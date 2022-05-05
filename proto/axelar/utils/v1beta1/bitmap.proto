@@ -9,7 +9,7 @@ option (gogoproto.goproto_getters_all) = false;
 
 message Bitmap {
   message Cache {
-    uint64 bitCount = 1;
+    uint64 bit_count = 1;
     uint64 result = 2;
   }
 

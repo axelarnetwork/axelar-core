@@ -186,20 +186,19 @@ func (k Keeper) RemoveChainMaintainer(ctx sdk.Context, chain exported.Chain, add
 
 // MarkChainMaintainerMissingVote marks the given chain maintainer for missing vote of a poll
 func (k Keeper) MarkChainMaintainerMissingVote(ctx sdk.Context, chain exported.Chain, address sdk.ValAddress, missingVote bool) {
-	chainState, _ := k.getChainState(ctx, chain)
-	chainState.Chain = chain
-
-	i := chainState.IndexOfMaintainer(address)
-	if i == -1 {
-		return
-	}
-
-	chainState.MaintainerStates[i].MissingVotes.Add(missingVote)
-	k.setChainState(ctx, chainState)
+	k.markMisbehave(ctx, chain, address, missingVote, func(maintainerState *types.MaintainerState) *utils.Bitmap {
+		return &maintainerState.MissingVotes
+	})
 }
 
 // MarkChainMaintainerIncorrectVote marks the given chain maintainer for voting incorrectly of a poll
 func (k Keeper) MarkChainMaintainerIncorrectVote(ctx sdk.Context, chain exported.Chain, address sdk.ValAddress, incorrectVote bool) {
+	k.markMisbehave(ctx, chain, address, incorrectVote, func(maintainerState *types.MaintainerState) *utils.Bitmap {
+		return &maintainerState.IncorrectVotes
+	})
+}
+
+func (k Keeper) markMisbehave(ctx sdk.Context, chain exported.Chain, address sdk.ValAddress, misbehaved bool, selectMisbehaveType func(maintainerState *types.MaintainerState) *utils.Bitmap) {
 	chainState, _ := k.getChainState(ctx, chain)
 	chainState.Chain = chain
 
@@ -208,7 +207,8 @@ func (k Keeper) MarkChainMaintainerIncorrectVote(ctx sdk.Context, chain exported
 		return
 	}
 
-	chainState.MaintainerStates[i].IncorrectVotes.Add(incorrectVote)
+	votes := selectMisbehaveType(&chainState.MaintainerStates[i])
+	votes.Add(misbehaved)
 	k.setChainState(ctx, chainState)
 }
 

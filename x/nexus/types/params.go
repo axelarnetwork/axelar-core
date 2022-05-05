@@ -90,7 +90,7 @@ func validateThresholdWith(paramName string) func(interface{}) error {
 }
 
 func validateChainMaintainerCheckWindow(i interface{}) error {
-	val, ok := i.(uint32)
+	val, ok := i.(uint64)
 	if !ok {
 		return fmt.Errorf("invalid parameter type for ChainMaintainerCheckWindow: %T", i)
 	}

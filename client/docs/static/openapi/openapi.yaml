@@ -7870,7 +7870,7 @@ paths:
                                 true_count_cache:
                                   type: object
                                   properties:
-                                    bitCount:
+                                    bit_count:
                                       type: string
                                       format: uint64
                                     result:
@@ -7885,7 +7885,7 @@ paths:
                                 true_count_cache:
                                   type: object
                                   properties:
-                                    bitCount:
+                                    bit_count:
                                       type: string
                                       format: uint64
                                     result:
@@ -35406,7 +35406,7 @@ components:
                   true_count_cache:
                     type: object
                     properties:
-                      bitCount:
+                      bit_count:
                         type: string
                         format: uint64
                       result:
@@ -35421,7 +35421,7 @@ components:
                   true_count_cache:
                     type: object
                     properties:
-                      bitCount:
+                      bit_count:
                         type: string
                         format: uint64
                       result:
@@ -35488,7 +35488,7 @@ components:
                       true_count_cache:
                         type: object
                         properties:
-                          bitCount:
+                          bit_count:
                             type: string
                             format: uint64
                           result:
@@ -35503,7 +35503,7 @@ components:
                       true_count_cache:
                         type: object
                         properties:
-                          bitCount:
+                          bit_count:
                             type: string
                             format: uint64
                           result:
@@ -35588,7 +35588,7 @@ components:
             true_count_cache:
               type: object
               properties:
-                bitCount:
+                bit_count:
                   type: string
                   format: uint64
                 result:
@@ -35603,7 +35603,7 @@ components:
             true_count_cache:
               type: object
               properties:
-                bitCount:
+                bit_count:
                   type: string
                   format: uint64
                 result:
@@ -35763,7 +35763,7 @@ components:
         true_count_cache:
           type: object
           properties:
-            bitCount:
+            bit_count:
               type: string
               format: uint64
             result:
@@ -35772,7 +35772,7 @@ components:
     axelar.utils.v1beta1.Bitmap.Cache:
       type: object
       properties:
-        bitCount:
+        bit_count:
           type: string
           format: uint64
         result:
