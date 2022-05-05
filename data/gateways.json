@@ -42,5 +42,15 @@
       "id": "moonbeam",
       "address": "0x5769D84DD62a6fD969856c75c7D321b84d455929"
     }
+  ],
+  "testnet-2": [
+    {
+      "id": "ethereum",
+      "address": "0xC0a29A0F494748bDae4a5FD0402e5c36Cc5B25c4"
+    },
+    {
+      "id": "avalanche",
+      "address": "0xA8315e133184a68E2ad547FD229df59B0868C254"
+    }
   ]
 }

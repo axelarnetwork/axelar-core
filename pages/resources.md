@@ -1,12 +1,59 @@
 # Resources
 
-|                              | Mainnet                                                                                                                                                                                                  | Testnet                                                                                                                                                             |
-| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Block explorers              | [Axelarscan](https://axelarscan.io/) <br/> [Mintscan](https://www.mintscan.io/axelar) <br/> [Big Dipper](https://axelar-mainnet.chainode.tech/) <br/> [Metrika](https://app.metrika.co/dashboard/axelar) | [Axelarscan](https://testnet.axelarscan.io/) <br/> [Mintscan](https://testnet.mintscan.io/axelar-testnet) <br/> [Big Dipper](https://axelar-testnet.chainode.tech/) |
-| Wallets                      | [Keplr](https://wallet.keplr.app/) <br/> [Cosmostation](https://www.cosmostation.io/)                                                                                                                    |                                                                                                                                                                     |
-| Faucet                       |                                                                                                                                                                                                          | [Axelar testnet faucet](https://faucet.testnet.axelar.dev/)                                                                                                         |
-| RPC endpoints                | https://quickapi.com/ <br/> https://axelar-rpc.pops.one/ <br/> https://axelar-rpc.chainode.tech/                                                                                                         | https://quickapi.com/                                                                                                                                               |
-| Contract addresses, releases | [Mainnet](resources/mainnet)                                                                                                                                                                             | [Testnet](resources/testnet)                                                                                                                                        |
+ <table>
+  <tr>
+    <th></th>
+    <th>Mainnet</th>
+    <th>Testnet</th>
+    <th>Testnet-2</th>
+  </tr>
+  <tr>
+    <td>Block explorers</td>
+    <td>
+      [Axelarscan](https://axelarscan.io/) <br/>
+      [Mintscan](https://www.mintscan.io/axelar) <br/>
+      [Big Dipper](https://axelar-mainnet.chainode.tech/) <br/>
+      [Metrika](https://app.metrika.co/dashboard/axelar)
+    </td>
+    <td>
+      [Axelarscan](https://testnet.axelarscan.io/) <br/>
+      [Mintscan](https://testnet.mintscan.io/axelar-testnet) <br/>
+      [Big Dipper](https://axelar-testnet.chainode.tech/)
+    </td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>Wallets</td>
+    <td>
+      [Keplr](https://wallet.keplr.app/) <br/>
+      [Cosmostation](https://www.cosmostation.io/)
+    </td>
+    <td></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>Faucet</td>
+    <td></td>
+    <td> [Axelar testnet faucet](https://faucet.testnet.axelar.dev/) </td>
+    <td> [Axelar testnet-2 faucet](https://faucet-casablanca.testnet.axelar.dev/) </td>
+  </tr>
+  <tr>
+    <td>RPC endpoints</td>
+    <td>
+      https://quickapi.com/ <br/>
+      https://axelar-rpc.pops.one/ <br/>
+      https://axelar-rpc.chainode.tech/
+    </td>
+    <td>https://quickapi.com/ </td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>Contract addresses, releases</td>
+    <td>[Mainnet](resources/mainnet)</td>
+    <td>[Testnet](resources/testnet)</td>
+    <td>[Testnet-2](resources/testnet-2)</td>
+  </tr>
+</table>
 
 ## Looking for help?
 

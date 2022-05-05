@@ -42,5 +42,17 @@
       "name": "Osmosis",
       "image": "/images/chains/osmosis.png"
     }
+  ],
+  "testnet-2": [
+    {
+      "id": "axelarnet",
+      "name": "Axelar",
+      "image": "/images/chains/axelar.png"
+    },
+    {
+      "id": "terra",
+      "name": "Terra",
+      "image": "/images/chains/terra.png"
+    }
   ]
 }

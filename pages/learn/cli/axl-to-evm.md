@@ -14,7 +14,7 @@ Transfer AXL tokens from Axelar to an EVM chain using the terminal.
 - You need both AXL tokens and `{EVM_CHAIN}` tokens to pay transaction fees.
   - **Testnet:**
     - Get some `{EVM_CHAIN}` testnet tokens as per [Metamask for EVM chains](/resources/metamask).
-    - Get some AXL testnet tokens from the [Axelar testnet faucet](http://faucet.testnet.axelar.dev/).
+    - Get some AXL tokens from the Axelar faucets: [testnet](https://faucet.testnet.axelar.dev/) | [testnet-2](https://faucet-casablanca.testnet.axelar.dev/).
   - **Mainnet:** You are responsible for obtaining your own tokens.
 - `{EVM_DEST_ADDR}` is an address controlled by you on the external EVM chain `{EVM_CHAIN}`. (In your Metamask, for example.) This is where your AXL tokens will be sent.
 - `{AMOUNT}` is the amount of AXL tokens you wish to transfer, denominated in `uaxl`. Recall that `1 AXL = 1000000 uaxl`. See [Testnet resources](/resources/testnet) or [Mainnet resources](/resources/mainnet) for minimum transfer amounts.

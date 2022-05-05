@@ -9,7 +9,7 @@ We'll write a function `myGetDepositAddress` with
 
 From here, a user could do the following:
 
-- Use the [Axelar testnet faucet](https://faucet.testnet.axelar.dev/) to deposit AXL tokens to `addr`. (Be sure to exceed the minimum of 10 AXL tokens!) The Axelar network will transfer these AXL tokens to Avalanche.
+- Use the Axelar faucets ([testnet](https://faucet.testnet.axelar.dev/) | [testnet-2](https://faucet-casablanca.testnet.axelar.dev/)) to deposit AXL tokens to `addr`. (Be sure to exceed the minimum of 10 AXL tokens!) The Axelar network will transfer these AXL tokens to Avalanche.
 - After some time, verify your AXL tokens arrived on Avalanche at `destinationAddress`. Use an Avalanche testnet block explorer such as [Snowtrace](https://testnet.snowtrace.io/). View the ERC-20 [token contract for AXL tokens on Avalanche testnet](https://testnet.snowtrace.io/address/0x46cc87ea84586c03bb2109ed9b33f998d40b7623).
 
 You can substitute (Axelar, AXL, Avalanche) for many other choices of (source chain, asset, destination chain).
@@ -27,7 +27,6 @@ npm i --save @axelar-network/axelarjs-sdk@0.4.29
 ## Get a deposit address from the Axelar network
 
 Write a function `myGetDepositAddress` that wraps a call to `getDepositAddress` from the AxelarJS SDK API like so:
-
 
 ```typescript
 import {

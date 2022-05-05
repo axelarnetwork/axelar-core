@@ -674,5 +674,101 @@
         }
       ]
     }
+  ],
+  "testnet-2": [
+    {
+      "id": "uaxl",
+      "name": "Axelar",
+      "symbol": "AXL",
+      "image": "/images/assets/axl.png",
+      "contracts": [
+        {
+          "chain": "ethereum",
+          "address": "0x4ecfcCeC5A50103d257965fe379209D924a4601E",
+          "decimals": 6
+        },
+        {
+          "chain": "avalanche",
+          "address": "0xF2B55C5A2BA224691021A6E8575E921D00362a9B",
+          "decimals": 6
+        }
+      ]
+    },
+    {
+      "id": "uusd",
+      "name": "TerraUSD",
+      "symbol": "UST",
+      "image": "/images/assets/ust.png",
+      "transfer_fee": 1,
+      "contracts": [
+        {
+          "chain": "ethereum",
+          "address": "0x4d5A08dab9F62D00559BB5Eeb5D3f545275832c6",
+          "decimals": 6,
+          "transfer_fee": 20
+        },
+        {
+          "chain": "avalanche",
+          "address": "0x9f59cb0d2660cd2Ca3aBaa9E2880fd1AedA6A173",
+          "decimals": 6
+        }
+      ]
+    },
+    {
+      "id": "uluna",
+      "name": "Terra",
+      "symbol": "LUNA",
+      "image": "/images/assets/luna.png",
+      "transfer_fee": 0.01,
+      "contracts": [
+        {
+          "chain": "ethereum",
+          "address": "0xebe4E666bb3f931e60c322fc99007EB0803eef0b",
+          "decimals": 6,
+          "transfer_fee": 0.2
+        },
+        {
+          "chain": "avalanche",
+          "address": "0xa0164F7B73dcAe5E3c44581c2f99Bf92dc9b4b3D",
+          "decimals": 6
+        }
+      ]
+    },
+    {
+      "id": "weth-wei",
+      "name": "Wrapped Ether",
+      "symbol": "WETH",
+      "image": "/images/assets/eth.png",
+      "contracts": [
+        {
+          "chain": "ethereum",
+          "address": "0xc778417E063141139Fce010982780140Aa0cD5Ab",
+          "decimals": 18
+        },
+        {
+          "chain": "avalanche",
+          "address": "0x84998BdB8Cd71588a1e5981D2297656Beaf0dAD2",
+          "decimals": 18
+        }
+      ]
+    },
+    {
+      "id": "wavax-wei",
+      "name": "Wrapped AVAX",
+      "symbol": "WAVAX",
+      "image": "/images/assets/avax.png",
+      "contracts": [
+        {
+          "chain": "ethereum",
+          "address": "0x5e39FF8ce8D4d35f984E9Be4f6c8674E85E03B4A",
+          "decimals": 18
+        },
+        {
+          "chain": "avalanche",
+          "address": "0xd00ae08403B9bbb9124bB305C09058E32C39A48c",
+          "decimals": 18
+        }
+      ]
+    }
   ]
 }
