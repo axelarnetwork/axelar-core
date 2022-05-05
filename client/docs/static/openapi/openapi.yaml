@@ -7867,12 +7867,30 @@ paths:
                                 bits:
                                   type: string
                                   format: byte
+                                true_count_cache:
+                                  type: object
+                                  properties:
+                                    bitCount:
+                                      type: string
+                                      format: uint64
+                                    result:
+                                      type: string
+                                      format: uint64
                             incorrect_votes:
                               type: object
                               properties:
                                 bits:
                                   type: string
                                   format: byte
+                                true_count_cache:
+                                  type: object
+                                  properties:
+                                    bitCount:
+                                      type: string
+                                      format: uint64
+                                    result:
+                                      type: string
+                                      format: uint64
                     title: ChainState represents the state of a registered blockchain
         default:
           description: An unexpected error response
@@ -35385,12 +35403,30 @@ components:
                   bits:
                     type: string
                     format: byte
+                  true_count_cache:
+                    type: object
+                    properties:
+                      bitCount:
+                        type: string
+                        format: uint64
+                      result:
+                        type: string
+                        format: uint64
               incorrect_votes:
                 type: object
                 properties:
                   bits:
                     type: string
                     format: byte
+                  true_count_cache:
+                    type: object
+                    properties:
+                      bitCount:
+                        type: string
+                        format: uint64
+                      result:
+                        type: string
+                        format: uint64
       title: ChainState represents the state of a registered blockchain
     axelar.nexus.v1beta1.ChainStateResponse:
       type: object
@@ -35449,12 +35485,30 @@ components:
                       bits:
                         type: string
                         format: byte
+                      true_count_cache:
+                        type: object
+                        properties:
+                          bitCount:
+                            type: string
+                            format: uint64
+                          result:
+                            type: string
+                            format: uint64
                   incorrect_votes:
                     type: object
                     properties:
                       bits:
                         type: string
                         format: byte
+                      true_count_cache:
+                        type: object
+                        properties:
+                          bitCount:
+                            type: string
+                            format: uint64
+                          result:
+                            type: string
+                            format: uint64
           title: ChainState represents the state of a registered blockchain
     axelar.nexus.v1beta1.ChainsByAssetResponse:
       type: object
@@ -35531,12 +35585,30 @@ components:
             bits:
               type: string
               format: byte
+            true_count_cache:
+              type: object
+              properties:
+                bitCount:
+                  type: string
+                  format: uint64
+                result:
+                  type: string
+                  format: uint64
         incorrect_votes:
           type: object
           properties:
             bits:
               type: string
               format: byte
+            true_count_cache:
+              type: object
+              properties:
+                bitCount:
+                  type: string
+                  format: uint64
+                result:
+                  type: string
+                  format: uint64
     axelar.nexus.v1beta1.RegisterAssetFeeRequest:
       type: object
       properties:
@@ -35688,6 +35760,24 @@ components:
         bits:
           type: string
           format: byte
+        true_count_cache:
+          type: object
+          properties:
+            bitCount:
+              type: string
+              format: uint64
+            result:
+              type: string
+              format: uint64
+    axelar.utils.v1beta1.Bitmap.Cache:
+      type: object
+      properties:
+        bitCount:
+          type: string
+          format: uint64
+        result:
+          type: string
+          format: uint64
     cosmos.base.query.v1beta1.PageRequest:
       type: object
       properties:

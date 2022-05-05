@@ -7,4 +7,12 @@ import "gogoproto/gogo.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
-message Bitmap { bytes bits = 1; }
+message Bitmap {
+  message Cache {
+    uint64 bitCount = 1;
+    uint64 result = 2;
+  }
+
+  bytes bits = 1;
+  Cache true_count_cache = 2;
+}

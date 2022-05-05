@@ -14,7 +14,10 @@ import (
 // on every begin block
 func BeginBlocker(_ sdk.Context, _ abci.RequestBeginBlock, _ types.Nexus) {}
 
-// EndBlocker called every block, process inflation, update validator set.
+// EndBlocker called every block, checking the chain maintainers of all activated chains
+// - if a chain maintainer has missed voting for too many polls, then it will be de-registered
+// - if a chain maintainer has voted incorrectly for too many polls, then it will be de-registered
+// - if a chain maintainer does not active proxy set, then it will be de-registered
 func EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock, n types.Nexus, r types.RewardKeeper, s types.Snapshotter) ([]abci.ValidatorUpdate, error) {
 	if err := checkChainMaintainers(ctx, n, r, s); err != nil {
 		return nil, err
@@ -33,8 +36,8 @@ func checkChainMaintainers(ctx sdk.Context, n types.Nexus, r types.RewardKeeper,
 		params := n.GetParams(ctx)
 
 		for _, maintainerState := range n.GetChainMaintainerStates(ctx, chain) {
-			missingVoteCount := maintainerState.MissingVotes.CountTrue(uint(params.ChainMaintainerCheckWindow))
-			incorrectVoteCount := maintainerState.IncorrectVotes.CountTrue(uint(params.ChainMaintainerCheckWindow))
+			missingVoteCount := maintainerState.MissingVotes.CountTrue(params.ChainMaintainerCheckWindow)
+			incorrectVoteCount := maintainerState.IncorrectVotes.CountTrue(params.ChainMaintainerCheckWindow)
 			window := params.ChainMaintainerCheckWindow
 			_, hasProxyActive := s.GetProxy(ctx, maintainerState.Address)
 

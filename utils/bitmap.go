@@ -4,8 +4,6 @@ import (
 	"math/big"
 )
 
-// var mask = sdk.NewInt(2).ToDec().Power(MaxBitmapLen - 1).RoundInt().BigInt()
-
 // NewBitmap is the constructor for Bitmap
 func NewBitmap() Bitmap {
 	return Bitmap{
@@ -27,24 +25,31 @@ func (m *Bitmap) Add(bit bool) *Bitmap {
 	}
 
 	m.Bits = bits.Bytes()
+	m.TrueCountCache = nil
 
 	return m
 }
 
 // CountTrue returns the number of 1's in the given range
-func (m Bitmap) CountTrue(bitCount uint) uint {
-	result := uint(0)
+func (m *Bitmap) CountTrue(bitCount uint64) uint64 {
+	if m.TrueCountCache != nil && m.TrueCountCache.BitCount == bitCount {
+		return m.TrueCountCache.Result
+	}
+
+	m.TrueCountCache = nil
+
+	result := uint64(0)
 	bits := m.getBits()
 	bitLen := bits.BitLen()
 
-	for i := 0; uint(i) < bitCount && i < bitLen; i++ {
-		result += bits.Bit(i)
+	for i := 0; uint64(i) < bitCount && i < bitLen; i++ {
+		result += uint64(bits.Bit(i))
 	}
 
 	return result
 }
 
 // CountFalse returns the number of 0's in the given range
-func (m Bitmap) CountFalse(bitCount uint) uint {
+func (m *Bitmap) CountFalse(bitCount uint64) uint64 {
 	return bitCount - m.CountTrue(bitCount)
 }
