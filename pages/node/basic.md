@@ -1,27 +1,59 @@
 # Basic node management
 
 import Callout from 'nextra-theme-docs/callout'
-import Markdown from 'markdown-to-jsx'
-import Tabs from '../../components/tabs'
-import CodeBlock from '../../components/code-block'
 
-Stop your node, backup your chain data, resume your node. Check your AXL balance, get AXL tokens from the faucet.
-
-<Callout type="error" emoji="🔥">
-  Important: The Axelar network is under active development. Use at your own risk with funds you're comfortable using. See [Terms of use](/terms-of-use).
-</Callout>
+Start and stop your node, test whether your blockchain is downloaded. Backup your keys and chain data. Create an account, check your AXL balance, get AXL tokens from the faucet.
 
 ## Prerequisites
 
-You have launched your Axelar node as per [Quick sync](./join). Perhaps you have not yet completed downloading the blockchain.
+- Configure your environment as per [CLI configuration](config-cli) and [Node configuration](config-node).
+- Let `{AXELARD_HOME}` denote the home directory path as per [Node configuration](config-node).
+
+## Start your Axelar node
+
+You may wish to redirect log output to a file:
+
+```bash
+axelard start --home {AXELARD_HOME} >> {AXELARD_HOME}/logs/axelard.log 2>&1
+```
+
+View your logs in real time:
+
+```bash
+tail -f {AXELARD_HOME}/logs/axelard.log
+```
+
+## Test whether your blockchain is downloaded
+
+Eventually your Axelar node will download the entire Axelar blockchain and exit `catching_up` mode. At that time your logs will show a new block added to the blockchain every 5 seconds.
+
+You can test whether your Axelar node has exited `catching_up` mode:
+
+```bash
+axelard status
+```
+
+Look for the field `catching_up`:
+
+- `true`: you are still downloading the blockchain.
+- `false`: you have finished downloading the blockchain.
 
 ## Stop your Axelar node
 
 Stop your currently running Axelar node:
 
 ```bash
-kill -9 $(pgrep -f "axelard start")
+pkill -f "axelard start"
 ```
+
+## Backup and restore your node and validator keys
+
+Each time you start your Axelar node `axelard` will look for the following files in `{AXELARD_HOME}/config`:
+
+- `node_key.json` : The p2p identity of your node. Back this up if this is a seed node.
+- `priv_validator_key.json` : Validator’s Tendermint consensus key. Back this up if this is a validator node.
+
+These files will be created if they do not already exist. You can restore them from a backup simply by placing them in `{AXELARD_HOME}/config` before starting your node.
 
 ## Backup your chain data
 
@@ -29,71 +61,33 @@ kill -9 $(pgrep -f "axelard start")
   Caution: Your node must be stopped in order to properly backup chain data.
 </Callout>
 
+Backup your entire node's state simply by copying the `{AXELARD_HOME}` directory:
+
 ```bash
-cp -r $AXELARD_HOME ${AXELARD_HOME}_backup
+cp -r {AXELARD_HOME} {AXELARD_HOME}_backup
 ```
 
-## Resume your Axelar node
+## Create an account
 
-Resume your stopped Axelar node.
+```bash
+axelard keys add my_account --home {AXELARD_HOME}
+```
 
-<Callout emoji="💡">
-  Tip: If your node is still in `catching_up` mode then you might need to use the `-a` flag in the following command to specify a different version of axelar-core depending on your current progress downloading the blockchain. See [Genesis sync](./join-genesis).
+<Callout type="warning" emoji="⚠️">
+  Caution: The above command will print a mnemonic to stdout.  This mnemonic allows you to recover the secret key for your new account.  Be sure to store a backup of the mnemonic in a safe place.
 </Callout>
-
-<Tabs tabs={[
-{
-title: "Mainnet",
-content: <CodeBlock language="bash">
-{"KEYRING_PASSWORD=my-secret-password ./scripts/node.sh -n mainnet"}
-</CodeBlock>
-},
-{
-title: "Testnet",
-content: <CodeBlock language="bash">
-{"KEYRING_PASSWORD=my-secret-password ./scripts/node.sh"}
-</CodeBlock>
-},
-{
-title: "Testnet-2",
-content: <CodeBlock language="bash">
-{"KEYRING_PASSWORD=my-secret-password ./scripts/node.sh -n testnet-2"}
-</CodeBlock>
-}
-]} />
 
 ## Learn your address
 
-<Callout emoji="💡">
-  Tip: A new account named `validator` was automatically created for you when you joined the Axelar network for the first time. This is just a name---you are not (yet) a validator on the Axelar network.
-</Callout>
+The public address of your account `my_account` was printed to stdout when you created it. You can display the address at any time:
 
-Learn the address of your `validator` account:
-
-<Tabs tabs={[
-{
-title: "Mainnet",
-content: <CodeBlock language="bash">
-{"echo my-secret-password | ~/.axelar/bin/axelard keys show validator -a --home ~/.axelar/.core"}
-</CodeBlock>
-},
-{
-title: "Testnet",
-content: <CodeBlock language="bash">
-{"echo my-secret-password | ~/.axelar_testnet/bin/axelard keys show validator -a --home ~/.axelar_testnet/.core"}
-</CodeBlock>
-},
-{
-title: "Testnet-2",
-content: <CodeBlock language="bash">
-{"echo my-secret-password | ~/.axelar_testnet-2/bin/axelard keys show validator -a --home ~/.axelar_testnet-2/.core"}
-</CodeBlock>
-}
-]} />
+```bash
+axelard keys show validator -a --home {AXELARD_HOME}
+```
 
 ## Check your AXL balance
 
-Let `{MY_ADDRESS}` denote the address of your `validator` account.
+Let `{MY_ADDRESS}` denote the address of your `my_account` account.
 
 <Callout emoji="💡">
   Tip: Your balance will appear only after you have downloaded the blockchain and exited `catching_up` mode.
@@ -112,7 +106,3 @@ Go to the Axelar testnet faucet and send some free AXL testnet tokens to `{MY_AD
 
 - [Testnet-1 Faucet](https://faucet.testnet.axelar.dev/).
 - [Testnet-2 Faucet](https://faucet-casablanca.testnet.axelar.dev/)
-
-## Recover your secret keys
-
-Join the network as per [Quick sync](./join), except use the flags `-t path_to_tendermint_key -m path_to_validator_mnemonic -r` (`-r` is to reset the chain). These flags work only on a completely fresh state.

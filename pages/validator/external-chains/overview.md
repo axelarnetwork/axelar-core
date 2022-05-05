@@ -97,28 +97,7 @@ kill -9 $(pgrep tofnd)
 kill -9 $(pgrep -f "axelard vald-start")
 ```
 
-Immediately resume your companion processes `vald`, `tofnd`:
-
-<Tabs tabs={[
-{
-title: "Mainnet",
-content: <CodeBlock language="bash">
-{"KEYRING_PASSWORD=my-secret-password TOFND_PASSWORD=my-tofnd-password ./scripts/validator-tools-host.sh -n mainnet"}
-</CodeBlock>
-},
-{
-title: "Testnet",
-content: <CodeBlock language="bash">
-{"KEYRING_PASSWORD=my-secret-password TOFND_PASSWORD=my-tofnd-password ./scripts/validator-tools-host.sh"}
-</CodeBlock>
-},
-{
-title: "Testnet-2",
-content: <CodeBlock language="bash">
-{"KEYRING_PASSWORD=my-secret-password TOFND_PASSWORD=my-tofnd-password ./scripts/validator-tools-host.sh -n testnet-2"}
-</CodeBlock>
-}
-]} />
+Immediately resume your companion processes `vald`, `tofnd` as per [Launch companion processes](../setup/vald-tofnd).
 
 ## Check your connections to new chains in vald
 
@@ -140,26 +119,9 @@ For each external blockchain you selected earlier you must inform the Axelar net
 
 Example: multiple EVM chains in one command:
 
-<Tabs tabs={[
-{
-title: "Mainnet",
-content: <CodeBlock language="bash">
-{"echo my-secret-password | ~/.axelar/bin/axelard tx nexus register-chain-maintainer avalanche ethereum fantom moonbeam polygon --from broadcaster --chain-id axelar-dojo-1 --home ~/.axelar/.vald --gas auto --gas-adjustment 1.5"}
-</CodeBlock>
-},
-{
-title: "Testnet",
-content: <CodeBlock language="bash">
-{"echo my-secret-password | ~/.axelar_testnet/bin/axelard tx nexus register-chain-maintainer avalanche ethereum fantom moonbeam polygon --from broadcaster --chain-id axelar-testnet-lisbon-3 --home ~/.axelar_testnet/.vald --gas auto --gas-adjustment 1.5"}
-</CodeBlock>
-},
-{
-title: "Testnet-2",
-content: <CodeBlock language="bash">
-{"echo my-secret-password | ~/.axelar_testnet-2/bin/axelard tx nexus register-chain-maintainer avalanche ethereum fantom moonbeam polygon --from broadcaster --chain-id axelar-testnet-casablanca-1 --home ~/.axelar_testnet-2/.vald --gas auto --gas-adjustment 1.5"}
-</CodeBlock>
-}
-]} />
+```bash
+axelard tx nexus register-chain-maintainer avalanche ethereum fantom moonbeam polygon --from broadcaster --chain-id {AXELARD_CHAIN_ID} --home {AXELARD_HOME}
+```
 
 <Callout emoji="ℹ️">
   Validator voting for maintained chains

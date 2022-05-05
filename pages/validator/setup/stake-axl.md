@@ -21,7 +21,7 @@ axelard tx staking create-validator --amount {STAKE_AMOUNT}uaxl --moniker "{MY_M
 Learn the `{VALOPER_ADDR}` address associated with your `validator` account
 
 ```bash
-axelard keys show validator -a --bech val
+axelard keys show validator -a --bech val --home {AXELARD_HOME}
 ```
 
 ## Optional: check the stake amount delegated to your validator

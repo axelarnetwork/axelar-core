@@ -1,46 +1,37 @@
-# Back-up your secret data
+# Create and backup accounts
 
-Back-up your validator mnemonics and secret keys.
+Create and backup your validator mnemonics and secret keys.
 
 You must store backup copies of the following data in a safe place:
 
-1. `validator` account secret mnemonic
-2. Tendermint validator secret key
+1. Tendermint validator secret key
+2. `validator` account secret mnemonic
 3. `broadcaster` account secret mnemonic
 4. `tofnd` secret mnemonic
 
-Items 1 and 2 were created when you completed [Quick sync](../../node/join).
+## Backup your Tendermint validator secret key
 
-Items 3 and 4 were created when you completed [Launch validator companion processes for the first time](./vald-tofnd).
+As described in [Basic node management](../../node/basic) BACKUP the file `{AXELARD_HOME}/config/priv_validator_key.json`.
 
-## Validator account secret mnemonic
+## Create and backup accounts
 
-BACKUP and DELETE the `validator` account secret mnemonic:
+Each validator needs two accounts, which we call `validator` and `broadcaster`. Create those accounts and back them up.
 
-```
-$AXELARD_HOME/validator.txt
-```
-
-## Tendermint validator secret key
-
-BACKUP but do NOT DELETE the Tendermint consensus secret key (this is needed on node restarts):
-
-```
-$AXELARD_HOME/config/priv_validator_key.json
+```bash
+axelard keys add validator --home {AXELARD_HOME}
+axelard keys add broadcaster --home {AXELARD_HOME}
 ```
 
-## Broadcaster account secret mnemonic
+As described in [Basic node management](../../node/basic), BACKUP the secret mnemonics for these accounts that are printed to stdout when you crate them.
 
-BACKUP and DELETE the `broadcaster` account secret mnemonic:
+## Create and backup tofnd mnemonic
 
+Similar to your [Axelar keyring](../../node/keyring), your `tofnd` storage is encrypted with a password you choose. Your password must have at least 8 characters.
+
+Set `tofnd` password and create `tofnd` mnemonic:
+
+```bash
+tofnd -m create -d {AXELARD_HOME}/tofnd
 ```
-$AXELARD_HOME/broadcaster.txt
-```
 
-## Tofnd secret mnemonic
-
-BACKUP and DELETE the `tofnd` secret mnemonic:
-
-```
-$AXELARD_HOME/.tofnd/import
-```
+BACKUP and DELETE `{AXELARD_HOME}/tofnd/export`.

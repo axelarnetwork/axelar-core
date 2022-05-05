@@ -10,11 +10,11 @@ Axelar validators exchange messages with one another via the Axelar blockchain. 
 
 ## Learn your broadcaster account address
 
-Your `broadcaster` address `{BROADCASTER_ADDR}` is stored in a text file:
+```bash
+axelard keys show broadcaster -a --home {AXELARD_HOME}
+```
 
-```
-$AXELARD_HOME/broadcaster.address
-```
+Let `{BROADCASTER_ADDR}` denote your `broadcaster` address
 
 ## Fund your validator and broadcaster accounts
 
@@ -33,5 +33,5 @@ axelard tx snapshot register-proxy {BROADCASTER_ADDR} --from validator
 ## Optional: check your broadcaster registration
 
 ```bash
-axelard q snapshot proxy $(cat $AXELARD_HOME/validator.bech)
+axelard q snapshot proxy {VALIDATOR_ADDR}
 ```

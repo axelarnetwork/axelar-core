@@ -1,7 +1,8 @@
 {
   "overview": "Overview",
+  "config": "Configure companion processes",
+  "backup": "Create and backup accounts",
   "vald-tofnd": "Launch companion processes",
-  "backup": "Back-up your secret data",
   "register-broadcaster": "Register broadcaster proxy",
   "stake-axl": "Stake AXL tokens",
   "health-check": "Health check",
