@@ -10,7 +10,7 @@ Convert your existing Axelar node into a validator by staking AXL tokens and att
 
 - **Hardware:** Minimum: 16 cores, 16GB RAM, 1.5 TB drive. Recommended: 32 cores, 32 GB RAM, 2 TB+ drive.
 - You have downloaded the Axelar blockchain and are comfortable with [Basic node management](../../node/basic).
-- Let `{AXELARD_HOME}` denote the home directory path as per [Node configuration](config-node).
+- Let `{AXELARD_HOME}` denote the home directory path as per [Node configuration](../../node/config-node).
 
 MOVE:
 

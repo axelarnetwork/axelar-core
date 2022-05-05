@@ -33,5 +33,5 @@ axelard tx snapshot register-proxy {BROADCASTER_ADDR} --from validator
 ## Optional: check your broadcaster registration
 
 ```bash
-axelard q snapshot proxy {VALIDATOR_ADDR}
+axelard q snapshot proxy {VALOPER_ADDR}
 ```
