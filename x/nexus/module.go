@@ -15,6 +15,7 @@ import (
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/nexus/client/cli"
 	"github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
@@ -86,10 +87,11 @@ type AppModule struct {
 	staking     types.StakingKeeper
 	axelarnet   types.AxelarnetKeeper
 	evm         types.EVMBaseKeeper
+	reward      types.RewardKeeper
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(k keeper.Keeper, snapshotter types.Snapshotter, staking types.StakingKeeper, axelarnet types.AxelarnetKeeper, evm types.EVMBaseKeeper) AppModule {
+func NewAppModule(k keeper.Keeper, snapshotter types.Snapshotter, staking types.StakingKeeper, axelarnet types.AxelarnetKeeper, evm types.EVMBaseKeeper, reward types.RewardKeeper) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
@@ -97,6 +99,7 @@ func NewAppModule(k keeper.Keeper, snapshotter types.Snapshotter, staking types.
 		staking:        staking,
 		axelarnet:      axelarnet,
 		evm:            evm,
+		reward:         reward,
 	}
 }
 
@@ -137,7 +140,9 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 
 // EndBlock executes all state transitions this module requires at the end of each new block
 func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
-	return EndBlocker(ctx, req, am.keeper)
+	return utils.RunEndBlocker(ctx, am.keeper, func(ctx sdk.Context) ([]abci.ValidatorUpdate, error) {
+		return EndBlocker(ctx, req, am.keeper, am.reward, am.snapshotter)
+	})
 }
 
 // Route returns the module's route

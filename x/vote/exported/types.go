@@ -14,7 +14,7 @@ import (
 //go:generate moq -out ./mock/types.go -pkg mock . Poll
 
 // VoteHandler defines a function that handler pool result
-type VoteHandler func(ctx sdk.Context, result *Vote) error
+type VoteHandler func(ctx sdk.Context, result Poll) error
 
 // Is checks if the poll is in the given state
 func (m PollMetadata) Is(state PollState) bool {
@@ -157,6 +157,8 @@ func RewardPool(rewardPoolName string) PollProperty {
 
 // Poll provides an interface for other modules to interact with polls
 type Poll interface {
+	HasVotedCorrectly(voter sdk.ValAddress) bool
+	HasVoted(voter sdk.ValAddress) bool
 	Vote(voter sdk.ValAddress, data codec.ProtoMarshaler) error
 	Is(state PollState) bool
 	AllowOverride()

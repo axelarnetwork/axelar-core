@@ -43,13 +43,13 @@ func TestGetMigrationHandler(t *testing.T) {
 		sigMetadata evmTypes.SigMetadata
 	)
 
-	givenMigrationHandler := Given("the migration handler", func(t *testing.T) {
+	givenMigrationHandler := Given("the migration handler", func() {
 		cdc, ctx, k = setup()
 		handler = keeper.GetMigrationHandler(k)
 	})
 
 	givenMigrationHandler.
-		When("some sign info with valid EVM sig metadata exists", func(_ *testing.T) {
+		When("some sign info with valid EVM sig metadata exists", func() {
 			sigMetadata = evmTypes.SigMetadata{
 				Type:  evmTypes.SigCommand,
 				Chain: rand.NormalizedStr(5),
@@ -78,7 +78,7 @@ func TestGetMigrationHandler(t *testing.T) {
 		Run(t)
 
 	givenMigrationHandler.
-		When("some sign info with invalid EVM sig metadata exists", func(_ *testing.T) {
+		When("some sign info with invalid EVM sig metadata exists", func() {
 			sigID = rand.HexStr(64)
 			signInfo := exported.SignInfo{
 				SigID:    sigID,

@@ -7853,6 +7853,48 @@ paths:
                             is_native_asset:
                               type: boolean
                               format: boolean
+                      maintainer_states:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            address:
+                              type: string
+                              format: byte
+                            missing_votes:
+                              type: object
+                              properties:
+                                true_count_cache:
+                                  type: object
+                                  properties:
+                                    cumulative_value:
+                                      type: array
+                                      items:
+                                        type: string
+                                        format: uint64
+                                    index:
+                                      type: integer
+                                      format: int32
+                                    max_size:
+                                      type: integer
+                                      format: int32
+                            incorrect_votes:
+                              type: object
+                              properties:
+                                true_count_cache:
+                                  type: object
+                                  properties:
+                                    cumulative_value:
+                                      type: array
+                                      items:
+                                        type: string
+                                        format: uint64
+                                    index:
+                                      type: integer
+                                      format: int32
+                                    max_size:
+                                      type: integer
+                                      format: int32
                     title: ChainState represents the state of a registered blockchain
         default:
           description: An unexpected error response
@@ -35351,6 +35393,48 @@ components:
               is_native_asset:
                 type: boolean
                 format: boolean
+        maintainer_states:
+          type: array
+          items:
+            type: object
+            properties:
+              address:
+                type: string
+                format: byte
+              missing_votes:
+                type: object
+                properties:
+                  true_count_cache:
+                    type: object
+                    properties:
+                      cumulative_value:
+                        type: array
+                        items:
+                          type: string
+                          format: uint64
+                      index:
+                        type: integer
+                        format: int32
+                      max_size:
+                        type: integer
+                        format: int32
+              incorrect_votes:
+                type: object
+                properties:
+                  true_count_cache:
+                    type: object
+                    properties:
+                      cumulative_value:
+                        type: array
+                        items:
+                          type: string
+                          format: uint64
+                      index:
+                        type: integer
+                        format: int32
+                      max_size:
+                        type: integer
+                        format: int32
       title: ChainState represents the state of a registered blockchain
     axelar.nexus.v1beta1.ChainStateResponse:
       type: object
@@ -35395,6 +35479,48 @@ components:
                   is_native_asset:
                     type: boolean
                     format: boolean
+            maintainer_states:
+              type: array
+              items:
+                type: object
+                properties:
+                  address:
+                    type: string
+                    format: byte
+                  missing_votes:
+                    type: object
+                    properties:
+                      true_count_cache:
+                        type: object
+                        properties:
+                          cumulative_value:
+                            type: array
+                            items:
+                              type: string
+                              format: uint64
+                          index:
+                            type: integer
+                            format: int32
+                          max_size:
+                            type: integer
+                            format: int32
+                  incorrect_votes:
+                    type: object
+                    properties:
+                      true_count_cache:
+                        type: object
+                        properties:
+                          cumulative_value:
+                            type: array
+                            items:
+                              type: string
+                              format: uint64
+                          index:
+                            type: integer
+                            format: int32
+                          max_size:
+                            type: integer
+                            format: int32
           title: ChainState represents the state of a registered blockchain
     axelar.nexus.v1beta1.ChainsByAssetResponse:
       type: object
@@ -35459,6 +35585,46 @@ components:
       properties:
         deposit_addr:
           type: string
+    axelar.nexus.v1beta1.MaintainerState:
+      type: object
+      properties:
+        address:
+          type: string
+          format: byte
+        missing_votes:
+          type: object
+          properties:
+            true_count_cache:
+              type: object
+              properties:
+                cumulative_value:
+                  type: array
+                  items:
+                    type: string
+                    format: uint64
+                index:
+                  type: integer
+                  format: int32
+                max_size:
+                  type: integer
+                  format: int32
+        incorrect_votes:
+          type: object
+          properties:
+            true_count_cache:
+              type: object
+              properties:
+                cumulative_value:
+                  type: array
+                  items:
+                    type: string
+                    format: uint64
+                index:
+                  type: integer
+                  format: int32
+                max_size:
+                  type: integer
+                  format: int32
     axelar.nexus.v1beta1.RegisterAssetFeeRequest:
       type: object
       properties:
@@ -35604,6 +35770,37 @@ components:
                      repeated Bar results = 1;
                      PageResponse page = 2;
              }
+    axelar.utils.v1beta1.Bitmap:
+      type: object
+      properties:
+        true_count_cache:
+          type: object
+          properties:
+            cumulative_value:
+              type: array
+              items:
+                type: string
+                format: uint64
+            index:
+              type: integer
+              format: int32
+            max_size:
+              type: integer
+              format: int32
+    axelar.utils.v1beta1.CircularBuffer:
+      type: object
+      properties:
+        cumulative_value:
+          type: array
+          items:
+            type: string
+            format: uint64
+        index:
+          type: integer
+          format: int32
+        max_size:
+          type: integer
+          format: int32
     cosmos.base.query.v1beta1.PageRequest:
       type: object
       properties:

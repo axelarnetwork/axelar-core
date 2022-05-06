@@ -9,6 +9,11 @@ import "axelar/tss/exported/v1beta1/types.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
+message VoteEvents {
+  string chain = 1;
+  repeated Event events = 2 [ (gogoproto.nullable) = false ];
+}
+
 message Event {
   enum Status {
     option (gogoproto.goproto_enum_prefix) = false;

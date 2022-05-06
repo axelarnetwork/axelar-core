@@ -1283,6 +1283,12 @@ var _ types.Nexus = &NexusMock{}
 // 			LinkAddressesFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress) error {
 // 				panic("mock out the LinkAddresses method")
 // 			},
+// 			MarkChainMaintainerIncorrectVoteFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, address github_com_cosmos_cosmos_sdk_types.ValAddress, incorrectVote bool)  {
+// 				panic("mock out the MarkChainMaintainerIncorrectVote method")
+// 			},
+// 			MarkChainMaintainerMissingVoteFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, address github_com_cosmos_cosmos_sdk_types.ValAddress, missingVote bool)  {
+// 				panic("mock out the MarkChainMaintainerMissingVote method")
+// 			},
 // 			RegisterAssetFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, asset nexus.Asset) error {
 // 				panic("mock out the RegisterAsset method")
 // 			},
@@ -1337,6 +1343,12 @@ type NexusMock struct {
 
 	// LinkAddressesFunc mocks the LinkAddresses method.
 	LinkAddressesFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress) error
+
+	// MarkChainMaintainerIncorrectVoteFunc mocks the MarkChainMaintainerIncorrectVote method.
+	MarkChainMaintainerIncorrectVoteFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, address github_com_cosmos_cosmos_sdk_types.ValAddress, incorrectVote bool)
+
+	// MarkChainMaintainerMissingVoteFunc mocks the MarkChainMaintainerMissingVote method.
+	MarkChainMaintainerMissingVoteFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, address github_com_cosmos_cosmos_sdk_types.ValAddress, missingVote bool)
 
 	// RegisterAssetFunc mocks the RegisterAsset method.
 	RegisterAssetFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, asset nexus.Asset) error
@@ -1458,6 +1470,28 @@ type NexusMock struct {
 			// Recipient is the recipient argument value.
 			Recipient nexus.CrossChainAddress
 		}
+		// MarkChainMaintainerIncorrectVote holds details about calls to the MarkChainMaintainerIncorrectVote method.
+		MarkChainMaintainerIncorrectVote []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Chain is the chain argument value.
+			Chain nexus.Chain
+			// Address is the address argument value.
+			Address github_com_cosmos_cosmos_sdk_types.ValAddress
+			// IncorrectVote is the incorrectVote argument value.
+			IncorrectVote bool
+		}
+		// MarkChainMaintainerMissingVote holds details about calls to the MarkChainMaintainerMissingVote method.
+		MarkChainMaintainerMissingVote []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Chain is the chain argument value.
+			Chain nexus.Chain
+			// Address is the address argument value.
+			Address github_com_cosmos_cosmos_sdk_types.ValAddress
+			// MissingVote is the missingVote argument value.
+			MissingVote bool
+		}
 		// RegisterAsset holds details about calls to the RegisterAsset method.
 		RegisterAsset []struct {
 			// Ctx is the ctx argument value.
@@ -1475,22 +1509,24 @@ type NexusMock struct {
 			Chain nexus.Chain
 		}
 	}
-	lockAddTransferFee         sync.RWMutex
-	lockArchivePendingTransfer sync.RWMutex
-	lockComputeTransferFee     sync.RWMutex
-	lockEnqueueForTransfer     sync.RWMutex
-	lockEnqueueTransfer        sync.RWMutex
-	lockGetChain               sync.RWMutex
-	lockGetChainByNativeAsset  sync.RWMutex
-	lockGetChainMaintainers    sync.RWMutex
-	lockGetChains              sync.RWMutex
-	lockGetRecipient           sync.RWMutex
-	lockGetTransfersForChain   sync.RWMutex
-	lockIsAssetRegistered      sync.RWMutex
-	lockIsChainActivated       sync.RWMutex
-	lockLinkAddresses          sync.RWMutex
-	lockRegisterAsset          sync.RWMutex
-	lockSetChain               sync.RWMutex
+	lockAddTransferFee                   sync.RWMutex
+	lockArchivePendingTransfer           sync.RWMutex
+	lockComputeTransferFee               sync.RWMutex
+	lockEnqueueForTransfer               sync.RWMutex
+	lockEnqueueTransfer                  sync.RWMutex
+	lockGetChain                         sync.RWMutex
+	lockGetChainByNativeAsset            sync.RWMutex
+	lockGetChainMaintainers              sync.RWMutex
+	lockGetChains                        sync.RWMutex
+	lockGetRecipient                     sync.RWMutex
+	lockGetTransfersForChain             sync.RWMutex
+	lockIsAssetRegistered                sync.RWMutex
+	lockIsChainActivated                 sync.RWMutex
+	lockLinkAddresses                    sync.RWMutex
+	lockMarkChainMaintainerIncorrectVote sync.RWMutex
+	lockMarkChainMaintainerMissingVote   sync.RWMutex
+	lockRegisterAsset                    sync.RWMutex
+	lockSetChain                         sync.RWMutex
 }
 
 // AddTransferFee calls AddTransferFeeFunc.
@@ -2008,6 +2044,92 @@ func (mock *NexusMock) LinkAddressesCalls() []struct {
 	mock.lockLinkAddresses.RLock()
 	calls = mock.calls.LinkAddresses
 	mock.lockLinkAddresses.RUnlock()
+	return calls
+}
+
+// MarkChainMaintainerIncorrectVote calls MarkChainMaintainerIncorrectVoteFunc.
+func (mock *NexusMock) MarkChainMaintainerIncorrectVote(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, address github_com_cosmos_cosmos_sdk_types.ValAddress, incorrectVote bool) {
+	if mock.MarkChainMaintainerIncorrectVoteFunc == nil {
+		panic("NexusMock.MarkChainMaintainerIncorrectVoteFunc: method is nil but Nexus.MarkChainMaintainerIncorrectVote was just called")
+	}
+	callInfo := struct {
+		Ctx           github_com_cosmos_cosmos_sdk_types.Context
+		Chain         nexus.Chain
+		Address       github_com_cosmos_cosmos_sdk_types.ValAddress
+		IncorrectVote bool
+	}{
+		Ctx:           ctx,
+		Chain:         chain,
+		Address:       address,
+		IncorrectVote: incorrectVote,
+	}
+	mock.lockMarkChainMaintainerIncorrectVote.Lock()
+	mock.calls.MarkChainMaintainerIncorrectVote = append(mock.calls.MarkChainMaintainerIncorrectVote, callInfo)
+	mock.lockMarkChainMaintainerIncorrectVote.Unlock()
+	mock.MarkChainMaintainerIncorrectVoteFunc(ctx, chain, address, incorrectVote)
+}
+
+// MarkChainMaintainerIncorrectVoteCalls gets all the calls that were made to MarkChainMaintainerIncorrectVote.
+// Check the length with:
+//     len(mockedNexus.MarkChainMaintainerIncorrectVoteCalls())
+func (mock *NexusMock) MarkChainMaintainerIncorrectVoteCalls() []struct {
+	Ctx           github_com_cosmos_cosmos_sdk_types.Context
+	Chain         nexus.Chain
+	Address       github_com_cosmos_cosmos_sdk_types.ValAddress
+	IncorrectVote bool
+} {
+	var calls []struct {
+		Ctx           github_com_cosmos_cosmos_sdk_types.Context
+		Chain         nexus.Chain
+		Address       github_com_cosmos_cosmos_sdk_types.ValAddress
+		IncorrectVote bool
+	}
+	mock.lockMarkChainMaintainerIncorrectVote.RLock()
+	calls = mock.calls.MarkChainMaintainerIncorrectVote
+	mock.lockMarkChainMaintainerIncorrectVote.RUnlock()
+	return calls
+}
+
+// MarkChainMaintainerMissingVote calls MarkChainMaintainerMissingVoteFunc.
+func (mock *NexusMock) MarkChainMaintainerMissingVote(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, address github_com_cosmos_cosmos_sdk_types.ValAddress, missingVote bool) {
+	if mock.MarkChainMaintainerMissingVoteFunc == nil {
+		panic("NexusMock.MarkChainMaintainerMissingVoteFunc: method is nil but Nexus.MarkChainMaintainerMissingVote was just called")
+	}
+	callInfo := struct {
+		Ctx         github_com_cosmos_cosmos_sdk_types.Context
+		Chain       nexus.Chain
+		Address     github_com_cosmos_cosmos_sdk_types.ValAddress
+		MissingVote bool
+	}{
+		Ctx:         ctx,
+		Chain:       chain,
+		Address:     address,
+		MissingVote: missingVote,
+	}
+	mock.lockMarkChainMaintainerMissingVote.Lock()
+	mock.calls.MarkChainMaintainerMissingVote = append(mock.calls.MarkChainMaintainerMissingVote, callInfo)
+	mock.lockMarkChainMaintainerMissingVote.Unlock()
+	mock.MarkChainMaintainerMissingVoteFunc(ctx, chain, address, missingVote)
+}
+
+// MarkChainMaintainerMissingVoteCalls gets all the calls that were made to MarkChainMaintainerMissingVote.
+// Check the length with:
+//     len(mockedNexus.MarkChainMaintainerMissingVoteCalls())
+func (mock *NexusMock) MarkChainMaintainerMissingVoteCalls() []struct {
+	Ctx         github_com_cosmos_cosmos_sdk_types.Context
+	Chain       nexus.Chain
+	Address     github_com_cosmos_cosmos_sdk_types.ValAddress
+	MissingVote bool
+} {
+	var calls []struct {
+		Ctx         github_com_cosmos_cosmos_sdk_types.Context
+		Chain       nexus.Chain
+		Address     github_com_cosmos_cosmos_sdk_types.ValAddress
+		MissingVote bool
+	}
+	mock.lockMarkChainMaintainerMissingVote.RLock()
+	calls = mock.calls.MarkChainMaintainerMissingVote
+	mock.lockMarkChainMaintainerMissingVote.RUnlock()
 	return calls
 }
 
