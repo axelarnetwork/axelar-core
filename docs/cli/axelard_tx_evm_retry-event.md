@@ -2,10 +2,6 @@
 
 Retry a failed event
 
-### Synopsis
-
-Retry a failed event
-
 ```
 axelard tx evm retry-event [chain] [event ID] [flags]
 ```

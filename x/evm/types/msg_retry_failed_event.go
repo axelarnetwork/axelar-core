@@ -12,7 +12,7 @@ func NewRetryFailedEventRequest(sender sdk.AccAddress, chain string, eventID str
 	return &RetryFailedEventRequest{
 		Sender:  sender,
 		Chain:   utils.NormalizeString(chain),
-		EventID: utils.NormalizeString(eventID),
+		EventID: EventID(utils.NormalizeString(eventID)),
 	}
 }
 
@@ -36,7 +36,7 @@ func (m RetryFailedEventRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(err, "invalid chain")
 	}
 
-	if err := utils.ValidateString(m.EventID); err != nil {
+	if err := m.EventID.Validate(); err != nil {
 		return sdkerrors.Wrap(err, "invalid eventID")
 	}
 

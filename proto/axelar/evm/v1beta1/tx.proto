@@ -206,7 +206,8 @@ message RetryFailedEventRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string chain = 2;
-  string event_id = 3 [ (gogoproto.customname) = "EventID" ];
+  string event_id = 3
+      [ (gogoproto.customname) = "EventID", (gogoproto.casttype) = "EventID" ];
 }
 
 message RetryFailedEventResponse {}

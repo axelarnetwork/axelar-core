@@ -468,7 +468,6 @@ func GetCmdRetryFailedEvent() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "retry-event [chain] [event ID]",
 		Short: "Retry a failed event",
-		Long:  "Retry a failed event",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)

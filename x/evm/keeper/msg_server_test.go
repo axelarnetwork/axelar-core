@@ -1303,8 +1303,8 @@ func TestRetryFailedEvent(t *testing.T) {
 
 	req := types.NewRetryFailedEventRequest(rand.AccAddr(), rand.Str(5), rand.Str(5))
 
-	chainFound := func(found bool) func(t *testing.T) {
-		return func(t *testing.T) {
+	chainFound := func(found bool) func() {
+		return func() {
 			n.GetChainFunc = func(sdk.Context, string) (nexus.Chain, bool) {
 				if !found {
 					return nexus.Chain{}, false
@@ -1314,17 +1314,17 @@ func TestRetryFailedEvent(t *testing.T) {
 		}
 	}
 
-	isChainActivated := func(isActivated bool) func(t *testing.T) {
-		return func(t *testing.T) {
+	isChainActivated := func(isActivated bool) func() {
+		return func() {
 			n.IsChainActivatedFunc = func(sdk.Context, nexus.Chain) bool {
 				return isActivated
 			}
 		}
 	}
 
-	eventFound := func(found bool, eventStatus types.Event_Status) func(t *testing.T) {
-		return func(t *testing.T) {
-			ck.GetEventFunc = func(sdk.Context, string) (types.Event, bool) {
+	eventFound := func(found bool, eventStatus types.Event_Status) func() {
+		return func() {
+			ck.GetEventFunc = func(sdk.Context, types.EventID) (types.Event, bool) {
 				if !found {
 					return types.Event{}, false
 				}
@@ -1341,7 +1341,6 @@ func TestRetryFailedEvent(t *testing.T) {
 		Run(t)
 
 	When("chain is found", chainFound(true)).
-		And().
 		When("chain is not activated", isChainActivated(false)).
 		Then("should return error", func(t *testing.T) {
 			_, err := msgServer.RetryFailedEvent(sdk.WrapSDKContext(ctx), req)
@@ -1350,9 +1349,7 @@ func TestRetryFailedEvent(t *testing.T) {
 		Run(t)
 
 	When("chain is found", chainFound(true)).
-		And().
 		When("chain is activated", isChainActivated(true)).
-		And().
 		When("event not found", eventFound(false, types.EventNonExistent)).
 		Then("should return error", func(t *testing.T) {
 			_, err := msgServer.RetryFailedEvent(sdk.WrapSDKContext(ctx), req)
@@ -1361,9 +1358,7 @@ func TestRetryFailedEvent(t *testing.T) {
 		Run(t)
 
 	When("chain is found", chainFound(true)).
-		And().
 		When("chain is activated", isChainActivated(true)).
-		And().
 		When("event is completed", eventFound(true, types.EventCompleted)).
 		Then("should return error", func(t *testing.T) {
 			_, err := msgServer.RetryFailedEvent(sdk.WrapSDKContext(ctx), req)
@@ -1372,9 +1367,7 @@ func TestRetryFailedEvent(t *testing.T) {
 		Run(t)
 
 	When("chain is found", chainFound(true)).
-		And().
 		When("chain is activated", isChainActivated(true)).
-		And().
 		When("event is failed", eventFound(true, types.EventFailed)).
 		Then("should retry event", func(t *testing.T) {
 			_, err := msgServer.RetryFailedEvent(sdk.WrapSDKContext(ctx), req)

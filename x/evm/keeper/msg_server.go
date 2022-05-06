@@ -942,7 +942,7 @@ func (s msgServer) RetryFailedEvent(c context.Context, req *types.RetryFailedEve
 	keeper.GetConfirmedEventQueue(ctx).Enqueue(getEventKey(req.EventID), &event)
 
 	s.Logger(ctx).Info(
-		fmt.Sprintf("retry failed event"),
+		fmt.Sprintf("re-queued failed event"),
 		types.AttributeKeyChain, chain.Name,
 		"eventID", req.EventID,
 	)

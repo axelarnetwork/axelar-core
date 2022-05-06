@@ -241,7 +241,7 @@ func (q Querier) Event(c context.Context, req *types.EventRequest) (*types.Event
 		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("[%s] is not a registered chain", req.Chain)).Error())
 	}
 
-	event, ok := q.keeper.ForChain(req.Chain).GetEvent(ctx, req.EventId)
+	event, ok := q.keeper.ForChain(req.Chain).GetEvent(ctx, types.EventID(req.EventId))
 	if !ok {
 		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("no event with ID [%s] was found", req.EventId)).Error())
 	}
