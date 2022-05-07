@@ -4,9 +4,10 @@ go 1.18
 
 require (
 	github.com/armon/go-metrics v0.3.11
-	github.com/axelarnetwork/tm-events v0.0.0-20220427205951-b2751210ec88
-	github.com/axelarnetwork/utils v0.0.0-20220427135829-9eaa425319c1
-	github.com/btcsuite/btcd v0.22.0-beta
+	github.com/axelarnetwork/tm-events v0.0.0-20220427211200-9114fb26a603
+	github.com/axelarnetwork/utils v0.0.0-20220427210315-486bfb5d7157
+	github.com/btcsuite/btcd v0.22.1
+	github.com/btcsuite/btcd/chaincfg/chainhash v1.0.1
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
 	github.com/cosmos/cosmos-sdk v0.45.4
 	github.com/cosmos/ibc-go/v2 v2.2.0
@@ -28,12 +29,12 @@ require (
 	github.com/stretchr/testify v1.7.1
 	github.com/tendermint/tendermint v0.34.19
 	github.com/tendermint/tm-db v0.6.7
-	golang.org/x/crypto v0.0.0-20220427172511-eb4f295cb31f
-	golang.org/x/exp v0.0.0-20220426173459-3bcf042a4bf5
+	golang.org/x/crypto v0.0.0-20220507011949-2cf3adece122
+	golang.org/x/exp v0.0.0-20220428152302-39d4317da171
 	golang.org/x/mod v0.6.0-dev.0.20220106191415-9b9b3d81d5e3
 	golang.org/x/text v0.3.7
 	golang.org/x/tools v0.1.10
-	google.golang.org/genproto v0.0.0-20220426171045-31bebdecfb46
+	google.golang.org/genproto v0.0.0-20220505152158-f39f71e6c8f3
 	google.golang.org/grpc v1.46.0
 	google.golang.org/protobuf v1.28.0
 )
@@ -48,7 +49,7 @@ require (
 	github.com/aead/siphash v1.0.1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bgentry/speakeasy v0.1.0 // indirect
-	github.com/btcsuite/btcd/btcec/v2 v2.1.3 // indirect
+	github.com/btcsuite/btcd/btcec/v2 v2.1.2 // indirect
 	github.com/btcsuite/btclog v0.0.0-20170628155309-84c8d2346e9f // indirect
 	github.com/btcsuite/go-socks v0.0.0-20170105172521-4720035b7bfd // indirect
 	github.com/btcsuite/websocket v0.0.0-20150119174127-31079b680792 // indirect
@@ -170,4 +171,4 @@ replace github.com/gin-gonic/gin => github.com/gin-gonic/gin v1.7.0
 replace github.com/zondax/hid => github.com/zondax/hid v0.9.1-0.20220302062450-5552068d2266
 
 // Update btcec explicitly since btcd hasn't created a new release yet
-replace github.com/btcsuite/btcd/btcec/v2 => github.com/btcsuite/btcd/btcec/v2 v2.1.3
+replace github.com/btcsuite/btcd/btcec/v2 => github.com/btcsuite/btcd/btcec/v2 v2.2.0
