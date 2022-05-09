@@ -7,20 +7,39 @@ import CodeBlock from '../../../components/code-block'
 
 ## Prerequisites
 
-- Ubuntu (tested on 18.04)
+- Ubuntu (tested on 18.04 and 20.04)
 - `sudo apt-get install wget liblz4-tool aria2 jq -y`
 
 ## Get Binaries
 
+Check the appropriate version for the network accordingly:
+- [Mainnet](/resources/mainnet)
+- [Testnet](/resources/testnet)
+- [Testnet-2](/resources/testnet-2)
+
+
 ```bash
+
+# set versions: the below is an example and the numbers should be replaced
+# AXELARD_RELEASE=v0.17.1
+# TOFND_RELEASE=v0.10.1
+
+AXELARD_RELEASE=<GIVE_VERSION>
+TOFND_RELEASE=<GIVE_VERSION>
+
+# verify
+echo $AXELARD_RELEASE $TOFND_RELEASE
+
 # create a temp dir for binaries
+cd $HOME
 mkdir binaries && cd binaries
 
+
 # get axelard, tofnd binaries and rename
-wget https://github.com/axelarnetwork/axelar-core/releases/download/v0.17.1/axelard-linux-amd64-v0.17.1
-wget https://github.com/axelarnetwork/tofnd/releases/download/v0.10.1/tofnd-linux-amd64-v0.10.1
-mv axelard-linux-amd64-v0.17.1 axelard
-mv tofnd-linux-amd64-v0.10.1 tofnd
+wget https://github.com/axelarnetwork/axelar-core/releases/download/$AXELARD_RELEASE/axelard-linux-amd64-$AXELARD_RELEASE
+wget https://github.com/axelarnetwork/tofnd/releases/download/$TOFND_RELEASE/tofnd-linux-amd64-$TOFND_RELEASE
+mv axelard-linux-amd64-$AXELARD_RELEASE axelard
+mv tofnd-linux-amd64-$TOFND_RELEASE tofnd
 
 # make binaries executable
 chmod +x *
@@ -28,8 +47,8 @@ chmod +x *
 # move to usr bin
 sudo mv * /usr/bin/
 
-# clean up temp dir
-cd .. && rmdir binaries
+# get out of binaries directory
+cd $HOME
 
 # check versions
 axelard version
@@ -38,13 +57,22 @@ tofnd --help
 
 ## Generate keys
 
+To create new keys
 ```bash
 axelard keys add broadcaster
 axelard keys add validator
 tofnd -m create
 ```
+To recover exsiting keys
+```bash
+axelard keys add broadcaster --recover
+axelard keys add validator --recover
+tofnd -m import
+# type your desired keyring password and enter mnemonics when prompted
+```
 
-Your `tofnd` secret mnemonic is in a file `.tofnd/export`. Save this mnemonic somewhere safe and delete the file `.tofnd/export`.
+Your `tofnd` secret mnemonic is in a file do ` cat $HOME/.tofnd/export` to check.
+Save this mnemonic somewhere safe and delete the file by ` rm $HOME/.tofnd/export`.
 
 ## Set environment variables
 
@@ -83,7 +111,8 @@ echo export BROADCASTER_ADDRESS=$BROADCASTER_ADDRESS >> $HOME/.profile
 
 Choose a secret `{KEYRING_PASSWORD}` and add the following line to `$HOME/.profile`:
 
-```
+```bash
+# it's recommended to manually edit the file and add it
 echo export KEYRING_PASSWORD=PUT_YOUR_KEYRING_PASSWORD_HERE >> $HOME/.profile
 ```
 
@@ -122,7 +151,8 @@ sed -i.bak 's/external_address = \"\"/external_address = \"'"$(curl -4 ifconfig.
 {
 title: "Mainnet",
 content: <CodeBlock language="bash">
-{`axelard unsafe-reset-all URL=\`curl https://quicksync.io/axelar.json | jq -r '.[] |select(.file=="axelar-dojo-1-pruned")|.url'\`
+{`axelard unsafe-reset-all
+URL=\`curl https://quicksync.io/axelar.json | jq -r '.[] |select(.file=="axelar-dojo-1-pruned")|.url'\`
 echo $URL
 cd $HOME/.axelar/
 wget -O - $URL | lz4 -d | tar -xvf -
@@ -182,7 +212,6 @@ sudo systemctl enable tofnd
 ### vald
 
 ```bash
-# TODO is --chain-id necessary?
 sudo tee <<EOF >/dev/null /etc/systemd/system/vald.service
 [Unit]
 Description=Vald daemon
@@ -220,7 +249,7 @@ sudo systemctl restart vald
 ## Check logs
 
 ```bash
-# change log settings to persistent
+# change log settings to persistent if not already
 sed -i 's/#Storage=auto/Storage=persistent/g' /etc/systemd/journald.conf
 sudo systemctl restart systemd-journald
 
@@ -243,7 +272,7 @@ axelard tx snapshot register-proxy $BROADCASTER_ADDRESS --from validator --chain
 
 ```bash
 # set temporary variables for create-validator command
-IDENTITY="YOUR_KEYBASE_IDENTITY"
+IDENTITY="YOUR_KEYBASE_IDENTITY" # optional
 AMOUNT=PUT_AMOUNT_OF_TOKEN_YOU_WANT_TO_DELEGATE
 DENOM=uaxl
 
@@ -264,3 +293,55 @@ axelard tx staking create-validator --yes \
 ## Register external chains
 
 See [Support external chains](../external-chains).
+
+## Upgrade Process
+```bash
+cd $HOME
+cd binaries
+# put the tag/version that we are upgrading to
+# set versions: the below is an example and the numbers should be replaced
+# AXELARD_RELEASE=v0.17.1
+# TOFND_RELEASE=v0.10.1
+
+AXELARD_RELEASE=<GIVE_VERSION>
+TOFND_RELEASE=<GIVE_VERSION>  # if we are upgrading tofnd too
+
+echo $AXELARD_RELEASE $TOFND_RELEASE
+
+# get axelard, tofnd binaries and rename
+wget https://github.com/axelarnetwork/axelar-core/releases/download/$AXELARD_RELEASE/axelard-linux-amd64-$AXELARD_RELEASE
+# if we are upgrading tofnd too
+wget https://github.com/axelarnetwork/tofnd/releases/download/$TOFND_RELEASE/tofnd-linux-amd64-$TOFND_RELEASE
+
+
+mv axelard-linux-amd64-$AXELARD_RELEASE axelard # if we are upgrading tofnd too
+mv tofnd-linux-amd64-$TOFND_RELEASE tofnd
+
+# make binaries executable
+chmod +x *
+
+# move to usr bin
+sudo mv * /usr/bin/
+
+
+# check versions
+axelard version
+echo $AXELARD_RELEASE
+# axelard version and echo $RELEASE should have same tag/version
+
+
+# check versions
+tofnd --help
+echo $TOFND_RELEASE
+# tofnd version and echo $TOFND_RELEASE should have same tag/version
+
+# restart services
+sudo systemctl restart axelard
+sudo systemctl restart tofnd # if we are upgrading tofnd too
+sudo systemctl restart vald
+
+# check logs
+journalctl -u axelard.service -f -n 100
+journalctl -u tofnd.service -f -n 100
+journalctl -u vald.service -f -n 1000
+```
