@@ -91,13 +91,13 @@ function _executeWithToken(
     string memory tokenSymbol,
     uint256 amount
 ) internal virtual {
-	// decode recipient
-  address memory recipient = abi.decode(payload, (address));
-	// get ERC-20 address from gateway
-  address tokenAddress = gateway.tokenAddresses(tokenSymbol);
+    // decode recipient
+    address memory recipient = abi.decode(payload, (address));
+    // get ERC-20 address from gateway
+    address tokenAddress = gateway.tokenAddresses(tokenSymbol);
 
-	// transfer received tokens to the recipient
-	IERC20(tokenAddress).transfer(recipient, amount);
+    // transfer received tokens to the recipient
+    IERC20(tokenAddress).transfer(recipient, amount);
 }
 ```
 
@@ -125,7 +125,7 @@ function _execute(
     string memory sourceAddress,
     bytes calldata payload
 ) internal override {
-		// decoding a string
+    // decoding a string
     string memory _message = abi.decode(payload, (string));
 }
 ```

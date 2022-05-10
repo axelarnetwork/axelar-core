@@ -56,10 +56,10 @@ Call `sendToken` on the gateway contract of the source chain. Example:
 
 ```solidity
 sendToken(
-	"avalanche", // destination chain name
-	"0xF16DfB26e1FEc993E085092563ECFAEaDa7eD7fD", // some destination wallet address (should be your own)
-	"USDC", // asset symbol
-	100000000 // amount (in atomic units)
+    "avalanche", // destination chain name
+    "0xF16DfB26e1FEc993E085092563ECFAEaDa7eD7fD", // some destination wallet address (should be your own)
+    "USDC", // asset symbol
+    100000000 // amount (in atomic units)
 )
 ```
 
