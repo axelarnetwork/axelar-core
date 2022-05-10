@@ -1880,16 +1880,19 @@ func getType(val interface{}) string {
 // EventID ensures a correctly formatted event ID
 type EventID string
 
-// Validate returns an error, if the event ID is not in format of Hash-Index
+// Validate returns an error, if the event ID is not in format of txID-index
 func (id EventID) Validate() error {
 	if err := utils.ValidateString(string(id)); err != nil {
 		return err
 	}
 
 	arr := strings.Split(string(id), "-")
+	if len(arr) != 2 {
+		return fmt.Errorf("event ID should be in foramt of txID-index")
+	}
 
-	_, err := hexutil.Decode(arr[0])
-	if err != nil {
+	bz, err := hexutil.Decode(arr[0])
+	if err != nil || len(bz) != common.HashLength {
 		return sdkerrors.Wrap(err, "invalid tx hash")
 	}
 
