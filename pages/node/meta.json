@@ -1,5 +1,4 @@
 {
-  "config-cli": "CLI configuration",
   "config-node": "Node configuration",
   "join": "Quick sync (recommended)",
   "join-old": {
@@ -10,5 +9,6 @@
     "hidden": true
   },
   "basic": "Basic node management",
+  "config-cli": "CLI configuration",
   "keyring": "Keyring backend"
 }

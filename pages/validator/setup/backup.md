@@ -11,15 +11,15 @@ You must store backup copies of the following data in a safe place:
 
 ## Backup your Tendermint validator secret key
 
-As described in [Basic node management](../../node/basic) BACKUP the file `{AXELARD_HOME}/config/priv_validator_key.json`.
+As described in [Basic node management](../../node/basic) BACKUP the file `${AXELARD_HOME}/config/priv_validator_key.json`.
 
 ## Create and backup accounts
 
 Each validator needs two accounts, which we call `validator` and `broadcaster`. Create those accounts and back them up.
 
 ```bash
-axelard keys add validator --home {AXELARD_HOME}
-axelard keys add broadcaster --home {AXELARD_HOME}
+axelard keys add validator --home $AXELARD_HOME
+axelard keys add broadcaster --home $AXELARD_HOME
 ```
 
 As described in [Basic node management](../../node/basic), BACKUP the secret mnemonics for these accounts that are printed to stdout when you crate them.
@@ -31,7 +31,7 @@ Similar to your [Axelar keyring](../../node/keyring), your `tofnd` storage is en
 Set `tofnd` password and create `tofnd` mnemonic:
 
 ```bash
-tofnd -m create -d {AXELARD_HOME}/tofnd
+tofnd -m create -d ${AXELARD_HOME}/tofnd
 ```
 
-BACKUP and DELETE `{AXELARD_HOME}/tofnd/export`.
+BACKUP and DELETE `${AXELARD_HOME}/tofnd/export`.

@@ -10,7 +10,7 @@ module.exports = withNextra({
     return [
       {
         source: "/node",
-        destination: "/node/join",
+        destination: "/node/config-node",
         statusCode: 301,
       },
       {

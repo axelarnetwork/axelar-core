@@ -14,9 +14,8 @@ Start your Axelar node and download the blockchain.
 
 ## Prerequisites
 
-- Configure your system as per [Node configuration](config-node) with the latest version of `axelard`.
-- Let `{AXELARD_HOME}` denote the home directory path as per [Node configuration](config-node).
-- Existing chain state is stored in `{AXELARD_HOME}/data`. Delete this directory if it exists.
+- Configure your environment as per [CLI configuration](config-cli) and [Node configuration](config-node).
+- Existing chain state is stored in `${AXELARD_HOME}/data`. Delete this directory if it exists.
 
 ## Download the latest Axelar blockchain snapshot
 
@@ -32,16 +31,16 @@ Let `{SNAPSHOT_FILE}` denote the file name of the snapshot you downloaded. Examp
 - **Testnet:** `axelartestnet-lisbon-2-default.20220207.2240.tar.lz4`
 - **Mainnet:** `axelar-dojo-1-default.20220207.2210.tar.lz4`
 
-Decompress the downloaded snapshot into your `{AXELARD_HOME}/data` directory. (You may need to install `lz4`: [MacOS](https://formulae.brew.sh/formula/lz4) | [Ubuntu](https://snapcraft.io/install/lz4/ubuntu).)
+Decompress the downloaded snapshot into your `${AXELARD_HOME}/data` directory. (You may need to install `lz4`: [MacOS](https://formulae.brew.sh/formula/lz4) | [Ubuntu](https://snapcraft.io/install/lz4/ubuntu).)
 
 ```bash
-lz4 -dc --no-sparse {SNAPSHOT_FILE} | tar xfC - {AXELARD_HOME}
+lz4 -dc --no-sparse {SNAPSHOT_FILE} | tar xfC - $AXELARD_HOME
 ```
 
 ## Start your node
 
 ```bash
-axelard start --home {AXELARD_HOME}
+axelard start --home $AXELARD_HOME
 ```
 
 Your Axelar node will launch and begin downloading the rest of the blockchain after the snapshot.

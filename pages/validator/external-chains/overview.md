@@ -120,7 +120,7 @@ For each external blockchain you selected earlier you must inform the Axelar net
 Example: multiple EVM chains in one command:
 
 ```bash
-axelard tx nexus register-chain-maintainer avalanche ethereum fantom moonbeam polygon --from broadcaster --chain-id {AXELARD_CHAIN_ID} --home {AXELARD_HOME}
+axelard tx nexus register-chain-maintainer avalanche ethereum fantom moonbeam polygon --from broadcaster --chain-id $AXELARD_CHAIN_ID --home $AXELARD_HOME
 ```
 
 <Callout emoji="ℹ️">

@@ -15,7 +15,7 @@ Similar to [Node configuration](../../node/config-node), run `setup-validator.sh
 ./scripts/setup-validator.sh -n [mainnet|testnet|testnet-2]
 ```
 
-The binary `tofnd` is placed in your `{AXELARD_HOME}/bin` directory. The binary `vald` is actually part of `axelard`.
+The binary `tofnd` is placed in your `${AXELARD_HOME}/bin` directory. The binary `vald` is actually part of `axelard`.
 
 ## Directory structure of a running validator
 

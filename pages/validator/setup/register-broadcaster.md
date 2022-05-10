@@ -11,7 +11,7 @@ Axelar validators exchange messages with one another via the Axelar blockchain. 
 ## Learn your broadcaster account address
 
 ```bash
-axelard keys show broadcaster -a --home {AXELARD_HOME}
+axelard keys show broadcaster -a --home $AXELARD_HOME
 ```
 
 Let `{BROADCASTER_ADDR}` denote your `broadcaster` address
@@ -27,7 +27,7 @@ Go to the Axelar testnet faucet and send some free AXL testnet tokens to both `{
 ## Register your broadcaster account
 
 ```bash
-axelard tx snapshot register-proxy {BROADCASTER_ADDR} --from validator --home {AXELARD_HOME}
+axelard tx snapshot register-proxy {BROADCASTER_ADDR} --from validator --home $AXELARD_HOME
 ```
 
 ## Optional: check your broadcaster registration

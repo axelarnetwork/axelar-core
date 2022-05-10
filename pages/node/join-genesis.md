@@ -65,7 +65,7 @@ content: <CodeBlock language="bash">
 Start your node with the newly configured `axelard` version:
 
 ```bash
-axelard start --home {AXELARD_HOME}
+axelard start --home $AXELARD_HOME
 ```
 
 Your Axelar node will resume downloading the blockchain.

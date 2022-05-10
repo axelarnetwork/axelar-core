@@ -7,20 +7,19 @@ Start and stop your node, test whether your blockchain is downloaded. Backup you
 ## Prerequisites
 
 - Configure your environment as per [CLI configuration](config-cli) and [Node configuration](config-node).
-- Let `{AXELARD_HOME}` denote the home directory path as per [Node configuration](config-node).
 
 ## Start your Axelar node
 
 You may wish to redirect log output to a file:
 
 ```bash
-axelard start --home {AXELARD_HOME} >> {AXELARD_HOME}/logs/axelard.log 2>&1
+axelard start --home $AXELARD_HOME >> $AXELARD_HOME/logs/axelard.log 2>&1
 ```
 
 View your logs in real time:
 
 ```bash
-tail -f {AXELARD_HOME}/logs/axelard.log
+tail -f $AXELARD_HOME/logs/axelard.log
 ```
 
 ## Test whether your blockchain is downloaded
@@ -48,12 +47,12 @@ pkill -f "axelard start"
 
 ## Backup and restore your node and validator keys
 
-Each time you start your Axelar node `axelard` will look for the following files in `{AXELARD_HOME}/config`:
+Each time you start your Axelar node `axelard` will look for the following files in `$AXELARD_HOME/config`:
 
 - `node_key.json` : The p2p identity of your node. Back this up if this is a seed node.
 - `priv_validator_key.json` : Validator’s Tendermint consensus key. Back this up if this is a validator node.
 
-These files will be created if they do not already exist. You can restore them from a backup simply by placing them in `{AXELARD_HOME}/config` before starting your node.
+These files will be created if they do not already exist. You can restore them from a backup simply by placing them in `$AXELARD_HOME/config` before starting your node.
 
 ## Backup your chain data
 
@@ -61,16 +60,16 @@ These files will be created if they do not already exist. You can restore them f
   Caution: Your node must be stopped in order to properly backup chain data.
 </Callout>
 
-Backup your entire node's state simply by copying the `{AXELARD_HOME}` directory:
+Backup your entire node's state simply by copying the `$AXELARD_HOME` directory:
 
 ```bash
-cp -r {AXELARD_HOME} {AXELARD_HOME}_backup
+cp -r $AXELARD_HOME ${AXELARD_HOME}_backup
 ```
 
 ## Create an account
 
 ```bash
-axelard keys add my_account --home {AXELARD_HOME}
+axelard keys add my_account --home $AXELARD_HOME
 ```
 
 <Callout type="warning" emoji="⚠️">
@@ -82,7 +81,7 @@ axelard keys add my_account --home {AXELARD_HOME}
 The public address of your account `my_account` was printed to stdout when you created it. You can display the address at any time:
 
 ```bash
-axelard keys show validator -a --home {AXELARD_HOME}
+axelard keys show validator -a --home $AXELARD_HOME
 ```
 
 ## Check your AXL balance
