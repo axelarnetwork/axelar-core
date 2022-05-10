@@ -733,7 +733,7 @@ func (s msgServer) createTransferKeyCommand(ctx sdk.Context, keeper types.ChainK
 
 		return types.CreateSinglesigTransferCommand(transferKeyType, chainID, currMasterKeyID, crypto.PubkeyToAddress(pk))
 	case tss.Multisig:
-		addresses, threshold, err := getMultisigAddresses(nextKey)
+		addresses, threshold, err := types.GetMultisigAddresses(nextKey)
 		if err != nil {
 			return types.Command{}, err
 		}
