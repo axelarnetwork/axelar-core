@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/big"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -17,6 +18,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -1517,8 +1519,8 @@ func CommandIDsToStrings(commandIDs []CommandID) []string {
 }
 
 // GetID returns an unique ID for the event
-func (m Event) GetID() string {
-	return fmt.Sprintf("%s-%d", m.TxId.Hex(), m.Index)
+func (m Event) GetID() EventID {
+	return EventID(fmt.Sprintf("%s-%d", m.TxId.Hex(), m.Index))
 }
 
 // ValidateBasic returns an error if the event is invalid
@@ -1589,6 +1591,11 @@ func (m Event) ValidateBasic() error {
 	}
 
 	return nil
+}
+
+// GetEventType returns the type for the event
+func (m Event) GetEventType() string {
+	return getType(m.GetEvent())
 }
 
 // ValidateBasic returns an error if the event token sent is invalid
@@ -1849,4 +1856,50 @@ func PackEvents(chain string, events []Event) (*codectypes.Any, error) {
 		Chain:  chain,
 		Events: events,
 	})
+}
+
+// GetMultisigAddresses coverts a tss multisig key to addresses
+func GetMultisigAddresses(key tss.Key) ([]common.Address, uint8, error) {
+	multisigPubKeys, err := key.GetMultisigPubKey()
+	if err != nil {
+		return nil, 0, err
+	}
+
+	threshold := uint8(key.GetMultisigKey().Threshold)
+	return KeysToAddresses(multisigPubKeys...), threshold, nil
+}
+
+func getType(val interface{}) string {
+	t := reflect.TypeOf(val)
+	for t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	return t.Name()
+}
+
+// EventID ensures a correctly formatted event ID
+type EventID string
+
+// Validate returns an error, if the event ID is not in format of txID-index
+func (id EventID) Validate() error {
+	if err := utils.ValidateString(string(id)); err != nil {
+		return err
+	}
+
+	arr := strings.Split(string(id), "-")
+	if len(arr) != 2 {
+		return fmt.Errorf("event ID should be in foramt of txID-index")
+	}
+
+	bz, err := hexutil.Decode(arr[0])
+	if err != nil || len(bz) != common.HashLength {
+		return sdkerrors.Wrap(err, "invalid tx hash")
+	}
+
+	_, err = strconv.ParseInt(arr[1], 10, 64)
+	if err != nil {
+		return sdkerrors.Wrap(err, "invalid index")
+	}
+
+	return nil
 }
