@@ -2839,7 +2839,7 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			GetERC20TokenBySymbolFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, symbol string) types.ERC20Token {
 // 				panic("mock out the GetERC20TokenBySymbol method")
 // 			},
-// 			GetEventFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, eventID string) (types.Event, bool) {
+// 			GetEventFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, eventID types.EventID) (types.Event, bool) {
 // 				panic("mock out the GetEvent method")
 // 			},
 // 			GetGatewayAddressFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (common.Address, bool) {
@@ -2899,10 +2899,10 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			SetDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, deposit types.ERC20Deposit, state types.DepositStatus)  {
 // 				panic("mock out the SetDeposit method")
 // 			},
-// 			SetEventCompletedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, eventID string) error {
+// 			SetEventCompletedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, eventID types.EventID) error {
 // 				panic("mock out the SetEventCompleted method")
 // 			},
-// 			SetEventFailedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, eventID string) error {
+// 			SetEventFailedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, eventID types.EventID) error {
 // 				panic("mock out the SetEventFailed method")
 // 			},
 // 			SetFailedEventFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, event types.Event) error {
@@ -2994,7 +2994,7 @@ type ChainKeeperMock struct {
 	GetERC20TokenBySymbolFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, symbol string) types.ERC20Token
 
 	// GetEventFunc mocks the GetEvent method.
-	GetEventFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, eventID string) (types.Event, bool)
+	GetEventFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, eventID types.EventID) (types.Event, bool)
 
 	// GetGatewayAddressFunc mocks the GetGatewayAddress method.
 	GetGatewayAddressFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (common.Address, bool)
@@ -3054,10 +3054,10 @@ type ChainKeeperMock struct {
 	SetDepositFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, deposit types.ERC20Deposit, state types.DepositStatus)
 
 	// SetEventCompletedFunc mocks the SetEventCompleted method.
-	SetEventCompletedFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, eventID string) error
+	SetEventCompletedFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, eventID types.EventID) error
 
 	// SetEventFailedFunc mocks the SetEventFailed method.
-	SetEventFailedFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, eventID string) error
+	SetEventFailedFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, eventID types.EventID) error
 
 	// SetFailedEventFunc mocks the SetFailedEvent method.
 	SetFailedEventFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, event types.Event) error
@@ -3231,7 +3231,7 @@ type ChainKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// EventID is the eventID argument value.
-			EventID string
+			EventID types.EventID
 		}
 		// GetGatewayAddress holds details about calls to the GetGatewayAddress method.
 		GetGatewayAddress []struct {
@@ -3345,14 +3345,14 @@ type ChainKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// EventID is the eventID argument value.
-			EventID string
+			EventID types.EventID
 		}
 		// SetEventFailed holds details about calls to the SetEventFailed method.
 		SetEventFailed []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// EventID is the eventID argument value.
-			EventID string
+			EventID types.EventID
 		}
 		// SetFailedEvent holds details about calls to the SetFailedEvent method.
 		SetFailedEvent []struct {
@@ -4188,13 +4188,13 @@ func (mock *ChainKeeperMock) GetERC20TokenBySymbolCalls() []struct {
 }
 
 // GetEvent calls GetEventFunc.
-func (mock *ChainKeeperMock) GetEvent(ctx github_com_cosmos_cosmos_sdk_types.Context, eventID string) (types.Event, bool) {
+func (mock *ChainKeeperMock) GetEvent(ctx github_com_cosmos_cosmos_sdk_types.Context, eventID types.EventID) (types.Event, bool) {
 	if mock.GetEventFunc == nil {
 		panic("ChainKeeperMock.GetEventFunc: method is nil but ChainKeeper.GetEvent was just called")
 	}
 	callInfo := struct {
 		Ctx     github_com_cosmos_cosmos_sdk_types.Context
-		EventID string
+		EventID types.EventID
 	}{
 		Ctx:     ctx,
 		EventID: eventID,
@@ -4210,11 +4210,11 @@ func (mock *ChainKeeperMock) GetEvent(ctx github_com_cosmos_cosmos_sdk_types.Con
 //     len(mockedChainKeeper.GetEventCalls())
 func (mock *ChainKeeperMock) GetEventCalls() []struct {
 	Ctx     github_com_cosmos_cosmos_sdk_types.Context
-	EventID string
+	EventID types.EventID
 } {
 	var calls []struct {
 		Ctx     github_com_cosmos_cosmos_sdk_types.Context
-		EventID string
+		EventID types.EventID
 	}
 	mock.lockGetEvent.RLock()
 	calls = mock.calls.GetEvent
@@ -4835,13 +4835,13 @@ func (mock *ChainKeeperMock) SetDepositCalls() []struct {
 }
 
 // SetEventCompleted calls SetEventCompletedFunc.
-func (mock *ChainKeeperMock) SetEventCompleted(ctx github_com_cosmos_cosmos_sdk_types.Context, eventID string) error {
+func (mock *ChainKeeperMock) SetEventCompleted(ctx github_com_cosmos_cosmos_sdk_types.Context, eventID types.EventID) error {
 	if mock.SetEventCompletedFunc == nil {
 		panic("ChainKeeperMock.SetEventCompletedFunc: method is nil but ChainKeeper.SetEventCompleted was just called")
 	}
 	callInfo := struct {
 		Ctx     github_com_cosmos_cosmos_sdk_types.Context
-		EventID string
+		EventID types.EventID
 	}{
 		Ctx:     ctx,
 		EventID: eventID,
@@ -4857,11 +4857,11 @@ func (mock *ChainKeeperMock) SetEventCompleted(ctx github_com_cosmos_cosmos_sdk_
 //     len(mockedChainKeeper.SetEventCompletedCalls())
 func (mock *ChainKeeperMock) SetEventCompletedCalls() []struct {
 	Ctx     github_com_cosmos_cosmos_sdk_types.Context
-	EventID string
+	EventID types.EventID
 } {
 	var calls []struct {
 		Ctx     github_com_cosmos_cosmos_sdk_types.Context
-		EventID string
+		EventID types.EventID
 	}
 	mock.lockSetEventCompleted.RLock()
 	calls = mock.calls.SetEventCompleted
@@ -4870,13 +4870,13 @@ func (mock *ChainKeeperMock) SetEventCompletedCalls() []struct {
 }
 
 // SetEventFailed calls SetEventFailedFunc.
-func (mock *ChainKeeperMock) SetEventFailed(ctx github_com_cosmos_cosmos_sdk_types.Context, eventID string) error {
+func (mock *ChainKeeperMock) SetEventFailed(ctx github_com_cosmos_cosmos_sdk_types.Context, eventID types.EventID) error {
 	if mock.SetEventFailedFunc == nil {
 		panic("ChainKeeperMock.SetEventFailedFunc: method is nil but ChainKeeper.SetEventFailed was just called")
 	}
 	callInfo := struct {
 		Ctx     github_com_cosmos_cosmos_sdk_types.Context
-		EventID string
+		EventID types.EventID
 	}{
 		Ctx:     ctx,
 		EventID: eventID,
@@ -4892,11 +4892,11 @@ func (mock *ChainKeeperMock) SetEventFailed(ctx github_com_cosmos_cosmos_sdk_typ
 //     len(mockedChainKeeper.SetEventFailedCalls())
 func (mock *ChainKeeperMock) SetEventFailedCalls() []struct {
 	Ctx     github_com_cosmos_cosmos_sdk_types.Context
-	EventID string
+	EventID types.EventID
 } {
 	var calls []struct {
 		Ctx     github_com_cosmos_cosmos_sdk_types.Context
-		EventID string
+		EventID types.EventID
 	}
 	mock.lockSetEventFailed.RLock()
 	calls = mock.calls.SetEventFailed
