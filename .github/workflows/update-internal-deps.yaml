@@ -1,9 +1,9 @@
 name: Check format and generated files up-to-date
 
 on:
-  - pull_request:
-      branches:
-        - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
   check-internal-deps-up-to-date:
