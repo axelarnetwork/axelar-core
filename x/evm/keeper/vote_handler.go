@@ -87,7 +87,7 @@ func handleEvents(ctx sdk.Context, ck types.ChainKeeper, events []types.Event, c
 				sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 				sdk.NewAttribute(types.AttributeKeyChain, event.Chain),
 				sdk.NewAttribute(types.AttributeKeyTxID, event.TxId.Hex()),
-				sdk.NewAttribute(types.AttributeKeyEventID, event.GetID()),
+				sdk.NewAttribute(types.AttributeKeyEventID, string(event.GetID())),
 				sdk.NewAttribute(types.AttributeKeyEventType, event.GetEventType()),
 				sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)),
 		)

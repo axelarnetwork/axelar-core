@@ -268,6 +268,8 @@
     - [CreateTransferOwnershipResponse](#axelar.evm.v1beta1.CreateTransferOwnershipResponse)
     - [LinkRequest](#axelar.evm.v1beta1.LinkRequest)
     - [LinkResponse](#axelar.evm.v1beta1.LinkResponse)
+    - [RetryFailedEventRequest](#axelar.evm.v1beta1.RetryFailedEventRequest)
+    - [RetryFailedEventResponse](#axelar.evm.v1beta1.RetryFailedEventResponse)
     - [SetGatewayRequest](#axelar.evm.v1beta1.SetGatewayRequest)
     - [SetGatewayResponse](#axelar.evm.v1beta1.SetGatewayResponse)
     - [SignCommandsRequest](#axelar.evm.v1beta1.SignCommandsRequest)
@@ -4157,6 +4159,33 @@ address
 
 
 
+<a name="axelar.evm.v1beta1.RetryFailedEventRequest"></a>
+
+### RetryFailedEventRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
+| `event_id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.RetryFailedEventResponse"></a>
+
+### RetryFailedEventResponse
+
+
+
+
+
+
+
 <a name="axelar.evm.v1beta1.SetGatewayRequest"></a>
 
 ### SetGatewayRequest
@@ -4258,6 +4287,7 @@ Msg defines the evm Msg service.
 | `CreateTransferOperatorship` | [CreateTransferOperatorshipRequest](#axelar.evm.v1beta1.CreateTransferOperatorshipRequest) | [CreateTransferOperatorshipResponse](#axelar.evm.v1beta1.CreateTransferOperatorshipResponse) |  | POST|/axelar/evm/create_transfer_operatorship|
 | `SignCommands` | [SignCommandsRequest](#axelar.evm.v1beta1.SignCommandsRequest) | [SignCommandsResponse](#axelar.evm.v1beta1.SignCommandsResponse) |  | POST|/axelar/evm/sign_commands|
 | `AddChain` | [AddChainRequest](#axelar.evm.v1beta1.AddChainRequest) | [AddChainResponse](#axelar.evm.v1beta1.AddChainResponse) |  | POST|/axelar/evm/add_chain|
+| `RetryFailedEvent` | [RetryFailedEventRequest](#axelar.evm.v1beta1.RetryFailedEventRequest) | [RetryFailedEventResponse](#axelar.evm.v1beta1.RetryFailedEventResponse) |  | POST|/axelar/evm/retry-failed-event|
 
 
 <a name="axelar.evm.v1beta1.QueryService"></a>
