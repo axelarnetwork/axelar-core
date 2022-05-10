@@ -122,14 +122,12 @@ func (q Querier) TransferFee(c context.Context, req *types.TransferFeeRequest) (
 	}
 
 	// When source chain is another cosmos chain, use axelarnet for fee info where deposit address is generated on
-	if q.axelarnet.IsCosmosChain(ctx, sourceChain.Name) && !strings.EqualFold(sourceChain.Name, exported.Axelarnet.Name) {
-		sourceChain, ok = q.keeper.GetChain(ctx, exported.Axelarnet.Name)
-		if !ok {
-			return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered chain", exported.Axelarnet.Name)
-		}
+	feeCalcSourceChain := sourceChain
+	if q.axelarnet.IsCosmosChain(ctx, feeCalcSourceChain.Name) {
+		feeCalcSourceChain = exported.Axelarnet
 	}
 
-	fee, err := q.keeper.ComputeTransferFee(ctx, sourceChain, destinationChain, amount)
+	fee, err := q.keeper.ComputeTransferFee(ctx, feeCalcSourceChain, destinationChain, amount)
 	if err != nil {
 		return nil, err
 	}
