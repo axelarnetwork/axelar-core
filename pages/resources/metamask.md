@@ -21,7 +21,7 @@ Open Metamask. In the "Networks" dropdown list choose "Add Network". Enter the d
 | Avalanche | Avalanche  | 43114    | AVAX         | [URL](https://api.avax.network/ext/bc/C/rpc) | [URL](https://snowtrace.io)    | <AddToWeb3 environment="mainnet" chain="avalanche" /> |
 | Fantom    | Fantom     | 250      | FTM          | [URL](https://rpc.ftm.tools)                 | [URL](https://ftmscan.com/)    | <AddToWeb3 environment="mainnet" chain="fantom" />    |
 | Polygon   | Polygon    | 137      | MATIC        | [URL](https://polygon-rpc.com)               | [URL](https://polygonscan.com) | <AddToWeb3 environment="mainnet" chain="polygon" />   |
-| Moonbeam  | Moonbeam   | 1284     | DEV          | [URL](https://rpc.api.moonbeam.network)      | [URL](https://moonscan.io)     | <AddToWeb3 environment="mainnet" chain="moonbeam" />  |
+| Moonbeam  | Moonbeam   | 1284     | GLMR          | [URL](https://rpc.api.moonbeam.network)      | [URL](https://moonscan.io)     | <AddToWeb3 environment="mainnet" chain="moonbeam" />  |
 
 ### Testnet
 
@@ -30,7 +30,7 @@ Open Metamask. In the "Networks" dropdown list choose "Add Network". Enter the d
 | Ethereum  | Ethereum Ropsten | 3        | ETH          | [URL](https://ropsten.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161) | [URL](https://ropsten.etherscan.io)   | <AddToWeb3 environment="testnet" chain="ethereum" />  |
 | Avalanche | Avalanche Fuji   | 43113    | AVAX         | [URL](https://api.avax-test.network/ext/bc/C/rpc)                    | [URL](https://testnet.snowtrace.io)   | <AddToWeb3 environment="testnet" chain="avalanche" /> |
 | Fantom    | Fantom Testnet   | 4002     | FTM          | [URL](https://rpc.testnet.fantom.network)                            | [URL](https://testnet.ftmscan.com/)   | <AddToWeb3 environment="testnet" chain="fantom" />    |
-| Polygon   | Polygon Mumbai   | 80001    | MATIC        | [URL](https://rpc-mumbai.maticvigil.com)                             | [URL](https://mumbai.polygonscan.com) | <AddToWeb3 environment="testnet" chain="polygon" />   |
+| Polygon   | Polygon Mumbai   | 80001    | MATIC        | [URL](https://matic-mumbai.chainstacklabs.com)                             | [URL](https://mumbai.polygonscan.com) | <AddToWeb3 environment="testnet" chain="polygon" />   |
 | Moonbeam  | Moonbase Alpha   | 1287     | DEV          | [URL](https://rpc.api.moonbase.moonbeam.network)                     | [URL](https://moonbase.moonscan.io)   | <AddToWeb3 environment="testnet" chain="moonbeam" />  |
 
 ## Get testnet tokens for EVM chains

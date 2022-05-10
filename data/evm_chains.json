@@ -50,7 +50,6 @@
           "rpcUrls": [
             "https://polygon-rpc.com",
             "https://matic-mainnet.chainstacklabs.com",
-            "https://rpc-mainnet.maticvigil.com"
           ],
           "nativeCurrency": {
             "name": "Matic",
@@ -155,7 +154,6 @@
           "chainId": "0x13881",
           "chainName": "Polygon Mumbai",
           "rpcUrls": [
-            "https://rpc-mumbai.maticvigil.com",
             "https://rpc-mumbai.matic.today",
             "https://matic-mumbai.chainstacklabs.com"
           ],
