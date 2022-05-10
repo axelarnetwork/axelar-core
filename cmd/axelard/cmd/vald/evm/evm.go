@@ -73,21 +73,6 @@ func (mgr Mgr) ProcessNewChain(e tmEvents.Event) (err error) {
 	return nil
 }
 
-// ProcessChainConfirmation votes on the correctness of an EVM chain token deposit
-func (mgr Mgr) ProcessChainConfirmation(e tmEvents.Event) (err error) {
-	chain, pollKey, err := parseChainConfirmationParams(mgr.cdc, e.Attributes)
-	if err != nil {
-		return sdkerrors.Wrap(err, "EVM chain confirmation failed")
-	}
-
-	_, confirmed := mgr.rpcs[strings.ToLower(chain)]
-
-	msg := evmTypes.NewVoteConfirmChainRequest(mgr.cliCtx.FromAddress, chain, pollKey, confirmed)
-	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", msg.Confirmed, pollKey.String()))
-	_, err = mgr.broadcaster.Broadcast(context.TODO(), msg)
-	return err
-}
-
 // ProcessDepositConfirmation votes on the correctness of an EVM chain token deposit
 func (mgr Mgr) ProcessDepositConfirmation(e tmEvents.Event) (err error) {
 	chain, txID, burnAddr, tokenAddr, confHeight, pollKey, err := parseDepositConfirmationParams(mgr.cdc, e.Attributes)
@@ -133,7 +118,7 @@ func (mgr Mgr) ProcessDepositConfirmation(e tmEvents.Event) (err error) {
 		return true
 	})
 
-	v, err := packEvents(events)
+	v, err := packEvents(chain, events)
 	if err != nil {
 		return err
 	}
@@ -189,7 +174,7 @@ func (mgr Mgr) ProcessTokenConfirmation(e tmEvents.Event) error {
 		return true
 	})
 
-	v, err := packEvents(events)
+	v, err := packEvents(chain, events)
 	if err != nil {
 		return err
 	}
@@ -303,7 +288,7 @@ func (mgr Mgr) ProcessTransferKeyConfirmation(e tmEvents.Event) (err error) {
 		return true
 	})
 
-	v, err := packEvents(events)
+	v, err := packEvents(chain, events)
 	if err != nil {
 		return err
 	}
@@ -386,7 +371,7 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(e tmEvents.Event) error {
 		return true
 	})
 
-	v, err := packEvents(events)
+	v, err := packEvents(chain, events)
 	if err != nil {
 		return err
 	}
@@ -543,27 +528,6 @@ func parseNewChainParams(attributes map[string]string) (chain string, nativeAsse
 	}
 
 	return results[0].(string), results[1].(string), nil
-}
-
-func parseChainConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]string) (
-	chain string,
-	pollKey vote.PollKey,
-	err error,
-) {
-	parsers := []*parse.AttributeParser{
-		{Key: evmTypes.AttributeKeyChain, Map: parse.IdentityMap},
-		{Key: evmTypes.AttributeKeyPoll, Map: func(s string) (interface{}, error) {
-			cdc.MustUnmarshalJSON([]byte(s), &pollKey)
-			return pollKey, nil
-		}},
-	}
-
-	results, err := parse.Parse(attributes, parsers)
-	if err != nil {
-		return "", vote.PollKey{}, err
-	}
-
-	return results[0].(string), results[1].(vote.PollKey), nil
 }
 
 func parseDepositConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]string) (
@@ -952,14 +916,14 @@ func unpackMultisigTransferKeyEvent(log *geth.Log) ([]common.Address, *big.Int, 
 	return preAddresses, preThreshold, newAddresses, newThreshold, nil
 }
 
-func packEvents(events []evmTypes.Event) (vote.Vote, error) {
+func packEvents(chain string, events []evmTypes.Event) (vote.Vote, error) {
 	var v vote.Vote
 
-	eventsAny, err := evmTypes.PackEvents(events)
+	voteEvents, err := evmTypes.PackEvents(chain, events)
 	if err != nil {
 		return vote.Vote{}, sdkerrors.Wrap(err, "Pack events failed")
 	}
-	v.Results = eventsAny
+	v.Result = voteEvents
 
 	return v, nil
 }

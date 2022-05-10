@@ -1283,6 +1283,12 @@ var _ types.Nexus = &NexusMock{}
 // 			LinkAddressesFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress) error {
 // 				panic("mock out the LinkAddresses method")
 // 			},
+// 			MarkChainMaintainerIncorrectVoteFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, address github_com_cosmos_cosmos_sdk_types.ValAddress, incorrectVote bool)  {
+// 				panic("mock out the MarkChainMaintainerIncorrectVote method")
+// 			},
+// 			MarkChainMaintainerMissingVoteFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, address github_com_cosmos_cosmos_sdk_types.ValAddress, missingVote bool)  {
+// 				panic("mock out the MarkChainMaintainerMissingVote method")
+// 			},
 // 			RegisterAssetFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, asset nexus.Asset) error {
 // 				panic("mock out the RegisterAsset method")
 // 			},
@@ -1337,6 +1343,12 @@ type NexusMock struct {
 
 	// LinkAddressesFunc mocks the LinkAddresses method.
 	LinkAddressesFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress) error
+
+	// MarkChainMaintainerIncorrectVoteFunc mocks the MarkChainMaintainerIncorrectVote method.
+	MarkChainMaintainerIncorrectVoteFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, address github_com_cosmos_cosmos_sdk_types.ValAddress, incorrectVote bool)
+
+	// MarkChainMaintainerMissingVoteFunc mocks the MarkChainMaintainerMissingVote method.
+	MarkChainMaintainerMissingVoteFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, address github_com_cosmos_cosmos_sdk_types.ValAddress, missingVote bool)
 
 	// RegisterAssetFunc mocks the RegisterAsset method.
 	RegisterAssetFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, asset nexus.Asset) error
@@ -1458,6 +1470,28 @@ type NexusMock struct {
 			// Recipient is the recipient argument value.
 			Recipient nexus.CrossChainAddress
 		}
+		// MarkChainMaintainerIncorrectVote holds details about calls to the MarkChainMaintainerIncorrectVote method.
+		MarkChainMaintainerIncorrectVote []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Chain is the chain argument value.
+			Chain nexus.Chain
+			// Address is the address argument value.
+			Address github_com_cosmos_cosmos_sdk_types.ValAddress
+			// IncorrectVote is the incorrectVote argument value.
+			IncorrectVote bool
+		}
+		// MarkChainMaintainerMissingVote holds details about calls to the MarkChainMaintainerMissingVote method.
+		MarkChainMaintainerMissingVote []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Chain is the chain argument value.
+			Chain nexus.Chain
+			// Address is the address argument value.
+			Address github_com_cosmos_cosmos_sdk_types.ValAddress
+			// MissingVote is the missingVote argument value.
+			MissingVote bool
+		}
 		// RegisterAsset holds details about calls to the RegisterAsset method.
 		RegisterAsset []struct {
 			// Ctx is the ctx argument value.
@@ -1475,22 +1509,24 @@ type NexusMock struct {
 			Chain nexus.Chain
 		}
 	}
-	lockAddTransferFee         sync.RWMutex
-	lockArchivePendingTransfer sync.RWMutex
-	lockComputeTransferFee     sync.RWMutex
-	lockEnqueueForTransfer     sync.RWMutex
-	lockEnqueueTransfer        sync.RWMutex
-	lockGetChain               sync.RWMutex
-	lockGetChainByNativeAsset  sync.RWMutex
-	lockGetChainMaintainers    sync.RWMutex
-	lockGetChains              sync.RWMutex
-	lockGetRecipient           sync.RWMutex
-	lockGetTransfersForChain   sync.RWMutex
-	lockIsAssetRegistered      sync.RWMutex
-	lockIsChainActivated       sync.RWMutex
-	lockLinkAddresses          sync.RWMutex
-	lockRegisterAsset          sync.RWMutex
-	lockSetChain               sync.RWMutex
+	lockAddTransferFee                   sync.RWMutex
+	lockArchivePendingTransfer           sync.RWMutex
+	lockComputeTransferFee               sync.RWMutex
+	lockEnqueueForTransfer               sync.RWMutex
+	lockEnqueueTransfer                  sync.RWMutex
+	lockGetChain                         sync.RWMutex
+	lockGetChainByNativeAsset            sync.RWMutex
+	lockGetChainMaintainers              sync.RWMutex
+	lockGetChains                        sync.RWMutex
+	lockGetRecipient                     sync.RWMutex
+	lockGetTransfersForChain             sync.RWMutex
+	lockIsAssetRegistered                sync.RWMutex
+	lockIsChainActivated                 sync.RWMutex
+	lockLinkAddresses                    sync.RWMutex
+	lockMarkChainMaintainerIncorrectVote sync.RWMutex
+	lockMarkChainMaintainerMissingVote   sync.RWMutex
+	lockRegisterAsset                    sync.RWMutex
+	lockSetChain                         sync.RWMutex
 }
 
 // AddTransferFee calls AddTransferFeeFunc.
@@ -2011,6 +2047,92 @@ func (mock *NexusMock) LinkAddressesCalls() []struct {
 	return calls
 }
 
+// MarkChainMaintainerIncorrectVote calls MarkChainMaintainerIncorrectVoteFunc.
+func (mock *NexusMock) MarkChainMaintainerIncorrectVote(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, address github_com_cosmos_cosmos_sdk_types.ValAddress, incorrectVote bool) {
+	if mock.MarkChainMaintainerIncorrectVoteFunc == nil {
+		panic("NexusMock.MarkChainMaintainerIncorrectVoteFunc: method is nil but Nexus.MarkChainMaintainerIncorrectVote was just called")
+	}
+	callInfo := struct {
+		Ctx           github_com_cosmos_cosmos_sdk_types.Context
+		Chain         nexus.Chain
+		Address       github_com_cosmos_cosmos_sdk_types.ValAddress
+		IncorrectVote bool
+	}{
+		Ctx:           ctx,
+		Chain:         chain,
+		Address:       address,
+		IncorrectVote: incorrectVote,
+	}
+	mock.lockMarkChainMaintainerIncorrectVote.Lock()
+	mock.calls.MarkChainMaintainerIncorrectVote = append(mock.calls.MarkChainMaintainerIncorrectVote, callInfo)
+	mock.lockMarkChainMaintainerIncorrectVote.Unlock()
+	mock.MarkChainMaintainerIncorrectVoteFunc(ctx, chain, address, incorrectVote)
+}
+
+// MarkChainMaintainerIncorrectVoteCalls gets all the calls that were made to MarkChainMaintainerIncorrectVote.
+// Check the length with:
+//     len(mockedNexus.MarkChainMaintainerIncorrectVoteCalls())
+func (mock *NexusMock) MarkChainMaintainerIncorrectVoteCalls() []struct {
+	Ctx           github_com_cosmos_cosmos_sdk_types.Context
+	Chain         nexus.Chain
+	Address       github_com_cosmos_cosmos_sdk_types.ValAddress
+	IncorrectVote bool
+} {
+	var calls []struct {
+		Ctx           github_com_cosmos_cosmos_sdk_types.Context
+		Chain         nexus.Chain
+		Address       github_com_cosmos_cosmos_sdk_types.ValAddress
+		IncorrectVote bool
+	}
+	mock.lockMarkChainMaintainerIncorrectVote.RLock()
+	calls = mock.calls.MarkChainMaintainerIncorrectVote
+	mock.lockMarkChainMaintainerIncorrectVote.RUnlock()
+	return calls
+}
+
+// MarkChainMaintainerMissingVote calls MarkChainMaintainerMissingVoteFunc.
+func (mock *NexusMock) MarkChainMaintainerMissingVote(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, address github_com_cosmos_cosmos_sdk_types.ValAddress, missingVote bool) {
+	if mock.MarkChainMaintainerMissingVoteFunc == nil {
+		panic("NexusMock.MarkChainMaintainerMissingVoteFunc: method is nil but Nexus.MarkChainMaintainerMissingVote was just called")
+	}
+	callInfo := struct {
+		Ctx         github_com_cosmos_cosmos_sdk_types.Context
+		Chain       nexus.Chain
+		Address     github_com_cosmos_cosmos_sdk_types.ValAddress
+		MissingVote bool
+	}{
+		Ctx:         ctx,
+		Chain:       chain,
+		Address:     address,
+		MissingVote: missingVote,
+	}
+	mock.lockMarkChainMaintainerMissingVote.Lock()
+	mock.calls.MarkChainMaintainerMissingVote = append(mock.calls.MarkChainMaintainerMissingVote, callInfo)
+	mock.lockMarkChainMaintainerMissingVote.Unlock()
+	mock.MarkChainMaintainerMissingVoteFunc(ctx, chain, address, missingVote)
+}
+
+// MarkChainMaintainerMissingVoteCalls gets all the calls that were made to MarkChainMaintainerMissingVote.
+// Check the length with:
+//     len(mockedNexus.MarkChainMaintainerMissingVoteCalls())
+func (mock *NexusMock) MarkChainMaintainerMissingVoteCalls() []struct {
+	Ctx         github_com_cosmos_cosmos_sdk_types.Context
+	Chain       nexus.Chain
+	Address     github_com_cosmos_cosmos_sdk_types.ValAddress
+	MissingVote bool
+} {
+	var calls []struct {
+		Ctx         github_com_cosmos_cosmos_sdk_types.Context
+		Chain       nexus.Chain
+		Address     github_com_cosmos_cosmos_sdk_types.ValAddress
+		MissingVote bool
+	}
+	mock.lockMarkChainMaintainerMissingVote.RLock()
+	calls = mock.calls.MarkChainMaintainerMissingVote
+	mock.lockMarkChainMaintainerMissingVote.RUnlock()
+	return calls
+}
+
 // RegisterAsset calls RegisterAssetFunc.
 func (mock *NexusMock) RegisterAsset(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, asset nexus.Asset) error {
 	if mock.RegisterAssetFunc == nil {
@@ -2405,17 +2527,11 @@ var _ types.BaseKeeper = &BaseKeeperMock{}
 //
 // 		// make and configure a mocked types.BaseKeeper
 // 		mockedBaseKeeper := &BaseKeeperMock{
-// 			DeletePendingChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string)  {
-// 				panic("mock out the DeletePendingChain method")
-// 			},
 // 			ExportGenesisFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) types.GenesisState {
 // 				panic("mock out the ExportGenesis method")
 // 			},
 // 			ForChainFunc: func(chain string) types.ChainKeeper {
 // 				panic("mock out the ForChain method")
-// 			},
-// 			GetPendingChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (types.PendingChain, bool) {
-// 				panic("mock out the GetPendingChain method")
 // 			},
 // 			HasChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) bool {
 // 				panic("mock out the HasChain method")
@@ -2426,9 +2542,6 @@ var _ types.BaseKeeper = &BaseKeeperMock{}
 // 			LoggerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger {
 // 				panic("mock out the Logger method")
 // 			},
-// 			SetPendingChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, p types.Params)  {
-// 				panic("mock out the SetPendingChain method")
-// 			},
 // 		}
 //
 // 		// use mockedBaseKeeper in code that requires types.BaseKeeper
@@ -2436,17 +2549,11 @@ var _ types.BaseKeeper = &BaseKeeperMock{}
 //
 // 	}
 type BaseKeeperMock struct {
-	// DeletePendingChainFunc mocks the DeletePendingChain method.
-	DeletePendingChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string)
-
 	// ExportGenesisFunc mocks the ExportGenesis method.
 	ExportGenesisFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) types.GenesisState
 
 	// ForChainFunc mocks the ForChain method.
 	ForChainFunc func(chain string) types.ChainKeeper
-
-	// GetPendingChainFunc mocks the GetPendingChain method.
-	GetPendingChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (types.PendingChain, bool)
 
 	// HasChainFunc mocks the HasChain method.
 	HasChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) bool
@@ -2457,18 +2564,8 @@ type BaseKeeperMock struct {
 	// LoggerFunc mocks the Logger method.
 	LoggerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger
 
-	// SetPendingChainFunc mocks the SetPendingChain method.
-	SetPendingChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, p types.Params)
-
 	// calls tracks calls to the methods.
 	calls struct {
-		// DeletePendingChain holds details about calls to the DeletePendingChain method.
-		DeletePendingChain []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Chain is the chain argument value.
-			Chain string
-		}
 		// ExportGenesis holds details about calls to the ExportGenesis method.
 		ExportGenesis []struct {
 			// Ctx is the ctx argument value.
@@ -2476,13 +2573,6 @@ type BaseKeeperMock struct {
 		}
 		// ForChain holds details about calls to the ForChain method.
 		ForChain []struct {
-			// Chain is the chain argument value.
-			Chain string
-		}
-		// GetPendingChain holds details about calls to the GetPendingChain method.
-		GetPendingChain []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Chain is the chain argument value.
 			Chain string
 		}
@@ -2505,59 +2595,12 @@ type BaseKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
-		// SetPendingChain holds details about calls to the SetPendingChain method.
-		SetPendingChain []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Chain is the chain argument value.
-			Chain nexus.Chain
-			// P is the p argument value.
-			P types.Params
-		}
 	}
-	lockDeletePendingChain sync.RWMutex
-	lockExportGenesis      sync.RWMutex
-	lockForChain           sync.RWMutex
-	lockGetPendingChain    sync.RWMutex
-	lockHasChain           sync.RWMutex
-	lockInitGenesis        sync.RWMutex
-	lockLogger             sync.RWMutex
-	lockSetPendingChain    sync.RWMutex
-}
-
-// DeletePendingChain calls DeletePendingChainFunc.
-func (mock *BaseKeeperMock) DeletePendingChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) {
-	if mock.DeletePendingChainFunc == nil {
-		panic("BaseKeeperMock.DeletePendingChainFunc: method is nil but BaseKeeper.DeletePendingChain was just called")
-	}
-	callInfo := struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Chain string
-	}{
-		Ctx:   ctx,
-		Chain: chain,
-	}
-	mock.lockDeletePendingChain.Lock()
-	mock.calls.DeletePendingChain = append(mock.calls.DeletePendingChain, callInfo)
-	mock.lockDeletePendingChain.Unlock()
-	mock.DeletePendingChainFunc(ctx, chain)
-}
-
-// DeletePendingChainCalls gets all the calls that were made to DeletePendingChain.
-// Check the length with:
-//     len(mockedBaseKeeper.DeletePendingChainCalls())
-func (mock *BaseKeeperMock) DeletePendingChainCalls() []struct {
-	Ctx   github_com_cosmos_cosmos_sdk_types.Context
-	Chain string
-} {
-	var calls []struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Chain string
-	}
-	mock.lockDeletePendingChain.RLock()
-	calls = mock.calls.DeletePendingChain
-	mock.lockDeletePendingChain.RUnlock()
-	return calls
+	lockExportGenesis sync.RWMutex
+	lockForChain      sync.RWMutex
+	lockHasChain      sync.RWMutex
+	lockInitGenesis   sync.RWMutex
+	lockLogger        sync.RWMutex
 }
 
 // ExportGenesis calls ExportGenesisFunc.
@@ -2619,41 +2662,6 @@ func (mock *BaseKeeperMock) ForChainCalls() []struct {
 	mock.lockForChain.RLock()
 	calls = mock.calls.ForChain
 	mock.lockForChain.RUnlock()
-	return calls
-}
-
-// GetPendingChain calls GetPendingChainFunc.
-func (mock *BaseKeeperMock) GetPendingChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (types.PendingChain, bool) {
-	if mock.GetPendingChainFunc == nil {
-		panic("BaseKeeperMock.GetPendingChainFunc: method is nil but BaseKeeper.GetPendingChain was just called")
-	}
-	callInfo := struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Chain string
-	}{
-		Ctx:   ctx,
-		Chain: chain,
-	}
-	mock.lockGetPendingChain.Lock()
-	mock.calls.GetPendingChain = append(mock.calls.GetPendingChain, callInfo)
-	mock.lockGetPendingChain.Unlock()
-	return mock.GetPendingChainFunc(ctx, chain)
-}
-
-// GetPendingChainCalls gets all the calls that were made to GetPendingChain.
-// Check the length with:
-//     len(mockedBaseKeeper.GetPendingChainCalls())
-func (mock *BaseKeeperMock) GetPendingChainCalls() []struct {
-	Ctx   github_com_cosmos_cosmos_sdk_types.Context
-	Chain string
-} {
-	var calls []struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Chain string
-	}
-	mock.lockGetPendingChain.RLock()
-	calls = mock.calls.GetPendingChain
-	mock.lockGetPendingChain.RUnlock()
 	return calls
 }
 
@@ -2755,45 +2763,6 @@ func (mock *BaseKeeperMock) LoggerCalls() []struct {
 	mock.lockLogger.RLock()
 	calls = mock.calls.Logger
 	mock.lockLogger.RUnlock()
-	return calls
-}
-
-// SetPendingChain calls SetPendingChainFunc.
-func (mock *BaseKeeperMock) SetPendingChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, p types.Params) {
-	if mock.SetPendingChainFunc == nil {
-		panic("BaseKeeperMock.SetPendingChainFunc: method is nil but BaseKeeper.SetPendingChain was just called")
-	}
-	callInfo := struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Chain nexus.Chain
-		P     types.Params
-	}{
-		Ctx:   ctx,
-		Chain: chain,
-		P:     p,
-	}
-	mock.lockSetPendingChain.Lock()
-	mock.calls.SetPendingChain = append(mock.calls.SetPendingChain, callInfo)
-	mock.lockSetPendingChain.Unlock()
-	mock.SetPendingChainFunc(ctx, chain, p)
-}
-
-// SetPendingChainCalls gets all the calls that were made to SetPendingChain.
-// Check the length with:
-//     len(mockedBaseKeeper.SetPendingChainCalls())
-func (mock *BaseKeeperMock) SetPendingChainCalls() []struct {
-	Ctx   github_com_cosmos_cosmos_sdk_types.Context
-	Chain nexus.Chain
-	P     types.Params
-} {
-	var calls []struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Chain nexus.Chain
-		P     types.Params
-	}
-	mock.lockSetPendingChain.RLock()
-	calls = mock.calls.SetPendingChain
-	mock.lockSetPendingChain.RUnlock()
 	return calls
 }
 

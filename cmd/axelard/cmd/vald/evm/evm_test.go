@@ -20,6 +20,7 @@ import (
 	"golang.org/x/crypto/sha3"
 
 	"github.com/axelarnetwork/axelar-core/app"
+	"github.com/axelarnetwork/axelar-core/app/params"
 	mock2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types/mock"
 	evmRpc "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm/rpc"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm/rpc/mock"
@@ -324,13 +325,15 @@ func TestMgr_validate(t *testing.T) {
 
 func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 	var (
-		mgr         *Mgr
-		attributes  map[string]string
-		rpc         *mock.ClientMock
-		broadcaster *mock2.BroadcasterMock
+		mgr            *Mgr
+		attributes     map[string]string
+		rpc            *mock.ClientMock
+		broadcaster    *mock2.BroadcasterMock
+		encodingConfig params.EncodingConfig
 	)
 	setup := func() {
-		cdc := app.MakeEncodingConfig().Amino
+		encodingConfig = app.MakeEncodingConfig()
+		cdc := encodingConfig.Amino
 		pollKey := exported.NewPollKey(evmTypes.ModuleName, rand.StrBetween(5, 20))
 
 		burnAddrBytes := rand.Bytes(common.AddressLength)
@@ -421,8 +424,12 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
+
 		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		assert.Equal(t, 1, len(msg.(*voteTypes.VoteRequest).Vote.Results))
+		actualVoteEvents, err := evmTypes.UnpackEvents(encodingConfig.Codec, msg.(*voteTypes.VoteRequest).Vote.Result)
+		assert.NoError(t, err)
+		assert.Equal(t, "Ethereum", actualVoteEvents.Chain)
+		assert.Len(t, actualVoteEvents.Events, 1)
 	}).Repeat(repeats))
 
 	t.Run("missing attributes", testutils.Func(func(t *testing.T) {
@@ -444,8 +451,12 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
+
 		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		assert.Equal(t, 0, len(msg.(*voteTypes.VoteRequest).Vote.Results))
+		actualVoteEvents, err := evmTypes.UnpackEvents(encodingConfig.Codec, msg.(*voteTypes.VoteRequest).Vote.Result)
+		assert.NoError(t, err)
+		assert.Equal(t, "Ethereum", actualVoteEvents.Chain)
+		assert.Len(t, actualVoteEvents.Events, 0)
 	}).Repeat(repeats))
 
 	t.Run("no block number", testutils.Func(func(t *testing.T) {
@@ -458,8 +469,12 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
+
 		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		assert.Equal(t, len(msg.(*voteTypes.VoteRequest).Vote.Results), 0)
+		actualVoteEvents, err := evmTypes.UnpackEvents(encodingConfig.Codec, msg.(*voteTypes.VoteRequest).Vote.Result)
+		assert.NoError(t, err)
+		assert.Equal(t, "Ethereum", actualVoteEvents.Chain)
+		assert.Len(t, actualVoteEvents.Events, 0)
 	}).Repeat(repeats))
 }
 
@@ -470,9 +485,11 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		rpc              *mock.ClientMock
 		broadcaster      *mock2.BroadcasterMock
 		gatewayAddrBytes []byte
+		encodingConfig   params.EncodingConfig
 	)
 	setup := func() {
-		cdc := app.MakeEncodingConfig().Amino
+		encodingConfig = app.MakeEncodingConfig()
+		cdc := encodingConfig.Amino
 		pollKey := exported.NewPollKey(evmTypes.ModuleName, rand.StrBetween(5, 20))
 
 		gatewayAddrBytes = rand.Bytes(common.AddressLength)
@@ -532,8 +549,12 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
+
 		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		assert.Equal(t, len(msg.(*voteTypes.VoteRequest).Vote.Results), 1)
+		actualVoteEvents, err := evmTypes.UnpackEvents(encodingConfig.Codec, msg.(*voteTypes.VoteRequest).Vote.Result)
+		assert.NoError(t, err)
+		assert.Equal(t, "Ethereum", actualVoteEvents.Chain)
+		assert.Len(t, actualVoteEvents.Events, 1)
 	}).Repeat(repeats))
 
 	t.Run("missing attributes", testutils.Func(func(t *testing.T) {
@@ -555,8 +576,12 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
+
 		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		assert.Equal(t, 0, len(msg.(*voteTypes.VoteRequest).Vote.Results))
+		actualVoteEvents, err := evmTypes.UnpackEvents(encodingConfig.Codec, msg.(*voteTypes.VoteRequest).Vote.Result)
+		assert.NoError(t, err)
+		assert.Equal(t, "Ethereum", actualVoteEvents.Chain)
+		assert.Len(t, actualVoteEvents.Events, 0)
 	}).Repeat(repeats))
 
 	t.Run("no block number", testutils.Func(func(t *testing.T) {
@@ -569,8 +594,12 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
+
 		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		assert.Equal(t, 0, len(msg.(*voteTypes.VoteRequest).Vote.Results))
+		actualVoteEvents, err := evmTypes.UnpackEvents(encodingConfig.Codec, msg.(*voteTypes.VoteRequest).Vote.Result)
+		assert.NoError(t, err)
+		assert.Equal(t, "Ethereum", actualVoteEvents.Chain)
+		assert.Len(t, actualVoteEvents.Events, 0)
 	}).Repeat(repeats))
 
 	t.Run("no deploy event", testutils.Func(func(t *testing.T) {
@@ -591,8 +620,12 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
+
 		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		assert.Equal(t, 0, len(msg.(*voteTypes.VoteRequest).Vote.Results))
+		actualVoteEvents, err := evmTypes.UnpackEvents(encodingConfig.Codec, msg.(*voteTypes.VoteRequest).Vote.Result)
+		assert.NoError(t, err)
+		assert.Equal(t, "Ethereum", actualVoteEvents.Chain)
+		assert.Len(t, actualVoteEvents.Events, 0)
 
 	}).Repeat(repeats))
 
@@ -611,8 +644,12 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
+
 		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		assert.Equal(t, 0, len(msg.(*voteTypes.VoteRequest).Vote.Results))
+		actualVoteEvents, err := evmTypes.UnpackEvents(encodingConfig.Codec, msg.(*voteTypes.VoteRequest).Vote.Result)
+		assert.NoError(t, err)
+		assert.Equal(t, "Ethereum", actualVoteEvents.Chain)
+		assert.Len(t, actualVoteEvents.Events, 0)
 	}).Repeat(repeats))
 }
 
@@ -623,9 +660,11 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 		rpc                   *mock.ClientMock
 		broadcaster           *mock2.BroadcasterMock
 		prevNewOwnerAddrBytes []byte
+		encodingConfig        params.EncodingConfig
 	)
 	setup := func() {
-		cdc := app.MakeEncodingConfig().Amino
+		encodingConfig = app.MakeEncodingConfig()
+		cdc := encodingConfig.Amino
 		pollKey := exported.NewPollKey(evmTypes.ModuleName, rand.StrBetween(5, 20))
 
 		gatewayAddrBytes := rand.Bytes(common.AddressLength)
@@ -729,8 +768,12 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
+
 		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		assert.Equal(t, 1, len(msg.(*voteTypes.VoteRequest).Vote.Results))
+		actualVoteEvents, err := evmTypes.UnpackEvents(encodingConfig.Codec, msg.(*voteTypes.VoteRequest).Vote.Result)
+		assert.NoError(t, err)
+		assert.Equal(t, "Ethereum", actualVoteEvents.Chain)
+		assert.Len(t, actualVoteEvents.Events, 1)
 	}).Repeat(repeats))
 
 	t.Run("missing attributes", testutils.Func(func(t *testing.T) {
@@ -752,8 +795,12 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
+
 		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		assert.Equal(t, 0, len(msg.(*voteTypes.VoteRequest).Vote.Results))
+		actualVoteEvents, err := evmTypes.UnpackEvents(encodingConfig.Codec, msg.(*voteTypes.VoteRequest).Vote.Result)
+		assert.NoError(t, err)
+		assert.Equal(t, "Ethereum", actualVoteEvents.Chain)
+		assert.Len(t, actualVoteEvents.Events, 0)
 	}).Repeat(repeats))
 
 	t.Run("no block number", testutils.Func(func(t *testing.T) {
@@ -766,8 +813,12 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
+
 		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		assert.Equal(t, 0, len(msg.(*voteTypes.VoteRequest).Vote.Results))
+		actualVoteEvents, err := evmTypes.UnpackEvents(encodingConfig.Codec, msg.(*voteTypes.VoteRequest).Vote.Result)
+		assert.NoError(t, err)
+		assert.Equal(t, "Ethereum", actualVoteEvents.Chain)
+		assert.Len(t, actualVoteEvents.Events, 0)
 	}).Repeat(repeats))
 
 	t.Run("receipt status failed", testutils.Func(func(t *testing.T) {
@@ -784,8 +835,12 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
+
 		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		assert.Equal(t, 0, len(msg.(*voteTypes.VoteRequest).Vote.Results))
+		actualVoteEvents, err := evmTypes.UnpackEvents(encodingConfig.Codec, msg.(*voteTypes.VoteRequest).Vote.Result)
+		assert.NoError(t, err)
+		assert.Equal(t, "Ethereum", actualVoteEvents.Chain)
+		assert.Len(t, actualVoteEvents.Events, 0)
 	}).Repeat(repeats))
 
 }

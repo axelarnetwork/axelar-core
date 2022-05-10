@@ -27,14 +27,14 @@ func TestRestrictedTx(t *testing.T) {
 		tx         *mock.TxMock
 	)
 
-	signerAnyRole := func(t *testing.T) {
+	signerAnyRole := func() {
 		permission.GetRoleFunc = func(sdk.Context, sdk.AccAddress) exported.Role {
 			return exported.Role(rand.Of(maps.Keys(exported.Role_name)...))
 		}
 	}
 
-	signerIsNot := func(role exported.Role) func(t *testing.T) {
-		return func(t *testing.T) {
+	signerIsNot := func(role exported.Role) func() {
+		return func() {
 			permission.GetRoleFunc = func(sdk.Context, sdk.AccAddress) exported.Role {
 				filtered := slices.Filter(maps.Keys(exported.Role_name), func(k int32) bool { return k != int32(role) })
 				return exported.Role(rand.Of(filtered...))
@@ -69,29 +69,29 @@ func TestRestrictedTx(t *testing.T) {
 		}
 	}
 
-	msgRoleIsUnrestricted := func(t *testing.T) { tx = txWithMsg(&evm.LinkRequest{}) }
-	msgRoleIsUnspecified := func(t *testing.T) { tx = txWithMsg(&banktypes.MsgSend{}) }
-	msgRoleIsChainManagement := func(t *testing.T) { tx = txWithMsg(&tss.RotateKeyRequest{}) }
-	msgRoleIsAccessControl := func(t *testing.T) { tx = txWithMsg(&axelarnet.RegisterFeeCollectorRequest{}) }
+	msgRoleIsUnrestricted := func() { tx = txWithMsg(&evm.LinkRequest{}) }
+	msgRoleIsUnspecified := func() { tx = txWithMsg(&banktypes.MsgSend{}) }
+	msgRoleIsChainManagement := func() { tx = txWithMsg(&tss.RotateKeyRequest{}) }
+	msgRoleIsAccessControl := func() { tx = txWithMsg(&axelarnet.RegisterFeeCollectorRequest{}) }
 
-	Given("a restricted tx ante handler", func(t *testing.T) {
+	Given("a restricted tx ante handler", func() {
 		permission = &mock.PermissionMock{}
 		handler = ante.NewRestrictedTx(permission)
 	}).Branch(
 		When("msg role is unrestricted", msgRoleIsUnrestricted).
-			And().When("signer has any role", signerAnyRole).
+			When("signer has any role", signerAnyRole).
 			Then("let the msg through", letTxThrough),
 
 		When("msg role is unspecified", msgRoleIsUnspecified).
-			And().When("signer has any role", signerAnyRole).
+			When("signer has any role", signerAnyRole).
 			Then("let the msg through", letTxThrough),
 
 		When("msg role is chain management", msgRoleIsChainManagement).
-			And().When("signer is not chain management", signerIsNot(exported.ROLE_CHAIN_MANAGEMENT)).
+			When("signer is not chain management", signerIsNot(exported.ROLE_CHAIN_MANAGEMENT)).
 			Then("stop tx", stopTx),
 
 		When("msg role is access control", msgRoleIsAccessControl).
-			And().When("signer is not access control", signerIsNot(exported.ROLE_ACCESS_CONTROL)).
+			When("signer is not access control", signerIsNot(exported.ROLE_ACCESS_CONTROL)).
 			Then("stop tx", stopTx),
 	).Run(t, 20)
 }

@@ -21,7 +21,6 @@ import (
 	evmkeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 )
 
@@ -56,11 +55,11 @@ func getRandomEthereumAddress() exported.CrossChainAddress {
 	}
 }
 
-func randFee(chain string, asset string) nexus.FeeInfo {
+func randFee(chain string, asset string) exported.FeeInfo {
 	rate := sdk.NewDecWithPrec(sdk.Int(randInt(0, 100)).Int64(), 3)
 	min := randInt(0, 10)
 	max := randInt(min.Int64()+1, 100)
-	return nexus.NewFeeInfo(chain, asset, rate, min, max)
+	return exported.NewFeeInfo(chain, asset, rate, min, max)
 }
 
 func randInt(min int64, max int64) sdk.Int {

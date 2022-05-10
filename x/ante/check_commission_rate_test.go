@@ -19,12 +19,12 @@ func TestCheckCommissionRate(t *testing.T) {
 		msg     sdk.Msg
 	)
 
-	givenCheckCommissionRateAnteHandler := Given("the check commission rate ante handler", func(_ *testing.T) {
+	givenCheckCommissionRateAnteHandler := Given("the check commission rate ante handler", func() {
 		handler = ante.NewCheckCommissionRate()
 	})
 
 	givenCheckCommissionRateAnteHandler.
-		When("a tx with MsgCreateValidator with commission rate below minimum is received", func(_ *testing.T) {
+		When("a tx with MsgCreateValidator with commission rate below minimum is received", func() {
 			msg = &stakingtypes.MsgCreateValidator{
 				Commission: stakingtypes.CommissionRates{
 					Rate:    sdk.NewDecWithPrec(49, 3),
@@ -45,7 +45,7 @@ func TestCheckCommissionRate(t *testing.T) {
 		Run(t)
 
 	givenCheckCommissionRateAnteHandler.
-		When("a tx with MsgCreateValidator with max commission rate below minimum is received", func(_ *testing.T) {
+		When("a tx with MsgCreateValidator with max commission rate below minimum is received", func() {
 			msg = &stakingtypes.MsgCreateValidator{
 				Commission: stakingtypes.CommissionRates{
 					Rate:    sdk.NewDecWithPrec(51, 3),
@@ -66,7 +66,7 @@ func TestCheckCommissionRate(t *testing.T) {
 		Run(t)
 
 	givenCheckCommissionRateAnteHandler.
-		When("a tx with MsgEditValidator with commission rate below minimum is received", func(_ *testing.T) {
+		When("a tx with MsgEditValidator with commission rate below minimum is received", func() {
 			commissionRate := sdk.NewDecWithPrec(49, 3)
 			msg = &stakingtypes.MsgEditValidator{
 				CommissionRate: &commissionRate,
@@ -85,7 +85,7 @@ func TestCheckCommissionRate(t *testing.T) {
 		Run(t)
 
 	givenCheckCommissionRateAnteHandler.
-		When("a tx with eligible MsgCreateValidator and MsgEditValidator is received", func(_ *testing.T) {
+		When("a tx with eligible MsgCreateValidator and MsgEditValidator is received", func() {
 			commissionRate := sdk.NewDecWithPrec(51, 3)
 
 			tx = &mock.TxMock{

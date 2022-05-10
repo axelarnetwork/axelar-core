@@ -6,17 +6,13 @@ import (
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	gogoprototypes "github.com/gogo/protobuf/types"
-
-	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 )
 
 // RegisterLegacyAminoCodec registers concrete types on codec
 func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&LinkRequest{}, "evm/MsgLink", nil)
-	cdc.RegisterConcrete(&VoteConfirmChainRequest{}, "evm/VoteConfirmChain", nil)
 	cdc.RegisterConcrete(&ConfirmTokenRequest{}, "evm/ConfirmToken", nil)
 	cdc.RegisterConcrete(&ConfirmDepositRequest{}, "evm/ConfirmDeposit", nil)
-	cdc.RegisterConcrete(&ConfirmChainRequest{}, "evm/ConfirmChain", nil)
 	cdc.RegisterConcrete(&ConfirmTransferKeyRequest{}, "evm/ConfirmTransferKey", nil)
 	cdc.RegisterConcrete(&CreatePendingTransfersRequest{}, "evm/CreatePendingTransfers", nil)
 	cdc.RegisterConcrete(&CreateDeployTokenRequest{}, "evm/CreateDeployToken", nil)
@@ -33,10 +29,8 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 	registry.RegisterImplementations((*sdk.Msg)(nil),
 		&LinkRequest{},
-		&VoteConfirmChainRequest{},
 		&ConfirmTokenRequest{},
 		&ConfirmDepositRequest{},
-		&ConfirmChainRequest{},
 		&ConfirmTransferKeyRequest{},
 		&CreatePendingTransfersRequest{},
 		&CreateDeployTokenRequest{},
@@ -50,11 +44,9 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 	)
 	registry.RegisterImplementations((*codec.ProtoMarshaler)(nil),
 		&gogoprototypes.BoolValue{},
+		&SigMetadata{},
 		&Event{},
-	)
-
-	registry.RegisterImplementations((*reward.Refundable)(nil),
-		&VoteConfirmChainRequest{},
+		&VoteEvents{},
 	)
 }
 

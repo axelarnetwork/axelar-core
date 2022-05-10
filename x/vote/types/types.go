@@ -13,6 +13,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
+	"github.com/axelarnetwork/utils/slices"
 )
 
 //go:generate moq -out ./mock/types.go -pkg mock . Store
@@ -252,17 +253,28 @@ func (p Poll) Delete() error {
 }
 
 // GetKey returns the poll's key
-func (p *Poll) GetKey() exported.PollKey {
+func (p Poll) GetKey() exported.PollKey {
 	return p.Key
 }
 
 // GetVoters returns the poll's voters
-func (p *Poll) GetVoters() []exported.Voter {
+func (p Poll) GetVoters() []exported.Voter {
 	return p.Voters
 }
 
+// HasVotedCorrectly returns true if the give voter has voted correctly for the poll, false otherwise
+func (p Poll) HasVotedCorrectly(voter sdk.ValAddress) bool {
+	majorityVote := p.getMajorityVote()
+
+	return p.Is(exported.Completed) &&
+		p.HasVoted(voter) &&
+		slices.Any(majorityVote.Voters, func(v sdk.ValAddress) bool {
+			return voter.Equals(v)
+		})
+}
+
 // GetTotalVotingPower returns the total voting power of the poll
-func (p *Poll) GetTotalVotingPower() sdk.Int {
+func (p Poll) GetTotalVotingPower() sdk.Int {
 	return p.TotalVotingPower
 }
 

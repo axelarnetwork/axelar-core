@@ -38,6 +38,12 @@ var _ exported.Poll = &PollMock{}
 // 			GetVotersFunc: func() []exported.Voter {
 // 				panic("mock out the GetVoters method")
 // 			},
+// 			HasVotedFunc: func(voter github_com_cosmos_cosmos_sdk_types.ValAddress) bool {
+// 				panic("mock out the HasVoted method")
+// 			},
+// 			HasVotedCorrectlyFunc: func(voter github_com_cosmos_cosmos_sdk_types.ValAddress) bool {
+// 				panic("mock out the HasVotedCorrectly method")
+// 			},
 // 			IsFunc: func(state exported.PollState) bool {
 // 				panic("mock out the Is method")
 // 			},
@@ -69,6 +75,12 @@ type PollMock struct {
 	// GetVotersFunc mocks the GetVoters method.
 	GetVotersFunc func() []exported.Voter
 
+	// HasVotedFunc mocks the HasVoted method.
+	HasVotedFunc func(voter github_com_cosmos_cosmos_sdk_types.ValAddress) bool
+
+	// HasVotedCorrectlyFunc mocks the HasVotedCorrectly method.
+	HasVotedCorrectlyFunc func(voter github_com_cosmos_cosmos_sdk_types.ValAddress) bool
+
 	// IsFunc mocks the Is method.
 	IsFunc func(state exported.PollState) bool
 
@@ -95,6 +107,16 @@ type PollMock struct {
 		// GetVoters holds details about calls to the GetVoters method.
 		GetVoters []struct {
 		}
+		// HasVoted holds details about calls to the HasVoted method.
+		HasVoted []struct {
+			// Voter is the voter argument value.
+			Voter github_com_cosmos_cosmos_sdk_types.ValAddress
+		}
+		// HasVotedCorrectly holds details about calls to the HasVotedCorrectly method.
+		HasVotedCorrectly []struct {
+			// Voter is the voter argument value.
+			Voter github_com_cosmos_cosmos_sdk_types.ValAddress
+		}
 		// Is holds details about calls to the Is method.
 		Is []struct {
 			// State is the state argument value.
@@ -114,6 +136,8 @@ type PollMock struct {
 	lockGetResult           sync.RWMutex
 	lockGetTotalVotingPower sync.RWMutex
 	lockGetVoters           sync.RWMutex
+	lockHasVoted            sync.RWMutex
+	lockHasVotedCorrectly   sync.RWMutex
 	lockIs                  sync.RWMutex
 	lockVote                sync.RWMutex
 }
@@ -271,6 +295,68 @@ func (mock *PollMock) GetVotersCalls() []struct {
 	mock.lockGetVoters.RLock()
 	calls = mock.calls.GetVoters
 	mock.lockGetVoters.RUnlock()
+	return calls
+}
+
+// HasVoted calls HasVotedFunc.
+func (mock *PollMock) HasVoted(voter github_com_cosmos_cosmos_sdk_types.ValAddress) bool {
+	if mock.HasVotedFunc == nil {
+		panic("PollMock.HasVotedFunc: method is nil but Poll.HasVoted was just called")
+	}
+	callInfo := struct {
+		Voter github_com_cosmos_cosmos_sdk_types.ValAddress
+	}{
+		Voter: voter,
+	}
+	mock.lockHasVoted.Lock()
+	mock.calls.HasVoted = append(mock.calls.HasVoted, callInfo)
+	mock.lockHasVoted.Unlock()
+	return mock.HasVotedFunc(voter)
+}
+
+// HasVotedCalls gets all the calls that were made to HasVoted.
+// Check the length with:
+//     len(mockedPoll.HasVotedCalls())
+func (mock *PollMock) HasVotedCalls() []struct {
+	Voter github_com_cosmos_cosmos_sdk_types.ValAddress
+} {
+	var calls []struct {
+		Voter github_com_cosmos_cosmos_sdk_types.ValAddress
+	}
+	mock.lockHasVoted.RLock()
+	calls = mock.calls.HasVoted
+	mock.lockHasVoted.RUnlock()
+	return calls
+}
+
+// HasVotedCorrectly calls HasVotedCorrectlyFunc.
+func (mock *PollMock) HasVotedCorrectly(voter github_com_cosmos_cosmos_sdk_types.ValAddress) bool {
+	if mock.HasVotedCorrectlyFunc == nil {
+		panic("PollMock.HasVotedCorrectlyFunc: method is nil but Poll.HasVotedCorrectly was just called")
+	}
+	callInfo := struct {
+		Voter github_com_cosmos_cosmos_sdk_types.ValAddress
+	}{
+		Voter: voter,
+	}
+	mock.lockHasVotedCorrectly.Lock()
+	mock.calls.HasVotedCorrectly = append(mock.calls.HasVotedCorrectly, callInfo)
+	mock.lockHasVotedCorrectly.Unlock()
+	return mock.HasVotedCorrectlyFunc(voter)
+}
+
+// HasVotedCorrectlyCalls gets all the calls that were made to HasVotedCorrectly.
+// Check the length with:
+//     len(mockedPoll.HasVotedCorrectlyCalls())
+func (mock *PollMock) HasVotedCorrectlyCalls() []struct {
+	Voter github_com_cosmos_cosmos_sdk_types.ValAddress
+} {
+	var calls []struct {
+		Voter github_com_cosmos_cosmos_sdk_types.ValAddress
+	}
+	mock.lockHasVotedCorrectly.RLock()
+	calls = mock.calls.HasVotedCorrectly
+	mock.lockHasVotedCorrectly.RUnlock()
 	return calls
 }
 

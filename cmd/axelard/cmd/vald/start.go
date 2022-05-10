@@ -247,8 +247,6 @@ func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, ax
 
 	evmNewChain := subscribe(evmTypes.EventTypeNewChain, evmTypes.ModuleName, evmTypes.AttributeValueUpdate)
 	subscriptions = append(subscriptions, evmNewChain)
-	evmChainConf := subscribe(evmTypes.EventTypeChainConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
-	subscriptions = append(subscriptions, evmNewChain)
 	evmDepConf := subscribe(evmTypes.EventTypeDepositConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
 	subscriptions = append(subscriptions, evmDepConf)
 	evmTokConf := subscribe(evmTypes.EventTypeTokenConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
@@ -296,7 +294,6 @@ func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, ax
 		createJob(signStart, tssMgr.ProcessSignStart, cancelEventCtx, logger),
 		createJob(signMsg, tssMgr.ProcessSignMsg, cancelEventCtx, logger),
 		createJob(evmNewChain, evmMgr.ProcessNewChain, cancelEventCtx, logger),
-		createJob(evmChainConf, evmMgr.ProcessChainConfirmation, cancelEventCtx, logger),
 		createJob(evmDepConf, evmMgr.ProcessDepositConfirmation, cancelEventCtx, logger),
 		createJob(evmTokConf, evmMgr.ProcessTokenConfirmation, cancelEventCtx, logger),
 		createJob(evmTraConf, evmMgr.ProcessTransferKeyConfirmation, cancelEventCtx, logger),
@@ -329,26 +326,22 @@ func createJob(sub tmEvents.FilteredSubscriber, processor func(event tmEvents.Ev
 
 // Wait until the node has synced with the network and return the node height
 func waitTillNetworkSync(cfg config.ValdConfig, tmClient tmEvents.SyncInfoClient, logger log.Logger) (int64, error) {
-	rpcCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	syncInfo, err := tmClient.LatestSyncInfo(rpcCtx)
-	if err != nil {
-		return 0, err
-	}
-
-	// If the block height is older than the allowed time, then wait for the node to sync
-	for syncInfo.LatestBlockTime.Add(cfg.MaxLatestBlockAge).Before(time.Now()) {
-		logger.Info(fmt.Sprintf("node height %d is old, waiting for a recent block", syncInfo.LatestBlockHeight))
-		time.Sleep(cfg.MaxLatestBlockAge)
-
-		syncInfo, err = tmClient.LatestSyncInfo(rpcCtx)
+	for {
+		rpcCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		syncInfo, err := tmClient.LatestSyncInfo(rpcCtx)
+		cancel()
 		if err != nil {
 			return 0, err
 		}
-	}
 
-	return syncInfo.LatestBlockHeight, nil
+		// If the block height is older than the allowed time, then wait for the node to sync
+		if syncInfo.LatestBlockTime.Add(cfg.MaxLatestBlockAge).After(time.Now()) {
+			return syncInfo.LatestBlockHeight, nil
+		}
+
+		logger.Info(fmt.Sprintf("node height %d is old, waiting for a recent block", syncInfo.LatestBlockHeight))
+		time.Sleep(cfg.MaxLatestBlockAge)
+	}
 }
 
 // Return the block height to start listening to TM events from

@@ -26,6 +26,7 @@ Axelar App
 - [axelard keys](axelard_keys.md)	 - Manage your application's keys
 - [axelard migrate](axelard_migrate.md)	 - Migrate genesis to a specified target version
 - [axelard query](axelard_query.md)	 - Querying subcommands
+- [axelard rollback](axelard_rollback.md)	 - rollback cosmos-sdk and tendermint state by one height
 - [axelard rosetta](axelard_rosetta.md)	 - spin up a rosetta server
 - [axelard set-genesis-auth](axelard_set-genesis-auth.md)	 - Set the genesis parameters for the auth module
 - [axelard set-genesis-chain-params](axelard_set-genesis-chain-params.md)	 - Set chain parameters in genesis.json
@@ -44,7 +45,6 @@ Axelar App
 - [axelard status](axelard_status.md)	 - Query remote node for status
 - [axelard tendermint](axelard_tendermint.md)	 - Tendermint subcommands
 - [axelard tx](axelard_tx.md)	 - Transactions subcommands
-- [axelard unsafe-reset-all](axelard_unsafe-reset-all.md)	 - Resets the blockchain database, removes address book files, and resets data/priv_validator_state.json to the genesis state
 - [axelard vald-start](axelard_vald-start.md)	 -
 - [axelard validate-genesis](axelard_validate-genesis.md)	 - validates the genesis file at the default location or at the location passed as an arg
 - [axelard version](axelard_version.md)	 - Print the application binary version information
