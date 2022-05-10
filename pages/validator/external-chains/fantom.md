@@ -2,16 +2,16 @@
 
 import Callout from 'nextra-theme-docs/callout'
 
-Set up your Fantom Opera node.
+Set up your Fantom Mainnet or Testnet Opera node.
 
 ## Prerequisites
 
 - [Setup your Axelar validator](/validator/setup)
-- Minimum hardware requirements: 4 vCPU+, 100GB+ free storage space.
+- Minimum hardware requirements: 4 vCPU+, 16GB RAM, 1.5TB+ free storage space.
 - MacOS or Ubuntu 18.04+
 - Build-essential packages
 - Golang
-- [Official Documentation](https://docs.fantom.foundation/staking/run-a-read-only-node)
+- [Official Documentation](https://docs.fantom.foundation/node/run-a-read-only-node)
 
 ## Install required dependencies
 
@@ -33,12 +33,12 @@ Install the [latest version of golang](https://go.dev/doc/install).
 
 ### 1. Checkout and build go-opera
 
-Please make sure you checkout the [latest release tag](https://github.com/Fantom-foundation/go-opera/tags). In this tutorial we are using `1.1.0-rc.4`.
+Please make sure you checkout the [latest release tag](https://github.com/Fantom-foundation/go-opera/tags). In this tutorial we are using `1.1.0-rc.5`.
 
 ```bash
 git clone https://github.com/Fantom-foundation/go-opera.git
 cd go-opera/
-git checkout release/1.1.0-rc.4
+git checkout release/1.1.0-rc.5
 make
 ```
 
@@ -46,34 +46,56 @@ make
 
 ```bash
 cd build/
-wget https://opera.fantom.network/testnet.g
+wget https://opera.fantom.network/mainnet.g
+
+#Testnet
+# wget https://opera.fantom.network/testnet.g
 ```
 
-### 3. Start the Fantom Opera node
+### 3. Create systemd service file
 
-In this guide we are using `tmux` to run the `opera-go` process in the background. In case you don't have tmux installed, then you can do so with:
+After installation of `go-opera`, we are now ready to start the process but in order to ensure it is running in the background and auto-restarts in case of a server failure, we will setup a service file with systemd.
 
-```bash
-apt install tmux
-```
-
-Now create a new session called `fantom`:
-
-```bash
-tmux new -s fantom
-```
-
-Once you're inside the newly created tmux session, start the `opera-go`:
-
-```bash
-./opera --genesis testnet.g --http --http.addr=0.0.0.0 --http.vhosts="*" --http.corsdomain="*" --ws --ws.origins="*"
-```
-
-Your node will now start to synchronize with the network. It will take several hours before the node is fully synced.
-
-<Callout type="error" emoji="🔥">
-  Important: To detach from your current tmux session and keep it running in the background, use `CTRL + B D`. If you want to re-attach to the existing session, then use `tmux attach-session -t fantom`
+<Callout emoji="📝">
+  Note: In the service file below you need to replace `$USER` and path to `opera`, depending on your system configuration.
 </Callout>
+
+```bash
+sudo tee <<EOF >/dev/null /etc/systemd/system/fantom.service
+[Unit]
+Description=Fantom Node
+After=network.target
+
+[Service]
+User=$USER
+Type=simple
+ExecStart=/root/go-opera/build/opera --genesis /root/go-opera/build/mainnet.g --identity <your_name> --cache 8096 --http --http.addr 0.0.0.0 --http.corsdomain '*' --http.vhosts "*" --http.api "eth,net,web3" 
+Restart=on-failure
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target
+EOF
+```
+<Callout type="error" emoji="⚠️">
+ If you would like to run a node on the Testnet instead, you need to replace `--genesis /root/go-opera/build/testnet.g` in the configuration above.
+</Callout>
+
+### 4. Enable and start the `fantom` service
+
+```bash
+sudo systemctl enable fantom
+sudo systemctl daemon-reload
+sudo systemctl start fantom
+```
+
+If everything was set-up correctly, your Fantom node should now be starting the process of synchronization. This will take several hours, depending on your hardware. To check the status of the running service or to follow the logs, you can use:
+
+```bash
+sudo systemctl status fantom
+sudo journalctl -u fantom -f
+```
+Your node will now start to synchronize with the network. It will take several hours before the node is fully synced.
 
 ## Test your Fantom RPC connection
 

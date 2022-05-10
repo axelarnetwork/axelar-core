@@ -2,12 +2,12 @@
 
 import Callout from 'nextra-theme-docs/callout'
 
-Set up your Ethereum Ropsten Testnet node.
+Set up your Ethereum Mainnet or Ropsten Testnet node.
 
 ## Prerequisites
 
 - [Setup your Axelar validator](/validator/setup)
-- Minimum hardware requirements: CPU with 2+ cores, 4GB RAM, 200GB+ free storage space.
+- Minimum hardware requirements: CPU with 2+ cores, 4GB RAM, 600GB+ free storage space.
 - MacOS or Ubuntu 18.04+
 - [Official Documentation](https://geth.ethereum.org/docs/getting-started)
 
@@ -41,13 +41,13 @@ After installation of `go-ethereum`, we are now ready to start the `geth` proces
 ```bash
 sudo tee <<EOF >/dev/null /etc/systemd/system/geth.service
 [Unit]
-Description=Ethereum Ropsten Node
+Description=Ethereum Node
 After=network.target
 
 [Service]
 User=$USER
 Type=simple
-ExecStart=/usr/bin/geth --ropsten --syncmode "snap" --http --http.vhosts "*" --http.addr 0.0.0.0
+ExecStart=/usr/bin/geth --syncmode "snap" --http --http.vhosts "*" --http.addr 0.0.0.0
 Restart=on-failure
 LimitNOFILE=65535
 
@@ -55,6 +55,9 @@ LimitNOFILE=65535
 WantedBy=multi-user.target
 EOF
 ```
+<Callout type="error" emoji="⚠️">
+ If you would like to run a node on the Testnet instead (Ropsten), you need to add the `--ropsten` flag to the configuration above. 
+</Callout>
 
 ##### 2. Enable and start the `geth` service
 
@@ -64,7 +67,7 @@ sudo systemctl daemon-reload
 sudo systemctl start geth
 ```
 
-If everything was set-up correctly, your Ethereum node should now be starting the process of synchronization. This will take several hours, depending on your hardware. In order to check the status of the running service or follow logs, you can use:
+If everything was set-up correctly, your Ethereum node should now be starting the process of synchronization. This will take several hours, depending on your hardware.To check the status of the running service or to follow the logs, you can use:
 
 ```bash
 sudo systemctl status geth
@@ -76,9 +79,11 @@ sudo journalctl -u geth -f
 Alternatively, you can now also use the Geth JavaScript console and check status of your node by attaching to your newly created `geth.ipc`. Don't forget to replace $USER and path, depending on your server configuration.
 
 ```bash
-geth attach ipc:/home/$resources/.ethereum/ropsten/geth.ipc
+geth attach ipc:/root/.ethereum/geth.ipc
 eth.syncing
 
+#Testnet
+#geth attach ipc:/root/.ethereum/ropsten/geth.ipc
 ```
 
 Once your node is fully synced, the output from above will say `false`. To test your Ethereum node, you can send an RPC request using `cURL`

@@ -2,12 +2,12 @@
 
 import Callout from 'nextra-theme-docs/callout'
 
-Set up your Avalanche Fuji Testnet node.
+Set up your Avalanche Mainnet or Fuji Testnet node.
 
 ## Prerequisites
 
 - [Setup your Axelar validator](/validator/setup)
-- Minimum hardware requirements: 8 AWS vCPU+, 16GB RAM, 100GB+ free storage space.
+- Minimum hardware requirements: 8 AWS vCPU+, 16GB RAM, 500GB+ free storage space.
 - MacOS or Ubuntu 18.04+
 - [Official Documentation](https://docs.avax.network/build/tutorials/nodes-and-staking/run-avalanche-node)
 
@@ -28,15 +28,18 @@ chmod 755 avalanchego-installer.sh
 ./avalanchego-installer.sh
 ```
 
-The script will start and prompt you for information about your server environment. Follow the required steps, enter your network information and confirm the installation. The script will then create and start the `avalanchego.service` for you automatically. To check if the service is running or follow the logs, use the following commands:
+The script will start and prompt you for information about your server environment. Follow the required steps, enter your network information, and confirm the installation. The script will then automatically create and start the `avalanchego.service`. To check if the service is running or to follow the logs, use the following commands:
 
 ```bash
 sudo systemctl status avalanchego
 sudo journalctl -u avalanchego -f
 ```
+Now you should be synchronizing on the Avalanche Mainnet network. Once the network is synced, you will see a message similar to:
 
-<Callout type="error" emoji="☠️">
-  Danger: By default the network will start synchronizing on the Mainnet but we want to run our node on the Avalanche Fuji testnet, so you need to stop the `avalanchego.service`, edit the `node.json` configuration file and restart the service.
+`health/service.go#130: "isBootstrapped" became healthy with: {"timestamp":"2021-12-27T21:35:36.879654389+01:00","duration":6943,"contiguousFailures":0,"timeOfFirstFailure":null}`
+
+<Callout type="error" emoji="⚠️">
+   By default, the network will start synchronizing on the Mainnet network. If you are trying to set up a node on the testnet network (Avalanche Fuji), you need to stop the  `avalanchego.service`, edit the `node.json` configuration file and restart the service.
 </Callout>
 
 ```bash
@@ -49,10 +52,6 @@ Change `"network-id"` to `"fuji"`, save the file and restart the service:
 ```bash
 sudo systemctl start avalanchego
 ```
-
-Now you should be synchronizing on Fuji testnet network. Once the network is fully synced, you should see a message like:
-
-`health/service.go#130: "isBootstrapped" became healthy with: {"timestamp":"2021-12-27T21:35:36.879654389+01:00","duration":6943,"contiguousFailures":0,"timeOfFirstFailure":null}`
 
 ## Test your Avalanche RPC connection
 
