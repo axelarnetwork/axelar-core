@@ -899,11 +899,9 @@ func (k chainKeeper) SetConfirmedEvent(ctx sdk.Context, event types.Event) error
 	event.Status = types.EventConfirmed
 
 	switch event.GetEvent().(type) {
-	case *types.Event_ContractCall, *types.Event_ContractCallWithToken, *types.Event_TokenSent:
+	case *types.Event_ContractCall, *types.Event_ContractCallWithToken, *types.Event_TokenSent,
+		*types.Event_Transfer, *types.Event_TokenDeployed, *types.Event_MultisigOwnershipTransferred, *types.Event_MultisigOperatorshipTransferred:
 		k.GetConfirmedEventQueue(ctx).Enqueue(getEventKey(eventID), &event)
-	case *types.Event_Transfer, *types.Event_TokenDeployed,
-		*types.Event_MultisigOwnershipTransferred, *types.Event_MultisigOperatorshipTransferred:
-		k.setEvent(ctx, event)
 	default:
 		return fmt.Errorf("unsupported event type %T", event)
 	}

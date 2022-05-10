@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/big"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -1591,6 +1592,11 @@ func (m Event) ValidateBasic() error {
 	return nil
 }
 
+// GetEventType returns the type for the event
+func (m Event) GetEventType() string {
+	return getType(m.GetEvent())
+}
+
 // ValidateBasic returns an error if the event token sent is invalid
 func (m EventTokenSent) ValidateBasic() error {
 	if m.Sender.IsZeroAddress() {
@@ -1849,4 +1855,23 @@ func PackEvents(chain string, events []Event) (*codectypes.Any, error) {
 		Chain:  chain,
 		Events: events,
 	})
+}
+
+// GetMultisigAddresses coverts a tss multisig key to addresses
+func GetMultisigAddresses(key tss.Key) ([]common.Address, uint8, error) {
+	multisigPubKeys, err := key.GetMultisigPubKey()
+	if err != nil {
+		return nil, 0, err
+	}
+
+	threshold := uint8(key.GetMultisigKey().Threshold)
+	return KeysToAddresses(multisigPubKeys...), threshold, nil
+}
+
+func getType(val interface{}) string {
+	t := reflect.TypeOf(val)
+	for t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	return t.Name()
 }
