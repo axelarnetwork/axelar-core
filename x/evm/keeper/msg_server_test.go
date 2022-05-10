@@ -24,6 +24,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
+	utilsMock "github.com/axelarnetwork/axelar-core/utils/mock"
 	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
@@ -36,6 +37,7 @@ import (
 	tssTestUtils "github.com/axelarnetwork/axelar-core/x/tss/exported/testutils"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	voteMock "github.com/axelarnetwork/axelar-core/x/vote/exported/mock"
+	. "github.com/axelarnetwork/utils/test"
 )
 
 var (
@@ -774,183 +776,6 @@ func TestMintTx_DifferentRecipient_DifferentHash(t *testing.T) {
 	assert.NotEqual(t, tx1.Hash(), tx2.Hash())
 }
 
-func TestHandleMsgConfirmChain(t *testing.T) {
-	var (
-		ctx     sdk.Context
-		basek   *mock.BaseKeeperMock
-		v       *mock.VoterMock
-		n       *mock.NexusMock
-		s       *mock.SnapshotterMock
-		tssk    *mock.TSSMock
-		msg     *types.ConfirmChainRequest
-		voteReq *types.VoteConfirmChainRequest
-		server  types.MsgServiceServer
-	)
-
-	setup := func() {
-		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
-		chain := rand.StrBetween(5, 20)
-		msg = &types.ConfirmChainRequest{
-			Sender: rand.AccAddr(),
-			Name:   chain,
-		}
-		voteReq = &types.VoteConfirmChainRequest{Name: chain}
-
-		basek = &mock.BaseKeeperMock{
-			SetPendingChainFunc: func(sdk.Context, nexus.Chain, types.Params) {},
-			GetPendingChainFunc: func(_ sdk.Context, chain string) (types.PendingChain, bool) {
-				if strings.EqualFold(chain, msg.Name) {
-					return types.PendingChain{
-						Chain:  nexus.Chain{Name: msg.Name, SupportsForeignAssets: true, Module: rand.Str(10)},
-						Params: evmTestUtils.RandomParams(),
-					}, true
-				}
-				return types.PendingChain{}, false
-			},
-		}
-		v = &mock.VoterMock{
-			InitializePollWithSnapshotFunc: func(sdk.Context, vote.PollKey, int64, ...vote.PollProperty) error {
-				return nil
-			},
-			GetPollFunc: func(sdk.Context, vote.PollKey) vote.Poll {
-				return &voteMock.PollMock{
-					VoteFunc: func(sdk.ValAddress, codec.ProtoMarshaler) error {
-						return nil
-					},
-					IsFunc: func(state vote.PollState) bool {
-						switch state {
-						case vote.Pending:
-							return true
-						default:
-							return false
-						}
-					},
-				}
-			},
-		}
-
-		chains := map[string]nexus.Chain{exported.Ethereum.Name: exported.Ethereum}
-		n = &mock.NexusMock{
-			IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool { return true },
-			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
-				c, ok := chains[chain]
-				return c, ok
-			},
-			IsAssetRegisteredFunc: func(sdk.Context, nexus.Chain, string) bool { return false },
-		}
-		s = &mock.SnapshotterMock{
-			GetLatestSnapshotFunc: func(sdk.Context) (snapshot.Snapshot, bool) {
-				return snapshot.Snapshot{Counter: rand.PosI64()}, true
-
-			},
-			GetOperatorFunc: func(sdk.Context, sdk.AccAddress) sdk.ValAddress {
-				return rand.ValAddr()
-			},
-			TakeSnapshotFunc: func(sdk.Context, tss.KeyRequirement) (snapshot.Snapshot, error) {
-				return snapshot.Snapshot{Counter: rand.PosI64()}, nil
-			},
-		}
-		tssk = &mock.TSSMock{
-			GetKeyRequirementFunc: func(sdk.Context, tss.KeyRole, tss.KeyType) (tss.KeyRequirement, bool) {
-				return tss.KeyRequirement{}, true
-			},
-		}
-
-		server = keeper.NewMsgServerImpl(basek, tssk, n, &mock.SignerMock{}, v, s)
-	}
-
-	repeats := 20
-	t.Run("happy path confirm", testutils.Func(func(t *testing.T) {
-		setup()
-
-		_, err := server.ConfirmChain(sdk.WrapSDKContext(ctx), msg)
-
-		assert.NoError(t, err)
-		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeChainConfirmation }), 1)
-		assert.Equal(t, 1, len(v.InitializePollWithSnapshotCalls()))
-	}).Repeat(repeats))
-
-	t.Run("GIVEN a valid vote WHEN voting THEN event is emitted that captures vote value", testutils.Func(func(t *testing.T) {
-		setup()
-
-		_, err := server.VoteConfirmChain(sdk.WrapSDKContext(ctx), voteReq)
-
-		assert.NoError(t, err)
-		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool {
-			isValidType := event.GetType() == types.EventTypeChainConfirmation
-			if !isValidType {
-				return false
-			}
-			isVoteAction := len(testutils.Attributes(event.GetAttributes()).Filter(func(attribute abci.EventAttribute) bool {
-				return string(attribute.GetKey()) == sdk.AttributeKeyAction &&
-					string(attribute.GetValue()) == types.AttributeValueVote
-			})) == 1
-			if !isVoteAction {
-				return false
-			}
-			hasCorrectValue := len(testutils.Attributes(event.GetAttributes()).Filter(func(attribute abci.EventAttribute) bool {
-				if string(attribute.GetKey()) != types.AttributeKeyValue {
-					return false
-				}
-				return string(attribute.GetValue()) == "false"
-			})) == 1
-			return hasCorrectValue
-		}), 1)
-
-	}).Repeat(repeats))
-
-	t.Run("happy path with no snapshot", testutils.Func(func(t *testing.T) {
-		setup()
-
-		s = &mock.SnapshotterMock{
-			GetLatestSnapshotFunc: func(sdk.Context) (snapshot.Snapshot, bool) {
-				if len(s.TakeSnapshotCalls()) > 0 {
-					return snapshot.Snapshot{Counter: rand.PosI64()}, true
-				}
-				return snapshot.Snapshot{}, false
-			},
-			TakeSnapshotFunc: func(sdk.Context, tss.KeyRequirement) (snapshot.Snapshot, error) {
-				return snapshot.Snapshot{}, nil
-			},
-		}
-
-		_, err := server.ConfirmChain(sdk.WrapSDKContext(ctx), msg)
-
-		assert.NoError(t, err)
-		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeChainConfirmation }), 1)
-		assert.Equal(t, 1, len(v.InitializePollWithSnapshotCalls()))
-	}).Repeat(repeats))
-
-	t.Run("registered chain", testutils.Func(func(t *testing.T) {
-		setup()
-		msg.Name = evmChain
-
-		_, err := server.ConfirmChain(sdk.WrapSDKContext(ctx), msg)
-
-		assert.Error(t, err)
-	}).Repeat(repeats))
-
-	t.Run("unknown chain", testutils.Func(func(t *testing.T) {
-		setup()
-		basek.GetPendingChainFunc = func(sdk.Context, string) (types.PendingChain, bool) { return types.PendingChain{}, false }
-
-		_, err := server.ConfirmChain(sdk.WrapSDKContext(ctx), msg)
-
-		assert.Error(t, err)
-	}).Repeat(repeats))
-
-	t.Run("init poll failed", testutils.Func(func(t *testing.T) {
-		setup()
-		v.InitializePollWithSnapshotFunc = func(sdk.Context, vote.PollKey, int64, ...vote.PollProperty) error {
-			return fmt.Errorf("poll setup failed")
-		}
-
-		_, err := server.ConfirmChain(sdk.WrapSDKContext(ctx), msg)
-
-		assert.Error(t, err)
-	}).Repeat(repeats))
-}
-
 func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 	var (
 		ctx    sdk.Context
@@ -1100,6 +925,7 @@ func TestAddChain(t *testing.T) {
 	var (
 		ctx     sdk.Context
 		basek   *mock.BaseKeeperMock
+		chaink  *mock.ChainKeeperMock
 		tssMock *mock.TSSMock
 		n       *mock.NexusMock
 		msg     *types.AddChainRequest
@@ -1116,7 +942,15 @@ func TestAddChain(t *testing.T) {
 			btc.Bitcoin.Name:       btc.Bitcoin,
 		}
 		basek = &mock.BaseKeeperMock{
-			SetPendingChainFunc: func(sdk.Context, nexus.Chain, types.Params) {},
+			ForChainFunc: func(n string) types.ChainKeeper {
+				if n == name {
+					return chaink
+				}
+				return nil
+			},
+		}
+		chaink = &mock.ChainKeeperMock{
+			SetParamsFunc: func(sdk.Context, types.Params) {},
 		}
 
 		tssMock = &mock.TSSMock{}
@@ -1128,6 +962,7 @@ func TestAddChain(t *testing.T) {
 				return c, ok
 			},
 			GetChainByNativeAssetFunc: func(ctx sdk.Context, denom string) (nexus.Chain, bool) { return nexus.Chain{}, false },
+			SetChainFunc:              func(sdk.Context, nexus.Chain) {},
 		}
 
 		name = rand.StrBetween(5, 20)
@@ -1149,9 +984,12 @@ func TestAddChain(t *testing.T) {
 		_, err := server.AddChain(sdk.WrapSDKContext(ctx), msg)
 
 		assert.NoError(t, err)
-		assert.Equal(t, 1, len(basek.SetPendingChainCalls()))
-		assert.Equal(t, name, basek.SetPendingChainCalls()[0].Chain.Name)
-		assert.Equal(t, params, basek.SetPendingChainCalls()[0].P)
+		assert.Equal(t, 1, len(basek.ForChainCalls()))
+		assert.Equal(t, 1, len(chaink.SetParamsCalls()))
+		assert.Equal(t, 1, len(n.SetChainCalls()))
+		assert.Equal(t, name, basek.ForChainCalls()[0].Chain)
+		assert.Equal(t, params, chaink.SetParamsCalls()[0].P)
+		assert.Equal(t, name, n.SetChainCalls()[0].Chain.Name)
 
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeNewChain }), 1)
 
@@ -1439,6 +1277,104 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 		assert.Error(t, err)
 	}).Repeat(repeats))
 
+}
+
+func TestRetryFailedEvent(t *testing.T) {
+	var (
+		ctx sdk.Context
+		bk  *mock.BaseKeeperMock
+		ck  *mock.ChainKeeperMock
+		n   *mock.NexusMock
+	)
+
+	ctx, msgServer, bk, _, n, _, _, _ := setup()
+	contractCallQueue := &utilsMock.KVQueueMock{
+		EnqueueFunc: func(key utils.Key, value codec.ProtoMarshaler) {},
+	}
+	ck = &mock.ChainKeeperMock{
+		GetConfirmedEventQueueFunc: func(ctx sdk.Context) utils.KVQueue {
+			return contractCallQueue
+		},
+	}
+	bk.ForChainFunc = func(chain string) types.ChainKeeper {
+		return ck
+	}
+	bk.LoggerFunc = func(ctx sdk.Context) log.Logger { return ctx.Logger() }
+
+	req := types.NewRetryFailedEventRequest(rand.AccAddr(), rand.Str(5), rand.Str(5))
+
+	chainFound := func(found bool) func() {
+		return func() {
+			n.GetChainFunc = func(sdk.Context, string) (nexus.Chain, bool) {
+				if !found {
+					return nexus.Chain{}, false
+				}
+				return nexus.Chain{}, true
+			}
+		}
+	}
+
+	isChainActivated := func(isActivated bool) func() {
+		return func() {
+			n.IsChainActivatedFunc = func(sdk.Context, nexus.Chain) bool {
+				return isActivated
+			}
+		}
+	}
+
+	eventFound := func(found bool, eventStatus types.Event_Status) func() {
+		return func() {
+			ck.GetEventFunc = func(sdk.Context, types.EventID) (types.Event, bool) {
+				if !found {
+					return types.Event{}, false
+				}
+				return types.Event{Status: eventStatus}, true
+			}
+		}
+	}
+
+	When("chain is not found", chainFound(false)).
+		Then("should return error", func(t *testing.T) {
+			_, err := msgServer.RetryFailedEvent(sdk.WrapSDKContext(ctx), req)
+			assert.Error(t, err)
+		}).
+		Run(t)
+
+	When("chain is found", chainFound(true)).
+		When("chain is not activated", isChainActivated(false)).
+		Then("should return error", func(t *testing.T) {
+			_, err := msgServer.RetryFailedEvent(sdk.WrapSDKContext(ctx), req)
+			assert.Error(t, err)
+		}).
+		Run(t)
+
+	When("chain is found", chainFound(true)).
+		When("chain is activated", isChainActivated(true)).
+		When("event not found", eventFound(false, types.EventNonExistent)).
+		Then("should return error", func(t *testing.T) {
+			_, err := msgServer.RetryFailedEvent(sdk.WrapSDKContext(ctx), req)
+			assert.Error(t, err)
+		}).
+		Run(t)
+
+	When("chain is found", chainFound(true)).
+		When("chain is activated", isChainActivated(true)).
+		When("event is completed", eventFound(true, types.EventCompleted)).
+		Then("should return error", func(t *testing.T) {
+			_, err := msgServer.RetryFailedEvent(sdk.WrapSDKContext(ctx), req)
+			assert.Error(t, err)
+		}).
+		Run(t)
+
+	When("chain is found", chainFound(true)).
+		When("chain is activated", isChainActivated(true)).
+		When("event is failed", eventFound(true, types.EventFailed)).
+		Then("should retry event", func(t *testing.T) {
+			_, err := msgServer.RetryFailedEvent(sdk.WrapSDKContext(ctx), req)
+			assert.NoError(t, err)
+			assert.Len(t, contractCallQueue.EnqueueCalls(), 1)
+		}).
+		Run(t)
 }
 
 func createSignedDeployTx() *evmTypes.Transaction {

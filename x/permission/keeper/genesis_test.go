@@ -30,13 +30,13 @@ func TestGenesis(t *testing.T) {
 	)
 
 	Given("a keeper",
-		func(t *testing.T) {
+		func() {
 			subspace := paramstypes.NewSubspace(cfg.Codec, cfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "permission")
 			k = keeper.NewKeeper(cfg.Codec, sdk.NewKVStoreKey(types.StoreKey), subspace)
 
 		}).
 		When("the state is initialized from a genesis state",
-			func(t *testing.T) {
+			func() {
 				initialGenesis = types.NewGenesisState(types.Params{}, randomMultisigGovernanceKey(), randomGovAccounts())
 				assert.NoError(t, initialGenesis.Validate())
 

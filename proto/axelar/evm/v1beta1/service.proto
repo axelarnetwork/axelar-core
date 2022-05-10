@@ -34,13 +34,6 @@ service MsgService {
     };
   }
 
-  rpc ConfirmChain(ConfirmChainRequest) returns (ConfirmChainResponse) {
-    option (google.api.http) = {
-      post : "/axelar/evm/confirm_chain"
-      body : "*"
-    };
-  }
-
   rpc ConfirmToken(ConfirmTokenRequest) returns (ConfirmTokenResponse) {
     option (google.api.http) = {
       post : "/axelar/evm/confirm_token"
@@ -59,14 +52,6 @@ service MsgService {
       returns (ConfirmTransferKeyResponse) {
     option (google.api.http) = {
       post : "/axelar/evm/confirm_transfer_key"
-      body : "*"
-    };
-  }
-
-  rpc VoteConfirmChain(VoteConfirmChainRequest)
-      returns (VoteConfirmChainResponse) {
-    option (google.api.http) = {
-      post : "/axelar/evm/vote_confirm_chain",
       body : "*"
     };
   }
@@ -121,6 +106,14 @@ service MsgService {
   rpc AddChain(AddChainRequest) returns (AddChainResponse) {
     option (google.api.http) = {
       post : "/axelar/evm/add_chain"
+      body : "*"
+    };
+  }
+
+  rpc RetryFailedEvent(RetryFailedEventRequest)
+      returns (RetryFailedEventResponse) {
+    option (google.api.http) = {
+      post : "/axelar/evm/retry-failed-event"
       body : "*"
     };
   }

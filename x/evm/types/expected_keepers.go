@@ -22,9 +22,6 @@ type BaseKeeper interface {
 	HasChain(ctx sdk.Context, chain string) bool
 	ForChain(chain string) ChainKeeper
 
-	SetPendingChain(ctx sdk.Context, chain nexus.Chain, p Params)
-	GetPendingChain(ctx sdk.Context, chain string) (PendingChain, bool)
-	DeletePendingChain(ctx sdk.Context, chain string)
 	InitGenesis(ctx sdk.Context, state GenesisState)
 	ExportGenesis(ctx sdk.Context) GenesisState
 }
@@ -81,10 +78,10 @@ type ChainKeeper interface {
 	DeleteUnsignedCommandBatchID(ctx sdk.Context)
 
 	GetConfirmedEventQueue(ctx sdk.Context) utils.KVQueue
-	GetEvent(ctx sdk.Context, eventID string) (Event, bool)
+	GetEvent(ctx sdk.Context, eventID EventID) (Event, bool)
 	SetConfirmedEvent(ctx sdk.Context, event Event) error
-	SetEventCompleted(ctx sdk.Context, eventID string) error
-	SetEventFailed(ctx sdk.Context, eventID string) error
+	SetEventCompleted(ctx sdk.Context, eventID EventID) error
+	SetEventFailed(ctx sdk.Context, eventID EventID) error
 	SetFailedEvent(ctx sdk.Context, event Event) error
 }
 
@@ -126,6 +123,8 @@ type Nexus interface {
 	GetChainByNativeAsset(ctx sdk.Context, asset string) (chain nexus.Chain, ok bool)
 	ComputeTransferFee(ctx sdk.Context, sourceChain nexus.Chain, destinationChain nexus.Chain, asset sdk.Coin) (sdk.Coin, error)
 	AddTransferFee(ctx sdk.Context, coin sdk.Coin)
+	MarkChainMaintainerMissingVote(ctx sdk.Context, chain nexus.Chain, address sdk.ValAddress, missingVote bool)
+	MarkChainMaintainerIncorrectVote(ctx sdk.Context, chain nexus.Chain, address sdk.ValAddress, incorrectVote bool)
 }
 
 // InitPoller is a minimal interface to start a poll. This must be a type alias instead of a type definition,

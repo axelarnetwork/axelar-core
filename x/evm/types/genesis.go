@@ -137,7 +137,7 @@ func (m GenesisState) Validate() error {
 		}
 
 		for _, event := range chain.Events {
-			if eventSeen[event.GetID()] {
+			if eventSeen[string(event.GetID())] {
 				return getValidateError(j, fmt.Errorf("duplicate event %s", event.GetID()))
 			}
 
@@ -149,7 +149,7 @@ func (m GenesisState) Validate() error {
 				return getValidateError(j, sdkerrors.Wrapf(err, "invalid event %s", event.GetID()))
 			}
 
-			eventSeen[event.GetID()] = true
+			eventSeen[string(event.GetID())] = true
 		}
 
 		if err := chain.ConfirmedEventQueue.ValidateBasic(); err != nil {

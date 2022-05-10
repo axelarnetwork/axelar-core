@@ -165,6 +165,7 @@
       - [applied \[upgrade-name\]](axelard_query_upgrade_applied.md)	 - block header for height at which a completed upgrade was applied
       - [module_versions \[optional module_name\]](axelard_query_upgrade_module_versions.md)	 - get the list of module versions
       - [plan](axelard_query_upgrade_plan.md)	 - get upgrade plan (if one exists)
+  - [rollback](axelard_rollback.md)	 - rollback cosmos-sdk and tendermint state by one height
   - [rosetta](axelard_rosetta.md)	 - spin up a rosetta server
   - [set-genesis-auth](axelard_set-genesis-auth.md)	 - Set the genesis parameters for the auth module
   - [set-genesis-chain-params \[bitcoin | evm\] \[chain\]](axelard_set-genesis-chain-params.md)	 - Set chain parameters in genesis.json
@@ -182,9 +183,11 @@
   - [start](axelard_start.md)	 - Run the full node
   - [status](axelard_status.md)	 - Query remote node for status
   - [tendermint](axelard_tendermint.md)	 - Tendermint subcommands
+    - [reset-state](axelard_tendermint_reset-state.md)	 - Remove all the data and WAL
     - [show-address](axelard_tendermint_show-address.md)	 - Shows this node's tendermint validator consensus address
     - [show-node-id](axelard_tendermint_show-node-id.md)	 - Show this node's ID
     - [show-validator](axelard_tendermint_show-validator.md)	 - Show this node's tendermint validator info
+    - [unsafe-reset-all](axelard_tendermint_unsafe-reset-all.md)	 - (unsafe) Remove all the data and WAL, reset this node's validator to genesis state
     - [version](axelard_tendermint_version.md)	 - Print tendermint libraries' version
   - [tx](axelard_tx.md)	 - Transactions subcommands
     - [axelarnet](axelard_tx_axelarnet.md)	 - axelarnet transactions subcommands
@@ -212,7 +215,6 @@
     - [evidence](axelard_tx_evidence.md)	 - Evidence transaction subcommands
     - [evm](axelard_tx_evm.md)	 - evm transactions subcommands
       - [add-chain \[name\] \[key type\] \[chain config\]](axelard_tx_evm_add-chain.md)	 - Add a new EVM chain
-      - [confirm-chain \[chain\]](axelard_tx_evm_confirm-chain.md)	 - Confirm an EVM chain for a given name and native asset
       - [confirm-erc20-deposit \[chain\] \[txID\] \[burnerAddr\]](axelard_tx_evm_confirm-erc20-deposit.md)	 - Confirm ERC20 deposits in an EVM chain transaction to a burner address
       - [confirm-erc20-token \[chain\] \[origin chain\] \[origin asset\] \[txID\]](axelard_tx_evm_confirm-erc20-token.md)	 - Confirm an ERC20 token deployment in an EVM chain transaction for a given asset of some origin chain and gateway address
       - [confirm-gateway-tx \[chain\] \[txID\]](axelard_tx_evm_confirm-gateway-tx.md)	 - Confirm a gateway transaction in an EVM chain
@@ -222,6 +224,7 @@
       - [create-deploy-token \[evm chain\] \[origin chain\] \[origin asset\] \[token name\] \[symbol\] \[decimals\] \[capacity\]](axelard_tx_evm_create-deploy-token.md)	 - Create a deploy token command with the AxelarGateway contract
       - [create-pending-transfers \[chain\]](axelard_tx_evm_create-pending-transfers.md)	 - Create commands for handling all pending transfers to an EVM chain
       - [link \[chain\] \[recipient chain\] \[recipient address\] \[asset name\]](axelard_tx_evm_link.md)	 - Link a cross chain address to an EVM chain address created by Axelar
+      - [retry-event \[chain\] \[event ID\]](axelard_tx_evm_retry-event.md)	 - Retry a failed event
       - [set-gateway \[chain\] \[address\]](axelard_tx_evm_set-gateway.md)	 - Set the gateway address for the given evm chain
       - [sign-commands \[chain\]](axelard_tx_evm_sign-commands.md)	 - Sign pending commands for an EVM chain contract
       - [transfer-operatorship \[chain\] \[keyID\]](axelard_tx_evm_transfer-operatorship.md)	 - Create transfer operatorship command for an EVM chain contract
@@ -284,7 +287,6 @@
       - [create-vesting-account \[to_address\] \[amount\] \[end_time\]](axelard_tx_vesting_create-vesting-account.md)	 - Create a new vesting account funded with an allocation of tokens.
     - [vesting](axelard_tx_vesting.md)	 - Vesting transaction subcommands
       - [create-vesting-account \[to_address\] \[amount\] \[end_time\]](axelard_tx_vesting_create-vesting-account.md)	 - Create a new vesting account funded with an allocation of tokens.
-  - [unsafe-reset-all](axelard_unsafe-reset-all.md)	 - Resets the blockchain database, removes address book files, and resets data/priv_validator_state.json to the genesis state
   - [vald-start](axelard_vald-start.md)	 -
   - [validate-genesis \[file\]](axelard_validate-genesis.md)	 - validates the genesis file at the default location or at the location passed as an arg
   - [version](axelard_version.md)	 - Print the application binary version information

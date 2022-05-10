@@ -36,7 +36,6 @@ func GetTxCmd() *cobra.Command {
 	evmTxCmd.AddCommand(
 		GetCmdSetGateway(),
 		GetCmdLink(),
-		GetCmdConfirmChain(),
 		GetCmdConfirmERC20TokenDeployment(),
 		GetCmdConfirmERC20Deposit(),
 		GetCmdConfirmTransferOwnership(),
@@ -49,6 +48,7 @@ func GetTxCmd() *cobra.Command {
 		GetCmdCreateTransferOperatorship(),
 		GetCmdSignCommands(),
 		GetCmdAddChain(),
+		GetCmdRetryFailedEvent(),
 	)
 
 	return evmTxCmd
@@ -106,31 +106,6 @@ func GetCmdLink() *cobra.Command {
 		},
 	}
 	flags.AddTxFlagsToCmd(cmd)
-	return cmd
-}
-
-// GetCmdConfirmChain returns the cli command to confirm a new chain
-func GetCmdConfirmChain() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "confirm-chain [chain]",
-		Short: "Confirm an EVM chain for a given name and native asset",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx, err := client.GetClientTxContext(cmd)
-			if err != nil {
-				return err
-			}
-
-			msg := types.NewConfirmChainRequest(cliCtx.GetFromAddress(), args[0])
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
-
-			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
-		},
-	}
-	flags.AddTxFlagsToCmd(cmd)
-
 	return cmd
 }
 
@@ -477,6 +452,30 @@ func GetCmdAddChain() *cobra.Command {
 			}
 
 			msg := types.NewAddChainRequest(cliCtx.GetFromAddress(), name, keyType, chainConf.Params)
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
+		},
+	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdRetryFailedEvent returns the cli command to retry a failed event
+func GetCmdRetryFailedEvent() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "retry-event [chain] [event ID]",
+		Short: "Retry a failed event",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewRetryFailedEventRequest(cliCtx.GetFromAddress(), args[0], args[1])
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

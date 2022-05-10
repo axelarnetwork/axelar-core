@@ -28,13 +28,6 @@ func NewHandler(k types.BaseKeeper, t types.TSS, v types.Voter, s types.Signer, 
 				result.Log = fmt.Sprintf("successfully linked deposit %s to recipient %s", res.DepositAddr, msg.RecipientAddr)
 			}
 			return result, err
-		case *types.ConfirmChainRequest:
-			res, err := server.ConfirmChain(sdk.WrapSDKContext(ctx), msg)
-			result, err := sdk.WrapServiceResult(ctx, res, err)
-			if err == nil {
-				result.Log = fmt.Sprintf("votes on confirmation of EVM chain %s started", msg.Name)
-			}
-			return result, err
 		case *types.ConfirmTokenRequest:
 			res, err := server.ConfirmToken(sdk.WrapSDKContext(ctx), msg)
 			result, err := sdk.WrapServiceResult(ctx, res, err)
@@ -59,13 +52,7 @@ func NewHandler(k types.BaseKeeper, t types.TSS, v types.Voter, s types.Signer, 
 		case *types.ConfirmGatewayTxRequest:
 			res, err := server.ConfirmGatewayTx(sdk.WrapSDKContext(ctx), msg)
 			return sdk.WrapServiceResult(ctx, res, err)
-		case *types.VoteConfirmChainRequest:
-			res, err := server.VoteConfirmChain(sdk.WrapSDKContext(ctx), msg)
-			result, err := sdk.WrapServiceResult(ctx, res, err)
-			if err == nil {
-				result.Log = res.Log
-			}
-			return result, err
+
 		case *types.CreateDeployTokenRequest:
 			res, err := server.CreateDeployToken(sdk.WrapSDKContext(ctx), msg)
 			return sdk.WrapServiceResult(ctx, res, err)
@@ -98,6 +85,10 @@ func NewHandler(k types.BaseKeeper, t types.TSS, v types.Voter, s types.Signer, 
 			if err == nil {
 				result.Log = fmt.Sprintf("successfully added new chain %s", msg.Name)
 			}
+			return result, err
+		case *types.RetryFailedEventRequest:
+			res, err := server.RetryFailedEvent(sdk.WrapSDKContext(ctx), msg)
+			result, err := sdk.WrapServiceResult(ctx, res, err)
 			return result, err
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,

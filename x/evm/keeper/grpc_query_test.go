@@ -47,7 +47,7 @@ func TestQueryPendingCommands(t *testing.T) {
 		symbol = "axelarBTC"
 		chainID = sdk.NewInt(1)
 		keyID = tssTestUtils.RandKeyID()
-		cmdDeploy, _ := types.CreateDeployTokenCommand(chainID, keyID, createDetails(asset, symbol), types.ZeroAddress)
+		cmdDeploy, _ := types.CreateDeployTokenCommand(chainID, keyID, asset, createDetails(asset, symbol), types.ZeroAddress)
 		cmdMint, _ := types.CreateMintTokenCommand(keyID, types.NewCommandID(rand.Bytes(10), chainID), symbol, common.BytesToAddress(rand.Bytes(common.AddressLength)), big.NewInt(rand.I64Between(1000, 100000)))
 		cmdBurn, _ := types.CreateBurnTokenCommand(chainID, keyID, ctx.BlockHeight(), types.BurnerInfo{
 			BurnerAddress: types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
@@ -546,6 +546,7 @@ func TestEvent(t *testing.T) {
 		grpcQuerier        *evmKeeper.Querier
 		existingChain      string
 		nonExistingChain   string
+		existingTxID       string
 		existingEventID    string
 		nonExistingEventID string
 		existingStatus     types.Event_Status
@@ -554,17 +555,18 @@ func TestEvent(t *testing.T) {
 	setup := func() {
 		existingChain = "existing-chain"
 		nonExistingChain = "non-existing-chain"
-		existingEventID = evmTest.RandomHash().Hex()
-		nonExistingEventID = evmTest.RandomHash().Hex()
+		existingTxID = evmTest.RandomHash().Hex()
+		existingEventID = fmt.Sprintf("%s-%d", existingTxID, rand.PosI64())
+		nonExistingEventID = fmt.Sprintf("%s-%d", evmTest.RandomHash().Hex(), rand.PosI64())
 
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 
 		chainKeeper = &mock.ChainKeeperMock{
-			GetEventFunc: func(ctx sdk.Context, eventID string) (types.Event, bool) {
-				if eventID == existingEventID {
+			GetEventFunc: func(ctx sdk.Context, eventID types.EventID) (types.Event, bool) {
+				if eventID == types.EventID(existingEventID) {
 					return types.Event{
 						Chain:  existingChain,
-						TxId:   types.Hash(common.HexToHash(existingEventID)),
+						TxId:   types.Hash(common.HexToHash(existingTxID)),
 						Index:  0,
 						Status: existingStatus,
 						Event:  nil,
@@ -598,7 +600,7 @@ func TestEvent(t *testing.T) {
 			expectedResp = types.EventResponse{
 				Event: &types.Event{
 					Chain:  existingChain,
-					TxId:   types.Hash(common.HexToHash(existingEventID)),
+					TxId:   types.Hash(common.HexToHash(existingTxID)),
 					Index:  0,
 					Status: existingStatus,
 					Event:  nil,
