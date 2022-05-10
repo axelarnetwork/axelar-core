@@ -49,7 +49,7 @@
           "chainName": "Matic Mainnet",
           "rpcUrls": [
             "https://polygon-rpc.com",
-            "https://matic-mainnet.chainstacklabs.com",
+            "https://matic-mainnet.chainstacklabs.com"
           ],
           "nativeCurrency": {
             "name": "Matic",
