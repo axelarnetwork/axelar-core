@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/big"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -1593,24 +1594,7 @@ func (m Event) ValidateBasic() error {
 
 // GetEventType returns the type for the event
 func (m Event) GetEventType() string {
-	switch m.GetEvent().(type) {
-	case *Event_ContractCall:
-		return "contractCall"
-	case *Event_ContractCallWithToken:
-		return "contractCallWithToken"
-	case *Event_TokenSent:
-		return "tokenSent"
-	case *Event_Transfer:
-		return "transfer"
-	case *Event_TokenDeployed:
-		return "tokenDeployed"
-	case *Event_MultisigOwnershipTransferred:
-		return "multisigOwnershipTransferred"
-	case *Event_MultisigOperatorshipTransferred:
-		return "multisigOperatorshipTransferred"
-	default:
-		return "unknown"
-	}
+	return getType(m.GetEvent())
 }
 
 // ValidateBasic returns an error if the event token sent is invalid
@@ -1882,4 +1866,12 @@ func GetMultisigAddresses(key tss.Key) ([]common.Address, uint8, error) {
 
 	threshold := uint8(key.GetMultisigKey().Threshold)
 	return KeysToAddresses(multisigPubKeys...), threshold, nil
+}
+
+func getType(val interface{}) string {
+	t := reflect.TypeOf(val)
+	for t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	return t.Name()
 }
