@@ -14437,6 +14437,153 @@ paths:
                           format: byte
       tags:
         - Query
+  "/cosmos/bank/v1beta1/spendable_balances/{address}":
+    get:
+      summary: |-
+        SpendableBalances queries the spenable balance of all coins for a single
+        account.
+      operationId: SpendableBalances
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            "*/*":
+              schema:
+                type: object
+                properties:
+                  balances:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        denom:
+                          type: string
+                        amount:
+                          type: string
+                      description: >-
+                        Coin defines a token with a denomination and an amount.
+
+
+                        NOTE: The amount field is an Int which implements the custom method
+
+                        signatures required by gogoproto.
+                    description: balances is the spendable balances of all the coins.
+                  pagination:
+                    description: pagination defines the pagination in the response.
+                    type: object
+                    properties:
+                      next_key:
+                        type: string
+                        format: byte
+                        title: |-
+                          next_key is the key to be passed to PageRequest.key to
+                          query the next page most efficiently
+                      total:
+                        type: string
+                        format: uint64
+                        title: >-
+                          total is total number of results available if
+                          PageRequest.count_total
+
+                          was set, its value is undefined otherwise
+                description: >-
+                  QuerySpendableBalancesResponse defines the gRPC response
+                  structure for querying
+
+                  an account's spendable balances.
+        default:
+          description: An unexpected error response
+          content:
+            "*/*":
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  code:
+                    type: integer
+                    format: int32
+                  message:
+                    type: string
+                  details:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        type_url:
+                          type: string
+                        value:
+                          type: string
+                          format: byte
+      parameters:
+        - name: address
+          description: address is the address to query spendable balances for.
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: pagination.key
+          description: |-
+            key is a value returned in PageResponse.next_key to begin
+            querying the next page most efficiently. Only one of offset or key
+            should be set.
+          in: query
+          required: false
+          schema:
+            type: string
+            format: byte
+        - name: pagination.offset
+          description: >-
+            offset is a numeric offset that can be used when key is unavailable.
+
+            It is less efficient than using key. Only one of offset or key should
+
+            be set.
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uint64
+        - name: pagination.limit
+          description: >-
+            limit is the total number of results to be returned in the result
+            page.
+
+            If left empty it will default to a value to be set by each app.
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uint64
+        - name: pagination.count_total
+          description: >-
+            count_total is set to true  to indicate that the result set should
+            include
+
+            a count of the total number of items available for pagination in UIs.
+
+            count_total is only respected when offset is used. It is ignored when key
+
+            is set.
+          in: query
+          required: false
+          schema:
+            type: boolean
+            format: boolean
+        - name: pagination.reverse
+          description: >-
+            reverse is set to true if results are to be returned in the
+            descending order.
+
+
+            Since: cosmos-sdk 0.43
+          in: query
+          required: false
+          schema:
+            type: boolean
+            format: boolean
+      tags:
+        - Query
   /cosmos/bank/v1beta1/supply:
     get:
       summary: TotalSupply queries the total supply of all coins.
@@ -37345,6 +37492,49 @@ components:
           description: Params defines the parameters for the bank module.
       description: QueryParamsResponse defines the response type for querying x/bank
         parameters.
+    cosmos.bank.v1beta1.QuerySpendableBalancesResponse:
+      type: object
+      properties:
+        balances:
+          type: array
+          items:
+            type: object
+            properties:
+              denom:
+                type: string
+              amount:
+                type: string
+            description: >-
+              Coin defines a token with a denomination and an amount.
+
+
+              NOTE: The amount field is an Int which implements the custom method
+
+              signatures required by gogoproto.
+          description: balances is the spendable balances of all the coins.
+        pagination:
+          description: pagination defines the pagination in the response.
+          type: object
+          properties:
+            next_key:
+              type: string
+              format: byte
+              title: |-
+                next_key is the key to be passed to PageRequest.key to
+                query the next page most efficiently
+            total:
+              type: string
+              format: uint64
+              title: >-
+                total is total number of results available if
+                PageRequest.count_total
+
+                was set, its value is undefined otherwise
+      description: >-
+        QuerySpendableBalancesResponse defines the gRPC response structure for
+        querying
+
+        an account's spendable balances.
     cosmos.bank.v1beta1.QuerySupplyOfResponse:
       type: object
       properties:
