@@ -1,4 +1,4 @@
-name: Check format and generated files up-to-date
+name: Check internal dependencies up-to-date
 
 on:
   pull_request:
