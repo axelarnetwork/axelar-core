@@ -11,4 +11,9 @@ option (gogoproto.goproto_getters_all) = false;
 message Params {
   utils.v1beta1.Threshold chain_activation_threshold = 1
       [ (gogoproto.nullable) = false ];
+  utils.v1beta1.Threshold chain_maintainer_missing_vote_threshold = 2
+      [ (gogoproto.nullable) = false ];
+  utils.v1beta1.Threshold chain_maintainer_incorrect_vote_threshold = 3
+      [ (gogoproto.nullable) = false ];
+  int32 chain_maintainer_check_window = 4;
 }

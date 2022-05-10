@@ -36,7 +36,6 @@ func GetTxCmd() *cobra.Command {
 	evmTxCmd.AddCommand(
 		GetCmdSetGateway(),
 		GetCmdLink(),
-		GetCmdConfirmChain(),
 		GetCmdConfirmERC20TokenDeployment(),
 		GetCmdConfirmERC20Deposit(),
 		GetCmdConfirmTransferOwnership(),
@@ -106,31 +105,6 @@ func GetCmdLink() *cobra.Command {
 		},
 	}
 	flags.AddTxFlagsToCmd(cmd)
-	return cmd
-}
-
-// GetCmdConfirmChain returns the cli command to confirm a new chain
-func GetCmdConfirmChain() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "confirm-chain [chain]",
-		Short: "Confirm an EVM chain for a given name and native asset",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx, err := client.GetClientTxContext(cmd)
-			if err != nil {
-				return err
-			}
-
-			msg := types.NewConfirmChainRequest(cliCtx.GetFromAddress(), args[0])
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
-
-			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
-		},
-	}
-	flags.AddTxFlagsToCmd(cmd)
-
 	return cmd
 }
 

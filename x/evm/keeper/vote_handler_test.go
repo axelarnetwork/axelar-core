@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/btcsuite/btcd/btcec"
+	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
@@ -25,6 +26,7 @@ import (
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	tssTestUtils "github.com/axelarnetwork/axelar-core/x/tss/exported/testutils"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	voteMock "github.com/axelarnetwork/axelar-core/x/vote/exported/mock"
 	"github.com/axelarnetwork/utils/slices"
 )
 
@@ -116,14 +118,76 @@ func TestHandleVoteResult(t *testing.T) {
 
 	repeats := 20
 
+	t.Run("Given vote When events are not from the same source chain THEN return error", testutils.Func(func(t *testing.T) {
+		setup()
+
+		voteEvents, err := types.PackEvents(rand.Str(5), randTransferEvents(int(rand.I64Between(5, 10))))
+		if err != nil {
+			panic(err)
+		}
+		result.Result = voteEvents
+
+		poll := voteMock.PollMock{
+			GetResultFunc: func() codec.ProtoMarshaler { return &result },
+		}
+		err = handler(ctx, &poll)
+
+		assert.Error(t, err)
+		assert.Len(t, cacheStore.WriteCalls(), 0)
+	}).Repeat(repeats))
+
+	t.Run("Given vote When events empty THEN should nothing and return nil", testutils.Func(func(t *testing.T) {
+		setup()
+
+		voteEvents, err := types.PackEvents(evmChain, []types.Event{})
+		if err != nil {
+			panic(err)
+		}
+		result.Result = voteEvents
+
+		voter := vote.Voter{
+			Validator: rand.ValAddr(),
+		}
+		poll := voteMock.PollMock{
+			GetResultFunc:         func() codec.ProtoMarshaler { return &result },
+			GetVotersFunc:         func() []vote.Voter { return []vote.Voter{voter} },
+			HasVotedFunc:          func(_ sdk.ValAddress) bool { return false },
+			HasVotedCorrectlyFunc: func(voter sdk.ValAddress) bool { return false },
+			AllowOverrideFunc:     func() {},
+		}
+		n.MarkChainMaintainerMissingVoteFunc = func(_ sdk.Context, _ nexus.Chain, _ sdk.ValAddress, _ bool) {}
+		n.MarkChainMaintainerIncorrectVoteFunc = func(_ sdk.Context, _ nexus.Chain, _ sdk.ValAddress, _ bool) {}
+		err = handler(ctx, &poll)
+
+		assert.NoError(t, err)
+		assert.Len(t, cacheStore.WriteCalls(), 0)
+		assert.Len(t, n.MarkChainMaintainerMissingVoteCalls(), 1)
+		assert.Equal(t, evmChain, n.MarkChainMaintainerMissingVoteCalls()[0].Chain.Name)
+		assert.Equal(t, voter.Validator, n.MarkChainMaintainerMissingVoteCalls()[0].Address)
+		assert.True(t, n.MarkChainMaintainerMissingVoteCalls()[0].MissingVote)
+		assert.Len(t, n.MarkChainMaintainerIncorrectVoteCalls(), 1)
+		assert.Equal(t, evmChain, n.MarkChainMaintainerIncorrectVoteCalls()[0].Chain.Name)
+		assert.Equal(t, voter.Validator, n.MarkChainMaintainerIncorrectVoteCalls()[0].Address)
+		assert.False(t, n.MarkChainMaintainerIncorrectVoteCalls()[0].IncorrectVote)
+		assert.Len(t, poll.AllowOverrideCalls(), 1)
+	}).Repeat(repeats))
+
 	t.Run("GIVEN vote WHEN chain is not registered THEN return error", testutils.Func(func(t *testing.T) {
 		setup()
 		n.GetChainFunc = func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
 			return nexus.Chain{}, false
 		}
-		result.Results = randTransferEvents(int(rand.I64Between(5, 10)))
+		voteEvents, err := types.PackEvents(evmChain, randTransferEvents(int(rand.I64Between(5, 10))))
+		if err != nil {
+			panic(err)
+		}
+		result.Result = voteEvents
 
-		err := handler(ctx, &result)
+		poll := voteMock.PollMock{
+			GetResultFunc: func() codec.ProtoMarshaler { return &result },
+			GetVotersFunc: func() []vote.Voter { return []vote.Voter{} },
+		}
+		err = handler(ctx, &poll)
 
 		assert.Error(t, err)
 		assert.Len(t, cacheStore.WriteCalls(), 0)
@@ -134,9 +198,17 @@ func TestHandleVoteResult(t *testing.T) {
 
 		n.IsChainActivatedFunc = func(sdk.Context, nexus.Chain) bool { return false }
 		eventNum := int(rand.I64Between(5, 10))
-		result.Results = randTransferEvents(eventNum)
+		voteEvents, err := types.PackEvents(evmChain, randTransferEvents(eventNum))
+		if err != nil {
+			panic(err)
+		}
+		result.Result = voteEvents
 
-		err := handler(ctx, &result)
+		poll := voteMock.PollMock{
+			GetResultFunc: func() codec.ProtoMarshaler { return &result },
+			GetVotersFunc: func() []vote.Voter { return []vote.Voter{} },
+		}
+		err = handler(ctx, &poll)
 		assert.NoError(t, err)
 		assert.Len(t, cacheStore.WriteCalls(), 1)
 	}).Repeat(repeats))
@@ -145,8 +217,12 @@ func TestHandleVoteResult(t *testing.T) {
 		setup()
 
 		incorrectResult, _ := codectypes.NewAnyWithValue(types.NewConfirmGatewayTxRequest(rand.AccAddr(), rand.Str(5), types.Hash(common.BytesToHash(rand.Bytes(common.HashLength)))))
-		result.Results = []*codectypes.Any{incorrectResult}
-		err := handler(ctx, &result)
+		result.Result = incorrectResult
+
+		poll := voteMock.PollMock{
+			GetResultFunc: func() codec.ProtoMarshaler { return &result },
+		}
+		err := handler(ctx, &poll)
 
 		assert.Error(t, err)
 		assert.Len(t, cacheStore.WriteCalls(), 0)
@@ -159,9 +235,17 @@ func TestHandleVoteResult(t *testing.T) {
 			return types.Event{}, true
 		}
 
-		result.Results = randTransferEvents(int(rand.I64Between(5, 10)))
+		voteEvents, err := types.PackEvents(evmChain, randTransferEvents(int(rand.I64Between(5, 10))))
+		if err != nil {
+			panic(err)
+		}
+		result.Result = voteEvents
 
-		err := handler(ctx, &result)
+		poll := voteMock.PollMock{
+			GetResultFunc: func() codec.ProtoMarshaler { return &result },
+			GetVotersFunc: func() []vote.Voter { return []vote.Voter{} },
+		}
+		err = handler(ctx, &poll)
 
 		assert.Error(t, err)
 		assert.Len(t, cacheStore.WriteCalls(), 0)
@@ -175,9 +259,17 @@ func TestHandleVoteResult(t *testing.T) {
 			return nexus.CrossChainAddress{}, false
 		}
 
-		result.Results = randTransferEvents(int(rand.I64Between(5, 10)))
+		voteEvents, err := types.PackEvents(evmChain, randTransferEvents(int(rand.I64Between(5, 10))))
+		if err != nil {
+			panic(err)
+		}
+		result.Result = voteEvents
 
-		err := handler(ctx, &result)
+		poll := voteMock.PollMock{
+			GetResultFunc: func() codec.ProtoMarshaler { return &result },
+			GetVotersFunc: func() []vote.Voter { return []vote.Voter{} },
+		}
+		err = handler(ctx, &poll)
 
 		assert.Error(t, err)
 		assert.Len(t, cacheStore.WriteCalls(), 0)
@@ -187,8 +279,17 @@ func TestHandleVoteResult(t *testing.T) {
 	t.Run("GIVEN transfer event WHEN handle deposit THEN depositConfirmation event is emitted", testutils.Func(func(t *testing.T) {
 		setup()
 		eventNum := int(rand.I64Between(5, 10))
-		result.Results = randTransferEvents(eventNum)
-		err := handler(ctx, &result)
+		voteEvents, err := types.PackEvents(evmChain, randTransferEvents(eventNum))
+		if err != nil {
+			panic(err)
+		}
+		result.Result = voteEvents
+
+		poll := voteMock.PollMock{
+			GetResultFunc: func() codec.ProtoMarshaler { return &result },
+			GetVotersFunc: func() []vote.Voter { return []vote.Voter{} },
+		}
+		err = handler(ctx, &poll)
 
 		assert.NoError(t, err)
 		assert.Len(t, cacheStore.WriteCalls(), 1)
@@ -196,11 +297,17 @@ func TestHandleVoteResult(t *testing.T) {
 
 	t.Run("GIVEN tokenDeployed event WHEN token is not exited THEN return error", testutils.Func(func(t *testing.T) {
 		setup()
-		event := randTokenDeployedEvents(1)
-		eventsAny, _ := types.PackEvents(event)
-		result.Results = eventsAny
+		voteEvents, err := types.PackEvents(evmChain, randTokenDeployedEvents(1))
+		if err != nil {
+			panic(err)
+		}
+		result.Result = voteEvents
 
-		err := handler(ctx, &result)
+		poll := voteMock.PollMock{
+			GetResultFunc: func() codec.ProtoMarshaler { return &result },
+			GetVotersFunc: func() []vote.Voter { return []vote.Voter{} },
+		}
+		err = handler(ctx, &poll)
 
 		assert.Error(t, err)
 		assert.Len(t, cacheStore.WriteCalls(), 0)
@@ -208,15 +315,21 @@ func TestHandleVoteResult(t *testing.T) {
 
 	t.Run("GIVEN tokenDeployed event WHEN token address does not match THEN return error", testutils.Func(func(t *testing.T) {
 		setup()
-		event := randTokenDeployedEvents(1)
-		eventsAny, _ := types.PackEvents(event)
-		result.Results = eventsAny
+		voteEvents, err := types.PackEvents(evmChain, randTokenDeployedEvents(1))
+		if err != nil {
+			panic(err)
+		}
+		result.Result = voteEvents
 
 		chaink.GetERC20TokenBySymbolFunc = func(ctx sdk.Context, symbol string) types.ERC20Token {
 			return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Pending})
 		}
 
-		err := handler(ctx, &result)
+		poll := voteMock.PollMock{
+			GetResultFunc: func() codec.ProtoMarshaler { return &result },
+			GetVotersFunc: func() []vote.Voter { return []vote.Voter{} },
+		}
+		err = handler(ctx, &poll)
 
 		assert.Error(t, err)
 		assert.Len(t, cacheStore.WriteCalls(), 0)
@@ -225,16 +338,23 @@ func TestHandleVoteResult(t *testing.T) {
 
 	t.Run("GIVEN tokenDeployed event WHEN handle confirm token THEN tokenConfirmation event is emitted", testutils.Func(func(t *testing.T) {
 		setup()
-		event := randTokenDeployedEvents(1)
-		eventsAny, _ := types.PackEvents(event)
-		result.Results = eventsAny
-		deployedEvent := event[0].GetEvent().(*types.Event_TokenDeployed)
+		events := randTokenDeployedEvents(1)
+		voteEvents, err := types.PackEvents(evmChain, events)
+		if err != nil {
+			panic(err)
+		}
+		result.Result = voteEvents
+		deployedEvent := events[0].GetEvent().(*types.Event_TokenDeployed)
 
 		chaink.GetERC20TokenBySymbolFunc = func(ctx sdk.Context, symbol string) types.ERC20Token {
 			return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Pending, TokenAddress: deployedEvent.TokenDeployed.TokenAddress})
 		}
 
-		err := handler(ctx, &result)
+		poll := voteMock.PollMock{
+			GetResultFunc: func() codec.ProtoMarshaler { return &result },
+			GetVotersFunc: func() []vote.Voter { return []vote.Voter{} },
+		}
+		err = handler(ctx, &poll)
 
 		assert.NoError(t, err)
 		assert.Len(t, cacheStore.WriteCalls(), 1)
@@ -321,15 +441,21 @@ func TestHandleVoteTransferKey(t *testing.T) {
 
 	t.Run("GIVEN MultisigOwnershipTransferred event WHEN next keyID not found THEN return error", testutils.Func(func(t *testing.T) {
 		setup()
-		event := randTransferKeyEvent(tss.MasterKey)
-		eventsAny, _ := types.PackEvents(event)
-		result.Results = eventsAny
+		voteEvents, err := types.PackEvents(evmChain, randTransferKeyEvent(tss.MasterKey))
+		if err != nil {
+			panic(err)
+		}
+		result.Result = voteEvents
 
 		s.GetNextKeyIDFunc = func(sdk.Context, nexus.Chain, tss.KeyRole) (tss.KeyID, bool) {
 			return "", false
 		}
 
-		err := handler(ctx, &result)
+		poll := voteMock.PollMock{
+			GetResultFunc: func() codec.ProtoMarshaler { return &result },
+			GetVotersFunc: func() []vote.Voter { return []vote.Voter{} },
+		}
+		err = handler(ctx, &poll)
 
 		assert.Error(t, err)
 		assert.Len(t, cacheStore.WriteCalls(), 0)
@@ -338,15 +464,21 @@ func TestHandleVoteTransferKey(t *testing.T) {
 
 	t.Run("GIVEN MultisigOwnershipTransferred event WHEN next key not found THEN return error", testutils.Func(func(t *testing.T) {
 		setup()
-		event := randTransferKeyEvent(tss.MasterKey)
-		eventsAny, _ := types.PackEvents(event)
-		result.Results = eventsAny
+		voteEvents, err := types.PackEvents(evmChain, randTransferKeyEvent(tss.MasterKey))
+		if err != nil {
+			panic(err)
+		}
+		result.Result = voteEvents
 
 		s.GetKeyFunc = func(ctx sdk.Context, keyID tss.KeyID) (tss.Key, bool) {
 			return tss.Key{}, false
 		}
 
-		err := handler(ctx, &result)
+		poll := voteMock.PollMock{
+			GetResultFunc: func() codec.ProtoMarshaler { return &result },
+			GetVotersFunc: func() []vote.Voter { return []vote.Voter{} },
+		}
+		err = handler(ctx, &poll)
 
 		assert.Error(t, err)
 		assert.Len(t, cacheStore.WriteCalls(), 0)
@@ -355,11 +487,17 @@ func TestHandleVoteTransferKey(t *testing.T) {
 
 	t.Run("GIVEN MultisigOwnershipTransferred event WHEN new owners do not match expected keys THEN return error", testutils.Func(func(t *testing.T) {
 		setup()
-		event := randTransferKeyEvent(tss.MasterKey)
-		eventsAny, _ := types.PackEvents(event)
-		result.Results = eventsAny
+		voteEvents, err := types.PackEvents(evmChain, randTransferKeyEvent(tss.MasterKey))
+		if err != nil {
+			panic(err)
+		}
+		result.Result = voteEvents
 
-		err := handler(ctx, &result)
+		poll := voteMock.PollMock{
+			GetResultFunc: func() codec.ProtoMarshaler { return &result },
+			GetVotersFunc: func() []vote.Voter { return []vote.Voter{} },
+		}
+		err = handler(ctx, &poll)
 
 		assert.Error(t, err)
 		assert.Len(t, cacheStore.WriteCalls(), 0)
@@ -368,7 +506,7 @@ func TestHandleVoteTransferKey(t *testing.T) {
 
 	t.Run("GIVEN MultisigOwnershipTransferred event When event is confirmed THEN transferKeyConfirmation event is emitted", testutils.Func(func(t *testing.T) {
 		setup()
-		event := randTransferKeyEvent(tss.MasterKey)
+		events := randTransferKeyEvent(tss.MasterKey)
 
 		multisigPubKeys, _ := masterKey.GetMultisigPubKey()
 		expectedAddresses := types.KeysToAddresses(multisigPubKeys...)
@@ -377,19 +515,26 @@ func TestHandleVoteTransferKey(t *testing.T) {
 		newOwners := slices.Map(expectedAddresses, func(addr common.Address) types.Address { return types.Address(addr) })
 
 		ownershipTransferred := types.EventMultisigOwnershipTransferred{
-			PreOwners:     event[0].GetEvent().(*types.Event_MultisigOwnershipTransferred).MultisigOwnershipTransferred.PreOwners,
-			PrevThreshold: event[0].GetEvent().(*types.Event_MultisigOwnershipTransferred).MultisigOwnershipTransferred.PrevThreshold,
+			PreOwners:     events[0].GetEvent().(*types.Event_MultisigOwnershipTransferred).MultisigOwnershipTransferred.PreOwners,
+			PrevThreshold: events[0].GetEvent().(*types.Event_MultisigOwnershipTransferred).MultisigOwnershipTransferred.PrevThreshold,
 			NewOwners:     newOwners,
 			NewThreshold:  sdk.NewUint(uint64(threshold)),
 		}
-		event[0].Event = &types.Event_MultisigOwnershipTransferred{
+		events[0].Event = &types.Event_MultisigOwnershipTransferred{
 			MultisigOwnershipTransferred: &ownershipTransferred,
 		}
 
-		eventsAny, _ := types.PackEvents(event)
-		result.Results = eventsAny
+		voteEvents, err := types.PackEvents(evmChain, events)
+		if err != nil {
+			panic(err)
+		}
+		result.Result = voteEvents
 
-		err := handler(ctx, &result)
+		poll := voteMock.PollMock{
+			GetResultFunc: func() codec.ProtoMarshaler { return &result },
+			GetVotersFunc: func() []vote.Voter { return []vote.Voter{} },
+		}
+		err = handler(ctx, &poll)
 
 		assert.NoError(t, err)
 		assert.Len(t, cacheStore.WriteCalls(), 1)
@@ -397,7 +542,7 @@ func TestHandleVoteTransferKey(t *testing.T) {
 	}).Repeat(repeats))
 }
 
-func randTransferEvents(n int) []*codectypes.Any {
+func randTransferEvents(n int) []types.Event {
 	var events []types.Event
 	events = make([]types.Event, n)
 	burnerAddress := types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength)))
@@ -416,8 +561,7 @@ func randTransferEvents(n int) []*codectypes.Any {
 		}
 	}
 
-	eventsAny, _ := types.PackEvents(events)
-	return eventsAny
+	return events
 }
 
 func randTokenDeployedEvents(n int) []types.Event {
@@ -438,8 +582,8 @@ func randTokenDeployedEvents(n int) []types.Event {
 			},
 		}
 	}
-	return events
 
+	return events
 }
 
 func randTransferKeyEvent(keyRole tss.KeyRole) []types.Event {
@@ -483,6 +627,7 @@ func randTransferKeyEvent(keyRole tss.KeyRole) []types.Event {
 		}
 	}
 	events[0] = event
+
 	return events
 }
 
