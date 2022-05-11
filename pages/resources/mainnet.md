@@ -44,7 +44,7 @@ For e.g. a transfer of 1000 UST from Terra to Avalanche will have a fee of 1.5 U
 | USDT         | 20 USDT   | 1 USDT           | 0.5 USDT      | 6        | uusdt    |
 | NGM          | 16 NGM    | 0.8 NGM          | 0.4 NGM       | 6        | ungm     |
 | EEUR         | 20 EEUR   | 1 EEUR           | 0.5 EEUR      | 6        | eeur     |
-| WETH         | 0.01 WETH | N/A              | 0.0002 WET    | 18       | weth-wei |
+| WETH         | 0.01 WETH | N/A              | 0.0002 WETH   | 18       | weth-wei |
 
 The current transfer fee can also be queried on the network with
 
