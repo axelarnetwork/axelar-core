@@ -16,8 +16,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
-	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
-	rewardMock "github.com/axelarnetwork/axelar-core/x/reward/exported/mock"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/types"
 	"github.com/axelarnetwork/axelar-core/x/vote/types/mock"
@@ -49,21 +47,20 @@ func setup() (sdk.Context, Keeper, *mock.SnapshotterMock, *mock.StakingKeeperMoc
 func initializeRandomPoll(ctx sdk.Context, keeper Keeper) exported.PollMetadata {
 	voterCount := rand.I64Between(10, 100)
 	voters := make([]exported.Voter, voterCount)
-	totalVotingPower := sdk.ZeroInt()
 	for i := range voters {
 		voters[i] = exported.Voter{
 			Validator:   rand.ValAddr(),
 			VotingPower: rand.I64Between(1, 10),
 		}
-		totalVotingPower = totalVotingPower.AddRaw(voters[i].VotingPower)
 	}
 
 	pollKey := exported.PollKey{Module: randomNormalizedStr(5), ID: randomNormalizedStr(10)}
-	keeper.initializePoll(ctx, pollKey, voters, totalVotingPower,
+	keeper.initializePoll(ctx, pollKey, voters,
 		exported.ExpiryAt(rand.PosI64()),
 		exported.RewardPool(randomNormalizedStr(5)),
-		exported.MinVoterCount(rand.I64Between(1, int64(len(voters)))),
+		exported.MinVoterCount(rand.I64Between(0, int64(len(voters)))),
 		exported.Threshold(utils.NewThreshold(rand.I64Between(1, 101), 100)),
+		exported.GracePeriod(rand.I64Between(0, 10)),
 	)
 
 	metadata, ok := keeper.getPollMetadata(ctx, pollKey)
@@ -72,23 +69,22 @@ func initializeRandomPoll(ctx sdk.Context, keeper Keeper) exported.PollMetadata 
 	}
 
 	pollStates := []exported.PollState{exported.Completed, exported.Failed, exported.Expired, exported.AllowOverride}
-	poll := types.NewPoll(ctx, metadata, keeper.newPollStore(ctx, metadata.Key), keeper.rewarder)
-	poll.State = pollStates[rand.I64Between(0, int64(len(pollStates)))]
+	poll := types.NewPoll(metadata, keeper.newPollStore(ctx, metadata.Key))
+	poll.State = rand.Of(pollStates...)
+
 	if poll.Is(exported.Completed) {
 		poll.Result = &codectypes.Any{}
+		poll.CompletedAt = rand.PosI64()
 	}
+
 	poll.SetMetadata(poll.PollMetadata)
 
 	return poll.PollMetadata
 }
 
 func TestExportGenesisInitGenesis(t *testing.T) {
-	ctx, keeper, _, _, rewarder := setup()
+	ctx, keeper, _, _, _ := setup()
 	keeper.InitGenesis(ctx, types.NewGenesisState(types.DefaultParams(), []exported.PollMetadata{}))
-
-	rewarder.GetPoolFunc = func(ctx sdk.Context, name string) reward.RewardPool {
-		return &rewardMock.RewardPoolMock{}
-	}
 
 	pollCount := rand.I64Between(10, 100)
 	expectedPollMetadatas := make([]exported.PollMetadata, pollCount)

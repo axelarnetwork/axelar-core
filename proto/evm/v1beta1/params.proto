@@ -24,6 +24,7 @@ message Params {
   int64 min_voter_count = 10;
   uint32 commands_gas_limit = 11;
   reserved 12; // transaction_fee_rate was removed in v0.15
+  int64 voting_grace_period = 13;
 }
 
 message PendingChain {

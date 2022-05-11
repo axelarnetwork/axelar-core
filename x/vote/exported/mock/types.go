@@ -32,6 +32,9 @@ var _ exported.Poll = &PollMock{}
 // 			GetResultFunc: func() codec.ProtoMarshaler {
 // 				panic("mock out the GetResult method")
 // 			},
+// 			GetRewardPoolNameFunc: func() (string, bool) {
+// 				panic("mock out the GetRewardPoolName method")
+// 			},
 // 			GetTotalVotingPowerFunc: func() github_com_cosmos_cosmos_sdk_types.Int {
 // 				panic("mock out the GetTotalVotingPower method")
 // 			},
@@ -44,10 +47,16 @@ var _ exported.Poll = &PollMock{}
 // 			HasVotedCorrectlyFunc: func(voter github_com_cosmos_cosmos_sdk_types.ValAddress) bool {
 // 				panic("mock out the HasVotedCorrectly method")
 // 			},
+// 			HasVotedLateFunc: func(voter github_com_cosmos_cosmos_sdk_types.ValAddress) bool {
+// 				panic("mock out the HasVotedLate method")
+// 			},
 // 			IsFunc: func(state exported.PollState) bool {
 // 				panic("mock out the Is method")
 // 			},
-// 			VoteFunc: func(voter github_com_cosmos_cosmos_sdk_types.ValAddress, data codec.ProtoMarshaler) error {
+// 			SetExpiredFunc: func()  {
+// 				panic("mock out the SetExpired method")
+// 			},
+// 			VoteFunc: func(voter github_com_cosmos_cosmos_sdk_types.ValAddress, blockHeight int64, data codec.ProtoMarshaler) (codec.ProtoMarshaler, bool, error) {
 // 				panic("mock out the Vote method")
 // 			},
 // 		}
@@ -69,6 +78,9 @@ type PollMock struct {
 	// GetResultFunc mocks the GetResult method.
 	GetResultFunc func() codec.ProtoMarshaler
 
+	// GetRewardPoolNameFunc mocks the GetRewardPoolName method.
+	GetRewardPoolNameFunc func() (string, bool)
+
 	// GetTotalVotingPowerFunc mocks the GetTotalVotingPower method.
 	GetTotalVotingPowerFunc func() github_com_cosmos_cosmos_sdk_types.Int
 
@@ -81,11 +93,17 @@ type PollMock struct {
 	// HasVotedCorrectlyFunc mocks the HasVotedCorrectly method.
 	HasVotedCorrectlyFunc func(voter github_com_cosmos_cosmos_sdk_types.ValAddress) bool
 
+	// HasVotedLateFunc mocks the HasVotedLate method.
+	HasVotedLateFunc func(voter github_com_cosmos_cosmos_sdk_types.ValAddress) bool
+
 	// IsFunc mocks the Is method.
 	IsFunc func(state exported.PollState) bool
 
+	// SetExpiredFunc mocks the SetExpired method.
+	SetExpiredFunc func()
+
 	// VoteFunc mocks the Vote method.
-	VoteFunc func(voter github_com_cosmos_cosmos_sdk_types.ValAddress, data codec.ProtoMarshaler) error
+	VoteFunc func(voter github_com_cosmos_cosmos_sdk_types.ValAddress, blockHeight int64, data codec.ProtoMarshaler) (codec.ProtoMarshaler, bool, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -100,6 +118,9 @@ type PollMock struct {
 		}
 		// GetResult holds details about calls to the GetResult method.
 		GetResult []struct {
+		}
+		// GetRewardPoolName holds details about calls to the GetRewardPoolName method.
+		GetRewardPoolName []struct {
 		}
 		// GetTotalVotingPower holds details about calls to the GetTotalVotingPower method.
 		GetTotalVotingPower []struct {
@@ -117,15 +138,25 @@ type PollMock struct {
 			// Voter is the voter argument value.
 			Voter github_com_cosmos_cosmos_sdk_types.ValAddress
 		}
+		// HasVotedLate holds details about calls to the HasVotedLate method.
+		HasVotedLate []struct {
+			// Voter is the voter argument value.
+			Voter github_com_cosmos_cosmos_sdk_types.ValAddress
+		}
 		// Is holds details about calls to the Is method.
 		Is []struct {
 			// State is the state argument value.
 			State exported.PollState
 		}
+		// SetExpired holds details about calls to the SetExpired method.
+		SetExpired []struct {
+		}
 		// Vote holds details about calls to the Vote method.
 		Vote []struct {
 			// Voter is the voter argument value.
 			Voter github_com_cosmos_cosmos_sdk_types.ValAddress
+			// BlockHeight is the blockHeight argument value.
+			BlockHeight int64
 			// Data is the data argument value.
 			Data codec.ProtoMarshaler
 		}
@@ -134,11 +165,14 @@ type PollMock struct {
 	lockDelete              sync.RWMutex
 	lockGetKey              sync.RWMutex
 	lockGetResult           sync.RWMutex
+	lockGetRewardPoolName   sync.RWMutex
 	lockGetTotalVotingPower sync.RWMutex
 	lockGetVoters           sync.RWMutex
 	lockHasVoted            sync.RWMutex
 	lockHasVotedCorrectly   sync.RWMutex
+	lockHasVotedLate        sync.RWMutex
 	lockIs                  sync.RWMutex
+	lockSetExpired          sync.RWMutex
 	lockVote                sync.RWMutex
 }
 
@@ -243,6 +277,32 @@ func (mock *PollMock) GetResultCalls() []struct {
 	mock.lockGetResult.RLock()
 	calls = mock.calls.GetResult
 	mock.lockGetResult.RUnlock()
+	return calls
+}
+
+// GetRewardPoolName calls GetRewardPoolNameFunc.
+func (mock *PollMock) GetRewardPoolName() (string, bool) {
+	if mock.GetRewardPoolNameFunc == nil {
+		panic("PollMock.GetRewardPoolNameFunc: method is nil but Poll.GetRewardPoolName was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockGetRewardPoolName.Lock()
+	mock.calls.GetRewardPoolName = append(mock.calls.GetRewardPoolName, callInfo)
+	mock.lockGetRewardPoolName.Unlock()
+	return mock.GetRewardPoolNameFunc()
+}
+
+// GetRewardPoolNameCalls gets all the calls that were made to GetRewardPoolName.
+// Check the length with:
+//     len(mockedPoll.GetRewardPoolNameCalls())
+func (mock *PollMock) GetRewardPoolNameCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockGetRewardPoolName.RLock()
+	calls = mock.calls.GetRewardPoolName
+	mock.lockGetRewardPoolName.RUnlock()
 	return calls
 }
 
@@ -360,6 +420,37 @@ func (mock *PollMock) HasVotedCorrectlyCalls() []struct {
 	return calls
 }
 
+// HasVotedLate calls HasVotedLateFunc.
+func (mock *PollMock) HasVotedLate(voter github_com_cosmos_cosmos_sdk_types.ValAddress) bool {
+	if mock.HasVotedLateFunc == nil {
+		panic("PollMock.HasVotedLateFunc: method is nil but Poll.HasVotedLate was just called")
+	}
+	callInfo := struct {
+		Voter github_com_cosmos_cosmos_sdk_types.ValAddress
+	}{
+		Voter: voter,
+	}
+	mock.lockHasVotedLate.Lock()
+	mock.calls.HasVotedLate = append(mock.calls.HasVotedLate, callInfo)
+	mock.lockHasVotedLate.Unlock()
+	return mock.HasVotedLateFunc(voter)
+}
+
+// HasVotedLateCalls gets all the calls that were made to HasVotedLate.
+// Check the length with:
+//     len(mockedPoll.HasVotedLateCalls())
+func (mock *PollMock) HasVotedLateCalls() []struct {
+	Voter github_com_cosmos_cosmos_sdk_types.ValAddress
+} {
+	var calls []struct {
+		Voter github_com_cosmos_cosmos_sdk_types.ValAddress
+	}
+	mock.lockHasVotedLate.RLock()
+	calls = mock.calls.HasVotedLate
+	mock.lockHasVotedLate.RUnlock()
+	return calls
+}
+
 // Is calls IsFunc.
 func (mock *PollMock) Is(state exported.PollState) bool {
 	if mock.IsFunc == nil {
@@ -391,37 +482,279 @@ func (mock *PollMock) IsCalls() []struct {
 	return calls
 }
 
+// SetExpired calls SetExpiredFunc.
+func (mock *PollMock) SetExpired() {
+	if mock.SetExpiredFunc == nil {
+		panic("PollMock.SetExpiredFunc: method is nil but Poll.SetExpired was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockSetExpired.Lock()
+	mock.calls.SetExpired = append(mock.calls.SetExpired, callInfo)
+	mock.lockSetExpired.Unlock()
+	mock.SetExpiredFunc()
+}
+
+// SetExpiredCalls gets all the calls that were made to SetExpired.
+// Check the length with:
+//     len(mockedPoll.SetExpiredCalls())
+func (mock *PollMock) SetExpiredCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockSetExpired.RLock()
+	calls = mock.calls.SetExpired
+	mock.lockSetExpired.RUnlock()
+	return calls
+}
+
 // Vote calls VoteFunc.
-func (mock *PollMock) Vote(voter github_com_cosmos_cosmos_sdk_types.ValAddress, data codec.ProtoMarshaler) error {
+func (mock *PollMock) Vote(voter github_com_cosmos_cosmos_sdk_types.ValAddress, blockHeight int64, data codec.ProtoMarshaler) (codec.ProtoMarshaler, bool, error) {
 	if mock.VoteFunc == nil {
 		panic("PollMock.VoteFunc: method is nil but Poll.Vote was just called")
 	}
 	callInfo := struct {
-		Voter github_com_cosmos_cosmos_sdk_types.ValAddress
-		Data  codec.ProtoMarshaler
+		Voter       github_com_cosmos_cosmos_sdk_types.ValAddress
+		BlockHeight int64
+		Data        codec.ProtoMarshaler
 	}{
-		Voter: voter,
-		Data:  data,
+		Voter:       voter,
+		BlockHeight: blockHeight,
+		Data:        data,
 	}
 	mock.lockVote.Lock()
 	mock.calls.Vote = append(mock.calls.Vote, callInfo)
 	mock.lockVote.Unlock()
-	return mock.VoteFunc(voter, data)
+	return mock.VoteFunc(voter, blockHeight, data)
 }
 
 // VoteCalls gets all the calls that were made to Vote.
 // Check the length with:
 //     len(mockedPoll.VoteCalls())
 func (mock *PollMock) VoteCalls() []struct {
-	Voter github_com_cosmos_cosmos_sdk_types.ValAddress
-	Data  codec.ProtoMarshaler
+	Voter       github_com_cosmos_cosmos_sdk_types.ValAddress
+	BlockHeight int64
+	Data        codec.ProtoMarshaler
 } {
 	var calls []struct {
-		Voter github_com_cosmos_cosmos_sdk_types.ValAddress
-		Data  codec.ProtoMarshaler
+		Voter       github_com_cosmos_cosmos_sdk_types.ValAddress
+		BlockHeight int64
+		Data        codec.ProtoMarshaler
 	}
 	mock.lockVote.RLock()
 	calls = mock.calls.Vote
 	mock.lockVote.RUnlock()
+	return calls
+}
+
+// Ensure, that VoteHandlerMock does implement exported.VoteHandler.
+// If this is not the case, regenerate this file with moq.
+var _ exported.VoteHandler = &VoteHandlerMock{}
+
+// VoteHandlerMock is a mock implementation of exported.VoteHandler.
+//
+// 	func TestSomethingThatUsesVoteHandler(t *testing.T) {
+//
+// 		// make and configure a mocked exported.VoteHandler
+// 		mockedVoteHandler := &VoteHandlerMock{
+// 			HandleCompletedPollFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.Poll) error {
+// 				panic("mock out the HandleCompletedPoll method")
+// 			},
+// 			HandleExpiredPollFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.Poll) error {
+// 				panic("mock out the HandleExpiredPoll method")
+// 			},
+// 			HandleResultFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, result codec.ProtoMarshaler) error {
+// 				panic("mock out the HandleResult method")
+// 			},
+// 			IsFalsyResultFunc: func(result codec.ProtoMarshaler) bool {
+// 				panic("mock out the IsFalsyResult method")
+// 			},
+// 		}
+//
+// 		// use mockedVoteHandler in code that requires exported.VoteHandler
+// 		// and then make assertions.
+//
+// 	}
+type VoteHandlerMock struct {
+	// HandleCompletedPollFunc mocks the HandleCompletedPoll method.
+	HandleCompletedPollFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.Poll) error
+
+	// HandleExpiredPollFunc mocks the HandleExpiredPoll method.
+	HandleExpiredPollFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.Poll) error
+
+	// HandleResultFunc mocks the HandleResult method.
+	HandleResultFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, result codec.ProtoMarshaler) error
+
+	// IsFalsyResultFunc mocks the IsFalsyResult method.
+	IsFalsyResultFunc func(result codec.ProtoMarshaler) bool
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// HandleCompletedPoll holds details about calls to the HandleCompletedPoll method.
+		HandleCompletedPoll []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Poll is the poll argument value.
+			Poll exported.Poll
+		}
+		// HandleExpiredPoll holds details about calls to the HandleExpiredPoll method.
+		HandleExpiredPoll []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Poll is the poll argument value.
+			Poll exported.Poll
+		}
+		// HandleResult holds details about calls to the HandleResult method.
+		HandleResult []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Result is the result argument value.
+			Result codec.ProtoMarshaler
+		}
+		// IsFalsyResult holds details about calls to the IsFalsyResult method.
+		IsFalsyResult []struct {
+			// Result is the result argument value.
+			Result codec.ProtoMarshaler
+		}
+	}
+	lockHandleCompletedPoll sync.RWMutex
+	lockHandleExpiredPoll   sync.RWMutex
+	lockHandleResult        sync.RWMutex
+	lockIsFalsyResult       sync.RWMutex
+}
+
+// HandleCompletedPoll calls HandleCompletedPollFunc.
+func (mock *VoteHandlerMock) HandleCompletedPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.Poll) error {
+	if mock.HandleCompletedPollFunc == nil {
+		panic("VoteHandlerMock.HandleCompletedPollFunc: method is nil but VoteHandler.HandleCompletedPoll was just called")
+	}
+	callInfo := struct {
+		Ctx  github_com_cosmos_cosmos_sdk_types.Context
+		Poll exported.Poll
+	}{
+		Ctx:  ctx,
+		Poll: poll,
+	}
+	mock.lockHandleCompletedPoll.Lock()
+	mock.calls.HandleCompletedPoll = append(mock.calls.HandleCompletedPoll, callInfo)
+	mock.lockHandleCompletedPoll.Unlock()
+	return mock.HandleCompletedPollFunc(ctx, poll)
+}
+
+// HandleCompletedPollCalls gets all the calls that were made to HandleCompletedPoll.
+// Check the length with:
+//     len(mockedVoteHandler.HandleCompletedPollCalls())
+func (mock *VoteHandlerMock) HandleCompletedPollCalls() []struct {
+	Ctx  github_com_cosmos_cosmos_sdk_types.Context
+	Poll exported.Poll
+} {
+	var calls []struct {
+		Ctx  github_com_cosmos_cosmos_sdk_types.Context
+		Poll exported.Poll
+	}
+	mock.lockHandleCompletedPoll.RLock()
+	calls = mock.calls.HandleCompletedPoll
+	mock.lockHandleCompletedPoll.RUnlock()
+	return calls
+}
+
+// HandleExpiredPoll calls HandleExpiredPollFunc.
+func (mock *VoteHandlerMock) HandleExpiredPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.Poll) error {
+	if mock.HandleExpiredPollFunc == nil {
+		panic("VoteHandlerMock.HandleExpiredPollFunc: method is nil but VoteHandler.HandleExpiredPoll was just called")
+	}
+	callInfo := struct {
+		Ctx  github_com_cosmos_cosmos_sdk_types.Context
+		Poll exported.Poll
+	}{
+		Ctx:  ctx,
+		Poll: poll,
+	}
+	mock.lockHandleExpiredPoll.Lock()
+	mock.calls.HandleExpiredPoll = append(mock.calls.HandleExpiredPoll, callInfo)
+	mock.lockHandleExpiredPoll.Unlock()
+	return mock.HandleExpiredPollFunc(ctx, poll)
+}
+
+// HandleExpiredPollCalls gets all the calls that were made to HandleExpiredPoll.
+// Check the length with:
+//     len(mockedVoteHandler.HandleExpiredPollCalls())
+func (mock *VoteHandlerMock) HandleExpiredPollCalls() []struct {
+	Ctx  github_com_cosmos_cosmos_sdk_types.Context
+	Poll exported.Poll
+} {
+	var calls []struct {
+		Ctx  github_com_cosmos_cosmos_sdk_types.Context
+		Poll exported.Poll
+	}
+	mock.lockHandleExpiredPoll.RLock()
+	calls = mock.calls.HandleExpiredPoll
+	mock.lockHandleExpiredPoll.RUnlock()
+	return calls
+}
+
+// HandleResult calls HandleResultFunc.
+func (mock *VoteHandlerMock) HandleResult(ctx github_com_cosmos_cosmos_sdk_types.Context, result codec.ProtoMarshaler) error {
+	if mock.HandleResultFunc == nil {
+		panic("VoteHandlerMock.HandleResultFunc: method is nil but VoteHandler.HandleResult was just called")
+	}
+	callInfo := struct {
+		Ctx    github_com_cosmos_cosmos_sdk_types.Context
+		Result codec.ProtoMarshaler
+	}{
+		Ctx:    ctx,
+		Result: result,
+	}
+	mock.lockHandleResult.Lock()
+	mock.calls.HandleResult = append(mock.calls.HandleResult, callInfo)
+	mock.lockHandleResult.Unlock()
+	return mock.HandleResultFunc(ctx, result)
+}
+
+// HandleResultCalls gets all the calls that were made to HandleResult.
+// Check the length with:
+//     len(mockedVoteHandler.HandleResultCalls())
+func (mock *VoteHandlerMock) HandleResultCalls() []struct {
+	Ctx    github_com_cosmos_cosmos_sdk_types.Context
+	Result codec.ProtoMarshaler
+} {
+	var calls []struct {
+		Ctx    github_com_cosmos_cosmos_sdk_types.Context
+		Result codec.ProtoMarshaler
+	}
+	mock.lockHandleResult.RLock()
+	calls = mock.calls.HandleResult
+	mock.lockHandleResult.RUnlock()
+	return calls
+}
+
+// IsFalsyResult calls IsFalsyResultFunc.
+func (mock *VoteHandlerMock) IsFalsyResult(result codec.ProtoMarshaler) bool {
+	if mock.IsFalsyResultFunc == nil {
+		panic("VoteHandlerMock.IsFalsyResultFunc: method is nil but VoteHandler.IsFalsyResult was just called")
+	}
+	callInfo := struct {
+		Result codec.ProtoMarshaler
+	}{
+		Result: result,
+	}
+	mock.lockIsFalsyResult.Lock()
+	mock.calls.IsFalsyResult = append(mock.calls.IsFalsyResult, callInfo)
+	mock.lockIsFalsyResult.Unlock()
+	return mock.IsFalsyResultFunc(result)
+}
+
+// IsFalsyResultCalls gets all the calls that were made to IsFalsyResult.
+// Check the length with:
+//     len(mockedVoteHandler.IsFalsyResultCalls())
+func (mock *VoteHandlerMock) IsFalsyResultCalls() []struct {
+	Result codec.ProtoMarshaler
+} {
+	var calls []struct {
+		Result codec.ProtoMarshaler
+	}
+	mock.lockIsFalsyResult.RLock()
+	calls = mock.calls.IsFalsyResult
+	mock.lockIsFalsyResult.RUnlock()
 	return calls
 }

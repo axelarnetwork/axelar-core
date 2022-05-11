@@ -16,7 +16,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	gogoprototypes "github.com/gogo/protobuf/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
@@ -206,7 +205,6 @@ func (s msgServer) ConfirmOutpoint(c context.Context, req *types.ConfirmOutpoint
 		vote.ExpiryAt(ctx.BlockHeight()+s.BTCKeeper.GetRevoteLockingPeriod(ctx)),
 		vote.Threshold(s.GetVotingThreshold(ctx)),
 		vote.MinVoterCount(s.GetMinVoterCount(ctx)),
-		vote.RewardPool(exported.Bitcoin.Name),
 	); err != nil {
 		return nil, err
 	}
@@ -225,157 +223,159 @@ func (s msgServer) ConfirmOutpoint(c context.Context, req *types.ConfirmOutpoint
 
 // VoteConfirmOutpoint handles the votes on an outpoint confirmation
 func (s msgServer) VoteConfirmOutpoint(c context.Context, req *types.VoteConfirmOutpointRequest) (*types.VoteConfirmOutpointResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
+	return nil, sdkerrors.ErrUnknownRequest
 
-	if err := validateChainActivated(ctx, s.nexus, exported.Bitcoin); err != nil {
-		return nil, err
-	}
+	// ctx := sdk.UnwrapSDKContext(c)
 
-	// has the outpoint been confirmed before?
-	confirmedOutPointInfo, state, confirmedBefore := s.GetOutPointInfo(ctx, *types.MustConvertOutPointFromStr(req.OutPoint))
-	// is there an ongoing poll?
-	pendingOutPointInfo, pollFound := s.GetPendingOutPointInfo(ctx, req.PollKey)
+	// if err := validateChainActivated(ctx, s.nexus, exported.Bitcoin); err != nil {
+	// 	return nil, err
+	// }
 
-	switch {
-	// a malicious user could try to delete an ongoing poll by providing an already confirmed outpoint,
-	// so we need to check that it matches the poll before deleting
-	case confirmedBefore && pollFound && pendingOutPointInfo.OutPoint == confirmedOutPointInfo.OutPoint:
-		s.DeletePendingOutPointInfo(ctx, req.PollKey)
-		fallthrough
-	// If the voting threshold has been met and additional votes are received they should not return an error
-	case confirmedBefore:
-		switch state {
-		case types.OutPointState_Confirmed:
-			return &types.VoteConfirmOutpointResponse{Status: fmt.Sprintf("outpoint %s already confirmed", req.OutPoint)}, nil
-		case types.OutPointState_Spent:
-			return &types.VoteConfirmOutpointResponse{Status: fmt.Sprintf("outpoint %s already spent", req.OutPoint)}, nil
-		default:
-			panic(fmt.Sprintf("invalid outpoint state %v", state))
-		}
-	case !pollFound:
-		return nil, fmt.Errorf("no outpoint found for poll %s", req.PollKey.String())
-	case pendingOutPointInfo.OutPoint != req.OutPoint:
-		return nil, fmt.Errorf("outpoint %s does not match poll %s", req.OutPoint, req.PollKey.String())
-	default:
-		// assert: the outpoint is known and has not been confirmed before
-	}
+	// // has the outpoint been confirmed before?
+	// confirmedOutPointInfo, state, confirmedBefore := s.GetOutPointInfo(ctx, *types.MustConvertOutPointFromStr(req.OutPoint))
+	// // is there an ongoing poll?
+	// pendingOutPointInfo, pollFound := s.GetPendingOutPointInfo(ctx, req.PollKey)
 
-	voter := s.snapshotter.GetOperator(ctx, req.Sender)
-	if voter == nil {
-		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
-	}
+	// switch {
+	// // a malicious user could try to delete an ongoing poll by providing an already confirmed outpoint,
+	// // so we need to check that it matches the poll before deleting
+	// case confirmedBefore && pollFound && pendingOutPointInfo.OutPoint == confirmedOutPointInfo.OutPoint:
+	// 	s.DeletePendingOutPointInfo(ctx, req.PollKey)
+	// 	fallthrough
+	// // If the voting threshold has been met and additional votes are received they should not return an error
+	// case confirmedBefore:
+	// 	switch state {
+	// 	case types.OutPointState_Confirmed:
+	// 		return &types.VoteConfirmOutpointResponse{Status: fmt.Sprintf("outpoint %s already confirmed", req.OutPoint)}, nil
+	// 	case types.OutPointState_Spent:
+	// 		return &types.VoteConfirmOutpointResponse{Status: fmt.Sprintf("outpoint %s already spent", req.OutPoint)}, nil
+	// 	default:
+	// 		panic(fmt.Sprintf("invalid outpoint state %v", state))
+	// 	}
+	// case !pollFound:
+	// 	return nil, fmt.Errorf("no outpoint found for poll %s", req.PollKey.String())
+	// case pendingOutPointInfo.OutPoint != req.OutPoint:
+	// 	return nil, fmt.Errorf("outpoint %s does not match poll %s", req.OutPoint, req.PollKey.String())
+	// default:
+	// 	// assert: the outpoint is known and has not been confirmed before
+	// }
 
-	poll := s.voter.GetPoll(ctx, req.PollKey)
-	voteValue := &gogoprototypes.BoolValue{Value: req.Confirmed}
-	if err := poll.Vote(voter, voteValue); err != nil {
-		return nil, err
-	}
+	// voter := s.snapshotter.GetOperator(ctx, req.Sender)
+	// if voter == nil {
+	// 	return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
+	// }
 
-	ctx.EventManager().EmitEvent(sdk.NewEvent(
-		types.EventTypeOutpointConfirmation,
-		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueVoted),
-		sdk.NewAttribute(types.AttributeKeyValue, strconv.FormatBool(voteValue.Value)),
-	))
+	// poll := s.voter.GetPoll(ctx, req.PollKey)
+	// voteValue := &gogoprototypes.BoolValue{Value: req.Confirmed}
+	// if err := poll.Vote(voter, ctx.BlockHeight(), voteValue); err != nil {
+	// 	return nil, err
+	// }
 
-	if poll.Is(vote.Pending) {
-		return &types.VoteConfirmOutpointResponse{Status: fmt.Sprintf("not enough votes to confirm outpoint %s yet", req.OutPoint)}, nil
-	}
+	// ctx.EventManager().EmitEvent(sdk.NewEvent(
+	// 	types.EventTypeOutpointConfirmation,
+	// 	sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+	// 	sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueVoted),
+	// 	sdk.NewAttribute(types.AttributeKeyValue, strconv.FormatBool(voteValue.Value)),
+	// ))
 
-	if poll.Is(vote.Failed) {
-		s.DeletePendingOutPointInfo(ctx, req.PollKey)
-		return &types.VoteConfirmOutpointResponse{Status: fmt.Sprintf("poll %s failed", poll.GetKey())}, nil
-	}
+	// if poll.Is(vote.Pending) {
+	// 	return &types.VoteConfirmOutpointResponse{Status: fmt.Sprintf("not enough votes to confirm outpoint %s yet", req.OutPoint)}, nil
+	// }
 
-	confirmed, ok := poll.GetResult().(*gogoprototypes.BoolValue)
-	if !ok {
-		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetResult())
-	}
+	// if poll.Is(vote.Failed) {
+	// 	s.DeletePendingOutPointInfo(ctx, req.PollKey)
+	// 	return &types.VoteConfirmOutpointResponse{Status: fmt.Sprintf("poll %s failed", poll.GetKey())}, nil
+	// }
 
-	s.DeletePendingOutPointInfo(ctx, req.PollKey)
+	// confirmed, ok := poll.GetResult().(*gogoprototypes.BoolValue)
+	// if !ok {
+	// 	return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetResult())
+	// }
 
-	// handle poll result
-	event := sdk.NewEvent(types.EventTypeOutpointConfirmation,
-		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.PollKey))),
-		sdk.NewAttribute(types.AttributeKeyOutPointInfo, string(types.ModuleCdc.MustMarshalJSON(&pendingOutPointInfo))))
+	// s.DeletePendingOutPointInfo(ctx, req.PollKey)
 
-	// allow each return path to append unique attributes
-	defer func() { ctx.EventManager().EmitEvent(event) }()
+	// // handle poll result
+	// event := sdk.NewEvent(types.EventTypeOutpointConfirmation,
+	// 	sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+	// 	sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.PollKey))),
+	// 	sdk.NewAttribute(types.AttributeKeyOutPointInfo, string(types.ModuleCdc.MustMarshalJSON(&pendingOutPointInfo))))
 
-	if !confirmed.Value {
-		poll.AllowOverride()
-		event = event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject))
+	// // allow each return path to append unique attributes
+	// defer func() { ctx.EventManager().EmitEvent(event) }()
 
-		return &types.VoteConfirmOutpointResponse{
-			Status: fmt.Sprintf("outpoint %s was discarded ", req.OutPoint),
-		}, nil
-	}
+	// if !confirmed.Value {
+	// 	poll.AllowOverride()
+	// 	event = event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject))
 
-	s.Logger(ctx).Info(fmt.Sprintf("outpoint %s was confirmed ", req.OutPoint))
-	event = event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm))
+	// 	return &types.VoteConfirmOutpointResponse{
+	// 		Status: fmt.Sprintf("outpoint %s was discarded ", req.OutPoint),
+	// 	}, nil
+	// }
 
-	addr, ok := s.GetAddressInfo(ctx, pendingOutPointInfo.Address)
-	if !ok {
-		return nil, fmt.Errorf("cannot confirm outpoint of unknown address")
-	}
+	// s.Logger(ctx).Info(fmt.Sprintf("outpoint %s was confirmed ", req.OutPoint))
+	// event = event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm))
 
-	s.SetConfirmedOutpointInfo(ctx, addr.KeyID, pendingOutPointInfo)
+	// addr, ok := s.GetAddressInfo(ctx, pendingOutPointInfo.Address)
+	// if !ok {
+	// 	return nil, fmt.Errorf("cannot confirm outpoint of unknown address")
+	// }
 
-	key, ok := s.signer.GetKey(ctx, addr.KeyID)
-	if !ok {
-		return nil, fmt.Errorf("cannot key %s", addr.KeyID)
-	}
+	// s.SetConfirmedOutpointInfo(ctx, addr.KeyID, pendingOutPointInfo)
 
-	rotationCount, ok := s.signer.GetRotationCountOfKeyID(ctx, addr.KeyID)
-	if !ok {
-		return nil, fmt.Errorf("cannot find rotation count of key %s", addr.KeyID)
-	}
+	// key, ok := s.signer.GetKey(ctx, addr.KeyID)
+	// if !ok {
+	// 	return nil, fmt.Errorf("cannot key %s", addr.KeyID)
+	// }
 
-	currRotationCount := s.signer.GetRotationCount(ctx, exported.Bitcoin, key.Role)
-	_, nextKeyFound := s.signer.GetNextKey(ctx, exported.Bitcoin, key.Role)
-	if nextKeyFound {
-		currRotationCount++
-	}
+	// rotationCount, ok := s.signer.GetRotationCountOfKeyID(ctx, addr.KeyID)
+	// if !ok {
+	// 	return nil, fmt.Errorf("cannot find rotation count of key %s", addr.KeyID)
+	// }
 
-	if currRotationCount-rotationCount > s.signer.GetKeyUnbondingLockingKeyRotationCount(ctx) {
-		return &types.VoteConfirmOutpointResponse{
-			Status: fmt.Sprintf("cannot confirm outpoint of the old key %s anymore", addr.KeyID)}, nil
-	}
+	// currRotationCount := s.signer.GetRotationCount(ctx, exported.Bitcoin, key.Role)
+	// _, nextKeyFound := s.signer.GetNextKey(ctx, exported.Bitcoin, key.Role)
+	// if nextKeyFound {
+	// 	currRotationCount++
+	// }
 
-	switch addr.Role {
-	case types.Deposit:
-		// handle cross-chain transfer
-		depositAddr := nexus.CrossChainAddress{Address: pendingOutPointInfo.Address, Chain: exported.Bitcoin}
-		amount := sdk.NewInt64Coin(types.Satoshi, int64(pendingOutPointInfo.Amount))
-		if err := s.nexus.EnqueueForTransfer(ctx, depositAddr, amount); err != nil {
-			return nil, sdkerrors.Wrap(err, "cross-chain transfer failed")
-		}
+	// if currRotationCount-rotationCount > s.signer.GetKeyUnbondingLockingKeyRotationCount(ctx) {
+	// 	return &types.VoteConfirmOutpointResponse{
+	// 		Status: fmt.Sprintf("cannot confirm outpoint of the old key %s anymore", addr.KeyID)}, nil
+	// }
 
-		telemetry.IncrCounter(float32(pendingOutPointInfo.Amount), types.ModuleName, "total", "deposit")
-		telemetry.IncrCounter(1, types.ModuleName, "total", "deposit", "count")
+	// switch addr.Role {
+	// case types.Deposit:
+	// 	// handle cross-chain transfer
+	// 	depositAddr := nexus.CrossChainAddress{Address: pendingOutPointInfo.Address, Chain: exported.Bitcoin}
+	// 	amount := sdk.NewInt64Coin(types.Satoshi, int64(pendingOutPointInfo.Amount))
+	// 	if err := s.nexus.EnqueueForTransfer(ctx, depositAddr, amount); err != nil {
+	// 		return nil, sdkerrors.Wrap(err, "cross-chain transfer failed")
+	// 	}
 
-		recipient, ok := s.nexus.GetRecipient(ctx, depositAddr)
-		if !ok {
-			return nil, fmt.Errorf("cross-chain sender has no recipient")
-		}
-		event = event.AppendAttributes(
-			sdk.NewAttribute(types.AttributeKeyDestinationChain, recipient.Chain.Name),
-			sdk.NewAttribute(types.AttributeKeyDestinationAddress, recipient.Address),
-		)
+	// 	telemetry.IncrCounter(float32(pendingOutPointInfo.Amount), types.ModuleName, "total", "deposit")
+	// 	telemetry.IncrCounter(1, types.ModuleName, "total", "deposit", "count")
 
-		return &types.VoteConfirmOutpointResponse{
-			Status: fmt.Sprintf("transfer of %s from {%s} successfully prepared", amount.Amount.String(), depositAddr.String()),
-		}, nil
-	case types.Consolidation:
-		unconfirmedAmount := s.BTCKeeper.GetUnconfirmedAmount(ctx, addr.KeyID)
-		s.BTCKeeper.SetUnconfirmedAmount(ctx, addr.KeyID, unconfirmedAmount-pendingOutPointInfo.Amount)
-		// the outpoint simply deposits funds into a consolidation address. Simply confirm
-		return &types.VoteConfirmOutpointResponse{
-			Status: "confirmed top up of consolidation balance"}, nil
-	default:
-		return nil, fmt.Errorf("outpoint sends funds to address with unrecognized role")
-	}
+	// 	recipient, ok := s.nexus.GetRecipient(ctx, depositAddr)
+	// 	if !ok {
+	// 		return nil, fmt.Errorf("cross-chain sender has no recipient")
+	// 	}
+	// 	event = event.AppendAttributes(
+	// 		sdk.NewAttribute(types.AttributeKeyDestinationChain, recipient.Chain.Name),
+	// 		sdk.NewAttribute(types.AttributeKeyDestinationAddress, recipient.Address),
+	// 	)
+
+	// 	return &types.VoteConfirmOutpointResponse{
+	// 		Status: fmt.Sprintf("transfer of %s from {%s} successfully prepared", amount.Amount.String(), depositAddr.String()),
+	// 	}, nil
+	// case types.Consolidation:
+	// 	unconfirmedAmount := s.BTCKeeper.GetUnconfirmedAmount(ctx, addr.KeyID)
+	// 	s.BTCKeeper.SetUnconfirmedAmount(ctx, addr.KeyID, unconfirmedAmount-pendingOutPointInfo.Amount)
+	// 	// the outpoint simply deposits funds into a consolidation address. Simply confirm
+	// 	return &types.VoteConfirmOutpointResponse{
+	// 		Status: "confirmed top up of consolidation balance"}, nil
+	// default:
+	// 	return nil, fmt.Errorf("outpoint sends funds to address with unrecognized role")
+	// }
 }
 
 func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.SignTxResponse, error) {

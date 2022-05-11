@@ -3,14 +3,12 @@ package keeper
 import (
 	"context"
 	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"strconv"
 	"strings"
 
 	"github.com/armon/go-metrics"
 	"github.com/btcsuite/btcd/btcec"
-	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -18,7 +16,6 @@ import (
 
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
-	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
@@ -320,154 +317,156 @@ func (s msgServer) RotateKey(c context.Context, req *types.RotateKeyRequest) (*t
 }
 
 func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (*types.VotePubKeyResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
+	return nil, sdkerrors.ErrUnknownRequest
 
-	voter := s.snapshotter.GetOperator(ctx, req.Sender)
-	if voter == nil {
-		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
-	}
+	// ctx := sdk.UnwrapSDKContext(c)
 
-	var voteData codec.ProtoMarshaler
-	keyID := exported.KeyID(req.PollKey.ID)
-	switch res := req.Result.GetKeygenResultData().(type) {
-	case *tofnd.MessageOut_KeygenResult_Criminals:
-		voteData = res.Criminals
-	case *tofnd.MessageOut_KeygenResult_Data:
-		if s.HasPrivateRecoveryInfo(ctx, voter, keyID) {
-			return nil, fmt.Errorf("voter %s already submitted their private recovery info", voter.String())
-		}
+	// voter := s.snapshotter.GetOperator(ctx, req.Sender)
+	// if voter == nil {
+	// 	return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
+	// }
 
-		counter, ok := s.GetSnapshotCounterForKeyID(ctx, keyID)
-		if !ok {
-			return nil, fmt.Errorf("could not obtain snapshot counter for key ID %s", keyID)
-		}
-		snapshot, ok := s.snapshotter.GetSnapshot(ctx, counter)
-		if !ok {
-			return nil, fmt.Errorf("could not obtain snapshot for counter %d", counter)
-		}
+	// var voteData codec.ProtoMarshaler
+	// keyID := exported.KeyID(req.PollKey.ID)
+	// switch res := req.Result.GetKeygenResultData().(type) {
+	// case *tofnd.MessageOut_KeygenResult_Criminals:
+	// 	voteData = res.Criminals
+	// case *tofnd.MessageOut_KeygenResult_Data:
+	// 	if s.HasPrivateRecoveryInfo(ctx, voter, keyID) {
+	// 		return nil, fmt.Errorf("voter %s already submitted their private recovery info", voter.String())
+	// 	}
 
-		val, ok := snapshot.GetValidator(voter)
-		if !ok {
-			return nil, fmt.Errorf("could not find validator %s in snapshot #%d", val.String(), counter)
-		}
+	// 	counter, ok := s.GetSnapshotCounterForKeyID(ctx, keyID)
+	// 	if !ok {
+	// 		return nil, fmt.Errorf("could not obtain snapshot counter for key ID %s", keyID)
+	// 	}
+	// 	snapshot, ok := s.snapshotter.GetSnapshot(ctx, counter)
+	// 	if !ok {
+	// 		return nil, fmt.Errorf("could not obtain snapshot for counter %d", counter)
+	// 	}
 
-		// get pubkey
-		pubKey := res.Data.GetPubKey()
-		if pubKey == nil {
-			return nil, fmt.Errorf("public key is nil")
-		}
+	// 	val, ok := snapshot.GetValidator(voter)
+	// 	if !ok {
+	// 		return nil, fmt.Errorf("could not find validator %s in snapshot #%d", val.String(), counter)
+	// 	}
 
-		s.SetPrivateRecoveryInfo(ctx, voter, keyID, res.Data.GetPrivateRecoverInfo())
+	// 	// get pubkey
+	// 	pubKey := res.Data.GetPubKey()
+	// 	if pubKey == nil {
+	// 		return nil, fmt.Errorf("public key is nil")
+	// 	}
 
-		voteData = &types.KeygenVoteData{
-			PubKey:            pubKey,
-			GroupRecoveryInfo: res.Data.GetGroupRecoverInfo(),
-		}
+	// 	s.SetPrivateRecoveryInfo(ctx, voter, keyID, res.Data.GetPrivateRecoverInfo())
 
-	default:
-		return nil, fmt.Errorf("invalid data type")
-	}
+	// 	voteData = &types.KeygenVoteData{
+	// 		PubKey:            pubKey,
+	// 		GroupRecoveryInfo: res.Data.GetGroupRecoverInfo(),
+	// 	}
 
-	if _, ok := s.GetKey(ctx, keyID); ok {
-		// the key is already set, no need for further processing of the vote
-		s.Logger(ctx).Debug(fmt.Sprintf("public key %s already verified", keyID))
-		return &types.VotePubKeyResponse{}, nil
-	}
+	// default:
+	// 	return nil, fmt.Errorf("invalid data type")
+	// }
 
-	poll := s.voter.GetPoll(ctx, req.PollKey)
+	// if _, ok := s.GetKey(ctx, keyID); ok {
+	// 	// the key is already set, no need for further processing of the vote
+	// 	s.Logger(ctx).Debug(fmt.Sprintf("public key %s already verified", keyID))
+	// 	return &types.VotePubKeyResponse{}, nil
+	// }
 
-	if err := poll.Vote(voter, voteData); err != nil {
-		return nil, err
-	}
+	// poll := s.voter.GetPoll(ctx, req.PollKey)
 
-	if poll.Is(vote.Pending) {
-		return &types.VotePubKeyResponse{Log: fmt.Sprintf("not enough votes to confirm public key %s yet", keyID)}, nil
-	}
+	// if err := poll.Vote(voter, voteData); err != nil {
+	// 	return nil, err
+	// }
 
-	event := sdk.NewEvent(
-		types.EventTypeKeygen,
-		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(types.AttributeKeyPoll, req.PollKey.String()),
-	)
-	defer ctx.EventManager().EmitEvent(event)
+	// if poll.Is(vote.Pending) {
+	// 	return &types.VotePubKeyResponse{Log: fmt.Sprintf("not enough votes to confirm public key %s yet", keyID)}, nil
+	// }
 
-	if poll.Is(vote.Failed) {
-		s.Logger(ctx).Info(fmt.Sprintf("voting for key '%s' has failed", keyID))
+	// event := sdk.NewEvent(
+	// 	types.EventTypeKeygen,
+	// 	sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+	// 	sdk.NewAttribute(types.AttributeKeyPoll, req.PollKey.String()),
+	// )
+	// defer ctx.EventManager().EmitEvent(event)
 
-		ctx.EventManager().EmitEvent(
-			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)),
-		)
+	// if poll.Is(vote.Failed) {
+	// 	s.Logger(ctx).Info(fmt.Sprintf("voting for key '%s' has failed", keyID))
 
-		s.DeleteSnapshotCounterForKeyID(ctx, keyID)
-		s.DeleteKeygenStart(ctx, keyID)
-		s.DeleteKeyRecoveryInfo(ctx, keyID)
+	// 	ctx.EventManager().EmitEvent(
+	// 		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)),
+	// 	)
 
-		return &types.VotePubKeyResponse{}, nil
-	}
+	// 	s.DeleteSnapshotCounterForKeyID(ctx, keyID)
+	// 	s.DeleteKeygenStart(ctx, keyID)
+	// 	s.DeleteKeyRecoveryInfo(ctx, keyID)
 
-	s.Logger(ctx).Info(fmt.Sprintf("voting for key '%s' has finished", keyID))
+	// 	return &types.VotePubKeyResponse{}, nil
+	// }
 
-	result := poll.GetResult()
-	// result should be either KeygenResult or Criminals
-	switch keygenResult := result.(type) {
-	case *types.KeygenVoteData:
-		s.Logger(ctx).Debug(fmt.Sprintf("processing new key '%s'", keyID))
+	// s.Logger(ctx).Info(fmt.Sprintf("voting for key '%s' has finished", keyID))
 
-		_, err := btcec.ParsePubKey(keygenResult.PubKey, btcec.S256())
-		if err != nil {
-			return nil, fmt.Errorf("could not parse public key bytes: [%w]", err)
-		}
+	// result := poll.GetResult()
+	// // result should be either KeygenResult or Criminals
+	// switch keygenResult := result.(type) {
+	// case *types.KeygenVoteData:
+	// 	s.Logger(ctx).Debug(fmt.Sprintf("processing new key '%s'", keyID))
 
-		s.SetKey(ctx, exported.Key{
-			ID: keyID,
-			PublicKey: &exported.Key_ECDSAKey_{
-				ECDSAKey: &exported.Key_ECDSAKey{
-					Value: keygenResult.PubKey,
-				},
-			},
-		})
+	// 	_, err := btcec.ParsePubKey(keygenResult.PubKey, btcec.S256())
+	// 	if err != nil {
+	// 		return nil, fmt.Errorf("could not parse public key bytes: [%w]", err)
+	// 	}
 
-		s.SetGroupRecoveryInfo(ctx, keyID, keygenResult.GroupRecoveryInfo)
+	// 	s.SetKey(ctx, exported.Key{
+	// 		ID: keyID,
+	// 		PublicKey: &exported.Key_ECDSAKey_{
+	// 			ECDSAKey: &exported.Key_ECDSAKey{
+	// 				Value: keygenResult.PubKey,
+	// 			},
+	// 		},
+	// 	})
 
-		ctx.EventManager().EmitEvent(
-			event.AppendAttributes(
-				sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDecided),
-				sdk.NewAttribute(types.AttributeKeyPayload, keygenResult.String()),
-			),
-		)
+	// 	s.SetGroupRecoveryInfo(ctx, keyID, keygenResult.GroupRecoveryInfo)
 
-		return &types.VotePubKeyResponse{}, nil
-	case *tofnd.MessageOut_CriminalList:
-		s.Logger(ctx).Debug(fmt.Sprintf("extracting criminal list for poll %s", keyID))
+	// 	ctx.EventManager().EmitEvent(
+	// 		event.AppendAttributes(
+	// 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDecided),
+	// 			sdk.NewAttribute(types.AttributeKeyPayload, keygenResult.String()),
+	// 		),
+	// 	)
 
-		// TODO: allow vote for timeout only if params.TimeoutInBlocks has passed
-		// TODO: the snapshot itself can be deleted too but we need to be more careful with it
-		s.DeleteSnapshotCounterForKeyID(ctx, keyID)
-		s.DeleteKeygenStart(ctx, keyID)
-		s.DeleteKeyRecoveryInfo(ctx, keyID)
-		poll.AllowOverride()
+	// 	return &types.VotePubKeyResponse{}, nil
+	// case *tofnd.MessageOut_CriminalList:
+	// 	s.Logger(ctx).Debug(fmt.Sprintf("extracting criminal list for poll %s", keyID))
 
-		ctx.EventManager().EmitEvent(
-			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)),
-		)
+	// 	// TODO: allow vote for timeout only if params.TimeoutInBlocks has passed
+	// 	// TODO: the snapshot itself can be deleted too but we need to be more careful with it
+	// 	s.DeleteSnapshotCounterForKeyID(ctx, keyID)
+	// 	s.DeleteKeygenStart(ctx, keyID)
+	// 	s.DeleteKeyRecoveryInfo(ctx, keyID)
+	// 	poll.AllowOverride()
 
-		for _, criminal := range keygenResult.Criminals {
-			criminalAddress, _ := sdk.ValAddressFromBech32(criminal.GetPartyUid())
-			if err := validateCriminal(criminalAddress, poll); err != nil {
-				s.Logger(ctx).Error(err.Error())
-				continue
-			}
+	// 	ctx.EventManager().EmitEvent(
+	// 		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)),
+	// 	)
 
-			s.TSSKeeper.PenalizeCriminal(ctx, criminalAddress, criminal.GetCrimeType())
+	// 	for _, criminal := range keygenResult.Criminals {
+	// 		criminalAddress, _ := sdk.ValAddressFromBech32(criminal.GetPartyUid())
+	// 		if err := validateCriminal(criminalAddress, poll); err != nil {
+	// 			s.Logger(ctx).Error(err.Error())
+	// 			continue
+	// 		}
 
-			s.Logger(ctx).Info(fmt.Sprintf("criminal for generating key %s verified: %s - %s", keyID, criminal.GetPartyUid(), criminal.CrimeType.String()))
-		}
+	// 		s.TSSKeeper.PenalizeCriminal(ctx, criminalAddress, criminal.GetCrimeType())
 
-		return &types.VotePubKeyResponse{}, nil
-	default:
-		return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
-			fmt.Sprintf("unrecognized voting result type: %T", result))
-	}
+	// 		s.Logger(ctx).Info(fmt.Sprintf("criminal for generating key %s verified: %s - %s", keyID, criminal.GetPartyUid(), criminal.CrimeType.String()))
+	// 	}
+
+	// 	return &types.VotePubKeyResponse{}, nil
+	// default:
+	// 	return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
+	// 		fmt.Sprintf("unrecognized voting result type: %T", result))
+	// }
 }
 
 func (s msgServer) ProcessSignTraffic(c context.Context, req *types.ProcessSignTrafficRequest) (*types.ProcessSignTrafficResponse, error) {
@@ -494,117 +493,119 @@ func (s msgServer) ProcessSignTraffic(c context.Context, req *types.ProcessSignT
 }
 
 func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types.VoteSigResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
+	return nil, sdkerrors.ErrUnknownRequest
 
-	if _, status := s.GetSig(ctx, req.PollKey.ID); status == exported.SigStatus_Signed {
-		// the signature is already set, no need for further processing of the vote
-		s.Logger(ctx).Debug(fmt.Sprintf("signature %s already verified", req.PollKey.ID))
-		return &types.VoteSigResponse{}, nil
-	}
+	// ctx := sdk.UnwrapSDKContext(c)
 
-	voter := s.snapshotter.GetOperator(ctx, req.Sender)
-	if voter == nil {
-		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
-	}
+	// if _, status := s.GetSig(ctx, req.PollKey.ID); status == exported.SigStatus_Signed {
+	// 	// the signature is already set, no need for further processing of the vote
+	// 	s.Logger(ctx).Debug(fmt.Sprintf("signature %s already verified", req.PollKey.ID))
+	// 	return &types.VoteSigResponse{}, nil
+	// }
 
-	info, ok := s.GetInfoForSig(ctx, req.PollKey.ID)
-	if !ok {
-		return nil, fmt.Errorf("sig info does not exist")
-	}
+	// voter := s.snapshotter.GetOperator(ctx, req.Sender)
+	// if voter == nil {
+	// 	return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
+	// }
 
-	poll := s.voter.GetPoll(ctx, req.PollKey)
-	if err := poll.Vote(voter, &req.Result); err != nil {
-		return nil, err
-	}
+	// info, ok := s.GetInfoForSig(ctx, req.PollKey.ID)
+	// if !ok {
+	// 	return nil, fmt.Errorf("sig info does not exist")
+	// }
 
-	if poll.Is(vote.Pending) {
-		return &types.VoteSigResponse{Log: fmt.Sprintf("not enough votes to confirm signature %s yet", req.PollKey.ID)}, nil
-	}
+	// poll := s.voter.GetPoll(ctx, req.PollKey)
+	// if err := poll.Vote(voter, &req.Result); err != nil {
+	// 	return nil, err
+	// }
 
-	event := sdk.NewEvent(
-		types.EventTypeSign,
-		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(types.AttributeKeyPoll, req.PollKey.String()),
-		sdk.NewAttribute(types.AttributeKeySigID, req.PollKey.ID),
-		sdk.NewAttribute(types.AttributeKeySigModule, info.RequestModule),
-		sdk.NewAttribute(types.AttributeKeyParticipants, string(s.GetSignParticipantsAsJSON(ctx, req.PollKey.ID))),
-		sdk.NewAttribute(types.AttributeKeyParticipantShareCounts, string(s.GetSignParticipantsSharesAsJSON(ctx, req.PollKey.ID))),
-	)
-	defer func() { ctx.EventManager().EmitEvent(event) }()
+	// if poll.Is(vote.Pending) {
+	// 	return &types.VoteSigResponse{Log: fmt.Sprintf("not enough votes to confirm signature %s yet", req.PollKey.ID)}, nil
+	// }
 
-	if len(info.Metadata) > 0 {
-		// module that requests sign is responsible for marshalling metadata to appropriate encoding (expects JSON)
-		event = event.AppendAttributes(sdk.NewAttribute(types.AttributeKeySigData, info.Metadata))
-	}
+	// event := sdk.NewEvent(
+	// 	types.EventTypeSign,
+	// 	sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+	// 	sdk.NewAttribute(types.AttributeKeyPoll, req.PollKey.String()),
+	// 	sdk.NewAttribute(types.AttributeKeySigID, req.PollKey.ID),
+	// 	sdk.NewAttribute(types.AttributeKeySigModule, info.RequestModule),
+	// 	sdk.NewAttribute(types.AttributeKeyParticipants, string(s.GetSignParticipantsAsJSON(ctx, req.PollKey.ID))),
+	// 	sdk.NewAttribute(types.AttributeKeyParticipantShareCounts, string(s.GetSignParticipantsSharesAsJSON(ctx, req.PollKey.ID))),
+	// )
+	// defer func() { ctx.EventManager().EmitEvent(event) }()
 
-	if poll.Is(vote.Failed) {
-		event = event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject))
+	// if len(info.Metadata) > 0 {
+	// 	// module that requests sign is responsible for marshalling metadata to appropriate encoding (expects JSON)
+	// 	event = event.AppendAttributes(sdk.NewAttribute(types.AttributeKeySigData, info.Metadata))
+	// }
 
-		s.DeleteInfoForSig(ctx, req.PollKey.ID)
-		s.SetSigStatus(ctx, req.PollKey.ID, exported.SigStatus_Aborted)
-		s.route(ctx, info)
+	// if poll.Is(vote.Failed) {
+	// 	event = event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject))
 
-		return &types.VoteSigResponse{}, nil
-	}
+	// 	s.DeleteInfoForSig(ctx, req.PollKey.ID)
+	// 	s.SetSigStatus(ctx, req.PollKey.ID, exported.SigStatus_Aborted)
+	// 	s.route(ctx, info)
 
-	result := poll.GetResult()
-	switch signResult := result.(type) {
-	case *tofnd.MessageOut_SignResult:
-		if signature := signResult.GetSignature(); signature != nil {
-			key, _ := s.GetKey(ctx, info.KeyID)
-			pk, err := key.GetECDSAPubKey()
-			if err != nil {
-				return nil, err
-			}
-			btcecPK := btcec.PublicKey(pk)
+	// 	return &types.VoteSigResponse{}, nil
+	// }
 
-			s.SetSig(ctx, exported.Signature{
-				SigID: req.PollKey.ID,
-				Sig: &exported.Signature_SingleSig_{
-					SingleSig: &exported.Signature_SingleSig{
-						SigKeyPair: exported.SigKeyPair{
-							PubKey:    btcecPK.SerializeCompressed(),
-							Signature: signature,
-						},
-					},
-				},
-				SigStatus: exported.SigStatus_Signed,
-			})
-			s.route(ctx, info)
+	// result := poll.GetResult()
+	// switch signResult := result.(type) {
+	// case *tofnd.MessageOut_SignResult:
+	// 	if signature := signResult.GetSignature(); signature != nil {
+	// 		key, _ := s.GetKey(ctx, info.KeyID)
+	// 		pk, err := key.GetECDSAPubKey()
+	// 		if err != nil {
+	// 			return nil, err
+	// 		}
+	// 		btcecPK := btcec.PublicKey(pk)
 
-			s.Logger(ctx).Info(fmt.Sprintf("signature for %s verified: %.10s", req.PollKey.ID, hex.EncodeToString(signature)))
-			event = event.AppendAttributes(
-				sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDecided),
-				sdk.NewAttribute(types.AttributeKeyPayload, signResult.String()),
-			)
+	// 		s.SetSig(ctx, exported.Signature{
+	// 			SigID: req.PollKey.ID,
+	// 			Sig: &exported.Signature_SingleSig_{
+	// 				SingleSig: &exported.Signature_SingleSig{
+	// 					SigKeyPair: exported.SigKeyPair{
+	// 						PubKey:    btcecPK.SerializeCompressed(),
+	// 						Signature: signature,
+	// 					},
+	// 				},
+	// 			},
+	// 			SigStatus: exported.SigStatus_Signed,
+	// 		})
+	// 		s.route(ctx, info)
 
-			return &types.VoteSigResponse{}, nil
-		}
+	// 		s.Logger(ctx).Info(fmt.Sprintf("signature for %s verified: %.10s", req.PollKey.ID, hex.EncodeToString(signature)))
+	// 		event = event.AppendAttributes(
+	// 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDecided),
+	// 			sdk.NewAttribute(types.AttributeKeyPayload, signResult.String()),
+	// 		)
 
-		// TODO: allow vote for timeout only if params.TimeoutInBlocks has passed
-		s.DeleteInfoForSig(ctx, req.PollKey.ID)
-		s.SetSigStatus(ctx, req.PollKey.ID, exported.SigStatus_Aborted)
-		s.route(ctx, info)
-		event = event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject))
-		poll.AllowOverride()
+	// 		return &types.VoteSigResponse{}, nil
+	// 	}
 
-		for _, criminal := range signResult.GetCriminals().Criminals {
-			criminalAddress, _ := sdk.ValAddressFromBech32(criminal.GetPartyUid())
-			if err := validateCriminal(criminalAddress, poll); err != nil {
-				s.Logger(ctx).Error(err.Error())
-				continue
-			}
+	// 	// TODO: allow vote for timeout only if params.TimeoutInBlocks has passed
+	// 	s.DeleteInfoForSig(ctx, req.PollKey.ID)
+	// 	s.SetSigStatus(ctx, req.PollKey.ID, exported.SigStatus_Aborted)
+	// 	s.route(ctx, info)
+	// 	event = event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject))
+	// 	poll.AllowOverride()
 
-			s.TSSKeeper.PenalizeCriminal(ctx, criminalAddress, criminal.GetCrimeType())
+	// 	for _, criminal := range signResult.GetCriminals().Criminals {
+	// 		criminalAddress, _ := sdk.ValAddressFromBech32(criminal.GetPartyUid())
+	// 		if err := validateCriminal(criminalAddress, poll); err != nil {
+	// 			s.Logger(ctx).Error(err.Error())
+	// 			continue
+	// 		}
 
-			s.Logger(ctx).Info(fmt.Sprintf("criminal for signature %s verified: %s - %s", req.PollKey.ID, criminal.GetPartyUid(), criminal.CrimeType.String()))
-		}
+	// 		s.TSSKeeper.PenalizeCriminal(ctx, criminalAddress, criminal.GetCrimeType())
 
-		return &types.VoteSigResponse{}, nil
-	default:
-		return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
-			fmt.Sprintf("unrecognized voting result type: %T", result))
-	}
+	// 		s.Logger(ctx).Info(fmt.Sprintf("criminal for signature %s verified: %s - %s", req.PollKey.ID, criminal.GetPartyUid(), criminal.CrimeType.String()))
+	// 	}
+
+	// 	return &types.VoteSigResponse{}, nil
+	// default:
+	// 	return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
+	// 		fmt.Sprintf("unrecognized voting result type: %T", result))
+	// }
 }
 
 func (s msgServer) SubmitMultisigPubKeys(c context.Context, req *types.SubmitMultisigPubKeysRequest) (*types.SubmitMultisigPubKeysResponse, error) {

@@ -17,7 +17,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/evm/types/mock"
 	"github.com/axelarnetwork/axelar-core/x/evm/types/testutils"
-	testUtils "github.com/axelarnetwork/axelar-core/x/evm/types/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tssTestUtils "github.com/axelarnetwork/axelar-core/x/tss/exported/testutils"
 	"github.com/axelarnetwork/utils/slices"
@@ -110,14 +109,33 @@ func TestGetMigrationHandler(t *testing.T) {
 			for _, chain := range evmChains {
 				for _, token := range tokens {
 					keeper.ForChain(chain.Name).(chainKeeper).setTokenMetadata(ctx, token)
-
-					_, ok := keeper.ForChain(chain.Name).(chainKeeper).getTokenMetadataByAsset(ctx, token.Asset)
-					assert.True(t, ok)
-					_, ok = keeper.ForChain(chain.Name).(chainKeeper).getTokenMetadataBySymbol(ctx, token.Details.Symbol)
-					assert.True(t, ok)
 				}
 			}
 		})
+
+	whenTokensAreSetup.
+		When("voting grace period is not set", func() {
+			for _, chain := range evmChains {
+				ck := keeper.ForChain(chain.Name).(chainKeeper)
+				subspace, _ := ck.getSubspace(ctx)
+				subspace.Set(ctx, types.KeyVotingGracePeriod, int64(0))
+			}
+		}).
+		Then("should set new param voting grace period", func(t *testing.T) {
+			for _, chain := range evmChains {
+				ck := keeper.ForChain(chain.Name).(chainKeeper)
+				assert.EqualValues(t, 0, ck.GetParams(ctx).VotingGracePeriod)
+			}
+
+			err := handler(ctx)
+			assert.Error(t, err)
+
+			for _, chain := range evmChains {
+				ck := keeper.ForChain(chain.Name).(chainKeeper)
+				assert.EqualValues(t, types.DefaultParams()[0].VotingGracePeriod, ck.GetParams(ctx).VotingGracePeriod)
+			}
+		}).
+		Run(t)
 
 	whenTokensAreSetup.
 		Then("should delete uaxl token", func(t *testing.T) {
@@ -203,10 +221,10 @@ func TestGetMigrationHandler(t *testing.T) {
 				for i := 0; i < burnerCount; i++ {
 					switch rand.Bools(0.5).Next() {
 					case true:
-						ck.SetBurnerInfo(ctx, types.BurnerInfo{Asset: uaxl, BurnerAddress: testUtils.RandomAddress()})
+						ck.SetBurnerInfo(ctx, types.BurnerInfo{Asset: uaxl, BurnerAddress: testutils.RandomAddress()})
 					default:
 						chainToNonUaxlBurnerCount[chain.Name]++
-						ck.SetBurnerInfo(ctx, types.BurnerInfo{Asset: rand.NormalizedStr(5), BurnerAddress: testUtils.RandomAddress()})
+						ck.SetBurnerInfo(ctx, types.BurnerInfo{Asset: rand.NormalizedStr(5), BurnerAddress: testutils.RandomAddress()})
 					}
 				}
 
@@ -233,8 +251,8 @@ func TestGetMigrationHandler(t *testing.T) {
 
 				for i := 0; i < confirmedDepositCount; i++ {
 					deposit := types.ERC20Deposit{
-						TxID:          testUtils.RandomHash(),
-						BurnerAddress: testUtils.RandomAddress(),
+						TxID:          testutils.RandomHash(),
+						BurnerAddress: testutils.RandomAddress(),
 					}
 
 					switch rand.Bools(0.5).Next() {
