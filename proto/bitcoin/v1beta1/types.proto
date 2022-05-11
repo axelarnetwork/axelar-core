@@ -1,0 +1,141 @@
+syntax = "proto3";
+package bitcoin.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/bitcoin/types";
+
+import "gogoproto/gogo.proto";
+import "tss/exported/v1beta1/types.proto";
+import "google/protobuf/timestamp.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+enum TxStatus {
+  option (gogoproto.goproto_enum_prefix) = false;
+  option (gogoproto.goproto_enum_stringer) = true;
+
+  TX_STATUS_UNSPECIFIED = 0
+      [ (gogoproto.enumvalue_customname) = "TxStatusUnspecified" ];
+  TX_STATUS_CREATED = 1 [ (gogoproto.enumvalue_customname) = "Created" ];
+  TX_STATUS_SIGNING = 2 [ (gogoproto.enumvalue_customname) = "Signing" ];
+  TX_STATUS_ABORTED = 3 [ (gogoproto.enumvalue_customname) = "Aborted" ];
+  TX_STATUS_SIGNED = 4 [ (gogoproto.enumvalue_customname) = "Signed" ];
+}
+
+enum TxType {
+  option (gogoproto.goproto_enum_prefix) = false;
+  option (gogoproto.goproto_enum_stringer) = true;
+
+  TX_TYPE_UNSPECIFIED = 0
+      [ (gogoproto.enumvalue_customname) = "TxTypeUnspecified" ];
+  TX_TYPE_MASTER_CONSOLIDATION = 1
+      [ (gogoproto.enumvalue_customname) = "MasterConsolidation" ];
+  TX_TYPE_SECONDARY_CONSOLIDATION = 2
+      [ (gogoproto.enumvalue_customname) = "SecondaryConsolidation" ];
+  TX_TYPE_RESCUE = 3 [ (gogoproto.enumvalue_customname) = "Rescue" ];
+}
+
+message UnsignedTx {
+  message Info {
+    message InputInfo {
+      message SigRequirement {
+        string key_id = 1 [
+          (gogoproto.customname) = "KeyID",
+          (gogoproto.casttype) =
+              "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+        ];
+        bytes sig_hash = 2;
+      }
+
+      repeated SigRequirement sig_requirements = 1
+          [ (gogoproto.nullable) = false ];
+    }
+
+    bool rotate_key = 1;
+    repeated InputInfo input_infos = 2 [ (gogoproto.nullable) = false ];
+  }
+
+  TxType type = 1;
+  bytes tx = 2;
+  Info info = 3 [ (gogoproto.nullable) = false ];
+  TxStatus status = 4;
+  bool confirmation_required = 5;
+  uint32 anyone_can_spend_vout = 6;
+  string prev_aborted_key_id = 7
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID" ];
+  int64 internal_transfer_amount = 8
+      [ (gogoproto.casttype) = "github.com/btcsuite/btcutil.Amount" ];
+}
+
+message SignedTx {
+  TxType type = 1;
+  bytes tx = 2;
+  bytes prev_signed_tx_hash = 3;
+  bool confirmation_required = 4;
+  uint32 anyone_can_spend_vout = 5;
+}
+
+// OutPointInfo describes all the necessary information to confirm the outPoint
+// of a transaction
+message OutPointInfo {
+  option (gogoproto.goproto_stringer) = false;
+
+  string out_point = 1;
+  int64 amount = 2
+      [ (gogoproto.casttype) = "github.com/btcsuite/btcutil.Amount" ];
+  string address = 3;
+}
+
+enum OutPointState {
+  option (gogoproto.goproto_enum_prefix) = true;
+  option (gogoproto.goproto_enum_stringer) = true;
+
+  OUT_POINT_STATE_UNSPECIFIED = 0 [ (gogoproto.enumvalue_customname) = "None" ];
+  OUT_POINT_STATE_PENDING = 1 [ (gogoproto.enumvalue_customname) = "Pending" ];
+  OUT_POINT_STATE_CONFIRMED = 2
+      [ (gogoproto.enumvalue_customname) = "Confirmed" ];
+  OUT_POINT_STATE_SPENT = 3 [ (gogoproto.enumvalue_customname) = "Spent" ];
+}
+
+enum AddressRole {
+  option (gogoproto.goproto_enum_prefix) = false;
+  option (gogoproto.goproto_enum_stringer) = true;
+
+  ADDRESS_ROLE_UNSPECIFIED = 0 [ (gogoproto.enumvalue_customname) = "None" ];
+  ADDRESS_ROLE_DEPOSIT = 1 [ (gogoproto.enumvalue_customname) = "Deposit" ];
+  ADDRESS_ROLE_CONSOLIDATION = 2
+      [ (gogoproto.enumvalue_customname) = "Consolidation" ];
+}
+
+// AddressInfo is a wrapper containing the Bitcoin P2WSH address, it's
+// corresponding script and the underlying key
+message AddressInfo {
+  message SpendingCondition {
+    // internal_key_ids lists the internal key IDs that one of which has to sign
+    // regardless of locktime
+    repeated string internal_key_ids = 1
+        [ (gogoproto.casttype) =
+              "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID" ];
+    // external_key_ids lists the external key IDs that
+    // external_multisig_threshold of which have to sign to spend before
+    // locktime if set
+    repeated string external_key_ids = 2
+        [ (gogoproto.casttype) =
+              "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID" ];
+    int64 external_multisig_threshold = 3;
+    google.protobuf.Timestamp lock_time = 4 [ (gogoproto.stdtime) = true ];
+  }
+
+  string address = 1;
+  AddressRole role = 2;
+  bytes redeem_script = 3;
+  string key_id = 4 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+  ];
+  uint32 max_sig_count = 5;
+  SpendingCondition spending_condition = 6;
+}
+
+message Network { string name = 1; }

@@ -32,7 +32,7 @@ In order to run/build the project locally we need to import the bytecode from ga
 ## Interacting with a local node
 
 With a local (dockerized) node running, the `axelard` binary can be used to interact with the node.
-Run `./bin/axelard --help` after building the binaries to get information about the available commands.
+Run `./bin/axelard` or `./bin/axelard <command> --help` after building the binaries to get information about the available commands.
 
 ## Show API documentation
 

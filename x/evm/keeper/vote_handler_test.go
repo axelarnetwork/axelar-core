@@ -56,7 +56,7 @@ func TestHandleVoteResult(t *testing.T) {
 			HasChainFunc: func(ctx sdk.Context, chain string) bool { return true },
 		}
 		chaink = &mock.ChainKeeperMock{
-			GetEventFunc: func(sdk.Context, string) (types.Event, bool) {
+			GetEventFunc: func(sdk.Context, types.EventID) (types.Event, bool) {
 				return types.Event{}, false
 			},
 			SetConfirmedEventFunc: func(sdk.Context, types.Event) error {
@@ -199,7 +199,7 @@ func TestHandleVoteResult(t *testing.T) {
 	t.Run("GIVEN already confirmed event WHEN handle deposit THEN return error", testutils.Func(func(t *testing.T) {
 		setup()
 
-		chaink.GetEventFunc = func(sdk.Context, string) (types.Event, bool) {
+		chaink.GetEventFunc = func(sdk.Context, types.EventID) (types.Event, bool) {
 			return types.Event{}, true
 		}
 

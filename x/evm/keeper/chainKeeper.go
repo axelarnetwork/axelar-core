@@ -860,8 +860,8 @@ func (k chainKeeper) getGateway(ctx sdk.Context) types.Gateway {
 	return gateway
 }
 
-func getEventKey(eventID string) utils.Key {
-	return eventPrefix.Append(utils.LowerCaseKey(eventID))
+func getEventKey(eventID types.EventID) utils.Key {
+	return eventPrefix.Append(utils.LowerCaseKey(string(eventID)))
 }
 
 func (k chainKeeper) setEvent(ctx sdk.Context, event types.Event) {
@@ -883,7 +883,7 @@ func (k chainKeeper) getEvents(ctx sdk.Context) []types.Event {
 }
 
 // GetEvent returns the event for the given event ID
-func (k chainKeeper) GetEvent(ctx sdk.Context, eventID string) (event types.Event, ok bool) {
+func (k chainKeeper) GetEvent(ctx sdk.Context, eventID types.EventID) (event types.Event, ok bool) {
 	k.getStore(ctx, k.chainLowerKey).Get(getEventKey(eventID), &event)
 
 	return event, event.Status != types.EventNonExistent
@@ -910,7 +910,7 @@ func (k chainKeeper) SetConfirmedEvent(ctx sdk.Context, event types.Event) error
 }
 
 // SetEventCompleted sets the event as completed
-func (k chainKeeper) SetEventCompleted(ctx sdk.Context, eventID string) error {
+func (k chainKeeper) SetEventCompleted(ctx sdk.Context, eventID types.EventID) error {
 	event, ok := k.GetEvent(ctx, eventID)
 	if !ok || event.Status != types.EventConfirmed {
 		return fmt.Errorf("event %s is not confirmed", eventID)
@@ -923,7 +923,7 @@ func (k chainKeeper) SetEventCompleted(ctx sdk.Context, eventID string) error {
 }
 
 // SetEventFailed sets the event as invalid
-func (k chainKeeper) SetEventFailed(ctx sdk.Context, eventID string) error {
+func (k chainKeeper) SetEventFailed(ctx sdk.Context, eventID types.EventID) error {
 	event, ok := k.GetEvent(ctx, eventID)
 	if !ok || event.Status != types.EventConfirmed {
 		return fmt.Errorf("event %s is not confirmed", eventID)
