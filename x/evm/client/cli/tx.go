@@ -40,7 +40,6 @@ func GetTxCmd() *cobra.Command {
 		GetCmdConfirmERC20Deposit(),
 		GetCmdConfirmTransferOwnership(),
 		GetCmdConfirmTransferOperatorship(),
-		GetCmdCreateConfirmGatewayTx(),
 		GetCmdCreatePendingTransfers(),
 		GetCmdCreateDeployToken(),
 		GetCmdCreateBurnTokens(),
@@ -209,33 +208,6 @@ func GetCmdConfirmTransferOperatorship() *cobra.Command {
 			txID := common.HexToHash(args[1])
 			keyID := args[2]
 			msg := types.NewConfirmTransferKeyRequest(cliCtx.GetFromAddress(), chain, txID, types.Operatorship, keyID)
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
-
-			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
-		},
-	}
-	flags.AddTxFlagsToCmd(cmd)
-	return cmd
-}
-
-// GetCmdCreateConfirmGatewayTx returns the cli command to confirm a gateway transaction
-func GetCmdCreateConfirmGatewayTx() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "confirm-gateway-tx [chain] [txID]",
-		Short: "Confirm a gateway transaction in an EVM chain",
-		Args:  cobra.ExactArgs(2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx, err := client.GetClientTxContext(cmd)
-			if err != nil {
-				return err
-			}
-
-			chain := args[0]
-			txID := types.Hash(common.HexToHash(args[1]))
-
-			msg := types.NewConfirmGatewayTxRequest(cliCtx.GetFromAddress(), chain, txID)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

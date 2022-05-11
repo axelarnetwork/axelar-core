@@ -250,8 +250,6 @@
     - [AddChainResponse](#evm.v1beta1.AddChainResponse)
     - [ConfirmDepositRequest](#evm.v1beta1.ConfirmDepositRequest)
     - [ConfirmDepositResponse](#evm.v1beta1.ConfirmDepositResponse)
-    - [ConfirmGatewayTxRequest](#evm.v1beta1.ConfirmGatewayTxRequest)
-    - [ConfirmGatewayTxResponse](#evm.v1beta1.ConfirmGatewayTxResponse)
     - [ConfirmTokenRequest](#evm.v1beta1.ConfirmTokenRequest)
     - [ConfirmTokenResponse](#evm.v1beta1.ConfirmTokenResponse)
     - [ConfirmTransferKeyRequest](#evm.v1beta1.ConfirmTransferKeyRequest)
@@ -3902,33 +3900,6 @@ MsgConfirmDeposit represents an erc20 deposit confirmation message
 
 
 
-<a name="evm.v1beta1.ConfirmGatewayTxRequest"></a>
-
-### ConfirmGatewayTxRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `sender` | [bytes](#bytes) |  |  |
-| `chain` | [string](#string) |  |  |
-| `tx_id` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="evm.v1beta1.ConfirmGatewayTxResponse"></a>
-
-### ConfirmGatewayTxResponse
-
-
-
-
-
-
-
 <a name="evm.v1beta1.ConfirmTokenRequest"></a>
 
 ### ConfirmTokenRequest
@@ -4275,7 +4246,6 @@ Msg defines the evm Msg service.
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `SetGateway` | [SetGatewayRequest](#evm.v1beta1.SetGatewayRequest) | [SetGatewayResponse](#evm.v1beta1.SetGatewayResponse) |  | POST|/axelar/evm/set_gateway|
-| `ConfirmGatewayTx` | [ConfirmGatewayTxRequest](#evm.v1beta1.ConfirmGatewayTxRequest) | [ConfirmGatewayTxResponse](#evm.v1beta1.ConfirmGatewayTxResponse) |  | POST|/axelar/evm/confirm_gateway_tx|
 | `Link` | [LinkRequest](#evm.v1beta1.LinkRequest) | [LinkResponse](#evm.v1beta1.LinkResponse) |  | POST|/axelar/evm/link|
 | `ConfirmToken` | [ConfirmTokenRequest](#evm.v1beta1.ConfirmTokenRequest) | [ConfirmTokenResponse](#evm.v1beta1.ConfirmTokenResponse) |  | POST|/axelar/evm/confirm_token|
 | `ConfirmDeposit` | [ConfirmDepositRequest](#evm.v1beta1.ConfirmDepositRequest) | [ConfirmDepositResponse](#evm.v1beta1.ConfirmDepositResponse) |  | POST|/axelar/evm/confirm_deposit|

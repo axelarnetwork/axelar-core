@@ -22,20 +22,6 @@ message SetGatewayRequest {
 
 message SetGatewayResponse {}
 
-message ConfirmGatewayTxRequest {
-  option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
-  bytes sender = 1 [ (gogoproto.casttype) =
-                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  string chain = 2;
-  bytes tx_id = 3 [
-    (gogoproto.nullable) = false,
-    (gogoproto.customtype) = "Hash",
-    (gogoproto.customname) = "TxID"
-  ];
-}
-
-message ConfirmGatewayTxResponse {}
-
 // MsgConfirmDeposit represents an erc20 deposit confirmation message
 message ConfirmDepositRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;

@@ -19,14 +19,6 @@ service MsgService {
     };
   }
 
-  rpc ConfirmGatewayTx(ConfirmGatewayTxRequest)
-      returns (ConfirmGatewayTxResponse) {
-    option (google.api.http) = {
-      post : "/axelar/evm/confirm_gateway_tx"
-      body : "*"
-    };
-  }
-
   rpc Link(LinkRequest) returns (LinkResponse) {
     option (google.api.http) = {
       post : "/axelar/evm/link"

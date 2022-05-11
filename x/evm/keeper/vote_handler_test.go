@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	gogoprototypes "github.com/gogo/protobuf/types"
 	mathRand "math/rand"
 	"strings"
 	"testing"
@@ -183,8 +184,8 @@ func TestHandleVoteResult(t *testing.T) {
 
 	t.Run("GIVEN vote WHEN result is invalid THEN return error", testutils.Func(func(t *testing.T) {
 		setup()
-
-		incorrectResult, _ := codectypes.NewAnyWithValue(types.NewConfirmGatewayTxRequest(rand.AccAddr(), rand.Str(5), types.Hash(common.BytesToHash(rand.Bytes(common.HashLength)))))
+		data := gogoprototypes.StringValue{Value: rand.Str(10)}
+		incorrectResult, _ := codectypes.NewAnyWithValue(&data)
 		result.Result = incorrectResult
 
 		poll := voteMock.PollMock{

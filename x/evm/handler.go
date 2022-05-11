@@ -49,10 +49,6 @@ func NewHandler(k types.BaseKeeper, t types.TSS, v types.Voter, s types.Signer, 
 				result.Log = fmt.Sprintf("votes on confirmation of transfer ownership %s started", msg.TxID.Hex())
 			}
 			return result, err
-		case *types.ConfirmGatewayTxRequest:
-			res, err := server.ConfirmGatewayTx(sdk.WrapSDKContext(ctx), msg)
-			return sdk.WrapServiceResult(ctx, res, err)
-
 		case *types.CreateDeployTokenRequest:
 			res, err := server.CreateDeployToken(sdk.WrapSDKContext(ctx), msg)
 			return sdk.WrapServiceResult(ctx, res, err)

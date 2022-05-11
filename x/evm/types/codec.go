@@ -22,7 +22,6 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&SignCommandsRequest{}, "evm/SignCommands", nil)
 	cdc.RegisterConcrete(&AddChainRequest{}, "evm/AddChainRequest", nil)
 	cdc.RegisterConcrete(&SetGatewayRequest{}, "evm/SetGatewayRequest", nil)
-	cdc.RegisterConcrete(&ConfirmGatewayTxRequest{}, "evm/ConfirmGatewayTxRequest", nil)
 	cdc.RegisterConcrete(&RetryFailedEventRequest{}, "evm/RetryFailedEvent", nil)
 }
 
@@ -41,7 +40,6 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		&SignCommandsRequest{},
 		&AddChainRequest{},
 		&SetGatewayRequest{},
-		&ConfirmGatewayTxRequest{},
 		&RetryFailedEventRequest{},
 	)
 	registry.RegisterImplementations((*codec.ProtoMarshaler)(nil),
