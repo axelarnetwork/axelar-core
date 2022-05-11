@@ -109,6 +109,14 @@ service MsgService {
       body : "*"
     };
   }
+
+  rpc RetryFailedEvent(RetryFailedEventRequest)
+      returns (RetryFailedEventResponse) {
+    option (google.api.http) = {
+      post : "/axelar/evm/retry-failed-event"
+      body : "*"
+    };
+  }
 }
 
 // QueryService defines the gRPC querier service.
