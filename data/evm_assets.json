@@ -261,6 +261,21 @@
       ]
     },
     {
+      "id": "weth-wei",
+      "name": "WETH",
+      "symbol": "WETH",
+      "image": "/images/assets/weth.png",
+      "transfer_fee": 1,
+      "contracts": [
+        {
+          "chain": "ethereum",
+          "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+          "decimals": 18,
+          "transfer_fee": 0.01
+        }
+      ]
+    },
+    {
       "id": "uusdt",
       "name": "Tether",
       "symbol": "USDT",

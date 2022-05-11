@@ -54,6 +54,12 @@
       "symbol": "USDT",
       "image": "/images/assets/usdt.png",
       "transfer_fee": 0.5
+    },
+    {
+      "id": "weth-wei",
+      "name": "Wrapped Ether",
+      "symbol": "WETH",
+      "image": "/images/assets/eth.png"
     }
   ],
   "testnet": [
