@@ -1,6 +1,7 @@
 package utils_test
 
 import (
+	"math"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -71,5 +72,60 @@ func TestCircularBuffer(t *testing.T) {
 				}
 			}).
 			Run(t)
+
+		n = uint32(rand.I64Between(1, 10))
+		bufferIsShrunkAfterBeingFilled := When("the buffer is full", func() {
+			for i := 0; i < 2*maxSize; i++ {
+				circularBuffer.Add(n)
+			}
+		}).
+			When("max size is decreased", func() {
+				circularBuffer.SetMaxSize(2)
+			})
+
+		givenNewCircularBitmap.
+			When2(bufferIsShrunkAfterBeingFilled).
+			Then("return correct count", func(t *testing.T) {
+				assert.EqualValues(t, n, circularBuffer.Count(1))
+			}).Run(t)
+
+		givenNewCircularBitmap.
+			When2(bufferIsShrunkAfterBeingFilled).
+			When("adding another entry", func() {
+				circularBuffer.Add(2 * n)
+			}).
+			Then("return correct count", func(t *testing.T) {
+				assert.EqualValues(t, 2*n, circularBuffer.Count(1))
+			}).Run(t)
+
+		bufferIsFull := When("it is completely full", func() {
+			circularBuffer.CumulativeValue[circularBuffer.Index] = math.MaxUint64 - uint64(circularBuffer.MaxSize)
+			// increase buffer size to max size
+			for i := int32(0); i < circularBuffer.MaxSize; i++ {
+				circularBuffer.Add(1)
+			}
+		})
+		givenNewCircularBitmap.
+			When2(bufferIsFull).
+			Then("do not overflow", func(t *testing.T) {
+				circularBuffer.Add(1)
+				assert.EqualValues(t, 5, circularBuffer.Count(5))
+			}).Run(t)
+
+		givenNewCircularBitmap.
+			When2(bufferIsFull).
+			When("buffer gets shrunk", func() {
+				circularBuffer.SetMaxSize(10)
+				circularBuffer.Add(1)
+			}).
+			When("buffer gets enlarged again", func() {
+				circularBuffer.SetMaxSize(100)
+				circularBuffer.Add(1)
+			}).
+			Then("return correct count", func(t *testing.T) {
+				assert.EqualValues(t, 10, circularBuffer.Count(30))
+			}).Run(t)
+
 	}).Repeat(1))
+
 }
