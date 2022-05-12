@@ -733,7 +733,7 @@ func (s msgServer) createTransferKeyCommand(ctx sdk.Context, keeper types.ChainK
 
 		return types.CreateSinglesigTransferCommand(transferKeyType, chainID, currMasterKeyID, crypto.PubkeyToAddress(pk))
 	case tss.Multisig:
-		addresses, threshold, err := getMultisigAddresses(nextKey)
+		addresses, threshold, err := types.GetMultisigAddresses(nextKey)
 		if err != nil {
 			return types.Command{}, err
 		}
@@ -913,4 +913,39 @@ func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*typ
 	)
 
 	return &types.AddChainResponse{}, nil
+}
+
+func (s msgServer) RetryFailedEvent(c context.Context, req *types.RetryFailedEventRequest) (*types.RetryFailedEventResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	chain, ok := s.nexus.GetChain(ctx, req.Chain)
+	if !ok {
+		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
+	}
+
+	if err := validateChainActivated(ctx, s.nexus, chain); err != nil {
+		return nil, err
+	}
+
+	keeper := s.ForChain(chain.Name)
+
+	event, ok := keeper.GetEvent(ctx, req.EventID)
+	if !ok {
+		return nil, fmt.Errorf("event %s not found for chain %s", req.EventID, req.Chain)
+	}
+
+	if event.Status != types.EventFailed {
+		return nil, fmt.Errorf("event %s is not a failed event", req.EventID)
+	}
+
+	event.Status = types.EventConfirmed
+	keeper.GetConfirmedEventQueue(ctx).Enqueue(getEventKey(req.EventID), &event)
+
+	s.Logger(ctx).Info(
+		fmt.Sprintf("re-queued failed event"),
+		types.AttributeKeyChain, chain.Name,
+		"eventID", req.EventID,
+	)
+
+	return &types.RetryFailedEventResponse{}, nil
 }

@@ -4,496 +4,498 @@
 
 ## Table of Contents
 
-- [axelar/axelarnet/v1beta1/params.proto](#axelar/axelarnet/v1beta1/params.proto)
-    - [Params](#axelar.axelarnet.v1beta1.Params)
-  
-- [axelar/axelarnet/v1beta1/types.proto](#axelar/axelarnet/v1beta1/types.proto)
-    - [Asset](#axelar.axelarnet.v1beta1.Asset)
-    - [CosmosChain](#axelar.axelarnet.v1beta1.CosmosChain)
-    - [IBCTransfer](#axelar.axelarnet.v1beta1.IBCTransfer)
-  
-- [axelar/axelarnet/v1beta1/genesis.proto](#axelar/axelarnet/v1beta1/genesis.proto)
-    - [GenesisState](#axelar.axelarnet.v1beta1.GenesisState)
-  
-- [axelar/utils/v1beta1/threshold.proto](#axelar/utils/v1beta1/threshold.proto)
-    - [Threshold](#axelar.utils.v1beta1.Threshold)
-  
-- [axelar/tss/exported/v1beta1/types.proto](#axelar/tss/exported/v1beta1/types.proto)
-    - [Key](#axelar.tss.exported.v1beta1.Key)
-    - [Key.ECDSAKey](#axelar.tss.exported.v1beta1.Key.ECDSAKey)
-    - [Key.MultisigKey](#axelar.tss.exported.v1beta1.Key.MultisigKey)
-    - [KeyRequirement](#axelar.tss.exported.v1beta1.KeyRequirement)
-    - [SigKeyPair](#axelar.tss.exported.v1beta1.SigKeyPair)
-    - [SignInfo](#axelar.tss.exported.v1beta1.SignInfo)
-    - [Signature](#axelar.tss.exported.v1beta1.Signature)
-    - [Signature.MultiSig](#axelar.tss.exported.v1beta1.Signature.MultiSig)
-    - [Signature.SingleSig](#axelar.tss.exported.v1beta1.Signature.SingleSig)
-  
-    - [AckType](#axelar.tss.exported.v1beta1.AckType)
-    - [KeyRole](#axelar.tss.exported.v1beta1.KeyRole)
-    - [KeyShareDistributionPolicy](#axelar.tss.exported.v1beta1.KeyShareDistributionPolicy)
-    - [KeyType](#axelar.tss.exported.v1beta1.KeyType)
-    - [SigStatus](#axelar.tss.exported.v1beta1.SigStatus)
-  
-- [axelar/nexus/exported/v1beta1/types.proto](#axelar/nexus/exported/v1beta1/types.proto)
-    - [Asset](#axelar.nexus.exported.v1beta1.Asset)
-    - [Chain](#axelar.nexus.exported.v1beta1.Chain)
-    - [CrossChainAddress](#axelar.nexus.exported.v1beta1.CrossChainAddress)
-    - [CrossChainTransfer](#axelar.nexus.exported.v1beta1.CrossChainTransfer)
-    - [FeeInfo](#axelar.nexus.exported.v1beta1.FeeInfo)
-    - [TransferFee](#axelar.nexus.exported.v1beta1.TransferFee)
-  
-    - [TransferState](#axelar.nexus.exported.v1beta1.TransferState)
-  
-- [axelar/utils/v1beta1/bitmap.proto](#axelar/utils/v1beta1/bitmap.proto)
-    - [Bitmap](#axelar.utils.v1beta1.Bitmap)
-    - [CircularBuffer](#axelar.utils.v1beta1.CircularBuffer)
-  
-- [axelar/nexus/v1beta1/types.proto](#axelar/nexus/v1beta1/types.proto)
-    - [ChainState](#axelar.nexus.v1beta1.ChainState)
-    - [LinkedAddresses](#axelar.nexus.v1beta1.LinkedAddresses)
-    - [MaintainerState](#axelar.nexus.v1beta1.MaintainerState)
-  
-- [axelar/nexus/v1beta1/query.proto](#axelar/nexus/v1beta1/query.proto)
-    - [AssetsRequest](#axelar.nexus.v1beta1.AssetsRequest)
-    - [AssetsResponse](#axelar.nexus.v1beta1.AssetsResponse)
-    - [ChainStateRequest](#axelar.nexus.v1beta1.ChainStateRequest)
-    - [ChainStateResponse](#axelar.nexus.v1beta1.ChainStateResponse)
-    - [ChainsByAssetRequest](#axelar.nexus.v1beta1.ChainsByAssetRequest)
-    - [ChainsByAssetResponse](#axelar.nexus.v1beta1.ChainsByAssetResponse)
-    - [ChainsRequest](#axelar.nexus.v1beta1.ChainsRequest)
-    - [ChainsResponse](#axelar.nexus.v1beta1.ChainsResponse)
-    - [FeeInfoRequest](#axelar.nexus.v1beta1.FeeInfoRequest)
-    - [FeeInfoResponse](#axelar.nexus.v1beta1.FeeInfoResponse)
-    - [LatestDepositAddressRequest](#axelar.nexus.v1beta1.LatestDepositAddressRequest)
-    - [LatestDepositAddressResponse](#axelar.nexus.v1beta1.LatestDepositAddressResponse)
-    - [QueryChainMaintainersResponse](#axelar.nexus.v1beta1.QueryChainMaintainersResponse)
-    - [TransferFeeRequest](#axelar.nexus.v1beta1.TransferFeeRequest)
-    - [TransferFeeResponse](#axelar.nexus.v1beta1.TransferFeeResponse)
-    - [TransfersForChainRequest](#axelar.nexus.v1beta1.TransfersForChainRequest)
-    - [TransfersForChainResponse](#axelar.nexus.v1beta1.TransfersForChainResponse)
-  
-- [axelar/axelarnet/v1beta1/query.proto](#axelar/axelarnet/v1beta1/query.proto)
-    - [PendingIBCTransferCountRequest](#axelar.axelarnet.v1beta1.PendingIBCTransferCountRequest)
-    - [PendingIBCTransferCountResponse](#axelar.axelarnet.v1beta1.PendingIBCTransferCountResponse)
-    - [PendingIBCTransferCountResponse.TransfersByChainEntry](#axelar.axelarnet.v1beta1.PendingIBCTransferCountResponse.TransfersByChainEntry)
-  
-- [axelar/permission/exported/v1beta1/types.proto](#axelar/permission/exported/v1beta1/types.proto)
-    - [Role](#axelar.permission.exported.v1beta1.Role)
-  
-    - [File-level Extensions](#axelar/permission/exported/v1beta1/types.proto-extensions)
-  
-- [axelar/axelarnet/v1beta1/tx.proto](#axelar/axelarnet/v1beta1/tx.proto)
-    - [AddCosmosBasedChainRequest](#axelar.axelarnet.v1beta1.AddCosmosBasedChainRequest)
-    - [AddCosmosBasedChainResponse](#axelar.axelarnet.v1beta1.AddCosmosBasedChainResponse)
-    - [ConfirmDepositRequest](#axelar.axelarnet.v1beta1.ConfirmDepositRequest)
-    - [ConfirmDepositResponse](#axelar.axelarnet.v1beta1.ConfirmDepositResponse)
-    - [ExecutePendingTransfersRequest](#axelar.axelarnet.v1beta1.ExecutePendingTransfersRequest)
-    - [ExecutePendingTransfersResponse](#axelar.axelarnet.v1beta1.ExecutePendingTransfersResponse)
-    - [LinkRequest](#axelar.axelarnet.v1beta1.LinkRequest)
-    - [LinkResponse](#axelar.axelarnet.v1beta1.LinkResponse)
-    - [RegisterAssetRequest](#axelar.axelarnet.v1beta1.RegisterAssetRequest)
-    - [RegisterAssetResponse](#axelar.axelarnet.v1beta1.RegisterAssetResponse)
-    - [RegisterFeeCollectorRequest](#axelar.axelarnet.v1beta1.RegisterFeeCollectorRequest)
-    - [RegisterFeeCollectorResponse](#axelar.axelarnet.v1beta1.RegisterFeeCollectorResponse)
-    - [RegisterIBCPathRequest](#axelar.axelarnet.v1beta1.RegisterIBCPathRequest)
-    - [RegisterIBCPathResponse](#axelar.axelarnet.v1beta1.RegisterIBCPathResponse)
-    - [RouteIBCTransfersRequest](#axelar.axelarnet.v1beta1.RouteIBCTransfersRequest)
-    - [RouteIBCTransfersResponse](#axelar.axelarnet.v1beta1.RouteIBCTransfersResponse)
-  
-- [axelar/axelarnet/v1beta1/service.proto](#axelar/axelarnet/v1beta1/service.proto)
-    - [MsgService](#axelar.axelarnet.v1beta1.MsgService)
-    - [QueryService](#axelar.axelarnet.v1beta1.QueryService)
-  
-- [axelar/bitcoin/v1beta1/types.proto](#axelar/bitcoin/v1beta1/types.proto)
-    - [AddressInfo](#axelar.bitcoin.v1beta1.AddressInfo)
-    - [AddressInfo.SpendingCondition](#axelar.bitcoin.v1beta1.AddressInfo.SpendingCondition)
-    - [Network](#axelar.bitcoin.v1beta1.Network)
-    - [OutPointInfo](#axelar.bitcoin.v1beta1.OutPointInfo)
-    - [SignedTx](#axelar.bitcoin.v1beta1.SignedTx)
-    - [UnsignedTx](#axelar.bitcoin.v1beta1.UnsignedTx)
-    - [UnsignedTx.Info](#axelar.bitcoin.v1beta1.UnsignedTx.Info)
-    - [UnsignedTx.Info.InputInfo](#axelar.bitcoin.v1beta1.UnsignedTx.Info.InputInfo)
-    - [UnsignedTx.Info.InputInfo.SigRequirement](#axelar.bitcoin.v1beta1.UnsignedTx.Info.InputInfo.SigRequirement)
-  
-    - [AddressRole](#axelar.bitcoin.v1beta1.AddressRole)
-    - [OutPointState](#axelar.bitcoin.v1beta1.OutPointState)
-    - [TxStatus](#axelar.bitcoin.v1beta1.TxStatus)
-    - [TxType](#axelar.bitcoin.v1beta1.TxType)
-  
-- [axelar/bitcoin/v1beta1/params.proto](#axelar/bitcoin/v1beta1/params.proto)
-    - [Params](#axelar.bitcoin.v1beta1.Params)
-  
-- [axelar/bitcoin/v1beta1/genesis.proto](#axelar/bitcoin/v1beta1/genesis.proto)
-    - [GenesisState](#axelar.bitcoin.v1beta1.GenesisState)
-  
-- [axelar/bitcoin/v1beta1/query.proto](#axelar/bitcoin/v1beta1/query.proto)
-    - [DepositQueryParams](#axelar.bitcoin.v1beta1.DepositQueryParams)
-    - [QueryAddressResponse](#axelar.bitcoin.v1beta1.QueryAddressResponse)
-    - [QueryDepositStatusResponse](#axelar.bitcoin.v1beta1.QueryDepositStatusResponse)
-    - [QueryTxResponse](#axelar.bitcoin.v1beta1.QueryTxResponse)
-    - [QueryTxResponse.SigningInfo](#axelar.bitcoin.v1beta1.QueryTxResponse.SigningInfo)
-  
-- [axelar/snapshot/exported/v1beta1/types.proto](#axelar/snapshot/exported/v1beta1/types.proto)
-    - [Snapshot](#axelar.snapshot.exported.v1beta1.Snapshot)
-    - [Validator](#axelar.snapshot.exported.v1beta1.Validator)
-  
-    - [ValidatorIllegibility](#axelar.snapshot.exported.v1beta1.ValidatorIllegibility)
-  
-- [axelar/vote/exported/v1beta1/types.proto](#axelar/vote/exported/v1beta1/types.proto)
-    - [PollKey](#axelar.vote.exported.v1beta1.PollKey)
-    - [PollMetadata](#axelar.vote.exported.v1beta1.PollMetadata)
-    - [Vote](#axelar.vote.exported.v1beta1.Vote)
-    - [Voter](#axelar.vote.exported.v1beta1.Voter)
-  
-    - [PollState](#axelar.vote.exported.v1beta1.PollState)
-  
-- [axelar/bitcoin/v1beta1/tx.proto](#axelar/bitcoin/v1beta1/tx.proto)
-    - [ConfirmOutpointRequest](#axelar.bitcoin.v1beta1.ConfirmOutpointRequest)
-    - [ConfirmOutpointResponse](#axelar.bitcoin.v1beta1.ConfirmOutpointResponse)
-    - [CreateMasterTxRequest](#axelar.bitcoin.v1beta1.CreateMasterTxRequest)
-    - [CreateMasterTxResponse](#axelar.bitcoin.v1beta1.CreateMasterTxResponse)
-    - [CreatePendingTransfersTxRequest](#axelar.bitcoin.v1beta1.CreatePendingTransfersTxRequest)
-    - [CreatePendingTransfersTxResponse](#axelar.bitcoin.v1beta1.CreatePendingTransfersTxResponse)
-    - [CreateRescueTxRequest](#axelar.bitcoin.v1beta1.CreateRescueTxRequest)
-    - [CreateRescueTxResponse](#axelar.bitcoin.v1beta1.CreateRescueTxResponse)
-    - [LinkRequest](#axelar.bitcoin.v1beta1.LinkRequest)
-    - [LinkResponse](#axelar.bitcoin.v1beta1.LinkResponse)
-    - [SignTxRequest](#axelar.bitcoin.v1beta1.SignTxRequest)
-    - [SignTxResponse](#axelar.bitcoin.v1beta1.SignTxResponse)
-    - [SubmitExternalSignatureRequest](#axelar.bitcoin.v1beta1.SubmitExternalSignatureRequest)
-    - [SubmitExternalSignatureResponse](#axelar.bitcoin.v1beta1.SubmitExternalSignatureResponse)
-    - [VoteConfirmOutpointRequest](#axelar.bitcoin.v1beta1.VoteConfirmOutpointRequest)
-    - [VoteConfirmOutpointResponse](#axelar.bitcoin.v1beta1.VoteConfirmOutpointResponse)
-  
-- [axelar/bitcoin/v1beta1/service.proto](#axelar/bitcoin/v1beta1/service.proto)
-    - [MsgService](#axelar.bitcoin.v1beta1.MsgService)
-  
-- [axelar/utils/v1beta1/queuer.proto](#axelar/utils/v1beta1/queuer.proto)
-    - [QueueState](#axelar.utils.v1beta1.QueueState)
-    - [QueueState.Item](#axelar.utils.v1beta1.QueueState.Item)
-    - [QueueState.ItemsEntry](#axelar.utils.v1beta1.QueueState.ItemsEntry)
-  
-- [axelar/evm/v1beta1/types.proto](#axelar/evm/v1beta1/types.proto)
-    - [Asset](#axelar.evm.v1beta1.Asset)
-    - [BurnerInfo](#axelar.evm.v1beta1.BurnerInfo)
-    - [Command](#axelar.evm.v1beta1.Command)
-    - [CommandBatchMetadata](#axelar.evm.v1beta1.CommandBatchMetadata)
-    - [ERC20Deposit](#axelar.evm.v1beta1.ERC20Deposit)
-    - [ERC20TokenMetadata](#axelar.evm.v1beta1.ERC20TokenMetadata)
-    - [Event](#axelar.evm.v1beta1.Event)
-    - [EventContractCall](#axelar.evm.v1beta1.EventContractCall)
-    - [EventContractCallWithToken](#axelar.evm.v1beta1.EventContractCallWithToken)
-    - [EventMultisigOperatorshipTransferred](#axelar.evm.v1beta1.EventMultisigOperatorshipTransferred)
-    - [EventMultisigOwnershipTransferred](#axelar.evm.v1beta1.EventMultisigOwnershipTransferred)
-    - [EventSinglesigOperatorshipTransferred](#axelar.evm.v1beta1.EventSinglesigOperatorshipTransferred)
-    - [EventSinglesigOwnershipTransferred](#axelar.evm.v1beta1.EventSinglesigOwnershipTransferred)
-    - [EventTokenDeployed](#axelar.evm.v1beta1.EventTokenDeployed)
-    - [EventTokenSent](#axelar.evm.v1beta1.EventTokenSent)
-    - [EventTransfer](#axelar.evm.v1beta1.EventTransfer)
-    - [Gateway](#axelar.evm.v1beta1.Gateway)
-    - [NetworkInfo](#axelar.evm.v1beta1.NetworkInfo)
-    - [SigMetadata](#axelar.evm.v1beta1.SigMetadata)
-    - [TokenDetails](#axelar.evm.v1beta1.TokenDetails)
-    - [TransactionMetadata](#axelar.evm.v1beta1.TransactionMetadata)
-    - [TransferKey](#axelar.evm.v1beta1.TransferKey)
-    - [VoteEvents](#axelar.evm.v1beta1.VoteEvents)
-  
-    - [BatchedCommandsStatus](#axelar.evm.v1beta1.BatchedCommandsStatus)
-    - [DepositStatus](#axelar.evm.v1beta1.DepositStatus)
-    - [Event.Status](#axelar.evm.v1beta1.Event.Status)
-    - [Gateway.Status](#axelar.evm.v1beta1.Gateway.Status)
-    - [SigType](#axelar.evm.v1beta1.SigType)
-    - [Status](#axelar.evm.v1beta1.Status)
-    - [TransferKeyType](#axelar.evm.v1beta1.TransferKeyType)
-  
-- [axelar/evm/v1beta1/params.proto](#axelar/evm/v1beta1/params.proto)
-    - [Params](#axelar.evm.v1beta1.Params)
-    - [PendingChain](#axelar.evm.v1beta1.PendingChain)
-  
-- [axelar/evm/v1beta1/genesis.proto](#axelar/evm/v1beta1/genesis.proto)
-    - [GenesisState](#axelar.evm.v1beta1.GenesisState)
-    - [GenesisState.Chain](#axelar.evm.v1beta1.GenesisState.Chain)
-  
-- [axelar/evm/v1beta1/query.proto](#axelar/evm/v1beta1/query.proto)
-    - [BatchedCommandsRequest](#axelar.evm.v1beta1.BatchedCommandsRequest)
-    - [BatchedCommandsResponse](#axelar.evm.v1beta1.BatchedCommandsResponse)
-    - [BurnerInfoRequest](#axelar.evm.v1beta1.BurnerInfoRequest)
-    - [BurnerInfoResponse](#axelar.evm.v1beta1.BurnerInfoResponse)
-    - [BytecodeRequest](#axelar.evm.v1beta1.BytecodeRequest)
-    - [BytecodeResponse](#axelar.evm.v1beta1.BytecodeResponse)
-    - [ChainsRequest](#axelar.evm.v1beta1.ChainsRequest)
-    - [ChainsResponse](#axelar.evm.v1beta1.ChainsResponse)
-    - [ConfirmationHeightRequest](#axelar.evm.v1beta1.ConfirmationHeightRequest)
-    - [ConfirmationHeightResponse](#axelar.evm.v1beta1.ConfirmationHeightResponse)
-    - [DepositQueryParams](#axelar.evm.v1beta1.DepositQueryParams)
-    - [DepositStateRequest](#axelar.evm.v1beta1.DepositStateRequest)
-    - [DepositStateResponse](#axelar.evm.v1beta1.DepositStateResponse)
-    - [EventRequest](#axelar.evm.v1beta1.EventRequest)
-    - [EventResponse](#axelar.evm.v1beta1.EventResponse)
-    - [GatewayAddressRequest](#axelar.evm.v1beta1.GatewayAddressRequest)
-    - [GatewayAddressResponse](#axelar.evm.v1beta1.GatewayAddressResponse)
-    - [KeyAddressRequest](#axelar.evm.v1beta1.KeyAddressRequest)
-    - [KeyAddressResponse](#axelar.evm.v1beta1.KeyAddressResponse)
-    - [KeyAddressResponse.MultisigAddresses](#axelar.evm.v1beta1.KeyAddressResponse.MultisigAddresses)
-    - [KeyAddressResponse.ThresholdAddress](#axelar.evm.v1beta1.KeyAddressResponse.ThresholdAddress)
-    - [PendingCommandsRequest](#axelar.evm.v1beta1.PendingCommandsRequest)
-    - [PendingCommandsResponse](#axelar.evm.v1beta1.PendingCommandsResponse)
-    - [QueryBurnerAddressResponse](#axelar.evm.v1beta1.QueryBurnerAddressResponse)
-    - [QueryCommandResponse](#axelar.evm.v1beta1.QueryCommandResponse)
-    - [QueryCommandResponse.ParamsEntry](#axelar.evm.v1beta1.QueryCommandResponse.ParamsEntry)
-    - [QueryDepositStateParams](#axelar.evm.v1beta1.QueryDepositStateParams)
-    - [QueryTokenAddressResponse](#axelar.evm.v1beta1.QueryTokenAddressResponse)
-  
-- [axelar/evm/v1beta1/tx.proto](#axelar/evm/v1beta1/tx.proto)
-    - [AddChainRequest](#axelar.evm.v1beta1.AddChainRequest)
-    - [AddChainResponse](#axelar.evm.v1beta1.AddChainResponse)
-    - [ConfirmDepositRequest](#axelar.evm.v1beta1.ConfirmDepositRequest)
-    - [ConfirmDepositResponse](#axelar.evm.v1beta1.ConfirmDepositResponse)
-    - [ConfirmGatewayTxRequest](#axelar.evm.v1beta1.ConfirmGatewayTxRequest)
-    - [ConfirmGatewayTxResponse](#axelar.evm.v1beta1.ConfirmGatewayTxResponse)
-    - [ConfirmTokenRequest](#axelar.evm.v1beta1.ConfirmTokenRequest)
-    - [ConfirmTokenResponse](#axelar.evm.v1beta1.ConfirmTokenResponse)
-    - [ConfirmTransferKeyRequest](#axelar.evm.v1beta1.ConfirmTransferKeyRequest)
-    - [ConfirmTransferKeyResponse](#axelar.evm.v1beta1.ConfirmTransferKeyResponse)
-    - [CreateBurnTokensRequest](#axelar.evm.v1beta1.CreateBurnTokensRequest)
-    - [CreateBurnTokensResponse](#axelar.evm.v1beta1.CreateBurnTokensResponse)
-    - [CreateDeployTokenRequest](#axelar.evm.v1beta1.CreateDeployTokenRequest)
-    - [CreateDeployTokenResponse](#axelar.evm.v1beta1.CreateDeployTokenResponse)
-    - [CreatePendingTransfersRequest](#axelar.evm.v1beta1.CreatePendingTransfersRequest)
-    - [CreatePendingTransfersResponse](#axelar.evm.v1beta1.CreatePendingTransfersResponse)
-    - [CreateTransferOperatorshipRequest](#axelar.evm.v1beta1.CreateTransferOperatorshipRequest)
-    - [CreateTransferOperatorshipResponse](#axelar.evm.v1beta1.CreateTransferOperatorshipResponse)
-    - [CreateTransferOwnershipRequest](#axelar.evm.v1beta1.CreateTransferOwnershipRequest)
-    - [CreateTransferOwnershipResponse](#axelar.evm.v1beta1.CreateTransferOwnershipResponse)
-    - [LinkRequest](#axelar.evm.v1beta1.LinkRequest)
-    - [LinkResponse](#axelar.evm.v1beta1.LinkResponse)
-    - [SetGatewayRequest](#axelar.evm.v1beta1.SetGatewayRequest)
-    - [SetGatewayResponse](#axelar.evm.v1beta1.SetGatewayResponse)
-    - [SignCommandsRequest](#axelar.evm.v1beta1.SignCommandsRequest)
-    - [SignCommandsResponse](#axelar.evm.v1beta1.SignCommandsResponse)
-  
-- [axelar/evm/v1beta1/service.proto](#axelar/evm/v1beta1/service.proto)
-    - [MsgService](#axelar.evm.v1beta1.MsgService)
-    - [QueryService](#axelar.evm.v1beta1.QueryService)
-  
-- [axelar/nexus/v1beta1/params.proto](#axelar/nexus/v1beta1/params.proto)
-    - [Params](#axelar.nexus.v1beta1.Params)
-  
-- [axelar/nexus/v1beta1/genesis.proto](#axelar/nexus/v1beta1/genesis.proto)
-    - [GenesisState](#axelar.nexus.v1beta1.GenesisState)
-  
-- [axelar/nexus/v1beta1/tx.proto](#axelar/nexus/v1beta1/tx.proto)
-    - [ActivateChainRequest](#axelar.nexus.v1beta1.ActivateChainRequest)
-    - [ActivateChainResponse](#axelar.nexus.v1beta1.ActivateChainResponse)
-    - [DeactivateChainRequest](#axelar.nexus.v1beta1.DeactivateChainRequest)
-    - [DeactivateChainResponse](#axelar.nexus.v1beta1.DeactivateChainResponse)
-    - [DeregisterChainMaintainerRequest](#axelar.nexus.v1beta1.DeregisterChainMaintainerRequest)
-    - [DeregisterChainMaintainerResponse](#axelar.nexus.v1beta1.DeregisterChainMaintainerResponse)
-    - [RegisterAssetFeeRequest](#axelar.nexus.v1beta1.RegisterAssetFeeRequest)
-    - [RegisterAssetFeeResponse](#axelar.nexus.v1beta1.RegisterAssetFeeResponse)
-    - [RegisterChainMaintainerRequest](#axelar.nexus.v1beta1.RegisterChainMaintainerRequest)
-    - [RegisterChainMaintainerResponse](#axelar.nexus.v1beta1.RegisterChainMaintainerResponse)
-  
-- [axelar/nexus/v1beta1/service.proto](#axelar/nexus/v1beta1/service.proto)
-    - [MsgService](#axelar.nexus.v1beta1.MsgService)
-    - [QueryService](#axelar.nexus.v1beta1.QueryService)
-  
-- [axelar/permission/v1beta1/types.proto](#axelar/permission/v1beta1/types.proto)
-    - [GovAccount](#axelar.permission.v1beta1.GovAccount)
-  
-- [axelar/permission/v1beta1/params.proto](#axelar/permission/v1beta1/params.proto)
-    - [Params](#axelar.permission.v1beta1.Params)
-  
-- [axelar/permission/v1beta1/genesis.proto](#axelar/permission/v1beta1/genesis.proto)
-    - [GenesisState](#axelar.permission.v1beta1.GenesisState)
-  
-- [axelar/permission/v1beta1/query.proto](#axelar/permission/v1beta1/query.proto)
-    - [QueryGovernanceKeyRequest](#axelar.permission.v1beta1.QueryGovernanceKeyRequest)
-    - [QueryGovernanceKeyResponse](#axelar.permission.v1beta1.QueryGovernanceKeyResponse)
-  
-- [axelar/permission/v1beta1/tx.proto](#axelar/permission/v1beta1/tx.proto)
-    - [DeregisterControllerRequest](#axelar.permission.v1beta1.DeregisterControllerRequest)
-    - [DeregisterControllerResponse](#axelar.permission.v1beta1.DeregisterControllerResponse)
-    - [RegisterControllerRequest](#axelar.permission.v1beta1.RegisterControllerRequest)
-    - [RegisterControllerResponse](#axelar.permission.v1beta1.RegisterControllerResponse)
-    - [UpdateGovernanceKeyRequest](#axelar.permission.v1beta1.UpdateGovernanceKeyRequest)
-    - [UpdateGovernanceKeyResponse](#axelar.permission.v1beta1.UpdateGovernanceKeyResponse)
-  
-- [axelar/permission/v1beta1/service.proto](#axelar/permission/v1beta1/service.proto)
-    - [Msg](#axelar.permission.v1beta1.Msg)
-    - [Query](#axelar.permission.v1beta1.Query)
-  
-- [axelar/reward/v1beta1/params.proto](#axelar/reward/v1beta1/params.proto)
-    - [Params](#axelar.reward.v1beta1.Params)
-  
-- [axelar/reward/v1beta1/types.proto](#axelar/reward/v1beta1/types.proto)
-    - [Pool](#axelar.reward.v1beta1.Pool)
-    - [Pool.Reward](#axelar.reward.v1beta1.Pool.Reward)
-    - [Refund](#axelar.reward.v1beta1.Refund)
-  
-- [axelar/reward/v1beta1/genesis.proto](#axelar/reward/v1beta1/genesis.proto)
-    - [GenesisState](#axelar.reward.v1beta1.GenesisState)
-  
-- [axelar/reward/v1beta1/tx.proto](#axelar/reward/v1beta1/tx.proto)
-    - [RefundMsgRequest](#axelar.reward.v1beta1.RefundMsgRequest)
-    - [RefundMsgResponse](#axelar.reward.v1beta1.RefundMsgResponse)
-  
-- [axelar/reward/v1beta1/service.proto](#axelar/reward/v1beta1/service.proto)
-    - [MsgService](#axelar.reward.v1beta1.MsgService)
-  
-- [axelar/snapshot/v1beta1/params.proto](#axelar/snapshot/v1beta1/params.proto)
-    - [Params](#axelar.snapshot.v1beta1.Params)
-  
-- [axelar/snapshot/v1beta1/types.proto](#axelar/snapshot/v1beta1/types.proto)
-    - [ProxiedValidator](#axelar.snapshot.v1beta1.ProxiedValidator)
-  
-- [axelar/snapshot/v1beta1/genesis.proto](#axelar/snapshot/v1beta1/genesis.proto)
-    - [GenesisState](#axelar.snapshot.v1beta1.GenesisState)
-  
-- [axelar/snapshot/v1beta1/query.proto](#axelar/snapshot/v1beta1/query.proto)
-    - [QueryValidatorsResponse](#axelar.snapshot.v1beta1.QueryValidatorsResponse)
-    - [QueryValidatorsResponse.TssIllegibilityInfo](#axelar.snapshot.v1beta1.QueryValidatorsResponse.TssIllegibilityInfo)
-    - [QueryValidatorsResponse.Validator](#axelar.snapshot.v1beta1.QueryValidatorsResponse.Validator)
-  
-- [axelar/snapshot/v1beta1/tx.proto](#axelar/snapshot/v1beta1/tx.proto)
-    - [DeactivateProxyRequest](#axelar.snapshot.v1beta1.DeactivateProxyRequest)
-    - [DeactivateProxyResponse](#axelar.snapshot.v1beta1.DeactivateProxyResponse)
-    - [RegisterProxyRequest](#axelar.snapshot.v1beta1.RegisterProxyRequest)
-    - [RegisterProxyResponse](#axelar.snapshot.v1beta1.RegisterProxyResponse)
-  
-- [axelar/snapshot/v1beta1/service.proto](#axelar/snapshot/v1beta1/service.proto)
-    - [MsgService](#axelar.snapshot.v1beta1.MsgService)
-  
-- [axelar/tss/tofnd/v1beta1/common.proto](#axelar/tss/tofnd/v1beta1/common.proto)
-    - [KeyPresenceRequest](#axelar.tss.tofnd.v1beta1.KeyPresenceRequest)
-    - [KeyPresenceResponse](#axelar.tss.tofnd.v1beta1.KeyPresenceResponse)
-  
-    - [KeyPresenceResponse.Response](#axelar.tss.tofnd.v1beta1.KeyPresenceResponse.Response)
-  
-- [axelar/tss/tofnd/v1beta1/multisig.proto](#axelar/tss/tofnd/v1beta1/multisig.proto)
-    - [KeygenRequest](#axelar.tss.tofnd.v1beta1.KeygenRequest)
-    - [KeygenResponse](#axelar.tss.tofnd.v1beta1.KeygenResponse)
-    - [SignRequest](#axelar.tss.tofnd.v1beta1.SignRequest)
-    - [SignResponse](#axelar.tss.tofnd.v1beta1.SignResponse)
-  
-- [axelar/tss/tofnd/v1beta1/tofnd.proto](#axelar/tss/tofnd/v1beta1/tofnd.proto)
-    - [KeygenInit](#axelar.tss.tofnd.v1beta1.KeygenInit)
-    - [KeygenOutput](#axelar.tss.tofnd.v1beta1.KeygenOutput)
-    - [MessageIn](#axelar.tss.tofnd.v1beta1.MessageIn)
-    - [MessageOut](#axelar.tss.tofnd.v1beta1.MessageOut)
-    - [MessageOut.CriminalList](#axelar.tss.tofnd.v1beta1.MessageOut.CriminalList)
-    - [MessageOut.CriminalList.Criminal](#axelar.tss.tofnd.v1beta1.MessageOut.CriminalList.Criminal)
-    - [MessageOut.KeygenResult](#axelar.tss.tofnd.v1beta1.MessageOut.KeygenResult)
-    - [MessageOut.SignResult](#axelar.tss.tofnd.v1beta1.MessageOut.SignResult)
-    - [RecoverRequest](#axelar.tss.tofnd.v1beta1.RecoverRequest)
-    - [RecoverResponse](#axelar.tss.tofnd.v1beta1.RecoverResponse)
-    - [SignInit](#axelar.tss.tofnd.v1beta1.SignInit)
-    - [TrafficIn](#axelar.tss.tofnd.v1beta1.TrafficIn)
-    - [TrafficOut](#axelar.tss.tofnd.v1beta1.TrafficOut)
-  
-    - [MessageOut.CriminalList.Criminal.CrimeType](#axelar.tss.tofnd.v1beta1.MessageOut.CriminalList.Criminal.CrimeType)
-    - [RecoverResponse.Response](#axelar.tss.tofnd.v1beta1.RecoverResponse.Response)
-  
-- [axelar/tss/v1beta1/params.proto](#axelar/tss/v1beta1/params.proto)
-    - [Params](#axelar.tss.v1beta1.Params)
-  
-- [axelar/tss/v1beta1/types.proto](#axelar/tss/v1beta1/types.proto)
-    - [ExternalKeys](#axelar.tss.v1beta1.ExternalKeys)
-    - [KeyInfo](#axelar.tss.v1beta1.KeyInfo)
-    - [KeyRecoveryInfo](#axelar.tss.v1beta1.KeyRecoveryInfo)
-    - [KeyRecoveryInfo.PrivateEntry](#axelar.tss.v1beta1.KeyRecoveryInfo.PrivateEntry)
-    - [KeygenVoteData](#axelar.tss.v1beta1.KeygenVoteData)
-    - [MultisigInfo](#axelar.tss.v1beta1.MultisigInfo)
-    - [MultisigInfo.Info](#axelar.tss.v1beta1.MultisigInfo.Info)
-    - [ValidatorStatus](#axelar.tss.v1beta1.ValidatorStatus)
-  
-- [axelar/tss/v1beta1/genesis.proto](#axelar/tss/v1beta1/genesis.proto)
-    - [GenesisState](#axelar.tss.v1beta1.GenesisState)
-  
-- [axelar/tss/v1beta1/query.proto](#axelar/tss/v1beta1/query.proto)
-    - [AssignableKeyRequest](#axelar.tss.v1beta1.AssignableKeyRequest)
-    - [AssignableKeyResponse](#axelar.tss.v1beta1.AssignableKeyResponse)
-    - [NextKeyIDRequest](#axelar.tss.v1beta1.NextKeyIDRequest)
-    - [NextKeyIDResponse](#axelar.tss.v1beta1.NextKeyIDResponse)
-    - [QueryActiveOldKeysResponse](#axelar.tss.v1beta1.QueryActiveOldKeysResponse)
-    - [QueryActiveOldKeysValidatorResponse](#axelar.tss.v1beta1.QueryActiveOldKeysValidatorResponse)
-    - [QueryActiveOldKeysValidatorResponse.KeyInfo](#axelar.tss.v1beta1.QueryActiveOldKeysValidatorResponse.KeyInfo)
-    - [QueryDeactivatedOperatorsResponse](#axelar.tss.v1beta1.QueryDeactivatedOperatorsResponse)
-    - [QueryExternalKeyIDResponse](#axelar.tss.v1beta1.QueryExternalKeyIDResponse)
-    - [QueryKeyResponse](#axelar.tss.v1beta1.QueryKeyResponse)
-    - [QueryKeyResponse.ECDSAKey](#axelar.tss.v1beta1.QueryKeyResponse.ECDSAKey)
-    - [QueryKeyResponse.Key](#axelar.tss.v1beta1.QueryKeyResponse.Key)
-    - [QueryKeyResponse.MultisigKey](#axelar.tss.v1beta1.QueryKeyResponse.MultisigKey)
-    - [QueryKeyShareResponse](#axelar.tss.v1beta1.QueryKeyShareResponse)
-    - [QueryKeyShareResponse.ShareInfo](#axelar.tss.v1beta1.QueryKeyShareResponse.ShareInfo)
-    - [QueryRecoveryResponse](#axelar.tss.v1beta1.QueryRecoveryResponse)
-    - [QuerySignatureResponse](#axelar.tss.v1beta1.QuerySignatureResponse)
-    - [QuerySignatureResponse.MultisigSignature](#axelar.tss.v1beta1.QuerySignatureResponse.MultisigSignature)
-    - [QuerySignatureResponse.Signature](#axelar.tss.v1beta1.QuerySignatureResponse.Signature)
-    - [QuerySignatureResponse.ThresholdSignature](#axelar.tss.v1beta1.QuerySignatureResponse.ThresholdSignature)
-    - [ValidatorMultisigKeysRequest](#axelar.tss.v1beta1.ValidatorMultisigKeysRequest)
-    - [ValidatorMultisigKeysResponse](#axelar.tss.v1beta1.ValidatorMultisigKeysResponse)
-    - [ValidatorMultisigKeysResponse.Keys](#axelar.tss.v1beta1.ValidatorMultisigKeysResponse.Keys)
-    - [ValidatorMultisigKeysResponse.KeysEntry](#axelar.tss.v1beta1.ValidatorMultisigKeysResponse.KeysEntry)
-  
-    - [VoteStatus](#axelar.tss.v1beta1.VoteStatus)
-  
-- [axelar/tss/v1beta1/tx.proto](#axelar/tss/v1beta1/tx.proto)
-    - [HeartBeatRequest](#axelar.tss.v1beta1.HeartBeatRequest)
-    - [HeartBeatResponse](#axelar.tss.v1beta1.HeartBeatResponse)
-    - [ProcessKeygenTrafficRequest](#axelar.tss.v1beta1.ProcessKeygenTrafficRequest)
-    - [ProcessKeygenTrafficResponse](#axelar.tss.v1beta1.ProcessKeygenTrafficResponse)
-    - [ProcessSignTrafficRequest](#axelar.tss.v1beta1.ProcessSignTrafficRequest)
-    - [ProcessSignTrafficResponse](#axelar.tss.v1beta1.ProcessSignTrafficResponse)
-    - [RegisterExternalKeysRequest](#axelar.tss.v1beta1.RegisterExternalKeysRequest)
-    - [RegisterExternalKeysRequest.ExternalKey](#axelar.tss.v1beta1.RegisterExternalKeysRequest.ExternalKey)
-    - [RegisterExternalKeysResponse](#axelar.tss.v1beta1.RegisterExternalKeysResponse)
-    - [RotateKeyRequest](#axelar.tss.v1beta1.RotateKeyRequest)
-    - [RotateKeyResponse](#axelar.tss.v1beta1.RotateKeyResponse)
-    - [StartKeygenRequest](#axelar.tss.v1beta1.StartKeygenRequest)
-    - [StartKeygenResponse](#axelar.tss.v1beta1.StartKeygenResponse)
-    - [SubmitMultisigPubKeysRequest](#axelar.tss.v1beta1.SubmitMultisigPubKeysRequest)
-    - [SubmitMultisigPubKeysResponse](#axelar.tss.v1beta1.SubmitMultisigPubKeysResponse)
-    - [SubmitMultisigSignaturesRequest](#axelar.tss.v1beta1.SubmitMultisigSignaturesRequest)
-    - [SubmitMultisigSignaturesResponse](#axelar.tss.v1beta1.SubmitMultisigSignaturesResponse)
-    - [VotePubKeyRequest](#axelar.tss.v1beta1.VotePubKeyRequest)
-    - [VotePubKeyResponse](#axelar.tss.v1beta1.VotePubKeyResponse)
-    - [VoteSigRequest](#axelar.tss.v1beta1.VoteSigRequest)
-    - [VoteSigResponse](#axelar.tss.v1beta1.VoteSigResponse)
-  
-- [axelar/tss/v1beta1/service.proto](#axelar/tss/v1beta1/service.proto)
-    - [MsgService](#axelar.tss.v1beta1.MsgService)
-    - [QueryService](#axelar.tss.v1beta1.QueryService)
-  
-- [axelar/vote/v1beta1/params.proto](#axelar/vote/v1beta1/params.proto)
-    - [Params](#axelar.vote.v1beta1.Params)
-  
-- [axelar/vote/v1beta1/genesis.proto](#axelar/vote/v1beta1/genesis.proto)
-    - [GenesisState](#axelar.vote.v1beta1.GenesisState)
-  
-- [axelar/vote/v1beta1/tx.proto](#axelar/vote/v1beta1/tx.proto)
-    - [VoteRequest](#axelar.vote.v1beta1.VoteRequest)
-    - [VoteResponse](#axelar.vote.v1beta1.VoteResponse)
-  
-- [axelar/vote/v1beta1/service.proto](#axelar/vote/v1beta1/service.proto)
-    - [MsgService](#axelar.vote.v1beta1.MsgService)
-  
-- [axelar/vote/v1beta1/types.proto](#axelar/vote/v1beta1/types.proto)
-    - [TalliedVote](#axelar.vote.v1beta1.TalliedVote)
+- [axelarnet/v1beta1/params.proto](#axelarnet/v1beta1/params.proto)
+    - [Params](#axelarnet.v1beta1.Params)
+  
+- [axelarnet/v1beta1/types.proto](#axelarnet/v1beta1/types.proto)
+    - [Asset](#axelarnet.v1beta1.Asset)
+    - [CosmosChain](#axelarnet.v1beta1.CosmosChain)
+    - [IBCTransfer](#axelarnet.v1beta1.IBCTransfer)
+  
+- [axelarnet/v1beta1/genesis.proto](#axelarnet/v1beta1/genesis.proto)
+    - [GenesisState](#axelarnet.v1beta1.GenesisState)
+  
+- [utils/v1beta1/threshold.proto](#utils/v1beta1/threshold.proto)
+    - [Threshold](#utils.v1beta1.Threshold)
+  
+- [tss/exported/v1beta1/types.proto](#tss/exported/v1beta1/types.proto)
+    - [Key](#tss.exported.v1beta1.Key)
+    - [Key.ECDSAKey](#tss.exported.v1beta1.Key.ECDSAKey)
+    - [Key.MultisigKey](#tss.exported.v1beta1.Key.MultisigKey)
+    - [KeyRequirement](#tss.exported.v1beta1.KeyRequirement)
+    - [SigKeyPair](#tss.exported.v1beta1.SigKeyPair)
+    - [SignInfo](#tss.exported.v1beta1.SignInfo)
+    - [Signature](#tss.exported.v1beta1.Signature)
+    - [Signature.MultiSig](#tss.exported.v1beta1.Signature.MultiSig)
+    - [Signature.SingleSig](#tss.exported.v1beta1.Signature.SingleSig)
+  
+    - [AckType](#tss.exported.v1beta1.AckType)
+    - [KeyRole](#tss.exported.v1beta1.KeyRole)
+    - [KeyShareDistributionPolicy](#tss.exported.v1beta1.KeyShareDistributionPolicy)
+    - [KeyType](#tss.exported.v1beta1.KeyType)
+    - [SigStatus](#tss.exported.v1beta1.SigStatus)
+  
+- [nexus/exported/v1beta1/types.proto](#nexus/exported/v1beta1/types.proto)
+    - [Asset](#nexus.exported.v1beta1.Asset)
+    - [Chain](#nexus.exported.v1beta1.Chain)
+    - [CrossChainAddress](#nexus.exported.v1beta1.CrossChainAddress)
+    - [CrossChainTransfer](#nexus.exported.v1beta1.CrossChainTransfer)
+    - [FeeInfo](#nexus.exported.v1beta1.FeeInfo)
+    - [TransferFee](#nexus.exported.v1beta1.TransferFee)
+  
+    - [TransferState](#nexus.exported.v1beta1.TransferState)
+  
+- [utils/v1beta1/bitmap.proto](#utils/v1beta1/bitmap.proto)
+    - [Bitmap](#utils.v1beta1.Bitmap)
+    - [CircularBuffer](#utils.v1beta1.CircularBuffer)
+  
+- [nexus/v1beta1/types.proto](#nexus/v1beta1/types.proto)
+    - [ChainState](#nexus.v1beta1.ChainState)
+    - [LinkedAddresses](#nexus.v1beta1.LinkedAddresses)
+    - [MaintainerState](#nexus.v1beta1.MaintainerState)
+  
+- [nexus/v1beta1/query.proto](#nexus/v1beta1/query.proto)
+    - [AssetsRequest](#nexus.v1beta1.AssetsRequest)
+    - [AssetsResponse](#nexus.v1beta1.AssetsResponse)
+    - [ChainStateRequest](#nexus.v1beta1.ChainStateRequest)
+    - [ChainStateResponse](#nexus.v1beta1.ChainStateResponse)
+    - [ChainsByAssetRequest](#nexus.v1beta1.ChainsByAssetRequest)
+    - [ChainsByAssetResponse](#nexus.v1beta1.ChainsByAssetResponse)
+    - [ChainsRequest](#nexus.v1beta1.ChainsRequest)
+    - [ChainsResponse](#nexus.v1beta1.ChainsResponse)
+    - [FeeInfoRequest](#nexus.v1beta1.FeeInfoRequest)
+    - [FeeInfoResponse](#nexus.v1beta1.FeeInfoResponse)
+    - [LatestDepositAddressRequest](#nexus.v1beta1.LatestDepositAddressRequest)
+    - [LatestDepositAddressResponse](#nexus.v1beta1.LatestDepositAddressResponse)
+    - [QueryChainMaintainersResponse](#nexus.v1beta1.QueryChainMaintainersResponse)
+    - [TransferFeeRequest](#nexus.v1beta1.TransferFeeRequest)
+    - [TransferFeeResponse](#nexus.v1beta1.TransferFeeResponse)
+    - [TransfersForChainRequest](#nexus.v1beta1.TransfersForChainRequest)
+    - [TransfersForChainResponse](#nexus.v1beta1.TransfersForChainResponse)
+  
+- [axelarnet/v1beta1/query.proto](#axelarnet/v1beta1/query.proto)
+    - [PendingIBCTransferCountRequest](#axelarnet.v1beta1.PendingIBCTransferCountRequest)
+    - [PendingIBCTransferCountResponse](#axelarnet.v1beta1.PendingIBCTransferCountResponse)
+    - [PendingIBCTransferCountResponse.TransfersByChainEntry](#axelarnet.v1beta1.PendingIBCTransferCountResponse.TransfersByChainEntry)
+  
+- [permission/exported/v1beta1/types.proto](#permission/exported/v1beta1/types.proto)
+    - [Role](#permission.exported.v1beta1.Role)
+  
+    - [File-level Extensions](#permission/exported/v1beta1/types.proto-extensions)
+  
+- [axelarnet/v1beta1/tx.proto](#axelarnet/v1beta1/tx.proto)
+    - [AddCosmosBasedChainRequest](#axelarnet.v1beta1.AddCosmosBasedChainRequest)
+    - [AddCosmosBasedChainResponse](#axelarnet.v1beta1.AddCosmosBasedChainResponse)
+    - [ConfirmDepositRequest](#axelarnet.v1beta1.ConfirmDepositRequest)
+    - [ConfirmDepositResponse](#axelarnet.v1beta1.ConfirmDepositResponse)
+    - [ExecutePendingTransfersRequest](#axelarnet.v1beta1.ExecutePendingTransfersRequest)
+    - [ExecutePendingTransfersResponse](#axelarnet.v1beta1.ExecutePendingTransfersResponse)
+    - [LinkRequest](#axelarnet.v1beta1.LinkRequest)
+    - [LinkResponse](#axelarnet.v1beta1.LinkResponse)
+    - [RegisterAssetRequest](#axelarnet.v1beta1.RegisterAssetRequest)
+    - [RegisterAssetResponse](#axelarnet.v1beta1.RegisterAssetResponse)
+    - [RegisterFeeCollectorRequest](#axelarnet.v1beta1.RegisterFeeCollectorRequest)
+    - [RegisterFeeCollectorResponse](#axelarnet.v1beta1.RegisterFeeCollectorResponse)
+    - [RegisterIBCPathRequest](#axelarnet.v1beta1.RegisterIBCPathRequest)
+    - [RegisterIBCPathResponse](#axelarnet.v1beta1.RegisterIBCPathResponse)
+    - [RouteIBCTransfersRequest](#axelarnet.v1beta1.RouteIBCTransfersRequest)
+    - [RouteIBCTransfersResponse](#axelarnet.v1beta1.RouteIBCTransfersResponse)
+  
+- [axelarnet/v1beta1/service.proto](#axelarnet/v1beta1/service.proto)
+    - [MsgService](#axelarnet.v1beta1.MsgService)
+    - [QueryService](#axelarnet.v1beta1.QueryService)
+  
+- [bitcoin/v1beta1/types.proto](#bitcoin/v1beta1/types.proto)
+    - [AddressInfo](#bitcoin.v1beta1.AddressInfo)
+    - [AddressInfo.SpendingCondition](#bitcoin.v1beta1.AddressInfo.SpendingCondition)
+    - [Network](#bitcoin.v1beta1.Network)
+    - [OutPointInfo](#bitcoin.v1beta1.OutPointInfo)
+    - [SignedTx](#bitcoin.v1beta1.SignedTx)
+    - [UnsignedTx](#bitcoin.v1beta1.UnsignedTx)
+    - [UnsignedTx.Info](#bitcoin.v1beta1.UnsignedTx.Info)
+    - [UnsignedTx.Info.InputInfo](#bitcoin.v1beta1.UnsignedTx.Info.InputInfo)
+    - [UnsignedTx.Info.InputInfo.SigRequirement](#bitcoin.v1beta1.UnsignedTx.Info.InputInfo.SigRequirement)
+  
+    - [AddressRole](#bitcoin.v1beta1.AddressRole)
+    - [OutPointState](#bitcoin.v1beta1.OutPointState)
+    - [TxStatus](#bitcoin.v1beta1.TxStatus)
+    - [TxType](#bitcoin.v1beta1.TxType)
+  
+- [bitcoin/v1beta1/params.proto](#bitcoin/v1beta1/params.proto)
+    - [Params](#bitcoin.v1beta1.Params)
+  
+- [bitcoin/v1beta1/genesis.proto](#bitcoin/v1beta1/genesis.proto)
+    - [GenesisState](#bitcoin.v1beta1.GenesisState)
+  
+- [bitcoin/v1beta1/query.proto](#bitcoin/v1beta1/query.proto)
+    - [DepositQueryParams](#bitcoin.v1beta1.DepositQueryParams)
+    - [QueryAddressResponse](#bitcoin.v1beta1.QueryAddressResponse)
+    - [QueryDepositStatusResponse](#bitcoin.v1beta1.QueryDepositStatusResponse)
+    - [QueryTxResponse](#bitcoin.v1beta1.QueryTxResponse)
+    - [QueryTxResponse.SigningInfo](#bitcoin.v1beta1.QueryTxResponse.SigningInfo)
+  
+- [snapshot/exported/v1beta1/types.proto](#snapshot/exported/v1beta1/types.proto)
+    - [Snapshot](#snapshot.exported.v1beta1.Snapshot)
+    - [Validator](#snapshot.exported.v1beta1.Validator)
+  
+    - [ValidatorIllegibility](#snapshot.exported.v1beta1.ValidatorIllegibility)
+  
+- [vote/exported/v1beta1/types.proto](#vote/exported/v1beta1/types.proto)
+    - [PollKey](#vote.exported.v1beta1.PollKey)
+    - [PollMetadata](#vote.exported.v1beta1.PollMetadata)
+    - [Vote](#vote.exported.v1beta1.Vote)
+    - [Voter](#vote.exported.v1beta1.Voter)
+  
+    - [PollState](#vote.exported.v1beta1.PollState)
+  
+- [bitcoin/v1beta1/tx.proto](#bitcoin/v1beta1/tx.proto)
+    - [ConfirmOutpointRequest](#bitcoin.v1beta1.ConfirmOutpointRequest)
+    - [ConfirmOutpointResponse](#bitcoin.v1beta1.ConfirmOutpointResponse)
+    - [CreateMasterTxRequest](#bitcoin.v1beta1.CreateMasterTxRequest)
+    - [CreateMasterTxResponse](#bitcoin.v1beta1.CreateMasterTxResponse)
+    - [CreatePendingTransfersTxRequest](#bitcoin.v1beta1.CreatePendingTransfersTxRequest)
+    - [CreatePendingTransfersTxResponse](#bitcoin.v1beta1.CreatePendingTransfersTxResponse)
+    - [CreateRescueTxRequest](#bitcoin.v1beta1.CreateRescueTxRequest)
+    - [CreateRescueTxResponse](#bitcoin.v1beta1.CreateRescueTxResponse)
+    - [LinkRequest](#bitcoin.v1beta1.LinkRequest)
+    - [LinkResponse](#bitcoin.v1beta1.LinkResponse)
+    - [SignTxRequest](#bitcoin.v1beta1.SignTxRequest)
+    - [SignTxResponse](#bitcoin.v1beta1.SignTxResponse)
+    - [SubmitExternalSignatureRequest](#bitcoin.v1beta1.SubmitExternalSignatureRequest)
+    - [SubmitExternalSignatureResponse](#bitcoin.v1beta1.SubmitExternalSignatureResponse)
+    - [VoteConfirmOutpointRequest](#bitcoin.v1beta1.VoteConfirmOutpointRequest)
+    - [VoteConfirmOutpointResponse](#bitcoin.v1beta1.VoteConfirmOutpointResponse)
+  
+- [bitcoin/v1beta1/service.proto](#bitcoin/v1beta1/service.proto)
+    - [MsgService](#bitcoin.v1beta1.MsgService)
+  
+- [utils/v1beta1/queuer.proto](#utils/v1beta1/queuer.proto)
+    - [QueueState](#utils.v1beta1.QueueState)
+    - [QueueState.Item](#utils.v1beta1.QueueState.Item)
+    - [QueueState.ItemsEntry](#utils.v1beta1.QueueState.ItemsEntry)
+  
+- [evm/v1beta1/types.proto](#evm/v1beta1/types.proto)
+    - [Asset](#evm.v1beta1.Asset)
+    - [BurnerInfo](#evm.v1beta1.BurnerInfo)
+    - [Command](#evm.v1beta1.Command)
+    - [CommandBatchMetadata](#evm.v1beta1.CommandBatchMetadata)
+    - [ERC20Deposit](#evm.v1beta1.ERC20Deposit)
+    - [ERC20TokenMetadata](#evm.v1beta1.ERC20TokenMetadata)
+    - [Event](#evm.v1beta1.Event)
+    - [EventContractCall](#evm.v1beta1.EventContractCall)
+    - [EventContractCallWithToken](#evm.v1beta1.EventContractCallWithToken)
+    - [EventMultisigOperatorshipTransferred](#evm.v1beta1.EventMultisigOperatorshipTransferred)
+    - [EventMultisigOwnershipTransferred](#evm.v1beta1.EventMultisigOwnershipTransferred)
+    - [EventSinglesigOperatorshipTransferred](#evm.v1beta1.EventSinglesigOperatorshipTransferred)
+    - [EventSinglesigOwnershipTransferred](#evm.v1beta1.EventSinglesigOwnershipTransferred)
+    - [EventTokenDeployed](#evm.v1beta1.EventTokenDeployed)
+    - [EventTokenSent](#evm.v1beta1.EventTokenSent)
+    - [EventTransfer](#evm.v1beta1.EventTransfer)
+    - [Gateway](#evm.v1beta1.Gateway)
+    - [NetworkInfo](#evm.v1beta1.NetworkInfo)
+    - [SigMetadata](#evm.v1beta1.SigMetadata)
+    - [TokenDetails](#evm.v1beta1.TokenDetails)
+    - [TransactionMetadata](#evm.v1beta1.TransactionMetadata)
+    - [TransferKey](#evm.v1beta1.TransferKey)
+    - [VoteEvents](#evm.v1beta1.VoteEvents)
+  
+    - [BatchedCommandsStatus](#evm.v1beta1.BatchedCommandsStatus)
+    - [DepositStatus](#evm.v1beta1.DepositStatus)
+    - [Event.Status](#evm.v1beta1.Event.Status)
+    - [Gateway.Status](#evm.v1beta1.Gateway.Status)
+    - [SigType](#evm.v1beta1.SigType)
+    - [Status](#evm.v1beta1.Status)
+    - [TransferKeyType](#evm.v1beta1.TransferKeyType)
+  
+- [evm/v1beta1/params.proto](#evm/v1beta1/params.proto)
+    - [Params](#evm.v1beta1.Params)
+    - [PendingChain](#evm.v1beta1.PendingChain)
+  
+- [evm/v1beta1/genesis.proto](#evm/v1beta1/genesis.proto)
+    - [GenesisState](#evm.v1beta1.GenesisState)
+    - [GenesisState.Chain](#evm.v1beta1.GenesisState.Chain)
+  
+- [evm/v1beta1/query.proto](#evm/v1beta1/query.proto)
+    - [BatchedCommandsRequest](#evm.v1beta1.BatchedCommandsRequest)
+    - [BatchedCommandsResponse](#evm.v1beta1.BatchedCommandsResponse)
+    - [BurnerInfoRequest](#evm.v1beta1.BurnerInfoRequest)
+    - [BurnerInfoResponse](#evm.v1beta1.BurnerInfoResponse)
+    - [BytecodeRequest](#evm.v1beta1.BytecodeRequest)
+    - [BytecodeResponse](#evm.v1beta1.BytecodeResponse)
+    - [ChainsRequest](#evm.v1beta1.ChainsRequest)
+    - [ChainsResponse](#evm.v1beta1.ChainsResponse)
+    - [ConfirmationHeightRequest](#evm.v1beta1.ConfirmationHeightRequest)
+    - [ConfirmationHeightResponse](#evm.v1beta1.ConfirmationHeightResponse)
+    - [DepositQueryParams](#evm.v1beta1.DepositQueryParams)
+    - [DepositStateRequest](#evm.v1beta1.DepositStateRequest)
+    - [DepositStateResponse](#evm.v1beta1.DepositStateResponse)
+    - [EventRequest](#evm.v1beta1.EventRequest)
+    - [EventResponse](#evm.v1beta1.EventResponse)
+    - [GatewayAddressRequest](#evm.v1beta1.GatewayAddressRequest)
+    - [GatewayAddressResponse](#evm.v1beta1.GatewayAddressResponse)
+    - [KeyAddressRequest](#evm.v1beta1.KeyAddressRequest)
+    - [KeyAddressResponse](#evm.v1beta1.KeyAddressResponse)
+    - [KeyAddressResponse.MultisigAddresses](#evm.v1beta1.KeyAddressResponse.MultisigAddresses)
+    - [KeyAddressResponse.ThresholdAddress](#evm.v1beta1.KeyAddressResponse.ThresholdAddress)
+    - [PendingCommandsRequest](#evm.v1beta1.PendingCommandsRequest)
+    - [PendingCommandsResponse](#evm.v1beta1.PendingCommandsResponse)
+    - [QueryBurnerAddressResponse](#evm.v1beta1.QueryBurnerAddressResponse)
+    - [QueryCommandResponse](#evm.v1beta1.QueryCommandResponse)
+    - [QueryCommandResponse.ParamsEntry](#evm.v1beta1.QueryCommandResponse.ParamsEntry)
+    - [QueryDepositStateParams](#evm.v1beta1.QueryDepositStateParams)
+    - [QueryTokenAddressResponse](#evm.v1beta1.QueryTokenAddressResponse)
+  
+- [evm/v1beta1/tx.proto](#evm/v1beta1/tx.proto)
+    - [AddChainRequest](#evm.v1beta1.AddChainRequest)
+    - [AddChainResponse](#evm.v1beta1.AddChainResponse)
+    - [ConfirmDepositRequest](#evm.v1beta1.ConfirmDepositRequest)
+    - [ConfirmDepositResponse](#evm.v1beta1.ConfirmDepositResponse)
+    - [ConfirmGatewayTxRequest](#evm.v1beta1.ConfirmGatewayTxRequest)
+    - [ConfirmGatewayTxResponse](#evm.v1beta1.ConfirmGatewayTxResponse)
+    - [ConfirmTokenRequest](#evm.v1beta1.ConfirmTokenRequest)
+    - [ConfirmTokenResponse](#evm.v1beta1.ConfirmTokenResponse)
+    - [ConfirmTransferKeyRequest](#evm.v1beta1.ConfirmTransferKeyRequest)
+    - [ConfirmTransferKeyResponse](#evm.v1beta1.ConfirmTransferKeyResponse)
+    - [CreateBurnTokensRequest](#evm.v1beta1.CreateBurnTokensRequest)
+    - [CreateBurnTokensResponse](#evm.v1beta1.CreateBurnTokensResponse)
+    - [CreateDeployTokenRequest](#evm.v1beta1.CreateDeployTokenRequest)
+    - [CreateDeployTokenResponse](#evm.v1beta1.CreateDeployTokenResponse)
+    - [CreatePendingTransfersRequest](#evm.v1beta1.CreatePendingTransfersRequest)
+    - [CreatePendingTransfersResponse](#evm.v1beta1.CreatePendingTransfersResponse)
+    - [CreateTransferOperatorshipRequest](#evm.v1beta1.CreateTransferOperatorshipRequest)
+    - [CreateTransferOperatorshipResponse](#evm.v1beta1.CreateTransferOperatorshipResponse)
+    - [CreateTransferOwnershipRequest](#evm.v1beta1.CreateTransferOwnershipRequest)
+    - [CreateTransferOwnershipResponse](#evm.v1beta1.CreateTransferOwnershipResponse)
+    - [LinkRequest](#evm.v1beta1.LinkRequest)
+    - [LinkResponse](#evm.v1beta1.LinkResponse)
+    - [RetryFailedEventRequest](#evm.v1beta1.RetryFailedEventRequest)
+    - [RetryFailedEventResponse](#evm.v1beta1.RetryFailedEventResponse)
+    - [SetGatewayRequest](#evm.v1beta1.SetGatewayRequest)
+    - [SetGatewayResponse](#evm.v1beta1.SetGatewayResponse)
+    - [SignCommandsRequest](#evm.v1beta1.SignCommandsRequest)
+    - [SignCommandsResponse](#evm.v1beta1.SignCommandsResponse)
+  
+- [evm/v1beta1/service.proto](#evm/v1beta1/service.proto)
+    - [MsgService](#evm.v1beta1.MsgService)
+    - [QueryService](#evm.v1beta1.QueryService)
+  
+- [nexus/v1beta1/params.proto](#nexus/v1beta1/params.proto)
+    - [Params](#nexus.v1beta1.Params)
+  
+- [nexus/v1beta1/genesis.proto](#nexus/v1beta1/genesis.proto)
+    - [GenesisState](#nexus.v1beta1.GenesisState)
+  
+- [nexus/v1beta1/tx.proto](#nexus/v1beta1/tx.proto)
+    - [ActivateChainRequest](#nexus.v1beta1.ActivateChainRequest)
+    - [ActivateChainResponse](#nexus.v1beta1.ActivateChainResponse)
+    - [DeactivateChainRequest](#nexus.v1beta1.DeactivateChainRequest)
+    - [DeactivateChainResponse](#nexus.v1beta1.DeactivateChainResponse)
+    - [DeregisterChainMaintainerRequest](#nexus.v1beta1.DeregisterChainMaintainerRequest)
+    - [DeregisterChainMaintainerResponse](#nexus.v1beta1.DeregisterChainMaintainerResponse)
+    - [RegisterAssetFeeRequest](#nexus.v1beta1.RegisterAssetFeeRequest)
+    - [RegisterAssetFeeResponse](#nexus.v1beta1.RegisterAssetFeeResponse)
+    - [RegisterChainMaintainerRequest](#nexus.v1beta1.RegisterChainMaintainerRequest)
+    - [RegisterChainMaintainerResponse](#nexus.v1beta1.RegisterChainMaintainerResponse)
+  
+- [nexus/v1beta1/service.proto](#nexus/v1beta1/service.proto)
+    - [MsgService](#nexus.v1beta1.MsgService)
+    - [QueryService](#nexus.v1beta1.QueryService)
+  
+- [permission/v1beta1/types.proto](#permission/v1beta1/types.proto)
+    - [GovAccount](#permission.v1beta1.GovAccount)
+  
+- [permission/v1beta1/params.proto](#permission/v1beta1/params.proto)
+    - [Params](#permission.v1beta1.Params)
+  
+- [permission/v1beta1/genesis.proto](#permission/v1beta1/genesis.proto)
+    - [GenesisState](#permission.v1beta1.GenesisState)
+  
+- [permission/v1beta1/query.proto](#permission/v1beta1/query.proto)
+    - [QueryGovernanceKeyRequest](#permission.v1beta1.QueryGovernanceKeyRequest)
+    - [QueryGovernanceKeyResponse](#permission.v1beta1.QueryGovernanceKeyResponse)
+  
+- [permission/v1beta1/tx.proto](#permission/v1beta1/tx.proto)
+    - [DeregisterControllerRequest](#permission.v1beta1.DeregisterControllerRequest)
+    - [DeregisterControllerResponse](#permission.v1beta1.DeregisterControllerResponse)
+    - [RegisterControllerRequest](#permission.v1beta1.RegisterControllerRequest)
+    - [RegisterControllerResponse](#permission.v1beta1.RegisterControllerResponse)
+    - [UpdateGovernanceKeyRequest](#permission.v1beta1.UpdateGovernanceKeyRequest)
+    - [UpdateGovernanceKeyResponse](#permission.v1beta1.UpdateGovernanceKeyResponse)
+  
+- [permission/v1beta1/service.proto](#permission/v1beta1/service.proto)
+    - [Msg](#permission.v1beta1.Msg)
+    - [Query](#permission.v1beta1.Query)
+  
+- [reward/v1beta1/params.proto](#reward/v1beta1/params.proto)
+    - [Params](#reward.v1beta1.Params)
+  
+- [reward/v1beta1/types.proto](#reward/v1beta1/types.proto)
+    - [Pool](#reward.v1beta1.Pool)
+    - [Pool.Reward](#reward.v1beta1.Pool.Reward)
+    - [Refund](#reward.v1beta1.Refund)
+  
+- [reward/v1beta1/genesis.proto](#reward/v1beta1/genesis.proto)
+    - [GenesisState](#reward.v1beta1.GenesisState)
+  
+- [reward/v1beta1/tx.proto](#reward/v1beta1/tx.proto)
+    - [RefundMsgRequest](#reward.v1beta1.RefundMsgRequest)
+    - [RefundMsgResponse](#reward.v1beta1.RefundMsgResponse)
+  
+- [reward/v1beta1/service.proto](#reward/v1beta1/service.proto)
+    - [MsgService](#reward.v1beta1.MsgService)
+  
+- [snapshot/v1beta1/params.proto](#snapshot/v1beta1/params.proto)
+    - [Params](#snapshot.v1beta1.Params)
+  
+- [snapshot/v1beta1/types.proto](#snapshot/v1beta1/types.proto)
+    - [ProxiedValidator](#snapshot.v1beta1.ProxiedValidator)
+  
+- [snapshot/v1beta1/genesis.proto](#snapshot/v1beta1/genesis.proto)
+    - [GenesisState](#snapshot.v1beta1.GenesisState)
+  
+- [snapshot/v1beta1/query.proto](#snapshot/v1beta1/query.proto)
+    - [QueryValidatorsResponse](#snapshot.v1beta1.QueryValidatorsResponse)
+    - [QueryValidatorsResponse.TssIllegibilityInfo](#snapshot.v1beta1.QueryValidatorsResponse.TssIllegibilityInfo)
+    - [QueryValidatorsResponse.Validator](#snapshot.v1beta1.QueryValidatorsResponse.Validator)
+  
+- [snapshot/v1beta1/tx.proto](#snapshot/v1beta1/tx.proto)
+    - [DeactivateProxyRequest](#snapshot.v1beta1.DeactivateProxyRequest)
+    - [DeactivateProxyResponse](#snapshot.v1beta1.DeactivateProxyResponse)
+    - [RegisterProxyRequest](#snapshot.v1beta1.RegisterProxyRequest)
+    - [RegisterProxyResponse](#snapshot.v1beta1.RegisterProxyResponse)
+  
+- [snapshot/v1beta1/service.proto](#snapshot/v1beta1/service.proto)
+    - [MsgService](#snapshot.v1beta1.MsgService)
+  
+- [tss/tofnd/v1beta1/common.proto](#tss/tofnd/v1beta1/common.proto)
+    - [KeyPresenceRequest](#tss.tofnd.v1beta1.KeyPresenceRequest)
+    - [KeyPresenceResponse](#tss.tofnd.v1beta1.KeyPresenceResponse)
+  
+    - [KeyPresenceResponse.Response](#tss.tofnd.v1beta1.KeyPresenceResponse.Response)
+  
+- [tss/tofnd/v1beta1/multisig.proto](#tss/tofnd/v1beta1/multisig.proto)
+    - [KeygenRequest](#tss.tofnd.v1beta1.KeygenRequest)
+    - [KeygenResponse](#tss.tofnd.v1beta1.KeygenResponse)
+    - [SignRequest](#tss.tofnd.v1beta1.SignRequest)
+    - [SignResponse](#tss.tofnd.v1beta1.SignResponse)
+  
+- [tss/tofnd/v1beta1/tofnd.proto](#tss/tofnd/v1beta1/tofnd.proto)
+    - [KeygenInit](#tss.tofnd.v1beta1.KeygenInit)
+    - [KeygenOutput](#tss.tofnd.v1beta1.KeygenOutput)
+    - [MessageIn](#tss.tofnd.v1beta1.MessageIn)
+    - [MessageOut](#tss.tofnd.v1beta1.MessageOut)
+    - [MessageOut.CriminalList](#tss.tofnd.v1beta1.MessageOut.CriminalList)
+    - [MessageOut.CriminalList.Criminal](#tss.tofnd.v1beta1.MessageOut.CriminalList.Criminal)
+    - [MessageOut.KeygenResult](#tss.tofnd.v1beta1.MessageOut.KeygenResult)
+    - [MessageOut.SignResult](#tss.tofnd.v1beta1.MessageOut.SignResult)
+    - [RecoverRequest](#tss.tofnd.v1beta1.RecoverRequest)
+    - [RecoverResponse](#tss.tofnd.v1beta1.RecoverResponse)
+    - [SignInit](#tss.tofnd.v1beta1.SignInit)
+    - [TrafficIn](#tss.tofnd.v1beta1.TrafficIn)
+    - [TrafficOut](#tss.tofnd.v1beta1.TrafficOut)
+  
+    - [MessageOut.CriminalList.Criminal.CrimeType](#tss.tofnd.v1beta1.MessageOut.CriminalList.Criminal.CrimeType)
+    - [RecoverResponse.Response](#tss.tofnd.v1beta1.RecoverResponse.Response)
+  
+- [tss/v1beta1/params.proto](#tss/v1beta1/params.proto)
+    - [Params](#tss.v1beta1.Params)
+  
+- [tss/v1beta1/types.proto](#tss/v1beta1/types.proto)
+    - [ExternalKeys](#tss.v1beta1.ExternalKeys)
+    - [KeyInfo](#tss.v1beta1.KeyInfo)
+    - [KeyRecoveryInfo](#tss.v1beta1.KeyRecoveryInfo)
+    - [KeyRecoveryInfo.PrivateEntry](#tss.v1beta1.KeyRecoveryInfo.PrivateEntry)
+    - [KeygenVoteData](#tss.v1beta1.KeygenVoteData)
+    - [MultisigInfo](#tss.v1beta1.MultisigInfo)
+    - [MultisigInfo.Info](#tss.v1beta1.MultisigInfo.Info)
+    - [ValidatorStatus](#tss.v1beta1.ValidatorStatus)
+  
+- [tss/v1beta1/genesis.proto](#tss/v1beta1/genesis.proto)
+    - [GenesisState](#tss.v1beta1.GenesisState)
+  
+- [tss/v1beta1/query.proto](#tss/v1beta1/query.proto)
+    - [AssignableKeyRequest](#tss.v1beta1.AssignableKeyRequest)
+    - [AssignableKeyResponse](#tss.v1beta1.AssignableKeyResponse)
+    - [NextKeyIDRequest](#tss.v1beta1.NextKeyIDRequest)
+    - [NextKeyIDResponse](#tss.v1beta1.NextKeyIDResponse)
+    - [QueryActiveOldKeysResponse](#tss.v1beta1.QueryActiveOldKeysResponse)
+    - [QueryActiveOldKeysValidatorResponse](#tss.v1beta1.QueryActiveOldKeysValidatorResponse)
+    - [QueryActiveOldKeysValidatorResponse.KeyInfo](#tss.v1beta1.QueryActiveOldKeysValidatorResponse.KeyInfo)
+    - [QueryDeactivatedOperatorsResponse](#tss.v1beta1.QueryDeactivatedOperatorsResponse)
+    - [QueryExternalKeyIDResponse](#tss.v1beta1.QueryExternalKeyIDResponse)
+    - [QueryKeyResponse](#tss.v1beta1.QueryKeyResponse)
+    - [QueryKeyResponse.ECDSAKey](#tss.v1beta1.QueryKeyResponse.ECDSAKey)
+    - [QueryKeyResponse.Key](#tss.v1beta1.QueryKeyResponse.Key)
+    - [QueryKeyResponse.MultisigKey](#tss.v1beta1.QueryKeyResponse.MultisigKey)
+    - [QueryKeyShareResponse](#tss.v1beta1.QueryKeyShareResponse)
+    - [QueryKeyShareResponse.ShareInfo](#tss.v1beta1.QueryKeyShareResponse.ShareInfo)
+    - [QueryRecoveryResponse](#tss.v1beta1.QueryRecoveryResponse)
+    - [QuerySignatureResponse](#tss.v1beta1.QuerySignatureResponse)
+    - [QuerySignatureResponse.MultisigSignature](#tss.v1beta1.QuerySignatureResponse.MultisigSignature)
+    - [QuerySignatureResponse.Signature](#tss.v1beta1.QuerySignatureResponse.Signature)
+    - [QuerySignatureResponse.ThresholdSignature](#tss.v1beta1.QuerySignatureResponse.ThresholdSignature)
+    - [ValidatorMultisigKeysRequest](#tss.v1beta1.ValidatorMultisigKeysRequest)
+    - [ValidatorMultisigKeysResponse](#tss.v1beta1.ValidatorMultisigKeysResponse)
+    - [ValidatorMultisigKeysResponse.Keys](#tss.v1beta1.ValidatorMultisigKeysResponse.Keys)
+    - [ValidatorMultisigKeysResponse.KeysEntry](#tss.v1beta1.ValidatorMultisigKeysResponse.KeysEntry)
+  
+    - [VoteStatus](#tss.v1beta1.VoteStatus)
+  
+- [tss/v1beta1/tx.proto](#tss/v1beta1/tx.proto)
+    - [HeartBeatRequest](#tss.v1beta1.HeartBeatRequest)
+    - [HeartBeatResponse](#tss.v1beta1.HeartBeatResponse)
+    - [ProcessKeygenTrafficRequest](#tss.v1beta1.ProcessKeygenTrafficRequest)
+    - [ProcessKeygenTrafficResponse](#tss.v1beta1.ProcessKeygenTrafficResponse)
+    - [ProcessSignTrafficRequest](#tss.v1beta1.ProcessSignTrafficRequest)
+    - [ProcessSignTrafficResponse](#tss.v1beta1.ProcessSignTrafficResponse)
+    - [RegisterExternalKeysRequest](#tss.v1beta1.RegisterExternalKeysRequest)
+    - [RegisterExternalKeysRequest.ExternalKey](#tss.v1beta1.RegisterExternalKeysRequest.ExternalKey)
+    - [RegisterExternalKeysResponse](#tss.v1beta1.RegisterExternalKeysResponse)
+    - [RotateKeyRequest](#tss.v1beta1.RotateKeyRequest)
+    - [RotateKeyResponse](#tss.v1beta1.RotateKeyResponse)
+    - [StartKeygenRequest](#tss.v1beta1.StartKeygenRequest)
+    - [StartKeygenResponse](#tss.v1beta1.StartKeygenResponse)
+    - [SubmitMultisigPubKeysRequest](#tss.v1beta1.SubmitMultisigPubKeysRequest)
+    - [SubmitMultisigPubKeysResponse](#tss.v1beta1.SubmitMultisigPubKeysResponse)
+    - [SubmitMultisigSignaturesRequest](#tss.v1beta1.SubmitMultisigSignaturesRequest)
+    - [SubmitMultisigSignaturesResponse](#tss.v1beta1.SubmitMultisigSignaturesResponse)
+    - [VotePubKeyRequest](#tss.v1beta1.VotePubKeyRequest)
+    - [VotePubKeyResponse](#tss.v1beta1.VotePubKeyResponse)
+    - [VoteSigRequest](#tss.v1beta1.VoteSigRequest)
+    - [VoteSigResponse](#tss.v1beta1.VoteSigResponse)
+  
+- [tss/v1beta1/service.proto](#tss/v1beta1/service.proto)
+    - [MsgService](#tss.v1beta1.MsgService)
+    - [QueryService](#tss.v1beta1.QueryService)
+  
+- [vote/v1beta1/params.proto](#vote/v1beta1/params.proto)
+    - [Params](#vote.v1beta1.Params)
+  
+- [vote/v1beta1/genesis.proto](#vote/v1beta1/genesis.proto)
+    - [GenesisState](#vote.v1beta1.GenesisState)
+  
+- [vote/v1beta1/tx.proto](#vote/v1beta1/tx.proto)
+    - [VoteRequest](#vote.v1beta1.VoteRequest)
+    - [VoteResponse](#vote.v1beta1.VoteResponse)
+  
+- [vote/v1beta1/service.proto](#vote/v1beta1/service.proto)
+    - [MsgService](#vote.v1beta1.MsgService)
+  
+- [vote/v1beta1/types.proto](#vote/v1beta1/types.proto)
+    - [TalliedVote](#vote.v1beta1.TalliedVote)
   
 - [Scalar Value Types](#scalar-value-types)
 
 
 
-<a name="axelar/axelarnet/v1beta1/params.proto"></a>
+<a name="axelarnet/v1beta1/params.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/axelarnet/v1beta1/params.proto
+## axelarnet/v1beta1/params.proto
 
 
 
-<a name="axelar.axelarnet.v1beta1.Params"></a>
+<a name="axelarnet.v1beta1.Params"></a>
 
 ### Params
 Params represent the genesis parameters for the module
@@ -517,14 +519,14 @@ Params represent the genesis parameters for the module
 
 
 
-<a name="axelar/axelarnet/v1beta1/types.proto"></a>
+<a name="axelarnet/v1beta1/types.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/axelarnet/v1beta1/types.proto
+## axelarnet/v1beta1/types.proto
 
 
 
-<a name="axelar.axelarnet.v1beta1.Asset"></a>
+<a name="axelarnet.v1beta1.Asset"></a>
 
 ### Asset
 
@@ -540,7 +542,7 @@ Params represent the genesis parameters for the module
 
 
 
-<a name="axelar.axelarnet.v1beta1.CosmosChain"></a>
+<a name="axelarnet.v1beta1.CosmosChain"></a>
 
 ### CosmosChain
 
@@ -550,7 +552,7 @@ Params represent the genesis parameters for the module
 | ----- | ---- | ----- | ----------- |
 | `name` | [string](#string) |  |  |
 | `ibc_path` | [string](#string) |  |  |
-| `assets` | [Asset](#axelar.axelarnet.v1beta1.Asset) | repeated | **Deprecated.**  |
+| `assets` | [Asset](#axelarnet.v1beta1.Asset) | repeated | **Deprecated.**  |
 | `addr_prefix` | [string](#string) |  |  |
 
 
@@ -558,7 +560,7 @@ Params represent the genesis parameters for the module
 
 
 
-<a name="axelar.axelarnet.v1beta1.IBCTransfer"></a>
+<a name="axelarnet.v1beta1.IBCTransfer"></a>
 
 ### IBCTransfer
 
@@ -587,14 +589,14 @@ Params represent the genesis parameters for the module
 
 
 
-<a name="axelar/axelarnet/v1beta1/genesis.proto"></a>
+<a name="axelarnet/v1beta1/genesis.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/axelarnet/v1beta1/genesis.proto
+## axelarnet/v1beta1/genesis.proto
 
 
 
-<a name="axelar.axelarnet.v1beta1.GenesisState"></a>
+<a name="axelarnet.v1beta1.GenesisState"></a>
 
 ### GenesisState
 
@@ -602,10 +604,10 @@ Params represent the genesis parameters for the module
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `params` | [Params](#axelar.axelarnet.v1beta1.Params) |  |  |
+| `params` | [Params](#axelarnet.v1beta1.Params) |  |  |
 | `collector_address` | [bytes](#bytes) |  |  |
-| `chains` | [CosmosChain](#axelar.axelarnet.v1beta1.CosmosChain) | repeated |  |
-| `pending_transfers` | [IBCTransfer](#axelar.axelarnet.v1beta1.IBCTransfer) | repeated |  |
+| `chains` | [CosmosChain](#axelarnet.v1beta1.CosmosChain) | repeated |  |
+| `pending_transfers` | [IBCTransfer](#axelarnet.v1beta1.IBCTransfer) | repeated |  |
 
 
 
@@ -621,14 +623,14 @@ Params represent the genesis parameters for the module
 
 
 
-<a name="axelar/utils/v1beta1/threshold.proto"></a>
+<a name="utils/v1beta1/threshold.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/utils/v1beta1/threshold.proto
+## utils/v1beta1/threshold.proto
 
 
 
-<a name="axelar.utils.v1beta1.Threshold"></a>
+<a name="utils.v1beta1.Threshold"></a>
 
 ### Threshold
 
@@ -653,14 +655,14 @@ Params represent the genesis parameters for the module
 
 
 
-<a name="axelar/tss/exported/v1beta1/types.proto"></a>
+<a name="tss/exported/v1beta1/types.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/tss/exported/v1beta1/types.proto
+## tss/exported/v1beta1/types.proto
 
 
 
-<a name="axelar.tss.exported.v1beta1.Key"></a>
+<a name="tss.exported.v1beta1.Key"></a>
 
 ### Key
 
@@ -669,10 +671,10 @@ Params represent the genesis parameters for the module
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `id` | [string](#string) |  |  |
-| `role` | [KeyRole](#axelar.tss.exported.v1beta1.KeyRole) |  |  |
-| `type` | [KeyType](#axelar.tss.exported.v1beta1.KeyType) |  |  |
-| `ecdsa_key` | [Key.ECDSAKey](#axelar.tss.exported.v1beta1.Key.ECDSAKey) |  |  |
-| `multisig_key` | [Key.MultisigKey](#axelar.tss.exported.v1beta1.Key.MultisigKey) |  |  |
+| `role` | [KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
+| `type` | [KeyType](#tss.exported.v1beta1.KeyType) |  |  |
+| `ecdsa_key` | [Key.ECDSAKey](#tss.exported.v1beta1.Key.ECDSAKey) |  |  |
+| `multisig_key` | [Key.MultisigKey](#tss.exported.v1beta1.Key.MultisigKey) |  |  |
 | `rotated_at` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
 | `rotation_count` | [int64](#int64) |  |  |
 | `chain` | [string](#string) |  |  |
@@ -683,7 +685,7 @@ Params represent the genesis parameters for the module
 
 
 
-<a name="axelar.tss.exported.v1beta1.Key.ECDSAKey"></a>
+<a name="tss.exported.v1beta1.Key.ECDSAKey"></a>
 
 ### Key.ECDSAKey
 
@@ -698,7 +700,7 @@ Params represent the genesis parameters for the module
 
 
 
-<a name="axelar.tss.exported.v1beta1.Key.MultisigKey"></a>
+<a name="tss.exported.v1beta1.Key.MultisigKey"></a>
 
 ### Key.MultisigKey
 
@@ -714,7 +716,7 @@ Params represent the genesis parameters for the module
 
 
 
-<a name="axelar.tss.exported.v1beta1.KeyRequirement"></a>
+<a name="tss.exported.v1beta1.KeyRequirement"></a>
 
 ### KeyRequirement
 KeyRequirement defines requirements for keys
@@ -722,15 +724,15 @@ KeyRequirement defines requirements for keys
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `key_role` | [KeyRole](#axelar.tss.exported.v1beta1.KeyRole) |  |  |
-| `key_type` | [KeyType](#axelar.tss.exported.v1beta1.KeyType) |  |  |
-| `min_keygen_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
-| `safety_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
-| `key_share_distribution_policy` | [KeyShareDistributionPolicy](#axelar.tss.exported.v1beta1.KeyShareDistributionPolicy) |  |  |
+| `key_role` | [KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
+| `key_type` | [KeyType](#tss.exported.v1beta1.KeyType) |  |  |
+| `min_keygen_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
+| `safety_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
+| `key_share_distribution_policy` | [KeyShareDistributionPolicy](#tss.exported.v1beta1.KeyShareDistributionPolicy) |  |  |
 | `max_total_share_count` | [int64](#int64) |  |  |
 | `min_total_share_count` | [int64](#int64) |  |  |
-| `keygen_voting_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
-| `sign_voting_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
+| `keygen_voting_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
+| `sign_voting_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
 | `keygen_timeout` | [int64](#int64) |  |  |
 | `sign_timeout` | [int64](#int64) |  |  |
 
@@ -739,7 +741,7 @@ KeyRequirement defines requirements for keys
 
 
 
-<a name="axelar.tss.exported.v1beta1.SigKeyPair"></a>
+<a name="tss.exported.v1beta1.SigKeyPair"></a>
 
 ### SigKeyPair
 PubKeyInfo holds a pubkey and a signature
@@ -755,7 +757,7 @@ PubKeyInfo holds a pubkey and a signature
 
 
 
-<a name="axelar.tss.exported.v1beta1.SignInfo"></a>
+<a name="tss.exported.v1beta1.SignInfo"></a>
 
 ### SignInfo
 SignInfo holds information about a sign request
@@ -776,7 +778,7 @@ SignInfo holds information about a sign request
 
 
 
-<a name="axelar.tss.exported.v1beta1.Signature"></a>
+<a name="tss.exported.v1beta1.Signature"></a>
 
 ### Signature
 Signature holds public key and ECDSA signature
@@ -785,16 +787,16 @@ Signature holds public key and ECDSA signature
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sig_id` | [string](#string) |  |  |
-| `single_sig` | [Signature.SingleSig](#axelar.tss.exported.v1beta1.Signature.SingleSig) |  |  |
-| `multi_sig` | [Signature.MultiSig](#axelar.tss.exported.v1beta1.Signature.MultiSig) |  |  |
-| `sig_status` | [SigStatus](#axelar.tss.exported.v1beta1.SigStatus) |  |  |
+| `single_sig` | [Signature.SingleSig](#tss.exported.v1beta1.Signature.SingleSig) |  |  |
+| `multi_sig` | [Signature.MultiSig](#tss.exported.v1beta1.Signature.MultiSig) |  |  |
+| `sig_status` | [SigStatus](#tss.exported.v1beta1.SigStatus) |  |  |
 
 
 
 
 
 
-<a name="axelar.tss.exported.v1beta1.Signature.MultiSig"></a>
+<a name="tss.exported.v1beta1.Signature.MultiSig"></a>
 
 ### Signature.MultiSig
 
@@ -802,14 +804,14 @@ Signature holds public key and ECDSA signature
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `sig_key_pairs` | [SigKeyPair](#axelar.tss.exported.v1beta1.SigKeyPair) | repeated |  |
+| `sig_key_pairs` | [SigKeyPair](#tss.exported.v1beta1.SigKeyPair) | repeated |  |
 
 
 
 
 
 
-<a name="axelar.tss.exported.v1beta1.Signature.SingleSig"></a>
+<a name="tss.exported.v1beta1.Signature.SingleSig"></a>
 
 ### Signature.SingleSig
 
@@ -817,7 +819,7 @@ Signature holds public key and ECDSA signature
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `sig_key_pair` | [SigKeyPair](#axelar.tss.exported.v1beta1.SigKeyPair) |  |  |
+| `sig_key_pair` | [SigKeyPair](#tss.exported.v1beta1.SigKeyPair) |  |  |
 
 
 
@@ -826,7 +828,7 @@ Signature holds public key and ECDSA signature
  <!-- end messages -->
 
 
-<a name="axelar.tss.exported.v1beta1.AckType"></a>
+<a name="tss.exported.v1beta1.AckType"></a>
 
 ### AckType
 
@@ -839,7 +841,7 @@ Signature holds public key and ECDSA signature
 
 
 
-<a name="axelar.tss.exported.v1beta1.KeyRole"></a>
+<a name="tss.exported.v1beta1.KeyRole"></a>
 
 ### KeyRole
 
@@ -853,7 +855,7 @@ Signature holds public key and ECDSA signature
 
 
 
-<a name="axelar.tss.exported.v1beta1.KeyShareDistributionPolicy"></a>
+<a name="tss.exported.v1beta1.KeyShareDistributionPolicy"></a>
 
 ### KeyShareDistributionPolicy
 
@@ -866,7 +868,7 @@ Signature holds public key and ECDSA signature
 
 
 
-<a name="axelar.tss.exported.v1beta1.KeyType"></a>
+<a name="tss.exported.v1beta1.KeyType"></a>
 
 ### KeyType
 
@@ -880,7 +882,7 @@ Signature holds public key and ECDSA signature
 
 
 
-<a name="axelar.tss.exported.v1beta1.SigStatus"></a>
+<a name="tss.exported.v1beta1.SigStatus"></a>
 
 ### SigStatus
 
@@ -903,14 +905,14 @@ Signature holds public key and ECDSA signature
 
 
 
-<a name="axelar/nexus/exported/v1beta1/types.proto"></a>
+<a name="nexus/exported/v1beta1/types.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/nexus/exported/v1beta1/types.proto
+## nexus/exported/v1beta1/types.proto
 
 
 
-<a name="axelar.nexus.exported.v1beta1.Asset"></a>
+<a name="nexus.exported.v1beta1.Asset"></a>
 
 ### Asset
 
@@ -926,7 +928,7 @@ Signature holds public key and ECDSA signature
 
 
 
-<a name="axelar.nexus.exported.v1beta1.Chain"></a>
+<a name="nexus.exported.v1beta1.Chain"></a>
 
 ### Chain
 Chain represents the properties of a registered blockchain
@@ -936,7 +938,7 @@ Chain represents the properties of a registered blockchain
 | ----- | ---- | ----- | ----------- |
 | `name` | [string](#string) |  |  |
 | `supports_foreign_assets` | [bool](#bool) |  |  |
-| `key_type` | [axelar.tss.exported.v1beta1.KeyType](#axelar.tss.exported.v1beta1.KeyType) |  |  |
+| `key_type` | [tss.exported.v1beta1.KeyType](#tss.exported.v1beta1.KeyType) |  |  |
 | `module` | [string](#string) |  |  |
 
 
@@ -944,7 +946,7 @@ Chain represents the properties of a registered blockchain
 
 
 
-<a name="axelar.nexus.exported.v1beta1.CrossChainAddress"></a>
+<a name="nexus.exported.v1beta1.CrossChainAddress"></a>
 
 ### CrossChainAddress
 CrossChainAddress represents a generalized address on any registered chain
@@ -952,7 +954,7 @@ CrossChainAddress represents a generalized address on any registered chain
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `chain` | [Chain](#axelar.nexus.exported.v1beta1.Chain) |  |  |
+| `chain` | [Chain](#nexus.exported.v1beta1.Chain) |  |  |
 | `address` | [string](#string) |  |  |
 
 
@@ -960,7 +962,7 @@ CrossChainAddress represents a generalized address on any registered chain
 
 
 
-<a name="axelar.nexus.exported.v1beta1.CrossChainTransfer"></a>
+<a name="nexus.exported.v1beta1.CrossChainTransfer"></a>
 
 ### CrossChainTransfer
 CrossChainTransfer represents a generalized transfer of some asset to a
@@ -969,17 +971,17 @@ registered blockchain
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `recipient` | [CrossChainAddress](#axelar.nexus.exported.v1beta1.CrossChainAddress) |  |  |
+| `recipient` | [CrossChainAddress](#nexus.exported.v1beta1.CrossChainAddress) |  |  |
 | `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 | `id` | [uint64](#uint64) |  |  |
-| `state` | [TransferState](#axelar.nexus.exported.v1beta1.TransferState) |  |  |
+| `state` | [TransferState](#nexus.exported.v1beta1.TransferState) |  |  |
 
 
 
 
 
 
-<a name="axelar.nexus.exported.v1beta1.FeeInfo"></a>
+<a name="nexus.exported.v1beta1.FeeInfo"></a>
 
 ### FeeInfo
 
@@ -998,7 +1000,7 @@ registered blockchain
 
 
 
-<a name="axelar.nexus.exported.v1beta1.TransferFee"></a>
+<a name="nexus.exported.v1beta1.TransferFee"></a>
 
 ### TransferFee
 TransferFee represents accumulated fees generated by the network
@@ -1015,7 +1017,7 @@ TransferFee represents accumulated fees generated by the network
  <!-- end messages -->
 
 
-<a name="axelar.nexus.exported.v1beta1.TransferState"></a>
+<a name="nexus.exported.v1beta1.TransferState"></a>
 
 ### TransferState
 
@@ -1036,14 +1038,14 @@ TransferFee represents accumulated fees generated by the network
 
 
 
-<a name="axelar/utils/v1beta1/bitmap.proto"></a>
+<a name="utils/v1beta1/bitmap.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/utils/v1beta1/bitmap.proto
+## utils/v1beta1/bitmap.proto
 
 
 
-<a name="axelar.utils.v1beta1.Bitmap"></a>
+<a name="utils.v1beta1.Bitmap"></a>
 
 ### Bitmap
 
@@ -1051,14 +1053,14 @@ TransferFee represents accumulated fees generated by the network
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `true_count_cache` | [CircularBuffer](#axelar.utils.v1beta1.CircularBuffer) |  |  |
+| `true_count_cache` | [CircularBuffer](#utils.v1beta1.CircularBuffer) |  |  |
 
 
 
 
 
 
-<a name="axelar.utils.v1beta1.CircularBuffer"></a>
+<a name="utils.v1beta1.CircularBuffer"></a>
 
 ### CircularBuffer
 
@@ -1084,14 +1086,14 @@ TransferFee represents accumulated fees generated by the network
 
 
 
-<a name="axelar/nexus/v1beta1/types.proto"></a>
+<a name="nexus/v1beta1/types.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/nexus/v1beta1/types.proto
+## nexus/v1beta1/types.proto
 
 
 
-<a name="axelar.nexus.v1beta1.ChainState"></a>
+<a name="nexus.v1beta1.ChainState"></a>
 
 ### ChainState
 ChainState represents the state of a registered blockchain
@@ -1099,18 +1101,18 @@ ChainState represents the state of a registered blockchain
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `chain` | [axelar.nexus.exported.v1beta1.Chain](#axelar.nexus.exported.v1beta1.Chain) |  |  |
+| `chain` | [nexus.exported.v1beta1.Chain](#nexus.exported.v1beta1.Chain) |  |  |
 | `maintainers` | [bytes](#bytes) | repeated | **Deprecated.**  |
 | `activated` | [bool](#bool) |  |  |
-| `assets` | [axelar.nexus.exported.v1beta1.Asset](#axelar.nexus.exported.v1beta1.Asset) | repeated |  |
-| `maintainer_states` | [MaintainerState](#axelar.nexus.v1beta1.MaintainerState) | repeated |  |
+| `assets` | [nexus.exported.v1beta1.Asset](#nexus.exported.v1beta1.Asset) | repeated |  |
+| `maintainer_states` | [MaintainerState](#nexus.v1beta1.MaintainerState) | repeated |  |
 
 
 
 
 
 
-<a name="axelar.nexus.v1beta1.LinkedAddresses"></a>
+<a name="nexus.v1beta1.LinkedAddresses"></a>
 
 ### LinkedAddresses
 
@@ -1118,15 +1120,15 @@ ChainState represents the state of a registered blockchain
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `deposit_address` | [axelar.nexus.exported.v1beta1.CrossChainAddress](#axelar.nexus.exported.v1beta1.CrossChainAddress) |  |  |
-| `recipient_address` | [axelar.nexus.exported.v1beta1.CrossChainAddress](#axelar.nexus.exported.v1beta1.CrossChainAddress) |  |  |
+| `deposit_address` | [nexus.exported.v1beta1.CrossChainAddress](#nexus.exported.v1beta1.CrossChainAddress) |  |  |
+| `recipient_address` | [nexus.exported.v1beta1.CrossChainAddress](#nexus.exported.v1beta1.CrossChainAddress) |  |  |
 
 
 
 
 
 
-<a name="axelar.nexus.v1beta1.MaintainerState"></a>
+<a name="nexus.v1beta1.MaintainerState"></a>
 
 ### MaintainerState
 
@@ -1135,8 +1137,8 @@ ChainState represents the state of a registered blockchain
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `address` | [bytes](#bytes) |  |  |
-| `missing_votes` | [axelar.utils.v1beta1.Bitmap](#axelar.utils.v1beta1.Bitmap) |  |  |
-| `incorrect_votes` | [axelar.utils.v1beta1.Bitmap](#axelar.utils.v1beta1.Bitmap) |  |  |
+| `missing_votes` | [utils.v1beta1.Bitmap](#utils.v1beta1.Bitmap) |  |  |
+| `incorrect_votes` | [utils.v1beta1.Bitmap](#utils.v1beta1.Bitmap) |  |  |
 
 
 
@@ -1152,14 +1154,14 @@ ChainState represents the state of a registered blockchain
 
 
 
-<a name="axelar/nexus/v1beta1/query.proto"></a>
+<a name="nexus/v1beta1/query.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/nexus/v1beta1/query.proto
+## nexus/v1beta1/query.proto
 
 
 
-<a name="axelar.nexus.v1beta1.AssetsRequest"></a>
+<a name="nexus.v1beta1.AssetsRequest"></a>
 
 ### AssetsRequest
 AssetsRequest represents a message that queries the registered assets of a
@@ -1175,7 +1177,7 @@ chain
 
 
 
-<a name="axelar.nexus.v1beta1.AssetsResponse"></a>
+<a name="nexus.v1beta1.AssetsResponse"></a>
 
 ### AssetsResponse
 
@@ -1190,7 +1192,7 @@ chain
 
 
 
-<a name="axelar.nexus.v1beta1.ChainStateRequest"></a>
+<a name="nexus.v1beta1.ChainStateRequest"></a>
 
 ### ChainStateRequest
 ChainStateRequest represents a message that queries the state of a chain
@@ -1206,7 +1208,7 @@ registered on the network
 
 
 
-<a name="axelar.nexus.v1beta1.ChainStateResponse"></a>
+<a name="nexus.v1beta1.ChainStateResponse"></a>
 
 ### ChainStateResponse
 
@@ -1214,14 +1216,14 @@ registered on the network
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `state` | [ChainState](#axelar.nexus.v1beta1.ChainState) |  |  |
+| `state` | [ChainState](#nexus.v1beta1.ChainState) |  |  |
 
 
 
 
 
 
-<a name="axelar.nexus.v1beta1.ChainsByAssetRequest"></a>
+<a name="nexus.v1beta1.ChainsByAssetRequest"></a>
 
 ### ChainsByAssetRequest
 ChainsByAssetRequest represents a message that queries the chains
@@ -1237,7 +1239,7 @@ that support an asset on the network
 
 
 
-<a name="axelar.nexus.v1beta1.ChainsByAssetResponse"></a>
+<a name="nexus.v1beta1.ChainsByAssetResponse"></a>
 
 ### ChainsByAssetResponse
 
@@ -1252,7 +1254,7 @@ that support an asset on the network
 
 
 
-<a name="axelar.nexus.v1beta1.ChainsRequest"></a>
+<a name="nexus.v1beta1.ChainsRequest"></a>
 
 ### ChainsRequest
 ChainsRequest represents a message that queries the chains
@@ -1263,7 +1265,7 @@ registered on the network
 
 
 
-<a name="axelar.nexus.v1beta1.ChainsResponse"></a>
+<a name="nexus.v1beta1.ChainsResponse"></a>
 
 ### ChainsResponse
 
@@ -1278,7 +1280,7 @@ registered on the network
 
 
 
-<a name="axelar.nexus.v1beta1.FeeInfoRequest"></a>
+<a name="nexus.v1beta1.FeeInfoRequest"></a>
 
 ### FeeInfoRequest
 FeeInfoRequest represents a message that queries the transfer fees associated
@@ -1295,7 +1297,7 @@ to an asset on a chain
 
 
 
-<a name="axelar.nexus.v1beta1.FeeInfoResponse"></a>
+<a name="nexus.v1beta1.FeeInfoResponse"></a>
 
 ### FeeInfoResponse
 
@@ -1303,14 +1305,14 @@ to an asset on a chain
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `fee_info` | [axelar.nexus.exported.v1beta1.FeeInfo](#axelar.nexus.exported.v1beta1.FeeInfo) |  |  |
+| `fee_info` | [nexus.exported.v1beta1.FeeInfo](#nexus.exported.v1beta1.FeeInfo) |  |  |
 
 
 
 
 
 
-<a name="axelar.nexus.v1beta1.LatestDepositAddressRequest"></a>
+<a name="nexus.v1beta1.LatestDepositAddressRequest"></a>
 
 ### LatestDepositAddressRequest
 LatestDepositAddressRequest represents a message that queries a deposit
@@ -1328,7 +1330,7 @@ address by recipient address
 
 
 
-<a name="axelar.nexus.v1beta1.LatestDepositAddressResponse"></a>
+<a name="nexus.v1beta1.LatestDepositAddressResponse"></a>
 
 ### LatestDepositAddressResponse
 
@@ -1343,7 +1345,7 @@ address by recipient address
 
 
 
-<a name="axelar.nexus.v1beta1.QueryChainMaintainersResponse"></a>
+<a name="nexus.v1beta1.QueryChainMaintainersResponse"></a>
 
 ### QueryChainMaintainersResponse
 
@@ -1358,7 +1360,7 @@ address by recipient address
 
 
 
-<a name="axelar.nexus.v1beta1.TransferFeeRequest"></a>
+<a name="nexus.v1beta1.TransferFeeRequest"></a>
 
 ### TransferFeeRequest
 TransferFeeRequest represents a message that queries the fees charged by
@@ -1376,7 +1378,7 @@ the network for a cross-chain transfer
 
 
 
-<a name="axelar.nexus.v1beta1.TransferFeeResponse"></a>
+<a name="nexus.v1beta1.TransferFeeResponse"></a>
 
 ### TransferFeeResponse
 
@@ -1391,7 +1393,7 @@ the network for a cross-chain transfer
 
 
 
-<a name="axelar.nexus.v1beta1.TransfersForChainRequest"></a>
+<a name="nexus.v1beta1.TransfersForChainRequest"></a>
 
 ### TransfersForChainRequest
 TransfersForChainRequest represents a message that queries the
@@ -1401,7 +1403,7 @@ transfers for the specified chain
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `chain` | [string](#string) |  |  |
-| `state` | [axelar.nexus.exported.v1beta1.TransferState](#axelar.nexus.exported.v1beta1.TransferState) |  |  |
+| `state` | [nexus.exported.v1beta1.TransferState](#nexus.exported.v1beta1.TransferState) |  |  |
 | `pagination` | [cosmos.base.query.v1beta1.PageRequest](#cosmos.base.query.v1beta1.PageRequest) |  |  |
 
 
@@ -1409,7 +1411,7 @@ transfers for the specified chain
 
 
 
-<a name="axelar.nexus.v1beta1.TransfersForChainResponse"></a>
+<a name="nexus.v1beta1.TransfersForChainResponse"></a>
 
 ### TransfersForChainResponse
 
@@ -1417,7 +1419,7 @@ transfers for the specified chain
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `transfers` | [axelar.nexus.exported.v1beta1.CrossChainTransfer](#axelar.nexus.exported.v1beta1.CrossChainTransfer) | repeated |  |
+| `transfers` | [nexus.exported.v1beta1.CrossChainTransfer](#nexus.exported.v1beta1.CrossChainTransfer) | repeated |  |
 | `pagination` | [cosmos.base.query.v1beta1.PageResponse](#cosmos.base.query.v1beta1.PageResponse) |  |  |
 
 
@@ -1434,14 +1436,14 @@ transfers for the specified chain
 
 
 
-<a name="axelar/axelarnet/v1beta1/query.proto"></a>
+<a name="axelarnet/v1beta1/query.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/axelarnet/v1beta1/query.proto
+## axelarnet/v1beta1/query.proto
 
 
 
-<a name="axelar.axelarnet.v1beta1.PendingIBCTransferCountRequest"></a>
+<a name="axelarnet.v1beta1.PendingIBCTransferCountRequest"></a>
 
 ### PendingIBCTransferCountRequest
 
@@ -1451,7 +1453,7 @@ transfers for the specified chain
 
 
 
-<a name="axelar.axelarnet.v1beta1.PendingIBCTransferCountResponse"></a>
+<a name="axelarnet.v1beta1.PendingIBCTransferCountResponse"></a>
 
 ### PendingIBCTransferCountResponse
 
@@ -1459,14 +1461,14 @@ transfers for the specified chain
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `transfers_by_chain` | [PendingIBCTransferCountResponse.TransfersByChainEntry](#axelar.axelarnet.v1beta1.PendingIBCTransferCountResponse.TransfersByChainEntry) | repeated |  |
+| `transfers_by_chain` | [PendingIBCTransferCountResponse.TransfersByChainEntry](#axelarnet.v1beta1.PendingIBCTransferCountResponse.TransfersByChainEntry) | repeated |  |
 
 
 
 
 
 
-<a name="axelar.axelarnet.v1beta1.PendingIBCTransferCountResponse.TransfersByChainEntry"></a>
+<a name="axelarnet.v1beta1.PendingIBCTransferCountResponse.TransfersByChainEntry"></a>
 
 ### PendingIBCTransferCountResponse.TransfersByChainEntry
 
@@ -1491,16 +1493,16 @@ transfers for the specified chain
 
 
 
-<a name="axelar/permission/exported/v1beta1/types.proto"></a>
+<a name="permission/exported/v1beta1/types.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/permission/exported/v1beta1/types.proto
+## permission/exported/v1beta1/types.proto
 
 
  <!-- end messages -->
 
 
-<a name="axelar.permission.exported.v1beta1.Role"></a>
+<a name="permission.exported.v1beta1.Role"></a>
 
 ### Role
 
@@ -1516,7 +1518,7 @@ transfers for the specified chain
  <!-- end enums -->
 
 
-<a name="axelar/permission/exported/v1beta1/types.proto-extensions"></a>
+<a name="permission/exported/v1beta1/types.proto-extensions"></a>
 
 ### File-level Extensions
 | Extension | Type | Base | Number | Description |
@@ -1529,14 +1531,14 @@ transfers for the specified chain
 
 
 
-<a name="axelar/axelarnet/v1beta1/tx.proto"></a>
+<a name="axelarnet/v1beta1/tx.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/axelarnet/v1beta1/tx.proto
+## axelarnet/v1beta1/tx.proto
 
 
 
-<a name="axelar.axelarnet.v1beta1.AddCosmosBasedChainRequest"></a>
+<a name="axelarnet.v1beta1.AddCosmosBasedChainRequest"></a>
 
 ### AddCosmosBasedChainRequest
 MsgAddCosmosBasedChain represents a message to register a cosmos based chain
@@ -1546,16 +1548,16 @@ to nexus
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
-| `chain` | [axelar.nexus.exported.v1beta1.Chain](#axelar.nexus.exported.v1beta1.Chain) |  |  |
+| `chain` | [nexus.exported.v1beta1.Chain](#nexus.exported.v1beta1.Chain) |  |  |
 | `addr_prefix` | [string](#string) |  |  |
-| `native_assets` | [axelar.nexus.exported.v1beta1.Asset](#axelar.nexus.exported.v1beta1.Asset) | repeated |  |
+| `native_assets` | [nexus.exported.v1beta1.Asset](#nexus.exported.v1beta1.Asset) | repeated |  |
 
 
 
 
 
 
-<a name="axelar.axelarnet.v1beta1.AddCosmosBasedChainResponse"></a>
+<a name="axelarnet.v1beta1.AddCosmosBasedChainResponse"></a>
 
 ### AddCosmosBasedChainResponse
 
@@ -1565,7 +1567,7 @@ to nexus
 
 
 
-<a name="axelar.axelarnet.v1beta1.ConfirmDepositRequest"></a>
+<a name="axelarnet.v1beta1.ConfirmDepositRequest"></a>
 
 ### ConfirmDepositRequest
 MsgConfirmDeposit represents a deposit confirmation message
@@ -1582,7 +1584,7 @@ MsgConfirmDeposit represents a deposit confirmation message
 
 
 
-<a name="axelar.axelarnet.v1beta1.ConfirmDepositResponse"></a>
+<a name="axelarnet.v1beta1.ConfirmDepositResponse"></a>
 
 ### ConfirmDepositResponse
 
@@ -1592,7 +1594,7 @@ MsgConfirmDeposit represents a deposit confirmation message
 
 
 
-<a name="axelar.axelarnet.v1beta1.ExecutePendingTransfersRequest"></a>
+<a name="axelarnet.v1beta1.ExecutePendingTransfersRequest"></a>
 
 ### ExecutePendingTransfersRequest
 MsgExecutePendingTransfers represents a message to trigger transfer all
@@ -1608,7 +1610,7 @@ pending transfers
 
 
 
-<a name="axelar.axelarnet.v1beta1.ExecutePendingTransfersResponse"></a>
+<a name="axelarnet.v1beta1.ExecutePendingTransfersResponse"></a>
 
 ### ExecutePendingTransfersResponse
 
@@ -1618,7 +1620,7 @@ pending transfers
 
 
 
-<a name="axelar.axelarnet.v1beta1.LinkRequest"></a>
+<a name="axelarnet.v1beta1.LinkRequest"></a>
 
 ### LinkRequest
 MsgLink represents a message to link a cross-chain address to an Axelar
@@ -1637,7 +1639,7 @@ address
 
 
 
-<a name="axelar.axelarnet.v1beta1.LinkResponse"></a>
+<a name="axelarnet.v1beta1.LinkResponse"></a>
 
 ### LinkResponse
 
@@ -1652,7 +1654,7 @@ address
 
 
 
-<a name="axelar.axelarnet.v1beta1.RegisterAssetRequest"></a>
+<a name="axelarnet.v1beta1.RegisterAssetRequest"></a>
 
 ### RegisterAssetRequest
 RegisterAssetRequest represents a message to register an asset to a cosmos
@@ -1663,14 +1665,14 @@ based chain
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
-| `asset` | [axelar.nexus.exported.v1beta1.Asset](#axelar.nexus.exported.v1beta1.Asset) |  |  |
+| `asset` | [nexus.exported.v1beta1.Asset](#nexus.exported.v1beta1.Asset) |  |  |
 
 
 
 
 
 
-<a name="axelar.axelarnet.v1beta1.RegisterAssetResponse"></a>
+<a name="axelarnet.v1beta1.RegisterAssetResponse"></a>
 
 ### RegisterAssetResponse
 
@@ -1680,7 +1682,7 @@ based chain
 
 
 
-<a name="axelar.axelarnet.v1beta1.RegisterFeeCollectorRequest"></a>
+<a name="axelarnet.v1beta1.RegisterFeeCollectorRequest"></a>
 
 ### RegisterFeeCollectorRequest
 RegisterFeeCollectorRequest represents a message to register axelarnet fee
@@ -1697,7 +1699,7 @@ collector account
 
 
 
-<a name="axelar.axelarnet.v1beta1.RegisterFeeCollectorResponse"></a>
+<a name="axelarnet.v1beta1.RegisterFeeCollectorResponse"></a>
 
 ### RegisterFeeCollectorResponse
 
@@ -1707,7 +1709,7 @@ collector account
 
 
 
-<a name="axelar.axelarnet.v1beta1.RegisterIBCPathRequest"></a>
+<a name="axelarnet.v1beta1.RegisterIBCPathRequest"></a>
 
 ### RegisterIBCPathRequest
 MSgRegisterIBCPath represents a message to register an IBC tracing path for
@@ -1725,7 +1727,7 @@ a cosmos chain
 
 
 
-<a name="axelar.axelarnet.v1beta1.RegisterIBCPathResponse"></a>
+<a name="axelarnet.v1beta1.RegisterIBCPathResponse"></a>
 
 ### RegisterIBCPathResponse
 
@@ -1735,7 +1737,7 @@ a cosmos chain
 
 
 
-<a name="axelar.axelarnet.v1beta1.RouteIBCTransfersRequest"></a>
+<a name="axelarnet.v1beta1.RouteIBCTransfersRequest"></a>
 
 ### RouteIBCTransfersRequest
 RouteIBCTransfersRequest represents a message to route pending transfers to
@@ -1751,7 +1753,7 @@ cosmos based chains
 
 
 
-<a name="axelar.axelarnet.v1beta1.RouteIBCTransfersResponse"></a>
+<a name="axelarnet.v1beta1.RouteIBCTransfersResponse"></a>
 
 ### RouteIBCTransfersResponse
 
@@ -1770,10 +1772,10 @@ cosmos based chains
 
 
 
-<a name="axelar/axelarnet/v1beta1/service.proto"></a>
+<a name="axelarnet/v1beta1/service.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/axelarnet/v1beta1/service.proto
+## axelarnet/v1beta1/service.proto
 
 
  <!-- end messages -->
@@ -1783,44 +1785,44 @@ cosmos based chains
  <!-- end HasExtensions -->
 
 
-<a name="axelar.axelarnet.v1beta1.MsgService"></a>
+<a name="axelarnet.v1beta1.MsgService"></a>
 
 ### MsgService
 Msg defines the axelarnet Msg service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `Link` | [LinkRequest](#axelar.axelarnet.v1beta1.LinkRequest) | [LinkResponse](#axelar.axelarnet.v1beta1.LinkResponse) |  | POST|/axelar/axelarnet/link|
-| `ConfirmDeposit` | [ConfirmDepositRequest](#axelar.axelarnet.v1beta1.ConfirmDepositRequest) | [ConfirmDepositResponse](#axelar.axelarnet.v1beta1.ConfirmDepositResponse) |  | POST|/axelar/axelarnet/confirm_deposit|
-| `ExecutePendingTransfers` | [ExecutePendingTransfersRequest](#axelar.axelarnet.v1beta1.ExecutePendingTransfersRequest) | [ExecutePendingTransfersResponse](#axelar.axelarnet.v1beta1.ExecutePendingTransfersResponse) |  | POST|/axelar/axelarnet/execute_pending_transfers|
-| `RegisterIBCPath` | [RegisterIBCPathRequest](#axelar.axelarnet.v1beta1.RegisterIBCPathRequest) | [RegisterIBCPathResponse](#axelar.axelarnet.v1beta1.RegisterIBCPathResponse) |  | POST|/axelar/axelarnet/register_ibc_path|
-| `AddCosmosBasedChain` | [AddCosmosBasedChainRequest](#axelar.axelarnet.v1beta1.AddCosmosBasedChainRequest) | [AddCosmosBasedChainResponse](#axelar.axelarnet.v1beta1.AddCosmosBasedChainResponse) |  | POST|/axelar/axelarnet/add_cosmos_based_chain|
-| `RegisterAsset` | [RegisterAssetRequest](#axelar.axelarnet.v1beta1.RegisterAssetRequest) | [RegisterAssetResponse](#axelar.axelarnet.v1beta1.RegisterAssetResponse) |  | POST|/axelar/axelarnet/register_asset|
-| `RouteIBCTransfers` | [RouteIBCTransfersRequest](#axelar.axelarnet.v1beta1.RouteIBCTransfersRequest) | [RouteIBCTransfersResponse](#axelar.axelarnet.v1beta1.RouteIBCTransfersResponse) |  | POST|/axelar/axelarnet/route_ibc_transfers|
-| `RegisterFeeCollector` | [RegisterFeeCollectorRequest](#axelar.axelarnet.v1beta1.RegisterFeeCollectorRequest) | [RegisterFeeCollectorResponse](#axelar.axelarnet.v1beta1.RegisterFeeCollectorResponse) |  | POST|/axelar/axelarnet/register_fee_collector|
+| `Link` | [LinkRequest](#axelarnet.v1beta1.LinkRequest) | [LinkResponse](#axelarnet.v1beta1.LinkResponse) |  | POST|/axelar/axelarnet/link|
+| `ConfirmDeposit` | [ConfirmDepositRequest](#axelarnet.v1beta1.ConfirmDepositRequest) | [ConfirmDepositResponse](#axelarnet.v1beta1.ConfirmDepositResponse) |  | POST|/axelar/axelarnet/confirm_deposit|
+| `ExecutePendingTransfers` | [ExecutePendingTransfersRequest](#axelarnet.v1beta1.ExecutePendingTransfersRequest) | [ExecutePendingTransfersResponse](#axelarnet.v1beta1.ExecutePendingTransfersResponse) |  | POST|/axelar/axelarnet/execute_pending_transfers|
+| `RegisterIBCPath` | [RegisterIBCPathRequest](#axelarnet.v1beta1.RegisterIBCPathRequest) | [RegisterIBCPathResponse](#axelarnet.v1beta1.RegisterIBCPathResponse) |  | POST|/axelar/axelarnet/register_ibc_path|
+| `AddCosmosBasedChain` | [AddCosmosBasedChainRequest](#axelarnet.v1beta1.AddCosmosBasedChainRequest) | [AddCosmosBasedChainResponse](#axelarnet.v1beta1.AddCosmosBasedChainResponse) |  | POST|/axelar/axelarnet/add_cosmos_based_chain|
+| `RegisterAsset` | [RegisterAssetRequest](#axelarnet.v1beta1.RegisterAssetRequest) | [RegisterAssetResponse](#axelarnet.v1beta1.RegisterAssetResponse) |  | POST|/axelar/axelarnet/register_asset|
+| `RouteIBCTransfers` | [RouteIBCTransfersRequest](#axelarnet.v1beta1.RouteIBCTransfersRequest) | [RouteIBCTransfersResponse](#axelarnet.v1beta1.RouteIBCTransfersResponse) |  | POST|/axelar/axelarnet/route_ibc_transfers|
+| `RegisterFeeCollector` | [RegisterFeeCollectorRequest](#axelarnet.v1beta1.RegisterFeeCollectorRequest) | [RegisterFeeCollectorResponse](#axelarnet.v1beta1.RegisterFeeCollectorResponse) |  | POST|/axelar/axelarnet/register_fee_collector|
 
 
-<a name="axelar.axelarnet.v1beta1.QueryService"></a>
+<a name="axelarnet.v1beta1.QueryService"></a>
 
 ### QueryService
 QueryService defines the gRPC querier service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `PendingIBCTransferCount` | [PendingIBCTransferCountRequest](#axelar.axelarnet.v1beta1.PendingIBCTransferCountRequest) | [PendingIBCTransferCountResponse](#axelar.axelarnet.v1beta1.PendingIBCTransferCountResponse) | PendingIBCTransferCount queries the pending ibc transfers for all chains | GET|/axelar/axelarnet/v1beta1/ibc_transfer_count|
+| `PendingIBCTransferCount` | [PendingIBCTransferCountRequest](#axelarnet.v1beta1.PendingIBCTransferCountRequest) | [PendingIBCTransferCountResponse](#axelarnet.v1beta1.PendingIBCTransferCountResponse) | PendingIBCTransferCount queries the pending ibc transfers for all chains | GET|/axelar/axelarnet/v1beta1/ibc_transfer_count|
 
  <!-- end services -->
 
 
 
-<a name="axelar/bitcoin/v1beta1/types.proto"></a>
+<a name="bitcoin/v1beta1/types.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/bitcoin/v1beta1/types.proto
+## bitcoin/v1beta1/types.proto
 
 
 
-<a name="axelar.bitcoin.v1beta1.AddressInfo"></a>
+<a name="bitcoin.v1beta1.AddressInfo"></a>
 
 ### AddressInfo
 AddressInfo is a wrapper containing the Bitcoin P2WSH address, it's
@@ -1830,18 +1832,18 @@ corresponding script and the underlying key
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `address` | [string](#string) |  |  |
-| `role` | [AddressRole](#axelar.bitcoin.v1beta1.AddressRole) |  |  |
+| `role` | [AddressRole](#bitcoin.v1beta1.AddressRole) |  |  |
 | `redeem_script` | [bytes](#bytes) |  |  |
 | `key_id` | [string](#string) |  |  |
 | `max_sig_count` | [uint32](#uint32) |  |  |
-| `spending_condition` | [AddressInfo.SpendingCondition](#axelar.bitcoin.v1beta1.AddressInfo.SpendingCondition) |  |  |
+| `spending_condition` | [AddressInfo.SpendingCondition](#bitcoin.v1beta1.AddressInfo.SpendingCondition) |  |  |
 
 
 
 
 
 
-<a name="axelar.bitcoin.v1beta1.AddressInfo.SpendingCondition"></a>
+<a name="bitcoin.v1beta1.AddressInfo.SpendingCondition"></a>
 
 ### AddressInfo.SpendingCondition
 
@@ -1859,7 +1861,7 @@ corresponding script and the underlying key
 
 
 
-<a name="axelar.bitcoin.v1beta1.Network"></a>
+<a name="bitcoin.v1beta1.Network"></a>
 
 ### Network
 
@@ -1874,7 +1876,7 @@ corresponding script and the underlying key
 
 
 
-<a name="axelar.bitcoin.v1beta1.OutPointInfo"></a>
+<a name="bitcoin.v1beta1.OutPointInfo"></a>
 
 ### OutPointInfo
 OutPointInfo describes all the necessary information to confirm the outPoint
@@ -1892,7 +1894,7 @@ of a transaction
 
 
 
-<a name="axelar.bitcoin.v1beta1.SignedTx"></a>
+<a name="bitcoin.v1beta1.SignedTx"></a>
 
 ### SignedTx
 
@@ -1900,7 +1902,7 @@ of a transaction
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `type` | [TxType](#axelar.bitcoin.v1beta1.TxType) |  |  |
+| `type` | [TxType](#bitcoin.v1beta1.TxType) |  |  |
 | `tx` | [bytes](#bytes) |  |  |
 | `prev_signed_tx_hash` | [bytes](#bytes) |  |  |
 | `confirmation_required` | [bool](#bool) |  |  |
@@ -1911,7 +1913,7 @@ of a transaction
 
 
 
-<a name="axelar.bitcoin.v1beta1.UnsignedTx"></a>
+<a name="bitcoin.v1beta1.UnsignedTx"></a>
 
 ### UnsignedTx
 
@@ -1919,10 +1921,10 @@ of a transaction
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `type` | [TxType](#axelar.bitcoin.v1beta1.TxType) |  |  |
+| `type` | [TxType](#bitcoin.v1beta1.TxType) |  |  |
 | `tx` | [bytes](#bytes) |  |  |
-| `info` | [UnsignedTx.Info](#axelar.bitcoin.v1beta1.UnsignedTx.Info) |  |  |
-| `status` | [TxStatus](#axelar.bitcoin.v1beta1.TxStatus) |  |  |
+| `info` | [UnsignedTx.Info](#bitcoin.v1beta1.UnsignedTx.Info) |  |  |
+| `status` | [TxStatus](#bitcoin.v1beta1.TxStatus) |  |  |
 | `confirmation_required` | [bool](#bool) |  |  |
 | `anyone_can_spend_vout` | [uint32](#uint32) |  |  |
 | `prev_aborted_key_id` | [string](#string) |  |  |
@@ -1933,7 +1935,7 @@ of a transaction
 
 
 
-<a name="axelar.bitcoin.v1beta1.UnsignedTx.Info"></a>
+<a name="bitcoin.v1beta1.UnsignedTx.Info"></a>
 
 ### UnsignedTx.Info
 
@@ -1942,14 +1944,14 @@ of a transaction
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `rotate_key` | [bool](#bool) |  |  |
-| `input_infos` | [UnsignedTx.Info.InputInfo](#axelar.bitcoin.v1beta1.UnsignedTx.Info.InputInfo) | repeated |  |
+| `input_infos` | [UnsignedTx.Info.InputInfo](#bitcoin.v1beta1.UnsignedTx.Info.InputInfo) | repeated |  |
 
 
 
 
 
 
-<a name="axelar.bitcoin.v1beta1.UnsignedTx.Info.InputInfo"></a>
+<a name="bitcoin.v1beta1.UnsignedTx.Info.InputInfo"></a>
 
 ### UnsignedTx.Info.InputInfo
 
@@ -1957,14 +1959,14 @@ of a transaction
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `sig_requirements` | [UnsignedTx.Info.InputInfo.SigRequirement](#axelar.bitcoin.v1beta1.UnsignedTx.Info.InputInfo.SigRequirement) | repeated |  |
+| `sig_requirements` | [UnsignedTx.Info.InputInfo.SigRequirement](#bitcoin.v1beta1.UnsignedTx.Info.InputInfo.SigRequirement) | repeated |  |
 
 
 
 
 
 
-<a name="axelar.bitcoin.v1beta1.UnsignedTx.Info.InputInfo.SigRequirement"></a>
+<a name="bitcoin.v1beta1.UnsignedTx.Info.InputInfo.SigRequirement"></a>
 
 ### UnsignedTx.Info.InputInfo.SigRequirement
 
@@ -1982,7 +1984,7 @@ of a transaction
  <!-- end messages -->
 
 
-<a name="axelar.bitcoin.v1beta1.AddressRole"></a>
+<a name="bitcoin.v1beta1.AddressRole"></a>
 
 ### AddressRole
 
@@ -1995,7 +1997,7 @@ of a transaction
 
 
 
-<a name="axelar.bitcoin.v1beta1.OutPointState"></a>
+<a name="bitcoin.v1beta1.OutPointState"></a>
 
 ### OutPointState
 
@@ -2009,7 +2011,7 @@ of a transaction
 
 
 
-<a name="axelar.bitcoin.v1beta1.TxStatus"></a>
+<a name="bitcoin.v1beta1.TxStatus"></a>
 
 ### TxStatus
 
@@ -2024,7 +2026,7 @@ of a transaction
 
 
 
-<a name="axelar.bitcoin.v1beta1.TxType"></a>
+<a name="bitcoin.v1beta1.TxType"></a>
 
 ### TxType
 
@@ -2045,14 +2047,14 @@ of a transaction
 
 
 
-<a name="axelar/bitcoin/v1beta1/params.proto"></a>
+<a name="bitcoin/v1beta1/params.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/bitcoin/v1beta1/params.proto
+## bitcoin/v1beta1/params.proto
 
 
 
-<a name="axelar.bitcoin.v1beta1.Params"></a>
+<a name="bitcoin.v1beta1.Params"></a>
 
 ### Params
 
@@ -2060,7 +2062,7 @@ of a transaction
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `network` | [Network](#axelar.bitcoin.v1beta1.Network) |  |  |
+| `network` | [Network](#bitcoin.v1beta1.Network) |  |  |
 | `confirmation_height` | [uint64](#uint64) |  |  |
 | `revote_locking_period` | [int64](#int64) |  |  |
 | `sig_check_interval` | [int64](#int64) |  |  |
@@ -2070,7 +2072,7 @@ of a transaction
 | `master_key_retention_period` | [int64](#int64) |  |  |
 | `master_address_internal_key_lock_duration` | [int64](#int64) |  |  |
 | `master_address_external_key_lock_duration` | [int64](#int64) |  |  |
-| `voting_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
+| `voting_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
 | `min_voter_count` | [int64](#int64) |  |  |
 | `max_tx_size` | [int64](#int64) |  |  |
 
@@ -2088,14 +2090,14 @@ of a transaction
 
 
 
-<a name="axelar/bitcoin/v1beta1/genesis.proto"></a>
+<a name="bitcoin/v1beta1/genesis.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/bitcoin/v1beta1/genesis.proto
+## bitcoin/v1beta1/genesis.proto
 
 
 
-<a name="axelar.bitcoin.v1beta1.GenesisState"></a>
+<a name="bitcoin.v1beta1.GenesisState"></a>
 
 ### GenesisState
 
@@ -2103,7 +2105,7 @@ of a transaction
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `params` | [Params](#axelar.bitcoin.v1beta1.Params) |  |  |
+| `params` | [Params](#bitcoin.v1beta1.Params) |  |  |
 
 
 
@@ -2119,14 +2121,14 @@ of a transaction
 
 
 
-<a name="axelar/bitcoin/v1beta1/query.proto"></a>
+<a name="bitcoin/v1beta1/query.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/bitcoin/v1beta1/query.proto
+## bitcoin/v1beta1/query.proto
 
 
 
-<a name="axelar.bitcoin.v1beta1.DepositQueryParams"></a>
+<a name="bitcoin.v1beta1.DepositQueryParams"></a>
 
 ### DepositQueryParams
 DepositQueryParams describe the parameters used to query for a Bitcoin
@@ -2143,7 +2145,7 @@ deposit address
 
 
 
-<a name="axelar.bitcoin.v1beta1.QueryAddressResponse"></a>
+<a name="bitcoin.v1beta1.QueryAddressResponse"></a>
 
 ### QueryAddressResponse
 
@@ -2159,7 +2161,7 @@ deposit address
 
 
 
-<a name="axelar.bitcoin.v1beta1.QueryDepositStatusResponse"></a>
+<a name="bitcoin.v1beta1.QueryDepositStatusResponse"></a>
 
 ### QueryDepositStatusResponse
 
@@ -2168,14 +2170,14 @@ deposit address
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `log` | [string](#string) |  |  |
-| `status` | [OutPointState](#axelar.bitcoin.v1beta1.OutPointState) |  |  |
+| `status` | [OutPointState](#bitcoin.v1beta1.OutPointState) |  |  |
 
 
 
 
 
 
-<a name="axelar.bitcoin.v1beta1.QueryTxResponse"></a>
+<a name="bitcoin.v1beta1.QueryTxResponse"></a>
 
 ### QueryTxResponse
 
@@ -2184,18 +2186,18 @@ deposit address
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `tx` | [string](#string) |  |  |
-| `status` | [TxStatus](#axelar.bitcoin.v1beta1.TxStatus) |  |  |
+| `status` | [TxStatus](#bitcoin.v1beta1.TxStatus) |  |  |
 | `confirmation_required` | [bool](#bool) |  |  |
 | `prev_signed_tx_hash` | [string](#string) |  |  |
 | `anyone_can_spend_vout` | [uint32](#uint32) |  |  |
-| `signing_infos` | [QueryTxResponse.SigningInfo](#axelar.bitcoin.v1beta1.QueryTxResponse.SigningInfo) | repeated |  |
+| `signing_infos` | [QueryTxResponse.SigningInfo](#bitcoin.v1beta1.QueryTxResponse.SigningInfo) | repeated |  |
 
 
 
 
 
 
-<a name="axelar.bitcoin.v1beta1.QueryTxResponse.SigningInfo"></a>
+<a name="bitcoin.v1beta1.QueryTxResponse.SigningInfo"></a>
 
 ### QueryTxResponse.SigningInfo
 
@@ -2220,14 +2222,14 @@ deposit address
 
 
 
-<a name="axelar/snapshot/exported/v1beta1/types.proto"></a>
+<a name="snapshot/exported/v1beta1/types.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/snapshot/exported/v1beta1/types.proto
+## snapshot/exported/v1beta1/types.proto
 
 
 
-<a name="axelar.snapshot.exported.v1beta1.Snapshot"></a>
+<a name="snapshot.exported.v1beta1.Snapshot"></a>
 
 ### Snapshot
 
@@ -2235,12 +2237,12 @@ deposit address
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `validators` | [Validator](#axelar.snapshot.exported.v1beta1.Validator) | repeated |  |
+| `validators` | [Validator](#snapshot.exported.v1beta1.Validator) | repeated |  |
 | `timestamp` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
 | `height` | [int64](#int64) |  |  |
 | `total_share_count` | [bytes](#bytes) |  |  |
 | `counter` | [int64](#int64) |  |  |
-| `key_share_distribution_policy` | [axelar.tss.exported.v1beta1.KeyShareDistributionPolicy](#axelar.tss.exported.v1beta1.KeyShareDistributionPolicy) |  |  |
+| `key_share_distribution_policy` | [tss.exported.v1beta1.KeyShareDistributionPolicy](#tss.exported.v1beta1.KeyShareDistributionPolicy) |  |  |
 | `corruption_threshold` | [int64](#int64) |  |  |
 
 
@@ -2248,7 +2250,7 @@ deposit address
 
 
 
-<a name="axelar.snapshot.exported.v1beta1.Validator"></a>
+<a name="snapshot.exported.v1beta1.Validator"></a>
 
 ### Validator
 
@@ -2266,7 +2268,7 @@ deposit address
  <!-- end messages -->
 
 
-<a name="axelar.snapshot.exported.v1beta1.ValidatorIllegibility"></a>
+<a name="snapshot.exported.v1beta1.ValidatorIllegibility"></a>
 
 ### ValidatorIllegibility
 
@@ -2290,14 +2292,14 @@ deposit address
 
 
 
-<a name="axelar/vote/exported/v1beta1/types.proto"></a>
+<a name="vote/exported/v1beta1/types.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/vote/exported/v1beta1/types.proto
+## vote/exported/v1beta1/types.proto
 
 
 
-<a name="axelar.vote.exported.v1beta1.PollKey"></a>
+<a name="vote.exported.v1beta1.PollKey"></a>
 
 ### PollKey
 PollKey represents the key data for a poll
@@ -2313,7 +2315,7 @@ PollKey represents the key data for a poll
 
 
 
-<a name="axelar.vote.exported.v1beta1.PollMetadata"></a>
+<a name="vote.exported.v1beta1.PollMetadata"></a>
 
 ### PollMetadata
 PollMetadata represents a poll with write-in voting, i.e. the result of the
@@ -2322,13 +2324,13 @@ vote can have any data type
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `key` | [PollKey](#axelar.vote.exported.v1beta1.PollKey) |  |  |
+| `key` | [PollKey](#vote.exported.v1beta1.PollKey) |  |  |
 | `expires_at` | [int64](#int64) |  |  |
 | `result` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
-| `voting_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
-| `state` | [PollState](#axelar.vote.exported.v1beta1.PollState) |  |  |
+| `voting_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
+| `state` | [PollState](#vote.exported.v1beta1.PollState) |  |  |
 | `min_voter_count` | [int64](#int64) |  |  |
-| `voters` | [Voter](#axelar.vote.exported.v1beta1.Voter) | repeated |  |
+| `voters` | [Voter](#vote.exported.v1beta1.Voter) | repeated |  |
 | `total_voting_power` | [bytes](#bytes) |  |  |
 | `reward_pool_name` | [string](#string) |  |  |
 
@@ -2337,7 +2339,7 @@ vote can have any data type
 
 
 
-<a name="axelar.vote.exported.v1beta1.Vote"></a>
+<a name="vote.exported.v1beta1.Vote"></a>
 
 ### Vote
 
@@ -2352,7 +2354,7 @@ vote can have any data type
 
 
 
-<a name="axelar.vote.exported.v1beta1.Voter"></a>
+<a name="vote.exported.v1beta1.Voter"></a>
 
 ### Voter
 
@@ -2370,7 +2372,7 @@ vote can have any data type
  <!-- end messages -->
 
 
-<a name="axelar.vote.exported.v1beta1.PollState"></a>
+<a name="vote.exported.v1beta1.PollState"></a>
 
 ### PollState
 
@@ -2393,14 +2395,14 @@ vote can have any data type
 
 
 
-<a name="axelar/bitcoin/v1beta1/tx.proto"></a>
+<a name="bitcoin/v1beta1/tx.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/bitcoin/v1beta1/tx.proto
+## bitcoin/v1beta1/tx.proto
 
 
 
-<a name="axelar.bitcoin.v1beta1.ConfirmOutpointRequest"></a>
+<a name="bitcoin.v1beta1.ConfirmOutpointRequest"></a>
 
 ### ConfirmOutpointRequest
 MsgConfirmOutpoint represents a message to trigger the confirmation of a
@@ -2410,14 +2412,14 @@ Bitcoin outpoint
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
-| `out_point_info` | [OutPointInfo](#axelar.bitcoin.v1beta1.OutPointInfo) |  |  |
+| `out_point_info` | [OutPointInfo](#bitcoin.v1beta1.OutPointInfo) |  |  |
 
 
 
 
 
 
-<a name="axelar.bitcoin.v1beta1.ConfirmOutpointResponse"></a>
+<a name="bitcoin.v1beta1.ConfirmOutpointResponse"></a>
 
 ### ConfirmOutpointResponse
 
@@ -2427,7 +2429,7 @@ Bitcoin outpoint
 
 
 
-<a name="axelar.bitcoin.v1beta1.CreateMasterTxRequest"></a>
+<a name="bitcoin.v1beta1.CreateMasterTxRequest"></a>
 
 ### CreateMasterTxRequest
 
@@ -2444,7 +2446,7 @@ Bitcoin outpoint
 
 
 
-<a name="axelar.bitcoin.v1beta1.CreateMasterTxResponse"></a>
+<a name="bitcoin.v1beta1.CreateMasterTxResponse"></a>
 
 ### CreateMasterTxResponse
 
@@ -2454,7 +2456,7 @@ Bitcoin outpoint
 
 
 
-<a name="axelar.bitcoin.v1beta1.CreatePendingTransfersTxRequest"></a>
+<a name="bitcoin.v1beta1.CreatePendingTransfersTxRequest"></a>
 
 ### CreatePendingTransfersTxRequest
 CreatePendingTransfersTxRequest represents a message to trigger the creation
@@ -2472,7 +2474,7 @@ of a secondary key consolidation transaction
 
 
 
-<a name="axelar.bitcoin.v1beta1.CreatePendingTransfersTxResponse"></a>
+<a name="bitcoin.v1beta1.CreatePendingTransfersTxResponse"></a>
 
 ### CreatePendingTransfersTxResponse
 
@@ -2482,7 +2484,7 @@ of a secondary key consolidation transaction
 
 
 
-<a name="axelar.bitcoin.v1beta1.CreateRescueTxRequest"></a>
+<a name="bitcoin.v1beta1.CreateRescueTxRequest"></a>
 
 ### CreateRescueTxRequest
 
@@ -2497,7 +2499,7 @@ of a secondary key consolidation transaction
 
 
 
-<a name="axelar.bitcoin.v1beta1.CreateRescueTxResponse"></a>
+<a name="bitcoin.v1beta1.CreateRescueTxResponse"></a>
 
 ### CreateRescueTxResponse
 
@@ -2507,7 +2509,7 @@ of a secondary key consolidation transaction
 
 
 
-<a name="axelar.bitcoin.v1beta1.LinkRequest"></a>
+<a name="bitcoin.v1beta1.LinkRequest"></a>
 
 ### LinkRequest
 MsgLink represents a message to link a cross-chain address to a Bitcoin
@@ -2525,7 +2527,7 @@ address
 
 
 
-<a name="axelar.bitcoin.v1beta1.LinkResponse"></a>
+<a name="bitcoin.v1beta1.LinkResponse"></a>
 
 ### LinkResponse
 
@@ -2540,7 +2542,7 @@ address
 
 
 
-<a name="axelar.bitcoin.v1beta1.SignTxRequest"></a>
+<a name="bitcoin.v1beta1.SignTxRequest"></a>
 
 ### SignTxRequest
 
@@ -2549,14 +2551,14 @@ address
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
-| `tx_type` | [TxType](#axelar.bitcoin.v1beta1.TxType) |  |  |
+| `tx_type` | [TxType](#bitcoin.v1beta1.TxType) |  |  |
 
 
 
 
 
 
-<a name="axelar.bitcoin.v1beta1.SignTxResponse"></a>
+<a name="bitcoin.v1beta1.SignTxResponse"></a>
 
 ### SignTxResponse
 
@@ -2571,7 +2573,7 @@ address
 
 
 
-<a name="axelar.bitcoin.v1beta1.SubmitExternalSignatureRequest"></a>
+<a name="bitcoin.v1beta1.SubmitExternalSignatureRequest"></a>
 
 ### SubmitExternalSignatureRequest
 
@@ -2589,7 +2591,7 @@ address
 
 
 
-<a name="axelar.bitcoin.v1beta1.SubmitExternalSignatureResponse"></a>
+<a name="bitcoin.v1beta1.SubmitExternalSignatureResponse"></a>
 
 ### SubmitExternalSignatureResponse
 
@@ -2599,7 +2601,7 @@ address
 
 
 
-<a name="axelar.bitcoin.v1beta1.VoteConfirmOutpointRequest"></a>
+<a name="bitcoin.v1beta1.VoteConfirmOutpointRequest"></a>
 
 ### VoteConfirmOutpointRequest
 MsgVoteConfirmOutpoint represents a message to that votes on an outpoint
@@ -2608,7 +2610,7 @@ MsgVoteConfirmOutpoint represents a message to that votes on an outpoint
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
-| `poll_key` | [axelar.vote.exported.v1beta1.PollKey](#axelar.vote.exported.v1beta1.PollKey) |  |  |
+| `poll_key` | [vote.exported.v1beta1.PollKey](#vote.exported.v1beta1.PollKey) |  |  |
 | `out_point` | [string](#string) |  |  |
 | `confirmed` | [bool](#bool) |  |  |
 
@@ -2617,7 +2619,7 @@ MsgVoteConfirmOutpoint represents a message to that votes on an outpoint
 
 
 
-<a name="axelar.bitcoin.v1beta1.VoteConfirmOutpointResponse"></a>
+<a name="bitcoin.v1beta1.VoteConfirmOutpointResponse"></a>
 
 ### VoteConfirmOutpointResponse
 
@@ -2641,10 +2643,10 @@ MsgVoteConfirmOutpoint represents a message to that votes on an outpoint
 
 
 
-<a name="axelar/bitcoin/v1beta1/service.proto"></a>
+<a name="bitcoin/v1beta1/service.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/bitcoin/v1beta1/service.proto
+## bitcoin/v1beta1/service.proto
 
 
  <!-- end messages -->
@@ -2654,34 +2656,34 @@ MsgVoteConfirmOutpoint represents a message to that votes on an outpoint
  <!-- end HasExtensions -->
 
 
-<a name="axelar.bitcoin.v1beta1.MsgService"></a>
+<a name="bitcoin.v1beta1.MsgService"></a>
 
 ### MsgService
 Msg defines the bitcoin Msg service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `Link` | [LinkRequest](#axelar.bitcoin.v1beta1.LinkRequest) | [LinkResponse](#axelar.bitcoin.v1beta1.LinkResponse) |  | POST|/axelar/bitcoin/link|
-| `ConfirmOutpoint` | [ConfirmOutpointRequest](#axelar.bitcoin.v1beta1.ConfirmOutpointRequest) | [ConfirmOutpointResponse](#axelar.bitcoin.v1beta1.ConfirmOutpointResponse) |  | POST|/axelar/bitcoin/confirm|
-| `VoteConfirmOutpoint` | [VoteConfirmOutpointRequest](#axelar.bitcoin.v1beta1.VoteConfirmOutpointRequest) | [VoteConfirmOutpointResponse](#axelar.bitcoin.v1beta1.VoteConfirmOutpointResponse) |  | POST|/axelar/bitcoin/vote_confirm|
-| `CreatePendingTransfersTx` | [CreatePendingTransfersTxRequest](#axelar.bitcoin.v1beta1.CreatePendingTransfersTxRequest) | [CreatePendingTransfersTxResponse](#axelar.bitcoin.v1beta1.CreatePendingTransfersTxResponse) |  | POST|/axelar/bitcoin/create_pending_transfers_tx|
-| `CreateMasterTx` | [CreateMasterTxRequest](#axelar.bitcoin.v1beta1.CreateMasterTxRequest) | [CreateMasterTxResponse](#axelar.bitcoin.v1beta1.CreateMasterTxResponse) |  | POST|/axelar/bitcoin/create_master_tx|
-| `CreateRescueTx` | [CreateRescueTxRequest](#axelar.bitcoin.v1beta1.CreateRescueTxRequest) | [CreateRescueTxResponse](#axelar.bitcoin.v1beta1.CreateRescueTxResponse) |  | POST|/axelar/bitcoin/create_rescue_tx|
-| `SignTx` | [SignTxRequest](#axelar.bitcoin.v1beta1.SignTxRequest) | [SignTxResponse](#axelar.bitcoin.v1beta1.SignTxResponse) |  | POST|/axelar/bitcoin/sign_tx|
-| `SubmitExternalSignature` | [SubmitExternalSignatureRequest](#axelar.bitcoin.v1beta1.SubmitExternalSignatureRequest) | [SubmitExternalSignatureResponse](#axelar.bitcoin.v1beta1.SubmitExternalSignatureResponse) |  | POST|/axelar/bitcoin/submit_external_signature|
+| `Link` | [LinkRequest](#bitcoin.v1beta1.LinkRequest) | [LinkResponse](#bitcoin.v1beta1.LinkResponse) |  | POST|/axelar/bitcoin/link|
+| `ConfirmOutpoint` | [ConfirmOutpointRequest](#bitcoin.v1beta1.ConfirmOutpointRequest) | [ConfirmOutpointResponse](#bitcoin.v1beta1.ConfirmOutpointResponse) |  | POST|/axelar/bitcoin/confirm|
+| `VoteConfirmOutpoint` | [VoteConfirmOutpointRequest](#bitcoin.v1beta1.VoteConfirmOutpointRequest) | [VoteConfirmOutpointResponse](#bitcoin.v1beta1.VoteConfirmOutpointResponse) |  | POST|/axelar/bitcoin/vote_confirm|
+| `CreatePendingTransfersTx` | [CreatePendingTransfersTxRequest](#bitcoin.v1beta1.CreatePendingTransfersTxRequest) | [CreatePendingTransfersTxResponse](#bitcoin.v1beta1.CreatePendingTransfersTxResponse) |  | POST|/axelar/bitcoin/create_pending_transfers_tx|
+| `CreateMasterTx` | [CreateMasterTxRequest](#bitcoin.v1beta1.CreateMasterTxRequest) | [CreateMasterTxResponse](#bitcoin.v1beta1.CreateMasterTxResponse) |  | POST|/axelar/bitcoin/create_master_tx|
+| `CreateRescueTx` | [CreateRescueTxRequest](#bitcoin.v1beta1.CreateRescueTxRequest) | [CreateRescueTxResponse](#bitcoin.v1beta1.CreateRescueTxResponse) |  | POST|/axelar/bitcoin/create_rescue_tx|
+| `SignTx` | [SignTxRequest](#bitcoin.v1beta1.SignTxRequest) | [SignTxResponse](#bitcoin.v1beta1.SignTxResponse) |  | POST|/axelar/bitcoin/sign_tx|
+| `SubmitExternalSignature` | [SubmitExternalSignatureRequest](#bitcoin.v1beta1.SubmitExternalSignatureRequest) | [SubmitExternalSignatureResponse](#bitcoin.v1beta1.SubmitExternalSignatureResponse) |  | POST|/axelar/bitcoin/submit_external_signature|
 
  <!-- end services -->
 
 
 
-<a name="axelar/utils/v1beta1/queuer.proto"></a>
+<a name="utils/v1beta1/queuer.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/utils/v1beta1/queuer.proto
+## utils/v1beta1/queuer.proto
 
 
 
-<a name="axelar.utils.v1beta1.QueueState"></a>
+<a name="utils.v1beta1.QueueState"></a>
 
 ### QueueState
 
@@ -2689,14 +2691,14 @@ Msg defines the bitcoin Msg service.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `items` | [QueueState.ItemsEntry](#axelar.utils.v1beta1.QueueState.ItemsEntry) | repeated |  |
+| `items` | [QueueState.ItemsEntry](#utils.v1beta1.QueueState.ItemsEntry) | repeated |  |
 
 
 
 
 
 
-<a name="axelar.utils.v1beta1.QueueState.Item"></a>
+<a name="utils.v1beta1.QueueState.Item"></a>
 
 ### QueueState.Item
 
@@ -2712,7 +2714,7 @@ Msg defines the bitcoin Msg service.
 
 
 
-<a name="axelar.utils.v1beta1.QueueState.ItemsEntry"></a>
+<a name="utils.v1beta1.QueueState.ItemsEntry"></a>
 
 ### QueueState.ItemsEntry
 
@@ -2721,7 +2723,7 @@ Msg defines the bitcoin Msg service.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `key` | [string](#string) |  |  |
-| `value` | [QueueState.Item](#axelar.utils.v1beta1.QueueState.Item) |  |  |
+| `value` | [QueueState.Item](#utils.v1beta1.QueueState.Item) |  |  |
 
 
 
@@ -2737,14 +2739,14 @@ Msg defines the bitcoin Msg service.
 
 
 
-<a name="axelar/evm/v1beta1/types.proto"></a>
+<a name="evm/v1beta1/types.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/evm/v1beta1/types.proto
+## evm/v1beta1/types.proto
 
 
 
-<a name="axelar.evm.v1beta1.Asset"></a>
+<a name="evm.v1beta1.Asset"></a>
 
 ### Asset
 
@@ -2760,7 +2762,7 @@ Msg defines the bitcoin Msg service.
 
 
 
-<a name="axelar.evm.v1beta1.BurnerInfo"></a>
+<a name="evm.v1beta1.BurnerInfo"></a>
 
 ### BurnerInfo
 BurnerInfo describes information required to burn token at an burner address
@@ -2781,7 +2783,7 @@ that is deposited by an user
 
 
 
-<a name="axelar.evm.v1beta1.Command"></a>
+<a name="evm.v1beta1.Command"></a>
 
 ### Command
 
@@ -2800,7 +2802,7 @@ that is deposited by an user
 
 
 
-<a name="axelar.evm.v1beta1.CommandBatchMetadata"></a>
+<a name="evm.v1beta1.CommandBatchMetadata"></a>
 
 ### CommandBatchMetadata
 
@@ -2812,7 +2814,7 @@ that is deposited by an user
 | `command_ids` | [bytes](#bytes) | repeated |  |
 | `data` | [bytes](#bytes) |  |  |
 | `sig_hash` | [bytes](#bytes) |  |  |
-| `status` | [BatchedCommandsStatus](#axelar.evm.v1beta1.BatchedCommandsStatus) |  |  |
+| `status` | [BatchedCommandsStatus](#evm.v1beta1.BatchedCommandsStatus) |  |  |
 | `key_id` | [string](#string) |  |  |
 | `prev_batched_commands_id` | [bytes](#bytes) |  |  |
 
@@ -2821,7 +2823,7 @@ that is deposited by an user
 
 
 
-<a name="axelar.evm.v1beta1.ERC20Deposit"></a>
+<a name="evm.v1beta1.ERC20Deposit"></a>
 
 ### ERC20Deposit
 ERC20Deposit contains information for an ERC20 deposit
@@ -2840,7 +2842,7 @@ ERC20Deposit contains information for an ERC20 deposit
 
 
 
-<a name="axelar.evm.v1beta1.ERC20TokenMetadata"></a>
+<a name="evm.v1beta1.ERC20TokenMetadata"></a>
 
 ### ERC20TokenMetadata
 ERC20TokenMetadata describes information about an ERC20 token
@@ -2850,10 +2852,10 @@ ERC20TokenMetadata describes information about an ERC20 token
 | ----- | ---- | ----- | ----------- |
 | `asset` | [string](#string) |  |  |
 | `chain_id` | [bytes](#bytes) |  |  |
-| `details` | [TokenDetails](#axelar.evm.v1beta1.TokenDetails) |  |  |
+| `details` | [TokenDetails](#evm.v1beta1.TokenDetails) |  |  |
 | `token_address` | [string](#string) |  |  |
 | `tx_hash` | [string](#string) |  |  |
-| `status` | [Status](#axelar.evm.v1beta1.Status) |  |  |
+| `status` | [Status](#evm.v1beta1.Status) |  |  |
 | `is_external` | [bool](#bool) |  |  |
 | `burner_code` | [bytes](#bytes) |  |  |
 
@@ -2862,7 +2864,7 @@ ERC20TokenMetadata describes information about an ERC20 token
 
 
 
-<a name="axelar.evm.v1beta1.Event"></a>
+<a name="evm.v1beta1.Event"></a>
 
 ### Event
 
@@ -2873,23 +2875,23 @@ ERC20TokenMetadata describes information about an ERC20 token
 | `chain` | [string](#string) |  |  |
 | `tx_id` | [bytes](#bytes) |  |  |
 | `index` | [uint64](#uint64) |  |  |
-| `status` | [Event.Status](#axelar.evm.v1beta1.Event.Status) |  |  |
-| `token_sent` | [EventTokenSent](#axelar.evm.v1beta1.EventTokenSent) |  |  |
-| `contract_call` | [EventContractCall](#axelar.evm.v1beta1.EventContractCall) |  |  |
-| `contract_call_with_token` | [EventContractCallWithToken](#axelar.evm.v1beta1.EventContractCallWithToken) |  |  |
-| `transfer` | [EventTransfer](#axelar.evm.v1beta1.EventTransfer) |  |  |
-| `token_deployed` | [EventTokenDeployed](#axelar.evm.v1beta1.EventTokenDeployed) |  |  |
-| `multisig_ownership_transferred` | [EventMultisigOwnershipTransferred](#axelar.evm.v1beta1.EventMultisigOwnershipTransferred) |  |  |
-| `multisig_operatorship_transferred` | [EventMultisigOperatorshipTransferred](#axelar.evm.v1beta1.EventMultisigOperatorshipTransferred) |  |  |
-| `singlesig_ownership_transferred` | [EventSinglesigOwnershipTransferred](#axelar.evm.v1beta1.EventSinglesigOwnershipTransferred) |  |  |
-| `singlesig_operatorship_transferred` | [EventSinglesigOperatorshipTransferred](#axelar.evm.v1beta1.EventSinglesigOperatorshipTransferred) |  |  |
+| `status` | [Event.Status](#evm.v1beta1.Event.Status) |  |  |
+| `token_sent` | [EventTokenSent](#evm.v1beta1.EventTokenSent) |  |  |
+| `contract_call` | [EventContractCall](#evm.v1beta1.EventContractCall) |  |  |
+| `contract_call_with_token` | [EventContractCallWithToken](#evm.v1beta1.EventContractCallWithToken) |  |  |
+| `transfer` | [EventTransfer](#evm.v1beta1.EventTransfer) |  |  |
+| `token_deployed` | [EventTokenDeployed](#evm.v1beta1.EventTokenDeployed) |  |  |
+| `multisig_ownership_transferred` | [EventMultisigOwnershipTransferred](#evm.v1beta1.EventMultisigOwnershipTransferred) |  |  |
+| `multisig_operatorship_transferred` | [EventMultisigOperatorshipTransferred](#evm.v1beta1.EventMultisigOperatorshipTransferred) |  |  |
+| `singlesig_ownership_transferred` | [EventSinglesigOwnershipTransferred](#evm.v1beta1.EventSinglesigOwnershipTransferred) |  |  |
+| `singlesig_operatorship_transferred` | [EventSinglesigOperatorshipTransferred](#evm.v1beta1.EventSinglesigOperatorshipTransferred) |  |  |
 
 
 
 
 
 
-<a name="axelar.evm.v1beta1.EventContractCall"></a>
+<a name="evm.v1beta1.EventContractCall"></a>
 
 ### EventContractCall
 
@@ -2907,7 +2909,7 @@ ERC20TokenMetadata describes information about an ERC20 token
 
 
 
-<a name="axelar.evm.v1beta1.EventContractCallWithToken"></a>
+<a name="evm.v1beta1.EventContractCallWithToken"></a>
 
 ### EventContractCallWithToken
 
@@ -2927,7 +2929,7 @@ ERC20TokenMetadata describes information about an ERC20 token
 
 
 
-<a name="axelar.evm.v1beta1.EventMultisigOperatorshipTransferred"></a>
+<a name="evm.v1beta1.EventMultisigOperatorshipTransferred"></a>
 
 ### EventMultisigOperatorshipTransferred
 
@@ -2945,7 +2947,7 @@ ERC20TokenMetadata describes information about an ERC20 token
 
 
 
-<a name="axelar.evm.v1beta1.EventMultisigOwnershipTransferred"></a>
+<a name="evm.v1beta1.EventMultisigOwnershipTransferred"></a>
 
 ### EventMultisigOwnershipTransferred
 
@@ -2963,7 +2965,7 @@ ERC20TokenMetadata describes information about an ERC20 token
 
 
 
-<a name="axelar.evm.v1beta1.EventSinglesigOperatorshipTransferred"></a>
+<a name="evm.v1beta1.EventSinglesigOperatorshipTransferred"></a>
 
 ### EventSinglesigOperatorshipTransferred
 
@@ -2979,7 +2981,7 @@ ERC20TokenMetadata describes information about an ERC20 token
 
 
 
-<a name="axelar.evm.v1beta1.EventSinglesigOwnershipTransferred"></a>
+<a name="evm.v1beta1.EventSinglesigOwnershipTransferred"></a>
 
 ### EventSinglesigOwnershipTransferred
 
@@ -2995,7 +2997,7 @@ ERC20TokenMetadata describes information about an ERC20 token
 
 
 
-<a name="axelar.evm.v1beta1.EventTokenDeployed"></a>
+<a name="evm.v1beta1.EventTokenDeployed"></a>
 
 ### EventTokenDeployed
 
@@ -3011,7 +3013,7 @@ ERC20TokenMetadata describes information about an ERC20 token
 
 
 
-<a name="axelar.evm.v1beta1.EventTokenSent"></a>
+<a name="evm.v1beta1.EventTokenSent"></a>
 
 ### EventTokenSent
 
@@ -3030,7 +3032,7 @@ ERC20TokenMetadata describes information about an ERC20 token
 
 
 
-<a name="axelar.evm.v1beta1.EventTransfer"></a>
+<a name="evm.v1beta1.EventTransfer"></a>
 
 ### EventTransfer
 
@@ -3046,7 +3048,7 @@ ERC20TokenMetadata describes information about an ERC20 token
 
 
 
-<a name="axelar.evm.v1beta1.Gateway"></a>
+<a name="evm.v1beta1.Gateway"></a>
 
 ### Gateway
 
@@ -3055,14 +3057,14 @@ ERC20TokenMetadata describes information about an ERC20 token
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `address` | [bytes](#bytes) |  |  |
-| `status` | [Gateway.Status](#axelar.evm.v1beta1.Gateway.Status) |  | **Deprecated.**  |
+| `status` | [Gateway.Status](#evm.v1beta1.Gateway.Status) |  | **Deprecated.**  |
 
 
 
 
 
 
-<a name="axelar.evm.v1beta1.NetworkInfo"></a>
+<a name="evm.v1beta1.NetworkInfo"></a>
 
 ### NetworkInfo
 NetworkInfo describes information about a network
@@ -3078,7 +3080,7 @@ NetworkInfo describes information about a network
 
 
 
-<a name="axelar.evm.v1beta1.SigMetadata"></a>
+<a name="evm.v1beta1.SigMetadata"></a>
 
 ### SigMetadata
 SigMetadata stores necessary information for external apps to map signature
@@ -3087,7 +3089,7 @@ results to evm relay transaction types
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `type` | [SigType](#axelar.evm.v1beta1.SigType) |  |  |
+| `type` | [SigType](#evm.v1beta1.SigType) |  |  |
 | `chain` | [string](#string) |  |  |
 
 
@@ -3095,7 +3097,7 @@ results to evm relay transaction types
 
 
 
-<a name="axelar.evm.v1beta1.TokenDetails"></a>
+<a name="evm.v1beta1.TokenDetails"></a>
 
 ### TokenDetails
 
@@ -3113,7 +3115,7 @@ results to evm relay transaction types
 
 
 
-<a name="axelar.evm.v1beta1.TransactionMetadata"></a>
+<a name="evm.v1beta1.TransactionMetadata"></a>
 
 ### TransactionMetadata
 
@@ -3129,7 +3131,7 @@ results to evm relay transaction types
 
 
 
-<a name="axelar.evm.v1beta1.TransferKey"></a>
+<a name="evm.v1beta1.TransferKey"></a>
 
 ### TransferKey
 TransferKey contains information for a transfer ownership or operatorship
@@ -3138,7 +3140,7 @@ TransferKey contains information for a transfer ownership or operatorship
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `tx_id` | [bytes](#bytes) |  |  |
-| `type` | [TransferKeyType](#axelar.evm.v1beta1.TransferKeyType) |  |  |
+| `type` | [TransferKeyType](#evm.v1beta1.TransferKeyType) |  |  |
 | `next_key_id` | [string](#string) |  |  |
 
 
@@ -3146,7 +3148,7 @@ TransferKey contains information for a transfer ownership or operatorship
 
 
 
-<a name="axelar.evm.v1beta1.VoteEvents"></a>
+<a name="evm.v1beta1.VoteEvents"></a>
 
 ### VoteEvents
 
@@ -3155,7 +3157,7 @@ TransferKey contains information for a transfer ownership or operatorship
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `chain` | [string](#string) |  |  |
-| `events` | [Event](#axelar.evm.v1beta1.Event) | repeated |  |
+| `events` | [Event](#evm.v1beta1.Event) | repeated |  |
 
 
 
@@ -3164,7 +3166,7 @@ TransferKey contains information for a transfer ownership or operatorship
  <!-- end messages -->
 
 
-<a name="axelar.evm.v1beta1.BatchedCommandsStatus"></a>
+<a name="evm.v1beta1.BatchedCommandsStatus"></a>
 
 ### BatchedCommandsStatus
 
@@ -3178,7 +3180,7 @@ TransferKey contains information for a transfer ownership or operatorship
 
 
 
-<a name="axelar.evm.v1beta1.DepositStatus"></a>
+<a name="evm.v1beta1.DepositStatus"></a>
 
 ### DepositStatus
 
@@ -3192,7 +3194,7 @@ TransferKey contains information for a transfer ownership or operatorship
 
 
 
-<a name="axelar.evm.v1beta1.Event.Status"></a>
+<a name="evm.v1beta1.Event.Status"></a>
 
 ### Event.Status
 
@@ -3206,7 +3208,7 @@ TransferKey contains information for a transfer ownership or operatorship
 
 
 
-<a name="axelar.evm.v1beta1.Gateway.Status"></a>
+<a name="evm.v1beta1.Gateway.Status"></a>
 
 ### Gateway.Status
 
@@ -3219,7 +3221,7 @@ TransferKey contains information for a transfer ownership or operatorship
 
 
 
-<a name="axelar.evm.v1beta1.SigType"></a>
+<a name="evm.v1beta1.SigType"></a>
 
 ### SigType
 
@@ -3232,7 +3234,7 @@ TransferKey contains information for a transfer ownership or operatorship
 
 
 
-<a name="axelar.evm.v1beta1.Status"></a>
+<a name="evm.v1beta1.Status"></a>
 
 ### Status
 
@@ -3246,7 +3248,7 @@ TransferKey contains information for a transfer ownership or operatorship
 
 
 
-<a name="axelar.evm.v1beta1.TransferKeyType"></a>
+<a name="evm.v1beta1.TransferKeyType"></a>
 
 ### TransferKeyType
 
@@ -3266,14 +3268,14 @@ TransferKey contains information for a transfer ownership or operatorship
 
 
 
-<a name="axelar/evm/v1beta1/params.proto"></a>
+<a name="evm/v1beta1/params.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/evm/v1beta1/params.proto
+## evm/v1beta1/params.proto
 
 
 
-<a name="axelar.evm.v1beta1.Params"></a>
+<a name="evm.v1beta1.Params"></a>
 
 ### Params
 Params is the parameter set for this module
@@ -3287,8 +3289,8 @@ Params is the parameter set for this module
 | `token_code` | [bytes](#bytes) |  |  |
 | `burnable` | [bytes](#bytes) |  |  |
 | `revote_locking_period` | [int64](#int64) |  |  |
-| `networks` | [NetworkInfo](#axelar.evm.v1beta1.NetworkInfo) | repeated |  |
-| `voting_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
+| `networks` | [NetworkInfo](#evm.v1beta1.NetworkInfo) | repeated |  |
+| `voting_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
 | `min_voter_count` | [int64](#int64) |  |  |
 | `commands_gas_limit` | [uint32](#uint32) |  |  |
 
@@ -3297,7 +3299,7 @@ Params is the parameter set for this module
 
 
 
-<a name="axelar.evm.v1beta1.PendingChain"></a>
+<a name="evm.v1beta1.PendingChain"></a>
 
 ### PendingChain
 
@@ -3305,8 +3307,8 @@ Params is the parameter set for this module
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `params` | [Params](#axelar.evm.v1beta1.Params) |  |  |
-| `chain` | [axelar.nexus.exported.v1beta1.Chain](#axelar.nexus.exported.v1beta1.Chain) |  |  |
+| `params` | [Params](#evm.v1beta1.Params) |  |  |
+| `chain` | [nexus.exported.v1beta1.Chain](#nexus.exported.v1beta1.Chain) |  |  |
 
 
 
@@ -3322,14 +3324,14 @@ Params is the parameter set for this module
 
 
 
-<a name="axelar/evm/v1beta1/genesis.proto"></a>
+<a name="evm/v1beta1/genesis.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/evm/v1beta1/genesis.proto
+## evm/v1beta1/genesis.proto
 
 
 
-<a name="axelar.evm.v1beta1.GenesisState"></a>
+<a name="evm.v1beta1.GenesisState"></a>
 
 ### GenesisState
 GenesisState represents the genesis state
@@ -3337,14 +3339,14 @@ GenesisState represents the genesis state
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `chains` | [GenesisState.Chain](#axelar.evm.v1beta1.GenesisState.Chain) | repeated |  |
+| `chains` | [GenesisState.Chain](#evm.v1beta1.GenesisState.Chain) | repeated |  |
 
 
 
 
 
 
-<a name="axelar.evm.v1beta1.GenesisState.Chain"></a>
+<a name="evm.v1beta1.GenesisState.Chain"></a>
 
 ### GenesisState.Chain
 
@@ -3352,16 +3354,16 @@ GenesisState represents the genesis state
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `params` | [Params](#axelar.evm.v1beta1.Params) |  |  |
-| `burner_infos` | [BurnerInfo](#axelar.evm.v1beta1.BurnerInfo) | repeated |  |
-| `command_queue` | [axelar.utils.v1beta1.QueueState](#axelar.utils.v1beta1.QueueState) |  |  |
-| `confirmed_deposits` | [ERC20Deposit](#axelar.evm.v1beta1.ERC20Deposit) | repeated |  |
-| `burned_deposits` | [ERC20Deposit](#axelar.evm.v1beta1.ERC20Deposit) | repeated |  |
-| `command_batches` | [CommandBatchMetadata](#axelar.evm.v1beta1.CommandBatchMetadata) | repeated |  |
-| `gateway` | [Gateway](#axelar.evm.v1beta1.Gateway) |  |  |
-| `tokens` | [ERC20TokenMetadata](#axelar.evm.v1beta1.ERC20TokenMetadata) | repeated |  |
-| `events` | [Event](#axelar.evm.v1beta1.Event) | repeated |  |
-| `confirmed_event_queue` | [axelar.utils.v1beta1.QueueState](#axelar.utils.v1beta1.QueueState) |  |  |
+| `params` | [Params](#evm.v1beta1.Params) |  |  |
+| `burner_infos` | [BurnerInfo](#evm.v1beta1.BurnerInfo) | repeated |  |
+| `command_queue` | [utils.v1beta1.QueueState](#utils.v1beta1.QueueState) |  |  |
+| `confirmed_deposits` | [ERC20Deposit](#evm.v1beta1.ERC20Deposit) | repeated |  |
+| `burned_deposits` | [ERC20Deposit](#evm.v1beta1.ERC20Deposit) | repeated |  |
+| `command_batches` | [CommandBatchMetadata](#evm.v1beta1.CommandBatchMetadata) | repeated |  |
+| `gateway` | [Gateway](#evm.v1beta1.Gateway) |  |  |
+| `tokens` | [ERC20TokenMetadata](#evm.v1beta1.ERC20TokenMetadata) | repeated |  |
+| `events` | [Event](#evm.v1beta1.Event) | repeated |  |
+| `confirmed_event_queue` | [utils.v1beta1.QueueState](#utils.v1beta1.QueueState) |  |  |
 
 
 
@@ -3377,14 +3379,14 @@ GenesisState represents the genesis state
 
 
 
-<a name="axelar/evm/v1beta1/query.proto"></a>
+<a name="evm/v1beta1/query.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/evm/v1beta1/query.proto
+## evm/v1beta1/query.proto
 
 
 
-<a name="axelar.evm.v1beta1.BatchedCommandsRequest"></a>
+<a name="evm.v1beta1.BatchedCommandsRequest"></a>
 
 ### BatchedCommandsRequest
 
@@ -3400,7 +3402,7 @@ GenesisState represents the genesis state
 
 
 
-<a name="axelar.evm.v1beta1.BatchedCommandsResponse"></a>
+<a name="evm.v1beta1.BatchedCommandsResponse"></a>
 
 ### BatchedCommandsResponse
 
@@ -3410,7 +3412,7 @@ GenesisState represents the genesis state
 | ----- | ---- | ----- | ----------- |
 | `id` | [string](#string) |  |  |
 | `data` | [string](#string) |  |  |
-| `status` | [BatchedCommandsStatus](#axelar.evm.v1beta1.BatchedCommandsStatus) |  |  |
+| `status` | [BatchedCommandsStatus](#evm.v1beta1.BatchedCommandsStatus) |  |  |
 | `key_id` | [string](#string) |  |  |
 | `signature` | [string](#string) | repeated |  |
 | `execute_data` | [string](#string) |  |  |
@@ -3422,7 +3424,7 @@ GenesisState represents the genesis state
 
 
 
-<a name="axelar.evm.v1beta1.BurnerInfoRequest"></a>
+<a name="evm.v1beta1.BurnerInfoRequest"></a>
 
 ### BurnerInfoRequest
 
@@ -3437,7 +3439,7 @@ GenesisState represents the genesis state
 
 
 
-<a name="axelar.evm.v1beta1.BurnerInfoResponse"></a>
+<a name="evm.v1beta1.BurnerInfoResponse"></a>
 
 ### BurnerInfoResponse
 
@@ -3446,14 +3448,14 @@ GenesisState represents the genesis state
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `chain` | [string](#string) |  |  |
-| `burner_info` | [BurnerInfo](#axelar.evm.v1beta1.BurnerInfo) |  |  |
+| `burner_info` | [BurnerInfo](#evm.v1beta1.BurnerInfo) |  |  |
 
 
 
 
 
 
-<a name="axelar.evm.v1beta1.BytecodeRequest"></a>
+<a name="evm.v1beta1.BytecodeRequest"></a>
 
 ### BytecodeRequest
 
@@ -3469,7 +3471,7 @@ GenesisState represents the genesis state
 
 
 
-<a name="axelar.evm.v1beta1.BytecodeResponse"></a>
+<a name="evm.v1beta1.BytecodeResponse"></a>
 
 ### BytecodeResponse
 
@@ -3484,7 +3486,7 @@ GenesisState represents the genesis state
 
 
 
-<a name="axelar.evm.v1beta1.ChainsRequest"></a>
+<a name="evm.v1beta1.ChainsRequest"></a>
 
 ### ChainsRequest
 
@@ -3494,7 +3496,7 @@ GenesisState represents the genesis state
 
 
 
-<a name="axelar.evm.v1beta1.ChainsResponse"></a>
+<a name="evm.v1beta1.ChainsResponse"></a>
 
 ### ChainsResponse
 
@@ -3509,7 +3511,7 @@ GenesisState represents the genesis state
 
 
 
-<a name="axelar.evm.v1beta1.ConfirmationHeightRequest"></a>
+<a name="evm.v1beta1.ConfirmationHeightRequest"></a>
 
 ### ConfirmationHeightRequest
 
@@ -3524,7 +3526,7 @@ GenesisState represents the genesis state
 
 
 
-<a name="axelar.evm.v1beta1.ConfirmationHeightResponse"></a>
+<a name="evm.v1beta1.ConfirmationHeightResponse"></a>
 
 ### ConfirmationHeightResponse
 
@@ -3539,7 +3541,7 @@ GenesisState represents the genesis state
 
 
 
-<a name="axelar.evm.v1beta1.DepositQueryParams"></a>
+<a name="evm.v1beta1.DepositQueryParams"></a>
 
 ### DepositQueryParams
 DepositQueryParams describe the parameters used to query for an EVM
@@ -3557,7 +3559,7 @@ deposit address
 
 
 
-<a name="axelar.evm.v1beta1.DepositStateRequest"></a>
+<a name="evm.v1beta1.DepositStateRequest"></a>
 
 ### DepositStateRequest
 
@@ -3566,14 +3568,14 @@ deposit address
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `chain` | [string](#string) |  |  |
-| `params` | [QueryDepositStateParams](#axelar.evm.v1beta1.QueryDepositStateParams) |  |  |
+| `params` | [QueryDepositStateParams](#evm.v1beta1.QueryDepositStateParams) |  |  |
 
 
 
 
 
 
-<a name="axelar.evm.v1beta1.DepositStateResponse"></a>
+<a name="evm.v1beta1.DepositStateResponse"></a>
 
 ### DepositStateResponse
 
@@ -3581,14 +3583,14 @@ deposit address
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `status` | [DepositStatus](#axelar.evm.v1beta1.DepositStatus) |  |  |
+| `status` | [DepositStatus](#evm.v1beta1.DepositStatus) |  |  |
 
 
 
 
 
 
-<a name="axelar.evm.v1beta1.EventRequest"></a>
+<a name="evm.v1beta1.EventRequest"></a>
 
 ### EventRequest
 
@@ -3604,7 +3606,7 @@ deposit address
 
 
 
-<a name="axelar.evm.v1beta1.EventResponse"></a>
+<a name="evm.v1beta1.EventResponse"></a>
 
 ### EventResponse
 
@@ -3612,14 +3614,14 @@ deposit address
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `event` | [Event](#axelar.evm.v1beta1.Event) |  |  |
+| `event` | [Event](#evm.v1beta1.Event) |  |  |
 
 
 
 
 
 
-<a name="axelar.evm.v1beta1.GatewayAddressRequest"></a>
+<a name="evm.v1beta1.GatewayAddressRequest"></a>
 
 ### GatewayAddressRequest
 
@@ -3634,7 +3636,7 @@ deposit address
 
 
 
-<a name="axelar.evm.v1beta1.GatewayAddressResponse"></a>
+<a name="evm.v1beta1.GatewayAddressResponse"></a>
 
 ### GatewayAddressResponse
 
@@ -3649,7 +3651,7 @@ deposit address
 
 
 
-<a name="axelar.evm.v1beta1.KeyAddressRequest"></a>
+<a name="evm.v1beta1.KeyAddressRequest"></a>
 
 ### KeyAddressRequest
 
@@ -3666,7 +3668,7 @@ deposit address
 
 
 
-<a name="axelar.evm.v1beta1.KeyAddressResponse"></a>
+<a name="evm.v1beta1.KeyAddressResponse"></a>
 
 ### KeyAddressResponse
 
@@ -3675,15 +3677,15 @@ deposit address
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `key_id` | [string](#string) |  |  |
-| `multisig_addresses` | [KeyAddressResponse.MultisigAddresses](#axelar.evm.v1beta1.KeyAddressResponse.MultisigAddresses) |  |  |
-| `threshold_address` | [KeyAddressResponse.ThresholdAddress](#axelar.evm.v1beta1.KeyAddressResponse.ThresholdAddress) |  |  |
+| `multisig_addresses` | [KeyAddressResponse.MultisigAddresses](#evm.v1beta1.KeyAddressResponse.MultisigAddresses) |  |  |
+| `threshold_address` | [KeyAddressResponse.ThresholdAddress](#evm.v1beta1.KeyAddressResponse.ThresholdAddress) |  |  |
 
 
 
 
 
 
-<a name="axelar.evm.v1beta1.KeyAddressResponse.MultisigAddresses"></a>
+<a name="evm.v1beta1.KeyAddressResponse.MultisigAddresses"></a>
 
 ### KeyAddressResponse.MultisigAddresses
 
@@ -3699,7 +3701,7 @@ deposit address
 
 
 
-<a name="axelar.evm.v1beta1.KeyAddressResponse.ThresholdAddress"></a>
+<a name="evm.v1beta1.KeyAddressResponse.ThresholdAddress"></a>
 
 ### KeyAddressResponse.ThresholdAddress
 
@@ -3714,7 +3716,7 @@ deposit address
 
 
 
-<a name="axelar.evm.v1beta1.PendingCommandsRequest"></a>
+<a name="evm.v1beta1.PendingCommandsRequest"></a>
 
 ### PendingCommandsRequest
 
@@ -3729,7 +3731,7 @@ deposit address
 
 
 
-<a name="axelar.evm.v1beta1.PendingCommandsResponse"></a>
+<a name="evm.v1beta1.PendingCommandsResponse"></a>
 
 ### PendingCommandsResponse
 
@@ -3737,14 +3739,14 @@ deposit address
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `commands` | [QueryCommandResponse](#axelar.evm.v1beta1.QueryCommandResponse) | repeated |  |
+| `commands` | [QueryCommandResponse](#evm.v1beta1.QueryCommandResponse) | repeated |  |
 
 
 
 
 
 
-<a name="axelar.evm.v1beta1.QueryBurnerAddressResponse"></a>
+<a name="evm.v1beta1.QueryBurnerAddressResponse"></a>
 
 ### QueryBurnerAddressResponse
 
@@ -3759,7 +3761,7 @@ deposit address
 
 
 
-<a name="axelar.evm.v1beta1.QueryCommandResponse"></a>
+<a name="evm.v1beta1.QueryCommandResponse"></a>
 
 ### QueryCommandResponse
 
@@ -3769,7 +3771,7 @@ deposit address
 | ----- | ---- | ----- | ----------- |
 | `id` | [string](#string) |  |  |
 | `type` | [string](#string) |  |  |
-| `params` | [QueryCommandResponse.ParamsEntry](#axelar.evm.v1beta1.QueryCommandResponse.ParamsEntry) | repeated |  |
+| `params` | [QueryCommandResponse.ParamsEntry](#evm.v1beta1.QueryCommandResponse.ParamsEntry) | repeated |  |
 | `key_id` | [string](#string) |  |  |
 | `max_gas_cost` | [uint32](#uint32) |  |  |
 
@@ -3778,7 +3780,7 @@ deposit address
 
 
 
-<a name="axelar.evm.v1beta1.QueryCommandResponse.ParamsEntry"></a>
+<a name="evm.v1beta1.QueryCommandResponse.ParamsEntry"></a>
 
 ### QueryCommandResponse.ParamsEntry
 
@@ -3794,7 +3796,7 @@ deposit address
 
 
 
-<a name="axelar.evm.v1beta1.QueryDepositStateParams"></a>
+<a name="evm.v1beta1.QueryDepositStateParams"></a>
 
 ### QueryDepositStateParams
 
@@ -3811,7 +3813,7 @@ deposit address
 
 
 
-<a name="axelar.evm.v1beta1.QueryTokenAddressResponse"></a>
+<a name="evm.v1beta1.QueryTokenAddressResponse"></a>
 
 ### QueryTokenAddressResponse
 
@@ -3836,14 +3838,14 @@ deposit address
 
 
 
-<a name="axelar/evm/v1beta1/tx.proto"></a>
+<a name="evm/v1beta1/tx.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/evm/v1beta1/tx.proto
+## evm/v1beta1/tx.proto
 
 
 
-<a name="axelar.evm.v1beta1.AddChainRequest"></a>
+<a name="evm.v1beta1.AddChainRequest"></a>
 
 ### AddChainRequest
 
@@ -3853,7 +3855,7 @@ deposit address
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `name` | [string](#string) |  |  |
-| `key_type` | [axelar.tss.exported.v1beta1.KeyType](#axelar.tss.exported.v1beta1.KeyType) |  |  |
+| `key_type` | [tss.exported.v1beta1.KeyType](#tss.exported.v1beta1.KeyType) |  |  |
 | `params` | [bytes](#bytes) |  |  |
 
 
@@ -3861,7 +3863,7 @@ deposit address
 
 
 
-<a name="axelar.evm.v1beta1.AddChainResponse"></a>
+<a name="evm.v1beta1.AddChainResponse"></a>
 
 ### AddChainResponse
 
@@ -3871,7 +3873,7 @@ deposit address
 
 
 
-<a name="axelar.evm.v1beta1.ConfirmDepositRequest"></a>
+<a name="evm.v1beta1.ConfirmDepositRequest"></a>
 
 ### ConfirmDepositRequest
 MsgConfirmDeposit represents an erc20 deposit confirmation message
@@ -3890,7 +3892,7 @@ MsgConfirmDeposit represents an erc20 deposit confirmation message
 
 
 
-<a name="axelar.evm.v1beta1.ConfirmDepositResponse"></a>
+<a name="evm.v1beta1.ConfirmDepositResponse"></a>
 
 ### ConfirmDepositResponse
 
@@ -3900,7 +3902,7 @@ MsgConfirmDeposit represents an erc20 deposit confirmation message
 
 
 
-<a name="axelar.evm.v1beta1.ConfirmGatewayTxRequest"></a>
+<a name="evm.v1beta1.ConfirmGatewayTxRequest"></a>
 
 ### ConfirmGatewayTxRequest
 
@@ -3917,7 +3919,7 @@ MsgConfirmDeposit represents an erc20 deposit confirmation message
 
 
 
-<a name="axelar.evm.v1beta1.ConfirmGatewayTxResponse"></a>
+<a name="evm.v1beta1.ConfirmGatewayTxResponse"></a>
 
 ### ConfirmGatewayTxResponse
 
@@ -3927,7 +3929,7 @@ MsgConfirmDeposit represents an erc20 deposit confirmation message
 
 
 
-<a name="axelar.evm.v1beta1.ConfirmTokenRequest"></a>
+<a name="evm.v1beta1.ConfirmTokenRequest"></a>
 
 ### ConfirmTokenRequest
 MsgConfirmToken represents a token deploy confirmation message
@@ -3938,14 +3940,14 @@ MsgConfirmToken represents a token deploy confirmation message
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
 | `tx_id` | [bytes](#bytes) |  |  |
-| `asset` | [Asset](#axelar.evm.v1beta1.Asset) |  |  |
+| `asset` | [Asset](#evm.v1beta1.Asset) |  |  |
 
 
 
 
 
 
-<a name="axelar.evm.v1beta1.ConfirmTokenResponse"></a>
+<a name="evm.v1beta1.ConfirmTokenResponse"></a>
 
 ### ConfirmTokenResponse
 
@@ -3955,7 +3957,7 @@ MsgConfirmToken represents a token deploy confirmation message
 
 
 
-<a name="axelar.evm.v1beta1.ConfirmTransferKeyRequest"></a>
+<a name="evm.v1beta1.ConfirmTransferKeyRequest"></a>
 
 ### ConfirmTransferKeyRequest
 
@@ -3966,7 +3968,7 @@ MsgConfirmToken represents a token deploy confirmation message
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
 | `tx_id` | [bytes](#bytes) |  |  |
-| `transfer_type` | [TransferKeyType](#axelar.evm.v1beta1.TransferKeyType) |  |  |
+| `transfer_type` | [TransferKeyType](#evm.v1beta1.TransferKeyType) |  |  |
 | `key_id` | [string](#string) |  |  |
 
 
@@ -3974,7 +3976,7 @@ MsgConfirmToken represents a token deploy confirmation message
 
 
 
-<a name="axelar.evm.v1beta1.ConfirmTransferKeyResponse"></a>
+<a name="evm.v1beta1.ConfirmTransferKeyResponse"></a>
 
 ### ConfirmTransferKeyResponse
 
@@ -3984,7 +3986,7 @@ MsgConfirmToken represents a token deploy confirmation message
 
 
 
-<a name="axelar.evm.v1beta1.CreateBurnTokensRequest"></a>
+<a name="evm.v1beta1.CreateBurnTokensRequest"></a>
 
 ### CreateBurnTokensRequest
 CreateBurnTokensRequest represents the message to create commands to burn
@@ -4001,7 +4003,7 @@ tokens with AxelarGateway
 
 
 
-<a name="axelar.evm.v1beta1.CreateBurnTokensResponse"></a>
+<a name="evm.v1beta1.CreateBurnTokensResponse"></a>
 
 ### CreateBurnTokensResponse
 
@@ -4011,7 +4013,7 @@ tokens with AxelarGateway
 
 
 
-<a name="axelar.evm.v1beta1.CreateDeployTokenRequest"></a>
+<a name="evm.v1beta1.CreateDeployTokenRequest"></a>
 
 ### CreateDeployTokenRequest
 CreateDeployTokenRequest represents the message to create a deploy token
@@ -4022,8 +4024,8 @@ command for AxelarGateway
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
-| `asset` | [Asset](#axelar.evm.v1beta1.Asset) |  |  |
-| `token_details` | [TokenDetails](#axelar.evm.v1beta1.TokenDetails) |  |  |
+| `asset` | [Asset](#evm.v1beta1.Asset) |  |  |
+| `token_details` | [TokenDetails](#evm.v1beta1.TokenDetails) |  |  |
 | `address` | [bytes](#bytes) |  |  |
 
 
@@ -4031,7 +4033,7 @@ command for AxelarGateway
 
 
 
-<a name="axelar.evm.v1beta1.CreateDeployTokenResponse"></a>
+<a name="evm.v1beta1.CreateDeployTokenResponse"></a>
 
 ### CreateDeployTokenResponse
 
@@ -4041,7 +4043,7 @@ command for AxelarGateway
 
 
 
-<a name="axelar.evm.v1beta1.CreatePendingTransfersRequest"></a>
+<a name="evm.v1beta1.CreatePendingTransfersRequest"></a>
 
 ### CreatePendingTransfersRequest
 CreatePendingTransfersRequest represents a message to trigger the creation of
@@ -4058,7 +4060,7 @@ commands handling all pending transfers
 
 
 
-<a name="axelar.evm.v1beta1.CreatePendingTransfersResponse"></a>
+<a name="evm.v1beta1.CreatePendingTransfersResponse"></a>
 
 ### CreatePendingTransfersResponse
 
@@ -4068,7 +4070,7 @@ commands handling all pending transfers
 
 
 
-<a name="axelar.evm.v1beta1.CreateTransferOperatorshipRequest"></a>
+<a name="evm.v1beta1.CreateTransferOperatorshipRequest"></a>
 
 ### CreateTransferOperatorshipRequest
 
@@ -4085,7 +4087,7 @@ commands handling all pending transfers
 
 
 
-<a name="axelar.evm.v1beta1.CreateTransferOperatorshipResponse"></a>
+<a name="evm.v1beta1.CreateTransferOperatorshipResponse"></a>
 
 ### CreateTransferOperatorshipResponse
 
@@ -4095,7 +4097,7 @@ commands handling all pending transfers
 
 
 
-<a name="axelar.evm.v1beta1.CreateTransferOwnershipRequest"></a>
+<a name="evm.v1beta1.CreateTransferOwnershipRequest"></a>
 
 ### CreateTransferOwnershipRequest
 
@@ -4112,7 +4114,7 @@ commands handling all pending transfers
 
 
 
-<a name="axelar.evm.v1beta1.CreateTransferOwnershipResponse"></a>
+<a name="evm.v1beta1.CreateTransferOwnershipResponse"></a>
 
 ### CreateTransferOwnershipResponse
 
@@ -4122,7 +4124,7 @@ commands handling all pending transfers
 
 
 
-<a name="axelar.evm.v1beta1.LinkRequest"></a>
+<a name="evm.v1beta1.LinkRequest"></a>
 
 ### LinkRequest
 MsgLink represents the message that links a cross chain address to a burner
@@ -4142,7 +4144,7 @@ address
 
 
 
-<a name="axelar.evm.v1beta1.LinkResponse"></a>
+<a name="evm.v1beta1.LinkResponse"></a>
 
 ### LinkResponse
 
@@ -4157,7 +4159,34 @@ address
 
 
 
-<a name="axelar.evm.v1beta1.SetGatewayRequest"></a>
+<a name="evm.v1beta1.RetryFailedEventRequest"></a>
+
+### RetryFailedEventRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
+| `event_id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.RetryFailedEventResponse"></a>
+
+### RetryFailedEventResponse
+
+
+
+
+
+
+
+<a name="evm.v1beta1.SetGatewayRequest"></a>
 
 ### SetGatewayRequest
 
@@ -4174,7 +4203,7 @@ address
 
 
 
-<a name="axelar.evm.v1beta1.SetGatewayResponse"></a>
+<a name="evm.v1beta1.SetGatewayResponse"></a>
 
 ### SetGatewayResponse
 
@@ -4184,7 +4213,7 @@ address
 
 
 
-<a name="axelar.evm.v1beta1.SignCommandsRequest"></a>
+<a name="evm.v1beta1.SignCommandsRequest"></a>
 
 ### SignCommandsRequest
 
@@ -4200,7 +4229,7 @@ address
 
 
 
-<a name="axelar.evm.v1beta1.SignCommandsResponse"></a>
+<a name="evm.v1beta1.SignCommandsResponse"></a>
 
 ### SignCommandsResponse
 
@@ -4225,10 +4254,10 @@ address
 
 
 
-<a name="axelar/evm/v1beta1/service.proto"></a>
+<a name="evm/v1beta1/service.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/evm/v1beta1/service.proto
+## evm/v1beta1/service.proto
 
 
  <!-- end messages -->
@@ -4238,58 +4267,59 @@ address
  <!-- end HasExtensions -->
 
 
-<a name="axelar.evm.v1beta1.MsgService"></a>
+<a name="evm.v1beta1.MsgService"></a>
 
 ### MsgService
 Msg defines the evm Msg service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `SetGateway` | [SetGatewayRequest](#axelar.evm.v1beta1.SetGatewayRequest) | [SetGatewayResponse](#axelar.evm.v1beta1.SetGatewayResponse) |  | POST|/axelar/evm/set_gateway|
-| `ConfirmGatewayTx` | [ConfirmGatewayTxRequest](#axelar.evm.v1beta1.ConfirmGatewayTxRequest) | [ConfirmGatewayTxResponse](#axelar.evm.v1beta1.ConfirmGatewayTxResponse) |  | POST|/axelar/evm/confirm_gateway_tx|
-| `Link` | [LinkRequest](#axelar.evm.v1beta1.LinkRequest) | [LinkResponse](#axelar.evm.v1beta1.LinkResponse) |  | POST|/axelar/evm/link|
-| `ConfirmToken` | [ConfirmTokenRequest](#axelar.evm.v1beta1.ConfirmTokenRequest) | [ConfirmTokenResponse](#axelar.evm.v1beta1.ConfirmTokenResponse) |  | POST|/axelar/evm/confirm_token|
-| `ConfirmDeposit` | [ConfirmDepositRequest](#axelar.evm.v1beta1.ConfirmDepositRequest) | [ConfirmDepositResponse](#axelar.evm.v1beta1.ConfirmDepositResponse) |  | POST|/axelar/evm/confirm_deposit|
-| `ConfirmTransferKey` | [ConfirmTransferKeyRequest](#axelar.evm.v1beta1.ConfirmTransferKeyRequest) | [ConfirmTransferKeyResponse](#axelar.evm.v1beta1.ConfirmTransferKeyResponse) |  | POST|/axelar/evm/confirm_transfer_key|
-| `CreateDeployToken` | [CreateDeployTokenRequest](#axelar.evm.v1beta1.CreateDeployTokenRequest) | [CreateDeployTokenResponse](#axelar.evm.v1beta1.CreateDeployTokenResponse) |  | POST|/axelar/evm/create_deploy_token|
-| `CreateBurnTokens` | [CreateBurnTokensRequest](#axelar.evm.v1beta1.CreateBurnTokensRequest) | [CreateBurnTokensResponse](#axelar.evm.v1beta1.CreateBurnTokensResponse) |  | POST|/axelar/evm/create_burn_tokens|
-| `CreatePendingTransfers` | [CreatePendingTransfersRequest](#axelar.evm.v1beta1.CreatePendingTransfersRequest) | [CreatePendingTransfersResponse](#axelar.evm.v1beta1.CreatePendingTransfersResponse) |  | POST|/axelar/evm/create_pending_transfers|
-| `CreateTransferOwnership` | [CreateTransferOwnershipRequest](#axelar.evm.v1beta1.CreateTransferOwnershipRequest) | [CreateTransferOwnershipResponse](#axelar.evm.v1beta1.CreateTransferOwnershipResponse) |  | POST|/axelar/evm/create_transfer_ownership|
-| `CreateTransferOperatorship` | [CreateTransferOperatorshipRequest](#axelar.evm.v1beta1.CreateTransferOperatorshipRequest) | [CreateTransferOperatorshipResponse](#axelar.evm.v1beta1.CreateTransferOperatorshipResponse) |  | POST|/axelar/evm/create_transfer_operatorship|
-| `SignCommands` | [SignCommandsRequest](#axelar.evm.v1beta1.SignCommandsRequest) | [SignCommandsResponse](#axelar.evm.v1beta1.SignCommandsResponse) |  | POST|/axelar/evm/sign_commands|
-| `AddChain` | [AddChainRequest](#axelar.evm.v1beta1.AddChainRequest) | [AddChainResponse](#axelar.evm.v1beta1.AddChainResponse) |  | POST|/axelar/evm/add_chain|
+| `SetGateway` | [SetGatewayRequest](#evm.v1beta1.SetGatewayRequest) | [SetGatewayResponse](#evm.v1beta1.SetGatewayResponse) |  | POST|/axelar/evm/set_gateway|
+| `ConfirmGatewayTx` | [ConfirmGatewayTxRequest](#evm.v1beta1.ConfirmGatewayTxRequest) | [ConfirmGatewayTxResponse](#evm.v1beta1.ConfirmGatewayTxResponse) |  | POST|/axelar/evm/confirm_gateway_tx|
+| `Link` | [LinkRequest](#evm.v1beta1.LinkRequest) | [LinkResponse](#evm.v1beta1.LinkResponse) |  | POST|/axelar/evm/link|
+| `ConfirmToken` | [ConfirmTokenRequest](#evm.v1beta1.ConfirmTokenRequest) | [ConfirmTokenResponse](#evm.v1beta1.ConfirmTokenResponse) |  | POST|/axelar/evm/confirm_token|
+| `ConfirmDeposit` | [ConfirmDepositRequest](#evm.v1beta1.ConfirmDepositRequest) | [ConfirmDepositResponse](#evm.v1beta1.ConfirmDepositResponse) |  | POST|/axelar/evm/confirm_deposit|
+| `ConfirmTransferKey` | [ConfirmTransferKeyRequest](#evm.v1beta1.ConfirmTransferKeyRequest) | [ConfirmTransferKeyResponse](#evm.v1beta1.ConfirmTransferKeyResponse) |  | POST|/axelar/evm/confirm_transfer_key|
+| `CreateDeployToken` | [CreateDeployTokenRequest](#evm.v1beta1.CreateDeployTokenRequest) | [CreateDeployTokenResponse](#evm.v1beta1.CreateDeployTokenResponse) |  | POST|/axelar/evm/create_deploy_token|
+| `CreateBurnTokens` | [CreateBurnTokensRequest](#evm.v1beta1.CreateBurnTokensRequest) | [CreateBurnTokensResponse](#evm.v1beta1.CreateBurnTokensResponse) |  | POST|/axelar/evm/create_burn_tokens|
+| `CreatePendingTransfers` | [CreatePendingTransfersRequest](#evm.v1beta1.CreatePendingTransfersRequest) | [CreatePendingTransfersResponse](#evm.v1beta1.CreatePendingTransfersResponse) |  | POST|/axelar/evm/create_pending_transfers|
+| `CreateTransferOwnership` | [CreateTransferOwnershipRequest](#evm.v1beta1.CreateTransferOwnershipRequest) | [CreateTransferOwnershipResponse](#evm.v1beta1.CreateTransferOwnershipResponse) |  | POST|/axelar/evm/create_transfer_ownership|
+| `CreateTransferOperatorship` | [CreateTransferOperatorshipRequest](#evm.v1beta1.CreateTransferOperatorshipRequest) | [CreateTransferOperatorshipResponse](#evm.v1beta1.CreateTransferOperatorshipResponse) |  | POST|/axelar/evm/create_transfer_operatorship|
+| `SignCommands` | [SignCommandsRequest](#evm.v1beta1.SignCommandsRequest) | [SignCommandsResponse](#evm.v1beta1.SignCommandsResponse) |  | POST|/axelar/evm/sign_commands|
+| `AddChain` | [AddChainRequest](#evm.v1beta1.AddChainRequest) | [AddChainResponse](#evm.v1beta1.AddChainResponse) |  | POST|/axelar/evm/add_chain|
+| `RetryFailedEvent` | [RetryFailedEventRequest](#evm.v1beta1.RetryFailedEventRequest) | [RetryFailedEventResponse](#evm.v1beta1.RetryFailedEventResponse) |  | POST|/axelar/evm/retry-failed-event|
 
 
-<a name="axelar.evm.v1beta1.QueryService"></a>
+<a name="evm.v1beta1.QueryService"></a>
 
 ### QueryService
 QueryService defines the gRPC querier service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `BatchedCommands` | [BatchedCommandsRequest](#axelar.evm.v1beta1.BatchedCommandsRequest) | [BatchedCommandsResponse](#axelar.evm.v1beta1.BatchedCommandsResponse) | BatchedCommands queries the batched commands for a specified chain and BatchedCommandsID if no BatchedCommandsID is specified, then it returns the latest batched commands | GET|/axelar/evm/v1beta1/batched_commands/{chain}/{id}|
-| `BurnerInfo` | [BurnerInfoRequest](#axelar.evm.v1beta1.BurnerInfoRequest) | [BurnerInfoResponse](#axelar.evm.v1beta1.BurnerInfoResponse) | BurnerInfo queries the burner info for the specified address | GET|/axelar/evm/v1beta1/burner_info|
-| `ConfirmationHeight` | [ConfirmationHeightRequest](#axelar.evm.v1beta1.ConfirmationHeightRequest) | [ConfirmationHeightResponse](#axelar.evm.v1beta1.ConfirmationHeightResponse) | ConfirmationHeight queries the confirmation height for the specified chain | GET|/axelar/evm/v1beta1/confirmation_height/{chain}|
-| `DepositState` | [DepositStateRequest](#axelar.evm.v1beta1.DepositStateRequest) | [DepositStateResponse](#axelar.evm.v1beta1.DepositStateResponse) | DepositState queries the state of the specified deposit | GET|/axelar/evm/v1beta1/deposit_state|
-| `PendingCommands` | [PendingCommandsRequest](#axelar.evm.v1beta1.PendingCommandsRequest) | [PendingCommandsResponse](#axelar.evm.v1beta1.PendingCommandsResponse) | PendingCommands queries the pending commands for the specified chain | GET|/axelar/evm/v1beta1/pending_commands/{chain}|
-| `Chains` | [ChainsRequest](#axelar.evm.v1beta1.ChainsRequest) | [ChainsResponse](#axelar.evm.v1beta1.ChainsResponse) | Chains queries the available evm chains | GET|/axelar/evm/v1beta1/chains|
-| `KeyAddress` | [KeyAddressRequest](#axelar.evm.v1beta1.KeyAddressRequest) | [KeyAddressResponse](#axelar.evm.v1beta1.KeyAddressResponse) | KeyAddress queries the address of key of a chain | GET|/axelar/evm/v1beta1/key_address/{chain}|
-| `GatewayAddress` | [GatewayAddressRequest](#axelar.evm.v1beta1.GatewayAddressRequest) | [GatewayAddressResponse](#axelar.evm.v1beta1.GatewayAddressResponse) | GatewayAddress queries the address of axelar gateway at the specified chain | GET|/axelar/evm/v1beta1/gateway_address/{chain}|
-| `Bytecode` | [BytecodeRequest](#axelar.evm.v1beta1.BytecodeRequest) | [BytecodeResponse](#axelar.evm.v1beta1.BytecodeResponse) | Bytecode queries the bytecode of a specified gateway at the specified chain | GET|/axelar/evm/v1beta1/bytecode/{chain}/{contract}|
-| `Event` | [EventRequest](#axelar.evm.v1beta1.EventRequest) | [EventResponse](#axelar.evm.v1beta1.EventResponse) | Event queries an event at the specified chain | GET|/axelar/evm/v1beta1/event/{chain}/{event_id}|
+| `BatchedCommands` | [BatchedCommandsRequest](#evm.v1beta1.BatchedCommandsRequest) | [BatchedCommandsResponse](#evm.v1beta1.BatchedCommandsResponse) | BatchedCommands queries the batched commands for a specified chain and BatchedCommandsID if no BatchedCommandsID is specified, then it returns the latest batched commands | GET|/axelar/evm/v1beta1/batched_commands/{chain}/{id}|
+| `BurnerInfo` | [BurnerInfoRequest](#evm.v1beta1.BurnerInfoRequest) | [BurnerInfoResponse](#evm.v1beta1.BurnerInfoResponse) | BurnerInfo queries the burner info for the specified address | GET|/axelar/evm/v1beta1/burner_info|
+| `ConfirmationHeight` | [ConfirmationHeightRequest](#evm.v1beta1.ConfirmationHeightRequest) | [ConfirmationHeightResponse](#evm.v1beta1.ConfirmationHeightResponse) | ConfirmationHeight queries the confirmation height for the specified chain | GET|/axelar/evm/v1beta1/confirmation_height/{chain}|
+| `DepositState` | [DepositStateRequest](#evm.v1beta1.DepositStateRequest) | [DepositStateResponse](#evm.v1beta1.DepositStateResponse) | DepositState queries the state of the specified deposit | GET|/axelar/evm/v1beta1/deposit_state|
+| `PendingCommands` | [PendingCommandsRequest](#evm.v1beta1.PendingCommandsRequest) | [PendingCommandsResponse](#evm.v1beta1.PendingCommandsResponse) | PendingCommands queries the pending commands for the specified chain | GET|/axelar/evm/v1beta1/pending_commands/{chain}|
+| `Chains` | [ChainsRequest](#evm.v1beta1.ChainsRequest) | [ChainsResponse](#evm.v1beta1.ChainsResponse) | Chains queries the available evm chains | GET|/axelar/evm/v1beta1/chains|
+| `KeyAddress` | [KeyAddressRequest](#evm.v1beta1.KeyAddressRequest) | [KeyAddressResponse](#evm.v1beta1.KeyAddressResponse) | KeyAddress queries the address of key of a chain | GET|/axelar/evm/v1beta1/key_address/{chain}|
+| `GatewayAddress` | [GatewayAddressRequest](#evm.v1beta1.GatewayAddressRequest) | [GatewayAddressResponse](#evm.v1beta1.GatewayAddressResponse) | GatewayAddress queries the address of axelar gateway at the specified chain | GET|/axelar/evm/v1beta1/gateway_address/{chain}|
+| `Bytecode` | [BytecodeRequest](#evm.v1beta1.BytecodeRequest) | [BytecodeResponse](#evm.v1beta1.BytecodeResponse) | Bytecode queries the bytecode of a specified gateway at the specified chain | GET|/axelar/evm/v1beta1/bytecode/{chain}/{contract}|
+| `Event` | [EventRequest](#evm.v1beta1.EventRequest) | [EventResponse](#evm.v1beta1.EventResponse) | Event queries an event at the specified chain | GET|/axelar/evm/v1beta1/event/{chain}/{event_id}|
 
  <!-- end services -->
 
 
 
-<a name="axelar/nexus/v1beta1/params.proto"></a>
+<a name="nexus/v1beta1/params.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/nexus/v1beta1/params.proto
+## nexus/v1beta1/params.proto
 
 
 
-<a name="axelar.nexus.v1beta1.Params"></a>
+<a name="nexus.v1beta1.Params"></a>
 
 ### Params
 Params represent the genesis parameters for the module
@@ -4297,9 +4327,9 @@ Params represent the genesis parameters for the module
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `chain_activation_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
-| `chain_maintainer_missing_vote_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
-| `chain_maintainer_incorrect_vote_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
+| `chain_activation_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
+| `chain_maintainer_missing_vote_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
+| `chain_maintainer_incorrect_vote_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
 | `chain_maintainer_check_window` | [int32](#int32) |  |  |
 
 
@@ -4316,14 +4346,14 @@ Params represent the genesis parameters for the module
 
 
 
-<a name="axelar/nexus/v1beta1/genesis.proto"></a>
+<a name="nexus/v1beta1/genesis.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/nexus/v1beta1/genesis.proto
+## nexus/v1beta1/genesis.proto
 
 
 
-<a name="axelar.nexus.v1beta1.GenesisState"></a>
+<a name="nexus.v1beta1.GenesisState"></a>
 
 ### GenesisState
 GenesisState represents the genesis state
@@ -4331,14 +4361,14 @@ GenesisState represents the genesis state
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `params` | [Params](#axelar.nexus.v1beta1.Params) |  |  |
+| `params` | [Params](#nexus.v1beta1.Params) |  |  |
 | `nonce` | [uint64](#uint64) |  |  |
-| `chains` | [axelar.nexus.exported.v1beta1.Chain](#axelar.nexus.exported.v1beta1.Chain) | repeated |  |
-| `chain_states` | [ChainState](#axelar.nexus.v1beta1.ChainState) | repeated |  |
-| `linked_addresses` | [LinkedAddresses](#axelar.nexus.v1beta1.LinkedAddresses) | repeated |  |
-| `transfers` | [axelar.nexus.exported.v1beta1.CrossChainTransfer](#axelar.nexus.exported.v1beta1.CrossChainTransfer) | repeated |  |
-| `fee` | [axelar.nexus.exported.v1beta1.TransferFee](#axelar.nexus.exported.v1beta1.TransferFee) |  |  |
-| `fee_infos` | [axelar.nexus.exported.v1beta1.FeeInfo](#axelar.nexus.exported.v1beta1.FeeInfo) | repeated |  |
+| `chains` | [nexus.exported.v1beta1.Chain](#nexus.exported.v1beta1.Chain) | repeated |  |
+| `chain_states` | [ChainState](#nexus.v1beta1.ChainState) | repeated |  |
+| `linked_addresses` | [LinkedAddresses](#nexus.v1beta1.LinkedAddresses) | repeated |  |
+| `transfers` | [nexus.exported.v1beta1.CrossChainTransfer](#nexus.exported.v1beta1.CrossChainTransfer) | repeated |  |
+| `fee` | [nexus.exported.v1beta1.TransferFee](#nexus.exported.v1beta1.TransferFee) |  |  |
+| `fee_infos` | [nexus.exported.v1beta1.FeeInfo](#nexus.exported.v1beta1.FeeInfo) | repeated |  |
 
 
 
@@ -4354,14 +4384,14 @@ GenesisState represents the genesis state
 
 
 
-<a name="axelar/nexus/v1beta1/tx.proto"></a>
+<a name="nexus/v1beta1/tx.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/nexus/v1beta1/tx.proto
+## nexus/v1beta1/tx.proto
 
 
 
-<a name="axelar.nexus.v1beta1.ActivateChainRequest"></a>
+<a name="nexus.v1beta1.ActivateChainRequest"></a>
 
 ### ActivateChainRequest
 ActivateChainRequest represents a message to activate chains
@@ -4377,7 +4407,7 @@ ActivateChainRequest represents a message to activate chains
 
 
 
-<a name="axelar.nexus.v1beta1.ActivateChainResponse"></a>
+<a name="nexus.v1beta1.ActivateChainResponse"></a>
 
 ### ActivateChainResponse
 
@@ -4387,7 +4417,7 @@ ActivateChainRequest represents a message to activate chains
 
 
 
-<a name="axelar.nexus.v1beta1.DeactivateChainRequest"></a>
+<a name="nexus.v1beta1.DeactivateChainRequest"></a>
 
 ### DeactivateChainRequest
 DeactivateChainRequest represents a message to deactivate chains
@@ -4403,7 +4433,7 @@ DeactivateChainRequest represents a message to deactivate chains
 
 
 
-<a name="axelar.nexus.v1beta1.DeactivateChainResponse"></a>
+<a name="nexus.v1beta1.DeactivateChainResponse"></a>
 
 ### DeactivateChainResponse
 
@@ -4413,7 +4443,7 @@ DeactivateChainRequest represents a message to deactivate chains
 
 
 
-<a name="axelar.nexus.v1beta1.DeregisterChainMaintainerRequest"></a>
+<a name="nexus.v1beta1.DeregisterChainMaintainerRequest"></a>
 
 ### DeregisterChainMaintainerRequest
 
@@ -4429,7 +4459,7 @@ DeactivateChainRequest represents a message to deactivate chains
 
 
 
-<a name="axelar.nexus.v1beta1.DeregisterChainMaintainerResponse"></a>
+<a name="nexus.v1beta1.DeregisterChainMaintainerResponse"></a>
 
 ### DeregisterChainMaintainerResponse
 
@@ -4439,7 +4469,7 @@ DeactivateChainRequest represents a message to deactivate chains
 
 
 
-<a name="axelar.nexus.v1beta1.RegisterAssetFeeRequest"></a>
+<a name="nexus.v1beta1.RegisterAssetFeeRequest"></a>
 
 ### RegisterAssetFeeRequest
 RegisterAssetFeeRequest represents a message to register the transfer fee
@@ -4449,14 +4479,14 @@ info associated to an asset on a chain
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
-| `fee_info` | [axelar.nexus.exported.v1beta1.FeeInfo](#axelar.nexus.exported.v1beta1.FeeInfo) |  |  |
+| `fee_info` | [nexus.exported.v1beta1.FeeInfo](#nexus.exported.v1beta1.FeeInfo) |  |  |
 
 
 
 
 
 
-<a name="axelar.nexus.v1beta1.RegisterAssetFeeResponse"></a>
+<a name="nexus.v1beta1.RegisterAssetFeeResponse"></a>
 
 ### RegisterAssetFeeResponse
 
@@ -4466,7 +4496,7 @@ info associated to an asset on a chain
 
 
 
-<a name="axelar.nexus.v1beta1.RegisterChainMaintainerRequest"></a>
+<a name="nexus.v1beta1.RegisterChainMaintainerRequest"></a>
 
 ### RegisterChainMaintainerRequest
 
@@ -4482,7 +4512,7 @@ info associated to an asset on a chain
 
 
 
-<a name="axelar.nexus.v1beta1.RegisterChainMaintainerResponse"></a>
+<a name="nexus.v1beta1.RegisterChainMaintainerResponse"></a>
 
 ### RegisterChainMaintainerResponse
 
@@ -4501,10 +4531,10 @@ info associated to an asset on a chain
 
 
 
-<a name="axelar/nexus/v1beta1/service.proto"></a>
+<a name="nexus/v1beta1/service.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/nexus/v1beta1/service.proto
+## nexus/v1beta1/service.proto
 
 
  <!-- end messages -->
@@ -4514,48 +4544,48 @@ info associated to an asset on a chain
  <!-- end HasExtensions -->
 
 
-<a name="axelar.nexus.v1beta1.MsgService"></a>
+<a name="nexus.v1beta1.MsgService"></a>
 
 ### MsgService
 Msg defines the nexus Msg service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `RegisterChainMaintainer` | [RegisterChainMaintainerRequest](#axelar.nexus.v1beta1.RegisterChainMaintainerRequest) | [RegisterChainMaintainerResponse](#axelar.nexus.v1beta1.RegisterChainMaintainerResponse) |  | POST|/axelar/nexus/register_chain_maintainer|
-| `DeregisterChainMaintainer` | [DeregisterChainMaintainerRequest](#axelar.nexus.v1beta1.DeregisterChainMaintainerRequest) | [DeregisterChainMaintainerResponse](#axelar.nexus.v1beta1.DeregisterChainMaintainerResponse) |  | POST|/axelar/nexus/deregister_chain_maintainer|
-| `ActivateChain` | [ActivateChainRequest](#axelar.nexus.v1beta1.ActivateChainRequest) | [ActivateChainResponse](#axelar.nexus.v1beta1.ActivateChainResponse) |  | POST|/axelar/nexus/activate_chain|
-| `DeactivateChain` | [DeactivateChainRequest](#axelar.nexus.v1beta1.DeactivateChainRequest) | [DeactivateChainResponse](#axelar.nexus.v1beta1.DeactivateChainResponse) |  | POST|/axelar/nexus/deactivate_chain|
-| `RegisterAssetFee` | [RegisterAssetFeeRequest](#axelar.nexus.v1beta1.RegisterAssetFeeRequest) | [RegisterAssetFeeResponse](#axelar.nexus.v1beta1.RegisterAssetFeeResponse) |  | POST|/axelar/nexus/register_asset_fee|
+| `RegisterChainMaintainer` | [RegisterChainMaintainerRequest](#nexus.v1beta1.RegisterChainMaintainerRequest) | [RegisterChainMaintainerResponse](#nexus.v1beta1.RegisterChainMaintainerResponse) |  | POST|/axelar/nexus/register_chain_maintainer|
+| `DeregisterChainMaintainer` | [DeregisterChainMaintainerRequest](#nexus.v1beta1.DeregisterChainMaintainerRequest) | [DeregisterChainMaintainerResponse](#nexus.v1beta1.DeregisterChainMaintainerResponse) |  | POST|/axelar/nexus/deregister_chain_maintainer|
+| `ActivateChain` | [ActivateChainRequest](#nexus.v1beta1.ActivateChainRequest) | [ActivateChainResponse](#nexus.v1beta1.ActivateChainResponse) |  | POST|/axelar/nexus/activate_chain|
+| `DeactivateChain` | [DeactivateChainRequest](#nexus.v1beta1.DeactivateChainRequest) | [DeactivateChainResponse](#nexus.v1beta1.DeactivateChainResponse) |  | POST|/axelar/nexus/deactivate_chain|
+| `RegisterAssetFee` | [RegisterAssetFeeRequest](#nexus.v1beta1.RegisterAssetFeeRequest) | [RegisterAssetFeeResponse](#nexus.v1beta1.RegisterAssetFeeResponse) |  | POST|/axelar/nexus/register_asset_fee|
 
 
-<a name="axelar.nexus.v1beta1.QueryService"></a>
+<a name="nexus.v1beta1.QueryService"></a>
 
 ### QueryService
 QueryService defines the gRPC querier service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `LatestDepositAddress` | [LatestDepositAddressRequest](#axelar.nexus.v1beta1.LatestDepositAddressRequest) | [LatestDepositAddressResponse](#axelar.nexus.v1beta1.LatestDepositAddressResponse) | LatestDepositAddress queries the a deposit address by recipient | GET|/axelar/nexus/v1beta1/latest_deposit_address/{recipient_addr}/{recipient_chain}/{deposit_chain}|
-| `TransfersForChain` | [TransfersForChainRequest](#axelar.nexus.v1beta1.TransfersForChainRequest) | [TransfersForChainResponse](#axelar.nexus.v1beta1.TransfersForChainResponse) | TransfersForChain queries transfers by chain | GET|/axelar/nexus/v1beta1/transfers_for_chain/{chain}/{state}|
-| `FeeInfo` | [FeeInfoRequest](#axelar.nexus.v1beta1.FeeInfoRequest) | [FeeInfoResponse](#axelar.nexus.v1beta1.FeeInfoResponse) | FeeInfo queries the fee info by chain and asset | GET|/axelar/nexus/v1beta1/fee_info/{chain}/{asset}GET|/axelar/nexus/v1beta1/fee|
-| `TransferFee` | [TransferFeeRequest](#axelar.nexus.v1beta1.TransferFeeRequest) | [TransferFeeResponse](#axelar.nexus.v1beta1.TransferFeeResponse) | TransferFee queries the transfer fee by the source, destination chain, and amount. If amount is 0, the min fee is returned | GET|/axelar/nexus/v1beta1/transfer_fee/{source_chain}/{destination_chain}/{amount}GET|/axelar/nexus/v1beta1/transfer_fee|
-| `Chains` | [ChainsRequest](#axelar.nexus.v1beta1.ChainsRequest) | [ChainsResponse](#axelar.nexus.v1beta1.ChainsResponse) | Chains queries the chains registered on the network | GET|/axelar/nexus/v1beta1/chains|
-| `Assets` | [AssetsRequest](#axelar.nexus.v1beta1.AssetsRequest) | [AssetsResponse](#axelar.nexus.v1beta1.AssetsResponse) | Assets queries the assets registered for a chain | GET|/axelar/nexus/v1beta1/assets/{chain}|
-| `ChainState` | [ChainStateRequest](#axelar.nexus.v1beta1.ChainStateRequest) | [ChainStateResponse](#axelar.nexus.v1beta1.ChainStateResponse) | ChainState queries the state of a registered chain on the network | GET|/axelar/nexus/v1beta1/chain_state/{chain}|
-| `ChainsByAsset` | [ChainsByAssetRequest](#axelar.nexus.v1beta1.ChainsByAssetRequest) | [ChainsByAssetResponse](#axelar.nexus.v1beta1.ChainsByAssetResponse) | ChainsByAsset queries the chains that support an asset on the network | GET|/axelar/nexus/v1beta1/chains_by_asset/{asset}|
+| `LatestDepositAddress` | [LatestDepositAddressRequest](#nexus.v1beta1.LatestDepositAddressRequest) | [LatestDepositAddressResponse](#nexus.v1beta1.LatestDepositAddressResponse) | LatestDepositAddress queries the a deposit address by recipient | GET|/axelar/nexus/v1beta1/latest_deposit_address/{recipient_addr}/{recipient_chain}/{deposit_chain}|
+| `TransfersForChain` | [TransfersForChainRequest](#nexus.v1beta1.TransfersForChainRequest) | [TransfersForChainResponse](#nexus.v1beta1.TransfersForChainResponse) | TransfersForChain queries transfers by chain | GET|/axelar/nexus/v1beta1/transfers_for_chain/{chain}/{state}|
+| `FeeInfo` | [FeeInfoRequest](#nexus.v1beta1.FeeInfoRequest) | [FeeInfoResponse](#nexus.v1beta1.FeeInfoResponse) | FeeInfo queries the fee info by chain and asset | GET|/axelar/nexus/v1beta1/fee_info/{chain}/{asset}GET|/axelar/nexus/v1beta1/fee|
+| `TransferFee` | [TransferFeeRequest](#nexus.v1beta1.TransferFeeRequest) | [TransferFeeResponse](#nexus.v1beta1.TransferFeeResponse) | TransferFee queries the transfer fee by the source, destination chain, and amount. If amount is 0, the min fee is returned | GET|/axelar/nexus/v1beta1/transfer_fee/{source_chain}/{destination_chain}/{amount}GET|/axelar/nexus/v1beta1/transfer_fee|
+| `Chains` | [ChainsRequest](#nexus.v1beta1.ChainsRequest) | [ChainsResponse](#nexus.v1beta1.ChainsResponse) | Chains queries the chains registered on the network | GET|/axelar/nexus/v1beta1/chains|
+| `Assets` | [AssetsRequest](#nexus.v1beta1.AssetsRequest) | [AssetsResponse](#nexus.v1beta1.AssetsResponse) | Assets queries the assets registered for a chain | GET|/axelar/nexus/v1beta1/assets/{chain}|
+| `ChainState` | [ChainStateRequest](#nexus.v1beta1.ChainStateRequest) | [ChainStateResponse](#nexus.v1beta1.ChainStateResponse) | ChainState queries the state of a registered chain on the network | GET|/axelar/nexus/v1beta1/chain_state/{chain}|
+| `ChainsByAsset` | [ChainsByAssetRequest](#nexus.v1beta1.ChainsByAssetRequest) | [ChainsByAssetResponse](#nexus.v1beta1.ChainsByAssetResponse) | ChainsByAsset queries the chains that support an asset on the network | GET|/axelar/nexus/v1beta1/chains_by_asset/{asset}|
 
  <!-- end services -->
 
 
 
-<a name="axelar/permission/v1beta1/types.proto"></a>
+<a name="permission/v1beta1/types.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/permission/v1beta1/types.proto
+## permission/v1beta1/types.proto
 
 
 
-<a name="axelar.permission.v1beta1.GovAccount"></a>
+<a name="permission.v1beta1.GovAccount"></a>
 
 ### GovAccount
 
@@ -4564,7 +4594,7 @@ QueryService defines the gRPC querier service.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `address` | [bytes](#bytes) |  |  |
-| `role` | [axelar.permission.exported.v1beta1.Role](#axelar.permission.exported.v1beta1.Role) |  |  |
+| `role` | [permission.exported.v1beta1.Role](#permission.exported.v1beta1.Role) |  |  |
 
 
 
@@ -4580,14 +4610,14 @@ QueryService defines the gRPC querier service.
 
 
 
-<a name="axelar/permission/v1beta1/params.proto"></a>
+<a name="permission/v1beta1/params.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/permission/v1beta1/params.proto
+## permission/v1beta1/params.proto
 
 
 
-<a name="axelar.permission.v1beta1.Params"></a>
+<a name="permission.v1beta1.Params"></a>
 
 ### Params
 Params represent the genesis parameters for the module
@@ -4606,14 +4636,14 @@ Params represent the genesis parameters for the module
 
 
 
-<a name="axelar/permission/v1beta1/genesis.proto"></a>
+<a name="permission/v1beta1/genesis.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/permission/v1beta1/genesis.proto
+## permission/v1beta1/genesis.proto
 
 
 
-<a name="axelar.permission.v1beta1.GenesisState"></a>
+<a name="permission.v1beta1.GenesisState"></a>
 
 ### GenesisState
 GenesisState represents the genesis state
@@ -4621,9 +4651,9 @@ GenesisState represents the genesis state
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `params` | [Params](#axelar.permission.v1beta1.Params) |  |  |
+| `params` | [Params](#permission.v1beta1.Params) |  |  |
 | `governance_key` | [cosmos.crypto.multisig.LegacyAminoPubKey](#cosmos.crypto.multisig.LegacyAminoPubKey) |  |  |
-| `gov_accounts` | [GovAccount](#axelar.permission.v1beta1.GovAccount) | repeated |  |
+| `gov_accounts` | [GovAccount](#permission.v1beta1.GovAccount) | repeated |  |
 
 
 
@@ -4639,14 +4669,14 @@ GenesisState represents the genesis state
 
 
 
-<a name="axelar/permission/v1beta1/query.proto"></a>
+<a name="permission/v1beta1/query.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/permission/v1beta1/query.proto
+## permission/v1beta1/query.proto
 
 
 
-<a name="axelar.permission.v1beta1.QueryGovernanceKeyRequest"></a>
+<a name="permission.v1beta1.QueryGovernanceKeyRequest"></a>
 
 ### QueryGovernanceKeyRequest
 QueryGovernanceKeyRequest is the request type for the
@@ -4657,7 +4687,7 @@ Query/GovernanceKey RPC method
 
 
 
-<a name="axelar.permission.v1beta1.QueryGovernanceKeyResponse"></a>
+<a name="permission.v1beta1.QueryGovernanceKeyResponse"></a>
 
 ### QueryGovernanceKeyResponse
 QueryGovernanceKeyResponse is the response type for the
@@ -4682,14 +4712,14 @@ Query/GovernanceKey RPC method
 
 
 
-<a name="axelar/permission/v1beta1/tx.proto"></a>
+<a name="permission/v1beta1/tx.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/permission/v1beta1/tx.proto
+## permission/v1beta1/tx.proto
 
 
 
-<a name="axelar.permission.v1beta1.DeregisterControllerRequest"></a>
+<a name="permission.v1beta1.DeregisterControllerRequest"></a>
 
 ### DeregisterControllerRequest
 DeregisterController represents a message to deregister a controller account
@@ -4705,7 +4735,7 @@ DeregisterController represents a message to deregister a controller account
 
 
 
-<a name="axelar.permission.v1beta1.DeregisterControllerResponse"></a>
+<a name="permission.v1beta1.DeregisterControllerResponse"></a>
 
 ### DeregisterControllerResponse
 
@@ -4715,7 +4745,7 @@ DeregisterController represents a message to deregister a controller account
 
 
 
-<a name="axelar.permission.v1beta1.RegisterControllerRequest"></a>
+<a name="permission.v1beta1.RegisterControllerRequest"></a>
 
 ### RegisterControllerRequest
 MsgRegisterController represents a message to register a controller account
@@ -4731,7 +4761,7 @@ MsgRegisterController represents a message to register a controller account
 
 
 
-<a name="axelar.permission.v1beta1.RegisterControllerResponse"></a>
+<a name="permission.v1beta1.RegisterControllerResponse"></a>
 
 ### RegisterControllerResponse
 
@@ -4741,7 +4771,7 @@ MsgRegisterController represents a message to register a controller account
 
 
 
-<a name="axelar.permission.v1beta1.UpdateGovernanceKeyRequest"></a>
+<a name="permission.v1beta1.UpdateGovernanceKeyRequest"></a>
 
 ### UpdateGovernanceKeyRequest
 
@@ -4757,7 +4787,7 @@ MsgRegisterController represents a message to register a controller account
 
 
 
-<a name="axelar.permission.v1beta1.UpdateGovernanceKeyResponse"></a>
+<a name="permission.v1beta1.UpdateGovernanceKeyResponse"></a>
 
 ### UpdateGovernanceKeyResponse
 
@@ -4776,10 +4806,10 @@ MsgRegisterController represents a message to register a controller account
 
 
 
-<a name="axelar/permission/v1beta1/service.proto"></a>
+<a name="permission/v1beta1/service.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/permission/v1beta1/service.proto
+## permission/v1beta1/service.proto
 
 
  <!-- end messages -->
@@ -4789,39 +4819,39 @@ MsgRegisterController represents a message to register a controller account
  <!-- end HasExtensions -->
 
 
-<a name="axelar.permission.v1beta1.Msg"></a>
+<a name="permission.v1beta1.Msg"></a>
 
 ### Msg
 Msg defines the gov Msg service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `RegisterController` | [RegisterControllerRequest](#axelar.permission.v1beta1.RegisterControllerRequest) | [RegisterControllerResponse](#axelar.permission.v1beta1.RegisterControllerResponse) |  | POST|/axelar/permission/register_controller|
-| `DeregisterController` | [DeregisterControllerRequest](#axelar.permission.v1beta1.DeregisterControllerRequest) | [DeregisterControllerResponse](#axelar.permission.v1beta1.DeregisterControllerResponse) |  | POST|/axelar/permission/deregister_controller|
-| `UpdateGovernanceKey` | [UpdateGovernanceKeyRequest](#axelar.permission.v1beta1.UpdateGovernanceKeyRequest) | [UpdateGovernanceKeyResponse](#axelar.permission.v1beta1.UpdateGovernanceKeyResponse) |  | POST|/axelar/permission/update_governance_key|
+| `RegisterController` | [RegisterControllerRequest](#permission.v1beta1.RegisterControllerRequest) | [RegisterControllerResponse](#permission.v1beta1.RegisterControllerResponse) |  | POST|/axelar/permission/register_controller|
+| `DeregisterController` | [DeregisterControllerRequest](#permission.v1beta1.DeregisterControllerRequest) | [DeregisterControllerResponse](#permission.v1beta1.DeregisterControllerResponse) |  | POST|/axelar/permission/deregister_controller|
+| `UpdateGovernanceKey` | [UpdateGovernanceKeyRequest](#permission.v1beta1.UpdateGovernanceKeyRequest) | [UpdateGovernanceKeyResponse](#permission.v1beta1.UpdateGovernanceKeyResponse) |  | POST|/axelar/permission/update_governance_key|
 
 
-<a name="axelar.permission.v1beta1.Query"></a>
+<a name="permission.v1beta1.Query"></a>
 
 ### Query
 Query defines the gRPC querier service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `GovernanceKey` | [QueryGovernanceKeyRequest](#axelar.permission.v1beta1.QueryGovernanceKeyRequest) | [QueryGovernanceKeyResponse](#axelar.permission.v1beta1.QueryGovernanceKeyResponse) | GovernanceKey returns the multisig governance key | GET|/axelar/permission/v1beta1/governance_key|
+| `GovernanceKey` | [QueryGovernanceKeyRequest](#permission.v1beta1.QueryGovernanceKeyRequest) | [QueryGovernanceKeyResponse](#permission.v1beta1.QueryGovernanceKeyResponse) | GovernanceKey returns the multisig governance key | GET|/axelar/permission/v1beta1/governance_key|
 
  <!-- end services -->
 
 
 
-<a name="axelar/reward/v1beta1/params.proto"></a>
+<a name="reward/v1beta1/params.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/reward/v1beta1/params.proto
+## reward/v1beta1/params.proto
 
 
 
-<a name="axelar.reward.v1beta1.Params"></a>
+<a name="reward.v1beta1.Params"></a>
 
 ### Params
 Params represent the genesis parameters for the module
@@ -4846,14 +4876,14 @@ Params represent the genesis parameters for the module
 
 
 
-<a name="axelar/reward/v1beta1/types.proto"></a>
+<a name="reward/v1beta1/types.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/reward/v1beta1/types.proto
+## reward/v1beta1/types.proto
 
 
 
-<a name="axelar.reward.v1beta1.Pool"></a>
+<a name="reward.v1beta1.Pool"></a>
 
 ### Pool
 
@@ -4862,14 +4892,14 @@ Params represent the genesis parameters for the module
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `name` | [string](#string) |  |  |
-| `rewards` | [Pool.Reward](#axelar.reward.v1beta1.Pool.Reward) | repeated |  |
+| `rewards` | [Pool.Reward](#reward.v1beta1.Pool.Reward) | repeated |  |
 
 
 
 
 
 
-<a name="axelar.reward.v1beta1.Pool.Reward"></a>
+<a name="reward.v1beta1.Pool.Reward"></a>
 
 ### Pool.Reward
 
@@ -4885,7 +4915,7 @@ Params represent the genesis parameters for the module
 
 
 
-<a name="axelar.reward.v1beta1.Refund"></a>
+<a name="reward.v1beta1.Refund"></a>
 
 ### Refund
 
@@ -4910,14 +4940,14 @@ Params represent the genesis parameters for the module
 
 
 
-<a name="axelar/reward/v1beta1/genesis.proto"></a>
+<a name="reward/v1beta1/genesis.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/reward/v1beta1/genesis.proto
+## reward/v1beta1/genesis.proto
 
 
 
-<a name="axelar.reward.v1beta1.GenesisState"></a>
+<a name="reward.v1beta1.GenesisState"></a>
 
 ### GenesisState
 GenesisState represents the genesis state
@@ -4925,8 +4955,8 @@ GenesisState represents the genesis state
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `params` | [Params](#axelar.reward.v1beta1.Params) |  |  |
-| `pools` | [Pool](#axelar.reward.v1beta1.Pool) | repeated |  |
+| `params` | [Params](#reward.v1beta1.Params) |  |  |
+| `pools` | [Pool](#reward.v1beta1.Pool) | repeated |  |
 
 
 
@@ -4942,14 +4972,14 @@ GenesisState represents the genesis state
 
 
 
-<a name="axelar/reward/v1beta1/tx.proto"></a>
+<a name="reward/v1beta1/tx.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/reward/v1beta1/tx.proto
+## reward/v1beta1/tx.proto
 
 
 
-<a name="axelar.reward.v1beta1.RefundMsgRequest"></a>
+<a name="reward.v1beta1.RefundMsgRequest"></a>
 
 ### RefundMsgRequest
 
@@ -4965,7 +4995,7 @@ GenesisState represents the genesis state
 
 
 
-<a name="axelar.reward.v1beta1.RefundMsgResponse"></a>
+<a name="reward.v1beta1.RefundMsgResponse"></a>
 
 ### RefundMsgResponse
 
@@ -4990,10 +5020,10 @@ GenesisState represents the genesis state
 
 
 
-<a name="axelar/reward/v1beta1/service.proto"></a>
+<a name="reward/v1beta1/service.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/reward/v1beta1/service.proto
+## reward/v1beta1/service.proto
 
 
  <!-- end messages -->
@@ -5003,27 +5033,27 @@ GenesisState represents the genesis state
  <!-- end HasExtensions -->
 
 
-<a name="axelar.reward.v1beta1.MsgService"></a>
+<a name="reward.v1beta1.MsgService"></a>
 
 ### MsgService
 Msg defines the axelarnet Msg service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `RefundMsg` | [RefundMsgRequest](#axelar.reward.v1beta1.RefundMsgRequest) | [RefundMsgResponse](#axelar.reward.v1beta1.RefundMsgResponse) |  | POST|/axelar/reward/refund_message|
+| `RefundMsg` | [RefundMsgRequest](#reward.v1beta1.RefundMsgRequest) | [RefundMsgResponse](#reward.v1beta1.RefundMsgResponse) |  | POST|/axelar/reward/refund_message|
 
  <!-- end services -->
 
 
 
-<a name="axelar/snapshot/v1beta1/params.proto"></a>
+<a name="snapshot/v1beta1/params.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/snapshot/v1beta1/params.proto
+## snapshot/v1beta1/params.proto
 
 
 
-<a name="axelar.snapshot.v1beta1.Params"></a>
+<a name="snapshot.v1beta1.Params"></a>
 
 ### Params
 Params represent the genesis parameters for the module
@@ -5047,14 +5077,14 @@ Params represent the genesis parameters for the module
 
 
 
-<a name="axelar/snapshot/v1beta1/types.proto"></a>
+<a name="snapshot/v1beta1/types.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/snapshot/v1beta1/types.proto
+## snapshot/v1beta1/types.proto
 
 
 
-<a name="axelar.snapshot.v1beta1.ProxiedValidator"></a>
+<a name="snapshot.v1beta1.ProxiedValidator"></a>
 
 ### ProxiedValidator
 
@@ -5080,14 +5110,14 @@ Params represent the genesis parameters for the module
 
 
 
-<a name="axelar/snapshot/v1beta1/genesis.proto"></a>
+<a name="snapshot/v1beta1/genesis.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/snapshot/v1beta1/genesis.proto
+## snapshot/v1beta1/genesis.proto
 
 
 
-<a name="axelar.snapshot.v1beta1.GenesisState"></a>
+<a name="snapshot.v1beta1.GenesisState"></a>
 
 ### GenesisState
 GenesisState represents the genesis state
@@ -5095,9 +5125,9 @@ GenesisState represents the genesis state
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `params` | [Params](#axelar.snapshot.v1beta1.Params) |  |  |
-| `snapshots` | [axelar.snapshot.exported.v1beta1.Snapshot](#axelar.snapshot.exported.v1beta1.Snapshot) | repeated |  |
-| `proxied_validators` | [ProxiedValidator](#axelar.snapshot.v1beta1.ProxiedValidator) | repeated |  |
+| `params` | [Params](#snapshot.v1beta1.Params) |  |  |
+| `snapshots` | [snapshot.exported.v1beta1.Snapshot](#snapshot.exported.v1beta1.Snapshot) | repeated |  |
+| `proxied_validators` | [ProxiedValidator](#snapshot.v1beta1.ProxiedValidator) | repeated |  |
 
 
 
@@ -5113,14 +5143,14 @@ GenesisState represents the genesis state
 
 
 
-<a name="axelar/snapshot/v1beta1/query.proto"></a>
+<a name="snapshot/v1beta1/query.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/snapshot/v1beta1/query.proto
+## snapshot/v1beta1/query.proto
 
 
 
-<a name="axelar.snapshot.v1beta1.QueryValidatorsResponse"></a>
+<a name="snapshot.v1beta1.QueryValidatorsResponse"></a>
 
 ### QueryValidatorsResponse
 
@@ -5128,14 +5158,14 @@ GenesisState represents the genesis state
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `validators` | [QueryValidatorsResponse.Validator](#axelar.snapshot.v1beta1.QueryValidatorsResponse.Validator) | repeated |  |
+| `validators` | [QueryValidatorsResponse.Validator](#snapshot.v1beta1.QueryValidatorsResponse.Validator) | repeated |  |
 
 
 
 
 
 
-<a name="axelar.snapshot.v1beta1.QueryValidatorsResponse.TssIllegibilityInfo"></a>
+<a name="snapshot.v1beta1.QueryValidatorsResponse.TssIllegibilityInfo"></a>
 
 ### QueryValidatorsResponse.TssIllegibilityInfo
 
@@ -5156,7 +5186,7 @@ GenesisState represents the genesis state
 
 
 
-<a name="axelar.snapshot.v1beta1.QueryValidatorsResponse.Validator"></a>
+<a name="snapshot.v1beta1.QueryValidatorsResponse.Validator"></a>
 
 ### QueryValidatorsResponse.Validator
 
@@ -5166,7 +5196,7 @@ GenesisState represents the genesis state
 | ----- | ---- | ----- | ----------- |
 | `operator_address` | [string](#string) |  |  |
 | `moniker` | [string](#string) |  |  |
-| `tss_illegibility_info` | [QueryValidatorsResponse.TssIllegibilityInfo](#axelar.snapshot.v1beta1.QueryValidatorsResponse.TssIllegibilityInfo) |  |  |
+| `tss_illegibility_info` | [QueryValidatorsResponse.TssIllegibilityInfo](#snapshot.v1beta1.QueryValidatorsResponse.TssIllegibilityInfo) |  |  |
 
 
 
@@ -5182,14 +5212,14 @@ GenesisState represents the genesis state
 
 
 
-<a name="axelar/snapshot/v1beta1/tx.proto"></a>
+<a name="snapshot/v1beta1/tx.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/snapshot/v1beta1/tx.proto
+## snapshot/v1beta1/tx.proto
 
 
 
-<a name="axelar.snapshot.v1beta1.DeactivateProxyRequest"></a>
+<a name="snapshot.v1beta1.DeactivateProxyRequest"></a>
 
 ### DeactivateProxyRequest
 
@@ -5204,7 +5234,7 @@ GenesisState represents the genesis state
 
 
 
-<a name="axelar.snapshot.v1beta1.DeactivateProxyResponse"></a>
+<a name="snapshot.v1beta1.DeactivateProxyResponse"></a>
 
 ### DeactivateProxyResponse
 
@@ -5214,7 +5244,7 @@ GenesisState represents the genesis state
 
 
 
-<a name="axelar.snapshot.v1beta1.RegisterProxyRequest"></a>
+<a name="snapshot.v1beta1.RegisterProxyRequest"></a>
 
 ### RegisterProxyRequest
 
@@ -5230,7 +5260,7 @@ GenesisState represents the genesis state
 
 
 
-<a name="axelar.snapshot.v1beta1.RegisterProxyResponse"></a>
+<a name="snapshot.v1beta1.RegisterProxyResponse"></a>
 
 ### RegisterProxyResponse
 
@@ -5249,10 +5279,10 @@ GenesisState represents the genesis state
 
 
 
-<a name="axelar/snapshot/v1beta1/service.proto"></a>
+<a name="snapshot/v1beta1/service.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/snapshot/v1beta1/service.proto
+## snapshot/v1beta1/service.proto
 
 
  <!-- end messages -->
@@ -5262,28 +5292,28 @@ GenesisState represents the genesis state
  <!-- end HasExtensions -->
 
 
-<a name="axelar.snapshot.v1beta1.MsgService"></a>
+<a name="snapshot.v1beta1.MsgService"></a>
 
 ### MsgService
 Msg defines the snapshot Msg service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `RegisterProxy` | [RegisterProxyRequest](#axelar.snapshot.v1beta1.RegisterProxyRequest) | [RegisterProxyResponse](#axelar.snapshot.v1beta1.RegisterProxyResponse) | RegisterProxy defines a method for registering a proxy account that can act in a validator account's stead. | POST|/axelar/snapshot/register_proxy|
-| `DeactivateProxy` | [DeactivateProxyRequest](#axelar.snapshot.v1beta1.DeactivateProxyRequest) | [DeactivateProxyResponse](#axelar.snapshot.v1beta1.DeactivateProxyResponse) | DeactivateProxy defines a method for deregistering a proxy account. | POST|/axelar/snapshot/deactivate_proxy|
+| `RegisterProxy` | [RegisterProxyRequest](#snapshot.v1beta1.RegisterProxyRequest) | [RegisterProxyResponse](#snapshot.v1beta1.RegisterProxyResponse) | RegisterProxy defines a method for registering a proxy account that can act in a validator account's stead. | POST|/axelar/snapshot/register_proxy|
+| `DeactivateProxy` | [DeactivateProxyRequest](#snapshot.v1beta1.DeactivateProxyRequest) | [DeactivateProxyResponse](#snapshot.v1beta1.DeactivateProxyResponse) | DeactivateProxy defines a method for deregistering a proxy account. | POST|/axelar/snapshot/deactivate_proxy|
 
  <!-- end services -->
 
 
 
-<a name="axelar/tss/tofnd/v1beta1/common.proto"></a>
+<a name="tss/tofnd/v1beta1/common.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/tss/tofnd/v1beta1/common.proto
+## tss/tofnd/v1beta1/common.proto
 File copied from golang tofnd with minor tweaks
 
 
-<a name="axelar.tss.tofnd.v1beta1.KeyPresenceRequest"></a>
+<a name="tss.tofnd.v1beta1.KeyPresenceRequest"></a>
 
 ### KeyPresenceRequest
 Key presence check types
@@ -5299,7 +5329,7 @@ Key presence check types
 
 
 
-<a name="axelar.tss.tofnd.v1beta1.KeyPresenceResponse"></a>
+<a name="tss.tofnd.v1beta1.KeyPresenceResponse"></a>
 
 ### KeyPresenceResponse
 
@@ -5307,7 +5337,7 @@ Key presence check types
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `response` | [KeyPresenceResponse.Response](#axelar.tss.tofnd.v1beta1.KeyPresenceResponse.Response) |  |  |
+| `response` | [KeyPresenceResponse.Response](#tss.tofnd.v1beta1.KeyPresenceResponse.Response) |  |  |
 
 
 
@@ -5316,7 +5346,7 @@ Key presence check types
  <!-- end messages -->
 
 
-<a name="axelar.tss.tofnd.v1beta1.KeyPresenceResponse.Response"></a>
+<a name="tss.tofnd.v1beta1.KeyPresenceResponse.Response"></a>
 
 ### KeyPresenceResponse.Response
 
@@ -5337,14 +5367,14 @@ Key presence check types
 
 
 
-<a name="axelar/tss/tofnd/v1beta1/multisig.proto"></a>
+<a name="tss/tofnd/v1beta1/multisig.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/tss/tofnd/v1beta1/multisig.proto
+## tss/tofnd/v1beta1/multisig.proto
 File copied from golang tofnd with minor tweaks
 
 
-<a name="axelar.tss.tofnd.v1beta1.KeygenRequest"></a>
+<a name="tss.tofnd.v1beta1.KeygenRequest"></a>
 
 ### KeygenRequest
 
@@ -5360,7 +5390,7 @@ File copied from golang tofnd with minor tweaks
 
 
 
-<a name="axelar.tss.tofnd.v1beta1.KeygenResponse"></a>
+<a name="tss.tofnd.v1beta1.KeygenResponse"></a>
 
 ### KeygenResponse
 
@@ -5376,7 +5406,7 @@ File copied from golang tofnd with minor tweaks
 
 
 
-<a name="axelar.tss.tofnd.v1beta1.SignRequest"></a>
+<a name="tss.tofnd.v1beta1.SignRequest"></a>
 
 ### SignRequest
 
@@ -5394,7 +5424,7 @@ File copied from golang tofnd with minor tweaks
 
 
 
-<a name="axelar.tss.tofnd.v1beta1.SignResponse"></a>
+<a name="tss.tofnd.v1beta1.SignResponse"></a>
 
 ### SignResponse
 
@@ -5419,14 +5449,14 @@ File copied from golang tofnd with minor tweaks
 
 
 
-<a name="axelar/tss/tofnd/v1beta1/tofnd.proto"></a>
+<a name="tss/tofnd/v1beta1/tofnd.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/tss/tofnd/v1beta1/tofnd.proto
+## tss/tofnd/v1beta1/tofnd.proto
 File copied from golang tofnd with minor tweaks
 
 
-<a name="axelar.tss.tofnd.v1beta1.KeygenInit"></a>
+<a name="tss.tofnd.v1beta1.KeygenInit"></a>
 
 ### KeygenInit
 
@@ -5445,7 +5475,7 @@ File copied from golang tofnd with minor tweaks
 
 
 
-<a name="axelar.tss.tofnd.v1beta1.KeygenOutput"></a>
+<a name="tss.tofnd.v1beta1.KeygenOutput"></a>
 
 ### KeygenOutput
 Keygen's success response
@@ -5462,7 +5492,7 @@ Keygen's success response
 
 
 
-<a name="axelar.tss.tofnd.v1beta1.MessageIn"></a>
+<a name="tss.tofnd.v1beta1.MessageIn"></a>
 
 ### MessageIn
 
@@ -5470,9 +5500,9 @@ Keygen's success response
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `keygen_init` | [KeygenInit](#axelar.tss.tofnd.v1beta1.KeygenInit) |  | first message only, Keygen |
-| `sign_init` | [SignInit](#axelar.tss.tofnd.v1beta1.SignInit) |  | first message only, Sign |
-| `traffic` | [TrafficIn](#axelar.tss.tofnd.v1beta1.TrafficIn) |  | all subsequent messages |
+| `keygen_init` | [KeygenInit](#tss.tofnd.v1beta1.KeygenInit) |  | first message only, Keygen |
+| `sign_init` | [SignInit](#tss.tofnd.v1beta1.SignInit) |  | first message only, Sign |
+| `traffic` | [TrafficIn](#tss.tofnd.v1beta1.TrafficIn) |  | all subsequent messages |
 | `abort` | [bool](#bool) |  | abort the protocol, ignore the bool value |
 
 
@@ -5480,7 +5510,7 @@ Keygen's success response
 
 
 
-<a name="axelar.tss.tofnd.v1beta1.MessageOut"></a>
+<a name="tss.tofnd.v1beta1.MessageOut"></a>
 
 ### MessageOut
 
@@ -5488,9 +5518,9 @@ Keygen's success response
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `traffic` | [TrafficOut](#axelar.tss.tofnd.v1beta1.TrafficOut) |  | all but final message |
-| `keygen_result` | [MessageOut.KeygenResult](#axelar.tss.tofnd.v1beta1.MessageOut.KeygenResult) |  | final message only, Keygen |
-| `sign_result` | [MessageOut.SignResult](#axelar.tss.tofnd.v1beta1.MessageOut.SignResult) |  | final message only, Sign |
+| `traffic` | [TrafficOut](#tss.tofnd.v1beta1.TrafficOut) |  | all but final message |
+| `keygen_result` | [MessageOut.KeygenResult](#tss.tofnd.v1beta1.MessageOut.KeygenResult) |  | final message only, Keygen |
+| `sign_result` | [MessageOut.SignResult](#tss.tofnd.v1beta1.MessageOut.SignResult) |  | final message only, Sign |
 | `need_recover` | [bool](#bool) |  | issue recover from client |
 
 
@@ -5498,7 +5528,7 @@ Keygen's success response
 
 
 
-<a name="axelar.tss.tofnd.v1beta1.MessageOut.CriminalList"></a>
+<a name="tss.tofnd.v1beta1.MessageOut.CriminalList"></a>
 
 ### MessageOut.CriminalList
 Keygen/Sign failure response message
@@ -5506,14 +5536,14 @@ Keygen/Sign failure response message
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `criminals` | [MessageOut.CriminalList.Criminal](#axelar.tss.tofnd.v1beta1.MessageOut.CriminalList.Criminal) | repeated |  |
+| `criminals` | [MessageOut.CriminalList.Criminal](#tss.tofnd.v1beta1.MessageOut.CriminalList.Criminal) | repeated |  |
 
 
 
 
 
 
-<a name="axelar.tss.tofnd.v1beta1.MessageOut.CriminalList.Criminal"></a>
+<a name="tss.tofnd.v1beta1.MessageOut.CriminalList.Criminal"></a>
 
 ### MessageOut.CriminalList.Criminal
 
@@ -5522,14 +5552,14 @@ Keygen/Sign failure response message
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `party_uid` | [string](#string) |  |  |
-| `crime_type` | [MessageOut.CriminalList.Criminal.CrimeType](#axelar.tss.tofnd.v1beta1.MessageOut.CriminalList.Criminal.CrimeType) |  |  |
+| `crime_type` | [MessageOut.CriminalList.Criminal.CrimeType](#tss.tofnd.v1beta1.MessageOut.CriminalList.Criminal.CrimeType) |  |  |
 
 
 
 
 
 
-<a name="axelar.tss.tofnd.v1beta1.MessageOut.KeygenResult"></a>
+<a name="tss.tofnd.v1beta1.MessageOut.KeygenResult"></a>
 
 ### MessageOut.KeygenResult
 Keygen's response types
@@ -5537,15 +5567,15 @@ Keygen's response types
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `data` | [KeygenOutput](#axelar.tss.tofnd.v1beta1.KeygenOutput) |  | Success response |
-| `criminals` | [MessageOut.CriminalList](#axelar.tss.tofnd.v1beta1.MessageOut.CriminalList) |  | Faiilure response |
+| `data` | [KeygenOutput](#tss.tofnd.v1beta1.KeygenOutput) |  | Success response |
+| `criminals` | [MessageOut.CriminalList](#tss.tofnd.v1beta1.MessageOut.CriminalList) |  | Faiilure response |
 
 
 
 
 
 
-<a name="axelar.tss.tofnd.v1beta1.MessageOut.SignResult"></a>
+<a name="tss.tofnd.v1beta1.MessageOut.SignResult"></a>
 
 ### MessageOut.SignResult
 Sign's response types
@@ -5554,14 +5584,14 @@ Sign's response types
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `signature` | [bytes](#bytes) |  | Success response |
-| `criminals` | [MessageOut.CriminalList](#axelar.tss.tofnd.v1beta1.MessageOut.CriminalList) |  | Failure response |
+| `criminals` | [MessageOut.CriminalList](#tss.tofnd.v1beta1.MessageOut.CriminalList) |  | Failure response |
 
 
 
 
 
 
-<a name="axelar.tss.tofnd.v1beta1.RecoverRequest"></a>
+<a name="tss.tofnd.v1beta1.RecoverRequest"></a>
 
 ### RecoverRequest
 
@@ -5569,15 +5599,15 @@ Sign's response types
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `keygen_init` | [KeygenInit](#axelar.tss.tofnd.v1beta1.KeygenInit) |  |  |
-| `keygen_output` | [KeygenOutput](#axelar.tss.tofnd.v1beta1.KeygenOutput) |  |  |
+| `keygen_init` | [KeygenInit](#tss.tofnd.v1beta1.KeygenInit) |  |  |
+| `keygen_output` | [KeygenOutput](#tss.tofnd.v1beta1.KeygenOutput) |  |  |
 
 
 
 
 
 
-<a name="axelar.tss.tofnd.v1beta1.RecoverResponse"></a>
+<a name="tss.tofnd.v1beta1.RecoverResponse"></a>
 
 ### RecoverResponse
 
@@ -5585,14 +5615,14 @@ Sign's response types
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `response` | [RecoverResponse.Response](#axelar.tss.tofnd.v1beta1.RecoverResponse.Response) |  |  |
+| `response` | [RecoverResponse.Response](#tss.tofnd.v1beta1.RecoverResponse.Response) |  |  |
 
 
 
 
 
 
-<a name="axelar.tss.tofnd.v1beta1.SignInit"></a>
+<a name="tss.tofnd.v1beta1.SignInit"></a>
 
 ### SignInit
 
@@ -5610,7 +5640,7 @@ Sign's response types
 
 
 
-<a name="axelar.tss.tofnd.v1beta1.TrafficIn"></a>
+<a name="tss.tofnd.v1beta1.TrafficIn"></a>
 
 ### TrafficIn
 
@@ -5627,7 +5657,7 @@ Sign's response types
 
 
 
-<a name="axelar.tss.tofnd.v1beta1.TrafficOut"></a>
+<a name="tss.tofnd.v1beta1.TrafficOut"></a>
 
 ### TrafficOut
 
@@ -5646,7 +5676,7 @@ Sign's response types
  <!-- end messages -->
 
 
-<a name="axelar.tss.tofnd.v1beta1.MessageOut.CriminalList.Criminal.CrimeType"></a>
+<a name="tss.tofnd.v1beta1.MessageOut.CriminalList.Criminal.CrimeType"></a>
 
 ### MessageOut.CriminalList.Criminal.CrimeType
 
@@ -5659,7 +5689,7 @@ Sign's response types
 
 
 
-<a name="axelar.tss.tofnd.v1beta1.RecoverResponse.Response"></a>
+<a name="tss.tofnd.v1beta1.RecoverResponse.Response"></a>
 
 ### RecoverResponse.Response
 
@@ -5679,14 +5709,14 @@ Sign's response types
 
 
 
-<a name="axelar/tss/v1beta1/params.proto"></a>
+<a name="tss/v1beta1/params.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/tss/v1beta1/params.proto
+## tss/v1beta1/params.proto
 
 
 
-<a name="axelar.tss.v1beta1.Params"></a>
+<a name="tss.v1beta1.Params"></a>
 
 ### Params
 Params is the parameter set for this module
@@ -5694,12 +5724,12 @@ Params is the parameter set for this module
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `key_requirements` | [axelar.tss.exported.v1beta1.KeyRequirement](#axelar.tss.exported.v1beta1.KeyRequirement) | repeated | KeyRequirements defines the requirement for each key role |
+| `key_requirements` | [tss.exported.v1beta1.KeyRequirement](#tss.exported.v1beta1.KeyRequirement) | repeated | KeyRequirements defines the requirement for each key role |
 | `suspend_duration_in_blocks` | [int64](#int64) |  | SuspendDurationInBlocks defines the number of blocks a validator is disallowed to participate in any TSS ceremony after committing a malicious behaviour during signing |
 | `heartbeat_period_in_blocks` | [int64](#int64) |  | HeartBeatPeriodInBlocks defines the time period in blocks for tss to emit the event asking validators to send their heartbeats |
-| `max_missed_blocks_per_window` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
+| `max_missed_blocks_per_window` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
 | `unbonding_locking_key_rotation_count` | [int64](#int64) |  |  |
-| `external_multisig_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
+| `external_multisig_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
 | `max_sign_queue_size` | [int64](#int64) |  |  |
 | `max_simultaneous_sign_shares` | [int64](#int64) |  |  |
 | `tss_signed_blocks_window` | [int64](#int64) |  |  |
@@ -5718,14 +5748,14 @@ Params is the parameter set for this module
 
 
 
-<a name="axelar/tss/v1beta1/types.proto"></a>
+<a name="tss/v1beta1/types.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/tss/v1beta1/types.proto
+## tss/v1beta1/types.proto
 
 
 
-<a name="axelar.tss.v1beta1.ExternalKeys"></a>
+<a name="tss.v1beta1.ExternalKeys"></a>
 
 ### ExternalKeys
 
@@ -5741,7 +5771,7 @@ Params is the parameter set for this module
 
 
 
-<a name="axelar.tss.v1beta1.KeyInfo"></a>
+<a name="tss.v1beta1.KeyInfo"></a>
 
 ### KeyInfo
 KeyInfo holds information about a key
@@ -5750,15 +5780,15 @@ KeyInfo holds information about a key
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `key_id` | [string](#string) |  |  |
-| `key_role` | [axelar.tss.exported.v1beta1.KeyRole](#axelar.tss.exported.v1beta1.KeyRole) |  |  |
-| `key_type` | [axelar.tss.exported.v1beta1.KeyType](#axelar.tss.exported.v1beta1.KeyType) |  |  |
+| `key_role` | [tss.exported.v1beta1.KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
+| `key_type` | [tss.exported.v1beta1.KeyType](#tss.exported.v1beta1.KeyType) |  |  |
 
 
 
 
 
 
-<a name="axelar.tss.v1beta1.KeyRecoveryInfo"></a>
+<a name="tss.v1beta1.KeyRecoveryInfo"></a>
 
 ### KeyRecoveryInfo
 
@@ -5768,14 +5798,14 @@ KeyInfo holds information about a key
 | ----- | ---- | ----- | ----------- |
 | `key_id` | [string](#string) |  |  |
 | `public` | [bytes](#bytes) |  |  |
-| `private` | [KeyRecoveryInfo.PrivateEntry](#axelar.tss.v1beta1.KeyRecoveryInfo.PrivateEntry) | repeated |  |
+| `private` | [KeyRecoveryInfo.PrivateEntry](#tss.v1beta1.KeyRecoveryInfo.PrivateEntry) | repeated |  |
 
 
 
 
 
 
-<a name="axelar.tss.v1beta1.KeyRecoveryInfo.PrivateEntry"></a>
+<a name="tss.v1beta1.KeyRecoveryInfo.PrivateEntry"></a>
 
 ### KeyRecoveryInfo.PrivateEntry
 
@@ -5791,7 +5821,7 @@ KeyInfo holds information about a key
 
 
 
-<a name="axelar.tss.v1beta1.KeygenVoteData"></a>
+<a name="tss.v1beta1.KeygenVoteData"></a>
 
 ### KeygenVoteData
 
@@ -5807,7 +5837,7 @@ KeyInfo holds information about a key
 
 
 
-<a name="axelar.tss.v1beta1.MultisigInfo"></a>
+<a name="tss.v1beta1.MultisigInfo"></a>
 
 ### MultisigInfo
 
@@ -5818,14 +5848,14 @@ KeyInfo holds information about a key
 | `id` | [string](#string) |  |  |
 | `timeout` | [int64](#int64) |  |  |
 | `target_num` | [int64](#int64) |  |  |
-| `infos` | [MultisigInfo.Info](#axelar.tss.v1beta1.MultisigInfo.Info) | repeated |  |
+| `infos` | [MultisigInfo.Info](#tss.v1beta1.MultisigInfo.Info) | repeated |  |
 
 
 
 
 
 
-<a name="axelar.tss.v1beta1.MultisigInfo.Info"></a>
+<a name="tss.v1beta1.MultisigInfo.Info"></a>
 
 ### MultisigInfo.Info
 
@@ -5841,7 +5871,7 @@ KeyInfo holds information about a key
 
 
 
-<a name="axelar.tss.v1beta1.ValidatorStatus"></a>
+<a name="tss.v1beta1.ValidatorStatus"></a>
 
 ### ValidatorStatus
 
@@ -5866,14 +5896,14 @@ KeyInfo holds information about a key
 
 
 
-<a name="axelar/tss/v1beta1/genesis.proto"></a>
+<a name="tss/v1beta1/genesis.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/tss/v1beta1/genesis.proto
+## tss/v1beta1/genesis.proto
 
 
 
-<a name="axelar.tss.v1beta1.GenesisState"></a>
+<a name="tss.v1beta1.GenesisState"></a>
 
 ### GenesisState
 
@@ -5881,13 +5911,13 @@ KeyInfo holds information about a key
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `params` | [Params](#axelar.tss.v1beta1.Params) |  |  |
-| `key_recovery_infos` | [KeyRecoveryInfo](#axelar.tss.v1beta1.KeyRecoveryInfo) | repeated |  |
-| `keys` | [axelar.tss.exported.v1beta1.Key](#axelar.tss.exported.v1beta1.Key) | repeated |  |
-| `multisig_infos` | [MultisigInfo](#axelar.tss.v1beta1.MultisigInfo) | repeated |  |
-| `external_keys` | [ExternalKeys](#axelar.tss.v1beta1.ExternalKeys) | repeated |  |
-| `signatures` | [axelar.tss.exported.v1beta1.Signature](#axelar.tss.exported.v1beta1.Signature) | repeated |  |
-| `validator_statuses` | [ValidatorStatus](#axelar.tss.v1beta1.ValidatorStatus) | repeated |  |
+| `params` | [Params](#tss.v1beta1.Params) |  |  |
+| `key_recovery_infos` | [KeyRecoveryInfo](#tss.v1beta1.KeyRecoveryInfo) | repeated |  |
+| `keys` | [tss.exported.v1beta1.Key](#tss.exported.v1beta1.Key) | repeated |  |
+| `multisig_infos` | [MultisigInfo](#tss.v1beta1.MultisigInfo) | repeated |  |
+| `external_keys` | [ExternalKeys](#tss.v1beta1.ExternalKeys) | repeated |  |
+| `signatures` | [tss.exported.v1beta1.Signature](#tss.exported.v1beta1.Signature) | repeated |  |
+| `validator_statuses` | [ValidatorStatus](#tss.v1beta1.ValidatorStatus) | repeated |  |
 
 
 
@@ -5903,14 +5933,14 @@ KeyInfo holds information about a key
 
 
 
-<a name="axelar/tss/v1beta1/query.proto"></a>
+<a name="tss/v1beta1/query.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/tss/v1beta1/query.proto
+## tss/v1beta1/query.proto
 
 
 
-<a name="axelar.tss.v1beta1.AssignableKeyRequest"></a>
+<a name="tss.v1beta1.AssignableKeyRequest"></a>
 
 ### AssignableKeyRequest
 
@@ -5919,14 +5949,14 @@ KeyInfo holds information about a key
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `chain` | [string](#string) |  |  |
-| `key_role` | [axelar.tss.exported.v1beta1.KeyRole](#axelar.tss.exported.v1beta1.KeyRole) |  |  |
+| `key_role` | [tss.exported.v1beta1.KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
 
 
 
 
 
 
-<a name="axelar.tss.v1beta1.AssignableKeyResponse"></a>
+<a name="tss.v1beta1.AssignableKeyResponse"></a>
 
 ### AssignableKeyResponse
 
@@ -5941,7 +5971,7 @@ KeyInfo holds information about a key
 
 
 
-<a name="axelar.tss.v1beta1.NextKeyIDRequest"></a>
+<a name="tss.v1beta1.NextKeyIDRequest"></a>
 
 ### NextKeyIDRequest
 
@@ -5950,14 +5980,14 @@ KeyInfo holds information about a key
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `chain` | [string](#string) |  |  |
-| `key_role` | [axelar.tss.exported.v1beta1.KeyRole](#axelar.tss.exported.v1beta1.KeyRole) |  |  |
+| `key_role` | [tss.exported.v1beta1.KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
 
 
 
 
 
 
-<a name="axelar.tss.v1beta1.NextKeyIDResponse"></a>
+<a name="tss.v1beta1.NextKeyIDResponse"></a>
 
 ### NextKeyIDResponse
 
@@ -5972,7 +6002,7 @@ KeyInfo holds information about a key
 
 
 
-<a name="axelar.tss.v1beta1.QueryActiveOldKeysResponse"></a>
+<a name="tss.v1beta1.QueryActiveOldKeysResponse"></a>
 
 ### QueryActiveOldKeysResponse
 
@@ -5987,7 +6017,7 @@ KeyInfo holds information about a key
 
 
 
-<a name="axelar.tss.v1beta1.QueryActiveOldKeysValidatorResponse"></a>
+<a name="tss.v1beta1.QueryActiveOldKeysValidatorResponse"></a>
 
 ### QueryActiveOldKeysValidatorResponse
 
@@ -5995,14 +6025,14 @@ KeyInfo holds information about a key
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `keys_info` | [QueryActiveOldKeysValidatorResponse.KeyInfo](#axelar.tss.v1beta1.QueryActiveOldKeysValidatorResponse.KeyInfo) | repeated |  |
+| `keys_info` | [QueryActiveOldKeysValidatorResponse.KeyInfo](#tss.v1beta1.QueryActiveOldKeysValidatorResponse.KeyInfo) | repeated |  |
 
 
 
 
 
 
-<a name="axelar.tss.v1beta1.QueryActiveOldKeysValidatorResponse.KeyInfo"></a>
+<a name="tss.v1beta1.QueryActiveOldKeysValidatorResponse.KeyInfo"></a>
 
 ### QueryActiveOldKeysValidatorResponse.KeyInfo
 
@@ -6019,7 +6049,7 @@ KeyInfo holds information about a key
 
 
 
-<a name="axelar.tss.v1beta1.QueryDeactivatedOperatorsResponse"></a>
+<a name="tss.v1beta1.QueryDeactivatedOperatorsResponse"></a>
 
 ### QueryDeactivatedOperatorsResponse
 
@@ -6034,7 +6064,7 @@ KeyInfo holds information about a key
 
 
 
-<a name="axelar.tss.v1beta1.QueryExternalKeyIDResponse"></a>
+<a name="tss.v1beta1.QueryExternalKeyIDResponse"></a>
 
 ### QueryExternalKeyIDResponse
 
@@ -6049,7 +6079,7 @@ KeyInfo holds information about a key
 
 
 
-<a name="axelar.tss.v1beta1.QueryKeyResponse"></a>
+<a name="tss.v1beta1.QueryKeyResponse"></a>
 
 ### QueryKeyResponse
 
@@ -6057,9 +6087,9 @@ KeyInfo holds information about a key
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `ecdsa_key` | [QueryKeyResponse.ECDSAKey](#axelar.tss.v1beta1.QueryKeyResponse.ECDSAKey) |  |  |
-| `multisig_key` | [QueryKeyResponse.MultisigKey](#axelar.tss.v1beta1.QueryKeyResponse.MultisigKey) |  |  |
-| `role` | [axelar.tss.exported.v1beta1.KeyRole](#axelar.tss.exported.v1beta1.KeyRole) |  |  |
+| `ecdsa_key` | [QueryKeyResponse.ECDSAKey](#tss.v1beta1.QueryKeyResponse.ECDSAKey) |  |  |
+| `multisig_key` | [QueryKeyResponse.MultisigKey](#tss.v1beta1.QueryKeyResponse.MultisigKey) |  |  |
+| `role` | [tss.exported.v1beta1.KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
 | `rotated_at` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
 
 
@@ -6067,7 +6097,7 @@ KeyInfo holds information about a key
 
 
 
-<a name="axelar.tss.v1beta1.QueryKeyResponse.ECDSAKey"></a>
+<a name="tss.v1beta1.QueryKeyResponse.ECDSAKey"></a>
 
 ### QueryKeyResponse.ECDSAKey
 
@@ -6075,15 +6105,15 @@ KeyInfo holds information about a key
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `vote_status` | [VoteStatus](#axelar.tss.v1beta1.VoteStatus) |  |  |
-| `key` | [QueryKeyResponse.Key](#axelar.tss.v1beta1.QueryKeyResponse.Key) |  |  |
+| `vote_status` | [VoteStatus](#tss.v1beta1.VoteStatus) |  |  |
+| `key` | [QueryKeyResponse.Key](#tss.v1beta1.QueryKeyResponse.Key) |  |  |
 
 
 
 
 
 
-<a name="axelar.tss.v1beta1.QueryKeyResponse.Key"></a>
+<a name="tss.v1beta1.QueryKeyResponse.Key"></a>
 
 ### QueryKeyResponse.Key
 
@@ -6099,7 +6129,7 @@ KeyInfo holds information about a key
 
 
 
-<a name="axelar.tss.v1beta1.QueryKeyResponse.MultisigKey"></a>
+<a name="tss.v1beta1.QueryKeyResponse.MultisigKey"></a>
 
 ### QueryKeyResponse.MultisigKey
 
@@ -6108,14 +6138,14 @@ KeyInfo holds information about a key
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `threshold` | [int64](#int64) |  |  |
-| `key` | [QueryKeyResponse.Key](#axelar.tss.v1beta1.QueryKeyResponse.Key) | repeated |  |
+| `key` | [QueryKeyResponse.Key](#tss.v1beta1.QueryKeyResponse.Key) | repeated |  |
 
 
 
 
 
 
-<a name="axelar.tss.v1beta1.QueryKeyShareResponse"></a>
+<a name="tss.v1beta1.QueryKeyShareResponse"></a>
 
 ### QueryKeyShareResponse
 
@@ -6123,14 +6153,14 @@ KeyInfo holds information about a key
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `share_infos` | [QueryKeyShareResponse.ShareInfo](#axelar.tss.v1beta1.QueryKeyShareResponse.ShareInfo) | repeated |  |
+| `share_infos` | [QueryKeyShareResponse.ShareInfo](#tss.v1beta1.QueryKeyShareResponse.ShareInfo) | repeated |  |
 
 
 
 
 
 
-<a name="axelar.tss.v1beta1.QueryKeyShareResponse.ShareInfo"></a>
+<a name="tss.v1beta1.QueryKeyShareResponse.ShareInfo"></a>
 
 ### QueryKeyShareResponse.ShareInfo
 
@@ -6151,7 +6181,7 @@ KeyInfo holds information about a key
 
 
 
-<a name="axelar.tss.v1beta1.QueryRecoveryResponse"></a>
+<a name="tss.v1beta1.QueryRecoveryResponse"></a>
 
 ### QueryRecoveryResponse
 
@@ -6162,14 +6192,14 @@ KeyInfo holds information about a key
 | `party_uids` | [string](#string) | repeated |  |
 | `party_share_counts` | [uint32](#uint32) | repeated |  |
 | `threshold` | [uint32](#uint32) |  |  |
-| `keygen_output` | [axelar.tss.tofnd.v1beta1.KeygenOutput](#axelar.tss.tofnd.v1beta1.KeygenOutput) |  |  |
+| `keygen_output` | [tss.tofnd.v1beta1.KeygenOutput](#tss.tofnd.v1beta1.KeygenOutput) |  |  |
 
 
 
 
 
 
-<a name="axelar.tss.v1beta1.QuerySignatureResponse"></a>
+<a name="tss.v1beta1.QuerySignatureResponse"></a>
 
 ### QuerySignatureResponse
 
@@ -6177,15 +6207,15 @@ KeyInfo holds information about a key
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `threshold_signature` | [QuerySignatureResponse.ThresholdSignature](#axelar.tss.v1beta1.QuerySignatureResponse.ThresholdSignature) |  |  |
-| `multisig_signature` | [QuerySignatureResponse.MultisigSignature](#axelar.tss.v1beta1.QuerySignatureResponse.MultisigSignature) |  |  |
+| `threshold_signature` | [QuerySignatureResponse.ThresholdSignature](#tss.v1beta1.QuerySignatureResponse.ThresholdSignature) |  |  |
+| `multisig_signature` | [QuerySignatureResponse.MultisigSignature](#tss.v1beta1.QuerySignatureResponse.MultisigSignature) |  |  |
 
 
 
 
 
 
-<a name="axelar.tss.v1beta1.QuerySignatureResponse.MultisigSignature"></a>
+<a name="tss.v1beta1.QuerySignatureResponse.MultisigSignature"></a>
 
 ### QuerySignatureResponse.MultisigSignature
 
@@ -6193,15 +6223,15 @@ KeyInfo holds information about a key
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `sig_status` | [axelar.tss.exported.v1beta1.SigStatus](#axelar.tss.exported.v1beta1.SigStatus) |  |  |
-| `signatures` | [QuerySignatureResponse.Signature](#axelar.tss.v1beta1.QuerySignatureResponse.Signature) | repeated |  |
+| `sig_status` | [tss.exported.v1beta1.SigStatus](#tss.exported.v1beta1.SigStatus) |  |  |
+| `signatures` | [QuerySignatureResponse.Signature](#tss.v1beta1.QuerySignatureResponse.Signature) | repeated |  |
 
 
 
 
 
 
-<a name="axelar.tss.v1beta1.QuerySignatureResponse.Signature"></a>
+<a name="tss.v1beta1.QuerySignatureResponse.Signature"></a>
 
 ### QuerySignatureResponse.Signature
 
@@ -6217,7 +6247,7 @@ KeyInfo holds information about a key
 
 
 
-<a name="axelar.tss.v1beta1.QuerySignatureResponse.ThresholdSignature"></a>
+<a name="tss.v1beta1.QuerySignatureResponse.ThresholdSignature"></a>
 
 ### QuerySignatureResponse.ThresholdSignature
 
@@ -6225,15 +6255,15 @@ KeyInfo holds information about a key
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `vote_status` | [VoteStatus](#axelar.tss.v1beta1.VoteStatus) |  |  |
-| `signature` | [QuerySignatureResponse.Signature](#axelar.tss.v1beta1.QuerySignatureResponse.Signature) |  |  |
+| `vote_status` | [VoteStatus](#tss.v1beta1.VoteStatus) |  |  |
+| `signature` | [QuerySignatureResponse.Signature](#tss.v1beta1.QuerySignatureResponse.Signature) |  |  |
 
 
 
 
 
 
-<a name="axelar.tss.v1beta1.ValidatorMultisigKeysRequest"></a>
+<a name="tss.v1beta1.ValidatorMultisigKeysRequest"></a>
 
 ### ValidatorMultisigKeysRequest
 
@@ -6248,7 +6278,7 @@ KeyInfo holds information about a key
 
 
 
-<a name="axelar.tss.v1beta1.ValidatorMultisigKeysResponse"></a>
+<a name="tss.v1beta1.ValidatorMultisigKeysResponse"></a>
 
 ### ValidatorMultisigKeysResponse
 
@@ -6256,14 +6286,14 @@ KeyInfo holds information about a key
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `keys` | [ValidatorMultisigKeysResponse.KeysEntry](#axelar.tss.v1beta1.ValidatorMultisigKeysResponse.KeysEntry) | repeated |  |
+| `keys` | [ValidatorMultisigKeysResponse.KeysEntry](#tss.v1beta1.ValidatorMultisigKeysResponse.KeysEntry) | repeated |  |
 
 
 
 
 
 
-<a name="axelar.tss.v1beta1.ValidatorMultisigKeysResponse.Keys"></a>
+<a name="tss.v1beta1.ValidatorMultisigKeysResponse.Keys"></a>
 
 ### ValidatorMultisigKeysResponse.Keys
 
@@ -6278,7 +6308,7 @@ KeyInfo holds information about a key
 
 
 
-<a name="axelar.tss.v1beta1.ValidatorMultisigKeysResponse.KeysEntry"></a>
+<a name="tss.v1beta1.ValidatorMultisigKeysResponse.KeysEntry"></a>
 
 ### ValidatorMultisigKeysResponse.KeysEntry
 
@@ -6287,7 +6317,7 @@ KeyInfo holds information about a key
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `key` | [string](#string) |  |  |
-| `value` | [ValidatorMultisigKeysResponse.Keys](#axelar.tss.v1beta1.ValidatorMultisigKeysResponse.Keys) |  |  |
+| `value` | [ValidatorMultisigKeysResponse.Keys](#tss.v1beta1.ValidatorMultisigKeysResponse.Keys) |  |  |
 
 
 
@@ -6296,7 +6326,7 @@ KeyInfo holds information about a key
  <!-- end messages -->
 
 
-<a name="axelar.tss.v1beta1.VoteStatus"></a>
+<a name="tss.v1beta1.VoteStatus"></a>
 
 ### VoteStatus
 
@@ -6317,14 +6347,14 @@ KeyInfo holds information about a key
 
 
 
-<a name="axelar/tss/v1beta1/tx.proto"></a>
+<a name="tss/v1beta1/tx.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/tss/v1beta1/tx.proto
+## tss/v1beta1/tx.proto
 
 
 
-<a name="axelar.tss.v1beta1.HeartBeatRequest"></a>
+<a name="tss.v1beta1.HeartBeatRequest"></a>
 
 ### HeartBeatRequest
 
@@ -6340,7 +6370,7 @@ KeyInfo holds information about a key
 
 
 
-<a name="axelar.tss.v1beta1.HeartBeatResponse"></a>
+<a name="tss.v1beta1.HeartBeatResponse"></a>
 
 ### HeartBeatResponse
 
@@ -6356,7 +6386,7 @@ KeyInfo holds information about a key
 
 
 
-<a name="axelar.tss.v1beta1.ProcessKeygenTrafficRequest"></a>
+<a name="tss.v1beta1.ProcessKeygenTrafficRequest"></a>
 
 ### ProcessKeygenTrafficRequest
 ProcessKeygenTrafficRequest protocol message
@@ -6366,14 +6396,14 @@ ProcessKeygenTrafficRequest protocol message
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `session_id` | [string](#string) |  |  |
-| `payload` | [axelar.tss.tofnd.v1beta1.TrafficOut](#axelar.tss.tofnd.v1beta1.TrafficOut) |  |  |
+| `payload` | [tss.tofnd.v1beta1.TrafficOut](#tss.tofnd.v1beta1.TrafficOut) |  |  |
 
 
 
 
 
 
-<a name="axelar.tss.v1beta1.ProcessKeygenTrafficResponse"></a>
+<a name="tss.v1beta1.ProcessKeygenTrafficResponse"></a>
 
 ### ProcessKeygenTrafficResponse
 
@@ -6383,7 +6413,7 @@ ProcessKeygenTrafficRequest protocol message
 
 
 
-<a name="axelar.tss.v1beta1.ProcessSignTrafficRequest"></a>
+<a name="tss.v1beta1.ProcessSignTrafficRequest"></a>
 
 ### ProcessSignTrafficRequest
 ProcessSignTrafficRequest protocol message
@@ -6393,14 +6423,14 @@ ProcessSignTrafficRequest protocol message
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `session_id` | [string](#string) |  |  |
-| `payload` | [axelar.tss.tofnd.v1beta1.TrafficOut](#axelar.tss.tofnd.v1beta1.TrafficOut) |  |  |
+| `payload` | [tss.tofnd.v1beta1.TrafficOut](#tss.tofnd.v1beta1.TrafficOut) |  |  |
 
 
 
 
 
 
-<a name="axelar.tss.v1beta1.ProcessSignTrafficResponse"></a>
+<a name="tss.v1beta1.ProcessSignTrafficResponse"></a>
 
 ### ProcessSignTrafficResponse
 
@@ -6410,7 +6440,7 @@ ProcessSignTrafficRequest protocol message
 
 
 
-<a name="axelar.tss.v1beta1.RegisterExternalKeysRequest"></a>
+<a name="tss.v1beta1.RegisterExternalKeysRequest"></a>
 
 ### RegisterExternalKeysRequest
 
@@ -6420,14 +6450,14 @@ ProcessSignTrafficRequest protocol message
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
-| `external_keys` | [RegisterExternalKeysRequest.ExternalKey](#axelar.tss.v1beta1.RegisterExternalKeysRequest.ExternalKey) | repeated |  |
+| `external_keys` | [RegisterExternalKeysRequest.ExternalKey](#tss.v1beta1.RegisterExternalKeysRequest.ExternalKey) | repeated |  |
 
 
 
 
 
 
-<a name="axelar.tss.v1beta1.RegisterExternalKeysRequest.ExternalKey"></a>
+<a name="tss.v1beta1.RegisterExternalKeysRequest.ExternalKey"></a>
 
 ### RegisterExternalKeysRequest.ExternalKey
 
@@ -6443,7 +6473,7 @@ ProcessSignTrafficRequest protocol message
 
 
 
-<a name="axelar.tss.v1beta1.RegisterExternalKeysResponse"></a>
+<a name="tss.v1beta1.RegisterExternalKeysResponse"></a>
 
 ### RegisterExternalKeysResponse
 
@@ -6453,7 +6483,7 @@ ProcessSignTrafficRequest protocol message
 
 
 
-<a name="axelar.tss.v1beta1.RotateKeyRequest"></a>
+<a name="tss.v1beta1.RotateKeyRequest"></a>
 
 ### RotateKeyRequest
 
@@ -6463,7 +6493,7 @@ ProcessSignTrafficRequest protocol message
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
-| `key_role` | [axelar.tss.exported.v1beta1.KeyRole](#axelar.tss.exported.v1beta1.KeyRole) |  |  |
+| `key_role` | [tss.exported.v1beta1.KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
 | `key_id` | [string](#string) |  |  |
 
 
@@ -6471,7 +6501,7 @@ ProcessSignTrafficRequest protocol message
 
 
 
-<a name="axelar.tss.v1beta1.RotateKeyResponse"></a>
+<a name="tss.v1beta1.RotateKeyResponse"></a>
 
 ### RotateKeyResponse
 
@@ -6481,7 +6511,7 @@ ProcessSignTrafficRequest protocol message
 
 
 
-<a name="axelar.tss.v1beta1.StartKeygenRequest"></a>
+<a name="tss.v1beta1.StartKeygenRequest"></a>
 
 ### StartKeygenRequest
 StartKeygenRequest indicate the start of keygen
@@ -6490,14 +6520,14 @@ StartKeygenRequest indicate the start of keygen
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [string](#string) |  |  |
-| `key_info` | [KeyInfo](#axelar.tss.v1beta1.KeyInfo) |  |  |
+| `key_info` | [KeyInfo](#tss.v1beta1.KeyInfo) |  |  |
 
 
 
 
 
 
-<a name="axelar.tss.v1beta1.StartKeygenResponse"></a>
+<a name="tss.v1beta1.StartKeygenResponse"></a>
 
 ### StartKeygenResponse
 
@@ -6507,7 +6537,7 @@ StartKeygenRequest indicate the start of keygen
 
 
 
-<a name="axelar.tss.v1beta1.SubmitMultisigPubKeysRequest"></a>
+<a name="tss.v1beta1.SubmitMultisigPubKeysRequest"></a>
 
 ### SubmitMultisigPubKeysRequest
 
@@ -6517,14 +6547,14 @@ StartKeygenRequest indicate the start of keygen
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `key_id` | [string](#string) |  |  |
-| `sig_key_pairs` | [axelar.tss.exported.v1beta1.SigKeyPair](#axelar.tss.exported.v1beta1.SigKeyPair) | repeated |  |
+| `sig_key_pairs` | [tss.exported.v1beta1.SigKeyPair](#tss.exported.v1beta1.SigKeyPair) | repeated |  |
 
 
 
 
 
 
-<a name="axelar.tss.v1beta1.SubmitMultisigPubKeysResponse"></a>
+<a name="tss.v1beta1.SubmitMultisigPubKeysResponse"></a>
 
 ### SubmitMultisigPubKeysResponse
 
@@ -6534,7 +6564,7 @@ StartKeygenRequest indicate the start of keygen
 
 
 
-<a name="axelar.tss.v1beta1.SubmitMultisigSignaturesRequest"></a>
+<a name="tss.v1beta1.SubmitMultisigSignaturesRequest"></a>
 
 ### SubmitMultisigSignaturesRequest
 
@@ -6551,7 +6581,7 @@ StartKeygenRequest indicate the start of keygen
 
 
 
-<a name="axelar.tss.v1beta1.SubmitMultisigSignaturesResponse"></a>
+<a name="tss.v1beta1.SubmitMultisigSignaturesResponse"></a>
 
 ### SubmitMultisigSignaturesResponse
 
@@ -6561,7 +6591,7 @@ StartKeygenRequest indicate the start of keygen
 
 
 
-<a name="axelar.tss.v1beta1.VotePubKeyRequest"></a>
+<a name="tss.v1beta1.VotePubKeyRequest"></a>
 
 ### VotePubKeyRequest
 VotePubKeyRequest represents the message to vote on a public key
@@ -6570,15 +6600,15 @@ VotePubKeyRequest represents the message to vote on a public key
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
-| `poll_key` | [axelar.vote.exported.v1beta1.PollKey](#axelar.vote.exported.v1beta1.PollKey) |  |  |
-| `result` | [axelar.tss.tofnd.v1beta1.MessageOut.KeygenResult](#axelar.tss.tofnd.v1beta1.MessageOut.KeygenResult) |  |  |
+| `poll_key` | [vote.exported.v1beta1.PollKey](#vote.exported.v1beta1.PollKey) |  |  |
+| `result` | [tss.tofnd.v1beta1.MessageOut.KeygenResult](#tss.tofnd.v1beta1.MessageOut.KeygenResult) |  |  |
 
 
 
 
 
 
-<a name="axelar.tss.v1beta1.VotePubKeyResponse"></a>
+<a name="tss.v1beta1.VotePubKeyResponse"></a>
 
 ### VotePubKeyResponse
 
@@ -6593,7 +6623,7 @@ VotePubKeyRequest represents the message to vote on a public key
 
 
 
-<a name="axelar.tss.v1beta1.VoteSigRequest"></a>
+<a name="tss.v1beta1.VoteSigRequest"></a>
 
 ### VoteSigRequest
 VoteSigRequest represents a message to vote for a signature
@@ -6602,15 +6632,15 @@ VoteSigRequest represents a message to vote for a signature
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
-| `poll_key` | [axelar.vote.exported.v1beta1.PollKey](#axelar.vote.exported.v1beta1.PollKey) |  |  |
-| `result` | [axelar.tss.tofnd.v1beta1.MessageOut.SignResult](#axelar.tss.tofnd.v1beta1.MessageOut.SignResult) |  |  |
+| `poll_key` | [vote.exported.v1beta1.PollKey](#vote.exported.v1beta1.PollKey) |  |  |
+| `result` | [tss.tofnd.v1beta1.MessageOut.SignResult](#tss.tofnd.v1beta1.MessageOut.SignResult) |  |  |
 
 
 
 
 
 
-<a name="axelar.tss.v1beta1.VoteSigResponse"></a>
+<a name="tss.v1beta1.VoteSigResponse"></a>
 
 ### VoteSigResponse
 
@@ -6634,10 +6664,10 @@ VoteSigRequest represents a message to vote for a signature
 
 
 
-<a name="axelar/tss/v1beta1/service.proto"></a>
+<a name="tss/v1beta1/service.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/tss/v1beta1/service.proto
+## tss/v1beta1/service.proto
 
 
  <!-- end messages -->
@@ -6647,48 +6677,48 @@ VoteSigRequest represents a message to vote for a signature
  <!-- end HasExtensions -->
 
 
-<a name="axelar.tss.v1beta1.MsgService"></a>
+<a name="tss.v1beta1.MsgService"></a>
 
 ### MsgService
 Msg defines the tss Msg service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `RegisterExternalKeys` | [RegisterExternalKeysRequest](#axelar.tss.v1beta1.RegisterExternalKeysRequest) | [RegisterExternalKeysResponse](#axelar.tss.v1beta1.RegisterExternalKeysResponse) |  | POST|/axelar/tss/register_external_keys|
-| `HeartBeat` | [HeartBeatRequest](#axelar.tss.v1beta1.HeartBeatRequest) | [HeartBeatResponse](#axelar.tss.v1beta1.HeartBeatResponse) |  | POST|/axelar/tss/heartbeat|
-| `StartKeygen` | [StartKeygenRequest](#axelar.tss.v1beta1.StartKeygenRequest) | [StartKeygenResponse](#axelar.tss.v1beta1.StartKeygenResponse) |  | POST|/axelar/tss/start_keygen|
-| `ProcessKeygenTraffic` | [ProcessKeygenTrafficRequest](#axelar.tss.v1beta1.ProcessKeygenTrafficRequest) | [ProcessKeygenTrafficResponse](#axelar.tss.v1beta1.ProcessKeygenTrafficResponse) |  | POST|/axelar/tss/process_keygen_traffic|
-| `RotateKey` | [RotateKeyRequest](#axelar.tss.v1beta1.RotateKeyRequest) | [RotateKeyResponse](#axelar.tss.v1beta1.RotateKeyResponse) |  | POST|/axelar/tss/rotate_key|
-| `VotePubKey` | [VotePubKeyRequest](#axelar.tss.v1beta1.VotePubKeyRequest) | [VotePubKeyResponse](#axelar.tss.v1beta1.VotePubKeyResponse) |  | POST|/axelar/tss/vote_pub_key|
-| `ProcessSignTraffic` | [ProcessSignTrafficRequest](#axelar.tss.v1beta1.ProcessSignTrafficRequest) | [ProcessSignTrafficResponse](#axelar.tss.v1beta1.ProcessSignTrafficResponse) |  | POST|/axelar/tss/process_sign_traffic|
-| `VoteSig` | [VoteSigRequest](#axelar.tss.v1beta1.VoteSigRequest) | [VoteSigResponse](#axelar.tss.v1beta1.VoteSigResponse) |  | POST|/axelar/tss/vote_sig|
-| `SubmitMultisigPubKeys` | [SubmitMultisigPubKeysRequest](#axelar.tss.v1beta1.SubmitMultisigPubKeysRequest) | [SubmitMultisigPubKeysResponse](#axelar.tss.v1beta1.SubmitMultisigPubKeysResponse) |  | POST|/axelar/tss/submit_multisig_pub_keys|
-| `SubmitMultisigSignatures` | [SubmitMultisigSignaturesRequest](#axelar.tss.v1beta1.SubmitMultisigSignaturesRequest) | [SubmitMultisigSignaturesResponse](#axelar.tss.v1beta1.SubmitMultisigSignaturesResponse) |  | POST|/axelar/tss/submit_multisig_signatures|
+| `RegisterExternalKeys` | [RegisterExternalKeysRequest](#tss.v1beta1.RegisterExternalKeysRequest) | [RegisterExternalKeysResponse](#tss.v1beta1.RegisterExternalKeysResponse) |  | POST|/axelar/tss/register_external_keys|
+| `HeartBeat` | [HeartBeatRequest](#tss.v1beta1.HeartBeatRequest) | [HeartBeatResponse](#tss.v1beta1.HeartBeatResponse) |  | POST|/axelar/tss/heartbeat|
+| `StartKeygen` | [StartKeygenRequest](#tss.v1beta1.StartKeygenRequest) | [StartKeygenResponse](#tss.v1beta1.StartKeygenResponse) |  | POST|/axelar/tss/start_keygen|
+| `ProcessKeygenTraffic` | [ProcessKeygenTrafficRequest](#tss.v1beta1.ProcessKeygenTrafficRequest) | [ProcessKeygenTrafficResponse](#tss.v1beta1.ProcessKeygenTrafficResponse) |  | POST|/axelar/tss/process_keygen_traffic|
+| `RotateKey` | [RotateKeyRequest](#tss.v1beta1.RotateKeyRequest) | [RotateKeyResponse](#tss.v1beta1.RotateKeyResponse) |  | POST|/axelar/tss/rotate_key|
+| `VotePubKey` | [VotePubKeyRequest](#tss.v1beta1.VotePubKeyRequest) | [VotePubKeyResponse](#tss.v1beta1.VotePubKeyResponse) |  | POST|/axelar/tss/vote_pub_key|
+| `ProcessSignTraffic` | [ProcessSignTrafficRequest](#tss.v1beta1.ProcessSignTrafficRequest) | [ProcessSignTrafficResponse](#tss.v1beta1.ProcessSignTrafficResponse) |  | POST|/axelar/tss/process_sign_traffic|
+| `VoteSig` | [VoteSigRequest](#tss.v1beta1.VoteSigRequest) | [VoteSigResponse](#tss.v1beta1.VoteSigResponse) |  | POST|/axelar/tss/vote_sig|
+| `SubmitMultisigPubKeys` | [SubmitMultisigPubKeysRequest](#tss.v1beta1.SubmitMultisigPubKeysRequest) | [SubmitMultisigPubKeysResponse](#tss.v1beta1.SubmitMultisigPubKeysResponse) |  | POST|/axelar/tss/submit_multisig_pub_keys|
+| `SubmitMultisigSignatures` | [SubmitMultisigSignaturesRequest](#tss.v1beta1.SubmitMultisigSignaturesRequest) | [SubmitMultisigSignaturesResponse](#tss.v1beta1.SubmitMultisigSignaturesResponse) |  | POST|/axelar/tss/submit_multisig_signatures|
 
 
-<a name="axelar.tss.v1beta1.QueryService"></a>
+<a name="tss.v1beta1.QueryService"></a>
 
 ### QueryService
 Query defines the gRPC querier service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `NextKeyID` | [NextKeyIDRequest](#axelar.tss.v1beta1.NextKeyIDRequest) | [NextKeyIDResponse](#axelar.tss.v1beta1.NextKeyIDResponse) | NextKeyID returns the key ID assigned for the next rotation on a given chain and for the given key role | GET|/axelar/tss/v1beta1/next_key_id/{chain}/{key_role}|
-| `AssignableKey` | [AssignableKeyRequest](#axelar.tss.v1beta1.AssignableKeyRequest) | [AssignableKeyResponse](#axelar.tss.v1beta1.AssignableKeyResponse) | AssignableKey returns true if there is no assigned key for the next rotation on a given chain, and false otherwise | GET|/axelar/tss/v1beta1/assignable_key/{chain}/{key_role}|
-| `ValidatorMultisigKeys` | [ValidatorMultisigKeysRequest](#axelar.tss.v1beta1.ValidatorMultisigKeysRequest) | [ValidatorMultisigKeysResponse](#axelar.tss.v1beta1.ValidatorMultisigKeysResponse) | ValidatorMultisigKeys returns the validator's multisig pubkeys corresponding to each active key ID | GET|/axelar/tss/v1beta1/validator_multisig_keys/{address}|
+| `NextKeyID` | [NextKeyIDRequest](#tss.v1beta1.NextKeyIDRequest) | [NextKeyIDResponse](#tss.v1beta1.NextKeyIDResponse) | NextKeyID returns the key ID assigned for the next rotation on a given chain and for the given key role | GET|/axelar/tss/v1beta1/next_key_id/{chain}/{key_role}|
+| `AssignableKey` | [AssignableKeyRequest](#tss.v1beta1.AssignableKeyRequest) | [AssignableKeyResponse](#tss.v1beta1.AssignableKeyResponse) | AssignableKey returns true if there is no assigned key for the next rotation on a given chain, and false otherwise | GET|/axelar/tss/v1beta1/assignable_key/{chain}/{key_role}|
+| `ValidatorMultisigKeys` | [ValidatorMultisigKeysRequest](#tss.v1beta1.ValidatorMultisigKeysRequest) | [ValidatorMultisigKeysResponse](#tss.v1beta1.ValidatorMultisigKeysResponse) | ValidatorMultisigKeys returns the validator's multisig pubkeys corresponding to each active key ID | GET|/axelar/tss/v1beta1/validator_multisig_keys/{address}|
 
  <!-- end services -->
 
 
 
-<a name="axelar/vote/v1beta1/params.proto"></a>
+<a name="vote/v1beta1/params.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/vote/v1beta1/params.proto
+## vote/v1beta1/params.proto
 
 
 
-<a name="axelar.vote.v1beta1.Params"></a>
+<a name="vote.v1beta1.Params"></a>
 
 ### Params
 Params represent the genesis parameters for the module
@@ -6696,7 +6726,7 @@ Params represent the genesis parameters for the module
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `default_voting_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
+| `default_voting_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
 
 
 
@@ -6712,14 +6742,14 @@ Params represent the genesis parameters for the module
 
 
 
-<a name="axelar/vote/v1beta1/genesis.proto"></a>
+<a name="vote/v1beta1/genesis.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/vote/v1beta1/genesis.proto
+## vote/v1beta1/genesis.proto
 
 
 
-<a name="axelar.vote.v1beta1.GenesisState"></a>
+<a name="vote.v1beta1.GenesisState"></a>
 
 ### GenesisState
 
@@ -6727,8 +6757,8 @@ Params represent the genesis parameters for the module
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `params` | [Params](#axelar.vote.v1beta1.Params) |  |  |
-| `poll_metadatas` | [axelar.vote.exported.v1beta1.PollMetadata](#axelar.vote.exported.v1beta1.PollMetadata) | repeated |  |
+| `params` | [Params](#vote.v1beta1.Params) |  |  |
+| `poll_metadatas` | [vote.exported.v1beta1.PollMetadata](#vote.exported.v1beta1.PollMetadata) | repeated |  |
 
 
 
@@ -6744,14 +6774,14 @@ Params represent the genesis parameters for the module
 
 
 
-<a name="axelar/vote/v1beta1/tx.proto"></a>
+<a name="vote/v1beta1/tx.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/vote/v1beta1/tx.proto
+## vote/v1beta1/tx.proto
 
 
 
-<a name="axelar.vote.v1beta1.VoteRequest"></a>
+<a name="vote.v1beta1.VoteRequest"></a>
 
 ### VoteRequest
 
@@ -6760,15 +6790,15 @@ Params represent the genesis parameters for the module
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
-| `poll_key` | [axelar.vote.exported.v1beta1.PollKey](#axelar.vote.exported.v1beta1.PollKey) |  |  |
-| `vote` | [axelar.vote.exported.v1beta1.Vote](#axelar.vote.exported.v1beta1.Vote) |  |  |
+| `poll_key` | [vote.exported.v1beta1.PollKey](#vote.exported.v1beta1.PollKey) |  |  |
+| `vote` | [vote.exported.v1beta1.Vote](#vote.exported.v1beta1.Vote) |  |  |
 
 
 
 
 
 
-<a name="axelar.vote.v1beta1.VoteResponse"></a>
+<a name="vote.v1beta1.VoteResponse"></a>
 
 ### VoteResponse
 
@@ -6792,10 +6822,10 @@ Params represent the genesis parameters for the module
 
 
 
-<a name="axelar/vote/v1beta1/service.proto"></a>
+<a name="vote/v1beta1/service.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/vote/v1beta1/service.proto
+## vote/v1beta1/service.proto
 
 
  <!-- end messages -->
@@ -6805,27 +6835,27 @@ Params represent the genesis parameters for the module
  <!-- end HasExtensions -->
 
 
-<a name="axelar.vote.v1beta1.MsgService"></a>
+<a name="vote.v1beta1.MsgService"></a>
 
 ### MsgService
 Msg defines the vote Msg service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `Vote` | [VoteRequest](#axelar.vote.v1beta1.VoteRequest) | [VoteResponse](#axelar.vote.v1beta1.VoteResponse) |  | POST|/axelar/vote/vote|
+| `Vote` | [VoteRequest](#vote.v1beta1.VoteRequest) | [VoteResponse](#vote.v1beta1.VoteResponse) |  | POST|/axelar/vote/vote|
 
  <!-- end services -->
 
 
 
-<a name="axelar/vote/v1beta1/types.proto"></a>
+<a name="vote/v1beta1/types.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/vote/v1beta1/types.proto
+## vote/v1beta1/types.proto
 
 
 
-<a name="axelar.vote.v1beta1.TalliedVote"></a>
+<a name="vote.v1beta1.TalliedVote"></a>
 
 ### TalliedVote
 TalliedVote represents a vote for a poll with the accumulated stake of all
