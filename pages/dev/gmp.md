@@ -5,21 +5,19 @@ With General Message Passing you can:
 - Call a contract on chain B from chain A.
 - Call a contract on chain B from chain A and attach some tokens.
 
-For GMP to work, both chain A and chain B should have an Axelar Gateway deployed.
+For GMP to work, both chain A and chain B must be EVM chains with a deployed Axelar Gateway contract.
 
-To check if a chain has an Axelar Gateway deployed you can refer to [Resources](../resources).
+See [Supported chains](../resources/supported) for a list of EVM chains that have an Axelar Gateway deployed.
 
 ![gmp-diagram.png](/images/gmp-diagram.png)
 
 ## Call a contract on chain B from chain A
 
-To call chain B from chain A the user needs to call `callContract` on the gateway of chain A, specifying:
+To call a contract on chain B from chain A the user needs to call `callContract` on the gateway of chain A, specifying:
 
-- The destination chain.
-- The destination contract address to call.
-- The payload to pass to the destination contract.
-
-As per snippet below.
+- The destination chain: must an EVM chain from [Supported chains](../resources/supported).
+- The destination contract address: must implement the `IAxelarExecutable` interface defined in [IAxelarExecutable.sol](https://github.com/axelarnetwork/axelar-cgp-solidity/blob/main/src/interfaces/IAxelarExecutable.sol).
+- The payload `bytes` to pass to the destination contract.
 
 ```solidity
 function callContract(
@@ -28,8 +26,6 @@ function callContract(
     bytes memory payload
 ) external;
 ```
-
-The destination contract must implement the `IAxelarExecutable` interface defined in [IAxelarExecutable.sol](https://github.com/axelarnetwork/axelar-cgp-solidity/blob/main/src/interfaces/IAxelarExecutable.sol).
 
 `IAxelarExecutable` has an `_execute` function that will be triggered by the Axelar network after the `callContract` function has been executed. You can write any custom logic there.
 
@@ -45,10 +41,10 @@ function _execute(
 
 To call chain B from chain A and send some tokens along the way, the user needs to call `callContractWithToken` on the gateway of chain A, specifying:
 
-- The destination chain.
-- The destination contract address to call.
-- The payload to pass to the destination contract.
-- The symbol of the token to transfer.
+- The destination chain: must an EVM chain from [Supported chains](../resources/supported).
+- The destination contract address: must implement the `IAxelarExecutable` interface defined in [IAxelarExecutable.sol](https://github.com/axelarnetwork/axelar-cgp-solidity/blob/main/src/interfaces/IAxelarExecutable.sol).
+- The payload `bytes` to pass to the destination contract.
+- The symbol of the token to transfer: must be a supported asset [[Mainnet](../resources/mainnet) | [Testnet](../resources/testnet) | [Testnet-2](../resources/testnet-2)].
 - The amount of the token to transfer.
 
 As per snippet below.
@@ -63,9 +59,7 @@ function callContractWithToken(
 ) external;
 ```
 
-The destination contract must implement the `IAxelarExecutable` interface defined in [IAxelarExecutable.sol](https://github.com/axelarnetwork/axelar-cgp-solidity/blob/main/src/interfaces/IAxelarExecutable.sol).
-
-`IAxelarExecutable` has an `\_executeWithToken` function that will be triggered by the Axelar network after the `callContractWithToken` function has been executed. You can write any custom logic there.
+`IAxelarExecutable` has an `_executeWithToken` function that will be triggered by the Axelar network after the `callContractWithToken` function has been executed. You can write any custom logic there.
 
 The destination contract will be authorized to transfer the ERC-20 identified by the `tokenSymbol`.
 
@@ -101,9 +95,9 @@ function _executeWithToken(
 }
 ```
 
-### Note regarding the payload
+### Encode the payload as `bytes`
 
-You have probably noticed that the `payload` that is passed to `callContract` (and ultimately to the `_execute` and `_executeWithToken`) are `bytes`. To encode data as `bytes` you can use the ABI encoder/decoder.
+The `payload` passed to `callContract` (and ultimately to the `_execute` and `_executeWithToken`) has type `bytes`. Use the ABI encoder/decoder convert your data to `bytes`.
 
 Example of payload encoding in JavaScript (using ethers.js):
 

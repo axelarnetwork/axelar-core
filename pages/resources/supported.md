@@ -2,20 +2,18 @@
 
 ## EVM Networks
 
-- Ethereum
-- Avalanche
-- Fantom
-- Polygon
-- Moonbeam
+The following values are legal arguments for token transfers and General Message Passing calls such as `callContract` and `callContractWithToken`:
 
-EVM networks can be the destination of token transfers and contract calls.
+- `Ethereum`
+- `Avalanche`
+- `Fantom`
+- `Polygon`
+- `Moonbeam`
 
+## Non-EVM Networks
 
+The following values are legal arguments for token transfers:
 
-## Non-EVM Networks 
-
-- Axelarnet
-- terra
-- osmosis-3
-
-Non-EVM networks can only be the destination of token transfers.
+- `Axelarnet`
+- `terra`
+- `osmosis-3`
