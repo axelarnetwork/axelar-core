@@ -31,20 +31,21 @@ import IBCChannels from '../../components/ibc/channels'
 The Network (and thus the Satellite app) charges a base fee for all cross-chain transfers.
 This fee only depends on the source/destination chain and the asset and does NOT take a percentage from the transfer amount.
 When transferring an asset X from chain Y to chain Z, the transfer fee is the sum of per-chain fee for that asset.
-For e.g. a transfer of 1000 UST from Terra to Avalanche will have a fee of 1.5 UST (= 0.5 UST for Terra + 1.0 UST for Avalanche), and so the recipient will get 998.5 UST.
+For e.g. a transfer of 1000 USDC from Ethereum to Osmosis will have a fee of 40.5 USDC (= 40 USDC for Ethereum + 0.5 USDC for Osmosis),
+and so the recipient will get 959.5 UST.
 
 | Asset symbol | Ethereum  | non-Ethereum EVM | Cosmos Chains | Decimals | Unit     |
 | ------------ | --------- | ---------------- | ------------- | -------- | -------- |
-| UST          | 20 UST    | 1 UST            | 0.5 UST       | 6        | uusd     |
-| LUNA         | 0.2 LUNA  | 0.01 LUNA        | 0.005 LUNA    | 6        | uluna    |
-| ATOM         | 0.7 ATOM  | 0.04 ATOM        | 0.02 ATOM     | 6        | uatom    |
-| USDC         | 20 USDC   | 1 USDC           | 0.5 USDC      | 6        | uusdc    |
-| FRAX         | 20 FRAX   | 1 FRAX           | 0.5 FRAX      | 18       | frax-wei |
-| DAI          | 20 DAI    | 1 DAI            | 0.5 DAI       | 18       | dai-wei  |
-| USDT         | 20 USDT   | 1 USDT           | 0.5 USDT      | 6        | uusdt    |
-| NGM          | 16 NGM    | 0.8 NGM          | 0.4 NGM       | 6        | ungm     |
-| EEUR         | 20 EEUR   | 1 EEUR           | 0.5 EEUR      | 6        | eeur     |
-| WETH         | 0.01 WETH | N/A              | 0.0002 WETH   | 18       | weth-wei |
+| UST          | 80 UST    | 2 UST            | 1 UST         | 6        | uusd     |
+| LUNA         | 40 LUNA   | 1 LUNA           | 0.5 LUNA      | 6        | uluna    |
+| ATOM         | 4 ATOM    | 0.1 ATOM         | 0.05 ATOM     | 6        | uatom    |
+| USDC         | 40 USDC   | 1 USDC           | 0.5 USDC      | 6        | uusdc    |
+| FRAX         | 40 FRAX   | 1 FRAX           | 0.5 FRAX      | 18       | frax-wei |
+| DAI          | 40 DAI    | 1 DAI            | 0.5 DAI       | 18       | dai-wei  |
+| USDT         | 40 USDT   | 1 USDT           | 0.5 USDT      | 6        | uusdt    |
+| NGM          | 40 NGM    | 1 NGM            | 0.5 NGM       | 6        | ungm     |
+| EEUR         | 40 EEUR   | 1 EEUR           | 0.5 EEUR      | 6        | eeur     |
+| WETH         | 0.02 WETH | N/A              | 0.0002 WETH   | 18       | weth-wei |
 
 The current transfer fee can also be queried on the network with
 
