@@ -106,7 +106,9 @@ func NewHandler(k types.BaseKeeper, t types.TSS, v types.Voter, s types.Signer, 
 			k.Logger(ctx).Debug(err.Error())
 			return nil, err
 		}
-		k.Logger(ctx).Debug(res.Log)
+		if len(res.Log) > 0 {
+			k.Logger(ctx).Debug(res.Log)
+		}
 		return res, nil
 	}
 }
