@@ -49,8 +49,8 @@ On a fresh install `setup-node.sh` puts the following in your node's home direct
 ```
 .axelar
 ├── bin
-│   ├── axelard -> /Users/gus/.foo/bin/axelard-v0.17.3
-│   └── axelard-v0.17.3
+│   ├── axelard -> /Users/gus/.foo/bin/axelard-vx.y.z
+│   └── axelard-vx.y.z
 ├── config
 │   ├── app.toml
 │   ├── config.toml

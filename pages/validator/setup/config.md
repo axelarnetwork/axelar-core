@@ -24,10 +24,10 @@ Later, after you've launched your companion processes and created your validator
 ```
 .axelar
 ├── bin
-│   ├── axelard -> /Users/gus/.axelar/bin/axelard-v0.17.1
-│   ├── axelard-v0.17.1
-│   ├── tofnd -> /Users/gus/.axelar/bin/tofnd-v0.10.1
-│   └── tofnd-v0.10.1
+│   ├── axelard -> /Users/gus/.axelar/bin/axelard-vx.y.z
+│   ├── axelard-vx.y.z
+│   ├── tofnd -> /Users/gus/.axelar/bin/tofnd-va.b.c
+│   └── tofnd-va.b.c
 ├── config
 │   ├── app.toml
 │   ├── config.toml
