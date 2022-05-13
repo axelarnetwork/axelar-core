@@ -78,10 +78,10 @@ type ChainKeeper interface {
 	DeleteUnsignedCommandBatchID(ctx sdk.Context)
 
 	GetConfirmedEventQueue(ctx sdk.Context) utils.KVQueue
-	GetEvent(ctx sdk.Context, eventID string) (Event, bool)
+	GetEvent(ctx sdk.Context, eventID EventID) (Event, bool)
 	SetConfirmedEvent(ctx sdk.Context, event Event) error
-	SetEventCompleted(ctx sdk.Context, eventID string) error
-	SetEventFailed(ctx sdk.Context, eventID string) error
+	SetEventCompleted(ctx sdk.Context, eventID EventID) error
+	SetEventFailed(ctx sdk.Context, eventID EventID) error
 	SetFailedEvent(ctx sdk.Context, event Event) error
 }
 

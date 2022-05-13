@@ -7,9 +7,9 @@ const (
 
 // Event attribute keys
 const (
-	AttributeKeyPoll  = "poll"
-	AttributeKeyVoter = "voter"
-	AttributeKeyChain = "chain"
+	AttributeKeyPoll      = "poll"
+	AttributeKeyVoter     = "voter"
+	AttributeKeyPollState = "state"
 )
 
 // Event attribute values

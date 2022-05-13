@@ -36,6 +36,7 @@ axelard tx evm [flags]
 - [axelard tx evm create-deploy-token](axelard_tx_evm_create-deploy-token.md)	 - Create a deploy token command with the AxelarGateway contract
 - [axelard tx evm create-pending-transfers](axelard_tx_evm_create-pending-transfers.md)	 - Create commands for handling all pending transfers to an EVM chain
 - [axelard tx evm link](axelard_tx_evm_link.md)	 - Link a cross chain address to an EVM chain address created by Axelar
+- [axelard tx evm retry-event](axelard_tx_evm_retry-event.md)	 - Retry a failed event
 - [axelard tx evm set-gateway](axelard_tx_evm_set-gateway.md)	 - Set the gateway address for the given evm chain
 - [axelard tx evm sign-commands](axelard_tx_evm_sign-commands.md)	 - Sign pending commands for an EVM chain contract
 - [axelard tx evm transfer-operatorship](axelard_tx_evm_transfer-operatorship.md)	 - Create transfer operatorship command for an EVM chain contract

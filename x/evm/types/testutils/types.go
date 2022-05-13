@@ -121,7 +121,7 @@ func getConfirmedEventQueue(cdc codec.Codec, events []types.Event) utils.QueueSt
 		}
 
 		qs.Items[fmt.Sprintf("%s_%s", queueName, event.GetID())] = utils.QueueState_Item{
-			Key:   eventPrefix.AppendStr(event.GetID()).AsKey(),
+			Key:   eventPrefix.AppendStr(string(event.GetID())).AsKey(),
 			Value: cdc.MustMarshalLengthPrefixed(&event),
 		}
 	}

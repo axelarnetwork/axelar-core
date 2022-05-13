@@ -7,10 +7,10 @@
   },
   "apis": [
     {
-      "url": "../../tmp-swagger-gen/axelar/axelarnet/v1beta1/query.swagger.json"
+      "url": "../../tmp-swagger-gen/axelarnet/v1beta1/query.swagger.json"
     },
     {
-      "url": "../../tmp-swagger-gen/axelar/axelarnet/v1beta1/service.swagger.json",
+      "url": "../../tmp-swagger-gen/axelarnet/v1beta1/service.swagger.json",
       "operationIds": {
         "rename": {
           "Link": "AxelarnetLink",
@@ -19,10 +19,10 @@
       }
     },
     {
-      "url": "../../tmp-swagger-gen/axelar/evm/v1beta1/query.swagger.json"
+      "url": "../../tmp-swagger-gen/evm/v1beta1/query.swagger.json"
     },
     {
-      "url": "../../tmp-swagger-gen/axelar/evm/v1beta1/service.swagger.json",
+      "url": "../../tmp-swagger-gen/evm/v1beta1/service.swagger.json",
       "operationIds": {
         "rename": {
           "Link": "EvmLink",
@@ -32,22 +32,22 @@
       }
     },
     {
-      "url": "../../tmp-swagger-gen/axelar/nexus/v1beta1/query.swagger.json"
+      "url": "../../tmp-swagger-gen/nexus/v1beta1/query.swagger.json"
     },
     {
-      "url": "../../tmp-swagger-gen/axelar/nexus/v1beta1/service.swagger.json"
+      "url": "../../tmp-swagger-gen/nexus/v1beta1/service.swagger.json"
     },
     {
-      "url": "../../tmp-swagger-gen/axelar/snapshot/v1beta1/query.swagger.json"
+      "url": "../../tmp-swagger-gen/snapshot/v1beta1/query.swagger.json"
     },
     {
-      "url": "../../tmp-swagger-gen/axelar/snapshot/v1beta1/service.swagger.json"
+      "url": "../../tmp-swagger-gen/snapshot/v1beta1/service.swagger.json"
     },
     {
-      "url": "../../tmp-swagger-gen/axelar/tss/v1beta1/query.swagger.json"
+      "url": "../../tmp-swagger-gen/tss/v1beta1/query.swagger.json"
     },
     {
-      "url": "../../tmp-swagger-gen/axelar/tss/v1beta1/service.swagger.json"
+      "url": "../../tmp-swagger-gen/tss/v1beta1/service.swagger.json"
     },
     {
       "url": "../../tmp-swagger-gen/cosmos/auth/v1beta1/query.swagger.json",
