@@ -97,7 +97,9 @@ func TestKeeper(t *testing.T) {
 				maintainer = rand.ValAddr()
 				chain = makeRandomChain(rand.Str(5))
 
-				keeper.AddChainMaintainer(ctx, chain, maintainer)
+				if err := keeper.AddChainMaintainer(ctx, chain, maintainer); err != nil {
+					panic(err)
+				}
 			}).
 			Then("should mark missing vote", func(t *testing.T) {
 				keeper.MarkChainMaintainerMissingVote(ctx, chain, maintainer, true)
@@ -121,7 +123,9 @@ func TestKeeper(t *testing.T) {
 				maintainer = rand.ValAddr()
 				chain = makeRandomChain(rand.Str(5))
 
-				keeper.AddChainMaintainer(ctx, chain, maintainer)
+				if err := keeper.AddChainMaintainer(ctx, chain, maintainer); err != nil {
+					panic(err)
+				}
 			}).
 			Then("should mark missing vote", func(t *testing.T) {
 				keeper.MarkChainMaintainerIncorrectVote(ctx, chain, maintainer, true)

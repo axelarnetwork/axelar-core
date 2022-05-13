@@ -73,7 +73,9 @@ func TestHandlePollsAtExpiry(t *testing.T) {
 				}
 
 				bz, _ := pollMetadata.Marshal()
-				value.Unmarshal(bz)
+				if err := value.Unmarshal(bz); err != nil {
+					panic(err)
+				}
 				dequeued = true
 
 				return true

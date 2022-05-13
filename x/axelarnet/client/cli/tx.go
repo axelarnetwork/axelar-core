@@ -15,7 +15,6 @@ import (
 
 const (
 	flagIsNativeAsset = "is-native-asset"
-	flagNativeAsset   = "native-asset"
 )
 
 // GetTxCmd returns the transaction commands for this module

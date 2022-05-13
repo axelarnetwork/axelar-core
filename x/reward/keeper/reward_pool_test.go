@@ -72,9 +72,10 @@ func TestReleaseRewards(t *testing.T) {
 	distributor.AllocateTokensToValidatorFunc = func(ctx sdk.Context, val stakingtypes.ValidatorI, tokens sdk.DecCoins) {}
 
 	pool.AddReward(validator, coin)
-	pool.ReleaseRewards(validator)
+	err := pool.ReleaseRewards(validator)
 	p := pool.(*rewardPool)
 
+	assert.NoError(t, err)
 	assert.Len(t, banker.MintCoinsCalls(), 1)
 	assert.Len(t, banker.MintCoinsCalls()[0].Amt, 1)
 	assert.Equal(t, coin, banker.MintCoinsCalls()[0].Amt[0])

@@ -88,7 +88,11 @@ func QueryHandlerRecovery(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		r.ParseForm()
+		if err := r.ParseForm(); err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
 		keyIDs := r.Form[QueryParamKeyID]
 		validator := r.URL.Query().Get(QueryParamValidator)
 		address, err := sdk.ValAddressFromBech32(validator)

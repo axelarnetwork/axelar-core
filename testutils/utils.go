@@ -5,12 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/cosmos/cosmos-sdk/codec"
 	abci "github.com/tendermint/tendermint/abci/types"
-)
-
-var (
-	cdc *codec.LegacyAmino
 )
 
 // Func wraps a regular testing function so it can be used as a pointer function receiver

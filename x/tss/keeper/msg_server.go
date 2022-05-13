@@ -133,7 +133,9 @@ func (s msgServer) HeartBeat(c context.Context, req *types.HeartBeatRequest) (*t
 	s.Logger(ctx).Debug(fmt.Sprintf("updating availability of operator %s (proxy address %s) for keys %v at block %d",
 		valAddr.String(), req.Sender, req.KeyIDs, ctx.BlockHeight()))
 	s.SetAvailableOperator(ctx, valAddr, req.KeyIDs...)
-	s.rewarder.GetPool(ctx, types.ModuleName).ReleaseRewards(valAddr)
+	if err := s.rewarder.GetPool(ctx, types.ModuleName).ReleaseRewards(valAddr); err != nil {
+		return nil, err
+	}
 
 	response := &types.HeartBeatResponse{
 		KeygenIllegibility: illegibility.FilterIllegibilityForNewKey(),
@@ -506,15 +508,4 @@ func validateCriminal(criminal sdk.ValAddress, poll vote.Poll) error {
 	}
 
 	return nil
-}
-
-func (s msgServer) route(ctx sdk.Context, sigInfo exported.SignInfo) {
-	r := s.GetRouter()
-	if r.HasRoute(sigInfo.RequestModule) {
-		handler := r.GetRoute(sigInfo.RequestModule)
-		err := handler(ctx, sigInfo)
-		if err != nil {
-			s.Logger(ctx).Error(fmt.Sprintf("error while routing signature to module %s: %s", sigInfo.RequestModule, err))
-		}
-	}
 }

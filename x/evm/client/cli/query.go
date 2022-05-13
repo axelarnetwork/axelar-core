@@ -126,7 +126,7 @@ func GetCmdTokenAddress(queryRoute string) *cobra.Command {
 		}
 
 		var res types.QueryTokenAddressResponse
-		types.ModuleCdc.UnmarshalLengthPrefixed(bz, &res)
+		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
 
 		return cliCtx.PrintProto(&res)
 	}

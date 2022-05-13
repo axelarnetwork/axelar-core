@@ -144,6 +144,7 @@ func (v voteHandler) HandleResult(ctx sdk.Context, result codec.ProtoMarshaler) 
 	if err != nil {
 		// set events to failed, we will deal with later
 		for _, e := range voteEvents.Events {
+			// TODO: handle error
 			chainK.SetFailedEvent(ctx, e)
 		}
 		return err
@@ -167,7 +168,9 @@ func handleEvents(ctx sdk.Context, ck types.ChainKeeper, events []types.Event, c
 		if _, ok := ck.GetEvent(ctx, eventID); ok {
 			return fmt.Errorf("event %s is already confirmed", eventID)
 		}
-		ck.SetConfirmedEvent(ctx, event)
+		if err := ck.SetConfirmedEvent(ctx, event); err != nil {
+			panic(err)
+		}
 		ck.Logger(ctx).Info(fmt.Sprintf("confirmed %s event %s in transaction %s", chain.Name, eventID, event.TxId.Hex()))
 
 		ctx.EventManager().EmitEvent(
