@@ -1,0 +1,373 @@
+syntax = "proto3";
+package axelar.evm.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/evm/types";
+
+import "gogoproto/gogo.proto";
+import "axelar/nexus/exported/v1beta1/types.proto";
+import "axelar/tss/exported/v1beta1/types.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+message VoteEvents {
+  string chain = 1
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  repeated Event events = 2 [ (gogoproto.nullable) = false ];
+}
+
+message Event {
+  enum Status {
+    option (gogoproto.goproto_enum_prefix) = false;
+    option (gogoproto.goproto_enum_stringer) = true;
+
+    STATUS_UNSPECIFIED = 0
+        [ (gogoproto.enumvalue_customname) = "EventNonExistent" ];
+    STATUS_CONFIRMED = 1
+        [ (gogoproto.enumvalue_customname) = "EventConfirmed" ];
+    STATUS_COMPLETED = 2
+        [ (gogoproto.enumvalue_customname) = "EventCompleted" ];
+    STATUS_FAILED = 3 [ (gogoproto.enumvalue_customname) = "EventFailed" ];
+  }
+
+  string chain = 1
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  bytes tx_id = 2
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Hash" ];
+  uint64 index = 3;
+  Status status = 4;
+
+  oneof event {
+    EventTokenSent token_sent = 5;
+    EventContractCall contract_call = 6;
+    EventContractCallWithToken contract_call_with_token = 7;
+    EventTransfer transfer = 8;
+    EventTokenDeployed token_deployed = 9;
+    EventMultisigOwnershipTransferred multisig_ownership_transferred = 10;
+    EventMultisigOperatorshipTransferred multisig_operatorship_transferred = 11;
+    EventSinglesigOwnershipTransferred singlesig_ownership_transferred = 12;
+    EventSinglesigOperatorshipTransferred singlesig_operatorship_transferred =
+        13;
+  }
+}
+
+message EventTokenSent {
+  bytes sender = 1
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+  string destination_chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string destination_address = 3;
+  string symbol = 4;
+  bytes amount = 5 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.nullable) = false
+  ];
+}
+
+message EventContractCall {
+  bytes sender = 1
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+  string destination_chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string contract_address = 3;
+  bytes payload_hash = 4
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Hash" ];
+}
+
+message EventContractCallWithToken {
+  bytes sender = 1
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+  string destination_chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string contract_address = 3;
+  bytes payload_hash = 4
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Hash" ];
+  string symbol = 5;
+  bytes amount = 6 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.nullable) = false
+  ];
+}
+
+message EventTransfer {
+  bytes to = 1
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+  bytes amount = 2 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.nullable) = false
+  ];
+}
+
+message EventTokenDeployed {
+  string symbol = 1;
+  bytes token_address = 2
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+}
+
+message EventMultisigOwnershipTransferred {
+  repeated bytes pre_owners = 1
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+  bytes prev_threshold = 2 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.nullable) = false
+  ];
+  repeated bytes new_owners = 3
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+  bytes new_threshold = 4 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.nullable) = false
+  ];
+}
+
+message EventMultisigOperatorshipTransferred {
+  repeated bytes pre_operators = 1
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+  bytes prev_threshold = 2 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.nullable) = false
+  ];
+  repeated bytes new_operators = 3
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+  bytes new_threshold = 4 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.nullable) = false
+  ];
+}
+
+message EventSinglesigOwnershipTransferred {
+  bytes pre_owner = 1
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+  bytes new_owner = 2
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+}
+
+message EventSinglesigOperatorshipTransferred {
+  bytes pre_operator = 1
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+  bytes new_operator = 2
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+}
+
+// NetworkInfo describes information about a network
+message NetworkInfo {
+  string name = 1;
+  bytes id = 2 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.nullable) = false
+  ];
+}
+
+// BurnerInfo describes information required to burn token at an burner address
+// that is deposited by an user
+message BurnerInfo {
+  bytes burner_address = 1
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+  bytes token_address = 2
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+  string destination_chain = 3
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string symbol = 4;
+  string asset = 5;
+  bytes salt = 6
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Hash" ];
+}
+
+// ERC20Deposit contains information for an ERC20 deposit
+message ERC20Deposit {
+  bytes tx_id = 1 [
+    (gogoproto.nullable) = false,
+    (gogoproto.customtype) = "Hash",
+    (gogoproto.customname) = "TxID"
+  ];
+  bytes amount = 2 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.nullable) = false
+  ];
+  string asset = 3;
+  string destination_chain = 4
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  bytes burner_address = 5
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+}
+
+// ERC20TokenMetadata describes information about an ERC20 token
+message ERC20TokenMetadata {
+  string asset = 1;
+  bytes chain_id = 2 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.customname) = "ChainID",
+    (gogoproto.nullable) = false
+  ];
+  TokenDetails details = 3 [ (gogoproto.nullable) = false ];
+  string token_address = 4
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+  string tx_hash = 5
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Hash" ];
+  reserved 6; // min_amount was removed in v0.15
+  Status status = 7;
+  bool is_external = 8;
+  bytes burner_code = 9;
+}
+
+enum Status {
+  option (gogoproto.goproto_enum_prefix) = false;
+  option (gogoproto.goproto_enum_stringer) = true;
+
+  // these enum values are used for bitwise operations, therefore they need to
+  // be powers of 2
+  STATUS_UNSPECIFIED = 0 [ (gogoproto.enumvalue_customname) = "NonExistent" ];
+  STATUS_INITIALIZED = 1 [ (gogoproto.enumvalue_customname) = "Initialized" ];
+  STATUS_PENDING = 2 [ (gogoproto.enumvalue_customname) = "Pending" ];
+  STATUS_CONFIRMED = 4 [ (gogoproto.enumvalue_customname) = "Confirmed" ];
+}
+
+message TransactionMetadata {
+  bytes raw_tx = 1 [ (gogoproto.customname) = "RawTX" ];
+  bytes pub_key = 2;
+}
+
+message Command {
+  bytes id = 1 [
+    (gogoproto.nullable) = false,
+    (gogoproto.customname) = "ID",
+    (gogoproto.customtype) = "CommandID"
+  ];
+  string command = 2;
+  bytes params = 3;
+  string key_id = 4 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+  ];
+  uint32 max_gas_cost = 5;
+}
+
+enum BatchedCommandsStatus {
+  option (gogoproto.goproto_enum_prefix) = false;
+
+  BATCHED_COMMANDS_STATUS_UNSPECIFIED = 0
+      [ (gogoproto.enumvalue_customname) = "BatchNonExistent" ];
+  BATCHED_COMMANDS_STATUS_SIGNING = 1
+      [ (gogoproto.enumvalue_customname) = "BatchSigning" ];
+  BATCHED_COMMANDS_STATUS_ABORTED = 2
+      [ (gogoproto.enumvalue_customname) = "BatchAborted" ];
+  BATCHED_COMMANDS_STATUS_SIGNED = 3
+      [ (gogoproto.enumvalue_customname) = "BatchSigned" ];
+}
+
+message CommandBatchMetadata {
+  bytes id = 1 [ (gogoproto.customname) = "ID" ];
+  repeated bytes command_ids = 2 [
+    (gogoproto.nullable) = false,
+    (gogoproto.customname) = "CommandIDs",
+    (gogoproto.customtype) = "CommandID"
+  ];
+  bytes data = 3;
+  bytes sig_hash = 4
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Hash" ];
+  BatchedCommandsStatus status = 5;
+  string key_id = 6 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+  ];
+  bytes prev_batched_commands_id = 7
+      [ (gogoproto.customname) = "PrevBatchedCommandsID" ];
+}
+
+enum TransferKeyType {
+  option (gogoproto.goproto_enum_prefix) = false;
+
+  TRANSFER_KEY_TYPE_UNSPECIFIED = 0
+      [ (gogoproto.enumvalue_customname) = "UnspecifiedTransferKeyType" ];
+  TRANSFER_KEY_TYPE_OWNERSHIP = 1
+      [ (gogoproto.enumvalue_customname) = "Ownership" ];
+  TRANSFER_KEY_TYPE_OPERATORSHIP = 2
+      [ (gogoproto.enumvalue_customname) = "Operatorship" ];
+}
+
+// SigMetadata stores necessary information for external apps to map signature
+// results to evm relay transaction types
+message SigMetadata {
+  SigType type = 1;
+  string chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+}
+
+enum SigType {
+  option (gogoproto.goproto_enum_prefix) = false;
+  option (gogoproto.goproto_enum_stringer) = true;
+
+  SIG_TYPE_UNSPECIFIED = 0 [ (gogoproto.enumvalue_customname) = "None" ];
+  SIG_TYPE_TX = 1 [ (gogoproto.enumvalue_customname) = "SigTx" ];
+  SIG_TYPE_COMMAND = 2 [ (gogoproto.enumvalue_customname) = "SigCommand" ];
+}
+
+// TransferKey contains information for a transfer ownership or operatorship
+message TransferKey {
+
+  bytes tx_id = 1 [
+    (gogoproto.nullable) = false,
+    (gogoproto.customtype) = "Hash",
+    (gogoproto.customname) = "TxID"
+  ];
+  TransferKeyType type = 2;
+  string next_key_id = 3 [
+    (gogoproto.customname) = "NextKeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+  ];
+}
+
+enum DepositStatus {
+  option (gogoproto.goproto_enum_prefix) = true;
+  option (gogoproto.goproto_enum_stringer) = true;
+
+  DEPOSIT_STATUS_UNSPECIFIED = 0 [ (gogoproto.enumvalue_customname) = "None" ];
+  DEPOSIT_STATUS_PENDING = 1 [ (gogoproto.enumvalue_customname) = "Pending" ];
+  DEPOSIT_STATUS_CONFIRMED = 2
+      [ (gogoproto.enumvalue_customname) = "Confirmed" ];
+  DEPOSIT_STATUS_BURNED = 3 [ (gogoproto.enumvalue_customname) = "Burned" ];
+}
+
+message Asset {
+  string chain = 1
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string name = 2;
+}
+
+message TokenDetails {
+  string token_name = 1;
+  string symbol = 2;
+  uint32 decimals = 3 [ (gogoproto.casttype) = "uint8" ];
+  bytes capacity = 4 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.nullable) = false
+  ];
+}
+
+message Gateway {
+  enum Status {
+    option (gogoproto.goproto_enum_prefix) = false;
+    option (gogoproto.goproto_enum_stringer) = true;
+
+    STATUS_UNSPECIFIED = 0
+        [ (gogoproto.enumvalue_customname) = "GatewayStatusNone" ];
+    STATUS_PENDING = 1
+        [ (gogoproto.enumvalue_customname) = "GatewayStatusPending" ];
+    STATUS_CONFIRMED = 2
+        [ (gogoproto.enumvalue_customname) = "GatewayStatusConfirmed" ];
+  }
+
+  bytes address = 1
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+  Status status = 2 [ deprecated = true ];
+}

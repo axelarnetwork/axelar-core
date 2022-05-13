@@ -1,0 +1,21 @@
+syntax = "proto3";
+package axelar.permission.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/permission/types";
+
+import "gogoproto/gogo.proto";
+import "google/protobuf/timestamp.proto";
+import "cosmos/crypto/multisig/keys.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+// QueryGovernanceKeyRequest is the request type for the
+// Query/GovernanceKey RPC method
+message QueryGovernanceKeyRequest {}
+
+// QueryGovernanceKeyResponse is the response type for the
+// Query/GovernanceKey RPC method
+message QueryGovernanceKeyResponse {
+  cosmos.crypto.multisig.LegacyAminoPubKey governance_key = 1
+      [ (gogoproto.nullable) = false ];
+}

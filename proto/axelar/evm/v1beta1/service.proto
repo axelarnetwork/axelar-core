@@ -1,0 +1,185 @@
+syntax = "proto3";
+package axelar.evm.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/evm/types";
+
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "axelar/evm/v1beta1/tx.proto";
+import "axelar/evm/v1beta1/query.proto";
+
+option (gogoproto.goproto_registration) = true;
+
+// Msg defines the evm Msg service.
+service MsgService {
+  rpc SetGateway(SetGatewayRequest) returns (SetGatewayResponse) {
+    option (google.api.http) = {
+      post : "/axelar/evm/set_gateway"
+      body : "*"
+    };
+  }
+
+  rpc ConfirmGatewayTx(ConfirmGatewayTxRequest)
+      returns (ConfirmGatewayTxResponse) {
+    option (google.api.http) = {
+      post : "/axelar/evm/confirm_gateway_tx"
+      body : "*"
+    };
+  }
+
+  rpc Link(LinkRequest) returns (LinkResponse) {
+    option (google.api.http) = {
+      post : "/axelar/evm/link"
+      body : "*"
+    };
+  }
+
+  rpc ConfirmToken(ConfirmTokenRequest) returns (ConfirmTokenResponse) {
+    option (google.api.http) = {
+      post : "/axelar/evm/confirm_token"
+      body : "*"
+    };
+  }
+
+  rpc ConfirmDeposit(ConfirmDepositRequest) returns (ConfirmDepositResponse) {
+    option (google.api.http) = {
+      post : "/axelar/evm/confirm_deposit"
+      body : "*"
+    };
+  }
+
+  rpc ConfirmTransferKey(ConfirmTransferKeyRequest)
+      returns (ConfirmTransferKeyResponse) {
+    option (google.api.http) = {
+      post : "/axelar/evm/confirm_transfer_key"
+      body : "*"
+    };
+  }
+
+  rpc CreateDeployToken(CreateDeployTokenRequest)
+      returns (CreateDeployTokenResponse) {
+    option (google.api.http) = {
+      post : "/axelar/evm/create_deploy_token"
+      body : "*"
+    };
+  }
+
+  rpc CreateBurnTokens(CreateBurnTokensRequest)
+      returns (CreateBurnTokensResponse) {
+    option (google.api.http) = {
+      post : "/axelar/evm/create_burn_tokens"
+      body : "*"
+    };
+  }
+
+  rpc CreatePendingTransfers(CreatePendingTransfersRequest)
+      returns (CreatePendingTransfersResponse) {
+    option (google.api.http) = {
+      post : "/axelar/evm/create_pending_transfers"
+      body : "*"
+    };
+  }
+
+  rpc CreateTransferOwnership(CreateTransferOwnershipRequest)
+      returns (CreateTransferOwnershipResponse) {
+    option (google.api.http) = {
+      post : "/axelar/evm/create_transfer_ownership"
+      body : "*"
+    };
+  }
+
+  rpc CreateTransferOperatorship(CreateTransferOperatorshipRequest)
+      returns (CreateTransferOperatorshipResponse) {
+    option (google.api.http) = {
+      post : "/axelar/evm/create_transfer_operatorship"
+      body : "*"
+    };
+  }
+
+  rpc SignCommands(SignCommandsRequest) returns (SignCommandsResponse) {
+    option (google.api.http) = {
+      post : "/axelar/evm/sign_commands"
+      body : "*"
+    };
+  }
+
+  rpc AddChain(AddChainRequest) returns (AddChainResponse) {
+    option (google.api.http) = {
+      post : "/axelar/evm/add_chain"
+      body : "*"
+    };
+  }
+
+  rpc RetryFailedEvent(RetryFailedEventRequest)
+      returns (RetryFailedEventResponse) {
+    option (google.api.http) = {
+      post : "/axelar/evm/retry-failed-event"
+      body : "*"
+    };
+  }
+}
+
+// QueryService defines the gRPC querier service.
+service QueryService {
+
+  // BatchedCommands queries the batched commands for a specified chain and
+  // BatchedCommandsID if no BatchedCommandsID is specified, then it returns the
+  // latest batched commands
+  rpc BatchedCommands(BatchedCommandsRequest)
+      returns (BatchedCommandsResponse) {
+    option (google.api.http).get =
+        "/axelar/evm/v1beta1/batched_commands/{chain}/{id}";
+  }
+
+  // BurnerInfo queries the burner info for the specified address
+  rpc BurnerInfo(BurnerInfoRequest) returns (BurnerInfoResponse) {
+    option (google.api.http).get = "/axelar/evm/v1beta1/burner_info";
+  }
+
+  // ConfirmationHeight queries the confirmation height for the specified chain
+  rpc ConfirmationHeight(ConfirmationHeightRequest)
+      returns (ConfirmationHeightResponse) {
+    option (google.api.http).get =
+        "/axelar/evm/v1beta1/confirmation_height/{chain}";
+  }
+
+  // DepositState queries the state of the specified deposit
+  rpc DepositState(DepositStateRequest) returns (DepositStateResponse) {
+    option (google.api.http).get = "/axelar/evm/v1beta1/deposit_state";
+  }
+
+  // PendingCommands queries the pending commands for the specified chain
+  rpc PendingCommands(PendingCommandsRequest)
+      returns (PendingCommandsResponse) {
+    option (google.api.http).get =
+        "/axelar/evm/v1beta1/pending_commands/{chain}";
+  }
+
+  // Chains queries the available evm chains
+  rpc Chains(ChainsRequest) returns (ChainsResponse) {
+    option (google.api.http).get = "/axelar/evm/v1beta1/chains";
+  }
+
+  // KeyAddress queries the address of key of a chain
+  rpc KeyAddress(KeyAddressRequest) returns (KeyAddressResponse) {
+    option (google.api.http).get = "/axelar/evm/v1beta1/key_address/{chain}";
+  }
+
+  // GatewayAddress queries the address of axelar gateway at the specified chain
+  rpc GatewayAddress(GatewayAddressRequest) returns (GatewayAddressResponse) {
+    option (google.api.http).get =
+        "/axelar/evm/v1beta1/gateway_address/{chain}";
+  }
+
+  // Bytecode queries the bytecode of a specified gateway at the specified chain
+  rpc Bytecode(BytecodeRequest) returns (BytecodeResponse) {
+    option (google.api.http).get =
+        "/axelar/evm/v1beta1/bytecode/{chain}/{contract}";
+  }
+
+  // Event queries an event at the specified chain
+  rpc Event(EventRequest) returns (EventResponse) {
+    option (google.api.http).get =
+        "/axelar/evm/v1beta1/event/{chain}/{event_id}";
+  }
+}

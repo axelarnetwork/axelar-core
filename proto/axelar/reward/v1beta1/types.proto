@@ -1,0 +1,33 @@
+syntax = "proto3";
+package axelar.reward.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/reward/types";
+
+import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+message Pool {
+  message Reward {
+    bytes validator = 1 [ (gogoproto.casttype) =
+                              "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
+    repeated cosmos.base.v1beta1.Coin coins = 2 [
+      (gogoproto.nullable) = false,
+      (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
+    ];
+  }
+
+  string name = 1;
+  repeated Reward rewards = 2 [ (gogoproto.nullable) = false ];
+}
+
+message Refund {
+  bytes payer = 1 [ (gogoproto.casttype) =
+                        "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+
+  repeated cosmos.base.v1beta1.Coin fees = 2 [
+    (gogoproto.nullable) = false,
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
+  ];
+}
