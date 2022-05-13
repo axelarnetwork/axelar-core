@@ -1,4 +1,4 @@
-# Supported Networks
+# Chain names
 
 ## EVM Networks
 

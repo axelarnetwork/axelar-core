@@ -88,6 +88,11 @@ module.exports = withNextra({
         destination: "/learn/cli/:slug*",
         statusCode: 301,
       },
+      {
+        source: "/resources/supported",
+        destination: "/dev/chain-names",
+        statusCode: 301,
+      },
     ];
   },
 });

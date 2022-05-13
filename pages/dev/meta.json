@@ -3,5 +3,6 @@
   "get-started": "Get started",
   "tokens": "Transfer tokens",
   "gmp": "General Message Passing",
-  "gas-receiver": "Axelar Gas Receiver"
+  "gas-receiver": "Axelar Gas Receiver",
+  "chain-names": "Chain names"
 }

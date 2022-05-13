@@ -7,7 +7,7 @@ With General Message Passing you can:
 
 For GMP to work, both chain A and chain B must be EVM chains with a deployed Axelar Gateway contract.
 
-See [Supported chains](../resources/supported) for a list of EVM chains that have an Axelar Gateway deployed.
+See [Chain names](chain-names) for a list of EVM chains that have an Axelar Gateway deployed.
 
 ![gmp-diagram.png](/images/gmp-diagram.png)
 
@@ -15,7 +15,7 @@ See [Supported chains](../resources/supported) for a list of EVM chains that hav
 
 To call a contract on chain B from chain A the user needs to call `callContract` on the gateway of chain A, specifying:
 
-- The destination chain: must an EVM chain from [Supported chains](../resources/supported).
+- The destination chain: must an EVM chain from [Chain names](chain-names).
 - The destination contract address: must implement the `IAxelarExecutable` interface defined in [IAxelarExecutable.sol](https://github.com/axelarnetwork/axelar-cgp-solidity/blob/main/src/interfaces/IAxelarExecutable.sol).
 - The payload `bytes` to pass to the destination contract.
 
@@ -41,7 +41,7 @@ function _execute(
 
 To call chain B from chain A and send some tokens along the way, the user needs to call `callContractWithToken` on the gateway of chain A, specifying:
 
-- The destination chain: must an EVM chain from [Supported chains](../resources/supported).
+- The destination chain: must an EVM chain from [Chain names](chain-names).
 - The destination contract address: must implement the `IAxelarExecutable` interface defined in [IAxelarExecutable.sol](https://github.com/axelarnetwork/axelar-cgp-solidity/blob/main/src/interfaces/IAxelarExecutable.sol).
 - The payload `bytes` to pass to the destination contract.
 - The symbol of the token to transfer: must be a supported asset [[Mainnet](../resources/mainnet) | [Testnet](../resources/testnet) | [Testnet-2](../resources/testnet-2)].

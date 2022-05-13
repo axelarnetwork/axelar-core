@@ -11,6 +11,6 @@ Here are two basic cross-chain functions you can add to a dApp using Axelar.
 1. Token transfers: Send & receive fungible tokens securely from any chain to any chain, including Cosmos-to-EVM and other complex transfers.
 2. General Message Passing: Call any function on any chain from inside a dApp; compose DeFi functions; move NFTs cross-chain; perform cross-chain calls of any kind that sync state securely between dApps on various ecosystems.
 
-When executing token transfers or calling functions on remote chains, you need to specify a `destinationChain` as a string. Currently supported values for `destinationChain` can be found in the [Resourses](../resources/supported) section.
+When executing token transfers or calling functions on remote chains, you need to specify a `destinationChain` as a string. See [Chain names](chain-names) for a list of valid supported values for this string.
 
 The following sections will show you how to set up a local development environment for testing this functionality in your dApp, then deploy to testnet and mainnet.

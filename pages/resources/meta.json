@@ -4,6 +4,5 @@
   "testnet-2": "Testnet-2",
   "satellite": "Satellite",
   "metamask": "Set up Metamask",
-  "supported": "Supported Networks",
   "weth": "Convert ETH <> WETH"
 }
