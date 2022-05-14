@@ -68,6 +68,8 @@ ExecStart=/var/lib/moonbeam-data/moonbeam \
      --port 30333 \
      --rpc-port 9933 \
      --ws-port 9944 \
+     --unsafe-rpc-external \
+     --rpc-cors all \
      --execution wasm \
      --wasm-execution compiled \
      --pruning=archive \
