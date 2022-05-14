@@ -60,6 +60,12 @@
       "name": "Wrapped Ether",
       "symbol": "WETH",
       "image": "/images/assets/eth.png"
+    },
+    {
+      "id": "wbtc-satoshi",
+      "name": "Wrapped BTC",
+      "symbol": "WBTC",
+      "image": "/images/assets/wbtc.png"
     }
   ],
   "testnet": [
@@ -95,6 +101,12 @@
       "name": "Wrapped Ether",
       "symbol": "WETH",
       "image": "/images/assets/eth.png"
+    },
+    {
+      "id": "wbtc-satoshi",
+      "name": "Wrapped BTC",
+      "symbol": "WBTC",
+      "image": "/images/assets/wbtc.png"
     },
     {
       "id": "wavax-wei",

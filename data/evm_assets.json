@@ -276,6 +276,21 @@
       ]
     },
     {
+      "id": "wbtc-satoshi",
+      "name": "WBTC",
+      "symbol": "WBTC",
+      "image": "/images/assets/wbtc.png",
+      "transfer_fee": 60,
+      "contracts": [
+        {
+          "chain": "ethereum",
+          "address": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+          "decimals": 8,
+          "transfer_fee": 60
+        }
+      ]
+    },
+    {
       "id": "uusdt",
       "name": "Tether",
       "symbol": "USDT",
@@ -554,6 +569,21 @@
           "chain": "moonbeam",
           "address": "0xc40Fdaa2cB43C85eAA6D43856df42E7A80669fca",
           "decimals": 18
+        }
+      ]
+    },
+    {
+      "id": "wbtc-satoshi",
+      "name": "WBTC",
+      "symbol": "WBTC",
+      "image": "/images/assets/wbtc.png",
+      "transfer_fee": 1,
+      "contracts": [
+        {
+          "chain": "ethereum",
+          "address": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+          "decimals": 8,
+          "transfer_fee": 1
         }
       ]
     },
