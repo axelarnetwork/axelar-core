@@ -5,6 +5,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
@@ -22,11 +23,11 @@ func (k Keeper) InitGenesis(ctx sdk.Context, snapshotter types.Snapshotter, genS
 		k.setKey(ctx, key)
 
 		if key.RotationCount > 0 {
-			if _, ok := k.getKeyID(ctx, key.Chain, key.RotationCount, key.Role); ok {
+			if _, ok := k.getKeyID(ctx, nexus.ChainName(key.Chain), key.RotationCount, key.Role); ok {
 				panic(fmt.Errorf("key ID for chain %s, rotation count %d and role %s already set", key.Chain, key.RotationCount, key.Role.SimpleString()))
 			}
 
-			k.setKeyID(ctx, key.Chain, key.RotationCount, key.Role, key.ID)
+			k.setKeyID(ctx, nexus.ChainName(key.Chain), key.RotationCount, key.Role, key.ID)
 		}
 
 		if key.Role != exported.ExternalKey {
@@ -49,7 +50,7 @@ func (k Keeper) InitGenesis(ctx sdk.Context, snapshotter types.Snapshotter, genS
 
 	for chain, keyRoleToRotationCount := range rotationCountMap {
 		for keyRole, rotationCount := range keyRoleToRotationCount {
-			k.setRotationCount(ctx, chain, keyRole, rotationCount)
+			k.setRotationCount(ctx, nexus.ChainName(chain), keyRole, rotationCount)
 		}
 	}
 

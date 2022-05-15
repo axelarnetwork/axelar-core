@@ -70,7 +70,7 @@ func TestSetGateway(t *testing.T) {
 	t.Run("should fail if any of master, secondary and external keys is not set", testutils.Func(func(t *testing.T) {
 		ctx, msgServer, _, _, nexusKeeper, signerKeeper, _, _ := setup()
 
-		nexusKeeper.GetChainFunc = func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+		nexusKeeper.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 			if chain == req.Chain {
 				return nexus.Chain{Name: chain}, true
 			}
@@ -106,7 +106,7 @@ func TestSetGateway(t *testing.T) {
 		ctx, msgServer, baseKeeper, _, nexusKeeper, signerKeeper, _, _ := setup()
 		chainKeeper := &mock.ChainKeeperMock{}
 
-		nexusKeeper.GetChainFunc = func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+		nexusKeeper.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 			if chain == req.Chain {
 				return nexus.Chain{Name: chain}, true
 			}
@@ -118,7 +118,7 @@ func TestSetGateway(t *testing.T) {
 			return tssTestUtils.RandKeyID(), true
 		}
 		signerKeeper.GetExternalKeyIDsFunc = func(ctx sdk.Context, chain nexus.Chain) ([]tss.KeyID, bool) { return []tss.KeyID{}, true }
-		baseKeeper.ForChainFunc = func(chain string) types.ChainKeeper { return chainKeeper }
+		baseKeeper.ForChainFunc = func(chain nexus.ChainName) types.ChainKeeper { return chainKeeper }
 		chainKeeper.GetGatewayAddressFunc = func(ctx sdk.Context) (common.Address, bool) {
 			return common.Address(evmTestUtils.RandomAddress()), true
 		}
@@ -132,7 +132,7 @@ func TestSetGateway(t *testing.T) {
 		ctx, msgServer, baseKeeper, _, nexusKeeper, signerKeeper, _, _ := setup()
 		chainKeeper := &mock.ChainKeeperMock{}
 
-		nexusKeeper.GetChainFunc = func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+		nexusKeeper.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 			if chain == req.Chain {
 				return nexus.Chain{Name: chain}, true
 			}
@@ -144,7 +144,7 @@ func TestSetGateway(t *testing.T) {
 			return tssTestUtils.RandKeyID(), true
 		}
 		signerKeeper.GetExternalKeyIDsFunc = func(ctx sdk.Context, chain nexus.Chain) ([]tss.KeyID, bool) { return []tss.KeyID{}, true }
-		baseKeeper.ForChainFunc = func(chain string) types.ChainKeeper { return chainKeeper }
+		baseKeeper.ForChainFunc = func(chain nexus.ChainName) types.ChainKeeper { return chainKeeper }
 		chainKeeper.GetGatewayAddressFunc = func(ctx sdk.Context) (common.Address, bool) {
 			return common.Address{}, false
 		}
@@ -168,7 +168,7 @@ func TestSignCommands(t *testing.T) {
 		voteKeeper := &mock.VoterMock{}
 		snapshotKeeper := &mock.SnapshotterMock{}
 
-		nexusKeeper.GetChainFunc = func(ctx sdk.Context, chain string) (nexus.Chain, bool) { return nexus.Chain{}, true }
+		nexusKeeper.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) { return nexus.Chain{}, true }
 		nexusKeeper.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return true }
 
 		msgServer := keeper.NewMsgServerImpl(evmBaseKeeper, tssKeeper, nexusKeeper, signerKeeper, voteKeeper, snapshotKeeper)
@@ -192,7 +192,7 @@ func TestSignCommands(t *testing.T) {
 
 		chainKeeper := &mock.ChainKeeperMock{}
 		evmBaseKeeper.LoggerFunc = func(ctx sdk.Context) log.Logger { return ctx.Logger() }
-		evmBaseKeeper.ForChainFunc = func(chain string) types.ChainKeeper { return chainKeeper }
+		evmBaseKeeper.ForChainFunc = func(chain nexus.ChainName) types.ChainKeeper { return chainKeeper }
 		chainKeeper.GetChainIDFunc = func(ctx sdk.Context) (sdk.Int, bool) { return sdk.NewInt(0), true }
 		chainKeeper.GetLatestCommandBatchFunc = func(ctx sdk.Context) types.CommandBatch {
 			return types.NonExistentCommand
@@ -233,7 +233,7 @@ func TestSignCommands(t *testing.T) {
 
 		chainKeeper := &mock.ChainKeeperMock{}
 		evmBaseKeeper.LoggerFunc = func(ctx sdk.Context) log.Logger { return ctx.Logger() }
-		evmBaseKeeper.ForChainFunc = func(chain string) types.ChainKeeper { return chainKeeper }
+		evmBaseKeeper.ForChainFunc = func(chain nexus.ChainName) types.ChainKeeper { return chainKeeper }
 		chainKeeper.GetChainIDFunc = func(ctx sdk.Context) (sdk.Int, bool) { return sdk.NewInt(0), true }
 		chainKeeper.GetLatestCommandBatchFunc = func(ctx sdk.Context) types.CommandBatch {
 			return types.NewCommandBatch(commandBatch, func(batch types.CommandBatchMetadata) {
@@ -277,7 +277,7 @@ func TestCreateBurnTokens(t *testing.T) {
 	repeats := 20
 	setup := func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
-		req = types.NewCreateBurnTokensRequest(rand.AccAddr(), exported.Ethereum.Name)
+		req = types.NewCreateBurnTokensRequest(rand.AccAddr(), exported.Ethereum.Name.String())
 		secondaryKeyID = tssTestUtils.RandKeyID()
 
 		evmChainKeeper = &mock.ChainKeeperMock{
@@ -298,14 +298,14 @@ func TestCreateBurnTokens(t *testing.T) {
 			},
 		}
 		evmBaseKeeper = &mock.BaseKeeperMock{
-			ForChainFunc: func(string) types.ChainKeeper {
+			ForChainFunc: func(nexus.ChainName) types.ChainKeeper {
 				return evmChainKeeper
 			},
 		}
 		tssKeeper = &mock.TSSMock{}
 		nexusKeeper = &mock.NexusMock{
 			IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool { return true },
-			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+			GetChainFunc: func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 				if chain == req.Chain {
 					return exported.Ethereum, true
 				}
@@ -490,7 +490,7 @@ func TestLink_UnknownChain(t *testing.T) {
 
 	n := &mock.NexusMock{
 		IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool { return true },
-		GetChainFunc:         func(sdk.Context, string) (nexus.Chain, bool) { return nexus.Chain{}, false },
+		GetChainFunc:         func(sdk.Context, nexus.ChainName) (nexus.Chain, bool) { return nexus.Chain{}, false },
 	}
 	server := keeper.NewMsgServerImpl(k, &mock.TSSMock{}, n, &mock.SignerMock{}, &mock.VoterMock{}, &mock.SnapshotterMock{})
 	_, err := server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Sender: rand.AccAddr(), Chain: evmChain, RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name, Asset: asset})
@@ -523,10 +523,10 @@ func TestLink_NoGateway(t *testing.T) {
 	recipient := nexus.CrossChainAddress{Address: "bcrt1q4reak3gj7xynnuc70gpeut8wxslqczhpsxhd5q8avda6m428hddqgkntss", Chain: btc.Bitcoin}
 	asset := rand.Str(3)
 
-	chains := map[string]nexus.Chain{exported.Ethereum.Name: exported.Ethereum}
+	chains := map[nexus.ChainName]nexus.Chain{exported.Ethereum.Name: exported.Ethereum}
 	n := &mock.NexusMock{
 		IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool { return true },
-		GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+		GetChainFunc: func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 			c, ok := chains[chain]
 			return c, ok
 		},
@@ -556,10 +556,10 @@ func TestLink_NoRecipientChain(t *testing.T) {
 	recipient := nexus.CrossChainAddress{Address: "bcrt1q4reak3gj7xynnuc70gpeut8wxslqczhpsxhd5q8avda6m428hddqgkntss", Chain: btc.Bitcoin}
 	asset := rand.Str(3)
 
-	chains := map[string]nexus.Chain{exported.Ethereum.Name: exported.Ethereum}
+	chains := map[nexus.ChainName]nexus.Chain{exported.Ethereum.Name: exported.Ethereum}
 	n := &mock.NexusMock{
 		IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool { return true },
-		GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+		GetChainFunc: func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 			c, ok := chains[chain]
 			return c, ok
 		},
@@ -589,10 +589,10 @@ func TestLink_NoRegisteredAsset(t *testing.T) {
 
 	asset := rand.Str(3)
 
-	chains := map[string]nexus.Chain{btc.Bitcoin.Name: btc.Bitcoin, exported.Ethereum.Name: exported.Ethereum}
+	chains := map[nexus.ChainName]nexus.Chain{btc.Bitcoin.Name: btc.Bitcoin, exported.Ethereum.Name: exported.Ethereum}
 	n := &mock.NexusMock{
 		IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool { return true },
-		GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+		GetChainFunc: func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 			c, ok := chains[chain]
 			return c, ok
 		},
@@ -620,7 +620,7 @@ func TestLink_NoRegisteredAsset(t *testing.T) {
 func TestLink_Success(t *testing.T) {
 	minConfHeight := rand.I64Between(1, 10)
 	ctx := rand.Context(fake.NewMultiStore())
-	chain := "Ethereum"
+	chain := nexus.ChainName("Ethereum")
 	k := newKeeper(ctx, chain, minConfHeight)
 	tokenDetails := createDetails(randomNormalizedStr(10), randomNormalizedStr(3))
 	msg := createMsgSignDeploy(tokenDetails)
@@ -648,11 +648,11 @@ func TestLink_Success(t *testing.T) {
 	}
 	sender := nexus.CrossChainAddress{Address: burnAddr.Hex(), Chain: exported.Ethereum}
 
-	chains := map[string]nexus.Chain{btc.Bitcoin.Name: btc.Bitcoin, exported.Ethereum.Name: exported.Ethereum}
+	chains := map[nexus.ChainName]nexus.Chain{btc.Bitcoin.Name: btc.Bitcoin, exported.Ethereum.Name: exported.Ethereum}
 	n := &mock.NexusMock{
 		IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool { return true },
 		LinkAddressesFunc:    func(ctx sdk.Context, s nexus.CrossChainAddress, r nexus.CrossChainAddress) error { return nil },
-		GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+		GetChainFunc: func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 			c, ok := chains[chain]
 			return c, ok
 		},
@@ -792,8 +792,8 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
 
 		basek = &mock.BaseKeeperMock{
-			ForChainFunc: func(chain string) types.ChainKeeper {
-				if strings.EqualFold(chain, evmChain) {
+			ForChainFunc: func(chain nexus.ChainName) types.ChainKeeper {
+				if strings.EqualFold(chain.String(), evmChain.String()) {
 					return chaink
 				}
 				return nil
@@ -835,13 +835,13 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 				}
 			},
 		}
-		chains := map[string]nexus.Chain{btc.Bitcoin.Name: btc.Bitcoin, exported.Ethereum.Name: exported.Ethereum}
+		chains := map[nexus.ChainName]nexus.Chain{btc.Bitcoin.Name: btc.Bitcoin, exported.Ethereum.Name: exported.Ethereum}
 		n = &mock.NexusMock{
 			GetChainMaintainersFunc: func(ctx sdk.Context, chain nexus.Chain) []sdk.ValAddress {
 				return []sdk.ValAddress{}
 			},
 			IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool { return true },
-			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+			GetChainFunc: func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 				c, ok := chains[chain]
 				return c, ok
 			},
@@ -860,7 +860,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 			Sender: rand.AccAddr(),
 			Chain:  evmChain,
 			TxID:   types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
-			Asset:  types.NewAsset(btc.Bitcoin.Name, btc.NativeAsset),
+			Asset:  types.NewAsset(btc.Bitcoin.Name.String(), btc.NativeAsset),
 		}
 		server = keeper.NewMsgServerImpl(basek, &mock.TSSMock{}, n, s, v, &mock.SnapshotterMock{
 			GetOperatorFunc: func(sdk.Context, sdk.AccAddress) sdk.ValAddress {
@@ -881,7 +881,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 
 	t.Run("unknown chain", testutils.Func(func(t *testing.T) {
 		setup()
-		msg.Chain = rand.StrBetween(5, 20)
+		msg.Chain = nexus.ChainName(rand.StrBetween(5, 20))
 
 		_, err := server.ConfirmToken(sdk.WrapSDKContext(ctx), msg)
 
@@ -935,19 +935,19 @@ func TestAddChain(t *testing.T) {
 		n       *mock.NexusMock
 		msg     *types.AddChainRequest
 		server  types.MsgServiceServer
-		name    string
+		name    nexus.ChainName
 		params  types.Params
 	)
 
 	setup := func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
 
-		chains := map[string]nexus.Chain{
+		chains := map[nexus.ChainName]nexus.Chain{
 			exported.Ethereum.Name: exported.Ethereum,
 			btc.Bitcoin.Name:       btc.Bitcoin,
 		}
 		basek = &mock.BaseKeeperMock{
-			ForChainFunc: func(n string) types.ChainKeeper {
+			ForChainFunc: func(n nexus.ChainName) types.ChainKeeper {
 				if n == name {
 					return chaink
 				}
@@ -962,7 +962,7 @@ func TestAddChain(t *testing.T) {
 
 		n = &mock.NexusMock{
 			IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool { return true },
-			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+			GetChainFunc: func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 				c, ok := chains[chain]
 				return c, ok
 			},
@@ -970,7 +970,7 @@ func TestAddChain(t *testing.T) {
 			SetChainFunc:              func(sdk.Context, nexus.Chain) {},
 		}
 
-		name = rand.StrBetween(5, 20)
+		name = nexus.ChainName(rand.StrBetween(5, 20))
 		params = types.DefaultParams()[0]
 		params.Chain = name
 		msg = &types.AddChainRequest{
@@ -1026,8 +1026,8 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
 
 		basek = &mock.BaseKeeperMock{
-			ForChainFunc: func(chain string) types.ChainKeeper {
-				if strings.EqualFold(chain, evmChain) {
+			ForChainFunc: func(chain nexus.ChainName) types.ChainKeeper {
+				if strings.EqualFold(chain.String(), evmChain.String()) {
 					return chaink
 				}
 				return nil
@@ -1084,14 +1084,14 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 				return rand.PosI64(), true
 			},
 		}
-		chains := map[string]nexus.Chain{
+		chains := map[nexus.ChainName]nexus.Chain{
 			exported.Ethereum.Name: exported.Ethereum,
 			btc.Bitcoin.Name:       btc.Bitcoin,
 		}
 		n = &mock.NexusMock{
 			GetChainMaintainersFunc: func(ctx sdk.Context, chain nexus.Chain) []sdk.ValAddress { return []sdk.ValAddress{} },
 			IsChainActivatedFunc:    func(ctx sdk.Context, chain nexus.Chain) bool { return true },
-			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+			GetChainFunc: func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 				c, ok := chains[chain]
 				return c, ok
 			},
@@ -1122,7 +1122,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 
 	t.Run("unknown chain", testutils.Func(func(t *testing.T) {
 		setup()
-		msg.Chain = rand.StrBetween(5, 20)
+		msg.Chain = nexus.ChainName(rand.StrBetween(5, 20))
 
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 
@@ -1157,8 +1157,8 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 		msg = createMsgSignDeploy(createDetails(randomNormalizedStr(10), randomNormalizedStr(3)))
 
 		basek = &mock.BaseKeeperMock{
-			ForChainFunc: func(chain string) types.ChainKeeper {
-				if strings.EqualFold(chain, evmChain) {
+			ForChainFunc: func(chain nexus.ChainName) types.ChainKeeper {
+				if strings.EqualFold(chain.String(), evmChain.String()) {
 					return chaink
 				}
 				return nil
@@ -1196,10 +1196,10 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 			EnqueueCommandFunc: func(ctx sdk.Context, cmd types.Command) error { return nil },
 		}
 
-		chains := map[string]nexus.Chain{btc.Bitcoin.Name: btc.Bitcoin, exported.Ethereum.Name: exported.Ethereum}
+		chains := map[nexus.ChainName]nexus.Chain{btc.Bitcoin.Name: btc.Bitcoin, exported.Ethereum.Name: exported.Ethereum}
 		n = &mock.NexusMock{
 			IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool { return true },
-			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+			GetChainFunc: func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 				c, ok := chains[chain]
 				return c, ok
 			},
@@ -1229,7 +1229,7 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 
 	t.Run("should return error when chain is unknown", testutils.Func(func(t *testing.T) {
 		setup()
-		msg.Chain = rand.StrBetween(5, 20)
+		msg.Chain = nexus.ChainName(rand.StrBetween(5, 20))
 
 		_, err := server.CreateDeployToken(sdk.WrapSDKContext(ctx), msg)
 
@@ -1247,7 +1247,7 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 
 	t.Run("should return error when origin chain is unknown", testutils.Func(func(t *testing.T) {
 		setup()
-		msg.Asset.Chain = rand.StrBetween(5, 20)
+		msg.Asset.Chain = nexus.ChainName(rand.StrBetween(5, 20))
 
 		_, err := server.CreateDeployToken(sdk.WrapSDKContext(ctx), msg)
 
@@ -1302,7 +1302,7 @@ func TestRetryFailedEvent(t *testing.T) {
 			return contractCallQueue
 		},
 	}
-	bk.ForChainFunc = func(chain string) types.ChainKeeper {
+	bk.ForChainFunc = func(chain nexus.ChainName) types.ChainKeeper {
 		return ck
 	}
 	bk.LoggerFunc = func(ctx sdk.Context) log.Logger { return ctx.Logger() }
@@ -1311,7 +1311,7 @@ func TestRetryFailedEvent(t *testing.T) {
 
 	chainFound := func(found bool) func() {
 		return func() {
-			n.GetChainFunc = func(sdk.Context, string) (nexus.Chain, bool) {
+			n.GetChainFunc = func(sdk.Context, nexus.ChainName) (nexus.Chain, bool) {
 				if !found {
 					return nexus.Chain{}, false
 				}
@@ -1419,7 +1419,7 @@ func createSignedTx() *evmTypes.Transaction {
 	return sign(evmTypes.NewTransaction(nonce, contractAddr, value, gasLimit, gasPrice, data))
 }
 
-func newKeeper(ctx sdk.Context, chain string, confHeight int64) types.BaseKeeper {
+func newKeeper(ctx sdk.Context, chain nexus.ChainName, confHeight int64) types.BaseKeeper {
 	encCfg := app.MakeEncodingConfig()
 	paramsK := paramsKeeper.NewKeeper(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"))
 	k := keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("testKey"), paramsK)
@@ -1446,7 +1446,7 @@ func newKeeper(ctx sdk.Context, chain string, confHeight int64) types.BaseKeeper
 func createMsgSignDeploy(details types.TokenDetails) *types.CreateDeployTokenRequest {
 	account := rand.AccAddr()
 
-	asset := types.NewAsset(btc.Bitcoin.Name, btc.NativeAsset)
+	asset := types.NewAsset(btc.Bitcoin.Name.String(), btc.NativeAsset)
 	return &types.CreateDeployTokenRequest{Sender: account, Chain: "Ethereum", Asset: asset, TokenDetails: details}
 }
 

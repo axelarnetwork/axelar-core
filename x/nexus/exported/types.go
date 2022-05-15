@@ -103,7 +103,7 @@ func NewCrossChainTransfer(id uint64, recipient CrossChainAddress, asset sdk.Coi
 
 // Validate performs a stateless check to ensure the Chain object has been initialized correctly
 func (m Chain) Validate() error {
-	if err := utils.ValidateString(m.Name); err != nil {
+	if err := m.Name.Validate(); err != nil {
 		return sdkerrors.Wrap(err, "invalid chain name")
 	}
 
@@ -133,21 +133,20 @@ func (m Asset) Validate() error {
 }
 
 // NewFeeInfo returns a FeeInfo struct
-func NewFeeInfo(chain string, asset string, feeRate sdk.Dec, minFee sdk.Int, maxFee sdk.Int) FeeInfo {
-	chain = utils.NormalizeString(chain)
+func NewFeeInfo(chain ChainName, asset string, feeRate sdk.Dec, minFee sdk.Int, maxFee sdk.Int) FeeInfo {
 	asset = utils.NormalizeString(asset)
 
 	return FeeInfo{Chain: chain, Asset: asset, FeeRate: feeRate, MinFee: minFee, MaxFee: maxFee}
 }
 
 // ZeroFeeInfo returns a FeeInfo struct with zero fees
-func ZeroFeeInfo(chain string, asset string) FeeInfo {
+func ZeroFeeInfo(chain ChainName, asset string) FeeInfo {
 	return NewFeeInfo(chain, asset, sdk.ZeroDec(), sdk.ZeroInt(), sdk.ZeroInt())
 }
 
 // Validate checks the stateless validity of fee info
 func (m FeeInfo) Validate() error {
-	if err := utils.ValidateString(m.Chain); err != nil {
+	if err := m.Chain.Validate(); err != nil {
 		return sdkerrors.Wrap(err, "invalid chain")
 	}
 

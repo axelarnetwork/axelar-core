@@ -21,6 +21,7 @@ import (
 	evmKeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/evm/types/mock"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
@@ -28,7 +29,7 @@ func TestCommands(t *testing.T) {
 	var (
 		ctx    sdk.Context
 		keeper types.BaseKeeper
-		chain  string
+		chain  nexus.ChainName
 	)
 
 	setup := func() {
@@ -91,7 +92,7 @@ func TestSetBurnerInfoGetBurnerInfo(t *testing.T) {
 	var (
 		ctx    sdk.Context
 		keeper types.BaseKeeper
-		chain  string
+		chain  nexus.ChainName
 	)
 
 	setup := func() {
@@ -171,7 +172,7 @@ func TestGetTokenAddress(t *testing.T) {
 	paramsK := paramsKeeper.NewKeeper(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"))
 	k := evmKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("testKey"), paramsK)
 
-	chain := "Ethereum"
+	chain := nexus.ChainName("Ethereum")
 	asset := "axelar"
 	tokenName := "axelar token"
 	tokenSymbol := "at"

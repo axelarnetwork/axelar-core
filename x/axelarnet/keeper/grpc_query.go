@@ -39,7 +39,7 @@ func (q Querier) PendingIBCTransferCount(c context.Context, _ *types.PendingIBCT
 			return nil, fmt.Errorf("cosmos chain %s not found in the %s module", c, nexusTypes.ModuleName)
 		}
 		transfers := q.nexus.GetTransfersForChain(ctx, chain, exported.Pending)
-		counts[c] = uint32(len(transfers)) // assert: there should never be more than 4294967295 transfers in the queue
+		counts[c.String()] = uint32(len(transfers)) // assert: there should never be more than 4294967295 transfers in the queue
 	}
 
 	return &types.PendingIBCTransferCountResponse{TransfersByChain: counts}, nil

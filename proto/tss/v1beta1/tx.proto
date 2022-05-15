@@ -27,7 +27,9 @@ message RotateKeyRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  string chain = 2;
+  string chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
   tss.exported.v1beta1.KeyRole key_role = 3;
   string key_id = 4 [
     (gogoproto.customname) = "KeyID",
@@ -119,7 +121,9 @@ message RegisterExternalKeysRequest {
 
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  string chain = 2;
+  string chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
   repeated ExternalKey external_keys = 3 [ (gogoproto.nullable) = false ];
 }
 

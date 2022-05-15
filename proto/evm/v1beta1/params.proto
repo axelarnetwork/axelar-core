@@ -11,7 +11,9 @@ option (gogoproto.goproto_getters_all) = false;
 
 // Params is the parameter set for this module
 message Params {
-  string chain = 1;
+  string chain = 1
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
   uint64 confirmation_height = 2;
   string network = 3;
   reserved 4; // gateway_code was removed in v0.16

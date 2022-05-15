@@ -423,7 +423,7 @@ func (k Keeper) SetExternalKeyIDs(ctx sdk.Context, chain nexus.Chain, keyIDs []e
 }
 
 func (k Keeper) setExternalKeys(ctx sdk.Context, externalKeys types.ExternalKeys) {
-	k.getStore(ctx).Set(externalKeysPrefix.Append(utils.LowerCaseKey(externalKeys.Chain)), &externalKeys)
+	k.getStore(ctx).Set(externalKeysPrefix.Append(utils.LowerCaseKey(externalKeys.Chain.String())), &externalKeys)
 }
 
 // GetExternalKeyIDs retrieves the current list of external key IDs
@@ -431,9 +431,9 @@ func (k Keeper) GetExternalKeyIDs(ctx sdk.Context, chain nexus.Chain) ([]exporte
 	return k.getExternalKeyIDs(ctx, chain.Name)
 }
 
-func (k Keeper) getExternalKeyIDs(ctx sdk.Context, chain string) ([]exported.KeyID, bool) {
+func (k Keeper) getExternalKeyIDs(ctx sdk.Context, chain nexus.ChainName) ([]exported.KeyID, bool) {
 	var externalKeys types.ExternalKeys
-	if !k.getStore(ctx).Get(externalKeysPrefix.Append(utils.LowerCaseKey(chain)), &externalKeys) {
+	if !k.getStore(ctx).Get(externalKeysPrefix.Append(utils.LowerCaseKey(chain.String())), &externalKeys) {
 		return []exported.KeyID{}, false
 	}
 

@@ -5,13 +5,14 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
 // NewRetryFailedEventRequest - RetryFailedEventRequest constructor
 func NewRetryFailedEventRequest(sender sdk.AccAddress, chain string, eventID string) *RetryFailedEventRequest {
 	return &RetryFailedEventRequest{
 		Sender:  sender,
-		Chain:   utils.NormalizeString(chain),
+		Chain:   nexus.ChainName(utils.NormalizeString(chain)),
 		EventID: EventID(utils.NormalizeString(eventID)),
 	}
 }
@@ -32,7 +33,7 @@ func (m RetryFailedEventRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
-	if err := utils.ValidateString(m.Chain); err != nil {
+	if err := m.Chain.Validate(); err != nil {
 		return sdkerrors.Wrap(err, "invalid chain")
 	}
 

@@ -40,7 +40,7 @@ func TestMsgServer_RotateKey(t *testing.T) {
 		staker := &mock.StakingKeeperMock{}
 		voter := &mock.VoterMock{}
 		nexusKeeper := &mock.NexusMock{
-			GetChainFunc: func(_ sdk.Context, chain string) (nexus.Chain, bool) {
+			GetChainFunc: func(_ sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 				return nexus.Chain{
 					Name:                  chain,
 					SupportsForeignAssets: true,
@@ -60,7 +60,7 @@ func TestMsgServer_RotateKey(t *testing.T) {
 
 		_, err := server.RotateKey(sdk.WrapSDKContext(ctx), &types.RotateKeyRequest{
 			Sender:  rand.AccAddr(),
-			Chain:   rand.StrBetween(5, 20),
+			Chain:   nexus.ChainName(rand.StrBetween(5, 20)),
 			KeyRole: exported.KeyRole(rand.I64Between(1, 3)),
 			KeyID:   tssTestUtils.RandKeyID(),
 		})
@@ -80,7 +80,7 @@ func TestMsgServer_RotateKey(t *testing.T) {
 
 		_, err := server.RotateKey(sdk.WrapSDKContext(ctx), &types.RotateKeyRequest{
 			Sender:  rand.AccAddr(),
-			Chain:   rand.StrBetween(5, 20),
+			Chain:   nexus.ChainName(rand.StrBetween(5, 20)),
 			KeyRole: exported.KeyRole(rand.I64Between(1, 3)),
 			KeyID:   keyID,
 		})
@@ -99,7 +99,7 @@ func TestMsgServer_RotateKey(t *testing.T) {
 
 		_, err := server.RotateKey(sdk.WrapSDKContext(ctx), &types.RotateKeyRequest{
 			Sender:  rand.AccAddr(),
-			Chain:   rand.StrBetween(5, 20),
+			Chain:   nexus.ChainName(rand.StrBetween(5, 20)),
 			KeyRole: exported.KeyRole(rand.I64Between(1, 3)),
 			KeyID:   tssTestUtils.RandKeyID(),
 		})

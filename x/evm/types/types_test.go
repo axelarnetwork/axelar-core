@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	tssTestUtils "github.com/axelarnetwork/axelar-core/x/tss/exported/testutils"
 )
@@ -20,7 +21,7 @@ import (
 func TestCreateApproveContractCallWithMintCommand(t *testing.T) {
 	chainID := sdk.NewInt(1)
 	keyID := tssTestUtils.RandKeyID()
-	sourceChain := "polygon"
+	sourceChain := nexus.ChainName("polygon")
 	txID := Hash(common.HexToHash("0x5bb45dc24ddd6b90fa37f26eecfcf203328427c3226db29d1c01051b965ca93b"))
 	index := uint64(99)
 	sourceAddress := "0x68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8"
@@ -52,7 +53,7 @@ func TestCreateApproveContractCallWithMintCommand(t *testing.T) {
 
 	actualSourceChain, actualSourceAddress, actualContractAddress, actualPayloadHash, actualSymbol, actualAmount, actualSourceTxID, actualSourceEventIndex, err := decodeApproveContractCallWithMintParams(actual.Params)
 	assert.NoError(t, err)
-	assert.Equal(t, sourceChain, actualSourceChain)
+	assert.Equal(t, sourceChain.String(), actualSourceChain)
 	assert.Equal(t, sourceAddress, actualSourceAddress)
 	assert.Equal(t, contractAddress, actualContractAddress)
 	assert.Equal(t, payloadHash, actualPayloadHash)

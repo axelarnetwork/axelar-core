@@ -12,10 +12,11 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
 // NewLinkedAddress creates a new address to make a deposit which can be transferred to another blockchain
-func NewLinkedAddress(ctx sdk.Context, chain, symbol, recipientAddr string) sdk.AccAddress {
+func NewLinkedAddress(ctx sdk.Context, chain nexus.ChainName, symbol, recipientAddr string) sdk.AccAddress {
 	nonce := utils.GetNonce(ctx.HeaderHash(), ctx.BlockGasMeter())
 	hash := sha256.Sum256([]byte(fmt.Sprintf("%s_%s_%s_%x", chain, symbol, recipientAddr, nonce)))
 	return hash[:address.Len]
@@ -92,7 +93,7 @@ func SortTransfers(transfers []IBCTransfer) {
 
 // Validate checks the stateless validity of the cosmos chain
 func (m CosmosChain) Validate() error {
-	if strings.EqualFold(m.Name, exported.Axelarnet.Name) {
+	if strings.EqualFold(m.Name.String(), exported.Axelarnet.Name.String()) {
 		if m.IBCPath != "" {
 			return fmt.Errorf("IBC path should be empty for %s", exported.Axelarnet.Name)
 		}
@@ -102,7 +103,7 @@ func (m CosmosChain) Validate() error {
 		}
 	}
 
-	if err := utils.ValidateString(m.Name); err != nil {
+	if err := m.Name.Validate(); err != nil {
 		return sdkerrors.Wrap(err, "invalid name")
 	}
 

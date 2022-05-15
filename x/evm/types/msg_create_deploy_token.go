@@ -8,13 +8,14 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
 // NewCreateDeployTokenRequest is the constructor for CreateDeployTokenRequest
 func NewCreateDeployTokenRequest(sender sdk.AccAddress, chain string, asset Asset, tokenDetails TokenDetails, address Address) *CreateDeployTokenRequest {
 	return &CreateDeployTokenRequest{
 		Sender:       sender,
-		Chain:        utils.NormalizeString(chain),
+		Chain:        nexus.ChainName(utils.NormalizeString(chain)),
 		Asset:        asset,
 		TokenDetails: tokenDetails,
 		Address:      address,
@@ -48,7 +49,7 @@ func (m CreateDeployTokenRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
-	if err := utils.ValidateString(m.Chain); err != nil {
+	if err := m.Chain.Validate(); err != nil {
 		return sdkerrors.Wrap(err, "invalid chain")
 	}
 
@@ -58,11 +59,11 @@ func (m CreateDeployTokenRequest) ValidateBasic() error {
 
 	switch m.Address.IsZeroAddress() {
 	case true:
-		if strings.EqualFold(m.Chain, m.Asset.Chain) {
+		if strings.EqualFold(m.Chain.String(), m.Asset.Chain.String()) {
 			return fmt.Errorf("cannot deploy token on the origin chain")
 		}
 	case false:
-		if !strings.EqualFold(m.Chain, m.Asset.Chain) {
+		if !strings.EqualFold(m.Chain.String(), m.Asset.Chain.String()) {
 			return fmt.Errorf("cannot link token on a different chain")
 		}
 	}

@@ -248,12 +248,12 @@ func TestSetChainGetChain_MixCaseChainName(t *testing.T) {
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	keeper.SetChain(ctx, chain)
 
-	actual, ok := keeper.GetChain(ctx, strings.ToUpper(chainName))
+	actual, ok := keeper.GetChain(ctx, exported.ChainName(strings.ToUpper(chainName)))
 
 	assert.True(t, ok)
 	assert.Equal(t, chain, actual)
 
-	actual, ok = keeper.GetChain(ctx, strings.ToLower(chainName))
+	actual, ok = keeper.GetChain(ctx, exported.ChainName(strings.ToLower(chainName)))
 
 	assert.True(t, ok)
 	assert.Equal(t, chain, actual)
@@ -266,12 +266,12 @@ func TestSetChainGetChain_UpperCaseChainName(t *testing.T) {
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	keeper.SetChain(ctx, chain)
 
-	actual, ok := keeper.GetChain(ctx, strings.ToUpper(chainName))
+	actual, ok := keeper.GetChain(ctx, exported.ChainName(strings.ToUpper(chainName)))
 
 	assert.True(t, ok)
 	assert.Equal(t, chain, actual)
 
-	actual, ok = keeper.GetChain(ctx, strings.ToLower(chainName))
+	actual, ok = keeper.GetChain(ctx, exported.ChainName(strings.ToLower(chainName)))
 
 	assert.True(t, ok)
 	assert.Equal(t, chain, actual)
@@ -284,12 +284,12 @@ func TestSetChainGetChain_LowerCaseChainName(t *testing.T) {
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	keeper.SetChain(ctx, chain)
 
-	actual, ok := keeper.GetChain(ctx, strings.ToUpper(chainName))
+	actual, ok := keeper.GetChain(ctx, exported.ChainName(strings.ToUpper(chainName)))
 
 	assert.True(t, ok)
 	assert.Equal(t, chain, actual)
 
-	actual, ok = keeper.GetChain(ctx, strings.ToLower(chainName))
+	actual, ok = keeper.GetChain(ctx, exported.ChainName(strings.ToLower(chainName)))
 
 	assert.True(t, ok)
 	assert.Equal(t, chain, actual)
@@ -297,7 +297,7 @@ func TestSetChainGetChain_LowerCaseChainName(t *testing.T) {
 
 func makeRandomChain(chainName string) exported.Chain {
 	return exported.Chain{
-		Name:                  chainName,
+		Name:                  exported.ChainName(chainName),
 		Module:                rand.Str(10),
 		SupportsForeignAssets: true,
 	}
@@ -322,7 +322,7 @@ func makeRandAddressesForChain(origin, destination exported.Chain) (exported.Cro
 	case evmTypes.ModuleName:
 		addr = genEvmAddr()
 	case axelarnetTypes.ModuleName:
-		addr = genCosmosAddr(origin.Name)
+		addr = genCosmosAddr(origin.Name.String())
 	default:
 		panic("unexpected module for origin")
 	}
@@ -338,7 +338,7 @@ func makeRandAddressesForChain(origin, destination exported.Chain) (exported.Cro
 	case evmTypes.ModuleName:
 		addr = genEvmAddr()
 	case axelarnetTypes.ModuleName:
-		addr = genCosmosAddr(destination.Name)
+		addr = genCosmosAddr(destination.Name.String())
 	default:
 		panic("unexpected module for destination")
 	}

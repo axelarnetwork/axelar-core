@@ -176,7 +176,7 @@ func handleEvents(ctx sdk.Context, ck types.ChainKeeper, events []types.Event, c
 		ctx.EventManager().EmitEvent(
 			sdk.NewEvent(types.EventTypeEventConfirmation,
 				sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-				sdk.NewAttribute(types.AttributeKeyChain, event.Chain),
+				sdk.NewAttribute(types.AttributeKeyChain, event.Chain.String()),
 				sdk.NewAttribute(types.AttributeKeyTxID, event.TxId.Hex()),
 				sdk.NewAttribute(types.AttributeKeyEventID, string(event.GetID())),
 				sdk.NewAttribute(types.AttributeKeyEventType, event.GetEventType()),

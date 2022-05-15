@@ -16,7 +16,7 @@ import (
 func NewAddChainRequest(sender sdk.AccAddress, name string, keyType tss.KeyType, params Params) *AddChainRequest {
 	return &AddChainRequest{
 		Sender:  sender,
-		Name:    utils.NormalizeString(name),
+		Name:    nexus.ChainName(utils.NormalizeString(name)),
 		KeyType: keyType,
 		Params:  params,
 	}
@@ -53,7 +53,7 @@ func (m AddChainRequest) ValidateBasic() error {
 		return fmt.Errorf("invalid EVM param: %v", err)
 	}
 
-	if !strings.EqualFold(m.Name, m.Params.Chain) {
+	if !strings.EqualFold(m.Name.String(), m.Params.Chain.String()) {
 		return fmt.Errorf("chain mismatch: chain name is %s, parameters chain is %s", m.Name, m.Params.Chain)
 	}
 

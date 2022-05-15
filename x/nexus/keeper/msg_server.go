@@ -65,7 +65,7 @@ func (s msgServer) RegisterChainMaintainer(c context.Context, req *types.Registe
 				types.EventTypeChainMaintainer,
 				sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 				sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueRegister),
-				sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
+				sdk.NewAttribute(types.AttributeKeyChain, chain.Name.String()),
 				sdk.NewAttribute(types.AttributeKeyChainMaintainerAddress, validator.String()),
 			),
 		)
@@ -102,7 +102,7 @@ func (s msgServer) DeregisterChainMaintainer(c context.Context, req *types.Dereg
 				types.EventTypeChainMaintainer,
 				sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 				sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDeregister),
-				sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
+				sdk.NewAttribute(types.AttributeKeyChain, chain.Name.String()),
 				sdk.NewAttribute(types.AttributeKeyChainMaintainerAddress, validator.String()),
 			),
 		)
@@ -118,7 +118,7 @@ func (s msgServer) DeregisterChainMaintainer(c context.Context, req *types.Dereg
 
 func (s msgServer) ActivateChain(c context.Context, req *types.ActivateChainRequest) (*types.ActivateChainResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
-	if strings.ToLower(req.Chains[0]) == allChain {
+	if strings.ToLower(req.Chains[0].String()) == allChain {
 		for _, chain := range s.GetChains(ctx) {
 			s.activateChain(ctx, chain)
 		}
@@ -138,7 +138,7 @@ func (s msgServer) ActivateChain(c context.Context, req *types.ActivateChainRequ
 func (s msgServer) DeactivateChain(c context.Context, req *types.DeactivateChainRequest) (*types.DeactivateChainResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	if strings.ToLower(req.Chains[0]) == allChain {
+	if strings.ToLower(req.Chains[0].String()) == allChain {
 		for _, chain := range s.GetChains(ctx) {
 			s.deactivateChain(ctx, chain)
 		}
@@ -175,7 +175,7 @@ func (s msgServer) activateChain(ctx sdk.Context, chain exported.Chain) {
 			types.EventTypeChain,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueActivated),
-			sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
+			sdk.NewAttribute(types.AttributeKeyChain, chain.Name.String()),
 		),
 	)
 }
@@ -194,7 +194,7 @@ func (s msgServer) deactivateChain(ctx sdk.Context, chain exported.Chain) {
 			types.EventTypeChain,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDeactivated),
-			sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
+			sdk.NewAttribute(types.AttributeKeyChain, chain.Name.String()),
 		),
 	)
 }

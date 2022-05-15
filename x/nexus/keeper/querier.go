@@ -7,6 +7,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	abci "github.com/tendermint/tendermint/abci/types"
 
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 )
 
@@ -31,7 +32,7 @@ func NewQuerier(k types.Nexus) sdk.Querier {
 func QueryChainMaintainersByChain(ctx sdk.Context, k types.Nexus, chainStr string) ([]byte, error) {
 	var resp types.QueryChainMaintainersResponse
 
-	chain, ok := k.GetChain(ctx, chainStr)
+	chain, ok := k.GetChain(ctx, nexus.ChainName(chainStr))
 	if !ok {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, fmt.Sprintf("%s is not a registered chain", chainStr))
 	}

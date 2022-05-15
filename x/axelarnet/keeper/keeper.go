@@ -11,6 +11,8 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/utils/slices"
 )
 
 var (
@@ -54,7 +56,7 @@ func (k Keeper) GetRouteTimeoutWindow(ctx sdk.Context) uint64 {
 }
 
 // RegisterIBCPath registers an IBC path for a cosmos chain
-func (k Keeper) RegisterIBCPath(ctx sdk.Context, chain, path string) error {
+func (k Keeper) RegisterIBCPath(ctx sdk.Context, chain nexus.ChainName, path string) error {
 	cosmosChain, ok := k.getCosmosChain(ctx, chain)
 	if !ok {
 		return fmt.Errorf("unknown cosmos chain %s", chain)
@@ -71,7 +73,7 @@ func (k Keeper) RegisterIBCPath(ctx sdk.Context, chain, path string) error {
 }
 
 // GetIBCPath retrieves the IBC path associated to the specified chain
-func (k Keeper) GetIBCPath(ctx sdk.Context, chain string) (string, bool) {
+func (k Keeper) GetIBCPath(ctx sdk.Context, chain nexus.ChainName) (string, bool) {
 	cosmosChain, ok := k.getCosmosChain(ctx, chain)
 	if !ok || cosmosChain.IBCPath == "" {
 		return "", false
@@ -124,14 +126,14 @@ func (k Keeper) DeletePendingIBCTransfer(ctx sdk.Context, portID, channelID stri
 }
 
 // IsCosmosChain returns true if the given chain name is for a cosmos chain
-func (k Keeper) IsCosmosChain(ctx sdk.Context, chain string) bool {
+func (k Keeper) IsCosmosChain(ctx sdk.Context, chain nexus.ChainName) bool {
 	_, ok := k.getCosmosChain(ctx, chain)
 	return ok
 }
 
 // GetCosmosChainByName gets the address prefix of the given cosmos chain
-func (k Keeper) GetCosmosChainByName(ctx sdk.Context, chain string) (types.CosmosChain, bool) {
-	key := cosmosChainPrefix.Append(utils.LowerCaseKey(chain))
+func (k Keeper) GetCosmosChainByName(ctx sdk.Context, chain nexus.ChainName) (types.CosmosChain, bool) {
+	key := cosmosChainPrefix.Append(utils.LowerCaseKey(chain.String()))
 	var value types.CosmosChain
 	ok := k.getStore(ctx).Get(key, &value)
 	if !ok {
@@ -142,15 +144,8 @@ func (k Keeper) GetCosmosChainByName(ctx sdk.Context, chain string) (types.Cosmo
 }
 
 // GetCosmosChains retrieves all registered cosmos chain names
-func (k Keeper) GetCosmosChains(ctx sdk.Context) []string {
-	cosmosChains := k.getCosmosChains(ctx)
-	chains := make([]string, len(cosmosChains))
-
-	for i, chain := range cosmosChains {
-		chains[i] = chain.Name
-	}
-
-	return chains
+func (k Keeper) GetCosmosChains(ctx sdk.Context) []nexus.ChainName {
+	return slices.Map(k.getCosmosChains(ctx), func(c types.CosmosChain) nexus.ChainName { return c.Name })
 }
 
 func (k Keeper) getCosmosChains(ctx sdk.Context) (cosmosChains []types.CosmosChain) {
@@ -167,14 +162,14 @@ func (k Keeper) getCosmosChains(ctx sdk.Context) (cosmosChains []types.CosmosCha
 	return cosmosChains
 }
 
-func (k Keeper) getCosmosChain(ctx sdk.Context, chain string) (cosmosChain types.CosmosChain, ok bool) {
-	return cosmosChain, k.getStore(ctx).Get(cosmosChainPrefix.Append(utils.LowerCaseKey(chain)), &cosmosChain)
+func (k Keeper) getCosmosChain(ctx sdk.Context, chain nexus.ChainName) (cosmosChain types.CosmosChain, ok bool) {
+	return cosmosChain, k.getStore(ctx).Get(cosmosChainPrefix.Append(utils.LowerCaseKey(chain.String())), &cosmosChain)
 }
 
 // SetCosmosChain sets the address prefix for the given cosmos chain
 func (k Keeper) SetCosmosChain(ctx sdk.Context, chain types.CosmosChain) {
 	// register a cosmos chain to axelarnet
-	k.getStore(ctx).Set(cosmosChainPrefix.Append(utils.LowerCaseKey(chain.Name)), &chain)
+	k.getStore(ctx).Set(cosmosChainPrefix.Append(utils.LowerCaseKey(chain.Name.String())), &chain)
 }
 
 // SetFeeCollector sets axelarnet fee collector

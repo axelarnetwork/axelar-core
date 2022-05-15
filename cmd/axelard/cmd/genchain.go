@@ -32,7 +32,11 @@ func AddGenesisEVMChainCmd(defaultNodeHome string) *cobra.Command {
 
 			config.SetRoot(clientCtx.HomeDir)
 
-			name := args[0]
+			name := nexusExported.ChainName(args[0])
+			err := name.Validate()
+			if err != nil {
+				return err
+			}
 
 			genFile := config.GenesisFile()
 			appState, genDoc, err := genutiltypes.GenesisStateFromGenFile(genFile)

@@ -55,7 +55,7 @@ func getRandomEthereumAddress() exported.CrossChainAddress {
 	}
 }
 
-func randFee(chain string, asset string) exported.FeeInfo {
+func randFee(chain exported.ChainName, asset string) exported.FeeInfo {
 	rate := sdk.NewDecWithPrec(sdk.Int(randInt(0, 100)).Int64(), 3)
 	min := randInt(0, 10)
 	max := randInt(min.Int64()+1, 100)
@@ -80,7 +80,7 @@ func assertChainStatesEqual(t *testing.T, expected, actual *types.GenesisState) 
 func TestExportGenesisInitGenesis(t *testing.T) {
 	ctx, keeper := setup()
 
-	getter := func(sdk.Context, string) (axelarnetTypes.CosmosChain, bool) {
+	getter := func(sdk.Context, exported.ChainName) (axelarnetTypes.CosmosChain, bool) {
 		return axelarnetTypes.CosmosChain{Name: axelarnet.Axelarnet.Name, AddrPrefix: "axelar"}, true
 	}
 

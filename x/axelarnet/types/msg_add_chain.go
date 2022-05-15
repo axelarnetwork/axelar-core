@@ -17,7 +17,7 @@ func NewAddCosmosBasedChainRequest(sender sdk.AccAddress, name, addrPrefix strin
 	return &AddCosmosBasedChainRequest{
 		Sender: sender,
 		Chain: nexus.Chain{
-			Name:                  utils.NormalizeString(name),
+			Name:                  nexus.ChainName(utils.NormalizeString(name)),
 			SupportsForeignAssets: true,
 			KeyType:               tss.None,
 			Module:                exported.Axelarnet.Module,

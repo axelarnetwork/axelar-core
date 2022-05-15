@@ -14,6 +14,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/keeper"
@@ -52,7 +53,7 @@ func TestGetMigrationHandler(t *testing.T) {
 		When("some sign info with valid EVM sig metadata exists", func() {
 			sigMetadata = evmTypes.SigMetadata{
 				Type:  evmTypes.SigCommand,
-				Chain: rand.NormalizedStr(5),
+				Chain: nexus.ChainName(rand.NormalizedStr(5)),
 			}
 
 			sigID = rand.HexStr(64)

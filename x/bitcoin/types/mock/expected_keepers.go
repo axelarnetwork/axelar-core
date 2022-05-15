@@ -1381,7 +1381,7 @@ var _ types.Nexus = &NexusMock{}
 // 			EnqueueForTransferFunc: func(ctx sdk.Context, sender nexus.CrossChainAddress, amount sdk.Coin) error {
 // 				panic("mock out the EnqueueForTransfer method")
 // 			},
-// 			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+// 			GetChainFunc: func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 // 				panic("mock out the GetChain method")
 // 			},
 // 			GetChainMaintainersFunc: func(ctx sdk.Context, chain nexus.Chain) []sdk.ValAddress {
@@ -1416,7 +1416,7 @@ type NexusMock struct {
 	EnqueueForTransferFunc func(ctx sdk.Context, sender nexus.CrossChainAddress, amount sdk.Coin) error
 
 	// GetChainFunc mocks the GetChain method.
-	GetChainFunc func(ctx sdk.Context, chain string) (nexus.Chain, bool)
+	GetChainFunc func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool)
 
 	// GetChainMaintainersFunc mocks the GetChainMaintainers method.
 	GetChainMaintainersFunc func(ctx sdk.Context, chain nexus.Chain) []sdk.ValAddress
@@ -1459,7 +1459,7 @@ type NexusMock struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Chain is the chain argument value.
-			Chain string
+			Chain nexus.ChainName
 		}
 		// GetChainMaintainers holds details about calls to the GetChainMaintainers method.
 		GetChainMaintainers []struct {
@@ -1596,13 +1596,13 @@ func (mock *NexusMock) EnqueueForTransferCalls() []struct {
 }
 
 // GetChain calls GetChainFunc.
-func (mock *NexusMock) GetChain(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+func (mock *NexusMock) GetChain(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 	if mock.GetChainFunc == nil {
 		panic("NexusMock.GetChainFunc: method is nil but Nexus.GetChain was just called")
 	}
 	callInfo := struct {
 		Ctx   sdk.Context
-		Chain string
+		Chain nexus.ChainName
 	}{
 		Ctx:   ctx,
 		Chain: chain,
@@ -1618,11 +1618,11 @@ func (mock *NexusMock) GetChain(ctx sdk.Context, chain string) (nexus.Chain, boo
 //     len(mockedNexus.GetChainCalls())
 func (mock *NexusMock) GetChainCalls() []struct {
 	Ctx   sdk.Context
-	Chain string
+	Chain nexus.ChainName
 } {
 	var calls []struct {
 		Ctx   sdk.Context
-		Chain string
+		Chain nexus.ChainName
 	}
 	mock.lockGetChain.RLock()
 	calls = mock.calls.GetChain

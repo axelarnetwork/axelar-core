@@ -7,13 +7,14 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
 // NewConfirmGatewayTxRequest creates a message of type ConfirmGatewayTxRequest
 func NewConfirmGatewayTxRequest(sender sdk.AccAddress, chain string, txID Hash) *ConfirmGatewayTxRequest {
 	return &ConfirmGatewayTxRequest{
 		Sender: sender,
-		Chain:  chain,
+		Chain:  nexus.ChainName(utils.NormalizeString(chain)),
 		TxID:   txID,
 	}
 }
@@ -34,7 +35,7 @@ func (m ConfirmGatewayTxRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
-	if err := utils.ValidateString(m.Chain); err != nil {
+	if err := m.Chain.Validate(); err != nil {
 		return sdkerrors.Wrap(err, "invalid chain")
 	}
 
