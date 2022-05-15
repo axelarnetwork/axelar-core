@@ -328,7 +328,7 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(e tmEvents.Event) error {
 				}
 
 				events = append(events, evmTypes.Event{
-					Chain: chain,
+					Chain: nexus.ChainName(chain),
 					TxId:  evmTypes.Hash(txID),
 					Index: uint64(i),
 					Event: &evmTypes.Event_ContractCall{
@@ -344,7 +344,7 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(e tmEvents.Event) error {
 				}
 
 				events = append(events, evmTypes.Event{
-					Chain: chain,
+					Chain: nexus.ChainName(chain),
 					TxId:  evmTypes.Hash(txID),
 					Index: uint64(i),
 					Event: &evmTypes.Event_ContractCallWithToken{
@@ -358,7 +358,7 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(e tmEvents.Event) error {
 				}
 
 				events = append(events, evmTypes.Event{
-					Chain: chain,
+					Chain: nexus.ChainName(chain),
 					TxId:  evmTypes.Hash(txID),
 					Index: uint64(i),
 					Event: &evmTypes.Event_TokenSent{
