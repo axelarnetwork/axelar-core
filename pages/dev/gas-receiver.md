@@ -3,9 +3,11 @@
 General Message Passing is a two-step process:
 
 1. **_Approval._** Axelar validators approve a message via vote on the message payload hash.
-2. **_Execution._** Anyone can execute an approved message by posting the payload hash preimage to the destination chain and paying transaction fees.
+2. **_Execution._** Anyone can execute an approved message by posting the payload hash preimage to the destination chain and paying relayer gas fees.
 
-The Axelar network provides approval but not execution. Axelar also provides an optional relayer service called _gas receiver_ that provides execution of approved messages. Anyone can use the gas receiver service by pre-paying the transaction fee on the source chain. Axelar relayer services observe use of the gas receiver for a given message and automatically execute the General Message Passing call.
+The Axelar network provides approval but not execution. Axelar also provides an optional relayer service called _gas receiver_ that provides execution of approved messages. Anyone can use the gas receiver service by pre-paying the relayer gas fee on the source chain. Axelar relayer services observe use of the gas receiver for a given message and automatically execute the General Message Passing call.
+
+Relayer gas fees are needed only to pay gas costs across chains.
 
 ## Introduction
 

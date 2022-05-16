@@ -13,10 +13,10 @@ A _controller_ is a special Axelar account with privileges to execute certain `a
 <Callout emoji="📝">
   Most participants do not need this information
 
-  Most Axelar roles (end user, node operator, validator, etc) do not need the information in this article. Many CLI commands in this article can be executed only from a controller account on Axelar network.
+Most Axelar roles (end user, node operator, validator, etc) do not need the information in this article. Many CLI commands in this article can be executed only from a controller account on Axelar network.
 </Callout>
 
 ## Prerequisites
 
-- Your fully-synced Axelar node has an account you control named `controller`. You might also have an account named `validator`. All accounts have enough AXL tokens to pay transaction fees for Axelar network.
+- Your fully-synced Axelar node has an account you control named `controller`. You might also have an account named `validator`. All accounts have enough AXL tokens to pay relayer gas fees for Axelar network.
 - Your `controller` account is a registered controller on the Axelar network.
