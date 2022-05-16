@@ -46,14 +46,14 @@ and so the recipient will get X - 40.5 USDC tokens on Osmosis.
 | Asset symbol | Ethereum   | non-Ethereum EVM | Cosmos Chains | Decimals | Unit         |
 | ------------ | ---------- | ---------------- | ------------- | -------- | ------------ |
 | USDC         | 60 USDC    | 1 USDC           | 0.5 USDC      | 6        | uusdc        |
-| WETH         | 0.02 WETH  | N/A              | 0.0002 WETH   | 18       | weth-wei     |
-| WBTC         | 0.002 WBTC | N/A              | 0.00002 WBTC  | 8        | wbtc-satoshi |
+| WETH         | 0.03 WETH  | N/A              | 0.0002 WETH   | 18       | weth-wei     |
+| WBTC         | 0.003 WBTC | N/A              | 0.00002 WBTC  | 8        | wbtc-satoshi |
 | DAI          | 60 DAI     | 1 DAI            | 0.5 DAI       | 18       | dai-wei      |
 | FRAX         | 60 FRAX    | 1 FRAX           | 0.5 FRAX      | 18       | frax-wei     |
 | USDT         | 60 USDT    | 1 USDT           | 0.5 USDT      | 6        | uusdt        |
-| ATOM         | 4 ATOM     | 0.1 ATOM         | 0.05 ATOM     | 6        | uatom        |
-| UST          | 80 UST     | 2 UST            | 1 UST         | 6        | uusd         |
-| LUNA         | 40 LUNA    | 1 LUNA           | 0.5 LUNA      | 6        | uluna        |
+| ATOM         | 6 ATOM     | 0.1 ATOM         | 0.05 ATOM     | 6        | uatom        |
+| UST          | 100 UST    | 2 UST            | 1 UST         | 6        | uusd         |
+| LUNA         | 60 LUNA    | 1 LUNA           | 0.5 LUNA      | 6        | uluna        |
 | NGM          | 60 NGM     | 1 NGM            | 0.5 NGM       | 6        | ungm         |
 | EEUR         | 60 EEUR    | 1 EEUR           | 0.5 EEUR      | 6        | eeur         |
 
