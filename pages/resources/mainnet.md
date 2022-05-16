@@ -40,8 +40,8 @@ The relayer gas fee amount depends only on:
   The relayer gas fee does NOT take a percentage from the transfer amount.
 </Callout>
 
-Example: a transfer of X USDC tokens from Ethereum to Osmosis will have a fee of 40.5 USDC (= 40 USDC for Ethereum + 0.5 USDC for Osmosis),
-and so the recipient will get X - 40.5 USDC tokens on Osmosis.
+Example: a transfer of X USDC tokens from Avalanche to Osmosis will have a fee of 1.5 USDC (= 1 USDC for Avalanche + 0.5 USDC for Osmosis),
+and so the recipient will get X - 1.5 USDC tokens on Osmosis.
 
 | Asset symbol | Ethereum   | non-Ethereum EVM | Cosmos Chains | Decimals | Unit         |
 | ------------ | ---------- | ---------------- | ------------- | -------- | ------------ |
