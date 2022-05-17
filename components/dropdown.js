@@ -1,17 +1,20 @@
 import Image from "next/image";
 import { Fragment, useState, useEffect } from "react";
+import _ from "lodash";
 import { Menu, Transition } from "@headlessui/react";
 import { BiChevronDown, BiChevronUp } from "react-icons/bi";
 
 import evm_chains from "../data/evm_chains.json";
 import evm_assets from "../data/evm_assets.json";
 import gateways from "../data/gateways.json";
+import cosmos_chains from "../data/cosmos_chains.json";
 import ibc_assets from "../data/ibc_assets.json";
 
 const data = {
   evm_chains,
   evm_assets,
   gateways,
+  cosmos_chains,
   ibc_assets,
 };
 
@@ -40,6 +43,12 @@ export default ({ environment, chain, dataName, placeholder, hasAllOptions, allO
             name: o?.symbol,
           };
         });
+        break;
+      case "chains":
+        _options = _.concat(data.evm_chains?.[environment] || [], data.cosmos_chains?.[environment] || []);
+        break;
+      case "assets":
+        _options = _.uniqBy(_.concat(data.evm_assets?.[environment] || [], data.ibc_assets?.[environment] || []), 'id');
         break;
       default:
         _options = data[dataName];

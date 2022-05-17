@@ -34,76 +34,6 @@
       ]
     },
     {
-      "id": "uusd",
-      "name": "TerraUSD",
-      "symbol": "UST",
-      "image": "/images/assets/ust.png",
-      "transfer_fee": 1,
-      "contracts": [
-        {
-          "chain": "ethereum",
-          "address": "0x085416975fe14C2A731a97eC38B9bF8135231F62",
-          "decimals": 6,
-          "transfer_fee": 20
-        },
-        {
-          "chain": "avalanche",
-          "address": "0x260Bbf5698121EB85e7a74f2E45E16Ce762EbE11",
-          "decimals": 6
-        },
-        {
-          "chain": "polygon",
-          "address": "0xeDDc6eDe8F3AF9B4971e1Fa9639314905458bE87",
-          "decimals": 6
-        },
-        {
-          "chain": "fantom",
-          "address": "0x2B9d3F168905067D88d93F094C938BACEe02b0cB",
-          "decimals": 6
-        },
-        {
-          "chain": "moonbeam",
-          "address": "0x085416975fe14C2A731a97eC38B9bF8135231F62",
-          "decimals": 6
-        }
-      ]
-    },
-    {
-      "id": "uluna",
-      "name": "Terra",
-      "symbol": "LUNA",
-      "image": "/images/assets/luna.png",
-      "transfer_fee": 0.01,
-      "contracts": [
-        {
-          "chain": "ethereum",
-          "address": "0x31DAB3430f3081dfF3Ccd80F17AD98583437B213",
-          "decimals": 6,
-          "transfer_fee": 0.2
-        },
-        {
-          "chain": "avalanche",
-          "address": "0x120AD3e5A7c796349e591F1570D9f7980F4eA9cb",
-          "decimals": 6
-        },
-        {
-          "chain": "polygon",
-          "address": "0xa17927fB75E9faEA10C08259902d0468b3DEad88",
-          "decimals": 6
-        },
-        {
-          "chain": "fantom",
-          "address": "0x5e3C572A97D898Fe359a2Cea31c7D46ba5386895",
-          "decimals": 6
-        },
-        {
-          "chain": "moonbeam",
-          "address": "0x31DAB3430f3081dfF3Ccd80F17AD98583437B213",
-          "decimals": 6
-        }
-      ]
-    },
-    {
       "id": "uusdc",
       "name": "USD Coin",
       "symbol": "USDC",
@@ -114,7 +44,7 @@
           "chain": "ethereum",
           "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
           "decimals": 6,
-          "transfer_fee": 20
+          "transfer_fee": 60
         },
         {
           "chain": "avalanche",
@@ -143,154 +73,6 @@
       ]
     },
     {
-      "id": "uatom",
-      "name": "Cosmos",
-      "symbol": "ATOM",
-      "image": "/images/assets/atom.png",
-      "transfer_fee": 0.04,
-      "contracts": [
-        {
-          "chain": "ethereum",
-          "address": "0x27292cf0016E5dF1d8b37306B2A98588aCbD6fCA",
-          "decimals": 6,
-          "symbol": "axlATOM",
-          "transfer_fee": 0.7
-        },
-        {
-          "chain": "avalanche",
-          "address": "0x80D18b1c9Ab0c9B5D6A6d5173575417457d00a12",
-          "decimals": 6,
-          "symbol": "axlATOM"
-        },
-        {
-          "chain": "polygon",
-          "address": "0x33F8a5029264BcFB66e39157aF3FeA3E2a8a5067",
-          "decimals": 6,
-          "symbol": "axlATOM"
-        },
-        {
-          "chain": "fantom",
-          "address": "0x3bB68cb55Fc9C22511467c18E42D14E8c959c4dA",
-          "decimals": 6,
-          "symbol": "axlATOM"
-        },
-        {
-          "chain": "moonbeam",
-          "address": "0x27292cf0016E5dF1d8b37306B2A98588aCbD6fCA",
-          "decimals": 6,
-          "symbol": "axlATOM"
-        }
-      ]
-    },
-    {
-      "id": "frax-wei",
-      "name": "Frax",
-      "symbol": "FRAX",
-      "image": "/images/assets/frax.png",
-      "transfer_fee": 1,
-      "contracts": [
-        {
-          "chain": "ethereum",
-          "address": "0x853d955aCEf822Db058eb8505911ED77F175b99e",
-          "decimals": 18,
-          "transfer_fee": 20
-        },
-        {
-          "chain": "avalanche",
-          "address": "0x4914886dBb8aAd7A7456D471EAab10b06d42348D",
-          "decimals": 18,
-          "symbol": "axlFRAX"
-        },
-        {
-          "chain": "polygon",
-          "address": "0x53Adc464b488bE8C5d7269B9ABBCe8bA74195C3a",
-          "decimals": 18,
-          "symbol": "axlFRAX"
-        },
-        {
-          "chain": "fantom",
-          "address": "0xbE71e68fB36d14565F523C9c36ab2A8Be0c26D55",
-          "decimals": 18,
-          "symbol": "axlFRAX"
-        },
-        {
-          "chain": "moonbeam",
-          "address": "0x61C82805453a989E99B544DFB7031902e9bac448",
-          "decimals": 18,
-          "symbol": "axlFRAX"
-        }
-      ]
-    },
-    {
-      "id": "dai-wei",
-      "name": "Dai",
-      "symbol": "DAI",
-      "image": "/images/assets/dai.png",
-      "transfer_fee": 1,
-      "contracts": [
-        {
-          "chain": "ethereum",
-          "address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
-          "decimals": 18,
-          "transfer_fee": 20
-        },
-        {
-          "chain": "avalanche",
-          "address": "0xC5Fa5669E326DA8B2C35540257cD48811F40a36B",
-          "decimals": 18,
-          "symbol": "axlDAI"
-        },
-        {
-          "chain": "polygon",
-          "address": "0xDDc9E2891FA11a4CC5C223145e8d14B44f3077c9",
-          "decimals": 18,
-          "symbol": "axlDAI"
-        },
-        {
-          "chain": "fantom",
-          "address": "0xD5d5350F42CB484036A1C1aF5F2DF77eAFadcAFF",
-          "decimals": 18,
-          "symbol": "axlDAI"
-        },
-        {
-          "chain": "moonbeam",
-          "address": "0x14dF360966a1c4582d2b18EDbdae432EA0A27575",
-          "decimals": 18,
-          "symbol": "axlDAI"
-        }
-      ]
-    },
-    {
-      "id": "weth-wei",
-      "name": "WETH",
-      "symbol": "WETH",
-      "image": "/images/assets/weth.png",
-      "transfer_fee": 1,
-      "contracts": [
-        {
-          "chain": "ethereum",
-          "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-          "decimals": 18,
-          "transfer_fee": 0.01
-        }
-      ]
-    },
-    {
-      "id": "wbtc-satoshi",
-      "name": "WBTC",
-      "symbol": "WBTC",
-      "image": "/images/assets/wbtc.png",
-      "transfer_fee": 60,
-      "contracts": [
-        {
-          "chain": "ethereum",
-          "address": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
-          "decimals": 8,
-          "transfer_fee": 60
-        }
-      ]
-    },
-    {
       "id": "uusdt",
       "name": "Tether",
       "symbol": "USDT",
@@ -301,7 +83,7 @@
           "chain": "ethereum",
           "address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
           "decimals": 6,
-          "transfer_fee": 20
+          "transfer_fee": 60
         },
         {
           "chain": "avalanche",
@@ -330,17 +112,165 @@
       ]
     },
     {
+      "id": "dai-wei",
+      "name": "Dai",
+      "symbol": "DAI",
+      "image": "/images/assets/dai.png",
+      "transfer_fee": 1,
+      "contracts": [
+        {
+          "chain": "ethereum",
+          "address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "decimals": 18,
+          "transfer_fee": 60
+        },
+        {
+          "chain": "avalanche",
+          "address": "0xC5Fa5669E326DA8B2C35540257cD48811F40a36B",
+          "decimals": 18,
+          "symbol": "axlDAI"
+        },
+        {
+          "chain": "polygon",
+          "address": "0xDDc9E2891FA11a4CC5C223145e8d14B44f3077c9",
+          "decimals": 18,
+          "symbol": "axlDAI"
+        },
+        {
+          "chain": "fantom",
+          "address": "0xD5d5350F42CB484036A1C1aF5F2DF77eAFadcAFF",
+          "decimals": 18,
+          "symbol": "axlDAI"
+        },
+        {
+          "chain": "moonbeam",
+          "address": "0x14dF360966a1c4582d2b18EDbdae432EA0A27575",
+          "decimals": 18,
+          "symbol": "axlDAI"
+        }
+      ]
+    },
+    {
+      "id": "frax-wei",
+      "name": "Frax",
+      "symbol": "FRAX",
+      "image": "/images/assets/frax.png",
+      "transfer_fee": 1,
+      "contracts": [
+        {
+          "chain": "ethereum",
+          "address": "0x853d955aCEf822Db058eb8505911ED77F175b99e",
+          "decimals": 18,
+          "transfer_fee": 60
+        },
+        {
+          "chain": "avalanche",
+          "address": "0x4914886dBb8aAd7A7456D471EAab10b06d42348D",
+          "decimals": 18,
+          "symbol": "axlFRAX"
+        },
+        {
+          "chain": "polygon",
+          "address": "0x53Adc464b488bE8C5d7269B9ABBCe8bA74195C3a",
+          "decimals": 18,
+          "symbol": "axlFRAX"
+        },
+        {
+          "chain": "fantom",
+          "address": "0xbE71e68fB36d14565F523C9c36ab2A8Be0c26D55",
+          "decimals": 18,
+          "symbol": "axlFRAX"
+        },
+        {
+          "chain": "moonbeam",
+          "address": "0x61C82805453a989E99B544DFB7031902e9bac448",
+          "decimals": 18,
+          "symbol": "axlFRAX"
+        }
+      ]
+    },
+    {
+      "id": "weth-wei",
+      "name": "WETH",
+      "symbol": "WETH",
+      "image": "/images/assets/weth.png",
+      "transfer_fee": 0.03,
+      "contracts": [
+        {
+          "chain": "ethereum",
+          "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+          "decimals": 18,
+          "transfer_fee": 0.03
+        }
+      ]
+    },
+    {
+      "id": "wbtc-satoshi",
+      "name": "WBTC",
+      "symbol": "WBTC",
+      "image": "/images/assets/wbtc.png",
+      "transfer_fee": 0.003,
+      "contracts": [
+        {
+          "chain": "ethereum",
+          "address": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+          "decimals": 8,
+          "transfer_fee": 0.003
+        }
+      ]
+    },
+    {
+      "id": "uatom",
+      "name": "Cosmos",
+      "symbol": "ATOM",
+      "image": "/images/assets/atom.png",
+      "transfer_fee": 0.1,
+      "contracts": [
+        {
+          "chain": "ethereum",
+          "address": "0x27292cf0016E5dF1d8b37306B2A98588aCbD6fCA",
+          "decimals": 6,
+          "symbol": "axlATOM",
+          "transfer_fee": 6
+        },
+        {
+          "chain": "avalanche",
+          "address": "0x80D18b1c9Ab0c9B5D6A6d5173575417457d00a12",
+          "decimals": 6,
+          "symbol": "axlATOM"
+        },
+        {
+          "chain": "polygon",
+          "address": "0x33F8a5029264BcFB66e39157aF3FeA3E2a8a5067",
+          "decimals": 6,
+          "symbol": "axlATOM"
+        },
+        {
+          "chain": "fantom",
+          "address": "0x3bB68cb55Fc9C22511467c18E42D14E8c959c4dA",
+          "decimals": 6,
+          "symbol": "axlATOM"
+        },
+        {
+          "chain": "moonbeam",
+          "address": "0x27292cf0016E5dF1d8b37306B2A98588aCbD6fCA",
+          "decimals": 6,
+          "symbol": "axlATOM"
+        }
+      ]
+    },
+    {
       "id": "ungm",
       "name": "e-Money Staking Coin",
       "symbol": "NGM",
       "image": "/images/assets/ngm.png",
-      "transfer_fee": 0.8,
+      "transfer_fee": 1,
       "contracts": [
         {
           "chain": "ethereum",
           "address": "0x08fe7A0db575c2a08d76EEcA71763E48C6e60F45",
           "decimals": 6,
-          "transfer_fee": 16
+          "transfer_fee": 60
         },
         {
           "chain": "avalanche",
@@ -375,7 +305,7 @@
           "chain": "ethereum",
           "address": "0xDd26a5c8Ae5b60Bb14aEcED892A052CA48A2e915",
           "decimals": 6,
-          "transfer_fee": 20
+          "transfer_fee": 60
         },
         {
           "chain": "avalanche",
@@ -395,6 +325,76 @@
         {
           "chain": "moonbeam",
           "address": "0xDd26a5c8Ae5b60Bb14aEcED892A052CA48A2e915",
+          "decimals": 6
+        }
+      ]
+    },
+    {
+      "id": "uusd",
+      "name": "TerraUSD",
+      "symbol": "UST",
+      "image": "/images/assets/ust.png",
+      "transfer_fee": 2,
+      "contracts": [
+        {
+          "chain": "ethereum",
+          "address": "0x085416975fe14C2A731a97eC38B9bF8135231F62",
+          "decimals": 6,
+          "transfer_fee": 100
+        },
+        {
+          "chain": "avalanche",
+          "address": "0x260Bbf5698121EB85e7a74f2E45E16Ce762EbE11",
+          "decimals": 6
+        },
+        {
+          "chain": "polygon",
+          "address": "0xeDDc6eDe8F3AF9B4971e1Fa9639314905458bE87",
+          "decimals": 6
+        },
+        {
+          "chain": "fantom",
+          "address": "0x2B9d3F168905067D88d93F094C938BACEe02b0cB",
+          "decimals": 6
+        },
+        {
+          "chain": "moonbeam",
+          "address": "0x085416975fe14C2A731a97eC38B9bF8135231F62",
+          "decimals": 6
+        }
+      ]
+    },
+    {
+      "id": "uluna",
+      "name": "Terra",
+      "symbol": "LUNA",
+      "image": "/images/assets/luna.png",
+      "transfer_fee": 1,
+      "contracts": [
+        {
+          "chain": "ethereum",
+          "address": "0x31DAB3430f3081dfF3Ccd80F17AD98583437B213",
+          "decimals": 6,
+          "transfer_fee": 60
+        },
+        {
+          "chain": "avalanche",
+          "address": "0x120AD3e5A7c796349e591F1570D9f7980F4eA9cb",
+          "decimals": 6
+        },
+        {
+          "chain": "polygon",
+          "address": "0xa17927fB75E9faEA10C08259902d0468b3DEad88",
+          "decimals": 6
+        },
+        {
+          "chain": "fantom",
+          "address": "0x5e3C572A97D898Fe359a2Cea31c7D46ba5386895",
+          "decimals": 6
+        },
+        {
+          "chain": "moonbeam",
+          "address": "0x31DAB3430f3081dfF3Ccd80F17AD98583437B213",
           "decimals": 6
         }
       ]
@@ -435,76 +435,6 @@
       ]
     },
     {
-      "id": "uusd",
-      "name": "TerraUSD",
-      "symbol": "UST",
-      "image": "/images/assets/ust.png",
-      "transfer_fee": 1,
-      "contracts": [
-        {
-          "chain": "ethereum",
-          "address": "0x1487F3faefE78792CDC48D87FF32aaC6650fd85f",
-          "decimals": 6,
-          "transfer_fee": 20
-        },
-        {
-          "chain": "avalanche",
-          "address": "0x43F4600b552089655645f8c16D86A5a9Fa296bc3",
-          "decimals": 6
-        },
-        {
-          "chain": "polygon",
-          "address": "0xa32575f477FDEbFA02513880d47F6515Da42FB90",
-          "decimals": 6
-        },
-        {
-          "chain": "fantom",
-          "address": "0x89A1D86901D25EFFe5D022bDD1132827e4D7f010",
-          "decimals": 6
-        },
-        {
-          "chain": "moonbeam",
-          "address": "0xd34007bb8a54b2fbb1d6647c5aba04d507abd21d",
-          "decimals": 6
-        }
-      ]
-    },
-    {
-      "id": "uluna",
-      "name": "Terra",
-      "symbol": "LUNA",
-      "image": "/images/assets/luna.png",
-      "transfer_fee": 0.01,
-      "contracts": [
-        {
-          "chain": "ethereum",
-          "address": "0x7Aa125543B9D4a361f58aC1Ff3Bea86eAF6D948B",
-          "decimals": 6,
-          "transfer_fee": 0.2
-        },
-        {
-          "chain": "avalanche",
-          "address": "0x50a70aBb7bd6EbBcC46Df7C0d033C568F563cA27",
-          "decimals": 6
-        },
-        {
-          "chain": "polygon",
-          "address": "0x6Ad38DD216DC344c6B3CeDc34612e1014e2aa469",
-          "decimals": 6
-        },
-        {
-          "chain": "fantom",
-          "address": "0x121286BeDd58d58558A30ED2db2f4a7c6Eb646A3",
-          "decimals": 6
-        },
-        {
-          "chain": "moonbeam",
-          "address": "0xa1cf442e73045f1ea9960499fc8771454a01019d",
-          "decimals": 6
-        }
-      ]
-    },
-    {
       "id": "uausdc",
       "name": "USD Coin",
       "symbol": "aUSDC",
@@ -515,7 +445,7 @@
           "chain": "ethereum",
           "address": "0x526f0A95EDC3DF4CBDB7bb37d4F7Ed451dB8e369",
           "decimals": 6,
-          "transfer_fee": 20
+          "transfer_fee": 60
         },
         {
           "chain": "avalanche",
@@ -544,11 +474,13 @@
       "name": "Wrapped Ether",
       "symbol": "WETH",
       "image": "/images/assets/eth.png",
+      "transfer_fee": 0.02,
       "contracts": [
         {
           "chain": "ethereum",
           "address": "0xc778417E063141139Fce010982780140Aa0cD5Ab",
-          "decimals": 18
+          "decimals": 18,
+          "transfer_fee": 0.02
         },
         {
           "chain": "avalanche",
@@ -577,13 +509,13 @@
       "name": "WBTC",
       "symbol": "WBTC",
       "image": "/images/assets/wbtc.png",
-      "transfer_fee": 1,
+      "transfer_fee": 0.002,
       "contracts": [
         {
           "chain": "ethereum",
           "address": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
           "decimals": 8,
-          "transfer_fee": 1
+          "transfer_fee": 0.002
         }
       ]
     },
@@ -718,6 +650,76 @@
           "decimals": 18
         }
       ]
+    },
+    {
+      "id": "uusd",
+      "name": "TerraUSD",
+      "symbol": "UST",
+      "image": "/images/assets/ust.png",
+      "transfer_fee": 2,
+      "contracts": [
+        {
+          "chain": "ethereum",
+          "address": "0x1487F3faefE78792CDC48D87FF32aaC6650fd85f",
+          "decimals": 6,
+          "transfer_fee": 80
+        },
+        {
+          "chain": "avalanche",
+          "address": "0x43F4600b552089655645f8c16D86A5a9Fa296bc3",
+          "decimals": 6
+        },
+        {
+          "chain": "polygon",
+          "address": "0xa32575f477FDEbFA02513880d47F6515Da42FB90",
+          "decimals": 6
+        },
+        {
+          "chain": "fantom",
+          "address": "0x89A1D86901D25EFFe5D022bDD1132827e4D7f010",
+          "decimals": 6
+        },
+        {
+          "chain": "moonbeam",
+          "address": "0xd34007bb8a54b2fbb1d6647c5aba04d507abd21d",
+          "decimals": 6
+        }
+      ]
+    },
+    {
+      "id": "uluna",
+      "name": "Terra",
+      "symbol": "LUNA",
+      "image": "/images/assets/luna.png",
+      "transfer_fee": 1,
+      "contracts": [
+        {
+          "chain": "ethereum",
+          "address": "0x7Aa125543B9D4a361f58aC1Ff3Bea86eAF6D948B",
+          "decimals": 6,
+          "transfer_fee": 40
+        },
+        {
+          "chain": "avalanche",
+          "address": "0x50a70aBb7bd6EbBcC46Df7C0d033C568F563cA27",
+          "decimals": 6
+        },
+        {
+          "chain": "polygon",
+          "address": "0x6Ad38DD216DC344c6B3CeDc34612e1014e2aa469",
+          "decimals": 6
+        },
+        {
+          "chain": "fantom",
+          "address": "0x121286BeDd58d58558A30ED2db2f4a7c6Eb646A3",
+          "decimals": 6
+        },
+        {
+          "chain": "moonbeam",
+          "address": "0xa1cf442e73045f1ea9960499fc8771454a01019d",
+          "decimals": 6
+        }
+      ]
     }
   ],
   "testnet-2": [
@@ -740,55 +742,17 @@
       ]
     },
     {
-      "id": "uusd",
-      "name": "TerraUSD",
-      "symbol": "UST",
-      "image": "/images/assets/ust.png",
-      "transfer_fee": 1,
-      "contracts": [
-        {
-          "chain": "ethereum",
-          "address": "0x4d5A08dab9F62D00559BB5Eeb5D3f545275832c6",
-          "decimals": 6,
-          "transfer_fee": 20
-        },
-        {
-          "chain": "avalanche",
-          "address": "0x9f59cb0d2660cd2Ca3aBaa9E2880fd1AedA6A173",
-          "decimals": 6
-        }
-      ]
-    },
-    {
-      "id": "uluna",
-      "name": "Terra",
-      "symbol": "LUNA",
-      "image": "/images/assets/luna.png",
-      "transfer_fee": 0.01,
-      "contracts": [
-        {
-          "chain": "ethereum",
-          "address": "0xebe4E666bb3f931e60c322fc99007EB0803eef0b",
-          "decimals": 6,
-          "transfer_fee": 0.2
-        },
-        {
-          "chain": "avalanche",
-          "address": "0xa0164F7B73dcAe5E3c44581c2f99Bf92dc9b4b3D",
-          "decimals": 6
-        }
-      ]
-    },
-    {
       "id": "weth-wei",
       "name": "Wrapped Ether",
       "symbol": "WETH",
       "image": "/images/assets/eth.png",
+      "transfer_fee": 0.02,
       "contracts": [
         {
           "chain": "ethereum",
           "address": "0xc778417E063141139Fce010982780140Aa0cD5Ab",
-          "decimals": 18
+          "decimals": 18,
+          "transfer_fee": 0.02
         },
         {
           "chain": "avalanche",
@@ -802,16 +766,58 @@
       "name": "Wrapped AVAX",
       "symbol": "WAVAX",
       "image": "/images/assets/avax.png",
+      "transfer_fee": 0.002,
       "contracts": [
         {
           "chain": "ethereum",
           "address": "0x5e39FF8ce8D4d35f984E9Be4f6c8674E85E03B4A",
-          "decimals": 18
+          "decimals": 18,
+          "transfer_fee": 0.002
         },
         {
           "chain": "avalanche",
           "address": "0xd00ae08403B9bbb9124bB305C09058E32C39A48c",
           "decimals": 18
+        }
+      ]
+    },
+    {
+      "id": "uusd",
+      "name": "TerraUSD",
+      "symbol": "UST",
+      "image": "/images/assets/ust.png",
+      "transfer_fee": 2,
+      "contracts": [
+        {
+          "chain": "ethereum",
+          "address": "0x4d5A08dab9F62D00559BB5Eeb5D3f545275832c6",
+          "decimals": 6,
+          "transfer_fee": 80
+        },
+        {
+          "chain": "avalanche",
+          "address": "0x9f59cb0d2660cd2Ca3aBaa9E2880fd1AedA6A173",
+          "decimals": 6
+        }
+      ]
+    },
+    {
+      "id": "uluna",
+      "name": "Terra",
+      "symbol": "LUNA",
+      "image": "/images/assets/luna.png",
+      "transfer_fee": 1,
+      "contracts": [
+        {
+          "chain": "ethereum",
+          "address": "0xebe4E666bb3f931e60c322fc99007EB0803eef0b",
+          "decimals": 6,
+          "transfer_fee": 40
+        },
+        {
+          "chain": "avalanche",
+          "address": "0xa0164F7B73dcAe5E3c44581c2f99Bf92dc9b4b3D",
+          "decimals": 6
         }
       ]
     }
