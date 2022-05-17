@@ -9,7 +9,7 @@ import cosmos_chains from "../../data/cosmos_chains.json";
 import ibc_assets from "../../data/ibc_assets.json";
 
 export default ({ environment = "mainnet" }) => {
-  const [assetData, setAssetData] = useState(evm_assets?.[environment]?.find(a => a?.id === "uusdc"));
+  const [assetData, setAssetData] = useState(evm_assets?.[environment]?.find(a => a?.id === (environment === "testnet" ? "uausdc" : "uusdc")));
   const [sourceChainData, setSourceChainData] = useState(evm_chains?.[environment]?.find(c => c?.id === "avalanche"));
   const [destinationChainData, setDestinationChainData] = useState(cosmos_chains?.[environment]?.find(c => c?.id === "osmosis"));
 
