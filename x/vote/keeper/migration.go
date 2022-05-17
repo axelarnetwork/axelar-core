@@ -17,6 +17,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/vote/types2"
 )
 
+// GetMigrationHandler returns the migration handler for the vote module
 func GetMigrationHandler(k Keeper) func(ctx sdk.Context) error {
 	return func(ctx sdk.Context) error {
 		return migrateVotes(ctx, k)
@@ -72,6 +73,7 @@ func assertMigrationSuccessful(ctx sdk.Context, k Keeper) error {
 	return nil
 }
 
+// MigrateVoteData migrates vote results from an Any slice to a single Any value
 func MigrateVoteData(cdc codec.BinaryCodec, data *codectypes.Any, logger log.Logger) *codectypes.Any {
 	switch d := data.GetCachedValue().(type) {
 	case *exported2.Vote:
