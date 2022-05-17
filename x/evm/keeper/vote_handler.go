@@ -12,65 +12,154 @@ import (
 	"github.com/axelarnetwork/utils/slices"
 )
 
+var _ vote.VoteHandler = &voteHandler{}
+
+type voteHandler struct {
+	cdc      codec.Codec
+	keeper   types.BaseKeeper
+	nexus    types.Nexus
+	rewarder types.Rewarder
+}
+
 // NewVoteHandler returns the handler for processing vote delivered by the vote module
-func NewVoteHandler(cdc codec.Codec, keeper types.BaseKeeper, nexus types.Nexus) vote.VoteHandler {
-	return func(ctx sdk.Context, poll vote.Poll) error {
-		voteEvents, err := types.UnpackEvents(cdc, poll.GetResult().(*vote.Vote).Result)
-		if err != nil {
-			return err
+func NewVoteHandler(cdc codec.Codec, keeper types.BaseKeeper, nexus types.Nexus, rewarder types.Rewarder) vote.VoteHandler {
+	return voteHandler{
+		cdc:      cdc,
+		keeper:   keeper,
+		nexus:    nexus,
+		rewarder: rewarder,
+	}
+}
+
+func (v voteHandler) IsFalsyResult(result codec.ProtoMarshaler) bool {
+	voteEvents, err := types.UnpackEvents(v.cdc, result.(*vote.Vote).Result)
+
+	return err != nil || len(voteEvents.Events) == 0
+}
+
+func (v voteHandler) HandleExpiredPoll(ctx sdk.Context, poll vote.Poll) error {
+	rewardPoolName, ok := poll.GetRewardPoolName()
+	if !ok {
+		return fmt.Errorf("reward pool not set for poll %s", poll.GetKey().String())
+	}
+
+	// TODO: MarkChainMaintainerMissingVote for those who didn't vote in time. Need
+	// to be able to get chain of expired polls in order to do it.
+	rewardPool := v.rewarder.GetPool(ctx, rewardPoolName)
+	// Penalize voters who failed to vote
+	for _, voter := range poll.GetVoters() {
+		if !poll.HasVoted(voter.Validator) {
+			rewardPool.ClearRewards(voter.Validator)
+			v.keeper.Logger(ctx).Debug(fmt.Sprintf("penalized voter %s due to timeout", voter.Validator.String()),
+				"voter", voter.Validator.String(),
+				"poll", poll.GetKey().String())
 		}
+	}
 
-		if slices.Any(voteEvents.Events, func(event types.Event) bool { return event.Chain != voteEvents.Chain }) {
-			return fmt.Errorf("events are not from the same source chain")
-		}
+	return nil
+}
 
-		chain, ok := nexus.GetChain(ctx, voteEvents.Chain)
-		if !ok {
-			return fmt.Errorf("%s is not a registered chain", voteEvents.Chain)
-		}
+func (v voteHandler) HandleCompletedPoll(ctx sdk.Context, poll vote.Poll) error {
+	voteEvents, err := types.UnpackEvents(v.cdc, poll.GetResult().(*vote.Vote).Result)
+	if err != nil {
+		return err
+	}
 
-		if !keeper.HasChain(ctx, voteEvents.Chain) {
-			return fmt.Errorf("%s is not an evm chain", voteEvents.Chain)
-		}
+	chain, ok := v.nexus.GetChain(ctx, voteEvents.Chain)
+	if !ok {
+		return fmt.Errorf("%s is not a registered chain", voteEvents.Chain)
+	}
 
-		for _, voter := range poll.GetVoters() {
-			hasVoted := poll.HasVoted(voter.Validator)
-			hasVotedIncorrectly := hasVoted && !poll.HasVotedCorrectly(voter.Validator)
+	rewardPoolName, ok := poll.GetRewardPoolName()
+	if !ok {
+		return fmt.Errorf("reward pool not set for poll %s", poll.GetKey().String())
+	}
 
-			nexus.MarkChainMaintainerMissingVote(ctx, chain, voter.Validator, !hasVoted)
-			nexus.MarkChainMaintainerIncorrectVote(ctx, chain, voter.Validator, hasVotedIncorrectly)
-		}
+	rewardPool := v.rewarder.GetPool(ctx, rewardPoolName)
 
-		if len(voteEvents.Events) == 0 {
-			poll.AllowOverride()
+	for _, voter := range poll.GetVoters() {
+		hasVoted := poll.HasVoted(voter.Validator)
+		hasVotedLate := poll.HasVotedLate(voter.Validator)
+		hasVotedIncorrectly := hasVoted && !poll.HasVotedCorrectly(voter.Validator)
 
-			return nil
-		}
+		v.nexus.MarkChainMaintainerMissingVote(ctx, chain, voter.Validator, !hasVoted)
+		v.nexus.MarkChainMaintainerIncorrectVote(ctx, chain, voter.Validator, hasVotedIncorrectly)
 
-		chainK := keeper.ForChain(chain.Name)
-		cacheCtx, writeCache := ctx.CacheContext()
+		v.keeper.Logger(ctx).Debug(fmt.Sprintf("marked voter %s behaviour", voter.Validator.String()),
+			"voter", voter.Validator.String(),
+			"missing_vote", !hasVoted,
+			"incorrect_vote", hasVotedIncorrectly,
+		)
 
-		err = handleEvents(cacheCtx, chainK, voteEvents.Events, chain)
-		if err != nil {
-			// set events to failed, we will deal with later
-			for _, e := range voteEvents.Events {
-				chainK.SetFailedEvent(ctx, e)
+		switch {
+		case hasVotedIncorrectly, !hasVoted:
+			rewardPool.ClearRewards(voter.Validator)
+			v.keeper.Logger(ctx).Debug(fmt.Sprintf("penalized voter %s due to incorrect vote or missing vote", voter.Validator.String()),
+				"voter", voter.Validator.String(),
+				"poll", poll.GetKey().String())
+		case hasVoted && !hasVotedLate:
+			if err := rewardPool.ReleaseRewards(voter.Validator); err != nil {
+				return err
 			}
-			return err
+			v.keeper.Logger(ctx).Debug(fmt.Sprintf("released rewards for voter %s", voter.Validator.String()),
+				"voter", voter.Validator.String(),
+				"poll", poll.GetKey().String())
+		default:
+			v.keeper.Logger(ctx).Debug(fmt.Sprintf("held rewards for voter %s due to late vote", voter.Validator.String()),
+				"voter", voter.Validator.String(),
+				"poll", poll.GetKey().String())
 		}
+	}
 
-		writeCache()
-		ctx.EventManager().EmitEvents(cacheCtx.EventManager().Events())
+	return nil
+}
+
+func (v voteHandler) HandleResult(ctx sdk.Context, result codec.ProtoMarshaler) error {
+	voteEvents, err := types.UnpackEvents(v.cdc, result.(*vote.Vote).Result)
+	if err != nil {
+		return err
+	}
+
+	if v.IsFalsyResult(result) {
 		return nil
 	}
+
+	if slices.Any(voteEvents.Events, func(event types.Event) bool { return event.Chain != voteEvents.Chain }) {
+		return fmt.Errorf("events are not from the same source chain")
+	}
+
+	chain, ok := v.nexus.GetChain(ctx, voteEvents.Chain)
+	if !ok {
+		return fmt.Errorf("%s is not a registered chain", voteEvents.Chain)
+	}
+
+	if !v.keeper.HasChain(ctx, voteEvents.Chain) {
+		return fmt.Errorf("%s is not an evm chain", voteEvents.Chain)
+	}
+
+	chainK := v.keeper.ForChain(chain.Name)
+	cacheCtx, writeCache := ctx.CacheContext()
+
+	err = handleEvents(cacheCtx, chainK, voteEvents.Events, chain)
+	if err != nil {
+		// set events to failed, we will deal with later
+		for _, e := range voteEvents.Events {
+			// TODO: handle error
+			chainK.SetFailedEvent(ctx, e)
+		}
+		return err
+	}
+
+	writeCache()
+	ctx.EventManager().EmitEvents(cacheCtx.EventManager().Events())
+
+	return nil
 }
 
 func handleEvents(ctx sdk.Context, ck types.ChainKeeper, events []types.Event, chain nexus.Chain) error {
 	for _, event := range events {
-		var err error
 		// validate event
-		err = event.ValidateBasic()
-		if err != nil {
+		if err := event.ValidateBasic(); err != nil {
 			return fmt.Errorf("event %s: %s", event.GetID(), err.Error())
 		}
 
@@ -79,7 +168,9 @@ func handleEvents(ctx sdk.Context, ck types.ChainKeeper, events []types.Event, c
 		if _, ok := ck.GetEvent(ctx, eventID); ok {
 			return fmt.Errorf("event %s is already confirmed", eventID)
 		}
-		ck.SetConfirmedEvent(ctx, event)
+		if err := ck.SetConfirmedEvent(ctx, event); err != nil {
+			panic(err)
+		}
 		ck.Logger(ctx).Info(fmt.Sprintf("confirmed %s event %s in transaction %s", chain.Name, eventID, event.TxId.Hex()))
 
 		ctx.EventManager().EmitEvent(

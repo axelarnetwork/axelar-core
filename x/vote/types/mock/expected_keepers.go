@@ -4,13 +4,209 @@
 package mock
 
 import (
+	utils "github.com/axelarnetwork/axelar-core/utils"
 	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	exported "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/types"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	"github.com/tendermint/tendermint/libs/log"
 	"sync"
 )
+
+// Ensure, that VoterMock does implement types.Voter.
+// If this is not the case, regenerate this file with moq.
+var _ types.Voter = &VoterMock{}
+
+// VoterMock is a mock implementation of types.Voter.
+//
+// 	func TestSomethingThatUsesVoter(t *testing.T) {
+//
+// 		// make and configure a mocked types.Voter
+// 		mockedVoter := &VoterMock{
+// 			GetPollFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported.PollKey) exported.Poll {
+// 				panic("mock out the GetPoll method")
+// 			},
+// 			GetPollQueueFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.KVQueue {
+// 				panic("mock out the GetPollQueue method")
+// 			},
+// 			GetVoteRouterFunc: func() types.VoteRouter {
+// 				panic("mock out the GetVoteRouter method")
+// 			},
+// 			LoggerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger {
+// 				panic("mock out the Logger method")
+// 			},
+// 		}
+//
+// 		// use mockedVoter in code that requires types.Voter
+// 		// and then make assertions.
+//
+// 	}
+type VoterMock struct {
+	// GetPollFunc mocks the GetPoll method.
+	GetPollFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported.PollKey) exported.Poll
+
+	// GetPollQueueFunc mocks the GetPollQueue method.
+	GetPollQueueFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.KVQueue
+
+	// GetVoteRouterFunc mocks the GetVoteRouter method.
+	GetVoteRouterFunc func() types.VoteRouter
+
+	// LoggerFunc mocks the Logger method.
+	LoggerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// GetPoll holds details about calls to the GetPoll method.
+		GetPoll []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Key is the key argument value.
+			Key exported.PollKey
+		}
+		// GetPollQueue holds details about calls to the GetPollQueue method.
+		GetPollQueue []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+		}
+		// GetVoteRouter holds details about calls to the GetVoteRouter method.
+		GetVoteRouter []struct {
+		}
+		// Logger holds details about calls to the Logger method.
+		Logger []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+		}
+	}
+	lockGetPoll       sync.RWMutex
+	lockGetPollQueue  sync.RWMutex
+	lockGetVoteRouter sync.RWMutex
+	lockLogger        sync.RWMutex
+}
+
+// GetPoll calls GetPollFunc.
+func (mock *VoterMock) GetPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported.PollKey) exported.Poll {
+	if mock.GetPollFunc == nil {
+		panic("VoterMock.GetPollFunc: method is nil but Voter.GetPoll was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+		Key exported.PollKey
+	}{
+		Ctx: ctx,
+		Key: key,
+	}
+	mock.lockGetPoll.Lock()
+	mock.calls.GetPoll = append(mock.calls.GetPoll, callInfo)
+	mock.lockGetPoll.Unlock()
+	return mock.GetPollFunc(ctx, key)
+}
+
+// GetPollCalls gets all the calls that were made to GetPoll.
+// Check the length with:
+//     len(mockedVoter.GetPollCalls())
+func (mock *VoterMock) GetPollCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+	Key exported.PollKey
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+		Key exported.PollKey
+	}
+	mock.lockGetPoll.RLock()
+	calls = mock.calls.GetPoll
+	mock.lockGetPoll.RUnlock()
+	return calls
+}
+
+// GetPollQueue calls GetPollQueueFunc.
+func (mock *VoterMock) GetPollQueue(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.KVQueue {
+	if mock.GetPollQueueFunc == nil {
+		panic("VoterMock.GetPollQueueFunc: method is nil but Voter.GetPollQueue was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetPollQueue.Lock()
+	mock.calls.GetPollQueue = append(mock.calls.GetPollQueue, callInfo)
+	mock.lockGetPollQueue.Unlock()
+	return mock.GetPollQueueFunc(ctx)
+}
+
+// GetPollQueueCalls gets all the calls that were made to GetPollQueue.
+// Check the length with:
+//     len(mockedVoter.GetPollQueueCalls())
+func (mock *VoterMock) GetPollQueueCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}
+	mock.lockGetPollQueue.RLock()
+	calls = mock.calls.GetPollQueue
+	mock.lockGetPollQueue.RUnlock()
+	return calls
+}
+
+// GetVoteRouter calls GetVoteRouterFunc.
+func (mock *VoterMock) GetVoteRouter() types.VoteRouter {
+	if mock.GetVoteRouterFunc == nil {
+		panic("VoterMock.GetVoteRouterFunc: method is nil but Voter.GetVoteRouter was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockGetVoteRouter.Lock()
+	mock.calls.GetVoteRouter = append(mock.calls.GetVoteRouter, callInfo)
+	mock.lockGetVoteRouter.Unlock()
+	return mock.GetVoteRouterFunc()
+}
+
+// GetVoteRouterCalls gets all the calls that were made to GetVoteRouter.
+// Check the length with:
+//     len(mockedVoter.GetVoteRouterCalls())
+func (mock *VoterMock) GetVoteRouterCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockGetVoteRouter.RLock()
+	calls = mock.calls.GetVoteRouter
+	mock.lockGetVoteRouter.RUnlock()
+	return calls
+}
+
+// Logger calls LoggerFunc.
+func (mock *VoterMock) Logger(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger {
+	if mock.LoggerFunc == nil {
+		panic("VoterMock.LoggerFunc: method is nil but Voter.Logger was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockLogger.Lock()
+	mock.calls.Logger = append(mock.calls.Logger, callInfo)
+	mock.lockLogger.Unlock()
+	return mock.LoggerFunc(ctx)
+}
+
+// LoggerCalls gets all the calls that were made to Logger.
+// Check the length with:
+//     len(mockedVoter.LoggerCalls())
+func (mock *VoterMock) LoggerCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}
+	mock.lockLogger.RLock()
+	calls = mock.calls.Logger
+	mock.lockLogger.RUnlock()
+	return calls
+}
 
 // Ensure, that SnapshotterMock does implement types.Snapshotter.
 // If this is not the case, regenerate this file with moq.

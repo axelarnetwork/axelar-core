@@ -8,12 +8,13 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
-//go:generate moq -out ./mock/expected_keepers.go -pkg mock . TSS Voter Signer Nexus Snapshotter BaseKeeper ChainKeeper
+//go:generate moq -out ./mock/expected_keepers.go -pkg mock . TSS Voter Signer Nexus Snapshotter BaseKeeper ChainKeeper Rewarder
 
 // BaseKeeper is implemented by this module's base keeper
 type BaseKeeper interface {
@@ -157,3 +158,8 @@ type Signer interface {
 
 // Snapshotter provides access to the snapshot functionality
 type Snapshotter = snapshot.Snapshotter
+
+// Rewarder provides reward functionality
+type Rewarder interface {
+	GetPool(ctx sdk.Context, name string) reward.RewardPool
+}

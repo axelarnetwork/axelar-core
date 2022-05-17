@@ -11,7 +11,6 @@ import (
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
@@ -96,6 +95,7 @@ func (s msgServer) ConfirmGatewayTx(c context.Context, req *types.ConfirmGateway
 		vote.Threshold(votingThreshold),
 		vote.MinVoterCount(minVoterCount),
 		vote.RewardPool(chain.Name),
+		vote.GracePeriod(keeper.GetParams(ctx).VotingGracePeriod),
 	); err != nil {
 		return nil, err
 	}
@@ -290,6 +290,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		vote.Threshold(votingThreshold),
 		vote.MinVoterCount(minVoterCount),
 		vote.RewardPool(chain.Name),
+		vote.GracePeriod(keeper.GetParams(ctx).VotingGracePeriod),
 	); err != nil {
 		return nil, err
 	}
@@ -359,6 +360,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		vote.Threshold(votingThreshold),
 		vote.MinVoterCount(minVoterCount),
 		vote.RewardPool(chain.Name),
+		vote.GracePeriod(keeper.GetParams(ctx).VotingGracePeriod),
 	); err != nil {
 		return nil, err
 	}
@@ -438,6 +440,7 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 		vote.Threshold(votingThreshold),
 		vote.MinVoterCount(minVoterCount),
 		vote.RewardPool(chain.Name),
+		vote.GracePeriod(keeper.GetParams(ctx).VotingGracePeriod),
 	); err != nil {
 		return nil, err
 	}
@@ -598,16 +601,6 @@ func (s msgServer) CreateBurnTokens(c context.Context, req *types.CreateBurnToke
 
 func (s msgServer) newErrRotationInProgress(chain nexus.Chain, key tss.KeyRole) error {
 	return sdkerrors.Wrapf(types.ErrRotationInProgress, "finish rotating to next %s key for chain %s first", key.SimpleString(), chain.Name)
-}
-
-func getMultisigAddresses(key tss.Key) ([]common.Address, uint8, error) {
-	multisigPubKeys, err := key.GetMultisigPubKey()
-	if err != nil {
-		return nil, 0, sdkerrors.Wrapf(types.ErrEVM, err.Error())
-	}
-
-	threshold := uint8(key.GetMultisigKey().Threshold)
-	return types.KeysToAddresses(multisigPubKeys...), threshold, nil
 }
 
 func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePendingTransfersRequest) (*types.CreatePendingTransfersResponse, error) {
@@ -942,7 +935,7 @@ func (s msgServer) RetryFailedEvent(c context.Context, req *types.RetryFailedEve
 	keeper.GetConfirmedEventQueue(ctx).Enqueue(getEventKey(req.EventID), &event)
 
 	s.Logger(ctx).Info(
-		fmt.Sprintf("re-queued failed event"),
+		"re-queued failed event",
 		types.AttributeKeyChain, chain.Name,
 		"eventID", req.EventID,
 	)

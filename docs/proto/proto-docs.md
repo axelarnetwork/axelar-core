@@ -483,6 +483,7 @@
   
 - [vote/v1beta1/types.proto](#vote/v1beta1/types.proto)
     - [TalliedVote](#vote.v1beta1.TalliedVote)
+    - [VoteRecord](#vote.v1beta1.VoteRecord)
   
 - [Scalar Value Types](#scalar-value-types)
 
@@ -2333,6 +2334,8 @@ vote can have any data type
 | `voters` | [Voter](#vote.exported.v1beta1.Voter) | repeated |  |
 | `total_voting_power` | [bytes](#bytes) |  |  |
 | `reward_pool_name` | [string](#string) |  |  |
+| `grace_period` | [int64](#int64) |  |  |
+| `completed_at` | [int64](#int64) |  |  |
 
 
 
@@ -3293,6 +3296,7 @@ Params is the parameter set for this module
 | `voting_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
 | `min_voter_count` | [int64](#int64) |  |  |
 | `commands_gas_limit` | [uint32](#uint32) |  |  |
+| `voting_grace_period` | [int64](#int64) |  |  |
 
 
 
@@ -6867,6 +6871,22 @@ validators voting for the same data
 | `tally` | [bytes](#bytes) |  |  |
 | `voters` | [bytes](#bytes) | repeated |  |
 | `data` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
+
+
+
+
+
+
+<a name="vote.v1beta1.VoteRecord"></a>
+
+### VoteRecord
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `voter` | [bytes](#bytes) |  |  |
+| `is_late` | [bool](#bool) |  |  |
 
 
 

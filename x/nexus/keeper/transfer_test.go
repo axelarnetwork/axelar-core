@@ -83,7 +83,9 @@ func TestComputeTransferFee(t *testing.T) {
 				for _, chain := range chains {
 					for _, asset := range assets {
 						assetFees[chain.Name+"_"+asset] = randFee(chain.Name, asset)
-						k.RegisterFee(ctx, chain, assetFees[chain.Name+"_"+asset])
+						if err := k.RegisterFee(ctx, chain, assetFees[chain.Name+"_"+asset]); err != nil {
+							panic(err)
+						}
 					}
 				}
 			}).
@@ -381,10 +383,14 @@ func setup(cfg params.EncodingConfig) (nexusKeeper.Keeper, sdk.Context) {
 				isNative = true
 			}
 
-			k.RegisterAsset(ctx, chain, nexus.NewAsset(asset, isNative))
+			if err := k.RegisterAsset(ctx, chain, nexus.NewAsset(asset, isNative)); err != nil {
+				panic(err)
+			}
 
 			feeInfo := nexus.NewFeeInfo(chain.Name, asset, sdk.ZeroDec(), sdk.NewInt(minAmount), sdk.NewInt(maxAmount))
-			k.RegisterFee(ctx, chain, feeInfo)
+			if err := k.RegisterFee(ctx, chain, feeInfo); err != nil {
+				panic(err)
+			}
 		}
 		k.ActivateChain(ctx, chain)
 	}
