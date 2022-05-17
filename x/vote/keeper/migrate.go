@@ -1,11 +1,20 @@
 package keeper
 
 import (
+	"encoding/hex"
+	"fmt"
+
+	"github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
+	exported0_17 "github.com/axelarnetwork/axelar-core/x/vote/exported-0.17"
 	"github.com/axelarnetwork/axelar-core/x/vote/types"
+	types0_17 "github.com/axelarnetwork/axelar-core/x/vote/types-0.17"
 )
 
 // GetMigrationHandler returns the handler that performs in-place store migrations from v0.17 to v0.18. The
@@ -14,8 +23,8 @@ import (
 // - migrate all completed polls
 func GetMigrationHandler(k Keeper) func(ctx sdk.Context) error {
 	return func(ctx sdk.Context) error {
-		err:= migrateVotes(ctx, k)
-		if err!= nil{
+		err := migrateVotes(ctx, k)
+		if err != nil {
 			return err
 		}
 
@@ -25,7 +34,6 @@ func GetMigrationHandler(k Keeper) func(ctx sdk.Context) error {
 		return nil
 	}
 }
-
 
 func migrateVotes(ctx sdk.Context, k Keeper) error {
 	metadatas := k.getPollMetadatasOld(ctx)
@@ -51,7 +59,7 @@ func migrateVotes(ctx sdk.Context, k Keeper) error {
 				Voters: vote.Voters,
 				Data:   MigrateVoteData(k.cdc, metadata.RewardPoolName, vote.Data, k.Logger(ctx)),
 			}
-			pollStore.Set(votesPrefix.AppendStr(pollStore.key.String()).AppendStr(newVote.Hash()), &newVote)
+			pollStore.Set(votesPrefix.AppendStr(pollStore.key.String()).AppendStr(hash(newVote.Data)), &newVote)
 		}
 	}
 
@@ -61,14 +69,14 @@ func migrateVotes(ctx sdk.Context, k Keeper) error {
 func assertMigrationSuccessful(ctx sdk.Context, k Keeper) error {
 	metadatas := k.getPollMetadatas(ctx)
 	for _, metadata := range metadatas {
-		if metadata.Result.GetCachedValue() == nil {
+		if metadata.Result != nil && metadata.Result.GetCachedValue() == nil {
 			return fmt.Errorf("failed to verify poll result for %s", hex.EncodeToString(k.cdc.MustMarshalLengthPrefixed(&metadata)))
 		}
 
 		pollStore := k.newPollStore(ctx, metadata.Key)
 		votes := pollStore.GetVotes()
 		for _, vote := range votes {
-			if metadata.Result.GetCachedValue() == nil {
+			if vote.Data.GetCachedValue() == nil {
 				return fmt.Errorf("failed to verify tallied vote data for %s", hex.EncodeToString(k.cdc.MustMarshalLengthPrefixed(&vote)))
 			}
 		}
@@ -78,6 +86,10 @@ func assertMigrationSuccessful(ctx sdk.Context, k Keeper) error {
 
 // MigrateVoteData migrates vote results from an Any slice to a single Any value
 func MigrateVoteData(cdc codec.BinaryCodec, chain string, data *codectypes.Any, logger log.Logger) *codectypes.Any {
+	if data == nil {
+		return nil
+	}
+
 	switch d := data.GetCachedValue().(type) {
 	case *exported0_17.Vote:
 		events, err := unpackEvents(cdc, d.Results)

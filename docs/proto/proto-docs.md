@@ -483,6 +483,7 @@
   
 - [axelar/vote/v1beta1/types.proto](#axelar/vote/v1beta1/types.proto)
     - [TalliedVote](#axelar.vote.v1beta1.TalliedVote)
+    - [VoteRecord](#axelar.vote.v1beta1.VoteRecord)
   
 - [vote/exported/v1beta1/types.proto](#vote/exported/v1beta1/types.proto)
     - [PollMetadata](#vote.exported.v1beta1.PollMetadata)
@@ -2340,6 +2341,8 @@ vote can have any data type
 | `voters` | [Voter](#axelar.vote.exported.v1beta1.Voter) | repeated |  |
 | `total_voting_power` | [bytes](#bytes) |  |  |
 | `reward_pool_name` | [string](#string) |  |  |
+| `grace_period` | [int64](#int64) |  |  |
+| `completed_at` | [int64](#int64) |  |  |
 
 
 
@@ -3300,6 +3303,7 @@ Params is the parameter set for this module
 | `voting_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
 | `min_voter_count` | [int64](#int64) |  |  |
 | `commands_gas_limit` | [uint32](#uint32) |  |  |
+| `voting_grace_period` | [int64](#int64) |  |  |
 
 
 
@@ -6874,6 +6878,22 @@ validators voting for the same data
 | `tally` | [bytes](#bytes) |  |  |
 | `voters` | [bytes](#bytes) | repeated |  |
 | `data` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
+
+
+
+
+
+
+<a name="axelar.vote.v1beta1.VoteRecord"></a>
+
+### VoteRecord
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `voter` | [bytes](#bytes) |  |  |
+| `is_late` | [bool](#bool) |  |  |
 
 
 

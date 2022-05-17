@@ -1,4 +1,4 @@
-package keeper_test
+package keeper
 
 import (
 	"testing"
@@ -7,10 +7,15 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	gogoprototypes "github.com/gogo/protobuf/types"
 	"github.com/stretchr/testify/assert"
+	"github.com/tendermint/tendermint/libs/log"
 
+	appParams "github.com/axelarnetwork/axelar-core/app/params"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
+	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
+	exported0_17 "github.com/axelarnetwork/axelar-core/x/vote/exported-0.17"
+	"github.com/axelarnetwork/axelar-core/x/vote/types"
 	"github.com/axelarnetwork/utils/slices"
 	. "github.com/axelarnetwork/utils/test"
 )
@@ -18,7 +23,7 @@ import (
 func TestGetMigrationHandler(t *testing.T) {
 	var (
 		ctx     sdk.Context
-		keeper  keeper.Keeper
+		k       Keeper
 		handler func(ctx sdk.Context) error
 	)
 
@@ -26,8 +31,8 @@ func TestGetMigrationHandler(t *testing.T) {
 	pollCount := rand.I64Between(100, 200)
 
 	givenTheMigrationHandler := Given("the migration handler", func() {
-		ctx, keeper, _, _, _ = setup()
-		handler = GetMigrationHandler(keeper)
+		ctx, k, _, _, _ = setup()
+		handler = GetMigrationHandler(k)
 	})
 
 	whenPollsExistWith := func(pollCount int64) WhenStatement {
@@ -37,7 +42,7 @@ func TestGetMigrationHandler(t *testing.T) {
 				voters := make([]sdk.ValAddress, voterCount)
 
 				pollKey := exported.NewPollKey(rand.Str(5), rand.HexStr(64))
-				poll := keeper.newPollStore(ctx, pollKey)
+				poll := k.newPollStore(ctx, pollKey)
 
 				pollMeta := exported.PollMetadata{
 					Key:   pollKey,
@@ -81,8 +86,8 @@ func TestGetMigrationHandler(t *testing.T) {
 
 			var pendingPollMetadatas []exported.PollMetadata
 
-			iter := keeper.getKVStore(ctx).Iterator(pollPrefix)
-			defer utils.CloseLogError(iter, keeper.Logger(ctx))
+			iter := k.getKVStore(ctx).Iterator(pollPrefix)
+			defer utils.CloseLogError(iter, k.Logger(ctx))
 
 			for ; iter.Valid(); iter.Next() {
 				var pollMetadata exported.PollMetadata
@@ -95,7 +100,7 @@ func TestGetMigrationHandler(t *testing.T) {
 				pendingPollMetadatas = append(pendingPollMetadatas, pollMetadata)
 			}
 
-			assert.Less(t, len(keeper.getNonPendingPollMetadatas(ctx)), int(pollCount))
+			assert.Less(t, len(k.getNonPendingPollMetadatas(ctx)), int(pollCount))
 			assert.Empty(t, pendingPollMetadatas)
 		}).
 		Run(t, repeats)
@@ -103,7 +108,7 @@ func TestGetMigrationHandler(t *testing.T) {
 	givenTheMigrationHandler.
 		When2(whenPollsExistWith(pollCount)).
 		Then("should migrate all completed polls", func(t *testing.T) {
-			iter := keeper.getKVStore(ctx).Iterator(pollPrefix)
+			iter := k.getKVStore(ctx).Iterator(pollPrefix)
 			for ; iter.Valid(); iter.Next() {
 				var pollMetadata exported.PollMetadata
 				iter.UnmarshalValue(&pollMetadata)
@@ -114,18 +119,18 @@ func TestGetMigrationHandler(t *testing.T) {
 
 				assert.Zero(t, pollMetadata.CompletedAt)
 
-				poll := keeper.newPollStore(ctx, pollMetadata.Key)
+				poll := k.newPollStore(ctx, pollMetadata.Key)
 				for _, voter := range pollMetadata.Voters {
 					assert.Panics(t, func() { poll.HasVotedLate(voter.Validator) })
 				}
 			}
-			utils.CloseLogError(iter, keeper.Logger(ctx))
+			utils.CloseLogError(iter, k.Logger(ctx))
 
 			err := handler(ctx)
 			assert.NoError(t, err)
 
-			iter = keeper.getKVStore(ctx).Iterator(pollPrefix)
-			defer utils.CloseLogError(iter, keeper.Logger(ctx))
+			iter = k.getKVStore(ctx).Iterator(pollPrefix)
+			defer utils.CloseLogError(iter, k.Logger(ctx))
 
 			for ; iter.Valid(); iter.Next() {
 				var pollMetadata exported.PollMetadata
@@ -137,7 +142,7 @@ func TestGetMigrationHandler(t *testing.T) {
 
 				assert.NotZero(t, pollMetadata.CompletedAt)
 
-				poll := keeper.newPollStore(ctx, pollMetadata.Key)
+				poll := k.newPollStore(ctx, pollMetadata.Key)
 				for _, voter := range pollMetadata.Voters {
 					assert.False(t, poll.HasVotedLate(voter.Validator))
 				}
@@ -145,7 +150,6 @@ func TestGetMigrationHandler(t *testing.T) {
 		}).
 		Run(t, repeats)
 }
-
 
 func TestMigrateVotes(t *testing.T) {
 	vote := exported0_17.Vote{}
@@ -161,12 +165,14 @@ func TestMigrateVotes(t *testing.T) {
 
 	meta := exported0_17.PollMetadata{Result: packed}
 
-	cdc := app.MakeEncodingConfig().Codec
+	encodingConfig := appParams.MakeEncodingConfig()
+	types.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	cdc := encodingConfig.Codec
 
 	bz := cdc.MustMarshalLengthPrefixed(&meta)
 	meta = exported0_17.PollMetadata{} // reset
 	cdc.MustUnmarshalLengthPrefixed(bz, &meta)
-	newPackedVote := keeper.MigrateVoteData(cdc, rand.Str(5), meta.Result, log.TestingLogger())
+	newPackedVote := MigrateVoteData(cdc, rand.Str(5), meta.Result, log.TestingLogger())
 
 	newVote, ok := newPackedVote.GetCachedValue().(*exported.Vote)
 	assert.True(t, ok)
