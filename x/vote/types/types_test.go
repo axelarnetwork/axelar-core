@@ -125,6 +125,8 @@ func TestPoll_Vote(t *testing.T) {
 	givenPoll.
 		When("poll is failed", withState(exported.Failed)).
 		Then("should do nothing", func(t *testing.T) {
+			pollStore.HasVotedFunc = func(v sdk.ValAddress) bool { return false }
+
 			result, voted, err := poll.Vote(
 				rand.Of(poll.Voters...).Validator,
 				rand.PosI64(),
@@ -139,7 +141,9 @@ func TestPoll_Vote(t *testing.T) {
 
 	givenPoll.
 		When("poll is expired", withState(exported.Expired)).
-		Then("should do nothing", func(t *testing.T) {
+		Then("should return error", func(t *testing.T) {
+			pollStore.HasVotedFunc = func(v sdk.ValAddress) bool { return false }
+
 			result, voted, err := poll.Vote(
 				rand.Of(poll.Voters...).Validator,
 				rand.PosI64(),
@@ -148,7 +152,7 @@ func TestPoll_Vote(t *testing.T) {
 
 			assert.Nil(t, result)
 			assert.False(t, voted)
-			assert.NoError(t, err)
+			assert.ErrorContains(t, err, "expired")
 		}).
 		Run(t, repeats)
 
@@ -187,14 +191,9 @@ func TestPoll_Vote(t *testing.T) {
 		When("poll is completed", withState(exported.Completed)).
 		When("poll is not within its grace period", func() {
 			poll.GracePeriod = rand.I64Between(1, blockHeight)
-
-			if rand.Bools(0.5).Next() {
-				poll.State |= exported.Expired
-			} else {
-				poll.CompletedAt = rand.I64Between(0, blockHeight-int64(poll.GracePeriod))
-			}
+			poll.CompletedAt = rand.I64Between(0, blockHeight-int64(poll.GracePeriod))
 		}).
-		Then("should allow late vote", func(t *testing.T) {
+		Then("should not allow late vote", func(t *testing.T) {
 			voter := rand.Of(poll.Voters...)
 			pollStore.HasVotedFunc = func(v sdk.ValAddress) bool { return !v.Equals(voter.Validator) }
 

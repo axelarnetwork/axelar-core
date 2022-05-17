@@ -162,10 +162,6 @@ func (p Poll) Initialize(blockHeight int64) error {
 }
 
 func (p Poll) getVotingPower(v sdk.ValAddress) int64 {
-	if p.HasVoted(v) {
-		return 0
-	}
-
 	for _, voter := range p.PollMetadata.Voters {
 		if v.Equals(voter.Validator) {
 			return voter.VotingPower
@@ -183,11 +179,19 @@ func (p Poll) isWithinGracePeriod(blockHeight int64) bool {
 
 // Vote records the given vote
 func (p *Poll) Vote(voter sdk.ValAddress, blockHeight int64, data codec.ProtoMarshaler) (codec.ProtoMarshaler, bool, error) {
-	switch {
-	case p.Is(exported.NonExistent):
+	if p.Is(exported.NonExistent) {
 		return nil, false, fmt.Errorf("poll does not exist")
-	case p.Is(exported.Failed), p.Is(exported.Expired):
+	}
+
+	if p.HasVoted(voter) {
+		return nil, false, fmt.Errorf("voter %s has voted already", voter)
+	}
+
+	switch {
+	case p.Is(exported.Failed):
 		return nil, false, nil
+	case p.Is(exported.Expired):
+		return nil, false, fmt.Errorf("poll %s has expired already", p.GetKey().String())
 	case p.Is(exported.Completed) && p.isWithinGracePeriod(blockHeight):
 		votingPower := p.getVotingPower(voter)
 		if votingPower == 0 {

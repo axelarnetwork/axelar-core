@@ -50,7 +50,7 @@ func (v voteHandler) HandleExpiredPoll(ctx sdk.Context, poll vote.Poll) error {
 	for _, voter := range poll.GetVoters() {
 		if !poll.HasVoted(voter.Validator) {
 			rewardPool.ClearRewards(voter.Validator)
-			v.keeper.Logger(ctx).Debug("penalized voter due to timeout",
+			v.keeper.Logger(ctx).Debug(fmt.Sprintf("penalized voter %s due to timeout", voter.Validator.String()),
 				"voter", voter.Validator.String(),
 				"poll", poll.GetKey().String())
 		}
@@ -85,27 +85,27 @@ func (v voteHandler) HandleCompletedPoll(ctx sdk.Context, poll vote.Poll) error 
 		v.nexus.MarkChainMaintainerMissingVote(ctx, chain, voter.Validator, !hasVoted)
 		v.nexus.MarkChainMaintainerIncorrectVote(ctx, chain, voter.Validator, hasVotedIncorrectly)
 
-		v.keeper.Logger(ctx).Debug("marked voter misbehave",
+		v.keeper.Logger(ctx).Debug(fmt.Sprintf("marked voter %s behaviour", voter.Validator.String()),
 			"voter", voter.Validator.String(),
 			"missing_vote", !hasVoted,
 			"incorrect_vote", hasVotedIncorrectly,
 		)
 
 		switch {
-		case hasVotedIncorrectly:
+		case hasVotedIncorrectly, !hasVoted:
 			rewardPool.ClearRewards(voter.Validator)
-			v.keeper.Logger(ctx).Debug("penalized voter due to incorrect vote",
+			v.keeper.Logger(ctx).Debug(fmt.Sprintf("penalized voter %s due to incorrect vote or missing vote", voter.Validator.String()),
 				"voter", voter.Validator.String(),
 				"poll", poll.GetKey().String())
 		case hasVoted && !hasVotedLate:
 			if err := rewardPool.ReleaseRewards(voter.Validator); err != nil {
 				return err
 			}
-			v.keeper.Logger(ctx).Debug("released rewards for voter",
+			v.keeper.Logger(ctx).Debug(fmt.Sprintf("released rewards for voter %s", voter.Validator.String()),
 				"voter", voter.Validator.String(),
 				"poll", poll.GetKey().String())
 		default:
-			v.keeper.Logger(ctx).Debug("held rewards for voter due to missing or late vote",
+			v.keeper.Logger(ctx).Debug(fmt.Sprintf("held rewards for voter %s due to late vote", voter.Validator.String()),
 				"voter", voter.Validator.String(),
 				"poll", poll.GetKey().String())
 		}
