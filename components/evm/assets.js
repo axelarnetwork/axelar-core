@@ -36,7 +36,12 @@ export default ({ environment = "mainnet" }) => {
           hasAllOptions={true}
           allOptionsName="All Chains"
           defaultSelectedKey={chainData?.id || ""}
-          onSelect={c => setChainData(c)}
+          onSelect={c => {
+            setChainData(c);
+            if (c && evm_assets?.[environment]?.findIndex(a => (!assetData || a?.id === assetData.id) && a?.contracts?.findIndex(_c => _c?.chain === c?.id) > -1) < 0) {
+              setAssetData("");
+            }
+          }}
         />
         <Dropdown
           environment={environment}
