@@ -288,10 +288,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 	t.Run("should return error when chain is not activated", testutils.Func(func(t *testing.T) {
 		setup()
 		nexusKeeper.IsChainActivatedFunc = func(_ sdk.Context, chain nexus.Chain) bool {
-			if chain.Name != exported.Axelarnet.Name {
-				return false
-			}
-			return true
+			return chain.Name == exported.Axelarnet.Name
 		}
 
 		msg = randomMsgConfirmDeposit()

@@ -37,7 +37,7 @@ func TestHandleMsgRefundRequest(t *testing.T) {
 			GetPendingRefundFunc: func(sdk.Context, types.RefundMsgRequest) (types.Refund, bool) {
 				return types.Refund{Payer: rand.AccAddr(), Fees: sdk.NewCoins(sdk.Coin{Denom: "uaxl", Amount: sdk.NewInt(1000)})}, true
 			},
-			DeletePendingRefundFunc: func(sdk.Context, types.RefundMsgRequest) { return },
+			DeletePendingRefundFunc: func(sdk.Context, types.RefundMsgRequest) {},
 		}
 		bankKeeper = &mock.BankerMock{
 			SendCoinsFromModuleToAccountFunc: func(sdk.Context, string, sdk.AccAddress, sdk.Coins) error { return nil },
@@ -89,9 +89,9 @@ func TestHandleMsgRefundRequest(t *testing.T) {
 		}
 		router.AddRoute(sdk.NewRoute("evm", evmHandler))
 		voteReq := &votetypes.VoteRequest{
-			rand.AccAddr(),
-			exported.NewPollKey(votetypes.ModuleName, rand.StrBetween(5, 100)),
-			exported.Vote{},
+			Sender:  rand.AccAddr(),
+			PollKey: exported.NewPollKey(votetypes.ModuleName, rand.StrBetween(5, 100)),
+			Vote:    exported.Vote{},
 		}
 		msg = types.NewRefundMsgRequest(rand.AccAddr(), voteReq)
 

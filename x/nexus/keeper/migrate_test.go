@@ -21,9 +21,15 @@ func TestGetMigrationHandler_deregisterUaxlAsset(t *testing.T) {
 
 	keeper.SetChain(ctx, axelarnet.Axelarnet)
 	keeper.SetChain(ctx, evm.Ethereum)
-	keeper.RegisterAsset(ctx, axelarnet.Axelarnet, exported.NewAsset(uaxlAsset, true))
-	keeper.RegisterAsset(ctx, evm.Ethereum, exported.NewAsset(uaxlAsset, false))
-	keeper.RegisterAsset(ctx, evm.Ethereum, exported.NewAsset(anotherAsset, false))
+	if err := keeper.RegisterAsset(ctx, axelarnet.Axelarnet, exported.NewAsset(uaxlAsset, true)); err != nil {
+		panic(err)
+	}
+	if err := keeper.RegisterAsset(ctx, evm.Ethereum, exported.NewAsset(uaxlAsset, false)); err != nil {
+		panic(err)
+	}
+	if err := keeper.RegisterAsset(ctx, evm.Ethereum, exported.NewAsset(anotherAsset, false)); err != nil {
+		panic(err)
+	}
 
 	assert.True(t, keeper.IsAssetRegistered(ctx, axelarnet.Axelarnet, uaxlAsset))
 	assert.True(t, keeper.IsAssetRegistered(ctx, evm.Ethereum, uaxlAsset))

@@ -77,7 +77,7 @@ func GetHandlerQueryTokenAddress(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		var res types.QueryTokenAddressResponse
-		types.ModuleCdc.UnmarshalLengthPrefixed(bz, &res)
+		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
 
 		rest.PostProcessResponse(w, cliCtx, res)
 	}

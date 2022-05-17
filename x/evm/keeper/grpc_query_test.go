@@ -66,7 +66,7 @@ func TestQueryPendingCommands(t *testing.T) {
 
 		nexusKeeper = &mock.NexusMock{
 			GetChainFunc: func(_ sdk.Context, chain string) (nexus.Chain, bool) {
-				if strings.ToLower(chain) == strings.ToLower(evmChain) {
+				if strings.EqualFold(chain, evmChain) {
 					return nexus.Chain{
 						Name:                  evmChain,
 						SupportsForeignAssets: true,
@@ -141,7 +141,7 @@ func TestQueryDepositState(t *testing.T) {
 		}
 		nexusKeeper = &mock.NexusMock{
 			GetChainFunc: func(_ sdk.Context, chain string) (nexus.Chain, bool) {
-				if strings.ToLower(chain) == strings.ToLower(evmChain) {
+				if strings.EqualFold(chain, evmChain) {
 					return nexus.Chain{
 						Name:                  evmChain,
 						SupportsForeignAssets: true,

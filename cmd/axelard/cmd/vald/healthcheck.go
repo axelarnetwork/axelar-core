@@ -157,7 +157,9 @@ func checkBroadcaster(ctx context.Context, clientCtx client.Context, serverCtx *
 		Address string `json:"address"`
 		Status  string `json:"status"`
 	}{}
-	json.Unmarshal(bz, &reply)
+	if err := json.Unmarshal(bz, &reply); err != nil {
+		return err
+	}
 
 	broadcaster, err := sdk.AccAddressFromBech32(reply.Address)
 	if err != nil {

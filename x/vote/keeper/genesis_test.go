@@ -55,13 +55,16 @@ func initializeRandomPoll(ctx sdk.Context, keeper Keeper) exported.PollMetadata 
 	}
 
 	pollKey := exported.PollKey{Module: randomNormalizedStr(5), ID: randomNormalizedStr(10)}
-	keeper.initializePoll(ctx, pollKey, voters,
+	err := keeper.initializePoll(ctx, pollKey, voters,
 		exported.ExpiryAt(rand.PosI64()),
 		exported.RewardPool(randomNormalizedStr(5)),
 		exported.MinVoterCount(rand.I64Between(0, int64(len(voters)))),
 		exported.Threshold(utils.NewThreshold(rand.I64Between(1, 101), 100)),
 		exported.GracePeriod(rand.I64Between(0, 10)),
 	)
+	if err != nil {
+		panic(err)
+	}
 
 	metadata, ok := keeper.getPollMetadata(ctx, pollKey)
 	if !ok {

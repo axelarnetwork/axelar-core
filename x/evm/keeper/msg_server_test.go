@@ -902,8 +902,12 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 	t.Run("already registered", testutils.Func(func(t *testing.T) {
 		setup()
 		hash := common.BytesToHash(rand.Bytes(common.HashLength))
-		token.RecordDeployment(types.Hash(hash))
-		token.ConfirmDeployment()
+		if err := token.RecordDeployment(types.Hash(hash)); err != nil {
+			panic(err)
+		}
+		if err := token.ConfirmDeployment(); err != nil {
+			panic(err)
+		}
 
 		_, err := server.ConfirmToken(sdk.WrapSDKContext(ctx), msg)
 
