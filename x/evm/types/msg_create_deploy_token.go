@@ -2,7 +2,6 @@ package types
 
 import (
 	"fmt"
-	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -59,11 +58,11 @@ func (m CreateDeployTokenRequest) ValidateBasic() error {
 
 	switch m.Address.IsZeroAddress() {
 	case true:
-		if strings.EqualFold(m.Chain.String(), m.Asset.Chain.String()) {
+		if m.Chain.Equals(m.Asset.Chain) {
 			return fmt.Errorf("cannot deploy token on the origin chain")
 		}
 	case false:
-		if !strings.EqualFold(m.Chain.String(), m.Asset.Chain.String()) {
+		if !m.Chain.Equals(m.Asset.Chain) {
 			return fmt.Errorf("cannot link token on a different chain")
 		}
 	}

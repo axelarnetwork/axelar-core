@@ -199,3 +199,8 @@ func (c ChainName) Validate() error {
 func (c ChainName) String() string {
 	return string(c)
 }
+
+// Equals returns boolean for whether two chain names are case-insensitive equal
+func (c ChainName) Equals(c2 ChainName) bool {
+	return strings.EqualFold(c.String(), c2.String())
+}

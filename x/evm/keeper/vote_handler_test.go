@@ -2,7 +2,6 @@ package keeper_test
 
 import (
 	mathRand "math/rand"
-	"strings"
 	"testing"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -47,7 +46,7 @@ func TestHandleResult(t *testing.T) {
 
 		basek = &mock.BaseKeeperMock{
 			ForChainFunc: func(chain nexus.ChainName) types.ChainKeeper {
-				if strings.EqualFold(chain.String(), evmChain.String()) {
+				if chain.Equals(evmChain) {
 					return chaink
 				}
 				return nil

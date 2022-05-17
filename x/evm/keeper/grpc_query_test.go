@@ -3,7 +3,6 @@ package keeper_test
 import (
 	"fmt"
 	"math/big"
-	"strings"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -66,7 +65,7 @@ func TestQueryPendingCommands(t *testing.T) {
 
 		nexusKeeper = &mock.NexusMock{
 			GetChainFunc: func(_ sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
-				if strings.EqualFold(chain.String(), evmChain.String()) {
+				if chain.Equals(evmChain) {
 					return nexus.Chain{
 						Name:                  evmChain,
 						SupportsForeignAssets: true,
@@ -141,7 +140,7 @@ func TestQueryDepositState(t *testing.T) {
 		}
 		nexusKeeper = &mock.NexusMock{
 			GetChainFunc: func(_ sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
-				if strings.EqualFold(chain.String(), evmChain.String()) {
+				if chain.Equals(evmChain) {
 					return nexus.Chain{
 						Name:                  evmChain,
 						SupportsForeignAssets: true,

@@ -326,8 +326,7 @@ func (s msgServer) RouteIBCTransfers(c context.Context, _ *types.RouteIBCTransfe
 			s.Logger(ctx).Error(fmt.Sprintf("%s is not a registered chain", chain.Name))
 			continue
 		}
-
-		if strings.EqualFold(chain.Name.String(), exported.Axelarnet.Name.String()) {
+		if chain.Name.Equals(exported.Axelarnet.Name) {
 			continue
 		}
 

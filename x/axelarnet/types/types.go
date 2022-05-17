@@ -4,7 +4,6 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"sort"
-	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/address"
@@ -93,7 +92,7 @@ func SortTransfers(transfers []IBCTransfer) {
 
 // Validate checks the stateless validity of the cosmos chain
 func (m CosmosChain) Validate() error {
-	if strings.EqualFold(m.Name.String(), exported.Axelarnet.Name.String()) {
+	if m.Name.Equals(exported.Axelarnet.Name) {
 		if m.IBCPath != "" {
 			return fmt.Errorf("IBC path should be empty for %s", exported.Axelarnet.Name)
 		}
