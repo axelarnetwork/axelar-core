@@ -4,5 +4,6 @@
   "tokens": "Transfer tokens",
   "gmp": "General Message Passing",
   "gas-receiver": "Axelar Gas Receiver",
+  "gmp-tracker": "GMP status tracker",
   "chain-names": "Chain names"
 }
