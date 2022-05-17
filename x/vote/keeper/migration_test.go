@@ -27,8 +27,14 @@ func TestName(t *testing.T) {
 	packed, err := codectypes.NewAnyWithValue(&vote)
 	assert.NoError(t, err)
 
+	meta := exported2.PollMetadata{Result: packed}
+
 	cdc := app.MakeEncodingConfig().Codec
-	newPackedVote := keeper.MigrateVoteData(cdc, packed, log.TestingLogger())
+
+	bz := cdc.MustMarshalLengthPrefixed(&meta)
+	meta = exported2.PollMetadata{} // reset
+	cdc.MustUnmarshalLengthPrefixed(bz, &meta)
+	newPackedVote := keeper.MigrateVoteData(cdc, meta.Result, log.TestingLogger())
 
 	newVote, ok := newPackedVote.GetCachedValue().(*exported.Vote)
 	assert.True(t, ok)
