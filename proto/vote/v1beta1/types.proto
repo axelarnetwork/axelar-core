@@ -20,3 +20,9 @@ message TalliedVote {
   google.protobuf.Any data = 3 [ (cosmos_proto.accepts_interface) =
                                      "github.com/cosmos/codec/ProtoMarshaler" ];
 }
+
+message VoteRecord {
+  bytes voter = 1 [ (gogoproto.casttype) =
+                        "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
+  bool is_late = 2;
+}

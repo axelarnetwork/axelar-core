@@ -14,14 +14,27 @@ const uaxlAsset = "uaxl"
 
 // GetMigrationHandler returns the handler that performs in-place store migrations from v0.17 to v0.18. The
 // migration includes:
+// - migrate contracts bytecode (CRUCIAL AND DO NOT DELETE) for all evm chains
 // - delete pending chains from the base keeper
-// - migrate contracts bytecode (CRUCIAL AND DO NOT DELETE)
+// - add VotingGracePeriod param for all evm chains
 // - delete uaxl token for all evm chains
 // - delete uaxl token's burners for all evm chains
 // - migrate uaxl token's confirmed deposits to burnt for all evm chains
 // - delete uaxl token's deployment commands for all evm chains
 func GetMigrationHandler(k BaseKeeper, n types.Nexus) func(ctx sdk.Context) error {
 	return func(ctx sdk.Context) error {
+		// migrate contracts bytecode (CRUCIAL AND DO NOT DELETE) for all evm chains
+		for _, chain := range n.GetChains(ctx) {
+			if chain.Module != types.ModuleName {
+				continue
+			}
+
+			ck := k.ForChain(chain.Name).(chainKeeper)
+			if err := migrateContractsBytecode(ctx, ck); err != nil {
+				return err
+			}
+		}
+
 		deleteAllPendingChains(ctx, k)
 
 		for _, chain := range n.GetChains(ctx) {
@@ -30,7 +43,7 @@ func GetMigrationHandler(k BaseKeeper, n types.Nexus) func(ctx sdk.Context) erro
 			}
 			ck := k.ForChain(chain.Name).(chainKeeper)
 
-			if err := migrateContractsBytecode(ctx, ck); err != nil {
+			if err := setVotingGracePeriod(ctx, ck); err != nil {
 				return err
 			}
 
@@ -59,6 +72,16 @@ func deleteAllPendingChains(ctx sdk.Context, k BaseKeeper) {
 	for ; iter.Valid(); iter.Next() {
 		k.getBaseStore(ctx).Delete(iter.GetKey())
 	}
+}
+
+func setVotingGracePeriod(ctx sdk.Context, ck chainKeeper) error {
+	subspace, ok := ck.getSubspace(ctx)
+	if !ok {
+		return fmt.Errorf("param subspace for chain %s should exist", ck.GetName())
+	}
+
+	subspace.Set(ctx, types.KeyVotingGracePeriod, types.DefaultParams()[0].VotingGracePeriod)
+	return nil
 }
 
 func deleteToken(ctx sdk.Context, ck chainKeeper, token types.ERC20TokenMetadata) {
@@ -125,15 +148,13 @@ func migrateContractsBytecode(ctx sdk.Context, ck chainKeeper) error {
 		return err
 	}
 
-	params := ck.GetParams(ctx)
-	params.TokenCode = bzToken
-	params.Burnable = bzBurnable
-
-	if err := params.Validate(); err != nil {
-		return err
+	subspace, ok := ck.getSubspace(ctx)
+	if !ok {
+		return fmt.Errorf("param subspace for chain %s should exist", ck.GetName())
 	}
 
-	ck.SetParams(ctx, params)
+	subspace.Set(ctx, types.KeyToken, bzToken)
+	subspace.Set(ctx, types.KeyBurnable, bzBurnable)
 
 	return nil
 }

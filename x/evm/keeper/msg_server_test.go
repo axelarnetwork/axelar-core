@@ -815,13 +815,14 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 				}
 				return types.NilToken
 			},
+			GetParamsFunc: func(ctx sdk.Context) types.Params { return types.DefaultParams()[0] },
 		}
 		v = &mock.VoterMock{
 			InitializePollFunc: func(sdk.Context, vote.PollKey, []sdk.ValAddress, ...vote.PollProperty) error { return nil },
 			GetPollFunc: func(sdk.Context, vote.PollKey) vote.Poll {
 				return &voteMock.PollMock{
-					VoteFunc: func(sdk.ValAddress, codec.ProtoMarshaler) error {
-						return nil
+					VoteFunc: func(voter sdk.ValAddress, blockHeight int64, data codec.ProtoMarshaler) (codec.ProtoMarshaler, bool, error) {
+						return nil, false, nil
 					},
 					IsFunc: func(state vote.PollState) bool {
 						switch state {
@@ -1051,13 +1052,14 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 					DestinationChain: evmChain,
 				}, true
 			},
+			GetParamsFunc: func(ctx sdk.Context) types.Params { return types.DefaultParams()[0] },
 		}
 		v = &mock.VoterMock{
 			InitializePollFunc: func(sdk.Context, vote.PollKey, []sdk.ValAddress, ...vote.PollProperty) error { return nil },
 			GetPollFunc: func(sdk.Context, vote.PollKey) vote.Poll {
 				return &voteMock.PollMock{
-					VoteFunc: func(sdk.ValAddress, codec.ProtoMarshaler) error {
-						return nil
+					VoteFunc: func(voter sdk.ValAddress, blockHeight int64, data codec.ProtoMarshaler) (codec.ProtoMarshaler, bool, error) {
+						return nil, false, nil
 					},
 					IsFunc: func(state vote.PollState) bool {
 						switch state {

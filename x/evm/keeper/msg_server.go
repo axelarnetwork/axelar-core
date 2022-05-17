@@ -96,6 +96,7 @@ func (s msgServer) ConfirmGatewayTx(c context.Context, req *types.ConfirmGateway
 		vote.Threshold(votingThreshold),
 		vote.MinVoterCount(minVoterCount),
 		vote.RewardPool(chain.Name),
+		vote.GracePeriod(keeper.GetParams(ctx).VotingGracePeriod),
 	); err != nil {
 		return nil, err
 	}
@@ -290,6 +291,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		vote.Threshold(votingThreshold),
 		vote.MinVoterCount(minVoterCount),
 		vote.RewardPool(chain.Name),
+		vote.GracePeriod(keeper.GetParams(ctx).VotingGracePeriod),
 	); err != nil {
 		return nil, err
 	}
@@ -359,6 +361,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		vote.Threshold(votingThreshold),
 		vote.MinVoterCount(minVoterCount),
 		vote.RewardPool(chain.Name),
+		vote.GracePeriod(keeper.GetParams(ctx).VotingGracePeriod),
 	); err != nil {
 		return nil, err
 	}
@@ -438,6 +441,7 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 		vote.Threshold(votingThreshold),
 		vote.MinVoterCount(minVoterCount),
 		vote.RewardPool(chain.Name),
+		vote.GracePeriod(keeper.GetParams(ctx).VotingGracePeriod),
 	); err != nil {
 		return nil, err
 	}

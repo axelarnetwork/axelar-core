@@ -25,7 +25,10 @@ message Voter {
   int64 voting_power = 2;
 }
 
-message Vote { google.protobuf.Any result = 1; }
+message Vote {
+  reserved 1; // results was removed in v0.18
+  google.protobuf.Any result = 2;
+}
 
 // PollMetadata represents a poll with write-in voting, i.e. the result of the
 // vote can have any data type
@@ -44,6 +47,8 @@ message PollMetadata {
     (gogoproto.nullable) = false
   ];
   string reward_pool_name = 10;
+  int64 grace_period = 11;
+  int64 completed_at = 12;
 }
 
 enum PollState {

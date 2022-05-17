@@ -5,7 +5,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
@@ -23,19 +22,20 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/types/mock"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
-	voteMock "github.com/axelarnetwork/axelar-core/x/vote/exported/mock"
 )
 
-func TestHandleVoteResult(t *testing.T) {
+func TestHandleResult(t *testing.T) {
 	var (
 		ctx        sdk.Context
 		cacheStore *fakeMock.CacheMultiStoreMock
 		basek      *mock.BaseKeeperMock
 		chaink     *mock.ChainKeeperMock
 		n          *mock.NexusMock
+		r          *mock.RewarderMock
 		result     vote.Vote
 		handler    vote.VoteHandler
 	)
+
 	setup := func() {
 		store := &fakeMock.MultiStoreMock{}
 		cacheStore = &fakeMock.CacheMultiStoreMock{
@@ -78,8 +78,9 @@ func TestHandleVoteResult(t *testing.T) {
 				return c, ok
 			},
 		}
+		r = &mock.RewarderMock{}
 		encCfg := params.MakeEncodingConfig()
-		handler = keeper.NewVoteHandler(encCfg.Codec, basek, n)
+		handler = keeper.NewVoteHandler(encCfg.Codec, basek, n, r)
 
 		result = vote.Vote{}
 	}
@@ -95,10 +96,7 @@ func TestHandleVoteResult(t *testing.T) {
 		}
 		result.Result = voteEvents
 
-		poll := voteMock.PollMock{
-			GetResultFunc: func() codec.ProtoMarshaler { return &result },
-		}
-		err = handler(ctx, &poll)
+		err = handler.HandleResult(ctx, &result)
 
 		assert.Error(t, err)
 		assert.Len(t, cacheStore.WriteCalls(), 0)
@@ -113,31 +111,10 @@ func TestHandleVoteResult(t *testing.T) {
 		}
 		result.Result = voteEvents
 
-		voter := vote.Voter{
-			Validator: rand.ValAddr(),
-		}
-		poll := voteMock.PollMock{
-			GetResultFunc:         func() codec.ProtoMarshaler { return &result },
-			GetVotersFunc:         func() []vote.Voter { return []vote.Voter{voter} },
-			HasVotedFunc:          func(_ sdk.ValAddress) bool { return false },
-			HasVotedCorrectlyFunc: func(voter sdk.ValAddress) bool { return false },
-			AllowOverrideFunc:     func() {},
-		}
-		n.MarkChainMaintainerMissingVoteFunc = func(_ sdk.Context, _ nexus.Chain, _ sdk.ValAddress, _ bool) {}
-		n.MarkChainMaintainerIncorrectVoteFunc = func(_ sdk.Context, _ nexus.Chain, _ sdk.ValAddress, _ bool) {}
-		err = handler(ctx, &poll)
+		err = handler.HandleResult(ctx, &result)
 
 		assert.NoError(t, err)
 		assert.Len(t, cacheStore.WriteCalls(), 0)
-		assert.Len(t, n.MarkChainMaintainerMissingVoteCalls(), 1)
-		assert.Equal(t, evmChain, n.MarkChainMaintainerMissingVoteCalls()[0].Chain.Name)
-		assert.Equal(t, voter.Validator, n.MarkChainMaintainerMissingVoteCalls()[0].Address)
-		assert.True(t, n.MarkChainMaintainerMissingVoteCalls()[0].MissingVote)
-		assert.Len(t, n.MarkChainMaintainerIncorrectVoteCalls(), 1)
-		assert.Equal(t, evmChain, n.MarkChainMaintainerIncorrectVoteCalls()[0].Chain.Name)
-		assert.Equal(t, voter.Validator, n.MarkChainMaintainerIncorrectVoteCalls()[0].Address)
-		assert.False(t, n.MarkChainMaintainerIncorrectVoteCalls()[0].IncorrectVote)
-		assert.Len(t, poll.AllowOverrideCalls(), 1)
 	}).Repeat(repeats))
 
 	t.Run("GIVEN vote WHEN chain is not registered THEN return error", testutils.Func(func(t *testing.T) {
@@ -151,11 +128,7 @@ func TestHandleVoteResult(t *testing.T) {
 		}
 		result.Result = voteEvents
 
-		poll := voteMock.PollMock{
-			GetResultFunc: func() codec.ProtoMarshaler { return &result },
-			GetVotersFunc: func() []vote.Voter { return []vote.Voter{} },
-		}
-		err = handler(ctx, &poll)
+		err = handler.HandleResult(ctx, &result)
 
 		assert.Error(t, err)
 		assert.Len(t, cacheStore.WriteCalls(), 0)
@@ -172,11 +145,8 @@ func TestHandleVoteResult(t *testing.T) {
 		}
 		result.Result = voteEvents
 
-		poll := voteMock.PollMock{
-			GetResultFunc: func() codec.ProtoMarshaler { return &result },
-			GetVotersFunc: func() []vote.Voter { return []vote.Voter{} },
-		}
-		err = handler(ctx, &poll)
+		err = handler.HandleResult(ctx, &result)
+
 		assert.NoError(t, err)
 		assert.Len(t, cacheStore.WriteCalls(), 1)
 	}).Repeat(repeats))
@@ -187,10 +157,7 @@ func TestHandleVoteResult(t *testing.T) {
 		incorrectResult, _ := codectypes.NewAnyWithValue(types.NewConfirmGatewayTxRequest(rand.AccAddr(), rand.Str(5), types.Hash(common.BytesToHash(rand.Bytes(common.HashLength)))))
 		result.Result = incorrectResult
 
-		poll := voteMock.PollMock{
-			GetResultFunc: func() codec.ProtoMarshaler { return &result },
-		}
-		err := handler(ctx, &poll)
+		err := handler.HandleResult(ctx, &result)
 
 		assert.Error(t, err)
 		assert.Len(t, cacheStore.WriteCalls(), 0)
@@ -209,11 +176,7 @@ func TestHandleVoteResult(t *testing.T) {
 		}
 		result.Result = voteEvents
 
-		poll := voteMock.PollMock{
-			GetResultFunc: func() codec.ProtoMarshaler { return &result },
-			GetVotersFunc: func() []vote.Voter { return []vote.Voter{} },
-		}
-		err = handler(ctx, &poll)
+		err = handler.HandleResult(ctx, &result)
 
 		assert.Error(t, err)
 		assert.Len(t, cacheStore.WriteCalls(), 0)
@@ -222,8 +185,7 @@ func TestHandleVoteResult(t *testing.T) {
 }
 
 func randTransferEvents(n int) []types.Event {
-	var events []types.Event
-	events = make([]types.Event, n)
+	events := make([]types.Event, n)
 	burnerAddress := types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength)))
 	for i := 0; i < n; i++ {
 		transfer := types.EventTransfer{
