@@ -16,7 +16,9 @@ message TalliedVote {
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
     (gogoproto.nullable) = false
   ];
-  repeated bytes voters = 2 [ (gogoproto.castrepeated) = "github.com/axelarnetwork/axelar-core/x/vote/types.Voters" ];
+  repeated bytes voters = 2
+      [ (gogoproto.castrepeated) =
+            "github.com/axelarnetwork/axelar-core/x/vote/types.Voters" ];
   google.protobuf.Any data = 3 [ (cosmos_proto.accepts_interface) =
                                      "github.com/cosmos/codec/ProtoMarshaler" ];
 }
