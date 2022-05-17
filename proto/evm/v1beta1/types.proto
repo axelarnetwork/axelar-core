@@ -4,8 +4,8 @@ package evm.v1beta1;
 option go_package = "github.com/axelarnetwork/axelar-core/x/evm/types2";
 
 import "gogoproto/gogo.proto";
-import "nexus/exported/v1beta1/types.proto";
-import "tss/exported/v1beta1/types.proto";
+import "axelar/nexus/exported/v1beta1/types.proto";
+import "axelar/tss/exported/v1beta1/types.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
@@ -25,7 +25,7 @@ message Event {
 
   string chain = 1;
   bytes tx_id = 2
-      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Hash" ];
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "github.com/axelarnetwork/axelar-core/x/evm/types.Hash" ];
   uint64 index = 3;
   Status status = 4;
 
@@ -45,7 +45,7 @@ message Event {
 
 message EventTokenSent {
   bytes sender = 1
-      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "github.com/axelarnetwork/axelar-core/x/evm/types.Address" ];
   string destination_chain = 2;
   string destination_address = 3;
   string symbol = 4;
@@ -57,20 +57,20 @@ message EventTokenSent {
 
 message EventContractCall {
   bytes sender = 1
-      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "github.com/axelarnetwork/axelar-core/x/evm/types.Address" ];
   string destination_chain = 2;
   string contract_address = 3;
   bytes payload_hash = 4
-      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Hash" ];
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "github.com/axelarnetwork/axelar-core/x/evm/types.Hash" ];
 }
 
 message EventContractCallWithToken {
   bytes sender = 1
-      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "github.com/axelarnetwork/axelar-core/x/evm/types.Address" ];
   string destination_chain = 2;
   string contract_address = 3;
   bytes payload_hash = 4
-      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Hash" ];
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "github.com/axelarnetwork/axelar-core/x/evm/types.Hash" ];
   string symbol = 5;
   bytes amount = 6 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
@@ -80,7 +80,7 @@ message EventContractCallWithToken {
 
 message EventTransfer {
   bytes to = 1
-      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "github.com/axelarnetwork/axelar-core/x/evm/types.Address" ];
   bytes amount = 2 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
     (gogoproto.nullable) = false
@@ -90,18 +90,18 @@ message EventTransfer {
 message EventTokenDeployed {
   string symbol = 1;
   bytes token_address = 2
-      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "github.com/axelarnetwork/axelar-core/x/evm/types.Address" ];
 }
 
 message EventMultisigOwnershipTransferred {
   repeated bytes pre_owners = 1
-      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "github.com/axelarnetwork/axelar-core/x/evm/types.Address" ];
   bytes prev_threshold = 2 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
     (gogoproto.nullable) = false
   ];
   repeated bytes new_owners = 3
-      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "github.com/axelarnetwork/axelar-core/x/evm/types.Address" ];
   bytes new_threshold = 4 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
     (gogoproto.nullable) = false
@@ -110,13 +110,13 @@ message EventMultisigOwnershipTransferred {
 
 message EventMultisigOperatorshipTransferred {
   repeated bytes pre_operators = 1
-      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "github.com/axelarnetwork/axelar-core/x/evm/types.Address" ];
   bytes prev_threshold = 2 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
     (gogoproto.nullable) = false
   ];
   repeated bytes new_operators = 3
-      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "github.com/axelarnetwork/axelar-core/x/evm/types.Address" ];
   bytes new_threshold = 4 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
     (gogoproto.nullable) = false
@@ -125,16 +125,16 @@ message EventMultisigOperatorshipTransferred {
 
 message EventSinglesigOwnershipTransferred {
   bytes pre_owner = 1
-      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "github.com/axelarnetwork/axelar-core/x/evm/types.Address" ];
   bytes new_owner = 2
-      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "github.com/axelarnetwork/axelar-core/x/evm/types.Address" ];
 }
 
 message EventSinglesigOperatorshipTransferred {
   bytes pre_operator = 1
-      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "github.com/axelarnetwork/axelar-core/x/evm/types.Address" ];
   bytes new_operator = 2
-      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "github.com/axelarnetwork/axelar-core/x/evm/types.Address" ];
 }
 
 // NetworkInfo describes information about a network
@@ -150,21 +150,21 @@ message NetworkInfo {
 // that is deposited by an user
 message BurnerInfo {
   bytes burner_address = 1
-      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "github.com/axelarnetwork/axelar-core/x/evm/types.Address" ];
   bytes token_address = 2
-      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "github.com/axelarnetwork/axelar-core/x/evm/types.Address" ];
   string destination_chain = 3;
   string symbol = 4;
   string asset = 5;
   bytes salt = 6
-      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Hash" ];
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "github.com/axelarnetwork/axelar-core/x/evm/types.Hash" ];
 }
 
 // ERC20Deposit contains information for an ERC20 deposit
 message ERC20Deposit {
   bytes tx_id = 1 [
     (gogoproto.nullable) = false,
-    (gogoproto.customtype) = "Hash",
+    (gogoproto.customtype) = "github.com/axelarnetwork/axelar-core/x/evm/types.Hash",
     (gogoproto.customname) = "TxID"
   ];
   bytes amount = 2 [
@@ -174,7 +174,7 @@ message ERC20Deposit {
   string asset = 3;
   string destination_chain = 4;
   bytes burner_address = 5
-      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "github.com/axelarnetwork/axelar-core/x/evm/types.Address" ];
 }
 
 // ERC20TokenMetadata describes information about an ERC20 token
@@ -187,9 +187,9 @@ message ERC20TokenMetadata {
   ];
   TokenDetails details = 3 [ (gogoproto.nullable) = false ];
   string token_address = 4
-      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "github.com/axelarnetwork/axelar-core/x/evm/types.Address" ];
   string tx_hash = 5
-      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Hash" ];
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "github.com/axelarnetwork/axelar-core/x/evm/types.Hash" ];
   reserved 6; // min_amount was removed in v0.15
   Status status = 7;
   bool is_external = 8;
@@ -217,7 +217,7 @@ message Command {
   bytes id = 1 [
     (gogoproto.nullable) = false,
     (gogoproto.customname) = "ID",
-    (gogoproto.customtype) = "CommandID"
+    (gogoproto.customtype) = "github.com/axelarnetwork/axelar-core/x/evm/types.CommandID"
   ];
   string command = 2;
   bytes params = 3;
@@ -247,11 +247,11 @@ message CommandBatchMetadata {
   repeated bytes command_ids = 2 [
     (gogoproto.nullable) = false,
     (gogoproto.customname) = "CommandIDs",
-    (gogoproto.customtype) = "CommandID"
+    (gogoproto.customtype) = "github.com/axelarnetwork/axelar-core/x/evm/types.CommandID"
   ];
   bytes data = 3;
   bytes sig_hash = 4
-      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Hash" ];
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "github.com/axelarnetwork/axelar-core/x/evm/types.Hash" ];
   BatchedCommandsStatus status = 5;
   string key_id = 6 [
     (gogoproto.customname) = "KeyID",
@@ -294,7 +294,7 @@ message TransferKey {
 
   bytes tx_id = 1 [
     (gogoproto.nullable) = false,
-    (gogoproto.customtype) = "Hash",
+    (gogoproto.customtype) = "github.com/axelarnetwork/axelar-core/x/evm/types.Hash",
     (gogoproto.customname) = "TxID"
   ];
   TransferKeyType type = 2;
@@ -345,6 +345,6 @@ message Gateway {
   }
 
   bytes address = 1
-      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "github.com/axelarnetwork/axelar-core/x/evm/types.Address" ];
   Status status = 2 [ deprecated = true ];
 }

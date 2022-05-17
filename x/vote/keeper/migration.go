@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"encoding/hex"
+	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -18,12 +19,11 @@ import (
 
 func GetMigrationHandler(k Keeper) func(ctx sdk.Context) error {
 	return func(ctx sdk.Context) error {
-		migrateVotes(ctx, k)
-		return nil
+		return migrateVotes(ctx, k)
 	}
 }
 
-func migrateVotes(ctx sdk.Context, k Keeper) {
+func migrateVotes(ctx sdk.Context, k Keeper) error {
 	metadatas := k.getPollMetadatasOld(ctx)
 	for _, metadata := range metadatas {
 		newMetadata := exported.PollMetadata{
@@ -50,6 +50,26 @@ func migrateVotes(ctx sdk.Context, k Keeper) {
 			pollStore.Set(votesPrefix.AppendStr(pollStore.key.String()).AppendStr(newVote.Hash()), &newVote)
 		}
 	}
+
+	return assertMigrationSuccessful(ctx, k)
+}
+
+func assertMigrationSuccessful(ctx sdk.Context, k Keeper) error {
+	metadatas := k.getPollMetadatas(ctx)
+	for _, metadata := range metadatas {
+		if metadata.Result.GetCachedValue() == nil {
+			return fmt.Errorf("failed to verify poll result for %s", hex.EncodeToString(k.cdc.MustMarshalLengthPrefixed(&metadata)))
+		}
+
+		pollStore := k.newPollStore(ctx, metadata.Key)
+		votes := pollStore.GetVotes()
+		for _, vote := range votes {
+			if metadata.Result.GetCachedValue() == nil {
+				return fmt.Errorf("failed to verify tallied vote data for %s", hex.EncodeToString(k.cdc.MustMarshalLengthPrefixed(&vote)))
+			}
+		}
+	}
+	return nil
 }
 
 func MigrateVoteData(cdc codec.BinaryCodec, data *codectypes.Any, logger log.Logger) *codectypes.Any {
