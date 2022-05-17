@@ -11,7 +11,6 @@ To search for a particular transfer, you can enter either a transaction hash or 
 ![gmp-searchbar.png](/images/gmp-searchbar.png)
 
 ### searchGMP API
-
 This API endpoint allows you to programmatically get the General Message Passing status via an HTTP request.
 
 #### HTTP Request
@@ -36,8 +35,8 @@ This API endpoint allows you to programmatically get the General Message Passing
 | `from`             | number   | the records' index for pagination                                                                                     |
 | `size`             | number   | the number of the returned records. This field is used for pagination.                                                |
 
-### Execute Manually
-Axelar provides a relayer service that automatically executes transfers for you. Alternatively, you also can execute transfers manually through the Axelarscan's GMP page by connecting a wallet, and click the Execute button. Please note that you need to pay gas to process the transaction.
+### Manually execute a transfer
+Axelar provides a relayer service that automatically executes transfers for you. Alternatively, you also can manually execute a transfer through the Axelarscan's GMP page by connecting a wallet, and click the Execute button. Please note that you need to pay gas to process the transaction.
 
 ![gmp-connect-wallet.png](/images/gmp-connect-wallet.png)
 ![gmp-execute-button.png](/images/gmp-execute-button.png)
