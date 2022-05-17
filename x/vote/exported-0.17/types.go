@@ -1,4 +1,4 @@
-package exported2
+package exported_0_17
 
 import (
 	"github.com/cosmos/cosmos-sdk/codec"

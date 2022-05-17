@@ -1,4 +1,4 @@
-package keeper
+package keeper_test
 
 import (
 	"testing"
@@ -18,7 +18,7 @@ import (
 func TestGetMigrationHandler(t *testing.T) {
 	var (
 		ctx     sdk.Context
-		keeper  Keeper
+		keeper  keeper.Keeper
 		handler func(ctx sdk.Context) error
 	)
 
@@ -144,4 +144,33 @@ func TestGetMigrationHandler(t *testing.T) {
 			}
 		}).
 		Run(t, repeats)
+}
+
+
+func TestMigrateVotes(t *testing.T) {
+	vote := exported0_17.Vote{}
+	for i := 0; i < 10; i++ {
+		result, err := codectypes.NewAnyWithValue(&evmtypes.Event{
+			Chain: rand.Str(10),
+		})
+		assert.NoError(t, err)
+		vote.Results = append(vote.Results, result)
+	}
+	packed, err := codectypes.NewAnyWithValue(&vote)
+	assert.NoError(t, err)
+
+	meta := exported0_17.PollMetadata{Result: packed}
+
+	cdc := app.MakeEncodingConfig().Codec
+
+	bz := cdc.MustMarshalLengthPrefixed(&meta)
+	meta = exported0_17.PollMetadata{} // reset
+	cdc.MustUnmarshalLengthPrefixed(bz, &meta)
+	newPackedVote := keeper.MigrateVoteData(cdc, rand.Str(5), meta.Result, log.TestingLogger())
+
+	newVote, ok := newPackedVote.GetCachedValue().(*exported.Vote)
+	assert.True(t, ok)
+	events, err := evmtypes.UnpackEvents(cdc, newVote.Result)
+	assert.NoError(t, err)
+	assert.Len(t, events.Events, 10)
 }

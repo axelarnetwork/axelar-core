@@ -8,7 +8,7 @@ import (
 
 	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
-	vote2 "github.com/axelarnetwork/axelar-core/x/vote/exported2"
+	exported0_17 "github.com/axelarnetwork/axelar-core/x/vote/exported-0.17"
 )
 
 // RegisterLegacyAminoCodec registers concrete types on codec
@@ -23,7 +23,7 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 	registry.RegisterImplementations((*reward.Refundable)(nil), &VoteRequest{})
 
 	registry.RegisterImplementations((*codec.ProtoMarshaler)(nil), &vote.Vote{})
-	registry.RegisterImplementations((*codec.ProtoMarshaler)(nil), &vote2.Vote{})
+	registry.RegisterImplementations((*codec.ProtoMarshaler)(nil), &exported0_17.Vote{})
 }
 
 var amino = codec.NewLegacyAmino()
