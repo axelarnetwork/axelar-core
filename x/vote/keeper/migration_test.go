@@ -15,7 +15,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/vote/keeper"
 )
 
-func TestName(t *testing.T) {
+func TestMigrateVotes(t *testing.T) {
 	vote := exported2.Vote{}
 	for i := 0; i < 10; i++ {
 		result, err := codectypes.NewAnyWithValue(&evmtypes.Event{
