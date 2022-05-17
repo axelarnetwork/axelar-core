@@ -27,17 +27,20 @@ import (
 
 func TestKeeper_TransfersForChain(t *testing.T) {
 	var (
-		k              nexusKeeper.Keeper
-		ctx            sdk.Context
-		totalTransfers int64
-		pageRequest    *query.PageRequest
-		response       *types.TransfersForChainResponse
+		k               nexusKeeper.Keeper
+		axelarnetKeeper types.AxelarnetKeeper
+		q               nexusKeeper.Querier
+		ctx             sdk.Context
+		totalTransfers  int64
+		pageRequest     *query.PageRequest
+		response        *types.TransfersForChainResponse
 	)
 
 	Given("a nexus keeper", func() {
 		encCfg := app.MakeEncodingConfig()
 		nexusSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("nexusKey"), sdk.NewKVStoreKey("tNexusKey"), "nexus")
 		k = nexusKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("nexus"), nexusSubspace)
+		q = nexusKeeper.NewGRPCQuerier(k, axelarnetKeeper)
 	}).
 		When("a correct context", func() {
 			store := fake.NewMultiStore()
@@ -96,7 +99,7 @@ func TestKeeper_TransfersForChain(t *testing.T) {
 		}).
 		When("TransferForChain is called", func() {
 			var err error
-			response, err = k.TransfersForChain(sdk.WrapSDKContext(ctx), &types.TransfersForChainRequest{
+			response, err = q.TransfersForChain(sdk.WrapSDKContext(ctx), &types.TransfersForChainRequest{
 				Chain:      axelarnet.Axelarnet.Name,
 				State:      exported.Pending,
 				Pagination: pageRequest,
