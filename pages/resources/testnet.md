@@ -5,6 +5,7 @@ import MarkdownPath from '../../components/markdown'
 import EVMChains from '../../components/evm/chains'
 import EVMAssets from '../../components/evm/assets'
 import IBCChannels from '../../components/ibc/channels'
+import TransferFeeCalculator from '../../components/transfer-fee/calculator'
 
 | Variable              | Value     |
 | --------------------- | --------- |
@@ -39,6 +40,11 @@ The relayer gas fee amount depends only on:
 <Callout emoji="💡">
   The relayer gas fee does NOT take a percentage from the transfer amount.
 </Callout>
+
+<div className="space-y-1 mt-4">
+  ## Transfer Fee Calculator
+  <TransferFeeCalculator environment="testnet" />
+</div>
 
 Example: a transfer of X USDC tokens from Ethereum to Osmosis will have a fee of 40.5 USDC (= 40 USDC for Ethereum + 0.5 USDC for Osmosis),
 and so the recipient will get X - 40.5 USDC tokens on Osmosis.

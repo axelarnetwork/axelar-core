@@ -19,24 +19,24 @@ export default ({ environment = "mainnet" }) => {
       if (evm_chains?.[environment]?.findIndex(c => c?.id === chain) > -1) {
         const chain_data = evm_chains[environment].find(c => c?.id === chain);
         const asset_data = evm_assets?.[environment]?.find(a => a?.id === assetData.id);
-        transfer_fee = asset_data?.contracts?.find(c => c?.chain === chain)?.transfer_fee || asset_data?.transfer_fee;
+        transfer_fee = asset_data?.contracts?.find(c => c?.chain === chain)?.transfer_fee || (asset_data?.contracts?.findIndex(c => c?.chain === chain) > -1 ? asset_data?.transfer_fee : null);
       }
       else if (cosmos_chains?.[environment]?.findIndex(c => c?.id === chain) > -1) {
         const asset_data = ibc_assets?.[environment]?.find(a => a?.id === assetData.id);
         transfer_fee = asset_data?.transfer_fee;
       }
     }
-    return transfer_fee || 0;
+    return transfer_fee;
   };
 
   const { symbol } = { ...assetData };
   const sourceTransferFee = getTransferFee(sourceChainData?.id);
   const destinationTransferFee = getTransferFee(destinationChainData?.id);
-
+  const totalFee = parseFloat(((sourceTransferFee || 0) + (destinationTransferFee || 0)).toFixed(6));
   return (
     <div className="max-w-lg border dark:border-gray-500 rounded-2xl shadow dark:shadow-gray-500 flex flex-col p-6">
-      <div className="grid grid-cols-5 items-center gap-6">
-        <span className="col-span-2 text-lg font-bold">
+      <div className="grid grid-cols-3 items-center gap-6">
+        <span className="text-base font-bold">
           Asset
         </span>
         <Dropdown
@@ -45,14 +45,14 @@ export default ({ environment = "mainnet" }) => {
           placeholder="Select Asset"
           defaultSelectedKey={assetData?.id || ""}
           onSelect={a => setAssetData(a)}
-          className="col-span-2"
+          className="min-w-max"
         />
         <span className="whitespace-nowrap text-base font-semibold text-right">
           Fee
         </span>
       </div>
-      <div className="grid grid-cols-5 items-center gap-6 mt-4">
-        <span className="col-span-2 text-lg font-bold">
+      <div className="grid grid-cols-3 items-center gap-6 mt-4">
+        <span className="text-base font-bold">
           Source chain
         </span>
         <Dropdown
@@ -61,10 +61,10 @@ export default ({ environment = "mainnet" }) => {
           placeholder="Select Chain"
           defaultSelectedKey={sourceChainData?.id || ""}
           onSelect={c => setSourceChainData(c)}
-          className="col-span-2"
+          className="min-w-max"
         />
         <span className="whitespace-nowrap text-base font-semibold text-right">
-          {sourceTransferFee} {symbol}
+          {sourceTransferFee || 'N/A'} {symbol}
         </span>
       </div>
       <div className="flex items-center justify-end">
@@ -72,8 +72,8 @@ export default ({ environment = "mainnet" }) => {
           +
         </span>
       </div>
-      <div className="grid grid-cols-5 items-center gap-6 mt-1">
-        <span className="col-span-2 text-lg font-bold">
+      <div className="grid grid-cols-3 items-center gap-6 mt-1">
+        <span className="text-base font-bold">
           Destination chain
         </span>
         <Dropdown
@@ -82,10 +82,10 @@ export default ({ environment = "mainnet" }) => {
           placeholder="Select Chain"
           defaultSelectedKey={destinationChainData?.id || ""}
           onSelect={c => setDestinationChainData(c)}
-          className="col-span-2"
+          className="min-w-max"
         />
         <span className="whitespace-nowrap text-base font-semibold text-right">
-          {destinationTransferFee} {symbol}
+          {destinationTransferFee || 'N/A'} {symbol}
         </span>
       </div>
       <div className="border-t-2 dark:border-gray-500 mt-4" />
@@ -94,7 +94,7 @@ export default ({ environment = "mainnet" }) => {
           Total
         </span>
         <span className="text-xl font-bold">
-          {sourceTransferFee + destinationTransferFee} {symbol}
+          {totalFee} {symbol}
         </span>
       </div>
       <div className="h-3 border-y-2 dark:border-gray-500 mt-1" />
