@@ -484,6 +484,274 @@
 - [axelar/vote/v1beta1/types.proto](#axelar/vote/v1beta1/types.proto)
     - [TalliedVote](#axelar.vote.v1beta1.TalliedVote)
   
+- [axelarnet/v1beta1/params.proto](#axelarnet/v1beta1/params.proto)
+    - [Params](#axelarnet.v1beta1.Params)
+  
+- [axelarnet/v1beta1/types.proto](#axelarnet/v1beta1/types.proto)
+    - [Asset](#axelarnet.v1beta1.Asset)
+    - [CosmosChain](#axelarnet.v1beta1.CosmosChain)
+    - [IBCTransfer](#axelarnet.v1beta1.IBCTransfer)
+  
+- [axelarnet/v1beta1/genesis.proto](#axelarnet/v1beta1/genesis.proto)
+    - [GenesisState](#axelarnet.v1beta1.GenesisState)
+  
+- [utils/v1beta1/threshold.proto](#utils/v1beta1/threshold.proto)
+    - [Threshold](#utils.v1beta1.Threshold)
+  
+- [tss/exported/v1beta1/types.proto](#tss/exported/v1beta1/types.proto)
+    - [Key](#tss.exported.v1beta1.Key)
+    - [Key.ECDSAKey](#tss.exported.v1beta1.Key.ECDSAKey)
+    - [Key.MultisigKey](#tss.exported.v1beta1.Key.MultisigKey)
+    - [KeyRequirement](#tss.exported.v1beta1.KeyRequirement)
+    - [SigKeyPair](#tss.exported.v1beta1.SigKeyPair)
+    - [SignInfo](#tss.exported.v1beta1.SignInfo)
+    - [Signature](#tss.exported.v1beta1.Signature)
+    - [Signature.MultiSig](#tss.exported.v1beta1.Signature.MultiSig)
+    - [Signature.SingleSig](#tss.exported.v1beta1.Signature.SingleSig)
+  
+    - [AckType](#tss.exported.v1beta1.AckType)
+    - [KeyRole](#tss.exported.v1beta1.KeyRole)
+    - [KeyShareDistributionPolicy](#tss.exported.v1beta1.KeyShareDistributionPolicy)
+    - [KeyType](#tss.exported.v1beta1.KeyType)
+    - [SigStatus](#tss.exported.v1beta1.SigStatus)
+  
+- [nexus/exported/v1beta1/types.proto](#nexus/exported/v1beta1/types.proto)
+    - [Asset](#nexus.exported.v1beta1.Asset)
+    - [Chain](#nexus.exported.v1beta1.Chain)
+    - [CrossChainAddress](#nexus.exported.v1beta1.CrossChainAddress)
+    - [CrossChainTransfer](#nexus.exported.v1beta1.CrossChainTransfer)
+    - [FeeInfo](#nexus.exported.v1beta1.FeeInfo)
+    - [TransferFee](#nexus.exported.v1beta1.TransferFee)
+  
+    - [TransferState](#nexus.exported.v1beta1.TransferState)
+  
+- [nexus/v1beta1/types.proto](#nexus/v1beta1/types.proto)
+    - [ChainState](#nexus.v1beta1.ChainState)
+    - [LinkedAddresses](#nexus.v1beta1.LinkedAddresses)
+  
+- [nexus/v1beta1/query.proto](#nexus/v1beta1/query.proto)
+    - [AssetsRequest](#nexus.v1beta1.AssetsRequest)
+    - [AssetsResponse](#nexus.v1beta1.AssetsResponse)
+    - [ChainStateRequest](#nexus.v1beta1.ChainStateRequest)
+    - [ChainStateResponse](#nexus.v1beta1.ChainStateResponse)
+    - [ChainsByAssetRequest](#nexus.v1beta1.ChainsByAssetRequest)
+    - [ChainsByAssetResponse](#nexus.v1beta1.ChainsByAssetResponse)
+    - [ChainsRequest](#nexus.v1beta1.ChainsRequest)
+    - [ChainsResponse](#nexus.v1beta1.ChainsResponse)
+    - [FeeRequest](#nexus.v1beta1.FeeRequest)
+    - [FeeResponse](#nexus.v1beta1.FeeResponse)
+    - [LatestDepositAddressRequest](#nexus.v1beta1.LatestDepositAddressRequest)
+    - [LatestDepositAddressResponse](#nexus.v1beta1.LatestDepositAddressResponse)
+    - [QueryChainMaintainersResponse](#nexus.v1beta1.QueryChainMaintainersResponse)
+    - [TransferFeeRequest](#nexus.v1beta1.TransferFeeRequest)
+    - [TransferFeeResponse](#nexus.v1beta1.TransferFeeResponse)
+    - [TransfersForChainRequest](#nexus.v1beta1.TransfersForChainRequest)
+    - [TransfersForChainResponse](#nexus.v1beta1.TransfersForChainResponse)
+  
+- [axelarnet/v1beta1/query.proto](#axelarnet/v1beta1/query.proto)
+    - [PendingIBCTransferCountRequest](#axelarnet.v1beta1.PendingIBCTransferCountRequest)
+    - [PendingIBCTransferCountResponse](#axelarnet.v1beta1.PendingIBCTransferCountResponse)
+    - [PendingIBCTransferCountResponse.TransfersByChainEntry](#axelarnet.v1beta1.PendingIBCTransferCountResponse.TransfersByChainEntry)
+  
+- [utils/v1beta1/queuer.proto](#utils/v1beta1/queuer.proto)
+    - [QueueState](#utils.v1beta1.QueueState)
+    - [QueueState.Item](#utils.v1beta1.QueueState.Item)
+    - [QueueState.ItemsEntry](#utils.v1beta1.QueueState.ItemsEntry)
+  
+- [evm/v1beta1/types.proto](#evm/v1beta1/types.proto)
+    - [Asset](#evm.v1beta1.Asset)
+    - [BurnerInfo](#evm.v1beta1.BurnerInfo)
+    - [Command](#evm.v1beta1.Command)
+    - [CommandBatchMetadata](#evm.v1beta1.CommandBatchMetadata)
+    - [ERC20Deposit](#evm.v1beta1.ERC20Deposit)
+    - [ERC20TokenMetadata](#evm.v1beta1.ERC20TokenMetadata)
+    - [Event](#evm.v1beta1.Event)
+    - [EventContractCall](#evm.v1beta1.EventContractCall)
+    - [EventContractCallWithToken](#evm.v1beta1.EventContractCallWithToken)
+    - [EventMultisigOperatorshipTransferred](#evm.v1beta1.EventMultisigOperatorshipTransferred)
+    - [EventMultisigOwnershipTransferred](#evm.v1beta1.EventMultisigOwnershipTransferred)
+    - [EventSinglesigOperatorshipTransferred](#evm.v1beta1.EventSinglesigOperatorshipTransferred)
+    - [EventSinglesigOwnershipTransferred](#evm.v1beta1.EventSinglesigOwnershipTransferred)
+    - [EventTokenDeployed](#evm.v1beta1.EventTokenDeployed)
+    - [EventTokenSent](#evm.v1beta1.EventTokenSent)
+    - [EventTransfer](#evm.v1beta1.EventTransfer)
+    - [Gateway](#evm.v1beta1.Gateway)
+    - [NetworkInfo](#evm.v1beta1.NetworkInfo)
+    - [SigMetadata](#evm.v1beta1.SigMetadata)
+    - [TokenDetails](#evm.v1beta1.TokenDetails)
+    - [TransactionMetadata](#evm.v1beta1.TransactionMetadata)
+    - [TransferKey](#evm.v1beta1.TransferKey)
+  
+    - [BatchedCommandsStatus](#evm.v1beta1.BatchedCommandsStatus)
+    - [DepositStatus](#evm.v1beta1.DepositStatus)
+    - [Event.Status](#evm.v1beta1.Event.Status)
+    - [Gateway.Status](#evm.v1beta1.Gateway.Status)
+    - [SigType](#evm.v1beta1.SigType)
+    - [Status](#evm.v1beta1.Status)
+    - [TransferKeyType](#evm.v1beta1.TransferKeyType)
+  
+- [evm/v1beta1/params.proto](#evm/v1beta1/params.proto)
+    - [Params](#evm.v1beta1.Params)
+    - [PendingChain](#evm.v1beta1.PendingChain)
+  
+- [evm/v1beta1/genesis.proto](#evm/v1beta1/genesis.proto)
+    - [GenesisState](#evm.v1beta1.GenesisState)
+    - [GenesisState.Chain](#evm.v1beta1.GenesisState.Chain)
+  
+- [evm/v1beta1/query.proto](#evm/v1beta1/query.proto)
+    - [BatchedCommandsRequest](#evm.v1beta1.BatchedCommandsRequest)
+    - [BatchedCommandsResponse](#evm.v1beta1.BatchedCommandsResponse)
+    - [BurnerInfoRequest](#evm.v1beta1.BurnerInfoRequest)
+    - [BurnerInfoResponse](#evm.v1beta1.BurnerInfoResponse)
+    - [BytecodeRequest](#evm.v1beta1.BytecodeRequest)
+    - [BytecodeResponse](#evm.v1beta1.BytecodeResponse)
+    - [ChainsRequest](#evm.v1beta1.ChainsRequest)
+    - [ChainsResponse](#evm.v1beta1.ChainsResponse)
+    - [ConfirmationHeightRequest](#evm.v1beta1.ConfirmationHeightRequest)
+    - [ConfirmationHeightResponse](#evm.v1beta1.ConfirmationHeightResponse)
+    - [DepositQueryParams](#evm.v1beta1.DepositQueryParams)
+    - [DepositStateRequest](#evm.v1beta1.DepositStateRequest)
+    - [DepositStateResponse](#evm.v1beta1.DepositStateResponse)
+    - [EventRequest](#evm.v1beta1.EventRequest)
+    - [EventResponse](#evm.v1beta1.EventResponse)
+    - [GatewayAddressRequest](#evm.v1beta1.GatewayAddressRequest)
+    - [GatewayAddressResponse](#evm.v1beta1.GatewayAddressResponse)
+    - [KeyAddressRequest](#evm.v1beta1.KeyAddressRequest)
+    - [KeyAddressResponse](#evm.v1beta1.KeyAddressResponse)
+    - [KeyAddressResponse.MultisigAddresses](#evm.v1beta1.KeyAddressResponse.MultisigAddresses)
+    - [KeyAddressResponse.ThresholdAddress](#evm.v1beta1.KeyAddressResponse.ThresholdAddress)
+    - [PendingCommandsRequest](#evm.v1beta1.PendingCommandsRequest)
+    - [PendingCommandsResponse](#evm.v1beta1.PendingCommandsResponse)
+    - [QueryBurnerAddressResponse](#evm.v1beta1.QueryBurnerAddressResponse)
+    - [QueryCommandResponse](#evm.v1beta1.QueryCommandResponse)
+    - [QueryCommandResponse.ParamsEntry](#evm.v1beta1.QueryCommandResponse.ParamsEntry)
+    - [QueryDepositStateParams](#evm.v1beta1.QueryDepositStateParams)
+    - [QueryTokenAddressResponse](#evm.v1beta1.QueryTokenAddressResponse)
+  
+- [nexus/v1beta1/params.proto](#nexus/v1beta1/params.proto)
+    - [Params](#nexus.v1beta1.Params)
+  
+- [nexus/v1beta1/genesis.proto](#nexus/v1beta1/genesis.proto)
+    - [GenesisState](#nexus.v1beta1.GenesisState)
+  
+- [reward/v1beta1/params.proto](#reward/v1beta1/params.proto)
+    - [Params](#reward.v1beta1.Params)
+  
+- [reward/v1beta1/types.proto](#reward/v1beta1/types.proto)
+    - [Pool](#reward.v1beta1.Pool)
+    - [Pool.Reward](#reward.v1beta1.Pool.Reward)
+    - [Refund](#reward.v1beta1.Refund)
+  
+- [reward/v1beta1/genesis.proto](#reward/v1beta1/genesis.proto)
+    - [GenesisState](#reward.v1beta1.GenesisState)
+  
+- [snapshot/exported/v1beta1/types.proto](#snapshot/exported/v1beta1/types.proto)
+    - [Snapshot](#snapshot.exported.v1beta1.Snapshot)
+    - [Validator](#snapshot.exported.v1beta1.Validator)
+  
+    - [ValidatorIllegibility](#snapshot.exported.v1beta1.ValidatorIllegibility)
+  
+- [snapshot/v1beta1/params.proto](#snapshot/v1beta1/params.proto)
+    - [Params](#snapshot.v1beta1.Params)
+  
+- [snapshot/v1beta1/types.proto](#snapshot/v1beta1/types.proto)
+    - [ProxiedValidator](#snapshot.v1beta1.ProxiedValidator)
+  
+- [snapshot/v1beta1/genesis.proto](#snapshot/v1beta1/genesis.proto)
+    - [GenesisState](#snapshot.v1beta1.GenesisState)
+  
+- [snapshot/v1beta1/query.proto](#snapshot/v1beta1/query.proto)
+    - [QueryValidatorsResponse](#snapshot.v1beta1.QueryValidatorsResponse)
+    - [QueryValidatorsResponse.TssIllegibilityInfo](#snapshot.v1beta1.QueryValidatorsResponse.TssIllegibilityInfo)
+    - [QueryValidatorsResponse.Validator](#snapshot.v1beta1.QueryValidatorsResponse.Validator)
+  
+- [tss/tofnd/v1beta1/common.proto](#tss/tofnd/v1beta1/common.proto)
+    - [KeyPresenceRequest](#tss.tofnd.v1beta1.KeyPresenceRequest)
+    - [KeyPresenceResponse](#tss.tofnd.v1beta1.KeyPresenceResponse)
+  
+    - [KeyPresenceResponse.Response](#tss.tofnd.v1beta1.KeyPresenceResponse.Response)
+  
+- [tss/tofnd/v1beta1/multisig.proto](#tss/tofnd/v1beta1/multisig.proto)
+    - [KeygenRequest](#tss.tofnd.v1beta1.KeygenRequest)
+    - [KeygenResponse](#tss.tofnd.v1beta1.KeygenResponse)
+    - [SignRequest](#tss.tofnd.v1beta1.SignRequest)
+    - [SignResponse](#tss.tofnd.v1beta1.SignResponse)
+  
+- [tss/tofnd/v1beta1/tofnd.proto](#tss/tofnd/v1beta1/tofnd.proto)
+    - [KeygenInit](#tss.tofnd.v1beta1.KeygenInit)
+    - [KeygenOutput](#tss.tofnd.v1beta1.KeygenOutput)
+    - [MessageIn](#tss.tofnd.v1beta1.MessageIn)
+    - [MessageOut](#tss.tofnd.v1beta1.MessageOut)
+    - [MessageOut.CriminalList](#tss.tofnd.v1beta1.MessageOut.CriminalList)
+    - [MessageOut.CriminalList.Criminal](#tss.tofnd.v1beta1.MessageOut.CriminalList.Criminal)
+    - [MessageOut.KeygenResult](#tss.tofnd.v1beta1.MessageOut.KeygenResult)
+    - [MessageOut.SignResult](#tss.tofnd.v1beta1.MessageOut.SignResult)
+    - [RecoverRequest](#tss.tofnd.v1beta1.RecoverRequest)
+    - [RecoverResponse](#tss.tofnd.v1beta1.RecoverResponse)
+    - [SignInit](#tss.tofnd.v1beta1.SignInit)
+    - [TrafficIn](#tss.tofnd.v1beta1.TrafficIn)
+    - [TrafficOut](#tss.tofnd.v1beta1.TrafficOut)
+  
+    - [MessageOut.CriminalList.Criminal.CrimeType](#tss.tofnd.v1beta1.MessageOut.CriminalList.Criminal.CrimeType)
+    - [RecoverResponse.Response](#tss.tofnd.v1beta1.RecoverResponse.Response)
+  
+- [tss/v1beta1/params.proto](#tss/v1beta1/params.proto)
+    - [Params](#tss.v1beta1.Params)
+  
+- [tss/v1beta1/types.proto](#tss/v1beta1/types.proto)
+    - [ExternalKeys](#tss.v1beta1.ExternalKeys)
+    - [KeyInfo](#tss.v1beta1.KeyInfo)
+    - [KeyRecoveryInfo](#tss.v1beta1.KeyRecoveryInfo)
+    - [KeyRecoveryInfo.PrivateEntry](#tss.v1beta1.KeyRecoveryInfo.PrivateEntry)
+    - [KeygenVoteData](#tss.v1beta1.KeygenVoteData)
+    - [MultisigInfo](#tss.v1beta1.MultisigInfo)
+    - [MultisigInfo.Info](#tss.v1beta1.MultisigInfo.Info)
+    - [ValidatorStatus](#tss.v1beta1.ValidatorStatus)
+  
+- [tss/v1beta1/genesis.proto](#tss/v1beta1/genesis.proto)
+    - [GenesisState](#tss.v1beta1.GenesisState)
+  
+- [tss/v1beta1/query.proto](#tss/v1beta1/query.proto)
+    - [AssignableKeyRequest](#tss.v1beta1.AssignableKeyRequest)
+    - [AssignableKeyResponse](#tss.v1beta1.AssignableKeyResponse)
+    - [NextKeyIDRequest](#tss.v1beta1.NextKeyIDRequest)
+    - [NextKeyIDResponse](#tss.v1beta1.NextKeyIDResponse)
+    - [QueryActiveOldKeysResponse](#tss.v1beta1.QueryActiveOldKeysResponse)
+    - [QueryActiveOldKeysValidatorResponse](#tss.v1beta1.QueryActiveOldKeysValidatorResponse)
+    - [QueryActiveOldKeysValidatorResponse.KeyInfo](#tss.v1beta1.QueryActiveOldKeysValidatorResponse.KeyInfo)
+    - [QueryDeactivatedOperatorsResponse](#tss.v1beta1.QueryDeactivatedOperatorsResponse)
+    - [QueryExternalKeyIDResponse](#tss.v1beta1.QueryExternalKeyIDResponse)
+    - [QueryKeyResponse](#tss.v1beta1.QueryKeyResponse)
+    - [QueryKeyResponse.ECDSAKey](#tss.v1beta1.QueryKeyResponse.ECDSAKey)
+    - [QueryKeyResponse.Key](#tss.v1beta1.QueryKeyResponse.Key)
+    - [QueryKeyResponse.MultisigKey](#tss.v1beta1.QueryKeyResponse.MultisigKey)
+    - [QueryKeyShareResponse](#tss.v1beta1.QueryKeyShareResponse)
+    - [QueryKeyShareResponse.ShareInfo](#tss.v1beta1.QueryKeyShareResponse.ShareInfo)
+    - [QueryRecoveryResponse](#tss.v1beta1.QueryRecoveryResponse)
+    - [QuerySignatureResponse](#tss.v1beta1.QuerySignatureResponse)
+    - [QuerySignatureResponse.MultisigSignature](#tss.v1beta1.QuerySignatureResponse.MultisigSignature)
+    - [QuerySignatureResponse.Signature](#tss.v1beta1.QuerySignatureResponse.Signature)
+    - [QuerySignatureResponse.ThresholdSignature](#tss.v1beta1.QuerySignatureResponse.ThresholdSignature)
+    - [ValidatorMultisigKeysRequest](#tss.v1beta1.ValidatorMultisigKeysRequest)
+    - [ValidatorMultisigKeysResponse](#tss.v1beta1.ValidatorMultisigKeysResponse)
+    - [ValidatorMultisigKeysResponse.Keys](#tss.v1beta1.ValidatorMultisigKeysResponse.Keys)
+    - [ValidatorMultisigKeysResponse.KeysEntry](#tss.v1beta1.ValidatorMultisigKeysResponse.KeysEntry)
+  
+    - [VoteStatus](#tss.v1beta1.VoteStatus)
+  
+- [vote/exported/v1beta1/types.proto](#vote/exported/v1beta1/types.proto)
+    - [PollMetadata](#vote.exported.v1beta1.PollMetadata)
+    - [Vote](#vote.exported.v1beta1.Vote)
+  
+- [vote/v1beta1/params.proto](#vote/v1beta1/params.proto)
+    - [Params](#vote.v1beta1.Params)
+  
+- [vote/v1beta1/genesis.proto](#vote/v1beta1/genesis.proto)
+    - [GenesisState](#vote.v1beta1.GenesisState)
+  
+- [vote/v1beta1/types.proto](#vote/v1beta1/types.proto)
+    - [TalliedVote](#vote.v1beta1.TalliedVote)
+  
 - [Scalar Value Types](#scalar-value-types)
 
 
@@ -6856,6 +7124,3716 @@ Msg defines the vote Msg service.
 
 
 <a name="axelar.vote.v1beta1.TalliedVote"></a>
+
+### TalliedVote
+TalliedVote represents a vote for a poll with the accumulated stake of all
+validators voting for the same data
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tally` | [bytes](#bytes) |  |  |
+| `voters` | [bytes](#bytes) | repeated |  |
+| `data` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="axelarnet/v1beta1/params.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelarnet/v1beta1/params.proto
+
+
+
+<a name="axelarnet.v1beta1.Params"></a>
+
+### Params
+Params represent the genesis parameters for the module
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `route_timeout_window` | [uint64](#uint64) |  | IBC packet route timeout window |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="axelarnet/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelarnet/v1beta1/types.proto
+
+
+
+<a name="axelarnet.v1beta1.Asset"></a>
+
+### Asset
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `denom` | [string](#string) |  |  |
+| `min_amount` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="axelarnet.v1beta1.CosmosChain"></a>
+
+### CosmosChain
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `name` | [string](#string) |  |  |
+| `ibc_path` | [string](#string) |  |  |
+| `assets` | [Asset](#axelarnet.v1beta1.Asset) | repeated | **Deprecated.**  |
+| `addr_prefix` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelarnet.v1beta1.IBCTransfer"></a>
+
+### IBCTransfer
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `receiver` | [string](#string) |  |  |
+| `token` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+| `port_id` | [string](#string) |  |  |
+| `channel_id` | [string](#string) |  |  |
+| `sequence` | [uint64](#uint64) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="axelarnet/v1beta1/genesis.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelarnet/v1beta1/genesis.proto
+
+
+
+<a name="axelarnet.v1beta1.GenesisState"></a>
+
+### GenesisState
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `params` | [Params](#axelarnet.v1beta1.Params) |  |  |
+| `collector_address` | [bytes](#bytes) |  |  |
+| `chains` | [CosmosChain](#axelarnet.v1beta1.CosmosChain) | repeated |  |
+| `pending_transfers` | [IBCTransfer](#axelarnet.v1beta1.IBCTransfer) | repeated |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="utils/v1beta1/threshold.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## utils/v1beta1/threshold.proto
+
+
+
+<a name="utils.v1beta1.Threshold"></a>
+
+### Threshold
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `numerator` | [int64](#int64) |  | split threshold into Numerator and denominator to avoid floating point errors down the line |
+| `denominator` | [int64](#int64) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="tss/exported/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## tss/exported/v1beta1/types.proto
+
+
+
+<a name="tss.exported.v1beta1.Key"></a>
+
+### Key
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [string](#string) |  |  |
+| `role` | [KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
+| `type` | [KeyType](#tss.exported.v1beta1.KeyType) |  |  |
+| `ecdsa_key` | [Key.ECDSAKey](#tss.exported.v1beta1.Key.ECDSAKey) |  |  |
+| `multisig_key` | [Key.MultisigKey](#tss.exported.v1beta1.Key.MultisigKey) |  |  |
+| `rotated_at` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
+| `rotation_count` | [int64](#int64) |  |  |
+| `chain` | [string](#string) |  |  |
+| `snapshot_counter` | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="tss.exported.v1beta1.Key.ECDSAKey"></a>
+
+### Key.ECDSAKey
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `value` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="tss.exported.v1beta1.Key.MultisigKey"></a>
+
+### Key.MultisigKey
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `values` | [bytes](#bytes) | repeated |  |
+| `threshold` | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="tss.exported.v1beta1.KeyRequirement"></a>
+
+### KeyRequirement
+KeyRequirement defines requirements for keys
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_role` | [KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
+| `key_type` | [KeyType](#tss.exported.v1beta1.KeyType) |  |  |
+| `min_keygen_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
+| `safety_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
+| `key_share_distribution_policy` | [KeyShareDistributionPolicy](#tss.exported.v1beta1.KeyShareDistributionPolicy) |  |  |
+| `max_total_share_count` | [int64](#int64) |  |  |
+| `min_total_share_count` | [int64](#int64) |  |  |
+| `keygen_voting_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
+| `sign_voting_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
+| `keygen_timeout` | [int64](#int64) |  |  |
+| `sign_timeout` | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="tss.exported.v1beta1.SigKeyPair"></a>
+
+### SigKeyPair
+PubKeyInfo holds a pubkey and a signature
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `pub_key` | [bytes](#bytes) |  |  |
+| `signature` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="tss.exported.v1beta1.SignInfo"></a>
+
+### SignInfo
+SignInfo holds information about a sign request
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_id` | [string](#string) |  |  |
+| `sig_id` | [string](#string) |  |  |
+| `msg` | [bytes](#bytes) |  |  |
+| `snapshot_counter` | [int64](#int64) |  |  |
+| `request_module` | [string](#string) |  |  |
+| `metadata` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="tss.exported.v1beta1.Signature"></a>
+
+### Signature
+Signature holds public key and ECDSA signature
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sig_id` | [string](#string) |  |  |
+| `single_sig` | [Signature.SingleSig](#tss.exported.v1beta1.Signature.SingleSig) |  |  |
+| `multi_sig` | [Signature.MultiSig](#tss.exported.v1beta1.Signature.MultiSig) |  |  |
+| `sig_status` | [SigStatus](#tss.exported.v1beta1.SigStatus) |  |  |
+
+
+
+
+
+
+<a name="tss.exported.v1beta1.Signature.MultiSig"></a>
+
+### Signature.MultiSig
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sig_key_pairs` | [SigKeyPair](#tss.exported.v1beta1.SigKeyPair) | repeated |  |
+
+
+
+
+
+
+<a name="tss.exported.v1beta1.Signature.SingleSig"></a>
+
+### Signature.SingleSig
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sig_key_pair` | [SigKeyPair](#tss.exported.v1beta1.SigKeyPair) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+
+<a name="tss.exported.v1beta1.AckType"></a>
+
+### AckType
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| ACK_TYPE_UNSPECIFIED | 0 |  |
+| ACK_TYPE_KEYGEN | 1 |  |
+| ACK_TYPE_SIGN | 2 |  |
+
+
+
+<a name="tss.exported.v1beta1.KeyRole"></a>
+
+### KeyRole
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| KEY_ROLE_UNSPECIFIED | 0 |  |
+| KEY_ROLE_MASTER_KEY | 1 |  |
+| KEY_ROLE_SECONDARY_KEY | 2 |  |
+| KEY_ROLE_EXTERNAL_KEY | 3 |  |
+
+
+
+<a name="tss.exported.v1beta1.KeyShareDistributionPolicy"></a>
+
+### KeyShareDistributionPolicy
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| KEY_SHARE_DISTRIBUTION_POLICY_UNSPECIFIED | 0 |  |
+| KEY_SHARE_DISTRIBUTION_POLICY_WEIGHTED_BY_STAKE | 1 |  |
+| KEY_SHARE_DISTRIBUTION_POLICY_ONE_PER_VALIDATOR | 2 |  |
+
+
+
+<a name="tss.exported.v1beta1.KeyType"></a>
+
+### KeyType
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| KEY_TYPE_UNSPECIFIED | 0 |  |
+| KEY_TYPE_NONE | 1 |  |
+| KEY_TYPE_THRESHOLD | 2 |  |
+| KEY_TYPE_MULTISIG | 3 |  |
+
+
+
+<a name="tss.exported.v1beta1.SigStatus"></a>
+
+### SigStatus
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| SIG_STATUS_UNSPECIFIED | 0 |  |
+| SIG_STATUS_QUEUED | 1 |  |
+| SIG_STATUS_SIGNING | 2 |  |
+| SIG_STATUS_SIGNED | 3 |  |
+| SIG_STATUS_ABORTED | 4 |  |
+| SIG_STATUS_INVALID | 5 |  |
+
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="nexus/exported/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## nexus/exported/v1beta1/types.proto
+
+
+
+<a name="nexus.exported.v1beta1.Asset"></a>
+
+### Asset
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `denom` | [string](#string) |  |  |
+| `is_native_asset` | [bool](#bool) |  |  |
+
+
+
+
+
+
+<a name="nexus.exported.v1beta1.Chain"></a>
+
+### Chain
+Chain represents the properties of a registered blockchain
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `name` | [string](#string) |  |  |
+| `supports_foreign_assets` | [bool](#bool) |  |  |
+| `key_type` | [tss.exported.v1beta1.KeyType](#tss.exported.v1beta1.KeyType) |  |  |
+| `module` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="nexus.exported.v1beta1.CrossChainAddress"></a>
+
+### CrossChainAddress
+CrossChainAddress represents a generalized address on any registered chain
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [Chain](#nexus.exported.v1beta1.Chain) |  |  |
+| `address` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="nexus.exported.v1beta1.CrossChainTransfer"></a>
+
+### CrossChainTransfer
+CrossChainTransfer represents a generalized transfer of some asset to a
+registered blockchain
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `recipient` | [CrossChainAddress](#nexus.exported.v1beta1.CrossChainAddress) |  |  |
+| `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+| `id` | [uint64](#uint64) |  |  |
+| `state` | [TransferState](#nexus.exported.v1beta1.TransferState) |  |  |
+
+
+
+
+
+
+<a name="nexus.exported.v1beta1.FeeInfo"></a>
+
+### FeeInfo
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `asset` | [string](#string) |  |  |
+| `fee_rate` | [bytes](#bytes) |  |  |
+| `min_fee` | [bytes](#bytes) |  |  |
+| `max_fee` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="nexus.exported.v1beta1.TransferFee"></a>
+
+### TransferFee
+TransferFee represents accumulated fees generated by the network
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `coins` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) | repeated |  |
+
+
+
+
+
+ <!-- end messages -->
+
+
+<a name="nexus.exported.v1beta1.TransferState"></a>
+
+### TransferState
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| TRANSFER_STATE_UNSPECIFIED | 0 |  |
+| TRANSFER_STATE_PENDING | 1 |  |
+| TRANSFER_STATE_ARCHIVED | 2 |  |
+| TRANSFER_STATE_INSUFFICIENT_AMOUNT | 3 |  |
+
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="nexus/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## nexus/v1beta1/types.proto
+
+
+
+<a name="nexus.v1beta1.ChainState"></a>
+
+### ChainState
+ChainState represents the state of a registered blockchain
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [nexus.exported.v1beta1.Chain](#nexus.exported.v1beta1.Chain) |  |  |
+| `maintainers` | [bytes](#bytes) | repeated |  |
+| `activated` | [bool](#bool) |  |  |
+| `assets` | [nexus.exported.v1beta1.Asset](#nexus.exported.v1beta1.Asset) | repeated |  |
+
+
+
+
+
+
+<a name="nexus.v1beta1.LinkedAddresses"></a>
+
+### LinkedAddresses
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `deposit_address` | [nexus.exported.v1beta1.CrossChainAddress](#nexus.exported.v1beta1.CrossChainAddress) |  |  |
+| `recipient_address` | [nexus.exported.v1beta1.CrossChainAddress](#nexus.exported.v1beta1.CrossChainAddress) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="nexus/v1beta1/query.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## nexus/v1beta1/query.proto
+
+
+
+<a name="nexus.v1beta1.AssetsRequest"></a>
+
+### AssetsRequest
+AssetsRequest represents a message that queries the registered assets of a
+chain
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="nexus.v1beta1.AssetsResponse"></a>
+
+### AssetsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `assets` | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="nexus.v1beta1.ChainStateRequest"></a>
+
+### ChainStateRequest
+ChainStateRequest represents a message that queries the state of a chain
+registered on the network
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="nexus.v1beta1.ChainStateResponse"></a>
+
+### ChainStateResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `state` | [ChainState](#nexus.v1beta1.ChainState) |  |  |
+
+
+
+
+
+
+<a name="nexus.v1beta1.ChainsByAssetRequest"></a>
+
+### ChainsByAssetRequest
+ChainsByAssetRequest represents a message that queries the chains
+that support an asset on the network
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `asset` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="nexus.v1beta1.ChainsByAssetResponse"></a>
+
+### ChainsByAssetResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chains` | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="nexus.v1beta1.ChainsRequest"></a>
+
+### ChainsRequest
+ChainsRequest represents a message that queries the chains
+registered on the network
+
+
+
+
+
+
+<a name="nexus.v1beta1.ChainsResponse"></a>
+
+### ChainsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chains` | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="nexus.v1beta1.FeeRequest"></a>
+
+### FeeRequest
+FeeRequest represents a message that queries the transfer fees associated
+to an asset on a chain
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `asset` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="nexus.v1beta1.FeeResponse"></a>
+
+### FeeResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `fee_info` | [nexus.exported.v1beta1.FeeInfo](#nexus.exported.v1beta1.FeeInfo) |  |  |
+
+
+
+
+
+
+<a name="nexus.v1beta1.LatestDepositAddressRequest"></a>
+
+### LatestDepositAddressRequest
+LatestDepositAddressRequest represents a message that queries a deposit
+address by recipient address
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `recipient_addr` | [string](#string) |  |  |
+| `recipient_chain` | [string](#string) |  |  |
+| `deposit_chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="nexus.v1beta1.LatestDepositAddressResponse"></a>
+
+### LatestDepositAddressResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `deposit_addr` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="nexus.v1beta1.QueryChainMaintainersResponse"></a>
+
+### QueryChainMaintainersResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `maintainers` | [bytes](#bytes) | repeated |  |
+
+
+
+
+
+
+<a name="nexus.v1beta1.TransferFeeRequest"></a>
+
+### TransferFeeRequest
+TransferFeeRequest represents a message that queries the fees charged by
+the network for a cross-chain transfer
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `source_chain` | [string](#string) |  |  |
+| `destination_chain` | [string](#string) |  |  |
+| `amount` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="nexus.v1beta1.TransferFeeResponse"></a>
+
+### TransferFeeResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `fee` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+
+
+
+
+
+
+<a name="nexus.v1beta1.TransfersForChainRequest"></a>
+
+### TransfersForChainRequest
+TransfersForChainRequest represents a message that queries the
+transfers for the specified chain
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `state` | [nexus.exported.v1beta1.TransferState](#nexus.exported.v1beta1.TransferState) |  |  |
+| `pagination` | [cosmos.base.query.v1beta1.PageRequest](#cosmos.base.query.v1beta1.PageRequest) |  |  |
+
+
+
+
+
+
+<a name="nexus.v1beta1.TransfersForChainResponse"></a>
+
+### TransfersForChainResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `transfers` | [nexus.exported.v1beta1.CrossChainTransfer](#nexus.exported.v1beta1.CrossChainTransfer) | repeated |  |
+| `pagination` | [cosmos.base.query.v1beta1.PageResponse](#cosmos.base.query.v1beta1.PageResponse) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="axelarnet/v1beta1/query.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelarnet/v1beta1/query.proto
+
+
+
+<a name="axelarnet.v1beta1.PendingIBCTransferCountRequest"></a>
+
+### PendingIBCTransferCountRequest
+
+
+
+
+
+
+
+<a name="axelarnet.v1beta1.PendingIBCTransferCountResponse"></a>
+
+### PendingIBCTransferCountResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `transfers_by_chain` | [PendingIBCTransferCountResponse.TransfersByChainEntry](#axelarnet.v1beta1.PendingIBCTransferCountResponse.TransfersByChainEntry) | repeated |  |
+
+
+
+
+
+
+<a name="axelarnet.v1beta1.PendingIBCTransferCountResponse.TransfersByChainEntry"></a>
+
+### PendingIBCTransferCountResponse.TransfersByChainEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key` | [string](#string) |  |  |
+| `value` | [uint32](#uint32) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="utils/v1beta1/queuer.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## utils/v1beta1/queuer.proto
+
+
+
+<a name="utils.v1beta1.QueueState"></a>
+
+### QueueState
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `items` | [QueueState.ItemsEntry](#utils.v1beta1.QueueState.ItemsEntry) | repeated |  |
+
+
+
+
+
+
+<a name="utils.v1beta1.QueueState.Item"></a>
+
+### QueueState.Item
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key` | [bytes](#bytes) |  |  |
+| `value` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="utils.v1beta1.QueueState.ItemsEntry"></a>
+
+### QueueState.ItemsEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key` | [string](#string) |  |  |
+| `value` | [QueueState.Item](#utils.v1beta1.QueueState.Item) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="evm/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## evm/v1beta1/types.proto
+
+
+
+<a name="evm.v1beta1.Asset"></a>
+
+### Asset
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `name` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.BurnerInfo"></a>
+
+### BurnerInfo
+BurnerInfo describes information required to burn token at an burner address
+that is deposited by an user
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `burner_address` | [bytes](#bytes) |  |  |
+| `token_address` | [bytes](#bytes) |  |  |
+| `destination_chain` | [string](#string) |  |  |
+| `symbol` | [string](#string) |  |  |
+| `asset` | [string](#string) |  |  |
+| `salt` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.Command"></a>
+
+### Command
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [bytes](#bytes) |  |  |
+| `command` | [string](#string) |  |  |
+| `params` | [bytes](#bytes) |  |  |
+| `key_id` | [string](#string) |  |  |
+| `max_gas_cost` | [uint32](#uint32) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.CommandBatchMetadata"></a>
+
+### CommandBatchMetadata
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [bytes](#bytes) |  |  |
+| `command_ids` | [bytes](#bytes) | repeated |  |
+| `data` | [bytes](#bytes) |  |  |
+| `sig_hash` | [bytes](#bytes) |  |  |
+| `status` | [BatchedCommandsStatus](#evm.v1beta1.BatchedCommandsStatus) |  |  |
+| `key_id` | [string](#string) |  |  |
+| `prev_batched_commands_id` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.ERC20Deposit"></a>
+
+### ERC20Deposit
+ERC20Deposit contains information for an ERC20 deposit
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tx_id` | [bytes](#bytes) |  |  |
+| `amount` | [bytes](#bytes) |  |  |
+| `asset` | [string](#string) |  |  |
+| `destination_chain` | [string](#string) |  |  |
+| `burner_address` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.ERC20TokenMetadata"></a>
+
+### ERC20TokenMetadata
+ERC20TokenMetadata describes information about an ERC20 token
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `asset` | [string](#string) |  |  |
+| `chain_id` | [bytes](#bytes) |  |  |
+| `details` | [TokenDetails](#evm.v1beta1.TokenDetails) |  |  |
+| `token_address` | [string](#string) |  |  |
+| `tx_hash` | [string](#string) |  |  |
+| `status` | [Status](#evm.v1beta1.Status) |  |  |
+| `is_external` | [bool](#bool) |  |  |
+| `burner_code` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.Event"></a>
+
+### Event
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `tx_id` | [bytes](#bytes) |  |  |
+| `index` | [uint64](#uint64) |  |  |
+| `status` | [Event.Status](#evm.v1beta1.Event.Status) |  |  |
+| `token_sent` | [EventTokenSent](#evm.v1beta1.EventTokenSent) |  |  |
+| `contract_call` | [EventContractCall](#evm.v1beta1.EventContractCall) |  |  |
+| `contract_call_with_token` | [EventContractCallWithToken](#evm.v1beta1.EventContractCallWithToken) |  |  |
+| `transfer` | [EventTransfer](#evm.v1beta1.EventTransfer) |  |  |
+| `token_deployed` | [EventTokenDeployed](#evm.v1beta1.EventTokenDeployed) |  |  |
+| `multisig_ownership_transferred` | [EventMultisigOwnershipTransferred](#evm.v1beta1.EventMultisigOwnershipTransferred) |  |  |
+| `multisig_operatorship_transferred` | [EventMultisigOperatorshipTransferred](#evm.v1beta1.EventMultisigOperatorshipTransferred) |  |  |
+| `singlesig_ownership_transferred` | [EventSinglesigOwnershipTransferred](#evm.v1beta1.EventSinglesigOwnershipTransferred) |  |  |
+| `singlesig_operatorship_transferred` | [EventSinglesigOperatorshipTransferred](#evm.v1beta1.EventSinglesigOperatorshipTransferred) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.EventContractCall"></a>
+
+### EventContractCall
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `destination_chain` | [string](#string) |  |  |
+| `contract_address` | [string](#string) |  |  |
+| `payload_hash` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.EventContractCallWithToken"></a>
+
+### EventContractCallWithToken
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `destination_chain` | [string](#string) |  |  |
+| `contract_address` | [string](#string) |  |  |
+| `payload_hash` | [bytes](#bytes) |  |  |
+| `symbol` | [string](#string) |  |  |
+| `amount` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.EventMultisigOperatorshipTransferred"></a>
+
+### EventMultisigOperatorshipTransferred
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `pre_operators` | [bytes](#bytes) | repeated |  |
+| `prev_threshold` | [bytes](#bytes) |  |  |
+| `new_operators` | [bytes](#bytes) | repeated |  |
+| `new_threshold` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.EventMultisigOwnershipTransferred"></a>
+
+### EventMultisigOwnershipTransferred
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `pre_owners` | [bytes](#bytes) | repeated |  |
+| `prev_threshold` | [bytes](#bytes) |  |  |
+| `new_owners` | [bytes](#bytes) | repeated |  |
+| `new_threshold` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.EventSinglesigOperatorshipTransferred"></a>
+
+### EventSinglesigOperatorshipTransferred
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `pre_operator` | [bytes](#bytes) |  |  |
+| `new_operator` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.EventSinglesigOwnershipTransferred"></a>
+
+### EventSinglesigOwnershipTransferred
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `pre_owner` | [bytes](#bytes) |  |  |
+| `new_owner` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.EventTokenDeployed"></a>
+
+### EventTokenDeployed
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `symbol` | [string](#string) |  |  |
+| `token_address` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.EventTokenSent"></a>
+
+### EventTokenSent
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `destination_chain` | [string](#string) |  |  |
+| `destination_address` | [string](#string) |  |  |
+| `symbol` | [string](#string) |  |  |
+| `amount` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.EventTransfer"></a>
+
+### EventTransfer
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `to` | [bytes](#bytes) |  |  |
+| `amount` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.Gateway"></a>
+
+### Gateway
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [bytes](#bytes) |  |  |
+| `status` | [Gateway.Status](#evm.v1beta1.Gateway.Status) |  | **Deprecated.**  |
+
+
+
+
+
+
+<a name="evm.v1beta1.NetworkInfo"></a>
+
+### NetworkInfo
+NetworkInfo describes information about a network
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `name` | [string](#string) |  |  |
+| `id` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.SigMetadata"></a>
+
+### SigMetadata
+SigMetadata stores necessary information for external apps to map signature
+results to evm relay transaction types
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `type` | [SigType](#evm.v1beta1.SigType) |  |  |
+| `chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.TokenDetails"></a>
+
+### TokenDetails
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `token_name` | [string](#string) |  |  |
+| `symbol` | [string](#string) |  |  |
+| `decimals` | [uint32](#uint32) |  |  |
+| `capacity` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.TransactionMetadata"></a>
+
+### TransactionMetadata
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `raw_tx` | [bytes](#bytes) |  |  |
+| `pub_key` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.TransferKey"></a>
+
+### TransferKey
+TransferKey contains information for a transfer ownership or operatorship
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tx_id` | [bytes](#bytes) |  |  |
+| `type` | [TransferKeyType](#evm.v1beta1.TransferKeyType) |  |  |
+| `next_key_id` | [string](#string) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+
+<a name="evm.v1beta1.BatchedCommandsStatus"></a>
+
+### BatchedCommandsStatus
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| BATCHED_COMMANDS_STATUS_UNSPECIFIED | 0 |  |
+| BATCHED_COMMANDS_STATUS_SIGNING | 1 |  |
+| BATCHED_COMMANDS_STATUS_ABORTED | 2 |  |
+| BATCHED_COMMANDS_STATUS_SIGNED | 3 |  |
+
+
+
+<a name="evm.v1beta1.DepositStatus"></a>
+
+### DepositStatus
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| DEPOSIT_STATUS_UNSPECIFIED | 0 |  |
+| DEPOSIT_STATUS_PENDING | 1 |  |
+| DEPOSIT_STATUS_CONFIRMED | 2 |  |
+| DEPOSIT_STATUS_BURNED | 3 |  |
+
+
+
+<a name="evm.v1beta1.Event.Status"></a>
+
+### Event.Status
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| STATUS_UNSPECIFIED | 0 |  |
+| STATUS_CONFIRMED | 1 |  |
+| STATUS_COMPLETED | 2 |  |
+| STATUS_FAILED | 3 |  |
+
+
+
+<a name="evm.v1beta1.Gateway.Status"></a>
+
+### Gateway.Status
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| STATUS_UNSPECIFIED | 0 |  |
+| STATUS_PENDING | 1 |  |
+| STATUS_CONFIRMED | 2 |  |
+
+
+
+<a name="evm.v1beta1.SigType"></a>
+
+### SigType
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| SIG_TYPE_UNSPECIFIED | 0 |  |
+| SIG_TYPE_TX | 1 |  |
+| SIG_TYPE_COMMAND | 2 |  |
+
+
+
+<a name="evm.v1beta1.Status"></a>
+
+### Status
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| STATUS_UNSPECIFIED | 0 | these enum values are used for bitwise operations, therefore they need to be powers of 2 |
+| STATUS_INITIALIZED | 1 |  |
+| STATUS_PENDING | 2 |  |
+| STATUS_CONFIRMED | 4 |  |
+
+
+
+<a name="evm.v1beta1.TransferKeyType"></a>
+
+### TransferKeyType
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| TRANSFER_KEY_TYPE_UNSPECIFIED | 0 |  |
+| TRANSFER_KEY_TYPE_OWNERSHIP | 1 |  |
+| TRANSFER_KEY_TYPE_OPERATORSHIP | 2 |  |
+
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="evm/v1beta1/params.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## evm/v1beta1/params.proto
+
+
+
+<a name="evm.v1beta1.Params"></a>
+
+### Params
+Params is the parameter set for this module
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `confirmation_height` | [uint64](#uint64) |  |  |
+| `network` | [string](#string) |  |  |
+| `token_code` | [bytes](#bytes) |  |  |
+| `burnable` | [bytes](#bytes) |  |  |
+| `revote_locking_period` | [int64](#int64) |  |  |
+| `networks` | [NetworkInfo](#evm.v1beta1.NetworkInfo) | repeated |  |
+| `voting_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
+| `min_voter_count` | [int64](#int64) |  |  |
+| `commands_gas_limit` | [uint32](#uint32) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.PendingChain"></a>
+
+### PendingChain
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `params` | [Params](#evm.v1beta1.Params) |  |  |
+| `chain` | [nexus.exported.v1beta1.Chain](#nexus.exported.v1beta1.Chain) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="evm/v1beta1/genesis.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## evm/v1beta1/genesis.proto
+
+
+
+<a name="evm.v1beta1.GenesisState"></a>
+
+### GenesisState
+GenesisState represents the genesis state
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chains` | [GenesisState.Chain](#evm.v1beta1.GenesisState.Chain) | repeated |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.GenesisState.Chain"></a>
+
+### GenesisState.Chain
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `params` | [Params](#evm.v1beta1.Params) |  |  |
+| `burner_infos` | [BurnerInfo](#evm.v1beta1.BurnerInfo) | repeated |  |
+| `command_queue` | [utils.v1beta1.QueueState](#utils.v1beta1.QueueState) |  |  |
+| `confirmed_deposits` | [ERC20Deposit](#evm.v1beta1.ERC20Deposit) | repeated |  |
+| `burned_deposits` | [ERC20Deposit](#evm.v1beta1.ERC20Deposit) | repeated |  |
+| `command_batches` | [CommandBatchMetadata](#evm.v1beta1.CommandBatchMetadata) | repeated |  |
+| `gateway` | [Gateway](#evm.v1beta1.Gateway) |  |  |
+| `tokens` | [ERC20TokenMetadata](#evm.v1beta1.ERC20TokenMetadata) | repeated |  |
+| `events` | [Event](#evm.v1beta1.Event) | repeated |  |
+| `confirmed_event_queue` | [utils.v1beta1.QueueState](#utils.v1beta1.QueueState) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="evm/v1beta1/query.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## evm/v1beta1/query.proto
+
+
+
+<a name="evm.v1beta1.BatchedCommandsRequest"></a>
+
+### BatchedCommandsRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `id` | [string](#string) |  | id defines an optional id for the commandsbatch. If not specified the latest will be returned |
+
+
+
+
+
+
+<a name="evm.v1beta1.BatchedCommandsResponse"></a>
+
+### BatchedCommandsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [string](#string) |  |  |
+| `data` | [string](#string) |  |  |
+| `status` | [BatchedCommandsStatus](#evm.v1beta1.BatchedCommandsStatus) |  |  |
+| `key_id` | [string](#string) |  |  |
+| `signature` | [string](#string) | repeated |  |
+| `execute_data` | [string](#string) |  |  |
+| `prev_batched_commands_id` | [string](#string) |  |  |
+| `command_ids` | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.BurnerInfoRequest"></a>
+
+### BurnerInfoRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.BurnerInfoResponse"></a>
+
+### BurnerInfoResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `burner_info` | [BurnerInfo](#evm.v1beta1.BurnerInfo) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.BytecodeRequest"></a>
+
+### BytecodeRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `contract` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.BytecodeResponse"></a>
+
+### BytecodeResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `bytecode` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.ChainsRequest"></a>
+
+### ChainsRequest
+
+
+
+
+
+
+
+<a name="evm.v1beta1.ChainsResponse"></a>
+
+### ChainsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chains` | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.ConfirmationHeightRequest"></a>
+
+### ConfirmationHeightRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.ConfirmationHeightResponse"></a>
+
+### ConfirmationHeightResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `height` | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.DepositQueryParams"></a>
+
+### DepositQueryParams
+DepositQueryParams describe the parameters used to query for an EVM
+deposit address
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [string](#string) |  |  |
+| `asset` | [string](#string) |  |  |
+| `chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.DepositStateRequest"></a>
+
+### DepositStateRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `params` | [QueryDepositStateParams](#evm.v1beta1.QueryDepositStateParams) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.DepositStateResponse"></a>
+
+### DepositStateResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `status` | [DepositStatus](#evm.v1beta1.DepositStatus) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.EventRequest"></a>
+
+### EventRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `event_id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.EventResponse"></a>
+
+### EventResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `event` | [Event](#evm.v1beta1.Event) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.GatewayAddressRequest"></a>
+
+### GatewayAddressRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.GatewayAddressResponse"></a>
+
+### GatewayAddressResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.KeyAddressRequest"></a>
+
+### KeyAddressRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `role` | [int32](#int32) |  |  |
+| `id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.KeyAddressResponse"></a>
+
+### KeyAddressResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_id` | [string](#string) |  |  |
+| `multisig_addresses` | [KeyAddressResponse.MultisigAddresses](#evm.v1beta1.KeyAddressResponse.MultisigAddresses) |  |  |
+| `threshold_address` | [KeyAddressResponse.ThresholdAddress](#evm.v1beta1.KeyAddressResponse.ThresholdAddress) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.KeyAddressResponse.MultisigAddresses"></a>
+
+### KeyAddressResponse.MultisigAddresses
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `addresses` | [string](#string) | repeated |  |
+| `threshold` | [uint32](#uint32) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.KeyAddressResponse.ThresholdAddress"></a>
+
+### KeyAddressResponse.ThresholdAddress
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.PendingCommandsRequest"></a>
+
+### PendingCommandsRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.PendingCommandsResponse"></a>
+
+### PendingCommandsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `commands` | [QueryCommandResponse](#evm.v1beta1.QueryCommandResponse) | repeated |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.QueryBurnerAddressResponse"></a>
+
+### QueryBurnerAddressResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.QueryCommandResponse"></a>
+
+### QueryCommandResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [string](#string) |  |  |
+| `type` | [string](#string) |  |  |
+| `params` | [QueryCommandResponse.ParamsEntry](#evm.v1beta1.QueryCommandResponse.ParamsEntry) | repeated |  |
+| `key_id` | [string](#string) |  |  |
+| `max_gas_cost` | [uint32](#uint32) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.QueryCommandResponse.ParamsEntry"></a>
+
+### QueryCommandResponse.ParamsEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key` | [string](#string) |  |  |
+| `value` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.QueryDepositStateParams"></a>
+
+### QueryDepositStateParams
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tx_id` | [bytes](#bytes) |  |  |
+| `burner_address` | [bytes](#bytes) |  |  |
+| `amount` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="evm.v1beta1.QueryTokenAddressResponse"></a>
+
+### QueryTokenAddressResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [string](#string) |  |  |
+| `confirmed` | [bool](#bool) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="nexus/v1beta1/params.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## nexus/v1beta1/params.proto
+
+
+
+<a name="nexus.v1beta1.Params"></a>
+
+### Params
+Params represent the genesis parameters for the module
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain_activation_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="nexus/v1beta1/genesis.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## nexus/v1beta1/genesis.proto
+
+
+
+<a name="nexus.v1beta1.GenesisState"></a>
+
+### GenesisState
+GenesisState represents the genesis state
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `params` | [Params](#nexus.v1beta1.Params) |  |  |
+| `nonce` | [uint64](#uint64) |  |  |
+| `chains` | [nexus.exported.v1beta1.Chain](#nexus.exported.v1beta1.Chain) | repeated |  |
+| `chain_states` | [ChainState](#nexus.v1beta1.ChainState) | repeated |  |
+| `linked_addresses` | [LinkedAddresses](#nexus.v1beta1.LinkedAddresses) | repeated |  |
+| `transfers` | [nexus.exported.v1beta1.CrossChainTransfer](#nexus.exported.v1beta1.CrossChainTransfer) | repeated |  |
+| `fee` | [nexus.exported.v1beta1.TransferFee](#nexus.exported.v1beta1.TransferFee) |  |  |
+| `fee_infos` | [nexus.exported.v1beta1.FeeInfo](#nexus.exported.v1beta1.FeeInfo) | repeated |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="reward/v1beta1/params.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## reward/v1beta1/params.proto
+
+
+
+<a name="reward.v1beta1.Params"></a>
+
+### Params
+Params represent the genesis parameters for the module
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `external_chain_voting_inflation_rate` | [bytes](#bytes) |  |  |
+| `tss_relative_inflation_rate` | [bytes](#bytes) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="reward/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## reward/v1beta1/types.proto
+
+
+
+<a name="reward.v1beta1.Pool"></a>
+
+### Pool
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `name` | [string](#string) |  |  |
+| `rewards` | [Pool.Reward](#reward.v1beta1.Pool.Reward) | repeated |  |
+
+
+
+
+
+
+<a name="reward.v1beta1.Pool.Reward"></a>
+
+### Pool.Reward
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `validator` | [bytes](#bytes) |  |  |
+| `coins` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) | repeated |  |
+
+
+
+
+
+
+<a name="reward.v1beta1.Refund"></a>
+
+### Refund
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `payer` | [bytes](#bytes) |  |  |
+| `fees` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) | repeated |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="reward/v1beta1/genesis.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## reward/v1beta1/genesis.proto
+
+
+
+<a name="reward.v1beta1.GenesisState"></a>
+
+### GenesisState
+GenesisState represents the genesis state
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `params` | [Params](#reward.v1beta1.Params) |  |  |
+| `pools` | [Pool](#reward.v1beta1.Pool) | repeated |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="snapshot/exported/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## snapshot/exported/v1beta1/types.proto
+
+
+
+<a name="snapshot.exported.v1beta1.Snapshot"></a>
+
+### Snapshot
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `validators` | [Validator](#snapshot.exported.v1beta1.Validator) | repeated |  |
+| `timestamp` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
+| `height` | [int64](#int64) |  |  |
+| `total_share_count` | [bytes](#bytes) |  |  |
+| `counter` | [int64](#int64) |  |  |
+| `key_share_distribution_policy` | [tss.exported.v1beta1.KeyShareDistributionPolicy](#tss.exported.v1beta1.KeyShareDistributionPolicy) |  |  |
+| `corruption_threshold` | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="snapshot.exported.v1beta1.Validator"></a>
+
+### Validator
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sdk_validator` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
+| `share_count` | [int64](#int64) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+
+<a name="snapshot.exported.v1beta1.ValidatorIllegibility"></a>
+
+### ValidatorIllegibility
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| VALIDATOR_ILLEGIBILITY_UNSPECIFIED | 0 | these enum values are used for bitwise operations, therefore they need to be powers of 2 |
+| VALIDATOR_ILLEGIBILITY_TOMBSTONED | 1 |  |
+| VALIDATOR_ILLEGIBILITY_JAILED | 2 |  |
+| VALIDATOR_ILLEGIBILITY_MISSED_TOO_MANY_BLOCKS | 4 |  |
+| VALIDATOR_ILLEGIBILITY_NO_PROXY_REGISTERED | 8 |  |
+| VALIDATOR_ILLEGIBILITY_TSS_SUSPENDED | 16 |  |
+| VALIDATOR_ILLEGIBILITY_PROXY_INSUFICIENT_FUNDS | 32 |  |
+
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="snapshot/v1beta1/params.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## snapshot/v1beta1/params.proto
+
+
+
+<a name="snapshot.v1beta1.Params"></a>
+
+### Params
+Params represent the genesis parameters for the module
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `min_proxy_balance` | [int64](#int64) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="snapshot/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## snapshot/v1beta1/types.proto
+
+
+
+<a name="snapshot.v1beta1.ProxiedValidator"></a>
+
+### ProxiedValidator
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `validator` | [bytes](#bytes) |  |  |
+| `proxy` | [bytes](#bytes) |  |  |
+| `active` | [bool](#bool) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="snapshot/v1beta1/genesis.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## snapshot/v1beta1/genesis.proto
+
+
+
+<a name="snapshot.v1beta1.GenesisState"></a>
+
+### GenesisState
+GenesisState represents the genesis state
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `params` | [Params](#snapshot.v1beta1.Params) |  |  |
+| `snapshots` | [snapshot.exported.v1beta1.Snapshot](#snapshot.exported.v1beta1.Snapshot) | repeated |  |
+| `proxied_validators` | [ProxiedValidator](#snapshot.v1beta1.ProxiedValidator) | repeated |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="snapshot/v1beta1/query.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## snapshot/v1beta1/query.proto
+
+
+
+<a name="snapshot.v1beta1.QueryValidatorsResponse"></a>
+
+### QueryValidatorsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `validators` | [QueryValidatorsResponse.Validator](#snapshot.v1beta1.QueryValidatorsResponse.Validator) | repeated |  |
+
+
+
+
+
+
+<a name="snapshot.v1beta1.QueryValidatorsResponse.TssIllegibilityInfo"></a>
+
+### QueryValidatorsResponse.TssIllegibilityInfo
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tombstoned` | [bool](#bool) |  |  |
+| `jailed` | [bool](#bool) |  |  |
+| `missed_too_many_blocks` | [bool](#bool) |  |  |
+| `no_proxy_registered` | [bool](#bool) |  |  |
+| `tss_suspended` | [bool](#bool) |  |  |
+| `proxy_insuficient_funds` | [bool](#bool) |  |  |
+| `stale_tss_heartbeat` | [bool](#bool) |  |  |
+
+
+
+
+
+
+<a name="snapshot.v1beta1.QueryValidatorsResponse.Validator"></a>
+
+### QueryValidatorsResponse.Validator
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `operator_address` | [string](#string) |  |  |
+| `moniker` | [string](#string) |  |  |
+| `tss_illegibility_info` | [QueryValidatorsResponse.TssIllegibilityInfo](#snapshot.v1beta1.QueryValidatorsResponse.TssIllegibilityInfo) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="tss/tofnd/v1beta1/common.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## tss/tofnd/v1beta1/common.proto
+File copied from golang tofnd with minor tweaks
+
+
+<a name="tss.tofnd.v1beta1.KeyPresenceRequest"></a>
+
+### KeyPresenceRequest
+Key presence check types
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_uid` | [string](#string) |  |  |
+| `pub_key` | [bytes](#bytes) |  | SEC1-encoded compressed pub key bytes to find the right |
+
+
+
+
+
+
+<a name="tss.tofnd.v1beta1.KeyPresenceResponse"></a>
+
+### KeyPresenceResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `response` | [KeyPresenceResponse.Response](#tss.tofnd.v1beta1.KeyPresenceResponse.Response) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+
+<a name="tss.tofnd.v1beta1.KeyPresenceResponse.Response"></a>
+
+### KeyPresenceResponse.Response
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| RESPONSE_UNSPECIFIED | 0 |  |
+| RESPONSE_PRESENT | 1 |  |
+| RESPONSE_ABSENT | 2 |  |
+| RESPONSE_FAIL | 3 |  |
+
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="tss/tofnd/v1beta1/multisig.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## tss/tofnd/v1beta1/multisig.proto
+File copied from golang tofnd with minor tweaks
+
+
+<a name="tss.tofnd.v1beta1.KeygenRequest"></a>
+
+### KeygenRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_uid` | [string](#string) |  |  |
+| `party_uid` | [string](#string) |  | used only for logging |
+
+
+
+
+
+
+<a name="tss.tofnd.v1beta1.KeygenResponse"></a>
+
+### KeygenResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `pub_key` | [bytes](#bytes) |  | SEC1-encoded compressed curve point |
+| `error` | [string](#string) |  | reply with an error message if keygen fails |
+
+
+
+
+
+
+<a name="tss.tofnd.v1beta1.SignRequest"></a>
+
+### SignRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_uid` | [string](#string) |  |  |
+| `msg_to_sign` | [bytes](#bytes) |  | 32-byte pre-hashed message digest |
+| `party_uid` | [string](#string) |  | used only for logging |
+| `pub_key` | [bytes](#bytes) |  | SEC1-encoded compressed pub key bytes to find the right |
+
+
+
+
+
+
+<a name="tss.tofnd.v1beta1.SignResponse"></a>
+
+### SignResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `signature` | [bytes](#bytes) |  | ASN.1 DER-encoded ECDSA signature |
+| `error` | [string](#string) |  | reply with an error message if sign fails |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="tss/tofnd/v1beta1/tofnd.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## tss/tofnd/v1beta1/tofnd.proto
+File copied from golang tofnd with minor tweaks
+
+
+<a name="tss.tofnd.v1beta1.KeygenInit"></a>
+
+### KeygenInit
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `new_key_uid` | [string](#string) |  |  |
+| `party_uids` | [string](#string) | repeated |  |
+| `party_share_counts` | [uint32](#uint32) | repeated |  |
+| `my_party_index` | [uint32](#uint32) |  | parties[my_party_index] belongs to the server |
+| `threshold` | [uint32](#uint32) |  |  |
+
+
+
+
+
+
+<a name="tss.tofnd.v1beta1.KeygenOutput"></a>
+
+### KeygenOutput
+Keygen's success response
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `pub_key` | [bytes](#bytes) |  | pub_key; common for all parties |
+| `group_recover_info` | [bytes](#bytes) |  | recover info of all parties' shares; common for all parties |
+| `private_recover_info` | [bytes](#bytes) |  | private recover info of this party's shares; unique for each party |
+
+
+
+
+
+
+<a name="tss.tofnd.v1beta1.MessageIn"></a>
+
+### MessageIn
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `keygen_init` | [KeygenInit](#tss.tofnd.v1beta1.KeygenInit) |  | first message only, Keygen |
+| `sign_init` | [SignInit](#tss.tofnd.v1beta1.SignInit) |  | first message only, Sign |
+| `traffic` | [TrafficIn](#tss.tofnd.v1beta1.TrafficIn) |  | all subsequent messages |
+| `abort` | [bool](#bool) |  | abort the protocol, ignore the bool value |
+
+
+
+
+
+
+<a name="tss.tofnd.v1beta1.MessageOut"></a>
+
+### MessageOut
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `traffic` | [TrafficOut](#tss.tofnd.v1beta1.TrafficOut) |  | all but final message |
+| `keygen_result` | [MessageOut.KeygenResult](#tss.tofnd.v1beta1.MessageOut.KeygenResult) |  | final message only, Keygen |
+| `sign_result` | [MessageOut.SignResult](#tss.tofnd.v1beta1.MessageOut.SignResult) |  | final message only, Sign |
+| `need_recover` | [bool](#bool) |  | issue recover from client |
+
+
+
+
+
+
+<a name="tss.tofnd.v1beta1.MessageOut.CriminalList"></a>
+
+### MessageOut.CriminalList
+Keygen/Sign failure response message
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `criminals` | [MessageOut.CriminalList.Criminal](#tss.tofnd.v1beta1.MessageOut.CriminalList.Criminal) | repeated |  |
+
+
+
+
+
+
+<a name="tss.tofnd.v1beta1.MessageOut.CriminalList.Criminal"></a>
+
+### MessageOut.CriminalList.Criminal
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `party_uid` | [string](#string) |  |  |
+| `crime_type` | [MessageOut.CriminalList.Criminal.CrimeType](#tss.tofnd.v1beta1.MessageOut.CriminalList.Criminal.CrimeType) |  |  |
+
+
+
+
+
+
+<a name="tss.tofnd.v1beta1.MessageOut.KeygenResult"></a>
+
+### MessageOut.KeygenResult
+Keygen's response types
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `data` | [KeygenOutput](#tss.tofnd.v1beta1.KeygenOutput) |  | Success response |
+| `criminals` | [MessageOut.CriminalList](#tss.tofnd.v1beta1.MessageOut.CriminalList) |  | Faiilure response |
+
+
+
+
+
+
+<a name="tss.tofnd.v1beta1.MessageOut.SignResult"></a>
+
+### MessageOut.SignResult
+Sign's response types
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `signature` | [bytes](#bytes) |  | Success response |
+| `criminals` | [MessageOut.CriminalList](#tss.tofnd.v1beta1.MessageOut.CriminalList) |  | Failure response |
+
+
+
+
+
+
+<a name="tss.tofnd.v1beta1.RecoverRequest"></a>
+
+### RecoverRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `keygen_init` | [KeygenInit](#tss.tofnd.v1beta1.KeygenInit) |  |  |
+| `keygen_output` | [KeygenOutput](#tss.tofnd.v1beta1.KeygenOutput) |  |  |
+
+
+
+
+
+
+<a name="tss.tofnd.v1beta1.RecoverResponse"></a>
+
+### RecoverResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `response` | [RecoverResponse.Response](#tss.tofnd.v1beta1.RecoverResponse.Response) |  |  |
+
+
+
+
+
+
+<a name="tss.tofnd.v1beta1.SignInit"></a>
+
+### SignInit
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `new_sig_uid` | [string](#string) |  |  |
+| `key_uid` | [string](#string) |  |  |
+| `party_uids` | [string](#string) | repeated | TODO replace this with a subset of indices? |
+| `message_to_sign` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="tss.tofnd.v1beta1.TrafficIn"></a>
+
+### TrafficIn
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `from_party_uid` | [string](#string) |  |  |
+| `payload` | [bytes](#bytes) |  |  |
+| `is_broadcast` | [bool](#bool) |  |  |
+
+
+
+
+
+
+<a name="tss.tofnd.v1beta1.TrafficOut"></a>
+
+### TrafficOut
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `to_party_uid` | [string](#string) |  |  |
+| `payload` | [bytes](#bytes) |  |  |
+| `is_broadcast` | [bool](#bool) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+
+<a name="tss.tofnd.v1beta1.MessageOut.CriminalList.Criminal.CrimeType"></a>
+
+### MessageOut.CriminalList.Criminal.CrimeType
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| CRIME_TYPE_UNSPECIFIED | 0 |  |
+| CRIME_TYPE_NON_MALICIOUS | 1 |  |
+| CRIME_TYPE_MALICIOUS | 2 |  |
+
+
+
+<a name="tss.tofnd.v1beta1.RecoverResponse.Response"></a>
+
+### RecoverResponse.Response
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| RESPONSE_UNSPECIFIED | 0 |  |
+| RESPONSE_SUCCESS | 1 |  |
+| RESPONSE_FAIL | 2 |  |
+
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="tss/v1beta1/params.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## tss/v1beta1/params.proto
+
+
+
+<a name="tss.v1beta1.Params"></a>
+
+### Params
+Params is the parameter set for this module
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_requirements` | [tss.exported.v1beta1.KeyRequirement](#tss.exported.v1beta1.KeyRequirement) | repeated | KeyRequirements defines the requirement for each key role |
+| `suspend_duration_in_blocks` | [int64](#int64) |  | SuspendDurationInBlocks defines the number of blocks a validator is disallowed to participate in any TSS ceremony after committing a malicious behaviour during signing |
+| `heartbeat_period_in_blocks` | [int64](#int64) |  | HeartBeatPeriodInBlocks defines the time period in blocks for tss to emit the event asking validators to send their heartbeats |
+| `max_missed_blocks_per_window` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
+| `unbonding_locking_key_rotation_count` | [int64](#int64) |  |  |
+| `external_multisig_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
+| `max_sign_queue_size` | [int64](#int64) |  |  |
+| `max_simultaneous_sign_shares` | [int64](#int64) |  |  |
+| `tss_signed_blocks_window` | [int64](#int64) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="tss/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## tss/v1beta1/types.proto
+
+
+
+<a name="tss.v1beta1.ExternalKeys"></a>
+
+### ExternalKeys
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `key_ids` | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.KeyInfo"></a>
+
+### KeyInfo
+KeyInfo holds information about a key
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_id` | [string](#string) |  |  |
+| `key_role` | [tss.exported.v1beta1.KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
+| `key_type` | [tss.exported.v1beta1.KeyType](#tss.exported.v1beta1.KeyType) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.KeyRecoveryInfo"></a>
+
+### KeyRecoveryInfo
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_id` | [string](#string) |  |  |
+| `public` | [bytes](#bytes) |  |  |
+| `private` | [KeyRecoveryInfo.PrivateEntry](#tss.v1beta1.KeyRecoveryInfo.PrivateEntry) | repeated |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.KeyRecoveryInfo.PrivateEntry"></a>
+
+### KeyRecoveryInfo.PrivateEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key` | [string](#string) |  |  |
+| `value` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.KeygenVoteData"></a>
+
+### KeygenVoteData
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `pub_key` | [bytes](#bytes) |  |  |
+| `group_recovery_info` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.MultisigInfo"></a>
+
+### MultisigInfo
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [string](#string) |  |  |
+| `timeout` | [int64](#int64) |  |  |
+| `target_num` | [int64](#int64) |  |  |
+| `infos` | [MultisigInfo.Info](#tss.v1beta1.MultisigInfo.Info) | repeated |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.MultisigInfo.Info"></a>
+
+### MultisigInfo.Info
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `participant` | [bytes](#bytes) |  |  |
+| `data` | [bytes](#bytes) | repeated |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.ValidatorStatus"></a>
+
+### ValidatorStatus
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `validator` | [bytes](#bytes) |  |  |
+| `suspended_until` | [uint64](#uint64) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="tss/v1beta1/genesis.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## tss/v1beta1/genesis.proto
+
+
+
+<a name="tss.v1beta1.GenesisState"></a>
+
+### GenesisState
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `params` | [Params](#tss.v1beta1.Params) |  |  |
+| `key_recovery_infos` | [KeyRecoveryInfo](#tss.v1beta1.KeyRecoveryInfo) | repeated |  |
+| `keys` | [tss.exported.v1beta1.Key](#tss.exported.v1beta1.Key) | repeated |  |
+| `multisig_infos` | [MultisigInfo](#tss.v1beta1.MultisigInfo) | repeated |  |
+| `external_keys` | [ExternalKeys](#tss.v1beta1.ExternalKeys) | repeated |  |
+| `signatures` | [tss.exported.v1beta1.Signature](#tss.exported.v1beta1.Signature) | repeated |  |
+| `validator_statuses` | [ValidatorStatus](#tss.v1beta1.ValidatorStatus) | repeated |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="tss/v1beta1/query.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## tss/v1beta1/query.proto
+
+
+
+<a name="tss.v1beta1.AssignableKeyRequest"></a>
+
+### AssignableKeyRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `key_role` | [tss.exported.v1beta1.KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.AssignableKeyResponse"></a>
+
+### AssignableKeyResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `assignable` | [bool](#bool) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.NextKeyIDRequest"></a>
+
+### NextKeyIDRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `key_role` | [tss.exported.v1beta1.KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.NextKeyIDResponse"></a>
+
+### NextKeyIDResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.QueryActiveOldKeysResponse"></a>
+
+### QueryActiveOldKeysResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_ids` | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.QueryActiveOldKeysValidatorResponse"></a>
+
+### QueryActiveOldKeysValidatorResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `keys_info` | [QueryActiveOldKeysValidatorResponse.KeyInfo](#tss.v1beta1.QueryActiveOldKeysValidatorResponse.KeyInfo) | repeated |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.QueryActiveOldKeysValidatorResponse.KeyInfo"></a>
+
+### QueryActiveOldKeysValidatorResponse.KeyInfo
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [string](#string) |  |  |
+| `chain` | [string](#string) |  |  |
+| `role` | [int32](#int32) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.QueryDeactivatedOperatorsResponse"></a>
+
+### QueryDeactivatedOperatorsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `operator_addresses` | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.QueryExternalKeyIDResponse"></a>
+
+### QueryExternalKeyIDResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_ids` | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.QueryKeyResponse"></a>
+
+### QueryKeyResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `ecdsa_key` | [QueryKeyResponse.ECDSAKey](#tss.v1beta1.QueryKeyResponse.ECDSAKey) |  |  |
+| `multisig_key` | [QueryKeyResponse.MultisigKey](#tss.v1beta1.QueryKeyResponse.MultisigKey) |  |  |
+| `role` | [tss.exported.v1beta1.KeyRole](#tss.exported.v1beta1.KeyRole) |  |  |
+| `rotated_at` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.QueryKeyResponse.ECDSAKey"></a>
+
+### QueryKeyResponse.ECDSAKey
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `vote_status` | [VoteStatus](#tss.v1beta1.VoteStatus) |  |  |
+| `key` | [QueryKeyResponse.Key](#tss.v1beta1.QueryKeyResponse.Key) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.QueryKeyResponse.Key"></a>
+
+### QueryKeyResponse.Key
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `x` | [string](#string) |  |  |
+| `y` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.QueryKeyResponse.MultisigKey"></a>
+
+### QueryKeyResponse.MultisigKey
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `threshold` | [int64](#int64) |  |  |
+| `key` | [QueryKeyResponse.Key](#tss.v1beta1.QueryKeyResponse.Key) | repeated |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.QueryKeyShareResponse"></a>
+
+### QueryKeyShareResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `share_infos` | [QueryKeyShareResponse.ShareInfo](#tss.v1beta1.QueryKeyShareResponse.ShareInfo) | repeated |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.QueryKeyShareResponse.ShareInfo"></a>
+
+### QueryKeyShareResponse.ShareInfo
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_id` | [string](#string) |  |  |
+| `key_chain` | [string](#string) |  |  |
+| `key_role` | [string](#string) |  |  |
+| `snapshot_block_number` | [int64](#int64) |  |  |
+| `validator_address` | [string](#string) |  |  |
+| `num_validator_shares` | [int64](#int64) |  |  |
+| `num_total_shares` | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.QueryRecoveryResponse"></a>
+
+### QueryRecoveryResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `party_uids` | [string](#string) | repeated |  |
+| `party_share_counts` | [uint32](#uint32) | repeated |  |
+| `threshold` | [uint32](#uint32) |  |  |
+| `keygen_output` | [tss.tofnd.v1beta1.KeygenOutput](#tss.tofnd.v1beta1.KeygenOutput) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.QuerySignatureResponse"></a>
+
+### QuerySignatureResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `threshold_signature` | [QuerySignatureResponse.ThresholdSignature](#tss.v1beta1.QuerySignatureResponse.ThresholdSignature) |  |  |
+| `multisig_signature` | [QuerySignatureResponse.MultisigSignature](#tss.v1beta1.QuerySignatureResponse.MultisigSignature) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.QuerySignatureResponse.MultisigSignature"></a>
+
+### QuerySignatureResponse.MultisigSignature
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sig_status` | [tss.exported.v1beta1.SigStatus](#tss.exported.v1beta1.SigStatus) |  |  |
+| `signatures` | [QuerySignatureResponse.Signature](#tss.v1beta1.QuerySignatureResponse.Signature) | repeated |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.QuerySignatureResponse.Signature"></a>
+
+### QuerySignatureResponse.Signature
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `r` | [string](#string) |  |  |
+| `s` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.QuerySignatureResponse.ThresholdSignature"></a>
+
+### QuerySignatureResponse.ThresholdSignature
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `vote_status` | [VoteStatus](#tss.v1beta1.VoteStatus) |  |  |
+| `signature` | [QuerySignatureResponse.Signature](#tss.v1beta1.QuerySignatureResponse.Signature) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.ValidatorMultisigKeysRequest"></a>
+
+### ValidatorMultisigKeysRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.ValidatorMultisigKeysResponse"></a>
+
+### ValidatorMultisigKeysResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `keys` | [ValidatorMultisigKeysResponse.KeysEntry](#tss.v1beta1.ValidatorMultisigKeysResponse.KeysEntry) | repeated |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.ValidatorMultisigKeysResponse.Keys"></a>
+
+### ValidatorMultisigKeysResponse.Keys
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `keys` | [bytes](#bytes) | repeated |  |
+
+
+
+
+
+
+<a name="tss.v1beta1.ValidatorMultisigKeysResponse.KeysEntry"></a>
+
+### ValidatorMultisigKeysResponse.KeysEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key` | [string](#string) |  |  |
+| `value` | [ValidatorMultisigKeysResponse.Keys](#tss.v1beta1.ValidatorMultisigKeysResponse.Keys) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+
+<a name="tss.v1beta1.VoteStatus"></a>
+
+### VoteStatus
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| VOTE_STATUS_UNSPECIFIED | 0 |  |
+| VOTE_STATUS_NOT_FOUND | 1 |  |
+| VOTE_STATUS_PENDING | 2 |  |
+| VOTE_STATUS_DECIDED | 3 |  |
+
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="vote/exported/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## vote/exported/v1beta1/types.proto
+
+
+
+<a name="vote.exported.v1beta1.PollMetadata"></a>
+
+### PollMetadata
+PollMetadata represents a poll with write-in voting, i.e. the result of the
+vote can have any data type
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key` | [axelar.vote.exported.v1beta1.PollKey](#axelar.vote.exported.v1beta1.PollKey) |  |  |
+| `expires_at` | [int64](#int64) |  |  |
+| `result` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
+| `voting_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
+| `state` | [axelar.vote.exported.v1beta1.PollState](#axelar.vote.exported.v1beta1.PollState) |  |  |
+| `min_voter_count` | [int64](#int64) |  |  |
+| `voters` | [axelar.vote.exported.v1beta1.Voter](#axelar.vote.exported.v1beta1.Voter) | repeated |  |
+| `total_voting_power` | [bytes](#bytes) |  |  |
+| `reward_pool_name` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="vote.exported.v1beta1.Vote"></a>
+
+### Vote
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `results` | [google.protobuf.Any](#google.protobuf.Any) | repeated |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="vote/v1beta1/params.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## vote/v1beta1/params.proto
+
+
+
+<a name="vote.v1beta1.Params"></a>
+
+### Params
+Params represent the genesis parameters for the module
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `default_voting_threshold` | [utils.v1beta1.Threshold](#utils.v1beta1.Threshold) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="vote/v1beta1/genesis.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## vote/v1beta1/genesis.proto
+
+
+
+<a name="vote.v1beta1.GenesisState"></a>
+
+### GenesisState
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `params` | [Params](#vote.v1beta1.Params) |  |  |
+| `poll_metadatas` | [vote.exported.v1beta1.PollMetadata](#vote.exported.v1beta1.PollMetadata) | repeated |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="vote/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## vote/v1beta1/types.proto
+
+
+
+<a name="vote.v1beta1.TalliedVote"></a>
 
 ### TalliedVote
 TalliedVote represents a vote for a poll with the accumulated stake of all
