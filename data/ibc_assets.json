@@ -25,7 +25,7 @@
       "name": "Cosmos",
       "symbol": "ATOM",
       "image": "/images/assets/atom.png",
-      "transfer_fee": 0.02
+      "transfer_fee": 0.05
     },
     {
       "id": "dai-wei",
@@ -45,27 +45,43 @@
       "id": "weth-wei",
       "name": "Wrapped Ether",
       "symbol": "WETH",
-      "image": "/images/assets/eth.png"
+      "image": "/images/assets/eth.png",
+      "transfer_fee": 0.0002
     },
     {
       "id": "wbtc-satoshi",
       "name": "Wrapped BTC",
       "symbol": "WBTC",
-      "image": "/images/assets/wbtc.png"
+      "image": "/images/assets/wbtc.png",
+      "transfer_fee": 0.00002
+    },
+    {
+      "id": "ungm",
+      "name": "e-Money Staking Coin",
+      "symbol": "NGM",
+      "image": "/images/assets/ngm.png",
+      "transfer_fee": 0.5
+    },
+    {
+      "id": "ueeur",
+      "name": "e-Money EUR",
+      "symbol": "EEUR",
+      "image": "/images/assets/eeur.png",
+      "transfer_fee": 0.5
     },
     {
       "id": "uusd",
       "name": "TerraUSD",
       "symbol": "UST",
       "image": "/images/assets/ust.png",
-      "transfer_fee": 0.5
+      "transfer_fee": 1
     },
     {
       "id": "uluna",
       "name": "Terra",
       "symbol": "LUNA",
       "image": "/images/assets/luna.png",
-      "transfer_fee": 0.005
+      "transfer_fee": 0.5
     }
   ],
   "testnet": [
@@ -86,13 +102,15 @@
       "id": "weth-wei",
       "name": "Wrapped Ether",
       "symbol": "WETH",
-      "image": "/images/assets/eth.png"
+      "image": "/images/assets/eth.png",
+      "transfer_fee": 0.0002
     },
     {
       "id": "wbtc-satoshi",
       "name": "Wrapped BTC",
       "symbol": "WBTC",
-      "image": "/images/assets/wbtc.png"
+      "image": "/images/assets/wbtc.png",
+      "transfer_fee": 0.00002
     },
     {
       "id": "wavax-wei",
@@ -123,14 +141,14 @@
       "name": "TerraUSD",
       "symbol": "UST",
       "image": "/images/assets/ust.png",
-      "transfer_fee": 0.5
+      "transfer_fee": 1
     },
     {
       "id": "uluna",
       "name": "Terra",
       "symbol": "LUNA",
       "image": "/images/assets/luna.png",
-      "transfer_fee": 0.005
+      "transfer_fee": 0.5
     }
   ]
 }

@@ -18,25 +18,25 @@ This API endpoint allows you to programmatically get the General Message Passing
 **Testnet:** `GET https://testnet.api.gmp.axelarscan.io`
 
 #### Query Parameters
-| Parameter          | Type     | Description                                                                                                           |
-| ------------------ | -------- | --------------------------------------------------------------------------------------------------------------------- |
-| `method`<br />**(required field)** | string   | must insert `searchGMP` as mandatory                                                                                          |
-| `txHash`           | string   | the transaction hash on source chain                                                                              |
-| `sourceChain`      | string   | the source chain of the transfer                                                                                      |
-| `destinationChain` | string   | the destination chain of the transfer                                                                                 |
-| `senderAddress`    | string   | the sender address                                                                                                    |
-| `sourceAddress`    | string   | the source address of the transfer                                                                                    |
-| `contractAddress`  | string   | the destination contract address that the transfer will be executed to                                                                   |
-| `event`            | string   | the event emitted on the destination gateway contracts. This can be either `contractCall` or `contractCallWithToken`. |
-| `relayerAddress`   | string   | the relayer address used in the transfer                                                                                            |
-| `status`           | string   | `approving`: the transfer is waiting for approval at the destination chain<br />`approved`: the transfer is approved at the destination chain and waiting to be executed to the destination contract<br />`executed`: the transfer is successfully executed to the destination contract |
-| `fromTime`         | unix time | the start timestamp of the transfer                                                                                     |
-| `toTime`           | unix time | the end timestamp of the transfer                                                                                       |
-| `from`             | number   | the records' index for pagination                                                                                     |
-| `size`             | number   | the number of the returned records. This field is used for pagination.                                                |
+| Parameter          | Type      | Description                                                                                                           |
+| ------------------ | --------- | --------------------------------------------------------------------------------------------------------------------- |
+| `method`<br />**(required field)** | string    | must insert `searchGMP` as mandatory                                                                  |
+| `txHash`           | string    | the transaction hash on source chain                                                                                  |
+| `sourceChain`      | string    | the source chain of the transfer                                                                                      |
+| `destinationChain` | string    | the destination chain of the transfer                                                                                 |
+| `senderAddress`    | string    | the sender address                                                                                                    |
+| `sourceAddress`    | string    | the source address of the transfer                                                                                    |
+| `contractAddress`  | string    | the destination contract address that the transfer will be executed to                                                |
+| `event`            | string    | the event emitted on the destination gateway contracts. This can be either `contractCall` or `contractCallWithToken`. |
+| `relayerAddress`   | string    | the relayer address used in the transfer                                                                              |
+| `status`           | string    | `approving`: the transfer is waiting for approval at the destination chain<br />`approved`: the transfer is approved at the destination chain and waiting to be executed to the destination contract<br />`executed`: the transfer is successfully executed to the destination contract |
+| `fromTime`         | unix time | the start timestamp of the transfer                                                                                   |
+| `toTime`           | unix time | the end timestamp of the transfer                                                                                     |
+| `from`             | number    | the records' index for pagination                                                                                     |
+| `size`             | number    | the number of the returned records. This field is used for pagination.                                                |
 
 ### Manually execute a transfer
-Axelar provides a relayer service that automatically executes transfers for you. Alternatively, you also can manually execute a transfer through the Axelarscan's GMP page by connecting a wallet, and click the Execute button. Please note that you need to pay gas to process the transaction.
+Axelar provides a relayer service that automatically executes transfers for you. Alternatively, in some cases where you don't want to wait for the auto-relayer, you can manually execute a transfer through the Axelarscan's GMP page by connecting a wallet and clicking the Execute button. Please note that you need to pay gas to process the transaction.
 
 ![gmp-connect-wallet.png](/images/gmp-connect-wallet.png)
 ![gmp-execute-button.png](/images/gmp-execute-button.png)
