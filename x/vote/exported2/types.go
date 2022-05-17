@@ -5,8 +5,6 @@ import (
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 )
 
-//go:generate moq -out ./mock/types.go -pkg mock . Poll
-
 // PollProperty is a modifier for PollMetadata. It should never be manually initialized
 type PollProperty struct {
 	do func(metadata PollMetadata) PollMetadata
