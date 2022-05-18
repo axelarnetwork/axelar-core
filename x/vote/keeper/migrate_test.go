@@ -13,6 +13,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
 	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 	exported0_17 "github.com/axelarnetwork/axelar-core/x/vote/exported-0.17"
 	"github.com/axelarnetwork/axelar-core/x/vote/types"
@@ -155,7 +156,7 @@ func TestMigrateVotes(t *testing.T) {
 	vote := exported0_17.Vote{}
 	for i := 0; i < 10; i++ {
 		result, err := codectypes.NewAnyWithValue(&evmtypes.Event{
-			Chain: rand.Str(10),
+			Chain: nexus.ChainName(rand.Str(10)),
 		})
 		assert.NoError(t, err)
 		vote.Results = append(vote.Results, result)
@@ -172,7 +173,7 @@ func TestMigrateVotes(t *testing.T) {
 	bz := cdc.MustMarshalLengthPrefixed(&meta)
 	meta = exported0_17.PollMetadata{} // reset
 	cdc.MustUnmarshalLengthPrefixed(bz, &meta)
-	newPackedVote := MigrateVoteData(cdc, rand.Str(5), meta.Result, log.TestingLogger())
+	newPackedVote := MigrateVoteData(cdc, nexus.ChainName(rand.Str(5)), meta.Result, log.TestingLogger())
 
 	newVote, ok := newPackedVote.GetCachedValue().(*exported.Vote)
 	assert.True(t, ok)

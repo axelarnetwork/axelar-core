@@ -11,6 +11,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 	exported0_17 "github.com/axelarnetwork/axelar-core/x/vote/exported-0.17"
 	"github.com/axelarnetwork/axelar-core/x/vote/types"
@@ -41,7 +42,7 @@ func migrateVotes(ctx sdk.Context, k Keeper) error {
 		newMetadata := exported.PollMetadata{
 			Key:              metadata.Key,
 			ExpiresAt:        metadata.ExpiresAt,
-			Result:           MigrateVoteData(k.cdc, metadata.RewardPoolName, metadata.Result, k.Logger(ctx)),
+			Result:           MigrateVoteData(k.cdc, nexus.ChainName(metadata.RewardPoolName), metadata.Result, k.Logger(ctx)),
 			VotingThreshold:  metadata.VotingThreshold,
 			State:            metadata.State,
 			MinVoterCount:    metadata.MinVoterCount,
@@ -57,7 +58,7 @@ func migrateVotes(ctx sdk.Context, k Keeper) error {
 			newVote := types.TalliedVote{
 				Tally:  vote.Tally,
 				Voters: vote.Voters,
-				Data:   MigrateVoteData(k.cdc, metadata.RewardPoolName, vote.Data, k.Logger(ctx)),
+				Data:   MigrateVoteData(k.cdc, nexus.ChainName(metadata.RewardPoolName), vote.Data, k.Logger(ctx)),
 			}
 			pollStore.Set(votesPrefix.AppendStr(pollStore.key.String()).AppendStr(hash(newVote.Data)), &newVote)
 		}
@@ -85,7 +86,7 @@ func assertMigrationSuccessful(ctx sdk.Context, k Keeper) error {
 }
 
 // MigrateVoteData migrates vote results from an Any slice to a single Any value
-func MigrateVoteData(cdc codec.BinaryCodec, chain string, data *codectypes.Any, logger log.Logger) *codectypes.Any {
+func MigrateVoteData(cdc codec.BinaryCodec, chain nexus.ChainName, data *codectypes.Any, logger log.Logger) *codectypes.Any {
 	if data == nil {
 		return nil
 	}
