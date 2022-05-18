@@ -1,0 +1,68 @@
+syntax = "proto3";
+package axelar.nexus.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/nexus/types";
+
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "axelar/nexus/exported/v1beta1/types.proto";
+import "axelar/permission/exported/v1beta1/types.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+message RegisterChainMaintainerRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  repeated string chains = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+}
+
+message RegisterChainMaintainerResponse {}
+
+message DeregisterChainMaintainerRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  repeated string chains = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+}
+
+message DeregisterChainMaintainerResponse {}
+
+// ActivateChainRequest represents a message to activate chains
+message ActivateChainRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  repeated string chains = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+}
+
+message ActivateChainResponse {}
+
+// DeactivateChainRequest represents a message to deactivate chains
+message DeactivateChainRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  repeated string chains = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+}
+
+message DeactivateChainResponse {}
+
+// RegisterAssetFeeRequest represents a message to register the transfer fee
+// info associated to an asset on a chain
+message RegisterAssetFeeRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  nexus.exported.v1beta1.FeeInfo fee_info = 2 [ (gogoproto.nullable) = false ];
+}
+
+message RegisterAssetFeeResponse {}

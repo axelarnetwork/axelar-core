@@ -1,0 +1,156 @@
+syntax = "proto3";
+package axelar.tss.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/tss/types";
+
+import "gogoproto/gogo.proto";
+import "axelar/tss/exported/v1beta1/types.proto";
+import "axelar/tss/v1beta1/types.proto";
+import "axelar/tss/tofnd/v1beta1/tofnd.proto";
+import "axelar/vote/exported/v1beta1/types.proto";
+import "cosmos/crypto/multisig/keys.proto";
+import "axelar/permission/exported/v1beta1/types.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+// StartKeygenRequest indicate the start of keygen
+message StartKeygenRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
+  string sender = 1 [ (gogoproto.casttype) =
+                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  tss.v1beta1.KeyInfo key_info = 2 [ (gogoproto.nullable) = false ];
+}
+
+message StartKeygenResponse {}
+
+message RotateKeyRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  tss.exported.v1beta1.KeyRole key_role = 3;
+  string key_id = 4 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+  ];
+}
+
+message RotateKeyResponse {}
+
+// ProcessKeygenTrafficRequest protocol message
+message ProcessKeygenTrafficRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string session_id = 2 [ (gogoproto.customname) = "SessionID" ];
+  tss.tofnd.v1beta1.TrafficOut payload = 3 [ (gogoproto.nullable) = false ];
+}
+
+message ProcessKeygenTrafficResponse {}
+
+// ProcessSignTrafficRequest protocol message
+message ProcessSignTrafficRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string session_id = 2 [ (gogoproto.customname) = "SessionID" ];
+  tss.tofnd.v1beta1.TrafficOut payload = 3 [ (gogoproto.nullable) = false ];
+}
+
+message ProcessSignTrafficResponse {}
+
+// VotePubKeyRequest represents the message to vote on a public key
+message VotePubKeyRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  vote.exported.v1beta1.PollKey poll_key = 2 [ (gogoproto.nullable) = false ];
+  tss.tofnd.v1beta1.MessageOut.KeygenResult result = 3
+      [ (gogoproto.nullable) = false ];
+}
+message VotePubKeyResponse { string log = 1; }
+
+// VoteSigRequest represents a message to vote for a signature
+message VoteSigRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  vote.exported.v1beta1.PollKey poll_key = 2 [ (gogoproto.nullable) = false ];
+  tss.tofnd.v1beta1.MessageOut.SignResult result = 3
+      [ (gogoproto.nullable) = false ];
+}
+
+message VoteSigResponse { string log = 1; }
+
+message HeartBeatRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+
+  repeated string key_ids = 2 [
+    (gogoproto.customname) = "KeyIDs",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+  ];
+}
+
+message HeartBeatResponse {
+  int32 keygen_illegibility = 1
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/snapshot/"
+            "exported.ValidatorIllegibility" ];
+  int32 signing_illegibility = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/snapshot/"
+            "exported.ValidatorIllegibility" ];
+}
+
+message RegisterExternalKeysRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
+  message ExternalKey {
+    string id = 1 [
+      (gogoproto.customname) = "ID",
+      (gogoproto.casttype) =
+          "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+    ];
+    bytes pub_key = 2;
+  }
+
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  repeated ExternalKey external_keys = 3 [ (gogoproto.nullable) = false ];
+}
+
+message RegisterExternalKeysResponse {};
+
+message SubmitMultisigPubKeysRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string key_id = 2 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+  ];
+  repeated exported.v1beta1.SigKeyPair sig_key_pairs = 3
+      [ (gogoproto.nullable) = false ];
+}
+
+message SubmitMultisigPubKeysResponse {}
+
+message SubmitMultisigSignaturesRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string sig_id = 2 [ (gogoproto.customname) = "SigID" ];
+
+  repeated bytes signatures = 3;
+}
+
+message SubmitMultisigSignaturesResponse {}

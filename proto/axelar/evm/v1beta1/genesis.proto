@@ -1,0 +1,35 @@
+syntax = "proto3";
+package axelar.evm.v1beta1;
+option go_package = "github.com/axelarnetwork/axelar-core/x/evm/types";
+
+import "axelar/utils/v1beta1/queuer.proto";
+import "gogoproto/gogo.proto";
+import "axelar/evm/v1beta1/params.proto";
+import "axelar/evm/v1beta1/types.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+// GenesisState represents the genesis state
+message GenesisState {
+  option (gogoproto.stable_marshaler) = true;
+
+  message Chain {
+    Params params = 1 [ (gogoproto.nullable) = false ];
+    repeated BurnerInfo burner_infos = 2 [ (gogoproto.nullable) = false ];
+    utils.v1beta1.QueueState command_queue = 3 [ (gogoproto.nullable) = false ];
+    repeated ERC20Deposit confirmed_deposits = 4
+        [ (gogoproto.nullable) = false ];
+    repeated ERC20Deposit burned_deposits = 5 [ (gogoproto.nullable) = false ];
+
+    repeated CommandBatchMetadata command_batches = 8
+        [ (gogoproto.nullable) = false ];
+
+    Gateway gateway = 9 [ (gogoproto.nullable) = false ];
+    repeated ERC20TokenMetadata tokens = 10 [ (gogoproto.nullable) = false ];
+    repeated Event events = 11 [ (gogoproto.nullable) = false ];
+    utils.v1beta1.QueueState confirmed_event_queue = 12
+        [ (gogoproto.nullable) = false ];
+  }
+
+  repeated Chain chains = 3 [ (gogoproto.nullable) = false ];
+}

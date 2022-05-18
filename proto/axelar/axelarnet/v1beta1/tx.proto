@@ -1,0 +1,124 @@
+syntax = "proto3";
+package axelar.axelarnet.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/axelarnet/types";
+
+import "google/protobuf/any.proto";
+import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
+import "cosmos_proto/cosmos.proto";
+import "axelar/nexus/exported/v1beta1/types.proto";
+import "axelar/axelarnet/v1beta1/types.proto";
+import "axelar/permission/exported/v1beta1/types.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+// MsgLink represents a message to link a cross-chain address to an Axelar
+// address
+message LinkRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string recipient_addr = 2;
+  string recipient_chain = 3
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string asset = 4;
+}
+
+message LinkResponse { string deposit_addr = 1; };
+
+// MsgConfirmDeposit represents a deposit confirmation message
+message ConfirmDepositRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+
+  reserved 2; // tx_id was removed in v0.14
+
+  reserved 3; // token was removed in v0.15
+
+  bytes deposit_address = 4
+      [ (gogoproto.casttype) =
+            "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+
+  string denom = 5;
+}
+
+message ConfirmDepositResponse {}
+
+// MsgExecutePendingTransfers represents a message to trigger transfer all
+// pending transfers
+message ExecutePendingTransfersRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+}
+
+message ExecutePendingTransfersResponse {}
+
+// MSgRegisterIBCPath represents a message to register an IBC tracing path for
+// a cosmos chain
+message RegisterIBCPathRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string path = 3;
+}
+
+message RegisterIBCPathResponse {}
+
+// MsgAddCosmosBasedChain represents a message to register a cosmos based chain
+// to nexus
+message AddCosmosBasedChainRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  nexus.exported.v1beta1.Chain chain = 2 [ (gogoproto.nullable) = false ];
+  string addr_prefix = 3;
+  reserved 4; // min_amount was removed in v0.15
+  repeated nexus.exported.v1beta1.Asset native_assets = 5
+      [ (gogoproto.nullable) = false ];
+}
+
+message AddCosmosBasedChainResponse {}
+
+// RegisterAssetRequest represents a message to register an asset to a cosmos
+// based chain
+message RegisterAssetRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  nexus.exported.v1beta1.Asset asset = 3 [ (gogoproto.nullable) = false ];
+}
+
+message RegisterAssetResponse {}
+
+// RouteIBCTransfersRequest represents a message to route pending transfers to
+// cosmos based chains
+message RouteIBCTransfersRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+}
+
+message RouteIBCTransfersResponse {}
+
+// RegisterFeeCollectorRequest represents a message to register axelarnet fee
+// collector account
+message RegisterFeeCollectorRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  bytes fee_collector = 2
+      [ (gogoproto.casttype) =
+            "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+}
+
+message RegisterFeeCollectorResponse {}
