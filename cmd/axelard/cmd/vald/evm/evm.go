@@ -159,7 +159,7 @@ func (mgr Mgr) ProcessTokenConfirmation(e tmEvents.Event) error {
 					continue
 				}
 				events = append(events, evmTypes.Event{
-					Chain: nexus.ChainName(chain),
+					Chain: chain,
 					TxId:  evmTypes.Hash(txID),
 					Index: uint64(i),
 					Event: &evmTypes.Event_TokenDeployed{
@@ -218,7 +218,7 @@ func (mgr Mgr) ProcessTransferKeyConfirmation(e tmEvents.Event) (err error) {
 					}
 
 					events = append(events, evmTypes.Event{
-						Chain: nexus.ChainName(chain),
+						Chain: chain,
 						TxId:  evmTypes.Hash(txID),
 						Index: uint64(i),
 						Event: &evmTypes.Event_SinglesigOwnershipTransferred{
@@ -233,7 +233,7 @@ func (mgr Mgr) ProcessTransferKeyConfirmation(e tmEvents.Event) (err error) {
 					}
 
 					events = append(events, evmTypes.Event{
-						Chain: nexus.ChainName(chain),
+						Chain: chain,
 						TxId:  evmTypes.Hash(txID),
 						Index: uint64(i),
 						Event: &evmTypes.Event_SinglesigOperatorshipTransferred{
@@ -252,7 +252,7 @@ func (mgr Mgr) ProcessTransferKeyConfirmation(e tmEvents.Event) (err error) {
 					}
 
 					events = append(events, evmTypes.Event{
-						Chain: nexus.ChainName(chain),
+						Chain: chain,
 						TxId:  evmTypes.Hash(txID),
 						Index: uint64(i),
 						Event: &evmTypes.Event_MultisigOwnershipTransferred{
@@ -267,7 +267,7 @@ func (mgr Mgr) ProcessTransferKeyConfirmation(e tmEvents.Event) (err error) {
 					}
 
 					events = append(events, evmTypes.Event{
-						Chain: nexus.ChainName(chain),
+						Chain: chain,
 						TxId:  evmTypes.Hash(txID),
 						Index: uint64(i),
 						Event: &evmTypes.Event_MultisigOperatorshipTransferred{
