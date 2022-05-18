@@ -1,0 +1,41 @@
+syntax = "proto3";
+package axelar.permission.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/permission/types";
+
+import "gogoproto/gogo.proto";
+import "cosmos/crypto/multisig/keys.proto";
+import "axelar/permission/exported/v1beta1/types.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+message UpdateGovernanceKeyRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  cosmos.crypto.multisig.LegacyAminoPubKey governance_key = 2
+      [ (gogoproto.nullable) = false ];
+}
+
+message UpdateGovernanceKeyResponse {}
+
+// MsgRegisterController represents a message to register a controller account
+message RegisterControllerRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  bytes controller = 2 [ (gogoproto.casttype) =
+                             "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+}
+
+message RegisterControllerResponse {}
+
+// DeregisterController represents a message to deregister a controller account
+message DeregisterControllerRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  bytes controller = 2 [ (gogoproto.casttype) =
+                             "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+}
+message DeregisterControllerResponse {}

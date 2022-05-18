@@ -82,7 +82,7 @@ func TestPoll_Vote(t *testing.T) {
 		pollStore *mock.StoreMock
 	)
 
-	repeats := 1
+	repeats := 20
 
 	givenPoll := Given("poll", func() {
 		voterCount := rand.I64Between(10, 20)
@@ -119,6 +119,24 @@ func TestPoll_Vote(t *testing.T) {
 			assert.Nil(t, result)
 			assert.False(t, voted)
 			assert.ErrorContains(t, err, "poll does not exist")
+		}).
+		Run(t, repeats)
+
+	givenPoll.
+		When("poll is in any state", withState(rand.Of(exported.Completed, exported.Failed, exported.Pending, exported.Expired))).
+		When("the voter has voted already", func() {
+			pollStore.HasVotedFunc = func(v sdk.ValAddress) bool { return true }
+		}).
+		Then("should return error", func(t *testing.T) {
+			result, voted, err := poll.Vote(
+				rand.Of(poll.Voters...).Validator,
+				rand.PosI64(),
+				&gogoprototypes.BoolValue{Value: true},
+			)
+
+			assert.Nil(t, result)
+			assert.False(t, voted)
+			assert.ErrorContains(t, err, "has voted already")
 		}).
 		Run(t, repeats)
 
@@ -213,12 +231,8 @@ func TestPoll_Vote(t *testing.T) {
 	givenPoll.
 		When("poll is pending", withState(exported.Pending)).
 		When("voter is not eligible", func() {
-			if rand.Bools(0.5).Next() {
-				pollStore.HasVotedFunc = func(v sdk.ValAddress) bool { return false }
-				voter = exported.Voter{Validator: rand.ValAddr()}
-			} else {
-				pollStore.HasVotedFunc = func(v sdk.ValAddress) bool { return v.Equals(voter.Validator) }
-			}
+			pollStore.HasVotedFunc = func(v sdk.ValAddress) bool { return false }
+			voter = exported.Voter{Validator: rand.ValAddr()}
 		}).
 		Then("should return error", func(t *testing.T) {
 			result, voted, err := poll.Vote(

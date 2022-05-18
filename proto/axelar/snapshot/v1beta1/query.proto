@@ -1,0 +1,29 @@
+syntax = "proto3";
+package axelar.snapshot.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/snapshot/types";
+
+import "gogoproto/gogo.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+message QueryValidatorsResponse {
+  message TssIllegibilityInfo {
+    bool tombstoned = 1;
+    bool jailed = 2;
+    bool missed_too_many_blocks = 3;
+    bool no_proxy_registered = 4;
+    bool tss_suspended = 5;
+    bool proxy_insuficient_funds = 6;
+    bool stale_tss_heartbeat = 7;
+  }
+
+  message Validator {
+    string operator_address = 1;
+    string moniker = 2;
+    TssIllegibilityInfo tss_illegibility_info = 3
+        [ (gogoproto.nullable) = false ];
+  }
+
+  repeated Validator validators = 1;
+}

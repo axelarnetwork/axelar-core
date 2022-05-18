@@ -1,0 +1,15 @@
+syntax = "proto3";
+package axelar.utils.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/utils";
+
+import "gogoproto/gogo.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+message Threshold {
+  // split threshold into Numerator and denominator to avoid floating point
+  // errors down the line
+  int64 numerator = 1;
+  int64 denominator = 2;
+}
