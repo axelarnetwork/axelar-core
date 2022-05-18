@@ -105,7 +105,7 @@ func (mgr Mgr) ProcessDepositConfirmation(e tmEvents.Event) (err error) {
 				}
 
 				events = append(events, evmTypes.Event{
-					Chain: nexus.ChainName(chain),
+					Chain: chain,
 					TxId:  evmTypes.Hash(txID),
 					Index: uint64(i),
 					Event: &evmTypes.Event_Transfer{
@@ -159,7 +159,7 @@ func (mgr Mgr) ProcessTokenConfirmation(e tmEvents.Event) error {
 					continue
 				}
 				events = append(events, evmTypes.Event{
-					Chain: nexus.ChainName(chain),
+					Chain: chain,
 					TxId:  evmTypes.Hash(txID),
 					Index: uint64(i),
 					Event: &evmTypes.Event_TokenDeployed{
@@ -218,7 +218,7 @@ func (mgr Mgr) ProcessTransferKeyConfirmation(e tmEvents.Event) (err error) {
 					}
 
 					events = append(events, evmTypes.Event{
-						Chain: nexus.ChainName(chain),
+						Chain: chain,
 						TxId:  evmTypes.Hash(txID),
 						Index: uint64(i),
 						Event: &evmTypes.Event_SinglesigOwnershipTransferred{
@@ -233,7 +233,7 @@ func (mgr Mgr) ProcessTransferKeyConfirmation(e tmEvents.Event) (err error) {
 					}
 
 					events = append(events, evmTypes.Event{
-						Chain: nexus.ChainName(chain),
+						Chain: chain,
 						TxId:  evmTypes.Hash(txID),
 						Index: uint64(i),
 						Event: &evmTypes.Event_SinglesigOperatorshipTransferred{
@@ -252,7 +252,7 @@ func (mgr Mgr) ProcessTransferKeyConfirmation(e tmEvents.Event) (err error) {
 					}
 
 					events = append(events, evmTypes.Event{
-						Chain: nexus.ChainName(chain),
+						Chain: chain,
 						TxId:  evmTypes.Hash(txID),
 						Index: uint64(i),
 						Event: &evmTypes.Event_MultisigOwnershipTransferred{
@@ -267,7 +267,7 @@ func (mgr Mgr) ProcessTransferKeyConfirmation(e tmEvents.Event) (err error) {
 					}
 
 					events = append(events, evmTypes.Event{
-						Chain: nexus.ChainName(chain),
+						Chain: chain,
 						TxId:  evmTypes.Hash(txID),
 						Index: uint64(i),
 						Event: &evmTypes.Event_MultisigOperatorshipTransferred{
@@ -327,6 +327,12 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(e tmEvents.Event) error {
 					return false
 				}
 
+				err = event.ValidateBasic()
+				if err != nil {
+					mgr.logger.Debug(sdkerrors.Wrap(err, "invalid event ContractCall").Error())
+					continue
+				}
+
 				events = append(events, evmTypes.Event{
 					Chain: chain,
 					TxId:  evmTypes.Hash(txID),
@@ -343,6 +349,12 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(e tmEvents.Event) error {
 					return false
 				}
 
+				err = event.ValidateBasic()
+				if err != nil {
+					mgr.logger.Debug(sdkerrors.Wrap(err, "invalid event ContractCallWithToken").Error())
+					continue
+				}
+
 				events = append(events, evmTypes.Event{
 					Chain: chain,
 					TxId:  evmTypes.Hash(txID),
@@ -355,6 +367,12 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(e tmEvents.Event) error {
 				event, err := decodeEventTokenSent(log)
 				if err != nil {
 					mgr.logger.Debug(sdkerrors.Wrap(err, "decode event TokenSent failed").Error())
+				}
+
+				err = event.ValidateBasic()
+				if err != nil {
+					mgr.logger.Debug(sdkerrors.Wrap(err, "invalid event TokenSent").Error())
+					continue
 				}
 
 				events = append(events, evmTypes.Event{
