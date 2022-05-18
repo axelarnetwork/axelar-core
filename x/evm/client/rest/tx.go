@@ -15,6 +15,7 @@ import (
 	clientUtils "github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
@@ -162,9 +163,9 @@ func GetHandlerLink(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		msg := &types.LinkRequest{
-			Chain:          mux.Vars(r)[clientUtils.PathVarChain],
+			Chain:          nexus.ChainName(mux.Vars(r)[clientUtils.PathVarChain]),
 			Sender:         fromAddr,
-			RecipientChain: req.RecipientChain,
+			RecipientChain: nexus.ChainName(req.RecipientChain),
 			RecipientAddr:  req.RecipientAddr,
 			Asset:          req.Asset,
 		}

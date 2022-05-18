@@ -32,7 +32,7 @@ func checkChainMaintainers(ctx sdk.Context, n types.Nexus, r types.RewardKeeper,
 			continue
 		}
 
-		rewardPool := r.GetPool(ctx, chain.Name)
+		rewardPool := r.GetPool(ctx, chain.Name.String())
 		params := n.GetParams(ctx)
 
 		for _, maintainerState := range n.GetChainMaintainerStates(ctx, chain) {
@@ -57,7 +57,7 @@ func checkChainMaintainers(ctx sdk.Context, n types.Nexus, r types.RewardKeeper,
 					types.EventTypeChainMaintainer,
 					sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 					sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDeregister),
-					sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
+					sdk.NewAttribute(types.AttributeKeyChain, chain.Name.String()),
 					sdk.NewAttribute(types.AttributeKeyChainMaintainerAddress, maintainerState.Address.String()),
 				),
 			)

@@ -5,13 +5,14 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
 // NewSignCommandsRequest creates a message of type SignCommandsRequest
 func NewSignCommandsRequest(sender sdk.AccAddress, chain string) *SignCommandsRequest {
 	return &SignCommandsRequest{
 		Sender: sender,
-		Chain:  utils.NormalizeString(chain),
+		Chain:  nexus.ChainName(utils.NormalizeString(chain)),
 	}
 }
 
@@ -31,7 +32,7 @@ func (m SignCommandsRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
-	if err := utils.ValidateString(m.Chain); err != nil {
+	if err := m.Chain.Validate(); err != nil {
 		return sdkerrors.Wrap(err, "invalid chain")
 	}
 

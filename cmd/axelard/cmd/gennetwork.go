@@ -17,6 +17,7 @@ import (
 	bitcoinTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
 const (
@@ -68,7 +69,7 @@ func SetGenesisChainParamsCmd(defaultNodeHome string) *cobra.Command {
 			var moduleName string
 
 			switch strings.ToLower(platformStr) {
-			case strings.ToLower(btc.Bitcoin.Name):
+			case strings.ToLower(btc.Bitcoin.Name.String()):
 				genesisState := bitcoinTypes.GetGenesisStateFromAppState(cdc, appState)
 				moduleName = bitcoinTypes.ModuleName
 
@@ -100,7 +101,10 @@ func SetGenesisChainParamsCmd(defaultNodeHome string) *cobra.Command {
 				if len(args) < 2 {
 					return fmt.Errorf("chain name is required for EVM platform")
 				}
-				evmChainName := args[1]
+				evmChainName := nexus.ChainName(args[1])
+				if err := evmChainName.Validate(); err != nil {
+					return err
+				}
 
 				// fetch existing EVM chain, or add new one
 				genesisState := evmTypes.GetGenesisStateFromAppState(cdc, appState)
@@ -193,9 +197,9 @@ func SetGenesisChainParamsCmd(defaultNodeHome string) *cobra.Command {
 	return cmd
 }
 
-func findEVMChain(chains []evmTypes.GenesisState_Chain, chainName string) (chain evmTypes.GenesisState_Chain, index int) {
+func findEVMChain(chains []evmTypes.GenesisState_Chain, chainName nexus.ChainName) (chain evmTypes.GenesisState_Chain, index int) {
 	for index, chain = range chains {
-		if strings.EqualFold(chainName, chain.Params.Chain) {
+		if chainName.Equals(chain.Params.Chain) {
 			return
 		}
 	}

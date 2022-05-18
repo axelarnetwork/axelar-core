@@ -15,7 +15,9 @@ message SetGatewayRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  string chain = 2;
+  string chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
   bytes address = 3
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
 }
@@ -26,7 +28,9 @@ message ConfirmGatewayTxRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  string chain = 2;
+  string chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
   bytes tx_id = 3 [
     (gogoproto.nullable) = false,
     (gogoproto.customtype) = "Hash",
@@ -41,7 +45,9 @@ message ConfirmDepositRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  string chain = 2;
+  string chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
   bytes tx_id = 3 [
     (gogoproto.nullable) = false,
     (gogoproto.customtype) = "Hash",
@@ -63,7 +69,9 @@ message ConfirmTokenRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  string chain = 2;
+  string chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
   bytes tx_id = 3 [
     (gogoproto.nullable) = false,
     (gogoproto.customtype) = "Hash",
@@ -78,7 +86,9 @@ message ConfirmTransferKeyRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  string chain = 2;
+  string chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
   bytes tx_id = 3 [
     (gogoproto.nullable) = false,
     (gogoproto.customtype) = "Hash",
@@ -100,10 +110,14 @@ message LinkRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  string chain = 2;
+  string chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
   string recipient_addr = 3;
   string asset = 4;
-  string recipient_chain = 5;
+  string recipient_chain = 5
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
 }
 
 message LinkResponse { string deposit_addr = 1; }
@@ -114,7 +128,9 @@ message CreateBurnTokensRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  string chain = 2;
+  string chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
 }
 
 message CreateBurnTokensResponse {}
@@ -125,7 +141,9 @@ message CreateDeployTokenRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  string chain = 2;
+  string chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
   Asset asset = 3 [ (gogoproto.nullable) = false ];
   TokenDetails token_details = 4 [ (gogoproto.nullable) = false ];
   reserved 5; // min_amount was removed in v0.15
@@ -141,7 +159,9 @@ message CreatePendingTransfersRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  string chain = 2;
+  string chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
 }
 
 message CreatePendingTransfersResponse {}
@@ -150,7 +170,9 @@ message CreateTransferOwnershipRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  string chain = 2;
+  string chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
   string key_id = 3 [
     (gogoproto.customname) = "KeyID",
     (gogoproto.casttype) =
@@ -164,7 +186,9 @@ message CreateTransferOperatorshipRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  string chain = 2;
+  string chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
   string key_id = 3 [
     (gogoproto.customname) = "KeyID",
     (gogoproto.casttype) =
@@ -178,7 +202,9 @@ message SignCommandsRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  string chain = 2;
+  string chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
 }
 
 message SignCommandsResponse {
@@ -193,7 +219,9 @@ message AddChainRequest {
 
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  string name = 2;
+  string name = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
   tss.exported.v1beta1.KeyType key_type = 4;
   bytes params = 5
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Params" ];
@@ -205,7 +233,9 @@ message RetryFailedEventRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  string chain = 2;
+  string chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
   string event_id = 3
       [ (gogoproto.customname) = "EventID", (gogoproto.casttype) = "EventID" ];
 }

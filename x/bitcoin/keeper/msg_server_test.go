@@ -89,7 +89,7 @@ func TestHandleMsgLink(t *testing.T) {
 			IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool {
 				return chain == exported.Bitcoin
 			},
-			GetChainFunc: func(_ sdk.Context, chain string) (nexus.Chain, bool) {
+			GetChainFunc: func(_ sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 				return nexus.Chain{
 					Name:                  chain,
 					SupportsForeignAssets: true,
@@ -126,7 +126,7 @@ func TestHandleMsgLink(t *testing.T) {
 
 	t.Run("unknown chain", testutils.Func(func(t *testing.T) {
 		setup()
-		nexusKeeper.GetChainFunc = func(sdk.Context, string) (nexus.Chain, bool) { return nexus.Chain{}, false }
+		nexusKeeper.GetChainFunc = func(sdk.Context, nexus.ChainName) (nexus.Chain, bool) { return nexus.Chain{}, false }
 		_, err := server.Link(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
 	}).Repeat(repeatCount))

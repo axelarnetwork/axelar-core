@@ -18,7 +18,9 @@ message IBCTransfer {
 }
 
 message CosmosChain {
-  string name = 1;
+  string name = 1
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
   string ibc_path = 2 [ (gogoproto.customname) = "IBCPath" ];
   repeated Asset assets = 3 [ (gogoproto.nullable) = false, deprecated = true ];
   string addr_prefix = 4;

@@ -47,7 +47,7 @@ func TestHandleMsgLink(t *testing.T) {
 			LoggerFunc: func(ctx sdk.Context) log.Logger { return log.TestingLogger() },
 		}
 		nexusKeeper = &mock.NexusMock{
-			GetChainFunc: func(_ sdk.Context, chain string) (nexus.Chain, bool) {
+			GetChainFunc: func(_ sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 				return nexus.Chain{
 					Name:                  chain,
 					SupportsForeignAssets: true,
@@ -75,7 +75,7 @@ func TestHandleMsgLink(t *testing.T) {
 	t.Run("should return error when the given chain is unknown", testutils.Func(func(t *testing.T) {
 		setup()
 		msg = randomMsgLink()
-		nexusKeeper.GetChainFunc = func(sdk.Context, string) (nexus.Chain, bool) { return nexus.Chain{}, false }
+		nexusKeeper.GetChainFunc = func(sdk.Context, nexus.ChainName) (nexus.Chain, bool) { return nexus.Chain{}, false }
 		_, err := server.Link(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
 	}).Repeat(repeatCount))
@@ -105,12 +105,12 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		amount = sdk.NewInt(rand.I64Between(1, 10000000000))
 		axelarnetKeeper = &mock.BaseKeeperMock{
 			LoggerFunc: func(ctx sdk.Context) log.Logger { return log.TestingLogger() },
-			GetIBCPathFunc: func(sdk.Context, string) (string, bool) {
+			GetIBCPathFunc: func(sdk.Context, nexus.ChainName) (string, bool) {
 				return ibcPath, true
 			},
 		}
 		nexusKeeper = &mock.NexusMock{
-			GetChainFunc: func(_ sdk.Context, chain string) (nexus.Chain, bool) {
+			GetChainFunc: func(_ sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 				return nexus.Chain{
 					Name:                  chain,
 					SupportsForeignAssets: true,
@@ -227,7 +227,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 	t.Run("should return error when ICS20 token path not registered in axelarnet keeper", testutils.Func(func(t *testing.T) {
 		setup()
 		nexusKeeper.IsAssetRegisteredFunc = func(sdk.Context, nexus.Chain, string) bool { return false }
-		axelarnetKeeper.GetIBCPathFunc = func(sdk.Context, string) (string, bool) {
+		axelarnetKeeper.GetIBCPathFunc = func(sdk.Context, nexus.ChainName) (string, bool) {
 			return "", false
 		}
 		msg = randomMsgConfirmDeposit()
@@ -239,7 +239,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 	t.Run("should return error when ICS20 token tracing path does not match registered path in axelarnet keeper", testutils.Func(func(t *testing.T) {
 		setup()
 		nexusKeeper.IsAssetRegisteredFunc = func(sdk.Context, nexus.Chain, string) bool { return false }
-		axelarnetKeeper.GetIBCPathFunc = func(sdk.Context, string) (string, bool) {
+		axelarnetKeeper.GetIBCPathFunc = func(sdk.Context, nexus.ChainName) (string, bool) {
 			return randomIBCPath(), true
 		}
 		msg = randomMsgConfirmDeposit()
@@ -315,10 +315,10 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 	setup := func() {
 		axelarnetKeeper = &mock.BaseKeeperMock{
 			LoggerFunc: func(ctx sdk.Context) log.Logger { return log.TestingLogger() },
-			GetIBCPathFunc: func(sdk.Context, string) (string, bool) {
+			GetIBCPathFunc: func(sdk.Context, nexus.ChainName) (string, bool) {
 				return "", false
 			},
-			GetCosmosChainByNameFunc: func(sdk.Context, string) (types.CosmosChain, bool) {
+			GetCosmosChainByNameFunc: func(sdk.Context, nexus.ChainName) (types.CosmosChain, bool) {
 				return types.CosmosChain{Name: testChain, AddrPrefix: rand.Str(5)}, true
 			},
 			GetFeeCollectorFunc: func(sdk.Context) (sdk.AccAddress, bool) { return rand.AccAddr(), true },
@@ -334,7 +334,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 				return transfers
 			},
 			ArchivePendingTransferFunc: func(sdk.Context, nexus.CrossChainTransfer) {},
-			GetChainFunc: func(_ sdk.Context, chain string) (nexus.Chain, bool) {
+			GetChainFunc: func(_ sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 				return nexus.Chain{
 					Name:                  chain,
 					SupportsForeignAssets: true,
@@ -393,7 +393,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 	t.Run("should send ICS20 token from escrow account to recipients, and archive pending transfers \\"+
 		"when pending transfer asset is origined from cosmos chain", testutils.Func(func(t *testing.T) {
 		setup()
-		axelarnetKeeper.GetIBCPathFunc = func(sdk.Context, string) (string, bool) {
+		axelarnetKeeper.GetIBCPathFunc = func(sdk.Context, nexus.ChainName) (string, bool) {
 			return randomIBCPath(), true
 		}
 
@@ -408,7 +408,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 		"when pending transfer asset is axelar native token", testutils.Func(func(t *testing.T) {
 		setup()
 
-		axelarnetKeeper.GetCosmosChainByNameFunc = func(sdk.Context, string) (types.CosmosChain, bool) {
+		axelarnetKeeper.GetCosmosChainByNameFunc = func(sdk.Context, nexus.ChainName) (types.CosmosChain, bool) {
 			return types.CosmosChain{}, false
 		}
 
@@ -440,7 +440,7 @@ func TestHandleMsgRegisterIBCPath(t *testing.T) {
 	)
 	setup := func() {
 		axelarnetKeeper = &mock.BaseKeeperMock{
-			RegisterIBCPathFunc: func(sdk.Context, string, string) error { return nil },
+			RegisterIBCPathFunc: func(sdk.Context, nexus.ChainName, string) error { return nil },
 		}
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 
@@ -458,7 +458,7 @@ func TestHandleMsgRegisterIBCPath(t *testing.T) {
 
 	t.Run("should return error if an asset is already registered", testutils.Func(func(t *testing.T) {
 		setup()
-		axelarnetKeeper.RegisterIBCPathFunc = func(sdk.Context, string, string) error { return fmt.Errorf("failed") }
+		axelarnetKeeper.RegisterIBCPathFunc = func(sdk.Context, nexus.ChainName, string) error { return fmt.Errorf("failed") }
 		msg = randomMsgRegisterIBCPath()
 		_, err := server.RegisterIBCPath(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
@@ -483,18 +483,18 @@ func TestHandleMsgRouteIBCTransfers(t *testing.T) {
 		ibcPath := randomIBCPath()
 		axelarnetKeeper = &mock.BaseKeeperMock{
 			LoggerFunc: func(sdk.Context) log.Logger { return log.TestingLogger() },
-			GetIBCPathFunc: func(sdk.Context, string) (string, bool) {
+			GetIBCPathFunc: func(sdk.Context, nexus.ChainName) (string, bool) {
 				return ibcPath, true
 			},
-			GetCosmosChainsFunc: func(sdk.Context) []string {
-				var chains []string
+			GetCosmosChainsFunc: func(sdk.Context) []nexus.ChainName {
+				var chains []nexus.ChainName
 				chains = append(chains, "cosmoschain")
 				return chains
 			},
 
 			GetRouteTimeoutWindowFunc: func(ctx sdk.Context) uint64 { return 10 },
 			SetPendingIBCTransferFunc: func(ctx sdk.Context, transfer types.IBCTransfer) {},
-			GetCosmosChainByNameFunc: func(sdk.Context, string) (types.CosmosChain, bool) {
+			GetCosmosChainByNameFunc: func(sdk.Context, nexus.ChainName) (types.CosmosChain, bool) {
 				return types.CosmosChain{Name: testChain, AddrPrefix: rand.Str(5)}, true
 			},
 		}
@@ -508,7 +508,7 @@ func TestHandleMsgRouteIBCTransfers(t *testing.T) {
 				return transfers
 			},
 			ArchivePendingTransferFunc: func(sdk.Context, nexus.CrossChainTransfer) {},
-			GetChainFunc: func(_ sdk.Context, chain string) (nexus.Chain, bool) {
+			GetChainFunc: func(_ sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 				return nexus.Chain{
 					Name:                  chain,
 					SupportsForeignAssets: true,
@@ -557,7 +557,7 @@ func TestHandleMsgRouteIBCTransfers(t *testing.T) {
 	t.Run("should mint wrapped token and route to cosmos chains, and archive pending transfers when get pending transfers from nexus keeper", testutils.Func(func(t *testing.T) {
 		setup()
 
-		axelarnetKeeper.GetCosmosChainByNameFunc = func(sdk.Context, string) (types.CosmosChain, bool) {
+		axelarnetKeeper.GetCosmosChainByNameFunc = func(sdk.Context, nexus.ChainName) (types.CosmosChain, bool) {
 			return types.CosmosChain{}, false
 		}
 
@@ -571,7 +571,7 @@ func TestHandleMsgRouteIBCTransfers(t *testing.T) {
 
 	t.Run("should continue when no path registered for cosmos chain", testutils.Func(func(t *testing.T) {
 		setup()
-		axelarnetKeeper.GetIBCPathFunc = func(sdk.Context, string) (string, bool) { return "", false }
+		axelarnetKeeper.GetIBCPathFunc = func(sdk.Context, nexus.ChainName) (string, bool) { return "", false }
 		msg = types.NewRouteIBCTransfersRequest(rand.AccAddr())
 		_, err := server.RouteIBCTransfers(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
@@ -602,7 +602,7 @@ func randomMsgRegisterIBCPath() *types.RegisterIBCPathRequest {
 
 }
 
-func randomTransfer(asset string, chain string) nexus.CrossChainTransfer {
+func randomTransfer(asset string, chain nexus.ChainName) nexus.CrossChainTransfer {
 	hash := sha256.Sum256(rand.BytesBetween(20, 50))
 	ranAddr := sdk.AccAddress(hash[:20]).String()
 

@@ -27,7 +27,7 @@ func TestNextKeyID(t *testing.T) {
 		stakingKeeper   *mock.StakingKeeperMock
 		ctx             sdk.Context
 		grpcQuerier     *keeper.Querier
-		existingChain   string
+		existingChain   nexus.ChainName
 		existingKeyID   tss.KeyID
 		existingKeyRole tss.KeyRole
 	)
@@ -49,7 +49,7 @@ func TestNextKeyID(t *testing.T) {
 		}
 
 		nexusKeeper = &mock.NexusMock{
-			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+			GetChainFunc: func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 				if chain == existingChain {
 					return nexus.Chain{
 						Name:                  existingChain,
@@ -82,7 +82,7 @@ func TestNextKeyID(t *testing.T) {
 		}
 
 		res, err := grpcQuerier.NextKeyID(sdk.WrapSDKContext(ctx), &types.NextKeyIDRequest{
-			Chain:   existingChain,
+			Chain:   existingChain.String(),
 			KeyRole: existingKeyRole,
 		})
 
@@ -108,7 +108,7 @@ func TestNextKeyID(t *testing.T) {
 
 	t.Run("if key role does not exist, get OK grpc code", testutils.Func(func(t *testing.T) {
 		res, err := grpcQuerier.NextKeyID(sdk.WrapSDKContext(ctx), &types.NextKeyIDRequest{
-			Chain:   existingChain,
+			Chain:   existingChain.String(),
 			KeyRole: tss.SecondaryKey,
 		})
 
@@ -127,7 +127,7 @@ func TestAssignbleKey(t *testing.T) {
 		stakingKeeper   *mock.StakingKeeperMock
 		ctx             sdk.Context
 		grpcQuerier     *keeper.Querier
-		existingChain   string
+		existingChain   nexus.ChainName
 		existingKeyRole tss.KeyRole
 	)
 
@@ -147,7 +147,7 @@ func TestAssignbleKey(t *testing.T) {
 		}
 
 		nexusKeeper = &mock.NexusMock{
-			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+			GetChainFunc: func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 				if chain == existingChain {
 					return nexus.Chain{
 						Name:                  existingChain,
@@ -180,7 +180,7 @@ func TestAssignbleKey(t *testing.T) {
 		}
 
 		res, err := grpcQuerier.AssignableKey(sdk.WrapSDKContext(ctx), &types.AssignableKeyRequest{
-			Chain:   existingChain,
+			Chain:   existingChain.String(),
 			KeyRole: existingKeyRole,
 		})
 
@@ -199,7 +199,7 @@ func TestAssignbleKey(t *testing.T) {
 		}
 
 		res, err := grpcQuerier.AssignableKey(sdk.WrapSDKContext(ctx), &types.AssignableKeyRequest{
-			Chain:   existingChain,
+			Chain:   existingChain.String(),
 			KeyRole: tss.SecondaryKey,
 		})
 

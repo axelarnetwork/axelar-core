@@ -18,15 +18,15 @@ type BaseKeeper interface {
 	Logger(ctx sdk.Context) log.Logger
 	GetRouteTimeoutWindow(ctx sdk.Context) uint64
 
-	RegisterIBCPath(ctx sdk.Context, asset, path string) error
-	GetIBCPath(ctx sdk.Context, chain string) (string, bool)
+	RegisterIBCPath(ctx sdk.Context, chain nexus.ChainName, path string) error
+	GetIBCPath(ctx sdk.Context, chain nexus.ChainName) (string, bool)
 	GetFeeCollector(ctx sdk.Context) (sdk.AccAddress, bool)
 	SetFeeCollector(ctx sdk.Context, address sdk.AccAddress) error
 	SetPendingIBCTransfer(ctx sdk.Context, transfer IBCTransfer)
 	GetPendingIBCTransfer(ctx sdk.Context, portID, channelID string, sequence uint64) (IBCTransfer, bool)
 	DeletePendingIBCTransfer(ctx sdk.Context, portID, channelID string, sequence uint64)
-	GetCosmosChains(ctx sdk.Context) []string
-	GetCosmosChainByName(ctx sdk.Context, chain string) (CosmosChain, bool)
+	GetCosmosChains(ctx sdk.Context) []nexus.ChainName
+	GetCosmosChainByName(ctx sdk.Context, chain nexus.ChainName) (CosmosChain, bool)
 	SetCosmosChain(ctx sdk.Context, chain CosmosChain)
 }
 
@@ -35,7 +35,7 @@ type Nexus interface {
 	EnqueueForTransfer(ctx sdk.Context, sender nexus.CrossChainAddress, amount sdk.Coin) (nexus.TransferID, error)
 	GetTransfersForChain(ctx sdk.Context, chain nexus.Chain, state nexus.TransferState) []nexus.CrossChainTransfer
 	ArchivePendingTransfer(ctx sdk.Context, transfer nexus.CrossChainTransfer)
-	GetChain(ctx sdk.Context, chain string) (nexus.Chain, bool)
+	GetChain(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool)
 	LinkAddresses(ctx sdk.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress) error
 	IsAssetRegistered(ctx sdk.Context, chain nexus.Chain, denom string) bool
 	RegisterAsset(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset) error
@@ -78,4 +78,4 @@ type AccountKeeper interface {
 }
 
 // CosmosChainGetter exposes GetCosmosChainByName
-type CosmosChainGetter func(ctx sdk.Context, chain string) (CosmosChain, bool)
+type CosmosChainGetter func(ctx sdk.Context, chain nexus.ChainName) (CosmosChain, bool)

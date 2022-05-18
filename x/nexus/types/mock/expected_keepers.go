@@ -35,7 +35,7 @@ var _ types.Nexus = &NexusMock{}
 // 			ExportGenesisFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) *types.GenesisState {
 // 				panic("mock out the ExportGenesis method")
 // 			},
-// 			GetChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (exported.Chain, bool) {
+// 			GetChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.ChainName) (exported.Chain, bool) {
 // 				panic("mock out the GetChain method")
 // 			},
 // 			GetChainMaintainerStatesFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain) []types.MaintainerState {
@@ -97,7 +97,7 @@ type NexusMock struct {
 	ExportGenesisFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) *types.GenesisState
 
 	// GetChainFunc mocks the GetChain method.
-	GetChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (exported.Chain, bool)
+	GetChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.ChainName) (exported.Chain, bool)
 
 	// GetChainMaintainerStatesFunc mocks the GetChainMaintainerStates method.
 	GetChainMaintainerStatesFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain) []types.MaintainerState
@@ -173,7 +173,7 @@ type NexusMock struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Chain is the chain argument value.
-			Chain string
+			Chain exported.ChainName
 		}
 		// GetChainMaintainerStates holds details about calls to the GetChainMaintainerStates method.
 		GetChainMaintainerStates []struct {
@@ -432,13 +432,13 @@ func (mock *NexusMock) ExportGenesisCalls() []struct {
 }
 
 // GetChain calls GetChainFunc.
-func (mock *NexusMock) GetChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) (exported.Chain, bool) {
+func (mock *NexusMock) GetChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.ChainName) (exported.Chain, bool) {
 	if mock.GetChainFunc == nil {
 		panic("NexusMock.GetChainFunc: method is nil but Nexus.GetChain was just called")
 	}
 	callInfo := struct {
 		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Chain string
+		Chain exported.ChainName
 	}{
 		Ctx:   ctx,
 		Chain: chain,
@@ -454,11 +454,11 @@ func (mock *NexusMock) GetChain(ctx github_com_cosmos_cosmos_sdk_types.Context, 
 //     len(mockedNexus.GetChainCalls())
 func (mock *NexusMock) GetChainCalls() []struct {
 	Ctx   github_com_cosmos_cosmos_sdk_types.Context
-	Chain string
+	Chain exported.ChainName
 } {
 	var calls []struct {
 		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Chain string
+		Chain exported.ChainName
 	}
 	mock.lockGetChain.RLock()
 	calls = mock.calls.GetChain
@@ -1059,7 +1059,7 @@ var _ types.AxelarnetKeeper = &AxelarnetKeeperMock{}
 //
 // 		// make and configure a mocked types.AxelarnetKeeper
 // 		mockedAxelarnetKeeper := &AxelarnetKeeperMock{
-// 			IsCosmosChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) bool {
+// 			IsCosmosChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.ChainName) bool {
 // 				panic("mock out the IsCosmosChain method")
 // 			},
 // 		}
@@ -1070,7 +1070,7 @@ var _ types.AxelarnetKeeper = &AxelarnetKeeperMock{}
 // 	}
 type AxelarnetKeeperMock struct {
 	// IsCosmosChainFunc mocks the IsCosmosChain method.
-	IsCosmosChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) bool
+	IsCosmosChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.ChainName) bool
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -1079,20 +1079,20 @@ type AxelarnetKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Chain is the chain argument value.
-			Chain string
+			Chain exported.ChainName
 		}
 	}
 	lockIsCosmosChain sync.RWMutex
 }
 
 // IsCosmosChain calls IsCosmosChainFunc.
-func (mock *AxelarnetKeeperMock) IsCosmosChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain string) bool {
+func (mock *AxelarnetKeeperMock) IsCosmosChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.ChainName) bool {
 	if mock.IsCosmosChainFunc == nil {
 		panic("AxelarnetKeeperMock.IsCosmosChainFunc: method is nil but AxelarnetKeeper.IsCosmosChain was just called")
 	}
 	callInfo := struct {
 		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Chain string
+		Chain exported.ChainName
 	}{
 		Ctx:   ctx,
 		Chain: chain,
@@ -1108,11 +1108,11 @@ func (mock *AxelarnetKeeperMock) IsCosmosChain(ctx github_com_cosmos_cosmos_sdk_
 //     len(mockedAxelarnetKeeper.IsCosmosChainCalls())
 func (mock *AxelarnetKeeperMock) IsCosmosChainCalls() []struct {
 	Ctx   github_com_cosmos_cosmos_sdk_types.Context
-	Chain string
+	Chain exported.ChainName
 } {
 	var calls []struct {
 		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Chain string
+		Chain exported.ChainName
 	}
 	mock.lockIsCosmosChain.RLock()
 	calls = mock.calls.IsCosmosChain
@@ -1130,7 +1130,7 @@ var _ types.EVMBaseKeeper = &EVMBaseKeeperMock{}
 //
 // 		// make and configure a mocked types.EVMBaseKeeper
 // 		mockedEVMBaseKeeper := &EVMBaseKeeperMock{
-// 			ForChainFunc: func(chain string) evm.ChainKeeper {
+// 			ForChainFunc: func(chain exported.ChainName) evm.ChainKeeper {
 // 				panic("mock out the ForChain method")
 // 			},
 // 		}
@@ -1141,26 +1141,26 @@ var _ types.EVMBaseKeeper = &EVMBaseKeeperMock{}
 // 	}
 type EVMBaseKeeperMock struct {
 	// ForChainFunc mocks the ForChain method.
-	ForChainFunc func(chain string) evm.ChainKeeper
+	ForChainFunc func(chain exported.ChainName) evm.ChainKeeper
 
 	// calls tracks calls to the methods.
 	calls struct {
 		// ForChain holds details about calls to the ForChain method.
 		ForChain []struct {
 			// Chain is the chain argument value.
-			Chain string
+			Chain exported.ChainName
 		}
 	}
 	lockForChain sync.RWMutex
 }
 
 // ForChain calls ForChainFunc.
-func (mock *EVMBaseKeeperMock) ForChain(chain string) evm.ChainKeeper {
+func (mock *EVMBaseKeeperMock) ForChain(chain exported.ChainName) evm.ChainKeeper {
 	if mock.ForChainFunc == nil {
 		panic("EVMBaseKeeperMock.ForChainFunc: method is nil but EVMBaseKeeper.ForChain was just called")
 	}
 	callInfo := struct {
-		Chain string
+		Chain exported.ChainName
 	}{
 		Chain: chain,
 	}
@@ -1174,10 +1174,10 @@ func (mock *EVMBaseKeeperMock) ForChain(chain string) evm.ChainKeeper {
 // Check the length with:
 //     len(mockedEVMBaseKeeper.ForChainCalls())
 func (mock *EVMBaseKeeperMock) ForChainCalls() []struct {
-	Chain string
+	Chain exported.ChainName
 } {
 	var calls []struct {
-		Chain string
+		Chain exported.ChainName
 	}
 	mock.lockForChain.RLock()
 	calls = mock.calls.ForChain

@@ -86,7 +86,7 @@ func handleExternalChainVotingInflation(ctx sdk.Context, k types.Rewarder, n typ
 			continue
 		}
 
-		rewardPool := k.GetPool(ctx, chain.Name)
+		rewardPool := k.GetPool(ctx, chain.Name.String())
 		maintainers := n.GetChainMaintainers(ctx, chain)
 		if len(maintainers) == 0 {
 			continue

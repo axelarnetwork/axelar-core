@@ -67,9 +67,9 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		sdk.NewEvent(
 			types.EventTypeLink,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(types.AttributeKeySourceChain, exported.Axelarnet.Name),
+			sdk.NewAttribute(types.AttributeKeySourceChain, exported.Axelarnet.Name.String()),
 			sdk.NewAttribute(types.AttributeKeyDepositAddress, depositAddress.String()),
-			sdk.NewAttribute(types.AttributeKeyDestinationChain, recipientChain.Name),
+			sdk.NewAttribute(types.AttributeKeyDestinationChain, recipientChain.Name.String()),
 			sdk.NewAttribute(types.AttributeKeyDestinationAddress, req.RecipientAddr),
 			sdk.NewAttribute(types.AttributeKeyAsset, req.Asset),
 		),
@@ -195,9 +195,9 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		sdk.NewEvent(types.EventTypeDepositConfirmation,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm),
-			sdk.NewAttribute(types.AttributeKeySourceChain, exported.Axelarnet.Name),
+			sdk.NewAttribute(types.AttributeKeySourceChain, exported.Axelarnet.Name.String()),
 			sdk.NewAttribute(types.AttributeKeyDepositAddress, req.DepositAddress.String()),
-			sdk.NewAttribute(types.AttributeKeyDestinationChain, recipient.Chain.Name),
+			sdk.NewAttribute(types.AttributeKeyDestinationChain, recipient.Chain.Name.String()),
 			sdk.NewAttribute(types.AttributeKeyDestinationAddress, recipient.Address),
 			sdk.NewAttribute(sdk.AttributeKeyAmount, amount.String()),
 			sdk.NewAttribute(types.AttributeKeyAsset, amount.Denom),
@@ -326,8 +326,7 @@ func (s msgServer) RouteIBCTransfers(c context.Context, _ *types.RouteIBCTransfe
 			s.Logger(ctx).Error(fmt.Sprintf("%s is not a registered chain", chain.Name))
 			continue
 		}
-
-		if strings.EqualFold(chain.Name, exported.Axelarnet.Name) {
+		if chain.Name.Equals(exported.Axelarnet.Name) {
 			continue
 		}
 

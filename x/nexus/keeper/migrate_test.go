@@ -66,7 +66,7 @@ func TestGetMigrationHandler_migrateChainMaintainers(t *testing.T) {
 		maintainers[i] = rand.ValAddr()
 	}
 	chainState := types.ChainState{
-		Chain:       exported.Chain{Name: rand.NormalizedStr(5)},
+		Chain:       exported.Chain{Name: exported.ChainName(rand.NormalizedStr(5))},
 		Maintainers: maintainers,
 	}
 	keeper.setChainState(ctx, chainState)

@@ -13,7 +13,9 @@ option (gogoproto.goproto_getters_all) = false;
 message DepositQueryParams {
   string address = 1;
   string asset = 2;
-  string chain = 3;
+  string chain = 3
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
 }
 
 message BatchedCommandsRequest {
@@ -89,7 +91,9 @@ message QueryDepositStateParams {
 }
 
 message DepositStateRequest {
-  string chain = 1;
+  string chain = 1
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
   QueryDepositStateParams params = 2;
 }
 
@@ -106,7 +110,11 @@ message QueryBurnerAddressResponse { string address = 1; }
 
 message ChainsRequest {}
 
-message ChainsResponse { repeated string chains = 1; }
+message ChainsResponse {
+  repeated string chains = 1
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+}
 
 message PendingCommandsRequest { string chain = 1; }
 
@@ -128,7 +136,9 @@ message BurnerInfoRequest {
 }
 
 message BurnerInfoResponse {
-  string chain = 1;
+  string chain = 1
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
   BurnerInfo burner_info = 2;
 }
 

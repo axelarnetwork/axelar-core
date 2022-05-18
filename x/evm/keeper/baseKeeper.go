@@ -12,6 +12,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
 var (
@@ -50,10 +51,10 @@ func (k BaseKeeper) Logger(ctx sdk.Context) log.Logger {
 }
 
 // ForChain returns the keeper associated to the given chain
-func (k BaseKeeper) ForChain(chain string) types.ChainKeeper {
+func (k BaseKeeper) ForChain(chain nexus.ChainName) types.ChainKeeper {
 	return chainKeeper{
 		BaseKeeper:    k,
-		chainLowerKey: strings.ToLower(chain),
+		chainLowerKey: strings.ToLower(chain.String()),
 	}
 }
 
@@ -67,6 +68,6 @@ func (k BaseKeeper) getStore(ctx sdk.Context, chain string) utils.KVStore {
 }
 
 // HasChain returns true of the chain has been set up
-func (k BaseKeeper) HasChain(ctx sdk.Context, chain string) bool {
-	return k.getBaseStore(ctx).Has(subspacePrefix.AppendStr(strings.ToLower(chain)))
+func (k BaseKeeper) HasChain(ctx sdk.Context, chain nexus.ChainName) bool {
+	return k.getBaseStore(ctx).Has(subspacePrefix.AppendStr(strings.ToLower(chain.String())))
 }

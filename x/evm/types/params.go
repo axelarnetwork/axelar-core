@@ -12,6 +12,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/exported"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
 // Parameter keys
@@ -107,12 +108,13 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 }
 
 func validateChain(chain interface{}) error {
-	c, ok := chain.(string)
+	c, ok := chain.(nexus.ChainName)
 	if !ok {
 		return fmt.Errorf("invalid parameter type for chain: %T", chain)
 	}
-	if c == "" {
-		return sdkerrors.Wrap(types.ErrInvalidGenesis, "chain name cannot be an empty string")
+	err := c.Validate()
+	if err != nil {
+		return sdkerrors.Wrap(types.ErrInvalidGenesis, "invalid chain name")
 	}
 	return nil
 }

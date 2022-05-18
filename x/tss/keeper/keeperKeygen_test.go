@@ -45,7 +45,7 @@ func TestKeeper_AssignNextMasterKey_RotateMasterKey_NewKeyIsSet(t *testing.T) {
 		expectedKey := s.SetKey(t, s.Ctx, exported.MasterKey, chain.KeyType)
 		timestamp := s.Ctx.BlockTime()
 		expectedKey.RotatedAt = &timestamp
-		expectedKey.Chain = chain.Name
+		expectedKey.Chain = chain.Name.String()
 		expectedKey.RotationCount = int64(i + 1)
 		expectedKey.SnapshotCounter = snap.Counter
 
@@ -77,12 +77,12 @@ func TestKeeper_AssignNextMasterKey_RotateMasterKey_AssignNextSecondaryKey_Rotat
 	timestamp := s.Ctx.BlockTime()
 	expectedMasterKey.Role = exported.MasterKey
 	expectedMasterKey.RotatedAt = &timestamp
-	expectedMasterKey.Chain = chain.Name
+	expectedMasterKey.Chain = chain.Name.String()
 	expectedMasterKey.RotationCount = 1
 	expectedMasterKey.SnapshotCounter = snap.Counter
 	expectedSecondaryKey.Role = exported.SecondaryKey
 	expectedSecondaryKey.RotatedAt = &timestamp
-	expectedSecondaryKey.Chain = chain.Name
+	expectedSecondaryKey.Chain = chain.Name.String()
 	expectedSecondaryKey.RotationCount = 1
 	expectedSecondaryKey.SnapshotCounter = snap.Counter
 

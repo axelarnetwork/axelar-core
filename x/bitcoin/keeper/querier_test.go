@@ -66,7 +66,7 @@ func TestQueryDepositAddress(t *testing.T) {
 
 		params := types.DepositQueryParams{Chain: "unknown", Address: address}
 
-		nexusKeeper.GetChainFunc = func(_ sdk.Context, _ string) (nexus.Chain, bool) {
+		nexusKeeper.GetChainFunc = func(_ sdk.Context, _ nexus.ChainName) (nexus.Chain, bool) {
 			return nexus.Chain{}, false
 		}
 
@@ -80,10 +80,10 @@ func TestQueryDepositAddress(t *testing.T) {
 		setup()
 
 		secondaryKey := createRandomKey(tss.SecondaryKey, time.Now())
-		params := types.DepositQueryParams{Chain: evm.Ethereum.Name, Address: address}
+		params := types.DepositQueryParams{Chain: evm.Ethereum.Name.String(), Address: address}
 
-		nexusKeeper.GetChainFunc = func(_ sdk.Context, chain string) (nexus.Chain, bool) {
-			if chain == params.Chain {
+		nexusKeeper.GetChainFunc = func(_ sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
+			if chain.String() == params.Chain {
 				return evm.Ethereum, true
 			}
 			return nexus.Chain{}, false

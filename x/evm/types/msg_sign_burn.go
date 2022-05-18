@@ -5,11 +5,12 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
 // NewCreateBurnTokensRequest is the constructor for CreateBurnTokensRequest
 func NewCreateBurnTokensRequest(sender sdk.AccAddress, chain string) *CreateBurnTokensRequest {
-	return &CreateBurnTokensRequest{Sender: sender, Chain: utils.NormalizeString(chain)}
+	return &CreateBurnTokensRequest{Sender: sender, Chain: nexus.ChainName(utils.NormalizeString(chain))}
 }
 
 // Route implements sdk.Msg
@@ -39,7 +40,7 @@ func (m CreateBurnTokensRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
-	if err := utils.ValidateString(m.Chain); err != nil {
+	if err := m.Chain.Validate(); err != nil {
 		return sdkerrors.Wrap(err, "invalid chain")
 	}
 

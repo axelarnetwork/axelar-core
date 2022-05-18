@@ -6,13 +6,14 @@ import (
 	host "github.com/cosmos/ibc-go/v2/modules/core/24-host"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
 // NewRegisterIBCPathRequest creates a message of type RegisterIBCPathRequest
 func NewRegisterIBCPathRequest(sender sdk.AccAddress, chain, path string) *RegisterIBCPathRequest {
 	return &RegisterIBCPathRequest{
 		Sender: sender,
-		Chain:  utils.NormalizeString(chain),
+		Chain:  nexus.ChainName(utils.NormalizeString(chain)),
 		Path:   utils.NormalizeString(path),
 	}
 }
@@ -33,7 +34,7 @@ func (m RegisterIBCPathRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
-	if err := utils.ValidateString(m.Chain); err != nil {
+	if err := m.Chain.Validate(); err != nil {
 		return sdkerrors.Wrap(err, "invalid chain")
 	}
 

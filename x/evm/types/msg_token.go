@@ -6,13 +6,14 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
 // NewConfirmTokenRequest creates a message of type ConfirmTokenRequest
 func NewConfirmTokenRequest(sender sdk.AccAddress, chain string, asset Asset, txID common.Hash) *ConfirmTokenRequest {
 	return &ConfirmTokenRequest{
 		Sender: sender,
-		Chain:  utils.NormalizeString(chain),
+		Chain:  nexus.ChainName(utils.NormalizeString(chain)),
 		Asset:  asset,
 		TxID:   Hash(txID),
 	}
@@ -34,7 +35,7 @@ func (m ConfirmTokenRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
-	if err := utils.ValidateString(m.Chain); err != nil {
+	if err := m.Chain.Validate(); err != nil {
 		return sdkerrors.Wrap(err, "invalid chain")
 	}
 

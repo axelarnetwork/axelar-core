@@ -10,10 +10,10 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 )
 
-func getLatestDepositAddressKey(depositChain string, recipientAddress exported.CrossChainAddress) utils.Key {
+func getLatestDepositAddressKey(depositChain exported.ChainName, recipientAddress exported.CrossChainAddress) utils.Key {
 	return latestDepositAddressPrefix.
-		Append(utils.LowerCaseKey(depositChain)).
-		Append(utils.LowerCaseKey(recipientAddress.Chain.Name)).
+		Append(utils.LowerCaseKey(depositChain.String())).
+		Append(utils.LowerCaseKey(recipientAddress.Chain.Name.String())).
 		Append(utils.LowerCaseKey(recipientAddress.Address))
 }
 
@@ -21,13 +21,13 @@ func (k Keeper) setLatestDepositAddress(ctx sdk.Context, recipientAddress, depos
 	k.getStore(ctx).Set(getLatestDepositAddressKey(depositAddress.Chain.Name, recipientAddress), &depositAddress)
 }
 
-func (k Keeper) getLatestDepositAddress(ctx sdk.Context, depositChain string, recipientAddress exported.CrossChainAddress) (depositAddress exported.CrossChainAddress, ok bool) {
+func (k Keeper) getLatestDepositAddress(ctx sdk.Context, depositChain exported.ChainName, recipientAddress exported.CrossChainAddress) (depositAddress exported.CrossChainAddress, ok bool) {
 	return depositAddress, k.getStore(ctx).Get(getLatestDepositAddressKey(depositChain, recipientAddress), &depositAddress)
 }
 
 func getLinkedAddressesKey(depositAddress exported.CrossChainAddress) utils.Key {
 	return linkedAddressesPrefix.
-		Append(utils.LowerCaseKey(depositAddress.Chain.Name)).
+		Append(utils.LowerCaseKey(depositAddress.Chain.Name.String())).
 		Append(utils.LowerCaseKey(depositAddress.Address))
 }
 
