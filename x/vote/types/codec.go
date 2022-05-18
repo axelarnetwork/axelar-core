@@ -8,7 +8,7 @@ import (
 
 	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
-	exported0_17 "github.com/axelarnetwork/axelar-core/x/vote/exported-0.17"
+	exported0_17 "github.com/axelarnetwork/axelar-core/x/vote/exported017"
 )
 
 // RegisterLegacyAminoCodec registers concrete types on codec

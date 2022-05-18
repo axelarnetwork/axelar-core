@@ -15,7 +15,7 @@ import (
 	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
-	exported0_17 "github.com/axelarnetwork/axelar-core/x/vote/exported-0.17"
+	exported0_17 "github.com/axelarnetwork/axelar-core/x/vote/exported017"
 	"github.com/axelarnetwork/axelar-core/x/vote/types"
 	"github.com/axelarnetwork/utils/slices"
 	. "github.com/axelarnetwork/utils/test"
