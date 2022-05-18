@@ -1,0 +1,129 @@
+// File copied from golang tofnd with minor tweaks
+syntax = "proto3";
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/tss/tofnd";
+import "gogoproto/gogo.proto";
+import "axelar/tss/tofnd/v1beta1/common.proto"; // import key presence request/response
+
+package axelar.tss.tofnd.v1beta1;
+
+// TODO: figure out why gogoproto produces unusable services
+// GG20 is the protocol https://eprint.iacr.org/2020/540
+// rpc definitions intended to wrap the API for this library:
+// https://github.com/axelarnetwork/tofn
+// service GG20 {
+//  rpc Recover(RecoverRequest) returns (RecoverResponse);
+//  rpc Keygen(stream MessageIn) returns (stream MessageOut);
+//  rpc Sign(stream MessageIn) returns (stream MessageOut);
+//  rpc KeyPresence(KeyPresenceRequest) returns (KeyPresenceResponse);
+//}
+
+message RecoverRequest {
+  KeygenInit keygen_init = 1;
+  KeygenOutput keygen_output = 2;
+}
+message RecoverResponse {
+  enum Response {
+    RESPONSE_UNSPECIFIED = 0;
+    RESPONSE_SUCCESS = 1;
+    RESPONSE_FAIL = 2;
+  }
+  Response response = 1;
+}
+
+// Keygen's success response
+message KeygenOutput {
+  bytes pub_key = 1; // pub_key; common for all parties
+  bytes group_recover_info =
+      2; // recover info of all parties' shares; common for all parties
+  bytes private_recover_info =
+      3; // private recover info of this party's shares; unique for each party
+}
+
+// generic message types shared by Keygen, Sign
+
+// TODO use nested message types
+// eg. KeygenInit, SignInit should be defined inside MessageIn, etc.
+
+message MessageIn {
+  oneof data {                  // TODO don't reuse `data`
+    KeygenInit keygen_init = 1; // first message only, Keygen
+    SignInit sign_init = 2;     // first message only, Sign
+    TrafficIn traffic = 3;      // all subsequent messages
+    bool abort = 4;             // abort the protocol, ignore the bool value
+  }
+}
+
+message MessageOut {
+  oneof data {                      // TODO don't reuse `data`
+    TrafficOut traffic = 1;         // all but final message
+    KeygenResult keygen_result = 2; // final message only, Keygen
+    SignResult sign_result = 3;     // final message only, Sign
+    bool need_recover = 4;          // issue recover from client
+  }
+
+  // Keygen's response types
+  message KeygenResult {
+    oneof keygen_result_data {
+      KeygenOutput data = 1;      // Success response
+      CriminalList criminals = 2; // Faiilure response
+    }
+  }
+
+  // Sign's response types
+  message SignResult {
+    oneof sign_result_data {
+      bytes signature = 1;        // Success response
+      CriminalList criminals = 2; // Failure response
+    }
+  }
+
+  // Keygen/Sign failure response message
+  message CriminalList {
+    repeated Criminal criminals = 1;
+
+    message Criminal {
+      string party_uid = 1;
+
+      enum CrimeType {
+        option (gogoproto.goproto_enum_prefix) = false;
+
+        CRIME_TYPE_UNSPECIFIED = 0;
+        CRIME_TYPE_NON_MALICIOUS = 1;
+        CRIME_TYPE_MALICIOUS = 2;
+      }
+      CrimeType crime_type = 2;
+    }
+  }
+}
+
+message TrafficIn {
+  string from_party_uid = 1;
+  bytes payload = 2;
+  bool is_broadcast = 3;
+}
+
+message TrafficOut {
+  string to_party_uid = 1;
+  bytes payload = 2;
+  bool is_broadcast = 3;
+}
+
+// Keygen-specific message types
+
+message KeygenInit {
+  string new_key_uid = 1;
+  repeated string party_uids = 2;
+  repeated uint32 party_share_counts = 5;
+  uint32 my_party_index = 3; // parties[my_party_index] belongs to the server
+  uint32 threshold = 4;
+}
+
+// Sign-specific message types
+
+message SignInit {
+  string new_sig_uid = 1;
+  string key_uid = 2;
+  repeated string party_uids = 3; // TODO replace this with a subset of indices?
+  bytes message_to_sign = 4;
+}

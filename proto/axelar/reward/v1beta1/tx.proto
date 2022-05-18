@@ -1,0 +1,24 @@
+syntax = "proto3";
+package axelar.reward.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/reward/types";
+
+import "google/protobuf/any.proto";
+import "gogoproto/gogo.proto";
+import "cosmos_proto/cosmos.proto";
+import "axelar/permission/exported/v1beta1/types.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+message RefundMsgRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  google.protobuf.Any inner_message = 2
+      [ (cosmos_proto.accepts_interface) = "Refundable" ];
+}
+
+message RefundMsgResponse {
+  bytes data = 1;
+  string log = 2;
+}

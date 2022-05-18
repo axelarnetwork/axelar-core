@@ -1,0 +1,157 @@
+syntax = "proto3";
+package axelar.tss.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/tss/types";
+
+import "gogoproto/gogo.proto";
+import "google/protobuf/timestamp.proto";
+import "axelar/tss/exported/v1beta1/types.proto";
+import "axelar/tss/tofnd/v1beta1/tofnd.proto";
+import "cosmos/crypto/multisig/keys.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+message QuerySignatureResponse {
+  message Signature {
+    string r = 1;
+    string s = 2;
+  }
+
+  message ThresholdSignature {
+    VoteStatus vote_status = 1;
+    Signature signature = 2;
+  }
+
+  message MultisigSignature {
+    exported.v1beta1.SigStatus sig_status = 1;
+    repeated Signature signatures = 2 [ (gogoproto.nullable) = false ];
+  }
+
+  oneof sig {
+    ThresholdSignature threshold_signature = 1;
+    MultisigSignature multisig_signature = 2;
+  }
+}
+
+message QueryKeyResponse {
+  message Key {
+    string x = 1;
+    string y = 2;
+  }
+  message ECDSAKey {
+    VoteStatus vote_status = 1;
+    Key key = 2 [ (gogoproto.nullable) = false ];
+  }
+  message MultisigKey {
+    int64 threshold = 1;
+    repeated Key key = 2 [ (gogoproto.nullable) = false ];
+  }
+  oneof public_key {
+    ECDSAKey ecdsa_key = 1 [ (gogoproto.customname) = "ECDSAKey" ];
+    MultisigKey multisig_key = 2;
+  }
+
+  tss.exported.v1beta1.KeyRole role = 3;
+
+  google.protobuf.Timestamp rotated_at = 4
+      [ (gogoproto.nullable) = true, (gogoproto.stdtime) = true ];
+}
+
+enum VoteStatus {
+  option (gogoproto.goproto_enum_prefix) = false;
+  option (gogoproto.goproto_enum_stringer) = true;
+
+  VOTE_STATUS_UNSPECIFIED = 0
+      [ (gogoproto.enumvalue_customname) = "Unspecified" ];
+  VOTE_STATUS_NOT_FOUND = 1 [ (gogoproto.enumvalue_customname) = "NotFound" ];
+  VOTE_STATUS_PENDING = 2 [ (gogoproto.enumvalue_customname) = "Pending" ];
+  VOTE_STATUS_DECIDED = 3 [ (gogoproto.enumvalue_customname) = "Decided" ];
+}
+
+message QueryRecoveryResponse {
+  repeated string party_uids = 1;
+  repeated uint32 party_share_counts = 2;
+  uint32 threshold = 3;
+  tss.tofnd.v1beta1.KeygenOutput keygen_output = 4;
+}
+
+message QueryKeyShareResponse {
+  message ShareInfo {
+    string key_id = 1 [
+      (gogoproto.customname) = "KeyID",
+      (gogoproto.casttype) =
+          "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+    ];
+    string key_chain = 2;
+    string key_role = 3;
+    int64 snapshot_block_number = 4;
+    string validator_address = 5;
+    int64 num_validator_shares = 6;
+    int64 num_total_shares = 7;
+  }
+
+  repeated ShareInfo share_infos = 1 [ (gogoproto.nullable) = false ];
+}
+
+message QueryDeactivatedOperatorsResponse {
+  repeated string operator_addresses = 1;
+}
+
+message QueryActiveOldKeysValidatorResponse {
+  message KeyInfo {
+    string id = 1 [
+      (gogoproto.customname) = "ID",
+      (gogoproto.casttype) =
+          "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+    ];
+    string chain = 2;
+    int32 role = 3
+        [ (gogoproto.casttype) =
+              "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyRole" ];
+  }
+  repeated KeyInfo keys_info = 1 [ (gogoproto.nullable) = false ];
+}
+
+message QueryActiveOldKeysResponse {
+  repeated string key_ids = 1 [
+    (gogoproto.customname) = "KeyIDs",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+  ];
+}
+
+message QueryExternalKeyIDResponse {
+  repeated string key_ids = 1 [
+    (gogoproto.customname) = "KeyIDs",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+  ];
+}
+
+message NextKeyIDRequest {
+  string chain = 1;
+  tss.exported.v1beta1.KeyRole key_role = 2;
+}
+
+message NextKeyIDResponse {
+  string key_id = 1 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+  ];
+}
+
+message AssignableKeyRequest {
+  string chain = 1;
+  tss.exported.v1beta1.KeyRole key_role = 2;
+}
+
+message AssignableKeyResponse { bool assignable = 1; }
+
+message ValidatorMultisigKeysRequest { string address = 1; }
+
+message ValidatorMultisigKeysResponse {
+  message Keys { repeated bytes keys = 1; };
+
+  map<string, Keys> keys = 1;
+}

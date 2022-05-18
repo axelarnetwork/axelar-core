@@ -1,0 +1,97 @@
+syntax = "proto3";
+package axelar.nexus.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/nexus/types";
+
+import "gogoproto/gogo.proto";
+import "axelar/nexus/exported/v1beta1/types.proto";
+import "axelar/nexus/v1beta1/types.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
+import "cosmos/base/v1beta1/coin.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+message QueryChainMaintainersResponse {
+  repeated bytes maintainers = 1
+      [ (gogoproto.casttype) =
+            "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
+}
+
+// LatestDepositAddressRequest represents a message that queries a deposit
+// address by recipient address
+message LatestDepositAddressRequest {
+  string recipient_addr = 1;
+  string recipient_chain = 2;
+  string deposit_chain = 3;
+}
+
+message LatestDepositAddressResponse { string deposit_addr = 1; };
+
+// TransfersForChainRequest represents a message that queries the
+// transfers for the specified chain
+message TransfersForChainRequest {
+  string chain = 1;
+  exported.v1beta1.TransferState state = 2;
+  cosmos.base.query.v1beta1.PageRequest pagination = 3;
+}
+
+message TransfersForChainResponse {
+  repeated exported.v1beta1.CrossChainTransfer transfers = 1
+      [ (gogoproto.nullable) = false ];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// FeeInfoRequest represents a message that queries the transfer fees associated
+// to an asset on a chain
+message FeeInfoRequest {
+  string chain = 1;
+  string asset = 2;
+}
+
+message FeeInfoResponse { exported.v1beta1.FeeInfo fee_info = 1; }
+
+// TransferFeeRequest represents a message that queries the fees charged by
+// the network for a cross-chain transfer
+message TransferFeeRequest {
+  string source_chain = 1;
+  string destination_chain = 2;
+  string amount = 3;
+}
+
+message TransferFeeResponse {
+  cosmos.base.v1beta1.Coin fee = 1 [ (gogoproto.nullable) = false ];
+}
+
+// ChainsRequest represents a message that queries the chains
+// registered on the network
+message ChainsRequest {}
+
+message ChainsResponse {
+  repeated string chains = 1
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+}
+
+// AssetsRequest represents a message that queries the registered assets of a
+// chain
+message AssetsRequest { string chain = 1; }
+
+message AssetsResponse { repeated string assets = 1; }
+
+// ChainStateRequest represents a message that queries the state of a chain
+// registered on the network
+message ChainStateRequest { string chain = 1; }
+
+message ChainStateResponse {
+  ChainState state = 1 [ (gogoproto.nullable) = false ];
+}
+
+// ChainsByAssetRequest represents a message that queries the chains
+// that support an asset on the network
+message ChainsByAssetRequest { string asset = 1; }
+
+message ChainsByAssetResponse {
+  repeated string chains = 1
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+}

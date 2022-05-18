@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package axelar.tss.v1beta1;
+option go_package = "github.com/axelarnetwork/axelar-core/x/tss/types";
+
+import "gogoproto/gogo.proto";
+import "axelar/utils/v1beta1/threshold.proto";
+import "axelar/tss/exported/v1beta1/types.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+// Params is the parameter set for this module
+message Params {
+  // KeyRequirements defines the requirement for each key role
+  repeated tss.exported.v1beta1.KeyRequirement key_requirements = 1
+      [ (gogoproto.nullable) = false ];
+  // SuspendDurationInBlocks defines the number of blocks a
+  // validator is disallowed to participate in any TSS ceremony after
+  // committing a malicious behaviour during signing
+  int64 suspend_duration_in_blocks = 2;
+  // HeartBeatPeriodInBlocks defines the time period in blocks for tss to
+  // emit the event asking validators to send their heartbeats
+  int64 heartbeat_period_in_blocks = 3;
+  utils.v1beta1.Threshold max_missed_blocks_per_window = 4
+      [ (gogoproto.nullable) = false ];
+  int64 unbonding_locking_key_rotation_count = 5;
+  utils.v1beta1.Threshold external_multisig_threshold = 6
+      [ (gogoproto.nullable) = false ];
+  int64 max_sign_queue_size = 7;
+  int64 max_simultaneous_sign_shares = 8;
+  int64 tss_signed_blocks_window = 9;
+}

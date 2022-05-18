@@ -1,0 +1,18 @@
+syntax = "proto3";
+package axelar.axelarnet.v1beta1;
+option go_package = "github.com/axelarnetwork/axelar-core/x/axelarnet/types";
+
+import "gogoproto/gogo.proto";
+import "axelar/axelarnet/v1beta1/params.proto";
+import "axelar/axelarnet/v1beta1/types.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+message GenesisState {
+  Params params = 1 [ (gogoproto.nullable) = false ];
+  bytes collector_address = 2
+      [ (gogoproto.casttype) =
+            "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  repeated CosmosChain chains = 3 [ (gogoproto.nullable) = false ];
+  repeated IBCTransfer pending_transfers = 4 [ (gogoproto.nullable) = false ];
+}
