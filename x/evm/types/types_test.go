@@ -97,6 +97,7 @@ func TestDeployToken(t *testing.T) {
 		Capacity:  sdk.NewIntFromBigInt(big.NewInt(rand.I64Between(100, 100000))),
 	}
 	address := Address(common.BytesToAddress(rand.Bytes(common.AddressLength)))
+	asset := rand.Str(5)
 
 	capBz := make([]byte, 8)
 	binary.BigEndian.PutUint64(capBz, details.Capacity.Uint64())
@@ -109,10 +110,12 @@ func TestDeployToken(t *testing.T) {
 		hex.EncodeToString([]byte(details.TokenName)),
 		hex.EncodeToString([]byte(details.Symbol)),
 	)
-	actual, err := CreateDeployTokenCommand(chainID, keyID, rand.Str(5), details, address)
+	expectedCommandID := NewCommandID([]byte(asset+"_"+details.Symbol), chainID)
+	actual, err := CreateDeployTokenCommand(chainID, keyID, asset, details, address)
 
 	assert.NoError(t, err)
 	assert.Equal(t, expectedParams, hex.EncodeToString(actual.Params))
+	assert.Equal(t, expectedCommandID, actual.ID)
 
 	decodedName, decodedSymbol, decodedDecs, decodedCap, tokenAddress, err := decodeDeployTokenParams(actual.Params)
 	assert.NoError(t, err)
