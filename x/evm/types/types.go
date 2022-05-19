@@ -820,7 +820,7 @@ func CreateDeployTokenCommand(chainID sdk.Int, keyID tss.KeyID, asset string, to
 	}
 
 	return Command{
-		ID:         NewCommandID([]byte(fmt.Sprintf("%s-%s", asset, tokenDetails.Symbol)), chainID),
+		ID:         NewCommandID([]byte(fmt.Sprintf("%s_%s", asset, tokenDetails.Symbol)), chainID),
 		Command:    AxelarGatewayCommandDeployToken,
 		Params:     params,
 		KeyID:      keyID,
