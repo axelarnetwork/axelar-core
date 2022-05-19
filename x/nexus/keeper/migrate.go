@@ -21,7 +21,7 @@ const uaxlAsset = "uaxl"
 func GetMigrationHandler(k Keeper) func(ctx sdk.Context) error {
 	return func(ctx sdk.Context) error {
 		deregisterUaxlAsset(ctx, k)
-		removeUaxlFeeInfo(ctx, k)
+		removeUaxlEVMFeeInfo(ctx, k)
 		addModuleParams(ctx, k)
 
 		if err := migrateChainMaintainers(ctx, k); err != nil {
@@ -51,7 +51,7 @@ func deregisterUaxlAsset(ctx sdk.Context, k Keeper) {
 	}
 }
 
-func removeUaxlFeeInfo(ctx sdk.Context, k Keeper) {
+func removeUaxlEVMFeeInfo(ctx sdk.Context, k Keeper) {
 	for _, feeInfo := range k.getFeeInfos(ctx) {
 		if feeInfo.Asset != uaxlAsset {
 			continue
