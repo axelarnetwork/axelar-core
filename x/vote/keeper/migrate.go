@@ -28,9 +28,13 @@ func GetMigrationHandler(k Keeper) func(ctx sdk.Context) error {
 		if err != nil {
 			return err
 		}
+		k.Logger(ctx).Info("Vote data migrated")
 
 		deleteAllPendingPolls(ctx, k)
+		k.Logger(ctx).Info("Pending polls deleted")
+
 		migrateAllCompletedPolls(ctx, k)
+		k.Logger(ctx).Info("Completed poll migrated")
 
 		return nil
 	}
@@ -179,6 +183,39 @@ func deleteAllPendingPolls(ctx sdk.Context, k Keeper) {
 }
 
 func migrateAllCompletedPolls(ctx sdk.Context, k Keeper) {
+	pollMetadatas := k.getCompletedPollMetadatas(ctx)
+
+	var voterKeys []utils.Key
+	var voterRecords []types.VoteRecord
+	var pollKeys []exported.PollKey
+
+	for _, p := range pollMetadatas {
+		poll := k.newPollStore(ctx, p.Key)
+		voterIter := k.getKVStore(ctx).Iterator(voterPrefix.AppendStr(poll.key.String()))
+		for ; voterIter.Valid(); voterIter.Next() {
+			voterKeys = append(voterKeys, voterIter.GetKey())
+			voterRecords = append(voterRecords, types.VoteRecord{IsLate: false})
+			pollKeys = append(pollKeys, p.Key)
+		}
+	}
+
+	for _, p := range pollMetadatas {
+		// The actual completed at cannot be retrieved anymore, but need to
+		// make it valid
+		poll := k.newPollStore(ctx, p.Key)
+		p.CompletedAt = 1
+		poll.SetMetadata(p)
+	}
+
+	for i := range voterKeys {
+		poll := k.newPollStore(ctx, pollKeys[i])
+		poll.KVStore.Set(voterKeys[i], &voterRecords[i])
+	}
+}
+
+func (k Keeper) getCompletedPollMetadatas(ctx sdk.Context) []exported.PollMetadata {
+	var pollMetadatas []exported.PollMetadata
+
 	iter := k.getKVStore(ctx).Iterator(pollPrefix)
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
@@ -190,15 +227,8 @@ func migrateAllCompletedPolls(ctx sdk.Context, k Keeper) {
 			continue
 		}
 
-		poll := k.newPollStore(ctx, pollMetadata.Key)
-		voterIter := k.getKVStore(ctx).Iterator(voterPrefix.AppendStr(poll.key.String()))
-		for ; voterIter.Valid(); voterIter.Next() {
-			poll.KVStore.Set(voterIter.GetKey(), &types.VoteRecord{IsLate: false})
-		}
-		utils.CloseLogError(voterIter, k.Logger(ctx))
-		// The actual completed at cannot be retrieved anymore, but need to
-		// make it valid
-		pollMetadata.CompletedAt = 1
-		poll.SetMetadata(pollMetadata)
+		pollMetadatas = append(pollMetadatas, pollMetadata)
 	}
+
+	return pollMetadatas
 }
