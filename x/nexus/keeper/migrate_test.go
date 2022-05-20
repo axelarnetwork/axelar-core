@@ -44,6 +44,53 @@ func TestGetMigrationHandler_deregisterUaxlAsset(t *testing.T) {
 	assert.True(t, keeper.IsAssetRegistered(ctx, evm.Ethereum, anotherAsset))
 }
 
+func TestGetMigrationHandler_removeUaxlFeeInfo(t *testing.T) {
+	ctx, keeper := setup()
+	uaxlAsset := "uaxl"
+	anotherAsset := rand.NormalizedStr(5)
+
+	keeper.SetChain(ctx, axelarnet.Axelarnet)
+	keeper.SetChain(ctx, evm.Ethereum)
+	if err := keeper.RegisterAsset(ctx, axelarnet.Axelarnet, exported.NewAsset(uaxlAsset, true)); err != nil {
+		panic(err)
+	}
+	if err := keeper.RegisterAsset(ctx, evm.Ethereum, exported.NewAsset(uaxlAsset, false)); err != nil {
+		panic(err)
+	}
+	if err := keeper.RegisterAsset(ctx, evm.Ethereum, exported.NewAsset(anotherAsset, false)); err != nil {
+		panic(err)
+	}
+
+	expectedFeeInfo := exported.NewFeeInfo(axelarnet.Axelarnet.Name, uaxlAsset, sdk.OneDec(), sdk.NewInt(100), sdk.NewInt(100000))
+	expectedEthereumFeeInfo := exported.NewFeeInfo(evm.Ethereum.Name, uaxlAsset, sdk.OneDec(), sdk.NewInt(100), sdk.NewInt(100000))
+	anotherAssetFeeInfo := exported.NewFeeInfo(axelarnet.Axelarnet.Name, anotherAsset, sdk.OneDec(), sdk.NewInt(10), sdk.NewInt(10000))
+
+	if err := keeper.RegisterFee(ctx, axelarnet.Axelarnet, expectedFeeInfo); err != nil {
+		panic(err)
+	}
+	if err := keeper.RegisterFee(ctx, evm.Ethereum, expectedEthereumFeeInfo); err != nil {
+		panic(err)
+	}
+	if err := keeper.RegisterFee(ctx, evm.Ethereum, anotherAssetFeeInfo); err != nil {
+		panic(err)
+	}
+
+	handler := GetMigrationHandler(keeper)
+	err := handler(ctx)
+	assert.NoError(t, err)
+
+	actualFeeInfo, ok := keeper.GetFeeInfo(ctx, axelarnet.Axelarnet, uaxlAsset)
+	assert.True(t, ok)
+	assert.Equal(t, expectedFeeInfo, actualFeeInfo)
+
+	actualFeeInfo, ok = keeper.GetFeeInfo(ctx, evm.Ethereum, uaxlAsset)
+	assert.False(t, ok)
+
+	actualFeeInfo, ok = keeper.GetFeeInfo(ctx, evm.Ethereum, anotherAsset)
+	assert.True(t, ok)
+	assert.Equal(t, anotherAssetFeeInfo, actualFeeInfo)
+}
+
 func TestGetMigrationHandler_addNewParams(t *testing.T) {
 	ctx, keeper := setup()
 
@@ -66,7 +113,7 @@ func TestGetMigrationHandler_migrateChainMaintainers(t *testing.T) {
 		maintainers[i] = rand.ValAddr()
 	}
 	chainState := types.ChainState{
-		Chain:       exported.Chain{Name: rand.NormalizedStr(5)},
+		Chain:       exported.Chain{Name: exported.ChainName(rand.NormalizedStr(5))},
 		Maintainers: maintainers,
 	}
 	keeper.setChainState(ctx, chainState)

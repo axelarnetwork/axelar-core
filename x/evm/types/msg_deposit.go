@@ -6,13 +6,14 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
 // NewConfirmDepositRequest creates a message of type ConfirmDepositRequest
 func NewConfirmDepositRequest(sender sdk.AccAddress, chain string, txID common.Hash, burnerAddr common.Address) *ConfirmDepositRequest {
 	return &ConfirmDepositRequest{
 		Sender:        sender,
-		Chain:         utils.NormalizeString(chain),
+		Chain:         nexus.ChainName(utils.NormalizeString(chain)),
 		TxID:          Hash(txID),
 		BurnerAddress: Address(burnerAddr),
 	}
@@ -34,7 +35,7 @@ func (m ConfirmDepositRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
-	if err := utils.ValidateString(m.Chain); err != nil {
+	if err := m.Chain.Validate(); err != nil {
 		return sdkerrors.Wrap(err, "invalid chain")
 	}
 

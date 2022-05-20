@@ -3,7 +3,6 @@ package keeper_test
 import (
 	"fmt"
 	"math/big"
-	"strings"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -32,7 +31,7 @@ func TestQueryPendingCommands(t *testing.T) {
 		signer      *mock.SignerMock
 		nexusKeeper *mock.NexusMock
 		ctx         sdk.Context
-		evmChain    string
+		evmChain    nexus.ChainName
 		asset       string
 		symbol      string
 		chainID     sdk.Int
@@ -42,7 +41,7 @@ func TestQueryPendingCommands(t *testing.T) {
 
 	setup := func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
-		evmChain = rand.StrBetween(5, 10)
+		evmChain = nexus.ChainName(rand.StrBetween(5, 10))
 		asset = btc.NativeAsset
 		symbol = "axelarBTC"
 		chainID = sdk.NewInt(1)
@@ -58,15 +57,15 @@ func TestQueryPendingCommands(t *testing.T) {
 		cmds = append(cmds, cmdDeploy, cmdMint, cmdBurn)
 
 		chainKeeper = &mock.ChainKeeperMock{
-			GetNameFunc: func() string { return evmChain },
+			GetNameFunc: func() string { return evmChain.String() },
 			GetPendingCommandsFunc: func(sdk.Context) []types.Command {
 				return cmds
 			},
 		}
 
 		nexusKeeper = &mock.NexusMock{
-			GetChainFunc: func(_ sdk.Context, chain string) (nexus.Chain, bool) {
-				if strings.EqualFold(chain, evmChain) {
+			GetChainFunc: func(_ sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
+				if chain.Equals(evmChain) {
 					return nexus.Chain{
 						Name:                  evmChain,
 						SupportsForeignAssets: true,
@@ -78,7 +77,7 @@ func TestQueryPendingCommands(t *testing.T) {
 		}
 
 		baseKeeper = &mock.BaseKeeperMock{
-			ForChainFunc: func(chain string) types.ChainKeeper {
+			ForChainFunc: func(chain nexus.ChainName) types.ChainKeeper {
 				return chainKeeper
 			},
 		}
@@ -91,7 +90,7 @@ func TestQueryPendingCommands(t *testing.T) {
 
 		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer)
 
-		res, err := q.PendingCommands(sdk.WrapSDKContext(ctx), &types.PendingCommandsRequest{Chain: evmChain})
+		res, err := q.PendingCommands(sdk.WrapSDKContext(ctx), &types.PendingCommandsRequest{Chain: evmChain.String()})
 		assert.NoError(t, err)
 
 		var cmdResp []types.QueryCommandResponse
@@ -111,7 +110,7 @@ func TestQueryDepositState(t *testing.T) {
 		baseKeeper      *mock.BaseKeeperMock
 		signer          *mock.SignerMock
 		ctx             sdk.Context
-		evmChain        string
+		evmChain        nexus.ChainName
 		expectedDeposit types.ERC20Deposit
 		chainKeeper     *mock.ChainKeeperMock
 		nexusKeeper     *mock.NexusMock
@@ -119,11 +118,11 @@ func TestQueryDepositState(t *testing.T) {
 	)
 
 	setup := func() {
-		evmChain = rand.StrBetween(5, 10)
+		evmChain = nexus.ChainName(rand.StrBetween(5, 10))
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 
 		expectedDeposit = types.ERC20Deposit{
-			DestinationChain: rand.StrBetween(5, 10),
+			DestinationChain: nexus.ChainName(rand.StrBetween(5, 10)),
 			Amount:           sdk.NewUint(uint64(rand.I64Between(100, 10000))),
 			BurnerAddress:    evmTest.RandomAddress(),
 			TxID:             evmTest.RandomHash(),
@@ -131,7 +130,7 @@ func TestQueryDepositState(t *testing.T) {
 		}
 
 		chainKeeper = &mock.ChainKeeperMock{
-			GetNameFunc: func() string { return evmChain },
+			GetNameFunc: func() string { return evmChain.String() },
 			GetPendingDepositFunc: func(sdk.Context, vote.PollKey) (types.ERC20Deposit, bool) {
 				return types.ERC20Deposit{}, false
 			},
@@ -140,8 +139,8 @@ func TestQueryDepositState(t *testing.T) {
 			},
 		}
 		nexusKeeper = &mock.NexusMock{
-			GetChainFunc: func(_ sdk.Context, chain string) (nexus.Chain, bool) {
-				if strings.EqualFold(chain, evmChain) {
+			GetChainFunc: func(_ sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
+				if chain.Equals(evmChain) {
 					return nexus.Chain{
 						Name:                  evmChain,
 						SupportsForeignAssets: true,
@@ -152,7 +151,7 @@ func TestQueryDepositState(t *testing.T) {
 			},
 		}
 		baseKeeper = &mock.BaseKeeperMock{
-			ForChainFunc: func(chain string) types.ChainKeeper {
+			ForChainFunc: func(chain nexus.ChainName) types.ChainKeeper {
 				return chainKeeper
 			},
 		}
@@ -272,7 +271,7 @@ func TestQueryDepositState(t *testing.T) {
 
 	t.Run("chain not registered", testutils.Func(func(t *testing.T) {
 		setup()
-		nexusKeeper.GetChainFunc = func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+		nexusKeeper.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 			return nexus.Chain{}, false
 		}
 		_, err := grpcQuerier.DepositState(sdk.WrapSDKContext(ctx), &types.DepositStateRequest{
@@ -296,8 +295,8 @@ func TestChains(t *testing.T) {
 		signer      *mock.SignerMock
 		nexusKeeper *mock.NexusMock
 		ctx         sdk.Context
-		evmChain    string
-		nonEvmChain string
+		evmChain    nexus.ChainName
+		nonEvmChain nexus.ChainName
 		expectedRes types.ChainsResponse
 		grpcQuerier *evmKeeper.Querier
 	)
@@ -313,7 +312,7 @@ func TestChains(t *testing.T) {
 	t.Run("evm chain exists", testutils.Func(func(t *testing.T) {
 		setup()
 
-		expectedRes = types.ChainsResponse{Chains: []string{evmChain}}
+		expectedRes = types.ChainsResponse{Chains: []nexus.ChainName{evmChain}}
 		nexusKeeper = &mock.NexusMock{
 			GetChainsFunc: func(ctx sdk.Context) []nexus.Chain {
 				return []nexus.Chain{
@@ -343,7 +342,7 @@ func TestChains(t *testing.T) {
 	t.Run("evm chain doesn't exist", testutils.Func(func(t *testing.T) {
 		setup()
 
-		expectedRes = types.ChainsResponse{Chains: []string{}}
+		expectedRes = types.ChainsResponse{Chains: []nexus.ChainName{}}
 		nexusKeeper = &mock.NexusMock{
 			GetChainsFunc: func(ctx sdk.Context) []nexus.Chain {
 				return []nexus.Chain{
@@ -376,7 +375,7 @@ func TestGateway(t *testing.T) {
 		expectedRes   types.GatewayAddressResponse
 		grpcQuerier   *evmKeeper.Querier
 		address       common.Address
-		existingChain string
+		existingChain nexus.ChainName
 	)
 
 	setup := func() {
@@ -391,10 +390,10 @@ func TestGateway(t *testing.T) {
 
 		existingChain = "existing"
 		baseKeeper = &mock.BaseKeeperMock{
-			HasChainFunc: func(ctx sdk.Context, chain string) bool {
+			HasChainFunc: func(ctx sdk.Context, chain nexus.ChainName) bool {
 				return chain == existingChain
 			},
-			ForChainFunc: func(chain string) types.ChainKeeper {
+			ForChainFunc: func(chain nexus.ChainName) types.ChainKeeper {
 				return chainKeeper
 			},
 		}
@@ -413,7 +412,7 @@ func TestGateway(t *testing.T) {
 		}
 
 		res, err := grpcQuerier.GatewayAddress(sdk.WrapSDKContext(ctx), &types.GatewayAddressRequest{
-			Chain: existingChain,
+			Chain: existingChain.String(),
 		})
 
 		assert := assert.New(t)
@@ -443,7 +442,7 @@ func TestGateway(t *testing.T) {
 		}
 
 		_, err := grpcQuerier.GatewayAddress(sdk.WrapSDKContext(ctx), &types.GatewayAddressRequest{
-			Chain: existingChain,
+			Chain: existingChain.String(),
 		})
 
 		assert := assert.New(t)
@@ -460,7 +459,7 @@ func TestBytecode(t *testing.T) {
 		ctx            sdk.Context
 		expectedRes    types.BytecodeResponse
 		grpcQuerier    *evmKeeper.Querier
-		existingChain  string
+		existingChain  nexus.ChainName
 		contracts      []string
 		bytecodesExist bool
 	)
@@ -472,7 +471,7 @@ func TestBytecode(t *testing.T) {
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 
 		nexusKeeper = &mock.NexusMock{
-			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+			GetChainFunc: func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 				if chain == existingChain {
 					return nexus.Chain{
 						Name:                  chain,
@@ -501,7 +500,7 @@ func TestBytecode(t *testing.T) {
 		}
 
 		baseKeeper = &mock.BaseKeeperMock{
-			ForChainFunc: func(chain string) types.ChainKeeper {
+			ForChainFunc: func(chain nexus.ChainName) types.ChainKeeper {
 				return chainKeeper
 			},
 		}
@@ -523,7 +522,7 @@ func TestBytecode(t *testing.T) {
 			bytecodesExist = true
 
 			res, err := grpcQuerier.Bytecode(sdk.WrapSDKContext(ctx), &types.BytecodeRequest{
-				Chain:    existingChain,
+				Chain:    existingChain.String(),
 				Contract: bytecode,
 			})
 
@@ -544,8 +543,8 @@ func TestEvent(t *testing.T) {
 		ctx                sdk.Context
 		expectedResp       types.EventResponse
 		grpcQuerier        *evmKeeper.Querier
-		existingChain      string
-		nonExistingChain   string
+		existingChain      nexus.ChainName
+		nonExistingChain   nexus.ChainName
 		existingTxID       string
 		existingEventID    string
 		nonExistingEventID string
@@ -577,10 +576,10 @@ func TestEvent(t *testing.T) {
 		}
 
 		baseKeeper = &mock.BaseKeeperMock{
-			HasChainFunc: func(_ sdk.Context, chain string) bool {
+			HasChainFunc: func(_ sdk.Context, chain nexus.ChainName) bool {
 				return chain == existingChain
 			},
-			ForChainFunc: func(chain string) types.ChainKeeper {
+			ForChainFunc: func(chain nexus.ChainName) types.ChainKeeper {
 				return chainKeeper
 			},
 		}
@@ -608,7 +607,7 @@ func TestEvent(t *testing.T) {
 			}
 
 			res, err := grpcQuerier.Event(sdk.WrapSDKContext(ctx), &types.EventRequest{
-				Chain:   existingChain,
+				Chain:   existingChain.String(),
 				EventId: existingEventID,
 			})
 
@@ -622,7 +621,7 @@ func TestEvent(t *testing.T) {
 	t.Run("chain doesn't exist", testutils.Func(func(t *testing.T) {
 		setup()
 		_, err := grpcQuerier.Event(sdk.WrapSDKContext(ctx), &types.EventRequest{
-			Chain:   nonExistingChain,
+			Chain:   nonExistingChain.String(),
 			EventId: existingEventID,
 		})
 
@@ -635,7 +634,7 @@ func TestEvent(t *testing.T) {
 	t.Run("event doesn't exist", testutils.Func(func(t *testing.T) {
 		setup()
 		_, err := grpcQuerier.Event(sdk.WrapSDKContext(ctx), &types.EventRequest{
-			Chain:   existingChain,
+			Chain:   existingChain.String(),
 			EventId: nonExistingEventID,
 		})
 

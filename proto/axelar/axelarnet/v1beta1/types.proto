@@ -1,0 +1,36 @@
+syntax = "proto3";
+package axelar.axelarnet.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/axelarnet/types";
+import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+message IBCTransfer {
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string receiver = 2;
+  cosmos.base.v1beta1.Coin token = 3 [ (gogoproto.nullable) = false ];
+  string port_id = 4 [ (gogoproto.customname) = "PortID" ];
+  string channel_id = 5 [ (gogoproto.customname) = "ChannelID" ];
+  uint64 sequence = 6;
+}
+
+message CosmosChain {
+  string name = 1
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string ibc_path = 2 [ (gogoproto.customname) = "IBCPath" ];
+  repeated Asset assets = 3 [ (gogoproto.nullable) = false, deprecated = true ];
+  string addr_prefix = 4;
+}
+
+message Asset {
+  option deprecated = true;
+  string denom = 1;
+  bytes min_amount = 2 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.nullable) = false
+  ];
+}

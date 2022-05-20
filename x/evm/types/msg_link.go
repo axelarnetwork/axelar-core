@@ -5,14 +5,15 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
 // NewLinkRequest creates a message of type LinkRequest
 func NewLinkRequest(sender sdk.AccAddress, chain, recipientChain, recipientAddr, asset string) *LinkRequest {
 	return &LinkRequest{
 		Sender:         sender,
-		Chain:          utils.NormalizeString(chain),
-		RecipientChain: utils.NormalizeString(recipientChain),
+		Chain:          nexus.ChainName(utils.NormalizeString(chain)),
+		RecipientChain: nexus.ChainName(utils.NormalizeString(recipientChain)),
 		RecipientAddr:  utils.NormalizeString(recipientAddr),
 		Asset:          utils.NormalizeString(asset),
 	}
@@ -34,11 +35,11 @@ func (m LinkRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
-	if err := utils.ValidateString(m.Chain); err != nil {
+	if err := m.Chain.Validate(); err != nil {
 		return sdkerrors.Wrap(err, "invalid chain")
 	}
 
-	if err := utils.ValidateString(m.RecipientChain); err != nil {
+	if err := m.RecipientChain.Validate(); err != nil {
 		return sdkerrors.Wrap(err, "invalid recipient chain")
 	}
 

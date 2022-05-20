@@ -15,7 +15,7 @@ import (
 	"github.com/axelarnetwork/utils/slices"
 )
 
-func validateChains(ctx sdk.Context, sourceChainName string, destinationChainName string, bk types.BaseKeeper, n types.Nexus) (nexus.Chain, nexus.Chain, error) {
+func validateChains(ctx sdk.Context, sourceChainName nexus.ChainName, destinationChainName nexus.ChainName, bk types.BaseKeeper, n types.Nexus) (nexus.Chain, nexus.Chain, error) {
 	sourceChain, ok := n.GetChain(ctx, sourceChainName)
 	if !ok {
 		panic(fmt.Errorf("%s is not a registered chain", sourceChainName))
@@ -253,9 +253,9 @@ func handleConfirmDeposit(ctx sdk.Context, event types.Event, ck types.ChainKeep
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeDepositConfirmation,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
-			sdk.NewAttribute(types.AttributeKeySourceChain, chain.Name),
-			sdk.NewAttribute(types.AttributeKeyDestinationChain, recipient.Chain.Name),
+			sdk.NewAttribute(types.AttributeKeyChain, chain.Name.String()),
+			sdk.NewAttribute(types.AttributeKeySourceChain, chain.Name.String()),
+			sdk.NewAttribute(types.AttributeKeyDestinationChain, recipient.Chain.Name.String()),
 			sdk.NewAttribute(types.AttributeKeyDestinationAddress, recipient.Address),
 			sdk.NewAttribute(types.AttributeKeyAmount, e.Amount.String()),
 			sdk.NewAttribute(types.AttributeKeyAsset, burnerInfo.Asset),
@@ -296,7 +296,7 @@ func handleTokenDeployed(ctx sdk.Context, event types.Event, ck types.ChainKeepe
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeTokenConfirmation,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
+			sdk.NewAttribute(types.AttributeKeyChain, chain.Name.String()),
 			sdk.NewAttribute(types.AttributeKeyAsset, token.GetAsset()),
 			sdk.NewAttribute(types.AttributeKeySymbol, token.GetDetails().Symbol),
 			sdk.NewAttribute(types.AttributeKeyTokenAddress, token.GetAddress().Hex()),
@@ -365,7 +365,7 @@ func handleMultisigTransferKey(ctx sdk.Context, event types.Event, ck types.Chai
 	ctx.EventManager().EmitEvent(sdk.NewEvent(
 		types.EventTypeTransferKeyConfirmation,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
+		sdk.NewAttribute(types.AttributeKeyChain, chain.Name.String()),
 		sdk.NewAttribute(types.AttributeKeyTransferKeyType, keyRole.SimpleString()),
 		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm),
 	))
@@ -377,7 +377,7 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 	shouldHandleEvent := func(e codec.ProtoMarshaler) bool {
 		event := e.(*types.Event)
 
-		var destinationChainName string
+		var destinationChainName nexus.ChainName
 		switch event := event.GetEvent().(type) {
 		case *types.Event_ContractCall:
 			destinationChainName = event.ContractCall.DestinationChain

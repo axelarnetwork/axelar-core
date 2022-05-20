@@ -36,12 +36,12 @@ func migrateSignInfo(ctx sdk.Context, k types.TSSKeeper) error {
 			continue
 		}
 
-		sigMatadataProto, err := codectypes.NewAnyWithValue(&sigMetadata)
+		sigMetadataProto, err := codectypes.NewAnyWithValue(&sigMetadata)
 		if err != nil {
 			return err
 		}
 
-		signInfo.ModuleMetadata = sigMatadataProto
+		signInfo.ModuleMetadata = sigMetadataProto
 		signInfo.Metadata = ""
 
 		k.SetInfoForSig(ctx, signInfo.SigID, signInfo)

@@ -94,7 +94,7 @@ func (s msgServer) ConfirmGatewayTx(c context.Context, req *types.ConfirmGateway
 		vote.ExpiryAt(ctx.BlockHeight()+period),
 		vote.Threshold(votingThreshold),
 		vote.MinVoterCount(minVoterCount),
-		vote.RewardPool(chain.Name),
+		vote.RewardPool(chain.Name.String()),
 		vote.GracePeriod(keeper.GetParams(ctx).VotingGracePeriod),
 	); err != nil {
 		return nil, err
@@ -109,7 +109,7 @@ func (s msgServer) ConfirmGatewayTx(c context.Context, req *types.ConfirmGateway
 		sdk.NewEvent(types.EventTypeGatewayTxConfirmation,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
-			sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
+			sdk.NewAttribute(types.AttributeKeyChain, chain.Name.String()),
 			sdk.NewAttribute(types.AttributeKeyGatewayAddress, gatewayAddress.Hex()),
 			sdk.NewAttribute(types.AttributeKeyTxID, req.TxID.Hex()),
 			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
@@ -155,7 +155,7 @@ func (s msgServer) SetGateway(c context.Context, req *types.SetGatewayRequest) (
 		sdk.NewEvent(types.EventTypeGateway,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm),
-			sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
+			sdk.NewAttribute(types.AttributeKeyChain, chain.Name.String()),
 			sdk.NewAttribute(types.AttributeKeyAddress, req.Address.Hex()),
 		),
 	)
@@ -221,10 +221,10 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		sdk.NewEvent(
 			types.EventTypeLink,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(types.AttributeKeySourceChain, senderChain.Name),
+			sdk.NewAttribute(types.AttributeKeySourceChain, senderChain.Name.String()),
 			sdk.NewAttribute(types.AttributeKeyDepositAddress, burnerAddress.Hex()),
 			sdk.NewAttribute(types.AttributeKeyDestinationAddress, req.RecipientAddr),
-			sdk.NewAttribute(types.AttributeKeyDestinationChain, recipientChain.Name),
+			sdk.NewAttribute(types.AttributeKeyDestinationChain, recipientChain.Name.String()),
 			sdk.NewAttribute(types.AttributeKeyTokenAddress, token.GetAddress().Hex()),
 			sdk.NewAttribute(types.AttributeKeyAsset, req.Asset),
 		),
@@ -289,7 +289,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		vote.ExpiryAt(ctx.BlockHeight()+period),
 		vote.Threshold(votingThreshold),
 		vote.MinVoterCount(minVoterCount),
-		vote.RewardPool(chain.Name),
+		vote.RewardPool(chain.Name.String()),
 		vote.GracePeriod(keeper.GetParams(ctx).VotingGracePeriod),
 	); err != nil {
 		return nil, err
@@ -304,7 +304,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		sdk.NewEvent(types.EventTypeTokenConfirmation,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
-			sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
+			sdk.NewAttribute(types.AttributeKeyChain, chain.Name.String()),
 			sdk.NewAttribute(types.AttributeKeyTxID, req.TxID.Hex()),
 			sdk.NewAttribute(types.AttributeKeyGatewayAddress, gatewayAddr.Hex()),
 			sdk.NewAttribute(types.AttributeKeyTokenAddress, tokenAddr.Hex()),
@@ -359,7 +359,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		vote.ExpiryAt(ctx.BlockHeight()+period),
 		vote.Threshold(votingThreshold),
 		vote.MinVoterCount(minVoterCount),
-		vote.RewardPool(chain.Name),
+		vote.RewardPool(chain.Name.String()),
 		vote.GracePeriod(keeper.GetParams(ctx).VotingGracePeriod),
 	); err != nil {
 		return nil, err
@@ -370,7 +370,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		sdk.NewEvent(types.EventTypeDepositConfirmation,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
-			sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
+			sdk.NewAttribute(types.AttributeKeyChain, chain.Name.String()),
 			sdk.NewAttribute(types.AttributeKeyTxID, req.TxID.Hex()),
 			sdk.NewAttribute(types.AttributeKeyDepositAddress, req.BurnerAddress.Hex()),
 			sdk.NewAttribute(types.AttributeKeyTokenAddress, burnerInfo.TokenAddress.Hex()),
@@ -439,7 +439,7 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 		vote.ExpiryAt(ctx.BlockHeight()+period),
 		vote.Threshold(votingThreshold),
 		vote.MinVoterCount(minVoterCount),
-		vote.RewardPool(chain.Name),
+		vote.RewardPool(chain.Name.String()),
 		vote.GracePeriod(keeper.GetParams(ctx).VotingGracePeriod),
 	); err != nil {
 		return nil, err
@@ -450,7 +450,7 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 	event := sdk.NewEvent(types.EventTypeTransferKeyConfirmation,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
-		sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
+		sdk.NewAttribute(types.AttributeKeyChain, chain.Name.String()),
 		sdk.NewAttribute(types.AttributeKeyTxID, req.TxID.Hex()),
 		sdk.NewAttribute(types.AttributeKeyTransferKeyType, req.TransferType.SimpleString()),
 		sdk.NewAttribute(types.AttributeKeyKeyType, chain.KeyType.SimpleString()),
@@ -663,7 +663,7 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 	return &types.CreatePendingTransfersResponse{}, nil
 }
 
-func (s msgServer) createTransferKeyCommand(ctx sdk.Context, keeper types.ChainKeeper, transferKeyType types.TransferKeyType, chainStr string, nextKeyID tss.KeyID) (types.Command, error) {
+func (s msgServer) createTransferKeyCommand(ctx sdk.Context, keeper types.ChainKeeper, transferKeyType types.TransferKeyType, chainStr nexus.ChainName, nextKeyID tss.KeyID) (types.Command, error) {
 	chain, ok := s.nexus.GetChain(ctx, chainStr)
 	if !ok {
 		return types.Command{}, fmt.Errorf("%s is not a registered chain", chainStr)
@@ -868,7 +868,7 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 			types.EventTypeSign,
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
+			sdk.NewAttribute(types.AttributeKeyChain, chain.Name.String()),
 			sdk.NewAttribute(sdk.AttributeKeySender, req.Sender.String()),
 			sdk.NewAttribute(types.AttributeKeyBatchedCommandsID, batchedCommandsIDHex),
 			sdk.NewAttribute(types.AttributeKeyCommandsIDs, strings.Join(commandList, ",")),
@@ -901,7 +901,7 @@ func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*typ
 		sdk.NewEvent(types.EventTypeNewChain,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueUpdate),
-			sdk.NewAttribute(types.AttributeKeyChain, req.Name),
+			sdk.NewAttribute(types.AttributeKeyChain, req.Name.String()),
 		),
 	)
 

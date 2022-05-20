@@ -537,7 +537,7 @@ func GetSignHash(commandData []byte) common.Hash {
 func CreateApproveContractCallCommand(
 	chainID sdk.Int,
 	keyID tss.KeyID,
-	sourceChain string,
+	sourceChain nexus.ChainName,
 	sourceTxID Hash,
 	sourceEventIndex uint64,
 	event EventContractCall,
@@ -563,7 +563,7 @@ func CreateApproveContractCallCommand(
 func CreateApproveContractCallWithMintCommand(
 	chainID sdk.Int,
 	keyID tss.KeyID,
-	sourceChain string,
+	sourceChain nexus.ChainName,
 	sourceTxID Hash,
 	sourceEventIndex uint64,
 	event EventContractCallWithToken,
@@ -686,7 +686,7 @@ func decodeApproveContractCallParams(bz []byte) (string, string, common.Address,
 }
 
 func createApproveContractCallParams(
-	sourceChain string,
+	sourceChain nexus.ChainName,
 	sourceTxID Hash,
 	sourceEventIndex uint64,
 	event EventContractCall) ([]byte, error) {
@@ -735,7 +735,7 @@ func createApproveContractCallParams(
 }
 
 func createApproveContractCallWithMintParams(
-	sourceChain string,
+	sourceChain nexus.ChainName,
 	sourceTxID Hash,
 	sourceEventIndex uint64,
 	event EventContractCallWithToken,
@@ -820,7 +820,7 @@ func CreateDeployTokenCommand(chainID sdk.Int, keyID tss.KeyID, asset string, to
 	}
 
 	return Command{
-		ID:         NewCommandID([]byte(fmt.Sprintf("%s-%s", asset, tokenDetails.Symbol)), chainID),
+		ID:         NewCommandID([]byte(fmt.Sprintf("%s_%s", asset, tokenDetails.Symbol)), chainID),
 		Command:    AxelarGatewayCommandDeployToken,
 		Params:     params,
 		KeyID:      keyID,
@@ -1128,14 +1128,14 @@ func (t TransferKeyType) SimpleString() string {
 // NewAsset returns a new Asset instance
 func NewAsset(chain, name string) Asset {
 	return Asset{
-		Chain: utils.NormalizeString(chain),
+		Chain: nexus.ChainName(utils.NormalizeString(chain)),
 		Name:  utils.NormalizeString(name),
 	}
 }
 
 // Validate ensures that all fields are filled with sensible values
 func (m Asset) Validate() error {
-	if err := utils.ValidateString(m.Chain); err != nil {
+	if err := m.Chain.Validate(); err != nil {
 		return sdkerrors.Wrap(err, "invalid chain")
 	}
 
@@ -1451,7 +1451,7 @@ func decodeTransferMultisigParams(bz []byte) ([]common.Address, uint8, error) {
 
 // ValidateBasic does stateless validation of the object
 func (m *BurnerInfo) ValidateBasic() error {
-	if err := utils.ValidateString(m.DestinationChain); err != nil {
+	if err := m.DestinationChain.Validate(); err != nil {
 		return sdkerrors.Wrap(err, "invalid destination chain")
 	}
 
@@ -1497,7 +1497,7 @@ func (m *ERC20Deposit) ValidateBasic() error {
 		return sdkerrors.Wrap(err, "invalid asset")
 	}
 
-	if err := utils.ValidateString(m.DestinationChain); err != nil {
+	if err := m.DestinationChain.Validate(); err != nil {
 		return sdkerrors.Wrap(err, "invalid destination chain")
 	}
 
@@ -1525,7 +1525,7 @@ func (m Event) GetID() EventID {
 
 // ValidateBasic returns an error if the event is invalid
 func (m Event) ValidateBasic() error {
-	if err := utils.ValidateString(m.Chain); err != nil {
+	if err := m.Chain.Validate(); err != nil {
 		return sdkerrors.Wrap(err, "invalid source chain")
 	}
 
@@ -1604,11 +1604,12 @@ func (m EventTokenSent) ValidateBasic() error {
 		return fmt.Errorf("invalid sender")
 	}
 
-	if err := utils.ValidateString(m.DestinationChain); err != nil {
+	if err := m.DestinationChain.Validate(); err != nil {
 		return sdkerrors.Wrap(err, "invalid destination chain")
 	}
 
-	if err := utils.ValidateString(m.DestinationAddress); err != nil {
+	err := utils.ValidateString(m.DestinationAddress)
+	if err != nil || common.IsHexAddress(m.DestinationAddress) {
 		return sdkerrors.Wrap(err, "invalid destination address")
 	}
 
@@ -1629,11 +1630,12 @@ func (m EventContractCall) ValidateBasic() error {
 		return fmt.Errorf("invalid sender")
 	}
 
-	if err := utils.ValidateString(m.DestinationChain); err != nil {
+	if err := m.DestinationChain.Validate(); err != nil {
 		return sdkerrors.Wrap(err, "invalid destination chain")
 	}
 
-	if err := utils.ValidateString(m.ContractAddress); err != nil {
+	err := utils.ValidateString(m.ContractAddress)
+	if err != nil || common.IsHexAddress(m.ContractAddress) {
 		return sdkerrors.Wrap(err, "invalid contract address")
 	}
 
@@ -1650,11 +1652,12 @@ func (m EventContractCallWithToken) ValidateBasic() error {
 		return fmt.Errorf("invalid sender")
 	}
 
-	if err := utils.ValidateString(m.DestinationChain); err != nil {
+	if err := m.DestinationChain.Validate(); err != nil {
 		return sdkerrors.Wrap(err, "invalid destination chain")
 	}
 
-	if err := utils.ValidateString(m.ContractAddress); err != nil {
+	err := utils.ValidateString(m.ContractAddress)
+	if err != nil || common.IsHexAddress(m.ContractAddress) {
 		return sdkerrors.Wrap(err, "invalid contract address")
 	}
 
@@ -1851,7 +1854,7 @@ func UnpackEvents(cdc codec.Codec, any *codectypes.Any) (voteEvents VoteEvents, 
 }
 
 // PackEvents converts Event to Any slice
-func PackEvents(chain string, events []Event) (*codectypes.Any, error) {
+func PackEvents(chain nexus.ChainName, events []Event) (*codectypes.Any, error) {
 	return codectypes.NewAnyWithValue(&VoteEvents{
 		Chain:  chain,
 		Events: events,

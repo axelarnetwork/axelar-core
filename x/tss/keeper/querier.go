@@ -10,6 +10,7 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -286,7 +287,7 @@ func queryKeyStatus(ctx sdk.Context, k types.TSSKeeper, v types.Voter, keyID exp
 
 // queryKeyID returns the keyID of the most recent key for a provided keyChain and keyRole
 func queryKeyID(ctx sdk.Context, k types.TSSKeeper, n types.Nexus, keyChainStr string, keyRoleStr string) ([]byte, error) {
-	keyChain, ok := n.GetChain(ctx, keyChainStr)
+	keyChain, ok := n.GetChain(ctx, nexus.ChainName(keyChainStr))
 	if !ok {
 		return nil, fmt.Errorf("%s is not a registered chain", keyChainStr)
 	}
@@ -344,7 +345,7 @@ func queryKeySharesByKeyID(ctx sdk.Context, k types.TSSKeeper, s types.Snapshott
 func queryActiveOldKeyIDs(ctx sdk.Context, k types.TSSKeeper, n types.Nexus, chainName, roleStr string) ([]byte, error) {
 	var queryResponse types.QueryActiveOldKeysResponse
 
-	chain, ok := n.GetChain(ctx, chainName)
+	chain, ok := n.GetChain(ctx, nexus.ChainName(chainName))
 	if !ok {
 		return nil, fmt.Errorf("could not find chain '%s'", chainName)
 	}
@@ -379,7 +380,7 @@ func queryActiveOldKeyIDsByValidator(ctx sdk.Context, k types.TSSKeeper, n types
 			for _, key := range keys {
 				allKeys = append(allKeys, types.QueryActiveOldKeysValidatorResponse_KeyInfo{
 					ID:    key.ID,
-					Chain: chain.Name,
+					Chain: chain.Name.String(),
 					Role:  role,
 				})
 			}
@@ -438,7 +439,7 @@ func queryKeySharesByValidator(ctx sdk.Context, k types.TSSKeeper, n types.Nexus
 
 					thisShareInfo := types.QueryKeyShareResponse_ShareInfo{
 						KeyID:               keyID,
-						KeyChain:            chain.Name,
+						KeyChain:            chain.Name.String(),
 						KeyRole:             keyRole.String(),
 						SnapshotBlockNumber: snapshot.Height,
 						ValidatorAddress:    validator.GetSDKValidator().GetOperator().String(),
@@ -491,7 +492,7 @@ func queryDeactivatedOperator(ctx sdk.Context, k types.TSSKeeper, s types.Snapsh
 
 // QueryExternalKeyID returns the keyIDs of the current set of external keys for the given chain
 func QueryExternalKeyID(ctx sdk.Context, k types.TSSKeeper, n types.Nexus, chainStr string) ([]byte, error) {
-	chain, ok := n.GetChain(ctx, chainStr)
+	chain, ok := n.GetChain(ctx, nexus.ChainName(chainStr))
 	if !ok {
 		return nil, fmt.Errorf("unknown chain %s", chainStr)
 	}

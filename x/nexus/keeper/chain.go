@@ -26,11 +26,11 @@ func (k Keeper) getChainStates(ctx sdk.Context) (chainStates []types.ChainState)
 }
 
 func (k Keeper) setChainState(ctx sdk.Context, chainState types.ChainState) {
-	k.getStore(ctx).Set(chainStatePrefix.Append(utils.LowerCaseKey(chainState.Chain.Name)), &chainState)
+	k.getStore(ctx).Set(chainStatePrefix.Append(utils.LowerCaseKey(chainState.Chain.Name.String())), &chainState)
 }
 
 func (k Keeper) getChainState(ctx sdk.Context, chain exported.Chain) (chainState types.ChainState, ok bool) {
-	return chainState, k.getStore(ctx).Get(chainStatePrefix.Append(utils.LowerCaseKey(chain.Name)), &chainState)
+	return chainState, k.getStore(ctx).Get(chainStatePrefix.Append(utils.LowerCaseKey(chain.Name.String())), &chainState)
 }
 
 // RegisterAsset indicates that the specified asset is supported by the given chain
@@ -79,13 +79,13 @@ func (k Keeper) getFeeInfos(ctx sdk.Context) (feeInfos []exported.FeeInfo) {
 }
 
 func (k Keeper) setFeeInfo(ctx sdk.Context, chain exported.Chain, asset string, feeInfo exported.FeeInfo) {
-	k.getStore(ctx).Set(assetFeePrefix.Append(utils.LowerCaseKey(chain.Name)).Append(utils.KeyFromStr(asset)), &feeInfo)
+	k.getStore(ctx).Set(assetFeePrefix.Append(utils.LowerCaseKey(chain.Name.String())).Append(utils.KeyFromStr(asset)), &feeInfo)
 }
 
 // GetFeeInfo retrieves the fee info for an asset on a chain, and returns zero fees if it doesn't exist
 func (k Keeper) GetFeeInfo(ctx sdk.Context, chain exported.Chain, asset string) (feeInfo exported.FeeInfo, found bool) {
 	feeInfo = exported.ZeroFeeInfo(chain.Name, asset)
-	return feeInfo, k.getStore(ctx).Get(assetFeePrefix.Append(utils.LowerCaseKey(chain.Name)).Append(utils.KeyFromStr(asset)), &feeInfo)
+	return feeInfo, k.getStore(ctx).Get(assetFeePrefix.Append(utils.LowerCaseKey(chain.Name.String())).Append(utils.KeyFromStr(asset)), &feeInfo)
 }
 
 // RegisterFee registers the fee info for an asset on a chain
@@ -228,13 +228,13 @@ func (k Keeper) GetChains(ctx sdk.Context) (chains []exported.Chain) {
 }
 
 // GetChain retrieves the specification for a supported blockchain
-func (k Keeper) GetChain(ctx sdk.Context, chainName string) (chain exported.Chain, ok bool) {
-	return chain, k.getStore(ctx).Get(chainPrefix.Append(utils.LowerCaseKey(chainName)), &chain)
+func (k Keeper) GetChain(ctx sdk.Context, chainName exported.ChainName) (chain exported.Chain, ok bool) {
+	return chain, k.getStore(ctx).Get(chainPrefix.Append(utils.LowerCaseKey(chainName.String())), &chain)
 }
 
 // SetChain sets the specification for a supported chain
 func (k Keeper) SetChain(ctx sdk.Context, chain exported.Chain) {
-	k.getStore(ctx).Set(chainPrefix.Append(utils.LowerCaseKey(chain.Name)), &chain)
+	k.getStore(ctx).Set(chainPrefix.Append(utils.LowerCaseKey(chain.Name.String())), &chain)
 }
 
 func (k Keeper) setChainByNativeAsset(ctx sdk.Context, asset string, chain exported.Chain) {

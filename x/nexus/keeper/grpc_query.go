@@ -32,7 +32,7 @@ func NewGRPCQuerier(k Keeper, a types.AxelarnetKeeper) Querier {
 func (q Querier) TransfersForChain(c context.Context, req *types.TransfersForChainRequest) (*types.TransfersForChainResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	chain, ok := q.keeper.GetChain(ctx, req.Chain)
+	chain, ok := q.keeper.GetChain(ctx, nexus.ChainName(req.Chain))
 	if !ok {
 		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered chain", req.Chain)
 	}
@@ -49,12 +49,12 @@ func (q Querier) TransfersForChain(c context.Context, req *types.TransfersForCha
 func (q Querier) LatestDepositAddress(c context.Context, req *types.LatestDepositAddressRequest) (*types.LatestDepositAddressResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	recipientChain, ok := q.keeper.GetChain(ctx, req.RecipientChain)
+	recipientChain, ok := q.keeper.GetChain(ctx, nexus.ChainName(req.RecipientChain))
 	if !ok {
 		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered chain", req.RecipientChain)
 	}
 
-	depositChain, ok := q.keeper.GetChain(ctx, req.DepositChain)
+	depositChain, ok := q.keeper.GetChain(ctx, nexus.ChainName(req.DepositChain))
 	if !ok {
 		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered chain", req.DepositChain)
 	}
@@ -72,7 +72,7 @@ func (q Querier) LatestDepositAddress(c context.Context, req *types.LatestDeposi
 func (q Querier) FeeInfo(c context.Context, req *types.FeeInfoRequest) (*types.FeeInfoResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	chain, ok := q.keeper.GetChain(ctx, req.Chain)
+	chain, ok := q.keeper.GetChain(ctx, nexus.ChainName(req.Chain))
 	if !ok {
 		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered chain", req.Chain)
 	}
@@ -93,12 +93,12 @@ func (q Querier) FeeInfo(c context.Context, req *types.FeeInfoRequest) (*types.F
 func (q Querier) TransferFee(c context.Context, req *types.TransferFeeRequest) (*types.TransferFeeResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	sourceChain, ok := q.keeper.GetChain(ctx, req.SourceChain)
+	sourceChain, ok := q.keeper.GetChain(ctx, nexus.ChainName(req.SourceChain))
 	if !ok {
 		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered chain", req.SourceChain)
 	}
 
-	destinationChain, ok := q.keeper.GetChain(ctx, req.DestinationChain)
+	destinationChain, ok := q.keeper.GetChain(ctx, nexus.ChainName(req.DestinationChain))
 	if !ok {
 		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered chain", req.DestinationChain)
 	}
@@ -140,7 +140,7 @@ func (q Querier) Chains(c context.Context, req *types.ChainsRequest) (*types.Cha
 
 	chains := q.keeper.GetChains(ctx)
 
-	chainNames := make([]string, len(chains))
+	chainNames := make([]nexus.ChainName, len(chains))
 	for i, chain := range chains {
 		chainNames[i] = chain.Name
 	}
@@ -152,7 +152,7 @@ func (q Querier) Chains(c context.Context, req *types.ChainsRequest) (*types.Cha
 func (q Querier) Assets(c context.Context, req *types.AssetsRequest) (*types.AssetsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	chain, ok := q.keeper.GetChain(ctx, req.Chain)
+	chain, ok := q.keeper.GetChain(ctx, nexus.ChainName(req.Chain))
 	if !ok {
 		return nil, fmt.Errorf("chain %s not found", req.Chain)
 	}
@@ -174,7 +174,7 @@ func (q Querier) Assets(c context.Context, req *types.AssetsRequest) (*types.Ass
 func (q Querier) ChainState(c context.Context, req *types.ChainStateRequest) (*types.ChainStateResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	chain, ok := q.keeper.GetChain(ctx, req.Chain)
+	chain, ok := q.keeper.GetChain(ctx, nexus.ChainName(req.Chain))
 	if !ok {
 		return nil, fmt.Errorf("chain %s not found", req.Chain)
 	}
@@ -196,7 +196,7 @@ func (q Querier) ChainsByAsset(c context.Context, req *types.ChainsByAssetReques
 	}
 
 	chains := q.keeper.GetChains(ctx)
-	chainNames := []string{}
+	var chainNames []nexus.ChainName
 
 	for _, chain := range chains {
 		if q.keeper.IsAssetRegistered(ctx, chain, req.Asset) {

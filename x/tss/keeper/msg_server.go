@@ -72,7 +72,7 @@ func (s msgServer) RegisterExternalKeys(c context.Context, req *types.RegisterEx
 			ID:    externalKey.ID,
 			Role:  exported.ExternalKey,
 			Type:  exported.None,
-			Chain: req.Chain,
+			Chain: req.Chain.String(),
 			PublicKey: &exported.Key_ECDSAKey_{
 				ECDSAKey: &exported.Key_ECDSAKey{
 					Value: externalKey.PubKey,
@@ -84,7 +84,7 @@ func (s msgServer) RegisterExternalKeys(c context.Context, req *types.RegisterEx
 		ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeKey,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueAssigned),
-			sdk.NewAttribute(types.AttributeChain, chain.Name),
+			sdk.NewAttribute(types.AttributeChain, chain.Name.String()),
 			sdk.NewAttribute(types.AttributeKeyRole, exported.ExternalKey.SimpleString()),
 			sdk.NewAttribute(types.AttributeKeyKeyID, string(externalKey.ID)),
 		))
@@ -297,9 +297,9 @@ func (s msgServer) RotateKey(c context.Context, req *types.RotateKeyRequest) (*t
 
 	s.Logger(ctx).Debug(fmt.Sprintf("rotated %s key for chain %s", req.KeyRole.SimpleString(), chain.Name))
 
-	telemetry.IncrCounter(1, types.ModuleName, strings.ToLower(chain.Name), req.KeyRole.SimpleString(), "key", "rotation", "count")
+	telemetry.IncrCounter(1, types.ModuleName, strings.ToLower(chain.Name.String()), req.KeyRole.SimpleString(), "key", "rotation", "count")
 	telemetry.SetGaugeWithLabels(
-		[]string{types.ModuleName, strings.ToLower(chain.Name), req.KeyRole.SimpleString(), "key", "id"},
+		[]string{types.ModuleName, strings.ToLower(chain.Name.String()), req.KeyRole.SimpleString(), "key", "id"},
 		0,
 		[]metrics.Label{
 			telemetry.NewLabel("timestamp", strconv.FormatInt(ctx.BlockTime().Unix(), 10)),
@@ -311,7 +311,7 @@ func (s msgServer) RotateKey(c context.Context, req *types.RotateKeyRequest) (*t
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeySender, req.Sender.String()),
-			sdk.NewAttribute(types.AttributeChain, chain.Name),
+			sdk.NewAttribute(types.AttributeChain, chain.Name.String()),
 		),
 	)
 

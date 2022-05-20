@@ -2,7 +2,6 @@ package types
 
 import (
 	"fmt"
-	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -16,7 +15,7 @@ import (
 func NewAddChainRequest(sender sdk.AccAddress, name string, keyType tss.KeyType, params Params) *AddChainRequest {
 	return &AddChainRequest{
 		Sender:  sender,
-		Name:    utils.NormalizeString(name),
+		Name:    nexus.ChainName(utils.NormalizeString(name)),
 		KeyType: keyType,
 		Params:  params,
 	}
@@ -53,7 +52,7 @@ func (m AddChainRequest) ValidateBasic() error {
 		return fmt.Errorf("invalid EVM param: %v", err)
 	}
 
-	if !strings.EqualFold(m.Name, m.Params.Chain) {
+	if !m.Name.Equals(m.Params.Chain) {
 		return fmt.Errorf("chain mismatch: chain name is %s, parameters chain is %s", m.Name, m.Params.Chain)
 	}
 

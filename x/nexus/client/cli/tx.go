@@ -163,7 +163,7 @@ func GetCmdRegisterAssetFee() *cobra.Command {
 				return fmt.Errorf("invalid value provided for max fee")
 			}
 
-			feeInfo := exported.NewFeeInfo(args[0], args[1], feeRate, minFee, maxFee)
+			feeInfo := exported.NewFeeInfo(exported.ChainName(args[0]), args[1], feeRate, minFee, maxFee)
 
 			msg := types.NewRegisterAssetFeeRequest(cliCtx.GetFromAddress(), feeInfo)
 

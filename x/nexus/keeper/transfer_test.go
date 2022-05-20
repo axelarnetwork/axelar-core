@@ -82,8 +82,8 @@ func TestComputeTransferFee(t *testing.T) {
 			func() {
 				for _, chain := range chains {
 					for _, asset := range assets {
-						assetFees[chain.Name+"_"+asset] = randFee(chain.Name, asset)
-						if err := k.RegisterFee(ctx, chain, assetFees[chain.Name+"_"+asset]); err != nil {
+						assetFees[chain.Name.String()+"_"+asset] = randFee(chain.Name, asset)
+						if err := k.RegisterFee(ctx, chain, assetFees[chain.Name.String()+"_"+asset]); err != nil {
 							panic(err)
 						}
 					}
@@ -100,7 +100,7 @@ func TestComputeTransferFee(t *testing.T) {
 							destinationChainFee, found := k.GetFeeInfo(ctx, destinationChain, asset)
 							assert.True(t, found)
 
-							assetFee := assetFees[sourceChain.Name+"_"+asset]
+							assetFee := assetFees[sourceChain.Name.String()+"_"+asset]
 							assert.Equal(t, sourceChainFee, assetFee)
 
 							coin := sdk.NewCoin(asset, randInt(0, maxAmount*2))
@@ -148,7 +148,7 @@ func TestTransfer(t *testing.T) {
 		recipients []nexus.CrossChainAddress
 		transfers  []sdk.Coin
 		// track total transfers, amounts and fees per chain
-		expectedTransfers map[string]transferCounter
+		expectedTransfers map[nexus.ChainName]transferCounter
 		asset             string
 	)
 
@@ -411,7 +411,7 @@ func makeAmountAboveMin(denom string) sdk.Coin {
 	return sdk.NewCoin(denom, sdk.NewInt(rand.I64Between(minAmount*2, maxAmount*2)))
 }
 
-func randFee(chain string, asset string) nexus.FeeInfo {
+func randFee(chain nexus.ChainName, asset string) nexus.FeeInfo {
 	rate := sdk.NewDecWithPrec(sdk.Int(randInt(0, 100)).Int64(), 3)
 	min := randInt(0, minAmount)
 	max := randInt(min.Int64(), maxAmount)

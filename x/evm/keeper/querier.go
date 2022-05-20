@@ -8,6 +8,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
 // Query labels
@@ -37,7 +38,7 @@ func NewQuerier(k types.BaseKeeper, s types.Signer, n types.Nexus) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
 		var chainKeeper types.ChainKeeper
 		if len(path) > 1 {
-			chainKeeper = k.ForChain(path[1])
+			chainKeeper = k.ForChain(exported.ChainName(path[1]))
 		}
 
 		switch path[0] {
@@ -90,7 +91,7 @@ func GetCommandResponse(cmd types.Command) (types.QueryCommandResponse, error) {
 
 // QueryTokenAddressByAsset returns the address of the token contract by asset
 func QueryTokenAddressByAsset(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, asset string) ([]byte, error) {
-	_, ok := n.GetChain(ctx, k.GetName())
+	_, ok := n.GetChain(ctx, exported.ChainName(k.GetName()))
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", k.GetName()))
 	}
@@ -109,7 +110,7 @@ func QueryTokenAddressByAsset(ctx sdk.Context, k types.ChainKeeper, n types.Nexu
 
 // QueryTokenAddressBySymbol returns the address of the token contract by symbol
 func QueryTokenAddressBySymbol(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, symbol string) ([]byte, error) {
-	_, ok := n.GetChain(ctx, k.GetName())
+	_, ok := n.GetChain(ctx, exported.ChainName(k.GetName()))
 	if !ok {
 		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", k.GetName()))
 	}

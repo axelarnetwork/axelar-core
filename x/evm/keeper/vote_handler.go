@@ -79,7 +79,6 @@ func (v voteHandler) HandleCompletedPoll(ctx sdk.Context, poll vote.Poll) error 
 
 	for _, voter := range poll.GetVoters() {
 		hasVoted := poll.HasVoted(voter.Validator)
-		hasVotedLate := poll.HasVotedLate(voter.Validator)
 		hasVotedIncorrectly := hasVoted && !poll.HasVotedCorrectly(voter.Validator)
 
 		v.nexus.MarkChainMaintainerMissingVote(ctx, chain, voter.Validator, !hasVoted)
@@ -97,15 +96,11 @@ func (v voteHandler) HandleCompletedPoll(ctx sdk.Context, poll vote.Poll) error 
 			v.keeper.Logger(ctx).Debug(fmt.Sprintf("penalized voter %s due to incorrect vote or missing vote", voter.Validator.String()),
 				"voter", voter.Validator.String(),
 				"poll", poll.GetKey().String())
-		case hasVoted && !hasVotedLate:
+		default:
 			if err := rewardPool.ReleaseRewards(voter.Validator); err != nil {
 				return err
 			}
 			v.keeper.Logger(ctx).Debug(fmt.Sprintf("released rewards for voter %s", voter.Validator.String()),
-				"voter", voter.Validator.String(),
-				"poll", poll.GetKey().String())
-		default:
-			v.keeper.Logger(ctx).Debug(fmt.Sprintf("held rewards for voter %s due to late vote", voter.Validator.String()),
 				"voter", voter.Validator.String(),
 				"poll", poll.GetKey().String())
 		}
@@ -176,7 +171,7 @@ func handleEvents(ctx sdk.Context, ck types.ChainKeeper, events []types.Event, c
 		ctx.EventManager().EmitEvent(
 			sdk.NewEvent(types.EventTypeEventConfirmation,
 				sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-				sdk.NewAttribute(types.AttributeKeyChain, event.Chain),
+				sdk.NewAttribute(types.AttributeKeyChain, event.Chain.String()),
 				sdk.NewAttribute(types.AttributeKeyTxID, event.TxId.Hex()),
 				sdk.NewAttribute(types.AttributeKeyEventID, string(event.GetID())),
 				sdk.NewAttribute(types.AttributeKeyEventType, event.GetEventType()),

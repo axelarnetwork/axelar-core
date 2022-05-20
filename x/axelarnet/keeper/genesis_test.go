@@ -16,6 +16,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	. "github.com/axelarnetwork/utils/test"
 )
 
@@ -91,7 +92,7 @@ func randomChains() []types.CosmosChain {
 
 func randomChain() types.CosmosChain {
 	return types.CosmosChain{
-		Name:       randomNormalizedStr(5, 20),
+		Name:       nexus.ChainName(randomNormalizedStr(5, 20)),
 		IBCPath:    randomIBCPath(),
 		AddrPrefix: randomNormalizedStr(5, 20),
 	}

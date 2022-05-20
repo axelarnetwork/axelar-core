@@ -11,10 +11,10 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
-func getTransferPrefix(chain string, state exported.TransferState) utils.Key {
+func getTransferPrefix(chain exported.ChainName, state exported.TransferState) utils.Key {
 	return transferPrefix.
 		AppendStr(state.String()).
-		AppendStr(chain)
+		AppendStr(chain.String())
 }
 
 func getTransferKey(transfer exported.CrossChainTransfer) utils.Key {

@@ -22,6 +22,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm/rpc"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/parse"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
@@ -80,7 +81,7 @@ func (mgr Mgr) ProcessDepositConfirmation(e tmEvents.Event) (err error) {
 		return sdkerrors.Wrap(err, "EVM deposit confirmation failed")
 	}
 
-	rpc, found := mgr.rpcs[strings.ToLower(chain)]
+	rpc, found := mgr.rpcs[strings.ToLower(chain.String())]
 	if !found {
 		return sdkerrors.Wrap(err, fmt.Sprintf("Unable to find an RPC for chain '%s'", chain))
 	}
@@ -135,7 +136,7 @@ func (mgr Mgr) ProcessTokenConfirmation(e tmEvents.Event) error {
 		return sdkerrors.Wrap(err, "EVM token deployment confirmation failed")
 	}
 
-	rpc, found := mgr.rpcs[strings.ToLower(chain)]
+	rpc, found := mgr.rpcs[strings.ToLower(chain.String())]
 	if !found {
 		return sdkerrors.Wrap(err, fmt.Sprintf("Unable to find an RPC for chain '%s'", chain))
 	}
@@ -191,7 +192,7 @@ func (mgr Mgr) ProcessTransferKeyConfirmation(e tmEvents.Event) (err error) {
 		return sdkerrors.Wrap(err, "EVM key transfer confirmation failed")
 	}
 
-	rpc, found := mgr.rpcs[strings.ToLower(chain)]
+	rpc, found := mgr.rpcs[strings.ToLower(chain.String())]
 	if !found {
 		return sdkerrors.Wrap(err, fmt.Sprintf("Unable to find an RPC for chain '%s'", chain))
 	}
@@ -305,7 +306,7 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(e tmEvents.Event) error {
 		return sdkerrors.Wrap(err, "EVM gateway transaction confirmation failed")
 	}
 
-	rpc, found := mgr.rpcs[strings.ToLower(chain)]
+	rpc, found := mgr.rpcs[strings.ToLower(chain.String())]
 	if !found {
 		return sdkerrors.Wrap(err, fmt.Sprintf("Unable to find an RPC for chain '%s'", chain))
 	}
@@ -326,6 +327,12 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(e tmEvents.Event) error {
 					return false
 				}
 
+				err = event.ValidateBasic()
+				if err != nil {
+					mgr.logger.Debug(sdkerrors.Wrap(err, "invalid event ContractCall").Error())
+					continue
+				}
+
 				events = append(events, evmTypes.Event{
 					Chain: chain,
 					TxId:  evmTypes.Hash(txID),
@@ -342,6 +349,12 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(e tmEvents.Event) error {
 					return false
 				}
 
+				err = event.ValidateBasic()
+				if err != nil {
+					mgr.logger.Debug(sdkerrors.Wrap(err, "invalid event ContractCallWithToken").Error())
+					continue
+				}
+
 				events = append(events, evmTypes.Event{
 					Chain: chain,
 					TxId:  evmTypes.Hash(txID),
@@ -354,6 +367,12 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(e tmEvents.Event) error {
 				event, err := decodeEventTokenSent(log)
 				if err != nil {
 					mgr.logger.Debug(sdkerrors.Wrap(err, "decode event TokenSent failed").Error())
+				}
+
+				err = event.ValidateBasic()
+				if err != nil {
+					mgr.logger.Debug(sdkerrors.Wrap(err, "invalid event TokenSent").Error())
+					continue
 				}
 
 				events = append(events, evmTypes.Event{
@@ -405,7 +424,7 @@ func decodeEventTokenSent(log *geth.Log) (evmTypes.EventTokenSent, error) {
 
 	return evmTypes.EventTokenSent{
 		Sender:             evmTypes.Address(common.BytesToAddress(log.Topics[1].Bytes())),
-		DestinationChain:   params[0].(string),
+		DestinationChain:   nexus.ChainName(params[0].(string)),
 		DestinationAddress: params[1].(string),
 		Symbol:             params[2].(string),
 		Amount:             sdk.NewUintFromBigInt(params[3].(*big.Int)),
@@ -435,7 +454,7 @@ func decodeEventContractCall(log *geth.Log) (evmTypes.EventContractCall, error) 
 
 	return evmTypes.EventContractCall{
 		Sender:           evmTypes.Address(common.BytesToAddress(log.Topics[1].Bytes())),
-		DestinationChain: params[0].(string),
+		DestinationChain: nexus.ChainName(params[0].(string)),
 		ContractAddress:  params[1].(string),
 		PayloadHash:      evmTypes.Hash(common.BytesToHash(log.Topics[2].Bytes())),
 	}, nil
@@ -471,7 +490,7 @@ func decodeEventContractCallWithToken(log *geth.Log) (evmTypes.EventContractCall
 
 	return evmTypes.EventContractCallWithToken{
 		Sender:           evmTypes.Address(common.BytesToAddress(log.Topics[1].Bytes())),
-		DestinationChain: params[0].(string),
+		DestinationChain: nexus.ChainName(params[0].(string)),
 		ContractAddress:  params[1].(string),
 		PayloadHash:      evmTypes.Hash(common.BytesToHash(log.Topics[2].Bytes())),
 		Symbol:           params[3].(string),
@@ -480,7 +499,7 @@ func decodeEventContractCallWithToken(log *geth.Log) (evmTypes.EventContractCall
 }
 
 func parseGatewayTxConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]string) (
-	chain string,
+	chain nexus.ChainName,
 	gatewayAddress common.Address,
 	txID common.Hash,
 	confHeight uint64,
@@ -508,7 +527,7 @@ func parseGatewayTxConfirmationParams(cdc *codec.LegacyAmino, attributes map[str
 		return "", common.Address{}, common.Hash{}, 0, vote.PollKey{}, err
 	}
 
-	return results[0].(string),
+	return results[0].(nexus.ChainName),
 		results[1].(common.Address),
 		results[2].(common.Hash),
 		results[3].(uint64),
@@ -531,7 +550,7 @@ func parseNewChainParams(attributes map[string]string) (chain string, nativeAsse
 }
 
 func parseDepositConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]string) (
-	chain string,
+	chain nexus.ChainName,
 	txID common.Hash,
 	burnAddr, tokenAddr common.Address,
 	confHeight uint64,
@@ -539,7 +558,9 @@ func parseDepositConfirmationParams(cdc *codec.LegacyAmino, attributes map[strin
 	err error,
 ) {
 	parsers := []*parse.AttributeParser{
-		{Key: evmTypes.AttributeKeyChain, Map: parse.IdentityMap},
+		{Key: evmTypes.AttributeKeyChain, Map: func(s string) (interface{}, error) {
+			return nexus.ChainName(s), nil
+		}},
 		{Key: evmTypes.AttributeKeyTxID, Map: func(s string) (interface{}, error) {
 			return common.HexToHash(s), nil
 		}},
@@ -561,7 +582,7 @@ func parseDepositConfirmationParams(cdc *codec.LegacyAmino, attributes map[strin
 		return "", [32]byte{}, [20]byte{}, [20]byte{}, 0, vote.PollKey{}, err
 	}
 
-	return results[0].(string),
+	return results[0].(nexus.ChainName),
 		results[1].(common.Hash),
 		results[2].(common.Address),
 		results[3].(common.Address),
@@ -571,7 +592,7 @@ func parseDepositConfirmationParams(cdc *codec.LegacyAmino, attributes map[strin
 }
 
 func parseTokenConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]string) (
-	chain string,
+	chain nexus.ChainName,
 	txID common.Hash,
 	gatewayAddr, tokenAddr common.Address,
 	symbol string,
@@ -580,7 +601,9 @@ func parseTokenConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]
 	err error,
 ) {
 	parsers := []*parse.AttributeParser{
-		{Key: evmTypes.AttributeKeyChain, Map: parse.IdentityMap},
+		{Key: evmTypes.AttributeKeyChain, Map: func(s string) (interface{}, error) {
+			return nexus.ChainName(s), nil
+		}},
 		{Key: evmTypes.AttributeKeyTxID, Map: func(s string) (interface{}, error) {
 			return common.HexToHash(s), nil
 		}},
@@ -603,7 +626,7 @@ func parseTokenConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]
 		return "", [32]byte{}, [20]byte{}, [20]byte{}, "", 0, vote.PollKey{}, err
 	}
 
-	return results[0].(string),
+	return results[0].(nexus.ChainName),
 		results[1].(common.Hash),
 		results[2].(common.Address),
 		results[3].(common.Address),
@@ -614,7 +637,7 @@ func parseTokenConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]
 }
 
 func parseTransferKeyConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]string) (
-	chain string,
+	chain nexus.ChainName,
 	txID common.Hash,
 	transferKeyType evmTypes.TransferKeyType,
 	keyType tss.KeyType,
@@ -624,7 +647,9 @@ func parseTransferKeyConfirmationParams(cdc *codec.LegacyAmino, attributes map[s
 	err error,
 ) {
 	parsers := []*parse.AttributeParser{
-		{Key: evmTypes.AttributeKeyChain, Map: parse.IdentityMap},
+		{Key: evmTypes.AttributeKeyChain, Map: func(s string) (interface{}, error) {
+			return nexus.ChainName(s), nil
+		}},
 		{Key: evmTypes.AttributeKeyTxID, Map: func(s string) (interface{}, error) {
 			return common.HexToHash(s), nil
 		}},
@@ -649,7 +674,7 @@ func parseTransferKeyConfirmationParams(cdc *codec.LegacyAmino, attributes map[s
 		return "", common.Hash{}, evmTypes.UnspecifiedTransferKeyType, tss.KEY_TYPE_UNSPECIFIED, common.Address{}, 0, vote.PollKey{}, err
 	}
 
-	return results[0].(string),
+	return results[0].(nexus.ChainName),
 		results[1].(common.Hash),
 		results[2].(evmTypes.TransferKeyType),
 		results[3].(tss.KeyType),
@@ -916,7 +941,7 @@ func unpackMultisigTransferKeyEvent(log *geth.Log) ([]common.Address, *big.Int, 
 	return preAddresses, preThreshold, newAddresses, newThreshold, nil
 }
 
-func packEvents(chain string, events []evmTypes.Event) (vote.Vote, error) {
+func packEvents(chain nexus.ChainName, events []evmTypes.Event) (vote.Vote, error) {
 	var v vote.Vote
 
 	voteEvents, err := evmTypes.PackEvents(chain, events)

@@ -1,0 +1,16 @@
+syntax = "proto3";
+package axelar.utils.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/utils";
+
+import "gogoproto/gogo.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+message Bitmap { CircularBuffer true_count_cache = 2; }
+
+message CircularBuffer {
+  repeated uint64 cumulative_value = 1;
+  int32 index = 2;
+  int32 max_size = 3;
+}

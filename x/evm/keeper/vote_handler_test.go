@@ -2,7 +2,6 @@ package keeper_test
 
 import (
 	mathRand "math/rand"
-	"strings"
 	"testing"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -46,14 +45,14 @@ func TestHandleResult(t *testing.T) {
 		ctx = sdk.NewContext(store, tmproto.Header{}, false, log.TestingLogger())
 
 		basek = &mock.BaseKeeperMock{
-			ForChainFunc: func(chain string) types.ChainKeeper {
-				if strings.EqualFold(chain, evmChain) {
+			ForChainFunc: func(chain nexus.ChainName) types.ChainKeeper {
+				if chain.Equals(evmChain) {
 					return chaink
 				}
 				return nil
 			},
 			LoggerFunc:   func(ctx sdk.Context) log.Logger { return log.TestingLogger() },
-			HasChainFunc: func(ctx sdk.Context, chain string) bool { return true },
+			HasChainFunc: func(ctx sdk.Context, chain nexus.ChainName) bool { return true },
 		}
 		chaink = &mock.ChainKeeperMock{
 			GetEventFunc: func(sdk.Context, types.EventID) (types.Event, bool) {
@@ -68,12 +67,12 @@ func TestHandleResult(t *testing.T) {
 			LoggerFunc: func(ctx sdk.Context) log.Logger { return log.TestingLogger() },
 		}
 
-		chains := map[string]nexus.Chain{
+		chains := map[nexus.ChainName]nexus.Chain{
 			exported.Ethereum.Name: exported.Ethereum,
 		}
 		n = &mock.NexusMock{
 			IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool { return true },
-			GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+			GetChainFunc: func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 				c, ok := chains[chain]
 				return c, ok
 			},
@@ -90,7 +89,7 @@ func TestHandleResult(t *testing.T) {
 	t.Run("Given vote When events are not from the same source chain THEN return error", testutils.Func(func(t *testing.T) {
 		setup()
 
-		voteEvents, err := types.PackEvents(rand.Str(5), randTransferEvents(int(rand.I64Between(5, 10))))
+		voteEvents, err := types.PackEvents(nexus.ChainName(rand.Str(5)), randTransferEvents(int(rand.I64Between(5, 10))))
 		if err != nil {
 			panic(err)
 		}
@@ -119,7 +118,7 @@ func TestHandleResult(t *testing.T) {
 
 	t.Run("GIVEN vote WHEN chain is not registered THEN return error", testutils.Func(func(t *testing.T) {
 		setup()
-		n.GetChainFunc = func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+		n.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 			return nexus.Chain{}, false
 		}
 		voteEvents, err := types.PackEvents(evmChain, randTransferEvents(int(rand.I64Between(5, 10))))
