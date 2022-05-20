@@ -239,7 +239,7 @@ func handleMultisigSigns(ctx sdk.Context, sequenceQueue utils.SequenceKVQueue, k
 					sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 					sdk.NewAttribute(types.AttributeKeySigID, sigID),
 					sdk.NewAttribute(types.AttributeKeySigModule, info.RequestModule),
-					sdk.NewAttribute(types.AttributeKeySigData, info.Metadata),
+					sdk.NewAttribute(types.AttributeKeySigData, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(info.ModuleMetadata))),
 					sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDecided)),
 			)
 		// handle multisig session timeout
