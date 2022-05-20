@@ -9,6 +9,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/reward/types"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
+	"github.com/axelarnetwork/utils/slices"
 )
 
 // BeginBlocker is called at the beginning of every block
@@ -26,19 +27,22 @@ func addRewardsByConsensusPower(ctx sdk.Context, s types.Staker, rewardPool expo
 	totalAmount := totalReward.Amount
 	denom := totalReward.Denom
 
-	totalConsensusPower := sdk.ZeroInt()
-	for _, validator := range validators {
-		totalConsensusPower = totalConsensusPower.AddRaw(validator.GetConsensusPower(s.PowerReduction(ctx)))
-	}
+	validatorsWithConsensusPower := slices.Filter(validators, func(v stakingtypes.Validator) bool {
+		return v.GetConsensusPower(s.PowerReduction(ctx)) > 0
+	})
+	totalConsensusPower := slices.Reduce(validatorsWithConsensusPower, sdk.ZeroInt(), func(total sdk.Int, v stakingtypes.Validator) sdk.Int {
+		return total.AddRaw(v.GetConsensusPower(s.PowerReduction(ctx)))
+	})
 
-	for _, validator := range validators {
+	slices.ForEach(validatorsWithConsensusPower, func(v stakingtypes.Validator) {
 		// Each validator receives reward weighted by consensus power
-		amount := totalAmount.MulInt64(validator.GetConsensusPower(s.PowerReduction(ctx))).QuoInt(totalConsensusPower).RoundInt()
+		amount := totalAmount.MulInt64(v.GetConsensusPower(s.PowerReduction(ctx))).QuoInt(totalConsensusPower).RoundInt()
 		rewardPool.AddReward(
-			validator.GetOperator(),
+			v.GetOperator(),
 			sdk.NewCoin(denom, amount),
 		)
-	}
+	})
+
 }
 
 func handleTssInflation(ctx sdk.Context, k types.Rewarder, m types.Minter, s types.Staker, t types.Tss, ss types.Snapshotter) {

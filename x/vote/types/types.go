@@ -309,7 +309,7 @@ func (p Poll) getVoterCount() int64 {
 
 func (p *Poll) hasEnoughVotes(majority sdk.Int) bool {
 	return utils.NewThreshold(majority.Int64(), p.GetTotalVotingPower().Int64()).GTE(p.VotingThreshold) &&
-		(int64(len(p.Voters)) < p.MinVoterCount || p.getVoterCount() >= p.MinVoterCount)
+		p.getVoterCount() >= p.MinVoterCount
 }
 
 func (p *Poll) cannotWin(majority sdk.Int) bool {
