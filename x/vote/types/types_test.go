@@ -457,8 +457,15 @@ func TestPoll_Delete(t *testing.T) {
 
 func newRandomPollMetadata() exported.PollMetadata {
 	key := exported.NewPollKey(randomNormalizedStr(5, 20), randomNormalizedStr(5, 20))
-	poll := types.NewPollMetaData(key, types.DefaultParams().DefaultVotingThreshold, []exported.Voter{})
+	voterCount := rand.I64Between(10, 20)
+	voters := make([]exported.Voter, voterCount)
+	for i := 0; i < int(voterCount); i++ {
+		voters[i] = exported.Voter{Validator: rand.ValAddr(), VotingPower: rand.PosI64()}
+	}
+
+	poll := types.NewPollMetaData(key, types.DefaultParams().DefaultVotingThreshold, voters)
 	poll.ExpiresAt = rand.I64Between(1, 1000000)
+
 	return poll
 }
 
