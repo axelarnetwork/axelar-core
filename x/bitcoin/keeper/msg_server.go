@@ -365,7 +365,6 @@ func (s msgServer) SignTx(c context.Context, req *types.SignTxRequest) (*types.S
 				Msg:             sigRequirement.SigHash,
 				SnapshotCounter: snapshot.Counter,
 				RequestModule:   types.ModuleName,
-				Metadata:        "",
 			}, s.snapshotter, s.voter)
 			if err != nil {
 				return nil, err

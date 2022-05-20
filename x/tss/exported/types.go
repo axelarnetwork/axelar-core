@@ -7,11 +7,21 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcd/btcec"
+	"github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 )
+
+var _ codectypes.UnpackInterfacesMessage = SignInfo{}
+
+// UnpackInterfaces implements UnpackInterfacesMessage
+func (m SignInfo) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
+	var data codec.ProtoMarshaler
+	return unpacker.UnpackAny(m.ModuleMetadata, &data)
+}
 
 // Handler defines a function that handles a signature after it has
 // been generated and voted on
