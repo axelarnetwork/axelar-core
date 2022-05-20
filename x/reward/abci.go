@@ -27,12 +27,14 @@ func addRewardsByConsensusPower(ctx sdk.Context, s types.Staker, rewardPool expo
 	totalAmount := totalReward.Amount
 	denom := totalReward.Denom
 
-	bondedValidators := slices.Filter(validators, func(v stakingtypes.Validator) bool { return v.IsBonded() })
-	totalConsensusPower := slices.Reduce(bondedValidators, sdk.ZeroInt(), func(total sdk.Int, v stakingtypes.Validator) sdk.Int {
+	validatorsWithConsensusPower := slices.Filter(validators, func(v stakingtypes.Validator) bool {
+		return v.GetConsensusPower(s.PowerReduction(ctx)) > 0
+	})
+	totalConsensusPower := slices.Reduce(validatorsWithConsensusPower, sdk.ZeroInt(), func(total sdk.Int, v stakingtypes.Validator) sdk.Int {
 		return total.AddRaw(v.GetConsensusPower(s.PowerReduction(ctx)))
 	})
 
-	slices.ForEach(bondedValidators, func(v stakingtypes.Validator) {
+	slices.ForEach(validatorsWithConsensusPower, func(v stakingtypes.Validator) {
 		// Each validator receives reward weighted by consensus power
 		amount := totalAmount.MulInt64(v.GetConsensusPower(s.PowerReduction(ctx))).QuoInt(totalConsensusPower).RoundInt()
 		rewardPool.AddReward(
