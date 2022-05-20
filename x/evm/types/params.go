@@ -217,8 +217,8 @@ func validateMinVoterCount(minVoterCount interface{}) error {
 		return fmt.Errorf("invalid parameter type for MinVoterCount: %T", minVoterCount)
 	}
 
-	if val < 0 {
-		return fmt.Errorf("min voter count must be >=0")
+	if val < 1 {
+		return fmt.Errorf("min voter count must be >=1")
 	}
 
 	return nil

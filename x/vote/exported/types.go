@@ -64,6 +64,10 @@ func (m PollMetadata) Validate() error {
 		return fmt.Errorf("invalid min voter count")
 	}
 
+	if len(m.Voters) == 0 {
+		return fmt.Errorf("no voters set")
+	}
+
 	actualTotalVotingPower := sdk.ZeroInt()
 	for _, voter := range m.Voters {
 		if err := sdk.VerifyAddressFormat(voter.Validator); err != nil {
