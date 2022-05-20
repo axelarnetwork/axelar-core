@@ -1,6 +1,7 @@
 package tss
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -232,6 +233,11 @@ func handleMultisigSigns(ctx sdk.Context, sequenceQueue utils.SequenceKVQueue, k
 				SigStatus: exported.SigStatus_Signed,
 			})
 
+			moduleMetadataBz, err := json.Marshal(info.ModuleMetadata.GetCachedValue())
+			if err != nil {
+				panic(err)
+			}
+
 			k.Logger(ctx).Info(fmt.Sprintf("multisig sign %s completed", sigID))
 			ctx.EventManager().EmitEvent(
 				sdk.NewEvent(
@@ -239,7 +245,7 @@ func handleMultisigSigns(ctx sdk.Context, sequenceQueue utils.SequenceKVQueue, k
 					sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 					sdk.NewAttribute(types.AttributeKeySigID, sigID),
 					sdk.NewAttribute(types.AttributeKeySigModule, info.RequestModule),
-					sdk.NewAttribute(types.AttributeKeySigData, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(info.ModuleMetadata))),
+					sdk.NewAttribute(types.AttributeKeySigData, string(moduleMetadataBz)),
 					sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDecided)),
 			)
 		// handle multisig session timeout

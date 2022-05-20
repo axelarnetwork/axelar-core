@@ -25,6 +25,9 @@ import (
 
 func setup() (codec.Codec, sdk.Context, keeper.Keeper) {
 	encCfg := params.MakeEncodingConfig()
+	encCfg.InterfaceRegistry.RegisterImplementations((*codec.ProtoMarshaler)(nil),
+		&evmTypes.SigMetadata{},
+	)
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	subspace := paramsTypes.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), "tss")
 
