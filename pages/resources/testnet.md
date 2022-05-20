@@ -9,9 +9,9 @@ import TransferFeeCalculator from '../../components/transfer-fee/calculator'
 
 | Variable              | Value     |
 | --------------------- | --------- |
-| `axelar-core` version | `v0.17.0` |
-| `vald` version        | `v0.17.0` |
-| `tofnd` version       | `v0.8.2`  |
+| `axelar-core` version | `v0.18.2` |
+| `vald` version        | `v0.18.2` |
+| `tofnd` version       | `v0.10.1` |
 
 <div className="space-y-1 mt-4">
   ## EVM Chains
@@ -42,7 +42,6 @@ The relayer gas fee amount depends only on:
 </Callout>
 
 <div className="space-y-1 mt-4">
-  ## Transfer Fee Calculator
   <TransferFeeCalculator environment="testnet" />
 </div>
 

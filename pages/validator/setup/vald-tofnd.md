@@ -4,7 +4,7 @@ Launch validator companion processes `tofnd` and `vald`.
 
 ## Launch tofnd
 
-You may wish to redirect log output to a file:
+You may wish to redirect log output to a file. Enter the `tofnd` password on stdin after the process is launched.
 
 ```bash
 tofnd -m existing -d ${AXELARD_HOME}/tofnd >> ${AXELARD_HOME}/logs/tofnd.log 2>&1
