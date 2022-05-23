@@ -70,7 +70,7 @@ func (mgr Mgr) ProcessNewChain(e tmEvents.Event) (err error) {
 		return sdkerrors.Wrap(err, "Invalid update event")
 	}
 
-	mgr.logger.Info(fmt.Sprintf("VALD needs to be updated and restarted for new chain %s with native asset %s", chain, nativeAsset))
+	mgr.logger.Info(fmt.Sprintf("VALD needs to be updated and restarted for new chain %s with native asset %s", chain.String(), nativeAsset))
 	return nil
 }
 
@@ -507,7 +507,9 @@ func parseGatewayTxConfirmationParams(cdc *codec.LegacyAmino, attributes map[str
 	err error,
 ) {
 	parsers := []*parse.AttributeParser{
-		{Key: evmTypes.AttributeKeyChain, Map: parse.IdentityMap},
+		{Key: evmTypes.AttributeKeyChain, Map: func(s string) (interface{}, error) {
+			return nexus.ChainName(s), nil
+		}},
 		{Key: evmTypes.AttributeKeyGatewayAddress, Map: func(s string) (interface{}, error) {
 			return common.HexToAddress(s), nil
 		}},
@@ -535,9 +537,11 @@ func parseGatewayTxConfirmationParams(cdc *codec.LegacyAmino, attributes map[str
 		nil
 }
 
-func parseNewChainParams(attributes map[string]string) (chain string, nativeAsset string, err error) {
+func parseNewChainParams(attributes map[string]string) (chain nexus.ChainName, nativeAsset string, err error) {
 	parsers := []*parse.AttributeParser{
-		{Key: evmTypes.AttributeKeyChain, Map: parse.IdentityMap},
+		{Key: evmTypes.AttributeKeyChain, Map: func(s string) (interface{}, error) {
+			return nexus.ChainName(s), nil
+		}},
 		{Key: evmTypes.AttributeKeyNativeAsset, Map: parse.IdentityMap},
 	}
 
@@ -546,7 +550,7 @@ func parseNewChainParams(attributes map[string]string) (chain string, nativeAsse
 		return "", "", err
 	}
 
-	return results[0].(string), results[1].(string), nil
+	return results[0].(nexus.ChainName), results[1].(string), nil
 }
 
 func parseDepositConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]string) (
