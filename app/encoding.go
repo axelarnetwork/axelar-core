@@ -3,6 +3,7 @@ package app
 import (
 	"github.com/cosmos/cosmos-sdk/std"
 
+	"github.com/axelarnetwork/axelar-core/app/codec"
 	"github.com/axelarnetwork/axelar-core/app/params"
 )
 
@@ -13,5 +14,8 @@ func MakeEncodingConfig() params.EncodingConfig {
 	std.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 	ModuleBasics.RegisterLegacyAminoCodec(encodingConfig.Amino)
 	ModuleBasics.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+
+	codec.RegisterLegacyMsgInterfaces(encodingConfig.InterfaceRegistry)
+
 	return encodingConfig
 }
