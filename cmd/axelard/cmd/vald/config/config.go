@@ -12,7 +12,7 @@ import (
 
 // ValdConfig contains all necessary vald configurations
 type ValdConfig struct {
-	tss.TssConfig         `mapstructure:",squash"`
+	tss.TssConfig         `mapstructure:"tss"`
 	BroadcastConfig       `mapstructure:"broadcast"`
 	BatchSizeLimit        int           `mapstructure:"max_batch_size"`
 	BatchThreshold        int           `mapstructure:"batch_threshold"`
