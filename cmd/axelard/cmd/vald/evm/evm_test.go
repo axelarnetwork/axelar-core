@@ -21,7 +21,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/app/params"
-	mock2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types/mock"
+	mock2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast/mock"
 	evmRpc "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm/rpc"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm/rpc/mock"
 	"github.com/axelarnetwork/axelar-core/testutils"
