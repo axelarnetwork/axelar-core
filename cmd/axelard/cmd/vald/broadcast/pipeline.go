@@ -51,7 +51,7 @@ func (p *retryPipeline) retry(f func() error, retryOnError func(error) bool) err
 		err = f()
 		if err == nil {
 			if i > 0 {
-				p.logger.Info("successful execution after backoff")
+				logger.Info("successful execution after backoff")
 			}
 			return nil
 		}
@@ -62,7 +62,7 @@ func (p *retryPipeline) retry(f func() error, retryOnError func(error) bool) err
 
 		if i < p.maxRetries {
 			timeout := p.backOff(i)
-			p.logger.Info(sdkerrors.Wrapf(err, "backing off (retry in %v )", timeout).Error())
+			logger.Info(sdkerrors.Wrapf(err, "backing off (retry in %v )", timeout).Error())
 			time.Sleep(timeout)
 		}
 	}
