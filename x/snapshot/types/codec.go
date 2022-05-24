@@ -23,8 +23,10 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		(*exported.SDKValidator)(nil),
 		&stakingtypes.Validator{},
 	)
-	registry.RegisterImplementations((*sdk.Msg)(nil), &RegisterProxyRequest{})
-	registry.RegisterImplementations((*sdk.Msg)(nil), &DeactivateProxyRequest{})
+	registry.RegisterImplementations((*sdk.Msg)(nil),
+		&RegisterProxyRequest{},
+		&DeactivateProxyRequest{},
+	)
 
 	msgservice.RegisterMsgServiceDesc(registry, &_MsgService_serviceDesc)
 }
