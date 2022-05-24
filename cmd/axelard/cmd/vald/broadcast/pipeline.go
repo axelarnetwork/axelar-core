@@ -43,7 +43,7 @@ func (p *retryPipeline) Push(f func() error, retryOnError func(error) bool) erro
 	return <-e
 }
 
-func (p *retryPipeline) retry(f func() error, retryOnError func(error) bool) error {
+func (p retryPipeline) retry(f func() error, retryOnError func(error) bool) error {
 	var err error
 	logger := p.logger
 	for i := 0; i <= p.maxRetries; i++ {
