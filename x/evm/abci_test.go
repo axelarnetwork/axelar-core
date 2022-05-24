@@ -12,6 +12,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
+	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/evm/exported"
@@ -220,7 +221,7 @@ func TestHandleTokenSent(t *testing.T) {
 		},
 	}
 
-	t.Run("should panic if the source chain is not registered", func(t *testing.T) {
+	t.Run("should panic if the source chain is not registered", testutils.Func(func(t *testing.T) {
 		ctx, bk, n, _, sourceCk, destinationCk := setup()
 
 		bk.ForChainFunc = func(chain nexus.ChainName) types.ChainKeeper {
@@ -240,9 +241,9 @@ func TestHandleTokenSent(t *testing.T) {
 		assert.PanicsWithError(t, fmt.Sprintf("%s is not a registered chain", sourceChainName), func() {
 			handleTokenSent(ctx, event, bk, n)
 		})
-	})
+	}))
 
-	t.Run("should return false if the destination chain is not registered", func(t *testing.T) {
+	t.Run("should return false if the destination chain is not registered", testutils.Func(func(t *testing.T) {
 		ctx, bk, n, _, sourceCk, destinationCk := setup()
 
 		bk.ForChainFunc = func(chain nexus.ChainName) types.ChainKeeper {
@@ -261,9 +262,9 @@ func TestHandleTokenSent(t *testing.T) {
 
 		ok := handleTokenSent(ctx, event, bk, n)
 		assert.False(t, ok)
-	})
+	}))
 
-	t.Run("should return false if the token is not confirmed on the source chain", func(t *testing.T) {
+	t.Run("should return false if the token is not confirmed on the source chain", testutils.Func(func(t *testing.T) {
 		ctx, bk, n, _, sourceCk, destinationCk := setup()
 
 		bk.ForChainFunc = func(chain nexus.ChainName) types.ChainKeeper {
@@ -292,9 +293,9 @@ func TestHandleTokenSent(t *testing.T) {
 
 		ok := handleTokenSent(ctx, event, bk, n)
 		assert.False(t, ok)
-	})
+	}))
 
-	t.Run("should return false if the token is not confirmed on the destination chain", func(t *testing.T) {
+	t.Run("should return false if the token is not confirmed on the destination chain", testutils.Func(func(t *testing.T) {
 		ctx, bk, n, _, sourceCk, destinationCk := setup()
 
 		bk.ForChainFunc = func(chain nexus.ChainName) types.ChainKeeper {
@@ -329,9 +330,9 @@ func TestHandleTokenSent(t *testing.T) {
 
 		ok := handleTokenSent(ctx, event, bk, n)
 		assert.False(t, ok)
-	})
+	}))
 
-	t.Run("should return false if failed to enqueue the transfer", func(t *testing.T) {
+	t.Run("should return false if failed to enqueue the transfer", testutils.Func(func(t *testing.T) {
 		ctx, bk, n, _, sourceCk, destinationCk := setup()
 
 		bk.ForChainFunc = func(chain nexus.ChainName) types.ChainKeeper {
@@ -372,9 +373,9 @@ func TestHandleTokenSent(t *testing.T) {
 
 		ok := handleTokenSent(ctx, event, bk, n)
 		assert.False(t, ok)
-	})
+	}))
 
-	t.Run("should return true if succeeded to enqueue the transfer", func(t *testing.T) {
+	t.Run("should return true if succeeded to enqueue the transfer", testutils.Func(func(t *testing.T) {
 		ctx, bk, n, _, sourceCk, destinationCk := setup()
 
 		bk.ForChainFunc = func(chain nexus.ChainName) types.ChainKeeper {
@@ -416,7 +417,7 @@ func TestHandleTokenSent(t *testing.T) {
 		ok := handleTokenSent(ctx, event, bk, n)
 		assert.True(t, ok)
 		assert.Len(t, n.EnqueueTransferCalls(), 1)
-	})
+	}))
 }
 
 func TestHandleContractCallWithToken(t *testing.T) {
@@ -439,7 +440,7 @@ func TestHandleContractCallWithToken(t *testing.T) {
 		},
 	}
 
-	t.Run("should panic if the source chain is not registered", func(t *testing.T) {
+	t.Run("should panic if the source chain is not registered", testutils.Func(func(t *testing.T) {
 		ctx, bk, n, s, sourceCk, destinationCk := setup()
 
 		bk.ForChainFunc = func(chain nexus.ChainName) types.ChainKeeper {
@@ -459,9 +460,9 @@ func TestHandleContractCallWithToken(t *testing.T) {
 		assert.PanicsWithError(t, fmt.Sprintf("%s is not a registered chain", sourceChainName), func() {
 			handleContractCallWithToken(ctx, event, bk, n, s)
 		})
-	})
+	}))
 
-	t.Run("should panic if the destination chain is not registered", func(t *testing.T) {
+	t.Run("should panic if the destination chain is not registered", testutils.Func(func(t *testing.T) {
 		ctx, bk, n, s, sourceCk, destinationCk := setup()
 
 		bk.ForChainFunc = func(chain nexus.ChainName) types.ChainKeeper {
@@ -480,9 +481,9 @@ func TestHandleContractCallWithToken(t *testing.T) {
 
 		ok := handleContractCallWithToken(ctx, event, bk, n, s)
 		assert.False(t, ok)
-	})
+	}))
 
-	t.Run("should return false if the token is not confirmed on the source chain", func(t *testing.T) {
+	t.Run("should return false if the token is not confirmed on the source chain", testutils.Func(func(t *testing.T) {
 		ctx, bk, n, s, sourceCk, destinationCk := setup()
 
 		bk.ForChainFunc = func(chain nexus.ChainName) types.ChainKeeper {
@@ -511,9 +512,9 @@ func TestHandleContractCallWithToken(t *testing.T) {
 
 		ok := handleContractCallWithToken(ctx, event, bk, n, s)
 		assert.False(t, ok)
-	})
+	}))
 
-	t.Run("should return false if the token is not confirmed on the destination chain", func(t *testing.T) {
+	t.Run("should return false if the token is not confirmed on the destination chain", testutils.Func(func(t *testing.T) {
 		ctx, bk, n, s, sourceCk, destinationCk := setup()
 
 		bk.ForChainFunc = func(chain nexus.ChainName) types.ChainKeeper {
@@ -548,9 +549,9 @@ func TestHandleContractCallWithToken(t *testing.T) {
 
 		ok := handleContractCallWithToken(ctx, event, bk, n, s)
 		assert.False(t, ok)
-	})
+	}))
 
-	t.Run("should return false if the contract address is invalid", func(t *testing.T) {
+	t.Run("should return false if the contract address is invalid", testutils.Func(func(t *testing.T) {
 		ctx, bk, n, s, sourceCk, destinationCk := setup()
 
 		bk.ForChainFunc = func(chain nexus.ChainName) types.ChainKeeper {
@@ -591,9 +592,9 @@ func TestHandleContractCallWithToken(t *testing.T) {
 		ok := handleContractCallWithToken(ctx, event, bk, n, s)
 		event.GetContractCallWithToken().ContractAddress = contractAddress
 		assert.False(t, ok)
-	})
+	}))
 
-	t.Run("should return false if failed to compute transfer fee", func(t *testing.T) {
+	t.Run("should return false if failed to compute transfer fee", testutils.Func(func(t *testing.T) {
 		ctx, bk, n, s, sourceCk, destinationCk := setup()
 
 		bk.ForChainFunc = func(chain nexus.ChainName) types.ChainKeeper {
@@ -634,9 +635,9 @@ func TestHandleContractCallWithToken(t *testing.T) {
 
 		ok := handleContractCallWithToken(ctx, event, bk, n, s)
 		assert.False(t, ok)
-	})
+	}))
 
-	t.Run("should return false if the amount is not enough to cover the fee", func(t *testing.T) {
+	t.Run("should return false if the amount is not enough to cover the fee", testutils.Func(func(t *testing.T) {
 		ctx, bk, n, s, sourceCk, destinationCk := setup()
 		fee := sdk.NewCoin(event.GetContractCallWithToken().Symbol, sdk.Int(event.GetContractCallWithToken().Amount.AddUint64(1)))
 
@@ -678,9 +679,9 @@ func TestHandleContractCallWithToken(t *testing.T) {
 
 		ok := handleContractCallWithToken(ctx, event, bk, n, s)
 		assert.False(t, ok)
-	})
+	}))
 
-	t.Run("should panic if the destination chain ID is not found", func(t *testing.T) {
+	t.Run("should panic if the destination chain ID is not found", testutils.Func(func(t *testing.T) {
 		ctx, bk, n, s, sourceCk, destinationCk := setup()
 		fee := sdk.NewCoin(event.GetContractCallWithToken().Symbol, sdk.NewInt(rand.I64Between(1, event.GetContractCallWithToken().Amount.BigInt().Int64())))
 
@@ -724,9 +725,9 @@ func TestHandleContractCallWithToken(t *testing.T) {
 		assert.PanicsWithError(t, fmt.Sprintf("could not find chain ID for '%s'", destinationChainName), func() {
 			handleContractCallWithToken(ctx, event, bk, n, s)
 		})
-	})
+	}))
 
-	t.Run("should panic if the destination chain does not have the secondary key set", func(t *testing.T) {
+	t.Run("should panic if the destination chain does not have the secondary key set", testutils.Func(func(t *testing.T) {
 		ctx, bk, n, s, sourceCk, destinationCk := setup()
 		fee := sdk.NewCoin(event.GetContractCallWithToken().Symbol, sdk.NewInt(rand.I64Between(1, event.GetContractCallWithToken().Amount.BigInt().Int64())))
 
@@ -773,9 +774,9 @@ func TestHandleContractCallWithToken(t *testing.T) {
 		assert.PanicsWithError(t, fmt.Sprintf("no secondary key for chain %s found", destinationChainName), func() {
 			handleContractCallWithToken(ctx, event, bk, n, s)
 		})
-	})
+	}))
 
-	t.Run("should return true if successfully created the command", func(t *testing.T) {
+	t.Run("should return true if successfully created the command", testutils.Func(func(t *testing.T) {
 		ctx, bk, n, s, sourceCk, destinationCk := setup()
 		fee := sdk.NewCoin(event.GetContractCallWithToken().Symbol, sdk.NewInt(rand.I64Between(1, event.GetContractCallWithToken().Amount.BigInt().Int64())))
 
@@ -826,7 +827,7 @@ func TestHandleContractCallWithToken(t *testing.T) {
 		assert.Len(t, destinationCk.EnqueueCommandCalls(), 1)
 		assert.Len(t, n.AddTransferFeeCalls(), 1)
 		assert.Equal(t, n.AddTransferFeeCalls()[0].Coin, fee)
-	})
+	}))
 }
 
 func TestHandleConfirmDeposit(t *testing.T) {

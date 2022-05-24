@@ -29,7 +29,7 @@ func TestRestrictedTx(t *testing.T) {
 
 	signerAnyRole := func() {
 		permission.GetRoleFunc = func(sdk.Context, sdk.AccAddress) exported.Role {
-			return exported.Role(rand.Of[int32](maps.Keys(exported.Role_name)...))
+			return exported.Role(rand.Of(maps.Keys(exported.Role_name)...))
 		}
 	}
 
@@ -37,7 +37,7 @@ func TestRestrictedTx(t *testing.T) {
 		return func() {
 			permission.GetRoleFunc = func(sdk.Context, sdk.AccAddress) exported.Role {
 				filtered := slices.Filter(maps.Keys(exported.Role_name), func(k int32) bool { return k != int32(role) })
-				return exported.Role(rand.Of[int32](filtered...))
+				return exported.Role(rand.Of(filtered...))
 			}
 		}
 	}
