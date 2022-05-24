@@ -5,6 +5,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
@@ -12,7 +13,7 @@ import (
 func NewRotateKeyRequest(sender sdk.AccAddress, chain string, keyRole exported.KeyRole, keyID string) *RotateKeyRequest {
 	return &RotateKeyRequest{
 		Sender:  sender,
-		Chain:   utils.NormalizeString(chain),
+		Chain:   nexus.ChainName(utils.NormalizeString(chain)),
 		KeyRole: keyRole,
 		KeyID:   exported.KeyID(keyID),
 	}
@@ -33,7 +34,7 @@ func (m RotateKeyRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(ErrTss, "sender must be set")
 	}
-	if err := utils.ValidateString(m.Chain); err != nil {
+	if err := m.Chain.Validate(); err != nil {
 		return sdkerrors.Wrap(err, "invalid chain")
 	}
 

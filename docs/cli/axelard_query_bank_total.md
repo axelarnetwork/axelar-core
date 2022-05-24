@@ -19,10 +19,16 @@ axelard query bank total [flags]
 ### Options
 
 ```
-      --denom string   The specific balance denomination to query for
-      --height int     Use a specific height to query state at (this can error if the node is pruning state)
-  -h, --help           help for total
-      --node string    <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
+      --count-total       count total number of records in all supply totals to query for
+      --denom string      The specific balance denomination to query for
+      --height int        Use a specific height to query state at (this can error if the node is pruning state)
+  -h, --help              help for total
+      --limit uint        pagination limit of all supply totals to query for (default 100)
+      --node string       <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
+      --offset uint       pagination offset of all supply totals to query for
+      --page uint         pagination page of all supply totals to query for. This sets offset to a multiple of limit (default 1)
+      --page-key string   pagination page-key of all supply totals to query for
+      --reverse           results are sorted in descending order
 ```
 
 ### Options inherited from parent commands

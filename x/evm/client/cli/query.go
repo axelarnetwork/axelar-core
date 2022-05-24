@@ -14,6 +14,7 @@ import (
 	evmclient "github.com/axelarnetwork/axelar-core/x/evm/client"
 	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
@@ -126,7 +127,7 @@ func GetCmdTokenAddress(queryRoute string) *cobra.Command {
 		}
 
 		var res types.QueryTokenAddressResponse
-		types.ModuleCdc.UnmarshalLengthPrefixed(bz, &res)
+		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
 
 		return cliCtx.PrintProto(&res)
 	}
@@ -155,7 +156,7 @@ func GetCmdDepositState(queryRoute string) *cobra.Command {
 			queryClient := types.NewQueryServiceClient(cliCtx)
 
 			res, err := queryClient.DepositState(cmd.Context(), &types.DepositStateRequest{
-				Chain: chain,
+				Chain: nexus.ChainName(chain),
 				Params: &types.QueryDepositStateParams{
 					TxID:          types.Hash(txID),
 					BurnerAddress: types.Address(burnerAddress),

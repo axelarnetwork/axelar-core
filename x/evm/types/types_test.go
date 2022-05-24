@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	tssTestUtils "github.com/axelarnetwork/axelar-core/x/tss/exported/testutils"
 )
@@ -20,7 +21,7 @@ import (
 func TestCreateApproveContractCallWithMintCommand(t *testing.T) {
 	chainID := sdk.NewInt(1)
 	keyID := tssTestUtils.RandKeyID()
-	sourceChain := "polygon"
+	sourceChain := nexus.ChainName("polygon")
 	txID := Hash(common.HexToHash("0x5bb45dc24ddd6b90fa37f26eecfcf203328427c3226db29d1c01051b965ca93b"))
 	index := uint64(99)
 	sourceAddress := "0x68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8"
@@ -52,7 +53,7 @@ func TestCreateApproveContractCallWithMintCommand(t *testing.T) {
 
 	actualSourceChain, actualSourceAddress, actualContractAddress, actualPayloadHash, actualSymbol, actualAmount, actualSourceTxID, actualSourceEventIndex, err := decodeApproveContractCallWithMintParams(actual.Params)
 	assert.NoError(t, err)
-	assert.Equal(t, sourceChain, actualSourceChain)
+	assert.Equal(t, sourceChain.String(), actualSourceChain)
 	assert.Equal(t, sourceAddress, actualSourceAddress)
 	assert.Equal(t, contractAddress, actualContractAddress)
 	assert.Equal(t, payloadHash, actualPayloadHash)
@@ -74,6 +75,7 @@ func TestNewCommandBatchMetadata(t *testing.T) {
 
 	expectedData := common.Hex2Bytes("0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000a000000000000000000000000000000000000000000000000000000000000000e000000000000000000000000000000000000000000000000000000000000001600000000000000000000000000000000000000000000000000000000000000001c5baf525fe191e3e9e35c2012ff5f86954c04677a1e4df56079714fc4949409f00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000b6465706c6f79546f6b656e00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000012000000000000000000000000000000000000000000000000000000000000000a000000000000000000000000000000000000000000000000000000000000000e00000000000000000000000000000000000000000000000000000000000000012000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010416e20417765736f6d6520546f6b656e0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000034141540000000000000000000000000000000000000000000000000000000000")
 	actual, err := NewCommandBatchMetadata(
+		rand.PosI64(),
 		chainID,
 		tssTestUtils.RandKeyID(),
 		tss.MasterKey,
@@ -95,6 +97,7 @@ func TestDeployToken(t *testing.T) {
 		Capacity:  sdk.NewIntFromBigInt(big.NewInt(rand.I64Between(100, 100000))),
 	}
 	address := Address(common.BytesToAddress(rand.Bytes(common.AddressLength)))
+	asset := rand.Str(5)
 
 	capBz := make([]byte, 8)
 	binary.BigEndian.PutUint64(capBz, details.Capacity.Uint64())
@@ -107,10 +110,12 @@ func TestDeployToken(t *testing.T) {
 		hex.EncodeToString([]byte(details.TokenName)),
 		hex.EncodeToString([]byte(details.Symbol)),
 	)
-	actual, err := CreateDeployTokenCommand(chainID, keyID, details, address)
+	expectedCommandID := NewCommandID([]byte(asset+"_"+details.Symbol), chainID)
+	actual, err := CreateDeployTokenCommand(chainID, keyID, asset, details, address)
 
 	assert.NoError(t, err)
 	assert.Equal(t, expectedParams, hex.EncodeToString(actual.Params))
+	assert.Equal(t, expectedCommandID, actual.ID)
 
 	decodedName, decodedSymbol, decodedDecs, decodedCap, tokenAddress, err := decodeDeployTokenParams(actual.Params)
 	assert.NoError(t, err)

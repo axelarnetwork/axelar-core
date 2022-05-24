@@ -2,6 +2,7 @@ package evm
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -11,9 +12,10 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	"github.com/axelarnetwork/utils/slices"
 )
 
-func validateChains(ctx sdk.Context, sourceChainName string, destinationChainName string, bk types.BaseKeeper, n types.Nexus) (nexus.Chain, nexus.Chain, error) {
+func validateChains(ctx sdk.Context, sourceChainName nexus.ChainName, destinationChainName nexus.ChainName, bk types.BaseKeeper, n types.Nexus) (nexus.Chain, nexus.Chain, error) {
 	sourceChain, ok := n.GetChain(ctx, sourceChainName)
 	if !ok {
 		panic(fmt.Errorf("%s is not a registered chain", sourceChainName))
@@ -209,11 +211,173 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 	return true
 }
 
+func handleConfirmDeposit(ctx sdk.Context, event types.Event, ck types.ChainKeeper, n types.Nexus, chain nexus.Chain) bool {
+	e := event.GetEvent().(*types.Event_Transfer).Transfer
+	if e == nil {
+		panic(fmt.Errorf("event is nil"))
+	}
+
+	// get deposit address
+	burnerInfo := ck.GetBurnerInfo(ctx, e.To)
+	if burnerInfo == nil {
+		ck.Logger(ctx).Info(fmt.Sprintf("no burner info found for address %s", e.To.Hex()))
+		return false
+	}
+
+	depositAddr := nexus.CrossChainAddress{Chain: chain, Address: e.To.Hex()}
+	recipient, ok := n.GetRecipient(ctx, depositAddr)
+	if !ok {
+		ck.Logger(ctx).Info(fmt.Sprintf("cross-chain sender has no recipient %s", e.To.Hex()))
+		return false
+	}
+
+	amount := sdk.NewCoin(burnerInfo.Asset, sdk.NewIntFromBigInt(e.Amount.BigInt()))
+	transferID, err := n.EnqueueForTransfer(ctx, depositAddr, amount)
+	if err != nil {
+		ck.Logger(ctx).Info(err.Error())
+		return false
+	}
+
+	// set confirmed deposit
+	erc20Deposit := types.ERC20Deposit{
+		TxID:             event.TxId,
+		Amount:           e.Amount,
+		Asset:            burnerInfo.Asset,
+		DestinationChain: burnerInfo.DestinationChain,
+		BurnerAddress:    burnerInfo.BurnerAddress,
+	}
+	ck.SetDeposit(ctx, erc20Deposit, types.DepositStatus_Confirmed)
+
+	ck.Logger(ctx).Info(fmt.Sprintf("deposit confirmation result to %s %s", e.To.Hex(), e.Amount), "chain", chain.Name)
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(types.EventTypeDepositConfirmation,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(types.AttributeKeyChain, chain.Name.String()),
+			sdk.NewAttribute(types.AttributeKeySourceChain, chain.Name.String()),
+			sdk.NewAttribute(types.AttributeKeyDestinationChain, recipient.Chain.Name.String()),
+			sdk.NewAttribute(types.AttributeKeyDestinationAddress, recipient.Address),
+			sdk.NewAttribute(types.AttributeKeyAmount, e.Amount.String()),
+			sdk.NewAttribute(types.AttributeKeyAsset, burnerInfo.Asset),
+			sdk.NewAttribute(types.AttributeKeyDepositAddress, depositAddr.Address),
+			sdk.NewAttribute(types.AttributeKeyTokenAddress, burnerInfo.TokenAddress.Hex()),
+			sdk.NewAttribute(types.AttributeKeyTxID, event.TxId.Hex()),
+			sdk.NewAttribute(types.AttributeKeyTransferID, transferID.String()),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm),
+		))
+
+	return true
+}
+
+func handleTokenDeployed(ctx sdk.Context, event types.Event, ck types.ChainKeeper, chain nexus.Chain) bool {
+	e := event.GetEvent().(*types.Event_TokenDeployed).TokenDeployed
+	if e == nil {
+		panic(fmt.Errorf("event is nil"))
+	}
+
+	token := ck.GetERC20TokenBySymbol(ctx, e.Symbol)
+	if token.Is(types.NonExistent) {
+		ck.Logger(ctx).Info(fmt.Sprintf("token %s does not exist", e.Symbol))
+		return false
+	}
+
+	if token.GetAddress() != e.TokenAddress {
+		ck.Logger(ctx).Info(fmt.Sprintf("token address %s does not match expected %s", e.TokenAddress.Hex(), token.GetAddress().Hex()))
+		return false
+	}
+
+	if err := token.ConfirmDeployment(); err != nil {
+		ck.Logger(ctx).Info(err.Error())
+		return false
+	}
+
+	ck.Logger(ctx).Info(fmt.Sprintf("token %s deployment confirmed on chain %s", e.Symbol, chain.Name))
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(types.EventTypeTokenConfirmation,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(types.AttributeKeyChain, chain.Name.String()),
+			sdk.NewAttribute(types.AttributeKeyAsset, token.GetAsset()),
+			sdk.NewAttribute(types.AttributeKeySymbol, token.GetDetails().Symbol),
+			sdk.NewAttribute(types.AttributeKeyTokenAddress, token.GetAddress().Hex()),
+			sdk.NewAttribute(types.AttributeKeyTxID, event.TxId.Hex()),
+			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm),
+		))
+
+	return true
+}
+
+func handleMultisigTransferKey(ctx sdk.Context, event types.Event, ck types.ChainKeeper, s types.Signer, chain nexus.Chain) bool {
+	var newAddresses []types.Address
+	var newThreshold sdk.Uint
+	var keyRole tss.KeyRole
+
+	switch e := event.GetEvent().(type) {
+	case *types.Event_MultisigOwnershipTransferred:
+		newAddresses = e.MultisigOwnershipTransferred.NewOwners
+		newThreshold = e.MultisigOwnershipTransferred.NewThreshold
+		keyRole = tss.MasterKey
+	case *types.Event_MultisigOperatorshipTransferred:
+		newAddresses = e.MultisigOperatorshipTransferred.NewOperators
+		newThreshold = e.MultisigOperatorshipTransferred.NewThreshold
+		keyRole = tss.SecondaryKey
+	default:
+		panic(fmt.Errorf("event %s: unsupported event type %T", event.GetID(), event))
+	}
+
+	nextKeyID, ok := s.GetNextKeyID(ctx, chain, keyRole)
+	if !ok {
+		ck.Logger(ctx).Info(fmt.Sprintf("next %s key for chain %s not found", keyRole.SimpleString(), chain.Name))
+		return false
+	}
+
+	nextKey, found := s.GetKey(ctx, nextKeyID)
+	if !found {
+		ck.Logger(ctx).Info(fmt.Sprintf("key %s not found", nextKeyID))
+		return false
+	}
+
+	expectedAddress, expectedThreshold, err := types.GetMultisigAddresses(nextKey)
+	if err != nil {
+		ck.Logger(ctx).Info(err.Error())
+		return false
+	}
+
+	newOwners := slices.Map(newAddresses, func(addr types.Address) common.Address { return common.Address(addr) })
+	if !areAddressesEqual(expectedAddress, newOwners) {
+		ck.Logger(ctx).Info(fmt.Sprintf("new adddress does not match, expected %v got %v", expectedAddress, newOwners))
+		return false
+	}
+
+	if !sdk.NewUint(uint64(expectedThreshold)).Equal(newThreshold) {
+		ck.Logger(ctx).Info(fmt.Sprintf("new threshold does not match, expected %d got %d", expectedThreshold, newThreshold.Uint64()))
+		return false
+	}
+
+	if err := s.RotateKey(ctx, chain, keyRole); err != nil {
+		ck.Logger(ctx).Info(err.Error())
+		return false
+	}
+
+	ck.Logger(ctx).Info(fmt.Sprintf("successfully confirmed %s key transfer for chain %s",
+		keyRole.SimpleString(), chain.Name), "txID", event.TxId.Hex(), "rotation count", s.GetRotationCount(ctx, chain, keyRole))
+
+	ctx.EventManager().EmitEvent(sdk.NewEvent(
+		types.EventTypeTransferKeyConfirmation,
+		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+		sdk.NewAttribute(types.AttributeKeyChain, chain.Name.String()),
+		sdk.NewAttribute(types.AttributeKeyTransferKeyType, keyRole.SimpleString()),
+		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm),
+	))
+
+	return true
+}
+
 func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, s types.Signer) error {
 	shouldHandleEvent := func(e codec.ProtoMarshaler) bool {
 		event := e.(*types.Event)
 
-		var destinationChainName string
+		var destinationChainName nexus.ChainName
 		switch event := event.GetEvent().(type) {
 		case *types.Event_ContractCall:
 			destinationChainName = event.ContractCall.DestinationChain
@@ -221,6 +385,10 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 			destinationChainName = event.ContractCallWithToken.DestinationChain
 		case *types.Event_TokenSent:
 			destinationChainName = event.TokenSent.DestinationChain
+		case *types.Event_Transfer, *types.Event_TokenDeployed,
+			*types.Event_MultisigOwnershipTransferred, *types.Event_MultisigOperatorshipTransferred:
+			// skip checks for non-gateway tx event
+			return true
 		default:
 			panic(fmt.Errorf("unsupported event type %T", event))
 		}
@@ -269,6 +437,12 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 				ok = handleContractCallWithToken(ctx, event, bk, n, s)
 			case *types.Event_TokenSent:
 				ok = handleTokenSent(ctx, event, bk, n)
+			case *types.Event_Transfer:
+				ok = handleConfirmDeposit(ctx, event, ck, n, chain)
+			case *types.Event_TokenDeployed:
+				ok = handleTokenDeployed(ctx, event, ck, chain)
+			case *types.Event_MultisigOwnershipTransferred, *types.Event_MultisigOperatorshipTransferred:
+				ok = handleMultisigTransferKey(ctx, event, ck, s, chain)
 			default:
 				return fmt.Errorf("unsupported event type %T", event)
 			}
@@ -306,4 +480,25 @@ func EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock, bk types.BaseKeeper, n 
 	}
 
 	return nil, nil
+}
+
+func areAddressesEqual(addressesA, addressesB []common.Address) bool {
+	if len(addressesA) != len(addressesB) {
+		return false
+	}
+
+	addressesToHex := func(addr common.Address) string { return addr.Hex() }
+
+	hexesA := slices.Map(addressesA, addressesToHex)
+	sort.Strings(hexesA)
+	hexesB := slices.Map(addressesB, addressesToHex)
+	sort.Strings(hexesB)
+
+	for i, hexA := range hexesA {
+		if hexA != hexesB[i] {
+			return false
+		}
+	}
+
+	return true
 }

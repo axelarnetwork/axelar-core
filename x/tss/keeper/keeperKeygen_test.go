@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"crypto/ecdsa"
 	"testing"
 	"time"
 
@@ -9,12 +10,14 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/axelarnetwork/axelar-core/testutils"
+	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
 	bitcoin "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
+	"github.com/axelarnetwork/utils/slices"
 )
 
 func TestKeeper_StartKeygen_IdAlreadyInUse_ReturnError(t *testing.T) {
@@ -42,7 +45,7 @@ func TestKeeper_AssignNextMasterKey_RotateMasterKey_NewKeyIsSet(t *testing.T) {
 		expectedKey := s.SetKey(t, s.Ctx, exported.MasterKey, chain.KeyType)
 		timestamp := s.Ctx.BlockTime()
 		expectedKey.RotatedAt = &timestamp
-		expectedKey.Chain = chain.Name
+		expectedKey.Chain = chain.Name.String()
 		expectedKey.RotationCount = int64(i + 1)
 		expectedKey.SnapshotCounter = snap.Counter
 
@@ -74,12 +77,12 @@ func TestKeeper_AssignNextMasterKey_RotateMasterKey_AssignNextSecondaryKey_Rotat
 	timestamp := s.Ctx.BlockTime()
 	expectedMasterKey.Role = exported.MasterKey
 	expectedMasterKey.RotatedAt = &timestamp
-	expectedMasterKey.Chain = chain.Name
+	expectedMasterKey.Chain = chain.Name.String()
 	expectedMasterKey.RotationCount = 1
 	expectedMasterKey.SnapshotCounter = snap.Counter
 	expectedSecondaryKey.Role = exported.SecondaryKey
 	expectedSecondaryKey.RotatedAt = &timestamp
-	expectedSecondaryKey.Chain = chain.Name
+	expectedSecondaryKey.Chain = chain.Name.String()
 	expectedSecondaryKey.RotationCount = 1
 	expectedSecondaryKey.SnapshotCounter = snap.Counter
 
@@ -166,19 +169,29 @@ func TestMultisigKeygen(t *testing.T) {
 
 		pubKeysCount := int64(0)
 		for _, v := range snap.Validators {
-			// random pub keys
-			var pubKeys [][]byte
-			for i := int64(0); i < v.ShareCount; i++ {
-				pk := btcec.PublicKey(generatePubKey())
-				pubKeys = append(pubKeys, pk.SerializeCompressed())
-			}
+			// generate random pub keys for validator v
+			pubKeys := slices.Expand(func(idx int) ecdsa.PublicKey { return generatePubKey() }, int(v.ShareCount))
+			serializedPubKeys := slices.Map(pubKeys, func(pk ecdsa.PublicKey) []byte { pk2 := btcec.PublicKey(pk); return pk2.SerializeCompressed() })
+
 			pubKeysCount += int64(len(pubKeys))
-			s.Keeper.SubmitPubKeys(s.Ctx, keyID, v.GetSDKValidator().GetOperator(), pubKeys...)
+			s.Keeper.SubmitPubKeys(s.Ctx, keyID, v.GetSDKValidator().GetOperator(), serializedPubKeys...)
+
 			keygenInfo, ok := s.Keeper.GetMultisigKeygenInfo(s.Ctx, keyID)
 			assert.True(t, ok)
 			assert.Equal(t, pubKeysCount, keygenInfo.Count())
 			assert.True(t, keygenInfo.DoesParticipate(v.GetSDKValidator().GetOperator()))
+
+			// verify that the validator's pub keys in the keeper are correct
+			actualPubKeys, ok := s.Keeper.GetMultisigPubKeysByValidator(s.Ctx, keyID, v.GetSDKValidator().GetOperator())
+			assert.True(t, ok)
+			assert.Equal(t, pubKeys, actualPubKeys)
 		}
+
+		// fail to retrieve pub keys for a validator that wasn't in the snapshot
+		val := newValidator(rand.ValAddr(), 100)
+		pubKeys, ok := s.Keeper.GetMultisigPubKeysByValidator(s.Ctx, keyID, val.GetSDKValidator().GetOperator())
+		assert.False(t, ok)
+		assert.Nil(t, pubKeys)
 	}).Repeat(repeats))
 }
 

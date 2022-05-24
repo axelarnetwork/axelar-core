@@ -27,23 +27,26 @@ import (
 
 func TestKeeper_TransfersForChain(t *testing.T) {
 	var (
-		k              nexusKeeper.Keeper
-		ctx            sdk.Context
-		totalTransfers int64
-		pageRequest    *query.PageRequest
-		response       *types.TransfersForChainResponse
+		k               nexusKeeper.Keeper
+		axelarnetKeeper types.AxelarnetKeeper
+		q               nexusKeeper.Querier
+		ctx             sdk.Context
+		totalTransfers  int64
+		pageRequest     *query.PageRequest
+		response        *types.TransfersForChainResponse
 	)
 
 	Given("a nexus keeper", func() {
 		encCfg := app.MakeEncodingConfig()
 		nexusSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("nexusKey"), sdk.NewKVStoreKey("tNexusKey"), "nexus")
 		k = nexusKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("nexus"), nexusSubspace)
+		q = nexusKeeper.NewGRPCQuerier(k, axelarnetKeeper)
 	}).
-		Given("a correct context", func() {
+		When("a correct context", func() {
 			store := fake.NewMultiStore()
 			ctx = sdk.NewContext(store, tmproto.Header{}, false, log.TestingLogger())
 		}).
-		Given("the keeper is correctly set up", func() {
+		When("the keeper is correctly set up", func() {
 			k.SetParams(ctx, types.DefaultParams())
 			k.SetChain(ctx, evm.Ethereum)
 			k.ActivateChain(ctx, evm.Ethereum)
@@ -59,7 +62,7 @@ func TestKeeper_TransfersForChain(t *testing.T) {
 			k.SetRouter(nexusRouter)
 
 		}).
-		Given("there are some pending transfers", func() {
+		When("there are some pending transfers", func() {
 			totalTransfers = rand.I64Between(10, 200)
 			for i := int64(0); i < totalTransfers; i++ {
 				sender := exported.CrossChainAddress{
@@ -79,7 +82,7 @@ func TestKeeper_TransfersForChain(t *testing.T) {
 				assert.NoError(t, err)
 			}
 		}).
-		Given("pagination flags are set up", func() {
+		When("pagination flags are set up", func() {
 			pageFlags := pflag.NewFlagSet("pagination", pflag.PanicOnError)
 			pageFlags.Uint64(flags.FlagPage, 1, "")
 			pageFlags.Uint64(flags.FlagLimit, 100, "")
@@ -96,8 +99,8 @@ func TestKeeper_TransfersForChain(t *testing.T) {
 		}).
 		When("TransferForChain is called", func() {
 			var err error
-			response, err = k.TransfersForChain(sdk.WrapSDKContext(ctx), &types.TransfersForChainRequest{
-				Chain:      axelarnet.Axelarnet.Name,
+			response, err = q.TransfersForChain(sdk.WrapSDKContext(ctx), &types.TransfersForChainRequest{
+				Chain:      axelarnet.Axelarnet.Name.String(),
 				State:      exported.Pending,
 				Pagination: pageRequest,
 			})

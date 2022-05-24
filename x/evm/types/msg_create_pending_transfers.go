@@ -5,11 +5,12 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
 // NewCreatePendingTransfersRequest - CreatePendingTransfersRequest constructor
 func NewCreatePendingTransfersRequest(sender sdk.AccAddress, chain string) *CreatePendingTransfersRequest {
-	return &CreatePendingTransfersRequest{Sender: sender, Chain: utils.NormalizeString(chain)}
+	return &CreatePendingTransfersRequest{Sender: sender, Chain: nexus.ChainName(utils.NormalizeString(chain))}
 }
 
 // Route returns the route for this message
@@ -28,7 +29,7 @@ func (m CreatePendingTransfersRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
-	if err := utils.ValidateString(m.Chain); err != nil {
+	if err := m.Chain.Validate(); err != nil {
 		return sdkerrors.Wrap(err, "invalid chain")
 	}
 

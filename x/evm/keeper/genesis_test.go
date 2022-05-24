@@ -39,7 +39,7 @@ func TestGenesis(t *testing.T) {
 	Given("a genesis state", func() {
 		initialState = types.NewGenesisState(testutils.RandomChains(cfg.Codec))
 
-	}).Given("it is valid", func() {
+	}).When("it is valid", func() {
 		assert.NoError(t, initialState.Validate())
 	}).
 		When("importing and exporting the state", func() {

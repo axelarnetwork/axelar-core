@@ -24,9 +24,9 @@ import (
 	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
+	. "github.com/axelarnetwork/utils/test"
 )
 
 const maxAmount int64 = 100000000000
@@ -35,19 +35,19 @@ var keeper nexusKeeper.Keeper
 
 func addressValidator() types.Router {
 	router := types.NewRouter()
-	router.AddAddressValidator("evm", func(_ sdk.Context, addr nexus.CrossChainAddress) error {
+	router.AddAddressValidator("evm", func(_ sdk.Context, addr exported.CrossChainAddress) error {
 		if !evmUtil.IsHexAddress(addr.Address) {
 			return fmt.Errorf("not an hex address")
 		}
 
 		return nil
-	}).AddAddressValidator("bitcoin", func(ctx sdk.Context, addr nexus.CrossChainAddress) error {
+	}).AddAddressValidator("bitcoin", func(ctx sdk.Context, addr exported.CrossChainAddress) error {
 		if _, err := btcutil.DecodeAddress(addr.Address, btcTypes.Testnet3.Params()); err != nil {
 			return err
 		}
 
 		return nil
-	}).AddAddressValidator("axelarnet", func(ctx sdk.Context, addr nexus.CrossChainAddress) error {
+	}).AddAddressValidator("axelarnet", func(ctx sdk.Context, addr exported.CrossChainAddress) error {
 		bz, err := sdk.GetFromBech32(addr.Address, getPrefixByAddress(addr.Address))
 		if err != nil {
 			return err
@@ -70,6 +70,75 @@ func init() {
 	keeper.SetRouter(addressValidator())
 }
 
+func TestKeeper(t *testing.T) {
+	var (
+		ctx    sdk.Context
+		keeper nexusKeeper.Keeper
+	)
+
+	repeats := 20
+
+	givenKeeper := Given("nexus keeper", func() {
+		encCfg := app.MakeEncodingConfig()
+		nexusSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("nexusKey"), sdk.NewKVStoreKey("tNexusKey"), "nexus")
+		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+		keeper = nexusKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("nexus"), nexusSubspace)
+		keeper.SetParams(ctx, types.DefaultParams())
+	})
+
+	t.Run("MarkChainMaintainerMissingVote", testutils.Func(func(t *testing.T) {
+		var (
+			chain      exported.Chain
+			maintainer sdk.ValAddress
+		)
+
+		givenKeeper.
+			When("chain maintainer exists", func() {
+				maintainer = rand.ValAddr()
+				chain = makeRandomChain(rand.Str(5))
+
+				if err := keeper.AddChainMaintainer(ctx, chain, maintainer); err != nil {
+					panic(err)
+				}
+			}).
+			Then("should mark missing vote", func(t *testing.T) {
+				keeper.MarkChainMaintainerMissingVote(ctx, chain, maintainer, true)
+
+				maintainerStates := keeper.GetChainMaintainerStates(ctx, chain)
+				assert.Len(t, maintainerStates, 1)
+				assert.Equal(t, maintainer, maintainerStates[0].Address)
+				assert.Equal(t, 1, maintainerStates[0].MissingVotes.CountTrue(100))
+				assert.Equal(t, 0, maintainerStates[0].IncorrectVotes.CountTrue(100))
+			})
+	}).Repeat(repeats))
+
+	t.Run("MarkChainMaintainerIncorrectVote", testutils.Func(func(t *testing.T) {
+		var (
+			chain      exported.Chain
+			maintainer sdk.ValAddress
+		)
+
+		givenKeeper.
+			When("chain maintainer exists", func() {
+				maintainer = rand.ValAddr()
+				chain = makeRandomChain(rand.Str(5))
+
+				if err := keeper.AddChainMaintainer(ctx, chain, maintainer); err != nil {
+					panic(err)
+				}
+			}).
+			Then("should mark missing vote", func(t *testing.T) {
+				keeper.MarkChainMaintainerIncorrectVote(ctx, chain, maintainer, true)
+
+				maintainerStates := keeper.GetChainMaintainerStates(ctx, chain)
+				assert.Len(t, maintainerStates, 1)
+				assert.Equal(t, maintainer, maintainerStates[0].Address)
+				assert.Equal(t, 0, maintainerStates[0].MissingVotes.CountTrue(100))
+				assert.Equal(t, 1, maintainerStates[0].IncorrectVotes.CountTrue(100))
+			})
+	}).Repeat(repeats))
+}
+
 func TestLinkAddress(t *testing.T) {
 	repeats := 20
 
@@ -85,7 +154,7 @@ func TestLinkAddress(t *testing.T) {
 			keeper.ActivateChain(ctx, chain)
 		}
 
-		_ = keeper.RegisterAsset(ctx, btc.Bitcoin, nexus.NewAsset(btc.NativeAsset, true))
+		_ = keeper.RegisterAsset(ctx, btc.Bitcoin, exported.NewAsset(btc.NativeAsset, true))
 	}
 
 	t.Run("should pass address validation", testutils.Func(func(t *testing.T) {
@@ -179,12 +248,12 @@ func TestSetChainGetChain_MixCaseChainName(t *testing.T) {
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	keeper.SetChain(ctx, chain)
 
-	actual, ok := keeper.GetChain(ctx, strings.ToUpper(chainName))
+	actual, ok := keeper.GetChain(ctx, exported.ChainName(strings.ToUpper(chainName)))
 
 	assert.True(t, ok)
 	assert.Equal(t, chain, actual)
 
-	actual, ok = keeper.GetChain(ctx, strings.ToLower(chainName))
+	actual, ok = keeper.GetChain(ctx, exported.ChainName(strings.ToLower(chainName)))
 
 	assert.True(t, ok)
 	assert.Equal(t, chain, actual)
@@ -197,12 +266,12 @@ func TestSetChainGetChain_UpperCaseChainName(t *testing.T) {
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	keeper.SetChain(ctx, chain)
 
-	actual, ok := keeper.GetChain(ctx, strings.ToUpper(chainName))
+	actual, ok := keeper.GetChain(ctx, exported.ChainName(strings.ToUpper(chainName)))
 
 	assert.True(t, ok)
 	assert.Equal(t, chain, actual)
 
-	actual, ok = keeper.GetChain(ctx, strings.ToLower(chainName))
+	actual, ok = keeper.GetChain(ctx, exported.ChainName(strings.ToLower(chainName)))
 
 	assert.True(t, ok)
 	assert.Equal(t, chain, actual)
@@ -215,12 +284,12 @@ func TestSetChainGetChain_LowerCaseChainName(t *testing.T) {
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	keeper.SetChain(ctx, chain)
 
-	actual, ok := keeper.GetChain(ctx, strings.ToUpper(chainName))
+	actual, ok := keeper.GetChain(ctx, exported.ChainName(strings.ToUpper(chainName)))
 
 	assert.True(t, ok)
 	assert.Equal(t, chain, actual)
 
-	actual, ok = keeper.GetChain(ctx, strings.ToLower(chainName))
+	actual, ok = keeper.GetChain(ctx, exported.ChainName(strings.ToLower(chainName)))
 
 	assert.True(t, ok)
 	assert.Equal(t, chain, actual)
@@ -228,7 +297,7 @@ func TestSetChainGetChain_LowerCaseChainName(t *testing.T) {
 
 func makeRandomChain(chainName string) exported.Chain {
 	return exported.Chain{
-		Name:                  chainName,
+		Name:                  exported.ChainName(chainName),
 		Module:                rand.Str(10),
 		SupportsForeignAssets: true,
 	}
@@ -253,7 +322,7 @@ func makeRandAddressesForChain(origin, destination exported.Chain) (exported.Cro
 	case evmTypes.ModuleName:
 		addr = genEvmAddr()
 	case axelarnetTypes.ModuleName:
-		addr = genCosmosAddr(origin.Name)
+		addr = genCosmosAddr(origin.Name.String())
 	default:
 		panic("unexpected module for origin")
 	}
@@ -269,7 +338,7 @@ func makeRandAddressesForChain(origin, destination exported.Chain) (exported.Cro
 	case evmTypes.ModuleName:
 		addr = genEvmAddr()
 	case axelarnetTypes.ModuleName:
-		addr = genCosmosAddr(destination.Name)
+		addr = genCosmosAddr(destination.Name.String())
 	default:
 		panic("unexpected module for destination")
 	}

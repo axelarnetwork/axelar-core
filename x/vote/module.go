@@ -14,6 +14,7 @@ import (
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/vote/keeper"
 	"github.com/axelarnetwork/axelar-core/x/vote/types"
 )
@@ -129,13 +130,19 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 
 // EndBlock executes all state transitions this module requires at the end of each new block
 func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
-	return EndBlocker(ctx, req, am.keeper)
+	return utils.RunEndBlocker(ctx, am.keeper, func(ctx sdk.Context) ([]abci.ValidatorUpdate, error) {
+		return EndBlocker(ctx, req, am.keeper)
+	})
 }
 
 // RegisterServices registers a GRPC query service to respond to the
 // module-specific GRPC queries.
-func (am AppModule) RegisterServices(module.Configurator) {
+func (am AppModule) RegisterServices(cfg module.Configurator) {
+	err := cfg.RegisterMigration(types.ModuleName, 1, keeper.GetMigrationHandler(am.keeper))
+	if err != nil {
+		panic(err)
+	}
 }
 
 // ConsensusVersion implements AppModule/ConsensusVersion.
-func (AppModule) ConsensusVersion() uint64 { return 1 }
+func (AppModule) ConsensusVersion() uint64 { return 2 }

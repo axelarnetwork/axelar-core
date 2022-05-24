@@ -21,34 +21,34 @@ func TestQuerier_PendingIBCTransferCount(t *testing.T) {
 	var (
 		querier                  keeper.Querier
 		response                 *types.PendingIBCTransferCountResponse
-		expectedChains           []string
+		expectedChains           []nexus.ChainName
 		expectedTransfersByChain map[string]uint32
 	)
 
 	Given("existing pending IBC transfers", func() {
 		chainCount := int(rand.I64Between(0, 20))
-		expectedChains = make([]string, 0, chainCount)
+		expectedChains = make([]nexus.ChainName, 0, chainCount)
 		randStr := rand.Strings(5, 20).Distinct()
 		for i := 0; i < chainCount; i++ {
-			expectedChains = append(expectedChains, randStr.Next())
+			expectedChains = append(expectedChains, nexus.ChainName(randStr.Next()))
 		}
 
 		expectedTransfersByChain = make(map[string]uint32, len(expectedChains))
 
 		for _, chain := range expectedChains {
-			expectedTransfersByChain[chain] = uint32(rand.I64Between(0, 30))
+			expectedTransfersByChain[chain.String()] = uint32(rand.I64Between(0, 30))
 		}
 	}).
-		Given("a querier", func() {
-			k := &mock.BaseKeeperMock{GetCosmosChainsFunc: func(sdk.Context) []string { return expectedChains }}
+		When("a querier", func() {
+			k := &mock.BaseKeeperMock{GetCosmosChainsFunc: func(sdk.Context) []nexus.ChainName { return expectedChains }}
 			n := &mock.NexusMock{GetTransfersForChainFunc: func(ctx sdk.Context, chain nexus.Chain, state nexus.TransferState) []nexus.CrossChainTransfer {
 				var transfers []nexus.CrossChainTransfer
-				for i := 0; i < int(expectedTransfersByChain[chain.Name]); i++ {
+				for i := 0; i < int(expectedTransfersByChain[chain.Name.String()]); i++ {
 					transfers = append(transfers, nexus.CrossChainTransfer{})
 				}
 				return transfers
 			},
-				GetChainFunc: func(ctx sdk.Context, chain string) (nexus.Chain, bool) {
+				GetChainFunc: func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 					return nexus.Chain{Name: chain}, true
 				},
 			}

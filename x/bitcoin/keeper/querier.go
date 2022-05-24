@@ -105,7 +105,7 @@ func QueryDepositAddress(ctx sdk.Context, k types.BTCKeeper, n types.Nexus, data
 		return nil, fmt.Errorf("could not parse the recipient")
 	}
 
-	chain, ok := n.GetChain(ctx, params.Chain)
+	chain, ok := n.GetChain(ctx, nexus.ChainName(params.Chain))
 	if !ok {
 		return nil, fmt.Errorf("recipient chain not found")
 	}

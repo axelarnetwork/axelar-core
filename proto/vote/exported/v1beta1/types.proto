@@ -1,0 +1,35 @@
+syntax = "proto3";
+package vote.exported.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/vote/exported017";
+
+import "gogoproto/gogo.proto";
+import "google/protobuf/any.proto";
+import "axelar/utils/v1beta1/threshold.proto";
+import "cosmos_proto/cosmos.proto";
+import "axelar/vote/exported/v1beta1/types.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+message Vote { repeated google.protobuf.Any results = 1; }
+
+// PollMetadata represents a poll with write-in voting, i.e. the result of the
+// vote can have any data type
+message PollMetadata {
+  axelar.vote.exported.v1beta1.PollKey key = 1 [ (gogoproto.nullable) = false ];
+  int64 expires_at = 3;
+  google.protobuf.Any result = 4
+      [ (cosmos_proto.accepts_interface) =
+            "github.com/cosmos/codec/ProtoMarshaler" ];
+  axelar.utils.v1beta1.Threshold voting_threshold = 5
+      [ (gogoproto.nullable) = false ];
+  axelar.vote.exported.v1beta1.PollState state = 6;
+  int64 min_voter_count = 7;
+  repeated axelar.vote.exported.v1beta1.Voter voters = 8
+      [ (gogoproto.nullable) = false ];
+  bytes total_voting_power = 9 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.nullable) = false
+  ];
+  string reward_pool_name = 10;
+}

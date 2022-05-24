@@ -12,11 +12,12 @@ import (
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
-	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/reward/keeper"
 	"github.com/axelarnetwork/axelar-core/x/reward/types"
 	"github.com/axelarnetwork/axelar-core/x/reward/types/mock"
 	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
+	"github.com/axelarnetwork/axelar-core/x/vote/exported"
+	votetypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 	testutils "github.com/axelarnetwork/utils/test"
 	"github.com/axelarnetwork/utils/test/rand"
 )
@@ -36,7 +37,7 @@ func TestHandleMsgRefundRequest(t *testing.T) {
 			GetPendingRefundFunc: func(sdk.Context, types.RefundMsgRequest) (types.Refund, bool) {
 				return types.Refund{Payer: rand.AccAddr(), Fees: sdk.NewCoins(sdk.Coin{Denom: "uaxl", Amount: sdk.NewInt(1000)})}, true
 			},
-			DeletePendingRefundFunc: func(sdk.Context, types.RefundMsgRequest) { return },
+			DeletePendingRefundFunc: func(sdk.Context, types.RefundMsgRequest) {},
 		}
 		bankKeeper = &mock.BankerMock{
 			SendCoinsFromModuleToAccountFunc: func(sdk.Context, string, sdk.AccAddress, sdk.Coins) error { return nil },
@@ -87,7 +88,11 @@ func TestHandleMsgRefundRequest(t *testing.T) {
 			return &sdk.Result{}, fmt.Errorf("failed to execute message")
 		}
 		router.AddRoute(sdk.NewRoute("evm", evmHandler))
-		voteReq := &evmtypes.VoteConfirmChainRequest{Name: rand.StrBetween(5, 20)}
+		voteReq := &votetypes.VoteRequest{
+			Sender:  rand.AccAddr(),
+			PollKey: exported.NewPollKey(votetypes.ModuleName, rand.StrBetween(5, 100)),
+			Vote:    exported.Vote{},
+		}
 		msg = types.NewRefundMsgRequest(rand.AccAddr(), voteReq)
 
 		_, err := server.RefundMsg(sdk.WrapSDKContext(ctx), msg)

@@ -5,10 +5,11 @@ package types
 
 import (
 	fmt "fmt"
+	github_com_axelarnetwork_axelar_core_x_nexus_exported "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	_ "github.com/axelarnetwork/axelar-core/x/permission/exported"
-	exported1 "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	exported "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	github_com_axelarnetwork_axelar_core_x_tss_exported "github.com/axelarnetwork/axelar-core/x/tss/exported"
-	exported "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	_ "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
@@ -29,9 +30,9 @@ var _ = math.Inf
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 type SetGatewayRequest struct {
-	Sender  github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
-	Chain   string                                        `protobuf:"bytes,2,opt,name=chain,proto3" json:"chain,omitempty"`
-	Address Address                                       `protobuf:"bytes,3,opt,name=address,proto3,customtype=Address" json:"address"`
+	Sender  github_com_cosmos_cosmos_sdk_types.AccAddress                   `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
+	Chain   github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
+	Address Address                                                         `protobuf:"bytes,3,opt,name=address,proto3,customtype=Address" json:"address"`
 }
 
 func (m *SetGatewayRequest) Reset()         { *m = SetGatewayRequest{} }
@@ -104,9 +105,9 @@ func (m *SetGatewayResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_SetGatewayResponse proto.InternalMessageInfo
 
 type ConfirmGatewayTxRequest struct {
-	Sender github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
-	Chain  string                                        `protobuf:"bytes,2,opt,name=chain,proto3" json:"chain,omitempty"`
-	TxID   Hash                                          `protobuf:"bytes,3,opt,name=tx_id,json=txId,proto3,customtype=Hash" json:"tx_id"`
+	Sender github_com_cosmos_cosmos_sdk_types.AccAddress                   `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
+	Chain  github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
+	TxID   Hash                                                            `protobuf:"bytes,3,opt,name=tx_id,json=txId,proto3,customtype=Hash" json:"tx_id"`
 }
 
 func (m *ConfirmGatewayTxRequest) Reset()         { *m = ConfirmGatewayTxRequest{} }
@@ -178,94 +179,20 @@ func (m *ConfirmGatewayTxResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_ConfirmGatewayTxResponse proto.InternalMessageInfo
 
-type ConfirmChainRequest struct {
-	Sender github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
-	Name   string                                        `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-}
-
-func (m *ConfirmChainRequest) Reset()         { *m = ConfirmChainRequest{} }
-func (m *ConfirmChainRequest) String() string { return proto.CompactTextString(m) }
-func (*ConfirmChainRequest) ProtoMessage()    {}
-func (*ConfirmChainRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_43a3259b9722fdab, []int{4}
-}
-func (m *ConfirmChainRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *ConfirmChainRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_ConfirmChainRequest.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *ConfirmChainRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ConfirmChainRequest.Merge(m, src)
-}
-func (m *ConfirmChainRequest) XXX_Size() int {
-	return m.Size()
-}
-func (m *ConfirmChainRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_ConfirmChainRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_ConfirmChainRequest proto.InternalMessageInfo
-
-type ConfirmChainResponse struct {
-}
-
-func (m *ConfirmChainResponse) Reset()         { *m = ConfirmChainResponse{} }
-func (m *ConfirmChainResponse) String() string { return proto.CompactTextString(m) }
-func (*ConfirmChainResponse) ProtoMessage()    {}
-func (*ConfirmChainResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_43a3259b9722fdab, []int{5}
-}
-func (m *ConfirmChainResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *ConfirmChainResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_ConfirmChainResponse.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *ConfirmChainResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ConfirmChainResponse.Merge(m, src)
-}
-func (m *ConfirmChainResponse) XXX_Size() int {
-	return m.Size()
-}
-func (m *ConfirmChainResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_ConfirmChainResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_ConfirmChainResponse proto.InternalMessageInfo
-
 // MsgConfirmDeposit represents an erc20 deposit confirmation message
 type ConfirmDepositRequest struct {
-	Sender        github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
-	Chain         string                                        `protobuf:"bytes,2,opt,name=chain,proto3" json:"chain,omitempty"`
-	TxID          Hash                                          `protobuf:"bytes,3,opt,name=tx_id,json=txId,proto3,customtype=Hash" json:"tx_id"`
-	Amount        github_com_cosmos_cosmos_sdk_types.Uint       `protobuf:"bytes,4,opt,name=amount,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Uint" json:"amount"` // Deprecated: Do not use.
-	BurnerAddress Address                                       `protobuf:"bytes,5,opt,name=burner_address,json=burnerAddress,proto3,customtype=Address" json:"burner_address"`
+	Sender        github_com_cosmos_cosmos_sdk_types.AccAddress                   `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
+	Chain         github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
+	TxID          Hash                                                            `protobuf:"bytes,3,opt,name=tx_id,json=txId,proto3,customtype=Hash" json:"tx_id"`
+	Amount        github_com_cosmos_cosmos_sdk_types.Uint                         `protobuf:"bytes,4,opt,name=amount,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Uint" json:"amount"` // Deprecated: Do not use.
+	BurnerAddress Address                                                         `protobuf:"bytes,5,opt,name=burner_address,json=burnerAddress,proto3,customtype=Address" json:"burner_address"`
 }
 
 func (m *ConfirmDepositRequest) Reset()         { *m = ConfirmDepositRequest{} }
 func (m *ConfirmDepositRequest) String() string { return proto.CompactTextString(m) }
 func (*ConfirmDepositRequest) ProtoMessage()    {}
 func (*ConfirmDepositRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_43a3259b9722fdab, []int{6}
+	return fileDescriptor_43a3259b9722fdab, []int{4}
 }
 func (m *ConfirmDepositRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -301,7 +228,7 @@ func (m *ConfirmDepositResponse) Reset()         { *m = ConfirmDepositResponse{}
 func (m *ConfirmDepositResponse) String() string { return proto.CompactTextString(m) }
 func (*ConfirmDepositResponse) ProtoMessage()    {}
 func (*ConfirmDepositResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_43a3259b9722fdab, []int{7}
+	return fileDescriptor_43a3259b9722fdab, []int{5}
 }
 func (m *ConfirmDepositResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -332,17 +259,17 @@ var xxx_messageInfo_ConfirmDepositResponse proto.InternalMessageInfo
 
 // MsgConfirmToken represents a token deploy confirmation message
 type ConfirmTokenRequest struct {
-	Sender github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
-	Chain  string                                        `protobuf:"bytes,2,opt,name=chain,proto3" json:"chain,omitempty"`
-	TxID   Hash                                          `protobuf:"bytes,3,opt,name=tx_id,json=txId,proto3,customtype=Hash" json:"tx_id"`
-	Asset  Asset                                         `protobuf:"bytes,4,opt,name=asset,proto3" json:"asset"`
+	Sender github_com_cosmos_cosmos_sdk_types.AccAddress                   `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
+	Chain  github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
+	TxID   Hash                                                            `protobuf:"bytes,3,opt,name=tx_id,json=txId,proto3,customtype=Hash" json:"tx_id"`
+	Asset  Asset                                                           `protobuf:"bytes,4,opt,name=asset,proto3" json:"asset"`
 }
 
 func (m *ConfirmTokenRequest) Reset()         { *m = ConfirmTokenRequest{} }
 func (m *ConfirmTokenRequest) String() string { return proto.CompactTextString(m) }
 func (*ConfirmTokenRequest) ProtoMessage()    {}
 func (*ConfirmTokenRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_43a3259b9722fdab, []int{8}
+	return fileDescriptor_43a3259b9722fdab, []int{6}
 }
 func (m *ConfirmTokenRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -378,7 +305,7 @@ func (m *ConfirmTokenResponse) Reset()         { *m = ConfirmTokenResponse{} }
 func (m *ConfirmTokenResponse) String() string { return proto.CompactTextString(m) }
 func (*ConfirmTokenResponse) ProtoMessage()    {}
 func (*ConfirmTokenResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_43a3259b9722fdab, []int{9}
+	return fileDescriptor_43a3259b9722fdab, []int{7}
 }
 func (m *ConfirmTokenResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -408,18 +335,18 @@ func (m *ConfirmTokenResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_ConfirmTokenResponse proto.InternalMessageInfo
 
 type ConfirmTransferKeyRequest struct {
-	Sender       github_com_cosmos_cosmos_sdk_types.AccAddress             `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
-	Chain        string                                                    `protobuf:"bytes,2,opt,name=chain,proto3" json:"chain,omitempty"`
-	TxID         Hash                                                      `protobuf:"bytes,3,opt,name=tx_id,json=txId,proto3,customtype=Hash" json:"tx_id"`
-	TransferType TransferKeyType                                           `protobuf:"varint,4,opt,name=transfer_type,json=transferType,proto3,enum=axelar.evm.v1beta1.TransferKeyType" json:"transfer_type,omitempty"`
-	KeyID        github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID `protobuf:"bytes,5,opt,name=key_id,json=keyId,proto3,casttype=github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID" json:"key_id,omitempty"`
+	Sender       github_com_cosmos_cosmos_sdk_types.AccAddress                   `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
+	Chain        github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
+	TxID         Hash                                                            `protobuf:"bytes,3,opt,name=tx_id,json=txId,proto3,customtype=Hash" json:"tx_id"`
+	TransferType TransferKeyType                                                 `protobuf:"varint,4,opt,name=transfer_type,json=transferType,proto3,enum=axelar.evm.v1beta1.TransferKeyType" json:"transfer_type,omitempty"`
+	KeyID        github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID       `protobuf:"bytes,5,opt,name=key_id,json=keyId,proto3,casttype=github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID" json:"key_id,omitempty"`
 }
 
 func (m *ConfirmTransferKeyRequest) Reset()         { *m = ConfirmTransferKeyRequest{} }
 func (m *ConfirmTransferKeyRequest) String() string { return proto.CompactTextString(m) }
 func (*ConfirmTransferKeyRequest) ProtoMessage()    {}
 func (*ConfirmTransferKeyRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_43a3259b9722fdab, []int{10}
+	return fileDescriptor_43a3259b9722fdab, []int{8}
 }
 func (m *ConfirmTransferKeyRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -455,7 +382,7 @@ func (m *ConfirmTransferKeyResponse) Reset()         { *m = ConfirmTransferKeyRe
 func (m *ConfirmTransferKeyResponse) String() string { return proto.CompactTextString(m) }
 func (*ConfirmTransferKeyResponse) ProtoMessage()    {}
 func (*ConfirmTransferKeyResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_43a3259b9722fdab, []int{11}
+	return fileDescriptor_43a3259b9722fdab, []int{9}
 }
 func (m *ConfirmTransferKeyResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -487,18 +414,18 @@ var xxx_messageInfo_ConfirmTransferKeyResponse proto.InternalMessageInfo
 // MsgLink represents the message that links a cross chain address to a burner
 // address
 type LinkRequest struct {
-	Sender         github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
-	Chain          string                                        `protobuf:"bytes,2,opt,name=chain,proto3" json:"chain,omitempty"`
-	RecipientAddr  string                                        `protobuf:"bytes,3,opt,name=recipient_addr,json=recipientAddr,proto3" json:"recipient_addr,omitempty"`
-	Asset          string                                        `protobuf:"bytes,4,opt,name=asset,proto3" json:"asset,omitempty"`
-	RecipientChain string                                        `protobuf:"bytes,5,opt,name=recipient_chain,json=recipientChain,proto3" json:"recipient_chain,omitempty"`
+	Sender         github_com_cosmos_cosmos_sdk_types.AccAddress                   `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
+	Chain          github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
+	RecipientAddr  string                                                          `protobuf:"bytes,3,opt,name=recipient_addr,json=recipientAddr,proto3" json:"recipient_addr,omitempty"`
+	Asset          string                                                          `protobuf:"bytes,4,opt,name=asset,proto3" json:"asset,omitempty"`
+	RecipientChain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,5,opt,name=recipient_chain,json=recipientChain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"recipient_chain,omitempty"`
 }
 
 func (m *LinkRequest) Reset()         { *m = LinkRequest{} }
 func (m *LinkRequest) String() string { return proto.CompactTextString(m) }
 func (*LinkRequest) ProtoMessage()    {}
 func (*LinkRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_43a3259b9722fdab, []int{12}
+	return fileDescriptor_43a3259b9722fdab, []int{10}
 }
 func (m *LinkRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -535,7 +462,7 @@ func (m *LinkResponse) Reset()         { *m = LinkResponse{} }
 func (m *LinkResponse) String() string { return proto.CompactTextString(m) }
 func (*LinkResponse) ProtoMessage()    {}
 func (*LinkResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_43a3259b9722fdab, []int{13}
+	return fileDescriptor_43a3259b9722fdab, []int{11}
 }
 func (m *LinkResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -567,15 +494,15 @@ var xxx_messageInfo_LinkResponse proto.InternalMessageInfo
 // CreateBurnTokensRequest represents the message to create commands to burn
 // tokens with AxelarGateway
 type CreateBurnTokensRequest struct {
-	Sender github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
-	Chain  string                                        `protobuf:"bytes,2,opt,name=chain,proto3" json:"chain,omitempty"`
+	Sender github_com_cosmos_cosmos_sdk_types.AccAddress                   `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
+	Chain  github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
 }
 
 func (m *CreateBurnTokensRequest) Reset()         { *m = CreateBurnTokensRequest{} }
 func (m *CreateBurnTokensRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateBurnTokensRequest) ProtoMessage()    {}
 func (*CreateBurnTokensRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_43a3259b9722fdab, []int{14}
+	return fileDescriptor_43a3259b9722fdab, []int{12}
 }
 func (m *CreateBurnTokensRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -611,7 +538,7 @@ func (m *CreateBurnTokensResponse) Reset()         { *m = CreateBurnTokensRespon
 func (m *CreateBurnTokensResponse) String() string { return proto.CompactTextString(m) }
 func (*CreateBurnTokensResponse) ProtoMessage()    {}
 func (*CreateBurnTokensResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_43a3259b9722fdab, []int{15}
+	return fileDescriptor_43a3259b9722fdab, []int{13}
 }
 func (m *CreateBurnTokensResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -643,18 +570,18 @@ var xxx_messageInfo_CreateBurnTokensResponse proto.InternalMessageInfo
 // CreateDeployTokenRequest represents the message to create a deploy token
 // command for AxelarGateway
 type CreateDeployTokenRequest struct {
-	Sender       github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
-	Chain        string                                        `protobuf:"bytes,2,opt,name=chain,proto3" json:"chain,omitempty"`
-	Asset        Asset                                         `protobuf:"bytes,3,opt,name=asset,proto3" json:"asset"`
-	TokenDetails TokenDetails                                  `protobuf:"bytes,4,opt,name=token_details,json=tokenDetails,proto3" json:"token_details"`
-	Address      Address                                       `protobuf:"bytes,6,opt,name=address,proto3,customtype=Address" json:"address"`
+	Sender       github_com_cosmos_cosmos_sdk_types.AccAddress                   `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
+	Chain        github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
+	Asset        Asset                                                           `protobuf:"bytes,3,opt,name=asset,proto3" json:"asset"`
+	TokenDetails TokenDetails                                                    `protobuf:"bytes,4,opt,name=token_details,json=tokenDetails,proto3" json:"token_details"`
+	Address      Address                                                         `protobuf:"bytes,6,opt,name=address,proto3,customtype=Address" json:"address"`
 }
 
 func (m *CreateDeployTokenRequest) Reset()         { *m = CreateDeployTokenRequest{} }
 func (m *CreateDeployTokenRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateDeployTokenRequest) ProtoMessage()    {}
 func (*CreateDeployTokenRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_43a3259b9722fdab, []int{16}
+	return fileDescriptor_43a3259b9722fdab, []int{14}
 }
 func (m *CreateDeployTokenRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -690,7 +617,7 @@ func (m *CreateDeployTokenResponse) Reset()         { *m = CreateDeployTokenResp
 func (m *CreateDeployTokenResponse) String() string { return proto.CompactTextString(m) }
 func (*CreateDeployTokenResponse) ProtoMessage()    {}
 func (*CreateDeployTokenResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_43a3259b9722fdab, []int{17}
+	return fileDescriptor_43a3259b9722fdab, []int{15}
 }
 func (m *CreateDeployTokenResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -722,15 +649,15 @@ var xxx_messageInfo_CreateDeployTokenResponse proto.InternalMessageInfo
 // CreatePendingTransfersRequest represents a message to trigger the creation of
 // commands handling all pending transfers
 type CreatePendingTransfersRequest struct {
-	Sender github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
-	Chain  string                                        `protobuf:"bytes,2,opt,name=chain,proto3" json:"chain,omitempty"`
+	Sender github_com_cosmos_cosmos_sdk_types.AccAddress                   `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
+	Chain  github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
 }
 
 func (m *CreatePendingTransfersRequest) Reset()         { *m = CreatePendingTransfersRequest{} }
 func (m *CreatePendingTransfersRequest) String() string { return proto.CompactTextString(m) }
 func (*CreatePendingTransfersRequest) ProtoMessage()    {}
 func (*CreatePendingTransfersRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_43a3259b9722fdab, []int{18}
+	return fileDescriptor_43a3259b9722fdab, []int{16}
 }
 func (m *CreatePendingTransfersRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -766,7 +693,7 @@ func (m *CreatePendingTransfersResponse) Reset()         { *m = CreatePendingTra
 func (m *CreatePendingTransfersResponse) String() string { return proto.CompactTextString(m) }
 func (*CreatePendingTransfersResponse) ProtoMessage()    {}
 func (*CreatePendingTransfersResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_43a3259b9722fdab, []int{19}
+	return fileDescriptor_43a3259b9722fdab, []int{17}
 }
 func (m *CreatePendingTransfersResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -795,95 +722,17 @@ func (m *CreatePendingTransfersResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_CreatePendingTransfersResponse proto.InternalMessageInfo
 
-// MsgVoteConfirmChain represents a message that votes on a new EVM chain
-type VoteConfirmChainRequest struct {
-	Sender    github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
-	Name      string                                        `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	PollKey   exported.PollKey                              `protobuf:"bytes,3,opt,name=poll_key,json=pollKey,proto3" json:"poll_key"`
-	Confirmed bool                                          `protobuf:"varint,4,opt,name=confirmed,proto3" json:"confirmed,omitempty"`
-}
-
-func (m *VoteConfirmChainRequest) Reset()         { *m = VoteConfirmChainRequest{} }
-func (m *VoteConfirmChainRequest) String() string { return proto.CompactTextString(m) }
-func (*VoteConfirmChainRequest) ProtoMessage()    {}
-func (*VoteConfirmChainRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_43a3259b9722fdab, []int{20}
-}
-func (m *VoteConfirmChainRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *VoteConfirmChainRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_VoteConfirmChainRequest.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *VoteConfirmChainRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_VoteConfirmChainRequest.Merge(m, src)
-}
-func (m *VoteConfirmChainRequest) XXX_Size() int {
-	return m.Size()
-}
-func (m *VoteConfirmChainRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_VoteConfirmChainRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_VoteConfirmChainRequest proto.InternalMessageInfo
-
-type VoteConfirmChainResponse struct {
-	Log string `protobuf:"bytes,1,opt,name=log,proto3" json:"log,omitempty"`
-}
-
-func (m *VoteConfirmChainResponse) Reset()         { *m = VoteConfirmChainResponse{} }
-func (m *VoteConfirmChainResponse) String() string { return proto.CompactTextString(m) }
-func (*VoteConfirmChainResponse) ProtoMessage()    {}
-func (*VoteConfirmChainResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_43a3259b9722fdab, []int{21}
-}
-func (m *VoteConfirmChainResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *VoteConfirmChainResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_VoteConfirmChainResponse.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *VoteConfirmChainResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_VoteConfirmChainResponse.Merge(m, src)
-}
-func (m *VoteConfirmChainResponse) XXX_Size() int {
-	return m.Size()
-}
-func (m *VoteConfirmChainResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_VoteConfirmChainResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_VoteConfirmChainResponse proto.InternalMessageInfo
-
 type CreateTransferOwnershipRequest struct {
-	Sender github_com_cosmos_cosmos_sdk_types.AccAddress             `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
-	Chain  string                                                    `protobuf:"bytes,2,opt,name=chain,proto3" json:"chain,omitempty"`
-	KeyID  github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID `protobuf:"bytes,3,opt,name=key_id,json=keyId,proto3,casttype=github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID" json:"key_id,omitempty"`
+	Sender github_com_cosmos_cosmos_sdk_types.AccAddress                   `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
+	Chain  github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
+	KeyID  github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID       `protobuf:"bytes,3,opt,name=key_id,json=keyId,proto3,casttype=github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID" json:"key_id,omitempty"`
 }
 
 func (m *CreateTransferOwnershipRequest) Reset()         { *m = CreateTransferOwnershipRequest{} }
 func (m *CreateTransferOwnershipRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateTransferOwnershipRequest) ProtoMessage()    {}
 func (*CreateTransferOwnershipRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_43a3259b9722fdab, []int{22}
+	return fileDescriptor_43a3259b9722fdab, []int{18}
 }
 func (m *CreateTransferOwnershipRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -919,7 +768,7 @@ func (m *CreateTransferOwnershipResponse) Reset()         { *m = CreateTransferO
 func (m *CreateTransferOwnershipResponse) String() string { return proto.CompactTextString(m) }
 func (*CreateTransferOwnershipResponse) ProtoMessage()    {}
 func (*CreateTransferOwnershipResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_43a3259b9722fdab, []int{23}
+	return fileDescriptor_43a3259b9722fdab, []int{19}
 }
 func (m *CreateTransferOwnershipResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -949,16 +798,16 @@ func (m *CreateTransferOwnershipResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_CreateTransferOwnershipResponse proto.InternalMessageInfo
 
 type CreateTransferOperatorshipRequest struct {
-	Sender github_com_cosmos_cosmos_sdk_types.AccAddress             `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
-	Chain  string                                                    `protobuf:"bytes,2,opt,name=chain,proto3" json:"chain,omitempty"`
-	KeyID  github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID `protobuf:"bytes,3,opt,name=key_id,json=keyId,proto3,casttype=github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID" json:"key_id,omitempty"`
+	Sender github_com_cosmos_cosmos_sdk_types.AccAddress                   `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
+	Chain  github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
+	KeyID  github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID       `protobuf:"bytes,3,opt,name=key_id,json=keyId,proto3,casttype=github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID" json:"key_id,omitempty"`
 }
 
 func (m *CreateTransferOperatorshipRequest) Reset()         { *m = CreateTransferOperatorshipRequest{} }
 func (m *CreateTransferOperatorshipRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateTransferOperatorshipRequest) ProtoMessage()    {}
 func (*CreateTransferOperatorshipRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_43a3259b9722fdab, []int{24}
+	return fileDescriptor_43a3259b9722fdab, []int{20}
 }
 func (m *CreateTransferOperatorshipRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -994,7 +843,7 @@ func (m *CreateTransferOperatorshipResponse) Reset()         { *m = CreateTransf
 func (m *CreateTransferOperatorshipResponse) String() string { return proto.CompactTextString(m) }
 func (*CreateTransferOperatorshipResponse) ProtoMessage()    {}
 func (*CreateTransferOperatorshipResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_43a3259b9722fdab, []int{25}
+	return fileDescriptor_43a3259b9722fdab, []int{21}
 }
 func (m *CreateTransferOperatorshipResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1024,15 +873,15 @@ func (m *CreateTransferOperatorshipResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_CreateTransferOperatorshipResponse proto.InternalMessageInfo
 
 type SignCommandsRequest struct {
-	Sender github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
-	Chain  string                                        `protobuf:"bytes,2,opt,name=chain,proto3" json:"chain,omitempty"`
+	Sender github_com_cosmos_cosmos_sdk_types.AccAddress                   `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
+	Chain  github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
 }
 
 func (m *SignCommandsRequest) Reset()         { *m = SignCommandsRequest{} }
 func (m *SignCommandsRequest) String() string { return proto.CompactTextString(m) }
 func (*SignCommandsRequest) ProtoMessage()    {}
 func (*SignCommandsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_43a3259b9722fdab, []int{26}
+	return fileDescriptor_43a3259b9722fdab, []int{22}
 }
 func (m *SignCommandsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1070,7 +919,7 @@ func (m *SignCommandsResponse) Reset()         { *m = SignCommandsResponse{} }
 func (m *SignCommandsResponse) String() string { return proto.CompactTextString(m) }
 func (*SignCommandsResponse) ProtoMessage()    {}
 func (*SignCommandsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_43a3259b9722fdab, []int{27}
+	return fileDescriptor_43a3259b9722fdab, []int{23}
 }
 func (m *SignCommandsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1100,17 +949,17 @@ func (m *SignCommandsResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_SignCommandsResponse proto.InternalMessageInfo
 
 type AddChainRequest struct {
-	Sender  github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
-	Name    string                                        `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	KeyType exported1.KeyType                             `protobuf:"varint,4,opt,name=key_type,json=keyType,proto3,enum=axelar.tss.exported.v1beta1.KeyType" json:"key_type,omitempty"`
-	Params  Params                                        `protobuf:"bytes,5,opt,name=params,proto3,customtype=Params" json:"params"`
+	Sender  github_com_cosmos_cosmos_sdk_types.AccAddress                   `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
+	Name    github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=name,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"name,omitempty"`
+	KeyType exported.KeyType                                                `protobuf:"varint,4,opt,name=key_type,json=keyType,proto3,enum=axelar.tss.exported.v1beta1.KeyType" json:"key_type,omitempty"`
+	Params  Params                                                          `protobuf:"bytes,5,opt,name=params,proto3,customtype=Params" json:"params"`
 }
 
 func (m *AddChainRequest) Reset()         { *m = AddChainRequest{} }
 func (m *AddChainRequest) String() string { return proto.CompactTextString(m) }
 func (*AddChainRequest) ProtoMessage()    {}
 func (*AddChainRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_43a3259b9722fdab, []int{28}
+	return fileDescriptor_43a3259b9722fdab, []int{24}
 }
 func (m *AddChainRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1146,7 +995,7 @@ func (m *AddChainResponse) Reset()         { *m = AddChainResponse{} }
 func (m *AddChainResponse) String() string { return proto.CompactTextString(m) }
 func (*AddChainResponse) ProtoMessage()    {}
 func (*AddChainResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_43a3259b9722fdab, []int{29}
+	return fileDescriptor_43a3259b9722fdab, []int{25}
 }
 func (m *AddChainResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1175,13 +1024,86 @@ func (m *AddChainResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_AddChainResponse proto.InternalMessageInfo
 
+type RetryFailedEventRequest struct {
+	Sender  github_com_cosmos_cosmos_sdk_types.AccAddress                   `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
+	Chain   github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
+	EventID EventID                                                         `protobuf:"bytes,3,opt,name=event_id,json=eventId,proto3,casttype=EventID" json:"event_id,omitempty"`
+}
+
+func (m *RetryFailedEventRequest) Reset()         { *m = RetryFailedEventRequest{} }
+func (m *RetryFailedEventRequest) String() string { return proto.CompactTextString(m) }
+func (*RetryFailedEventRequest) ProtoMessage()    {}
+func (*RetryFailedEventRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_43a3259b9722fdab, []int{26}
+}
+func (m *RetryFailedEventRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *RetryFailedEventRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_RetryFailedEventRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *RetryFailedEventRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RetryFailedEventRequest.Merge(m, src)
+}
+func (m *RetryFailedEventRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *RetryFailedEventRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_RetryFailedEventRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RetryFailedEventRequest proto.InternalMessageInfo
+
+type RetryFailedEventResponse struct {
+}
+
+func (m *RetryFailedEventResponse) Reset()         { *m = RetryFailedEventResponse{} }
+func (m *RetryFailedEventResponse) String() string { return proto.CompactTextString(m) }
+func (*RetryFailedEventResponse) ProtoMessage()    {}
+func (*RetryFailedEventResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_43a3259b9722fdab, []int{27}
+}
+func (m *RetryFailedEventResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *RetryFailedEventResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_RetryFailedEventResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *RetryFailedEventResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RetryFailedEventResponse.Merge(m, src)
+}
+func (m *RetryFailedEventResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *RetryFailedEventResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_RetryFailedEventResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RetryFailedEventResponse proto.InternalMessageInfo
+
 func init() {
 	proto.RegisterType((*SetGatewayRequest)(nil), "axelar.evm.v1beta1.SetGatewayRequest")
 	proto.RegisterType((*SetGatewayResponse)(nil), "axelar.evm.v1beta1.SetGatewayResponse")
 	proto.RegisterType((*ConfirmGatewayTxRequest)(nil), "axelar.evm.v1beta1.ConfirmGatewayTxRequest")
 	proto.RegisterType((*ConfirmGatewayTxResponse)(nil), "axelar.evm.v1beta1.ConfirmGatewayTxResponse")
-	proto.RegisterType((*ConfirmChainRequest)(nil), "axelar.evm.v1beta1.ConfirmChainRequest")
-	proto.RegisterType((*ConfirmChainResponse)(nil), "axelar.evm.v1beta1.ConfirmChainResponse")
 	proto.RegisterType((*ConfirmDepositRequest)(nil), "axelar.evm.v1beta1.ConfirmDepositRequest")
 	proto.RegisterType((*ConfirmDepositResponse)(nil), "axelar.evm.v1beta1.ConfirmDepositResponse")
 	proto.RegisterType((*ConfirmTokenRequest)(nil), "axelar.evm.v1beta1.ConfirmTokenRequest")
@@ -1196,8 +1118,6 @@ func init() {
 	proto.RegisterType((*CreateDeployTokenResponse)(nil), "axelar.evm.v1beta1.CreateDeployTokenResponse")
 	proto.RegisterType((*CreatePendingTransfersRequest)(nil), "axelar.evm.v1beta1.CreatePendingTransfersRequest")
 	proto.RegisterType((*CreatePendingTransfersResponse)(nil), "axelar.evm.v1beta1.CreatePendingTransfersResponse")
-	proto.RegisterType((*VoteConfirmChainRequest)(nil), "axelar.evm.v1beta1.VoteConfirmChainRequest")
-	proto.RegisterType((*VoteConfirmChainResponse)(nil), "axelar.evm.v1beta1.VoteConfirmChainResponse")
 	proto.RegisterType((*CreateTransferOwnershipRequest)(nil), "axelar.evm.v1beta1.CreateTransferOwnershipRequest")
 	proto.RegisterType((*CreateTransferOwnershipResponse)(nil), "axelar.evm.v1beta1.CreateTransferOwnershipResponse")
 	proto.RegisterType((*CreateTransferOperatorshipRequest)(nil), "axelar.evm.v1beta1.CreateTransferOperatorshipRequest")
@@ -1206,81 +1126,83 @@ func init() {
 	proto.RegisterType((*SignCommandsResponse)(nil), "axelar.evm.v1beta1.SignCommandsResponse")
 	proto.RegisterType((*AddChainRequest)(nil), "axelar.evm.v1beta1.AddChainRequest")
 	proto.RegisterType((*AddChainResponse)(nil), "axelar.evm.v1beta1.AddChainResponse")
+	proto.RegisterType((*RetryFailedEventRequest)(nil), "axelar.evm.v1beta1.RetryFailedEventRequest")
+	proto.RegisterType((*RetryFailedEventResponse)(nil), "axelar.evm.v1beta1.RetryFailedEventResponse")
 }
 
 func init() { proto.RegisterFile("axelar/evm/v1beta1/tx.proto", fileDescriptor_43a3259b9722fdab) }
 
 var fileDescriptor_43a3259b9722fdab = []byte{
-	// 1091 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xdc, 0x57, 0xcf, 0x6f, 0x1b, 0xd5,
-	0x13, 0xcf, 0xfa, 0x57, 0x92, 0xa9, 0x9d, 0x26, 0x1b, 0xb7, 0x75, 0xd2, 0x7e, 0xed, 0x64, 0xdb,
-	0x7e, 0x13, 0x24, 0x62, 0x93, 0x22, 0x90, 0xe0, 0x82, 0xe2, 0x98, 0xd2, 0x10, 0x04, 0xd1, 0x36,
-	0x70, 0x40, 0x42, 0xd6, 0xda, 0x3b, 0x75, 0x56, 0xf6, 0xee, 0x5b, 0xf6, 0xbd, 0x24, 0x36, 0xe2,
-	0x50, 0x71, 0xe0, 0xcc, 0x3f, 0xc1, 0x09, 0xae, 0xf0, 0x37, 0xe4, 0xd8, 0x13, 0x42, 0x3d, 0x58,
-	0xe0, 0x00, 0x12, 0xff, 0x42, 0x4f, 0xe8, 0xed, 0x9b, 0xb5, 0x9d, 0xd8, 0x8d, 0xc2, 0xa1, 0x56,
-	0xc4, 0xc9, 0xbb, 0x6f, 0xe6, 0xcd, 0xfb, 0x7c, 0x3e, 0x6f, 0x66, 0x3c, 0x0b, 0xb7, 0xad, 0x36,
-	0xb6, 0xac, 0xa0, 0x84, 0x47, 0x6e, 0xe9, 0x68, 0xb3, 0x86, 0xc2, 0xda, 0x2c, 0x89, 0x76, 0xd1,
-	0x0f, 0x98, 0x60, 0xba, 0xae, 0x8c, 0x45, 0x3c, 0x72, 0x8b, 0x64, 0x5c, 0xce, 0x36, 0x58, 0x83,
-	0x85, 0xe6, 0x92, 0x7c, 0x52, 0x9e, 0xcb, 0xeb, 0x14, 0xe6, 0x88, 0x09, 0x2c, 0x61, 0xdb, 0x67,
-	0x81, 0x40, 0x7b, 0x10, 0xb0, 0xe3, 0x23, 0x27, 0xcf, 0x35, 0xf2, 0x14, 0x9c, 0x5f, 0xec, 0x98,
-	0x1f, 0x87, 0x6c, 0xc8, 0x5e, 0x24, 0xbb, 0x8f, 0x81, 0xeb, 0x70, 0xee, 0x30, 0xef, 0xc2, 0x78,
-	0xc6, 0xf7, 0x1a, 0x2c, 0x3c, 0x46, 0xf1, 0x81, 0x25, 0xf0, 0xd8, 0xea, 0x98, 0xf8, 0xe5, 0x21,
-	0x72, 0xa1, 0xef, 0x40, 0x8a, 0xa3, 0x67, 0x63, 0x90, 0xd3, 0x56, 0xb4, 0xf5, 0x74, 0x79, 0xf3,
-	0x45, 0xb7, 0xb0, 0xd1, 0x70, 0xc4, 0xc1, 0x61, 0xad, 0x58, 0x67, 0x6e, 0xa9, 0xce, 0xb8, 0xcb,
-	0x38, 0xfd, 0x6c, 0x70, 0xbb, 0x49, 0x31, 0xb7, 0xea, 0xf5, 0x2d, 0xdb, 0x0e, 0x90, 0x73, 0x93,
-	0x02, 0xe8, 0x59, 0x48, 0xd6, 0x0f, 0x2c, 0xc7, 0xcb, 0xc5, 0x56, 0xb4, 0xf5, 0x59, 0x53, 0xbd,
-	0xe8, 0xaf, 0xc1, 0xb4, 0xa5, 0x1c, 0x73, 0xf1, 0xf0, 0x84, 0xeb, 0x27, 0xdd, 0xc2, 0xd4, 0xf3,
-	0x6e, 0x61, 0x3a, 0xda, 0x1f, 0xd9, 0xdf, 0x4d, 0x3c, 0xfd, 0x29, 0x17, 0x37, 0xb2, 0xa0, 0x0f,
-	0xc3, 0xe4, 0x3e, 0xf3, 0x38, 0x1a, 0x3f, 0x68, 0x70, 0x6b, 0x9b, 0x79, 0x4f, 0x9c, 0xc0, 0x25,
-	0xd3, 0x7e, 0x7b, 0x82, 0x1c, 0x92, 0xa2, 0x5d, 0x75, 0x6c, 0x62, 0x90, 0x25, 0x06, 0x89, 0x47,
-	0x16, 0x3f, 0xe8, 0x75, 0x0b, 0x89, 0xfd, 0xf6, 0x4e, 0xc5, 0x4c, 0x88, 0xf6, 0x8e, 0x1d, 0x72,
-	0xd0, 0x8c, 0x65, 0xc8, 0x8d, 0x82, 0x25, 0x26, 0x5f, 0xc1, 0x22, 0xd9, 0xb6, 0x65, 0xf0, 0x57,
-	0x40, 0x42, 0x87, 0x84, 0x67, 0xb9, 0x48, 0x1c, 0xc2, 0x67, 0xc2, 0x75, 0x13, 0xb2, 0x67, 0xcf,
-	0x26, 0x4c, 0x3f, 0xc6, 0xe0, 0x06, 0x19, 0x2a, 0xe8, 0x33, 0xee, 0x88, 0x2b, 0xa8, 0xad, 0xc4,
-	0x62, 0xb9, 0xec, 0xd0, 0x13, 0xb9, 0x84, 0xc2, 0x42, 0xbe, 0x6b, 0x97, 0xc0, 0xf3, 0xa9, 0xe3,
-	0x89, 0x9c, 0x66, 0x52, 0x00, 0xfd, 0x6d, 0x98, 0xab, 0x1d, 0x06, 0x1e, 0x06, 0xd5, 0x28, 0x39,
-	0x93, 0xe3, 0x93, 0x33, 0xa3, 0xdc, 0xb6, 0x86, 0x52, 0x54, 0x33, 0x72, 0x70, 0xf3, 0xbc, 0x5a,
-	0x24, 0x64, 0x57, 0xeb, 0xdf, 0xee, 0x3e, 0x6b, 0xa2, 0x77, 0x15, 0x65, 0x7c, 0x0b, 0x92, 0x16,
-	0xe7, 0xa8, 0x54, 0xbc, 0xf6, 0x60, 0xa9, 0x38, 0xda, 0xe5, 0x8a, 0x5b, 0xd2, 0xa1, 0x9c, 0x90,
-	0x51, 0x4c, 0xe5, 0x3d, 0x92, 0x41, 0xc4, 0x8f, 0x88, 0xff, 0x12, 0x83, 0xa5, 0xc8, 0x10, 0x58,
-	0x1e, 0x7f, 0x82, 0xc1, 0x2e, 0x76, 0xae, 0x22, 0xfd, 0x47, 0x90, 0x11, 0x84, 0xb0, 0x2a, 0x4f,
-	0x09, 0x65, 0x98, 0x7b, 0x70, 0x77, 0x9c, 0x0c, 0x43, 0x54, 0xf6, 0x3b, 0x3e, 0x9a, 0xe9, 0x68,
-	0xa7, 0x7c, 0xd3, 0xbf, 0x80, 0x54, 0x13, 0x3b, 0xf2, 0x54, 0x99, 0x3c, 0xb3, 0xe5, 0x87, 0xbd,
-	0x6e, 0x21, 0xb9, 0x8b, 0x9d, 0x9d, 0xca, 0x8b, 0x6e, 0xe1, 0x9d, 0x21, 0x7a, 0x2a, 0xb2, 0x87,
-	0xe2, 0x98, 0x05, 0x4d, 0x7a, 0xdb, 0xa8, 0xb3, 0x00, 0x4b, 0xed, 0x33, 0xff, 0x03, 0xc5, 0x70,
-	0xb3, 0x99, 0x6c, 0x62, 0xa7, 0xdf, 0x4a, 0xee, 0xc0, 0xf2, 0x38, 0x5d, 0x49, 0xf6, 0xe7, 0x1a,
-	0x5c, 0xfb, 0xc8, 0xf1, 0x9a, 0x13, 0x13, 0xfa, 0x3e, 0xcc, 0x05, 0x58, 0x77, 0x7c, 0x07, 0x3d,
-	0x11, 0xd6, 0x4e, 0xa8, 0xf8, 0xac, 0x99, 0xe9, 0xaf, 0xca, 0x38, 0x72, 0xf3, 0x20, 0xc7, 0x66,
-	0x29, 0x85, 0xf4, 0x35, 0xb8, 0x3e, 0xd8, 0xac, 0x82, 0x87, 0xca, 0x99, 0x83, 0x98, 0x61, 0x5f,
-	0x22, 0xea, 0x9b, 0x90, 0x56, 0xdc, 0x14, 0x59, 0x7d, 0x15, 0xd2, 0xb6, 0xaa, 0x37, 0x75, 0xb2,
-	0x16, 0xee, 0xbd, 0x46, 0x6b, 0xf2, 0x5c, 0xe3, 0xa9, 0xfc, 0x9b, 0x08, 0xd0, 0x12, 0x58, 0x3e,
-	0x0c, 0xbc, 0x30, 0x45, 0xf9, 0xa4, 0xb4, 0x19, 0xea, 0xfd, 0x23, 0x08, 0xe8, 0xba, 0x7e, 0x8e,
-	0x45, 0xc6, 0x0a, 0xfa, 0x2d, 0xd6, 0x99, 0x6c, 0x8f, 0xe8, 0x17, 0x7e, 0xfc, 0xdf, 0x14, 0xbe,
-	0xbe, 0x0b, 0x19, 0x21, 0x71, 0x56, 0x6d, 0x14, 0x96, 0xd3, 0xe2, 0xd4, 0x37, 0x56, 0xc6, 0x16,
-	0x8c, 0x74, 0xac, 0x28, 0x3f, 0x8a, 0x92, 0x16, 0x43, 0x6b, 0xc3, 0xe3, 0x40, 0xea, 0x12, 0xe3,
-	0x40, 0xec, 0xc3, 0xc4, 0x4c, 0x72, 0x3e, 0x65, 0xdc, 0x86, 0xa5, 0x31, 0xba, 0x91, 0xaa, 0xdf,
-	0x6a, 0xf0, 0x3f, 0x65, 0xdd, 0x43, 0xcf, 0x76, 0xbc, 0x46, 0x54, 0x29, 0x93, 0xbe, 0xfa, 0x15,
-	0xc8, 0xbf, 0x0c, 0x07, 0x41, 0xfd, 0x43, 0x83, 0x5b, 0x9f, 0x31, 0x81, 0x93, 0x9f, 0x00, 0xf4,
-	0x87, 0x30, 0xe3, 0xb3, 0x56, 0xab, 0xda, 0xc4, 0x0e, 0x25, 0xc0, 0xfd, 0xe8, 0x06, 0xe5, 0xd4,
-	0x5a, 0xec, 0x37, 0xa1, 0xe8, 0x2e, 0xf7, 0x58, 0xab, 0xb5, 0x8b, 0x1d, 0xba, 0xc6, 0x69, 0x5f,
-	0xbd, 0xea, 0x77, 0x60, 0xb6, 0xae, 0xd0, 0xa3, 0x1d, 0xa6, 0xc2, 0x8c, 0x39, 0x58, 0x20, 0x21,
-	0x5e, 0x87, 0xdc, 0x28, 0x4b, 0xaa, 0xe2, 0x79, 0x88, 0xb7, 0x58, 0x83, 0x8a, 0x57, 0x3e, 0x1a,
-	0x7f, 0x69, 0x91, 0x6e, 0x91, 0x60, 0x9f, 0x1c, 0x7b, 0x18, 0xf0, 0x03, 0xc7, 0x9f, 0x58, 0x6d,
-	0x0c, 0x7a, 0x79, 0xfc, 0x55, 0xf5, 0xf2, 0x98, 0xb1, 0x0a, 0x85, 0x97, 0xf2, 0xa4, 0x04, 0xf9,
-	0x5b, 0x83, 0xd5, 0x73, 0x3e, 0x3e, 0x06, 0x96, 0x60, 0xff, 0x41, 0x39, 0xee, 0x81, 0x71, 0x11,
-	0x55, 0x52, 0xe4, 0x6b, 0x58, 0x7c, 0xec, 0x34, 0xbc, 0x6d, 0xe6, 0xba, 0x96, 0x67, 0x4f, 0xba,
-	0xa4, 0xbf, 0xd1, 0x20, 0x7b, 0xf6, 0x78, 0x4a, 0xe3, 0xf7, 0x61, 0xb1, 0x66, 0x89, 0xfa, 0x01,
-	0xda, 0xd5, 0x3a, 0xd9, 0xa4, 0x5c, 0x0a, 0xcc, 0x8d, 0x5e, 0xb7, 0xb0, 0x50, 0x56, 0xe6, 0x68,
-	0xe7, 0x4e, 0xc5, 0x5c, 0xa8, 0x9d, 0x5b, 0xb2, 0xf5, 0xbb, 0x90, 0xa1, 0xed, 0xd5, 0x7a, 0x38,
-	0xda, 0x4a, 0x0c, 0x19, 0x33, 0x4d, 0x8b, 0xdb, 0x72, 0xcd, 0xf8, 0x53, 0x83, 0xeb, 0x5b, 0xb6,
-	0x3d, 0xc9, 0x6e, 0xf1, 0x1e, 0xcc, 0xc8, 0x04, 0x18, 0x1a, 0x90, 0xee, 0x45, 0xdd, 0x42, 0x70,
-	0x3e, 0xda, 0x2c, 0xa2, 0x09, 0x69, 0xba, 0xa9, 0x1e, 0xf4, 0xff, 0x43, 0xca, 0xb7, 0x02, 0xcb,
-	0x8d, 0x26, 0xeb, 0x39, 0xea, 0xf3, 0xa9, 0xbd, 0x70, 0xd5, 0x24, 0x6b, 0xbf, 0xcb, 0xc7, 0xe7,
-	0x13, 0x86, 0x0e, 0xf3, 0x03, 0x9a, 0x4a, 0xe7, 0xf2, 0xc7, 0x27, 0xbf, 0xe7, 0xa7, 0x4e, 0x7a,
-	0x79, 0xed, 0x59, 0x2f, 0xaf, 0xfd, 0xd6, 0xcb, 0x6b, 0xdf, 0x9d, 0xe6, 0xa7, 0x9e, 0x9d, 0xe6,
-	0xa7, 0x7e, 0x3d, 0xcd, 0x4f, 0x7d, 0xfe, 0xc6, 0x25, 0x53, 0x51, 0x7e, 0x44, 0x87, 0xfc, 0x6b,
-	0xa9, 0xf0, 0x6b, 0xf8, 0xcd, 0x7f, 0x02, 0x00, 0x00, 0xff, 0xff, 0xa5, 0x14, 0x62, 0x3e, 0xf9,
-	0x0f, 0x00, 0x00,
+	// 1089 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xec, 0x58, 0xcf, 0x6f, 0x1b, 0x45,
+	0x14, 0xce, 0xfa, 0x57, 0x92, 0x17, 0x3b, 0x3f, 0x36, 0x6e, 0xea, 0xa4, 0x60, 0x27, 0xdb, 0x42,
+	0xc3, 0x21, 0x36, 0x29, 0x02, 0x09, 0x2e, 0x55, 0x1c, 0xb7, 0x34, 0x0d, 0x2a, 0xd5, 0x36, 0x08,
+	0x81, 0x84, 0xac, 0xf1, 0xee, 0x6b, 0xb2, 0x72, 0x76, 0x76, 0x99, 0x19, 0x3b, 0xf6, 0x0d, 0xf1,
+	0x17, 0x70, 0xe7, 0xc8, 0x0d, 0x24, 0x6e, 0xfc, 0x01, 0x1c, 0x90, 0x22, 0x71, 0xe9, 0x11, 0x71,
+	0xb0, 0xc0, 0xe1, 0xc4, 0x09, 0x6e, 0x28, 0x5c, 0xd0, 0xee, 0xcc, 0xc6, 0xdb, 0xc4, 0x8d, 0x82,
+	0xd4, 0x1e, 0x1c, 0xf5, 0x94, 0xf5, 0x7c, 0x6f, 0xde, 0xbe, 0xef, 0x7b, 0x6f, 0xdf, 0x9b, 0x09,
+	0x5c, 0x23, 0x1d, 0xdc, 0x27, 0xac, 0x82, 0x6d, 0xb7, 0xd2, 0x5e, 0x6f, 0xa0, 0x20, 0xeb, 0x15,
+	0xd1, 0x29, 0xfb, 0xcc, 0x13, 0x9e, 0xae, 0x4b, 0xb0, 0x8c, 0x6d, 0xb7, 0xac, 0xc0, 0xa5, 0xfc,
+	0xae, 0xb7, 0xeb, 0x85, 0x70, 0x25, 0x78, 0x92, 0x96, 0x4b, 0xab, 0xca, 0x4d, 0xdb, 0x13, 0x58,
+	0xc1, 0x8e, 0xef, 0x31, 0x81, 0xf6, 0xc0, 0x61, 0xd7, 0x47, 0xae, 0x2c, 0x6f, 0x2a, 0x4b, 0xc1,
+	0xf9, 0xf9, 0x86, 0xc5, 0x61, 0x91, 0xc5, 0xf0, 0xb2, 0xc2, 0x7d, 0x64, 0xae, 0xc3, 0xb9, 0xe3,
+	0xd1, 0x73, 0xfd, 0x19, 0x7f, 0x6a, 0x30, 0xf7, 0x08, 0xc5, 0xfb, 0x44, 0xe0, 0x01, 0xe9, 0x9a,
+	0xf8, 0x79, 0x0b, 0xb9, 0xd0, 0xb7, 0x20, 0xc3, 0x91, 0xda, 0xc8, 0x0a, 0xda, 0xb2, 0xb6, 0x9a,
+	0xad, 0xae, 0x1f, 0xf7, 0x4a, 0x6b, 0xbb, 0x8e, 0xd8, 0x6b, 0x35, 0xca, 0x96, 0xe7, 0x56, 0x2c,
+	0x8f, 0xbb, 0x1e, 0x57, 0x7f, 0xd6, 0xb8, 0xdd, 0x54, 0x3e, 0x37, 0x2c, 0x6b, 0xc3, 0xb6, 0x19,
+	0x72, 0x6e, 0x2a, 0x07, 0xfa, 0x27, 0x90, 0xb6, 0xf6, 0x88, 0x43, 0x0b, 0x89, 0x65, 0x6d, 0x75,
+	0xb2, 0xba, 0x79, 0xdc, 0x2b, 0xdd, 0x8e, 0x79, 0x92, 0xe1, 0x52, 0x14, 0x07, 0x1e, 0x6b, 0xaa,
+	0x5f, 0x6b, 0x96, 0xc7, 0xb0, 0xd2, 0xa9, 0x50, 0xec, 0xb4, 0x06, 0x72, 0x94, 0x37, 0x03, 0x37,
+	0x0f, 0x88, 0x8b, 0xa6, 0xf4, 0xa8, 0xbf, 0x01, 0xe3, 0x44, 0xbe, 0xad, 0x90, 0x0c, 0xc3, 0x9c,
+	0x39, 0xec, 0x95, 0xc6, 0x7e, 0xed, 0x95, 0xc6, 0xa3, 0x20, 0x22, 0xfc, 0xbd, 0xd4, 0x17, 0x3f,
+	0x14, 0x92, 0x46, 0x1e, 0xf4, 0x38, 0x57, 0xee, 0x7b, 0x94, 0xa3, 0xf1, 0x97, 0x06, 0x57, 0x37,
+	0x3d, 0xfa, 0xd8, 0x61, 0xae, 0x82, 0x76, 0x3a, 0xa3, 0x26, 0x44, 0x5a, 0x74, 0xea, 0x8e, 0xad,
+	0x64, 0xc8, 0x2b, 0x19, 0x52, 0xf7, 0x08, 0xdf, 0xeb, 0xf7, 0x4a, 0xa9, 0x9d, 0xce, 0x56, 0xcd,
+	0x4c, 0x89, 0xce, 0x96, 0x1d, 0x0a, 0xa1, 0x19, 0x4b, 0x50, 0x38, 0xcb, 0x58, 0xc9, 0xf1, 0x77,
+	0x02, 0xae, 0x28, 0xb0, 0x86, 0xbe, 0xc7, 0x1d, 0x71, 0x59, 0xc5, 0x08, 0x08, 0x11, 0xd7, 0x6b,
+	0x51, 0x51, 0x48, 0x49, 0x42, 0xca, 0xf6, 0xe6, 0x05, 0x48, 0x7d, 0xe4, 0x50, 0x51, 0xd0, 0x4c,
+	0xe5, 0x40, 0x7f, 0x07, 0xa6, 0x1b, 0x2d, 0x46, 0x91, 0xd5, 0xa3, 0x92, 0x4c, 0x0f, 0x2f, 0xc9,
+	0x9c, 0x34, 0xdb, 0x88, 0x15, 0xa6, 0x66, 0x14, 0x60, 0xe1, 0xb4, 0xe4, 0x2a, 0x1b, 0xdf, 0x24,
+	0x60, 0x5e, 0x41, 0x3b, 0x5e, 0x13, 0xe9, 0xa5, 0xcd, 0xc5, 0xdb, 0x90, 0x26, 0x9c, 0xa3, 0x4c,
+	0xc5, 0xd4, 0xad, 0xc5, 0xf2, 0xd9, 0x2e, 0x5b, 0xde, 0x08, 0x0c, 0xaa, 0xa9, 0xc0, 0x8b, 0x29,
+	0xad, 0x95, 0x7e, 0x0b, 0x90, 0x7f, 0x5a, 0x24, 0xa5, 0xde, 0xd7, 0x49, 0x58, 0x8c, 0x00, 0x46,
+	0x28, 0x7f, 0x8c, 0x6c, 0x1b, 0xbb, 0x97, 0x56, 0xc3, 0x7b, 0x90, 0x13, 0x8a, 0x66, 0x3d, 0x08,
+	0x35, 0xd4, 0x72, 0xfa, 0xd6, 0xf5, 0x61, 0x5a, 0xc6, 0xf4, 0xd8, 0xe9, 0xfa, 0x68, 0x66, 0xa3,
+	0x9d, 0xc1, 0x2f, 0xfd, 0x33, 0xc8, 0x34, 0xb1, 0x1b, 0xbc, 0x35, 0x1d, 0x12, 0xba, 0xdb, 0xef,
+	0x95, 0xd2, 0xdb, 0xd8, 0xdd, 0xaa, 0x1d, 0xf7, 0x4a, 0xef, 0x5e, 0x90, 0x59, 0x7c, 0x98, 0x95,
+	0xc3, 0xcd, 0x66, 0xba, 0x89, 0xdd, 0x93, 0x2e, 0xf4, 0x0a, 0x2c, 0x0d, 0x4b, 0x8e, 0xca, 0xdd,
+	0x1f, 0x09, 0x98, 0xfa, 0xc0, 0xa1, 0xcd, 0xd1, 0xca, 0xd6, 0x6b, 0x30, 0xcd, 0xd0, 0x72, 0x7c,
+	0x07, 0xa9, 0x08, 0x5b, 0x41, 0x98, 0xb6, 0x49, 0x33, 0x77, 0xb2, 0x1a, 0x04, 0xa3, 0xe7, 0xe3,
+	0xd5, 0x3e, 0xa9, 0x8a, 0x59, 0xdf, 0x87, 0x99, 0xc1, 0x66, 0x19, 0x61, 0xfa, 0xf9, 0x45, 0x38,
+	0x08, 0x2c, 0x5c, 0x53, 0x49, 0x58, 0x87, 0xac, 0x54, 0x59, 0xca, 0xae, 0xaf, 0x40, 0xd6, 0x96,
+	0x3d, 0x48, 0x86, 0xaf, 0x85, 0x01, 0x4e, 0xa9, 0xb5, 0x20, 0x78, 0xe3, 0xa7, 0x60, 0x60, 0x32,
+	0x24, 0x02, 0xab, 0x2d, 0x46, 0xc3, 0x2f, 0x8e, 0x8f, 0x54, 0x96, 0x62, 0x53, 0xf0, 0x0c, 0x0d,
+	0x55, 0x7d, 0xff, 0x26, 0x22, 0xb0, 0x86, 0xfe, 0xbe, 0xd7, 0x1d, 0xc1, 0xe6, 0x7b, 0xd2, 0x51,
+	0x93, 0xff, 0xa7, 0xa3, 0xea, 0xdb, 0x90, 0x13, 0x01, 0xd9, 0xba, 0x8d, 0x82, 0x38, 0xfb, 0x5c,
+	0x35, 0xe4, 0xe5, 0xa1, 0x4d, 0x24, 0x30, 0xac, 0x49, 0x3b, 0xe5, 0x25, 0x2b, 0x62, 0x6b, 0xf1,
+	0x23, 0x5a, 0xe6, 0x02, 0x47, 0xb4, 0xc4, 0xfd, 0xd4, 0x44, 0x7a, 0x36, 0x63, 0x5c, 0x83, 0xc5,
+	0x21, 0xe2, 0xab, 0xd4, 0xfc, 0xac, 0xc1, 0xab, 0x12, 0x7d, 0x88, 0xd4, 0x76, 0xe8, 0x6e, 0xd4,
+	0x3d, 0x46, 0xb2, 0x08, 0x97, 0xa1, 0xf8, 0x2c, 0x32, 0x8a, 0xef, 0x77, 0x89, 0xc8, 0x24, 0xc2,
+	0x3e, 0x3c, 0xa0, 0xc8, 0xf8, 0x9e, 0xe3, 0x8f, 0x56, 0x41, 0x0e, 0x86, 0x4a, 0xf2, 0x45, 0x0d,
+	0x95, 0x84, 0xb1, 0x02, 0xa5, 0x67, 0x8a, 0xa5, 0x04, 0xfd, 0x3e, 0x01, 0x2b, 0xa7, 0x6c, 0x7c,
+	0x64, 0x44, 0x78, 0x2f, 0x35, 0x1d, 0xae, 0xe9, 0x0d, 0x30, 0xce, 0xd3, 0x4b, 0xc9, 0xfa, 0xa3,
+	0x06, 0xf3, 0x8f, 0x9c, 0x5d, 0xba, 0xe9, 0xb9, 0x2e, 0xa1, 0xf6, 0x48, 0x7e, 0x8d, 0x5f, 0x6a,
+	0x90, 0x7f, 0x9a, 0x83, 0x1a, 0x8b, 0x77, 0x60, 0xbe, 0x41, 0x84, 0xb5, 0x87, 0x76, 0xdd, 0x52,
+	0x58, 0x20, 0xba, 0x64, 0x74, 0xa5, 0xdf, 0x2b, 0xcd, 0x55, 0x25, 0x1c, 0xed, 0xdc, 0xaa, 0x99,
+	0x73, 0x8d, 0x53, 0x4b, 0xb6, 0x7e, 0x1d, 0x72, 0x6a, 0x7b, 0xdd, 0x0a, 0x2f, 0x1e, 0x01, 0x91,
+	0x9c, 0x99, 0x55, 0x8b, 0x9b, 0xc1, 0x9a, 0xf1, 0x6d, 0x02, 0x66, 0x36, 0x6c, 0x3b, 0x0c, 0xf1,
+	0x05, 0x88, 0xf8, 0x31, 0xa4, 0x28, 0x71, 0xf1, 0x79, 0x6a, 0x18, 0x3a, 0xd4, 0x6f, 0xc3, 0x44,
+	0x50, 0x8b, 0xb1, 0x93, 0xe7, 0x8d, 0x68, 0x68, 0x08, 0xce, 0xcb, 0x27, 0xfb, 0xa2, 0xe9, 0x11,
+	0x1d, 0x3d, 0xc7, 0x9b, 0xf2, 0x41, 0x7f, 0x1d, 0x32, 0x3e, 0x61, 0xc4, 0x8d, 0x2e, 0x4f, 0xd3,
+	0x6a, 0x58, 0x64, 0x1e, 0x86, 0xab, 0xa6, 0x42, 0xe5, 0x6d, 0xfe, 0x7e, 0x6a, 0x22, 0x39, 0x9b,
+	0x32, 0x74, 0x98, 0x1d, 0x68, 0xa5, 0x2a, 0xf1, 0x1f, 0x0d, 0xae, 0x9a, 0x28, 0x58, 0xf7, 0x2e,
+	0x71, 0xf6, 0xd1, 0xbe, 0xd3, 0x46, 0x3a, 0x62, 0x97, 0xd8, 0x75, 0x98, 0xc0, 0x20, 0xea, 0xc1,
+	0x87, 0xbd, 0xd0, 0xef, 0x95, 0xc6, 0x43, 0x26, 0xe1, 0xa7, 0x1d, 0x3d, 0x9a, 0xe3, 0xa1, 0x5d,
+	0xfc, 0x66, 0x7f, 0x96, 0xb9, 0x94, 0xa5, 0xfa, 0xe0, 0xf0, 0xf7, 0xe2, 0xd8, 0x61, 0xbf, 0xa8,
+	0x3d, 0xe9, 0x17, 0xb5, 0xdf, 0xfa, 0x45, 0xed, 0xab, 0xa3, 0xe2, 0xd8, 0x93, 0xa3, 0xe2, 0xd8,
+	0x2f, 0x47, 0xc5, 0xb1, 0x4f, 0xdf, 0xbc, 0x60, 0xe8, 0xd8, 0x76, 0xa5, 0x24, 0x8d, 0x4c, 0xf8,
+	0x2f, 0xa4, 0xb7, 0xfe, 0x0b, 0x00, 0x00, 0xff, 0xff, 0xfc, 0xc9, 0xed, 0x72, 0x2e, 0x13, 0x00,
+	0x00,
 }
 
 func (m *SetGatewayRequest) Marshal() (dAtA []byte, err error) {
@@ -1416,66 +1338,6 @@ func (m *ConfirmGatewayTxResponse) MarshalTo(dAtA []byte) (int, error) {
 }
 
 func (m *ConfirmGatewayTxResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	return len(dAtA) - i, nil
-}
-
-func (m *ConfirmChainRequest) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *ConfirmChainRequest) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *ConfirmChainRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if len(m.Name) > 0 {
-		i -= len(m.Name)
-		copy(dAtA[i:], m.Name)
-		i = encodeVarintTx(dAtA, i, uint64(len(m.Name)))
-		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.Sender) > 0 {
-		i -= len(m.Sender)
-		copy(dAtA[i:], m.Sender)
-		i = encodeVarintTx(dAtA, i, uint64(len(m.Sender)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *ConfirmChainResponse) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *ConfirmChainResponse) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *ConfirmChainResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -2033,93 +1895,6 @@ func (m *CreatePendingTransfersResponse) MarshalToSizedBuffer(dAtA []byte) (int,
 	return len(dAtA) - i, nil
 }
 
-func (m *VoteConfirmChainRequest) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *VoteConfirmChainRequest) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *VoteConfirmChainRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.Confirmed {
-		i--
-		if m.Confirmed {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
-		}
-		i--
-		dAtA[i] = 0x20
-	}
-	{
-		size, err := m.PollKey.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintTx(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0x1a
-	if len(m.Name) > 0 {
-		i -= len(m.Name)
-		copy(dAtA[i:], m.Name)
-		i = encodeVarintTx(dAtA, i, uint64(len(m.Name)))
-		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.Sender) > 0 {
-		i -= len(m.Sender)
-		copy(dAtA[i:], m.Sender)
-		i = encodeVarintTx(dAtA, i, uint64(len(m.Sender)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *VoteConfirmChainResponse) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *VoteConfirmChainResponse) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *VoteConfirmChainResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if len(m.Log) > 0 {
-		i -= len(m.Log)
-		copy(dAtA[i:], m.Log)
-		i = encodeVarintTx(dAtA, i, uint64(len(m.Log)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
 func (m *CreateTransferOwnershipRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -2401,6 +2176,73 @@ func (m *AddChainResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *RetryFailedEventRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *RetryFailedEventRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *RetryFailedEventRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.EventID) > 0 {
+		i -= len(m.EventID)
+		copy(dAtA[i:], m.EventID)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.EventID)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.Chain) > 0 {
+		i -= len(m.Chain)
+		copy(dAtA[i:], m.Chain)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Chain)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Sender) > 0 {
+		i -= len(m.Sender)
+		copy(dAtA[i:], m.Sender)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Sender)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *RetryFailedEventResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *RetryFailedEventResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *RetryFailedEventResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintTx(dAtA []byte, offset int, v uint64) int {
 	offset -= sovTx(v)
 	base := offset
@@ -2460,32 +2302,6 @@ func (m *ConfirmGatewayTxRequest) Size() (n int) {
 }
 
 func (m *ConfirmGatewayTxResponse) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	return n
-}
-
-func (m *ConfirmChainRequest) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.Sender)
-	if l > 0 {
-		n += 1 + l + sovTx(uint64(l))
-	}
-	l = len(m.Name)
-	if l > 0 {
-		n += 1 + l + sovTx(uint64(l))
-	}
-	return n
-}
-
-func (m *ConfirmChainResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -2717,41 +2533,6 @@ func (m *CreatePendingTransfersResponse) Size() (n int) {
 	return n
 }
 
-func (m *VoteConfirmChainRequest) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.Sender)
-	if l > 0 {
-		n += 1 + l + sovTx(uint64(l))
-	}
-	l = len(m.Name)
-	if l > 0 {
-		n += 1 + l + sovTx(uint64(l))
-	}
-	l = m.PollKey.Size()
-	n += 1 + l + sovTx(uint64(l))
-	if m.Confirmed {
-		n += 2
-	}
-	return n
-}
-
-func (m *VoteConfirmChainResponse) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.Log)
-	if l > 0 {
-		n += 1 + l + sovTx(uint64(l))
-	}
-	return n
-}
-
 func (m *CreateTransferOwnershipRequest) Size() (n int) {
 	if m == nil {
 		return 0
@@ -2876,6 +2657,36 @@ func (m *AddChainResponse) Size() (n int) {
 	return n
 }
 
+func (m *RetryFailedEventRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Sender)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = len(m.Chain)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = len(m.EventID)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	return n
+}
+
+func (m *RetryFailedEventResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
 func sovTx(x uint64) (n int) {
 	return (math_bits.Len64(x|1) + 6) / 7
 }
@@ -2975,7 +2786,7 @@ func (m *SetGatewayRequest) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Chain = string(dAtA[iNdEx:postIndex])
+			m.Chain = github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
@@ -3174,7 +2985,7 @@ func (m *ConfirmGatewayTxRequest) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Chain = string(dAtA[iNdEx:postIndex])
+			m.Chain = github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
@@ -3257,172 +3068,6 @@ func (m *ConfirmGatewayTxResponse) Unmarshal(dAtA []byte) error {
 		}
 		if fieldNum <= 0 {
 			return fmt.Errorf("proto: ConfirmGatewayTxResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		default:
-			iNdEx = preIndex
-			skippy, err := skipTx(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthTx
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *ConfirmChainRequest) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowTx
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: ConfirmChainRequest: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ConfirmChainRequest: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Sender", wireType)
-			}
-			var byteLen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowTx
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				byteLen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if byteLen < 0 {
-				return ErrInvalidLengthTx
-			}
-			postIndex := iNdEx + byteLen
-			if postIndex < 0 {
-				return ErrInvalidLengthTx
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Sender = append(m.Sender[:0], dAtA[iNdEx:postIndex]...)
-			if m.Sender == nil {
-				m.Sender = []byte{}
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowTx
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthTx
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthTx
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Name = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipTx(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthTx
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *ConfirmChainResponse) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowTx
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: ConfirmChainResponse: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ConfirmChainResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		default:
@@ -3539,7 +3184,7 @@ func (m *ConfirmDepositRequest) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Chain = string(dAtA[iNdEx:postIndex])
+			m.Chain = github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
@@ -3804,7 +3449,7 @@ func (m *ConfirmTokenRequest) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Chain = string(dAtA[iNdEx:postIndex])
+			m.Chain = github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
@@ -4036,7 +3681,7 @@ func (m *ConfirmTransferKeyRequest) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Chain = string(dAtA[iNdEx:postIndex])
+			m.Chain = github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
@@ -4286,7 +3931,7 @@ func (m *LinkRequest) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Chain = string(dAtA[iNdEx:postIndex])
+			m.Chain = github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
@@ -4382,7 +4027,7 @@ func (m *LinkRequest) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.RecipientChain = string(dAtA[iNdEx:postIndex])
+			m.RecipientChain = github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -4580,7 +4225,7 @@ func (m *CreateBurnTokensRequest) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Chain = string(dAtA[iNdEx:postIndex])
+			m.Chain = github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -4746,7 +4391,7 @@ func (m *CreateDeployTokenRequest) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Chain = string(dAtA[iNdEx:postIndex])
+			m.Chain = github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
@@ -5011,7 +4656,7 @@ func (m *CreatePendingTransfersRequest) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Chain = string(dAtA[iNdEx:postIndex])
+			m.Chain = github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -5063,257 +4708,6 @@ func (m *CreatePendingTransfersResponse) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: CreatePendingTransfersResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		default:
-			iNdEx = preIndex
-			skippy, err := skipTx(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthTx
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *VoteConfirmChainRequest) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowTx
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: VoteConfirmChainRequest: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: VoteConfirmChainRequest: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Sender", wireType)
-			}
-			var byteLen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowTx
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				byteLen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if byteLen < 0 {
-				return ErrInvalidLengthTx
-			}
-			postIndex := iNdEx + byteLen
-			if postIndex < 0 {
-				return ErrInvalidLengthTx
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Sender = append(m.Sender[:0], dAtA[iNdEx:postIndex]...)
-			if m.Sender == nil {
-				m.Sender = []byte{}
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowTx
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthTx
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthTx
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Name = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field PollKey", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowTx
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthTx
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthTx
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.PollKey.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 4:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Confirmed", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowTx
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.Confirmed = bool(v != 0)
-		default:
-			iNdEx = preIndex
-			skippy, err := skipTx(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthTx
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *VoteConfirmChainResponse) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowTx
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: VoteConfirmChainResponse: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: VoteConfirmChainResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Log", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowTx
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthTx
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthTx
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Log = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipTx(dAtA[iNdEx:])
@@ -5428,7 +4822,7 @@ func (m *CreateTransferOwnershipRequest) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Chain = string(dAtA[iNdEx:postIndex])
+			m.Chain = github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
@@ -5626,7 +5020,7 @@ func (m *CreateTransferOperatorshipRequest) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Chain = string(dAtA[iNdEx:postIndex])
+			m.Chain = github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
@@ -5824,7 +5218,7 @@ func (m *SignCommandsRequest) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Chain = string(dAtA[iNdEx:postIndex])
+			m.Chain = github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -6043,7 +5437,7 @@ func (m *AddChainRequest) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Name = string(dAtA[iNdEx:postIndex])
+			m.Name = github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 4:
 			if wireType != 0 {
@@ -6059,7 +5453,7 @@ func (m *AddChainRequest) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.KeyType |= exported1.KeyType(b&0x7F) << shift
+				m.KeyType |= exported.KeyType(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -6145,6 +5539,204 @@ func (m *AddChainResponse) Unmarshal(dAtA []byte) error {
 		}
 		if fieldNum <= 0 {
 			return fmt.Errorf("proto: AddChainResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *RetryFailedEventRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: RetryFailedEventRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: RetryFailedEventRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Sender", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Sender = append(m.Sender[:0], dAtA[iNdEx:postIndex]...)
+			if m.Sender == nil {
+				m.Sender = []byte{}
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Chain", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Chain = github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EventID", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.EventID = EventID(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *RetryFailedEventResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: RetryFailedEventResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: RetryFailedEventResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		default:

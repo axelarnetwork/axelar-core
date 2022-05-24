@@ -259,7 +259,7 @@ func (k chainKeeper) GetBurnerAddressAndSalt(ctx sdk.Context, token types.ERC20T
 		}
 
 		initCodeHash = types.Hash(crypto.Keccak256Hash(append(token.GetBurnerCode(), params...)))
-	case types.BurnerCodeHashV2, types.BurnerCodeHashV3:
+	case types.BurnerCodeHashV2, types.BurnerCodeHashV3, types.BurnerCodeHashV4:
 		initCodeHash = token.GetBurnerCodeHash()
 	default:
 		return types.Address{}, types.Hash{}, fmt.Errorf("unsupported burner code with hash %s for chain %s", tokenBurnerCodeHash, k.chainLowerKey)
@@ -670,7 +670,7 @@ func (k chainKeeper) CreateNewBatchToSign(ctx sdk.Context, signer types.Signer) 
 	}
 
 	keyRole := signer.GetKeyRole(ctx, keyID)
-	commandBatch, err := types.NewCommandBatchMetadata(chainID, keyID, keyRole, commands)
+	commandBatch, err := types.NewCommandBatchMetadata(ctx.BlockHeight(), chainID, keyID, keyRole, commands)
 	if err != nil {
 		return types.CommandBatch{}, err
 	}
@@ -860,8 +860,8 @@ func (k chainKeeper) getGateway(ctx sdk.Context) types.Gateway {
 	return gateway
 }
 
-func getEventKey(eventID string) utils.Key {
-	return eventPrefix.Append(utils.LowerCaseKey(eventID))
+func getEventKey(eventID types.EventID) utils.Key {
+	return eventPrefix.Append(utils.LowerCaseKey(string(eventID)))
 }
 
 func (k chainKeeper) setEvent(ctx sdk.Context, event types.Event) {
@@ -883,7 +883,7 @@ func (k chainKeeper) getEvents(ctx sdk.Context) []types.Event {
 }
 
 // GetEvent returns the event for the given event ID
-func (k chainKeeper) GetEvent(ctx sdk.Context, eventID string) (event types.Event, ok bool) {
+func (k chainKeeper) GetEvent(ctx sdk.Context, eventID types.EventID) (event types.Event, ok bool) {
 	k.getStore(ctx, k.chainLowerKey).Get(getEventKey(eventID), &event)
 
 	return event, event.Status != types.EventNonExistent
@@ -899,11 +899,9 @@ func (k chainKeeper) SetConfirmedEvent(ctx sdk.Context, event types.Event) error
 	event.Status = types.EventConfirmed
 
 	switch event.GetEvent().(type) {
-	case *types.Event_ContractCall, *types.Event_ContractCallWithToken, *types.Event_TokenSent:
+	case *types.Event_ContractCall, *types.Event_ContractCallWithToken, *types.Event_TokenSent,
+		*types.Event_Transfer, *types.Event_TokenDeployed, *types.Event_MultisigOwnershipTransferred, *types.Event_MultisigOperatorshipTransferred:
 		k.GetConfirmedEventQueue(ctx).Enqueue(getEventKey(eventID), &event)
-	case *types.Event_Transfer, *types.Event_TokenDeployed,
-		*types.Event_MultisigOwnershipTransferred, *types.Event_MultisigOperatorshipTransferred:
-		k.setEvent(ctx, event)
 	default:
 		return fmt.Errorf("unsupported event type %T", event)
 	}
@@ -912,7 +910,7 @@ func (k chainKeeper) SetConfirmedEvent(ctx sdk.Context, event types.Event) error
 }
 
 // SetEventCompleted sets the event as completed
-func (k chainKeeper) SetEventCompleted(ctx sdk.Context, eventID string) error {
+func (k chainKeeper) SetEventCompleted(ctx sdk.Context, eventID types.EventID) error {
 	event, ok := k.GetEvent(ctx, eventID)
 	if !ok || event.Status != types.EventConfirmed {
 		return fmt.Errorf("event %s is not confirmed", eventID)
@@ -925,7 +923,7 @@ func (k chainKeeper) SetEventCompleted(ctx sdk.Context, eventID string) error {
 }
 
 // SetEventFailed sets the event as invalid
-func (k chainKeeper) SetEventFailed(ctx sdk.Context, eventID string) error {
+func (k chainKeeper) SetEventFailed(ctx sdk.Context, eventID types.EventID) error {
 	event, ok := k.GetEvent(ctx, eventID)
 	if !ok || event.Status != types.EventConfirmed {
 		return fmt.Errorf("event %s is not confirmed", eventID)

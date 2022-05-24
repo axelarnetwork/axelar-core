@@ -442,11 +442,11 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	app.ibcKeeper.SetRouter(ibcRouter)
 
 	tssRouter := tssTypes.NewRouter()
-	tssRouter.AddRoute(evmTypes.ModuleName, evmKeeper.NewTssHandler(evmK, nexusK, tssK))
+	tssRouter.AddRoute(evmTypes.ModuleName, evmKeeper.NewTssHandler(appCodec, evmK, tssK))
 	tssK.SetRouter(tssRouter)
 
 	voteRouter := voteTypes.NewRouter()
-	voteRouter.AddHandler(evmTypes.ModuleName, evmKeeper.NewVoteHandler(appCodec, evmK, nexusK, tssK))
+	voteRouter.AddHandler(evmTypes.ModuleName, evmKeeper.NewVoteHandler(appCodec, evmK, nexusK, rewardK))
 	votingK.SetVoteRouter(voteRouter)
 
 	/****  Module Options ****/
@@ -477,10 +477,10 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		transferModule,
 		feegrantmodule.NewAppModule(appCodec, accountK, bankK, feegrantK, app.interfaceRegistry),
 
-		snapshot.NewAppModule(snapK, nexusK),
+		snapshot.NewAppModule(snapK),
 		tss.NewAppModule(tssK, snapK, votingK, nexusK, stakingK, rewardK),
 		vote.NewAppModule(votingK),
-		nexus.NewAppModule(nexusK, snapK, stakingK, axelarnetK, evmK),
+		nexus.NewAppModule(nexusK, snapK, stakingK, axelarnetK, evmK, rewardK),
 		evm.NewAppModule(evmK, tssK, votingK, tssK, nexusK, snapK, logger),
 		axelarnetModule,
 		reward.NewAppModule(rewardK, nexusK, mintK, stakingK, tssK, snapK, bankK, bApp.MsgServiceRouter(), bApp.Router()),

@@ -13,6 +13,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
@@ -121,7 +122,7 @@ func getConfirmedEventQueue(cdc codec.Codec, events []types.Event) utils.QueueSt
 		}
 
 		qs.Items[fmt.Sprintf("%s_%s", queueName, event.GetID())] = utils.QueueState_Item{
-			Key:   eventPrefix.AppendStr(event.GetID()).AsKey(),
+			Key:   eventPrefix.AppendStr(string(event.GetID())).AsKey(),
 			Value: cdc.MustMarshalLengthPrefixed(&event),
 		}
 	}
@@ -165,7 +166,7 @@ func RandomDeposit() types.ERC20Deposit {
 		TxID:             RandomHash(),
 		Amount:           sdk.NewUint(uint64(rand.PosI64())),
 		Asset:            rand.Denom(5, 10),
-		DestinationChain: randomNormalizedStr(5, 20),
+		DestinationChain: nexus.ChainName(randomNormalizedStr(5, 20)),
 		BurnerAddress:    RandomAddress(),
 	}
 }
@@ -298,7 +299,7 @@ func RandomBurnerInfo() types.BurnerInfo {
 	return types.BurnerInfo{
 		BurnerAddress:    RandomAddress(),
 		TokenAddress:     RandomAddress(),
-		DestinationChain: randomNormalizedStr(5, 20),
+		DestinationChain: nexus.ChainName(randomNormalizedStr(5, 20)),
 		Symbol:           randomNormalizedStr(5, 20),
 		Asset:            rand.Denom(5, 20),
 		Salt:             RandomHash(),
@@ -315,7 +316,7 @@ func RandomParams() types.Params {
 	nominator := rand.I64Between(1, 100)
 	denominator := rand.I64Between(nominator, 101)
 	params := types.Params{
-		Chain:               randomNormalizedStr(5, 20),
+		Chain:               nexus.ChainName(randomNormalizedStr(5, 20)),
 		ConfirmationHeight:  uint64(rand.PosI64()),
 		TokenCode:           rand.Bytes(int(rand.I64Between(10, 100))),
 		Burnable:            bzBurnable,
@@ -351,28 +352,28 @@ func RandomEvent(statuses ...types.Event_Status) types.Event {
 
 	return rand.Of(
 		types.Event{
-			Chain:  randomNormalizedStr(5, 20),
+			Chain:  nexus.ChainName(randomNormalizedStr(5, 20)),
 			TxId:   RandomHash(),
 			Index:  uint64(rand.PosI64()),
 			Status: rand.Of(statuses...),
 			Event: &types.Event_ContractCall{
 				ContractCall: &types.EventContractCall{
 					Sender:           RandomAddress(),
-					DestinationChain: randomNormalizedStr(5, 20),
+					DestinationChain: nexus.ChainName(randomNormalizedStr(5, 20)),
 					ContractAddress:  RandomAddress().Hex(),
 					PayloadHash:      types.Hash(crypto.Keccak256Hash(payload)),
 				},
 			},
 		},
 		types.Event{
-			Chain:  randomNormalizedStr(5, 20),
+			Chain:  nexus.ChainName(randomNormalizedStr(5, 20)),
 			TxId:   RandomHash(),
 			Index:  uint64(rand.PosI64()),
 			Status: rand.Of(statuses...),
 			Event: &types.Event_ContractCallWithToken{
 				ContractCallWithToken: &types.EventContractCallWithToken{
 					Sender:           RandomAddress(),
-					DestinationChain: randomNormalizedStr(5, 20),
+					DestinationChain: nexus.ChainName(randomNormalizedStr(5, 20)),
 					ContractAddress:  RandomAddress().Hex(),
 					PayloadHash:      types.Hash(crypto.Keccak256Hash(payload)),
 					Symbol:           randomNormalizedStr(5, 20),
@@ -381,14 +382,14 @@ func RandomEvent(statuses ...types.Event_Status) types.Event {
 			},
 		},
 		types.Event{
-			Chain:  randomNormalizedStr(5, 20),
+			Chain:  nexus.ChainName(randomNormalizedStr(5, 20)),
 			TxId:   RandomHash(),
 			Index:  uint64(rand.PosI64()),
 			Status: rand.Of(statuses...),
 			Event: &types.Event_TokenSent{
 				TokenSent: &types.EventTokenSent{
 					Sender:             RandomAddress(),
-					DestinationChain:   randomNormalizedStr(5, 20),
+					DestinationChain:   nexus.ChainName(randomNormalizedStr(5, 20)),
 					DestinationAddress: RandomAddress().Hex(),
 					Symbol:             randomNormalizedStr(5, 20),
 					Amount:             sdk.NewUint(uint64(rand.PosI64())),

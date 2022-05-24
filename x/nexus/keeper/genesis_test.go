@@ -21,7 +21,6 @@ import (
 	evmkeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 )
 
@@ -56,11 +55,11 @@ func getRandomEthereumAddress() exported.CrossChainAddress {
 	}
 }
 
-func randFee(chain string, asset string) nexus.FeeInfo {
+func randFee(chain exported.ChainName, asset string) exported.FeeInfo {
 	rate := sdk.NewDecWithPrec(sdk.Int(randInt(0, 100)).Int64(), 3)
 	min := randInt(0, 10)
 	max := randInt(min.Int64()+1, 100)
-	return nexus.NewFeeInfo(chain, asset, rate, min, max)
+	return exported.NewFeeInfo(chain, asset, rate, min, max)
 }
 
 func randInt(min int64, max int64) sdk.Int {
@@ -81,7 +80,7 @@ func assertChainStatesEqual(t *testing.T, expected, actual *types.GenesisState) 
 func TestExportGenesisInitGenesis(t *testing.T) {
 	ctx, keeper := setup()
 
-	getter := func(sdk.Context, string) (axelarnetTypes.CosmosChain, bool) {
+	getter := func(sdk.Context, exported.ChainName) (axelarnetTypes.CosmosChain, bool) {
 		return axelarnetTypes.CosmosChain{Name: axelarnet.Axelarnet.Name, AddrPrefix: "axelar"}, true
 	}
 
@@ -94,14 +93,24 @@ func TestExportGenesisInitGenesis(t *testing.T) {
 
 	expected := types.DefaultGenesisState()
 
-	keeper.RegisterFee(ctx, axelarnet.Axelarnet, randFee(axelarnet.Axelarnet.Name, axelarnet.NativeAsset))
+	if err := keeper.RegisterFee(ctx, axelarnet.Axelarnet, randFee(axelarnet.Axelarnet.Name, axelarnet.NativeAsset)); err != nil {
+		panic(err)
+	}
 
 	keeper.SetChain(ctx, bitcoin.Bitcoin)
-	keeper.RegisterAsset(ctx, bitcoin.Bitcoin, exported.NewAsset(bitcoin.NativeAsset, true))
-	keeper.RegisterFee(ctx, bitcoin.Bitcoin, randFee(bitcoin.Bitcoin.Name, bitcoin.NativeAsset))
+	if err := keeper.RegisterAsset(ctx, bitcoin.Bitcoin, exported.NewAsset(bitcoin.NativeAsset, true)); err != nil {
+		panic(err)
+	}
+	if err := keeper.RegisterFee(ctx, bitcoin.Bitcoin, randFee(bitcoin.Bitcoin.Name, bitcoin.NativeAsset)); err != nil {
+		panic(err)
+	}
 
-	keeper.RegisterAsset(ctx, evm.Ethereum, exported.NewAsset(axelarnet.NativeAsset, false))
-	keeper.RegisterFee(ctx, evm.Ethereum, randFee(evm.Ethereum.Name, axelarnet.NativeAsset))
+	if err := keeper.RegisterAsset(ctx, evm.Ethereum, exported.NewAsset(axelarnet.NativeAsset, false)); err != nil {
+		panic(err)
+	}
+	if err := keeper.RegisterFee(ctx, evm.Ethereum, randFee(evm.Ethereum.Name, axelarnet.NativeAsset)); err != nil {
+		panic(err)
+	}
 
 	expected.Chains = append(expected.Chains, bitcoin.Bitcoin)
 	for _, chain := range expected.Chains {
@@ -114,7 +123,9 @@ func TestExportGenesisInitGenesis(t *testing.T) {
 		depositAddress := getRandomAxelarnetAddress()
 		recipientAddress := getRandomEthereumAddress()
 
-		keeper.LinkAddresses(ctx, depositAddress, recipientAddress)
+		if err := keeper.LinkAddresses(ctx, depositAddress, recipientAddress); err != nil {
+			panic(err)
+		}
 		expectedLinkedAddresses[i] = types.NewLinkedAddresses(depositAddress, recipientAddress)
 	}
 	expected.LinkedAddresses = expectedLinkedAddresses
@@ -131,11 +142,14 @@ func TestExportGenesisInitGenesis(t *testing.T) {
 		fees, err := keeper.ComputeTransferFee(ctx, depositAddress.Chain, recipientAddress.Chain, asset)
 		assert.Nil(t, err)
 
-		keeper.EnqueueForTransfer(
+		_, err = keeper.EnqueueForTransfer(
 			ctx,
 			depositAddress,
 			asset,
 		)
+		if err != nil {
+			panic(err)
+		}
 
 		if asset.Amount.LTE(fees.Amount) {
 			expectedTransfer := exported.NewCrossChainTransfer(uint64(i), recipientAddress, asset, exported.InsufficientAmount)

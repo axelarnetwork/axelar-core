@@ -18,6 +18,7 @@ import (
 	nexustypes "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	"github.com/axelarnetwork/utils/slices"
 )
 
 var _ types.QueryServiceServer = Querier{}
@@ -38,15 +39,12 @@ func NewGRPCQuerier(k types.BaseKeeper, n types.Nexus, s types.Signer) Querier {
 	}
 }
 
-func queryChains(ctx sdk.Context, n types.Nexus) []string {
-	chains := []string{}
-	for _, c := range n.GetChains(ctx) {
-		if c.Module == types.ModuleName {
-			chains = append(chains, c.Name)
-		}
-	}
+func queryChains(ctx sdk.Context, n types.Nexus) []nexustypes.ChainName {
+	chains := slices.Filter(n.GetChains(ctx), func(c nexustypes.Chain) bool { return c.Module == types.ModuleName })
 
-	return chains
+	return slices.Map(chains, func(c nexustypes.Chain) nexustypes.ChainName {
+		return c.Name
+	})
 }
 
 // Chains returns the available evm chains
@@ -184,10 +182,10 @@ func getBatchedCommandsSig(pair tss.SigKeyPair, batchedCommands types.Hash) (typ
 func (q Querier) BatchedCommands(c context.Context, req *types.BatchedCommandsRequest) (*types.BatchedCommandsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	if !q.keeper.HasChain(ctx, req.Chain) {
+	if !q.keeper.HasChain(ctx, nexustypes.ChainName(req.Chain)) {
 		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", req.Chain)).Error())
 	}
-	ck := q.keeper.ForChain(req.Chain)
+	ck := q.keeper.ForChain(nexustypes.ChainName(req.Chain))
 
 	var batchedCommands types.CommandBatch
 	if req.Id == "" {
@@ -219,13 +217,13 @@ func (q Querier) BatchedCommands(c context.Context, req *types.BatchedCommandsRe
 func (q Querier) ConfirmationHeight(c context.Context, req *types.ConfirmationHeightRequest) (*types.ConfirmationHeightResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	_, ok := q.nexus.GetChain(ctx, req.Chain)
+	_, ok := q.nexus.GetChain(ctx, nexustypes.ChainName(req.Chain))
 	if !ok {
 		return nil, status.Error(codes.NotFound, "unknown chain")
 
 	}
 
-	ck := q.keeper.ForChain(string(req.Chain))
+	ck := q.keeper.ForChain(nexustypes.ChainName(req.Chain))
 	height, ok := ck.GetRequiredConfirmationHeight(ctx)
 	if !ok {
 		return nil, status.Error(codes.NotFound, "could not get confirmation height")
@@ -237,11 +235,11 @@ func (q Querier) ConfirmationHeight(c context.Context, req *types.ConfirmationHe
 // Event implements the query for an event at a chain based on the event's ID
 func (q Querier) Event(c context.Context, req *types.EventRequest) (*types.EventResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
-	if !q.keeper.HasChain(ctx, req.Chain) {
+	if !q.keeper.HasChain(ctx, nexustypes.ChainName(req.Chain)) {
 		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("[%s] is not a registered chain", req.Chain)).Error())
 	}
 
-	event, ok := q.keeper.ForChain(req.Chain).GetEvent(ctx, req.EventId)
+	event, ok := q.keeper.ForChain(nexustypes.ChainName(req.Chain)).GetEvent(ctx, types.EventID(req.EventId))
 	if !ok {
 		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("no event with ID [%s] was found", req.EventId)).Error())
 	}
@@ -250,7 +248,7 @@ func (q Querier) Event(c context.Context, req *types.EventRequest) (*types.Event
 }
 
 func queryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, params *types.QueryDepositStateParams) (types.DepositStatus, string, codes.Code) {
-	_, ok := n.GetChain(ctx, k.GetName())
+	_, ok := n.GetChain(ctx, nexustypes.ChainName(k.GetName()))
 	if !ok {
 		return -1, fmt.Sprintf("%s is not a registered chain", k.GetName()), codes.NotFound
 	}
@@ -290,12 +288,12 @@ func (q Querier) DepositState(c context.Context, req *types.DepositStateRequest)
 func (q Querier) PendingCommands(c context.Context, req *types.PendingCommandsRequest) (*types.PendingCommandsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	_, ok := q.nexus.GetChain(ctx, req.Chain)
+	_, ok := q.nexus.GetChain(ctx, nexustypes.ChainName(req.Chain))
 	if !ok {
 		return nil, status.Error(codes.NotFound, fmt.Sprintf("chain %s not found", req.Chain))
 	}
 
-	ck := q.keeper.ForChain(req.Chain)
+	ck := q.keeper.ForChain(nexustypes.ChainName(req.Chain))
 
 	var commands []types.QueryCommandResponse
 	for _, cmd := range ck.GetPendingCommands(ctx) {
@@ -357,7 +355,7 @@ func queryAddressByKeyID(ctx sdk.Context, s types.Signer, chain nexustypes.Chain
 func (q Querier) KeyAddress(c context.Context, req *types.KeyAddressRequest) (*types.KeyAddressResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	chain, ok := q.nexus.GetChain(ctx, req.Chain)
+	chain, ok := q.nexus.GetChain(ctx, nexustypes.ChainName(req.Chain))
 	if !ok {
 		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", req.Chain)).Error())
 	}
@@ -392,11 +390,11 @@ func (q Querier) KeyAddress(c context.Context, req *types.KeyAddressRequest) (*t
 func (q Querier) GatewayAddress(c context.Context, req *types.GatewayAddressRequest) (*types.GatewayAddressResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	if !q.keeper.HasChain(ctx, req.Chain) {
+	if !q.keeper.HasChain(ctx, nexustypes.ChainName(req.Chain)) {
 		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", req.Chain)).Error())
 	}
 
-	ck := q.keeper.ForChain(req.Chain)
+	ck := q.keeper.ForChain(nexustypes.ChainName(req.Chain))
 
 	address, ok := ck.GetGatewayAddress(ctx)
 	if !ok {
@@ -410,11 +408,11 @@ func (q Querier) GatewayAddress(c context.Context, req *types.GatewayAddressRequ
 func (q Querier) Bytecode(c context.Context, req *types.BytecodeRequest) (*types.BytecodeResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	if _, ok := q.nexus.GetChain(ctx, req.Chain); !ok {
+	if _, ok := q.nexus.GetChain(ctx, nexustypes.ChainName(req.Chain)); !ok {
 		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", req.Chain)).Error())
 	}
 
-	ck := q.keeper.ForChain(req.Chain)
+	ck := q.keeper.ForChain(nexustypes.ChainName(req.Chain))
 
 	var bytecode []byte
 	switch strings.ToLower(req.Contract) {

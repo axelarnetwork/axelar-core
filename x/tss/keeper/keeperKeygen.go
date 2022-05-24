@@ -225,9 +225,9 @@ func (k Keeper) setKeygenStart(ctx sdk.Context, keyID exported.KeyID) {
 	k.getStore(ctx).SetRaw(keygenStartPrefix.AppendStr(string(keyID)), []byte{1})
 }
 
-func (k Keeper) getKeyID(ctx sdk.Context, chain string, rotation int64, keyRole exported.KeyRole) (exported.KeyID, bool) {
+func (k Keeper) getKeyID(ctx sdk.Context, chain nexus.ChainName, rotation int64, keyRole exported.KeyRole) (exported.KeyID, bool) {
 	storageKey := rotationPrefix.
-		Append(utils.LowerCaseKey(chain)).
+		Append(utils.LowerCaseKey(chain.String())).
 		Append(utils.KeyFromStr(keyRole.SimpleString())).
 		Append(utils.KeyFromStr(strconv.FormatInt(rotation, 10)))
 
@@ -239,9 +239,9 @@ func (k Keeper) getKeyID(ctx sdk.Context, chain string, rotation int64, keyRole 
 	return exported.KeyID(keyID), true
 }
 
-func (k Keeper) setKeyID(ctx sdk.Context, chain string, rotation int64, keyRole exported.KeyRole, keyID exported.KeyID) {
+func (k Keeper) setKeyID(ctx sdk.Context, chain nexus.ChainName, rotation int64, keyRole exported.KeyRole, keyID exported.KeyID) {
 	storageKey := rotationPrefix.
-		Append(utils.LowerCaseKey(chain)).
+		Append(utils.LowerCaseKey(chain.String())).
 		Append(utils.KeyFromStr(keyRole.SimpleString())).
 		Append(utils.KeyFromStr(strconv.FormatInt(rotation, 10)))
 
@@ -250,7 +250,7 @@ func (k Keeper) setKeyID(ctx sdk.Context, chain string, rotation int64, keyRole 
 
 // GetRotationCount returns the current rotation count for the given chain and key role
 func (k Keeper) GetRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) int64 {
-	storageKey := rotationCountPrefix.Append(utils.LowerCaseKey(chain.Name)).Append(utils.KeyFromStr(keyRole.SimpleString()))
+	storageKey := rotationCountPrefix.Append(utils.LowerCaseKey(chain.Name.String())).Append(utils.KeyFromStr(keyRole.SimpleString()))
 
 	var rotation gogoprototypes.Int64Value
 	if ok := k.getStore(ctx).Get(storageKey, &rotation); !ok {
@@ -260,8 +260,8 @@ func (k Keeper) GetRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole exp
 	return rotation.Value
 }
 
-func (k Keeper) setRotationCount(ctx sdk.Context, chain string, keyRole exported.KeyRole, rotation int64) {
-	storageKey := rotationCountPrefix.Append(utils.LowerCaseKey(chain)).Append(utils.KeyFromStr(keyRole.SimpleString()))
+func (k Keeper) setRotationCount(ctx sdk.Context, chain nexus.ChainName, keyRole exported.KeyRole, rotation int64) {
+	storageKey := rotationCountPrefix.Append(utils.LowerCaseKey(chain.String())).Append(utils.KeyFromStr(keyRole.SimpleString()))
 	k.getStore(ctx).Set(storageKey, &gogoprototypes.Int64Value{Value: rotation})
 }
 
@@ -291,7 +291,7 @@ func (k Keeper) setRotationOfKey(ctx sdk.Context, keyID exported.KeyID, rotation
 	}
 
 	key.RotationCount = rotationCount
-	key.Chain = chain.Name
+	key.Chain = chain.Name.String()
 
 	k.setKey(ctx, key)
 }
@@ -385,9 +385,11 @@ func (k Keeper) IsMultisigKeygenCompleted(ctx sdk.Context, keyID exported.KeyID)
 func (k Keeper) GetMultisigPubKeysByValidator(ctx sdk.Context, keyID exported.KeyID, val sdk.ValAddress) ([]ecdsa.PublicKey, bool) {
 	info, ok := k.GetMultisigKeygenInfo(ctx, keyID)
 	if !ok {
-		return []ecdsa.PublicKey{}, false
+		return nil, false
 	}
-	return info.GetPubKeysByValidator(val), ok
+
+	pubKeys := info.GetPubKeysByValidator(val)
+	return pubKeys, len(pubKeys) > 0
 }
 
 // GetMultisigKeygenQueue returns the multisig keygen timeout queue

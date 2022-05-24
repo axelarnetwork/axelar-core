@@ -8,23 +8,21 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
-//go:generate moq -out ./mock/expected_keepers.go -pkg mock . TSS Voter Signer Nexus Snapshotter BaseKeeper ChainKeeper
+//go:generate moq -out ./mock/expected_keepers.go -pkg mock . TSS Voter Signer Nexus Snapshotter BaseKeeper ChainKeeper Rewarder
 
 // BaseKeeper is implemented by this module's base keeper
 type BaseKeeper interface {
 	Logger(ctx sdk.Context) log.Logger
 
-	HasChain(ctx sdk.Context, chain string) bool
-	ForChain(chain string) ChainKeeper
+	HasChain(ctx sdk.Context, chain nexus.ChainName) bool
+	ForChain(chain nexus.ChainName) ChainKeeper
 
-	SetPendingChain(ctx sdk.Context, chain nexus.Chain, p Params)
-	GetPendingChain(ctx sdk.Context, chain string) (PendingChain, bool)
-	DeletePendingChain(ctx sdk.Context, chain string)
 	InitGenesis(ctx sdk.Context, state GenesisState)
 	ExportGenesis(ctx sdk.Context) GenesisState
 }
@@ -81,10 +79,10 @@ type ChainKeeper interface {
 	DeleteUnsignedCommandBatchID(ctx sdk.Context)
 
 	GetConfirmedEventQueue(ctx sdk.Context) utils.KVQueue
-	GetEvent(ctx sdk.Context, eventID string) (Event, bool)
+	GetEvent(ctx sdk.Context, eventID EventID) (Event, bool)
 	SetConfirmedEvent(ctx sdk.Context, event Event) error
-	SetEventCompleted(ctx sdk.Context, eventID string) error
-	SetEventFailed(ctx sdk.Context, eventID string) error
+	SetEventCompleted(ctx sdk.Context, eventID EventID) error
+	SetEventFailed(ctx sdk.Context, eventID EventID) error
 	SetFailedEvent(ctx sdk.Context, event Event) error
 }
 
@@ -118,7 +116,7 @@ type Nexus interface {
 	ArchivePendingTransfer(ctx sdk.Context, transfer nexus.CrossChainTransfer)
 	SetChain(ctx sdk.Context, chain nexus.Chain)
 	GetChains(ctx sdk.Context) []nexus.Chain
-	GetChain(ctx sdk.Context, chain string) (nexus.Chain, bool)
+	GetChain(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool)
 	IsAssetRegistered(ctx sdk.Context, chain nexus.Chain, denom string) bool
 	RegisterAsset(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset) error
 	GetChainMaintainers(ctx sdk.Context, chain nexus.Chain) []sdk.ValAddress
@@ -126,6 +124,8 @@ type Nexus interface {
 	GetChainByNativeAsset(ctx sdk.Context, asset string) (chain nexus.Chain, ok bool)
 	ComputeTransferFee(ctx sdk.Context, sourceChain nexus.Chain, destinationChain nexus.Chain, asset sdk.Coin) (sdk.Coin, error)
 	AddTransferFee(ctx sdk.Context, coin sdk.Coin)
+	MarkChainMaintainerMissingVote(ctx sdk.Context, chain nexus.Chain, address sdk.ValAddress, missingVote bool)
+	MarkChainMaintainerIncorrectVote(ctx sdk.Context, chain nexus.Chain, address sdk.ValAddress, incorrectVote bool)
 }
 
 // InitPoller is a minimal interface to start a poll. This must be a type alias instead of a type definition,
@@ -158,3 +158,8 @@ type Signer interface {
 
 // Snapshotter provides access to the snapshot functionality
 type Snapshotter = snapshot.Snapshotter
+
+// Rewarder provides reward functionality
+type Rewarder interface {
+	GetPool(ctx sdk.Context, name string) reward.RewardPool
+}

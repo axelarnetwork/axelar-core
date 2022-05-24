@@ -11,6 +11,7 @@ const (
 	EventTypeTransferKeyConfirmation = "transferKeyConfirmation"
 	EventTypeLink                    = "link"
 	EventTypeSign                    = "sign"
+	EventTypeEventConfirmation       = "eventConfirmation"
 )
 
 // Event attribute keys
@@ -39,6 +40,8 @@ const (
 	AttributeKeyCommandsID         = "commandID"
 	AttributeKeyCommandsIDs        = "commandIDs"
 	AttributeKeyTransferID         = "transferID"
+	AttributeKeyEventType          = "eventType"
+	AttributeKeyEventID            = "eventID"
 )
 
 // Event attribute values
