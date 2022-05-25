@@ -39,6 +39,16 @@
       "from": "axelarnet",
       "to": "emoney",
       "channel_id": "channel-6"
+    },
+    {
+      "from": "crescent",
+      "to": "axelarnet",
+      "channel_id": "channel-4"
+    },
+    {
+      "from": "axelarnet",
+      "to": "crescent",
+      "channel_id": "channel-7"
     }
   ],
   "testnet": [
@@ -61,6 +71,16 @@
       "from": "axelarnet",
       "to": "osmosis",
       "channel_id": "channel-7"
+    },
+    {
+      "from": "crescent",
+      "to": "axelarnet",
+      "channel_id": "channel-3"
+    },
+    {
+      "from": "axelarnet",
+      "to": "crescent",
+      "channel_id": "channel-6"
     }
   ]
 }

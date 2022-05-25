@@ -24,6 +24,11 @@
       "id": "emoney",
       "name": "e-Money",
       "image": "/images/chains/emoney.jpg"
+    },
+    {
+      "id": "crescent",
+      "name": "Crescent",
+      "image": "/images/chains/crescent.jpg"
     }
   ],
   "testnet": [
@@ -41,6 +46,11 @@
       "id": "osmosis",
       "name": "Osmosis",
       "image": "/images/chains/osmosis.png"
+    },
+    {
+      "id": "crescent",
+      "name": "Crescent",
+      "image": "/images/chains/crescent.jpg"
     }
   ],
   "testnet-2": [
