@@ -11,10 +11,15 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 )
 
-//go:generate moq -out ./mock/types.go -pkg mock . Poll
+//go:generate moq -out ./mock/types.go -pkg mock . Poll VoteHandler
 
-// VoteHandler defines a function that handler pool result
-type VoteHandler func(ctx sdk.Context, result *Vote) error
+// VoteHandler defines a struct that can handle the poll result
+type VoteHandler interface {
+	IsFalsyResult(result codec.ProtoMarshaler) bool
+	HandleExpiredPoll(ctx sdk.Context, poll Poll) error
+	HandleCompletedPoll(ctx sdk.Context, poll Poll) error
+	HandleResult(ctx sdk.Context, result codec.ProtoMarshaler) error
+}
 
 // Is checks if the poll is in the given state
 func (m PollMetadata) Is(state PollState) bool {
@@ -31,8 +36,12 @@ func (m PollMetadata) Validate() error {
 		return err
 	}
 
-	if m.ExpiresAt < -1 {
-		return fmt.Errorf("expires at must be >= -1")
+	if m.ExpiresAt <= 0 {
+		return fmt.Errorf("expires at must be >0")
+	}
+
+	if m.CompletedAt < 0 {
+		return fmt.Errorf("completed at must be >=0")
 	}
 
 	if m.VotingThreshold.LTE(utils.ZeroThreshold) || m.VotingThreshold.GT(utils.OneThreshold) {
@@ -43,12 +52,20 @@ func (m PollMetadata) Validate() error {
 		return fmt.Errorf("completed poll must have result set")
 	}
 
+	if m.Is(Completed) == (m.CompletedAt <= 0) {
+		return fmt.Errorf("completed poll must have completed at set and non-completed poll must not")
+	}
+
 	if m.Is(NonExistent) {
 		return fmt.Errorf("state cannot be non-existent")
 	}
 
 	if m.MinVoterCount < 0 || m.MinVoterCount > int64(len(m.Voters)) {
 		return fmt.Errorf("invalid min voter count")
+	}
+
+	if len(m.Voters) == 0 {
+		return fmt.Errorf("no voters set")
 	}
 
 	actualTotalVotingPower := sdk.ZeroInt()
@@ -155,12 +172,26 @@ func RewardPool(rewardPoolName string) PollProperty {
 	}}
 }
 
+// GracePeriod sets the grace period after poll completion during which votes
+// are still recorded
+func GracePeriod(gracePeriod int64) PollProperty {
+	return PollProperty{do: func(metadata PollMetadata) PollMetadata {
+		metadata.GracePeriod = gracePeriod
+		return metadata
+	}}
+}
+
 // Poll provides an interface for other modules to interact with polls
 type Poll interface {
-	Vote(voter sdk.ValAddress, data codec.ProtoMarshaler) error
+	HasVotedCorrectly(voter sdk.ValAddress) bool
+	HasVoted(voter sdk.ValAddress) bool
+	HasVotedLate(voter sdk.ValAddress) bool
+	Vote(voter sdk.ValAddress, blockHeight int64, data codec.ProtoMarshaler) (result codec.ProtoMarshaler, voted bool, err error)
 	Is(state PollState) bool
+	SetExpired()
 	AllowOverride()
 	GetResult() codec.ProtoMarshaler
+	GetRewardPoolName() (string, bool)
 	GetKey() PollKey
 	GetVoters() []Voter
 	GetTotalVotingPower() sdk.Int

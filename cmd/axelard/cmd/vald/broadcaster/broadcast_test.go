@@ -29,8 +29,8 @@ import (
 	mock2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types/mock"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
-	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
+	vote "github.com/axelarnetwork/axelar-core/x/vote/types"
 	. "github.com/axelarnetwork/utils/test"
 )
 
@@ -137,14 +137,13 @@ func TestBroadcast(t *testing.T) {
 		msgs        []sdk.Msg
 	)
 
-	Given("a broadcaster", func(t *testing.T) {
+	Given("a broadcaster", func() {
 		signer := rand.AccAddr()
 		broadcaster, ctx = setup(signer)
-	}).
-		And().Given("a batch of multiple messages", func(t *testing.T) {
+	}).When("a batch of multiple messages", func() {
 		msgs = createMsgsWithSigner(ctx.FromAddress, rand.I64Between(2, 20))
 	}).
-		When("the broadcaster returns a message specific error", func(t *testing.T) {
+		When("the broadcaster returns a message specific error", func() {
 			attempt := 0
 			ctx.Client.(*mock2.ClientMock).BroadcastTxSyncFunc = func(context.Context, types.Tx) (*coretypes.ResultBroadcastTx, error) {
 				if attempt == 0 {
@@ -299,12 +298,12 @@ func createMsgsWithSigner(signer sdk.AccAddress, count int64) []sdk.Msg {
 
 	for i := int64(0); i < count; i++ {
 
-		msg := evm.NewVoteConfirmChainRequest(
-			signer,
-			rand.StrBetween(5, 10),
-			exported.NewPollKey(evm.ModuleName, rand.StrBetween(5, 100)),
-			rand.Bools(0.5).Next(),
-		)
+		msg := &vote.VoteRequest{
+			Sender:  signer,
+			PollKey: exported.NewPollKey(vote.ModuleName, rand.StrBetween(5, 100)),
+			Vote:    exported.Vote{},
+		}
+
 		msgs = append(msgs, msg)
 	}
 	return msgs

@@ -34,7 +34,7 @@ func NewHandler(k types.BaseKeeper, n types.Nexus, b types.BankKeeper, t types.I
 			res, err := server.ExecutePendingTransfers(sdk.WrapSDKContext(ctx), msg)
 			result, err := sdk.WrapServiceResult(ctx, res, err)
 			if err == nil {
-				result.Log = fmt.Sprintf("successfully executed pending transfers")
+				result.Log = "successfully executed pending transfers"
 			}
 			return result, err
 		case *types.RegisterIBCPathRequest:
@@ -62,7 +62,7 @@ func NewHandler(k types.BaseKeeper, n types.Nexus, b types.BankKeeper, t types.I
 			res, err := server.RouteIBCTransfers(sdk.WrapSDKContext(ctx), msg)
 			result, err := sdk.WrapServiceResult(ctx, res, err)
 			if err == nil {
-				result.Log = fmt.Sprintf("successfully executed pending transfers")
+				result.Log = "successfully executed pending transfers"
 			}
 			return result, err
 		case *types.RegisterFeeCollectorRequest:

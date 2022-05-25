@@ -7,17 +7,32 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
+	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 )
 
-var _ types.QueryServiceServer = Keeper{}
+var _ types.QueryServiceServer = Querier{}
+
+// Querier implements the grpc queries for the nexus module
+type Querier struct {
+	keeper    Keeper
+	axelarnet types.AxelarnetKeeper
+}
+
+// NewGRPCQuerier creates a new nexus Querier
+func NewGRPCQuerier(k Keeper, a types.AxelarnetKeeper) Querier {
+	return Querier{
+		keeper:    k,
+		axelarnet: a,
+	}
+}
 
 // TransfersForChain returns the transfers for a given chain
-func (k Keeper) TransfersForChain(c context.Context, req *types.TransfersForChainRequest) (*types.TransfersForChainResponse, error) {
+func (q Querier) TransfersForChain(c context.Context, req *types.TransfersForChainRequest) (*types.TransfersForChainResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	chain, ok := k.GetChain(ctx, req.Chain)
+	chain, ok := q.keeper.GetChain(ctx, nexus.ChainName(req.Chain))
 	if !ok {
 		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered chain", req.Chain)
 	}
@@ -26,26 +41,26 @@ func (k Keeper) TransfersForChain(c context.Context, req *types.TransfersForChai
 		return nil, err
 	}
 
-	transfers, pagination, err := k.GetTransfersForChainPaginated(ctx, chain, req.State, req.Pagination)
+	transfers, pagination, err := q.keeper.GetTransfersForChainPaginated(ctx, chain, req.State, req.Pagination)
 	return &types.TransfersForChainResponse{Transfers: transfers, Pagination: pagination}, err
 }
 
 // LatestDepositAddress returns the deposit address for the provided recipient
-func (k Keeper) LatestDepositAddress(c context.Context, req *types.LatestDepositAddressRequest) (*types.LatestDepositAddressResponse, error) {
+func (q Querier) LatestDepositAddress(c context.Context, req *types.LatestDepositAddressRequest) (*types.LatestDepositAddressResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	recipientChain, ok := k.GetChain(ctx, req.RecipientChain)
+	recipientChain, ok := q.keeper.GetChain(ctx, nexus.ChainName(req.RecipientChain))
 	if !ok {
 		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered chain", req.RecipientChain)
 	}
 
-	depositChain, ok := k.GetChain(ctx, req.DepositChain)
+	depositChain, ok := q.keeper.GetChain(ctx, nexus.ChainName(req.DepositChain))
 	if !ok {
 		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered chain", req.DepositChain)
 	}
 
 	recipientAddress := nexus.CrossChainAddress{Chain: recipientChain, Address: req.RecipientAddr}
-	depositAddress, ok := k.getLatestDepositAddress(ctx, depositChain.Name, recipientAddress)
+	depositAddress, ok := q.keeper.getLatestDepositAddress(ctx, depositChain.Name, recipientAddress)
 	if !ok {
 		return nil, sdkerrors.Wrapf(types.ErrNexus, "no deposit address found for recipient %s on chain %s", req.RecipientAddr, req.RecipientChain)
 	}
@@ -54,19 +69,19 @@ func (k Keeper) LatestDepositAddress(c context.Context, req *types.LatestDeposit
 }
 
 // FeeInfo returns the fee info for an asset on a specific chain
-func (k Keeper) FeeInfo(c context.Context, req *types.FeeInfoRequest) (*types.FeeInfoResponse, error) {
+func (q Querier) FeeInfo(c context.Context, req *types.FeeInfoRequest) (*types.FeeInfoResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	chain, ok := k.GetChain(ctx, req.Chain)
+	chain, ok := q.keeper.GetChain(ctx, nexus.ChainName(req.Chain))
 	if !ok {
 		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered chain", req.Chain)
 	}
 
-	if !k.IsAssetRegistered(ctx, chain, req.Asset) {
+	if !q.keeper.IsAssetRegistered(ctx, chain, req.Asset) {
 		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered asset on chain %s", req.Asset, chain.Name)
 	}
 
-	feeInfo, ok := k.GetFeeInfo(ctx, chain, req.Asset)
+	feeInfo, ok := q.keeper.GetFeeInfo(ctx, chain, req.Asset)
 	if !ok {
 		return nil, sdkerrors.Wrapf(types.ErrNexus, "no fee info registered for asset %s on chain %s", req.Asset, chain.Name)
 	}
@@ -75,15 +90,15 @@ func (k Keeper) FeeInfo(c context.Context, req *types.FeeInfoRequest) (*types.Fe
 }
 
 // TransferFee returns the transfer fee for a cross chain transfer
-func (k Keeper) TransferFee(c context.Context, req *types.TransferFeeRequest) (*types.TransferFeeResponse, error) {
+func (q Querier) TransferFee(c context.Context, req *types.TransferFeeRequest) (*types.TransferFeeResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	sourceChain, ok := k.GetChain(ctx, req.SourceChain)
+	sourceChain, ok := q.keeper.GetChain(ctx, nexus.ChainName(req.SourceChain))
 	if !ok {
 		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered chain", req.SourceChain)
 	}
 
-	destinationChain, ok := k.GetChain(ctx, req.DestinationChain)
+	destinationChain, ok := q.keeper.GetChain(ctx, nexus.ChainName(req.DestinationChain))
 	if !ok {
 		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered chain", req.DestinationChain)
 	}
@@ -93,11 +108,11 @@ func (k Keeper) TransferFee(c context.Context, req *types.TransferFeeRequest) (*
 		return nil, err
 	}
 
-	if !k.IsAssetRegistered(ctx, sourceChain, amount.Denom) {
+	if !q.keeper.IsAssetRegistered(ctx, sourceChain, amount.Denom) {
 		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered asset on chain %s", amount.Denom, sourceChain.Name)
 	}
 
-	if !k.IsAssetRegistered(ctx, destinationChain, amount.Denom) {
+	if !q.keeper.IsAssetRegistered(ctx, destinationChain, amount.Denom) {
 		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered asset on chain %s", amount.Denom, destinationChain.Name)
 	}
 
@@ -105,7 +120,13 @@ func (k Keeper) TransferFee(c context.Context, req *types.TransferFeeRequest) (*
 		return nil, fmt.Errorf("amount cannot be negative")
 	}
 
-	fee, err := k.ComputeTransferFee(ctx, sourceChain, destinationChain, amount)
+	// When source chain is another cosmos chain, use axelarnet for fee info where deposit address is generated on
+	feeCalcSourceChain := sourceChain
+	if q.axelarnet.IsCosmosChain(ctx, feeCalcSourceChain.Name) {
+		feeCalcSourceChain = exported.Axelarnet
+	}
+
+	fee, err := q.keeper.ComputeTransferFee(ctx, feeCalcSourceChain, destinationChain, amount)
 	if err != nil {
 		return nil, err
 	}
@@ -114,12 +135,12 @@ func (k Keeper) TransferFee(c context.Context, req *types.TransferFeeRequest) (*
 }
 
 // Chains returns the chains registered on the network
-func (k Keeper) Chains(c context.Context, req *types.ChainsRequest) (*types.ChainsResponse, error) {
+func (q Querier) Chains(c context.Context, req *types.ChainsRequest) (*types.ChainsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	chains := k.GetChains(ctx)
+	chains := q.keeper.GetChains(ctx)
 
-	chainNames := make([]string, len(chains))
+	chainNames := make([]nexus.ChainName, len(chains))
 	for i, chain := range chains {
 		chainNames[i] = chain.Name
 	}
@@ -128,15 +149,15 @@ func (k Keeper) Chains(c context.Context, req *types.ChainsRequest) (*types.Chai
 }
 
 // Assets returns the registered assets of a chain
-func (k Keeper) Assets(c context.Context, req *types.AssetsRequest) (*types.AssetsResponse, error) {
+func (q Querier) Assets(c context.Context, req *types.AssetsRequest) (*types.AssetsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	chain, ok := k.GetChain(ctx, req.Chain)
+	chain, ok := q.keeper.GetChain(ctx, nexus.ChainName(req.Chain))
 	if !ok {
 		return nil, fmt.Errorf("chain %s not found", req.Chain)
 	}
 
-	chainState, ok := k.getChainState(ctx, chain)
+	chainState, ok := q.keeper.getChainState(ctx, chain)
 	if !ok {
 		return nil, fmt.Errorf("chain state not found for %s", chain.Name)
 	}
@@ -150,15 +171,15 @@ func (k Keeper) Assets(c context.Context, req *types.AssetsRequest) (*types.Asse
 }
 
 // ChainState returns the chain state in the network
-func (k Keeper) ChainState(c context.Context, req *types.ChainStateRequest) (*types.ChainStateResponse, error) {
+func (q Querier) ChainState(c context.Context, req *types.ChainStateRequest) (*types.ChainStateResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	chain, ok := k.GetChain(ctx, req.Chain)
+	chain, ok := q.keeper.GetChain(ctx, nexus.ChainName(req.Chain))
 	if !ok {
 		return nil, fmt.Errorf("chain %s not found", req.Chain)
 	}
 
-	chainState, ok := k.getChainState(ctx, chain)
+	chainState, ok := q.keeper.getChainState(ctx, chain)
 	if !ok {
 		return nil, fmt.Errorf("chain state not found for %s", chain.Name)
 	}
@@ -167,18 +188,18 @@ func (k Keeper) ChainState(c context.Context, req *types.ChainStateRequest) (*ty
 }
 
 // ChainsByAsset returns all chains that an asset is registered on
-func (k Keeper) ChainsByAsset(c context.Context, req *types.ChainsByAssetRequest) (*types.ChainsByAssetResponse, error) {
+func (q Querier) ChainsByAsset(c context.Context, req *types.ChainsByAssetRequest) (*types.ChainsByAssetResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
 	if err := sdk.ValidateDenom(req.Asset); err != nil {
 		return nil, sdkerrors.Wrap(err, "invalid asset")
 	}
 
-	chains := k.GetChains(ctx)
-	chainNames := []string{}
+	chains := q.keeper.GetChains(ctx)
+	var chainNames []nexus.ChainName
 
 	for _, chain := range chains {
-		if k.IsAssetRegistered(ctx, chain, req.Asset) {
+		if q.keeper.IsAssetRegistered(ctx, chain, req.Asset) {
 			chainNames = append(chainNames, chain.Name)
 		}
 	}

@@ -214,51 +214,39 @@ func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, ax
 	}
 
 	eventBus := createEventBus(robustClient, startBlock, logger)
-	var subscriptions []tmEvents.FilteredSubscriber
-	subscribe := func(eventType, module, action string) tmEvents.FilteredSubscriber {
-		return tmEvents.MustSubscribeWithAttributes(eventBus,
-			eventType, module, sdk.Attribute{Key: sdk.AttributeKeyAction, Value: action})
+	subscribe := func(eventType, module, action string) <-chan tmEvents.ABCIEventWithHeight {
+		return eventBus.Subscribe(func(e tmEvents.ABCIEventWithHeight) bool {
+			event := tmEvents.Map(e)
+			return event.Type == eventType && event.Attributes[sdk.AttributeKeyModule] == module && event.Attributes[sdk.AttributeKeyAction] == action
+		})
 	}
 
-	blockHeaderSub := tmEvents.MustSubscribeBlockHeader(eventBus)
-	subscriptions = append(subscriptions, blockHeaderSub)
+	var blockHeight int64
+	blockHeaderSub := eventBus.Subscribe(func(event tmEvents.ABCIEventWithHeight) bool {
+		if event.Height != blockHeight {
+			blockHeight = event.Height
+			return true
+		}
+		return false
+	})
 
-	queryHeartBeat := createNewBlockEventQuery(tssTypes.EventTypeHeartBeat, tssTypes.ModuleName, tssTypes.AttributeValueSend)
-	heartbeat, err := tmEvents.Subscribe(eventBus, queryHeartBeat)
-	if err != nil {
-		panic(fmt.Errorf("unable to subscribe with ack event query: %v", err))
-	}
-	subscriptions = append(subscriptions, heartbeat)
+	heartbeat := subscribe(tssTypes.EventTypeHeartBeat, tssTypes.ModuleName, tssTypes.AttributeValueSend)
 
 	keygenStart := subscribe(tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueStart)
-	subscriptions = append(subscriptions, keygenStart)
-
-	querySign := createNewBlockEventQuery(tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueStart)
-	signStart, err := tmEvents.Subscribe(eventBus, querySign)
-	if err != nil {
-		panic(fmt.Errorf("unable to subscribe with sign event query: %v", err))
-	}
-	subscriptions = append(subscriptions, signStart)
+	signStart := subscribe(tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueStart)
 
 	keygenMsg := subscribe(tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
-	subscriptions = append(subscriptions, keygenMsg)
 	signMsg := subscribe(tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
-	subscriptions = append(subscriptions, signMsg)
 
 	evmNewChain := subscribe(evmTypes.EventTypeNewChain, evmTypes.ModuleName, evmTypes.AttributeValueUpdate)
-	subscriptions = append(subscriptions, evmNewChain)
-	evmChainConf := subscribe(evmTypes.EventTypeChainConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
-	subscriptions = append(subscriptions, evmNewChain)
 	evmDepConf := subscribe(evmTypes.EventTypeDepositConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
-	subscriptions = append(subscriptions, evmDepConf)
 	evmTokConf := subscribe(evmTypes.EventTypeTokenConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
-	subscriptions = append(subscriptions, evmTokConf)
 	evmTraConf := subscribe(evmTypes.EventTypeTransferKeyConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
-	subscriptions = append(subscriptions, evmTraConf)
 	evmGatewayTxConf := subscribe(evmTypes.EventTypeGatewayTxConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
-	subscriptions = append(subscriptions, evmGatewayTxConf)
 
 	eventCtx, cancelEventCtx := context.WithCancel(context.Background())
+	mgr := jobs.NewMgr(eventCtx)
+
 	// stop the jobs if process gets interrupted/terminated
 	cleanupCommands = append(cleanupCommands, func() {
 		logger.Info("stop listening for events...")
@@ -266,9 +254,7 @@ func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, ax
 		<-eventBus.Done()
 		logger.Info("event listener stopped")
 		logger.Info("stopping subscribers...")
-		for _, subscription := range subscriptions {
-			<-subscription.Done()
-		}
+		<-mgr.Done()
 		logger.Info("subscriptions stopped")
 	})
 
@@ -296,22 +282,20 @@ func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, ax
 		createJob(signStart, tssMgr.ProcessSignStart, cancelEventCtx, logger),
 		createJob(signMsg, tssMgr.ProcessSignMsg, cancelEventCtx, logger),
 		createJob(evmNewChain, evmMgr.ProcessNewChain, cancelEventCtx, logger),
-		createJob(evmChainConf, evmMgr.ProcessChainConfirmation, cancelEventCtx, logger),
 		createJob(evmDepConf, evmMgr.ProcessDepositConfirmation, cancelEventCtx, logger),
 		createJob(evmTokConf, evmMgr.ProcessTokenConfirmation, cancelEventCtx, logger),
 		createJob(evmTraConf, evmMgr.ProcessTransferKeyConfirmation, cancelEventCtx, logger),
 		createJob(evmGatewayTxConf, evmMgr.ProcessGatewayTxConfirmation, cancelEventCtx, logger),
 	}
 
-	mgr := jobs.NewMgr(eventCtx)
 	mgr.AddJobs(js...)
 	<-mgr.Done()
 }
 
-func createJob(sub tmEvents.FilteredSubscriber, processor func(event tmEvents.Event) error, cancel context.CancelFunc, logger log.Logger) jobs.Job {
+func createJob(sub <-chan tmEvents.ABCIEventWithHeight, processor func(event tmEvents.Event) error, cancel context.CancelFunc, logger log.Logger) jobs.Job {
 	return func(ctx context.Context) error {
-		processWithLog := func(e tmEvents.Event) {
-			err := processor(e)
+		processWithLog := func(e tmEvents.ABCIEventWithHeight) {
+			err := processor(tmEvents.Map(e))
 			if err != nil {
 				logger.Error(err.Error())
 			}
@@ -329,26 +313,22 @@ func createJob(sub tmEvents.FilteredSubscriber, processor func(event tmEvents.Ev
 
 // Wait until the node has synced with the network and return the node height
 func waitTillNetworkSync(cfg config.ValdConfig, tmClient tmEvents.SyncInfoClient, logger log.Logger) (int64, error) {
-	rpcCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	syncInfo, err := tmClient.LatestSyncInfo(rpcCtx)
-	if err != nil {
-		return 0, err
-	}
-
-	// If the block height is older than the allowed time, then wait for the node to sync
-	for syncInfo.LatestBlockTime.Add(cfg.MaxLatestBlockAge).Before(time.Now()) {
-		logger.Info(fmt.Sprintf("node height %d is old, waiting for a recent block", syncInfo.LatestBlockHeight))
-		time.Sleep(cfg.MaxLatestBlockAge)
-
-		syncInfo, err = tmClient.LatestSyncInfo(rpcCtx)
+	for {
+		rpcCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		syncInfo, err := tmClient.LatestSyncInfo(rpcCtx)
+		cancel()
 		if err != nil {
 			return 0, err
 		}
-	}
 
-	return syncInfo.LatestBlockHeight, nil
+		// If the block height is older than the allowed time, then wait for the node to sync
+		if syncInfo.LatestBlockTime.Add(cfg.MaxLatestBlockAge).After(time.Now()) {
+			return syncInfo.LatestBlockHeight, nil
+		}
+
+		logger.Info(fmt.Sprintf("node height %d is old, waiting for a recent block", syncInfo.LatestBlockHeight))
+		time.Sleep(cfg.MaxLatestBlockAge)
+	}
 }
 
 // Return the block height to start listening to TM events from
@@ -382,18 +362,9 @@ func getStartBlock(cfg config.ValdConfig, stateStore StateStore, nodeHeight int6
 	return startBlock, nil
 }
 
-func createNewBlockEventQuery(eventType, module, action string) tmEvents.Query {
-	return tmEvents.Query{
-		TMQuery: tmEvents.NewBlockHeaderEventQuery(eventType).MatchModule(module).MatchAction(action).Build(),
-		Predicate: func(e tmEvents.Event) bool {
-			return e.Type == eventType && e.Attributes[sdk.AttributeKeyModule] == module && e.Attributes[sdk.AttributeKeyAction] == action
-		},
-	}
-}
-
 func createEventBus(client *tendermint.RobustClient, startBlock int64, logger log.Logger) *tmEvents.Bus {
 	notifier := tmEvents.NewBlockNotifier(client, logger).StartingAt(startBlock)
-	return tmEvents.NewEventBus(tmEvents.NewBlockSource(client, notifier, logger), pubsub.NewBus, logger)
+	return tmEvents.NewEventBus(tmEvents.NewBlockSource(client, notifier, logger), pubsub.NewBus[tmEvents.ABCIEventWithHeight](), logger)
 }
 
 func createRefundableBroadcaster(txf tx.Factory, ctx sdkClient.Context, axelarCfg config.ValdConfig, logger log.Logger) broadcasterTypes.Broadcaster {

@@ -18,6 +18,8 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	axelarnetKeeper "github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/utils/slices"
 )
 
 func TestKeeper_GetIBCPath(t *testing.T) {
@@ -83,18 +85,20 @@ func TestKeeper_RegisterCosmosChain(t *testing.T) {
 		for i := 0; i < int(count); i++ {
 			chains[i] = strings.ToLower(rand.NormalizedStr(10))
 			keeper.SetCosmosChain(ctx, types.CosmosChain{
-				Name:       chains[i],
+				Name:       nexus.ChainName(chains[i]),
 				AddrPrefix: rand.NormalizedStr(5),
 			})
 		}
 		sort.Strings(chains)
-		assert.Equal(t, chains, keeper.GetCosmosChains(ctx))
+		assert.Equal(t, chains,
+			slices.Map(keeper.GetCosmosChains(ctx), func(c nexus.ChainName) string { return c.String() }),
+		)
 
 	}).Repeat(repeats))
 
 	t.Run("should empty list when no chain registered", testutils.Func(func(t *testing.T) {
 		setup()
-		empty := make([]string, 0)
+		empty := make([]nexus.ChainName, 0)
 
 		assert.Equal(t, empty, keeper.GetCosmosChains(ctx))
 

@@ -1,0 +1,45 @@
+name: Ensure EVM module migration when bytecode changes
+
+on:
+  - pull_request
+
+jobs:
+  ensure-evm-migration:
+    strategy:
+      matrix:
+        go-version:
+          - 1.18
+        os:
+          - ubuntu-18.04
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: '0'
+          ref: ${{ inputs.branch }}
+          submodules: recursive
+
+      - name: Compare bytecode version to previous tagged version
+        run: |
+          tag=$(git tag --list --merged HEAD --sort=-v:refname | head -n 1)
+          current_commit=$(git rev-parse HEAD)
+          evm_module=./x/evm/module.go
+          echo "Comparing current branch with tag $tag"
+          
+          if git diff "$tag" -s --exit-code ./contract-artifacts; then
+          echo "The contract version has not changed, no need to enforce a migration"
+          exit 0
+          fi
+          
+          echo "The contract version has changed"
+          # Check out the latest tag, increment the consensus version and check if it matches the version in the current commit
+          git checkout -q "$tag"  $evm_module
+          perl -i -pe 's/(?<=^func \(AppModule\) ConsensusVersion\(\) uint64 \{ return )(\b\d+\b)(?= }$)/$1+1/me' $evm_module
+          if git diff "$current_commit" --exit-code $evm_module | grep ConsensusVersion > /dev/null; then
+          echo "EVM module consensus version needs to be incremented"
+          exit 1
+          fi
+          
+          echo "EVM module consensus version has been incremented"
+        

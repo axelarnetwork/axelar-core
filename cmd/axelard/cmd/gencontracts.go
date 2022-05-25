@@ -15,7 +15,6 @@ import (
 )
 
 const (
-	flagGateway  = "gateway"
 	flagToken    = "token"
 	flagBurnable = "burnable"
 )

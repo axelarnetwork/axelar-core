@@ -12,7 +12,7 @@ import (
 func NewRegisterAssetRequest(sender sdk.AccAddress, chain string, asset nexus.Asset) *RegisterAssetRequest {
 	return &RegisterAssetRequest{
 		Sender: sender,
-		Chain:  utils.NormalizeString(chain),
+		Chain:  nexus.ChainName(utils.NormalizeString(chain)),
 		Asset:  asset,
 	}
 }
@@ -33,7 +33,7 @@ func (m RegisterAssetRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
-	if err := utils.ValidateString(m.Chain); err != nil {
+	if err := m.Chain.Validate(); err != nil {
 		return sdkerrors.Wrap(err, "invalid chain")
 	}
 

@@ -51,29 +51,11 @@ func (k BaseKeeper) Logger(ctx sdk.Context) log.Logger {
 }
 
 // ForChain returns the keeper associated to the given chain
-func (k BaseKeeper) ForChain(chain string) types.ChainKeeper {
+func (k BaseKeeper) ForChain(chain nexus.ChainName) types.ChainKeeper {
 	return chainKeeper{
 		BaseKeeper:    k,
-		chainLowerKey: strings.ToLower(chain),
+		chainLowerKey: strings.ToLower(chain.String()),
 	}
-}
-
-// SetPendingChain stores the chain pending for confirmation
-func (k BaseKeeper) SetPendingChain(ctx sdk.Context, chain nexus.Chain, p types.Params) {
-	k.getBaseStore(ctx).Set(pendingChainKey.Append(utils.LowerCaseKey(chain.Name)), &types.PendingChain{Chain: chain, Params: p})
-}
-
-// GetPendingChain returns the chain object with the given name, false if the chain is either unknown or confirmed
-func (k BaseKeeper) GetPendingChain(ctx sdk.Context, chainName string) (types.PendingChain, bool) {
-	var chain types.PendingChain
-	found := k.getBaseStore(ctx).Get(pendingChainKey.Append(utils.LowerCaseKey(chainName)), &chain)
-
-	return chain, found
-}
-
-// DeletePendingChain deletes a chain that is not registered yet
-func (k BaseKeeper) DeletePendingChain(ctx sdk.Context, chain string) {
-	k.getBaseStore(ctx).Delete(pendingChainKey.Append(utils.LowerCaseKey(chain)))
 }
 
 func (k BaseKeeper) getBaseStore(ctx sdk.Context) utils.KVStore {
@@ -86,6 +68,6 @@ func (k BaseKeeper) getStore(ctx sdk.Context, chain string) utils.KVStore {
 }
 
 // HasChain returns true of the chain has been set up
-func (k BaseKeeper) HasChain(ctx sdk.Context, chain string) bool {
-	return k.getBaseStore(ctx).Has(subspacePrefix.AppendStr(strings.ToLower(chain)))
+func (k BaseKeeper) HasChain(ctx sdk.Context, chain nexus.ChainName) bool {
+	return k.getBaseStore(ctx).Has(subspacePrefix.AppendStr(strings.ToLower(chain.String())))
 }

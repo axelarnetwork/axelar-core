@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/big"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -17,6 +18,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -43,14 +45,18 @@ const (
 	BurnerCodeHashV2 = "0x49c166661e31e0bf5434d891dea1448dc35f6ecd54a0d88594df06e24effe7c2"
 	// BurnerCodeHashV3 is the hash of the bytecode of burner v3
 	BurnerCodeHashV3 = "0xa50851cafd39f2f61171c0c00a11bda820ed0958950df5a53ba11a047402351f"
+	// BurnerCodeHashV4 is the hash of the bytecode of burner v4
+	BurnerCodeHashV4 = "0x701d8db26f2d668fee8acf2346199a6b63b0173f212324d1c5a04b4d4de95666"
 )
 
 func validateBurnerCode(burnerCode []byte) error {
 	burnerCodeHash := crypto.Keccak256Hash(burnerCode).Hex()
 	switch burnerCodeHash {
-	case BurnerCodeHashV1:
-	case BurnerCodeHashV2:
-	case BurnerCodeHashV3:
+	case BurnerCodeHashV1,
+		BurnerCodeHashV2,
+		BurnerCodeHashV3,
+		BurnerCodeHashV4:
+		break
 	default:
 		return fmt.Errorf("unsupported burner code with hash %s", burnerCodeHash)
 	}
@@ -146,16 +152,6 @@ func (t ERC20Token) IsExternal() bool {
 	return t.metadata.IsExternal
 }
 
-// SaveBurnerCode saves the burner code; panic if already saved since it should only be used during in-place storage migration
-func (t *ERC20Token) SaveBurnerCode(burnerCode []byte) {
-	if len(t.metadata.BurnerCode) > 0 {
-		panic(fmt.Errorf("burner code already set"))
-	}
-
-	t.metadata.BurnerCode = burnerCode
-	t.setMeta(t.metadata)
-}
-
 // GetBurnerCode returns the version of the burner the token is deployed with
 func (t ERC20Token) GetBurnerCode() []byte {
 	return t.metadata.BurnerCode
@@ -170,9 +166,9 @@ func (t ERC20Token) GetBurnerCodeHash() Hash {
 func (t *ERC20Token) CreateDeployCommand(key tss.KeyID) (Command, error) {
 	switch {
 	case t.Is(NonExistent):
-		return Command{}, fmt.Errorf("token %s non-existent", t.metadata.Asset)
+		return Command{}, fmt.Errorf("token %s non-existent", t.GetAsset())
 	case t.Is(Confirmed):
-		return Command{}, fmt.Errorf("token %s already confirmed", t.metadata.Asset)
+		return Command{}, fmt.Errorf("token %s already confirmed", t.GetAsset())
 	}
 	if err := key.Validate(); err != nil {
 		return Command{}, err
@@ -182,6 +178,7 @@ func (t *ERC20Token) CreateDeployCommand(key tss.KeyID) (Command, error) {
 		return CreateDeployTokenCommand(
 			t.metadata.ChainID,
 			key,
+			t.GetAsset(),
 			t.metadata.Details,
 			t.GetAddress(),
 		)
@@ -190,6 +187,7 @@ func (t *ERC20Token) CreateDeployCommand(key tss.KeyID) (Command, error) {
 	return CreateDeployTokenCommand(
 		t.metadata.ChainID,
 		key,
+		t.GetAsset(),
 		t.metadata.Details,
 		ZeroAddress,
 	)
@@ -539,7 +537,7 @@ func GetSignHash(commandData []byte) common.Hash {
 func CreateApproveContractCallCommand(
 	chainID sdk.Int,
 	keyID tss.KeyID,
-	sourceChain string,
+	sourceChain nexus.ChainName,
 	sourceTxID Hash,
 	sourceEventIndex uint64,
 	event EventContractCall,
@@ -565,7 +563,7 @@ func CreateApproveContractCallCommand(
 func CreateApproveContractCallWithMintCommand(
 	chainID sdk.Int,
 	keyID tss.KeyID,
-	sourceChain string,
+	sourceChain nexus.ChainName,
 	sourceTxID Hash,
 	sourceEventIndex uint64,
 	event EventContractCallWithToken,
@@ -688,7 +686,7 @@ func decodeApproveContractCallParams(bz []byte) (string, string, common.Address,
 }
 
 func createApproveContractCallParams(
-	sourceChain string,
+	sourceChain nexus.ChainName,
 	sourceTxID Hash,
 	sourceEventIndex uint64,
 	event EventContractCall) ([]byte, error) {
@@ -737,7 +735,7 @@ func createApproveContractCallParams(
 }
 
 func createApproveContractCallWithMintParams(
-	sourceChain string,
+	sourceChain nexus.ChainName,
 	sourceTxID Hash,
 	sourceEventIndex uint64,
 	event EventContractCallWithToken,
@@ -815,14 +813,14 @@ func CreateBurnTokenCommand(chainID sdk.Int, keyID tss.KeyID, height int64, burn
 }
 
 // CreateDeployTokenCommand creates a command to deploy a token
-func CreateDeployTokenCommand(chainID sdk.Int, keyID tss.KeyID, tokenDetails TokenDetails, address Address) (Command, error) {
+func CreateDeployTokenCommand(chainID sdk.Int, keyID tss.KeyID, asset string, tokenDetails TokenDetails, address Address) (Command, error) {
 	params, err := createDeployTokenParams(tokenDetails.TokenName, tokenDetails.Symbol, tokenDetails.Decimals, tokenDetails.Capacity, address)
 	if err != nil {
 		return Command{}, err
 	}
 
 	return Command{
-		ID:         NewCommandID([]byte(tokenDetails.Symbol), chainID),
+		ID:         NewCommandID([]byte(fmt.Sprintf("%s_%s", asset, tokenDetails.Symbol)), chainID),
 		Command:    AxelarGatewayCommandDeployToken,
 		Params:     params,
 		KeyID:      keyID,
@@ -993,7 +991,7 @@ func (b *CommandBatch) SetStatus(status BatchedCommandsStatus) bool {
 }
 
 // NewCommandBatchMetadata assembles a CommandBatchMetadata struct from the provided arguments
-func NewCommandBatchMetadata(chainID sdk.Int, keyID tss.KeyID, keyRole tss.KeyRole, cmds []Command) (CommandBatchMetadata, error) {
+func NewCommandBatchMetadata(blockHeight int64, chainID sdk.Int, keyID tss.KeyID, keyRole tss.KeyRole, cmds []Command) (CommandBatchMetadata, error) {
 	var r role
 	var commandIDs []CommandID
 	var commands []string
@@ -1019,8 +1017,11 @@ func NewCommandBatchMetadata(chainID sdk.Int, keyID tss.KeyID, keyRole tss.KeyRo
 		return CommandBatchMetadata{}, err
 	}
 
+	bz := make([]byte, 8)
+	binary.BigEndian.PutUint64(bz, uint64(blockHeight))
+
 	return CommandBatchMetadata{
-		ID:         crypto.Keccak256(data),
+		ID:         crypto.Keccak256(bz, data),
 		CommandIDs: commandIDs,
 		Data:       data,
 		SigHash:    Hash(GetSignHash(data)),
@@ -1127,14 +1128,14 @@ func (t TransferKeyType) SimpleString() string {
 // NewAsset returns a new Asset instance
 func NewAsset(chain, name string) Asset {
 	return Asset{
-		Chain: utils.NormalizeString(chain),
+		Chain: nexus.ChainName(utils.NormalizeString(chain)),
 		Name:  utils.NormalizeString(name),
 	}
 }
 
 // Validate ensures that all fields are filled with sensible values
 func (m Asset) Validate() error {
-	if err := utils.ValidateString(m.Chain); err != nil {
+	if err := m.Chain.Validate(); err != nil {
 		return sdkerrors.Wrap(err, "invalid chain")
 	}
 
@@ -1450,7 +1451,7 @@ func decodeTransferMultisigParams(bz []byte) ([]common.Address, uint8, error) {
 
 // ValidateBasic does stateless validation of the object
 func (m *BurnerInfo) ValidateBasic() error {
-	if err := utils.ValidateString(m.DestinationChain); err != nil {
+	if err := m.DestinationChain.Validate(); err != nil {
 		return sdkerrors.Wrap(err, "invalid destination chain")
 	}
 
@@ -1496,7 +1497,7 @@ func (m *ERC20Deposit) ValidateBasic() error {
 		return sdkerrors.Wrap(err, "invalid asset")
 	}
 
-	if err := utils.ValidateString(m.DestinationChain); err != nil {
+	if err := m.DestinationChain.Validate(); err != nil {
 		return sdkerrors.Wrap(err, "invalid destination chain")
 	}
 
@@ -1518,13 +1519,13 @@ func CommandIDsToStrings(commandIDs []CommandID) []string {
 }
 
 // GetID returns an unique ID for the event
-func (m Event) GetID() string {
-	return fmt.Sprintf("%s-%d", m.TxId.Hex(), m.Index)
+func (m Event) GetID() EventID {
+	return EventID(fmt.Sprintf("%s-%d", m.TxId.Hex(), m.Index))
 }
 
 // ValidateBasic returns an error if the event is invalid
 func (m Event) ValidateBasic() error {
-	if err := utils.ValidateString(m.Chain); err != nil {
+	if err := m.Chain.Validate(); err != nil {
 		return sdkerrors.Wrap(err, "invalid source chain")
 	}
 
@@ -1592,17 +1593,23 @@ func (m Event) ValidateBasic() error {
 	return nil
 }
 
+// GetEventType returns the type for the event
+func (m Event) GetEventType() string {
+	return getType(m.GetEvent())
+}
+
 // ValidateBasic returns an error if the event token sent is invalid
 func (m EventTokenSent) ValidateBasic() error {
 	if m.Sender.IsZeroAddress() {
 		return fmt.Errorf("invalid sender")
 	}
 
-	if err := utils.ValidateString(m.DestinationChain); err != nil {
+	if err := m.DestinationChain.Validate(); err != nil {
 		return sdkerrors.Wrap(err, "invalid destination chain")
 	}
 
-	if err := utils.ValidateString(m.DestinationAddress); err != nil {
+	err := utils.ValidateString(m.DestinationAddress)
+	if err != nil || common.IsHexAddress(m.DestinationAddress) {
 		return sdkerrors.Wrap(err, "invalid destination address")
 	}
 
@@ -1623,11 +1630,12 @@ func (m EventContractCall) ValidateBasic() error {
 		return fmt.Errorf("invalid sender")
 	}
 
-	if err := utils.ValidateString(m.DestinationChain); err != nil {
+	if err := m.DestinationChain.Validate(); err != nil {
 		return sdkerrors.Wrap(err, "invalid destination chain")
 	}
 
-	if err := utils.ValidateString(m.ContractAddress); err != nil {
+	err := utils.ValidateString(m.ContractAddress)
+	if err != nil || common.IsHexAddress(m.ContractAddress) {
 		return sdkerrors.Wrap(err, "invalid contract address")
 	}
 
@@ -1644,11 +1652,12 @@ func (m EventContractCallWithToken) ValidateBasic() error {
 		return fmt.Errorf("invalid sender")
 	}
 
-	if err := utils.ValidateString(m.DestinationChain); err != nil {
+	if err := m.DestinationChain.Validate(); err != nil {
 		return sdkerrors.Wrap(err, "invalid destination chain")
 	}
 
-	if err := utils.ValidateString(m.ContractAddress); err != nil {
+	err := utils.ValidateString(m.ContractAddress)
+	if err != nil || common.IsHexAddress(m.ContractAddress) {
 		return sdkerrors.Wrap(err, "invalid contract address")
 	}
 
@@ -1840,29 +1849,60 @@ func StrictDecode(arguments abi.Arguments, bz []byte) ([]interface{}, error) {
 }
 
 // UnpackEvents converts Any slice to Events
-func UnpackEvents(cdc codec.Codec, eventsAny []*codectypes.Any) ([]Event, error) {
-	var events []Event
-	for _, any := range eventsAny {
-		var event Event
-		if err := cdc.Unmarshal(any.Value, &event); err != nil {
-			return nil, err
-		}
-		events = append(events, event)
-	}
-
-	return events, nil
+func UnpackEvents(cdc codec.Codec, any *codectypes.Any) (voteEvents VoteEvents, err error) {
+	return voteEvents, cdc.Unmarshal(any.Value, &voteEvents)
 }
 
 // PackEvents converts Event to Any slice
-func PackEvents(events []Event) ([]*codectypes.Any, error) {
-	eventsAny := make([]*codectypes.Any, len(events))
-	for i, e := range events {
-		any, err := codectypes.NewAnyWithValue(&e)
-		if err != nil {
-			return nil, err
-		}
-		eventsAny[i] = any
+func PackEvents(chain nexus.ChainName, events []Event) (*codectypes.Any, error) {
+	return codectypes.NewAnyWithValue(&VoteEvents{
+		Chain:  chain,
+		Events: events,
+	})
+}
+
+// GetMultisigAddresses coverts a tss multisig key to addresses
+func GetMultisigAddresses(key tss.Key) ([]common.Address, uint8, error) {
+	multisigPubKeys, err := key.GetMultisigPubKey()
+	if err != nil {
+		return nil, 0, err
 	}
 
-	return eventsAny, nil
+	threshold := uint8(key.GetMultisigKey().Threshold)
+	return KeysToAddresses(multisigPubKeys...), threshold, nil
+}
+
+func getType(val interface{}) string {
+	t := reflect.TypeOf(val)
+	for t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	return t.Name()
+}
+
+// EventID ensures a correctly formatted event ID
+type EventID string
+
+// Validate returns an error, if the event ID is not in format of txID-index
+func (id EventID) Validate() error {
+	if err := utils.ValidateString(string(id)); err != nil {
+		return err
+	}
+
+	arr := strings.Split(string(id), "-")
+	if len(arr) != 2 {
+		return fmt.Errorf("event ID should be in foramt of txID-index")
+	}
+
+	bz, err := hexutil.Decode(arr[0])
+	if err != nil || len(bz) != common.HashLength {
+		return sdkerrors.Wrap(err, "invalid tx hash")
+	}
+
+	_, err = strconv.ParseInt(arr[1], 10, 64)
+	if err != nil {
+		return sdkerrors.Wrap(err, "invalid index")
+	}
+
+	return nil
 }

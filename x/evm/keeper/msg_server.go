@@ -8,13 +8,11 @@ import (
 	"strconv"
 	"strings"
 
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	gogoprototypes "github.com/gogo/protobuf/types"
 
-	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
@@ -96,7 +94,8 @@ func (s msgServer) ConfirmGatewayTx(c context.Context, req *types.ConfirmGateway
 		vote.ExpiryAt(ctx.BlockHeight()+period),
 		vote.Threshold(votingThreshold),
 		vote.MinVoterCount(minVoterCount),
-		vote.RewardPool(chain.Name),
+		vote.RewardPool(chain.Name.String()),
+		vote.GracePeriod(keeper.GetParams(ctx).VotingGracePeriod),
 	); err != nil {
 		return nil, err
 	}
@@ -110,7 +109,7 @@ func (s msgServer) ConfirmGatewayTx(c context.Context, req *types.ConfirmGateway
 		sdk.NewEvent(types.EventTypeGatewayTxConfirmation,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
-			sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
+			sdk.NewAttribute(types.AttributeKeyChain, chain.Name.String()),
 			sdk.NewAttribute(types.AttributeKeyGatewayAddress, gatewayAddress.Hex()),
 			sdk.NewAttribute(types.AttributeKeyTxID, req.TxID.Hex()),
 			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
@@ -156,7 +155,7 @@ func (s msgServer) SetGateway(c context.Context, req *types.SetGatewayRequest) (
 		sdk.NewEvent(types.EventTypeGateway,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm),
-			sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
+			sdk.NewAttribute(types.AttributeKeyChain, chain.Name.String()),
 			sdk.NewAttribute(types.AttributeKeyAddress, req.Address.Hex()),
 		),
 	)
@@ -222,10 +221,10 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		sdk.NewEvent(
 			types.EventTypeLink,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(types.AttributeKeySourceChain, senderChain.Name),
+			sdk.NewAttribute(types.AttributeKeySourceChain, senderChain.Name.String()),
 			sdk.NewAttribute(types.AttributeKeyDepositAddress, burnerAddress.Hex()),
 			sdk.NewAttribute(types.AttributeKeyDestinationAddress, req.RecipientAddr),
-			sdk.NewAttribute(types.AttributeKeyDestinationChain, recipientChain.Name),
+			sdk.NewAttribute(types.AttributeKeyDestinationChain, recipientChain.Name.String()),
 			sdk.NewAttribute(types.AttributeKeyTokenAddress, token.GetAddress().Hex()),
 			sdk.NewAttribute(types.AttributeKeyAsset, req.Asset),
 		),
@@ -290,7 +289,8 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		vote.ExpiryAt(ctx.BlockHeight()+period),
 		vote.Threshold(votingThreshold),
 		vote.MinVoterCount(minVoterCount),
-		vote.RewardPool(chain.Name),
+		vote.RewardPool(chain.Name.String()),
+		vote.GracePeriod(keeper.GetParams(ctx).VotingGracePeriod),
 	); err != nil {
 		return nil, err
 	}
@@ -304,7 +304,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		sdk.NewEvent(types.EventTypeTokenConfirmation,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
-			sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
+			sdk.NewAttribute(types.AttributeKeyChain, chain.Name.String()),
 			sdk.NewAttribute(types.AttributeKeyTxID, req.TxID.Hex()),
 			sdk.NewAttribute(types.AttributeKeyGatewayAddress, gatewayAddr.Hex()),
 			sdk.NewAttribute(types.AttributeKeyTokenAddress, tokenAddr.Hex()),
@@ -315,59 +315,6 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 	)
 
 	return &types.ConfirmTokenResponse{}, nil
-}
-
-func (s msgServer) ConfirmChain(c context.Context, req *types.ConfirmChainRequest) (*types.ConfirmChainResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-	if _, found := s.nexus.GetChain(ctx, req.Name); found {
-		return nil, fmt.Errorf("chain '%s' is already confirmed", req.Name)
-	}
-
-	pendingChain, ok := s.GetPendingChain(ctx, req.Name)
-	if !ok {
-		return nil, fmt.Errorf("'%s' has not been added yet", req.Name)
-	}
-
-	keyRequirement, ok := s.tss.GetKeyRequirement(ctx, tss.MasterKey, pendingChain.Chain.KeyType)
-	if !ok {
-		return nil, fmt.Errorf("key requirement for key role %s type %s not found", tss.MasterKey.SimpleString(), pendingChain.Chain.KeyType)
-	}
-
-	snapshot, err := s.snapshotter.TakeSnapshot(ctx, keyRequirement)
-	if err != nil {
-		return nil, fmt.Errorf("unable to take snapshot: %v", err)
-	}
-
-	if err := pendingChain.Params.Validate(); err != nil {
-		return nil, err
-	}
-
-	period := pendingChain.Params.RevoteLockingPeriod
-	votingThreshold := pendingChain.Params.VotingThreshold
-	minVoterCount := pendingChain.Params.MinVoterCount
-
-	pollKey := vote.NewPollKey(types.ModuleName, pendingChain.Chain.Name)
-	if err := s.voter.InitializePollWithSnapshot(
-		ctx,
-		pollKey,
-		snapshot.Counter,
-		vote.ExpiryAt(ctx.BlockHeight()+period),
-		vote.Threshold(votingThreshold),
-		vote.MinVoterCount(minVoterCount),
-	); err != nil {
-		return nil, err
-	}
-
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(types.EventTypeChainConfirmation,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
-			sdk.NewAttribute(types.AttributeKeyChain, pendingChain.Chain.Name),
-			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&pollKey))),
-		),
-	)
-
-	return &types.ConfirmChainResponse{}, nil
 }
 
 // ConfirmDeposit handles deposit confirmations
@@ -412,7 +359,8 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		vote.ExpiryAt(ctx.BlockHeight()+period),
 		vote.Threshold(votingThreshold),
 		vote.MinVoterCount(minVoterCount),
-		vote.RewardPool(chain.Name),
+		vote.RewardPool(chain.Name.String()),
+		vote.GracePeriod(keeper.GetParams(ctx).VotingGracePeriod),
 	); err != nil {
 		return nil, err
 	}
@@ -422,7 +370,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		sdk.NewEvent(types.EventTypeDepositConfirmation,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
-			sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
+			sdk.NewAttribute(types.AttributeKeyChain, chain.Name.String()),
 			sdk.NewAttribute(types.AttributeKeyTxID, req.TxID.Hex()),
 			sdk.NewAttribute(types.AttributeKeyDepositAddress, req.BurnerAddress.Hex()),
 			sdk.NewAttribute(types.AttributeKeyTokenAddress, burnerInfo.TokenAddress.Hex()),
@@ -491,7 +439,8 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 		vote.ExpiryAt(ctx.BlockHeight()+period),
 		vote.Threshold(votingThreshold),
 		vote.MinVoterCount(minVoterCount),
-		vote.RewardPool(chain.Name),
+		vote.RewardPool(chain.Name.String()),
+		vote.GracePeriod(keeper.GetParams(ctx).VotingGracePeriod),
 	); err != nil {
 		return nil, err
 	}
@@ -501,7 +450,7 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 	event := sdk.NewEvent(types.EventTypeTransferKeyConfirmation,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
-		sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
+		sdk.NewAttribute(types.AttributeKeyChain, chain.Name.String()),
 		sdk.NewAttribute(types.AttributeKeyTxID, req.TxID.Hex()),
 		sdk.NewAttribute(types.AttributeKeyTransferKeyType, req.TransferType.SimpleString()),
 		sdk.NewAttribute(types.AttributeKeyKeyType, chain.KeyType.SimpleString()),
@@ -512,81 +461,6 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 	defer func() { ctx.EventManager().EmitEvent(event) }()
 
 	return &types.ConfirmTransferKeyResponse{}, nil
-}
-
-func (s msgServer) VoteConfirmChain(c context.Context, req *types.VoteConfirmChainRequest) (*types.VoteConfirmChainResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-
-	voter := s.snapshotter.GetOperator(ctx, req.Sender)
-	if voter == nil {
-		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
-	}
-
-	poll := s.voter.GetPoll(ctx, req.PollKey)
-	switch {
-	case poll.Is(vote.Expired):
-		return &types.VoteConfirmChainResponse{Log: fmt.Sprintf("vote for poll %s already expired", req.PollKey)}, nil
-	case poll.Is(vote.Failed), poll.Is(vote.Completed):
-		// if the voting threshold has been met and additional votes are received they should not return an error
-		return &types.VoteConfirmChainResponse{Log: fmt.Sprintf("vote for poll %s already decided", req.PollKey)}, nil
-	default:
-	}
-
-	pendingChain, chainFound := s.GetPendingChain(ctx, req.Name)
-	if !chainFound {
-		return nil, fmt.Errorf("unknown chain %s", req.Name)
-	}
-
-	voteValue := &gogoprototypes.BoolValue{Value: req.Confirmed}
-	if err := poll.Vote(voter, voteValue); err != nil {
-		return nil, err
-	}
-
-	ctx.EventManager().EmitEvent(sdk.NewEvent(
-		types.EventTypeChainConfirmation,
-		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueVote),
-		sdk.NewAttribute(types.AttributeKeyValue, strconv.FormatBool(voteValue.Value)),
-	))
-
-	if poll.Is(vote.Pending) {
-		return &types.VoteConfirmChainResponse{Log: fmt.Sprintf("not enough votes to confirm chain %s yet", pendingChain.Chain.Name)}, nil
-	}
-
-	if poll.Is(vote.Failed) {
-		s.DeletePendingChain(ctx, pendingChain.Chain.Name)
-		return &types.VoteConfirmChainResponse{Log: fmt.Sprintf("poll %s failed", poll.GetKey())}, nil
-	}
-
-	confirmed, ok := poll.GetResult().(*gogoprototypes.BoolValue)
-	if !ok {
-		return nil, fmt.Errorf("result of poll %s has wrong type, expected bool, got %T", req.PollKey.String(), poll.GetResult())
-	}
-
-	s.Logger(ctx).Info(fmt.Sprintf("EVM chain %s confirmation result is %t", pendingChain.Chain.Name, confirmed.Value))
-	s.DeletePendingChain(ctx, pendingChain.Chain.Name)
-
-	// handle poll result
-	event := sdk.NewEvent(types.EventTypeChainConfirmation,
-		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(types.AttributeKeyChain, pendingChain.Chain.Name),
-		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.PollKey))))
-
-	if !confirmed.Value {
-		poll.AllowOverride()
-		ctx.EventManager().EmitEvent(
-			event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueReject)))
-		return &types.VoteConfirmChainResponse{
-			Log: fmt.Sprintf("chain %s was rejected", pendingChain.Chain.Name),
-		}, nil
-	}
-	ctx.EventManager().EmitEvent(
-		event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)))
-
-	s.nexus.SetChain(ctx, pendingChain.Chain)
-	s.ForChain(pendingChain.Chain.Name).SetParams(ctx, pendingChain.Params)
-
-	return &types.VoteConfirmChainResponse{}, nil
 }
 
 func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployTokenRequest) (*types.CreateDeployTokenResponse, error) {
@@ -729,26 +603,6 @@ func (s msgServer) newErrRotationInProgress(chain nexus.Chain, key tss.KeyRole) 
 	return sdkerrors.Wrapf(types.ErrRotationInProgress, "finish rotating to next %s key for chain %s first", key.SimpleString(), chain.Name)
 }
 
-func getMultisigThreshold(keyCount int, threshold utils.Threshold) uint8 {
-	return uint8(
-		sdk.NewDec(int64(keyCount)).
-			MulInt64(threshold.Numerator).
-			QuoInt64(threshold.Denominator).
-			Ceil().
-			RoundInt64(),
-	)
-}
-
-func getMultisigAddresses(key tss.Key) ([]common.Address, uint8, error) {
-	multisigPubKeys, err := key.GetMultisigPubKey()
-	if err != nil {
-		return nil, 0, sdkerrors.Wrapf(types.ErrEVM, err.Error())
-	}
-
-	threshold := uint8(key.GetMultisigKey().Threshold)
-	return types.KeysToAddresses(multisigPubKeys...), threshold, nil
-}
-
 func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePendingTransfersRequest) (*types.CreatePendingTransfersResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
@@ -809,7 +663,7 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 	return &types.CreatePendingTransfersResponse{}, nil
 }
 
-func (s msgServer) createTransferKeyCommand(ctx sdk.Context, keeper types.ChainKeeper, transferKeyType types.TransferKeyType, chainStr string, nextKeyID tss.KeyID) (types.Command, error) {
+func (s msgServer) createTransferKeyCommand(ctx sdk.Context, keeper types.ChainKeeper, transferKeyType types.TransferKeyType, chainStr nexus.ChainName, nextKeyID tss.KeyID) (types.Command, error) {
 	chain, ok := s.nexus.GetChain(ctx, chainStr)
 	if !ok {
 		return types.Command{}, fmt.Errorf("%s is not a registered chain", chainStr)
@@ -872,7 +726,7 @@ func (s msgServer) createTransferKeyCommand(ctx sdk.Context, keeper types.ChainK
 
 		return types.CreateSinglesigTransferCommand(transferKeyType, chainID, currMasterKeyID, crypto.PubkeyToAddress(pk))
 	case tss.Multisig:
-		addresses, threshold, err := getMultisigAddresses(nextKey)
+		addresses, threshold, err := types.GetMultisigAddresses(nextKey)
 		if err != nil {
 			return types.Command{}, err
 		}
@@ -973,9 +827,12 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", commandBatch.GetKeyID())
 	}
 
-	sigMetadata := types.SigMetadata{
+	sigMetadata, err := codectypes.NewAnyWithValue(&types.SigMetadata{
 		Type:  types.SigCommand,
 		Chain: chain.Name,
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	batchedCommandsIDHex := hex.EncodeToString(commandBatch.GetID())
@@ -985,7 +842,7 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		Msg:             commandBatch.GetSigHash().Bytes(),
 		SnapshotCounter: counter,
 		RequestModule:   types.ModuleName,
-		Metadata:        string(types.ModuleCdc.MustMarshalJSON(&sigMetadata)),
+		ModuleMetadata:  sigMetadata,
 	}, s.snapshotter, s.voter)
 	if err != nil {
 		return nil, err
@@ -1011,7 +868,7 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 			types.EventTypeSign,
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(types.AttributeKeyChain, chain.Name),
+			sdk.NewAttribute(types.AttributeKeyChain, chain.Name.String()),
 			sdk.NewAttribute(sdk.AttributeKeySender, req.Sender.String()),
 			sdk.NewAttribute(types.AttributeKeyBatchedCommandsID, batchedCommandsIDHex),
 			sdk.NewAttribute(types.AttributeKeyCommandsIDs, strings.Join(commandList, ",")),
@@ -1036,19 +893,52 @@ func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*typ
 		return nil, fmt.Errorf("TSS is disabled")
 	}
 
-	s.SetPendingChain(
-		ctx,
-		nexus.Chain{Name: req.Name, SupportsForeignAssets: true, KeyType: req.KeyType, Module: types.ModuleName},
-		req.Params,
-	)
+	chain := nexus.Chain{Name: req.Name, SupportsForeignAssets: true, KeyType: req.KeyType, Module: types.ModuleName}
+	s.nexus.SetChain(ctx, chain)
+	s.ForChain(chain.Name).SetParams(ctx, req.Params)
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeNewChain,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueUpdate),
-			sdk.NewAttribute(types.AttributeKeyChain, req.Name),
+			sdk.NewAttribute(types.AttributeKeyChain, req.Name.String()),
 		),
 	)
 
 	return &types.AddChainResponse{}, nil
+}
+
+func (s msgServer) RetryFailedEvent(c context.Context, req *types.RetryFailedEventRequest) (*types.RetryFailedEventResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	chain, ok := s.nexus.GetChain(ctx, req.Chain)
+	if !ok {
+		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
+	}
+
+	if err := validateChainActivated(ctx, s.nexus, chain); err != nil {
+		return nil, err
+	}
+
+	keeper := s.ForChain(chain.Name)
+
+	event, ok := keeper.GetEvent(ctx, req.EventID)
+	if !ok {
+		return nil, fmt.Errorf("event %s not found for chain %s", req.EventID, req.Chain)
+	}
+
+	if event.Status != types.EventFailed {
+		return nil, fmt.Errorf("event %s is not a failed event", req.EventID)
+	}
+
+	event.Status = types.EventConfirmed
+	keeper.GetConfirmedEventQueue(ctx).Enqueue(getEventKey(req.EventID), &event)
+
+	s.Logger(ctx).Info(
+		"re-queued failed event",
+		types.AttributeKeyChain, chain.Name,
+		"eventID", req.EventID,
+	)
+
+	return &types.RetryFailedEventResponse{}, nil
 }

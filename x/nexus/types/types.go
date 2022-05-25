@@ -6,8 +6,29 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
+
+const maxBitmapSize = 1 << 15 // 32,768
+
+// NewMaintainerState is the constructor for MaintainerState
+func NewMaintainerState(address sdk.ValAddress) MaintainerState {
+	return MaintainerState{
+		Address:        address,
+		MissingVotes:   utils.NewBitmap(maxBitmapSize),
+		IncorrectVotes: utils.NewBitmap(maxBitmapSize),
+	}
+}
+
+// ValidateBasic returns error if the given MaintainerState is invalid, nil otherwise
+func (m MaintainerState) ValidateBasic() error {
+	if err := sdk.VerifyAddressFormat(m.Address); err != nil {
+		return err
+	}
+
+	return nil
+}
 
 // NewLinkedAddresses is the constructor of LinkedAddresses
 func NewLinkedAddresses(depositAddress, recepientAddress exported.CrossChainAddress) LinkedAddresses {
@@ -30,9 +51,10 @@ func (m LinkedAddresses) Validate() error {
 	return nil
 }
 
-func (m ChainState) indexOfMaintainer(maintainer sdk.ValAddress) int {
-	for i, mt := range m.Maintainers {
-		if mt.Equals(maintainer) {
+// IndexOfMaintainer returns the index of the maintainer in the given chain state
+func (m ChainState) IndexOfMaintainer(address sdk.ValAddress) int {
+	for i, ms := range m.MaintainerStates {
+		if ms.Address.Equals(address) {
 			return i
 		}
 	}
@@ -56,8 +78,8 @@ func (m ChainState) Validate() error {
 		return err
 	}
 
-	for _, maintainer := range m.Maintainers {
-		if err := sdk.VerifyAddressFormat(maintainer); err != nil {
+	for _, ms := range m.MaintainerStates {
+		if err := ms.ValidateBasic(); err != nil {
 			return err
 		}
 	}
@@ -104,30 +126,30 @@ func (m *ChainState) AddAsset(asset exported.Asset) error {
 }
 
 // HasMaintainer returns true if the given maintainer is registered for the chain; false otherwise
-func (m ChainState) HasMaintainer(maintainer sdk.ValAddress) bool {
-	return m.indexOfMaintainer(maintainer) != -1
+func (m ChainState) HasMaintainer(address sdk.ValAddress) bool {
+	return m.IndexOfMaintainer(address) != -1
 }
 
 // AddMaintainer registers the given maintainer for the chain
-func (m *ChainState) AddMaintainer(maintainer sdk.ValAddress) error {
-	if m.HasMaintainer(maintainer) {
-		return fmt.Errorf("maintainer %s is already registered for chain %s", maintainer.String(), m.Chain.Name)
+func (m *ChainState) AddMaintainer(address sdk.ValAddress) error {
+	if m.HasMaintainer(address) {
+		return fmt.Errorf("maintainer %s is already registered for chain %s", address.String(), m.Chain.Name)
 	}
 
-	m.Maintainers = append(m.Maintainers, maintainer)
+	m.MaintainerStates = append(m.MaintainerStates, NewMaintainerState(address))
 
 	return nil
 }
 
 // RemoveMaintainer deregisters the given maintainer for the chain
-func (m *ChainState) RemoveMaintainer(maintainer sdk.ValAddress) error {
-	i := m.indexOfMaintainer(maintainer)
+func (m *ChainState) RemoveMaintainer(address sdk.ValAddress) error {
+	i := m.IndexOfMaintainer(address)
 	if i == -1 {
-		return fmt.Errorf("maintainer %s is not registered for chain %s", maintainer.String(), m.Chain.Name)
+		return fmt.Errorf("maintainer %s is not registered for chain %s", address.String(), m.Chain.Name)
 	}
 
-	m.Maintainers[i] = m.Maintainers[len(m.Maintainers)-1]
-	m.Maintainers = m.Maintainers[:len(m.Maintainers)-1]
+	m.MaintainerStates[i] = m.MaintainerStates[len(m.MaintainerStates)-1]
+	m.MaintainerStates = m.MaintainerStates[:len(m.MaintainerStates)-1]
 
 	return nil
 }

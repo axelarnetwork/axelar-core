@@ -12,6 +12,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/exported"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
 // Parameter keys
@@ -26,6 +27,7 @@ var (
 	KeyBurnable            = []byte("burnable")
 	KeyMinVoterCount       = []byte("minVoterCount")
 	KeyCommandsGasLimit    = []byte("commandsGasLimit")
+	KeyVotingGracePeriod   = []byte("votingGracePeriod")
 )
 
 // KeyTable returns a subspace.KeyTable that has registered all parameter types in this module's parameter set
@@ -74,9 +76,10 @@ func DefaultParams() []Params {
 				Id:   sdk.NewIntFromBigInt(gethParams.AllCliqueProtocolChanges.ChainID),
 			},
 		},
-		VotingThreshold:  utils.Threshold{Numerator: 51, Denominator: 100},
-		MinVoterCount:    1,
-		CommandsGasLimit: 5000000,
+		VotingThreshold:   utils.Threshold{Numerator: 51, Denominator: 100},
+		VotingGracePeriod: 3,
+		MinVoterCount:     1,
+		CommandsGasLimit:  5000000,
 	}}
 }
 
@@ -100,16 +103,18 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 		params.NewParamSetPair(KeyVotingThreshold, &m.VotingThreshold, validateVotingThreshold),
 		params.NewParamSetPair(KeyMinVoterCount, &m.MinVoterCount, validateMinVoterCount),
 		params.NewParamSetPair(KeyCommandsGasLimit, &m.CommandsGasLimit, validateCommandsGasLimit),
+		params.NewParamSetPair(KeyVotingGracePeriod, &m.VotingGracePeriod, validateVotingGracePeriod),
 	}
 }
 
 func validateChain(chain interface{}) error {
-	c, ok := chain.(string)
+	c, ok := chain.(nexus.ChainName)
 	if !ok {
 		return fmt.Errorf("invalid parameter type for chain: %T", chain)
 	}
-	if c == "" {
-		return sdkerrors.Wrap(types.ErrInvalidGenesis, "chain name cannot be an empty string")
+	err := c.Validate()
+	if err != nil {
+		return sdkerrors.Wrap(types.ErrInvalidGenesis, "invalid chain name")
 	}
 	return nil
 }
@@ -149,14 +154,27 @@ func validateBytes(bytes interface{}) error {
 	return nil
 }
 
-func validateRevoteLockingPeriod(RevoteLockingPeriod interface{}) error {
-	r, ok := RevoteLockingPeriod.(int64)
+func validateRevoteLockingPeriod(revoteLockingPeriod interface{}) error {
+	r, ok := revoteLockingPeriod.(int64)
 	if !ok {
 		return fmt.Errorf("invalid parameter type for revote lock period: %T", r)
 	}
 
 	if r <= 0 {
-		return sdkerrors.Wrap(types.ErrInvalidGenesis, "revote lock period be greater than 0")
+		return sdkerrors.Wrap(types.ErrInvalidGenesis, "revote lock period must be >0")
+	}
+
+	return nil
+}
+
+func validateVotingGracePeriod(votingGracePeriod interface{}) error {
+	r, ok := votingGracePeriod.(int64)
+	if !ok {
+		return fmt.Errorf("invalid parameter type for voting grace period: %T", r)
+	}
+
+	if r < 0 {
+		return sdkerrors.Wrap(types.ErrInvalidGenesis, "voting grace period must be >=0")
 	}
 
 	return nil
@@ -199,8 +217,8 @@ func validateMinVoterCount(minVoterCount interface{}) error {
 		return fmt.Errorf("invalid parameter type for MinVoterCount: %T", minVoterCount)
 	}
 
-	if val < 0 {
-		return fmt.Errorf("min voter count must be >=0")
+	if val < 1 {
+		return fmt.Errorf("min voter count must be >=1")
 	}
 
 	return nil
@@ -243,6 +261,14 @@ func (m Params) Validate() error {
 
 	if err := validateRevoteLockingPeriod(m.RevoteLockingPeriod); err != nil {
 		return err
+	}
+
+	if err := validateVotingGracePeriod(m.VotingGracePeriod); err != nil {
+		return err
+	}
+
+	if m.VotingGracePeriod >= m.RevoteLockingPeriod {
+		return fmt.Errorf("voting grace period must be < revote locking period")
 	}
 
 	if err := validateVotingThreshold(m.VotingThreshold); err != nil {

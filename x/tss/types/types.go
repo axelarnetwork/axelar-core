@@ -46,7 +46,7 @@ func (m MultisigInfo) Validate() error {
 
 // Validate validates the ExternalKeys
 func (m ExternalKeys) Validate() error {
-	if err := utils.ValidateString(m.Chain); err != nil {
+	if err := m.Chain.Validate(); err != nil {
 		return sdkerrors.Wrap(err, "invalid chain")
 	}
 

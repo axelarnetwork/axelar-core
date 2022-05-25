@@ -32,14 +32,14 @@ In order to run/build the project locally we need to import the bytecode from ga
 ## Interacting with a local node
 
 With a local (dockerized) node running, the `axelard` binary can be used to interact with the node.
-Run `./bin/axelard --help` after building the binaries to get information about the available commands.
+Run `./bin/axelard` or `./bin/axelard <command> --help` after building the binaries to get information about the available commands.
 
 ## Show API documentation
 
 Execute `GO111MODULE=off go install -u golang.org/x/tools/cmd/godoc` to ensure that `godoc` is installed on the host.
 
 After the installation, execute `godoc -http ":{port}" -index` to host a local godoc server. For example, with
-port `8080` the documentation is hosted at
+port `8080` and `godoc -http ":8080" -index`, the documentation is hosted at
 http://localhost:8080/pkg/github.com/axelarnetwork/axelar-core. The index flag makes the documentation searchable.
 
 Comments at the beginning of packages, before types and before functions are automatically taken from the source files

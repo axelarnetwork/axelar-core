@@ -8,6 +8,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
@@ -15,7 +16,7 @@ import (
 func NewRegisterExternalKeysRequest(sender sdk.AccAddress, chain string, externalKeys ...RegisterExternalKeysRequest_ExternalKey) *RegisterExternalKeysRequest {
 	return &RegisterExternalKeysRequest{
 		Sender:       sender,
-		Chain:        utils.NormalizeString(chain),
+		Chain:        nexus.ChainName(utils.NormalizeString(chain)),
 		ExternalKeys: externalKeys,
 	}
 }
@@ -36,7 +37,7 @@ func (m RegisterExternalKeysRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
-	if err := utils.ValidateString(m.Chain); err != nil {
+	if err := m.Chain.Validate(); err != nil {
 		return sdkerrors.Wrap(err, "invalid chain")
 	}
 

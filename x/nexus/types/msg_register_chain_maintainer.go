@@ -7,18 +7,17 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/utils/slices"
 )
 
 // NewRegisterChainMaintainerRequest creates a message of type RegisterChainMaintainerRequest
 func NewRegisterChainMaintainerRequest(sender sdk.AccAddress, chains ...string) *RegisterChainMaintainerRequest {
-	var normalizedChains []string
-	for _, chain := range chains {
-		normalizedChains = append(normalizedChains, utils.NormalizeString(chain))
-	}
-
 	return &RegisterChainMaintainerRequest{
 		Sender: sender,
-		Chains: normalizedChains,
+		Chains: slices.Map(chains, func(c string) exported.ChainName {
+			return exported.ChainName(utils.NormalizeString(c))
+		}),
 	}
 }
 
@@ -43,7 +42,7 @@ func (m RegisterChainMaintainerRequest) ValidateBasic() error {
 	}
 
 	for _, chain := range m.Chains {
-		if err := utils.ValidateString(chain); err != nil {
+		if err := chain.Validate(); err != nil {
 			return sdkerrors.Wrap(err, "invalid chain")
 		}
 	}

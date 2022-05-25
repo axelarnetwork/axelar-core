@@ -22,7 +22,7 @@ jobs:
     - name: Execute SSH commmands on remote server
       uses: JimCronqvist/action-ssh@master
       with:
-        hosts: {{ secrets.CATCHUP_HOST }}
+        hosts: ${{ secrets.CATCHUP_HOST }}
         privateKey: ${{ secrets.CATCHUP_SSH_PRIVATE_KEY }}
         command: |
           sudo apt-get update -y

@@ -11,8 +11,8 @@ import (
 )
 
 // NewHandler returns a new handler
-func NewHandler(k keeper.Keeper, n types.Nexus) sdk.Handler {
-	server := keeper.NewMsgServerImpl(k, n)
+func NewHandler(k keeper.Keeper) sdk.Handler {
+	server := keeper.NewMsgServerImpl(k)
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {

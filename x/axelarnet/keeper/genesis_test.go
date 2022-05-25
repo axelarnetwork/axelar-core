@@ -16,6 +16,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	. "github.com/axelarnetwork/utils/test"
 )
 
@@ -28,13 +29,13 @@ func TestGenesis(t *testing.T) {
 	)
 
 	Given("a keeper",
-		func(t *testing.T) {
+		func() {
 			subspace := paramstypes.NewSubspace(cfg.Codec, cfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "axelarnet")
 			k = keeper.NewKeeper(cfg.Codec, sdk.NewKVStoreKey(types.StoreKey), subspace)
 
 		}).
 		When("the state is initialized from a genesis state",
-			func(t *testing.T) {
+			func() {
 				initialGenesis = types.NewGenesisState(types.DefaultParams(), rand.AccAddr(), randomChains(), randomTransfers())
 				assert.NoError(t, initialGenesis.Validate())
 
@@ -91,7 +92,7 @@ func randomChains() []types.CosmosChain {
 
 func randomChain() types.CosmosChain {
 	return types.CosmosChain{
-		Name:       randomNormalizedStr(5, 20),
+		Name:       nexus.ChainName(randomNormalizedStr(5, 20)),
 		IBCPath:    randomIBCPath(),
 		AddrPrefix: randomNormalizedStr(5, 20),
 	}

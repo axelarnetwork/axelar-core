@@ -23,7 +23,6 @@ type Broadcaster struct {
 	logger         log.Logger
 	retryPipeline  types.Pipeline
 	backlog        backlog
-	nextTask       broadcastTask
 	txFactory      tx.Factory
 	clientCtx      sdkClient.Context
 	batchThreshold int

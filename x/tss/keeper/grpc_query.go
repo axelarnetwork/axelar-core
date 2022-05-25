@@ -10,6 +10,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
@@ -36,7 +37,7 @@ func NewGRPCQuerier(k types.TSSKeeper, n types.Nexus, s types.StakingKeeper) Que
 func (q Querier) NextKeyID(c context.Context, req *types.NextKeyIDRequest) (*types.NextKeyIDResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	chain, ok := q.nexus.GetChain(ctx, req.Chain)
+	chain, ok := q.nexus.GetChain(ctx, nexus.ChainName(req.Chain))
 	if !ok {
 		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrTss, fmt.Sprintf("chain [%s] not found", req.Chain)).Error())
 	}
@@ -53,7 +54,7 @@ func (q Querier) NextKeyID(c context.Context, req *types.NextKeyIDRequest) (*typ
 func (q Querier) AssignableKey(c context.Context, req *types.AssignableKeyRequest) (*types.AssignableKeyResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	chain, ok := q.nexus.GetChain(ctx, req.Chain)
+	chain, ok := q.nexus.GetChain(ctx, nexus.ChainName(req.Chain))
 	if !ok {
 		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrTss, fmt.Sprintf("chain [%s] not found", req.Chain)).Error())
 	}

@@ -5,6 +5,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
 // InitGenesis initializes the state from a genesis file
@@ -70,7 +71,7 @@ func (k BaseKeeper) getChains(ctx sdk.Context) []types.GenesisState_Chain {
 
 	var chains []types.GenesisState_Chain
 	for ; iter.Valid(); iter.Next() {
-		ck := k.ForChain(string(iter.Value())).(chainKeeper)
+		ck := k.ForChain(nexus.ChainName(iter.Value())).(chainKeeper)
 
 		chain := types.GenesisState_Chain{
 			Params:              ck.GetParams(ctx),

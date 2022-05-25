@@ -1,0 +1,43 @@
+name: Check internal dependencies up-to-date
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  check-internal-deps-up-to-date:
+    strategy:
+      matrix:
+        go-version:
+          - 1.18
+        os:
+          - ubuntu-18.04
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Setup Golang with cache
+        uses: magnetikonline/action-golang-cache@v2
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Update internal dependencies
+        run: |
+          go get -u github.com/axelarnetwork/utils@latest
+          go get -u github.com/axelarnetwork/tm-events@latest
+
+      - name: Check for changes
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo Following files are changed...
+            git status
+
+            echo Changes:
+            git diff
+
+            exit 1;
+          else
+            exit 0;
+          fi

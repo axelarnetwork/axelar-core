@@ -36,13 +36,13 @@ func TestGenesis(t *testing.T) {
 	paramsK := paramskeeper.NewKeeper(cfg.Codec, cfg.Amino, sdk.NewKVStoreKey(paramstypes.StoreKey), sdk.NewKVStoreKey(paramstypes.TStoreKey))
 	k := keeper.NewKeeper(cfg.Codec, sdk.NewKVStoreKey(types.StoreKey), paramsK)
 
-	Given("a genesis state", func(t *testing.T) {
+	Given("a genesis state", func() {
 		initialState = types.NewGenesisState(testutils.RandomChains(cfg.Codec))
 
-	}).And().Given("it is valid", func(t *testing.T) {
+	}).When("it is valid", func() {
 		assert.NoError(t, initialState.Validate())
 	}).
-		When("importing and exporting the state", func(t *testing.T) {
+		When("importing and exporting the state", func() {
 			ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 			k.InitGenesis(ctx, initialState)
 			exportedState = k.ExportGenesis(ctx)
@@ -51,9 +51,9 @@ func TestGenesis(t *testing.T) {
 			assertChainsEqual(t, initialState, exportedState)
 		}).Run(t, 10)
 
-	Given("the default genesis state", func(t *testing.T) {
+	Given("the default genesis state", func() {
 		initialState = types.DefaultGenesisState()
-	}).When("it is valid", func(t *testing.T) {
+	}).When("it is valid", func() {
 		assert.NoError(t, initialState.Validate())
 	}).Then("the keeper can be initialized", func(t *testing.T) {
 		ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())

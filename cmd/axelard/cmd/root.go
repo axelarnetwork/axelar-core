@@ -85,7 +85,7 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 
 			// we don't have direct access to the definition of the start command, so this is the only place we can add additional seeds
 			if cmd.Use == "start" {
-				if err := extendSeeds(cmd, err); err != nil {
+				if err := extendSeeds(cmd); err != nil {
 					return err
 				}
 			}
@@ -98,7 +98,7 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 	return rootCmd, encodingConfig
 }
 
-func extendSeeds(cmd *cobra.Command, err error) error {
+func extendSeeds(cmd *cobra.Command) error {
 	serverCtx := server.GetServerContextFromCmd(cmd)
 	seeds, err := config.ReadSeeds(serverCtx.Viper)
 	if errors.As(err, &viper.ConfigFileNotFoundError{}) {

@@ -6,6 +6,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
@@ -13,7 +14,7 @@ import (
 func NewConfirmTransferKeyRequest(sender sdk.AccAddress, chain string, txID common.Hash, transferType TransferKeyType, keyID string) *ConfirmTransferKeyRequest {
 	return &ConfirmTransferKeyRequest{
 		Sender:       sender,
-		Chain:        utils.NormalizeString(chain),
+		Chain:        nexus.ChainName(utils.NormalizeString(chain)),
 		TxID:         Hash(txID),
 		TransferType: transferType,
 		KeyID:        tss.KeyID(keyID),
@@ -36,7 +37,7 @@ func (m ConfirmTransferKeyRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
-	if err := utils.ValidateString(m.Chain); err != nil {
+	if err := m.Chain.Validate(); err != nil {
 		return sdkerrors.Wrap(err, "invalid chain")
 	}
 

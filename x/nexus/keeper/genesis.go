@@ -65,7 +65,9 @@ func (k Keeper) InitGenesis(ctx sdk.Context, genState *types.GenesisState) {
 			panic(fmt.Errorf("fee info for chain %s and asset %s already registered", chain.Name, feeInfo.Asset))
 		}
 
-		k.RegisterFee(ctx, chain, feeInfo)
+		if err := k.RegisterFee(ctx, chain, feeInfo); err != nil {
+			panic(err)
+		}
 	}
 }
 

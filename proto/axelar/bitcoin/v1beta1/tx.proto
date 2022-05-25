@@ -25,7 +25,9 @@ message LinkRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string recipient_addr = 2;
-  string recipient_chain = 3;
+  string recipient_chain = 3
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
 }
 
 message LinkResponse { string deposit_addr = 2; };
