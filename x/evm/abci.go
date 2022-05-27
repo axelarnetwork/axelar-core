@@ -404,14 +404,32 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 		}
 		// skip if destination chain is not activated
 		if !n.IsChainActivated(ctx, destinationChain) {
+			bk.Logger(ctx).Debug("skipping confirmed event due to destination chain being inactive",
+				"chain", event.Chain.String(),
+				"destination_chain", destinationChainName.String(),
+				"eventID", event.GetID(),
+			)
+
 			return false
 		}
 		// skip if destination chain has not got gateway set yet
 		if _, ok := bk.ForChain(destinationChainName).GetGatewayAddress(ctx); !ok {
+			bk.Logger(ctx).Debug("skipping confirmed event due to destination chain not having gateway set",
+				"chain", event.Chain.String(),
+				"destination_chain", destinationChainName.String(),
+				"eventID", event.GetID(),
+			)
+
 			return false
 		}
 		// skip if destination chain has the secondary key rotation in progress
 		if _, nextSecondaryKeyAssigned := s.GetNextKeyID(ctx, destinationChain, tss.SecondaryKey); nextSecondaryKeyAssigned {
+			bk.Logger(ctx).Debug("skipping confirmed event due to destination chain in the middle of secondary key rotation",
+				"chain", event.Chain.String(),
+				"destination_chain", destinationChainName.String(),
+				"eventID", event.GetID(),
+			)
+
 			return false
 		}
 
@@ -419,15 +437,28 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 	}
 
 	for _, chain := range n.GetChains(ctx) {
+		bk.Logger(ctx).Debug("handling confirmed events",
+			"chain", chain.Name.String(),
+		)
+
 		ck := bk.ForChain(chain.Name)
 		queue := ck.GetConfirmedEventQueue(ctx)
 		// skip if confirmed event queue is empty
 		if queue.IsEmpty() {
+			bk.Logger(ctx).Debug("skipping handling confirmed events due to empty queue",
+				"chain", chain.Name.String(),
+			)
+
 			continue
 		}
 
 		var event types.Event
 		for queue.Dequeue(&event, shouldHandleEvent) {
+			bk.Logger(ctx).Debug("handling confirmed event",
+				"chain", chain.Name.String(),
+				"eventID", event.GetID(),
+			)
+
 			var ok bool
 
 			switch event.GetEvent().(type) {
@@ -459,6 +490,11 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 
 				continue
 			}
+
+			bk.Logger(ctx).Debug("handled confirmed event",
+				"chain", chain.Name.String(),
+				"eventID", event.GetID(),
+			)
 
 			if err := ck.SetEventCompleted(ctx, event.GetID()); err != nil {
 				return err
