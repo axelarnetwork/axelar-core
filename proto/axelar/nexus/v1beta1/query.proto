@@ -95,3 +95,15 @@ message ChainsByAssetResponse {
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
 }
+
+// RecipientAddressRequest represents a message that queries the registered
+// recipient address for a given deposit address
+message RecipientAddressRequest {
+  string deposit_addr = 1;
+  string deposit_chain = 2;
+}
+
+message RecipientAddressResponse {
+  string recipient_addr = 1;
+  string recipient_chain = 2;
+};
