@@ -107,4 +107,11 @@ service QueryService {
     option (google.api.http).get =
         "/axelar/nexus/v1beta1/chains_by_asset/{asset}";
   }
+
+  // RecipientAddress queries the recipient address for a given deposit address
+  rpc RecipientAddress(RecipientAddressRequest)
+      returns (RecipientAddressResponse) {
+    option (google.api.http).get = "/axelar/nexus/v1beta1/recipient_address/"
+                                   "{deposit_chain}/{deposit_addr}";
+  }
 }
