@@ -374,7 +374,7 @@ func handleMultisigTransferKey(ctx sdk.Context, event types.Event, ck types.Chai
 }
 
 func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, s types.Signer) error {
-	shouldHandleEvent := func(e codec.ProtoMarshaler) bool {
+	shouldHandleEvent := func(e codec.ProtoMarshaler) (pass bool, stop bool) {
 		event := e.(*types.Event)
 
 		var destinationChainName nexus.ChainName
@@ -388,7 +388,7 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 		case *types.Event_Transfer, *types.Event_TokenDeployed,
 			*types.Event_MultisigOwnershipTransferred, *types.Event_MultisigOperatorshipTransferred:
 			// skip checks for non-gateway tx event
-			return true
+			return true, false
 		default:
 			panic(fmt.Errorf("unsupported event type %T", event))
 		}
@@ -396,26 +396,26 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 		// would handle event as failure if destination chain is not registered
 		destinationChain, ok := n.GetChain(ctx, destinationChainName)
 		if !ok {
-			return true
+			return true, false
 		}
 		// would handle event as failure if destination chain is not an evm chain
 		if !bk.HasChain(ctx, destinationChainName) {
-			return true
+			return true, false
 		}
 		// skip if destination chain is not activated
 		if !n.IsChainActivated(ctx, destinationChain) {
-			return false
+			return false, false
 		}
 		// skip if destination chain has not got gateway set yet
 		if _, ok := bk.ForChain(destinationChainName).GetGatewayAddress(ctx); !ok {
-			return false
+			return false, false
 		}
 		// skip if destination chain has the secondary key rotation in progress
 		if _, nextSecondaryKeyAssigned := s.GetNextKeyID(ctx, destinationChain, tss.SecondaryKey); nextSecondaryKeyAssigned {
-			return false
+			return false, false
 		}
 
-		return true
+		return true, false
 	}
 
 	for _, chain := range n.GetChains(ctx) {

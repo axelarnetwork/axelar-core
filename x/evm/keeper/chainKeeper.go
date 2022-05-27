@@ -556,7 +556,7 @@ func (k chainKeeper) GetChainIDByNetwork(ctx sdk.Context, network string) (sdk.I
 	return sdk.Int{}, false
 }
 
-func (k chainKeeper) popCommand(ctx sdk.Context, filters ...func(value codec.ProtoMarshaler) bool) (types.Command, bool) {
+func (k chainKeeper) popCommand(ctx sdk.Context, filters ...func(value codec.ProtoMarshaler) (bool, bool)) (types.Command, bool) {
 	var cmd types.Command
 	ok := k.getCommandQueue(ctx).Dequeue(&cmd, filters...)
 	return cmd, ok
@@ -653,11 +653,11 @@ func (k chainKeeper) CreateNewBatchToSign(ctx sdk.Context, signer types.Signer) 
 	gasLimit := k.getCommandsGasLimit(ctx)
 	gasCost := uint32(command.MaxGasCost)
 	keyID := command.KeyID
-	filter := func(value codec.ProtoMarshaler) bool {
+	filter := func(value codec.ProtoMarshaler) (bool, bool) {
 		cmd, ok := value.(*types.Command)
 		gasCost += cmd.MaxGasCost
 
-		return ok && cmd.KeyID == keyID && gasCost <= gasLimit
+		return ok && cmd.KeyID == keyID && gasCost <= gasLimit, true
 	}
 
 	commands := []types.Command{command.Clone()}

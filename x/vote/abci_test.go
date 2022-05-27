@@ -63,12 +63,12 @@ func TestHandlePollsAtExpiry(t *testing.T) {
 			poll.IsFunc = func(s exported.PollState) bool { return state == s }
 
 			dequeued := false
-			pollQueue.DequeueFunc = func(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) bool) bool {
+			pollQueue.DequeueFunc = func(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) (bool, bool)) bool {
 				if dequeued {
 					return false
 				}
 
-				if !filter[0](&pollMetadata) {
+				if pass, _ := filter[0](&pollMetadata); !pass {
 					return false
 				}
 

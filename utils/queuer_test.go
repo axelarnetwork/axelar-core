@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"encoding/binary"
+	"strconv"
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -15,6 +17,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	. "github.com/axelarnetwork/utils/test"
 )
 
 var stringGen = rand.Strings(5, 50).Distinct()
@@ -32,6 +35,65 @@ func setup() (sdk.Context, *codec.ProtoCodec) {
 
 func TestNewBlockHeightKVQueue(t *testing.T) {
 	repeats := 20
+
+	t.Run("dequeue filter", testutils.Func(func(t *testing.T) {
+		var (
+			kvQueue   GeneralKVQueue
+			itemCount int64
+		)
+
+		whenHavingASequentialKVQueue := When("a sequential kv queue", func() {
+			ctx, cdc := setup()
+			store := NewNormalizedStore(ctx.KVStore(sdk.NewKVStoreKey(stringGen.Next())), cdc)
+
+			itemCount = rand.I64Between(10, 1000)
+			items := make([]gogoprototypes.UInt64Value, itemCount)
+
+			for i := 0; i < int(itemCount); i++ {
+				items[i] = gogoprototypes.UInt64Value{Value: uint64(i)}
+			}
+
+			kvQueue = NewGeneralKVQueue(rand.Str(5), store, log.TestingLogger(), func(value codec.ProtoMarshaler) Key {
+				v := value.(*gogoprototypes.UInt64Value)
+				bz := make([]byte, 8)
+				binary.BigEndian.PutUint64(bz, v.Value)
+
+				return KeyFromBz(bz)
+			})
+
+			for _, item := range items {
+				kvQueue.Enqueue(KeyFromStr(strconv.FormatUint(item.Value, 10)), &item)
+			}
+		})
+
+		whenHavingASequentialKVQueue.
+			Then("should dequeue zero given no filter", func(t *testing.T) {
+				var actual gogoprototypes.UInt64Value
+				assert.True(t, kvQueue.Dequeue(&actual))
+				assert.EqualValues(t, 0, actual.Value)
+			}).
+			Run(t)
+
+		whenHavingASequentialKVQueue.
+			Then("should dequeue nothing if filter does not match and stops immediately", func(t *testing.T) {
+				var actual gogoprototypes.UInt64Value
+				assert.False(t, kvQueue.Dequeue(&actual, func(value codec.ProtoMarshaler) (pass bool, stop bool) {
+					return value.(*gogoprototypes.UInt64Value).Value > 0, true
+				}))
+			}).
+			Run(t)
+
+		whenHavingASequentialKVQueue.
+			Then("should dequeue first item that matches the filter and the filter does not stop immediately", func(t *testing.T) {
+				min := uint64(rand.I64Between(0, itemCount-1))
+				var actual gogoprototypes.UInt64Value
+				assert.True(t, kvQueue.Dequeue(&actual, func(value codec.ProtoMarshaler) (pass bool, stop bool) {
+					return value.(*gogoprototypes.UInt64Value).Value >= min, false
+				}))
+				assert.EqualValues(t, min, actual.Value)
+			}).
+			Run(t)
+	}).Repeat(repeats))
 
 	t.Run("enqueue and dequeue", testutils.Func(func(t *testing.T) {
 		ctx, cdc := setup()

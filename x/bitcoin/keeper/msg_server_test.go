@@ -608,7 +608,7 @@ func TestCreateRescueTx(t *testing.T) {
 			GetConfirmedOutpointInfoQueueForKeyFunc: func(ctx sdk.Context, keyID tss.KeyID) utils.KVQueue {
 				return &utilsmock.KVQueueMock{
 					IsEmptyFunc: func() bool { return true },
-					DequeueFunc: func(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) bool) bool {
+					DequeueFunc: func(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) (bool, bool)) bool {
 						return false
 					},
 				}
@@ -695,7 +695,7 @@ func TestCreateRescueTx(t *testing.T) {
 
 				return &utilsmock.KVQueueMock{
 					IsEmptyFunc: func() bool { return true },
-					DequeueFunc: func(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) bool) bool {
+					DequeueFunc: func(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) (bool, bool)) bool {
 						if dequeueCount >= len(inputs) {
 							return false
 						}
@@ -713,7 +713,7 @@ func TestCreateRescueTx(t *testing.T) {
 
 			return &utilsmock.KVQueueMock{
 				IsEmptyFunc: func() bool { return true },
-				DequeueFunc: func(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) bool) bool {
+				DequeueFunc: func(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) (bool, bool)) bool {
 					return false
 				},
 			}
@@ -796,7 +796,7 @@ func TestCreateRescueTx(t *testing.T) {
 
 				return &utilsmock.KVQueueMock{
 					IsEmptyFunc: func() bool { return true },
-					DequeueFunc: func(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) bool) bool {
+					DequeueFunc: func(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) (bool, bool)) bool {
 						if dequeueCount >= len(inputs) {
 							return false
 						}
@@ -814,7 +814,7 @@ func TestCreateRescueTx(t *testing.T) {
 
 			return &utilsmock.KVQueueMock{
 				IsEmptyFunc: func() bool { return true },
-				DequeueFunc: func(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) bool) bool {
+				DequeueFunc: func(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) (bool, bool)) bool {
 					return false
 				},
 			}
@@ -938,7 +938,7 @@ func TestCreateMasterTx(t *testing.T) {
 
 					return &utilsmock.KVQueueMock{
 						IsEmptyFunc: func() bool { return true },
-						DequeueFunc: func(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) bool) bool {
+						DequeueFunc: func(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) (bool, bool)) bool {
 							if dequeueCount >= len(inputs) {
 								return false
 							}
@@ -1309,7 +1309,7 @@ func TestCreateMasterTx(t *testing.T) {
 
 				return &utilsmock.KVQueueMock{
 					IsEmptyFunc: func() bool { return false },
-					DequeueFunc: func(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) bool) bool {
+					DequeueFunc: func(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) (bool, bool)) bool {
 						if dequeueCount >= len(inputs) {
 							return false
 						}
@@ -1439,7 +1439,7 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 
 					return &utilsmock.KVQueueMock{
 						IsEmptyFunc: func() bool { return true },
-						DequeueFunc: func(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) bool) bool {
+						DequeueFunc: func(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) (bool, bool)) bool {
 							if dequeueCount >= len(inputs) {
 								return false
 							}
@@ -1840,7 +1840,7 @@ func TestCreatePendingTransfersTx(t *testing.T) {
 
 				return &utilsmock.KVQueueMock{
 					IsEmptyFunc: func() bool { return false },
-					DequeueFunc: func(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) bool) bool {
+					DequeueFunc: func(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) (bool, bool)) bool {
 						if dequeueCount >= len(inputs) {
 							return false
 						}
