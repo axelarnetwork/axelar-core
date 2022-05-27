@@ -43,7 +43,7 @@ axelard tx ibc-transfer transfer [src-port] [src-channel] [receiver] [amount] [f
       --note string                     Note to add a description to the transaction (previously --memo)
       --offline                         Offline mode (does not allow any online functionality
       --packet-timeout-height string    Packet timeout block height. The timeout is disabled when set to 0-0. (default "0-1000")
-      --packet-timeout-timestamp uint   Packet timeout timestamp in nanoseconds. Default is 10 minutes. The timeout is disabled when set to 0. (default 600000000000)
+      --packet-timeout-timestamp uint   Packet timeout timestamp in nanoseconds from now. Default is 10 minutes. The timeout is disabled when set to 0. (default 600000000000)
   -s, --sequence uint                   The sequence number of the signing account (offline mode only)
       --sign-mode string                Choose sign mode (direct|amino-json), this is an advanced feature
       --timeout-height uint             Set a block timeout height to prevent the tx from being committed past a certain height
