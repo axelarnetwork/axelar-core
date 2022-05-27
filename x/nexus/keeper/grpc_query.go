@@ -206,3 +206,25 @@ func (q Querier) ChainsByAsset(c context.Context, req *types.ChainsByAssetReques
 
 	return &types.ChainsByAssetResponse{Chains: chainNames}, nil
 }
+
+// RecipientAddress returns the recipient address for a given deposit address
+func (q Querier) RecipientAddress(c context.Context, req *types.RecipientAddressRequest) (*types.RecipientAddressResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	chain, ok := q.keeper.GetChain(ctx, nexus.ChainName(req.DepositChain))
+	if !ok {
+		return nil, fmt.Errorf("chain %s not found", req.DepositChain)
+	}
+
+	depositAddress := nexus.CrossChainAddress{Chain: chain, Address: req.DepositAddr}
+
+	linkedAddresses, ok := q.keeper.getLinkedAddresses(ctx, depositAddress)
+	if !ok {
+		return nil, sdkerrors.Wrapf(types.ErrNexus, "no recipient address found for deposit address %s on chain %s", req.DepositAddr, req.DepositChain)
+	}
+
+	return &types.RecipientAddressResponse{
+		RecipientAddr:  linkedAddresses.RecipientAddress.Address,
+		RecipientChain: linkedAddresses.RecipientAddress.Chain.String(),
+	}, nil
+}
