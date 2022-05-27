@@ -159,18 +159,6 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 		return false
 	}
 
-	coin := sdk.NewCoin(asset, sdk.Int(e.Amount))
-	fee, err := n.ComputeTransferFee(ctx, sourceChain, destinationChain, coin)
-	if err != nil {
-		bk.Logger(ctx).Info(fmt.Sprintf("failed computing transfer fee for event %s with error %s", event.GetID(), err.Error()))
-		return false
-	}
-
-	if coin.IsLT(fee) {
-		bk.Logger(ctx).Info(fmt.Sprintf("amount %s less than fee %s", e.Amount.String(), fee.Amount.String()))
-		return false
-	}
-
 	destinationChainID, ok := destinationCk.GetChainID(ctx)
 	if !ok {
 		panic(fmt.Errorf("could not find chain ID for '%s'", destinationChain.Name))
@@ -181,7 +169,6 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 		panic(fmt.Errorf("no secondary key for chain %s found", destinationChain.Name))
 	}
 
-	amount := e.Amount.Sub(sdk.Uint(fee.Amount))
 	cmd, err := types.CreateApproveContractCallWithMintCommand(
 		destinationChainID,
 		keyID,
@@ -189,7 +176,7 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 		event.TxId,
 		event.Index,
 		*e,
-		amount,
+		e.Amount,
 		destinationToken.GetDetails().Symbol,
 	)
 	if err != nil {
@@ -205,8 +192,6 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 		"eventID", event.GetID(),
 		"commandID", cmd.ID.Hex(),
 	)
-
-	n.AddTransferFee(ctx, fee)
 
 	return true
 }
