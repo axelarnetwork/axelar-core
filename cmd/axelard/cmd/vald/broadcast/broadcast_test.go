@@ -60,6 +60,9 @@ func TestStatefulBroadcaster(t *testing.T) {
 	})
 	txFactory := Given("a tx factory", func() {
 		accountRetriever = &mock.AccountRetrieverMock{}
+		keyringInfoMock := &mock.InfoMock{
+			GetPubKeyFunc: func() cryptotypes.PubKey { return ed25519.GenPrivKey().PubKey() },
+		}
 		txf = tx.Factory{}.
 			WithChainID(rand.StrBetween(5, 20)).
 			WithSimulateAndExecute(true).
@@ -67,12 +70,13 @@ func TestStatefulBroadcaster(t *testing.T) {
 			WithTxConfig(clientCtx.TxConfig).
 			WithKeybase(&mock.KeyringMock{
 				KeyFunc: func(string) (keyring.Info, error) {
-					return &mock.InfoMock{
-						GetPubKeyFunc: func() cryptotypes.PubKey { return ed25519.GenPrivKey().PubKey() },
-					}, nil
+					return keyringInfoMock, nil
 				},
 				SignFunc: func(string, []byte) ([]byte, cryptotypes.PubKey, error) {
 					return rand.Bytes(10), nil, nil
+				},
+				ListFunc: func() ([]keyring.Info, error) {
+					return []keyring.Info{keyringInfoMock}, nil
 				},
 			})
 	})
