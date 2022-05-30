@@ -14,7 +14,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
-	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 // Query paths
@@ -192,24 +191,7 @@ func querySignatureStatus(ctx sdk.Context, k types.TSSKeeper, v types.Voter, sig
 
 	}
 
-	//TODO: signature might be in progress, should get sig type by sigID
-	pollMeta := voting.NewPollKey(types.ModuleName, sigID)
-	var voteStatue types.VoteStatus
-	if poll := v.GetPoll(ctx, pollMeta); poll.Is(voting.NonExistent) {
-		voteStatue = types.NotFound
-	} else {
-		voteStatue = types.Pending
-	}
-
-	res := types.QuerySignatureResponse{
-		Sig: &types.QuerySignatureResponse_ThresholdSignature_{
-			ThresholdSignature: &types.QuerySignatureResponse_ThresholdSignature{
-				VoteStatus: voteStatue,
-			},
-		},
-	}
-
-	return res.Marshal()
+	return nil, fmt.Errorf("signature not found")
 }
 
 func queryKeyStatus(ctx sdk.Context, k types.TSSKeeper, v types.Voter, keyID exported.KeyID) ([]byte, error) {
@@ -266,23 +248,7 @@ func queryKeyStatus(ctx sdk.Context, k types.TSSKeeper, v types.Voter, keyID exp
 		}
 	}
 
-	pollMeta := voting.NewPollKey(types.ModuleName, string(keyID))
-	var voteStatue types.VoteStatus
-	if poll := v.GetPoll(ctx, pollMeta); poll.Is(voting.NonExistent) {
-		voteStatue = types.NotFound
-	} else {
-		voteStatue = types.Pending
-	}
-
-	res := types.QueryKeyResponse{
-		PublicKey: &types.QueryKeyResponse_ECDSAKey_{
-			ECDSAKey: &types.QueryKeyResponse_ECDSAKey{
-				VoteStatus: voteStatue,
-			},
-		},
-	}
-
-	return res.Marshal()
+	return nil, fmt.Errorf("key not found")
 }
 
 // queryKeyID returns the keyID of the most recent key for a provided keyChain and keyRole

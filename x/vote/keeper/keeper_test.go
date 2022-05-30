@@ -78,9 +78,8 @@ func TestKeeper(t *testing.T) {
 				staking.ValidatorFunc = func(ctx sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI { return nil }
 			}).
 			Then("should return error", func(t *testing.T) {
-				err := k.InitializePoll(
+				_, err := k.InitializePoll(
 					ctx,
-					exported.NewPollKey(rand.Str(10), rand.Str(10)),
 					voters,
 					exported.ExpiryAt(rand.PosI64()),
 				)
@@ -102,9 +101,8 @@ func TestKeeper(t *testing.T) {
 				staking.PowerReductionFunc = func(context sdk.Context) sdk.Int { return sdk.NewInt(10) }
 			}).
 			Then("should return error", func(t *testing.T) {
-				err := k.InitializePoll(
+				_, err := k.InitializePoll(
 					ctx,
-					exported.NewPollKey(rand.Str(10), rand.Str(10)),
 					voters,
 					exported.ExpiryAt(rand.PosI64()),
 				)

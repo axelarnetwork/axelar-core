@@ -504,7 +504,7 @@ func validateCriminal(criminal sdk.ValAddress, poll vote.Poll) error {
 	}
 
 	if !criminalFound {
-		return fmt.Errorf("received criminal %s who is not a voter of poll %s", criminal.String(), poll.GetKey().String())
+		return fmt.Errorf("received criminal %s who is not a voter of poll %s", criminal.String(), poll.GetID().String())
 	}
 
 	return nil

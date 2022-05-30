@@ -14,7 +14,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
-	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 // Query paths
@@ -70,32 +69,7 @@ func NewQuerier(k types.BTCKeeper, s types.Signer, n types.Nexus) sdk.Querier {
 
 // QueryDepositStatus returns the status of the queried depoist
 func QueryDepositStatus(ctx sdk.Context, k types.BTCKeeper, outpointStr string) ([]byte, error) {
-	outpoint, err := types.OutPointFromStr(outpointStr)
-	if err != nil {
-		return nil, sdkerrors.Wrap(err, "cannot parse outpoint")
-	}
-
-	key := vote.NewPollKey(types.ModuleName, outpointStr)
-
-	var resp types.QueryDepositStatusResponse
-
-	_, pending := k.GetPendingOutPointInfo(ctx, key)
-	_, state, ok := k.GetOutPointInfo(ctx, *outpoint)
-
-	switch {
-	case pending:
-		resp = types.QueryDepositStatusResponse{Status: types.OutPointState_Pending, Log: "deposit is waiting for confirmation"}
-	case !pending && !ok:
-		resp = types.QueryDepositStatusResponse{Status: types.OutPointState_None, Log: "deposit is unknown"}
-	case state == types.OutPointState_Confirmed:
-		resp = types.QueryDepositStatusResponse{Status: types.OutPointState_Confirmed, Log: "deposit has been confirmed and is pending for transfer"}
-	case state == types.OutPointState_Spent:
-		resp = types.QueryDepositStatusResponse{Status: types.OutPointState_Spent, Log: "deposit has been transferred to the destination address"}
-	default:
-		return nil, fmt.Errorf("deposit is in an unexpected state")
-	}
-
-	return types.ModuleCdc.MarshalLengthPrefixed(&resp)
+	return nil, sdkerrors.ErrUnknownRequest
 }
 
 // QueryDepositAddress returns deposit address

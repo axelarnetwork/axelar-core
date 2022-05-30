@@ -30,12 +30,7 @@ func (s msgServer) Vote(c context.Context, req *types.VoteRequest) (*types.VoteR
 		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
 	}
 
-	voteHandler := s.GetVoteRouter().GetHandler(req.PollKey.Module)
-	if voteHandler == nil {
-		return nil, fmt.Errorf("unknown module for vote %s", req.PollKey.Module)
-	}
-
-	poll := s.GetPoll(ctx, req.PollKey)
+	poll := s.GetPoll(ctx, req.PollID)
 	result, voted, err := poll.Vote(voter, ctx.BlockHeight(), &req.Vote)
 	if err != nil {
 		return nil, err
@@ -44,7 +39,7 @@ func (s msgServer) Vote(c context.Context, req *types.VoteRequest) (*types.VoteR
 	event := sdk.NewEvent(types.EventType,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueVote),
-		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&req.PollKey))),
+		sdk.NewAttribute(types.AttributeKeyPoll, req.PollID.String()),
 		sdk.NewAttribute(types.AttributeKeyVoter, req.Sender.String()),
 	)
 
@@ -56,21 +51,27 @@ func (s msgServer) Vote(c context.Context, req *types.VoteRequest) (*types.VoteR
 	case poll.Is(vote.Pending):
 		event = event.AppendAttributes(sdk.NewAttribute(types.AttributeKeyPollState, vote.Pending.String()))
 
-		return &types.VoteResponse{Log: fmt.Sprintf("not enough votes to confirm poll %s yet", poll.GetKey())}, nil
+		return &types.VoteResponse{Log: fmt.Sprintf("not enough votes to confirm poll %s yet", poll.GetID().String())}, nil
 	case poll.Is(vote.Failed):
 		event = event.AppendAttributes(sdk.NewAttribute(types.AttributeKeyPollState, vote.Failed.String()))
 
-		return &types.VoteResponse{Log: fmt.Sprintf("poll %s failed", poll.GetKey())}, nil
+		return &types.VoteResponse{Log: fmt.Sprintf("poll %s failed", poll.GetID().String())}, nil
 	case poll.Is(vote.Expired):
-		return &types.VoteResponse{Log: fmt.Sprintf("poll %s expired", poll.GetKey())}, nil
+		return &types.VoteResponse{Log: fmt.Sprintf("poll %s expired", poll.GetID().String())}, nil
 	case result != nil:
 		_, ok := result.(*vote.Vote)
 		if !ok {
-			return nil, fmt.Errorf("result of poll %s has wrong type, expected *exported.Vote, got %T", poll.GetKey().String(), poll.GetResult())
+			return nil, fmt.Errorf("result of poll %s has wrong type, expected *exported.Vote, got %T", poll.GetID().String(), poll.GetResult())
+		}
+
+		pollModuleMetadata := poll.GetModuleMetadata()
+		voteHandler := s.GetVoteRouter().GetHandler(pollModuleMetadata.Module)
+		if voteHandler == nil {
+			return nil, fmt.Errorf("unknown module for vote %s", pollModuleMetadata.Module)
 		}
 
 		if err := voteHandler.HandleResult(ctx, result); err != nil {
-			return &types.VoteResponse{Log: fmt.Sprintf("vote handler failed %s", err.Error())}, nil
+			return nil, err
 		}
 
 		fallthrough

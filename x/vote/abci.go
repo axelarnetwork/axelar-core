@@ -24,30 +24,29 @@ func handlePollsAtExpiry(ctx sdk.Context, k types.Voter) error {
 
 	var pollMeta exported.PollMetadata
 	for pollQueue.DequeueIf(&pollMeta, hasPollExpired) {
-		poll := k.GetPoll(ctx, pollMeta.Key)
+		poll := k.GetPoll(ctx, pollMeta.ID)
 
-		voteHandler := k.GetVoteRouter().GetHandler(poll.GetKey().Module)
+		pollModuleMetadata := poll.GetModuleMetadata()
+		voteHandler := k.GetVoteRouter().GetHandler(pollModuleMetadata.Module)
 		if voteHandler == nil {
-			return fmt.Errorf("unknown module for vote %s", poll.GetKey().Module)
+			return fmt.Errorf("unknown module for vote %s", pollModuleMetadata.Module)
 		}
 
 		switch {
 		case poll.Is(exported.Pending):
+			// TODO: no need to set expired since polls are deleted right after
 			poll.SetExpired()
-			poll.AllowOverride()
 
 			if err := voteHandler.HandleExpiredPoll(ctx, poll); err != nil {
 				return err
 			}
 
-			k.Logger(ctx).Debug("marked poll as expired and can be re-started now",
-				"poll", poll.GetKey().String(),
+			k.Logger(ctx).Debug("poll expired",
+				"poll", poll.GetID().String(),
 			)
 		case poll.Is(exported.Failed):
-			poll.AllowOverride()
-
-			k.Logger(ctx).Debug("poll failed and can be re-started now",
-				"poll", poll.GetKey().String(),
+			k.Logger(ctx).Debug("poll failed",
+				"poll", poll.GetID().String(),
 			)
 		case poll.Is(exported.Completed):
 			if err := voteHandler.HandleCompletedPoll(ctx, poll); err != nil {
@@ -55,18 +54,19 @@ func handlePollsAtExpiry(ctx sdk.Context, k types.Voter) error {
 			}
 
 			if voteHandler.IsFalsyResult(poll.GetResult()) {
-				poll.AllowOverride()
-				k.Logger(ctx).Debug("poll completed with falsy result and can be re-started now",
-					"poll", poll.GetKey().String(),
+				k.Logger(ctx).Debug("poll completed with falsy result",
+					"poll", poll.GetID().String(),
 				)
 			} else {
 				k.Logger(ctx).Debug("poll completed with final result",
-					"poll", poll.GetKey().String(),
+					"poll", poll.GetID().String(),
 				)
 			}
 		default:
-			return fmt.Errorf("cannot handle poll %s due to invalid state", poll.GetKey())
+			return fmt.Errorf("cannot handle poll %s due to invalid state", poll.GetID().String())
 		}
+
+		poll.Delete()
 	}
 
 	return nil

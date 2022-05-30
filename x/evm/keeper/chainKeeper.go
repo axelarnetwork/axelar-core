@@ -15,7 +15,6 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
-	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 var (
@@ -25,14 +24,11 @@ var (
 
 	tokenMetadataByAssetPrefix  = utils.KeyFromStr("token_deployment_by_asset")
 	tokenMetadataBySymbolPrefix = utils.KeyFromStr("token_deployment_by_symbol")
-	pendingDepositPrefix        = utils.KeyFromStr("pending_deposit")
 	confirmedDepositPrefix      = utils.KeyFromStr("confirmed_deposit")
 	burnedDepositPrefix         = utils.KeyFromStr("burned_deposit")
 	commandBatchPrefix          = utils.KeyFromStr("batched_commands")
 	commandPrefix               = utils.KeyFromStr("command")
 	burnerAddrPrefix            = utils.KeyFromStr("burnerAddr")
-	pendingTransferKeyPrefix    = utils.KeyFromStr("pending_transfer_key")
-	archivedTransferKeyPrefix   = utils.KeyFromStr("archived_transfer_key")
 	eventPrefix                 = utils.KeyFromStr("event")
 
 	commandQueueName        = "cmd_queue"
@@ -394,11 +390,6 @@ func (k chainKeeper) GetPendingCommands(ctx sdk.Context) []types.Command {
 	return commands
 }
 
-// SetPendingDeposit stores a pending deposit
-func (k chainKeeper) SetPendingDeposit(ctx sdk.Context, key exported.PollKey, deposit *types.ERC20Deposit) {
-	k.getStore(ctx, k.chainLowerKey).Set(pendingDepositPrefix.AppendStr(key.String()), deposit)
-}
-
 // GetDeposit retrieves a confirmed/burned deposit
 func (k chainKeeper) GetDeposit(ctx sdk.Context, txID common.Hash, burnAddr common.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
 	var deposit types.ERC20Deposit
@@ -462,19 +453,6 @@ func (k chainKeeper) getSigner(ctx sdk.Context) evmTypes.EIP155Signer {
 	return evmTypes.NewEIP155Signer(chainID.BigInt())
 }
 
-// DeletePendingDeposit deletes the deposit associated with the given poll
-func (k chainKeeper) DeletePendingDeposit(ctx sdk.Context, key exported.PollKey) {
-	k.getStore(ctx, k.chainLowerKey).Delete(pendingDepositPrefix.AppendStr(key.String()))
-}
-
-// GetPendingDeposit returns the deposit associated with the given poll
-func (k chainKeeper) GetPendingDeposit(ctx sdk.Context, key exported.PollKey) (types.ERC20Deposit, bool) {
-	var deposit types.ERC20Deposit
-	found := k.getStore(ctx, k.chainLowerKey).Get(pendingDepositPrefix.AppendStr(key.String()), &deposit)
-
-	return deposit, found
-}
-
 // SetDeposit stores confirmed or burned deposits
 func (k chainKeeper) SetDeposit(ctx sdk.Context, deposit types.ERC20Deposit, state types.DepositStatus) {
 	switch state {
@@ -491,41 +469,6 @@ func (k chainKeeper) SetDeposit(ctx sdk.Context, deposit types.ERC20Deposit, sta
 func (k chainKeeper) DeleteDeposit(ctx sdk.Context, deposit types.ERC20Deposit) {
 	k.getStore(ctx, k.chainLowerKey).Delete(confirmedDepositPrefix.AppendStr(deposit.TxID.Hex()).AppendStr(deposit.BurnerAddress.Hex()))
 	k.getStore(ctx, k.chainLowerKey).Delete(burnedDepositPrefix.AppendStr(deposit.TxID.Hex()).AppendStr(deposit.BurnerAddress.Hex()))
-}
-
-// SetPendingTransferKey stores a pending transfer ownership/operatorship
-func (k chainKeeper) SetPendingTransferKey(ctx sdk.Context, key exported.PollKey, transferKey *types.TransferKey) {
-	k.getStore(ctx, k.chainLowerKey).Set(pendingTransferKeyPrefix.AppendStr(key.String()), transferKey)
-}
-
-// DeletePendingTransferKey deletes a pending transfer ownership/operatorship
-func (k chainKeeper) DeletePendingTransferKey(ctx sdk.Context, key exported.PollKey) {
-	k.getStore(ctx, k.chainLowerKey).Delete(pendingTransferKeyPrefix.AppendStr(key.String()))
-}
-
-// ArchiveTransferKey archives an ownership transfer so it is no longer pending but can still be queried
-func (k chainKeeper) ArchiveTransferKey(ctx sdk.Context, key exported.PollKey) {
-	var transferKey types.TransferKey
-	if k.getStore(ctx, k.chainLowerKey).Get(pendingTransferKeyPrefix.AppendStr(key.String()), &transferKey) {
-		k.DeletePendingTransferKey(ctx, key)
-		k.getStore(ctx, k.chainLowerKey).Set(archivedTransferKeyPrefix.AppendStr(key.String()), &transferKey)
-	}
-}
-
-// GetArchivedTransferKey returns an archived transfer of ownership/operatorship associated with the given poll
-func (k chainKeeper) GetArchivedTransferKey(ctx sdk.Context, key exported.PollKey) (types.TransferKey, bool) {
-	var transferKey types.TransferKey
-	found := k.getStore(ctx, k.chainLowerKey).Get(archivedTransferKeyPrefix.AppendStr(key.String()), &transferKey)
-
-	return transferKey, found
-}
-
-// GetPendingTransferKey returns the transfer ownership/operatorship associated with the given poll
-func (k chainKeeper) GetPendingTransferKey(ctx sdk.Context, key exported.PollKey) (types.TransferKey, bool) {
-	var transferKey types.TransferKey
-	found := k.getStore(ctx, k.chainLowerKey).Get(pendingTransferKeyPrefix.AppendStr(key.String()), &transferKey)
-
-	return transferKey, found
 }
 
 // GetNetworkByID returns the network name for a given chain and network ID
@@ -935,19 +878,6 @@ func (k chainKeeper) SetEventFailed(ctx sdk.Context, eventID types.EventID) erro
 	event, ok := k.GetEvent(ctx, eventID)
 	if !ok || event.Status != types.EventConfirmed {
 		return fmt.Errorf("event %s is not confirmed", eventID)
-	}
-
-	event.Status = types.EventFailed
-	k.setEvent(ctx, event)
-
-	return nil
-}
-
-// SetFailedEvent sets the event to failed if the event status is not completed or failed
-func (k chainKeeper) SetFailedEvent(ctx sdk.Context, event types.Event) error {
-	e, ok := k.GetEvent(ctx, event.GetID())
-	if ok && e.Status != types.EventConfirmed {
-		return fmt.Errorf("event %s is already %s", e.GetID(), e.Status)
 	}
 
 	event.Status = types.EventFailed

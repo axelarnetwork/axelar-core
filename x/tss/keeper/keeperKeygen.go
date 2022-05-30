@@ -14,7 +14,6 @@ import (
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
-	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 // StartKeygen starts a keygen protocol with the specified parameters
@@ -40,17 +39,6 @@ func (k Keeper) StartKeygen(ctx sdk.Context, voter types.Voter, keyInfo types.Ke
 	}
 
 	switch keyInfo.KeyType {
-	case exported.Threshold:
-		pollKey := vote.NewPollKey(types.ModuleName, string(keyInfo.KeyID))
-		if err := voter.InitializePollWithSnapshot(
-			ctx,
-			pollKey,
-			snapshot.Counter,
-			vote.ExpiryAt(0),
-			vote.Threshold(keyRequirement.KeygenVotingThreshold),
-		); err != nil {
-			return err
-		}
 	case exported.Multisig:
 		// init multisig key info
 		multisigKeyInfo := types.MultisigInfo{

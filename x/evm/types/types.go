@@ -24,7 +24,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
-	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/axelarnetwork/utils/slices"
 )
 
@@ -298,11 +297,6 @@ func (s SigKeyPairs) Swap(i, j int) {
 
 // NilToken is a nil erc20 token
 var NilToken = ERC20Token{}
-
-// GetConfirmTokenKey creates a poll key for token confirmation
-func GetConfirmTokenKey(txID Hash, asset string) vote.PollKey {
-	return vote.NewPollKey(ModuleName, fmt.Sprintf("%s_%s", txID.Hex(), strings.ToLower(asset)))
-}
 
 // Address wraps EVM Address
 type Address common.Address

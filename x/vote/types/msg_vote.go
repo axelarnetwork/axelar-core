@@ -8,11 +8,11 @@ import (
 )
 
 // NewVoteRequest creates a message of type VoteMsgRequest
-func NewVoteRequest(sender sdk.AccAddress, pollKey vote.PollKey, vote vote.Vote) *VoteRequest {
+func NewVoteRequest(sender sdk.AccAddress, id vote.PollID, vote vote.Vote) *VoteRequest {
 	return &VoteRequest{
-		Sender:  sender,
-		PollKey: pollKey,
-		Vote:    vote,
+		Sender: sender,
+		PollID: id,
+		Vote:   vote,
 	}
 }
 
@@ -30,10 +30,6 @@ func (m VoteRequest) Type() string {
 func (m VoteRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
-	}
-
-	if err := m.PollKey.Validate(); err != nil {
-		return sdkerrors.Wrap(err, "invalid poll key")
 	}
 
 	return nil

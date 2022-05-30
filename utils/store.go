@@ -78,6 +78,11 @@ func (store KVStore) Delete(key Key) {
 	store.KVStore.Delete(key.AsKey())
 }
 
+// DeleteRaw deletes the value stored under the given raw key, if it exists
+func (store KVStore) DeleteRaw(key []byte) {
+	store.KVStore.Delete(key)
+}
+
 // Iterator returns an Iterator that can handle a structured Key
 func (store KVStore) Iterator(prefix Key) Iterator {
 	iter := sdk.KVStorePrefixIterator(store.KVStore, append(prefix.AsKey(), []byte(DefaultDelimiter)...))

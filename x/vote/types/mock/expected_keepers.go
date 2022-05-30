@@ -7,7 +7,7 @@ import (
 	utils "github.com/axelarnetwork/axelar-core/utils"
 	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
-	exported "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	github_com_axelarnetwork_axelar_core_x_vote_exported "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/types"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -25,7 +25,7 @@ var _ types.Voter = &VoterMock{}
 //
 // 		// make and configure a mocked types.Voter
 // 		mockedVoter := &VoterMock{
-// 			GetPollFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported.PollKey) exported.Poll {
+// 			GetPollFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, id github_com_axelarnetwork_axelar_core_x_vote_exported.PollID) github_com_axelarnetwork_axelar_core_x_vote_exported.Poll {
 // 				panic("mock out the GetPoll method")
 // 			},
 // 			GetPollQueueFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.KVQueue {
@@ -45,7 +45,7 @@ var _ types.Voter = &VoterMock{}
 // 	}
 type VoterMock struct {
 	// GetPollFunc mocks the GetPoll method.
-	GetPollFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported.PollKey) exported.Poll
+	GetPollFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, id github_com_axelarnetwork_axelar_core_x_vote_exported.PollID) github_com_axelarnetwork_axelar_core_x_vote_exported.Poll
 
 	// GetPollQueueFunc mocks the GetPollQueue method.
 	GetPollQueueFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.KVQueue
@@ -62,8 +62,8 @@ type VoterMock struct {
 		GetPoll []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Key is the key argument value.
-			Key exported.PollKey
+			// ID is the id argument value.
+			ID github_com_axelarnetwork_axelar_core_x_vote_exported.PollID
 		}
 		// GetPollQueue holds details about calls to the GetPollQueue method.
 		GetPollQueue []struct {
@@ -86,21 +86,21 @@ type VoterMock struct {
 }
 
 // GetPoll calls GetPollFunc.
-func (mock *VoterMock) GetPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported.PollKey) exported.Poll {
+func (mock *VoterMock) GetPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, id github_com_axelarnetwork_axelar_core_x_vote_exported.PollID) github_com_axelarnetwork_axelar_core_x_vote_exported.Poll {
 	if mock.GetPollFunc == nil {
 		panic("VoterMock.GetPollFunc: method is nil but Voter.GetPoll was just called")
 	}
 	callInfo := struct {
 		Ctx github_com_cosmos_cosmos_sdk_types.Context
-		Key exported.PollKey
+		ID  github_com_axelarnetwork_axelar_core_x_vote_exported.PollID
 	}{
 		Ctx: ctx,
-		Key: key,
+		ID:  id,
 	}
 	mock.lockGetPoll.Lock()
 	mock.calls.GetPoll = append(mock.calls.GetPoll, callInfo)
 	mock.lockGetPoll.Unlock()
-	return mock.GetPollFunc(ctx, key)
+	return mock.GetPollFunc(ctx, id)
 }
 
 // GetPollCalls gets all the calls that were made to GetPoll.
@@ -108,11 +108,11 @@ func (mock *VoterMock) GetPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, k
 //     len(mockedVoter.GetPollCalls())
 func (mock *VoterMock) GetPollCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
-	Key exported.PollKey
+	ID  github_com_axelarnetwork_axelar_core_x_vote_exported.PollID
 } {
 	var calls []struct {
 		Ctx github_com_cosmos_cosmos_sdk_types.Context
-		Key exported.PollKey
+		ID  github_com_axelarnetwork_axelar_core_x_vote_exported.PollID
 	}
 	mock.lockGetPoll.RLock()
 	calls = mock.calls.GetPoll
