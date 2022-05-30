@@ -156,33 +156,29 @@ wget https://axelar-mainnet.s3.us-east-2.amazonaws.com/genesis.json -O $HOME/.ax
 wget https://raw.githubusercontent.com/axelarnetwork/axelarate-community/main/resources/mainnet/seeds.toml -O $HOME/.axelar/config/seeds.toml
 
 # set external ip to your config.json file
-
 sed -i.bak 's/external_address = \"\"/external_address = \"'"$(curl -4 ifconfig.co)"':26656\"/g' $HOME/.axelar/config/config.toml`}
-
 </CodeBlock>
 },
- { title: "Testnet", content: <CodeBlock language="bash"> {`axelard init $MONIKER --chain-id $CHAIN_ID
+{ title: "Testnet", content: <CodeBlock language="bash">
+{`axelard init $MONIKER --chain-id $CHAIN_ID
 wget https://raw.githubusercontent.com/axelarnetwork/axelarate-community/main/configuration/config.toml -O $HOME/.axelar/config/config.toml
 wget https://raw.githubusercontent.com/axelarnetwork/axelarate-community/main/configuration/app.toml -O $HOME/.axelar/config/app.toml
 wget https://raw.githubusercontent.com/axelarnetwork/axelarate-community/main/resources/testnet/genesis.json -O $HOME/.axelar/config/genesis.json
 wget https://raw.githubusercontent.com/axelarnetwork/axelarate-community/main/resources/testnet/seeds.toml -O $HOME/.axelar/config/seeds.toml
 
 # set external ip to your config.json file
-
 sed -i.bak 's/external_address = \"\"/external_address = \"'"$(curl -4 ifconfig.co)"':26656\"/g' $HOME/.axelar/config/config.toml`}
-
 </CodeBlock>
 },
-{ title: "Testnet-2", content: <CodeBlock language="bash"> {`axelard init $MONIKER --chain-id $CHAIN_ID
+{ title: "Testnet-2", content: <CodeBlock language="bash">
+{`axelard init $MONIKER --chain-id $CHAIN_ID
 wget https://raw.githubusercontent.com/axelarnetwork/axelarate-community/main/configuration/config.toml -O $HOME/.axelar/config/config.toml
 wget https://raw.githubusercontent.com/axelarnetwork/axelarate-community/main/configuration/app.toml -O $HOME/.axelar/config/app.toml
 wget https://raw.githubusercontent.com/axelarnetwork/axelarate-community/main/resources/testnet-2/genesis.json -O $HOME/.axelar/config/genesis.json
 wget https://raw.githubusercontent.com/axelarnetwork/axelarate-community/main/resources/testnet-2/seeds.toml -O $HOME/.axelar/config/seeds.toml
 
 # set external ip to your config.json file
-
 sed -i.bak 's/external_address = ""/external_address = "'"$(curl -4 ifconfig.co)"':26656"/g' $HOME/.axelar/config/config.toml`}
-
 </CodeBlock>
 }
 ]} />
@@ -193,16 +189,25 @@ sed -i.bak 's/external_address = ""/external_address = "'"$(curl -4 ifconfig.co)
 {
 title: "Mainnet",
 content: <CodeBlock language="bash">
-{`axelard unsafe-reset-all URL=\`curl https://quicksync.io/axelar.json | jq -r '.[] |select(.file=="axelar-dojo-1-pruned")|.url'\`
+{`axelard unsafe-reset-all
+URL=\`curl https://quicksync.io/axelar.json | jq -r '.[] |select(.file=="axelar-dojo-1-pruned")|.url'\`
 echo $URL
 cd $HOME/.axelar/
 wget -O - $URL | lz4 -d | tar -xvf -
-cd $HOME`} </CodeBlock> }, { title: "Testnet", content: <CodeBlock language="bash"> {`axelard unsafe-reset-all
+cd $HOME`}
+</CodeBlock>
+},
+{ title: "Testnet", content: <CodeBlock language="bash">
+{`axelard unsafe-reset-all
 URL=\`curl https://quicksync.io/axelar.json | jq -r '.[] |select(.file=="axelartestnet-lisbon-3-pruned")|.url'\`
 echo $URL
 cd $HOME/.axelar/
 wget -O - $URL | lz4 -d | tar -xvf -
-cd $HOME`} </CodeBlock> }, { title: "Testnet-2", content: <CodeBlock language="bash"> {`axelard unsafe-reset-all
+cd $HOME`}
+</CodeBlock>
+},
+{ title: "Testnet-2", content: <CodeBlock language="bash">
+{`axelard unsafe-reset-all
 URL="https://snapshots.bitszn.com/snapshots/axelar/axelar.tar"
 echo $URL
 cd $HOME/.axelar/data
