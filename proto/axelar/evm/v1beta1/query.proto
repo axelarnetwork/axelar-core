@@ -156,3 +156,19 @@ message BytecodeRequest {
 }
 
 message BytecodeResponse { string bytecode = 1; }
+
+message ERC20TokensRequest {
+  string chain = 1;
+  bool external_only = 2;
+}
+
+message ERC20TokensResponse { repeated string assets = 1; }
+
+message TokenDetailsRequest {
+  string chain = 1;
+  string asset = 2;
+}
+
+message TokenDetailsResponse {
+  TokenDetails details = 1 [ (gogoproto.nullable) = false ];
+}

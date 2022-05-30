@@ -40,7 +40,7 @@ func NewGRPCQuerier(k types.BaseKeeper, n types.Nexus, s types.Signer) Querier {
 }
 
 func queryChains(ctx sdk.Context, n types.Nexus) []nexustypes.ChainName {
-	chains := slices.Filter(n.GetChains(ctx), func(c nexustypes.Chain) bool { return c.Module == types.ModuleName })
+	chains := slices.Filter(n.GetChains(ctx), IsEVMChain)
 
 	return slices.Map(chains, func(c nexustypes.Chain) nexustypes.ChainName {
 		return c.Name
@@ -425,4 +425,51 @@ func (q Querier) Bytecode(c context.Context, req *types.BytecodeRequest) (*types
 	}
 
 	return &types.BytecodeResponse{Bytecode: fmt.Sprintf("0x" + common.Bytes2Hex(bytecode))}, nil
+}
+
+// ERC20Tokens returns the ERC20 tokens registered for a chain
+func (q Querier) ERC20Tokens(c context.Context, req *types.ERC20TokensRequest) (*types.ERC20TokensResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	chain, ok := q.nexus.GetChain(ctx, nexustypes.ChainName(req.Chain))
+	if !ok {
+		return nil, fmt.Errorf("chain %s not found", req.Chain)
+	}
+
+	if !IsEVMChain(chain) {
+		return nil, fmt.Errorf("%s not an EVM chain", chain.Name)
+	}
+
+	ck := q.keeper.ForChain(chain.Name)
+
+	tokens := ck.GetTokens(ctx)
+	if req.ExternalOnly {
+		tokens = slices.Filter(tokens, types.ERC20Token.IsExternal)
+	}
+	assets := slices.Map(tokens, types.ERC20Token.GetAsset)
+
+	return &types.ERC20TokensResponse{Assets: assets}, nil
+}
+
+// TokenDetails returns the token details for a registered asset
+func (q Querier) TokenDetails(c context.Context, req *types.TokenDetailsRequest) (*types.TokenDetailsResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	chain, ok := q.nexus.GetChain(ctx, nexustypes.ChainName(req.Chain))
+	if !ok {
+		return nil, fmt.Errorf("chain %s not found", req.Chain)
+	}
+
+	if !IsEVMChain(chain) {
+		return nil, fmt.Errorf("%s is not an EVM chain", chain.Name)
+	}
+
+	ck := q.keeper.ForChain(nexustypes.ChainName(req.Chain))
+
+	asset := ck.GetERC20TokenByAsset(ctx, req.Asset)
+	if asset.GetAsset() == "" {
+		return nil, fmt.Errorf("%s is not a registered asset for chain %s", req.Asset, chain.Name)
+	}
+
+	return &types.TokenDetailsResponse{Details: asset.GetDetails()}, nil
 }
