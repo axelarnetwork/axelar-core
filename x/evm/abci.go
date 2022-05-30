@@ -374,7 +374,7 @@ func handleMultisigTransferKey(ctx sdk.Context, event types.Event, ck types.Chai
 }
 
 func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, s types.Signer) error {
-	shouldHandleEvent := func(e codec.ProtoMarshaler) (pass bool, stop bool) {
+	shouldHandleEvent := func(e codec.ProtoMarshaler) bool {
 		event := e.(*types.Event)
 
 		var destinationChainName nexus.ChainName
@@ -388,7 +388,7 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 		case *types.Event_Transfer, *types.Event_TokenDeployed,
 			*types.Event_MultisigOwnershipTransferred, *types.Event_MultisigOperatorshipTransferred:
 			// skip checks for non-gateway tx event
-			return true, false
+			return true
 		default:
 			panic(fmt.Errorf("unsupported event type %T", event))
 		}
@@ -396,26 +396,26 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 		// would handle event as failure if destination chain is not registered
 		destinationChain, ok := n.GetChain(ctx, destinationChainName)
 		if !ok {
-			return true, false
+			return true
 		}
 		// would handle event as failure if destination chain is not an evm chain
 		if !bk.HasChain(ctx, destinationChainName) {
-			return true, false
+			return true
 		}
 		// skip if destination chain is not activated
 		if !n.IsChainActivated(ctx, destinationChain) {
-			return false, false
+			return false
 		}
 		// skip if destination chain has not got gateway set yet
 		if _, ok := bk.ForChain(destinationChainName).GetGatewayAddress(ctx); !ok {
-			return false, false
+			return false
 		}
 		// skip if destination chain has the secondary key rotation in progress
 		if _, nextSecondaryKeyAssigned := s.GetNextKeyID(ctx, destinationChain, tss.SecondaryKey); nextSecondaryKeyAssigned {
-			return false, false
+			return false
 		}
 
-		return true, false
+		return true
 	}
 
 	for _, chain := range n.GetChains(ctx) {
@@ -427,7 +427,7 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 		}
 
 		var event types.Event
-		for queue.Dequeue(&event, shouldHandleEvent) {
+		for queue.DequeueUntil(&event, shouldHandleEvent) {
 			var ok bool
 
 			switch event.GetEvent().(type) {

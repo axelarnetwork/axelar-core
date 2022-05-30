@@ -18,12 +18,12 @@ func BeginBlocker(_ sdk.Context, _ abci.RequestBeginBlock, _ keeper.Keeper) {}
 
 func handlePollsAtExpiry(ctx sdk.Context, k types.Voter) error {
 	pollQueue := k.GetPollQueue(ctx)
-	hasPollExpired := func(value codec.ProtoMarshaler) (bool, bool) {
-		return ctx.BlockHeight() >= value.(*exported.PollMetadata).ExpiresAt, true
+	hasPollExpired := func(value codec.ProtoMarshaler) bool {
+		return ctx.BlockHeight() >= value.(*exported.PollMetadata).ExpiresAt
 	}
 
 	var pollMeta exported.PollMetadata
-	for pollQueue.Dequeue(&pollMeta, hasPollExpired) {
+	for pollQueue.DequeueIf(&pollMeta, hasPollExpired) {
 		poll := k.GetPoll(ctx, pollMeta.Key)
 
 		voteHandler := k.GetVoteRouter().GetHandler(poll.GetKey().Module)

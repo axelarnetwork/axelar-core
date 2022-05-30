@@ -556,12 +556,6 @@ func (k chainKeeper) GetChainIDByNetwork(ctx sdk.Context, network string) (sdk.I
 	return sdk.Int{}, false
 }
 
-func (k chainKeeper) popCommand(ctx sdk.Context, filters ...func(value codec.ProtoMarshaler) (bool, bool)) (types.Command, bool) {
-	var cmd types.Command
-	ok := k.getCommandQueue(ctx).Dequeue(&cmd, filters...)
-	return cmd, ok
-}
-
 func (k chainKeeper) setCommandBatchMetadata(ctx sdk.Context, meta types.CommandBatchMetadata) {
 	k.getStore(ctx, k.chainLowerKey).Set(commandBatchPrefix.AppendStr(string(meta.ID)), &meta)
 }
@@ -644,28 +638,31 @@ func (k chainKeeper) setLatestBatchMetadata(ctx sdk.Context, batch types.Command
 
 // CreateNewBatchToSign creates a new batch of commands to be signed
 func (k chainKeeper) CreateNewBatchToSign(ctx sdk.Context, signer types.Signer) (types.CommandBatch, error) {
-	command, ok := k.popCommand(ctx)
+	var firstCmd types.Command
+	ok := k.getCommandQueue(ctx).Dequeue(&firstCmd)
 	if !ok {
 		return types.CommandBatch{}, nil
 	}
 
 	chainID := sdk.NewIntFromBigInt(k.getSigner(ctx).ChainID())
 	gasLimit := k.getCommandsGasLimit(ctx)
-	gasCost := uint32(command.MaxGasCost)
-	keyID := command.KeyID
-	filter := func(value codec.ProtoMarshaler) (bool, bool) {
+	gasCost := uint32(firstCmd.MaxGasCost)
+	keyID := firstCmd.KeyID
+	filter := func(value codec.ProtoMarshaler) bool {
 		cmd, ok := value.(*types.Command)
 		gasCost += cmd.MaxGasCost
 
-		return ok && cmd.KeyID == keyID && gasCost <= gasLimit, true
+		return ok && cmd.KeyID == keyID && gasCost <= gasLimit
 	}
 
-	commands := []types.Command{command.Clone()}
+	commands := []types.Command{firstCmd.Clone()}
 	for {
-		cmd, ok := k.popCommand(ctx, filter)
+		var cmd types.Command
+		ok := k.getCommandQueue(ctx).DequeueIf(&cmd, filter)
 		if !ok {
 			break
 		}
+
 		commands = append(commands, cmd.Clone())
 	}
 

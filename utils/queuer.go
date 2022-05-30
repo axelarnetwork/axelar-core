@@ -16,8 +16,15 @@ import (
 
 // KVQueue represents a queue built with the KVStore
 type KVQueue interface {
+	// Enqueue pushes the given value into the queue with the given key
 	Enqueue(key Key, value codec.ProtoMarshaler)
-	Dequeue(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) (pass bool, stop bool)) bool
+	// Dequeue pops the first item in queue and stores it in the given value
+	Dequeue(value codec.ProtoMarshaler) bool
+	// DequeueIf pops the first item in queue iff it matches the given filter and stores it in the given value
+	DequeueIf(value codec.ProtoMarshaler, filter func(value codec.ProtoMarshaler) bool) bool
+	// DequeueUntil pops the first item in queue that matches the given filter and stores it in the given value
+	DequeueUntil(value codec.ProtoMarshaler, filter func(value codec.ProtoMarshaler) bool) bool
+	// IsEmpty returns true if the queue is empty; false otherwise
 	IsEmpty() bool
 
 	//TODO: convert to iterator
@@ -53,21 +60,31 @@ func (q GeneralKVQueue) Enqueue(key Key, value codec.ProtoMarshaler) {
 
 func defaultFilter(_ codec.ProtoMarshaler) (pass bool, stop bool) { return true, false }
 
-// Dequeue pops the bottom of the queue and unmarshals it into the given object, and return true if anything
-// in the queue is found and the value passes the optional filter function
-func (q GeneralKVQueue) Dequeue(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) (pass bool, stop bool)) bool {
+// Dequeue pops the first item in queue and stores it in the given value
+func (q GeneralKVQueue) Dequeue(value codec.ProtoMarshaler) bool {
 	iter := sdk.KVStorePrefixIterator(q.store.KVStore, q.name.AsKey())
 	defer CloseLogError(iter, q.logger)
 
-	switch len(filter) {
-	case 0:
-		return q.dequeue(value, iter, defaultFilter)
-	default:
-		return q.dequeue(value, iter, filter[0])
-	}
+	return q.dequeue(value, iter, defaultFilter)
 }
 
-func (q GeneralKVQueue) dequeue(value codec.ProtoMarshaler, iter db.Iterator, filter func(value codec.ProtoMarshaler) (pass bool, stop bool)) bool {
+// DequeueIf pops the first item in queue iff it matches the given filter and stores it in the given value
+func (q GeneralKVQueue) DequeueIf(value codec.ProtoMarshaler, filter func(value codec.ProtoMarshaler) bool) bool {
+	iter := sdk.KVStorePrefixIterator(q.store.KVStore, q.name.AsKey())
+	defer CloseLogError(iter, q.logger)
+
+	return q.dequeue(value, iter, func(value codec.ProtoMarshaler) (bool, bool) { return filter(value), false })
+}
+
+// DequeueUntil pops the first item in queue that matches the given filter and stores it in the given value
+func (q GeneralKVQueue) DequeueUntil(value codec.ProtoMarshaler, filter func(value codec.ProtoMarshaler) bool) bool {
+	iter := sdk.KVStorePrefixIterator(q.store.KVStore, q.name.AsKey())
+	defer CloseLogError(iter, q.logger)
+
+	return q.dequeue(value, iter, func(value codec.ProtoMarshaler) (bool, bool) { return filter(value), true })
+}
+
+func (q GeneralKVQueue) dequeue(value codec.ProtoMarshaler, iter db.Iterator, filter func(value codec.ProtoMarshaler) (bool, bool)) bool {
 	if !iter.Valid() {
 		return false
 	}
@@ -79,18 +96,18 @@ func (q GeneralKVQueue) dequeue(value codec.ProtoMarshaler, iter db.Iterator, fi
 		return false
 	}
 
-	pass, stop := filter(value)
+	isQualified, continueIfNotQualified := filter(value)
 	switch {
-	case pass:
+	case isQualified:
 		q.store.Delete(KeyFromBz(iter.Key()))
 
 		return true
-	case stop:
-		return false
-	default:
+	case continueIfNotQualified:
 		iter.Next()
 
 		return q.dequeue(value, iter, filter)
+	default:
+		return false
 	}
 }
 
