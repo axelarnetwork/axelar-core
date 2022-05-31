@@ -1,11 +1,8 @@
 # syntax=docker/dockerfile:experimental
 
-FROM golang:1.18-alpine3.15 as build
+FROM golang:1.18-bullseye as build
 
-RUN apk add --no-cache --update \
-  ca-certificates \
-  git \
-  make
+RUN apt update && apt install ca-certificates git make -y
 
 WORKDIR axelar
 
@@ -17,13 +14,13 @@ COPY . .
 ENV CGO_ENABLED=0
 RUN make build
 
-FROM alpine:3.15
-
+FROM ubuntu:20.04
+RUN apt update && apt install jq -y
 ARG USER_ID=1000
 ARG GROUP_ID=1001
-RUN apk add jq
 COPY --from=build /go/axelar/bin/* /usr/local/bin/
-RUN addgroup -S -g ${GROUP_ID} axelard && adduser -S -u ${USER_ID} axelard -G axelard
+RUN useradd --uid ${USER_ID} axelard && groupmod --gid ${GROUP_ID} axelard && usermod -aG axelard axelard
+RUN chown axelard /home
 USER axelard
 COPY ./entrypoint.sh /entrypoint.sh
 
@@ -45,10 +42,11 @@ ENV PRESTART_SCRIPT ""
 ENV NODE_MONIKER ""
 
 # Create these folders so that when they are mounted the permissions flow down
-RUN mkdir /home/axelard/.axelar && chown axelard /home/axelard/.axelar
-RUN mkdir /home/axelard/shared && chown axelard /home/axelard/shared
-RUN mkdir /home/axelard/genesis && chown axelard /home/axelard/genesis
-RUN mkdir /home/axelard/scripts && chown axelard /home/axelard/scripts
-RUN mkdir /home/axelard/conf && chown axelard /home/axelard/conf
+RUN mkdir -p /home/axelard/.axelar && chown axelard /home/axelard/.axelar
+RUN mkdir -p /home/axelard/shared && chown axelard /home/axelard/shared
+RUN mkdir -p /home/axelard/genesis && chown axelard /home/axelard/genesis
+RUN mkdir -p /home/axelard/scripts && chown axelard /home/axelard/scripts
+RUN mkdir -p /home/axelard/conf && chown axelard /home/axelard/conf
+
 
 ENTRYPOINT ["/entrypoint.sh"]
