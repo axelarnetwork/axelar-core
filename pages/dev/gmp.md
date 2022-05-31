@@ -37,6 +37,8 @@ function _execute(
 ) internal virtual {}
 ```
 
+See [Get started](get-started) for info on working examples.
+
 ## Call a contract on chain B from chain A and attach some tokens
 
 To call chain B from chain A and send some tokens along the way, the user needs to call `callContractWithToken` on the gateway of chain A, specifying:
@@ -72,6 +74,8 @@ function _executeWithToken(
     uint256 amount
 ) internal virtual {}
 ```
+
+See [Get started](get-started) for info on working examples.
 
 ### Example
 

@@ -9,11 +9,21 @@ import Button from '../../components/button'
 
 ## Examples
 
+### Examples repo
+
 There are several complete, working examples with instructions at the `axelar-local-gmp-examples` repo that illustrate the build-deploy process.
 
 View the github README for instructions and code:
 
 <Button title="examples" url="https://github.com/axelarnetwork/axelar-local-gmp-examples" />
+
+### Video on NFT linker example
+
+The [axelar-local-gmp-examples](https://github.com/axelarnetwork/axelar-local-gmp-examples) repo contains an example [nft-linker](https://github.com/axelarnetwork/axelar-local-gmp-examples/tree/main/examples/nft-linker) on cross-chain transfer for ERC-721 NFT tokens.
+
+See the accompanying [video](https://www.youtube.com/watch?v=pAxuQ7PIl8g):
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/pAxuQ7PIl8g" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 ## Build
 
