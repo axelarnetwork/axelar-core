@@ -9,8 +9,8 @@ Validators need to keep their old `tofnd` mnemonics until all keys generated fro
 pkill -9 -f "vald"
 pkill -f "tofnd"
 
-# Rotate tofnd mnemonic
-tofnd -m rotate -d $AXELARD_HOME/.tofnd
+# Rotate tofnd mnemonic, the new mnemonic is exported automatically
+tofnd -m rotate -d $TOFND_HOME
 
 # Note: Keep the old mnemonic backups around
 
@@ -22,11 +22,13 @@ rm $TOFND_HOME/export
 ```
 
 After performing the rotation, monitor your validator to make sure it's
-still posting heartbeats and there are no unexpected errors in `vald`/`tofnd` logs. It's also useful to perform a health check.
+still posting heartbeats and there are no unexpected errors in `vald`/`tofnd` logs.
+It's also useful to perform a health check.
 
 ## Recovery of mnmenonics
 
-As always, you can import a `tofnd` mnemonic with `tofnd -m import -d $AXELARD_HOME/.tofnd`. If there are no other mnemonics yet in `tofnd` storage then the imported mnemonic will be treated as the latest mnemonic, 
+As before, you can import a `tofnd` mnemonic with `tofnd -m import -d $TOFND_HOME`.
+If there are no other mnemonics yet in `tofnd` storage then the imported mnemonic will be treated as the *latest mnemonic*, 
 and automatically used for future key ids that are rotated to and any previous key ids it was already a part of.
 Each subsequent imported mnemonic is considered as "old"
 and so only used for any past key ids that corresponded to it.
