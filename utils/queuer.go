@@ -58,14 +58,16 @@ func (q GeneralKVQueue) Enqueue(key Key, value codec.ProtoMarshaler) {
 	q.store.Set(key, value)
 }
 
-func defaultFilter(_ codec.ProtoMarshaler) (pass bool, stop bool) { return true, false }
+func noopFilter(_ codec.ProtoMarshaler) bool {
+	return true
+}
 
 // Dequeue pops the first item in queue and stores it in the given value
 func (q GeneralKVQueue) Dequeue(value codec.ProtoMarshaler) bool {
 	iter := sdk.KVStorePrefixIterator(q.store.KVStore, q.name.AsKey())
 	defer CloseLogError(iter, q.logger)
 
-	return q.dequeue(value, iter, defaultFilter)
+	return q.dequeue(value, iter, noopFilter, false)
 }
 
 // DequeueIf pops the first item in queue iff it matches the given filter and stores it in the given value
@@ -73,7 +75,7 @@ func (q GeneralKVQueue) DequeueIf(value codec.ProtoMarshaler, filter func(value 
 	iter := sdk.KVStorePrefixIterator(q.store.KVStore, q.name.AsKey())
 	defer CloseLogError(iter, q.logger)
 
-	return q.dequeue(value, iter, func(value codec.ProtoMarshaler) (bool, bool) { return filter(value), false })
+	return q.dequeue(value, iter, filter, false)
 }
 
 // DequeueUntil pops the first item in queue that matches the given filter and stores it in the given value
@@ -81,34 +83,31 @@ func (q GeneralKVQueue) DequeueUntil(value codec.ProtoMarshaler, filter func(val
 	iter := sdk.KVStorePrefixIterator(q.store.KVStore, q.name.AsKey())
 	defer CloseLogError(iter, q.logger)
 
-	return q.dequeue(value, iter, func(value codec.ProtoMarshaler) (bool, bool) { return filter(value), true })
+	return q.dequeue(value, iter, filter, true)
 }
 
-func (q GeneralKVQueue) dequeue(value codec.ProtoMarshaler, iter db.Iterator, filter func(value codec.ProtoMarshaler) (bool, bool)) bool {
-	if !iter.Valid() {
-		return false
+func (q GeneralKVQueue) dequeue(value codec.ProtoMarshaler, iter db.Iterator, filter func(value codec.ProtoMarshaler) bool, continueIfNotQualified bool) bool {
+	for ; iter.Valid(); iter.Next() {
+		var key gogoprototypes.BytesValue
+		q.store.cdc.MustUnmarshalLengthPrefixed(iter.Value(), &key)
+
+		if ok := q.store.Get(KeyFromBz(key.Value), value); !ok {
+			return false
+		}
+
+		isQualified := filter(value)
+		if isQualified {
+			q.store.Delete(KeyFromBz(iter.Key()))
+
+			return true
+		}
+
+		if !continueIfNotQualified {
+			return false
+		}
 	}
 
-	var key gogoprototypes.BytesValue
-	q.store.cdc.MustUnmarshalLengthPrefixed(iter.Value(), &key)
-
-	if ok := q.store.Get(KeyFromBz(key.Value), value); !ok {
-		return false
-	}
-
-	isQualified, continueIfNotQualified := filter(value)
-	switch {
-	case isQualified:
-		q.store.Delete(KeyFromBz(iter.Key()))
-
-		return true
-	case continueIfNotQualified:
-		iter.Next()
-
-		return q.dequeue(value, iter, filter)
-	default:
-		return false
-	}
+	return false
 }
 
 // IsEmpty returns true if the queue is empty; otherwise, false
