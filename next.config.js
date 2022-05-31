@@ -93,6 +93,11 @@ module.exports = withNextra({
         destination: "/dev/chain-names",
         statusCode: 301,
       },
+      {
+        source: "/resources/weth",
+        destination: "/resources/wrapped-tokens",
+        statusCode: 301,
+      },
     ];
   },
 });

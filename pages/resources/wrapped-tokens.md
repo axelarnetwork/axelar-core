@@ -1,10 +1,15 @@
-# Convert between ETH and WETH
+# Convert between native and wrapped tokens
 
 import Callout from 'nextra-theme-docs/callout'
 
-Axelar supports cross-chain transfer of Wrapped Ether (WETH) token from the Ethereum mainnet. WETH is an ERC-20 version of Ether (ETH), Ethereum's native token.
+Axelar supports cross-chain transfer of
+
+- Wrapped Ether (WETH) token from the Ethereum mainnet. WETH is an ERC-20 version of Ether (ETH), Ethereum's native token.
+- Wrapped Matic (WMATIC) token from the Polygon mainnet. WMATIC is an ERC-20 version of Matic (MATIC), Polygon's native token.
 
 If you have ETH tokens but not WETH tokens then you can convert your ETH to WETH for use with Axelar. (Conversely, you can convert your WETH back to ETH any time you choose.)
+
+Below we describe how to convert between ETH and WETH. Conversion between MATIC and WMATIC is similar---we list the differences at the end.
 
 ## Prerequisites
 
@@ -41,3 +46,14 @@ By contrast, for the "deposit" field (to convert ETH to WETH) the amount of ETH 
 </Callout>
 
 As above, click "write", approve the transaction, and check your Metamask for the new ETH tokens.
+
+## Convert between MATIC and WMATIC
+
+Conversion between MATIC and WMATIC is similar, except the transactions are posted to Polygon instead of Ethereum.
+
+If you haven't already, import the WMATIC ERC-20 token to your Metamask account in the Polygon network as described in [Set up Metamask](metamask).
+
+Visit the WMATIC ERC-20 token contract on polygonscan:
+
+- [Polygon Mumbai testnet](https://mumbai.polygonscan.com/address/0x9c3c9283d3e44854697cd22d3faa240cfb032889#writeContract)
+- [Polygon mainnet](https://polygonscan.com/token/0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270#writeContract)

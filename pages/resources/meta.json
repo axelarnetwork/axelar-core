@@ -4,5 +4,5 @@
   "testnet-2": "Testnet-2",
   "satellite": "Satellite",
   "metamask": "Set up Metamask",
-  "weth": "Convert ETH <> WETH"
+  "wrapped-tokens": "Wrap/unwrap tokens"
 }
