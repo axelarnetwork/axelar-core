@@ -41,6 +41,8 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		GetCmdBurnerInfo(queryRoute),
 		GetCmdChains(queryRoute),
 		GetCmdConfirmationHeight(queryRoute),
+		GetCmdERC20Tokens(queryRoute),
+		GetCmdTokenDetails(queryRoute),
 	)
 
 	return evmQueryCmd
@@ -468,6 +470,80 @@ func GetCmdEvent(queryRoute string) *cobra.Command {
 			&types.EventRequest{
 				Chain:   chain,
 				EventId: eventID,
+			})
+		if err != nil {
+			return err
+		}
+
+		return clientCtx.PrintProto(res)
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdERC20Tokens returns the query to get the ERC20 tokens for a given chain
+func GetCmdERC20Tokens(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "erc20-tokens [chain]",
+		Short: "Returns the ERC20 tokens for the given chain",
+		Args:  cobra.ExactArgs(1),
+	}
+	tokenType := cmd.Flags().String("token-type", "", "the token type [external|internal]")
+
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		clientCtx, err := client.GetClientQueryContext(cmd)
+		if err != nil {
+			return err
+		}
+
+		queryClient := types.NewQueryServiceClient(clientCtx)
+
+		var tokenTypeEnum types.TokenType
+		switch *tokenType {
+		case "":
+			tokenTypeEnum = types.Unspecified
+		case "internal":
+			tokenTypeEnum = types.Internal
+		case "external":
+			tokenTypeEnum = types.External
+		}
+
+		res, err := queryClient.ERC20Tokens(cmd.Context(),
+			&types.ERC20TokensRequest{
+				Chain: args[0],
+				Type:  tokenTypeEnum,
+			})
+		if err != nil {
+			return err
+		}
+
+		return clientCtx.PrintProto(res)
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdTokenDetails returns the query to get the details for an ERC20 token
+func GetCmdTokenDetails(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "token-details [asset]",
+		Short: "Returns the details for the given ERC20 token",
+		Args:  cobra.ExactArgs(1),
+	}
+
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		clientCtx, err := client.GetClientQueryContext(cmd)
+		if err != nil {
+			return err
+		}
+
+		queryClient := types.NewQueryServiceClient(clientCtx)
+
+		res, err := queryClient.TokenDetails(cmd.Context(),
+			&types.TokenDetailsRequest{
+				Asset: args[0],
 			})
 		if err != nil {
 			return err

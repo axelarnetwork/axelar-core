@@ -6684,11 +6684,15 @@ paths:
           in: path
           required: true
           type: string
-        - name: external_only
+        - name: type
           in: query
           required: false
-          type: boolean
-          format: boolean
+          type: string
+          enum:
+            - TOKEN_TYPE_UNSPECIFIED
+            - TOKEN_TYPE_INTERNAL
+            - TOKEN_TYPE_EXTERNAL
+          default: TOKEN_TYPE_UNSPECIFIED
       tags:
         - QueryService
   /axelar/evm/v1beta1/event/{chain}/{event_id}:
@@ -39303,6 +39307,13 @@ definitions:
           capacity:
             type: string
             format: byte
+  axelar.evm.v1beta1.TokenType:
+    type: string
+    enum:
+      - TOKEN_TYPE_UNSPECIFIED
+      - TOKEN_TYPE_INTERNAL
+      - TOKEN_TYPE_EXTERNAL
+    default: TOKEN_TYPE_UNSPECIFIED
   axelar.evm.v1beta1.TransferKeyType:
     type: string
     enum:

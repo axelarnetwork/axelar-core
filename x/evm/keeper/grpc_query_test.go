@@ -647,27 +647,34 @@ func TestEvent(t *testing.T) {
 
 func TestERC20Tokens(t *testing.T) {
 	var (
-		baseKeeper  *mock.BaseKeeperMock
-		signer      *mock.SignerMock
-		nexusKeeper *mock.NexusMock
-		chainKeeper *mock.ChainKeeperMock
-		ctx         sdk.Context
-		chain       nexus.ChainName
-		expectedRes types.ERC20TokensResponse
-		grpcQuerier *evmKeeper.Querier
+		baseKeeper    *mock.BaseKeeperMock
+		signer        *mock.SignerMock
+		nexusKeeper   *mock.NexusMock
+		chainKeeper   *mock.ChainKeeperMock
+		ctx           sdk.Context
+		existingChain nexus.ChainName
+		expectedRes   types.ERC20TokensResponse
+		grpcQuerier   *evmKeeper.Querier
 	)
 
 	external := types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Asset: "external", IsExternal: true})
 	internal := types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Asset: "internal", IsExternal: false})
 
 	setup := func() {
-		chain = nexus.ChainName("chain")
+		existingChain = nexus.ChainName("chain")
 
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 
 		nexusKeeper = &mock.NexusMock{
 			GetChainFunc: func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
-				return nexus.Chain{Name: chain, Module: types.ModuleName}, true
+				if chain == existingChain {
+					return nexus.Chain{
+						Name:                  chain,
+						SupportsForeignAssets: true,
+						Module:                types.ModuleName,
+					}, true
+				}
+				return nexus.Chain{}, false
 			},
 		}
 		chainKeeper = &mock.ChainKeeperMock{
@@ -692,10 +699,21 @@ func TestERC20Tokens(t *testing.T) {
 
 		expectedRes = types.ERC20TokensResponse{Assets: []string{external.GetAsset(), internal.GetAsset()}}
 
-		res, err := grpcQuerier.ERC20Tokens(sdk.WrapSDKContext(ctx), &types.ERC20TokensRequest{Chain: chain.String()})
+		res, err := grpcQuerier.ERC20Tokens(sdk.WrapSDKContext(ctx), &types.ERC20TokensRequest{Chain: existingChain.String()})
 		assert := assert.New(t)
 		assert.NoError(err)
 
+		assert.Equal(expectedRes, *res)
+	}).Repeat(repeatCount))
+
+	t.Run("internal erc20 tokens only", testutils.Func(func(t *testing.T) {
+		setup()
+
+		expectedRes = types.ERC20TokensResponse{Assets: []string{internal.GetAsset()}}
+
+		res, err := grpcQuerier.ERC20Tokens(sdk.WrapSDKContext(ctx), &types.ERC20TokensRequest{Chain: existingChain.String(), Type: types.Internal})
+		assert := assert.New(t)
+		assert.NoError(err)
 		assert.Equal(expectedRes, *res)
 	}).Repeat(repeatCount))
 
@@ -704,33 +722,31 @@ func TestERC20Tokens(t *testing.T) {
 
 		expectedRes = types.ERC20TokensResponse{Assets: []string{external.GetAsset()}}
 
-		res, err := grpcQuerier.ERC20Tokens(sdk.WrapSDKContext(ctx), &types.ERC20TokensRequest{Chain: chain.String(), ExternalOnly: true})
+		res, err := grpcQuerier.ERC20Tokens(sdk.WrapSDKContext(ctx), &types.ERC20TokensRequest{Chain: existingChain.String(), Type: types.External})
 		assert := assert.New(t)
 		assert.NoError(err)
 		assert.Equal(expectedRes, *res)
 	}).Repeat(repeatCount))
 
-	t.Run("non-evm chain", testutils.Func(func(t *testing.T) {
+	t.Run("non evm chain", testutils.Func(func(t *testing.T) {
 		setup()
 
-		expectedRes = types.ERC20TokensResponse{Assets: []string{external.GetAsset()}}
-
-		res, err := grpcQuerier.ERC20Tokens(sdk.WrapSDKContext(ctx), &types.ERC20TokensRequest{Chain: chain.String(), ExternalOnly: true})
+		res, err := grpcQuerier.ERC20Tokens(sdk.WrapSDKContext(ctx), &types.ERC20TokensRequest{Chain: "non-existing-chain", Type: types.Unspecified})
 		assert := assert.New(t)
-		assert.NoError(err)
-		assert.Equal(expectedRes, *res)
+		assert.Error(err)
+		assert.Nil(res)
 	}).Repeat(repeatCount))
 }
 
 func TestTokenDetails(t *testing.T) {
 	var (
-		baseKeeper  *mock.BaseKeeperMock
-		signer      *mock.SignerMock
-		nexusKeeper *mock.NexusMock
-		chainKeeper *mock.ChainKeeperMock
-		ctx         sdk.Context
-		chain       nexus.ChainName
-		grpcQuerier *evmKeeper.Querier
+		baseKeeper    *mock.BaseKeeperMock
+		signer        *mock.SignerMock
+		nexusKeeper   *mock.NexusMock
+		chainKeeper   *mock.ChainKeeperMock
+		existingChain nexus.ChainName
+		ctx           sdk.Context
+		grpcQuerier   *evmKeeper.Querier
 	)
 
 	token := types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{
@@ -740,13 +756,20 @@ func TestTokenDetails(t *testing.T) {
 	})
 
 	setup := func() {
-		chain = nexus.ChainName("chain")
+		existingChain = nexus.ChainName("chain")
 
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 
 		nexusKeeper = &mock.NexusMock{
 			GetChainFunc: func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
-				return nexus.Chain{Name: chain, Module: types.ModuleName}, true
+				if chain == existingChain {
+					return nexus.Chain{
+						Name:                  existingChain,
+						SupportsForeignAssets: true,
+						Module:                types.ModuleName,
+					}, true
+				}
+				return nexus.Chain{}, false
 			},
 		}
 		chainKeeper = &mock.ChainKeeperMock{
@@ -775,7 +798,7 @@ func TestTokenDetails(t *testing.T) {
 
 		expectedRes := types.TokenDetailsResponse{Details: token.GetDetails()}
 
-		res, err := grpcQuerier.TokenDetails(sdk.WrapSDKContext(ctx), &types.TokenDetailsRequest{Chain: chain.String(), Asset: token.GetAsset()})
+		res, err := grpcQuerier.TokenDetails(sdk.WrapSDKContext(ctx), &types.TokenDetailsRequest{Chain: existingChain.String(), Asset: token.GetAsset()})
 		assert := assert.New(t)
 		assert.NoError(err)
 		assert.Equal(expectedRes, *res)
@@ -784,7 +807,7 @@ func TestTokenDetails(t *testing.T) {
 	t.Run("unknown token", testutils.Func(func(t *testing.T) {
 		setup()
 
-		res, err := grpcQuerier.TokenDetails(sdk.WrapSDKContext(ctx), &types.TokenDetailsRequest{Chain: chain.String(), Asset: "unknown-token"})
+		res, err := grpcQuerier.TokenDetails(sdk.WrapSDKContext(ctx), &types.TokenDetailsRequest{Chain: existingChain.String(), Asset: "unknown-token"})
 		assert := assert.New(t)
 		assert.Nil(res)
 		assert.Error(err)

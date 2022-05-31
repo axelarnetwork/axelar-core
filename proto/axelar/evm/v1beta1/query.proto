@@ -157,9 +157,19 @@ message BytecodeRequest {
 
 message BytecodeResponse { string bytecode = 1; }
 
+enum TokenType {
+  option (gogoproto.goproto_enum_prefix) = false;
+  option (gogoproto.goproto_enum_stringer) = true;
+
+  TOKEN_TYPE_UNSPECIFIED = 0
+      [ (gogoproto.enumvalue_customname) = "Unspecified" ];
+  TOKEN_TYPE_INTERNAL = 1 [ (gogoproto.enumvalue_customname) = "Internal" ];
+  TOKEN_TYPE_EXTERNAL = 2 [ (gogoproto.enumvalue_customname) = "External" ];
+}
+
 message ERC20TokensRequest {
   string chain = 1;
-  bool external_only = 2;
+  TokenType type = 2;
 }
 
 message ERC20TokensResponse { repeated string assets = 1; }

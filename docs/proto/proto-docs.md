@@ -251,6 +251,8 @@
     - [TokenDetailsRequest](#axelar.evm.v1beta1.TokenDetailsRequest)
     - [TokenDetailsResponse](#axelar.evm.v1beta1.TokenDetailsResponse)
   
+    - [TokenType](#axelar.evm.v1beta1.TokenType)
+  
 - [axelar/evm/v1beta1/tx.proto](#axelar/evm/v1beta1/tx.proto)
     - [AddChainRequest](#axelar.evm.v1beta1.AddChainRequest)
     - [AddChainResponse](#axelar.evm.v1beta1.AddChainResponse)
@@ -3649,7 +3651,7 @@ deposit address
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `chain` | [string](#string) |  |  |
-| `external_only` | [bool](#bool) |  |  |
+| `type` | [TokenType](#axelar.evm.v1beta1.TokenType) |  |  |
 
 
 
@@ -3941,6 +3943,19 @@ deposit address
 
 
  <!-- end messages -->
+
+
+<a name="axelar.evm.v1beta1.TokenType"></a>
+
+### TokenType
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| TOKEN_TYPE_UNSPECIFIED | 0 |  |
+| TOKEN_TYPE_INTERNAL | 1 |  |
+| TOKEN_TYPE_EXTERNAL | 2 |  |
+
 
  <!-- end enums -->
 

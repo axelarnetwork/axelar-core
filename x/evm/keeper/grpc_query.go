@@ -443,9 +443,12 @@ func (q Querier) ERC20Tokens(c context.Context, req *types.ERC20TokensRequest) (
 	ck := q.keeper.ForChain(chain.Name)
 
 	tokens := ck.GetTokens(ctx)
-	if req.ExternalOnly {
+	if req.Type == types.External {
 		tokens = slices.Filter(tokens, types.ERC20Token.IsExternal)
+	} else if req.Type == types.Internal {
+		tokens = slices.Filter(tokens, func(token types.ERC20Token) bool { return !token.IsExternal() })
 	}
+
 	assets := slices.Map(tokens, types.ERC20Token.GetAsset)
 
 	return &types.ERC20TokensResponse{Assets: assets}, nil
