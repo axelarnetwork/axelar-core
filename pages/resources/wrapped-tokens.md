@@ -2,58 +2,62 @@
 
 import Callout from 'nextra-theme-docs/callout'
 
-Axelar supports cross-chain transfer of
+Axelar supports cross-chain transfer of the following native tokens via their wrapped ERC-20 versions:
 
-- Wrapped Ether (WETH) token from the Ethereum mainnet. WETH is an ERC-20 version of Ether (ETH), Ethereum's native token.
-- Wrapped Matic (WMATIC) token from the Polygon mainnet. WMATIC is an ERC-20 version of Matic (MATIC), Polygon's native token.
+- AVAX (Avalanche)
+- ETH (Ethereum)
+- FTM (Fantom)
+- GLMR (Moonbeam)
+- MATIC (Polygon)
 
-If you have ETH tokens but not WETH tokens then you can convert your ETH to WETH for use with Axelar. (Conversely, you can convert your WETH back to ETH any time you choose.)
-
-Below we describe how to convert between ETH and WETH. Conversion between MATIC and WMATIC is similar---we list the differences at the end.
+If you have native tokens but not wrapped tokens then you can convert your native to wrapped for use with Axelar. (Conversely, you can convert your wrapped back to native any time you choose.)
 
 ## Prerequisites
 
-- A Metamask account with some ETH tokens or WETH tokens.
-- If you haven't already, import the WETH ERC-20 token to your Metamask account in the Ethereum network as described in [Set up Metamask](metamask).
+A Metamask account with some native tokens or wrapped tokens.
 
-## Connect Metamask to Etherscan
+## Connect Metamask to a block explorer
 
-Visit the WETH ERC-20 token contract on etherscan:
+Visit the wrapped ERC-20 token contract on the appropriate block explorer:
 
+Testnets:
+
+- [Avalanche Fuji testnet](https://testnet.snowtrace.io/token/0xd00ae08403B9bbb9124bB305C09058E32C39A48c#writeContract)
 - [Ethereum Ropsten testnet](https://ropsten.etherscan.io/address/0xc778417e063141139fce010982780140aa0cd5ab#writeContract)
-- [Ethereum mainnet](https://etherscan.io/address/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2#writeContract)
+- [Fantom testnet](https://testnet.ftmscan.com/token/0x812666209b90344Ec8e528375298ab9045c2Bd08#writeContract)
+- [Moonbase Alpha testnet](https://moonbase.moonscan.io/address/0x1436aE0dF0A8663F18c0Ec51d7e2E46591730715#writeContract)
+- [Polygon Mumbai testnet](https://mumbai.polygonscan.com/address/0x9c3c9283d3e44854697cd22d3faa240cfb032889#writeContract)
+
+Mainnets:
+
+- [Avalanche](https://snowtrace.io/token/0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7#writeContract)
+- [Ethereum](https://etherscan.io/address/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2#writeContract)
+- [Fantom](https://ftmscan.com/token/0x21be370d5312f44cb42ce377bc9b8a0cef1a4c83#writeContract)
+- [Moonbeam](https://moonbeam.moonscan.io/token/0xacc15dc74880c9944775448304b263d191c6077f#writeContract)
+- [Polygon](https://polygonscan.com/token/0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270#writeContract)
+
+If you haven't already, import the wrapped ERC-20 token to your Metamask account in the appropriate network as described in [Set up Metamask](metamask).
 
 Click the "contract" tab, then click "write contract". (The above links should take you directly to "write contract".)
 
 Click "connect to web3" to connect your Metamask account.
 
-## Convert ETH to WETH
+## Convert native to wrapped
 
-In the "deposit" field enter the amount of ETH you wish to convert to WETH.
+In the "deposit" field enter the amount of native token you wish to convert to wrapped token. (The following screenshot is for Ethereum.)
 
 ![WETH conversion screenshot](/images/weth-etherscan.png)
 
-Click "write". Your Metamask wallet should appear---approve the transaction and wait for the transaction to get confirmed into the Ethereum blockchain. Check your Metamask balances for the new WETH tokens.
+Click "write". Your Metamask wallet should appear---approve the transaction and wait for the transaction to get confirmed into the blockchain. Check your Metamask balances for the new wrapped tokens.
 
-## Convert WETH to ETH
+## Convert wrapped to native
 
-In the "withdraw" field enter the amount of WETH (denominated in Wei) you wish to convert to ETH.
+In the "withdraw" field enter the amount of wrapped tokens (denominated in Wei) you wish to convert to native.
 
 <Callout emoji="💡">
-For the "withdraw" field (to convert WETH to ETH) the amount of WETH is denominated in Wei where 1 WETH = 10^18 Wei.  Example: to convert `0.2` WETH to ETH enter `200000000000000000`.
+For the "withdraw" field (to convert wrapped to native) the amount of wrapped tokens is denominated in Wei where 1 wrapped token = 10^18 Wei.  Example: to convert `0.2` WETH to ETH enter `200000000000000000`.
 
-By contrast, for the "deposit" field (to convert ETH to WETH) the amount of ETH is denominated in ETH. Example: to convert `0.2` ETH to WETH enter `0.2`.
+By contrast, for the "deposit" field (to convert native to wrapped tokens) the amount of native is denominated in native units. Example: to convert `0.2` ETH to WETH enter `0.2`.
 </Callout>
 
-As above, click "write", approve the transaction, and check your Metamask for the new ETH tokens.
-
-## Convert between MATIC and WMATIC
-
-Conversion between MATIC and WMATIC is similar, except the transactions are posted to Polygon instead of Ethereum.
-
-If you haven't already, import the WMATIC ERC-20 token to your Metamask account in the Polygon network as described in [Set up Metamask](metamask).
-
-Visit the WMATIC ERC-20 token contract on polygonscan:
-
-- [Polygon Mumbai testnet](https://mumbai.polygonscan.com/address/0x9c3c9283d3e44854697cd22d3faa240cfb032889#writeContract)
-- [Polygon mainnet](https://polygonscan.com/token/0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270#writeContract)
+As above, click "write", approve the transaction, and check your Metamask for the new native tokens.
