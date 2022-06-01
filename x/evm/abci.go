@@ -427,7 +427,7 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 		}
 
 		var event types.Event
-		for queue.Dequeue(&event, shouldHandleEvent) {
+		for queue.DequeueUntil(&event, shouldHandleEvent) {
 			var ok bool
 
 			switch event.GetEvent().(type) {
