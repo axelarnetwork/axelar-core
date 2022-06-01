@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/big"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -16,6 +17,7 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	tssTestUtils "github.com/axelarnetwork/axelar-core/x/tss/exported/testutils"
+	"github.com/axelarnetwork/utils/slices"
 )
 
 func TestCreateApproveContractCallWithMintCommand(t *testing.T) {
@@ -206,6 +208,10 @@ func TestCreateSinglesigTransferCommand_Ownership(t *testing.T) {
 
 	_, _, err = decodeTransferMultisigParams(actual.Params)
 	assert.Error(t, err)
+
+	params, err := actual.DecodeParams()
+	assert.NoError(t, err)
+	assert.Equal(t, map[string]string{"newOwner": newOwnerAddr.Hex()}, params)
 }
 
 func TestCreateSinglesigTransferCommand_Operatorship(t *testing.T) {
@@ -230,6 +236,10 @@ func TestCreateSinglesigTransferCommand_Operatorship(t *testing.T) {
 
 	_, _, err = decodeTransferMultisigParams(actual.Params)
 	assert.Error(t, err)
+
+	params, err := actual.DecodeParams()
+	assert.NoError(t, err)
+	assert.Equal(t, map[string]string{"newOperator": newOperatorAddr.Hex()}, params)
 }
 
 func TestCreateMultisigTransferCommand_Ownership(t *testing.T) {
@@ -262,6 +272,13 @@ func TestCreateMultisigTransferCommand_Ownership(t *testing.T) {
 
 	_, err = decodeTransferSinglesigParams(actual.Params)
 	assert.Error(t, err)
+
+	params, err := actual.DecodeParams()
+	assert.NoError(t, err)
+	assert.Equal(t, map[string]string{
+		"newOwners":    strings.Join(slices.Map(addresses, func(addr common.Address) string { return addr.Hex() }), ";"),
+		"newThreshold": strconv.FormatUint(uint64(threshold), 10),
+	}, params)
 }
 func TestCreateMultisigTransferCommand_Operatorship(t *testing.T) {
 	chainID := sdk.NewInt(1)
@@ -276,7 +293,7 @@ func TestCreateMultisigTransferCommand_Operatorship(t *testing.T) {
 
 	expectedParams := "000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000003000000000000000000000000d59ca627af68d29c547b91066297a7c469a7bf72000000000000000000000000c2fcc7bcf743153c58efd44e6e723e9819e9a10a0000000000000000000000002ad611e02e4f7063f515c8f190e5728719937205"
 	actual, err := CreateMultisigTransferCommand(
-		Ownership,
+		Operatorship,
 		chainID,
 		keyID,
 		threshold,
@@ -293,6 +310,13 @@ func TestCreateMultisigTransferCommand_Operatorship(t *testing.T) {
 
 	_, err = decodeTransferSinglesigParams(actual.Params)
 	assert.Error(t, err)
+
+	params, err := actual.DecodeParams()
+	assert.NoError(t, err)
+	assert.Equal(t, map[string]string{
+		"newOperators": strings.Join(slices.Map(addresses, func(addr common.Address) string { return addr.Hex() }), ";"),
+		"newThreshold": strconv.FormatUint(uint64(threshold), 10),
+	}, params)
 }
 
 func TestGetSignHash(t *testing.T) {
