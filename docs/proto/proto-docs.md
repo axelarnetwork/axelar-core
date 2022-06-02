@@ -75,6 +75,8 @@
     - [TransfersForChainRequest](#axelar.nexus.v1beta1.TransfersForChainRequest)
     - [TransfersForChainResponse](#axelar.nexus.v1beta1.TransfersForChainResponse)
   
+    - [ChainStatus](#axelar.nexus.v1beta1.ChainStatus)
+  
 - [axelar/axelarnet/v1beta1/query.proto](#axelar/axelarnet/v1beta1/query.proto)
     - [PendingIBCTransferCountRequest](#axelar.axelarnet.v1beta1.PendingIBCTransferCountRequest)
     - [PendingIBCTransferCountResponse](#axelar.axelarnet.v1beta1.PendingIBCTransferCountResponse)
@@ -1271,6 +1273,11 @@ ChainsRequest represents a message that queries the chains
 registered on the network
 
 
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `status` | [ChainStatus](#axelar.nexus.v1beta1.ChainStatus) |  |  |
+
+
 
 
 
@@ -1470,6 +1477,19 @@ transfers for the specified chain
 
 
  <!-- end messages -->
+
+
+<a name="axelar.nexus.v1beta1.ChainStatus"></a>
+
+### ChainStatus
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| CHAIN_STATUS_UNSPECIFIED | 0 |  |
+| CHAIN_STATUS_ACTIVATED | 1 |  |
+| CHAIN_STATUS_DEACTIVATED | 2 |  |
+
 
  <!-- end enums -->
 

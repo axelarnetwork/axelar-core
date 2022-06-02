@@ -9309,6 +9309,16 @@ paths:
                           "@type": "type.googleapis.com/google.protobuf.Duration",
                           "value": "1.212s"
                         }
+      parameters:
+        - name: status
+          in: query
+          required: false
+          type: string
+          enum:
+            - CHAIN_STATUS_UNSPECIFIED
+            - CHAIN_STATUS_ACTIVATED
+            - CHAIN_STATUS_DEACTIVATED
+          default: CHAIN_STATUS_UNSPECIFIED
       tags:
         - QueryService
   /axelar/nexus/v1beta1/chains_by_asset/{asset}:
@@ -39137,6 +39147,13 @@ definitions:
                           type: integer
                           format: int32
         title: ChainState represents the state of a registered blockchain
+  axelar.nexus.v1beta1.ChainStatus:
+    type: string
+    enum:
+      - CHAIN_STATUS_UNSPECIFIED
+      - CHAIN_STATUS_ACTIVATED
+      - CHAIN_STATUS_DEACTIVATED
+    default: CHAIN_STATUS_UNSPECIFIED
   axelar.nexus.v1beta1.ChainsByAssetResponse:
     type: object
     properties:

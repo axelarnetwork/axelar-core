@@ -42,9 +42,7 @@ func NewGRPCQuerier(k types.BaseKeeper, n types.Nexus, s types.Signer) Querier {
 func queryChains(ctx sdk.Context, n types.Nexus) []nexustypes.ChainName {
 	chains := slices.Filter(n.GetChains(ctx), func(c nexustypes.Chain) bool { return c.Module == types.ModuleName })
 
-	return slices.Map(chains, func(c nexustypes.Chain) nexustypes.ChainName {
-		return c.Name
-	})
+	return slices.Map(chains, nexustypes.Chain.GetName)
 }
 
 // Chains returns the available evm chains
