@@ -2,9 +2,10 @@ package rpc
 
 import (
 	"context"
-	"encoding/json"
 	"math/big"
 
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	evmClient "github.com/ethereum/go-ethereum/ethclient"
@@ -13,8 +14,6 @@ import (
 
 //go:generate moq -out ./mock/rpcClient.go -pkg mock . Client MoonbeamClient
 
-const codeMethodNotFound = -32601
-
 // Client provides calls to EVM JSON-RPC endpoints
 type Client interface {
 	BlockNumber(ctx context.Context) (uint64, error)
@@ -22,6 +21,37 @@ type Client interface {
 	TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error)
 	BlockByNumber(ctx context.Context, number *big.Int) (*types.Block, error)
 	Close()
+}
+
+// Eth2PostMergeClient provides calls to Ethereum JSON-RPC endpoints post the merge
+type Eth2PostMergeClient interface {
+	Client
+
+	FinalizedHeader(ctx context.Context) (*types.Header, error)
+}
+
+// Eth2PostMergeClientImpl implements Eth2PostMergeClient
+type Eth2PostMergeClientImpl struct {
+	*evmClient.Client
+	url string
+}
+
+func (c Eth2PostMergeClientImpl) FinalizedHeader(ctx context.Context) (*types.Header, error) {
+	rpc, err := rpc.DialContext(ctx, c.url)
+	if err != nil {
+		return nil, err
+	}
+
+	var result *types.Header
+	if err := rpc.CallContext(ctx, &result, "eth_getBlockByNumber", "finalized", false); err != nil {
+		return nil, err
+	}
+
+	if result == nil {
+		return nil, ethereum.NotFound
+	}
+
+	return result, nil
 }
 
 // MoonbeamClient provides calls to Moonbeam JSON-RPC endpoints
@@ -69,43 +99,32 @@ func (c MoonbeamClientImpl) ChainGetHeader(ctx context.Context, hash common.Hash
 }
 
 // NewClient returns an EVM rpc client
-func NewClient(url string, enableRPCDetection bool) (Client, error) {
+func NewClient(url string) (Client, error) {
 	evmClient, err := evmClient.Dial(url)
 	if err != nil {
 		return nil, err
 	}
 
-	if !enableRPCDetection {
-		return evmClient, nil
+	// validate that the given url implements standard ethereum JSON-RPC
+	if _, err := evmClient.BlockNumber(context.Background()); err != nil {
+		return nil, sdkerrors.Wrapf(err, "cannot query latest block number with the given EVM JSON-RPC url %s", url)
 	}
 
 	moonbeamClient := MoonbeamClientImpl{
 		Client: evmClient,
 		url:    url,
 	}
-
-	_, err = moonbeamClient.ChainGetFinalizedHead(context.Background())
-	switch err := err.(type) {
-	case nil:
+	if _, err := moonbeamClient.ChainGetFinalizedHead(context.Background()); err == nil {
 		return moonbeamClient, nil
-	case rpc.HTTPError:
-		var jsonrpcMsg jsonrpcMessage
-		if json.Unmarshal(err.Body, &jsonrpcMsg) != nil {
-			return nil, err
-		}
-
-		if jsonrpcMsg.Error != nil && jsonrpcMsg.Error.Code == codeMethodNotFound {
-			return evmClient, nil
-		}
-
-		return nil, err
-	case rpc.Error:
-		if err.ErrorCode() == codeMethodNotFound {
-			return evmClient, nil
-		}
-
-		return nil, err
-	default:
-		return nil, err
 	}
+
+	eth2PostMergeClient := Eth2PostMergeClientImpl{
+		Client: evmClient,
+		url:    url,
+	}
+	if _, err := eth2PostMergeClient.FinalizedHeader(context.Background()); err == nil {
+		return moonbeamClient, nil
+	}
+
+	return evmClient, nil
 }

@@ -702,6 +702,13 @@ func getLatestFinalizedBlockNumber(client rpc.Client, confHeight uint64) (*big.I
 		}
 
 		return header.Number.ToInt(), nil
+	case rpc.Eth2PostMergeClient:
+		finalizedHeader, err := client.FinalizedHeader(context.Background())
+		if err != nil {
+			return nil, err
+		}
+
+		return finalizedHeader.Number, nil
 	default:
 		blockNumber, err := client.BlockNumber(context.Background())
 		if err != nil {
