@@ -1,87 +1,196 @@
 {
   "mainnet": [
     {
-      "id": "uaxl",
-      "name": "Axelar",
-      "symbol": "AXL",
-      "image": "/images/assets/axl.png"
-    },
-    {
       "id": "uusdc",
       "name": "USD Coin",
       "symbol": "USDC",
       "image": "/images/assets/usdc.png",
-      "transfer_fee": 0.5
-    },
-    {
-      "id": "uusdt",
-      "name": "Tether",
-      "symbol": "USDT",
-      "image": "/images/assets/usdt.png",
-      "transfer_fee": 0.5
-    },
-    {
-      "id": "uatom",
-      "name": "Cosmos",
-      "symbol": "ATOM",
-      "image": "/images/assets/atom.png",
-      "transfer_fee": 0.05
-    },
-    {
-      "id": "dai-wei",
-      "name": "Dai",
-      "symbol": "DAI",
-      "image": "/images/assets/dai.png",
-      "transfer_fee": 0.5
-    },
-    {
-      "id": "frax-wei",
-      "name": "Frax",
-      "symbol": "FRAX",
-      "image": "/images/assets/frax.png",
+      "decimals": 6,
       "transfer_fee": 0.5
     },
     {
       "id": "weth-wei",
       "name": "Wrapped Ether",
       "symbol": "WETH",
-      "image": "/images/assets/eth.png",
+      "image": "/images/assets/weth.png",
+      "decimals": 18,
       "transfer_fee": 0.0002
+    },
+    {
+      "id": "dai-wei",
+      "name": "Dai Stablecoin",
+      "symbol": "DAI",
+      "image": "/images/assets/dai.png",
+      "decimals": 18,
+      "transfer_fee": 0.5
+    },
+    {
+      "id": "dot-planck",
+      "name": "Wrapped DOT",
+      "symbol": "DOT",
+      "image": "/images/assets/dot.svg",
+      "decimals": 10,
+      "transfer_fee": 0.05
+    },
+    {
+      "id": "wavax-wei",
+      "name": "Wrapped AVAX",
+      "symbol": "WAVAX",
+      "image": "/images/assets/wavax.svg",
+      "decimals": 18,
+      "transfer_fee": 0.02
+    },
+    {
+      "id": "wglmr-wei",
+      "name": "Wrapped GLMR",
+      "symbol": "WGLMR",
+      "image": "/images/assets/wglmr.png",
+      "decimals": 18,
+      "transfer_fee": 0.4
+    },
+    {
+      "id": "wmatic-wei",
+      "name": "Wrapped Matic",
+      "symbol": "WMATIC",
+      "image": "/images/assets/wmatic.png",
+      "decimals": 18,
+      "transfer_fee": 0.8
     },
     {
       "id": "wbtc-satoshi",
       "name": "Wrapped BTC",
       "symbol": "WBTC",
       "image": "/images/assets/wbtc.png",
-      "transfer_fee": 0.00002
+      "decimals": 8,
+      "transfer_fee": 2e-05
+    },
+    {
+      "id": "wftm-wei",
+      "name": "Wrapped Fantom",
+      "symbol": "WFTM",
+      "image": "/images/assets/wftm.png",
+      "decimals": 18,
+      "transfer_fee": 1.0
+    },
+    {
+      "id": "uatom",
+      "name": "Axelar Wrapped ATOM",
+      "symbol": "ATOM",
+      "image": "/images/assets/atom.png",
+      "decimals": 6,
+      "transfer_fee": 0.05
+    },
+    {
+      "id": "uusdt",
+      "name": "Tether USD",
+      "symbol": "USDT",
+      "image": "/images/assets/usdt.png",
+      "decimals": 6,
+      "transfer_fee": 0.5
     },
     {
       "id": "ungm",
-      "name": "e-Money Staking Coin",
+      "name": "e-Money NGM staking token",
       "symbol": "NGM",
       "image": "/images/assets/ngm.png",
+      "decimals": 6,
       "transfer_fee": 0.5
     },
     {
-      "id": "ueeur",
-      "name": "e-Money EUR",
+      "id": "eeur",
+      "name": "e-Money EUR stablecoin",
       "symbol": "EEUR",
       "image": "/images/assets/eeur.png",
+      "decimals": 6,
       "transfer_fee": 0.5
     },
     {
-      "id": "uusd",
-      "name": "TerraUSD",
-      "symbol": "UST",
-      "image": "/images/assets/ust.png",
-      "transfer_fee": 1
+      "id": "rai-wei",
+      "name": "Rai Reflex Index",
+      "symbol": "RAI",
+      "image": "/images/assets/rai.svg",
+      "decimals": 18,
+      "transfer_fee": 0.2
     },
     {
-      "id": "uluna",
-      "name": "Terra",
-      "symbol": "LUNA",
-      "image": "/images/assets/luna.png",
+      "id": "link-wei",
+      "name": "ChainLink Token",
+      "symbol": "LINK",
+      "image": "/images/assets/link.svg",
+      "decimals": 18,
+      "transfer_fee": 0.07
+    },
+    {
+      "id": "aave-wei",
+      "name": "Aave Token",
+      "symbol": "AAVE",
+      "image": "/images/assets/aave.svg",
+      "decimals": 18,
+      "transfer_fee": 0.005
+    },
+    {
+      "id": "steth-wei",
+      "name": "Liquid staked Ether 2.0",
+      "symbol": "stETH",
+      "image": "/images/assets/steth.svg",
+      "decimals": 18,
+      "transfer_fee": 0.0002
+    },
+    {
+      "id": "frax-wei",
+      "name": "Frax",
+      "symbol": "FRAX",
+      "image": "/images/assets/frax.png",
+      "decimals": 18,
       "transfer_fee": 0.5
+    },
+    {
+      "id": "ape-wei",
+      "name": "ApeCoin",
+      "symbol": "APE",
+      "image": "/images/assets/ape.svg",
+      "decimals": 18,
+      "transfer_fee": 0.07
+    },
+    {
+      "id": "uni-wei",
+      "name": "Uniswap",
+      "symbol": "UNI",
+      "image": "/images/assets/uni.svg",
+      "decimals": 18,
+      "transfer_fee": 0.09
+    },
+    {
+      "id": "shib-wei",
+      "name": "SHIBA INU",
+      "symbol": "SHIB",
+      "image": "/images/assets/shib.svg",
+      "decimals": 18,
+      "transfer_fee": 40000.0
+    },
+    {
+      "id": "axs-wei",
+      "name": "Axie Infinity Shard",
+      "symbol": "AXS",
+      "image": "/images/assets/axs.svg",
+      "decimals": 18,
+      "transfer_fee": 0.02
+    },
+    {
+      "id": "xcn-wei",
+      "name": "XCN",
+      "symbol": "XCN",
+      "image": "/images/assets/xcn.svg",
+      "decimals": 18,
+      "transfer_fee": 3.0
+    },
+    {
+      "id": "mkr-wei",
+      "name": "Maker",
+      "symbol": "MKR",
+      "image": "/images/assets/mkr.svg",
+      "decimals": 18,
+      "transfer_fee": 0.0004
     }
   ],
   "testnet": [

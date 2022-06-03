@@ -203,6 +203,25 @@
           "blockExplorerUrls": ["https://moonbase.moonscan.io"]
         }
       ]
+    },
+    {
+      "id": "binance",
+      "name": "Binance Testnet",
+      "chain_id": 97,
+      "image": "/images/chains/binance.svg",
+      "provider_params": [
+        {
+          "chainId": "0x61",
+          "chainName": "Binance Testnet",
+          "rpcUrls": ["https://data-seed-prebsc-1-s1.binance.org:8545/", "https://data-seed-prebsc-2-s1.binance.org:8545/"],
+          "nativeCurrency": {
+            "name": "Bnb",
+            "symbol": "BNB",
+            "decimals": 18
+          },
+          "blockExplorerUrls": ["https://testnet.bscscan.com/"]
+        }
+      ]
     }
   ],
   "testnet-2": [

@@ -41,6 +41,10 @@
     {
       "id": "moonbeam",
       "address": "0x5769D84DD62a6fD969856c75c7D321b84d455929"
+    },
+    {
+      "id": "binance",
+      "address": "0x4D147dCb984e6affEEC47e44293DA442580A3Ec0"
     }
   ],
   "testnet-2": [

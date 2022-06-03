@@ -26,9 +26,19 @@
       "image": "/images/chains/emoney.jpg"
     },
     {
+      "id": "juno",
+      "name": "Junø",
+      "image": "/images/chains/juno.png"
+    },
+    {
       "id": "crescent",
       "name": "Crescent",
-      "image": "/images/chains/crescent.jpg"
+      "image": "/images/chains/crescent.png"
+    },
+    {
+      "id": "injective",
+      "name": "Injective",
+      "image": "/images/chains/injective.svg"
     }
   ],
   "testnet": [
