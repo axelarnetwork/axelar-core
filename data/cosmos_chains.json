@@ -50,7 +50,12 @@
     {
       "id": "crescent",
       "name": "Crescent",
-      "image": "/images/chains/crescent.jpg"
+      "image": "/images/chains/crescent.png"
+    },
+    {
+      "id": "juno",
+      "name": "Junø",
+      "image": "/images/chains/juno.png"
     }
   ],
   "testnet-2": [

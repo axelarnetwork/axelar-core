@@ -81,6 +81,16 @@
       "from": "axelarnet",
       "to": "crescent",
       "channel_id": "channel-6"
+    },
+    {
+      "from": "juno",
+      "to": "axelarnet",
+      "channel_id": "channel-4"
+    },
+    {
+      "from": "axelarnet",
+      "to": "juno",
+      "channel_id": "channel-16"
     }
   ]
 }
