@@ -702,21 +702,20 @@ func getLatestFinalizedBlockNumber(client rpc.Client, confHeight uint64) (*big.I
 		}
 
 		return header.Number.ToInt(), nil
-	case rpc.Eth2PostMergeClient:
-		finalizedHeader, err := client.FinalizedHeader(context.Background())
-		if err != nil {
-			return nil, err
+	case rpc.Eth2Client:
+		// TODO: check error after the merge is settled on ethereum mainnet
+		finalizedHeader, _ := client.FinalizedHeader(context.Background())
+		if finalizedHeader != nil {
+			return finalizedHeader.Number, nil
 		}
-
-		return finalizedHeader.Number, nil
-	default:
-		blockNumber, err := client.BlockNumber(context.Background())
-		if err != nil {
-			return nil, err
-		}
-
-		return big.NewInt(int64(blockNumber - confHeight + 1)), nil
 	}
+
+	blockNumber, err := client.BlockNumber(context.Background())
+	if err != nil {
+		return nil, err
+	}
+
+	return big.NewInt(int64(blockNumber - confHeight + 1)), nil
 }
 
 func (mgr Mgr) validate(client rpc.Client, txID common.Hash, confHeight uint64, validateTx func(tx *geth.Transaction, txReceipt *geth.Receipt) bool) bool {

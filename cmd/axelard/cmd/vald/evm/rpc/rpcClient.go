@@ -5,7 +5,6 @@ import (
 	"math/big"
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	evmClient "github.com/ethereum/go-ethereum/ethclient"
@@ -23,35 +22,32 @@ type Client interface {
 	Close()
 }
 
-// Eth2PostMergeClient provides calls to Ethereum JSON-RPC endpoints post the merge
-type Eth2PostMergeClient interface {
+// Eth2Client provides calls to Ethereum JSON-RPC endpoints post the merge
+type Eth2Client interface {
 	Client
 
 	FinalizedHeader(ctx context.Context) (*types.Header, error)
 }
 
-// Eth2PostMergeClientImpl implements Eth2PostMergeClient
-type Eth2PostMergeClientImpl struct {
+// Eth2ClientImpl implements Eth2Client
+type Eth2ClientImpl struct {
 	*evmClient.Client
 	url string
 }
 
-func (c Eth2PostMergeClientImpl) FinalizedHeader(ctx context.Context) (*types.Header, error) {
+// FinalizedHeader returns the header of the most recent finalized block
+func (c Eth2ClientImpl) FinalizedHeader(ctx context.Context) (*types.Header, error) {
 	rpc, err := rpc.DialContext(ctx, c.url)
 	if err != nil {
 		return nil, err
 	}
 
-	var result *types.Header
-	if err := rpc.CallContext(ctx, &result, "eth_getBlockByNumber", "finalized", false); err != nil {
+	var head *types.Header
+	if err := rpc.CallContext(ctx, &head, "eth_getBlockByNumber", "finalized", false); err != nil {
 		return nil, err
 	}
 
-	if result == nil {
-		return nil, ethereum.NotFound
-	}
-
-	return result, nil
+	return head, nil
 }
 
 // MoonbeamClient provides calls to Moonbeam JSON-RPC endpoints
@@ -118,13 +114,11 @@ func NewClient(url string) (Client, error) {
 		return moonbeamClient, nil
 	}
 
-	eth2PostMergeClient := Eth2PostMergeClientImpl{
+	eth2Client := Eth2ClientImpl{
 		Client: evmClient,
 		url:    url,
 	}
-	if _, err := eth2PostMergeClient.FinalizedHeader(context.Background()); err == nil {
-		return moonbeamClient, nil
-	}
 
-	return evmClient, nil
+	// TODO: not return a eth2 client after the merge is settled on ethereum mainnet
+	return eth2Client, nil
 }
