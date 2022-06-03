@@ -19,8 +19,14 @@ var _ utils.KVQueue = &KVQueueMock{}
 //
 // 		// make and configure a mocked utils.KVQueue
 // 		mockedKVQueue := &KVQueueMock{
-// 			DequeueFunc: func(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) bool) bool {
+// 			DequeueFunc: func(value codec.ProtoMarshaler) bool {
 // 				panic("mock out the Dequeue method")
+// 			},
+// 			DequeueIfFunc: func(value codec.ProtoMarshaler, filter func(value codec.ProtoMarshaler) bool) bool {
+// 				panic("mock out the DequeueIf method")
+// 			},
+// 			DequeueUntilFunc: func(value codec.ProtoMarshaler, filter func(value codec.ProtoMarshaler) bool) bool {
+// 				panic("mock out the DequeueUntil method")
 // 			},
 // 			EnqueueFunc: func(key utils.Key, value codec.ProtoMarshaler)  {
 // 				panic("mock out the Enqueue method")
@@ -39,7 +45,13 @@ var _ utils.KVQueue = &KVQueueMock{}
 // 	}
 type KVQueueMock struct {
 	// DequeueFunc mocks the Dequeue method.
-	DequeueFunc func(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) bool) bool
+	DequeueFunc func(value codec.ProtoMarshaler) bool
+
+	// DequeueIfFunc mocks the DequeueIf method.
+	DequeueIfFunc func(value codec.ProtoMarshaler, filter func(value codec.ProtoMarshaler) bool) bool
+
+	// DequeueUntilFunc mocks the DequeueUntil method.
+	DequeueUntilFunc func(value codec.ProtoMarshaler, filter func(value codec.ProtoMarshaler) bool) bool
 
 	// EnqueueFunc mocks the Enqueue method.
 	EnqueueFunc func(key utils.Key, value codec.ProtoMarshaler)
@@ -56,8 +68,20 @@ type KVQueueMock struct {
 		Dequeue []struct {
 			// Value is the value argument value.
 			Value codec.ProtoMarshaler
+		}
+		// DequeueIf holds details about calls to the DequeueIf method.
+		DequeueIf []struct {
+			// Value is the value argument value.
+			Value codec.ProtoMarshaler
 			// Filter is the filter argument value.
-			Filter []func(value codec.ProtoMarshaler) bool
+			Filter func(value codec.ProtoMarshaler) bool
+		}
+		// DequeueUntil holds details about calls to the DequeueUntil method.
+		DequeueUntil []struct {
+			// Value is the value argument value.
+			Value codec.ProtoMarshaler
+			// Filter is the filter argument value.
+			Filter func(value codec.ProtoMarshaler) bool
 		}
 		// Enqueue holds details about calls to the Enqueue method.
 		Enqueue []struct {
@@ -73,44 +97,112 @@ type KVQueueMock struct {
 		Keys []struct {
 		}
 	}
-	lockDequeue sync.RWMutex
-	lockEnqueue sync.RWMutex
-	lockIsEmpty sync.RWMutex
-	lockKeys    sync.RWMutex
+	lockDequeue      sync.RWMutex
+	lockDequeueIf    sync.RWMutex
+	lockDequeueUntil sync.RWMutex
+	lockEnqueue      sync.RWMutex
+	lockIsEmpty      sync.RWMutex
+	lockKeys         sync.RWMutex
 }
 
 // Dequeue calls DequeueFunc.
-func (mock *KVQueueMock) Dequeue(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) bool) bool {
+func (mock *KVQueueMock) Dequeue(value codec.ProtoMarshaler) bool {
 	if mock.DequeueFunc == nil {
 		panic("KVQueueMock.DequeueFunc: method is nil but KVQueue.Dequeue was just called")
 	}
 	callInfo := struct {
-		Value  codec.ProtoMarshaler
-		Filter []func(value codec.ProtoMarshaler) bool
+		Value codec.ProtoMarshaler
 	}{
-		Value:  value,
-		Filter: filter,
+		Value: value,
 	}
 	mock.lockDequeue.Lock()
 	mock.calls.Dequeue = append(mock.calls.Dequeue, callInfo)
 	mock.lockDequeue.Unlock()
-	return mock.DequeueFunc(value, filter...)
+	return mock.DequeueFunc(value)
 }
 
 // DequeueCalls gets all the calls that were made to Dequeue.
 // Check the length with:
 //     len(mockedKVQueue.DequeueCalls())
 func (mock *KVQueueMock) DequeueCalls() []struct {
-	Value  codec.ProtoMarshaler
-	Filter []func(value codec.ProtoMarshaler) bool
+	Value codec.ProtoMarshaler
 } {
 	var calls []struct {
-		Value  codec.ProtoMarshaler
-		Filter []func(value codec.ProtoMarshaler) bool
+		Value codec.ProtoMarshaler
 	}
 	mock.lockDequeue.RLock()
 	calls = mock.calls.Dequeue
 	mock.lockDequeue.RUnlock()
+	return calls
+}
+
+// DequeueIf calls DequeueIfFunc.
+func (mock *KVQueueMock) DequeueIf(value codec.ProtoMarshaler, filter func(value codec.ProtoMarshaler) bool) bool {
+	if mock.DequeueIfFunc == nil {
+		panic("KVQueueMock.DequeueIfFunc: method is nil but KVQueue.DequeueIf was just called")
+	}
+	callInfo := struct {
+		Value  codec.ProtoMarshaler
+		Filter func(value codec.ProtoMarshaler) bool
+	}{
+		Value:  value,
+		Filter: filter,
+	}
+	mock.lockDequeueIf.Lock()
+	mock.calls.DequeueIf = append(mock.calls.DequeueIf, callInfo)
+	mock.lockDequeueIf.Unlock()
+	return mock.DequeueIfFunc(value, filter)
+}
+
+// DequeueIfCalls gets all the calls that were made to DequeueIf.
+// Check the length with:
+//     len(mockedKVQueue.DequeueIfCalls())
+func (mock *KVQueueMock) DequeueIfCalls() []struct {
+	Value  codec.ProtoMarshaler
+	Filter func(value codec.ProtoMarshaler) bool
+} {
+	var calls []struct {
+		Value  codec.ProtoMarshaler
+		Filter func(value codec.ProtoMarshaler) bool
+	}
+	mock.lockDequeueIf.RLock()
+	calls = mock.calls.DequeueIf
+	mock.lockDequeueIf.RUnlock()
+	return calls
+}
+
+// DequeueUntil calls DequeueUntilFunc.
+func (mock *KVQueueMock) DequeueUntil(value codec.ProtoMarshaler, filter func(value codec.ProtoMarshaler) bool) bool {
+	if mock.DequeueUntilFunc == nil {
+		panic("KVQueueMock.DequeueUntilFunc: method is nil but KVQueue.DequeueUntil was just called")
+	}
+	callInfo := struct {
+		Value  codec.ProtoMarshaler
+		Filter func(value codec.ProtoMarshaler) bool
+	}{
+		Value:  value,
+		Filter: filter,
+	}
+	mock.lockDequeueUntil.Lock()
+	mock.calls.DequeueUntil = append(mock.calls.DequeueUntil, callInfo)
+	mock.lockDequeueUntil.Unlock()
+	return mock.DequeueUntilFunc(value, filter)
+}
+
+// DequeueUntilCalls gets all the calls that were made to DequeueUntil.
+// Check the length with:
+//     len(mockedKVQueue.DequeueUntilCalls())
+func (mock *KVQueueMock) DequeueUntilCalls() []struct {
+	Value  codec.ProtoMarshaler
+	Filter func(value codec.ProtoMarshaler) bool
+} {
+	var calls []struct {
+		Value  codec.ProtoMarshaler
+		Filter func(value codec.ProtoMarshaler) bool
+	}
+	mock.lockDequeueUntil.RLock()
+	calls = mock.calls.DequeueUntil
+	mock.lockDequeueUntil.RUnlock()
 	return calls
 }
 

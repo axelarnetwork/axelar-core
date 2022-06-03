@@ -23,7 +23,7 @@ func handlePollsAtExpiry(ctx sdk.Context, k types.Voter) error {
 	}
 
 	var pollMeta exported.PollMetadata
-	for pollQueue.Dequeue(&pollMeta, hasPollExpired) {
+	for pollQueue.DequeueIf(&pollMeta, hasPollExpired) {
 		poll := k.GetPoll(ctx, pollMeta.Key)
 
 		voteHandler := k.GetVoteRouter().GetHandler(poll.GetKey().Module)
