@@ -42,10 +42,16 @@
     <td>
       https://quickapi.com/ <br/>
       https://axelar-rpc.pops.one/ <br/>
-      https://axelar-rpc.chainode.tech/
+      https://axelar-rpc.chainode.tech/ <br/>
+      https://services.staketab.com/axelar-rpc
     </td>
-    <td>https://quickapi.com/ </td>
-    <td></td>
+    <td>
+      https://quickapi.com/  <br/>
+      https://services.staketab.com/axelar-testnet-1-rpc
+    </td>
+    <td>
+      https://services.staketab.com/axelar-testnet-2-rpc
+    </td>
   </tr>
   <tr>
     <td>Contract addresses, releases</td>

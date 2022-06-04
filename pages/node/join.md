@@ -22,7 +22,7 @@ Start your Axelar node and download the blockchain.
 Download the latest Axelar blockchain snapshot for your chosen network (testnet or mainnet) from a provider:
 
 - [quicksync.io](https://quicksync.io/networks/axelar.html)
-- [staketab.com](https://services.staketab.com/snapshots/axelar) | [instructions](https://github.com/staketab/nginx-cosmos-snap/blob/main/docs/axelar.md)
+- [staketab.com](https://services.staketab.com/snapshots/axelar) | [instructions](https://services.staketab.com/snapshots/axelar)
 
 The following instructions assume you downloaded the `default` snapshot from `quicksync.io`.
 
