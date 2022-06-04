@@ -40,18 +40,29 @@
   <tr>
     <td>RPC endpoints</td>
     <td>
-      https://quickapi.com/ <br/>
+      https://axelar-rpc.quickapi.com/ <br/>
       https://axelar-rpc.pops.one/ <br/>
       https://axelar-rpc.chainode.tech/ <br/>
-      https://services.staketab.com/axelar-rpc
+      https://services.staketab.com/axelar-rpc <br/>
+      https://axelar.rpc.stake2.me/
     </td>
     <td>
-      https://quickapi.com/  <br/>
+      https://axelartest-rpc.quickapi.com/ <br/>
       https://services.staketab.com/axelar-testnet-1-rpc
     </td>
     <td>
       https://services.staketab.com/axelar-testnet-2-rpc
     </td>
+  </tr>
+  <tr>
+    <td>LCD endpoints</td>
+    <td>
+      https://axelar-lcd.quickapi.com/
+    </td>
+    <td>
+      https://axelartest-lcd.quickapi.com/
+    </td>
+    <td></td>
   </tr>
   <tr>
     <td>Contract addresses, releases</td>
