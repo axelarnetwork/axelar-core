@@ -159,18 +159,6 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 		return false
 	}
 
-	coin := sdk.NewCoin(asset, sdk.Int(e.Amount))
-	fee, err := n.ComputeTransferFee(ctx, sourceChain, destinationChain, coin)
-	if err != nil {
-		bk.Logger(ctx).Info(fmt.Sprintf("failed computing transfer fee for event %s with error %s", event.GetID(), err.Error()))
-		return false
-	}
-
-	if coin.IsLT(fee) {
-		bk.Logger(ctx).Info(fmt.Sprintf("amount %s less than fee %s", e.Amount.String(), fee.Amount.String()))
-		return false
-	}
-
 	destinationChainID, ok := destinationCk.GetChainID(ctx)
 	if !ok {
 		panic(fmt.Errorf("could not find chain ID for '%s'", destinationChain.Name))
@@ -181,7 +169,6 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 		panic(fmt.Errorf("no secondary key for chain %s found", destinationChain.Name))
 	}
 
-	amount := e.Amount.Sub(sdk.Uint(fee.Amount))
 	cmd, err := types.CreateApproveContractCallWithMintCommand(
 		destinationChainID,
 		keyID,
@@ -189,7 +176,7 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 		event.TxId,
 		event.Index,
 		*e,
-		amount,
+		e.Amount,
 		destinationToken.GetDetails().Symbol,
 	)
 	if err != nil {
@@ -205,8 +192,6 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 		"eventID", event.GetID(),
 		"commandID", cmd.ID.Hex(),
 	)
-
-	n.AddTransferFee(ctx, fee)
 
 	return true
 }
@@ -404,14 +389,32 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 		}
 		// skip if destination chain is not activated
 		if !n.IsChainActivated(ctx, destinationChain) {
+			bk.Logger(ctx).Debug(fmt.Sprintf("skipping confirmed event %s due to destination chain being inactive", event.GetID()),
+				"chain", event.Chain.String(),
+				"destination_chain", destinationChainName.String(),
+				"eventID", event.GetID(),
+			)
+
 			return false
 		}
 		// skip if destination chain has not got gateway set yet
 		if _, ok := bk.ForChain(destinationChainName).GetGatewayAddress(ctx); !ok {
+			bk.Logger(ctx).Debug(fmt.Sprintf("skipping confirmed event %s due to destination chain not having gateway set", event.GetID()),
+				"chain", event.Chain.String(),
+				"destination_chain", destinationChainName.String(),
+				"eventID", event.GetID(),
+			)
+
 			return false
 		}
 		// skip if destination chain has the secondary key rotation in progress
 		if _, nextSecondaryKeyAssigned := s.GetNextKeyID(ctx, destinationChain, tss.SecondaryKey); nextSecondaryKeyAssigned {
+			bk.Logger(ctx).Debug(fmt.Sprintf("skipping confirmed event %s due to destination chain in the middle of secondary key rotation", event.GetID()),
+				"chain", event.Chain.String(),
+				"destination_chain", destinationChainName.String(),
+				"eventID", event.GetID(),
+			)
+
 			return false
 		}
 
@@ -427,7 +430,12 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 		}
 
 		var event types.Event
-		for queue.Dequeue(&event, shouldHandleEvent) {
+		for queue.DequeueUntil(&event, shouldHandleEvent) {
+			bk.Logger(ctx).Debug("handling confirmed event",
+				"chain", chain.Name.String(),
+				"eventID", event.GetID(),
+			)
+
 			var ok bool
 
 			switch event.GetEvent().(type) {
@@ -459,6 +467,11 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 
 				continue
 			}
+
+			bk.Logger(ctx).Debug("completed handling event",
+				"chain", chain.Name.String(),
+				"eventID", event.GetID(),
+			)
 
 			if err := ck.SetEventCompleted(ctx, event.GetID()); err != nil {
 				return err

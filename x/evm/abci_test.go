@@ -594,93 +594,6 @@ func TestHandleContractCallWithToken(t *testing.T) {
 		assert.False(t, ok)
 	}))
 
-	t.Run("should return false if failed to compute transfer fee", testutils.Func(func(t *testing.T) {
-		ctx, bk, n, s, sourceCk, destinationCk := setup()
-
-		bk.ForChainFunc = func(chain nexus.ChainName) types.ChainKeeper {
-			switch chain {
-			case sourceChainName:
-				return sourceCk
-			case destinationChainName:
-				return destinationCk
-			default:
-				return nil
-			}
-		}
-		n.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
-			switch chain {
-			case sourceChainName, destinationChainName:
-				return nexus.Chain{Name: chain}, true
-			default:
-				return nexus.Chain{}, false
-			}
-		}
-		bk.HasChainFunc = func(ctx sdk.Context, chain nexus.ChainName) bool { return true }
-		n.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return true }
-		sourceCk.GetERC20TokenBySymbolFunc = func(ctx sdk.Context, symbol string) types.ERC20Token {
-			if symbol == event.GetContractCallWithToken().Symbol {
-				return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed, Asset: symbol})
-			}
-			return types.NilToken
-		}
-		destinationCk.GetERC20TokenByAssetFunc = func(ctx sdk.Context, asset string) types.ERC20Token {
-			if asset == event.GetContractCallWithToken().Symbol {
-				return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed, Asset: asset})
-			}
-			return types.NilToken
-		}
-		n.ComputeTransferFeeFunc = func(ctx sdk.Context, sourceChain, destinationChain nexus.Chain, asset sdk.Coin) (sdk.Coin, error) {
-			return sdk.Coin{}, fmt.Errorf("")
-		}
-
-		ok := handleContractCallWithToken(ctx, event, bk, n, s)
-		assert.False(t, ok)
-	}))
-
-	t.Run("should return false if the amount is not enough to cover the fee", testutils.Func(func(t *testing.T) {
-		ctx, bk, n, s, sourceCk, destinationCk := setup()
-		fee := sdk.NewCoin(event.GetContractCallWithToken().Symbol, sdk.Int(event.GetContractCallWithToken().Amount.AddUint64(1)))
-
-		bk.ForChainFunc = func(chain nexus.ChainName) types.ChainKeeper {
-			switch chain {
-			case sourceChainName:
-				return sourceCk
-			case destinationChainName:
-				return destinationCk
-			default:
-				return nil
-			}
-		}
-		n.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
-			switch chain {
-			case sourceChainName, destinationChainName:
-				return nexus.Chain{Name: chain}, true
-			default:
-				return nexus.Chain{}, false
-			}
-		}
-		bk.HasChainFunc = func(ctx sdk.Context, chain nexus.ChainName) bool { return true }
-		n.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return true }
-		sourceCk.GetERC20TokenBySymbolFunc = func(ctx sdk.Context, symbol string) types.ERC20Token {
-			if symbol == event.GetContractCallWithToken().Symbol {
-				return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed, Asset: symbol})
-			}
-			return types.NilToken
-		}
-		destinationCk.GetERC20TokenByAssetFunc = func(ctx sdk.Context, asset string) types.ERC20Token {
-			if asset == event.GetContractCallWithToken().Symbol {
-				return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed, Asset: asset})
-			}
-			return types.NilToken
-		}
-		n.ComputeTransferFeeFunc = func(ctx sdk.Context, sourceChain, destinationChain nexus.Chain, asset sdk.Coin) (sdk.Coin, error) {
-			return fee, nil
-		}
-
-		ok := handleContractCallWithToken(ctx, event, bk, n, s)
-		assert.False(t, ok)
-	}))
-
 	t.Run("should panic if the destination chain ID is not found", testutils.Func(func(t *testing.T) {
 		ctx, bk, n, s, sourceCk, destinationCk := setup()
 		fee := sdk.NewCoin(event.GetContractCallWithToken().Symbol, sdk.NewInt(rand.I64Between(1, event.GetContractCallWithToken().Amount.BigInt().Int64())))
@@ -778,7 +691,6 @@ func TestHandleContractCallWithToken(t *testing.T) {
 
 	t.Run("should return true if successfully created the command", testutils.Func(func(t *testing.T) {
 		ctx, bk, n, s, sourceCk, destinationCk := setup()
-		fee := sdk.NewCoin(event.GetContractCallWithToken().Symbol, sdk.NewInt(rand.I64Between(1, event.GetContractCallWithToken().Amount.BigInt().Int64())))
 
 		bk.ForChainFunc = func(chain nexus.ChainName) types.ChainKeeper {
 			switch chain {
@@ -812,21 +724,15 @@ func TestHandleContractCallWithToken(t *testing.T) {
 			}
 			return types.NilToken
 		}
-		n.ComputeTransferFeeFunc = func(ctx sdk.Context, sourceChain, destinationChain nexus.Chain, asset sdk.Coin) (sdk.Coin, error) {
-			return fee, nil
-		}
 		destinationCk.GetChainIDFunc = func(ctx sdk.Context) (sdk.Int, bool) { return sdk.NewInt(1), true }
 		s.GetCurrentKeyIDFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
 			return tssTestUtils.RandKeyID(), true
 		}
 		destinationCk.EnqueueCommandFunc = func(ctx sdk.Context, cmd types.Command) error { return nil }
-		n.AddTransferFeeFunc = func(ctx sdk.Context, coin sdk.Coin) {}
 
 		ok := handleContractCallWithToken(ctx, event, bk, n, s)
 		assert.True(t, ok)
 		assert.Len(t, destinationCk.EnqueueCommandCalls(), 1)
-		assert.Len(t, n.AddTransferFeeCalls(), 1)
-		assert.Equal(t, n.AddTransferFeeCalls()[0].Coin, fee)
 	}))
 }
 

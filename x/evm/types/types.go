@@ -1806,13 +1806,13 @@ func (c Command) DecodeParams() (map[string]string, error) {
 		addresses, threshold, decodeMultisigErr := decodeTransferMultisigParams(c.Params)
 
 		switch {
-		case decodeSinglesigErr != nil:
+		case decodeSinglesigErr == nil:
 			param := "newOwner"
 			if c.Command == AxelarGatewayCommandTransferOperatorship {
 				param = "newOperator"
 			}
 			params[param] = address.Hex()
-		case decodeMultisigErr != nil:
+		case decodeMultisigErr == nil:
 			var addressStrs []string
 			for _, address := range addresses {
 				addressStrs = append(addressStrs, address.Hex())

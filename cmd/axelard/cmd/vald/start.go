@@ -412,7 +412,7 @@ func createEVMMgr(axelarCfg config.ValdConfig, cliCtx client.Context, b broadcas
 			panic(msg)
 		}
 
-		rpc, err := evmRPC.NewClient(evmChainConf.RPCAddr, evmChainConf.EnableRPCDetection)
+		rpc, err := evmRPC.NewClient(evmChainConf.RPCAddr)
 		if err != nil {
 			err = sdkerrors.Wrap(err, fmt.Sprintf("Failed to create an RPC connection for EVM chain %s. Verify your RPC config.", evmChainConf.Name))
 			logger.Error(err.Error())
