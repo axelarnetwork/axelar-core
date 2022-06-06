@@ -1151,7 +1151,12 @@ func request_QueryService_TokenDetails_0(ctx context.Context, marshaler runtime.
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "asset")
 	}
 
-	protoReq.Asset, err = runtime.String(val)
+	if protoReq.FindBy == nil {
+		protoReq.FindBy = &TokenDetailsRequest_Asset{}
+	} else if _, ok := protoReq.FindBy.(*TokenDetailsRequest_Asset); !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "expect type: *TokenDetailsRequest_Asset, but: %t\n", protoReq.FindBy)
+	}
+	protoReq.FindBy.(*TokenDetailsRequest_Asset).Asset, err = runtime.String(val)
 
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "asset", err)
@@ -1185,7 +1190,12 @@ func local_request_QueryService_TokenDetails_0(ctx context.Context, marshaler ru
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "asset")
 	}
 
-	protoReq.Asset, err = runtime.String(val)
+	if protoReq.FindBy == nil {
+		protoReq.FindBy = &TokenDetailsRequest_Asset{}
+	} else if _, ok := protoReq.FindBy.(*TokenDetailsRequest_Asset); !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "expect type: *TokenDetailsRequest_Asset, but: %t\n", protoReq.FindBy)
+	}
+	protoReq.FindBy.(*TokenDetailsRequest_Asset).Asset, err = runtime.String(val)
 
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "asset", err)

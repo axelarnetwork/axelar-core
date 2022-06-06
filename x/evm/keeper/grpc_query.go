@@ -431,7 +431,7 @@ func (q Querier) Bytecode(c context.Context, req *types.BytecodeRequest) (*types
 func (q Querier) ERC20Tokens(c context.Context, req *types.ERC20TokensRequest) (*types.ERC20TokensResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	chain, ok := q.nexus.GetChain(ctx, nexustypes.ChainName(req.Chain))
+	chain, ok := q.nexus.GetChain(ctx, req.Chain)
 	if !ok {
 		return nil, fmt.Errorf("chain %s not found", req.Chain)
 	}
@@ -458,7 +458,7 @@ func (q Querier) ERC20Tokens(c context.Context, req *types.ERC20TokensRequest) (
 func (q Querier) TokenDetails(c context.Context, req *types.TokenDetailsRequest) (*types.TokenDetailsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	chain, ok := q.nexus.GetChain(ctx, nexustypes.ChainName(req.Chain))
+	chain, ok := q.nexus.GetChain(ctx, req.Chain)
 	if !ok {
 		return nil, fmt.Errorf("chain %s not found", req.Chain)
 	}
@@ -467,11 +467,11 @@ func (q Querier) TokenDetails(c context.Context, req *types.TokenDetailsRequest)
 		return nil, fmt.Errorf("%s is not an EVM chain", chain.Name)
 	}
 
-	ck := q.keeper.ForChain(nexustypes.ChainName(req.Chain))
+	ck := q.keeper.ForChain(req.Chain)
 
-	asset := ck.GetERC20TokenByAsset(ctx, req.Asset)
+	asset := ck.GetERC20TokenByAsset(ctx, req.GetAsset())
 	if asset.GetAsset() == "" {
-		return nil, fmt.Errorf("%s is not a registered asset for chain %s", req.Asset, chain.Name)
+		return nil, fmt.Errorf("%s is not a registered asset for chain %s", req.GetAsset(), chain.Name)
 	}
 
 	return &types.TokenDetailsResponse{Details: asset.GetDetails()}, nil

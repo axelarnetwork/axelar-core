@@ -3922,6 +3922,7 @@ deposit address
 | ----- | ---- | ----- | ----------- |
 | `chain` | [string](#string) |  |  |
 | `asset` | [string](#string) |  |  |
+| `symbol` | [string](#string) |  |  |
 
 
 

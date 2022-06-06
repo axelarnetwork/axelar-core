@@ -699,7 +699,7 @@ func TestERC20Tokens(t *testing.T) {
 
 		expectedRes = types.ERC20TokensResponse{Assets: []string{external.GetAsset(), internal.GetAsset()}}
 
-		res, err := grpcQuerier.ERC20Tokens(sdk.WrapSDKContext(ctx), &types.ERC20TokensRequest{Chain: existingChain.String()})
+		res, err := grpcQuerier.ERC20Tokens(sdk.WrapSDKContext(ctx), &types.ERC20TokensRequest{Chain: existingChain})
 		assert := assert.New(t)
 		assert.NoError(err)
 
@@ -711,7 +711,7 @@ func TestERC20Tokens(t *testing.T) {
 
 		expectedRes = types.ERC20TokensResponse{Assets: []string{internal.GetAsset()}}
 
-		res, err := grpcQuerier.ERC20Tokens(sdk.WrapSDKContext(ctx), &types.ERC20TokensRequest{Chain: existingChain.String(), Type: types.Internal})
+		res, err := grpcQuerier.ERC20Tokens(sdk.WrapSDKContext(ctx), &types.ERC20TokensRequest{Chain: existingChain, Type: types.Internal})
 		assert := assert.New(t)
 		assert.NoError(err)
 		assert.Equal(expectedRes, *res)
@@ -722,7 +722,7 @@ func TestERC20Tokens(t *testing.T) {
 
 		expectedRes = types.ERC20TokensResponse{Assets: []string{external.GetAsset()}}
 
-		res, err := grpcQuerier.ERC20Tokens(sdk.WrapSDKContext(ctx), &types.ERC20TokensRequest{Chain: existingChain.String(), Type: types.External})
+		res, err := grpcQuerier.ERC20Tokens(sdk.WrapSDKContext(ctx), &types.ERC20TokensRequest{Chain: existingChain, Type: types.External})
 		assert := assert.New(t)
 		assert.NoError(err)
 		assert.Equal(expectedRes, *res)
@@ -793,21 +793,53 @@ func TestTokenDetails(t *testing.T) {
 
 	repeatCount := 1
 
-	t.Run("token detail", testutils.Func(func(t *testing.T) {
+	t.Run("token detail by asset", testutils.Func(func(t *testing.T) {
 		setup()
 
 		expectedRes := types.TokenDetailsResponse{Details: token.GetDetails()}
 
-		res, err := grpcQuerier.TokenDetails(sdk.WrapSDKContext(ctx), &types.TokenDetailsRequest{Chain: existingChain.String(), Asset: token.GetAsset()})
+		res, err := grpcQuerier.TokenDetails(sdk.WrapSDKContext(ctx), &types.TokenDetailsRequest{
+			Chain:  existingChain,
+			FindBy: &types.TokenDetailsRequest_Asset{Asset: token.GetAsset()},
+		})
 		assert := assert.New(t)
 		assert.NoError(err)
 		assert.Equal(expectedRes, *res)
 	}).Repeat(repeatCount))
 
-	t.Run("unknown token", testutils.Func(func(t *testing.T) {
+	t.Run("token detail by symbol", testutils.Func(func(t *testing.T) {
 		setup()
 
-		res, err := grpcQuerier.TokenDetails(sdk.WrapSDKContext(ctx), &types.TokenDetailsRequest{Chain: existingChain.String(), Asset: "unknown-token"})
+		expectedRes := types.TokenDetailsResponse{Details: token.GetDetails()}
+
+		res, err := grpcQuerier.TokenDetails(sdk.WrapSDKContext(ctx), &types.TokenDetailsRequest{
+			Chain:  existingChain,
+			FindBy: &types.TokenDetailsRequest_Symbol{Symbol: token.GetDetails().Symbol},
+		})
+		assert := assert.New(t)
+		assert.NoError(err)
+		assert.Equal(expectedRes, *res)
+	}).Repeat(repeatCount))
+
+	t.Run("unknown token by asset", testutils.Func(func(t *testing.T) {
+		setup()
+
+		res, err := grpcQuerier.TokenDetails(sdk.WrapSDKContext(ctx), &types.TokenDetailsRequest{
+			Chain:  existingChain,
+			FindBy: &types.TokenDetailsRequest_Asset{Asset: "unknown-token"},
+		})
+		assert := assert.New(t)
+		assert.Nil(res)
+		assert.Error(err)
+	}).Repeat(repeatCount))
+
+	t.Run("unknown token by symbol", testutils.Func(func(t *testing.T) {
+		setup()
+
+		res, err := grpcQuerier.TokenDetails(sdk.WrapSDKContext(ctx), &types.TokenDetailsRequest{
+			Chain:  existingChain,
+			FindBy: &types.TokenDetailsRequest_Symbol{Symbol: "UTOKEN"},
+		})
 		assert := assert.New(t)
 		assert.Nil(res)
 		assert.Error(err)
