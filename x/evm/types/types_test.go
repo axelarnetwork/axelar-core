@@ -105,27 +105,32 @@ func TestDeployToken(t *testing.T) {
 	binary.BigEndian.PutUint64(capBz, details.Capacity.Uint64())
 	capHex := hex.EncodeToString(capBz)
 
-	expectedParams := fmt.Sprintf("00000000000000000000000000000000000000000000000000000000000000a000000000000000000000000000000000000000000000000000000000000000e000000000000000000000000000000000000000000000000000000000000000%s%s000000000000000000000000%s000000000000000000000000000000000000000000000000000000000000000a%s000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003%s0000000000000000000000000000000000000000000000000000000000",
+	dailyMintLimit := sdk.NewUint(uint64(rand.PosI64()))
+	dailyMintLimitHex := hex.EncodeToString(dailyMintLimit.BigInt().Bytes())
+
+	expectedParams := fmt.Sprintf("00000000000000000000000000000000000000000000000000000000000000c0000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000%s%s000000000000000000000000%s%s000000000000000000000000000000000000000000000000000000000000000a%s000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003%s0000000000000000000000000000000000000000000000000000000000",
 		hex.EncodeToString([]byte{byte(details.Decimals)}),
 		strings.Repeat("0", 64-len(capHex))+capHex,
 		hex.EncodeToString(address.Bytes()),
+		strings.Repeat("0", 64-len(dailyMintLimitHex))+dailyMintLimitHex,
 		hex.EncodeToString([]byte(details.TokenName)),
 		hex.EncodeToString([]byte(details.Symbol)),
 	)
 	expectedCommandID := NewCommandID([]byte(asset+"_"+details.Symbol), chainID)
-	actual, err := CreateDeployTokenCommand(chainID, keyID, asset, details, address)
+	actual, err := CreateDeployTokenCommand(chainID, keyID, asset, details, address, dailyMintLimit)
 
 	assert.NoError(t, err)
 	assert.Equal(t, expectedParams, hex.EncodeToString(actual.Params))
 	assert.Equal(t, expectedCommandID, actual.ID)
 
-	decodedName, decodedSymbol, decodedDecs, decodedCap, tokenAddress, err := decodeDeployTokenParams(actual.Params)
+	decodedName, decodedSymbol, decodedDecs, decodedCap, tokenAddress, decodedDailyMintLimit, err := decodeDeployTokenParams(actual.Params)
 	assert.NoError(t, err)
 	assert.Equal(t, details.TokenName, decodedName)
 	assert.Equal(t, details.Symbol, decodedSymbol)
 	assert.Equal(t, details.Decimals, decodedDecs)
 	assert.Equal(t, details.Capacity.BigInt(), decodedCap)
 	assert.Equal(t, address, Address(tokenAddress))
+	assert.Equal(t, decodedDailyMintLimit, dailyMintLimit)
 }
 
 func TestCreateMintTokenCommand(t *testing.T) {

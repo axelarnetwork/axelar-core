@@ -474,6 +474,11 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 		return nil, err
 	}
 
+	dailyMintLimit, err := sdk.ParseUint(req.DailyMintLimit)
+	if err != nil {
+		return nil, err
+	}
+
 	keeper := s.ForChain(chain.Name)
 
 	switch req.Address.IsZeroAddress() {
@@ -514,7 +519,7 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 		return nil, sdkerrors.Wrapf(err, "failed to initialize token %s(%s) for chain %s", req.TokenDetails.TokenName, req.TokenDetails.Symbol, chain.Name)
 	}
 
-	cmd, err := token.CreateDeployCommand(masterKeyID)
+	cmd, err := token.CreateDeployCommand(masterKeyID, dailyMintLimit)
 	if err != nil {
 		return nil, err
 	}
