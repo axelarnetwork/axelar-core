@@ -15,7 +15,6 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
-	nexustypes "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
@@ -49,11 +48,6 @@ type chainKeeper struct {
 
 func (k chainKeeper) GetName() string {
 	return k.chainLowerKey
-}
-
-// IsEVMChain returns true if a chain is an EVM chain
-func IsEVMChain(chain nexustypes.Chain) bool {
-	return chain.Module == types.ModuleName
 }
 
 // SetParams sets the evm module's parameters

@@ -40,7 +40,7 @@ func NewGRPCQuerier(k types.BaseKeeper, n types.Nexus, s types.Signer) Querier {
 }
 
 func queryChains(ctx sdk.Context, n types.Nexus) []nexustypes.ChainName {
-	chains := slices.Filter(n.GetChains(ctx), IsEVMChain)
+	chains := slices.Filter(n.GetChains(ctx), types.IsEVMChain)
 
 	return slices.Map(chains, func(c nexustypes.Chain) nexustypes.ChainName {
 		return c.Name
@@ -436,7 +436,7 @@ func (q Querier) ERC20Tokens(c context.Context, req *types.ERC20TokensRequest) (
 		return nil, fmt.Errorf("chain %s not found", req.Chain)
 	}
 
-	if !IsEVMChain(chain) {
+	if !types.IsEVMChain(chain) {
 		return nil, fmt.Errorf("%s not an EVM chain", chain.Name)
 	}
 
@@ -463,7 +463,7 @@ func (q Querier) TokenDetails(c context.Context, req *types.TokenDetailsRequest)
 		return nil, fmt.Errorf("chain %s not found", req.Chain)
 	}
 
-	if !IsEVMChain(chain) {
+	if !types.IsEVMChain(chain) {
 		return nil, fmt.Errorf("%s is not an EVM chain", chain.Name)
 	}
 
