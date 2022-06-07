@@ -75,6 +75,8 @@ message KeyAddressResponse {
 }
 
 message QueryTokenAddressResponse {
+  option deprecated = true; // Deprecated in v19
+
   string address = 1;
   bool confirmed = 2;
 }
