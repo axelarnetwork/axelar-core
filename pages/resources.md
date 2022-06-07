@@ -44,11 +44,13 @@
       https://axelar-rpc.pops.one/ <br/>
       https://axelar-rpc.chainode.tech/ <br/>
       https://services.staketab.com/axelar-rpc <br/>
-      https://axelar.rpc.stake2.me/
+      https://axelar.rpc.stake2.me/ <br/>
+      https://axelar-rpc.qubelabs.io/
     </td>
     <td>
       https://axelartest-rpc.quickapi.com/ <br/>
-      https://services.staketab.com/axelar-testnet-1-rpc
+      https://services.staketab.com/axelar-testnet-1-rpc <br/>
+      https://axelar-testnet-rpc.qubelabs.io/
     </td>
     <td>
       https://services.staketab.com/axelar-testnet-2-rpc
@@ -57,7 +59,8 @@
   <tr>
     <td>LCD endpoints</td>
     <td>
-      https://axelar-lcd.quickapi.com/
+      https://axelar-lcd.quickapi.com/ <br/>
+      https://axelar-lcd.qubelabs.io/
     </td>
     <td>
       https://axelartest-lcd.quickapi.com/
