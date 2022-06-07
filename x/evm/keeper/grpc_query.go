@@ -450,7 +450,6 @@ func (q Querier) ERC20Tokens(c context.Context, req *types.ERC20TokensRequest) (
 		tokens = slices.Filter(tokens, func(token types.ERC20Token) bool { return !token.IsExternal() })
 	default:
 		// no filtering when retrieving all tokens
-		break
 	}
 
 	assets := slices.Map(tokens, types.ERC20Token.GetAsset)
