@@ -40,7 +40,7 @@ func NewGRPCQuerier(k types.BaseKeeper, n types.Nexus, s types.Signer) Querier {
 }
 
 func queryChains(ctx sdk.Context, n types.Nexus) []nexustypes.ChainName {
-	chains := slices.Filter(n.GetChains(ctx), func(c nexustypes.Chain) bool { return c.Module == types.ModuleName })
+	chains := slices.Filter(n.GetChains(ctx), types.IsEVMChain)
 
 	return slices.Map(chains, func(c nexustypes.Chain) nexustypes.ChainName {
 		return c.Name
@@ -425,4 +425,72 @@ func (q Querier) Bytecode(c context.Context, req *types.BytecodeRequest) (*types
 	}
 
 	return &types.BytecodeResponse{Bytecode: fmt.Sprintf("0x" + common.Bytes2Hex(bytecode))}, nil
+}
+
+// ERC20Tokens returns the ERC20 tokens registered for a chain
+func (q Querier) ERC20Tokens(c context.Context, req *types.ERC20TokensRequest) (*types.ERC20TokensResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	chain, ok := q.nexus.GetChain(ctx, nexustypes.ChainName(req.Chain))
+	if !ok {
+		return nil, fmt.Errorf("chain %s not found", req.Chain)
+	}
+
+	if !types.IsEVMChain(chain) {
+		return nil, fmt.Errorf("%s not an EVM chain", chain.Name)
+	}
+
+	ck := q.keeper.ForChain(chain.Name)
+
+	tokens := ck.GetTokens(ctx)
+	switch req.Type {
+	case types.External:
+		tokens = slices.Filter(tokens, types.ERC20Token.IsExternal)
+	case types.Internal:
+		tokens = slices.Filter(tokens, func(token types.ERC20Token) bool { return !token.IsExternal() })
+	default:
+		// no filtering when retrieving all tokens
+	}
+
+	assets := slices.Map(tokens, types.ERC20Token.GetAsset)
+
+	return &types.ERC20TokensResponse{Assets: assets}, nil
+}
+
+// TokenInfo returns the token info for a registered asset
+func (q Querier) TokenInfo(c context.Context, req *types.TokenInfoRequest) (*types.TokenInfoResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	chain, ok := q.nexus.GetChain(ctx, nexustypes.ChainName(req.Chain))
+	if !ok {
+		return nil, fmt.Errorf("chain %s not found", req.Chain)
+	}
+
+	if !types.IsEVMChain(chain) {
+		return nil, fmt.Errorf("%s is not an EVM chain", chain.Name)
+	}
+
+	ck := q.keeper.ForChain(nexustypes.ChainName(req.Chain))
+
+	var token types.ERC20Token
+	switch findBy := req.GetFindBy().(type) {
+	case *types.TokenInfoRequest_Asset:
+		token = ck.GetERC20TokenByAsset(ctx, findBy.Asset)
+		if token.Is(types.NonExistent) {
+			return nil, fmt.Errorf("%s is not a registered asset for chain %s", req.GetAsset(), chain.Name)
+		}
+	case *types.TokenInfoRequest_Symbol:
+		token = ck.GetERC20TokenBySymbol(ctx, findBy.Symbol)
+		if token.Is(types.NonExistent) {
+			return nil, fmt.Errorf("%s is not a registered symbol for chain %s", req.GetSymbol(), chain.Name)
+		}
+	}
+
+	return &types.TokenInfoResponse{
+		Asset:      token.GetAsset(),
+		Details:    token.GetDetails(),
+		Address:    token.GetAddress().Hex(),
+		Confirmed:  token.Is(types.Confirmed),
+		IsExternal: token.IsExternal(),
+	}, nil
 }

@@ -229,6 +229,8 @@
     - [DepositQueryParams](#axelar.evm.v1beta1.DepositQueryParams)
     - [DepositStateRequest](#axelar.evm.v1beta1.DepositStateRequest)
     - [DepositStateResponse](#axelar.evm.v1beta1.DepositStateResponse)
+    - [ERC20TokensRequest](#axelar.evm.v1beta1.ERC20TokensRequest)
+    - [ERC20TokensResponse](#axelar.evm.v1beta1.ERC20TokensResponse)
     - [EventRequest](#axelar.evm.v1beta1.EventRequest)
     - [EventResponse](#axelar.evm.v1beta1.EventResponse)
     - [GatewayAddressRequest](#axelar.evm.v1beta1.GatewayAddressRequest)
@@ -244,6 +246,10 @@
     - [QueryCommandResponse.ParamsEntry](#axelar.evm.v1beta1.QueryCommandResponse.ParamsEntry)
     - [QueryDepositStateParams](#axelar.evm.v1beta1.QueryDepositStateParams)
     - [QueryTokenAddressResponse](#axelar.evm.v1beta1.QueryTokenAddressResponse)
+    - [TokenInfoRequest](#axelar.evm.v1beta1.TokenInfoRequest)
+    - [TokenInfoResponse](#axelar.evm.v1beta1.TokenInfoResponse)
+  
+    - [TokenType](#axelar.evm.v1beta1.TokenType)
   
 - [axelar/evm/v1beta1/tx.proto](#axelar/evm/v1beta1/tx.proto)
     - [AddChainRequest](#axelar.evm.v1beta1.AddChainRequest)
@@ -3601,6 +3607,37 @@ deposit address
 
 
 
+<a name="axelar.evm.v1beta1.ERC20TokensRequest"></a>
+
+### ERC20TokensRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `type` | [TokenType](#axelar.evm.v1beta1.TokenType) |  |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.ERC20TokensResponse"></a>
+
+### ERC20TokensResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `assets` | [string](#string) | repeated |  |
+
+
+
+
+
+
 <a name="axelar.evm.v1beta1.EventRequest"></a>
 
 ### EventRequest
@@ -3839,7 +3876,56 @@ deposit address
 
 
 
+
+<a name="axelar.evm.v1beta1.TokenInfoRequest"></a>
+
+### TokenInfoRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `asset` | [string](#string) |  |  |
+| `symbol` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.TokenInfoResponse"></a>
+
+### TokenInfoResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `asset` | [string](#string) |  |  |
+| `details` | [TokenDetails](#axelar.evm.v1beta1.TokenDetails) |  |  |
+| `address` | [string](#string) |  |  |
+| `confirmed` | [bool](#bool) |  |  |
+| `is_external` | [bool](#bool) |  |  |
+
+
+
+
+
  <!-- end messages -->
+
+
+<a name="axelar.evm.v1beta1.TokenType"></a>
+
+### TokenType
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| TOKEN_TYPE_UNSPECIFIED | 0 |  |
+| TOKEN_TYPE_INTERNAL | 1 |  |
+| TOKEN_TYPE_EXTERNAL | 2 |  |
+
 
  <!-- end enums -->
 
@@ -4318,6 +4404,8 @@ QueryService defines the gRPC querier service.
 | `GatewayAddress` | [GatewayAddressRequest](#axelar.evm.v1beta1.GatewayAddressRequest) | [GatewayAddressResponse](#axelar.evm.v1beta1.GatewayAddressResponse) | GatewayAddress queries the address of axelar gateway at the specified chain | GET|/axelar/evm/v1beta1/gateway_address/{chain}|
 | `Bytecode` | [BytecodeRequest](#axelar.evm.v1beta1.BytecodeRequest) | [BytecodeResponse](#axelar.evm.v1beta1.BytecodeResponse) | Bytecode queries the bytecode of a specified gateway at the specified chain | GET|/axelar/evm/v1beta1/bytecode/{chain}/{contract}|
 | `Event` | [EventRequest](#axelar.evm.v1beta1.EventRequest) | [EventResponse](#axelar.evm.v1beta1.EventResponse) | Event queries an event at the specified chain | GET|/axelar/evm/v1beta1/event/{chain}/{event_id}|
+| `ERC20Tokens` | [ERC20TokensRequest](#axelar.evm.v1beta1.ERC20TokensRequest) | [ERC20TokensResponse](#axelar.evm.v1beta1.ERC20TokensResponse) | ERC20Tokens queries the ERC20 tokens registered for a chain | GET|/axelar/evm/v1beta1/erc20_tokens/{chain}|
+| `TokenInfo` | [TokenInfoRequest](#axelar.evm.v1beta1.TokenInfoRequest) | [TokenInfoResponse](#axelar.evm.v1beta1.TokenInfoResponse) | TokenInfo queries the token info for a registered ERC20 Token | GET|/axelar/evm/v1beta1/token_info/{chain}|
 
  <!-- end services -->
 

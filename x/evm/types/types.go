@@ -107,6 +107,11 @@ const (
 	roleOperator role = 2
 )
 
+// IsEVMChain returns true if a chain is an EVM chain
+func IsEVMChain(chain nexus.Chain) bool {
+	return chain.Module == ModuleName
+}
+
 // ERC20Token represents an ERC20 token and its respective state
 type ERC20Token struct {
 	metadata ERC20TokenMetadata
