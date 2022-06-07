@@ -165,7 +165,6 @@
       - [applied \[upgrade-name\]](axelard_query_upgrade_applied.md)	 - block header for height at which a completed upgrade was applied
       - [module_versions \[optional module_name\]](axelard_query_upgrade_module_versions.md)	 - get the list of module versions
       - [plan](axelard_query_upgrade_plan.md)	 - get upgrade plan (if one exists)
-  - [rollback](axelard_rollback.md)	 - rollback cosmos-sdk and tendermint state by one height
   - [rosetta](axelard_rosetta.md)	 - spin up a rosetta server
   - [set-genesis-auth](axelard_set-genesis-auth.md)	 - Set the genesis parameters for the auth module
   - [set-genesis-chain-params \[bitcoin | evm\] \[chain\]](axelard_set-genesis-chain-params.md)	 - Set chain parameters in genesis.json
@@ -183,11 +182,9 @@
   - [start](axelard_start.md)	 - Run the full node
   - [status](axelard_status.md)	 - Query remote node for status
   - [tendermint](axelard_tendermint.md)	 - Tendermint subcommands
-    - [reset-state](axelard_tendermint_reset-state.md)	 - Remove all the data and WAL
     - [show-address](axelard_tendermint_show-address.md)	 - Shows this node's tendermint validator consensus address
     - [show-node-id](axelard_tendermint_show-node-id.md)	 - Show this node's ID
     - [show-validator](axelard_tendermint_show-validator.md)	 - Show this node's tendermint validator info
-    - [unsafe-reset-all](axelard_tendermint_unsafe-reset-all.md)	 - (unsafe) Remove all the data and WAL, reset this node's validator to genesis state
     - [version](axelard_tendermint_version.md)	 - Print tendermint libraries' version
   - [tx](axelard_tx.md)	 - Transactions subcommands
     - [axelarnet](axelard_tx_axelarnet.md)	 - axelarnet transactions subcommands
@@ -287,6 +284,7 @@
       - [create-vesting-account \[to_address\] \[amount\] \[end_time\]](axelard_tx_vesting_create-vesting-account.md)	 - Create a new vesting account funded with an allocation of tokens.
     - [vesting](axelard_tx_vesting.md)	 - Vesting transaction subcommands
       - [create-vesting-account \[to_address\] \[amount\] \[end_time\]](axelard_tx_vesting_create-vesting-account.md)	 - Create a new vesting account funded with an allocation of tokens.
+  - [unsafe-reset-all](axelard_unsafe-reset-all.md)	 - Resets the blockchain database, removes address book files, and resets data/priv_validator_state.json to the genesis state
   - [vald-start](axelard_vald-start.md)	 -
   - [validate-genesis \[file\]](axelard_validate-genesis.md)	 - validates the genesis file at the default location or at the location passed as an arg
   - [version](axelard_version.md)	 - Print the application binary version information

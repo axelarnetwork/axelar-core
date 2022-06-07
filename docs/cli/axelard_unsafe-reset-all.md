@@ -1,15 +1,15 @@
-## axelard tendermint reset-state
+## axelard unsafe-reset-all
 
-Remove all the data and WAL
+Resets the blockchain database, removes address book files, and resets data/priv_validator_state.json to the genesis state
 
 ```
-axelard tendermint reset-state [flags]
+axelard unsafe-reset-all [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for reset-state
+  -h, --help   help for unsafe-reset-all
 ```
 
 ### Options inherited from parent commands
@@ -24,4 +24,4 @@ axelard tendermint reset-state [flags]
 
 ### SEE ALSO
 
-- [axelard tendermint](axelard_tendermint.md)	 - Tendermint subcommands
+- [axelard](axelard.md)	 - Axelar App

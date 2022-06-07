@@ -14,7 +14,7 @@ For '--pruning' the options are as follows:
 
 default: the last 100 states are kept in addition to every 500th state; pruning at 10 block intervals
 nothing: all historic states will be saved, nothing will be deleted (i.e. archiving node)
-everything: all saved states will be deleted, storing only the current and previous state; pruning at 10 block intervals
+everything: all saved states will be deleted, storing only the current state; pruning at 10 block intervals
 custom: allow pruning options to be manually specified through 'pruning-keep-recent', 'pruning-keep-every', and 'pruning-interval'
 
 Node halting configurations exist in the form of two flags: '--halt-height' and '--halt-time'. During
@@ -25,11 +25,6 @@ will not be able to commit subsequent blocks.
 
 For profiling and benchmarking purposes, CPU profiling can be enabled via the '--cpu-profile' flag
 which accepts a path for the resulting pprof file.
-
-The node may be started in a 'query only' mode where only the gRPC and JSON HTTP
-API services are enabled via the 'grpc-only' flag. In this mode, Tendermint is
-bypassed and can be used when legacy queries are needed after an on-chain upgrade
-is performed. Note, when enabled, gRPC will also be automatically enabled.
 
 ```
 axelard start [flags]
@@ -48,7 +43,6 @@ axelard start [flags]
       --db_dir string                                   database directory (default "data")
       --fast_sync                                       fast blockchain syncing (default true)
       --genesis_hash bytesHex                           optional SHA-256 hash of the genesis file
-      --grpc-only                                       Start the node in gRPC query only mode (no Tendermint process is started)
       --grpc-web.address string                         The gRPC-Web server address to listen on (default "0.0.0.0:9091")
       --grpc-web.enable                                 Define if the gRPC-Web server should be enabled. (Note: gRPC must also be enabled.) (default true)
       --grpc.address string                             the gRPC server address to listen on (default "0.0.0.0:9090")
