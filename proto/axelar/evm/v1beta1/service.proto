@@ -182,4 +182,14 @@ service QueryService {
     option (google.api.http).get =
         "/axelar/evm/v1beta1/event/{chain}/{event_id}";
   }
+
+  // ERC20Tokens queries the ERC20 tokens registered for a chain
+  rpc ERC20Tokens(ERC20TokensRequest) returns (ERC20TokensResponse) {
+    option (google.api.http).get = "/axelar/evm/v1beta1/erc20_tokens/{chain}";
+  }
+
+  // TokenInfo queries the token info for a registered ERC20 Token
+  rpc TokenInfo(TokenInfoRequest) returns (TokenInfoResponse) {
+    option (google.api.http).get = "/axelar/evm/v1beta1/token_info/{chain}";
+  }
 }

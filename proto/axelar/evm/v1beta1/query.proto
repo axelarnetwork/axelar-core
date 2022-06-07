@@ -75,6 +75,8 @@ message KeyAddressResponse {
 }
 
 message QueryTokenAddressResponse {
+  option deprecated = true; // Deprecated in v19
+
   string address = 1;
   bool confirmed = 2;
 }
@@ -156,3 +158,36 @@ message BytecodeRequest {
 }
 
 message BytecodeResponse { string bytecode = 1; }
+
+enum TokenType {
+  option (gogoproto.goproto_enum_prefix) = false;
+  option (gogoproto.goproto_enum_stringer) = true;
+
+  TOKEN_TYPE_UNSPECIFIED = 0
+      [ (gogoproto.enumvalue_customname) = "Unspecified" ];
+  TOKEN_TYPE_INTERNAL = 1 [ (gogoproto.enumvalue_customname) = "Internal" ];
+  TOKEN_TYPE_EXTERNAL = 2 [ (gogoproto.enumvalue_customname) = "External" ];
+}
+
+message ERC20TokensRequest {
+  string chain = 1;
+  TokenType type = 2;
+}
+
+message ERC20TokensResponse { repeated string assets = 1; }
+
+message TokenInfoRequest {
+  string chain = 1;
+  oneof find_by {
+    string asset = 2;
+    string symbol = 3;
+  }
+}
+
+message TokenInfoResponse {
+  string asset = 1;
+  TokenDetails details = 2 [ (gogoproto.nullable) = false ];
+  string address = 3;
+  bool confirmed = 4;
+  bool is_external = 5;
+}
