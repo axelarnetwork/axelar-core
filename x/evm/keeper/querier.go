@@ -89,7 +89,8 @@ func GetCommandResponse(cmd types.Command) (types.QueryCommandResponse, error) {
 	}, nil
 }
 
-// Deprecated: QueryTokenAddressByAsset returns the address of the token contract by asset
+// QueryTokenAddressByAsset returns the address of the token contract by asset
+// Deprecated: Use token-info query instead
 func QueryTokenAddressByAsset(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, asset string) ([]byte, error) {
 	_, ok := n.GetChain(ctx, exported.ChainName(k.GetName()))
 	if !ok {
@@ -108,7 +109,8 @@ func QueryTokenAddressByAsset(ctx sdk.Context, k types.ChainKeeper, n types.Nexu
 	return types.ModuleCdc.MarshalLengthPrefixed(&resp)
 }
 
-// Deprecated: QueryTokenAddressBySymbol returns the address of the token contract by symbol
+// QueryTokenAddressBySymbol returns the address of the token contract by symbol
+// Deprecated: Use token-info query instead
 func QueryTokenAddressBySymbol(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, symbol string) ([]byte, error) {
 	_, ok := n.GetChain(ctx, exported.ChainName(k.GetName()))
 	if !ok {
