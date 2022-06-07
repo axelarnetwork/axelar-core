@@ -648,7 +648,6 @@ func TestEvent(t *testing.T) {
 func TestERC20Tokens(t *testing.T) {
 	var (
 		baseKeeper    *mock.BaseKeeperMock
-		signer        *mock.SignerMock
 		nexusKeeper   *mock.NexusMock
 		chainKeeper   *mock.ChainKeeperMock
 		ctx           sdk.Context
@@ -688,7 +687,7 @@ func TestERC20Tokens(t *testing.T) {
 			},
 		}
 
-		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer)
+		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, nil)
 		grpcQuerier = &q
 	}
 
@@ -699,7 +698,7 @@ func TestERC20Tokens(t *testing.T) {
 
 		expectedRes = types.ERC20TokensResponse{Assets: []string{external.GetAsset(), internal.GetAsset()}}
 
-		res, err := grpcQuerier.ERC20Tokens(sdk.WrapSDKContext(ctx), &types.ERC20TokensRequest{Chain: existingChain})
+		res, err := grpcQuerier.ERC20Tokens(sdk.WrapSDKContext(ctx), &types.ERC20TokensRequest{Chain: existingChain.String()})
 		assert := assert.New(t)
 		assert.NoError(err)
 
@@ -711,7 +710,7 @@ func TestERC20Tokens(t *testing.T) {
 
 		expectedRes = types.ERC20TokensResponse{Assets: []string{internal.GetAsset()}}
 
-		res, err := grpcQuerier.ERC20Tokens(sdk.WrapSDKContext(ctx), &types.ERC20TokensRequest{Chain: existingChain, Type: types.Internal})
+		res, err := grpcQuerier.ERC20Tokens(sdk.WrapSDKContext(ctx), &types.ERC20TokensRequest{Chain: existingChain.String(), Type: types.Internal})
 		assert := assert.New(t)
 		assert.NoError(err)
 		assert.Equal(expectedRes, *res)
@@ -722,7 +721,7 @@ func TestERC20Tokens(t *testing.T) {
 
 		expectedRes = types.ERC20TokensResponse{Assets: []string{external.GetAsset()}}
 
-		res, err := grpcQuerier.ERC20Tokens(sdk.WrapSDKContext(ctx), &types.ERC20TokensRequest{Chain: existingChain, Type: types.External})
+		res, err := grpcQuerier.ERC20Tokens(sdk.WrapSDKContext(ctx), &types.ERC20TokensRequest{Chain: existingChain.String(), Type: types.External})
 		assert := assert.New(t)
 		assert.NoError(err)
 		assert.Equal(expectedRes, *res)
@@ -738,7 +737,7 @@ func TestERC20Tokens(t *testing.T) {
 	}).Repeat(repeatCount))
 }
 
-func TestTokenDetails(t *testing.T) {
+func TestTokenInfo(t *testing.T) {
 	var (
 		baseKeeper    *mock.BaseKeeperMock
 		signer        *mock.SignerMock
@@ -750,9 +749,11 @@ func TestTokenDetails(t *testing.T) {
 	)
 
 	token := types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{
-		Asset:      "token",
-		IsExternal: true,
-		Details:    types.NewTokenDetails("Token", "TOKEN", 10, sdk.NewInt(0)),
+		Asset:        "token",
+		Details:      types.NewTokenDetails("Token", "TOKEN", 10, sdk.NewInt(0)),
+		TokenAddress: types.ZeroAddress,
+		Status:       types.Confirmed,
+		IsExternal:   true,
 	})
 
 	setup := func() {
@@ -776,9 +777,16 @@ func TestTokenDetails(t *testing.T) {
 			GetERC20TokenByAssetFunc: func(ctx sdk.Context, asset string) types.ERC20Token {
 				if asset == token.GetAsset() {
 					return token
-				} else {
-					return types.NilToken
 				}
+
+				return types.NilToken
+			},
+			GetERC20TokenBySymbolFunc: func(ctx sdk.Context, symbol string) types.ERC20Token {
+				if symbol == token.GetDetails().Symbol {
+					return token
+				}
+
+				return types.NilToken
 			},
 		}
 		baseKeeper = &mock.BaseKeeperMock{
@@ -792,15 +800,20 @@ func TestTokenDetails(t *testing.T) {
 	}
 
 	repeatCount := 1
+	expectedRes := types.TokenInfoResponse{
+		Asset:      token.GetAsset(),
+		Details:    token.GetDetails(),
+		Address:    token.GetAddress().Hex(),
+		Confirmed:  token.Is(types.Confirmed),
+		IsExternal: token.IsExternal(),
+	}
 
 	t.Run("token detail by asset", testutils.Func(func(t *testing.T) {
 		setup()
 
-		expectedRes := types.TokenDetailsResponse{Details: token.GetDetails()}
-
-		res, err := grpcQuerier.TokenDetails(sdk.WrapSDKContext(ctx), &types.TokenDetailsRequest{
-			Chain:  existingChain,
-			FindBy: &types.TokenDetailsRequest_Asset{Asset: token.GetAsset()},
+		res, err := grpcQuerier.TokenInfo(sdk.WrapSDKContext(ctx), &types.TokenInfoRequest{
+			Chain:  existingChain.String(),
+			FindBy: &types.TokenInfoRequest_Asset{Asset: token.GetAsset()},
 		})
 		assert := assert.New(t)
 		assert.NoError(err)
@@ -810,11 +823,9 @@ func TestTokenDetails(t *testing.T) {
 	t.Run("token detail by symbol", testutils.Func(func(t *testing.T) {
 		setup()
 
-		expectedRes := types.TokenDetailsResponse{Details: token.GetDetails()}
-
-		res, err := grpcQuerier.TokenDetails(sdk.WrapSDKContext(ctx), &types.TokenDetailsRequest{
-			Chain:  existingChain,
-			FindBy: &types.TokenDetailsRequest_Symbol{Symbol: token.GetDetails().Symbol},
+		res, err := grpcQuerier.TokenInfo(sdk.WrapSDKContext(ctx), &types.TokenInfoRequest{
+			Chain:  existingChain.String(),
+			FindBy: &types.TokenInfoRequest_Symbol{Symbol: token.GetDetails().Symbol},
 		})
 		assert := assert.New(t)
 		assert.NoError(err)
@@ -824,9 +835,9 @@ func TestTokenDetails(t *testing.T) {
 	t.Run("unknown token by asset", testutils.Func(func(t *testing.T) {
 		setup()
 
-		res, err := grpcQuerier.TokenDetails(sdk.WrapSDKContext(ctx), &types.TokenDetailsRequest{
-			Chain:  existingChain,
-			FindBy: &types.TokenDetailsRequest_Asset{Asset: "unknown-token"},
+		res, err := grpcQuerier.TokenInfo(sdk.WrapSDKContext(ctx), &types.TokenInfoRequest{
+			Chain:  existingChain.String(),
+			FindBy: &types.TokenInfoRequest_Asset{Asset: "unknown-token"},
 		})
 		assert := assert.New(t)
 		assert.Nil(res)
@@ -836,9 +847,9 @@ func TestTokenDetails(t *testing.T) {
 	t.Run("unknown token by symbol", testutils.Func(func(t *testing.T) {
 		setup()
 
-		res, err := grpcQuerier.TokenDetails(sdk.WrapSDKContext(ctx), &types.TokenDetailsRequest{
-			Chain:  existingChain,
-			FindBy: &types.TokenDetailsRequest_Symbol{Symbol: "UTOKEN"},
+		res, err := grpcQuerier.TokenInfo(sdk.WrapSDKContext(ctx), &types.TokenInfoRequest{
+			Chain:  existingChain.String(),
+			FindBy: &types.TokenInfoRequest_Symbol{Symbol: "UTOKEN"},
 		})
 		assert := assert.New(t)
 		assert.Nil(res)

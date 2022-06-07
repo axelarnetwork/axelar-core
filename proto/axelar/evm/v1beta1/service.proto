@@ -188,8 +188,8 @@ service QueryService {
     option (google.api.http).get = "/axelar/evm/v1beta1/erc20_tokens/{chain}";
   }
 
-  // TokenDetails queries the token details for a registered ERC20 Token
-  rpc TokenDetails(TokenDetailsRequest) returns (TokenDetailsResponse) {
-    option (google.api.http).get = "/axelar/evm/v1beta1/token_details/{asset}";
+  // TokenInfo queries the token info for a registered ERC20 Token
+  rpc TokenInfo(TokenInfoRequest) returns (TokenInfoResponse) {
+    option (google.api.http).get = "/axelar/evm/v1beta1/token_info/{chain}";
   }
 }

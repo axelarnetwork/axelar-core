@@ -7032,10 +7032,10 @@ paths:
             type: string
       tags:
         - QueryService
-  "/axelar/evm/v1beta1/token_details/{asset}":
+  "/axelar/evm/v1beta1/token_info/{chain}":
     get:
-      summary: TokenDetails queries the token details for a registered ERC20 Token
-      operationId: TokenDetails
+      summary: TokenInfo queries the token info for a registered ERC20 Token
+      operationId: TokenInfo
       responses:
         "200":
           description: A successful response.
@@ -7044,6 +7044,8 @@ paths:
               schema:
                 type: object
                 properties:
+                  asset:
+                    type: string
                   details:
                     type: object
                     properties:
@@ -7057,6 +7059,14 @@ paths:
                       capacity:
                         type: string
                         format: byte
+                  address:
+                    type: string
+                  confirmed:
+                    type: boolean
+                    format: boolean
+                  is_external:
+                    type: boolean
+                    format: boolean
         default:
           description: An unexpected error response
           content:
@@ -7228,12 +7238,12 @@ paths:
                               "value": "1.212s"
                             }
       parameters:
-        - name: asset
+        - name: chain
           in: path
           required: true
           schema:
             type: string
-        - name: chain
+        - name: asset
           in: query
           required: false
           schema:
@@ -36200,9 +36210,11 @@ components:
         capacity:
           type: string
           format: byte
-    axelar.evm.v1beta1.TokenDetailsResponse:
+    axelar.evm.v1beta1.TokenInfoResponse:
       type: object
       properties:
+        asset:
+          type: string
         details:
           type: object
           properties:
@@ -36216,6 +36228,14 @@ components:
             capacity:
               type: string
               format: byte
+        address:
+          type: string
+        confirmed:
+          type: boolean
+          format: boolean
+        is_external:
+          type: boolean
+          format: boolean
     axelar.evm.v1beta1.TokenType:
       type: string
       enum:

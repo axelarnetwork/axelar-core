@@ -431,7 +431,7 @@ func (q Querier) Bytecode(c context.Context, req *types.BytecodeRequest) (*types
 func (q Querier) ERC20Tokens(c context.Context, req *types.ERC20TokensRequest) (*types.ERC20TokensResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	chain, ok := q.nexus.GetChain(ctx, req.Chain)
+	chain, ok := q.nexus.GetChain(ctx, nexustypes.ChainName(req.Chain))
 	if !ok {
 		return nil, fmt.Errorf("chain %s not found", req.Chain)
 	}
@@ -443,10 +443,14 @@ func (q Querier) ERC20Tokens(c context.Context, req *types.ERC20TokensRequest) (
 	ck := q.keeper.ForChain(chain.Name)
 
 	tokens := ck.GetTokens(ctx)
-	if req.Type == types.External {
+	switch req.Type {
+	case types.External:
 		tokens = slices.Filter(tokens, types.ERC20Token.IsExternal)
-	} else if req.Type == types.Internal {
+	case types.Internal:
 		tokens = slices.Filter(tokens, func(token types.ERC20Token) bool { return !token.IsExternal() })
+	default:
+		// no filtering when retrieving all tokens
+		break
 	}
 
 	assets := slices.Map(tokens, types.ERC20Token.GetAsset)
@@ -454,11 +458,11 @@ func (q Querier) ERC20Tokens(c context.Context, req *types.ERC20TokensRequest) (
 	return &types.ERC20TokensResponse{Assets: assets}, nil
 }
 
-// TokenDetails returns the token details for a registered asset
-func (q Querier) TokenDetails(c context.Context, req *types.TokenDetailsRequest) (*types.TokenDetailsResponse, error) {
+// TokenInfo returns the token info for a registered asset
+func (q Querier) TokenInfo(c context.Context, req *types.TokenInfoRequest) (*types.TokenInfoResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	chain, ok := q.nexus.GetChain(ctx, req.Chain)
+	chain, ok := q.nexus.GetChain(ctx, nexustypes.ChainName(req.Chain))
 	if !ok {
 		return nil, fmt.Errorf("chain %s not found", req.Chain)
 	}
@@ -467,12 +471,27 @@ func (q Querier) TokenDetails(c context.Context, req *types.TokenDetailsRequest)
 		return nil, fmt.Errorf("%s is not an EVM chain", chain.Name)
 	}
 
-	ck := q.keeper.ForChain(req.Chain)
+	ck := q.keeper.ForChain(nexustypes.ChainName(req.Chain))
 
-	asset := ck.GetERC20TokenByAsset(ctx, req.GetAsset())
-	if asset.GetAsset() == "" {
-		return nil, fmt.Errorf("%s is not a registered asset for chain %s", req.GetAsset(), chain.Name)
+	var token types.ERC20Token
+	switch findBy := req.GetFindBy().(type) {
+	case *types.TokenInfoRequest_Asset:
+		token = ck.GetERC20TokenByAsset(ctx, findBy.Asset)
+		if token.Is(types.NonExistent) {
+			return nil, fmt.Errorf("%s is not a registered asset for chain %s", req.GetAsset(), chain.Name)
+		}
+	case *types.TokenInfoRequest_Symbol:
+		token = ck.GetERC20TokenBySymbol(ctx, findBy.Symbol)
+		if token.Is(types.NonExistent) {
+			return nil, fmt.Errorf("%s is not a registered symbol for chain %s", req.GetSymbol(), chain.Name)
+		}
 	}
 
-	return &types.TokenDetailsResponse{Details: asset.GetDetails()}, nil
+	return &types.TokenInfoResponse{
+		Asset:      token.GetAsset(),
+		Details:    token.GetDetails(),
+		Address:    token.GetAddress().Hex(),
+		Confirmed:  token.Is(types.Confirmed),
+		IsExternal: token.IsExternal(),
+	}, nil
 }

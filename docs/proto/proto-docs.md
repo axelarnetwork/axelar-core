@@ -248,8 +248,8 @@
     - [QueryCommandResponse.ParamsEntry](#axelar.evm.v1beta1.QueryCommandResponse.ParamsEntry)
     - [QueryDepositStateParams](#axelar.evm.v1beta1.QueryDepositStateParams)
     - [QueryTokenAddressResponse](#axelar.evm.v1beta1.QueryTokenAddressResponse)
-    - [TokenDetailsRequest](#axelar.evm.v1beta1.TokenDetailsRequest)
-    - [TokenDetailsResponse](#axelar.evm.v1beta1.TokenDetailsResponse)
+    - [TokenInfoRequest](#axelar.evm.v1beta1.TokenInfoRequest)
+    - [TokenInfoResponse](#axelar.evm.v1beta1.TokenInfoResponse)
   
     - [TokenType](#axelar.evm.v1beta1.TokenType)
   
@@ -3912,9 +3912,9 @@ deposit address
 
 
 
-<a name="axelar.evm.v1beta1.TokenDetailsRequest"></a>
+<a name="axelar.evm.v1beta1.TokenInfoRequest"></a>
 
-### TokenDetailsRequest
+### TokenInfoRequest
 
 
 
@@ -3929,15 +3929,19 @@ deposit address
 
 
 
-<a name="axelar.evm.v1beta1.TokenDetailsResponse"></a>
+<a name="axelar.evm.v1beta1.TokenInfoResponse"></a>
 
-### TokenDetailsResponse
+### TokenInfoResponse
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| `asset` | [string](#string) |  |  |
 | `details` | [TokenDetails](#axelar.evm.v1beta1.TokenDetails) |  |  |
+| `address` | [string](#string) |  |  |
+| `confirmed` | [bool](#bool) |  |  |
+| `is_external` | [bool](#bool) |  |  |
 
 
 
@@ -4436,7 +4440,7 @@ QueryService defines the gRPC querier service.
 | `Bytecode` | [BytecodeRequest](#axelar.evm.v1beta1.BytecodeRequest) | [BytecodeResponse](#axelar.evm.v1beta1.BytecodeResponse) | Bytecode queries the bytecode of a specified gateway at the specified chain | GET|/axelar/evm/v1beta1/bytecode/{chain}/{contract}|
 | `Event` | [EventRequest](#axelar.evm.v1beta1.EventRequest) | [EventResponse](#axelar.evm.v1beta1.EventResponse) | Event queries an event at the specified chain | GET|/axelar/evm/v1beta1/event/{chain}/{event_id}|
 | `ERC20Tokens` | [ERC20TokensRequest](#axelar.evm.v1beta1.ERC20TokensRequest) | [ERC20TokensResponse](#axelar.evm.v1beta1.ERC20TokensResponse) | ERC20Tokens queries the ERC20 tokens registered for a chain | GET|/axelar/evm/v1beta1/erc20_tokens/{chain}|
-| `TokenDetails` | [TokenDetailsRequest](#axelar.evm.v1beta1.TokenDetailsRequest) | [TokenDetailsResponse](#axelar.evm.v1beta1.TokenDetailsResponse) | TokenDetails queries the token details for a registered ERC20 Token | GET|/axelar/evm/v1beta1/token_details/{asset}|
+| `TokenInfo` | [TokenInfoRequest](#axelar.evm.v1beta1.TokenInfoRequest) | [TokenInfoResponse](#axelar.evm.v1beta1.TokenInfoResponse) | TokenInfo queries the token info for a registered ERC20 Token | GET|/axelar/evm/v1beta1/token_info/{chain}|
 
  <!-- end services -->
 

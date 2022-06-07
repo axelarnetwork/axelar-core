@@ -42,7 +42,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		GetCmdChains(queryRoute),
 		GetCmdConfirmationHeight(queryRoute),
 		GetCmdERC20Tokens(queryRoute),
-		GetCmdTokenDetails(queryRoute),
+		GetCmdTokenInfo(queryRoute),
 	)
 
 	return evmQueryCmd
@@ -525,13 +525,16 @@ func GetCmdERC20Tokens(queryRoute string) *cobra.Command {
 	return cmd
 }
 
-// GetCmdTokenDetails returns the query to get the details for an ERC20 token
-func GetCmdTokenDetails(queryRoute string) *cobra.Command {
+// GetCmdTokenInfo returns the query to get the details for an ERC20 token
+func GetCmdTokenInfo(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "token-details [asset]",
-		Short: "Returns the details for the given ERC20 token",
+		Use:   "token-info [chain]",
+		Short: fmt.Sprintf("Returns the info of token by either %s or %s", keeper.BySymbol, keeper.ByAsset),
 		Args:  cobra.ExactArgs(1),
 	}
+
+	symbol := cmd.Flags().String(keeper.BySymbol, "", "lookup token by symbol")
+	asset := cmd.Flags().String(keeper.ByAsset, "", "lookup token by asset name")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		clientCtx, err := client.GetClientQueryContext(cmd)
@@ -539,12 +542,28 @@ func GetCmdTokenDetails(queryRoute string) *cobra.Command {
 			return err
 		}
 
-		queryClient := types.NewQueryServiceClient(clientCtx)
+		var req types.TokenInfoRequest
+		switch {
+		case *symbol == "" && *asset != "":
+			req = types.TokenInfoRequest{
+				Chain:  args[0],
+				FindBy: &types.TokenInfoRequest_Asset{Asset: *asset},
+			}
+		case *symbol != "" && *asset == "":
+			req = types.TokenInfoRequest{
+				Chain:  args[0],
+				FindBy: &types.TokenInfoRequest_Symbol{Symbol: *symbol},
+			}
+		default:
+			return fmt.Errorf("lookup must be either by asset name or symbol")
+		}
 
-		res, err := queryClient.TokenDetails(cmd.Context(),
-			&types.TokenDetailsRequest{
-				Asset: args[0],
-			})
+		if err != nil {
+			return err
+		}
+
+		queryClient := types.NewQueryServiceClient(clientCtx)
+		res, err := queryClient.TokenInfo(cmd.Context(), &req)
 		if err != nil {
 			return err
 		}

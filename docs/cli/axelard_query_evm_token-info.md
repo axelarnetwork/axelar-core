@@ -1,17 +1,19 @@
-## axelard query evm token-details
+## axelard query evm token-info
 
-Returns the details for the given ERC20 token
+Returns the info of token by either symbol or asset
 
 ```
-axelard query evm token-details [asset] [flags]
+axelard query evm token-info [chain] [flags]
 ```
 
 ### Options
 
 ```
-      --height int    Use a specific height to query state at (this can error if the node is pruning state)
-  -h, --help          help for token-details
-      --node string   <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
+      --asset string    lookup token by asset name
+      --height int      Use a specific height to query state at (this can error if the node is pruning state)
+  -h, --help            help for token-info
+      --node string     <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
+      --symbol string   lookup token by symbol
 ```
 
 ### Options inherited from parent commands

@@ -168,24 +168,24 @@ enum TokenType {
 }
 
 message ERC20TokensRequest {
-  string chain = 1
-      [ (gogoproto.casttype) =
-            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string chain = 1;
   TokenType type = 2;
 }
 
 message ERC20TokensResponse { repeated string assets = 1; }
 
-message TokenDetailsRequest {
-  string chain = 1
-      [ (gogoproto.casttype) =
-            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+message TokenInfoRequest {
+  string chain = 1;
   oneof find_by {
     string asset = 2;
     string symbol = 3;
   }
 }
 
-message TokenDetailsResponse {
-  TokenDetails details = 1 [ (gogoproto.nullable) = false ];
+message TokenInfoResponse {
+  string asset = 1;
+  TokenDetails details = 2 [ (gogoproto.nullable) = false ];
+  string address = 3;
+  bool confirmed = 4;
+  bool is_external = 5;
 }
