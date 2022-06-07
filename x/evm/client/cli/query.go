@@ -558,7 +558,6 @@ func GetCmdTokenInfo(queryRoute string) *cobra.Command {
 			return fmt.Errorf("lookup must be either by asset name or symbol")
 		}
 
-
 		queryClient := types.NewQueryServiceClient(clientCtx)
 		res, err := queryClient.TokenInfo(cmd.Context(), &req)
 		if err != nil {
