@@ -9,8 +9,8 @@ import TransferFeeCalculator from '../../components/transfer-fee/calculator'
 
 | Variable              | Value     |
 | --------------------- | --------- |
-| `axelar-core` version | `v0.18.3` |
-| `vald` version        | `v0.18.3` |
+| `axelar-core` version | `v0.19.2` |
+| `vald` version        | `v0.19.2` |
 | `tofnd` version       | `v0.10.1` |
 
 <div className="space-y-1 mt-4">

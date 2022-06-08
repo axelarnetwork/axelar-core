@@ -2,7 +2,7 @@ import Callout from 'nextra-theme-docs/callout'
 
 # Rotation of mnemonics in tofnd
 
-Starting from `axelard` `v0.17.3` and `tofnd` `v0.10.1`, validators can generate a new `tofnd` mnemonic
+Starting from `axelard` `v0.17.3+` and `tofnd` `v0.10.1+`, validators can generate a new `tofnd` mnemonic
 to slowly rotate out their old `tofnd` mnemonics for improved security.
 New Axelar key rotations will automatically use the most recent mnemonic generated.
 
