@@ -168,7 +168,7 @@ func (t ERC20Token) GetBurnerCodeHash() Hash {
 }
 
 // CreateDeployCommand returns a token deployment command for the token
-func (t *ERC20Token) CreateDeployCommand(key tss.KeyID) (Command, error) {
+func (t *ERC20Token) CreateDeployCommand(key tss.KeyID, dailyMintLimit sdk.Uint) (Command, error) {
 	switch {
 	case t.Is(NonExistent):
 		return Command{}, fmt.Errorf("token %s non-existent", t.GetAsset())
@@ -186,6 +186,7 @@ func (t *ERC20Token) CreateDeployCommand(key tss.KeyID) (Command, error) {
 			t.GetAsset(),
 			t.metadata.Details,
 			t.GetAddress(),
+			dailyMintLimit,
 		)
 	}
 
@@ -195,6 +196,7 @@ func (t *ERC20Token) CreateDeployCommand(key tss.KeyID) (Command, error) {
 		t.GetAsset(),
 		t.metadata.Details,
 		ZeroAddress,
+		dailyMintLimit,
 	)
 }
 
@@ -818,8 +820,8 @@ func CreateBurnTokenCommand(chainID sdk.Int, keyID tss.KeyID, height int64, burn
 }
 
 // CreateDeployTokenCommand creates a command to deploy a token
-func CreateDeployTokenCommand(chainID sdk.Int, keyID tss.KeyID, asset string, tokenDetails TokenDetails, address Address) (Command, error) {
-	params, err := createDeployTokenParams(tokenDetails.TokenName, tokenDetails.Symbol, tokenDetails.Decimals, tokenDetails.Capacity, address)
+func CreateDeployTokenCommand(chainID sdk.Int, keyID tss.KeyID, asset string, tokenDetails TokenDetails, address Address, dailyMintLimit sdk.Uint) (Command, error) {
+	params, err := createDeployTokenParams(tokenDetails.TokenName, tokenDetails.Symbol, tokenDetails.Decimals, tokenDetails.Capacity, address, dailyMintLimit)
 	if err != nil {
 		return Command{}, err
 	}
@@ -1274,7 +1276,7 @@ func decodeMintTokenParams(bz []byte) (string, common.Address, *big.Int, error) 
 	return params[0].(string), params[1].(common.Address), params[2].(*big.Int), nil
 }
 
-func createDeployTokenParams(tokenName string, symbol string, decimals uint8, capacity sdk.Int, address Address) ([]byte, error) {
+func createDeployTokenParams(tokenName string, symbol string, decimals uint8, capacity sdk.Int, address Address, dailyMintLimit sdk.Uint) ([]byte, error) {
 	stringType, err := abi.NewType("string", "string", nil)
 	if err != nil {
 		return nil, err
@@ -1295,13 +1297,14 @@ func createDeployTokenParams(tokenName string, symbol string, decimals uint8, ca
 		return nil, err
 	}
 
-	arguments := abi.Arguments{{Type: stringType}, {Type: stringType}, {Type: uint8Type}, {Type: uint256Type}, {Type: addressType}}
+	arguments := abi.Arguments{{Type: stringType}, {Type: stringType}, {Type: uint8Type}, {Type: uint256Type}, {Type: addressType}, {Type: uint256Type}}
 	result, err := arguments.Pack(
 		tokenName,
 		symbol,
 		decimals,
 		capacity.BigInt(),
 		address,
+		dailyMintLimit.BigInt(),
 	)
 	if err != nil {
 		return nil, err
@@ -1311,34 +1314,36 @@ func createDeployTokenParams(tokenName string, symbol string, decimals uint8, ca
 }
 
 // decodeDeployTokenParams unpacks the parameters of a deploy token command
-func decodeDeployTokenParams(bz []byte) (string, string, uint8, *big.Int, common.Address, error) {
+func decodeDeployTokenParams(bz []byte) (string, string, uint8, *big.Int, common.Address, sdk.Uint, error) {
 	stringType, err := abi.NewType("string", "string", nil)
 	if err != nil {
-		return "", "", 0, nil, common.Address{}, err
+		return "", "", 0, nil, common.Address{}, sdk.OneUint(), err
 	}
 
 	uint8Type, err := abi.NewType("uint8", "uint8", nil)
 	if err != nil {
-		return "", "", 0, nil, common.Address{}, err
+		return "", "", 0, nil, common.Address{}, sdk.OneUint(), err
 	}
 
 	uint256Type, err := abi.NewType("uint256", "uint256", nil)
 	if err != nil {
-		return "", "", 0, nil, common.Address{}, err
+		return "", "", 0, nil, common.Address{}, sdk.OneUint(), err
 	}
 
 	addressType, err := abi.NewType("address", "address", nil)
 	if err != nil {
-		return "", "", 0, nil, common.Address{}, err
+		return "", "", 0, nil, common.Address{}, sdk.OneUint(), err
 	}
 
-	arguments := abi.Arguments{{Type: stringType}, {Type: stringType}, {Type: uint8Type}, {Type: uint256Type}, {Type: addressType}}
+	arguments := abi.Arguments{{Type: stringType}, {Type: stringType}, {Type: uint8Type}, {Type: uint256Type}, {Type: addressType}, {Type: uint256Type}}
 	params, err := StrictDecode(arguments, bz)
 	if err != nil {
-		return "", "", 0, nil, common.Address{}, err
+		return "", "", 0, nil, common.Address{}, sdk.OneUint(), err
 	}
 
-	return params[0].(string), params[1].(string), params[2].(uint8), params[3].(*big.Int), params[4].(common.Address), nil
+	dailyMintLimit := sdk.NewUintFromBigInt(params[5].(*big.Int))
+
+	return params[0].(string), params[1].(string), params[2].(uint8), params[3].(*big.Int), params[4].(common.Address), dailyMintLimit, nil
 }
 
 func createBurnTokenParams(symbol string, salt common.Hash) ([]byte, error) {
@@ -1779,7 +1784,7 @@ func (c Command) DecodeParams() (map[string]string, error) {
 		params["sourceTxHash"] = sourceTxID.Hex()
 		params["sourceEventIndex"] = sourceEventIndex.String()
 	case AxelarGatewayCommandDeployToken:
-		name, symbol, decs, cap, tokenAddress, err := decodeDeployTokenParams(c.Params)
+		name, symbol, decs, cap, tokenAddress, dailyMintLimit, err := decodeDeployTokenParams(c.Params)
 		if err != nil {
 			return nil, err
 		}
@@ -1789,6 +1794,7 @@ func (c Command) DecodeParams() (map[string]string, error) {
 		params["decimals"] = strconv.FormatUint(uint64(decs), 10)
 		params["cap"] = cap.String()
 		params["tokenAddress"] = tokenAddress.Hex()
+		params["dailyMintLimit"] = dailyMintLimit.String()
 	case AxelarGatewayCommandMintToken:
 		symbol, addr, amount, err := decodeMintTokenParams(c.Params)
 		if err != nil {

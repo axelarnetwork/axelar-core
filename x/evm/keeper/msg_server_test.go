@@ -1447,7 +1447,7 @@ func createMsgSignDeploy(details types.TokenDetails) *types.CreateDeployTokenReq
 	account := rand.AccAddr()
 
 	asset := types.NewAsset(btc.Bitcoin.Name.String(), btc.NativeAsset)
-	return &types.CreateDeployTokenRequest{Sender: account, Chain: "Ethereum", Asset: asset, TokenDetails: details}
+	return types.NewCreateDeployTokenRequest(account, exported.Ethereum.Name.String(), asset, details, types.ZeroAddress, sdk.NewUint(uint64(rand.PosI64())).String())
 }
 
 func createDetails(name, symbol string) types.TokenDetails {

@@ -3257,6 +3257,8 @@ paths:
                 address:
                   type: string
                   format: byte
+                daily_mint_limit:
+                  type: string
               title: >-
                 CreateDeployTokenRequest represents the message to create a
                 deploy token
@@ -35567,6 +35569,8 @@ components:
         address:
           type: string
           format: byte
+        daily_mint_limit:
+          type: string
       title: |-
         CreateDeployTokenRequest represents the message to create a deploy token
         command for AxelarGateway
