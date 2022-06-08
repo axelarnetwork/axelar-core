@@ -3907,6 +3907,7 @@ deposit address
 | `address` | [string](#string) |  |  |
 | `confirmed` | [bool](#bool) |  |  |
 | `is_external` | [bool](#bool) |  |  |
+| `hash` | [string](#string) |  |  |
 
 
 

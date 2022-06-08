@@ -7754,6 +7754,8 @@ paths:
               is_external:
                 type: boolean
                 format: boolean
+              hash:
+                type: string
         default:
           description: An unexpected error response
           schema:
@@ -39112,6 +39114,8 @@ definitions:
       is_external:
         type: boolean
         format: boolean
+      hash:
+        type: string
   axelar.evm.v1beta1.TokenType:
     type: string
     enum:

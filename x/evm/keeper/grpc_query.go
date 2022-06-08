@@ -492,5 +492,6 @@ func (q Querier) TokenInfo(c context.Context, req *types.TokenInfoRequest) (*typ
 		Address:    token.GetAddress().Hex(),
 		Confirmed:  token.Is(types.Confirmed),
 		IsExternal: token.IsExternal(),
+		Hash:       token.GetBurnerCodeHash().Hex(),
 	}, nil
 }
