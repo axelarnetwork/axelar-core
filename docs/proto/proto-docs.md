@@ -3907,7 +3907,7 @@ deposit address
 | `address` | [string](#string) |  |  |
 | `confirmed` | [bool](#bool) |  |  |
 | `is_external` | [bool](#bool) |  |  |
-| `hash` | [string](#string) |  |  |
+| `burner_code_hash` | [string](#string) |  |  |
 
 
 

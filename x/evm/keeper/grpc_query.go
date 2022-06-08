@@ -487,11 +487,11 @@ func (q Querier) TokenInfo(c context.Context, req *types.TokenInfoRequest) (*typ
 	}
 
 	return &types.TokenInfoResponse{
-		Asset:      token.GetAsset(),
-		Details:    token.GetDetails(),
-		Address:    token.GetAddress().Hex(),
-		Confirmed:  token.Is(types.Confirmed),
-		IsExternal: token.IsExternal(),
-		Hash:       token.GetBurnerCodeHash().Hex(),
+		Asset:          token.GetAsset(),
+		Details:        token.GetDetails(),
+		Address:        token.GetAddress().Hex(),
+		Confirmed:      token.Is(types.Confirmed),
+		IsExternal:     token.IsExternal(),
+		BurnerCodeHash: token.GetBurnerCodeHash().Hex(),
 	}, nil
 }

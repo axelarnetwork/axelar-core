@@ -1,12 +1,14 @@
 package keeper_test
 
 import (
+	"encoding/hex"
 	"fmt"
 	"math/big"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
@@ -748,12 +750,18 @@ func TestTokenInfo(t *testing.T) {
 		grpcQuerier   *evmKeeper.Querier
 	)
 
+	burnerCode, err := hex.DecodeString(rand.HexStr(200))
+	if err != nil {
+		panic(err)
+	}
+	burnerCodeHash := types.Hash(crypto.Keccak256Hash(burnerCode)).Hex()
 	token := types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{
 		Asset:        "token",
 		Details:      types.NewTokenDetails("Token", "TOKEN", 10, sdk.NewInt(0)),
 		TokenAddress: types.ZeroAddress,
 		Status:       types.Confirmed,
 		IsExternal:   true,
+		BurnerCode:   burnerCode,
 	})
 
 	setup := func() {
@@ -801,11 +809,12 @@ func TestTokenInfo(t *testing.T) {
 
 	repeatCount := 1
 	expectedRes := types.TokenInfoResponse{
-		Asset:      token.GetAsset(),
-		Details:    token.GetDetails(),
-		Address:    token.GetAddress().Hex(),
-		Confirmed:  token.Is(types.Confirmed),
-		IsExternal: token.IsExternal(),
+		Asset:          token.GetAsset(),
+		Details:        token.GetDetails(),
+		Address:        token.GetAddress().Hex(),
+		Confirmed:      token.Is(types.Confirmed),
+		IsExternal:     token.IsExternal(),
+		BurnerCodeHash: burnerCodeHash,
 	}
 
 	t.Run("token detail by asset", testutils.Func(func(t *testing.T) {

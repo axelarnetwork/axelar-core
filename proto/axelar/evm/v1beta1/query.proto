@@ -190,5 +190,5 @@ message TokenInfoResponse {
   string address = 3;
   bool confirmed = 4;
   bool is_external = 5;
-  string hash = 6;
+  string burner_code_hash = 6;
 }

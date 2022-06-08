@@ -7754,7 +7754,7 @@ paths:
               is_external:
                 type: boolean
                 format: boolean
-              hash:
+              burner_code_hash:
                 type: string
         default:
           description: An unexpected error response
@@ -39114,7 +39114,7 @@ definitions:
       is_external:
         type: boolean
         format: boolean
-      hash:
+      burner_code_hash:
         type: string
   axelar.evm.v1beta1.TokenType:
     type: string
