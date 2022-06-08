@@ -80,14 +80,6 @@ service MsgService {
     };
   }
 
-  rpc CreateTransferOwnership(CreateTransferOwnershipRequest)
-      returns (CreateTransferOwnershipResponse) {
-    option (google.api.http) = {
-      post : "/axelar/evm/create_transfer_ownership"
-      body : "*"
-    };
-  }
-
   rpc CreateTransferOperatorship(CreateTransferOperatorshipRequest)
       returns (CreateTransferOperatorshipResponse) {
     option (google.api.http) = {

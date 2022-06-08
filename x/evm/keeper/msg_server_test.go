@@ -67,7 +67,7 @@ func setup() (sdk.Context, types.MsgServiceServer, *mock.BaseKeeperMock, *mock.T
 func TestSetGateway(t *testing.T) {
 	req := types.NewSetGatewayRequest(rand.AccAddr(), rand.Str(5), evmTestUtils.RandomAddress())
 
-	t.Run("should fail if any of master, secondary and external keys is not set", testutils.Func(func(t *testing.T) {
+	t.Run("should fail if secondary or external keys is not set", testutils.Func(func(t *testing.T) {
 		ctx, msgServer, _, _, nexusKeeper, signerKeeper, _, _ := setup()
 
 		nexusKeeper.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
@@ -80,18 +80,11 @@ func TestSetGateway(t *testing.T) {
 		nexusKeeper.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return chain.Name == req.Chain }
 
 		signerKeeper.GetCurrentKeyIDFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
-			return tssTestUtils.RandKeyID(), keyRole != tss.MasterKey
+			return tssTestUtils.RandKeyID(), keyRole != tss.SecondaryKey
 		}
 		_, err := msgServer.SetGateway(sdk.WrapSDKContext(ctx), req)
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "no master key")
-
-		signerKeeper.GetCurrentKeyIDFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
-			return tssTestUtils.RandKeyID(), keyRole != tss.SecondaryKey
-		}
-		_, err = msgServer.SetGateway(sdk.WrapSDKContext(ctx), req)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "no secondary key")
+		assert.Contains(t, err.Error(), "no key")
 
 		signerKeeper.GetCurrentKeyIDFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
 			return tssTestUtils.RandKeyID(), true

@@ -38,7 +38,6 @@ func GetTxCmd() *cobra.Command {
 		GetCmdLink(),
 		GetCmdConfirmERC20TokenDeployment(),
 		GetCmdConfirmERC20Deposit(),
-		GetCmdConfirmTransferOwnership(),
 		GetCmdConfirmTransferOperatorship(),
 		GetCmdCreateConfirmGatewayTx(),
 		GetCmdCreatePendingTransfers(),
@@ -166,33 +165,6 @@ func GetCmdConfirmERC20Deposit() *cobra.Command {
 	return cmd
 }
 
-// GetCmdConfirmTransferOwnership returns the cli command to confirm a transfer ownership for the gateway contract
-func GetCmdConfirmTransferOwnership() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "confirm-transfer-ownership [chain] [txID] [keyID]",
-		Short: "Confirm a transfer ownership in an EVM chain transaction",
-		Args:  cobra.ExactArgs(3),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx, err := client.GetClientTxContext(cmd)
-			if err != nil {
-				return err
-			}
-
-			chain := args[0]
-			txID := common.HexToHash(args[1])
-			keyID := args[2]
-			msg := types.NewConfirmTransferKeyRequest(cliCtx.GetFromAddress(), chain, txID, types.Ownership, keyID)
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
-
-			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
-		},
-	}
-	flags.AddTxFlagsToCmd(cmd)
-	return cmd
-}
-
 // GetCmdConfirmTransferOperatorship returns the cli command to confirm a transfer operatorship for the gateway contract
 func GetCmdConfirmTransferOperatorship() *cobra.Command {
 	cmd := &cobra.Command{
@@ -208,7 +180,7 @@ func GetCmdConfirmTransferOperatorship() *cobra.Command {
 			chain := args[0]
 			txID := common.HexToHash(args[1])
 			keyID := args[2]
-			msg := types.NewConfirmTransferKeyRequest(cliCtx.GetFromAddress(), chain, txID, types.Operatorship, keyID)
+			msg := types.NewConfirmTransferKeyRequest(cliCtx.GetFromAddress(), chain, txID, keyID)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

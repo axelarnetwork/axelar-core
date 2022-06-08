@@ -30,7 +30,6 @@ const (
 	TxCreatePendingTransfers      = "create-pending-transfers"
 	TxCreateDeployToken           = "create-deploy-token"
 	TxCreateBurnTokens            = "create-burn-token"
-	TxCreateTransferOwnership     = "create-transfer-ownership"
 	TxCreateTransferOperatorship  = "create-transfer-operatorship"
 	TxSignCommands                = "sign-commands"
 	TxAddChain                    = "add-chain"
@@ -47,12 +46,10 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerTx(GetHandlerLink(cliCtx), TxLink, clientUtils.PathVarChain)
 	registerTx(GetHandlerConfirmTokenDeploy(cliCtx), TxConfirmTokenDeploy, clientUtils.PathVarChain)
 	registerTx(GetHandlerConfirmDeposit(cliCtx), TxConfirmDeposit, clientUtils.PathVarChain)
-	registerTx(GetHandlerConfirmTransferKey(cliCtx, types.Ownership), TxConfirmTransferOwnership, clientUtils.PathVarChain)
-	registerTx(GetHandlerConfirmTransferKey(cliCtx, types.Operatorship), TxConfirmTransferOperatorship, clientUtils.PathVarChain)
+	registerTx(GetHandlerConfirmTransferKey(cliCtx), TxConfirmTransferOperatorship, clientUtils.PathVarChain)
 	registerTx(GetHandlerCreatePendingTransfers(cliCtx), TxCreatePendingTransfers, clientUtils.PathVarChain)
 	registerTx(GetHandlerCreateDeployToken(cliCtx), TxCreateDeployToken, clientUtils.PathVarChain)
 	registerTx(GetHandlerCreateBurnTokens(cliCtx), TxCreateBurnTokens, clientUtils.PathVarChain)
-	registerTx(GetHandlerCreateTransferOwnership(cliCtx), TxCreateTransferOwnership, clientUtils.PathVarChain)
 	registerTx(GetHandlerCreateTransferOperatorship(cliCtx), TxCreateTransferOperatorship, clientUtils.PathVarChain)
 	registerTx(GetHandlerSignCommands(cliCtx), TxSignCommands, clientUtils.PathVarChain)
 	registerTx(GetHandlerAddChain(cliCtx), TxAddChain)
@@ -120,12 +117,6 @@ type ReqCreateDeployToken struct {
 // ReqCreateBurnTokens represents a request to create commands for all outstanding burns
 type ReqCreateBurnTokens struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
-}
-
-// ReqCreateTransferOwnership represents a request to create transfer ownership command
-type ReqCreateTransferOwnership struct {
-	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
-	KeyID   string       `json:"key_id" yaml:"key_id"`
 }
 
 // ReqCreateTransferOperatorship represents a request to create transfer operatorship command
@@ -238,7 +229,7 @@ func GetHandlerConfirmDeposit(cliCtx client.Context) http.HandlerFunc {
 }
 
 // GetHandlerConfirmTransferKey returns a handler to confirm a transfer ownership
-func GetHandlerConfirmTransferKey(cliCtx client.Context, transferKeyType types.TransferKeyType) http.HandlerFunc {
+func GetHandlerConfirmTransferKey(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req ReqConfirmTransferKey
 		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
@@ -255,7 +246,7 @@ func GetHandlerConfirmTransferKey(cliCtx client.Context, transferKeyType types.T
 
 		txID := common.HexToHash(req.TxID)
 
-		msg := types.NewConfirmTransferKeyRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], txID, transferKeyType, req.KeyID)
+		msg := types.NewConfirmTransferKeyRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], txID, req.KeyID)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -356,30 +347,6 @@ func GetHandlerCreateBurnTokens(cliCtx client.Context) http.HandlerFunc {
 		}
 
 		msg := types.NewCreateBurnTokensRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain])
-		if err := msg.ValidateBasic(); err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
-		}
-		tx.WriteGeneratedTxResponse(cliCtx, w, req.BaseReq, msg)
-	}
-}
-
-// GetHandlerCreateTransferOwnership returns a handler to create transfer ownership command
-func GetHandlerCreateTransferOwnership(cliCtx client.Context) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var req ReqCreateTransferOwnership
-		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
-			return
-		}
-		req.BaseReq = req.BaseReq.Sanitize()
-		if !req.BaseReq.ValidateBasic(w) {
-			return
-		}
-		fromAddr, ok := clientUtils.ExtractReqSender(w, req.BaseReq)
-		if !ok {
-			return
-		}
-		msg := types.NewCreateTransferOwnershipRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], req.KeyID)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

@@ -11,13 +11,12 @@ import (
 )
 
 // NewConfirmTransferKeyRequest creates a message of type ConfirmTransferKeyRequest
-func NewConfirmTransferKeyRequest(sender sdk.AccAddress, chain string, txID common.Hash, transferType TransferKeyType, keyID string) *ConfirmTransferKeyRequest {
+func NewConfirmTransferKeyRequest(sender sdk.AccAddress, chain string, txID common.Hash, keyID string) *ConfirmTransferKeyRequest {
 	return &ConfirmTransferKeyRequest{
-		Sender:       sender,
-		Chain:        nexus.ChainName(utils.NormalizeString(chain)),
-		TxID:         Hash(txID),
-		TransferType: transferType,
-		KeyID:        tss.KeyID(keyID),
+		Sender: sender,
+		Chain:  nexus.ChainName(utils.NormalizeString(chain)),
+		TxID:   Hash(txID),
+		KeyID:  tss.KeyID(keyID),
 	}
 }
 
@@ -39,10 +38,6 @@ func (m ConfirmTransferKeyRequest) ValidateBasic() error {
 
 	if err := m.Chain.Validate(); err != nil {
 		return sdkerrors.Wrap(err, "invalid chain")
-	}
-
-	if err := m.TransferType.Validate(); err != nil {
-		return err
 	}
 
 	if err := m.KeyID.Validate(); err != nil {

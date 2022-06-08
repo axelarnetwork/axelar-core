@@ -89,8 +89,6 @@ const (
 	AxelarGatewayCommandBurnToken                   = "burnToken"
 	burnExternalTokenMaxGasCost                     = 400000
 	burnInternalTokenMaxGasCost                     = 120000
-	AxelarGatewayCommandTransferOwnership           = "transferOwnership"
-	transferOwnershipMaxGasCost                     = 120000
 	AxelarGatewayCommandTransferOperatorship        = "transferOperatorship"
 	transferOperatorshipMaxGasCost                  = 120000
 	AxelarGatewayCommandApproveContractCallWithMint = "approveContractCallWithMint"
@@ -98,13 +96,6 @@ const (
 	AxelarGatewayCommandApproveContractCall         = "approveContractCall"
 	approveContractCallMaxGasCost                   = 120000
 	axelarGatewayFuncExecute                        = "execute"
-)
-
-type role uint8
-
-const (
-	roleOwner    role = 1
-	roleOperator role = 2
 )
 
 // IsEVMChain returns true if a chain is an EVM chain
@@ -853,7 +844,6 @@ func CreateMintTokenCommand(keyID tss.KeyID, id CommandID, symbol string, addres
 
 // CreateSinglesigTransferCommand creates a command to transfer ownership/operator of the singlesig contract
 func CreateSinglesigTransferCommand(
-	transferType TransferKeyType,
 	chainID sdk.Int,
 	keyID tss.KeyID,
 	address common.Address) (Command, error) {
@@ -862,12 +852,11 @@ func CreateSinglesigTransferCommand(
 		return Command{}, err
 	}
 
-	return createTransferCmd(NewCommandID(address.Bytes(), chainID), params, keyID, transferType)
+	return createTransferCmd(NewCommandID(address.Bytes(), chainID), params, keyID)
 }
 
 // CreateMultisigTransferCommand creates a command to transfer ownership/operator of the multisig contract
 func CreateMultisigTransferCommand(
-	transferType TransferKeyType,
 	chainID sdk.Int,
 	keyID tss.KeyID,
 	threshold uint8,
@@ -887,30 +876,17 @@ func CreateMultisigTransferCommand(
 		return Command{}, err
 	}
 
-	return createTransferCmd(NewCommandID(concat, chainID), params, keyID, transferType)
+	return createTransferCmd(NewCommandID(concat, chainID), params, keyID)
 }
 
-func createTransferCmd(id CommandID, params []byte, keyID tss.KeyID, transferType TransferKeyType) (Command, error) {
-	switch transferType {
-	case Ownership:
-		return Command{
-			ID:         id,
-			Command:    AxelarGatewayCommandTransferOwnership,
-			Params:     params,
-			KeyID:      keyID,
-			MaxGasCost: transferOwnershipMaxGasCost,
-		}, nil
-	case Operatorship:
-		return Command{
-			ID:         id,
-			Command:    AxelarGatewayCommandTransferOperatorship,
-			Params:     params,
-			KeyID:      keyID,
-			MaxGasCost: transferOperatorshipMaxGasCost,
-		}, nil
-	default:
-		return Command{}, fmt.Errorf("invalid transfer key type %s", transferType.SimpleString())
-	}
+func createTransferCmd(id CommandID, params []byte, keyID tss.KeyID) (Command, error) {
+	return Command{
+		ID:         id,
+		Command:    AxelarGatewayCommandTransferOperatorship,
+		Params:     params,
+		KeyID:      keyID,
+		MaxGasCost: transferOperatorshipMaxGasCost,
+	}, nil
 }
 
 // Clone returns an exacy copy of Command
@@ -999,19 +975,9 @@ func (b *CommandBatch) SetStatus(status BatchedCommandsStatus) bool {
 
 // NewCommandBatchMetadata assembles a CommandBatchMetadata struct from the provided arguments
 func NewCommandBatchMetadata(blockHeight int64, chainID sdk.Int, keyID tss.KeyID, keyRole tss.KeyRole, cmds []Command) (CommandBatchMetadata, error) {
-	var r role
 	var commandIDs []CommandID
 	var commands []string
 	var commandParams [][]byte
-
-	switch keyRole {
-	case tss.MasterKey:
-		r = roleOwner
-	case tss.SecondaryKey:
-		r = roleOperator
-	default:
-		return CommandBatchMetadata{}, fmt.Errorf("cannot sign command batch with a key of role %s", keyRole.SimpleString())
-	}
 
 	for _, cmd := range cmds {
 		commandIDs = append(commandIDs, cmd.ID)
@@ -1019,7 +985,7 @@ func NewCommandBatchMetadata(blockHeight int64, chainID sdk.Int, keyID tss.KeyID
 		commandParams = append(commandParams, cmd.Params)
 	}
 
-	data, err := packArguments(chainID, r, commandIDs, commands, commandParams)
+	data, err := packArguments(chainID, commandIDs, commands, commandParams)
 	if err != nil {
 		return CommandBatchMetadata{}, err
 	}
@@ -1098,40 +1064,6 @@ func (c *CommandID) Unmarshal(data []byte) error {
 	return nil
 }
 
-// TransferKeyTypeFromSimpleStr converts a given string into TransferKeyType
-func TransferKeyTypeFromSimpleStr(str string) (TransferKeyType, error) {
-	switch strings.ToLower(str) {
-	case Ownership.SimpleString():
-		return Ownership, nil
-	case Operatorship.SimpleString():
-		return Operatorship, nil
-	default:
-		return -1, fmt.Errorf("invalid transfer key type %s", str)
-	}
-}
-
-// Validate returns an error if the TransferKeyType is invalid; nil otherwise
-func (t TransferKeyType) Validate() error {
-	switch t {
-	case Ownership, Operatorship:
-		return nil
-	default:
-		return fmt.Errorf("invalid transfer key type")
-	}
-}
-
-// SimpleString returns a human-readable string representing the TransferKeyType
-func (t TransferKeyType) SimpleString() string {
-	switch t {
-	case Ownership:
-		return "transfer_ownership"
-	case Operatorship:
-		return "transfer_operatorship"
-	default:
-		return "unknown"
-	}
-}
-
 // NewAsset returns a new Asset instance
 func NewAsset(chain, name string) Asset {
 	return Asset{
@@ -1180,17 +1112,12 @@ func (m TokenDetails) Validate() error {
 	return nil
 }
 
-func packArguments(chainID sdk.Int, r role, commandIDs []CommandID, commands []string, commandParams [][]byte) ([]byte, error) {
+func packArguments(chainID sdk.Int, commandIDs []CommandID, commands []string, commandParams [][]byte) ([]byte, error) {
 	if len(commandIDs) != len(commands) || len(commandIDs) != len(commandParams) {
 		return nil, fmt.Errorf("length mismatch for command arguments")
 	}
 
 	uint256Type, err := abi.NewType("uint256", "uint256", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	uint8Type, err := abi.NewType("uint8", "uint8", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -1210,10 +1137,9 @@ func packArguments(chainID sdk.Int, r role, commandIDs []CommandID, commands []s
 		return nil, err
 	}
 
-	arguments := abi.Arguments{{Type: uint256Type}, {Type: uint8Type}, {Type: bytes32ArrayType}, {Type: stringArrayType}, {Type: bytesArrayType}}
+	arguments := abi.Arguments{{Type: uint256Type}, {Type: bytes32ArrayType}, {Type: stringArrayType}, {Type: bytesArrayType}}
 	result, err := arguments.Pack(
 		chainID.BigInt(),
-		r,
 		commandIDs,
 		commands,
 		commandParams,
@@ -1812,28 +1738,20 @@ func (c Command) DecodeParams() (map[string]string, error) {
 
 		params["symbol"] = symbol
 		params["salt"] = salt.Hex()
-	case AxelarGatewayCommandTransferOwnership, AxelarGatewayCommandTransferOperatorship:
+	case AxelarGatewayCommandTransferOperatorship:
 		address, decodeSinglesigErr := decodeTransferSinglesigParams(c.Params)
 		addresses, threshold, decodeMultisigErr := decodeTransferMultisigParams(c.Params)
 
 		switch {
 		case decodeSinglesigErr == nil:
-			param := "newOwner"
-			if c.Command == AxelarGatewayCommandTransferOperatorship {
-				param = "newOperator"
-			}
-			params[param] = address.Hex()
+			params["newOperator"] = address.Hex()
 		case decodeMultisigErr == nil:
 			var addressStrs []string
 			for _, address := range addresses {
 				addressStrs = append(addressStrs, address.Hex())
 			}
 
-			param := "newOwners"
-			if c.Command == AxelarGatewayCommandTransferOperatorship {
-				param = "newOperators"
-			}
-			params[param] = strings.Join(addressStrs, ";")
+			params["newOperators"] = strings.Join(addressStrs, ";")
 			params["newThreshold"] = strconv.FormatUint(uint64(threshold), 10)
 		default:
 			return nil, fmt.Errorf("unsupported type of transfer key")

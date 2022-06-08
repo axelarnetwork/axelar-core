@@ -83,6 +83,8 @@ message ConfirmTokenRequest {
 message ConfirmTokenResponse {}
 
 message ConfirmTransferKeyRequest {
+  reserved 4; // transfer_type was deleted in v0.20
+
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
@@ -94,7 +96,6 @@ message ConfirmTransferKeyRequest {
     (gogoproto.customtype) = "Hash",
     (gogoproto.customname) = "TxID"
   ];
-  evm.v1beta1.TransferKeyType transfer_type = 4;
   string key_id = 5 [
     (gogoproto.customname) = "KeyID",
     (gogoproto.casttype) =
