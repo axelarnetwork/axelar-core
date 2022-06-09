@@ -239,6 +239,17 @@ func (k chainKeeper) GetBurnerAddressAndSalt(ctx sdk.Context, token types.ERC20T
 	salt := types.Hash(common.BytesToHash(crypto.Keccak256Hash(bz).Bytes()))
 
 	var initCodeHash types.Hash
+
+	// always use the latest burner byte code for external token
+	if token.IsExternal() {
+		burnerCode, ok := k.GetBurnerByteCode(ctx)
+		if !ok {
+			return types.Address{}, types.Hash{}, fmt.Errorf("burner code not found for chain %s", k.chainLowerKey)
+		}
+		initCodeHash = types.Hash(crypto.Keccak256Hash(burnerCode))
+		return types.Address(crypto.CreateAddress2(gatewayAddr, salt, initCodeHash.Bytes())), salt, nil
+	}
+
 	tokenBurnerCodeHash := token.GetBurnerCodeHash().Hex()
 	switch tokenBurnerCodeHash {
 	case types.BurnerCodeHashV1:
@@ -795,7 +806,7 @@ func (k chainKeeper) initTokenMetadata(ctx sdk.Context, asset string, details ty
 			ChainID:      sdk.NewIntFromBigInt(chainID),
 			Status:       types.Initialized,
 			IsExternal:   true,
-			BurnerCode:   burnerCode,
+			BurnerCode:   nil,
 		}
 		k.setTokenMetadata(ctx, meta)
 

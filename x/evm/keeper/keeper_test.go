@@ -238,7 +238,7 @@ func TestGetBurnerAddressAndSalt(t *testing.T) {
 		token := types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{
 			TokenAddress: tokenAddr,
 			IsExternal:   true,
-			BurnerCode:   bzBurnable,
+			BurnerCode:   nil,
 		})
 		actualburnerAddr, actualSalt, err := chainKeeper.GetBurnerAddressAndSalt(ctx, token, recipient, axelarGateway)
 
