@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"fmt"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -13,9 +12,10 @@ import (
 	"github.com/axelarnetwork/axelar-core/app/params"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/evm/types/mock"
-	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	. "github.com/axelarnetwork/utils/test"
 )
 
@@ -36,39 +36,83 @@ func TestGetMigrationHandler(t *testing.T) {
 	var (
 		ctx     sdk.Context
 		keeper  BaseKeeper
-		nexus   *mock.NexusMock
 		handler func(ctx sdk.Context) error
 	)
 
-	givenHandler := Given("the migration handler", func() {
+	evmChains := []nexus.Chain{exported.Ethereum}
+	tokens := []types.ERC20TokenMetadata{
+		{
+			Asset: rand.NormalizedStr(5),
+			Details: types.TokenDetails{
+				TokenName: rand.NormalizedStr(5),
+				Symbol:    rand.NormalizedStr(5),
+				Decimals:  8,
+				Capacity:  sdk.ZeroInt(),
+			},
+			Status:     types.Confirmed,
+			IsExternal: true,
+			BurnerCode: types.DefaultParams()[0].Burnable,
+		},
+		{
+			Asset: rand.NormalizedStr(5),
+			Details: types.TokenDetails{
+				TokenName: rand.NormalizedStr(5),
+				Symbol:    rand.NormalizedStr(5),
+				Decimals:  8,
+				Capacity:  sdk.ZeroInt(),
+			},
+			Status:     types.Pending,
+			IsExternal: false,
+			BurnerCode: types.DefaultParams()[0].Burnable,
+		},
+		{
+			Asset: rand.NormalizedStr(5),
+			Details: types.TokenDetails{
+				TokenName: rand.NormalizedStr(5),
+				Symbol:    rand.NormalizedStr(5),
+				Decimals:  8,
+				Capacity:  sdk.ZeroInt(),
+			},
+			Status:     types.Pending,
+			IsExternal: true,
+			BurnerCode: types.DefaultParams()[0].Burnable,
+		},
+	}
+
+	whenTokensAreSetup := Given("the migration handler", func() {
 		ctx, keeper = setup()
-		nexus = &mock.NexusMock{}
-		handler = GetMigrationHandler(keeper, nexus)
-	})
-
-	givenHandler.
-		When("contract bytecode is out-of-date for some EVM chain", func() {
-			chain := types.DefaultParams()[0].Chain
-
-			ck := keeper.ForChain(chain)
-			subspace, ok := ck.(chainKeeper).getSubspace(ctx)
-			if !ok {
-				panic(fmt.Errorf("param subspace for chain %s should exist", ck.GetName()))
+		nexus := mock.NexusMock{
+			GetChainsFunc: func(_ sdk.Context) []nexus.Chain {
+				return evmChains
+			},
+		}
+		handler = GetMigrationHandler(keeper, &nexus)
+	}).
+		When("tokens are setup for evm chains", func() {
+			for _, chain := range evmChains {
+				for _, token := range tokens {
+					keeper.ForChain(chain.Name).(chainKeeper).setTokenMetadata(ctx, token)
+				}
 			}
-			subspace.Set(ctx, types.KeyToken, rand.Bytes(100))
-			subspace.Set(ctx, types.KeyBurnable, rand.Bytes(100))
+		})
 
-			nexus.GetChainsFunc = func(ctx sdk.Context) []exported.Chain {
-				return []exported.Chain{{Name: chain, Module: types.ModuleName}}
-			}
-		}).
-		Then("should update bytecode", func(t *testing.T) {
+	whenTokensAreSetup.
+		When("migration runs", func() {
 			err := handler(ctx)
 			assert.NoError(t, err)
-
-			params := types.DefaultParams()[0]
-			assert.Equal(t, params, keeper.ForChain(params.Chain).GetParams(ctx))
 		}).
-		Run(t)
+		Then("should remove burner code for external tokens", func(t *testing.T) {
+			for _, chain := range evmChains {
+				ck := keeper.ForChain(chain.Name).(chainKeeper)
+
+				for _, meta := range ck.getTokensMetadata(ctx) {
+					if meta.IsExternal {
+						assert.Nil(t, meta.BurnerCode)
+					} else {
+						assert.Equal(t, meta.BurnerCode, types.DefaultParams()[0].Burnable)
+					}
+				}
+			}
+		}).Run(t)
 
 }

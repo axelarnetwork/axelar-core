@@ -238,9 +238,20 @@ func (k chainKeeper) GetBurnerAddressAndSalt(ctx sdk.Context, token types.ERC20T
 	bz = append(bz, nonce[:]...)
 	salt := types.Hash(common.BytesToHash(crypto.Keccak256Hash(bz).Bytes()))
 
+	var tokenBurnerCodeHash types.Hash
+	if token.IsExternal() {
+		// always use the latest burner byte code for external token
+		burnerCode, ok := k.GetBurnerByteCode(ctx)
+		if !ok {
+			return types.Address{}, types.Hash{}, fmt.Errorf("burner code not found for chain %s", k.chainLowerKey)
+		}
+		tokenBurnerCodeHash = types.Hash(crypto.Keccak256Hash(burnerCode))
+	} else {
+		tokenBurnerCodeHash = token.GetBurnerCodeHash()
+	}
+
 	var initCodeHash types.Hash
-	tokenBurnerCodeHash := token.GetBurnerCodeHash().Hex()
-	switch tokenBurnerCodeHash {
+	switch tokenBurnerCodeHash.Hex() {
 	case types.BurnerCodeHashV1:
 		addressType, err := abi.NewType("address", "address", nil)
 		if err != nil {
@@ -260,9 +271,9 @@ func (k chainKeeper) GetBurnerAddressAndSalt(ctx sdk.Context, token types.ERC20T
 
 		initCodeHash = types.Hash(crypto.Keccak256Hash(append(token.GetBurnerCode(), params...)))
 	case types.BurnerCodeHashV2, types.BurnerCodeHashV3, types.BurnerCodeHashV4:
-		initCodeHash = token.GetBurnerCodeHash()
+		initCodeHash = tokenBurnerCodeHash
 	default:
-		return types.Address{}, types.Hash{}, fmt.Errorf("unsupported burner code with hash %s for chain %s", tokenBurnerCodeHash, k.chainLowerKey)
+		return types.Address{}, types.Hash{}, fmt.Errorf("unsupported burner code with hash %s for chain %s", tokenBurnerCodeHash.Hex(), k.chainLowerKey)
 	}
 
 	return types.Address(crypto.CreateAddress2(gatewayAddr, salt, initCodeHash.Bytes())), salt, nil
@@ -795,7 +806,7 @@ func (k chainKeeper) initTokenMetadata(ctx sdk.Context, asset string, details ty
 			ChainID:      sdk.NewIntFromBigInt(chainID),
 			Status:       types.Initialized,
 			IsExternal:   true,
-			BurnerCode:   burnerCode,
+			BurnerCode:   nil,
 		}
 		k.setTokenMetadata(ctx, meta)
 
