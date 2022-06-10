@@ -68,6 +68,8 @@
     - [LatestDepositAddressRequest](#axelar.nexus.v1beta1.LatestDepositAddressRequest)
     - [LatestDepositAddressResponse](#axelar.nexus.v1beta1.LatestDepositAddressResponse)
     - [QueryChainMaintainersResponse](#axelar.nexus.v1beta1.QueryChainMaintainersResponse)
+    - [RecipientAddressRequest](#axelar.nexus.v1beta1.RecipientAddressRequest)
+    - [RecipientAddressResponse](#axelar.nexus.v1beta1.RecipientAddressResponse)
     - [TransferFeeRequest](#axelar.nexus.v1beta1.TransferFeeRequest)
     - [TransferFeeResponse](#axelar.nexus.v1beta1.TransferFeeResponse)
     - [TransfersForChainRequest](#axelar.nexus.v1beta1.TransfersForChainRequest)
@@ -1368,6 +1370,39 @@ address by recipient address
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `maintainers` | [bytes](#bytes) | repeated |  |
+
+
+
+
+
+
+<a name="axelar.nexus.v1beta1.RecipientAddressRequest"></a>
+
+### RecipientAddressRequest
+RecipientAddressRequest represents a message that queries the registered
+recipient address for a given deposit address
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `deposit_addr` | [string](#string) |  |  |
+| `deposit_chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.nexus.v1beta1.RecipientAddressResponse"></a>
+
+### RecipientAddressResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `recipient_addr` | [string](#string) |  |  |
+| `recipient_chain` | [string](#string) |  |  |
 
 
 
@@ -4672,6 +4707,7 @@ QueryService defines the gRPC querier service.
 | `Assets` | [AssetsRequest](#axelar.nexus.v1beta1.AssetsRequest) | [AssetsResponse](#axelar.nexus.v1beta1.AssetsResponse) | Assets queries the assets registered for a chain | GET|/axelar/nexus/v1beta1/assets/{chain}|
 | `ChainState` | [ChainStateRequest](#axelar.nexus.v1beta1.ChainStateRequest) | [ChainStateResponse](#axelar.nexus.v1beta1.ChainStateResponse) | ChainState queries the state of a registered chain on the network | GET|/axelar/nexus/v1beta1/chain_state/{chain}|
 | `ChainsByAsset` | [ChainsByAssetRequest](#axelar.nexus.v1beta1.ChainsByAssetRequest) | [ChainsByAssetResponse](#axelar.nexus.v1beta1.ChainsByAssetResponse) | ChainsByAsset queries the chains that support an asset on the network | GET|/axelar/nexus/v1beta1/chains_by_asset/{asset}|
+| `RecipientAddress` | [RecipientAddressRequest](#axelar.nexus.v1beta1.RecipientAddressRequest) | [RecipientAddressResponse](#axelar.nexus.v1beta1.RecipientAddressResponse) | RecipientAddress queries the recipient address for a given deposit address | GET|/axelar/nexus/v1beta1/recipient_address/{deposit_chain}/{deposit_addr}|
 
  <!-- end services -->
 
