@@ -9,14 +9,22 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	gogoprototypes "github.com/gogo/protobuf/types"
 	"github.com/tendermint/tendermint/libs/log"
+	db "github.com/tendermint/tm-db"
 )
 
 //go:generate moq -out ./mock/queuer.go -pkg mock . KVQueue
 
 // KVQueue represents a queue built with the KVStore
 type KVQueue interface {
+	// Enqueue pushes the given value into the queue with the given key
 	Enqueue(key Key, value codec.ProtoMarshaler)
-	Dequeue(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) bool) bool
+	// Dequeue pops the first item in queue and stores it in the given value
+	Dequeue(value codec.ProtoMarshaler) bool
+	// DequeueIf pops the first item in queue iff it matches the given filter and stores it in the given value
+	DequeueIf(value codec.ProtoMarshaler, filter func(value codec.ProtoMarshaler) bool) bool
+	// DequeueUntil pops the first item in queue that matches the given filter and stores it in the given value
+	DequeueUntil(value codec.ProtoMarshaler, filter func(value codec.ProtoMarshaler) bool) bool
+	// IsEmpty returns true if the queue is empty; false otherwise
 	IsEmpty() bool
 
 	//TODO: convert to iterator
@@ -50,30 +58,56 @@ func (q GeneralKVQueue) Enqueue(key Key, value codec.ProtoMarshaler) {
 	q.store.Set(key, value)
 }
 
-// Dequeue pops the bottom of the queue and unmarshals it into the given object, and return true if anything
-// in the queue is found and the value passes the optional filter function
-func (q GeneralKVQueue) Dequeue(value codec.ProtoMarshaler, filter ...func(value codec.ProtoMarshaler) bool) bool {
+func noopFilter(_ codec.ProtoMarshaler) bool {
+	return true
+}
+
+// Dequeue pops the first item in queue and stores it in the given value
+func (q GeneralKVQueue) Dequeue(value codec.ProtoMarshaler) bool {
 	iter := sdk.KVStorePrefixIterator(q.store.KVStore, q.name.AsKey())
 	defer CloseLogError(iter, q.logger)
 
-	if !iter.Valid() {
-		return false
+	return q.dequeue(value, iter, noopFilter, false)
+}
+
+// DequeueIf pops the first item in queue iff it matches the given filter and stores it in the given value
+func (q GeneralKVQueue) DequeueIf(value codec.ProtoMarshaler, filter func(value codec.ProtoMarshaler) bool) bool {
+	iter := sdk.KVStorePrefixIterator(q.store.KVStore, q.name.AsKey())
+	defer CloseLogError(iter, q.logger)
+
+	return q.dequeue(value, iter, filter, false)
+}
+
+// DequeueUntil pops the first item in queue that matches the given filter and stores it in the given value
+func (q GeneralKVQueue) DequeueUntil(value codec.ProtoMarshaler, filter func(value codec.ProtoMarshaler) bool) bool {
+	iter := sdk.KVStorePrefixIterator(q.store.KVStore, q.name.AsKey())
+	defer CloseLogError(iter, q.logger)
+
+	return q.dequeue(value, iter, filter, true)
+}
+
+func (q GeneralKVQueue) dequeue(value codec.ProtoMarshaler, iter db.Iterator, filter func(value codec.ProtoMarshaler) bool, continueIfNotQualified bool) bool {
+	for ; iter.Valid(); iter.Next() {
+		var key gogoprototypes.BytesValue
+		q.store.cdc.MustUnmarshalLengthPrefixed(iter.Value(), &key)
+
+		if ok := q.store.Get(KeyFromBz(key.Value), value); !ok {
+			return false
+		}
+
+		isQualified := filter(value)
+		if isQualified {
+			q.store.Delete(KeyFromBz(iter.Key()))
+
+			return true
+		}
+
+		if !continueIfNotQualified {
+			return false
+		}
 	}
 
-	var key gogoprototypes.BytesValue
-	q.store.cdc.MustUnmarshalLengthPrefixed(iter.Value(), &key)
-
-	if ok := q.store.Get(KeyFromBz(key.Value), value); !ok {
-		return false
-	}
-
-	if len(filter) > 0 && !filter[0](value) {
-		return false
-	}
-
-	q.store.Delete(KeyFromBz(iter.Key()))
-
-	return true
+	return false
 }
 
 // IsEmpty returns true if the queue is empty; otherwise, false

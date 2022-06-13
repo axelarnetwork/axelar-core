@@ -11,13 +11,14 @@ import (
 )
 
 // NewCreateDeployTokenRequest is the constructor for CreateDeployTokenRequest
-func NewCreateDeployTokenRequest(sender sdk.AccAddress, chain string, asset Asset, tokenDetails TokenDetails, address Address) *CreateDeployTokenRequest {
+func NewCreateDeployTokenRequest(sender sdk.AccAddress, chain string, asset Asset, tokenDetails TokenDetails, address Address, dailyMintLimit string) *CreateDeployTokenRequest {
 	return &CreateDeployTokenRequest{
-		Sender:       sender,
-		Chain:        nexus.ChainName(utils.NormalizeString(chain)),
-		Asset:        asset,
-		TokenDetails: tokenDetails,
-		Address:      address,
+		Sender:         sender,
+		Chain:          nexus.ChainName(utils.NormalizeString(chain)),
+		Asset:          asset,
+		TokenDetails:   tokenDetails,
+		Address:        address,
+		DailyMintLimit: dailyMintLimit,
 	}
 }
 
@@ -69,6 +70,15 @@ func (m CreateDeployTokenRequest) ValidateBasic() error {
 
 	if err := m.TokenDetails.Validate(); err != nil {
 		return err
+	}
+
+	dailyMintLimit, err := sdk.ParseUint(m.DailyMintLimit)
+	if err != nil {
+		return err
+	}
+
+	if dailyMintLimit.IsZero() {
+		return fmt.Errorf("daily mint limit must be >0")
 	}
 
 	return nil

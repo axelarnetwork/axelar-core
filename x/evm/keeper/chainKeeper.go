@@ -238,9 +238,20 @@ func (k chainKeeper) GetBurnerAddressAndSalt(ctx sdk.Context, token types.ERC20T
 	bz = append(bz, nonce[:]...)
 	salt := types.Hash(common.BytesToHash(crypto.Keccak256Hash(bz).Bytes()))
 
+	var tokenBurnerCodeHash types.Hash
+	if token.IsExternal() {
+		// always use the latest burner byte code for external token
+		burnerCode, ok := k.GetBurnerByteCode(ctx)
+		if !ok {
+			return types.Address{}, types.Hash{}, fmt.Errorf("burner code not found for chain %s", k.chainLowerKey)
+		}
+		tokenBurnerCodeHash = types.Hash(crypto.Keccak256Hash(burnerCode))
+	} else {
+		tokenBurnerCodeHash = token.GetBurnerCodeHash()
+	}
+
 	var initCodeHash types.Hash
-	tokenBurnerCodeHash := token.GetBurnerCodeHash().Hex()
-	switch tokenBurnerCodeHash {
+	switch tokenBurnerCodeHash.Hex() {
 	case types.BurnerCodeHashV1:
 		addressType, err := abi.NewType("address", "address", nil)
 		if err != nil {
@@ -260,9 +271,9 @@ func (k chainKeeper) GetBurnerAddressAndSalt(ctx sdk.Context, token types.ERC20T
 
 		initCodeHash = types.Hash(crypto.Keccak256Hash(append(token.GetBurnerCode(), params...)))
 	case types.BurnerCodeHashV2, types.BurnerCodeHashV3, types.BurnerCodeHashV4:
-		initCodeHash = token.GetBurnerCodeHash()
+		initCodeHash = tokenBurnerCodeHash
 	default:
-		return types.Address{}, types.Hash{}, fmt.Errorf("unsupported burner code with hash %s for chain %s", tokenBurnerCodeHash, k.chainLowerKey)
+		return types.Address{}, types.Hash{}, fmt.Errorf("unsupported burner code with hash %s for chain %s", tokenBurnerCodeHash.Hex(), k.chainLowerKey)
 	}
 
 	return types.Address(crypto.CreateAddress2(gatewayAddr, salt, initCodeHash.Bytes())), salt, nil
@@ -556,12 +567,6 @@ func (k chainKeeper) GetChainIDByNetwork(ctx sdk.Context, network string) (sdk.I
 	return sdk.Int{}, false
 }
 
-func (k chainKeeper) popCommand(ctx sdk.Context, filters ...func(value codec.ProtoMarshaler) bool) (types.Command, bool) {
-	var cmd types.Command
-	ok := k.getCommandQueue(ctx).Dequeue(&cmd, filters...)
-	return cmd, ok
-}
-
 func (k chainKeeper) setCommandBatchMetadata(ctx sdk.Context, meta types.CommandBatchMetadata) {
 	k.getStore(ctx, k.chainLowerKey).Set(commandBatchPrefix.AppendStr(string(meta.ID)), &meta)
 }
@@ -644,15 +649,16 @@ func (k chainKeeper) setLatestBatchMetadata(ctx sdk.Context, batch types.Command
 
 // CreateNewBatchToSign creates a new batch of commands to be signed
 func (k chainKeeper) CreateNewBatchToSign(ctx sdk.Context, signer types.Signer) (types.CommandBatch, error) {
-	command, ok := k.popCommand(ctx)
+	var firstCmd types.Command
+	ok := k.getCommandQueue(ctx).Dequeue(&firstCmd)
 	if !ok {
 		return types.CommandBatch{}, nil
 	}
 
 	chainID := sdk.NewIntFromBigInt(k.getSigner(ctx).ChainID())
 	gasLimit := k.getCommandsGasLimit(ctx)
-	gasCost := uint32(command.MaxGasCost)
-	keyID := command.KeyID
+	gasCost := uint32(firstCmd.MaxGasCost)
+	keyID := firstCmd.KeyID
 	filter := func(value codec.ProtoMarshaler) bool {
 		cmd, ok := value.(*types.Command)
 		gasCost += cmd.MaxGasCost
@@ -660,12 +666,14 @@ func (k chainKeeper) CreateNewBatchToSign(ctx sdk.Context, signer types.Signer) 
 		return ok && cmd.KeyID == keyID && gasCost <= gasLimit
 	}
 
-	commands := []types.Command{command.Clone()}
+	commands := []types.Command{firstCmd.Clone()}
 	for {
-		cmd, ok := k.popCommand(ctx, filter)
+		var cmd types.Command
+		ok := k.getCommandQueue(ctx).DequeueIf(&cmd, filter)
 		if !ok {
 			break
 		}
+
 		commands = append(commands, cmd.Clone())
 	}
 
@@ -798,7 +806,7 @@ func (k chainKeeper) initTokenMetadata(ctx sdk.Context, asset string, details ty
 			ChainID:      sdk.NewIntFromBigInt(chainID),
 			Status:       types.Initialized,
 			IsExternal:   true,
-			BurnerCode:   burnerCode,
+			BurnerCode:   nil,
 		}
 		k.setTokenMetadata(ctx, meta)
 
