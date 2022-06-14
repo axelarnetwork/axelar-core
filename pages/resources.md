@@ -60,11 +60,21 @@
     <td>LCD endpoints</td>
     <td>
       https://axelar-lcd.quickapi.com/ <br/>
-      https://axelar-lcd.qubelabs.io/
+      https://axelar-lcd.qubelabs.io/ <br/>
+      https://services.staketab.com/axelar-api
     </td>
     <td>
-      https://axelartest-lcd.quickapi.com/
+      https://axelartest-lcd.quickapi.com/ <br/>
+      https://services.staketab.com/axelar-testnet-1-api
     </td>
+    <td>
+      https://services.staketab.com/axelar-testnet-2-api
+    </td>
+  </tr>
+  <tr>
+    <td>GRPC endpoints</td>
+    <td>services.staketab.com:9080</td>
+    <td>services.staketab.com:9090</td>
     <td></td>
   </tr>
   <tr>
