@@ -93,7 +93,6 @@ type ReqConfirmDeposit struct {
 type ReqConfirmTransferKey struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 	TxID    string       `json:"tx_id" yaml:"tx_id"`
-	KeyID   string       `json:"key_id" yaml:"key_id"`
 }
 
 // ReqCreatePendingTransfers represents a request to create commands for all pending transfers
@@ -246,7 +245,7 @@ func GetHandlerConfirmTransferKey(cliCtx client.Context) http.HandlerFunc {
 
 		txID := common.HexToHash(req.TxID)
 
-		msg := types.NewConfirmTransferKeyRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], txID, req.KeyID)
+		msg := types.NewConfirmTransferKeyRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], txID)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

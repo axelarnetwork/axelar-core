@@ -980,10 +980,8 @@ func TestHandleTransferKey(t *testing.T) {
 		newOwners := slices.Map(expectedAddresses, func(addr common.Address) types.Address { return types.Address(addr) })
 
 		operatorshipTransferred := types.EventMultisigOperatorshipTransferred{
-			PreOperators:  event.GetEvent().(*types.Event_MultisigOperatorshipTransferred).MultisigOperatorshipTransferred.PreOperators,
-			PrevThreshold: event.GetEvent().(*types.Event_MultisigOperatorshipTransferred).MultisigOperatorshipTransferred.PrevThreshold,
-			NewOperators:  newOwners,
-			NewThreshold:  sdk.NewUint(uint64(threshold)),
+			NewOperators: newOwners,
+			NewThreshold: sdk.NewUint(uint64(threshold)),
 		}
 		event.Event = &types.Event_MultisigOperatorshipTransferred{
 			MultisigOperatorshipTransferred: &operatorshipTransferred,
@@ -1039,20 +1037,14 @@ func randTransferKeyEvent(chain nexus.ChainName) types.Event {
 		Index: uint64(rand.I64Between(1, 50)),
 	}
 
-	preAddresses := make([]types.Address, rand.I64Between(10, 50))
-	for i := 0; i < len(preAddresses); i++ {
-		preAddresses[i] = types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength)))
-	}
 	newAddresses := make([]types.Address, rand.I64Between(10, 50))
 	for i := 0; i < len(newAddresses); i++ {
 		newAddresses[i] = types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength)))
 	}
 
 	operatorshipTransferred := types.EventMultisigOperatorshipTransferred{
-		PreOperators:  preAddresses,
-		PrevThreshold: sdk.NewUint(uint64(rand.I64Between(10, 50))),
-		NewOperators:  newAddresses,
-		NewThreshold:  sdk.NewUint(uint64(rand.I64Between(10, 50))),
+		NewOperators: newAddresses,
+		NewThreshold: sdk.NewUint(uint64(rand.I64Between(10, 50))),
 	}
 	event.Event = &types.Event_MultisigOperatorshipTransferred{
 		MultisigOperatorshipTransferred: &operatorshipTransferred,

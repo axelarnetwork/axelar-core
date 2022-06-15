@@ -2987,8 +2987,6 @@ ERC20TokenMetadata describes information about an ERC20 token
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `pre_operators` | [bytes](#bytes) | repeated |  |
-| `prev_threshold` | [bytes](#bytes) |  |  |
 | `new_operators` | [bytes](#bytes) | repeated |  |
 | `new_threshold` | [bytes](#bytes) |  |  |
 
@@ -4085,7 +4083,6 @@ MsgConfirmToken represents a token deploy confirmation message
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
 | `tx_id` | [bytes](#bytes) |  |  |
-| `key_id` | [string](#string) |  |  |
 
 
 

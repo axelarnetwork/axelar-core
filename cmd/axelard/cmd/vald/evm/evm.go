@@ -35,7 +35,7 @@ var (
 	ERC20TransferSig                 = crypto.Keccak256Hash([]byte("Transfer(address,address,uint256)"))
 	ERC20TokenDeploymentSig          = crypto.Keccak256Hash([]byte("TokenDeployed(string,address)"))
 	SinglesigTransferOperatorshipSig = crypto.Keccak256Hash([]byte("OperatorshipTransferred(address,address)"))
-	MultisigTransferOperatorshipSig  = crypto.Keccak256Hash([]byte("OperatorshipTransferred(address[],uint256,address[],uint256)"))
+	MultisigTransferOperatorshipSig  = crypto.Keccak256Hash([]byte("OperatorshipTransferred(bytes)"))
 	ContractCallSig                  = crypto.Keccak256Hash([]byte("ContractCall(address,string,string,bytes32,bytes)"))
 	ContractCallWithTokenSig         = crypto.Keccak256Hash([]byte("ContractCallWithToken(address,string,string,bytes32,bytes,string,uint256)"))
 	TokenSentSig                     = crypto.Keccak256Hash([]byte("TokenSent(address,string,string,string,uint256)"))
@@ -781,14 +781,6 @@ func decodeERC20TokenDeploymentEvent(log *geth.Log) (evmTypes.EventTokenDeployed
 	}, nil
 }
 
-func decodeSinglesigKeyTransferEvent(log *geth.Log) (common.Address, error) {
-	if len(log.Topics) != 3 || log.Topics[0] != SinglesigTransferOperatorshipSig {
-		return common.Address{}, fmt.Errorf("event is not for a transfer singlesig key")
-	}
-
-	return common.BytesToAddress(log.Topics[2][:]), nil
-}
-
 func decodeSinglesigOperatorshipTransferredEvent(log *geth.Log) (evmTypes.EventSinglesigOperatorshipTransferred, error) {
 	if len(log.Topics) != 3 || log.Topics[0] != SinglesigTransferOperatorshipSig {
 		return evmTypes.EventSinglesigOperatorshipTransferred{}, fmt.Errorf("event is not for a transfer singlesig key")
@@ -805,63 +797,44 @@ func decodeMultisigOperatorshipTransferredEvent(log *geth.Log) (evmTypes.EventMu
 		return evmTypes.EventMultisigOperatorshipTransferred{}, fmt.Errorf("event is not a MultisigTransferOwnershipSig")
 	}
 
-	preAddresses, preThreshold, newAddresses, newThreshold, err := unpackMultisigTransferKeyEvent(log)
+	newAddresses, newThreshold, err := unpackMultisigTransferKeyEvent(log)
 	if err != nil {
 		return evmTypes.EventMultisigOperatorshipTransferred{}, err
 	}
 
-	f := func(addr common.Address) evmTypes.Address { return evmTypes.Address(addr) }
-
 	return evmTypes.EventMultisigOperatorshipTransferred{
-		PreOperators:  slices.Map(preAddresses, f),
-		PrevThreshold: sdk.NewUintFromBigInt(preThreshold),
-		NewOperators:  slices.Map(newAddresses, f),
-		NewThreshold:  sdk.NewUintFromBigInt(newThreshold),
+		NewOperators: slices.Map(newAddresses, func(addr common.Address) evmTypes.Address { return evmTypes.Address(addr) }),
+		NewThreshold: sdk.NewUintFromBigInt(newThreshold),
 	}, nil
 }
 
-func unpackMultisigTransferKeyEvent(log *geth.Log) ([]common.Address, *big.Int, []common.Address, *big.Int, error) {
+func unpackMultisigTransferKeyEvent(log *geth.Log) ([]common.Address, *big.Int, error) {
+	bytesType, err := abi.NewType("bytes", "bytes", nil)
+	if err != nil {
+		return []common.Address{}, &big.Int{}, err
+	}
+
+	operatorData, err := evmTypes.StrictDecode(abi.Arguments{{Type: bytesType}}, log.Data)
+	if err != nil {
+		return []common.Address{}, &big.Int{}, err
+	}
+
 	addressesType, err := abi.NewType("address[]", "address[]", nil)
 	if err != nil {
-		return []common.Address{}, &big.Int{}, []common.Address{}, &big.Int{}, err
+		return []common.Address{}, &big.Int{}, err
 	}
 
 	uint256Type, err := abi.NewType("uint256", "uint256", nil)
 	if err != nil {
-		return []common.Address{}, &big.Int{}, []common.Address{}, &big.Int{}, err
+		return []common.Address{}, &big.Int{}, err
 	}
 
-	arguments := abi.Arguments{{Type: addressesType}, {Type: uint256Type}, {Type: addressesType}, {Type: uint256Type}}
-	params, err := evmTypes.StrictDecode(arguments, log.Data)
+	params, err := evmTypes.StrictDecode(abi.Arguments{{Type: addressesType}, {Type: uint256Type}}, operatorData[0].([]byte))
 	if err != nil {
-		return []common.Address{}, &big.Int{}, []common.Address{}, &big.Int{}, err
+		return []common.Address{}, &big.Int{}, err
 	}
 
-	if len(params) != 4 {
-		return []common.Address{}, &big.Int{}, []common.Address{}, &big.Int{}, fmt.Errorf("event is not for a transfer multisig key")
-	}
-
-	preAddresses, ok := params[0].([]common.Address)
-	if !ok {
-		return []common.Address{}, &big.Int{}, []common.Address{}, &big.Int{}, fmt.Errorf("event is not for a transfer multisig key")
-	}
-
-	preThreshold, ok := params[1].(*big.Int)
-	if !ok {
-		return []common.Address{}, &big.Int{}, []common.Address{}, &big.Int{}, fmt.Errorf("event is not for a transfer multisig key")
-	}
-
-	newAddresses, ok := params[2].([]common.Address)
-	if !ok {
-		return []common.Address{}, &big.Int{}, []common.Address{}, &big.Int{}, fmt.Errorf("event is not for a transfer multisig key")
-	}
-
-	newThreshold, ok := params[3].(*big.Int)
-	if !ok {
-		return []common.Address{}, &big.Int{}, []common.Address{}, &big.Int{}, fmt.Errorf("event is not for a transfer multisig key")
-	}
-
-	return preAddresses, preThreshold, newAddresses, newThreshold, nil
+	return params[0].([]common.Address), params[1].(*big.Int), nil
 }
 
 func packEvents(chain nexus.ChainName, events []evmTypes.Event) (vote.Vote, error) {
