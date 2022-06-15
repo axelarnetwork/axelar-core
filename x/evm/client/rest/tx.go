@@ -106,14 +106,15 @@ type ReqCreatePendingTransfers struct {
 
 // ReqCreateDeployToken represents a request to create a deploy token command
 type ReqCreateDeployToken struct {
-	BaseReq     rest.BaseReq `json:"base_req" yaml:"base_req"`
-	OriginChain string       `json:"origin_chain" yaml:"origin_chain"`
-	OriginAsset string       `json:"origin_asset" yaml:"origin_asset"`
-	Symbol      string       `json:"symbol" yaml:"symbol"`
-	TokenName   string       `json:"token_name" yaml:"token_name"`
-	Decimals    string       `json:"decimals" yaml:"decimals"`
-	Capacity    string       `json:"capacity" yaml:"capacity"`
-	Address     string       `json:"address" yaml:"address"`
+	BaseReq        rest.BaseReq `json:"base_req" yaml:"base_req"`
+	OriginChain    string       `json:"origin_chain" yaml:"origin_chain"`
+	OriginAsset    string       `json:"origin_asset" yaml:"origin_asset"`
+	Symbol         string       `json:"symbol" yaml:"symbol"`
+	TokenName      string       `json:"token_name" yaml:"token_name"`
+	Decimals       string       `json:"decimals" yaml:"decimals"`
+	Capacity       string       `json:"capacity" yaml:"capacity"`
+	Address        string       `json:"address" yaml:"address"`
+	DailyMintLimit string       `json:"daily_mint_limit" yaml:"daily_mint_limit"`
 }
 
 // ReqCreateBurnTokens represents a request to create commands for all outstanding burns
@@ -328,7 +329,7 @@ func GetHandlerCreateDeployToken(cliCtx client.Context) http.HandlerFunc {
 
 		asset := types.NewAsset(req.OriginChain, req.OriginAsset)
 		tokenDetails := types.NewTokenDetails(req.TokenName, req.Symbol, uint8(decs), capacity)
-		msg := types.NewCreateDeployTokenRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], asset, tokenDetails, types.Address(common.HexToAddress(req.Address)))
+		msg := types.NewCreateDeployTokenRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], asset, tokenDetails, types.Address(common.HexToAddress(req.Address)), req.DailyMintLimit)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
