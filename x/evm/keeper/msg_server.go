@@ -136,7 +136,7 @@ func (s msgServer) SetGateway(c context.Context, req *types.SetGatewayRequest) (
 	}
 
 	if _, ok := s.signer.GetCurrentKeyID(ctx, chain, keyRole); !ok {
-		return nil, fmt.Errorf("no key for chain %s found", chain.Name)
+		return nil, fmt.Errorf("current key not set for chain %s", chain.Name)
 	}
 
 	if _, ok := s.signer.GetExternalKeyIDs(ctx, chain); !ok {
@@ -393,7 +393,7 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 		return nil, err
 	}
 
-	_, ok = s.signer.GetNextKeyID(ctx, chain, keyRole)
+	nextKeyID, ok := s.signer.GetNextKeyID(ctx, chain, keyRole)
 	if !ok {
 		return nil, fmt.Errorf("next %s key for chain %s not set yet", keyRole.SimpleString(), chain.Name)
 	}
@@ -420,7 +420,7 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 		return nil, fmt.Errorf("min voter count for chain %s not found", chain.Name)
 	}
 
-	pollKey := vote.NewPollKey(types.ModuleName, fmt.Sprintf("%s_%s", req.TxID.Hex(), req.KeyID))
+	pollKey := vote.NewPollKey(types.ModuleName, fmt.Sprintf("%s_%s", req.TxID.Hex(), nextKeyID))
 	if err := s.voter.InitializePoll(
 		ctx,
 		pollKey,
@@ -499,7 +499,7 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 
 	keyID, ok := s.signer.GetCurrentKeyID(ctx, chain, keyRole)
 	if !ok {
-		return nil, fmt.Errorf("no key for chain %s found", chain.Name)
+		return nil, fmt.Errorf("current key not set for chain %s", chain.Name)
 	}
 
 	token, err := keeper.CreateERC20Token(ctx, req.Asset.Name, req.TokenDetails, req.Address)
@@ -553,7 +553,7 @@ func (s msgServer) CreateBurnTokens(c context.Context, req *types.CreateBurnToke
 
 	keyID, ok := s.signer.GetCurrentKeyID(ctx, chain, keyRole)
 	if !ok {
-		return nil, fmt.Errorf("no %s key for chain %s found", keyRole.SimpleString(), chain.Name)
+		return nil, fmt.Errorf("current key not set for chain %s", chain.Name)
 	}
 
 	seen := map[string]bool{}
@@ -622,7 +622,7 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 
 	keyID, ok := s.signer.GetCurrentKeyID(ctx, chain, keyRole)
 	if !ok {
-		return nil, fmt.Errorf("no %s key for chain %s found", keyRole.SimpleString(), chain.Name)
+		return nil, fmt.Errorf("current key not set for chain %s", chain.Name)
 	}
 
 	for _, transfer := range pendingTransfers {
@@ -703,9 +703,9 @@ func (s msgServer) createTransferKeyCommand(ctx sdk.Context, keeper types.ChainK
 		return types.Command{}, err
 	}
 
-	currMasterKeyID, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.MasterKey)
+	keyID, ok := s.signer.GetCurrentKeyID(ctx, chain, keyRole)
 	if !ok {
-		return types.Command{}, fmt.Errorf("current %s key not set for chain %s", tss.MasterKey, chain.Name)
+		return types.Command{}, fmt.Errorf("current key not set for chain %s", chain.Name)
 	}
 
 	nextKey, ok := s.signer.GetKey(ctx, nextKeyID)
@@ -723,7 +723,7 @@ func (s msgServer) createTransferKeyCommand(ctx sdk.Context, keeper types.ChainK
 		address := crypto.PubkeyToAddress(pk)
 		s.Logger(ctx).Debug(fmt.Sprintf("creating transfer key command for chain %s to transfer to address %s", chain.Name, address))
 
-		return types.CreateSinglesigTransferCommand(chainID, currMasterKeyID, crypto.PubkeyToAddress(pk))
+		return types.CreateSinglesigTransferCommand(chainID, keyID, crypto.PubkeyToAddress(pk))
 	case tss.Multisig:
 		addresses, threshold, err := types.GetMultisigAddresses(nextKey)
 		if err != nil {
@@ -737,7 +737,7 @@ func (s msgServer) createTransferKeyCommand(ctx sdk.Context, keeper types.ChainK
 
 		s.Logger(ctx).Debug(fmt.Sprintf("creating transfer key command for chain %s to transfer to addresses %s", chain.Name, strings.Join(addressStrs, ",")))
 
-		return types.CreateMultisigTransferCommand(chainID, currMasterKeyID, threshold, addresses...)
+		return types.CreateMultisigTransferCommand(chainID, keyID, threshold, addresses...)
 	default:
 		return types.Command{}, fmt.Errorf("invalid key type '%s'", chain.KeyType.SimpleString())
 	}

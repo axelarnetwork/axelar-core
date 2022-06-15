@@ -3113,8 +3113,6 @@ paths:
               tx_id:
                 type: string
                 format: byte
-              key_id:
-                type: string
       tags:
         - MsgService
   /axelar/evm/create_burn_tokens:
@@ -6588,14 +6586,6 @@ paths:
                   multisig_operatorship_transferred:
                     type: object
                     properties:
-                      pre_operators:
-                        type: array
-                        items:
-                          type: string
-                          format: byte
-                      prev_threshold:
-                        type: string
-                        format: byte
                       new_operators:
                         type: array
                         items:
@@ -38380,8 +38370,6 @@ definitions:
       tx_id:
         type: string
         format: byte
-      key_id:
-        type: string
   axelar.evm.v1beta1.ConfirmTransferKeyResponse:
     type: object
   axelar.evm.v1beta1.ConfirmationHeightResponse:
@@ -38598,14 +38586,6 @@ definitions:
       multisig_operatorship_transferred:
         type: object
         properties:
-          pre_operators:
-            type: array
-            items:
-              type: string
-              format: byte
-          prev_threshold:
-            type: string
-            format: byte
           new_operators:
             type: array
             items:
@@ -38674,14 +38654,6 @@ definitions:
   axelar.evm.v1beta1.EventMultisigOperatorshipTransferred:
     type: object
     properties:
-      pre_operators:
-        type: array
-        items:
-          type: string
-          format: byte
-      prev_threshold:
-        type: string
-        format: byte
       new_operators:
         type: array
         items:
@@ -38816,14 +38788,6 @@ definitions:
           multisig_operatorship_transferred:
             type: object
             properties:
-              pre_operators:
-                type: array
-                items:
-                  type: string
-                  format: byte
-              prev_threshold:
-                type: string
-                format: byte
               new_operators:
                 type: array
                 items:

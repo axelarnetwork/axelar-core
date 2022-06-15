@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"encoding/hex"
 	"fmt"
 	"sort"
@@ -336,15 +337,15 @@ func queryAddressByKeyID(ctx sdk.Context, s types.Signer, chain nexustypes.Chain
 			return types.KeyAddressResponse{}, sdkerrors.Wrap(types.ErrEVM, err.Error())
 		}
 
-		addressStrs := make([]string, len(multisigPubKey))
-		for i, address := range types.KeysToAddresses(multisigPubKey...) {
-			addressStrs[i] = address.Hex()
-		}
+		addresses := types.Addresses(slices.Map(multisigPubKey, func(p ecdsa.PublicKey) types.Address {
+			return types.Address(crypto.PubkeyToAddress(p))
+		}))
+		sort.Stable(addresses)
 
 		threshold := uint32(key.GetMultisigKey().Threshold)
 
 		resp := types.KeyAddressResponse{
-			Address: &types.KeyAddressResponse_MultisigAddresses_{MultisigAddresses: &types.KeyAddressResponse_MultisigAddresses{Addresses: addressStrs, Threshold: threshold}},
+			Address: &types.KeyAddressResponse_MultisigAddresses_{MultisigAddresses: &types.KeyAddressResponse_MultisigAddresses{Addresses: slices.Map(addresses, types.Address.Hex), Threshold: threshold}},
 			KeyID:   keyID,
 		}
 

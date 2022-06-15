@@ -84,7 +84,7 @@ func TestSetGateway(t *testing.T) {
 		}
 		_, err := msgServer.SetGateway(sdk.WrapSDKContext(ctx), req)
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "no key")
+		assert.Contains(t, err.Error(), "current key not set for chain")
 
 		signerKeeper.GetCurrentKeyIDFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
 			return tssTestUtils.RandKeyID(), true
