@@ -105,7 +105,7 @@ func (p Poll) Is(state exported.PollState) bool {
 }
 
 // SetExpired sets the poll to be expired
-func (p Poll) SetExpired() {
+func (p *Poll) SetExpired() {
 	if !p.Is(exported.NonExistent) {
 		p.State |= exported.Expired
 	}
@@ -113,7 +113,7 @@ func (p Poll) SetExpired() {
 }
 
 // AllowOverride makes it possible to delete the poll, regardless of which state it is in
-func (p Poll) AllowOverride() {
+func (p *Poll) AllowOverride() {
 	if !p.Is(exported.NonExistent) {
 		p.State |= exported.AllowOverride
 	}
