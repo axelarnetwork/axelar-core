@@ -4159,7 +4159,6 @@ command for AxelarGateway
 | `asset` | [Asset](#axelar.evm.v1beta1.Asset) |  |  |
 | `token_details` | [TokenDetails](#axelar.evm.v1beta1.TokenDetails) |  |  |
 | `address` | [bytes](#bytes) |  |  |
-| `daily_mint_limit` | [string](#string) |  |  |
 
 
 
