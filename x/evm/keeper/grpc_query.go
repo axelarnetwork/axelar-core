@@ -452,9 +452,15 @@ func (q Querier) ERC20Tokens(c context.Context, req *types.ERC20TokensRequest) (
 		// no filtering when retrieving all tokens
 	}
 
-	assets := slices.Map(tokens, types.ERC20Token.GetAsset)
+	res := types.ERC20TokensResponse{
+		Tokens: make(map[string]string, len(tokens)),
+	}
 
-	return &types.ERC20TokensResponse{Assets: assets}, nil
+	slices.ForEach(tokens, func(token types.ERC20Token) {
+		res.Tokens[token.GetAsset()] = token.GetDetails().Symbol
+	})
+
+	return &res, nil
 }
 
 // TokenInfo returns the token info for a registered asset
@@ -487,10 +493,11 @@ func (q Querier) TokenInfo(c context.Context, req *types.TokenInfoRequest) (*typ
 	}
 
 	return &types.TokenInfoResponse{
-		Asset:      token.GetAsset(),
-		Details:    token.GetDetails(),
-		Address:    token.GetAddress().Hex(),
-		Confirmed:  token.Is(types.Confirmed),
-		IsExternal: token.IsExternal(),
+		Asset:          token.GetAsset(),
+		Details:        token.GetDetails(),
+		Address:        token.GetAddress().Hex(),
+		Confirmed:      token.Is(types.Confirmed),
+		IsExternal:     token.IsExternal(),
+		BurnerCodeHash: token.GetBurnerCodeHash().Hex(),
 	}, nil
 }
