@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/axelarnetwork/axelar-core/app"
+	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -112,21 +113,6 @@ func TestPoll(t *testing.T) {
 				assert.True(t, poll.Is(exported.Expired))
 				assert.Len(t, pollStore.SetMetadataCalls(), 1)
 				assert.True(t, pollStore.SetMetadataCalls()[0].Metadata.Is(exported.Expired))
-			}).
-			Run(t)
-	}).Repeat(repeats))
-
-	t.Run("AllowOverride", testutils.Func(func(t *testing.T) {
-		givenPoll.
-			When("poll is pending", withState(exported.Pending)).
-			Then("should set poll as allow override", func(t *testing.T) {
-				pollStore.SetMetadataFunc = func(exported.PollMetadata) {}
-
-				poll.AllowOverride()
-
-				assert.True(t, poll.Is(exported.AllowOverride))
-				assert.Len(t, pollStore.SetMetadataCalls(), 1)
-				assert.True(t, pollStore.SetMetadataCalls()[0].Metadata.Is(exported.AllowOverride))
 			}).
 			Run(t)
 	}).Repeat(repeats))
