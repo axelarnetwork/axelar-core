@@ -71,7 +71,7 @@ func initializeRandomPoll(ctx sdk.Context, keeper Keeper) exported.PollMetadata 
 		panic(fmt.Errorf("poll metadata not found"))
 	}
 
-	pollStates := []exported.PollState{exported.Completed, exported.Failed, exported.Expired, exported.AllowOverride}
+	pollStates := []exported.PollState{exported.Completed, exported.Failed}
 	poll := types.NewPoll(metadata, keeper.newPollStore(ctx, metadata.ID))
 	poll.State = rand.Of(pollStates...)
 

@@ -96,14 +96,11 @@ func TestHandlePollsAtExpiry(t *testing.T) {
 
 	givenPollQueue.
 		When2(withPoll(true, exported.Pending)).
-		Then("set poll as expired and delete", func(t *testing.T) {
-			poll.SetExpiredFunc = func() {}
+		Then("should delete poll", func(t *testing.T) {
 			voteHandler.HandleExpiredPollFunc = func(ctx sdk.Context, poll exported.Poll) error { return nil }
 
 			err := handlePollsAtExpiry(ctx, keeper)
 			assert.NoError(t, err)
-
-			assert.Len(t, poll.SetExpiredCalls(), 1)
 			assert.Len(t, poll.DeleteCalls(), 1)
 			assert.Len(t, voteHandler.HandleExpiredPollCalls(), 1)
 		}).

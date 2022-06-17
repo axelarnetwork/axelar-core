@@ -53,9 +53,6 @@ var _ exported.Poll = &PollMock{}
 // 			IsFunc: func(state exported.PollState) bool {
 // 				panic("mock out the Is method")
 // 			},
-// 			SetExpiredFunc: func()  {
-// 				panic("mock out the SetExpired method")
-// 			},
 // 			VoteFunc: func(voter github_com_cosmos_cosmos_sdk_types.ValAddress, blockHeight int64, data codec.ProtoMarshaler) (codec.ProtoMarshaler, bool, error) {
 // 				panic("mock out the Vote method")
 // 			},
@@ -98,9 +95,6 @@ type PollMock struct {
 
 	// IsFunc mocks the Is method.
 	IsFunc func(state exported.PollState) bool
-
-	// SetExpiredFunc mocks the SetExpired method.
-	SetExpiredFunc func()
 
 	// VoteFunc mocks the Vote method.
 	VoteFunc func(voter github_com_cosmos_cosmos_sdk_types.ValAddress, blockHeight int64, data codec.ProtoMarshaler) (codec.ProtoMarshaler, bool, error)
@@ -148,9 +142,6 @@ type PollMock struct {
 			// State is the state argument value.
 			State exported.PollState
 		}
-		// SetExpired holds details about calls to the SetExpired method.
-		SetExpired []struct {
-		}
 		// Vote holds details about calls to the Vote method.
 		Vote []struct {
 			// Voter is the voter argument value.
@@ -172,7 +163,6 @@ type PollMock struct {
 	lockHasVotedCorrectly   sync.RWMutex
 	lockHasVotedLate        sync.RWMutex
 	lockIs                  sync.RWMutex
-	lockSetExpired          sync.RWMutex
 	lockVote                sync.RWMutex
 }
 
@@ -479,32 +469,6 @@ func (mock *PollMock) IsCalls() []struct {
 	mock.lockIs.RLock()
 	calls = mock.calls.Is
 	mock.lockIs.RUnlock()
-	return calls
-}
-
-// SetExpired calls SetExpiredFunc.
-func (mock *PollMock) SetExpired() {
-	if mock.SetExpiredFunc == nil {
-		panic("PollMock.SetExpiredFunc: method is nil but Poll.SetExpired was just called")
-	}
-	callInfo := struct {
-	}{}
-	mock.lockSetExpired.Lock()
-	mock.calls.SetExpired = append(mock.calls.SetExpired, callInfo)
-	mock.lockSetExpired.Unlock()
-	mock.SetExpiredFunc()
-}
-
-// SetExpiredCalls gets all the calls that were made to SetExpired.
-// Check the length with:
-//     len(mockedPoll.SetExpiredCalls())
-func (mock *PollMock) SetExpiredCalls() []struct {
-} {
-	var calls []struct {
-	}
-	mock.lockSetExpired.RLock()
-	calls = mock.calls.SetExpired
-	mock.lockSetExpired.RUnlock()
 	return calls
 }
 
