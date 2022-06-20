@@ -181,6 +181,11 @@ func (k Keeper) GetHeartbeatPeriodInBlocks(ctx sdk.Context) int64 {
 	return result
 }
 
+// GetHeartbeatValidityInBlocks returns the number of blocks a heartbeat is considered valid
+func (k Keeper) GetHeartbeatValidityInBlocks(ctx sdk.Context) int64 {
+	return 2 * k.GetHeartbeatPeriodInBlocks(ctx)
+}
+
 // GetKeyRequirement gets the key requirement for a given chain of a given role
 func (k Keeper) GetKeyRequirement(ctx sdk.Context, keyRole exported.KeyRole, keyType exported.KeyType) (exported.KeyRequirement, bool) {
 	for _, keyRequirement := range k.GetParams(ctx).KeyRequirements {
@@ -320,7 +325,7 @@ func (k Keeper) IsOperatorAvailable(ctx sdk.Context, validator sdk.ValAddress, k
 	}
 	height := int64(binary.LittleEndian.Uint64(bz))
 
-	return (ctx.BlockHeight()-height) <= k.GetHeartbeatPeriodInBlocks(ctx) && k.operatorHasKeys(ctx, validator, keyIDs...)
+	return (ctx.BlockHeight()-height) <= k.GetHeartbeatValidityInBlocks(ctx) && k.operatorHasKeys(ctx, validator, keyIDs...)
 }
 
 // GetAvailableOperators gets all operators that still have a non-stale heartbeat
@@ -338,7 +343,7 @@ func (k Keeper) GetAvailableOperators(ctx sdk.Context, keyIDs ...exported.KeyID)
 		}
 
 		height := int64(binary.LittleEndian.Uint64(iter.Value()))
-		if (ctx.BlockHeight() - height) > k.GetHeartbeatPeriodInBlocks(ctx) {
+		if (ctx.BlockHeight() - height) > k.GetHeartbeatValidityInBlocks(ctx) {
 			k.Logger(ctx).Debug(fmt.Sprintf("excluding validator %s due to stale heartbeat "+
 				"[current height %d, event height %d]", validator, ctx.BlockHeight(), height))
 			continue

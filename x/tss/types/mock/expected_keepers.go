@@ -1267,6 +1267,9 @@ var _ types.TSSKeeper = &TSSKeeperMock{}
 // 			GetHeartbeatPeriodInBlocksFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64 {
 // 				panic("mock out the GetHeartbeatPeriodInBlocks method")
 // 			},
+// 			GetHeartbeatValidityInBlocksFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64 {
+// 				panic("mock out the GetHeartbeatValidityInBlocks method")
+// 			},
 // 			GetInfoForSigFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string) (github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo, bool) {
 // 				panic("mock out the GetInfoForSig method")
 // 			},
@@ -1438,6 +1441,9 @@ type TSSKeeperMock struct {
 
 	// GetHeartbeatPeriodInBlocksFunc mocks the GetHeartbeatPeriodInBlocks method.
 	GetHeartbeatPeriodInBlocksFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64
+
+	// GetHeartbeatValidityInBlocksFunc mocks the GetHeartbeatValidityInBlocks method.
+	GetHeartbeatValidityInBlocksFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64
 
 	// GetInfoForSigFunc mocks the GetInfoForSig method.
 	GetInfoForSigFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string) (github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo, bool)
@@ -1681,6 +1687,11 @@ type TSSKeeperMock struct {
 		}
 		// GetHeartbeatPeriodInBlocks holds details about calls to the GetHeartbeatPeriodInBlocks method.
 		GetHeartbeatPeriodInBlocks []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+		}
+		// GetHeartbeatValidityInBlocks holds details about calls to the GetHeartbeatValidityInBlocks method.
+		GetHeartbeatValidityInBlocks []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
@@ -2014,6 +2025,7 @@ type TSSKeeperMock struct {
 	lockGetExternalMultisigThreshold    sync.RWMutex
 	lockGetGroupRecoveryInfo            sync.RWMutex
 	lockGetHeartbeatPeriodInBlocks      sync.RWMutex
+	lockGetHeartbeatValidityInBlocks    sync.RWMutex
 	lockGetInfoForSig                   sync.RWMutex
 	lockGetKey                          sync.RWMutex
 	lockGetKeyRequirement               sync.RWMutex
@@ -2636,6 +2648,37 @@ func (mock *TSSKeeperMock) GetHeartbeatPeriodInBlocksCalls() []struct {
 	mock.lockGetHeartbeatPeriodInBlocks.RLock()
 	calls = mock.calls.GetHeartbeatPeriodInBlocks
 	mock.lockGetHeartbeatPeriodInBlocks.RUnlock()
+	return calls
+}
+
+// GetHeartbeatValidityInBlocks calls GetHeartbeatValidityInBlocksFunc.
+func (mock *TSSKeeperMock) GetHeartbeatValidityInBlocks(ctx github_com_cosmos_cosmos_sdk_types.Context) int64 {
+	if mock.GetHeartbeatValidityInBlocksFunc == nil {
+		panic("TSSKeeperMock.GetHeartbeatValidityInBlocksFunc: method is nil but TSSKeeper.GetHeartbeatValidityInBlocks was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetHeartbeatValidityInBlocks.Lock()
+	mock.calls.GetHeartbeatValidityInBlocks = append(mock.calls.GetHeartbeatValidityInBlocks, callInfo)
+	mock.lockGetHeartbeatValidityInBlocks.Unlock()
+	return mock.GetHeartbeatValidityInBlocksFunc(ctx)
+}
+
+// GetHeartbeatValidityInBlocksCalls gets all the calls that were made to GetHeartbeatValidityInBlocks.
+// Check the length with:
+//     len(mockedTSSKeeper.GetHeartbeatValidityInBlocksCalls())
+func (mock *TSSKeeperMock) GetHeartbeatValidityInBlocksCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}
+	mock.lockGetHeartbeatValidityInBlocks.RLock()
+	calls = mock.calls.GetHeartbeatValidityInBlocks
+	mock.lockGetHeartbeatValidityInBlocks.RUnlock()
 	return calls
 }
 

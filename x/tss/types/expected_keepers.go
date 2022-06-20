@@ -109,6 +109,7 @@ type TSSKeeper interface {
 	SetExternalKeyIDs(ctx sdk.Context, chain nexus.Chain, keyIDs []exported.KeyID)
 	GetExternalMultisigThreshold(ctx sdk.Context) utils.Threshold
 	GetHeartbeatPeriodInBlocks(ctx sdk.Context) int64
+	GetHeartbeatValidityInBlocks(ctx sdk.Context) int64
 	GetOldActiveKeys(ctx sdk.Context, chain nexus.Chain, keyRole exported.KeyRole) ([]exported.Key, error)
 	GetMaxSimultaneousSignShares(ctx sdk.Context) int64
 
