@@ -404,6 +404,18 @@ func (h Hash) Size() int {
 // Signature encodes the parameters R,S,V in the byte format expected by an EVM chain
 type Signature [crypto.SignatureLength]byte
 
+// NewSignature is the constructor of Signature
+func NewSignature(bz []byte) (sig Signature) {
+	copy(sig[:], bz)
+
+	return sig
+}
+
+// Hex returns the hex-encoding of the given Signature
+func (s Signature) Hex() string {
+	return hex.EncodeToString(s[:])
+}
+
 // ToSignature transforms an Axelar generated signature into a recoverable signature
 func ToSignature(sig btcec.Signature, hash common.Hash, pk ecdsa.PublicKey) (Signature, error) {
 	s := Signature{}
@@ -486,16 +498,13 @@ func CreateExecuteDataSinglesig(data []byte, sig Signature) ([]byte, error) {
 
 // CreateExecuteDataMultisig wraps the specific command data and includes the command signatures.
 // Returns the data that goes into the data field of an EVM transaction
-func CreateExecuteDataMultisig(data []byte, sigs ...Signature) ([]byte, error) {
+func CreateExecuteDataMultisig(data []byte, signers []common.Address, sigs []Signature) ([]byte, error) {
 	abiEncoder, err := abi.JSON(strings.NewReader(axelarGatewayABI))
 	if err != nil {
 		return nil, err
 	}
 
-	var homesteadSigs [][]byte
-	for _, sig := range sigs {
-		homesteadSigs = append(homesteadSigs, toHomesteadSig(sig))
-	}
+	homesteadSigs := slices.Map(sigs, toHomesteadSig)
 
 	bytesType, err := abi.NewType("bytes", "bytes", nil)
 	if err != nil {
@@ -507,18 +516,22 @@ func CreateExecuteDataMultisig(data []byte, sigs ...Signature) ([]byte, error) {
 		return nil, err
 	}
 
-	arguments := abi.Arguments{{Type: bytesType}, {Type: bytesArrayType}}
-	executeData, err := arguments.Pack(data, homesteadSigs)
+	addressesType, err := abi.NewType("address[]", "address[]", nil)
 	if err != nil {
 		return nil, err
 	}
 
-	result, err := abiEncoder.Pack(axelarGatewayFuncExecute, executeData)
+	proof, err := abi.Arguments{{Type: addressesType}, {Type: bytesArrayType}}.Pack(signers, homesteadSigs)
 	if err != nil {
 		return nil, err
 	}
 
-	return result, nil
+	executeData, err := abi.Arguments{{Type: bytesType}, {Type: bytesType}}.Pack(data, proof)
+	if err != nil {
+		return nil, err
+	}
+
+	return abiEncoder.Pack(axelarGatewayFuncExecute, executeData)
 }
 
 // GetSignHash returns the hash that needs to be signed so AxelarGateway accepts the given command
