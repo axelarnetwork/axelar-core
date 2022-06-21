@@ -301,23 +301,8 @@ func GetConfirmTokenKey(txID Hash, asset string) vote.PollKey {
 // Address wraps EVM Address
 type Address common.Address
 
-// Addresses wraps []Address
-type Addresses []Address
-
 // ZeroAddress represents an evm address with all bytes being zero
 var ZeroAddress = Address{}
-
-func (a Addresses) Swap(i, j int) {
-	a[i], a[j] = a[j], a[i]
-}
-
-func (a Addresses) Len() int {
-	return len(a)
-}
-
-func (a Addresses) Less(i, j int) bool {
-	return bytes.Compare(a[i].Bytes(), a[j].Bytes()) < 0
-}
 
 // IsZeroAddress returns true if the address contains only zero bytes; false otherwise
 func (a Address) IsZeroAddress() bool {
@@ -515,8 +500,8 @@ func CreateExecuteDataSinglesig(data []byte, sig Signature) ([]byte, error) {
 // CreateExecuteDataMultisig wraps the specific command data and includes the command signatures.
 // Returns the data that goes into the data field of an EVM transaction
 func CreateExecuteDataMultisig(data []byte, signers []common.Address, sigs []Signature) ([]byte, error) {
-	sortedSigners := Addresses(slices.Map(signers, func(a common.Address) Address { return Address(a) }))
-	sort.Stable(sortedSigners)
+	sortedSigners := slices.Map(signers, func(a common.Address) Address { return Address(a) })
+	sort.SliceStable(sortedSigners, func(i, j int) bool { return bytes.Compare(sortedSigners[i].Bytes(), sortedSigners[j].Bytes()) < 0 })
 
 	abiEncoder, err := abi.JSON(strings.NewReader(axelarGatewayABI))
 	if err != nil {
@@ -1377,8 +1362,8 @@ func decodeTransferSinglesigParams(bz []byte) (common.Address, error) {
 }
 
 func createTransferMultisigParams(addrs []common.Address, threshold uint8) ([]byte, error) {
-	sortedAddrs := Addresses(slices.Map(addrs, func(a common.Address) Address { return Address(a) }))
-	sort.Stable(sortedAddrs)
+	sortedAddrs := slices.Map(addrs, func(a common.Address) Address { return Address(a) })
+	sort.SliceStable(sortedAddrs, func(i, j int) bool { return bytes.Compare(sortedAddrs[i].Bytes(), sortedAddrs[j].Bytes()) < 0 })
 
 	addressesType, err := abi.NewType("address[]", "address[]", nil)
 	if err != nil {
