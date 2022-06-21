@@ -63,6 +63,10 @@ func (s msgServer) Vote(c context.Context, req *types.VoteRequest) (*types.VoteR
 		return &types.VoteResponse{Log: fmt.Sprintf("poll %s failed", poll.GetKey())}, nil
 	case poll.Is(vote.Expired):
 		return &types.VoteResponse{Log: fmt.Sprintf("poll %s expired", poll.GetKey())}, nil
+	case poll.Is(vote.Completed):
+		event = event.AppendAttributes(sdk.NewAttribute(types.AttributeKeyPollState, vote.Completed.String()))
+
+		fallthrough
 	case result != nil:
 		_, ok := result.(*vote.Vote)
 		if !ok {
