@@ -116,7 +116,7 @@ func TestHandleContractCall(t *testing.T) {
 		}
 	}
 
-	isCurrentSecondaryKeySet := func(isSet bool) func() {
+	isCurrentKeySet := func(isSet bool) func() {
 		return func() {
 			s.GetCurrentKeyIDFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
 				if !isSet {
@@ -178,14 +178,14 @@ func TestHandleContractCall(t *testing.T) {
 	whenChainsAreRegistered.
 		When("destination chain is an evm chain", isDestinationChainEvm(true)).
 		When("destination chain ID is set", isDestinationChainIDSet(true)).
-		When("current secondary key is not set", isCurrentSecondaryKeySet(false)).
-		Then("should panic", panicWith(fmt.Sprintf("no secondary key for chain %s found", destinationChainName))).
+		When("current key is not set", isCurrentKeySet(false)).
+		Then("should panic", panicWith(fmt.Sprintf("no key for chain %s found", destinationChainName))).
 		Run(t)
 
 	whenChainsAreRegistered.
 		When("destination chain is an evm chain", isDestinationChainEvm(true)).
 		When("destination chain ID is set", isDestinationChainIDSet(true)).
-		When("current secondary key is set", isCurrentSecondaryKeySet(true)).
+		When("current key is set", isCurrentKeySet(true)).
 		When("enqueue command fails", enqueueCommandSucceed(false)).
 		Then("should panic", panicWith("enqueue error")).
 		Run(t)
@@ -193,7 +193,7 @@ func TestHandleContractCall(t *testing.T) {
 	whenChainsAreRegistered.
 		When("destination chain is an evm chain", isDestinationChainEvm(true)).
 		When("destination chain ID is set", isDestinationChainIDSet(true)).
-		When("current secondary key is set", isCurrentSecondaryKeySet(true)).
+		When("current key is set", isCurrentKeySet(true)).
 		When("enqueue command succeeds", enqueueCommandSucceed(true)).
 		Then("should return true", func(t *testing.T) {
 			ok := handleContractCall(ctx, event, bk, n, s)
@@ -640,7 +640,7 @@ func TestHandleContractCallWithToken(t *testing.T) {
 		})
 	}))
 
-	t.Run("should panic if the destination chain does not have the secondary key set", testutils.Func(func(t *testing.T) {
+	t.Run("should panic if the destination chain does not have the key set", testutils.Func(func(t *testing.T) {
 		ctx, bk, n, s, sourceCk, destinationCk := setup()
 		fee := sdk.NewCoin(event.GetContractCallWithToken().Symbol, sdk.NewInt(rand.I64Between(1, event.GetContractCallWithToken().Amount.BigInt().Int64())))
 
@@ -684,7 +684,7 @@ func TestHandleContractCallWithToken(t *testing.T) {
 			return tssTestUtils.RandKeyID(), false
 		}
 
-		assert.PanicsWithError(t, fmt.Sprintf("no secondary key for chain %s found", destinationChainName), func() {
+		assert.PanicsWithError(t, fmt.Sprintf("no key for chain %s found", destinationChainName), func() {
 			handleContractCallWithToken(ctx, event, bk, n, s)
 		})
 	}))
@@ -934,7 +934,7 @@ func TestHandleTransferKey(t *testing.T) {
 	sourceChainName := nexus.ChainName(rand.Str(5))
 
 	givenMultisigTransferKeyEvent := Given("a MultisigTransferKey event", func() {
-		event = randTransferKeyEvent(sourceChainName, tss.MasterKey)
+		event = randTransferKeyEvent(sourceChainName)
 		ctx, bk, _, s, sourceCk, _ = setup()
 
 		bk.ForChainFunc = func(chain nexus.ChainName) types.ChainKeeper {
@@ -943,7 +943,7 @@ func TestHandleTransferKey(t *testing.T) {
 
 	})
 
-	isCurrentSecondaryKeySet := func(isSet bool) func() {
+	isCurrentKeySet := func(isSet bool) func() {
 		return func() {
 			s.GetNextKeyIDFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
 				if !isSet {
@@ -979,14 +979,14 @@ func TestHandleTransferKey(t *testing.T) {
 
 		newOwners := slices.Map(expectedAddresses, func(addr common.Address) types.Address { return types.Address(addr) })
 
-		ownershipTransferred := types.EventMultisigOwnershipTransferred{
-			PreOwners:     event.GetEvent().(*types.Event_MultisigOwnershipTransferred).MultisigOwnershipTransferred.PreOwners,
-			PrevThreshold: event.GetEvent().(*types.Event_MultisigOwnershipTransferred).MultisigOwnershipTransferred.PrevThreshold,
-			NewOwners:     newOwners,
+		operatorshipTransferred := types.EventMultisigOperatorshipTransferred{
+			PreOperators:  event.GetEvent().(*types.Event_MultisigOperatorshipTransferred).MultisigOperatorshipTransferred.PreOperators,
+			PrevThreshold: event.GetEvent().(*types.Event_MultisigOperatorshipTransferred).MultisigOperatorshipTransferred.PrevThreshold,
+			NewOperators:  newOwners,
 			NewThreshold:  sdk.NewUint(uint64(threshold)),
 		}
-		event.Event = &types.Event_MultisigOwnershipTransferred{
-			MultisigOwnershipTransferred: &ownershipTransferred,
+		event.Event = &types.Event_MultisigOperatorshipTransferred{
+			MultisigOperatorshipTransferred: &operatorshipTransferred,
 		}
 
 		s.RotateKeyFunc = func(sdk.Context, nexus.Chain, tss.KeyRole) error { return nil }
@@ -995,7 +995,7 @@ func TestHandleTransferKey(t *testing.T) {
 	}
 
 	givenMultisigTransferKeyEvent.
-		When("next key id not set", isCurrentSecondaryKeySet(false)).
+		When("next key id not set", isCurrentKeySet(false)).
 		Then("should return false", func(t *testing.T) {
 			ok := handleMultisigTransferKey(ctx, event, sourceCk, s, exported.Ethereum)
 			assert.False(t, ok)
@@ -1003,7 +1003,7 @@ func TestHandleTransferKey(t *testing.T) {
 		Run(t)
 
 	givenMultisigTransferKeyEvent.
-		When("next key id is set", isCurrentSecondaryKeySet(true)).
+		When("next key id is set", isCurrentKeySet(true)).
 		When("next key not found", KeyFound(false)).
 		Then("should return false", func(t *testing.T) {
 			ok := handleMultisigTransferKey(ctx, event, sourceCk, s, exported.Ethereum)
@@ -1012,7 +1012,7 @@ func TestHandleTransferKey(t *testing.T) {
 		Run(t)
 
 	givenMultisigTransferKeyEvent.
-		When("next key id is set", isCurrentSecondaryKeySet(true)).
+		When("next key id is set", isCurrentKeySet(true)).
 		When("next key is found, but does not match expected", KeyFound(true)).
 		Then("should return false", func(t *testing.T) {
 			ok := handleMultisigTransferKey(ctx, event, sourceCk, s, exported.Ethereum)
@@ -1021,7 +1021,7 @@ func TestHandleTransferKey(t *testing.T) {
 		Run(t)
 
 	givenMultisigTransferKeyEvent.
-		When("next key id is set", isCurrentSecondaryKeySet(true)).
+		When("next key id is set", isCurrentKeySet(true)).
 		When("next key is found, matches expected key", keyMatches).
 		Then("should return true", func(t *testing.T) {
 			ok := handleMultisigTransferKey(ctx, event, sourceCk, s, exported.Ethereum)
@@ -1032,7 +1032,7 @@ func TestHandleTransferKey(t *testing.T) {
 		Run(t)
 }
 
-func randTransferKeyEvent(chain nexus.ChainName, keyRole tss.KeyRole) types.Event {
+func randTransferKeyEvent(chain nexus.ChainName) types.Event {
 	event := types.Event{
 		Chain: chain,
 		TxId:  types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
@@ -1047,27 +1047,15 @@ func randTransferKeyEvent(chain nexus.ChainName, keyRole tss.KeyRole) types.Even
 	for i := 0; i < len(newAddresses); i++ {
 		newAddresses[i] = types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength)))
 	}
-	switch keyRole {
-	case tss.MasterKey:
-		ownershipTransferred := types.EventMultisigOwnershipTransferred{
-			PreOwners:     preAddresses,
-			PrevThreshold: sdk.NewUint(uint64(rand.I64Between(10, 50))),
-			NewOwners:     newAddresses,
-			NewThreshold:  sdk.NewUint(uint64(rand.I64Between(10, 50))),
-		}
-		event.Event = &types.Event_MultisigOwnershipTransferred{
-			MultisigOwnershipTransferred: &ownershipTransferred,
-		}
-	case tss.SecondaryKey:
-		operatorshipTransferred := types.EventMultisigOperatorshipTransferred{
-			PreOperators:  preAddresses,
-			PrevThreshold: sdk.NewUint(uint64(rand.I64Between(10, 50))),
-			NewOperators:  newAddresses,
-			NewThreshold:  sdk.NewUint(uint64(rand.I64Between(10, 50))),
-		}
-		event.Event = &types.Event_MultisigOperatorshipTransferred{
-			MultisigOperatorshipTransferred: &operatorshipTransferred,
-		}
+
+	operatorshipTransferred := types.EventMultisigOperatorshipTransferred{
+		PreOperators:  preAddresses,
+		PrevThreshold: sdk.NewUint(uint64(rand.I64Between(10, 50))),
+		NewOperators:  newAddresses,
+		NewThreshold:  sdk.NewUint(uint64(rand.I64Between(10, 50))),
+	}
+	event.Event = &types.Event_MultisigOperatorshipTransferred{
+		MultisigOperatorshipTransferred: &operatorshipTransferred,
 	}
 
 	return event

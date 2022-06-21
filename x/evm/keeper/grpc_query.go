@@ -365,16 +365,9 @@ func (q Querier) KeyAddress(c context.Context, req *types.KeyAddressRequest) (*t
 	case *types.KeyAddressRequest_KeyID:
 		keyID = key.KeyID
 	case *types.KeyAddressRequest_Role:
-		switch key.Role {
-		case tss.MasterKey, tss.SecondaryKey:
-			break
-		default:
-			return nil, status.Error(codes.NotFound, fmt.Sprintf("unsupported key role %s", key.Role.SimpleString()))
-		}
-
-		keyID, ok = q.signer.GetCurrentKeyID(ctx, chain, key.Role)
+		keyID, ok = q.signer.GetCurrentKeyID(ctx, chain, keyRole)
 		if !ok {
-			return nil, status.Error(codes.NotFound, sdkerrors.Wrapf(types.ErrEVM, "%s key not found for chain %s", key.Role.SimpleString(), req.Chain).Error())
+			return nil, status.Error(codes.NotFound, sdkerrors.Wrapf(types.ErrEVM, "key not found for chain %s", req.Chain).Error())
 		}
 	}
 

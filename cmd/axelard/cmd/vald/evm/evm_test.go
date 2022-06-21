@@ -194,31 +194,11 @@ func TestDecodeErc20TransferEvent_CorrectData(t *testing.T) {
 	assert.Equal(t, expectedAmount, transfer.Amount)
 }
 
-func TestDecodeTransferOwnershipEvent_CorrectData(t *testing.T) {
-	transferOwnershipEventSig := common.HexToHash("0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0")
-	expectedPrevOwner := common.BytesToAddress(rand.Bytes(common.AddressLength))
-	expectedNewOwner := common.BytesToAddress(rand.Bytes(common.AddressLength))
-
-	l := geth.Log{
-		Topics: []common.Hash{
-			transferOwnershipEventSig,
-			common.BytesToHash(common.LeftPadBytes(expectedPrevOwner.Bytes(), common.HashLength)),
-			common.BytesToHash(common.LeftPadBytes(expectedNewOwner.Bytes(), common.HashLength)),
-		},
-		Data: nil,
-	}
-
-	actualNewOwner, err := decodeSinglesigKeyTransferEvent(&l, evmTypes.Ownership)
-
-	assert.NoError(t, err)
-	assert.Equal(t, expectedNewOwner, actualNewOwner)
-}
-
 func TestDecodeMultisigKeyTransferEvent(t *testing.T) {
 	t.Run("should decode the new multisig addresses and threshold", testutils.Func(func(t *testing.T) {
 		log := geth.Log{
 			Topics: []common.Hash{
-				common.HexToHash("d167b96814cd24898418cc293e8d47d54afe6dcf0631283f0830e1eae621f6bd"),
+				MultisigTransferOperatorshipSig,
 			},
 			Data: common.Hex2Bytes("00000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000003000000000000000000000000000000000000000000000000000000000000014000000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000005000000000000000000000000435b66b6d3889c9371a80bb3b42f438fcfb083a50000000000000000000000007b519ffcd280d5a7316b647b8d46a587bbebec140000000000000000000000009372ae5bcc1716741b323f39698e2f859412ced300000000000000000000000044db145b85cebb77b8269516152a931a6d9e0238000000000000000000000000579c2e330dd6a7bcc3abf8a21602adfc483b1f6400000000000000000000000000000000000000000000000000000000000000050000000000000000000000004b379b1aec479cae840b0c921c3c48c2c44c08e9000000000000000000000000d5403824cbdea1288e2ade9cb782ada6aa0c7466000000000000000000000000ea69ec886a7d763f933f7d442a6d437538008cb50000000000000000000000002b7f57804a9e60c25852c825e8400562efa690650000000000000000000000003b94e9fad488db2e57a701522a034311f0e7b1db"),
 		}
@@ -231,43 +211,43 @@ func TestDecodeMultisigKeyTransferEvent(t *testing.T) {
 			common.HexToAddress("3b94e9fad488db2e57a701522a034311f0e7b1db"),
 		}
 		expectedThreshold := uint64(3)
-		ownershipTransferredEvent, err := decodeMultisigOwnershipTransferredEvent(&log)
+		operatorshipTransferredEvent, err := decodeMultisigOperatorshipTransferredEvent(&log)
 
 		assert.NoError(t, err)
-		assert.Equal(t, expectedAddresses, slices.Map(ownershipTransferredEvent.NewOwners, func(addr evmTypes.Address) common.Address { return common.Address(addr) }))
-		assert.Equal(t, expectedThreshold, ownershipTransferredEvent.NewThreshold.Uint64())
+		assert.Equal(t, expectedAddresses, slices.Map(operatorshipTransferredEvent.NewOperators, func(addr evmTypes.Address) common.Address { return common.Address(addr) }))
+		assert.Equal(t, expectedThreshold, operatorshipTransferredEvent.NewThreshold.Uint64())
 	}))
 
 	t.Run("should return error when event is not about transfer of the correct multisig keys", testutils.Func(func(t *testing.T) {
 		// wrong number of topics
 		log := geth.Log{
 			Topics: []common.Hash{
-				common.HexToHash("d3f18f46b5db15b1cee9f5a6e26325d5a43e69fd18f131d2ffe41586765f8e0f"),
-				common.HexToHash("d3f18f46b5db15b1cee9f5a6e26325d5a43e69fd18f131d2ffe41586765f8e0f"),
+				MultisigTransferOperatorshipSig,
+				MultisigTransferOperatorshipSig,
 			},
 			Data: common.Hex2Bytes("00000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000003000000000000000000000000000000000000000000000000000000000000014000000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000005000000000000000000000000435b66b6d3889c9371a80bb3b42f438fcfb083a50000000000000000000000007b519ffcd280d5a7316b647b8d46a587bbebec140000000000000000000000009372ae5bcc1716741b323f39698e2f859412ced300000000000000000000000044db145b85cebb77b8269516152a931a6d9e0238000000000000000000000000579c2e330dd6a7bcc3abf8a21602adfc483b1f6400000000000000000000000000000000000000000000000000000000000000050000000000000000000000004b379b1aec479cae840b0c921c3c48c2c44c08e9000000000000000000000000d5403824cbdea1288e2ade9cb782ada6aa0c7466000000000000000000000000ea69ec886a7d763f933f7d442a6d437538008cb50000000000000000000000002b7f57804a9e60c25852c825e8400562efa690650000000000000000000000003b94e9fad488db2e57a701522a034311f0e7b1db"),
 		}
-		_, err := decodeMultisigOwnershipTransferredEvent(&log)
+		_, err := decodeMultisigOperatorshipTransferredEvent(&log)
 		assert.Error(t, err)
 
 		// wrong topics[0]
 		log = geth.Log{
 			Topics: []common.Hash{
-				common.HexToHash("d3f18f46b5db15b1cee9f5a6e26325d5a43e69fd18f131d2ffe41586765f8e0f"),
+				common.BytesToHash(rand.Bytes(common.HashLength)),
 			},
 			Data: common.Hex2Bytes("00000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000003000000000000000000000000000000000000000000000000000000000000014000000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000005000000000000000000000000435b66b6d3889c9371a80bb3b42f438fcfb083a50000000000000000000000007b519ffcd280d5a7316b647b8d46a587bbebec140000000000000000000000009372ae5bcc1716741b323f39698e2f859412ced300000000000000000000000044db145b85cebb77b8269516152a931a6d9e0238000000000000000000000000579c2e330dd6a7bcc3abf8a21602adfc483b1f6400000000000000000000000000000000000000000000000000000000000000050000000000000000000000004b379b1aec479cae840b0c921c3c48c2c44c08e9000000000000000000000000d5403824cbdea1288e2ade9cb782ada6aa0c7466000000000000000000000000ea69ec886a7d763f933f7d442a6d437538008cb50000000000000000000000002b7f57804a9e60c25852c825e8400562efa690650000000000000000000000003b94e9fad488db2e57a701522a034311f0e7b1db"),
 		}
-		_, err = decodeMultisigOwnershipTransferredEvent(&log)
+		_, err = decodeMultisigOperatorshipTransferredEvent(&log)
 		assert.Error(t, err)
 
 		// wrong data
 		log = geth.Log{
 			Topics: []common.Hash{
-				common.HexToHash("d3f18f46b5db15b1cee9f5a6e26325d5a43e69fd18f131d2ffe41586765f8e0f"),
+				MultisigTransferOperatorshipSig,
 			},
-			Data: common.Hex2Bytes("ea69ec886a7d763f933f7d442a6d437538008cb5"),
+			Data: rand.Bytes(int(rand.I64Between(10, 1000))),
 		}
-		_, err = decodeMultisigOwnershipTransferredEvent(&log)
+		_, err = decodeMultisigOperatorshipTransferredEvent(&log)
 		assert.Error(t, err)
 	}))
 }
@@ -675,13 +655,12 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 		confHeight := rand.I64Between(0, blockNumber-1)
 
 		attributes = map[string]string{
-			evmTypes.AttributeKeyChain:           "Ethereum",
-			evmTypes.AttributeKeyTxID:            common.Bytes2Hex(rand.Bytes(common.HashLength)),
-			evmTypes.AttributeKeyTransferKeyType: evmTypes.Ownership.SimpleString(),
-			evmTypes.AttributeKeyKeyType:         tss.Threshold.SimpleString(),
-			evmTypes.AttributeKeyGatewayAddress:  common.Bytes2Hex(gatewayAddrBytes),
-			evmTypes.AttributeKeyConfHeight:      strconv.FormatUint(uint64(confHeight), 10),
-			evmTypes.AttributeKeyPoll:            string(cdc.MustMarshalJSON(pollKey)),
+			evmTypes.AttributeKeyChain:          "Ethereum",
+			evmTypes.AttributeKeyTxID:           common.Bytes2Hex(rand.Bytes(common.HashLength)),
+			evmTypes.AttributeKeyKeyType:        tss.Threshold.SimpleString(),
+			evmTypes.AttributeKeyGatewayAddress: common.Bytes2Hex(gatewayAddrBytes),
+			evmTypes.AttributeKeyConfHeight:     strconv.FormatUint(uint64(confHeight), 10),
+			evmTypes.AttributeKeyPoll:           string(cdc.MustMarshalJSON(pollKey)),
 		}
 
 		tx := geth.NewTransaction(0, common.BytesToAddress(rand.Bytes(common.HashLength)), big.NewInt(0), 21000, big.NewInt(1), []byte{})
@@ -693,7 +672,7 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 				{
 					Address: common.BytesToAddress(gatewayAddrBytes),
 					Topics: []common.Hash{
-						SinglesigTransferOwnershipSig,
+						SinglesigTransferOperatorshipSig,
 						common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
 						common.BytesToHash(common.LeftPadBytes(prevNewOwnerAddrBytes, common.HashLength)),
 					},
@@ -703,7 +682,7 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 				{
 					Address: common.BytesToAddress(gatewayAddrBytes),
 					Topics: []common.Hash{
-						SinglesigTransferOwnershipSig,
+						SinglesigTransferOperatorshipSig,
 						common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
 						common.BytesToHash(common.LeftPadBytes(newOwnerAddrBytes, common.HashLength)),
 					},
@@ -713,7 +692,7 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 				{
 					Address: common.BytesToAddress(gatewayAddrBytes),
 					Topics: []common.Hash{
-						SinglesigTransferOwnershipSig,
+						SinglesigTransferOperatorshipSig,
 						common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
 					},
 					Data: nil,
@@ -732,7 +711,7 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 				{
 					Address: common.BytesToAddress(rand.Bytes(common.AddressLength)),
 					Topics: []common.Hash{
-						SinglesigTransferOwnershipSig,
+						SinglesigTransferOperatorshipSig,
 						common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
 						common.BytesToHash(common.LeftPadBytes(newOwnerAddrBytes, common.HashLength)),
 					},

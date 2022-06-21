@@ -207,7 +207,6 @@
     - [Gateway.Status](#axelar.evm.v1beta1.Gateway.Status)
     - [SigType](#axelar.evm.v1beta1.SigType)
     - [Status](#axelar.evm.v1beta1.Status)
-    - [TransferKeyType](#axelar.evm.v1beta1.TransferKeyType)
   
 - [axelar/evm/v1beta1/params.proto](#axelar/evm/v1beta1/params.proto)
     - [Params](#axelar.evm.v1beta1.Params)
@@ -3191,7 +3190,6 @@ TransferKey contains information for a transfer ownership or operatorship
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `tx_id` | [bytes](#bytes) |  |  |
-| `type` | [TransferKeyType](#axelar.evm.v1beta1.TransferKeyType) |  |  |
 | `next_key_id` | [string](#string) |  |  |
 
 
@@ -3296,19 +3294,6 @@ TransferKey contains information for a transfer ownership or operatorship
 | STATUS_INITIALIZED | 1 |  |
 | STATUS_PENDING | 2 |  |
 | STATUS_CONFIRMED | 4 |  |
-
-
-
-<a name="axelar.evm.v1beta1.TransferKeyType"></a>
-
-### TransferKeyType
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| TRANSFER_KEY_TYPE_UNSPECIFIED | 0 |  |
-| TRANSFER_KEY_TYPE_OWNERSHIP | 1 |  |
-| TRANSFER_KEY_TYPE_OPERATORSHIP | 2 |  |
 
 
  <!-- end enums -->
@@ -3743,7 +3728,7 @@ deposit address
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `chain` | [string](#string) |  |  |
-| `role` | [int32](#int32) |  |  |
+| `role` | [int32](#int32) |  | **Deprecated.**  |
 | `id` | [string](#string) |  |  |
 
 
@@ -4100,7 +4085,6 @@ MsgConfirmToken represents a token deploy confirmation message
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
 | `tx_id` | [bytes](#bytes) |  |  |
-| `transfer_type` | [TransferKeyType](#axelar.evm.v1beta1.TransferKeyType) |  |  |
 | `key_id` | [string](#string) |  |  |
 
 
@@ -4416,7 +4400,6 @@ Msg defines the evm Msg service.
 | `CreateDeployToken` | [CreateDeployTokenRequest](#axelar.evm.v1beta1.CreateDeployTokenRequest) | [CreateDeployTokenResponse](#axelar.evm.v1beta1.CreateDeployTokenResponse) |  | POST|/axelar/evm/create_deploy_token|
 | `CreateBurnTokens` | [CreateBurnTokensRequest](#axelar.evm.v1beta1.CreateBurnTokensRequest) | [CreateBurnTokensResponse](#axelar.evm.v1beta1.CreateBurnTokensResponse) |  | POST|/axelar/evm/create_burn_tokens|
 | `CreatePendingTransfers` | [CreatePendingTransfersRequest](#axelar.evm.v1beta1.CreatePendingTransfersRequest) | [CreatePendingTransfersResponse](#axelar.evm.v1beta1.CreatePendingTransfersResponse) |  | POST|/axelar/evm/create_pending_transfers|
-| `CreateTransferOwnership` | [CreateTransferOwnershipRequest](#axelar.evm.v1beta1.CreateTransferOwnershipRequest) | [CreateTransferOwnershipResponse](#axelar.evm.v1beta1.CreateTransferOwnershipResponse) |  | POST|/axelar/evm/create_transfer_ownership|
 | `CreateTransferOperatorship` | [CreateTransferOperatorshipRequest](#axelar.evm.v1beta1.CreateTransferOperatorshipRequest) | [CreateTransferOperatorshipResponse](#axelar.evm.v1beta1.CreateTransferOperatorshipResponse) |  | POST|/axelar/evm/create_transfer_operatorship|
 | `SignCommands` | [SignCommandsRequest](#axelar.evm.v1beta1.SignCommandsRequest) | [SignCommandsResponse](#axelar.evm.v1beta1.SignCommandsResponse) |  | POST|/axelar/evm/sign_commands|
 | `AddChain` | [AddChainRequest](#axelar.evm.v1beta1.AddChainRequest) | [AddChainResponse](#axelar.evm.v1beta1.AddChainResponse) |  | POST|/axelar/evm/add_chain|

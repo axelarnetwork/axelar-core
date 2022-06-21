@@ -109,6 +109,8 @@ message EventTokenDeployed {
 }
 
 message EventMultisigOwnershipTransferred {
+  option deprecated = true;
+
   repeated bytes pre_owners = 1
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
   bytes prev_threshold = 2 [
@@ -139,6 +141,8 @@ message EventMultisigOperatorshipTransferred {
 }
 
 message EventSinglesigOwnershipTransferred {
+  option deprecated = true;
+
   bytes pre_owner = 1
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
   bytes new_owner = 2
@@ -281,17 +285,6 @@ message CommandBatchMetadata {
       [ (gogoproto.customname) = "PrevBatchedCommandsID" ];
 }
 
-enum TransferKeyType {
-  option (gogoproto.goproto_enum_prefix) = false;
-
-  TRANSFER_KEY_TYPE_UNSPECIFIED = 0
-      [ (gogoproto.enumvalue_customname) = "UnspecifiedTransferKeyType" ];
-  TRANSFER_KEY_TYPE_OWNERSHIP = 1
-      [ (gogoproto.enumvalue_customname) = "Ownership" ];
-  TRANSFER_KEY_TYPE_OPERATORSHIP = 2
-      [ (gogoproto.enumvalue_customname) = "Operatorship" ];
-}
-
 // SigMetadata stores necessary information for external apps to map signature
 // results to evm relay transaction types
 message SigMetadata {
@@ -312,13 +305,13 @@ enum SigType {
 
 // TransferKey contains information for a transfer ownership or operatorship
 message TransferKey {
+  reserved 2; // type was deleted in v0.20
 
   bytes tx_id = 1 [
     (gogoproto.nullable) = false,
     (gogoproto.customtype) = "Hash",
     (gogoproto.customname) = "TxID"
   ];
-  TransferKeyType type = 2;
   string next_key_id = 3 [
     (gogoproto.customname) = "NextKeyID",
     (gogoproto.casttype) =
