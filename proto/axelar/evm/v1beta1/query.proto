@@ -42,19 +42,14 @@ message BatchedCommandsResponse {
 }
 
 message KeyAddressRequest {
+  reserved 2, 3;
+
   string chain = 1;
-  oneof key {
-    int32 role = 2 [
-      (gogoproto.casttype) =
-          "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyRole",
-      deprecated = true
-    ];
-    string id = 3 [
-      (gogoproto.customname) = "KeyID",
-      (gogoproto.casttype) =
-          "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
-    ];
-  }
+  string key_id = 4 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+  ];
 }
 
 message KeyAddressResponse {

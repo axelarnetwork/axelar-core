@@ -83,7 +83,7 @@ message ConfirmTokenRequest {
 message ConfirmTokenResponse {}
 
 message ConfirmTransferKeyRequest {
-  reserved 4; // transfer_type was deleted in v0.20
+  reserved 4, 5; // transfer_type and key_id were deleted in v0.20
 
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   bytes sender = 1 [ (gogoproto.casttype) =
@@ -95,11 +95,6 @@ message ConfirmTransferKeyRequest {
     (gogoproto.nullable) = false,
     (gogoproto.customtype) = "Hash",
     (gogoproto.customname) = "TxID"
-  ];
-  string key_id = 5 [
-    (gogoproto.customname) = "KeyID",
-    (gogoproto.casttype) =
-        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
   ];
 }
 

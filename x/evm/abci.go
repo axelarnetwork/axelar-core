@@ -337,8 +337,11 @@ func handleMultisigTransferKey(ctx sdk.Context, event types.Event, ck types.Chai
 		return false
 	}
 
-	ck.Logger(ctx).Info(fmt.Sprintf("successfully confirmed %s key transfer for chain %s",
-		keyRole.SimpleString(), chain.Name), "txID", event.TxId.Hex(), "rotation count", s.GetRotationCount(ctx, chain, keyRole))
+	ck.Logger(ctx).Info(fmt.Sprintf("successfully confirmed key transfer for chain %s", chain.Name),
+		"txID", event.TxId.Hex(),
+		"keyID", nextKeyID,
+		"rotation count", s.GetRotationCount(ctx, chain, keyRole),
+	)
 
 	ctx.EventManager().EmitEvent(sdk.NewEvent(
 		types.EventTypeTransferKeyConfirmation,

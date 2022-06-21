@@ -2987,8 +2987,6 @@ ERC20TokenMetadata describes information about an ERC20 token
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `pre_operators` | [bytes](#bytes) | repeated |  |
-| `prev_threshold` | [bytes](#bytes) |  |  |
 | `new_operators` | [bytes](#bytes) | repeated |  |
 | `new_threshold` | [bytes](#bytes) |  |  |
 
@@ -3728,8 +3726,7 @@ deposit address
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `chain` | [string](#string) |  |  |
-| `role` | [int32](#int32) |  | **Deprecated.**  |
-| `id` | [string](#string) |  |  |
+| `key_id` | [string](#string) |  |  |
 
 
 
@@ -4085,7 +4082,6 @@ MsgConfirmToken represents a token deploy confirmation message
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
 | `tx_id` | [bytes](#bytes) |  |  |
-| `key_id` | [string](#string) |  |  |
 
 
 

@@ -1,7 +1,9 @@
 package keeper
 
 import (
+	"bytes"
 	"context"
+	"crypto/ecdsa"
 	"encoding/hex"
 	"fmt"
 	"sort"
@@ -336,15 +338,13 @@ func queryAddressByKeyID(ctx sdk.Context, s types.Signer, chain nexustypes.Chain
 			return types.KeyAddressResponse{}, sdkerrors.Wrap(types.ErrEVM, err.Error())
 		}
 
-		addressStrs := make([]string, len(multisigPubKey))
-		for i, address := range types.KeysToAddresses(multisigPubKey...) {
-			addressStrs[i] = address.Hex()
-		}
+		addresses := slices.Map(multisigPubKey, func(p ecdsa.PublicKey) types.Address { return types.Address(crypto.PubkeyToAddress(p)) })
+		sort.SliceStable(addresses, func(i, j int) bool { return bytes.Compare(addresses[i].Bytes(), addresses[j].Bytes()) < 0 })
 
 		threshold := uint32(key.GetMultisigKey().Threshold)
 
 		resp := types.KeyAddressResponse{
-			Address: &types.KeyAddressResponse_MultisigAddresses_{MultisigAddresses: &types.KeyAddressResponse_MultisigAddresses{Addresses: addressStrs, Threshold: threshold}},
+			Address: &types.KeyAddressResponse_MultisigAddresses_{MultisigAddresses: &types.KeyAddressResponse_MultisigAddresses{Addresses: slices.Map(addresses, types.Address.Hex), Threshold: threshold}},
 			KeyID:   keyID,
 		}
 
@@ -376,11 +376,8 @@ func (q Querier) KeyAddress(c context.Context, req *types.KeyAddressRequest) (*t
 		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", req.Chain)).Error())
 	}
 
-	var keyID tss.KeyID
-	switch key := req.Key.(type) {
-	case *types.KeyAddressRequest_KeyID:
-		keyID = key.KeyID
-	case *types.KeyAddressRequest_Role:
+	keyID := req.KeyID
+	if keyID == "" {
 		keyID, ok = q.signer.GetCurrentKeyID(ctx, chain, keyRole)
 		if !ok {
 			return nil, status.Error(codes.NotFound, sdkerrors.Wrapf(types.ErrEVM, "key not found for chain %s", req.Chain).Error())

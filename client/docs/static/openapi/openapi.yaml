@@ -2417,20 +2417,7 @@ paths:
                               "value": "1.212s"
                             }
       requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                sender:
-                  type: string
-                  format: byte
-                chain:
-                  type: string
-                tx_id:
-                  type: string
-                  format: byte
-        required: true
+        $ref: "#/components/requestBodies/ConfirmGatewayTxBody"
       tags:
         - MsgService
   /axelar/evm/confirm_token:
@@ -2819,22 +2806,7 @@ paths:
                               "value": "1.212s"
                             }
       requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                sender:
-                  type: string
-                  format: byte
-                chain:
-                  type: string
-                tx_id:
-                  type: string
-                  format: byte
-                key_id:
-                  type: string
-        required: true
+        $ref: "#/components/requestBodies/ConfirmGatewayTxBody"
       tags:
         - MsgService
   /axelar/evm/create_burn_tokens:
@@ -6019,14 +5991,6 @@ paths:
                       multisig_operatorship_transferred:
                         type: object
                         properties:
-                          pre_operators:
-                            type: array
-                            items:
-                              type: string
-                              format: byte
-                          prev_threshold:
-                            type: string
-                            format: byte
                           new_operators:
                             type: array
                             items:
@@ -6634,13 +6598,7 @@ paths:
           required: true
           schema:
             type: string
-        - name: role
-          in: query
-          required: false
-          schema:
-            type: integer
-            format: int32
-        - name: id
+        - name: key_id
           in: query
           required: false
           schema:
@@ -34598,6 +34556,21 @@ components:
                 items:
                   type: string
       required: true
+    ConfirmGatewayTxBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              sender:
+                type: string
+                format: byte
+              chain:
+                type: string
+              tx_id:
+                type: string
+                format: byte
+      required: true
   schemas:
     google.protobuf.Any:
       type: object
@@ -35313,8 +35286,6 @@ components:
         tx_id:
           type: string
           format: byte
-        key_id:
-          type: string
     axelar.evm.v1beta1.ConfirmTransferKeyResponse:
       type: object
     axelar.evm.v1beta1.ConfirmationHeightResponse:
@@ -35533,14 +35504,6 @@ components:
         multisig_operatorship_transferred:
           type: object
           properties:
-            pre_operators:
-              type: array
-              items:
-                type: string
-                format: byte
-            prev_threshold:
-              type: string
-              format: byte
             new_operators:
               type: array
               items:
@@ -35609,14 +35572,6 @@ components:
     axelar.evm.v1beta1.EventMultisigOperatorshipTransferred:
       type: object
       properties:
-        pre_operators:
-          type: array
-          items:
-            type: string
-            format: byte
-        prev_threshold:
-          type: string
-          format: byte
         new_operators:
           type: array
           items:
@@ -35751,14 +35706,6 @@ components:
             multisig_operatorship_transferred:
               type: object
               properties:
-                pre_operators:
-                  type: array
-                  items:
-                    type: string
-                    format: byte
-                prev_threshold:
-                  type: string
-                  format: byte
                 new_operators:
                   type: array
                   items:

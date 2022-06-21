@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"math/big"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -499,6 +500,9 @@ func CreateExecuteDataSinglesig(data []byte, sig Signature) ([]byte, error) {
 // CreateExecuteDataMultisig wraps the specific command data and includes the command signatures.
 // Returns the data that goes into the data field of an EVM transaction
 func CreateExecuteDataMultisig(data []byte, signers []common.Address, sigs []Signature) ([]byte, error) {
+	sortedSigners := slices.Map(signers, func(a common.Address) Address { return Address(a) })
+	sort.SliceStable(sortedSigners, func(i, j int) bool { return bytes.Compare(sortedSigners[i].Bytes(), sortedSigners[j].Bytes()) < 0 })
+
 	abiEncoder, err := abi.JSON(strings.NewReader(axelarGatewayABI))
 	if err != nil {
 		return nil, err
@@ -521,7 +525,7 @@ func CreateExecuteDataMultisig(data []byte, signers []common.Address, sigs []Sig
 		return nil, err
 	}
 
-	proof, err := abi.Arguments{{Type: addressesType}, {Type: bytesArrayType}}.Pack(signers, homesteadSigs)
+	proof, err := abi.Arguments{{Type: addressesType}, {Type: bytesArrayType}}.Pack(sortedSigners, homesteadSigs)
 	if err != nil {
 		return nil, err
 	}
@@ -1358,6 +1362,9 @@ func decodeTransferSinglesigParams(bz []byte) (common.Address, error) {
 }
 
 func createTransferMultisigParams(addrs []common.Address, threshold uint8) ([]byte, error) {
+	sortedAddrs := slices.Map(addrs, func(a common.Address) Address { return Address(a) })
+	sort.SliceStable(sortedAddrs, func(i, j int) bool { return bytes.Compare(sortedAddrs[i].Bytes(), sortedAddrs[j].Bytes()) < 0 })
+
 	addressesType, err := abi.NewType("address[]", "address[]", nil)
 	if err != nil {
 		return nil, err
@@ -1369,7 +1376,7 @@ func createTransferMultisigParams(addrs []common.Address, threshold uint8) ([]by
 	}
 
 	arguments := abi.Arguments{{Type: addressesType}, {Type: uint256Type}}
-	result, err := arguments.Pack(addrs, big.NewInt(int64(threshold)))
+	result, err := arguments.Pack(sortedAddrs, big.NewInt(int64(threshold)))
 	if err != nil {
 		return nil, err
 	}
@@ -1675,12 +1682,6 @@ func (m EventMultisigOwnershipTransferred) Validate() error {
 func (m EventMultisigOperatorshipTransferred) Validate() error {
 	NonzeroAddress := func(addr Address) bool { return !addr.IsZeroAddress() }
 
-	if !slices.All(m.PreOperators, NonzeroAddress) {
-		return fmt.Errorf("invalid pre operators")
-	}
-	if m.PrevThreshold.IsZero() {
-		return fmt.Errorf("invalid pre threshold")
-	}
 	if !slices.All(m.NewOperators, NonzeroAddress) {
 		return fmt.Errorf("invalid new operators")
 	}
