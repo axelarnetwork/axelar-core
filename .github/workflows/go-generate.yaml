@@ -32,7 +32,7 @@ jobs:
 
       - name: Get Bytecode Version
         id: bytecode_version
-        run: echo ::set-output name=VERSION::$(cat contract-artifacts/version-config.json | jq -r '.gateway')
+        run: echo ::set-output name=VERSION::$(cat contract-version.json | jq -r '.gateway')
 
       - name: Download Bytecode
         uses: dawidd6/action-download-artifact@v2
@@ -40,7 +40,7 @@ jobs:
           repo: axelarnetwork/solidity-cgp-gateway
           workflow: publish-bytecode.yaml
           name: Bytecode-${{ steps.bytecode_version.outputs.VERSION }}
-          path: contract-artifacts/gateway
+          path: contract-artifacts
           search_artifacts: true
 
       - name: Install prereqs

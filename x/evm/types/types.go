@@ -48,6 +48,8 @@ const (
 	BurnerCodeHashV3 = "0xa50851cafd39f2f61171c0c00a11bda820ed0958950df5a53ba11a047402351f"
 	// BurnerCodeHashV4 is the hash of the bytecode of burner v4
 	BurnerCodeHashV4 = "0x701d8db26f2d668fee8acf2346199a6b63b0173f212324d1c5a04b4d4de95666"
+	// BurnerCodeHashV5 is the hash of the bytecode of burner v5
+	BurnerCodeHashV5 = "0x9f217a79e864028081339cfcead3c3d1fe92e237fcbe9468d6bb4d1da7aa6352"
 )
 
 func validateBurnerCode(burnerCode []byte) error {
@@ -56,7 +58,8 @@ func validateBurnerCode(burnerCode []byte) error {
 	case BurnerCodeHashV1,
 		BurnerCodeHashV2,
 		BurnerCodeHashV3,
-		BurnerCodeHashV4:
+		BurnerCodeHashV4,
+		BurnerCodeHashV5:
 		break
 	default:
 		return fmt.Errorf("unsupported burner code with hash %s", burnerCodeHash)

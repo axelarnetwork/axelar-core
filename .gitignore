@@ -20,5 +20,5 @@
 /x/evm/client/cli/testdata/
 /node_modules/
 *.DS_Store
-/contract-artifacts/*/*.json
+/contract-artifacts
 /client/docs/node_modules/
