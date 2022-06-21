@@ -4,16 +4,20 @@ import (
 	"bytes"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"go/format"
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"text/template"
 
 	"github.com/pkg/errors"
 )
 
-//go:generate go run generate.go -template ./contracts.go.tmpl -out ../contracts.go -contracts ../../../../contract-artifacts/gateway
+//go:generate go run generate.go -template ./contracts.go.tmpl -out ../contracts.go -contracts ../../../../contract-artifacts/contracts
+
+const prefix = "0x"
 
 type contracts struct {
 	Token    string
@@ -56,12 +60,12 @@ func main() {
 func parseContracts(contractDir string) contracts {
 	var contracts contracts
 	contractSetterMapping := map[string]func(string){
-		"BurnableMintableCappedERC20": func(bz string) { contracts.Token = bz },
-		"DepositHandler":              func(bz string) { contracts.Burnable = bz },
+		"BurnableMintableCappedERC20": func(bz string) { contracts.Token = strings.TrimPrefix(bz, prefix) },
+		"DepositHandler":              func(bz string) { contracts.Burnable = strings.TrimPrefix(bz, prefix) },
 	}
 
 	for file, setter := range contractSetterMapping {
-		fp, err := filepath.Abs(filepath.Join(contractDir, file+".json"))
+		fp, err := filepath.Abs(filepath.Join(contractDir, fmt.Sprintf("%s.sol", file), fmt.Sprintf("%s.json", file)))
 		if err != nil {
 			log.Fatal(errors.Wrapf(err, "cannot build filepath for %s", file))
 		}

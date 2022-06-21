@@ -270,7 +270,7 @@ func (k chainKeeper) GetBurnerAddressAndSalt(ctx sdk.Context, token types.ERC20T
 		}
 
 		initCodeHash = types.Hash(crypto.Keccak256Hash(append(token.GetBurnerCode(), params...)))
-	case types.BurnerCodeHashV2, types.BurnerCodeHashV3, types.BurnerCodeHashV4:
+	case types.BurnerCodeHashV2, types.BurnerCodeHashV3, types.BurnerCodeHashV4, types.BurnerCodeHashV5:
 		initCodeHash = tokenBurnerCodeHash
 	default:
 		return types.Address{}, types.Hash{}, fmt.Errorf("unsupported burner code with hash %s for chain %s", tokenBurnerCodeHash.Hex(), k.chainLowerKey)
