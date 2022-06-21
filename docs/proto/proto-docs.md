@@ -3726,8 +3726,7 @@ deposit address
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `chain` | [string](#string) |  |  |
-| `role` | [int32](#int32) |  | **Deprecated.**  |
-| `id` | [string](#string) |  |  |
+| `key_id` | [string](#string) |  |  |
 
 
 

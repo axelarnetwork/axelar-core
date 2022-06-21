@@ -6598,13 +6598,7 @@ paths:
           required: true
           schema:
             type: string
-        - name: role
-          in: query
-          required: false
-          schema:
-            type: integer
-            format: int32
-        - name: id
+        - name: key_id
           in: query
           required: false
           schema:

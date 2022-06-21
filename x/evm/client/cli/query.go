@@ -68,14 +68,7 @@ func GetCmdAddress(queryRoute string) *cobra.Command {
 
 		req := types.KeyAddressRequest{
 			Chain: utils.NormalizeString(args[0]),
-			Key:   nil,
-		}
-
-		switch *keyID {
-		case "":
-			req.Key = &types.KeyAddressRequest_Role{}
-		default:
-			req.Key = &types.KeyAddressRequest_KeyID{KeyID: tss.KeyID(*keyID)}
+			KeyID: tss.KeyID(*keyID),
 		}
 
 		res, err := queryClient.KeyAddress(cmd.Context(), &req)

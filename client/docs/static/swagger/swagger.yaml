@@ -7252,12 +7252,7 @@ paths:
           in: path
           required: true
           type: string
-        - name: role
-          in: query
-          required: false
-          type: integer
-          format: int32
-        - name: id
+        - name: key_id
           in: query
           required: false
           type: string

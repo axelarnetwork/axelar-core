@@ -376,11 +376,8 @@ func (q Querier) KeyAddress(c context.Context, req *types.KeyAddressRequest) (*t
 		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", req.Chain)).Error())
 	}
 
-	var keyID tss.KeyID
-	switch key := req.Key.(type) {
-	case *types.KeyAddressRequest_KeyID:
-		keyID = key.KeyID
-	case *types.KeyAddressRequest_Role:
+	keyID := req.KeyID
+	if keyID == "" {
 		keyID, ok = q.signer.GetCurrentKeyID(ctx, chain, keyRole)
 		if !ok {
 			return nil, status.Error(codes.NotFound, sdkerrors.Wrapf(types.ErrEVM, "key not found for chain %s", req.Chain).Error())
