@@ -258,6 +258,27 @@ func TestPoll(t *testing.T) {
 			}).
 			Run(t)
 
+		givenPoll.
+			When("poll is completed", withState(exported.Completed)).
+			When("voter is not eligible", func() {
+				poll.GracePeriod = rand.I64Between(1, blockHeight)
+				poll.CompletedAt = rand.I64Between(0, blockHeight-poll.GracePeriod)
+				pollStore.HasVotedFunc = func(v sdk.ValAddress) bool { return false }
+				voter = exported.Voter{Validator: rand.ValAddr()}
+			}).
+			Then("should return error", func(t *testing.T) {
+				result, voted, err := poll.Vote(
+					voter.Validator,
+					rand.PosI64(),
+					&gogoprototypes.BoolValue{Value: true},
+				)
+
+				assert.Nil(t, result)
+				assert.False(t, voted)
+				assert.ErrorContains(t, err, "is not eligible")
+			}).
+			Run(t)
+
 		data := gogoprototypes.StringValue{Value: rand.Str(5)}
 		result, _ := codectypes.NewAnyWithValue(&data)
 		givenPoll.

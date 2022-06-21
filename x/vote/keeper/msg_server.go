@@ -48,6 +48,8 @@ func (s msgServer) Vote(c context.Context, req *types.VoteRequest) (*types.VoteR
 	}
 
 	switch {
+	case poll.Is(vote.Expired):
+		return &types.VoteResponse{Log: fmt.Sprintf("poll %s expired", poll.GetID())}, nil
 	case poll.Is(vote.Pending):
 		event = event.AppendAttributes(sdk.NewAttribute(types.AttributeKeyPollState, vote.Pending.String()))
 
@@ -55,9 +57,7 @@ func (s msgServer) Vote(c context.Context, req *types.VoteRequest) (*types.VoteR
 	case poll.Is(vote.Failed):
 		event = event.AppendAttributes(sdk.NewAttribute(types.AttributeKeyPollState, vote.Failed.String()))
 
-		return &types.VoteResponse{Log: fmt.Sprintf("poll %s failed", poll.GetID().String())}, nil
-	case poll.Is(vote.Expired):
-		return &types.VoteResponse{Log: fmt.Sprintf("poll %s expired", poll.GetID().String())}, nil
+		return &types.VoteResponse{Log: fmt.Sprintf("poll %s failed", poll.GetID())}, nil
 	case result != nil:
 		_, ok := result.(*vote.Vote)
 		if !ok {
@@ -76,6 +76,8 @@ func (s msgServer) Vote(c context.Context, req *types.VoteRequest) (*types.VoteR
 
 		fallthrough
 	default:
+		event = event.AppendAttributes(sdk.NewAttribute(types.AttributeKeyPollState, vote.Completed.String()))
+
 		return &types.VoteResponse{}, nil
 	}
 }

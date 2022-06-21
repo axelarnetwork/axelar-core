@@ -67,7 +67,7 @@ func (m PollMetadata) Validate() error {
 	actualTotalVotingPower := sdk.ZeroInt()
 	for _, voter := range m.Voters {
 		if err := sdk.VerifyAddressFormat(voter.Validator); err != nil {
-			return nil
+			return err
 		}
 
 		if voter.VotingPower <= 0 {
