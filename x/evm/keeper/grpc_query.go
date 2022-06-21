@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"bytes"
 	"context"
 	"crypto/ecdsa"
 	"encoding/hex"
@@ -337,10 +338,8 @@ func queryAddressByKeyID(ctx sdk.Context, s types.Signer, chain nexustypes.Chain
 			return types.KeyAddressResponse{}, sdkerrors.Wrap(types.ErrEVM, err.Error())
 		}
 
-		addresses := types.Addresses(slices.Map(multisigPubKey, func(p ecdsa.PublicKey) types.Address {
-			return types.Address(crypto.PubkeyToAddress(p))
-		}))
-		sort.Stable(addresses)
+		addresses := slices.Map(multisigPubKey, func(p ecdsa.PublicKey) types.Address { return types.Address(crypto.PubkeyToAddress(p)) })
+		sort.SliceStable(addresses, func(i, j int) bool { return bytes.Compare(addresses[i].Bytes(), addresses[j].Bytes()) < 0 })
 
 		threshold := uint32(key.GetMultisigKey().Threshold)
 
