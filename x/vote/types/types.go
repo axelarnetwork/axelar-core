@@ -187,21 +187,17 @@ func (p *Poll) Vote(voter sdk.ValAddress, blockHeight int64, data codec.ProtoMar
 		return nil, false, fmt.Errorf("voter %s has voted already", voter)
 	}
 
+	votingPower := p.getVotingPower(voter)
+	if votingPower == 0 {
+		return nil, false, fmt.Errorf("address %s is not eligible to Vote in this poll", voter)
+	}
+
 	switch {
 	case p.Is(exported.Failed):
 		return nil, false, nil
 	case p.Is(exported.Expired):
 		return nil, false, fmt.Errorf("poll %s has expired already", p.GetKey().String())
-	case p.Is(exported.Completed):
-		votingPower := p.getVotingPower(voter)
-		if votingPower == 0 {
-			return nil, false, fmt.Errorf("address %s is not eligible to Vote in this poll", voter)
-		}
-
-		if !p.isWithinGracePeriod(blockHeight) {
-			return nil, false, nil
-		}
-
+	case p.Is(exported.Completed) && p.isWithinGracePeriod(blockHeight):
 		p.SetVote(voter, data, votingPower, true)
 		p.logger.Debug("received late vote for poll",
 			"voter", voter.String(),
@@ -209,11 +205,8 @@ func (p *Poll) Vote(voter sdk.ValAddress, blockHeight int64, data codec.ProtoMar
 		)
 
 		return nil, true, nil
-	}
-
-	votingPower := p.getVotingPower(voter)
-	if votingPower == 0 {
-		return nil, false, fmt.Errorf("address %s is not eligible to Vote in this poll", voter)
+	case p.Is(exported.Completed):
+		return nil, false, nil
 	}
 
 	p.SetVote(voter, data, votingPower, false)
