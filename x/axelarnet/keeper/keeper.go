@@ -16,9 +16,12 @@ import (
 )
 
 var (
-	transferPrefix    = utils.KeyFromStr("transfer")
 	cosmosChainPrefix = utils.KeyFromStr("cosmos_chain")
 	feeCollector      = utils.KeyFromStr("fee_collector")
+
+	nonceKey             = utils.KeyFromStr("nonce")
+	transferPrefix       = utils.KeyFromStr("ibc_transfer")
+	ibcTransferQueueName = "ibc_transfer_queue"
 )
 
 // Keeper provides access to all state changes regarding the Axelarnet module
@@ -80,49 +83,6 @@ func (k Keeper) GetIBCPath(ctx sdk.Context, chain nexus.ChainName) (string, bool
 	}
 
 	return cosmosChain.IBCPath, true
-}
-
-// SetPendingIBCTransfer saves a pending IBC transfer routed by axelarnet
-func (k Keeper) SetPendingIBCTransfer(ctx sdk.Context, transfer types.IBCTransfer) {
-	bz := make([]byte, 8)
-	binary.LittleEndian.PutUint64(bz, transfer.Sequence)
-	key := transferPrefix.Append(utils.KeyFromStr(transfer.PortID)).Append(utils.KeyFromStr(transfer.ChannelID)).Append(utils.KeyFromBz(bz))
-
-	k.getStore(ctx).Set(key, &transfer)
-}
-
-// GetPendingIBCTransfer gets a pending IBC transfer routed by axelarnet
-func (k Keeper) GetPendingIBCTransfer(ctx sdk.Context, portID, channelID string, sequence uint64) (types.IBCTransfer, bool) {
-	var value types.IBCTransfer
-	bz := make([]byte, 8)
-	binary.LittleEndian.PutUint64(bz, sequence)
-	key := transferPrefix.Append(utils.KeyFromStr(portID)).Append(utils.KeyFromStr(channelID)).Append(utils.KeyFromBz(bz))
-
-	ok := k.getStore(ctx).Get(key, &value)
-	return value, ok
-}
-
-func (k Keeper) getPendingIBCTransfers(ctx sdk.Context) []types.IBCTransfer {
-	iter := k.getStore(ctx).Iterator(transferPrefix)
-	defer utils.CloseLogError(iter, k.Logger(ctx))
-
-	var transfers []types.IBCTransfer
-	for ; iter.Valid(); iter.Next() {
-		var transfer types.IBCTransfer
-		iter.UnmarshalValue(&transfer)
-		transfers = append(transfers, transfer)
-	}
-
-	return transfers
-}
-
-// DeletePendingIBCTransfer deletes a pending IBC transfer routed by axelarnet
-func (k Keeper) DeletePendingIBCTransfer(ctx sdk.Context, portID, channelID string, sequence uint64) {
-	bz := make([]byte, 8)
-	binary.LittleEndian.PutUint64(bz, sequence)
-	key := transferPrefix.Append(utils.KeyFromStr(portID)).Append(utils.KeyFromStr(channelID)).Append(utils.KeyFromBz(bz))
-
-	k.getStore(ctx).Delete(key)
 }
 
 // IsCosmosChain returns true if the given chain name is for a cosmos chain
@@ -194,4 +154,67 @@ func (k Keeper) GetFeeCollector(ctx sdk.Context) (sdk.AccAddress, bool) {
 
 func (k Keeper) getStore(ctx sdk.Context) utils.KVStore {
 	return utils.NewNormalizedStore(ctx.KVStore(k.storeKey), k.cdc)
+}
+
+// GetIBCTransferQueue returns the queue of IBC transfers
+func (k Keeper) GetIBCTransferQueue(ctx sdk.Context) utils.KVQueue {
+	return utils.NewGeneralKVQueue(
+		ibcTransferQueueName,
+		k.getStore(ctx),
+		k.Logger(ctx),
+		func(value codec.ProtoMarshaler) utils.Key {
+			transfer := value.(*types.IBCTransfer)
+			return utils.KeyFromBz(transfer.ID.Bytes())
+		},
+	)
+}
+
+// EnqueueTransfer stores the pending ibc transfer in the queue
+func (k Keeper) EnqueueTransfer(ctx sdk.Context, transfer types.IBCTransfer) error {
+	id := k.getNonce(ctx)
+	transfer.SetID(id)
+	k.setNonce(ctx, id+1)
+
+	key := transferPrefix.AppendStr(transfer.ID.String())
+	if k.getStore(ctx).Has(key) {
+		return fmt.Errorf("transfer %s already exists", transfer.ID.String())
+	}
+
+	k.GetIBCTransferQueue(ctx).Enqueue(key, &transfer)
+	return nil
+}
+
+func (k Keeper) getNonce(ctx sdk.Context) uint64 {
+	if bz := k.getStore(ctx).GetRaw(nonceKey); bz != nil {
+		return binary.LittleEndian.Uint64(bz)
+	}
+
+	return 0
+}
+
+func (k Keeper) setNonce(ctx sdk.Context, nonce uint64) {
+	bz := make([]byte, 8)
+	binary.LittleEndian.PutUint64(bz, nonce)
+
+	k.getStore(ctx).SetRaw(nonceKey, bz)
+}
+
+// validateIBCTransferQueueState checks if the keys of the given map have the correct format to be imported as ibc transfer queue state.
+func (k Keeper) validateIBCTransferQueueState(state utils.QueueState, queueName ...string) error {
+	if err := state.ValidateBasic(queueName...); err != nil {
+		return err
+	}
+
+	for _, item := range state.Items {
+		var transfer types.IBCTransfer
+		if err := k.cdc.UnmarshalLengthPrefixed(item.Value, &transfer); err != nil {
+			return err
+		}
+
+		if err := transfer.ValidateBasic(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

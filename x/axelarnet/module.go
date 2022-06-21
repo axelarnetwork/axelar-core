@@ -9,9 +9,11 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
 	"github.com/cosmos/ibc-go/v2/modules/apps/transfer"
+	ibctransfertypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
 	channeltypes "github.com/cosmos/ibc-go/v2/modules/core/04-channel/types"
 	ibcexported "github.com/cosmos/ibc-go/v2/modules/core/exported"
 	"github.com/gorilla/mux"
@@ -20,6 +22,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/client/cli"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/client/rest"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
@@ -148,7 +151,7 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.Raw
 
 // Route returns the module's route
 func (am AppModule) Route() sdk.Route {
-	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper, am.nexus, am.bank, am.transfer, am.channel, am.account))
+	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper, am.nexus, am.bank, am.transfer, am.account))
 }
 
 // QuerierRoute returns this module's query route
@@ -179,7 +182,9 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 
 // EndBlock executes all state transitions this module requires at the end of each new block
 func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
-	return EndBlocker(ctx, req)
+	return utils.RunEndBlocker(ctx, am.keeper, func(ctx sdk.Context) ([]abci.ValidatorUpdate, error) {
+		return EndBlocker(ctx, req, am.keeper, am.transfer, am.channel)
+	})
 }
 
 // ConsensusVersion implements AppModule/ConsensusVersion.
@@ -275,10 +280,7 @@ func (am AppModule) OnAcknowledgementPacket(
 		_ = types.ModuleCdc.UnmarshalJSON(acknowledgement, &ack)
 		switch ack.Response.(type) {
 		case *channeltypes.Acknowledgement_Error:
-			err = resendTransferRoutedByAxelar(ctx, am.keeper, am.transfer, am.channel, packet)
-		default:
-			// the acknowledgement succeeded on the receiving chain, delete the pending ibc transfer if it routed by axelarnet
-			am.keeper.DeletePendingIBCTransfer(ctx, packet.GetSourcePort(), packet.GetSourceChannel(), packet.GetSequence())
+			err = requeueTransfer(ctx, am.keeper, packet)
 		}
 	}
 	return err
@@ -292,24 +294,44 @@ func (am AppModule) OnTimeoutPacket(
 ) error {
 	err := am.transferModule.OnTimeoutPacket(ctx, packet, relayer)
 	if err == nil {
-		err = resendTransferRoutedByAxelar(ctx, am.keeper, am.transfer, am.channel, packet)
+		err = requeueTransfer(ctx, am.keeper, packet)
 	}
 	return err
 }
 
-func resendTransferRoutedByAxelar(ctx sdk.Context, k keeper.Keeper, t types.IBCTransferKeeper, c types.ChannelKeeper, packet channeltypes.Packet) error {
-	// resend pending IBC transfer routed by axelarnet
-	p, ok := k.GetPendingIBCTransfer(ctx, packet.GetSourcePort(), packet.GetSourceChannel(), packet.GetSequence())
-	if !ok {
-		return nil
+func requeueTransfer(ctx sdk.Context, k keeper.Keeper, packet channeltypes.Packet) error {
+	var data ibctransfertypes.FungibleTokenPacketData
+	if err := types.ModuleCdc.UnmarshalJSON(packet.GetData(), &data); err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "cannot unmarshal ICS-20 transfer packet data: %s", err.Error())
 	}
-	path := fmt.Sprintf("%s/%s", packet.GetSourcePort(), packet.GetSourceChannel())
-	err := keeper.IBCTransfer(ctx, k, t, c, p.Token, p.Sender, p.Receiver, path)
-	// delete the timed out transfer
+	sender, err := sdk.AccAddressFromBech32(data.Sender)
 	if err != nil {
-		k.DeletePendingIBCTransfer(ctx, packet.GetSourcePort(), packet.GetSourceChannel(), packet.GetSequence())
+		return err
 	}
-	return err
+
+	// parse the denomination from the full denom path
+	trace := ibctransfertypes.ParseDenomTrace(data.Denom)
+
+	// parse the transfer amount
+	transferAmount, ok := sdk.NewIntFromString(data.Amount)
+	if !ok {
+		return sdkerrors.Wrapf(ibctransfertypes.ErrInvalidAmount, "unable to parse transfer amount (%s) into sdk.Int", data.Amount)
+	}
+	token := sdk.NewCoin(trace.IBCDenom(), transferAmount)
+
+	// requeue transfer
+	err = k.EnqueueTransfer(ctx, types.IBCTransfer{
+		Sender:    sender,
+		Receiver:  data.Receiver,
+		Token:     token,
+		PortID:    packet.GetSourcePort(),
+		ChannelID: packet.GetSourceChannel(),
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // NegotiateAppVersion implements the IBCModule interface

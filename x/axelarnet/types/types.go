@@ -8,6 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/address"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	host "github.com/cosmos/ibc-go/v2/modules/core/24-host"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
@@ -108,6 +109,35 @@ func (m CosmosChain) Validate() error {
 
 	if err := utils.ValidateString(m.AddrPrefix); err != nil {
 		return sdkerrors.Wrap(err, "invalid address prefix")
+	}
+
+	return nil
+}
+
+// SetID set the ID for IBCTransfer
+func (m *IBCTransfer) SetID(id uint64) {
+	m.ID = nexus.TransferID(id)
+}
+
+func (m IBCTransfer) ValidateBasic() error {
+	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
+		return sdkerrors.Wrap(err, "invalid transfer sender")
+	}
+
+	if err := utils.ValidateString(m.Receiver); err != nil {
+		return sdkerrors.Wrap(err, "invalid transfer receiver")
+	}
+
+	if err := m.Token.Validate(); err != nil {
+		return sdkerrors.Wrap(err, "invalid token")
+	}
+
+	if err := host.PortIdentifierValidator(m.PortID); err != nil {
+		return sdkerrors.Wrap(err, "invalid source port ID")
+	}
+
+	if err := host.ChannelIdentifierValidator(m.ChannelID); err != nil {
+		return sdkerrors.Wrap(err, "invalid source channel ID")
 	}
 
 	return nil

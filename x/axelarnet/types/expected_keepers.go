@@ -8,6 +8,7 @@ import (
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 	"github.com/tendermint/tendermint/libs/log"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
@@ -22,12 +23,11 @@ type BaseKeeper interface {
 	GetIBCPath(ctx sdk.Context, chain nexus.ChainName) (string, bool)
 	GetFeeCollector(ctx sdk.Context) (sdk.AccAddress, bool)
 	SetFeeCollector(ctx sdk.Context, address sdk.AccAddress) error
-	SetPendingIBCTransfer(ctx sdk.Context, transfer IBCTransfer)
-	GetPendingIBCTransfer(ctx sdk.Context, portID, channelID string, sequence uint64) (IBCTransfer, bool)
-	DeletePendingIBCTransfer(ctx sdk.Context, portID, channelID string, sequence uint64)
 	GetCosmosChains(ctx sdk.Context) []nexus.ChainName
 	GetCosmosChainByName(ctx sdk.Context, chain nexus.ChainName) (CosmosChain, bool)
 	SetCosmosChain(ctx sdk.Context, chain CosmosChain)
+	EnqueueTransfer(ctx sdk.Context, transfer IBCTransfer) error
+	GetIBCTransferQueue(ctx sdk.Context) utils.KVQueue
 }
 
 // Nexus provides functionality to manage cross-chain transfers
