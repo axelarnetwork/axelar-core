@@ -144,6 +144,12 @@ If you have added an RPC endpoint to your configuration for chain C then your va
 The Axelar consensus protocol simply ignores all votes for chain C events from those validators who are not registered as a maintainer for C.
 </Callout>
 
+<Callout type="warning" emoji="⚠️">
+  Automatic deregistration
+
+Your validator could be automatically deregistered as a maintainer for chain C for poor performance. See [Automatic deregistration](#automatic-deregistration) below.
+</Callout>
+
 ## Deregister as chain maintainer from an external chain
 
 If for some reason you need to deregister an external chain as a maintainer you must inform the Axelar network of every chain you intent to leave.
@@ -185,3 +191,16 @@ Why? If your RPC endpoint for C is enabled but you are not registered as a maint
 Conversely, if you are registered as a maintainer for C but your RPC endpoint for C is disabled then your validator will fail to post vote transactions for C when the Axelar network expects them. Consequences:
 
 - Your validator will exhibit poor vote performance and cannot earn rewards for maintaining C.
+
+## Automatic deregistration
+
+The Axelar network will automatically deregister your validator as a maintainer for chain C if either of the following conditions is met in the previous 500 polls for C:
+
+1. Your validator missed at least 20% of polls. A poll is "missed" if your validator never submits a vote transaction or if the vote transaction is posted more than 3 blocks after the poll concludes.
+2. Your validator voted incorrectly in at least 5% of polls. A vote is "incorrect" if it conflicts with the majority for that poll.
+
+### How to recognize automatic deregistration
+
+- The Axelar network emits an event each time a chain maintainer is deregistered.
+- `axelar-core` logs will contain a message of the form `deregistered validator {address} as maintainer for chain {chain}`.
+- Run the CLI query `axelard q nexus chain-maintainers [chain]` to see whether your validator is included.
