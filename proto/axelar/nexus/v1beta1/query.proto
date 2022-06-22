@@ -62,9 +62,19 @@ message TransferFeeResponse {
   cosmos.base.v1beta1.Coin fee = 1 [ (gogoproto.nullable) = false ];
 }
 
+enum ChainStatus {
+  option (gogoproto.goproto_enum_prefix) = false;
+
+  CHAIN_STATUS_UNSPECIFIED = 0
+      [ (gogoproto.enumvalue_customname) = "Unspecified" ];
+  CHAIN_STATUS_ACTIVATED = 1 [ (gogoproto.enumvalue_customname) = "Activated" ];
+  CHAIN_STATUS_DEACTIVATED = 2
+      [ (gogoproto.enumvalue_customname) = "Deactivated" ];
+}
+
 // ChainsRequest represents a message that queries the chains
 // registered on the network
-message ChainsRequest {}
+message ChainsRequest { ChainStatus status = 1; }
 
 message ChainsResponse {
   repeated string chains = 1

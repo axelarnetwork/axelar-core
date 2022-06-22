@@ -118,6 +118,11 @@ func (m Chain) Validate() error {
 	return nil
 }
 
+// GetName returns the chain name
+func (m Chain) GetName() ChainName {
+	return m.Name
+}
+
 // NewAsset returns an asset struct
 func NewAsset(denom string, isNative bool) Asset {
 	return Asset{Denom: utils.NormalizeString(denom), IsNativeAsset: isNative}
