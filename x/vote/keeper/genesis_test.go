@@ -54,25 +54,25 @@ func initializeRandomPoll(ctx sdk.Context, keeper Keeper) exported.PollMetadata 
 		}
 	}
 
-	pollKey := exported.PollKey{Module: randomNormalizedStr(5), ID: randomNormalizedStr(10)}
-	err := keeper.initializePoll(ctx, pollKey, voters,
+	pollID, err := keeper.initializePoll(ctx, voters,
 		exported.ExpiryAt(rand.PosI64()),
 		exported.RewardPool(randomNormalizedStr(5)),
 		exported.MinVoterCount(rand.I64Between(0, int64(len(voters)))),
 		exported.Threshold(utils.NewThreshold(rand.I64Between(1, 101), 100)),
 		exported.GracePeriod(rand.I64Between(0, 10)),
+		exported.ModuleMetadata(randomNormalizedStr(5)),
 	)
 	if err != nil {
 		panic(err)
 	}
 
-	metadata, ok := keeper.getPollMetadata(ctx, pollKey)
+	metadata, ok := keeper.getPollMetadata(ctx, pollID)
 	if !ok {
 		panic(fmt.Errorf("poll metadata not found"))
 	}
 
 	pollStates := []exported.PollState{exported.Completed, exported.Failed, exported.Expired, exported.AllowOverride}
-	poll := types.NewPoll(metadata, keeper.newPollStore(ctx, metadata.Key))
+	poll := types.NewPoll(metadata, keeper.newPollStore(ctx, metadata.ID))
 	poll.State = rand.Of(pollStates...)
 
 	if poll.Is(exported.Completed) {

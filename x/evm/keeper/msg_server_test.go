@@ -202,7 +202,7 @@ func TestSignCommands(t *testing.T) {
 		}
 		signerKeeper.GetSnapshotCounterForKeyIDFunc = func(ctx sdk.Context, keyID tss.KeyID) (int64, bool) { return 1, true }
 		signerKeeper.StartSignFunc = func(ctx sdk.Context, info tss.SignInfo, snapshotter snapshot.Snapshotter, voter interface {
-			InitializePollWithSnapshot(ctx sdk.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error
+			InitializePollWithSnapshot(ctx sdk.Context, snapshotSeqNo int64, pollProperties ...vote.PollProperty) (vote.PollID, error)
 		}) error {
 			return nil
 		}
@@ -242,7 +242,7 @@ func TestSignCommands(t *testing.T) {
 		}
 		signerKeeper.GetSnapshotCounterForKeyIDFunc = func(ctx sdk.Context, keyID tss.KeyID) (int64, bool) { return 1, true }
 		signerKeeper.StartSignFunc = func(ctx sdk.Context, info tss.SignInfo, snapshotter snapshot.Snapshotter, voter interface {
-			InitializePollWithSnapshot(ctx sdk.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error
+			InitializePollWithSnapshot(ctx sdk.Context, snapshotSeqNo int64, pollProperties ...vote.PollProperty) (vote.PollID, error)
 		}) error {
 			return nil
 		}
@@ -818,8 +818,10 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 			GetParamsFunc: func(ctx sdk.Context) types.Params { return types.DefaultParams()[0] },
 		}
 		v = &mock.VoterMock{
-			InitializePollFunc: func(sdk.Context, vote.PollKey, []sdk.ValAddress, ...vote.PollProperty) error { return nil },
-			GetPollFunc: func(sdk.Context, vote.PollKey) vote.Poll {
+			InitializePollFunc: func(sdk.Context, []sdk.ValAddress, ...vote.PollProperty) (vote.PollID, error) {
+				return 0, nil
+			},
+			GetPollFunc: func(sdk.Context, vote.PollID) vote.Poll {
 				return &voteMock.PollMock{
 					VoteFunc: func(voter sdk.ValAddress, blockHeight int64, data codec.ProtoMarshaler) (codec.ProtoMarshaler, bool, error) {
 						return nil, false, nil
@@ -876,7 +878,6 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeTokenConfirmation }), 1)
-		assert.Equal(t, v.InitializePollCalls()[0].Key, types.GetConfirmTokenKey(msg.TxID, btc.NativeAsset))
 	}).Repeat(repeats))
 
 	t.Run("unknown chain", testutils.Func(func(t *testing.T) {
@@ -916,8 +917,8 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 
 	t.Run("init poll failed", testutils.Func(func(t *testing.T) {
 		setup()
-		v.InitializePollFunc = func(sdk.Context, vote.PollKey, []sdk.ValAddress, ...vote.PollProperty) error {
-			return fmt.Errorf("poll setup failed")
+		v.InitializePollFunc = func(sdk.Context, []sdk.ValAddress, ...vote.PollProperty) (vote.PollID, error) {
+			return 0, fmt.Errorf("poll setup failed")
 		}
 
 		_, err := server.ConfirmToken(sdk.WrapSDKContext(ctx), msg)
@@ -1045,22 +1046,16 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 				}
 			},
 			GetRevoteLockingPeriodFunc:        func(sdk.Context) (int64, bool) { return rand.PosI64(), true },
-			SetPendingDepositFunc:             func(sdk.Context, vote.PollKey, *types.ERC20Deposit) {},
 			GetRequiredConfirmationHeightFunc: func(sdk.Context) (uint64, bool) { return mathRand.Uint64(), true },
 			GetVotingThresholdFunc: func(sdk.Context) (utils.Threshold, bool) {
 				return utils.Threshold{Numerator: 15, Denominator: 100}, true
 			},
 			GetMinVoterCountFunc: func(sdk.Context) (int64, bool) { return 15, true },
-			GetPendingDepositFunc: func(sdk.Context, vote.PollKey) (types.ERC20Deposit, bool) {
-				return types.ERC20Deposit{
-					DestinationChain: evmChain,
-				}, true
-			},
-			GetParamsFunc: func(ctx sdk.Context) types.Params { return types.DefaultParams()[0] },
+			GetParamsFunc:        func(ctx sdk.Context) types.Params { return types.DefaultParams()[0] },
 		}
 		v = &mock.VoterMock{
-			InitializePollFunc: func(sdk.Context, vote.PollKey, []sdk.ValAddress, ...vote.PollProperty) error { return nil },
-			GetPollFunc: func(sdk.Context, vote.PollKey) vote.Poll {
+			InitializePollFunc: func(sdk.Context, []sdk.ValAddress, ...vote.PollProperty) (vote.PollID, error) { return 0, nil },
+			GetPollFunc: func(sdk.Context, vote.PollID) vote.Poll {
 				return &voteMock.PollMock{
 					VoteFunc: func(voter sdk.ValAddress, blockHeight int64, data codec.ProtoMarshaler) (codec.ProtoMarshaler, bool, error) {
 						return nil, false, nil
@@ -1131,8 +1126,8 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 
 	t.Run("init poll failed", testutils.Func(func(t *testing.T) {
 		setup()
-		v.InitializePollFunc = func(sdk.Context, vote.PollKey, []sdk.ValAddress, ...vote.PollProperty) error {
-			return fmt.Errorf("failed")
+		v.InitializePollFunc = func(sdk.Context, []sdk.ValAddress, ...vote.PollProperty) (vote.PollID, error) {
+			return 0, fmt.Errorf("failed")
 		}
 
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)

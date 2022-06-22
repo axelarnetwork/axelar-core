@@ -1,8 +1,6 @@
 package types_test
 
 import (
-	"fmt"
-	"strings"
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -10,15 +8,12 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	gogoprototypes "github.com/gogo/protobuf/types"
 	"github.com/stretchr/testify/assert"
-	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
-	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
-	voteMock "github.com/axelarnetwork/axelar-core/x/vote/exported/mock"
 	"github.com/axelarnetwork/axelar-core/x/vote/types"
 	"github.com/axelarnetwork/axelar-core/x/vote/types/mock"
 	"github.com/axelarnetwork/utils/slices"
@@ -94,8 +89,8 @@ func TestPoll(t *testing.T) {
 			}
 		}
 
-		pollKey := exported.NewPollKey(randomNormalizedStr(5, 20), randomNormalizedStr(5, 20))
-		pollMetadata := types.NewPollMetaData(pollKey, types.DefaultParams().DefaultVotingThreshold, voters)
+		pollID := exported.PollID(rand.I64Between(10, 100))
+		pollMetadata := types.NewPollMetaData(pollID, types.DefaultParams().DefaultVotingThreshold, voters)
 
 		pollStore = &mock.StoreMock{}
 		poll = types.NewPoll(pollMetadata, pollStore)
@@ -118,21 +113,6 @@ func TestPoll(t *testing.T) {
 				assert.True(t, poll.Is(exported.Expired))
 				assert.Len(t, pollStore.SetMetadataCalls(), 1)
 				assert.True(t, pollStore.SetMetadataCalls()[0].Metadata.Is(exported.Expired))
-			}).
-			Run(t)
-	}).Repeat(repeats))
-
-	t.Run("AllowOverride", testutils.Func(func(t *testing.T) {
-		givenPoll.
-			When("poll is pending", withState(exported.Pending)).
-			Then("should set poll as allow override", func(t *testing.T) {
-				pollStore.SetMetadataFunc = func(exported.PollMetadata) {}
-
-				poll.AllowOverride()
-
-				assert.True(t, poll.Is(exported.AllowOverride))
-				assert.Len(t, pollStore.SetMetadataCalls(), 1)
-				assert.True(t, pollStore.SetMetadataCalls()[0].Metadata.Is(exported.AllowOverride))
 			}).
 			Run(t)
 	}).Repeat(repeats))
@@ -424,104 +404,4 @@ func TestPoll(t *testing.T) {
 			}).
 			Run(t)
 	}).Repeat(repeats))
-}
-
-func TestPoll_Initialize(t *testing.T) {
-	var (
-		previousPoll exported.Poll
-	)
-
-	repeats := 20
-
-	testCases := []struct {
-		label        string
-		previousPoll exported.Poll
-		expectError  bool
-	}{
-		{"poll can be overridden", &voteMock.PollMock{DeleteFunc: func() error { return nil }}, false},
-		{"poll can not be overridden", &voteMock.PollMock{DeleteFunc: func() error { return fmt.Errorf("no delete") }}, true},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.label, testutils.Func(func(t *testing.T) {
-			store := &mock.StoreMock{
-				GetPollFunc:     func(exported.PollKey) exported.Poll { return previousPoll },
-				SetMetadataFunc: func(exported.PollMetadata) {},
-				DeletePollFunc:  func() {},
-				EnqueuePollFunc: func(exported.PollMetadata) {},
-			}
-
-			previousPoll = testCase.previousPoll
-			poll := types.NewPoll(newRandomPollMetadata(), store).WithLogger(log.TestingLogger())
-
-			if testCase.expectError {
-				assert.Error(t, poll.Initialize(rand.I64Between(1, poll.ExpiresAt)))
-				assert.Len(t, store.EnqueuePollCalls(), 0)
-			} else {
-				assert.NoError(t, poll.Initialize(rand.I64Between(1, poll.ExpiresAt)))
-				assert.Len(t, store.EnqueuePollCalls(), 1)
-			}
-		}).Repeat(repeats))
-	}
-}
-
-func TestPoll_Delete(t *testing.T) {
-	var store *mock.StoreMock
-	setup := func(pollState exported.PollState) exported.Poll {
-		store = &mock.StoreMock{DeletePollFunc: func() {}}
-		metadata := newRandomPollMetadata()
-		metadata.State = pollState
-
-		return types.NewPoll(metadata, store).WithLogger(log.TestingLogger())
-	}
-
-	t.Run("nonexistent", func(t *testing.T) {
-		poll := setup(exported.NonExistent)
-		assert.NoError(t, poll.Delete())
-		assert.Len(t, store.DeletePollCalls(), 0)
-	})
-
-	testCases := []struct {
-		label            string
-		pollState        exported.PollState
-		deleteSuccessful bool
-	}{
-		{"pending", exported.Pending, false},
-		{"completed", exported.Completed, false},
-		{"failed", exported.Failed, false},
-		{"expired", exported.Expired, false},
-		{"allow override", exported.AllowOverride, true},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.label, func(t *testing.T) {
-			poll := setup(testCase.pollState)
-
-			if testCase.deleteSuccessful {
-				assert.NoError(t, poll.Delete())
-				assert.Len(t, store.DeletePollCalls(), 1)
-			} else {
-				assert.Error(t, poll.Delete())
-				assert.Len(t, store.DeletePollCalls(), 0)
-			}
-		})
-	}
-}
-
-func newRandomPollMetadata() exported.PollMetadata {
-	key := exported.NewPollKey(randomNormalizedStr(5, 20), randomNormalizedStr(5, 20))
-	voterCount := rand.I64Between(10, 20)
-	voters := make([]exported.Voter, voterCount)
-	for i := 0; i < int(voterCount); i++ {
-		voters[i] = exported.Voter{Validator: rand.ValAddr(), VotingPower: rand.PosI64()}
-	}
-
-	poll := types.NewPollMetaData(key, types.DefaultParams().DefaultVotingThreshold, voters)
-	poll.ExpiresAt = rand.I64Between(1, 1000000)
-
-	return poll
-}
-
-func randomNormalizedStr(min, max int) string {
-	return strings.ReplaceAll(utils.NormalizeString(rand.StrBetween(min, max)), utils.DefaultDelimiter, "-")
 }

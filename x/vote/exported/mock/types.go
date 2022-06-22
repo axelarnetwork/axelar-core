@@ -20,14 +20,14 @@ var _ exported.Poll = &PollMock{}
 //
 // 		// make and configure a mocked exported.Poll
 // 		mockedPoll := &PollMock{
-// 			AllowOverrideFunc: func()  {
-// 				panic("mock out the AllowOverride method")
-// 			},
-// 			DeleteFunc: func() error {
+// 			DeleteFunc: func()  {
 // 				panic("mock out the Delete method")
 // 			},
-// 			GetKeyFunc: func() exported.PollKey {
-// 				panic("mock out the GetKey method")
+// 			GetIDFunc: func() exported.PollID {
+// 				panic("mock out the GetID method")
+// 			},
+// 			GetModuleMetadataFunc: func() exported.PollModuleMetadata {
+// 				panic("mock out the GetModuleMetadata method")
 // 			},
 // 			GetResultFunc: func() codec.ProtoMarshaler {
 // 				panic("mock out the GetResult method")
@@ -66,14 +66,14 @@ var _ exported.Poll = &PollMock{}
 //
 // 	}
 type PollMock struct {
-	// AllowOverrideFunc mocks the AllowOverride method.
-	AllowOverrideFunc func()
-
 	// DeleteFunc mocks the Delete method.
-	DeleteFunc func() error
+	DeleteFunc func()
 
-	// GetKeyFunc mocks the GetKey method.
-	GetKeyFunc func() exported.PollKey
+	// GetIDFunc mocks the GetID method.
+	GetIDFunc func() exported.PollID
+
+	// GetModuleMetadataFunc mocks the GetModuleMetadata method.
+	GetModuleMetadataFunc func() exported.PollModuleMetadata
 
 	// GetResultFunc mocks the GetResult method.
 	GetResultFunc func() codec.ProtoMarshaler
@@ -107,14 +107,14 @@ type PollMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
-		// AllowOverride holds details about calls to the AllowOverride method.
-		AllowOverride []struct {
-		}
 		// Delete holds details about calls to the Delete method.
 		Delete []struct {
 		}
-		// GetKey holds details about calls to the GetKey method.
-		GetKey []struct {
+		// GetID holds details about calls to the GetID method.
+		GetID []struct {
+		}
+		// GetModuleMetadata holds details about calls to the GetModuleMetadata method.
+		GetModuleMetadata []struct {
 		}
 		// GetResult holds details about calls to the GetResult method.
 		GetResult []struct {
@@ -161,9 +161,9 @@ type PollMock struct {
 			Data codec.ProtoMarshaler
 		}
 	}
-	lockAllowOverride       sync.RWMutex
 	lockDelete              sync.RWMutex
-	lockGetKey              sync.RWMutex
+	lockGetID               sync.RWMutex
+	lockGetModuleMetadata   sync.RWMutex
 	lockGetResult           sync.RWMutex
 	lockGetRewardPoolName   sync.RWMutex
 	lockGetTotalVotingPower sync.RWMutex
@@ -176,34 +176,8 @@ type PollMock struct {
 	lockVote                sync.RWMutex
 }
 
-// AllowOverride calls AllowOverrideFunc.
-func (mock *PollMock) AllowOverride() {
-	if mock.AllowOverrideFunc == nil {
-		panic("PollMock.AllowOverrideFunc: method is nil but Poll.AllowOverride was just called")
-	}
-	callInfo := struct {
-	}{}
-	mock.lockAllowOverride.Lock()
-	mock.calls.AllowOverride = append(mock.calls.AllowOverride, callInfo)
-	mock.lockAllowOverride.Unlock()
-	mock.AllowOverrideFunc()
-}
-
-// AllowOverrideCalls gets all the calls that were made to AllowOverride.
-// Check the length with:
-//     len(mockedPoll.AllowOverrideCalls())
-func (mock *PollMock) AllowOverrideCalls() []struct {
-} {
-	var calls []struct {
-	}
-	mock.lockAllowOverride.RLock()
-	calls = mock.calls.AllowOverride
-	mock.lockAllowOverride.RUnlock()
-	return calls
-}
-
 // Delete calls DeleteFunc.
-func (mock *PollMock) Delete() error {
+func (mock *PollMock) Delete() {
 	if mock.DeleteFunc == nil {
 		panic("PollMock.DeleteFunc: method is nil but Poll.Delete was just called")
 	}
@@ -212,7 +186,7 @@ func (mock *PollMock) Delete() error {
 	mock.lockDelete.Lock()
 	mock.calls.Delete = append(mock.calls.Delete, callInfo)
 	mock.lockDelete.Unlock()
-	return mock.DeleteFunc()
+	mock.DeleteFunc()
 }
 
 // DeleteCalls gets all the calls that were made to Delete.
@@ -228,29 +202,55 @@ func (mock *PollMock) DeleteCalls() []struct {
 	return calls
 }
 
-// GetKey calls GetKeyFunc.
-func (mock *PollMock) GetKey() exported.PollKey {
-	if mock.GetKeyFunc == nil {
-		panic("PollMock.GetKeyFunc: method is nil but Poll.GetKey was just called")
+// GetID calls GetIDFunc.
+func (mock *PollMock) GetID() exported.PollID {
+	if mock.GetIDFunc == nil {
+		panic("PollMock.GetIDFunc: method is nil but Poll.GetID was just called")
 	}
 	callInfo := struct {
 	}{}
-	mock.lockGetKey.Lock()
-	mock.calls.GetKey = append(mock.calls.GetKey, callInfo)
-	mock.lockGetKey.Unlock()
-	return mock.GetKeyFunc()
+	mock.lockGetID.Lock()
+	mock.calls.GetID = append(mock.calls.GetID, callInfo)
+	mock.lockGetID.Unlock()
+	return mock.GetIDFunc()
 }
 
-// GetKeyCalls gets all the calls that were made to GetKey.
+// GetIDCalls gets all the calls that were made to GetID.
 // Check the length with:
-//     len(mockedPoll.GetKeyCalls())
-func (mock *PollMock) GetKeyCalls() []struct {
+//     len(mockedPoll.GetIDCalls())
+func (mock *PollMock) GetIDCalls() []struct {
 } {
 	var calls []struct {
 	}
-	mock.lockGetKey.RLock()
-	calls = mock.calls.GetKey
-	mock.lockGetKey.RUnlock()
+	mock.lockGetID.RLock()
+	calls = mock.calls.GetID
+	mock.lockGetID.RUnlock()
+	return calls
+}
+
+// GetModuleMetadata calls GetModuleMetadataFunc.
+func (mock *PollMock) GetModuleMetadata() exported.PollModuleMetadata {
+	if mock.GetModuleMetadataFunc == nil {
+		panic("PollMock.GetModuleMetadataFunc: method is nil but Poll.GetModuleMetadata was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockGetModuleMetadata.Lock()
+	mock.calls.GetModuleMetadata = append(mock.calls.GetModuleMetadata, callInfo)
+	mock.lockGetModuleMetadata.Unlock()
+	return mock.GetModuleMetadataFunc()
+}
+
+// GetModuleMetadataCalls gets all the calls that were made to GetModuleMetadata.
+// Check the length with:
+//     len(mockedPoll.GetModuleMetadataCalls())
+func (mock *PollMock) GetModuleMetadataCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockGetModuleMetadata.RLock()
+	calls = mock.calls.GetModuleMetadata
+	mock.lockGetModuleMetadata.RUnlock()
 	return calls
 }
 

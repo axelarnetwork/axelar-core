@@ -2,11 +2,11 @@ package exported
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 )
@@ -21,6 +21,15 @@ type VoteHandler interface {
 	HandleResult(ctx sdk.Context, result codec.ProtoMarshaler) error
 }
 
+// ValidateBasic returns an error if the poll module metadata is not valid; nil otherwise
+func (m PollModuleMetadata) ValidateBasic() error {
+	if err := utils.ValidateString(m.Module); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // Is checks if the poll is in the given state
 func (m PollMetadata) Is(state PollState) bool {
 	// this special case check is needed, because 0 & x == 0 is true for any x
@@ -32,7 +41,7 @@ func (m PollMetadata) Is(state PollState) bool {
 
 // Validate returns an error if the poll metadata is not valid; nil otherwise
 func (m PollMetadata) Validate() error {
-	if err := m.Key.Validate(); err != nil {
+	if err := m.ModuleMetadata.ValidateBasic(); err != nil {
 		return err
 	}
 
@@ -88,29 +97,16 @@ func (m PollMetadata) Validate() error {
 	return nil
 }
 
-// NewPollKey constructor for PollKey without nonce
-func NewPollKey(module string, id string) PollKey {
-	return PollKey{
-		Module: module,
-		ID:     utils.NormalizeString(id),
-	}
+// PollID represents ID of polls
+type PollID uint64
+
+// String converts the given poll ID to string
+func (id PollID) String() string {
+	return strconv.FormatUint(uint64(id), 10)
 }
 
 func (m PollKey) String() string {
 	return fmt.Sprintf("%s_%s", m.Module, m.ID)
-}
-
-// Validate performs a stateless validity check to ensure PollKey has been properly initialized
-func (m PollKey) Validate() error {
-	if m.Module == "" {
-		return fmt.Errorf("missing module")
-	}
-
-	if err := utils.ValidateString(m.ID, ""); err != nil {
-		return sdkerrors.Wrap(err, "invalid poll key ID")
-	}
-
-	return nil
 }
 
 // PollProperty is a modifier for PollMetadata. It should never be manually initialized
@@ -181,6 +177,19 @@ func GracePeriod(gracePeriod int64) PollProperty {
 	}}
 }
 
+// ModuleMetadata sets the module metadata on the poll
+func ModuleMetadata(module string) PollProperty {
+	return PollProperty{do: func(metadata PollMetadata) PollMetadata {
+		// TODO: attach the actual module metadata
+		metadata.ModuleMetadata = PollModuleMetadata{
+			Module:   module,
+			Metadata: nil,
+		}
+
+		return metadata
+	}}
+}
+
 // Poll provides an interface for other modules to interact with polls
 type Poll interface {
 	HasVotedCorrectly(voter sdk.ValAddress) bool
@@ -189,11 +198,11 @@ type Poll interface {
 	Vote(voter sdk.ValAddress, blockHeight int64, data codec.ProtoMarshaler) (result codec.ProtoMarshaler, voted bool, err error)
 	Is(state PollState) bool
 	SetExpired()
-	AllowOverride()
 	GetResult() codec.ProtoMarshaler
 	GetRewardPoolName() (string, bool)
-	GetKey() PollKey
+	GetID() PollID
 	GetVoters() []Voter
 	GetTotalVotingPower() sdk.Int
-	Delete() error
+	GetModuleMetadata() PollModuleMetadata
+	Delete()
 }

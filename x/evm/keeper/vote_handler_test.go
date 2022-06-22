@@ -25,24 +25,17 @@ import (
 
 func TestHandleResult(t *testing.T) {
 	var (
-		ctx        sdk.Context
-		cacheStore *fakeMock.CacheMultiStoreMock
-		basek      *mock.BaseKeeperMock
-		chaink     *mock.ChainKeeperMock
-		n          *mock.NexusMock
-		r          *mock.RewarderMock
-		result     vote.Vote
-		handler    vote.VoteHandler
+		ctx     sdk.Context
+		basek   *mock.BaseKeeperMock
+		chaink  *mock.ChainKeeperMock
+		n       *mock.NexusMock
+		r       *mock.RewarderMock
+		result  vote.Vote
+		handler vote.VoteHandler
 	)
 
 	setup := func() {
-		store := &fakeMock.MultiStoreMock{}
-		cacheStore = &fakeMock.CacheMultiStoreMock{
-			WriteFunc: func() {},
-		}
-		store.CacheMultiStoreFunc = func() sdk.CacheMultiStore { return cacheStore }
-
-		ctx = sdk.NewContext(store, tmproto.Header{}, false, log.TestingLogger())
+		ctx = sdk.NewContext(&fakeMock.MultiStoreMock{}, tmproto.Header{}, false, log.TestingLogger())
 
 		basek = &mock.BaseKeeperMock{
 			ForChainFunc: func(chain nexus.ChainName) types.ChainKeeper {
@@ -59,9 +52,6 @@ func TestHandleResult(t *testing.T) {
 				return types.Event{}, false
 			},
 			SetConfirmedEventFunc: func(sdk.Context, types.Event) error {
-				return nil
-			},
-			SetFailedEventFunc: func(sdk.Context, types.Event) error {
 				return nil
 			},
 			LoggerFunc: func(ctx sdk.Context) log.Logger { return log.TestingLogger() },
@@ -98,7 +88,6 @@ func TestHandleResult(t *testing.T) {
 		err = handler.HandleResult(ctx, &result)
 
 		assert.Error(t, err)
-		assert.Len(t, cacheStore.WriteCalls(), 0)
 	}).Repeat(repeats))
 
 	t.Run("Given vote When events empty THEN should nothing and return nil", testutils.Func(func(t *testing.T) {
@@ -113,7 +102,6 @@ func TestHandleResult(t *testing.T) {
 		err = handler.HandleResult(ctx, &result)
 
 		assert.NoError(t, err)
-		assert.Len(t, cacheStore.WriteCalls(), 0)
 	}).Repeat(repeats))
 
 	t.Run("GIVEN vote WHEN chain is not registered THEN return error", testutils.Func(func(t *testing.T) {
@@ -130,7 +118,6 @@ func TestHandleResult(t *testing.T) {
 		err = handler.HandleResult(ctx, &result)
 
 		assert.Error(t, err)
-		assert.Len(t, cacheStore.WriteCalls(), 0)
 	}).Repeat(repeats))
 
 	t.Run("GIVEN vote WHEN chain is not activated THEN still confirm the event", testutils.Func(func(t *testing.T) {
@@ -147,7 +134,6 @@ func TestHandleResult(t *testing.T) {
 		err = handler.HandleResult(ctx, &result)
 
 		assert.NoError(t, err)
-		assert.Len(t, cacheStore.WriteCalls(), 1)
 	}).Repeat(repeats))
 
 	t.Run("GIVEN vote WHEN result is invalid THEN return error", testutils.Func(func(t *testing.T) {
@@ -159,7 +145,6 @@ func TestHandleResult(t *testing.T) {
 		err := handler.HandleResult(ctx, &result)
 
 		assert.Error(t, err)
-		assert.Len(t, cacheStore.WriteCalls(), 0)
 	}).Repeat(repeats))
 
 	t.Run("GIVEN already confirmed event WHEN handle deposit THEN return error", testutils.Func(func(t *testing.T) {
@@ -178,8 +163,6 @@ func TestHandleResult(t *testing.T) {
 		err = handler.HandleResult(ctx, &result)
 
 		assert.Error(t, err)
-		assert.Len(t, cacheStore.WriteCalls(), 0)
-
 	}).Repeat(repeats))
 }
 

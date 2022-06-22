@@ -335,7 +335,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 	setup := func() {
 		encodingConfig = app.MakeEncodingConfig()
 		cdc := encodingConfig.Amino
-		pollKey := exported.NewPollKey(evmTypes.ModuleName, rand.StrBetween(5, 20))
+		pollID := exported.PollID(rand.I64Between(10, 100))
 
 		burnAddrBytes := rand.Bytes(common.AddressLength)
 		tokenAddrBytes := rand.Bytes(common.AddressLength)
@@ -348,7 +348,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 			evmTypes.AttributeKeyDepositAddress: common.Bytes2Hex(burnAddrBytes),
 			evmTypes.AttributeKeyTokenAddress:   common.Bytes2Hex(tokenAddrBytes),
 			evmTypes.AttributeKeyConfHeight:     strconv.FormatUint(uint64(confHeight), 10),
-			evmTypes.AttributeKeyPoll:           string(cdc.MustMarshalJSON(pollKey)),
+			evmTypes.AttributeKeyPoll:           pollID.String(),
 		}
 
 		tx := geth.NewTransaction(0, common.BytesToAddress(rand.Bytes(common.HashLength)), big.NewInt(0), 21000, big.NewInt(1), []byte{})
@@ -491,7 +491,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 	setup := func() {
 		encodingConfig = app.MakeEncodingConfig()
 		cdc := encodingConfig.Amino
-		pollKey := exported.NewPollKey(evmTypes.ModuleName, rand.StrBetween(5, 20))
+		pollID := exported.PollID(rand.I64Between(10, 100))
 
 		gatewayAddrBytes = rand.Bytes(common.AddressLength)
 		tokenAddrBytes := rand.Bytes(common.AddressLength)
@@ -506,7 +506,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 			evmTypes.AttributeKeyTokenAddress:   common.Bytes2Hex(tokenAddrBytes),
 			evmTypes.AttributeKeySymbol:         symbol,
 			evmTypes.AttributeKeyConfHeight:     strconv.FormatUint(uint64(confHeight), 10),
-			evmTypes.AttributeKeyPoll:           string(cdc.MustMarshalJSON(pollKey)),
+			evmTypes.AttributeKeyPoll:           pollID.String(),
 		}
 
 		tx := geth.NewTransaction(0, common.BytesToAddress(rand.Bytes(common.HashLength)), big.NewInt(0), 21000, big.NewInt(1), []byte{})
@@ -666,7 +666,7 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 	setup := func() {
 		encodingConfig = app.MakeEncodingConfig()
 		cdc := encodingConfig.Amino
-		pollKey := exported.NewPollKey(evmTypes.ModuleName, rand.StrBetween(5, 20))
+		pollID := exported.PollID(rand.I64Between(10, 100))
 
 		gatewayAddrBytes := rand.Bytes(common.AddressLength)
 		newOwnerAddrBytes := rand.Bytes(common.AddressLength)
@@ -681,7 +681,7 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 			evmTypes.AttributeKeyKeyType:         tss.Threshold.SimpleString(),
 			evmTypes.AttributeKeyGatewayAddress:  common.Bytes2Hex(gatewayAddrBytes),
 			evmTypes.AttributeKeyConfHeight:      strconv.FormatUint(uint64(confHeight), 10),
-			evmTypes.AttributeKeyPoll:            string(cdc.MustMarshalJSON(pollKey)),
+			evmTypes.AttributeKeyPoll:            pollID.String(),
 		}
 
 		tx := geth.NewTransaction(0, common.BytesToAddress(rand.Bytes(common.HashLength)), big.NewInt(0), 21000, big.NewInt(1), []byte{})

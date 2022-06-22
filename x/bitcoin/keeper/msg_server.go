@@ -22,7 +22,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
-	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 var _ types.MsgServiceServer = msgServer{}
@@ -177,48 +176,7 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 
 // ConfirmOutpoint handles the confirmation of a Bitcoin outpoint
 func (s msgServer) ConfirmOutpoint(c context.Context, req *types.ConfirmOutpointRequest) (*types.ConfirmOutpointResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-
-	if err := validateChainActivated(ctx, s.nexus, exported.Bitcoin); err != nil {
-		return nil, err
-	}
-
-	_, state, ok := s.GetOutPointInfo(ctx, req.OutPointInfo.GetOutPoint())
-	switch {
-	case !ok:
-		break
-	case state == types.OutPointState_Confirmed:
-		return nil, fmt.Errorf("already confirmed")
-	case state == types.OutPointState_Spent:
-		return nil, fmt.Errorf("already spent")
-	}
-
-	if _, ok := s.GetAddressInfo(ctx, req.OutPointInfo.Address); !ok {
-		return nil, fmt.Errorf("outpoint address unknown, aborting deposit confirmation")
-	}
-
-	pollKey := vote.NewPollKey(types.ModuleName, fmt.Sprintf("%s_%s_%d", req.OutPointInfo.OutPoint, req.OutPointInfo.Address, req.OutPointInfo.Amount))
-	if err := s.voter.InitializePoll(
-		ctx,
-		pollKey,
-		s.nexus.GetChainMaintainers(ctx, exported.Bitcoin),
-		vote.ExpiryAt(ctx.BlockHeight()+s.BTCKeeper.GetRevoteLockingPeriod(ctx)),
-		vote.Threshold(s.GetVotingThreshold(ctx)),
-		vote.MinVoterCount(s.GetMinVoterCount(ctx)),
-	); err != nil {
-		return nil, err
-	}
-	s.SetPendingOutpointInfo(ctx, pollKey, req.OutPointInfo)
-
-	ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeOutpointConfirmation,
-		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
-		sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(s.GetRequiredConfirmationHeight(ctx), 10)),
-		sdk.NewAttribute(types.AttributeKeyOutPointInfo, string(types.ModuleCdc.MustMarshalJSON(&req.OutPointInfo))),
-		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&pollKey))),
-	))
-
-	return &types.ConfirmOutpointResponse{}, nil
+	return nil, sdkerrors.ErrUnknownRequest
 }
 
 // VoteConfirmOutpoint handles the votes on an outpoint confirmation

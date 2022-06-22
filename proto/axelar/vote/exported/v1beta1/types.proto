@@ -13,6 +13,7 @@ option (gogoproto.goproto_getters_all) = false;
 
 // PollKey represents the key data for a poll
 message PollKey {
+  option deprecated = true;
   option (gogoproto.goproto_stringer) = false;
 
   string module = 1;
@@ -30,10 +31,18 @@ message Vote {
   google.protobuf.Any result = 2;
 }
 
+message PollModuleMetadata {
+  string module = 1;
+  google.protobuf.Any metadata = 2
+      [ (cosmos_proto.accepts_interface) =
+            "github.com/cosmos/codec/ProtoMarshaler" ];
+}
+
 // PollMetadata represents a poll with write-in voting, i.e. the result of the
 // vote can have any data type
 message PollMetadata {
-  vote.exported.v1beta1.PollKey key = 1 [ (gogoproto.nullable) = false ];
+  vote.exported.v1beta1.PollKey key = 1
+      [ (gogoproto.nullable) = false, deprecated = true ];
   int64 expires_at = 3;
   google.protobuf.Any result = 4
       [ (cosmos_proto.accepts_interface) =
@@ -49,6 +58,12 @@ message PollMetadata {
   string reward_pool_name = 10;
   int64 grace_period = 11;
   int64 completed_at = 12;
+  uint64 id = 13 [
+    (gogoproto.customname) = "ID",
+    (gogoproto.customtype) = "PollID",
+    (gogoproto.nullable) = false
+  ];
+  PollModuleMetadata module_metadata = 14 [ (gogoproto.nullable) = false ];
 }
 
 enum PollState {
