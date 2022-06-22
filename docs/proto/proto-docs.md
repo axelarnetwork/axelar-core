@@ -233,6 +233,7 @@
     - [DepositStateResponse](#axelar.evm.v1beta1.DepositStateResponse)
     - [ERC20TokensRequest](#axelar.evm.v1beta1.ERC20TokensRequest)
     - [ERC20TokensResponse](#axelar.evm.v1beta1.ERC20TokensResponse)
+    - [ERC20TokensResponse.Token](#axelar.evm.v1beta1.ERC20TokensResponse.Token)
     - [EventRequest](#axelar.evm.v1beta1.EventRequest)
     - [EventResponse](#axelar.evm.v1beta1.EventResponse)
     - [GatewayAddressRequest](#axelar.evm.v1beta1.GatewayAddressRequest)
@@ -3645,7 +3646,8 @@ deposit address
 <a name="axelar.evm.v1beta1.ERC20TokensRequest"></a>
 
 ### ERC20TokensRequest
-
+ERC20TokensRequest describes the chain for which the type of ERC20 tokens are
+requested.
 
 
 | Field | Type | Label | Description |
@@ -3661,12 +3663,29 @@ deposit address
 <a name="axelar.evm.v1beta1.ERC20TokensResponse"></a>
 
 ### ERC20TokensResponse
+ERC20TokensResponse describes the asset and symbol for all
+ERC20 tokens requested for a chain
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tokens` | [ERC20TokensResponse.Token](#axelar.evm.v1beta1.ERC20TokensResponse.Token) | repeated |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.ERC20TokensResponse.Token"></a>
+
+### ERC20TokensResponse.Token
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `assets` | [string](#string) | repeated |  |
+| `asset` | [string](#string) |  |  |
+| `symbol` | [string](#string) |  |  |
 
 
 
@@ -3942,6 +3961,7 @@ deposit address
 | `address` | [string](#string) |  |  |
 | `confirmed` | [bool](#bool) |  |  |
 | `is_external` | [bool](#bool) |  |  |
+| `burner_code_hash` | [string](#string) |  |  |
 
 
 

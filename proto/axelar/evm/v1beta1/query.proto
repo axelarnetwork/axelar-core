@@ -169,12 +169,23 @@ enum TokenType {
   TOKEN_TYPE_EXTERNAL = 2 [ (gogoproto.enumvalue_customname) = "External" ];
 }
 
+// ERC20TokensRequest describes the chain for which the type of ERC20 tokens are
+// requested.
 message ERC20TokensRequest {
   string chain = 1;
   TokenType type = 2;
 }
 
-message ERC20TokensResponse { repeated string assets = 1; }
+// ERC20TokensResponse describes the asset and symbol for all
+// ERC20 tokens requested for a chain
+message ERC20TokensResponse {
+  message Token {
+    string asset = 1;
+    string symbol = 2;
+  }
+
+  repeated Token tokens = 1 [ (gogoproto.nullable) = false ];
+}
 
 message TokenInfoRequest {
   string chain = 1;
@@ -190,4 +201,5 @@ message TokenInfoResponse {
   string address = 3;
   bool confirmed = 4;
   bool is_external = 5;
+  string burner_code_hash = 6;
 }
