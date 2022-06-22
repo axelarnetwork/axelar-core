@@ -185,12 +185,7 @@ service QueryService {
 
   // ERC20Tokens queries the ERC20 tokens registered for a chain
   rpc ERC20Tokens(ERC20TokensRequest) returns (ERC20TokensResponse) {
-    option (google.api.http) = {
-      get : "/axelar/evm/v1beta1/erc20_tokens/{chain}"
-      additional_bindings : {
-        get : "/axelar/evm/v1beta1/erc20_tokens/{chain}/{type}"
-      }
-    };
+    option (google.api.http).get = "/axelar/evm/v1beta1/erc20_tokens/{chain}";
   }
 
   // TokenInfo queries the token info for a registered ERC20 Token
