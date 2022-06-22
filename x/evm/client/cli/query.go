@@ -41,6 +41,8 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		GetCmdBurnerInfo(queryRoute),
 		GetCmdChains(queryRoute),
 		GetCmdConfirmationHeight(queryRoute),
+		GetCmdERC20Tokens(queryRoute),
+		GetCmdTokenInfo(queryRoute),
 	)
 
 	return evmQueryCmd
@@ -469,6 +471,95 @@ func GetCmdEvent(queryRoute string) *cobra.Command {
 				Chain:   chain,
 				EventId: eventID,
 			})
+		if err != nil {
+			return err
+		}
+
+		return clientCtx.PrintProto(res)
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdERC20Tokens returns the query to get the ERC20 tokens for a given chain
+func GetCmdERC20Tokens(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "erc20-tokens [chain]",
+		Short: "Returns the ERC20 tokens for the given chain",
+		Args:  cobra.ExactArgs(1),
+	}
+	tokenType := cmd.Flags().String("token-type", "", "the token type [external|internal]")
+
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		clientCtx, err := client.GetClientQueryContext(cmd)
+		if err != nil {
+			return err
+		}
+
+		queryClient := types.NewQueryServiceClient(clientCtx)
+
+		var tokenTypeEnum types.TokenType
+		switch *tokenType {
+		case "":
+			tokenTypeEnum = types.Unspecified
+		case "internal":
+			tokenTypeEnum = types.Internal
+		case "external":
+			tokenTypeEnum = types.External
+		}
+
+		res, err := queryClient.ERC20Tokens(cmd.Context(),
+			&types.ERC20TokensRequest{
+				Chain: args[0],
+				Type:  tokenTypeEnum,
+			})
+		if err != nil {
+			return err
+		}
+
+		return clientCtx.PrintProto(res)
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdTokenInfo returns the query to get the details for an ERC20 token
+func GetCmdTokenInfo(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "token-info [chain]",
+		Short: fmt.Sprintf("Returns the info of token by either %s or %s", keeper.BySymbol, keeper.ByAsset),
+		Args:  cobra.ExactArgs(1),
+	}
+
+	symbol := cmd.Flags().String(keeper.BySymbol, "", "lookup token by symbol")
+	asset := cmd.Flags().String(keeper.ByAsset, "", "lookup token by asset name")
+
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		clientCtx, err := client.GetClientQueryContext(cmd)
+		if err != nil {
+			return err
+		}
+
+		var req types.TokenInfoRequest
+		switch {
+		case *symbol == "" && *asset != "":
+			req = types.TokenInfoRequest{
+				Chain:  args[0],
+				FindBy: &types.TokenInfoRequest_Asset{Asset: *asset},
+			}
+		case *symbol != "" && *asset == "":
+			req = types.TokenInfoRequest{
+				Chain:  args[0],
+				FindBy: &types.TokenInfoRequest_Symbol{Symbol: *symbol},
+			}
+		default:
+			return fmt.Errorf("lookup must be either by asset name or symbol")
+		}
+
+		queryClient := types.NewQueryServiceClient(clientCtx)
+		res, err := queryClient.TokenInfo(cmd.Context(), &req)
 		if err != nil {
 			return err
 		}

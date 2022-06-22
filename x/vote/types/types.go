@@ -105,7 +105,7 @@ func (p Poll) Is(state exported.PollState) bool {
 }
 
 // SetExpired sets the poll to be expired
-func (p Poll) SetExpired() {
+func (p *Poll) SetExpired() {
 	if !p.Is(exported.NonExistent) {
 		p.State |= exported.Expired
 	}
@@ -113,7 +113,7 @@ func (p Poll) SetExpired() {
 }
 
 // AllowOverride makes it possible to delete the poll, regardless of which state it is in
-func (p Poll) AllowOverride() {
+func (p *Poll) AllowOverride() {
 	if !p.Is(exported.NonExistent) {
 		p.State |= exported.AllowOverride
 	}
@@ -187,17 +187,17 @@ func (p *Poll) Vote(voter sdk.ValAddress, blockHeight int64, data codec.ProtoMar
 		return nil, false, fmt.Errorf("voter %s has voted already", voter)
 	}
 
+	votingPower := p.getVotingPower(voter)
+	if votingPower == 0 {
+		return nil, false, fmt.Errorf("address %s is not eligible to Vote in this poll", voter)
+	}
+
 	switch {
 	case p.Is(exported.Failed):
 		return nil, false, nil
 	case p.Is(exported.Expired):
 		return nil, false, fmt.Errorf("poll %s has expired already", p.GetKey().String())
 	case p.Is(exported.Completed) && p.isWithinGracePeriod(blockHeight):
-		votingPower := p.getVotingPower(voter)
-		if votingPower == 0 {
-			return nil, false, fmt.Errorf("address %s is not eligible to Vote in this poll", voter)
-		}
-
 		p.SetVote(voter, data, votingPower, true)
 		p.logger.Debug("received late vote for poll",
 			"voter", voter.String(),
@@ -207,11 +207,6 @@ func (p *Poll) Vote(voter sdk.ValAddress, blockHeight int64, data codec.ProtoMar
 		return nil, true, nil
 	case p.Is(exported.Completed):
 		return nil, false, nil
-	}
-
-	votingPower := p.getVotingPower(voter)
-	if votingPower == 0 {
-		return nil, false, fmt.Errorf("address %s is not eligible to Vote in this poll", voter)
 	}
 
 	p.SetVote(voter, data, votingPower, false)
