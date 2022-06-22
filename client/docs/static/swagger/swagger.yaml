@@ -6260,10 +6260,18 @@ paths:
           schema:
             type: object
             properties:
-              assets:
+              tokens:
                 type: array
                 items:
-                  type: string
+                  type: object
+                  properties:
+                    asset:
+                      type: string
+                    symbol:
+                      type: string
+            title: |-
+              ERC20TokensResponse describes the asset and symbol for all
+              ERC20 tokens requested for a chain
         default:
           description: An unexpected error response
           schema:
@@ -7518,6 +7526,8 @@ paths:
               is_external:
                 type: boolean
                 format: boolean
+              burner_code_hash:
+                type: string
         default:
           description: An unexpected error response
           schema:
@@ -38473,10 +38483,25 @@ definitions:
   axelar.evm.v1beta1.ERC20TokensResponse:
     type: object
     properties:
-      assets:
+      tokens:
         type: array
         items:
-          type: string
+          type: object
+          properties:
+            asset:
+              type: string
+            symbol:
+              type: string
+    title: |-
+      ERC20TokensResponse describes the asset and symbol for all
+      ERC20 tokens requested for a chain
+  axelar.evm.v1beta1.ERC20TokensResponse.Token:
+    type: object
+    properties:
+      asset:
+        type: string
+      symbol:
+        type: string
   axelar.evm.v1beta1.Event:
     type: object
     properties:
@@ -39052,6 +39077,8 @@ definitions:
       is_external:
         type: boolean
         format: boolean
+      burner_code_hash:
+        type: string
   axelar.evm.v1beta1.TokenType:
     type: string
     enum:

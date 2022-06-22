@@ -1,12 +1,14 @@
 package keeper_test
 
 import (
+	"encoding/hex"
 	"fmt"
 	"math/big"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
@@ -697,7 +699,17 @@ func TestERC20Tokens(t *testing.T) {
 	t.Run("all erc20 tokens", testutils.Func(func(t *testing.T) {
 		setup()
 
-		expectedRes = types.ERC20TokensResponse{Assets: []string{external.GetAsset(), internal.GetAsset()}}
+		expectedTokens := []types.ERC20TokensResponse_Token{
+			{
+				Asset:  external.GetAsset(),
+				Symbol: external.GetDetails().Symbol,
+			},
+			{
+				Asset:  internal.GetAsset(),
+				Symbol: internal.GetDetails().Symbol,
+			},
+		}
+		expectedRes = types.ERC20TokensResponse{Tokens: expectedTokens}
 
 		res, err := grpcQuerier.ERC20Tokens(sdk.WrapSDKContext(ctx), &types.ERC20TokensRequest{Chain: existingChain.String()})
 		assert := assert.New(t)
@@ -709,7 +721,11 @@ func TestERC20Tokens(t *testing.T) {
 	t.Run("internal erc20 tokens only", testutils.Func(func(t *testing.T) {
 		setup()
 
-		expectedRes = types.ERC20TokensResponse{Assets: []string{internal.GetAsset()}}
+		expectedTokens := []types.ERC20TokensResponse_Token{{
+			Asset:  internal.GetAsset(),
+			Symbol: internal.GetDetails().Symbol,
+		}}
+		expectedRes = types.ERC20TokensResponse{Tokens: expectedTokens}
 
 		res, err := grpcQuerier.ERC20Tokens(sdk.WrapSDKContext(ctx), &types.ERC20TokensRequest{Chain: existingChain.String(), Type: types.Internal})
 		assert := assert.New(t)
@@ -720,7 +736,11 @@ func TestERC20Tokens(t *testing.T) {
 	t.Run("external erc20 tokens only", testutils.Func(func(t *testing.T) {
 		setup()
 
-		expectedRes = types.ERC20TokensResponse{Assets: []string{external.GetAsset()}}
+		expectedTokens := []types.ERC20TokensResponse_Token{{
+			Asset:  external.GetAsset(),
+			Symbol: external.GetDetails().Symbol,
+		}}
+		expectedRes = types.ERC20TokensResponse{Tokens: expectedTokens}
 
 		res, err := grpcQuerier.ERC20Tokens(sdk.WrapSDKContext(ctx), &types.ERC20TokensRequest{Chain: existingChain.String(), Type: types.External})
 		assert := assert.New(t)
@@ -749,12 +769,18 @@ func TestTokenInfo(t *testing.T) {
 		grpcQuerier   *evmKeeper.Querier
 	)
 
+	burnerCode, err := hex.DecodeString(rand.HexStr(200))
+	if err != nil {
+		panic(err)
+	}
+	burnerCodeHash := types.Hash(crypto.Keccak256Hash(burnerCode)).Hex()
 	token := types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{
 		Asset:        "token",
 		Details:      types.NewTokenDetails("Token", "TOKEN", 10, sdk.NewInt(0)),
 		TokenAddress: types.ZeroAddress,
 		Status:       types.Confirmed,
 		IsExternal:   true,
+		BurnerCode:   burnerCode,
 	})
 
 	setup := func() {
@@ -802,11 +828,12 @@ func TestTokenInfo(t *testing.T) {
 
 	repeatCount := 1
 	expectedRes := types.TokenInfoResponse{
-		Asset:      token.GetAsset(),
-		Details:    token.GetDetails(),
-		Address:    token.GetAddress().Hex(),
-		Confirmed:  token.Is(types.Confirmed),
-		IsExternal: token.IsExternal(),
+		Asset:          token.GetAsset(),
+		Details:        token.GetDetails(),
+		Address:        token.GetAddress().Hex(),
+		Confirmed:      token.Is(types.Confirmed),
+		IsExternal:     token.IsExternal(),
+		BurnerCodeHash: burnerCodeHash,
 	}
 
 	t.Run("token detail by asset", testutils.Func(func(t *testing.T) {
