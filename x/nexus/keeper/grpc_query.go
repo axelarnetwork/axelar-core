@@ -141,9 +141,10 @@ func (q Querier) Chains(c context.Context, req *types.ChainsRequest) (*types.Cha
 
 	chains := q.keeper.GetChains(ctx)
 
-	if req.Status == types.Activated {
+	switch req.Status {
+	case types.Activated:
 		chains = slices.Filter(chains, func(chain nexus.Chain) bool { return q.keeper.IsChainActivated(ctx, chain) })
-	} else if req.Status == types.Deactivated {
+	case types.Deactivated:
 		chains = slices.Filter(chains, func(chain nexus.Chain) bool { return !q.keeper.IsChainActivated(ctx, chain) })
 	}
 

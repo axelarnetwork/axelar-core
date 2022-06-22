@@ -166,6 +166,6 @@ func TestKeeper_Chains(t *testing.T) {
 				assert.NoError(t, err)
 				assert.Equal(t, response.Chains, []exported.ChainName{testChain.Name})
 			}),
-		).Run(t, 1)
+		).Run(t)
 
 }
