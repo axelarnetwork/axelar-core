@@ -23,8 +23,8 @@ type VoteHandler interface {
 
 // ValidateBasic returns an error if the poll module metadata is not valid; nil otherwise
 func (m PollModuleMetadata) ValidateBasic() error {
-	if m.Module == "" {
-		return fmt.Errorf("module cannot be empty in poll module metadata")
+	if err := utils.ValidateString(m.Module); err != nil {
+		return err
 	}
 
 	return nil
