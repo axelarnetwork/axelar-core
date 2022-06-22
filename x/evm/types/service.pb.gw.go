@@ -1214,7 +1214,7 @@ func local_request_QueryService_ERC20Tokens_1(ctx context.Context, marshaler run
 }
 
 var (
-	filter_QueryService_TokenInfo_0 = &utilities.DoubleArray{Encoding: map[string]int{"chain": 0, "asset": 1}, Base: []int{1, 1, 2, 0, 0}, Check: []int{0, 1, 1, 2, 3}}
+	filter_QueryService_TokenInfo_0 = &utilities.DoubleArray{Encoding: map[string]int{"chain": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
 )
 
 func request_QueryService_TokenInfo_0(ctx context.Context, marshaler runtime.Marshaler, client QueryServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
@@ -1237,22 +1237,6 @@ func request_QueryService_TokenInfo_0(ctx context.Context, marshaler runtime.Mar
 
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "chain", err)
-	}
-
-	val, ok = pathParams["asset"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "asset")
-	}
-
-	if protoReq.FindBy == nil {
-		protoReq.FindBy = &TokenInfoRequest_Asset{}
-	} else if _, ok := protoReq.FindBy.(*TokenInfoRequest_Asset); !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "expect type: *TokenInfoRequest_Asset, but: %t\n", protoReq.FindBy)
-	}
-	protoReq.FindBy.(*TokenInfoRequest_Asset).Asset, err = runtime.String(val)
-
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "asset", err)
 	}
 
 	if err := req.ParseForm(); err != nil {
@@ -1289,130 +1273,10 @@ func local_request_QueryService_TokenInfo_0(ctx context.Context, marshaler runti
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "chain", err)
 	}
 
-	val, ok = pathParams["asset"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "asset")
-	}
-
-	if protoReq.FindBy == nil {
-		protoReq.FindBy = &TokenInfoRequest_Asset{}
-	} else if _, ok := protoReq.FindBy.(*TokenInfoRequest_Asset); !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "expect type: *TokenInfoRequest_Asset, but: %t\n", protoReq.FindBy)
-	}
-	protoReq.FindBy.(*TokenInfoRequest_Asset).Asset, err = runtime.String(val)
-
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "asset", err)
-	}
-
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_QueryService_TokenInfo_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-
-	msg, err := server.TokenInfo(ctx, &protoReq)
-	return msg, metadata, err
-
-}
-
-var (
-	filter_QueryService_TokenInfo_1 = &utilities.DoubleArray{Encoding: map[string]int{"chain": 0, "symbol": 1}, Base: []int{1, 1, 2, 0, 0}, Check: []int{0, 1, 1, 2, 3}}
-)
-
-func request_QueryService_TokenInfo_1(ctx context.Context, marshaler runtime.Marshaler, client QueryServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq TokenInfoRequest
-	var metadata runtime.ServerMetadata
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["chain"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "chain")
-	}
-
-	protoReq.Chain, err = runtime.String(val)
-
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "chain", err)
-	}
-
-	val, ok = pathParams["symbol"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "symbol")
-	}
-
-	if protoReq.FindBy == nil {
-		protoReq.FindBy = &TokenInfoRequest_Symbol{}
-	} else if _, ok := protoReq.FindBy.(*TokenInfoRequest_Symbol); !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "expect type: *TokenInfoRequest_Symbol, but: %t\n", protoReq.FindBy)
-	}
-	protoReq.FindBy.(*TokenInfoRequest_Symbol).Symbol, err = runtime.String(val)
-
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "symbol", err)
-	}
-
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_QueryService_TokenInfo_1); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-
-	msg, err := client.TokenInfo(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
-	return msg, metadata, err
-
-}
-
-func local_request_QueryService_TokenInfo_1(ctx context.Context, marshaler runtime.Marshaler, server QueryServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq TokenInfoRequest
-	var metadata runtime.ServerMetadata
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["chain"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "chain")
-	}
-
-	protoReq.Chain, err = runtime.String(val)
-
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "chain", err)
-	}
-
-	val, ok = pathParams["symbol"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "symbol")
-	}
-
-	if protoReq.FindBy == nil {
-		protoReq.FindBy = &TokenInfoRequest_Symbol{}
-	} else if _, ok := protoReq.FindBy.(*TokenInfoRequest_Symbol); !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "expect type: *TokenInfoRequest_Symbol, but: %t\n", protoReq.FindBy)
-	}
-	protoReq.FindBy.(*TokenInfoRequest_Symbol).Symbol, err = runtime.String(val)
-
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "symbol", err)
-	}
-
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_QueryService_TokenInfo_1); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -1973,26 +1837,6 @@ func RegisterQueryServiceHandlerServer(ctx context.Context, mux *runtime.ServeMu
 		}
 
 		forward_QueryService_TokenInfo_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
-	})
-
-	mux.Handle("GET", pattern_QueryService_TokenInfo_1, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := local_request_QueryService_TokenInfo_1(rctx, inboundMarshaler, server, req, pathParams)
-		ctx = runtime.NewServerMetadataContext(ctx, md)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-
-		forward_QueryService_TokenInfo_1(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -2678,26 +2522,6 @@ func RegisterQueryServiceHandlerClient(ctx context.Context, mux *runtime.ServeMu
 
 	})
 
-	mux.Handle("GET", pattern_QueryService_TokenInfo_1, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := request_QueryService_TokenInfo_1(rctx, inboundMarshaler, client, req, pathParams)
-		ctx = runtime.NewServerMetadataContext(ctx, md)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-
-		forward_QueryService_TokenInfo_1(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
-	})
-
 	return nil
 }
 
@@ -2724,11 +2548,9 @@ var (
 
 	pattern_QueryService_ERC20Tokens_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"axelar", "evm", "v1beta1", "erc20_tokens", "chain"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_QueryService_ERC20Tokens_1 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4, 2, 5, 1, 0, 4, 1, 5, 5}, []string{"axelar", "evm", "v1beta1", "erc20_tokens", "chain", "type"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_QueryService_ERC20Tokens_1 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4, 1, 0, 4, 1, 5, 5}, []string{"axelar", "evm", "v1beta1", "erc20_tokens", "chain", "type"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_QueryService_TokenInfo_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4, 2, 5, 1, 0, 4, 1, 5, 5}, []string{"axelar", "evm", "v1beta1", "token_info", "chain", "asset"}, "", runtime.AssumeColonVerbOpt(true)))
-
-	pattern_QueryService_TokenInfo_1 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4, 2, 5, 1, 0, 4, 1, 5, 5}, []string{"axelar", "evm", "v1beta1", "token_info", "chain", "symbol"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_QueryService_TokenInfo_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"axelar", "evm", "v1beta1", "token_info", "chain"}, "", runtime.AssumeColonVerbOpt(true)))
 )
 
 var (
@@ -2757,6 +2579,4 @@ var (
 	forward_QueryService_ERC20Tokens_1 = runtime.ForwardResponseMessage
 
 	forward_QueryService_TokenInfo_0 = runtime.ForwardResponseMessage
-
-	forward_QueryService_TokenInfo_1 = runtime.ForwardResponseMessage
 )

@@ -176,10 +176,15 @@ message ERC20TokensRequest {
   TokenType type = 2;
 }
 
-// ERC20TokensResponse describes the asset and corresponding symbol for all
+// ERC20TokensResponse describes the asset and symbol for all
 // ERC20 tokens requested for a chain
 message ERC20TokensResponse {
-  map<string, string> tokens = 1 [ (gogoproto.nullable) = false ];
+  message Token {
+    string asset = 1;
+    string symbol = 2;
+  }
+
+  repeated Token tokens = 1 [ (gogoproto.nullable) = false ];
 }
 
 message TokenInfoRequest {

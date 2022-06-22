@@ -453,12 +453,13 @@ func (q Querier) ERC20Tokens(c context.Context, req *types.ERC20TokensRequest) (
 	}
 
 	res := types.ERC20TokensResponse{
-		Tokens: make(map[string]string, len(tokens)),
+		Tokens: slices.Map(tokens, func(token types.ERC20Token) types.ERC20TokensResponse_Token {
+			return types.ERC20TokensResponse_Token{
+				Asset:  token.GetAsset(),
+				Symbol: token.GetDetails().Symbol,
+			}
+		}),
 	}
-
-	slices.ForEach(tokens, func(token types.ERC20Token) {
-		res.Tokens[token.GetAsset()] = token.GetDetails().Symbol
-	})
 
 	return &res, nil
 }

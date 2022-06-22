@@ -233,7 +233,7 @@
     - [DepositStateResponse](#axelar.evm.v1beta1.DepositStateResponse)
     - [ERC20TokensRequest](#axelar.evm.v1beta1.ERC20TokensRequest)
     - [ERC20TokensResponse](#axelar.evm.v1beta1.ERC20TokensResponse)
-    - [ERC20TokensResponse.TokensEntry](#axelar.evm.v1beta1.ERC20TokensResponse.TokensEntry)
+    - [ERC20TokensResponse.Token](#axelar.evm.v1beta1.ERC20TokensResponse.Token)
     - [EventRequest](#axelar.evm.v1beta1.EventRequest)
     - [EventResponse](#axelar.evm.v1beta1.EventResponse)
     - [GatewayAddressRequest](#axelar.evm.v1beta1.GatewayAddressRequest)
@@ -3663,29 +3663,29 @@ requested.
 <a name="axelar.evm.v1beta1.ERC20TokensResponse"></a>
 
 ### ERC20TokensResponse
-ERC20TokensResponse describes the asset and corresponding symbol for all
+ERC20TokensResponse describes the asset and symbol for all
 ERC20 tokens requested for a chain
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `tokens` | [ERC20TokensResponse.TokensEntry](#axelar.evm.v1beta1.ERC20TokensResponse.TokensEntry) | repeated |  |
+| `tokens` | [ERC20TokensResponse.Token](#axelar.evm.v1beta1.ERC20TokensResponse.Token) | repeated |  |
 
 
 
 
 
 
-<a name="axelar.evm.v1beta1.ERC20TokensResponse.TokensEntry"></a>
+<a name="axelar.evm.v1beta1.ERC20TokensResponse.Token"></a>
 
-### ERC20TokensResponse.TokensEntry
+### ERC20TokensResponse.Token
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `key` | [string](#string) |  |  |
-| `value` | [string](#string) |  |  |
+| `asset` | [string](#string) |  |  |
+| `symbol` | [string](#string) |  |  |
 
 
 
@@ -4459,8 +4459,8 @@ QueryService defines the gRPC querier service.
 | `GatewayAddress` | [GatewayAddressRequest](#axelar.evm.v1beta1.GatewayAddressRequest) | [GatewayAddressResponse](#axelar.evm.v1beta1.GatewayAddressResponse) | GatewayAddress queries the address of axelar gateway at the specified chain | GET|/axelar/evm/v1beta1/gateway_address/{chain}|
 | `Bytecode` | [BytecodeRequest](#axelar.evm.v1beta1.BytecodeRequest) | [BytecodeResponse](#axelar.evm.v1beta1.BytecodeResponse) | Bytecode queries the bytecode of a specified gateway at the specified chain | GET|/axelar/evm/v1beta1/bytecode/{chain}/{contract}|
 | `Event` | [EventRequest](#axelar.evm.v1beta1.EventRequest) | [EventResponse](#axelar.evm.v1beta1.EventResponse) | Event queries an event at the specified chain | GET|/axelar/evm/v1beta1/event/{chain}/{event_id}|
-| `ERC20Tokens` | [ERC20TokensRequest](#axelar.evm.v1beta1.ERC20TokensRequest) | [ERC20TokensResponse](#axelar.evm.v1beta1.ERC20TokensResponse) | ERC20Tokens queries the ERC20 tokens registered for a chain | GET|/axelar/evm/v1beta1/erc20_tokens/{chain}GET|/axelar/evm/v1beta1/erc20_tokens/{chain}/type/{type}|
-| `TokenInfo` | [TokenInfoRequest](#axelar.evm.v1beta1.TokenInfoRequest) | [TokenInfoResponse](#axelar.evm.v1beta1.TokenInfoResponse) | TokenInfo queries the token info for a registered ERC20 Token | GET|/axelar/evm/v1beta1/token_info/{chain}/asset/{asset}GET|/axelar/evm/v1beta1/token_info/{chain}/symbol/{symbol}|
+| `ERC20Tokens` | [ERC20TokensRequest](#axelar.evm.v1beta1.ERC20TokensRequest) | [ERC20TokensResponse](#axelar.evm.v1beta1.ERC20TokensResponse) | ERC20Tokens queries the ERC20 tokens registered for a chain | GET|/axelar/evm/v1beta1/erc20_tokens/{chain}GET|/axelar/evm/v1beta1/erc20_tokens/{chain}/{type}|
+| `TokenInfo` | [TokenInfoRequest](#axelar.evm.v1beta1.TokenInfoRequest) | [TokenInfoResponse](#axelar.evm.v1beta1.TokenInfoResponse) | TokenInfo queries the token info for a registered ERC20 Token | GET|/axelar/evm/v1beta1/token_info/{chain}|
 
  <!-- end services -->
 

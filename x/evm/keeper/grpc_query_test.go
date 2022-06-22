@@ -698,9 +698,16 @@ func TestERC20Tokens(t *testing.T) {
 	t.Run("all erc20 tokens", testutils.Func(func(t *testing.T) {
 		setup()
 
-		expectedTokens := make(map[string]string)
-		expectedTokens[external.GetAsset()] = external.GetDetails().Symbol
-		expectedTokens[internal.GetAsset()] = internal.GetDetails().Symbol
+		expectedTokens := []types.ERC20TokensResponse_Token{
+			{
+				Asset:  external.GetAsset(),
+				Symbol: external.GetDetails().Symbol,
+			},
+			{
+				Asset:  internal.GetAsset(),
+				Symbol: internal.GetDetails().Symbol,
+			},
+		}
 		expectedRes = types.ERC20TokensResponse{Tokens: expectedTokens}
 
 		res, err := grpcQuerier.ERC20Tokens(sdk.WrapSDKContext(ctx), &types.ERC20TokensRequest{Chain: existingChain.String()})
@@ -713,8 +720,10 @@ func TestERC20Tokens(t *testing.T) {
 	t.Run("internal erc20 tokens only", testutils.Func(func(t *testing.T) {
 		setup()
 
-		expectedTokens := make(map[string]string)
-		expectedTokens[internal.GetAsset()] = internal.GetDetails().Symbol
+		expectedTokens := []types.ERC20TokensResponse_Token{{
+			Asset:  internal.GetAsset(),
+			Symbol: internal.GetDetails().Symbol,
+		}}
 		expectedRes = types.ERC20TokensResponse{Tokens: expectedTokens}
 
 		res, err := grpcQuerier.ERC20Tokens(sdk.WrapSDKContext(ctx), &types.ERC20TokensRequest{Chain: existingChain.String(), Type: types.Internal})
@@ -726,8 +735,10 @@ func TestERC20Tokens(t *testing.T) {
 	t.Run("external erc20 tokens only", testutils.Func(func(t *testing.T) {
 		setup()
 
-		expectedTokens := make(map[string]string)
-		expectedTokens[external.GetAsset()] = external.GetDetails().Symbol
+		expectedTokens := []types.ERC20TokensResponse_Token{{
+			Asset:  external.GetAsset(),
+			Symbol: external.GetDetails().Symbol,
+		}}
 		expectedRes = types.ERC20TokensResponse{Tokens: expectedTokens}
 
 		res, err := grpcQuerier.ERC20Tokens(sdk.WrapSDKContext(ctx), &types.ERC20TokensRequest{Chain: existingChain.String(), Type: types.External})
