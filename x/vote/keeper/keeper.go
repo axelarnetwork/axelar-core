@@ -11,6 +11,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
+	gogoprototypes "github.com/gogo/protobuf/types"
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -23,6 +24,8 @@ var (
 	pollPrefix  = utils.KeyFromStr("poll")
 	votesPrefix = utils.KeyFromStr("votes")
 	voterPrefix = utils.KeyFromStr("voter")
+
+	countKey = utils.KeyFromStr("count")
 
 	pollQueueName = "pending_poll_queue"
 )
@@ -68,21 +71,42 @@ func (k Keeper) SetParams(ctx sdk.Context, params types.Params) {
 	k.paramSpace.SetParamSet(ctx, &params)
 }
 
-func (k Keeper) initializePoll(ctx sdk.Context, key exported.PollKey, voters []exported.Voter, pollProperties ...exported.PollProperty) error {
+func (k Keeper) getPollCount(ctx sdk.Context) uint64 {
+	var val gogoprototypes.UInt64Value
+	if !k.getKVStore(ctx).Get(countKey, &val) {
+		return 0
+	}
+
+	return val.Value
+}
+
+func (k Keeper) setPollCount(ctx sdk.Context, count uint64) {
+	k.getKVStore(ctx).Set(countKey, &gogoprototypes.UInt64Value{Value: count})
+}
+
+func (k Keeper) initializePoll(ctx sdk.Context, voters []exported.Voter, pollProperties ...exported.PollProperty) (exported.PollID, error) {
+	pollCount := k.getPollCount(ctx)
+	pollID := exported.PollID(pollCount)
 	metadata := types.NewPollMetaData(
-		key,
+		pollID,
 		k.GetParams(ctx).DefaultVotingThreshold,
 		slices.Filter(voters, func(v exported.Voter) bool {
 			return v.VotingPower > 0
 		})).
 		With(pollProperties...)
-	poll := types.NewPoll(metadata, k.newPollStore(ctx, metadata.Key)).WithLogger(k.Logger(ctx))
 
-	return poll.Initialize(ctx.BlockHeight())
+	poll := types.NewPoll(metadata, k.newPollStore(ctx, metadata.ID)).WithLogger(k.Logger(ctx))
+	if err := poll.Initialize(ctx.BlockHeight()); err != nil {
+		return 0, err
+	}
+
+	k.setPollCount(ctx, pollCount+1)
+
+	return pollID, nil
 }
 
 // InitializePoll initializes a new poll with the given validators
-func (k Keeper) InitializePoll(ctx sdk.Context, key exported.PollKey, voterAddresses []sdk.ValAddress, pollProperties ...exported.PollProperty) error {
+func (k Keeper) InitializePoll(ctx sdk.Context, voterAddresses []sdk.ValAddress, pollProperties ...exported.PollProperty) (exported.PollID, error) {
 	voters := make([]exported.Voter, 0)
 
 	for _, voterAddress := range voterAddresses {
@@ -95,14 +119,14 @@ func (k Keeper) InitializePoll(ctx sdk.Context, key exported.PollKey, voterAddre
 		voters = append(voters, exported.Voter{Validator: voterAddress, VotingPower: validator.GetConsensusPower(k.staking.PowerReduction(ctx))})
 	}
 
-	return k.initializePoll(ctx, key, voters, pollProperties...)
+	return k.initializePoll(ctx, voters, pollProperties...)
 }
 
 // InitializePollWithSnapshot initializes a new poll with the given snapshot sequence number
-func (k Keeper) InitializePollWithSnapshot(ctx sdk.Context, key exported.PollKey, snapshotSeqNo int64, pollProperties ...exported.PollProperty) error {
+func (k Keeper) InitializePollWithSnapshot(ctx sdk.Context, snapshotSeqNo int64, pollProperties ...exported.PollProperty) (exported.PollID, error) {
 	snap, ok := k.snapshotter.GetSnapshot(ctx, snapshotSeqNo)
 	if !ok {
-		return fmt.Errorf("snapshot %d does not exist", snapshotSeqNo)
+		return 0, fmt.Errorf("snapshot %d does not exist", snapshotSeqNo)
 	}
 
 	voters := make([]exported.Voter, 0)
@@ -110,24 +134,24 @@ func (k Keeper) InitializePollWithSnapshot(ctx sdk.Context, key exported.PollKey
 		voters = append(voters, exported.Voter{Validator: validator.GetSDKValidator().GetOperator(), VotingPower: validator.ShareCount})
 	}
 
-	return k.initializePoll(ctx, key, voters, pollProperties...)
+	return k.initializePoll(ctx, voters, pollProperties...)
 }
 
 // GetPoll returns an existing poll to record votes
-func (k Keeper) GetPoll(ctx sdk.Context, pollKey exported.PollKey) exported.Poll {
-	metadata, ok := k.getPollMetadata(ctx, pollKey)
+func (k Keeper) GetPoll(ctx sdk.Context, id exported.PollID) exported.Poll {
+	metadata, ok := k.getPollMetadata(ctx, id)
 	if !ok {
 		return &types.Poll{PollMetadata: exported.PollMetadata{State: exported.NonExistent}}
 	}
 
-	poll := types.NewPoll(metadata, k.newPollStore(ctx, metadata.Key)).WithLogger(k.Logger(ctx))
+	poll := types.NewPoll(metadata, k.newPollStore(ctx, metadata.ID)).WithLogger(k.Logger(ctx))
 
 	return poll
 }
 
-func (k Keeper) getPollMetadata(ctx sdk.Context, pollKey exported.PollKey) (exported.PollMetadata, bool) {
+func (k Keeper) getPollMetadata(ctx sdk.Context, id exported.PollID) (exported.PollMetadata, bool) {
 	var poll exported.PollMetadata
-	if ok := k.getKVStore(ctx).Get(pollPrefix.AppendStr(pollKey.String()), &poll); !ok {
+	if ok := k.getKVStore(ctx).Get(pollPrefix.AppendStr(id.String()), &poll); !ok {
 		return exported.PollMetadata{}, false
 	}
 
@@ -160,11 +184,11 @@ func (k Keeper) getKVStore(ctx sdk.Context) utils.KVStore {
 	return utils.NewNormalizedStore(ctx.KVStore(k.storeKey), k.cdc)
 }
 
-func (k Keeper) newPollStore(ctx sdk.Context, key exported.PollKey) *pollStore {
+func (k Keeper) newPollStore(ctx sdk.Context, id exported.PollID) *pollStore {
 	return &pollStore{
-		key:     key,
+		id:      id,
 		KVStore: k.getKVStore(ctx),
-		getPoll: func(key exported.PollKey) exported.Poll { return k.GetPoll(ctx, key) },
+		getPoll: func(id exported.PollID) exported.Poll { return k.GetPoll(ctx, id) },
 		logger:  k.Logger(ctx),
 	}
 }
@@ -218,8 +242,8 @@ type pollStore struct {
 	utils.KVStore
 	logger  log.Logger
 	votes   []types.TalliedVote
-	getPoll func(key exported.PollKey) exported.Poll
-	key     exported.PollKey
+	getPoll func(key exported.PollID) exported.Poll
+	id      exported.PollID
 }
 
 func hash(data codec.ProtoMarshaler) string {
@@ -247,13 +271,13 @@ func (p *pollStore) SetVote(voter sdk.ValAddress, data codec.ProtoMarshaler, vot
 	// to keep it simple a single write invalidates the cache
 	p.votesCached = false
 
-	p.Set(voterPrefix.AppendStr(p.key.String()).AppendStr(voter.String()), &types.VoteRecord{Voter: voter, IsLate: isLate})
-	p.Set(votesPrefix.AppendStr(p.key.String()).AppendStr(dataHash), &talliedVote)
+	p.Set(voterPrefix.AppendStr(p.id.String()).AppendStr(voter.String()), &types.VoteRecord{Voter: voter, IsLate: isLate})
+	p.Set(votesPrefix.AppendStr(p.id.String()).AppendStr(dataHash), &talliedVote)
 }
 
 func (p pollStore) GetVote(hash string) (types.TalliedVote, bool) {
 	var vote types.TalliedVote
-	ok := p.Get(votesPrefix.AppendStr(p.key.String()).AppendStr(hash), &vote)
+	ok := p.Get(votesPrefix.AppendStr(p.id.String()).AppendStr(hash), &vote)
 	return vote, ok
 }
 
@@ -261,7 +285,7 @@ func (p *pollStore) GetVotes() []types.TalliedVote {
 	if !p.votesCached {
 		p.votes = []types.TalliedVote{}
 
-		iter := p.Iterator(votesPrefix.AppendStr(p.key.String()))
+		iter := p.Iterator(votesPrefix.AppendStr(p.id.String()))
 		defer utils.CloseLogError(iter, p.logger)
 
 		for ; iter.Valid(); iter.Next() {
@@ -277,17 +301,17 @@ func (p *pollStore) GetVotes() []types.TalliedVote {
 }
 
 func (p pollStore) HasVoted(voter sdk.ValAddress) bool {
-	return p.Has(voterPrefix.AppendStr(p.key.String()).AppendStr(voter.String()))
+	return p.Has(voterPrefix.AppendStr(p.id.String()).AppendStr(voter.String()))
 }
 
 func (p pollStore) HasVotedLate(voter sdk.ValAddress) bool {
 	var voteRecord types.VoteRecord
 
-	return p.Get(voterPrefix.AppendStr(p.key.String()).AppendStr(voter.String()), &voteRecord) && voteRecord.IsLate
+	return p.Get(voterPrefix.AppendStr(p.id.String()).AppendStr(voter.String()), &voteRecord) && voteRecord.IsLate
 }
 
 func getPollMetadataKey(metadata exported.PollMetadata) utils.Key {
-	return pollPrefix.AppendStr(metadata.Key.String())
+	return pollPrefix.AppendStr(metadata.ID.String())
 }
 
 func (p pollStore) SetMetadata(metadata exported.PollMetadata) {
@@ -298,16 +322,16 @@ func (p pollStore) EnqueuePoll(metadata exported.PollMetadata) {
 	getPollQueue(p.KVStore, p.logger).Enqueue(getPollMetadataKey(metadata), &metadata)
 }
 
-func (p pollStore) GetPoll(key exported.PollKey) exported.Poll {
-	return p.getPoll(key)
+func (p pollStore) GetPoll(id exported.PollID) exported.Poll {
+	return p.getPoll(id)
 }
 
 func (p pollStore) DeletePoll() {
 	// delete poll metadata
-	p.Delete(pollPrefix.AppendStr(p.key.String()))
+	p.Delete(pollPrefix.AppendStr(p.id.String()))
 
 	// delete tallied votes index for poll
-	iter := p.Iterator(votesPrefix.AppendStr(p.key.String()))
+	iter := p.Iterator(votesPrefix.AppendStr(p.id.String()))
 	defer utils.CloseLogError(iter, p.logger)
 
 	for ; iter.Valid(); iter.Next() {
@@ -315,7 +339,7 @@ func (p pollStore) DeletePoll() {
 	}
 
 	// delete records of past voters
-	iter = p.Iterator(voterPrefix.AppendStr(p.key.String()))
+	iter = p.Iterator(voterPrefix.AppendStr(p.id.String()))
 	defer utils.CloseLogError(iter, p.logger)
 
 	for ; iter.Valid(); iter.Next() {

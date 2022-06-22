@@ -37,7 +37,8 @@ func (m VoteConfirmOutpointRequest) ValidateBasic() error {
 	if _, err := OutPointFromStr(m.OutPoint); err != nil {
 		return sdkerrors.Wrap(err, "outpoint malformed")
 	}
-	return m.PollKey.Validate()
+
+	return nil
 }
 
 // GetSignBytes returns the message bytes that need to be signed

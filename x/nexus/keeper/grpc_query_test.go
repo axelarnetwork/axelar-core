@@ -116,3 +116,56 @@ func TestKeeper_TransfersForChain(t *testing.T) {
 		}).Run(t, 20)
 
 }
+
+func TestKeeper_Chains(t *testing.T) {
+	var (
+		k               nexusKeeper.Keeper
+		axelarnetKeeper types.AxelarnetKeeper
+		q               nexusKeeper.Querier
+		ctx             sdk.Context
+		response        *types.ChainsResponse
+		err             error
+	)
+
+	testChain := exported.Chain{Name: exported.ChainName("test")}
+
+	Given("a nexus keeper", func() {
+		encCfg := app.MakeEncodingConfig()
+		nexusSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("nexusKey"), sdk.NewKVStoreKey("tNexusKey"), "nexus")
+		k = nexusKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("nexus"), nexusSubspace)
+		q = nexusKeeper.NewGRPCQuerier(k, axelarnetKeeper)
+	}).
+		When("a correct context", func() {
+			store := fake.NewMultiStore()
+			ctx = sdk.NewContext(store, tmproto.Header{}, false, log.TestingLogger())
+		}).
+		When("the keeper is correctly set up", func() {
+			k.SetChain(ctx, evm.Ethereum)
+			k.ActivateChain(ctx, evm.Ethereum)
+			k.SetChain(ctx, axelarnet.Axelarnet)
+			k.ActivateChain(ctx, axelarnet.Axelarnet)
+			k.SetChain(ctx, testChain)
+		}).
+		Branch(
+			Then("query all chains", func(t *testing.T) {
+				response, err = q.Chains(sdk.WrapSDKContext(ctx), &types.ChainsRequest{})
+				assert.NoError(t, err)
+				assert.Equal(t, response.Chains, []exported.ChainName{axelarnet.Axelarnet.Name, evm.Ethereum.Name, testChain.Name})
+			}),
+			Then("query only activated chains", func(t *testing.T) {
+				response, err = q.Chains(sdk.WrapSDKContext(ctx), &types.ChainsRequest{
+					Status: types.Activated,
+				})
+				assert.NoError(t, err)
+				assert.Equal(t, response.Chains, []exported.ChainName{axelarnet.Axelarnet.Name, evm.Ethereum.Name})
+			}),
+			Then("query only deactivated chains", func(t *testing.T) {
+				response, err = q.Chains(sdk.WrapSDKContext(ctx), &types.ChainsRequest{
+					Status: types.Deactivated,
+				})
+				assert.NoError(t, err)
+				assert.Equal(t, response.Chains, []exported.ChainName{testChain.Name})
+			}),
+		).Run(t)
+
+}

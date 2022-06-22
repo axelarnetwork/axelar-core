@@ -234,6 +234,11 @@ func handleConfirmDeposit(ctx sdk.Context, event types.Event, ck types.ChainKeep
 		DestinationChain: burnerInfo.DestinationChain,
 		BurnerAddress:    burnerInfo.BurnerAddress,
 	}
+
+	if _, _, ok := ck.GetDeposit(ctx, common.Hash(event.TxId), common.Address(burnerInfo.BurnerAddress)); ok {
+		ck.Logger(ctx).Info(fmt.Sprintf("%s deposit %s-%s already exists", chain.Name.String(), event.TxId.Hex(), burnerInfo.BurnerAddress.Hex()))
+		return false
+	}
 	ck.SetDeposit(ctx, erc20Deposit, types.DepositStatus_Confirmed)
 
 	ck.Logger(ctx).Info(fmt.Sprintf("deposit confirmation result to %s %s", e.To.Hex(), e.Amount), "chain", chain.Name)

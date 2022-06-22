@@ -75,6 +75,8 @@
     - [TransfersForChainRequest](#axelar.nexus.v1beta1.TransfersForChainRequest)
     - [TransfersForChainResponse](#axelar.nexus.v1beta1.TransfersForChainResponse)
   
+    - [ChainStatus](#axelar.nexus.v1beta1.ChainStatus)
+  
 - [axelar/axelarnet/v1beta1/query.proto](#axelar/axelarnet/v1beta1/query.proto)
     - [PendingIBCTransferCountRequest](#axelar.axelarnet.v1beta1.PendingIBCTransferCountRequest)
     - [PendingIBCTransferCountResponse](#axelar.axelarnet.v1beta1.PendingIBCTransferCountResponse)
@@ -145,6 +147,7 @@
 - [axelar/vote/exported/v1beta1/types.proto](#axelar/vote/exported/v1beta1/types.proto)
     - [PollKey](#axelar.vote.exported.v1beta1.PollKey)
     - [PollMetadata](#axelar.vote.exported.v1beta1.PollMetadata)
+    - [PollModuleMetadata](#axelar.vote.exported.v1beta1.PollModuleMetadata)
     - [Vote](#axelar.vote.exported.v1beta1.Vote)
     - [Voter](#axelar.vote.exported.v1beta1.Voter)
   
@@ -1277,6 +1280,11 @@ ChainsRequest represents a message that queries the chains
 registered on the network
 
 
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `status` | [ChainStatus](#axelar.nexus.v1beta1.ChainStatus) |  |  |
+
+
 
 
 
@@ -1476,6 +1484,19 @@ transfers for the specified chain
 
 
  <!-- end messages -->
+
+
+<a name="axelar.nexus.v1beta1.ChainStatus"></a>
+
+### ChainStatus
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| CHAIN_STATUS_UNSPECIFIED | 0 |  |
+| CHAIN_STATUS_ACTIVATED | 1 |  |
+| CHAIN_STATUS_DEACTIVATED | 2 |  |
+
 
  <!-- end enums -->
 
@@ -2373,7 +2394,7 @@ vote can have any data type
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `key` | [PollKey](#axelar.vote.exported.v1beta1.PollKey) |  |  |
+| `key` | [PollKey](#axelar.vote.exported.v1beta1.PollKey) |  | **Deprecated.**  |
 | `expires_at` | [int64](#int64) |  |  |
 | `result` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
 | `voting_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
@@ -2384,6 +2405,24 @@ vote can have any data type
 | `reward_pool_name` | [string](#string) |  |  |
 | `grace_period` | [int64](#int64) |  |  |
 | `completed_at` | [int64](#int64) |  |  |
+| `id` | [uint64](#uint64) |  |  |
+| `module_metadata` | [PollModuleMetadata](#axelar.vote.exported.v1beta1.PollModuleMetadata) |  |  |
+
+
+
+
+
+
+<a name="axelar.vote.exported.v1beta1.PollModuleMetadata"></a>
+
+### PollModuleMetadata
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `module` | [string](#string) |  |  |
+| `metadata` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
 
 
 
@@ -6925,8 +6964,8 @@ Params represent the genesis parameters for the module
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
-| `poll_key` | [axelar.vote.exported.v1beta1.PollKey](#axelar.vote.exported.v1beta1.PollKey) |  |  |
 | `vote` | [axelar.vote.exported.v1beta1.Vote](#axelar.vote.exported.v1beta1.Vote) |  |  |
+| `poll_id` | [uint64](#uint64) |  |  |
 
 
 

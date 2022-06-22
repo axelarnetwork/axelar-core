@@ -89,17 +89,17 @@ func (s msgServer) ConfirmGatewayTx(c context.Context, req *types.ConfirmGateway
 		return nil, fmt.Errorf("min voter count not found")
 	}
 
-	pollKey := vote.NewPollKey(types.ModuleName, fmt.Sprintf("%s_%s", req.Chain, req.TxID.Hex()))
-	if err := s.voter.InitializePoll(
+	pollID, err := s.voter.InitializePoll(
 		ctx,
-		pollKey,
 		s.nexus.GetChainMaintainers(ctx, chain),
 		vote.ExpiryAt(ctx.BlockHeight()+period),
 		vote.Threshold(votingThreshold),
 		vote.MinVoterCount(minVoterCount),
 		vote.RewardPool(chain.Name.String()),
 		vote.GracePeriod(keeper.GetParams(ctx).VotingGracePeriod),
-	); err != nil {
+		vote.ModuleMetadata(types.ModuleName),
+	)
+	if err != nil {
 		return nil, err
 	}
 
@@ -116,7 +116,7 @@ func (s msgServer) ConfirmGatewayTx(c context.Context, req *types.ConfirmGateway
 			sdk.NewAttribute(types.AttributeKeyGatewayAddress, gatewayAddress.Hex()),
 			sdk.NewAttribute(types.AttributeKeyTxID, req.TxID.Hex()),
 			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
-			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&pollKey))),
+			sdk.NewAttribute(types.AttributeKeyPoll, pollID.String()),
 		),
 	)
 
@@ -280,17 +280,17 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, fmt.Errorf("min voter count not found")
 	}
 
-	pollKey := types.GetConfirmTokenKey(req.TxID, req.Asset.Name)
-	if err := s.voter.InitializePoll(
+	pollID, err := s.voter.InitializePoll(
 		ctx,
-		pollKey,
 		s.nexus.GetChainMaintainers(ctx, chain),
 		vote.ExpiryAt(ctx.BlockHeight()+period),
 		vote.Threshold(votingThreshold),
 		vote.MinVoterCount(minVoterCount),
 		vote.RewardPool(chain.Name.String()),
 		vote.GracePeriod(keeper.GetParams(ctx).VotingGracePeriod),
-	); err != nil {
+		vote.ModuleMetadata(types.ModuleName),
+	)
+	if err != nil {
 		return nil, err
 	}
 
@@ -309,7 +309,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 			sdk.NewAttribute(types.AttributeKeyTokenAddress, tokenAddr.Hex()),
 			sdk.NewAttribute(types.AttributeKeySymbol, token.GetDetails().Symbol),
 			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
-			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&pollKey))),
+			sdk.NewAttribute(types.AttributeKeyPoll, pollID.String()),
 		),
 	)
 
@@ -350,17 +350,17 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, fmt.Errorf("min voter count for chain %s not found", chain.Name)
 	}
 
-	pollKey := vote.NewPollKey(types.ModuleName, fmt.Sprintf("%s_%s", req.TxID.Hex(), req.BurnerAddress.Hex()))
-	if err := s.voter.InitializePoll(
+	pollID, err := s.voter.InitializePoll(
 		ctx,
-		pollKey,
 		s.nexus.GetChainMaintainers(ctx, chain),
 		vote.ExpiryAt(ctx.BlockHeight()+period),
 		vote.Threshold(votingThreshold),
 		vote.MinVoterCount(minVoterCount),
 		vote.RewardPool(chain.Name.String()),
 		vote.GracePeriod(keeper.GetParams(ctx).VotingGracePeriod),
-	); err != nil {
+		vote.ModuleMetadata(types.ModuleName),
+	)
+	if err != nil {
 		return nil, err
 	}
 
@@ -374,7 +374,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 			sdk.NewAttribute(types.AttributeKeyDepositAddress, req.BurnerAddress.Hex()),
 			sdk.NewAttribute(types.AttributeKeyTokenAddress, burnerInfo.TokenAddress.Hex()),
 			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
-			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&pollKey))),
+			sdk.NewAttribute(types.AttributeKeyPoll, pollID.String()),
 		),
 	)
 
@@ -393,8 +393,7 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 		return nil, err
 	}
 
-	nextKeyID, ok := s.signer.GetNextKeyID(ctx, chain, keyRole)
-	if !ok {
+	if _, ok := s.signer.GetNextKeyID(ctx, chain, keyRole); !ok {
 		return nil, fmt.Errorf("next %s key for chain %s not set yet", keyRole.SimpleString(), chain.Name)
 	}
 
@@ -420,17 +419,17 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 		return nil, fmt.Errorf("min voter count for chain %s not found", chain.Name)
 	}
 
-	pollKey := vote.NewPollKey(types.ModuleName, fmt.Sprintf("%s_%s", req.TxID.Hex(), nextKeyID))
-	if err := s.voter.InitializePoll(
+	pollID, err := s.voter.InitializePoll(
 		ctx,
-		pollKey,
 		s.nexus.GetChainMaintainers(ctx, chain),
 		vote.ExpiryAt(ctx.BlockHeight()+period),
 		vote.Threshold(votingThreshold),
 		vote.MinVoterCount(minVoterCount),
 		vote.RewardPool(chain.Name.String()),
 		vote.GracePeriod(keeper.GetParams(ctx).VotingGracePeriod),
-	); err != nil {
+		vote.ModuleMetadata(types.ModuleName),
+	)
+	if err != nil {
 		return nil, err
 	}
 
@@ -444,7 +443,7 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 		sdk.NewAttribute(types.AttributeKeyKeyType, chain.KeyType.SimpleString()),
 		sdk.NewAttribute(types.AttributeKeyGatewayAddress, gatewayAddr.Hex()),
 		sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
-		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&pollKey))),
+		sdk.NewAttribute(types.AttributeKeyPoll, pollID.String()),
 	)
 	defer func() { ctx.EventManager().EmitEvent(event) }()
 

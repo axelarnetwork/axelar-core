@@ -4,7 +4,7 @@
 package mock
 
 import (
-	exported "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	github_com_axelarnetwork_axelar_core_x_vote_exported "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
@@ -24,10 +24,10 @@ var _ types.Store = &StoreMock{}
 // 			DeletePollFunc: func()  {
 // 				panic("mock out the DeletePoll method")
 // 			},
-// 			EnqueuePollFunc: func(metadata exported.PollMetadata)  {
+// 			EnqueuePollFunc: func(metadata github_com_axelarnetwork_axelar_core_x_vote_exported.PollMetadata)  {
 // 				panic("mock out the EnqueuePoll method")
 // 			},
-// 			GetPollFunc: func(key exported.PollKey) exported.Poll {
+// 			GetPollFunc: func(id github_com_axelarnetwork_axelar_core_x_vote_exported.PollID) github_com_axelarnetwork_axelar_core_x_vote_exported.Poll {
 // 				panic("mock out the GetPoll method")
 // 			},
 // 			GetVoteFunc: func(hash string) (types.TalliedVote, bool) {
@@ -42,7 +42,7 @@ var _ types.Store = &StoreMock{}
 // 			HasVotedLateFunc: func(voter github_com_cosmos_cosmos_sdk_types.ValAddress) bool {
 // 				panic("mock out the HasVotedLate method")
 // 			},
-// 			SetMetadataFunc: func(metadata exported.PollMetadata)  {
+// 			SetMetadataFunc: func(metadata github_com_axelarnetwork_axelar_core_x_vote_exported.PollMetadata)  {
 // 				panic("mock out the SetMetadata method")
 // 			},
 // 			SetVoteFunc: func(voter github_com_cosmos_cosmos_sdk_types.ValAddress, data codec.ProtoMarshaler, votingPower int64, isLate bool)  {
@@ -59,10 +59,10 @@ type StoreMock struct {
 	DeletePollFunc func()
 
 	// EnqueuePollFunc mocks the EnqueuePoll method.
-	EnqueuePollFunc func(metadata exported.PollMetadata)
+	EnqueuePollFunc func(metadata github_com_axelarnetwork_axelar_core_x_vote_exported.PollMetadata)
 
 	// GetPollFunc mocks the GetPoll method.
-	GetPollFunc func(key exported.PollKey) exported.Poll
+	GetPollFunc func(id github_com_axelarnetwork_axelar_core_x_vote_exported.PollID) github_com_axelarnetwork_axelar_core_x_vote_exported.Poll
 
 	// GetVoteFunc mocks the GetVote method.
 	GetVoteFunc func(hash string) (types.TalliedVote, bool)
@@ -77,7 +77,7 @@ type StoreMock struct {
 	HasVotedLateFunc func(voter github_com_cosmos_cosmos_sdk_types.ValAddress) bool
 
 	// SetMetadataFunc mocks the SetMetadata method.
-	SetMetadataFunc func(metadata exported.PollMetadata)
+	SetMetadataFunc func(metadata github_com_axelarnetwork_axelar_core_x_vote_exported.PollMetadata)
 
 	// SetVoteFunc mocks the SetVote method.
 	SetVoteFunc func(voter github_com_cosmos_cosmos_sdk_types.ValAddress, data codec.ProtoMarshaler, votingPower int64, isLate bool)
@@ -90,12 +90,12 @@ type StoreMock struct {
 		// EnqueuePoll holds details about calls to the EnqueuePoll method.
 		EnqueuePoll []struct {
 			// Metadata is the metadata argument value.
-			Metadata exported.PollMetadata
+			Metadata github_com_axelarnetwork_axelar_core_x_vote_exported.PollMetadata
 		}
 		// GetPoll holds details about calls to the GetPoll method.
 		GetPoll []struct {
-			// Key is the key argument value.
-			Key exported.PollKey
+			// ID is the id argument value.
+			ID github_com_axelarnetwork_axelar_core_x_vote_exported.PollID
 		}
 		// GetVote holds details about calls to the GetVote method.
 		GetVote []struct {
@@ -118,7 +118,7 @@ type StoreMock struct {
 		// SetMetadata holds details about calls to the SetMetadata method.
 		SetMetadata []struct {
 			// Metadata is the metadata argument value.
-			Metadata exported.PollMetadata
+			Metadata github_com_axelarnetwork_axelar_core_x_vote_exported.PollMetadata
 		}
 		// SetVote holds details about calls to the SetVote method.
 		SetVote []struct {
@@ -170,12 +170,12 @@ func (mock *StoreMock) DeletePollCalls() []struct {
 }
 
 // EnqueuePoll calls EnqueuePollFunc.
-func (mock *StoreMock) EnqueuePoll(metadata exported.PollMetadata) {
+func (mock *StoreMock) EnqueuePoll(metadata github_com_axelarnetwork_axelar_core_x_vote_exported.PollMetadata) {
 	if mock.EnqueuePollFunc == nil {
 		panic("StoreMock.EnqueuePollFunc: method is nil but Store.EnqueuePoll was just called")
 	}
 	callInfo := struct {
-		Metadata exported.PollMetadata
+		Metadata github_com_axelarnetwork_axelar_core_x_vote_exported.PollMetadata
 	}{
 		Metadata: metadata,
 	}
@@ -189,10 +189,10 @@ func (mock *StoreMock) EnqueuePoll(metadata exported.PollMetadata) {
 // Check the length with:
 //     len(mockedStore.EnqueuePollCalls())
 func (mock *StoreMock) EnqueuePollCalls() []struct {
-	Metadata exported.PollMetadata
+	Metadata github_com_axelarnetwork_axelar_core_x_vote_exported.PollMetadata
 } {
 	var calls []struct {
-		Metadata exported.PollMetadata
+		Metadata github_com_axelarnetwork_axelar_core_x_vote_exported.PollMetadata
 	}
 	mock.lockEnqueuePoll.RLock()
 	calls = mock.calls.EnqueuePoll
@@ -201,29 +201,29 @@ func (mock *StoreMock) EnqueuePollCalls() []struct {
 }
 
 // GetPoll calls GetPollFunc.
-func (mock *StoreMock) GetPoll(key exported.PollKey) exported.Poll {
+func (mock *StoreMock) GetPoll(id github_com_axelarnetwork_axelar_core_x_vote_exported.PollID) github_com_axelarnetwork_axelar_core_x_vote_exported.Poll {
 	if mock.GetPollFunc == nil {
 		panic("StoreMock.GetPollFunc: method is nil but Store.GetPoll was just called")
 	}
 	callInfo := struct {
-		Key exported.PollKey
+		ID github_com_axelarnetwork_axelar_core_x_vote_exported.PollID
 	}{
-		Key: key,
+		ID: id,
 	}
 	mock.lockGetPoll.Lock()
 	mock.calls.GetPoll = append(mock.calls.GetPoll, callInfo)
 	mock.lockGetPoll.Unlock()
-	return mock.GetPollFunc(key)
+	return mock.GetPollFunc(id)
 }
 
 // GetPollCalls gets all the calls that were made to GetPoll.
 // Check the length with:
 //     len(mockedStore.GetPollCalls())
 func (mock *StoreMock) GetPollCalls() []struct {
-	Key exported.PollKey
+	ID github_com_axelarnetwork_axelar_core_x_vote_exported.PollID
 } {
 	var calls []struct {
-		Key exported.PollKey
+		ID github_com_axelarnetwork_axelar_core_x_vote_exported.PollID
 	}
 	mock.lockGetPoll.RLock()
 	calls = mock.calls.GetPoll
@@ -351,12 +351,12 @@ func (mock *StoreMock) HasVotedLateCalls() []struct {
 }
 
 // SetMetadata calls SetMetadataFunc.
-func (mock *StoreMock) SetMetadata(metadata exported.PollMetadata) {
+func (mock *StoreMock) SetMetadata(metadata github_com_axelarnetwork_axelar_core_x_vote_exported.PollMetadata) {
 	if mock.SetMetadataFunc == nil {
 		panic("StoreMock.SetMetadataFunc: method is nil but Store.SetMetadata was just called")
 	}
 	callInfo := struct {
-		Metadata exported.PollMetadata
+		Metadata github_com_axelarnetwork_axelar_core_x_vote_exported.PollMetadata
 	}{
 		Metadata: metadata,
 	}
@@ -370,10 +370,10 @@ func (mock *StoreMock) SetMetadata(metadata exported.PollMetadata) {
 // Check the length with:
 //     len(mockedStore.SetMetadataCalls())
 func (mock *StoreMock) SetMetadataCalls() []struct {
-	Metadata exported.PollMetadata
+	Metadata github_com_axelarnetwork_axelar_core_x_vote_exported.PollMetadata
 } {
 	var calls []struct {
-		Metadata exported.PollMetadata
+		Metadata github_com_axelarnetwork_axelar_core_x_vote_exported.PollMetadata
 	}
 	mock.lockSetMetadata.RLock()
 	calls = mock.calls.SetMetadata
@@ -434,10 +434,10 @@ var _ types.VoteRouter = &VoteRouterMock{}
 //
 // 		// make and configure a mocked types.VoteRouter
 // 		mockedVoteRouter := &VoteRouterMock{
-// 			AddHandlerFunc: func(module string, handler exported.VoteHandler) types.VoteRouter {
+// 			AddHandlerFunc: func(module string, handler github_com_axelarnetwork_axelar_core_x_vote_exported.VoteHandler) types.VoteRouter {
 // 				panic("mock out the AddHandler method")
 // 			},
-// 			GetHandlerFunc: func(module string) exported.VoteHandler {
+// 			GetHandlerFunc: func(module string) github_com_axelarnetwork_axelar_core_x_vote_exported.VoteHandler {
 // 				panic("mock out the GetHandler method")
 // 			},
 // 			HasHandlerFunc: func(module string) bool {
@@ -454,10 +454,10 @@ var _ types.VoteRouter = &VoteRouterMock{}
 // 	}
 type VoteRouterMock struct {
 	// AddHandlerFunc mocks the AddHandler method.
-	AddHandlerFunc func(module string, handler exported.VoteHandler) types.VoteRouter
+	AddHandlerFunc func(module string, handler github_com_axelarnetwork_axelar_core_x_vote_exported.VoteHandler) types.VoteRouter
 
 	// GetHandlerFunc mocks the GetHandler method.
-	GetHandlerFunc func(module string) exported.VoteHandler
+	GetHandlerFunc func(module string) github_com_axelarnetwork_axelar_core_x_vote_exported.VoteHandler
 
 	// HasHandlerFunc mocks the HasHandler method.
 	HasHandlerFunc func(module string) bool
@@ -472,7 +472,7 @@ type VoteRouterMock struct {
 			// Module is the module argument value.
 			Module string
 			// Handler is the handler argument value.
-			Handler exported.VoteHandler
+			Handler github_com_axelarnetwork_axelar_core_x_vote_exported.VoteHandler
 		}
 		// GetHandler holds details about calls to the GetHandler method.
 		GetHandler []struct {
@@ -495,13 +495,13 @@ type VoteRouterMock struct {
 }
 
 // AddHandler calls AddHandlerFunc.
-func (mock *VoteRouterMock) AddHandler(module string, handler exported.VoteHandler) types.VoteRouter {
+func (mock *VoteRouterMock) AddHandler(module string, handler github_com_axelarnetwork_axelar_core_x_vote_exported.VoteHandler) types.VoteRouter {
 	if mock.AddHandlerFunc == nil {
 		panic("VoteRouterMock.AddHandlerFunc: method is nil but VoteRouter.AddHandler was just called")
 	}
 	callInfo := struct {
 		Module  string
-		Handler exported.VoteHandler
+		Handler github_com_axelarnetwork_axelar_core_x_vote_exported.VoteHandler
 	}{
 		Module:  module,
 		Handler: handler,
@@ -517,11 +517,11 @@ func (mock *VoteRouterMock) AddHandler(module string, handler exported.VoteHandl
 //     len(mockedVoteRouter.AddHandlerCalls())
 func (mock *VoteRouterMock) AddHandlerCalls() []struct {
 	Module  string
-	Handler exported.VoteHandler
+	Handler github_com_axelarnetwork_axelar_core_x_vote_exported.VoteHandler
 } {
 	var calls []struct {
 		Module  string
-		Handler exported.VoteHandler
+		Handler github_com_axelarnetwork_axelar_core_x_vote_exported.VoteHandler
 	}
 	mock.lockAddHandler.RLock()
 	calls = mock.calls.AddHandler
@@ -530,7 +530,7 @@ func (mock *VoteRouterMock) AddHandlerCalls() []struct {
 }
 
 // GetHandler calls GetHandlerFunc.
-func (mock *VoteRouterMock) GetHandler(module string) exported.VoteHandler {
+func (mock *VoteRouterMock) GetHandler(module string) github_com_axelarnetwork_axelar_core_x_vote_exported.VoteHandler {
 	if mock.GetHandlerFunc == nil {
 		panic("VoteRouterMock.GetHandlerFunc: method is nil but VoteRouter.GetHandler was just called")
 	}

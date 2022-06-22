@@ -19,7 +19,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexustypes "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
-	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/axelarnetwork/utils/slices"
 )
 
@@ -44,9 +43,7 @@ func NewGRPCQuerier(k types.BaseKeeper, n types.Nexus, s types.Signer) Querier {
 func queryChains(ctx sdk.Context, n types.Nexus) []nexustypes.ChainName {
 	chains := slices.Filter(n.GetChains(ctx), types.IsEVMChain)
 
-	return slices.Map(chains, func(c nexustypes.Chain) nexustypes.ChainName {
-		return c.Name
-	})
+	return slices.Map(chains, nexustypes.Chain.GetName)
 }
 
 // Chains returns the available evm chains
@@ -266,23 +263,19 @@ func (q Querier) Event(c context.Context, req *types.EventRequest) (*types.Event
 }
 
 func queryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, params *types.QueryDepositStateParams) (types.DepositStatus, string, codes.Code) {
-	_, ok := n.GetChain(ctx, nexustypes.ChainName(k.GetName()))
-	if !ok {
+	if _, ok := n.GetChain(ctx, nexustypes.ChainName(k.GetName())); !ok {
 		return -1, fmt.Sprintf("%s is not a registered chain", k.GetName()), codes.NotFound
 	}
 
-	pollKey := vote.NewPollKey(types.ModuleName, fmt.Sprintf("%s_%s_%s", params.TxID.Hex(), params.BurnerAddress.Hex(), params.Amount))
-	_, isPending := k.GetPendingDeposit(ctx, pollKey)
 	_, state, ok := k.GetDeposit(ctx, common.Hash(params.TxID), common.Address(params.BurnerAddress))
-
-	switch {
-	case isPending:
-		return types.DepositStatus_Pending, "deposit transaction is waiting for confirmation", codes.OK
-	case !isPending && !ok:
+	if !ok {
 		return types.DepositStatus_None, "deposit transaction is not confirmed", codes.OK
-	case state == types.DepositStatus_Confirmed:
+	}
+
+	switch state {
+	case types.DepositStatus_Confirmed:
 		return types.DepositStatus_Confirmed, "deposit transaction is confirmed", codes.OK
-	case state == types.DepositStatus_Burned:
+	case types.DepositStatus_Burned:
 		return types.DepositStatus_Burned, "deposit has been transferred to the destination chain", codes.OK
 	default:
 		return -1, "deposit is in an unexpected state", codes.Internal

@@ -23,7 +23,6 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	tssTestUtils "github.com/axelarnetwork/axelar-core/x/tss/exported/testutils"
-	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 func TestQueryPendingCommands(t *testing.T) {
@@ -134,9 +133,6 @@ func TestQueryDepositState(t *testing.T) {
 
 		chainKeeper = &mock.ChainKeeperMock{
 			GetNameFunc: func() string { return evmChain.String() },
-			GetPendingDepositFunc: func(sdk.Context, vote.PollKey) (types.ERC20Deposit, bool) {
-				return types.ERC20Deposit{}, false
-			},
 			GetDepositFunc: func(_ sdk.Context, txID common.Hash, burnerAddr common.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
 				return types.ERC20Deposit{}, 0, false
 			},
@@ -177,41 +173,10 @@ func TestQueryDepositState(t *testing.T) {
 		assert := assert.New(t)
 		assert.NoError(err)
 		assert.Len(chainKeeper.GetNameCalls(), 1)
-		assert.Len(chainKeeper.GetPendingDepositCalls(), 1)
 		assert.Len(chainKeeper.GetDepositCalls(), 1)
 		assert.Len(nexusKeeper.GetChainCalls(), 1)
 
 		assert.Equal(types.DepositStatus_None, res.Status)
-	}).Repeat(repeatCount))
-
-	t.Run("deposit pending", testutils.Func(func(t *testing.T) {
-		setup()
-		pollKey := vote.NewPollKey(types.ModuleName, fmt.Sprintf("%s_%s_%d", expectedDeposit.TxID.Hex(), expectedDeposit.BurnerAddress.Hex(), expectedDeposit.Amount.Uint64()))
-		chainKeeper.GetPendingDepositFunc = func(_ sdk.Context, k vote.PollKey) (types.ERC20Deposit, bool) {
-			if pollKey == k {
-				return expectedDeposit, true
-			}
-			return types.ERC20Deposit{}, false
-		}
-
-		res, err := grpcQuerier.DepositState(sdk.WrapSDKContext(ctx), &types.DepositStateRequest{
-			Chain: evmChain,
-			Params: &types.QueryDepositStateParams{
-				TxID:          expectedDeposit.TxID,
-				BurnerAddress: expectedDeposit.BurnerAddress,
-				Amount:        expectedDeposit.Amount.String(),
-			},
-		})
-
-		assert := assert.New(t)
-		assert.NoError(err)
-		assert.Len(chainKeeper.GetNameCalls(), 1)
-		assert.Len(chainKeeper.GetPendingDepositCalls(), 1)
-		assert.Len(chainKeeper.GetDepositCalls(), 1)
-		assert.Len(nexusKeeper.GetChainCalls(), 1)
-
-		assert.Equal(types.DepositStatus_Pending, res.Status)
-
 	}).Repeat(repeatCount))
 
 	t.Run("deposit confirmed", testutils.Func(func(t *testing.T) {
@@ -235,7 +200,6 @@ func TestQueryDepositState(t *testing.T) {
 		assert := assert.New(t)
 		assert.NoError(err)
 		assert.Len(chainKeeper.GetNameCalls(), 1)
-		assert.Len(chainKeeper.GetPendingDepositCalls(), 1)
 		assert.Len(chainKeeper.GetDepositCalls(), 1)
 		assert.Len(nexusKeeper.GetChainCalls(), 1)
 
@@ -264,7 +228,6 @@ func TestQueryDepositState(t *testing.T) {
 		assert := assert.New(t)
 		assert.NoError(err)
 		assert.Len(chainKeeper.GetNameCalls(), 1)
-		assert.Len(chainKeeper.GetPendingDepositCalls(), 1)
 		assert.Len(chainKeeper.GetDepositCalls(), 1)
 		assert.Len(nexusKeeper.GetChainCalls(), 1)
 

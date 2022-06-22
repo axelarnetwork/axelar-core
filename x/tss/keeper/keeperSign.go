@@ -16,7 +16,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
-	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 const signQueueName = "sign_queue"
@@ -69,23 +68,6 @@ func (k Keeper) StartSign(ctx sdk.Context, info exported.SignInfo, snapshotter t
 	}
 
 	switch key.Type {
-	case exported.Threshold:
-		_, ok := k.GetKey(ctx, info.KeyID)
-		if !ok {
-			return fmt.Errorf("key %s not found", info.KeyID)
-		}
-
-		pollKey := vote.NewPollKey(types.ModuleName, info.SigID)
-		//TODO: method is deprecated, must be replaced with voter.InitializePoll
-		if err := voter.InitializePollWithSnapshot(
-			ctx,
-			pollKey,
-			snap.Counter,
-			vote.ExpiryAt(0),
-			vote.Threshold(keyRequirement.SignVotingThreshold),
-		); err != nil {
-			return err
-		}
 	case exported.Multisig:
 		// init multisig key info
 		multisigSignInfo := types.MultisigInfo{

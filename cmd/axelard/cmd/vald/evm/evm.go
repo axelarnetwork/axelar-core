@@ -74,7 +74,7 @@ func (mgr Mgr) ProcessNewChain(e tmEvents.Event) (err error) {
 
 // ProcessDepositConfirmation votes on the correctness of an EVM chain token deposit
 func (mgr Mgr) ProcessDepositConfirmation(e tmEvents.Event) (err error) {
-	chain, txID, burnAddr, tokenAddr, confHeight, pollKey, err := parseDepositConfirmationParams(mgr.cdc, e.Attributes)
+	chain, txID, burnAddr, tokenAddr, confHeight, pollID, err := parseDepositConfirmationParams(mgr.cdc, e.Attributes)
 	if err != nil {
 		return sdkerrors.Wrap(err, "EVM deposit confirmation failed")
 	}
@@ -121,15 +121,15 @@ func (mgr Mgr) ProcessDepositConfirmation(e tmEvents.Event) (err error) {
 	if err != nil {
 		return err
 	}
-	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, pollKey, v)
-	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", events, pollKey.String()))
+	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, pollID, v)
+	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", events, pollID.String()))
 	_, err = mgr.broadcaster.Broadcast(context.TODO(), msg)
 	return err
 }
 
 // ProcessTokenConfirmation votes on the correctness of an EVM chain token deployment
 func (mgr Mgr) ProcessTokenConfirmation(e tmEvents.Event) error {
-	chain, txID, gatewayAddr, tokenAddr, symbol, confHeight, pollKey, err := parseTokenConfirmationParams(mgr.cdc, e.Attributes)
+	chain, txID, gatewayAddr, tokenAddr, symbol, confHeight, pollID, err := parseTokenConfirmationParams(mgr.cdc, e.Attributes)
 	if err != nil {
 		return sdkerrors.Wrap(err, "EVM token deployment confirmation failed")
 	}
@@ -177,15 +177,15 @@ func (mgr Mgr) ProcessTokenConfirmation(e tmEvents.Event) error {
 	if err != nil {
 		return err
 	}
-	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, pollKey, v)
-	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", events, pollKey.String()))
+	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, pollID, v)
+	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", events, pollID.String()))
 	_, err = mgr.broadcaster.Broadcast(context.TODO(), msg)
 	return err
 }
 
 // ProcessTransferKeyConfirmation votes on the correctness of an EVM chain key transfer
 func (mgr Mgr) ProcessTransferKeyConfirmation(e tmEvents.Event) (err error) {
-	chain, txID, keyType, gatewayAddr, confHeight, pollKey, err := parseTransferKeyConfirmationParams(mgr.cdc, e.Attributes)
+	chain, txID, keyType, gatewayAddr, confHeight, pollID, err := parseTransferKeyConfirmationParams(mgr.cdc, e.Attributes)
 	if err != nil {
 		return sdkerrors.Wrap(err, "EVM key transfer confirmation failed")
 	}
@@ -252,15 +252,15 @@ func (mgr Mgr) ProcessTransferKeyConfirmation(e tmEvents.Event) (err error) {
 	if err != nil {
 		return err
 	}
-	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, pollKey, v)
-	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", events, pollKey.String()))
+	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, pollID, v)
+	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", events, pollID.String()))
 	_, err = mgr.broadcaster.Broadcast(context.TODO(), msg)
 	return err
 }
 
 // ProcessGatewayTxConfirmation votes on the correctness of an EVM chain gateway's transactions
 func (mgr Mgr) ProcessGatewayTxConfirmation(e tmEvents.Event) error {
-	chain, gatewayAddress, txID, confHeight, pollKey, err := parseGatewayTxConfirmationParams(mgr.cdc, e.Attributes)
+	chain, gatewayAddress, txID, confHeight, pollID, err := parseGatewayTxConfirmationParams(mgr.cdc, e.Attributes)
 	if err != nil {
 		return sdkerrors.Wrap(err, "EVM gateway transaction confirmation failed")
 	}
@@ -353,8 +353,8 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(e tmEvents.Event) error {
 	if err != nil {
 		return err
 	}
-	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, pollKey, v)
-	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", events, pollKey.String()))
+	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, pollID, v)
+	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", events, pollID.String()))
 	_, err = mgr.broadcaster.Broadcast(context.TODO(), msg)
 	return err
 }
@@ -462,7 +462,7 @@ func parseGatewayTxConfirmationParams(cdc *codec.LegacyAmino, attributes map[str
 	gatewayAddress common.Address,
 	txID common.Hash,
 	confHeight uint64,
-	pollKey vote.PollKey,
+	pollID vote.PollID,
 	err error,
 ) {
 	parsers := []*parse.AttributeParser{
@@ -477,22 +477,21 @@ func parseGatewayTxConfirmationParams(cdc *codec.LegacyAmino, attributes map[str
 		}},
 		{Key: evmTypes.AttributeKeyConfHeight, Map: func(s string) (interface{}, error) { return strconv.ParseUint(s, 10, 64) }},
 		{Key: evmTypes.AttributeKeyPoll, Map: func(s string) (interface{}, error) {
-			cdc.MustUnmarshalJSON([]byte(s), &pollKey)
-
-			return pollKey, nil
+			id, err := strconv.ParseUint(s, 10, 64)
+			return vote.PollID(id), err
 		}},
 	}
 
 	results, err := parse.Parse(attributes, parsers)
 	if err != nil {
-		return "", common.Address{}, common.Hash{}, 0, vote.PollKey{}, err
+		return "", common.Address{}, common.Hash{}, 0, 0, err
 	}
 
 	return results[0].(nexus.ChainName),
 		results[1].(common.Address),
 		results[2].(common.Hash),
 		results[3].(uint64),
-		results[4].(vote.PollKey),
+		results[4].(vote.PollID),
 		nil
 }
 
@@ -517,7 +516,7 @@ func parseDepositConfirmationParams(cdc *codec.LegacyAmino, attributes map[strin
 	txID common.Hash,
 	burnAddr, tokenAddr common.Address,
 	confHeight uint64,
-	pollKey vote.PollKey,
+	pollID vote.PollID,
 	err error,
 ) {
 	parsers := []*parse.AttributeParser{
@@ -535,14 +534,18 @@ func parseDepositConfirmationParams(cdc *codec.LegacyAmino, attributes map[strin
 		}},
 		{Key: evmTypes.AttributeKeyConfHeight, Map: func(s string) (interface{}, error) { return strconv.ParseUint(s, 10, 64) }},
 		{Key: evmTypes.AttributeKeyPoll, Map: func(s string) (interface{}, error) {
-			cdc.MustUnmarshalJSON([]byte(s), &pollKey)
-			return pollKey, nil
+			id, err := strconv.ParseUint(s, 10, 64)
+			if err != nil {
+				return vote.PollID(0), err
+			}
+
+			return vote.PollID(id), nil
 		}},
 	}
 
 	results, err := parse.Parse(attributes, parsers)
 	if err != nil {
-		return "", [32]byte{}, [20]byte{}, [20]byte{}, 0, vote.PollKey{}, err
+		return "", [32]byte{}, [20]byte{}, [20]byte{}, 0, 0, err
 	}
 
 	return results[0].(nexus.ChainName),
@@ -550,7 +553,7 @@ func parseDepositConfirmationParams(cdc *codec.LegacyAmino, attributes map[strin
 		results[2].(common.Address),
 		results[3].(common.Address),
 		results[4].(uint64),
-		results[5].(vote.PollKey),
+		results[5].(vote.PollID),
 		nil
 }
 
@@ -560,7 +563,7 @@ func parseTokenConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]
 	gatewayAddr, tokenAddr common.Address,
 	symbol string,
 	confHeight uint64,
-	pollKey vote.PollKey,
+	pollID vote.PollID,
 	err error,
 ) {
 	parsers := []*parse.AttributeParser{
@@ -579,14 +582,18 @@ func parseTokenConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]
 		{Key: evmTypes.AttributeKeySymbol, Map: parse.IdentityMap},
 		{Key: evmTypes.AttributeKeyConfHeight, Map: func(s string) (interface{}, error) { return strconv.ParseUint(s, 10, 64) }},
 		{Key: evmTypes.AttributeKeyPoll, Map: func(s string) (interface{}, error) {
-			cdc.MustUnmarshalJSON([]byte(s), &pollKey)
-			return pollKey, nil
+			id, err := strconv.ParseUint(s, 10, 64)
+			if err != nil {
+				return vote.PollID(0), err
+			}
+
+			return vote.PollID(id), nil
 		}},
 	}
 
 	results, err := parse.Parse(attributes, parsers)
 	if err != nil {
-		return "", [32]byte{}, [20]byte{}, [20]byte{}, "", 0, vote.PollKey{}, err
+		return "", [32]byte{}, [20]byte{}, [20]byte{}, "", 0, 0, err
 	}
 
 	return results[0].(nexus.ChainName),
@@ -595,7 +602,7 @@ func parseTokenConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]
 		results[3].(common.Address),
 		results[4].(string),
 		results[5].(uint64),
-		results[6].(vote.PollKey),
+		results[6].(vote.PollID),
 		nil
 }
 
@@ -605,7 +612,7 @@ func parseTransferKeyConfirmationParams(cdc *codec.LegacyAmino, attributes map[s
 	keyType tss.KeyType,
 	gatewayAddr common.Address,
 	confHeight uint64,
-	pollKey vote.PollKey,
+	pollID vote.PollID,
 	err error,
 ) {
 	parsers := []*parse.AttributeParser{
@@ -623,14 +630,18 @@ func parseTransferKeyConfirmationParams(cdc *codec.LegacyAmino, attributes map[s
 		}},
 		{Key: evmTypes.AttributeKeyConfHeight, Map: func(s string) (interface{}, error) { return strconv.ParseUint(s, 10, 64) }},
 		{Key: evmTypes.AttributeKeyPoll, Map: func(s string) (interface{}, error) {
-			cdc.MustUnmarshalJSON([]byte(s), &pollKey)
-			return pollKey, nil
+			id, err := strconv.ParseUint(s, 10, 64)
+			if err != nil {
+				return vote.PollID(0), err
+			}
+
+			return vote.PollID(id), nil
 		}},
 	}
 
 	results, err := parse.Parse(attributes, parsers)
 	if err != nil {
-		return "", common.Hash{}, tss.KEY_TYPE_UNSPECIFIED, common.Address{}, 0, vote.PollKey{}, err
+		return "", common.Hash{}, tss.KEY_TYPE_UNSPECIFIED, common.Address{}, 0, 0, err
 	}
 
 	return results[0].(nexus.ChainName),
@@ -638,7 +649,7 @@ func parseTransferKeyConfirmationParams(cdc *codec.LegacyAmino, attributes map[s
 		results[2].(tss.KeyType),
 		results[3].(common.Address),
 		results[4].(uint64),
-		results[5].(vote.PollKey),
+		results[5].(vote.PollID),
 		nil
 }
 

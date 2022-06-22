@@ -30,14 +30,14 @@ type Nexus interface {
 // Voter provides voting functionality
 type Voter interface {
 	// Deprecated: InitializePollWithSnapshot will be removed soon
-	InitializePollWithSnapshot(ctx sdk.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error
-	GetPoll(ctx sdk.Context, pollKey vote.PollKey) vote.Poll
+	InitializePollWithSnapshot(ctx sdk.Context, snapshotSeqNo int64, pollProperties ...vote.PollProperty) (vote.PollID, error)
+	GetPoll(ctx sdk.Context, pollID vote.PollID) vote.Poll
 }
 
 // InitPoller is a minimal interface to start a poll
 type InitPoller = interface {
 	// Deprecated: InitializePollWithSnapshot will be removed soon
-	InitializePollWithSnapshot(ctx sdk.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error
+	InitializePollWithSnapshot(ctx sdk.Context, snapshotSeqNo int64, pollProperties ...vote.PollProperty) (vote.PollID, error)
 }
 
 // TofndClient wraps around TofndKeyGenClient and TofndSignClient

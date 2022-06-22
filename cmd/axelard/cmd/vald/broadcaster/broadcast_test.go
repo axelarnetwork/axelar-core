@@ -299,9 +299,9 @@ func createMsgsWithSigner(signer sdk.AccAddress, count int64) []sdk.Msg {
 	for i := int64(0); i < count; i++ {
 
 		msg := &vote.VoteRequest{
-			Sender:  signer,
-			PollKey: exported.NewPollKey(vote.ModuleName, rand.StrBetween(5, 100)),
-			Vote:    exported.Vote{},
+			Sender: signer,
+			PollID: exported.PollID(rand.I64Between(10, 100)),
+			Vote:   exported.Vote{},
 		}
 
 		msgs = append(msgs, msg)

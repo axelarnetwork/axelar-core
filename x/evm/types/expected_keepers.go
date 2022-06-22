@@ -46,19 +46,11 @@ type ChainKeeper interface {
 	GetGatewayAddress(ctx sdk.Context) (common.Address, bool)
 	GetDeposit(ctx sdk.Context, txID common.Hash, burnerAddr common.Address) (ERC20Deposit, DepositStatus, bool)
 	GetBurnerInfo(ctx sdk.Context, address Address) *BurnerInfo
-	SetPendingDeposit(ctx sdk.Context, key vote.PollKey, deposit *ERC20Deposit)
 	GetBurnerAddressAndSalt(ctx sdk.Context, token ERC20Token, recipient string, gatewayAddr common.Address) (Address, Hash, error)
 	SetBurnerInfo(ctx sdk.Context, burnerInfo BurnerInfo)
-	GetPendingDeposit(ctx sdk.Context, key vote.PollKey) (ERC20Deposit, bool)
-	DeletePendingDeposit(ctx sdk.Context, key vote.PollKey)
 	DeleteDeposit(ctx sdk.Context, deposit ERC20Deposit)
 	SetDeposit(ctx sdk.Context, deposit ERC20Deposit, state DepositStatus)
 	GetConfirmedDeposits(ctx sdk.Context) []ERC20Deposit
-	GetPendingTransferKey(ctx sdk.Context, key vote.PollKey) (TransferKey, bool)
-	SetPendingTransferKey(ctx sdk.Context, key vote.PollKey, transferOwnership *TransferKey)
-	GetArchivedTransferKey(ctx sdk.Context, key vote.PollKey) (TransferKey, bool)
-	ArchiveTransferKey(ctx sdk.Context, key vote.PollKey)
-	DeletePendingTransferKey(ctx sdk.Context, key vote.PollKey)
 	GetNetworkByID(ctx sdk.Context, id sdk.Int) (string, bool)
 	GetChainIDByNetwork(ctx sdk.Context, network string) (sdk.Int, bool)
 	GetVotingThreshold(ctx sdk.Context) (utils.Threshold, bool)
@@ -83,7 +75,6 @@ type ChainKeeper interface {
 	SetConfirmedEvent(ctx sdk.Context, event Event) error
 	SetEventCompleted(ctx sdk.Context, eventID EventID) error
 	SetEventFailed(ctx sdk.Context, eventID EventID) error
-	SetFailedEvent(ctx sdk.Context, event Event) error
 }
 
 // ParamsKeeper represents a global paramstore
@@ -100,10 +91,10 @@ type TSS interface {
 
 // Voter exposes voting functionality
 type Voter interface {
-	InitializePoll(ctx sdk.Context, key vote.PollKey, voters []sdk.ValAddress, pollProperties ...vote.PollProperty) error
+	InitializePoll(ctx sdk.Context, voters []sdk.ValAddress, pollProperties ...vote.PollProperty) (vote.PollID, error)
 	// Deprecated: InitializePollWithSnapshot will be removed soon
-	InitializePollWithSnapshot(ctx sdk.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error
-	GetPoll(ctx sdk.Context, pollKey vote.PollKey) vote.Poll
+	InitializePollWithSnapshot(ctx sdk.Context, snapshotSeqNo int64, pollProperties ...vote.PollProperty) (vote.PollID, error)
+	GetPoll(ctx sdk.Context, pollID vote.PollID) vote.Poll
 }
 
 // Nexus provides functionality to manage cross-chain transfers
@@ -133,7 +124,7 @@ type Nexus interface {
 // InitPoller interface. Go cannot match the types otherwise
 type InitPoller = interface {
 	// Deprecated: InitializePollWithSnapshot will be removed soon
-	InitializePollWithSnapshot(ctx sdk.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error
+	InitializePollWithSnapshot(ctx sdk.Context, snapshotSeqNo int64, pollProperties ...vote.PollProperty) (vote.PollID, error)
 }
 
 // Signer provides keygen and signing functionality

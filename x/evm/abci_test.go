@@ -804,6 +804,14 @@ func TestHandleConfirmDeposit(t *testing.T) {
 		}
 	}
 
+	depositFound := func(found bool) func() {
+		return func() {
+			sourceCk.GetDepositFunc = func(ctx sdk.Context, txID common.Hash, burnerAddr common.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
+				return types.ERC20Deposit{}, types.DepositStatus_Confirmed, found
+			}
+		}
+	}
+
 	givenTransferEvent.
 		When("burner info not found", burnerInfoFound(false)).
 		Then("should return false", func(t *testing.T) {
@@ -835,6 +843,7 @@ func TestHandleConfirmDeposit(t *testing.T) {
 		When("burner info found", burnerInfoFound(true)).
 		When("recipient found", recipientFound(true)).
 		When("enqueue the transfer", enqueueTransferSucceed(true)).
+		When("deposit does not exist", depositFound(false)).
 		Then("should return true", func(t *testing.T) {
 			ok := handleConfirmDeposit(ctx, event, sourceCk, n, exported.Ethereum)
 			assert.True(t, ok)

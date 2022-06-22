@@ -32,10 +32,10 @@ var _ types.Voter = &VoterMock{}
 // 			GetPollFunc: func(ctx sdk.Context, pollKey exported.PollKey) exported.Poll {
 // 				panic("mock out the GetPoll method")
 // 			},
-// 			InitializePollFunc: func(ctx sdk.Context, key exported.PollKey, voters []sdk.ValAddress, pollProperties ...exported.PollProperty) error {
+// 			InitializePollFunc: func(ctx sdk.Context, voters []sdk.ValAddress, pollProperties ...exported.PollProperty) (exported.PollID, error) {
 // 				panic("mock out the InitializePoll method")
 // 			},
-// 			InitializePollWithSnapshotFunc: func(ctx sdk.Context, key exported.PollKey, snapshotSeqNo int64, pollProperties ...exported.PollProperty) error {
+// 			InitializePollWithSnapshotFunc: func(ctx sdk.Context, snapshotSeqNo int64, pollProperties ...exported.PollProperty) (exported.PollID, error) {
 // 				panic("mock out the InitializePollWithSnapshot method")
 // 			},
 // 		}
@@ -49,10 +49,10 @@ type VoterMock struct {
 	GetPollFunc func(ctx sdk.Context, pollKey exported.PollKey) exported.Poll
 
 	// InitializePollFunc mocks the InitializePoll method.
-	InitializePollFunc func(ctx sdk.Context, key exported.PollKey, voters []sdk.ValAddress, pollProperties ...exported.PollProperty) error
+	InitializePollFunc func(ctx sdk.Context, voters []sdk.ValAddress, pollProperties ...exported.PollProperty) (exported.PollID, error)
 
 	// InitializePollWithSnapshotFunc mocks the InitializePollWithSnapshot method.
-	InitializePollWithSnapshotFunc func(ctx sdk.Context, key exported.PollKey, snapshotSeqNo int64, pollProperties ...exported.PollProperty) error
+	InitializePollWithSnapshotFunc func(ctx sdk.Context, snapshotSeqNo int64, pollProperties ...exported.PollProperty) (exported.PollID, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -67,8 +67,6 @@ type VoterMock struct {
 		InitializePoll []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
-			// Key is the key argument value.
-			Key exported.PollKey
 			// Voters is the voters argument value.
 			Voters []sdk.ValAddress
 			// PollProperties is the pollProperties argument value.
@@ -78,8 +76,6 @@ type VoterMock struct {
 		InitializePollWithSnapshot []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
-			// Key is the key argument value.
-			Key exported.PollKey
 			// SnapshotSeqNo is the snapshotSeqNo argument value.
 			SnapshotSeqNo int64
 			// PollProperties is the pollProperties argument value.
@@ -127,25 +123,23 @@ func (mock *VoterMock) GetPollCalls() []struct {
 }
 
 // InitializePoll calls InitializePollFunc.
-func (mock *VoterMock) InitializePoll(ctx sdk.Context, key exported.PollKey, voters []sdk.ValAddress, pollProperties ...exported.PollProperty) error {
+func (mock *VoterMock) InitializePoll(ctx sdk.Context, voters []sdk.ValAddress, pollProperties ...exported.PollProperty) (exported.PollID, error) {
 	if mock.InitializePollFunc == nil {
 		panic("VoterMock.InitializePollFunc: method is nil but Voter.InitializePoll was just called")
 	}
 	callInfo := struct {
 		Ctx            sdk.Context
-		Key            exported.PollKey
 		Voters         []sdk.ValAddress
 		PollProperties []exported.PollProperty
 	}{
 		Ctx:            ctx,
-		Key:            key,
 		Voters:         voters,
 		PollProperties: pollProperties,
 	}
 	mock.lockInitializePoll.Lock()
 	mock.calls.InitializePoll = append(mock.calls.InitializePoll, callInfo)
 	mock.lockInitializePoll.Unlock()
-	return mock.InitializePollFunc(ctx, key, voters, pollProperties...)
+	return mock.InitializePollFunc(ctx, voters, pollProperties...)
 }
 
 // InitializePollCalls gets all the calls that were made to InitializePoll.
@@ -153,13 +147,11 @@ func (mock *VoterMock) InitializePoll(ctx sdk.Context, key exported.PollKey, vot
 //     len(mockedVoter.InitializePollCalls())
 func (mock *VoterMock) InitializePollCalls() []struct {
 	Ctx            sdk.Context
-	Key            exported.PollKey
 	Voters         []sdk.ValAddress
 	PollProperties []exported.PollProperty
 } {
 	var calls []struct {
 		Ctx            sdk.Context
-		Key            exported.PollKey
 		Voters         []sdk.ValAddress
 		PollProperties []exported.PollProperty
 	}
@@ -170,25 +162,23 @@ func (mock *VoterMock) InitializePollCalls() []struct {
 }
 
 // InitializePollWithSnapshot calls InitializePollWithSnapshotFunc.
-func (mock *VoterMock) InitializePollWithSnapshot(ctx sdk.Context, key exported.PollKey, snapshotSeqNo int64, pollProperties ...exported.PollProperty) error {
+func (mock *VoterMock) InitializePollWithSnapshot(ctx sdk.Context, snapshotSeqNo int64, pollProperties ...exported.PollProperty) (exported.PollID, error) {
 	if mock.InitializePollWithSnapshotFunc == nil {
 		panic("VoterMock.InitializePollWithSnapshotFunc: method is nil but Voter.InitializePollWithSnapshot was just called")
 	}
 	callInfo := struct {
 		Ctx            sdk.Context
-		Key            exported.PollKey
 		SnapshotSeqNo  int64
 		PollProperties []exported.PollProperty
 	}{
 		Ctx:            ctx,
-		Key:            key,
 		SnapshotSeqNo:  snapshotSeqNo,
 		PollProperties: pollProperties,
 	}
 	mock.lockInitializePollWithSnapshot.Lock()
 	mock.calls.InitializePollWithSnapshot = append(mock.calls.InitializePollWithSnapshot, callInfo)
 	mock.lockInitializePollWithSnapshot.Unlock()
-	return mock.InitializePollWithSnapshotFunc(ctx, key, snapshotSeqNo, pollProperties...)
+	return mock.InitializePollWithSnapshotFunc(ctx, snapshotSeqNo, pollProperties...)
 }
 
 // InitializePollWithSnapshotCalls gets all the calls that were made to InitializePollWithSnapshot.
@@ -196,13 +186,11 @@ func (mock *VoterMock) InitializePollWithSnapshot(ctx sdk.Context, key exported.
 //     len(mockedVoter.InitializePollWithSnapshotCalls())
 func (mock *VoterMock) InitializePollWithSnapshotCalls() []struct {
 	Ctx            sdk.Context
-	Key            exported.PollKey
 	SnapshotSeqNo  int64
 	PollProperties []exported.PollProperty
 } {
 	var calls []struct {
 		Ctx            sdk.Context
-		Key            exported.PollKey
 		SnapshotSeqNo  int64
 		PollProperties []exported.PollProperty
 	}
@@ -282,7 +270,7 @@ var _ types.Signer = &SignerMock{}
 // 			SetSigStatusFunc: func(ctx sdk.Context, sigID string, status github_com_axelarnetwork_axelar_core_x_tss_exported.SigStatus)  {
 // 				panic("mock out the SetSigStatus method")
 // 			},
-// 			StartSignFunc: func(ctx sdk.Context, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo, snapshotter snapshot.Snapshotter, voter interface{InitializePollWithSnapshot(ctx sdk.Context, key exported.PollKey, snapshotSeqNo int64, pollProperties ...exported.PollProperty) error}) error {
+// 			StartSignFunc: func(ctx sdk.Context, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo, snapshotter snapshot.Snapshotter, voter interface{InitializePollWithSnapshot(ctx sdk.Context, snapshotSeqNo int64, pollProperties ...exported.PollProperty) (exported.PollID, error)}) error {
 // 				panic("mock out the StartSign method")
 // 			},
 // 		}
@@ -354,7 +342,7 @@ type SignerMock struct {
 
 	// StartSignFunc mocks the StartSign method.
 	StartSignFunc func(ctx sdk.Context, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo, snapshotter snapshot.Snapshotter, voter interface {
-		InitializePollWithSnapshot(ctx sdk.Context, key exported.PollKey, snapshotSeqNo int64, pollProperties ...exported.PollProperty) error
+		InitializePollWithSnapshot(ctx sdk.Context, snapshotSeqNo int64, pollProperties ...exported.PollProperty) (exported.PollID, error)
 	}) error
 
 	// calls tracks calls to the methods.
@@ -535,7 +523,7 @@ type SignerMock struct {
 			Snapshotter snapshot.Snapshotter
 			// Voter is the voter argument value.
 			Voter interface {
-				InitializePollWithSnapshot(ctx sdk.Context, key exported.PollKey, snapshotSeqNo int64, pollProperties ...exported.PollProperty) error
+				InitializePollWithSnapshot(ctx sdk.Context, snapshotSeqNo int64, pollProperties ...exported.PollProperty) (exported.PollID, error)
 			}
 		}
 	}
@@ -1316,7 +1304,7 @@ func (mock *SignerMock) SetSigStatusCalls() []struct {
 
 // StartSign calls StartSignFunc.
 func (mock *SignerMock) StartSign(ctx sdk.Context, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo, snapshotter snapshot.Snapshotter, voter interface {
-	InitializePollWithSnapshot(ctx sdk.Context, key exported.PollKey, snapshotSeqNo int64, pollProperties ...exported.PollProperty) error
+	InitializePollWithSnapshot(ctx sdk.Context, snapshotSeqNo int64, pollProperties ...exported.PollProperty) (exported.PollID, error)
 }) error {
 	if mock.StartSignFunc == nil {
 		panic("SignerMock.StartSignFunc: method is nil but Signer.StartSign was just called")
@@ -1326,7 +1314,7 @@ func (mock *SignerMock) StartSign(ctx sdk.Context, info github_com_axelarnetwork
 		Info        github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
 		Snapshotter snapshot.Snapshotter
 		Voter       interface {
-			InitializePollWithSnapshot(ctx sdk.Context, key exported.PollKey, snapshotSeqNo int64, pollProperties ...exported.PollProperty) error
+			InitializePollWithSnapshot(ctx sdk.Context, snapshotSeqNo int64, pollProperties ...exported.PollProperty) (exported.PollID, error)
 		}
 	}{
 		Ctx:         ctx,
@@ -1348,7 +1336,7 @@ func (mock *SignerMock) StartSignCalls() []struct {
 	Info        github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
 	Snapshotter snapshot.Snapshotter
 	Voter       interface {
-		InitializePollWithSnapshot(ctx sdk.Context, key exported.PollKey, snapshotSeqNo int64, pollProperties ...exported.PollProperty) error
+		InitializePollWithSnapshot(ctx sdk.Context, snapshotSeqNo int64, pollProperties ...exported.PollProperty) (exported.PollID, error)
 	}
 } {
 	var calls []struct {
@@ -1356,7 +1344,7 @@ func (mock *SignerMock) StartSignCalls() []struct {
 		Info        github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
 		Snapshotter snapshot.Snapshotter
 		Voter       interface {
-			InitializePollWithSnapshot(ctx sdk.Context, key exported.PollKey, snapshotSeqNo int64, pollProperties ...exported.PollProperty) error
+			InitializePollWithSnapshot(ctx sdk.Context, snapshotSeqNo int64, pollProperties ...exported.PollProperty) (exported.PollID, error)
 		}
 	}
 	mock.lockStartSign.RLock()

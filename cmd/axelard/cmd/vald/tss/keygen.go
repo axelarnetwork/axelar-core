@@ -4,10 +4,8 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
-	"sort"
 	"strconv"
 
-	"github.com/btcsuite/btcd/btcec"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -16,13 +14,12 @@ import (
 	tssexported "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
-	voting "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	tmEvents "github.com/axelarnetwork/tm-events/events"
 )
 
 // ProcessKeygenStart starts the communication with the keygen protocol
 func (mgr *Mgr) ProcessKeygenStart(e tmEvents.Event) error {
-	keyType, keyID, threshold, participants, participantShareCounts, timeout, err := parseKeygenStartParams(mgr.cdc, e.Attributes)
+	keyType, keyID, _, participants, participantShareCounts, _, err := parseKeygenStartParams(mgr.cdc, e.Attributes)
 	if err != nil {
 		return err
 	}
@@ -34,58 +31,11 @@ func (mgr *Mgr) ProcessKeygenStart(e tmEvents.Event) error {
 	}
 
 	switch keyType {
-	case tssexported.Threshold.SimpleString():
-		return mgr.thresholdKeygenStart(e, keyID, timeout, threshold, myIndex, participants, participantShareCounts)
 	case tssexported.Multisig.SimpleString():
 		return mgr.multiSigKeygenStart(keyID, participantShareCounts[myIndex])
 	default:
 		return fmt.Errorf(fmt.Sprintf("unknown keytype %s", keyType))
 	}
-}
-
-func (mgr *Mgr) thresholdKeygenStart(e tmEvents.Event, keyID string, timeout int64, threshold uint32, myIndex int, participants []string, participantShareCounts []uint32) error {
-	done := false
-	session := mgr.timeoutQueue.Enqueue(keyID, e.Height+timeout)
-
-	stream, cancel, err := mgr.startKeygen(keyID, threshold, uint32(myIndex), participants, participantShareCounts)
-	if err != nil {
-		return err
-	}
-	mgr.setKeygenStream(keyID, stream)
-
-	// use error channel to coordinate errors during communication with sign protocol
-	errChan := make(chan error, 4)
-	intermediateMsgs, result, streamErrChan := handleStream(stream, cancel, mgr.Logger)
-	go func() {
-		err, ok := <-streamErrChan
-		if ok {
-			errChan <- err
-		}
-	}()
-	go func() {
-		err := mgr.handleIntermediateKeygenMsgs(keyID, intermediateMsgs)
-		if err != nil {
-			errChan <- err
-		}
-	}()
-	go func() {
-		session.WaitForTimeout()
-
-		if done {
-			return
-		}
-
-		errChan <- mgr.abortKeygen(keyID)
-		mgr.Logger.Info(fmt.Sprintf("aborted keygen protocol %s due to timeout", keyID))
-	}()
-	go func() {
-		err := mgr.handleKeygenResult(keyID, result)
-		done = true
-
-		errChan <- err
-	}()
-
-	return <-errChan
 }
 
 func (mgr *Mgr) multiSigKeygenStart(keyID string, shares uint32) error {
@@ -229,59 +179,6 @@ func (mgr *Mgr) handleIntermediateKeygenMsgs(keyID string, intermediate <-chan *
 		}
 	}
 	return nil
-}
-
-func (mgr *Mgr) handleKeygenResult(keyID string, resultChan <-chan interface{}) error {
-	// Delete the reference to the keygen stream with keyID because entering this function means the tss protocol has completed
-	defer func() {
-		mgr.keygen.Lock()
-		defer mgr.keygen.Unlock()
-		delete(mgr.keygenStreams, keyID)
-	}()
-
-	r, ok := <-resultChan
-	if !ok {
-		return fmt.Errorf("failed to receive keygen result, channel was closed by the server")
-	}
-
-	// get result. Result will be implicity checked by Validate() during Braodcast(), so no checks are needed here
-	result, ok := r.(*tofnd.MessageOut_KeygenResult)
-	if !ok {
-		return fmt.Errorf("failed to receive keygen result, received unexpected type %T", r)
-	}
-
-	mgr.Logger.Debug(fmt.Sprintf("handler goroutine: received keygen result for %s [%+v]", keyID, result))
-
-	switch res := result.GetKeygenResultData().(type) {
-	case *tofnd.MessageOut_KeygenResult_Criminals:
-		// prepare criminals for Validate()
-		// criminals have to be sorted in ascending order
-		sort.Stable(res.Criminals)
-	case *tofnd.MessageOut_KeygenResult_Data:
-		if res.Data.GetPubKey() == nil {
-			return fmt.Errorf("public key missing from the result")
-		}
-		if res.Data.GetGroupRecoverInfo() == nil {
-			return fmt.Errorf("group recovery data missing from the result")
-		}
-		if res.Data.GetPrivateRecoverInfo() == nil {
-			return fmt.Errorf("private recovery data missing from the result")
-		}
-
-		btcecPK, err := btcec.ParsePubKey(res.Data.GetPubKey(), btcec.S256())
-		if err != nil {
-			return sdkerrors.Wrap(err, "failure to deserialize pubkey")
-		}
-
-		mgr.Logger.Info(fmt.Sprintf("handler goroutine: received pubkey from server! [%v]", btcecPK.ToECDSA()))
-	default:
-		return fmt.Errorf("invalid data type")
-	}
-
-	pollKey := voting.NewPollKey(tss.ModuleName, keyID)
-	vote := &tss.VotePubKeyRequest{Sender: mgr.cliCtx.FromAddress, PollKey: pollKey, Result: *result}
-	_, err := mgr.broadcaster.Broadcast(context.TODO(), vote)
-	return err
 }
 
 func (mgr *Mgr) getKeygenStream(keyID string) (Stream, bool) {
