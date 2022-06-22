@@ -5888,10 +5888,18 @@ paths:
               schema:
                 type: object
                 properties:
-                  assets:
+                  tokens:
                     type: array
                     items:
-                      type: string
+                      type: object
+                      properties:
+                        asset:
+                          type: string
+                        symbol:
+                          type: string
+                title: |-
+                  ERC20TokensResponse describes the asset and symbol for all
+                  ERC20 tokens requested for a chain
         default:
           description: An unexpected error response
           content:
@@ -7067,6 +7075,8 @@ paths:
                   is_external:
                     type: boolean
                     format: boolean
+                  burner_code_hash:
+                    type: string
         default:
           description: An unexpected error response
           content:
@@ -8883,6 +8893,17 @@ paths:
                               "@type": "type.googleapis.com/google.protobuf.Duration",
                               "value": "1.212s"
                             }
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - CHAIN_STATUS_UNSPECIFIED
+              - CHAIN_STATUS_ACTIVATED
+              - CHAIN_STATUS_DEACTIVATED
+            default: CHAIN_STATUS_UNSPECIFIED
       tags:
         - QueryService
   "/axelar/nexus/v1beta1/chains_by_asset/{asset}":
@@ -35633,10 +35654,25 @@ components:
     axelar.evm.v1beta1.ERC20TokensResponse:
       type: object
       properties:
-        assets:
+        tokens:
           type: array
           items:
-            type: string
+            type: object
+            properties:
+              asset:
+                type: string
+              symbol:
+                type: string
+      title: |-
+        ERC20TokensResponse describes the asset and symbol for all
+        ERC20 tokens requested for a chain
+    axelar.evm.v1beta1.ERC20TokensResponse.Token:
+      type: object
+      properties:
+        asset:
+          type: string
+        symbol:
+          type: string
     axelar.evm.v1beta1.Event:
       type: object
       properties:
@@ -36236,6 +36272,8 @@ components:
         is_external:
           type: boolean
           format: boolean
+        burner_code_hash:
+          type: string
     axelar.evm.v1beta1.TokenType:
       type: string
       enum:
@@ -36544,6 +36582,13 @@ components:
                             type: integer
                             format: int32
           title: ChainState represents the state of a registered blockchain
+    axelar.nexus.v1beta1.ChainStatus:
+      type: string
+      enum:
+        - CHAIN_STATUS_UNSPECIFIED
+        - CHAIN_STATUS_ACTIVATED
+        - CHAIN_STATUS_DEACTIVATED
+      default: CHAIN_STATUS_UNSPECIFIED
     axelar.nexus.v1beta1.ChainsByAssetResponse:
       type: object
       properties:

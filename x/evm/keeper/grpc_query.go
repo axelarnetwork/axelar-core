@@ -42,9 +42,7 @@ func NewGRPCQuerier(k types.BaseKeeper, n types.Nexus, s types.Signer) Querier {
 func queryChains(ctx sdk.Context, n types.Nexus) []nexustypes.ChainName {
 	chains := slices.Filter(n.GetChains(ctx), types.IsEVMChain)
 
-	return slices.Map(chains, func(c nexustypes.Chain) nexustypes.ChainName {
-		return c.Name
-	})
+	return slices.Map(chains, nexustypes.Chain.GetName)
 }
 
 // Chains returns the available evm chains
@@ -452,9 +450,16 @@ func (q Querier) ERC20Tokens(c context.Context, req *types.ERC20TokensRequest) (
 		// no filtering when retrieving all tokens
 	}
 
-	assets := slices.Map(tokens, types.ERC20Token.GetAsset)
+	res := types.ERC20TokensResponse{
+		Tokens: slices.Map(tokens, func(token types.ERC20Token) types.ERC20TokensResponse_Token {
+			return types.ERC20TokensResponse_Token{
+				Asset:  token.GetAsset(),
+				Symbol: token.GetDetails().Symbol,
+			}
+		}),
+	}
 
-	return &types.ERC20TokensResponse{Assets: assets}, nil
+	return &res, nil
 }
 
 // TokenInfo returns the token info for a registered asset
@@ -487,10 +492,11 @@ func (q Querier) TokenInfo(c context.Context, req *types.TokenInfoRequest) (*typ
 	}
 
 	return &types.TokenInfoResponse{
-		Asset:      token.GetAsset(),
-		Details:    token.GetDetails(),
-		Address:    token.GetAddress().Hex(),
-		Confirmed:  token.Is(types.Confirmed),
-		IsExternal: token.IsExternal(),
+		Asset:          token.GetAsset(),
+		Details:        token.GetDetails(),
+		Address:        token.GetAddress().Hex(),
+		Confirmed:      token.Is(types.Confirmed),
+		IsExternal:     token.IsExternal(),
+		BurnerCodeHash: token.GetBurnerCodeHash().Hex(),
 	}, nil
 }

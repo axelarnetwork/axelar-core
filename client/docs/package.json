@@ -9,8 +9,8 @@
     "build": "redoc-cli build static/openapi/openapi.yaml --output ./static/openapi/index.html"
   },
   "dependencies": {
-    "redoc-cli": "^0.13.10",
-    "swagger-combine": "^1.4.0",
-    "swagger2openapi": "^7.0.8"
+    "redoc-cli": "^0.13",
+    "swagger-combine": "^1.4",
+    "swagger2openapi": "^7.0"
   }
 }

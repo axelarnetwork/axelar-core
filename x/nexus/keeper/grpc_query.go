@@ -10,6 +10,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
+	"github.com/axelarnetwork/utils/slices"
 )
 
 var _ types.QueryServiceServer = Querier{}
@@ -140,10 +141,14 @@ func (q Querier) Chains(c context.Context, req *types.ChainsRequest) (*types.Cha
 
 	chains := q.keeper.GetChains(ctx)
 
-	chainNames := make([]nexus.ChainName, len(chains))
-	for i, chain := range chains {
-		chainNames[i] = chain.Name
+	switch req.Status {
+	case types.Activated:
+		chains = slices.Filter(chains, func(chain nexus.Chain) bool { return q.keeper.IsChainActivated(ctx, chain) })
+	case types.Deactivated:
+		chains = slices.Filter(chains, func(chain nexus.Chain) bool { return !q.keeper.IsChainActivated(ctx, chain) })
 	}
+
+	chainNames := slices.Map(chains, nexus.Chain.GetName)
 
 	return &types.ChainsResponse{Chains: chainNames}, nil
 }
