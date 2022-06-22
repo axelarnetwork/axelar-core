@@ -70,9 +70,13 @@ func (s msgServer) Vote(c context.Context, req *types.VoteRequest) (*types.VoteR
 			return nil, fmt.Errorf("unknown module for vote %s", pollModuleMetadata.Module)
 		}
 
-		if err := voteHandler.HandleResult(ctx, result); err != nil {
-			return nil, err
+		cachedCtx, writeCache := ctx.CacheContext()
+		if err := voteHandler.HandleResult(cachedCtx, result); err != nil {
+			return &types.VoteResponse{Log: fmt.Sprintf("vote handler failed %s", err.Error())}, nil
 		}
+
+		writeCache()
+		ctx.EventManager().EmitEvents(cachedCtx.EventManager().Events())
 
 		fallthrough
 	default:

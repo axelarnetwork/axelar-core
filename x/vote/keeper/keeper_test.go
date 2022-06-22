@@ -82,6 +82,7 @@ func TestKeeper(t *testing.T) {
 					ctx,
 					voters,
 					exported.ExpiryAt(rand.PosI64()),
+					exported.ModuleMetadata(rand.Str(5)),
 				)
 
 				assert.ErrorContains(t, err, "no voters set")
@@ -105,6 +106,7 @@ func TestKeeper(t *testing.T) {
 					ctx,
 					voters,
 					exported.ExpiryAt(rand.PosI64()),
+					exported.ModuleMetadata(rand.Str(5)),
 				)
 
 				assert.ErrorContains(t, err, "no voters set")

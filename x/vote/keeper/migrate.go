@@ -13,7 +13,10 @@ import (
 func GetMigrationHandler(k Keeper) func(ctx sdk.Context) error {
 	return func(ctx sdk.Context) error {
 		emptyPollQueue(ctx, k)
-		deleteAllPolls(ctx, k)
+
+		deleteAllWithPrefix(ctx, k, pollPrefix)
+		deleteAllWithPrefix(ctx, k, votesPrefix)
+		deleteAllWithPrefix(ctx, k, voterPrefix)
 
 		return nil
 	}
@@ -27,15 +30,15 @@ func emptyPollQueue(ctx sdk.Context, k Keeper) {
 	}
 }
 
-func deleteAllPolls(ctx sdk.Context, k Keeper) {
+func deleteAllWithPrefix(ctx sdk.Context, k Keeper, prefix utils.Key) {
 	var keys [][]byte
 
-	iter := k.getKVStore(ctx).Iterator(pollPrefix)
+	iter := k.getKVStore(ctx).Iterator(prefix)
+	defer utils.CloseLogError(iter, k.Logger(ctx))
+
 	for ; iter.Valid(); iter.Next() {
 		keys = append(keys, iter.Key())
 	}
-	utils.CloseLogError(iter, k.Logger(ctx))
-
 	for _, key := range keys {
 		k.getKVStore(ctx).DeleteRaw(key)
 	}

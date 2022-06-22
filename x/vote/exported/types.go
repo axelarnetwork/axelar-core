@@ -21,6 +21,15 @@ type VoteHandler interface {
 	HandleResult(ctx sdk.Context, result codec.ProtoMarshaler) error
 }
 
+// ValidateBasic returns an error if the poll module metadata is not valid; nil otherwise
+func (m PollModuleMetadata) ValidateBasic() error {
+	if m.Module == "" {
+		return fmt.Errorf("module cannot be empty in poll module metadata")
+	}
+
+	return nil
+}
+
 // Is checks if the poll is in the given state
 func (m PollMetadata) Is(state PollState) bool {
 	// this special case check is needed, because 0 & x == 0 is true for any x
@@ -32,6 +41,10 @@ func (m PollMetadata) Is(state PollState) bool {
 
 // Validate returns an error if the poll metadata is not valid; nil otherwise
 func (m PollMetadata) Validate() error {
+	if err := m.ModuleMetadata.ValidateBasic(); err != nil {
+		return err
+	}
+
 	if m.ExpiresAt <= 0 {
 		return fmt.Errorf("expires at must be >0")
 	}
@@ -87,7 +100,7 @@ func (m PollMetadata) Validate() error {
 // PollID represents ID of polls
 type PollID uint64
 
-// String converts the give poll ID to string
+// String converts the given poll ID to string
 func (id PollID) String() string {
 	return strconv.FormatUint(uint64(id), 10)
 }

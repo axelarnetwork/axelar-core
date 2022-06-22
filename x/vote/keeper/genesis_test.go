@@ -60,6 +60,7 @@ func initializeRandomPoll(ctx sdk.Context, keeper Keeper) exported.PollMetadata 
 		exported.MinVoterCount(rand.I64Between(0, int64(len(voters)))),
 		exported.Threshold(utils.NewThreshold(rand.I64Between(1, 101), 100)),
 		exported.GracePeriod(rand.I64Between(0, 10)),
+		exported.ModuleMetadata(rand.Str(5)),
 	)
 	if err != nil {
 		panic(err)
