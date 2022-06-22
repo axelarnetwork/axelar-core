@@ -345,7 +345,7 @@ func (k chainKeeper) GetConfirmedEventQueue(ctx sdk.Context) utils.KVQueue {
 			event := value.(*types.Event)
 
 			indexBz := make([]byte, 8)
-			binary.BigEndian.PutUint64(blockHeightBz, event.Index)
+			binary.BigEndian.PutUint64(indexBz, event.Index)
 
 			return utils.KeyFromBz(blockHeightBz).
 				Append(utils.KeyFromBz(event.TxId.Bytes())).
