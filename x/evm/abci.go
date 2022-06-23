@@ -15,6 +15,9 @@ import (
 	"github.com/axelarnetwork/utils/slices"
 )
 
+// TODO: make this a param when we can easily switch between different kinds of keys and different settings
+var keyRole = tss.SecondaryKey
+
 func validateChains(ctx sdk.Context, sourceChainName nexus.ChainName, destinationChainName nexus.ChainName, bk types.BaseKeeper, n types.Nexus) (nexus.Chain, nexus.Chain, error) {
 	sourceChain, ok := n.GetChain(ctx, sourceChainName)
 	if !ok {
@@ -96,9 +99,9 @@ func handleContractCall(ctx sdk.Context, event types.Event, bk types.BaseKeeper,
 		panic(fmt.Errorf("could not find chain ID for '%s'", destinationChain.Name))
 	}
 
-	keyID, ok := s.GetCurrentKeyID(ctx, destinationChain, tss.SecondaryKey)
+	keyID, ok := s.GetCurrentKeyID(ctx, destinationChain, keyRole)
 	if !ok {
-		panic(fmt.Errorf("no secondary key for chain %s found", destinationChain.Name))
+		panic(fmt.Errorf("no key for chain %s found", destinationChain.Name))
 	}
 
 	cmd, err := types.CreateApproveContractCallCommand(
@@ -164,9 +167,9 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 		panic(fmt.Errorf("could not find chain ID for '%s'", destinationChain.Name))
 	}
 
-	keyID, ok := s.GetCurrentKeyID(ctx, destinationChain, tss.SecondaryKey)
+	keyID, ok := s.GetCurrentKeyID(ctx, destinationChain, keyRole)
 	if !ok {
-		panic(fmt.Errorf("no secondary key for chain %s found", destinationChain.Name))
+		panic(fmt.Errorf("no key for chain %s found", destinationChain.Name))
 	}
 
 	cmd, err := types.CreateApproveContractCallWithMintCommand(
@@ -298,22 +301,13 @@ func handleTokenDeployed(ctx sdk.Context, event types.Event, ck types.ChainKeepe
 }
 
 func handleMultisigTransferKey(ctx sdk.Context, event types.Event, ck types.ChainKeeper, s types.Signer, chain nexus.Chain) bool {
-	var newAddresses []types.Address
-	var newThreshold sdk.Uint
-	var keyRole tss.KeyRole
-
-	switch e := event.GetEvent().(type) {
-	case *types.Event_MultisigOwnershipTransferred:
-		newAddresses = e.MultisigOwnershipTransferred.NewOwners
-		newThreshold = e.MultisigOwnershipTransferred.NewThreshold
-		keyRole = tss.MasterKey
-	case *types.Event_MultisigOperatorshipTransferred:
-		newAddresses = e.MultisigOperatorshipTransferred.NewOperators
-		newThreshold = e.MultisigOperatorshipTransferred.NewThreshold
-		keyRole = tss.SecondaryKey
-	default:
-		panic(fmt.Errorf("event %s: unsupported event type %T", event.GetID(), event))
+	e := event.GetEvent().(*types.Event_MultisigOperatorshipTransferred).MultisigOperatorshipTransferred
+	if e == nil {
+		panic(fmt.Errorf("event is nil"))
 	}
+
+	newAddresses := e.NewOperators
+	newThreshold := e.NewThreshold
 
 	nextKeyID, ok := s.GetNextKeyID(ctx, chain, keyRole)
 	if !ok {
@@ -333,9 +327,8 @@ func handleMultisigTransferKey(ctx sdk.Context, event types.Event, ck types.Chai
 		return false
 	}
 
-	newOwners := slices.Map(newAddresses, func(addr types.Address) common.Address { return common.Address(addr) })
-	if !areAddressesEqual(expectedAddress, newOwners) {
-		ck.Logger(ctx).Info(fmt.Sprintf("new adddress does not match, expected %v got %v", expectedAddress, newOwners))
+	if !areAddressesEqual(expectedAddress, slices.Map(newAddresses, func(addr types.Address) common.Address { return common.Address(addr) })) {
+		ck.Logger(ctx).Info(fmt.Sprintf("new adddress does not match, expected %v got %v", expectedAddress, newAddresses))
 		return false
 	}
 
@@ -349,14 +342,16 @@ func handleMultisigTransferKey(ctx sdk.Context, event types.Event, ck types.Chai
 		return false
 	}
 
-	ck.Logger(ctx).Info(fmt.Sprintf("successfully confirmed %s key transfer for chain %s",
-		keyRole.SimpleString(), chain.Name), "txID", event.TxId.Hex(), "rotation count", s.GetRotationCount(ctx, chain, keyRole))
+	ck.Logger(ctx).Info(fmt.Sprintf("successfully confirmed key transfer for chain %s", chain.Name),
+		"txID", event.TxId.Hex(),
+		"keyID", nextKeyID,
+		"rotation count", s.GetRotationCount(ctx, chain, keyRole),
+	)
 
 	ctx.EventManager().EmitEvent(sdk.NewEvent(
 		types.EventTypeTransferKeyConfirmation,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 		sdk.NewAttribute(types.AttributeKeyChain, chain.Name.String()),
-		sdk.NewAttribute(types.AttributeKeyTransferKeyType, keyRole.SimpleString()),
 		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm),
 	))
 
@@ -412,9 +407,9 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 
 			return false
 		}
-		// skip if destination chain has the secondary key rotation in progress
-		if _, nextSecondaryKeyAssigned := s.GetNextKeyID(ctx, destinationChain, tss.SecondaryKey); nextSecondaryKeyAssigned {
-			bk.Logger(ctx).Debug(fmt.Sprintf("skipping confirmed event %s due to destination chain in the middle of secondary key rotation", event.GetID()),
+		// skip if destination chain key rotation is in progress
+		if _, nextKeyAssigned := s.GetNextKeyID(ctx, destinationChain, keyRole); nextKeyAssigned {
+			bk.Logger(ctx).Debug(fmt.Sprintf("skipping confirmed event %s due to destination chain in the middle of key rotation", event.GetID()),
 				"chain", event.Chain.String(),
 				"destination_chain", destinationChainName.String(),
 				"eventID", event.GetID(),
@@ -454,10 +449,15 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 				ok = handleConfirmDeposit(ctx, event, ck, n, chain)
 			case *types.Event_TokenDeployed:
 				ok = handleTokenDeployed(ctx, event, ck, chain)
-			case *types.Event_MultisigOwnershipTransferred, *types.Event_MultisigOperatorshipTransferred:
+			case *types.Event_MultisigOperatorshipTransferred:
 				ok = handleMultisigTransferKey(ctx, event, ck, s, chain)
 			default:
-				return fmt.Errorf("unsupported event type %T", event)
+				bk.Logger(ctx).Debug("unsupported event type %T", event,
+					"chain", chain.Name.String(),
+					"eventID", event.GetID(),
+				)
+
+				ok = false
 			}
 
 			if !ok {

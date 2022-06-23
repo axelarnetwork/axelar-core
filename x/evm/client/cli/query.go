@@ -56,7 +56,6 @@ func GetCmdAddress(queryRoute string) *cobra.Command {
 		Short: "Returns the EVM address",
 		Args:  cobra.ExactArgs(1),
 	}
-	keyRole := cmd.Flags().String("key-role", "", "the role of the key to get the address for")
 	keyID := cmd.Flags().String("key-id", "", "the ID of the key to get the address for")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
@@ -69,20 +68,7 @@ func GetCmdAddress(queryRoute string) *cobra.Command {
 
 		req := types.KeyAddressRequest{
 			Chain: utils.NormalizeString(args[0]),
-			Key:   nil,
-		}
-
-		switch {
-		case *keyRole != "" && *keyID == "":
-			keyRoleType, err := tss.KeyRoleFromSimpleStr(*keyRole)
-			if err != nil {
-				return fmt.Errorf("key role %s is not supported", *keyRole)
-			}
-			req.Key = &types.KeyAddressRequest_Role{Role: keyRoleType}
-		case *keyRole == "" && *keyID != "":
-			req.Key = &types.KeyAddressRequest_KeyID{KeyID: tss.KeyID(*keyID)}
-		default:
-			return fmt.Errorf("one and only one of the two flags key-role and key-id has to be set")
+			KeyID: tss.KeyID(*keyID),
 		}
 
 		res, err := queryClient.KeyAddress(cmd.Context(), &req)

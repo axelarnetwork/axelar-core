@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"math/big"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -46,6 +47,8 @@ const (
 	BurnerCodeHashV3 = "0xa50851cafd39f2f61171c0c00a11bda820ed0958950df5a53ba11a047402351f"
 	// BurnerCodeHashV4 is the hash of the bytecode of burner v4
 	BurnerCodeHashV4 = "0x701d8db26f2d668fee8acf2346199a6b63b0173f212324d1c5a04b4d4de95666"
+	// BurnerCodeHashV5 is the hash of the bytecode of burner v5
+	BurnerCodeHashV5 = "0x9f217a79e864028081339cfcead3c3d1fe92e237fcbe9468d6bb4d1da7aa6352"
 )
 
 func validateBurnerCode(burnerCode []byte) error {
@@ -54,7 +57,8 @@ func validateBurnerCode(burnerCode []byte) error {
 	case BurnerCodeHashV1,
 		BurnerCodeHashV2,
 		BurnerCodeHashV3,
-		BurnerCodeHashV4:
+		BurnerCodeHashV4,
+		BurnerCodeHashV5:
 		break
 	default:
 		return fmt.Errorf("unsupported burner code with hash %s", burnerCodeHash)
@@ -88,8 +92,6 @@ const (
 	AxelarGatewayCommandBurnToken                   = "burnToken"
 	burnExternalTokenMaxGasCost                     = 400000
 	burnInternalTokenMaxGasCost                     = 120000
-	AxelarGatewayCommandTransferOwnership           = "transferOwnership"
-	transferOwnershipMaxGasCost                     = 120000
 	AxelarGatewayCommandTransferOperatorship        = "transferOperatorship"
 	transferOperatorshipMaxGasCost                  = 120000
 	AxelarGatewayCommandApproveContractCallWithMint = "approveContractCallWithMint"
@@ -97,13 +99,6 @@ const (
 	AxelarGatewayCommandApproveContractCall         = "approveContractCall"
 	approveContractCallMaxGasCost                   = 120000
 	axelarGatewayFuncExecute                        = "execute"
-)
-
-type role uint8
-
-const (
-	roleOwner    role = 1
-	roleOperator role = 2
 )
 
 // IsEVMChain returns true if a chain is an EVM chain
@@ -167,7 +162,7 @@ func (t ERC20Token) GetBurnerCodeHash() Hash {
 }
 
 // CreateDeployCommand returns a token deployment command for the token
-func (t *ERC20Token) CreateDeployCommand(key tss.KeyID) (Command, error) {
+func (t *ERC20Token) CreateDeployCommand(key tss.KeyID, dailyMintLimit sdk.Uint) (Command, error) {
 	switch {
 	case t.Is(NonExistent):
 		return Command{}, fmt.Errorf("token %s non-existent", t.GetAsset())
@@ -185,6 +180,7 @@ func (t *ERC20Token) CreateDeployCommand(key tss.KeyID) (Command, error) {
 			t.GetAsset(),
 			t.metadata.Details,
 			t.GetAddress(),
+			dailyMintLimit,
 		)
 	}
 
@@ -194,6 +190,7 @@ func (t *ERC20Token) CreateDeployCommand(key tss.KeyID) (Command, error) {
 		t.GetAsset(),
 		t.metadata.Details,
 		ZeroAddress,
+		dailyMintLimit,
 	)
 }
 
@@ -405,6 +402,18 @@ func (h Hash) Size() int {
 // Signature encodes the parameters R,S,V in the byte format expected by an EVM chain
 type Signature [crypto.SignatureLength]byte
 
+// NewSignature is the constructor of Signature
+func NewSignature(bz []byte) (sig Signature) {
+	copy(sig[:], bz)
+
+	return sig
+}
+
+// Hex returns the hex-encoding of the given Signature
+func (s Signature) Hex() string {
+	return hex.EncodeToString(s[:])
+}
+
 // ToSignature transforms an Axelar generated signature into a recoverable signature
 func ToSignature(sig btcec.Signature, hash common.Hash, pk ecdsa.PublicKey) (Signature, error) {
 	s := Signature{}
@@ -487,16 +496,16 @@ func CreateExecuteDataSinglesig(data []byte, sig Signature) ([]byte, error) {
 
 // CreateExecuteDataMultisig wraps the specific command data and includes the command signatures.
 // Returns the data that goes into the data field of an EVM transaction
-func CreateExecuteDataMultisig(data []byte, sigs ...Signature) ([]byte, error) {
+func CreateExecuteDataMultisig(data []byte, signers []common.Address, sigs []Signature) ([]byte, error) {
+	sortedSigners := slices.Map(signers, func(a common.Address) Address { return Address(a) })
+	sort.SliceStable(sortedSigners, func(i, j int) bool { return bytes.Compare(sortedSigners[i].Bytes(), sortedSigners[j].Bytes()) < 0 })
+
 	abiEncoder, err := abi.JSON(strings.NewReader(axelarGatewayABI))
 	if err != nil {
 		return nil, err
 	}
 
-	var homesteadSigs [][]byte
-	for _, sig := range sigs {
-		homesteadSigs = append(homesteadSigs, toHomesteadSig(sig))
-	}
+	homesteadSigs := slices.Map(sigs, toHomesteadSig)
 
 	bytesType, err := abi.NewType("bytes", "bytes", nil)
 	if err != nil {
@@ -508,18 +517,22 @@ func CreateExecuteDataMultisig(data []byte, sigs ...Signature) ([]byte, error) {
 		return nil, err
 	}
 
-	arguments := abi.Arguments{{Type: bytesType}, {Type: bytesArrayType}}
-	executeData, err := arguments.Pack(data, homesteadSigs)
+	addressesType, err := abi.NewType("address[]", "address[]", nil)
 	if err != nil {
 		return nil, err
 	}
 
-	result, err := abiEncoder.Pack(axelarGatewayFuncExecute, executeData)
+	proof, err := abi.Arguments{{Type: addressesType}, {Type: bytesArrayType}}.Pack(sortedSigners, homesteadSigs)
 	if err != nil {
 		return nil, err
 	}
 
-	return result, nil
+	executeData, err := abi.Arguments{{Type: bytesType}, {Type: bytesType}}.Pack(data, proof)
+	if err != nil {
+		return nil, err
+	}
+
+	return abiEncoder.Pack(axelarGatewayFuncExecute, executeData)
 }
 
 // GetSignHash returns the hash that needs to be signed so AxelarGateway accepts the given command
@@ -812,8 +825,8 @@ func CreateBurnTokenCommand(chainID sdk.Int, keyID tss.KeyID, height int64, burn
 }
 
 // CreateDeployTokenCommand creates a command to deploy a token
-func CreateDeployTokenCommand(chainID sdk.Int, keyID tss.KeyID, asset string, tokenDetails TokenDetails, address Address) (Command, error) {
-	params, err := createDeployTokenParams(tokenDetails.TokenName, tokenDetails.Symbol, tokenDetails.Decimals, tokenDetails.Capacity, address)
+func CreateDeployTokenCommand(chainID sdk.Int, keyID tss.KeyID, asset string, tokenDetails TokenDetails, address Address, dailyMintLimit sdk.Uint) (Command, error) {
+	params, err := createDeployTokenParams(tokenDetails.TokenName, tokenDetails.Symbol, tokenDetails.Decimals, tokenDetails.Capacity, address, dailyMintLimit)
 	if err != nil {
 		return Command{}, err
 	}
@@ -845,7 +858,6 @@ func CreateMintTokenCommand(keyID tss.KeyID, id CommandID, symbol string, addres
 
 // CreateSinglesigTransferCommand creates a command to transfer ownership/operator of the singlesig contract
 func CreateSinglesigTransferCommand(
-	transferType TransferKeyType,
 	chainID sdk.Int,
 	keyID tss.KeyID,
 	address common.Address) (Command, error) {
@@ -854,12 +866,11 @@ func CreateSinglesigTransferCommand(
 		return Command{}, err
 	}
 
-	return createTransferCmd(NewCommandID(address.Bytes(), chainID), params, keyID, transferType)
+	return createTransferCmd(NewCommandID(address.Bytes(), chainID), params, keyID)
 }
 
 // CreateMultisigTransferCommand creates a command to transfer ownership/operator of the multisig contract
 func CreateMultisigTransferCommand(
-	transferType TransferKeyType,
 	chainID sdk.Int,
 	keyID tss.KeyID,
 	threshold uint8,
@@ -879,30 +890,17 @@ func CreateMultisigTransferCommand(
 		return Command{}, err
 	}
 
-	return createTransferCmd(NewCommandID(concat, chainID), params, keyID, transferType)
+	return createTransferCmd(NewCommandID(concat, chainID), params, keyID)
 }
 
-func createTransferCmd(id CommandID, params []byte, keyID tss.KeyID, transferType TransferKeyType) (Command, error) {
-	switch transferType {
-	case Ownership:
-		return Command{
-			ID:         id,
-			Command:    AxelarGatewayCommandTransferOwnership,
-			Params:     params,
-			KeyID:      keyID,
-			MaxGasCost: transferOwnershipMaxGasCost,
-		}, nil
-	case Operatorship:
-		return Command{
-			ID:         id,
-			Command:    AxelarGatewayCommandTransferOperatorship,
-			Params:     params,
-			KeyID:      keyID,
-			MaxGasCost: transferOperatorshipMaxGasCost,
-		}, nil
-	default:
-		return Command{}, fmt.Errorf("invalid transfer key type %s", transferType.SimpleString())
-	}
+func createTransferCmd(id CommandID, params []byte, keyID tss.KeyID) (Command, error) {
+	return Command{
+		ID:         id,
+		Command:    AxelarGatewayCommandTransferOperatorship,
+		Params:     params,
+		KeyID:      keyID,
+		MaxGasCost: transferOperatorshipMaxGasCost,
+	}, nil
 }
 
 // Clone returns an exacy copy of Command
@@ -991,19 +989,9 @@ func (b *CommandBatch) SetStatus(status BatchedCommandsStatus) bool {
 
 // NewCommandBatchMetadata assembles a CommandBatchMetadata struct from the provided arguments
 func NewCommandBatchMetadata(blockHeight int64, chainID sdk.Int, keyID tss.KeyID, keyRole tss.KeyRole, cmds []Command) (CommandBatchMetadata, error) {
-	var r role
 	var commandIDs []CommandID
 	var commands []string
 	var commandParams [][]byte
-
-	switch keyRole {
-	case tss.MasterKey:
-		r = roleOwner
-	case tss.SecondaryKey:
-		r = roleOperator
-	default:
-		return CommandBatchMetadata{}, fmt.Errorf("cannot sign command batch with a key of role %s", keyRole.SimpleString())
-	}
 
 	for _, cmd := range cmds {
 		commandIDs = append(commandIDs, cmd.ID)
@@ -1011,7 +999,7 @@ func NewCommandBatchMetadata(blockHeight int64, chainID sdk.Int, keyID tss.KeyID
 		commandParams = append(commandParams, cmd.Params)
 	}
 
-	data, err := packArguments(chainID, r, commandIDs, commands, commandParams)
+	data, err := packArguments(chainID, commandIDs, commands, commandParams)
 	if err != nil {
 		return CommandBatchMetadata{}, err
 	}
@@ -1090,40 +1078,6 @@ func (c *CommandID) Unmarshal(data []byte) error {
 	return nil
 }
 
-// TransferKeyTypeFromSimpleStr converts a given string into TransferKeyType
-func TransferKeyTypeFromSimpleStr(str string) (TransferKeyType, error) {
-	switch strings.ToLower(str) {
-	case Ownership.SimpleString():
-		return Ownership, nil
-	case Operatorship.SimpleString():
-		return Operatorship, nil
-	default:
-		return -1, fmt.Errorf("invalid transfer key type %s", str)
-	}
-}
-
-// Validate returns an error if the TransferKeyType is invalid; nil otherwise
-func (t TransferKeyType) Validate() error {
-	switch t {
-	case Ownership, Operatorship:
-		return nil
-	default:
-		return fmt.Errorf("invalid transfer key type")
-	}
-}
-
-// SimpleString returns a human-readable string representing the TransferKeyType
-func (t TransferKeyType) SimpleString() string {
-	switch t {
-	case Ownership:
-		return "transfer_ownership"
-	case Operatorship:
-		return "transfer_operatorship"
-	default:
-		return "unknown"
-	}
-}
-
 // NewAsset returns a new Asset instance
 func NewAsset(chain, name string) Asset {
 	return Asset{
@@ -1172,17 +1126,12 @@ func (m TokenDetails) Validate() error {
 	return nil
 }
 
-func packArguments(chainID sdk.Int, r role, commandIDs []CommandID, commands []string, commandParams [][]byte) ([]byte, error) {
+func packArguments(chainID sdk.Int, commandIDs []CommandID, commands []string, commandParams [][]byte) ([]byte, error) {
 	if len(commandIDs) != len(commands) || len(commandIDs) != len(commandParams) {
 		return nil, fmt.Errorf("length mismatch for command arguments")
 	}
 
 	uint256Type, err := abi.NewType("uint256", "uint256", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	uint8Type, err := abi.NewType("uint8", "uint8", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -1202,10 +1151,9 @@ func packArguments(chainID sdk.Int, r role, commandIDs []CommandID, commands []s
 		return nil, err
 	}
 
-	arguments := abi.Arguments{{Type: uint256Type}, {Type: uint8Type}, {Type: bytes32ArrayType}, {Type: stringArrayType}, {Type: bytesArrayType}}
+	arguments := abi.Arguments{{Type: uint256Type}, {Type: bytes32ArrayType}, {Type: stringArrayType}, {Type: bytesArrayType}}
 	result, err := arguments.Pack(
 		chainID.BigInt(),
-		r,
 		commandIDs,
 		commands,
 		commandParams,
@@ -1268,7 +1216,7 @@ func decodeMintTokenParams(bz []byte) (string, common.Address, *big.Int, error) 
 	return params[0].(string), params[1].(common.Address), params[2].(*big.Int), nil
 }
 
-func createDeployTokenParams(tokenName string, symbol string, decimals uint8, capacity sdk.Int, address Address) ([]byte, error) {
+func createDeployTokenParams(tokenName string, symbol string, decimals uint8, capacity sdk.Int, address Address, dailyMintLimit sdk.Uint) ([]byte, error) {
 	stringType, err := abi.NewType("string", "string", nil)
 	if err != nil {
 		return nil, err
@@ -1289,13 +1237,14 @@ func createDeployTokenParams(tokenName string, symbol string, decimals uint8, ca
 		return nil, err
 	}
 
-	arguments := abi.Arguments{{Type: stringType}, {Type: stringType}, {Type: uint8Type}, {Type: uint256Type}, {Type: addressType}}
+	arguments := abi.Arguments{{Type: stringType}, {Type: stringType}, {Type: uint8Type}, {Type: uint256Type}, {Type: addressType}, {Type: uint256Type}}
 	result, err := arguments.Pack(
 		tokenName,
 		symbol,
 		decimals,
 		capacity.BigInt(),
 		address,
+		dailyMintLimit.BigInt(),
 	)
 	if err != nil {
 		return nil, err
@@ -1305,34 +1254,36 @@ func createDeployTokenParams(tokenName string, symbol string, decimals uint8, ca
 }
 
 // decodeDeployTokenParams unpacks the parameters of a deploy token command
-func decodeDeployTokenParams(bz []byte) (string, string, uint8, *big.Int, common.Address, error) {
+func decodeDeployTokenParams(bz []byte) (string, string, uint8, *big.Int, common.Address, sdk.Uint, error) {
 	stringType, err := abi.NewType("string", "string", nil)
 	if err != nil {
-		return "", "", 0, nil, common.Address{}, err
+		return "", "", 0, nil, common.Address{}, sdk.OneUint(), err
 	}
 
 	uint8Type, err := abi.NewType("uint8", "uint8", nil)
 	if err != nil {
-		return "", "", 0, nil, common.Address{}, err
+		return "", "", 0, nil, common.Address{}, sdk.OneUint(), err
 	}
 
 	uint256Type, err := abi.NewType("uint256", "uint256", nil)
 	if err != nil {
-		return "", "", 0, nil, common.Address{}, err
+		return "", "", 0, nil, common.Address{}, sdk.OneUint(), err
 	}
 
 	addressType, err := abi.NewType("address", "address", nil)
 	if err != nil {
-		return "", "", 0, nil, common.Address{}, err
+		return "", "", 0, nil, common.Address{}, sdk.OneUint(), err
 	}
 
-	arguments := abi.Arguments{{Type: stringType}, {Type: stringType}, {Type: uint8Type}, {Type: uint256Type}, {Type: addressType}}
+	arguments := abi.Arguments{{Type: stringType}, {Type: stringType}, {Type: uint8Type}, {Type: uint256Type}, {Type: addressType}, {Type: uint256Type}}
 	params, err := StrictDecode(arguments, bz)
 	if err != nil {
-		return "", "", 0, nil, common.Address{}, err
+		return "", "", 0, nil, common.Address{}, sdk.OneUint(), err
 	}
 
-	return params[0].(string), params[1].(string), params[2].(uint8), params[3].(*big.Int), params[4].(common.Address), nil
+	dailyMintLimit := sdk.NewUintFromBigInt(params[5].(*big.Int))
+
+	return params[0].(string), params[1].(string), params[2].(uint8), params[3].(*big.Int), params[4].(common.Address), dailyMintLimit, nil
 }
 
 func createBurnTokenParams(symbol string, salt common.Hash) ([]byte, error) {
@@ -1408,6 +1359,9 @@ func decodeTransferSinglesigParams(bz []byte) (common.Address, error) {
 }
 
 func createTransferMultisigParams(addrs []common.Address, threshold uint8) ([]byte, error) {
+	sortedAddrs := slices.Map(addrs, func(a common.Address) Address { return Address(a) })
+	sort.SliceStable(sortedAddrs, func(i, j int) bool { return bytes.Compare(sortedAddrs[i].Bytes(), sortedAddrs[j].Bytes()) < 0 })
+
 	addressesType, err := abi.NewType("address[]", "address[]", nil)
 	if err != nil {
 		return nil, err
@@ -1419,7 +1373,7 @@ func createTransferMultisigParams(addrs []common.Address, threshold uint8) ([]by
 	}
 
 	arguments := abi.Arguments{{Type: addressesType}, {Type: uint256Type}}
-	result, err := arguments.Pack(addrs, big.NewInt(int64(threshold)))
+	result, err := arguments.Pack(sortedAddrs, big.NewInt(int64(threshold)))
 	if err != nil {
 		return nil, err
 	}
@@ -1725,12 +1679,6 @@ func (m EventMultisigOwnershipTransferred) Validate() error {
 func (m EventMultisigOperatorshipTransferred) Validate() error {
 	NonzeroAddress := func(addr Address) bool { return !addr.IsZeroAddress() }
 
-	if !slices.All(m.PreOperators, NonzeroAddress) {
-		return fmt.Errorf("invalid pre operators")
-	}
-	if m.PrevThreshold.IsZero() {
-		return fmt.Errorf("invalid pre threshold")
-	}
 	if !slices.All(m.NewOperators, NonzeroAddress) {
 		return fmt.Errorf("invalid new operators")
 	}
@@ -1773,7 +1721,7 @@ func (c Command) DecodeParams() (map[string]string, error) {
 		params["sourceTxHash"] = sourceTxID.Hex()
 		params["sourceEventIndex"] = sourceEventIndex.String()
 	case AxelarGatewayCommandDeployToken:
-		name, symbol, decs, cap, tokenAddress, err := decodeDeployTokenParams(c.Params)
+		name, symbol, decs, cap, tokenAddress, dailyMintLimit, err := decodeDeployTokenParams(c.Params)
 		if err != nil {
 			return nil, err
 		}
@@ -1783,6 +1731,7 @@ func (c Command) DecodeParams() (map[string]string, error) {
 		params["decimals"] = strconv.FormatUint(uint64(decs), 10)
 		params["cap"] = cap.String()
 		params["tokenAddress"] = tokenAddress.Hex()
+		params["dailyMintLimit"] = dailyMintLimit.String()
 	case AxelarGatewayCommandMintToken:
 		symbol, addr, amount, err := decodeMintTokenParams(c.Params)
 		if err != nil {
@@ -1800,28 +1749,20 @@ func (c Command) DecodeParams() (map[string]string, error) {
 
 		params["symbol"] = symbol
 		params["salt"] = salt.Hex()
-	case AxelarGatewayCommandTransferOwnership, AxelarGatewayCommandTransferOperatorship:
+	case AxelarGatewayCommandTransferOperatorship:
 		address, decodeSinglesigErr := decodeTransferSinglesigParams(c.Params)
 		addresses, threshold, decodeMultisigErr := decodeTransferMultisigParams(c.Params)
 
 		switch {
 		case decodeSinglesigErr == nil:
-			param := "newOwner"
-			if c.Command == AxelarGatewayCommandTransferOperatorship {
-				param = "newOperator"
-			}
-			params[param] = address.Hex()
+			params["newOperator"] = address.Hex()
 		case decodeMultisigErr == nil:
 			var addressStrs []string
 			for _, address := range addresses {
 				addressStrs = append(addressStrs, address.Hex())
 			}
 
-			param := "newOwners"
-			if c.Command == AxelarGatewayCommandTransferOperatorship {
-				param = "newOperators"
-			}
-			params[param] = strings.Join(addressStrs, ";")
+			params["newOperators"] = strings.Join(addressStrs, ";")
 			params["newThreshold"] = strconv.FormatUint(uint64(threshold), 10)
 		default:
 			return nil, fmt.Errorf("unsupported type of transfer key")

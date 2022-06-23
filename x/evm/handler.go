@@ -62,9 +62,6 @@ func NewHandler(k types.BaseKeeper, t types.TSS, v types.Voter, s types.Signer, 
 		case *types.CreatePendingTransfersRequest:
 			res, err := server.CreatePendingTransfers(sdk.WrapSDKContext(ctx), msg)
 			return sdk.WrapServiceResult(ctx, res, err)
-		case *types.CreateTransferOwnershipRequest:
-			res, err := server.CreateTransferOwnership(sdk.WrapSDKContext(ctx), msg)
-			return sdk.WrapServiceResult(ctx, res, err)
 		case *types.CreateTransferOperatorshipRequest:
 			res, err := server.CreateTransferOperatorship(sdk.WrapSDKContext(ctx), msg)
 			return sdk.WrapServiceResult(ctx, res, err)
