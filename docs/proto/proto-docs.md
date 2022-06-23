@@ -496,13 +496,6 @@
     - [TalliedVote](#axelar.vote.v1beta1.TalliedVote)
     - [VoteRecord](#axelar.vote.v1beta1.VoteRecord)
   
-- [vote/exported/v1beta1/types.proto](#vote/exported/v1beta1/types.proto)
-    - [PollMetadata](#vote.exported.v1beta1.PollMetadata)
-    - [Vote](#vote.exported.v1beta1.Vote)
-  
-- [vote/v1beta1/types.proto](#vote/v1beta1/types.proto)
-    - [TalliedVote](#vote.v1beta1.TalliedVote)
-  
 - [Scalar Value Types](#scalar-value-types)
 
 
@@ -2469,12 +2462,10 @@ vote can have any data type
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| POLL_STATE_UNSPECIFIED | 0 | these enum values are used for bitwise operations, therefore they need to be powers of 2 |
+| POLL_STATE_UNSPECIFIED | 0 |  |
 | POLL_STATE_PENDING | 1 |  |
 | POLL_STATE_COMPLETED | 2 |  |
-| POLL_STATE_FAILED | 4 |  |
-| POLL_STATE_EXPIRED | 8 |  |
-| POLL_STATE_ALLOW_OVERRIDE | 16 |  |
+| POLL_STATE_FAILED | 3 |  |
 
 
  <!-- end enums -->
@@ -7057,95 +7048,6 @@ validators voting for the same data
 | ----- | ---- | ----- | ----------- |
 | `voter` | [bytes](#bytes) |  |  |
 | `is_late` | [bool](#bool) |  |  |
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
-<a name="vote/exported/v1beta1/types.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## vote/exported/v1beta1/types.proto
-
-
-
-<a name="vote.exported.v1beta1.PollMetadata"></a>
-
-### PollMetadata
-PollMetadata represents a poll with write-in voting, i.e. the result of the
-vote can have any data type
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `key` | [axelar.vote.exported.v1beta1.PollKey](#axelar.vote.exported.v1beta1.PollKey) |  |  |
-| `expires_at` | [int64](#int64) |  |  |
-| `result` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
-| `voting_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
-| `state` | [axelar.vote.exported.v1beta1.PollState](#axelar.vote.exported.v1beta1.PollState) |  |  |
-| `min_voter_count` | [int64](#int64) |  |  |
-| `voters` | [axelar.vote.exported.v1beta1.Voter](#axelar.vote.exported.v1beta1.Voter) | repeated |  |
-| `total_voting_power` | [bytes](#bytes) |  |  |
-| `reward_pool_name` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="vote.exported.v1beta1.Vote"></a>
-
-### Vote
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `results` | [google.protobuf.Any](#google.protobuf.Any) | repeated |  |
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
-<a name="vote/v1beta1/types.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## vote/v1beta1/types.proto
-
-
-
-<a name="vote.v1beta1.TalliedVote"></a>
-
-### TalliedVote
-TalliedVote represents a vote for a poll with the accumulated stake of all
-validators voting for the same data
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `tally` | [bytes](#bytes) |  |  |
-| `voters` | [bytes](#bytes) | repeated |  |
-| `data` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
 
 
 

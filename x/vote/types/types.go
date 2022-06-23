@@ -104,14 +104,6 @@ func (p Poll) Is(state exported.PollState) bool {
 	return p.PollMetadata.Is(state)
 }
 
-// SetExpired sets the poll to be expired
-func (p *Poll) SetExpired() {
-	if !p.Is(exported.NonExistent) {
-		p.State |= exported.Expired
-	}
-	p.SetMetadata(p.PollMetadata)
-}
-
 // GetResult returns the result of the poll. Returns nil if the poll is not completed.
 func (p Poll) GetResult() codec.ProtoMarshaler {
 	if p.Result == nil {
@@ -167,12 +159,6 @@ func (p Poll) getVotingPower(v sdk.ValAddress) int64 {
 	return 0
 }
 
-func (p Poll) isWithinGracePeriod(blockHeight int64) bool {
-	return !p.Is(exported.Expired) &&
-		p.Is(exported.Completed) &&
-		blockHeight <= p.CompletedAt+int64(p.GracePeriod)
-}
-
 // Vote records the given vote
 func (p *Poll) Vote(voter sdk.ValAddress, blockHeight int64, data codec.ProtoMarshaler) (codec.ProtoMarshaler, bool, error) {
 	if p.Is(exported.NonExistent) {
@@ -191,9 +177,8 @@ func (p *Poll) Vote(voter sdk.ValAddress, blockHeight int64, data codec.ProtoMar
 	switch {
 	case p.Is(exported.Failed):
 		return nil, false, nil
-	case p.Is(exported.Expired):
-		return nil, false, fmt.Errorf("poll %s has expired already", p.GetID().String())
-	case p.Is(exported.Completed) && p.isWithinGracePeriod(blockHeight):
+	case p.Is(exported.Completed) && blockHeight <= p.CompletedAt+int64(p.GracePeriod):
+		// poll is completed but within the grace period for late votes
 		p.SetVote(voter, data, votingPower, true)
 		p.logger.Debug("received late vote for poll",
 			"voter", voter.String(),

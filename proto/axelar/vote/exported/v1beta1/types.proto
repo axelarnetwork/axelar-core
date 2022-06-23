@@ -70,14 +70,9 @@ enum PollState {
   option (gogoproto.goproto_enum_prefix) = false;
   option (gogoproto.goproto_enum_stringer) = true;
 
-  // these enum values are used for bitwise operations, therefore they need to
-  // be powers of 2
   POLL_STATE_UNSPECIFIED = 0
       [ (gogoproto.enumvalue_customname) = "NonExistent" ];
   POLL_STATE_PENDING = 1 [ (gogoproto.enumvalue_customname) = "Pending" ];
   POLL_STATE_COMPLETED = 2 [ (gogoproto.enumvalue_customname) = "Completed" ];
-  POLL_STATE_FAILED = 4 [ (gogoproto.enumvalue_customname) = "Failed" ];
-  POLL_STATE_EXPIRED = 8 [ (gogoproto.enumvalue_customname) = "Expired" ];
-  POLL_STATE_ALLOW_OVERRIDE = 16
-      [ (gogoproto.enumvalue_customname) = "AllowOverride" ];
+  POLL_STATE_FAILED = 3 [ (gogoproto.enumvalue_customname) = "Failed" ];
 }

@@ -34,9 +34,6 @@ func handlePollsAtExpiry(ctx sdk.Context, k types.Voter) error {
 
 		switch {
 		case poll.Is(exported.Pending):
-			// TODO: no need to set expired since polls are deleted right after
-			poll.SetExpired()
-
 			if err := voteHandler.HandleExpiredPoll(ctx, poll); err != nil {
 				return err
 			}
