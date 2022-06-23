@@ -32,11 +32,7 @@ func (m PollModuleMetadata) ValidateBasic() error {
 
 // Is checks if the poll is in the given state
 func (m PollMetadata) Is(state PollState) bool {
-	// this special case check is needed, because 0 & x == 0 is true for any x
-	if state == NonExistent {
-		return m.State == NonExistent
-	}
-	return state&m.State == state
+	return m.State == state
 }
 
 // Validate returns an error if the poll metadata is not valid; nil otherwise
@@ -197,7 +193,6 @@ type Poll interface {
 	HasVotedLate(voter sdk.ValAddress) bool
 	Vote(voter sdk.ValAddress, blockHeight int64, data codec.ProtoMarshaler) (result codec.ProtoMarshaler, voted bool, err error)
 	Is(state PollState) bool
-	SetExpired()
 	GetResult() codec.ProtoMarshaler
 	GetRewardPoolName() (string, bool)
 	GetID() PollID

@@ -102,21 +102,6 @@ func TestPoll(t *testing.T) {
 		}
 	}
 
-	t.Run("SetExpired", testutils.Func(func(t *testing.T) {
-		givenPoll.
-			When("poll is pending", withState(exported.Pending)).
-			Then("should set poll as expired", func(t *testing.T) {
-				pollStore.SetMetadataFunc = func(exported.PollMetadata) {}
-
-				poll.SetExpired()
-
-				assert.True(t, poll.Is(exported.Expired))
-				assert.Len(t, pollStore.SetMetadataCalls(), 1)
-				assert.True(t, pollStore.SetMetadataCalls()[0].Metadata.Is(exported.Expired))
-			}).
-			Run(t)
-	}).Repeat(repeats))
-
 	t.Run("Vote", testutils.Func(func(t *testing.T) {
 		givenPoll.
 			When("poll does not exist", withState(exported.NonExistent)).
@@ -134,7 +119,7 @@ func TestPoll(t *testing.T) {
 			Run(t)
 
 		givenPoll.
-			When("poll is in any state", withState(rand.Of(exported.Completed, exported.Failed, exported.Pending, exported.Expired))).
+			When("poll is in any state", withState(rand.Of(exported.Completed, exported.Failed, exported.Pending))).
 			When("the voter has voted already", func() {
 				pollStore.HasVotedFunc = func(v sdk.ValAddress) bool { return true }
 			}).
@@ -165,23 +150,6 @@ func TestPoll(t *testing.T) {
 				assert.Nil(t, result)
 				assert.False(t, voted)
 				assert.NoError(t, err)
-			}).
-			Run(t)
-
-		givenPoll.
-			When("poll is expired", withState(exported.Expired)).
-			Then("should return error", func(t *testing.T) {
-				pollStore.HasVotedFunc = func(v sdk.ValAddress) bool { return false }
-
-				result, voted, err := poll.Vote(
-					rand.Of(poll.Voters...).Validator,
-					rand.PosI64(),
-					&gogoprototypes.BoolValue{Value: true},
-				)
-
-				assert.Nil(t, result)
-				assert.False(t, voted)
-				assert.ErrorContains(t, err, "expired")
 			}).
 			Run(t)
 

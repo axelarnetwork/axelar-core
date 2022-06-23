@@ -102,6 +102,10 @@ func (k Keeper) initializePoll(ctx sdk.Context, voters []exported.Voter, pollPro
 
 	k.setPollCount(ctx, pollCount+1)
 
+	k.Logger(ctx).Info("created poll",
+		"poll", pollID.String(),
+	)
+
 	return pollID, nil
 }
 
