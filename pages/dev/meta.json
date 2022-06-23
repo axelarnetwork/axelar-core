@@ -1,10 +1,9 @@
 {
   "intro": "Introduction",
   "get-started": "Get started",
-  "tokens": "Transfer tokens",
+  "tokens": "Send tokens",
   "gmp": "General Message Passing",
-  "gas-receiver": "Axelar Gas Receiver",
-  "gmp-tracker": "GMP status tracker",
+  "axelarjs-sdk": "AxelarJS SDK",
   "chain-names": "Chain names",
   "solidity-utilities": "Solidity Utilities"
 }

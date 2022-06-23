@@ -1,52 +1,12 @@
-# General Message Passing
-
-With General Message Passing you can:
-
-- Call a contract on chain B from chain A.
-- Call a contract on chain B from chain A and attach some tokens.
-
-For GMP to work, both chain A and chain B must be EVM chains with a deployed Axelar Gateway contract.
-
-See [Chain names](chain-names) for a list of EVM chains that have an Axelar Gateway deployed.
-
-![gmp-diagram.png](/images/gmp-diagram.png)
-
-## Call a contract on chain B from chain A
-
-To call a contract on chain B from chain A the user needs to call `callContract` on the gateway of chain A, specifying:
-
-- The destination chain: must an EVM chain from [Chain names](chain-names).
-- The destination contract address: must implement the `IAxelarExecutable` interface defined in [IAxelarExecutable.sol](https://github.com/axelarnetwork/axelar-cgp-solidity/blob/main/src/interfaces/IAxelarExecutable.sol).
-- The payload `bytes` to pass to the destination contract.
-
-```solidity
-function callContract(
-    string memory destinationChain,
-    string memory contractAddress,
-    bytes memory payload
-) external;
-```
-
-`IAxelarExecutable` has an `_execute` function that will be triggered by the Axelar network after the `callContract` function has been executed. You can write any custom logic there.
-
-```solidity
-function _execute(
-    string memory sourceChain,
-    string memory sourceAddress,
-    bytes calldata payload
-) internal virtual {}
-```
-
-See [Get started](get-started) for info on working examples.
 
 ## Call a contract on chain B from chain A and attach some tokens
 
 To call chain B from chain A and send some tokens along the way, the user needs to call `callContractWithToken` on the gateway of chain A, specifying:
 
-- The destination chain: must an EVM chain from [Chain names](chain-names).
-- The destination contract address: must implement the `IAxelarExecutable` interface defined in [IAxelarExecutable.sol](https://github.com/axelarnetwork/axelar-cgp-solidity/blob/main/src/interfaces/IAxelarExecutable.sol).
+- The destination chain: must be an EVM chain from [Chain names](../chain-names).
+- The destination contract address: must implement the `IAxelarExecutable` interface defined in [IAxelarExecutable.sol](https://github.com/axelarnetwork/axelar-cgp-solidity/blob/main/contracts/interfaces/IAxelarExecutable.sol).
 - The payload `bytes` to pass to the destination contract.
-- The symbol of the token to transfer: must be a supported asset [[Mainnet](../resources/mainnet) | [Testnet](../resources/testnet) | [Testnet-2](../resources/testnet-2)].
+- The symbol of the token to transfer: must be a supported asset [[Mainnet](/resources/mainnet) | [Testnet](/resources/testnet) | [Testnet-2](/resources/testnet-2)].
 - The amount of the token to transfer.
 
 As per snippet below.
@@ -75,8 +35,6 @@ function _executeWithToken(
 ) internal virtual {}
 ```
 
-See [Get started](get-started) for info on working examples.
-
 ### Example
 
 Suppose our destination contract wants to forward the token it received to a recipient provided in the payload. It could be done this way.
@@ -99,7 +57,7 @@ function _executeWithToken(
 }
 ```
 
-### Encode the payload as `bytes`
+*** __Ensure the payload is encoded `bytes`.__
 
 The `payload` passed to `callContract` (and ultimately to the `_execute` and `_executeWithToken`) has type `bytes`. Use the ABI encoder/decoder convert your data to `bytes`.
 
