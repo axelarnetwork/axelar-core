@@ -8,6 +8,8 @@ import "gogoproto/gogo.proto";
 option (gogoproto.goproto_getters_all) = false;
 
 message QueueState {
+  option (gogoproto.stable_marshaler) = true;
+
   message Item {
     bytes key = 1;
     bytes value = 2;

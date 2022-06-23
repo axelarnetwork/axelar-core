@@ -16,7 +16,11 @@ import (
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
-//go:generate moq -out ./mock/types.go -pkg mock . SDKValidator Snapshotter Slasher Tss
+//go:generate moq -out ./mock/types.go -pkg mock . SDKValidator Snapshotter Slasher Tss ValidatorI
+
+// ValidatorI provides necessary functions to the validator information
+type ValidatorI interface {
+}
 
 // NewSnapshot is the constructor of Snapshot
 func NewSnapshot(
@@ -36,7 +40,56 @@ func NewSnapshot(
 		Counter:                    counter,
 		KeyShareDistributionPolicy: keyShareDistributionPolicy,
 		CorruptionThreshold:        corruptionThreshold,
+		Participants:               nil,
+		BondedWeight:               sdk.ZeroUint(),
 	}
+}
+
+// ValidateBasic returns an error if the given participant is invalid; nil otherwise
+func (m Participant) ValidateBasic() error {
+	if err := sdk.VerifyAddressFormat(m.Address); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// ValidateBasic returns an error if the given snapshot is invalid; nil otherwise
+func (m Snapshot) ValidateBasic() error {
+	if len(m.Participants) == 0 {
+		return fmt.Errorf("snapshot cannot have no participant")
+	}
+
+	if m.BondedWeight.IsZero() {
+		return fmt.Errorf("snapshot cannot have zero total weight")
+	}
+
+	if m.Height <= 0 {
+		return fmt.Errorf("snapshot must height >0")
+	}
+
+	if m.Timestamp.IsZero() {
+		return fmt.Errorf("snapshot must timestamp >0")
+	}
+
+	sumWeight := sdk.ZeroUint()
+	for addr, p := range m.Participants {
+		if _, err := sdk.ValAddressFromBech32(addr); err != nil {
+			return err
+		}
+
+		if err := p.ValidateBasic(); err != nil {
+			return err
+		}
+
+		sumWeight = sumWeight.Add(p.Weight)
+	}
+
+	if sumWeight.GT(m.BondedWeight) {
+		return fmt.Errorf("snapshot cannot have sum of participant weight greater than total weight")
+	}
+
+	return nil
 }
 
 // Validate returns an error if the snapshot is not valid; nil otherwise
