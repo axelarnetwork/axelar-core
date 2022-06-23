@@ -139,7 +139,9 @@
     - [QueryTxResponse.SigningInfo](#axelar.bitcoin.v1beta1.QueryTxResponse.SigningInfo)
   
 - [axelar/snapshot/exported/v1beta1/types.proto](#axelar/snapshot/exported/v1beta1/types.proto)
+    - [Participant](#axelar.snapshot.exported.v1beta1.Participant)
     - [Snapshot](#axelar.snapshot.exported.v1beta1.Snapshot)
+    - [Snapshot.ParticipantsEntry](#axelar.snapshot.exported.v1beta1.Snapshot.ParticipantsEntry)
     - [Validator](#axelar.snapshot.exported.v1beta1.Validator)
   
     - [ValidatorIllegibility](#axelar.snapshot.exported.v1beta1.ValidatorIllegibility)
@@ -2292,6 +2294,22 @@ deposit address
 
 
 
+<a name="axelar.snapshot.exported.v1beta1.Participant"></a>
+
+### Participant
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [bytes](#bytes) |  |  |
+| `weight` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
 <a name="axelar.snapshot.exported.v1beta1.Snapshot"></a>
 
 ### Snapshot
@@ -2300,13 +2318,31 @@ deposit address
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `validators` | [Validator](#axelar.snapshot.exported.v1beta1.Validator) | repeated |  |
+| `validators` | [Validator](#axelar.snapshot.exported.v1beta1.Validator) | repeated | **Deprecated.**  |
+| `total_share_count` | [bytes](#bytes) |  | **Deprecated.**  |
+| `counter` | [int64](#int64) |  | **Deprecated.**  |
+| `key_share_distribution_policy` | [axelar.tss.exported.v1beta1.KeyShareDistributionPolicy](#axelar.tss.exported.v1beta1.KeyShareDistributionPolicy) |  | **Deprecated.**  |
+| `corruption_threshold` | [int64](#int64) |  | **Deprecated.**  |
 | `timestamp` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
 | `height` | [int64](#int64) |  |  |
-| `total_share_count` | [bytes](#bytes) |  |  |
-| `counter` | [int64](#int64) |  |  |
-| `key_share_distribution_policy` | [axelar.tss.exported.v1beta1.KeyShareDistributionPolicy](#axelar.tss.exported.v1beta1.KeyShareDistributionPolicy) |  |  |
-| `corruption_threshold` | [int64](#int64) |  |  |
+| `participants` | [Snapshot.ParticipantsEntry](#axelar.snapshot.exported.v1beta1.Snapshot.ParticipantsEntry) | repeated |  |
+| `bonded_weight` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="axelar.snapshot.exported.v1beta1.Snapshot.ParticipantsEntry"></a>
+
+### Snapshot.ParticipantsEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key` | [string](#string) |  |  |
+| `value` | [Participant](#axelar.snapshot.exported.v1beta1.Participant) |  |  |
 
 
 

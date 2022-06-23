@@ -1136,3 +1136,25 @@ func (mock *TssMock) IsOperatorAvailableCalls() []struct {
 	mock.lockIsOperatorAvailable.RUnlock()
 	return calls
 }
+
+// Ensure, that ValidatorIMock does implement snapshotexported.ValidatorI.
+// If this is not the case, regenerate this file with moq.
+var _ snapshotexported.ValidatorI = &ValidatorIMock{}
+
+// ValidatorIMock is a mock implementation of snapshotexported.ValidatorI.
+//
+// 	func TestSomethingThatUsesValidatorI(t *testing.T) {
+//
+// 		// make and configure a mocked snapshotexported.ValidatorI
+// 		mockedValidatorI := &ValidatorIMock{
+// 		}
+//
+// 		// use mockedValidatorI in code that requires snapshotexported.ValidatorI
+// 		// and then make assertions.
+//
+// 	}
+type ValidatorIMock struct {
+	// calls tracks calls to the methods.
+	calls struct {
+	}
+}
