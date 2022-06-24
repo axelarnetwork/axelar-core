@@ -60,15 +60,17 @@ func getRandomSnapshot(counter int64) exported.Snapshot {
 		totalShareCount = totalShareCount.AddRaw(shareCount)
 	}
 
-	return exported.NewSnapshot(
-		validators,
-		time.Time{},
-		rand.PosI64(),
-		totalShareCount,
-		counter,
-		tss.WeightedByStake,
-		tss.ComputeAbsCorruptionThreshold(tsstypes.DefaultParams().KeyRequirements[0].SafetyThreshold, totalShareCount),
-	)
+	return exported.Snapshot{
+		Validators:                 validators,
+		Timestamp:                  time.Time{},
+		Height:                     rand.PosI64(),
+		TotalShareCount:            totalShareCount,
+		Counter:                    counter,
+		KeyShareDistributionPolicy: tss.WeightedByStake,
+		CorruptionThreshold:        tss.ComputeAbsCorruptionThreshold(tsstypes.DefaultParams().KeyRequirements[0].SafetyThreshold, totalShareCount),
+		Participants:               nil,
+		BondedWeight:               sdk.ZeroUint(),
+	}
 }
 
 func TestExportGenesis(t *testing.T) {
