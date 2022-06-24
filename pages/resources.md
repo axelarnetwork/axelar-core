@@ -50,7 +50,7 @@
     <td>
       https://axelartest-rpc.quickapi.com/ <br/>
       https://services.staketab.com/axelar-testnet-1-rpc <br/>
-      https://axelar-testnet-rpc.qubelabs.io/
+      https://axelar-testnet-rpc.qubelabs.io/ <br/>
     </td>
     <td>
       https://services.staketab.com/axelar-testnet-2-rpc
@@ -61,7 +61,8 @@
     <td>
       https://axelar-lcd.quickapi.com/ <br/>
       https://axelar-lcd.qubelabs.io/ <br/>
-      https://services.staketab.com/axelar-api
+      https://services.staketab.com/axelar-api <br/>
+      https://axelar-rest.chainode.tech/
     </td>
     <td>
       https://axelartest-lcd.quickapi.com/ <br/>
@@ -76,7 +77,9 @@
     <td>GRPC endpoints</td>
     <td>
       services.staketab.com:9080 <br/>
-      axelar-grpc.qubelabs.io:9092
+      axelar-grpc.qubelabs.io:9092 <br/>
+      axelar-grpc.chainode.tech <br/>
+      axelar-grpcweb.chainode.tech
     </td>
     <td>
       services.staketab.com:9090 <br/>
