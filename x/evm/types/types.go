@@ -101,6 +101,11 @@ const (
 	axelarGatewayFuncExecute                        = "execute"
 )
 
+// NewPollModuleMetadata is the constructor of PollModuleMetadata
+func NewPollModuleMetadata(chainName nexus.ChainName) *PollModuleMetadata {
+	return &PollModuleMetadata{ChainName: chainName}
+}
+
 // IsEVMChain returns true if a chain is an EVM chain
 func IsEVMChain(chain nexus.Chain) bool {
 	return chain.Module == ModuleName
@@ -1794,9 +1799,8 @@ func UnpackEvents(cdc codec.Codec, any *codectypes.Any) (voteEvents VoteEvents, 
 }
 
 // PackEvents converts Event to Any slice
-func PackEvents(chain nexus.ChainName, events []Event) (*codectypes.Any, error) {
+func PackEvents(events []Event) (*codectypes.Any, error) {
 	return codectypes.NewAnyWithValue(&VoteEvents{
-		Chain:  chain,
 		Events: events,
 	})
 }

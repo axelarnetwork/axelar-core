@@ -79,13 +79,13 @@ func TestHandleResult(t *testing.T) {
 	t.Run("Given vote When events are not from the same source chain THEN return error", testutils.Func(func(t *testing.T) {
 		setup()
 
-		voteEvents, err := types.PackEvents(nexus.ChainName(rand.Str(5)), randTransferEvents(int(rand.I64Between(5, 10))))
+		voteEvents, err := types.PackEvents(randTransferEvents(int(rand.I64Between(5, 10))))
 		if err != nil {
 			panic(err)
 		}
 		result.Result = voteEvents
 
-		err = handler.HandleResult(ctx, &result)
+		err = handler.HandleResult(ctx, types.NewPollModuleMetadata(nexus.ChainName(rand.Str(5))), &result)
 
 		assert.Error(t, err)
 	}).Repeat(repeats))
@@ -93,13 +93,13 @@ func TestHandleResult(t *testing.T) {
 	t.Run("Given vote When events empty THEN should nothing and return nil", testutils.Func(func(t *testing.T) {
 		setup()
 
-		voteEvents, err := types.PackEvents(evmChain, []types.Event{})
+		voteEvents, err := types.PackEvents([]types.Event{})
 		if err != nil {
 			panic(err)
 		}
 		result.Result = voteEvents
 
-		err = handler.HandleResult(ctx, &result)
+		err = handler.HandleResult(ctx, types.NewPollModuleMetadata(evmChain), &result)
 
 		assert.NoError(t, err)
 	}).Repeat(repeats))
@@ -109,13 +109,13 @@ func TestHandleResult(t *testing.T) {
 		n.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 			return nexus.Chain{}, false
 		}
-		voteEvents, err := types.PackEvents(evmChain, randTransferEvents(int(rand.I64Between(5, 10))))
+		voteEvents, err := types.PackEvents(randTransferEvents(int(rand.I64Between(5, 10))))
 		if err != nil {
 			panic(err)
 		}
 		result.Result = voteEvents
 
-		err = handler.HandleResult(ctx, &result)
+		err = handler.HandleResult(ctx, types.NewPollModuleMetadata(evmChain), &result)
 
 		assert.Error(t, err)
 	}).Repeat(repeats))
@@ -125,13 +125,13 @@ func TestHandleResult(t *testing.T) {
 
 		n.IsChainActivatedFunc = func(sdk.Context, nexus.Chain) bool { return false }
 		eventNum := int(rand.I64Between(5, 10))
-		voteEvents, err := types.PackEvents(evmChain, randTransferEvents(eventNum))
+		voteEvents, err := types.PackEvents(randTransferEvents(eventNum))
 		if err != nil {
 			panic(err)
 		}
 		result.Result = voteEvents
 
-		err = handler.HandleResult(ctx, &result)
+		err = handler.HandleResult(ctx, types.NewPollModuleMetadata(evmChain), &result)
 
 		assert.NoError(t, err)
 	}).Repeat(repeats))
@@ -142,7 +142,7 @@ func TestHandleResult(t *testing.T) {
 		incorrectResult, _ := codectypes.NewAnyWithValue(types.NewConfirmGatewayTxRequest(rand.AccAddr(), rand.Str(5), types.Hash(common.BytesToHash(rand.Bytes(common.HashLength)))))
 		result.Result = incorrectResult
 
-		err := handler.HandleResult(ctx, &result)
+		err := handler.HandleResult(ctx, types.NewPollModuleMetadata(evmChain), &result)
 
 		assert.Error(t, err)
 	}).Repeat(repeats))
@@ -154,13 +154,13 @@ func TestHandleResult(t *testing.T) {
 			return types.Event{}, true
 		}
 
-		voteEvents, err := types.PackEvents(evmChain, randTransferEvents(int(rand.I64Between(5, 10))))
+		voteEvents, err := types.PackEvents(randTransferEvents(int(rand.I64Between(5, 10))))
 		if err != nil {
 			panic(err)
 		}
 		result.Result = voteEvents
 
-		err = handler.HandleResult(ctx, &result)
+		err = handler.HandleResult(ctx, types.NewPollModuleMetadata(evmChain), &result)
 
 		assert.Error(t, err)
 	}).Repeat(repeats))

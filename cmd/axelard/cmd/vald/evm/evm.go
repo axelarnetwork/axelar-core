@@ -117,7 +117,7 @@ func (mgr Mgr) ProcessDepositConfirmation(e tmEvents.Event) (err error) {
 		return true
 	})
 
-	v, err := packEvents(chain, events)
+	v, err := packEvents(events)
 	if err != nil {
 		return err
 	}
@@ -173,7 +173,7 @@ func (mgr Mgr) ProcessTokenConfirmation(e tmEvents.Event) error {
 		return true
 	})
 
-	v, err := packEvents(chain, events)
+	v, err := packEvents(events)
 	if err != nil {
 		return err
 	}
@@ -248,7 +248,7 @@ func (mgr Mgr) ProcessTransferKeyConfirmation(e tmEvents.Event) (err error) {
 		return true
 	})
 
-	v, err := packEvents(chain, events)
+	v, err := packEvents(events)
 	if err != nil {
 		return err
 	}
@@ -349,7 +349,7 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(e tmEvents.Event) error {
 		return true
 	})
 
-	v, err := packEvents(chain, events)
+	v, err := packEvents(events)
 	if err != nil {
 		return err
 	}
@@ -848,10 +848,10 @@ func unpackMultisigTransferKeyEvent(log *geth.Log) ([]common.Address, *big.Int, 
 	return params[0].([]common.Address), params[1].(*big.Int), nil
 }
 
-func packEvents(chain nexus.ChainName, events []evmTypes.Event) (vote.Vote, error) {
+func packEvents(events []evmTypes.Event) (vote.Vote, error) {
 	var v vote.Vote
 
-	voteEvents, err := evmTypes.PackEvents(chain, events)
+	voteEvents, err := evmTypes.PackEvents(events)
 	if err != nil {
 		return vote.Vote{}, sdkerrors.Wrap(err, "Pack events failed")
 	}

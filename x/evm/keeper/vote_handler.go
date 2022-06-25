@@ -43,13 +43,22 @@ func (v voteHandler) HandleExpiredPoll(ctx sdk.Context, poll vote.Poll) error {
 		return fmt.Errorf("reward pool not set for poll %s", poll.GetID().String())
 	}
 
+	_, metadata := poll.GetModuleMetadata()
+	chainName := metadata.(*types.PollModuleMetadata).ChainName
+	chain, ok := v.nexus.GetChain(ctx, chainName)
+	if !ok {
+		return fmt.Errorf("%s is not a registered chain", chainName)
+	}
+
 	// TODO: MarkChainMaintainerMissingVote for those who didn't vote in time. Need
 	// to be able to get chain of expired polls in order to do it.
 	rewardPool := v.rewarder.GetPool(ctx, rewardPoolName)
 	// Penalize voters who failed to vote
 	for _, voter := range poll.GetVoters() {
 		if !poll.HasVoted(voter.Validator) {
+			v.nexus.MarkChainMaintainerMissingVote(ctx, chain, voter.Validator, true)
 			rewardPool.ClearRewards(voter.Validator)
+
 			v.keeper.Logger(ctx).Debug(fmt.Sprintf("penalized voter %s due to timeout", voter.Validator.String()),
 				"voter", voter.Validator.String(),
 				"poll", poll.GetID().String())
@@ -60,14 +69,12 @@ func (v voteHandler) HandleExpiredPoll(ctx sdk.Context, poll vote.Poll) error {
 }
 
 func (v voteHandler) HandleCompletedPoll(ctx sdk.Context, poll vote.Poll) error {
-	voteEvents, err := types.UnpackEvents(v.cdc, poll.GetResult().(*vote.Vote).Result)
-	if err != nil {
-		return err
-	}
+	_, metadata := poll.GetModuleMetadata()
+	chainName := metadata.(*types.PollModuleMetadata).ChainName
 
-	chain, ok := v.nexus.GetChain(ctx, voteEvents.Chain)
+	chain, ok := v.nexus.GetChain(ctx, chainName)
 	if !ok {
-		return fmt.Errorf("%s is not a registered chain", voteEvents.Chain)
+		return fmt.Errorf("%s is not a registered chain", chainName)
 	}
 
 	rewardPoolName, ok := poll.GetRewardPoolName()
@@ -109,27 +116,29 @@ func (v voteHandler) HandleCompletedPoll(ctx sdk.Context, poll vote.Poll) error 
 	return nil
 }
 
-func (v voteHandler) HandleResult(ctx sdk.Context, result codec.ProtoMarshaler) error {
+func (v voteHandler) HandleResult(ctx sdk.Context, metadata codec.ProtoMarshaler, result codec.ProtoMarshaler) error {
 	voteEvents, err := types.UnpackEvents(v.cdc, result.(*vote.Vote).Result)
 	if err != nil {
 		return err
 	}
 
+	chainName := metadata.(*types.PollModuleMetadata).ChainName
+
 	if v.IsFalsyResult(result) {
 		return nil
 	}
 
-	if slices.Any(voteEvents.Events, func(event types.Event) bool { return event.Chain != voteEvents.Chain }) {
+	if slices.Any(voteEvents.Events, func(event types.Event) bool { return event.Chain != chainName }) {
 		return fmt.Errorf("events are not from the same source chain")
 	}
 
-	chain, ok := v.nexus.GetChain(ctx, voteEvents.Chain)
+	chain, ok := v.nexus.GetChain(ctx, chainName)
 	if !ok {
-		return fmt.Errorf("%s is not a registered chain", voteEvents.Chain)
+		return fmt.Errorf("%s is not a registered chain", chainName)
 	}
 
-	if !v.keeper.HasChain(ctx, voteEvents.Chain) {
-		return fmt.Errorf("%s is not an evm chain", voteEvents.Chain)
+	if !v.keeper.HasChain(ctx, chainName) {
+		return fmt.Errorf("%s is not an evm chain", chainName)
 	}
 
 	ck := v.keeper.ForChain(chain.Name)

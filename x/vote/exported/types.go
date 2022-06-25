@@ -18,7 +18,7 @@ type VoteHandler interface {
 	IsFalsyResult(result codec.ProtoMarshaler) bool
 	HandleExpiredPoll(ctx sdk.Context, poll Poll) error
 	HandleCompletedPoll(ctx sdk.Context, poll Poll) error
-	HandleResult(ctx sdk.Context, result codec.ProtoMarshaler) error
+	HandleResult(ctx sdk.Context, moduleMetadata codec.ProtoMarshaler, result codec.ProtoMarshaler) error
 }
 
 // ValidateBasic returns an error if the poll module metadata is not valid; nil otherwise
@@ -117,9 +117,23 @@ func (p PollProperty) apply(metadata PollMetadata) PollMetadata {
 var _ codectypes.UnpackInterfacesMessage = PollMetadata{}
 
 // UnpackInterfaces implements UnpackInterfacesMessage
+func (m PollModuleMetadata) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
+	var data codec.ProtoMarshaler
+	return unpacker.UnpackAny(m.Metadata, &data)
+}
+
+// UnpackInterfaces implements UnpackInterfacesMessage
 func (m PollMetadata) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
 	var data codec.ProtoMarshaler
-	return unpacker.UnpackAny(m.Result, &data)
+	if err := unpacker.UnpackAny(m.Result, &data); err != nil {
+		return err
+	}
+
+	if err := m.ModuleMetadata.UnpackInterfaces(unpacker); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // With returns a new metadata object with all the given properties set
@@ -174,12 +188,21 @@ func GracePeriod(gracePeriod int64) PollProperty {
 }
 
 // ModuleMetadata sets the module metadata on the poll
-func ModuleMetadata(module string) PollProperty {
+func ModuleMetadata(module string, moduleMetadata ...codec.ProtoMarshaler) PollProperty {
+	var any *codectypes.Any
+	var err error
+
+	if len(moduleMetadata) > 0 {
+		any, err = codectypes.NewAnyWithValue(moduleMetadata[0])
+		if err != nil {
+			panic(err)
+		}
+	}
+
 	return PollProperty{do: func(metadata PollMetadata) PollMetadata {
-		// TODO: attach the actual module metadata
 		metadata.ModuleMetadata = PollModuleMetadata{
 			Module:   module,
-			Metadata: nil,
+			Metadata: any,
 		}
 
 		return metadata
@@ -198,6 +221,6 @@ type Poll interface {
 	GetID() PollID
 	GetVoters() []Voter
 	GetTotalVotingPower() sdk.Int
-	GetModuleMetadata() PollModuleMetadata
+	GetModuleMetadata() (string, codec.ProtoMarshaler)
 	Delete()
 }

@@ -114,8 +114,12 @@ func (p Poll) GetResult() codec.ProtoMarshaler {
 }
 
 // GetModuleMetadata returns the module metadata
-func (p Poll) GetModuleMetadata() exported.PollModuleMetadata {
-	return p.ModuleMetadata
+func (p Poll) GetModuleMetadata() (string, codec.ProtoMarshaler) {
+	if p.ModuleMetadata.Metadata == nil {
+		return p.ModuleMetadata.Module, nil
+	}
+
+	return p.ModuleMetadata.Module, p.ModuleMetadata.Metadata.GetCachedValue().(codec.ProtoMarshaler)
 }
 
 // Initialize initializes the poll

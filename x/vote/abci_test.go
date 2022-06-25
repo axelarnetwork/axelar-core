@@ -15,6 +15,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
 	utilsMock "github.com/axelarnetwork/axelar-core/utils/mock"
+	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 	exportedMock "github.com/axelarnetwork/axelar-core/x/vote/exported/mock"
@@ -38,8 +39,10 @@ func TestHandlePollsAtExpiry(t *testing.T) {
 		pollQueue = &utilsMock.KVQueueMock{}
 		voteHandler = &exportedMock.VoteHandlerMock{}
 		poll = &exportedMock.PollMock{
-			GetIDFunc:             func() exported.PollID { return exported.PollID(rand.PosI64()) },
-			GetModuleMetadataFunc: func() exported.PollModuleMetadata { return exported.PollModuleMetadata{Module: evmtypes.ModuleName} },
+			GetIDFunc: func() exported.PollID { return exported.PollID(rand.PosI64()) },
+			GetModuleMetadataFunc: func() (string, codec.ProtoMarshaler) {
+				return evmtypes.ModuleName, evmtypes.NewPollModuleMetadata(evm.Ethereum.Name)
+			},
 		}
 		keeper = &mock.VoterMock{
 			LoggerFunc:       func(ctx sdk.Context) log.Logger { return log.NewNopLogger() },

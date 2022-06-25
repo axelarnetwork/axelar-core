@@ -5,7 +5,6 @@ import (
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	gogoprototypes "github.com/gogo/protobuf/types"
 )
 
 // RegisterLegacyAminoCodec registers concrete types on codec
@@ -45,10 +44,10 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		&RetryFailedEventRequest{},
 	)
 	registry.RegisterImplementations((*codec.ProtoMarshaler)(nil),
-		&gogoprototypes.BoolValue{},
 		&SigMetadata{},
 		&Event{},
 		&VoteEvents{},
+		&PollModuleMetadata{},
 	)
 }
 

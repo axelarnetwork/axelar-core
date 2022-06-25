@@ -62,14 +62,14 @@ func (s msgServer) Vote(c context.Context, req *types.VoteRequest) (*types.VoteR
 			return nil, fmt.Errorf("result of poll %s has wrong type, expected *exported.Vote, got %T", poll.GetID().String(), poll.GetResult())
 		}
 
-		pollModuleMetadata := poll.GetModuleMetadata()
-		voteHandler := s.GetVoteRouter().GetHandler(pollModuleMetadata.Module)
+		module, moduleMetadata := poll.GetModuleMetadata()
+		voteHandler := s.GetVoteRouter().GetHandler(module)
 		if voteHandler == nil {
-			return nil, fmt.Errorf("unknown module for vote %s", pollModuleMetadata.Module)
+			return nil, fmt.Errorf("unknown module for vote %s", module)
 		}
 
 		cachedCtx, writeCache := ctx.CacheContext()
-		if err := voteHandler.HandleResult(cachedCtx, result); err != nil {
+		if err := voteHandler.HandleResult(cachedCtx, moduleMetadata, result); err != nil {
 			return &types.VoteResponse{Log: fmt.Sprintf("vote handler failed %s", err.Error())}, nil
 		}
 

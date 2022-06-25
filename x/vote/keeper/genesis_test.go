@@ -16,6 +16,8 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
+	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/types"
 	"github.com/axelarnetwork/axelar-core/x/vote/types/mock"
@@ -30,6 +32,8 @@ func setup() (sdk.Context, Keeper, *mock.SnapshotterMock, *mock.StakingKeeperMoc
 	encodingConfig := params.MakeEncodingConfig()
 	types.RegisterLegacyAminoCodec(encodingConfig.Amino)
 	types.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	evmtypes.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+
 	subspace := paramstypes.NewSubspace(encodingConfig.Codec, encodingConfig.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "vote")
 
 	keeper := NewKeeper(
@@ -60,7 +64,7 @@ func initializeRandomPoll(ctx sdk.Context, keeper Keeper) exported.PollMetadata 
 		exported.MinVoterCount(rand.I64Between(0, int64(len(voters)))),
 		exported.Threshold(utils.NewThreshold(rand.I64Between(1, 101), 100)),
 		exported.GracePeriod(rand.I64Between(0, 10)),
-		exported.ModuleMetadata(randomNormalizedStr(5)),
+		exported.ModuleMetadata(randomNormalizedStr(5), evmtypes.NewPollModuleMetadata(nexus.ChainName(rand.Str(5)))),
 	)
 	if err != nil {
 		panic(err)

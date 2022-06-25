@@ -9,10 +9,15 @@ import "axelar/tss/exported/v1beta1/types.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
-message VoteEvents {
-  string chain = 1
+message PollModuleMetadata {
+  string chain_name = 1
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+}
+
+message VoteEvents {
+  reserved 1; // chain was removed in v0.20
+
   repeated Event events = 2 [ (gogoproto.nullable) = false ];
 }
 

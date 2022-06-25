@@ -26,10 +26,10 @@ func handlePollsAtExpiry(ctx sdk.Context, k types.Voter) error {
 	for pollQueue.DequeueIf(&pollMeta, hasPollExpired) {
 		poll := k.GetPoll(ctx, pollMeta.ID)
 
-		pollModuleMetadata := poll.GetModuleMetadata()
-		voteHandler := k.GetVoteRouter().GetHandler(pollModuleMetadata.Module)
+		module, _ := poll.GetModuleMetadata()
+		voteHandler := k.GetVoteRouter().GetHandler(module)
 		if voteHandler == nil {
-			return fmt.Errorf("unknown module for vote %s", pollModuleMetadata.Module)
+			return fmt.Errorf("unknown module for vote %s", module)
 		}
 
 		switch {

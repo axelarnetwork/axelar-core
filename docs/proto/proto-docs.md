@@ -200,6 +200,7 @@
     - [EventTransfer](#axelar.evm.v1beta1.EventTransfer)
     - [Gateway](#axelar.evm.v1beta1.Gateway)
     - [NetworkInfo](#axelar.evm.v1beta1.NetworkInfo)
+    - [PollModuleMetadata](#axelar.evm.v1beta1.PollModuleMetadata)
     - [SigMetadata](#axelar.evm.v1beta1.SigMetadata)
     - [TokenDetails](#axelar.evm.v1beta1.TokenDetails)
     - [TransactionMetadata](#axelar.evm.v1beta1.TransactionMetadata)
@@ -3195,6 +3196,21 @@ NetworkInfo describes information about a network
 
 
 
+<a name="axelar.evm.v1beta1.PollModuleMetadata"></a>
+
+### PollModuleMetadata
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain_name` | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="axelar.evm.v1beta1.SigMetadata"></a>
 
 ### SigMetadata
@@ -3270,7 +3286,6 @@ TransferKey contains information for a transfer ownership or operatorship
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `chain` | [string](#string) |  |  |
 | `events` | [Event](#axelar.evm.v1beta1.Event) | repeated |  |
 
 

@@ -26,7 +26,7 @@ var _ exported.Poll = &PollMock{}
 // 			GetIDFunc: func() exported.PollID {
 // 				panic("mock out the GetID method")
 // 			},
-// 			GetModuleMetadataFunc: func() exported.PollModuleMetadata {
+// 			GetModuleMetadataFunc: func() (string, codec.ProtoMarshaler) {
 // 				panic("mock out the GetModuleMetadata method")
 // 			},
 // 			GetResultFunc: func() codec.ProtoMarshaler {
@@ -70,7 +70,7 @@ type PollMock struct {
 	GetIDFunc func() exported.PollID
 
 	// GetModuleMetadataFunc mocks the GetModuleMetadata method.
-	GetModuleMetadataFunc func() exported.PollModuleMetadata
+	GetModuleMetadataFunc func() (string, codec.ProtoMarshaler)
 
 	// GetResultFunc mocks the GetResult method.
 	GetResultFunc func() codec.ProtoMarshaler
@@ -219,7 +219,7 @@ func (mock *PollMock) GetIDCalls() []struct {
 }
 
 // GetModuleMetadata calls GetModuleMetadataFunc.
-func (mock *PollMock) GetModuleMetadata() exported.PollModuleMetadata {
+func (mock *PollMock) GetModuleMetadata() (string, codec.ProtoMarshaler) {
 	if mock.GetModuleMetadataFunc == nil {
 		panic("PollMock.GetModuleMetadataFunc: method is nil but Poll.GetModuleMetadata was just called")
 	}
@@ -527,7 +527,7 @@ var _ exported.VoteHandler = &VoteHandlerMock{}
 // 			HandleExpiredPollFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.Poll) error {
 // 				panic("mock out the HandleExpiredPoll method")
 // 			},
-// 			HandleResultFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, result codec.ProtoMarshaler) error {
+// 			HandleResultFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, moduleMetadata codec.ProtoMarshaler, result codec.ProtoMarshaler) error {
 // 				panic("mock out the HandleResult method")
 // 			},
 // 			IsFalsyResultFunc: func(result codec.ProtoMarshaler) bool {
@@ -547,7 +547,7 @@ type VoteHandlerMock struct {
 	HandleExpiredPollFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.Poll) error
 
 	// HandleResultFunc mocks the HandleResult method.
-	HandleResultFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, result codec.ProtoMarshaler) error
+	HandleResultFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, moduleMetadata codec.ProtoMarshaler, result codec.ProtoMarshaler) error
 
 	// IsFalsyResultFunc mocks the IsFalsyResult method.
 	IsFalsyResultFunc func(result codec.ProtoMarshaler) bool
@@ -572,6 +572,8 @@ type VoteHandlerMock struct {
 		HandleResult []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// ModuleMetadata is the moduleMetadata argument value.
+			ModuleMetadata codec.ProtoMarshaler
 			// Result is the result argument value.
 			Result codec.ProtoMarshaler
 		}
@@ -658,33 +660,37 @@ func (mock *VoteHandlerMock) HandleExpiredPollCalls() []struct {
 }
 
 // HandleResult calls HandleResultFunc.
-func (mock *VoteHandlerMock) HandleResult(ctx github_com_cosmos_cosmos_sdk_types.Context, result codec.ProtoMarshaler) error {
+func (mock *VoteHandlerMock) HandleResult(ctx github_com_cosmos_cosmos_sdk_types.Context, moduleMetadata codec.ProtoMarshaler, result codec.ProtoMarshaler) error {
 	if mock.HandleResultFunc == nil {
 		panic("VoteHandlerMock.HandleResultFunc: method is nil but VoteHandler.HandleResult was just called")
 	}
 	callInfo := struct {
-		Ctx    github_com_cosmos_cosmos_sdk_types.Context
-		Result codec.ProtoMarshaler
+		Ctx            github_com_cosmos_cosmos_sdk_types.Context
+		ModuleMetadata codec.ProtoMarshaler
+		Result         codec.ProtoMarshaler
 	}{
-		Ctx:    ctx,
-		Result: result,
+		Ctx:            ctx,
+		ModuleMetadata: moduleMetadata,
+		Result:         result,
 	}
 	mock.lockHandleResult.Lock()
 	mock.calls.HandleResult = append(mock.calls.HandleResult, callInfo)
 	mock.lockHandleResult.Unlock()
-	return mock.HandleResultFunc(ctx, result)
+	return mock.HandleResultFunc(ctx, moduleMetadata, result)
 }
 
 // HandleResultCalls gets all the calls that were made to HandleResult.
 // Check the length with:
 //     len(mockedVoteHandler.HandleResultCalls())
 func (mock *VoteHandlerMock) HandleResultCalls() []struct {
-	Ctx    github_com_cosmos_cosmos_sdk_types.Context
-	Result codec.ProtoMarshaler
+	Ctx            github_com_cosmos_cosmos_sdk_types.Context
+	ModuleMetadata codec.ProtoMarshaler
+	Result         codec.ProtoMarshaler
 } {
 	var calls []struct {
-		Ctx    github_com_cosmos_cosmos_sdk_types.Context
-		Result codec.ProtoMarshaler
+		Ctx            github_com_cosmos_cosmos_sdk_types.Context
+		ModuleMetadata codec.ProtoMarshaler
+		Result         codec.ProtoMarshaler
 	}
 	mock.lockHandleResult.RLock()
 	calls = mock.calls.HandleResult

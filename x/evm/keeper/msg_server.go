@@ -97,7 +97,7 @@ func (s msgServer) ConfirmGatewayTx(c context.Context, req *types.ConfirmGateway
 		vote.MinVoterCount(minVoterCount),
 		vote.RewardPool(chain.Name.String()),
 		vote.GracePeriod(keeper.GetParams(ctx).VotingGracePeriod),
-		vote.ModuleMetadata(types.ModuleName),
+		vote.ModuleMetadata(types.ModuleName, types.NewPollModuleMetadata(chain.Name)),
 	)
 	if err != nil {
 		return nil, err
@@ -288,7 +288,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		vote.MinVoterCount(minVoterCount),
 		vote.RewardPool(chain.Name.String()),
 		vote.GracePeriod(keeper.GetParams(ctx).VotingGracePeriod),
-		vote.ModuleMetadata(types.ModuleName),
+		vote.ModuleMetadata(types.ModuleName, types.NewPollModuleMetadata(chain.Name)),
 	)
 	if err != nil {
 		return nil, err
@@ -358,7 +358,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		vote.MinVoterCount(minVoterCount),
 		vote.RewardPool(chain.Name.String()),
 		vote.GracePeriod(keeper.GetParams(ctx).VotingGracePeriod),
-		vote.ModuleMetadata(types.ModuleName),
+		vote.ModuleMetadata(types.ModuleName, types.NewPollModuleMetadata(chain.Name)),
 	)
 	if err != nil {
 		return nil, err
@@ -427,7 +427,7 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 		vote.MinVoterCount(minVoterCount),
 		vote.RewardPool(chain.Name.String()),
 		vote.GracePeriod(keeper.GetParams(ctx).VotingGracePeriod),
-		vote.ModuleMetadata(types.ModuleName),
+		vote.ModuleMetadata(types.ModuleName, types.NewPollModuleMetadata(chain.Name)),
 	)
 	if err != nil {
 		return nil, err
