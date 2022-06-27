@@ -95,9 +95,4 @@ jobs:
         env:
           SEMVER: v5.5.5
 
-      - name: Sign the images with GitHub OIDC
-        run: cosign sign --oidc-issuer https://token.actions.githubusercontent.com ${TAGS}
-        env:
-          TAGS: axelarnet/axelar-core:v5.5.5
-          COSIGN_EXPERIMENTAL: 1
 
