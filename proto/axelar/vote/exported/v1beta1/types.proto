@@ -43,6 +43,13 @@ message PollModuleMetadata {
 message PollMetadata {
   vote.exported.v1beta1.PollKey key = 1
       [ (gogoproto.nullable) = false, deprecated = true ];
+  bytes total_voting_power = 9 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.nullable) = false,
+    deprecated = true,
+  ];
+  repeated Voter voters = 8 [ (gogoproto.nullable) = false, deprecated = true ];
+
   int64 expires_at = 3;
   google.protobuf.Any result = 4
       [ (cosmos_proto.accepts_interface) =
@@ -50,11 +57,6 @@ message PollMetadata {
   utils.v1beta1.Threshold voting_threshold = 5 [ (gogoproto.nullable) = false ];
   exported.v1beta1.PollState state = 6;
   int64 min_voter_count = 7;
-  repeated Voter voters = 8 [ (gogoproto.nullable) = false ];
-  bytes total_voting_power = 9 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.nullable) = false
-  ];
   string reward_pool_name = 10;
   int64 grace_period = 11;
   int64 completed_at = 12;
@@ -64,6 +66,8 @@ message PollMetadata {
     (gogoproto.nullable) = false
   ];
   PollModuleMetadata module_metadata = 14 [ (gogoproto.nullable) = false ];
+  snapshot.exported.v1beta1.Snapshot snapshot = 15
+      [ (gogoproto.nullable) = false ];
 }
 
 enum PollState {
