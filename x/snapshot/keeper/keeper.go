@@ -15,6 +15,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	"github.com/axelarnetwork/utils/slices"
 )
 
 const (
@@ -289,15 +290,18 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, keyRequirement t
 		)
 	}
 
-	snapshot := exported.NewSnapshot(
-		participants,
-		ctx.BlockTime(),
-		ctx.BlockHeight(),
-		totalShareCount,
-		counter,
-		keyRequirement.KeyShareDistributionPolicy,
-		tss.ComputeAbsCorruptionThreshold(keyRequirement.SafetyThreshold, totalShareCount),
-	)
+	snapshot := exported.Snapshot{
+		Validators:                 participants,
+		Timestamp:                  ctx.BlockTime(),
+		Height:                     ctx.BlockHeight(),
+		TotalShareCount:            totalShareCount,
+		Counter:                    counter,
+		KeyShareDistributionPolicy: keyRequirement.KeyShareDistributionPolicy,
+		CorruptionThreshold:        tss.ComputeAbsCorruptionThreshold(keyRequirement.SafetyThreshold, totalShareCount),
+		Participants:               nil,
+		BondedWeight:               sdk.ZeroUint(),
+	}
+
 	if err := snapshot.Validate(); err != nil {
 		return exported.Snapshot{}, err
 	}
@@ -475,5 +479,35 @@ func (k Keeper) CreateSnapshot(
 	weightFunc func(consensusPower sdk.Uint) sdk.Uint,
 	threshold utils.Threshold,
 ) (exported.Snapshot, error) {
-	panic("TODO")
+	validators := slices.Map(candidates, func(address sdk.ValAddress) exported.ValidatorI { return k.staking.Validator(ctx, address) })
+	participatingValidators := slices.Filter(validators, filterFunc)
+
+	powerReduction := k.staking.PowerReduction(ctx)
+	participants := slices.Map(participatingValidators, func(v exported.ValidatorI) exported.Participant {
+		return exported.NewParticipant(v.GetOperator(), weightFunc(sdk.NewUint(uint64(v.GetConsensusPower(powerReduction)))))
+	})
+
+	bondedWeight := sdk.ZeroUint()
+	k.staking.IterateBondedValidatorsByPower(ctx, func(_ int64, v stakingtypes.ValidatorI) (stop bool) {
+		if v == nil {
+			panic("nil bonded validator received")
+		}
+
+		weight := weightFunc(sdk.NewUint(uint64(v.GetConsensusPower(powerReduction))))
+		bondedWeight = bondedWeight.Add(weight)
+
+		// we do not stop until we've iterated through all bonded validators.
+		// Due to the unknown nature of weightFunc, every validator might contribute
+		// some weight
+		return false
+	})
+
+	snapshot := exported.NewSnapshot(ctx.BlockTime(), ctx.BlockHeight(), participants, bondedWeight)
+
+	participantsWeight := snapshot.GetParticipantsWeight()
+	if participantsWeight.LT(snapshot.CalculateMinPassingWeight(threshold)) {
+		return exported.Snapshot{}, fmt.Errorf("given threshold %s cannot be met (participants weight: %s, bonded weight: %s)", threshold.SimpleString(), participantsWeight, bondedWeight)
+	}
+
+	return snapshot, nil
 }

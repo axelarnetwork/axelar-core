@@ -12,37 +12,79 @@ import (
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	"github.com/gogo/protobuf/proto"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	"github.com/axelarnetwork/utils/slices"
 )
 
 //go:generate moq -out ./mock/types.go -pkg mock . SDKValidator Snapshotter Slasher Tss ValidatorI
 
 // ValidatorI provides necessary functions to the validator information
 type ValidatorI interface {
+	GetConsensusPower(sdk.Int) int64 // validation power in tendermint
+	GetOperator() sdk.ValAddress     // operator address to receive/return validators coins
 }
 
 // NewSnapshot is the constructor of Snapshot
-func NewSnapshot(
-	validators []Validator,
-	timestamp time.Time,
-	height int64,
-	totalShareCount sdk.Int,
-	counter int64,
-	keyShareDistributionPolicy tss.KeyShareDistributionPolicy,
-	corruptionThreshold int64,
-) Snapshot {
+func NewSnapshot(timestamp time.Time, height int64, participants []Participant, bondedWeight sdk.Uint) Snapshot {
 	return Snapshot{
-		Validators:                 validators,
-		Timestamp:                  timestamp,
-		Height:                     height,
-		TotalShareCount:            totalShareCount,
-		Counter:                    counter,
-		KeyShareDistributionPolicy: keyShareDistributionPolicy,
-		CorruptionThreshold:        corruptionThreshold,
-		Participants:               nil,
-		BondedWeight:               sdk.ZeroUint(),
+		Timestamp:    timestamp,
+		Height:       height,
+		Participants: slices.ToMap(participants, func(p Participant) string { return p.Address.String() }),
+		BondedWeight: bondedWeight,
 	}
+}
+
+// ValidateBasic returns an error if the given snapshot is invalid; nil otherwise
+func (m Snapshot) ValidateBasic() error {
+	if len(m.Participants) == 0 {
+		return fmt.Errorf("snapshot cannot have no participant")
+	}
+
+	if m.BondedWeight.IsZero() {
+		return fmt.Errorf("snapshot must have bonded weight >0")
+	}
+
+	if m.Height <= 0 {
+		return fmt.Errorf("snapshot must have height >0")
+	}
+
+	if m.Timestamp.IsZero() {
+		return fmt.Errorf("snapshot must have timestamp >0")
+	}
+
+	participantsWeight := sdk.ZeroUint()
+	for addr, p := range m.Participants {
+		if err := p.ValidateBasic(); err != nil {
+			return err
+		}
+
+		if addr != p.Address.String() {
+			return fmt.Errorf("invalid snapshot")
+		}
+
+		participantsWeight = participantsWeight.Add(p.Weight)
+	}
+
+	if participantsWeight.GT(m.BondedWeight) {
+		return fmt.Errorf("snapshot cannot have sum of participants weight greater than bonded weight")
+	}
+
+	return nil
+}
+
+// NewParticipant is the constructor of Participant
+func NewParticipant(address sdk.ValAddress, weight sdk.Uint) Participant {
+	return Participant{
+		Address: address,
+		Weight:  weight,
+	}
+}
+
+// GetAddress returns the address of the participant
+func (m Participant) GetAddress() sdk.ValAddress {
+	return m.Address
 }
 
 // ValidateBasic returns an error if the given participant is invalid; nil otherwise
@@ -54,42 +96,22 @@ func (m Participant) ValidateBasic() error {
 	return nil
 }
 
-// ValidateBasic returns an error if the given snapshot is invalid; nil otherwise
-func (m Snapshot) ValidateBasic() error {
-	if len(m.Participants) == 0 {
-		return fmt.Errorf("snapshot cannot have no participant")
+// GetParticipantsWeight returns the sum of all participants' weights
+func (m Snapshot) GetParticipantsWeight() sdk.Uint {
+	weight := sdk.ZeroUint()
+	for _, p := range m.Participants {
+		weight = weight.Add(p.Weight)
 	}
 
-	if m.BondedWeight.IsZero() {
-		return fmt.Errorf("snapshot cannot have zero total weight")
-	}
+	return weight
+}
 
-	if m.Height <= 0 {
-		return fmt.Errorf("snapshot must height >0")
-	}
-
-	if m.Timestamp.IsZero() {
-		return fmt.Errorf("snapshot must timestamp >0")
-	}
-
-	sumWeight := sdk.ZeroUint()
-	for addr, p := range m.Participants {
-		if _, err := sdk.ValAddressFromBech32(addr); err != nil {
-			return err
-		}
-
-		if err := p.ValidateBasic(); err != nil {
-			return err
-		}
-
-		sumWeight = sumWeight.Add(p.Weight)
-	}
-
-	if sumWeight.GT(m.BondedWeight) {
-		return fmt.Errorf("snapshot cannot have sum of participant weight greater than total weight")
-	}
-
-	return nil
+// CalculateMinPassingWeight returns the minimum amount of weights to pass the given threshold
+func (m Snapshot) CalculateMinPassingWeight(threshold utils.Threshold) sdk.Uint {
+	return m.BondedWeight.
+		MulUint64(uint64(threshold.Numerator)).
+		QuoUint64(uint64(threshold.Denominator)).
+		AddUint64(1)
 }
 
 // Validate returns an error if the snapshot is not valid; nil otherwise
