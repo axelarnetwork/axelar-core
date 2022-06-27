@@ -34,8 +34,14 @@
   <tr>
     <td>Faucet</td>
     <td></td>
-    <td> [Axelar testnet faucet](https://faucet.testnet.axelar.dev/) </td>
-    <td> [Axelar testnet-2 faucet](https://faucet-casablanca.testnet.axelar.dev/) </td>
+    <td>
+      [Axelar testnet faucet](https://faucet.testnet.axelar.dev/) <br/>
+      <a href="https://www.allthatnode.com/faucet/axelar.dsrv"> Lisbon faucet by All That Node</a>
+    </td>
+    <td>
+      [Axelar testnet-2 faucet](https://faucet-casablanca.testnet.axelar.dev/) <br/>
+      <a href="https://www.allthatnode.com/faucet/axelar.dsrv"> Casablanca faucet by All That Node</a>
+    </td>
   </tr>
   <tr>
     <td>RPC endpoints</td>
@@ -45,15 +51,21 @@
       https://axelar-rpc.chainode.tech/ <br/>
       https://services.staketab.com/axelar-rpc <br/>
       https://axelar.rpc.stake2.me/ <br/>
-      https://axelar-rpc.qubelabs.io/
+      https://axelar-rpc.qubelabs.io/ <br/>
+      https://axelar-mainnet-rpc.allthatnode.com:1317 (REST API) <br/>
+      https://axelar-mainnet-rpc.allthatnode.com:26657 (Tendermint RPC)
     </td>
     <td>
       https://axelartest-rpc.quickapi.com/ <br/>
       https://services.staketab.com/axelar-testnet-1-rpc <br/>
       https://axelar-testnet-rpc.qubelabs.io/ <br/>
+      https://axelar-lisbon-rpc.allthatnode.com:1317 (REST API) <br/>
+      https://axelar-lisbon-rpc.allthatnode.com:26657 (Tendermint RPC)
     </td>
     <td>
-      https://services.staketab.com/axelar-testnet-2-rpc
+      https://services.staketab.com/axelar-testnet-2-rpc <br/>
+      https://axelar-casablanca-rpc.allthatnode.com:1317 (REST API) <br/>
+      https://axelar-casablanca-rpc.allthatnode.com:26657 (Tendermint RPC)
     </td>
   </tr>
   <tr>
