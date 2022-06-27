@@ -92,9 +92,6 @@ type TSS interface {
 // Voter exposes voting functionality
 type Voter interface {
 	InitializePoll(ctx sdk.Context, voters []sdk.ValAddress, pollProperties ...vote.PollProperty) (vote.PollID, error)
-	// Deprecated: InitializePollWithSnapshot will be removed soon
-	InitializePollWithSnapshot(ctx sdk.Context, snapshotSeqNo int64, pollProperties ...vote.PollProperty) (vote.PollID, error)
-	GetPoll(ctx sdk.Context, pollID vote.PollID) vote.Poll
 }
 
 // Nexus provides functionality to manage cross-chain transfers

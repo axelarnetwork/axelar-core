@@ -302,7 +302,7 @@ func TestPoll(t *testing.T) {
 							data, _ := codectypes.NewAnyWithValue(&gogoprototypes.StringValue{Value: rand.Str(5)})
 
 							return types.TalliedVote{
-								Tally:  sdk.NewInt(v.VotingPower),
+								Tally:  sdk.NewUint(v.VotingPower),
 								Voters: []sdk.ValAddress{v.Validator},
 								Data:   data,
 							}
@@ -345,7 +345,7 @@ func TestPoll(t *testing.T) {
 
 					return []types.TalliedVote{
 						{
-							Tally:  sdk.NewInt(voter.VotingPower),
+							Tally:  sdk.NewUint(voter.VotingPower),
 							Data:   data,
 							Voters: []sdk.ValAddress{voter.Validator},
 						},

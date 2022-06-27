@@ -106,6 +106,15 @@ func (m Snapshot) GetParticipantsWeight() sdk.Uint {
 	return weight
 }
 
+// GetParticipantWeight returns the weight of the given participant
+func (m Snapshot) GetParticipantWeight(participant sdk.ValAddress) sdk.Uint {
+	if participant, ok := m.Participants[participant.String()]; ok {
+		return participant.Weight
+	}
+
+	return sdk.ZeroUint()
+}
+
 // CalculateMinPassingWeight returns the minimum amount of weights to pass the given threshold
 func (m Snapshot) CalculateMinPassingWeight(threshold utils.Threshold) sdk.Uint {
 	return m.BondedWeight.

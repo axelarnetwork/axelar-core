@@ -1,12 +1,16 @@
 package types
 
 import (
+	"bytes"
 	"fmt"
+	"sort"
 
+	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/tendermint/libs/log"
+	"golang.org/x/exp/maps"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -21,20 +25,26 @@ var _ codectypes.UnpackInterfacesMessage = TalliedVote{}
 type Voters []sdk.ValAddress
 
 // NewTalliedVote is the constructor for TalliedVote
-func NewTalliedVote(voter sdk.ValAddress, votingPower int64, data codec.ProtoMarshaler) TalliedVote {
-	if voter == nil {
-		panic("voter cannot be nil")
-	}
+func NewTalliedVote(pollID exported.PollID, data codec.ProtoMarshaler) TalliedVote {
 	d, err := codectypes.NewAnyWithValue(data)
 	if err != nil {
 		panic(err)
 	}
 
 	return TalliedVote{
-		Tally:  sdk.NewInt(votingPower),
+		PollID: pollID,
+		Tally:  sdk.ZeroUint(),
 		Data:   d,
-		Voters: Voters{voter},
 	}
+}
+
+// TallyVote adds the given voting power to the tallied vote
+func (m *TalliedVote) TallyVote(voter sdk.ValAddress, votingPower sdk.Uint) {
+	if voter == nil {
+		panic("voter cannot be nil")
+	}
+	m.Voters = append(m.Voters, voter)
+	m.Tally = m.Tally.Add(votingPower)
 }
 
 // UnpackInterfaces implements UnpackInterfacesMessage
@@ -45,20 +55,12 @@ func (m TalliedVote) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
 
 // NewPollMetaData is the constructor for PollMetadata.
 // It is not in the exported package to make it clear that only the vote module is supposed to use it.
-func NewPollMetaData(id exported.PollID, threshold utils.Threshold, voters []exported.Voter) exported.PollMetadata {
-	return exported.PollMetadata{
-		ID:              id,
-		ExpiresAt:       0,
-		Result:          nil,
+func NewPollMetaData(id exported.PollID, threshold utils.Threshold, snapshot snapshot.Snapshot) PollMetadata {
+	return PollMetadata{
 		VotingThreshold: threshold,
 		State:           exported.Pending,
-		MinVoterCount:   0,
-		Voters:          voters,
-		TotalVotingPower: slices.Reduce(voters, sdk.ZeroInt(), func(total sdk.Int, voter exported.Voter) sdk.Int {
-			return total.AddRaw(voter.VotingPower)
-		}),
-		GracePeriod: 0,
-		CompletedAt: 0,
+		ID:              id,
+		Snapshot:        snapshot,
 	}
 }
 
@@ -66,26 +68,26 @@ var _ exported.Poll = &Poll{}
 
 // Poll represents a poll with write-in voting
 type Poll struct {
-	exported.PollMetadata
+	PollMetadata
 	Store
 	logger log.Logger
 }
 
 // Store enables a poll to communicate with the keeper
 type Store interface {
-	SetVote(voter sdk.ValAddress, data codec.ProtoMarshaler, votingPower int64, isLate bool)
+	SetVote(voter sdk.ValAddress, data codec.ProtoMarshaler, votingPower sdk.Uint, isLate bool)
 	GetVote(hash string) (TalliedVote, bool)
 	HasVoted(voter sdk.ValAddress) bool
 	HasVotedLate(voter sdk.ValAddress) bool
 	GetVotes() []TalliedVote
-	SetMetadata(metadata exported.PollMetadata)
-	EnqueuePoll(metadata exported.PollMetadata)
-	GetPoll(id exported.PollID) exported.Poll
+	SetMetadata(metadata PollMetadata)
+	EnqueuePoll(metadata PollMetadata)
+	GetPoll(id exported.PollID) Poll
 	DeletePoll()
 }
 
 // NewPoll creates a new poll
-func NewPoll(meta exported.PollMetadata, store Store) *Poll {
+func NewPoll(meta PollMetadata, store Store) *Poll {
 	return &Poll{
 		PollMetadata: meta,
 		Store:        store,
@@ -120,7 +122,7 @@ func (p Poll) GetModuleMetadata() exported.PollModuleMetadata {
 
 // Initialize initializes the poll
 func (p Poll) Initialize(blockHeight int64) error {
-	if err := p.Validate(); err != nil {
+	if err := p.ValidateBasic(); err != nil {
 		return err
 	}
 
@@ -149,52 +151,56 @@ func (p Poll) Initialize(blockHeight int64) error {
 	return nil
 }
 
-func (p Poll) getVotingPower(v sdk.ValAddress) int64 {
-	for _, voter := range p.PollMetadata.Voters {
-		if v.Equals(voter.Validator) {
-			return voter.VotingPower
-		}
-	}
+type VoteResult int
 
-	return 0
-}
+const (
+	NoVote = iota
+	VoteInTime
+	VotedLate
+)
 
 // Vote records the given vote
-func (p *Poll) Vote(voter sdk.ValAddress, blockHeight int64, data codec.ProtoMarshaler) (codec.ProtoMarshaler, bool, error) {
+func (p *Poll) Vote(voter sdk.ValAddress, blockHeight int64, data codec.ProtoMarshaler) (VoteResult, error) {
 	if p.Is(exported.NonExistent) {
-		return nil, false, fmt.Errorf("poll does not exist")
+		return NoVote, fmt.Errorf("poll does not exist")
 	}
 
 	if p.HasVoted(voter) {
-		return nil, false, fmt.Errorf("voter %s has voted already", voter)
+		return NoVote, fmt.Errorf("voter %s has voted already", voter)
 	}
 
-	votingPower := p.getVotingPower(voter)
-	if votingPower == 0 {
-		return nil, false, fmt.Errorf("address %s is not eligible to Vote in this poll", voter)
+	if p.getVotingPower(voter).IsZero() {
+		return NoVote, fmt.Errorf("address %s is not eligible to Vote in this poll", voter)
 	}
 
-	switch {
-	case p.Is(exported.Failed):
-		return nil, false, nil
-	case p.Is(exported.Completed) && blockHeight <= p.CompletedAt+int64(p.GracePeriod):
-		// poll is completed but within the grace period for late votes
-		p.SetVote(voter, data, votingPower, true)
-		p.logger.Debug("received late vote for poll",
-			"voter", voter.String(),
-			"poll", p.GetID().String(),
-		)
-
-		return nil, true, nil
-	case p.Is(exported.Completed):
-		return nil, false, nil
+	if p.Is(exported.Failed) {
+		return NoVote, nil
 	}
 
-	p.SetVote(voter, data, votingPower, false)
+	if p.Is(exported.Completed) && p.isInGracePeriod(blockHeight) {
+		p.voteLate(voter, data)
+		return VotedLate, nil
+	}
+
+	if p.Is(exported.Completed) {
+		return NoVote, nil
+	}
+
+	p.voteBeforeCompletion(voter, blockHeight, data)
+	return VoteInTime, nil
+}
+
+func (p *Poll) isInGracePeriod(blockHeight int64) bool {
+	return blockHeight <= p.CompletedAt+p.GracePeriod
+}
+
+func (p *Poll) voteBeforeCompletion(voter sdk.ValAddress, blockHeight int64, data codec.ProtoMarshaler) {
 	p.logger.Debug("received vote for poll",
 		"voter", voter.String(),
 		"poll", p.GetID().String(),
 	)
+
+	p.SetVote(voter, data, p.getVotingPower(voter), false)
 
 	majorityVote := p.getMajorityVote()
 	switch {
@@ -211,7 +217,6 @@ func (p *Poll) Vote(voter sdk.ValAddress, blockHeight int64, data codec.ProtoMar
 
 		p.SetMetadata(p.PollMetadata)
 
-		return p.GetResult(), true, nil
 	case p.cannotWin(majorityVote.Tally):
 		p.State = exported.Failed
 		p.logger.Debug(fmt.Sprintf("poll %s (threshold: %d/%d, min voter count: %d) failed, voters could not agree on single value",
@@ -222,10 +227,16 @@ func (p *Poll) Vote(voter sdk.ValAddress, blockHeight int64, data codec.ProtoMar
 		))
 
 		p.SetMetadata(p.PollMetadata)
-		fallthrough
-	default:
-		return nil, true, nil
 	}
+}
+
+func (p *Poll) voteLate(voter sdk.ValAddress, data codec.ProtoMarshaler) {
+	p.logger.Debug("received late vote for poll",
+		"voter", voter.String(),
+		"poll", p.GetID().String(),
+	)
+
+	p.SetVote(voter, data, p.Snapshot.GetParticipantWeight(voter), true)
 }
 
 // Delete deletes the poll
@@ -244,8 +255,10 @@ func (p Poll) GetID() exported.PollID {
 }
 
 // GetVoters returns the poll's voters
-func (p Poll) GetVoters() []exported.Voter {
-	return p.Voters
+func (p Poll) GetVoters() []sdk.ValAddress {
+	voters := slices.Map(maps.Values(p.Snapshot.Participants), snapshot.Participant.GetAddress)
+	sort.SliceStable(voters, func(i, j int) bool { return bytes.Compare(voters[i], voters[j]) < 0 })
+	return voters
 }
 
 // HasVotedCorrectly returns true if the give voter has voted correctly for the poll, false otherwise
@@ -260,7 +273,7 @@ func (p Poll) HasVotedCorrectly(voter sdk.ValAddress) bool {
 }
 
 // GetTotalVotingPower returns the total voting power of the poll
-func (p Poll) GetTotalVotingPower() sdk.Int {
+func (p Poll) GetTotalVotingPower() sdk.Uint {
 	return p.TotalVotingPower
 }
 
@@ -279,12 +292,12 @@ func (p Poll) getVoterCount() int64 {
 	return count
 }
 
-func (p *Poll) hasEnoughVotes(majority sdk.Int) bool {
+func (p *Poll) hasEnoughVotes(majority sdk.Uint) bool {
 	return utils.NewThreshold(majority.Int64(), p.GetTotalVotingPower().Int64()).GTE(p.VotingThreshold) &&
 		p.getVoterCount() >= p.MinVoterCount
 }
 
-func (p *Poll) cannotWin(majority sdk.Int) bool {
+func (p *Poll) cannotWin(majority sdk.Uint) bool {
 	alreadyTallied := p.getTalliedVotingPower()
 	missingVotingPower := p.GetTotalVotingPower().Sub(alreadyTallied)
 
@@ -303,12 +316,83 @@ func (p Poll) getMajorityVote() TalliedVote {
 	return result
 }
 
-func (p Poll) getTalliedVotingPower() sdk.Int {
-	result := sdk.ZeroInt()
+func (p Poll) getTalliedVotingPower() sdk.Uint {
+	result := sdk.ZeroUint()
 
 	for _, talliedVote := range p.GetVotes() {
 		result = result.Add(talliedVote.Tally)
 	}
 
 	return result
+}
+
+// Is checks if the poll is in the given state
+func (m PollMetadata) Is(state exported.PollState) bool {
+	return m.State == state
+}
+
+// ValidateBasic returns an error if the poll metadata is not valid; nil otherwise
+func (m PollMetadata) ValidateBasic() error {
+	if err := m.ModuleMetadata.ValidateBasic(); err != nil {
+		return err
+	}
+
+	if m.ExpiresAt <= 0 {
+		return fmt.Errorf("expires at must be >0")
+	}
+
+	if m.CompletedAt < 0 {
+		return fmt.Errorf("completed at must be >=0")
+	}
+
+	if m.VotingThreshold.LTE(utils.ZeroThreshold) || m.VotingThreshold.GT(utils.OneThreshold) {
+		return fmt.Errorf("voting threshold must be >0 and <=1")
+	}
+
+	if m.Is(Completed) == (m.Result == nil) {
+		return fmt.Errorf("completed poll must have result set")
+	}
+
+	if m.Is(Completed) == (m.CompletedAt <= 0) {
+		return fmt.Errorf("completed poll must have completed at set and non-completed poll must not")
+	}
+
+	if m.Is(NonExistent) {
+		return fmt.Errorf("state cannot be non-existent")
+	}
+
+	if m.MinVoterCount < 0 || m.MinVoterCount > int64(len(m.Voters)) {
+		return fmt.Errorf("invalid min voter count")
+	}
+
+	if len(m.Voters) == 0 {
+		return fmt.Errorf("no voters set")
+	}
+
+	actualTotalVotingPower := sdk.ZeroInt()
+	for _, voter := range m.Voters {
+		if err := sdk.VerifyAddressFormat(voter.Validator); err != nil {
+			return err
+		}
+
+		if voter.VotingPower <= 0 {
+			return fmt.Errorf("voter's voting power must be >0")
+		}
+
+		actualTotalVotingPower = actualTotalVotingPower.AddRaw(voter.VotingPower)
+	}
+
+	if !m.TotalVotingPower.Equal(actualTotalVotingPower) {
+		return fmt.Errorf("total voting power mismatch")
+	}
+
+	return nil
+}
+
+var _ codectypes.UnpackInterfacesMessage = PollMetadata{}
+
+// UnpackInterfaces implements UnpackInterfacesMessage
+func (m PollMetadata) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
+	var data codec.ProtoMarshaler
+	return unpacker.UnpackAny(m.Result, &data)
 }

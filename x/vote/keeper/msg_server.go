@@ -31,7 +31,7 @@ func (s msgServer) Vote(c context.Context, req *types.VoteRequest) (*types.VoteR
 	}
 
 	poll := s.GetPoll(ctx, req.PollID)
-	result, voted, err := poll.Vote(voter, ctx.BlockHeight(), &req.Vote)
+	voted, err := poll.Vote(voter, ctx.BlockHeight(), &req.Vote)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func (s msgServer) Vote(c context.Context, req *types.VoteRequest) (*types.VoteR
 		event = event.AppendAttributes(sdk.NewAttribute(types.AttributeKeyPollState, vote.Failed.String()))
 
 		return &types.VoteResponse{Log: fmt.Sprintf("poll %s failed", poll.GetID().String())}, nil
-	case result != nil:
+	case poll.GetResult() != nil:
 		_, ok := result.(*vote.Vote)
 		if !ok {
 			return nil, fmt.Errorf("result of poll %s has wrong type, expected *exported.Vote, got %T", poll.GetID().String(), poll.GetResult())

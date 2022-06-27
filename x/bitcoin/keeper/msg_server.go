@@ -852,7 +852,7 @@ func getSigID(sigHash []byte, keyID tss.KeyID) string {
 }
 
 func validateKeyAssignment(ctx sdk.Context, k types.BTCKeeper, signer types.Signer, snapshotter types.Snapshotter, currKey tss.Key, nextKey tss.Key) error {
-	// Validate that the other key is not in the process of sending coin to the key that is to be rotated out
+	// ValidateBasic that the other key is not in the process of sending coin to the key that is to be rotated out
 	var txType types.TxType
 
 	switch currKey.Role {

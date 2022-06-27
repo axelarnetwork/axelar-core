@@ -6,6 +6,9 @@ option go_package = "github.com/axelarnetwork/axelar-core/x/vote/types";
 import "google/protobuf/any.proto";
 import "gogoproto/gogo.proto";
 import "cosmos_proto/cosmos.proto";
+import "axelar/snapshot/exported/v1beta1/types.proto";
+import "axelar/utils/v1beta1/threshold.proto";
+import "axelar/vote/exported/v1beta1/types.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
@@ -13,16 +16,66 @@ option (gogoproto.goproto_getters_all) = false;
 // validators voting for the same data
 message TalliedVote {
   bytes tally = 1 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
     (gogoproto.nullable) = false
   ];
   repeated bytes voters = 2 [ (gogoproto.castrepeated) = "Voters" ];
   google.protobuf.Any data = 3 [ (cosmos_proto.accepts_interface) =
                                      "github.com/cosmos/codec/ProtoMarshaler" ];
+  uint64 poll_id = 4 [
+    (gogoproto.customname) = "PollID",
+    (gogoproto.customtype) =
+        "github.com/axelarnetwork/axelar-core/x/vote/exported.PollID",
+    (gogoproto.nullable) = false
+  ];
 }
 
 message VoteRecord {
   bytes voter = 1 [ (gogoproto.casttype) =
                         "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
   bool is_late = 2;
+  uint64 poll_id = 3 [
+    (gogoproto.customname) = "PollID",
+    (gogoproto.customtype) =
+        "github.com/axelarnetwork/axelar-core/x/vote/exported.PollID",
+    (gogoproto.nullable) = false
+  ];
+}
+
+message Voter {
+  bytes validator = 1 [ (gogoproto.casttype) =
+                            "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
+  int64 voting_power = 2;
+}
+
+message Vote {
+  reserved 1; // results was removed in v0.18
+  google.protobuf.Any result = 2;
+}
+
+// PollMetadata represents a poll with write-in voting, i.e. the result of the
+// vote can have any data type
+message PollMetadata {
+  reserved 1, 8, 9; // deleted poll key, total voting power and voters in 0.20.x
+
+  int64 expires_at = 3;
+  google.protobuf.Any result = 4
+      [ (cosmos_proto.accepts_interface) =
+            "github.com/cosmos/codec/ProtoMarshaler" ];
+  utils.v1beta1.Threshold voting_threshold = 5 [ (gogoproto.nullable) = false ];
+  exported.v1beta1.PollState state = 6;
+  int64 min_voter_count = 7;
+  string reward_pool_name = 10;
+  int64 grace_period = 11;
+  int64 completed_at = 12;
+  uint64 id = 13 [
+    (gogoproto.customname) = "ID",
+    (gogoproto.customtype) =
+        "github.com/axelarnetwork/axelar-core/x/vote/exported.PollID",
+    (gogoproto.nullable) = false
+  ];
+  vote.exported.v1beta1.PollModuleMetadata module_metadata = 14
+      [ (gogoproto.nullable) = false ];
+  snapshot.exported.v1beta1.Snapshot snapshot = 15
+      [ (gogoproto.nullable) = false ];
 }

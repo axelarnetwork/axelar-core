@@ -142,7 +142,7 @@ func (k Keeper) InitializePollWithSnapshot(ctx sdk.Context, snapshotSeqNo int64,
 }
 
 // GetPoll returns an existing poll to record votes
-func (k Keeper) GetPoll(ctx sdk.Context, id exported.PollID) exported.Poll {
+func (k Keeper) GetPoll(ctx sdk.Context, id exported.PollID) types.Poll {
 	metadata, ok := k.getPollMetadata(ctx, id)
 	if !ok {
 		return &types.Poll{PollMetadata: exported.PollMetadata{State: exported.NonExistent}}
@@ -260,7 +260,7 @@ func hash(data codec.ProtoMarshaler) string {
 	return string(h[:])
 }
 
-func (p *pollStore) SetVote(voter sdk.ValAddress, data codec.ProtoMarshaler, votingPower int64, isLate bool) {
+func (p *pollStore) SetVote(voter sdk.ValAddress, data codec.ProtoMarshaler, votingPower uint64, isLate bool) {
 	dataHash := hash(data)
 
 	var talliedVote types.TalliedVote
@@ -268,7 +268,7 @@ func (p *pollStore) SetVote(voter sdk.ValAddress, data codec.ProtoMarshaler, vot
 		talliedVote = types.NewTalliedVote(voter, votingPower, data)
 	} else {
 		talliedVote = existingVote
-		talliedVote.Tally = talliedVote.Tally.AddRaw(votingPower)
+		talliedVote.Tally = talliedVote.Tally.AddUint64(votingPower)
 		talliedVote.Voters = append(talliedVote.Voters, voter)
 	}
 

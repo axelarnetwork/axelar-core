@@ -5,9 +5,7 @@ option go_package = "github.com/axelarnetwork/axelar-core/x/vote/exported";
 
 import "gogoproto/gogo.proto";
 import "google/protobuf/any.proto";
-import "axelar/utils/v1beta1/threshold.proto";
 import "cosmos_proto/cosmos.proto";
-import "axelar/snapshot/exported/v1beta1/types.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
@@ -20,56 +18,6 @@ message PollKey {
   string id = 2 [ (gogoproto.customname) = "ID" ];
 }
 
-message Voter {
-  bytes validator = 1 [ (gogoproto.casttype) =
-                            "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
-  int64 voting_power = 2;
-}
-
-message Vote {
-  reserved 1; // results was removed in v0.18
-  google.protobuf.Any result = 2;
-}
-
-message PollModuleMetadata {
-  string module = 1;
-  google.protobuf.Any metadata = 2
-      [ (cosmos_proto.accepts_interface) =
-            "github.com/cosmos/codec/ProtoMarshaler" ];
-}
-
-// PollMetadata represents a poll with write-in voting, i.e. the result of the
-// vote can have any data type
-message PollMetadata {
-  vote.exported.v1beta1.PollKey key = 1
-      [ (gogoproto.nullable) = false, deprecated = true ];
-  bytes total_voting_power = 9 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.nullable) = false,
-    deprecated = true,
-  ];
-  repeated Voter voters = 8 [ (gogoproto.nullable) = false, deprecated = true ];
-
-  int64 expires_at = 3;
-  google.protobuf.Any result = 4
-      [ (cosmos_proto.accepts_interface) =
-            "github.com/cosmos/codec/ProtoMarshaler" ];
-  utils.v1beta1.Threshold voting_threshold = 5 [ (gogoproto.nullable) = false ];
-  exported.v1beta1.PollState state = 6;
-  int64 min_voter_count = 7;
-  string reward_pool_name = 10;
-  int64 grace_period = 11;
-  int64 completed_at = 12;
-  uint64 id = 13 [
-    (gogoproto.customname) = "ID",
-    (gogoproto.customtype) = "PollID",
-    (gogoproto.nullable) = false
-  ];
-  PollModuleMetadata module_metadata = 14 [ (gogoproto.nullable) = false ];
-  snapshot.exported.v1beta1.Snapshot snapshot = 15
-      [ (gogoproto.nullable) = false ];
-}
-
 enum PollState {
   option (gogoproto.goproto_enum_prefix) = false;
   option (gogoproto.goproto_enum_stringer) = true;
@@ -79,4 +27,11 @@ enum PollState {
   POLL_STATE_PENDING = 1 [ (gogoproto.enumvalue_customname) = "Pending" ];
   POLL_STATE_COMPLETED = 2 [ (gogoproto.enumvalue_customname) = "Completed" ];
   POLL_STATE_FAILED = 3 [ (gogoproto.enumvalue_customname) = "Failed" ];
+}
+
+message PollModuleMetadata {
+  string module = 1;
+  google.protobuf.Any metadata = 2
+      [ (cosmos_proto.accepts_interface) =
+            "github.com/cosmos/codec/ProtoMarshaler" ];
 }

@@ -32,7 +32,7 @@ func (m GenesisState) Validate() error {
 			return getValidateError(fmt.Errorf("state of poll metadata %s is pending", pollMetadata.Key.String()))
 		}
 
-		if err := pollMetadata.Validate(); err != nil {
+		if err := pollMetadata.ValidateBasic(); err != nil {
 			return getValidateError(err)
 		}
 	}
