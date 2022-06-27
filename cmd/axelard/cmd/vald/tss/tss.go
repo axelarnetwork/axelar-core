@@ -210,6 +210,9 @@ func (mgr *Mgr) RefreshKeys(ctx context.Context) error {
 		return sdkerrors.Wrap(err, "failed to execute query")
 	}
 
+	mgr.keygen.Lock()
+	defer mgr.keygen.Unlock()
+
 	mgr.Keys = make(map[string][][]byte, len(valKeysResponse.Keys))
 	for keyID, keys := range valKeysResponse.Keys {
 		if len(keys.Keys) == 0 {
@@ -221,6 +224,21 @@ func (mgr *Mgr) RefreshKeys(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (mgr *Mgr) getKey(keyID string) ([][]byte, bool) {
+	mgr.keygen.RLock()
+	defer mgr.keygen.RUnlock()
+
+	keys, ok := mgr.Keys[keyID]
+	return keys, ok
+}
+
+func (mgr *Mgr) setKey(keyID string, keys [][]byte) {
+	mgr.keygen.Lock()
+	defer mgr.keygen.Unlock()
+
+	mgr.Keys[keyID] = keys
 }
 
 // Recover instructs tofnd to recover the node's shares given the recovery info provided
@@ -300,7 +318,7 @@ func (mgr *Mgr) ProcessHeartBeatEvent(e tmEvents.Event) error {
 			}
 			response, err = mgr.client.KeyPresence(grpcCtx, request)
 		case exported.Multisig:
-			pubKeys, found := mgr.Keys[string(keyInfo.KeyID)]
+			pubKeys, found := mgr.getKey(string(keyInfo.KeyID))
 			if !found {
 				continue
 			}
