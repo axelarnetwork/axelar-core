@@ -85,7 +85,7 @@ docker-image-local-user:  guard-VERSION guard-GROUP_ID guard-USER_ID
 		-t axelarnet/axelar-core:${VERSION}-local .
 
 .PHONY: build-push-docker-image
-build-push-docker-images:  guard-SEMVER
+build-push-docker-images:
 	@DOCKER_BUILDKIT=1 docker buildx build \
 		--platform ${PLATFORM} \
 		--output "type=image,push=${PUSH_DOCKER_IMAGE}" \
