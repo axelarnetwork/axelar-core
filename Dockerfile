@@ -2,7 +2,7 @@
 
 FROM golang:1.18-bullseye as build
 
-RUN apt update && apt install ca-certificates git make -y
+RUN apt update && apt install ca-certificates git make jq -y
 
 WORKDIR axelar
 
@@ -14,15 +14,13 @@ COPY . .
 ENV CGO_ENABLED=0
 RUN make build
 
-FROM ubuntu:20.04
-RUN apt update && apt install jq -y
 ARG USER_ID=1000
 ARG GROUP_ID=1001
-COPY --from=build /go/axelar/bin/* /usr/local/bin/
 RUN useradd --uid ${USER_ID} axelard && groupmod --gid ${GROUP_ID} axelard && usermod -aG axelard axelard
-RUN chown axelard /home
+RUN chown axelard /home && mv bin/axelard /usr/local/bin && chmod 777 /usr/local/bin/axelard
 USER axelard
 COPY ./entrypoint.sh /entrypoint.sh
+
 
 # The home directory of axelar-core where configuration/genesis/data are stored
 ENV HOME_DIR /home/axelard
@@ -50,3 +48,4 @@ RUN mkdir -p /home/axelard/conf && chown axelard /home/axelard/conf
 
 
 ENTRYPOINT ["/entrypoint.sh"]
+
