@@ -125,7 +125,7 @@ func (mgr *Mgr) multiSigKeygenStart(keyID string, shares uint32) error {
 	}
 
 	// TODO: Evict keys older than X rotations (they can be retrieved again if needed)
-	mgr.Keys[keyID] = pubKeys
+	mgr.setKey(keyID, pubKeys)
 
 	mgr.Logger.Info(fmt.Sprintf("operator %s sending multisig keys for key %s", mgr.principalAddr, keyID))
 	tssMsg := tss.NewSubmitMultiSigPubKeysRequest(mgr.cliCtx.FromAddress, tssexported.KeyID(keyID), sigKeyPairs)
