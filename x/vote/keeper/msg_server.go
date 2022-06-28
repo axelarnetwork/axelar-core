@@ -4,10 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 type msgServer struct {
@@ -30,8 +29,12 @@ func (s msgServer) Vote(c context.Context, req *types.VoteRequest) (*types.VoteR
 		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
 	}
 
-	poll := s.GetPoll(ctx, req.PollID)
-	voted, err := poll.Vote(voter, ctx.BlockHeight(), &req.Vote)
+	poll, ok := s.GetPoll(ctx, req.PollID)
+	if !ok {
+		return nil, fmt.Errorf("poll %s not found", req.PollID)
+	}
+
+	voteResult, err := poll.Vote(voter, ctx.BlockHeight(), req.Vote)
 	if err != nil {
 		return nil, err
 	}
@@ -41,45 +44,29 @@ func (s msgServer) Vote(c context.Context, req *types.VoteRequest) (*types.VoteR
 		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueVote),
 		sdk.NewAttribute(types.AttributeKeyPoll, req.PollID.String()),
 		sdk.NewAttribute(types.AttributeKeyVoter, req.Sender.String()),
+		sdk.NewAttribute(types.AttributeKeyPollState, poll.GetState().String()),
 	)
 
-	if voted {
+	if voteResult != vote.NoVote {
 		defer func() { ctx.EventManager().EmitEvent(event) }()
 	}
 
-	switch {
-	case poll.Is(vote.Pending):
-		event = event.AppendAttributes(sdk.NewAttribute(types.AttributeKeyPollState, vote.Pending.String()))
+	switch poll.GetState() {
+	case vote.Pending:
+		return &types.VoteResponse{Log: fmt.Sprintf("not enough votes to confirm poll %s yet", req.PollID.String())}, nil
+	case vote.Failed:
+		return &types.VoteResponse{Log: fmt.Sprintf("poll %s failed", req.PollID.String())}, nil
+	case vote.Completed:
 
-		return &types.VoteResponse{Log: fmt.Sprintf("not enough votes to confirm poll %s yet", poll.GetID().String())}, nil
-	case poll.Is(vote.Failed):
-		event = event.AppendAttributes(sdk.NewAttribute(types.AttributeKeyPollState, vote.Failed.String()))
-
-		return &types.VoteResponse{Log: fmt.Sprintf("poll %s failed", poll.GetID().String())}, nil
-	case poll.GetResult() != nil:
-		_, ok := result.(*vote.Vote)
-		if !ok {
-			return nil, fmt.Errorf("result of poll %s has wrong type, expected *exported.Vote, got %T", poll.GetID().String(), poll.GetResult())
+		if voteResult == vote.VoteInTime {
+			voteHandler := s.GetVoteRouter().GetHandler(poll.GetModule())
+			if err := voteHandler.HandleResult(ctx, poll.GetResult()); err != nil {
+				return &types.VoteResponse{Log: fmt.Sprintf("vote handler failed %s", err.Error())}, nil
+			}
 		}
-
-		pollModuleMetadata := poll.GetModuleMetadata()
-		voteHandler := s.GetVoteRouter().GetHandler(pollModuleMetadata.Module)
-		if voteHandler == nil {
-			return nil, fmt.Errorf("unknown module for vote %s", pollModuleMetadata.Module)
-		}
-
-		cachedCtx, writeCache := ctx.CacheContext()
-		if err := voteHandler.HandleResult(cachedCtx, result); err != nil {
-			return &types.VoteResponse{Log: fmt.Sprintf("vote handler failed %s", err.Error())}, nil
-		}
-
-		writeCache()
-		ctx.EventManager().EmitEvents(cachedCtx.EventManager().Events())
-
-		fallthrough
-	default:
-		event = event.AppendAttributes(sdk.NewAttribute(types.AttributeKeyPollState, vote.Completed.String()))
 
 		return &types.VoteResponse{}, nil
+	default:
+		panic(fmt.Sprintf("unexpected poll state %s", poll.GetState().String()))
 	}
 }

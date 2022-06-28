@@ -107,6 +107,11 @@ func (p *poll) Vote(voter sdk.ValAddress, blockHeight int64, data codec.ProtoMar
 	return exported.VoteInTime, nil
 }
 
+// GetModule returns the module the poll is associated with
+func (p poll) GetModule() string {
+	return p.Module
+}
+
 func (p poll) voteLate(voter sdk.ValAddress, data codec.ProtoMarshaler) {
 	p.logger().Debug("received late vote for poll",
 		"voter", voter.String(),

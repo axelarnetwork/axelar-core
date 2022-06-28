@@ -1,10 +1,10 @@
 package exported
 
 import (
-	fmt "fmt"
+	"fmt"
 	"strconv"
 
-	utils "github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/utils"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -175,11 +175,12 @@ const (
 
 // Poll provides an interface for other modules to interact with polls
 type Poll interface {
-	Is(state PollState) bool
+	GetState() PollState
 	HasVotedCorrectly(voter sdk.ValAddress) bool
 	HasVoted(voter sdk.ValAddress) bool
 	GetResult() codec.ProtoMarshaler
 	GetRewardPoolName() (string, bool)
 	GetVoters() []sdk.ValAddress
 	Vote(voter sdk.ValAddress, blockHeight int64, data codec.ProtoMarshaler) (VoteResult, error)
+	GetModule() string
 }
