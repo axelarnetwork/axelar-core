@@ -20,6 +20,13 @@ import (
 
 //go:generate moq -out ./mock/types.go -pkg mock . SDKValidator Snapshotter Slasher Tss ValidatorI
 
+// QuadraticWeightFunc returns floor(sqrt(consensusPower)) as the weight
+func QuadraticWeightFunc(consensusPower sdk.Uint) sdk.Uint {
+	bigInt := consensusPower.BigInt()
+
+	return sdk.NewUintFromBigInt(bigInt.Sqrt(bigInt))
+}
+
 // ValidatorI provides necessary functions to the validator information
 type ValidatorI interface {
 	GetConsensusPower(sdk.Int) int64 // validation power in tendermint

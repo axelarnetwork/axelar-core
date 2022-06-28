@@ -5,6 +5,8 @@ package exported
 
 import (
 	fmt "fmt"
+	utils "github.com/axelarnetwork/axelar-core/utils"
+	exported "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	types "github.com/cosmos/cosmos-sdk/codec/types"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
@@ -56,6 +58,56 @@ func (PollState) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_9e15e2bdf7e02581, []int{0}
 }
 
+// PollMetadata represents a poll with write-in voting, i.e. the result of the
+// vote can have any data type
+type PollMetadata struct {
+	ExpiresAt       int64             `protobuf:"varint,3,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	Result          *types.Any        `protobuf:"bytes,4,opt,name=result,proto3" json:"result,omitempty"`
+	VotingThreshold utils.Threshold   `protobuf:"bytes,5,opt,name=voting_threshold,json=votingThreshold,proto3" json:"voting_threshold"`
+	State           PollState         `protobuf:"varint,6,opt,name=state,proto3,enum=axelar.vote.exported.v1beta1.PollState" json:"state,omitempty"`
+	MinVoterCount   int64             `protobuf:"varint,7,opt,name=min_voter_count,json=minVoterCount,proto3" json:"min_voter_count,omitempty"`
+	RewardPoolName  string            `protobuf:"bytes,10,opt,name=reward_pool_name,json=rewardPoolName,proto3" json:"reward_pool_name,omitempty"`
+	GracePeriod     int64             `protobuf:"varint,11,opt,name=grace_period,json=gracePeriod,proto3" json:"grace_period,omitempty"`
+	CompletedAt     int64             `protobuf:"varint,12,opt,name=completed_at,json=completedAt,proto3" json:"completed_at,omitempty"`
+	ID              PollID            `protobuf:"varint,13,opt,name=id,proto3,customtype=PollID" json:"id"`
+	Snapshot        exported.Snapshot `protobuf:"bytes,15,opt,name=snapshot,proto3" json:"snapshot"`
+	Module          string            `protobuf:"bytes,16,opt,name=module,proto3" json:"module,omitempty"`
+	ModuleMetadata  *types.Any        `protobuf:"bytes,17,opt,name=module_metadata,json=moduleMetadata,proto3" json:"module_metadata,omitempty"`
+}
+
+func (m *PollMetadata) Reset()         { *m = PollMetadata{} }
+func (m *PollMetadata) String() string { return proto.CompactTextString(m) }
+func (*PollMetadata) ProtoMessage()    {}
+func (*PollMetadata) Descriptor() ([]byte, []int) {
+	return fileDescriptor_9e15e2bdf7e02581, []int{0}
+}
+func (m *PollMetadata) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *PollMetadata) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_PollMetadata.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *PollMetadata) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PollMetadata.Merge(m, src)
+}
+func (m *PollMetadata) XXX_Size() int {
+	return m.Size()
+}
+func (m *PollMetadata) XXX_DiscardUnknown() {
+	xxx_messageInfo_PollMetadata.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_PollMetadata proto.InternalMessageInfo
+
 // PollKey represents the key data for a poll
 //
 // Deprecated: Do not use.
@@ -67,7 +119,7 @@ type PollKey struct {
 func (m *PollKey) Reset()      { *m = PollKey{} }
 func (*PollKey) ProtoMessage() {}
 func (*PollKey) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9e15e2bdf7e02581, []int{0}
+	return fileDescriptor_9e15e2bdf7e02581, []int{1}
 }
 func (m *PollKey) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -96,48 +148,10 @@ func (m *PollKey) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_PollKey proto.InternalMessageInfo
 
-type PollModuleMetadata struct {
-	Module   string     `protobuf:"bytes,1,opt,name=module,proto3" json:"module,omitempty"`
-	Metadata *types.Any `protobuf:"bytes,2,opt,name=metadata,proto3" json:"metadata,omitempty"`
-}
-
-func (m *PollModuleMetadata) Reset()         { *m = PollModuleMetadata{} }
-func (m *PollModuleMetadata) String() string { return proto.CompactTextString(m) }
-func (*PollModuleMetadata) ProtoMessage()    {}
-func (*PollModuleMetadata) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9e15e2bdf7e02581, []int{1}
-}
-func (m *PollModuleMetadata) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *PollModuleMetadata) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_PollModuleMetadata.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *PollModuleMetadata) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_PollModuleMetadata.Merge(m, src)
-}
-func (m *PollModuleMetadata) XXX_Size() int {
-	return m.Size()
-}
-func (m *PollModuleMetadata) XXX_DiscardUnknown() {
-	xxx_messageInfo_PollModuleMetadata.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_PollModuleMetadata proto.InternalMessageInfo
-
 func init() {
 	proto.RegisterEnum("axelar.vote.exported.v1beta1.PollState", PollState_name, PollState_value)
+	proto.RegisterType((*PollMetadata)(nil), "axelar.vote.exported.v1beta1.PollMetadata")
 	proto.RegisterType((*PollKey)(nil), "axelar.vote.exported.v1beta1.PollKey")
-	proto.RegisterType((*PollModuleMetadata)(nil), "axelar.vote.exported.v1beta1.PollModuleMetadata")
 }
 
 func init() {
@@ -145,37 +159,170 @@ func init() {
 }
 
 var fileDescriptor_9e15e2bdf7e02581 = []byte{
-	// 471 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x74, 0x92, 0x4f, 0x8b, 0xd3, 0x40,
-	0x18, 0xc6, 0x33, 0x11, 0xb2, 0xdb, 0x29, 0x62, 0x0d, 0xa5, 0xd4, 0x20, 0xd9, 0xb8, 0x82, 0x2e,
-	0x2b, 0x9b, 0x61, 0xd5, 0x93, 0xb7, 0xb6, 0x49, 0x25, 0xd8, 0x76, 0x43, 0x5b, 0x2f, 0x22, 0x94,
-	0x69, 0xf2, 0x9a, 0x0d, 0x26, 0x99, 0x92, 0x4c, 0xd7, 0xf6, 0x1b, 0x48, 0x4e, 0x1e, 0xbd, 0x14,
-	0x04, 0x3d, 0x78, 0xd7, 0x0f, 0xb1, 0x78, 0xda, 0xa3, 0x27, 0xd1, 0xf6, 0x8b, 0x48, 0xfe, 0x54,
-	0xea, 0x61, 0x6f, 0xf3, 0xcc, 0xfb, 0x7b, 0x1f, 0x1e, 0x5e, 0x1e, 0x7c, 0x44, 0x17, 0x10, 0xd0,
-	0x98, 0x5c, 0x30, 0x0e, 0x04, 0x16, 0x33, 0x16, 0x73, 0x70, 0xc9, 0xc5, 0xe9, 0x14, 0x38, 0x3d,
-	0x25, 0x7c, 0x39, 0x83, 0x44, 0x9f, 0xc5, 0x8c, 0x33, 0xf9, 0x6e, 0x41, 0xea, 0x19, 0xa9, 0x6f,
-	0x49, 0xbd, 0x24, 0x95, 0xba, 0xc7, 0x3c, 0x96, 0x83, 0x24, 0x7b, 0x15, 0x3b, 0xca, 0x1d, 0x8f,
-	0x31, 0x2f, 0x00, 0x92, 0xab, 0xe9, 0xfc, 0x0d, 0xa1, 0xd1, 0x72, 0x3b, 0x72, 0x58, 0x12, 0xb2,
-	0x64, 0x52, 0xec, 0x14, 0xa2, 0x18, 0x1d, 0xb6, 0xf0, 0x9e, 0xcd, 0x82, 0xe0, 0x05, 0x2c, 0xe5,
-	0x06, 0x96, 0x42, 0xe6, 0xce, 0x03, 0x68, 0x22, 0x0d, 0x1d, 0x55, 0x86, 0xa5, 0x92, 0x1b, 0x58,
-	0xf4, 0xdd, 0xa6, 0x98, 0xfd, 0xb5, 0xa5, 0xf5, 0xaf, 0x03, 0xd1, 0x32, 0x86, 0xa2, 0xef, 0x3e,
-	0x93, 0x3e, 0x7e, 0x3a, 0x10, 0x9a, 0xe8, 0x30, 0x45, 0x58, 0xce, 0x3c, 0xfa, 0x39, 0xde, 0x07,
-	0x4e, 0x5d, 0xca, 0xe9, 0xb5, 0x76, 0xaf, 0xf1, 0x7e, 0x58, 0x32, 0xb9, 0x69, 0xf5, 0x71, 0x5d,
-	0x2f, 0xa2, 0xeb, 0xdb, 0xe8, 0x7a, 0x2b, 0x5a, 0xb6, 0x8f, 0x7f, 0x7c, 0x3f, 0x79, 0xe0, 0xf9,
-	0xfc, 0x7c, 0x3e, 0xd5, 0x1d, 0x16, 0x96, 0xb1, 0x89, 0xc3, 0x5c, 0x70, 0x88, 0x9d, 0x91, 0x7d,
-	0x1a, 0x27, 0xe7, 0x34, 0x80, 0x78, 0xf8, 0xcf, 0xf1, 0xf8, 0x1b, 0xc2, 0x95, 0x2c, 0xcc, 0x88,
-	0x53, 0x0e, 0xf2, 0x23, 0xdc, 0xb0, 0xcf, 0x7a, 0xbd, 0xc9, 0x68, 0xdc, 0x1a, 0x9b, 0x93, 0x97,
-	0x83, 0x91, 0x6d, 0x76, 0xac, 0xae, 0x65, 0x1a, 0x35, 0x41, 0xb9, 0x95, 0xae, 0xb4, 0xea, 0x80,
-	0x45, 0xe6, 0xc2, 0x4f, 0x38, 0x44, 0x5c, 0xbe, 0x8f, 0xe5, 0x1d, 0xd8, 0x36, 0x07, 0x86, 0x35,
-	0x78, 0x5e, 0x43, 0x4a, 0x35, 0x5d, 0x69, 0x7b, 0x36, 0x44, 0xae, 0x1f, 0x79, 0xf2, 0x43, 0x5c,
-	0xdf, 0x81, 0x3a, 0x67, 0x7d, 0xbb, 0x67, 0x8e, 0x4d, 0xa3, 0x26, 0x2a, 0x37, 0xd3, 0x95, 0x56,
-	0xe9, 0xb0, 0x70, 0x16, 0x00, 0x07, 0x57, 0xbe, 0x87, 0x6f, 0xef, 0x80, 0xdd, 0x96, 0xd5, 0x33,
-	0x8d, 0xda, 0x0d, 0x05, 0xa7, 0x2b, 0x4d, 0xea, 0x52, 0x3f, 0x00, 0x57, 0xd9, 0x7f, 0xff, 0x59,
-	0x15, 0xbe, 0x7e, 0x51, 0x51, 0x7b, 0x78, 0xf9, 0x47, 0x15, 0x2e, 0xd7, 0x2a, 0xba, 0x5a, 0xab,
-	0xe8, 0xf7, 0x5a, 0x45, 0x1f, 0x36, 0xaa, 0x70, 0xb5, 0x51, 0x85, 0x9f, 0x1b, 0x55, 0x78, 0xf5,
-	0x74, 0xe7, 0x0a, 0x45, 0x31, 0x22, 0xe0, 0xef, 0x58, 0xfc, 0xb6, 0x54, 0x27, 0x0e, 0x8b, 0x81,
-	0x2c, 0xfe, 0xef, 0xd5, 0x54, 0xca, 0xaf, 0xf9, 0xe4, 0x6f, 0x00, 0x00, 0x00, 0xff, 0xff, 0xa5,
-	0x8f, 0x2c, 0x6f, 0x76, 0x02, 0x00, 0x00,
+	// 765 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x94, 0x4f, 0x6f, 0xeb, 0x44,
+	0x14, 0xc5, 0xed, 0x34, 0x75, 0x93, 0x49, 0x9b, 0xf8, 0x8d, 0xa2, 0xca, 0x58, 0xe0, 0xf8, 0x3d,
+	0x9e, 0xde, 0x8b, 0x0a, 0xb5, 0xd5, 0xc2, 0x0a, 0x89, 0x45, 0xfe, 0xb8, 0x28, 0x21, 0x4d, 0xad,
+	0x24, 0x20, 0xc4, 0xc6, 0x9a, 0xd8, 0x83, 0x63, 0x61, 0x7b, 0x2c, 0x7b, 0xd2, 0x26, 0xdf, 0x00,
+	0x65, 0xc5, 0x92, 0x4d, 0x24, 0x24, 0x58, 0xb0, 0x87, 0x3d, 0xdb, 0x8a, 0x55, 0x97, 0x88, 0x45,
+	0x05, 0xe9, 0x17, 0x41, 0xfe, 0x97, 0xa6, 0x42, 0xea, 0x8a, 0x9d, 0xe7, 0xcc, 0x6f, 0x6e, 0xee,
+	0x39, 0xf7, 0x2a, 0xa0, 0x89, 0x16, 0xd8, 0x45, 0xa1, 0x7a, 0x4d, 0x28, 0x56, 0xf1, 0x22, 0x20,
+	0x21, 0xc5, 0x96, 0x7a, 0x7d, 0x36, 0xc5, 0x14, 0x9d, 0xa9, 0x74, 0x19, 0xe0, 0x48, 0x09, 0x42,
+	0x42, 0x09, 0x7c, 0x37, 0x25, 0x95, 0x98, 0x54, 0x72, 0x52, 0xc9, 0x48, 0xb1, 0x6e, 0x13, 0x9b,
+	0x24, 0xa0, 0x1a, 0x7f, 0xa5, 0x6f, 0xc4, 0x77, 0x6c, 0x42, 0x6c, 0x17, 0xab, 0xc9, 0x69, 0x3a,
+	0xff, 0x46, 0x45, 0xfe, 0x32, 0xbf, 0x32, 0x49, 0xe4, 0x91, 0xc8, 0x48, 0xdf, 0xa4, 0x87, 0xec,
+	0xea, 0xc3, 0xac, 0xa7, 0xc8, 0x47, 0x41, 0x34, 0x23, 0xf4, 0xd9, 0xbe, 0xc4, 0xd7, 0x19, 0x3d,
+	0xa7, 0x8e, 0x1b, 0x3d, 0x12, 0xb3, 0x10, 0x47, 0x33, 0xe2, 0x5a, 0x29, 0xf5, 0xea, 0xf7, 0x7d,
+	0x70, 0xa8, 0x13, 0xd7, 0xbd, 0xc4, 0x14, 0x59, 0x88, 0x22, 0xf8, 0x1e, 0x00, 0x78, 0x11, 0x38,
+	0x21, 0x8e, 0x0c, 0x44, 0x85, 0x3d, 0x99, 0x6d, 0xee, 0x8d, 0xca, 0x99, 0xd2, 0xa2, 0xf0, 0x2b,
+	0xc0, 0x85, 0x38, 0x9a, 0xbb, 0x54, 0x28, 0xca, 0x6c, 0xb3, 0x72, 0x5e, 0x57, 0x52, 0x2b, 0x4a,
+	0x6e, 0x45, 0x69, 0xf9, 0xcb, 0xf6, 0xc9, 0x1f, 0xbf, 0x9d, 0xbe, 0xb1, 0x1d, 0x3a, 0x9b, 0x4f,
+	0x15, 0x93, 0x78, 0x99, 0x0d, 0xd5, 0x24, 0x16, 0x36, 0x55, 0x3d, 0x26, 0x2f, 0x51, 0x18, 0xcd,
+	0x90, 0x8b, 0xc3, 0x51, 0x56, 0x0f, 0xea, 0x80, 0xbf, 0x26, 0xd4, 0xf1, 0x6d, 0x63, 0xdb, 0xa3,
+	0xb0, 0x9f, 0xfc, 0x46, 0x43, 0xc9, 0x22, 0x4e, 0xac, 0xe4, 0xd1, 0x2a, 0x93, 0x1c, 0x6b, 0x17,
+	0x6f, 0xef, 0x1b, 0xcc, 0xa8, 0x96, 0x3e, 0xdf, 0xca, 0xf0, 0x53, 0xb0, 0x1f, 0x51, 0x44, 0xb1,
+	0xc0, 0xc9, 0x6c, 0xb3, 0x7a, 0xfe, 0x56, 0x79, 0x6e, 0x52, 0x4a, 0x9c, 0xc2, 0x38, 0xc6, 0x47,
+	0xe9, 0x2b, 0xf8, 0x06, 0xd4, 0x3c, 0xc7, 0x37, 0x62, 0x3a, 0x34, 0x4c, 0x32, 0xf7, 0xa9, 0x70,
+	0x90, 0xc4, 0x71, 0xe4, 0x39, 0xfe, 0x97, 0xb1, 0xda, 0x89, 0x45, 0xd8, 0x04, 0x7c, 0x88, 0x6f,
+	0x50, 0x68, 0x19, 0x01, 0x21, 0xae, 0xe1, 0x23, 0x0f, 0x0b, 0x40, 0x66, 0x9b, 0xe5, 0x51, 0x35,
+	0xd5, 0x75, 0x42, 0xdc, 0x21, 0xf2, 0x30, 0x7c, 0x09, 0x0e, 0xed, 0x10, 0x99, 0xd8, 0x08, 0x70,
+	0xe8, 0x10, 0x4b, 0xa8, 0x24, 0xe5, 0x2a, 0x89, 0xa6, 0x27, 0x52, 0x8c, 0x98, 0xc4, 0x0b, 0x5c,
+	0x4c, 0xb1, 0x15, 0x0f, 0xe0, 0x30, 0x45, 0xb6, 0x5a, 0x8b, 0xc2, 0xd7, 0xa0, 0xe0, 0x58, 0xc2,
+	0x91, 0xcc, 0x36, 0x8b, 0xed, 0x7a, 0xec, 0xfc, 0xaf, 0xfb, 0x06, 0x17, 0x77, 0xdf, 0xeb, 0x6e,
+	0xee, 0x1b, 0x85, 0x5e, 0x77, 0x54, 0x70, 0x2c, 0x38, 0x00, 0xa5, 0x7c, 0x4f, 0x84, 0x5a, 0x12,
+	0xe3, 0x49, 0xee, 0x3f, 0xd7, 0xff, 0x9b, 0xc1, 0x38, 0xbb, 0xc9, 0x12, 0xdd, 0x56, 0x80, 0xc7,
+	0x80, 0xf3, 0x88, 0x35, 0x77, 0xb1, 0xc0, 0x27, 0xce, 0xb2, 0x13, 0x74, 0x40, 0x2d, 0xfd, 0x32,
+	0xbc, 0x6c, 0x81, 0x84, 0x17, 0xff, 0xd3, 0x5e, 0x54, 0xd3, 0xc2, 0xf9, 0x62, 0xf6, 0x8b, 0x25,
+	0x96, 0x2f, 0xf4, 0x8b, 0xa5, 0x12, 0x5f, 0xee, 0x17, 0x4b, 0x65, 0x1e, 0xf4, 0x8b, 0xa5, 0x2a,
+	0x5f, 0x7b, 0xd5, 0x02, 0x07, 0xb1, 0xf9, 0xcf, 0xf1, 0x72, 0xa7, 0x4b, 0xf6, 0x49, 0x97, 0xc7,
+	0x49, 0x62, 0x85, 0x58, 0x6b, 0x73, 0x8f, 0x19, 0x7d, 0xc2, 0xfd, 0xf0, 0x63, 0x83, 0x11, 0xd8,
+	0x93, 0x5f, 0x59, 0x50, 0xde, 0x8e, 0x1f, 0x7e, 0x00, 0x8e, 0xf5, 0xab, 0xc1, 0xc0, 0x18, 0x4f,
+	0x5a, 0x13, 0xcd, 0xf8, 0x62, 0x38, 0xd6, 0xb5, 0x4e, 0xef, 0xa2, 0xa7, 0x75, 0x79, 0x46, 0xac,
+	0xad, 0xd6, 0x72, 0x65, 0x48, 0x7c, 0x6d, 0xe1, 0x44, 0x14, 0xfb, 0x14, 0xbe, 0x0f, 0xe0, 0x0e,
+	0xac, 0x6b, 0xc3, 0x6e, 0x6f, 0xf8, 0x19, 0xcf, 0x8a, 0x95, 0xd5, 0x5a, 0x3e, 0xd0, 0xb1, 0x6f,
+	0x39, 0xbe, 0x0d, 0xdf, 0x82, 0xfa, 0x0e, 0xd4, 0xb9, 0xba, 0xd4, 0x07, 0xda, 0x44, 0xeb, 0xf2,
+	0x05, 0xf1, 0x68, 0xb5, 0x96, 0xcb, 0x9d, 0x7c, 0xb8, 0xf0, 0x25, 0x78, 0xb1, 0x03, 0x5e, 0xb4,
+	0x7a, 0x03, 0xad, 0xcb, 0xef, 0x89, 0x60, 0xb5, 0x96, 0xb9, 0x0b, 0xe4, 0xb8, 0xd8, 0x12, 0x4b,
+	0xdf, 0xfd, 0x24, 0x31, 0xbf, 0xfc, 0x2c, 0xb1, 0xed, 0xd1, 0xed, 0x3f, 0x12, 0x73, 0xbb, 0x91,
+	0xd8, 0xbb, 0x8d, 0xc4, 0xfe, 0xbd, 0x91, 0xd8, 0xef, 0x1f, 0x24, 0xe6, 0xee, 0x41, 0x62, 0xfe,
+	0x7c, 0x90, 0x98, 0xaf, 0x3f, 0xde, 0x89, 0x39, 0x9d, 0xbb, 0x8f, 0xe9, 0x0d, 0x09, 0xbf, 0xcd,
+	0x4e, 0xa7, 0x26, 0x09, 0xb1, 0xba, 0x78, 0xfa, 0x07, 0x37, 0xe5, 0x92, 0x71, 0x7d, 0xf4, 0x6f,
+	0x00, 0x00, 0x00, 0xff, 0xff, 0x97, 0xcf, 0xec, 0x85, 0xff, 0x04, 0x00, 0x00,
+}
+
+func (m *PollMetadata) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *PollMetadata) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *PollMetadata) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.ModuleMetadata != nil {
+		{
+			size, err := m.ModuleMetadata.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintTypes(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0x8a
+	}
+	if len(m.Module) > 0 {
+		i -= len(m.Module)
+		copy(dAtA[i:], m.Module)
+		i = encodeVarintTypes(dAtA, i, uint64(len(m.Module)))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0x82
+	}
+	{
+		size, err := m.Snapshot.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintTypes(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x7a
+	if m.ID != 0 {
+		i = encodeVarintTypes(dAtA, i, uint64(m.ID))
+		i--
+		dAtA[i] = 0x68
+	}
+	if m.CompletedAt != 0 {
+		i = encodeVarintTypes(dAtA, i, uint64(m.CompletedAt))
+		i--
+		dAtA[i] = 0x60
+	}
+	if m.GracePeriod != 0 {
+		i = encodeVarintTypes(dAtA, i, uint64(m.GracePeriod))
+		i--
+		dAtA[i] = 0x58
+	}
+	if len(m.RewardPoolName) > 0 {
+		i -= len(m.RewardPoolName)
+		copy(dAtA[i:], m.RewardPoolName)
+		i = encodeVarintTypes(dAtA, i, uint64(len(m.RewardPoolName)))
+		i--
+		dAtA[i] = 0x52
+	}
+	if m.MinVoterCount != 0 {
+		i = encodeVarintTypes(dAtA, i, uint64(m.MinVoterCount))
+		i--
+		dAtA[i] = 0x38
+	}
+	if m.State != 0 {
+		i = encodeVarintTypes(dAtA, i, uint64(m.State))
+		i--
+		dAtA[i] = 0x30
+	}
+	{
+		size, err := m.VotingThreshold.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintTypes(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x2a
+	if m.Result != nil {
+		{
+			size, err := m.Result.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintTypes(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x22
+	}
+	if m.ExpiresAt != 0 {
+		i = encodeVarintTypes(dAtA, i, uint64(m.ExpiresAt))
+		i--
+		dAtA[i] = 0x18
+	}
+	return len(dAtA) - i, nil
 }
 
 func (m *PollKey) Marshal() (dAtA []byte, err error) {
@@ -215,48 +362,6 @@ func (m *PollKey) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *PollModuleMetadata) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *PollModuleMetadata) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *PollModuleMetadata) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.Metadata != nil {
-		{
-			size, err := m.Metadata.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintTypes(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.Module) > 0 {
-		i -= len(m.Module)
-		copy(dAtA[i:], m.Module)
-		i = encodeVarintTypes(dAtA, i, uint64(len(m.Module)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
 func encodeVarintTypes(dAtA []byte, offset int, v uint64) int {
 	offset -= sovTypes(v)
 	base := offset
@@ -268,6 +373,53 @@ func encodeVarintTypes(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *PollMetadata) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.ExpiresAt != 0 {
+		n += 1 + sovTypes(uint64(m.ExpiresAt))
+	}
+	if m.Result != nil {
+		l = m.Result.Size()
+		n += 1 + l + sovTypes(uint64(l))
+	}
+	l = m.VotingThreshold.Size()
+	n += 1 + l + sovTypes(uint64(l))
+	if m.State != 0 {
+		n += 1 + sovTypes(uint64(m.State))
+	}
+	if m.MinVoterCount != 0 {
+		n += 1 + sovTypes(uint64(m.MinVoterCount))
+	}
+	l = len(m.RewardPoolName)
+	if l > 0 {
+		n += 1 + l + sovTypes(uint64(l))
+	}
+	if m.GracePeriod != 0 {
+		n += 1 + sovTypes(uint64(m.GracePeriod))
+	}
+	if m.CompletedAt != 0 {
+		n += 1 + sovTypes(uint64(m.CompletedAt))
+	}
+	if m.ID != 0 {
+		n += 1 + sovTypes(uint64(m.ID))
+	}
+	l = m.Snapshot.Size()
+	n += 1 + l + sovTypes(uint64(l))
+	l = len(m.Module)
+	if l > 0 {
+		n += 2 + l + sovTypes(uint64(l))
+	}
+	if m.ModuleMetadata != nil {
+		l = m.ModuleMetadata.Size()
+		n += 2 + l + sovTypes(uint64(l))
+	}
+	return n
+}
+
 func (m *PollKey) Size() (n int) {
 	if m == nil {
 		return 0
@@ -285,28 +437,377 @@ func (m *PollKey) Size() (n int) {
 	return n
 }
 
-func (m *PollModuleMetadata) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.Module)
-	if l > 0 {
-		n += 1 + l + sovTypes(uint64(l))
-	}
-	if m.Metadata != nil {
-		l = m.Metadata.Size()
-		n += 1 + l + sovTypes(uint64(l))
-	}
-	return n
-}
-
 func sovTypes(x uint64) (n int) {
 	return (math_bits.Len64(x|1) + 6) / 7
 }
 func sozTypes(x uint64) (n int) {
 	return sovTypes(uint64((x << 1) ^ uint64((int64(x) >> 63))))
+}
+func (m *PollMetadata) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTypes
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: PollMetadata: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: PollMetadata: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExpiresAt", wireType)
+			}
+			m.ExpiresAt = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ExpiresAt |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Result", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Result == nil {
+				m.Result = &types.Any{}
+			}
+			if err := m.Result.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field VotingThreshold", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.VotingThreshold.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field State", wireType)
+			}
+			m.State = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.State |= PollState(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 7:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MinVoterCount", wireType)
+			}
+			m.MinVoterCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.MinVoterCount |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 10:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RewardPoolName", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.RewardPoolName = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 11:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field GracePeriod", wireType)
+			}
+			m.GracePeriod = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.GracePeriod |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 12:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CompletedAt", wireType)
+			}
+			m.CompletedAt = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.CompletedAt |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 13:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ID", wireType)
+			}
+			m.ID = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ID |= PollID(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 15:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Snapshot", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.Snapshot.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 16:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Module", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Module = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 17:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ModuleMetadata", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.ModuleMetadata == nil {
+				m.ModuleMetadata = &types.Any{}
+			}
+			if err := m.ModuleMetadata.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTypes(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
 }
 func (m *PollKey) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
@@ -400,124 +901,6 @@ func (m *PollKey) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ID = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipTypes(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthTypes
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *PollModuleMetadata) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowTypes
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: PollModuleMetadata: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: PollModuleMetadata: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Module", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowTypes
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthTypes
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthTypes
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Module = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Metadata", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowTypes
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthTypes
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthTypes
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Metadata == nil {
-				m.Metadata = &types.Any{}
-			}
-			if err := m.Metadata.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

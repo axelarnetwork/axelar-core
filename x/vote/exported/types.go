@@ -1,17 +1,25 @@
 package exported
 
 import (
-	"fmt"
+	fmt "fmt"
 	"strconv"
 
+	utils "github.com/axelarnetwork/axelar-core/utils"
+	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	gogo "github.com/gogo/protobuf/types"
-
-	"github.com/axelarnetwork/axelar-core/utils"
 )
 
 //go:generate moq -out ./mock/types.go -pkg mock . Poll VoteHandler
+
+var _ codectypes.UnpackInterfacesMessage = PollMetadata{}
+
+// UnpackInterfaces implements UnpackInterfacesMessage
+func (m PollMetadata) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
+	var data codec.ProtoMarshaler
+	return unpacker.UnpackAny(m.Result, &data)
+}
 
 // VoteHandler defines a struct that can handle the poll result
 type VoteHandler interface {
@@ -29,103 +37,149 @@ func (id PollID) String() string {
 	return strconv.FormatUint(uint64(id), 10)
 }
 
+// Deprecated: String converts the given poll key to string
 func (m PollKey) String() string {
 	return fmt.Sprintf("%s_%s", m.Module, m.ID)
 }
 
 type PollBuilder struct {
-	ExpiresAt       int64
-	VotingThreshold utils.Threshold
-	MinVoterCount   int64
-	RewardPoolName  string
-	GracePeriod     int64
-	Module          string
-	Metadata        gogo.Any
+	p PollMetadata
 }
 
-// PollProperty is a modifier for PollMetadata. It should never be manually initialized
-type PollProperty struct {
-	do func(metadata PollBuilder) PollBuilder
-}
-
-func (p PollProperty) apply(metadata PollBuilder) PollBuilder {
-	return p.do(metadata)
-}
-
-// With returns a new metadata object with all the given properties set
-func (b PollBuilder) With(properties ...PollProperty) PollBuilder {
-	builder := b
-	for _, property := range properties {
-		builder = property.apply(builder)
+func NewPollBuilder(module string, threshold utils.Threshold, snapshot snapshot.Snapshot, expiresAt int64) PollBuilder {
+	return PollBuilder{
+		p: PollMetadata{
+			State:           Pending,
+			Module:          module,
+			VotingThreshold: threshold,
+			Snapshot:        snapshot,
+			ExpiresAt:       expiresAt,
+		},
 	}
-	return builder
-}
-
-// ExpiryAt sets the expiry property on PollMetadata
-func ExpiryAt(blockHeight int64) PollProperty {
-	return PollProperty{do: func(builder PollBuilder) PollBuilder {
-		builder.ExpiresAt = blockHeight
-		return builder
-	}}
-}
-
-// Threshold sets the threshold property on PollMetadata
-func Threshold(threshold utils.Threshold) PollProperty {
-	return PollProperty{do: func(builder PollBuilder) PollBuilder {
-		builder.VotingThreshold = threshold
-		return builder
-	}}
 }
 
 // MinVoterCount sets the minimum number of voters that have to vote on PollMeta
 // If not enough voters exist, then all of them have to vote
-func MinVoterCount(minVoterCount int64) PollProperty {
-	return PollProperty{do: func(builder PollBuilder) PollBuilder {
-		builder.MinVoterCount = minVoterCount
-		return builder
-	}}
+func (builder PollBuilder) MinVoterCount(minVoterCount int64) PollBuilder {
+	builder.p.MinVoterCount = minVoterCount
+	return builder
 }
 
-// RewardPool sets the name of a reward pool for the poll
-func RewardPool(rewardPoolName string) PollProperty {
-	return PollProperty{do: func(builder PollBuilder) PollBuilder {
-		builder.RewardPoolName = rewardPoolName
-		return builder
-	}}
+// RewardPoolName sets the name of a reward pool for the poll
+func (builder PollBuilder) RewardPoolName(rewardPoolName string) PollBuilder {
+	builder.p.RewardPoolName = rewardPoolName
+	return builder
 }
 
 // GracePeriod sets the grace period after poll completion during which votes
 // are still recorded
-func GracePeriod(gracePeriod int64) PollProperty {
-	return PollProperty{do: func(builder PollBuilder) PollBuilder {
-		builder.GracePeriod = gracePeriod
-		return builder
-	}}
+func (builder PollBuilder) GracePeriod(gracePeriod int64) PollBuilder {
+	builder.p.GracePeriod = gracePeriod
+	return builder
 }
 
-// Module sets the module name on the poll
-func Module(module string) PollProperty {
-	return PollProperty{do: func(builder PollBuilder) PollBuilder {
-		builder.Module = module
+// ModuleMetadata sets the module metadata on the poll
+func (builder PollBuilder) ModuleMetadata(moduleMetadata codec.ProtoMarshaler) PollBuilder {
+	any, err := codectypes.NewAnyWithValue(moduleMetadata)
+	if err != nil {
+		panic(err)
+	}
 
-		return builder
-	}}
+	builder.p.ModuleMetadata = any
+	return builder
 }
 
-// ValidateBasic returns an error if the poll module metadata is not valid; nil otherwise
-func (m PollModuleMetadata) ValidateBasic() error {
-	if err := utils.ValidateString(m.Module); err != nil {
+// Build returns the wrapped poll metadata, or an error if the poll metadata is not valid
+func (builder PollBuilder) Build(blockHeight int64) (PollMetadata, error) {
+	p := builder.p
+
+	if err := p.ValidateBasic(); err != nil {
+		return PollMetadata{}, nil
+	}
+
+	if p.ExpiresAt <= blockHeight {
+		return PollMetadata{}, fmt.Errorf(
+			"cannot create poll that expires at block %d which is less than or equal to the current block height %d",
+			p.ExpiresAt,
+			blockHeight,
+		)
+	}
+
+	if !p.Is(Pending) {
+		return PollMetadata{}, fmt.Errorf("cannot create poll %s that is not pending", p.ID)
+	}
+
+	if p.CompletedAt != 0 {
+		return PollMetadata{}, fmt.Errorf("cannot create poll %s that is already completed", p.ID)
+	}
+
+	return p, nil
+}
+
+// ValidateBasic returns an error if the poll metadata is not valid; nil otherwise
+func (m PollMetadata) ValidateBasic() error {
+	if len(m.Module) == 0 {
+		return fmt.Errorf("module must be set")
+	}
+
+	if m.ExpiresAt <= 0 {
+		return fmt.Errorf("expires at must be >0")
+	}
+
+	if m.CompletedAt < 0 {
+		return fmt.Errorf("completed at must be >=0")
+	}
+
+	if m.VotingThreshold.LTE(utils.ZeroThreshold) || m.VotingThreshold.GT(utils.OneThreshold) {
+		return fmt.Errorf("voting threshold must be >0 and <=1")
+	}
+
+	if m.Is(Completed) == (m.Result == nil) {
+		return fmt.Errorf("completed poll must have result set")
+	}
+
+	if m.Is(Completed) == (m.CompletedAt <= 0) {
+		return fmt.Errorf("completed poll must have completed at set and non-completed poll must not")
+	}
+
+	if m.Is(NonExistent) {
+		return fmt.Errorf("state cannot be non-existent")
+	}
+
+	if m.MinVoterCount < 0 || m.MinVoterCount > int64(len(m.Snapshot.Participants)) {
+		return fmt.Errorf("invalid min voter count")
+	}
+
+	if err := m.Snapshot.ValidateBasic(); err != nil {
 		return err
+	}
+
+	if m.Snapshot.GetParticipantsWeight().LT(m.Snapshot.CalculateMinPassingWeight(m.VotingThreshold)) {
+		return fmt.Errorf("invalid voting threshold")
 	}
 
 	return nil
 }
 
+func (p PollMetadata) Is(state PollState) bool {
+	return p.State == state
+}
+
+type VoteResult int
+
+const (
+	NoVote = iota
+	VoteInTime
+	VotedLate
+)
+
 // Poll provides an interface for other modules to interact with polls
 type Poll interface {
+	Is(state PollState) bool
 	HasVotedCorrectly(voter sdk.ValAddress) bool
 	HasVoted(voter sdk.ValAddress) bool
 	GetResult() codec.ProtoMarshaler
 	GetRewardPoolName() (string, bool)
 	GetVoters() []sdk.ValAddress
+	Vote(voter sdk.ValAddress, blockHeight int64, data codec.ProtoMarshaler) (VoteResult, error)
 }

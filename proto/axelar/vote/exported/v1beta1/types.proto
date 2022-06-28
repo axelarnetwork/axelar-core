@@ -6,8 +6,39 @@ option go_package = "github.com/axelarnetwork/axelar-core/x/vote/exported";
 import "gogoproto/gogo.proto";
 import "google/protobuf/any.proto";
 import "cosmos_proto/cosmos.proto";
+import "axelar/snapshot/exported/v1beta1/types.proto";
+import "axelar/utils/v1beta1/threshold.proto";
 
 option (gogoproto.goproto_getters_all) = false;
+
+// PollMetadata represents a poll with write-in voting, i.e. the result of the
+// vote can have any data type
+message PollMetadata {
+  reserved 1, 8, 9, 14; // deleted poll key, total voting power, voters and
+                        // module_metadata in 0.20.x
+
+  int64 expires_at = 3;
+  google.protobuf.Any result = 4
+      [ (cosmos_proto.accepts_interface) =
+            "github.com/cosmos/codec/ProtoMarshaler" ];
+  utils.v1beta1.Threshold voting_threshold = 5 [ (gogoproto.nullable) = false ];
+  PollState state = 6;
+  int64 min_voter_count = 7;
+  string reward_pool_name = 10;
+  int64 grace_period = 11;
+  int64 completed_at = 12;
+  uint64 id = 13 [
+    (gogoproto.customname) = "ID",
+    (gogoproto.customtype) = "PollID",
+    (gogoproto.nullable) = false
+  ];
+  snapshot.exported.v1beta1.Snapshot snapshot = 15
+      [ (gogoproto.nullable) = false ];
+  string module = 16;
+  google.protobuf.Any module_metadata = 17
+      [ (cosmos_proto.accepts_interface) =
+            "github.com/cosmos/codec/ProtoMarshaler" ];
+}
 
 // PollKey represents the key data for a poll
 message PollKey {
@@ -27,11 +58,4 @@ enum PollState {
   POLL_STATE_PENDING = 1 [ (gogoproto.enumvalue_customname) = "Pending" ];
   POLL_STATE_COMPLETED = 2 [ (gogoproto.enumvalue_customname) = "Completed" ];
   POLL_STATE_FAILED = 3 [ (gogoproto.enumvalue_customname) = "Failed" ];
-}
-
-message PollModuleMetadata {
-  string module = 1;
-  google.protobuf.Any metadata = 2
-      [ (cosmos_proto.accepts_interface) =
-            "github.com/cosmos/codec/ProtoMarshaler" ];
 }
