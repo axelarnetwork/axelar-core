@@ -75,12 +75,12 @@
     {
       "from": "osmosis",
       "to": "axelarnet",
-      "channel_id": "channel-240"
+      "channel_id": "channel-312"
     },
     {
       "from": "axelarnet",
       "to": "osmosis",
-      "channel_id": "channel-7"
+      "channel_id": "channel-22"
     },
     {
       "from": "crescent",
@@ -101,6 +101,16 @@
       "from": "axelarnet",
       "to": "juno",
       "channel_id": "channel-16"
+    },
+    {
+      "from": "terra",
+      "to": "axelarnet",
+      "channel_id": "channel-8"
+    },
+    {
+      "from": "axelarnet",
+      "to": "terra",
+      "channel_id": "channel-23"
     }
   ]
 }
