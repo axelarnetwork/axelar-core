@@ -14,7 +14,7 @@ func (k Keeper) InitGenesis(ctx sdk.Context, genState *types.GenesisState) {
 	k.SetParams(ctx, genState.Params)
 
 	for _, pollMetadata := range genState.PollMetadatas {
-		k.newPollStore(ctx, pollMetadata.ID).SetMetadata(pollMetadata)
+		k.setPollMetadata(ctx, pollMetadata)
 	}
 }
 

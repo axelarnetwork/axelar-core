@@ -6,6 +6,7 @@ import (
 
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/types"
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -34,7 +35,7 @@ func (s msgServer) Vote(c context.Context, req *types.VoteRequest) (*types.VoteR
 		return nil, fmt.Errorf("poll %s not found", req.PollID)
 	}
 
-	voteResult, err := poll.Vote(voter, ctx.BlockHeight(), req.Vote)
+	voteResult, err := poll.Vote(voter, ctx.BlockHeight(), req.Vote.GetCachedValue().(codec.ProtoMarshaler))
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +58,6 @@ func (s msgServer) Vote(c context.Context, req *types.VoteRequest) (*types.VoteR
 	case vote.Failed:
 		return &types.VoteResponse{Log: fmt.Sprintf("poll %s failed", req.PollID.String())}, nil
 	case vote.Completed:
-
 		if voteResult == vote.VoteInTime {
 			voteHandler := s.GetVoteRouter().GetHandler(poll.GetModule())
 			if err := voteHandler.HandleResult(ctx, poll.GetResult()); err != nil {

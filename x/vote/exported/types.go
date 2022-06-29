@@ -94,7 +94,7 @@ func (builder PollBuilder) Build(blockHeight int64) (PollMetadata, error) {
 	p := builder.p
 
 	if err := p.ValidateBasic(); err != nil {
-		return PollMetadata{}, nil
+		return PollMetadata{}, err
 	}
 
 	if p.ExpiresAt <= blockHeight {
@@ -175,6 +175,7 @@ const (
 
 // Poll provides an interface for other modules to interact with polls
 type Poll interface {
+	GetID() PollID
 	GetState() PollState
 	HasVotedCorrectly(voter sdk.ValAddress) bool
 	HasVoted(voter sdk.ValAddress) bool

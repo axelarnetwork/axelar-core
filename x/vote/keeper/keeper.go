@@ -71,19 +71,7 @@ func (k Keeper) SetParams(ctx sdk.Context, params types.Params) {
 	k.paramSpace.SetParamSet(ctx, &params)
 }
 
-func (k Keeper) getPollCount(ctx sdk.Context) uint64 {
-	var val gogoprototypes.UInt64Value
-	if !k.getKVStore(ctx).Get(countKey, &val) {
-		return 0
-	}
-
-	return val.Value
-}
-
-func (k Keeper) setPollCount(ctx sdk.Context, count uint64) {
-	k.getKVStore(ctx).Set(countKey, &gogoprototypes.UInt64Value{Value: count})
-}
-
+// InitializePoll creates a poll with the given poll builder
 func (k Keeper) InitializePoll(ctx sdk.Context, pollBuilder exported.PollBuilder) (exported.PollID, error) {
 	pollCount := k.getPollCount(ctx)
 	pollID := exported.PollID(pollCount)
@@ -112,6 +100,71 @@ func (k Keeper) GetPoll(ctx sdk.Context, id exported.PollID) (exported.Poll, boo
 	}
 
 	return newPoll(ctx, k, metadata), true
+}
+
+// SetVoteRouter sets the vote router. It will panic if called more than once
+func (k *Keeper) SetVoteRouter(router types.VoteRouter) {
+	if k.voteRouter != nil {
+		panic("router already set")
+	}
+
+	k.voteRouter = router
+
+	// In order to avoid invalid or non-deterministic behavior, we seal the router immediately
+	// to prevent additional handlers from being registered after the keeper is initialized.
+	k.voteRouter.Seal()
+}
+
+// GetVoteRouter returns the nexus router. If no router was set, it returns a (sealed) router with no handlers
+func (k Keeper) GetVoteRouter() types.VoteRouter {
+	if k.voteRouter == nil {
+		k.SetVoteRouter(types.NewRouter())
+	}
+
+	return k.voteRouter
+}
+
+// GetPollQueue returns the poll queue
+func (k Keeper) GetPollQueue(ctx sdk.Context) utils.KVQueue {
+	return utils.NewGeneralKVQueue(
+		pollQueueName,
+		k.getKVStore(ctx),
+		k.Logger(ctx),
+		func(value codec.ProtoMarshaler) utils.Key {
+			metadata := value.(*exported.PollMetadata)
+			bz := make([]byte, 8)
+			binary.BigEndian.PutUint64(bz, uint64(metadata.ExpiresAt))
+
+			return utils.KeyFromBz(bz)
+		},
+	)
+}
+
+// Delete poll deletes the poll with the given ID
+func (k Keeper) DeletePoll(ctx sdk.Context, pollID exported.PollID) {
+	// delete poll metadata
+	k.getKVStore(ctx).Delete(pollPrefix.AppendStr(pollID.String()))
+
+	// delete tallied votes index for poll
+	iter := k.getKVStore(ctx).Iterator(votesPrefix.AppendStr(pollID.String()))
+	defer utils.CloseLogError(iter, k.Logger(ctx))
+
+	for ; iter.Valid(); iter.Next() {
+		k.getKVStore(ctx).Delete(iter.GetKey())
+	}
+}
+
+func (k Keeper) getPollCount(ctx sdk.Context) uint64 {
+	var val gogoprototypes.UInt64Value
+	if !k.getKVStore(ctx).Get(countKey, &val) {
+		return 0
+	}
+
+	return val.Value
+}
+
+func (k Keeper) setPollCount(ctx sdk.Context, count uint64) {
+	k.getKVStore(ctx).Set(countKey, &gogoprototypes.UInt64Value{Value: count})
 }
 
 func (k Keeper) setPollMetadata(ctx sdk.Context, metadata exported.PollMetadata) {
@@ -146,46 +199,6 @@ func (k Keeper) getKVStore(ctx sdk.Context) utils.KVStore {
 	return utils.NewNormalizedStore(ctx.KVStore(k.storeKey), k.cdc)
 }
 
-// SetVoteRouter sets the vote router. It will panic if called more than once
-func (k *Keeper) SetVoteRouter(router types.VoteRouter) {
-	if k.voteRouter != nil {
-		panic("router already set")
-	}
-
-	k.voteRouter = router
-
-	// In order to avoid invalid or non-deterministic behavior, we seal the router immediately
-	// to prevent additional handlers from being registered after the keeper is initialized.
-	k.voteRouter.Seal()
-}
-
-// GetVoteRouter returns the nexus router. If no router was set, it returns a (sealed) router with no handlers
-func (k Keeper) GetVoteRouter() types.VoteRouter {
-	if k.voteRouter == nil {
-		k.SetVoteRouter(types.NewRouter())
-	}
-
-	return k.voteRouter
-}
-
-// GetPollQueue returns the poll queue
-func (k Keeper) GetPollQueue(ctx sdk.Context) utils.KVQueue {
-	return getPollQueue(k.getKVStore(ctx), k.Logger(ctx))
-}
-
-func (k Keeper) DeletePoll(ctx sdk.Context, pollID exported.PollID) {
-	// delete poll metadata
-	k.getKVStore(ctx).Delete(pollPrefix.AppendStr(pollID.String()))
-
-	// delete tallied votes index for poll
-	iter := k.getKVStore(ctx).Iterator(votesPrefix.AppendStr(pollID.String()))
-	defer utils.CloseLogError(iter, k.Logger(ctx))
-
-	for ; iter.Valid(); iter.Next() {
-		k.getKVStore(ctx).Delete(iter.GetKey())
-	}
-}
-
 func (k Keeper) getTalliedVotes(ctx sdk.Context, id exported.PollID) []types.TalliedVote {
 	var results []types.TalliedVote
 
@@ -206,7 +219,7 @@ func (k Keeper) setTalliedVote(ctx sdk.Context, talliedVote types.TalliedVote) {
 	k.getKVStore(ctx).Set(
 		votesPrefix.
 			AppendStr(talliedVote.PollID.String()).
-			Append(utils.KeyFromBz(proto.Hash(talliedVote.Data))),
+			Append(utils.KeyFromBz(proto.Hash(talliedVote.Data.GetCachedValue().(codec.ProtoMarshaler)))),
 		&talliedVote,
 	)
 }
@@ -217,20 +230,5 @@ func (k Keeper) getTalliedVote(ctx sdk.Context, pollID exported.PollID, dataHash
 			AppendStr(talliedVote.PollID.String()).
 			Append(utils.KeyFromBz(dataHash)),
 		&talliedVote,
-	)
-}
-
-func getPollQueue(store utils.KVStore, logger log.Logger) utils.KVQueue {
-	return utils.NewGeneralKVQueue(
-		pollQueueName,
-		store,
-		logger,
-		func(value codec.ProtoMarshaler) utils.Key {
-			metadata := value.(*exported.PollMetadata)
-			bz := make([]byte, 8)
-			binary.BigEndian.PutUint64(bz, uint64(metadata.ExpiresAt))
-
-			return utils.KeyFromBz(bz)
-		},
 	)
 }

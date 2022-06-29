@@ -8,7 +8,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
-//go:generate moq -out ./mock/types.go -pkg mock . Store VoteRouter
+//go:generate moq -out ./mock/types.go -pkg mock . VoteRouter
 
 var _ codectypes.UnpackInterfacesMessage = TalliedVote{}
 

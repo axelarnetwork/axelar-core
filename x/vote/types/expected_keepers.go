@@ -1,13 +1,26 @@
 package types
 
 import (
+	"github.com/tendermint/tendermint/libs/log"
+
+	"github.com/axelarnetwork/axelar-core/utils"
 	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 )
 
-//go:generate moq -pkg mock -out ./mock/expected_keepers.go . Snapshotter StakingKeeper Rewarder
+//go:generate moq -pkg mock -out ./mock/expected_keepers.go . Voter Snapshotter StakingKeeper Rewarder
+
+// Voter provides vote keeper functionality
+type Voter interface {
+	Logger(ctx sdk.Context) log.Logger
+	GetVoteRouter() VoteRouter
+	GetPoll(ctx sdk.Context, id exported.PollID) (exported.Poll, bool)
+	GetPollQueue(ctx sdk.Context) utils.KVQueue
+	DeletePoll(ctx sdk.Context, pollID exported.PollID)
+}
 
 // Snapshotter provides snapshot functionality
 type Snapshotter interface {

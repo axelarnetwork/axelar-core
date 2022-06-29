@@ -15,6 +15,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -29,6 +30,8 @@ type msgServer struct {
 	nexus       types.Nexus
 	voter       types.Voter
 	snapshotter types.Snapshotter
+	staking     types.StakingKeeper
+	slashing    types.SlashingKeeper
 }
 
 // TODO: make this a param when we can easily switch between different kinds of keys and different settings
@@ -36,7 +39,7 @@ var keyRole = tss.SecondaryKey
 
 // NewMsgServerImpl returns an implementation of the bitcoin MsgServiceServer interface
 // for the provided Keeper.
-func NewMsgServerImpl(keeper types.BaseKeeper, t types.TSS, n types.Nexus, s types.Signer, v types.Voter, snap types.Snapshotter) types.MsgServiceServer {
+func NewMsgServerImpl(keeper types.BaseKeeper, t types.TSS, n types.Nexus, s types.Signer, v types.Voter, snap types.Snapshotter, staking types.StakingKeeper, slashing types.SlashingKeeper) types.MsgServiceServer {
 	return msgServer{
 		BaseKeeper:  keeper,
 		tss:         t,
@@ -44,6 +47,8 @@ func NewMsgServerImpl(keeper types.BaseKeeper, t types.TSS, n types.Nexus, s typ
 		nexus:       n,
 		voter:       v,
 		snapshotter: snap,
+		staking:     staking,
+		slashing:    slashing,
 	}
 }
 
@@ -54,6 +59,24 @@ func validateChainActivated(ctx sdk.Context, n types.Nexus, chain nexus.Chain) e
 	}
 
 	return nil
+}
+
+func excludeJailedOrTombstoned(ctx sdk.Context, powerReduction sdk.Int, slashing types.SlashingKeeper) func(v snapshot.ValidatorI) bool {
+	return func(v snapshot.ValidatorI) bool {
+		consAddress, err := v.GetConsAddr()
+		if err != nil {
+			return false
+		}
+
+		validatorSignInfo, ok := slashing.GetValidatorSigningInfo(ctx, consAddress)
+		if !ok {
+			return false
+		}
+
+		return v.GetConsensusPower(powerReduction) > 0 &&
+			!v.IsJailed() &&
+			!validatorSignInfo.Tombstoned
+	}
 }
 
 func (s msgServer) ConfirmGatewayTx(c context.Context, req *types.ConfirmGatewayTxRequest) (*types.ConfirmGatewayTxResponse, error) {
@@ -74,30 +97,24 @@ func (s msgServer) ConfirmGatewayTx(c context.Context, req *types.ConfirmGateway
 		return nil, fmt.Errorf("axelar gateway address not set")
 	}
 
-	period, ok := keeper.GetRevoteLockingPeriod(ctx)
-	if !ok {
-		return nil, fmt.Errorf("could not retrieve revote locking period")
-	}
-
-	votingThreshold, ok := keeper.GetVotingThreshold(ctx)
-	if !ok {
-		return nil, fmt.Errorf("voting threshold not found")
-	}
-
-	minVoterCount, ok := keeper.GetMinVoterCount(ctx)
-	if !ok {
-		return nil, fmt.Errorf("min voter count not found")
+	params := keeper.GetParams(ctx)
+	snapshot, err := s.snapshotter.CreateSnapshot(
+		ctx,
+		s.nexus.GetChainMaintainers(ctx, chain),
+		excludeJailedOrTombstoned(ctx, s.staking.PowerReduction(ctx), s.slashing),
+		snapshot.QuadraticWeightFunc,
+		params.VotingThreshold,
+	)
+	if err != nil {
+		return nil, err
 	}
 
 	pollID, err := s.voter.InitializePoll(
 		ctx,
-		s.nexus.GetChainMaintainers(ctx, chain),
-		vote.ExpiryAt(ctx.BlockHeight()+period),
-		vote.Threshold(votingThreshold),
-		vote.MinVoterCount(minVoterCount),
-		vote.RewardPool(chain.Name.String()),
-		vote.GracePeriod(keeper.GetParams(ctx).VotingGracePeriod),
-		vote.Module(types.ModuleName),
+		vote.NewPollBuilder(types.ModuleName, params.VotingThreshold, snapshot, ctx.BlockHeight()+params.RevoteLockingPeriod).
+			MinVoterCount(params.MinVoterCount).
+			RewardPoolName(chain.Name.String()).
+			GracePeriod(keeper.GetParams(ctx).VotingGracePeriod),
 	)
 	if err != nil {
 		return nil, err
@@ -265,30 +282,24 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, err
 	}
 
-	period, ok := keeper.GetRevoteLockingPeriod(ctx)
-	if !ok {
-		return nil, fmt.Errorf("could not retrieve revote locking period")
-	}
-
-	votingThreshold, ok := keeper.GetVotingThreshold(ctx)
-	if !ok {
-		return nil, fmt.Errorf("voting threshold not found")
-	}
-
-	minVoterCount, ok := keeper.GetMinVoterCount(ctx)
-	if !ok {
-		return nil, fmt.Errorf("min voter count not found")
+	params := keeper.GetParams(ctx)
+	snapshot, err := s.snapshotter.CreateSnapshot(
+		ctx,
+		s.nexus.GetChainMaintainers(ctx, chain),
+		excludeJailedOrTombstoned(ctx, s.staking.PowerReduction(ctx), s.slashing),
+		snapshot.QuadraticWeightFunc,
+		params.VotingThreshold,
+	)
+	if err != nil {
+		return nil, err
 	}
 
 	pollID, err := s.voter.InitializePoll(
 		ctx,
-		s.nexus.GetChainMaintainers(ctx, chain),
-		vote.ExpiryAt(ctx.BlockHeight()+period),
-		vote.Threshold(votingThreshold),
-		vote.MinVoterCount(minVoterCount),
-		vote.RewardPool(chain.Name.String()),
-		vote.GracePeriod(keeper.GetParams(ctx).VotingGracePeriod),
-		vote.Module(types.ModuleName),
+		vote.NewPollBuilder(types.ModuleName, params.VotingThreshold, snapshot, ctx.BlockHeight()+params.RevoteLockingPeriod).
+			MinVoterCount(params.MinVoterCount).
+			RewardPoolName(chain.Name.String()).
+			GracePeriod(keeper.GetParams(ctx).VotingGracePeriod),
 	)
 	if err != nil {
 		return nil, err
@@ -335,30 +346,24 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, fmt.Errorf("no burner info found for address %s", req.BurnerAddress.Hex())
 	}
 
-	period, ok := keeper.GetRevoteLockingPeriod(ctx)
-	if !ok {
-		return nil, fmt.Errorf("could not retrieve revote locking period for chain %s", chain.Name)
-	}
-
-	votingThreshold, ok := keeper.GetVotingThreshold(ctx)
-	if !ok {
-		return nil, fmt.Errorf("voting threshold for chain %s not found", chain.Name)
-	}
-
-	minVoterCount, ok := keeper.GetMinVoterCount(ctx)
-	if !ok {
-		return nil, fmt.Errorf("min voter count for chain %s not found", chain.Name)
+	params := keeper.GetParams(ctx)
+	snapshot, err := s.snapshotter.CreateSnapshot(
+		ctx,
+		s.nexus.GetChainMaintainers(ctx, chain),
+		excludeJailedOrTombstoned(ctx, s.staking.PowerReduction(ctx), s.slashing),
+		snapshot.QuadraticWeightFunc,
+		params.VotingThreshold,
+	)
+	if err != nil {
+		return nil, err
 	}
 
 	pollID, err := s.voter.InitializePoll(
 		ctx,
-		s.nexus.GetChainMaintainers(ctx, chain),
-		vote.ExpiryAt(ctx.BlockHeight()+period),
-		vote.Threshold(votingThreshold),
-		vote.MinVoterCount(minVoterCount),
-		vote.RewardPool(chain.Name.String()),
-		vote.GracePeriod(keeper.GetParams(ctx).VotingGracePeriod),
-		vote.Module(types.ModuleName),
+		vote.NewPollBuilder(types.ModuleName, params.VotingThreshold, snapshot, ctx.BlockHeight()+params.RevoteLockingPeriod).
+			MinVoterCount(params.MinVoterCount).
+			RewardPoolName(chain.Name.String()).
+			GracePeriod(keeper.GetParams(ctx).VotingGracePeriod),
 	)
 	if err != nil {
 		return nil, err
@@ -404,30 +409,24 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 		return nil, fmt.Errorf("axelar gateway address not set")
 	}
 
-	period, ok := keeper.GetRevoteLockingPeriod(ctx)
-	if !ok {
-		return nil, fmt.Errorf("could not retrieve revote locking period for chain %s", chain.Name)
-	}
-
-	votingThreshold, ok := keeper.GetVotingThreshold(ctx)
-	if !ok {
-		return nil, fmt.Errorf("voting threshold for chain %s not found", chain.Name)
-	}
-
-	minVoterCount, ok := keeper.GetMinVoterCount(ctx)
-	if !ok {
-		return nil, fmt.Errorf("min voter count for chain %s not found", chain.Name)
+	params := keeper.GetParams(ctx)
+	snapshot, err := s.snapshotter.CreateSnapshot(
+		ctx,
+		s.nexus.GetChainMaintainers(ctx, chain),
+		excludeJailedOrTombstoned(ctx, s.staking.PowerReduction(ctx), s.slashing),
+		snapshot.QuadraticWeightFunc,
+		params.VotingThreshold,
+	)
+	if err != nil {
+		return nil, err
 	}
 
 	pollID, err := s.voter.InitializePoll(
 		ctx,
-		s.nexus.GetChainMaintainers(ctx, chain),
-		vote.ExpiryAt(ctx.BlockHeight()+period),
-		vote.Threshold(votingThreshold),
-		vote.MinVoterCount(minVoterCount),
-		vote.RewardPool(chain.Name.String()),
-		vote.GracePeriod(keeper.GetParams(ctx).VotingGracePeriod),
-		vote.Module(types.ModuleName),
+		vote.NewPollBuilder(types.ModuleName, params.VotingThreshold, snapshot, ctx.BlockHeight()+params.RevoteLockingPeriod).
+			MinVoterCount(params.MinVoterCount).
+			RewardPoolName(chain.Name.String()).
+			GracePeriod(keeper.GetParams(ctx).VotingGracePeriod),
 	)
 	if err != nil {
 		return nil, err

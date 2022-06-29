@@ -29,7 +29,7 @@ func (m GenesisState) Validate() error {
 
 	for _, pollMetadata := range m.PollMetadatas {
 		if pollMetadata.Is(exported.Pending) {
-			return getValidateError(fmt.Errorf("state of poll metadata %s is pending", pollMetadata.Key.String()))
+			return getValidateError(fmt.Errorf("state of poll metadata %s is pending", pollMetadata.ID.String()))
 		}
 
 		if err := pollMetadata.ValidateBasic(); err != nil {
