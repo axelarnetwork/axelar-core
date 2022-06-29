@@ -1,8 +1,8 @@
-# `Increase Gas`
+# Increase Gas
 
 When needed, our smart contract can receive gas to top up an existing General Message Passing (GMP) transaction in the following ways:
 
-### `addNativeGas`
+### addNativeGas
 
 Pay additional gas to a transaction that needs it (referenced by its txHash) in native tokens on its EVM source chain.
 
@@ -19,7 +19,7 @@ function addNativeGas(
 - In JavaScript or TypeScript, the SDK abstracts a method that can be invoked directly in a web application.
   See SDK docs for [Increase Native Gas Payment](/dev/axelarjs-sdk/tx-status-query-recovery#21-native-gas-payment).
 
-### `addGas`
+### addGas
 
 Pay additional gas to a transaction that needs it (referenced by its txHash) in any of Axelar's supported tokens on its EVM source chain.
 

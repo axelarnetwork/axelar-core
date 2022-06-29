@@ -80,10 +80,12 @@ See [[Pay Gas](pay-gas)] for more.
 
 ### Increase Gas
 
-The prepaid gas to the Gas Service contract (in GMP step 2) could be insufficient when the destination chain is congested (with many transfers or other conditions). Therefore, Axelar provides an option to resubmit a new amount of gas, as well as an option to refund the paid gas. The process can be done through the Axelarscan UI, the Axelar SDK, or via direct invocation of the Gas Receiver contract.
+The prepaid gas to the Gas Service contract (in [GMP step 2](/dev/gmp/overview#steps)) could be insufficient when the destination chain is congested (with many transfers or other conditions). Therefore, Axelar provides an option to resubmit a new amount of gas, as well as an option to refund the paid gas. The process can be done through the Axelarscan UI, the Axelar SDK, or via direct invocation of the Gas Receiver contract.
 
 See [[Increase Gas](increase-gas)] for more.
 
 ### Refund Gas
 
-We plan to add an option to get refunds in case excessive amounts are paid as gas, but this is not yet implemented.
+Our relayer service automatically refunds the overpay gas amount to the payer account through this method.
+
+See [[Refund the prepaid gas](refund)] for more.

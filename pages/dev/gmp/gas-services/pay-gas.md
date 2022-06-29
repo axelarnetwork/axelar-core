@@ -1,9 +1,13 @@
-# `Pay Gas`
+# Pay Gas
 
-For both `callContract` and `callContractWithToken`, the Gas Receiver can be paid in the native token of the source chain or any token supported by Axelar network. 
+The Gas Service contract provides methods to pay the relayer gas fee for both `callContract` and `callContractWithToken`. The fee can be paid in the native token of the source chain or any token supported by Axelar network. The details are as follows.
 
-## For `callContract`
-### `payGasForContractcall`:
+## Pay gas for the `callContract` method
+There are two available methods to pay gas for relaying the `callContract`. You can choose one that match your application design.
+
+### payGasForContractcall
+This methods receives any tokens for the relayer fee. The paid gas for this method must be in tokens Axelar supports. See the list of supported assets in Resources [[Mainnet](/resources/mainnet) | [Testnet](/resources/testnet) | [Testnet-2](/resources/testnet-2)].
+
 ```solidity
 function payGasForContractCall(
     address sender,
@@ -16,10 +20,8 @@ function payGasForContractCall(
 ) external;
 ```
 
-*** Gas Receiver can only be paid in tokens Axelar supports. See the list of supported assets in Resources [[Mainnet](/resources/mainnet) | [Testnet](/resources/testnet) | [Testnet-2](/resources/testnet-2)].
-
-
-### `payGasForContractCallWithToken`
+### payNativeGasForContractCall
+This method accepts the native tokens of the source chain.
 
 ```solidity
 // This is called on the source chain before calling the gateway to execute a remote contract.
@@ -32,8 +34,12 @@ function payNativeGasForContractCall(
 ) external payable;
 ```
 
-## For `callContractWithToken`:
-### `payGasForContractCallWithToken`
+## Pay gas for the `callContractWithToken` method
+Similar to the available pay-gas methods for the `callContract`, there are two available methods to pay gas for relaying the `callContractWithToken`.
+
+### payGasForContractCallWithToken
+This methods receives any tokens for the relayer fee. The paid gas for this method must be in tokens Axelar supports. See the list of supported assets in Resources [[Mainnet](/resources/mainnet) | [Testnet](/resources/testnet) | [Testnet-2](/resources/testnet-2)].
+
 ```solidity
 // This is called on the source chain before calling the gateway to execute a remote contract.
 function payGasForContractCallWithToken(
@@ -49,9 +55,9 @@ function payGasForContractCallWithToken(
 ) external;
 ```
 
-*** Gas Receiver can only be paid in tokens Axelar supports. See the list of supported assets in Resources [[Mainnet](/resources/mainnet) | [Testnet](/resources/testnet) | [Testnet-2](/resources/testnet-2)].
+### payNativeGasForContractCallWithToken
+This method accepts the native tokens of the source chain.
 
-### `payNativeGasForContractCallWithToken`
 ```solidity
 // This is called on the source chain before calling the gateway to execute a remote contract.
 function payNativeGasForContractCallWithToken(
@@ -65,6 +71,7 @@ function payNativeGasForContractCallWithToken(
 ) external payable;
 ```
 
+### Methods arguments description
 The function names are prety self-explanatory. The following is true for the arguments:
 
 - For all functions
