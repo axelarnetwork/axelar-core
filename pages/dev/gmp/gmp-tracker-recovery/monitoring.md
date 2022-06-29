@@ -22,7 +22,7 @@ Once you navigate to the detailed transfer page, you will see four main statuses
 - **EXECUTED** informs the execution result whether the execution is successful or not. 
 - **GAS REFUNDED** (optional) provides the refund information (if any), including the amount of gas paid, the amount of gas used, the refund amount, etc. This information will be shown up only when there’s a refund.
 
-### Error Messages on the Execution step
+### Execution Error Messages
 There could be multiple reasons that cause the unsuccessful execution. The below image shows some possible cases that could be found.
 
 ![execute-errors-example.png](/images/execute-errors-example.png)
