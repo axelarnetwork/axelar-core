@@ -109,73 +109,6 @@
     - [MsgService](#axelar.axelarnet.v1beta1.MsgService)
     - [QueryService](#axelar.axelarnet.v1beta1.QueryService)
   
-- [axelar/bitcoin/v1beta1/types.proto](#axelar/bitcoin/v1beta1/types.proto)
-    - [AddressInfo](#axelar.bitcoin.v1beta1.AddressInfo)
-    - [AddressInfo.SpendingCondition](#axelar.bitcoin.v1beta1.AddressInfo.SpendingCondition)
-    - [Network](#axelar.bitcoin.v1beta1.Network)
-    - [OutPointInfo](#axelar.bitcoin.v1beta1.OutPointInfo)
-    - [SignedTx](#axelar.bitcoin.v1beta1.SignedTx)
-    - [UnsignedTx](#axelar.bitcoin.v1beta1.UnsignedTx)
-    - [UnsignedTx.Info](#axelar.bitcoin.v1beta1.UnsignedTx.Info)
-    - [UnsignedTx.Info.InputInfo](#axelar.bitcoin.v1beta1.UnsignedTx.Info.InputInfo)
-    - [UnsignedTx.Info.InputInfo.SigRequirement](#axelar.bitcoin.v1beta1.UnsignedTx.Info.InputInfo.SigRequirement)
-  
-    - [AddressRole](#axelar.bitcoin.v1beta1.AddressRole)
-    - [OutPointState](#axelar.bitcoin.v1beta1.OutPointState)
-    - [TxStatus](#axelar.bitcoin.v1beta1.TxStatus)
-    - [TxType](#axelar.bitcoin.v1beta1.TxType)
-  
-- [axelar/bitcoin/v1beta1/params.proto](#axelar/bitcoin/v1beta1/params.proto)
-    - [Params](#axelar.bitcoin.v1beta1.Params)
-  
-- [axelar/bitcoin/v1beta1/genesis.proto](#axelar/bitcoin/v1beta1/genesis.proto)
-    - [GenesisState](#axelar.bitcoin.v1beta1.GenesisState)
-  
-- [axelar/bitcoin/v1beta1/query.proto](#axelar/bitcoin/v1beta1/query.proto)
-    - [DepositQueryParams](#axelar.bitcoin.v1beta1.DepositQueryParams)
-    - [QueryAddressResponse](#axelar.bitcoin.v1beta1.QueryAddressResponse)
-    - [QueryDepositStatusResponse](#axelar.bitcoin.v1beta1.QueryDepositStatusResponse)
-    - [QueryTxResponse](#axelar.bitcoin.v1beta1.QueryTxResponse)
-    - [QueryTxResponse.SigningInfo](#axelar.bitcoin.v1beta1.QueryTxResponse.SigningInfo)
-  
-- [axelar/snapshot/exported/v1beta1/types.proto](#axelar/snapshot/exported/v1beta1/types.proto)
-    - [Participant](#axelar.snapshot.exported.v1beta1.Participant)
-    - [Snapshot](#axelar.snapshot.exported.v1beta1.Snapshot)
-    - [Snapshot.ParticipantsEntry](#axelar.snapshot.exported.v1beta1.Snapshot.ParticipantsEntry)
-    - [Validator](#axelar.snapshot.exported.v1beta1.Validator)
-  
-    - [ValidatorIllegibility](#axelar.snapshot.exported.v1beta1.ValidatorIllegibility)
-  
-- [axelar/vote/exported/v1beta1/types.proto](#axelar/vote/exported/v1beta1/types.proto)
-    - [PollKey](#axelar.vote.exported.v1beta1.PollKey)
-    - [PollMetadata](#axelar.vote.exported.v1beta1.PollMetadata)
-    - [PollModuleMetadata](#axelar.vote.exported.v1beta1.PollModuleMetadata)
-    - [Vote](#axelar.vote.exported.v1beta1.Vote)
-    - [Voter](#axelar.vote.exported.v1beta1.Voter)
-  
-    - [PollState](#axelar.vote.exported.v1beta1.PollState)
-  
-- [axelar/bitcoin/v1beta1/tx.proto](#axelar/bitcoin/v1beta1/tx.proto)
-    - [ConfirmOutpointRequest](#axelar.bitcoin.v1beta1.ConfirmOutpointRequest)
-    - [ConfirmOutpointResponse](#axelar.bitcoin.v1beta1.ConfirmOutpointResponse)
-    - [CreateMasterTxRequest](#axelar.bitcoin.v1beta1.CreateMasterTxRequest)
-    - [CreateMasterTxResponse](#axelar.bitcoin.v1beta1.CreateMasterTxResponse)
-    - [CreatePendingTransfersTxRequest](#axelar.bitcoin.v1beta1.CreatePendingTransfersTxRequest)
-    - [CreatePendingTransfersTxResponse](#axelar.bitcoin.v1beta1.CreatePendingTransfersTxResponse)
-    - [CreateRescueTxRequest](#axelar.bitcoin.v1beta1.CreateRescueTxRequest)
-    - [CreateRescueTxResponse](#axelar.bitcoin.v1beta1.CreateRescueTxResponse)
-    - [LinkRequest](#axelar.bitcoin.v1beta1.LinkRequest)
-    - [LinkResponse](#axelar.bitcoin.v1beta1.LinkResponse)
-    - [SignTxRequest](#axelar.bitcoin.v1beta1.SignTxRequest)
-    - [SignTxResponse](#axelar.bitcoin.v1beta1.SignTxResponse)
-    - [SubmitExternalSignatureRequest](#axelar.bitcoin.v1beta1.SubmitExternalSignatureRequest)
-    - [SubmitExternalSignatureResponse](#axelar.bitcoin.v1beta1.SubmitExternalSignatureResponse)
-    - [VoteConfirmOutpointRequest](#axelar.bitcoin.v1beta1.VoteConfirmOutpointRequest)
-    - [VoteConfirmOutpointResponse](#axelar.bitcoin.v1beta1.VoteConfirmOutpointResponse)
-  
-- [axelar/bitcoin/v1beta1/service.proto](#axelar/bitcoin/v1beta1/service.proto)
-    - [MsgService](#axelar.bitcoin.v1beta1.MsgService)
-  
 - [axelar/utils/v1beta1/queuer.proto](#axelar/utils/v1beta1/queuer.proto)
     - [QueueState](#axelar.utils.v1beta1.QueueState)
     - [QueueState.Item](#axelar.utils.v1beta1.QueueState.Item)
@@ -257,6 +190,23 @@
     - [TokenInfoResponse](#axelar.evm.v1beta1.TokenInfoResponse)
   
     - [TokenType](#axelar.evm.v1beta1.TokenType)
+  
+- [axelar/snapshot/exported/v1beta1/types.proto](#axelar/snapshot/exported/v1beta1/types.proto)
+    - [Participant](#axelar.snapshot.exported.v1beta1.Participant)
+    - [Snapshot](#axelar.snapshot.exported.v1beta1.Snapshot)
+    - [Snapshot.ParticipantsEntry](#axelar.snapshot.exported.v1beta1.Snapshot.ParticipantsEntry)
+    - [Validator](#axelar.snapshot.exported.v1beta1.Validator)
+  
+    - [ValidatorIllegibility](#axelar.snapshot.exported.v1beta1.ValidatorIllegibility)
+  
+- [axelar/vote/exported/v1beta1/types.proto](#axelar/vote/exported/v1beta1/types.proto)
+    - [PollKey](#axelar.vote.exported.v1beta1.PollKey)
+    - [PollMetadata](#axelar.vote.exported.v1beta1.PollMetadata)
+    - [PollModuleMetadata](#axelar.vote.exported.v1beta1.PollModuleMetadata)
+    - [Vote](#axelar.vote.exported.v1beta1.Vote)
+    - [Voter](#axelar.vote.exported.v1beta1.Voter)
+  
+    - [PollState](#axelar.vote.exported.v1beta1.PollState)
   
 - [axelar/evm/v1beta1/tx.proto](#axelar/evm/v1beta1/tx.proto)
     - [AddChainRequest](#axelar.evm.v1beta1.AddChainRequest)
@@ -1880,919 +1830,6 @@ QueryService defines the gRPC querier service.
 
 
 
-<a name="axelar/bitcoin/v1beta1/types.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## axelar/bitcoin/v1beta1/types.proto
-
-
-
-<a name="axelar.bitcoin.v1beta1.AddressInfo"></a>
-
-### AddressInfo
-AddressInfo is a wrapper containing the Bitcoin P2WSH address, it's
-corresponding script and the underlying key
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `address` | [string](#string) |  |  |
-| `role` | [AddressRole](#axelar.bitcoin.v1beta1.AddressRole) |  |  |
-| `redeem_script` | [bytes](#bytes) |  |  |
-| `key_id` | [string](#string) |  |  |
-| `max_sig_count` | [uint32](#uint32) |  |  |
-| `spending_condition` | [AddressInfo.SpendingCondition](#axelar.bitcoin.v1beta1.AddressInfo.SpendingCondition) |  |  |
-
-
-
-
-
-
-<a name="axelar.bitcoin.v1beta1.AddressInfo.SpendingCondition"></a>
-
-### AddressInfo.SpendingCondition
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `internal_key_ids` | [string](#string) | repeated | internal_key_ids lists the internal key IDs that one of which has to sign regardless of locktime |
-| `external_key_ids` | [string](#string) | repeated | external_key_ids lists the external key IDs that external_multisig_threshold of which have to sign to spend before locktime if set |
-| `external_multisig_threshold` | [int64](#int64) |  |  |
-| `lock_time` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
-
-
-
-
-
-
-<a name="axelar.bitcoin.v1beta1.Network"></a>
-
-### Network
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `name` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="axelar.bitcoin.v1beta1.OutPointInfo"></a>
-
-### OutPointInfo
-OutPointInfo describes all the necessary information to confirm the outPoint
-of a transaction
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `out_point` | [string](#string) |  |  |
-| `amount` | [int64](#int64) |  |  |
-| `address` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="axelar.bitcoin.v1beta1.SignedTx"></a>
-
-### SignedTx
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `type` | [TxType](#axelar.bitcoin.v1beta1.TxType) |  |  |
-| `tx` | [bytes](#bytes) |  |  |
-| `prev_signed_tx_hash` | [bytes](#bytes) |  |  |
-| `confirmation_required` | [bool](#bool) |  |  |
-| `anyone_can_spend_vout` | [uint32](#uint32) |  |  |
-
-
-
-
-
-
-<a name="axelar.bitcoin.v1beta1.UnsignedTx"></a>
-
-### UnsignedTx
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `type` | [TxType](#axelar.bitcoin.v1beta1.TxType) |  |  |
-| `tx` | [bytes](#bytes) |  |  |
-| `info` | [UnsignedTx.Info](#axelar.bitcoin.v1beta1.UnsignedTx.Info) |  |  |
-| `status` | [TxStatus](#axelar.bitcoin.v1beta1.TxStatus) |  |  |
-| `confirmation_required` | [bool](#bool) |  |  |
-| `anyone_can_spend_vout` | [uint32](#uint32) |  |  |
-| `prev_aborted_key_id` | [string](#string) |  |  |
-| `internal_transfer_amount` | [int64](#int64) |  |  |
-
-
-
-
-
-
-<a name="axelar.bitcoin.v1beta1.UnsignedTx.Info"></a>
-
-### UnsignedTx.Info
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `rotate_key` | [bool](#bool) |  |  |
-| `input_infos` | [UnsignedTx.Info.InputInfo](#axelar.bitcoin.v1beta1.UnsignedTx.Info.InputInfo) | repeated |  |
-
-
-
-
-
-
-<a name="axelar.bitcoin.v1beta1.UnsignedTx.Info.InputInfo"></a>
-
-### UnsignedTx.Info.InputInfo
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `sig_requirements` | [UnsignedTx.Info.InputInfo.SigRequirement](#axelar.bitcoin.v1beta1.UnsignedTx.Info.InputInfo.SigRequirement) | repeated |  |
-
-
-
-
-
-
-<a name="axelar.bitcoin.v1beta1.UnsignedTx.Info.InputInfo.SigRequirement"></a>
-
-### UnsignedTx.Info.InputInfo.SigRequirement
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `key_id` | [string](#string) |  |  |
-| `sig_hash` | [bytes](#bytes) |  |  |
-
-
-
-
-
- <!-- end messages -->
-
-
-<a name="axelar.bitcoin.v1beta1.AddressRole"></a>
-
-### AddressRole
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| ADDRESS_ROLE_UNSPECIFIED | 0 |  |
-| ADDRESS_ROLE_DEPOSIT | 1 |  |
-| ADDRESS_ROLE_CONSOLIDATION | 2 |  |
-
-
-
-<a name="axelar.bitcoin.v1beta1.OutPointState"></a>
-
-### OutPointState
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| OUT_POINT_STATE_UNSPECIFIED | 0 |  |
-| OUT_POINT_STATE_PENDING | 1 |  |
-| OUT_POINT_STATE_CONFIRMED | 2 |  |
-| OUT_POINT_STATE_SPENT | 3 |  |
-
-
-
-<a name="axelar.bitcoin.v1beta1.TxStatus"></a>
-
-### TxStatus
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| TX_STATUS_UNSPECIFIED | 0 |  |
-| TX_STATUS_CREATED | 1 |  |
-| TX_STATUS_SIGNING | 2 |  |
-| TX_STATUS_ABORTED | 3 |  |
-| TX_STATUS_SIGNED | 4 |  |
-
-
-
-<a name="axelar.bitcoin.v1beta1.TxType"></a>
-
-### TxType
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| TX_TYPE_UNSPECIFIED | 0 |  |
-| TX_TYPE_MASTER_CONSOLIDATION | 1 |  |
-| TX_TYPE_SECONDARY_CONSOLIDATION | 2 |  |
-| TX_TYPE_RESCUE | 3 |  |
-
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
-<a name="axelar/bitcoin/v1beta1/params.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## axelar/bitcoin/v1beta1/params.proto
-
-
-
-<a name="axelar.bitcoin.v1beta1.Params"></a>
-
-### Params
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `network` | [Network](#axelar.bitcoin.v1beta1.Network) |  |  |
-| `confirmation_height` | [uint64](#uint64) |  |  |
-| `revote_locking_period` | [int64](#int64) |  |  |
-| `sig_check_interval` | [int64](#int64) |  |  |
-| `min_output_amount` | [cosmos.base.v1beta1.DecCoin](#cosmos.base.v1beta1.DecCoin) |  |  |
-| `max_input_count` | [int64](#int64) |  |  |
-| `max_secondary_output_amount` | [cosmos.base.v1beta1.DecCoin](#cosmos.base.v1beta1.DecCoin) |  |  |
-| `master_key_retention_period` | [int64](#int64) |  |  |
-| `master_address_internal_key_lock_duration` | [int64](#int64) |  |  |
-| `master_address_external_key_lock_duration` | [int64](#int64) |  |  |
-| `voting_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
-| `min_voter_count` | [int64](#int64) |  |  |
-| `max_tx_size` | [int64](#int64) |  |  |
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
-<a name="axelar/bitcoin/v1beta1/genesis.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## axelar/bitcoin/v1beta1/genesis.proto
-
-
-
-<a name="axelar.bitcoin.v1beta1.GenesisState"></a>
-
-### GenesisState
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `params` | [Params](#axelar.bitcoin.v1beta1.Params) |  |  |
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
-<a name="axelar/bitcoin/v1beta1/query.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## axelar/bitcoin/v1beta1/query.proto
-
-
-
-<a name="axelar.bitcoin.v1beta1.DepositQueryParams"></a>
-
-### DepositQueryParams
-DepositQueryParams describe the parameters used to query for a Bitcoin
-deposit address
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `address` | [string](#string) |  |  |
-| `chain` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="axelar.bitcoin.v1beta1.QueryAddressResponse"></a>
-
-### QueryAddressResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `address` | [string](#string) |  |  |
-| `key_id` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="axelar.bitcoin.v1beta1.QueryDepositStatusResponse"></a>
-
-### QueryDepositStatusResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `log` | [string](#string) |  |  |
-| `status` | [OutPointState](#axelar.bitcoin.v1beta1.OutPointState) |  |  |
-
-
-
-
-
-
-<a name="axelar.bitcoin.v1beta1.QueryTxResponse"></a>
-
-### QueryTxResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `tx` | [string](#string) |  |  |
-| `status` | [TxStatus](#axelar.bitcoin.v1beta1.TxStatus) |  |  |
-| `confirmation_required` | [bool](#bool) |  |  |
-| `prev_signed_tx_hash` | [string](#string) |  |  |
-| `anyone_can_spend_vout` | [uint32](#uint32) |  |  |
-| `signing_infos` | [QueryTxResponse.SigningInfo](#axelar.bitcoin.v1beta1.QueryTxResponse.SigningInfo) | repeated |  |
-
-
-
-
-
-
-<a name="axelar.bitcoin.v1beta1.QueryTxResponse.SigningInfo"></a>
-
-### QueryTxResponse.SigningInfo
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `redeem_script` | [string](#string) |  |  |
-| `amount` | [int64](#int64) |  |  |
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
-<a name="axelar/snapshot/exported/v1beta1/types.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## axelar/snapshot/exported/v1beta1/types.proto
-
-
-
-<a name="axelar.snapshot.exported.v1beta1.Participant"></a>
-
-### Participant
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `address` | [bytes](#bytes) |  |  |
-| `weight` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="axelar.snapshot.exported.v1beta1.Snapshot"></a>
-
-### Snapshot
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `validators` | [Validator](#axelar.snapshot.exported.v1beta1.Validator) | repeated | **Deprecated.**  |
-| `total_share_count` | [bytes](#bytes) |  | **Deprecated.**  |
-| `counter` | [int64](#int64) |  | **Deprecated.**  |
-| `key_share_distribution_policy` | [axelar.tss.exported.v1beta1.KeyShareDistributionPolicy](#axelar.tss.exported.v1beta1.KeyShareDistributionPolicy) |  | **Deprecated.**  |
-| `corruption_threshold` | [int64](#int64) |  | **Deprecated.**  |
-| `timestamp` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
-| `height` | [int64](#int64) |  |  |
-| `participants` | [Snapshot.ParticipantsEntry](#axelar.snapshot.exported.v1beta1.Snapshot.ParticipantsEntry) | repeated |  |
-| `bonded_weight` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="axelar.snapshot.exported.v1beta1.Snapshot.ParticipantsEntry"></a>
-
-### Snapshot.ParticipantsEntry
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `key` | [string](#string) |  |  |
-| `value` | [Participant](#axelar.snapshot.exported.v1beta1.Participant) |  |  |
-
-
-
-
-
-
-<a name="axelar.snapshot.exported.v1beta1.Validator"></a>
-
-### Validator
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `sdk_validator` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
-| `share_count` | [int64](#int64) |  |  |
-
-
-
-
-
- <!-- end messages -->
-
-
-<a name="axelar.snapshot.exported.v1beta1.ValidatorIllegibility"></a>
-
-### ValidatorIllegibility
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| VALIDATOR_ILLEGIBILITY_UNSPECIFIED | 0 | these enum values are used for bitwise operations, therefore they need to be powers of 2 |
-| VALIDATOR_ILLEGIBILITY_TOMBSTONED | 1 |  |
-| VALIDATOR_ILLEGIBILITY_JAILED | 2 |  |
-| VALIDATOR_ILLEGIBILITY_MISSED_TOO_MANY_BLOCKS | 4 |  |
-| VALIDATOR_ILLEGIBILITY_NO_PROXY_REGISTERED | 8 |  |
-| VALIDATOR_ILLEGIBILITY_TSS_SUSPENDED | 16 |  |
-| VALIDATOR_ILLEGIBILITY_PROXY_INSUFICIENT_FUNDS | 32 |  |
-
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
-<a name="axelar/vote/exported/v1beta1/types.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## axelar/vote/exported/v1beta1/types.proto
-
-
-
-<a name="axelar.vote.exported.v1beta1.PollKey"></a>
-
-### PollKey
-PollKey represents the key data for a poll
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `module` | [string](#string) |  |  |
-| `id` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="axelar.vote.exported.v1beta1.PollMetadata"></a>
-
-### PollMetadata
-PollMetadata represents a poll with write-in voting, i.e. the result of the
-vote can have any data type
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `key` | [PollKey](#axelar.vote.exported.v1beta1.PollKey) |  | **Deprecated.**  |
-| `expires_at` | [int64](#int64) |  |  |
-| `result` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
-| `voting_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
-| `state` | [PollState](#axelar.vote.exported.v1beta1.PollState) |  |  |
-| `min_voter_count` | [int64](#int64) |  |  |
-| `voters` | [Voter](#axelar.vote.exported.v1beta1.Voter) | repeated |  |
-| `total_voting_power` | [bytes](#bytes) |  |  |
-| `reward_pool_name` | [string](#string) |  |  |
-| `grace_period` | [int64](#int64) |  |  |
-| `completed_at` | [int64](#int64) |  |  |
-| `id` | [uint64](#uint64) |  |  |
-| `module_metadata` | [PollModuleMetadata](#axelar.vote.exported.v1beta1.PollModuleMetadata) |  |  |
-
-
-
-
-
-
-<a name="axelar.vote.exported.v1beta1.PollModuleMetadata"></a>
-
-### PollModuleMetadata
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `module` | [string](#string) |  |  |
-| `metadata` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
-
-
-
-
-
-
-<a name="axelar.vote.exported.v1beta1.Vote"></a>
-
-### Vote
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `result` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
-
-
-
-
-
-
-<a name="axelar.vote.exported.v1beta1.Voter"></a>
-
-### Voter
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `validator` | [bytes](#bytes) |  |  |
-| `voting_power` | [int64](#int64) |  |  |
-
-
-
-
-
- <!-- end messages -->
-
-
-<a name="axelar.vote.exported.v1beta1.PollState"></a>
-
-### PollState
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| POLL_STATE_UNSPECIFIED | 0 |  |
-| POLL_STATE_PENDING | 1 |  |
-| POLL_STATE_COMPLETED | 2 |  |
-| POLL_STATE_FAILED | 3 |  |
-
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
-<a name="axelar/bitcoin/v1beta1/tx.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## axelar/bitcoin/v1beta1/tx.proto
-
-
-
-<a name="axelar.bitcoin.v1beta1.ConfirmOutpointRequest"></a>
-
-### ConfirmOutpointRequest
-MsgConfirmOutpoint represents a message to trigger the confirmation of a
-Bitcoin outpoint
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `sender` | [bytes](#bytes) |  |  |
-| `out_point_info` | [OutPointInfo](#axelar.bitcoin.v1beta1.OutPointInfo) |  |  |
-
-
-
-
-
-
-<a name="axelar.bitcoin.v1beta1.ConfirmOutpointResponse"></a>
-
-### ConfirmOutpointResponse
-
-
-
-
-
-
-
-<a name="axelar.bitcoin.v1beta1.CreateMasterTxRequest"></a>
-
-### CreateMasterTxRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `sender` | [bytes](#bytes) |  |  |
-| `key_id` | [string](#string) |  |  |
-| `secondary_key_amount` | [int64](#int64) |  |  |
-
-
-
-
-
-
-<a name="axelar.bitcoin.v1beta1.CreateMasterTxResponse"></a>
-
-### CreateMasterTxResponse
-
-
-
-
-
-
-
-<a name="axelar.bitcoin.v1beta1.CreatePendingTransfersTxRequest"></a>
-
-### CreatePendingTransfersTxRequest
-CreatePendingTransfersTxRequest represents a message to trigger the creation
-of a secondary key consolidation transaction
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `sender` | [bytes](#bytes) |  |  |
-| `key_id` | [string](#string) |  |  |
-| `master_key_amount` | [int64](#int64) |  |  |
-
-
-
-
-
-
-<a name="axelar.bitcoin.v1beta1.CreatePendingTransfersTxResponse"></a>
-
-### CreatePendingTransfersTxResponse
-
-
-
-
-
-
-
-<a name="axelar.bitcoin.v1beta1.CreateRescueTxRequest"></a>
-
-### CreateRescueTxRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `sender` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="axelar.bitcoin.v1beta1.CreateRescueTxResponse"></a>
-
-### CreateRescueTxResponse
-
-
-
-
-
-
-
-<a name="axelar.bitcoin.v1beta1.LinkRequest"></a>
-
-### LinkRequest
-MsgLink represents a message to link a cross-chain address to a Bitcoin
-address
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `sender` | [bytes](#bytes) |  |  |
-| `recipient_addr` | [string](#string) |  |  |
-| `recipient_chain` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="axelar.bitcoin.v1beta1.LinkResponse"></a>
-
-### LinkResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `deposit_addr` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="axelar.bitcoin.v1beta1.SignTxRequest"></a>
-
-### SignTxRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `sender` | [bytes](#bytes) |  |  |
-| `tx_type` | [TxType](#axelar.bitcoin.v1beta1.TxType) |  |  |
-
-
-
-
-
-
-<a name="axelar.bitcoin.v1beta1.SignTxResponse"></a>
-
-### SignTxResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `position` | [int64](#int64) |  |  |
-
-
-
-
-
-
-<a name="axelar.bitcoin.v1beta1.SubmitExternalSignatureRequest"></a>
-
-### SubmitExternalSignatureRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `sender` | [bytes](#bytes) |  |  |
-| `key_id` | [string](#string) |  |  |
-| `signature` | [bytes](#bytes) |  |  |
-| `sig_hash` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="axelar.bitcoin.v1beta1.SubmitExternalSignatureResponse"></a>
-
-### SubmitExternalSignatureResponse
-
-
-
-
-
-
-
-<a name="axelar.bitcoin.v1beta1.VoteConfirmOutpointRequest"></a>
-
-### VoteConfirmOutpointRequest
-MsgVoteConfirmOutpoint represents a message to that votes on an outpoint
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `sender` | [bytes](#bytes) |  |  |
-| `poll_key` | [axelar.vote.exported.v1beta1.PollKey](#axelar.vote.exported.v1beta1.PollKey) |  |  |
-| `out_point` | [string](#string) |  |  |
-| `confirmed` | [bool](#bool) |  |  |
-
-
-
-
-
-
-<a name="axelar.bitcoin.v1beta1.VoteConfirmOutpointResponse"></a>
-
-### VoteConfirmOutpointResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `status` | [string](#string) |  |  |
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
-<a name="axelar/bitcoin/v1beta1/service.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## axelar/bitcoin/v1beta1/service.proto
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
-
-<a name="axelar.bitcoin.v1beta1.MsgService"></a>
-
-### MsgService
-Msg defines the bitcoin Msg service.
-
-| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
-| ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `Link` | [LinkRequest](#axelar.bitcoin.v1beta1.LinkRequest) | [LinkResponse](#axelar.bitcoin.v1beta1.LinkResponse) |  | POST|/axelar/bitcoin/link|
-| `ConfirmOutpoint` | [ConfirmOutpointRequest](#axelar.bitcoin.v1beta1.ConfirmOutpointRequest) | [ConfirmOutpointResponse](#axelar.bitcoin.v1beta1.ConfirmOutpointResponse) |  | POST|/axelar/bitcoin/confirm|
-| `VoteConfirmOutpoint` | [VoteConfirmOutpointRequest](#axelar.bitcoin.v1beta1.VoteConfirmOutpointRequest) | [VoteConfirmOutpointResponse](#axelar.bitcoin.v1beta1.VoteConfirmOutpointResponse) |  | POST|/axelar/bitcoin/vote_confirm|
-| `CreatePendingTransfersTx` | [CreatePendingTransfersTxRequest](#axelar.bitcoin.v1beta1.CreatePendingTransfersTxRequest) | [CreatePendingTransfersTxResponse](#axelar.bitcoin.v1beta1.CreatePendingTransfersTxResponse) |  | POST|/axelar/bitcoin/create_pending_transfers_tx|
-| `CreateMasterTx` | [CreateMasterTxRequest](#axelar.bitcoin.v1beta1.CreateMasterTxRequest) | [CreateMasterTxResponse](#axelar.bitcoin.v1beta1.CreateMasterTxResponse) |  | POST|/axelar/bitcoin/create_master_tx|
-| `CreateRescueTx` | [CreateRescueTxRequest](#axelar.bitcoin.v1beta1.CreateRescueTxRequest) | [CreateRescueTxResponse](#axelar.bitcoin.v1beta1.CreateRescueTxResponse) |  | POST|/axelar/bitcoin/create_rescue_tx|
-| `SignTx` | [SignTxRequest](#axelar.bitcoin.v1beta1.SignTxRequest) | [SignTxResponse](#axelar.bitcoin.v1beta1.SignTxResponse) |  | POST|/axelar/bitcoin/sign_tx|
-| `SubmitExternalSignature` | [SubmitExternalSignatureRequest](#axelar.bitcoin.v1beta1.SubmitExternalSignatureRequest) | [SubmitExternalSignatureResponse](#axelar.bitcoin.v1beta1.SubmitExternalSignatureResponse) |  | POST|/axelar/bitcoin/submit_external_signature|
-
- <!-- end services -->
-
-
-
 <a name="axelar/utils/v1beta1/queuer.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -4028,6 +3065,231 @@ ERC20 tokens requested for a chain
 | TOKEN_TYPE_UNSPECIFIED | 0 |  |
 | TOKEN_TYPE_INTERNAL | 1 |  |
 | TOKEN_TYPE_EXTERNAL | 2 |  |
+
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="axelar/snapshot/exported/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/snapshot/exported/v1beta1/types.proto
+
+
+
+<a name="axelar.snapshot.exported.v1beta1.Participant"></a>
+
+### Participant
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [bytes](#bytes) |  |  |
+| `weight` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="axelar.snapshot.exported.v1beta1.Snapshot"></a>
+
+### Snapshot
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `validators` | [Validator](#axelar.snapshot.exported.v1beta1.Validator) | repeated | **Deprecated.**  |
+| `total_share_count` | [bytes](#bytes) |  | **Deprecated.**  |
+| `counter` | [int64](#int64) |  | **Deprecated.**  |
+| `key_share_distribution_policy` | [axelar.tss.exported.v1beta1.KeyShareDistributionPolicy](#axelar.tss.exported.v1beta1.KeyShareDistributionPolicy) |  | **Deprecated.**  |
+| `corruption_threshold` | [int64](#int64) |  | **Deprecated.**  |
+| `timestamp` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
+| `height` | [int64](#int64) |  |  |
+| `participants` | [Snapshot.ParticipantsEntry](#axelar.snapshot.exported.v1beta1.Snapshot.ParticipantsEntry) | repeated |  |
+| `bonded_weight` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="axelar.snapshot.exported.v1beta1.Snapshot.ParticipantsEntry"></a>
+
+### Snapshot.ParticipantsEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key` | [string](#string) |  |  |
+| `value` | [Participant](#axelar.snapshot.exported.v1beta1.Participant) |  |  |
+
+
+
+
+
+
+<a name="axelar.snapshot.exported.v1beta1.Validator"></a>
+
+### Validator
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sdk_validator` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
+| `share_count` | [int64](#int64) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+
+<a name="axelar.snapshot.exported.v1beta1.ValidatorIllegibility"></a>
+
+### ValidatorIllegibility
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| VALIDATOR_ILLEGIBILITY_UNSPECIFIED | 0 | these enum values are used for bitwise operations, therefore they need to be powers of 2 |
+| VALIDATOR_ILLEGIBILITY_TOMBSTONED | 1 |  |
+| VALIDATOR_ILLEGIBILITY_JAILED | 2 |  |
+| VALIDATOR_ILLEGIBILITY_MISSED_TOO_MANY_BLOCKS | 4 |  |
+| VALIDATOR_ILLEGIBILITY_NO_PROXY_REGISTERED | 8 |  |
+| VALIDATOR_ILLEGIBILITY_TSS_SUSPENDED | 16 |  |
+| VALIDATOR_ILLEGIBILITY_PROXY_INSUFICIENT_FUNDS | 32 |  |
+
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="axelar/vote/exported/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/vote/exported/v1beta1/types.proto
+
+
+
+<a name="axelar.vote.exported.v1beta1.PollKey"></a>
+
+### PollKey
+PollKey represents the key data for a poll
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `module` | [string](#string) |  |  |
+| `id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.vote.exported.v1beta1.PollMetadata"></a>
+
+### PollMetadata
+PollMetadata represents a poll with write-in voting, i.e. the result of the
+vote can have any data type
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key` | [PollKey](#axelar.vote.exported.v1beta1.PollKey) |  | **Deprecated.**  |
+| `expires_at` | [int64](#int64) |  |  |
+| `result` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
+| `voting_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
+| `state` | [PollState](#axelar.vote.exported.v1beta1.PollState) |  |  |
+| `min_voter_count` | [int64](#int64) |  |  |
+| `voters` | [Voter](#axelar.vote.exported.v1beta1.Voter) | repeated |  |
+| `total_voting_power` | [bytes](#bytes) |  |  |
+| `reward_pool_name` | [string](#string) |  |  |
+| `grace_period` | [int64](#int64) |  |  |
+| `completed_at` | [int64](#int64) |  |  |
+| `id` | [uint64](#uint64) |  |  |
+| `module_metadata` | [PollModuleMetadata](#axelar.vote.exported.v1beta1.PollModuleMetadata) |  |  |
+
+
+
+
+
+
+<a name="axelar.vote.exported.v1beta1.PollModuleMetadata"></a>
+
+### PollModuleMetadata
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `module` | [string](#string) |  |  |
+| `metadata` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
+
+
+
+
+
+
+<a name="axelar.vote.exported.v1beta1.Vote"></a>
+
+### Vote
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `result` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
+
+
+
+
+
+
+<a name="axelar.vote.exported.v1beta1.Voter"></a>
+
+### Voter
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `validator` | [bytes](#bytes) |  |  |
+| `voting_power` | [int64](#int64) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+
+<a name="axelar.vote.exported.v1beta1.PollState"></a>
+
+### PollState
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| POLL_STATE_UNSPECIFIED | 0 |  |
+| POLL_STATE_PENDING | 1 |  |
+| POLL_STATE_COMPLETED | 2 |  |
+| POLL_STATE_FAILED | 3 |  |
 
 
  <!-- end enums -->
