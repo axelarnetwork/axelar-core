@@ -13,8 +13,6 @@ import (
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 	"github.com/spf13/cobra"
 
-	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
-	bitcoinTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -69,34 +67,6 @@ func SetGenesisChainParamsCmd(defaultNodeHome string) *cobra.Command {
 			var moduleName string
 
 			switch strings.ToLower(platformStr) {
-			case strings.ToLower(btc.Bitcoin.Name.String()):
-				genesisState := bitcoinTypes.GetGenesisStateFromAppState(cdc, appState)
-				moduleName = bitcoinTypes.ModuleName
-
-				// update expected network
-				if expectedNetwork != "" {
-					network, err := bitcoinTypes.NetworkFromStr(expectedNetwork)
-					if err != nil {
-						return err
-					}
-
-					genesisState.Params.Network = network
-				}
-
-				// update confirmation height
-				if confirmationHeight > 0 {
-					genesisState.Params.ConfirmationHeight = confirmationHeight
-				}
-
-				// update revote locking period
-				if revoteLockingPeriod > 0 {
-					genesisState.Params.RevoteLockingPeriod = revoteLockingPeriod
-				}
-
-				genesisStateBz, err = cdc.MarshalJSON(&genesisState)
-				if err != nil {
-					return fmt.Errorf("failed to marshal bitcoin genesis state: %w", err)
-				}
 			case strings.ToLower(evmTypes.ModuleName):
 				if len(args) < 2 {
 					return fmt.Errorf("chain name is required for EVM platform")

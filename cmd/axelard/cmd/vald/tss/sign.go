@@ -149,7 +149,7 @@ func (mgr *Mgr) setSignStream(sigID string, stream Stream) {
 
 func (mgr *Mgr) multiSigSignStart(keyID string, sigID string, shares uint32, payload []byte) error {
 	var signatures [][]byte
-	pubKeys, found := mgr.Keys[keyID]
+	pubKeys, found := mgr.getKey(keyID)
 	if !found {
 		return fmt.Errorf("received multisig sign request for sigID %s for an unknown key ID %s", sigID, keyID)
 	}
