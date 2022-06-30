@@ -4,10 +4,10 @@ Set chain parameters in genesis.json
 
 ### Synopsis
 
-Set chain parameters in genesis.json. The provided platform must be one of those axelar supports (bitcoin, EVM). In the case of Bitcoin, there is no need for the chain argument.
+Set chain parameters in genesis.json. The provided platform must be one of those axelar supports (currently only EVM).
 
 ```
-axelard set-genesis-chain-params [bitcoin | evm] [chain] [flags]
+axelard set-genesis-chain-params evm [chain] [flags]
 ```
 
 ### Options
