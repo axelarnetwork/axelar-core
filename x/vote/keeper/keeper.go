@@ -73,18 +73,16 @@ func (k Keeper) SetParams(ctx sdk.Context, params types.Params) {
 
 // InitializePoll creates a poll with the given poll builder
 func (k Keeper) InitializePoll(ctx sdk.Context, pollBuilder exported.PollBuilder) (exported.PollID, error) {
-	pollCount := k.getPollCount(ctx)
-	pollID := exported.PollID(pollCount)
-
 	pollMetadata, err := pollBuilder.Build(ctx.BlockHeight())
 	if err != nil {
 		return 0, err
 	}
+
+	pollID := k.nextPollID(ctx)
 	pollMetadata.ID = pollID
 
 	k.GetPollQueue(ctx).Enqueue(pollPrefix.AppendStr(pollMetadata.ID.String()), &pollMetadata)
 
-	k.setPollCount(ctx, pollCount+1)
 	k.Logger(ctx).Info("created poll",
 		"poll", pollID.String(),
 	)
@@ -154,17 +152,12 @@ func (k Keeper) DeletePoll(ctx sdk.Context, pollID exported.PollID) {
 	}
 }
 
-func (k Keeper) getPollCount(ctx sdk.Context) uint64 {
+func (k Keeper) nextPollID(ctx sdk.Context) exported.PollID {
 	var val gogoprototypes.UInt64Value
-	if !k.getKVStore(ctx).Get(countKey, &val) {
-		return 0
-	}
+	k.getKVStore(ctx).Get(countKey, &val)
+	defer k.getKVStore(ctx).Set(countKey, &gogoprototypes.UInt64Value{Value: val.Value + 1})
 
-	return val.Value
-}
-
-func (k Keeper) setPollCount(ctx sdk.Context, count uint64) {
-	k.getKVStore(ctx).Set(countKey, &gogoprototypes.UInt64Value{Value: count})
+	return exported.PollID(val.Value)
 }
 
 func (k Keeper) setPollMetadata(ctx sdk.Context, metadata exported.PollMetadata) {
@@ -227,7 +220,7 @@ func (k Keeper) setTalliedVote(ctx sdk.Context, talliedVote types.TalliedVote) {
 func (k Keeper) getTalliedVote(ctx sdk.Context, pollID exported.PollID, dataHash []byte) (talliedVote types.TalliedVote, ok bool) {
 	return talliedVote, k.getKVStore(ctx).Get(
 		votesPrefix.
-			AppendStr(talliedVote.PollID.String()).
+			AppendStr(pollID.String()).
 			Append(utils.KeyFromBz(dataHash)),
 		&talliedVote,
 	)
