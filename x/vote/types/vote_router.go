@@ -3,9 +3,10 @@ package types
 import (
 	"fmt"
 
-	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 // VoteRouter implements a Vote router based on module name.
