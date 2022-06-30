@@ -43,10 +43,12 @@ func (m PollKey) String() string {
 	return fmt.Sprintf("%s_%s", m.Module, m.ID)
 }
 
+// PollBuilder is a builder that is used to build up the poll metadata
 type PollBuilder struct {
 	p PollMetadata
 }
 
+// NewPollBuilder is the constructor for the poll builder
 func NewPollBuilder(module string, threshold utils.Threshold, snapshot snapshot.Snapshot, expiresAt int64) PollBuilder {
 	return PollBuilder{
 		p: PollMetadata{
@@ -162,15 +164,20 @@ func (m PollMetadata) ValidateBasic() error {
 	return nil
 }
 
-func (p PollMetadata) Is(state PollState) bool {
-	return p.State == state
+// Is returns true if the poll metadata is in the given state, false otherwise
+func (m PollMetadata) Is(state PollState) bool {
+	return m.State == state
 }
 
+// VoteResult represents all possible results of vote
 type VoteResult int
 
 const (
+	// NoVote means the voter is not allowed to vote for the poll anymore
 	NoVote = iota
+	// VoteInTime means the voter successfully voted for the poll before it completes
 	VoteInTime
+	// VotedLate means the voter successfully voted for the poll after it completes but within the grace period
 	VotedLate
 )
 

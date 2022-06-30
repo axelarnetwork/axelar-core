@@ -138,7 +138,7 @@ func (k Keeper) GetPollQueue(ctx sdk.Context) utils.KVQueue {
 	)
 }
 
-// Delete poll deletes the poll with the given ID
+// DeletePoll deletes the poll with the given ID
 func (k Keeper) DeletePoll(ctx sdk.Context, pollID exported.PollID) {
 	// delete poll metadata
 	k.getKVStore(ctx).Delete(pollPrefix.AppendStr(pollID.String()))
