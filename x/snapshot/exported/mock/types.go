@@ -1147,11 +1147,17 @@ var _ snapshotexported.ValidatorI = &ValidatorIMock{}
 //
 // 		// make and configure a mocked snapshotexported.ValidatorI
 // 		mockedValidatorI := &ValidatorIMock{
+// 			GetConsAddrFunc: func() (github_com_cosmos_cosmos_sdk_types.ConsAddress, error) {
+// 				panic("mock out the GetConsAddr method")
+// 			},
 // 			GetConsensusPowerFunc: func(intMoqParam github_com_cosmos_cosmos_sdk_types.Int) int64 {
 // 				panic("mock out the GetConsensusPower method")
 // 			},
 // 			GetOperatorFunc: func() github_com_cosmos_cosmos_sdk_types.ValAddress {
 // 				panic("mock out the GetOperator method")
+// 			},
+// 			IsJailedFunc: func() bool {
+// 				panic("mock out the IsJailed method")
 // 			},
 // 		}
 //
@@ -1160,14 +1166,23 @@ var _ snapshotexported.ValidatorI = &ValidatorIMock{}
 //
 // 	}
 type ValidatorIMock struct {
+	// GetConsAddrFunc mocks the GetConsAddr method.
+	GetConsAddrFunc func() (github_com_cosmos_cosmos_sdk_types.ConsAddress, error)
+
 	// GetConsensusPowerFunc mocks the GetConsensusPower method.
 	GetConsensusPowerFunc func(intMoqParam github_com_cosmos_cosmos_sdk_types.Int) int64
 
 	// GetOperatorFunc mocks the GetOperator method.
 	GetOperatorFunc func() github_com_cosmos_cosmos_sdk_types.ValAddress
 
+	// IsJailedFunc mocks the IsJailed method.
+	IsJailedFunc func() bool
+
 	// calls tracks calls to the methods.
 	calls struct {
+		// GetConsAddr holds details about calls to the GetConsAddr method.
+		GetConsAddr []struct {
+		}
 		// GetConsensusPower holds details about calls to the GetConsensusPower method.
 		GetConsensusPower []struct {
 			// IntMoqParam is the intMoqParam argument value.
@@ -1176,9 +1191,40 @@ type ValidatorIMock struct {
 		// GetOperator holds details about calls to the GetOperator method.
 		GetOperator []struct {
 		}
+		// IsJailed holds details about calls to the IsJailed method.
+		IsJailed []struct {
+		}
 	}
+	lockGetConsAddr       sync.RWMutex
 	lockGetConsensusPower sync.RWMutex
 	lockGetOperator       sync.RWMutex
+	lockIsJailed          sync.RWMutex
+}
+
+// GetConsAddr calls GetConsAddrFunc.
+func (mock *ValidatorIMock) GetConsAddr() (github_com_cosmos_cosmos_sdk_types.ConsAddress, error) {
+	if mock.GetConsAddrFunc == nil {
+		panic("ValidatorIMock.GetConsAddrFunc: method is nil but ValidatorI.GetConsAddr was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockGetConsAddr.Lock()
+	mock.calls.GetConsAddr = append(mock.calls.GetConsAddr, callInfo)
+	mock.lockGetConsAddr.Unlock()
+	return mock.GetConsAddrFunc()
+}
+
+// GetConsAddrCalls gets all the calls that were made to GetConsAddr.
+// Check the length with:
+//     len(mockedValidatorI.GetConsAddrCalls())
+func (mock *ValidatorIMock) GetConsAddrCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockGetConsAddr.RLock()
+	calls = mock.calls.GetConsAddr
+	mock.lockGetConsAddr.RUnlock()
+	return calls
 }
 
 // GetConsensusPower calls GetConsensusPowerFunc.
@@ -1235,5 +1281,31 @@ func (mock *ValidatorIMock) GetOperatorCalls() []struct {
 	mock.lockGetOperator.RLock()
 	calls = mock.calls.GetOperator
 	mock.lockGetOperator.RUnlock()
+	return calls
+}
+
+// IsJailed calls IsJailedFunc.
+func (mock *ValidatorIMock) IsJailed() bool {
+	if mock.IsJailedFunc == nil {
+		panic("ValidatorIMock.IsJailedFunc: method is nil but ValidatorI.IsJailed was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockIsJailed.Lock()
+	mock.calls.IsJailed = append(mock.calls.IsJailed, callInfo)
+	mock.lockIsJailed.Unlock()
+	return mock.IsJailedFunc()
+}
+
+// IsJailedCalls gets all the calls that were made to IsJailed.
+// Check the length with:
+//     len(mockedValidatorI.IsJailedCalls())
+func (mock *ValidatorIMock) IsJailedCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockIsJailed.RLock()
+	calls = mock.calls.IsJailed
+	mock.lockIsJailed.RUnlock()
 	return calls
 }
