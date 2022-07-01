@@ -37,7 +37,7 @@ type msgServer struct {
 // TODO: make this a param when we can easily switch between different kinds of keys and different settings
 var keyRole = tss.SecondaryKey
 
-// NewMsgServerImpl returns an implementation of the bitcoin MsgServiceServer interface
+// NewMsgServerImpl returns an implementation of the evm MsgServiceServer interface
 // for the provided Keeper.
 func NewMsgServerImpl(keeper types.BaseKeeper, t types.TSS, n types.Nexus, s types.Signer, v types.Voter, snap types.Snapshotter, staking types.StakingKeeper, slashing types.SlashingKeeper) types.MsgServiceServer {
 	return msgServer{
