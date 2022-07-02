@@ -13,25 +13,29 @@ import (
 )
 
 // RandSnapshot returns random snapshot based on the given parameters
-func RandSnapshot(participantCount uint64, threshold utils.Threshold) exported.Snapshot {
-	participantsWeight := sdk.ZeroUint()
-	participants := slices.Expand(func(int) exported.Participant {
-		weight := sdk.NewUint(uint64(rand.I64Between(1, 100)))
-		participantsWeight = participantsWeight.Add(weight)
+func RandSnapshot(participantCount uint64, threshold utils.Threshold) (snapshot exported.Snapshot) {
+	for {
+		participantsWeight := sdk.ZeroUint()
+		participants := slices.Expand(func(int) exported.Participant {
+			weight := sdk.NewUint(uint64(rand.I64Between(1, 100)))
+			participantsWeight = participantsWeight.Add(weight)
 
-		return exported.NewParticipant(rand.ValAddr(), weight)
-	},
-		int(participantCount),
-	)
+			return exported.NewParticipant(rand.ValAddr(), weight)
+		},
+			int(participantCount),
+		)
 
-	bondedWeight := sdk.NewUint(uint64(rand.I64Between(
-		participantsWeight.BigInt().Int64(),
-		math.MaxInt64(
-			participantsWeight.BigInt().Int64()+1,
-			participantsWeight.MulUint64(uint64(threshold.Denominator)).QuoUint64(uint64(threshold.Numerator)).BigInt().Int64()),
-	),
-	))
+		bondedWeight := sdk.NewUint(uint64(rand.I64Between(
+			participantsWeight.BigInt().Int64(),
+			math.MaxInt64(
+				participantsWeight.BigInt().Int64()+1,
+				participantsWeight.MulUint64(uint64(threshold.Denominator)).QuoUint64(uint64(threshold.Numerator)).BigInt().Int64()),
+		),
+		))
 
-	return exported.NewSnapshot(time.Now(), rand.I64Between(1, 1000), participants, bondedWeight)
-
+		snapshot = exported.NewSnapshot(time.Now(), rand.I64Between(1, 1000), participants, bondedWeight)
+		if err := snapshot.ValidateBasic(); err == nil {
+			return snapshot
+		}
+	}
 }

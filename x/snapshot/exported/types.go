@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	"github.com/gogo/protobuf/proto"
+	"golang.org/x/exp/maps"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -103,6 +105,14 @@ func (m Participant) ValidateBasic() error {
 	}
 
 	return nil
+}
+
+// GetParticipantAddresses returns the addresses of all participants in the snapshot
+func (m Snapshot) GetParticipantAddresses() []sdk.ValAddress {
+	addresses := slices.Map(maps.Values(m.Participants), Participant.GetAddress)
+	sort.SliceStable(addresses, func(i, j int) bool { return bytes.Compare(addresses[i], addresses[j]) < 0 })
+
+	return addresses
 }
 
 // GetParticipantsWeight returns the sum of all participants' weights

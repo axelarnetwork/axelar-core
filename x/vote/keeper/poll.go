@@ -1,16 +1,12 @@
 package keeper
 
 import (
-	"bytes"
 	"fmt"
-	"sort"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/tendermint/libs/log"
-	"golang.org/x/exp/maps"
 
-	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/types"
 	"github.com/axelarnetwork/utils/proto"
@@ -68,10 +64,7 @@ func (p poll) GetRewardPoolName() (string, bool) {
 
 // GetVoters returns the poll's voters
 func (p poll) GetVoters() []sdk.ValAddress {
-	voters := slices.Map(maps.Values(p.Snapshot.Participants), snapshot.Participant.GetAddress)
-	sort.SliceStable(voters, func(i, j int) bool { return bytes.Compare(voters[i], voters[j]) < 0 })
-
-	return voters
+	return p.Snapshot.GetParticipantAddresses()
 }
 
 // GetID returns the ID of the poll
