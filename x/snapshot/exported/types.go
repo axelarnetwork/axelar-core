@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	"github.com/gogo/protobuf/proto"
+	"golang.org/x/exp/maps"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -20,10 +22,19 @@ import (
 
 //go:generate moq -out ./mock/types.go -pkg mock . SDKValidator Snapshotter Slasher Tss ValidatorI
 
+// QuadraticWeightFunc returns floor(sqrt(consensusPower)) as the weight
+func QuadraticWeightFunc(consensusPower sdk.Uint) sdk.Uint {
+	bigInt := consensusPower.BigInt()
+
+	return sdk.NewUintFromBigInt(bigInt.Sqrt(bigInt))
+}
+
 // ValidatorI provides necessary functions to the validator information
 type ValidatorI interface {
-	GetConsensusPower(sdk.Int) int64 // validation power in tendermint
-	GetOperator() sdk.ValAddress     // operator address to receive/return validators coins
+	GetConsensusPower(sdk.Int) int64       // validation power in tendermint
+	GetOperator() sdk.ValAddress           // operator address to receive/return validators coins
+	GetConsAddr() (sdk.ConsAddress, error) // validation consensus address
+	IsJailed() bool                        // whether the validator is jailed
 }
 
 // NewSnapshot is the constructor of Snapshot
@@ -96,6 +107,14 @@ func (m Participant) ValidateBasic() error {
 	return nil
 }
 
+// GetParticipantAddresses returns the addresses of all participants in the snapshot
+func (m Snapshot) GetParticipantAddresses() []sdk.ValAddress {
+	addresses := slices.Map(maps.Values(m.Participants), Participant.GetAddress)
+	sort.SliceStable(addresses, func(i, j int) bool { return bytes.Compare(addresses[i], addresses[j]) < 0 })
+
+	return addresses
+}
+
 // GetParticipantsWeight returns the sum of all participants' weights
 func (m Snapshot) GetParticipantsWeight() sdk.Uint {
 	weight := sdk.ZeroUint()
@@ -104,6 +123,15 @@ func (m Snapshot) GetParticipantsWeight() sdk.Uint {
 	}
 
 	return weight
+}
+
+// GetParticipantWeight returns the weight of the given participant
+func (m Snapshot) GetParticipantWeight(participant sdk.ValAddress) sdk.Uint {
+	if participant, ok := m.Participants[participant.String()]; ok {
+		return participant.Weight
+	}
+
+	return sdk.ZeroUint()
 }
 
 // CalculateMinPassingWeight returns the minimum amount of weights to pass the given threshold
