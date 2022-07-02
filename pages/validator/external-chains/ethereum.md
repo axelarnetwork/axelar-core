@@ -146,3 +146,23 @@ http://IP:PORT
 
 Example:
 `http://192.168.192.168:8545`
+
+### Upgrade geth if necessary
+
+If new release of geth is out, you can update it by following commands.
+
+```
+sudo systemctl stop geth
+sudo apt-get update
+sudo apt-get upgrade geth
+```
+Check that you are on latest version. The last version is `1.10.20-stable`
+```
+geth version
+```
+Start you `geth` service and check logs.
+```
+sudo systemctl enable geth
+sudo systemctl start geth
+journalctl -u geth -f -n 100
+```
