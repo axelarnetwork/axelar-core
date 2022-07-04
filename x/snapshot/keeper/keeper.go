@@ -470,7 +470,7 @@ func (k Keeper) GetValidatorIllegibility(ctx sdk.Context, validator exported.SDK
 // CreateSnapshot returns a new snapshot giving each candidate its proper weight,
 // or returns an error if the threshold cannot be met given the total weight of all
 // validators in the system; candidates are excluded if the given filterFunc is
-// evaluated to false (NOTE: snapshot itself does not keep track of the threshold)
+// evaluated to false or their weight is zero (NOTE: snapshot itself does not keep track of the threshold)
 func (k Keeper) CreateSnapshot(
 	ctx sdk.Context,
 	candidates []sdk.ValAddress,
