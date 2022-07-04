@@ -53,14 +53,16 @@
       https://axelar.rpc.stake2.me/ <br/>
       https://axelar-rpc.qubelabs.io/ <br/>
       https://axelar-mainnet-rpc.allthatnode.com:1317 (REST API) <br/>
-      https://axelar-mainnet-rpc.allthatnode.com:26657 (Tendermint RPC)
+      https://axelar-mainnet-rpc.allthatnode.com:26657 (Tendermint RPC) <br/>
+      https://axelar-rpc.quantnode.tech/
     </td>
     <td>
       https://axelartest-rpc.quickapi.com/ <br/>
       https://services.staketab.com/axelar-testnet-1-rpc <br/>
       https://axelar-testnet-rpc.qubelabs.io/ <br/>
       https://axelar-lisbon-rpc.allthatnode.com:1317 (REST API) <br/>
-      https://axelar-lisbon-rpc.allthatnode.com:26657 (Tendermint RPC)
+      https://axelar-lisbon-rpc.allthatnode.com:26657 (Tendermint RPC) <br/>
+      https://axelartest-rpc.quantnode.tech/
     </td>
     <td>
       https://services.staketab.com/axelar-testnet-2-rpc <br/>
@@ -74,12 +76,14 @@
       https://axelar-lcd.quickapi.com/ <br/>
       https://axelar-lcd.qubelabs.io/ <br/>
       https://services.staketab.com/axelar-api <br/>
-      https://axelar-rest.chainode.tech/
+      https://axelar-rest.chainode.tech/ <br/>
+      https://axelar-lcd.quantnode.tech/
     </td>
     <td>
       https://axelartest-lcd.quickapi.com/ <br/>
       https://axelar-testnet-lcd.qubelabs.io/ <br/>
-      https://services.staketab.com/axelar-testnet-1-api
+      https://services.staketab.com/axelar-testnet-1-api <br/>
+      https://axelartest-lcd.quantnode.tech/
     </td>
     <td>
       https://services.staketab.com/axelar-testnet-2-api
@@ -91,11 +95,17 @@
       services.staketab.com:9080 <br/>
       axelar-grpc.qubelabs.io:9092 <br/>
       axelar-grpc.chainode.tech <br/>
-      axelar-grpcweb.chainode.tech
+      axelar-grpcweb.chainode.tech <br/>
+      axelar-grpc.quantnode.tech:9090 <br/>
+      axelar-grpcweb.quantnode.tech:9091 <br/>
+      https://axelar-grpcweb.quantnode.tech/
     </td>
     <td>
       services.staketab.com:9090 <br/>
-      axelar-testnet-grpc.qubelabs.io:9090
+      axelar-testnet-grpc.qubelabs.io:9090 <br/>
+      axelartest-grpc.quantnode.tech:9090 <br/>
+      axelartest-grpcweb.quantnode.tech:9091 <br/>
+      https://axelartest-grpcweb.quantnode.tech/
     </td>
     <td></td>
   </tr>
