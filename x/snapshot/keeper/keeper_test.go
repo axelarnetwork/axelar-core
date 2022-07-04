@@ -3,6 +3,7 @@ package keeper_test
 import (
 	"bytes"
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 
@@ -454,6 +455,26 @@ func TestKeeper(t *testing.T) {
 				assert.ErrorContains(t, err, "cannot be met")
 			}).
 			Run(t)
+
+		givenKeeper.
+			When2(whenAllParamsAreGood).
+			When("weight func returns zero weights", func() {
+				once := &sync.Once{}
+				weightFunc = func(w sdk.Uint) sdk.Uint {
+					once.Do(func() { w = sdk.ZeroUint() })
+					return w
+				}
+			}).
+			Then("don't include validators with zero weight in snapshot", func(t *testing.T) {
+				s, err := k.CreateSnapshot(ctx, candidates, filterFunc, weightFunc, threshold)
+
+				assert.NoError(t, err)
+				participantsWithNonZeroWeights := slices.Map(validators[1:], func(v stakingtypes.ValidatorI) sdk.ValAddress {
+					return v.GetOperator()
+				})
+				assert.ElementsMatch(t, participantsWithNonZeroWeights, slices.Map(maps.Values(s.Participants),
+					func(p exported.Participant) sdk.ValAddress { return p.Address }))
+			}).Run(t)
 	})
 }
 

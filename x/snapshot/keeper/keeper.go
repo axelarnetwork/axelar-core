@@ -15,7 +15,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
-	"github.com/axelarnetwork/utils/slices"
 )
 
 const (
@@ -479,13 +478,23 @@ func (k Keeper) CreateSnapshot(
 	weightFunc func(consensusPower sdk.Uint) sdk.Uint,
 	threshold utils.Threshold,
 ) (exported.Snapshot, error) {
-	validators := slices.Map(candidates, func(address sdk.ValAddress) exported.ValidatorI { return k.staking.Validator(ctx, address) })
-	participatingValidators := slices.Filter(validators, filterFunc)
-
 	powerReduction := k.staking.PowerReduction(ctx)
-	participants := slices.Map(participatingValidators, func(v exported.ValidatorI) exported.Participant {
-		return exported.NewParticipant(v.GetOperator(), weightFunc(sdk.NewUint(uint64(v.GetConsensusPower(powerReduction)))))
-	})
+	participants := make([]exported.Participant, 0, len(candidates))
+	for _, candidate := range candidates {
+		validator := k.staking.Validator(ctx, candidate)
+		if !filterFunc(validator) {
+			continue
+		}
+
+		weight := weightFunc(sdk.NewUint(uint64(validator.GetConsensusPower(powerReduction))))
+		// Participants with zero weight are useless for all intents and purposes.
+		// We filter them out here so any process dealing with snapshots doesn't have to worry about them
+		if weight.IsZero() {
+			continue
+		}
+		participants = append(participants, exported.NewParticipant(validator.GetOperator(), weight))
+
+	}
 
 	bondedWeight := sdk.ZeroUint()
 	k.staking.IterateBondedValidatorsByPower(ctx, func(_ int64, v stakingtypes.ValidatorI) (stop bool) {
