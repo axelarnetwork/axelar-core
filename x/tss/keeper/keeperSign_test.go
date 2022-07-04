@@ -436,7 +436,7 @@ func generateECDSAKey(keyID exported.KeyID) exported.Key {
 }
 
 func generateMultisigKey(keyID exported.KeyID) exported.Key {
-	keyNum := rand.I64Between(5, 15)
+	keyNum := rand.I64Between(5, 10)
 	var pks [][]byte
 	for i := int64(0); i <= keyNum; i++ {
 		sk, err := btcec.NewPrivateKey(btcec.S256())

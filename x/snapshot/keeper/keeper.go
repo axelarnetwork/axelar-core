@@ -506,7 +506,7 @@ func (k Keeper) CreateSnapshot(
 
 	participantsWeight := snapshot.GetParticipantsWeight()
 	if participantsWeight.LT(snapshot.CalculateMinPassingWeight(threshold)) {
-		return exported.Snapshot{}, fmt.Errorf("given threshold %s cannot be met (participants weight: %s, bonded weight: %s)", threshold.SimpleString(), participantsWeight, bondedWeight)
+		return exported.Snapshot{}, fmt.Errorf("given threshold %s cannot be met (participants weight: %s, bonded weight: %s)", threshold.String(), participantsWeight, bondedWeight)
 	}
 
 	return snapshot, nil

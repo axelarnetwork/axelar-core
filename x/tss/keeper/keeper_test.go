@@ -26,10 +26,10 @@ import (
 )
 
 var (
-	val1       = newValidator(rand.ValAddr(), 100)
-	val2       = newValidator(rand.ValAddr(), 100)
-	val3       = newValidator(rand.ValAddr(), 100)
-	val4       = newValidator(rand.ValAddr(), 100)
+	val1       = newValidator(rand.ValAddr(), 10)
+	val2       = newValidator(rand.ValAddr(), 10)
+	val3       = newValidator(rand.ValAddr(), 10)
+	val4       = newValidator(rand.ValAddr(), 10)
 	validators = []snapshot.Validator{val1, val2, val3, val4}
 	snap       = snapshot.Snapshot{
 		Validators:      validators,

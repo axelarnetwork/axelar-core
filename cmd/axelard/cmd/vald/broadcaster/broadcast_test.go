@@ -204,7 +204,7 @@ func TestRetryPipeline_Push(t *testing.T) {
 		backOff := utils.LinearBackOff(2 * time.Microsecond)
 		p := NewPipelineWithRetry(int(rand.I64Between(10, 100000)), retries, backOff, log.TestingLogger())
 
-		iterations := int(rand.I64Between(20, 100))
+		iterations := int(rand.I64Between(20, 30))
 
 		// introducing a data race on purpose to assert that broadcast calls are serialized
 		callCounter := 0
