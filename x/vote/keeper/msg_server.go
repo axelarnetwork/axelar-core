@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	. "github.com/axelarnetwork/utils/funcs"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -41,16 +42,15 @@ func (s msgServer) Vote(c context.Context, req *types.VoteRequest) (*types.VoteR
 		return nil, err
 	}
 
-	event := sdk.NewEvent(types.EventType,
-		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueVote),
-		sdk.NewAttribute(types.AttributeKeyPoll, req.PollID.String()),
-		sdk.NewAttribute(types.AttributeKeyVoter, req.Sender.String()),
-		sdk.NewAttribute(types.AttributeKeyPollState, poll.GetState().String()),
-	)
-
 	if voteResult != vote.NoVote {
-		defer func() { ctx.EventManager().EmitEvent(event) }()
+		MustNoErr(ctx.EventManager().EmitTypedEvent(
+			&types.Vote{
+				Module: types.ModuleName,
+				Action: types.AttributeValueVote,
+				Poll:   req.PollID.String(),
+				Voter:  req.Sender.String(),
+				State:  poll.GetState().String(),
+			}))
 	}
 
 	switch poll.GetState() {

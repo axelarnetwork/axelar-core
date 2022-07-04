@@ -1,11 +1,16 @@
 package keeper
 
 import (
+	"encoding/json"
+	"fmt"
 	"testing"
 	"time"
 
+	"github.com/axelarnetwork/axelar-core/x/vote/types"
+	. "github.com/axelarnetwork/utils/funcs"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
+	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -286,4 +291,30 @@ func TestPoll(t *testing.T) {
 			Run(t)
 	})
 
+}
+
+func TestName(t *testing.T) {
+	e1 := sdk.NewEvent(types.EventType,
+		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueVote),
+		sdk.NewAttribute(types.AttributeKeyPoll, "5"),
+		sdk.NewAttribute(types.AttributeKeyVoter, "abc"),
+		sdk.NewAttribute(types.AttributeKeyPollState, exported.Pending.String()),
+	)
+	fmt.Println(string(Must(json.Marshal(e1))))
+	te1 := &types.Vote{
+		Module: types.ModuleName,
+		Action: types.AttributeValueVote,
+		Poll:   "5",
+		Voter:  "abc",
+		State:  exported.Pending.String(),
+	}
+	e2, _ := sdk.TypedEventToEvent(
+		te1)
+	fmt.Println(string(Must(json.Marshal(e2))))
+
+	te2, err := sdk.ParseTypedEvent(abci.Event(e2))
+	assert.NoError(t, err)
+
+	fmt.Println(te2)
 }

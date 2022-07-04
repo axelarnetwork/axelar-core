@@ -83,9 +83,8 @@ func (k Keeper) InitializePoll(ctx sdk.Context, pollBuilder exported.PollBuilder
 
 	k.GetPollQueue(ctx).Enqueue(pollPrefix.AppendStr(pollMetadata.ID.String()), &pollMetadata)
 
-	k.Logger(ctx).Info("created poll",
-		"poll", pollID.String(),
-	)
+	poll := newPoll(ctx, k, pollMetadata)
+	poll.Logger().Info("created poll")
 
 	return pollID, nil
 }

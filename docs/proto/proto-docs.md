@@ -428,6 +428,9 @@
     - [MsgService](#axelar.tss.v1beta1.MsgService)
     - [QueryService](#axelar.tss.v1beta1.QueryService)
   
+- [axelar/vote/v1beta1/events.proto](#axelar/vote/v1beta1/events.proto)
+    - [Vote](#axelar.vote.v1beta1.Vote)
+  
 - [axelar/vote/v1beta1/params.proto](#axelar/vote/v1beta1/params.proto)
     - [Params](#axelar.vote.v1beta1.Params)
   
@@ -6118,6 +6121,41 @@ Query defines the gRPC querier service.
 | `NextKeyID` | [NextKeyIDRequest](#axelar.tss.v1beta1.NextKeyIDRequest) | [NextKeyIDResponse](#axelar.tss.v1beta1.NextKeyIDResponse) | NextKeyID returns the key ID assigned for the next rotation on a given chain and for the given key role | GET|/axelar/tss/v1beta1/next_key_id/{chain}/{key_role}|
 | `AssignableKey` | [AssignableKeyRequest](#axelar.tss.v1beta1.AssignableKeyRequest) | [AssignableKeyResponse](#axelar.tss.v1beta1.AssignableKeyResponse) | AssignableKey returns true if there is no assigned key for the next rotation on a given chain, and false otherwise | GET|/axelar/tss/v1beta1/assignable_key/{chain}/{key_role}|
 | `ValidatorMultisigKeys` | [ValidatorMultisigKeysRequest](#axelar.tss.v1beta1.ValidatorMultisigKeysRequest) | [ValidatorMultisigKeysResponse](#axelar.tss.v1beta1.ValidatorMultisigKeysResponse) | ValidatorMultisigKeys returns the validator's multisig pubkeys corresponding to each active key ID | GET|/axelar/tss/v1beta1/validator_multisig_keys/{address}|
+
+ <!-- end services -->
+
+
+
+<a name="axelar/vote/v1beta1/events.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/vote/v1beta1/events.proto
+
+
+
+<a name="axelar.vote.v1beta1.Vote"></a>
+
+### Vote
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `module` | [string](#string) |  |  |
+| `action` | [string](#string) |  |  |
+| `poll` | [string](#string) |  |  |
+| `voter` | [string](#string) |  |  |
+| `state` | [string](#string) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
 
  <!-- end services -->
 

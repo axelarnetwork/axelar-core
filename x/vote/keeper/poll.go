@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/axelarnetwork/utils/wrapper"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/tendermint/libs/log"
@@ -21,8 +22,9 @@ var _ exported.Poll = &poll{}
 
 type poll struct {
 	exported.PollMetadata
-	ctx sdk.Context
-	k   Keeper
+	ctx           sdk.Context
+	k             Keeper
+	passingWeight wrapper.Cached[sdk.Uint]
 }
 
 func newPoll(ctx sdk.Context, k Keeper, metadata exported.PollMetadata) *poll {
@@ -30,11 +32,28 @@ func newPoll(ctx sdk.Context, k Keeper, metadata exported.PollMetadata) *poll {
 		ctx:          ctx,
 		k:            k,
 		PollMetadata: metadata,
+		passingWeight: wrapper.NewCached(func() sdk.Uint {
+			return metadata.Snapshot.CalculateMinPassingWeight(metadata.VotingThreshold)
+		}),
 	}
 }
 
-func (p poll) logger() log.Logger {
-	return p.k.Logger(p.ctx)
+func (p poll) Logger() log.Logger {
+	return p.k.Logger(p.ctx).With(
+		"poll", p.ID.String(),
+		"voting_threshold", p.VotingThreshold.String(),
+		"min_voter_count", p.MinVoterCount,
+		"required_weight", p.passingWeight.Value(),
+	)
+}
+
+func (p poll) tallyLogger(voter sdk.ValAddress, talliedVote types.TalliedVote) log.Logger {
+	return p.Logger().With(
+		"voter", voter.String(),
+		"data_hash", talliedVote.Data,
+		"tally_weight", talliedVote.Tally,
+		"tally_voter_count", len(talliedVote.IsVoterLate),
+	)
 }
 
 func (p poll) HasVotedCorrectly(voter sdk.ValAddress) bool {
@@ -123,11 +142,6 @@ func (p poll) GetModule() string {
 }
 
 func (p poll) voteLate(voter sdk.ValAddress, data codec.ProtoMarshaler) {
-	p.logger().Debug("received late vote for poll",
-		"voter", voter.String(),
-		"poll", p.ID.String(),
-	)
-
 	talliedVote, ok := p.k.getTalliedVote(p.ctx, p.ID, proto.Hash(data))
 	if !ok {
 		talliedVote = types.NewTalliedVote(p.ID, data)
@@ -135,15 +149,14 @@ func (p poll) voteLate(voter sdk.ValAddress, data codec.ProtoMarshaler) {
 
 	talliedVote.TallyVote(voter, p.Snapshot.GetParticipantWeight(voter), true)
 	p.k.setTalliedVote(p.ctx, talliedVote)
+
+	p.tallyLogger(voter, talliedVote).Debug("received late vote for poll")
 }
 
 func (p *poll) voteBeforeCompletion(voter sdk.ValAddress, blockHeight int64, data codec.ProtoMarshaler) {
-	p.logger().Debug("received vote for poll",
-		"voter", voter.String(),
-		"poll", p.ID.String(),
-	)
+	hash := proto.Hash(data)
 
-	talliedVote, ok := p.k.getTalliedVote(p.ctx, p.ID, proto.Hash(data))
+	talliedVote, ok := p.k.getTalliedVote(p.ctx, p.ID, hash)
 	if !ok {
 		talliedVote = types.NewTalliedVote(p.ID, data)
 	}
@@ -151,29 +164,21 @@ func (p *poll) voteBeforeCompletion(voter sdk.ValAddress, blockHeight int64, dat
 	talliedVote.TallyVote(voter, p.Snapshot.GetParticipantWeight(voter), false)
 	p.k.setTalliedVote(p.ctx, talliedVote)
 
+	logger := p.tallyLogger(voter, talliedVote)
+	logger.Debug("received vote for poll")
 	majorityVote := p.getMajorityVote()
 	switch {
 	case p.hasEnoughVotes(majorityVote.Tally):
 		p.Result = majorityVote.Data
 		p.State = exported.Completed
 		p.CompletedAt = blockHeight
-		p.logger().Debug(fmt.Sprintf("poll %s (threshold: %d/%d, min voter count: %d) completed",
-			p.ID,
-			p.VotingThreshold.Numerator,
-			p.VotingThreshold.Denominator,
-			p.MinVoterCount,
-		))
+		logger.Debug("poll completed")
 
 		p.k.setPollMetadata(p.ctx, p.PollMetadata)
 
 	case p.cannotWin(majorityVote.Tally):
 		p.State = exported.Failed
-		p.logger().Debug(fmt.Sprintf("poll %s (threshold: %d/%d, min voter count: %d) failed, voters could not agree on single value",
-			p.ID,
-			p.VotingThreshold.Numerator,
-			p.VotingThreshold.Denominator,
-			p.MinVoterCount,
-		))
+		logger.Debug("poll failed, voters could not agree on single value")
 
 		p.k.setPollMetadata(p.ctx, p.PollMetadata)
 	}
