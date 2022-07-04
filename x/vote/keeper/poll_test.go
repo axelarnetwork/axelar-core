@@ -6,8 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/axelarnetwork/axelar-core/x/vote/types"
-	. "github.com/axelarnetwork/utils/funcs"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -17,6 +15,8 @@ import (
 	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
+	"github.com/axelarnetwork/axelar-core/x/vote/types"
+	. "github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 	. "github.com/axelarnetwork/utils/test"
 )

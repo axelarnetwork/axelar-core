@@ -3,7 +3,6 @@ package keeper
 import (
 	"fmt"
 
-	"github.com/axelarnetwork/utils/wrapper"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/tendermint/libs/log"
@@ -12,6 +11,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/vote/types"
 	"github.com/axelarnetwork/utils/proto"
 	"github.com/axelarnetwork/utils/slices"
+	"github.com/axelarnetwork/utils/wrapper"
 )
 
 var _ exported.Poll = &poll{}

@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/axelarnetwork/utils/funcs"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/types"
+	"github.com/axelarnetwork/utils/funcs"
 )
 
 type msgServer struct {
