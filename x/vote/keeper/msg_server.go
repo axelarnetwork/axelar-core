@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	. "github.com/axelarnetwork/utils/funcs"
+	"github.com/axelarnetwork/utils/funcs"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -43,7 +43,7 @@ func (s msgServer) Vote(c context.Context, req *types.VoteRequest) (*types.VoteR
 	}
 
 	if voteResult != vote.NoVote {
-		MustNoErr(ctx.EventManager().EmitTypedEvent(
+		funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(
 			&types.Vote{
 				Module: types.ModuleName,
 				Action: types.AttributeValueVote,
