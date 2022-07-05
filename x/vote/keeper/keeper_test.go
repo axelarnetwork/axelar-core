@@ -60,7 +60,7 @@ func TestKeeper(t *testing.T) {
 	t.Run("InitializePoll", testutils.Func(func(t *testing.T) {
 		whenPollBuilderIsSet := When("poll builder is set", func() {
 			votingThreshold := utilstestutils.RandThreshold()
-			snapshot := snapshottestutils.RandSnapshot(uint64(rand.I64Between(1, 100)), votingThreshold)
+			snapshot := snapshottestutils.Snapshot(uint64(rand.I64Between(1, 100)), votingThreshold)
 			pollBuilder = exported.NewPollBuilder(rand.NormalizedStr(5), votingThreshold, snapshot, rand.PosI64()).
 				RewardPoolName(rand.NormalizedStr(5)).
 				MinVoterCount(rand.I64Between(0, int64(len(snapshot.Participants)))).

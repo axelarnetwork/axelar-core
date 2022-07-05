@@ -37,7 +37,7 @@ func TestGetMigrationHandler(t *testing.T) {
 				pollMeta := exported.PollMetadata{
 					ID:       exported.PollID(rand.PosI64()),
 					State:    rand.Of(exported.Completed, exported.Failed, exported.Pending),
-					Snapshot: snapshottestutils.RandSnapshot(uint64(rand.I64Between(1, 10)), utilstestutils.RandThreshold()),
+					Snapshot: snapshottestutils.Snapshot(uint64(rand.I64Between(1, 10)), utilstestutils.RandThreshold()),
 				}
 
 				switch pollMeta.State {

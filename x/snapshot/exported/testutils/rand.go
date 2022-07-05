@@ -12,8 +12,8 @@ import (
 	"github.com/axelarnetwork/utils/slices"
 )
 
-// RandSnapshot returns random snapshot based on the given parameters
-func RandSnapshot(participantCount uint64, threshold utils.Threshold) (snapshot exported.Snapshot) {
+// Snapshot returns random snapshot based on the given parameters
+func Snapshot(participantCount uint64, threshold utils.Threshold) (snapshot exported.Snapshot) {
 	for {
 		participantsWeight := sdk.ZeroUint()
 		participants := slices.Expand(func(int) exported.Participant {

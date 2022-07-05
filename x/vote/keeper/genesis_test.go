@@ -48,7 +48,7 @@ func setup() (sdk.Context, Keeper, *mock.SnapshotterMock, *mock.StakingKeeperMoc
 
 func initializeRandomPoll(ctx sdk.Context, keeper Keeper) exported.PollMetadata {
 	votingThreshold := utilstestutils.RandThreshold()
-	snapshot := snapshottestutils.RandSnapshot(uint64(rand.I64Between(1, 100)), votingThreshold)
+	snapshot := snapshottestutils.Snapshot(uint64(rand.I64Between(1, 100)), votingThreshold)
 	pollID, err := keeper.InitializePoll(
 		ctx,
 		exported.NewPollBuilder(rand.NormalizedStr(5), votingThreshold, snapshot, rand.I64Between(1, 100)).
