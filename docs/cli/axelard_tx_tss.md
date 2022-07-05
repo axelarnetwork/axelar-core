@@ -25,7 +25,8 @@ axelard tx tss [flags]
 
 ### SEE ALSO
 
-- [axelard tx](axelard_tx.md)	 - Transactions subcommands
-- [axelard tx tss register-external-keys](axelard_tx_tss_register-external-keys.md)	 - Register the external keys for the given chain
-- [axelard tx tss rotate](axelard_tx_tss_rotate.md)	 - Rotate the given chain from the old key to the given key
-- [axelard tx tss start-keygen](axelard_tx_tss_start-keygen.md)	 - Initiate key generation protocol
+* [axelard tx](axelard_tx.md)	 - Transactions subcommands
+* [axelard tx tss register-external-keys](axelard_tx_tss_register-external-keys.md)	 - Register the external keys for the given chain
+* [axelard tx tss rotate](axelard_tx_tss_rotate.md)	 - Rotate the given chain from the old key to the given key
+* [axelard tx tss start-keygen](axelard_tx_tss_start-keygen.md)	 - Initiate key generation protocol
+

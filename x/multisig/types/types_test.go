@@ -3,7 +3,6 @@ package types_test
 import (
 	"testing"
 
-	"github.com/axelarnetwork/utils/funcs"
 	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
@@ -16,6 +15,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
 	typestestutils "github.com/axelarnetwork/axelar-core/x/multisig/types/testutils"
 	snapshottestutils "github.com/axelarnetwork/axelar-core/x/snapshot/exported/testutils"
+	"github.com/axelarnetwork/utils/funcs"
 	. "github.com/axelarnetwork/utils/test"
 )
 
