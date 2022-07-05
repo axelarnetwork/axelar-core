@@ -95,7 +95,7 @@ func (m KeygenSession) ValidateBasic() error {
 		return fmt.Errorf("keygen threshold must be >=signing threshold")
 	}
 
-	if m.ExpiresAt < 0 {
+	if m.ExpiresAt <= 0 {
 		return fmt.Errorf("expires at must be >0")
 	}
 
@@ -122,12 +122,16 @@ func (m *KeygenSession) AddKey(blockHeight int64, participant sdk.ValAddress, pu
 		m.IsPubKeyReceived = make(map[string]bool)
 	}
 
+	if blockHeight >= m.ExpiresAt {
+		return fmt.Errorf("keygen session %s has expired", m.GetKeyID())
+	}
+
 	if m.Key.Snapshot.GetParticipantWeight(participant).IsZero() {
 		return fmt.Errorf("%s is not a participant of keygen %s", participant.String(), m.GetKeyID())
 	}
 
 	if _, ok := m.Key.PubKeys[participant.String()]; ok {
-		return fmt.Errorf("participant %s already submit its public key for keygen %s", participant.String(), m.GetKeyID())
+		return fmt.Errorf("participant %s already submitted its public key for keygen %s", participant.String(), m.GetKeyID())
 	}
 
 	if m.IsPubKeyReceived[pubKey.String()] {
