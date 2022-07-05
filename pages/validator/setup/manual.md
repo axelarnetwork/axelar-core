@@ -199,7 +199,7 @@ cd $HOME`}
 },
 { title: "Testnet", content: <CodeBlock language="bash">
 {`axelard unsafe-reset-all
-URL=\`curl https://quicksync.io/axelar.json | jq -r '.[] |select(.file=="axelartestnet-lisbon-3-pruned")|.url'\`
+URL=\`curl -L https://quicksync.io/axelar.json | jq -r '.[] |select(.file=="axelartestnet-lisbon-3-pruned")|.url'\`
 echo $URL
 cd $HOME/.axelar/
 wget -O - $URL | lz4 -d | tar -xvf -
