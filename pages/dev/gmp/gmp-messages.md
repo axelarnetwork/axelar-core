@@ -1,8 +1,8 @@
-## Call a contract on chain B from chain A
+# Call a contract on chain B from chain A
 
 To call a contract on chain B from chain A the user needs to call `callContract` on the gateway of chain A, specifying:
 
-- The destination chain: must an EVM chain from [Chain names](chain-names).
+- The destination chain: must an EVM chain from [Chain names](../chain-names).
 - The destination contract address: must implement the `IAxelarExecutable` interface defined in [IAxelarExecutable.sol](https://github.com/axelarnetwork/axelar-cgp-solidity/blob/main/contracts/interfaces/IAxelarExecutable.sol).
 - The payload `bytes` to pass to the destination contract.
 
@@ -24,7 +24,7 @@ function _execute(
 ) internal virtual {}
 ```
 
-*** __Ensure the payload is encoded `bytes`__
+\*\*\* **Ensure the payload is encoded `bytes`**
 
 The `payload` passed to `callContract` (and ultimately to `_execute` and `_executeWithToken`) has type `bytes`. Use the ABI encoder/decoder convert your data to `bytes`.
 
