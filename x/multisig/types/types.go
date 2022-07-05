@@ -2,7 +2,7 @@ package types
 
 import (
 	"encoding/hex"
-	fmt "fmt"
+	"fmt"
 
 	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -17,7 +17,26 @@ import (
 type Signature []byte
 
 func (sig Signature) ValidateBasic() error {
+	_, err := btcec.ParseDERSignature(sig, btcec.S256())
+	if err != nil {
+		return err
+	}
 
+	return nil
+}
+
+func (sig Signature) Verify(payload []byte, pk PublicKey) bool {
+	s, err := btcec.ParseDERSignature(sig, btcec.S256())
+	if err != nil {
+		return false
+	}
+
+	parsedKey, err := btcec.ParsePubKey(pk, btcec.S256())
+	if err != nil {
+		return false
+	}
+
+	return s.Verify(payload, parsedKey)
 }
 
 // PublicKey is an alias for public key in raw bytes

@@ -1,7 +1,6 @@
 package types
 
 import (
-	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -11,7 +10,7 @@ import (
 var _ sdk.Msg = &SubmitPubKeyRequest{}
 
 // NewSubmitPubKeyRequest constructor for AckRequest
-func NewSubmitPubKeyRequest(sender sdk.AccAddress, keyID exported.KeyID, pubKey PublicKey, signature []byte) *SubmitPubKeyRequest {
+func NewSubmitPubKeyRequest(sender sdk.AccAddress, keyID exported.KeyID, pubKey PublicKey, signature Signature) *SubmitPubKeyRequest {
 	return &SubmitPubKeyRequest{
 		Sender:    sender,
 		KeyID:     keyID,
@@ -34,9 +33,12 @@ func (m SubmitPubKeyRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, err.Error())
 	}
 
-	sig, err := btcec.ParseDERSignature(m.Signature, btcec.S256())
-	if err != nil {
+	if err := m.Signature.ValidateBasic(); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, err.Error())
+	}
+
+	if !m.Signature.Verify([]byte(m.KeyID), m.PubKey) {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "signature does not match the public key")
 	}
 
 	return nil
