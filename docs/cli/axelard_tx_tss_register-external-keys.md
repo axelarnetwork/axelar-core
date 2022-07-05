@@ -46,5 +46,4 @@ axelard tx tss register-external-keys [chain] [flags]
 
 ### SEE ALSO
 
-* [axelard tx tss](axelard_tx_tss.md)	 - tss transactions subcommands
-
+- [axelard tx tss](axelard_tx_tss.md)	 - tss transactions subcommands

@@ -45,5 +45,4 @@ axelard tx tss rotate [chain] [role] [keyID] [flags]
 
 ### SEE ALSO
 
-* [axelard tx tss](axelard_tx_tss.md)	 - tss transactions subcommands
-
+- [axelard tx tss](axelard_tx_tss.md)	 - tss transactions subcommands
