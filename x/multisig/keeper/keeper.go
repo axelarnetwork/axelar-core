@@ -19,8 +19,6 @@ var (
 	keyPrefix    = utils.KeyFromStr("key")
 )
 
-var _ types.Keeper = Keeper{}
-
 // Keeper provides access to all state changes regarding this module
 type Keeper struct {
 	storeKey   sdk.StoreKey

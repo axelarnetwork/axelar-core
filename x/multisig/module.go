@@ -33,7 +33,7 @@ func (AppModuleBasic) Name() string {
 }
 
 // RegisterLegacyAminoCodec registers the types necessary in this module with the given codec
-func (AppModuleBasic) RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {}
+func (AppModuleBasic) RegisterLegacyAminoCodec(*codec.LegacyAmino) {}
 
 // RegisterInterfaces registers the module's interface types
 func (AppModuleBasic) RegisterInterfaces(reg cdctypes.InterfaceRegistry) {
@@ -56,7 +56,7 @@ func (AppModuleBasic) ValidateGenesis(cdc codec.JSONCodec, _ client.TxEncodingCo
 }
 
 // RegisterRESTRoutes registers the REST routes for this module
-func (AppModuleBasic) RegisterRESTRoutes(clientCtx client.Context, rtr *mux.Router) {}
+func (AppModuleBasic) RegisterRESTRoutes(client.Context, *mux.Router) {}
 
 // RegisterGRPCGatewayRoutes registers the gRPC Gateway routes for the module.
 func (AppModuleBasic) RegisterGRPCGatewayRoutes(client.Context, *runtime.ServeMux) {}
@@ -74,14 +74,20 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 // AppModule implements module.AppModule
 type AppModule struct {
 	AppModuleBasic
-	keeper keeper.Keeper
+	keeper      keeper.Keeper
+	staker      types.Staker
+	slasher     types.Slasher
+	snapshotter types.Snapshotter
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(keeper keeper.Keeper) AppModule {
+func NewAppModule(keeper keeper.Keeper, staker types.Staker, slasher types.Slasher, snapshotter types.Snapshotter) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         keeper,
+		staker:         staker,
+		slasher:        slasher,
+		snapshotter:    snapshotter,
 	}
 }
 
@@ -106,12 +112,12 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.Raw
 
 // Route returns the module's route
 func (am AppModule) Route() sdk.Route {
-	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper))
+	return sdk.NewRoute(types.RouterKey, nil)
 }
 
 // QuerierRoute returns this module's query route
 func (AppModule) QuerierRoute() string {
-	return types.QuerierRoute
+	return ""
 }
 
 // LegacyQuerierHandler returns a new query handler for this module
@@ -121,7 +127,9 @@ func (am AppModule) LegacyQuerierHandler(*codec.LegacyAmino) sdk.Querier {
 
 // RegisterServices registers a GRPC query service to respond to the
 // module-specific GRPC queries.
-func (am AppModule) RegisterServices(module.Configurator) {}
+func (am AppModule) RegisterServices(cfg module.Configurator) {
+	types.RegisterMsgServiceServer(cfg.MsgServer(), keeper.NewMsgServerImpl(am.keeper, am.snapshotter, am.staker, am.slasher))
+}
 
 // BeginBlock executes all state transitions this module requires at the beginning of each new block
 func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {

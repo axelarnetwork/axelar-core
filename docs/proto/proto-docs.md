@@ -251,14 +251,14 @@
 - [axelar/multisig/v1beta1/genesis.proto](#axelar/multisig/v1beta1/genesis.proto)
     - [GenesisState](#axelar.multisig.v1beta1.GenesisState)
   
-- [axelar/multisig/v1beta1/service.proto](#axelar/multisig/v1beta1/service.proto)
-    - [MsgService](#axelar.multisig.v1beta1.MsgService)
-  
 - [axelar/multisig/v1beta1/tx.proto](#axelar/multisig/v1beta1/tx.proto)
     - [StartKeygenRequest](#axelar.multisig.v1beta1.StartKeygenRequest)
     - [StartKeygenResponse](#axelar.multisig.v1beta1.StartKeygenResponse)
     - [SubmitPubKeyRequest](#axelar.multisig.v1beta1.SubmitPubKeyRequest)
     - [SubmitPubKeyResponse](#axelar.multisig.v1beta1.SubmitPubKeyResponse)
+  
+- [axelar/multisig/v1beta1/service.proto](#axelar/multisig/v1beta1/service.proto)
+    - [MsgService](#axelar.multisig.v1beta1.MsgService)
   
 - [axelar/multisig/v1beta1/types.proto](#axelar/multisig/v1beta1/types.proto)
     - [Key](#axelar.multisig.v1beta1.Key)
@@ -3891,31 +3891,6 @@ GenesisState represents the genesis state
 
 
 
-<a name="axelar/multisig/v1beta1/service.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## axelar/multisig/v1beta1/service.proto
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
-
-<a name="axelar.multisig.v1beta1.MsgService"></a>
-
-### MsgService
-Msg defines the multisig Msg service.
-
-| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
-| ----------- | ------------ | ------------- | ------------| ------- | -------- |
-
- <!-- end services -->
-
-
-
 <a name="axelar/multisig/v1beta1/tx.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -3981,6 +3956,33 @@ Msg defines the multisig Msg service.
  <!-- end enums -->
 
  <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="axelar/multisig/v1beta1/service.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/multisig/v1beta1/service.proto
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+
+<a name="axelar.multisig.v1beta1.MsgService"></a>
+
+### MsgService
+Msg defines the multisig Msg service.
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `StartKeygen` | [StartKeygenRequest](#axelar.multisig.v1beta1.StartKeygenRequest) | [StartKeygenResponse](#axelar.multisig.v1beta1.StartKeygenResponse) |  | POST|/axelar/multisig/keygen|
+| `SubmitPubKey` | [SubmitPubKeyRequest](#axelar.multisig.v1beta1.SubmitPubKeyRequest) | [SubmitPubKeyResponse](#axelar.multisig.v1beta1.SubmitPubKeyResponse) |  | POST|/axelar/multisig/submit_pk|
 
  <!-- end services -->
 

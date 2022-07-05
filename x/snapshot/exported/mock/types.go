@@ -4,13 +4,15 @@
 package mock
 
 import (
+	"sync"
+
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshotexported "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	types2 "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	tssexported "github.com/axelarnetwork/axelar-core/x/tss/exported"
-	types "github.com/cosmos/cosmos-sdk/codec/types"
+	"github.com/cosmos/cosmos-sdk/codec/types"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
-	"sync"
 )
 
 // Ensure, that SDKValidatorMock does implement snapshotexported.SDKValidator.
@@ -685,7 +687,7 @@ func (mock *SnapshotterMock) TakeSnapshotCalls() []struct {
 
 // Ensure, that SlasherMock does implement snapshotexported.Slasher.
 // If this is not the case, regenerate this file with moq.
-var _ snapshotexported.Slasher = &SlasherMock{}
+var _ types2.Slasher = &SlasherMock{}
 
 // SlasherMock is a mock implementation of snapshotexported.Slasher.
 //
@@ -854,7 +856,7 @@ func (mock *SlasherMock) SignedBlocksWindowCalls() []struct {
 
 // Ensure, that TssMock does implement snapshotexported.Tss.
 // If this is not the case, regenerate this file with moq.
-var _ snapshotexported.Tss = &TssMock{}
+var _ types2.Tss = &TssMock{}
 
 // TssMock is a mock implementation of snapshotexported.Tss.
 //

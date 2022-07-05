@@ -1,7 +1,9 @@
 package types
 
 import (
+	exported2 "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -30,4 +32,20 @@ type Nexus interface {
 	GetChains(ctx sdk.Context) []nexus.Chain
 	IsChainMaintainer(ctx sdk.Context, chain exported.Chain, maintainer sdk.ValAddress) bool
 	RemoveChainMaintainer(ctx sdk.Context, chain nexus.Chain, maintainer sdk.ValAddress) error
+}
+
+// Slasher provides functionality to manage slashing info for a validator
+type Slasher interface {
+	GetValidatorSigningInfo(ctx sdk.Context, address sdk.ConsAddress) (info types.ValidatorSigningInfo, found bool)
+	SignedBlocksWindow(ctx sdk.Context) (res int64)
+	GetValidatorMissedBlockBitArray(ctx sdk.Context, address sdk.ConsAddress, index int64) bool
+}
+
+// Tss provides functionality to tss module
+type Tss interface {
+	GetSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress) int64
+	GetNextKey(ctx sdk.Context, chain nexus.Chain, keyRole exported2.KeyRole) (exported2.Key, bool)
+	IsOperatorAvailable(ctx sdk.Context, validator sdk.ValAddress, keyIDs ...exported2.KeyID) bool
+	GetKeyRequirement(ctx sdk.Context, keyRole exported2.KeyRole, keyType exported2.KeyType) (exported2.KeyRequirement, bool)
+	HasMissedTooManyBlocks(ctx sdk.Context, address sdk.ConsAddress) (bool, error)
 }
