@@ -254,6 +254,12 @@
 - [axelar/multisig/v1beta1/service.proto](#axelar/multisig/v1beta1/service.proto)
     - [MsgService](#axelar.multisig.v1beta1.MsgService)
   
+- [axelar/multisig/v1beta1/tx.proto](#axelar/multisig/v1beta1/tx.proto)
+    - [StartKeygenRequest](#axelar.multisig.v1beta1.StartKeygenRequest)
+    - [StartKeygenResponse](#axelar.multisig.v1beta1.StartKeygenResponse)
+    - [SubmitPubKeyRequest](#axelar.multisig.v1beta1.SubmitPubKeyRequest)
+    - [SubmitPubKeyResponse](#axelar.multisig.v1beta1.SubmitPubKeyResponse)
+  
 - [axelar/multisig/v1beta1/types.proto](#axelar/multisig/v1beta1/types.proto)
     - [Key](#axelar.multisig.v1beta1.Key)
     - [Key.PubKeysEntry](#axelar.multisig.v1beta1.Key.PubKeysEntry)
@@ -3834,6 +3840,13 @@ QueryService defines the gRPC querier service.
 Params represent the genesis parameters for the module
 
 
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `keygen_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
+| `signing_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
+| `keygen_timeout` | [int64](#int64) |  |  |
+
+
 
 
 
@@ -3898,6 +3911,76 @@ Msg defines the multisig Msg service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
+
+ <!-- end services -->
+
+
+
+<a name="axelar/multisig/v1beta1/tx.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/multisig/v1beta1/tx.proto
+
+
+
+<a name="axelar.multisig.v1beta1.StartKeygenRequest"></a>
+
+### StartKeygenRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [string](#string) |  |  |
+| `key_id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.StartKeygenResponse"></a>
+
+### StartKeygenResponse
+
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.SubmitPubKeyRequest"></a>
+
+### SubmitPubKeyRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [string](#string) |  |  |
+| `key_id` | [string](#string) |  |  |
+| `pub_key` | [bytes](#bytes) |  |  |
+| `signature` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.SubmitPubKeyResponse"></a>
+
+### SubmitPubKeyResponse
+
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
 
  <!-- end services -->
 

@@ -13,6 +13,13 @@ import (
 	"github.com/axelarnetwork/utils/slices"
 )
 
+// Signature is an alias for signature in raw bytes
+type Signature []byte
+
+func (sig Signature) ValidateBasic() error {
+
+}
+
 // PublicKey is an alias for public key in raw bytes
 type PublicKey []byte
 
