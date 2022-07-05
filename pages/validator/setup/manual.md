@@ -190,7 +190,7 @@ sed -i.bak 's/external_address = ""/external_address = "'"$(curl -4 ifconfig.co)
 title: "Mainnet",
 content: <CodeBlock language="bash">
 {`axelard tendermint unsafe-reset-all
-URL=\`curl https://quicksync.io/axelar.json | jq -r '.[] |select(.file=="axelar-dojo-1-pruned")|.url'\`
+URL=\`curl -L https://quicksync.io/axelar.json | jq -r '.[] |select(.file=="axelar-dojo-1-pruned")|.url'\`
 echo $URL
 cd $HOME/.axelar/
 wget -O - $URL | lz4 -d | tar -xvf -
