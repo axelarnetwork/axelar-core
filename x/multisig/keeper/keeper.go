@@ -74,12 +74,7 @@ func (k Keeper) GetKeygenSession(ctx sdk.Context, id exported.KeyID) (keygen typ
 
 // GetKey returns the key with the given key ID
 func (k Keeper) GetKey(ctx sdk.Context, id exported.KeyID) (exported.Key, bool) {
-	key, ok := k.getKey(ctx, id)
-	if !ok {
-		return nil, false
-	}
-
-	return newKey(ctx, k, key), true
+	panic("TODO")
 }
 
 // DeleteKeygenSession deletes the keygen session with the given key ID
