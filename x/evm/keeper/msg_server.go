@@ -63,19 +63,20 @@ func validateChainActivated(ctx sdk.Context, n types.Nexus, chain nexus.Chain) e
 
 func excludeJailedOrTombstoned(ctx sdk.Context, powerReduction sdk.Int, slashing types.SlashingKeeper) func(v snapshot.ValidatorI) bool {
 	return func(v snapshot.ValidatorI) bool {
+		if v.IsJailed() {
+			return false
+		}
+
 		consAddress, err := v.GetConsAddr()
 		if err != nil {
 			return false
 		}
 
-		validatorSignInfo, ok := slashing.GetValidatorSigningInfo(ctx, consAddress)
-		if !ok {
+		if slashing.IsTombstoned(ctx, consAddress) {
 			return false
 		}
 
-		return v.GetConsensusPower(powerReduction) > 0 &&
-			!v.IsJailed() &&
-			!validatorSignInfo.Tombstoned
+		return true
 	}
 }
 

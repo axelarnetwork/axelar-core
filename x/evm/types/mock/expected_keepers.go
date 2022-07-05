@@ -12,7 +12,6 @@ import (
 	github_com_axelarnetwork_axelar_core_x_tss_exported "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
-	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/tendermint/tendermint/libs/log"
 	"sync"
@@ -4762,8 +4761,8 @@ var _ types.SlashingKeeper = &SlashingKeeperMock{}
 //
 // 		// make and configure a mocked types.SlashingKeeper
 // 		mockedSlashingKeeper := &SlashingKeeperMock{
-// 			GetValidatorSigningInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress) (slashingtypes.ValidatorSigningInfo, bool) {
-// 				panic("mock out the GetValidatorSigningInfo method")
+// 			IsTombstonedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, consAddr github_com_cosmos_cosmos_sdk_types.ConsAddress) bool {
+// 				panic("mock out the IsTombstoned method")
 // 			},
 // 		}
 //
@@ -4772,53 +4771,53 @@ var _ types.SlashingKeeper = &SlashingKeeperMock{}
 //
 // 	}
 type SlashingKeeperMock struct {
-	// GetValidatorSigningInfoFunc mocks the GetValidatorSigningInfo method.
-	GetValidatorSigningInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress) (slashingtypes.ValidatorSigningInfo, bool)
+	// IsTombstonedFunc mocks the IsTombstoned method.
+	IsTombstonedFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, consAddr github_com_cosmos_cosmos_sdk_types.ConsAddress) bool
 
 	// calls tracks calls to the methods.
 	calls struct {
-		// GetValidatorSigningInfo holds details about calls to the GetValidatorSigningInfo method.
-		GetValidatorSigningInfo []struct {
+		// IsTombstoned holds details about calls to the IsTombstoned method.
+		IsTombstoned []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Address is the address argument value.
-			Address github_com_cosmos_cosmos_sdk_types.ConsAddress
+			// ConsAddr is the consAddr argument value.
+			ConsAddr github_com_cosmos_cosmos_sdk_types.ConsAddress
 		}
 	}
-	lockGetValidatorSigningInfo sync.RWMutex
+	lockIsTombstoned sync.RWMutex
 }
 
-// GetValidatorSigningInfo calls GetValidatorSigningInfoFunc.
-func (mock *SlashingKeeperMock) GetValidatorSigningInfo(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress) (slashingtypes.ValidatorSigningInfo, bool) {
-	if mock.GetValidatorSigningInfoFunc == nil {
-		panic("SlashingKeeperMock.GetValidatorSigningInfoFunc: method is nil but SlashingKeeper.GetValidatorSigningInfo was just called")
+// IsTombstoned calls IsTombstonedFunc.
+func (mock *SlashingKeeperMock) IsTombstoned(ctx github_com_cosmos_cosmos_sdk_types.Context, consAddr github_com_cosmos_cosmos_sdk_types.ConsAddress) bool {
+	if mock.IsTombstonedFunc == nil {
+		panic("SlashingKeeperMock.IsTombstonedFunc: method is nil but SlashingKeeper.IsTombstoned was just called")
 	}
 	callInfo := struct {
-		Ctx     github_com_cosmos_cosmos_sdk_types.Context
-		Address github_com_cosmos_cosmos_sdk_types.ConsAddress
+		Ctx      github_com_cosmos_cosmos_sdk_types.Context
+		ConsAddr github_com_cosmos_cosmos_sdk_types.ConsAddress
 	}{
-		Ctx:     ctx,
-		Address: address,
+		Ctx:      ctx,
+		ConsAddr: consAddr,
 	}
-	mock.lockGetValidatorSigningInfo.Lock()
-	mock.calls.GetValidatorSigningInfo = append(mock.calls.GetValidatorSigningInfo, callInfo)
-	mock.lockGetValidatorSigningInfo.Unlock()
-	return mock.GetValidatorSigningInfoFunc(ctx, address)
+	mock.lockIsTombstoned.Lock()
+	mock.calls.IsTombstoned = append(mock.calls.IsTombstoned, callInfo)
+	mock.lockIsTombstoned.Unlock()
+	return mock.IsTombstonedFunc(ctx, consAddr)
 }
 
-// GetValidatorSigningInfoCalls gets all the calls that were made to GetValidatorSigningInfo.
+// IsTombstonedCalls gets all the calls that were made to IsTombstoned.
 // Check the length with:
-//     len(mockedSlashingKeeper.GetValidatorSigningInfoCalls())
-func (mock *SlashingKeeperMock) GetValidatorSigningInfoCalls() []struct {
-	Ctx     github_com_cosmos_cosmos_sdk_types.Context
-	Address github_com_cosmos_cosmos_sdk_types.ConsAddress
+//     len(mockedSlashingKeeper.IsTombstonedCalls())
+func (mock *SlashingKeeperMock) IsTombstonedCalls() []struct {
+	Ctx      github_com_cosmos_cosmos_sdk_types.Context
+	ConsAddr github_com_cosmos_cosmos_sdk_types.ConsAddress
 } {
 	var calls []struct {
-		Ctx     github_com_cosmos_cosmos_sdk_types.Context
-		Address github_com_cosmos_cosmos_sdk_types.ConsAddress
+		Ctx      github_com_cosmos_cosmos_sdk_types.Context
+		ConsAddr github_com_cosmos_cosmos_sdk_types.ConsAddress
 	}
-	mock.lockGetValidatorSigningInfo.RLock()
-	calls = mock.calls.GetValidatorSigningInfo
-	mock.lockGetValidatorSigningInfo.RUnlock()
+	mock.lockIsTombstoned.RLock()
+	calls = mock.calls.IsTombstoned
+	mock.lockIsTombstoned.RUnlock()
 	return calls
 }

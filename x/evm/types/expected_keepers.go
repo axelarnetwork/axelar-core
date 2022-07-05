@@ -3,7 +3,6 @@ package types
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
-	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/tendermint/tendermint/libs/log"
 
@@ -160,5 +159,5 @@ type StakingKeeper interface {
 
 // SlashingKeeper provides functionality to manage slashing info for a validator
 type SlashingKeeper interface {
-	GetValidatorSigningInfo(ctx sdk.Context, address sdk.ConsAddress) (info slashingtypes.ValidatorSigningInfo, found bool)
+	IsTombstoned(ctx sdk.Context, consAddr sdk.ConsAddress) bool
 }
