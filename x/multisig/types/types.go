@@ -2,7 +2,7 @@ package types
 
 import (
 	"encoding/hex"
-	fmt "fmt"
+	"fmt"
 
 	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -12,6 +12,34 @@ import (
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/utils/slices"
 )
+
+// Signature is an alias for signature in raw bytes
+type Signature []byte
+
+// ValidateBasic returns an error if the signature is not a valid S256 elliptic curve signature
+func (sig Signature) ValidateBasic() error {
+	_, err := btcec.ParseDERSignature(sig, btcec.S256())
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Verify checks if the signature matches the payload and public key
+func (sig Signature) Verify(payload []byte, pk PublicKey) bool {
+	s, err := btcec.ParseDERSignature(sig, btcec.S256())
+	if err != nil {
+		return false
+	}
+
+	parsedKey, err := btcec.ParsePubKey(pk, btcec.S256())
+	if err != nil {
+		return false
+	}
+
+	return s.Verify(payload, parsedKey)
+}
 
 // PublicKey is an alias for public key in raw bytes
 type PublicKey []byte

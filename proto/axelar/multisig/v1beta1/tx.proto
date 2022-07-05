@@ -1,0 +1,38 @@
+syntax = "proto3";
+package axelar.multisig.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/multisig/types";
+option (gogoproto.goproto_getters_all) = false;
+
+import "gogoproto/gogo.proto";
+import "axelar/permission/exported/v1beta1/types.proto";
+
+message StartKeygenRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
+
+  string sender = 1 [ (gogoproto.casttype) =
+                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string key_id = 2 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
+  ];
+}
+
+message StartKeygenResponse {}
+
+message SubmitPubKeyRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
+
+  string sender = 1 [ (gogoproto.casttype) =
+                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string key_id = 2 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
+  ];
+  bytes pub_key = 3 [ (gogoproto.casttype) = "PublicKey" ];
+  bytes signature = 4 [ (gogoproto.casttype) = "Signature" ];
+}
+
+message SubmitPubKeyResponse {}

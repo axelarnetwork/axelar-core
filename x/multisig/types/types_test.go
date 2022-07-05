@@ -3,6 +3,7 @@ package types_test
 import (
 	"testing"
 
+	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
 	typestestutils "github.com/axelarnetwork/axelar-core/x/multisig/types/testutils"
 	snapshottestutils "github.com/axelarnetwork/axelar-core/x/snapshot/exported/testutils"
+	"github.com/axelarnetwork/utils/funcs"
 	. "github.com/axelarnetwork/utils/test"
 )
 
@@ -326,4 +328,38 @@ func TestKey(t *testing.T) {
 			}).
 			Run(t, 5)
 	})
+}
+
+func TestSignature_Verify(t *testing.T) {
+
+	var (
+		sk      *btcec.PrivateKey
+		payload []byte
+		sig     types.Signature
+	)
+	Given("a private key", func() {
+		sk = funcs.Must(btcec.NewPrivateKey(btcec.S256()))
+	}).
+		Given("a payload", func() {
+			payload = rand.Bytes(30)
+
+		}).
+		Branch(
+			When("a signature is created", func() {
+				s := funcs.Must(sk.Sign(payload))
+				sig = s.Serialize()
+			}).
+				Then("signature verification succeeds", func(t *testing.T) {
+					assert.True(t, sig.Verify(payload, sk.PubKey().SerializeCompressed()))
+				}),
+			When("a an invalid signature is created", func() {
+				wrongKey := funcs.Must(btcec.NewPrivateKey(btcec.S256()))
+				s := funcs.Must(wrongKey.Sign(payload))
+				sig = s.Serialize()
+			}).
+				Then("signature verification fails", func(t *testing.T) {
+					assert.False(t, sig.Verify(payload, sk.PubKey().SerializeCompressed()))
+				}),
+		).Run(t)
+
 }
