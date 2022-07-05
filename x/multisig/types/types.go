@@ -16,6 +16,7 @@ import (
 // Signature is an alias for signature in raw bytes
 type Signature []byte
 
+// ValidateBasic returns an error if the signature is not a valid S256 elliptic curve signature
 func (sig Signature) ValidateBasic() error {
 	_, err := btcec.ParseDERSignature(sig, btcec.S256())
 	if err != nil {
@@ -25,6 +26,7 @@ func (sig Signature) ValidateBasic() error {
 	return nil
 }
 
+// Verify checks if the signature matches the payload and public key
 func (sig Signature) Verify(payload []byte, pk PublicKey) bool {
 	s, err := btcec.ParseDERSignature(sig, btcec.S256())
 	if err != nil {
