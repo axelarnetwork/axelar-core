@@ -1,6 +1,7 @@
 {
     "overview": "Overview",
     "building-on-gmp": "Building applications with GMP",
+    "examples": "GMP Examples",
     "gmp-messages": "Send messages",
     "gmp-tokens-with-messages": "Send tokens with messages",
     "gas-services": "Gas services",
