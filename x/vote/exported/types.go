@@ -61,6 +61,12 @@ func NewPollBuilder(module string, threshold utils.Threshold, snapshot snapshot.
 	}
 }
 
+// ID sets the poll ID
+func (builder PollBuilder) ID(pollID PollID) PollBuilder {
+	builder.p.ID = pollID
+	return builder
+}
+
 // MinVoterCount sets the minimum number of voters that have to vote on PollMeta
 // If not enough voters exist, then all of them have to vote
 func (builder PollBuilder) MinVoterCount(minVoterCount int64) PollBuilder {

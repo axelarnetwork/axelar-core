@@ -73,20 +73,17 @@ func (k Keeper) SetParams(ctx sdk.Context, params types.Params) {
 
 // InitializePoll creates a poll with the given poll builder
 func (k Keeper) InitializePoll(ctx sdk.Context, pollBuilder exported.PollBuilder) (exported.PollID, error) {
-	pollMetadata, err := pollBuilder.Build(ctx.BlockHeight())
+	pollMetadata, err := pollBuilder.ID(k.nextPollID(ctx)).Build(ctx.BlockHeight())
 	if err != nil {
 		return 0, err
 	}
-
-	pollID := k.nextPollID(ctx)
-	pollMetadata.ID = pollID
 
 	k.GetPollQueue(ctx).Enqueue(pollPrefix.AppendStr(pollMetadata.ID.String()), &pollMetadata)
 
 	poll := newPoll(ctx, k, pollMetadata)
 	poll.Logger().Info("created poll")
 
-	return pollID, nil
+	return pollMetadata.ID, nil
 }
 
 // GetPoll returns an existing poll to record votes

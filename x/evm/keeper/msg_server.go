@@ -61,7 +61,7 @@ func validateChainActivated(ctx sdk.Context, n types.Nexus, chain nexus.Chain) e
 	return nil
 }
 
-func excludeJailedOrTombstoned(ctx sdk.Context, powerReduction sdk.Int, slashing types.SlashingKeeper) func(v snapshot.ValidatorI) bool {
+func excludeJailedOrTombstoned(ctx sdk.Context, slashing types.SlashingKeeper) func(v snapshot.ValidatorI) bool {
 	return func(v snapshot.ValidatorI) bool {
 		if v.IsJailed() {
 			return false
@@ -102,7 +102,7 @@ func (s msgServer) ConfirmGatewayTx(c context.Context, req *types.ConfirmGateway
 	snapshot, err := s.snapshotter.CreateSnapshot(
 		ctx,
 		s.nexus.GetChainMaintainers(ctx, chain),
-		excludeJailedOrTombstoned(ctx, s.staking.PowerReduction(ctx), s.slashing),
+		excludeJailedOrTombstoned(ctx, s.slashing),
 		snapshot.QuadraticWeightFunc,
 		params.VotingThreshold,
 	)
@@ -287,7 +287,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 	snapshot, err := s.snapshotter.CreateSnapshot(
 		ctx,
 		s.nexus.GetChainMaintainers(ctx, chain),
-		excludeJailedOrTombstoned(ctx, s.staking.PowerReduction(ctx), s.slashing),
+		excludeJailedOrTombstoned(ctx, s.slashing),
 		snapshot.QuadraticWeightFunc,
 		params.VotingThreshold,
 	)
@@ -351,7 +351,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 	snapshot, err := s.snapshotter.CreateSnapshot(
 		ctx,
 		s.nexus.GetChainMaintainers(ctx, chain),
-		excludeJailedOrTombstoned(ctx, s.staking.PowerReduction(ctx), s.slashing),
+		excludeJailedOrTombstoned(ctx, s.slashing),
 		snapshot.QuadraticWeightFunc,
 		params.VotingThreshold,
 	)
@@ -414,7 +414,7 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 	snapshot, err := s.snapshotter.CreateSnapshot(
 		ctx,
 		s.nexus.GetChainMaintainers(ctx, chain),
-		excludeJailedOrTombstoned(ctx, s.staking.PowerReduction(ctx), s.slashing),
+		excludeJailedOrTombstoned(ctx, s.slashing),
 		snapshot.QuadraticWeightFunc,
 		params.VotingThreshold,
 	)
