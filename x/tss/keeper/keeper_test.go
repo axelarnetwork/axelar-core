@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/axelarnetwork/axelar-core/x/snapshot/types/mock"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	slashingTypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
@@ -77,7 +78,7 @@ func setup() *testSetup {
 		Signature:   make(chan []byte, 1),
 	}
 
-	slasher := &snapMock.SlasherMock{
+	slasher := &mock.SlasherMock{
 		GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (slashingTypes.ValidatorSigningInfo, bool) {
 			newInfo := slashingTypes.NewValidatorSigningInfo(
 				address,

@@ -24,6 +24,14 @@ type SnapshotCreator struct {
 	slasher     types.Slasher
 }
 
+func NewSnapshotCreator(snapshotter types.Snapshotter, staker types.Staker, slasher types.Slasher) SnapshotCreator {
+	return SnapshotCreator{
+		snapshotter: snapshotter,
+		staker:      staker,
+		slasher:     slasher,
+	}
+}
+
 func (sc SnapshotCreator) GetOperator(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress {
 	return sc.snapshotter.GetOperator(ctx, proxy)
 }

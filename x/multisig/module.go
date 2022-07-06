@@ -76,18 +76,16 @@ type AppModule struct {
 	AppModuleBasic
 	keeper      keeper.Keeper
 	staker      types.Staker
-	slasher     types.Slasher
-	snapshotter types.Snapshotter
+	snapshotter keeper.Snapshotter
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(keeper keeper.Keeper, staker types.Staker, slasher types.Slasher, snapshotter types.Snapshotter) AppModule {
+func NewAppModule(k keeper.Keeper, staker types.Staker, slasher types.Slasher, snapshotter types.Snapshotter) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
-		keeper:         keeper,
+		keeper:         k,
 		staker:         staker,
-		slasher:        slasher,
-		snapshotter:    snapshotter,
+		snapshotter:    keeper.NewSnapshotCreator(snapshotter, staker, slasher),
 	}
 }
 
@@ -100,7 +98,7 @@ func (AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {
 func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, gs json.RawMessage) []abci.ValidatorUpdate {
 	var genState types.GenesisState
 	cdc.MustUnmarshalJSON(gs, &genState)
-	am.keeper.InitGenesis(ctx, genState)
+	am.keeper.InitGenesis(ctx, &genState)
 
 	return []abci.ValidatorUpdate{}
 }
