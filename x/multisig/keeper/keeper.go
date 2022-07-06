@@ -13,6 +13,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 )
 
@@ -74,16 +75,12 @@ func (k Keeper) CreateKeygenSession(ctx sdk.Context, id exported.KeyID, snapshot
 	k.setKeygenSession(ctx, keygenSession)
 
 	participants := snapshot.GetParticipantAddresses()
-	err := ctx.EventManager().EmitTypedEvent(
-		types.NewKeygen(types.Started, id, participants),
-	)
-	if err != nil {
-		panic(err)
-	}
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewKeygenStarted(id, participants)))
 
 	k.Logger(ctx).Info("started keygen session",
 		"key_id", id,
-		"participants", strings.Join(slices.Map(participants, sdk.ValAddress.String), ","),
+		"participant_count", len(participants),
+		"participants", strings.Join(slices.Map(participants, sdk.ValAddress.String), ", "),
 		"participants_weight", snapshot.GetParticipantsWeight().String(),
 		"bonded_weight", snapshot.BondedWeight.String(),
 		"keygen_threshold", params.KeygenThreshold.String(),
@@ -112,6 +109,17 @@ func (k Keeper) DeleteKeygenSession(ctx sdk.Context, id exported.KeyID) {
 // SetKey stores the given key
 func (k Keeper) SetKey(ctx sdk.Context, key types.Key) {
 	k.getStore(ctx).Set(keyPrefix.AppendStr(key.ID.String()), &key)
+
+	participants := key.GetParticipants()
+	ctx.EventManager().EmitTypedEvent(types.NewKeygenCompleted(key.ID))
+	k.Logger(ctx).Info("completed keygen session",
+		"key_id", key.ID,
+		"participant_count", len(participants),
+		"participants", strings.Join(slices.Map(participants, sdk.ValAddress.String), ", "),
+		"participants_weight", key.GetParticipantsWeight().String(),
+		"bonded_weight", key.Snapshot.BondedWeight.String(),
+		"signing_threshold", key.SigningThreshold.String(),
+	)
 }
 
 func (k Keeper) setKeygenSession(ctx sdk.Context, keygen types.KeygenSession) {

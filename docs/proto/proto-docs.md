@@ -246,9 +246,9 @@
     - [KeygenState](#axelar.multisig.exported.v1beta1.KeygenState)
   
 - [axelar/multisig/v1beta1/events.proto](#axelar/multisig/v1beta1/events.proto)
-    - [Keygen](#axelar.multisig.v1beta1.Keygen)
-  
-    - [Keygen.Action](#axelar.multisig.v1beta1.Keygen.Action)
+    - [KeygenCompleted](#axelar.multisig.v1beta1.KeygenCompleted)
+    - [KeygenStarted](#axelar.multisig.v1beta1.KeygenStarted)
+    - [PubKeySubmitted](#axelar.multisig.v1beta1.PubKeySubmitted)
   
 - [axelar/multisig/v1beta1/params.proto](#axelar/multisig/v1beta1/params.proto)
     - [Params](#axelar.multisig.v1beta1.Params)
@@ -3839,16 +3839,31 @@ QueryService defines the gRPC querier service.
 
 
 
-<a name="axelar.multisig.v1beta1.Keygen"></a>
+<a name="axelar.multisig.v1beta1.KeygenCompleted"></a>
 
-### Keygen
+### KeygenCompleted
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `module` | [string](#string) |  |  |
-| `action` | [Keygen.Action](#axelar.multisig.v1beta1.Keygen.Action) |  |  |
+| `key_id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.KeygenStarted"></a>
+
+### KeygenStarted
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `module` | [string](#string) |  |  |
 | `key_id` | [string](#string) |  |  |
 | `participants` | [bytes](#bytes) | repeated |  |
 
@@ -3856,21 +3871,25 @@ QueryService defines the gRPC querier service.
 
 
 
+
+<a name="axelar.multisig.v1beta1.PubKeySubmitted"></a>
+
+### PubKeySubmitted
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `module` | [string](#string) |  |  |
+| `key_id` | [string](#string) |  |  |
+| `participant` | [bytes](#bytes) |  |  |
+| `pub_key` | [bytes](#bytes) |  |  |
+
+
+
+
+
  <!-- end messages -->
-
-
-<a name="axelar.multisig.v1beta1.Keygen.Action"></a>
-
-### Keygen.Action
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| ACTION_UNSPECIFIED | 0 |  |
-| ACTION_STARTED | 1 |  |
-| ACTION_EXPIRED | 2 |  |
-| ACTION_COMPLETED | 3 |  |
-
 
  <!-- end enums -->
 

@@ -3,15 +3,15 @@ package keeper
 import (
 	"context"
 	"fmt"
-	"strings"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	"github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/utils/slices"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 )
 
 var _ types.MsgServiceServer = msgServer{}
@@ -84,6 +84,9 @@ func (s msgServer) SubmitPubKey(c context.Context, req *types.SubmitPubKeyReques
 	if err := keygenSession.AddKey(ctx.BlockHeight(), participant, req.PubKey); err != nil {
 		return nil, sdkerrors.Wrap(err, "unable to add public key for keygen")
 	}
+	s.setKeygenSession(ctx, keygenSession)
+
+	ctx.EventManager().EmitTypedEvent(types.NewPubKeySubmitted(req.KeyID, participant, req.PubKey))
 
 	if keygenSession.State != exported.Completed {
 		return &types.SubmitPubKeyResponse{}, nil
@@ -94,18 +97,7 @@ func (s msgServer) SubmitPubKey(c context.Context, req *types.SubmitPubKeyReques
 		return nil, sdkerrors.Wrap(err, "unable to get keygen result")
 	}
 
-	s.DeleteKeygenSession(ctx, keygenSession.GetKeyID())
 	s.SetKey(ctx, key)
-
-	participants := key.GetParticipants()
-	ctx.EventManager().EmitTypedEvent(types.NewKeygen(types.Completed, key.ID, participants))
-	s.Logger(ctx).Info("started keygen session",
-		"key_id", key.ID,
-		"participants", strings.Join(slices.Map(participants, sdk.ValAddress.String), ","),
-		"participants_weight", key.GetParticipantsWeight().String(),
-		"bonded_weight", key.Snapshot.BondedWeight.String(),
-		"signing_threshold", key.SigningThreshold.String(),
-	)
 
 	return &types.SubmitPubKeyResponse{}, nil
 }

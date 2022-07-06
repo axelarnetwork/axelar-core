@@ -1,16 +1,16 @@
 package types
 
 import (
-	exported2 "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	exported2 "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
-//go:generate moq -pkg mock -out ./mock/expected_keepers.go . StakingKeeper BankKeeper
+//go:generate moq -pkg mock -out ./mock/expected_keepers.go . StakingKeeper BankKeeper Slasher Tss
 
 // StakingKeeper adopts the methods from "github.com/cosmos/cosmos-sdk/x/staking/exported" that are
 // actually used by this module

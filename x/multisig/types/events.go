@@ -1,16 +1,34 @@
 package types
 
 import (
-	"github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/axelarnetwork/axelar-core/x/multisig/exported"
 )
 
-// NewKeygen is the constructor for event keygen started
-func NewKeygen(action Keygen_Action, keyID exported.KeyID, participants []sdk.ValAddress) *Keygen {
-	return &Keygen{
+// NewKeygenStarted is the constructor for event keygen started
+func NewKeygenStarted(keyID exported.KeyID, participants []sdk.ValAddress) *KeygenStarted {
+	return &KeygenStarted{
 		Module:       ModuleName,
-		Action:       action,
 		KeyID:        keyID,
 		Participants: participants,
+	}
+}
+
+// NewKeygenCompleted is the constructor for event keygen completed
+func NewKeygenCompleted(keyID exported.KeyID) *KeygenCompleted {
+	return &KeygenCompleted{
+		Module: ModuleName,
+		KeyID:  keyID,
+	}
+}
+
+// NewPubKeySubmitted is the constructor for event pub key submitted
+func NewPubKeySubmitted(keyID exported.KeyID, participant sdk.ValAddress, pubKey PublicKey) *PubKeySubmitted {
+	return &PubKeySubmitted{
+		Module:      ModuleName,
+		KeyID:       keyID,
+		Participant: participant,
+		PubKey:      pubKey,
 	}
 }

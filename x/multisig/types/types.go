@@ -12,6 +12,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 )
 
@@ -197,9 +198,7 @@ func (m KeygenSession) Result() (Key, error) {
 	}
 
 	key := Key(m.Key)
-	if err := key.ValidateBasic(); err != nil {
-		panic(err)
-	}
+	funcs.MustNoErr(key.ValidateBasic())
 
 	return key, nil
 }
@@ -208,12 +207,8 @@ func (m KeygenSession) Result() (Key, error) {
 func (m Key) GetParticipants() []sdk.ValAddress {
 	participants := make([]sdk.ValAddress, 0, len(m.PubKeys))
 	for address := range m.PubKeys {
-		participant, err := sdk.ValAddressFromBech32(address)
-		if err != nil {
-			panic(err)
-		}
-
-		participants = append(participants, participant)
+		p := funcs.Must(sdk.ValAddressFromBech32(address))
+		participants = append(participants, p)
 	}
 
 	sort.SliceStable(participants, func(i, j int) bool { return bytes.Compare(participants[i], participants[j]) < 0 })
@@ -225,11 +220,7 @@ func (m Key) GetParticipants() []sdk.ValAddress {
 func (m Key) GetParticipantsWeight() sdk.Uint {
 	totalWeight := sdk.ZeroUint()
 	for address := range m.PubKeys {
-		p, err := sdk.ValAddressFromBech32(address)
-		if err != nil {
-			panic(err)
-		}
-
+		p := funcs.Must(sdk.ValAddressFromBech32(address))
 		totalWeight = totalWeight.Add(m.Snapshot.GetParticipantWeight(p))
 	}
 
