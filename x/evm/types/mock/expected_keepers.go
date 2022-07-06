@@ -4626,7 +4626,7 @@ func (mock *ChainKeeperMock) SetLatestSignedCommandBatchIDCalls() []struct {
 // SetParams calls SetParamsFunc.
 func (mock *ChainKeeperMock) SetParams(ctx github_com_cosmos_cosmos_sdk_types.Context, p types.Params) {
 	if mock.SetParamsFunc == nil {
-		panic("ChainKeeperMock.SetParamsFunc: method is nil but ChainKeeper.SetParams was just called")
+		panic("ChainKeeperMock.SetParamsFunc: method is nil but ChainKeeper.setParams was just called")
 	}
 	callInfo := struct {
 		Ctx github_com_cosmos_cosmos_sdk_types.Context

@@ -3752,7 +3752,7 @@ func (mock *TSSKeeperMock) SetKeyCalls() []struct {
 // SetParams calls SetParamsFunc.
 func (mock *TSSKeeperMock) SetParams(ctx github_com_cosmos_cosmos_sdk_types.Context, p types.Params) {
 	if mock.SetParamsFunc == nil {
-		panic("TSSKeeperMock.SetParamsFunc: method is nil but TSSKeeper.SetParams was just called")
+		panic("TSSKeeperMock.SetParamsFunc: method is nil but TSSKeeper.setParams was just called")
 	}
 	callInfo := struct {
 		Ctx github_com_cosmos_cosmos_sdk_types.Context

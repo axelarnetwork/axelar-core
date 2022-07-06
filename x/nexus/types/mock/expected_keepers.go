@@ -897,7 +897,7 @@ func (mock *NexusMock) RemoveChainMaintainerCalls() []struct {
 // SetParams calls SetParamsFunc.
 func (mock *NexusMock) SetParams(ctx github_com_cosmos_cosmos_sdk_types.Context, p types.Params) {
 	if mock.SetParamsFunc == nil {
-		panic("NexusMock.SetParamsFunc: method is nil but Nexus.SetParams was just called")
+		panic("NexusMock.SetParamsFunc: method is nil but Nexus.setParams was just called")
 	}
 	callInfo := struct {
 		Ctx github_com_cosmos_cosmos_sdk_types.Context

@@ -4,63 +4,40 @@ import (
 	"context"
 	"fmt"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-
 	"github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
-	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
-	"github.com/axelarnetwork/utils/slices"
+	"github.com/axelarnetwork/utils/funcs"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 var _ types.MsgServiceServer = msgServer{}
 
 type msgServer struct {
 	Keeper
-	snapshotter types.Snapshotter
+	snapshotter Snapshotter
 	staker      types.Staker
-	slasher     types.Slasher
 }
 
-// NewMsgServerImpl returns an implementation of the MsgServiceServer interface
+// NewMsgServer returns an implementation of the MsgServiceServer interface
 // for the provided Keeper.
-func NewMsgServerImpl(keeper Keeper, snapshotter types.Snapshotter, staker types.Staker, slasher types.Slasher) types.MsgServiceServer {
+func NewMsgServer(keeper Keeper, snapshotter Snapshotter, staker types.Staker) types.MsgServiceServer {
 	return msgServer{
 		Keeper:      keeper,
 		snapshotter: snapshotter,
 		staker:      staker,
-		slasher:     slasher,
 	}
 }
 
 func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest) (*types.StartKeygenResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	candidates := slices.Map(s.staker.GetBondedValidatorsByPower(ctx), stakingtypes.Validator.GetOperator)
-	filter := func(v snapshot.ValidatorI) bool {
-		if v.IsJailed() {
-			return false
-		}
-
-		consAdd, err := v.GetConsAddr()
-		if err != nil {
-			return false
-		}
-
-		if s.slasher.IsTombstoned(ctx, consAdd) {
-			return false
-		}
-
-		_, isActive := s.snapshotter.GetProxy(ctx, v.GetOperator())
-		return isActive
-	}
-	snapshot, err := s.snapshotter.CreateSnapshot(ctx, candidates, filter, snapshot.QuadraticWeightFunc, s.GetParams(ctx).KeygenThreshold)
+	snap, err := s.snapshotter.CreateSnapshot(ctx, s.getParams(ctx).KeygenThreshold)
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "unable to create snapshot for keygen")
 	}
 
-	err = s.CreateKeygenSession(ctx, req.KeyID, snapshot)
+	err = s.createKeygenSession(ctx, req.KeyID, snap)
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "unable to start keygen")
 	}
@@ -71,7 +48,7 @@ func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest)
 func (s msgServer) SubmitPubKey(c context.Context, req *types.SubmitPubKeyRequest) (*types.SubmitPubKeyResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	keygenSession, ok := s.GetKeygenSession(ctx, req.KeyID)
+	keygenSession, ok := s.getKeygenSession(ctx, req.KeyID)
 	if !ok {
 		return nil, fmt.Errorf("keygen session %s not found", req.KeyID)
 	}
@@ -86,7 +63,7 @@ func (s msgServer) SubmitPubKey(c context.Context, req *types.SubmitPubKeyReques
 	}
 	s.setKeygenSession(ctx, keygenSession)
 
-	ctx.EventManager().EmitTypedEvent(types.NewPubKeySubmitted(req.KeyID, participant, req.PubKey))
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewPubKeySubmitted(req.KeyID, participant, req.PubKey)))
 
 	if keygenSession.State != exported.Completed {
 		return &types.SubmitPubKeyResponse{}, nil

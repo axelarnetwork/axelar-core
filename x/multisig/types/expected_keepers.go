@@ -5,17 +5,19 @@ import (
 	stakingTypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
-	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 )
+
+//go:generate moq -pkg mock -out ./mock/expected_keepers.go . Snapshotter Staker Slasher
 
 type Snapshotter interface {
 	CreateSnapshot(
 		ctx sdk.Context,
 		candidates []sdk.ValAddress,
-		filterFunc func(exported.ValidatorI) bool,
+		filterFunc func(snapshot.ValidatorI) bool,
 		weightFunc func(consensusPower sdk.Uint) sdk.Uint,
 		threshold utils.Threshold,
-	) (exported.Snapshot, error)
+	) (snapshot.Snapshot, error)
 	GetProxy(ctx sdk.Context, operator sdk.ValAddress) (addr sdk.AccAddress, active bool)
 	GetOperator(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress
 }
