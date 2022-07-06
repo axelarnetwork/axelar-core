@@ -242,6 +242,30 @@
     - [MsgService](#axelar.evm.v1beta1.MsgService)
     - [QueryService](#axelar.evm.v1beta1.QueryService)
   
+- [axelar/multisig/exported/v1beta1/types.proto](#axelar/multisig/exported/v1beta1/types.proto)
+    - [KeygenState](#axelar.multisig.exported.v1beta1.KeygenState)
+  
+- [axelar/multisig/v1beta1/params.proto](#axelar/multisig/v1beta1/params.proto)
+    - [Params](#axelar.multisig.v1beta1.Params)
+  
+- [axelar/multisig/v1beta1/genesis.proto](#axelar/multisig/v1beta1/genesis.proto)
+    - [GenesisState](#axelar.multisig.v1beta1.GenesisState)
+  
+- [axelar/multisig/v1beta1/service.proto](#axelar/multisig/v1beta1/service.proto)
+    - [MsgService](#axelar.multisig.v1beta1.MsgService)
+  
+- [axelar/multisig/v1beta1/tx.proto](#axelar/multisig/v1beta1/tx.proto)
+    - [StartKeygenRequest](#axelar.multisig.v1beta1.StartKeygenRequest)
+    - [StartKeygenResponse](#axelar.multisig.v1beta1.StartKeygenResponse)
+    - [SubmitPubKeyRequest](#axelar.multisig.v1beta1.SubmitPubKeyRequest)
+    - [SubmitPubKeyResponse](#axelar.multisig.v1beta1.SubmitPubKeyResponse)
+  
+- [axelar/multisig/v1beta1/types.proto](#axelar/multisig/v1beta1/types.proto)
+    - [Key](#axelar.multisig.v1beta1.Key)
+    - [Key.PubKeysEntry](#axelar.multisig.v1beta1.Key.PubKeysEntry)
+    - [KeygenSession](#axelar.multisig.v1beta1.KeygenSession)
+    - [KeygenSession.IsPubKeyReceivedEntry](#axelar.multisig.v1beta1.KeygenSession.IsPubKeyReceivedEntry)
+  
 - [axelar/nexus/v1beta1/params.proto](#axelar/nexus/v1beta1/params.proto)
     - [Params](#axelar.nexus.v1beta1.Params)
   
@@ -3769,6 +3793,280 @@ QueryService defines the gRPC querier service.
 | `Event` | [EventRequest](#axelar.evm.v1beta1.EventRequest) | [EventResponse](#axelar.evm.v1beta1.EventResponse) | Event queries an event at the specified chain | GET|/axelar/evm/v1beta1/event/{chain}/{event_id}|
 | `ERC20Tokens` | [ERC20TokensRequest](#axelar.evm.v1beta1.ERC20TokensRequest) | [ERC20TokensResponse](#axelar.evm.v1beta1.ERC20TokensResponse) | ERC20Tokens queries the ERC20 tokens registered for a chain | GET|/axelar/evm/v1beta1/erc20_tokens/{chain}|
 | `TokenInfo` | [TokenInfoRequest](#axelar.evm.v1beta1.TokenInfoRequest) | [TokenInfoResponse](#axelar.evm.v1beta1.TokenInfoResponse) | TokenInfo queries the token info for a registered ERC20 Token | GET|/axelar/evm/v1beta1/token_info/{chain}|
+
+ <!-- end services -->
+
+
+
+<a name="axelar/multisig/exported/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/multisig/exported/v1beta1/types.proto
+
+
+ <!-- end messages -->
+
+
+<a name="axelar.multisig.exported.v1beta1.KeygenState"></a>
+
+### KeygenState
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| KEYGEN_STATE_UNSPECIFIED | 0 |  |
+| KEYGEN_STATE_PENDING | 1 |  |
+| KEYGEN_STATE_COMPLETED | 2 |  |
+
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="axelar/multisig/v1beta1/params.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/multisig/v1beta1/params.proto
+
+
+
+<a name="axelar.multisig.v1beta1.Params"></a>
+
+### Params
+Params represent the genesis parameters for the module
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `keygen_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
+| `signing_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
+| `keygen_timeout` | [int64](#int64) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="axelar/multisig/v1beta1/genesis.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/multisig/v1beta1/genesis.proto
+
+
+
+<a name="axelar.multisig.v1beta1.GenesisState"></a>
+
+### GenesisState
+GenesisState represents the genesis state
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `params` | [Params](#axelar.multisig.v1beta1.Params) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="axelar/multisig/v1beta1/service.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/multisig/v1beta1/service.proto
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+
+<a name="axelar.multisig.v1beta1.MsgService"></a>
+
+### MsgService
+Msg defines the multisig Msg service.
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+
+ <!-- end services -->
+
+
+
+<a name="axelar/multisig/v1beta1/tx.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/multisig/v1beta1/tx.proto
+
+
+
+<a name="axelar.multisig.v1beta1.StartKeygenRequest"></a>
+
+### StartKeygenRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [string](#string) |  |  |
+| `key_id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.StartKeygenResponse"></a>
+
+### StartKeygenResponse
+
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.SubmitPubKeyRequest"></a>
+
+### SubmitPubKeyRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [string](#string) |  |  |
+| `key_id` | [string](#string) |  |  |
+| `pub_key` | [bytes](#bytes) |  |  |
+| `signature` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.SubmitPubKeyResponse"></a>
+
+### SubmitPubKeyResponse
+
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="axelar/multisig/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/multisig/v1beta1/types.proto
+
+
+
+<a name="axelar.multisig.v1beta1.Key"></a>
+
+### Key
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [string](#string) |  |  |
+| `snapshot` | [axelar.snapshot.exported.v1beta1.Snapshot](#axelar.snapshot.exported.v1beta1.Snapshot) |  |  |
+| `pub_keys` | [Key.PubKeysEntry](#axelar.multisig.v1beta1.Key.PubKeysEntry) | repeated |  |
+| `signing_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.Key.PubKeysEntry"></a>
+
+### Key.PubKeysEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key` | [string](#string) |  |  |
+| `value` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.KeygenSession"></a>
+
+### KeygenSession
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key` | [Key](#axelar.multisig.v1beta1.Key) |  |  |
+| `state` | [axelar.multisig.exported.v1beta1.KeygenState](#axelar.multisig.exported.v1beta1.KeygenState) |  |  |
+| `keygen_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
+| `expires_at` | [int64](#int64) |  |  |
+| `completed_at` | [int64](#int64) |  |  |
+| `is_pub_key_received` | [KeygenSession.IsPubKeyReceivedEntry](#axelar.multisig.v1beta1.KeygenSession.IsPubKeyReceivedEntry) | repeated |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.KeygenSession.IsPubKeyReceivedEntry"></a>
+
+### KeygenSession.IsPubKeyReceivedEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key` | [string](#string) |  |  |
+| `value` | [bool](#bool) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
 
  <!-- end services -->
 

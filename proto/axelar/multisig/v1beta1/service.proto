@@ -1,0 +1,12 @@
+syntax = "proto3";
+package axelar.multisig.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/multisig/types";
+
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+
+option (gogoproto.goproto_registration) = true;
+
+// Msg defines the multisig Msg service.
+service MsgService {}
