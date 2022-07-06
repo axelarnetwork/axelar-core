@@ -245,6 +245,11 @@
 - [axelar/multisig/exported/v1beta1/types.proto](#axelar/multisig/exported/v1beta1/types.proto)
     - [KeygenState](#axelar.multisig.exported.v1beta1.KeygenState)
   
+- [axelar/multisig/v1beta1/events.proto](#axelar/multisig/v1beta1/events.proto)
+    - [KeygenCompleted](#axelar.multisig.v1beta1.KeygenCompleted)
+    - [KeygenStarted](#axelar.multisig.v1beta1.KeygenStarted)
+    - [PubKeySubmitted](#axelar.multisig.v1beta1.PubKeySubmitted)
+  
 - [axelar/multisig/v1beta1/params.proto](#axelar/multisig/v1beta1/params.proto)
     - [Params](#axelar.multisig.v1beta1.Params)
   
@@ -3818,6 +3823,73 @@ QueryService defines the gRPC querier service.
 | KEYGEN_STATE_PENDING | 1 |  |
 | KEYGEN_STATE_COMPLETED | 2 |  |
 
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="axelar/multisig/v1beta1/events.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/multisig/v1beta1/events.proto
+
+
+
+<a name="axelar.multisig.v1beta1.KeygenCompleted"></a>
+
+### KeygenCompleted
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `module` | [string](#string) |  |  |
+| `key_id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.KeygenStarted"></a>
+
+### KeygenStarted
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `module` | [string](#string) |  |  |
+| `key_id` | [string](#string) |  |  |
+| `participants` | [bytes](#bytes) | repeated |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.PubKeySubmitted"></a>
+
+### PubKeySubmitted
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `module` | [string](#string) |  |  |
+| `key_id` | [string](#string) |  |  |
+| `participant` | [bytes](#bytes) |  |  |
+| `pub_key` | [bytes](#bytes) |  |  |
+
+
+
+
+
+ <!-- end messages -->
 
  <!-- end enums -->
 

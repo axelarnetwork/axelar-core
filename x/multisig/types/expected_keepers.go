@@ -1,10 +1,11 @@
 package types
 
 import (
-	"github.com/axelarnetwork/axelar-core/utils"
-	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingTypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+
+	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 )
 
 type Snapshotter interface {
@@ -16,6 +17,7 @@ type Snapshotter interface {
 		threshold utils.Threshold,
 	) (exported.Snapshot, error)
 	GetProxy(ctx sdk.Context, operator sdk.ValAddress) (addr sdk.AccAddress, active bool)
+	GetOperator(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress
 }
 
 type Staker interface {

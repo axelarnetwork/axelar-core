@@ -18,7 +18,7 @@ import (
 	"github.com/axelarnetwork/utils/slices"
 )
 
-//go:generate moq -out ./mock/types.go -pkg mock . SDKValidator Snapshotter Slasher Tss ValidatorI
+//go:generate moq -out ./mock/types.go -pkg mock . SDKValidator Snapshotter ValidatorI
 
 // QuadraticWeightFunc returns floor(sqrt(consensusPower)) as the weight
 func QuadraticWeightFunc(consensusPower sdk.Uint) sdk.Uint {

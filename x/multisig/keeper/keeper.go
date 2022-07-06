@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -12,6 +13,8 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	"github.com/axelarnetwork/utils/funcs"
+	"github.com/axelarnetwork/utils/slices"
 )
 
 var (
@@ -62,7 +65,30 @@ func (k Keeper) CreateKeygenSession(ctx sdk.Context, id exported.KeyID, snapshot
 		return fmt.Errorf("key %s already set", id)
 	}
 
-	panic("TODO")
+	params := k.GetParams(ctx)
+
+	expiresAt := ctx.BlockHeight() + params.KeygenTimeout
+	keygenSession := types.NewKeygenSession(id, params.KeygenThreshold, params.SigningThreshold, snapshot, expiresAt)
+	if err := keygenSession.ValidateBasic(); err != nil {
+		return err
+	}
+	k.setKeygenSession(ctx, keygenSession)
+
+	participants := snapshot.GetParticipantAddresses()
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewKeygenStarted(id, participants)))
+
+	k.Logger(ctx).Info("started keygen session",
+		"key_id", id,
+		"participant_count", len(participants),
+		"participants", strings.Join(slices.Map(participants, sdk.ValAddress.String), ", "),
+		"participants_weight", snapshot.GetParticipantsWeight().String(),
+		"bonded_weight", snapshot.BondedWeight.String(),
+		"keygen_threshold", params.KeygenThreshold.String(),
+		"signing_threshold", params.SigningThreshold.String(),
+		"expires_at", expiresAt,
+	)
+
+	return nil
 }
 
 // GetKeygenSession returns the keygen session with the given key ID
@@ -83,6 +109,17 @@ func (k Keeper) DeleteKeygenSession(ctx sdk.Context, id exported.KeyID) {
 // SetKey stores the given key
 func (k Keeper) SetKey(ctx sdk.Context, key types.Key) {
 	k.getStore(ctx).Set(keyPrefix.AppendStr(key.ID.String()), &key)
+
+	participants := key.GetParticipants()
+	ctx.EventManager().EmitTypedEvent(types.NewKeygenCompleted(key.ID))
+	k.Logger(ctx).Info("completed keygen session",
+		"key_id", key.ID,
+		"participant_count", len(participants),
+		"participants", strings.Join(slices.Map(participants, sdk.ValAddress.String), ", "),
+		"participants_weight", key.GetParticipantsWeight().String(),
+		"bonded_weight", key.Snapshot.BondedWeight.String(),
+		"signing_threshold", key.SigningThreshold.String(),
+	)
 }
 
 func (k Keeper) setKeygenSession(ctx sdk.Context, keygen types.KeygenSession) {

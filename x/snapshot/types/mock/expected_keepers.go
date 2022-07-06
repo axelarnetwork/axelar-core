@@ -4,21 +4,24 @@
 package mock
 
 import (
-	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	snapshottypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
+	exported2 "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
+	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"sync"
 )
 
-// Ensure, that StakingKeeperMock does implement types.StakingKeeper.
+// Ensure, that StakingKeeperMock does implement snapshottypes.StakingKeeper.
 // If this is not the case, regenerate this file with moq.
-var _ types.StakingKeeper = &StakingKeeperMock{}
+var _ snapshottypes.StakingKeeper = &StakingKeeperMock{}
 
-// StakingKeeperMock is a mock implementation of types.StakingKeeper.
+// StakingKeeperMock is a mock implementation of snapshottypes.StakingKeeper.
 //
 // 	func TestSomethingThatUsesStakingKeeper(t *testing.T) {
 //
-// 		// make and configure a mocked types.StakingKeeper
+// 		// make and configure a mocked snapshottypes.StakingKeeper
 // 		mockedStakingKeeper := &StakingKeeperMock{
 // 			BondDenomFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) string {
 // 				panic("mock out the BondDenom method")
@@ -37,7 +40,7 @@ var _ types.StakingKeeper = &StakingKeeperMock{}
 // 			},
 // 		}
 //
-// 		// use mockedStakingKeeper in code that requires types.StakingKeeper
+// 		// use mockedStakingKeeper in code that requires snapshottypes.StakingKeeper
 // 		// and then make assertions.
 //
 // 	}
@@ -259,22 +262,22 @@ func (mock *StakingKeeperMock) ValidatorCalls() []struct {
 	return calls
 }
 
-// Ensure, that BankKeeperMock does implement types.BankKeeper.
+// Ensure, that BankKeeperMock does implement snapshottypes.BankKeeper.
 // If this is not the case, regenerate this file with moq.
-var _ types.BankKeeper = &BankKeeperMock{}
+var _ snapshottypes.BankKeeper = &BankKeeperMock{}
 
-// BankKeeperMock is a mock implementation of types.BankKeeper.
+// BankKeeperMock is a mock implementation of snapshottypes.BankKeeper.
 //
 // 	func TestSomethingThatUsesBankKeeper(t *testing.T) {
 //
-// 		// make and configure a mocked types.BankKeeper
+// 		// make and configure a mocked snapshottypes.BankKeeper
 // 		mockedBankKeeper := &BankKeeperMock{
 // 			GetBalanceFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, addr github_com_cosmos_cosmos_sdk_types.AccAddress, denom string) github_com_cosmos_cosmos_sdk_types.Coin {
 // 				panic("mock out the GetBalance method")
 // 			},
 // 		}
 //
-// 		// use mockedBankKeeper in code that requires types.BankKeeper
+// 		// use mockedBankKeeper in code that requires snapshottypes.BankKeeper
 // 		// and then make assertions.
 //
 // 	}
@@ -333,5 +336,459 @@ func (mock *BankKeeperMock) GetBalanceCalls() []struct {
 	mock.lockGetBalance.RLock()
 	calls = mock.calls.GetBalance
 	mock.lockGetBalance.RUnlock()
+	return calls
+}
+
+// Ensure, that SlasherMock does implement snapshottypes.Slasher.
+// If this is not the case, regenerate this file with moq.
+var _ snapshottypes.Slasher = &SlasherMock{}
+
+// SlasherMock is a mock implementation of snapshottypes.Slasher.
+//
+// 	func TestSomethingThatUsesSlasher(t *testing.T) {
+//
+// 		// make and configure a mocked snapshottypes.Slasher
+// 		mockedSlasher := &SlasherMock{
+// 			GetValidatorMissedBlockBitArrayFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress, index int64) bool {
+// 				panic("mock out the GetValidatorMissedBlockBitArray method")
+// 			},
+// 			GetValidatorSigningInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress) (slashingtypes.ValidatorSigningInfo, bool) {
+// 				panic("mock out the GetValidatorSigningInfo method")
+// 			},
+// 			SignedBlocksWindowFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64 {
+// 				panic("mock out the SignedBlocksWindow method")
+// 			},
+// 		}
+//
+// 		// use mockedSlasher in code that requires snapshottypes.Slasher
+// 		// and then make assertions.
+//
+// 	}
+type SlasherMock struct {
+	// GetValidatorMissedBlockBitArrayFunc mocks the GetValidatorMissedBlockBitArray method.
+	GetValidatorMissedBlockBitArrayFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress, index int64) bool
+
+	// GetValidatorSigningInfoFunc mocks the GetValidatorSigningInfo method.
+	GetValidatorSigningInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress) (slashingtypes.ValidatorSigningInfo, bool)
+
+	// SignedBlocksWindowFunc mocks the SignedBlocksWindow method.
+	SignedBlocksWindowFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// GetValidatorMissedBlockBitArray holds details about calls to the GetValidatorMissedBlockBitArray method.
+		GetValidatorMissedBlockBitArray []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Address is the address argument value.
+			Address github_com_cosmos_cosmos_sdk_types.ConsAddress
+			// Index is the index argument value.
+			Index int64
+		}
+		// GetValidatorSigningInfo holds details about calls to the GetValidatorSigningInfo method.
+		GetValidatorSigningInfo []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Address is the address argument value.
+			Address github_com_cosmos_cosmos_sdk_types.ConsAddress
+		}
+		// SignedBlocksWindow holds details about calls to the SignedBlocksWindow method.
+		SignedBlocksWindow []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+		}
+	}
+	lockGetValidatorMissedBlockBitArray sync.RWMutex
+	lockGetValidatorSigningInfo         sync.RWMutex
+	lockSignedBlocksWindow              sync.RWMutex
+}
+
+// GetValidatorMissedBlockBitArray calls GetValidatorMissedBlockBitArrayFunc.
+func (mock *SlasherMock) GetValidatorMissedBlockBitArray(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress, index int64) bool {
+	if mock.GetValidatorMissedBlockBitArrayFunc == nil {
+		panic("SlasherMock.GetValidatorMissedBlockBitArrayFunc: method is nil but Slasher.GetValidatorMissedBlockBitArray was just called")
+	}
+	callInfo := struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Address github_com_cosmos_cosmos_sdk_types.ConsAddress
+		Index   int64
+	}{
+		Ctx:     ctx,
+		Address: address,
+		Index:   index,
+	}
+	mock.lockGetValidatorMissedBlockBitArray.Lock()
+	mock.calls.GetValidatorMissedBlockBitArray = append(mock.calls.GetValidatorMissedBlockBitArray, callInfo)
+	mock.lockGetValidatorMissedBlockBitArray.Unlock()
+	return mock.GetValidatorMissedBlockBitArrayFunc(ctx, address, index)
+}
+
+// GetValidatorMissedBlockBitArrayCalls gets all the calls that were made to GetValidatorMissedBlockBitArray.
+// Check the length with:
+//     len(mockedSlasher.GetValidatorMissedBlockBitArrayCalls())
+func (mock *SlasherMock) GetValidatorMissedBlockBitArrayCalls() []struct {
+	Ctx     github_com_cosmos_cosmos_sdk_types.Context
+	Address github_com_cosmos_cosmos_sdk_types.ConsAddress
+	Index   int64
+} {
+	var calls []struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Address github_com_cosmos_cosmos_sdk_types.ConsAddress
+		Index   int64
+	}
+	mock.lockGetValidatorMissedBlockBitArray.RLock()
+	calls = mock.calls.GetValidatorMissedBlockBitArray
+	mock.lockGetValidatorMissedBlockBitArray.RUnlock()
+	return calls
+}
+
+// GetValidatorSigningInfo calls GetValidatorSigningInfoFunc.
+func (mock *SlasherMock) GetValidatorSigningInfo(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress) (slashingtypes.ValidatorSigningInfo, bool) {
+	if mock.GetValidatorSigningInfoFunc == nil {
+		panic("SlasherMock.GetValidatorSigningInfoFunc: method is nil but Slasher.GetValidatorSigningInfo was just called")
+	}
+	callInfo := struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Address github_com_cosmos_cosmos_sdk_types.ConsAddress
+	}{
+		Ctx:     ctx,
+		Address: address,
+	}
+	mock.lockGetValidatorSigningInfo.Lock()
+	mock.calls.GetValidatorSigningInfo = append(mock.calls.GetValidatorSigningInfo, callInfo)
+	mock.lockGetValidatorSigningInfo.Unlock()
+	return mock.GetValidatorSigningInfoFunc(ctx, address)
+}
+
+// GetValidatorSigningInfoCalls gets all the calls that were made to GetValidatorSigningInfo.
+// Check the length with:
+//     len(mockedSlasher.GetValidatorSigningInfoCalls())
+func (mock *SlasherMock) GetValidatorSigningInfoCalls() []struct {
+	Ctx     github_com_cosmos_cosmos_sdk_types.Context
+	Address github_com_cosmos_cosmos_sdk_types.ConsAddress
+} {
+	var calls []struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Address github_com_cosmos_cosmos_sdk_types.ConsAddress
+	}
+	mock.lockGetValidatorSigningInfo.RLock()
+	calls = mock.calls.GetValidatorSigningInfo
+	mock.lockGetValidatorSigningInfo.RUnlock()
+	return calls
+}
+
+// SignedBlocksWindow calls SignedBlocksWindowFunc.
+func (mock *SlasherMock) SignedBlocksWindow(ctx github_com_cosmos_cosmos_sdk_types.Context) int64 {
+	if mock.SignedBlocksWindowFunc == nil {
+		panic("SlasherMock.SignedBlocksWindowFunc: method is nil but Slasher.SignedBlocksWindow was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockSignedBlocksWindow.Lock()
+	mock.calls.SignedBlocksWindow = append(mock.calls.SignedBlocksWindow, callInfo)
+	mock.lockSignedBlocksWindow.Unlock()
+	return mock.SignedBlocksWindowFunc(ctx)
+}
+
+// SignedBlocksWindowCalls gets all the calls that were made to SignedBlocksWindow.
+// Check the length with:
+//     len(mockedSlasher.SignedBlocksWindowCalls())
+func (mock *SlasherMock) SignedBlocksWindowCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}
+	mock.lockSignedBlocksWindow.RLock()
+	calls = mock.calls.SignedBlocksWindow
+	mock.lockSignedBlocksWindow.RUnlock()
+	return calls
+}
+
+// Ensure, that TssMock does implement snapshottypes.Tss.
+// If this is not the case, regenerate this file with moq.
+var _ snapshottypes.Tss = &TssMock{}
+
+// TssMock is a mock implementation of snapshottypes.Tss.
+//
+// 	func TestSomethingThatUsesTss(t *testing.T) {
+//
+// 		// make and configure a mocked snapshottypes.Tss
+// 		mockedTss := &TssMock{
+// 			GetKeyRequirementFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRole exported2.KeyRole, keyType exported2.KeyType) (exported2.KeyRequirement, bool) {
+// 				panic("mock out the GetKeyRequirement method")
+// 			},
+// 			GetNextKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole exported2.KeyRole) (exported2.Key, bool) {
+// 				panic("mock out the GetNextKey method")
+// 			},
+// 			GetSuspendedUntilFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress) int64 {
+// 				panic("mock out the GetSuspendedUntil method")
+// 			},
+// 			HasMissedTooManyBlocksFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress) (bool, error) {
+// 				panic("mock out the HasMissedTooManyBlocks method")
+// 			},
+// 			IsOperatorAvailableFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress, keyIDs ...exported2.KeyID) bool {
+// 				panic("mock out the IsOperatorAvailable method")
+// 			},
+// 		}
+//
+// 		// use mockedTss in code that requires snapshottypes.Tss
+// 		// and then make assertions.
+//
+// 	}
+type TssMock struct {
+	// GetKeyRequirementFunc mocks the GetKeyRequirement method.
+	GetKeyRequirementFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRole exported2.KeyRole, keyType exported2.KeyType) (exported2.KeyRequirement, bool)
+
+	// GetNextKeyFunc mocks the GetNextKey method.
+	GetNextKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole exported2.KeyRole) (exported2.Key, bool)
+
+	// GetSuspendedUntilFunc mocks the GetSuspendedUntil method.
+	GetSuspendedUntilFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress) int64
+
+	// HasMissedTooManyBlocksFunc mocks the HasMissedTooManyBlocks method.
+	HasMissedTooManyBlocksFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress) (bool, error)
+
+	// IsOperatorAvailableFunc mocks the IsOperatorAvailable method.
+	IsOperatorAvailableFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress, keyIDs ...exported2.KeyID) bool
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// GetKeyRequirement holds details about calls to the GetKeyRequirement method.
+		GetKeyRequirement []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// KeyRole is the keyRole argument value.
+			KeyRole exported2.KeyRole
+			// KeyType is the keyType argument value.
+			KeyType exported2.KeyType
+		}
+		// GetNextKey holds details about calls to the GetNextKey method.
+		GetNextKey []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Chain is the chain argument value.
+			Chain nexus.Chain
+			// KeyRole is the keyRole argument value.
+			KeyRole exported2.KeyRole
+		}
+		// GetSuspendedUntil holds details about calls to the GetSuspendedUntil method.
+		GetSuspendedUntil []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Validator is the validator argument value.
+			Validator github_com_cosmos_cosmos_sdk_types.ValAddress
+		}
+		// HasMissedTooManyBlocks holds details about calls to the HasMissedTooManyBlocks method.
+		HasMissedTooManyBlocks []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Address is the address argument value.
+			Address github_com_cosmos_cosmos_sdk_types.ConsAddress
+		}
+		// IsOperatorAvailable holds details about calls to the IsOperatorAvailable method.
+		IsOperatorAvailable []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Validator is the validator argument value.
+			Validator github_com_cosmos_cosmos_sdk_types.ValAddress
+			// KeyIDs is the keyIDs argument value.
+			KeyIDs []exported2.KeyID
+		}
+	}
+	lockGetKeyRequirement      sync.RWMutex
+	lockGetNextKey             sync.RWMutex
+	lockGetSuspendedUntil      sync.RWMutex
+	lockHasMissedTooManyBlocks sync.RWMutex
+	lockIsOperatorAvailable    sync.RWMutex
+}
+
+// GetKeyRequirement calls GetKeyRequirementFunc.
+func (mock *TssMock) GetKeyRequirement(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRole exported2.KeyRole, keyType exported2.KeyType) (exported2.KeyRequirement, bool) {
+	if mock.GetKeyRequirementFunc == nil {
+		panic("TssMock.GetKeyRequirementFunc: method is nil but Tss.GetKeyRequirement was just called")
+	}
+	callInfo := struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		KeyRole exported2.KeyRole
+		KeyType exported2.KeyType
+	}{
+		Ctx:     ctx,
+		KeyRole: keyRole,
+		KeyType: keyType,
+	}
+	mock.lockGetKeyRequirement.Lock()
+	mock.calls.GetKeyRequirement = append(mock.calls.GetKeyRequirement, callInfo)
+	mock.lockGetKeyRequirement.Unlock()
+	return mock.GetKeyRequirementFunc(ctx, keyRole, keyType)
+}
+
+// GetKeyRequirementCalls gets all the calls that were made to GetKeyRequirement.
+// Check the length with:
+//     len(mockedTss.GetKeyRequirementCalls())
+func (mock *TssMock) GetKeyRequirementCalls() []struct {
+	Ctx     github_com_cosmos_cosmos_sdk_types.Context
+	KeyRole exported2.KeyRole
+	KeyType exported2.KeyType
+} {
+	var calls []struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		KeyRole exported2.KeyRole
+		KeyType exported2.KeyType
+	}
+	mock.lockGetKeyRequirement.RLock()
+	calls = mock.calls.GetKeyRequirement
+	mock.lockGetKeyRequirement.RUnlock()
+	return calls
+}
+
+// GetNextKey calls GetNextKeyFunc.
+func (mock *TssMock) GetNextKey(ctx github_com_cosmos_cosmos_sdk_types.Context, chain nexus.Chain, keyRole exported2.KeyRole) (exported2.Key, bool) {
+	if mock.GetNextKeyFunc == nil {
+		panic("TssMock.GetNextKeyFunc: method is nil but Tss.GetNextKey was just called")
+	}
+	callInfo := struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Chain   nexus.Chain
+		KeyRole exported2.KeyRole
+	}{
+		Ctx:     ctx,
+		Chain:   chain,
+		KeyRole: keyRole,
+	}
+	mock.lockGetNextKey.Lock()
+	mock.calls.GetNextKey = append(mock.calls.GetNextKey, callInfo)
+	mock.lockGetNextKey.Unlock()
+	return mock.GetNextKeyFunc(ctx, chain, keyRole)
+}
+
+// GetNextKeyCalls gets all the calls that were made to GetNextKey.
+// Check the length with:
+//     len(mockedTss.GetNextKeyCalls())
+func (mock *TssMock) GetNextKeyCalls() []struct {
+	Ctx     github_com_cosmos_cosmos_sdk_types.Context
+	Chain   nexus.Chain
+	KeyRole exported2.KeyRole
+} {
+	var calls []struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Chain   nexus.Chain
+		KeyRole exported2.KeyRole
+	}
+	mock.lockGetNextKey.RLock()
+	calls = mock.calls.GetNextKey
+	mock.lockGetNextKey.RUnlock()
+	return calls
+}
+
+// GetSuspendedUntil calls GetSuspendedUntilFunc.
+func (mock *TssMock) GetSuspendedUntil(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress) int64 {
+	if mock.GetSuspendedUntilFunc == nil {
+		panic("TssMock.GetSuspendedUntilFunc: method is nil but Tss.GetSuspendedUntil was just called")
+	}
+	callInfo := struct {
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
+		Validator github_com_cosmos_cosmos_sdk_types.ValAddress
+	}{
+		Ctx:       ctx,
+		Validator: validator,
+	}
+	mock.lockGetSuspendedUntil.Lock()
+	mock.calls.GetSuspendedUntil = append(mock.calls.GetSuspendedUntil, callInfo)
+	mock.lockGetSuspendedUntil.Unlock()
+	return mock.GetSuspendedUntilFunc(ctx, validator)
+}
+
+// GetSuspendedUntilCalls gets all the calls that were made to GetSuspendedUntil.
+// Check the length with:
+//     len(mockedTss.GetSuspendedUntilCalls())
+func (mock *TssMock) GetSuspendedUntilCalls() []struct {
+	Ctx       github_com_cosmos_cosmos_sdk_types.Context
+	Validator github_com_cosmos_cosmos_sdk_types.ValAddress
+} {
+	var calls []struct {
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
+		Validator github_com_cosmos_cosmos_sdk_types.ValAddress
+	}
+	mock.lockGetSuspendedUntil.RLock()
+	calls = mock.calls.GetSuspendedUntil
+	mock.lockGetSuspendedUntil.RUnlock()
+	return calls
+}
+
+// HasMissedTooManyBlocks calls HasMissedTooManyBlocksFunc.
+func (mock *TssMock) HasMissedTooManyBlocks(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress) (bool, error) {
+	if mock.HasMissedTooManyBlocksFunc == nil {
+		panic("TssMock.HasMissedTooManyBlocksFunc: method is nil but Tss.HasMissedTooManyBlocks was just called")
+	}
+	callInfo := struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Address github_com_cosmos_cosmos_sdk_types.ConsAddress
+	}{
+		Ctx:     ctx,
+		Address: address,
+	}
+	mock.lockHasMissedTooManyBlocks.Lock()
+	mock.calls.HasMissedTooManyBlocks = append(mock.calls.HasMissedTooManyBlocks, callInfo)
+	mock.lockHasMissedTooManyBlocks.Unlock()
+	return mock.HasMissedTooManyBlocksFunc(ctx, address)
+}
+
+// HasMissedTooManyBlocksCalls gets all the calls that were made to HasMissedTooManyBlocks.
+// Check the length with:
+//     len(mockedTss.HasMissedTooManyBlocksCalls())
+func (mock *TssMock) HasMissedTooManyBlocksCalls() []struct {
+	Ctx     github_com_cosmos_cosmos_sdk_types.Context
+	Address github_com_cosmos_cosmos_sdk_types.ConsAddress
+} {
+	var calls []struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Address github_com_cosmos_cosmos_sdk_types.ConsAddress
+	}
+	mock.lockHasMissedTooManyBlocks.RLock()
+	calls = mock.calls.HasMissedTooManyBlocks
+	mock.lockHasMissedTooManyBlocks.RUnlock()
+	return calls
+}
+
+// IsOperatorAvailable calls IsOperatorAvailableFunc.
+func (mock *TssMock) IsOperatorAvailable(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_cosmos_cosmos_sdk_types.ValAddress, keyIDs ...exported2.KeyID) bool {
+	if mock.IsOperatorAvailableFunc == nil {
+		panic("TssMock.IsOperatorAvailableFunc: method is nil but Tss.IsOperatorAvailable was just called")
+	}
+	callInfo := struct {
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
+		Validator github_com_cosmos_cosmos_sdk_types.ValAddress
+		KeyIDs    []exported2.KeyID
+	}{
+		Ctx:       ctx,
+		Validator: validator,
+		KeyIDs:    keyIDs,
+	}
+	mock.lockIsOperatorAvailable.Lock()
+	mock.calls.IsOperatorAvailable = append(mock.calls.IsOperatorAvailable, callInfo)
+	mock.lockIsOperatorAvailable.Unlock()
+	return mock.IsOperatorAvailableFunc(ctx, validator, keyIDs...)
+}
+
+// IsOperatorAvailableCalls gets all the calls that were made to IsOperatorAvailable.
+// Check the length with:
+//     len(mockedTss.IsOperatorAvailableCalls())
+func (mock *TssMock) IsOperatorAvailableCalls() []struct {
+	Ctx       github_com_cosmos_cosmos_sdk_types.Context
+	Validator github_com_cosmos_cosmos_sdk_types.ValAddress
+	KeyIDs    []exported2.KeyID
+} {
+	var calls []struct {
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
+		Validator github_com_cosmos_cosmos_sdk_types.ValAddress
+		KeyIDs    []exported2.KeyID
+	}
+	mock.lockIsOperatorAvailable.RLock()
+	calls = mock.calls.IsOperatorAvailable
+	mock.lockIsOperatorAvailable.RUnlock()
 	return calls
 }
