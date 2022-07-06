@@ -13,8 +13,6 @@ import (
 	"strings"
 
 	"github.com/btcsuite/btcd/btcec"
-	"github.com/cosmos/cosmos-sdk/codec"
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -1788,17 +1786,12 @@ func StrictDecode(arguments abi.Arguments, bz []byte) ([]interface{}, error) {
 	return params, nil
 }
 
-// UnpackEvents converts Any slice to Events
-func UnpackEvents(cdc codec.Codec, any *codectypes.Any) (voteEvents VoteEvents, err error) {
-	return voteEvents, cdc.Unmarshal(any.Value, &voteEvents)
-}
-
-// PackEvents converts Event to Any slice
-func PackEvents(chain nexus.ChainName, events []Event) (*codectypes.Any, error) {
-	return codectypes.NewAnyWithValue(&VoteEvents{
+// NewVoteEvents is the constructor for vote events
+func NewVoteEvents(chain nexus.ChainName, events []Event) *VoteEvents {
+	return &VoteEvents{
 		Chain:  chain,
 		Events: events,
-	})
+	}
 }
 
 // GetMultisigAddresses coverts a tss multisig key to addresses

@@ -36,7 +36,6 @@ import (
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	tssTestUtils "github.com/axelarnetwork/axelar-core/x/tss/exported/testutils"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
-	voteMock "github.com/axelarnetwork/axelar-core/x/vote/exported/mock"
 	. "github.com/axelarnetwork/utils/test"
 )
 
@@ -58,9 +57,11 @@ func setup() (sdk.Context, types.MsgServiceServer, *mock.BaseKeeperMock, *mock.T
 	signerKeeper := &mock.SignerMock{}
 	voteKeeper := &mock.VoterMock{}
 	snapshotKeeper := &mock.SnapshotterMock{}
+	stakingKeeper := &mock.StakingKeeperMock{}
+	slashingKeeper := &mock.SlashingKeeperMock{}
 
 	return ctx,
-		keeper.NewMsgServerImpl(evmBaseKeeper, tssKeeper, nexusKeeper, signerKeeper, voteKeeper, snapshotKeeper),
+		keeper.NewMsgServerImpl(evmBaseKeeper, tssKeeper, nexusKeeper, signerKeeper, voteKeeper, snapshotKeeper, stakingKeeper, slashingKeeper),
 		evmBaseKeeper, tssKeeper, nexusKeeper, signerKeeper, voteKeeper, snapshotKeeper
 }
 
@@ -160,11 +161,13 @@ func TestSignCommands(t *testing.T) {
 		signerKeeper := &mock.SignerMock{}
 		voteKeeper := &mock.VoterMock{}
 		snapshotKeeper := &mock.SnapshotterMock{}
+		stakingKeeper := &mock.StakingKeeperMock{}
+		slashingKeeper := &mock.SlashingKeeperMock{}
 
 		nexusKeeper.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) { return nexus.Chain{}, true }
 		nexusKeeper.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return true }
 
-		msgServer := keeper.NewMsgServerImpl(evmBaseKeeper, tssKeeper, nexusKeeper, signerKeeper, voteKeeper, snapshotKeeper)
+		msgServer := keeper.NewMsgServerImpl(evmBaseKeeper, tssKeeper, nexusKeeper, signerKeeper, voteKeeper, snapshotKeeper, stakingKeeper, slashingKeeper)
 
 		return ctx, msgServer, evmBaseKeeper, signerKeeper
 	}
@@ -195,7 +198,7 @@ func TestSignCommands(t *testing.T) {
 		}
 		signerKeeper.GetSnapshotCounterForKeyIDFunc = func(ctx sdk.Context, keyID tss.KeyID) (int64, bool) { return 1, true }
 		signerKeeper.StartSignFunc = func(ctx sdk.Context, info tss.SignInfo, snapshotter snapshot.Snapshotter, voter interface {
-			InitializePollWithSnapshot(ctx sdk.Context, snapshotSeqNo int64, pollProperties ...vote.PollProperty) (vote.PollID, error)
+			InitializePoll(ctx sdk.Context, pollBuilder vote.PollBuilder) (vote.PollID, error)
 		}) error {
 			return nil
 		}
@@ -235,7 +238,7 @@ func TestSignCommands(t *testing.T) {
 		}
 		signerKeeper.GetSnapshotCounterForKeyIDFunc = func(ctx sdk.Context, keyID tss.KeyID) (int64, bool) { return 1, true }
 		signerKeeper.StartSignFunc = func(ctx sdk.Context, info tss.SignInfo, snapshotter snapshot.Snapshotter, voter interface {
-			InitializePollWithSnapshot(ctx sdk.Context, snapshotSeqNo int64, pollProperties ...vote.PollProperty) (vote.PollID, error)
+			InitializePoll(ctx sdk.Context, pollBuilder vote.PollBuilder) (vote.PollID, error)
 		}) error {
 			return nil
 		}
@@ -316,8 +319,10 @@ func TestCreateBurnTokens(t *testing.T) {
 		}
 		voteKeeper = &mock.VoterMock{}
 		snapshotKeeper = &mock.SnapshotterMock{}
+		stakingKeeper := &mock.StakingKeeperMock{}
+		slashingKeeper := &mock.SlashingKeeperMock{}
 
-		server = keeper.NewMsgServerImpl(evmBaseKeeper, tssKeeper, nexusKeeper, signerKeeper, voteKeeper, snapshotKeeper)
+		server = keeper.NewMsgServerImpl(evmBaseKeeper, tssKeeper, nexusKeeper, signerKeeper, voteKeeper, snapshotKeeper, stakingKeeper, slashingKeeper)
 	}
 
 	t.Run("should do nothing if no confirmed deposits exist", testutils.Func(func(t *testing.T) {
@@ -485,7 +490,7 @@ func TestLink_UnknownChain(t *testing.T) {
 		IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool { return true },
 		GetChainFunc:         func(sdk.Context, nexus.ChainName) (nexus.Chain, bool) { return nexus.Chain{}, false },
 	}
-	server := keeper.NewMsgServerImpl(k, &mock.TSSMock{}, n, &mock.SignerMock{}, &mock.VoterMock{}, &mock.SnapshotterMock{})
+	server := keeper.NewMsgServerImpl(k, &mock.TSSMock{}, n, &mock.SignerMock{}, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{})
 	_, err := server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Sender: rand.AccAddr(), Chain: evmChain, RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name, Asset: asset})
 
 	assert.Error(t, err)
@@ -532,7 +537,7 @@ func TestLink_NoGateway(t *testing.T) {
 			return rand.PosI64(), true
 		},
 	}
-	server := keeper.NewMsgServerImpl(k, &mock.TSSMock{}, n, signer, &mock.VoterMock{}, &mock.SnapshotterMock{})
+	server := keeper.NewMsgServerImpl(k, &mock.TSSMock{}, n, signer, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{})
 	_, err := server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Chain: evmChain, Sender: rand.AccAddr(), RecipientAddr: recipient.Address, Asset: asset, RecipientChain: recipient.Chain.Name})
 
 	assert.Error(t, err)
@@ -566,7 +571,7 @@ func TestLink_NoRecipientChain(t *testing.T) {
 			return rand.PosI64(), true
 		},
 	}
-	server := keeper.NewMsgServerImpl(k, &mock.TSSMock{}, n, signer, &mock.VoterMock{}, &mock.SnapshotterMock{})
+	server := keeper.NewMsgServerImpl(k, &mock.TSSMock{}, n, signer, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{})
 	_, err := server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Chain: evmChain, Sender: rand.AccAddr(), RecipientAddr: recipient.Address, Asset: asset, RecipientChain: recipient.Chain.Name})
 
 	assert.Error(t, err)
@@ -600,7 +605,7 @@ func TestLink_NoRegisteredAsset(t *testing.T) {
 			return rand.PosI64(), true
 		},
 	}
-	server := keeper.NewMsgServerImpl(k, &mock.TSSMock{}, n, signer, &mock.VoterMock{}, &mock.SnapshotterMock{})
+	server := keeper.NewMsgServerImpl(k, &mock.TSSMock{}, n, signer, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{})
 	recipient := nexus.CrossChainAddress{Address: rand.ValAddr().String(), Chain: axelarnet.Axelarnet}
 	_, err := server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Sender: rand.AccAddr(), Chain: evmChain, RecipientAddr: recipient.Address, Asset: asset, RecipientChain: recipient.Chain.Name})
 
@@ -659,7 +664,7 @@ func TestLink_Success(t *testing.T) {
 			return rand.PosI64(), true
 		},
 	}
-	server := keeper.NewMsgServerImpl(k, &mock.TSSMock{}, n, signer, &mock.VoterMock{}, &mock.SnapshotterMock{})
+	server := keeper.NewMsgServerImpl(k, &mock.TSSMock{}, n, signer, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{})
 	_, err = server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Sender: rand.AccAddr(), Chain: evmChain, RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name, Asset: axelarnet.NativeAsset})
 
 	assert.NoError(t, err)
@@ -811,24 +816,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 			GetParamsFunc: func(ctx sdk.Context) types.Params { return types.DefaultParams()[0] },
 		}
 		v = &mock.VoterMock{
-			InitializePollFunc: func(sdk.Context, []sdk.ValAddress, ...vote.PollProperty) (vote.PollID, error) {
-				return 0, nil
-			},
-			GetPollFunc: func(sdk.Context, vote.PollID) vote.Poll {
-				return &voteMock.PollMock{
-					VoteFunc: func(voter sdk.ValAddress, blockHeight int64, data codec.ProtoMarshaler) (codec.ProtoMarshaler, bool, error) {
-						return nil, false, nil
-					},
-					IsFunc: func(state vote.PollState) bool {
-						switch state {
-						case vote.Pending:
-							return true
-						default:
-							return false
-						}
-					},
-				}
-			},
+			InitializePollFunc: func(ctx sdk.Context, pollBuilder vote.PollBuilder) (vote.PollID, error) { return 0, nil },
 		}
 		chains := map[nexus.ChainName]nexus.Chain{axelarnet.Axelarnet.Name: axelarnet.Axelarnet, exported.Ethereum.Name: exported.Ethereum}
 		n = &mock.NexusMock{
@@ -857,10 +845,18 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 			TxID:   types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
 			Asset:  types.NewAsset(axelarnet.Axelarnet.Name.String(), axelarnet.NativeAsset),
 		}
-		server = keeper.NewMsgServerImpl(basek, &mock.TSSMock{}, n, s, v, &mock.SnapshotterMock{
+		snapshotKeeper := &mock.SnapshotterMock{
 			GetOperatorFunc: func(sdk.Context, sdk.AccAddress) sdk.ValAddress {
 				return rand.ValAddr()
-			}})
+			},
+			CreateSnapshotFunc: func(sdk.Context, []sdk.ValAddress, func(snapshot.ValidatorI) bool, func(consensusPower sdk.Uint) sdk.Uint, utils.Threshold) (snapshot.Snapshot, error) {
+				return snapshot.Snapshot{}, nil
+			},
+		}
+		stakingKeeper := &mock.StakingKeeperMock{
+			PowerReductionFunc: func(ctx sdk.Context) sdk.Int { return sdk.OneInt() },
+		}
+		server = keeper.NewMsgServerImpl(basek, &mock.TSSMock{}, n, s, v, snapshotKeeper, stakingKeeper, &mock.SlashingKeeperMock{})
 	}
 
 	repeats := 20
@@ -910,7 +906,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 
 	t.Run("init poll failed", testutils.Func(func(t *testing.T) {
 		setup()
-		v.InitializePollFunc = func(sdk.Context, []sdk.ValAddress, ...vote.PollProperty) (vote.PollID, error) {
+		v.InitializePollFunc = func(ctx sdk.Context, pollBuilder vote.PollBuilder) (vote.PollID, error) {
 			return 0, fmt.Errorf("poll setup failed")
 		}
 
@@ -973,7 +969,7 @@ func TestAddChain(t *testing.T) {
 			Params: params,
 		}
 
-		server = keeper.NewMsgServerImpl(basek, tssMock, n, &mock.SignerMock{}, &mock.VoterMock{}, &mock.SnapshotterMock{})
+		server = keeper.NewMsgServerImpl(basek, tssMock, n, &mock.SignerMock{}, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{})
 	}
 
 	repeats := 20
@@ -1047,22 +1043,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			GetParamsFunc:        func(ctx sdk.Context) types.Params { return types.DefaultParams()[0] },
 		}
 		v = &mock.VoterMock{
-			InitializePollFunc: func(sdk.Context, []sdk.ValAddress, ...vote.PollProperty) (vote.PollID, error) { return 0, nil },
-			GetPollFunc: func(sdk.Context, vote.PollID) vote.Poll {
-				return &voteMock.PollMock{
-					VoteFunc: func(voter sdk.ValAddress, blockHeight int64, data codec.ProtoMarshaler) (codec.ProtoMarshaler, bool, error) {
-						return nil, false, nil
-					},
-					IsFunc: func(state vote.PollState) bool {
-						switch state {
-						case vote.Pending:
-							return true
-						default:
-							return false
-						}
-					},
-				}
-			},
+			InitializePollFunc: func(ctx sdk.Context, pollBuilder vote.PollBuilder) (vote.PollID, error) { return 0, nil },
 		}
 		s = &mock.SignerMock{
 			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
@@ -1090,11 +1071,18 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			Chain:  evmChain,
 			TxID:   types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
 		}
-		server = keeper.NewMsgServerImpl(basek, &mock.TSSMock{}, n, s, v, &mock.SnapshotterMock{
+		snapshotKeeper := &mock.SnapshotterMock{
 			GetOperatorFunc: func(sdk.Context, sdk.AccAddress) sdk.ValAddress {
 				return rand.ValAddr()
 			},
-		})
+			CreateSnapshotFunc: func(sdk.Context, []sdk.ValAddress, func(snapshot.ValidatorI) bool, func(consensusPower sdk.Uint) sdk.Uint, utils.Threshold) (snapshot.Snapshot, error) {
+				return snapshot.Snapshot{}, nil
+			},
+		}
+		stakingKeeper := &mock.StakingKeeperMock{
+			PowerReductionFunc: func(ctx sdk.Context) sdk.Int { return sdk.OneInt() },
+		}
+		server = keeper.NewMsgServerImpl(basek, &mock.TSSMock{}, n, s, v, snapshotKeeper, stakingKeeper, &mock.SlashingKeeperMock{})
 	}
 
 	repeats := 20
@@ -1119,10 +1107,9 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 
 	t.Run("init poll failed", testutils.Func(func(t *testing.T) {
 		setup()
-		v.InitializePollFunc = func(sdk.Context, []sdk.ValAddress, ...vote.PollProperty) (vote.PollID, error) {
+		v.InitializePollFunc = func(ctx sdk.Context, pollBuilder vote.PollBuilder) (vote.PollID, error) {
 			return 0, fmt.Errorf("failed")
 		}
-
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 
 		assert.Error(t, err)
@@ -1203,7 +1190,7 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 			},
 		}
 
-		server = keeper.NewMsgServerImpl(basek, &mock.TSSMock{}, n, s, v, &mock.SnapshotterMock{})
+		server = keeper.NewMsgServerImpl(basek, &mock.TSSMock{}, n, s, v, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{})
 	}
 
 	repeats := 20

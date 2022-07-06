@@ -107,7 +107,7 @@ func TestExportGenesisInitGenesis(t *testing.T) {
 		keeper.ActivateChain(ctx, chain)
 	}
 
-	linkedAddressesCount := rand.I64Between(100, 1000)
+	linkedAddressesCount := rand.I64Between(100, 200)
 	expectedLinkedAddresses := make([]types.LinkedAddresses, linkedAddressesCount)
 	for i := 0; i < int(linkedAddressesCount); i++ {
 		depositAddress := getRandomAxelarnetAddress()

@@ -30,7 +30,7 @@ func RandomChains(cdc codec.Codec) []types.GenesisState_Chain {
 
 // RandomChain returns a random (valid) chain for testing
 func RandomChain(cdc codec.Codec) types.GenesisState_Chain {
-	eventCount := rand.I64Between(1, 1000)
+	eventCount := rand.I64Between(1, 100)
 	events := make([]types.Event, eventCount)
 	for i := 0; i < int(eventCount); i++ {
 		events[i] = RandomEvent(types.EventConfirmed, types.EventCompleted, types.EventFailed)

@@ -22,48 +22,48 @@ func handlePollsAtExpiry(ctx sdk.Context, k types.Voter) error {
 		return ctx.BlockHeight() >= value.(*exported.PollMetadata).ExpiresAt
 	}
 
-	var pollMeta exported.PollMetadata
-	for pollQueue.DequeueIf(&pollMeta, hasPollExpired) {
-		poll := k.GetPoll(ctx, pollMeta.ID)
-
-		pollModuleMetadata := poll.GetModuleMetadata()
-		voteHandler := k.GetVoteRouter().GetHandler(pollModuleMetadata.Module)
-		if voteHandler == nil {
-			return fmt.Errorf("unknown module for vote %s", pollModuleMetadata.Module)
+	var pollMetadata exported.PollMetadata
+	for pollQueue.DequeueIf(&pollMetadata, hasPollExpired) {
+		pollID := pollMetadata.ID
+		poll, ok := k.GetPoll(ctx, pollID)
+		if !ok {
+			panic(fmt.Errorf("poll %s not found", pollID))
 		}
 
-		switch {
-		case poll.Is(exported.Pending):
+		voteHandler := k.GetVoteRouter().GetHandler(poll.GetModule())
+
+		switch poll.GetState() {
+		case exported.Pending:
 			if err := voteHandler.HandleExpiredPoll(ctx, poll); err != nil {
 				return err
 			}
 
 			k.Logger(ctx).Debug("poll expired",
-				"poll", poll.GetID().String(),
+				"poll", pollID.String(),
 			)
-		case poll.Is(exported.Failed):
+		case exported.Failed:
 			k.Logger(ctx).Debug("poll failed",
-				"poll", poll.GetID().String(),
+				"poll", pollID.String(),
 			)
-		case poll.Is(exported.Completed):
+		case exported.Completed:
 			if err := voteHandler.HandleCompletedPoll(ctx, poll); err != nil {
 				return err
 			}
 
 			if voteHandler.IsFalsyResult(poll.GetResult()) {
 				k.Logger(ctx).Debug("poll completed with falsy result",
-					"poll", poll.GetID().String(),
+					"poll", pollID.String(),
 				)
 			} else {
 				k.Logger(ctx).Debug("poll completed with final result",
-					"poll", poll.GetID().String(),
+					"poll", pollID.String(),
 				)
 			}
 		default:
-			return fmt.Errorf("cannot handle poll %s due to invalid state", poll.GetID().String())
+			panic(fmt.Errorf("unexpected poll state %s", poll.GetState().String()))
 		}
 
-		poll.Delete()
+		k.DeletePoll(ctx, pollID)
 	}
 
 	return nil

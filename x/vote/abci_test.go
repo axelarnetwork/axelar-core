@@ -38,18 +38,19 @@ func TestHandlePollsAtExpiry(t *testing.T) {
 		pollQueue = &utilsMock.KVQueueMock{}
 		voteHandler = &exportedMock.VoteHandlerMock{}
 		poll = &exportedMock.PollMock{
-			GetIDFunc:             func() exported.PollID { return exported.PollID(rand.PosI64()) },
-			GetModuleMetadataFunc: func() exported.PollModuleMetadata { return exported.PollModuleMetadata{Module: evmtypes.ModuleName} },
+			GetIDFunc:     func() exported.PollID { return exported.PollID(rand.PosI64()) },
+			GetModuleFunc: func() string { return evmtypes.ModuleName },
 		}
 		keeper = &mock.VoterMock{
 			LoggerFunc:       func(ctx sdk.Context) log.Logger { return log.NewNopLogger() },
 			GetPollQueueFunc: func(ctx sdk.Context) utils.KVQueue { return pollQueue },
-			GetPollFunc:      func(ctx sdk.Context, id exported.PollID) exported.Poll { return poll },
+			GetPollFunc:      func(ctx sdk.Context, id exported.PollID) (exported.Poll, bool) { return poll, true },
 			GetVoteRouterFunc: func() types.VoteRouter {
 				return &mock.VoteRouterMock{
 					GetHandlerFunc: func(module string) exported.VoteHandler { return voteHandler },
 				}
 			},
+			DeletePollFunc: func(sdk.Context, exported.PollID) {},
 		}
 	})
 
@@ -62,8 +63,7 @@ func TestHandlePollsAtExpiry(t *testing.T) {
 		}
 
 		return When(fmt.Sprintf("having poll (state=%s,expired=%t)", state.String(), expired), func() {
-			poll.IsFunc = func(s exported.PollState) bool { return state == s }
-			poll.DeleteFunc = func() {}
+			poll.GetStateFunc = func() exported.PollState { return state }
 
 			dequeued := false
 			pollQueue.DequeueIfFunc = func(value codec.ProtoMarshaler, filter func(value codec.ProtoMarshaler) bool) bool {
@@ -101,7 +101,7 @@ func TestHandlePollsAtExpiry(t *testing.T) {
 
 			err := handlePollsAtExpiry(ctx, keeper)
 			assert.NoError(t, err)
-			assert.Len(t, poll.DeleteCalls(), 1)
+			assert.Len(t, keeper.DeletePollCalls(), 1)
 			assert.Len(t, voteHandler.HandleExpiredPollCalls(), 1)
 		}).
 		Run(t, repeats)
@@ -112,7 +112,7 @@ func TestHandlePollsAtExpiry(t *testing.T) {
 
 			err := handlePollsAtExpiry(ctx, keeper)
 			assert.NoError(t, err)
-			assert.Len(t, poll.DeleteCalls(), 1)
+			assert.Len(t, keeper.DeletePollCalls(), 1)
 		}).
 		Run(t, repeats)
 
@@ -128,7 +128,7 @@ func TestHandlePollsAtExpiry(t *testing.T) {
 			err := handlePollsAtExpiry(ctx, keeper)
 			assert.NoError(t, err)
 			assert.Len(t, voteHandler.HandleCompletedPollCalls(), 1)
-			assert.Len(t, poll.DeleteCalls(), 1)
+			assert.Len(t, keeper.DeletePollCalls(), 1)
 		}).
 		Run(t, repeats)
 }

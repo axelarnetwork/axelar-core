@@ -29,8 +29,10 @@ import (
 	mock2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types/mock"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
+	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/types"
+	"github.com/axelarnetwork/utils/slices"
 	. "github.com/axelarnetwork/utils/test"
 )
 
@@ -202,7 +204,7 @@ func TestRetryPipeline_Push(t *testing.T) {
 		backOff := utils.LinearBackOff(2 * time.Microsecond)
 		p := NewPipelineWithRetry(int(rand.I64Between(10, 100000)), retries, backOff, log.TestingLogger())
 
-		iterations := int(rand.I64Between(20, 100))
+		iterations := int(rand.I64Between(20, 30))
 
 		// introducing a data race on purpose to assert that broadcast calls are serialized
 		callCounter := 0
@@ -294,17 +296,7 @@ func setup(signer sdk.AccAddress) (*RefundableBroadcaster, client.Context) {
 }
 
 func createMsgsWithSigner(signer sdk.AccAddress, count int64) []sdk.Msg {
-	var msgs []sdk.Msg
-
-	for i := int64(0); i < count; i++ {
-
-		msg := &vote.VoteRequest{
-			Sender: signer,
-			PollID: exported.PollID(rand.I64Between(10, 100)),
-			Vote:   exported.Vote{},
-		}
-
-		msgs = append(msgs, msg)
-	}
-	return msgs
+	return slices.Expand(func(_ int) sdk.Msg {
+		return vote.NewVoteRequest(signer, exported.PollID(rand.I64Between(10, 100)), &evmtypes.VoteEvents{})
+	}, int(count))
 }

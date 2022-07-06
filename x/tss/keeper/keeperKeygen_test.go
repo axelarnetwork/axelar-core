@@ -95,7 +95,7 @@ func TestKeeper_AssignNextMasterKey_RotateMasterKey_AssignNextSecondaryKey_Rotat
 }
 
 func TestKeeper_AssignNextMasterKey_RotateMasterKey_MultipleTimes_PreviousKeysStillAvailable(t *testing.T) {
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 20; i++ {
 		chain := evm.Ethereum
 		s := setup()
 		ctx := s.Ctx

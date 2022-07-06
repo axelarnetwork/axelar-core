@@ -14,7 +14,7 @@ import (
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
-//go:generate moq -out ./mock/expected_keepers.go -pkg mock . TSS Voter Signer Nexus Snapshotter BaseKeeper ChainKeeper Rewarder
+//go:generate moq -out ./mock/expected_keepers.go -pkg mock . TSS Voter Signer Nexus Snapshotter BaseKeeper ChainKeeper Rewarder StakingKeeper SlashingKeeper
 
 // BaseKeeper is implemented by this module's base keeper
 type BaseKeeper interface {
@@ -91,10 +91,7 @@ type TSS interface {
 
 // Voter exposes voting functionality
 type Voter interface {
-	InitializePoll(ctx sdk.Context, voters []sdk.ValAddress, pollProperties ...vote.PollProperty) (vote.PollID, error)
-	// Deprecated: InitializePollWithSnapshot will be removed soon
-	InitializePollWithSnapshot(ctx sdk.Context, snapshotSeqNo int64, pollProperties ...vote.PollProperty) (vote.PollID, error)
-	GetPoll(ctx sdk.Context, pollID vote.PollID) vote.Poll
+	InitializePoll(ctx sdk.Context, pollBuilder vote.PollBuilder) (vote.PollID, error)
 }
 
 // Nexus provides functionality to manage cross-chain transfers
@@ -123,8 +120,7 @@ type Nexus interface {
 // because the concrete implementation of Signer (specifically StartSign) is defined in a different package using another (identical)
 // InitPoller interface. Go cannot match the types otherwise
 type InitPoller = interface {
-	// Deprecated: InitializePollWithSnapshot will be removed soon
-	InitializePollWithSnapshot(ctx sdk.Context, snapshotSeqNo int64, pollProperties ...vote.PollProperty) (vote.PollID, error)
+	InitializePoll(ctx sdk.Context, pollBuilder vote.PollBuilder) (vote.PollID, error)
 }
 
 // Signer provides keygen and signing functionality
@@ -153,4 +149,15 @@ type Snapshotter = snapshot.Snapshotter
 // Rewarder provides reward functionality
 type Rewarder interface {
 	GetPool(ctx sdk.Context, name string) reward.RewardPool
+}
+
+// StakingKeeper adopts the methods from "github.com/cosmos/cosmos-sdk/x/staking/exported" that are
+// actually used by this module
+type StakingKeeper interface {
+	PowerReduction(ctx sdk.Context) sdk.Int
+}
+
+// SlashingKeeper provides functionality to manage slashing info for a validator
+type SlashingKeeper interface {
+	IsTombstoned(ctx sdk.Context, consAddr sdk.ConsAddress) bool
 }
