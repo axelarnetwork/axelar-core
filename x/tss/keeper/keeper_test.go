@@ -26,10 +26,10 @@ import (
 )
 
 var (
-	val1       = newValidator(rand.ValAddr(), 100)
-	val2       = newValidator(rand.ValAddr(), 100)
-	val3       = newValidator(rand.ValAddr(), 100)
-	val4       = newValidator(rand.ValAddr(), 100)
+	val1       = newValidator(rand.ValAddr(), 10)
+	val2       = newValidator(rand.ValAddr(), 10)
+	val3       = newValidator(rand.ValAddr(), 10)
+	val4       = newValidator(rand.ValAddr(), 10)
 	validators = []snapshot.Validator{val1, val2, val3, val4}
 	snap       = snapshot.Snapshot{
 		Validators:      validators,
@@ -54,7 +54,7 @@ func setup() *testSetup {
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	encCfg := appParams.MakeEncodingConfig()
 	voter := &tssMock.VoterMock{
-		InitializePollWithSnapshotFunc: func(sdk.Context, int64, ...vote.PollProperty) (vote.PollID, error) { return 0, nil },
+		InitializePollFunc: func(ctx sdk.Context, pollBuilder vote.PollBuilder) (vote.PollID, error) { return 0, nil },
 	}
 	snapshotter := &snapMock.SnapshotterMock{
 		GetValidatorIllegibilityFunc: func(ctx sdk.Context, validator snapshot.SDKValidator) (snapshot.ValidatorIllegibility, error) {

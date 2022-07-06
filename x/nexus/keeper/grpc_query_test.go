@@ -63,7 +63,7 @@ func TestKeeper_TransfersForChain(t *testing.T) {
 
 		}).
 		When("there are some pending transfers", func() {
-			totalTransfers = rand.I64Between(10, 200)
+			totalTransfers = rand.I64Between(10, 50)
 			for i := int64(0); i < totalTransfers; i++ {
 				sender := exported.CrossChainAddress{
 					Chain:   evm.Ethereum,

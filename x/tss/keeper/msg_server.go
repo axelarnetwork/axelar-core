@@ -17,7 +17,6 @@ import (
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
-	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 var _ types.MsgServiceServer = msgServer{}
@@ -492,20 +491,4 @@ func (s msgServer) SubmitMultisigSignatures(c context.Context, req *types.Submit
 	}
 
 	return &types.SubmitMultisigSignaturesResponse{}, nil
-}
-
-func validateCriminal(criminal sdk.ValAddress, poll vote.Poll) error {
-	criminalFound := false
-	for _, voter := range poll.GetVoters() {
-		if criminal.Equals(voter.Validator) {
-			criminalFound = true
-			break
-		}
-	}
-
-	if !criminalFound {
-		return fmt.Errorf("received criminal %s who is not a voter of poll %s", criminal.String(), poll.GetID().String())
-	}
-
-	return nil
 }

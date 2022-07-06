@@ -5,7 +5,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
-	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
@@ -14,6 +13,8 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	utilstestutils "github.com/axelarnetwork/axelar-core/utils/testutils"
+	snapshottestutils "github.com/axelarnetwork/axelar-core/x/snapshot/exported/testutils"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/keeper"
 	"github.com/axelarnetwork/axelar-core/x/vote/types"
@@ -47,70 +48,48 @@ func setup() (sdk.Context, keeper.Keeper, *mock.SnapshotterMock, *mock.StakingKe
 
 func TestKeeper(t *testing.T) {
 	var (
-		ctx     sdk.Context
-		k       keeper.Keeper
-		staking *mock.StakingKeeperMock
+		ctx         sdk.Context
+		k           keeper.Keeper
+		pollBuilder exported.PollBuilder
 	)
 
 	givenKeeper := Given("vote keeper", func() {
-		ctx, k, _, staking, _ = setup()
+		ctx, k, _, _, _ = setup()
 	})
 
-	repeats := 20
-
 	t.Run("InitializePoll", testutils.Func(func(t *testing.T) {
-		var (
-			voters []sdk.ValAddress
-		)
-
-		givenVotersWith := func(voterCount int) GivenStatement {
-			return Given("having voters", func() {
-				voters = make([]sdk.ValAddress, voterCount)
-				for i := 0; i < voterCount; i++ {
-					voters[i] = rand.ValAddr()
-				}
-			})
-		}
+		whenPollBuilderIsSet := When("poll builder is set", func() {
+			votingThreshold := utilstestutils.RandThreshold()
+			snapshot := snapshottestutils.Snapshot(uint64(rand.I64Between(1, 100)), votingThreshold)
+			pollBuilder = exported.NewPollBuilder(rand.NormalizedStr(5), votingThreshold, snapshot, rand.PosI64()).
+				RewardPoolName(rand.NormalizedStr(5)).
+				MinVoterCount(rand.I64Between(0, int64(len(snapshot.Participants)))).
+				GracePeriod(rand.I64Between(0, 10))
+		})
 
 		givenKeeper.
-			Given2(givenVotersWith(20)).
-			When("voters are not validators", func() {
-				staking.ValidatorFunc = func(ctx sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI { return nil }
-			}).
-			Then("should return error", func(t *testing.T) {
-				_, err := k.InitializePoll(
-					ctx,
-					voters,
-					exported.ExpiryAt(rand.PosI64()),
-					exported.ModuleMetadata(rand.NormalizedStr(5)),
-				)
+			When2(whenPollBuilderIsSet).
+			Then("should successfully initialize the polls with different IDs", func(t *testing.T) {
+				pollCount := rand.I64Between(1, 100)
+				for i := 0; i < int(pollCount); i++ {
+					actual, err := k.InitializePoll(ctx, pollBuilder)
 
-				assert.ErrorContains(t, err, "no voters set")
+					assert.NoError(t, err)
+					assert.EqualValues(t, i, actual)
+
+					_, ok := k.GetPoll(ctx, actual)
+					assert.True(t, ok)
+				}
 			}).
-			Run(t)
+			Run(t, 20)
 
 		givenKeeper.
-			Given2(givenVotersWith(20)).
-			When("voters do not have consensus power", func() {
-				staking.ValidatorFunc = func(ctx sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI {
-					if rand.Bools(0.5).Next() {
-						return stakingtypes.Validator{Status: rand.Of(stakingtypes.Unbonded, stakingtypes.Unbonding), Tokens: sdk.NewInt(rand.PosI64())}
-					}
-
-					return stakingtypes.Validator{Status: stakingtypes.Bonded, Tokens: sdk.ZeroInt()}
-				}
-				staking.PowerReductionFunc = func(context sdk.Context) sdk.Int { return sdk.NewInt(10) }
-			}).
-			Then("should return error", func(t *testing.T) {
-				_, err := k.InitializePoll(
-					ctx,
-					voters,
-					exported.ExpiryAt(rand.PosI64()),
-					exported.ModuleMetadata(rand.NormalizedStr(5)),
-				)
-
-				assert.ErrorContains(t, err, "no voters set")
+			When2(whenPollBuilderIsSet).
+			When("poll is not valid", func() { pollBuilder = pollBuilder.MinVoterCount(1000) }).
+			Then("should return an error", func(t *testing.T) {
+				_, err := k.InitializePoll(ctx, pollBuilder)
+				assert.Error(t, err)
 			}).
 			Run(t)
-	}).Repeat(repeats))
+	}))
 }

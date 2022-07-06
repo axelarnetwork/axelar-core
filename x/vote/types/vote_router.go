@@ -3,6 +3,9 @@ package types
 import (
 	"fmt"
 
+	"github.com/cosmos/cosmos-sdk/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
@@ -63,5 +66,20 @@ func (r *router) GetHandler(module string) exported.VoteHandler {
 		panic(fmt.Sprintf("handler for module \"%s\" not registered", module))
 	}
 
-	return r.routes[module]
+	return handlerWrapper{r.routes[module]}
+}
+
+type handlerWrapper struct {
+	exported.VoteHandler
+}
+
+func (w handlerWrapper) HandleResult(ctx sdk.Context, result codec.ProtoMarshaler) error {
+	cachedCtx, writeCache := ctx.CacheContext()
+	if err := w.VoteHandler.HandleResult(cachedCtx, result); err != nil {
+		return err
+	}
+
+	writeCache()
+	ctx.EventManager().EmitEvents(cachedCtx.EventManager().Events())
+	return nil
 }

@@ -91,7 +91,7 @@ func TestHandleMsgRefundRequest(t *testing.T) {
 		voteReq := &votetypes.VoteRequest{
 			Sender: rand.AccAddr(),
 			PollID: vote.PollID(rand.I64Between(5, 100)),
-			Vote:   vote.Vote{},
+			Vote:   nil,
 		}
 		msg = types.NewRefundMsgRequest(rand.AccAddr(), voteReq)
 

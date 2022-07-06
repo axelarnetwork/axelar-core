@@ -117,11 +117,7 @@ func (mgr Mgr) ProcessDepositConfirmation(e tmEvents.Event) (err error) {
 		return true
 	})
 
-	v, err := packEvents(chain, events)
-	if err != nil {
-		return err
-	}
-	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, pollID, v)
+	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, pollID, evmTypes.NewVoteEvents(chain, events))
 	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", events, pollID.String()))
 	_, err = mgr.broadcaster.Broadcast(context.TODO(), msg)
 	return err
@@ -173,11 +169,7 @@ func (mgr Mgr) ProcessTokenConfirmation(e tmEvents.Event) error {
 		return true
 	})
 
-	v, err := packEvents(chain, events)
-	if err != nil {
-		return err
-	}
-	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, pollID, v)
+	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, pollID, evmTypes.NewVoteEvents(chain, events))
 	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", events, pollID.String()))
 	_, err = mgr.broadcaster.Broadcast(context.TODO(), msg)
 	return err
@@ -248,11 +240,7 @@ func (mgr Mgr) ProcessTransferKeyConfirmation(e tmEvents.Event) (err error) {
 		return true
 	})
 
-	v, err := packEvents(chain, events)
-	if err != nil {
-		return err
-	}
-	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, pollID, v)
+	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, pollID, evmTypes.NewVoteEvents(chain, events))
 	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", events, pollID.String()))
 	_, err = mgr.broadcaster.Broadcast(context.TODO(), msg)
 	return err
@@ -349,11 +337,7 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(e tmEvents.Event) error {
 		return true
 	})
 
-	v, err := packEvents(chain, events)
-	if err != nil {
-		return err
-	}
-	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, pollID, v)
+	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, pollID, evmTypes.NewVoteEvents(chain, events))
 	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", events, pollID.String()))
 	_, err = mgr.broadcaster.Broadcast(context.TODO(), msg)
 	return err
@@ -846,16 +830,4 @@ func unpackMultisigTransferKeyEvent(log *geth.Log) ([]common.Address, *big.Int, 
 	}
 
 	return params[0].([]common.Address), params[1].(*big.Int), nil
-}
-
-func packEvents(chain nexus.ChainName, events []evmTypes.Event) (vote.Vote, error) {
-	var v vote.Vote
-
-	voteEvents, err := evmTypes.PackEvents(chain, events)
-	if err != nil {
-		return vote.Vote{}, sdkerrors.Wrap(err, "Pack events failed")
-	}
-	v.Result = voteEvents
-
-	return v, nil
 }

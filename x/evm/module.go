@@ -94,6 +94,8 @@ type AppModule struct {
 	nexus       types.Nexus
 	signer      types.Signer
 	snapshotter types.Snapshotter
+	staking     types.StakingKeeper
+	slashing    types.SlashingKeeper
 }
 
 // NewAppModule creates a new AppModule object
@@ -104,6 +106,8 @@ func NewAppModule(
 	signer types.Signer,
 	nexus types.Nexus,
 	snapshotter types.Snapshotter,
+	staking types.StakingKeeper,
+	slashing types.SlashingKeeper,
 	logger log.Logger) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
@@ -114,6 +118,8 @@ func NewAppModule(
 		signer:         signer,
 		nexus:          nexus,
 		snapshotter:    snapshotter,
+		staking:        staking,
+		slashing:       slashing,
 	}
 }
 
@@ -139,7 +145,7 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.Raw
 
 // Route returns the module's route
 func (am AppModule) Route() sdk.Route {
-	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper, am.tss, am.voter, am.signer, am.nexus, am.snapshotter))
+	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper, am.tss, am.voter, am.signer, am.nexus, am.snapshotter, am.staking, am.slashing))
 }
 
 // QuerierRoute returns this module's query route

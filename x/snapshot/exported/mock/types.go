@@ -4,6 +4,7 @@
 package mock
 
 import (
+	"github.com/axelarnetwork/axelar-core/utils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshotexported "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	tssexported "github.com/axelarnetwork/axelar-core/x/tss/exported"
@@ -383,6 +384,9 @@ var _ snapshotexported.Snapshotter = &SnapshotterMock{}
 //
 // 		// make and configure a mocked snapshotexported.Snapshotter
 // 		mockedSnapshotter := &SnapshotterMock{
+// 			CreateSnapshotFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, candidates []github_com_cosmos_cosmos_sdk_types.ValAddress, filterFunc func(snapshotexported.ValidatorI) bool, weightFunc func(consensusPower github_com_cosmos_cosmos_sdk_types.Uint) github_com_cosmos_cosmos_sdk_types.Uint, threshold utils.Threshold) (snapshotexported.Snapshot, error) {
+// 				panic("mock out the CreateSnapshot method")
+// 			},
 // 			GetLatestSnapshotFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (snapshotexported.Snapshot, bool) {
 // 				panic("mock out the GetLatestSnapshot method")
 // 			},
@@ -408,6 +412,9 @@ var _ snapshotexported.Snapshotter = &SnapshotterMock{}
 //
 // 	}
 type SnapshotterMock struct {
+	// CreateSnapshotFunc mocks the CreateSnapshot method.
+	CreateSnapshotFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, candidates []github_com_cosmos_cosmos_sdk_types.ValAddress, filterFunc func(snapshotexported.ValidatorI) bool, weightFunc func(consensusPower github_com_cosmos_cosmos_sdk_types.Uint) github_com_cosmos_cosmos_sdk_types.Uint, threshold utils.Threshold) (snapshotexported.Snapshot, error)
+
 	// GetLatestSnapshotFunc mocks the GetLatestSnapshot method.
 	GetLatestSnapshotFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (snapshotexported.Snapshot, bool)
 
@@ -428,6 +435,19 @@ type SnapshotterMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// CreateSnapshot holds details about calls to the CreateSnapshot method.
+		CreateSnapshot []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Candidates is the candidates argument value.
+			Candidates []github_com_cosmos_cosmos_sdk_types.ValAddress
+			// FilterFunc is the filterFunc argument value.
+			FilterFunc func(snapshotexported.ValidatorI) bool
+			// WeightFunc is the weightFunc argument value.
+			WeightFunc func(consensusPower github_com_cosmos_cosmos_sdk_types.Uint) github_com_cosmos_cosmos_sdk_types.Uint
+			// Threshold is the threshold argument value.
+			Threshold utils.Threshold
+		}
 		// GetLatestSnapshot holds details about calls to the GetLatestSnapshot method.
 		GetLatestSnapshot []struct {
 			// Ctx is the ctx argument value.
@@ -469,12 +489,60 @@ type SnapshotterMock struct {
 			KeyRequirement tssexported.KeyRequirement
 		}
 	}
+	lockCreateSnapshot           sync.RWMutex
 	lockGetLatestSnapshot        sync.RWMutex
 	lockGetOperator              sync.RWMutex
 	lockGetProxy                 sync.RWMutex
 	lockGetSnapshot              sync.RWMutex
 	lockGetValidatorIllegibility sync.RWMutex
 	lockTakeSnapshot             sync.RWMutex
+}
+
+// CreateSnapshot calls CreateSnapshotFunc.
+func (mock *SnapshotterMock) CreateSnapshot(ctx github_com_cosmos_cosmos_sdk_types.Context, candidates []github_com_cosmos_cosmos_sdk_types.ValAddress, filterFunc func(snapshotexported.ValidatorI) bool, weightFunc func(consensusPower github_com_cosmos_cosmos_sdk_types.Uint) github_com_cosmos_cosmos_sdk_types.Uint, threshold utils.Threshold) (snapshotexported.Snapshot, error) {
+	if mock.CreateSnapshotFunc == nil {
+		panic("SnapshotterMock.CreateSnapshotFunc: method is nil but Snapshotter.CreateSnapshot was just called")
+	}
+	callInfo := struct {
+		Ctx        github_com_cosmos_cosmos_sdk_types.Context
+		Candidates []github_com_cosmos_cosmos_sdk_types.ValAddress
+		FilterFunc func(snapshotexported.ValidatorI) bool
+		WeightFunc func(consensusPower github_com_cosmos_cosmos_sdk_types.Uint) github_com_cosmos_cosmos_sdk_types.Uint
+		Threshold  utils.Threshold
+	}{
+		Ctx:        ctx,
+		Candidates: candidates,
+		FilterFunc: filterFunc,
+		WeightFunc: weightFunc,
+		Threshold:  threshold,
+	}
+	mock.lockCreateSnapshot.Lock()
+	mock.calls.CreateSnapshot = append(mock.calls.CreateSnapshot, callInfo)
+	mock.lockCreateSnapshot.Unlock()
+	return mock.CreateSnapshotFunc(ctx, candidates, filterFunc, weightFunc, threshold)
+}
+
+// CreateSnapshotCalls gets all the calls that were made to CreateSnapshot.
+// Check the length with:
+//     len(mockedSnapshotter.CreateSnapshotCalls())
+func (mock *SnapshotterMock) CreateSnapshotCalls() []struct {
+	Ctx        github_com_cosmos_cosmos_sdk_types.Context
+	Candidates []github_com_cosmos_cosmos_sdk_types.ValAddress
+	FilterFunc func(snapshotexported.ValidatorI) bool
+	WeightFunc func(consensusPower github_com_cosmos_cosmos_sdk_types.Uint) github_com_cosmos_cosmos_sdk_types.Uint
+	Threshold  utils.Threshold
+} {
+	var calls []struct {
+		Ctx        github_com_cosmos_cosmos_sdk_types.Context
+		Candidates []github_com_cosmos_cosmos_sdk_types.ValAddress
+		FilterFunc func(snapshotexported.ValidatorI) bool
+		WeightFunc func(consensusPower github_com_cosmos_cosmos_sdk_types.Uint) github_com_cosmos_cosmos_sdk_types.Uint
+		Threshold  utils.Threshold
+	}
+	mock.lockCreateSnapshot.RLock()
+	calls = mock.calls.CreateSnapshot
+	mock.lockCreateSnapshot.RUnlock()
+	return calls
 }
 
 // GetLatestSnapshot calls GetLatestSnapshotFunc.
