@@ -245,6 +245,11 @@
 - [axelar/multisig/exported/v1beta1/types.proto](#axelar/multisig/exported/v1beta1/types.proto)
     - [KeygenState](#axelar.multisig.exported.v1beta1.KeygenState)
   
+- [axelar/multisig/v1beta1/events.proto](#axelar/multisig/v1beta1/events.proto)
+    - [Keygen](#axelar.multisig.v1beta1.Keygen)
+  
+    - [Keygen.Action](#axelar.multisig.v1beta1.Keygen.Action)
+  
 - [axelar/multisig/v1beta1/params.proto](#axelar/multisig/v1beta1/params.proto)
     - [Params](#axelar.multisig.v1beta1.Params)
   
@@ -3817,6 +3822,54 @@ QueryService defines the gRPC querier service.
 | KEYGEN_STATE_UNSPECIFIED | 0 |  |
 | KEYGEN_STATE_PENDING | 1 |  |
 | KEYGEN_STATE_COMPLETED | 2 |  |
+
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="axelar/multisig/v1beta1/events.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/multisig/v1beta1/events.proto
+
+
+
+<a name="axelar.multisig.v1beta1.Keygen"></a>
+
+### Keygen
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `module` | [string](#string) |  |  |
+| `action` | [Keygen.Action](#axelar.multisig.v1beta1.Keygen.Action) |  |  |
+| `key_id` | [string](#string) |  |  |
+| `participants` | [bytes](#bytes) | repeated |  |
+
+
+
+
+
+ <!-- end messages -->
+
+
+<a name="axelar.multisig.v1beta1.Keygen.Action"></a>
+
+### Keygen.Action
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| ACTION_UNSPECIFIED | 0 |  |
+| ACTION_STARTED | 1 |  |
+| ACTION_EXPIRED | 2 |  |
+| ACTION_COMPLETED | 3 |  |
 
 
  <!-- end enums -->

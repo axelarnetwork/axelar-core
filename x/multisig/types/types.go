@@ -1,8 +1,10 @@
 package types
 
 import (
+	"bytes"
 	"encoding/hex"
 	"fmt"
+	"sort"
 
 	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -169,7 +171,7 @@ func (m *KeygenSession) AddKey(blockHeight int64, participant sdk.ValAddress, pu
 	m.Key.PubKeys[participant.String()] = pubKey
 	m.IsPubKeyReceived[pubKey.String()] = true
 
-	if Key(m.Key).GetTotalWeight().GTE(m.Key.Snapshot.CalculateMinPassingWeight(m.KeygenThreshold)) {
+	if Key(m.Key).GetParticipantsWeight().GTE(m.Key.Snapshot.CalculateMinPassingWeight(m.KeygenThreshold)) {
 		m.CompletedAt = blockHeight
 		m.State = exported.Completed
 	}
@@ -202,8 +204,25 @@ func (m KeygenSession) Result() (Key, error) {
 	return key, nil
 }
 
-// GetTotalWeight returns the total weight of all participants who have submitted their public keys
-func (m Key) GetTotalWeight() sdk.Uint {
+// GetParticipants returns the participants of the given key
+func (m Key) GetParticipants() []sdk.ValAddress {
+	participants := make([]sdk.ValAddress, 0, len(m.PubKeys))
+	for address := range m.PubKeys {
+		participant, err := sdk.ValAddressFromBech32(address)
+		if err != nil {
+			panic(err)
+		}
+
+		participants = append(participants, participant)
+	}
+
+	sort.SliceStable(participants, func(i, j int) bool { return bytes.Compare(participants[i], participants[j]) < 0 })
+
+	return participants
+}
+
+// GetParticipantsWeight returns the total weight of all participants who have submitted their public keys
+func (m Key) GetParticipantsWeight() sdk.Uint {
 	totalWeight := sdk.ZeroUint()
 	for address := range m.PubKeys {
 		p, err := sdk.ValAddressFromBech32(address)
@@ -223,7 +242,7 @@ func (m Key) ValidateBasic() error {
 		return err
 	}
 
-	if m.GetTotalWeight().LT(m.Snapshot.CalculateMinPassingWeight(m.SigningThreshold)) {
+	if m.GetParticipantsWeight().LT(m.Snapshot.CalculateMinPassingWeight(m.SigningThreshold)) {
 		return fmt.Errorf("invalid signing threshold")
 	}
 

@@ -1,0 +1,29 @@
+syntax = "proto3";
+package axelar.multisig.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/multisig/types";
+
+import "gogoproto/gogo.proto";
+
+message Keygen {
+  enum Action {
+    option (gogoproto.goproto_enum_prefix) = false;
+    option (gogoproto.goproto_enum_stringer) = true;
+
+    ACTION_UNSPECIFIED = 0 [ (gogoproto.enumvalue_customname) = "Unspecified" ];
+    ACTION_STARTED = 1 [ (gogoproto.enumvalue_customname) = "Started" ];
+    ACTION_EXPIRED = 2 [ (gogoproto.enumvalue_customname) = "Expired" ];
+    ACTION_COMPLETED = 3 [ (gogoproto.enumvalue_customname) = "Completed" ];
+  }
+
+  string module = 1;
+  Action action = 2;
+  string key_id = 3 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
+  ];
+  repeated bytes participants = 4
+      [ (gogoproto.casttype) =
+            "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
+}

@@ -2,9 +2,12 @@ package keeper
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
+	"github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
-	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/utils/slices"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -31,11 +34,11 @@ func NewMsgServerImpl(keeper Keeper, snapshotter types.Snapshotter, staker types
 	}
 }
 
-func (m msgServer) StartKeygen(c context.Context, request *types.StartKeygenRequest) (*types.StartKeygenResponse, error) {
+func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest) (*types.StartKeygenResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	candidates := slices.Map(m.staker.GetBondedValidatorsByPower(ctx), stakingtypes.Validator.GetOperator)
-	filter := func(v exported.ValidatorI) bool {
+	candidates := slices.Map(s.staker.GetBondedValidatorsByPower(ctx), stakingtypes.Validator.GetOperator)
+	filter := func(v snapshot.ValidatorI) bool {
 		if v.IsJailed() {
 			return false
 		}
@@ -45,23 +48,19 @@ func (m msgServer) StartKeygen(c context.Context, request *types.StartKeygenRequ
 			return false
 		}
 
-		if m.slasher.IsTombstoned(ctx, consAdd) {
+		if s.slasher.IsTombstoned(ctx, consAdd) {
 			return false
 		}
 
-		_, isActive := m.snapshotter.GetProxy(ctx, v.GetOperator())
-		if !isActive {
-			return false
-		}
-
-		return true
+		_, isActive := s.snapshotter.GetProxy(ctx, v.GetOperator())
+		return isActive
 	}
-	snapshot, err := m.snapshotter.CreateSnapshot(ctx, candidates, filter, exported.QuadraticWeightFunc, m.GetParams(ctx).KeygenThreshold)
+	snapshot, err := s.snapshotter.CreateSnapshot(ctx, candidates, filter, snapshot.QuadraticWeightFunc, s.GetParams(ctx).KeygenThreshold)
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "unable to create snapshot for keygen")
 	}
 
-	err = m.CreateKeygenSession(ctx, request.KeyID, snapshot)
+	err = s.CreateKeygenSession(ctx, req.KeyID, snapshot)
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "unable to start keygen")
 	}
@@ -69,7 +68,44 @@ func (m msgServer) StartKeygen(c context.Context, request *types.StartKeygenRequ
 	return &types.StartKeygenResponse{}, nil
 }
 
-func (m msgServer) SubmitPubKey(ctx context.Context, request *types.SubmitPubKeyRequest) (*types.SubmitPubKeyResponse, error) {
-	// TODO implement me
-	panic("implement me")
+func (s msgServer) SubmitPubKey(c context.Context, req *types.SubmitPubKeyRequest) (*types.SubmitPubKeyResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	keygenSession, ok := s.GetKeygenSession(ctx, req.KeyID)
+	if !ok {
+		return nil, fmt.Errorf("keygen session %s not found", req.KeyID)
+	}
+
+	participant := s.snapshotter.GetOperator(ctx, req.Sender)
+	if participant.Empty() {
+		return nil, fmt.Errorf("sender %s is not a registered proxy", req.Sender.String())
+	}
+
+	if err := keygenSession.AddKey(ctx.BlockHeight(), participant, req.PubKey); err != nil {
+		return nil, sdkerrors.Wrap(err, "unable to add public key for keygen")
+	}
+
+	if keygenSession.State != exported.Completed {
+		return &types.SubmitPubKeyResponse{}, nil
+	}
+
+	key, err := keygenSession.Result()
+	if err != nil {
+		return nil, sdkerrors.Wrap(err, "unable to get keygen result")
+	}
+
+	s.DeleteKeygenSession(ctx, keygenSession.GetKeyID())
+	s.SetKey(ctx, key)
+
+	participants := key.GetParticipants()
+	ctx.EventManager().EmitTypedEvent(types.NewKeygen(types.Completed, key.ID, participants))
+	s.Logger(ctx).Info("started keygen session",
+		"key_id", key.ID,
+		"participants", strings.Join(slices.Map(participants, sdk.ValAddress.String), ","),
+		"participants_weight", key.GetParticipantsWeight().String(),
+		"bonded_weight", key.Snapshot.BondedWeight.String(),
+		"signing_threshold", key.SigningThreshold.String(),
+	)
+
+	return &types.SubmitPubKeyResponse{}, nil
 }

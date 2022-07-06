@@ -243,11 +243,11 @@ func TestKey(t *testing.T) {
 		key = typestestutils.Key()
 	})
 
-	t.Run("GetTotalWeight", func(t *testing.T) {
+	t.Run("GetParticipantsWeight", func(t *testing.T) {
 		givenRandomKey.
 			When("all participants have submitted their public key", func() {}).
-			Then("should return correct total weight", func(t *testing.T) {
-				assert.Equal(t, key.Snapshot.GetParticipantsWeight(), key.GetTotalWeight())
+			Then("should return correct participants weight", func(t *testing.T) {
+				assert.Equal(t, key.Snapshot.GetParticipantsWeight(), key.GetParticipantsWeight())
 			}).
 			Run(t, 5)
 	})

@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -12,6 +13,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	"github.com/axelarnetwork/utils/slices"
 )
 
 var (
@@ -62,7 +64,34 @@ func (k Keeper) CreateKeygenSession(ctx sdk.Context, id exported.KeyID, snapshot
 		return fmt.Errorf("key %s already set", id)
 	}
 
-	panic("TODO")
+	params := k.GetParams(ctx)
+
+	expiresAt := ctx.BlockHeight() + params.KeygenTimeout
+	keygenSession := types.NewKeygenSession(id, params.KeygenThreshold, params.SigningThreshold, snapshot, expiresAt)
+	if err := keygenSession.ValidateBasic(); err != nil {
+		return err
+	}
+	k.setKeygenSession(ctx, keygenSession)
+
+	participants := snapshot.GetParticipantAddresses()
+	err := ctx.EventManager().EmitTypedEvent(
+		types.NewKeygen(types.Started, id, participants),
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	k.Logger(ctx).Info("started keygen session",
+		"key_id", id,
+		"participants", strings.Join(slices.Map(participants, sdk.ValAddress.String), ","),
+		"participants_weight", snapshot.GetParticipantsWeight().String(),
+		"bonded_weight", snapshot.BondedWeight.String(),
+		"keygen_threshold", params.KeygenThreshold.String(),
+		"signing_threshold", params.SigningThreshold.String(),
+		"expires_at", expiresAt,
+	)
+
+	return nil
 }
 
 // GetKeygenSession returns the keygen session with the given key ID

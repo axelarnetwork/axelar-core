@@ -16,6 +16,7 @@ type Snapshotter interface {
 		threshold utils.Threshold,
 	) (exported.Snapshot, error)
 	GetProxy(ctx sdk.Context, operator sdk.ValAddress) (addr sdk.AccAddress, active bool)
+	GetOperator(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress
 }
 
 type Staker interface {
