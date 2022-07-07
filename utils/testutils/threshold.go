@@ -7,5 +7,5 @@ import (
 
 // RandThreshold returns a random Threshold
 func RandThreshold() utils.Threshold {
-	return utils.NewThreshold(rand.I64Between(1, 1001), 1000)
+	return utils.NewThreshold(rand.I64Between(1, 101), 100)
 }
