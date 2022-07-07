@@ -111,6 +111,7 @@ func TestMsgServer(t *testing.T) {
 					_, err := msgServer.StartKeygen(sdk.WrapSDKContext(ctx), req)
 					assert.Error(t, err)
 				}),
+
 			whenSenderIsProxy.
 				When("key exists", func() {
 					k.SetKey(ctx, types.Key{

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
 	"github.com/axelarnetwork/utils/funcs"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -64,17 +63,6 @@ func (s msgServer) SubmitPubKey(c context.Context, req *types.SubmitPubKeyReques
 	s.setKeygenSession(ctx, keygenSession)
 
 	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewPubKeySubmitted(req.KeyID, participant, req.PubKey)))
-
-	if keygenSession.State != exported.Completed {
-		return &types.SubmitPubKeyResponse{}, nil
-	}
-
-	key, err := keygenSession.Result()
-	if err != nil {
-		return nil, sdkerrors.Wrap(err, "unable to get keygen result")
-	}
-
-	s.SetKey(ctx, key)
 
 	return &types.SubmitPubKeyResponse{}, nil
 }
