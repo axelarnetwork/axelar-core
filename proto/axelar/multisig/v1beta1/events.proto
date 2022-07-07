@@ -34,6 +34,6 @@ message PubKeySubmitted {
         "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
   ];
   bytes participant = 3 [ (gogoproto.casttype) =
-            "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
+                              "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
   bytes pub_key = 4 [ (gogoproto.casttype) = "PublicKey" ];
 }

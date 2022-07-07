@@ -4,6 +4,12 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/btcsuite/btcd/btcec/v2"
+	"github.com/btcsuite/btcd/btcec/v2/ecdsa"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	params "github.com/cosmos/cosmos-sdk/x/params/types"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
@@ -18,11 +24,6 @@ import (
 	"github.com/axelarnetwork/utils/slices"
 	. "github.com/axelarnetwork/utils/test"
 	"github.com/axelarnetwork/utils/test/rand"
-	"github.com/btcsuite/btcd/btcec/v2"
-	"github.com/btcsuite/btcd/btcec/v2/ecdsa"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	params "github.com/cosmos/cosmos-sdk/x/params/types"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestMsgServer(t *testing.T) {
@@ -42,7 +43,7 @@ func TestMsgServer(t *testing.T) {
 		snapshotter.GetOperatorFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return rand.Sample(validators, 1)[0].Address }
 	})
 	keySessionExists := When("a key session exists", func() {
-		keyID = exported.KeyID(rand.Str(5))
+		keyID = exported.KeyID(rand.HexStr(5))
 		_, err := msgServer.StartKeygen(sdk.WrapSDKContext(ctx), types.NewStartKeygenRequest(rand.AccAddr(), keyID))
 		assert.NoError(t, err)
 	})
@@ -99,7 +100,7 @@ func TestMsgServer(t *testing.T) {
 					}
 				}).
 				Then("keygen fails", func(t *testing.T) {
-					req := types.NewStartKeygenRequest(rand.AccAddr(), exported.KeyID(rand.Str(5)))
+					req := types.NewStartKeygenRequest(rand.AccAddr(), exported.KeyID(rand.HexStr(5)))
 					_, err := msgServer.StartKeygen(sdk.WrapSDKContext(ctx), req)
 					assert.Error(t, err)
 				}),

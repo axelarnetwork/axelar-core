@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/axelarnetwork/axelar-core/x/snapshot/types/mock"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	slashingTypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
@@ -20,6 +19,7 @@ import (
 	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
+	"github.com/axelarnetwork/axelar-core/x/snapshot/types/mock"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 	tssMock "github.com/axelarnetwork/axelar-core/x/tss/types/mock"

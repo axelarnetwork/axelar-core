@@ -3,7 +3,6 @@ package keeper_test
 import (
 	"testing"
 
-	mock2 "github.com/axelarnetwork/axelar-core/x/snapshot/types/mock"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramsTypes "github.com/cosmos/cosmos-sdk/x/params/types"
@@ -16,6 +15,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	mock2 "github.com/axelarnetwork/axelar-core/x/snapshot/types/mock"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/keeper"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"

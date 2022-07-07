@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/axelarnetwork/axelar-core/x/multisig/types"
-	"github.com/axelarnetwork/utils/funcs"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	"github.com/axelarnetwork/axelar-core/x/multisig/types"
+	"github.com/axelarnetwork/utils/funcs"
 )
 
 var _ types.MsgServiceServer = msgServer{}

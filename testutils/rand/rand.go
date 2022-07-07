@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	rand2 "github.com/axelarnetwork/utils/test/rand"
 	"github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/address"
@@ -13,6 +12,8 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	"golang.org/x/text/unicode/norm"
+
+	rand2 "github.com/axelarnetwork/utils/test/rand"
 )
 
 const (
