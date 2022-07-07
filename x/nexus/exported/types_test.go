@@ -15,7 +15,7 @@ func TestTransferStateFromString(t *testing.T) {
 	assert.Equal(t, exported.TRANSFER_STATE_UNSPECIFIED, exported.TransferStateFromString(rand.StrBetween(1, 100)))
 }
 
-func TestChainNAme(t *testing.T) {
+func TestChainName(t *testing.T) {
 	invalidName := exported.ChainName(rand.NormalizedStr(exported.ChainNameLengthMax + 1))
 	assert.Error(t, invalidName.Validate())
 
