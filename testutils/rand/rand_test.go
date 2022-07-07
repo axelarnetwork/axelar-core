@@ -101,7 +101,7 @@ func TestRandDistinctStringGen_Take_DifferentLengths(t *testing.T) {
 }
 
 func TestRandDistinctStringGen_Take_SameLength(t *testing.T) {
-	g := Strings(10, 10).Distinct()
+	g := Strings(10, 11).Distinct()
 
 	previous := map[string]struct{}{}
 	for _, s := range g.Take(1000) {

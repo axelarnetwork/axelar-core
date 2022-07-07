@@ -44,12 +44,12 @@ func NormalizeString(str string) string {
 
 // NormalizedStr creates a random normalized string of the provided length
 func NormalizedStr(len int) string {
-	return NormalizedStrBetween(len, len)
+	return NormalizedStrBetween(len, len+1)
 }
 
-// NormalizedStrBetween creates a random normalized string in the provided range
-func NormalizedStrBetween(min, max int) string {
-	return strings.ReplaceAll(NormalizeString(StrBetween(min, max)), defaultDelimiter, "-")
+// NormalizedStrBetween creates a random normalized string in the provided range (exclusive uper limit)
+func NormalizedStrBetween(min, shorterThan int) string {
+	return strings.ReplaceAll(NormalizeString(StrBetween(min, shorterThan)), defaultDelimiter, "-")
 }
 
 // I64Gen represents an random integer generator to generate a sequence of integers with the same properties.
@@ -105,9 +105,9 @@ func Bytes(len int) []byte {
 	return bz
 }
 
-// BytesBetween returns a random byte slice of random length in the given limits (inclusive)
-func BytesBetween(minLength int, maxLength int) []byte {
-	len := int(I64Between(int64(minLength), int64(maxLength+1)))
+// BytesBetween returns a random byte slice of random length in the given limits (upper exclusive)
+func BytesBetween(lower int, upper int) []byte {
+	len := int(I64Between(int64(lower), int64(upper)))
 	bz := make([]byte, len)
 	for i, b := range I64GenBetween(0, 256).Take(len) {
 		bz[i] = byte(b)
@@ -203,20 +203,20 @@ type StringGen struct {
 	charPicker I64Gen
 }
 
-// Strings returns a random string generator that produces strings from the default alphabet of random length in the given limits (inclusive)
-func Strings(minLength int, maxLength int) StringGen {
+// Strings returns a random string generator that produces strings from the default alphabet of random length in the given limits (upper limit exclusive)
+func Strings(minLength int, shorterThan int) StringGen {
 	alphabet := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.:")
 	return StringGen{
-		lengthGen:  I64GenBetween(int64(minLength), int64(maxLength+1)),
+		lengthGen:  I64GenBetween(int64(minLength), int64(shorterThan)),
 		alphabet:   alphabet,
 		charPicker: I64GenBetween(0, int64(len(alphabet))),
 	}
 }
 
-// Denom returns a random denom string
+// Denom returns a random denom string (max exclusive)
 func Denom(min, max int) string {
 	// first letter must be an ascii alphabet
-	return Strings(1, 1).WithAlphabet([]rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")).Next() + Strings(min, max).WithAlphabet([]rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-/")).Next()
+	return Strings(1, 2).WithAlphabet([]rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")).Next() + Strings(min, max).WithAlphabet([]rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-/")).Next()
 }
 
 // HexStrings returns a random hex string generator that produces hex strings with given length
@@ -230,15 +230,15 @@ func HexStrings(length int) StringGen {
 	}
 }
 
-// StrBetween returns a random string of random length in the given limits (inclusive)
-func StrBetween(minLength int, maxLength int) string {
-	g := Strings(minLength, maxLength)
+// StrBetween returns a random string of random length in the given limits (upper exclusive)
+func StrBetween(minLength int, shorterThan int) string {
+	g := Strings(minLength, shorterThan)
 	return g.Next()
 }
 
 // Str returns a random string of given length
 func Str(len int) string {
-	return StrBetween(len, len)
+	return StrBetween(len, len+1)
 }
 
 // HexStr returns a random hex string of given length
@@ -246,7 +246,7 @@ func HexStr(len int) string {
 	return HexStrings(len).Next()
 }
 
-// WithAlphabet returns a random string generator that produces strings from the given alphabet of length between the given limits (inclusive)
+// WithAlphabet returns a random string generator that produces strings from the given alphabet
 func (g StringGen) WithAlphabet(alphabet []rune) StringGen {
 	return StringGen{
 		lengthGen:  g.lengthGen,
