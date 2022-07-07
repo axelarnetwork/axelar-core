@@ -32,4 +32,5 @@ message KeygenSession {
   int64 expires_at = 4;
   int64 completed_at = 5;
   map<string, bool> is_pub_key_received = 6;
+  int64 grace_period = 7;
 }

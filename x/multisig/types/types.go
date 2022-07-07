@@ -96,7 +96,7 @@ func validateBasicPendingKey(key Key) error {
 }
 
 // NewKeygenSession is the contructor for keygen session
-func NewKeygenSession(id exported.KeyID, keygenThreshold utils.Threshold, signingThreshold utils.Threshold, snapshot snapshot.Snapshot, expiresAt int64) KeygenSession {
+func NewKeygenSession(id exported.KeyID, keygenThreshold utils.Threshold, signingThreshold utils.Threshold, snapshot snapshot.Snapshot, expiresAt int64, gracePeriod int64) KeygenSession {
 	return KeygenSession{
 		Key: Key{
 			ID:               id,
@@ -106,6 +106,7 @@ func NewKeygenSession(id exported.KeyID, keygenThreshold utils.Threshold, signin
 		State:           exported.Pending,
 		KeygenThreshold: keygenThreshold,
 		ExpiresAt:       expiresAt,
+		GracePeriod:     gracePeriod,
 	}
 }
 
@@ -153,7 +154,7 @@ func (m *KeygenSession) AddKey(blockHeight int64, participant sdk.ValAddress, pu
 		m.IsPubKeyReceived = make(map[string]bool)
 	}
 
-	if blockHeight >= m.ExpiresAt {
+	if m.isExpired(blockHeight) {
 		return fmt.Errorf("keygen session %s has expired", m.GetKeyID())
 	}
 
@@ -169,10 +170,13 @@ func (m *KeygenSession) AddKey(blockHeight int64, participant sdk.ValAddress, pu
 		return fmt.Errorf("duplicate public key received")
 	}
 
-	m.Key.PubKeys[participant.String()] = pubKey
-	m.IsPubKeyReceived[pubKey.String()] = true
+	if m.State == exported.Completed && !m.isWithinGracePeriod(blockHeight) {
+		return fmt.Errorf("keygen session %s has closed", m.GetKeyID())
+	}
 
-	if Key(m.Key).GetParticipantsWeight().GTE(m.Key.Snapshot.CalculateMinPassingWeight(m.KeygenThreshold)) {
+	m.addKey(participant, pubKey)
+
+	if m.State != exported.Completed && Key(m.Key).GetParticipantsWeight().GTE(m.Key.Snapshot.CalculateMinPassingWeight(m.KeygenThreshold)) {
 		m.CompletedAt = blockHeight
 		m.State = exported.Completed
 	}
@@ -201,6 +205,19 @@ func (m KeygenSession) Result() (Key, error) {
 	funcs.MustNoErr(key.ValidateBasic())
 
 	return key, nil
+}
+
+func (m KeygenSession) isWithinGracePeriod(blockHeight int64) bool {
+	return blockHeight <= m.CompletedAt+m.GracePeriod
+}
+
+func (m KeygenSession) isExpired(blockHeight int64) bool {
+	return blockHeight >= m.ExpiresAt
+}
+
+func (m *KeygenSession) addKey(participant sdk.ValAddress, pubKey PublicKey) {
+	m.Key.PubKeys[participant.String()] = pubKey
+	m.IsPubKeyReceived[pubKey.String()] = true
 }
 
 // GetParticipants returns the participants of the given key

@@ -14,4 +14,5 @@ message Params {
   utils.v1beta1.Threshold signing_threshold = 2
       [ (gogoproto.nullable) = false ];
   int64 keygen_timeout = 3;
+  int64 keygen_grace_period = 4;
 }
