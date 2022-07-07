@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -36,6 +37,10 @@ type msgServer struct {
 
 // TODO: make this a param when we can easily switch between different kinds of keys and different settings
 var keyRole = tss.SecondaryKey
+
+const (
+	voteCostPerMaintainer = uint64(120000)
+)
 
 // NewMsgServerImpl returns an implementation of the evm MsgServiceServer interface
 // for the provided Keeper.
@@ -331,6 +336,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 // ConfirmDeposit handles deposit confirmations
 func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRequest) (*types.ConfirmDepositResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
+
 	chain, ok := s.nexus.GetChain(ctx, req.Chain)
 	if !ok {
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
@@ -342,6 +348,9 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 
 	keeper := s.ForChain(chain.Name)
 
+	chainMaintainers := s.nexus.GetChainMaintainers(ctx, chain)
+	ctx.GasMeter().ConsumeGas(voteCostPerMaintainer*storetypes.Gas(len(chainMaintainers)), "confirm ERC20 deposit")
+
 	burnerInfo := keeper.GetBurnerInfo(ctx, req.BurnerAddress)
 	if burnerInfo == nil {
 		return nil, fmt.Errorf("no burner info found for address %s", req.BurnerAddress.Hex())
@@ -350,7 +359,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 	params := keeper.GetParams(ctx)
 	snapshot, err := s.snapshotter.CreateSnapshot(
 		ctx,
-		s.nexus.GetChainMaintainers(ctx, chain),
+		chainMaintainers,
 		excludeJailedOrTombstoned(ctx, s.slashing),
 		snapshot.QuadraticWeightFunc,
 		params.VotingThreshold,
