@@ -18,7 +18,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	tmLog "github.com/tendermint/tendermint/libs/log"
 
-	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm/rpc"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/parse"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
@@ -46,12 +46,12 @@ type Mgr struct {
 	cliCtx      sdkClient.Context
 	logger      tmLog.Logger
 	rpcs        map[string]rpc.Client
-	broadcaster types.Broadcaster
+	broadcaster broadcast.Broadcaster
 	cdc         *codec.LegacyAmino
 }
 
 // NewMgr returns a new Mgr instance
-func NewMgr(rpcs map[string]rpc.Client, cliCtx sdkClient.Context, broadcaster types.Broadcaster, logger tmLog.Logger, cdc *codec.LegacyAmino) *Mgr {
+func NewMgr(rpcs map[string]rpc.Client, cliCtx sdkClient.Context, broadcaster broadcast.Broadcaster, logger tmLog.Logger, cdc *codec.LegacyAmino) *Mgr {
 	return &Mgr{
 		rpcs:        rpcs,
 		cliCtx:      cliCtx,
