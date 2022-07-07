@@ -172,6 +172,8 @@ github.com/axelarnetwork/utils v0.0.0-20220630195530-b10d5cdb0e74 h1:4OCtLTNLKcF
 github.com/axelarnetwork/utils v0.0.0-20220630195530-b10d5cdb0e74/go.mod h1:7l+gvhurXux3THcqHo7k7XR40oWNqVxnGlbKw52MrMI=
 github.com/axelarnetwork/utils v0.0.0-20220630202427-021188fdc4ee h1:QkVN85sHknHEO5oHXtYPL5HKpL9X8I51vN9rGJRyhrk=
 github.com/axelarnetwork/utils v0.0.0-20220630202427-021188fdc4ee/go.mod h1:7l+gvhurXux3THcqHo7k7XR40oWNqVxnGlbKw52MrMI=
+github.com/axelarnetwork/utils v0.0.0-20220707171954-f82c09fa59c7 h1:SR0qejKT0H0Q/nM7ncC3d7/NbXv2KP0Rg8l5TmXcPtc=
+github.com/axelarnetwork/utils v0.0.0-20220707171954-f82c09fa59c7/go.mod h1:7l+gvhurXux3THcqHo7k7XR40oWNqVxnGlbKw52MrMI=
 github.com/benbjohnson/clock v1.1.0/go.mod h1:J11/hYXuz8f4ySSvYwY0FKfm+ezbsZBKZxNJlLklBHA=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
 github.com/beorn7/perks v1.0.0/go.mod h1:KWe93zE9D1o94FZ5RNwFwVgaQK1VOXiVxmqh+CedLV8=
