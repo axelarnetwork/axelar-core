@@ -18,7 +18,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	tmLog "github.com/tendermint/tendermint/libs/log"
 
-	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm/rpc"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/parse"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
@@ -46,12 +46,12 @@ type Mgr struct {
 	cliCtx      sdkClient.Context
 	logger      tmLog.Logger
 	rpcs        map[string]rpc.Client
-	broadcaster types.Broadcaster
+	broadcaster broadcast.Broadcaster
 	cdc         *codec.LegacyAmino
 }
 
 // NewMgr returns a new Mgr instance
-func NewMgr(rpcs map[string]rpc.Client, cliCtx sdkClient.Context, broadcaster types.Broadcaster, logger tmLog.Logger, cdc *codec.LegacyAmino) *Mgr {
+func NewMgr(rpcs map[string]rpc.Client, cliCtx sdkClient.Context, broadcaster broadcast.Broadcaster, logger tmLog.Logger, cdc *codec.LegacyAmino) *Mgr {
 	return &Mgr{
 		rpcs:        rpcs,
 		cliCtx:      cliCtx,
@@ -117,11 +117,7 @@ func (mgr Mgr) ProcessDepositConfirmation(e tmEvents.Event) (err error) {
 		return true
 	})
 
-	v, err := packEvents(chain, events)
-	if err != nil {
-		return err
-	}
-	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, pollID, v)
+	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, pollID, evmTypes.NewVoteEvents(chain, events))
 	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", events, pollID.String()))
 	_, err = mgr.broadcaster.Broadcast(context.TODO(), msg)
 	return err
@@ -173,11 +169,7 @@ func (mgr Mgr) ProcessTokenConfirmation(e tmEvents.Event) error {
 		return true
 	})
 
-	v, err := packEvents(chain, events)
-	if err != nil {
-		return err
-	}
-	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, pollID, v)
+	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, pollID, evmTypes.NewVoteEvents(chain, events))
 	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", events, pollID.String()))
 	_, err = mgr.broadcaster.Broadcast(context.TODO(), msg)
 	return err
@@ -248,11 +240,7 @@ func (mgr Mgr) ProcessTransferKeyConfirmation(e tmEvents.Event) (err error) {
 		return true
 	})
 
-	v, err := packEvents(chain, events)
-	if err != nil {
-		return err
-	}
-	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, pollID, v)
+	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, pollID, evmTypes.NewVoteEvents(chain, events))
 	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", events, pollID.String()))
 	_, err = mgr.broadcaster.Broadcast(context.TODO(), msg)
 	return err
@@ -349,11 +337,7 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(e tmEvents.Event) error {
 		return true
 	})
 
-	v, err := packEvents(chain, events)
-	if err != nil {
-		return err
-	}
-	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, pollID, v)
+	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, pollID, evmTypes.NewVoteEvents(chain, events))
 	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", events, pollID.String()))
 	_, err = mgr.broadcaster.Broadcast(context.TODO(), msg)
 	return err
@@ -846,16 +830,4 @@ func unpackMultisigTransferKeyEvent(log *geth.Log) ([]common.Address, *big.Int, 
 	}
 
 	return params[0].([]common.Address), params[1].(*big.Int), nil
-}
-
-func packEvents(chain nexus.ChainName, events []evmTypes.Event) (vote.Vote, error) {
-	var v vote.Vote
-
-	voteEvents, err := evmTypes.PackEvents(chain, events)
-	if err != nil {
-		return vote.Vote{}, sdkerrors.Wrap(err, "Pack events failed")
-	}
-	v.Result = voteEvents
-
-	return v, nil
 }

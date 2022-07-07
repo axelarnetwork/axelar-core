@@ -302,6 +302,7 @@ func (m Snapshot) GetValidator(address sdk.ValAddress) (Validator, bool) {
 
 // Snapshotter represents the interface for the snapshot module's functionality
 type Snapshotter interface {
+	CreateSnapshot(ctx sdk.Context, candidates []sdk.ValAddress, filterFunc func(ValidatorI) bool, weightFunc func(consensusPower sdk.Uint) sdk.Uint, threshold utils.Threshold) (Snapshot, error)
 	GetLatestSnapshot(ctx sdk.Context) (Snapshot, bool)
 	GetSnapshot(ctx sdk.Context, seqNo int64) (Snapshot, bool)
 	TakeSnapshot(ctx sdk.Context, keyRequirement tss.KeyRequirement) (Snapshot, error)

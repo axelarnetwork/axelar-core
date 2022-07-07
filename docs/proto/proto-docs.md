@@ -202,9 +202,6 @@
 - [axelar/vote/exported/v1beta1/types.proto](#axelar/vote/exported/v1beta1/types.proto)
     - [PollKey](#axelar.vote.exported.v1beta1.PollKey)
     - [PollMetadata](#axelar.vote.exported.v1beta1.PollMetadata)
-    - [PollModuleMetadata](#axelar.vote.exported.v1beta1.PollModuleMetadata)
-    - [Vote](#axelar.vote.exported.v1beta1.Vote)
-    - [Voter](#axelar.vote.exported.v1beta1.Voter)
   
     - [PollState](#axelar.vote.exported.v1beta1.PollState)
   
@@ -460,11 +457,18 @@
     - [MsgService](#axelar.tss.v1beta1.MsgService)
     - [QueryService](#axelar.tss.v1beta1.QueryService)
   
+- [axelar/vote/v1beta1/events.proto](#axelar/vote/v1beta1/events.proto)
+    - [Vote](#axelar.vote.v1beta1.Vote)
+  
 - [axelar/vote/v1beta1/params.proto](#axelar/vote/v1beta1/params.proto)
     - [Params](#axelar.vote.v1beta1.Params)
   
 - [axelar/vote/v1beta1/genesis.proto](#axelar/vote/v1beta1/genesis.proto)
     - [GenesisState](#axelar.vote.v1beta1.GenesisState)
+  
+- [axelar/vote/v1beta1/types.proto](#axelar/vote/v1beta1/types.proto)
+    - [TalliedVote](#axelar.vote.v1beta1.TalliedVote)
+    - [TalliedVote.IsVoterLateEntry](#axelar.vote.v1beta1.TalliedVote.IsVoterLateEntry)
   
 - [axelar/vote/v1beta1/tx.proto](#axelar/vote/v1beta1/tx.proto)
     - [VoteRequest](#axelar.vote.v1beta1.VoteRequest)
@@ -472,10 +476,6 @@
   
 - [axelar/vote/v1beta1/service.proto](#axelar/vote/v1beta1/service.proto)
     - [MsgService](#axelar.vote.v1beta1.MsgService)
-  
-- [axelar/vote/v1beta1/types.proto](#axelar/vote/v1beta1/types.proto)
-    - [TalliedVote](#axelar.vote.v1beta1.TalliedVote)
-    - [VoteRecord](#axelar.vote.v1beta1.VoteRecord)
   
 - [Scalar Value Types](#scalar-value-types)
 
@@ -3240,66 +3240,18 @@ vote can have any data type
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `key` | [PollKey](#axelar.vote.exported.v1beta1.PollKey) |  | **Deprecated.**  |
 | `expires_at` | [int64](#int64) |  |  |
 | `result` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
 | `voting_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
 | `state` | [PollState](#axelar.vote.exported.v1beta1.PollState) |  |  |
 | `min_voter_count` | [int64](#int64) |  |  |
-| `voters` | [Voter](#axelar.vote.exported.v1beta1.Voter) | repeated |  |
-| `total_voting_power` | [bytes](#bytes) |  |  |
 | `reward_pool_name` | [string](#string) |  |  |
 | `grace_period` | [int64](#int64) |  |  |
 | `completed_at` | [int64](#int64) |  |  |
 | `id` | [uint64](#uint64) |  |  |
-| `module_metadata` | [PollModuleMetadata](#axelar.vote.exported.v1beta1.PollModuleMetadata) |  |  |
-
-
-
-
-
-
-<a name="axelar.vote.exported.v1beta1.PollModuleMetadata"></a>
-
-### PollModuleMetadata
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
+| `snapshot` | [axelar.snapshot.exported.v1beta1.Snapshot](#axelar.snapshot.exported.v1beta1.Snapshot) |  |  |
 | `module` | [string](#string) |  |  |
-| `metadata` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
-
-
-
-
-
-
-<a name="axelar.vote.exported.v1beta1.Vote"></a>
-
-### Vote
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `result` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
-
-
-
-
-
-
-<a name="axelar.vote.exported.v1beta1.Voter"></a>
-
-### Voter
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `validator` | [bytes](#bytes) |  |  |
-| `voting_power` | [int64](#int64) |  |  |
+| `module_metadata` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
 
 
 
@@ -6546,6 +6498,41 @@ Query defines the gRPC querier service.
 
 
 
+<a name="axelar/vote/v1beta1/events.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/vote/v1beta1/events.proto
+
+
+
+<a name="axelar.vote.v1beta1.Vote"></a>
+
+### Vote
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `module` | [string](#string) |  |  |
+| `action` | [string](#string) |  |  |
+| `poll` | [string](#string) |  |  |
+| `voter` | [string](#string) |  |  |
+| `state` | [string](#string) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
 <a name="axelar/vote/v1beta1/params.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -6609,6 +6596,57 @@ Params represent the genesis parameters for the module
 
 
 
+<a name="axelar/vote/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/vote/v1beta1/types.proto
+
+
+
+<a name="axelar.vote.v1beta1.TalliedVote"></a>
+
+### TalliedVote
+TalliedVote represents a vote for a poll with the accumulated stake of all
+validators voting for the same data
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tally` | [bytes](#bytes) |  |  |
+| `data` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
+| `poll_id` | [uint64](#uint64) |  |  |
+| `is_voter_late` | [TalliedVote.IsVoterLateEntry](#axelar.vote.v1beta1.TalliedVote.IsVoterLateEntry) | repeated |  |
+
+
+
+
+
+
+<a name="axelar.vote.v1beta1.TalliedVote.IsVoterLateEntry"></a>
+
+### TalliedVote.IsVoterLateEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key` | [string](#string) |  |  |
+| `value` | [bool](#bool) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
 <a name="axelar/vote/v1beta1/tx.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -6625,8 +6663,8 @@ Params represent the genesis parameters for the module
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
-| `vote` | [axelar.vote.exported.v1beta1.Vote](#axelar.vote.exported.v1beta1.Vote) |  |  |
 | `poll_id` | [uint64](#uint64) |  |  |
+| `vote` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
 
 
 
@@ -6678,56 +6716,6 @@ Msg defines the vote Msg service.
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `Vote` | [VoteRequest](#axelar.vote.v1beta1.VoteRequest) | [VoteResponse](#axelar.vote.v1beta1.VoteResponse) |  | POST|/axelar/vote/vote|
-
- <!-- end services -->
-
-
-
-<a name="axelar/vote/v1beta1/types.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## axelar/vote/v1beta1/types.proto
-
-
-
-<a name="axelar.vote.v1beta1.TalliedVote"></a>
-
-### TalliedVote
-TalliedVote represents a vote for a poll with the accumulated stake of all
-validators voting for the same data
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `tally` | [bytes](#bytes) |  |  |
-| `voters` | [bytes](#bytes) | repeated |  |
-| `data` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
-
-
-
-
-
-
-<a name="axelar.vote.v1beta1.VoteRecord"></a>
-
-### VoteRecord
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `voter` | [bytes](#bytes) |  |  |
-| `is_late` | [bool](#bool) |  |  |
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
 
  <!-- end services -->
 

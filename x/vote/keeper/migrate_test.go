@@ -10,8 +10,9 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
+	utilstestutils "github.com/axelarnetwork/axelar-core/utils/testutils"
+	snapshottestutils "github.com/axelarnetwork/axelar-core/x/snapshot/exported/testutils"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
-	"github.com/axelarnetwork/utils/slices"
 	. "github.com/axelarnetwork/utils/test"
 )
 
@@ -33,18 +34,10 @@ func TestGetMigrationHandler(t *testing.T) {
 	whenPollsExistWith := func(pollCount int64) WhenStatement {
 		return When("some polls exist", func() {
 			for i := 0; i < int(pollCount); i++ {
-				voterCount := rand.I64Between(1, 10)
-				voters := make([]sdk.ValAddress, voterCount)
-
-				pollID := exported.PollID(rand.PosI64())
-				poll := k.newPollStore(ctx, pollID)
-
 				pollMeta := exported.PollMetadata{
-					ID:    pollID,
-					State: rand.Of(exported.Completed, exported.Failed, exported.Pending),
-					Voters: slices.Map(voters, func(v sdk.ValAddress) exported.Voter {
-						return exported.Voter{Validator: v, VotingPower: rand.I64Between(10, 100)}
-					}),
+					ID:       exported.PollID(rand.PosI64()),
+					State:    rand.Of(exported.Completed, exported.Failed, exported.Pending),
+					Snapshot: snapshottestutils.Snapshot(uint64(rand.I64Between(1, 10)), utilstestutils.RandThreshold()),
 				}
 
 				switch pollMeta.State {
@@ -55,22 +48,16 @@ func TestGetMigrationHandler(t *testing.T) {
 						panic(err)
 					}
 
-					vote := exported.Vote{Result: d}
-					d, err = codectypes.NewAnyWithValue(&vote)
-					if err != nil {
-						panic(err)
-					}
-
 					pollMeta.Result = d
 					pollMeta.CompletedAt = 0
 				case exported.Pending:
-					poll.EnqueuePoll(pollMeta)
+					k.GetPollQueue(ctx).Enqueue(pollPrefix.AppendStr(pollMeta.ID.String()), &pollMeta)
 				}
 
-				poll.SetMetadata(pollMeta)
+				k.setPollMetadata(ctx, pollMeta)
 
-				for _, voter := range voters {
-					poll.KVStore.SetRaw(voterPrefix.AppendStr(poll.id.String()).AppendStr(voter.String()), []byte{0x01})
+				for _, voter := range pollMeta.Snapshot.Participants {
+					k.getKVStore(ctx).SetRaw(voterPrefix.AppendStr(pollMeta.ID.String()).AppendStr(voter.Address.String()), []byte{0x01})
 				}
 			}
 		})

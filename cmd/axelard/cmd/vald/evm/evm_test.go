@@ -21,11 +21,12 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/app/params"
-	mock2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types/mock"
+	mock2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast/mock"
 	evmRpc "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm/rpc"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm/rpc/mock"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
@@ -392,7 +393,9 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 				return receipt, nil
 			},
 		}
-		broadcaster = &mock2.BroadcasterMock{}
+		broadcaster = &mock2.BroadcasterMock{
+			BroadcastFunc: func(context.Context, ...sdk.Msg) (*sdk.TxResponse, error) { return nil, nil },
+		}
 		evmMap := make(map[string]evmRpc.Client)
 		evmMap["ethereum"] = rpc
 		mgr = NewMgr(evmMap, client.Context{}, broadcaster, log.TestingLogger(), cdc)
@@ -407,8 +410,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 
 		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		actualVoteEvents, err := evmTypes.UnpackEvents(encodingConfig.Codec, msg.(*voteTypes.VoteRequest).Vote.Result)
-		assert.NoError(t, err)
+		actualVoteEvents := msg.(*voteTypes.VoteRequest).Vote.GetCachedValue().(*types.VoteEvents)
 		assert.Equal(t, nexus.ChainName("Ethereum"), actualVoteEvents.Chain)
 		assert.Len(t, actualVoteEvents.Events, 1)
 	}).Repeat(repeats))
@@ -434,8 +436,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 
 		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		actualVoteEvents, err := evmTypes.UnpackEvents(encodingConfig.Codec, msg.(*voteTypes.VoteRequest).Vote.Result)
-		assert.NoError(t, err)
+		actualVoteEvents := msg.(*voteTypes.VoteRequest).Vote.GetCachedValue().(*types.VoteEvents)
 		assert.Equal(t, nexus.ChainName("Ethereum"), actualVoteEvents.Chain)
 		assert.Len(t, actualVoteEvents.Events, 0)
 	}).Repeat(repeats))
@@ -452,8 +453,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 
 		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		actualVoteEvents, err := evmTypes.UnpackEvents(encodingConfig.Codec, msg.(*voteTypes.VoteRequest).Vote.Result)
-		assert.NoError(t, err)
+		actualVoteEvents := msg.(*voteTypes.VoteRequest).Vote.GetCachedValue().(*types.VoteEvents)
 		assert.Equal(t, nexus.ChainName("Ethereum"), actualVoteEvents.Chain)
 		assert.Len(t, actualVoteEvents.Events, 0)
 	}).Repeat(repeats))
@@ -516,7 +516,9 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 				return receipt, nil
 			},
 		}
-		broadcaster = &mock2.BroadcasterMock{}
+		broadcaster = &mock2.BroadcasterMock{
+			BroadcastFunc: func(context.Context, ...sdk.Msg) (*sdk.TxResponse, error) { return nil, nil },
+		}
 		evmMap := make(map[string]evmRpc.Client)
 		evmMap["ethereum"] = rpc
 		mgr = NewMgr(evmMap, client.Context{}, broadcaster, log.TestingLogger(), cdc)
@@ -532,8 +534,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 
 		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		actualVoteEvents, err := evmTypes.UnpackEvents(encodingConfig.Codec, msg.(*voteTypes.VoteRequest).Vote.Result)
-		assert.NoError(t, err)
+		actualVoteEvents := msg.(*voteTypes.VoteRequest).Vote.GetCachedValue().(*types.VoteEvents)
 		assert.Equal(t, nexus.ChainName("Ethereum"), actualVoteEvents.Chain)
 		assert.Len(t, actualVoteEvents.Events, 1)
 	}).Repeat(repeats))
@@ -559,8 +560,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 
 		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		actualVoteEvents, err := evmTypes.UnpackEvents(encodingConfig.Codec, msg.(*voteTypes.VoteRequest).Vote.Result)
-		assert.NoError(t, err)
+		actualVoteEvents := msg.(*voteTypes.VoteRequest).Vote.GetCachedValue().(*types.VoteEvents)
 		assert.Equal(t, nexus.ChainName("Ethereum"), actualVoteEvents.Chain)
 		assert.Len(t, actualVoteEvents.Events, 0)
 	}).Repeat(repeats))
@@ -577,8 +577,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 
 		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		actualVoteEvents, err := evmTypes.UnpackEvents(encodingConfig.Codec, msg.(*voteTypes.VoteRequest).Vote.Result)
-		assert.NoError(t, err)
+		actualVoteEvents := msg.(*voteTypes.VoteRequest).Vote.GetCachedValue().(*types.VoteEvents)
 		assert.Equal(t, nexus.ChainName("Ethereum"), actualVoteEvents.Chain)
 		assert.Len(t, actualVoteEvents.Events, 0)
 	}).Repeat(repeats))
@@ -603,8 +602,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 
 		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		actualVoteEvents, err := evmTypes.UnpackEvents(encodingConfig.Codec, msg.(*voteTypes.VoteRequest).Vote.Result)
-		assert.NoError(t, err)
+		actualVoteEvents := msg.(*voteTypes.VoteRequest).Vote.GetCachedValue().(*types.VoteEvents)
 		assert.Equal(t, nexus.ChainName("Ethereum"), actualVoteEvents.Chain)
 		assert.Len(t, actualVoteEvents.Events, 0)
 
@@ -627,8 +625,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 
 		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		actualVoteEvents, err := evmTypes.UnpackEvents(encodingConfig.Codec, msg.(*voteTypes.VoteRequest).Vote.Result)
-		assert.NoError(t, err)
+		actualVoteEvents := msg.(*voteTypes.VoteRequest).Vote.GetCachedValue().(*types.VoteEvents)
 		assert.Equal(t, nexus.ChainName("Ethereum"), actualVoteEvents.Chain)
 		assert.Len(t, actualVoteEvents.Events, 0)
 	}).Repeat(repeats))
@@ -734,7 +731,9 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 				return receipt, nil
 			},
 		}
-		broadcaster = &mock2.BroadcasterMock{}
+		broadcaster = &mock2.BroadcasterMock{
+			BroadcastFunc: func(context.Context, ...sdk.Msg) (*sdk.TxResponse, error) { return nil, nil },
+		}
 		evmMap := make(map[string]evmRpc.Client)
 		evmMap["ethereum"] = rpc
 		mgr = NewMgr(evmMap, client.Context{}, broadcaster, log.TestingLogger(), cdc)
@@ -750,8 +749,7 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 
 		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		actualVoteEvents, err := evmTypes.UnpackEvents(encodingConfig.Codec, msg.(*voteTypes.VoteRequest).Vote.Result)
-		assert.NoError(t, err)
+		actualVoteEvents := msg.(*voteTypes.VoteRequest).Vote.GetCachedValue().(*types.VoteEvents)
 		assert.Equal(t, nexus.ChainName("Ethereum"), actualVoteEvents.Chain)
 		assert.Len(t, actualVoteEvents.Events, 1)
 	}).Repeat(repeats))
@@ -777,8 +775,7 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 
 		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		actualVoteEvents, err := evmTypes.UnpackEvents(encodingConfig.Codec, msg.(*voteTypes.VoteRequest).Vote.Result)
-		assert.NoError(t, err)
+		actualVoteEvents := msg.(*voteTypes.VoteRequest).Vote.GetCachedValue().(*types.VoteEvents)
 		assert.Equal(t, nexus.ChainName("Ethereum"), actualVoteEvents.Chain)
 		assert.Len(t, actualVoteEvents.Events, 0)
 	}).Repeat(repeats))
@@ -795,8 +792,7 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 
 		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		actualVoteEvents, err := evmTypes.UnpackEvents(encodingConfig.Codec, msg.(*voteTypes.VoteRequest).Vote.Result)
-		assert.NoError(t, err)
+		actualVoteEvents := msg.(*voteTypes.VoteRequest).Vote.GetCachedValue().(*types.VoteEvents)
 		assert.Equal(t, nexus.ChainName("Ethereum"), actualVoteEvents.Chain)
 		assert.Len(t, actualVoteEvents.Events, 0)
 	}).Repeat(repeats))
@@ -817,8 +813,7 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 
 		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		actualVoteEvents, err := evmTypes.UnpackEvents(encodingConfig.Codec, msg.(*voteTypes.VoteRequest).Vote.Result)
-		assert.NoError(t, err)
+		actualVoteEvents := msg.(*voteTypes.VoteRequest).Vote.GetCachedValue().(*types.VoteEvents)
 		assert.Equal(t, nexus.ChainName("Ethereum"), actualVoteEvents.Chain)
 		assert.Len(t, actualVoteEvents.Events, 0)
 	}).Repeat(repeats))

@@ -17,8 +17,9 @@ import (
 type Voter interface {
 	Logger(ctx sdk.Context) log.Logger
 	GetVoteRouter() VoteRouter
-	GetPoll(ctx sdk.Context, id exported.PollID) exported.Poll
+	GetPoll(ctx sdk.Context, id exported.PollID) (exported.Poll, bool)
 	GetPollQueue(ctx sdk.Context) utils.KVQueue
+	DeletePoll(ctx sdk.Context, pollID exported.PollID)
 }
 
 // Snapshotter provides snapshot functionality
