@@ -204,11 +204,11 @@ type StringGen struct {
 	charPicker I64Gen
 }
 
-// Strings returns a random string generator that produces strings from the default alphabet of random length in the given limits (inclusive)
+// Strings returns a random string generator that produces strings from the default alphabet of random length in the given limits (max exclusive)
 func Strings(minLength int, maxLength int) StringGen {
 	alphabet := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.:")
 	return StringGen{
-		lengthGen:  I64GenBetween(int64(minLength), int64(maxLength+1)),
+		lengthGen:  I64GenBetween(int64(minLength), int64(maxLength)),
 		alphabet:   alphabet,
 		charPicker: I64GenBetween(0, int64(len(alphabet))),
 	}
@@ -231,7 +231,7 @@ func HexStrings(length int) StringGen {
 	}
 }
 
-// StrBetween returns a random string of random length in the given limits (inclusive)
+// StrBetween returns a random string of random length in the given limits (max exclusive)
 func StrBetween(minLength int, maxLength int) string {
 	g := Strings(minLength, maxLength)
 	return g.Next()
