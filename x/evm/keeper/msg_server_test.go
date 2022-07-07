@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/codec"
-	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramsKeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 	"github.com/ethereum/go-ethereum/common"
@@ -1113,23 +1112,6 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		}
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 
-		assert.Error(t, err)
-	}).Repeat(repeats))
-
-	t.Run("increase gas consumption", testutils.Func(func(t *testing.T) {
-		setup()
-		num := int(rand.I64Between(10, 100))
-		n.GetChainMaintainersFunc = func(ctx sdk.Context, chain nexus.Chain) []sdk.ValAddress {
-			var maintainers []sdk.ValAddress
-			for i := 0; i < num; i++ {
-				maintainers = append(maintainers, rand.ValAddr())
-			}
-			return maintainers
-		}
-		gasBefore := ctx.GasMeter().GasConsumed()
-		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
-		gasAfter := ctx.GasMeter().GasConsumed()
-		assert.Equal(t, gasBefore+storetypes.Gas(num*120000), gasAfter)
 		assert.Error(t, err)
 	}).Repeat(repeats))
 }
