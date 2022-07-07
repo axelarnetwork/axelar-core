@@ -1,7 +1,9 @@
 package keeper
 
 import (
+	"bytes"
 	"context"
+	"crypto/ecdsa"
 	"encoding/hex"
 	"fmt"
 	"sort"
@@ -17,7 +19,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexustypes "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
-	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/axelarnetwork/utils/slices"
 )
 
@@ -42,9 +43,7 @@ func NewGRPCQuerier(k types.BaseKeeper, n types.Nexus, s types.Signer) Querier {
 func queryChains(ctx sdk.Context, n types.Nexus) []nexustypes.ChainName {
 	chains := slices.Filter(n.GetChains(ctx), types.IsEVMChain)
 
-	return slices.Map(chains, func(c nexustypes.Chain) nexustypes.ChainName {
-		return c.Name
-	})
+	return slices.Map(chains, nexustypes.Chain.GetName)
 }
 
 // Chains returns the available evm chains
@@ -73,92 +72,107 @@ func (q Querier) BurnerInfo(c context.Context, req *types.BurnerInfoRequest) (*t
 	return nil, status.Error(codes.NotFound, "unknown address")
 }
 
-func batchedCommandsToQueryResp(ctx sdk.Context, batchedCommands types.CommandBatch, s types.Signer) (types.BatchedCommandsResponse, error) {
-	batchedCommandsIDHex := hex.EncodeToString(batchedCommands.GetID())
-	prevBatchedCommandsIDHex := ""
-	if batchedCommands.GetPrevBatchedCommandsID() != nil {
-		prevBatchedCommandsIDHex = hex.EncodeToString(batchedCommands.GetPrevBatchedCommandsID())
+func getExecuteDataAndSigs(ctx sdk.Context, s types.Signer, commandBatch types.CommandBatch) ([]byte, []types.Signature, error) {
+	id := hex.EncodeToString(commandBatch.GetID())
+	sig, sigStatus := s.GetSig(ctx, id)
+	if sigStatus != tss.SigStatus_Signed {
+		return nil, nil, fmt.Errorf("could not find a corresponding signature for sig ID %s", id)
 	}
 
-	var commandIDs []string
-	for _, id := range batchedCommands.GetCommandIDs() {
-		commandIDs = append(commandIDs, id.Hex())
-	}
-
-	var resp types.BatchedCommandsResponse
-
-	switch {
-	case batchedCommands.Is(types.BatchSigned):
-		sig, sigStatus := s.GetSig(ctx, batchedCommandsIDHex)
-		if sigStatus != tss.SigStatus_Signed {
-			return resp, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find a corresponding signature for sig ID %s", batchedCommandsIDHex))
+	switch sig := sig.GetSig().(type) {
+	case *tss.Signature_SingleSig_:
+		commandBatchSig, err := getCommandBatchSig(sig.SingleSig.SigKeyPair, commandBatch.GetSigHash())
+		if err != nil {
+			return nil, nil, err
 		}
 
-		var executeData []byte
-		var signatures []string
-		switch signature := sig.GetSig().(type) {
-		case *tss.Signature_SingleSig_:
-			batchedCommandsSig, err := getBatchedCommandsSig(signature.SingleSig.SigKeyPair, batchedCommands.GetSigHash())
-			if err != nil {
-				return resp, err
-			}
-
-			executeData, err = types.CreateExecuteDataSinglesig(batchedCommands.GetData(), batchedCommandsSig)
-			if err != nil {
-				return resp, sdkerrors.Wrapf(types.ErrEVM, "could not create transaction data: %s", err)
-			}
-
-			signatures = append(signatures, hex.EncodeToString(batchedCommandsSig[:]))
-		case *tss.Signature_MultiSig_:
-			var batchedCmdSigs []types.Signature
-			var err error
-
-			sigKeyPairs := types.SigKeyPairs(signature.MultiSig.SigKeyPairs)
-			sort.Stable(sigKeyPairs)
-
-			for _, pair := range sigKeyPairs {
-				batchedCommandsSig, err := getBatchedCommandsSig(pair, batchedCommands.GetSigHash())
-				if err != nil {
-					return resp, err
-				}
-
-				batchedCmdSigs = append(batchedCmdSigs, batchedCommandsSig)
-				signatures = append(signatures, hex.EncodeToString(batchedCommandsSig[:]))
-			}
-
-			executeData, err = types.CreateExecuteDataMultisig(batchedCommands.GetData(), batchedCmdSigs...)
-			if err != nil {
-				return resp, sdkerrors.Wrapf(types.ErrEVM, "could not create transaction data: %s", err)
-			}
+		executeData, err := types.CreateExecuteDataSinglesig(commandBatch.GetData(), commandBatchSig)
+		if err != nil {
+			return nil, nil, fmt.Errorf("could not create transaction data: %s", err)
 		}
 
-		resp = types.BatchedCommandsResponse{
-			ID:                    batchedCommandsIDHex,
-			Data:                  hex.EncodeToString(batchedCommands.GetData()),
-			Status:                batchedCommands.GetStatus(),
-			KeyID:                 batchedCommands.GetKeyID(),
-			Signature:             signatures,
-			ExecuteData:           hex.EncodeToString(executeData),
-			PrevBatchedCommandsID: prevBatchedCommandsIDHex,
-			CommandIDs:            commandIDs,
+		return executeData, []types.Signature{commandBatchSig}, nil
+	case *tss.Signature_MultiSig_:
+		sigKeyPairs := types.SigKeyPairs(sig.MultiSig.SigKeyPairs)
+		sort.Stable(sigKeyPairs)
+
+		key, ok := s.GetKey(ctx, commandBatch.GetKeyID())
+		if !ok {
+			return nil, nil, fmt.Errorf("key %s not found", commandBatch.GetKeyID())
 		}
+
+		multisigPubKeys, err := key.GetMultisigPubKey()
+		if err != nil {
+			return nil, nil, err
+		}
+
+		commandBatchSigs := make([]types.Signature, len(sigKeyPairs))
+		for i, pair := range sigKeyPairs {
+			commandBatchSig, err := getCommandBatchSig(pair, commandBatch.GetSigHash())
+			if err != nil {
+				return nil, nil, err
+			}
+
+			commandBatchSigs[i] = commandBatchSig
+		}
+
+		executeData, err := types.CreateExecuteDataMultisig(
+			commandBatch.GetData(),
+			slices.Map(multisigPubKeys, crypto.PubkeyToAddress),
+			commandBatchSigs,
+		)
+		if err != nil {
+			return nil, nil, fmt.Errorf("could not create transaction data: %s", err)
+		}
+
+		return executeData, commandBatchSigs, nil
 	default:
-		resp = types.BatchedCommandsResponse{
-			ID:                    batchedCommandsIDHex,
-			Data:                  hex.EncodeToString(batchedCommands.GetData()),
-			Status:                batchedCommands.GetStatus(),
-			KeyID:                 batchedCommands.GetKeyID(),
-			Signature:             nil,
-			ExecuteData:           "",
-			PrevBatchedCommandsID: prevBatchedCommandsIDHex,
-			CommandIDs:            commandIDs,
-		}
+		panic(fmt.Errorf("unsupported type of signature %T", sig))
 	}
-
-	return resp, nil
 }
 
-func getBatchedCommandsSig(pair tss.SigKeyPair, batchedCommands types.Hash) (types.Signature, error) {
+func commandBatchToResp(ctx sdk.Context, commandBatch types.CommandBatch, s types.Signer) (types.BatchedCommandsResponse, error) {
+	id := hex.EncodeToString(commandBatch.GetID())
+
+	prevID := ""
+	if commandBatch.GetPrevBatchedCommandsID() != nil {
+		prevID = hex.EncodeToString(commandBatch.GetPrevBatchedCommandsID())
+	}
+
+	commandIDs := slices.Map(commandBatch.GetCommandIDs(), types.CommandID.Hex)
+
+	switch {
+	case commandBatch.Is(types.BatchSigned):
+		executeData, signatures, err := getExecuteDataAndSigs(ctx, s, commandBatch)
+		if err != nil {
+			return types.BatchedCommandsResponse{}, sdkerrors.Wrap(types.ErrEVM, err.Error())
+		}
+
+		return types.BatchedCommandsResponse{
+			ID:                    id,
+			Data:                  hex.EncodeToString(commandBatch.GetData()),
+			Status:                commandBatch.GetStatus(),
+			KeyID:                 commandBatch.GetKeyID(),
+			Signature:             slices.Map(signatures, types.Signature.Hex),
+			ExecuteData:           hex.EncodeToString(executeData),
+			PrevBatchedCommandsID: prevID,
+			CommandIDs:            commandIDs,
+		}, nil
+	default:
+		return types.BatchedCommandsResponse{
+			ID:                    id,
+			Data:                  hex.EncodeToString(commandBatch.GetData()),
+			Status:                commandBatch.GetStatus(),
+			KeyID:                 commandBatch.GetKeyID(),
+			Signature:             nil,
+			ExecuteData:           "",
+			PrevBatchedCommandsID: prevID,
+			CommandIDs:            commandIDs,
+		}, nil
+	}
+}
+
+func getCommandBatchSig(pair tss.SigKeyPair, batchedCommands types.Hash) (types.Signature, error) {
 	pk, err := pair.GetKey()
 	if err != nil {
 		return types.Signature{}, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not parse pub key: %v", err))
@@ -187,25 +201,26 @@ func (q Querier) BatchedCommands(c context.Context, req *types.BatchedCommandsRe
 	}
 	ck := q.keeper.ForChain(nexustypes.ChainName(req.Chain))
 
-	var batchedCommands types.CommandBatch
-	if req.Id == "" {
-		batchedCommands = ck.GetLatestCommandBatch(ctx)
-		if batchedCommands.Is(types.BatchNonExistent) {
+	var commandBatch types.CommandBatch
+	switch req.Id {
+	case "":
+		commandBatch = ck.GetLatestCommandBatch(ctx)
+		if commandBatch.Is(types.BatchNonExistent) {
 			return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not get the latest batched commands for chain %s", req.Chain)).Error())
 		}
-	} else {
-		batchedCommandsID, err := hex.DecodeString(req.Id)
+	default:
+		commandBatchID, err := hex.DecodeString(req.Id)
 		if err != nil {
 			return nil, status.Error(codes.InvalidArgument, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("invalid batched commands ID: %v", err)).Error())
 		}
 
-		batchedCommands = ck.GetBatchByID(ctx, batchedCommandsID)
-		if batchedCommands.Is(types.BatchNonExistent) {
+		commandBatch = ck.GetBatchByID(ctx, commandBatchID)
+		if commandBatch.Is(types.BatchNonExistent) {
 			return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("batched commands with ID %s not found", req.Id)).Error())
 		}
 	}
 
-	resp, err := batchedCommandsToQueryResp(ctx, batchedCommands, q.signer)
+	resp, err := commandBatchToResp(ctx, commandBatch, q.signer)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, err.Error())
 	}
@@ -248,23 +263,19 @@ func (q Querier) Event(c context.Context, req *types.EventRequest) (*types.Event
 }
 
 func queryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, params *types.QueryDepositStateParams) (types.DepositStatus, string, codes.Code) {
-	_, ok := n.GetChain(ctx, nexustypes.ChainName(k.GetName()))
-	if !ok {
+	if _, ok := n.GetChain(ctx, nexustypes.ChainName(k.GetName())); !ok {
 		return -1, fmt.Sprintf("%s is not a registered chain", k.GetName()), codes.NotFound
 	}
 
-	pollKey := vote.NewPollKey(types.ModuleName, fmt.Sprintf("%s_%s_%s", params.TxID.Hex(), params.BurnerAddress.Hex(), params.Amount))
-	_, isPending := k.GetPendingDeposit(ctx, pollKey)
 	_, state, ok := k.GetDeposit(ctx, common.Hash(params.TxID), common.Address(params.BurnerAddress))
-
-	switch {
-	case isPending:
-		return types.DepositStatus_Pending, "deposit transaction is waiting for confirmation", codes.OK
-	case !isPending && !ok:
+	if !ok {
 		return types.DepositStatus_None, "deposit transaction is not confirmed", codes.OK
-	case state == types.DepositStatus_Confirmed:
+	}
+
+	switch state {
+	case types.DepositStatus_Confirmed:
 		return types.DepositStatus_Confirmed, "deposit transaction is confirmed", codes.OK
-	case state == types.DepositStatus_Burned:
+	case types.DepositStatus_Burned:
 		return types.DepositStatus_Burned, "deposit has been transferred to the destination chain", codes.OK
 	default:
 		return -1, "deposit is in an unexpected state", codes.Internal
@@ -320,15 +331,13 @@ func queryAddressByKeyID(ctx sdk.Context, s types.Signer, chain nexustypes.Chain
 			return types.KeyAddressResponse{}, sdkerrors.Wrap(types.ErrEVM, err.Error())
 		}
 
-		addressStrs := make([]string, len(multisigPubKey))
-		for i, address := range types.KeysToAddresses(multisigPubKey...) {
-			addressStrs[i] = address.Hex()
-		}
+		addresses := slices.Map(multisigPubKey, func(p ecdsa.PublicKey) types.Address { return types.Address(crypto.PubkeyToAddress(p)) })
+		sort.SliceStable(addresses, func(i, j int) bool { return bytes.Compare(addresses[i].Bytes(), addresses[j].Bytes()) < 0 })
 
 		threshold := uint32(key.GetMultisigKey().Threshold)
 
 		resp := types.KeyAddressResponse{
-			Address: &types.KeyAddressResponse_MultisigAddresses_{MultisigAddresses: &types.KeyAddressResponse_MultisigAddresses{Addresses: addressStrs, Threshold: threshold}},
+			Address: &types.KeyAddressResponse_MultisigAddresses_{MultisigAddresses: &types.KeyAddressResponse_MultisigAddresses{Addresses: slices.Map(addresses, types.Address.Hex), Threshold: threshold}},
 			KeyID:   keyID,
 		}
 
@@ -360,21 +369,11 @@ func (q Querier) KeyAddress(c context.Context, req *types.KeyAddressRequest) (*t
 		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", req.Chain)).Error())
 	}
 
-	var keyID tss.KeyID
-	switch key := req.Key.(type) {
-	case *types.KeyAddressRequest_KeyID:
-		keyID = key.KeyID
-	case *types.KeyAddressRequest_Role:
-		switch key.Role {
-		case tss.MasterKey, tss.SecondaryKey:
-			break
-		default:
-			return nil, status.Error(codes.NotFound, fmt.Sprintf("unsupported key role %s", key.Role.SimpleString()))
-		}
-
-		keyID, ok = q.signer.GetCurrentKeyID(ctx, chain, key.Role)
+	keyID := req.KeyID
+	if keyID == "" {
+		keyID, ok = q.signer.GetCurrentKeyID(ctx, chain, keyRole)
 		if !ok {
-			return nil, status.Error(codes.NotFound, sdkerrors.Wrapf(types.ErrEVM, "%s key not found for chain %s", key.Role.SimpleString(), req.Chain).Error())
+			return nil, status.Error(codes.NotFound, sdkerrors.Wrapf(types.ErrEVM, "key not found for chain %s", req.Chain).Error())
 		}
 	}
 
@@ -452,9 +451,16 @@ func (q Querier) ERC20Tokens(c context.Context, req *types.ERC20TokensRequest) (
 		// no filtering when retrieving all tokens
 	}
 
-	assets := slices.Map(tokens, types.ERC20Token.GetAsset)
+	res := types.ERC20TokensResponse{
+		Tokens: slices.Map(tokens, func(token types.ERC20Token) types.ERC20TokensResponse_Token {
+			return types.ERC20TokensResponse_Token{
+				Asset:  token.GetAsset(),
+				Symbol: token.GetDetails().Symbol,
+			}
+		}),
+	}
 
-	return &types.ERC20TokensResponse{Assets: assets}, nil
+	return &res, nil
 }
 
 // TokenInfo returns the token info for a registered asset
@@ -487,10 +493,11 @@ func (q Querier) TokenInfo(c context.Context, req *types.TokenInfoRequest) (*typ
 	}
 
 	return &types.TokenInfoResponse{
-		Asset:      token.GetAsset(),
-		Details:    token.GetDetails(),
-		Address:    token.GetAddress().Hex(),
-		Confirmed:  token.Is(types.Confirmed),
-		IsExternal: token.IsExternal(),
+		Asset:          token.GetAsset(),
+		Details:        token.GetDetails(),
+		Address:        token.GetAddress().Hex(),
+		Confirmed:      token.Is(types.Confirmed),
+		IsExternal:     token.IsExternal(),
+		BurnerCodeHash: token.GetBurnerCodeHash().Hex(),
 	}, nil
 }

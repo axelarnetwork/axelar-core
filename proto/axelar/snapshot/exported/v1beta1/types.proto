@@ -21,19 +21,38 @@ message Validator {
   int64 share_count = 2;
 }
 
+message Participant {
+  bytes address = 1 [ (gogoproto.casttype) =
+                          "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
+  bytes weight = 2 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.nullable) = false
+  ];
+}
+
 message Snapshot {
-  repeated Validator validators = 1 [ (gogoproto.nullable) = false ];
+  option (gogoproto.stable_marshaler) = true;
+
+  repeated Validator validators = 1
+      [ (gogoproto.nullable) = false, deprecated = true ];
+  bytes total_share_count = 4 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.nullable) = false,
+    deprecated = true
+  ];
+  int64 counter = 5 [ deprecated = true ];
+  tss.exported.v1beta1.KeyShareDistributionPolicy
+      key_share_distribution_policy = 6 [ deprecated = true ];
+  int64 corruption_threshold = 7 [ deprecated = true ];
+
   google.protobuf.Timestamp timestamp = 2
       [ (gogoproto.nullable) = false, (gogoproto.stdtime) = true ];
   int64 height = 3;
-  bytes total_share_count = 4 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+  map<string, Participant> participants = 8 [ (gogoproto.nullable) = false ];
+  bytes bonded_weight = 9 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
     (gogoproto.nullable) = false
   ];
-  int64 counter = 5;
-  tss.exported.v1beta1.KeyShareDistributionPolicy
-      key_share_distribution_policy = 6;
-  int64 corruption_threshold = 7;
 }
 
 enum ValidatorIllegibility {

@@ -3,6 +3,7 @@ package keeper_test
 import (
 	"bytes"
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+	"golang.org/x/exp/maps"
 
 	"github.com/axelarnetwork/axelar-core/app"
 	appParams "github.com/axelarnetwork/axelar-core/app/params"
@@ -24,11 +26,17 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
+	utilstestutils "github.com/axelarnetwork/axelar-core/utils/testutils"
+	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	snapshotMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
+	keeperMock "github.com/axelarnetwork/axelar-core/x/snapshot/keeper/mock"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types/mock"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	"github.com/axelarnetwork/utils/funcs"
+	"github.com/axelarnetwork/utils/slices"
+	. "github.com/axelarnetwork/utils/test"
 )
 
 var encCfg appParams.EncodingConfig
@@ -302,6 +310,172 @@ func TestKeeper_DeregisterProxy(t *testing.T) {
 		assert.Error(t, err)
 
 	}).Repeat(20))
+}
+
+func TestKeeper(t *testing.T) {
+	var (
+		ctx     sdk.Context
+		k       keeper.Keeper
+		staking *mock.StakingKeeperMock
+	)
+
+	givenKeeper := Given("snapshot keeper", func() {
+		encCfg := appParams.MakeEncodingConfig()
+		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger()).
+			WithBlockHeight(rand.PosI64()).
+			WithBlockTime(time.Now())
+		subspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
+
+		staking = &mock.StakingKeeperMock{}
+		k = keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("snapshot"), subspace, staking, &mock.BankKeeperMock{}, &snapshotMock.SlasherMock{}, &snapshotMock.TssMock{})
+		k.SetParams(ctx, types.DefaultParams())
+	})
+
+	t.Run("CreateSnapshot", func(t *testing.T) {
+		var (
+			candidates []sdk.ValAddress
+			filterFunc func(exported.ValidatorI) bool
+			weightFunc func(consensusPower sdk.Uint) sdk.Uint
+			threshold  utils.Threshold
+		)
+
+		validators := slices.Expand(func(i int) stakingtypes.ValidatorI {
+			addr := rand.ValAddr()
+
+			return &keeperMock.ValidatorIMock{
+				GetOperatorFunc:       func() sdk.ValAddress { return addr },
+				GetConsensusPowerFunc: func(_ sdk.Int) int64 { return int64(100 - i) },
+			}
+		}, 100)
+		validatorMap := slices.ToMap(validators, func(v stakingtypes.ValidatorI) string { return v.GetOperator().String() })
+
+		whenAllParamsAreGood := When("all params are good", func() {
+			candidates = slices.Map(validators, stakingtypes.ValidatorI.GetOperator)
+			filterFunc = func(v exported.ValidatorI) bool { return true }
+			weightFunc = funcs.Identity[sdk.Uint]
+			threshold = utilstestutils.RandThreshold()
+
+			staking.ValidatorFunc = func(_ sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI {
+				return validatorMap[addr.String()]
+			}
+			staking.IterateBondedValidatorsByPowerFunc = func(ctx sdk.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool)) {
+				for i, v := range validators {
+					if fn(int64(i), v) {
+						return
+					}
+				}
+			}
+			staking.PowerReductionFunc = func(ctx sdk.Context) sdk.Int { return sdk.OneInt() }
+		})
+
+		givenKeeper.
+			When2(whenAllParamsAreGood).
+			Then("should create a valid snapshot", func(t *testing.T) {
+				actual, err := k.CreateSnapshot(ctx, candidates, filterFunc, weightFunc, threshold)
+
+				assert.NoError(t, err)
+				assert.NoError(t, actual.ValidateBasic())
+				assert.Equal(t, ctx.BlockHeight(), actual.Height)
+				assert.Equal(t, ctx.BlockTime(), actual.Timestamp)
+
+				expectedBondedWeight := sdk.ZeroUint()
+				for addr, v := range validatorMap {
+					weight := sdk.NewUint(uint64(v.GetConsensusPower(sdk.OneInt())))
+					assert.Equal(t, exported.NewParticipant(v.GetOperator(), weight), actual.Participants[addr])
+
+					expectedBondedWeight = expectedBondedWeight.Add(weight)
+				}
+				assert.Equal(t, expectedBondedWeight, actual.BondedWeight)
+			}).
+			Run(t)
+
+		givenKeeper.
+			When2(whenAllParamsAreGood).
+			When("candidates is a subset of validators", func() {
+				candidates = []sdk.ValAddress{}
+				slices.ForEach(validators, func(v stakingtypes.ValidatorI) {
+					if rand.Bools(0.5).Next() {
+						candidates = append(candidates, v.GetOperator())
+					}
+				})
+				threshold = utils.ZeroThreshold
+			}).
+			Then("should create a snapshot with only candidates passing the filterFunc", func(t *testing.T) {
+				actual, err := k.CreateSnapshot(ctx, candidates, filterFunc, weightFunc, threshold)
+
+				assert.NoError(t, err)
+				assert.NoError(t, actual.ValidateBasic())
+				assert.Len(t, actual.Participants, len(candidates))
+			}).
+			Run(t)
+
+		givenKeeper.
+			When2(whenAllParamsAreGood).
+			When("filterFunc filters some candidate out", func() {
+				filterFunc = func(v exported.ValidatorI) bool { return v.GetConsensusPower(sdk.OneInt()) > 90 }
+				threshold = utils.ZeroThreshold
+			}).
+			Then("should create a snapshot with only candidates passing the filterFunc", func(t *testing.T) {
+				actual, err := k.CreateSnapshot(ctx, candidates, filterFunc, weightFunc, threshold)
+
+				assert.NoError(t, err)
+				assert.NoError(t, actual.ValidateBasic())
+				assert.Len(t, actual.Participants, 10)
+			}).
+			Run(t)
+
+		givenKeeper.
+			When2(whenAllParamsAreGood).
+			When("weightFunc should translate consensus power to weight", func() {
+				weightFunc = func(sdk.Uint) sdk.Uint {
+					return sdk.OneUint()
+				}
+			}).
+			Then("should create a snapshot with participants having the correct weights", func(t *testing.T) {
+				actual, err := k.CreateSnapshot(ctx, candidates, filterFunc, weightFunc, threshold)
+
+				assert.NoError(t, err)
+				assert.NoError(t, actual.ValidateBasic())
+				assert.True(t, slices.All(maps.Values(actual.Participants), func(p exported.Participant) bool {
+					return p.Weight.Equal(sdk.OneUint())
+				}))
+				assert.Equal(t, sdk.OneUint().MulUint64(uint64(len(actual.Participants))), actual.BondedWeight)
+			}).
+			Run(t)
+
+		givenKeeper.
+			When2(whenAllParamsAreGood).
+			When("threshold cannot be met", func() {
+				filterFunc = func(v exported.ValidatorI) bool { return v.GetConsensusPower(sdk.OneInt()) > 90 }
+				threshold = utils.NewThreshold(955, 5050)
+			}).
+			Then("should return an error", func(t *testing.T) {
+				_, err := k.CreateSnapshot(ctx, candidates, filterFunc, weightFunc, threshold)
+
+				assert.ErrorContains(t, err, "cannot be met")
+			}).
+			Run(t)
+
+		givenKeeper.
+			When2(whenAllParamsAreGood).
+			When("weight func returns zero weights", func() {
+				once := &sync.Once{}
+				weightFunc = func(w sdk.Uint) sdk.Uint {
+					once.Do(func() { w = sdk.ZeroUint() })
+					return w
+				}
+			}).
+			Then("don't include validators with zero weight in snapshot", func(t *testing.T) {
+				s, err := k.CreateSnapshot(ctx, candidates, filterFunc, weightFunc, threshold)
+
+				assert.NoError(t, err)
+				participantsWithNonZeroWeights := slices.Map(validators[1:], func(v stakingtypes.ValidatorI) sdk.ValAddress {
+					return v.GetOperator()
+				})
+				assert.ElementsMatch(t, participantsWithNonZeroWeights, slices.Map(maps.Values(s.Participants),
+					func(p exported.Participant) sdk.ValAddress { return p.Address }))
+			}).Run(t)
+	})
 }
 
 // This function returns a set of validators whose voting power adds up to the specified total power

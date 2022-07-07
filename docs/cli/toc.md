@@ -170,7 +170,7 @@
   - [rollback](axelard_rollback.md)	 - rollback cosmos-sdk and tendermint state by one height
   - [rosetta](axelard_rosetta.md)	 - spin up a rosetta server
   - [set-genesis-auth](axelard_set-genesis-auth.md)	 - Set the genesis parameters for the auth module
-  - [set-genesis-chain-params \[bitcoin | evm\] \[chain\]](axelard_set-genesis-chain-params.md)	 - Set chain parameters in genesis.json
+  - [set-genesis-chain-params evm \[chain\]](axelard_set-genesis-chain-params.md)	 - Set chain parameters in genesis.json
   - [set-genesis-crisis](axelard_set-genesis-crisis.md)	 - Set the genesis parameters for the crisis module
   - [set-genesis-evm-contracts](axelard_set-genesis-evm-contracts.md)	 - Set the EVM's contract parameters in genesis.json
   - [set-genesis-gov](axelard_set-genesis-gov.md)	 - Set the genesis parameters for the governance module
@@ -220,10 +220,9 @@
       - [confirm-erc20-deposit \[chain\] \[txID\] \[burnerAddr\]](axelard_tx_evm_confirm-erc20-deposit.md)	 - Confirm ERC20 deposits in an EVM chain transaction to a burner address
       - [confirm-erc20-token \[chain\] \[origin chain\] \[origin asset\] \[txID\]](axelard_tx_evm_confirm-erc20-token.md)	 - Confirm an ERC20 token deployment in an EVM chain transaction for a given asset of some origin chain and gateway address
       - [confirm-gateway-tx \[chain\] \[txID\]](axelard_tx_evm_confirm-gateway-tx.md)	 - Confirm a gateway transaction in an EVM chain
-      - [confirm-transfer-operatorship \[chain\] \[txID\] \[keyID\]](axelard_tx_evm_confirm-transfer-operatorship.md)	 - Confirm a transfer operatorship in an EVM chain transaction
-      - [confirm-transfer-ownership \[chain\] \[txID\] \[keyID\]](axelard_tx_evm_confirm-transfer-ownership.md)	 - Confirm a transfer ownership in an EVM chain transaction
+      - [confirm-transfer-operatorship \[chain\] \[txID\]](axelard_tx_evm_confirm-transfer-operatorship.md)	 - Confirm a transfer operatorship in an EVM chain transaction
       - [create-burn-tokens \[chain\]](axelard_tx_evm_create-burn-tokens.md)	 - Create burn commands for all confirmed token deposits in an EVM chain
-      - [create-deploy-token \[evm chain\] \[origin chain\] \[origin asset\] \[token name\] \[symbol\] \[decimals\] \[capacity\]](axelard_tx_evm_create-deploy-token.md)	 - Create a deploy token command with the AxelarGateway contract
+      - [create-deploy-token \[evm chain\] \[origin chain\] \[origin asset\] \[token name\] \[symbol\] \[decimals\] \[capacity\] \[dailyMintLimit\]](axelard_tx_evm_create-deploy-token.md)	 - Create a deploy token command with the AxelarGateway contract
       - [create-pending-transfers \[chain\]](axelard_tx_evm_create-pending-transfers.md)	 - Create commands for handling all pending transfers to an EVM chain
       - [link \[chain\] \[recipient chain\] \[recipient address\] \[asset name\]](axelard_tx_evm_link.md)	 - Link a cross chain address to an EVM chain address created by Axelar
       - [retry-event \[chain\] \[event ID\]](axelard_tx_evm_retry-event.md)	 - Retry a failed event

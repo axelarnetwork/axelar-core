@@ -53,8 +53,8 @@ func TestCommands(t *testing.T) {
 		var commands []types.Command
 
 		for i := 0; i < numCmds; i++ {
-			tokenDetails := createDetails(randomNormalizedStr(10), randomNormalizedStr(10))
-			cmd, err := types.CreateDeployTokenCommand(chainID, tss.KeyID(rand.HexStr(10)), rand.Str(5), tokenDetails, types.ZeroAddress)
+			tokenDetails := createDetails(rand.NormalizedStr(10), rand.NormalizedStr(10))
+			cmd, err := types.CreateDeployTokenCommand(chainID, tss.KeyID(rand.HexStr(10)), rand.Str(5), tokenDetails, types.ZeroAddress, sdk.NewUint(uint64(rand.PosI64())))
 			assert.NoError(t, err)
 
 			err = chainKeeper.EnqueueCommand(ctx, cmd)
@@ -180,7 +180,7 @@ func TestGetTokenAddress(t *testing.T) {
 	capacity := sdk.NewIntFromUint64(uint64(10000))
 
 	axelarGateway := types.Address(common.HexToAddress("0xA193E42526F1FEA8C99AF609dcEabf30C1c29fAA"))
-	expected := "0xA7506007dfd1Dfe3f7ee45682a55312d347dd2F2"
+	expected := "0x696fec8ABd9D8095C8469BE173F9168A011F1598"
 
 	keeper := k.ForChain(chain)
 	keeper.SetParams(ctx, types.DefaultParams()[0])
@@ -209,7 +209,7 @@ func TestGetBurnerAddressAndSalt(t *testing.T) {
 		axelarGateway := common.HexToAddress("0xA193E42526F1FEA8C99AF609dcEabf30C1c29fAA")
 		recipient := "1KDeqnsTRzFeXRaENA6XLN1EwdTujchr4L"
 		tokenAddr := types.Address(common.HexToAddress("0xE7481ECB61F9C84b91C03414F3D5d48E5436045D"))
-		expectedBurnerAddr := "0xd367304b97074169b1cDAa207dafefA3aB15f0E5"
+		expectedBurnerAddr := "0x294C0419D756F7C31A521659f9b3EA7a7575d4b0"
 		expectedSalt := common.Hex2Bytes("b365d534cb5d28d511a8baf1125240c97b09cb46710645b30ed64f302c4ae7ff")
 
 		chainKeeper := k.ForChain(exported.Ethereum.Name)
@@ -230,7 +230,7 @@ func TestGetBurnerAddressAndSalt(t *testing.T) {
 		axelarGateway := common.HexToAddress("0xA193E42526F1FEA8C99AF609dcEabf30C1c29fAA")
 		recipient := "axelar1aguuy756cpaqnfd5t5qn68u7ck7w2sp64023hk"
 		tokenAddr := types.Address(common.HexToAddress("0xFDFEF9D10d929cB3905C71400ce6be1990EA0F34"))
-		expectedBurnerAddr := "0xEcA2BecB8FA622AF116aBB5CBB7E402c6990eebD"
+		expectedBurnerAddr := "0x3EF0e1bdF7A9c239016ce3904eAc4f458C1503D7"
 		expectedSalt := common.Hex2Bytes("2321c4ff5401853a7a9960fd93a0281cde689966a62d049bdc5c5b16733954f1")
 
 		chainKeeper := k.ForChain(exported.Ethereum.Name)

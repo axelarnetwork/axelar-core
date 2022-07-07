@@ -98,7 +98,7 @@ func TestStartSign_EnoughActiveValidators(t *testing.T) {
 	keyInfo := types.KeyInfo{
 		KeyID:   keyID,
 		KeyRole: exported.MasterKey,
-		KeyType: exported.Threshold,
+		KeyType: exported.Multisig,
 	}
 	err := s.Keeper.StartKeygen(s.Ctx, s.Voter, keyInfo, snap)
 	assert.NoError(t, err)
@@ -128,9 +128,9 @@ func TestStartSign_EnoughActiveValidators(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, signingShareCount.GTE(sdk.NewInt(snap.CorruptionThreshold)))
 	assert.Equal(t, int64(600), activeShareCount.Int64())
-	assert.Equal(t, int64(500), signingShareCount.Int64())
-	assert.Equal(t, 4, len(participants))
-	assert.Equal(t, 1, len(snap.Validators)-len(participants))
+	assert.Equal(t, int64(600), signingShareCount.Int64())
+	assert.Equal(t, 5, len(participants))
+	assert.Equal(t, 0, len(snap.Validators)-len(participants))
 	assert.Equal(t, val1, participants[0].GetSDKValidator().GetOperator())
 	assert.Equal(t, val2, participants[1].GetSDKValidator().GetOperator())
 	assert.Equal(t, val3, participants[2].GetSDKValidator().GetOperator())
@@ -436,7 +436,7 @@ func generateECDSAKey(keyID exported.KeyID) exported.Key {
 }
 
 func generateMultisigKey(keyID exported.KeyID) exported.Key {
-	keyNum := rand.I64Between(5, 15)
+	keyNum := rand.I64Between(5, 10)
 	var pks [][]byte
 	for i := int64(0); i <= keyNum; i++ {
 		sk, err := btcec.NewPrivateKey(btcec.S256())

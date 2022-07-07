@@ -1,506 +1,115 @@
 package types_test
 
 import (
-	"fmt"
-	"strings"
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/codec"
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	gogoprototypes "github.com/gogo/protobuf/types"
 	"github.com/stretchr/testify/assert"
-	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/app"
-	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
-	"github.com/axelarnetwork/axelar-core/utils"
-	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
-	voteMock "github.com/axelarnetwork/axelar-core/x/vote/exported/mock"
 	"github.com/axelarnetwork/axelar-core/x/vote/types"
-	"github.com/axelarnetwork/axelar-core/x/vote/types/mock"
-	"github.com/axelarnetwork/utils/slices"
 	. "github.com/axelarnetwork/utils/test"
 )
 
 func TestNewTalliedVote(t *testing.T) {
 	t.Run("panic on nil data", func(t *testing.T) {
 		assert.Panics(t, func() {
-			types.NewTalliedVote(rand.ValAddr(), rand.PosI64(), nil)
+			types.NewTalliedVote(exported.PollID(0), nil)
 		})
 	})
 
-	t.Run("panic on nil voter", func(t *testing.T) {
-		assert.Panics(t, func() {
-			types.NewTalliedVote(nil, rand.PosI64(), &gogoprototypes.BoolValue{Value: true})
-		})
+	t.Run("should return a new tallied vote", func(t *testing.T) {
+		pollID := exported.PollID(1)
+		actual := types.NewTalliedVote(pollID, &gogoprototypes.StringValue{Value: rand.Str(5)})
+
+		assert.Equal(t, pollID, actual.PollID)
+		assert.Equal(t, sdk.ZeroUint(), actual.Tally)
+		assert.NotNil(t, actual.Data)
+		assert.Nil(t, actual.IsVoterLate)
 	})
 }
 
-func TestTalliedVote_Marshaling(t *testing.T) {
+func TestTalliedVote(t *testing.T) {
+	var (
+		talliedVote types.TalliedVote
+		vote        codec.ProtoMarshaler
+	)
+
 	encCfg := app.MakeEncodingConfig()
+	encCfg.InterfaceRegistry.RegisterImplementations((*codec.ProtoMarshaler)(nil), &gogoprototypes.StringValue{})
 	cdc := encCfg.Codec
 
-	output := tofnd.KeygenOutput{PubKey: []byte("a public key"), GroupRecoverInfo: []byte{0}, PrivateRecoverInfo: []byte{0, 1, 2, 3}}
-	data := tofnd.MessageOut_KeygenResult{KeygenResultData: &tofnd.MessageOut_KeygenResult_Data{Data: &output}}
-	vote := types.NewTalliedVote(rand.ValAddr(), 23, &data)
-
-	bz := cdc.MustMarshalLengthPrefixed(&vote)
-	var actual types.TalliedVote
-	cdc.MustUnmarshalLengthPrefixed(bz, &actual)
-
-	assert.Equal(t, vote, actual)
-
-	bz = cdc.MustMarshalJSON(&vote)
-	var actual2 types.TalliedVote
-	cdc.MustUnmarshalJSON(bz, &actual2)
-
-	assert.Equal(t, vote.Tally, actual2.Tally)
-	assert.Equal(t, vote.Data.GetCachedValue(), actual2.Data.GetCachedValue())
-}
-
-func TestPoll_Is(t *testing.T) {
-	for _, state := range exported.PollState_value {
-		poll := types.Poll{PollMetadata: exported.PollMetadata{State: exported.PollState(state)}}
-
-		assert.True(t, poll.Is(exported.PollState(state)))
-
-		for _, otherState := range exported.PollState_value {
-			if otherState == state {
-				continue
-			}
-			assert.False(t, poll.Is(exported.PollState(otherState)), "poll: %s, other: %s", poll.State, exported.PollState(otherState))
+	givenTalliedVote := Given("given a tallied vote", func() {
+		vote = &gogoprototypes.StringValue{Value: rand.Str(5)}
+		talliedVote = types.NewTalliedVote(exported.PollID(1), vote)
+		talliedVote.IsVoterLate = map[string]bool{
+			rand.ValAddr().String(): true,
+			rand.ValAddr().String(): false,
+			rand.ValAddr().String(): true,
+			rand.ValAddr().String(): false,
+			rand.ValAddr().String(): true,
 		}
-	}
-}
-
-func TestPoll(t *testing.T) {
-	var (
-		poll      *types.Poll
-		pollStore *mock.StoreMock
-	)
-
-	repeats := 20
-
-	givenPoll := Given("poll", func() {
-		voterCount := rand.I64Between(10, 20)
-		voters := make([]exported.Voter, voterCount)
-		for i := 0; i < int(voterCount); i++ {
-			voters[i] = exported.Voter{
-				Validator:   rand.ValAddr(),
-				VotingPower: rand.I64Between(10, 100),
-			}
-		}
-
-		pollKey := exported.NewPollKey(randomNormalizedStr(5, 20), randomNormalizedStr(5, 20))
-		pollMetadata := types.NewPollMetaData(pollKey, types.DefaultParams().DefaultVotingThreshold, voters)
-
-		pollStore = &mock.StoreMock{}
-		poll = types.NewPoll(pollMetadata, pollStore)
 	})
 
-	withState := func(state exported.PollState) func() {
-		return func() {
-			poll.State = state
-		}
-	}
+	t.Run("marshaling", func(t *testing.T) {
+		var (
+			bz []byte
+		)
 
-	t.Run("SetExpired", testutils.Func(func(t *testing.T) {
-		givenPoll.
-			When("poll is pending", withState(exported.Pending)).
-			Then("should set poll as expired", func(t *testing.T) {
-				pollStore.SetMetadataFunc = func(exported.PollMetadata) {}
-
-				poll.SetExpired()
-
-				assert.True(t, poll.Is(exported.Expired))
-				assert.Len(t, pollStore.SetMetadataCalls(), 1)
-				assert.True(t, pollStore.SetMetadataCalls()[0].Metadata.Is(exported.Expired))
+		givenTalliedVote.
+			When("marshalized", func() {
+				bz = cdc.MustMarshalLengthPrefixed(&talliedVote)
 			}).
-			Run(t)
-	}).Repeat(repeats))
-
-	t.Run("AllowOverride", testutils.Func(func(t *testing.T) {
-		givenPoll.
-			When("poll is pending", withState(exported.Pending)).
-			Then("should set poll as allow override", func(t *testing.T) {
-				pollStore.SetMetadataFunc = func(exported.PollMetadata) {}
-
-				poll.AllowOverride()
-
-				assert.True(t, poll.Is(exported.AllowOverride))
-				assert.Len(t, pollStore.SetMetadataCalls(), 1)
-				assert.True(t, pollStore.SetMetadataCalls()[0].Metadata.Is(exported.AllowOverride))
-			}).
-			Run(t)
-	}).Repeat(repeats))
-
-	t.Run("Vote", testutils.Func(func(t *testing.T) {
-		givenPoll.
-			When("poll does not exist", withState(exported.NonExistent)).
-			Then("should return error", func(t *testing.T) {
-				result, voted, err := poll.Vote(
-					rand.Of(poll.Voters...).Validator,
-					rand.PosI64(),
-					&gogoprototypes.BoolValue{Value: true},
-				)
-
-				assert.Nil(t, result)
-				assert.False(t, voted)
-				assert.ErrorContains(t, err, "poll does not exist")
-			}).
-			Run(t)
-
-		givenPoll.
-			When("poll is in any state", withState(rand.Of(exported.Completed, exported.Failed, exported.Pending, exported.Expired))).
-			When("the voter has voted already", func() {
-				pollStore.HasVotedFunc = func(v sdk.ValAddress) bool { return true }
-			}).
-			Then("should return error", func(t *testing.T) {
-				result, voted, err := poll.Vote(
-					rand.Of(poll.Voters...).Validator,
-					rand.PosI64(),
-					&gogoprototypes.BoolValue{Value: true},
-				)
-
-				assert.Nil(t, result)
-				assert.False(t, voted)
-				assert.ErrorContains(t, err, "has voted already")
-			}).
-			Run(t)
-
-		givenPoll.
-			When("poll is failed", withState(exported.Failed)).
-			Then("should do nothing", func(t *testing.T) {
-				pollStore.HasVotedFunc = func(v sdk.ValAddress) bool { return false }
-
-				result, voted, err := poll.Vote(
-					rand.Of(poll.Voters...).Validator,
-					rand.PosI64(),
-					&gogoprototypes.BoolValue{Value: true},
-				)
-
-				assert.Nil(t, result)
-				assert.False(t, voted)
-				assert.NoError(t, err)
-			}).
-			Run(t)
-
-		givenPoll.
-			When("poll is expired", withState(exported.Expired)).
-			Then("should return error", func(t *testing.T) {
-				pollStore.HasVotedFunc = func(v sdk.ValAddress) bool { return false }
-
-				result, voted, err := poll.Vote(
-					rand.Of(poll.Voters...).Validator,
-					rand.PosI64(),
-					&gogoprototypes.BoolValue{Value: true},
-				)
-
-				assert.Nil(t, result)
-				assert.False(t, voted)
-				assert.ErrorContains(t, err, "expired")
-			}).
-			Run(t)
-
-		blockHeight := rand.I64Between(100, 1000)
-		givenPoll.
-			When("poll is completed", withState(exported.Completed)).
-			When("poll is within its grace period", func() {
-				poll.GracePeriod = rand.I64Between(1, blockHeight)
-				poll.CompletedAt = rand.I64Between(blockHeight-int64(poll.GracePeriod), blockHeight+1)
-			}).
-			Then("should allow late vote", func(t *testing.T) {
-				voter := rand.Of(poll.Voters...)
-				pollStore.HasVotedFunc = func(v sdk.ValAddress) bool { return !v.Equals(voter.Validator) }
-				pollStore.SetVoteFunc = func(voter sdk.ValAddress, data codec.ProtoMarshaler, votingPower int64, isLate bool) {}
-
-				result, voted, err := poll.Vote(
-					voter.Validator,
-					blockHeight,
-					&gogoprototypes.BoolValue{Value: true},
-				)
-
-				assert.Nil(t, result)
-				assert.True(t, voted)
-				assert.NoError(t, err)
-
-				assert.Len(t, pollStore.SetVoteCalls(), 1)
-				assert.Equal(t, voter.Validator, pollStore.SetVoteCalls()[0].Voter)
-				assert.NotNil(t, pollStore.SetVoteCalls()[0].Data)
-				assert.Equal(t, voter.VotingPower, pollStore.SetVoteCalls()[0].VotingPower)
-				assert.True(t, pollStore.SetVoteCalls()[0].IsLate)
-			}).
-			Run(t)
-
-		blockHeight = rand.I64Between(100, 1000)
-		givenPoll.
-			When("poll is completed", withState(exported.Completed)).
-			When("poll is not within its grace period", func() {
-				poll.GracePeriod = rand.I64Between(1, blockHeight)
-				poll.CompletedAt = rand.I64Between(0, blockHeight-int64(poll.GracePeriod))
-			}).
-			Then("should not allow late vote", func(t *testing.T) {
-				voter := rand.Of(poll.Voters...)
-				pollStore.HasVotedFunc = func(v sdk.ValAddress) bool { return !v.Equals(voter.Validator) }
-
-				result, voted, err := poll.Vote(
-					voter.Validator,
-					blockHeight,
-					&gogoprototypes.BoolValue{Value: true},
-				)
-
-				assert.Nil(t, result)
-				assert.False(t, voted)
-				assert.NoError(t, err)
-			}).
-			Run(t)
-
-		var voter exported.Voter
-		givenPoll.
-			When("poll is pending", withState(exported.Pending)).
-			When("voter is not eligible", func() {
-				pollStore.HasVotedFunc = func(v sdk.ValAddress) bool { return false }
-				voter = exported.Voter{Validator: rand.ValAddr()}
-			}).
-			Then("should return error", func(t *testing.T) {
-				result, voted, err := poll.Vote(
-					voter.Validator,
-					rand.PosI64(),
-					&gogoprototypes.BoolValue{Value: true},
-				)
-
-				assert.Nil(t, result)
-				assert.False(t, voted)
-				assert.ErrorContains(t, err, "is not eligible")
-			}).
-			Run(t)
-
-		data := gogoprototypes.StringValue{Value: rand.Str(5)}
-		result, _ := codectypes.NewAnyWithValue(&data)
-		givenPoll.
-			When("poll is pending", withState(exported.Pending)).
-			When("enough votes have been received", func() {
-				voter = rand.Of(poll.Voters...)
-				pollStore.HasVotedFunc = func(v sdk.ValAddress) bool { return !v.Equals(voter.Validator) }
-				pollStore.GetVotesFunc = func() []types.TalliedVote {
-					return []types.TalliedVote{
-						{
-							Tally:  poll.TotalVotingPower.MulRaw(poll.VotingThreshold.Numerator).QuoRaw(poll.VotingThreshold.Denominator).AddRaw(1),
-							Voters: []sdk.ValAddress{voter.Validator},
-							Data:   result,
-						},
-					}
+			Then("should marshalize to the same bytes", func(t *testing.T) {
+				for i := 0; i < 100; i++ {
+					assert.Equal(t, bz, cdc.MustMarshalLengthPrefixed(&talliedVote))
 				}
-				pollStore.SetVoteFunc = func(voter sdk.ValAddress, data codec.ProtoMarshaler, votingPower int64, isLate bool) {}
-				pollStore.SetMetadataFunc = func(metadata exported.PollMetadata) {}
 			}).
-			Then("should succeed voting", func(t *testing.T) {
-				blockHeight := rand.PosI64()
-				result, voted, err := poll.Vote(
-					voter.Validator,
-					blockHeight,
-					&data,
-				)
+			Run(t, 20)
 
-				assert.NotNil(t, result)
-				assert.True(t, voted)
-				assert.NoError(t, err)
-
-				assert.Len(t, pollStore.SetVoteCalls(), 1)
-				assert.Equal(t, voter.Validator, pollStore.SetVoteCalls()[0].Voter)
-				assert.NotNil(t, pollStore.SetVoteCalls()[0].Data)
-				assert.Equal(t, voter.VotingPower, pollStore.SetVoteCalls()[0].VotingPower)
-				assert.False(t, pollStore.SetVoteCalls()[0].IsLate)
-				assert.Len(t, pollStore.SetMetadataCalls(), 1)
-				assert.NotNil(t, pollStore.SetMetadataCalls()[0].Metadata.Result)
-				assert.Equal(t, exported.Completed, pollStore.SetMetadataCalls()[0].Metadata.State)
-				assert.Equal(t, blockHeight, pollStore.SetMetadataCalls()[0].Metadata.CompletedAt)
+		givenTalliedVote.
+			When("marshalized", func() {
+				bz = cdc.MustMarshalLengthPrefixed(&talliedVote)
 			}).
-			Run(t)
+			Then("should be able to unmarshalize", func(t *testing.T) {
+				var actual types.TalliedVote
+				cdc.MustUnmarshalLengthPrefixed(bz, &actual)
 
-		givenPoll.
-			When("poll is pending", withState(exported.Pending)).
-			When("poll cannot possibly complete", func() {
-				voter = rand.Of(poll.Voters...)
-				pollStore.HasVotedFunc = func(v sdk.ValAddress) bool { return !v.Equals(voter.Validator) }
-				pollStore.GetVotesFunc = func() []types.TalliedVote {
-					return slices.Map(
-						slices.Filter(poll.Voters, func(v exported.Voter) bool { return !v.Validator.Equals(voter.Validator) }),
-						func(v exported.Voter) types.TalliedVote {
-							data, _ := codectypes.NewAnyWithValue(&gogoprototypes.StringValue{Value: rand.Str(5)})
-
-							return types.TalliedVote{
-								Tally:  sdk.NewInt(v.VotingPower),
-								Voters: []sdk.ValAddress{v.Validator},
-								Data:   data,
-							}
-						},
-					)
-				}
-				pollStore.SetVoteFunc = func(voter sdk.ValAddress, data codec.ProtoMarshaler, votingPower int64, isLate bool) {}
-				pollStore.SetMetadataFunc = func(metadata exported.PollMetadata) {}
+				assert.Equal(t, talliedVote, actual)
+				assert.NotNil(t, actual.Data.GetCachedValue())
+				assert.Equal(t, vote, actual.Data.GetCachedValue())
 			}).
-			Then("should succeed voting but poll is failed", func(t *testing.T) {
-				result, voted, err := poll.Vote(
-					voter.Validator,
-					rand.PosI64(),
-					&gogoprototypes.StringValue{Value: rand.Str(5)},
-				)
-
-				assert.Nil(t, result)
-				assert.True(t, voted)
-				assert.NoError(t, err)
-
-				assert.Len(t, pollStore.SetVoteCalls(), 1)
-				assert.Equal(t, voter.Validator, pollStore.SetVoteCalls()[0].Voter)
-				assert.NotNil(t, pollStore.SetVoteCalls()[0].Data)
-				assert.Equal(t, voter.VotingPower, pollStore.SetVoteCalls()[0].VotingPower)
-				assert.False(t, pollStore.SetVoteCalls()[0].IsLate)
-				assert.Len(t, pollStore.SetMetadataCalls(), 1)
-				assert.Nil(t, pollStore.SetMetadataCalls()[0].Metadata.Result)
-				assert.Equal(t, exported.Failed, pollStore.SetMetadataCalls()[0].Metadata.State)
-				assert.EqualValues(t, 0, pollStore.SetMetadataCalls()[0].Metadata.CompletedAt)
-			}).
-			Run(t)
-
-		givenPoll.
-			When("poll is pending", withState(exported.Pending)).
-			When("no voter has voted yet", func() {
-				voter = rand.Of(poll.Voters...)
-				pollStore.HasVotedFunc = func(v sdk.ValAddress) bool { return !v.Equals(voter.Validator) }
-				pollStore.GetVotesFunc = func() []types.TalliedVote {
-					data, _ := codectypes.NewAnyWithValue(&gogoprototypes.StringValue{Value: rand.Str(5)})
-
-					return []types.TalliedVote{
-						{
-							Tally:  sdk.NewInt(voter.VotingPower),
-							Data:   data,
-							Voters: []sdk.ValAddress{voter.Validator},
-						},
-					}
-				}
-				pollStore.SetVoteFunc = func(voter sdk.ValAddress, data codec.ProtoMarshaler, votingPower int64, isLate bool) {}
-			}).
-			Then("should succeed voting", func(t *testing.T) {
-				result, voted, err := poll.Vote(
-					voter.Validator,
-					rand.PosI64(),
-					&gogoprototypes.StringValue{Value: rand.Str(5)},
-				)
-
-				assert.Nil(t, result)
-				assert.True(t, voted)
-				assert.NoError(t, err)
-
-				assert.Len(t, pollStore.SetVoteCalls(), 1)
-				assert.Equal(t, voter.Validator, pollStore.SetVoteCalls()[0].Voter)
-				assert.NotNil(t, pollStore.SetVoteCalls()[0].Data)
-				assert.Equal(t, voter.VotingPower, pollStore.SetVoteCalls()[0].VotingPower)
-				assert.False(t, pollStore.SetVoteCalls()[0].IsLate)
-			}).
-			Run(t)
-	}).Repeat(repeats))
-}
-
-func TestPoll_Initialize(t *testing.T) {
-	var (
-		previousPoll exported.Poll
-	)
-
-	repeats := 20
-
-	testCases := []struct {
-		label        string
-		previousPoll exported.Poll
-		expectError  bool
-	}{
-		{"poll can be overridden", &voteMock.PollMock{DeleteFunc: func() error { return nil }}, false},
-		{"poll can not be overridden", &voteMock.PollMock{DeleteFunc: func() error { return fmt.Errorf("no delete") }}, true},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.label, testutils.Func(func(t *testing.T) {
-			store := &mock.StoreMock{
-				GetPollFunc:     func(exported.PollKey) exported.Poll { return previousPoll },
-				SetMetadataFunc: func(exported.PollMetadata) {},
-				DeletePollFunc:  func() {},
-				EnqueuePollFunc: func(exported.PollMetadata) {},
-			}
-
-			previousPoll = testCase.previousPoll
-			poll := types.NewPoll(newRandomPollMetadata(), store).WithLogger(log.TestingLogger())
-
-			if testCase.expectError {
-				assert.Error(t, poll.Initialize(rand.I64Between(1, poll.ExpiresAt)))
-				assert.Len(t, store.EnqueuePollCalls(), 0)
-			} else {
-				assert.NoError(t, poll.Initialize(rand.I64Between(1, poll.ExpiresAt)))
-				assert.Len(t, store.EnqueuePollCalls(), 1)
-			}
-		}).Repeat(repeats))
-	}
-}
-
-func TestPoll_Delete(t *testing.T) {
-	var store *mock.StoreMock
-	setup := func(pollState exported.PollState) exported.Poll {
-		store = &mock.StoreMock{DeletePollFunc: func() {}}
-		metadata := newRandomPollMetadata()
-		metadata.State = pollState
-
-		return types.NewPoll(metadata, store).WithLogger(log.TestingLogger())
-	}
-
-	t.Run("nonexistent", func(t *testing.T) {
-		poll := setup(exported.NonExistent)
-		assert.NoError(t, poll.Delete())
-		assert.Len(t, store.DeletePollCalls(), 0)
+			Run(t, 20)
 	})
 
-	testCases := []struct {
-		label            string
-		pollState        exported.PollState
-		deleteSuccessful bool
-	}{
-		{"pending", exported.Pending, false},
-		{"completed", exported.Completed, false},
-		{"failed", exported.Failed, false},
-		{"expired", exported.Expired, false},
-		{"allow override", exported.AllowOverride, true},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.label, func(t *testing.T) {
-			poll := setup(testCase.pollState)
-
-			if testCase.deleteSuccessful {
-				assert.NoError(t, poll.Delete())
-				assert.Len(t, store.DeletePollCalls(), 1)
-			} else {
-				assert.Error(t, poll.Delete())
-				assert.Len(t, store.DeletePollCalls(), 0)
-			}
+	t.Run("TallyVote", func(t *testing.T) {
+		whenTalliedVoteIsNew := When("when tallied vote is new", func() {
+			talliedVote.Tally = sdk.ZeroUint()
+			talliedVote.IsVoterLate = nil
 		})
-	}
-}
 
-func newRandomPollMetadata() exported.PollMetadata {
-	key := exported.NewPollKey(randomNormalizedStr(5, 20), randomNormalizedStr(5, 20))
-	voterCount := rand.I64Between(10, 20)
-	voters := make([]exported.Voter, voterCount)
-	for i := 0; i < int(voterCount); i++ {
-		voters[i] = exported.Voter{Validator: rand.ValAddr(), VotingPower: rand.PosI64()}
-	}
+		givenTalliedVote.
+			When2(whenTalliedVoteIsNew).
+			Then("should panic if given voter is nil", func(t *testing.T) {
+				assert.Panics(t, func() {
+					talliedVote.TallyVote(nil, sdk.OneUint(), true)
+				})
+			}).
+			Run(t)
 
-	poll := types.NewPollMetaData(key, types.DefaultParams().DefaultVotingThreshold, voters)
-	poll.ExpiresAt = rand.I64Between(1, 1000000)
+		givenTalliedVote.
+			When2(whenTalliedVoteIsNew).
+			Then("should tally the vote", func(t *testing.T) {
+				voter := rand.ValAddr()
+				talliedVote.TallyVote(voter, sdk.OneUint(), true)
 
-	return poll
-}
-
-func randomNormalizedStr(min, max int) string {
-	return strings.ReplaceAll(utils.NormalizeString(rand.StrBetween(min, max)), utils.DefaultDelimiter, "-")
+				assert.True(t, talliedVote.IsVoterLate[voter.String()])
+				assert.Equal(t, sdk.OneUint(), talliedVote.Tally)
+			}).
+			Run(t)
+	})
 }

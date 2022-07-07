@@ -12,7 +12,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
-	bitcoin "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
@@ -61,7 +60,7 @@ func TestKeeper_AssignNextMasterKey_RotateMasterKey_NewKeyIsSet(t *testing.T) {
 func TestKeeper_AssignNextMasterKey_RotateMasterKey_AssignNextSecondaryKey_RotateSecondaryKey(t *testing.T) {
 	currHeight := rand2.I64Between(0, 10000000)
 
-	chain := bitcoin.Bitcoin
+	chain := evm.Ethereum
 	s := setup()
 	s.Ctx = s.Ctx.WithBlockHeight(currHeight)
 	s.Ctx = s.Ctx.WithBlockTime(time.Now())
@@ -96,7 +95,7 @@ func TestKeeper_AssignNextMasterKey_RotateMasterKey_AssignNextSecondaryKey_Rotat
 }
 
 func TestKeeper_AssignNextMasterKey_RotateMasterKey_MultipleTimes_PreviousKeysStillAvailable(t *testing.T) {
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 20; i++ {
 		chain := evm.Ethereum
 		s := setup()
 		ctx := s.Ctx

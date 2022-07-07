@@ -1,41 +1,16 @@
 package types
 
 import (
-	"fmt"
-
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/tendermint/tendermint/libs/log"
 
-	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
-	"github.com/axelarnetwork/utils/slices"
 )
 
-//go:generate moq -out ./mock/types.go -pkg mock . Store VoteRouter
+//go:generate moq -out ./mock/types.go -pkg mock . VoteRouter
 
 var _ codectypes.UnpackInterfacesMessage = TalliedVote{}
-
-// Voters is a type alias necessary to unmarshal TalliedVote
-type Voters []sdk.ValAddress
-
-// NewTalliedVote is the constructor for TalliedVote
-func NewTalliedVote(voter sdk.ValAddress, votingPower int64, data codec.ProtoMarshaler) TalliedVote {
-	if voter == nil {
-		panic("voter cannot be nil")
-	}
-	d, err := codectypes.NewAnyWithValue(data)
-	if err != nil {
-		panic(err)
-	}
-
-	return TalliedVote{
-		Tally:  sdk.NewInt(votingPower),
-		Data:   d,
-		Voters: Voters{voter},
-	}
-}
 
 // UnpackInterfaces implements UnpackInterfacesMessage
 func (m TalliedVote) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
@@ -43,300 +18,30 @@ func (m TalliedVote) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
 	return unpacker.UnpackAny(m.Data, &data)
 }
 
-// NewPollMetaData is the constructor for PollMetadata.
-// It is not in the exported package to make it clear that only the vote module is supposed to use it.
-func NewPollMetaData(key exported.PollKey, threshold utils.Threshold, voters []exported.Voter) exported.PollMetadata {
-	return exported.PollMetadata{
-		Key:             key,
-		ExpiresAt:       0,
-		Result:          nil,
-		VotingThreshold: threshold,
-		State:           exported.Pending,
-		MinVoterCount:   0,
-		Voters:          voters,
-		TotalVotingPower: slices.Reduce(voters, sdk.ZeroInt(), func(total sdk.Int, voter exported.Voter) sdk.Int {
-			return total.AddRaw(voter.VotingPower)
-		}),
-		GracePeriod: 0,
-		CompletedAt: 0,
+// NewTalliedVote is the constructor for TalliedVote
+func NewTalliedVote(pollID exported.PollID, data codec.ProtoMarshaler) TalliedVote {
+	d, err := codectypes.NewAnyWithValue(data)
+	if err != nil {
+		panic(err)
+	}
+
+	return TalliedVote{
+		PollID: pollID,
+		Tally:  sdk.ZeroUint(),
+		Data:   d,
 	}
 }
 
-var _ exported.Poll = &Poll{}
-
-// Poll represents a poll with write-in voting
-type Poll struct {
-	exported.PollMetadata
-	Store
-	logger log.Logger
-}
-
-// Store enables a poll to communicate with the keeper
-type Store interface {
-	SetVote(voter sdk.ValAddress, data codec.ProtoMarshaler, votingPower int64, isLate bool)
-	GetVote(hash string) (TalliedVote, bool)
-	HasVoted(voter sdk.ValAddress) bool
-	HasVotedLate(voter sdk.ValAddress) bool
-	GetVotes() []TalliedVote
-	SetMetadata(metadata exported.PollMetadata)
-	EnqueuePoll(metadata exported.PollMetadata)
-	GetPoll(key exported.PollKey) exported.Poll
-	DeletePoll()
-}
-
-// NewPoll creates a new poll
-func NewPoll(meta exported.PollMetadata, store Store) *Poll {
-	return &Poll{
-		PollMetadata: meta,
-		Store:        store,
-		logger:       utils.NewNOPLogger(),
-	}
-}
-
-// WithLogger sets a logger for the poll
-func (p *Poll) WithLogger(logger log.Logger) *Poll {
-	p.logger = logger
-	return p
-}
-
-// Is checks if the poll is in the given state
-func (p Poll) Is(state exported.PollState) bool {
-	return p.PollMetadata.Is(state)
-}
-
-// SetExpired sets the poll to be expired
-func (p *Poll) SetExpired() {
-	if !p.Is(exported.NonExistent) {
-		p.State |= exported.Expired
-	}
-	p.SetMetadata(p.PollMetadata)
-}
-
-// AllowOverride makes it possible to delete the poll, regardless of which state it is in
-func (p *Poll) AllowOverride() {
-	if !p.Is(exported.NonExistent) {
-		p.State |= exported.AllowOverride
-	}
-	p.SetMetadata(p.PollMetadata)
-}
-
-// GetResult returns the result of the poll. Returns nil if the poll is not completed.
-func (p Poll) GetResult() codec.ProtoMarshaler {
-	if p.Result == nil {
-		return nil
+// TallyVote adds the given voting power to the tallied vote
+func (m *TalliedVote) TallyVote(voter sdk.ValAddress, votingPower sdk.Uint, isLate bool) {
+	if voter == nil {
+		panic("voter cannot be nil")
 	}
 
-	return p.Result.GetCachedValue().(codec.ProtoMarshaler)
-}
-
-// Initialize initializes the poll
-func (p Poll) Initialize(blockHeight int64) error {
-	if err := p.Validate(); err != nil {
-		return err
+	if m.IsVoterLate == nil {
+		m.IsVoterLate = make(map[string]bool)
 	}
 
-	if p.ExpiresAt <= blockHeight {
-		return fmt.Errorf(
-			"cannot create poll %s that expires at block %d which is less than or equal to the current block height",
-			p.Key,
-			p.ExpiresAt,
-		)
-	}
-
-	if !p.Is(exported.Pending) {
-		return fmt.Errorf("cannot create poll %s that is not pending", p.Key)
-	}
-
-	if p.CompletedAt != 0 {
-		return fmt.Errorf("cannot create poll %s that is already completed", p.Key)
-	}
-
-	other := p.Store.GetPoll(p.Key)
-	if err := other.Delete(); err != nil {
-		return err
-	}
-
-	p.EnqueuePoll(p.PollMetadata)
-
-	return nil
-}
-
-func (p Poll) getVotingPower(v sdk.ValAddress) int64 {
-	for _, voter := range p.PollMetadata.Voters {
-		if v.Equals(voter.Validator) {
-			return voter.VotingPower
-		}
-	}
-
-	return 0
-}
-
-func (p Poll) isWithinGracePeriod(blockHeight int64) bool {
-	return !p.Is(exported.Expired) &&
-		p.Is(exported.Completed) &&
-		blockHeight <= p.CompletedAt+int64(p.GracePeriod)
-}
-
-// Vote records the given vote
-func (p *Poll) Vote(voter sdk.ValAddress, blockHeight int64, data codec.ProtoMarshaler) (codec.ProtoMarshaler, bool, error) {
-	if p.Is(exported.NonExistent) {
-		return nil, false, fmt.Errorf("poll does not exist")
-	}
-
-	if p.HasVoted(voter) {
-		return nil, false, fmt.Errorf("voter %s has voted already", voter)
-	}
-
-	switch {
-	case p.Is(exported.Failed):
-		return nil, false, nil
-	case p.Is(exported.Expired):
-		return nil, false, fmt.Errorf("poll %s has expired already", p.GetKey().String())
-	case p.Is(exported.Completed) && p.isWithinGracePeriod(blockHeight):
-		votingPower := p.getVotingPower(voter)
-		if votingPower == 0 {
-			return nil, false, fmt.Errorf("address %s is not eligible to Vote in this poll", voter)
-		}
-
-		p.SetVote(voter, data, votingPower, true)
-		p.logger.Debug("received late vote for poll",
-			"voter", voter.String(),
-			"poll", p.GetKey().String(),
-		)
-
-		return nil, true, nil
-	case p.Is(exported.Completed):
-		return nil, false, nil
-	}
-
-	votingPower := p.getVotingPower(voter)
-	if votingPower == 0 {
-		return nil, false, fmt.Errorf("address %s is not eligible to Vote in this poll", voter)
-	}
-
-	p.SetVote(voter, data, votingPower, false)
-	p.logger.Debug("received vote for poll",
-		"voter", voter.String(),
-		"poll", p.GetKey().String(),
-	)
-
-	majorityVote := p.getMajorityVote()
-	switch {
-	case p.hasEnoughVotes(majorityVote.Tally):
-		p.Result = majorityVote.Data
-		p.State = exported.Completed
-		p.CompletedAt = blockHeight
-		p.logger.Debug(fmt.Sprintf("poll %s (threshold: %d/%d, min voter count: %d) completed",
-			p.Key,
-			p.VotingThreshold.Numerator,
-			p.VotingThreshold.Denominator,
-			p.MinVoterCount,
-		))
-
-		p.SetMetadata(p.PollMetadata)
-
-		return p.GetResult(), true, nil
-	case p.cannotWin(majorityVote.Tally):
-		p.State = exported.Failed
-		p.logger.Debug(fmt.Sprintf("poll %s (threshold: %d/%d, min voter count: %d) failed, voters could not agree on single value",
-			p.Key,
-			p.VotingThreshold.Numerator,
-			p.VotingThreshold.Denominator,
-			p.MinVoterCount,
-		))
-
-		p.SetMetadata(p.PollMetadata)
-		fallthrough
-	default:
-		return nil, true, nil
-	}
-}
-
-// Delete deletes the poll. Returns error if the poll is in a state that does not allow deletion
-func (p Poll) Delete() error {
-	switch {
-	case p.Is(exported.NonExistent):
-		return nil
-	case p.Is(exported.AllowOverride):
-		p.logger.Debug(fmt.Sprintf("deleting poll %s in state %s", p.Key.String(), p.State))
-		p.Store.DeletePoll()
-		return nil
-	default:
-		return fmt.Errorf("cannot delete existing poll %s with state %s, must be allowed to be overridden", p.Key, p.State)
-	}
-}
-
-// GetKey returns the poll's key
-func (p Poll) GetKey() exported.PollKey {
-	return p.Key
-}
-
-// GetVoters returns the poll's voters
-func (p Poll) GetVoters() []exported.Voter {
-	return p.Voters
-}
-
-// HasVotedCorrectly returns true if the give voter has voted correctly for the poll, false otherwise
-func (p Poll) HasVotedCorrectly(voter sdk.ValAddress) bool {
-	majorityVote := p.getMajorityVote()
-
-	return p.Is(exported.Completed) &&
-		p.HasVoted(voter) &&
-		slices.Any(majorityVote.Voters, func(v sdk.ValAddress) bool {
-			return voter.Equals(v)
-		})
-}
-
-// GetTotalVotingPower returns the total voting power of the poll
-func (p Poll) GetTotalVotingPower() sdk.Int {
-	return p.TotalVotingPower
-}
-
-// GetRewardPoolName returns the name of the attached reward pool, if any
-func (p Poll) GetRewardPoolName() (string, bool) {
-	return p.RewardPoolName, len(p.RewardPoolName) > 0
-}
-
-func (p Poll) getVoterCount() int64 {
-	var count int64
-
-	for _, talliedVote := range p.GetVotes() {
-		count += int64(len(talliedVote.Voters))
-	}
-
-	return count
-}
-
-func (p *Poll) hasEnoughVotes(majority sdk.Int) bool {
-	return utils.NewThreshold(majority.Int64(), p.GetTotalVotingPower().Int64()).GTE(p.VotingThreshold) &&
-		p.getVoterCount() >= p.MinVoterCount
-}
-
-func (p *Poll) cannotWin(majority sdk.Int) bool {
-	alreadyTallied := p.getTalliedVotingPower()
-	missingVotingPower := p.GetTotalVotingPower().Sub(alreadyTallied)
-
-	return !p.hasEnoughVotes(majority.Add(missingVotingPower))
-}
-
-func (p Poll) getMajorityVote() TalliedVote {
-	var result TalliedVote
-
-	for i, talliedVote := range p.GetVotes() {
-		if i == 0 || talliedVote.Tally.GT(result.Tally) {
-			result = talliedVote
-		}
-	}
-
-	return result
-}
-
-func (p Poll) getTalliedVotingPower() sdk.Int {
-	result := sdk.ZeroInt()
-
-	for _, talliedVote := range p.GetVotes() {
-		result = result.Add(talliedVote.Tally)
-	}
-
-	return result
+	m.IsVoterLate[voter.String()] = isLate
+	m.Tally = m.Tally.Add(votingPower)
 }

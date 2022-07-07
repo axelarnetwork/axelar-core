@@ -289,15 +289,18 @@ func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, keyRequirement t
 		)
 	}
 
-	snapshot := exported.NewSnapshot(
-		participants,
-		ctx.BlockTime(),
-		ctx.BlockHeight(),
-		totalShareCount,
-		counter,
-		keyRequirement.KeyShareDistributionPolicy,
-		tss.ComputeAbsCorruptionThreshold(keyRequirement.SafetyThreshold, totalShareCount),
-	)
+	snapshot := exported.Snapshot{
+		Validators:                 participants,
+		Timestamp:                  ctx.BlockTime(),
+		Height:                     ctx.BlockHeight(),
+		TotalShareCount:            totalShareCount,
+		Counter:                    counter,
+		KeyShareDistributionPolicy: keyRequirement.KeyShareDistributionPolicy,
+		CorruptionThreshold:        tss.ComputeAbsCorruptionThreshold(keyRequirement.SafetyThreshold, totalShareCount),
+		Participants:               nil,
+		BondedWeight:               sdk.ZeroUint(),
+	}
+
 	if err := snapshot.Validate(); err != nil {
 		return exported.Snapshot{}, err
 	}
@@ -462,4 +465,58 @@ func (k Keeper) GetValidatorIllegibility(ctx sdk.Context, validator exported.SDK
 	}
 
 	return illegibility, nil
+}
+
+// CreateSnapshot returns a new snapshot giving each candidate its proper weight,
+// or returns an error if the threshold cannot be met given the total weight of all
+// validators in the system; candidates are excluded if the given filterFunc is
+// evaluated to false or their weight is zero (NOTE: snapshot itself does not keep track of the threshold)
+func (k Keeper) CreateSnapshot(
+	ctx sdk.Context,
+	candidates []sdk.ValAddress,
+	filterFunc func(exported.ValidatorI) bool,
+	weightFunc func(consensusPower sdk.Uint) sdk.Uint,
+	threshold utils.Threshold,
+) (exported.Snapshot, error) {
+	powerReduction := k.staking.PowerReduction(ctx)
+	participants := make([]exported.Participant, 0, len(candidates))
+	for _, candidate := range candidates {
+		validator := k.staking.Validator(ctx, candidate)
+		if !filterFunc(validator) {
+			continue
+		}
+
+		weight := weightFunc(sdk.NewUint(uint64(validator.GetConsensusPower(powerReduction))))
+		// Participants with zero weight are useless for all intents and purposes.
+		// We filter them out here so any process dealing with snapshots doesn't have to worry about them
+		if weight.IsZero() {
+			continue
+		}
+		participants = append(participants, exported.NewParticipant(validator.GetOperator(), weight))
+
+	}
+
+	bondedWeight := sdk.ZeroUint()
+	k.staking.IterateBondedValidatorsByPower(ctx, func(_ int64, v stakingtypes.ValidatorI) (stop bool) {
+		if v == nil {
+			panic("nil bonded validator received")
+		}
+
+		weight := weightFunc(sdk.NewUint(uint64(v.GetConsensusPower(powerReduction))))
+		bondedWeight = bondedWeight.Add(weight)
+
+		// we do not stop until we've iterated through all bonded validators.
+		// Due to the unknown nature of weightFunc, every validator might contribute
+		// some weight
+		return false
+	})
+
+	snapshot := exported.NewSnapshot(ctx.BlockTime(), ctx.BlockHeight(), participants, bondedWeight)
+
+	participantsWeight := snapshot.GetParticipantsWeight()
+	if participantsWeight.LT(snapshot.CalculateMinPassingWeight(threshold)) {
+		return exported.Snapshot{}, fmt.Errorf("given threshold %s cannot be met (participants weight: %s, bonded weight: %s)", threshold.String(), participantsWeight, bondedWeight)
+	}
+
+	return snapshot, nil
 }

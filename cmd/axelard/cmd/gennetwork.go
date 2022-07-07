@@ -13,8 +13,6 @@ import (
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 	"github.com/spf13/cobra"
 
-	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
-	bitcoinTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -25,7 +23,7 @@ const (
 	flagNetwork             = "network"
 	flagRevoteLockingPeriod = "revote-locking-period"
 
-	//EVM only
+	// EVM only
 	flagEVMNetworkName = "evm-network-name"
 	flagEVMChainID     = "evm-chain-id"
 )
@@ -42,11 +40,10 @@ func SetGenesisChainParamsCmd(defaultNodeHome string) *cobra.Command {
 		evmChainID     string
 	)
 	cmd := &cobra.Command{
-		Use:   "set-genesis-chain-params [bitcoin | evm] [chain]",
+		Use:   "set-genesis-chain-params evm [chain]",
 		Short: "Set chain parameters in genesis.json",
 		Long: "Set chain parameters in genesis.json. " +
-			"The provided platform must be one of those axelar supports (bitcoin, EVM). " +
-			"In the case of Bitcoin, there is no need for the chain argument.",
+			"The provided platform must be one of those axelar supports (currently only EVM).",
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx := client.GetClientContextFromCmd(cmd)
@@ -69,34 +66,6 @@ func SetGenesisChainParamsCmd(defaultNodeHome string) *cobra.Command {
 			var moduleName string
 
 			switch strings.ToLower(platformStr) {
-			case strings.ToLower(btc.Bitcoin.Name.String()):
-				genesisState := bitcoinTypes.GetGenesisStateFromAppState(cdc, appState)
-				moduleName = bitcoinTypes.ModuleName
-
-				// update expected network
-				if expectedNetwork != "" {
-					network, err := bitcoinTypes.NetworkFromStr(expectedNetwork)
-					if err != nil {
-						return err
-					}
-
-					genesisState.Params.Network = network
-				}
-
-				// update confirmation height
-				if confirmationHeight > 0 {
-					genesisState.Params.ConfirmationHeight = confirmationHeight
-				}
-
-				// update revote locking period
-				if revoteLockingPeriod > 0 {
-					genesisState.Params.RevoteLockingPeriod = revoteLockingPeriod
-				}
-
-				genesisStateBz, err = cdc.MarshalJSON(&genesisState)
-				if err != nil {
-					return fmt.Errorf("failed to marshal bitcoin genesis state: %w", err)
-				}
 			case strings.ToLower(evmTypes.ModuleName):
 				if len(args) < 2 {
 					return fmt.Errorf("chain name is required for EVM platform")

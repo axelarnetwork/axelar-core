@@ -83,6 +83,8 @@ message ConfirmTokenRequest {
 message ConfirmTokenResponse {}
 
 message ConfirmTransferKeyRequest {
+  reserved 4, 5; // transfer_type and key_id were deleted in v0.20
+
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
@@ -93,12 +95,6 @@ message ConfirmTransferKeyRequest {
     (gogoproto.nullable) = false,
     (gogoproto.customtype) = "Hash",
     (gogoproto.customname) = "TxID"
-  ];
-  evm.v1beta1.TransferKeyType transfer_type = 4;
-  string key_id = 5 [
-    (gogoproto.customname) = "KeyID",
-    (gogoproto.casttype) =
-        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
   ];
 }
 
@@ -149,6 +145,7 @@ message CreateDeployTokenRequest {
   reserved 5; // min_amount was removed in v0.15
   bytes address = 6
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+  string daily_mint_limit = 7;
 }
 
 message CreateDeployTokenResponse {}

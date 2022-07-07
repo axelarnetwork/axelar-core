@@ -3,7 +3,7 @@
 Confirm a transfer operatorship in an EVM chain transaction
 
 ```
-axelard tx evm confirm-transfer-operatorship [chain] [txID] [keyID] [flags]
+axelard tx evm confirm-transfer-operatorship [chain] [txID] [flags]
 ```
 
 ### Options

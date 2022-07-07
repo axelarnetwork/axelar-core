@@ -14,7 +14,7 @@ import (
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
-//go:generate moq -out ./mock/expected_keepers.go -pkg mock . TSS Voter Signer Nexus Snapshotter BaseKeeper ChainKeeper Rewarder
+//go:generate moq -out ./mock/expected_keepers.go -pkg mock . TSS Voter Signer Nexus Snapshotter BaseKeeper ChainKeeper Rewarder StakingKeeper SlashingKeeper
 
 // BaseKeeper is implemented by this module's base keeper
 type BaseKeeper interface {
@@ -46,19 +46,11 @@ type ChainKeeper interface {
 	GetGatewayAddress(ctx sdk.Context) (common.Address, bool)
 	GetDeposit(ctx sdk.Context, txID common.Hash, burnerAddr common.Address) (ERC20Deposit, DepositStatus, bool)
 	GetBurnerInfo(ctx sdk.Context, address Address) *BurnerInfo
-	SetPendingDeposit(ctx sdk.Context, key vote.PollKey, deposit *ERC20Deposit)
 	GetBurnerAddressAndSalt(ctx sdk.Context, token ERC20Token, recipient string, gatewayAddr common.Address) (Address, Hash, error)
 	SetBurnerInfo(ctx sdk.Context, burnerInfo BurnerInfo)
-	GetPendingDeposit(ctx sdk.Context, key vote.PollKey) (ERC20Deposit, bool)
-	DeletePendingDeposit(ctx sdk.Context, key vote.PollKey)
 	DeleteDeposit(ctx sdk.Context, deposit ERC20Deposit)
 	SetDeposit(ctx sdk.Context, deposit ERC20Deposit, state DepositStatus)
 	GetConfirmedDeposits(ctx sdk.Context) []ERC20Deposit
-	GetPendingTransferKey(ctx sdk.Context, key vote.PollKey) (TransferKey, bool)
-	SetPendingTransferKey(ctx sdk.Context, key vote.PollKey, transferOwnership *TransferKey)
-	GetArchivedTransferKey(ctx sdk.Context, key vote.PollKey) (TransferKey, bool)
-	ArchiveTransferKey(ctx sdk.Context, key vote.PollKey)
-	DeletePendingTransferKey(ctx sdk.Context, key vote.PollKey)
 	GetNetworkByID(ctx sdk.Context, id sdk.Int) (string, bool)
 	GetChainIDByNetwork(ctx sdk.Context, network string) (sdk.Int, bool)
 	GetVotingThreshold(ctx sdk.Context) (utils.Threshold, bool)
@@ -83,7 +75,6 @@ type ChainKeeper interface {
 	SetConfirmedEvent(ctx sdk.Context, event Event) error
 	SetEventCompleted(ctx sdk.Context, eventID EventID) error
 	SetEventFailed(ctx sdk.Context, eventID EventID) error
-	SetFailedEvent(ctx sdk.Context, event Event) error
 }
 
 // ParamsKeeper represents a global paramstore
@@ -100,10 +91,7 @@ type TSS interface {
 
 // Voter exposes voting functionality
 type Voter interface {
-	InitializePoll(ctx sdk.Context, key vote.PollKey, voters []sdk.ValAddress, pollProperties ...vote.PollProperty) error
-	// Deprecated: InitializePollWithSnapshot will be removed soon
-	InitializePollWithSnapshot(ctx sdk.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error
-	GetPoll(ctx sdk.Context, pollKey vote.PollKey) vote.Poll
+	InitializePoll(ctx sdk.Context, pollBuilder vote.PollBuilder) (vote.PollID, error)
 }
 
 // Nexus provides functionality to manage cross-chain transfers
@@ -132,8 +120,7 @@ type Nexus interface {
 // because the concrete implementation of Signer (specifically StartSign) is defined in a different package using another (identical)
 // InitPoller interface. Go cannot match the types otherwise
 type InitPoller = interface {
-	// Deprecated: InitializePollWithSnapshot will be removed soon
-	InitializePollWithSnapshot(ctx sdk.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error
+	InitializePoll(ctx sdk.Context, pollBuilder vote.PollBuilder) (vote.PollID, error)
 }
 
 // Signer provides keygen and signing functionality
@@ -162,4 +149,15 @@ type Snapshotter = snapshot.Snapshotter
 // Rewarder provides reward functionality
 type Rewarder interface {
 	GetPool(ctx sdk.Context, name string) reward.RewardPool
+}
+
+// StakingKeeper adopts the methods from "github.com/cosmos/cosmos-sdk/x/staking/exported" that are
+// actually used by this module
+type StakingKeeper interface {
+	PowerReduction(ctx sdk.Context) sdk.Int
+}
+
+// SlashingKeeper provides functionality to manage slashing info for a validator
+type SlashingKeeper interface {
+	IsTombstoned(ctx sdk.Context, consAddr sdk.ConsAddress) bool
 }

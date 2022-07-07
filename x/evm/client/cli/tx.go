@@ -38,7 +38,6 @@ func GetTxCmd() *cobra.Command {
 		GetCmdLink(),
 		GetCmdConfirmERC20TokenDeployment(),
 		GetCmdConfirmERC20Deposit(),
-		GetCmdConfirmTransferOwnership(),
 		GetCmdConfirmTransferOperatorship(),
 		GetCmdCreateConfirmGatewayTx(),
 		GetCmdCreatePendingTransfers(),
@@ -166,39 +165,12 @@ func GetCmdConfirmERC20Deposit() *cobra.Command {
 	return cmd
 }
 
-// GetCmdConfirmTransferOwnership returns the cli command to confirm a transfer ownership for the gateway contract
-func GetCmdConfirmTransferOwnership() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "confirm-transfer-ownership [chain] [txID] [keyID]",
-		Short: "Confirm a transfer ownership in an EVM chain transaction",
-		Args:  cobra.ExactArgs(3),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx, err := client.GetClientTxContext(cmd)
-			if err != nil {
-				return err
-			}
-
-			chain := args[0]
-			txID := common.HexToHash(args[1])
-			keyID := args[2]
-			msg := types.NewConfirmTransferKeyRequest(cliCtx.GetFromAddress(), chain, txID, types.Ownership, keyID)
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
-
-			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
-		},
-	}
-	flags.AddTxFlagsToCmd(cmd)
-	return cmd
-}
-
 // GetCmdConfirmTransferOperatorship returns the cli command to confirm a transfer operatorship for the gateway contract
 func GetCmdConfirmTransferOperatorship() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "confirm-transfer-operatorship [chain] [txID] [keyID]",
+		Use:   "confirm-transfer-operatorship [chain] [txID]",
 		Short: "Confirm a transfer operatorship in an EVM chain transaction",
-		Args:  cobra.ExactArgs(3),
+		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
@@ -207,8 +179,7 @@ func GetCmdConfirmTransferOperatorship() *cobra.Command {
 
 			chain := args[0]
 			txID := common.HexToHash(args[1])
-			keyID := args[2]
-			msg := types.NewConfirmTransferKeyRequest(cliCtx.GetFromAddress(), chain, txID, types.Operatorship, keyID)
+			msg := types.NewConfirmTransferKeyRequest(cliCtx.GetFromAddress(), chain, txID)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -274,9 +245,9 @@ func GetCmdCreatePendingTransfers() *cobra.Command {
 // GetCmdCreateDeployToken returns the cli command to create deploy-token command for an EVM chain
 func GetCmdCreateDeployToken() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "create-deploy-token [evm chain] [origin chain] [origin asset] [token name] [symbol] [decimals] [capacity]",
+		Use:   "create-deploy-token [evm chain] [origin chain] [origin asset] [token name] [symbol] [decimals] [capacity] [dailyMintLimit]",
 		Short: "Create a deploy token command with the AxelarGateway contract",
-		Args:  cobra.ExactArgs(7),
+		Args:  cobra.ExactArgs(8),
 	}
 	address := cmd.Flags().String(flagAddress, types.ZeroAddress.Hex(), "existing ERC20 token's address")
 
@@ -304,9 +275,11 @@ func GetCmdCreateDeployToken() *cobra.Command {
 			return fmt.Errorf("could not parse address")
 		}
 
+		dailyMintLimit := args[7]
+
 		asset := types.NewAsset(originChain, originAsset)
 		tokenDetails := types.NewTokenDetails(tokenName, symbol, uint8(decs), capacity)
-		msg := types.NewCreateDeployTokenRequest(cliCtx.GetFromAddress(), chain, asset, tokenDetails, types.Address(common.HexToAddress(*address)))
+		msg := types.NewCreateDeployTokenRequest(cliCtx.GetFromAddress(), chain, asset, tokenDetails, types.Address(common.HexToAddress(*address)), dailyMintLimit)
 		if err = msg.ValidateBasic(); err != nil {
 			return err
 		}

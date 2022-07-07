@@ -16,7 +16,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
-	bitcoin "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
+	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
@@ -26,10 +26,10 @@ import (
 )
 
 var (
-	val1       = newValidator(rand.ValAddr(), 100)
-	val2       = newValidator(rand.ValAddr(), 100)
-	val3       = newValidator(rand.ValAddr(), 100)
-	val4       = newValidator(rand.ValAddr(), 100)
+	val1       = newValidator(rand.ValAddr(), 10)
+	val2       = newValidator(rand.ValAddr(), 10)
+	val3       = newValidator(rand.ValAddr(), 10)
+	val4       = newValidator(rand.ValAddr(), 10)
 	validators = []snapshot.Validator{val1, val2, val3, val4}
 	snap       = snapshot.Snapshot{
 		Validators:      validators,
@@ -54,7 +54,7 @@ func setup() *testSetup {
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	encCfg := appParams.MakeEncodingConfig()
 	voter := &tssMock.VoterMock{
-		InitializePollWithSnapshotFunc: func(sdk.Context, vote.PollKey, int64, ...vote.PollProperty) error { return nil },
+		InitializePollFunc: func(ctx sdk.Context, pollBuilder vote.PollBuilder) (vote.PollID, error) { return 0, nil },
 	}
 	snapshotter := &snapMock.SnapshotterMock{
 		GetValidatorIllegibilityFunc: func(ctx sdk.Context, validator snapshot.SDKValidator) (snapshot.ValidatorIllegibility, error) {
@@ -299,7 +299,7 @@ func TestAvailableOperator(t *testing.T) {
 func TestActiveOldKeys(t *testing.T) {
 	t.Run("testing locked rotation keys", testutils.Func(func(t *testing.T) {
 		s := setup()
-		chain := bitcoin.Bitcoin
+		chain := evm.Ethereum
 		iterations := int(rand.I64Between(2, 10) * s.Keeper.GetKeyUnbondingLockingKeyRotationCount(s.Ctx))
 		params := types.DefaultParams()
 		params.MaxSignQueueSize = int64(iterations)
@@ -310,7 +310,7 @@ func TestActiveOldKeys(t *testing.T) {
 		var expectedKeys []exported.Key
 
 		for i := 0; i < iterations; i++ {
-			expectedMasterKey := s.SetKey(t, s.Ctx, role, exported.Threshold)
+			expectedMasterKey := s.SetKey(t, s.Ctx, role, exported.Multisig)
 			assert.NoError(t, s.Keeper.AssignNextKey(s.Ctx, chain, role, expectedMasterKey.ID))
 			assert.NoError(t, s.Keeper.RotateKey(s.Ctx, chain, role))
 			expectedKeys = append(expectedKeys, expectedMasterKey)

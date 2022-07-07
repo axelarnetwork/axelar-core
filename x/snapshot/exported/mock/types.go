@@ -4,6 +4,7 @@
 package mock
 
 import (
+	"github.com/axelarnetwork/axelar-core/utils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshotexported "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	tssexported "github.com/axelarnetwork/axelar-core/x/tss/exported"
@@ -383,6 +384,9 @@ var _ snapshotexported.Snapshotter = &SnapshotterMock{}
 //
 // 		// make and configure a mocked snapshotexported.Snapshotter
 // 		mockedSnapshotter := &SnapshotterMock{
+// 			CreateSnapshotFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, candidates []github_com_cosmos_cosmos_sdk_types.ValAddress, filterFunc func(snapshotexported.ValidatorI) bool, weightFunc func(consensusPower github_com_cosmos_cosmos_sdk_types.Uint) github_com_cosmos_cosmos_sdk_types.Uint, threshold utils.Threshold) (snapshotexported.Snapshot, error) {
+// 				panic("mock out the CreateSnapshot method")
+// 			},
 // 			GetLatestSnapshotFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (snapshotexported.Snapshot, bool) {
 // 				panic("mock out the GetLatestSnapshot method")
 // 			},
@@ -408,6 +412,9 @@ var _ snapshotexported.Snapshotter = &SnapshotterMock{}
 //
 // 	}
 type SnapshotterMock struct {
+	// CreateSnapshotFunc mocks the CreateSnapshot method.
+	CreateSnapshotFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, candidates []github_com_cosmos_cosmos_sdk_types.ValAddress, filterFunc func(snapshotexported.ValidatorI) bool, weightFunc func(consensusPower github_com_cosmos_cosmos_sdk_types.Uint) github_com_cosmos_cosmos_sdk_types.Uint, threshold utils.Threshold) (snapshotexported.Snapshot, error)
+
 	// GetLatestSnapshotFunc mocks the GetLatestSnapshot method.
 	GetLatestSnapshotFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (snapshotexported.Snapshot, bool)
 
@@ -428,6 +435,19 @@ type SnapshotterMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// CreateSnapshot holds details about calls to the CreateSnapshot method.
+		CreateSnapshot []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Candidates is the candidates argument value.
+			Candidates []github_com_cosmos_cosmos_sdk_types.ValAddress
+			// FilterFunc is the filterFunc argument value.
+			FilterFunc func(snapshotexported.ValidatorI) bool
+			// WeightFunc is the weightFunc argument value.
+			WeightFunc func(consensusPower github_com_cosmos_cosmos_sdk_types.Uint) github_com_cosmos_cosmos_sdk_types.Uint
+			// Threshold is the threshold argument value.
+			Threshold utils.Threshold
+		}
 		// GetLatestSnapshot holds details about calls to the GetLatestSnapshot method.
 		GetLatestSnapshot []struct {
 			// Ctx is the ctx argument value.
@@ -469,12 +489,60 @@ type SnapshotterMock struct {
 			KeyRequirement tssexported.KeyRequirement
 		}
 	}
+	lockCreateSnapshot           sync.RWMutex
 	lockGetLatestSnapshot        sync.RWMutex
 	lockGetOperator              sync.RWMutex
 	lockGetProxy                 sync.RWMutex
 	lockGetSnapshot              sync.RWMutex
 	lockGetValidatorIllegibility sync.RWMutex
 	lockTakeSnapshot             sync.RWMutex
+}
+
+// CreateSnapshot calls CreateSnapshotFunc.
+func (mock *SnapshotterMock) CreateSnapshot(ctx github_com_cosmos_cosmos_sdk_types.Context, candidates []github_com_cosmos_cosmos_sdk_types.ValAddress, filterFunc func(snapshotexported.ValidatorI) bool, weightFunc func(consensusPower github_com_cosmos_cosmos_sdk_types.Uint) github_com_cosmos_cosmos_sdk_types.Uint, threshold utils.Threshold) (snapshotexported.Snapshot, error) {
+	if mock.CreateSnapshotFunc == nil {
+		panic("SnapshotterMock.CreateSnapshotFunc: method is nil but Snapshotter.CreateSnapshot was just called")
+	}
+	callInfo := struct {
+		Ctx        github_com_cosmos_cosmos_sdk_types.Context
+		Candidates []github_com_cosmos_cosmos_sdk_types.ValAddress
+		FilterFunc func(snapshotexported.ValidatorI) bool
+		WeightFunc func(consensusPower github_com_cosmos_cosmos_sdk_types.Uint) github_com_cosmos_cosmos_sdk_types.Uint
+		Threshold  utils.Threshold
+	}{
+		Ctx:        ctx,
+		Candidates: candidates,
+		FilterFunc: filterFunc,
+		WeightFunc: weightFunc,
+		Threshold:  threshold,
+	}
+	mock.lockCreateSnapshot.Lock()
+	mock.calls.CreateSnapshot = append(mock.calls.CreateSnapshot, callInfo)
+	mock.lockCreateSnapshot.Unlock()
+	return mock.CreateSnapshotFunc(ctx, candidates, filterFunc, weightFunc, threshold)
+}
+
+// CreateSnapshotCalls gets all the calls that were made to CreateSnapshot.
+// Check the length with:
+//     len(mockedSnapshotter.CreateSnapshotCalls())
+func (mock *SnapshotterMock) CreateSnapshotCalls() []struct {
+	Ctx        github_com_cosmos_cosmos_sdk_types.Context
+	Candidates []github_com_cosmos_cosmos_sdk_types.ValAddress
+	FilterFunc func(snapshotexported.ValidatorI) bool
+	WeightFunc func(consensusPower github_com_cosmos_cosmos_sdk_types.Uint) github_com_cosmos_cosmos_sdk_types.Uint
+	Threshold  utils.Threshold
+} {
+	var calls []struct {
+		Ctx        github_com_cosmos_cosmos_sdk_types.Context
+		Candidates []github_com_cosmos_cosmos_sdk_types.ValAddress
+		FilterFunc func(snapshotexported.ValidatorI) bool
+		WeightFunc func(consensusPower github_com_cosmos_cosmos_sdk_types.Uint) github_com_cosmos_cosmos_sdk_types.Uint
+		Threshold  utils.Threshold
+	}
+	mock.lockCreateSnapshot.RLock()
+	calls = mock.calls.CreateSnapshot
+	mock.lockCreateSnapshot.RUnlock()
+	return calls
 }
 
 // GetLatestSnapshot calls GetLatestSnapshotFunc.
@@ -1134,5 +1202,178 @@ func (mock *TssMock) IsOperatorAvailableCalls() []struct {
 	mock.lockIsOperatorAvailable.RLock()
 	calls = mock.calls.IsOperatorAvailable
 	mock.lockIsOperatorAvailable.RUnlock()
+	return calls
+}
+
+// Ensure, that ValidatorIMock does implement snapshotexported.ValidatorI.
+// If this is not the case, regenerate this file with moq.
+var _ snapshotexported.ValidatorI = &ValidatorIMock{}
+
+// ValidatorIMock is a mock implementation of snapshotexported.ValidatorI.
+//
+// 	func TestSomethingThatUsesValidatorI(t *testing.T) {
+//
+// 		// make and configure a mocked snapshotexported.ValidatorI
+// 		mockedValidatorI := &ValidatorIMock{
+// 			GetConsAddrFunc: func() (github_com_cosmos_cosmos_sdk_types.ConsAddress, error) {
+// 				panic("mock out the GetConsAddr method")
+// 			},
+// 			GetConsensusPowerFunc: func(intMoqParam github_com_cosmos_cosmos_sdk_types.Int) int64 {
+// 				panic("mock out the GetConsensusPower method")
+// 			},
+// 			GetOperatorFunc: func() github_com_cosmos_cosmos_sdk_types.ValAddress {
+// 				panic("mock out the GetOperator method")
+// 			},
+// 			IsJailedFunc: func() bool {
+// 				panic("mock out the IsJailed method")
+// 			},
+// 		}
+//
+// 		// use mockedValidatorI in code that requires snapshotexported.ValidatorI
+// 		// and then make assertions.
+//
+// 	}
+type ValidatorIMock struct {
+	// GetConsAddrFunc mocks the GetConsAddr method.
+	GetConsAddrFunc func() (github_com_cosmos_cosmos_sdk_types.ConsAddress, error)
+
+	// GetConsensusPowerFunc mocks the GetConsensusPower method.
+	GetConsensusPowerFunc func(intMoqParam github_com_cosmos_cosmos_sdk_types.Int) int64
+
+	// GetOperatorFunc mocks the GetOperator method.
+	GetOperatorFunc func() github_com_cosmos_cosmos_sdk_types.ValAddress
+
+	// IsJailedFunc mocks the IsJailed method.
+	IsJailedFunc func() bool
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// GetConsAddr holds details about calls to the GetConsAddr method.
+		GetConsAddr []struct {
+		}
+		// GetConsensusPower holds details about calls to the GetConsensusPower method.
+		GetConsensusPower []struct {
+			// IntMoqParam is the intMoqParam argument value.
+			IntMoqParam github_com_cosmos_cosmos_sdk_types.Int
+		}
+		// GetOperator holds details about calls to the GetOperator method.
+		GetOperator []struct {
+		}
+		// IsJailed holds details about calls to the IsJailed method.
+		IsJailed []struct {
+		}
+	}
+	lockGetConsAddr       sync.RWMutex
+	lockGetConsensusPower sync.RWMutex
+	lockGetOperator       sync.RWMutex
+	lockIsJailed          sync.RWMutex
+}
+
+// GetConsAddr calls GetConsAddrFunc.
+func (mock *ValidatorIMock) GetConsAddr() (github_com_cosmos_cosmos_sdk_types.ConsAddress, error) {
+	if mock.GetConsAddrFunc == nil {
+		panic("ValidatorIMock.GetConsAddrFunc: method is nil but ValidatorI.GetConsAddr was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockGetConsAddr.Lock()
+	mock.calls.GetConsAddr = append(mock.calls.GetConsAddr, callInfo)
+	mock.lockGetConsAddr.Unlock()
+	return mock.GetConsAddrFunc()
+}
+
+// GetConsAddrCalls gets all the calls that were made to GetConsAddr.
+// Check the length with:
+//     len(mockedValidatorI.GetConsAddrCalls())
+func (mock *ValidatorIMock) GetConsAddrCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockGetConsAddr.RLock()
+	calls = mock.calls.GetConsAddr
+	mock.lockGetConsAddr.RUnlock()
+	return calls
+}
+
+// GetConsensusPower calls GetConsensusPowerFunc.
+func (mock *ValidatorIMock) GetConsensusPower(intMoqParam github_com_cosmos_cosmos_sdk_types.Int) int64 {
+	if mock.GetConsensusPowerFunc == nil {
+		panic("ValidatorIMock.GetConsensusPowerFunc: method is nil but ValidatorI.GetConsensusPower was just called")
+	}
+	callInfo := struct {
+		IntMoqParam github_com_cosmos_cosmos_sdk_types.Int
+	}{
+		IntMoqParam: intMoqParam,
+	}
+	mock.lockGetConsensusPower.Lock()
+	mock.calls.GetConsensusPower = append(mock.calls.GetConsensusPower, callInfo)
+	mock.lockGetConsensusPower.Unlock()
+	return mock.GetConsensusPowerFunc(intMoqParam)
+}
+
+// GetConsensusPowerCalls gets all the calls that were made to GetConsensusPower.
+// Check the length with:
+//     len(mockedValidatorI.GetConsensusPowerCalls())
+func (mock *ValidatorIMock) GetConsensusPowerCalls() []struct {
+	IntMoqParam github_com_cosmos_cosmos_sdk_types.Int
+} {
+	var calls []struct {
+		IntMoqParam github_com_cosmos_cosmos_sdk_types.Int
+	}
+	mock.lockGetConsensusPower.RLock()
+	calls = mock.calls.GetConsensusPower
+	mock.lockGetConsensusPower.RUnlock()
+	return calls
+}
+
+// GetOperator calls GetOperatorFunc.
+func (mock *ValidatorIMock) GetOperator() github_com_cosmos_cosmos_sdk_types.ValAddress {
+	if mock.GetOperatorFunc == nil {
+		panic("ValidatorIMock.GetOperatorFunc: method is nil but ValidatorI.GetOperator was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockGetOperator.Lock()
+	mock.calls.GetOperator = append(mock.calls.GetOperator, callInfo)
+	mock.lockGetOperator.Unlock()
+	return mock.GetOperatorFunc()
+}
+
+// GetOperatorCalls gets all the calls that were made to GetOperator.
+// Check the length with:
+//     len(mockedValidatorI.GetOperatorCalls())
+func (mock *ValidatorIMock) GetOperatorCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockGetOperator.RLock()
+	calls = mock.calls.GetOperator
+	mock.lockGetOperator.RUnlock()
+	return calls
+}
+
+// IsJailed calls IsJailedFunc.
+func (mock *ValidatorIMock) IsJailed() bool {
+	if mock.IsJailedFunc == nil {
+		panic("ValidatorIMock.IsJailedFunc: method is nil but ValidatorI.IsJailed was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockIsJailed.Lock()
+	mock.calls.IsJailed = append(mock.calls.IsJailed, callInfo)
+	mock.lockIsJailed.Unlock()
+	return mock.IsJailedFunc()
+}
+
+// IsJailedCalls gets all the calls that were made to IsJailed.
+// Check the length with:
+//     len(mockedValidatorI.IsJailedCalls())
+func (mock *ValidatorIMock) IsJailedCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockIsJailed.RLock()
+	calls = mock.calls.IsJailed
+	mock.lockIsJailed.RUnlock()
 	return calls
 }

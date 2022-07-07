@@ -2417,20 +2417,7 @@ paths:
                               "value": "1.212s"
                             }
       requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                sender:
-                  type: string
-                  format: byte
-                chain:
-                  type: string
-                tx_id:
-                  type: string
-                  format: byte
-        required: true
+        $ref: "#/components/requestBodies/ConfirmGatewayTxBody"
       tags:
         - MsgService
   /axelar/evm/confirm_token:
@@ -2819,29 +2806,7 @@ paths:
                               "value": "1.212s"
                             }
       requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                sender:
-                  type: string
-                  format: byte
-                chain:
-                  type: string
-                tx_id:
-                  type: string
-                  format: byte
-                transfer_type:
-                  type: string
-                  enum:
-                    - TRANSFER_KEY_TYPE_UNSPECIFIED
-                    - TRANSFER_KEY_TYPE_OWNERSHIP
-                    - TRANSFER_KEY_TYPE_OPERATORSHIP
-                  default: TRANSFER_KEY_TYPE_UNSPECIFIED
-                key_id:
-                  type: string
-        required: true
+        $ref: "#/components/requestBodies/ConfirmGatewayTxBody"
       tags:
         - MsgService
   /axelar/evm/create_burn_tokens:
@@ -3257,6 +3222,8 @@ paths:
                 address:
                   type: string
                   format: byte
+                daily_mint_limit:
+                  type: string
               title: >-
                 CreateDeployTokenRequest represents the message to create a
                 deploy token
@@ -3645,191 +3612,19 @@ paths:
                               "value": "1.212s"
                             }
       requestBody:
-        $ref: "#/components/requestBodies/CreateTransferOperatorshipBody"
-      tags:
-        - MsgService
-  /axelar/evm/create_transfer_ownership:
-    post:
-      operationId: CreateTransferOwnership
-      responses:
-        "200":
-          description: A successful response.
-          content:
-            "*/*":
-              schema:
-                type: object
-        default:
-          description: An unexpected error response
-          content:
-            "*/*":
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                  code:
-                    type: integer
-                    format: int32
-                  message:
-                    type: string
-                  details:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        type_url:
-                          type: string
-                          description: >-
-                            A URL/resource name that uniquely identifies the
-                            type of the serialized
-
-                            protocol buffer message. This string must contain at least
-
-                            one "/" character. The last segment of the URL's path must represent
-
-                            the fully qualified name of the type (as in
-
-                            `path/google.protobuf.Duration`). The name should be in a canonical form
-
-                            (e.g., leading "." is not accepted).
-
-
-                            In practice, teams usually precompile into the binary all types that they
-
-                            expect it to use in the context of Any. However, for URLs which use the
-
-                            scheme `http`, `https`, or no scheme, one can optionally set up a type
-
-                            server that maps type URLs to message definitions as follows:
-
-
-                            * If no scheme is provided, `https` is assumed.
-
-                            * An HTTP GET on the URL must yield a [google.protobuf.Type][]
-                              value in binary format, or produce an error.
-                            * Applications are allowed to cache lookup results based on the
-                              URL, or have them precompiled into a binary to avoid any
-                              lookup. Therefore, binary compatibility needs to be preserved
-                              on changes to types. (Use versioned type names to manage
-                              breaking changes.)
-
-                            Note: this functionality is not currently available in the official
-
-                            protobuf release, and it is not used for type URLs beginning with
-
-                            type.googleapis.com.
-
-
-                            Schemes other than `http`, `https` (or the empty scheme) might be
-
-                            used with implementation specific semantics.
-                        value:
-                          type: string
-                          format: byte
-                          description: Must be a valid serialized protocol buffer of the above specified
-                            type.
-                      description: >-
-                        `Any` contains an arbitrary serialized protocol buffer
-                        message along with a
-
-                        URL that describes the type of the serialized message.
-
-
-                        Protobuf library provides support to pack/unpack Any values in the form
-
-                        of utility functions or additional generated methods of the Any type.
-
-
-                        Example 1: Pack and unpack a message in C++.
-
-                            Foo foo = ...;
-                            Any any;
-                            any.PackFrom(foo);
-                            ...
-                            if (any.UnpackTo(&foo)) {
-                              ...
-                            }
-
-                        Example 2: Pack and unpack a message in Java.
-
-                            Foo foo = ...;
-                            Any any = Any.pack(foo);
-                            ...
-                            if (any.is(Foo.class)) {
-                              foo = any.unpack(Foo.class);
-                            }
-
-                         Example 3: Pack and unpack a message in Python.
-
-                            foo = Foo(...)
-                            any = Any()
-                            any.Pack(foo)
-                            ...
-                            if any.Is(Foo.DESCRIPTOR):
-                              any.Unpack(foo)
-                              ...
-
-                         Example 4: Pack and unpack a message in Go
-
-                             foo := &pb.Foo{...}
-                             any, err := anypb.New(foo)
-                             if err != nil {
-                               ...
-                             }
-                             ...
-                             foo := &pb.Foo{}
-                             if err := any.UnmarshalTo(foo); err != nil {
-                               ...
-                             }
-
-                        The pack methods provided by protobuf library will by default use
-
-                        'type.googleapis.com/full.type.name' as the type URL and the unpack
-
-                        methods only use the fully qualified type name after the last '/'
-
-                        in the type URL, for example "foo.bar.com/x/y.z" will yield type
-
-                        name "y.z".
-
-
-
-                        JSON
-
-                        ====
-
-                        The JSON representation of an `Any` value uses the regular
-
-                        representation of the deserialized, embedded message, with an
-
-                        additional field `@type` which contains the type URL. Example:
-
-                            package google.profile;
-                            message Person {
-                              string first_name = 1;
-                              string last_name = 2;
-                            }
-
-                            {
-                              "@type": "type.googleapis.com/google.profile.Person",
-                              "firstName": <string>,
-                              "lastName": <string>
-                            }
-
-                        If the embedded message type is well-known and has a custom JSON
-
-                        representation, that representation will be embedded adding a field
-
-                        `value` which holds the custom JSON in addition to the `@type`
-
-                        field. Example (for message [google.protobuf.Duration][]):
-
-                            {
-                              "@type": "type.googleapis.com/google.protobuf.Duration",
-                              "value": "1.212s"
-                            }
-      requestBody:
-        $ref: "#/components/requestBodies/CreateTransferOperatorshipBody"
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sender:
+                  type: string
+                  format: byte
+                chain:
+                  type: string
+                key_id:
+                  type: string
+        required: true
       tags:
         - MsgService
   /axelar/evm/link:
@@ -5888,10 +5683,18 @@ paths:
               schema:
                 type: object
                 properties:
-                  assets:
+                  tokens:
                     type: array
                     items:
-                      type: string
+                      type: object
+                      properties:
+                        asset:
+                          type: string
+                        symbol:
+                          type: string
+                title: |-
+                  ERC20TokensResponse describes the asset and symbol for all
+                  ERC20 tokens requested for a chain
         default:
           description: An unexpected error response
           content:
@@ -6196,14 +5999,6 @@ paths:
                       multisig_operatorship_transferred:
                         type: object
                         properties:
-                          pre_operators:
-                            type: array
-                            items:
-                              type: string
-                              format: byte
-                          prev_threshold:
-                            type: string
-                            format: byte
                           new_operators:
                             type: array
                             items:
@@ -6811,13 +6606,7 @@ paths:
           required: true
           schema:
             type: string
-        - name: role
-          in: query
-          required: false
-          schema:
-            type: integer
-            format: int32
-        - name: id
+        - name: key_id
           in: query
           required: false
           schema:
@@ -7067,6 +6856,8 @@ paths:
                   is_external:
                     type: boolean
                     format: boolean
+                  burner_code_hash:
+                    type: string
         default:
           description: An unexpected error response
           content:
@@ -8883,6 +8674,17 @@ paths:
                               "@type": "type.googleapis.com/google.protobuf.Duration",
                               "value": "1.212s"
                             }
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - CHAIN_STATUS_UNSPECIFIED
+              - CHAIN_STATUS_ACTIVATED
+              - CHAIN_STATUS_DEACTIVATED
+            default: CHAIN_STATUS_UNSPECIFIED
       tags:
         - QueryService
   "/axelar/nexus/v1beta1/chains_by_asset/{asset}":
@@ -34775,7 +34577,7 @@ components:
                 items:
                   type: string
       required: true
-    CreateTransferOperatorshipBody:
+    ConfirmGatewayTxBody:
       content:
         application/json:
           schema:
@@ -34786,8 +34588,9 @@ components:
                 format: byte
               chain:
                 type: string
-              key_id:
+              tx_id:
                 type: string
+                format: byte
       required: true
   schemas:
     google.protobuf.Any:
@@ -35504,15 +35307,6 @@ components:
         tx_id:
           type: string
           format: byte
-        transfer_type:
-          type: string
-          enum:
-            - TRANSFER_KEY_TYPE_UNSPECIFIED
-            - TRANSFER_KEY_TYPE_OWNERSHIP
-            - TRANSFER_KEY_TYPE_OPERATORSHIP
-          default: TRANSFER_KEY_TYPE_UNSPECIFIED
-        key_id:
-          type: string
     axelar.evm.v1beta1.ConfirmTransferKeyResponse:
       type: object
     axelar.evm.v1beta1.ConfirmationHeightResponse:
@@ -35567,6 +35361,8 @@ components:
         address:
           type: string
           format: byte
+        daily_mint_limit:
+          type: string
       title: |-
         CreateDeployTokenRequest represents the message to create a deploy token
         command for AxelarGateway
@@ -35599,18 +35395,6 @@ components:
           type: string
     axelar.evm.v1beta1.CreateTransferOperatorshipResponse:
       type: object
-    axelar.evm.v1beta1.CreateTransferOwnershipRequest:
-      type: object
-      properties:
-        sender:
-          type: string
-          format: byte
-        chain:
-          type: string
-        key_id:
-          type: string
-    axelar.evm.v1beta1.CreateTransferOwnershipResponse:
-      type: object
     axelar.evm.v1beta1.DepositStateResponse:
       type: object
       properties:
@@ -35633,10 +35417,25 @@ components:
     axelar.evm.v1beta1.ERC20TokensResponse:
       type: object
       properties:
-        assets:
+        tokens:
           type: array
           items:
-            type: string
+            type: object
+            properties:
+              asset:
+                type: string
+              symbol:
+                type: string
+      title: |-
+        ERC20TokensResponse describes the asset and symbol for all
+        ERC20 tokens requested for a chain
+    axelar.evm.v1beta1.ERC20TokensResponse.Token:
+      type: object
+      properties:
+        asset:
+          type: string
+        symbol:
+          type: string
     axelar.evm.v1beta1.Event:
       type: object
       properties:
@@ -35741,14 +35540,6 @@ components:
         multisig_operatorship_transferred:
           type: object
           properties:
-            pre_operators:
-              type: array
-              items:
-                type: string
-                format: byte
-            prev_threshold:
-              type: string
-              format: byte
             new_operators:
               type: array
               items:
@@ -35817,14 +35608,6 @@ components:
     axelar.evm.v1beta1.EventMultisigOperatorshipTransferred:
       type: object
       properties:
-        pre_operators:
-          type: array
-          items:
-            type: string
-            format: byte
-        prev_threshold:
-          type: string
-          format: byte
         new_operators:
           type: array
           items:
@@ -35959,14 +35742,6 @@ components:
             multisig_operatorship_transferred:
               type: object
               properties:
-                pre_operators:
-                  type: array
-                  items:
-                    type: string
-                    format: byte
-                prev_threshold:
-                  type: string
-                  format: byte
                 new_operators:
                   type: array
                   items:
@@ -36236,6 +36011,8 @@ components:
         is_external:
           type: boolean
           format: boolean
+        burner_code_hash:
+          type: string
     axelar.evm.v1beta1.TokenType:
       type: string
       enum:
@@ -36243,13 +36020,6 @@ components:
         - TOKEN_TYPE_INTERNAL
         - TOKEN_TYPE_EXTERNAL
       default: TOKEN_TYPE_UNSPECIFIED
-    axelar.evm.v1beta1.TransferKeyType:
-      type: string
-      enum:
-        - TRANSFER_KEY_TYPE_UNSPECIFIED
-        - TRANSFER_KEY_TYPE_OWNERSHIP
-        - TRANSFER_KEY_TYPE_OPERATORSHIP
-      default: TRANSFER_KEY_TYPE_UNSPECIFIED
     axelar.nexus.exported.v1beta1.CrossChainAddress:
       type: object
       properties:
@@ -36544,6 +36314,13 @@ components:
                             type: integer
                             format: int32
           title: ChainState represents the state of a registered blockchain
+    axelar.nexus.v1beta1.ChainStatus:
+      type: string
+      enum:
+        - CHAIN_STATUS_UNSPECIFIED
+        - CHAIN_STATUS_ACTIVATED
+        - CHAIN_STATUS_DEACTIVATED
+      default: CHAIN_STATUS_UNSPECIFIED
     axelar.nexus.v1beta1.ChainsByAssetResponse:
       type: object
       properties:

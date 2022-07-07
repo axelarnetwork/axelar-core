@@ -1,18 +1,33 @@
 package types
 
 import (
+	"github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
+var _ codectypes.UnpackInterfacesMessage = VoteRequest{}
+
+// UnpackInterfaces implements UnpackInterfacesMessage
+func (m VoteRequest) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
+	var data codec.ProtoMarshaler
+	return unpacker.UnpackAny(m.Vote, &data)
+}
+
 // NewVoteRequest creates a message of type VoteMsgRequest
-func NewVoteRequest(sender sdk.AccAddress, pollKey vote.PollKey, vote vote.Vote) *VoteRequest {
+func NewVoteRequest(sender sdk.AccAddress, id vote.PollID, vote codec.ProtoMarshaler) *VoteRequest {
+	any, err := codectypes.NewAnyWithValue(vote)
+	if err != nil {
+		panic(err)
+	}
+
 	return &VoteRequest{
-		Sender:  sender,
-		PollKey: pollKey,
-		Vote:    vote,
+		Sender: sender,
+		PollID: id,
+		Vote:   any,
 	}
 }
 
@@ -32,8 +47,14 @@ func (m VoteRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
-	if err := m.PollKey.Validate(); err != nil {
-		return sdkerrors.Wrap(err, "invalid poll key")
+	vote := m.Vote.GetCachedValue()
+	if vote == nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "vote request contains no vote")
+	}
+
+	_, ok := vote.(codec.ProtoMarshaler)
+	if !ok {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "vote request contains invalid vote")
 	}
 
 	return nil
