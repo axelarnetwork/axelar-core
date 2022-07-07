@@ -3,7 +3,13 @@ import { CopyToClipboard } from "react-copy-to-clipboard";
 import { HiCheckCircle } from "react-icons/hi";
 import { BiCopy } from "react-icons/bi";
 
-export default ({ value, size = 16, onCopy, className = "" }) => {
+export default ({
+  value,
+  title,
+  size = 16,
+  onCopy,
+  className = "",
+}) => {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -12,7 +18,14 @@ export default ({ value, size = 16, onCopy, className = "" }) => {
   }, [copied, setCopied]);
 
   return copied ?
-    <HiCheckCircle size={size} className={`text-green-300 dark:text-green-500 ${className}`} />
+    <div className={`${title ? "min-w-max" : ""} flex items-center space-x-1`}>
+      {title && (
+        <span className="font-medium">
+          {title}
+        </span>
+      )}
+      <HiCheckCircle size={size} className={className || "text-green-300 dark:text-green-500"} />
+    </div>
     :
     <CopyToClipboard
       text={value}
@@ -23,6 +36,13 @@ export default ({ value, size = 16, onCopy, className = "" }) => {
         }
       }}
     >
-      <BiCopy size={size} className={`cursor-pointer text-gray-300 hover:text-gray-400 dark:text-gray-700 dark:hover:text-gray-600 ${className}`} />
+      <div className={`${title ? "min-w-max" : ""} flex items-center space-x-1`}>
+        {title && (
+          <span className="font-medium">
+            {title}
+          </span>
+        )}
+        <BiCopy size={size} className={className || "cursor-pointer text-gray-300 hover:text-gray-400 dark:text-gray-700 dark:hover:text-gray-600"} />
+      </div>
     </CopyToClipboard>
 };

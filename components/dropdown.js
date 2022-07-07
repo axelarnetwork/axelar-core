@@ -4,21 +4,33 @@ import _ from "lodash";
 import { Menu, Transition } from "@headlessui/react";
 import { BiChevronDown, BiChevronUp } from "react-icons/bi";
 
+import { equals_ignore_case } from "../utils";
 import evm_chains from "../data/evm_chains.json";
-import evm_assets from "../data/evm_assets.json";
-import gateways from "../data/gateways.json";
 import cosmos_chains from "../data/cosmos_chains.json";
+import evm_assets from "../data/evm_assets.json";
 import ibc_assets from "../data/ibc_assets.json";
+import gateways from "../data/gateways.json";
 
 const data = {
   evm_chains,
-  evm_assets,
-  gateways,
   cosmos_chains,
+  evm_assets,
   ibc_assets,
+  gateways,
 };
 
-export default ({ environment, chain, dataName, placeholder, hasAllOptions, allOptionsName = "All", defaultSelectedKey, onSelect, align = "left", className = "" }) => {
+export default ({
+  environment,
+  chain,
+  dataName,
+  placeholder,
+  hasAllOptions,
+  allOptionsName = "All",
+  defaultSelectedKey,
+  onSelect,
+  align = "left",
+  className = "",
+}) => {
   const [options, setOptions] = useState(null);
   const [selectedKey, setSelectedKey] = useState(null);
 
@@ -26,11 +38,12 @@ export default ({ environment, chain, dataName, placeholder, hasAllOptions, allO
     let _options;
     switch (dataName) {
       case "evm_chains":
-        _options = data[dataName]?.[environment];
+        _options = data[dataName]?.[environment].filter(c => !c?.is_staging);
         break;
       case "evm_assets":
         _options = data[dataName]?.[environment]?.flatMap(o => {
-          const contracts = o?.contracts?.filter(c => !chain || c?.chain?.toLowerCase() === chain.toLowerCase()).filter((c, i) => chain || i < 1) || [];
+          const contracts = o?.contracts?.filter(c => !chain || equals_ignore_case(c?.chain, chain))
+            .filter((c, i) => chain || i < 1) || [];
           return contracts.map(c => {
             return {
               ...o,
@@ -45,7 +58,7 @@ export default ({ environment, chain, dataName, placeholder, hasAllOptions, allO
         });
         break;
       case "chains":
-        _options = _.concat(data.evm_chains?.[environment] || [], data.cosmos_chains?.[environment] || []);
+        _options = _.concat(data.evm_chains?.[environment].filter(c => !c?.is_staging) || [], data.cosmos_chains?.[environment] || []);
         break;
       case "assets":
         _options = _.uniqBy(_.concat(data.evm_assets?.[environment] || [], data.ibc_assets?.[environment] || []), 'id');
@@ -53,8 +66,7 @@ export default ({ environment, chain, dataName, placeholder, hasAllOptions, allO
       default:
         _options = data[dataName];
         break;
-    };
-
+    }
     setOptions(_options || []);
   }, [environment, chain, dataName]);
 
@@ -65,14 +77,14 @@ export default ({ environment, chain, dataName, placeholder, hasAllOptions, allO
   const selectedData = options?.find(o => o?.id === selectedKey) || selectedKey;
 
   return (
-    <Menu as="div" className={`relative inline-block text-left ${className}`}>
+    <Menu
+      as="div"
+      className={`relative inline-block text-left ${className}`}
+    >
       {({ open }) => (
         <>
           <div>
-            <Menu.Button
-              onClick={() => setOpen(!open)}
-              className="bg-white dark:bg-dark hover:bg-gray-50 dark:hover:bg-gray-900 w-full rounded-md border border-gray-300 dark:border-gray-700 shadow-sm focus:outline-none inline-flex justify-center text-sm font-medium text-gray-900 dark:text-gray-100 py-2 px-4"
-            >
+            <Menu.Button className="bg-white dark:bg-dark hover:bg-gray-50 dark:hover:bg-gray-900 w-full rounded-md border border-gray-300 dark:border-gray-700 shadow-sm focus:outline-none inline-flex justify-center text-sm font-medium text-gray-900 dark:text-gray-100 py-2 px-4">
               {selectedData ?
                 <div className="flex items-center space-x-2">
                   {selectedData.image && (
@@ -84,17 +96,20 @@ export default ({ environment, chain, dataName, placeholder, hasAllOptions, allO
                       className="rounded-full"
                     />
                   )}
-                  <span className="font-bold">{selectedData.name}</span>
+                  <span className="font-bold">
+                    {selectedData.name}
+                  </span>
                 </div>
                 :
                 selectedData === "" ?
-                  <span className="font-bold">{allOptionsName}</span>
+                  <span className="font-bold">
+                    {allOptionsName}
+                  </span>
                   :
                   placeholder || "Select Options"
               }
               {open ?
-                <BiChevronUp size={selectedData?.image ? 24 : 20} className="text-gray-800 dark:text-gray-200 ml-1.5 -mr-1.5" />
-                :
+                <BiChevronUp size={selectedData?.image ? 24 : 20} className="text-gray-800 dark:text-gray-200 ml-1.5 -mr-1.5" /> :
                 <BiChevronDown size={selectedData?.image ? 24 : 20} className="text-gray-800 dark:text-gray-200 ml-1.5 -mr-1.5" />
               }
             </Menu.Button>
@@ -122,33 +137,37 @@ export default ({ environment, chain, dataName, placeholder, hasAllOptions, allO
                         }}
                         className={`${active ? "bg-gray-100 dark:bg-gray-900 text-dark dark:text-white" : "text-gray-800 dark:text-gray-200"} ${selectedKey === "" ? "font-bold" : active ? "font-semibold" : "font-medium"} cursor-pointer flex items-center text-sm space-x-2 py-2 px-4`}
                       >
-                        <span>{allOptionsName}</span>
+                        <span>
+                          {allOptionsName}
+                        </span>
                       </div>
                     )}
                   </Menu.Item>
                 )}
-                {options?.map((option, key) => (
-                  <Menu.Item key={key}>
+                {options?.map((o, i) => (
+                  <Menu.Item key={i}>
                     {({ active }) => (
                       <div
                         onClick={() => {
-                          setSelectedKey(option.id);
+                          setSelectedKey(o.id);
                           if (onSelect) {
-                            onSelect(options?.find(o => o?.id === option.id));
+                            onSelect(options?.find(_o => _o?.id === o.id));
                           }
                         }}
-                        className={`${active ? "bg-gray-100 dark:bg-gray-900 text-dark dark:text-white" : "text-gray-800 dark:text-gray-200"} ${selectedKey === option.id ? "font-bold" : active ? "font-semibold" : "font-medium"} cursor-pointer flex items-center text-sm space-x-2 py-2 px-4`}
+                        className={`${active ? "bg-gray-100 dark:bg-gray-900 text-dark dark:text-white" : "text-gray-800 dark:text-gray-200"} ${selectedKey === o.id ? "font-bold" : active ? "font-semibold" : "font-medium"} cursor-pointer flex items-center text-sm space-x-2 py-2 px-4`}
                       >
-                        {option.image && (
+                        {o.image && (
                           <Image
-                            src={option.image}
+                            src={o.image}
                             alt=""
                             width={24}
                             height={24}
                             className="rounded-full"
                           />
                         )}
-                        <span>{option.name}</span>
+                        <span>
+                          {o.name}
+                        </span>
                       </div>
                     )}
                   </Menu.Item>
@@ -159,5 +178,5 @@ export default ({ environment, chain, dataName, placeholder, hasAllOptions, allO
         </>
       )}
     </Menu>
-  )
+  );
 };

@@ -2,7 +2,11 @@ import { useRouter } from "next/router";
 import Link from "next/link";
 import Image from "next/image";
 
-const Logo = ({ theme, width, height }) => (
+const Logo = ({
+  theme,
+  width,
+  height,
+}) => (
   <>
     <div className="flex dark:hidden items-center">
       <Image
@@ -51,10 +55,13 @@ export default {
     const { locale } = useRouter();
     return (
       <>
-        <Logo width={24} height={24} />
+        <Logo
+          width={24}
+          height={24}
+        />
         <span
-          className="hidden md:inline select-none font-extrabold mx-2"
           title={`Axelar Network | ${TITLE_WITH_TRANSLATIONS[locale] || TITLE_WITH_TRANSLATIONS["en-US"]}`}
+          className="hidden md:inline select-none font-extrabold mx-2"
         >
           Axelar Network
         </span>
@@ -64,7 +71,10 @@ export default {
       </>
     );
   },
-  head: ({ title, meta }) => {
+  head: ({
+    title,
+    meta,
+  }) => {
     const { route } = useRouter();
     const ogImage = meta.image || "/images/og.png";
     return (
@@ -151,11 +161,15 @@ export default {
               />
             </div>
           </div>
-          <div className="text-lg">Empowering developers to build scalable, multichain dApps</div>
+          <div className="text-lg">
+            Empowering developers to build scalable, multichain dApps
+          </div>
         </div>
         <div className="md:col-span-2 grid grid-flow-row grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           <div className="space-y-4 mx-4">
-            <div className="text-black dark:text-white text-lg font-bold">Learn</div>
+            <div className="text-black dark:text-white text-lg font-bold">
+              Learn
+            </div>
             <div className="flex flex-col space-y-3">
               <a
                 href="https://axelar.network"
@@ -192,7 +206,9 @@ export default {
             </div>
           </div>
           <div className="space-y-4 mx-4">
-            <div className="text-black dark:text-white text-lg font-bold">Community</div>
+            <div className="text-black dark:text-white text-lg font-bold">
+              Community
+            </div>
             <div className="flex flex-col space-y-3">
               <a
                 href="https://twitter.com/axelarcore"
@@ -229,7 +245,9 @@ export default {
             </div>
           </div>
           <div className="space-y-4 mx-4">
-            <div className="text-black dark:text-white text-lg font-bold">Others</div>
+            <div className="text-black dark:text-white text-lg font-bold">
+              Others
+            </div>
             <div className="flex flex-col space-y-3">
               <Link href="/bug-bounty">
                 <a className="no-underline text-current">
@@ -252,7 +270,9 @@ export default {
           rel="noopener"
           className="inline-flex items-center no-underline text-current font-semibold"
         >
-          <span className="whitespace-nowrap">© {new Date().getFullYear()} Axelar Network. All Rights Reserved.</span>
+          <span className="whitespace-nowrap">
+            © {new Date().getFullYear()} Axelar Network. All Rights Reserved.
+          </span>
         </a>
       </div>
     </div>

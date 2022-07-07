@@ -1,6 +1,5 @@
 import Image from "next/image";
 import Link from "next/link";
-
 import { BsFileEarmarkTextFill, BsStack } from "react-icons/bs";
 
 const items = [
@@ -50,20 +49,28 @@ const items = [
 export default () => {
   return (
     <div className="grid grid-flow-row grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-8 mt-6">
-      {items.map((item, key) => {
+      {items.map((item, i) => {
+        const {
+          icon,
+          title,
+          url,
+          external,
+        } = { ...item };
         const element = (
           <div className="card-index">
             <div className="flex items-center space-x-3">
-              {item.icon}
-              <span className="text-base font-semibold">{item.title}</span>
+              {icon}
+              <span className="text-base font-semibold">
+                {title}
+              </span>
             </div>
           </div>
         );
 
-        return item.external ?
+        return external ?
           <a
-            key={key}
-            href={item.url}
+            key={i}
+            href={url}
             target="_blank"
             rel="noopenner noreferrer"
             className="no-underline text-black dark:text-white"
@@ -71,7 +78,10 @@ export default () => {
             {element}
           </a>
           :
-          <Link key={key} href={item.url}>
+          <Link
+            key={i}
+            href={url}
+          >
             <a className="no-underline text-black dark:text-white">
               {element}
             </a>

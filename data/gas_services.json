@@ -5,6 +5,10 @@
       "address": "0x4154CF6eea0633DD9c4933E76a077fD7E9260738"
     },
     {
+      "id": "binance",
+      "address": ""
+    },
+    {
       "id": "avalanche",
       "address": "0xB53C693544363912D2A034f70D9d98808D5E192a"
     },
@@ -24,6 +28,10 @@
   "testnet": [
     {
       "id": "ethereum",
+      "address": "0xbE406F0189A0B4cf3A05C286473D23791Dd44Cc6"
+    },
+    {
+      "id": "binance",
       "address": "0xbE406F0189A0B4cf3A05C286473D23791Dd44Cc6"
     },
     {

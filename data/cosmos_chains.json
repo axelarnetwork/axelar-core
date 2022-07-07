@@ -3,17 +3,12 @@
     {
       "id": "axelarnet",
       "name": "Axelar",
-      "image": "/images/chains/axelar.png"
-    },
-    {
-      "id": "terra",
-      "name": "Terra",
-      "image": "/images/chains/terra.png"
+      "image": "/images/chains/axelarnet.png"
     },
     {
       "id": "cosmoshub",
       "name": "Cosmos",
-      "image": "/images/chains/cosmos.png"
+      "image": "/images/chains/cosmoshub.png"
     },
     {
       "id": "osmosis",
@@ -23,7 +18,7 @@
     {
       "id": "emoney",
       "name": "e-Money",
-      "image": "/images/chains/emoney.jpg"
+      "image": "/images/chains/emoney.png"
     },
     {
       "id": "juno",
@@ -38,19 +33,24 @@
     {
       "id": "injective",
       "name": "Injective",
-      "image": "/images/chains/injective.svg"
+      "image": "/images/chains/injective.png"
+    },
+    {
+      "id": "terra",
+      "name": "Terra",
+      "image": "/images/chains/terra.png"
     }
   ],
   "testnet": [
     {
       "id": "axelarnet",
       "name": "Axelar",
-      "image": "/images/chains/axelar.png"
+      "image": "/images/chains/axelarnet.png"
     },
     {
-      "id": "terra",
-      "name": "Terra",
-      "image": "/images/chains/terra.png"
+      "id": "cosmoshub",
+      "name": "Cosmos",
+      "image": "/images/chains/cosmoshub.png"
     },
     {
       "id": "osmosis",
@@ -58,21 +58,31 @@
       "image": "/images/chains/osmosis.png"
     },
     {
+      "id": "juno",
+      "name": "Junø",
+      "image": "/images/chains/juno.png"
+    },
+    {
       "id": "crescent",
       "name": "Crescent",
       "image": "/images/chains/crescent.png"
     },
     {
-      "id": "juno",
-      "name": "Junø",
-      "image": "/images/chains/juno.png"
+      "id": "kujira",
+      "name": "Kujira",
+      "image": "/images/chains/kujira.png"
+    },
+    {
+      "id": "terra",
+      "name": "Terra",
+      "image": "/images/chains/terra.png"
     }
   ],
   "testnet-2": [
     {
       "id": "axelarnet",
       "name": "Axelar",
-      "image": "/images/chains/axelar.png"
+      "image": "/images/chains/axelarnet.png"
     },
     {
       "id": "terra",

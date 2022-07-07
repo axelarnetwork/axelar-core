@@ -4,12 +4,14 @@
       "id": "ethereum",
       "name": "Ethereum",
       "chain_id": 1,
-      "image": "/images/chains/ethereum.png",
       "provider_params": [
         {
           "chainId": "0x1",
-          "chainName": "Ethereum Mainnet",
-          "rpcUrls": ["https://rpc.ankr.com/eth"],
+          "chainName": "Ethereum",
+          "rpcUrls": [
+            "https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161",
+            "https://rpc.ankr.com/eth"
+          ],
           "nativeCurrency": {
             "name": "Ether",
             "symbol": "ETH",
@@ -17,18 +19,46 @@
           },
           "blockExplorerUrls": ["https://etherscan.io"]
         }
-      ]
+      ],
+      "image": "/images/chains/ethereum.png"
+    },
+    {
+      "id": "binance",
+      "name": "BNB Chain",
+      "chain_id": 56,
+      "provider_params": [
+        {
+          "chainId": "0x38",
+          "chainName": "BNB Chain",
+          "rpcUrls": [
+            "https://rpc.ankr.com/bsc",
+            "https://bsc-dataseed.binance.org",
+            "https://bsc-dataseed1.defibit.io",
+            "https://bsc-dataseed1.ninicoin.io",
+            "https://bsc-dataseed1.binance.org"
+          ],
+          "nativeCurrency": {
+            "name": "BNB Token",
+            "symbol": "BNB",
+            "decimals": 18
+          },
+          "blockExplorerUrls": ["https://bscscan.com"]
+        }
+      ],
+      "image": "/images/chains/binance.png",
+      "is_staging": true
     },
     {
       "id": "avalanche",
       "name": "Avalanche",
       "chain_id": 43114,
-      "image": "/images/chains/avalanche.png",
       "provider_params": [
         {
           "chainId": "0xa86a",
-          "chainName": "Avalanche Mainnet C-Chain",
-          "rpcUrls": ["https://api.avax.network/ext/bc/C/rpc"],
+          "chainName": "Avalanche C-Chain",
+          "rpcUrls": [
+            "https://api.avax.network/ext/bc/C/rpc"
+          ],
           "nativeCurrency": {
             "name": "Avalanche",
             "symbol": "AVAX",
@@ -36,19 +66,19 @@
           },
           "blockExplorerUrls": ["https://snowtrace.io"]
         }
-      ]
+      ],
+      "image": "/images/chains/avalanche.png"
     },
     {
       "id": "polygon",
       "name": "Polygon",
       "chain_id": 137,
-      "image": "/images/chains/polygon.png",
       "provider_params": [
         {
           "chainId": "0x89",
-          "chainName": "Matic Mainnet",
+          "chainName": "Polygon",
           "rpcUrls": [
-            "https://polygon-rpc.com",
+            "https://rpc.ankr.com/polygon",
             "https://matic-mainnet.chainstacklabs.com"
           ],
           "nativeCurrency": {
@@ -58,13 +88,13 @@
           },
           "blockExplorerUrls": ["https://polygonscan.com"]
         }
-      ]
+      ],
+      "image": "/images/chains/polygon.png"
     },
     {
       "id": "fantom",
       "name": "Fantom",
       "chain_id": 250,
-      "image": "/images/chains/fantom.png",
       "provider_params": [
         {
           "chainId": "0xfa",
@@ -81,18 +111,21 @@
           },
           "blockExplorerUrls": ["https://ftmscan.com"]
         }
-      ]
+      ],
+      "image": "/images/chains/fantom.png"
     },
     {
       "id": "moonbeam",
       "name": "Moonbeam",
       "chain_id": 1284,
-      "image": "/images/chains/moonbeam.png",
       "provider_params": [
         {
           "chainId": "0x504",
           "chainName": "Moonbeam",
-          "rpcUrls": ["https://rpc.api.moonbeam.network"],
+          "rpcUrls": [
+            "https://rpc.api.moonbeam.network",
+            "https://rpc.ankr.com/moonbeam"
+          ],
           "nativeCurrency": {
             "name": "Glimmer",
             "symbol": "GLMR",
@@ -100,7 +133,8 @@
           },
           "blockExplorerUrls": ["https://moonscan.io"]
         }
-      ]
+      ],
+      "image": "/images/chains/moonbeam.png"
     }
   ],
   "testnet": [
@@ -108,7 +142,6 @@
       "id": "ethereum",
       "name": "Ethereum Ropsten",
       "chain_id": 3,
-      "image": "/images/chains/ethereum.png",
       "provider_params": [
         {
           "chainId": "0x3",
@@ -123,18 +156,43 @@
           },
           "blockExplorerUrls": ["https://ropsten.etherscan.io"]
         }
-      ]
+      ],
+      "image": "/images/chains/ethereum.png"
+    },
+    {
+      "id": "binance",
+      "name": "BNB Chain",
+      "chain_id": 97,
+      "provider_params": [
+        {
+          "chainId": "0x61",
+          "chainName": "BNB Chain Testnet",
+          "rpcUrls": [
+            "https://data-seed-prebsc-1-s1.binance.org:8545",
+            "https://data-seed-prebsc-2-s1.binance.org:8545",
+            "https://data-seed-prebsc-1-s2.binance.org:8545"
+          ],
+          "nativeCurrency": {
+            "name": "BNB Token",
+            "symbol": "BNB",
+            "decimals": 18
+          },
+          "blockExplorerUrls": ["https://testnet.bscscan.com"]
+        }
+      ],
+      "image": "/images/chains/binance.png"
     },
     {
       "id": "avalanche",
-      "name": "Avalanche Fuji",
+      "name": "Avalanche",
       "chain_id": 43113,
-      "image": "/images/chains/avalanche.png",
       "provider_params": [
         {
           "chainId": "0xa869",
-          "chainName": "Avalanche Testnet C-Chain",
-          "rpcUrls": ["https://api.avax-test.network/ext/bc/C/rpc"],
+          "chainName": "Avalanche Fuji",
+          "rpcUrls": [
+            "https://api.avax-test.network/ext/bc/C/rpc"
+          ],
           "nativeCurrency": {
             "name": "Avalanche",
             "symbol": "AVAX",
@@ -142,19 +200,18 @@
           },
           "blockExplorerUrls": ["https://testnet.snowtrace.io"]
         }
-      ]
+      ],
+      "image": "/images/chains/avalanche.png"
     },
     {
       "id": "polygon",
-      "name": "Polygon Mumbai",
+      "name": "Polygon",
       "chain_id": 80001,
-      "image": "/images/chains/polygon.png",
       "provider_params": [
         {
           "chainId": "0x13881",
           "chainName": "Polygon Mumbai",
           "rpcUrls": [
-            "https://rpc-mumbai.matic.today",
             "https://matic-mumbai.chainstacklabs.com"
           ],
           "nativeCurrency": {
@@ -164,18 +221,20 @@
           },
           "blockExplorerUrls": ["https://mumbai.polygonscan.com"]
         }
-      ]
+      ],
+      "image": "/images/chains/polygon.png"
     },
     {
       "id": "fantom",
-      "name": "Fantom Testnet",
+      "name": "Fantom",
       "chain_id": 4002,
-      "image": "/images/chains/fantom.png",
       "provider_params": [
         {
           "chainId": "0xfa2",
           "chainName": "Fantom Testnet",
-          "rpcUrls": ["https://rpc.testnet.fantom.network"],
+          "rpcUrls": [
+            "https://rpc.testnet.fantom.network"
+          ],
           "nativeCurrency": {
             "name": "Fantom",
             "symbol": "FTM",
@@ -183,18 +242,20 @@
           },
           "blockExplorerUrls": ["https://testnet.ftmscan.com"]
         }
-      ]
+      ],
+      "image": "/images/chains/fantom.png"
     },
     {
       "id": "moonbeam",
-      "name": "Moonbase Alpha",
+      "name": "Moonbase",
       "chain_id": 1287,
-      "image": "/images/chains/moonbeam.png",
       "provider_params": [
         {
           "chainId": "0x507",
           "chainName": "Moonbase Alpha",
-          "rpcUrls": ["https://rpc.api.moonbase.moonbeam.network"],
+          "rpcUrls": [
+            "https://rpc.api.moonbase.moonbeam.network"
+          ],
           "nativeCurrency": {
             "name": "Dev",
             "symbol": "DEV",
@@ -202,26 +263,8 @@
           },
           "blockExplorerUrls": ["https://moonbase.moonscan.io"]
         }
-      ]
-    },
-    {
-      "id": "binance",
-      "name": "Binance Testnet",
-      "chain_id": 97,
-      "image": "/images/chains/binance.svg",
-      "provider_params": [
-        {
-          "chainId": "0x61",
-          "chainName": "Binance Testnet",
-          "rpcUrls": ["https://data-seed-prebsc-1-s1.binance.org:8545/", "https://data-seed-prebsc-2-s1.binance.org:8545/"],
-          "nativeCurrency": {
-            "name": "Bnb",
-            "symbol": "BNB",
-            "decimals": 18
-          },
-          "blockExplorerUrls": ["https://testnet.bscscan.com/"]
-        }
-      ]
+      ],
+      "image": "/images/chains/moonbeam.png"
     }
   ],
   "testnet-2": [
@@ -229,7 +272,6 @@
       "id": "ethereum",
       "name": "Ethereum Ropsten",
       "chain_id": 3,
-      "image": "/images/chains/ethereum.png",
       "provider_params": [
         {
           "chainId": "0x3",
@@ -244,18 +286,20 @@
           },
           "blockExplorerUrls": ["https://ropsten.etherscan.io"]
         }
-      ]
+      ],
+      "image": "/images/chains/ethereum.png"
     },
     {
       "id": "avalanche",
-      "name": "Avalanche Fuji",
+      "name": "Avalanche",
       "chain_id": 43113,
-      "image": "/images/chains/avalanche.png",
       "provider_params": [
         {
           "chainId": "0xa869",
-          "chainName": "Avalanche Testnet C-Chain",
-          "rpcUrls": ["https://api.avax-test.network/ext/bc/C/rpc"],
+          "chainName": "Avalanche Fuji",
+          "rpcUrls": [
+            "https://api.avax-test.network/ext/bc/C/rpc"
+          ],
           "nativeCurrency": {
             "name": "Avalanche",
             "symbol": "AVAX",
@@ -263,7 +307,8 @@
           },
           "blockExplorerUrls": ["https://testnet.snowtrace.io"]
         }
-      ]
+      ],
+      "image": "/images/chains/avalanche.png"
     }
   ]
 }

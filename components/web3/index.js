@@ -3,17 +3,27 @@ import { useState, useEffect } from "react";
 import { useSelector, useDispatch, shallowEqual } from "react-redux";
 import Web3 from "web3";
 
-import { CHAIN_ID_DATA } from "../../reducers/types";
-import chains_data from "../../data/evm_chains.json";
+import { equals_ignore_case } from "../../utils";
+import evm_chains from "../../data/evm_chains.json";
+import { CHAIN_ID } from "../../reducers/types";
 
-export default ({ environment = "mainnet", chain, symbol, image, address, decimals }) => {
+export default ({
+  environment = "mainnet",
+  chain,
+  symbol,
+  image,
+  address,
+  decimals,
+}) => {
+  const _evm_chains = evm_chains?.[environment] || [];
+
   const dispatch = useDispatch();
-  const { chain_id } = useSelector(state => ({ chain_id: state.chain_id }), shallowEqual);
-  const { chain_id_data } = { ...chain_id };
+  const { _chain_id } = useSelector(state => ({ _chain_id: state.chain_id }), shallowEqual);
+  const { chain_id } = { ..._chain_id };
 
   const [web3, setWeb3] = useState(null);
   const [chainId, setChainId] = useState(null);
-  const [addTokenData, setAddTokenData] = useState(null);
+  const [data, setData] = useState(null);
 
   useEffect(() => {
     if (!web3) {
@@ -23,30 +33,31 @@ export default ({ environment = "mainnet", chain, symbol, image, address, decima
       try {
         web3.currentProvider._handleChainChanged = e => {
           try {
-            setChainId(Web3.utils.hexToNumber(e?.chainId));
+            const chainId = Web3.utils.hexToNumber(e?.chainId);
+            setChainId(chainId);
             dispatch({
-              type: CHAIN_ID_DATA,
-              value: Web3.utils.hexToNumber(e?.chainId),
+              type: CHAIN_ID,
+              value: chainId,
             });
           } catch (error) {}
-        }
+        };
       } catch (error) {}
     }
   }, [web3]);
 
   useEffect(() => {
-    if (chain_id_data) {
-      setChainId(chain_id_data);
+    if (chain_id) {
+      setChainId(chain_id);
     }
-  }, [chain_id_data]);
+  }, [chain_id]);
 
   useEffect(() => {
-    if (addTokenData?.chain_id === chainId && addTokenData?.contract) {
-      addTokenToMetaMask(addTokenData.chain_id, addTokenData.contract);
+    if (data?.chain_id === chainId && data?.contract) {
+      addToken(data.chain_id, data.contract);
     }
-  }, [chainId, addTokenData]);
+  }, [chainId, data]);
 
-  const addTokenToMetaMask = async (chain_id, contract) => {
+  const addToken = async (chain_id, contract) => {
     if (web3 && contract) {
       if (chain_id === chainId) {
         try {
@@ -57,21 +68,21 @@ export default ({ environment = "mainnet", chain, symbol, image, address, decima
               options: {
                 address: contract.address,
                 symbol: contract.symbol,
-                decimals: Number(contract.decimals),
+                decimals: contract.decimals,
                 image: contract.image ? `${window.location.origin}${contract.image}` : undefined,
               },
             },
           });
         } catch (error) {}
-        setAddTokenData(null);
+        setData(null);
       }
       else {
-        switchNetwork(chain_id, contract);
+        switchChain(chain_id, contract);
       }
     }
   };
 
-  const switchNetwork = async (chain_id, contract) => {
+  const switchChain = async (chain_id, contract) => {
     try {
       await web3.currentProvider.request({
         method: "wallet_switchEthereumChain",
@@ -82,14 +93,13 @@ export default ({ environment = "mainnet", chain, symbol, image, address, decima
         try {
           await web3.currentProvider.request({
             method: "wallet_addEthereumChain",
-            params: chains_data?.[environment]?.find(c => c.chain_id === chain_id)?.provider_params,
+            params: _evm_chains.find(c => c.chain_id === chain_id)?.provider_params,
           });
         } catch (error) {}
       }
     }
-
     if (contract) {
-      setAddTokenData({ chain_id, contract });
+      setData({ chain_id, contract });
     }
   };
 
@@ -97,9 +107,9 @@ export default ({ environment = "mainnet", chain, symbol, image, address, decima
     <button
       onClick={() => {
         if (chain) {
-          const chain_data = chains_data?.[environment]?.find(c => c.id?.toLowerCase() === chain.toLowerCase());
+          const chain_data = _evm_chains.find(c => equals_ignore_case(c.id, chain));
           if (symbol && address && decimals) {
-            addTokenToMetaMask(
+            addToken(
               chain_data?.chain_id,
               {
                 symbol,
@@ -110,7 +120,7 @@ export default ({ environment = "mainnet", chain, symbol, image, address, decima
             );
           }
           else {
-            switchNetwork(chain_data?.chain_id);
+            switchChain(chain_data?.chain_id);
           }
         }
       }}

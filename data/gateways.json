@@ -5,6 +5,10 @@
       "address": "0x4F4495243837681061C4743b74B3eEdf548D56A5"
     },
     {
+      "id": "binance",
+      "address": ""
+    },
+    {
       "id": "avalanche",
       "address": "0x5029C0EFf6C34351a0CEc334542cDb22c7928f78"
     },
@@ -27,6 +31,10 @@
       "address": "0xBC6fcce7c5487d43830a219CA6E7B83238B41e71"
     },
     {
+      "id": "binance",
+      "address": "0x4D147dCb984e6affEEC47e44293DA442580A3Ec0"
+    },
+    {
       "id": "avalanche",
       "address": "0xC249632c2D40b9001FE907806902f63038B737Ab"
     },
@@ -41,10 +49,6 @@
     {
       "id": "moonbeam",
       "address": "0x5769D84DD62a6fD969856c75c7D321b84d455929"
-    },
-    {
-      "id": "binance",
-      "address": "0x4D147dCb984e6affEEC47e44293DA442580A3Ec0"
     }
   ],
   "testnet-2": [

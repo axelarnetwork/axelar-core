@@ -1,16 +1,16 @@
-import { ENVIRONMENT } from "./types";
+import { CHAIN_ID } from "./types";
 
 export default (
   state = {
-    [`${ENVIRONMENT}`]: "mainnet",
+    [`${CHAIN_ID}`]: null,
   },
   action,
 ) => {
   switch (action.type) {
-    case ENVIRONMENT:
+    case CHAIN_ID:
       return {
         ...state,
-        [`${ENVIRONMENT}`]: action.value,
+        [`${CHAIN_ID}`]: action.value,
       };
     default:
       return state;

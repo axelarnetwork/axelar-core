@@ -1,15 +1,18 @@
 import { useRouter } from "next/router";
 import { useEffect } from "react";
 import { Provider } from "react-redux";
+
 import { useStore } from "../store";
 import * as ga from "../utils/ga";
-
 import "../styles/globals.css";
 import "../styles/components/tabs.css";
 import "../styles/components/cards.css";
 import "nextra-theme-docs/style.css";
 
-export default function Nextra({ Component, pageProps }) {
+export default ({
+  Component,
+  pageProps,
+}) => {
   const router = useRouter();
 
   const store = useStore(pageProps.initialReduxState);
@@ -28,7 +31,9 @@ export default function Nextra({ Component, pageProps }) {
 
   return (
     <Provider store={store}>
-      {getLayout(<Component {...pageProps} />)}
+      {getLayout(
+        <Component { ...pageProps } />
+      )}
     </Provider>
   );
 }

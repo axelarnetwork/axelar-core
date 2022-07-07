@@ -2,29 +2,32 @@ import Image from "next/image";
 import { useState } from "react";
 
 import Dropdown from "../dropdown";
-import AddToWeb3 from "../web3";
+import AddToken from "../web3";
 import Copy from "../copy";
-import utils from "../../utils";
+import { ellipse, equals_ignore_case } from "../../utils";
 import evm_chains from "../../data/evm_chains.json";
 import evm_assets from "../../data/evm_assets.json";
 
+const COLUMNS = [
+  { id: "asset", title: "Asset" },
+  { id: "chain", title: "Chain" },
+  { id: "contract_address", title: "Contract address" },
+  { id: "add_token", title: "", headerClassName: "text-right", className: "text-right" },
+];
+
 export default ({ environment = "mainnet" }) => {
+  const _evm_chains = evm_chains?.[environment] || [];
+  const _evm_assets = evm_assets?.[environment] || [];
+
   const [chainData, setChainData] = useState(null);
-  const [assetData, setAssetData] = useState(evm_assets?.[environment]?.find(a => a?.id === (environment === "testnet" ? "uausdc" : "uusdc")));
+  const [assetData, setAssetData] = useState(_evm_assets.find(a => a?.id === (environment === "testnet" ? "uausdc" : "uusdc")));
 
-  const columns = [
-    { id: "asset", title: "Asset" },
-    { id: "chain", title: "Chain" },
-    { id: "contract_address", title: "Contract address" },
-    { id: "add_token", title: "", headerClassName: "text-right", className: "text-right" },
-  ];
-
-  const assets = evm_assets?.[environment]?.filter(a => !assetData || a?.id === assetData.id).flatMap(a => a?.contracts?.map(c => {
+  const assets = _evm_assets.filter(a => !assetData || a?.id === assetData.id).flatMap(a => a?.contracts?.map(c => {
     return {
       ...a,
       ...c,
     };
-  }).filter(a => !chainData || a.chain?.toLowerCase() === chainData.id?.toLowerCase()) || []) || [];
+  }).filter(a => !chainData || equals_ignore_case(a.chain, chainData.id)) || []);
 
   return (
     <div className="space-y-3">
@@ -38,7 +41,7 @@ export default ({ environment = "mainnet" }) => {
           defaultSelectedKey={chainData?.id || ""}
           onSelect={c => {
             setChainData(c);
-            if (c && evm_assets?.[environment]?.findIndex(a => (!assetData || a?.id === assetData.id) && a?.contracts?.findIndex(_c => _c?.chain === c?.id) > -1) < 0) {
+            if (c && _evm_assets.findIndex(a => (!assetData || a?.id === assetData.id) && a?.contracts?.findIndex(_c => _c?.chain === c?.id) > -1) < 0) {
               setAssetData("");
             }
           }}
@@ -57,67 +60,100 @@ export default ({ environment = "mainnet" }) => {
       <table className="max-w-fit block shadow rounded-lg overflow-x-auto">
         <thead className="bg-gray-100 dark:bg-black uppercase text-xs">
           <tr className="border-none">
-            {columns.map((c, key) => (
-              <th key={key} scope="col" className={`${key === 0 ? "rounded-tl-lg" : key === columns.length - 1 ? "rounded-tr-lg" : ""} border-none whitespace-nowrap font-bold py-3 px-4 ${c.headerClassName || ""}`}>
+            {COLUMNS.map((c, i) => (
+              <th
+                key={i}
+                scope="col"
+                className={`${i === 0 ? "rounded-tl-lg" : i === COLUMNS.length - 1 ? "rounded-tr-lg" : ""} border-none whitespace-nowrap font-bold py-3 px-4 ${c.headerClassName || ""}`}
+              >
                 {c.title}
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {assets.map((a, key) => {
-            const chain_data = evm_chains?.[environment]?.find(c => c?.id === a.chain);
+          {assets.map((a, i) => {
+            const {
+              address,
+              symbol,
+              image,
+              chain,
+            } = { ...a };
+            const chain_data = _evm_chains.find(c => c?.id === chain);
             const explorer_url = chain_data?.provider_params?.[0]?.blockExplorerUrls?.[0];
 
             return (
-              <tr key={key} className="border-none border-b">
-                {columns.map((c, _key) => (
-                  <th key={_key} scope="col" className={`${key % 2 === 0 ? "bg-transparent" : "bg-gray-50 dark:bg-black"} ${key === assets.length - 1 ? _key === 0 ? "rounded-bl-lg" : _key === columns.length - 1 ? "rounded-br-lg" : "" : ""} border-none whitespace-nowrap py-3 px-4 ${c.className || ""}`}>
+              <tr
+                key={i}
+                className="border-none border-b"
+              >
+                {COLUMNS.map((c, j) => (
+                  <th
+                    key={j}
+                    scope="col"
+                    className={`${i % 2 === 0 ? "bg-transparent" : "bg-gray-50 dark:bg-black"} ${i === assets.length - 1 ? j === 0 ? "rounded-bl-lg" : j === COLUMNS.length - 1 ? "rounded-br-lg" : "" : ""} border-none whitespace-nowrap py-3 px-4 ${c.className || ""}`}
+                  >
                     {c.id === "asset" ?
                       <div className="min-w-max flex items-center space-x-3">
-                        <Image
-                          src={a.image}
-                          alt=""
-                          width={28}
-                          height={28}
-                          className="rounded-full"
-                        />
-                        <span className="whitespace-nowrap text-base font-semibold">{a.symbol}</span>
+                        {image && (
+                          <Image
+                            src={image}
+                            alt=""
+                            width={28}
+                            height={28}
+                            className="rounded-full"
+                          />
+                        )}
+                        <span className="whitespace-nowrap text-base font-semibold">
+                          {symbol}
+                        </span>
                       </div>
                       :
                       c.id === "chain" ?
                         <div className="min-w-max flex items-center space-x-2.5">
-                          <Image
-                            src={chain_data?.image}
-                            alt=""
-                            width={24}
-                            height={24}
-                            className="rounded-full"
-                          />
-                          <span className="whitespace-nowrap text-sm font-semibold">{chain_data?.name || a.chain}</span>
+                          {chain_data?.image && (
+                            <Image
+                              src={chain_data.image}
+                              alt=""
+                              width={24}
+                              height={24}
+                              className="rounded-full"
+                            />
+                          )}
+                          <span className="whitespace-nowrap text-sm font-semibold">
+                            {chain_data?.name || chain}
+                          </span>
                         </div>
                         :
                         c.id === "contract_address" ?
                           <div className="flex items-center text-base space-x-1.5">
-                            {a.address ?
+                            {address ?
                               <a
-                                href={`${explorer_url}/address/${a.address}`}
+                                href={`${explorer_url}/address/${address}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="no-underline text-blue-500 dark:text-white font-medium"
                               >
-                                {utils.ellipse(a.address, 24)}
+                                {ellipse(address, 24)}
                               </a>
                               :
-                              <span className="text-gray-400 dark:text-gray-600">-</span>
+                              <span className="text-gray-400 dark:text-gray-600">
+                                -
+                              </span>
                             }
-                            {a.address && (
-                              <Copy size={20} value={a.address} />
+                            {address && (
+                              <Copy
+                                value={address}
+                                size={20}
+                              />
                             )}
                           </div>
                           :
                           c.id === "add_token" ?
-                            <AddToWeb3 environment={environment} { ...a } />
+                            <AddToken
+                              environment={environment}
+                              { ...a }
+                            />
                             :
                             null
                     }

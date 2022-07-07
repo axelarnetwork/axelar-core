@@ -1,5 +1,5 @@
 // environment
-export const ENVIRONMENT_DATA = "environment_data";
+export const ENVIRONMENT = "environment_data";
 
-// chain id
-export const CHAIN_ID_DATA = "chain_id_data";
+// wallet
+export const CHAIN_ID = "chain_id";
