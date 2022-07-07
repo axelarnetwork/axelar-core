@@ -108,6 +108,7 @@ func (k Keeper) getKey(ctx sdk.Context, id exported.KeyID) (key types.Key, ok bo
 	return key, k.getStore(ctx).Get(keyPrefix.AppendStr(id.String()), &key)
 }
 
+// SetKey sets the given key
 func (k Keeper) SetKey(ctx sdk.Context, key types.Key) {
 	k.getStore(ctx).Set(keyPrefix.AppendStr(key.ID.String()), &key)
 

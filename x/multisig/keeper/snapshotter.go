@@ -11,6 +11,7 @@ import (
 
 //go:generate moq -pkg mock -out ./mock/snapshotter.go . Snapshotter
 
+// Snapshotter is an interface to create snapshots for multisig keygen
 type Snapshotter interface {
 	CreateSnapshot(ctx sdk.Context, threshold utils.Threshold) (snapshot.Snapshot, error)
 	GetOperator(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress
@@ -18,12 +19,14 @@ type Snapshotter interface {
 
 var _ Snapshotter = SnapshotCreator{}
 
+// SnapshotCreator is an implementation of Snapshotter
 type SnapshotCreator struct {
 	snapshotter types.Snapshotter
 	staker      types.Staker
 	slasher     types.Slasher
 }
 
+// NewSnapshotCreator is the constructor for snapshot creator
 func NewSnapshotCreator(snapshotter types.Snapshotter, staker types.Staker, slasher types.Slasher) SnapshotCreator {
 	return SnapshotCreator{
 		snapshotter: snapshotter,
@@ -32,10 +35,12 @@ func NewSnapshotCreator(snapshotter types.Snapshotter, staker types.Staker, slas
 	}
 }
 
+// GetOperator returns the operator of the given proxy
 func (sc SnapshotCreator) GetOperator(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress {
 	return sc.snapshotter.GetOperator(ctx, proxy)
 }
 
+// CreateSnapshot creates a snapshot for multisig keygen
 func (sc SnapshotCreator) CreateSnapshot(ctx sdk.Context, threshold utils.Threshold) (snapshot.Snapshot, error) {
 	filter := func(v snapshot.ValidatorI) bool {
 		if v.IsJailed() {

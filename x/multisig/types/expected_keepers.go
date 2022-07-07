@@ -10,6 +10,7 @@ import (
 
 //go:generate moq -pkg mock -out ./mock/expected_keepers.go . Snapshotter Staker Slasher
 
+// Snapshotter provides snapshot keeper functionality
 type Snapshotter interface {
 	CreateSnapshot(
 		ctx sdk.Context,
@@ -22,10 +23,12 @@ type Snapshotter interface {
 	GetOperator(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress
 }
 
+// Staker provides staking keeper functionality
 type Staker interface {
 	GetBondedValidatorsByPower(ctx sdk.Context) []stakingTypes.Validator
 }
 
+// Slasher provides slashing keeper functionality
 type Slasher interface {
 	IsTombstoned(ctx sdk.Context, consAddr sdk.ConsAddress) bool
 }
