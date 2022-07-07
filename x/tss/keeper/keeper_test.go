@@ -19,6 +19,7 @@ import (
 	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
+	"github.com/axelarnetwork/axelar-core/x/snapshot/types/mock"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 	tssMock "github.com/axelarnetwork/axelar-core/x/tss/types/mock"
@@ -77,7 +78,7 @@ func setup() *testSetup {
 		Signature:   make(chan []byte, 1),
 	}
 
-	slasher := &snapMock.SlasherMock{
+	slasher := &mock.SlasherMock{
 		GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (slashingTypes.ValidatorSigningInfo, bool) {
 			newInfo := slashingTypes.NewValidatorSigningInfo(
 				address,

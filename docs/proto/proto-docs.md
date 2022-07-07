@@ -242,20 +242,25 @@
 - [axelar/multisig/exported/v1beta1/types.proto](#axelar/multisig/exported/v1beta1/types.proto)
     - [KeygenState](#axelar.multisig.exported.v1beta1.KeygenState)
   
+- [axelar/multisig/v1beta1/events.proto](#axelar/multisig/v1beta1/events.proto)
+    - [KeygenCompleted](#axelar.multisig.v1beta1.KeygenCompleted)
+    - [KeygenStarted](#axelar.multisig.v1beta1.KeygenStarted)
+    - [PubKeySubmitted](#axelar.multisig.v1beta1.PubKeySubmitted)
+  
 - [axelar/multisig/v1beta1/params.proto](#axelar/multisig/v1beta1/params.proto)
     - [Params](#axelar.multisig.v1beta1.Params)
   
 - [axelar/multisig/v1beta1/genesis.proto](#axelar/multisig/v1beta1/genesis.proto)
     - [GenesisState](#axelar.multisig.v1beta1.GenesisState)
   
-- [axelar/multisig/v1beta1/service.proto](#axelar/multisig/v1beta1/service.proto)
-    - [MsgService](#axelar.multisig.v1beta1.MsgService)
-  
 - [axelar/multisig/v1beta1/tx.proto](#axelar/multisig/v1beta1/tx.proto)
     - [StartKeygenRequest](#axelar.multisig.v1beta1.StartKeygenRequest)
     - [StartKeygenResponse](#axelar.multisig.v1beta1.StartKeygenResponse)
     - [SubmitPubKeyRequest](#axelar.multisig.v1beta1.SubmitPubKeyRequest)
     - [SubmitPubKeyResponse](#axelar.multisig.v1beta1.SubmitPubKeyResponse)
+  
+- [axelar/multisig/v1beta1/service.proto](#axelar/multisig/v1beta1/service.proto)
+    - [MsgService](#axelar.multisig.v1beta1.MsgService)
   
 - [axelar/multisig/v1beta1/types.proto](#axelar/multisig/v1beta1/types.proto)
     - [Key](#axelar.multisig.v1beta1.Key)
@@ -3779,6 +3784,73 @@ QueryService defines the gRPC querier service.
 
 
 
+<a name="axelar/multisig/v1beta1/events.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/multisig/v1beta1/events.proto
+
+
+
+<a name="axelar.multisig.v1beta1.KeygenCompleted"></a>
+
+### KeygenCompleted
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `module` | [string](#string) |  |  |
+| `key_id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.KeygenStarted"></a>
+
+### KeygenStarted
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `module` | [string](#string) |  |  |
+| `key_id` | [string](#string) |  |  |
+| `participants` | [bytes](#bytes) | repeated |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.PubKeySubmitted"></a>
+
+### PubKeySubmitted
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `module` | [string](#string) |  |  |
+| `key_id` | [string](#string) |  |  |
+| `participant` | [bytes](#bytes) |  |  |
+| `pub_key` | [bytes](#bytes) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
 <a name="axelar/multisig/v1beta1/params.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -3838,31 +3910,6 @@ GenesisState represents the genesis state
  <!-- end enums -->
 
  <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
-<a name="axelar/multisig/v1beta1/service.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## axelar/multisig/v1beta1/service.proto
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
-
-<a name="axelar.multisig.v1beta1.MsgService"></a>
-
-### MsgService
-Msg defines the multisig Msg service.
-
-| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
-| ----------- | ------------ | ------------- | ------------| ------- | -------- |
 
  <!-- end services -->
 
@@ -3933,6 +3980,33 @@ Msg defines the multisig Msg service.
  <!-- end enums -->
 
  <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="axelar/multisig/v1beta1/service.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/multisig/v1beta1/service.proto
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+
+<a name="axelar.multisig.v1beta1.MsgService"></a>
+
+### MsgService
+Msg defines the multisig Msg service.
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `StartKeygen` | [StartKeygenRequest](#axelar.multisig.v1beta1.StartKeygenRequest) | [StartKeygenResponse](#axelar.multisig.v1beta1.StartKeygenResponse) |  | POST|/axelar/multisig/keygen|
+| `SubmitPubKey` | [SubmitPubKeyRequest](#axelar.multisig.v1beta1.SubmitPubKeyRequest) | [SubmitPubKeyResponse](#axelar.multisig.v1beta1.SubmitPubKeyResponse) |  | POST|/axelar/multisig/submit_pk|
 
  <!-- end services -->
 

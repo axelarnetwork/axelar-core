@@ -9,7 +9,4 @@ const (
 
 	// RouterKey to be used for routing msgs
 	RouterKey = ModuleName
-
-	// QuerierRoute to be used for legacy query routing
-	QuerierRoute = ModuleName
 )
