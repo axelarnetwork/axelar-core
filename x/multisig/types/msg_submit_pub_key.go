@@ -1,6 +1,8 @@
 package types
 
 import (
+	"crypto/sha256"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -37,7 +39,8 @@ func (m SubmitPubKeyRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, err.Error())
 	}
 
-	if !m.Signature.Verify([]byte(m.KeyID), m.PubKey) {
+	hash := sha256.Sum256([]byte(m.KeyID))
+	if !m.Signature.Verify(hash[:], m.PubKey) {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "signature does not match the public key")
 	}
 
