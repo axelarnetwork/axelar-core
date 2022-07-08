@@ -11,7 +11,6 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
-	utilstestutils "github.com/axelarnetwork/axelar-core/utils/testutils"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/utils/slices"
 	. "github.com/axelarnetwork/utils/test"
@@ -20,8 +19,7 @@ import (
 
 func TestSnapshot(t *testing.T) {
 	var (
-		snapshot  exported.Snapshot
-		threshold utils.Threshold
+		snapshot exported.Snapshot
 	)
 
 	givenSnapshot := Given("given any snapshot", func() {
@@ -116,17 +114,16 @@ func TestSnapshot(t *testing.T) {
 
 	t.Run("CalculateMinPassingWeight", func(t *testing.T) {
 		givenSnapshot.
-			When("given random threshold", func() {
-				threshold = utilstestutils.RandThreshold()
-			}).
+			When("", func() {}).
 			Then("should calculate correct minimum weight to pass the threshold", func(t *testing.T) {
-				expected := sdk.NewUint(snapshot.BondedWeight.Uint64()*uint64(threshold.Numerator)/uint64(threshold.Denominator) + 1)
-				actual := snapshot.CalculateMinPassingWeight(threshold)
+				threshold := utils.OneThreshold
+				assert.Equal(t, snapshot.BondedWeight, snapshot.CalculateMinPassingWeight(threshold))
 
-				assert.False(t, actual.IsZero())
-				assert.Equal(t, expected, actual)
+				threshold = utils.NewThreshold(1, 3)
+				snapshot.BondedWeight = sdk.NewUint(10)
+				assert.Equal(t, sdk.NewUint(4), snapshot.CalculateMinPassingWeight(threshold))
 			}).
-			Run(t, repeat)
+			Run(t)
 	})
 
 	t.Run("GetParticipantAddresses", func(t *testing.T) {

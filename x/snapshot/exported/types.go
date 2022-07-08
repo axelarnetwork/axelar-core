@@ -134,10 +134,15 @@ func (m Snapshot) GetParticipantWeight(participant sdk.ValAddress) sdk.Uint {
 
 // CalculateMinPassingWeight returns the minimum amount of weights to pass the given threshold
 func (m Snapshot) CalculateMinPassingWeight(threshold utils.Threshold) sdk.Uint {
-	return m.BondedWeight.
+	minPassingWeight := m.BondedWeight.
 		MulUint64(uint64(threshold.Numerator)).
-		QuoUint64(uint64(threshold.Denominator)).
-		AddUint64(1)
+		QuoUint64(uint64(threshold.Denominator))
+
+	if utils.NewThreshold(minPassingWeight.BigInt().Int64(), m.BondedWeight.BigInt().Int64()).GTE(threshold) {
+		return minPassingWeight
+	}
+
+	return minPassingWeight.AddUint64(1)
 }
 
 // Validate returns an error if the snapshot is not valid; nil otherwise
