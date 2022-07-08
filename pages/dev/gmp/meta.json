@@ -5,6 +5,7 @@
     "gmp-messages": "Send messages",
     "gmp-tokens-with-messages": "Send tokens with messages",
     "gas-services": "Gas services",
+    "executor-service": "Executor service",
     "gmp-tracker-recovery": "Monitoring and recovery"
 }
   

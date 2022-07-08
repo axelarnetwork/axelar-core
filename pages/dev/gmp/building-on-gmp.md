@@ -5,8 +5,8 @@ There are four simple steps (two mandatory and two optional):
     - `callContract`, or
     - `callContractWithToken`.
 2. Pay gas to the Gas Services contract.
-3. (optional) Check the status of the call.
-4. (optional) Execute and recovery methods.
+3. *(optional)* Check the status of the call.
+4. *(optional)* Execute and recover transactions.
 
 ### Step 1: Call the contract
 
@@ -18,12 +18,12 @@ Either:
 
 See [[Gas Services](gas-services/overview)].
 
-### Step 3: (optional) Check the status of the call
+### Step 3: Check the status of the call *(optional)* 
 
 See [[Monitoring state of transactions](gmp-tracker-recovery/monitoring)].
 
-### Step 4: (optional) Execute and recovery methods
+### Step 4: Execute and recover transactions *(optional)*
 
-Axelar network provides an optional relayer service, called Gas Services, which automatically relays transactions and executes approved messages. 
+Axelar network provides an optional relayer service, called Executor Service, which automatically relays transactions and executes approved messages. See [[Executor Service](/dev/gmp/executor-service)].
 
-However, due to chains' conditions (either from the source or destination or both chains), some unexpected scenarios can occur, and the transaction might not be successfully executed. Axelar provides two options to recover these possible cases. See [[Transaction Recovery](gmp-tracker-recovery/recovery)].
+Sometimes, unexpected scenarios occur due to chains' conditions (either from the source or destination or both chains) which cause unsuccessful executed transactions. Axelar provides options to recover them. See [[Transaction Recovery](gmp-tracker-recovery/recovery)].
