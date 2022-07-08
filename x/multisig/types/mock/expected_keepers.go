@@ -6,6 +6,7 @@ package mock
 import (
 	utils "github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
+	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 	exported "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingTypes "github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -332,5 +333,76 @@ func (mock *SlasherMock) IsTombstonedCalls() []struct {
 	mock.lockIsTombstoned.RLock()
 	calls = mock.calls.IsTombstoned
 	mock.lockIsTombstoned.RUnlock()
+	return calls
+}
+
+// Ensure, that RewarderMock does implement types.Rewarder.
+// If this is not the case, regenerate this file with moq.
+var _ types.Rewarder = &RewarderMock{}
+
+// RewarderMock is a mock implementation of types.Rewarder.
+//
+// 	func TestSomethingThatUsesRewarder(t *testing.T) {
+//
+// 		// make and configure a mocked types.Rewarder
+// 		mockedRewarder := &RewarderMock{
+// 			GetPoolFunc: func(ctx sdk.Context, name string) reward.RewardPool {
+// 				panic("mock out the GetPool method")
+// 			},
+// 		}
+//
+// 		// use mockedRewarder in code that requires types.Rewarder
+// 		// and then make assertions.
+//
+// 	}
+type RewarderMock struct {
+	// GetPoolFunc mocks the GetPool method.
+	GetPoolFunc func(ctx sdk.Context, name string) reward.RewardPool
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// GetPool holds details about calls to the GetPool method.
+		GetPool []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Name is the name argument value.
+			Name string
+		}
+	}
+	lockGetPool sync.RWMutex
+}
+
+// GetPool calls GetPoolFunc.
+func (mock *RewarderMock) GetPool(ctx sdk.Context, name string) reward.RewardPool {
+	if mock.GetPoolFunc == nil {
+		panic("RewarderMock.GetPoolFunc: method is nil but Rewarder.GetPool was just called")
+	}
+	callInfo := struct {
+		Ctx  sdk.Context
+		Name string
+	}{
+		Ctx:  ctx,
+		Name: name,
+	}
+	mock.lockGetPool.Lock()
+	mock.calls.GetPool = append(mock.calls.GetPool, callInfo)
+	mock.lockGetPool.Unlock()
+	return mock.GetPoolFunc(ctx, name)
+}
+
+// GetPoolCalls gets all the calls that were made to GetPool.
+// Check the length with:
+//     len(mockedRewarder.GetPoolCalls())
+func (mock *RewarderMock) GetPoolCalls() []struct {
+	Ctx  sdk.Context
+	Name string
+} {
+	var calls []struct {
+		Ctx  sdk.Context
+		Name string
+	}
+	mock.lockGetPool.RLock()
+	calls = mock.calls.GetPool
+	mock.lockGetPool.RUnlock()
 	return calls
 }

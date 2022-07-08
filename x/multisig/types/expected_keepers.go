@@ -5,10 +5,11 @@ import (
 	stakingTypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 )
 
-//go:generate moq -pkg mock -out ./mock/expected_keepers.go . Snapshotter Staker Slasher
+//go:generate moq -pkg mock -out ./mock/expected_keepers.go . Snapshotter Staker Slasher Rewarder
 
 // Snapshotter provides snapshot keeper functionality
 type Snapshotter interface {
@@ -31,4 +32,9 @@ type Staker interface {
 // Slasher provides slashing keeper functionality
 type Slasher interface {
 	IsTombstoned(ctx sdk.Context, consAddr sdk.ConsAddress) bool
+}
+
+// Rewarder provides reward keeper functionality
+type Rewarder interface {
+	GetPool(ctx sdk.Context, name string) reward.RewardPool
 }
