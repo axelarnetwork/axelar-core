@@ -59,8 +59,11 @@ func (k Keeper) GetKeygenSessionsByExpiry(ctx sdk.Context, expiry int64) []types
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
 	for ; iter.Valid(); iter.Next() {
-		var result types.KeygenSession
-		iter.UnmarshalValue(&result)
+		keyID := exported.KeyID(iter.Value())
+		result, ok := k.getKeygenSession(ctx, keyID)
+		if !ok {
+			panic(fmt.Errorf("keygen session %s not found", keyID))
+		}
 
 		results = append(results, result)
 	}
@@ -143,8 +146,9 @@ func (k Keeper) createKeygenSession(ctx sdk.Context, id exported.KeyID, snapshot
 }
 
 func (k Keeper) setKeygenSession(ctx sdk.Context, keygen types.KeygenSession) {
-	k.getStore(ctx).Delete(expiryPrefix.Append(utils.KeyFromBz(convert.IntToBytes(keygen.ExpiresAt))))
+	k.getStore(ctx).Delete(expiryPrefix.Append(utils.KeyFromBz(convert.IntToBytes(keygen.ExpiresAt))).Append(utils.KeyFromStr(keygen.GetKeyID().String())))
 	k.getStore(ctx).SetRaw(getKeygenSessionExpiryKey(keygen), []byte(keygen.GetKeyID()))
+
 	k.getStore(ctx).Set(getKeygenSessionKey(keygen.GetKeyID()), &keygen)
 }
 
@@ -168,7 +172,7 @@ func getKeygenSessionExpiryKey(keygen types.KeygenSession) utils.Key {
 		expiry = math.Min(keygen.ExpiresAt, keygen.CompletedAt+keygen.GracePeriod+1)
 	}
 
-	return expiryPrefix.Append(utils.KeyFromBz(convert.IntToBytes(expiry))).Append(utils.KeyFromStr(string(keygen.GetKeyID())))
+	return expiryPrefix.Append(utils.KeyFromBz(convert.IntToBytes(expiry))).Append(utils.KeyFromStr(keygen.GetKeyID().String()))
 }
 
 func getKeygenSessionKey(id exported.KeyID) utils.Key {

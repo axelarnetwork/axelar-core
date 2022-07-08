@@ -37,6 +37,7 @@ func TestMsgServer(t *testing.T) {
 		req         *types.SubmitPubKeyRequest
 		snapshotter *mock.SnapshotterMock
 		keyID       exported.KeyID
+		expiresAt   int64
 	)
 
 	whenSenderIsProxy := When("the sender is a proxy", func() {
@@ -45,7 +46,11 @@ func TestMsgServer(t *testing.T) {
 	keySessionExists := When("a key session exists", func() {
 		keyID = exported.KeyID(rand.HexStr(5))
 		_, err := msgServer.StartKeygen(sdk.WrapSDKContext(ctx), types.NewStartKeygenRequest(rand.AccAddr(), keyID))
+		expiresAt = ctx.BlockHeight() + types.DefaultParams().KeygenTimeout
+
 		assert.NoError(t, err)
+		assert.Len(t, k.GetKeygenSessionsByExpiry(ctx, expiresAt), 1)
+		assert.Len(t, k.GetKeygenSessionsByExpiry(ctx, ctx.BlockHeight()+types.DefaultParams().KeygenGracePeriod), 0)
 	})
 	requestIsMade := When("a request is made", func() {
 		sk := funcs.Must(btcec.NewPrivateKey())
@@ -125,6 +130,43 @@ func TestMsgServer(t *testing.T) {
 					req := types.NewStartKeygenRequest(rand.AccAddr(), keyID)
 					_, err := msgServer.StartKeygen(sdk.WrapSDKContext(ctx), req)
 					assert.Error(t, err)
+				}),
+
+			keySessionExists.
+				When("all participants submitted the public keys and the grace period does not go beyond the expires at", func() {
+					for _, v := range validators {
+						snapshotter.GetOperatorFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return v.Address }
+
+						sk := funcs.Must(btcec.NewPrivateKey())
+						req = types.NewSubmitPubKeyRequest(rand.AccAddr(), keyID, sk.PubKey().SerializeCompressed(), ecdsa.Sign(sk, []byte(keyID)).Serialize())
+
+						_, err := msgServer.SubmitPubKey(sdk.WrapSDKContext(ctx), req)
+						assert.NoError(t, err)
+					}
+				}).
+				Then("should update the keygen expiry", func(t *testing.T) {
+					assert.Len(t, k.GetKeygenSessionsByExpiry(ctx, expiresAt), 0)
+					assert.Len(t, k.GetKeygenSessionsByExpiry(ctx, ctx.BlockHeight()+types.DefaultParams().KeygenGracePeriod+1), 1)
+					assert.Equal(t, keyID, k.GetKeygenSessionsByExpiry(ctx, ctx.BlockHeight()+types.DefaultParams().KeygenGracePeriod+1)[0].GetKeyID())
+				}),
+
+			keySessionExists.
+				When("all participants submitted the public keys and the grace period goes beyond the expires at", func() {
+					ctx = ctx.WithBlockHeight(ctx.BlockHeight() + types.DefaultParams().KeygenTimeout - types.DefaultParams().KeygenGracePeriod)
+
+					for _, v := range validators {
+						snapshotter.GetOperatorFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return v.Address }
+
+						sk := funcs.Must(btcec.NewPrivateKey())
+						req = types.NewSubmitPubKeyRequest(rand.AccAddr(), keyID, sk.PubKey().SerializeCompressed(), ecdsa.Sign(sk, []byte(keyID)).Serialize())
+
+						_, err := msgServer.SubmitPubKey(sdk.WrapSDKContext(ctx), req)
+						assert.NoError(t, err)
+					}
+				}).
+				Then("should not update the keygen expiry if the grace period goes beyond expires at", func(t *testing.T) {
+					assert.Len(t, k.GetKeygenSessionsByExpiry(ctx, expiresAt), 1)
+					assert.Equal(t, keyID, k.GetKeygenSessionsByExpiry(ctx, expiresAt)[0].GetKeyID())
 				}),
 		).Run(t)
 
