@@ -6,7 +6,7 @@
     },
     {
       "id": "binance",
-      "address": ""
+      "address": "0x304acf330bbE08d1e512eefaa92F6a57871fD895"
     },
     {
       "id": "avalanche",
@@ -23,6 +23,10 @@
     {
       "id": "moonbeam",
       "address": "0x4F4495243837681061C4743b74B3eEdf548D56A5"
+    },
+    {
+      "id": "aurora",
+      "address": ""
     }
   ],
   "testnet": [
@@ -49,6 +53,10 @@
     {
       "id": "moonbeam",
       "address": "0x5769D84DD62a6fD969856c75c7D321b84d455929"
+    },
+    {
+      "id": "aurora",
+      "address": "0x304acf330bbE08d1e512eefaa92F6a57871fD895"
     }
   ],
   "testnet-2": [

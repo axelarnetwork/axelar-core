@@ -927,7 +927,7 @@
       "id": "wbnb-wei",
       "name": "WBNB - Wrapped BNB",
       "symbol": "WBNB",
-      "image": "/images/assets/wbnb.png",
+      "image": "/images/assets/bnb.png",
       "contracts": [
         {
           "chain": "moonbeam",

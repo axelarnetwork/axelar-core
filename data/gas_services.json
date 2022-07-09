@@ -23,6 +23,10 @@
     {
       "id": "moonbeam",
       "address": "0x27927CD55db998b720214205e598aA9AD614AEE3"
+    },
+    {
+      "id": "aurora",
+      "address": ""
     }
   ],
   "testnet": [
@@ -49,6 +53,10 @@
     {
       "id": "moonbeam",
       "address": "0xbE406F0189A0B4cf3A05C286473D23791Dd44Cc6"
+    },
+    {
+      "id": "aurora",
+      "address": ""
     }
   ]
 }

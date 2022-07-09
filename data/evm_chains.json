@@ -135,6 +135,28 @@
         }
       ],
       "image": "/images/chains/moonbeam.png"
+    },
+    {
+      "id": "aurora",
+      "name": "Aurora",
+      "chain_id": 1313161554,
+      "provider_params": [
+        {
+          "chainId": "0x4e454152",
+          "chainName": "Aurora",
+          "rpcUrls": [
+            "https://mainnet.aurora.dev"
+          ],
+          "nativeCurrency": {
+            "name": "Ether",
+            "symbol": "ETH",
+            "decimals": 18
+          },
+          "blockExplorerUrls": ["https://aurorascan.dev"]
+        }
+      ],
+      "image": "/images/chains/aurora.png",
+      "is_staging": true
     }
   ],
   "testnet": [
@@ -265,6 +287,27 @@
         }
       ],
       "image": "/images/chains/moonbeam.png"
+    },
+    {
+      "id": "aurora",
+      "name": "Aurora",
+      "chain_id": 1313161555,
+      "provider_params": [
+        {
+          "chainId": "0x4e454153",
+          "chainName": "Aurora Testnet",
+          "rpcUrls": [
+            "https://testnet.aurora.dev"
+          ],
+          "nativeCurrency": {
+            "name": "Ether",
+            "symbol": "ETH",
+            "decimals": 18
+          },
+          "blockExplorerUrls": ["https://testnet.aurorascan.dev"]
+        }
+      ],
+      "image": "/images/chains/aurora.png"
     }
   ],
   "testnet-2": [
