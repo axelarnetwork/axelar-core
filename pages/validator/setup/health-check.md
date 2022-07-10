@@ -11,7 +11,7 @@ Check the status of your validator.
 This step is not mandatory but it is good practice to help you detect and diagnose problems with your validator.
 
 ```bash
-axelard health-check --tofnd-host localhost --operator-addr {VALOPER_ADDR}
+$AXELARD_HOME/bin/axelard health-check --tofnd-host localhost --operator-addr {VALOPER_ADDR}
 ```
 
 You should see output like:
