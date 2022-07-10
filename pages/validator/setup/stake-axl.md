@@ -13,7 +13,7 @@ Choose a moniker `{MY_MONIKER}` for your validator. There are many other paramet
 Make your `validator` account into an Axelar validator by staking AXL tokens:
 
 ```bash
-axelard tx staking create-validator --amount {STAKE_AMOUNT}uaxl --moniker "{MY_MONIKER}" --commission-rate="0.10" --commission-max-rate="0.20" --commission-max-change-rate="0.01" --min-self-delegation="1" --pubkey="$(axelard tendermint show-validator)" --from validator
+$AXELARD_HOME/bin/axelard tx staking create-validator --amount {STAKE_AMOUNT}uaxl --moniker "{MY_MONIKER}" --commission-rate="0.10" --commission-max-rate="0.20" --commission-max-change-rate="0.01" --min-self-delegation="1" --pubkey="$(axelard tendermint show-validator)" --from validator
 ```
 
 ## Optional: Learn your valoper address
@@ -21,17 +21,17 @@ axelard tx staking create-validator --amount {STAKE_AMOUNT}uaxl --moniker "{MY_M
 Learn the `{VALOPER_ADDR}` address associated with your `validator` account
 
 ```bash
-axelard keys show validator -a --bech val --home $AXELARD_HOME
+$AXELARD_HOME/bin/axelard keys show validator -a --bech val --home $AXELARD_HOME
 ```
 
 ## Optional: check the stake amount delegated to your validator
 
 ```bash
-axelard q staking validator {VALOPER_ADDR} | grep tokens
+$AXELARD_HOME/bin/axelard q staking validator {VALOPER_ADDR} | grep tokens
 ```
 
 ## Optional: delegate additional stake to your validator
 
 ```bash
-axelard tx staking delegate {VALOPER_ADDR} {STAKE_AMOUNT}uaxl --from validator
+$AXELARD_HOME/bin/axelard tx staking delegate {VALOPER_ADDR} {STAKE_AMOUNT}uaxl --from validator
 ```
