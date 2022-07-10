@@ -19,6 +19,7 @@ Start your Axelar node and download the blockchain from scratch.
 ## Prerequisites
 
 - [CLI configuration](config-cli).
+- Ensure AXELARD_HOME variable is set in your current session. See https://docs.axelar.dev/node/config-node#home-directory (example AXELARD_HOME="$HOME/.axelar").
 
 ## Follow the upgrade path
 
@@ -39,7 +40,20 @@ content: <MarkdownPath src="/md/testnet-2/upgrade-path.md" />
 }
 ]} />
 
-Example: the first step on the upgrade path.
+First, you have to change directory to "axelarate-community" repository.
+
+```bash
+cd axelarate-community
+```
+
+To run setup-node.sh you have to specify the network (mainnet, testnet, testnet-2) and the axelard core version you want to use.
+You must follow the upgrade path as specified in the table above (it is different for each network).
+setup-node.sh will download axelard binary version you specified in "$AXELARD_HOME/bin" folder and create a symbolic link.
+
+```bash
+-rwxr-xr-x  1 kalid  staff  70832530 Jul  6 11:04 axelard-v0.13.6
+lrwxr-xr-x  1 kalid  staff        48 Jul  6 11:04 axelard -> /Users/kalid/.axelar_testnet/bin/axelard-v0.13.6
+```
 
 <Tabs tabs={[
 {
@@ -65,7 +79,7 @@ content: <CodeBlock language="bash">
 Start your node with the newly configured `axelard` version:
 
 ```bash
-axelard start --home $AXELARD_HOME
+$AXELARD_HOME/bin/axelard start --home $AXELARD_HOME
 ```
 
 Your Axelar node will resume downloading the blockchain.
