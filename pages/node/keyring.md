@@ -12,12 +12,17 @@ Axelar nodes use the `file` keyring backend by default. This means that your sec
   Protect your keyring password: There are several methods to provide your password for Axelar CLI commands. Each method comes with its own security and convenience properties. Whichever method you choose, be sure to follow best practices to keep your keyring password safe.
 </Callout>
 
+## Prerequisites
+
+- Configure your environment as per [CLI configuration](config-cli) and [Node configuration](config-node).
+- Ensure AXELARD_HOME variable is set in your current session. See https://docs.axelar.dev/node/config-node#home-directory (example AXELARD_HOME="$HOME/.axelar").
+
 ## Manual password entry
 
 A simple and highly-secure method for password entry is to type your password whenever an Axelar CLI command prompts for it. For example, you can print the address of your account named `my_account` as follows:
 
 ```bash
-axelard keys show my_account -a
+$AXELARD_HOME/bin/axelard keys show my_account -a
 Enter keyring passphrase: {TYPE_YOUR_PASSWORD_HERE}
 ```
 
@@ -28,7 +33,7 @@ It can be inconvenient to type your password for each Axlear CLI command, especi
 Suppose your keyring password is stored in a shell environment variable called `KEYRING_PASSWORD`. You could prefix your CLI commands with `echo $KEYRING_PASSWORD | `. For example:
 
 ```bash
-echo $KEYRING_PASSWORD | axelard keys show my_account -a
+echo $KEYRING_PASSWORD | $AXELARD_HOME/bin/axelard keys show my_account -a
 ```
 
 <Callout type="error" emoji="☠️">
@@ -42,5 +47,5 @@ For clarity, Axelar CLI documentation elides password entry from CLI commands. Y
 Example: to print the address of your account named `my_account` we write only
 
 ```bash
-axelard keys show my_account -a
+$AXELARD_HOME/bin/axelard keys show my_account -a
 ```
