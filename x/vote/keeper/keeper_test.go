@@ -81,7 +81,7 @@ func TestKeeper(t *testing.T) {
 					assert.True(t, ok)
 				}
 			}).
-			Run(t, 20)
+			Run(t, 5)
 
 		givenKeeper.
 			When2(whenPollBuilderIsSet).
