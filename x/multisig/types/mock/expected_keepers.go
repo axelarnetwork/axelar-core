@@ -5,12 +5,227 @@ package mock
 
 import (
 	utils "github.com/axelarnetwork/axelar-core/utils"
+	github_com_axelarnetwork_axelar_core_x_multisig_exported "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
+	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 	exported "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingTypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	"github.com/tendermint/tendermint/libs/log"
 	"sync"
 )
+
+// Ensure, that KeeperMock does implement types.Keeper.
+// If this is not the case, regenerate this file with moq.
+var _ types.Keeper = &KeeperMock{}
+
+// KeeperMock is a mock implementation of types.Keeper.
+//
+// 	func TestSomethingThatUsesKeeper(t *testing.T) {
+//
+// 		// make and configure a mocked types.Keeper
+// 		mockedKeeper := &KeeperMock{
+// 			DeleteKeygenSessionFunc: func(ctx sdk.Context, id github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID)  {
+// 				panic("mock out the DeleteKeygenSession method")
+// 			},
+// 			GetKeygenSessionsByExpiryFunc: func(ctx sdk.Context, expiry int64) []types.KeygenSession {
+// 				panic("mock out the GetKeygenSessionsByExpiry method")
+// 			},
+// 			LoggerFunc: func(ctx sdk.Context) log.Logger {
+// 				panic("mock out the Logger method")
+// 			},
+// 			SetKeyFunc: func(ctx sdk.Context, key types.Key)  {
+// 				panic("mock out the SetKey method")
+// 			},
+// 		}
+//
+// 		// use mockedKeeper in code that requires types.Keeper
+// 		// and then make assertions.
+//
+// 	}
+type KeeperMock struct {
+	// DeleteKeygenSessionFunc mocks the DeleteKeygenSession method.
+	DeleteKeygenSessionFunc func(ctx sdk.Context, id github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID)
+
+	// GetKeygenSessionsByExpiryFunc mocks the GetKeygenSessionsByExpiry method.
+	GetKeygenSessionsByExpiryFunc func(ctx sdk.Context, expiry int64) []types.KeygenSession
+
+	// LoggerFunc mocks the Logger method.
+	LoggerFunc func(ctx sdk.Context) log.Logger
+
+	// SetKeyFunc mocks the SetKey method.
+	SetKeyFunc func(ctx sdk.Context, key types.Key)
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// DeleteKeygenSession holds details about calls to the DeleteKeygenSession method.
+		DeleteKeygenSession []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// ID is the id argument value.
+			ID github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID
+		}
+		// GetKeygenSessionsByExpiry holds details about calls to the GetKeygenSessionsByExpiry method.
+		GetKeygenSessionsByExpiry []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Expiry is the expiry argument value.
+			Expiry int64
+		}
+		// Logger holds details about calls to the Logger method.
+		Logger []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+		}
+		// SetKey holds details about calls to the SetKey method.
+		SetKey []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Key is the key argument value.
+			Key types.Key
+		}
+	}
+	lockDeleteKeygenSession       sync.RWMutex
+	lockGetKeygenSessionsByExpiry sync.RWMutex
+	lockLogger                    sync.RWMutex
+	lockSetKey                    sync.RWMutex
+}
+
+// DeleteKeygenSession calls DeleteKeygenSessionFunc.
+func (mock *KeeperMock) DeleteKeygenSession(ctx sdk.Context, id github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID) {
+	if mock.DeleteKeygenSessionFunc == nil {
+		panic("KeeperMock.DeleteKeygenSessionFunc: method is nil but Keeper.DeleteKeygenSession was just called")
+	}
+	callInfo := struct {
+		Ctx sdk.Context
+		ID  github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID
+	}{
+		Ctx: ctx,
+		ID:  id,
+	}
+	mock.lockDeleteKeygenSession.Lock()
+	mock.calls.DeleteKeygenSession = append(mock.calls.DeleteKeygenSession, callInfo)
+	mock.lockDeleteKeygenSession.Unlock()
+	mock.DeleteKeygenSessionFunc(ctx, id)
+}
+
+// DeleteKeygenSessionCalls gets all the calls that were made to DeleteKeygenSession.
+// Check the length with:
+//     len(mockedKeeper.DeleteKeygenSessionCalls())
+func (mock *KeeperMock) DeleteKeygenSessionCalls() []struct {
+	Ctx sdk.Context
+	ID  github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID
+} {
+	var calls []struct {
+		Ctx sdk.Context
+		ID  github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID
+	}
+	mock.lockDeleteKeygenSession.RLock()
+	calls = mock.calls.DeleteKeygenSession
+	mock.lockDeleteKeygenSession.RUnlock()
+	return calls
+}
+
+// GetKeygenSessionsByExpiry calls GetKeygenSessionsByExpiryFunc.
+func (mock *KeeperMock) GetKeygenSessionsByExpiry(ctx sdk.Context, expiry int64) []types.KeygenSession {
+	if mock.GetKeygenSessionsByExpiryFunc == nil {
+		panic("KeeperMock.GetKeygenSessionsByExpiryFunc: method is nil but Keeper.GetKeygenSessionsByExpiry was just called")
+	}
+	callInfo := struct {
+		Ctx    sdk.Context
+		Expiry int64
+	}{
+		Ctx:    ctx,
+		Expiry: expiry,
+	}
+	mock.lockGetKeygenSessionsByExpiry.Lock()
+	mock.calls.GetKeygenSessionsByExpiry = append(mock.calls.GetKeygenSessionsByExpiry, callInfo)
+	mock.lockGetKeygenSessionsByExpiry.Unlock()
+	return mock.GetKeygenSessionsByExpiryFunc(ctx, expiry)
+}
+
+// GetKeygenSessionsByExpiryCalls gets all the calls that were made to GetKeygenSessionsByExpiry.
+// Check the length with:
+//     len(mockedKeeper.GetKeygenSessionsByExpiryCalls())
+func (mock *KeeperMock) GetKeygenSessionsByExpiryCalls() []struct {
+	Ctx    sdk.Context
+	Expiry int64
+} {
+	var calls []struct {
+		Ctx    sdk.Context
+		Expiry int64
+	}
+	mock.lockGetKeygenSessionsByExpiry.RLock()
+	calls = mock.calls.GetKeygenSessionsByExpiry
+	mock.lockGetKeygenSessionsByExpiry.RUnlock()
+	return calls
+}
+
+// Logger calls LoggerFunc.
+func (mock *KeeperMock) Logger(ctx sdk.Context) log.Logger {
+	if mock.LoggerFunc == nil {
+		panic("KeeperMock.LoggerFunc: method is nil but Keeper.Logger was just called")
+	}
+	callInfo := struct {
+		Ctx sdk.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockLogger.Lock()
+	mock.calls.Logger = append(mock.calls.Logger, callInfo)
+	mock.lockLogger.Unlock()
+	return mock.LoggerFunc(ctx)
+}
+
+// LoggerCalls gets all the calls that were made to Logger.
+// Check the length with:
+//     len(mockedKeeper.LoggerCalls())
+func (mock *KeeperMock) LoggerCalls() []struct {
+	Ctx sdk.Context
+} {
+	var calls []struct {
+		Ctx sdk.Context
+	}
+	mock.lockLogger.RLock()
+	calls = mock.calls.Logger
+	mock.lockLogger.RUnlock()
+	return calls
+}
+
+// SetKey calls SetKeyFunc.
+func (mock *KeeperMock) SetKey(ctx sdk.Context, key types.Key) {
+	if mock.SetKeyFunc == nil {
+		panic("KeeperMock.SetKeyFunc: method is nil but Keeper.SetKey was just called")
+	}
+	callInfo := struct {
+		Ctx sdk.Context
+		Key types.Key
+	}{
+		Ctx: ctx,
+		Key: key,
+	}
+	mock.lockSetKey.Lock()
+	mock.calls.SetKey = append(mock.calls.SetKey, callInfo)
+	mock.lockSetKey.Unlock()
+	mock.SetKeyFunc(ctx, key)
+}
+
+// SetKeyCalls gets all the calls that were made to SetKey.
+// Check the length with:
+//     len(mockedKeeper.SetKeyCalls())
+func (mock *KeeperMock) SetKeyCalls() []struct {
+	Ctx sdk.Context
+	Key types.Key
+} {
+	var calls []struct {
+		Ctx sdk.Context
+		Key types.Key
+	}
+	mock.lockSetKey.RLock()
+	calls = mock.calls.SetKey
+	mock.lockSetKey.RUnlock()
+	return calls
+}
 
 // Ensure, that SnapshotterMock does implement types.Snapshotter.
 // If this is not the case, regenerate this file with moq.
@@ -332,5 +547,76 @@ func (mock *SlasherMock) IsTombstonedCalls() []struct {
 	mock.lockIsTombstoned.RLock()
 	calls = mock.calls.IsTombstoned
 	mock.lockIsTombstoned.RUnlock()
+	return calls
+}
+
+// Ensure, that RewarderMock does implement types.Rewarder.
+// If this is not the case, regenerate this file with moq.
+var _ types.Rewarder = &RewarderMock{}
+
+// RewarderMock is a mock implementation of types.Rewarder.
+//
+// 	func TestSomethingThatUsesRewarder(t *testing.T) {
+//
+// 		// make and configure a mocked types.Rewarder
+// 		mockedRewarder := &RewarderMock{
+// 			GetPoolFunc: func(ctx sdk.Context, name string) reward.RewardPool {
+// 				panic("mock out the GetPool method")
+// 			},
+// 		}
+//
+// 		// use mockedRewarder in code that requires types.Rewarder
+// 		// and then make assertions.
+//
+// 	}
+type RewarderMock struct {
+	// GetPoolFunc mocks the GetPool method.
+	GetPoolFunc func(ctx sdk.Context, name string) reward.RewardPool
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// GetPool holds details about calls to the GetPool method.
+		GetPool []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Name is the name argument value.
+			Name string
+		}
+	}
+	lockGetPool sync.RWMutex
+}
+
+// GetPool calls GetPoolFunc.
+func (mock *RewarderMock) GetPool(ctx sdk.Context, name string) reward.RewardPool {
+	if mock.GetPoolFunc == nil {
+		panic("RewarderMock.GetPoolFunc: method is nil but Rewarder.GetPool was just called")
+	}
+	callInfo := struct {
+		Ctx  sdk.Context
+		Name string
+	}{
+		Ctx:  ctx,
+		Name: name,
+	}
+	mock.lockGetPool.Lock()
+	mock.calls.GetPool = append(mock.calls.GetPool, callInfo)
+	mock.lockGetPool.Unlock()
+	return mock.GetPoolFunc(ctx, name)
+}
+
+// GetPoolCalls gets all the calls that were made to GetPool.
+// Check the length with:
+//     len(mockedRewarder.GetPoolCalls())
+func (mock *RewarderMock) GetPoolCalls() []struct {
+	Ctx  sdk.Context
+	Name string
+} {
+	var calls []struct {
+		Ctx  sdk.Context
+		Name string
+	}
+	mock.lockGetPool.RLock()
+	calls = mock.calls.GetPool
+	mock.lockGetPool.RUnlock()
 	return calls
 }

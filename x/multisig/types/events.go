@@ -23,6 +23,14 @@ func NewKeygenCompleted(keyID exported.KeyID) *KeygenCompleted {
 	}
 }
 
+// NewKeygenExpired is the constructor for event keygen expired
+func NewKeygenExpired(keyID exported.KeyID) *KeygenExpired {
+	return &KeygenExpired{
+		Module: ModuleName,
+		KeyID:  keyID,
+	}
+}
+
 // NewPubKeySubmitted is the constructor for event pub key submitted
 func NewPubKeySubmitted(keyID exported.KeyID, participant sdk.ValAddress, pubKey PublicKey) *PubKeySubmitted {
 	return &PubKeySubmitted{

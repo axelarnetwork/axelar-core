@@ -57,7 +57,7 @@ func TestKeygenSession(t *testing.T) {
 		threshold := utilstestutils.RandThreshold()
 		snapshot := snapshottestutils.Snapshot(uint64(rand.I64Between(10, 20)), threshold)
 
-		keygenSession = types.NewKeygenSession(multisigtestutils.KeyID(), threshold, threshold, snapshot, rand.I64Between(10, 100))
+		keygenSession = types.NewKeygenSession(multisigtestutils.KeyID(), threshold, threshold, snapshot, rand.I64Between(10, 100), types.DefaultParams().KeygenGracePeriod)
 	})
 
 	t.Run("ValidateBasic", func(t *testing.T) {
@@ -123,7 +123,8 @@ func TestKeygenSession(t *testing.T) {
 				blockHeight := keygenSession.ExpiresAt - 1
 
 				for _, p := range keygenSession.Key.Snapshot.GetParticipantAddresses() {
-					assert.NoError(t, keygenSession.AddKey(blockHeight, p, typestestutils.PublicKey()))
+					err := keygenSession.AddKey(blockHeight, p, typestestutils.PublicKey())
+					assert.NoError(t, err)
 				}
 
 				assert.Equal(t, exported.Completed, keygenSession.GetState())
@@ -138,7 +139,8 @@ func TestKeygenSession(t *testing.T) {
 				pubKey = typestestutils.PublicKey()
 			}).
 			Then("should return error", func(t *testing.T) {
-				assert.ErrorContains(t, keygenSession.AddKey(blockHeight, participant, pubKey), "expired")
+				err := keygenSession.AddKey(blockHeight, participant, typestestutils.PublicKey())
+				assert.ErrorContains(t, err, "expired")
 			}).
 			Run(t)
 
@@ -149,7 +151,8 @@ func TestKeygenSession(t *testing.T) {
 				pubKey = typestestutils.PublicKey()
 			}).
 			Then("should return error", func(t *testing.T) {
-				assert.ErrorContains(t, keygenSession.AddKey(blockHeight, participant, pubKey), "not a participant")
+				err := keygenSession.AddKey(blockHeight, participant, pubKey)
+				assert.ErrorContains(t, err, "not a participant")
 			}).
 			Run(t)
 
@@ -162,7 +165,8 @@ func TestKeygenSession(t *testing.T) {
 				keygenSession.AddKey(blockHeight, participant, pubKey)
 			}).
 			Then("should return error", func(t *testing.T) {
-				assert.ErrorContains(t, keygenSession.AddKey(blockHeight, participant, pubKey), "already submitted")
+				err := keygenSession.AddKey(blockHeight, participant, pubKey)
+				assert.ErrorContains(t, err, "already submitted")
 			}).
 			Run(t)
 
@@ -176,7 +180,20 @@ func TestKeygenSession(t *testing.T) {
 				participant = keygenSession.GetKey().Snapshot.GetParticipantAddresses()[1]
 			}).
 			Then("should return error", func(t *testing.T) {
-				assert.ErrorContains(t, keygenSession.AddKey(blockHeight, participant, pubKey), "duplicate")
+				err := keygenSession.AddKey(blockHeight, participant, pubKey)
+				assert.ErrorContains(t, err, "duplicate")
+			}).
+			Run(t)
+
+		givenNewKeygenSession.
+			When("keygen is already completed", func() {
+				keygenSession.State = exported.Completed
+				keygenSession.CompletedAt = keygenSession.ExpiresAt - keygenSession.GracePeriod - 2
+			}).
+			Then("should fail if past the grace period", func(t *testing.T) {
+				blockHeight := keygenSession.CompletedAt + keygenSession.GracePeriod + 1
+				err := keygenSession.AddKey(blockHeight, keygenSession.Key.Snapshot.GetParticipantAddresses()[0], typestestutils.PublicKey())
+				assert.ErrorContains(t, err, "closed")
 			}).
 			Run(t)
 	})
