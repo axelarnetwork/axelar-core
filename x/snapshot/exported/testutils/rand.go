@@ -27,11 +27,6 @@ func Snapshot(participantCount uint64, threshold utils.Threshold) exported.Snaps
 		participantsWeight.BigInt().Int64(),
 		participantsWeight.MulUint64(uint64(threshold.Denominator)).QuoUint64(uint64(threshold.Numerator)).BigInt().Int64()+1),
 	))
-	snapshot := exported.NewSnapshot(time.Now(), rand.I64Between(1, 1000), participants, bondedWeight)
 
-	for snapshot.GetParticipantsWeight().LT(snapshot.CalculateMinPassingWeight(threshold)) {
-		snapshot.BondedWeight = snapshot.BondedWeight.Decr()
-	}
-
-	return snapshot
+	return exported.NewSnapshot(time.Now(), rand.I64Between(1, 1000), participants, bondedWeight)
 }

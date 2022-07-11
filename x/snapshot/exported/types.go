@@ -138,7 +138,7 @@ func (m Snapshot) CalculateMinPassingWeight(threshold utils.Threshold) sdk.Uint 
 		MulUint64(uint64(threshold.Numerator)).
 		QuoUint64(uint64(threshold.Denominator))
 
-	if utils.NewThreshold(minPassingWeight.BigInt().Int64(), m.BondedWeight.BigInt().Int64()).GTE(threshold) {
+	if minPassingWeight.MulUint64(uint64(threshold.Denominator)).GTE(m.BondedWeight.MulUint64(uint64(threshold.Numerator))) {
 		return minPassingWeight
 	}
 
