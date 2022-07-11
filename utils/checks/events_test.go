@@ -11,7 +11,6 @@ import (
 	"strconv"
 	"testing"
 
-	_ "github.com/axelarnetwork/axelar-core/utils/checks"
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 	sdk "github.com/cosmos/cosmos-sdk/types"

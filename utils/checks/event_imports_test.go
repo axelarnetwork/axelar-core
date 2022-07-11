@@ -1,4 +1,4 @@
-package checks
+package checks_test
 
 // add types packages for all modules here
 import (
