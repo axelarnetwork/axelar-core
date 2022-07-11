@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
 	"github.com/axelarnetwork/utils/slices"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // ProcessKeygenStarted handles event keygen started

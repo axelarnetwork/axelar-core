@@ -5,21 +5,21 @@ package mock
 
 import (
 	"context"
-	tofndgrpc "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/tofnd_grpc"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/multisig"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
-	grpc "google.golang.org/grpc"
+	"google.golang.org/grpc"
 	"sync"
 )
 
-// Ensure, that ClientMock does implement tofndgrpc.Client.
+// Ensure, that ClientMock does implement multisig.Client.
 // If this is not the case, regenerate this file with moq.
-var _ tofndgrpc.Client = &ClientMock{}
+var _ multisig.Client = &ClientMock{}
 
-// ClientMock is a mock implementation of tofndgrpc.Client.
+// ClientMock is a mock implementation of multisig.Client.
 //
 // 	func TestSomethingThatUsesClient(t *testing.T) {
 //
-// 		// make and configure a mocked tofndgrpc.Client
+// 		// make and configure a mocked multisig.Client
 // 		mockedClient := &ClientMock{
 // 			KeyPresenceFunc: func(ctx context.Context, in *tofnd.KeyPresenceRequest, opts ...grpc.CallOption) (*tofnd.KeyPresenceResponse, error) {
 // 				panic("mock out the KeyPresence method")
@@ -32,7 +32,7 @@ var _ tofndgrpc.Client = &ClientMock{}
 // 			},
 // 		}
 //
-// 		// use mockedClient in code that requires tofndgrpc.Client
+// 		// use mockedClient in code that requires multisig.Client
 // 		// and then make assertions.
 //
 // 	}

@@ -12,14 +12,13 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast"
-	grpc "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/tofnd_grpc"
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 )
 
 // Mgr represents an object that manages all communication with the multisig process
 type Mgr struct {
-	client      grpc.Client
+	client      Client
 	ctx         sdkclient.Context
 	participant sdk.ValAddress
 	logger      log.Logger
@@ -28,7 +27,7 @@ type Mgr struct {
 }
 
 // NewMgr is the constructor of mgr
-func NewMgr(client grpc.Client, ctx sdkclient.Context, participant sdk.ValAddress, logger log.Logger, broadcaster broadcast.Broadcaster, timeout time.Duration) *Mgr {
+func NewMgr(client Client, ctx sdkclient.Context, participant sdk.ValAddress, logger log.Logger, broadcaster broadcast.Broadcaster, timeout time.Duration) *Mgr {
 	return &Mgr{
 		client:      client,
 		ctx:         ctx,

@@ -7,16 +7,7 @@ import (
 
 	"github.com/tendermint/tendermint/libs/log"
 	"google.golang.org/grpc"
-
-	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 )
-
-//go:generate moq -pkg mock -out ./mock/rpcClient.go . Client
-
-// Client defines the interface of a grpc client to communicate with tofnd Multisig service
-type Client interface {
-	tofnd.MultisigClient
-}
 
 // Connect connects to tofnd gRPC Server
 func Connect(host string, port string, timeout time.Duration, logger log.Logger) (*grpc.ClientConn, error) {
