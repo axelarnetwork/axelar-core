@@ -268,6 +268,9 @@
     - [Key.PubKeysEntry](#axelar.multisig.v1beta1.Key.PubKeysEntry)
     - [KeygenSession](#axelar.multisig.v1beta1.KeygenSession)
     - [KeygenSession.IsPubKeyReceivedEntry](#axelar.multisig.v1beta1.KeygenSession.IsPubKeyReceivedEntry)
+    - [Sig](#axelar.multisig.v1beta1.Sig)
+    - [Sig.SigsEntry](#axelar.multisig.v1beta1.Sig.SigsEntry)
+    - [SigningSession](#axelar.multisig.v1beta1.SigningSession)
   
 - [axelar/nexus/v1beta1/params.proto](#axelar/nexus/v1beta1/params.proto)
     - [Params](#axelar.nexus.v1beta1.Params)
@@ -4102,6 +4105,61 @@ Msg defines the multisig Msg service.
 | ----- | ---- | ----- | ----------- |
 | `key` | [string](#string) |  |  |
 | `value` | [bool](#bool) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.Sig"></a>
+
+### Sig
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [uint64](#uint64) |  |  |
+| `key_id` | [string](#string) |  |  |
+| `payload_hash` | [bytes](#bytes) |  |  |
+| `sigs` | [Sig.SigsEntry](#axelar.multisig.v1beta1.Sig.SigsEntry) | repeated |  |
+| `module` | [string](#string) |  |  |
+| `module_metadata` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.Sig.SigsEntry"></a>
+
+### Sig.SigsEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key` | [string](#string) |  |  |
+| `value` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.SigningSession"></a>
+
+### SigningSession
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `signature` | [Sig](#axelar.multisig.v1beta1.Sig) |  |  |
+| `key` | [Key](#axelar.multisig.v1beta1.Key) |  |  |
+| `expires_at` | [int64](#int64) |  |  |
+| `completed_at` | [int64](#int64) |  |  |
+| `grace_period` | [int64](#int64) |  |  |
 
 
 
