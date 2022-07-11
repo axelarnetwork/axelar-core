@@ -446,7 +446,7 @@ func TestKeeper(t *testing.T) {
 			When2(whenAllParamsAreGood).
 			When("threshold cannot be met", func() {
 				filterFunc = func(v exported.ValidatorI) bool { return v.GetConsensusPower(sdk.OneInt()) > 90 }
-				threshold = utils.NewThreshold(955, 5050)
+				threshold = utils.NewThreshold(956, 5050)
 			}).
 			Then("should return an error", func(t *testing.T) {
 				_, err := k.CreateSnapshot(ctx, candidates, filterFunc, weightFunc, threshold)
