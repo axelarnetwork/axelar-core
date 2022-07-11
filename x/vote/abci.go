@@ -12,6 +12,8 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/vote/types"
 )
 
+const maxPollsPerBlock = 100
+
 // BeginBlocker check for infraction evidence or downtime of validators
 // on every begin block
 func BeginBlocker(_ sdk.Context, _ abci.RequestBeginBlock, _ keeper.Keeper) {}
@@ -22,8 +24,11 @@ func handlePollsAtExpiry(ctx sdk.Context, k types.Voter) error {
 		return ctx.BlockHeight() >= value.(*exported.PollMetadata).ExpiresAt
 	}
 
+	handledPolls := 0
 	var pollMetadata exported.PollMetadata
-	for pollQueue.DequeueIf(&pollMetadata, hasPollExpired) {
+	for pollQueue.DequeueIf(&pollMetadata, hasPollExpired) && handledPolls < maxPollsPerBlock {
+		handledPolls++
+
 		pollID := pollMetadata.ID
 		poll, ok := k.GetPoll(ctx, pollID)
 		if !ok {

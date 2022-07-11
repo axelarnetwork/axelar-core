@@ -12,6 +12,8 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
+const maxConfirmedEventsPerBlock = 50
+
 func validateChains(ctx sdk.Context, sourceChainName nexus.ChainName, destinationChainName nexus.ChainName, bk types.BaseKeeper, n types.Nexus) (nexus.Chain, nexus.Chain, error) {
 	sourceChain, ok := n.GetChain(ctx, sourceChainName)
 	if !ok {
@@ -444,8 +446,10 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 			continue
 		}
 
+		handledEvents := 0
 		var event types.Event
-		for queue.DequeueUntil(&event, shouldHandleEvent) {
+		for queue.DequeueUntil(&event, shouldHandleEvent) && handledEvents < maxConfirmedEventsPerBlock {
+			handledEvents++
 			bk.Logger(ctx).Debug("handling confirmed event",
 				"chain", chain.Name.String(),
 				"eventID", event.GetID(),
