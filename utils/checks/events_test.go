@@ -18,6 +18,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 // This test is dependent on type packages for all modules being loaded in event_imports.go.
@@ -34,8 +35,12 @@ func TestEventsAreMarshallable(t *testing.T) {
 			require.NotNilf(t, msgType, "event %s not registered, make sure the corresponding module is imported in event_imports.go", name)
 			event := reflect.New(msgType.Elem()).Interface().(proto.Message)
 
-			_, err := sdk.TypedEventToEvent(event)
+			abciEvent, err := sdk.TypedEventToEvent(event)
 			assert.NoError(t, err)
+
+			event2, err := sdk.ParseTypedEvent(abci.Event(abciEvent))
+			assert.NoError(t, err)
+			assert.Equal(t, event, event2)
 		}
 	}
 }
@@ -72,8 +77,8 @@ func parseEventNames(file string) ([]string, error) {
 	}
 
 	inits := findInitFuncs(root)
-	registerTypeCalls := slices.FMap(inits, findRegisterTypeCalls)
-	eventNames := slices.FMap(registerTypeCalls, parseEventNamesFromArgs)
+	registerTypeCalls := slices.FlatMap(inits, findRegisterTypeCalls)
+	eventNames := slices.FlatMap(registerTypeCalls, parseEventNamesFromArgs)
 
 	return eventNames, nil
 }
