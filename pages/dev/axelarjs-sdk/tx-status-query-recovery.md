@@ -2,7 +2,7 @@
 
 Occasionally, transactions can get "stuck" in the pipeline from a source to destination chain (e.g. due to one-off issues that arise with relayers that operate on top of the network).
 
-The `AxelarGMPRecoveryAPI` module in the AxelarJS SDK can be used by your dApp to query the status of any General Message Passing (GMP) transaction (triggered by either `callContract` or `callContractWithToken`) on the gateway contract of a source chain and trigger a manual relay from source to destination if necessary. - The [[GMP status tracker](../gmp-tracker)] on Axelarscan makes use of this feature.
+The `AxelarGMPRecoveryAPI` module in the AxelarJS SDK can be used by your dApp to query the status of any General Message Passing (GMP) transaction (triggered by either `callContract` or `callContractWithToken`) on the gateway contract of a source chain and trigger a manual relay from source to destination if necessary. - The [[GMP status tracker](../gmp/gmp-tracker-recovery/recovery)] on Axelarscan makes use of this feature.
 
 ### Install the AxelarJS SDK module (AxelarGMPRecoveryAPI)
 

@@ -11,9 +11,9 @@ The ideal development process is completed in two steps:
 
 **_To begin, download the `axelar-local-gmp-examples` repository, which contains a full suite of starter templates that are run against the Axelar local development environment._**
 
-View the github README for instructions and code:
+View the summary of notable examples with links to github instructions and code for each:
 
-<Button title="Starter templates" url="https://github.com/axelarnetwork/axelar-local-gmp-examples" />
+<Button title="Starter templates" url="./gmp/examples" />
 
 ## Build
 
@@ -56,3 +56,11 @@ The [axelar-local-gmp-examples](https://github.com/axelarnetwork/axelar-local-gm
 See the accompanying [video](https://www.youtube.com/watch?v=pAxuQ7PIl8g):
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/pAxuQ7PIl8g" title="YouTube video player" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>
+
+### Example: Airdrop! (an end-to-end walkthrough)
+
+Watch Vlad demo an end-to-end walkthrough of our Airdrop example, which sends aUSDC from a source chain to a list of recipients on a destination chain using the callContractWithToken function. The full stack example includes running the examples locally, deploying to testnet, and reviewing analytics tools in testnet... all run with a simple bootstrapped frontend.
+
+See the accompanying [video](https://www.youtube.com/watch?v=D5Z6lCbjZNA):
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/D5Z6lCbjZNA" title="YouTube video player" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>
