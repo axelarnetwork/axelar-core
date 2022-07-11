@@ -1,6 +1,8 @@
 package checks_test
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"go/ast"
 	"go/parser"
@@ -37,9 +39,15 @@ func TestEventsAreMarshallable(t *testing.T) {
 			abciEvent, err := sdk.TypedEventToEvent(event)
 			assert.NoError(t, err)
 
+			for i := 0; i < len(abciEvent.Attributes); i++ {
+				if bytes.Equal(abciEvent.Attributes[i].Value, []byte("\"\"")) || bytes.Equal(abciEvent.Attributes[i].Value, []byte("[]")) {
+					abciEvent.Attributes[i].Value = []byte("null")
+				}
+			}
+
 			event2, err := sdk.ParseTypedEvent(abci.Event(abciEvent))
 			assert.NoError(t, err)
-			assert.Equal(t, event, event2)
+			assert.Equal(t, funcs.Must(json.Marshal(event)), funcs.Must(json.Marshal(event2)))
 		}
 	}
 }
