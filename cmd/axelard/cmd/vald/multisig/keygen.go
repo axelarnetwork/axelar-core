@@ -4,18 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	abci "github.com/tendermint/tendermint/abci/types"
-
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
-	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // ProcessKeygenStarted handles event keygen started
-func (mgr *Mgr) ProcessKeygenStarted(e abci.Event) error {
-	event := funcs.Must(sdk.ParseTypedEvent(e)).(*types.KeygenStarted)
+func (mgr *Mgr) ProcessKeygenStarted(event *types.KeygenStarted) error {
 
 	if !slices.Any(event.Participants, mgr.isParticipant) {
 		return nil

@@ -20,11 +20,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	proto "github.com/gogo/protobuf/proto"
+	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
 
@@ -234,16 +233,6 @@ func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, ax
 			return event.Type == eventType && event.Attributes[sdk.AttributeKeyModule] == module && event.Attributes[sdk.AttributeKeyAction] == action
 		})
 	}
-	subscribeTyped := func(eventType string) <-chan tmEvents.ABCIEventWithHeight {
-		return eventBus.Subscribe(func(e tmEvents.ABCIEventWithHeight) bool {
-			typedEvent, err := sdk.ParseTypedEvent(e.Event)
-			if err != nil {
-				return false
-			}
-
-			return proto.MessageName(typedEvent) == eventType
-		})
-	}
 
 	var blockHeight int64
 	blockHeaderSub := eventBus.Subscribe(func(event tmEvents.ABCIEventWithHeight) bool {
@@ -268,7 +257,7 @@ func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, ax
 	evmTraConf := subscribe(evmTypes.EventTypeTransferKeyConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
 	evmGatewayTxConf := subscribe(evmTypes.EventTypeGatewayTxConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
 
-	multisigKeygen := subscribeTyped(proto.MessageName(&multisigTypes.KeygenStarted{}))
+	multisigKeygen := eventBus.Subscribe(eventFilter[*multisigTypes.KeygenStarted]())
 
 	eventCtx, cancelEventCtx := context.WithCancel(context.Background())
 	mgr := jobs.NewMgr(eventCtx)
@@ -337,10 +326,11 @@ func createJob(sub <-chan tmEvents.ABCIEventWithHeight, processor func(event tmE
 	}
 }
 
-func createJobTyped(sub <-chan tmEvents.ABCIEventWithHeight, processor func(event abci.Event) error, cancel context.CancelFunc, logger log.Logger) jobs.Job {
+func createJobTyped[T proto.Message](sub <-chan tmEvents.ABCIEventWithHeight, processor func(event T) error, cancel context.CancelFunc, logger log.Logger) jobs.Job {
 	return func(ctx context.Context) error {
 		processWithLog := func(e tmEvents.ABCIEventWithHeight) {
-			err := processor(e.Event)
+			event := funcs.Must(sdk.ParseTypedEvent(e.Event)).(T)
+			err := processor(event)
 			if err != nil {
 				logger.Error(err.Error())
 			}
@@ -505,3 +495,14 @@ func (f RWFile) ReadAll() ([]byte, error) { return os.ReadFile(f.path) }
 
 // WriteAll writes the given bytes to a file. Creates a new fille if it does not exist, overwrites the previous content otherwise.
 func (f RWFile) WriteAll(bz []byte) error { return os.WriteFile(f.path, bz, RW) }
+
+func eventFilter[T proto.Message]() func(e tmEvents.ABCIEventWithHeight) bool {
+	return func(e tmEvents.ABCIEventWithHeight) bool {
+		typedEvent, err := sdk.ParseTypedEvent(e.Event)
+		if err != nil {
+			return false
+		}
+
+		return proto.MessageName(typedEvent) == proto.MessageName(*new(T))
+	}
+}
