@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"encoding/binary"
 	"fmt"
 	"strings"
 
@@ -14,7 +13,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
-	"github.com/axelarnetwork/utils/convert"
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/math"
 	"github.com/axelarnetwork/utils/slices"
@@ -52,10 +50,7 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 func (k Keeper) GetKeygenSessionsByExpiry(ctx sdk.Context, expiry int64) []types.KeygenSession {
 	var results []types.KeygenSession
 
-	bz := make([]byte, 8)
-	binary.BigEndian.PutUint64(bz, uint64(expiry))
-
-	iter := k.getStore(ctx).Iterator(expiryPrefix.Append(utils.KeyFromBz(bz)))
+	iter := k.getStore(ctx).Iterator(expiryPrefix.Append(utils.KeyFromInt(expiry)))
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
 	for ; iter.Valid(); iter.Next() {
@@ -146,7 +141,7 @@ func (k Keeper) createKeygenSession(ctx sdk.Context, id exported.KeyID, snapshot
 }
 
 func (k Keeper) setKeygenSession(ctx sdk.Context, keygen types.KeygenSession) {
-	k.getStore(ctx).Delete(expiryPrefix.Append(utils.KeyFromBz(convert.IntToBytes(keygen.ExpiresAt))).Append(utils.KeyFromStr(keygen.GetKeyID().String())))
+	k.getStore(ctx).Delete(expiryPrefix.Append(utils.KeyFromInt(keygen.ExpiresAt)).Append(utils.KeyFromStr(keygen.GetKeyID().String())))
 	k.getStore(ctx).SetRaw(getKeygenSessionExpiryKey(keygen), []byte(keygen.GetKeyID()))
 
 	k.getStore(ctx).Set(getKeygenSessionKey(keygen.GetKeyID()), &keygen)
@@ -172,7 +167,7 @@ func getKeygenSessionExpiryKey(keygen types.KeygenSession) utils.Key {
 		expiry = math.Min(keygen.ExpiresAt, keygen.CompletedAt+keygen.GracePeriod+1)
 	}
 
-	return expiryPrefix.Append(utils.KeyFromBz(convert.IntToBytes(expiry))).Append(utils.KeyFromStr(keygen.GetKeyID().String()))
+	return expiryPrefix.Append(utils.KeyFromInt(expiry)).Append(utils.KeyFromStr(keygen.GetKeyID().String()))
 }
 
 func getKeygenSessionKey(id exported.KeyID) utils.Key {
