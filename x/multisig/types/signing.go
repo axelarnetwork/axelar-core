@@ -44,6 +44,21 @@ func (m SigningSession) ValidateBasic() error {
 		return err
 	}
 
+	if m.Key.ID != m.Signature.KeyID {
+		return fmt.Errorf("key ID mismatch")
+	}
+
+	for addr, sig := range m.Signature.Sigs {
+		pubKey, ok := m.Key.PubKeys[addr]
+		if !ok {
+			return fmt.Errorf("participant %s does not have public key submitted", addr)
+		}
+
+		if !sig.Verify(m.Signature.PayloadHash, pubKey) {
+			return fmt.Errorf("signature does not match the public key")
+		}
+	}
+
 	return nil
 }
 
