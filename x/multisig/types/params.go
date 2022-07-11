@@ -10,9 +10,10 @@ import (
 
 // Parameter keys
 var (
-	KeyKeygenThreshold  = []byte("KeygenThreshold")
-	KeySigningThreshold = []byte("SigningThreshold")
-	KeyKeygenTimeout    = []byte("KeygenTimeout")
+	KeyKeygenThreshold   = []byte("KeygenThreshold")
+	KeySigningThreshold  = []byte("SigningThreshold")
+	KeyKeygenTimeout     = []byte("KeygenTimeout")
+	KeyKeygenGracePeriod = []byte("KeygenGracePeriod")
 )
 
 // KeyTable returns a subspace.KeyTable that has registered all parameter types in this module's parameter set
@@ -23,9 +24,10 @@ func KeyTable() params.KeyTable {
 // DefaultParams returns the module's parameter set initialized with default values
 func DefaultParams() Params {
 	return Params{
-		KeygenThreshold:  utils.NewThreshold(90, 100),
-		SigningThreshold: utils.NewThreshold(67, 100),
-		KeygenTimeout:    20,
+		KeygenThreshold:   utils.NewThreshold(90, 100),
+		SigningThreshold:  utils.NewThreshold(67, 100),
+		KeygenTimeout:     20,
+		KeygenGracePeriod: 3,
 	}
 }
 
@@ -42,6 +44,7 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 		params.NewParamSetPair(KeyKeygenThreshold, &m.KeygenThreshold, validateThreshold),
 		params.NewParamSetPair(KeySigningThreshold, &m.SigningThreshold, validateThreshold),
 		params.NewParamSetPair(KeyKeygenTimeout, &m.KeygenTimeout, validateKeygenTimeout),
+		params.NewParamSetPair(KeyKeygenGracePeriod, &m.KeygenGracePeriod, validateKeygenGracePeriod),
 	}
 }
 
@@ -56,6 +59,10 @@ func (m Params) Validate() error {
 	}
 
 	if err := validateKeygenTimeout(m.KeygenTimeout); err != nil {
+		return err
+	}
+
+	if err := validateKeygenGracePeriod(m.KeygenGracePeriod); err != nil {
 		return err
 	}
 
@@ -83,6 +90,19 @@ func validateKeygenTimeout(i interface{}) error {
 
 	if keygenTimeout <= 0 {
 		return fmt.Errorf("keygen timeout must be >0")
+	}
+
+	return nil
+}
+
+func validateKeygenGracePeriod(i interface{}) error {
+	gracePeriod, ok := i.(int64)
+	if !ok {
+		return fmt.Errorf("invalid parameter type for keygen grace period: %T", i)
+	}
+
+	if gracePeriod < 0 {
+		return fmt.Errorf("keygen grace period must be >=0")
 	}
 
 	return nil

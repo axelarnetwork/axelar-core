@@ -58,10 +58,21 @@ func (s msgServer) SubmitPubKey(c context.Context, req *types.SubmitPubKeyReques
 		return nil, fmt.Errorf("sender %s is not a registered proxy", req.Sender.String())
 	}
 
-	if err := keygenSession.AddKey(ctx.BlockHeight(), participant, req.PubKey); err != nil {
+	err := keygenSession.AddKey(ctx.BlockHeight(), participant, req.PubKey)
+	if err != nil {
 		return nil, sdkerrors.Wrap(err, "unable to add public key for keygen")
 	}
+
 	s.setKeygenSession(ctx, keygenSession)
+
+	s.Logger(ctx).Debug("new public key submitted",
+		"key_id", keygenSession.GetKeyID(),
+		"participant", participant.String(),
+		"participants_weight", keygenSession.Key.GetParticipantsWeight().String(),
+		"bonded_weight", keygenSession.Key.Snapshot.BondedWeight.String(),
+		"keygen_threshold", keygenSession.KeygenThreshold.String(),
+		"expires_at", keygenSession.ExpiresAt,
+	)
 
 	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewPubKeySubmitted(req.KeyID, participant, req.PubKey)))
 

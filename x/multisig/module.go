@@ -14,6 +14,7 @@ import (
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/multisig/keeper"
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
 )
@@ -77,15 +78,17 @@ type AppModule struct {
 	keeper      keeper.Keeper
 	staker      types.Staker
 	snapshotter keeper.Snapshotter
+	rewarder    types.Rewarder
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(k keeper.Keeper, staker types.Staker, slasher types.Slasher, snapshotter types.Snapshotter) AppModule {
+func NewAppModule(k keeper.Keeper, staker types.Staker, slasher types.Slasher, snapshotter types.Snapshotter, rewarder types.Rewarder) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
 		staker:         staker,
 		snapshotter:    keeper.NewSnapshotCreator(snapshotter, staker, slasher),
+		rewarder:       rewarder,
 	}
 }
 
@@ -136,7 +139,9 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 
 // EndBlock executes all state transitions this module requires at the end of each new block
 func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
-	return EndBlocker(ctx, req)
+	return utils.RunEndBlocker(ctx, am.keeper, func(ctx sdk.Context) ([]abci.ValidatorUpdate, error) {
+		return EndBlocker(ctx, req, am.keeper, am.rewarder)
+	})
 }
 
 // ConsensusVersion implements AppModule/ConsensusVersion.

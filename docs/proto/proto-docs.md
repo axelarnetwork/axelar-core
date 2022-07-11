@@ -244,6 +244,7 @@
   
 - [axelar/multisig/v1beta1/events.proto](#axelar/multisig/v1beta1/events.proto)
     - [KeygenCompleted](#axelar.multisig.v1beta1.KeygenCompleted)
+    - [KeygenExpired](#axelar.multisig.v1beta1.KeygenExpired)
     - [KeygenStarted](#axelar.multisig.v1beta1.KeygenStarted)
     - [PubKeySubmitted](#axelar.multisig.v1beta1.PubKeySubmitted)
   
@@ -3807,6 +3808,22 @@ QueryService defines the gRPC querier service.
 
 
 
+<a name="axelar.multisig.v1beta1.KeygenExpired"></a>
+
+### KeygenExpired
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `module` | [string](#string) |  |  |
+| `key_id` | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="axelar.multisig.v1beta1.KeygenStarted"></a>
 
 ### KeygenStarted
@@ -3869,6 +3886,7 @@ Params represent the genesis parameters for the module
 | `keygen_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
 | `signing_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
 | `keygen_timeout` | [int64](#int64) |  |  |
+| `keygen_grace_period` | [int64](#int64) |  |  |
 
 
 
@@ -4067,6 +4085,7 @@ Msg defines the multisig Msg service.
 | `expires_at` | [int64](#int64) |  |  |
 | `completed_at` | [int64](#int64) |  |  |
 | `is_pub_key_received` | [KeygenSession.IsPubKeyReceivedEntry](#axelar.multisig.v1beta1.KeygenSession.IsPubKeyReceivedEntry) | repeated |  |
+| `grace_period` | [int64](#int64) |  |  |
 
 
 
