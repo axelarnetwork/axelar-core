@@ -5,8 +5,9 @@ go 1.18
 require (
 	github.com/armon/go-metrics v0.3.11
 	github.com/axelarnetwork/tm-events v0.0.0-20220427211200-9114fb26a603
-	github.com/axelarnetwork/utils v0.0.0-20220707192950-9f5641e2a20f
+	github.com/axelarnetwork/utils v0.0.0-20220711161449-a8263a543b9d
 	github.com/btcsuite/btcd v0.22.1
+	github.com/btcsuite/btcd/btcec/v2 v2.1.2
 	github.com/cosmos/cosmos-sdk v0.45.4
 	github.com/cosmos/ibc-go/v2 v2.2.0
 	github.com/ethereum/go-ethereum v1.10.17
@@ -46,7 +47,6 @@ require (
 	github.com/Workiva/go-datastructures v1.0.53 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bgentry/speakeasy v0.1.0 // indirect
-	github.com/btcsuite/btcd/btcec/v2 v2.1.2 // indirect
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.0.1 // indirect
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce // indirect
 	github.com/cespare/xxhash v1.1.0 // indirect
