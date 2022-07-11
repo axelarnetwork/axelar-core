@@ -12,7 +12,7 @@ import (
 )
 
 // Snapshot returns random snapshot based on the given parameters
-func Snapshot(participantCount uint64, threshold utils.Threshold) (snapshot exported.Snapshot) {
+func Snapshot(participantCount uint64, threshold utils.Threshold) exported.Snapshot {
 	participantsWeight := sdk.ZeroUint()
 	participants := slices.Expand(func(int) exported.Participant {
 		weight := sdk.NewUint(uint64(rand.I64Between(1, 100)))
