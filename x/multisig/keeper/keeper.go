@@ -26,16 +26,16 @@ var (
 
 // Keeper provides access to all state changes regarding this module
 type Keeper struct {
-	storeKey   sdk.StoreKey
 	cdc        codec.BinaryCodec
+	storeKey   sdk.StoreKey
 	paramSpace paramtypes.Subspace
 }
 
 // NewKeeper is the constructor for the keeper
-func NewKeeper(storeKey sdk.StoreKey, cdc codec.BinaryCodec, paramSpace paramtypes.Subspace) Keeper {
+func NewKeeper(cdc codec.BinaryCodec, storeKey sdk.StoreKey, paramSpace paramtypes.Subspace) Keeper {
 	return Keeper{
-		storeKey:   storeKey,
 		cdc:        cdc,
+		storeKey:   storeKey,
 		paramSpace: paramSpace.WithKeyTable(types.KeyTable()),
 	}
 }

@@ -63,7 +63,7 @@ func TestMsgServer(t *testing.T) {
 
 	Given("a multisig msg server", func() {
 		subspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "multisig")
-		k = keeper.NewKeeper(sdk.NewKVStoreKey(types.StoreKey), encCfg.Codec, subspace)
+		k = keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey(types.StoreKey), subspace)
 		snapshotter = &mock.SnapshotterMock{
 			CreateSnapshotFunc: func(sdk.Context, utils.Threshold) (snapshot.Snapshot, error) {
 				return snapshot.NewSnapshot(ctx.BlockTime(), ctx.BlockHeight(), validators, sdk.NewUint(10)), nil
