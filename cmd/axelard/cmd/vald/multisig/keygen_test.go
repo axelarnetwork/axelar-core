@@ -65,7 +65,7 @@ func TestMgr_ProcessKeygenStarted(t *testing.T) {
 		When("is part of the listed participants", func() {
 			event = types.NewKeygenStarted(testutils.KeyID(), []sdk.ValAddress{rand.ValAddr(), participant, rand.ValAddr()})
 		}).
-		Then("should ignore", func(t *testing.T) {
+		Then("should handle", func(t *testing.T) {
 			sk := funcs.Must(btcec.NewPrivateKey(btcec.S256()))
 			client.KeygenFunc = func(_ context.Context, in *tofnd.KeygenRequest, _ ...grpc.CallOption) (*tofnd.KeygenResponse, error) {
 				return &tofnd.KeygenResponse{KeygenResponse: &tofnd.KeygenResponse_PubKey{PubKey: sk.PubKey().SerializeCompressed()}}, nil
