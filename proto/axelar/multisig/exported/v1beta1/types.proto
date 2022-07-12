@@ -7,12 +7,13 @@ import "gogoproto/gogo.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
-enum KeygenState {
+enum MultisigState {
   option (gogoproto.goproto_enum_prefix) = false;
   option (gogoproto.goproto_enum_stringer) = true;
 
-  KEYGEN_STATE_UNSPECIFIED = 0
+  MULTISIG_STATE_UNSPECIFIED = 0
       [ (gogoproto.enumvalue_customname) = "NonExistent" ];
-  KEYGEN_STATE_PENDING = 1 [ (gogoproto.enumvalue_customname) = "Pending" ];
-  KEYGEN_STATE_COMPLETED = 2 [ (gogoproto.enumvalue_customname) = "Completed" ];
+  MULTISIG_STATE_PENDING = 1 [ (gogoproto.enumvalue_customname) = "Pending" ];
+  MULTISIG_STATE_COMPLETED = 2
+      [ (gogoproto.enumvalue_customname) = "Completed" ];
 }
