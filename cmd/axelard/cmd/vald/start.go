@@ -24,6 +24,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
 
@@ -225,39 +226,8 @@ func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, ax
 		panic(err)
 	}
 
-	eventBus := createEventBus(robustClient, startBlock, logger)
-	subscribe := func(eventType, module, action string) <-chan tmEvents.ABCIEventWithHeight {
-		return eventBus.Subscribe(func(e tmEvents.ABCIEventWithHeight) bool {
-			event := tmEvents.Map(e)
-
-			return event.Type == eventType && event.Attributes[sdk.AttributeKeyModule] == module && event.Attributes[sdk.AttributeKeyAction] == action
-		})
-	}
-
-	var blockHeight int64
-	blockHeaderSub := eventBus.Subscribe(func(event tmEvents.ABCIEventWithHeight) bool {
-		if event.Height != blockHeight {
-			blockHeight = event.Height
-			return true
-		}
-		return false
-	})
-
-	heartbeat := subscribe(tssTypes.EventTypeHeartBeat, tssTypes.ModuleName, tssTypes.AttributeValueSend)
-
-	keygenStart := subscribe(tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueStart)
-	signStart := subscribe(tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueStart)
-
-	keygenMsg := subscribe(tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
-	signMsg := subscribe(tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
-
-	evmNewChain := subscribe(evmTypes.EventTypeNewChain, evmTypes.ModuleName, evmTypes.AttributeValueUpdate)
-	evmDepConf := subscribe(evmTypes.EventTypeDepositConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
-	evmTokConf := subscribe(evmTypes.EventTypeTokenConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
-	evmTraConf := subscribe(evmTypes.EventTypeTransferKeyConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
-	evmGatewayTxConf := subscribe(evmTypes.EventTypeGatewayTxConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
-
-	multisigKeygen := eventBus.Subscribe(eventFilter[*multisigTypes.KeygenStarted]())
+	blockNotifier := tmEvents.NewBlockNotifier(robustClient, logger).StartingAt(startBlock)
+	eventBus := tmEvents.NewEventBus(tmEvents.NewBlockSource(robustClient, blockNotifier, logger), pubsub.NewBus[abci.Event](), logger)
 
 	eventCtx, cancelEventCtx := context.WithCancel(context.Background())
 	mgr := jobs.NewMgr(eventCtx)
@@ -278,73 +248,100 @@ func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, ax
 		case <-ctx.Done():
 			return nil
 		case err := <-eventBus.FetchEvents(ctx):
-			cancelEventCtx()
 			return err
 		}
 	}
 
-	processBlockHeader := func(event tmEvents.Event) error {
-		tssMgr.ProcessNewBlockHeader(event.Height)
-		return stateStore.SetState(event.Height)
+	processBlockHeader := func(blockHeight int64) error {
+		tssMgr.ProcessNewBlockHeader(blockHeight)
+		return stateStore.SetState(blockHeight)
 	}
+
+	blocks, blockErrs := blockNotifier.BlockHeights(ctx)
 
 	js := []jobs.Job{
 		fetchEvents,
-		createJob(blockHeaderSub, processBlockHeader, cancelEventCtx, logger),
-		createJob(heartbeat, tssMgr.ProcessHeartBeatEvent, cancelEventCtx, logger),
-		createJob(keygenStart, tssMgr.ProcessKeygenStart, cancelEventCtx, logger),
-		createJob(keygenMsg, tssMgr.ProcessKeygenMsg, cancelEventCtx, logger),
-		createJob(signStart, tssMgr.ProcessSignStart, cancelEventCtx, logger),
-		createJob(signMsg, tssMgr.ProcessSignMsg, cancelEventCtx, logger),
-		createJob(evmNewChain, evmMgr.ProcessNewChain, cancelEventCtx, logger),
-		createJob(evmDepConf, evmMgr.ProcessDepositConfirmation, cancelEventCtx, logger),
-		createJob(evmTokConf, evmMgr.ProcessTokenConfirmation, cancelEventCtx, logger),
-		createJob(evmTraConf, evmMgr.ProcessTransferKeyConfirmation, cancelEventCtx, logger),
-		createJob(evmGatewayTxConf, evmMgr.ProcessGatewayTxConfirmation, cancelEventCtx, logger),
-		createJobTyped(multisigKeygen, multisigMgr.ProcessKeygenStarted, cancelEventCtx, logger),
+		consume(blockErrs, funcs.Identity[error]),
+		consume(blocks, processBlockHeader),
+		consume(
+			eventBus.Subscribe(matchEvent(tssTypes.EventTypeHeartBeat, tssTypes.ModuleName, tssTypes.AttributeValueSend)),
+			mapEventTo(tssMgr.ProcessHeartBeatEvent)),
+		consume(
+			eventBus.Subscribe(matchEvent(tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueStart)),
+			mapEventTo(tssMgr.ProcessKeygenStart)),
+		consume(
+			eventBus.Subscribe(matchEvent(tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueMsg)),
+			mapEventTo(tssMgr.ProcessKeygenMsg)),
+		consume(
+			eventBus.Subscribe(matchEvent(tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueStart)),
+			mapEventTo(tssMgr.ProcessSignStart)),
+		consume(
+			eventBus.Subscribe(matchEvent(tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueMsg)),
+			mapEventTo(tssMgr.ProcessSignMsg)),
+		consume(
+			eventBus.Subscribe(matchEvent(evmTypes.EventTypeNewChain, evmTypes.ModuleName, evmTypes.AttributeValueUpdate)),
+			mapEventTo(evmMgr.ProcessNewChain)),
+		consume(
+			eventBus.Subscribe(matchEvent(evmTypes.EventTypeDepositConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)),
+			mapEventTo(evmMgr.ProcessDepositConfirmation)),
+		consume(
+			eventBus.Subscribe(matchEvent(evmTypes.EventTypeTokenConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)),
+			mapEventTo(evmMgr.ProcessTokenConfirmation)),
+		consume(
+			eventBus.Subscribe(matchEvent(evmTypes.EventTypeTransferKeyConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)),
+			mapEventTo(evmMgr.ProcessTransferKeyConfirmation)),
+		consume(
+			eventBus.Subscribe(matchEvent(evmTypes.EventTypeGatewayTxConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)),
+			mapEventTo(evmMgr.ProcessGatewayTxConfirmation)),
+		consume(
+			eventBus.Subscribe(eventFilter[*multisigTypes.KeygenStarted]()),
+			funcs.Compose(parseEvent[multisigTypes.KeygenStarted], multisigMgr.ProcessKeygenStarted)),
 	}
 
 	mgr.AddJobs(js...)
+	go func() {
+		select {
+		case <-eventCtx.Done():
+			return
+		case err := <-mgr.Errs():
+			logger.Error(errors.Wrap(err, "job failed").Error())
+			cancelEventCtx()
+		}
+	}()
 	<-mgr.Done()
 }
 
-func createJob(sub <-chan tmEvents.ABCIEventWithHeight, processor func(event tmEvents.Event) error, cancel context.CancelFunc, logger log.Logger) jobs.Job {
+func mapEventTo(f func(event tmEvents.Event) error) func(event abci.Event) error {
+	return mapEventTo(f)
+}
+
+func consume[T any](sub <-chan T, processor func(T) error) jobs.Job {
 	return func(ctx context.Context) error {
-		processWithLog := func(e tmEvents.ABCIEventWithHeight) {
-			err := processor(tmEvents.Map(e))
-			if err != nil {
-				logger.Error(err.Error())
+		errs := make(chan error, 1)
+		go func() {
+			for {
+				select {
+				case <-ctx.Done():
+					errs <- ctx.Err()
+					return
+				case x, ok := <-sub:
+					if !ok {
+						errs <- nil
+					}
+
+					if err := processor(x); err != nil {
+						errs <- err
+						return
+					}
+				}
 			}
-		}
-		consume := tmEvents.Consume(sub, processWithLog)
-		err := consume(ctx)
-		if err != nil {
-			cancel()
-			return err
-		}
-		return nil
+		}()
+		return <-errs
 	}
 }
 
-func createJobTyped[T proto.Message](sub <-chan tmEvents.ABCIEventWithHeight, processor func(event T) error, cancel context.CancelFunc, logger log.Logger) jobs.Job {
-	return func(ctx context.Context) error {
-		processWithLog := func(e tmEvents.ABCIEventWithHeight) {
-			event := funcs.Must(sdk.ParseTypedEvent(e.Event)).(T)
-			err := processor(event)
-			if err != nil {
-				logger.Error(err.Error())
-			}
-		}
-
-		consume := tmEvents.Consume(sub, processWithLog)
-		err := consume(ctx)
-		if err != nil {
-			cancel()
-			return err
-		}
-
-		return nil
-	}
+func parseEvent[T proto.Message](event abci.Event) T {
+	return funcs.Must(sdk.ParseTypedEvent(event)).(T)
 }
 
 // Wait until the node has synced with the network and return the node height
@@ -396,11 +393,6 @@ func getStartBlock(cfg config.ValdConfig, stateStore StateStore, nodeHeight int6
 	}
 
 	return startBlock, nil
-}
-
-func createEventBus(client *tendermint.RobustClient, startBlock int64, logger log.Logger) *tmEvents.Bus {
-	notifier := tmEvents.NewBlockNotifier(client, logger).StartingAt(startBlock)
-	return tmEvents.NewEventBus(tmEvents.NewBlockSource(client, notifier, logger), pubsub.NewBus[tmEvents.ABCIEventWithHeight](), logger)
 }
 
 func createRefundableBroadcaster(txf tx.Factory, ctx sdkClient.Context, axelarCfg config.ValdConfig, logger log.Logger) broadcast.Broadcaster {
@@ -496,13 +488,20 @@ func (f RWFile) ReadAll() ([]byte, error) { return os.ReadFile(f.path) }
 // WriteAll writes the given bytes to a file. Creates a new fille if it does not exist, overwrites the previous content otherwise.
 func (f RWFile) WriteAll(bz []byte) error { return os.WriteFile(f.path, bz, RW) }
 
-func eventFilter[T proto.Message]() func(e tmEvents.ABCIEventWithHeight) bool {
-	return func(e tmEvents.ABCIEventWithHeight) bool {
-		typedEvent, err := sdk.ParseTypedEvent(e.Event)
+func eventFilter[T proto.Message]() func(e abci.Event) bool {
+	return func(e abci.Event) bool {
+		typedEvent, err := sdk.ParseTypedEvent(e)
 		if err != nil {
 			return false
 		}
 
 		return proto.MessageName(typedEvent) == proto.MessageName(*new(T))
+	}
+}
+
+func matchEvent(eventType, module, action string) func(e abci.Event) bool {
+	return func(e abci.Event) bool {
+		event := tmEvents.Map(e)
+		return event.Type == eventType && event.Attributes[sdk.AttributeKeyModule] == module && event.Attributes[sdk.AttributeKeyAction] == action
 	}
 }

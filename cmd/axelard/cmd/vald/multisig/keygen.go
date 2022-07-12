@@ -11,8 +11,7 @@ import (
 )
 
 // ProcessKeygenStarted handles event keygen started
-func (mgr *Mgr) ProcessKeygenStarted(event *types.KeygenStarted) error {
-
+func (mgr *Mgr) ProcessKeygenStarted(event types.KeygenStarted) error {
 	if !slices.Any(event.Participants, mgr.isParticipant) {
 		return nil
 	}
