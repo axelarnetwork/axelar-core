@@ -38,6 +38,11 @@ func NewSigningSession(id uint64, key Key, payloadHash Hash, expiresAt int64, gr
 	}
 }
 
+// GetSigID returns the signature ID of the signing session
+func (m SigningSession) GetSigID() uint64 {
+	return m.MultiSig.ID
+}
+
 // ValidateBasic returns an error if the given signing session is invalid; nil otherwise
 func (m SigningSession) ValidateBasic() error {
 	if err := m.MultiSig.ValidateBasic(); err != nil {
@@ -56,7 +61,7 @@ func (m SigningSession) ValidateBasic() error {
 		return fmt.Errorf("expires at must be >0")
 	}
 
-	switch m.State {
+	switch m.GetState() {
 	case exported.Pending:
 		if m.CompletedAt != 0 {
 			return fmt.Errorf("pending signing session must not have completed at set")
@@ -66,12 +71,12 @@ func (m SigningSession) ValidateBasic() error {
 			return fmt.Errorf("completed signing session must have completed at set")
 		}
 
-		if m.getParticipantsWeight().LT(m.Key.Snapshot.CalculateMinPassingWeight(m.Key.SigningThreshold)) {
+		if m.getParticipantsWeight().LT(m.Key.GetMinPassingWeight()) {
 			return fmt.Errorf("completed signing session must have completed multi signature")
 		}
 
 	default:
-		return fmt.Errorf("unexpected state %s", m.State)
+		return fmt.Errorf("unexpected state %s", m.GetState())
 	}
 
 	for addr, sig := range m.MultiSig.Sigs {
@@ -86,6 +91,79 @@ func (m SigningSession) ValidateBasic() error {
 	}
 
 	return nil
+}
+
+// AddSig adds a new signature for the given participant into the signing session
+func (m *SigningSession) AddSig(blockHeight int64, participant sdk.ValAddress, sig Signature) error {
+	if m.MultiSig.Sigs == nil {
+		m.MultiSig.Sigs = make(map[string]Signature)
+	}
+
+	if m.isExpired(blockHeight) {
+		return fmt.Errorf("signing session %d has expired", m.GetSigID())
+	}
+
+	if _, ok := m.Key.PubKeys[participant.String()]; !ok {
+		return fmt.Errorf("%s is not a participant of signing %d", participant.String(), m.GetSigID())
+	}
+
+	if _, ok := m.MultiSig.Sigs[participant.String()]; ok {
+		return fmt.Errorf("participant %s already submitted its signature for signing %d", participant.String(), m.GetSigID())
+	}
+
+	if !sig.Verify(m.MultiSig.PayloadHash, m.Key.PubKeys[participant.String()]) {
+		return fmt.Errorf("invalid signature received from participant %s for signing %d", participant.String(), m.GetSigID())
+	}
+
+	if m.GetState() == exported.Completed && !m.isWithinGracePeriod(blockHeight) {
+		return fmt.Errorf("signing session %d has closed", m.GetSigID())
+	}
+
+	m.addSig(participant, sig)
+
+	if m.GetState() != exported.Completed && m.getParticipantsWeight().GTE(m.Key.GetMinPassingWeight()) {
+		m.CompletedAt = blockHeight
+		m.State = exported.Completed
+	}
+
+	return nil
+}
+
+// GetMissingParticipants returns all participants who failed to submit their signatures
+func (m SigningSession) GetMissingParticipants() []sdk.ValAddress {
+	participants := m.Key.GetParticipants()
+
+	return slices.Filter(participants, func(p sdk.ValAddress) bool {
+		_, ok := m.MultiSig.Sigs[p.String()]
+
+		return !ok
+	})
+}
+
+// Result returns the generated multi signature if the session is completed and the multi signature is valid
+func (m SigningSession) Result() (MultiSig, error) {
+	if m.GetState() != exported.Completed {
+		return MultiSig{}, fmt.Errorf("signing %d is not completed yet", m.GetSigID())
+	}
+
+	if m.getParticipantsWeight().LT(m.Key.GetMinPassingWeight()) {
+		panic(fmt.Errorf("multi sig is not completed yet"))
+	}
+	funcs.MustNoErr(m.MultiSig.ValidateBasic())
+
+	return m.MultiSig, nil
+}
+
+func (m *SigningSession) addSig(participant sdk.ValAddress, sig Signature) {
+	m.MultiSig.Sigs[participant.String()] = sig
+}
+
+func (m SigningSession) isWithinGracePeriod(blockHeight int64) bool {
+	return blockHeight <= m.CompletedAt+m.GracePeriod
+}
+
+func (m SigningSession) isExpired(blockHeight int64) bool {
+	return blockHeight >= m.ExpiresAt
 }
 
 func (m SigningSession) getParticipantsWeight() sdk.Uint {
