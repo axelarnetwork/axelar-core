@@ -103,6 +103,7 @@ func TestSigningSession(t *testing.T) {
 		signingSession types.SigningSession
 		validators     []sdk.ValAddress
 		privateKeys    map[string]*btcec.PrivateKey
+		signatures     map[string]types.Signature
 	)
 
 	givenNewSignSession := Given("new signing session", func() {
@@ -140,17 +141,24 @@ func TestSigningSession(t *testing.T) {
 		signingSession = types.NewSigningSession(id, key, payloadHash, expiresAt, gracePeriod, module)
 	})
 
-	whenIsCompleted := When("is completed", func() {
-		signingSession.State = exported.Completed
-		signingSession.CompletedAt = signingSession.ExpiresAt - 1
-		signingSession.MultiSig.Sigs = make(map[string]types.Signature)
-
+	whenSignaturesAreCreated := When("signatures are created", func() {
+		signatures = make(map[string]types.Signature, len(privateKeys))
 		for p, sk := range privateKeys {
-			signingSession.MultiSig.Sigs[p] = funcs.Must(sk.Sign(signingSession.MultiSig.PayloadHash)).Serialize()
+			signatures[p] = funcs.Must(sk.Sign(signingSession.MultiSig.PayloadHash)).Serialize()
 		}
 	})
 
 	t.Run("ValidateBasic", func(t *testing.T) {
+		whenIsCompleted := When("is completed", func() {
+			signingSession.State = exported.Completed
+			signingSession.CompletedAt = signingSession.ExpiresAt - 1
+			signingSession.MultiSig.Sigs = make(map[string]types.Signature)
+
+			for _, v := range validators {
+				signingSession.MultiSig.Sigs[v.String()] = signatures[v.String()]
+			}
+		})
+
 		givenNewSignSession.
 			When("", func() {}).
 			Then("should return nil", func(t *testing.T) {
@@ -246,6 +254,7 @@ func TestSigningSession(t *testing.T) {
 			Run(t)
 
 		givenNewSignSession.
+			When2(whenSignaturesAreCreated).
 			When2(whenIsCompleted).
 			Then("should return nil", func(t *testing.T) {
 				assert.NoError(t, signingSession.ValidateBasic())
@@ -253,6 +262,7 @@ func TestSigningSession(t *testing.T) {
 			Run(t)
 
 		givenNewSignSession.
+			When2(whenSignaturesAreCreated).
 			When2(whenIsCompleted).
 			When("completed at is not set", func() {
 				signingSession.CompletedAt = 0
@@ -263,12 +273,168 @@ func TestSigningSession(t *testing.T) {
 			Run(t)
 
 		givenNewSignSession.
+			When2(whenSignaturesAreCreated).
 			When2(whenIsCompleted).
 			When("signing threshold is not met", func() {
 				delete(signingSession.MultiSig.Sigs, validators[2].String())
 			}).
 			Then("should return error", func(t *testing.T) {
 				assert.Error(t, signingSession.ValidateBasic())
+			}).
+			Run(t)
+	})
+
+	t.Run("AddSig", func(t *testing.T) {
+		var (
+			blockHeight int64
+			participant sdk.ValAddress
+			signature   types.Signature
+		)
+
+		whenIsNotExpired := When("is not expired", func() { blockHeight = signingSession.ExpiresAt - signingSession.GracePeriod - 2 })
+		whenParticipantIsValid := When("participant is valid", func() {
+			participant = rand.Of(validators...)
+			signature = signatures[participant.String()]
+		})
+
+		givenNewSignSession.
+			When2(whenSignaturesAreCreated).
+			When("is expired", func() {
+				blockHeight = signingSession.ExpiresAt
+			}).
+			When2(whenParticipantIsValid).
+			Then("should return error", func(t *testing.T) {
+				assert.Error(t, signingSession.AddSig(blockHeight, participant, signature))
+			}).
+			Run(t)
+
+		givenNewSignSession.
+			When2(whenSignaturesAreCreated).
+			When2(whenIsNotExpired).
+			When("participant is invalid", func() {
+				participant = rand.ValAddr()
+				signature = signatures[rand.Of(validators...).String()]
+			}).
+			Then("should return error", func(t *testing.T) {
+				assert.Error(t, signingSession.AddSig(blockHeight, participant, signature))
+			}).
+			Run(t)
+
+		givenNewSignSession.
+			When2(whenSignaturesAreCreated).
+			When2(whenIsNotExpired).
+			When2(whenParticipantIsValid).
+			When("participant has already submitted its signature", func() {
+				signingSession.AddSig(blockHeight, participant, signature)
+			}).
+			Then("should return error", func(t *testing.T) {
+				assert.Error(t, signingSession.AddSig(blockHeight, participant, signature))
+			}).
+			Run(t)
+
+		givenNewSignSession.
+			When2(whenIsNotExpired).
+			When2(whenParticipantIsValid).
+			When("signature is invalid", func() {
+				sk := funcs.Must(btcec.NewPrivateKey(btcec.S256()))
+				signature = funcs.Must(sk.Sign(signingSession.MultiSig.PayloadHash)).Serialize()
+			}).
+			Then("should return error", func(t *testing.T) {
+				assert.Error(t, signingSession.AddSig(blockHeight, participant, signature))
+			}).
+			Run(t)
+
+		givenNewSignSession.
+			When2(whenSignaturesAreCreated).
+			When2(whenIsNotExpired).
+			When2(whenParticipantIsValid).
+			When("is completed", func() {
+				signingSession.AddSig(blockHeight, validators[2], signatures[validators[2].String()])
+				signingSession.AddSig(blockHeight, validators[1], signatures[validators[1].String()])
+			}).
+			When("is outside the grace period", func() {
+				blockHeight = signingSession.CompletedAt + signingSession.GracePeriod + 1
+			}).
+			Then("should return error", func(t *testing.T) {
+				assert.ErrorContains(t, signingSession.AddSig(blockHeight, validators[0], signatures[validators[0].String()]), "closed")
+			}).
+			Run(t)
+
+		givenNewSignSession.
+			When2(whenSignaturesAreCreated).
+			When2(whenIsNotExpired).
+			Then("should be able to complete the signing session", func(t *testing.T) {
+				startBlockHeight := blockHeight
+
+				for i := len(validators) - 1; i >= 0; i-- {
+					p := validators[i]
+					assert.NoError(t, signingSession.AddSig(blockHeight, p, signatures[p.String()]))
+					blockHeight += 1
+				}
+
+				assert.Equal(t, exported.Completed, signingSession.State)
+				assert.Equal(t, startBlockHeight+1, signingSession.CompletedAt)
+			}).
+			Run(t)
+	})
+
+	t.Run("GetMissingParticipants", func(t *testing.T) {
+		var (
+			participant sdk.ValAddress
+		)
+
+		givenNewSignSession.
+			When2(whenSignaturesAreCreated).
+			When("some participant submitted its signature", func() {
+				blockHeight := signingSession.ExpiresAt - 1
+				participant = rand.Of(validators...)
+
+				signingSession.AddSig(blockHeight, participant, signatures[participant.String()])
+			}).
+			Then("should return the correct missing participants", func(t *testing.T) {
+				actual := signingSession.GetMissingParticipants()
+
+				assert.Len(t, actual, 2)
+				assert.ElementsMatch(t, slices.Filter(validators, func(v sdk.ValAddress) bool { return !participant.Equals(v) }), actual)
+			}).
+			Run(t, 5)
+	})
+
+	t.Run("Result", func(t *testing.T) {
+		givenNewSignSession.
+			When("", func() {}).
+			Then("should return error", func(t *testing.T) {
+				_, err := signingSession.Result()
+
+				assert.Error(t, err)
+			}).
+			Run(t)
+
+		givenNewSignSession.
+			When2(whenSignaturesAreCreated).
+			When("is completed", func() {
+				blockHeight := signingSession.ExpiresAt - 1
+
+				signingSession.AddSig(blockHeight, validators[2], signatures[validators[2].String()])
+				signingSession.AddSig(blockHeight, validators[1], signatures[validators[1].String()])
+			}).
+			Then("should get valid multi sig", func(t *testing.T) {
+				actual, err := signingSession.Result()
+
+				assert.NoError(t, err)
+				assert.NoError(t, actual.ValidateBasic())
+				assert.Equal(t, signingSession.Key.ID, actual.KeyID)
+
+				participantsWeight := sdk.ZeroUint()
+				for p, sig := range actual.Sigs {
+					participantsWeight = participantsWeight.Add(signingSession.Key.Snapshot.GetParticipantWeight(funcs.Must(sdk.ValAddressFromBech32(p))))
+
+					pubKey, ok := signingSession.Key.PubKeys[p]
+
+					assert.True(t, ok)
+					assert.True(t, sig.Verify(actual.PayloadHash, pubKey))
+				}
+				assert.True(t, participantsWeight.GTE(signingSession.Key.GetMinPassingWeight()))
 			}).
 			Run(t)
 	})

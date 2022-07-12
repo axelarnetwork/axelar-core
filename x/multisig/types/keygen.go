@@ -94,7 +94,7 @@ func (m *KeygenSession) AddKey(blockHeight int64, participant sdk.ValAddress, pu
 
 	m.addKey(participant, pubKey)
 
-	if m.State != exported.Completed && Key(m.Key).GetParticipantsWeight().GTE(m.Key.Snapshot.CalculateMinPassingWeight(m.KeygenThreshold)) {
+	if m.State != exported.Completed && m.Key.GetParticipantsWeight().GTE(m.Key.Snapshot.CalculateMinPassingWeight(m.KeygenThreshold)) {
 		m.CompletedAt = blockHeight
 		m.State = exported.Completed
 	}
@@ -119,10 +119,9 @@ func (m KeygenSession) Result() (Key, error) {
 		return Key{}, fmt.Errorf("keygen %s is not completed yet", m.GetKeyID())
 	}
 
-	key := Key(m.Key)
-	funcs.MustNoErr(key.ValidateBasic())
+	funcs.MustNoErr(m.Key.ValidateBasic())
 
-	return key, nil
+	return m.Key, nil
 }
 
 func (m KeygenSession) isWithinGracePeriod(blockHeight int64) bool {
@@ -152,13 +151,19 @@ func (m Key) GetParticipantsWeight() sdk.Uint {
 	})
 }
 
+// GetMinPassingWeight returns the minimum amount of weights required for the
+// key to sign
+func (m Key) GetMinPassingWeight() sdk.Uint {
+	return m.Snapshot.CalculateMinPassingWeight(m.SigningThreshold)
+}
+
 // ValidateBasic returns an error if the given key is invalid; nil otherwise
 func (m Key) ValidateBasic() error {
 	if err := validateBasicPendingKey(m); err != nil {
 		return err
 	}
 
-	if m.GetParticipantsWeight().LT(m.Snapshot.CalculateMinPassingWeight(m.SigningThreshold)) {
+	if m.GetParticipantsWeight().LT(m.GetMinPassingWeight()) {
 		return fmt.Errorf("invalid signing threshold")
 	}
 
