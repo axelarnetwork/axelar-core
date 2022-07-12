@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+	"sort"
 
 	"github.com/btcsuite/btcd/btcec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 const (
@@ -79,4 +81,13 @@ func (pk PublicKey) ValidateBasic() error {
 // String returns the hex encoding of the given public key
 func (pk PublicKey) String() string {
 	return hex.EncodeToString(pk)
+}
+
+func sortAddresses[T sdk.Address](addrs []T) []T {
+	sorted := make([]T, len(addrs))
+	copy(sorted, addrs)
+
+	sort.SliceStable(sorted, func(i, j int) bool { return bytes.Compare(sorted[i].Bytes(), sorted[j].Bytes()) < 0 })
+
+	return sorted
 }

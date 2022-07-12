@@ -1,16 +1,16 @@
 package types
 
 import (
-	"bytes"
 	fmt "fmt"
-	"sort"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"golang.org/x/exp/maps"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // NewKeygenSession is the contructor for keygen session
@@ -140,26 +140,16 @@ func (m *KeygenSession) addKey(participant sdk.ValAddress, pubKey PublicKey) {
 
 // GetParticipants returns the participants of the given key
 func (m Key) GetParticipants() []sdk.ValAddress {
-	participants := make([]sdk.ValAddress, 0, len(m.PubKeys))
-	for address := range m.PubKeys {
-		p := funcs.Must(sdk.ValAddressFromBech32(address))
-		participants = append(participants, p)
-	}
-
-	sort.SliceStable(participants, func(i, j int) bool { return bytes.Compare(participants[i], participants[j]) < 0 })
-
-	return participants
+	return sortAddresses(
+		slices.Map(maps.Keys(m.PubKeys), func(a string) sdk.ValAddress { return funcs.Must(sdk.ValAddressFromBech32(a)) }),
+	)
 }
 
 // GetParticipantsWeight returns the total weight of all participants who have submitted their public keys
 func (m Key) GetParticipantsWeight() sdk.Uint {
-	totalWeight := sdk.ZeroUint()
-	for address := range m.PubKeys {
-		p := funcs.Must(sdk.ValAddressFromBech32(address))
-		totalWeight = totalWeight.Add(m.Snapshot.GetParticipantWeight(p))
-	}
-
-	return totalWeight
+	return slices.Reduce(m.GetParticipants(), sdk.ZeroUint(), func(total sdk.Uint, p sdk.ValAddress) sdk.Uint {
+		return total.Add(m.Snapshot.GetParticipantWeight(p))
+	})
 }
 
 // ValidateBasic returns an error if the given key is invalid; nil otherwise

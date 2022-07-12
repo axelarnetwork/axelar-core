@@ -29,7 +29,7 @@ message KeygenSession {
   option (gogoproto.stable_marshaler) = true;
 
   Key key = 1 [ (gogoproto.nullable) = false ];
-  multisig.exported.v1beta1.KeygenState state = 2;
+  multisig.exported.v1beta1.MultisigState state = 2;
   utils.v1beta1.Threshold keygen_threshold = 3 [ (gogoproto.nullable) = false ];
   int64 expires_at = 4;
   int64 completed_at = 5;
@@ -37,7 +37,7 @@ message KeygenSession {
   int64 grace_period = 7;
 }
 
-message Sig {
+message MultiSig {
   option (gogoproto.stable_marshaler) = true;
 
   uint64 id = 1 [ (gogoproto.customname) = "ID" ];
@@ -57,9 +57,10 @@ message Sig {
 message SigningSession {
   option (gogoproto.stable_marshaler) = true;
 
-  Sig signature = 1 [ (gogoproto.nullable) = false ];
-  Key key = 2 [ (gogoproto.nullable) = false ];
-  int64 expires_at = 3;
-  int64 completed_at = 4;
-  int64 grace_period = 5;
+  MultiSig multi_sig = 1 [ (gogoproto.nullable) = false ];
+  multisig.exported.v1beta1.MultisigState state = 2;
+  Key key = 3 [ (gogoproto.nullable) = false ];
+  int64 expires_at = 4;
+  int64 completed_at = 5;
+  int64 grace_period = 6;
 }
