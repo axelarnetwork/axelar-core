@@ -69,6 +69,26 @@
       "from": "axelarnet",
       "to": "terra",
       "channel_id": "channel-11"
+    },
+    {
+      "from": "secret",
+      "to": "axelarnet",
+      "channel_id": "channel-20"
+    },
+    {
+      "from": "axelarnet",
+      "to": "secret",
+      "channel_id": "channel-12"
+    },
+    {
+      "from": "kujira",
+      "to": "axelarnet",
+      "channel_id": "channel-9"
+    },
+    {
+      "from": "axelarnet",
+      "to": "kujira",
+      "channel_id": "channel-14"
     }
   ],
   "testnet": [
@@ -111,6 +131,16 @@
       "from": "axelarnet",
       "to": "terra",
       "channel_id": "channel-23"
+    },
+    {
+      "from": "kujira",
+      "to": "axelarnet",
+      "channel_id": "channel-8"
+    },
+    {
+      "from": "axelarnet",
+      "to": "kujira",
+      "channel_id": "channel-19"
     }
   ]
 }

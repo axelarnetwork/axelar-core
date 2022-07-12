@@ -39,6 +39,16 @@
       "id": "terra",
       "name": "Terra",
       "image": "/images/chains/terra.png"
+    },
+    {
+      "id": "secret",
+      "name": "Secret",
+      "image": "/images/chains/secret.png"
+    },
+    {
+      "id": "kujira",
+      "name": "Kujira",
+      "image": "/images/chains/kujira.png"
     }
   ],
   "testnet": [
