@@ -40,9 +40,9 @@ By default the `setup-node.sh` script sets the home directory for your node as f
 
 | Network   | Home directory path   |
 | --------- | --------------------- |
-| mainnet   | `~/.axelar`           |
-| testnet   | `~/.axelar_testnet`   |
-| testnet-2 | `~/.axelar_testnet-2` |
+| mainnet   | `$HOME/.axelar`           |
+| testnet   | `$HOME/.axelar_testnet`   |
+| testnet-2 | `$HOME/.axelar_testnet-2` |
 
 On a fresh install `setup-node.sh` puts the following in your node's home directory:
 
