@@ -30,6 +30,7 @@ type Keeper struct {
 	cdc        codec.BinaryCodec
 	storeKey   sdk.StoreKey
 	paramSpace paramtypes.Subspace
+	sigRouter  types.SigRouter
 }
 
 // NewKeeper is the constructor for the keeper

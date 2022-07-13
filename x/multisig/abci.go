@@ -45,7 +45,10 @@ func handleSignings(ctx sdk.Context, k types.Keeper, rewarder types.Rewarder) {
 		k.DeleteSigningSession(ctx, signing.GetSigID())
 
 		if signing.State == exported.Completed {
-			k.SetSig(ctx, funcs.Must(signing.Result()))
+			sig := funcs.Must(signing.Result())
+
+			k.SetSig(ctx, sig)
+			funcs.MustNoErr(k.GetSigRouter().GetHandler(sig.Module).HandleCompleted(ctx, &sig, sig.GetMetadata()))
 
 			continue
 		}
@@ -55,6 +58,7 @@ func handleSignings(ctx sdk.Context, k types.Keeper, rewarder types.Rewarder) {
 			"sig_id", signing.GetSigID(),
 		)
 
+		funcs.MustNoErr(k.GetSigRouter().GetHandler(signing.MultiSig.Module).HandleFailed(ctx, signing.MultiSig.GetMetadata()))
 		slices.ForEach(signing.GetMissingParticipants(), rewarder.GetPool(ctx, types.ModuleName).ClearRewards)
 	}
 }

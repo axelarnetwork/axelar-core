@@ -17,6 +17,28 @@ import (
 	"github.com/axelarnetwork/utils/slices"
 )
 
+// SetSigRouter sets the sig router. It will panic if called more than once
+func (k *Keeper) SetSigRouter(router types.SigRouter) {
+	if k.sigRouter != nil {
+		panic("router already set")
+	}
+
+	k.sigRouter = router
+
+	// In order to avoid invalid or non-deterministic behavior, we seal the router immediately
+	// to prevent additional handlers from being registered after the keeper is initialized.
+	k.sigRouter.Seal()
+}
+
+// GetVoteRouter returns the sig router. If no router was set, it returns a (sealed) router with no handlers
+func (k Keeper) GetSigRouter() types.SigRouter {
+	if k.sigRouter == nil {
+		k.SetSigRouter(types.NewSigRouter())
+	}
+
+	return k.sigRouter
+}
+
 // GetSigningSessionsByExpiry returns all signing sessions that either expires at
 // or goes out of the grace period at the given block height
 func (k Keeper) GetSigningSessionsByExpiry(ctx sdk.Context, expiry int64) []types.SigningSession {
@@ -56,6 +78,10 @@ func (k Keeper) SetSig(ctx sdk.Context, sig types.MultiSig) {
 // Sign starts a signing session to sign the given payload's hash with the given
 // key ID
 func (k Keeper) Sign(ctx sdk.Context, keyID exported.KeyID, payload []byte, module string, moduleMetadata ...codec.ProtoMarshaler) error {
+	if !k.GetSigRouter().HasHandler(module) {
+		panic(fmt.Errorf("sig handler not registered for module %s", module))
+	}
+
 	key, ok := k.getKey(ctx, keyID)
 	if !ok {
 		return fmt.Errorf("key %s not found", keyID)

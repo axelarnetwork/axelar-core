@@ -214,6 +214,15 @@ func (m MultiSig) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
 	return unpacker.UnpackAny(m.ModuleMetadata, &data)
 }
 
+// GetMetadata returns the unpacked module metadata
+func (m MultiSig) GetMetadata() codec.ProtoMarshaler {
+	if m.ModuleMetadata == nil {
+		return nil
+	}
+
+	return m.ModuleMetadata.GetCachedValue().(codec.ProtoMarshaler)
+}
+
 func (m MultiSig) getParticipants() []sdk.ValAddress {
 	return sortAddresses(
 		slices.Map(maps.Keys(m.Sigs), func(a string) sdk.ValAddress { return funcs.Must(sdk.ValAddressFromBech32(a)) }),
