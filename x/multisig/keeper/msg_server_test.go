@@ -208,7 +208,7 @@ func TestMsgServer(t *testing.T) {
 				sigRouter := types.NewSigRouter().AddHandler(module, &exportedmock.SigHandlerMock{})
 				k.SetSigRouter(sigRouter)
 			}).
-			When("key is generated", func() {
+			When("key is generated and activated", func() {
 				pubKeyIndex := 0
 				key = types.Key{
 					ID:       keyID,
@@ -221,6 +221,7 @@ func TestMsgServer(t *testing.T) {
 					}),
 					SigningThreshold: utils.NewThreshold(2, 3),
 				}
+				key.Activate()
 
 				k.SetKey(ctx, key)
 			}).

@@ -21,8 +21,9 @@ message Key {
   snapshot.exported.v1beta1.Snapshot snapshot = 2
       [ (gogoproto.nullable) = false ];
   map<string, bytes> pub_keys = 3 [ (gogoproto.castvalue) = "PublicKey" ];
-  utils.v1beta1.Threshold signing_threshold = 5
+  utils.v1beta1.Threshold signing_threshold = 4
       [ (gogoproto.nullable) = false ];
+  bool is_active = 5;
 }
 
 message KeygenSession {
@@ -63,4 +64,16 @@ message SigningSession {
   google.protobuf.Any module_metadata = 9
       [ (cosmos_proto.accepts_interface) =
             "github.com/cosmos/codec/ProtoMarshaler" ];
+}
+
+message KeyEpoch {
+  uint64 epoch = 1;
+  string chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string key_id = 3 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
+  ];
 }

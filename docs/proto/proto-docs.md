@@ -273,6 +273,7 @@
 - [axelar/multisig/v1beta1/types.proto](#axelar/multisig/v1beta1/types.proto)
     - [Key](#axelar.multisig.v1beta1.Key)
     - [Key.PubKeysEntry](#axelar.multisig.v1beta1.Key.PubKeysEntry)
+    - [KeyEpoch](#axelar.multisig.v1beta1.KeyEpoch)
     - [KeygenSession](#axelar.multisig.v1beta1.KeygenSession)
     - [KeygenSession.IsPubKeyReceivedEntry](#axelar.multisig.v1beta1.KeygenSession.IsPubKeyReceivedEntry)
     - [MultiSig](#axelar.multisig.v1beta1.MultiSig)
@@ -4175,6 +4176,7 @@ Msg defines the multisig Msg service.
 | `snapshot` | [axelar.snapshot.exported.v1beta1.Snapshot](#axelar.snapshot.exported.v1beta1.Snapshot) |  |  |
 | `pub_keys` | [Key.PubKeysEntry](#axelar.multisig.v1beta1.Key.PubKeysEntry) | repeated |  |
 | `signing_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
+| `is_active` | [bool](#bool) |  |  |
 
 
 
@@ -4191,6 +4193,23 @@ Msg defines the multisig Msg service.
 | ----- | ---- | ----- | ----------- |
 | `key` | [string](#string) |  |  |
 | `value` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.KeyEpoch"></a>
+
+### KeyEpoch
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `epoch` | [uint64](#uint64) |  |  |
+| `chain` | [string](#string) |  |  |
+| `key_id` | [string](#string) |  |  |
 
 
 
