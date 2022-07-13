@@ -64,3 +64,11 @@ message SigningSession {
       [ (cosmos_proto.accepts_interface) =
             "github.com/cosmos/codec/ProtoMarshaler" ];
 }
+
+message KeyRotation {
+  string chain = 1
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  uint64 count = 2;
+  bool next_assigned = 3;
+}

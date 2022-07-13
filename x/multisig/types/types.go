@@ -8,6 +8,8 @@ import (
 
 	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
 const (
@@ -90,4 +92,9 @@ func sortAddresses[T sdk.Address](addrs []T) []T {
 	sort.SliceStable(sorted, func(i, j int) bool { return bytes.Compare(sorted[i].Bytes(), sorted[j].Bytes()) < 0 })
 
 	return sorted
+}
+
+// NewKeyRotation is the constructor for key rotation
+func NewKeyRotation(chain nexus.ChainName) KeyRotation {
+	return KeyRotation{Chain: chain}
 }

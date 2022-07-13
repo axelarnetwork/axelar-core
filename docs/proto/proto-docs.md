@@ -273,6 +273,7 @@
 - [axelar/multisig/v1beta1/types.proto](#axelar/multisig/v1beta1/types.proto)
     - [Key](#axelar.multisig.v1beta1.Key)
     - [Key.PubKeysEntry](#axelar.multisig.v1beta1.Key.PubKeysEntry)
+    - [KeyRotation](#axelar.multisig.v1beta1.KeyRotation)
     - [KeygenSession](#axelar.multisig.v1beta1.KeygenSession)
     - [KeygenSession.IsPubKeyReceivedEntry](#axelar.multisig.v1beta1.KeygenSession.IsPubKeyReceivedEntry)
     - [MultiSig](#axelar.multisig.v1beta1.MultiSig)
@@ -4191,6 +4192,23 @@ Msg defines the multisig Msg service.
 | ----- | ---- | ----- | ----------- |
 | `key` | [string](#string) |  |  |
 | `value` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.KeyRotation"></a>
+
+### KeyRotation
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `count` | [uint64](#uint64) |  |  |
+| `next_assigned` | [bool](#bool) |  |  |
 
 
 

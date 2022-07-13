@@ -19,6 +19,8 @@ var (
 	sigPrefix           = utils.KeyFromInt(4)
 	expiryKeygenPrefix  = utils.KeyFromInt(5)
 	expirySigningPrefix = utils.KeyFromInt(6)
+	keyRotationPrefix   = utils.KeyFromInt(7)
+	keyIDPrefix         = utils.KeyFromInt(8)
 
 	signingSessionCountKey = utils.KeyFromInt(100)
 )
