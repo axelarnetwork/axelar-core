@@ -2,6 +2,7 @@ package multisig
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -12,7 +13,6 @@ import (
 
 // ProcessKeygenStarted handles event keygen started
 func (mgr *Mgr) ProcessKeygenStarted(event *types.KeygenStarted) error {
-
 	if !slices.Any(event.Participants, mgr.isParticipant) {
 		return nil
 	}
@@ -25,7 +25,8 @@ func (mgr *Mgr) ProcessKeygenStarted(event *types.KeygenStarted) error {
 		return err
 	}
 
-	sig, err := mgr.sign(keyUID, []byte(keyUID), partyUID, pubKey)
+	payloadHash := sha256.Sum256([]byte(keyUID))
+	sig, err := mgr.sign(keyUID, payloadHash[:], partyUID, pubKey)
 	if err != nil {
 		return err
 	}
