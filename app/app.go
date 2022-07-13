@@ -102,6 +102,9 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm"
 	evmKeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
+	"github.com/axelarnetwork/axelar-core/x/multisig"
+	multisigKeeper "github.com/axelarnetwork/axelar-core/x/multisig/keeper"
+	multisigTypes "github.com/axelarnetwork/axelar-core/x/multisig/types"
 	"github.com/axelarnetwork/axelar-core/x/nexus"
 	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	nexusTypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
@@ -161,6 +164,7 @@ var (
 		ibc.AppModuleBasic{},
 		transfer.AppModuleBasic{},
 
+		multisig.AppModuleBasic{},
 		tss.AppModuleBasic{},
 		vote.AppModuleBasic{},
 		evm.AppModuleBasic{},
@@ -264,6 +268,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		voteTypes.StoreKey,
 		evmTypes.StoreKey,
 		snapTypes.StoreKey,
+		multisigTypes.StoreKey,
 		tssTypes.StoreKey,
 		nexusTypes.StoreKey,
 		axelarnetTypes.StoreKey,
@@ -374,6 +379,9 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	rewardK := rewardKeeper.NewKeeper(
 		appCodec, keys[rewardTypes.StoreKey], app.getSubspace(rewardTypes.ModuleName), bankK, distrK, stakingK,
 	)
+	multisigK := multisigKeeper.NewKeeper(
+		appCodec, keys[multisigTypes.StoreKey], app.getSubspace(multisigTypes.ModuleName),
+	)
 	tssK := tssKeeper.NewKeeper(
 		appCodec, keys[tssTypes.StoreKey], app.getSubspace(tssTypes.ModuleName), slashingK, rewardK,
 	)
@@ -418,7 +426,9 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	}
 
 	if upgradeInfo.Name == upgradeName && !upgradeK.IsSkipHeight(upgradeInfo.Height) {
-		storeUpgrades := store.StoreUpgrades{}
+		storeUpgrades := store.StoreUpgrades{
+			Added: []string{multisigTypes.ModuleName},
+		}
 
 		// configure store loader that checks if version == upgradeHeight and applies store upgrades
 		app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
@@ -478,6 +488,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		feegrantmodule.NewAppModule(appCodec, accountK, bankK, feegrantK, app.interfaceRegistry),
 
 		snapshot.NewAppModule(snapK),
+		multisig.NewAppModule(multisigK, stakingK, slashingK, snapK, rewardK),
 		tss.NewAppModule(tssK, snapK, votingK, nexusK, stakingK, rewardK),
 		vote.NewAppModule(votingK),
 		nexus.NewAppModule(nexusK, snapK, stakingK, axelarnetK, evmK, rewardK),
@@ -515,6 +526,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		rewardTypes.ModuleName,
 		nexusTypes.ModuleName,
 		permissionTypes.ModuleName,
+		multisigTypes.ModuleName,
 		tssTypes.ModuleName,
 		evmTypes.ModuleName,
 		snapTypes.ModuleName,
@@ -541,6 +553,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		vestingtypes.ModuleName,
 
 		// axelar custom modules
+		multisigTypes.ModuleName,
 		tssTypes.ModuleName,
 		evmTypes.ModuleName,
 		nexusTypes.ModuleName,
@@ -575,6 +588,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		vestingtypes.ModuleName,
 
 		snapTypes.ModuleName,
+		multisigTypes.ModuleName,
 		tssTypes.ModuleName,
 		evmTypes.ModuleName,
 		nexusTypes.ModuleName,
@@ -654,6 +668,7 @@ func initParamsKeeper(appCodec codec.Codec, legacyAmino *codec.LegacyAmino, key,
 	paramsKeeper.Subspace(ibchost.ModuleName)
 
 	paramsKeeper.Subspace(snapTypes.ModuleName)
+	paramsKeeper.Subspace(multisigTypes.ModuleName)
 	paramsKeeper.Subspace(tssTypes.ModuleName)
 	paramsKeeper.Subspace(nexusTypes.ModuleName)
 	paramsKeeper.Subspace(axelarnetTypes.ModuleName)

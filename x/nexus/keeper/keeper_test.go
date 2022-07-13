@@ -280,7 +280,7 @@ func makeRandomChain(chainName string) exported.Chain {
 }
 
 func makeRandomDenom() string {
-	d := rand.Strings(3, 3).WithAlphabet([]rune("abcdefghijklmnopqrstuvwxyz")).Take(1)
+	d := rand.Strings(3, 4).WithAlphabet([]rune("abcdefghijklmnopqrstuvwxyz")).Take(1)
 	return d[0]
 }
 

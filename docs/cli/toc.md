@@ -253,6 +253,8 @@
         - [upgrade \[client-identifier\] \[path/to/client_state.json\] \[path/to/consensus_state.json\] \[upgrade-client-proof\] \[upgrade-consensus-state-proof\]](axelard_tx_ibc_client_upgrade.md)	 - upgrade an IBC client
     - [ibc-transfer](axelard_tx_ibc-transfer.md)	 - IBC fungible token transfer transaction subcommands
       - [transfer \[src-port\] \[src-channel\] \[receiver\] \[amount\]](axelard_tx_ibc-transfer_transfer.md)	 - Transfer a fungible token through IBC
+    - [multisig](axelard_tx_multisig.md)	 - multisig transactions subcommands
+      - [start-keygen](axelard_tx_multisig_start-keygen.md)	 - Initiate key generation protocol
     - [multisign \[file\] \[name\] \[\[signature\]...\]](axelard_tx_multisign.md)	 - Generate multisig signatures for transactions generated offline
     - [multisign-batch \[file\] \[name\] \[\[signature-file\]...\]](axelard_tx_multisign-batch.md)	 - Assemble multisig transactions in batch from batch signatures
     - [nexus](axelard_tx_nexus.md)	 - nexus transactions subcommands

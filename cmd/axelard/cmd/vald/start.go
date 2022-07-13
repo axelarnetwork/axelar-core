@@ -20,6 +20,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -32,13 +33,17 @@ import (
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/config"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm"
 	evmRPC "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm/rpc"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/multisig"
+	grpc "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/tofnd_grpc"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/tss"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
+	multisigTypes "github.com/axelarnetwork/axelar-core/x/multisig/types"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	tmEvents "github.com/axelarnetwork/tm-events/events"
 	"github.com/axelarnetwork/tm-events/pubsub"
 	"github.com/axelarnetwork/tm-events/tendermint"
+	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/jobs"
 )
 
@@ -202,6 +207,7 @@ func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, ax
 	}
 
 	evmMgr := createEVMMgr(axelarCfg, clientCtx, bc, logger, cdc)
+	multisigMgr := createMultisigMgr(bc, clientCtx, axelarCfg, logger, valAddr)
 
 	nodeHeight, err := waitTillNetworkSync(axelarCfg, robustClient, logger)
 	if err != nil {
@@ -223,6 +229,7 @@ func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, ax
 	subscribe := func(eventType, module, action string) <-chan tmEvents.ABCIEventWithHeight {
 		return eventBus.Subscribe(func(e tmEvents.ABCIEventWithHeight) bool {
 			event := tmEvents.Map(e)
+
 			return event.Type == eventType && event.Attributes[sdk.AttributeKeyModule] == module && event.Attributes[sdk.AttributeKeyAction] == action
 		})
 	}
@@ -249,6 +256,8 @@ func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, ax
 	evmTokConf := subscribe(evmTypes.EventTypeTokenConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
 	evmTraConf := subscribe(evmTypes.EventTypeTransferKeyConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
 	evmGatewayTxConf := subscribe(evmTypes.EventTypeGatewayTxConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
+
+	multisigKeygen := eventBus.Subscribe(eventFilter[*multisigTypes.KeygenStarted]())
 
 	eventCtx, cancelEventCtx := context.WithCancel(context.Background())
 	mgr := jobs.NewMgr(eventCtx)
@@ -292,6 +301,7 @@ func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, ax
 		createJob(evmTokConf, evmMgr.ProcessTokenConfirmation, cancelEventCtx, logger),
 		createJob(evmTraConf, evmMgr.ProcessTransferKeyConfirmation, cancelEventCtx, logger),
 		createJob(evmGatewayTxConf, evmMgr.ProcessGatewayTxConfirmation, cancelEventCtx, logger),
+		createJobTyped(multisigKeygen, multisigMgr.ProcessKeygenStarted, cancelEventCtx, logger),
 	}
 
 	mgr.AddJobs(js...)
@@ -314,7 +324,27 @@ func createJob(sub <-chan tmEvents.ABCIEventWithHeight, processor func(event tmE
 		}
 		return nil
 	}
+}
 
+func createJobTyped[T proto.Message](sub <-chan tmEvents.ABCIEventWithHeight, processor func(event T) error, cancel context.CancelFunc, logger log.Logger) jobs.Job {
+	return func(ctx context.Context) error {
+		processWithLog := func(e tmEvents.ABCIEventWithHeight) {
+			event := funcs.Must(sdk.ParseTypedEvent(e.Event)).(T)
+			err := processor(event)
+			if err != nil {
+				logger.Error(err.Error())
+			}
+		}
+
+		consume := tmEvents.Consume(sub, processWithLog)
+		err := consume(ctx)
+		if err != nil {
+			cancel()
+			return err
+		}
+
+		return nil
+	}
 }
 
 // Wait until the node has synced with the network and return the node height
@@ -381,6 +411,16 @@ func createRefundableBroadcaster(txf tx.Factory, ctx sdkClient.Context, axelarCf
 	broadcaster = broadcast.SuppressExecutionErrs(broadcaster, logger)
 
 	return broadcaster
+}
+
+func createMultisigMgr(broadcaster broadcast.Broadcaster, cliCtx client.Context, axelarCfg config.ValdConfig, logger log.Logger, valAddr string) *multisig.Mgr {
+	conn, err := grpc.Connect(axelarCfg.TssConfig.Host, axelarCfg.TssConfig.Port, axelarCfg.TssConfig.DialTimeout, logger)
+	if err != nil {
+		panic(sdkerrors.Wrap(err, "failed to create multisig manager"))
+	}
+	logger.Debug("successful connection to tofnd gRPC server")
+
+	return multisig.NewMgr(tofnd.NewMultisigClient(conn), cliCtx, funcs.Must(sdk.ValAddressFromBech32(valAddr)), logger, broadcaster, timeout)
 }
 
 func createTSSMgr(broadcaster broadcast.Broadcaster, cliCtx client.Context, axelarCfg config.ValdConfig, logger log.Logger, valAddr string, cdc *codec.LegacyAmino) *tss.Mgr {
@@ -455,3 +495,14 @@ func (f RWFile) ReadAll() ([]byte, error) { return os.ReadFile(f.path) }
 
 // WriteAll writes the given bytes to a file. Creates a new fille if it does not exist, overwrites the previous content otherwise.
 func (f RWFile) WriteAll(bz []byte) error { return os.WriteFile(f.path, bz, RW) }
+
+func eventFilter[T proto.Message]() func(e tmEvents.ABCIEventWithHeight) bool {
+	return func(e tmEvents.ABCIEventWithHeight) bool {
+		typedEvent, err := sdk.ParseTypedEvent(e.Event)
+		if err != nil {
+			return false
+		}
+
+		return proto.MessageName(typedEvent) == proto.MessageName(*new(T))
+	}
+}

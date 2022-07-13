@@ -46,4 +46,7 @@ func TestKey(t *testing.T) {
 		assert.True(t, compKey1.Equals(compKey2))
 	}).Repeat(repeats))
 
+	t.Run("key from integer", func(t *testing.T) {
+		assert.Equal(t, []byte{0, 0, 0, 0, 0, 0, 0, 0x10}, KeyFromInt(16).AsKey())
+	})
 }

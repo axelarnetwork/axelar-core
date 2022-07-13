@@ -240,7 +240,13 @@
     - [QueryService](#axelar.evm.v1beta1.QueryService)
   
 - [axelar/multisig/exported/v1beta1/types.proto](#axelar/multisig/exported/v1beta1/types.proto)
-    - [KeygenState](#axelar.multisig.exported.v1beta1.KeygenState)
+    - [MultisigState](#axelar.multisig.exported.v1beta1.MultisigState)
+  
+- [axelar/multisig/v1beta1/events.proto](#axelar/multisig/v1beta1/events.proto)
+    - [KeygenCompleted](#axelar.multisig.v1beta1.KeygenCompleted)
+    - [KeygenExpired](#axelar.multisig.v1beta1.KeygenExpired)
+    - [KeygenStarted](#axelar.multisig.v1beta1.KeygenStarted)
+    - [PubKeySubmitted](#axelar.multisig.v1beta1.PubKeySubmitted)
   
 - [axelar/multisig/v1beta1/params.proto](#axelar/multisig/v1beta1/params.proto)
     - [Params](#axelar.multisig.v1beta1.Params)
@@ -248,20 +254,23 @@
 - [axelar/multisig/v1beta1/genesis.proto](#axelar/multisig/v1beta1/genesis.proto)
     - [GenesisState](#axelar.multisig.v1beta1.GenesisState)
   
-- [axelar/multisig/v1beta1/service.proto](#axelar/multisig/v1beta1/service.proto)
-    - [MsgService](#axelar.multisig.v1beta1.MsgService)
-  
 - [axelar/multisig/v1beta1/tx.proto](#axelar/multisig/v1beta1/tx.proto)
     - [StartKeygenRequest](#axelar.multisig.v1beta1.StartKeygenRequest)
     - [StartKeygenResponse](#axelar.multisig.v1beta1.StartKeygenResponse)
     - [SubmitPubKeyRequest](#axelar.multisig.v1beta1.SubmitPubKeyRequest)
     - [SubmitPubKeyResponse](#axelar.multisig.v1beta1.SubmitPubKeyResponse)
   
+- [axelar/multisig/v1beta1/service.proto](#axelar/multisig/v1beta1/service.proto)
+    - [MsgService](#axelar.multisig.v1beta1.MsgService)
+  
 - [axelar/multisig/v1beta1/types.proto](#axelar/multisig/v1beta1/types.proto)
     - [Key](#axelar.multisig.v1beta1.Key)
     - [Key.PubKeysEntry](#axelar.multisig.v1beta1.Key.PubKeysEntry)
     - [KeygenSession](#axelar.multisig.v1beta1.KeygenSession)
     - [KeygenSession.IsPubKeyReceivedEntry](#axelar.multisig.v1beta1.KeygenSession.IsPubKeyReceivedEntry)
+    - [MultiSig](#axelar.multisig.v1beta1.MultiSig)
+    - [MultiSig.SigsEntry](#axelar.multisig.v1beta1.MultiSig.SigsEntry)
+    - [SigningSession](#axelar.multisig.v1beta1.SigningSession)
   
 - [axelar/nexus/v1beta1/params.proto](#axelar/nexus/v1beta1/params.proto)
     - [Params](#axelar.nexus.v1beta1.Params)
@@ -3759,17 +3768,100 @@ QueryService defines the gRPC querier service.
  <!-- end messages -->
 
 
-<a name="axelar.multisig.exported.v1beta1.KeygenState"></a>
+<a name="axelar.multisig.exported.v1beta1.MultisigState"></a>
 
-### KeygenState
+### MultisigState
 
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| KEYGEN_STATE_UNSPECIFIED | 0 |  |
-| KEYGEN_STATE_PENDING | 1 |  |
-| KEYGEN_STATE_COMPLETED | 2 |  |
+| MULTISIG_STATE_UNSPECIFIED | 0 |  |
+| MULTISIG_STATE_PENDING | 1 |  |
+| MULTISIG_STATE_COMPLETED | 2 |  |
 
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="axelar/multisig/v1beta1/events.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/multisig/v1beta1/events.proto
+
+
+
+<a name="axelar.multisig.v1beta1.KeygenCompleted"></a>
+
+### KeygenCompleted
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `module` | [string](#string) |  |  |
+| `key_id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.KeygenExpired"></a>
+
+### KeygenExpired
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `module` | [string](#string) |  |  |
+| `key_id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.KeygenStarted"></a>
+
+### KeygenStarted
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `module` | [string](#string) |  |  |
+| `key_id` | [string](#string) |  |  |
+| `participants` | [bytes](#bytes) | repeated |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.PubKeySubmitted"></a>
+
+### PubKeySubmitted
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `module` | [string](#string) |  |  |
+| `key_id` | [string](#string) |  |  |
+| `participant` | [bytes](#bytes) |  |  |
+| `pub_key` | [bytes](#bytes) |  |  |
+
+
+
+
+
+ <!-- end messages -->
 
  <!-- end enums -->
 
@@ -3797,6 +3889,7 @@ Params represent the genesis parameters for the module
 | `keygen_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
 | `signing_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
 | `keygen_timeout` | [int64](#int64) |  |  |
+| `keygen_grace_period` | [int64](#int64) |  |  |
 
 
 
@@ -3838,31 +3931,6 @@ GenesisState represents the genesis state
  <!-- end enums -->
 
  <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
-<a name="axelar/multisig/v1beta1/service.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## axelar/multisig/v1beta1/service.proto
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
-
-<a name="axelar.multisig.v1beta1.MsgService"></a>
-
-### MsgService
-Msg defines the multisig Msg service.
-
-| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
-| ----------- | ------------ | ------------- | ------------| ------- | -------- |
 
  <!-- end services -->
 
@@ -3938,6 +4006,33 @@ Msg defines the multisig Msg service.
 
 
 
+<a name="axelar/multisig/v1beta1/service.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/multisig/v1beta1/service.proto
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+
+<a name="axelar.multisig.v1beta1.MsgService"></a>
+
+### MsgService
+Msg defines the multisig Msg service.
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `StartKeygen` | [StartKeygenRequest](#axelar.multisig.v1beta1.StartKeygenRequest) | [StartKeygenResponse](#axelar.multisig.v1beta1.StartKeygenResponse) |  | POST|/axelar/multisig/keygen|
+| `SubmitPubKey` | [SubmitPubKeyRequest](#axelar.multisig.v1beta1.SubmitPubKeyRequest) | [SubmitPubKeyResponse](#axelar.multisig.v1beta1.SubmitPubKeyResponse) |  | POST|/axelar/multisig/submit_pk|
+
+ <!-- end services -->
+
+
+
 <a name="axelar/multisig/v1beta1/types.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -3988,11 +4083,12 @@ Msg defines the multisig Msg service.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `key` | [Key](#axelar.multisig.v1beta1.Key) |  |  |
-| `state` | [axelar.multisig.exported.v1beta1.KeygenState](#axelar.multisig.exported.v1beta1.KeygenState) |  |  |
+| `state` | [axelar.multisig.exported.v1beta1.MultisigState](#axelar.multisig.exported.v1beta1.MultisigState) |  |  |
 | `keygen_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
 | `expires_at` | [int64](#int64) |  |  |
 | `completed_at` | [int64](#int64) |  |  |
 | `is_pub_key_received` | [KeygenSession.IsPubKeyReceivedEntry](#axelar.multisig.v1beta1.KeygenSession.IsPubKeyReceivedEntry) | repeated |  |
+| `grace_period` | [int64](#int64) |  |  |
 
 
 
@@ -4009,6 +4105,62 @@ Msg defines the multisig Msg service.
 | ----- | ---- | ----- | ----------- |
 | `key` | [string](#string) |  |  |
 | `value` | [bool](#bool) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.MultiSig"></a>
+
+### MultiSig
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [uint64](#uint64) |  |  |
+| `key_id` | [string](#string) |  |  |
+| `payload_hash` | [bytes](#bytes) |  |  |
+| `sigs` | [MultiSig.SigsEntry](#axelar.multisig.v1beta1.MultiSig.SigsEntry) | repeated |  |
+| `module` | [string](#string) |  |  |
+| `module_metadata` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.MultiSig.SigsEntry"></a>
+
+### MultiSig.SigsEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key` | [string](#string) |  |  |
+| `value` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.SigningSession"></a>
+
+### SigningSession
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `multi_sig` | [MultiSig](#axelar.multisig.v1beta1.MultiSig) |  |  |
+| `state` | [axelar.multisig.exported.v1beta1.MultisigState](#axelar.multisig.exported.v1beta1.MultisigState) |  |  |
+| `key` | [Key](#axelar.multisig.v1beta1.Key) |  |  |
+| `expires_at` | [int64](#int64) |  |  |
+| `completed_at` | [int64](#int64) |  |  |
+| `grace_period` | [int64](#int64) |  |  |
 
 
 

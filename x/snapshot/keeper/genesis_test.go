@@ -15,7 +15,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
-	exportedmock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types/mock"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
@@ -24,11 +23,11 @@ import (
 
 const bondDenom = "test"
 
-func setup() (sdk.Context, Keeper, *mock.StakingKeeperMock, *mock.BankKeeperMock, *exportedmock.SlasherMock, *exportedmock.TssMock) {
+func setup() (sdk.Context, Keeper, *mock.StakingKeeperMock, *mock.BankKeeperMock, *mock.SlasherMock, *mock.TssMock) {
 	staking := mock.StakingKeeperMock{}
 	bank := mock.BankKeeperMock{}
-	slasher := exportedmock.SlasherMock{}
-	tss := exportedmock.TssMock{}
+	slasher := mock.SlasherMock{}
+	tss := mock.TssMock{}
 
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	encodingConfig := params.MakeEncodingConfig()

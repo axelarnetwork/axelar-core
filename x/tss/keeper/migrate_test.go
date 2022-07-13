@@ -15,7 +15,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	snapMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
+	mock2 "github.com/axelarnetwork/axelar-core/x/snapshot/types/mock"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/keeper"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -31,7 +31,7 @@ func setup() (codec.Codec, sdk.Context, keeper.Keeper) {
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	subspace := paramsTypes.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("storeKey"), sdk.NewKVStoreKey("tstorekey"), "tss")
 
-	k := keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("tss"), subspace, &snapMock.SlasherMock{}, &mock.RewarderMock{})
+	k := keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("tss"), subspace, &mock2.SlasherMock{}, &mock.RewarderMock{})
 	k.SetParams(ctx, types.DefaultParams())
 
 	return encCfg.Codec, ctx, k

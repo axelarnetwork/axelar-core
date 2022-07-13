@@ -8,6 +8,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/tendermint/tendermint/libs/log"
+	"golang.org/x/exp/constraints"
+
+	"github.com/axelarnetwork/utils/convert"
 )
 
 // DefaultDelimiter represents the default delimiter used for the KV store keys
@@ -138,6 +141,11 @@ func KeyFromBz(k []byte) StringKey {
 		prefix: nil,
 		key:    k,
 	}
+}
+
+// KeyFromInt returns a structured key
+func KeyFromInt[T constraints.Integer](k T) StringKey {
+	return KeyFromBz(convert.IntToBytes(k))
 }
 
 // AsKey returns the byte representation of the key. If given, uses a delimiter string to separate prefixes (default is "_")

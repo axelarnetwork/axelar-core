@@ -33,14 +33,14 @@ type Keeper struct {
 	storeKey sdk.StoreKey
 	staking  types.StakingKeeper
 	bank     types.BankKeeper
-	slasher  exported.Slasher
-	tss      exported.Tss
+	slasher  types.Slasher
+	tss      types.Tss
 	cdc      codec.BinaryCodec
 	params   params.Subspace
 }
 
 // NewKeeper creates a new keeper for the staking module
-func NewKeeper(cdc codec.BinaryCodec, key sdk.StoreKey, paramSpace params.Subspace, staking types.StakingKeeper, bank types.BankKeeper, slasher exported.Slasher, tss exported.Tss) Keeper {
+func NewKeeper(cdc codec.BinaryCodec, key sdk.StoreKey, paramSpace params.Subspace, staking types.StakingKeeper, bank types.BankKeeper, slasher types.Slasher, tss types.Tss) Keeper {
 	return Keeper{
 		storeKey: key,
 		cdc:      cdc,
