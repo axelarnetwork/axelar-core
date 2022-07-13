@@ -16,6 +16,7 @@ func BeginBlocker(sdk.Context, abci.RequestBeginBlock) {}
 // EndBlocker is called at the end of every block, process external chain voting inflation
 func EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock, k types.Keeper, rewarder types.Rewarder) ([]abci.ValidatorUpdate, error) {
 	handleKeygens(ctx, k, rewarder)
+	handleSignings(ctx, k, rewarder)
 
 	return nil, nil
 }
@@ -36,5 +37,24 @@ func handleKeygens(ctx sdk.Context, k types.Keeper, rewarder types.Rewarder) {
 		)
 
 		slices.ForEach(keygen.GetMissingParticipants(), rewarder.GetPool(ctx, types.ModuleName).ClearRewards)
+	}
+}
+
+func handleSignings(ctx sdk.Context, k types.Keeper, rewarder types.Rewarder) {
+	for _, signing := range k.GetSigningSessionsByExpiry(ctx, ctx.BlockHeight()) {
+		k.DeleteSigningSession(ctx, signing.GetSigID())
+
+		if signing.State == exported.Completed {
+			k.SetSig(ctx, funcs.Must(signing.Result()))
+
+			continue
+		}
+
+		funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewSigningExpired(signing.GetSigID())))
+		k.Logger(ctx).Info("signing session expired",
+			"sig_id", signing.GetSigID(),
+		)
+
+		slices.ForEach(signing.GetMissingParticipants(), rewarder.GetPool(ctx, types.ModuleName).ClearRewards)
 	}
 }

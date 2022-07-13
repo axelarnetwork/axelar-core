@@ -249,6 +249,7 @@
     - [PubKeySubmitted](#axelar.multisig.v1beta1.PubKeySubmitted)
     - [SignatureSubmitted](#axelar.multisig.v1beta1.SignatureSubmitted)
     - [SigningCompleted](#axelar.multisig.v1beta1.SigningCompleted)
+    - [SigningExpired](#axelar.multisig.v1beta1.SigningExpired)
     - [SigningStarted](#axelar.multisig.v1beta1.SigningStarted)
     - [SigningStarted.PubKeysEntry](#axelar.multisig.v1beta1.SigningStarted.PubKeysEntry)
   
@@ -3889,6 +3890,22 @@ QueryService defines the gRPC querier service.
 <a name="axelar.multisig.v1beta1.SigningCompleted"></a>
 
 ### SigningCompleted
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `module` | [string](#string) |  |  |
+| `sig_id` | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.SigningExpired"></a>
+
+### SigningExpired
 
 
 
