@@ -12,7 +12,7 @@ import (
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
-//go:generate moq -pkg mock -out ./mock/expected_keepers.go . Permission
+//go:generate moq -pkg mock -out ./mock/expected_keepers.go . Permission Staking
 
 // Tss provides access to the tss functionality
 type Tss interface {
