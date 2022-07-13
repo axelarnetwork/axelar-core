@@ -122,7 +122,7 @@ func TestNewBlockHeightKVQueue(t *testing.T) {
 		ctx, cdc := setup()
 		store := NewNormalizedStore(ctx.KVStore(sdk.NewKVStoreKey(stringGen.Next())), cdc)
 
-		itemCount := rand.I64Between(10, 1000)
+		itemCount := rand.I64Between(10, 100)
 		items := make([]string, itemCount)
 
 		for i := 0; i < int(itemCount); i++ {
@@ -150,7 +150,7 @@ func TestNewBlockHeightKVQueue(t *testing.T) {
 		ctx, cdc := setup()
 		store := NewNormalizedStore(ctx.KVStore(sdk.NewKVStoreKey(stringGen.Next())), cdc)
 
-		itemCount := rand.I64Between(10, 1000)
+		itemCount := rand.I64Between(10, 100)
 		items := make([]string, itemCount)
 
 		for i := 0; i < int(itemCount); i++ {
@@ -190,7 +190,7 @@ func TestNewSequenceKVQueue(t *testing.T) {
 	t.Run("enqueue within limit and dequeue", testutils.Func(func(t *testing.T) {
 		ctx, cdc := setup()
 
-		queueSize := rand.I64Between(10, 1000)
+		queueSize := rand.I64Between(10, 100)
 		itemCount := uint64(rand.I64Between(1, queueSize))
 		items := make([]string, itemCount)
 
@@ -219,7 +219,7 @@ func TestNewSequenceKVQueue(t *testing.T) {
 	t.Run("peek ith item, where i is smaller than queue size", testutils.Func(func(t *testing.T) {
 		ctx, cdc := setup()
 
-		queueSize := rand.I64Between(10, 1000)
+		queueSize := rand.I64Between(10, 100)
 		itemCount := rand.I64Between(1, queueSize)
 		items := make([]string, itemCount)
 
@@ -250,7 +250,7 @@ func TestNewSequenceKVQueue(t *testing.T) {
 	t.Run("dequeue the last item", testutils.Func(func(t *testing.T) {
 		ctx, cdc := setup()
 
-		queueSize := rand.I64Between(10, 1000)
+		queueSize := rand.I64Between(10, 100)
 		itemCount := rand.I64Between(1, queueSize)
 		items := make([]string, itemCount)
 

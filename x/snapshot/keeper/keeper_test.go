@@ -3,6 +3,7 @@ package keeper_test
 import (
 	"bytes"
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 
@@ -27,7 +28,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	utilstestutils "github.com/axelarnetwork/axelar-core/utils/testutils"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
-	snapshotMock "github.com/axelarnetwork/axelar-core/x/snapshot/exported/mock"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
 	keeperMock "github.com/axelarnetwork/axelar-core/x/snapshot/keeper/mock"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
@@ -87,7 +87,7 @@ func TestSnapshots(t *testing.T) {
 
 			snapSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
 
-			slashingKeeper := &snapshotMock.SlasherMock{
+			slashingKeeper := &mock.SlasherMock{
 				GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (slashingtypes.ValidatorSigningInfo, bool) {
 					newInfo := slashingtypes.NewValidatorSigningInfo(
 						address,
@@ -103,7 +103,7 @@ func TestSnapshots(t *testing.T) {
 				SignedBlocksWindowFunc: func(sdk.Context) int64 { return 100 },
 			}
 
-			tssMock := &snapshotMock.TssMock{
+			tssMock := &mock.TssMock{
 				HasMissedTooManyBlocksFunc: func(sdk.Context, sdk.ConsAddress) (bool, error) {
 					return false, nil
 				},
@@ -187,7 +187,7 @@ func TestKeeper_RegisterProxy(t *testing.T) {
 			},
 		}
 
-		snapshotKeeper = keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("staking"), snapSubspace, staker, bank, &snapshotMock.SlasherMock{}, &snapshotMock.TssMock{})
+		snapshotKeeper = keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("staking"), snapSubspace, staker, bank, &mock.SlasherMock{}, &mock.TssMock{})
 		snapshotKeeper.SetParams(ctx, types.DefaultParams())
 	}
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
@@ -263,7 +263,7 @@ func TestKeeper_DeregisterProxy(t *testing.T) {
 			},
 		}
 
-		snapshotKeeper = keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("staking"), snapSubspace, staker, bank, &snapshotMock.SlasherMock{}, &snapshotMock.TssMock{})
+		snapshotKeeper = keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("staking"), snapSubspace, staker, bank, &mock.SlasherMock{}, &mock.TssMock{})
 		snapshotKeeper.SetParams(ctx, types.DefaultParams())
 
 		if err := snapshotKeeper.ActivateProxy(ctx, principalAddress, expectedProxy); err != nil {
@@ -326,7 +326,7 @@ func TestKeeper(t *testing.T) {
 		subspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
 
 		staking = &mock.StakingKeeperMock{}
-		k = keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("snapshot"), subspace, staking, &mock.BankKeeperMock{}, &snapshotMock.SlasherMock{}, &snapshotMock.TssMock{})
+		k = keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("snapshot"), subspace, staking, &mock.BankKeeperMock{}, &mock.SlasherMock{}, &mock.TssMock{})
 		k.SetParams(ctx, types.DefaultParams())
 	})
 
@@ -446,7 +446,7 @@ func TestKeeper(t *testing.T) {
 			When2(whenAllParamsAreGood).
 			When("threshold cannot be met", func() {
 				filterFunc = func(v exported.ValidatorI) bool { return v.GetConsensusPower(sdk.OneInt()) > 90 }
-				threshold = utils.NewThreshold(955, 5050)
+				threshold = utils.NewThreshold(956, 5050)
 			}).
 			Then("should return an error", func(t *testing.T) {
 				_, err := k.CreateSnapshot(ctx, candidates, filterFunc, weightFunc, threshold)
@@ -454,6 +454,26 @@ func TestKeeper(t *testing.T) {
 				assert.ErrorContains(t, err, "cannot be met")
 			}).
 			Run(t)
+
+		givenKeeper.
+			When2(whenAllParamsAreGood).
+			When("weight func returns zero weights", func() {
+				once := &sync.Once{}
+				weightFunc = func(w sdk.Uint) sdk.Uint {
+					once.Do(func() { w = sdk.ZeroUint() })
+					return w
+				}
+			}).
+			Then("don't include validators with zero weight in snapshot", func(t *testing.T) {
+				s, err := k.CreateSnapshot(ctx, candidates, filterFunc, weightFunc, threshold)
+
+				assert.NoError(t, err)
+				participantsWithNonZeroWeights := slices.Map(validators[1:], func(v stakingtypes.ValidatorI) sdk.ValAddress {
+					return v.GetOperator()
+				})
+				assert.ElementsMatch(t, participantsWithNonZeroWeights, slices.Map(maps.Values(s.Participants),
+					func(p exported.Participant) sdk.ValAddress { return p.Address }))
+			}).Run(t)
 	})
 }
 

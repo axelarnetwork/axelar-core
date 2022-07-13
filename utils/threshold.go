@@ -17,8 +17,8 @@ func NewThreshold(numerator, denominator int64) Threshold {
 	return Threshold{Numerator: numerator, Denominator: denominator}
 }
 
-// SimpleString returns a simple string representation of the threshold
-func (m Threshold) SimpleString() string {
+// String returns a string representation of the threshold
+func (m Threshold) String() string {
 	return fmt.Sprintf("%d/%d", m.Numerator, m.Denominator)
 }
 

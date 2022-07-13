@@ -4,26 +4,35 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	"github.com/gogo/protobuf/proto"
+	"golang.org/x/exp/maps"
 
 	"github.com/axelarnetwork/axelar-core/utils"
-	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/utils/slices"
 )
 
-//go:generate moq -out ./mock/types.go -pkg mock . SDKValidator Snapshotter Slasher Tss ValidatorI
+//go:generate moq -out ./mock/types.go -pkg mock . SDKValidator Snapshotter ValidatorI
+
+// QuadraticWeightFunc returns floor(sqrt(consensusPower)) as the weight
+func QuadraticWeightFunc(consensusPower sdk.Uint) sdk.Uint {
+	bigInt := consensusPower.BigInt()
+
+	return sdk.NewUintFromBigInt(bigInt.Sqrt(bigInt))
+}
 
 // ValidatorI provides necessary functions to the validator information
 type ValidatorI interface {
-	GetConsensusPower(sdk.Int) int64 // validation power in tendermint
-	GetOperator() sdk.ValAddress     // operator address to receive/return validators coins
+	GetConsensusPower(sdk.Int) int64       // validation power in tendermint
+	GetOperator() sdk.ValAddress           // operator address to receive/return validators coins
+	GetConsAddr() (sdk.ConsAddress, error) // validation consensus address
+	IsJailed() bool                        // whether the validator is jailed
 }
 
 // NewSnapshot is the constructor of Snapshot
@@ -96,6 +105,14 @@ func (m Participant) ValidateBasic() error {
 	return nil
 }
 
+// GetParticipantAddresses returns the addresses of all participants in the snapshot
+func (m Snapshot) GetParticipantAddresses() []sdk.ValAddress {
+	addresses := slices.Map(maps.Values(m.Participants), Participant.GetAddress)
+	sort.SliceStable(addresses, func(i, j int) bool { return bytes.Compare(addresses[i], addresses[j]) < 0 })
+
+	return addresses
+}
+
 // GetParticipantsWeight returns the sum of all participants' weights
 func (m Snapshot) GetParticipantsWeight() sdk.Uint {
 	weight := sdk.ZeroUint()
@@ -106,12 +123,26 @@ func (m Snapshot) GetParticipantsWeight() sdk.Uint {
 	return weight
 }
 
+// GetParticipantWeight returns the weight of the given participant
+func (m Snapshot) GetParticipantWeight(participant sdk.ValAddress) sdk.Uint {
+	if participant, ok := m.Participants[participant.String()]; ok {
+		return participant.Weight
+	}
+
+	return sdk.ZeroUint()
+}
+
 // CalculateMinPassingWeight returns the minimum amount of weights to pass the given threshold
 func (m Snapshot) CalculateMinPassingWeight(threshold utils.Threshold) sdk.Uint {
-	return m.BondedWeight.
+	minPassingWeight := m.BondedWeight.
 		MulUint64(uint64(threshold.Numerator)).
-		QuoUint64(uint64(threshold.Denominator)).
-		AddUint64(1)
+		QuoUint64(uint64(threshold.Denominator))
+
+	if minPassingWeight.MulUint64(uint64(threshold.Denominator)).GTE(m.BondedWeight.MulUint64(uint64(threshold.Numerator))) {
+		return minPassingWeight
+	}
+
+	return minPassingWeight.AddUint64(1)
 }
 
 // Validate returns an error if the snapshot is not valid; nil otherwise
@@ -263,22 +294,6 @@ func GetValidatorIllegibilities() []ValidatorIllegibility {
 	return values
 }
 
-// Slasher provides functionality to manage slashing info for a validator
-type Slasher interface {
-	GetValidatorSigningInfo(ctx sdk.Context, address sdk.ConsAddress) (info slashingtypes.ValidatorSigningInfo, found bool)
-	SignedBlocksWindow(ctx sdk.Context) (res int64)
-	GetValidatorMissedBlockBitArray(ctx sdk.Context, address sdk.ConsAddress, index int64) bool
-}
-
-// Tss provides functionality to tss module
-type Tss interface {
-	GetSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress) int64
-	GetNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
-	IsOperatorAvailable(ctx sdk.Context, validator sdk.ValAddress, keyIDs ...tss.KeyID) bool
-	GetKeyRequirement(ctx sdk.Context, keyRole tss.KeyRole, keyType tss.KeyType) (tss.KeyRequirement, bool)
-	HasMissedTooManyBlocks(ctx sdk.Context, address sdk.ConsAddress) (bool, error)
-}
-
 // GetValidator returns the validator for a given address, if it is part of the snapshot
 func (m Snapshot) GetValidator(address sdk.ValAddress) (Validator, bool) {
 	for _, validator := range m.Validators {
@@ -292,6 +307,7 @@ func (m Snapshot) GetValidator(address sdk.ValAddress) (Validator, bool) {
 
 // Snapshotter represents the interface for the snapshot module's functionality
 type Snapshotter interface {
+	CreateSnapshot(ctx sdk.Context, candidates []sdk.ValAddress, filterFunc func(ValidatorI) bool, weightFunc func(consensusPower sdk.Uint) sdk.Uint, threshold utils.Threshold) (Snapshot, error)
 	GetLatestSnapshot(ctx sdk.Context) (Snapshot, bool)
 	GetSnapshot(ctx sdk.Context, seqNo int64) (Snapshot, bool)
 	TakeSnapshot(ctx sdk.Context, keyRequirement tss.KeyRequirement) (Snapshot, error)

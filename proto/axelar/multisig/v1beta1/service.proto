@@ -1,0 +1,27 @@
+syntax = "proto3";
+package axelar.multisig.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/multisig/types";
+
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "axelar/multisig/v1beta1/tx.proto";
+
+option (gogoproto.goproto_registration) = true;
+
+// Msg defines the multisig Msg service.
+service MsgService {
+  rpc StartKeygen(StartKeygenRequest) returns (StartKeygenResponse) {
+    option (google.api.http) = {
+      post : "/axelar/multisig/keygen"
+      body : "*"
+    };
+  }
+
+  rpc SubmitPubKey(SubmitPubKeyRequest) returns (SubmitPubKeyResponse) {
+    option (google.api.http) = {
+      post : "/axelar/multisig/submit_pk"
+      body : "*"
+    };
+  }
+}

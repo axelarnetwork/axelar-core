@@ -53,7 +53,7 @@ func TestCommands(t *testing.T) {
 		var commands []types.Command
 
 		for i := 0; i < numCmds; i++ {
-			tokenDetails := createDetails(randomNormalizedStr(10), randomNormalizedStr(10))
+			tokenDetails := createDetails(rand.NormalizedStr(10), rand.NormalizedStr(10))
 			cmd, err := types.CreateDeployTokenCommand(chainID, tss.KeyID(rand.HexStr(10)), rand.Str(5), tokenDetails, types.ZeroAddress, sdk.NewUint(uint64(rand.PosI64())))
 			assert.NoError(t, err)
 

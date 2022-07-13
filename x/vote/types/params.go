@@ -55,7 +55,7 @@ func validateDefaultVotingThreshold(i interface{}) error {
 	}
 
 	if v.LTE(utils.ZeroThreshold) || v.GT(utils.OneThreshold) {
-		return fmt.Errorf("default voting threshold must be >0 and <=1: %s", v.SimpleString())
+		return fmt.Errorf("default voting threshold must be >0 and <=1: %s", v.String())
 	}
 
 	return nil

@@ -4,7 +4,7 @@ import (
 	mathRand "math/rand"
 	"testing"
 
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
@@ -30,7 +30,7 @@ func TestHandleResult(t *testing.T) {
 		chaink  *mock.ChainKeeperMock
 		n       *mock.NexusMock
 		r       *mock.RewarderMock
-		result  vote.Vote
+		result  codec.ProtoMarshaler
 		handler vote.VoteHandler
 	)
 
@@ -70,8 +70,6 @@ func TestHandleResult(t *testing.T) {
 		r = &mock.RewarderMock{}
 		encCfg := params.MakeEncodingConfig()
 		handler = keeper.NewVoteHandler(encCfg.Codec, basek, n, r)
-
-		result = vote.Vote{}
 	}
 
 	repeats := 20
@@ -79,13 +77,11 @@ func TestHandleResult(t *testing.T) {
 	t.Run("Given vote When events are not from the same source chain THEN return error", testutils.Func(func(t *testing.T) {
 		setup()
 
-		voteEvents, err := types.PackEvents(nexus.ChainName(rand.Str(5)), randTransferEvents(int(rand.I64Between(5, 10))))
-		if err != nil {
-			panic(err)
+		result = &types.VoteEvents{
+			Chain:  nexus.ChainName(rand.Str(5)),
+			Events: randTransferEvents(int(rand.I64Between(5, 10))),
 		}
-		result.Result = voteEvents
-
-		err = handler.HandleResult(ctx, &result)
+		err := handler.HandleResult(ctx, result)
 
 		assert.Error(t, err)
 	}).Repeat(repeats))
@@ -93,13 +89,11 @@ func TestHandleResult(t *testing.T) {
 	t.Run("Given vote When events empty THEN should nothing and return nil", testutils.Func(func(t *testing.T) {
 		setup()
 
-		voteEvents, err := types.PackEvents(evmChain, []types.Event{})
-		if err != nil {
-			panic(err)
+		result = &types.VoteEvents{
+			Chain:  evmChain,
+			Events: []types.Event{},
 		}
-		result.Result = voteEvents
-
-		err = handler.HandleResult(ctx, &result)
+		err := handler.HandleResult(ctx, result)
 
 		assert.NoError(t, err)
 	}).Repeat(repeats))
@@ -109,13 +103,11 @@ func TestHandleResult(t *testing.T) {
 		n.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 			return nexus.Chain{}, false
 		}
-		voteEvents, err := types.PackEvents(evmChain, randTransferEvents(int(rand.I64Between(5, 10))))
-		if err != nil {
-			panic(err)
+		result = &types.VoteEvents{
+			Chain:  evmChain,
+			Events: randTransferEvents(int(rand.I64Between(5, 10))),
 		}
-		result.Result = voteEvents
-
-		err = handler.HandleResult(ctx, &result)
+		err := handler.HandleResult(ctx, result)
 
 		assert.Error(t, err)
 	}).Repeat(repeats))
@@ -124,27 +116,23 @@ func TestHandleResult(t *testing.T) {
 		setup()
 
 		n.IsChainActivatedFunc = func(sdk.Context, nexus.Chain) bool { return false }
-		eventNum := int(rand.I64Between(5, 10))
-		voteEvents, err := types.PackEvents(evmChain, randTransferEvents(eventNum))
-		if err != nil {
-			panic(err)
-		}
-		result.Result = voteEvents
 
-		err = handler.HandleResult(ctx, &result)
+		result = &types.VoteEvents{
+			Chain:  evmChain,
+			Events: randTransferEvents(int(rand.I64Between(5, 10))),
+		}
+		err := handler.HandleResult(ctx, result)
 
 		assert.NoError(t, err)
 	}).Repeat(repeats))
 
-	t.Run("GIVEN vote WHEN result is invalid THEN return error", testutils.Func(func(t *testing.T) {
+	t.Run("GIVEN vote WHEN result is invalid THEN panic", testutils.Func(func(t *testing.T) {
 		setup()
 
-		incorrectResult, _ := codectypes.NewAnyWithValue(types.NewConfirmGatewayTxRequest(rand.AccAddr(), rand.Str(5), types.Hash(common.BytesToHash(rand.Bytes(common.HashLength)))))
-		result.Result = incorrectResult
-
-		err := handler.HandleResult(ctx, &result)
-
-		assert.Error(t, err)
+		result = types.NewConfirmGatewayTxRequest(rand.AccAddr(), rand.Str(5), types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))))
+		assert.Panics(t, func() {
+			handler.HandleResult(ctx, result)
+		})
 	}).Repeat(repeats))
 
 	t.Run("GIVEN already confirmed event WHEN handle deposit THEN return error", testutils.Func(func(t *testing.T) {
@@ -154,13 +142,11 @@ func TestHandleResult(t *testing.T) {
 			return types.Event{}, true
 		}
 
-		voteEvents, err := types.PackEvents(evmChain, randTransferEvents(int(rand.I64Between(5, 10))))
-		if err != nil {
-			panic(err)
+		result = &types.VoteEvents{
+			Chain:  evmChain,
+			Events: randTransferEvents(int(rand.I64Between(5, 10))),
 		}
-		result.Result = voteEvents
-
-		err = handler.HandleResult(ctx, &result)
+		err := handler.HandleResult(ctx, result)
 
 		assert.Error(t, err)
 	}).Repeat(repeats))

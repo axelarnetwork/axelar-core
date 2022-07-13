@@ -15,7 +15,6 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
-	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	evmKeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/evm/types/mock"
@@ -43,8 +42,8 @@ func TestQueryPendingCommands(t *testing.T) {
 	setup := func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 		evmChain = nexus.ChainName(rand.StrBetween(5, 10))
-		asset = btc.NativeAsset
-		symbol = "axelarBTC"
+		asset = rand.Str(5)
+		symbol = rand.Str(5)
 		chainID = sdk.NewInt(1)
 		keyID = tssTestUtils.RandKeyID()
 		dailyMintLimit := sdk.NewUint(uint64(rand.PosI64()))
