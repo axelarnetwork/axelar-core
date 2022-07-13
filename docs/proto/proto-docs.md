@@ -247,6 +247,7 @@
     - [KeygenExpired](#axelar.multisig.v1beta1.KeygenExpired)
     - [KeygenStarted](#axelar.multisig.v1beta1.KeygenStarted)
     - [PubKeySubmitted](#axelar.multisig.v1beta1.PubKeySubmitted)
+    - [SignatureSubmitted](#axelar.multisig.v1beta1.SignatureSubmitted)
     - [SigningCompleted](#axelar.multisig.v1beta1.SigningCompleted)
     - [SigningStarted](#axelar.multisig.v1beta1.SigningStarted)
     - [SigningStarted.PubKeysEntry](#axelar.multisig.v1beta1.SigningStarted.PubKeysEntry)
@@ -262,6 +263,8 @@
     - [StartKeygenResponse](#axelar.multisig.v1beta1.StartKeygenResponse)
     - [SubmitPubKeyRequest](#axelar.multisig.v1beta1.SubmitPubKeyRequest)
     - [SubmitPubKeyResponse](#axelar.multisig.v1beta1.SubmitPubKeyResponse)
+    - [SubmitSignatureRequest](#axelar.multisig.v1beta1.SubmitSignatureRequest)
+    - [SubmitSignatureResponse](#axelar.multisig.v1beta1.SubmitSignatureResponse)
   
 - [axelar/multisig/v1beta1/service.proto](#axelar/multisig/v1beta1/service.proto)
     - [MsgService](#axelar.multisig.v1beta1.MsgService)
@@ -3865,6 +3868,24 @@ QueryService defines the gRPC querier service.
 
 
 
+<a name="axelar.multisig.v1beta1.SignatureSubmitted"></a>
+
+### SignatureSubmitted
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `module` | [string](#string) |  |  |
+| `sig_id` | [uint64](#uint64) |  |  |
+| `participant` | [bytes](#bytes) |  |  |
+| `signature` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
 <a name="axelar.multisig.v1beta1.SigningCompleted"></a>
 
 ### SigningCompleted
@@ -4053,6 +4074,33 @@ GenesisState represents the genesis state
 
 
 
+
+<a name="axelar.multisig.v1beta1.SubmitSignatureRequest"></a>
+
+### SubmitSignatureRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [string](#string) |  |  |
+| `sig_id` | [uint64](#uint64) |  |  |
+| `signature` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.SubmitSignatureResponse"></a>
+
+### SubmitSignatureResponse
+
+
+
+
+
+
  <!-- end messages -->
 
  <!-- end enums -->
@@ -4085,6 +4133,7 @@ Msg defines the multisig Msg service.
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `StartKeygen` | [StartKeygenRequest](#axelar.multisig.v1beta1.StartKeygenRequest) | [StartKeygenResponse](#axelar.multisig.v1beta1.StartKeygenResponse) |  | POST|/axelar/multisig/keygen|
 | `SubmitPubKey` | [SubmitPubKeyRequest](#axelar.multisig.v1beta1.SubmitPubKeyRequest) | [SubmitPubKeyResponse](#axelar.multisig.v1beta1.SubmitPubKeyResponse) |  | POST|/axelar/multisig/submit_pk|
+| `SubmitSignature` | [SubmitSignatureRequest](#axelar.multisig.v1beta1.SubmitSignatureRequest) | [SubmitSignatureResponse](#axelar.multisig.v1beta1.SubmitSignatureResponse) |  | POST|/axelar/multisig/submit_sig|
 
  <!-- end services -->
 

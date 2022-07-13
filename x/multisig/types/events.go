@@ -45,7 +45,7 @@ func NewPubKeySubmitted(keyID exported.KeyID, participant sdk.ValAddress, pubKey
 func NewSigningStarted(sigID uint64, key Key, payloadHash Hash, requestingModule string) *SigningStarted {
 	return &SigningStarted{
 		Module:           ModuleName,
-		SigId:            sigID,
+		SigID:            sigID,
 		KeyID:            key.GetID(),
 		PubKeys:          key.GetPubKeys(),
 		PayloadHash:      payloadHash,
@@ -57,6 +57,16 @@ func NewSigningStarted(sigID uint64, key Key, payloadHash Hash, requestingModule
 func NewSigningCompleted(sigID uint64) *SigningCompleted {
 	return &SigningCompleted{
 		Module: ModuleName,
-		SigId:  sigID,
+		SigID:  sigID,
+	}
+}
+
+// NewSignatureSubmitted is the constructor for event signature submitted
+func NewSignatureSubmitted(sigID uint64, participant sdk.ValAddress, signature Signature) *SignatureSubmitted {
+	return &SignatureSubmitted{
+		Module:      ModuleName,
+		SigID:       sigID,
+		Participant: participant,
+		Signature:   signature,
 	}
 }

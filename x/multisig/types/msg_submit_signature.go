@@ -3,27 +3,26 @@ package types
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-
-	"github.com/axelarnetwork/axelar-core/x/multisig/exported"
 )
 
-var _ sdk.Msg = &StartKeygenRequest{}
+var _ sdk.Msg = &SubmitSignatureRequest{}
 
-// NewStartKeygenRequest constructor for StartKeygenRequest
-func NewStartKeygenRequest(sender sdk.AccAddress, keyID exported.KeyID) *StartKeygenRequest {
-	return &StartKeygenRequest{
-		Sender: sender,
-		KeyID:  keyID,
+// NewSubmitSignatureRequest constructor for SubmitSignatureRequest
+func NewSubmitSignatureRequest(sender sdk.AccAddress, sigID uint64, signature Signature) *SubmitSignatureRequest {
+	return &SubmitSignatureRequest{
+		Sender:    sender,
+		SigID:     sigID,
+		Signature: signature,
 	}
 }
 
 // ValidateBasic implements the sdk.Msg interface.
-func (m StartKeygenRequest) ValidateBasic() error {
+func (m SubmitSignatureRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
-	if err := m.KeyID.ValidateBasic(); err != nil {
+	if err := m.Signature.ValidateBasic(); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, err.Error())
 	}
 
@@ -31,6 +30,6 @@ func (m StartKeygenRequest) ValidateBasic() error {
 }
 
 // GetSigners implements the sdk.Msg interface
-func (m StartKeygenRequest) GetSigners() []sdk.AccAddress {
+func (m SubmitSignatureRequest) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{m.Sender}
 }

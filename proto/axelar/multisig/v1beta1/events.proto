@@ -51,7 +51,7 @@ message SigningStarted {
   option (gogoproto.stable_marshaler) = true;
 
   string module = 1;
-  uint64 sig_id = 2;
+  uint64 sig_id = 2 [ (gogoproto.customname) = "SigID" ];
   string key_id = 3 [
     (gogoproto.customname) = "KeyID",
     (gogoproto.casttype) =
@@ -64,5 +64,13 @@ message SigningStarted {
 
 message SigningCompleted {
   string module = 1;
-  uint64 sig_id = 2;
+  uint64 sig_id = 2 [ (gogoproto.customname) = "SigID" ];
+}
+
+message SignatureSubmitted {
+  string module = 1;
+  uint64 sig_id = 2 [ (gogoproto.customname) = "SigID" ];
+  bytes participant = 3 [ (gogoproto.casttype) =
+                              "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
+  bytes signature = 4 [ (gogoproto.casttype) = "Signature" ];
 }
