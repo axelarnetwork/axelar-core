@@ -29,9 +29,10 @@ func (k Keeper) GetSigningSessionsByExpiry(ctx sdk.Context, expiry int64) []type
 		var value gogoprototypes.UInt64Value
 		iter.UnmarshalValue(&value)
 
-		result, ok := k.getSigningSession(ctx, value.Value)
+		sigID := value.Value
+		result, ok := k.getSigningSession(ctx, sigID)
 		if !ok {
-			panic(fmt.Errorf("signing session %d not found", value.Value))
+			panic(fmt.Errorf("signing session %d not found", sigID))
 		}
 
 		results = append(results, result)
@@ -98,7 +99,8 @@ func (k Keeper) DeleteSigningSession(ctx sdk.Context, id uint64) {
 }
 
 func (k Keeper) setSigningSession(ctx sdk.Context, signing types.SigningSession) {
-	k.getStore(ctx).Delete(expiryKeygenPrefix.Append(utils.KeyFromInt(signing.ExpiresAt)).Append(utils.KeyFromInt(signing.GetSigID())))
+	// the deletion is necessary because we may update it to a different location depending on the current state of the session
+	k.getStore(ctx).Delete(expirySigningPrefix.Append(utils.KeyFromInt(signing.ExpiresAt)).Append(utils.KeyFromInt(signing.GetSigID())))
 	k.getStore(ctx).Set(getSigningSessionExpiryKey(signing), &gogoprototypes.UInt64Value{Value: signing.GetSigID()})
 
 	k.getStore(ctx).Set(getSigningSessionKey(signing.GetSigID()), &signing)

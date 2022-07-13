@@ -92,8 +92,7 @@ func (s msgServer) SubmitSignature(c context.Context, req *types.SubmitSignature
 		return nil, fmt.Errorf("sender %s is not a registered proxy", req.Sender.String())
 	}
 
-	err := signingSession.AddSig(ctx.BlockHeight(), participant, req.Signature)
-	if err != nil {
+	if err := signingSession.AddSig(ctx.BlockHeight(), participant, req.Signature); err != nil {
 		return nil, sdkerrors.Wrap(err, "unable to add signature for signing")
 	}
 

@@ -10,10 +10,12 @@ import (
 
 // Parameter keys
 var (
-	KeyKeygenThreshold   = []byte("KeygenThreshold")
-	KeySigningThreshold  = []byte("SigningThreshold")
-	KeyKeygenTimeout     = []byte("KeygenTimeout")
-	KeyKeygenGracePeriod = []byte("KeygenGracePeriod")
+	KeyKeygenThreshold    = []byte("KeygenThreshold")
+	KeySigningThreshold   = []byte("SigningThreshold")
+	KeyKeygenTimeout      = []byte("KeygenTimeout")
+	KeyKeygenGracePeriod  = []byte("KeygenGracePeriod")
+	KeySigningTimeout     = []byte("SigningTimeout")
+	KeySigningGracePeriod = []byte("SigningGracePeriod")
 )
 
 // KeyTable returns a subspace.KeyTable that has registered all parameter types in this module's parameter set
@@ -24,10 +26,12 @@ func KeyTable() params.KeyTable {
 // DefaultParams returns the module's parameter set initialized with default values
 func DefaultParams() Params {
 	return Params{
-		KeygenThreshold:   utils.NewThreshold(90, 100),
-		SigningThreshold:  utils.NewThreshold(67, 100),
-		KeygenTimeout:     20,
-		KeygenGracePeriod: 3,
+		KeygenThreshold:    utils.NewThreshold(90, 100),
+		SigningThreshold:   utils.NewThreshold(67, 100),
+		KeygenTimeout:      20,
+		KeygenGracePeriod:  3,
+		SigningTimeout:     20,
+		SigningGracePeriod: 3,
 	}
 }
 
@@ -43,8 +47,10 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 	return params.ParamSetPairs{
 		params.NewParamSetPair(KeyKeygenThreshold, &m.KeygenThreshold, validateThreshold),
 		params.NewParamSetPair(KeySigningThreshold, &m.SigningThreshold, validateThreshold),
-		params.NewParamSetPair(KeyKeygenTimeout, &m.KeygenTimeout, validateKeygenTimeout),
-		params.NewParamSetPair(KeyKeygenGracePeriod, &m.KeygenGracePeriod, validateKeygenGracePeriod),
+		params.NewParamSetPair(KeyKeygenTimeout, &m.KeygenTimeout, validateTimeout),
+		params.NewParamSetPair(KeyKeygenGracePeriod, &m.KeygenGracePeriod, validateGracePeriod),
+		params.NewParamSetPair(KeySigningTimeout, &m.SigningTimeout, validateTimeout),
+		params.NewParamSetPair(KeySigningGracePeriod, &m.SigningGracePeriod, validateGracePeriod),
 	}
 }
 
@@ -58,11 +64,19 @@ func (m Params) Validate() error {
 		return err
 	}
 
-	if err := validateKeygenTimeout(m.KeygenTimeout); err != nil {
+	if err := validateTimeout(m.KeygenTimeout); err != nil {
 		return err
 	}
 
-	if err := validateKeygenGracePeriod(m.KeygenGracePeriod); err != nil {
+	if err := validateGracePeriod(m.KeygenGracePeriod); err != nil {
+		return err
+	}
+
+	if err := validateTimeout(m.SigningTimeout); err != nil {
+		return err
+	}
+
+	if err := validateGracePeriod(m.SigningGracePeriod); err != nil {
 		return err
 	}
 
@@ -82,27 +96,27 @@ func validateThreshold(i interface{}) error {
 	return nil
 }
 
-func validateKeygenTimeout(i interface{}) error {
+func validateTimeout(i interface{}) error {
 	keygenTimeout, ok := i.(int64)
 	if !ok {
-		return fmt.Errorf("invalid parameter type for keygen timeout: %T", i)
+		return fmt.Errorf("invalid parameter type for timeout: %T", i)
 	}
 
 	if keygenTimeout <= 0 {
-		return fmt.Errorf("keygen timeout must be >0")
+		return fmt.Errorf("timeout must be >0")
 	}
 
 	return nil
 }
 
-func validateKeygenGracePeriod(i interface{}) error {
+func validateGracePeriod(i interface{}) error {
 	gracePeriod, ok := i.(int64)
 	if !ok {
-		return fmt.Errorf("invalid parameter type for keygen grace period: %T", i)
+		return fmt.Errorf("invalid parameter type for grace period: %T", i)
 	}
 
 	if gracePeriod < 0 {
-		return fmt.Errorf("keygen grace period must be >=0")
+		return fmt.Errorf("grace period must be >=0")
 	}
 
 	return nil
