@@ -31,7 +31,7 @@ func DefaultParams() Params {
 	return Params{
 		ChainActivationThreshold:              utils.NewThreshold(55, 100),
 		ChainMaintainerMissingVoteThreshold:   utils.NewThreshold(20, 100),
-		ChainMaintainerIncorrectVoteThreshold: utils.NewThreshold(5, 100),
+		ChainMaintainerIncorrectVoteThreshold: utils.NewThreshold(15, 100),
 		ChainMaintainerCheckWindow:            500,
 	}
 }
