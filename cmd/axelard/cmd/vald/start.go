@@ -258,6 +258,7 @@ func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, ax
 	evmGatewayTxConf := subscribe(evmTypes.EventTypeGatewayTxConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
 
 	multisigKeygen := eventBus.Subscribe(eventFilter[*multisigTypes.KeygenStarted]())
+	multisigSigning := eventBus.Subscribe(eventFilter[*multisigTypes.SigningStarted]())
 
 	eventCtx, cancelEventCtx := context.WithCancel(context.Background())
 	mgr := jobs.NewMgr(eventCtx)
@@ -302,6 +303,7 @@ func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, ax
 		createJob(evmTraConf, evmMgr.ProcessTransferKeyConfirmation, cancelEventCtx, logger),
 		createJob(evmGatewayTxConf, evmMgr.ProcessGatewayTxConfirmation, cancelEventCtx, logger),
 		createJobTyped(multisigKeygen, multisigMgr.ProcessKeygenStarted, cancelEventCtx, logger),
+		createJobTyped(multisigSigning, multisigMgr.ProcessSigningStarted, cancelEventCtx, logger),
 	}
 
 	mgr.AddJobs(js...)

@@ -2,7 +2,6 @@ package multisig
 
 import (
 	"context"
-	"crypto/sha256"
 	"fmt"
 	"time"
 
@@ -64,14 +63,13 @@ func (mgr Mgr) generateKey(keyUID string, partyUID string) (types.PublicKey, err
 	}
 }
 
-func (mgr Mgr) sign(keyUID string, payload []byte, partyUID string, pubKey []byte) (types.Signature, error) {
+func (mgr Mgr) sign(keyUID string, payloadHash types.Hash, partyUID string, pubKey []byte) (types.Signature, error) {
 	grpcCtx, cancel := context.WithTimeout(context.Background(), mgr.timeout)
 	defer cancel()
 
-	hash := sha256.Sum256(payload)
 	res, err := mgr.client.Sign(grpcCtx, &tofnd.SignRequest{
 		KeyUid:    keyUID,
-		MsgToSign: hash[:],
+		MsgToSign: payloadHash,
 		PartyUid:  mgr.participant.String(),
 		PubKey:    pubKey,
 	})
