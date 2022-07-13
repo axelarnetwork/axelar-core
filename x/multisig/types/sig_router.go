@@ -34,14 +34,18 @@ func NewSigRouter() SigRouter {
 // router is sealed, if the module is invalid, or if the module has been
 // registered already.
 func (r *router) AddHandler(module string, handler exported.SigHandler) SigRouter {
+	if handler == nil {
+		panic("nil handler received")
+	}
+
 	if r.sealed {
-		panic("cannot add handler (router sealed)")
+		panic("router already sealed")
 	}
 
 	funcs.MustNoErr(utils.ValidateString(module))
 
 	if r.HasHandler(module) {
-		panic(fmt.Sprintf("handler for module %s is already registered", module))
+		panic(fmt.Sprintf("handler for module %s already registered", module))
 	}
 
 	r.handlers[module] = handler
@@ -60,7 +64,7 @@ func (r router) HasHandler(module string) bool {
 // GetHandler returns the handler for the given module.
 func (r router) GetHandler(module string) exported.SigHandler {
 	if !r.HasHandler(module) {
-		panic(fmt.Sprintf("no handler for module %s is registered", module))
+		panic(fmt.Sprintf("no handler for module %s registered", module))
 	}
 
 	return r.handlers[module]

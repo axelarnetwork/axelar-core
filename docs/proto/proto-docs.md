@@ -4242,12 +4242,9 @@ Msg defines the multisig Msg service.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `id` | [uint64](#uint64) |  |  |
 | `key_id` | [string](#string) |  |  |
 | `payload_hash` | [bytes](#bytes) |  |  |
 | `sigs` | [MultiSig.SigsEntry](#axelar.multisig.v1beta1.MultiSig.SigsEntry) | repeated |  |
-| `module` | [string](#string) |  |  |
-| `module_metadata` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
 
 
 
@@ -4278,12 +4275,15 @@ Msg defines the multisig Msg service.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| `id` | [uint64](#uint64) |  |  |
 | `multi_sig` | [MultiSig](#axelar.multisig.v1beta1.MultiSig) |  |  |
 | `state` | [axelar.multisig.exported.v1beta1.MultisigState](#axelar.multisig.exported.v1beta1.MultisigState) |  |  |
 | `key` | [Key](#axelar.multisig.v1beta1.Key) |  |  |
 | `expires_at` | [int64](#int64) |  |  |
 | `completed_at` | [int64](#int64) |  |  |
 | `grace_period` | [int64](#int64) |  |  |
+| `module` | [string](#string) |  |  |
+| `module_metadata` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
 
 
 

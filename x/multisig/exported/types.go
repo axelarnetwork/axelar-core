@@ -10,16 +10,12 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 )
 
-// Sig defines the interface to work with the generated signature
-type Sig interface {
-	GetID() uint64
-	GetMetadata() codec.ProtoMarshaler
-}
+//go:generate moq -out ./mock/types.go -pkg mock . SigHandler
 
 // SigHandler defines the interface for the requesting module to implement in
 // order to handle the different results of signing session
 type SigHandler interface {
-	HandleCompleted(ctx sdk.Context, sig Sig) error
+	HandleCompleted(ctx sdk.Context, sig codec.ProtoMarshaler, moduleMetadata codec.ProtoMarshaler) error
 	HandleFailed(ctx sdk.Context, moduleMetadata codec.ProtoMarshaler) error
 }
 

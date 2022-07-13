@@ -99,7 +99,7 @@ func (s msgServer) SubmitSignature(c context.Context, req *types.SubmitSignature
 	s.setSigningSession(ctx, signingSession)
 
 	s.Logger(ctx).Debug("new signature submitted",
-		"sig_id", signingSession.GetSigID(),
+		"sig_id", signingSession.GetID(),
 		"participant", participant.String(),
 		"participants_weight", signingSession.GetParticipantsWeight().String(),
 		"bonded_weight", signingSession.Key.Snapshot.BondedWeight.String(),

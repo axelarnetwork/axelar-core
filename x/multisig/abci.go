@@ -42,23 +42,30 @@ func handleKeygens(ctx sdk.Context, k types.Keeper, rewarder types.Rewarder) {
 
 func handleSignings(ctx sdk.Context, k types.Keeper, rewarder types.Rewarder) {
 	for _, signing := range k.GetSigningSessionsByExpiry(ctx, ctx.BlockHeight()) {
-		k.DeleteSigningSession(ctx, signing.GetSigID())
+		k.DeleteSigningSession(ctx, signing.GetID())
+		module := signing.GetModule()
 
 		if signing.State == exported.Completed {
 			sig := funcs.Must(signing.Result())
 
-			k.SetSig(ctx, sig)
-			funcs.MustNoErr(k.GetSigRouter().GetHandler(sig.Module).HandleCompleted(ctx, &sig))
+			funcs.MustNoErr(k.GetSigRouter().GetHandler(module).HandleCompleted(ctx, &sig, signing.GetMetadata()))
+
+			funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewSigningCompleted(signing.GetID())))
+			k.Logger(ctx).Info("signing session completed",
+				"sig_id", signing.GetID(),
+				"key_id", sig.GetKeyID(),
+				"module", module,
+			)
 
 			continue
 		}
 
-		funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewSigningExpired(signing.GetSigID())))
+		funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewSigningExpired(signing.GetID())))
 		k.Logger(ctx).Info("signing session expired",
-			"sig_id", signing.GetSigID(),
+			"sig_id", signing.GetID(),
 		)
 
-		funcs.MustNoErr(k.GetSigRouter().GetHandler(signing.MultiSig.Module).HandleFailed(ctx, signing.MultiSig.GetMetadata()))
+		funcs.MustNoErr(k.GetSigRouter().GetHandler(module).HandleFailed(ctx, signing.GetMetadata()))
 		slices.ForEach(signing.GetMissingParticipants(), rewarder.GetPool(ctx, types.ModuleName).ClearRewards)
 	}
 }

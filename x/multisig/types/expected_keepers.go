@@ -20,7 +20,6 @@ type Keeper interface {
 	SetKey(ctx sdk.Context, key Key)
 	DeleteKeygenSession(ctx sdk.Context, id exported.KeyID)
 	GetSigningSessionsByExpiry(ctx sdk.Context, expiry int64) []SigningSession
-	SetSig(ctx sdk.Context, sig MultiSig)
 	DeleteSigningSession(ctx sdk.Context, id uint64)
 	GetSigRouter() SigRouter
 }

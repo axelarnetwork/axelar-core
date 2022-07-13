@@ -51,10 +51,8 @@ func MultiSig() types.MultiSig {
 	}
 
 	return types.MultiSig{
-		ID:          uint64(rand.PosI64()),
 		KeyID:       multisigtestutils.KeyID(),
 		Sigs:        sigs,
 		PayloadHash: payloadHash,
-		Module:      rand.NormalizedStr(5),
 	}
 }
