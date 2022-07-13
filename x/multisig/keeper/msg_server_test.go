@@ -16,6 +16,7 @@ import (
 	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/multisig/exported"
+	exportedmock "github.com/axelarnetwork/axelar-core/x/multisig/exported/mock"
 	"github.com/axelarnetwork/axelar-core/x/multisig/keeper"
 	"github.com/axelarnetwork/axelar-core/x/multisig/keeper/mock"
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
@@ -189,6 +190,7 @@ func TestMsgServer(t *testing.T) {
 		keyID := exported.KeyID(rand.HexStr(5))
 		privateKeys := slices.Expand(func(int) *btcec.PrivateKey { return funcs.Must(btcec.NewPrivateKey()) }, participantCount)
 		publicKeys := slices.Map(privateKeys, func(sk *btcec.PrivateKey) types.PublicKey { return sk.PubKey().SerializeCompressed() })
+		module := rand.AlphaStrBetween(3, 3)
 
 		givenMsgServer.
 			When("proxies are all set up", func() {
@@ -201,6 +203,10 @@ func TestMsgServer(t *testing.T) {
 
 					return nil
 				}
+			}).
+			When("sig handler is set", func() {
+				sigRouter := types.NewSigRouter().AddHandler(module, &exportedmock.SigHandlerMock{})
+				k.SetSigRouter(sigRouter)
 			}).
 			When("key is generated", func() {
 				pubKeyIndex := 0
@@ -219,14 +225,18 @@ func TestMsgServer(t *testing.T) {
 				k.SetKey(ctx, key)
 			}).
 			Branch(
+				Then("should panic if sig handler is not registered for the given module", func(t *testing.T) {
+					assert.Panics(t, func() { k.Sign(ctx, exported.KeyID(rand.HexStr(5)), rand.Bytes(100), rand.AlphaStrBetween(3, 3)) })
+				}),
+
 				Then("should fail if the key does not exist", func(t *testing.T) {
-					err := k.Sign(ctx, exported.KeyID(rand.HexStr(5)), rand.Bytes(100), rand.AlphaStrBetween(3, 3))
+					err := k.Sign(ctx, exported.KeyID(rand.HexStr(5)), rand.Bytes(100), module)
 
 					assert.Error(t, err)
 				}),
 
 				Then("should start signing if the key exists", func(t *testing.T) {
-					err := k.Sign(ctx, keyID, rand.Bytes(100), rand.AlphaStrBetween(3, 3))
+					err := k.Sign(ctx, keyID, rand.Bytes(100), module)
 
 					assert.NoError(t, err)
 					assert.Len(t, k.GetSigningSessionsByExpiry(ctx, ctx.BlockHeight()+types.DefaultParams().SigningTimeout), 1)
@@ -237,7 +247,7 @@ func TestMsgServer(t *testing.T) {
 					hash := sha256.Sum256(payload)
 					payloadHash = hash[:]
 
-					k.Sign(ctx, keyID, payload, rand.AlphaStrBetween(3, 3))
+					k.Sign(ctx, keyID, payload, module)
 
 					events := ctx.EventManager().Events().ToABCIEvents()
 					sigID = funcs.Must(sdk.ParseTypedEvent(events[len(events)-1])).(*types.SigningStarted).SigID

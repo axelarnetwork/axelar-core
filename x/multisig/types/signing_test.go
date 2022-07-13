@@ -56,15 +56,6 @@ func TestSig(t *testing.T) {
 			Run(t)
 
 		givenRandomSig.
-			When("module is invalid", func() {
-				multiSig.Module = "___---"
-			}).
-			Then("should return error", func(t *testing.T) {
-				assert.Error(t, multiSig.ValidateBasic())
-			}).
-			Run(t)
-
-		givenRandomSig.
 			When("some participant is invalid", func() {
 				sk := funcs.Must(btcec.NewPrivateKey(btcec.S256()))
 				multiSig.Sigs[rand.StrBetween(10, 50)] = funcs.Must(sk.Sign(multiSig.PayloadHash)).Serialize()
@@ -163,6 +154,15 @@ func TestSigningSession(t *testing.T) {
 			When("", func() {}).
 			Then("should return nil", func(t *testing.T) {
 				assert.NoError(t, signingSession.ValidateBasic())
+			}).
+			Run(t)
+
+		givenNewSignSession.
+			When("module is invalid", func() {
+				signingSession.Module = "___---"
+			}).
+			Then("should return error", func(t *testing.T) {
+				assert.Error(t, signingSession.ValidateBasic())
 			}).
 			Run(t)
 

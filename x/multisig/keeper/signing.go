@@ -17,6 +17,28 @@ import (
 	"github.com/axelarnetwork/utils/slices"
 )
 
+// SetSigRouter sets the sig router. It will panic if called more than once
+func (k *Keeper) SetSigRouter(router types.SigRouter) {
+	if k.sigRouter != nil {
+		panic("router already set")
+	}
+
+	k.sigRouter = router
+
+	// In order to avoid invalid or non-deterministic behavior, we seal the router immediately
+	// to prevent additional handlers from being registered after the keeper is initialized.
+	k.sigRouter.Seal()
+}
+
+// GetSigRouter returns the sig router. If no router was set, it returns a (sealed) router with no handlers
+func (k Keeper) GetSigRouter() types.SigRouter {
+	if k.sigRouter == nil {
+		k.SetSigRouter(types.NewSigRouter())
+	}
+
+	return k.sigRouter
+}
+
 // GetSigningSessionsByExpiry returns all signing sessions that either expires at
 // or goes out of the grace period at the given block height
 func (k Keeper) GetSigningSessionsByExpiry(ctx sdk.Context, expiry int64) []types.SigningSession {
@@ -41,21 +63,13 @@ func (k Keeper) GetSigningSessionsByExpiry(ctx sdk.Context, expiry int64) []type
 	return results
 }
 
-// SetSig sets the given multi signature
-func (k Keeper) SetSig(ctx sdk.Context, sig types.MultiSig) {
-	k.getStore(ctx).Set(sigPrefix.Append(utils.KeyFromInt(sig.GetID())), &sig)
-
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewSigningCompleted(sig.GetID())))
-	k.Logger(ctx).Info("signing session completed",
-		"sig_id", sig.GetID(),
-		"key_id", sig.GetID(),
-		"module", sig.GetModule(),
-	)
-}
-
 // Sign starts a signing session to sign the given payload's hash with the given
 // key ID
 func (k Keeper) Sign(ctx sdk.Context, keyID exported.KeyID, payload []byte, module string, moduleMetadata ...codec.ProtoMarshaler) error {
+	if !k.GetSigRouter().HasHandler(module) {
+		panic(fmt.Errorf("sig handler not registered for module %s", module))
+	}
+
 	key, ok := k.getKey(ctx, keyID)
 	if !ok {
 		return fmt.Errorf("key %s not found", keyID)
@@ -72,9 +86,9 @@ func (k Keeper) Sign(ctx sdk.Context, keyID exported.KeyID, payload []byte, modu
 
 	k.setSigningSession(ctx, signingSession)
 
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewSigningStarted(signingSession.GetSigID(), key, payloadHash[:], module)))
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewSigningStarted(signingSession.GetID(), key, payloadHash[:], module)))
 	k.Logger(ctx).Info("signing session started",
-		"sig_id", signingSession.GetSigID(),
+		"sig_id", signingSession.GetID(),
 		"key_id", key.GetID(),
 		"participant_count", len(key.GetPubKeys()),
 		"participants", strings.Join(slices.Map(key.GetParticipants(), sdk.ValAddress.String), ", "),
@@ -100,10 +114,10 @@ func (k Keeper) DeleteSigningSession(ctx sdk.Context, id uint64) {
 
 func (k Keeper) setSigningSession(ctx sdk.Context, signing types.SigningSession) {
 	// the deletion is necessary because we may update it to a different location depending on the current state of the session
-	k.getStore(ctx).Delete(expirySigningPrefix.Append(utils.KeyFromInt(signing.ExpiresAt)).Append(utils.KeyFromInt(signing.GetSigID())))
-	k.getStore(ctx).Set(getSigningSessionExpiryKey(signing), &gogoprototypes.UInt64Value{Value: signing.GetSigID()})
+	k.getStore(ctx).Delete(expirySigningPrefix.Append(utils.KeyFromInt(signing.ExpiresAt)).Append(utils.KeyFromInt(signing.GetID())))
+	k.getStore(ctx).Set(getSigningSessionExpiryKey(signing), &gogoprototypes.UInt64Value{Value: signing.GetID()})
 
-	k.getStore(ctx).Set(getSigningSessionKey(signing.GetSigID()), &signing)
+	k.getStore(ctx).Set(getSigningSessionKey(signing.GetID()), &signing)
 }
 
 func (k Keeper) getSigningSession(ctx sdk.Context, id uint64) (signing types.SigningSession, ok bool) {
@@ -124,7 +138,7 @@ func getSigningSessionExpiryKey(signing types.SigningSession) utils.Key {
 		expiry = math.Min(signing.ExpiresAt, signing.CompletedAt+signing.GracePeriod+1)
 	}
 
-	return expirySigningPrefix.Append(utils.KeyFromInt(expiry)).Append(utils.KeyFromInt(signing.GetSigID()))
+	return expirySigningPrefix.Append(utils.KeyFromInt(expiry)).Append(utils.KeyFromInt(signing.GetID()))
 }
 
 func getSigningSessionKey(id uint64) utils.Key {
