@@ -13,12 +13,13 @@ import (
 // Sig defines the interface to work with the generated signature
 type Sig interface {
 	GetID() uint64
+	GetMetadata() codec.ProtoMarshaler
 }
 
 // SigHandler defines the interface for the requesting module to implement in
 // order to handle the different results of signing session
 type SigHandler interface {
-	HandleCompleted(ctx sdk.Context, sig Sig, moduleMetadata codec.ProtoMarshaler) error
+	HandleCompleted(ctx sdk.Context, sig Sig) error
 	HandleFailed(ctx sdk.Context, moduleMetadata codec.ProtoMarshaler) error
 }
 

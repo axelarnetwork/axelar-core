@@ -48,7 +48,7 @@ func handleSignings(ctx sdk.Context, k types.Keeper, rewarder types.Rewarder) {
 			sig := funcs.Must(signing.Result())
 
 			k.SetSig(ctx, sig)
-			funcs.MustNoErr(k.GetSigRouter().GetHandler(sig.Module).HandleCompleted(ctx, &sig, sig.GetMetadata()))
+			funcs.MustNoErr(k.GetSigRouter().GetHandler(sig.Module).HandleCompleted(ctx, &sig))
 
 			continue
 		}
