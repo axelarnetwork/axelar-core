@@ -24,4 +24,12 @@ service MsgService {
       body : "*"
     };
   }
+
+  rpc SubmitSignature(SubmitSignatureRequest)
+      returns (SubmitSignatureResponse) {
+    option (google.api.http) = {
+      post : "/axelar/multisig/submit_sig"
+      body : "*"
+    };
+  }
 }

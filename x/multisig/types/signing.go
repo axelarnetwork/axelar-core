@@ -71,7 +71,7 @@ func (m SigningSession) ValidateBasic() error {
 			return fmt.Errorf("completed signing session must have completed at set")
 		}
 
-		if m.getParticipantsWeight().LT(m.Key.GetMinPassingWeight()) {
+		if m.GetParticipantsWeight().LT(m.Key.GetMinPassingWeight()) {
 			return fmt.Errorf("completed signing session must have completed multi signature")
 		}
 
@@ -121,7 +121,7 @@ func (m *SigningSession) AddSig(blockHeight int64, participant sdk.ValAddress, s
 
 	m.addSig(participant, sig)
 
-	if m.GetState() != exported.Completed && m.getParticipantsWeight().GTE(m.Key.GetMinPassingWeight()) {
+	if m.GetState() != exported.Completed && m.GetParticipantsWeight().GTE(m.Key.GetMinPassingWeight()) {
 		m.CompletedAt = blockHeight
 		m.State = exported.Completed
 	}
@@ -146,12 +146,19 @@ func (m SigningSession) Result() (MultiSig, error) {
 		return MultiSig{}, fmt.Errorf("signing %d is not completed yet", m.GetSigID())
 	}
 
-	if m.getParticipantsWeight().LT(m.Key.GetMinPassingWeight()) {
+	if m.GetParticipantsWeight().LT(m.Key.GetMinPassingWeight()) {
 		panic(fmt.Errorf("multi sig is not completed yet"))
 	}
 	funcs.MustNoErr(m.MultiSig.ValidateBasic())
 
 	return m.MultiSig, nil
+}
+
+// GetParticipantsWeight returns the total weights of the participants
+func (m SigningSession) GetParticipantsWeight() sdk.Uint {
+	return slices.Reduce(m.MultiSig.getParticipants(), sdk.ZeroUint(), func(total sdk.Uint, p sdk.ValAddress) sdk.Uint {
+		return total.Add(m.Key.Snapshot.GetParticipantWeight(p))
+	})
 }
 
 func (m *SigningSession) addSig(participant sdk.ValAddress, sig Signature) {
@@ -164,12 +171,6 @@ func (m SigningSession) isWithinGracePeriod(blockHeight int64) bool {
 
 func (m SigningSession) isExpired(blockHeight int64) bool {
 	return blockHeight >= m.ExpiresAt
-}
-
-func (m SigningSession) getParticipantsWeight() sdk.Uint {
-	return slices.Reduce(m.MultiSig.getParticipants(), sdk.ZeroUint(), func(total sdk.Uint, p sdk.ValAddress) sdk.Uint {
-		return total.Add(m.Key.Snapshot.GetParticipantWeight(p))
-	})
 }
 
 // ValidateBasic returns an error if the given sig is invalid; nil otherwise

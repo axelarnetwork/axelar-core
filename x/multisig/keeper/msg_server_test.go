@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"crypto/sha256"
 	"errors"
 	"testing"
 
@@ -40,6 +41,21 @@ func TestMsgServer(t *testing.T) {
 		expiresAt   int64
 	)
 
+	givenMsgServer := Given("a multisig msg server", func() {
+		subspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "multisig")
+		k = keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey(types.StoreKey), subspace)
+
+		ctx = rand2.Context(fake.NewMultiStore())
+		k.InitGenesis(ctx, types.DefaultGenesisState())
+		snapshotter = &mock.SnapshotterMock{
+			CreateSnapshotFunc: func(sdk.Context, utils.Threshold) (snapshot.Snapshot, error) {
+				return snapshot.NewSnapshot(ctx.BlockTime(), ctx.BlockHeight(), validators, sdk.NewUint(10)), nil
+			},
+		}
+
+		msgServer = keeper.NewMsgServer(k, snapshotter, &mock2.StakerMock{})
+	})
+
 	whenSenderIsProxy := When("the sender is a proxy", func() {
 		snapshotter.GetOperatorFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return rand.Sample(validators, 1)[0].Address }
 	})
@@ -61,113 +77,213 @@ func TestMsgServer(t *testing.T) {
 		assert.Error(t, err)
 	})
 
-	Given("a multisig msg server", func() {
-		subspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "multisig")
-		k = keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey(types.StoreKey), subspace)
-		snapshotter = &mock.SnapshotterMock{
-			CreateSnapshotFunc: func(sdk.Context, utils.Threshold) (snapshot.Snapshot, error) {
-				return snapshot.NewSnapshot(ctx.BlockTime(), ctx.BlockHeight(), validators, sdk.NewUint(10)), nil
-			},
-		}
-		msgServer = keeper.NewMsgServer(k, snapshotter, &mock2.StakerMock{})
-	}).
-		Given("a context", func() {
-			ctx = rand2.Context(fake.NewMultiStore())
-			k.InitGenesis(ctx, types.DefaultGenesisState())
-		}).
-		Branch(
-			whenSenderIsProxy.
-				When("the key ID does not exist", func() {
-					// do not call StartKeygen
-				}).
-				When2(requestIsMade).
-				Then2(pubKeyFails),
+	t.Run("keygen", func(t *testing.T) {
+		givenMsgServer.
+			Branch(
+				whenSenderIsProxy.
+					When("the key ID does not exist", func() {
+						// do not call StartKeygen
+					}).
+					When2(requestIsMade).
+					Then2(pubKeyFails),
 
-			When("the sender is not a proxy", func() {
-				snapshotter.GetOperatorFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return nil }
+				When("the sender is not a proxy", func() {
+					snapshotter.GetOperatorFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return nil }
+				}).
+					When2(keySessionExists).
+					When2(requestIsMade).
+					Then2(pubKeyFails),
+
+				whenSenderIsProxy.
+					When2(keySessionExists).
+					When2(requestIsMade).
+					Then("submit pubkey succeeds", func(t *testing.T) {
+						_, err := msgServer.SubmitPubKey(sdk.WrapSDKContext(ctx), req)
+						assert.NoError(t, err)
+					}),
+
+				whenSenderIsProxy.
+					When("snapshot fails", func() {
+						snapshotter.CreateSnapshotFunc = func(sdk.Context, utils.Threshold) (snapshot.Snapshot, error) {
+							return snapshot.Snapshot{}, errors.New("some error")
+						}
+					}).
+					Then("keygen fails", func(t *testing.T) {
+						req := types.NewStartKeygenRequest(rand.AccAddr(), exported.KeyID(rand.HexStr(5)))
+						_, err := msgServer.StartKeygen(sdk.WrapSDKContext(ctx), req)
+						assert.Error(t, err)
+					}),
+
+				whenSenderIsProxy.
+					When2(keySessionExists).
+					Then("keygen with same KeyID fails", func(t *testing.T) {
+						req := types.NewStartKeygenRequest(rand.AccAddr(), keyID)
+						_, err := msgServer.StartKeygen(sdk.WrapSDKContext(ctx), req)
+						assert.Error(t, err)
+					}),
+
+				whenSenderIsProxy.
+					When("key exists", func() {
+						k.SetKey(ctx, types.Key{
+							ID:               keyID,
+							Snapshot:         snapshot.NewSnapshot(ctx.BlockTime(), ctx.BlockHeight(), validators, sdk.NewUint(10)),
+							SigningThreshold: types.DefaultParams().SigningThreshold,
+						})
+					}).
+					Then("keygen with same KeyID fails", func(t *testing.T) {
+						req := types.NewStartKeygenRequest(rand.AccAddr(), keyID)
+						_, err := msgServer.StartKeygen(sdk.WrapSDKContext(ctx), req)
+						assert.Error(t, err)
+					}),
+
+				keySessionExists.
+					When("all participants submitted the public keys and the grace period does not go beyond the expires at", func() {
+						for _, v := range validators {
+							snapshotter.GetOperatorFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return v.Address }
+
+							sk := funcs.Must(btcec.NewPrivateKey())
+							req = types.NewSubmitPubKeyRequest(rand.AccAddr(), keyID, sk.PubKey().SerializeCompressed(), ecdsa.Sign(sk, []byte(keyID)).Serialize())
+
+							_, err := msgServer.SubmitPubKey(sdk.WrapSDKContext(ctx), req)
+							assert.NoError(t, err)
+						}
+					}).
+					Then("should update the keygen expiry", func(t *testing.T) {
+						assert.Len(t, k.GetKeygenSessionsByExpiry(ctx, expiresAt), 0)
+						assert.Len(t, k.GetKeygenSessionsByExpiry(ctx, ctx.BlockHeight()+types.DefaultParams().KeygenGracePeriod+1), 1)
+						assert.Equal(t, keyID, k.GetKeygenSessionsByExpiry(ctx, ctx.BlockHeight()+types.DefaultParams().KeygenGracePeriod+1)[0].GetKeyID())
+					}),
+
+				keySessionExists.
+					When("all participants submitted the public keys and the grace period goes beyond the expires at", func() {
+						ctx = ctx.WithBlockHeight(ctx.BlockHeight() + types.DefaultParams().KeygenTimeout - types.DefaultParams().KeygenGracePeriod)
+
+						for _, v := range validators {
+							snapshotter.GetOperatorFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return v.Address }
+
+							sk := funcs.Must(btcec.NewPrivateKey())
+							req = types.NewSubmitPubKeyRequest(rand.AccAddr(), keyID, sk.PubKey().SerializeCompressed(), ecdsa.Sign(sk, []byte(keyID)).Serialize())
+
+							_, err := msgServer.SubmitPubKey(sdk.WrapSDKContext(ctx), req)
+							assert.NoError(t, err)
+						}
+					}).
+					Then("should not update the keygen expiry if the grace period goes beyond expires at", func(t *testing.T) {
+						assert.Len(t, k.GetKeygenSessionsByExpiry(ctx, expiresAt), 1)
+						assert.Equal(t, keyID, k.GetKeygenSessionsByExpiry(ctx, expiresAt)[0].GetKeyID())
+					}),
+			).Run(t)
+	})
+
+	t.Run("signing", func(t *testing.T) {
+		var (
+			payloadHash types.Hash
+			sigID       uint64
+			key         types.Key
+		)
+
+		participantCount := 3
+		validators := slices.Expand(func(int) sdk.ValAddress { return rand.ValAddr() }, participantCount)
+		proxies := slices.Expand(func(int) sdk.AccAddress { return rand.AccAddr() }, participantCount)
+		participants := slices.Map(validators, func(v sdk.ValAddress) snapshot.Participant { return snapshot.NewParticipant(v, sdk.OneUint()) })
+		keyID := exported.KeyID(rand.HexStr(5))
+		privateKeys := slices.Expand(func(int) *btcec.PrivateKey { return funcs.Must(btcec.NewPrivateKey()) }, participantCount)
+		publicKeys := slices.Map(privateKeys, func(sk *btcec.PrivateKey) types.PublicKey { return sk.PubKey().SerializeCompressed() })
+
+		givenMsgServer.
+			When("proxies are all set up", func() {
+				snapshotter.GetOperatorFunc = func(_ sdk.Context, p sdk.AccAddress) sdk.ValAddress {
+					for i, proxy := range proxies {
+						if proxy.Equals(p) {
+							return validators[i]
+						}
+					}
+
+					return nil
+				}
 			}).
-				When2(keySessionExists).
-				When2(requestIsMade).
-				Then2(pubKeyFails),
+			When("key is generated", func() {
+				pubKeyIndex := 0
+				key = types.Key{
+					ID:       keyID,
+					Snapshot: snapshot.NewSnapshot(ctx.BlockTime(), ctx.BlockHeight(), participants, sdk.NewUint(uint64(participantCount))),
+					PubKeys: slices.ToMap(publicKeys, func(pk types.PublicKey) string {
+						result := validators[pubKeyIndex]
+						pubKeyIndex += 1
 
-			whenSenderIsProxy.
-				When2(keySessionExists).
-				When2(requestIsMade).
-				Then("submit pubkey succeeds", func(t *testing.T) {
-					_, err := msgServer.SubmitPubKey(sdk.WrapSDKContext(ctx), req)
+						return result.String()
+					}),
+					SigningThreshold: utils.NewThreshold(2, 3),
+				}
+
+				k.SetKey(ctx, key)
+			}).
+			Branch(
+				Then("should fail if the key does not exist", func(t *testing.T) {
+					err := k.Sign(ctx, exported.KeyID(rand.HexStr(5)), rand.Bytes(100), rand.AlphaStrBetween(3, 3))
+
+					assert.Error(t, err)
+				}),
+
+				Then("should start signing if the key exists", func(t *testing.T) {
+					err := k.Sign(ctx, keyID, rand.Bytes(100), rand.AlphaStrBetween(3, 3))
+
 					assert.NoError(t, err)
+					assert.Len(t, k.GetSigningSessionsByExpiry(ctx, ctx.BlockHeight()+types.DefaultParams().SigningTimeout), 1)
 				}),
 
-			whenSenderIsProxy.
-				When("snapshot fails", func() {
-					snapshotter.CreateSnapshotFunc = func(sdk.Context, utils.Threshold) (snapshot.Snapshot, error) {
-						return snapshot.Snapshot{}, errors.New("some error")
-					}
+				When("signing session exists", func() {
+					payload := rand.Bytes(100)
+					hash := sha256.Sum256(payload)
+					payloadHash = hash[:]
+
+					k.Sign(ctx, keyID, payload, rand.AlphaStrBetween(3, 3))
+
+					events := ctx.EventManager().Events().ToABCIEvents()
+					sigID = funcs.Must(sdk.ParseTypedEvent(events[len(events)-1])).(*types.SigningStarted).SigID
 				}).
-				Then("keygen fails", func(t *testing.T) {
-					req := types.NewStartKeygenRequest(rand.AccAddr(), exported.KeyID(rand.HexStr(5)))
-					_, err := msgServer.StartKeygen(sdk.WrapSDKContext(ctx), req)
-					assert.Error(t, err)
-				}),
+					Branch(
+						Then("should fail if the signing session does not exist", func(t *testing.T) {
+							pIndex := rand.I64Between(1, participantCount)
+							signature := ecdsa.Sign(privateKeys[pIndex], payloadHash).Serialize()
+							_, err := msgServer.SubmitSignature(sdk.WrapSDKContext(ctx), types.NewSubmitSignatureRequest(proxies[pIndex], uint64(rand.PosI64()), signature))
 
-			whenSenderIsProxy.
-				When2(keySessionExists).
-				Then("keygen with same KeyID fails", func(t *testing.T) {
-					req := types.NewStartKeygenRequest(rand.AccAddr(), keyID)
-					_, err := msgServer.StartKeygen(sdk.WrapSDKContext(ctx), req)
-					assert.Error(t, err)
-				}),
+							assert.Error(t, err)
+						}),
 
-			whenSenderIsProxy.
-				When("key exists", func() {
-					k.SetKey(ctx, types.Key{
-						ID:               keyID,
-						Snapshot:         snapshot.NewSnapshot(ctx.BlockTime(), ctx.BlockHeight(), validators, sdk.NewUint(10)),
-						SigningThreshold: types.DefaultParams().SigningThreshold,
-					})
-				}).
-				Then("keygen with same KeyID fails", func(t *testing.T) {
-					req := types.NewStartKeygenRequest(rand.AccAddr(), keyID)
-					_, err := msgServer.StartKeygen(sdk.WrapSDKContext(ctx), req)
-					assert.Error(t, err)
-				}),
+						Then("should fail if proxy is not registered", func(t *testing.T) {
+							signature := ecdsa.Sign(privateKeys[rand.I64Between(1, participantCount)], payloadHash).Serialize()
+							_, err := msgServer.SubmitSignature(sdk.WrapSDKContext(ctx), types.NewSubmitSignatureRequest(rand.AccAddr(), sigID, signature))
 
-			keySessionExists.
-				When("all participants submitted the public keys and the grace period does not go beyond the expires at", func() {
-					for _, v := range validators {
-						snapshotter.GetOperatorFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return v.Address }
+							assert.Error(t, err)
+						}),
 
-						sk := funcs.Must(btcec.NewPrivateKey())
-						req = types.NewSubmitPubKeyRequest(rand.AccAddr(), keyID, sk.PubKey().SerializeCompressed(), ecdsa.Sign(sk, []byte(keyID)).Serialize())
+						Then("should succeed", func(t *testing.T) {
+							for i, proxy := range proxies {
+								signature := ecdsa.Sign(privateKeys[i], payloadHash).Serialize()
+								_, err := msgServer.SubmitSignature(sdk.WrapSDKContext(ctx), types.NewSubmitSignatureRequest(proxy, sigID, signature))
 
-						_, err := msgServer.SubmitPubKey(sdk.WrapSDKContext(ctx), req)
-						assert.NoError(t, err)
-					}
-				}).
-				Then("should update the keygen expiry", func(t *testing.T) {
-					assert.Len(t, k.GetKeygenSessionsByExpiry(ctx, expiresAt), 0)
-					assert.Len(t, k.GetKeygenSessionsByExpiry(ctx, ctx.BlockHeight()+types.DefaultParams().KeygenGracePeriod+1), 1)
-					assert.Equal(t, keyID, k.GetKeygenSessionsByExpiry(ctx, ctx.BlockHeight()+types.DefaultParams().KeygenGracePeriod+1)[0].GetKeyID())
-				}),
+								assert.NoError(t, err)
+							}
 
-			keySessionExists.
-				When("all participants submitted the public keys and the grace period goes beyond the expires at", func() {
-					ctx = ctx.WithBlockHeight(ctx.BlockHeight() + types.DefaultParams().KeygenTimeout - types.DefaultParams().KeygenGracePeriod)
+							assert.Len(t, k.GetSigningSessionsByExpiry(ctx, ctx.BlockHeight()+types.DefaultParams().SigningTimeout), 0)
+							actual := k.GetSigningSessionsByExpiry(ctx, ctx.BlockHeight()+types.DefaultParams().SigningGracePeriod+1)
+							assert.Len(t, actual, 1)
 
-					for _, v := range validators {
-						snapshotter.GetOperatorFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return v.Address }
+							sig, err := actual[0].Result()
+							assert.NoError(t, err)
+							assert.NoError(t, sig.ValidateBasic())
 
-						sk := funcs.Must(btcec.NewPrivateKey())
-						req = types.NewSubmitPubKeyRequest(rand.AccAddr(), keyID, sk.PubKey().SerializeCompressed(), ecdsa.Sign(sk, []byte(keyID)).Serialize())
+							participantsWeight := sdk.ZeroUint()
+							for p := range sig.GetSigs() {
+								participantsWeight = participantsWeight.Add(key.GetSnapshot().GetParticipantWeight(funcs.Must(sdk.ValAddressFromBech32(p))))
+							}
 
-						_, err := msgServer.SubmitPubKey(sdk.WrapSDKContext(ctx), req)
-						assert.NoError(t, err)
-					}
-				}).
-				Then("should not update the keygen expiry if the grace period goes beyond expires at", func(t *testing.T) {
-					assert.Len(t, k.GetKeygenSessionsByExpiry(ctx, expiresAt), 1)
-					assert.Equal(t, keyID, k.GetKeygenSessionsByExpiry(ctx, expiresAt)[0].GetKeyID())
-				}),
-		).Run(t)
+							assert.True(t, participantsWeight.GTE(key.GetMinPassingWeight()))
+						}),
+					),
+			).
+			Run(t)
+	})
 
 }
