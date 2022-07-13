@@ -42,7 +42,7 @@ lz4 -dc --no-sparse {SNAPSHOT_FILE} | tar xfC - $AXELARD_HOME
 ## Start your node
 
 ```bash
-$AXELARD_HOME/bin/axelard start --home $AXELARD_HOME
+$AXELARD_HOME/bin/axelard start --home $AXELARD_HOME >> $AXELARD_HOME/logs/axelard.log 2>&1 &
 ```
 
 Your Axelar node will launch and begin downloading the rest of the blockchain after the snapshot.
