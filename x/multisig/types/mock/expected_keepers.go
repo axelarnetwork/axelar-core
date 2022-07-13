@@ -34,6 +34,9 @@ var _ types.Keeper = &KeeperMock{}
 // 			GetKeygenSessionsByExpiryFunc: func(ctx sdk.Context, expiry int64) []types.KeygenSession {
 // 				panic("mock out the GetKeygenSessionsByExpiry method")
 // 			},
+// 			GetSigRouterFunc: func() types.SigRouter {
+// 				panic("mock out the GetSigRouter method")
+// 			},
 // 			GetSigningSessionsByExpiryFunc: func(ctx sdk.Context, expiry int64) []types.SigningSession {
 // 				panic("mock out the GetSigningSessionsByExpiry method")
 // 			},
@@ -42,9 +45,6 @@ var _ types.Keeper = &KeeperMock{}
 // 			},
 // 			SetKeyFunc: func(ctx sdk.Context, key types.Key)  {
 // 				panic("mock out the SetKey method")
-// 			},
-// 			SetSigFunc: func(ctx sdk.Context, sig types.MultiSig)  {
-// 				panic("mock out the SetSig method")
 // 			},
 // 		}
 //
@@ -62,6 +62,9 @@ type KeeperMock struct {
 	// GetKeygenSessionsByExpiryFunc mocks the GetKeygenSessionsByExpiry method.
 	GetKeygenSessionsByExpiryFunc func(ctx sdk.Context, expiry int64) []types.KeygenSession
 
+	// GetSigRouterFunc mocks the GetSigRouter method.
+	GetSigRouterFunc func() types.SigRouter
+
 	// GetSigningSessionsByExpiryFunc mocks the GetSigningSessionsByExpiry method.
 	GetSigningSessionsByExpiryFunc func(ctx sdk.Context, expiry int64) []types.SigningSession
 
@@ -70,9 +73,6 @@ type KeeperMock struct {
 
 	// SetKeyFunc mocks the SetKey method.
 	SetKeyFunc func(ctx sdk.Context, key types.Key)
-
-	// SetSigFunc mocks the SetSig method.
-	SetSigFunc func(ctx sdk.Context, sig types.MultiSig)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -97,6 +97,9 @@ type KeeperMock struct {
 			// Expiry is the expiry argument value.
 			Expiry int64
 		}
+		// GetSigRouter holds details about calls to the GetSigRouter method.
+		GetSigRouter []struct {
+		}
 		// GetSigningSessionsByExpiry holds details about calls to the GetSigningSessionsByExpiry method.
 		GetSigningSessionsByExpiry []struct {
 			// Ctx is the ctx argument value.
@@ -116,21 +119,14 @@ type KeeperMock struct {
 			// Key is the key argument value.
 			Key types.Key
 		}
-		// SetSig holds details about calls to the SetSig method.
-		SetSig []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// Sig is the sig argument value.
-			Sig types.MultiSig
-		}
 	}
 	lockDeleteKeygenSession        sync.RWMutex
 	lockDeleteSigningSession       sync.RWMutex
 	lockGetKeygenSessionsByExpiry  sync.RWMutex
+	lockGetSigRouter               sync.RWMutex
 	lockGetSigningSessionsByExpiry sync.RWMutex
 	lockLogger                     sync.RWMutex
 	lockSetKey                     sync.RWMutex
-	lockSetSig                     sync.RWMutex
 }
 
 // DeleteKeygenSession calls DeleteKeygenSessionFunc.
@@ -238,6 +234,32 @@ func (mock *KeeperMock) GetKeygenSessionsByExpiryCalls() []struct {
 	return calls
 }
 
+// GetSigRouter calls GetSigRouterFunc.
+func (mock *KeeperMock) GetSigRouter() types.SigRouter {
+	if mock.GetSigRouterFunc == nil {
+		panic("KeeperMock.GetSigRouterFunc: method is nil but Keeper.GetSigRouter was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockGetSigRouter.Lock()
+	mock.calls.GetSigRouter = append(mock.calls.GetSigRouter, callInfo)
+	mock.lockGetSigRouter.Unlock()
+	return mock.GetSigRouterFunc()
+}
+
+// GetSigRouterCalls gets all the calls that were made to GetSigRouter.
+// Check the length with:
+//     len(mockedKeeper.GetSigRouterCalls())
+func (mock *KeeperMock) GetSigRouterCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockGetSigRouter.RLock()
+	calls = mock.calls.GetSigRouter
+	mock.lockGetSigRouter.RUnlock()
+	return calls
+}
+
 // GetSigningSessionsByExpiry calls GetSigningSessionsByExpiryFunc.
 func (mock *KeeperMock) GetSigningSessionsByExpiry(ctx sdk.Context, expiry int64) []types.SigningSession {
 	if mock.GetSigningSessionsByExpiryFunc == nil {
@@ -336,41 +358,6 @@ func (mock *KeeperMock) SetKeyCalls() []struct {
 	mock.lockSetKey.RLock()
 	calls = mock.calls.SetKey
 	mock.lockSetKey.RUnlock()
-	return calls
-}
-
-// SetSig calls SetSigFunc.
-func (mock *KeeperMock) SetSig(ctx sdk.Context, sig types.MultiSig) {
-	if mock.SetSigFunc == nil {
-		panic("KeeperMock.SetSigFunc: method is nil but Keeper.SetSig was just called")
-	}
-	callInfo := struct {
-		Ctx sdk.Context
-		Sig types.MultiSig
-	}{
-		Ctx: ctx,
-		Sig: sig,
-	}
-	mock.lockSetSig.Lock()
-	mock.calls.SetSig = append(mock.calls.SetSig, callInfo)
-	mock.lockSetSig.Unlock()
-	mock.SetSigFunc(ctx, sig)
-}
-
-// SetSigCalls gets all the calls that were made to SetSig.
-// Check the length with:
-//     len(mockedKeeper.SetSigCalls())
-func (mock *KeeperMock) SetSigCalls() []struct {
-	Ctx sdk.Context
-	Sig types.MultiSig
-} {
-	var calls []struct {
-		Ctx sdk.Context
-		Sig types.MultiSig
-	}
-	mock.lockSetSig.RLock()
-	calls = mock.calls.SetSig
-	mock.lockSetSig.RUnlock()
 	return calls
 }
 

@@ -40,27 +40,27 @@ message KeygenSession {
 message MultiSig {
   option (gogoproto.stable_marshaler) = true;
 
-  uint64 id = 1 [ (gogoproto.customname) = "ID" ];
-  string key_id = 2 [
+  string key_id = 1 [
     (gogoproto.customname) = "KeyID",
     (gogoproto.casttype) =
         "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
   ];
-  bytes payload_hash = 3 [ (gogoproto.casttype) = "Hash" ];
-  map<string, bytes> sigs = 4 [ (gogoproto.castvalue) = "Signature" ];
-  string module = 5;
-  google.protobuf.Any module_metadata = 6
-      [ (cosmos_proto.accepts_interface) =
-            "github.com/cosmos/codec/ProtoMarshaler" ];
+  bytes payload_hash = 2 [ (gogoproto.casttype) = "Hash" ];
+  map<string, bytes> sigs = 3 [ (gogoproto.castvalue) = "Signature" ];
 }
 
 message SigningSession {
   option (gogoproto.stable_marshaler) = true;
 
-  MultiSig multi_sig = 1 [ (gogoproto.nullable) = false ];
-  multisig.exported.v1beta1.MultisigState state = 2;
-  Key key = 3 [ (gogoproto.nullable) = false ];
-  int64 expires_at = 4;
-  int64 completed_at = 5;
-  int64 grace_period = 6;
+  uint64 id = 1 [ (gogoproto.customname) = "ID" ];
+  MultiSig multi_sig = 2 [ (gogoproto.nullable) = false ];
+  multisig.exported.v1beta1.MultisigState state = 3;
+  Key key = 4 [ (gogoproto.nullable) = false ];
+  int64 expires_at = 5;
+  int64 completed_at = 6;
+  int64 grace_period = 7;
+  string module = 8;
+  google.protobuf.Any module_metadata = 9
+      [ (cosmos_proto.accepts_interface) =
+            "github.com/cosmos/codec/ProtoMarshaler" ];
 }

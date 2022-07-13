@@ -14,7 +14,7 @@ import (
 	"github.com/axelarnetwork/utils/slices"
 )
 
-var _ codectypes.UnpackInterfacesMessage = MultiSig{}
+var _ codectypes.UnpackInterfacesMessage = SigningSession{}
 
 // NewSigningSession is the contructor for signing session
 func NewSigningSession(id uint64, key Key, payloadHash Hash, expiresAt int64, gracePeriod int64, module string, moduleMetadataProto ...codec.ProtoMarshaler) SigningSession {
@@ -24,23 +24,18 @@ func NewSigningSession(id uint64, key Key, payloadHash Hash, expiresAt int64, gr
 	}
 
 	return SigningSession{
+		ID: id,
 		MultiSig: MultiSig{
-			ID:             id,
-			KeyID:          key.ID,
-			PayloadHash:    payloadHash,
-			Module:         module,
-			ModuleMetadata: moduleMetadata,
+			KeyID:       key.ID,
+			PayloadHash: payloadHash,
 		},
-		State:       exported.Pending,
-		Key:         key,
-		ExpiresAt:   expiresAt,
-		GracePeriod: gracePeriod,
+		State:          exported.Pending,
+		Key:            key,
+		ExpiresAt:      expiresAt,
+		GracePeriod:    gracePeriod,
+		Module:         module,
+		ModuleMetadata: moduleMetadata,
 	}
-}
-
-// GetSigID returns the signature ID of the signing session
-func (m SigningSession) GetSigID() uint64 {
-	return m.MultiSig.ID
 }
 
 // ValidateBasic returns an error if the given signing session is invalid; nil otherwise
@@ -59,6 +54,10 @@ func (m SigningSession) ValidateBasic() error {
 
 	if m.ExpiresAt <= 0 {
 		return fmt.Errorf("expires at must be >0")
+	}
+
+	if err := utils.ValidateString(m.Module); err != nil {
+		return err
 	}
 
 	switch m.GetState() {
@@ -100,23 +99,23 @@ func (m *SigningSession) AddSig(blockHeight int64, participant sdk.ValAddress, s
 	}
 
 	if m.isExpired(blockHeight) {
-		return fmt.Errorf("signing session %d has expired", m.GetSigID())
+		return fmt.Errorf("signing session %d has expired", m.GetID())
 	}
 
 	if _, ok := m.Key.PubKeys[participant.String()]; !ok {
-		return fmt.Errorf("%s is not a participant of signing %d", participant.String(), m.GetSigID())
+		return fmt.Errorf("%s is not a participant of signing %d", participant.String(), m.GetID())
 	}
 
 	if _, ok := m.MultiSig.Sigs[participant.String()]; ok {
-		return fmt.Errorf("participant %s already submitted its signature for signing %d", participant.String(), m.GetSigID())
+		return fmt.Errorf("participant %s already submitted its signature for signing %d", participant.String(), m.GetID())
 	}
 
 	if !sig.Verify(m.MultiSig.PayloadHash, m.Key.PubKeys[participant.String()]) {
-		return fmt.Errorf("invalid signature received from participant %s for signing %d", participant.String(), m.GetSigID())
+		return fmt.Errorf("invalid signature received from participant %s for signing %d", participant.String(), m.GetID())
 	}
 
 	if m.GetState() == exported.Completed && !m.isWithinGracePeriod(blockHeight) {
-		return fmt.Errorf("signing session %d has closed", m.GetSigID())
+		return fmt.Errorf("signing session %d has closed", m.GetID())
 	}
 
 	m.addSig(participant, sig)
@@ -143,7 +142,7 @@ func (m SigningSession) GetMissingParticipants() []sdk.ValAddress {
 // Result returns the generated multi signature if the session is completed and the multi signature is valid
 func (m SigningSession) Result() (MultiSig, error) {
 	if m.GetState() != exported.Completed {
-		return MultiSig{}, fmt.Errorf("signing %d is not completed yet", m.GetSigID())
+		return MultiSig{}, fmt.Errorf("signing %d is not completed yet", m.GetID())
 	}
 
 	if m.GetParticipantsWeight().LT(m.Key.GetMinPassingWeight()) {
@@ -159,6 +158,22 @@ func (m SigningSession) GetParticipantsWeight() sdk.Uint {
 	return slices.Reduce(m.MultiSig.getParticipants(), sdk.ZeroUint(), func(total sdk.Uint, p sdk.ValAddress) sdk.Uint {
 		return total.Add(m.Key.Snapshot.GetParticipantWeight(p))
 	})
+}
+
+// UnpackInterfaces implements UnpackInterfacesMessage
+func (m SigningSession) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
+	var data codec.ProtoMarshaler
+
+	return unpacker.UnpackAny(m.ModuleMetadata, &data)
+}
+
+// GetMetadata returns the unpacked module metadata
+func (m SigningSession) GetMetadata() codec.ProtoMarshaler {
+	if m.ModuleMetadata == nil {
+		return nil
+	}
+
+	return m.ModuleMetadata.GetCachedValue().(codec.ProtoMarshaler)
 }
 
 func (m *SigningSession) addSig(participant sdk.ValAddress, sig Signature) {
@@ -200,18 +215,7 @@ func (m MultiSig) ValidateBasic() error {
 		}
 	}
 
-	if err := utils.ValidateString(m.Module); err != nil {
-		return err
-	}
-
 	return nil
-}
-
-// UnpackInterfaces implements UnpackInterfacesMessage
-func (m MultiSig) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
-	var data codec.ProtoMarshaler
-
-	return unpacker.UnpackAny(m.ModuleMetadata, &data)
 }
 
 func (m MultiSig) getParticipants() []sdk.ValAddress {
