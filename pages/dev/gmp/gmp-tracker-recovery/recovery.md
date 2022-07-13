@@ -24,27 +24,22 @@ The CALL APPROVED status will be updated once the network approves the transacti
 2. Increase gas payment to the gas receiver on the source chain.
 
 ### Manually execute a transfer
-Click the ‘Connect’ button under the label ‘Execute at destination chain’. Then click `Execute`.
+Click the ‘Connect’ button under the label ‘Execute at destination chain’. Then click the `Execute` button. It triggers the executor service to execute the transaction using the new gas paid at the destination chain. You can check the latest execution result in the `Executed` section.
 
 ![gmp-execute.png](/images/gmp-execute.png)
 
-If you encounter some error messages after clicking and confirming the manual execution button, such as 
-- Execution Reverted
+If the manual execution fails, you will get an error message with the explained reason.
 ![gmp-execute-error-reverted.png](/images/gmp-execute-error-reverted.png)
 
-- Internal JSON-RPC error
-![gmp-execute-error-rpc.png](/images/gmp-execute-error-rpc.png)
-
-It could be an error in the destination contract. Please check your deployed contract and try a new call. 
-
+Please debug the deployed contract logic and make a new call. 
 
 ### Increase gas payment to the gas receiver on the source chain
-The prepaid gas to the Gas Service contract [[in step 2](../building-on-gmp#step-2-pay-gas-to-the-gas-services-contract)] could be insufficient when the destination chain is too busy (with many transfers or other conditions). Therefore, Axelarscan provides options to resubmit a new amount of gas as well as an option to refund the paid gas. 
+The prepaid gas to the Gas Service contract [[in step 2](../building-on-gmp#step-2-pay-gas-to-the-gas-services-contract)] could be insufficient when the destination chain is too busy (with many transfers or other conditions). Therefore, Axelarscan provides an option to resubmit a new amount of gas for executing the transaction. 
 
 To do this:
-1. Click the `Connect` button to connect your MetaMask wallet. Then switch the wallet network to the transfer’s source chain by clicking the `Switch Network` button under the label ‘Pay new gas at source chain.'
+1. Click the `Connect` button to connect your MetaMask wallet. Then switch the wallet network to the transfer’s source chain by clicking the `Switch Network` button under the label ‘Pay new gas at source chain‘.
 ![gmp-pay-gas-connect-wallet.png](/images/gmp-pay-gas-connect-wallet.png)
-2. Click the ‘Pay new gas’ button.
+2. Click the `Pay new gas` button. The new paid gas information will be updated in the `GAS PAID` section. Then the executor service will execute the transaction with the latest gas paid amount and update the execution result in the `Executed` section.
 ![gmp-pay-gas-success.png](/images/gmp-pay-gas-success.png)
 
 ## 2. the AxelarJS SDK
