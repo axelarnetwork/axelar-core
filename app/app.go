@@ -489,7 +489,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 
 		snapshot.NewAppModule(snapK),
 		multisig.NewAppModule(multisigK, stakingK, slashingK, snapK, rewardK),
-		tss.NewAppModule(tssK, snapK, votingK, nexusK, stakingK, rewardK),
+		tss.NewAppModule(tssK, snapK, votingK, nexusK, stakingK, rewardK, multisigK),
 		vote.NewAppModule(votingK),
 		nexus.NewAppModule(nexusK, snapK, stakingK, axelarnetK, evmK, rewardK),
 		evm.NewAppModule(evmK, tssK, votingK, tssK, nexusK, snapK, stakingK, slashingK, logger),

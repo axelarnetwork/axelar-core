@@ -3,6 +3,7 @@ package types
 import (
 	"crypto/ecdsa"
 
+	"github.com/axelarnetwork/axelar-core/x/multisig/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/tendermint/tendermint/libs/log"
@@ -16,7 +17,7 @@ import (
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
-//go:generate moq -pkg mock -out ./mock/expected_keepers.go . TofndClient TofndKeyGenClient TofndSignClient Voter StakingKeeper TSSKeeper Snapshotter Nexus Rewarder
+//go:generate moq -pkg mock -out ./mock/expected_keepers.go . TofndClient TofndKeyGenClient TofndSignClient Voter StakingKeeper TSSKeeper Snapshotter Nexus Rewarder MultiSigKeeper
 
 // Snapshotter provides snapshot functionality
 type Snapshotter = snapshot.Snapshotter
@@ -124,4 +125,8 @@ type TSSKeeper interface {
 // Rewarder provides reward functionality
 type Rewarder interface {
 	GetPool(ctx sdk.Context, name string) reward.RewardPool
+}
+
+type MultiSigKeeper interface {
+	SetKey(ctx sdk.Context, key types.Key)
 }
