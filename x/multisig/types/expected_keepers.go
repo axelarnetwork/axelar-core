@@ -19,6 +19,9 @@ type Keeper interface {
 	GetKeygenSessionsByExpiry(ctx sdk.Context, expiry int64) []KeygenSession
 	SetKey(ctx sdk.Context, key Key)
 	DeleteKeygenSession(ctx sdk.Context, id exported.KeyID)
+	GetSigningSessionsByExpiry(ctx sdk.Context, expiry int64) []SigningSession
+	SetSig(ctx sdk.Context, sig MultiSig)
+	DeleteSigningSession(ctx sdk.Context, id uint64)
 }
 
 // Snapshotter provides snapshot keeper functionality

@@ -36,3 +36,14 @@ message SubmitPubKeyRequest {
 }
 
 message SubmitPubKeyResponse {}
+
+message SubmitSignatureRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
+
+  string sender = 1 [ (gogoproto.casttype) =
+                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  uint64 sig_id = 2 [ (gogoproto.customname) = "SigID" ];
+  bytes signature = 3 [ (gogoproto.casttype) = "Signature" ];
+}
+
+message SubmitSignatureResponse {}

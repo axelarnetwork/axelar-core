@@ -247,6 +247,11 @@
     - [KeygenExpired](#axelar.multisig.v1beta1.KeygenExpired)
     - [KeygenStarted](#axelar.multisig.v1beta1.KeygenStarted)
     - [PubKeySubmitted](#axelar.multisig.v1beta1.PubKeySubmitted)
+    - [SignatureSubmitted](#axelar.multisig.v1beta1.SignatureSubmitted)
+    - [SigningCompleted](#axelar.multisig.v1beta1.SigningCompleted)
+    - [SigningExpired](#axelar.multisig.v1beta1.SigningExpired)
+    - [SigningStarted](#axelar.multisig.v1beta1.SigningStarted)
+    - [SigningStarted.PubKeysEntry](#axelar.multisig.v1beta1.SigningStarted.PubKeysEntry)
   
 - [axelar/multisig/v1beta1/params.proto](#axelar/multisig/v1beta1/params.proto)
     - [Params](#axelar.multisig.v1beta1.Params)
@@ -259,6 +264,8 @@
     - [StartKeygenResponse](#axelar.multisig.v1beta1.StartKeygenResponse)
     - [SubmitPubKeyRequest](#axelar.multisig.v1beta1.SubmitPubKeyRequest)
     - [SubmitPubKeyResponse](#axelar.multisig.v1beta1.SubmitPubKeyResponse)
+    - [SubmitSignatureRequest](#axelar.multisig.v1beta1.SubmitSignatureRequest)
+    - [SubmitSignatureResponse](#axelar.multisig.v1beta1.SubmitSignatureResponse)
   
 - [axelar/multisig/v1beta1/service.proto](#axelar/multisig/v1beta1/service.proto)
     - [MsgService](#axelar.multisig.v1beta1.MsgService)
@@ -3861,6 +3868,92 @@ QueryService defines the gRPC querier service.
 
 
 
+
+<a name="axelar.multisig.v1beta1.SignatureSubmitted"></a>
+
+### SignatureSubmitted
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `module` | [string](#string) |  |  |
+| `sig_id` | [uint64](#uint64) |  |  |
+| `participant` | [bytes](#bytes) |  |  |
+| `signature` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.SigningCompleted"></a>
+
+### SigningCompleted
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `module` | [string](#string) |  |  |
+| `sig_id` | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.SigningExpired"></a>
+
+### SigningExpired
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `module` | [string](#string) |  |  |
+| `sig_id` | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.SigningStarted"></a>
+
+### SigningStarted
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `module` | [string](#string) |  |  |
+| `sig_id` | [uint64](#uint64) |  |  |
+| `key_id` | [string](#string) |  |  |
+| `pub_keys` | [SigningStarted.PubKeysEntry](#axelar.multisig.v1beta1.SigningStarted.PubKeysEntry) | repeated |  |
+| `payload_hash` | [bytes](#bytes) |  |  |
+| `requesting_module` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.SigningStarted.PubKeysEntry"></a>
+
+### SigningStarted.PubKeysEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key` | [string](#string) |  |  |
+| `value` | [bytes](#bytes) |  |  |
+
+
+
+
+
  <!-- end messages -->
 
  <!-- end enums -->
@@ -3890,6 +3983,8 @@ Params represent the genesis parameters for the module
 | `signing_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
 | `keygen_timeout` | [int64](#int64) |  |  |
 | `keygen_grace_period` | [int64](#int64) |  |  |
+| `signing_timeout` | [int64](#int64) |  |  |
+| `signing_grace_period` | [int64](#int64) |  |  |
 
 
 
@@ -3996,6 +4091,33 @@ GenesisState represents the genesis state
 
 
 
+
+<a name="axelar.multisig.v1beta1.SubmitSignatureRequest"></a>
+
+### SubmitSignatureRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [string](#string) |  |  |
+| `sig_id` | [uint64](#uint64) |  |  |
+| `signature` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.SubmitSignatureResponse"></a>
+
+### SubmitSignatureResponse
+
+
+
+
+
+
  <!-- end messages -->
 
  <!-- end enums -->
@@ -4028,6 +4150,7 @@ Msg defines the multisig Msg service.
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `StartKeygen` | [StartKeygenRequest](#axelar.multisig.v1beta1.StartKeygenRequest) | [StartKeygenResponse](#axelar.multisig.v1beta1.StartKeygenResponse) |  | POST|/axelar/multisig/keygen|
 | `SubmitPubKey` | [SubmitPubKeyRequest](#axelar.multisig.v1beta1.SubmitPubKeyRequest) | [SubmitPubKeyResponse](#axelar.multisig.v1beta1.SubmitPubKeyResponse) |  | POST|/axelar/multisig/submit_pk|
+| `SubmitSignature` | [SubmitSignatureRequest](#axelar.multisig.v1beta1.SubmitSignatureRequest) | [SubmitSignatureResponse](#axelar.multisig.v1beta1.SubmitSignatureResponse) |  | POST|/axelar/multisig/submit_sig|
 
  <!-- end services -->
 

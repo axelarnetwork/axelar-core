@@ -40,3 +40,41 @@ func NewPubKeySubmitted(keyID exported.KeyID, participant sdk.ValAddress, pubKey
 		PubKey:      pubKey,
 	}
 }
+
+// NewSigningStarted is the constructor for event signing started
+func NewSigningStarted(sigID uint64, key Key, payloadHash Hash, requestingModule string) *SigningStarted {
+	return &SigningStarted{
+		Module:           ModuleName,
+		SigID:            sigID,
+		KeyID:            key.GetID(),
+		PubKeys:          key.GetPubKeys(),
+		PayloadHash:      payloadHash,
+		RequestingModule: requestingModule,
+	}
+}
+
+// NewSigningExpired is the constructor for event signing expired
+func NewSigningExpired(sigID uint64) *SigningExpired {
+	return &SigningExpired{
+		Module: ModuleName,
+		SigID:  sigID,
+	}
+}
+
+// NewSigningCompleted is the constructor for event signing completed
+func NewSigningCompleted(sigID uint64) *SigningCompleted {
+	return &SigningCompleted{
+		Module: ModuleName,
+		SigID:  sigID,
+	}
+}
+
+// NewSignatureSubmitted is the constructor for event signature submitted
+func NewSignatureSubmitted(sigID uint64, participant sdk.ValAddress, signature Signature) *SignatureSubmitted {
+	return &SignatureSubmitted{
+		Module:      ModuleName,
+		SigID:       sigID,
+		Participant: participant,
+		Signature:   signature,
+	}
+}
