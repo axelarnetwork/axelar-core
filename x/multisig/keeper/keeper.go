@@ -23,6 +23,8 @@ var (
 	signingSessionCountKey = utils.KeyFromInt(100)
 )
 
+var _ types.Keeper = &Keeper{}
+
 // Keeper provides access to all state changes regarding this module
 type Keeper struct {
 	cdc        codec.BinaryCodec

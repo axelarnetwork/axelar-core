@@ -3,10 +3,12 @@ package multisig_test
 import (
 	"testing"
 
+	"github.com/btcsuite/btcd/btcec/v2"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
+	"golang.org/x/exp/maps"
 
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
@@ -19,7 +21,10 @@ import (
 	typestestutils "github.com/axelarnetwork/axelar-core/x/multisig/types/testutils"
 	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 	rewardmock "github.com/axelarnetwork/axelar-core/x/reward/exported/mock"
+	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	snapshottestutils "github.com/axelarnetwork/axelar-core/x/snapshot/exported/testutils"
+	"github.com/axelarnetwork/utils/funcs"
+	"github.com/axelarnetwork/utils/slices"
 	. "github.com/axelarnetwork/utils/test"
 )
 
@@ -33,7 +38,9 @@ func TestEndBlocker(t *testing.T) {
 	givenKeepersAndCtx := Given("keepers", func() {
 		ctx = rand.Context(fake.NewMultiStore())
 		k = &mock.KeeperMock{
-			LoggerFunc: func(ctx sdk.Context) log.Logger { return log.TestingLogger() },
+			LoggerFunc:                     func(sdk.Context) log.Logger { return log.TestingLogger() },
+			GetKeygenSessionsByExpiryFunc:  func(sdk.Context, int64) []types.KeygenSession { return nil },
+			GetSigningSessionsByExpiryFunc: func(sdk.Context, int64) []types.SigningSession { return nil },
 		}
 		rewarder = &mock.RewarderMock{}
 	})
@@ -93,6 +100,93 @@ func TestEndBlocker(t *testing.T) {
 				assert.NoError(t, err)
 				assert.Len(t, k.DeleteKeygenSessionCalls(), 1)
 				assert.Len(t, k.SetKeyCalls(), 1)
+			}).
+			Run(t)
+	})
+
+	t.Run("handleSignings", func(t *testing.T) {
+		givenKeepersAndCtx.
+			When("a pending signing session expiry equal to the block height", func() {
+				k.GetSigningSessionsByExpiryFunc = func(_ sdk.Context, expiry int64) []types.SigningSession {
+					if expiry != ctx.BlockHeight() {
+						return nil
+					}
+
+					return []types.SigningSession{{
+						MultiSig: types.MultiSig{
+							ID: uint64(rand.PosI64()),
+						},
+						Key: types.Key{
+							ID: testutils.KeyID(),
+							PubKeys: slices.ToMap(
+								slices.Expand(func(int) types.PublicKey { return funcs.Must(btcec.NewPrivateKey()).PubKey().SerializeCompressed() }, 10),
+								func(types.PublicKey) string { return rand.ValAddr().String() },
+							),
+						},
+						State: exported.Pending,
+					}}
+				}
+			}).
+			Then("should delete and penalize missing participants", func(t *testing.T) {
+				pool := rewardmock.RewardPoolMock{
+					ClearRewardsFunc: func(sdk.ValAddress) {},
+				}
+
+				k.DeleteSigningSessionFunc = func(sdk.Context, uint64) {}
+				rewarder.GetPoolFunc = func(sdk.Context, string) reward.RewardPool { return &pool }
+
+				_, err := multisig.EndBlocker(ctx, abci.RequestEndBlock{}, k, rewarder)
+
+				assert.NoError(t, err)
+				assert.Len(t, k.DeleteSigningSessionCalls(), 1)
+				assert.Len(t, pool.ClearRewardsCalls(), 10)
+			}).
+			Run(t)
+
+		givenKeepersAndCtx.
+			When("a completed signing session expiry equal to the block height", func() {
+				k.GetSigningSessionsByExpiryFunc = func(_ sdk.Context, expiry int64) []types.SigningSession {
+					if expiry != ctx.BlockHeight() {
+						return nil
+					}
+
+					sig := typestestutils.MultiSig()
+					validators := maps.Keys(sig.GetSigs())
+
+					pubKeys := make(map[string]types.PublicKey)
+					for _, v := range validators {
+						pubKeys[v] = funcs.Must(btcec.NewPrivateKey()).PubKey().SerializeCompressed()
+					}
+
+					participants := make(map[string]snapshot.Participant)
+					for _, v := range validators {
+						participants[v] = snapshot.NewParticipant(funcs.Must(sdk.ValAddressFromBech32(v)), sdk.OneUint())
+					}
+
+					return []types.SigningSession{{
+						MultiSig: sig,
+						Key: types.Key{
+							ID:      testutils.KeyID(),
+							PubKeys: pubKeys,
+							Snapshot: snapshot.Snapshot{
+								Participants: participants,
+								BondedWeight: sdk.OneUint().MulUint64(uint64(len(participants))),
+							},
+							SigningThreshold: utils.OneThreshold,
+						},
+						State: exported.Completed,
+					}}
+				}
+			}).
+			Then("should delete and set sig", func(t *testing.T) {
+				k.DeleteSigningSessionFunc = func(sdk.Context, uint64) {}
+				k.SetSigFunc = func(sdk.Context, types.MultiSig) {}
+
+				_, err := multisig.EndBlocker(ctx, abci.RequestEndBlock{}, k, rewarder)
+
+				assert.NoError(t, err)
+				assert.Len(t, k.DeleteSigningSessionCalls(), 1)
+				assert.Len(t, k.SetSigCalls(), 1)
 			}).
 			Run(t)
 	})

@@ -53,6 +53,14 @@ func NewSigningStarted(sigID uint64, key Key, payloadHash Hash, requestingModule
 	}
 }
 
+// NewSigningExpired is the constructor for event signing expired
+func NewSigningExpired(sigID uint64) *SigningExpired {
+	return &SigningExpired{
+		Module: ModuleName,
+		SigID:  sigID,
+	}
+}
+
 // NewSigningCompleted is the constructor for event signing completed
 func NewSigningCompleted(sigID uint64) *SigningCompleted {
 	return &SigningCompleted{

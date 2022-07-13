@@ -67,6 +67,11 @@ message SigningCompleted {
   uint64 sig_id = 2 [ (gogoproto.customname) = "SigID" ];
 }
 
+message SigningExpired {
+  string module = 1;
+  uint64 sig_id = 2 [ (gogoproto.customname) = "SigID" ];
+}
+
 message SignatureSubmitted {
   string module = 1;
   uint64 sig_id = 2 [ (gogoproto.customname) = "SigID" ];
