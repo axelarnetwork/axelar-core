@@ -243,6 +243,8 @@
     - [MultisigState](#axelar.multisig.exported.v1beta1.MultisigState)
   
 - [axelar/multisig/v1beta1/events.proto](#axelar/multisig/v1beta1/events.proto)
+    - [KeyAssigned](#axelar.multisig.v1beta1.KeyAssigned)
+    - [KeyRotated](#axelar.multisig.v1beta1.KeyRotated)
     - [KeygenCompleted](#axelar.multisig.v1beta1.KeygenCompleted)
     - [KeygenExpired](#axelar.multisig.v1beta1.KeygenExpired)
     - [KeygenStarted](#axelar.multisig.v1beta1.KeygenStarted)
@@ -3800,6 +3802,40 @@ QueryService defines the gRPC querier service.
 <p align="right"><a href="#top">Top</a></p>
 
 ## axelar/multisig/v1beta1/events.proto
+
+
+
+<a name="axelar.multisig.v1beta1.KeyAssigned"></a>
+
+### KeyAssigned
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `module` | [string](#string) |  |  |
+| `chain` | [string](#string) |  |  |
+| `key_id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.KeyRotated"></a>
+
+### KeyRotated
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `module` | [string](#string) |  |  |
+| `chain` | [string](#string) |  |  |
+| `key_id` | [string](#string) |  |  |
+
+
+
 
 
 

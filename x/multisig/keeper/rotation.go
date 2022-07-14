@@ -66,18 +66,30 @@ func (k Keeper) AssignKey(ctx sdk.Context, chainName nexus.ChainName, keyID expo
 	k.SetKey(ctx, key)
 	k.setKeyEpoch(ctx, types.NewKeyEpoch(nextRotationCount, chainName, keyID))
 
+	ctx.EventManager().EmitTypedEvent(types.NewKeyAssigned(chainName, keyID))
+	k.Logger(ctx).Info("new key assigned",
+		"chain", chainName,
+		"keyID", keyID,
+	)
+
 	return nil
 }
 
 // RotateKey rotates to the given chain's next key
 func (k Keeper) RotateKey(ctx sdk.Context, chainName nexus.ChainName) error {
 	nextRotationCount := k.getKeyRotationCount(ctx, chainName) + 1
-	_, ok := k.getKeyEpoch(ctx, chainName, nextRotationCount)
+	keyEpoch, ok := k.getKeyEpoch(ctx, chainName, nextRotationCount)
 	if !ok {
 		return fmt.Errorf("next key of chain %s not assigned", chainName)
 	}
 
 	k.setKeyRotationCount(ctx, chainName, nextRotationCount)
+
+	ctx.EventManager().EmitTypedEvent(types.NewKeyRotated(chainName, keyEpoch.GetKeyID()))
+	k.Logger(ctx).Info("new key rotated",
+		"chain", chainName,
+		"keyID", keyEpoch.GetKeyID(),
+	)
 
 	return nil
 }
