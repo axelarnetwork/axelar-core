@@ -26,12 +26,12 @@ func KeyTable() params.KeyTable {
 // DefaultParams returns the module's parameter set initialized with default values
 func DefaultParams() Params {
 	return Params{
-		KeygenThreshold:    utils.NewThreshold(90, 100),
-		SigningThreshold:   utils.NewThreshold(67, 100),
-		KeygenTimeout:      20,
-		KeygenGracePeriod:  3,
-		SigningTimeout:     20,
-		SigningGracePeriod: 3,
+		KeygenThreshold:    utils.NewThreshold(80, 100),
+		SigningThreshold:   utils.NewThreshold(60, 100),
+		KeygenTimeout:      10,
+		KeygenGracePeriod:  5,
+		SigningTimeout:     10,
+		SigningGracePeriod: 1,
 	}
 }
 
