@@ -29,10 +29,6 @@ func validateChains(ctx sdk.Context, sourceChainName nexus.ChainName, destinatio
 		return nexus.Chain{}, nexus.Chain{}, fmt.Errorf("%s is not a registered chain", destinationChainName)
 	}
 
-	if !bk.HasChain(ctx, destinationChainName) {
-		return nexus.Chain{}, nexus.Chain{}, fmt.Errorf("destination chain %s is not an evm chain", destinationChainName)
-	}
-
 	return sourceChain, destinationChain, nil
 }
 
@@ -49,7 +45,6 @@ func handleTokenSent(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n 
 	}
 
 	sourceCk := bk.ForChain(sourceChain.Name)
-	destinationCk := bk.ForChain(destinationChain.Name)
 
 	token := sourceCk.GetERC20TokenBySymbol(ctx, e.Symbol)
 	if !token.Is(types.Confirmed) {
@@ -58,9 +53,15 @@ func handleTokenSent(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n 
 	}
 
 	asset := token.GetAsset()
-	if token := destinationCk.GetERC20TokenByAsset(ctx, asset); !token.Is(types.Confirmed) {
-		bk.Logger(ctx).Info(fmt.Sprintf("%s token with asset %s is not confirmed yet", e.DestinationChain, asset))
-		return false
+
+	// check erc20 token status if destination is an evm chain
+	if bk.HasChain(ctx, destinationChain.Name) {
+		destinationCk := bk.ForChain(destinationChain.Name)
+
+		if token := destinationCk.GetERC20TokenByAsset(ctx, asset); !token.Is(types.Confirmed) {
+			bk.Logger(ctx).Info(fmt.Sprintf("%s token with asset %s is not confirmed yet", e.DestinationChain, asset))
+			return false
+		}
 	}
 
 	recipient := nexus.CrossChainAddress{Chain: destinationChain, Address: e.DestinationAddress}
@@ -89,6 +90,11 @@ func handleContractCall(ctx sdk.Context, event types.Event, bk types.BaseKeeper,
 	sourceChain, destinationChain, err := validateChains(ctx, event.Chain, e.DestinationChain, bk, n)
 	if err != nil {
 		bk.Logger(ctx).Info(err.Error())
+		return false
+	}
+
+	if !bk.HasChain(ctx, destinationChain.Name) {
+		bk.Logger(ctx).Info(fmt.Sprintf("destination chain %s is not an evm chain", destinationChain.Name))
 		return false
 	}
 
@@ -138,6 +144,11 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 	sourceChain, destinationChain, err := validateChains(ctx, event.Chain, e.DestinationChain, bk, n)
 	if err != nil {
 		bk.Logger(ctx).Info(err.Error())
+		return false
+	}
+
+	if !bk.HasChain(ctx, destinationChain.Name) {
+		bk.Logger(ctx).Info(fmt.Sprintf("destination chain %s is not an evm chain", destinationChain.Name))
 		return false
 	}
 
@@ -383,10 +394,7 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 		if !ok {
 			return true
 		}
-		// would handle event as failure if destination chain is not an evm chain
-		if !bk.HasChain(ctx, destinationChainName) {
-			return true
-		}
+
 		// skip if destination chain is not activated
 		if !n.IsChainActivated(ctx, destinationChain) {
 			bk.Logger(ctx).Debug(fmt.Sprintf("skipping confirmed event %s due to destination chain being inactive", event.GetID()),
@@ -397,6 +405,12 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 
 			return false
 		}
+
+		// skip further checks and handle event if destination is not an evm chain
+		if !bk.HasChain(ctx, destinationChainName) {
+			return true
+		}
+
 		// skip if destination chain has not got gateway set yet
 		if _, ok := bk.ForChain(destinationChainName).GetGatewayAddress(ctx); !ok {
 			bk.Logger(ctx).Debug(fmt.Sprintf("skipping confirmed event %s due to destination chain not having gateway set", event.GetID()),
@@ -407,6 +421,7 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 
 			return false
 		}
+
 		// skip if destination chain key rotation is in progress
 		if _, nextKeyAssigned := s.GetNextKeyID(ctx, destinationChain, keyRole); nextKeyAssigned {
 			bk.Logger(ctx).Debug(fmt.Sprintf("skipping confirmed event %s due to destination chain in the middle of key rotation", event.GetID()),
