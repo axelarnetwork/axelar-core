@@ -10,6 +10,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/utils/funcs"
 )
 
 // GetCurrentKey returns the current key of the given chain
@@ -19,12 +20,7 @@ func (k Keeper) GetCurrentKey(ctx sdk.Context, chainName nexus.ChainName) (types
 		return types.Key{}, false
 	}
 
-	key, ok := k.getKey(ctx, keyID)
-	if !ok {
-		panic(fmt.Errorf("key %s not found", keyID))
-	}
-
-	return key, true
+	return funcs.MustOk(k.getKey(ctx, keyID)), true
 }
 
 // GetCurrentKeyID returns the current key ID of the given chain
