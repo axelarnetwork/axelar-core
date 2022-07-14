@@ -177,8 +177,7 @@
     - [GatewayAddressResponse](#axelar.evm.v1beta1.GatewayAddressResponse)
     - [KeyAddressRequest](#axelar.evm.v1beta1.KeyAddressRequest)
     - [KeyAddressResponse](#axelar.evm.v1beta1.KeyAddressResponse)
-    - [KeyAddressResponse.MultisigAddresses](#axelar.evm.v1beta1.KeyAddressResponse.MultisigAddresses)
-    - [KeyAddressResponse.ThresholdAddress](#axelar.evm.v1beta1.KeyAddressResponse.ThresholdAddress)
+    - [KeyAddressResponse.AddressWeightsEntry](#axelar.evm.v1beta1.KeyAddressResponse.AddressWeightsEntry)
     - [PendingCommandsRequest](#axelar.evm.v1beta1.PendingCommandsRequest)
     - [PendingCommandsResponse](#axelar.evm.v1beta1.PendingCommandsResponse)
     - [QueryBurnerAddressResponse](#axelar.evm.v1beta1.QueryBurnerAddressResponse)
@@ -2909,39 +2908,24 @@ ERC20 tokens requested for a chain
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `key_id` | [string](#string) |  |  |
-| `multisig_addresses` | [KeyAddressResponse.MultisigAddresses](#axelar.evm.v1beta1.KeyAddressResponse.MultisigAddresses) |  |  |
-| `threshold_address` | [KeyAddressResponse.ThresholdAddress](#axelar.evm.v1beta1.KeyAddressResponse.ThresholdAddress) |  |  |
+| `address_weights` | [KeyAddressResponse.AddressWeightsEntry](#axelar.evm.v1beta1.KeyAddressResponse.AddressWeightsEntry) | repeated |  |
+| `threshold` | [string](#string) |  |  |
 
 
 
 
 
 
-<a name="axelar.evm.v1beta1.KeyAddressResponse.MultisigAddresses"></a>
+<a name="axelar.evm.v1beta1.KeyAddressResponse.AddressWeightsEntry"></a>
 
-### KeyAddressResponse.MultisigAddresses
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `addresses` | [string](#string) | repeated |  |
-| `threshold` | [uint32](#uint32) |  |  |
-
-
-
-
-
-
-<a name="axelar.evm.v1beta1.KeyAddressResponse.ThresholdAddress"></a>
-
-### KeyAddressResponse.ThresholdAddress
+### KeyAddressResponse.AddressWeightsEntry
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `address` | [string](#string) |  |  |
+| `key` | [string](#string) |  |  |
+| `value` | [string](#string) |  |  |
 
 
 

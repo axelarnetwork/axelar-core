@@ -6415,21 +6415,12 @@ paths:
                 properties:
                   key_id:
                     type: string
-                  multisig_addresses:
+                  address_weights:
                     type: object
-                    properties:
-                      addresses:
-                        type: array
-                        items:
-                          type: string
-                      threshold:
-                        type: integer
-                        format: int64
-                  threshold_address:
-                    type: object
-                    properties:
-                      address:
-                        type: string
+                    additionalProperties:
+                      type: string
+                  threshold:
+                    type: string
         default:
           description: An unexpected error response
           content:
@@ -35828,35 +35819,11 @@ components:
       properties:
         key_id:
           type: string
-        multisig_addresses:
+        address_weights:
           type: object
-          properties:
-            addresses:
-              type: array
-              items:
-                type: string
-            threshold:
-              type: integer
-              format: int64
-        threshold_address:
-          type: object
-          properties:
-            address:
-              type: string
-    axelar.evm.v1beta1.KeyAddressResponse.MultisigAddresses:
-      type: object
-      properties:
-        addresses:
-          type: array
-          items:
+          additionalProperties:
             type: string
         threshold:
-          type: integer
-          format: int64
-    axelar.evm.v1beta1.KeyAddressResponse.ThresholdAddress:
-      type: object
-      properties:
-        address:
           type: string
     axelar.evm.v1beta1.LinkRequest:
       type: object
