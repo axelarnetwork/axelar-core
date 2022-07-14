@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/armon/go-metrics v0.3.11
 	github.com/axelarnetwork/tm-events v0.0.0-20220427211200-9114fb26a603
-	github.com/axelarnetwork/utils v0.0.0-20220713192931-4f2b1df4b2bb
+	github.com/axelarnetwork/utils v0.0.0-20220714142220-0c2c1db87fc8
 	github.com/btcsuite/btcd v0.22.1
 	github.com/btcsuite/btcd/btcec/v2 v2.1.2
 	github.com/cosmos/cosmos-sdk v0.45.4
