@@ -482,7 +482,7 @@ func (k Keeper) CreateSnapshot(
 	participants := make([]exported.Participant, 0, len(candidates))
 	for _, candidate := range candidates {
 		validator := k.staking.Validator(ctx, candidate)
-		if !filterFunc(validator) {
+		if validator == nil || !filterFunc(validator) {
 			continue
 		}
 
@@ -493,7 +493,10 @@ func (k Keeper) CreateSnapshot(
 			continue
 		}
 		participants = append(participants, exported.NewParticipant(validator.GetOperator(), weight))
+	}
 
+	if len(participants) == 0 {
+		return exported.Snapshot{}, fmt.Errorf("no participants selected")
 	}
 
 	bondedWeight := sdk.ZeroUint()
