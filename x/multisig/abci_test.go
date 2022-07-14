@@ -138,8 +138,8 @@ func TestEndBlocker(t *testing.T) {
 							Key: types.Key{
 								ID: testutils.KeyID(),
 								PubKeys: slices.ToMap(
-									slices.Expand(func(int) types.PublicKey { return funcs.Must(btcec.NewPrivateKey()).PubKey().SerializeCompressed() }, 10),
-									func(types.PublicKey) string { return rand.ValAddr().String() },
+									slices.Expand(func(int) exported.PublicKey { return funcs.Must(btcec.NewPrivateKey()).PubKey().SerializeCompressed() }, 10),
+									func(exported.PublicKey) string { return rand.ValAddr().String() },
 								),
 							},
 							State: exported.Pending,
@@ -172,7 +172,7 @@ func TestEndBlocker(t *testing.T) {
 						sig := typestestutils.MultiSig()
 						validators := maps.Keys(sig.GetSigs())
 
-						pubKeys := make(map[string]types.PublicKey)
+						pubKeys := make(map[string]exported.PublicKey)
 						for _, v := range validators {
 							pubKeys[v] = funcs.Must(btcec.NewPrivateKey()).PubKey().SerializeCompressed()
 						}

@@ -189,7 +189,7 @@ func TestMsgServer(t *testing.T) {
 		participants := slices.Map(validators, func(v sdk.ValAddress) snapshot.Participant { return snapshot.NewParticipant(v, sdk.OneUint()) })
 		keyID := exported.KeyID(rand.HexStr(5))
 		privateKeys := slices.Expand(func(int) *btcec.PrivateKey { return funcs.Must(btcec.NewPrivateKey()) }, participantCount)
-		publicKeys := slices.Map(privateKeys, func(sk *btcec.PrivateKey) types.PublicKey { return sk.PubKey().SerializeCompressed() })
+		publicKeys := slices.Map(privateKeys, func(sk *btcec.PrivateKey) exported.PublicKey { return sk.PubKey().SerializeCompressed() })
 		module := rand.AlphaStrBetween(3, 3)
 
 		givenMsgServer.
@@ -213,7 +213,7 @@ func TestMsgServer(t *testing.T) {
 				key = types.Key{
 					ID:       keyID,
 					Snapshot: snapshot.NewSnapshot(ctx.BlockTime(), ctx.BlockHeight(), participants, sdk.NewUint(uint64(participantCount))),
-					PubKeys: slices.ToMap(publicKeys, func(pk types.PublicKey) string {
+					PubKeys: slices.ToMap(publicKeys, func(pk exported.PublicKey) string {
 						result := validators[pubKeyIndex]
 						pubKeyIndex += 1
 

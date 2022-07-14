@@ -50,7 +50,7 @@ func (sig Signature) ValidateBasic() error {
 }
 
 // Verify checks if the signature matches the payload and public key
-func (sig Signature) Verify(payloadHash Hash, pk PublicKey) bool {
+func (sig Signature) Verify(payloadHash Hash, pk exported.PublicKey) bool {
 	s, err := btcec.ParseDERSignature(sig, btcec.S256())
 	if err != nil {
 		return false
@@ -67,28 +67,6 @@ func (sig Signature) Verify(payloadHash Hash, pk PublicKey) bool {
 // String returns the hex-encoding of signature
 func (sig Signature) String() string {
 	return hex.EncodeToString(sig)
-}
-
-// PublicKey is an alias for compressed public key in raw bytes
-type PublicKey []byte
-
-// ValidateBasic returns an error if the given public key is invalid; nil otherwise
-func (pk PublicKey) ValidateBasic() error {
-	btcecPubKey, err := btcec.ParsePubKey(pk, btcec.S256())
-	if err != nil {
-		return err
-	}
-
-	if !bytes.Equal(pk, btcecPubKey.SerializeCompressed()) {
-		return fmt.Errorf("public key is not compressed")
-	}
-
-	return nil
-}
-
-// String returns the hex encoding of the given public key
-func (pk PublicKey) String() string {
-	return hex.EncodeToString(pk)
 }
 
 func sortAddresses[T sdk.Address](addrs []T) []T {
