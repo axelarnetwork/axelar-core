@@ -5,17 +5,16 @@ option go_package = "github.com/axelarnetwork/axelar-core/x/nexus/exported";
 
 import "gogoproto/gogo.proto";
 import "cosmos/base/v1beta1/coin.proto";
-import "axelar/tss/exported/v1beta1/types.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
 // Chain represents the properties of a registered blockchain
 message Chain {
-  reserved 2; // native_asset was removed in 0.14
+  reserved 2; // native_asset was removed in v0.14
+  reserved 4; // key_type was removed in v0.20
 
   string name = 1 [ (gogoproto.casttype) = "ChainName" ];
   bool supports_foreign_assets = 3;
-  tss.exported.v1beta1.KeyType key_type = 4;
   string module = 5;
 }
 

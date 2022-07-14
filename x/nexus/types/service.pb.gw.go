@@ -13,7 +13,7 @@ import (
 	"io"
 	"net/http"
 
-	exported_0 "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/golang/protobuf/descriptor"
 	"github.com/golang/protobuf/proto"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -332,13 +332,13 @@ func request_QueryService_TransfersForChain_0(ctx context.Context, marshaler run
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "state")
 	}
 
-	e, err = runtime.Enum(val, exported_0.TransferState_value)
+	e, err = runtime.Enum(val, exported.TransferState_value)
 
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "state", err)
 	}
 
-	protoReq.State = exported_0.TransferState(e)
+	protoReq.State = exported.TransferState(e)
 
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
@@ -380,13 +380,13 @@ func local_request_QueryService_TransfersForChain_0(ctx context.Context, marshal
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "state")
 	}
 
-	e, err = runtime.Enum(val, exported_0.TransferState_value)
+	e, err = runtime.Enum(val, exported.TransferState_value)
 
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "state", err)
 	}
 
-	protoReq.State = exported_0.TransferState(e)
+	protoReq.State = exported.TransferState(e)
 
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)

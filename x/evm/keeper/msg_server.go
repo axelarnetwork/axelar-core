@@ -11,13 +11,11 @@ import (
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
-	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
@@ -25,30 +23,25 @@ var _ types.MsgServiceServer = msgServer{}
 
 type msgServer struct {
 	types.BaseKeeper
-	tss         types.TSS
-	signer      types.Signer
 	nexus       types.Nexus
 	voter       types.Voter
 	snapshotter types.Snapshotter
 	staking     types.StakingKeeper
 	slashing    types.SlashingKeeper
+	multisig    types.MultisigKeeper
 }
-
-// TODO: make this a param when we can easily switch between different kinds of keys and different settings
-var keyRole = tss.SecondaryKey
 
 // NewMsgServerImpl returns an implementation of the evm MsgServiceServer interface
 // for the provided Keeper.
-func NewMsgServerImpl(keeper types.BaseKeeper, t types.TSS, n types.Nexus, s types.Signer, v types.Voter, snap types.Snapshotter, staking types.StakingKeeper, slashing types.SlashingKeeper) types.MsgServiceServer {
+func NewMsgServerImpl(keeper types.BaseKeeper, n types.Nexus, v types.Voter, snap types.Snapshotter, staking types.StakingKeeper, slashing types.SlashingKeeper, multisig types.MultisigKeeper) types.MsgServiceServer {
 	return msgServer{
 		BaseKeeper:  keeper,
-		tss:         t,
-		signer:      s,
 		nexus:       n,
 		voter:       v,
 		snapshotter: snap,
 		staking:     staking,
 		slashing:    slashing,
+		multisig:    multisig,
 	}
 }
 
@@ -153,12 +146,8 @@ func (s msgServer) SetGateway(c context.Context, req *types.SetGatewayRequest) (
 		return nil, err
 	}
 
-	if _, ok := s.signer.GetCurrentKeyID(ctx, chain, keyRole); !ok {
+	if _, ok := s.multisig.GetCurrentKeyID(ctx, chain.Name); !ok {
 		return nil, fmt.Errorf("current key not set for chain %s", chain.Name)
-	}
-
-	if _, ok := s.signer.GetExternalKeyIDs(ctx, chain); !ok {
-		return nil, fmt.Errorf("no external keys for chain %s found", chain.Name)
 	}
 
 	keeper := s.ForChain(chain.Name)
@@ -399,8 +388,8 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 		return nil, err
 	}
 
-	if _, ok := s.signer.GetNextKeyID(ctx, chain, keyRole); !ok {
-		return nil, fmt.Errorf("next %s key for chain %s not set yet", keyRole.SimpleString(), chain.Name)
+	if _, ok := s.multisig.GetNextKeyID(ctx, chain.Name); !ok {
+		return nil, fmt.Errorf("next key for chain %s not set yet", chain.Name)
 	}
 
 	keeper := s.ForChain(chain.Name)
@@ -440,7 +429,6 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
 		sdk.NewAttribute(types.AttributeKeyChain, chain.Name.String()),
 		sdk.NewAttribute(types.AttributeKeyTxID, req.TxID.Hex()),
-		sdk.NewAttribute(types.AttributeKeyKeyType, chain.KeyType.SimpleString()),
 		sdk.NewAttribute(types.AttributeKeyGatewayAddress, gatewayAddr.Hex()),
 		sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
 		sdk.NewAttribute(types.AttributeKeyPoll, pollID.String()),
@@ -492,11 +480,11 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 		}
 	}
 
-	if _, nextKeyAssigned := s.signer.GetNextKeyID(ctx, chain, keyRole); nextKeyAssigned {
-		return nil, fmt.Errorf("next %s key already assigned for chain %s, rotate key first", keyRole.SimpleString(), chain.Name)
+	if _, nextKeyAssigned := s.multisig.GetNextKeyID(ctx, chain.Name); nextKeyAssigned {
+		return nil, fmt.Errorf("next key already assigned for chain %s, rotate key first", chain.Name)
 	}
 
-	keyID, ok := s.signer.GetCurrentKeyID(ctx, chain, keyRole)
+	keyID, ok := s.multisig.GetCurrentKeyID(ctx, chain.Name)
 	if !ok {
 		return nil, fmt.Errorf("current key not set for chain %s", chain.Name)
 	}
@@ -546,11 +534,11 @@ func (s msgServer) CreateBurnTokens(c context.Context, req *types.CreateBurnToke
 		return nil, fmt.Errorf("could not find chain ID for '%s'", chain.Name)
 	}
 
-	if _, nextKeyAssigned := s.signer.GetNextKeyID(ctx, chain, keyRole); nextKeyAssigned {
-		return nil, s.newErrRotationInProgress(chain, keyRole)
+	if _, nextKeyAssigned := s.multisig.GetNextKeyID(ctx, chain.Name); nextKeyAssigned {
+		return nil, s.newErrRotationInProgress(chain)
 	}
 
-	keyID, ok := s.signer.GetCurrentKeyID(ctx, chain, keyRole)
+	keyID, ok := s.multisig.GetCurrentKeyID(ctx, chain.Name)
 	if !ok {
 		return nil, fmt.Errorf("current key not set for chain %s", chain.Name)
 	}
@@ -591,8 +579,8 @@ func (s msgServer) CreateBurnTokens(c context.Context, req *types.CreateBurnToke
 	return &types.CreateBurnTokensResponse{}, nil
 }
 
-func (s msgServer) newErrRotationInProgress(chain nexus.Chain, key tss.KeyRole) error {
-	return sdkerrors.Wrapf(types.ErrRotationInProgress, "finish rotating to next %s key for chain %s first", key.SimpleString(), chain.Name)
+func (s msgServer) newErrRotationInProgress(chain nexus.Chain) error {
+	return sdkerrors.Wrapf(types.ErrRotationInProgress, "finish rotating to next key for chain %s first", chain.Name)
 }
 
 func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePendingTransfersRequest) (*types.CreatePendingTransfersResponse, error) {
@@ -615,11 +603,11 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 		return &types.CreatePendingTransfersResponse{}, nil
 	}
 
-	if _, nextKeyAssigned := s.signer.GetNextKeyID(ctx, chain, keyRole); nextKeyAssigned {
-		return nil, s.newErrRotationInProgress(chain, keyRole)
+	if _, nextKeyAssigned := s.multisig.GetNextKeyID(ctx, chain.Name); nextKeyAssigned {
+		return nil, s.newErrRotationInProgress(chain)
 	}
 
-	keyID, ok := s.signer.GetCurrentKeyID(ctx, chain, keyRole)
+	keyID, ok := s.multisig.GetCurrentKeyID(ctx, chain.Name)
 	if !ok {
 		return nil, fmt.Errorf("current key not set for chain %s", chain.Name)
 	}
@@ -675,7 +663,7 @@ func (s msgServer) CreateTransferOperatorship(c context.Context, req *types.Crea
 	return &types.CreateTransferOperatorshipResponse{}, nil
 }
 
-func (s msgServer) createTransferKeyCommand(ctx sdk.Context, keeper types.ChainKeeper, chainStr nexus.ChainName, nextKeyID tss.KeyID) (types.Command, error) {
+func (s msgServer) createTransferKeyCommand(ctx sdk.Context, keeper types.ChainKeeper, chainStr nexus.ChainName, nextKeyID multisig.KeyID) (types.Command, error) {
 	chain, ok := s.nexus.GetChain(ctx, chainStr)
 	if !ok {
 		return types.Command{}, fmt.Errorf("%s is not a registered chain", chainStr)
@@ -690,59 +678,56 @@ func (s msgServer) createTransferKeyCommand(ctx sdk.Context, keeper types.ChainK
 		return types.Command{}, fmt.Errorf("could not find chain ID for '%s'", chainStr)
 	}
 
-	if _, nextKeyAssigned := s.signer.GetNextKeyID(ctx, chain, keyRole); nextKeyAssigned {
-		return types.Command{}, s.newErrRotationInProgress(chain, keyRole)
+	if _, nextKeyAssigned := s.multisig.GetNextKeyID(ctx, chain.Name); nextKeyAssigned {
+		return types.Command{}, s.newErrRotationInProgress(chain)
 	}
 
-	if err := s.signer.AssertMatchesRequirements(ctx, s.snapshotter, chain, nextKeyID, keyRole); err != nil {
-		return types.Command{}, sdkerrors.Wrapf(err, "key %s does not match requirements for role %s", nextKeyID, keyRole.SimpleString())
-	}
-
-	if err := s.signer.AssignNextKey(ctx, chain, keyRole, nextKeyID); err != nil {
+	if err := s.multisig.AssignKey(ctx, chain.Name, nextKeyID); err != nil {
 		return types.Command{}, err
 	}
 
-	keyID, ok := s.signer.GetCurrentKeyID(ctx, chain, keyRole)
+	keyID, ok := s.multisig.GetCurrentKeyID(ctx, chain.Name)
 	if !ok {
 		return types.Command{}, fmt.Errorf("current key not set for chain %s", chain.Name)
 	}
 
-	nextKey, ok := s.signer.GetKey(ctx, nextKeyID)
-	if !ok {
-		return types.Command{}, fmt.Errorf("could not find threshold key '%s'", nextKeyID)
-	}
+	panic("TODO")
+	// nextKey, ok := s.signer.GetKey(ctx, nextKeyID)
+	// if !ok {
+	// 	return types.Command{}, fmt.Errorf("could not find threshold key '%s'", nextKeyID)
+	// }
 
-	switch chain.KeyType {
-	case tss.Threshold:
-		pk, err := nextKey.GetECDSAPubKey()
-		if err != nil {
-			return types.Command{}, err
-		}
+	// switch chain.KeyType {
+	// case tss.Threshold:
+	// 	pk, err := nextKey.GetECDSAPubKey()
+	// 	if err != nil {
+	// 		return types.Command{}, err
+	// 	}
 
-		address := crypto.PubkeyToAddress(pk)
-		s.Logger(ctx).Debug(fmt.Sprintf("creating transfer key command for chain %s to transfer to address %s", chain.Name, address))
+	// 	address := crypto.PubkeyToAddress(pk)
+	// 	s.Logger(ctx).Debug(fmt.Sprintf("creating transfer key command for chain %s to transfer to address %s", chain.Name, address))
 
-		return types.CreateSinglesigTransferCommand(chainID, keyID, crypto.PubkeyToAddress(pk))
-	case tss.Multisig:
-		addresses, threshold, err := types.GetMultisigAddresses(nextKey)
-		if err != nil {
-			return types.Command{}, err
-		}
+	// 	return types.CreateSinglesigTransferCommand(chainID, keyID, crypto.PubkeyToAddress(pk))
+	// case tss.Multisig:
+	// 	addresses, threshold, err := types.GetMultisigAddresses(nextKey)
+	// 	if err != nil {
+	// 		return types.Command{}, err
+	// 	}
 
-		addressStrs := make([]string, len(addresses))
-		for i, address := range addresses {
-			addressStrs[i] = address.Hex()
-		}
+	// 	addressStrs := make([]string, len(addresses))
+	// 	for i, address := range addresses {
+	// 		addressStrs[i] = address.Hex()
+	// 	}
 
-		s.Logger(ctx).Debug(fmt.Sprintf("creating transfer key command for chain %s to transfer to addresses %s", chain.Name, strings.Join(addressStrs, ",")))
+	// 	s.Logger(ctx).Debug(fmt.Sprintf("creating transfer key command for chain %s to transfer to addresses %s", chain.Name, strings.Join(addressStrs, ",")))
 
-		return types.CreateMultisigTransferCommand(chainID, keyID, threshold, addresses...)
-	default:
-		return types.Command{}, fmt.Errorf("invalid key type '%s'", chain.KeyType.SimpleString())
-	}
+	// 	return types.CreateMultisigTransferCommand(chainID, keyID, threshold, addresses...)
+	// default:
+	// 	return types.Command{}, fmt.Errorf("invalid key type '%s'", chain.KeyType.SimpleString())
+	// }
 }
 
-func getCommandBatchToSign(ctx sdk.Context, keeper types.ChainKeeper, signer types.Signer) (types.CommandBatch, error) {
+func getCommandBatchToSign(ctx sdk.Context, keeper types.ChainKeeper) (types.CommandBatch, error) {
 	latest := keeper.GetLatestCommandBatch(ctx)
 
 	switch latest.GetStatus() {
@@ -751,7 +736,7 @@ func getCommandBatchToSign(ctx sdk.Context, keeper types.ChainKeeper, signer typ
 	case types.BatchAborted:
 		return latest, nil
 	default:
-		return keeper.CreateNewBatchToSign(ctx, signer)
+		return keeper.CreateNewBatchToSign(ctx)
 	}
 }
 
@@ -772,17 +757,12 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		return nil, fmt.Errorf("could not find chain ID for '%s'", chain.Name)
 	}
 
-	commandBatch, err := getCommandBatchToSign(ctx, keeper, s.signer)
+	commandBatch, err := getCommandBatchToSign(ctx, keeper)
 	if err != nil {
 		return nil, err
 	}
 	if len(commandBatch.GetCommandIDs()) == 0 {
 		return &types.SignCommandsResponse{CommandCount: 0, BatchedCommandsID: nil}, nil
-	}
-
-	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, commandBatch.GetKeyID())
-	if !ok {
-		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", commandBatch.GetKeyID())
 	}
 
 	sigMetadata, err := codectypes.NewAnyWithValue(&types.SigMetadata{
@@ -793,15 +773,7 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		return nil, err
 	}
 
-	batchedCommandsIDHex := hex.EncodeToString(commandBatch.GetID())
-	err = s.signer.StartSign(ctx, tss.SignInfo{
-		KeyID:           commandBatch.GetKeyID(),
-		SigID:           batchedCommandsIDHex,
-		Msg:             commandBatch.GetSigHash().Bytes(),
-		SnapshotCounter: counter,
-		RequestModule:   types.ModuleName,
-		ModuleMetadata:  sigMetadata,
-	}, s.snapshotter, s.voter)
+	err = s.multisig.Sign(ctx, commandBatch.GetKeyID(), commandBatch.GetSigHash().Bytes(), types.ModuleName, sigMetadata)
 	if err != nil {
 		return nil, err
 	}
@@ -810,12 +782,13 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		return nil, fmt.Errorf("failed setting status of command batch %s to be signing", hex.EncodeToString(commandBatch.GetID()))
 	}
 
+	batchedCommandsIDHex := hex.EncodeToString(commandBatch.GetID())
 	commandList := types.CommandIDsToStrings(commandBatch.GetCommandIDs())
 	for _, commandID := range commandList {
 		s.Logger(ctx).Info(
 			fmt.Sprintf("signing command %s in batch %s for chain %s using key %s", commandID, batchedCommandsIDHex, chain.Name, string(commandBatch.GetKeyID())),
 			types.AttributeKeyChain, chain.Name,
-			tsstypes.AttributeKeyKeyID, string(commandBatch.GetKeyID()),
+			"key_id", commandBatch.GetKeyID(),
 			"commandBatchID", batchedCommandsIDHex,
 			"commandID", commandID,
 		)
@@ -847,11 +820,7 @@ func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*typ
 		return nil, err
 	}
 
-	if !tsstypes.TSSEnabled && req.KeyType == tss.Threshold {
-		return nil, fmt.Errorf("TSS is disabled")
-	}
-
-	chain := nexus.Chain{Name: req.Name, SupportsForeignAssets: true, KeyType: req.KeyType, Module: types.ModuleName}
+	chain := nexus.Chain{Name: req.Name, SupportsForeignAssets: true, Module: types.ModuleName}
 	s.nexus.SetChain(ctx, chain)
 	s.ForChain(chain.Name).SetParams(ctx, req.Params)
 

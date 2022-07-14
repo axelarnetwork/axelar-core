@@ -9,7 +9,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 // NewAddCosmosBasedChainRequest is the constructor for NewAddCosmosBasedChainRequest
@@ -19,7 +18,6 @@ func NewAddCosmosBasedChainRequest(sender sdk.AccAddress, name, addrPrefix strin
 		Chain: nexus.Chain{
 			Name:                  nexus.ChainName(utils.NormalizeString(name)),
 			SupportsForeignAssets: true,
-			KeyType:               tss.None,
 			Module:                exported.Axelarnet.Module,
 		},
 		AddrPrefix:   utils.NormalizeString(addrPrefix),
@@ -45,10 +43,6 @@ func (m AddCosmosBasedChainRequest) ValidateBasic() error {
 
 	if err := m.Chain.Validate(); err != nil {
 		return fmt.Errorf("invalid chain spec: %v", err)
-	}
-
-	if m.Chain.KeyType != tss.None {
-		return fmt.Errorf("invalid key type: %s", m.Chain.KeyType.String())
 	}
 
 	if err := utils.ValidateString(m.AddrPrefix); err != nil {

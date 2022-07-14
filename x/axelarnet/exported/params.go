@@ -2,7 +2,6 @@ package exported
 
 import (
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 var (
@@ -12,7 +11,6 @@ var (
 	Axelarnet = exported.Chain{
 		Name:                  "Axelarnet",
 		SupportsForeignAssets: true,
-		KeyType:               tss.None,
 		Module:                "axelarnet", // cannot use constant due to import cycle
 	}
 )

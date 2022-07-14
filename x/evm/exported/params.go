@@ -2,7 +2,6 @@ package exported
 
 import (
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 var (
@@ -10,7 +9,6 @@ var (
 	Ethereum = exported.Chain{
 		Name:                  "Ethereum",
 		SupportsForeignAssets: true,
-		KeyType:               tss.Multisig,
 		Module:                "evm", // cannot use constant due to import cycle
 	}
 )

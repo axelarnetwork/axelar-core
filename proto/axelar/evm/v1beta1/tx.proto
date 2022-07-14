@@ -5,7 +5,7 @@ option go_package = "github.com/axelarnetwork/axelar-core/x/evm/types";
 
 import "gogoproto/gogo.proto";
 import "axelar/vote/exported/v1beta1/types.proto";
-import "axelar/tss/exported/v1beta1/types.proto";
+import "axelar/multisig/exported/v1beta1/types.proto";
 import "axelar/evm/v1beta1/types.proto";
 import "axelar/permission/exported/v1beta1/types.proto";
 
@@ -173,7 +173,7 @@ message CreateTransferOwnershipRequest {
   string key_id = 3 [
     (gogoproto.customname) = "KeyID",
     (gogoproto.casttype) =
-        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
   ];
 }
 
@@ -189,7 +189,7 @@ message CreateTransferOperatorshipRequest {
   string key_id = 3 [
     (gogoproto.customname) = "KeyID",
     (gogoproto.casttype) =
-        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
   ];
 }
 
@@ -213,13 +213,13 @@ message SignCommandsResponse {
 message AddChainRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
   reserved 3; // native_asset was removed in v0.14
+  reserved 4; // key_type was removed in v0.20
 
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string name = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
-  tss.exported.v1beta1.KeyType key_type = 4;
   bytes params = 5
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Params" ];
 }

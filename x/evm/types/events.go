@@ -23,7 +23,6 @@ const (
 	AttributeKeyThreshold          = "threshold"
 	AttributeKeyPoll               = "poll"
 	AttributeKeyTxID               = "txID"
-	AttributeKeyKeyType            = "keyType"
 	AttributeKeyAmount             = "amount"
 	AttributeKeyDepositAddress     = "depositAddress"
 	AttributeKeyTokenAddress       = "tokenAddress"

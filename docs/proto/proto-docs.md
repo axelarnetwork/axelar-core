@@ -15,26 +15,6 @@
 - [axelar/axelarnet/v1beta1/genesis.proto](#axelar/axelarnet/v1beta1/genesis.proto)
     - [GenesisState](#axelar.axelarnet.v1beta1.GenesisState)
   
-- [axelar/utils/v1beta1/threshold.proto](#axelar/utils/v1beta1/threshold.proto)
-    - [Threshold](#axelar.utils.v1beta1.Threshold)
-  
-- [axelar/tss/exported/v1beta1/types.proto](#axelar/tss/exported/v1beta1/types.proto)
-    - [Key](#axelar.tss.exported.v1beta1.Key)
-    - [Key.ECDSAKey](#axelar.tss.exported.v1beta1.Key.ECDSAKey)
-    - [Key.MultisigKey](#axelar.tss.exported.v1beta1.Key.MultisigKey)
-    - [KeyRequirement](#axelar.tss.exported.v1beta1.KeyRequirement)
-    - [SigKeyPair](#axelar.tss.exported.v1beta1.SigKeyPair)
-    - [SignInfo](#axelar.tss.exported.v1beta1.SignInfo)
-    - [Signature](#axelar.tss.exported.v1beta1.Signature)
-    - [Signature.MultiSig](#axelar.tss.exported.v1beta1.Signature.MultiSig)
-    - [Signature.SingleSig](#axelar.tss.exported.v1beta1.Signature.SingleSig)
-  
-    - [AckType](#axelar.tss.exported.v1beta1.AckType)
-    - [KeyRole](#axelar.tss.exported.v1beta1.KeyRole)
-    - [KeyShareDistributionPolicy](#axelar.tss.exported.v1beta1.KeyShareDistributionPolicy)
-    - [KeyType](#axelar.tss.exported.v1beta1.KeyType)
-    - [SigStatus](#axelar.tss.exported.v1beta1.SigStatus)
-  
 - [axelar/nexus/exported/v1beta1/types.proto](#axelar/nexus/exported/v1beta1/types.proto)
     - [Asset](#axelar.nexus.exported.v1beta1.Asset)
     - [Chain](#axelar.nexus.exported.v1beta1.Chain)
@@ -114,6 +94,12 @@
     - [QueueState.Item](#axelar.utils.v1beta1.QueueState.Item)
     - [QueueState.ItemsEntry](#axelar.utils.v1beta1.QueueState.ItemsEntry)
   
+- [axelar/utils/v1beta1/threshold.proto](#axelar/utils/v1beta1/threshold.proto)
+    - [Threshold](#axelar.utils.v1beta1.Threshold)
+  
+- [axelar/multisig/exported/v1beta1/types.proto](#axelar/multisig/exported/v1beta1/types.proto)
+    - [MultisigState](#axelar.multisig.exported.v1beta1.MultisigState)
+  
 - [axelar/evm/v1beta1/types.proto](#axelar/evm/v1beta1/types.proto)
     - [Asset](#axelar.evm.v1beta1.Asset)
     - [BurnerInfo](#axelar.evm.v1beta1.BurnerInfo)
@@ -191,6 +177,23 @@
   
     - [TokenType](#axelar.evm.v1beta1.TokenType)
   
+- [axelar/tss/exported/v1beta1/types.proto](#axelar/tss/exported/v1beta1/types.proto)
+    - [Key](#axelar.tss.exported.v1beta1.Key)
+    - [Key.ECDSAKey](#axelar.tss.exported.v1beta1.Key.ECDSAKey)
+    - [Key.MultisigKey](#axelar.tss.exported.v1beta1.Key.MultisigKey)
+    - [KeyRequirement](#axelar.tss.exported.v1beta1.KeyRequirement)
+    - [SigKeyPair](#axelar.tss.exported.v1beta1.SigKeyPair)
+    - [SignInfo](#axelar.tss.exported.v1beta1.SignInfo)
+    - [Signature](#axelar.tss.exported.v1beta1.Signature)
+    - [Signature.MultiSig](#axelar.tss.exported.v1beta1.Signature.MultiSig)
+    - [Signature.SingleSig](#axelar.tss.exported.v1beta1.Signature.SingleSig)
+  
+    - [AckType](#axelar.tss.exported.v1beta1.AckType)
+    - [KeyRole](#axelar.tss.exported.v1beta1.KeyRole)
+    - [KeyShareDistributionPolicy](#axelar.tss.exported.v1beta1.KeyShareDistributionPolicy)
+    - [KeyType](#axelar.tss.exported.v1beta1.KeyType)
+    - [SigStatus](#axelar.tss.exported.v1beta1.SigStatus)
+  
 - [axelar/snapshot/exported/v1beta1/types.proto](#axelar/snapshot/exported/v1beta1/types.proto)
     - [Participant](#axelar.snapshot.exported.v1beta1.Participant)
     - [Snapshot](#axelar.snapshot.exported.v1beta1.Snapshot)
@@ -238,9 +241,6 @@
 - [axelar/evm/v1beta1/service.proto](#axelar/evm/v1beta1/service.proto)
     - [MsgService](#axelar.evm.v1beta1.MsgService)
     - [QueryService](#axelar.evm.v1beta1.QueryService)
-  
-- [axelar/multisig/exported/v1beta1/types.proto](#axelar/multisig/exported/v1beta1/types.proto)
-    - [MultisigState](#axelar.multisig.exported.v1beta1.MultisigState)
   
 - [axelar/multisig/v1beta1/events.proto](#axelar/multisig/v1beta1/events.proto)
     - [KeyAssigned](#axelar.multisig.v1beta1.KeyAssigned)
@@ -630,288 +630,6 @@ Params represent the genesis parameters for the module
 
 
 
-<a name="axelar/utils/v1beta1/threshold.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## axelar/utils/v1beta1/threshold.proto
-
-
-
-<a name="axelar.utils.v1beta1.Threshold"></a>
-
-### Threshold
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `numerator` | [int64](#int64) |  | split threshold into Numerator and denominator to avoid floating point errors down the line |
-| `denominator` | [int64](#int64) |  |  |
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
-<a name="axelar/tss/exported/v1beta1/types.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## axelar/tss/exported/v1beta1/types.proto
-
-
-
-<a name="axelar.tss.exported.v1beta1.Key"></a>
-
-### Key
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `id` | [string](#string) |  |  |
-| `role` | [KeyRole](#axelar.tss.exported.v1beta1.KeyRole) |  |  |
-| `type` | [KeyType](#axelar.tss.exported.v1beta1.KeyType) |  |  |
-| `ecdsa_key` | [Key.ECDSAKey](#axelar.tss.exported.v1beta1.Key.ECDSAKey) |  |  |
-| `multisig_key` | [Key.MultisigKey](#axelar.tss.exported.v1beta1.Key.MultisigKey) |  |  |
-| `rotated_at` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
-| `rotation_count` | [int64](#int64) |  |  |
-| `chain` | [string](#string) |  |  |
-| `snapshot_counter` | [int64](#int64) |  |  |
-
-
-
-
-
-
-<a name="axelar.tss.exported.v1beta1.Key.ECDSAKey"></a>
-
-### Key.ECDSAKey
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `value` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="axelar.tss.exported.v1beta1.Key.MultisigKey"></a>
-
-### Key.MultisigKey
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `values` | [bytes](#bytes) | repeated |  |
-| `threshold` | [int64](#int64) |  |  |
-
-
-
-
-
-
-<a name="axelar.tss.exported.v1beta1.KeyRequirement"></a>
-
-### KeyRequirement
-KeyRequirement defines requirements for keys
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `key_role` | [KeyRole](#axelar.tss.exported.v1beta1.KeyRole) |  |  |
-| `key_type` | [KeyType](#axelar.tss.exported.v1beta1.KeyType) |  |  |
-| `min_keygen_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
-| `safety_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
-| `key_share_distribution_policy` | [KeyShareDistributionPolicy](#axelar.tss.exported.v1beta1.KeyShareDistributionPolicy) |  |  |
-| `max_total_share_count` | [int64](#int64) |  |  |
-| `min_total_share_count` | [int64](#int64) |  |  |
-| `keygen_voting_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
-| `sign_voting_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
-| `keygen_timeout` | [int64](#int64) |  |  |
-| `sign_timeout` | [int64](#int64) |  |  |
-
-
-
-
-
-
-<a name="axelar.tss.exported.v1beta1.SigKeyPair"></a>
-
-### SigKeyPair
-PubKeyInfo holds a pubkey and a signature
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `pub_key` | [bytes](#bytes) |  |  |
-| `signature` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="axelar.tss.exported.v1beta1.SignInfo"></a>
-
-### SignInfo
-SignInfo holds information about a sign request
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `key_id` | [string](#string) |  |  |
-| `sig_id` | [string](#string) |  |  |
-| `msg` | [bytes](#bytes) |  |  |
-| `snapshot_counter` | [int64](#int64) |  |  |
-| `request_module` | [string](#string) |  |  |
-| `metadata` | [string](#string) |  | **Deprecated.**  |
-| `module_metadata` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
-
-
-
-
-
-
-<a name="axelar.tss.exported.v1beta1.Signature"></a>
-
-### Signature
-Signature holds public key and ECDSA signature
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `sig_id` | [string](#string) |  |  |
-| `single_sig` | [Signature.SingleSig](#axelar.tss.exported.v1beta1.Signature.SingleSig) |  |  |
-| `multi_sig` | [Signature.MultiSig](#axelar.tss.exported.v1beta1.Signature.MultiSig) |  |  |
-| `sig_status` | [SigStatus](#axelar.tss.exported.v1beta1.SigStatus) |  |  |
-
-
-
-
-
-
-<a name="axelar.tss.exported.v1beta1.Signature.MultiSig"></a>
-
-### Signature.MultiSig
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `sig_key_pairs` | [SigKeyPair](#axelar.tss.exported.v1beta1.SigKeyPair) | repeated |  |
-
-
-
-
-
-
-<a name="axelar.tss.exported.v1beta1.Signature.SingleSig"></a>
-
-### Signature.SingleSig
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `sig_key_pair` | [SigKeyPair](#axelar.tss.exported.v1beta1.SigKeyPair) |  |  |
-
-
-
-
-
- <!-- end messages -->
-
-
-<a name="axelar.tss.exported.v1beta1.AckType"></a>
-
-### AckType
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| ACK_TYPE_UNSPECIFIED | 0 |  |
-| ACK_TYPE_KEYGEN | 1 |  |
-| ACK_TYPE_SIGN | 2 |  |
-
-
-
-<a name="axelar.tss.exported.v1beta1.KeyRole"></a>
-
-### KeyRole
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| KEY_ROLE_UNSPECIFIED | 0 |  |
-| KEY_ROLE_MASTER_KEY | 1 |  |
-| KEY_ROLE_SECONDARY_KEY | 2 |  |
-| KEY_ROLE_EXTERNAL_KEY | 3 |  |
-
-
-
-<a name="axelar.tss.exported.v1beta1.KeyShareDistributionPolicy"></a>
-
-### KeyShareDistributionPolicy
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| KEY_SHARE_DISTRIBUTION_POLICY_UNSPECIFIED | 0 |  |
-| KEY_SHARE_DISTRIBUTION_POLICY_WEIGHTED_BY_STAKE | 1 |  |
-| KEY_SHARE_DISTRIBUTION_POLICY_ONE_PER_VALIDATOR | 2 |  |
-
-
-
-<a name="axelar.tss.exported.v1beta1.KeyType"></a>
-
-### KeyType
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| KEY_TYPE_UNSPECIFIED | 0 |  |
-| KEY_TYPE_NONE | 1 |  |
-| KEY_TYPE_THRESHOLD | 2 |  |
-| KEY_TYPE_MULTISIG | 3 |  |
-
-
-
-<a name="axelar.tss.exported.v1beta1.SigStatus"></a>
-
-### SigStatus
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| SIG_STATUS_UNSPECIFIED | 0 |  |
-| SIG_STATUS_QUEUED | 1 |  |
-| SIG_STATUS_SIGNING | 2 |  |
-| SIG_STATUS_SIGNED | 3 |  |
-| SIG_STATUS_ABORTED | 4 |  |
-| SIG_STATUS_INVALID | 5 |  |
-
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
 <a name="axelar/nexus/exported/v1beta1/types.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -945,7 +663,6 @@ Chain represents the properties of a registered blockchain
 | ----- | ---- | ----- | ----------- |
 | `name` | [string](#string) |  |  |
 | `supports_foreign_assets` | [bool](#bool) |  |  |
-| `key_type` | [axelar.tss.exported.v1beta1.KeyType](#axelar.tss.exported.v1beta1.KeyType) |  |  |
 | `module` | [string](#string) |  |  |
 
 
@@ -1927,6 +1644,67 @@ QueryService defines the gRPC querier service.
 
 
  <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="axelar/utils/v1beta1/threshold.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/utils/v1beta1/threshold.proto
+
+
+
+<a name="axelar.utils.v1beta1.Threshold"></a>
+
+### Threshold
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `numerator` | [int64](#int64) |  | split threshold into Numerator and denominator to avoid floating point errors down the line |
+| `denominator` | [int64](#int64) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="axelar/multisig/exported/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/multisig/exported/v1beta1/types.proto
+
+
+ <!-- end messages -->
+
+
+<a name="axelar.multisig.exported.v1beta1.MultisigState"></a>
+
+### MultisigState
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| MULTISIG_STATE_UNSPECIFIED | 0 |  |
+| MULTISIG_STATE_PENDING | 1 |  |
+| MULTISIG_STATE_COMPLETED | 2 |  |
+
 
  <!-- end enums -->
 
@@ -3118,6 +2896,256 @@ ERC20 tokens requested for a chain
 
 
 
+<a name="axelar/tss/exported/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/tss/exported/v1beta1/types.proto
+
+
+
+<a name="axelar.tss.exported.v1beta1.Key"></a>
+
+### Key
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [string](#string) |  |  |
+| `role` | [KeyRole](#axelar.tss.exported.v1beta1.KeyRole) |  |  |
+| `type` | [KeyType](#axelar.tss.exported.v1beta1.KeyType) |  |  |
+| `ecdsa_key` | [Key.ECDSAKey](#axelar.tss.exported.v1beta1.Key.ECDSAKey) |  |  |
+| `multisig_key` | [Key.MultisigKey](#axelar.tss.exported.v1beta1.Key.MultisigKey) |  |  |
+| `rotated_at` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
+| `rotation_count` | [int64](#int64) |  |  |
+| `chain` | [string](#string) |  |  |
+| `snapshot_counter` | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="axelar.tss.exported.v1beta1.Key.ECDSAKey"></a>
+
+### Key.ECDSAKey
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `value` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="axelar.tss.exported.v1beta1.Key.MultisigKey"></a>
+
+### Key.MultisigKey
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `values` | [bytes](#bytes) | repeated |  |
+| `threshold` | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="axelar.tss.exported.v1beta1.KeyRequirement"></a>
+
+### KeyRequirement
+KeyRequirement defines requirements for keys
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_role` | [KeyRole](#axelar.tss.exported.v1beta1.KeyRole) |  |  |
+| `key_type` | [KeyType](#axelar.tss.exported.v1beta1.KeyType) |  |  |
+| `min_keygen_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
+| `safety_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
+| `key_share_distribution_policy` | [KeyShareDistributionPolicy](#axelar.tss.exported.v1beta1.KeyShareDistributionPolicy) |  |  |
+| `max_total_share_count` | [int64](#int64) |  |  |
+| `min_total_share_count` | [int64](#int64) |  |  |
+| `keygen_voting_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
+| `sign_voting_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
+| `keygen_timeout` | [int64](#int64) |  |  |
+| `sign_timeout` | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="axelar.tss.exported.v1beta1.SigKeyPair"></a>
+
+### SigKeyPair
+PubKeyInfo holds a pubkey and a signature
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `pub_key` | [bytes](#bytes) |  |  |
+| `signature` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="axelar.tss.exported.v1beta1.SignInfo"></a>
+
+### SignInfo
+SignInfo holds information about a sign request
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_id` | [string](#string) |  |  |
+| `sig_id` | [string](#string) |  |  |
+| `msg` | [bytes](#bytes) |  |  |
+| `snapshot_counter` | [int64](#int64) |  |  |
+| `request_module` | [string](#string) |  |  |
+| `metadata` | [string](#string) |  | **Deprecated.**  |
+| `module_metadata` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
+
+
+
+
+
+
+<a name="axelar.tss.exported.v1beta1.Signature"></a>
+
+### Signature
+Signature holds public key and ECDSA signature
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sig_id` | [string](#string) |  |  |
+| `single_sig` | [Signature.SingleSig](#axelar.tss.exported.v1beta1.Signature.SingleSig) |  |  |
+| `multi_sig` | [Signature.MultiSig](#axelar.tss.exported.v1beta1.Signature.MultiSig) |  |  |
+| `sig_status` | [SigStatus](#axelar.tss.exported.v1beta1.SigStatus) |  |  |
+
+
+
+
+
+
+<a name="axelar.tss.exported.v1beta1.Signature.MultiSig"></a>
+
+### Signature.MultiSig
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sig_key_pairs` | [SigKeyPair](#axelar.tss.exported.v1beta1.SigKeyPair) | repeated |  |
+
+
+
+
+
+
+<a name="axelar.tss.exported.v1beta1.Signature.SingleSig"></a>
+
+### Signature.SingleSig
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sig_key_pair` | [SigKeyPair](#axelar.tss.exported.v1beta1.SigKeyPair) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+
+<a name="axelar.tss.exported.v1beta1.AckType"></a>
+
+### AckType
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| ACK_TYPE_UNSPECIFIED | 0 |  |
+| ACK_TYPE_KEYGEN | 1 |  |
+| ACK_TYPE_SIGN | 2 |  |
+
+
+
+<a name="axelar.tss.exported.v1beta1.KeyRole"></a>
+
+### KeyRole
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| KEY_ROLE_UNSPECIFIED | 0 |  |
+| KEY_ROLE_MASTER_KEY | 1 |  |
+| KEY_ROLE_SECONDARY_KEY | 2 |  |
+| KEY_ROLE_EXTERNAL_KEY | 3 |  |
+
+
+
+<a name="axelar.tss.exported.v1beta1.KeyShareDistributionPolicy"></a>
+
+### KeyShareDistributionPolicy
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| KEY_SHARE_DISTRIBUTION_POLICY_UNSPECIFIED | 0 |  |
+| KEY_SHARE_DISTRIBUTION_POLICY_WEIGHTED_BY_STAKE | 1 |  |
+| KEY_SHARE_DISTRIBUTION_POLICY_ONE_PER_VALIDATOR | 2 |  |
+
+
+
+<a name="axelar.tss.exported.v1beta1.KeyType"></a>
+
+### KeyType
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| KEY_TYPE_UNSPECIFIED | 0 |  |
+| KEY_TYPE_NONE | 1 |  |
+| KEY_TYPE_THRESHOLD | 2 |  |
+| KEY_TYPE_MULTISIG | 3 |  |
+
+
+
+<a name="axelar.tss.exported.v1beta1.SigStatus"></a>
+
+### SigStatus
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| SIG_STATUS_UNSPECIFIED | 0 |  |
+| SIG_STATUS_QUEUED | 1 |  |
+| SIG_STATUS_SIGNING | 2 |  |
+| SIG_STATUS_SIGNED | 3 |  |
+| SIG_STATUS_ABORTED | 4 |  |
+| SIG_STATUS_INVALID | 5 |  |
+
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
 <a name="axelar/snapshot/exported/v1beta1/types.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -3312,7 +3340,6 @@ vote can have any data type
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `name` | [string](#string) |  |  |
-| `key_type` | [axelar.tss.exported.v1beta1.KeyType](#axelar.tss.exported.v1beta1.KeyType) |  |  |
 | `params` | [bytes](#bytes) |  |  |
 
 
@@ -3764,35 +3791,6 @@ QueryService defines the gRPC querier service.
 | `Event` | [EventRequest](#axelar.evm.v1beta1.EventRequest) | [EventResponse](#axelar.evm.v1beta1.EventResponse) | Event queries an event at the specified chain | GET|/axelar/evm/v1beta1/event/{chain}/{event_id}|
 | `ERC20Tokens` | [ERC20TokensRequest](#axelar.evm.v1beta1.ERC20TokensRequest) | [ERC20TokensResponse](#axelar.evm.v1beta1.ERC20TokensResponse) | ERC20Tokens queries the ERC20 tokens registered for a chain | GET|/axelar/evm/v1beta1/erc20_tokens/{chain}|
 | `TokenInfo` | [TokenInfoRequest](#axelar.evm.v1beta1.TokenInfoRequest) | [TokenInfoResponse](#axelar.evm.v1beta1.TokenInfoResponse) | TokenInfo queries the token info for a registered ERC20 Token | GET|/axelar/evm/v1beta1/token_info/{chain}|
-
- <!-- end services -->
-
-
-
-<a name="axelar/multisig/exported/v1beta1/types.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## axelar/multisig/exported/v1beta1/types.proto
-
-
- <!-- end messages -->
-
-
-<a name="axelar.multisig.exported.v1beta1.MultisigState"></a>
-
-### MultisigState
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| MULTISIG_STATE_UNSPECIFIED | 0 |  |
-| MULTISIG_STATE_PENDING | 1 |  |
-| MULTISIG_STATE_COMPLETED | 2 |  |
-
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
 
  <!-- end services -->
 
