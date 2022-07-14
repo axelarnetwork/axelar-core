@@ -32,7 +32,7 @@ func TestPublicKey(t *testing.T) {
 			Then("should return nil", func(t *testing.T) {
 				assert.NoError(t, pubKey.ValidateBasic())
 			}).
-			Run(t, 20)
+			Run(t, 5)
 
 		Given("invalid public key", func() {
 			pubKey = rand.Bytes(int(rand.I64Between(1, 101)))
@@ -41,7 +41,25 @@ func TestPublicKey(t *testing.T) {
 			Then("should return error", func(t *testing.T) {
 				assert.Error(t, pubKey.ValidateBasic())
 			}).
-			Run(t, 20)
+			Run(t, 5)
+
+		Given("uncompressed public key", func() {
+			pubKey = funcs.Must(btcec.NewPrivateKey(btcec.S256())).PubKey().SerializeUncompressed()
+		}).
+			When("", func() {}).
+			Then("should return error", func(t *testing.T) {
+				assert.Error(t, pubKey.ValidateBasic())
+			}).
+			Run(t, 5)
+
+		Given("hybrid public key", func() {
+			pubKey = funcs.Must(btcec.NewPrivateKey(btcec.S256())).PubKey().SerializeHybrid()
+		}).
+			When("", func() {}).
+			Then("should return error", func(t *testing.T) {
+				assert.Error(t, pubKey.ValidateBasic())
+			}).
+			Run(t, 5)
 	})
 }
 

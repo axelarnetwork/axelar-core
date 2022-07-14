@@ -69,13 +69,18 @@ func (sig Signature) String() string {
 	return hex.EncodeToString(sig)
 }
 
-// PublicKey is an alias for public key in raw bytes
+// PublicKey is an alias for compressed public key in raw bytes
 type PublicKey []byte
 
 // ValidateBasic returns an error if the given public key is invalid; nil otherwise
 func (pk PublicKey) ValidateBasic() error {
-	if _, err := btcec.ParsePubKey(pk, btcec.S256()); err != nil {
+	btcecPubKey, err := btcec.ParsePubKey(pk, btcec.S256())
+	if err != nil {
 		return err
+	}
+
+	if !bytes.Equal(pk, btcecPubKey.SerializeCompressed()) {
+		return fmt.Errorf("public key is not compressed")
 	}
 
 	return nil
