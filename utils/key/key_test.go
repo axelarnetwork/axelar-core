@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/axelarnetwork/axelar-core/utils/key"
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/axelarnetwork/axelar-core/utils/key"
 )
 
 func TestFromBz(t *testing.T) {

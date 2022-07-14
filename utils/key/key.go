@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"strings"
 
-	"github.com/axelarnetwork/utils/convert"
 	"golang.org/x/exp/constraints"
+
+	"github.com/axelarnetwork/utils/convert"
 )
 
 const DefaultDelimiter = "_"
 
+// Key provides a type safe way to interact with the store
 type Key interface {
 	Append(Key) Key
 	Bytes(delimiter ...string) []byte
@@ -40,14 +42,17 @@ func (k basicKey) Bytes(delimiter ...string) []byte {
 	return bytes.Join(k.particles, []byte(del))
 }
 
+// FromBz creates a new Key from bytes
 func FromBz(key []byte) Key {
 	return &basicKey{particles: [][]byte{key}}
 }
 
+// FromStr creates a new Key from a string
 func FromStr(key string) Key {
 	return FromBz([]byte(strings.ToLower(key)))
 }
 
+// FromUInt creates a new Key from any unsigned integer type
 func FromUInt[T constraints.Unsigned](key T) Key {
 	return FromBz(convert.IntToBytes[T](key))
 }
