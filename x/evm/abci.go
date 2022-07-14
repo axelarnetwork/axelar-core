@@ -2,7 +2,6 @@ package evm
 
 import (
 	"fmt"
-	"sort"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -12,7 +11,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
-	"github.com/axelarnetwork/utils/slices"
 )
 
 // TODO: make this a param when we can easily switch between different kinds of keys and different settings
@@ -81,7 +79,7 @@ func handleTokenSent(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n 
 	return true
 }
 
-func handleContractCall(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus, s types.Signer) bool {
+func handleContractCall(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus, multisig types.MultisigKeeper) bool {
 	e := event.GetEvent().(*types.Event_ContractCall).ContractCall
 	if e == nil {
 		panic(fmt.Errorf("event is nil"))
@@ -105,7 +103,7 @@ func handleContractCall(ctx sdk.Context, event types.Event, bk types.BaseKeeper,
 		panic(fmt.Errorf("could not find chain ID for '%s'", destinationChain.Name))
 	}
 
-	keyID, ok := s.GetCurrentKeyID(ctx, destinationChain, keyRole)
+	keyID, ok := multisig.GetCurrentKeyID(ctx, destinationChain.Name)
 	if !ok {
 		panic(fmt.Errorf("no key for chain %s found", destinationChain.Name))
 	}
@@ -135,7 +133,7 @@ func handleContractCall(ctx sdk.Context, event types.Event, bk types.BaseKeeper,
 	return true
 }
 
-func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus, s types.Signer) bool {
+func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus, multisig types.MultisigKeeper) bool {
 	e := event.GetEvent().(*types.Event_ContractCallWithToken).ContractCallWithToken
 	if e == nil {
 		panic(fmt.Errorf("event is nil"))
@@ -178,7 +176,7 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 		panic(fmt.Errorf("could not find chain ID for '%s'", destinationChain.Name))
 	}
 
-	keyID, ok := s.GetCurrentKeyID(ctx, destinationChain, keyRole)
+	keyID, ok := multisig.GetCurrentKeyID(ctx, destinationChain.Name)
 	if !ok {
 		panic(fmt.Errorf("no key for chain %s found", destinationChain.Name))
 	}
@@ -311,44 +309,57 @@ func handleTokenDeployed(ctx sdk.Context, event types.Event, ck types.ChainKeepe
 	return true
 }
 
-func handleMultisigTransferKey(ctx sdk.Context, event types.Event, ck types.ChainKeeper, s types.Signer, chain nexus.Chain) bool {
+func handleMultisigTransferKey(ctx sdk.Context, event types.Event, ck types.ChainKeeper, multisig types.MultisigKeeper, chain nexus.Chain) bool {
 	e := event.GetEvent().(*types.Event_MultisigOperatorshipTransferred).MultisigOperatorshipTransferred
 	if e == nil {
 		panic(fmt.Errorf("event is nil"))
 	}
 
+	// TODO: add weights to the event and also check
 	newAddresses := e.NewOperators
 	newThreshold := e.NewThreshold
 
-	nextKeyID, ok := s.GetNextKeyID(ctx, chain, keyRole)
+	nextKeyID, ok := multisig.GetNextKeyID(ctx, chain.Name)
 	if !ok {
 		ck.Logger(ctx).Info(fmt.Sprintf("next %s key for chain %s not found", keyRole.SimpleString(), chain.Name))
 		return false
 	}
 
-	nextKey, found := s.GetKey(ctx, nextKeyID)
+	nextKey, found := multisig.GetKey(ctx, nextKeyID)
 	if !found {
 		ck.Logger(ctx).Info(fmt.Sprintf("key %s not found", nextKeyID))
 		return false
 	}
 
-	expectedAddress, expectedThreshold, err := types.GetMultisigAddresses(nextKey)
-	if err != nil {
-		ck.Logger(ctx).Info(err.Error())
+	expectedAddressWeights, expectedThreshold := types.ParseMultisigKey(nextKey)
+
+	if len(newAddresses) != len(expectedAddressWeights) {
+		ck.Logger(ctx).Info(fmt.Sprintf("new addresses length does not match, expected %d got %d", len(expectedAddressWeights), len(newAddresses)))
 		return false
 	}
 
-	if !areAddressesEqual(expectedAddress, slices.Map(newAddresses, func(addr types.Address) common.Address { return common.Address(addr) })) {
-		ck.Logger(ctx).Info(fmt.Sprintf("new adddress does not match, expected %v got %v", expectedAddress, newAddresses))
+	addressSeen := make(map[string]bool)
+	for _, newAddress := range newAddresses {
+		newAddressHex := newAddress.Hex()
+		if addressSeen[newAddressHex] {
+			ck.Logger(ctx).Info("duplicate address in new addresses")
+			return false
+		}
+		addressSeen[newAddressHex] = true
+
+		_, ok := expectedAddressWeights[newAddressHex]
+		if !ok {
+			ck.Logger(ctx).Info("new addresses do not match")
+			return false
+		}
+	}
+
+	if !newThreshold.Equal(expectedThreshold) {
+		ck.Logger(ctx).Info(fmt.Sprintf("new threshold does not match, expected %s got %s", expectedThreshold.String(), newThreshold.String()))
 		return false
 	}
 
-	if !sdk.NewUint(uint64(expectedThreshold)).Equal(newThreshold) {
-		ck.Logger(ctx).Info(fmt.Sprintf("new threshold does not match, expected %d got %d", expectedThreshold, newThreshold.Uint64()))
-		return false
-	}
-
-	if err := s.RotateKey(ctx, chain, keyRole); err != nil {
+	if err := multisig.RotateKey(ctx, chain.Name); err != nil {
 		ck.Logger(ctx).Info(err.Error())
 		return false
 	}
@@ -356,7 +367,6 @@ func handleMultisigTransferKey(ctx sdk.Context, event types.Event, ck types.Chai
 	ck.Logger(ctx).Info(fmt.Sprintf("successfully confirmed key transfer for chain %s", chain.Name),
 		"txID", event.TxId.Hex(),
 		"keyID", nextKeyID,
-		"rotation count", s.GetRotationCount(ctx, chain, keyRole),
 	)
 
 	ctx.EventManager().EmitEvent(sdk.NewEvent(
@@ -369,7 +379,7 @@ func handleMultisigTransferKey(ctx sdk.Context, event types.Event, ck types.Chai
 	return true
 }
 
-func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, s types.Signer) error {
+func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, multisig types.MultisigKeeper) error {
 	shouldHandleEvent := func(e codec.ProtoMarshaler) bool {
 		event := e.(*types.Event)
 
@@ -423,7 +433,7 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 		}
 
 		// skip if destination chain key rotation is in progress
-		if _, nextKeyAssigned := s.GetNextKeyID(ctx, destinationChain, keyRole); nextKeyAssigned {
+		if _, nextKeyAssigned := multisig.GetNextKeyID(ctx, destinationChain.Name); nextKeyAssigned {
 			bk.Logger(ctx).Debug(fmt.Sprintf("skipping confirmed event %s due to destination chain in the middle of key rotation", event.GetID()),
 				"chain", event.Chain.String(),
 				"destination_chain", destinationChainName.String(),
@@ -455,9 +465,9 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 
 			switch event.GetEvent().(type) {
 			case *types.Event_ContractCall:
-				ok = handleContractCall(ctx, event, bk, n, s)
+				ok = handleContractCall(ctx, event, bk, n, multisig)
 			case *types.Event_ContractCallWithToken:
-				ok = handleContractCallWithToken(ctx, event, bk, n, s)
+				ok = handleContractCallWithToken(ctx, event, bk, n, multisig)
 			case *types.Event_TokenSent:
 				ok = handleTokenSent(ctx, event, bk, n)
 			case *types.Event_Transfer:
@@ -465,7 +475,7 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 			case *types.Event_TokenDeployed:
 				ok = handleTokenDeployed(ctx, event, ck, chain)
 			case *types.Event_MultisigOperatorshipTransferred:
-				ok = handleMultisigTransferKey(ctx, event, ck, s, chain)
+				ok = handleMultisigTransferKey(ctx, event, ck, multisig, chain)
 			default:
 				bk.Logger(ctx).Debug("unsupported event type %T", event,
 					"chain", chain.Name.String(),
@@ -507,31 +517,10 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 func BeginBlocker(sdk.Context, abci.RequestBeginBlock, types.BaseKeeper) {}
 
 // EndBlocker called every block, process inflation, update validator set.
-func EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock, bk types.BaseKeeper, n types.Nexus, s types.Signer) ([]abci.ValidatorUpdate, error) {
-	if err := handleConfirmedEvents(ctx, bk, n, s); err != nil {
+func EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock, bk types.BaseKeeper, n types.Nexus, multisig types.MultisigKeeper) ([]abci.ValidatorUpdate, error) {
+	if err := handleConfirmedEvents(ctx, bk, n, multisig); err != nil {
 		return nil, err
 	}
 
 	return nil, nil
-}
-
-func areAddressesEqual(addressesA, addressesB []common.Address) bool {
-	if len(addressesA) != len(addressesB) {
-		return false
-	}
-
-	addressesToHex := func(addr common.Address) string { return addr.Hex() }
-
-	hexesA := slices.Map(addressesA, addressesToHex)
-	sort.Strings(hexesA)
-	hexesB := slices.Map(addressesB, addressesToHex)
-	sort.Strings(hexesB)
-
-	for i, hexA := range hexesA {
-		if hexA != hexesB[i] {
-			return false
-		}
-	}
-
-	return true
 }
