@@ -355,7 +355,7 @@ func TestHandleTokenSent(t *testing.T) {
 				return 0, fmt.Errorf("err")
 			}
 		}).
-	Then("should return false", assertFalse).
+		Then("should return false", assertFalse).
 		Run(t)
 
 	whenTokensAreConfirmed.
