@@ -339,6 +339,7 @@ func TestKey(t *testing.T) {
 		givenRandomKey.
 			When("contains invalid signing threshold", func() {
 				key.SigningThreshold = utils.OneThreshold
+				key.SigningThreshold.Numerator += 1
 			}).
 			Then("should return error", func(t *testing.T) {
 				assert.Error(t, key.ValidateBasic())
