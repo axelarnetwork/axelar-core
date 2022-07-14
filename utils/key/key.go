@@ -9,6 +9,7 @@ import (
 	"github.com/axelarnetwork/utils/convert"
 )
 
+// DefaultDelimiter represents the default delimiter used for the KV store keys when concatenating them together
 const DefaultDelimiter = "_"
 
 // Key provides a type safe way to interact with the store
