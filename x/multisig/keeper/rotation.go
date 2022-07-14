@@ -49,7 +49,7 @@ func (k Keeper) AssignKey(ctx sdk.Context, chainName nexus.ChainName, keyID expo
 	if !ok {
 		return fmt.Errorf("key %s not found", keyID)
 	}
-	if key.IsActive {
+	if key.State != types.Inactive {
 		return fmt.Errorf("key %s is already assigned", keyID)
 	}
 
@@ -58,7 +58,7 @@ func (k Keeper) AssignKey(ctx sdk.Context, chainName nexus.ChainName, keyID expo
 		return fmt.Errorf("next key of chain %s already assigned", chainName)
 	}
 
-	key.Activate()
+	key.State = types.Assigned
 	k.SetKey(ctx, key)
 	k.setKeyEpoch(ctx, types.NewKeyEpoch(nextRotationCount, chainName, keyID))
 
@@ -79,6 +79,13 @@ func (k Keeper) RotateKey(ctx sdk.Context, chainName nexus.ChainName) error {
 		return fmt.Errorf("next key of chain %s not assigned", chainName)
 	}
 
+	key := funcs.MustOk(k.getKey(ctx, keyEpoch.GetKeyID()))
+	if key.State != types.Assigned {
+		panic(fmt.Errorf("key must be assigned when being rotated to"))
+	}
+	key.State = types.Active
+
+	k.SetKey(ctx, key)
 	k.setKeyRotationCount(ctx, chainName, nextRotationCount)
 
 	ctx.EventManager().EmitTypedEvent(types.NewKeyRotated(chainName, keyEpoch.GetKeyID()))

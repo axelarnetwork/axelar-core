@@ -74,8 +74,8 @@ func (k Keeper) Sign(ctx sdk.Context, keyID exported.KeyID, payload []byte, modu
 	if !ok {
 		return fmt.Errorf("key %s not found", keyID)
 	}
-	if !key.IsActive {
-		return fmt.Errorf("key %s is not assigned yet", keyID)
+	if key.State != types.Active {
+		return fmt.Errorf("key %s is not activated yet", keyID)
 	}
 
 	params := k.getParams(ctx)

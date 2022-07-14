@@ -282,6 +282,8 @@
     - [MultiSig.SigsEntry](#axelar.multisig.v1beta1.MultiSig.SigsEntry)
     - [SigningSession](#axelar.multisig.v1beta1.SigningSession)
   
+    - [KeyState](#axelar.multisig.v1beta1.KeyState)
+  
 - [axelar/nexus/v1beta1/params.proto](#axelar/nexus/v1beta1/params.proto)
     - [Params](#axelar.nexus.v1beta1.Params)
   
@@ -4212,7 +4214,7 @@ Msg defines the multisig Msg service.
 | `snapshot` | [axelar.snapshot.exported.v1beta1.Snapshot](#axelar.snapshot.exported.v1beta1.Snapshot) |  |  |
 | `pub_keys` | [Key.PubKeysEntry](#axelar.multisig.v1beta1.Key.PubKeysEntry) | repeated |  |
 | `signing_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
-| `is_active` | [bool](#bool) |  |  |
+| `state` | [KeyState](#axelar.multisig.v1beta1.KeyState) |  |  |
 
 
 
@@ -4345,6 +4347,19 @@ Msg defines the multisig Msg service.
 
 
  <!-- end messages -->
+
+
+<a name="axelar.multisig.v1beta1.KeyState"></a>
+
+### KeyState
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| KEY_STATE_UNSPECIFIED | 0 |  |
+| KEY_STATE_ASSIGNED | 1 |  |
+| KEY_STATE_ACTIVE | 2 |  |
+
 
  <!-- end enums -->
 

@@ -118,7 +118,7 @@ func TestKeeper(t *testing.T) {
 						currentKey, ok := k.GetCurrentKey(ctx, chainName)
 						assert.True(t, ok)
 						assert.Equal(t, keyID1, currentKey.ID)
-						assert.True(t, currentKey.IsActive)
+						assert.Equal(t, types.Active, currentKey.State)
 					}),
 			).
 			Run(t)
