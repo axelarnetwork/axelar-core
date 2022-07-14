@@ -354,7 +354,7 @@ func TestHandleTokenSent(t *testing.T) {
 			n.EnqueueTransferFunc = func(ctx sdk.Context, senderChain nexus.Chain, recipient nexus.CrossChainAddress, asset sdk.Coin) (nexus.TransferID, error) {
 				return 0, fmt.Errorf("err")
 			}
-		})
+		}).
 	Then("should return false", assertFalse).
 		Run(t)
 
