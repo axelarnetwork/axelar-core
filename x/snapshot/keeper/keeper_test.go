@@ -484,7 +484,7 @@ func TestKeeper(t *testing.T) {
 			Then("no participants are selected", func(t *testing.T) {
 				_, err := k.CreateSnapshot(ctx, candidates, filterFunc, weightFunc, threshold)
 
-				assert.Error(t, err)
+				assert.ErrorContains(t, err, "snapshot cannot have no participant")
 			}).
 			Run(t)
 

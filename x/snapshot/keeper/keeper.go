@@ -495,10 +495,6 @@ func (k Keeper) CreateSnapshot(
 		participants = append(participants, exported.NewParticipant(validator.GetOperator(), weight))
 	}
 
-	if len(participants) == 0 {
-		return exported.Snapshot{}, fmt.Errorf("no participants selected")
-	}
-
 	bondedWeight := sdk.ZeroUint()
 	k.staking.IterateBondedValidatorsByPower(ctx, func(_ int64, v stakingtypes.ValidatorI) (stop bool) {
 		if v == nil {
@@ -519,6 +515,10 @@ func (k Keeper) CreateSnapshot(
 	participantsWeight := snapshot.GetParticipantsWeight()
 	if participantsWeight.LT(snapshot.CalculateMinPassingWeight(threshold)) {
 		return exported.Snapshot{}, fmt.Errorf("given threshold %s cannot be met (participants weight: %s, bonded weight: %s)", threshold.String(), participantsWeight, bondedWeight)
+	}
+
+	if err := snapshot.ValidateBasic(); err != nil {
+		return exported.Snapshot{}, err
 	}
 
 	return snapshot, nil
