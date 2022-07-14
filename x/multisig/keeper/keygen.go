@@ -37,14 +37,8 @@ func (k Keeper) GetKeygenSessionsByExpiry(ctx sdk.Context, expiry int64) []types
 }
 
 // GetKey returns the key of the given ID
-func (k Keeper) GetKey(ctx sdk.Context, keyID exported.KeyID) (exported.Key, bool) {
-	var key types.Key
-	ok := k.getStore(ctx).Get(keyPrefix.AppendStr(keyID.String()), &key)
-	if !ok {
-		return nil, false
-	}
-
-	return &key, true
+func (k Keeper) GetKey(ctx sdk.Context, keyID exported.KeyID) (key types.Key, ok bool) {
+	return key, k.getStore(ctx).Get(keyPrefix.AppendStr(keyID.String()), &key)
 }
 
 // SetKey sets the given key
