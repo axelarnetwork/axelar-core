@@ -130,7 +130,7 @@ func (am AppModule) LegacyQuerierHandler(*codec.LegacyAmino) sdk.Querier {
 // RegisterServices registers a GRPC query service to respond to the
 // module-specific GRPC queries.
 func (am AppModule) RegisterServices(cfg module.Configurator) {
-	types.RegisterMsgServiceServer(cfg.MsgServer(), keeper.NewMsgServer(am.keeper, am.snapshotter, am.staker))
+	types.RegisterMsgServiceServer(utils.ErrorWrapper{Server: cfg.MsgServer(), Err: types.ErrMultisig, Logger: am.keeper.Logger}, keeper.NewMsgServer(am.keeper, am.snapshotter, am.staker))
 }
 
 // BeginBlock executes all state transitions this module requires at the beginning of each new block
