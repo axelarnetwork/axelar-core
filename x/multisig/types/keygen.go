@@ -182,11 +182,6 @@ func (m Key) ValidateBasic() error {
 	return nil
 }
 
-// Activate sets the key to be activated
-func (m *Key) Activate() {
-	m.IsActive = true
-}
-
 func validateBasicPendingKey(key Key) error {
 	if err := key.ID.ValidateBasic(); err != nil {
 		return err
