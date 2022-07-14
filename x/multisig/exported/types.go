@@ -15,6 +15,14 @@ import (
 
 //go:generate moq -out ./mock/types.go -pkg mock . SigHandler
 
+// Key provides an interface to work with the key
+type Key interface {
+	GetParticipants() []sdk.ValAddress
+	GetPubKey(sdk.ValAddress) (PublicKey, bool)
+	GetWeight(sdk.ValAddress) (sdk.Uint, bool)
+	GetMinPassingWeight() sdk.Uint
+}
+
 // SigHandler defines the interface for the requesting module to implement in
 // order to handle the different results of signing session
 type SigHandler interface {
