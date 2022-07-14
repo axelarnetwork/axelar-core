@@ -204,220 +204,187 @@ func TestHandleContractCall(t *testing.T) {
 }
 
 func TestHandleTokenSent(t *testing.T) {
+	var (
+		event types.Event
+
+		ctx           sdk.Context
+		bk            *mock.BaseKeeperMock
+		n             *mock.NexusMock
+		sourceCk      *mock.ChainKeeperMock
+		destinationCk *mock.ChainKeeperMock
+	)
+
 	sourceChainName := nexus.ChainName(rand.Str(5))
 	destinationChainName := nexus.ChainName(rand.Str(5))
-	event := types.Event{
-		Chain: sourceChainName,
-		TxId:  evmTestUtils.RandomHash(),
-		Index: uint64(rand.PosI64()),
-		Event: &types.Event_TokenSent{
-			TokenSent: &types.EventTokenSent{
-				Sender:             evmTestUtils.RandomAddress(),
-				DestinationChain:   destinationChainName,
-				DestinationAddress: evmTestUtils.RandomAddress().Hex(),
-				Symbol:             rand.Denom(3, 5),
-				Amount:             sdk.NewUint(uint64(rand.I64Between(1, 10000))),
+
+	givenTokenSentEvent := Given("a TokenSent event", func() {
+		event = types.Event{
+			Chain: sourceChainName,
+			TxId:  evmTestUtils.RandomHash(),
+			Index: uint64(rand.PosI64()),
+			Event: &types.Event_TokenSent{
+				TokenSent: &types.EventTokenSent{
+					Sender:             evmTestUtils.RandomAddress(),
+					DestinationChain:   destinationChainName,
+					DestinationAddress: evmTestUtils.RandomAddress().Hex(),
+					Symbol:             rand.Denom(3, 5),
+					Amount:             sdk.NewUint(uint64(rand.I64Between(1, 10000))),
+				},
 			},
-		},
+		}
+		ctx, bk, n, _, sourceCk, destinationCk = setup()
+	})
+
+	whenChainsAreRegistered := givenTokenSentEvent.
+		When("the source chain is registered", func() {
+			bk.ForChainFunc = func(chain nexus.ChainName) types.ChainKeeper {
+				switch chain {
+				case sourceChainName:
+					return sourceCk
+				case destinationChainName:
+					return destinationCk
+				default:
+					return nil
+				}
+			}
+
+			n.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
+				switch chain {
+				case sourceChainName, destinationChainName:
+					return nexus.Chain{Name: chain}, true
+				default:
+					return nexus.Chain{}, false
+				}
+			}
+
+			bk.HasChainFunc = func(ctx sdk.Context, chain nexus.ChainName) bool { return true }
+			n.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return true }
+		})
+
+	panicWith := func(msg string) func(t *testing.T) {
+		return func(t *testing.T) {
+			assert.PanicsWithError(t, msg, func() {
+				handleTokenSent(ctx, event, bk, n)
+			})
+		}
 	}
 
-	t.Run("should panic if the source chain is not registered", testutils.Func(func(t *testing.T) {
-		ctx, bk, n, _, sourceCk, destinationCk := setup()
+	assertFalse := func(t *testing.T) {
+		ok := handleTokenSent(ctx, event, bk, n)
+		assert.False(t, ok)
+	}
 
-		bk.ForChainFunc = func(chain nexus.ChainName) types.ChainKeeper {
-			switch chain {
-			case sourceChainName:
-				return sourceCk
-			case destinationChainName:
-				return destinationCk
-			default:
-				return nil
+	tokenRegisteredOnChain := func(chain **mock.ChainKeeperMock, confirmed bool) func() {
+		return func() {
+			(*chain).GetERC20TokenBySymbolFunc = func(ctx sdk.Context, symbol string) types.ERC20Token {
+				if confirmed && symbol == event.GetTokenSent().Symbol {
+					return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed, Asset: symbol})
+				}
+				return types.NilToken
+			}
+
+			(*chain).GetERC20TokenByAssetFunc = func(ctx sdk.Context, asset string) types.ERC20Token {
+				if confirmed && asset == event.GetTokenSent().Symbol {
+					return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed, Asset: asset})
+				}
+				return types.NilToken
 			}
 		}
-		n.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
-			return nexus.Chain{}, chain != sourceChainName
-		}
+	}
 
-		assert.PanicsWithError(t, fmt.Sprintf("%s is not a registered chain", sourceChainName), func() {
-			handleTokenSent(ctx, event, bk, n)
+	isDestinationChainEvm := func(isEvm bool) func() {
+		return func() {
+			bk.ForChainFunc = func(chain nexus.ChainName) types.ChainKeeper {
+				switch chain {
+				case sourceChainName:
+					return sourceCk
+				case destinationChainName:
+					if isEvm {
+						return destinationCk
+					}
+
+					return nil
+				default:
+					return nil
+				}
+			}
+			bk.HasChainFunc = func(ctx sdk.Context, chain nexus.ChainName) bool { return chain == destinationChainName && isEvm }
+
+			if isEvm {
+				tokenRegisteredOnChain(&destinationCk, true)()
+			}
+		}
+	}
+
+	whenTokensAreConfirmed := whenChainsAreRegistered.
+		When("token is confirmed on the source chain", tokenRegisteredOnChain(&sourceCk, true)).
+		When("token is confirmed on the destination chain", tokenRegisteredOnChain(&destinationCk, true))
+
+	givenTokenSentEvent.
+		When("source chain is not registered", func() {
+			n.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
+				return nexus.Chain{}, chain != sourceChainName
+			}
+		}).
+		Then("should panic", panicWith(fmt.Sprintf("%s is not a registered chain", sourceChainName))).
+		Run(t)
+
+	givenTokenSentEvent.
+		When("destination chain is not registered", func() {
+			n.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
+				return nexus.Chain{}, chain != destinationChainName
+			}
+		}).
+		Then("should return false", assertFalse).
+		Run(t)
+
+	whenChainsAreRegistered.
+		When("token is not confirmed on the source chain", tokenRegisteredOnChain(&sourceCk, false)).
+		Then("should return false", assertFalse).
+		Run(t)
+
+	whenChainsAreRegistered.
+		When("token is confirmed on the source chain", tokenRegisteredOnChain(&sourceCk, true)).
+		When("token is not confirmed on the destination chain", tokenRegisteredOnChain(&destinationCk, false)).
+		Then("should return false", assertFalse).
+		Run(t)
+
+	whenTokensAreConfirmed.
+		When("failed to enqueue the transfer", func() {
+			n.EnqueueTransferFunc = func(ctx sdk.Context, senderChain nexus.Chain, recipient nexus.CrossChainAddress, asset sdk.Coin) (nexus.TransferID, error) {
+				return 0, fmt.Errorf("err")
+			}
 		})
-	}))
+	Then("should return false", assertFalse).
+		Run(t)
 
-	t.Run("should return false if the destination chain is not registered", testutils.Func(func(t *testing.T) {
-		ctx, bk, n, _, sourceCk, destinationCk := setup()
-
-		bk.ForChainFunc = func(chain nexus.ChainName) types.ChainKeeper {
-			switch chain {
-			case sourceChainName:
-				return sourceCk
-			case destinationChainName:
-				return destinationCk
-			default:
-				return nil
+	whenTokensAreConfirmed.
+		When("enqueue the transfer", func() {
+			n.EnqueueTransferFunc = func(ctx sdk.Context, senderChain nexus.Chain, recipient nexus.CrossChainAddress, asset sdk.Coin) (nexus.TransferID, error) {
+				return 0, nil
 			}
-		}
-		n.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
-			return nexus.Chain{}, chain != destinationChainName
-		}
+		}).
+		Then("should return true", func(t *testing.T) {
+			ok := handleTokenSent(ctx, event, bk, n)
+			assert.True(t, ok)
+			assert.Len(t, n.EnqueueTransferCalls(), 1)
+		}).
+		Run(t)
 
-		ok := handleTokenSent(ctx, event, bk, n)
-		assert.False(t, ok)
-	}))
-
-	t.Run("should return false if the token is not confirmed on the source chain", testutils.Func(func(t *testing.T) {
-		ctx, bk, n, _, sourceCk, destinationCk := setup()
-
-		bk.ForChainFunc = func(chain nexus.ChainName) types.ChainKeeper {
-			switch chain {
-			case sourceChainName:
-				return sourceCk
-			case destinationChainName:
-				return destinationCk
-			default:
-				return nil
+	whenChainsAreRegistered.
+		When("destination chain is not an evm chain", isDestinationChainEvm(false)).
+		When("token is confirmed on the source chain", tokenRegisteredOnChain(&sourceCk, true)).
+		When("enqueue the transfer", func() {
+			n.EnqueueTransferFunc = func(ctx sdk.Context, senderChain nexus.Chain, recipient nexus.CrossChainAddress, asset sdk.Coin) (nexus.TransferID, error) {
+				return 0, nil
 			}
-		}
-		n.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
-			switch chain {
-			case sourceChainName, destinationChainName:
-				return nexus.Chain{Name: chain}, true
-			default:
-				return nexus.Chain{}, false
-			}
-		}
-		bk.HasChainFunc = func(ctx sdk.Context, chain nexus.ChainName) bool { return true }
-		n.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return true }
-		sourceCk.GetERC20TokenBySymbolFunc = func(ctx sdk.Context, symbol string) types.ERC20Token {
-			return types.NilToken
-		}
-
-		ok := handleTokenSent(ctx, event, bk, n)
-		assert.False(t, ok)
-	}))
-
-	t.Run("should return false if the token is not confirmed on the destination chain", testutils.Func(func(t *testing.T) {
-		ctx, bk, n, _, sourceCk, destinationCk := setup()
-
-		bk.ForChainFunc = func(chain nexus.ChainName) types.ChainKeeper {
-			switch chain {
-			case sourceChainName:
-				return sourceCk
-			case destinationChainName:
-				return destinationCk
-			default:
-				return nil
-			}
-		}
-		n.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
-			switch chain {
-			case sourceChainName, destinationChainName:
-				return nexus.Chain{Name: chain}, true
-			default:
-				return nexus.Chain{}, false
-			}
-		}
-		bk.HasChainFunc = func(ctx sdk.Context, chain nexus.ChainName) bool { return true }
-		n.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return true }
-		sourceCk.GetERC20TokenBySymbolFunc = func(ctx sdk.Context, symbol string) types.ERC20Token {
-			if symbol == event.GetTokenSent().Symbol {
-				return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed, Asset: symbol})
-			}
-			return types.NilToken
-		}
-		destinationCk.GetERC20TokenByAssetFunc = func(ctx sdk.Context, asset string) types.ERC20Token {
-			return types.NilToken
-		}
-
-		ok := handleTokenSent(ctx, event, bk, n)
-		assert.False(t, ok)
-	}))
-
-	t.Run("should return false if failed to enqueue the transfer", testutils.Func(func(t *testing.T) {
-		ctx, bk, n, _, sourceCk, destinationCk := setup()
-
-		bk.ForChainFunc = func(chain nexus.ChainName) types.ChainKeeper {
-			switch chain {
-			case sourceChainName:
-				return sourceCk
-			case destinationChainName:
-				return destinationCk
-			default:
-				return nil
-			}
-		}
-		n.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
-			switch chain {
-			case sourceChainName, destinationChainName:
-				return nexus.Chain{Name: chain}, true
-			default:
-				return nexus.Chain{}, false
-			}
-		}
-		bk.HasChainFunc = func(ctx sdk.Context, chain nexus.ChainName) bool { return true }
-		n.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return true }
-		sourceCk.GetERC20TokenBySymbolFunc = func(ctx sdk.Context, symbol string) types.ERC20Token {
-			if symbol == event.GetTokenSent().Symbol {
-				return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed, Asset: symbol})
-			}
-			return types.NilToken
-		}
-		destinationCk.GetERC20TokenByAssetFunc = func(ctx sdk.Context, asset string) types.ERC20Token {
-			if asset == event.GetTokenSent().Symbol {
-				return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed, Asset: asset})
-			}
-			return types.NilToken
-		}
-		n.EnqueueTransferFunc = func(ctx sdk.Context, senderChain nexus.Chain, recipient nexus.CrossChainAddress, asset sdk.Coin) (nexus.TransferID, error) {
-			return 0, fmt.Errorf("err")
-		}
-
-		ok := handleTokenSent(ctx, event, bk, n)
-		assert.False(t, ok)
-	}))
-
-	t.Run("should return true if succeeded to enqueue the transfer", testutils.Func(func(t *testing.T) {
-		ctx, bk, n, _, sourceCk, destinationCk := setup()
-
-		bk.ForChainFunc = func(chain nexus.ChainName) types.ChainKeeper {
-			switch chain {
-			case sourceChainName:
-				return sourceCk
-			case destinationChainName:
-				return destinationCk
-			default:
-				return nil
-			}
-		}
-		n.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
-			switch chain {
-			case sourceChainName, destinationChainName:
-				return nexus.Chain{Name: chain}, true
-			default:
-				return nexus.Chain{}, false
-			}
-		}
-		bk.HasChainFunc = func(ctx sdk.Context, chain nexus.ChainName) bool { return true }
-		n.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return true }
-		sourceCk.GetERC20TokenBySymbolFunc = func(ctx sdk.Context, symbol string) types.ERC20Token {
-			if symbol == event.GetTokenSent().Symbol {
-				return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed, Asset: symbol})
-			}
-			return types.NilToken
-		}
-		destinationCk.GetERC20TokenByAssetFunc = func(ctx sdk.Context, asset string) types.ERC20Token {
-			if asset == event.GetTokenSent().Symbol {
-				return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed, Asset: asset})
-			}
-			return types.NilToken
-		}
-		n.EnqueueTransferFunc = func(ctx sdk.Context, senderChain nexus.Chain, recipient nexus.CrossChainAddress, asset sdk.Coin) (nexus.TransferID, error) {
-			return 0, nil
-		}
-
-		ok := handleTokenSent(ctx, event, bk, n)
-		assert.True(t, ok)
-		assert.Len(t, n.EnqueueTransferCalls(), 1)
-	}))
+		}).
+		Then("should return true", func(t *testing.T) {
+			ok := handleTokenSent(ctx, event, bk, n)
+			assert.True(t, ok)
+			assert.Len(t, n.EnqueueTransferCalls(), 1)
+		}).
+		Run(t)
 }
 
 func TestHandleContractCallWithToken(t *testing.T) {
