@@ -14,14 +14,13 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
-	multisigTestUtils "github.com/axelarnetwork/axelar-core/x/multisig/exported/testutils"
+	multisigTestutils "github.com/axelarnetwork/axelar-core/x/multisig/exported/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	tssTestUtils "github.com/axelarnetwork/axelar-core/x/tss/exported/testutils"
 )
 
 func TestCreateApproveContractCallWithMintCommand(t *testing.T) {
 	chainID := sdk.NewInt(1)
-	keyID := multisigTestUtils.KeyID()
+	keyID := multisigTestutils.KeyID()
 	sourceChain := nexus.ChainName("polygon")
 	txID := Hash(common.HexToHash("0x5bb45dc24ddd6b90fa37f26eecfcf203328427c3226db29d1c01051b965ca93b"))
 	index := uint64(99)
@@ -78,7 +77,7 @@ func TestNewCommandBatchMetadata(t *testing.T) {
 	actual, err := NewCommandBatchMetadata(
 		rand.PosI64(),
 		chainID,
-		tssTestUtils.RandKeyID(),
+		multisigTestutils.KeyID(),
 		commands,
 	)
 
@@ -88,7 +87,7 @@ func TestNewCommandBatchMetadata(t *testing.T) {
 
 func TestDeployToken(t *testing.T) {
 	chainID := sdk.NewInt(1)
-	keyID := tssTestUtils.RandKeyID()
+	keyID := multisigTestutils.KeyID()
 
 	details := TokenDetails{
 		TokenName: rand.Str(10),
@@ -133,7 +132,7 @@ func TestDeployToken(t *testing.T) {
 
 func TestCreateMintTokenCommand(t *testing.T) {
 	chainID := sdk.NewInt(1)
-	keyID := tssTestUtils.RandKeyID()
+	keyID := multisigTestutils.KeyID()
 	commandID := NewCommandID(rand.Bytes(32), chainID)
 	symbol := rand.Str(3)
 	address := common.BytesToAddress(rand.Bytes(common.AddressLength))
@@ -163,7 +162,7 @@ func TestCreateMintTokenCommand(t *testing.T) {
 
 func TestCreateBurnTokenCommand(t *testing.T) {
 	chainID := sdk.NewInt(1)
-	keyID := tssTestUtils.RandKeyID()
+	keyID := multisigTestutils.KeyID()
 	symbol := rand.Str(3)
 	salt := common.BytesToHash(rand.Bytes(common.HashLength))
 	height := rand.I64Between(100, 10000)
@@ -191,7 +190,7 @@ func TestCreateBurnTokenCommand(t *testing.T) {
 
 func TestCreateSinglesigTransferCommand_Operatorship(t *testing.T) {
 	chainID := sdk.NewInt(1)
-	keyID := tssTestUtils.RandKeyID()
+	keyID := multisigTestutils.KeyID()
 	newOperatorAddr := common.BytesToAddress(rand.Bytes(common.AddressLength))
 
 	expectedParams := fmt.Sprintf("000000000000000000000000%s", hex.EncodeToString(newOperatorAddr.Bytes()))
@@ -218,7 +217,7 @@ func TestCreateSinglesigTransferCommand_Operatorship(t *testing.T) {
 
 func TestCreateMultisigTransferCommand_Operatorship(t *testing.T) {
 	chainID := sdk.NewInt(1)
-	keyID := tssTestUtils.RandKeyID()
+	keyID := multisigTestutils.KeyID()
 
 	addrs := []common.Address{
 		common.HexToAddress("0xd59ca627Af68D29C547B91066297a7c469a7bF72"),

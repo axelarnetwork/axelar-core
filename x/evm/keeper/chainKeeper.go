@@ -914,7 +914,7 @@ func (k chainKeeper) validateCommandQueueState(state utils.QueueState, queueName
 			return err
 		}
 
-		if err := command.KeyID.Validate(); err != nil {
+		if err := command.KeyID.ValidateBasic(); err != nil {
 			return err
 		}
 	}
