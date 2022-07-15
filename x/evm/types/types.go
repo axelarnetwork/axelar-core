@@ -1850,7 +1850,7 @@ func ParseMultisigKey(key multisig.Key) (map[string]sdk.Uint, sdk.Uint) {
 
 	for _, p := range participants {
 		pubKey := funcs.MustOk(key.GetPubKey(p))
-		weight := funcs.MustOk(key.GetWeight(p))
+		weight := key.GetWeight(p)
 		address := crypto.PubkeyToAddress(*funcs.Must(btcec.ParsePubKey(pubKey, btcec.S256())).ToECDSA())
 
 		addressWeights[address.Hex()] = weight
