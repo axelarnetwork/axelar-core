@@ -34,11 +34,12 @@ message BatchedCommandsResponse {
     (gogoproto.casttype) =
         "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
   ];
-  repeated string signature = 5;
+  reserved 5; // signature was removed in v0.20.0
   string execute_data = 6;
   string prev_batched_commands_id = 7
       [ (gogoproto.customname) = "PrevBatchedCommandsID" ];
   repeated string command_ids = 8 [ (gogoproto.customname) = "CommandIDs" ];
+  Proof proof = 9;
 }
 
 message KeyAddressRequest {
@@ -190,4 +191,18 @@ message TokenInfoResponse {
   bool confirmed = 4;
   bool is_external = 5;
   string burner_code_hash = 6;
+}
+
+message Proof {
+  repeated bytes operators = 1
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+  repeated bytes weight = 2 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.nullable) = false
+  ];
+  bytes threshold = 3 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.nullable) = false
+  ];
+  repeated string signature = 4;
 }

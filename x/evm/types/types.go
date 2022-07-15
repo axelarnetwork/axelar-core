@@ -13,6 +13,8 @@ import (
 	"strings"
 
 	"github.com/btcsuite/btcd/btcec"
+	"github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -403,10 +405,14 @@ func (h Hash) Size() int {
 type Signature [crypto.SignatureLength]byte
 
 // NewSignature is the constructor of Signature
-func NewSignature(bz []byte) (sig Signature) {
+func NewSignature(bz []byte) (sig Signature, err error) {
+	if len(bz) != crypto.SignatureLength {
+		return Signature{}, fmt.Errorf("invalid signature length")
+	}
+
 	copy(sig[:], bz)
 
-	return sig
+	return sig, nil
 }
 
 // Hex returns the hex-encoding of the given Signature
@@ -435,6 +441,19 @@ func ToSignature(sig btcec.Signature, hash common.Hash, pk ecdsa.PublicKey) (Sig
 	return s, nil
 }
 
+func (s Signature) ToHomesteadSig() []byte {
+	/* TODO: We have to make v 27 or 28 due to openzeppelin's implementation at https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/cryptography/ECDSA.sol
+	requiring that. Consider copying and modifying it to require v to be just 0 or 1
+	instead.
+	*/
+	bz := s[:]
+	if bz[crypto.SignatureLength-1] == 0 || bz[crypto.SignatureLength-1] == 1 {
+		bz[crypto.SignatureLength-1] += 27
+	}
+
+	return bz
+}
+
 // CommandParams describe the parameters used to send a pre-signed command to the given contract,
 // with the sender signing the transaction on the node
 type CommandParams struct {
@@ -454,80 +473,25 @@ func KeysToAddresses(keys ...ecdsa.PublicKey) []common.Address {
 	return addresses
 }
 
-func toHomesteadSig(sig Signature) []byte {
-	/* TODO: We have to make v 27 or 28 due to openzeppelin's implementation at https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/cryptography/ECDSA.sol
-	requiring that. Consider copying and modifying it to require v to be just 0 or 1
-	instead.
-	*/
-	bz := sig[:]
-	if bz[crypto.SignatureLength-1] == 0 || bz[crypto.SignatureLength-1] == 1 {
-		bz[crypto.SignatureLength-1] += 27
-	}
-
-	return bz
-}
-
-// CreateExecuteDataSinglesig wraps the specific command data and includes the command signature.
-// Returns the data that goes into the data field of an EVM transaction
-func CreateExecuteDataSinglesig(data []byte, sig Signature) ([]byte, error) {
-	abiEncoder, err := abi.JSON(strings.NewReader(axelarGatewayABI))
-	if err != nil {
-		return nil, err
-	}
-
-	bytesType, err := abi.NewType("bytes", "bytes", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	arguments := abi.Arguments{{Type: bytesType}, {Type: bytesType}}
-	executeData, err := arguments.Pack(data, toHomesteadSig(sig))
-	if err != nil {
-		return nil, err
-	}
-
-	result, err := abiEncoder.Pack(axelarGatewayFuncExecute, executeData)
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
-}
-
 // CreateExecuteDataMultisig wraps the specific command data and includes the command signatures.
 // Returns the data that goes into the data field of an EVM transaction
-func CreateExecuteDataMultisig(data []byte, signers []common.Address, sigs []Signature) ([]byte, error) {
-	sortedSigners := slices.Map(signers, func(a common.Address) Address { return Address(a) })
-	sort.SliceStable(sortedSigners, func(i, j int) bool { return bytes.Compare(sortedSigners[i].Bytes(), sortedSigners[j].Bytes()) < 0 })
-
+func CreateExecuteDataMultisig(data []byte, proof AuthData) ([]byte, error) {
 	abiEncoder, err := abi.JSON(strings.NewReader(axelarGatewayABI))
 	if err != nil {
 		return nil, err
 	}
-
-	homesteadSigs := slices.Map(sigs, toHomesteadSig)
 
 	bytesType, err := abi.NewType("bytes", "bytes", nil)
 	if err != nil {
 		return nil, err
 	}
 
-	bytesArrayType, err := abi.NewType("bytes[]", "bytes[]", nil)
+	p, err := proof.abiEncode()
 	if err != nil {
 		return nil, err
 	}
 
-	addressesType, err := abi.NewType("address[]", "address[]", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	proof, err := abi.Arguments{{Type: addressesType}, {Type: bytesArrayType}}.Pack(sortedSigners, homesteadSigs)
-	if err != nil {
-		return nil, err
-	}
-
-	executeData, err := abi.Arguments{{Type: bytesType}, {Type: bytesType}}.Pack(data, proof)
+	executeData, err := abi.Arguments{{Type: bytesType}, {Type: bytesType}}.Pack(data, p)
 	if err != nil {
 		return nil, err
 	}
@@ -976,6 +940,15 @@ func (b CommandBatch) Is(status BatchedCommandsStatus) bool {
 	return b.metadata.Status == status
 }
 
+// GetSignature returns the batch's signature
+func (b CommandBatch) GetSignature() codec.ProtoMarshaler {
+	if b.metadata.Signature == nil {
+		return nil
+	}
+
+	return b.metadata.Signature.GetCachedValue().(codec.ProtoMarshaler)
+}
+
 // SetStatus sets the status for the batch, returning true if the status was updated
 func (b *CommandBatch) SetStatus(status BatchedCommandsStatus) bool {
 	if b.metadata.Status != BatchNonExistent && b.metadata.Status != BatchSigned {
@@ -985,6 +958,17 @@ func (b *CommandBatch) SetStatus(status BatchedCommandsStatus) bool {
 	}
 
 	return false
+}
+
+// SetSignature sets the signature for the batch, returning true if the status was updated
+func (b *CommandBatch) SetSignature(signature codec.ProtoMarshaler) {
+	sig, err := codectypes.NewAnyWithValue(signature)
+	if err != nil {
+		panic(err)
+	}
+	b.metadata.Signature = sig
+	b.setter(b.metadata)
+
 }
 
 // NewCommandBatchMetadata assembles a CommandBatchMetadata struct from the provided arguments
@@ -1840,6 +1824,80 @@ func (id EventID) Validate() error {
 	}
 
 	return nil
+}
+
+type Operator struct {
+	Address   Address
+	Signature []byte
+	Weight    sdk.Uint
+}
+
+func (o Operator) GetAddress() Address {
+	return o.Address
+}
+
+func (o Operator) GetWeight() sdk.Uint {
+	return o.Weight
+}
+
+func (o Operator) GetSignature() []byte {
+	return o.Signature
+}
+
+type AuthData struct {
+	Operators        []Operator
+	MinPassingWeight sdk.Uint
+}
+
+func (a AuthData) GetOperators() []Address {
+	return slices.Map(a.Operators, Operator.GetAddress)
+}
+
+func (a AuthData) GetWeights() []sdk.Uint {
+	return slices.Map(a.Operators, Operator.GetWeight)
+}
+
+func (a AuthData) GetSignatures() [][]byte {
+	return slices.Filter(slices.Map(a.Operators, Operator.GetSignature), func(b []byte) bool { return b != nil })
+}
+
+// operators, weights, threshold, signatures
+func (a AuthData) abiEncode() ([]byte, error) {
+	addressesType, err := abi.NewType("address[]", "address[]", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	weightsType, err := abi.NewType("uint256[]", "uint256[]", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	thresholdType, err := abi.NewType("uint256", "uint256", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	signaturesType, err := abi.NewType("bytes[]", "bytes[]", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	proof, err := abi.Arguments{
+		{Type: addressesType},
+		{Type: weightsType},
+		{Type: thresholdType},
+		{Type: signaturesType}}.Pack(
+		a.GetOperators(),
+		slices.Map(a.GetWeights(), sdk.Uint.BigInt),
+		a.MinPassingWeight.BigInt(),
+		a.GetSignatures(),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return proof, nil
 }
 
 // ParseMultisigKey parses the given multisig key and returns the weight for

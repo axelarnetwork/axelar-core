@@ -4925,10 +4925,6 @@ paths:
                 default: BATCHED_COMMANDS_STATUS_UNSPECIFIED
               key_id:
                 type: string
-              signature:
-                type: array
-                items:
-                  type: string
               execute_data:
                 type: string
               prev_batched_commands_id:
@@ -4937,6 +4933,26 @@ paths:
                 type: array
                 items:
                   type: string
+              proof:
+                type: object
+                properties:
+                  operators:
+                    type: array
+                    items:
+                      type: string
+                      format: byte
+                  weight:
+                    type: array
+                    items:
+                      type: string
+                      format: byte
+                  threshold:
+                    type: string
+                    format: byte
+                  signature:
+                    type: array
+                    items:
+                      type: string
         default:
           description: An unexpected error response
           schema:
@@ -38228,10 +38244,6 @@ definitions:
         default: BATCHED_COMMANDS_STATUS_UNSPECIFIED
       key_id:
         type: string
-      signature:
-        type: array
-        items:
-          type: string
       execute_data:
         type: string
       prev_batched_commands_id:
@@ -38240,6 +38252,26 @@ definitions:
         type: array
         items:
           type: string
+      proof:
+        type: object
+        properties:
+          operators:
+            type: array
+            items:
+              type: string
+              format: byte
+          weight:
+            type: array
+            items:
+              type: string
+              format: byte
+          threshold:
+            type: string
+            format: byte
+          signature:
+            type: array
+            items:
+              type: string
   axelar.evm.v1beta1.BatchedCommandsStatus:
     type: string
     enum:
@@ -38946,6 +38978,26 @@ definitions:
             max_gas_cost:
               type: integer
               format: int64
+  axelar.evm.v1beta1.Proof:
+    type: object
+    properties:
+      operators:
+        type: array
+        items:
+          type: string
+          format: byte
+      weight:
+        type: array
+        items:
+          type: string
+          format: byte
+      threshold:
+        type: string
+        format: byte
+      signature:
+        type: array
+        items:
+          type: string
   axelar.evm.v1beta1.QueryCommandResponse:
     type: object
     properties:

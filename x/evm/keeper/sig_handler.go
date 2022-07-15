@@ -1,0 +1,61 @@
+package keeper
+
+import (
+	"encoding/hex"
+	"fmt"
+
+	"github.com/cosmos/cosmos-sdk/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
+)
+
+type sigHandler struct {
+	cdc    codec.Codec
+	keeper types.BaseKeeper
+}
+
+// NewSigHandler returns the handler for processing signatures delivered by the multisig module
+func NewSigHandler(cdc codec.Codec, keeper types.BaseKeeper) multisig.SigHandler {
+	return sigHandler{
+		cdc:    cdc,
+		keeper: keeper,
+	}
+}
+
+func (s sigHandler) HandleCompleted(ctx sdk.Context, sig codec.ProtoMarshaler, moduleMetadata codec.ProtoMarshaler) error {
+	sigMetadata := moduleMetadata.(*types.SigMetadata)
+
+	if !s.keeper.HasChain(ctx, sigMetadata.Chain) {
+		return fmt.Errorf("chain %s does not exist as an EVM chain", sigMetadata.Chain)
+	}
+
+	ck := s.keeper.ForChain(sigMetadata.Chain)
+	commandBatch := ck.GetBatchByID(ctx, sigMetadata.BatchedCommandsID)
+	if !commandBatch.Is(types.BatchSigning) {
+		return fmt.Errorf("the command batch %s of chain %s is not being signed", hex.EncodeToString(sigMetadata.BatchedCommandsID), sigMetadata.Chain)
+	}
+
+	commandBatch.SetStatus(types.BatchSigned)
+	commandBatch.SetSignature(sig)
+
+	return nil
+}
+
+func (s sigHandler) HandleFailed(ctx sdk.Context, moduleMetadata codec.ProtoMarshaler) error {
+	sigMetadata := moduleMetadata.(*types.SigMetadata)
+
+	if !s.keeper.HasChain(ctx, sigMetadata.Chain) {
+		return fmt.Errorf("chain %s does not exist as an EVM chain", sigMetadata.Chain)
+	}
+
+	ck := s.keeper.ForChain(sigMetadata.Chain)
+	commandBatch := ck.GetBatchByID(ctx, sigMetadata.BatchedCommandsID)
+	if !commandBatch.Is(types.BatchSigning) {
+		return fmt.Errorf("the command batch %s of chain %s is not being signed", hex.EncodeToString(sigMetadata.BatchedCommandsID), sigMetadata.Chain)
+	}
+	commandBatch.SetStatus(types.BatchAborted)
+
+	return nil
+}

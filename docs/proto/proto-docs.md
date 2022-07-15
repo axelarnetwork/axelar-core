@@ -180,6 +180,7 @@
     - [KeyAddressResponse.AddressWeightsEntry](#axelar.evm.v1beta1.KeyAddressResponse.AddressWeightsEntry)
     - [PendingCommandsRequest](#axelar.evm.v1beta1.PendingCommandsRequest)
     - [PendingCommandsResponse](#axelar.evm.v1beta1.PendingCommandsResponse)
+    - [Proof](#axelar.evm.v1beta1.Proof)
     - [QueryBurnerAddressResponse](#axelar.evm.v1beta1.QueryBurnerAddressResponse)
     - [QueryCommandResponse](#axelar.evm.v1beta1.QueryCommandResponse)
     - [QueryCommandResponse.ParamsEntry](#axelar.evm.v1beta1.QueryCommandResponse.ParamsEntry)
@@ -2015,6 +2016,7 @@ that is deposited by an user
 | `status` | [BatchedCommandsStatus](#axelar.evm.v1beta1.BatchedCommandsStatus) |  |  |
 | `key_id` | [string](#string) |  |  |
 | `prev_batched_commands_id` | [bytes](#bytes) |  |  |
+| `signature` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
 
 
 
@@ -2287,6 +2289,7 @@ results to evm relay transaction types
 | ----- | ---- | ----- | ----------- |
 | `type` | [SigType](#axelar.evm.v1beta1.SigType) |  |  |
 | `chain` | [string](#string) |  |  |
+| `batched_commands_id` | [bytes](#bytes) |  |  |
 
 
 
@@ -2597,10 +2600,10 @@ GenesisState represents the genesis state
 | `data` | [string](#string) |  |  |
 | `status` | [BatchedCommandsStatus](#axelar.evm.v1beta1.BatchedCommandsStatus) |  |  |
 | `key_id` | [string](#string) |  |  |
-| `signature` | [string](#string) | repeated |  |
 | `execute_data` | [string](#string) |  |  |
 | `prev_batched_commands_id` | [string](#string) |  |  |
 | `command_ids` | [string](#string) | repeated |  |
+| `proof` | [Proof](#axelar.evm.v1beta1.Proof) |  |  |
 
 
 
@@ -2956,6 +2959,24 @@ ERC20 tokens requested for a chain
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `commands` | [QueryCommandResponse](#axelar.evm.v1beta1.QueryCommandResponse) | repeated |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.Proof"></a>
+
+### Proof
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `operators` | [bytes](#bytes) | repeated |  |
+| `weight` | [bytes](#bytes) | repeated |  |
+| `threshold` | [bytes](#bytes) |  |  |
+| `signature` | [string](#string) | repeated |  |
 
 
 

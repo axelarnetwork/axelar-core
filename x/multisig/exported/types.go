@@ -2,6 +2,7 @@ package exported
 
 import (
 	"bytes"
+	"crypto/ecdsa"
 	"encoding/hex"
 	"fmt"
 
@@ -76,4 +77,14 @@ func (pk PublicKey) ValidateBasic() error {
 // String returns the hex encoding of the given public key
 func (pk PublicKey) String() string {
 	return hex.EncodeToString(pk)
+}
+
+// GetECDSAPubKey returns the ECDSA public key
+func (pk PublicKey) GetECDSAPubKey() (ecdsa.PublicKey, error) {
+	btcecKey, err := btcec.ParsePubKey(pk, btcec.S256())
+	if err != nil {
+		return ecdsa.PublicKey{}, err
+	}
+
+	return *btcecKey.ToECDSA(), nil
 }
