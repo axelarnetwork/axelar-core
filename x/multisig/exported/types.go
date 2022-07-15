@@ -77,3 +77,26 @@ func (pk PublicKey) ValidateBasic() error {
 func (pk PublicKey) String() string {
 	return hex.EncodeToString(pk)
 }
+
+const (
+	// HashLength is the expected length of the hash
+	HashLength = 32
+)
+
+// Hash is an alias for a 32-byte hash
+type Hash []byte
+
+var zeroHash [HashLength]byte
+
+// ValidateBasic returns an error if the hash is not a valid
+func (h Hash) ValidateBasic() error {
+	if len(h) != HashLength {
+		return fmt.Errorf("hash length must be %d", HashLength)
+	}
+
+	if bytes.Equal(h, zeroHash[:]) {
+		return fmt.Errorf("hash cannot be zero")
+	}
+
+	return nil
+}

@@ -64,7 +64,9 @@ message SigningStarted {
     (gogoproto.castvalue) =
         "github.com/axelarnetwork/axelar-core/x/multisig/exported.PublicKey"
   ];
-  bytes payload_hash = 5 [ (gogoproto.casttype) = "Hash" ];
+  bytes payload_hash = 5
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/multisig/exported.Hash" ];
   string requesting_module = 6;
 }
 

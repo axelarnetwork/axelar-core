@@ -17,6 +17,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/multisig"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/multisig/mock"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	"github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
 	typestestutils "github.com/axelarnetwork/axelar-core/x/multisig/types/testutils"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
@@ -53,7 +54,7 @@ func TestMgr_ProcessSigningStarted(t *testing.T) {
 	givenMgr.
 		When("is not part of the listed participants", func() {
 			key := typestestutils.Key()
-			event = types.NewSigningStarted(uint64(rand.PosI64()), key, rand.Bytes(types.HashLength), rand.NormalizedStr(3))
+			event = types.NewSigningStarted(uint64(rand.PosI64()), key, rand.Bytes(exported.HashLength), rand.NormalizedStr(3))
 		}).
 		Then("should ignore", func(t *testing.T) {
 			err := mgr.ProcessSigningStarted(event)
@@ -68,7 +69,7 @@ func TestMgr_ProcessSigningStarted(t *testing.T) {
 			privateKey = funcs.Must(btcec.NewPrivateKey(btcec.S256()))
 			key.PubKeys[participant.String()] = privateKey.PubKey().SerializeCompressed()
 
-			event = types.NewSigningStarted(uint64(rand.PosI64()), key, rand.Bytes(types.HashLength), rand.NormalizedStr(3))
+			event = types.NewSigningStarted(uint64(rand.PosI64()), key, rand.Bytes(exported.HashLength), rand.NormalizedStr(3))
 		}).
 		Then("should handle", func(t *testing.T) {
 			client.SignFunc = func(_ context.Context, in *tofnd.SignRequest, _ ...grpc.CallOption) (*tofnd.SignResponse, error) {

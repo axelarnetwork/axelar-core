@@ -42,7 +42,7 @@ func Key() types.Key {
 
 // MultiSig returns a random multi sig
 func MultiSig() types.MultiSig {
-	payloadHash := rand.Bytes(types.HashLength)
+	payloadHash := rand.Bytes(exported.HashLength)
 	participants := slices.Expand(func(int) sdk.ValAddress { return rand.ValAddr() }, int(rand.I64Between(5, 10)))
 	sigs := make(map[string]types.Signature, len(participants))
 
