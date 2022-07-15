@@ -1,4 +1,4 @@
-## Query and Recover GMP transactions
+# Query and Recover GMP transactions
 
 Occasionally, transactions can get "stuck" in the pipeline from a source to destination chain (e.g. due to one-off issues that arise with relayers that operate on top of the network).
 

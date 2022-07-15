@@ -1,5 +1,5 @@
 
-## Get a deposit address
+# Get a deposit address
 
 A _deposit address_ is a special address created and monitored by Axelar relayer services on behalf of the requester. It is similar to how centralized exchanges generate a monitored, one-time deposit address that facilitates your token transfers.
 

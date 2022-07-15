@@ -1,4 +1,4 @@
-## Axelar Query API
+# Axelar Query API
 
 This module is a nice-to-have of common queries made into the Axelar network and its services that are abstracted into easy-to-use Javascript one-liners.
 

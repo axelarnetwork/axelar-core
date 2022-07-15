@@ -1,6 +1,7 @@
 {
     "monitoring": "Monitoring State of Transactions",
     "error-debugging": "Error message & Debugging",
-    "recovery": "Transaction Recovery"
+    "recovery": "Transaction Recovery",
+    "debugging-your-smart-contract": "Debugging your Smart Contract"
   }
   
