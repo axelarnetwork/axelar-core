@@ -13,6 +13,8 @@ import (
 	"strings"
 
 	"github.com/btcsuite/btcd/btcec"
+	"github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -971,6 +973,22 @@ func (b CommandBatch) GetCommandIDs() []CommandID {
 	return b.metadata.CommandIDs
 }
 
+// UnpackInterfaces implements UnpackInterfacesMessage
+func (b CommandBatch) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
+	var data codec.ProtoMarshaler
+
+	return unpacker.UnpackAny(b.metadata.Signature, &data)
+}
+
+// GetSignature returns the batch's signature
+func (b CommandBatch) GetSignature() codec.ProtoMarshaler {
+	if b.metadata.Signature == nil {
+		return nil
+	}
+
+	return b.metadata.Signature.GetCachedValue().(codec.ProtoMarshaler)
+}
+
 // Is returns true if batched commands is in the given status; false otherwise
 func (b CommandBatch) Is(status BatchedCommandsStatus) bool {
 	return b.metadata.Status == status
@@ -985,6 +1003,13 @@ func (b *CommandBatch) SetStatus(status BatchedCommandsStatus) bool {
 	}
 
 	return false
+}
+
+// SetSignature sets the signature for the batch
+func (b *CommandBatch) SetSignature(signature codec.ProtoMarshaler) {
+	sig := funcs.Must(codectypes.NewAnyWithValue(signature))
+	b.metadata.Signature = sig
+	b.setter(b.metadata)
 }
 
 // NewCommandBatchMetadata assembles a CommandBatchMetadata struct from the provided arguments

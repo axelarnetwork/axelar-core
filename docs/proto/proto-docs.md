@@ -2015,6 +2015,7 @@ that is deposited by an user
 | `status` | [BatchedCommandsStatus](#axelar.evm.v1beta1.BatchedCommandsStatus) |  |  |
 | `key_id` | [string](#string) |  |  |
 | `prev_batched_commands_id` | [bytes](#bytes) |  |  |
+| `signature` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
 
 
 
@@ -2287,6 +2288,7 @@ results to evm relay transaction types
 | ----- | ---- | ----- | ----------- |
 | `type` | [SigType](#axelar.evm.v1beta1.SigType) |  |  |
 | `chain` | [string](#string) |  |  |
+| `command_batch_id` | [bytes](#bytes) |  |  |
 
 
 
