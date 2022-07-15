@@ -19,25 +19,25 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/evm/types/mock"
 	evmTest "github.com/axelarnetwork/axelar-core/x/evm/types/testutils"
+	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
+	multisigTestutils "github.com/axelarnetwork/axelar-core/x/multisig/exported/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
-	tssTestUtils "github.com/axelarnetwork/axelar-core/x/tss/exported/testutils"
 )
 
 func TestQueryPendingCommands(t *testing.T) {
 	var (
-		chainKeeper *mock.ChainKeeperMock
-		baseKeeper  *mock.BaseKeeperMock
-		signer      *mock.SignerMock
-		multisig    *mock.MultisigKeeperMock
-		nexusKeeper *mock.NexusMock
-		ctx         sdk.Context
-		evmChain    nexus.ChainName
-		asset       string
-		symbol      string
-		chainID     sdk.Int
-		keyID       tss.KeyID
-		cmds        []types.Command
+		chainKeeper    *mock.ChainKeeperMock
+		baseKeeper     *mock.BaseKeeperMock
+		signer         *mock.SignerMock
+		multisigKeeper *mock.MultisigKeeperMock
+		nexusKeeper    *mock.NexusMock
+		ctx            sdk.Context
+		evmChain       nexus.ChainName
+		asset          string
+		symbol         string
+		chainID        sdk.Int
+		keyID          multisig.KeyID
+		cmds           []types.Command
 	)
 
 	setup := func() {
@@ -46,7 +46,7 @@ func TestQueryPendingCommands(t *testing.T) {
 		asset = rand.Str(5)
 		symbol = rand.Str(5)
 		chainID = sdk.NewInt(1)
-		keyID = tssTestUtils.RandKeyID()
+		keyID = multisigTestutils.KeyID()
 		dailyMintLimit := sdk.NewUint(uint64(rand.PosI64()))
 		cmdDeploy, _ := types.CreateDeployTokenCommand(chainID, keyID, asset, createDetails(asset, symbol), types.ZeroAddress, dailyMintLimit)
 		cmdMint, _ := types.CreateMintTokenCommand(keyID, types.NewCommandID(rand.Bytes(10), chainID), symbol, common.BytesToAddress(rand.Bytes(common.AddressLength)), big.NewInt(rand.I64Between(1000, 100000)))
@@ -90,7 +90,7 @@ func TestQueryPendingCommands(t *testing.T) {
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
 
-		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer, multisig)
+		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer, multisigKeeper)
 
 		res, err := q.PendingCommands(sdk.WrapSDKContext(ctx), &types.PendingCommandsRequest{Chain: evmChain.String()})
 		assert.NoError(t, err)
