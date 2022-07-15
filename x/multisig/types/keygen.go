@@ -165,10 +165,8 @@ func (m Key) GetPubKey(p sdk.ValAddress) (exported.PublicKey, bool) {
 }
 
 // GetWeight returns the weight of the given participant
-func (m Key) GetWeight(p sdk.ValAddress) (sdk.Uint, bool) {
-	weight := m.Snapshot.GetParticipantWeight(p)
-
-	return weight, weight.IsZero()
+func (m Key) GetWeight(p sdk.ValAddress) sdk.Uint {
+	return m.Snapshot.GetParticipantWeight(p)
 }
 
 // ValidateBasic returns an error if the given key is invalid; nil otherwise

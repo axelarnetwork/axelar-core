@@ -19,7 +19,7 @@ import (
 type Key interface {
 	GetParticipants() []sdk.ValAddress
 	GetPubKey(sdk.ValAddress) (PublicKey, bool)
-	GetWeight(sdk.ValAddress) (sdk.Uint, bool)
+	GetWeight(sdk.ValAddress) sdk.Uint
 	GetMinPassingWeight() sdk.Uint
 }
 
