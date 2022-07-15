@@ -30,6 +30,8 @@ import (
 	"github.com/axelarnetwork/utils/slices"
 )
 
+var _ codectypes.UnpackInterfacesMessage = CommandBatchMetadata{}
+
 // Ethereum network labels
 const (
 	Mainnet = "mainnet"
@@ -973,13 +975,6 @@ func (b CommandBatch) GetCommandIDs() []CommandID {
 	return b.metadata.CommandIDs
 }
 
-// UnpackInterfaces implements UnpackInterfacesMessage
-func (b CommandBatch) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
-	var data codec.ProtoMarshaler
-
-	return unpacker.UnpackAny(b.metadata.Signature, &data)
-}
-
 // GetSignature returns the batch's signature
 func (b CommandBatch) GetSignature() codec.ProtoMarshaler {
 	if b.metadata.Signature == nil {
@@ -1040,6 +1035,13 @@ func NewCommandBatchMetadata(blockHeight int64, chainID sdk.Int, keyID tss.KeyID
 		Status:     BatchSigning,
 		KeyID:      keyID,
 	}, nil
+}
+
+// UnpackInterfaces implements UnpackInterfacesMessage
+func (m CommandBatchMetadata) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
+	var data codec.ProtoMarshaler
+
+	return unpacker.UnpackAny(m.Signature, &data)
 }
 
 const commandIDSize = 32
