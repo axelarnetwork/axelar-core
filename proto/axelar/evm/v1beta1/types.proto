@@ -5,7 +5,7 @@ option go_package = "github.com/axelarnetwork/axelar-core/x/evm/types";
 
 import "gogoproto/gogo.proto";
 import "axelar/nexus/exported/v1beta1/types.proto";
-import "axelar/tss/exported/v1beta1/types.proto";
+import "axelar/multisig/exported/v1beta1/types.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
@@ -243,7 +243,7 @@ message Command {
   string key_id = 4 [
     (gogoproto.customname) = "KeyID",
     (gogoproto.casttype) =
-        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
   ];
   uint32 max_gas_cost = 5;
 }
@@ -275,7 +275,7 @@ message CommandBatchMetadata {
   string key_id = 6 [
     (gogoproto.customname) = "KeyID",
     (gogoproto.casttype) =
-        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
   ];
   bytes prev_batched_commands_id = 7
       [ (gogoproto.customname) = "PrevBatchedCommandsID" ];
@@ -311,7 +311,7 @@ message TransferKey {
   string next_key_id = 3 [
     (gogoproto.customname) = "NextKeyID",
     (gogoproto.casttype) =
-        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
   ];
 }
 

@@ -97,7 +97,7 @@ func getExecuteDataAndSigs(ctx sdk.Context, s types.Signer, commandBatch types.C
 		sigKeyPairs := types.SigKeyPairs(sig.MultiSig.SigKeyPairs)
 		sort.Stable(sigKeyPairs)
 
-		key, ok := s.GetKey(ctx, commandBatch.GetKeyID())
+		key, ok := s.GetKey(ctx, tss.KeyID(commandBatch.GetKeyID()))
 		if !ok {
 			return nil, nil, fmt.Errorf("key %s not found", commandBatch.GetKeyID())
 		}
@@ -153,7 +153,7 @@ func commandBatchToResp(ctx sdk.Context, commandBatch types.CommandBatch, s type
 			ID:                    id,
 			Data:                  hex.EncodeToString(commandBatch.GetData()),
 			Status:                commandBatch.GetStatus(),
-			KeyID:                 commandBatch.GetKeyID(),
+			KeyID:                 tss.KeyID(commandBatch.GetKeyID()),
 			Signature:             slices.Map(signatures, types.Signature.Hex),
 			ExecuteData:           hex.EncodeToString(executeData),
 			PrevBatchedCommandsID: prevID,
@@ -164,7 +164,7 @@ func commandBatchToResp(ctx sdk.Context, commandBatch types.CommandBatch, s type
 			ID:                    id,
 			Data:                  hex.EncodeToString(commandBatch.GetData()),
 			Status:                commandBatch.GetStatus(),
-			KeyID:                 commandBatch.GetKeyID(),
+			KeyID:                 tss.KeyID(commandBatch.GetKeyID()),
 			Signature:             nil,
 			ExecuteData:           "",
 			PrevBatchedCommandsID: prevID,
