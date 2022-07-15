@@ -29,7 +29,10 @@ message Key {
   ];
   snapshot.exported.v1beta1.Snapshot snapshot = 2
       [ (gogoproto.nullable) = false ];
-  map<string, bytes> pub_keys = 3 [ (gogoproto.castvalue) = "PublicKey" ];
+  map<string, bytes> pub_keys = 3 [
+    (gogoproto.castvalue) =
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.PublicKey"
+  ];
   utils.v1beta1.Threshold signing_threshold = 4
       [ (gogoproto.nullable) = false ];
   KeyState state = 5;

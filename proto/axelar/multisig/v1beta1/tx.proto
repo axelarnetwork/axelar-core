@@ -31,7 +31,10 @@ message SubmitPubKeyRequest {
     (gogoproto.casttype) =
         "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
   ];
-  bytes pub_key = 3 [ (gogoproto.casttype) = "PublicKey" ];
+  bytes pub_key = 3 [
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.PublicKey"
+  ];
   bytes signature = 4 [ (gogoproto.casttype) = "Signature" ];
 }
 

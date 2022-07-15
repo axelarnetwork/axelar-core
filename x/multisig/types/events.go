@@ -33,7 +33,7 @@ func NewKeygenExpired(keyID exported.KeyID) *KeygenExpired {
 }
 
 // NewPubKeySubmitted is the constructor for event pub key submitted
-func NewPubKeySubmitted(keyID exported.KeyID, participant sdk.ValAddress, pubKey PublicKey) *PubKeySubmitted {
+func NewPubKeySubmitted(keyID exported.KeyID, participant sdk.ValAddress, pubKey exported.PublicKey) *PubKeySubmitted {
 	return &PubKeySubmitted{
 		Module:      ModuleName,
 		KeyID:       keyID,
