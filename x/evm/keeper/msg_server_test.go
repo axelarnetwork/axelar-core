@@ -31,6 +31,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/evm/types/mock"
 	evmTestUtils "github.com/axelarnetwork/axelar-core/x/evm/types/testutils"
+	multisigTestUtils "github.com/axelarnetwork/axelar-core/x/multisig/exported/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
@@ -183,7 +184,7 @@ func TestSignCommands(t *testing.T) {
 			ID:         rand.Bytes(common.HashLength),
 			CommandIDs: expectedCommandIDs,
 			Status:     types.BatchSigning,
-			KeyID:      tssTestUtils.RandKeyID(),
+			KeyID:      multisigTestUtils.KeyID(),
 		}
 
 		chainKeeper := &mock.ChainKeeperMock{}
@@ -224,7 +225,7 @@ func TestSignCommands(t *testing.T) {
 			ID:         rand.Bytes(common.HashLength),
 			CommandIDs: expectedCommandIDs,
 			Status:     types.BatchAborted,
-			KeyID:      tssTestUtils.RandKeyID(),
+			KeyID:      multisigTestUtils.KeyID(),
 		}
 
 		chainKeeper := &mock.ChainKeeperMock{}
@@ -409,7 +410,7 @@ func TestCreateBurnTokens(t *testing.T) {
 			commandIDSeen[command.Cmd.ID.Hex()] = true
 
 			assert.False(t, ok)
-			assert.Equal(t, secondaryKeyID, command.Cmd.KeyID)
+			assert.EqualValues(t, secondaryKeyID, command.Cmd.KeyID)
 		}
 	}).Repeat(repeats))
 

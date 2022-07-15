@@ -4,6 +4,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
 	"github.com/axelarnetwork/utils/funcs"
@@ -42,30 +43,34 @@ func handleKeygens(ctx sdk.Context, k types.Keeper, rewarder types.Rewarder) {
 
 func handleSignings(ctx sdk.Context, k types.Keeper, rewarder types.Rewarder) {
 	for _, signing := range k.GetSigningSessionsByExpiry(ctx, ctx.BlockHeight()) {
-		k.DeleteSigningSession(ctx, signing.GetID())
-		module := signing.GetModule()
 
-		if signing.State != exported.Completed {
-			funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewSigningExpired(signing.GetID())))
-			k.Logger(ctx).Info("signing session expired",
+		_ = utils.RunCached(ctx, k, func(cachedCtx sdk.Context) ([]abci.ValidatorUpdate, error) {
+			k.DeleteSigningSession(cachedCtx, signing.GetID())
+			module := signing.GetModule()
+
+			if signing.State != exported.Completed {
+				funcs.MustNoErr(cachedCtx.EventManager().EmitTypedEvent(types.NewSigningExpired(signing.GetID())))
+				k.Logger(cachedCtx).Info("signing session expired",
+					"sig_id", signing.GetID(),
+				)
+
+				funcs.MustNoErr(k.GetSigRouter().GetHandler(module).HandleFailed(cachedCtx, signing.GetMetadata()))
+				slices.ForEach(signing.GetMissingParticipants(), rewarder.GetPool(cachedCtx, types.ModuleName).ClearRewards)
+				return nil, nil
+			}
+
+			sig := funcs.Must(signing.Result())
+
+			funcs.MustNoErr(k.GetSigRouter().GetHandler(module).HandleCompleted(cachedCtx, &sig, signing.GetMetadata()))
+
+			funcs.MustNoErr(cachedCtx.EventManager().EmitTypedEvent(types.NewSigningCompleted(signing.GetID())))
+			k.Logger(cachedCtx).Info("signing session completed",
 				"sig_id", signing.GetID(),
+				"key_id", sig.GetKeyID(),
+				"module", module,
 			)
 
-			funcs.MustNoErr(k.GetSigRouter().GetHandler(module).HandleFailed(ctx, signing.GetMetadata()))
-			slices.ForEach(signing.GetMissingParticipants(), rewarder.GetPool(ctx, types.ModuleName).ClearRewards)
-
-			continue
-		}
-
-		sig := funcs.Must(signing.Result())
-
-		funcs.MustNoErr(k.GetSigRouter().GetHandler(module).HandleCompleted(ctx, &sig, signing.GetMetadata()))
-
-		funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewSigningCompleted(signing.GetID())))
-		k.Logger(ctx).Info("signing session completed",
-			"sig_id", signing.GetID(),
-			"key_id", sig.GetKeyID(),
-			"module", module,
-		)
+			return nil, nil
+		})
 	}
 }

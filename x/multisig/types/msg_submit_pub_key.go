@@ -12,7 +12,7 @@ import (
 var _ sdk.Msg = &SubmitPubKeyRequest{}
 
 // NewSubmitPubKeyRequest constructor for SubmitPubKeyRequest
-func NewSubmitPubKeyRequest(sender sdk.AccAddress, keyID exported.KeyID, pubKey PublicKey, signature Signature) *SubmitPubKeyRequest {
+func NewSubmitPubKeyRequest(sender sdk.AccAddress, keyID exported.KeyID, pubKey exported.PublicKey, signature Signature) *SubmitPubKeyRequest {
 	return &SubmitPubKeyRequest{
 		Sender:    sender,
 		KeyID:     keyID,

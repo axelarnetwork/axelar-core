@@ -11,6 +11,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast"
+	"github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 )
@@ -41,7 +42,7 @@ func (mgr Mgr) isParticipant(p sdk.ValAddress) bool {
 	return mgr.participant.Equals(p)
 }
 
-func (mgr Mgr) generateKey(keyUID string, partyUID string) (types.PublicKey, error) {
+func (mgr Mgr) generateKey(keyUID string, partyUID string) (exported.PublicKey, error) {
 	grpcCtx, cancel := context.WithTimeout(context.Background(), mgr.timeout)
 	defer cancel()
 
@@ -63,7 +64,7 @@ func (mgr Mgr) generateKey(keyUID string, partyUID string) (types.PublicKey, err
 	}
 }
 
-func (mgr Mgr) sign(keyUID string, payloadHash types.Hash, partyUID string, pubKey []byte) (types.Signature, error) {
+func (mgr Mgr) sign(keyUID string, payloadHash exported.Hash, partyUID string, pubKey []byte) (types.Signature, error) {
 	grpcCtx, cancel := context.WithTimeout(context.Background(), mgr.timeout)
 	defer cancel()
 
