@@ -19,56 +19,12 @@ import (
 	. "github.com/axelarnetwork/utils/test"
 )
 
-func TestPublicKey(t *testing.T) {
-	var (
-		pubKey types.PublicKey
-	)
-
-	t.Run("ValidateBasic", func(t *testing.T) {
-		Given("valid public key", func() {
-			pubKey = typestestutils.PublicKey()
-		}).
-			When("", func() {}).
-			Then("should return nil", func(t *testing.T) {
-				assert.NoError(t, pubKey.ValidateBasic())
-			}).
-			Run(t, 5)
-
-		Given("invalid public key", func() {
-			pubKey = rand.Bytes(int(rand.I64Between(1, 101)))
-		}).
-			When("", func() {}).
-			Then("should return error", func(t *testing.T) {
-				assert.Error(t, pubKey.ValidateBasic())
-			}).
-			Run(t, 5)
-
-		Given("uncompressed public key", func() {
-			pubKey = funcs.Must(btcec.NewPrivateKey(btcec.S256())).PubKey().SerializeUncompressed()
-		}).
-			When("", func() {}).
-			Then("should return error", func(t *testing.T) {
-				assert.Error(t, pubKey.ValidateBasic())
-			}).
-			Run(t, 5)
-
-		Given("hybrid public key", func() {
-			pubKey = funcs.Must(btcec.NewPrivateKey(btcec.S256())).PubKey().SerializeHybrid()
-		}).
-			When("", func() {}).
-			Then("should return error", func(t *testing.T) {
-				assert.Error(t, pubKey.ValidateBasic())
-			}).
-			Run(t, 5)
-	})
-}
-
 func TestKeygenSession(t *testing.T) {
 	var (
 		keygenSession types.KeygenSession
 		blockHeight   int64
 		participant   sdk.ValAddress
-		pubKey        types.PublicKey
+		pubKey        exported.PublicKey
 	)
 
 	givenNewKeygenSession := Given("new keygen session", func() {

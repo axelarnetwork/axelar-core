@@ -44,7 +44,10 @@ message PubKeySubmitted {
   ];
   bytes participant = 3 [ (gogoproto.casttype) =
                               "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
-  bytes pub_key = 4 [ (gogoproto.casttype) = "PublicKey" ];
+  bytes pub_key = 4 [
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.PublicKey"
+  ];
 }
 
 message SigningStarted {
@@ -57,8 +60,13 @@ message SigningStarted {
     (gogoproto.casttype) =
         "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
   ];
-  map<string, bytes> pub_keys = 4 [ (gogoproto.castvalue) = "PublicKey" ];
-  bytes payload_hash = 5 [ (gogoproto.casttype) = "Hash" ];
+  map<string, bytes> pub_keys = 4 [
+    (gogoproto.castvalue) =
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.PublicKey"
+  ];
+  bytes payload_hash = 5
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/multisig/exported.Hash" ];
   string requesting_module = 6;
 }
 

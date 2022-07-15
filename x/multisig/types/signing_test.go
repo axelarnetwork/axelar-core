@@ -48,7 +48,7 @@ func TestSig(t *testing.T) {
 
 		givenRandomSig.
 			When("payload hash is invalid", func() {
-				multiSig.PayloadHash = make([]byte, types.HashLength+1)
+				multiSig.PayloadHash = make([]byte, exported.HashLength+1)
 			}).
 			Then("should return error", func(t *testing.T) {
 				assert.Error(t, multiSig.ValidateBasic())
@@ -104,7 +104,7 @@ func TestSigningSession(t *testing.T) {
 			validators[1].String(): snapshot.NewParticipant(validators[1], sdk.NewUint(2)),
 			validators[2].String(): snapshot.NewParticipant(validators[2], sdk.NewUint(3)),
 		}
-		publicKeys := make(map[string]types.PublicKey, len(validators))
+		publicKeys := make(map[string]exported.PublicKey, len(validators))
 		privateKeys = make(map[string]*btcec.PrivateKey, len(validators))
 		for _, v := range validators {
 			privateKey := funcs.Must(btcec.NewPrivateKey(btcec.S256()))
@@ -124,7 +124,7 @@ func TestSigningSession(t *testing.T) {
 			PubKeys:          publicKeys,
 			SigningThreshold: utils.NewThreshold(2, 3),
 		}
-		payloadHash := rand.Bytes(types.HashLength)
+		payloadHash := rand.Bytes(exported.HashLength)
 		expiresAt := rand.I64Between(1, 100)
 		gracePeriod := int64(3)
 		module := rand.NormalizedStr(5)

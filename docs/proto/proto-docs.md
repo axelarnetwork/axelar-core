@@ -114,6 +114,9 @@
     - [QueueState.Item](#axelar.utils.v1beta1.QueueState.Item)
     - [QueueState.ItemsEntry](#axelar.utils.v1beta1.QueueState.ItemsEntry)
   
+- [axelar/multisig/exported/v1beta1/types.proto](#axelar/multisig/exported/v1beta1/types.proto)
+    - [MultisigState](#axelar.multisig.exported.v1beta1.MultisigState)
+  
 - [axelar/evm/v1beta1/types.proto](#axelar/evm/v1beta1/types.proto)
     - [Asset](#axelar.evm.v1beta1.Asset)
     - [BurnerInfo](#axelar.evm.v1beta1.BurnerInfo)
@@ -177,8 +180,7 @@
     - [GatewayAddressResponse](#axelar.evm.v1beta1.GatewayAddressResponse)
     - [KeyAddressRequest](#axelar.evm.v1beta1.KeyAddressRequest)
     - [KeyAddressResponse](#axelar.evm.v1beta1.KeyAddressResponse)
-    - [KeyAddressResponse.MultisigAddresses](#axelar.evm.v1beta1.KeyAddressResponse.MultisigAddresses)
-    - [KeyAddressResponse.ThresholdAddress](#axelar.evm.v1beta1.KeyAddressResponse.ThresholdAddress)
+    - [KeyAddressResponse.AddressWeightsEntry](#axelar.evm.v1beta1.KeyAddressResponse.AddressWeightsEntry)
     - [PendingCommandsRequest](#axelar.evm.v1beta1.PendingCommandsRequest)
     - [PendingCommandsResponse](#axelar.evm.v1beta1.PendingCommandsResponse)
     - [QueryBurnerAddressResponse](#axelar.evm.v1beta1.QueryBurnerAddressResponse)
@@ -238,9 +240,6 @@
 - [axelar/evm/v1beta1/service.proto](#axelar/evm/v1beta1/service.proto)
     - [MsgService](#axelar.evm.v1beta1.MsgService)
     - [QueryService](#axelar.evm.v1beta1.QueryService)
-  
-- [axelar/multisig/exported/v1beta1/types.proto](#axelar/multisig/exported/v1beta1/types.proto)
-    - [MultisigState](#axelar.multisig.exported.v1beta1.MultisigState)
   
 - [axelar/multisig/v1beta1/events.proto](#axelar/multisig/v1beta1/events.proto)
     - [KeyAssigned](#axelar.multisig.v1beta1.KeyAssigned)
@@ -1938,6 +1937,35 @@ QueryService defines the gRPC querier service.
 
 
 
+<a name="axelar/multisig/exported/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/multisig/exported/v1beta1/types.proto
+
+
+ <!-- end messages -->
+
+
+<a name="axelar.multisig.exported.v1beta1.MultisigState"></a>
+
+### MultisigState
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| MULTISIG_STATE_UNSPECIFIED | 0 |  |
+| MULTISIG_STATE_PENDING | 1 |  |
+| MULTISIG_STATE_COMPLETED | 2 |  |
+
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
 <a name="axelar/evm/v1beta1/types.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -2016,6 +2044,7 @@ that is deposited by an user
 | `status` | [BatchedCommandsStatus](#axelar.evm.v1beta1.BatchedCommandsStatus) |  |  |
 | `key_id` | [string](#string) |  |  |
 | `prev_batched_commands_id` | [bytes](#bytes) |  |  |
+| `signature` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
 
 
 
@@ -2288,6 +2317,7 @@ results to evm relay transaction types
 | ----- | ---- | ----- | ----------- |
 | `type` | [SigType](#axelar.evm.v1beta1.SigType) |  |  |
 | `chain` | [string](#string) |  |  |
+| `command_batch_id` | [bytes](#bytes) |  |  |
 
 
 
@@ -2909,39 +2939,24 @@ ERC20 tokens requested for a chain
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `key_id` | [string](#string) |  |  |
-| `multisig_addresses` | [KeyAddressResponse.MultisigAddresses](#axelar.evm.v1beta1.KeyAddressResponse.MultisigAddresses) |  |  |
-| `threshold_address` | [KeyAddressResponse.ThresholdAddress](#axelar.evm.v1beta1.KeyAddressResponse.ThresholdAddress) |  |  |
+| `address_weights` | [KeyAddressResponse.AddressWeightsEntry](#axelar.evm.v1beta1.KeyAddressResponse.AddressWeightsEntry) | repeated |  |
+| `threshold` | [string](#string) |  |  |
 
 
 
 
 
 
-<a name="axelar.evm.v1beta1.KeyAddressResponse.MultisigAddresses"></a>
+<a name="axelar.evm.v1beta1.KeyAddressResponse.AddressWeightsEntry"></a>
 
-### KeyAddressResponse.MultisigAddresses
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `addresses` | [string](#string) | repeated |  |
-| `threshold` | [uint32](#uint32) |  |  |
-
-
-
-
-
-
-<a name="axelar.evm.v1beta1.KeyAddressResponse.ThresholdAddress"></a>
-
-### KeyAddressResponse.ThresholdAddress
+### KeyAddressResponse.AddressWeightsEntry
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `address` | [string](#string) |  |  |
+| `key` | [string](#string) |  |  |
+| `value` | [string](#string) |  |  |
 
 
 
@@ -3766,35 +3781,6 @@ QueryService defines the gRPC querier service.
 | `Event` | [EventRequest](#axelar.evm.v1beta1.EventRequest) | [EventResponse](#axelar.evm.v1beta1.EventResponse) | Event queries an event at the specified chain | GET|/axelar/evm/v1beta1/event/{chain}/{event_id}|
 | `ERC20Tokens` | [ERC20TokensRequest](#axelar.evm.v1beta1.ERC20TokensRequest) | [ERC20TokensResponse](#axelar.evm.v1beta1.ERC20TokensResponse) | ERC20Tokens queries the ERC20 tokens registered for a chain | GET|/axelar/evm/v1beta1/erc20_tokens/{chain}|
 | `TokenInfo` | [TokenInfoRequest](#axelar.evm.v1beta1.TokenInfoRequest) | [TokenInfoResponse](#axelar.evm.v1beta1.TokenInfoResponse) | TokenInfo queries the token info for a registered ERC20 Token | GET|/axelar/evm/v1beta1/token_info/{chain}|
-
- <!-- end services -->
-
-
-
-<a name="axelar/multisig/exported/v1beta1/types.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## axelar/multisig/exported/v1beta1/types.proto
-
-
- <!-- end messages -->
-
-
-<a name="axelar.multisig.exported.v1beta1.MultisigState"></a>
-
-### MultisigState
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| MULTISIG_STATE_UNSPECIFIED | 0 |  |
-| MULTISIG_STATE_PENDING | 1 |  |
-| MULTISIG_STATE_COMPLETED | 2 |  |
-
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
 
  <!-- end services -->
 

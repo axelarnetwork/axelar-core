@@ -13,6 +13,8 @@ import (
 	"strings"
 
 	"github.com/btcsuite/btcd/btcec"
+	"github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -21,10 +23,14 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 )
+
+var _ codectypes.UnpackInterfacesMessage = CommandBatchMetadata{}
 
 // Ethereum network labels
 const (
@@ -160,21 +166,21 @@ func (t ERC20Token) GetBurnerCodeHash() Hash {
 }
 
 // CreateDeployCommand returns a token deployment command for the token
-func (t *ERC20Token) CreateDeployCommand(key tss.KeyID, dailyMintLimit sdk.Uint) (Command, error) {
+func (t *ERC20Token) CreateDeployCommand(keyID multisig.KeyID, dailyMintLimit sdk.Uint) (Command, error) {
 	switch {
 	case t.Is(NonExistent):
 		return Command{}, fmt.Errorf("token %s non-existent", t.GetAsset())
 	case t.Is(Confirmed):
 		return Command{}, fmt.Errorf("token %s already confirmed", t.GetAsset())
 	}
-	if err := key.Validate(); err != nil {
+	if err := keyID.ValidateBasic(); err != nil {
 		return Command{}, err
 	}
 
 	if t.IsExternal() {
 		return CreateDeployTokenCommand(
 			t.metadata.ChainID,
-			key,
+			keyID,
 			t.GetAsset(),
 			t.metadata.Details,
 			t.GetAddress(),
@@ -184,7 +190,7 @@ func (t *ERC20Token) CreateDeployCommand(key tss.KeyID, dailyMintLimit sdk.Uint)
 
 	return CreateDeployTokenCommand(
 		t.metadata.ChainID,
-		key,
+		keyID,
 		t.GetAsset(),
 		t.metadata.Details,
 		ZeroAddress,
@@ -193,16 +199,16 @@ func (t *ERC20Token) CreateDeployCommand(key tss.KeyID, dailyMintLimit sdk.Uint)
 }
 
 // CreateMintCommand returns a mint deployment command for the token
-func (t *ERC20Token) CreateMintCommand(key tss.KeyID, transfer nexus.CrossChainTransfer) (Command, error) {
+func (t *ERC20Token) CreateMintCommand(keyID multisig.KeyID, transfer nexus.CrossChainTransfer) (Command, error) {
 	if !t.Is(Confirmed) {
 		return Command{}, fmt.Errorf("token %s not confirmed (current status: %s)",
 			t.metadata.Asset, t.metadata.Status.String())
 	}
-	if err := key.Validate(); err != nil {
+	if err := keyID.ValidateBasic(); err != nil {
 		return Command{}, err
 	}
 
-	return CreateMintTokenCommand(key, transferIDtoCommandID(transfer.ID), t.metadata.Details.Symbol, common.HexToAddress(transfer.Recipient.Address), transfer.Asset.Amount.BigInt())
+	return CreateMintTokenCommand(keyID, transferIDtoCommandID(transfer.ID), t.metadata.Details.Symbol, common.HexToAddress(transfer.Recipient.Address), transfer.Asset.Amount.BigInt())
 }
 
 // transferIDtoCommandID converts a transferID to a commandID
@@ -546,7 +552,7 @@ func GetSignHash(commandData []byte) common.Hash {
 // CreateApproveContractCallCommand creates a command to approve contract call
 func CreateApproveContractCallCommand(
 	chainID sdk.Int,
-	keyID tss.KeyID,
+	keyID multisig.KeyID,
 	sourceChain nexus.ChainName,
 	sourceTxID Hash,
 	sourceEventIndex uint64,
@@ -572,7 +578,7 @@ func CreateApproveContractCallCommand(
 // CreateApproveContractCallWithMintCommand creates a command to approve contract call with token being minted
 func CreateApproveContractCallWithMintCommand(
 	chainID sdk.Int,
-	keyID tss.KeyID,
+	keyID multisig.KeyID,
 	sourceChain nexus.ChainName,
 	sourceTxID Hash,
 	sourceEventIndex uint64,
@@ -799,7 +805,7 @@ func createApproveContractCallWithMintParams(
 }
 
 // CreateBurnTokenCommand creates a command to burn tokens with the given burner's information
-func CreateBurnTokenCommand(chainID sdk.Int, keyID tss.KeyID, height int64, burnerInfo BurnerInfo, isTokenExternal bool) (Command, error) {
+func CreateBurnTokenCommand(chainID sdk.Int, keyID multisig.KeyID, height int64, burnerInfo BurnerInfo, isTokenExternal bool) (Command, error) {
 	params, err := createBurnTokenParams(burnerInfo.Symbol, common.Hash(burnerInfo.Salt))
 	if err != nil {
 		return Command{}, err
@@ -823,7 +829,7 @@ func CreateBurnTokenCommand(chainID sdk.Int, keyID tss.KeyID, height int64, burn
 }
 
 // CreateDeployTokenCommand creates a command to deploy a token
-func CreateDeployTokenCommand(chainID sdk.Int, keyID tss.KeyID, asset string, tokenDetails TokenDetails, address Address, dailyMintLimit sdk.Uint) (Command, error) {
+func CreateDeployTokenCommand(chainID sdk.Int, keyID multisig.KeyID, asset string, tokenDetails TokenDetails, address Address, dailyMintLimit sdk.Uint) (Command, error) {
 	params, err := createDeployTokenParams(tokenDetails.TokenName, tokenDetails.Symbol, tokenDetails.Decimals, tokenDetails.Capacity, address, dailyMintLimit)
 	if err != nil {
 		return Command{}, err
@@ -839,7 +845,7 @@ func CreateDeployTokenCommand(chainID sdk.Int, keyID tss.KeyID, asset string, to
 }
 
 // CreateMintTokenCommand creates a command to mint token to the given address
-func CreateMintTokenCommand(keyID tss.KeyID, id CommandID, symbol string, address common.Address, amount *big.Int) (Command, error) {
+func CreateMintTokenCommand(keyID multisig.KeyID, id CommandID, symbol string, address common.Address, amount *big.Int) (Command, error) {
 	params, err := createMintTokenParams(symbol, address, amount)
 	if err != nil {
 		return Command{}, err
@@ -857,7 +863,7 @@ func CreateMintTokenCommand(keyID tss.KeyID, id CommandID, symbol string, addres
 // CreateSinglesigTransferCommand creates a command to transfer ownership/operator of the singlesig contract
 func CreateSinglesigTransferCommand(
 	chainID sdk.Int,
-	keyID tss.KeyID,
+	keyID multisig.KeyID,
 	address common.Address) (Command, error) {
 	params, err := createTransferSinglesigParams(address)
 	if err != nil {
@@ -870,7 +876,7 @@ func CreateSinglesigTransferCommand(
 // CreateMultisigTransferCommand creates a command to transfer ownership/operator of the multisig contract
 func CreateMultisigTransferCommand(
 	chainID sdk.Int,
-	keyID tss.KeyID,
+	keyID multisig.KeyID,
 	threshold uint8,
 	addresses ...common.Address) (Command, error) {
 
@@ -891,7 +897,7 @@ func CreateMultisigTransferCommand(
 	return createTransferCmd(NewCommandID(concat, chainID), params, keyID)
 }
 
-func createTransferCmd(id CommandID, params []byte, keyID tss.KeyID) (Command, error) {
+func createTransferCmd(id CommandID, params []byte, keyID multisig.KeyID) (Command, error) {
 	return Command{
 		ID:         id,
 		Command:    AxelarGatewayCommandTransferOperatorship,
@@ -953,7 +959,7 @@ func (b CommandBatch) GetID() []byte {
 }
 
 // GetKeyID returns the batch's key ID
-func (b CommandBatch) GetKeyID() tss.KeyID {
+func (b CommandBatch) GetKeyID() multisig.KeyID {
 	return b.metadata.KeyID
 
 }
@@ -967,6 +973,15 @@ func (b CommandBatch) GetSigHash() Hash {
 // GetCommandIDs returns the IDs of the commands included in the batch
 func (b CommandBatch) GetCommandIDs() []CommandID {
 	return b.metadata.CommandIDs
+}
+
+// GetSignature returns the batch's signature
+func (b CommandBatch) GetSignature() codec.ProtoMarshaler {
+	if b.metadata.Signature == nil {
+		return nil
+	}
+
+	return b.metadata.Signature.GetCachedValue().(codec.ProtoMarshaler)
 }
 
 // Is returns true if batched commands is in the given status; false otherwise
@@ -985,8 +1000,23 @@ func (b *CommandBatch) SetStatus(status BatchedCommandsStatus) bool {
 	return false
 }
 
+// SetSigned sets the signature and signed status for the batch
+func (b *CommandBatch) SetSigned(signature codec.ProtoMarshaler) error {
+	if b.metadata.Status != BatchSigning {
+		return fmt.Errorf("command batch %s is not being signed", hex.EncodeToString(b.GetID()))
+	}
+
+	b.metadata.Status = BatchSigned
+	sig := funcs.Must(codectypes.NewAnyWithValue(signature))
+	b.metadata.Signature = sig
+
+	b.setter(b.metadata)
+
+	return nil
+}
+
 // NewCommandBatchMetadata assembles a CommandBatchMetadata struct from the provided arguments
-func NewCommandBatchMetadata(blockHeight int64, chainID sdk.Int, keyID tss.KeyID, keyRole tss.KeyRole, cmds []Command) (CommandBatchMetadata, error) {
+func NewCommandBatchMetadata(blockHeight int64, chainID sdk.Int, keyID multisig.KeyID, cmds []Command) (CommandBatchMetadata, error) {
 	var commandIDs []CommandID
 	var commands []string
 	var commandParams [][]byte
@@ -1013,6 +1043,13 @@ func NewCommandBatchMetadata(blockHeight int64, chainID sdk.Int, keyID tss.KeyID
 		Status:     BatchSigning,
 		KeyID:      keyID,
 	}, nil
+}
+
+// UnpackInterfaces implements UnpackInterfacesMessage
+func (m CommandBatchMetadata) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
+	var data codec.ProtoMarshaler
+
+	return unpacker.UnpackAny(m.Signature, &data)
 }
 
 const commandIDSize = 32
@@ -1838,4 +1875,21 @@ func (id EventID) Validate() error {
 	}
 
 	return nil
+}
+
+// ParseMultisigKey parses the given multisig key and returns the weight for
+// each particpant evm address and the threshold
+func ParseMultisigKey(key multisig.Key) (map[string]sdk.Uint, sdk.Uint) {
+	participants := key.GetParticipants()
+	addressWeights := make(map[string]sdk.Uint, len(participants))
+
+	for _, p := range participants {
+		pubKey := funcs.MustOk(key.GetPubKey(p))
+		weight := key.GetWeight(p)
+		address := crypto.PubkeyToAddress(*funcs.Must(btcec.ParsePubKey(pubKey, btcec.S256())).ToECDSA())
+
+		addressWeights[address.Hex()] = weight
+	}
+
+	return addressWeights, key.GetMinPassingWeight()
 }

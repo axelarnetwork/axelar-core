@@ -620,8 +620,7 @@ func (k chainKeeper) CreateNewBatchToSign(ctx sdk.Context, signer types.Signer) 
 		commands = append(commands, cmd.Clone())
 	}
 
-	keyRole := signer.GetKeyRole(ctx, keyID)
-	commandBatch, err := types.NewCommandBatchMetadata(ctx.BlockHeight(), chainID, keyID, keyRole, commands)
+	commandBatch, err := types.NewCommandBatchMetadata(ctx.BlockHeight(), chainID, keyID, commands)
 	if err != nil {
 		return types.CommandBatch{}, err
 	}
@@ -915,7 +914,7 @@ func (k chainKeeper) validateCommandQueueState(state utils.QueueState, queueName
 			return err
 		}
 
-		if err := command.KeyID.Validate(); err != nil {
+		if err := command.KeyID.ValidateBasic(); err != nil {
 			return err
 		}
 	}

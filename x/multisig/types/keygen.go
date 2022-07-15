@@ -66,9 +66,9 @@ func (m KeygenSession) GetKeyID() exported.KeyID {
 }
 
 // AddKey adds a new public key for the given participant into the keygen session
-func (m *KeygenSession) AddKey(blockHeight int64, participant sdk.ValAddress, pubKey PublicKey) error {
+func (m *KeygenSession) AddKey(blockHeight int64, participant sdk.ValAddress, pubKey exported.PublicKey) error {
 	if m.Key.PubKeys == nil {
-		m.Key.PubKeys = make(map[string]PublicKey)
+		m.Key.PubKeys = make(map[string]exported.PublicKey)
 		m.IsPubKeyReceived = make(map[string]bool)
 	}
 
@@ -132,7 +132,7 @@ func (m KeygenSession) isExpired(blockHeight int64) bool {
 	return blockHeight >= m.ExpiresAt
 }
 
-func (m *KeygenSession) addKey(participant sdk.ValAddress, pubKey PublicKey) {
+func (m *KeygenSession) addKey(participant sdk.ValAddress, pubKey exported.PublicKey) {
 	m.Key.PubKeys[participant.String()] = pubKey
 	m.IsPubKeyReceived[pubKey.String()] = true
 }
@@ -155,6 +155,18 @@ func (m Key) GetParticipantsWeight() sdk.Uint {
 // key to sign
 func (m Key) GetMinPassingWeight() sdk.Uint {
 	return m.Snapshot.CalculateMinPassingWeight(m.SigningThreshold)
+}
+
+// GetPubKey returns the public key of the given participant
+func (m Key) GetPubKey(p sdk.ValAddress) (exported.PublicKey, bool) {
+	pubKey, ok := m.PubKeys[p.String()]
+
+	return pubKey, ok
+}
+
+// GetWeight returns the weight of the given participant
+func (m Key) GetWeight(p sdk.ValAddress) sdk.Uint {
+	return m.Snapshot.GetParticipantWeight(p)
 }
 
 // ValidateBasic returns an error if the given key is invalid; nil otherwise
