@@ -19,6 +19,7 @@ type MultiStore struct {
 	*mock.MultiStoreMock
 }
 
+// CachedMultiStore is a simple chached multistore for testing
 type CachedMultiStore struct {
 	kvstore map[string]interfaces.KVStore
 	*mock.CacheMultiStoreMock
@@ -47,6 +48,7 @@ func NewMultiStore() sdk.MultiStore {
 	return ms
 }
 
+// NewCachedMultiStore returns a new CacheMultiStore instance for testing
 func NewCachedMultiStore(ms MultiStore) sdk.CacheMultiStore {
 	kvstore := map[string]interfaces.KVStore{}
 
