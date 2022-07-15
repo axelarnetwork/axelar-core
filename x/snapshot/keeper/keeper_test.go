@@ -465,7 +465,7 @@ func TestKeeper(t *testing.T) {
 				}
 			}).
 			Then("don't include validators with zero weight in snapshot", func(t *testing.T) {
-				s, err := k.CreateSnapshot(ctx, candidates, filterFunc, weightFunc, threshold)
+				s, err := k.CreateSnapshot(ctx, candidates, filterFunc, weightFunc, utils.NewThreshold(9, 10))
 
 				assert.NoError(t, err)
 				participantsWithNonZeroWeights := slices.Map(validators[1:], func(v stakingtypes.ValidatorI) sdk.ValAddress {

@@ -1,6 +1,7 @@
 package multisig_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/btcsuite/btcd/btcec/v2"
@@ -169,33 +170,7 @@ func TestEndBlocker(t *testing.T) {
 							return nil
 						}
 
-						sig := typestestutils.MultiSig()
-						validators := maps.Keys(sig.GetSigs())
-
-						pubKeys := make(map[string]exported.PublicKey)
-						for _, v := range validators {
-							pubKeys[v] = funcs.Must(btcec.NewPrivateKey()).PubKey().SerializeCompressed()
-						}
-
-						participants := make(map[string]snapshot.Participant)
-						for _, v := range validators {
-							participants[v] = snapshot.NewParticipant(funcs.Must(sdk.ValAddressFromBech32(v)), sdk.OneUint())
-						}
-
-						return []types.SigningSession{{
-							MultiSig: sig,
-							Key: types.Key{
-								ID:      testutils.KeyID(),
-								PubKeys: pubKeys,
-								Snapshot: snapshot.Snapshot{
-									Participants: participants,
-									BondedWeight: sdk.OneUint().MulUint64(uint64(len(participants))),
-								},
-								SigningThreshold: utils.OneThreshold,
-							},
-							State:  exported.Completed,
-							Module: module,
-						}}
+						return []types.SigningSession{newSigningSession(module)}
 					}
 				}).
 					Then("should delete and set sig", func(t *testing.T) {
@@ -208,7 +183,67 @@ func TestEndBlocker(t *testing.T) {
 						assert.Len(t, k.DeleteSigningSessionCalls(), 1)
 						assert.Len(t, sigHandler.HandleCompletedCalls(), 1)
 					}),
+
+				When("a multiple completed signing sessions are triggered", func() {
+					k.GetSigningSessionsByExpiryFunc = func(_ sdk.Context, expiry int64) []types.SigningSession {
+						if expiry != ctx.BlockHeight() {
+							return nil
+						}
+						return []types.SigningSession{
+							newSigningSession(module),
+							newSigningSession(module),
+							newSigningSession(module),
+							newSigningSession(module),
+						}
+					}
+				}).
+					When("sigHandler fails", func() {
+						sigHandler.HandleCompletedFunc = func(sdk.Context, codec.ProtoMarshaler, codec.ProtoMarshaler) error {
+							return fmt.Errorf("some error")
+						}
+					}).
+					Then("recover and roll back state", func(t *testing.T) {
+						storeKey := sdk.NewKVStoreKey("cache")
+						rolledBackKey := []byte("ephemeral")
+						k.DeleteSigningSessionFunc = func(ctx sdk.Context, _ uint64) {
+							ctx.MultiStore().GetKVStore(storeKey).Set(rolledBackKey, []byte{})
+						}
+						_, err := multisig.EndBlocker(ctx, abci.RequestEndBlock{}, k, rewarder)
+						assert.NoError(t, err)
+						assert.False(t, ctx.MultiStore().GetKVStore(storeKey).Has(rolledBackKey))
+						assert.Equal(t, len(k.DeleteSigningSessionCalls()), len(k.GetSigningSessionsByExpiry(ctx, ctx.BlockHeight())))
+					}),
 			).
 			Run(t)
 	})
+}
+
+func newSigningSession(module string) types.SigningSession {
+	sig := typestestutils.MultiSig()
+	validators := maps.Keys(sig.GetSigs())
+
+	pubKeys := make(map[string]exported.PublicKey)
+	for _, v := range validators {
+		pubKeys[v] = funcs.Must(btcec.NewPrivateKey()).PubKey().SerializeCompressed()
+	}
+
+	participants := make(map[string]snapshot.Participant)
+	for _, v := range validators {
+		participants[v] = snapshot.NewParticipant(funcs.Must(sdk.ValAddressFromBech32(v)), sdk.OneUint())
+	}
+
+	return types.SigningSession{
+		MultiSig: sig,
+		Key: types.Key{
+			ID:      testutils.KeyID(),
+			PubKeys: pubKeys,
+			Snapshot: snapshot.Snapshot{
+				Participants: participants,
+				BondedWeight: sdk.OneUint().MulUint64(uint64(len(participants))),
+			},
+			SigningThreshold: utils.OneThreshold,
+		},
+		State:  exported.Completed,
+		Module: module,
+	}
 }
