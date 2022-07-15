@@ -19,6 +19,11 @@ type MultiStore struct {
 	*mock.MultiStoreMock
 }
 
+type CachedMultiStore struct {
+	kvstore map[string]interfaces.KVStore
+	*mock.CacheMultiStoreMock
+}
+
 // NewMultiStore returns a new Multistore instance used for testing
 func NewMultiStore() sdk.MultiStore {
 	ms := MultiStore{
@@ -34,20 +39,59 @@ func NewMultiStore() sdk.MultiStore {
 		return store
 
 	}
+
+	ms.CacheMultiStoreFunc = func() types.CacheMultiStore {
+		return NewCachedMultiStore(ms)
+	}
+
 	return ms
+}
+
+func NewCachedMultiStore(ms MultiStore) sdk.CacheMultiStore {
+	kvstore := map[string]interfaces.KVStore{}
+
+	for key, store := range ms.kvstore {
+		kvstore[key] = store.CacheWrap().(interfaces.KVStore)
+	}
+
+	cached := CachedMultiStore{
+		kvstore:             kvstore,
+		CacheMultiStoreMock: &mock.CacheMultiStoreMock{},
+	}
+	cached.GetKVStoreFunc = func(storeKey types.StoreKey) types.KVStore {
+		if store, ok := cached.kvstore[storeKey.String()]; ok {
+			return store
+		}
+		store := NewTestKVStore()
+		cached.kvstore[storeKey.String()] = store
+		return store
+	}
+
+	cached.WriteFunc = func() {
+		for _, store := range cached.kvstore {
+			store.(*TestKVStore).Write()
+		}
+	}
+	return cached
 }
 
 // TestKVStore is a kv store for testing
 type TestKVStore struct {
 	mutex *sync.RWMutex
 	store map[string][]byte
+	write func()
+}
+
+func (t TestKVStore) Write() {
+	t.write()
 }
 
 // NewTestKVStore returns a new kv store instance for testing
 func NewTestKVStore() interfaces.KVStore {
-	return TestKVStore{
+	return &TestKVStore{
 		mutex: &sync.RWMutex{},
 		store: map[string][]byte{},
+		write: func() {},
 	}
 }
 
@@ -57,8 +101,21 @@ func (t TestKVStore) GetStoreType() sdk.StoreType {
 }
 
 // CacheWrap is not implemented
-func (t TestKVStore) CacheWrap() sdk.CacheWrap {
-	panic("implement me")
+func (t *TestKVStore) CacheWrap() sdk.CacheWrap {
+	t.mutex.RLock()
+	defer t.mutex.RUnlock()
+
+	cache := &TestKVStore{
+		mutex: &sync.RWMutex{},
+		store: map[string][]byte{},
+	}
+	cache.write = func() { t.store = cache.store }
+
+	for key, val := range t.store {
+		cache.store[key] = val
+	}
+
+	return cache
 }
 
 // CacheWrapWithTrace is not implemented
