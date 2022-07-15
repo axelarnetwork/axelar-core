@@ -3,7 +3,6 @@ package types
 import (
 	"bytes"
 	"encoding/hex"
-	"fmt"
 	"sort"
 
 	"github.com/btcsuite/btcd/btcec"
@@ -12,29 +11,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
-
-const (
-	// HashLength is the expected length of the hash
-	HashLength = 32
-)
-
-// Hash is an alias for a 32-byte hash
-type Hash []byte
-
-var zeroHash [HashLength]byte
-
-// ValidateBasic returns an error if the hash is not a valid
-func (h Hash) ValidateBasic() error {
-	if len(h) != HashLength {
-		return fmt.Errorf("hash length must be %d", HashLength)
-	}
-
-	if bytes.Equal(h, zeroHash[:]) {
-		return fmt.Errorf("hash cannot be zero")
-	}
-
-	return nil
-}
 
 // Signature is an alias for signature in raw bytes
 type Signature []byte
@@ -50,7 +26,7 @@ func (sig Signature) ValidateBasic() error {
 }
 
 // Verify checks if the signature matches the payload and public key
-func (sig Signature) Verify(payloadHash Hash, pk exported.PublicKey) bool {
+func (sig Signature) Verify(payloadHash exported.Hash, pk exported.PublicKey) bool {
 	s, err := btcec.ParseDERSignature(sig, btcec.S256())
 	if err != nil {
 		return false
