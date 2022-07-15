@@ -14,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
@@ -512,7 +513,7 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 		return nil, sdkerrors.Wrapf(err, "failed to initialize token %s(%s) for chain %s", req.TokenDetails.TokenName, req.TokenDetails.Symbol, chain.Name)
 	}
 
-	cmd, err := token.CreateDeployCommand(keyID, dailyMintLimit)
+	cmd, err := token.CreateDeployCommand(multisig.KeyID(keyID), dailyMintLimit)
 	if err != nil {
 		return nil, err
 	}
@@ -582,7 +583,7 @@ func (s msgServer) CreateBurnTokens(c context.Context, req *types.CreateBurnToke
 			return nil, fmt.Errorf("token %s is not confirmed on %s", token.GetAsset(), chain.Name)
 		}
 
-		cmd, err := types.CreateBurnTokenCommand(chainID, keyID, ctx.BlockHeight(), *burnerInfo, token.IsExternal())
+		cmd, err := types.CreateBurnTokenCommand(chainID, multisig.KeyID(keyID), ctx.BlockHeight(), *burnerInfo, token.IsExternal())
 		if err != nil {
 			return nil, sdkerrors.Wrapf(err, "failed to create burn-token command to burn token at address %s for chain %s", burnerAddressHex, chain.Name)
 		}
@@ -637,7 +638,7 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 			continue
 		}
 
-		cmd, err := token.CreateMintCommand(keyID, transfer)
+		cmd, err := token.CreateMintCommand(multisig.KeyID(keyID), transfer)
 		if err != nil {
 			return nil, sdkerrors.Wrapf(err, "failed create mint-token command for transfer %d", transfer.ID)
 		}
@@ -728,7 +729,7 @@ func (s msgServer) createTransferKeyCommand(ctx sdk.Context, keeper types.ChainK
 		address := crypto.PubkeyToAddress(pk)
 		s.Logger(ctx).Debug(fmt.Sprintf("creating transfer key command for chain %s to transfer to address %s", chain.Name, address))
 
-		return types.CreateSinglesigTransferCommand(chainID, keyID, crypto.PubkeyToAddress(pk))
+		return types.CreateSinglesigTransferCommand(chainID, multisig.KeyID(keyID), crypto.PubkeyToAddress(pk))
 	case tss.Multisig:
 		addresses, threshold, err := types.GetMultisigAddresses(nextKey)
 		if err != nil {
@@ -742,7 +743,7 @@ func (s msgServer) createTransferKeyCommand(ctx sdk.Context, keeper types.ChainK
 
 		s.Logger(ctx).Debug(fmt.Sprintf("creating transfer key command for chain %s to transfer to addresses %s", chain.Name, strings.Join(addressStrs, ",")))
 
-		return types.CreateMultisigTransferCommand(chainID, keyID, threshold, addresses...)
+		return types.CreateMultisigTransferCommand(chainID, multisig.KeyID(keyID), threshold, addresses...)
 	default:
 		return types.Command{}, fmt.Errorf("invalid key type '%s'", chain.KeyType.SimpleString())
 	}
@@ -786,7 +787,7 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		return &types.SignCommandsResponse{CommandCount: 0, BatchedCommandsID: nil}, nil
 	}
 
-	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, commandBatch.GetKeyID())
+	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, tss.KeyID(commandBatch.GetKeyID()))
 	if !ok {
 		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", commandBatch.GetKeyID())
 	}
@@ -801,7 +802,7 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 
 	batchedCommandsIDHex := hex.EncodeToString(commandBatch.GetID())
 	err = s.signer.StartSign(ctx, tss.SignInfo{
-		KeyID:           commandBatch.GetKeyID(),
+		KeyID:           tss.KeyID(commandBatch.GetKeyID()),
 		SigID:           batchedCommandsIDHex,
 		Msg:             commandBatch.GetSigHash().Bytes(),
 		SnapshotCounter: counter,

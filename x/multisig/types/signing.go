@@ -17,7 +17,7 @@ import (
 var _ codectypes.UnpackInterfacesMessage = SigningSession{}
 
 // NewSigningSession is the contructor for signing session
-func NewSigningSession(id uint64, key Key, payloadHash Hash, expiresAt int64, gracePeriod int64, module string, moduleMetadataProto ...codec.ProtoMarshaler) SigningSession {
+func NewSigningSession(id uint64, key Key, payloadHash exported.Hash, expiresAt int64, gracePeriod int64, module string, moduleMetadataProto ...codec.ProtoMarshaler) SigningSession {
 	var moduleMetadata *codectypes.Any
 	if len(moduleMetadataProto) > 0 {
 		moduleMetadata = funcs.Must(codectypes.NewAnyWithValue(moduleMetadataProto[0]))

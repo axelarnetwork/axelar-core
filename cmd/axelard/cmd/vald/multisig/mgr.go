@@ -64,7 +64,7 @@ func (mgr Mgr) generateKey(keyUID string, partyUID string) (exported.PublicKey, 
 	}
 }
 
-func (mgr Mgr) sign(keyUID string, payloadHash types.Hash, partyUID string, pubKey []byte) (types.Signature, error) {
+func (mgr Mgr) sign(keyUID string, payloadHash exported.Hash, partyUID string, pubKey []byte) (types.Signature, error) {
 	grpcCtx, cancel := context.WithTimeout(context.Background(), mgr.timeout)
 	defer cancel()
 
