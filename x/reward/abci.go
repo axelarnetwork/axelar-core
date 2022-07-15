@@ -1,6 +1,7 @@
 package reward
 
 import (
+	multisigTypes "github.com/axelarnetwork/axelar-core/x/multisig/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -8,7 +9,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/reward/exported"
 	"github.com/axelarnetwork/axelar-core/x/reward/types"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
-	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	"github.com/axelarnetwork/utils/slices"
 )
 
@@ -18,7 +18,7 @@ func BeginBlocker(ctx sdk.Context, _ abci.RequestBeginBlock, _ types.Rewarder) {
 // EndBlocker is called at the end of every block, process external chain voting inflation
 func EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock, k types.Rewarder, n types.Nexus, m types.Minter, s types.Staker, t types.Tss, ss types.Snapshotter) []abci.ValidatorUpdate {
 	handleExternalChainVotingInflation(ctx, k, n, m, s)
-	handleTssInflation(ctx, k, m, s, t, ss)
+	handleKeyMgmtInflation(ctx, k, m, s, t, ss)
 
 	return nil
 }
@@ -45,11 +45,11 @@ func addRewardsByConsensusPower(ctx sdk.Context, s types.Staker, rewardPool expo
 
 }
 
-func handleTssInflation(ctx sdk.Context, k types.Rewarder, m types.Minter, s types.Staker, t types.Tss, ss types.Snapshotter) {
-	rewardPool := k.GetPool(ctx, tsstypes.ModuleName)
+func handleKeyMgmtInflation(ctx sdk.Context, k types.Rewarder, m types.Minter, s types.Staker, t types.Tss, ss types.Snapshotter) {
+	rewardPool := k.GetPool(ctx, multisigTypes.ModuleName)
 	minter := m.GetMinter(ctx)
 	mintParams := m.GetParams(ctx)
-	totalAmount := minter.BlockProvision(mintParams).Amount.ToDec().Mul(k.GetParams(ctx).TssRelativeInflationRate)
+	totalAmount := minter.BlockProvision(mintParams).Amount.ToDec().Mul(k.GetParams(ctx).KeyMgmtRelativeInflationRate)
 
 	var validators []stakingtypes.Validator
 
