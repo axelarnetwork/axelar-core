@@ -96,6 +96,7 @@ type AppModule struct {
 	snapshotter types.Snapshotter
 	staking     types.StakingKeeper
 	slashing    types.SlashingKeeper
+	multisig    types.MultisigKeeper
 }
 
 // NewAppModule creates a new AppModule object
@@ -108,6 +109,7 @@ func NewAppModule(
 	snapshotter types.Snapshotter,
 	staking types.StakingKeeper,
 	slashing types.SlashingKeeper,
+	multisig types.MultisigKeeper,
 	logger log.Logger) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
@@ -120,6 +122,7 @@ func NewAppModule(
 		snapshotter:    snapshotter,
 		staking:        staking,
 		slashing:       slashing,
+		multisig:       multisig,
 	}
 }
 
@@ -155,13 +158,13 @@ func (AppModule) QuerierRoute() string {
 
 // LegacyQuerierHandler returns a new query handler for this module
 func (am AppModule) LegacyQuerierHandler(*codec.LegacyAmino) sdk.Querier {
-	return keeper.NewQuerier(am.keeper, am.signer, am.nexus)
+	return keeper.NewQuerier(am.keeper, am.nexus)
 }
 
 // RegisterServices registers a GRPC query service to respond to the
 // module-specific GRPC queries.
 func (am AppModule) RegisterServices(cfg module.Configurator) {
-	types.RegisterQueryServiceServer(cfg.QueryServer(), keeper.NewGRPCQuerier(am.keeper, am.nexus, am.signer))
+	types.RegisterQueryServiceServer(cfg.QueryServer(), keeper.NewGRPCQuerier(am.keeper, am.nexus, am.signer, am.multisig))
 
 	err := cfg.RegisterMigration(types.ModuleName, 4, keeper.GetMigrationHandler(am.keeper, am.nexus))
 	if err != nil {
@@ -177,7 +180,7 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 // EndBlock executes all state transitions this module requires at the end of each new block
 func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
 	return utils.RunEndBlocker(ctx, am.keeper, func(ctx sdk.Context) ([]abci.ValidatorUpdate, error) {
-		return EndBlocker(ctx, req, am.keeper, am.nexus, am.signer)
+		return EndBlocker(ctx, req, am.keeper, am.nexus, am.multisig)
 	})
 }
 

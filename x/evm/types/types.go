@@ -21,8 +21,10 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 )
 
@@ -546,7 +548,7 @@ func GetSignHash(commandData []byte) common.Hash {
 // CreateApproveContractCallCommand creates a command to approve contract call
 func CreateApproveContractCallCommand(
 	chainID sdk.Int,
-	keyID tss.KeyID,
+	keyID multisig.KeyID,
 	sourceChain nexus.ChainName,
 	sourceTxID Hash,
 	sourceEventIndex uint64,
@@ -564,7 +566,7 @@ func CreateApproveContractCallCommand(
 		ID:         NewCommandID(append(sourceTxID.Bytes(), sourceEventIndexBz...), chainID),
 		Command:    AxelarGatewayCommandApproveContractCall,
 		Params:     params,
-		KeyID:      keyID,
+		KeyID:      tss.KeyID(keyID),
 		MaxGasCost: uint32(approveContractCallMaxGasCost),
 	}, nil
 }
@@ -572,7 +574,7 @@ func CreateApproveContractCallCommand(
 // CreateApproveContractCallWithMintCommand creates a command to approve contract call with token being minted
 func CreateApproveContractCallWithMintCommand(
 	chainID sdk.Int,
-	keyID tss.KeyID,
+	keyID multisig.KeyID,
 	sourceChain nexus.ChainName,
 	sourceTxID Hash,
 	sourceEventIndex uint64,
@@ -592,7 +594,7 @@ func CreateApproveContractCallWithMintCommand(
 		ID:         NewCommandID(append(sourceTxID.Bytes(), sourceEventIndexBz...), chainID),
 		Command:    AxelarGatewayCommandApproveContractCallWithMint,
 		Params:     params,
-		KeyID:      keyID,
+		KeyID:      tss.KeyID(keyID),
 		MaxGasCost: uint32(approveContractCallWithMintMaxGasCost),
 	}, nil
 }
@@ -986,7 +988,7 @@ func (b *CommandBatch) SetStatus(status BatchedCommandsStatus) bool {
 }
 
 // NewCommandBatchMetadata assembles a CommandBatchMetadata struct from the provided arguments
-func NewCommandBatchMetadata(blockHeight int64, chainID sdk.Int, keyID tss.KeyID, keyRole tss.KeyRole, cmds []Command) (CommandBatchMetadata, error) {
+func NewCommandBatchMetadata(blockHeight int64, chainID sdk.Int, keyID tss.KeyID, cmds []Command) (CommandBatchMetadata, error) {
 	var commandIDs []CommandID
 	var commands []string
 	var commandParams [][]byte
@@ -1838,4 +1840,21 @@ func (id EventID) Validate() error {
 	}
 
 	return nil
+}
+
+// ParseMultisigKey parses the given multisig key and returns the weight for
+// each particpant evm address and the threshold
+func ParseMultisigKey(key multisig.Key) (map[string]sdk.Uint, sdk.Uint) {
+	participants := key.GetParticipants()
+	addressWeights := make(map[string]sdk.Uint, len(participants))
+
+	for _, p := range participants {
+		pubKey := funcs.MustOk(key.GetPubKey(p))
+		weight := key.GetWeight(p)
+		address := crypto.PubkeyToAddress(*funcs.Must(btcec.ParsePubKey(pubKey, btcec.S256())).ToECDSA())
+
+		addressWeights[address.Hex()] = weight
+	}
+
+	return addressWeights, key.GetMinPassingWeight()
 }

@@ -15,8 +15,6 @@ import (
 const (
 	QTokenAddressBySymbol = "token-address-symbol"
 	QTokenAddressByAsset  = "token-address-asset"
-	QAddressByKeyRole     = "address-by-key-role"
-	QAddressByKeyID       = "address-by-key-id"
 	QPendingCommands      = "pending-commands"
 	QCommand              = "command"
 )
@@ -34,7 +32,7 @@ const (
 )
 
 // NewQuerier returns a new querier for the evm module
-func NewQuerier(k types.BaseKeeper, s types.Signer, n types.Nexus) sdk.Querier {
+func NewQuerier(k types.BaseKeeper, n types.Nexus) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
 		var chainKeeper types.ChainKeeper
 		if len(path) > 1 {
