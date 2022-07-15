@@ -550,7 +550,7 @@ func GetSignHash(commandData []byte) common.Hash {
 // CreateApproveContractCallCommand creates a command to approve contract call
 func CreateApproveContractCallCommand(
 	chainID sdk.Int,
-	keyID tss.KeyID,
+	keyID multisig.KeyID,
 	sourceChain nexus.ChainName,
 	sourceTxID Hash,
 	sourceEventIndex uint64,
@@ -568,7 +568,7 @@ func CreateApproveContractCallCommand(
 		ID:         NewCommandID(append(sourceTxID.Bytes(), sourceEventIndexBz...), chainID),
 		Command:    AxelarGatewayCommandApproveContractCall,
 		Params:     params,
-		KeyID:      keyID,
+		KeyID:      tss.KeyID(keyID),
 		MaxGasCost: uint32(approveContractCallMaxGasCost),
 	}, nil
 }
@@ -576,7 +576,7 @@ func CreateApproveContractCallCommand(
 // CreateApproveContractCallWithMintCommand creates a command to approve contract call with token being minted
 func CreateApproveContractCallWithMintCommand(
 	chainID sdk.Int,
-	keyID tss.KeyID,
+	keyID multisig.KeyID,
 	sourceChain nexus.ChainName,
 	sourceTxID Hash,
 	sourceEventIndex uint64,
@@ -596,7 +596,7 @@ func CreateApproveContractCallWithMintCommand(
 		ID:         NewCommandID(append(sourceTxID.Bytes(), sourceEventIndexBz...), chainID),
 		Command:    AxelarGatewayCommandApproveContractCallWithMint,
 		Params:     params,
-		KeyID:      keyID,
+		KeyID:      tss.KeyID(keyID),
 		MaxGasCost: uint32(approveContractCallWithMintMaxGasCost),
 	}, nil
 }
@@ -1013,7 +1013,7 @@ func (b *CommandBatch) SetSignature(signature codec.ProtoMarshaler) {
 }
 
 // NewCommandBatchMetadata assembles a CommandBatchMetadata struct from the provided arguments
-func NewCommandBatchMetadata(blockHeight int64, chainID sdk.Int, keyID tss.KeyID, keyRole tss.KeyRole, cmds []Command) (CommandBatchMetadata, error) {
+func NewCommandBatchMetadata(blockHeight int64, chainID sdk.Int, keyID tss.KeyID, cmds []Command) (CommandBatchMetadata, error) {
 	var commandIDs []CommandID
 	var commands []string
 	var commandParams [][]byte

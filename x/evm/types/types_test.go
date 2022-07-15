@@ -14,14 +14,14 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	multisigTestUtils "github.com/axelarnetwork/axelar-core/x/multisig/exported/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	tssTestUtils "github.com/axelarnetwork/axelar-core/x/tss/exported/testutils"
 )
 
 func TestCreateApproveContractCallWithMintCommand(t *testing.T) {
 	chainID := sdk.NewInt(1)
-	keyID := tssTestUtils.RandKeyID()
+	keyID := multisigTestUtils.KeyID()
 	sourceChain := nexus.ChainName("polygon")
 	txID := Hash(common.HexToHash("0x5bb45dc24ddd6b90fa37f26eecfcf203328427c3226db29d1c01051b965ca93b"))
 	index := uint64(99)
@@ -79,7 +79,6 @@ func TestNewCommandBatchMetadata(t *testing.T) {
 		rand.PosI64(),
 		chainID,
 		tssTestUtils.RandKeyID(),
-		tss.MasterKey,
 		commands,
 	)
 
