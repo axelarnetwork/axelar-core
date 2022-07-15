@@ -9,6 +9,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
+	"github.com/axelarnetwork/utils/funcs"
 )
 
 type sigHandler struct {
@@ -30,8 +31,7 @@ func (s sigHandler) HandleCompleted(ctx sdk.Context, sig codec.ProtoMarshaler, m
 		return err
 	}
 
-	commandBatch.SetStatus(types.BatchSigned)
-	commandBatch.SetSignature(sig)
+	funcs.MustNoErr(commandBatch.SetSigned(sig))
 
 	return nil
 }
@@ -42,7 +42,10 @@ func (s sigHandler) HandleFailed(ctx sdk.Context, moduleMetadata codec.ProtoMars
 		return err
 	}
 
-	commandBatch.SetStatus(types.BatchAborted)
+	ok := commandBatch.SetStatus(types.BatchAborted)
+	if !ok {
+		panic(fmt.Errorf("failed to abort command batch %s", hex.EncodeToString(commandBatch.GetID())))
+	}
 
 	return nil
 }

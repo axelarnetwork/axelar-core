@@ -1000,11 +1000,19 @@ func (b *CommandBatch) SetStatus(status BatchedCommandsStatus) bool {
 	return false
 }
 
-// SetSignature sets the signature for the batch
-func (b *CommandBatch) SetSignature(signature codec.ProtoMarshaler) {
+// SetSigned sets the signature and signed status for the batch
+func (b *CommandBatch) SetSigned(signature codec.ProtoMarshaler) error {
+	if b.metadata.Status != BatchSigning {
+		return fmt.Errorf("command batch %s is not being signed", hex.EncodeToString(b.GetID()))
+	}
+
+	b.metadata.Status = BatchSigned
 	sig := funcs.Must(codectypes.NewAnyWithValue(signature))
 	b.metadata.Signature = sig
+
 	b.setter(b.metadata)
+
+	return nil
 }
 
 // NewCommandBatchMetadata assembles a CommandBatchMetadata struct from the provided arguments
