@@ -13,6 +13,8 @@ import (
 	"strings"
 
 	"github.com/btcsuite/btcd/btcec"
+	"github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -27,6 +29,8 @@ import (
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 )
+
+var _ codectypes.UnpackInterfacesMessage = CommandBatchMetadata{}
 
 // Ethereum network labels
 const (
@@ -971,6 +975,15 @@ func (b CommandBatch) GetCommandIDs() []CommandID {
 	return b.metadata.CommandIDs
 }
 
+// GetSignature returns the batch's signature
+func (b CommandBatch) GetSignature() codec.ProtoMarshaler {
+	if b.metadata.Signature == nil {
+		return nil
+	}
+
+	return b.metadata.Signature.GetCachedValue().(codec.ProtoMarshaler)
+}
+
 // Is returns true if batched commands is in the given status; false otherwise
 func (b CommandBatch) Is(status BatchedCommandsStatus) bool {
 	return b.metadata.Status == status
@@ -985,6 +998,21 @@ func (b *CommandBatch) SetStatus(status BatchedCommandsStatus) bool {
 	}
 
 	return false
+}
+
+// SetSigned sets the signature and signed status for the batch
+func (b *CommandBatch) SetSigned(signature codec.ProtoMarshaler) error {
+	if b.metadata.Status != BatchSigning {
+		return fmt.Errorf("command batch %s is not being signed", hex.EncodeToString(b.GetID()))
+	}
+
+	b.metadata.Status = BatchSigned
+	sig := funcs.Must(codectypes.NewAnyWithValue(signature))
+	b.metadata.Signature = sig
+
+	b.setter(b.metadata)
+
+	return nil
 }
 
 // NewCommandBatchMetadata assembles a CommandBatchMetadata struct from the provided arguments
@@ -1015,6 +1043,13 @@ func NewCommandBatchMetadata(blockHeight int64, chainID sdk.Int, keyID multisig.
 		Status:     BatchSigning,
 		KeyID:      keyID,
 	}, nil
+}
+
+// UnpackInterfaces implements UnpackInterfacesMessage
+func (m CommandBatchMetadata) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
+	var data codec.ProtoMarshaler
+
+	return unpacker.UnpackAny(m.Signature, &data)
 }
 
 const commandIDSize = 32
