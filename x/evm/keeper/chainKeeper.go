@@ -591,7 +591,7 @@ func (k chainKeeper) setLatestBatchMetadata(ctx sdk.Context, batch types.Command
 }
 
 // CreateNewBatchToSign creates a new batch of commands to be signed
-func (k chainKeeper) CreateNewBatchToSign(ctx sdk.Context, signer types.Signer) (types.CommandBatch, error) {
+func (k chainKeeper) CreateNewBatchToSign(ctx sdk.Context) (types.CommandBatch, error) {
 	var firstCmd types.Command
 	ok := k.getCommandQueue(ctx).Dequeue(&firstCmd)
 	if !ok {

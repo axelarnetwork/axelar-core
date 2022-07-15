@@ -17,6 +17,7 @@ import (
 
 // Key provides an interface to work with the key
 type Key interface {
+	GetKeyID() KeyID
 	GetParticipants() []sdk.ValAddress
 	GetPubKey(sdk.ValAddress) (PublicKey, bool)
 	GetWeight(sdk.ValAddress) sdk.Uint

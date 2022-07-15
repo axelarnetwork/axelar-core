@@ -14,13 +14,13 @@ import (
 )
 
 // GetCurrentKey returns the current key of the given chain
-func (k Keeper) GetCurrentKey(ctx sdk.Context, chainName nexus.ChainName) (types.Key, bool) {
+func (k Keeper) GetCurrentKey(ctx sdk.Context, chainName nexus.ChainName) (exported.Key, bool) {
 	keyID, ok := k.GetCurrentKeyID(ctx, chainName)
 	if !ok {
-		return types.Key{}, false
+		return nil, false
 	}
 
-	return funcs.MustOk(k.getKey(ctx, keyID)), true
+	return k.GetKey(ctx, keyID)
 }
 
 // GetCurrentKeyID returns the current key ID of the given chain

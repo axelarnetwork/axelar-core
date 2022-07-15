@@ -12,143 +12,12 @@ import (
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	"github.com/cosmos/cosmos-sdk/codec"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/tendermint/tendermint/libs/log"
 	"sync"
 )
-
-// Ensure, that TSSMock does implement types.TSS.
-// If this is not the case, regenerate this file with moq.
-var _ types.TSS = &TSSMock{}
-
-// TSSMock is a mock implementation of types.TSS.
-//
-// 	func TestSomethingThatUsesTSS(t *testing.T) {
-//
-// 		// make and configure a mocked types.TSS
-// 		mockedTSS := &TSSMock{
-// 			GetKeyRequirementFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRole tss.KeyRole, keyType tss.KeyType) (tss.KeyRequirement, bool) {
-// 				panic("mock out the GetKeyRequirement method")
-// 			},
-// 			GetRotationCountFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, keyRole tss.KeyRole) int64 {
-// 				panic("mock out the GetRotationCount method")
-// 			},
-// 		}
-//
-// 		// use mockedTSS in code that requires types.TSS
-// 		// and then make assertions.
-//
-// 	}
-type TSSMock struct {
-	// GetKeyRequirementFunc mocks the GetKeyRequirement method.
-	GetKeyRequirementFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRole tss.KeyRole, keyType tss.KeyType) (tss.KeyRequirement, bool)
-
-	// GetRotationCountFunc mocks the GetRotationCount method.
-	GetRotationCountFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, keyRole tss.KeyRole) int64
-
-	// calls tracks calls to the methods.
-	calls struct {
-		// GetKeyRequirement holds details about calls to the GetKeyRequirement method.
-		GetKeyRequirement []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// KeyRole is the keyRole argument value.
-			KeyRole tss.KeyRole
-			// KeyType is the keyType argument value.
-			KeyType tss.KeyType
-		}
-		// GetRotationCount holds details about calls to the GetRotationCount method.
-		GetRotationCount []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Chain is the chain argument value.
-			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-			// KeyRole is the keyRole argument value.
-			KeyRole tss.KeyRole
-		}
-	}
-	lockGetKeyRequirement sync.RWMutex
-	lockGetRotationCount  sync.RWMutex
-}
-
-// GetKeyRequirement calls GetKeyRequirementFunc.
-func (mock *TSSMock) GetKeyRequirement(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRole tss.KeyRole, keyType tss.KeyType) (tss.KeyRequirement, bool) {
-	if mock.GetKeyRequirementFunc == nil {
-		panic("TSSMock.GetKeyRequirementFunc: method is nil but TSS.GetKeyRequirement was just called")
-	}
-	callInfo := struct {
-		Ctx     github_com_cosmos_cosmos_sdk_types.Context
-		KeyRole tss.KeyRole
-		KeyType tss.KeyType
-	}{
-		Ctx:     ctx,
-		KeyRole: keyRole,
-		KeyType: keyType,
-	}
-	mock.lockGetKeyRequirement.Lock()
-	mock.calls.GetKeyRequirement = append(mock.calls.GetKeyRequirement, callInfo)
-	mock.lockGetKeyRequirement.Unlock()
-	return mock.GetKeyRequirementFunc(ctx, keyRole, keyType)
-}
-
-// GetKeyRequirementCalls gets all the calls that were made to GetKeyRequirement.
-// Check the length with:
-//     len(mockedTSS.GetKeyRequirementCalls())
-func (mock *TSSMock) GetKeyRequirementCalls() []struct {
-	Ctx     github_com_cosmos_cosmos_sdk_types.Context
-	KeyRole tss.KeyRole
-	KeyType tss.KeyType
-} {
-	var calls []struct {
-		Ctx     github_com_cosmos_cosmos_sdk_types.Context
-		KeyRole tss.KeyRole
-		KeyType tss.KeyType
-	}
-	mock.lockGetKeyRequirement.RLock()
-	calls = mock.calls.GetKeyRequirement
-	mock.lockGetKeyRequirement.RUnlock()
-	return calls
-}
-
-// GetRotationCount calls GetRotationCountFunc.
-func (mock *TSSMock) GetRotationCount(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, keyRole tss.KeyRole) int64 {
-	if mock.GetRotationCountFunc == nil {
-		panic("TSSMock.GetRotationCountFunc: method is nil but TSS.GetRotationCount was just called")
-	}
-	callInfo := struct {
-		Ctx     github_com_cosmos_cosmos_sdk_types.Context
-		Chain   github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-		KeyRole tss.KeyRole
-	}{
-		Ctx:     ctx,
-		Chain:   chain,
-		KeyRole: keyRole,
-	}
-	mock.lockGetRotationCount.Lock()
-	mock.calls.GetRotationCount = append(mock.calls.GetRotationCount, callInfo)
-	mock.lockGetRotationCount.Unlock()
-	return mock.GetRotationCountFunc(ctx, chain, keyRole)
-}
-
-// GetRotationCountCalls gets all the calls that were made to GetRotationCount.
-// Check the length with:
-//     len(mockedTSS.GetRotationCountCalls())
-func (mock *TSSMock) GetRotationCountCalls() []struct {
-	Ctx     github_com_cosmos_cosmos_sdk_types.Context
-	Chain   github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-	KeyRole tss.KeyRole
-} {
-	var calls []struct {
-		Ctx     github_com_cosmos_cosmos_sdk_types.Context
-		Chain   github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-		KeyRole tss.KeyRole
-	}
-	mock.lockGetRotationCount.RLock()
-	calls = mock.calls.GetRotationCount
-	mock.lockGetRotationCount.RUnlock()
-	return calls
-}
 
 // Ensure, that VoterMock does implement types.Voter.
 // If this is not the case, regenerate this file with moq.
@@ -231,53 +100,11 @@ var _ types.Signer = &SignerMock{}
 //
 // 		// make and configure a mocked types.Signer
 // 		mockedSigner := &SignerMock{
-// 			AssertMatchesRequirementsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotter snapshot.Snapshotter, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, keyID tss.KeyID, keyRole tss.KeyRole) error {
-// 				panic("mock out the AssertMatchesRequirements method")
-// 			},
-// 			AssignNextKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, keyRole tss.KeyRole, keyID tss.KeyID) error {
-// 				panic("mock out the AssignNextKey method")
-// 			},
-// 			GetCurrentKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
-// 				panic("mock out the GetCurrentKey method")
-// 			},
-// 			GetCurrentKeyIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
-// 				panic("mock out the GetCurrentKeyID method")
-// 			},
-// 			GetExternalKeyIDsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain) ([]tss.KeyID, bool) {
-// 				panic("mock out the GetExternalKeyIDs method")
-// 			},
-// 			GetExternalMultisigThresholdFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.Threshold {
-// 				panic("mock out the GetExternalMultisigThreshold method")
-// 			},
 // 			GetKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID tss.KeyID) (tss.Key, bool) {
 // 				panic("mock out the GetKey method")
 // 			},
-// 			GetKeyRequirementFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRole tss.KeyRole, keyType tss.KeyType) (tss.KeyRequirement, bool) {
-// 				panic("mock out the GetKeyRequirement method")
-// 			},
-// 			GetKeyRoleFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID tss.KeyID) tss.KeyRole {
-// 				panic("mock out the GetKeyRole method")
-// 			},
-// 			GetKeyTypeFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID tss.KeyID) tss.KeyType {
-// 				panic("mock out the GetKeyType method")
-// 			},
-// 			GetNextKeyIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
-// 				panic("mock out the GetNextKeyID method")
-// 			},
-// 			GetRotationCountFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, keyRole tss.KeyRole) int64 {
-// 				panic("mock out the GetRotationCount method")
-// 			},
 // 			GetSigFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string) (tss.Signature, tss.SigStatus) {
 // 				panic("mock out the GetSig method")
-// 			},
-// 			GetSnapshotCounterForKeyIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID tss.KeyID) (int64, bool) {
-// 				panic("mock out the GetSnapshotCounterForKeyID method")
-// 			},
-// 			RotateKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, keyRole tss.KeyRole) error {
-// 				panic("mock out the RotateKey method")
-// 			},
-// 			StartSignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, info tss.SignInfo, snapshotter snapshot.Snapshotter, voter interface{InitializePoll(ctx github_com_cosmos_cosmos_sdk_types.Context, pollBuilder vote.PollBuilder) (vote.PollID, error)}) error {
-// 				panic("mock out the StartSign method")
 // 			},
 // 		}
 //
@@ -286,159 +113,20 @@ var _ types.Signer = &SignerMock{}
 //
 // 	}
 type SignerMock struct {
-	// AssertMatchesRequirementsFunc mocks the AssertMatchesRequirements method.
-	AssertMatchesRequirementsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotter snapshot.Snapshotter, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, keyID tss.KeyID, keyRole tss.KeyRole) error
-
-	// AssignNextKeyFunc mocks the AssignNextKey method.
-	AssignNextKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, keyRole tss.KeyRole, keyID tss.KeyID) error
-
-	// GetCurrentKeyFunc mocks the GetCurrentKey method.
-	GetCurrentKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, keyRole tss.KeyRole) (tss.Key, bool)
-
-	// GetCurrentKeyIDFunc mocks the GetCurrentKeyID method.
-	GetCurrentKeyIDFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, keyRole tss.KeyRole) (tss.KeyID, bool)
-
-	// GetExternalKeyIDsFunc mocks the GetExternalKeyIDs method.
-	GetExternalKeyIDsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain) ([]tss.KeyID, bool)
-
-	// GetExternalMultisigThresholdFunc mocks the GetExternalMultisigThreshold method.
-	GetExternalMultisigThresholdFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.Threshold
-
 	// GetKeyFunc mocks the GetKey method.
 	GetKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID tss.KeyID) (tss.Key, bool)
-
-	// GetKeyRequirementFunc mocks the GetKeyRequirement method.
-	GetKeyRequirementFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRole tss.KeyRole, keyType tss.KeyType) (tss.KeyRequirement, bool)
-
-	// GetKeyRoleFunc mocks the GetKeyRole method.
-	GetKeyRoleFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID tss.KeyID) tss.KeyRole
-
-	// GetKeyTypeFunc mocks the GetKeyType method.
-	GetKeyTypeFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID tss.KeyID) tss.KeyType
-
-	// GetNextKeyIDFunc mocks the GetNextKeyID method.
-	GetNextKeyIDFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, keyRole tss.KeyRole) (tss.KeyID, bool)
-
-	// GetRotationCountFunc mocks the GetRotationCount method.
-	GetRotationCountFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, keyRole tss.KeyRole) int64
 
 	// GetSigFunc mocks the GetSig method.
 	GetSigFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string) (tss.Signature, tss.SigStatus)
 
-	// GetSnapshotCounterForKeyIDFunc mocks the GetSnapshotCounterForKeyID method.
-	GetSnapshotCounterForKeyIDFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID tss.KeyID) (int64, bool)
-
-	// RotateKeyFunc mocks the RotateKey method.
-	RotateKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, keyRole tss.KeyRole) error
-
-	// StartSignFunc mocks the StartSign method.
-	StartSignFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, info tss.SignInfo, snapshotter snapshot.Snapshotter, voter interface {
-		InitializePoll(ctx github_com_cosmos_cosmos_sdk_types.Context, pollBuilder vote.PollBuilder) (vote.PollID, error)
-	}) error
-
 	// calls tracks calls to the methods.
 	calls struct {
-		// AssertMatchesRequirements holds details about calls to the AssertMatchesRequirements method.
-		AssertMatchesRequirements []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Snapshotter is the snapshotter argument value.
-			Snapshotter snapshot.Snapshotter
-			// Chain is the chain argument value.
-			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-			// KeyID is the keyID argument value.
-			KeyID tss.KeyID
-			// KeyRole is the keyRole argument value.
-			KeyRole tss.KeyRole
-		}
-		// AssignNextKey holds details about calls to the AssignNextKey method.
-		AssignNextKey []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Chain is the chain argument value.
-			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-			// KeyRole is the keyRole argument value.
-			KeyRole tss.KeyRole
-			// KeyID is the keyID argument value.
-			KeyID tss.KeyID
-		}
-		// GetCurrentKey holds details about calls to the GetCurrentKey method.
-		GetCurrentKey []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Chain is the chain argument value.
-			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-			// KeyRole is the keyRole argument value.
-			KeyRole tss.KeyRole
-		}
-		// GetCurrentKeyID holds details about calls to the GetCurrentKeyID method.
-		GetCurrentKeyID []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Chain is the chain argument value.
-			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-			// KeyRole is the keyRole argument value.
-			KeyRole tss.KeyRole
-		}
-		// GetExternalKeyIDs holds details about calls to the GetExternalKeyIDs method.
-		GetExternalKeyIDs []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Chain is the chain argument value.
-			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-		}
-		// GetExternalMultisigThreshold holds details about calls to the GetExternalMultisigThreshold method.
-		GetExternalMultisigThreshold []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-		}
 		// GetKey holds details about calls to the GetKey method.
 		GetKey []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// KeyID is the keyID argument value.
 			KeyID tss.KeyID
-		}
-		// GetKeyRequirement holds details about calls to the GetKeyRequirement method.
-		GetKeyRequirement []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// KeyRole is the keyRole argument value.
-			KeyRole tss.KeyRole
-			// KeyType is the keyType argument value.
-			KeyType tss.KeyType
-		}
-		// GetKeyRole holds details about calls to the GetKeyRole method.
-		GetKeyRole []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// KeyID is the keyID argument value.
-			KeyID tss.KeyID
-		}
-		// GetKeyType holds details about calls to the GetKeyType method.
-		GetKeyType []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// KeyID is the keyID argument value.
-			KeyID tss.KeyID
-		}
-		// GetNextKeyID holds details about calls to the GetNextKeyID method.
-		GetNextKeyID []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Chain is the chain argument value.
-			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-			// KeyRole is the keyRole argument value.
-			KeyRole tss.KeyRole
-		}
-		// GetRotationCount holds details about calls to the GetRotationCount method.
-		GetRotationCount []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Chain is the chain argument value.
-			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-			// KeyRole is the keyRole argument value.
-			KeyRole tss.KeyRole
 		}
 		// GetSig holds details about calls to the GetSig method.
 		GetSig []struct {
@@ -447,286 +135,9 @@ type SignerMock struct {
 			// SigID is the sigID argument value.
 			SigID string
 		}
-		// GetSnapshotCounterForKeyID holds details about calls to the GetSnapshotCounterForKeyID method.
-		GetSnapshotCounterForKeyID []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// KeyID is the keyID argument value.
-			KeyID tss.KeyID
-		}
-		// RotateKey holds details about calls to the RotateKey method.
-		RotateKey []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Chain is the chain argument value.
-			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-			// KeyRole is the keyRole argument value.
-			KeyRole tss.KeyRole
-		}
-		// StartSign holds details about calls to the StartSign method.
-		StartSign []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Info is the info argument value.
-			Info tss.SignInfo
-			// Snapshotter is the snapshotter argument value.
-			Snapshotter snapshot.Snapshotter
-			// Voter is the voter argument value.
-			Voter interface {
-				InitializePoll(ctx github_com_cosmos_cosmos_sdk_types.Context, pollBuilder vote.PollBuilder) (vote.PollID, error)
-			}
-		}
 	}
-	lockAssertMatchesRequirements    sync.RWMutex
-	lockAssignNextKey                sync.RWMutex
-	lockGetCurrentKey                sync.RWMutex
-	lockGetCurrentKeyID              sync.RWMutex
-	lockGetExternalKeyIDs            sync.RWMutex
-	lockGetExternalMultisigThreshold sync.RWMutex
-	lockGetKey                       sync.RWMutex
-	lockGetKeyRequirement            sync.RWMutex
-	lockGetKeyRole                   sync.RWMutex
-	lockGetKeyType                   sync.RWMutex
-	lockGetNextKeyID                 sync.RWMutex
-	lockGetRotationCount             sync.RWMutex
-	lockGetSig                       sync.RWMutex
-	lockGetSnapshotCounterForKeyID   sync.RWMutex
-	lockRotateKey                    sync.RWMutex
-	lockStartSign                    sync.RWMutex
-}
-
-// AssertMatchesRequirements calls AssertMatchesRequirementsFunc.
-func (mock *SignerMock) AssertMatchesRequirements(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotter snapshot.Snapshotter, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, keyID tss.KeyID, keyRole tss.KeyRole) error {
-	if mock.AssertMatchesRequirementsFunc == nil {
-		panic("SignerMock.AssertMatchesRequirementsFunc: method is nil but Signer.AssertMatchesRequirements was just called")
-	}
-	callInfo := struct {
-		Ctx         github_com_cosmos_cosmos_sdk_types.Context
-		Snapshotter snapshot.Snapshotter
-		Chain       github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-		KeyID       tss.KeyID
-		KeyRole     tss.KeyRole
-	}{
-		Ctx:         ctx,
-		Snapshotter: snapshotter,
-		Chain:       chain,
-		KeyID:       keyID,
-		KeyRole:     keyRole,
-	}
-	mock.lockAssertMatchesRequirements.Lock()
-	mock.calls.AssertMatchesRequirements = append(mock.calls.AssertMatchesRequirements, callInfo)
-	mock.lockAssertMatchesRequirements.Unlock()
-	return mock.AssertMatchesRequirementsFunc(ctx, snapshotter, chain, keyID, keyRole)
-}
-
-// AssertMatchesRequirementsCalls gets all the calls that were made to AssertMatchesRequirements.
-// Check the length with:
-//     len(mockedSigner.AssertMatchesRequirementsCalls())
-func (mock *SignerMock) AssertMatchesRequirementsCalls() []struct {
-	Ctx         github_com_cosmos_cosmos_sdk_types.Context
-	Snapshotter snapshot.Snapshotter
-	Chain       github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-	KeyID       tss.KeyID
-	KeyRole     tss.KeyRole
-} {
-	var calls []struct {
-		Ctx         github_com_cosmos_cosmos_sdk_types.Context
-		Snapshotter snapshot.Snapshotter
-		Chain       github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-		KeyID       tss.KeyID
-		KeyRole     tss.KeyRole
-	}
-	mock.lockAssertMatchesRequirements.RLock()
-	calls = mock.calls.AssertMatchesRequirements
-	mock.lockAssertMatchesRequirements.RUnlock()
-	return calls
-}
-
-// AssignNextKey calls AssignNextKeyFunc.
-func (mock *SignerMock) AssignNextKey(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, keyRole tss.KeyRole, keyID tss.KeyID) error {
-	if mock.AssignNextKeyFunc == nil {
-		panic("SignerMock.AssignNextKeyFunc: method is nil but Signer.AssignNextKey was just called")
-	}
-	callInfo := struct {
-		Ctx     github_com_cosmos_cosmos_sdk_types.Context
-		Chain   github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-		KeyRole tss.KeyRole
-		KeyID   tss.KeyID
-	}{
-		Ctx:     ctx,
-		Chain:   chain,
-		KeyRole: keyRole,
-		KeyID:   keyID,
-	}
-	mock.lockAssignNextKey.Lock()
-	mock.calls.AssignNextKey = append(mock.calls.AssignNextKey, callInfo)
-	mock.lockAssignNextKey.Unlock()
-	return mock.AssignNextKeyFunc(ctx, chain, keyRole, keyID)
-}
-
-// AssignNextKeyCalls gets all the calls that were made to AssignNextKey.
-// Check the length with:
-//     len(mockedSigner.AssignNextKeyCalls())
-func (mock *SignerMock) AssignNextKeyCalls() []struct {
-	Ctx     github_com_cosmos_cosmos_sdk_types.Context
-	Chain   github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-	KeyRole tss.KeyRole
-	KeyID   tss.KeyID
-} {
-	var calls []struct {
-		Ctx     github_com_cosmos_cosmos_sdk_types.Context
-		Chain   github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-		KeyRole tss.KeyRole
-		KeyID   tss.KeyID
-	}
-	mock.lockAssignNextKey.RLock()
-	calls = mock.calls.AssignNextKey
-	mock.lockAssignNextKey.RUnlock()
-	return calls
-}
-
-// GetCurrentKey calls GetCurrentKeyFunc.
-func (mock *SignerMock) GetCurrentKey(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, keyRole tss.KeyRole) (tss.Key, bool) {
-	if mock.GetCurrentKeyFunc == nil {
-		panic("SignerMock.GetCurrentKeyFunc: method is nil but Signer.GetCurrentKey was just called")
-	}
-	callInfo := struct {
-		Ctx     github_com_cosmos_cosmos_sdk_types.Context
-		Chain   github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-		KeyRole tss.KeyRole
-	}{
-		Ctx:     ctx,
-		Chain:   chain,
-		KeyRole: keyRole,
-	}
-	mock.lockGetCurrentKey.Lock()
-	mock.calls.GetCurrentKey = append(mock.calls.GetCurrentKey, callInfo)
-	mock.lockGetCurrentKey.Unlock()
-	return mock.GetCurrentKeyFunc(ctx, chain, keyRole)
-}
-
-// GetCurrentKeyCalls gets all the calls that were made to GetCurrentKey.
-// Check the length with:
-//     len(mockedSigner.GetCurrentKeyCalls())
-func (mock *SignerMock) GetCurrentKeyCalls() []struct {
-	Ctx     github_com_cosmos_cosmos_sdk_types.Context
-	Chain   github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-	KeyRole tss.KeyRole
-} {
-	var calls []struct {
-		Ctx     github_com_cosmos_cosmos_sdk_types.Context
-		Chain   github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-		KeyRole tss.KeyRole
-	}
-	mock.lockGetCurrentKey.RLock()
-	calls = mock.calls.GetCurrentKey
-	mock.lockGetCurrentKey.RUnlock()
-	return calls
-}
-
-// GetCurrentKeyID calls GetCurrentKeyIDFunc.
-func (mock *SignerMock) GetCurrentKeyID(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
-	if mock.GetCurrentKeyIDFunc == nil {
-		panic("SignerMock.GetCurrentKeyIDFunc: method is nil but Signer.GetCurrentKeyID was just called")
-	}
-	callInfo := struct {
-		Ctx     github_com_cosmos_cosmos_sdk_types.Context
-		Chain   github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-		KeyRole tss.KeyRole
-	}{
-		Ctx:     ctx,
-		Chain:   chain,
-		KeyRole: keyRole,
-	}
-	mock.lockGetCurrentKeyID.Lock()
-	mock.calls.GetCurrentKeyID = append(mock.calls.GetCurrentKeyID, callInfo)
-	mock.lockGetCurrentKeyID.Unlock()
-	return mock.GetCurrentKeyIDFunc(ctx, chain, keyRole)
-}
-
-// GetCurrentKeyIDCalls gets all the calls that were made to GetCurrentKeyID.
-// Check the length with:
-//     len(mockedSigner.GetCurrentKeyIDCalls())
-func (mock *SignerMock) GetCurrentKeyIDCalls() []struct {
-	Ctx     github_com_cosmos_cosmos_sdk_types.Context
-	Chain   github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-	KeyRole tss.KeyRole
-} {
-	var calls []struct {
-		Ctx     github_com_cosmos_cosmos_sdk_types.Context
-		Chain   github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-		KeyRole tss.KeyRole
-	}
-	mock.lockGetCurrentKeyID.RLock()
-	calls = mock.calls.GetCurrentKeyID
-	mock.lockGetCurrentKeyID.RUnlock()
-	return calls
-}
-
-// GetExternalKeyIDs calls GetExternalKeyIDsFunc.
-func (mock *SignerMock) GetExternalKeyIDs(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain) ([]tss.KeyID, bool) {
-	if mock.GetExternalKeyIDsFunc == nil {
-		panic("SignerMock.GetExternalKeyIDsFunc: method is nil but Signer.GetExternalKeyIDs was just called")
-	}
-	callInfo := struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-	}{
-		Ctx:   ctx,
-		Chain: chain,
-	}
-	mock.lockGetExternalKeyIDs.Lock()
-	mock.calls.GetExternalKeyIDs = append(mock.calls.GetExternalKeyIDs, callInfo)
-	mock.lockGetExternalKeyIDs.Unlock()
-	return mock.GetExternalKeyIDsFunc(ctx, chain)
-}
-
-// GetExternalKeyIDsCalls gets all the calls that were made to GetExternalKeyIDs.
-// Check the length with:
-//     len(mockedSigner.GetExternalKeyIDsCalls())
-func (mock *SignerMock) GetExternalKeyIDsCalls() []struct {
-	Ctx   github_com_cosmos_cosmos_sdk_types.Context
-	Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-} {
-	var calls []struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-	}
-	mock.lockGetExternalKeyIDs.RLock()
-	calls = mock.calls.GetExternalKeyIDs
-	mock.lockGetExternalKeyIDs.RUnlock()
-	return calls
-}
-
-// GetExternalMultisigThreshold calls GetExternalMultisigThresholdFunc.
-func (mock *SignerMock) GetExternalMultisigThreshold(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.Threshold {
-	if mock.GetExternalMultisigThresholdFunc == nil {
-		panic("SignerMock.GetExternalMultisigThresholdFunc: method is nil but Signer.GetExternalMultisigThreshold was just called")
-	}
-	callInfo := struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
-	}{
-		Ctx: ctx,
-	}
-	mock.lockGetExternalMultisigThreshold.Lock()
-	mock.calls.GetExternalMultisigThreshold = append(mock.calls.GetExternalMultisigThreshold, callInfo)
-	mock.lockGetExternalMultisigThreshold.Unlock()
-	return mock.GetExternalMultisigThresholdFunc(ctx)
-}
-
-// GetExternalMultisigThresholdCalls gets all the calls that were made to GetExternalMultisigThreshold.
-// Check the length with:
-//     len(mockedSigner.GetExternalMultisigThresholdCalls())
-func (mock *SignerMock) GetExternalMultisigThresholdCalls() []struct {
-	Ctx github_com_cosmos_cosmos_sdk_types.Context
-} {
-	var calls []struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
-	}
-	mock.lockGetExternalMultisigThreshold.RLock()
-	calls = mock.calls.GetExternalMultisigThreshold
-	mock.lockGetExternalMultisigThreshold.RUnlock()
-	return calls
+	lockGetKey sync.RWMutex
+	lockGetSig sync.RWMutex
 }
 
 // GetKey calls GetKeyFunc.
@@ -764,193 +175,6 @@ func (mock *SignerMock) GetKeyCalls() []struct {
 	return calls
 }
 
-// GetKeyRequirement calls GetKeyRequirementFunc.
-func (mock *SignerMock) GetKeyRequirement(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRole tss.KeyRole, keyType tss.KeyType) (tss.KeyRequirement, bool) {
-	if mock.GetKeyRequirementFunc == nil {
-		panic("SignerMock.GetKeyRequirementFunc: method is nil but Signer.GetKeyRequirement was just called")
-	}
-	callInfo := struct {
-		Ctx     github_com_cosmos_cosmos_sdk_types.Context
-		KeyRole tss.KeyRole
-		KeyType tss.KeyType
-	}{
-		Ctx:     ctx,
-		KeyRole: keyRole,
-		KeyType: keyType,
-	}
-	mock.lockGetKeyRequirement.Lock()
-	mock.calls.GetKeyRequirement = append(mock.calls.GetKeyRequirement, callInfo)
-	mock.lockGetKeyRequirement.Unlock()
-	return mock.GetKeyRequirementFunc(ctx, keyRole, keyType)
-}
-
-// GetKeyRequirementCalls gets all the calls that were made to GetKeyRequirement.
-// Check the length with:
-//     len(mockedSigner.GetKeyRequirementCalls())
-func (mock *SignerMock) GetKeyRequirementCalls() []struct {
-	Ctx     github_com_cosmos_cosmos_sdk_types.Context
-	KeyRole tss.KeyRole
-	KeyType tss.KeyType
-} {
-	var calls []struct {
-		Ctx     github_com_cosmos_cosmos_sdk_types.Context
-		KeyRole tss.KeyRole
-		KeyType tss.KeyType
-	}
-	mock.lockGetKeyRequirement.RLock()
-	calls = mock.calls.GetKeyRequirement
-	mock.lockGetKeyRequirement.RUnlock()
-	return calls
-}
-
-// GetKeyRole calls GetKeyRoleFunc.
-func (mock *SignerMock) GetKeyRole(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID tss.KeyID) tss.KeyRole {
-	if mock.GetKeyRoleFunc == nil {
-		panic("SignerMock.GetKeyRoleFunc: method is nil but Signer.GetKeyRole was just called")
-	}
-	callInfo := struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		KeyID tss.KeyID
-	}{
-		Ctx:   ctx,
-		KeyID: keyID,
-	}
-	mock.lockGetKeyRole.Lock()
-	mock.calls.GetKeyRole = append(mock.calls.GetKeyRole, callInfo)
-	mock.lockGetKeyRole.Unlock()
-	return mock.GetKeyRoleFunc(ctx, keyID)
-}
-
-// GetKeyRoleCalls gets all the calls that were made to GetKeyRole.
-// Check the length with:
-//     len(mockedSigner.GetKeyRoleCalls())
-func (mock *SignerMock) GetKeyRoleCalls() []struct {
-	Ctx   github_com_cosmos_cosmos_sdk_types.Context
-	KeyID tss.KeyID
-} {
-	var calls []struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		KeyID tss.KeyID
-	}
-	mock.lockGetKeyRole.RLock()
-	calls = mock.calls.GetKeyRole
-	mock.lockGetKeyRole.RUnlock()
-	return calls
-}
-
-// GetKeyType calls GetKeyTypeFunc.
-func (mock *SignerMock) GetKeyType(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID tss.KeyID) tss.KeyType {
-	if mock.GetKeyTypeFunc == nil {
-		panic("SignerMock.GetKeyTypeFunc: method is nil but Signer.GetKeyType was just called")
-	}
-	callInfo := struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		KeyID tss.KeyID
-	}{
-		Ctx:   ctx,
-		KeyID: keyID,
-	}
-	mock.lockGetKeyType.Lock()
-	mock.calls.GetKeyType = append(mock.calls.GetKeyType, callInfo)
-	mock.lockGetKeyType.Unlock()
-	return mock.GetKeyTypeFunc(ctx, keyID)
-}
-
-// GetKeyTypeCalls gets all the calls that were made to GetKeyType.
-// Check the length with:
-//     len(mockedSigner.GetKeyTypeCalls())
-func (mock *SignerMock) GetKeyTypeCalls() []struct {
-	Ctx   github_com_cosmos_cosmos_sdk_types.Context
-	KeyID tss.KeyID
-} {
-	var calls []struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		KeyID tss.KeyID
-	}
-	mock.lockGetKeyType.RLock()
-	calls = mock.calls.GetKeyType
-	mock.lockGetKeyType.RUnlock()
-	return calls
-}
-
-// GetNextKeyID calls GetNextKeyIDFunc.
-func (mock *SignerMock) GetNextKeyID(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
-	if mock.GetNextKeyIDFunc == nil {
-		panic("SignerMock.GetNextKeyIDFunc: method is nil but Signer.GetNextKeyID was just called")
-	}
-	callInfo := struct {
-		Ctx     github_com_cosmos_cosmos_sdk_types.Context
-		Chain   github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-		KeyRole tss.KeyRole
-	}{
-		Ctx:     ctx,
-		Chain:   chain,
-		KeyRole: keyRole,
-	}
-	mock.lockGetNextKeyID.Lock()
-	mock.calls.GetNextKeyID = append(mock.calls.GetNextKeyID, callInfo)
-	mock.lockGetNextKeyID.Unlock()
-	return mock.GetNextKeyIDFunc(ctx, chain, keyRole)
-}
-
-// GetNextKeyIDCalls gets all the calls that were made to GetNextKeyID.
-// Check the length with:
-//     len(mockedSigner.GetNextKeyIDCalls())
-func (mock *SignerMock) GetNextKeyIDCalls() []struct {
-	Ctx     github_com_cosmos_cosmos_sdk_types.Context
-	Chain   github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-	KeyRole tss.KeyRole
-} {
-	var calls []struct {
-		Ctx     github_com_cosmos_cosmos_sdk_types.Context
-		Chain   github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-		KeyRole tss.KeyRole
-	}
-	mock.lockGetNextKeyID.RLock()
-	calls = mock.calls.GetNextKeyID
-	mock.lockGetNextKeyID.RUnlock()
-	return calls
-}
-
-// GetRotationCount calls GetRotationCountFunc.
-func (mock *SignerMock) GetRotationCount(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, keyRole tss.KeyRole) int64 {
-	if mock.GetRotationCountFunc == nil {
-		panic("SignerMock.GetRotationCountFunc: method is nil but Signer.GetRotationCount was just called")
-	}
-	callInfo := struct {
-		Ctx     github_com_cosmos_cosmos_sdk_types.Context
-		Chain   github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-		KeyRole tss.KeyRole
-	}{
-		Ctx:     ctx,
-		Chain:   chain,
-		KeyRole: keyRole,
-	}
-	mock.lockGetRotationCount.Lock()
-	mock.calls.GetRotationCount = append(mock.calls.GetRotationCount, callInfo)
-	mock.lockGetRotationCount.Unlock()
-	return mock.GetRotationCountFunc(ctx, chain, keyRole)
-}
-
-// GetRotationCountCalls gets all the calls that were made to GetRotationCount.
-// Check the length with:
-//     len(mockedSigner.GetRotationCountCalls())
-func (mock *SignerMock) GetRotationCountCalls() []struct {
-	Ctx     github_com_cosmos_cosmos_sdk_types.Context
-	Chain   github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-	KeyRole tss.KeyRole
-} {
-	var calls []struct {
-		Ctx     github_com_cosmos_cosmos_sdk_types.Context
-		Chain   github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-		KeyRole tss.KeyRole
-	}
-	mock.lockGetRotationCount.RLock()
-	calls = mock.calls.GetRotationCount
-	mock.lockGetRotationCount.RUnlock()
-	return calls
-}
-
 // GetSig calls GetSigFunc.
 func (mock *SignerMock) GetSig(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string) (tss.Signature, tss.SigStatus) {
 	if mock.GetSigFunc == nil {
@@ -983,131 +207,6 @@ func (mock *SignerMock) GetSigCalls() []struct {
 	mock.lockGetSig.RLock()
 	calls = mock.calls.GetSig
 	mock.lockGetSig.RUnlock()
-	return calls
-}
-
-// GetSnapshotCounterForKeyID calls GetSnapshotCounterForKeyIDFunc.
-func (mock *SignerMock) GetSnapshotCounterForKeyID(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID tss.KeyID) (int64, bool) {
-	if mock.GetSnapshotCounterForKeyIDFunc == nil {
-		panic("SignerMock.GetSnapshotCounterForKeyIDFunc: method is nil but Signer.GetSnapshotCounterForKeyID was just called")
-	}
-	callInfo := struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		KeyID tss.KeyID
-	}{
-		Ctx:   ctx,
-		KeyID: keyID,
-	}
-	mock.lockGetSnapshotCounterForKeyID.Lock()
-	mock.calls.GetSnapshotCounterForKeyID = append(mock.calls.GetSnapshotCounterForKeyID, callInfo)
-	mock.lockGetSnapshotCounterForKeyID.Unlock()
-	return mock.GetSnapshotCounterForKeyIDFunc(ctx, keyID)
-}
-
-// GetSnapshotCounterForKeyIDCalls gets all the calls that were made to GetSnapshotCounterForKeyID.
-// Check the length with:
-//     len(mockedSigner.GetSnapshotCounterForKeyIDCalls())
-func (mock *SignerMock) GetSnapshotCounterForKeyIDCalls() []struct {
-	Ctx   github_com_cosmos_cosmos_sdk_types.Context
-	KeyID tss.KeyID
-} {
-	var calls []struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		KeyID tss.KeyID
-	}
-	mock.lockGetSnapshotCounterForKeyID.RLock()
-	calls = mock.calls.GetSnapshotCounterForKeyID
-	mock.lockGetSnapshotCounterForKeyID.RUnlock()
-	return calls
-}
-
-// RotateKey calls RotateKeyFunc.
-func (mock *SignerMock) RotateKey(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, keyRole tss.KeyRole) error {
-	if mock.RotateKeyFunc == nil {
-		panic("SignerMock.RotateKeyFunc: method is nil but Signer.RotateKey was just called")
-	}
-	callInfo := struct {
-		Ctx     github_com_cosmos_cosmos_sdk_types.Context
-		Chain   github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-		KeyRole tss.KeyRole
-	}{
-		Ctx:     ctx,
-		Chain:   chain,
-		KeyRole: keyRole,
-	}
-	mock.lockRotateKey.Lock()
-	mock.calls.RotateKey = append(mock.calls.RotateKey, callInfo)
-	mock.lockRotateKey.Unlock()
-	return mock.RotateKeyFunc(ctx, chain, keyRole)
-}
-
-// RotateKeyCalls gets all the calls that were made to RotateKey.
-// Check the length with:
-//     len(mockedSigner.RotateKeyCalls())
-func (mock *SignerMock) RotateKeyCalls() []struct {
-	Ctx     github_com_cosmos_cosmos_sdk_types.Context
-	Chain   github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-	KeyRole tss.KeyRole
-} {
-	var calls []struct {
-		Ctx     github_com_cosmos_cosmos_sdk_types.Context
-		Chain   github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-		KeyRole tss.KeyRole
-	}
-	mock.lockRotateKey.RLock()
-	calls = mock.calls.RotateKey
-	mock.lockRotateKey.RUnlock()
-	return calls
-}
-
-// StartSign calls StartSignFunc.
-func (mock *SignerMock) StartSign(ctx github_com_cosmos_cosmos_sdk_types.Context, info tss.SignInfo, snapshotter snapshot.Snapshotter, voter interface {
-	InitializePoll(ctx github_com_cosmos_cosmos_sdk_types.Context, pollBuilder vote.PollBuilder) (vote.PollID, error)
-}) error {
-	if mock.StartSignFunc == nil {
-		panic("SignerMock.StartSignFunc: method is nil but Signer.StartSign was just called")
-	}
-	callInfo := struct {
-		Ctx         github_com_cosmos_cosmos_sdk_types.Context
-		Info        tss.SignInfo
-		Snapshotter snapshot.Snapshotter
-		Voter       interface {
-			InitializePoll(ctx github_com_cosmos_cosmos_sdk_types.Context, pollBuilder vote.PollBuilder) (vote.PollID, error)
-		}
-	}{
-		Ctx:         ctx,
-		Info:        info,
-		Snapshotter: snapshotter,
-		Voter:       voter,
-	}
-	mock.lockStartSign.Lock()
-	mock.calls.StartSign = append(mock.calls.StartSign, callInfo)
-	mock.lockStartSign.Unlock()
-	return mock.StartSignFunc(ctx, info, snapshotter, voter)
-}
-
-// StartSignCalls gets all the calls that were made to StartSign.
-// Check the length with:
-//     len(mockedSigner.StartSignCalls())
-func (mock *SignerMock) StartSignCalls() []struct {
-	Ctx         github_com_cosmos_cosmos_sdk_types.Context
-	Info        tss.SignInfo
-	Snapshotter snapshot.Snapshotter
-	Voter       interface {
-		InitializePoll(ctx github_com_cosmos_cosmos_sdk_types.Context, pollBuilder vote.PollBuilder) (vote.PollID, error)
-	}
-} {
-	var calls []struct {
-		Ctx         github_com_cosmos_cosmos_sdk_types.Context
-		Info        tss.SignInfo
-		Snapshotter snapshot.Snapshotter
-		Voter       interface {
-			InitializePoll(ctx github_com_cosmos_cosmos_sdk_types.Context, pollBuilder vote.PollBuilder) (vote.PollID, error)
-		}
-	}
-	mock.lockStartSign.RLock()
-	calls = mock.calls.StartSign
-	mock.lockStartSign.RUnlock()
 	return calls
 }
 
@@ -2726,7 +1825,7 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			CreateERC20TokenFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string, details types.TokenDetails, address types.Address) (types.ERC20Token, error) {
 // 				panic("mock out the CreateERC20Token method")
 // 			},
-// 			CreateNewBatchToSignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, signer types.Signer) (types.CommandBatch, error) {
+// 			CreateNewBatchToSignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (types.CommandBatch, error) {
 // 				panic("mock out the CreateNewBatchToSign method")
 // 			},
 // 			DeleteDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, deposit types.ERC20Deposit)  {
@@ -2854,7 +1953,7 @@ type ChainKeeperMock struct {
 	CreateERC20TokenFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string, details types.TokenDetails, address types.Address) (types.ERC20Token, error)
 
 	// CreateNewBatchToSignFunc mocks the CreateNewBatchToSign method.
-	CreateNewBatchToSignFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, signer types.Signer) (types.CommandBatch, error)
+	CreateNewBatchToSignFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (types.CommandBatch, error)
 
 	// DeleteDepositFunc mocks the DeleteDeposit method.
 	DeleteDepositFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, deposit types.ERC20Deposit)
@@ -2987,8 +2086,6 @@ type ChainKeeperMock struct {
 		CreateNewBatchToSign []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Signer is the signer argument value.
-			Signer types.Signer
 		}
 		// DeleteDeposit holds details about calls to the DeleteDeposit method.
 		DeleteDeposit []struct {
@@ -3313,33 +2410,29 @@ func (mock *ChainKeeperMock) CreateERC20TokenCalls() []struct {
 }
 
 // CreateNewBatchToSign calls CreateNewBatchToSignFunc.
-func (mock *ChainKeeperMock) CreateNewBatchToSign(ctx github_com_cosmos_cosmos_sdk_types.Context, signer types.Signer) (types.CommandBatch, error) {
+func (mock *ChainKeeperMock) CreateNewBatchToSign(ctx github_com_cosmos_cosmos_sdk_types.Context) (types.CommandBatch, error) {
 	if mock.CreateNewBatchToSignFunc == nil {
 		panic("ChainKeeperMock.CreateNewBatchToSignFunc: method is nil but ChainKeeper.CreateNewBatchToSign was just called")
 	}
 	callInfo := struct {
-		Ctx    github_com_cosmos_cosmos_sdk_types.Context
-		Signer types.Signer
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
 	}{
-		Ctx:    ctx,
-		Signer: signer,
+		Ctx: ctx,
 	}
 	mock.lockCreateNewBatchToSign.Lock()
 	mock.calls.CreateNewBatchToSign = append(mock.calls.CreateNewBatchToSign, callInfo)
 	mock.lockCreateNewBatchToSign.Unlock()
-	return mock.CreateNewBatchToSignFunc(ctx, signer)
+	return mock.CreateNewBatchToSignFunc(ctx)
 }
 
 // CreateNewBatchToSignCalls gets all the calls that were made to CreateNewBatchToSign.
 // Check the length with:
 //     len(mockedChainKeeper.CreateNewBatchToSignCalls())
 func (mock *ChainKeeperMock) CreateNewBatchToSignCalls() []struct {
-	Ctx    github_com_cosmos_cosmos_sdk_types.Context
-	Signer types.Signer
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
 } {
 	var calls []struct {
-		Ctx    github_com_cosmos_cosmos_sdk_types.Context
-		Signer types.Signer
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
 	}
 	mock.lockCreateNewBatchToSign.RLock()
 	calls = mock.calls.CreateNewBatchToSign
@@ -4833,6 +3926,9 @@ var _ types.MultisigKeeper = &MultisigKeeperMock{}
 //
 // 		// make and configure a mocked types.MultisigKeeper
 // 		mockedMultisigKeeper := &MultisigKeeperMock{
+// 			AssignKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, keyID github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID) error {
+// 				panic("mock out the AssignKey method")
+// 			},
 // 			GetCurrentKeyIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID, bool) {
 // 				panic("mock out the GetCurrentKeyID method")
 // 			},
@@ -4845,6 +3941,9 @@ var _ types.MultisigKeeper = &MultisigKeeperMock{}
 // 			RotateKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) error {
 // 				panic("mock out the RotateKey method")
 // 			},
+// 			SignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID, payloadHash github_com_axelarnetwork_axelar_core_x_multisig_exported.Hash, module string, moduleMetadata ...codec.ProtoMarshaler) error {
+// 				panic("mock out the Sign method")
+// 			},
 // 		}
 //
 // 		// use mockedMultisigKeeper in code that requires types.MultisigKeeper
@@ -4852,6 +3951,9 @@ var _ types.MultisigKeeper = &MultisigKeeperMock{}
 //
 // 	}
 type MultisigKeeperMock struct {
+	// AssignKeyFunc mocks the AssignKey method.
+	AssignKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, keyID github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID) error
+
 	// GetCurrentKeyIDFunc mocks the GetCurrentKeyID method.
 	GetCurrentKeyIDFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID, bool)
 
@@ -4864,8 +3966,20 @@ type MultisigKeeperMock struct {
 	// RotateKeyFunc mocks the RotateKey method.
 	RotateKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) error
 
+	// SignFunc mocks the Sign method.
+	SignFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID, payloadHash github_com_axelarnetwork_axelar_core_x_multisig_exported.Hash, module string, moduleMetadata ...codec.ProtoMarshaler) error
+
 	// calls tracks calls to the methods.
 	calls struct {
+		// AssignKey holds details about calls to the AssignKey method.
+		AssignKey []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// ChainName is the chainName argument value.
+			ChainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+			// KeyID is the keyID argument value.
+			KeyID github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID
+		}
 		// GetCurrentKeyID holds details about calls to the GetCurrentKeyID method.
 		GetCurrentKeyID []struct {
 			// Ctx is the ctx argument value.
@@ -4894,11 +4008,65 @@ type MultisigKeeperMock struct {
 			// ChainName is the chainName argument value.
 			ChainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
 		}
+		// Sign holds details about calls to the Sign method.
+		Sign []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// KeyID is the keyID argument value.
+			KeyID github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID
+			// PayloadHash is the payloadHash argument value.
+			PayloadHash github_com_axelarnetwork_axelar_core_x_multisig_exported.Hash
+			// Module is the module argument value.
+			Module string
+			// ModuleMetadata is the moduleMetadata argument value.
+			ModuleMetadata []codec.ProtoMarshaler
+		}
 	}
+	lockAssignKey       sync.RWMutex
 	lockGetCurrentKeyID sync.RWMutex
 	lockGetKey          sync.RWMutex
 	lockGetNextKeyID    sync.RWMutex
 	lockRotateKey       sync.RWMutex
+	lockSign            sync.RWMutex
+}
+
+// AssignKey calls AssignKeyFunc.
+func (mock *MultisigKeeperMock) AssignKey(ctx github_com_cosmos_cosmos_sdk_types.Context, chainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, keyID github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID) error {
+	if mock.AssignKeyFunc == nil {
+		panic("MultisigKeeperMock.AssignKeyFunc: method is nil but MultisigKeeper.AssignKey was just called")
+	}
+	callInfo := struct {
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
+		ChainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+		KeyID     github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID
+	}{
+		Ctx:       ctx,
+		ChainName: chainName,
+		KeyID:     keyID,
+	}
+	mock.lockAssignKey.Lock()
+	mock.calls.AssignKey = append(mock.calls.AssignKey, callInfo)
+	mock.lockAssignKey.Unlock()
+	return mock.AssignKeyFunc(ctx, chainName, keyID)
+}
+
+// AssignKeyCalls gets all the calls that were made to AssignKey.
+// Check the length with:
+//     len(mockedMultisigKeeper.AssignKeyCalls())
+func (mock *MultisigKeeperMock) AssignKeyCalls() []struct {
+	Ctx       github_com_cosmos_cosmos_sdk_types.Context
+	ChainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+	KeyID     github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID
+} {
+	var calls []struct {
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
+		ChainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+		KeyID     github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID
+	}
+	mock.lockAssignKey.RLock()
+	calls = mock.calls.AssignKey
+	mock.lockAssignKey.RUnlock()
+	return calls
 }
 
 // GetCurrentKeyID calls GetCurrentKeyIDFunc.
@@ -5038,5 +4206,52 @@ func (mock *MultisigKeeperMock) RotateKeyCalls() []struct {
 	mock.lockRotateKey.RLock()
 	calls = mock.calls.RotateKey
 	mock.lockRotateKey.RUnlock()
+	return calls
+}
+
+// Sign calls SignFunc.
+func (mock *MultisigKeeperMock) Sign(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID, payloadHash github_com_axelarnetwork_axelar_core_x_multisig_exported.Hash, module string, moduleMetadata ...codec.ProtoMarshaler) error {
+	if mock.SignFunc == nil {
+		panic("MultisigKeeperMock.SignFunc: method is nil but MultisigKeeper.Sign was just called")
+	}
+	callInfo := struct {
+		Ctx            github_com_cosmos_cosmos_sdk_types.Context
+		KeyID          github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID
+		PayloadHash    github_com_axelarnetwork_axelar_core_x_multisig_exported.Hash
+		Module         string
+		ModuleMetadata []codec.ProtoMarshaler
+	}{
+		Ctx:            ctx,
+		KeyID:          keyID,
+		PayloadHash:    payloadHash,
+		Module:         module,
+		ModuleMetadata: moduleMetadata,
+	}
+	mock.lockSign.Lock()
+	mock.calls.Sign = append(mock.calls.Sign, callInfo)
+	mock.lockSign.Unlock()
+	return mock.SignFunc(ctx, keyID, payloadHash, module, moduleMetadata...)
+}
+
+// SignCalls gets all the calls that were made to Sign.
+// Check the length with:
+//     len(mockedMultisigKeeper.SignCalls())
+func (mock *MultisigKeeperMock) SignCalls() []struct {
+	Ctx            github_com_cosmos_cosmos_sdk_types.Context
+	KeyID          github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID
+	PayloadHash    github_com_axelarnetwork_axelar_core_x_multisig_exported.Hash
+	Module         string
+	ModuleMetadata []codec.ProtoMarshaler
+} {
+	var calls []struct {
+		Ctx            github_com_cosmos_cosmos_sdk_types.Context
+		KeyID          github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID
+		PayloadHash    github_com_axelarnetwork_axelar_core_x_multisig_exported.Hash
+		Module         string
+		ModuleMetadata []codec.ProtoMarshaler
+	}
+	mock.lockSign.RLock()
+	calls = mock.calls.Sign
+	mock.lockSign.RUnlock()
 	return calls
 }

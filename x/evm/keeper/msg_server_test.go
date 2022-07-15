@@ -31,11 +31,10 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/evm/types/mock"
 	evmTestUtils "github.com/axelarnetwork/axelar-core/x/evm/types/testutils"
+	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	multisigTestUtils "github.com/axelarnetwork/axelar-core/x/multisig/exported/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
-	tssTestUtils "github.com/axelarnetwork/axelar-core/x/tss/exported/testutils"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	. "github.com/axelarnetwork/utils/test"
 )
@@ -49,28 +48,27 @@ var (
 	gateway     = "0x37CC4B7E8f9f505CA8126Db8a9d070566ed5DAE7"
 )
 
-func setup() (sdk.Context, types.MsgServiceServer, *mock.BaseKeeperMock, *mock.TSSMock, *mock.NexusMock, *mock.SignerMock, *mock.VoterMock, *mock.SnapshotterMock) {
+func setup() (sdk.Context, types.MsgServiceServer, *mock.BaseKeeperMock, *mock.NexusMock, *mock.VoterMock, *mock.SnapshotterMock, *mock.MultisigKeeperMock) {
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 
 	evmBaseKeeper := &mock.BaseKeeperMock{}
-	tssKeeper := &mock.TSSMock{}
 	nexusKeeper := &mock.NexusMock{}
-	signerKeeper := &mock.SignerMock{}
 	voteKeeper := &mock.VoterMock{}
 	snapshotKeeper := &mock.SnapshotterMock{}
 	stakingKeeper := &mock.StakingKeeperMock{}
 	slashingKeeper := &mock.SlashingKeeperMock{}
+	multisigKeeper := &mock.MultisigKeeperMock{}
 
 	return ctx,
-		keeper.NewMsgServerImpl(evmBaseKeeper, tssKeeper, nexusKeeper, signerKeeper, voteKeeper, snapshotKeeper, stakingKeeper, slashingKeeper),
-		evmBaseKeeper, tssKeeper, nexusKeeper, signerKeeper, voteKeeper, snapshotKeeper
+		keeper.NewMsgServerImpl(evmBaseKeeper, nexusKeeper, voteKeeper, snapshotKeeper, stakingKeeper, slashingKeeper, multisigKeeper),
+		evmBaseKeeper, nexusKeeper, voteKeeper, snapshotKeeper, multisigKeeper
 }
 
 func TestSetGateway(t *testing.T) {
 	req := types.NewSetGatewayRequest(rand.AccAddr(), rand.Str(5), evmTestUtils.RandomAddress())
 
-	t.Run("should fail if secondary or external keys is not set", testutils.Func(func(t *testing.T) {
-		ctx, msgServer, _, _, nexusKeeper, signerKeeper, _, _ := setup()
+	t.Run("should fail if current key is not set", testutils.Func(func(t *testing.T) {
+		ctx, msgServer, _, nexusKeeper, _, _, multisigKeeper := setup()
 
 		nexusKeeper.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 			if chain == req.Chain {
@@ -81,24 +79,16 @@ func TestSetGateway(t *testing.T) {
 		}
 		nexusKeeper.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return chain.Name == req.Chain }
 
-		signerKeeper.GetCurrentKeyIDFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
-			return tssTestUtils.RandKeyID(), keyRole != tss.SecondaryKey
+		multisigKeeper.GetCurrentKeyIDFunc = func(ctx sdk.Context, chain nexus.ChainName) (multisig.KeyID, bool) {
+			return "", false
 		}
 		_, err := msgServer.SetGateway(sdk.WrapSDKContext(ctx), req)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "current key not set for chain")
-
-		signerKeeper.GetCurrentKeyIDFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
-			return tssTestUtils.RandKeyID(), true
-		}
-		signerKeeper.GetExternalKeyIDsFunc = func(ctx sdk.Context, chain nexus.Chain) ([]tss.KeyID, bool) { return []tss.KeyID{}, false }
-		_, err = msgServer.SetGateway(sdk.WrapSDKContext(ctx), req)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "no external keys")
 	}))
 
 	t.Run("should fail if gateway is already set", testutils.Func(func(t *testing.T) {
-		ctx, msgServer, baseKeeper, _, nexusKeeper, signerKeeper, _, _ := setup()
+		ctx, msgServer, baseKeeper, nexusKeeper, _, _, multisigKeeper := setup()
 		chainKeeper := &mock.ChainKeeperMock{}
 
 		nexusKeeper.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
@@ -109,10 +99,9 @@ func TestSetGateway(t *testing.T) {
 			return nexus.Chain{}, false
 		}
 		nexusKeeper.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return chain.Name == req.Chain }
-		signerKeeper.GetCurrentKeyIDFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
-			return tssTestUtils.RandKeyID(), true
+		multisigKeeper.GetCurrentKeyIDFunc = func(ctx sdk.Context, chain nexus.ChainName) (multisig.KeyID, bool) {
+			return multisigTestUtils.KeyID(), true
 		}
-		signerKeeper.GetExternalKeyIDsFunc = func(ctx sdk.Context, chain nexus.Chain) ([]tss.KeyID, bool) { return []tss.KeyID{}, true }
 		baseKeeper.ForChainFunc = func(chain nexus.ChainName) types.ChainKeeper { return chainKeeper }
 		chainKeeper.GetGatewayAddressFunc = func(ctx sdk.Context) (common.Address, bool) {
 			return common.Address(evmTestUtils.RandomAddress()), true
@@ -124,7 +113,7 @@ func TestSetGateway(t *testing.T) {
 	}))
 
 	t.Run("should set gateway", testutils.Func(func(t *testing.T) {
-		ctx, msgServer, baseKeeper, _, nexusKeeper, signerKeeper, _, _ := setup()
+		ctx, msgServer, baseKeeper, nexusKeeper, _, _, multisigKeeper := setup()
 		chainKeeper := &mock.ChainKeeperMock{}
 
 		nexusKeeper.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
@@ -135,10 +124,9 @@ func TestSetGateway(t *testing.T) {
 			return nexus.Chain{}, false
 		}
 		nexusKeeper.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return chain.Name == req.Chain }
-		signerKeeper.GetCurrentKeyIDFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
-			return tssTestUtils.RandKeyID(), true
+		multisigKeeper.GetCurrentKeyIDFunc = func(ctx sdk.Context, chain nexus.ChainName) (multisig.KeyID, bool) {
+			return multisigTestUtils.KeyID(), true
 		}
-		signerKeeper.GetExternalKeyIDsFunc = func(ctx sdk.Context, chain nexus.Chain) ([]tss.KeyID, bool) { return []tss.KeyID{}, true }
 		baseKeeper.ForChainFunc = func(chain nexus.ChainName) types.ChainKeeper { return chainKeeper }
 		chainKeeper.GetGatewayAddressFunc = func(ctx sdk.Context) (common.Address, bool) {
 			return common.Address{}, false
@@ -153,28 +141,27 @@ func TestSetGateway(t *testing.T) {
 }
 
 func TestSignCommands(t *testing.T) {
-	setup := func() (sdk.Context, types.MsgServiceServer, *mock.BaseKeeperMock, *mock.SignerMock) {
+	setup := func() (sdk.Context, types.MsgServiceServer, *mock.BaseKeeperMock, *mock.MultisigKeeperMock) {
 		ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 
 		evmBaseKeeper := &mock.BaseKeeperMock{}
-		tssKeeper := &mock.TSSMock{}
 		nexusKeeper := &mock.NexusMock{}
-		signerKeeper := &mock.SignerMock{}
 		voteKeeper := &mock.VoterMock{}
 		snapshotKeeper := &mock.SnapshotterMock{}
 		stakingKeeper := &mock.StakingKeeperMock{}
 		slashingKeeper := &mock.SlashingKeeperMock{}
+		multisigKeeper := &mock.MultisigKeeperMock{}
 
 		nexusKeeper.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) { return nexus.Chain{}, true }
 		nexusKeeper.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return true }
 
-		msgServer := keeper.NewMsgServerImpl(evmBaseKeeper, tssKeeper, nexusKeeper, signerKeeper, voteKeeper, snapshotKeeper, stakingKeeper, slashingKeeper)
+		msgServer := keeper.NewMsgServerImpl(evmBaseKeeper, nexusKeeper, voteKeeper, snapshotKeeper, stakingKeeper, slashingKeeper, multisigKeeper)
 
-		return ctx, msgServer, evmBaseKeeper, signerKeeper
+		return ctx, msgServer, evmBaseKeeper, multisigKeeper
 	}
 
 	t.Run("should create a new command batch to sign if the latest is not being signed or aborted", testutils.Func(func(t *testing.T) {
-		ctx, msgServer, evmBaseKeeper, signerKeeper := setup()
+		ctx, msgServer, evmBaseKeeper, multisigKeeper := setup()
 
 		expectedCommandIDs := make([]types.CommandID, rand.I64Between(1, 100))
 		for i := range expectedCommandIDs {
@@ -194,13 +181,10 @@ func TestSignCommands(t *testing.T) {
 		chainKeeper.GetLatestCommandBatchFunc = func(ctx sdk.Context) types.CommandBatch {
 			return types.NonExistentCommand
 		}
-		chainKeeper.CreateNewBatchToSignFunc = func(ctx sdk.Context, signer types.Signer) (types.CommandBatch, error) {
+		chainKeeper.CreateNewBatchToSignFunc = func(ctx sdk.Context) (types.CommandBatch, error) {
 			return types.NewCommandBatch(expected, func(batch types.CommandBatchMetadata) {}), nil
 		}
-		signerKeeper.GetSnapshotCounterForKeyIDFunc = func(ctx sdk.Context, keyID tss.KeyID) (int64, bool) { return 1, true }
-		signerKeeper.StartSignFunc = func(ctx sdk.Context, info tss.SignInfo, snapshotter snapshot.Snapshotter, voter interface {
-			InitializePoll(ctx sdk.Context, pollBuilder vote.PollBuilder) (vote.PollID, error)
-		}) error {
+		multisigKeeper.SignFunc = func(ctx sdk.Context, keyID multisig.KeyID, payloadHash multisig.Hash, module string, moduleMetadata ...codec.ProtoMarshaler) error {
 			return nil
 		}
 
@@ -211,7 +195,7 @@ func TestSignCommands(t *testing.T) {
 		assert.Equal(t, expected.ID, res.BatchedCommandsID)
 
 		assert.Len(t, chainKeeper.CreateNewBatchToSignCalls(), 1)
-		assert.Len(t, signerKeeper.StartSignCalls(), 1)
+		assert.Len(t, multisigKeeper.SignCalls(), 1)
 	}))
 
 	t.Run("should get the latest if it is aborted", testutils.Func(func(t *testing.T) {
@@ -237,10 +221,7 @@ func TestSignCommands(t *testing.T) {
 				assert.Equal(t, types.BatchSigning, batch.Status)
 			})
 		}
-		signerKeeper.GetSnapshotCounterForKeyIDFunc = func(ctx sdk.Context, keyID tss.KeyID) (int64, bool) { return 1, true }
-		signerKeeper.StartSignFunc = func(ctx sdk.Context, info tss.SignInfo, snapshotter snapshot.Snapshotter, voter interface {
-			InitializePoll(ctx sdk.Context, pollBuilder vote.PollBuilder) (vote.PollID, error)
-		}) error {
+		signerKeeper.SignFunc = func(ctx sdk.Context, keyID multisig.KeyID, payloadHash multisig.Hash, module string, moduleMetadata ...codec.ProtoMarshaler) error {
 			return nil
 		}
 
@@ -251,7 +232,7 @@ func TestSignCommands(t *testing.T) {
 		assert.Equal(t, commandBatch.ID, res.BatchedCommandsID)
 
 		assert.Len(t, chainKeeper.CreateNewBatchToSignCalls(), 0)
-		assert.Len(t, signerKeeper.StartSignCalls(), 1)
+		assert.Len(t, signerKeeper.SignCalls(), 1)
 	}))
 }
 
@@ -259,23 +240,22 @@ func TestCreateBurnTokens(t *testing.T) {
 	var (
 		evmBaseKeeper  *mock.BaseKeeperMock
 		evmChainKeeper *mock.ChainKeeperMock
-		tssKeeper      *mock.TSSMock
 		nexusKeeper    *mock.NexusMock
-		signerKeeper   *mock.SignerMock
 		voteKeeper     *mock.VoterMock
+		multisigKeeper *mock.MultisigKeeperMock
 		snapshotKeeper *mock.SnapshotterMock
 		server         types.MsgServiceServer
 
-		ctx            sdk.Context
-		req            *types.CreateBurnTokensRequest
-		secondaryKeyID tss.KeyID
+		ctx   sdk.Context
+		req   *types.CreateBurnTokensRequest
+		keyID multisig.KeyID
 	)
 
 	repeats := 20
 	setup := func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 		req = types.NewCreateBurnTokensRequest(rand.AccAddr(), exported.Ethereum.Name.String())
-		secondaryKeyID = tssTestUtils.RandKeyID()
+		keyID = multisigTestUtils.KeyID()
 
 		evmChainKeeper = &mock.ChainKeeperMock{
 			GetConfirmedDepositsFunc: func(ctx sdk.Context) []types.ERC20Deposit {
@@ -299,7 +279,6 @@ func TestCreateBurnTokens(t *testing.T) {
 				return evmChainKeeper
 			},
 		}
-		tssKeeper = &mock.TSSMock{}
 		nexusKeeper = &mock.NexusMock{
 			IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool { return true },
 			GetChainFunc: func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
@@ -310,12 +289,12 @@ func TestCreateBurnTokens(t *testing.T) {
 				return nexus.Chain{}, false
 			},
 		}
-		signerKeeper = &mock.SignerMock{
-			GetNextKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
+		multisigKeeper = &mock.MultisigKeeperMock{
+			GetNextKeyIDFunc: func(ctx sdk.Context, chain nexus.ChainName) (multisig.KeyID, bool) {
 				return "", false
 			},
-			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
-				return secondaryKeyID, true
+			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.ChainName) (multisig.KeyID, bool) {
+				return keyID, true
 			},
 		}
 		voteKeeper = &mock.VoterMock{}
@@ -323,7 +302,7 @@ func TestCreateBurnTokens(t *testing.T) {
 		stakingKeeper := &mock.StakingKeeperMock{}
 		slashingKeeper := &mock.SlashingKeeperMock{}
 
-		server = keeper.NewMsgServerImpl(evmBaseKeeper, tssKeeper, nexusKeeper, signerKeeper, voteKeeper, snapshotKeeper, stakingKeeper, slashingKeeper)
+		server = keeper.NewMsgServerImpl(evmBaseKeeper, nexusKeeper, voteKeeper, snapshotKeeper, stakingKeeper, slashingKeeper, multisigKeeper)
 	}
 
 	t.Run("should do nothing if no confirmed deposits exist", testutils.Func(func(t *testing.T) {
@@ -335,15 +314,15 @@ func TestCreateBurnTokens(t *testing.T) {
 		assert.Len(t, evmChainKeeper.DeleteDepositCalls(), 0)
 	}).Repeat(repeats))
 
-	t.Run("should return error if the next secondary key is assigned", testutils.Func(func(t *testing.T) {
+	t.Run("should return error if the next key is assigned", testutils.Func(func(t *testing.T) {
 		setup()
 
 		evmChainKeeper.GetConfirmedDepositsFunc = func(ctx sdk.Context) []types.ERC20Deposit {
 			return []types.ERC20Deposit{{}}
 		}
-		signerKeeper.GetNextKeyIDFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
-			if chain.Name == exported.Ethereum.Name && keyRole == tss.SecondaryKey {
-				return "", true
+		multisigKeeper.GetNextKeyIDFunc = func(ctx sdk.Context, chain nexus.ChainName) (multisig.KeyID, bool) {
+			if chain == exported.Ethereum.Name {
+				return multisigTestUtils.KeyID(), true
 			}
 
 			return "", false
@@ -410,7 +389,7 @@ func TestCreateBurnTokens(t *testing.T) {
 			commandIDSeen[command.Cmd.ID.Hex()] = true
 
 			assert.False(t, ok)
-			assert.EqualValues(t, secondaryKeyID, command.Cmd.KeyID)
+			assert.EqualValues(t, keyID, command.Cmd.KeyID)
 		}
 	}).Repeat(repeats))
 
@@ -491,7 +470,7 @@ func TestLink_UnknownChain(t *testing.T) {
 		IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool { return true },
 		GetChainFunc:         func(sdk.Context, nexus.ChainName) (nexus.Chain, bool) { return nexus.Chain{}, false },
 	}
-	server := keeper.NewMsgServerImpl(k, &mock.TSSMock{}, n, &mock.SignerMock{}, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{})
+	server := keeper.NewMsgServerImpl(k, n, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{}, &mock.MultisigKeeperMock{})
 	_, err := server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Sender: rand.AccAddr(), Chain: evmChain, RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name, Asset: asset})
 
 	assert.Error(t, err)
@@ -530,15 +509,12 @@ func TestLink_NoGateway(t *testing.T) {
 			return c, ok
 		},
 	}
-	signer := &mock.SignerMock{
-		GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
-			return tssTestUtils.RandKeyID(), true
-		},
-		GetSnapshotCounterForKeyIDFunc: func(sdk.Context, tss.KeyID) (int64, bool) {
-			return rand.PosI64(), true
+	multisigKeeper := &mock.MultisigKeeperMock{
+		GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.ChainName) (multisig.KeyID, bool) {
+			return multisigTestUtils.KeyID(), true
 		},
 	}
-	server := keeper.NewMsgServerImpl(k, &mock.TSSMock{}, n, signer, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{})
+	server := keeper.NewMsgServerImpl(k, n, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{}, multisigKeeper)
 	_, err := server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Chain: evmChain, Sender: rand.AccAddr(), RecipientAddr: recipient.Address, Asset: asset, RecipientChain: recipient.Chain.Name})
 
 	assert.Error(t, err)
@@ -564,15 +540,12 @@ func TestLink_NoRecipientChain(t *testing.T) {
 		},
 	}
 
-	signer := &mock.SignerMock{
-		GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
-			return tssTestUtils.RandKeyID(), true
-		},
-		GetSnapshotCounterForKeyIDFunc: func(sdk.Context, tss.KeyID) (int64, bool) {
-			return rand.PosI64(), true
+	multisigKeeper := &mock.MultisigKeeperMock{
+		GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.ChainName) (multisig.KeyID, bool) {
+			return multisigTestUtils.KeyID(), true
 		},
 	}
-	server := keeper.NewMsgServerImpl(k, &mock.TSSMock{}, n, signer, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{})
+	server := keeper.NewMsgServerImpl(k, n, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{}, multisigKeeper)
 	_, err := server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Chain: evmChain, Sender: rand.AccAddr(), RecipientAddr: recipient.Address, Asset: asset, RecipientChain: recipient.Chain.Name})
 
 	assert.Error(t, err)
@@ -598,15 +571,12 @@ func TestLink_NoRegisteredAsset(t *testing.T) {
 		IsAssetRegisteredFunc: func(sdk.Context, nexus.Chain, string) bool { return false },
 	}
 
-	signer := &mock.SignerMock{
-		GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
-			return tssTestUtils.RandKeyID(), true
-		},
-		GetSnapshotCounterForKeyIDFunc: func(sdk.Context, tss.KeyID) (int64, bool) {
-			return rand.PosI64(), true
+	multisigKeeper := &mock.MultisigKeeperMock{
+		GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.ChainName) (multisig.KeyID, bool) {
+			return multisigTestUtils.KeyID(), true
 		},
 	}
-	server := keeper.NewMsgServerImpl(k, &mock.TSSMock{}, n, signer, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{})
+	server := keeper.NewMsgServerImpl(k, n, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{}, multisigKeeper)
 	recipient := nexus.CrossChainAddress{Address: rand.ValAddr().String(), Chain: axelarnet.Axelarnet}
 	_, err := server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Sender: rand.AccAddr(), Chain: evmChain, RecipientAddr: recipient.Address, Asset: asset, RecipientChain: recipient.Chain.Name})
 
@@ -657,15 +627,12 @@ func TestLink_Success(t *testing.T) {
 		},
 		IsAssetRegisteredFunc: func(sdk.Context, nexus.Chain, string) bool { return true },
 	}
-	signer := &mock.SignerMock{
-		GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
-			return tssTestUtils.RandKeyID(), true
-		},
-		GetSnapshotCounterForKeyIDFunc: func(sdk.Context, tss.KeyID) (int64, bool) {
-			return rand.PosI64(), true
+	multisigKeeper := &mock.MultisigKeeperMock{
+		GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.ChainName) (multisig.KeyID, bool) {
+			return multisigTestUtils.KeyID(), true
 		},
 	}
-	server := keeper.NewMsgServerImpl(k, &mock.TSSMock{}, n, signer, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{})
+	server := keeper.NewMsgServerImpl(k, n, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{}, multisigKeeper)
 	_, err = server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Sender: rand.AccAddr(), Chain: evmChain, RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name, Asset: axelarnet.NativeAsset})
 
 	assert.NoError(t, err)
@@ -777,15 +744,15 @@ func TestMintTx_DifferentRecipient_DifferentHash(t *testing.T) {
 
 func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 	var (
-		ctx    sdk.Context
-		basek  *mock.BaseKeeperMock
-		chaink *mock.ChainKeeperMock
-		v      *mock.VoterMock
-		n      *mock.NexusMock
-		s      *mock.SignerMock
-		msg    *types.ConfirmTokenRequest
-		token  types.ERC20Token
-		server types.MsgServiceServer
+		ctx            sdk.Context
+		basek          *mock.BaseKeeperMock
+		chaink         *mock.ChainKeeperMock
+		v              *mock.VoterMock
+		n              *mock.NexusMock
+		multisigKeeper *mock.MultisigKeeperMock
+		msg            *types.ConfirmTokenRequest
+		token          types.ERC20Token
+		server         types.MsgServiceServer
 	)
 	setup := func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
@@ -830,12 +797,9 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 				return c, ok
 			},
 		}
-		s = &mock.SignerMock{
-			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
-				return tssTestUtils.RandKeyID(), true
-			},
-			GetSnapshotCounterForKeyIDFunc: func(sdk.Context, tss.KeyID) (int64, bool) {
-				return rand.PosI64(), true
+		multisigKeeper = &mock.MultisigKeeperMock{
+			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.ChainName) (multisig.KeyID, bool) {
+				return multisigTestUtils.KeyID(), true
 			},
 		}
 
@@ -857,7 +821,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 		stakingKeeper := &mock.StakingKeeperMock{
 			PowerReductionFunc: func(ctx sdk.Context) sdk.Int { return sdk.OneInt() },
 		}
-		server = keeper.NewMsgServerImpl(basek, &mock.TSSMock{}, n, s, v, snapshotKeeper, stakingKeeper, &mock.SlashingKeeperMock{})
+		server = keeper.NewMsgServerImpl(basek, n, v, snapshotKeeper, stakingKeeper, &mock.SlashingKeeperMock{}, multisigKeeper)
 	}
 
 	repeats := 20
@@ -919,15 +883,14 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 
 func TestAddChain(t *testing.T) {
 	var (
-		ctx     sdk.Context
-		basek   *mock.BaseKeeperMock
-		chaink  *mock.ChainKeeperMock
-		tssMock *mock.TSSMock
-		n       *mock.NexusMock
-		msg     *types.AddChainRequest
-		server  types.MsgServiceServer
-		name    nexus.ChainName
-		params  types.Params
+		ctx    sdk.Context
+		basek  *mock.BaseKeeperMock
+		chaink *mock.ChainKeeperMock
+		n      *mock.NexusMock
+		msg    *types.AddChainRequest
+		server types.MsgServiceServer
+		name   nexus.ChainName
+		params types.Params
 	)
 
 	setup := func() {
@@ -949,8 +912,6 @@ func TestAddChain(t *testing.T) {
 			SetParamsFunc: func(sdk.Context, types.Params) {},
 		}
 
-		tssMock = &mock.TSSMock{}
-
 		n = &mock.NexusMock{
 			IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool { return true },
 			GetChainFunc: func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
@@ -970,7 +931,7 @@ func TestAddChain(t *testing.T) {
 			Params: params,
 		}
 
-		server = keeper.NewMsgServerImpl(basek, tssMock, n, &mock.SignerMock{}, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{})
+		server = keeper.NewMsgServerImpl(basek, n, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{}, &mock.MultisigKeeperMock{})
 	}
 
 	repeats := 20
@@ -1004,14 +965,14 @@ func TestAddChain(t *testing.T) {
 
 func TestHandleMsgConfirmDeposit(t *testing.T) {
 	var (
-		ctx    sdk.Context
-		basek  *mock.BaseKeeperMock
-		chaink *mock.ChainKeeperMock
-		v      *mock.VoterMock
-		s      *mock.SignerMock
-		n      *mock.NexusMock
-		msg    *types.ConfirmDepositRequest
-		server types.MsgServiceServer
+		ctx            sdk.Context
+		basek          *mock.BaseKeeperMock
+		chaink         *mock.ChainKeeperMock
+		v              *mock.VoterMock
+		multisigKeeper *mock.MultisigKeeperMock
+		n              *mock.NexusMock
+		msg            *types.ConfirmDepositRequest
+		server         types.MsgServiceServer
 	)
 	setup := func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
@@ -1046,12 +1007,9 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		v = &mock.VoterMock{
 			InitializePollFunc: func(ctx sdk.Context, pollBuilder vote.PollBuilder) (vote.PollID, error) { return 0, nil },
 		}
-		s = &mock.SignerMock{
-			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
-				return tssTestUtils.RandKeyID(), true
-			},
-			GetSnapshotCounterForKeyIDFunc: func(sdk.Context, tss.KeyID) (int64, bool) {
-				return rand.PosI64(), true
+		multisigKeeper = &mock.MultisigKeeperMock{
+			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.ChainName) (multisig.KeyID, bool) {
+				return multisigTestUtils.KeyID(), true
 			},
 		}
 		chains := map[nexus.ChainName]nexus.Chain{
@@ -1083,7 +1041,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		stakingKeeper := &mock.StakingKeeperMock{
 			PowerReductionFunc: func(ctx sdk.Context) sdk.Int { return sdk.OneInt() },
 		}
-		server = keeper.NewMsgServerImpl(basek, &mock.TSSMock{}, n, s, v, snapshotKeeper, stakingKeeper, &mock.SlashingKeeperMock{})
+		server = keeper.NewMsgServerImpl(basek, n, v, snapshotKeeper, stakingKeeper, &mock.SlashingKeeperMock{}, multisigKeeper)
 	}
 
 	repeats := 20
@@ -1119,14 +1077,14 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 
 func TestHandleMsgCreateDeployToken(t *testing.T) {
 	var (
-		ctx    sdk.Context
-		basek  *mock.BaseKeeperMock
-		chaink *mock.ChainKeeperMock
-		v      *mock.VoterMock
-		s      *mock.SignerMock
-		n      *mock.NexusMock
-		msg    *types.CreateDeployTokenRequest
-		server types.MsgServiceServer
+		ctx            sdk.Context
+		basek          *mock.BaseKeeperMock
+		chaink         *mock.ChainKeeperMock
+		v              *mock.VoterMock
+		multisigKeeper *mock.MultisigKeeperMock
+		n              *mock.NexusMock
+		msg            *types.CreateDeployTokenRequest
+		server         types.MsgServiceServer
 	)
 	setup := func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
@@ -1182,16 +1140,16 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 			IsAssetRegisteredFunc: func(sdk.Context, nexus.Chain, string) bool { return true },
 			RegisterAssetFunc:     func(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset) error { return nil },
 		}
-		s = &mock.SignerMock{
-			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
-				return tssTestUtils.RandKeyID(), true
+		multisigKeeper = &mock.MultisigKeeperMock{
+			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.ChainName) (multisig.KeyID, bool) {
+				return multisigTestUtils.KeyID(), true
 			},
-			GetNextKeyIDFunc: func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
+			GetNextKeyIDFunc: func(ctx sdk.Context, chain nexus.ChainName) (multisig.KeyID, bool) {
 				return "", false
 			},
 		}
 
-		server = keeper.NewMsgServerImpl(basek, &mock.TSSMock{}, n, s, v, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{})
+		server = keeper.NewMsgServerImpl(basek, n, v, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{}, multisigKeeper)
 	}
 
 	repeats := 20
@@ -1239,10 +1197,10 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 		assert.Error(t, err)
 	}).Repeat(repeats))
 
-	t.Run("should return error when next master key is set", testutils.Func(func(t *testing.T) {
+	t.Run("should return error when next key is set", testutils.Func(func(t *testing.T) {
 		setup()
-		s.GetNextKeyIDFunc = func(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool) {
-			return "", true
+		multisigKeeper.GetNextKeyIDFunc = func(ctx sdk.Context, chain nexus.ChainName) (multisig.KeyID, bool) {
+			return multisigTestUtils.KeyID(), true
 		}
 
 		_, err := server.CreateDeployToken(sdk.WrapSDKContext(ctx), msg)
@@ -1250,9 +1208,9 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 		assert.Error(t, err)
 	}).Repeat(repeats))
 
-	t.Run("should return error when master key is not set", testutils.Func(func(t *testing.T) {
+	t.Run("should return error when key is not set", testutils.Func(func(t *testing.T) {
 		setup()
-		s.GetCurrentKeyIDFunc = func(sdk.Context, nexus.Chain, tss.KeyRole) (tss.KeyID, bool) { return "", false }
+		multisigKeeper.GetCurrentKeyIDFunc = func(ctx sdk.Context, chainName nexus.ChainName) (multisig.KeyID, bool) { return "", false }
 
 		_, err := server.CreateDeployToken(sdk.WrapSDKContext(ctx), msg)
 
@@ -1269,7 +1227,7 @@ func TestRetryFailedEvent(t *testing.T) {
 		n   *mock.NexusMock
 	)
 
-	ctx, msgServer, bk, _, n, _, _, _ := setup()
+	ctx, msgServer, bk, n, _, _, _ := setup()
 	contractCallQueue := &utilsMock.KVQueueMock{
 		EnqueueFunc: func(key utils.Key, value codec.ProtoMarshaler) {},
 	}
