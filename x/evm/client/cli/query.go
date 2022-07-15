@@ -14,8 +14,8 @@ import (
 	evmclient "github.com/axelarnetwork/axelar-core/x/evm/client"
 	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 // GetQueryCmd returns the cli query commands for this module
@@ -68,7 +68,7 @@ func GetCmdAddress(queryRoute string) *cobra.Command {
 
 		req := types.KeyAddressRequest{
 			Chain: utils.NormalizeString(args[0]),
-			KeyID: tss.KeyID(*keyID),
+			KeyID: multisig.KeyID(*keyID),
 		}
 
 		res, err := queryClient.KeyAddress(cmd.Context(), &req)

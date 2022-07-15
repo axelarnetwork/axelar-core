@@ -7,6 +7,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
@@ -14,7 +15,7 @@ import (
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
-//go:generate moq -out ./mock/expected_keepers.go -pkg mock . TSS Voter Signer Nexus Snapshotter BaseKeeper ChainKeeper Rewarder StakingKeeper SlashingKeeper
+//go:generate moq -out ./mock/expected_keepers.go -pkg mock . TSS Voter Signer Nexus Snapshotter BaseKeeper ChainKeeper Rewarder StakingKeeper SlashingKeeper MultisigKeeper
 
 // BaseKeeper is implemented by this module's base keeper
 type BaseKeeper interface {
@@ -160,4 +161,10 @@ type StakingKeeper interface {
 // SlashingKeeper provides functionality to manage slashing info for a validator
 type SlashingKeeper interface {
 	IsTombstoned(ctx sdk.Context, consAddr sdk.ConsAddress) bool
+}
+
+// MultisigKeeper provides functionality to the multisig module
+type MultisigKeeper interface {
+	GetCurrentKeyID(ctx sdk.Context, chainName nexus.ChainName) (multisig.KeyID, bool)
+	GetKey(ctx sdk.Context, keyID multisig.KeyID) (multisig.Key, bool)
 }

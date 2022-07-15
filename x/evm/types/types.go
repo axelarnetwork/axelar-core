@@ -21,8 +21,10 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 )
 
@@ -1838,4 +1840,21 @@ func (id EventID) Validate() error {
 	}
 
 	return nil
+}
+
+// ParseMultisigKey parses the given multisig key and returns the weight for
+// each particpant evm address and the threshold
+func ParseMultisigKey(key multisig.Key) (map[string]sdk.Uint, sdk.Uint) {
+	participants := key.GetParticipants()
+	addressWeights := make(map[string]sdk.Uint, len(participants))
+
+	for _, p := range participants {
+		pubKey := funcs.MustOk(key.GetPubKey(p))
+		weight := key.GetWeight(p)
+		address := crypto.PubkeyToAddress(*funcs.Must(btcec.ParsePubKey(pubKey, btcec.S256())).ToECDSA())
+
+		addressWeights[address.Hex()] = weight
+	}
+
+	return addressWeights, key.GetMinPassingWeight()
 }

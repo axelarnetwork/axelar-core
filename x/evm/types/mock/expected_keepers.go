@@ -6,6 +6,7 @@ package mock
 import (
 	utils "github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	github_com_axelarnetwork_axelar_core_x_nexus_exported "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
@@ -4819,5 +4820,125 @@ func (mock *SlashingKeeperMock) IsTombstonedCalls() []struct {
 	mock.lockIsTombstoned.RLock()
 	calls = mock.calls.IsTombstoned
 	mock.lockIsTombstoned.RUnlock()
+	return calls
+}
+
+// Ensure, that MultisigKeeperMock does implement types.MultisigKeeper.
+// If this is not the case, regenerate this file with moq.
+var _ types.MultisigKeeper = &MultisigKeeperMock{}
+
+// MultisigKeeperMock is a mock implementation of types.MultisigKeeper.
+//
+// 	func TestSomethingThatUsesMultisigKeeper(t *testing.T) {
+//
+// 		// make and configure a mocked types.MultisigKeeper
+// 		mockedMultisigKeeper := &MultisigKeeperMock{
+// 			GetCurrentKeyIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (multisig.KeyID, bool) {
+// 				panic("mock out the GetCurrentKeyID method")
+// 			},
+// 			GetKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID multisig.KeyID) (multisig.Key, bool) {
+// 				panic("mock out the GetKey method")
+// 			},
+// 		}
+//
+// 		// use mockedMultisigKeeper in code that requires types.MultisigKeeper
+// 		// and then make assertions.
+//
+// 	}
+type MultisigKeeperMock struct {
+	// GetCurrentKeyIDFunc mocks the GetCurrentKeyID method.
+	GetCurrentKeyIDFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (multisig.KeyID, bool)
+
+	// GetKeyFunc mocks the GetKey method.
+	GetKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID multisig.KeyID) (multisig.Key, bool)
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// GetCurrentKeyID holds details about calls to the GetCurrentKeyID method.
+		GetCurrentKeyID []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// ChainName is the chainName argument value.
+			ChainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+		}
+		// GetKey holds details about calls to the GetKey method.
+		GetKey []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// KeyID is the keyID argument value.
+			KeyID multisig.KeyID
+		}
+	}
+	lockGetCurrentKeyID sync.RWMutex
+	lockGetKey          sync.RWMutex
+}
+
+// GetCurrentKeyID calls GetCurrentKeyIDFunc.
+func (mock *MultisigKeeperMock) GetCurrentKeyID(ctx github_com_cosmos_cosmos_sdk_types.Context, chainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (multisig.KeyID, bool) {
+	if mock.GetCurrentKeyIDFunc == nil {
+		panic("MultisigKeeperMock.GetCurrentKeyIDFunc: method is nil but MultisigKeeper.GetCurrentKeyID was just called")
+	}
+	callInfo := struct {
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
+		ChainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+	}{
+		Ctx:       ctx,
+		ChainName: chainName,
+	}
+	mock.lockGetCurrentKeyID.Lock()
+	mock.calls.GetCurrentKeyID = append(mock.calls.GetCurrentKeyID, callInfo)
+	mock.lockGetCurrentKeyID.Unlock()
+	return mock.GetCurrentKeyIDFunc(ctx, chainName)
+}
+
+// GetCurrentKeyIDCalls gets all the calls that were made to GetCurrentKeyID.
+// Check the length with:
+//     len(mockedMultisigKeeper.GetCurrentKeyIDCalls())
+func (mock *MultisigKeeperMock) GetCurrentKeyIDCalls() []struct {
+	Ctx       github_com_cosmos_cosmos_sdk_types.Context
+	ChainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+} {
+	var calls []struct {
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
+		ChainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+	}
+	mock.lockGetCurrentKeyID.RLock()
+	calls = mock.calls.GetCurrentKeyID
+	mock.lockGetCurrentKeyID.RUnlock()
+	return calls
+}
+
+// GetKey calls GetKeyFunc.
+func (mock *MultisigKeeperMock) GetKey(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID multisig.KeyID) (multisig.Key, bool) {
+	if mock.GetKeyFunc == nil {
+		panic("MultisigKeeperMock.GetKeyFunc: method is nil but MultisigKeeper.GetKey was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		KeyID multisig.KeyID
+	}{
+		Ctx:   ctx,
+		KeyID: keyID,
+	}
+	mock.lockGetKey.Lock()
+	mock.calls.GetKey = append(mock.calls.GetKey, callInfo)
+	mock.lockGetKey.Unlock()
+	return mock.GetKeyFunc(ctx, keyID)
+}
+
+// GetKeyCalls gets all the calls that were made to GetKey.
+// Check the length with:
+//     len(mockedMultisigKeeper.GetKeyCalls())
+func (mock *MultisigKeeperMock) GetKeyCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	KeyID multisig.KeyID
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		KeyID multisig.KeyID
+	}
+	mock.lockGetKey.RLock()
+	calls = mock.calls.GetKey
+	mock.lockGetKey.RUnlock()
 	return calls
 }
