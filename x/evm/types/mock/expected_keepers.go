@@ -4839,6 +4839,12 @@ var _ types.MultisigKeeper = &MultisigKeeperMock{}
 // 			GetKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID multisig.KeyID) (multisig.Key, bool) {
 // 				panic("mock out the GetKey method")
 // 			},
+// 			GetNextKeyIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (multisig.KeyID, bool) {
+// 				panic("mock out the GetNextKeyID method")
+// 			},
+// 			RotateKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) error {
+// 				panic("mock out the RotateKey method")
+// 			},
 // 		}
 //
 // 		// use mockedMultisigKeeper in code that requires types.MultisigKeeper
@@ -4851,6 +4857,12 @@ type MultisigKeeperMock struct {
 
 	// GetKeyFunc mocks the GetKey method.
 	GetKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID multisig.KeyID) (multisig.Key, bool)
+
+	// GetNextKeyIDFunc mocks the GetNextKeyID method.
+	GetNextKeyIDFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (multisig.KeyID, bool)
+
+	// RotateKeyFunc mocks the RotateKey method.
+	RotateKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) error
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -4868,9 +4880,25 @@ type MultisigKeeperMock struct {
 			// KeyID is the keyID argument value.
 			KeyID multisig.KeyID
 		}
+		// GetNextKeyID holds details about calls to the GetNextKeyID method.
+		GetNextKeyID []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// ChainName is the chainName argument value.
+			ChainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+		}
+		// RotateKey holds details about calls to the RotateKey method.
+		RotateKey []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// ChainName is the chainName argument value.
+			ChainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+		}
 	}
 	lockGetCurrentKeyID sync.RWMutex
 	lockGetKey          sync.RWMutex
+	lockGetNextKeyID    sync.RWMutex
+	lockRotateKey       sync.RWMutex
 }
 
 // GetCurrentKeyID calls GetCurrentKeyIDFunc.
@@ -4940,5 +4968,75 @@ func (mock *MultisigKeeperMock) GetKeyCalls() []struct {
 	mock.lockGetKey.RLock()
 	calls = mock.calls.GetKey
 	mock.lockGetKey.RUnlock()
+	return calls
+}
+
+// GetNextKeyID calls GetNextKeyIDFunc.
+func (mock *MultisigKeeperMock) GetNextKeyID(ctx github_com_cosmos_cosmos_sdk_types.Context, chainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (multisig.KeyID, bool) {
+	if mock.GetNextKeyIDFunc == nil {
+		panic("MultisigKeeperMock.GetNextKeyIDFunc: method is nil but MultisigKeeper.GetNextKeyID was just called")
+	}
+	callInfo := struct {
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
+		ChainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+	}{
+		Ctx:       ctx,
+		ChainName: chainName,
+	}
+	mock.lockGetNextKeyID.Lock()
+	mock.calls.GetNextKeyID = append(mock.calls.GetNextKeyID, callInfo)
+	mock.lockGetNextKeyID.Unlock()
+	return mock.GetNextKeyIDFunc(ctx, chainName)
+}
+
+// GetNextKeyIDCalls gets all the calls that were made to GetNextKeyID.
+// Check the length with:
+//     len(mockedMultisigKeeper.GetNextKeyIDCalls())
+func (mock *MultisigKeeperMock) GetNextKeyIDCalls() []struct {
+	Ctx       github_com_cosmos_cosmos_sdk_types.Context
+	ChainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+} {
+	var calls []struct {
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
+		ChainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+	}
+	mock.lockGetNextKeyID.RLock()
+	calls = mock.calls.GetNextKeyID
+	mock.lockGetNextKeyID.RUnlock()
+	return calls
+}
+
+// RotateKey calls RotateKeyFunc.
+func (mock *MultisigKeeperMock) RotateKey(ctx github_com_cosmos_cosmos_sdk_types.Context, chainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) error {
+	if mock.RotateKeyFunc == nil {
+		panic("MultisigKeeperMock.RotateKeyFunc: method is nil but MultisigKeeper.RotateKey was just called")
+	}
+	callInfo := struct {
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
+		ChainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+	}{
+		Ctx:       ctx,
+		ChainName: chainName,
+	}
+	mock.lockRotateKey.Lock()
+	mock.calls.RotateKey = append(mock.calls.RotateKey, callInfo)
+	mock.lockRotateKey.Unlock()
+	return mock.RotateKeyFunc(ctx, chainName)
+}
+
+// RotateKeyCalls gets all the calls that were made to RotateKey.
+// Check the length with:
+//     len(mockedMultisigKeeper.RotateKeyCalls())
+func (mock *MultisigKeeperMock) RotateKeyCalls() []struct {
+	Ctx       github_com_cosmos_cosmos_sdk_types.Context
+	ChainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+} {
+	var calls []struct {
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
+		ChainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+	}
+	mock.lockRotateKey.RLock()
+	calls = mock.calls.RotateKey
+	mock.lockRotateKey.RUnlock()
 	return calls
 }

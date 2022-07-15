@@ -166,5 +166,7 @@ type SlashingKeeper interface {
 // MultisigKeeper provides functionality to the multisig module
 type MultisigKeeper interface {
 	GetCurrentKeyID(ctx sdk.Context, chainName nexus.ChainName) (multisig.KeyID, bool)
+	GetNextKeyID(ctx sdk.Context, chainName nexus.ChainName) (multisig.KeyID, bool)
 	GetKey(ctx sdk.Context, keyID multisig.KeyID) (multisig.Key, bool)
+	RotateKey(ctx sdk.Context, chainName nexus.ChainName) error
 }
