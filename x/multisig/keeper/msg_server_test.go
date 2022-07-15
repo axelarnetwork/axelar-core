@@ -235,63 +235,83 @@ func TestMsgServer(t *testing.T) {
 					assert.Error(t, err)
 				}),
 
-				Then("should start signing if the key exists", func(t *testing.T) {
+				Then("should fail if the key is inactive", func(t *testing.T) {
 					err := k.Sign(ctx, keyID, rand.Bytes(100), module)
 
-					assert.NoError(t, err)
-					assert.Len(t, k.GetSigningSessionsByExpiry(ctx, ctx.BlockHeight()+types.DefaultParams().SigningTimeout), 1)
+					assert.ErrorContains(t, err, "not activated")
 				}),
 
-				When("signing session exists", func() {
-					payload := rand.Bytes(100)
-					hash := sha256.Sum256(payload)
-					payloadHash = hash[:]
+				Then("should fail if the key is assigned", func(t *testing.T) {
+					key.State = types.Assigned
+					k.SetKey(ctx, key)
 
-					k.Sign(ctx, keyID, payload, module)
+					err := k.Sign(ctx, keyID, rand.Bytes(100), module)
 
-					events := ctx.EventManager().Events().ToABCIEvents()
-					sigID = funcs.Must(sdk.ParseTypedEvent(events[len(events)-1])).(*types.SigningStarted).SigID
-				}).
-					Branch(
-						Then("should fail if the signing session does not exist", func(t *testing.T) {
-							pIndex := rand.I64Between(1, participantCount)
-							signature := ecdsa.Sign(privateKeys[pIndex], payloadHash).Serialize()
-							_, err := msgServer.SubmitSignature(sdk.WrapSDKContext(ctx), types.NewSubmitSignatureRequest(proxies[pIndex], uint64(rand.PosI64()), signature))
+					assert.ErrorContains(t, err, "not activated")
+				}),
 
-							assert.Error(t, err)
-						}),
+				When("key is active", func() {
+					key.State = types.Active
+					k.SetKey(ctx, key)
+				}).Branch(
+					Then("should start signing if the key exists", func(t *testing.T) {
+						err := k.Sign(ctx, keyID, rand.Bytes(100), module)
 
-						Then("should fail if proxy is not registered", func(t *testing.T) {
-							signature := ecdsa.Sign(privateKeys[rand.I64Between(1, participantCount)], payloadHash).Serialize()
-							_, err := msgServer.SubmitSignature(sdk.WrapSDKContext(ctx), types.NewSubmitSignatureRequest(rand.AccAddr(), sigID, signature))
+						assert.NoError(t, err)
+						assert.Len(t, k.GetSigningSessionsByExpiry(ctx, ctx.BlockHeight()+types.DefaultParams().SigningTimeout), 1)
+					}),
 
-							assert.Error(t, err)
-						}),
+					When("signing session exists", func() {
+						payload := rand.Bytes(100)
+						hash := sha256.Sum256(payload)
+						payloadHash = hash[:]
 
-						Then("should succeed", func(t *testing.T) {
-							for i, proxy := range proxies {
-								signature := ecdsa.Sign(privateKeys[i], payloadHash).Serialize()
-								_, err := msgServer.SubmitSignature(sdk.WrapSDKContext(ctx), types.NewSubmitSignatureRequest(proxy, sigID, signature))
+						k.Sign(ctx, keyID, payload, module)
 
+						events := ctx.EventManager().Events().ToABCIEvents()
+						sigID = funcs.Must(sdk.ParseTypedEvent(events[len(events)-1])).(*types.SigningStarted).SigID
+					}).
+						Branch(
+							Then("should fail if the signing session does not exist", func(t *testing.T) {
+								pIndex := rand.I64Between(1, participantCount)
+								signature := ecdsa.Sign(privateKeys[pIndex], payloadHash).Serialize()
+								_, err := msgServer.SubmitSignature(sdk.WrapSDKContext(ctx), types.NewSubmitSignatureRequest(proxies[pIndex], uint64(rand.PosI64()), signature))
+
+								assert.Error(t, err)
+							}),
+
+							Then("should fail if proxy is not registered", func(t *testing.T) {
+								signature := ecdsa.Sign(privateKeys[rand.I64Between(1, participantCount)], payloadHash).Serialize()
+								_, err := msgServer.SubmitSignature(sdk.WrapSDKContext(ctx), types.NewSubmitSignatureRequest(rand.AccAddr(), sigID, signature))
+
+								assert.Error(t, err)
+							}),
+
+							Then("should succeed", func(t *testing.T) {
+								for i, proxy := range proxies {
+									signature := ecdsa.Sign(privateKeys[i], payloadHash).Serialize()
+									_, err := msgServer.SubmitSignature(sdk.WrapSDKContext(ctx), types.NewSubmitSignatureRequest(proxy, sigID, signature))
+
+									assert.NoError(t, err)
+								}
+
+								assert.Len(t, k.GetSigningSessionsByExpiry(ctx, ctx.BlockHeight()+types.DefaultParams().SigningTimeout), 0)
+								actual := k.GetSigningSessionsByExpiry(ctx, ctx.BlockHeight()+types.DefaultParams().SigningGracePeriod+1)
+								assert.Len(t, actual, 1)
+
+								sig, err := actual[0].Result()
 								assert.NoError(t, err)
-							}
+								assert.NoError(t, sig.ValidateBasic())
 
-							assert.Len(t, k.GetSigningSessionsByExpiry(ctx, ctx.BlockHeight()+types.DefaultParams().SigningTimeout), 0)
-							actual := k.GetSigningSessionsByExpiry(ctx, ctx.BlockHeight()+types.DefaultParams().SigningGracePeriod+1)
-							assert.Len(t, actual, 1)
+								participantsWeight := sdk.ZeroUint()
+								for p := range sig.GetSigs() {
+									participantsWeight = participantsWeight.Add(key.GetSnapshot().GetParticipantWeight(funcs.Must(sdk.ValAddressFromBech32(p))))
+								}
 
-							sig, err := actual[0].Result()
-							assert.NoError(t, err)
-							assert.NoError(t, sig.ValidateBasic())
-
-							participantsWeight := sdk.ZeroUint()
-							for p := range sig.GetSigs() {
-								participantsWeight = participantsWeight.Add(key.GetSnapshot().GetParticipantWeight(funcs.Must(sdk.ValAddressFromBech32(p))))
-							}
-
-							assert.True(t, participantsWeight.GTE(key.GetMinPassingWeight()))
-						}),
-					),
+								assert.True(t, participantsWeight.GTE(key.GetMinPassingWeight()))
+							}),
+						),
+				),
 			).
 			Run(t)
 	})

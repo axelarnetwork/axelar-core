@@ -113,6 +113,13 @@ func (store KVStore) Iterator(prefix Key) Iterator {
 	return iterator{Iterator: iter, cdc: store.cdc}
 }
 
+// ReverseIterator returns an Iterator that can handle a structured Key and
+// interate reversely
+func (store KVStore) ReverseIterator(prefix Key) Iterator {
+	iter := sdk.KVStoreReversePrefixIterator(store.KVStore, append(prefix.AsKey(), []byte(DefaultDelimiter)...))
+	return iterator{Iterator: iter, cdc: store.cdc}
+}
+
 // Iterator is an easier and safer to use sdk.Iterator extension
 type Iterator interface {
 	sdk.Iterator

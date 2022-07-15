@@ -243,6 +243,8 @@
     - [MultisigState](#axelar.multisig.exported.v1beta1.MultisigState)
   
 - [axelar/multisig/v1beta1/events.proto](#axelar/multisig/v1beta1/events.proto)
+    - [KeyAssigned](#axelar.multisig.v1beta1.KeyAssigned)
+    - [KeyRotated](#axelar.multisig.v1beta1.KeyRotated)
     - [KeygenCompleted](#axelar.multisig.v1beta1.KeygenCompleted)
     - [KeygenExpired](#axelar.multisig.v1beta1.KeygenExpired)
     - [KeygenStarted](#axelar.multisig.v1beta1.KeygenStarted)
@@ -273,11 +275,14 @@
 - [axelar/multisig/v1beta1/types.proto](#axelar/multisig/v1beta1/types.proto)
     - [Key](#axelar.multisig.v1beta1.Key)
     - [Key.PubKeysEntry](#axelar.multisig.v1beta1.Key.PubKeysEntry)
+    - [KeyEpoch](#axelar.multisig.v1beta1.KeyEpoch)
     - [KeygenSession](#axelar.multisig.v1beta1.KeygenSession)
     - [KeygenSession.IsPubKeyReceivedEntry](#axelar.multisig.v1beta1.KeygenSession.IsPubKeyReceivedEntry)
     - [MultiSig](#axelar.multisig.v1beta1.MultiSig)
     - [MultiSig.SigsEntry](#axelar.multisig.v1beta1.MultiSig.SigsEntry)
     - [SigningSession](#axelar.multisig.v1beta1.SigningSession)
+  
+    - [KeyState](#axelar.multisig.v1beta1.KeyState)
   
 - [axelar/nexus/v1beta1/params.proto](#axelar/nexus/v1beta1/params.proto)
     - [Params](#axelar.nexus.v1beta1.Params)
@@ -3802,6 +3807,40 @@ QueryService defines the gRPC querier service.
 
 
 
+<a name="axelar.multisig.v1beta1.KeyAssigned"></a>
+
+### KeyAssigned
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `module` | [string](#string) |  |  |
+| `chain` | [string](#string) |  |  |
+| `key_id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.KeyRotated"></a>
+
+### KeyRotated
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `module` | [string](#string) |  |  |
+| `chain` | [string](#string) |  |  |
+| `key_id` | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="axelar.multisig.v1beta1.KeygenCompleted"></a>
 
 ### KeygenCompleted
@@ -4175,6 +4214,7 @@ Msg defines the multisig Msg service.
 | `snapshot` | [axelar.snapshot.exported.v1beta1.Snapshot](#axelar.snapshot.exported.v1beta1.Snapshot) |  |  |
 | `pub_keys` | [Key.PubKeysEntry](#axelar.multisig.v1beta1.Key.PubKeysEntry) | repeated |  |
 | `signing_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
+| `state` | [KeyState](#axelar.multisig.v1beta1.KeyState) |  |  |
 
 
 
@@ -4191,6 +4231,23 @@ Msg defines the multisig Msg service.
 | ----- | ---- | ----- | ----------- |
 | `key` | [string](#string) |  |  |
 | `value` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.KeyEpoch"></a>
+
+### KeyEpoch
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `epoch` | [uint64](#uint64) |  |  |
+| `chain` | [string](#string) |  |  |
+| `key_id` | [string](#string) |  |  |
 
 
 
@@ -4290,6 +4347,19 @@ Msg defines the multisig Msg service.
 
 
  <!-- end messages -->
+
+
+<a name="axelar.multisig.v1beta1.KeyState"></a>
+
+### KeyState
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| KEY_STATE_UNSPECIFIED | 0 |  |
+| KEY_STATE_ASSIGNED | 1 |  |
+| KEY_STATE_ACTIVE | 2 |  |
+
 
  <!-- end enums -->
 

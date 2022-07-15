@@ -79,3 +79,27 @@ message SignatureSubmitted {
                               "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
   bytes signature = 4 [ (gogoproto.casttype) = "Signature" ];
 }
+
+message KeyAssigned {
+  string module = 1;
+  string chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string key_id = 3 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
+  ];
+}
+
+message KeyRotated {
+  string module = 1;
+  string chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string key_id = 3 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
+  ];
+}
