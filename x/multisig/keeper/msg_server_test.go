@@ -177,7 +177,7 @@ func TestMsgServer(t *testing.T) {
 
 	t.Run("signing", func(t *testing.T) {
 		var (
-			payloadHash types.Hash
+			payloadHash exported.Hash
 			sigID       uint64
 			key         types.Key
 		)
@@ -226,18 +226,18 @@ func TestMsgServer(t *testing.T) {
 			Branch(
 				Then("should panic if sig handler is not registered for the given module", func(t *testing.T) {
 					assert.Panics(t, func() {
-						k.Sign(ctx, exported.KeyID(rand.HexStr(5)), rand.Bytes(types.HashLength), rand.AlphaStrBetween(3, 3))
+						k.Sign(ctx, exported.KeyID(rand.HexStr(5)), rand.Bytes(exported.HashLength), rand.AlphaStrBetween(3, 3))
 					})
 				}),
 
 				Then("should fail if the key does not exist", func(t *testing.T) {
-					err := k.Sign(ctx, exported.KeyID(rand.HexStr(5)), rand.Bytes(types.HashLength), module)
+					err := k.Sign(ctx, exported.KeyID(rand.HexStr(5)), rand.Bytes(exported.HashLength), module)
 
 					assert.Error(t, err)
 				}),
 
 				Then("should fail if the key is inactive", func(t *testing.T) {
-					err := k.Sign(ctx, keyID, rand.Bytes(types.HashLength), module)
+					err := k.Sign(ctx, keyID, rand.Bytes(exported.HashLength), module)
 
 					assert.ErrorContains(t, err, "not activated")
 				}),
@@ -246,7 +246,7 @@ func TestMsgServer(t *testing.T) {
 					key.State = types.Assigned
 					k.SetKey(ctx, key)
 
-					err := k.Sign(ctx, keyID, rand.Bytes(types.HashLength), module)
+					err := k.Sign(ctx, keyID, rand.Bytes(exported.HashLength), module)
 
 					assert.ErrorContains(t, err, "not activated")
 				}),
@@ -259,20 +259,20 @@ func TestMsgServer(t *testing.T) {
 						err := k.Sign(ctx, keyID, rand.Bytes(100), module)
 						assert.Error(t, err)
 
-						var zeroHash [types.HashLength]byte
+						var zeroHash [exported.HashLength]byte
 						err = k.Sign(ctx, keyID, zeroHash[:], module)
 						assert.Error(t, err)
 					}),
 
 					Then("should start signing if the key exists", func(t *testing.T) {
-						err := k.Sign(ctx, keyID, rand.Bytes(types.HashLength), module)
+						err := k.Sign(ctx, keyID, rand.Bytes(exported.HashLength), module)
 
 						assert.NoError(t, err)
 						assert.Len(t, k.GetSigningSessionsByExpiry(ctx, ctx.BlockHeight()+types.DefaultParams().SigningTimeout), 1)
 					}),
 
 					When("signing session exists", func() {
-						payloadHash = rand.Bytes(types.HashLength)
+						payloadHash = rand.Bytes(exported.HashLength)
 						k.Sign(ctx, keyID, payloadHash, module)
 
 						events := ctx.EventManager().Events().ToABCIEvents()

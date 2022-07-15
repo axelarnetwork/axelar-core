@@ -58,7 +58,9 @@ message MultiSig {
     (gogoproto.casttype) =
         "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
   ];
-  bytes payload_hash = 2 [ (gogoproto.casttype) = "Hash" ];
+  bytes payload_hash = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/multisig/exported.Hash" ];
   map<string, bytes> sigs = 3 [ (gogoproto.castvalue) = "Signature" ];
 }
 

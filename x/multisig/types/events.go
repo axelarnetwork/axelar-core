@@ -43,7 +43,7 @@ func NewPubKeySubmitted(keyID exported.KeyID, participant sdk.ValAddress, pubKey
 }
 
 // NewSigningStarted is the constructor for event signing started
-func NewSigningStarted(sigID uint64, key Key, payloadHash Hash, requestingModule string) *SigningStarted {
+func NewSigningStarted(sigID uint64, key Key, payloadHash exported.Hash, requestingModule string) *SigningStarted {
 	return &SigningStarted{
 		Module:           ModuleName,
 		SigID:            sigID,

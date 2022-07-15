@@ -64,7 +64,7 @@ func (k Keeper) GetSigningSessionsByExpiry(ctx sdk.Context, expiry int64) []type
 
 // Sign starts a signing session to sign the given payload's hash with the given
 // key ID
-func (k Keeper) Sign(ctx sdk.Context, keyID exported.KeyID, payloadHash types.Hash, module string, moduleMetadata ...codec.ProtoMarshaler) error {
+func (k Keeper) Sign(ctx sdk.Context, keyID exported.KeyID, payloadHash exported.Hash, module string, moduleMetadata ...codec.ProtoMarshaler) error {
 	if !k.GetSigRouter().HasHandler(module) {
 		panic(fmt.Errorf("sig handler not registered for module %s", module))
 	}
