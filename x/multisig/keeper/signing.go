@@ -77,10 +77,6 @@ func (k Keeper) Sign(ctx sdk.Context, keyID exported.KeyID, payloadHash types.Ha
 		return fmt.Errorf("key %s is not activated yet", keyID)
 	}
 
-	if err := payloadHash.ValidateBasic(); err != nil {
-		return err
-	}
-
 	params := k.getParams(ctx)
 
 	expiresAt := ctx.BlockHeight() + params.SigningTimeout
