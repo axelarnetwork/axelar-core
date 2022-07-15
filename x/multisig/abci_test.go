@@ -222,10 +222,10 @@ func newSigningSession(module string) types.SigningSession {
 	sig := typestestutils.MultiSig()
 	validators := maps.Keys(sig.GetSigs())
 
-						pubKeys := make(map[string]exported.PublicKey)
-						for _, v := range validators {
-							pubKeys[v] = funcs.Must(btcec.NewPrivateKey()).PubKey().SerializeCompressed()
-						}
+	pubKeys := make(map[string]exported.PublicKey)
+	for _, v := range validators {
+		pubKeys[v] = funcs.Must(btcec.NewPrivateKey()).PubKey().SerializeCompressed()
+	}
 
 	participants := make(map[string]snapshot.Participant)
 	for _, v := range validators {
