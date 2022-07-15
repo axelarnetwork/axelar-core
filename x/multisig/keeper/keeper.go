@@ -13,12 +13,13 @@ import (
 )
 
 var (
-	keygenPrefix        = utils.KeyFromInt(1)
-	signingPrefix       = utils.KeyFromInt(2)
-	keyPrefix           = utils.KeyFromInt(3)
-	sigPrefix           = utils.KeyFromInt(4)
-	expiryKeygenPrefix  = utils.KeyFromInt(5)
-	expirySigningPrefix = utils.KeyFromInt(6)
+	keygenPrefix           = utils.KeyFromInt(1)
+	signingPrefix          = utils.KeyFromInt(2)
+	keyPrefix              = utils.KeyFromInt(3)
+	expiryKeygenPrefix     = utils.KeyFromInt(4)
+	expirySigningPrefix    = utils.KeyFromInt(5)
+	keyEpochPrefix         = utils.KeyFromInt(6)
+	keyRotationCountPrefix = utils.KeyFromInt(7)
 
 	signingSessionCountKey = utils.KeyFromInt(100)
 )

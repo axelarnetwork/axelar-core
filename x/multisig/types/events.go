@@ -4,6 +4,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/axelarnetwork/axelar-core/x/multisig/exported"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
 // NewKeygenStarted is the constructor for event keygen started
@@ -32,7 +33,7 @@ func NewKeygenExpired(keyID exported.KeyID) *KeygenExpired {
 }
 
 // NewPubKeySubmitted is the constructor for event pub key submitted
-func NewPubKeySubmitted(keyID exported.KeyID, participant sdk.ValAddress, pubKey PublicKey) *PubKeySubmitted {
+func NewPubKeySubmitted(keyID exported.KeyID, participant sdk.ValAddress, pubKey exported.PublicKey) *PubKeySubmitted {
 	return &PubKeySubmitted{
 		Module:      ModuleName,
 		KeyID:       keyID,
@@ -76,5 +77,23 @@ func NewSignatureSubmitted(sigID uint64, participant sdk.ValAddress, signature S
 		SigID:       sigID,
 		Participant: participant,
 		Signature:   signature,
+	}
+}
+
+// NewKeyAssigned is the constructor for event key assigned
+func NewKeyAssigned(chain nexus.ChainName, keyID exported.KeyID) *KeyAssigned {
+	return &KeyAssigned{
+		Module: ModuleName,
+		Chain:  chain,
+		KeyID:  keyID,
+	}
+}
+
+// NewKeyRotated is the constructor for event key rotated
+func NewKeyRotated(chain nexus.ChainName, keyID exported.KeyID) *KeyRotated {
+	return &KeyRotated{
+		Module: ModuleName,
+		Chain:  chain,
+		KeyID:  keyID,
 	}
 }

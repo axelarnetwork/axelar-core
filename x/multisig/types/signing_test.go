@@ -104,7 +104,7 @@ func TestSigningSession(t *testing.T) {
 			validators[1].String(): snapshot.NewParticipant(validators[1], sdk.NewUint(2)),
 			validators[2].String(): snapshot.NewParticipant(validators[2], sdk.NewUint(3)),
 		}
-		publicKeys := make(map[string]types.PublicKey, len(validators))
+		publicKeys := make(map[string]exported.PublicKey, len(validators))
 		privateKeys = make(map[string]*btcec.PrivateKey, len(validators))
 		for _, v := range validators {
 			privateKey := funcs.Must(btcec.NewPrivateKey(btcec.S256()))

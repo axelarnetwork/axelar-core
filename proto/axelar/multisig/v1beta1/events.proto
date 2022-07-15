@@ -44,7 +44,10 @@ message PubKeySubmitted {
   ];
   bytes participant = 3 [ (gogoproto.casttype) =
                               "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
-  bytes pub_key = 4 [ (gogoproto.casttype) = "PublicKey" ];
+  bytes pub_key = 4 [
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.PublicKey"
+  ];
 }
 
 message SigningStarted {
@@ -57,7 +60,10 @@ message SigningStarted {
     (gogoproto.casttype) =
         "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
   ];
-  map<string, bytes> pub_keys = 4 [ (gogoproto.castvalue) = "PublicKey" ];
+  map<string, bytes> pub_keys = 4 [
+    (gogoproto.castvalue) =
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.PublicKey"
+  ];
   bytes payload_hash = 5 [ (gogoproto.casttype) = "Hash" ];
   string requesting_module = 6;
 }
@@ -78,4 +84,28 @@ message SignatureSubmitted {
   bytes participant = 3 [ (gogoproto.casttype) =
                               "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
   bytes signature = 4 [ (gogoproto.casttype) = "Signature" ];
+}
+
+message KeyAssigned {
+  string module = 1;
+  string chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string key_id = 3 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
+  ];
+}
+
+message KeyRotated {
+  string module = 1;
+  string chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string key_id = 3 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
+  ];
 }

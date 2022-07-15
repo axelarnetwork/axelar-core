@@ -45,8 +45,13 @@ func (s msgServer) RegisterChainMaintainer(c context.Context, req *types.Registe
 		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
 	}
 
-	if s.staking.Validator(ctx, validator) == nil {
+	valAddr := s.staking.Validator(ctx, validator)
+	if valAddr == nil {
 		return nil, fmt.Errorf("account %v is not registered as a validator", validator)
+	}
+
+	if !valAddr.IsBonded() {
+		return nil, fmt.Errorf("validator %v is not bonded", validator)
 	}
 
 	for _, chainStr := range req.Chains {
