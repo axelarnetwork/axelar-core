@@ -32,7 +32,7 @@ Invoke `queryTransactionStatus`:
 ```ts
 const txHash: string =
   "0xfb6fb85f11496ef58b088116cb611497e87e9c72ff0c9333aa21491e4cdd397a";
-const txStatus: GMPStatusResponse = sdk.queryTransactionStatus(txHash);
+const txStatus: GMPStatusResponse = await sdk.queryTransactionStatus(txHash);
 ```
 
 where possible status responses for txStatus are outlined below:
@@ -40,15 +40,26 @@ where possible status responses for txStatus are outlined below:
 ```ts
 interface GMPStatusResponse {
   status: GMPStatus;
-  details: any;
-  call: any;
+  gasPaidInfo?: GasPaidInfo;
+  errors?: any;
+  callData?: any;
 }
 enum GMPStatus {
-  CALL = "call",
-  APPROVED = "approved",
-  EXECUTED = "executed",
-  ERROR = "error",
+  SRC_GATEWAY_CALLED = "source_gateway_called",
+  DEST_GATEWAY_APPROVED = "destination_gateway_approved",
+  DEST_EXECUTED = "destination_executed",
+  DEST_ERROR = "error",
+  ERROR_FETCHING_STATUS = "error_fetching_status",
+}
+interface GasPaidInfo {
+  status: GasPaidStatus;
+  details?: any;
+}
+enum GasPaidStatus {
   GAS_UNPAID = "gas_unpaid",
+  GAS_PAID = "gas_paid",
+  GAS_PAID_NOT_ENOUGH_GAS = "gas_paid_not_enough_gas",
+  GAS_PAID_ENOUGH_GAS = "gas_paid_enough_gas",
 }
 ```
 
