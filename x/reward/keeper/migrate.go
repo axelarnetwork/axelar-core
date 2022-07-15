@@ -60,12 +60,6 @@ var KeyTssRelativeInflationRate = []byte("TssRelativeInflationRate")
 type OldParams types.Params
 
 func (m *OldParams) ParamSetPairs() paramtypes.ParamSetPairs {
-	/*
-		because the subspace package makes liberal use of pointers to set and get values from the store,
-		this method needs to have a pointer receiver AND NewParamSetPair needs to receive the
-		parameter values as pointer arguments, otherwise either the internal type reflection panics or the value will not be
-		set on the correct Params data struct
-	*/
 	return paramtypes.ParamSetPairs{
 		paramtypes.NewParamSetPair(types.KeyExternalChainVotingInflationRate, &m.ExternalChainVotingInflationRate, validateExternalChainVotingInflationRate),
 		paramtypes.NewParamSetPair(KeyTssRelativeInflationRate, &m.KeyMgmtRelativeInflationRate, validateTSSRelativeInflationRate),
