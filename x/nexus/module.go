@@ -84,6 +84,7 @@ type AppModule struct {
 	AppModuleBasic
 	keeper      keeper.Keeper
 	snapshotter types.Snapshotter
+	slashing    types.SlashingKeeper
 	staking     types.StakingKeeper
 	axelarnet   types.AxelarnetKeeper
 	evm         types.EVMBaseKeeper
@@ -91,11 +92,12 @@ type AppModule struct {
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(k keeper.Keeper, snapshotter types.Snapshotter, staking types.StakingKeeper, axelarnet types.AxelarnetKeeper, evm types.EVMBaseKeeper, reward types.RewardKeeper) AppModule {
+func NewAppModule(k keeper.Keeper, snapshotter types.Snapshotter, slashing types.SlashingKeeper, staking types.StakingKeeper, axelarnet types.AxelarnetKeeper, evm types.EVMBaseKeeper, reward types.RewardKeeper) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
 		snapshotter:    snapshotter,
+		slashing:       slashing,
 		staking:        staking,
 		axelarnet:      axelarnet,
 		evm:            evm,
@@ -148,7 +150,7 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 // Route returns the module's route
 // Deprecated
 func (am AppModule) Route() sdk.Route {
-	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper, am.snapshotter, am.staking, am.axelarnet))
+	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper, am.snapshotter, am.slashing, am.staking, am.axelarnet))
 }
 
 // QuerierRoute returns this module's query route

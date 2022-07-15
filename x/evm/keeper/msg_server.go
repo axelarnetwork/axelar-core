@@ -19,6 +19,7 @@ import (
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	"github.com/axelarnetwork/utils/funcs"
 )
 
 var _ types.MsgServiceServer = msgServer{}
@@ -61,23 +62,28 @@ func validateChainActivated(ctx sdk.Context, n types.Nexus, chain nexus.Chain) e
 	return nil
 }
 
-func excludeJailedOrTombstoned(ctx sdk.Context, slashing types.SlashingKeeper) func(v snapshot.ValidatorI) bool {
-	return func(v snapshot.ValidatorI) bool {
-		if v.IsJailed() {
-			return false
-		}
-
-		consAddress, err := v.GetConsAddr()
+func excludeJailedOrTombstoned(ctx sdk.Context, slashing types.SlashingKeeper, snapshotter types.Snapshotter) func(v snapshot.ValidatorI) bool {
+	isTombstoned := func(v snapshot.ValidatorI) bool {
+		consAdd, err := v.GetConsAddr()
 		if err != nil {
-			return false
+			return true
 		}
 
-		if slashing.IsTombstoned(ctx, consAddress) {
-			return false
-		}
-
-		return true
+		return slashing.IsTombstoned(ctx, consAdd)
 	}
+
+	isProxyActive := func(v snapshot.ValidatorI) bool {
+		_, isActive := snapshotter.GetProxy(ctx, v.GetOperator())
+
+		return isActive
+	}
+
+	return funcs.And(
+		snapshot.ValidatorI.IsBonded,
+		funcs.Not(snapshot.ValidatorI.IsJailed),
+		funcs.Not(isTombstoned),
+		isProxyActive,
+	)
 }
 
 func (s msgServer) ConfirmGatewayTx(c context.Context, req *types.ConfirmGatewayTxRequest) (*types.ConfirmGatewayTxResponse, error) {
@@ -102,7 +108,7 @@ func (s msgServer) ConfirmGatewayTx(c context.Context, req *types.ConfirmGateway
 	snapshot, err := s.snapshotter.CreateSnapshot(
 		ctx,
 		s.nexus.GetChainMaintainers(ctx, chain),
-		excludeJailedOrTombstoned(ctx, s.slashing),
+		excludeJailedOrTombstoned(ctx, s.slashing, s.snapshotter),
 		snapshot.QuadraticWeightFunc,
 		params.VotingThreshold,
 	)
@@ -287,7 +293,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 	snapshot, err := s.snapshotter.CreateSnapshot(
 		ctx,
 		s.nexus.GetChainMaintainers(ctx, chain),
-		excludeJailedOrTombstoned(ctx, s.slashing),
+		excludeJailedOrTombstoned(ctx, s.slashing, s.snapshotter),
 		snapshot.QuadraticWeightFunc,
 		params.VotingThreshold,
 	)
@@ -351,7 +357,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 	snapshot, err := s.snapshotter.CreateSnapshot(
 		ctx,
 		s.nexus.GetChainMaintainers(ctx, chain),
-		excludeJailedOrTombstoned(ctx, s.slashing),
+		excludeJailedOrTombstoned(ctx, s.slashing, s.snapshotter),
 		snapshot.QuadraticWeightFunc,
 		params.VotingThreshold,
 	)
@@ -414,7 +420,7 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 	snapshot, err := s.snapshotter.CreateSnapshot(
 		ctx,
 		s.nexus.GetChainMaintainers(ctx, chain),
-		excludeJailedOrTombstoned(ctx, s.slashing),
+		excludeJailedOrTombstoned(ctx, s.slashing, s.snapshotter),
 		snapshot.QuadraticWeightFunc,
 		params.VotingThreshold,
 	)

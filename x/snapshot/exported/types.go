@@ -33,6 +33,7 @@ type ValidatorI interface {
 	GetOperator() sdk.ValAddress           // operator address to receive/return validators coins
 	GetConsAddr() (sdk.ConsAddress, error) // validation consensus address
 	IsJailed() bool                        // whether the validator is jailed
+	IsBonded() bool                        // whether the validator is bonded
 }
 
 // NewSnapshot is the constructor of Snapshot

@@ -60,6 +60,7 @@ func (sc SnapshotCreator) CreateSnapshot(ctx sdk.Context, threshold utils.Thresh
 	}
 
 	filter := funcs.And(
+		snapshot.ValidatorI.IsBonded,
 		funcs.Not(snapshot.ValidatorI.IsJailed),
 		funcs.Not(isTombstoned),
 		isProxyActive,
