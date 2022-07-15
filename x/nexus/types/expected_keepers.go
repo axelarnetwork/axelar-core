@@ -7,10 +7,9 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
-	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
-
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
+	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 )
 
 //go:generate moq -out ./mock/expected_keepers.go -pkg mock . Nexus Snapshotter AxelarnetKeeper EVMBaseKeeper RewardKeeper SlashingKeeper
