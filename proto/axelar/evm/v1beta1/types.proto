@@ -367,3 +367,10 @@ message Gateway {
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
   Status status = 2 [ deprecated = true ];
 }
+
+message PollMetadata {
+  string chain = 1
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string tx_id = 2 [ (gogoproto.customname) = "TxID" ];
+}

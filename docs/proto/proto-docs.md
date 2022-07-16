@@ -109,6 +109,10 @@
     - [MsgService](#axelar.axelarnet.v1beta1.MsgService)
     - [QueryService](#axelar.axelarnet.v1beta1.QueryService)
   
+- [axelar/evm/v1beta1/events.proto](#axelar/evm/v1beta1/events.proto)
+    - [PollExpired](#axelar.evm.v1beta1.PollExpired)
+    - [PollFailed](#axelar.evm.v1beta1.PollFailed)
+  
 - [axelar/utils/v1beta1/queuer.proto](#axelar/utils/v1beta1/queuer.proto)
     - [QueueState](#axelar.utils.v1beta1.QueueState)
     - [QueueState.Item](#axelar.utils.v1beta1.QueueState.Item)
@@ -136,6 +140,7 @@
     - [EventTransfer](#axelar.evm.v1beta1.EventTransfer)
     - [Gateway](#axelar.evm.v1beta1.Gateway)
     - [NetworkInfo](#axelar.evm.v1beta1.NetworkInfo)
+    - [PollMetadata](#axelar.evm.v1beta1.PollMetadata)
     - [SigMetadata](#axelar.evm.v1beta1.SigMetadata)
     - [TokenDetails](#axelar.evm.v1beta1.TokenDetails)
     - [TransactionMetadata](#axelar.evm.v1beta1.TransactionMetadata)
@@ -1874,6 +1879,56 @@ QueryService defines the gRPC querier service.
 
 
 
+<a name="axelar/evm/v1beta1/events.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/evm/v1beta1/events.proto
+
+
+
+<a name="axelar.evm.v1beta1.PollExpired"></a>
+
+### PollExpired
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tx_id` | [string](#string) |  |  |
+| `chain` | [string](#string) |  |  |
+| `poll_id` | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.PollFailed"></a>
+
+### PollFailed
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tx_id` | [string](#string) |  |  |
+| `chain` | [string](#string) |  |  |
+| `poll_id` | [uint64](#uint64) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
 <a name="axelar/utils/v1beta1/queuer.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -2300,6 +2355,22 @@ NetworkInfo describes information about a network
 | ----- | ---- | ----- | ----------- |
 | `name` | [string](#string) |  |  |
 | `id` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.PollMetadata"></a>
+
+### PollMetadata
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `tx_id` | [string](#string) |  |  |
 
 
 

@@ -1,0 +1,32 @@
+syntax = "proto3";
+package axelar.evm.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/evm/types";
+
+import "gogoproto/gogo.proto";
+
+message PollFailed {
+  string tx_id = 1 [ (gogoproto.customname) = "TxID" ];
+  string chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  uint64 poll_id = 4 [
+    (gogoproto.customname) = "PollID",
+    (gogoproto.customtype) =
+        "github.com/axelarnetwork/axelar-core/x/vote/exported.PollID",
+    (gogoproto.nullable) = false
+  ];
+}
+
+message PollExpired {
+  string tx_id = 1 [ (gogoproto.customname) = "TxID" ];
+  string chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  uint64 poll_id = 4 [
+    (gogoproto.customname) = "PollID",
+    (gogoproto.customtype) =
+        "github.com/axelarnetwork/axelar-core/x/vote/exported.PollID",
+    (gogoproto.nullable) = false
+  ];
+}
