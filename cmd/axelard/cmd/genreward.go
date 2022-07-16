@@ -62,7 +62,7 @@ func SetGenesisRewardCmd(defaultNodeHome string) *cobra.Command {
 					return err
 				}
 
-				genesisReward.Params.TssRelativeInflationRate = rate
+				genesisReward.Params.KeyMgmtRelativeInflationRate = rate
 			}
 
 			genesisRewardBz, err := cdc.MarshalJSON(&genesisReward)

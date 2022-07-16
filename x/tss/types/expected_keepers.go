@@ -5,6 +5,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/tendermint/tendermint/libs/log"
 
@@ -17,7 +18,7 @@ import (
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
-//go:generate moq -pkg mock -out ./mock/expected_keepers.go . TofndClient TofndKeyGenClient TofndSignClient Voter StakingKeeper TSSKeeper Snapshotter Nexus Rewarder MultiSigKeeper
+//go:generate moq -pkg mock -out ./mock/expected_keepers.go . TofndClient TofndKeyGenClient TofndSignClient Voter StakingKeeper TSSKeeper Snapshotter Nexus Rewarder MultiSigKeeper Slasher
 
 // Snapshotter provides snapshot functionality
 type Snapshotter = snapshot.Snapshotter
@@ -129,4 +130,10 @@ type Rewarder interface {
 
 type MultiSigKeeper interface {
 	SetKey(ctx sdk.Context, key types.Key)
+}
+
+type Slasher interface {
+	GetValidatorSigningInfo(ctx sdk.Context, address sdk.ConsAddress) (slashingtypes.ValidatorSigningInfo, bool)
+	SignedBlocksWindow(ctx sdk.Context) int64
+	GetValidatorMissedBlockBitArray(ctx sdk.Context, address sdk.ConsAddress, index int64) bool
 }

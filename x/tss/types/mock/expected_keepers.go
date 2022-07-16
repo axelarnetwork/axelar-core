@@ -16,6 +16,7 @@ import (
 	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	exported1 "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
+	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/tendermint/tendermint/libs/log"
 	grpc "google.golang.org/grpc"
@@ -4706,5 +4707,174 @@ func (mock *MultiSigKeeperMock) SetKeyCalls() []struct {
 	mock.lockSetKey.RLock()
 	calls = mock.calls.SetKey
 	mock.lockSetKey.RUnlock()
+	return calls
+}
+
+// Ensure, that SlasherMock does implement tsstypes.Slasher.
+// If this is not the case, regenerate this file with moq.
+var _ tsstypes.Slasher = &SlasherMock{}
+
+// SlasherMock is a mock implementation of tsstypes.Slasher.
+//
+// 	func TestSomethingThatUsesSlasher(t *testing.T) {
+//
+// 		// make and configure a mocked tsstypes.Slasher
+// 		mockedSlasher := &SlasherMock{
+// 			GetValidatorMissedBlockBitArrayFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress, index int64) bool {
+// 				panic("mock out the GetValidatorMissedBlockBitArray method")
+// 			},
+// 			GetValidatorSigningInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress) (slashingtypes.ValidatorSigningInfo, bool) {
+// 				panic("mock out the GetValidatorSigningInfo method")
+// 			},
+// 			SignedBlocksWindowFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64 {
+// 				panic("mock out the SignedBlocksWindow method")
+// 			},
+// 		}
+//
+// 		// use mockedSlasher in code that requires tsstypes.Slasher
+// 		// and then make assertions.
+//
+// 	}
+type SlasherMock struct {
+	// GetValidatorMissedBlockBitArrayFunc mocks the GetValidatorMissedBlockBitArray method.
+	GetValidatorMissedBlockBitArrayFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress, index int64) bool
+
+	// GetValidatorSigningInfoFunc mocks the GetValidatorSigningInfo method.
+	GetValidatorSigningInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress) (slashingtypes.ValidatorSigningInfo, bool)
+
+	// SignedBlocksWindowFunc mocks the SignedBlocksWindow method.
+	SignedBlocksWindowFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// GetValidatorMissedBlockBitArray holds details about calls to the GetValidatorMissedBlockBitArray method.
+		GetValidatorMissedBlockBitArray []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Address is the address argument value.
+			Address github_com_cosmos_cosmos_sdk_types.ConsAddress
+			// Index is the index argument value.
+			Index int64
+		}
+		// GetValidatorSigningInfo holds details about calls to the GetValidatorSigningInfo method.
+		GetValidatorSigningInfo []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Address is the address argument value.
+			Address github_com_cosmos_cosmos_sdk_types.ConsAddress
+		}
+		// SignedBlocksWindow holds details about calls to the SignedBlocksWindow method.
+		SignedBlocksWindow []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+		}
+	}
+	lockGetValidatorMissedBlockBitArray sync.RWMutex
+	lockGetValidatorSigningInfo         sync.RWMutex
+	lockSignedBlocksWindow              sync.RWMutex
+}
+
+// GetValidatorMissedBlockBitArray calls GetValidatorMissedBlockBitArrayFunc.
+func (mock *SlasherMock) GetValidatorMissedBlockBitArray(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress, index int64) bool {
+	if mock.GetValidatorMissedBlockBitArrayFunc == nil {
+		panic("SlasherMock.GetValidatorMissedBlockBitArrayFunc: method is nil but Slasher.GetValidatorMissedBlockBitArray was just called")
+	}
+	callInfo := struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Address github_com_cosmos_cosmos_sdk_types.ConsAddress
+		Index   int64
+	}{
+		Ctx:     ctx,
+		Address: address,
+		Index:   index,
+	}
+	mock.lockGetValidatorMissedBlockBitArray.Lock()
+	mock.calls.GetValidatorMissedBlockBitArray = append(mock.calls.GetValidatorMissedBlockBitArray, callInfo)
+	mock.lockGetValidatorMissedBlockBitArray.Unlock()
+	return mock.GetValidatorMissedBlockBitArrayFunc(ctx, address, index)
+}
+
+// GetValidatorMissedBlockBitArrayCalls gets all the calls that were made to GetValidatorMissedBlockBitArray.
+// Check the length with:
+//     len(mockedSlasher.GetValidatorMissedBlockBitArrayCalls())
+func (mock *SlasherMock) GetValidatorMissedBlockBitArrayCalls() []struct {
+	Ctx     github_com_cosmos_cosmos_sdk_types.Context
+	Address github_com_cosmos_cosmos_sdk_types.ConsAddress
+	Index   int64
+} {
+	var calls []struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Address github_com_cosmos_cosmos_sdk_types.ConsAddress
+		Index   int64
+	}
+	mock.lockGetValidatorMissedBlockBitArray.RLock()
+	calls = mock.calls.GetValidatorMissedBlockBitArray
+	mock.lockGetValidatorMissedBlockBitArray.RUnlock()
+	return calls
+}
+
+// GetValidatorSigningInfo calls GetValidatorSigningInfoFunc.
+func (mock *SlasherMock) GetValidatorSigningInfo(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress) (slashingtypes.ValidatorSigningInfo, bool) {
+	if mock.GetValidatorSigningInfoFunc == nil {
+		panic("SlasherMock.GetValidatorSigningInfoFunc: method is nil but Slasher.GetValidatorSigningInfo was just called")
+	}
+	callInfo := struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Address github_com_cosmos_cosmos_sdk_types.ConsAddress
+	}{
+		Ctx:     ctx,
+		Address: address,
+	}
+	mock.lockGetValidatorSigningInfo.Lock()
+	mock.calls.GetValidatorSigningInfo = append(mock.calls.GetValidatorSigningInfo, callInfo)
+	mock.lockGetValidatorSigningInfo.Unlock()
+	return mock.GetValidatorSigningInfoFunc(ctx, address)
+}
+
+// GetValidatorSigningInfoCalls gets all the calls that were made to GetValidatorSigningInfo.
+// Check the length with:
+//     len(mockedSlasher.GetValidatorSigningInfoCalls())
+func (mock *SlasherMock) GetValidatorSigningInfoCalls() []struct {
+	Ctx     github_com_cosmos_cosmos_sdk_types.Context
+	Address github_com_cosmos_cosmos_sdk_types.ConsAddress
+} {
+	var calls []struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Address github_com_cosmos_cosmos_sdk_types.ConsAddress
+	}
+	mock.lockGetValidatorSigningInfo.RLock()
+	calls = mock.calls.GetValidatorSigningInfo
+	mock.lockGetValidatorSigningInfo.RUnlock()
+	return calls
+}
+
+// SignedBlocksWindow calls SignedBlocksWindowFunc.
+func (mock *SlasherMock) SignedBlocksWindow(ctx github_com_cosmos_cosmos_sdk_types.Context) int64 {
+	if mock.SignedBlocksWindowFunc == nil {
+		panic("SlasherMock.SignedBlocksWindowFunc: method is nil but Slasher.SignedBlocksWindow was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockSignedBlocksWindow.Lock()
+	mock.calls.SignedBlocksWindow = append(mock.calls.SignedBlocksWindow, callInfo)
+	mock.lockSignedBlocksWindow.Unlock()
+	return mock.SignedBlocksWindowFunc(ctx)
+}
+
+// SignedBlocksWindowCalls gets all the calls that were made to SignedBlocksWindow.
+// Check the length with:
+//     len(mockedSlasher.SignedBlocksWindowCalls())
+func (mock *SlasherMock) SignedBlocksWindowCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}
+	mock.lockSignedBlocksWindow.RLock()
+	calls = mock.calls.SignedBlocksWindow
+	mock.lockSignedBlocksWindow.RUnlock()
 	return calls
 }

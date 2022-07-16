@@ -14,7 +14,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
-	types2 "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
@@ -45,7 +44,7 @@ var (
 
 // Keeper allows access to the broadcast state
 type Keeper struct {
-	slasher  types2.Slasher
+	slasher  types.Slasher
 	rewarder types.Rewarder
 	params   params.Subspace
 	storeKey sdk.StoreKey
@@ -118,7 +117,7 @@ func (k Keeper) AssertMatchesRequirements(ctx sdk.Context, snapshotter snapshot.
 }
 
 // NewKeeper constructs a tss keeper
-func NewKeeper(cdc codec.BinaryCodec, storeKey sdk.StoreKey, paramSpace params.Subspace, slasher types2.Slasher, rewarder types.Rewarder) Keeper {
+func NewKeeper(cdc codec.BinaryCodec, storeKey sdk.StoreKey, paramSpace params.Subspace, slasher types.Slasher, rewarder types.Rewarder) Keeper {
 	return Keeper{
 		slasher:  slasher,
 		rewarder: rewarder,

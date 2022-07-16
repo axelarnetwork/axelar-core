@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/axelarnetwork/axelar-core/utils"
-	exported1 "github.com/axelarnetwork/axelar-core/x/multisig/exported"
+	multisigExported "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	multisigTypes "github.com/axelarnetwork/axelar-core/x/multisig/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshotexported "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
@@ -73,7 +73,7 @@ func migrate(ctx sdk.Context, tss Keeper, multisig types.MultiSigKeeper, snapsho
 		if !found || !ok {
 			return fmt.Errorf("failed to migrate key %s for chain %s, key info not found", key.ID, chain)
 		}
-		pubkeys := make(map[string]multisigTypes.PublicKey)
+		pubkeys := make(map[string]multisigExported.PublicKey)
 		for _, infos := range keyInfo.Infos {
 
 			val := infos.Participant.String()
@@ -84,7 +84,7 @@ func migrate(ctx sdk.Context, tss Keeper, multisig types.MultiSigKeeper, snapsho
 			pubkeys[val] = keys[0]
 		}
 		multisig.SetKey(ctx, multisigTypes.Key{
-			ID:               exported1.KeyID(key.ID),
+			ID:               multisigExported.KeyID(key.ID),
 			Snapshot:         s,
 			PubKeys:          pubkeys,
 			SigningThreshold: utils.NewThreshold(keyInfo.TargetNum, keyInfo.Count()),
