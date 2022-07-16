@@ -25,7 +25,7 @@ func (mgr *Mgr) ProcessKeygenStarted(event *types.KeygenStarted) error {
 		return err
 	}
 
-	payloadHash := sha256.Sum256([]byte(keyUID))
+	payloadHash := sha256.Sum256(mgr.ctx.FromAddress)
 	sig, err := mgr.sign(keyUID, payloadHash[:], partyUID, pubKey)
 	if err != nil {
 		return err
