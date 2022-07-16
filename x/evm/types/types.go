@@ -1370,24 +1370,18 @@ func createTransferMultisigParams(addresses []common.Address, weights []*big.Int
 }
 
 // decodeTransferMultisigParams unpacks the parameters of a multi sig transfer command
-func decodeTransferMultisigParams(bz []byte) ([]common.Address, uint8, error) {
-	addressesType, err := abi.NewType("address[]", "address[]", nil)
-	if err != nil {
-		return []common.Address{}, 0, err
-	}
+func decodeTransferMultisigParams(bz []byte) ([]common.Address, []*big.Int, *big.Int, error) {
+	addressesType := funcs.Must(abi.NewType("address[]", "address[]", nil))
+	uint256ArrayType := funcs.Must(abi.NewType("uint256[]", "uint256[]", nil))
+	uint256Type := funcs.Must(abi.NewType("uint256", "uint256", nil))
 
-	uint256Type, err := abi.NewType("uint256", "uint256", nil)
-	if err != nil {
-		return []common.Address{}, 0, err
-	}
-
-	arguments := abi.Arguments{{Type: addressesType}, {Type: uint256Type}}
+	arguments := abi.Arguments{{Type: addressesType}, {Type: uint256ArrayType}, {Type: uint256Type}}
 	params, err := StrictDecode(arguments, bz)
 	if err != nil {
-		return []common.Address{}, 0, err
+		return nil, nil, nil, err
 	}
 
-	return params[0].([]common.Address), uint8(params[1].(*big.Int).Uint64()), nil
+	return params[0].([]common.Address), params[1].([]*big.Int), params[2].(*big.Int), nil
 }
 
 // ValidateBasic does stateless validation of the object
@@ -1739,19 +1733,15 @@ func (c Command) DecodeParams() (map[string]string, error) {
 		params["salt"] = salt.Hex()
 	case AxelarGatewayCommandTransferOperatorship:
 		address, decodeSinglesigErr := decodeTransferSinglesigParams(c.Params)
-		addresses, threshold, decodeMultisigErr := decodeTransferMultisigParams(c.Params)
+		addresses, weights, threshold, decodeMultisigErr := decodeTransferMultisigParams(c.Params)
 
 		switch {
 		case decodeSinglesigErr == nil:
 			params["newOperator"] = address.Hex()
 		case decodeMultisigErr == nil:
-			var addressStrs []string
-			for _, address := range addresses {
-				addressStrs = append(addressStrs, address.Hex())
-			}
-
-			params["newOperators"] = strings.Join(addressStrs, ";")
-			params["newThreshold"] = strconv.FormatUint(uint64(threshold), 10)
+			params["newOperators"] = strings.Join(slices.Map(addresses, common.Address.Hex), ";")
+			params["newWeights"] = strings.Join(slices.Map(weights, func(w *big.Int) string { return w.String() }), ";")
+			params["newThreshold"] = threshold.String()
 		default:
 			return nil, fmt.Errorf("unsupported type of transfer key")
 		}
