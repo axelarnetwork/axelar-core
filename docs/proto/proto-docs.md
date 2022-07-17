@@ -109,6 +109,9 @@
     - [MsgService](#axelar.axelarnet.v1beta1.MsgService)
     - [QueryService](#axelar.axelarnet.v1beta1.QueryService)
   
+- [axelar/evm/v1beta1/events.proto](#axelar/evm/v1beta1/events.proto)
+    - [ConfirmKeyTransfer](#axelar.evm.v1beta1.ConfirmKeyTransfer)
+  
 - [axelar/utils/v1beta1/queuer.proto](#axelar/utils/v1beta1/queuer.proto)
     - [QueueState](#axelar.utils.v1beta1.QueueState)
     - [QueueState.Item](#axelar.utils.v1beta1.QueueState.Item)
@@ -1874,6 +1877,41 @@ QueryService defines the gRPC querier service.
 
 
 
+<a name="axelar/evm/v1beta1/events.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/evm/v1beta1/events.proto
+
+
+
+<a name="axelar.evm.v1beta1.ConfirmKeyTransfer"></a>
+
+### ConfirmKeyTransfer
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `tx_id` | [bytes](#bytes) |  |  |
+| `gateway_address` | [bytes](#bytes) |  |  |
+| `confirmation_height` | [uint64](#uint64) |  |  |
+| `poll_id` | [uint64](#uint64) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
 <a name="axelar/utils/v1beta1/queuer.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -2167,6 +2205,7 @@ ERC20TokenMetadata describes information about an ERC20 token
 | ----- | ---- | ----- | ----------- |
 | `new_operators` | [bytes](#bytes) | repeated |  |
 | `new_threshold` | [bytes](#bytes) |  |  |
+| `new_weights` | [bytes](#bytes) | repeated |  |
 
 
 

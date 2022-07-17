@@ -1659,12 +1659,18 @@ func (m EventMultisigOwnershipTransferred) Validate() error {
 
 // Validate returns an error if the event multisig ownership transferred is invalid
 func (m EventMultisigOperatorshipTransferred) Validate() error {
-	NonzeroAddress := func(addr Address) bool { return !addr.IsZeroAddress() }
-
-	if !slices.All(m.NewOperators, NonzeroAddress) {
+	if slices.Any(m.NewOperators, Address.IsZeroAddress) {
 		return fmt.Errorf("invalid new operators")
 	}
-	if m.NewThreshold.IsZero() {
+
+	if len(m.NewOperators) != len(m.NewWeights) {
+		return fmt.Errorf("length of new operators does not match new weights")
+	}
+
+	totalWeight := sdk.ZeroUint()
+	slices.ForEach(m.NewWeights, func(w sdk.Uint) { totalWeight = totalWeight.Add(w) })
+
+	if m.NewThreshold.IsZero() || m.NewThreshold.GT(totalWeight) {
 		return fmt.Errorf("invalid new threshold")
 	}
 

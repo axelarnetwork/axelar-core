@@ -315,8 +315,8 @@ func handleMultisigTransferKey(ctx sdk.Context, event types.Event, ck types.Chai
 		panic(fmt.Errorf("event is nil"))
 	}
 
-	// TODO: add weights to the event and also check
 	newAddresses := e.NewOperators
+	newWeights := e.NewWeights
 	newThreshold := e.NewThreshold
 
 	nextKeyID, ok := multisig.GetNextKeyID(ctx, chain.Name)
@@ -339,7 +339,7 @@ func handleMultisigTransferKey(ctx sdk.Context, event types.Event, ck types.Chai
 	}
 
 	addressSeen := make(map[string]bool)
-	for _, newAddress := range newAddresses {
+	for i, newAddress := range newAddresses {
 		newAddressHex := newAddress.Hex()
 		if addressSeen[newAddressHex] {
 			ck.Logger(ctx).Info("duplicate address in new addresses")
@@ -347,9 +347,14 @@ func handleMultisigTransferKey(ctx sdk.Context, event types.Event, ck types.Chai
 		}
 		addressSeen[newAddressHex] = true
 
-		_, ok := expectedAddressWeights[newAddressHex]
+		expectedWeight, ok := expectedAddressWeights[newAddressHex]
 		if !ok {
 			ck.Logger(ctx).Info("new addresses do not match")
+			return false
+		}
+
+		if !expectedWeight.Equal(newWeights[i]) {
+			ck.Logger(ctx).Info("new weights do not match")
 			return false
 		}
 	}

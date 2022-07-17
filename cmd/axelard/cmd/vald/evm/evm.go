@@ -21,12 +21,13 @@ import (
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm/rpc"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/parse"
+	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 	tmEvents "github.com/axelarnetwork/tm-events/events"
+	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 )
 
@@ -176,73 +177,54 @@ func (mgr Mgr) ProcessTokenConfirmation(e tmEvents.Event) error {
 }
 
 // ProcessTransferKeyConfirmation votes on the correctness of an EVM chain key transfer
-func (mgr Mgr) ProcessTransferKeyConfirmation(e tmEvents.Event) (err error) {
-	chain, txID, keyType, gatewayAddr, confHeight, pollID, err := parseTransferKeyConfirmationParams(mgr.cdc, e.Attributes)
-	if err != nil {
-		return sdkerrors.Wrap(err, "EVM key transfer confirmation failed")
+func (mgr Mgr) ProcessTransferKeyConfirmation(event *types.ConfirmKeyTransfer) (err error) {
+	rpc, ok := mgr.rpcs[strings.ToLower(event.Chain.String())]
+	if !ok {
+		return sdkerrors.Wrap(err, fmt.Sprintf("unable to find the RPC for chain %s", event.Chain))
 	}
 
-	rpc, found := mgr.rpcs[strings.ToLower(chain.String())]
-	if !found {
-		return sdkerrors.Wrap(err, fmt.Sprintf("Unable to find an RPC for chain '%s'", chain))
-	}
-
-	var events []evmTypes.Event
-	_ = mgr.validate(rpc, txID, confHeight, func(_ *geth.Transaction, txReceipt *geth.Receipt) bool {
+	var operatorshipTransferred evmTypes.Event
+	ok = mgr.validate(rpc, common.Hash(event.TxID), event.ConfirmationHeight, func(_ *geth.Transaction, txReceipt *geth.Receipt) bool {
 		for i := len(txReceipt.Logs) - 1; i >= 0; i-- {
 			log := txReceipt.Logs[i]
 
 			// Event is not emitted by the axelar gateway
-			if log.Address != gatewayAddr {
+			if log.Address != common.Address(event.GatewayAddress) {
 				continue
 			}
 
-			switch {
-			case keyType == tss.Threshold && log.Topics[0] == SinglesigTransferOperatorshipSig:
-				event, err := decodeSinglesigOperatorshipTransferredEvent(log)
-				if err != nil {
-					mgr.logger.Debug(sdkerrors.Wrap(err, "key transfer confirmation failed").Error())
-					continue
-				}
-
-				events = append(events, evmTypes.Event{
-					Chain: chain,
-					TxId:  evmTypes.Hash(txID),
-					Index: uint64(i),
-					Event: &evmTypes.Event_SinglesigOperatorshipTransferred{
-						SinglesigOperatorshipTransferred: &event,
-					},
-				})
-			case keyType == tss.Multisig && log.Topics[0] == MultisigTransferOperatorshipSig:
-				event, err := decodeMultisigOperatorshipTransferredEvent(log)
-				if err != nil {
-					mgr.logger.Debug(sdkerrors.Wrap(err, "key transfer confirmation failed").Error())
-					continue
-				}
-
-				events = append(events, evmTypes.Event{
-					Chain: chain,
-					TxId:  evmTypes.Hash(txID),
-					Index: uint64(i),
-					Event: &evmTypes.Event_MultisigOperatorshipTransferred{
-						MultisigOperatorshipTransferred: &event,
-					},
-				})
-			default:
+			if log.Topics[0] != MultisigTransferOperatorshipSig {
+				continue
 			}
 
-			// There might be several transfer ownership/operatorship event. Only interest in the last one.
-			if len(events) != 0 {
-				break
+			e, err := decodeMultisigOperatorshipTransferredEvent(log)
+			if err != nil {
+				mgr.logger.Debug(sdkerrors.Wrap(err, "failed decoding operatorship transferred event").Error())
+				continue
 			}
+
+			operatorshipTransferred = evmTypes.Event{
+				Chain: event.Chain,
+				TxId:  event.TxID,
+				Index: uint64(i),
+				Event: &evmTypes.Event_MultisigOperatorshipTransferred{
+					MultisigOperatorshipTransferred: &e,
+				}}
+			return true
 		}
 
-		return true
+		return false
 	})
 
-	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, pollID, evmTypes.NewVoteEvents(chain, events))
-	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", events, pollID.String()))
+	evmEvents := []evmTypes.Event{}
+	if ok {
+		evmEvents = append(evmEvents, operatorshipTransferred)
+	}
+
+	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, event.PollID, evmTypes.NewVoteEvents(event.Chain, evmEvents))
+	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", evmEvents, event.PollID.String()))
 	_, err = mgr.broadcaster.Broadcast(context.TODO(), msg)
+
 	return err
 }
 
@@ -590,53 +572,6 @@ func parseTokenConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]
 		nil
 }
 
-func parseTransferKeyConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]string) (
-	chain nexus.ChainName,
-	txID common.Hash,
-	keyType tss.KeyType,
-	gatewayAddr common.Address,
-	confHeight uint64,
-	pollID vote.PollID,
-	err error,
-) {
-	parsers := []*parse.AttributeParser{
-		{Key: evmTypes.AttributeKeyChain, Map: func(s string) (interface{}, error) {
-			return nexus.ChainName(s), nil
-		}},
-		{Key: evmTypes.AttributeKeyTxID, Map: func(s string) (interface{}, error) {
-			return common.HexToHash(s), nil
-		}},
-		{Key: evmTypes.AttributeKeyKeyType, Map: func(s string) (interface{}, error) {
-			return tss.KeyTypeFromSimpleStr(s)
-		}},
-		{Key: evmTypes.AttributeKeyGatewayAddress, Map: func(s string) (interface{}, error) {
-			return common.HexToAddress(s), nil
-		}},
-		{Key: evmTypes.AttributeKeyConfHeight, Map: func(s string) (interface{}, error) { return strconv.ParseUint(s, 10, 64) }},
-		{Key: evmTypes.AttributeKeyPoll, Map: func(s string) (interface{}, error) {
-			id, err := strconv.ParseUint(s, 10, 64)
-			if err != nil {
-				return vote.PollID(0), err
-			}
-
-			return vote.PollID(id), nil
-		}},
-	}
-
-	results, err := parse.Parse(attributes, parsers)
-	if err != nil {
-		return "", common.Hash{}, tss.KEY_TYPE_UNSPECIFIED, common.Address{}, 0, 0, err
-	}
-
-	return results[0].(nexus.ChainName),
-		results[1].(common.Hash),
-		results[2].(tss.KeyType),
-		results[3].(common.Address),
-		results[4].(uint64),
-		results[5].(vote.PollID),
-		nil
-}
-
 func getLatestFinalizedBlockNumber(client rpc.Client, confHeight uint64) (*big.Int, error) {
 	switch client := client.(type) {
 	case rpc.MoonbeamClient:
@@ -703,8 +638,8 @@ func (mgr Mgr) validate(client rpc.Client, txID common.Hash, confHeight uint64, 
 	}
 
 	txFound := false
-	for _, tx := range txBlock.Body().Transactions {
-		if bytes.Equal(tx.Hash().Bytes(), txReceipt.TxHash.Bytes()) {
+	for _, t := range txBlock.Body().Transactions {
+		if bytes.Equal(t.Hash().Bytes(), txReceipt.TxHash.Bytes()) {
 			txFound = true
 			break
 		}
@@ -776,58 +711,44 @@ func decodeERC20TokenDeploymentEvent(log *geth.Log) (evmTypes.EventTokenDeployed
 	}, nil
 }
 
-func decodeSinglesigOperatorshipTransferredEvent(log *geth.Log) (evmTypes.EventSinglesigOperatorshipTransferred, error) {
-	if len(log.Topics) != 3 || log.Topics[0] != SinglesigTransferOperatorshipSig {
-		return evmTypes.EventSinglesigOperatorshipTransferred{}, fmt.Errorf("event is not for a transfer singlesig key")
-	}
-
-	return evmTypes.EventSinglesigOperatorshipTransferred{
-		PreOperator: evmTypes.Address(common.BytesToAddress(log.Topics[1][:])),
-		NewOperator: evmTypes.Address(common.BytesToAddress(log.Topics[2][:])),
-	}, nil
-}
-
 func decodeMultisigOperatorshipTransferredEvent(log *geth.Log) (evmTypes.EventMultisigOperatorshipTransferred, error) {
 	if len(log.Topics) != 1 || log.Topics[0] != MultisigTransferOperatorshipSig {
-		return evmTypes.EventMultisigOperatorshipTransferred{}, fmt.Errorf("event is not a MultisigTransferOwnershipSig")
+		return evmTypes.EventMultisigOperatorshipTransferred{}, fmt.Errorf("event is not OperatorshipTransferred")
 	}
 
-	newAddresses, newThreshold, err := unpackMultisigTransferKeyEvent(log)
+	newAddresses, newWeights, newThreshold, err := unpackMultisigTransferKeyEvent(log)
 	if err != nil {
 		return evmTypes.EventMultisigOperatorshipTransferred{}, err
 	}
 
-	return evmTypes.EventMultisigOperatorshipTransferred{
+	event := evmTypes.EventMultisigOperatorshipTransferred{
 		NewOperators: slices.Map(newAddresses, func(addr common.Address) evmTypes.Address { return evmTypes.Address(addr) }),
+		NewWeights:   slices.Map(newWeights, sdk.NewUintFromBigInt),
 		NewThreshold: sdk.NewUintFromBigInt(newThreshold),
-	}, nil
+	}
+	if err := event.Validate(); err != nil {
+		return evmTypes.EventMultisigOperatorshipTransferred{}, err
+	}
+
+	return event, nil
 }
 
-func unpackMultisigTransferKeyEvent(log *geth.Log) ([]common.Address, *big.Int, error) {
-	bytesType, err := abi.NewType("bytes", "bytes", nil)
+func unpackMultisigTransferKeyEvent(log *geth.Log) ([]common.Address, []*big.Int, *big.Int, error) {
+	bytesType := funcs.Must(abi.NewType("bytes", "bytes", nil))
+	newOperatorsData, err := evmTypes.StrictDecode(abi.Arguments{{Type: bytesType}}, log.Data)
 	if err != nil {
-		return []common.Address{}, &big.Int{}, err
+		return nil, nil, nil, err
 	}
 
-	operatorData, err := evmTypes.StrictDecode(abi.Arguments{{Type: bytesType}}, log.Data)
+	addressesType := funcs.Must(abi.NewType("address[]", "address[]", nil))
+	uint256ArrayType := funcs.Must(abi.NewType("uint256[]", "uint256[]", nil))
+	uint256Type := funcs.Must(abi.NewType("uint256", "uint256", nil))
+
+	arguments := abi.Arguments{{Type: addressesType}, {Type: uint256ArrayType}, {Type: uint256Type}}
+	params, err := types.StrictDecode(arguments, newOperatorsData[0].([]byte))
 	if err != nil {
-		return []common.Address{}, &big.Int{}, err
+		return nil, nil, nil, err
 	}
 
-	addressesType, err := abi.NewType("address[]", "address[]", nil)
-	if err != nil {
-		return []common.Address{}, &big.Int{}, err
-	}
-
-	uint256Type, err := abi.NewType("uint256", "uint256", nil)
-	if err != nil {
-		return []common.Address{}, &big.Int{}, err
-	}
-
-	params, err := evmTypes.StrictDecode(abi.Arguments{{Type: addressesType}, {Type: uint256Type}}, operatorData[0].([]byte))
-	if err != nil {
-		return []common.Address{}, &big.Int{}, err
-	}
-
-	return params[0].([]common.Address), params[1].(*big.Int), nil
+	return params[0].([]common.Address), params[1].([]*big.Int), params[2].(*big.Int), nil
 }
