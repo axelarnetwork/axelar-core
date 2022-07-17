@@ -169,6 +169,9 @@ func (m Key) GetWeight(p sdk.ValAddress) sdk.Uint {
 	return m.Snapshot.GetParticipantWeight(p)
 }
 
+// GetKeyID returns the key ID of the key
+func (m Key) GetKeyID() exported.KeyID { return m.GetID() }
+
 // ValidateBasic returns an error if the given key is invalid; nil otherwise
 func (m Key) ValidateBasic() error {
 	if err := validateBasicPendingKey(m); err != nil {
