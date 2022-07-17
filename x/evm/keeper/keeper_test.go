@@ -20,10 +20,8 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 	evmKeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
-	"github.com/axelarnetwork/axelar-core/x/evm/types/mock"
 	multisigTestUtils "github.com/axelarnetwork/axelar-core/x/multisig/exported/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 func TestCommands(t *testing.T) {
@@ -73,9 +71,7 @@ func TestCommands(t *testing.T) {
 
 		lastLength := len(chainKeeper.GetPendingCommands(ctx))
 		for {
-			_, err := chainKeeper.CreateNewBatchToSign(ctx, &mock.SignerMock{
-				GetKeyRoleFunc: func(_ sdk.Context, _ tss.KeyID) tss.KeyRole { return tss.MasterKey },
-			})
+			_, err := chainKeeper.CreateNewBatchToSign(ctx)
 			assert.NoError(t, err)
 			remainingCmds := chainKeeper.GetPendingCommands(ctx)
 			assert.Less(t, len(remainingCmds), lastLength)
