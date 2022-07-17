@@ -8,15 +8,14 @@ import (
 	"strconv"
 	"strings"
 
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
-	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
@@ -24,23 +23,25 @@ var _ types.MsgServiceServer = msgServer{}
 
 type msgServer struct {
 	types.BaseKeeper
-	tss         types.TSS
-	signer      types.Signer
-	nexus       types.Nexus
-	voter       types.Voter
-	snapshotter types.Snapshotter
+	nexus          types.Nexus
+	voter          types.Voter
+	snapshotter    types.Snapshotter
+	staking        types.StakingKeeper
+	slashing       types.SlashingKeeper
+	multisigKeeper types.MultisigKeeper
 }
 
-// NewMsgServerImpl returns an implementation of the bitcoin MsgServiceServer interface
+// NewMsgServerImpl returns an implementation of the evm MsgServiceServer interface
 // for the provided Keeper.
-func NewMsgServerImpl(keeper types.BaseKeeper, t types.TSS, n types.Nexus, s types.Signer, v types.Voter, snap types.Snapshotter) types.MsgServiceServer {
+func NewMsgServerImpl(keeper types.BaseKeeper, n types.Nexus, v types.Voter, snap types.Snapshotter, staking types.StakingKeeper, slashing types.SlashingKeeper, multisigKeeper types.MultisigKeeper) types.MsgServiceServer {
 	return msgServer{
-		BaseKeeper:  keeper,
-		tss:         t,
-		signer:      s,
-		nexus:       n,
-		voter:       v,
-		snapshotter: snap,
+		BaseKeeper:     keeper,
+		nexus:          n,
+		voter:          v,
+		snapshotter:    snap,
+		staking:        staking,
+		slashing:       slashing,
+		multisigKeeper: multisigKeeper,
 	}
 }
 
@@ -51,6 +52,25 @@ func validateChainActivated(ctx sdk.Context, n types.Nexus, chain nexus.Chain) e
 	}
 
 	return nil
+}
+
+func excludeJailedOrTombstoned(ctx sdk.Context, slashing types.SlashingKeeper) func(v snapshot.ValidatorI) bool {
+	return func(v snapshot.ValidatorI) bool {
+		if v.IsJailed() {
+			return false
+		}
+
+		consAddress, err := v.GetConsAddr()
+		if err != nil {
+			return false
+		}
+
+		if slashing.IsTombstoned(ctx, consAddress) {
+			return false
+		}
+
+		return true
+	}
 }
 
 func (s msgServer) ConfirmGatewayTx(c context.Context, req *types.ConfirmGatewayTxRequest) (*types.ConfirmGatewayTxResponse, error) {
@@ -71,32 +91,26 @@ func (s msgServer) ConfirmGatewayTx(c context.Context, req *types.ConfirmGateway
 		return nil, fmt.Errorf("axelar gateway address not set")
 	}
 
-	period, ok := keeper.GetRevoteLockingPeriod(ctx)
-	if !ok {
-		return nil, fmt.Errorf("could not retrieve revote locking period")
-	}
-
-	votingThreshold, ok := keeper.GetVotingThreshold(ctx)
-	if !ok {
-		return nil, fmt.Errorf("voting threshold not found")
-	}
-
-	minVoterCount, ok := keeper.GetMinVoterCount(ctx)
-	if !ok {
-		return nil, fmt.Errorf("min voter count not found")
-	}
-
-	pollKey := vote.NewPollKey(types.ModuleName, fmt.Sprintf("%s_%s", req.Chain, req.TxID.Hex()))
-	if err := s.voter.InitializePoll(
+	params := keeper.GetParams(ctx)
+	snapshot, err := s.snapshotter.CreateSnapshot(
 		ctx,
-		pollKey,
 		s.nexus.GetChainMaintainers(ctx, chain),
-		vote.ExpiryAt(ctx.BlockHeight()+period),
-		vote.Threshold(votingThreshold),
-		vote.MinVoterCount(minVoterCount),
-		vote.RewardPool(chain.Name.String()),
-		vote.GracePeriod(keeper.GetParams(ctx).VotingGracePeriod),
-	); err != nil {
+		excludeJailedOrTombstoned(ctx, s.slashing),
+		snapshot.QuadraticWeightFunc,
+		params.VotingThreshold,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	pollID, err := s.voter.InitializePoll(
+		ctx,
+		vote.NewPollBuilder(types.ModuleName, params.VotingThreshold, snapshot, ctx.BlockHeight()+params.RevoteLockingPeriod).
+			MinVoterCount(params.MinVoterCount).
+			RewardPoolName(chain.Name.String()).
+			GracePeriod(keeper.GetParams(ctx).VotingGracePeriod),
+	)
+	if err != nil {
 		return nil, err
 	}
 
@@ -113,7 +127,7 @@ func (s msgServer) ConfirmGatewayTx(c context.Context, req *types.ConfirmGateway
 			sdk.NewAttribute(types.AttributeKeyGatewayAddress, gatewayAddress.Hex()),
 			sdk.NewAttribute(types.AttributeKeyTxID, req.TxID.Hex()),
 			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
-			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&pollKey))),
+			sdk.NewAttribute(types.AttributeKeyPoll, pollID.String()),
 		),
 	)
 
@@ -132,16 +146,8 @@ func (s msgServer) SetGateway(c context.Context, req *types.SetGatewayRequest) (
 		return nil, err
 	}
 
-	if _, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.MasterKey); !ok {
-		return nil, fmt.Errorf("no master key for chain %s found", chain.Name)
-	}
-
-	if _, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.SecondaryKey); !ok {
-		return nil, fmt.Errorf("no secondary key for chain %s found", chain.Name)
-	}
-
-	if _, ok := s.signer.GetExternalKeyIDs(ctx, chain); !ok {
-		return nil, fmt.Errorf("no external keys for chain %s found", chain.Name)
+	if _, ok := s.multisigKeeper.GetCurrentKeyID(ctx, chain.Name); !ok {
+		return nil, fmt.Errorf("current key not set for chain %s", chain.Name)
 	}
 
 	keeper := s.ForChain(chain.Name)
@@ -266,32 +272,26 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, err
 	}
 
-	period, ok := keeper.GetRevoteLockingPeriod(ctx)
-	if !ok {
-		return nil, fmt.Errorf("could not retrieve revote locking period")
-	}
-
-	votingThreshold, ok := keeper.GetVotingThreshold(ctx)
-	if !ok {
-		return nil, fmt.Errorf("voting threshold not found")
-	}
-
-	minVoterCount, ok := keeper.GetMinVoterCount(ctx)
-	if !ok {
-		return nil, fmt.Errorf("min voter count not found")
-	}
-
-	pollKey := types.GetConfirmTokenKey(req.TxID, req.Asset.Name)
-	if err := s.voter.InitializePoll(
+	params := keeper.GetParams(ctx)
+	snapshot, err := s.snapshotter.CreateSnapshot(
 		ctx,
-		pollKey,
 		s.nexus.GetChainMaintainers(ctx, chain),
-		vote.ExpiryAt(ctx.BlockHeight()+period),
-		vote.Threshold(votingThreshold),
-		vote.MinVoterCount(minVoterCount),
-		vote.RewardPool(chain.Name.String()),
-		vote.GracePeriod(keeper.GetParams(ctx).VotingGracePeriod),
-	); err != nil {
+		excludeJailedOrTombstoned(ctx, s.slashing),
+		snapshot.QuadraticWeightFunc,
+		params.VotingThreshold,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	pollID, err := s.voter.InitializePoll(
+		ctx,
+		vote.NewPollBuilder(types.ModuleName, params.VotingThreshold, snapshot, ctx.BlockHeight()+params.RevoteLockingPeriod).
+			MinVoterCount(params.MinVoterCount).
+			RewardPoolName(chain.Name.String()).
+			GracePeriod(keeper.GetParams(ctx).VotingGracePeriod),
+	)
+	if err != nil {
 		return nil, err
 	}
 
@@ -310,7 +310,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 			sdk.NewAttribute(types.AttributeKeyTokenAddress, tokenAddr.Hex()),
 			sdk.NewAttribute(types.AttributeKeySymbol, token.GetDetails().Symbol),
 			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
-			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&pollKey))),
+			sdk.NewAttribute(types.AttributeKeyPoll, pollID.String()),
 		),
 	)
 
@@ -336,32 +336,26 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, fmt.Errorf("no burner info found for address %s", req.BurnerAddress.Hex())
 	}
 
-	period, ok := keeper.GetRevoteLockingPeriod(ctx)
-	if !ok {
-		return nil, fmt.Errorf("could not retrieve revote locking period for chain %s", chain.Name)
-	}
-
-	votingThreshold, ok := keeper.GetVotingThreshold(ctx)
-	if !ok {
-		return nil, fmt.Errorf("voting threshold for chain %s not found", chain.Name)
-	}
-
-	minVoterCount, ok := keeper.GetMinVoterCount(ctx)
-	if !ok {
-		return nil, fmt.Errorf("min voter count for chain %s not found", chain.Name)
-	}
-
-	pollKey := vote.NewPollKey(types.ModuleName, fmt.Sprintf("%s_%s", req.TxID.Hex(), req.BurnerAddress.Hex()))
-	if err := s.voter.InitializePoll(
+	params := keeper.GetParams(ctx)
+	snapshot, err := s.snapshotter.CreateSnapshot(
 		ctx,
-		pollKey,
 		s.nexus.GetChainMaintainers(ctx, chain),
-		vote.ExpiryAt(ctx.BlockHeight()+period),
-		vote.Threshold(votingThreshold),
-		vote.MinVoterCount(minVoterCount),
-		vote.RewardPool(chain.Name.String()),
-		vote.GracePeriod(keeper.GetParams(ctx).VotingGracePeriod),
-	); err != nil {
+		excludeJailedOrTombstoned(ctx, s.slashing),
+		snapshot.QuadraticWeightFunc,
+		params.VotingThreshold,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	pollID, err := s.voter.InitializePoll(
+		ctx,
+		vote.NewPollBuilder(types.ModuleName, params.VotingThreshold, snapshot, ctx.BlockHeight()+params.RevoteLockingPeriod).
+			MinVoterCount(params.MinVoterCount).
+			RewardPoolName(chain.Name.String()).
+			GracePeriod(keeper.GetParams(ctx).VotingGracePeriod),
+	)
+	if err != nil {
 		return nil, err
 	}
 
@@ -375,7 +369,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 			sdk.NewAttribute(types.AttributeKeyDepositAddress, req.BurnerAddress.Hex()),
 			sdk.NewAttribute(types.AttributeKeyTokenAddress, burnerInfo.TokenAddress.Hex()),
 			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
-			sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&pollKey))),
+			sdk.NewAttribute(types.AttributeKeyPoll, pollID.String()),
 		),
 	)
 
@@ -394,19 +388,8 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 		return nil, err
 	}
 
-	var keyRole tss.KeyRole
-	switch req.TransferType {
-	case types.Ownership:
-		keyRole = tss.MasterKey
-	case types.Operatorship:
-		keyRole = tss.SecondaryKey
-	default:
-		return nil, fmt.Errorf("invalid transfer type %s", req.TransferType.SimpleString())
-	}
-
-	_, ok = s.signer.GetNextKeyID(ctx, chain, keyRole)
-	if !ok {
-		return nil, fmt.Errorf("next %s key for chain %s not set yet", keyRole.SimpleString(), chain.Name)
+	if _, ok := s.multisigKeeper.GetNextKeyID(ctx, chain.Name); !ok {
+		return nil, fmt.Errorf("next key for chain %s not set yet", chain.Name)
 	}
 
 	keeper := s.ForChain(chain.Name)
@@ -416,32 +399,26 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 		return nil, fmt.Errorf("axelar gateway address not set")
 	}
 
-	period, ok := keeper.GetRevoteLockingPeriod(ctx)
-	if !ok {
-		return nil, fmt.Errorf("could not retrieve revote locking period for chain %s", chain.Name)
-	}
-
-	votingThreshold, ok := keeper.GetVotingThreshold(ctx)
-	if !ok {
-		return nil, fmt.Errorf("voting threshold for chain %s not found", chain.Name)
-	}
-
-	minVoterCount, ok := keeper.GetMinVoterCount(ctx)
-	if !ok {
-		return nil, fmt.Errorf("min voter count for chain %s not found", chain.Name)
-	}
-
-	pollKey := vote.NewPollKey(types.ModuleName, fmt.Sprintf("%s_%s_%s", req.TxID.Hex(), req.TransferType.SimpleString(), req.KeyID))
-	if err := s.voter.InitializePoll(
+	params := keeper.GetParams(ctx)
+	snapshot, err := s.snapshotter.CreateSnapshot(
 		ctx,
-		pollKey,
 		s.nexus.GetChainMaintainers(ctx, chain),
-		vote.ExpiryAt(ctx.BlockHeight()+period),
-		vote.Threshold(votingThreshold),
-		vote.MinVoterCount(minVoterCount),
-		vote.RewardPool(chain.Name.String()),
-		vote.GracePeriod(keeper.GetParams(ctx).VotingGracePeriod),
-	); err != nil {
+		excludeJailedOrTombstoned(ctx, s.slashing),
+		snapshot.QuadraticWeightFunc,
+		params.VotingThreshold,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	pollID, err := s.voter.InitializePoll(
+		ctx,
+		vote.NewPollBuilder(types.ModuleName, params.VotingThreshold, snapshot, ctx.BlockHeight()+params.RevoteLockingPeriod).
+			MinVoterCount(params.MinVoterCount).
+			RewardPoolName(chain.Name.String()).
+			GracePeriod(keeper.GetParams(ctx).VotingGracePeriod),
+	)
+	if err != nil {
 		return nil, err
 	}
 
@@ -452,11 +429,10 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
 		sdk.NewAttribute(types.AttributeKeyChain, chain.Name.String()),
 		sdk.NewAttribute(types.AttributeKeyTxID, req.TxID.Hex()),
-		sdk.NewAttribute(types.AttributeKeyTransferKeyType, req.TransferType.SimpleString()),
 		sdk.NewAttribute(types.AttributeKeyKeyType, chain.KeyType.SimpleString()),
 		sdk.NewAttribute(types.AttributeKeyGatewayAddress, gatewayAddr.Hex()),
 		sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
-		sdk.NewAttribute(types.AttributeKeyPoll, string(types.ModuleCdc.MustMarshalJSON(&pollKey))),
+		sdk.NewAttribute(types.AttributeKeyPoll, pollID.String()),
 	)
 	defer func() { ctx.EventManager().EmitEvent(event) }()
 
@@ -505,13 +481,13 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 		}
 	}
 
-	if _, nextMasterKeyAssigned := s.signer.GetNextKeyID(ctx, chain, tss.MasterKey); nextMasterKeyAssigned {
-		return nil, fmt.Errorf("next %s key already assigned for chain %s, rotate key first", tss.MasterKey.SimpleString(), chain.Name)
+	if _, ok := s.multisigKeeper.GetNextKeyID(ctx, chain.Name); ok {
+		return nil, s.newErrRotationInProgress(chain)
 	}
 
-	masterKeyID, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.MasterKey)
+	keyID, ok := s.multisigKeeper.GetCurrentKeyID(ctx, chain.Name)
 	if !ok {
-		return nil, fmt.Errorf("no master key for chain %s found", chain.Name)
+		return nil, fmt.Errorf("current key not set for chain %s", chain.Name)
 	}
 
 	token, err := keeper.CreateERC20Token(ctx, req.Asset.Name, req.TokenDetails, req.Address)
@@ -519,7 +495,7 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 		return nil, sdkerrors.Wrapf(err, "failed to initialize token %s(%s) for chain %s", req.TokenDetails.TokenName, req.TokenDetails.Symbol, chain.Name)
 	}
 
-	cmd, err := token.CreateDeployCommand(masterKeyID, dailyMintLimit)
+	cmd, err := token.CreateDeployCommand(keyID, dailyMintLimit)
 	if err != nil {
 		return nil, err
 	}
@@ -559,13 +535,13 @@ func (s msgServer) CreateBurnTokens(c context.Context, req *types.CreateBurnToke
 		return nil, fmt.Errorf("could not find chain ID for '%s'", chain.Name)
 	}
 
-	if _, nextSecondaryKeyAssigned := s.signer.GetNextKeyID(ctx, chain, tss.SecondaryKey); nextSecondaryKeyAssigned {
-		return nil, s.newErrRotationInProgress(chain, tss.SecondaryKey)
+	if _, ok := s.multisigKeeper.GetNextKeyID(ctx, chain.Name); ok {
+		return nil, s.newErrRotationInProgress(chain)
 	}
 
-	secondaryKeyID, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.SecondaryKey)
+	keyID, ok := s.multisigKeeper.GetCurrentKeyID(ctx, chain.Name)
 	if !ok {
-		return nil, fmt.Errorf("no %s key for chain %s found", tss.SecondaryKey.SimpleString(), chain.Name)
+		return nil, fmt.Errorf("current key not set for chain %s", chain.Name)
 	}
 
 	seen := map[string]bool{}
@@ -589,7 +565,7 @@ func (s msgServer) CreateBurnTokens(c context.Context, req *types.CreateBurnToke
 			return nil, fmt.Errorf("token %s is not confirmed on %s", token.GetAsset(), chain.Name)
 		}
 
-		cmd, err := types.CreateBurnTokenCommand(chainID, secondaryKeyID, ctx.BlockHeight(), *burnerInfo, token.IsExternal())
+		cmd, err := types.CreateBurnTokenCommand(chainID, multisig.KeyID(keyID), ctx.BlockHeight(), *burnerInfo, token.IsExternal())
 		if err != nil {
 			return nil, sdkerrors.Wrapf(err, "failed to create burn-token command to burn token at address %s for chain %s", burnerAddressHex, chain.Name)
 		}
@@ -604,8 +580,8 @@ func (s msgServer) CreateBurnTokens(c context.Context, req *types.CreateBurnToke
 	return &types.CreateBurnTokensResponse{}, nil
 }
 
-func (s msgServer) newErrRotationInProgress(chain nexus.Chain, key tss.KeyRole) error {
-	return sdkerrors.Wrapf(types.ErrRotationInProgress, "finish rotating to next %s key for chain %s first", key.SimpleString(), chain.Name)
+func (s msgServer) newErrRotationInProgress(chain nexus.Chain) error {
+	return sdkerrors.Wrapf(types.ErrRotationInProgress, "finish rotating to next key for chain %s first", chain.Name)
 }
 
 func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePendingTransfersRequest) (*types.CreatePendingTransfersResponse, error) {
@@ -628,13 +604,13 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 		return &types.CreatePendingTransfersResponse{}, nil
 	}
 
-	if _, nextSecondaryKeyAssigned := s.signer.GetNextKeyID(ctx, chain, tss.SecondaryKey); nextSecondaryKeyAssigned {
-		return nil, s.newErrRotationInProgress(chain, tss.SecondaryKey)
+	if _, ok := s.multisigKeeper.GetNextKeyID(ctx, chain.Name); ok {
+		return nil, s.newErrRotationInProgress(chain)
 	}
 
-	secondaryKeyID, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.SecondaryKey)
+	keyID, ok := s.multisigKeeper.GetCurrentKeyID(ctx, chain.Name)
 	if !ok {
-		return nil, fmt.Errorf("no %s key for chain %s found", tss.SecondaryKey.SimpleString(), chain.Name)
+		return nil, fmt.Errorf("current key not set for chain %s", chain.Name)
 	}
 
 	for _, transfer := range pendingTransfers {
@@ -644,7 +620,7 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 			continue
 		}
 
-		cmd, err := token.CreateMintCommand(secondaryKeyID, transfer)
+		cmd, err := token.CreateMintCommand(multisig.KeyID(keyID), transfer)
 		if err != nil {
 			return nil, sdkerrors.Wrapf(err, "failed create mint-token command for transfer %d", transfer.ID)
 		}
@@ -668,7 +644,27 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 	return &types.CreatePendingTransfersResponse{}, nil
 }
 
-func (s msgServer) createTransferKeyCommand(ctx sdk.Context, keeper types.ChainKeeper, transferKeyType types.TransferKeyType, chainStr nexus.ChainName, nextKeyID tss.KeyID) (types.Command, error) {
+func (s msgServer) CreateTransferOperatorship(c context.Context, req *types.CreateTransferOperatorshipRequest) (*types.CreateTransferOperatorshipResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+	keeper := s.ForChain(req.Chain)
+
+	if _, ok := keeper.GetGatewayAddress(ctx); !ok {
+		return nil, fmt.Errorf("axelar gateway address not set")
+	}
+
+	cmd, err := s.createTransferKeyCommand(ctx, keeper, req.Chain, multisig.KeyID(req.KeyID))
+	if err != nil {
+		return nil, err
+	}
+
+	if err := keeper.EnqueueCommand(ctx, cmd); err != nil {
+		return nil, err
+	}
+
+	return &types.CreateTransferOperatorshipResponse{}, nil
+}
+
+func (s msgServer) createTransferKeyCommand(ctx sdk.Context, keeper types.ChainKeeper, chainStr nexus.ChainName, nextKeyID multisig.KeyID) (types.Command, error) {
 	chain, ok := s.nexus.GetChain(ctx, chainStr)
 	if !ok {
 		return types.Command{}, fmt.Errorf("%s is not a registered chain", chainStr)
@@ -683,113 +679,28 @@ func (s msgServer) createTransferKeyCommand(ctx sdk.Context, keeper types.ChainK
 		return types.Command{}, fmt.Errorf("could not find chain ID for '%s'", chainStr)
 	}
 
-	var keyRole tss.KeyRole
-	switch transferKeyType {
-	case types.Ownership:
-		keyRole = tss.MasterKey
-	case types.Operatorship:
-		keyRole = tss.SecondaryKey
-	default:
-		return types.Command{}, fmt.Errorf("invalid transfer key type %s", transferKeyType.SimpleString())
+	if _, ok := s.multisigKeeper.GetNextKeyID(ctx, chain.Name); ok {
+		return types.Command{}, s.newErrRotationInProgress(chain)
 	}
 
-	// don't allow any transfer key if the next master/secondary key is already assigned
-	if _, nextMasterKeyAssigned := s.signer.GetNextKeyID(ctx, chain, tss.MasterKey); nextMasterKeyAssigned {
-		return types.Command{}, s.newErrRotationInProgress(chain, tss.MasterKey)
-	}
-	if _, nextSecondaryKeyAssigned := s.signer.GetNextKeyID(ctx, chain, tss.SecondaryKey); nextSecondaryKeyAssigned {
-		return types.Command{}, s.newErrRotationInProgress(chain, tss.SecondaryKey)
-	}
-
-	if err := s.signer.AssertMatchesRequirements(ctx, s.snapshotter, chain, nextKeyID, keyRole); err != nil {
-		return types.Command{}, sdkerrors.Wrapf(err, "key %s does not match requirements for role %s", nextKeyID, keyRole.SimpleString())
-	}
-
-	if err := s.signer.AssignNextKey(ctx, chain, keyRole, nextKeyID); err != nil {
+	if err := s.multisigKeeper.AssignKey(ctx, chain.Name, nextKeyID); err != nil {
 		return types.Command{}, err
 	}
 
-	currMasterKeyID, ok := s.signer.GetCurrentKeyID(ctx, chain, tss.MasterKey)
+	keyID, ok := s.multisigKeeper.GetCurrentKeyID(ctx, chain.Name)
 	if !ok {
-		return types.Command{}, fmt.Errorf("current %s key not set for chain %s", tss.MasterKey, chain.Name)
+		return types.Command{}, fmt.Errorf("current key not set for chain %s", chain.Name)
 	}
 
-	nextKey, ok := s.signer.GetKey(ctx, nextKeyID)
+	nextKey, ok := s.multisigKeeper.GetKey(ctx, nextKeyID)
 	if !ok {
 		return types.Command{}, fmt.Errorf("could not find threshold key '%s'", nextKeyID)
 	}
 
-	switch chain.KeyType {
-	case tss.Threshold:
-		pk, err := nextKey.GetECDSAPubKey()
-		if err != nil {
-			return types.Command{}, err
-		}
-
-		address := crypto.PubkeyToAddress(pk)
-		s.Logger(ctx).Debug(fmt.Sprintf("creating command %s for chain %s to transfer to address %s", transferKeyType.SimpleString(), chain.Name, address))
-
-		return types.CreateSinglesigTransferCommand(transferKeyType, chainID, currMasterKeyID, crypto.PubkeyToAddress(pk))
-	case tss.Multisig:
-		addresses, threshold, err := types.GetMultisigAddresses(nextKey)
-		if err != nil {
-			return types.Command{}, err
-		}
-
-		addressStrs := make([]string, len(addresses))
-		for i, address := range addresses {
-			addressStrs[i] = address.Hex()
-		}
-
-		s.Logger(ctx).Debug(fmt.Sprintf("creating command %s for chain %s to transfer to addresses %s", transferKeyType.SimpleString(), chain.Name, strings.Join(addressStrs, ",")))
-
-		return types.CreateMultisigTransferCommand(transferKeyType, chainID, currMasterKeyID, threshold, addresses...)
-	default:
-		return types.Command{}, fmt.Errorf("invalid key type '%s'", chain.KeyType.SimpleString())
-	}
+	return types.CreateMultisigTransferCommand(chainID, keyID, nextKey), nil
 }
 
-func (s msgServer) CreateTransferOwnership(c context.Context, req *types.CreateTransferOwnershipRequest) (*types.CreateTransferOwnershipResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-	keeper := s.ForChain(req.Chain)
-
-	if _, ok := keeper.GetGatewayAddress(ctx); !ok {
-		return nil, fmt.Errorf("axelar gateway address not set")
-	}
-
-	cmd, err := s.createTransferKeyCommand(ctx, keeper, types.Ownership, req.Chain, req.KeyID)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := keeper.EnqueueCommand(ctx, cmd); err != nil {
-		return nil, err
-	}
-
-	return &types.CreateTransferOwnershipResponse{}, nil
-}
-
-func (s msgServer) CreateTransferOperatorship(c context.Context, req *types.CreateTransferOperatorshipRequest) (*types.CreateTransferOperatorshipResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-	keeper := s.ForChain(req.Chain)
-
-	if _, ok := keeper.GetGatewayAddress(ctx); !ok {
-		return nil, fmt.Errorf("axelar gateway address not set")
-	}
-
-	cmd, err := s.createTransferKeyCommand(ctx, keeper, types.Operatorship, req.Chain, req.KeyID)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := keeper.EnqueueCommand(ctx, cmd); err != nil {
-		return nil, err
-	}
-
-	return &types.CreateTransferOperatorshipResponse{}, nil
-}
-
-func getCommandBatchToSign(ctx sdk.Context, keeper types.ChainKeeper, signer types.Signer) (types.CommandBatch, error) {
+func getCommandBatchToSign(ctx sdk.Context, keeper types.ChainKeeper) (types.CommandBatch, error) {
 	latest := keeper.GetLatestCommandBatch(ctx)
 
 	switch latest.GetStatus() {
@@ -798,7 +709,7 @@ func getCommandBatchToSign(ctx sdk.Context, keeper types.ChainKeeper, signer typ
 	case types.BatchAborted:
 		return latest, nil
 	default:
-		return keeper.CreateNewBatchToSign(ctx, signer)
+		return keeper.CreateNewBatchToSign(ctx)
 	}
 }
 
@@ -819,7 +730,7 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		return nil, fmt.Errorf("could not find chain ID for '%s'", chain.Name)
 	}
 
-	commandBatch, err := getCommandBatchToSign(ctx, keeper, s.signer)
+	commandBatch, err := getCommandBatchToSign(ctx, keeper)
 	if err != nil {
 		return nil, err
 	}
@@ -827,29 +738,13 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		return &types.SignCommandsResponse{CommandCount: 0, BatchedCommandsID: nil}, nil
 	}
 
-	counter, ok := s.signer.GetSnapshotCounterForKeyID(ctx, commandBatch.GetKeyID())
-	if !ok {
-		return nil, fmt.Errorf("no snapshot counter for key ID %s registered", commandBatch.GetKeyID())
-	}
-
-	sigMetadata, err := codectypes.NewAnyWithValue(&types.SigMetadata{
-		Type:  types.SigCommand,
-		Chain: chain.Name,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	batchedCommandsIDHex := hex.EncodeToString(commandBatch.GetID())
-	err = s.signer.StartSign(ctx, tss.SignInfo{
-		KeyID:           commandBatch.GetKeyID(),
-		SigID:           batchedCommandsIDHex,
-		Msg:             commandBatch.GetSigHash().Bytes(),
-		SnapshotCounter: counter,
-		RequestModule:   types.ModuleName,
-		ModuleMetadata:  sigMetadata,
-	}, s.snapshotter, s.voter)
-	if err != nil {
+	if err := s.multisigKeeper.Sign(
+		ctx,
+		commandBatch.GetKeyID(),
+		commandBatch.GetSigHash().Bytes(),
+		types.ModuleName,
+		types.NewSigMetadata(types.SigCommand, chain.Name),
+	); err != nil {
 		return nil, err
 	}
 
@@ -857,12 +752,13 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		return nil, fmt.Errorf("failed setting status of command batch %s to be signing", hex.EncodeToString(commandBatch.GetID()))
 	}
 
+	batchedCommandsIDHex := hex.EncodeToString(commandBatch.GetID())
 	commandList := types.CommandIDsToStrings(commandBatch.GetCommandIDs())
 	for _, commandID := range commandList {
 		s.Logger(ctx).Info(
 			fmt.Sprintf("signing command %s in batch %s for chain %s using key %s", commandID, batchedCommandsIDHex, chain.Name, string(commandBatch.GetKeyID())),
 			types.AttributeKeyChain, chain.Name,
-			tsstypes.AttributeKeyKeyID, string(commandBatch.GetKeyID()),
+			types.AttributeKeyKeyID, string(commandBatch.GetKeyID()),
 			"commandBatchID", batchedCommandsIDHex,
 			"commandID", commandID,
 		)
@@ -894,7 +790,7 @@ func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*typ
 		return nil, err
 	}
 
-	if !tsstypes.TSSEnabled && req.KeyType == tss.Threshold {
+	if req.KeyType == tss.Threshold {
 		return nil, fmt.Errorf("TSS is disabled")
 	}
 

@@ -5,7 +5,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/btcsuite/btcutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	evmUtil "github.com/ethereum/go-ethereum/common"
@@ -19,11 +18,10 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	axelarnetTypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
-	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
-	btcTypes "github.com/axelarnetwork/axelar-core/x/bitcoin/types"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 	. "github.com/axelarnetwork/utils/test"
@@ -38,12 +36,6 @@ func addressValidator() types.Router {
 	router.AddAddressValidator("evm", func(_ sdk.Context, addr exported.CrossChainAddress) error {
 		if !evmUtil.IsHexAddress(addr.Address) {
 			return fmt.Errorf("not an hex address")
-		}
-
-		return nil
-	}).AddAddressValidator("bitcoin", func(ctx sdk.Context, addr exported.CrossChainAddress) error {
-		if _, err := btcutil.DecodeAddress(addr.Address, btcTypes.Testnet3.Params()); err != nil {
-			return err
 		}
 
 		return nil
@@ -149,12 +141,10 @@ func TestLinkAddress(t *testing.T) {
 		keeper.SetParams(ctx, types.DefaultParams())
 
 		// set chain
-		for _, chain := range []exported.Chain{btc.Bitcoin, evm.Ethereum, axelarnet.Axelarnet} {
+		for _, chain := range []exported.Chain{evm.Ethereum, axelarnet.Axelarnet} {
 			keeper.SetChain(ctx, chain)
 			keeper.ActivateChain(ctx, chain)
 		}
-
-		_ = keeper.RegisterAsset(ctx, btc.Bitcoin, exported.NewAsset(btc.NativeAsset, true))
 	}
 
 	t.Run("should pass address validation", testutils.Func(func(t *testing.T) {
@@ -165,27 +155,13 @@ func TestLinkAddress(t *testing.T) {
 		)
 
 		assert.NoError(t, err)
-
-		err = keeper.LinkAddresses(ctx,
-			exported.CrossChainAddress{Chain: evm.Ethereum, Address: "0x68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8"},
-			exported.CrossChainAddress{Chain: btc.Bitcoin, Address: "bcrt1qjs8g7q8u0668l95zzxwqf2pnjnr005v2nasy7d32jrkd5cnmwmzsvx0c06"},
-		)
-
-		assert.NoError(t, err)
-	}).Repeat(1))
+	}))
 
 	t.Run("should return error when link invalid addresses", testutils.Func(func(t *testing.T) {
 		setup()
 		err := keeper.LinkAddresses(ctx,
 			exported.CrossChainAddress{Chain: axelarnet.Axelarnet, Address: "0x68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8"},
 			exported.CrossChainAddress{Chain: evm.Ethereum, Address: "axelar1t66w8cazua870wu7t2hsffndmy2qy2v556ymndnczs83qpz2h45sq6lq9w"},
-		)
-
-		assert.Error(t, err)
-
-		err = keeper.LinkAddresses(ctx,
-			exported.CrossChainAddress{Chain: btc.Bitcoin, Address: "0x68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8"},
-			exported.CrossChainAddress{Chain: evm.Ethereum, Address: "bcrt1qjs8g7q8u0668l95zzxwqf2pnjnr005v2nasy7d32jrkd5cnmwmzsvx0c06"},
 		)
 
 		assert.Error(t, err)
@@ -203,18 +179,18 @@ func TestLinkAddress(t *testing.T) {
 		)
 
 		assert.Error(t, err)
+	}))
 
-		err = keeper.LinkAddresses(ctx,
-			exported.CrossChainAddress{Chain: evm.Ethereum, Address: "0x68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8"},
-			exported.CrossChainAddress{Chain: btc.Bitcoin, Address: rand.StrBetween(10, 30)},
-		)
-
-		assert.Error(t, err)
-	}).Repeat(1))
-
-	t.Run("should return error when link chain which does not support foreign asset", testutils.Func(func(t *testing.T) {
+	t.Run("should return error when link chain does not support foreign asset", testutils.Func(func(t *testing.T) {
 		setup()
-		sender, recipient := makeRandAddressesForChain(btc.Bitcoin, evm.Ethereum)
+		fromChain := nexus.Chain{
+			Name:                  nexus.ChainName(rand.Str(5)),
+			SupportsForeignAssets: false,
+			Module:                evmTypes.ModuleName,
+		}
+		keeper.SetChain(ctx, fromChain)
+		keeper.ActivateChain(ctx, fromChain)
+		sender, recipient := makeRandAddressesForChain(fromChain, evm.Ethereum)
 		err := keeper.LinkAddresses(ctx, sender, recipient)
 		assert.NoError(t, err)
 		_, err = keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(makeRandomDenom()))
@@ -223,17 +199,17 @@ func TestLinkAddress(t *testing.T) {
 
 	t.Run("successfully link", testutils.Func(func(t *testing.T) {
 		setup()
-		sender, recipient := makeRandAddressesForChain(btc.Bitcoin, evm.Ethereum)
+		sender, recipient := makeRandAddressesForChain(axelarnet.Axelarnet, evm.Ethereum)
 		err := keeper.LinkAddresses(ctx, sender, recipient)
 		assert.NoError(t, err)
-		_, err = keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(btcTypes.Satoshi))
+		_, err = keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(axelarnet.NativeAsset))
 		assert.NoError(t, err)
 		recp, ok := keeper.GetRecipient(ctx, sender)
 		assert.True(t, ok)
 		assert.Equal(t, recipient, recp)
 
 		sender.Address = rand.Str(20)
-		_, err = keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(btcTypes.Satoshi))
+		_, err = keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(axelarnet.NativeAsset))
 		assert.Error(t, err)
 		recp, ok = keeper.GetRecipient(ctx, sender)
 		assert.False(t, ok)
@@ -304,7 +280,7 @@ func makeRandomChain(chainName string) exported.Chain {
 }
 
 func makeRandomDenom() string {
-	d := rand.Strings(3, 3).WithAlphabet([]rune("abcdefghijklmnopqrstuvwxyz")).Take(1)
+	d := rand.Strings(3, 4).WithAlphabet([]rune("abcdefghijklmnopqrstuvwxyz")).Take(1)
 	return d[0]
 }
 
@@ -317,8 +293,6 @@ func makeRandAddressesForChain(origin, destination exported.Chain) (exported.Cro
 	var addr string
 
 	switch origin.Module {
-	case btcTypes.ModuleName:
-		addr = genBtcAddr()
 	case evmTypes.ModuleName:
 		addr = genEvmAddr()
 	case axelarnetTypes.ModuleName:
@@ -333,8 +307,6 @@ func makeRandAddressesForChain(origin, destination exported.Chain) (exported.Cro
 	}
 
 	switch destination.Module {
-	case btcTypes.ModuleName:
-		addr = genBtcAddr()
 	case evmTypes.ModuleName:
 		addr = genEvmAddr()
 	case axelarnetTypes.ModuleName:
@@ -353,15 +325,6 @@ func makeRandAddressesForChain(origin, destination exported.Chain) (exported.Cro
 
 func genEvmAddr() string {
 	return evmUtil.BytesToAddress(rand.Bytes(evmUtil.AddressLength)).Hex()
-}
-
-func genBtcAddr() string {
-	addr, err := btcutil.NewAddressWitnessScriptHash(rand.Bytes(32), btcTypes.Testnet3.Params())
-	if err != nil {
-		panic(err)
-	}
-
-	return addr.EncodeAddress()
 }
 
 func genCosmosAddr(chain string) string {

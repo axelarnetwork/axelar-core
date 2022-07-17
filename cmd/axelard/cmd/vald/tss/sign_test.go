@@ -13,7 +13,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/axelarnetwork/axelar-core/app"
-	mock2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types/mock"
+	mock2 "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast/mock"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/tss/rpc/mock"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"

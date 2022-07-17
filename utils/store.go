@@ -8,21 +8,26 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/tendermint/tendermint/libs/log"
+	"golang.org/x/exp/constraints"
+
+	"github.com/axelarnetwork/axelar-core/utils/key"
+	"github.com/axelarnetwork/utils/convert"
 )
 
 // DefaultDelimiter represents the default delimiter used for the KV store keys
 const DefaultDelimiter = "_"
 
 // Key represents a store key to interact with the KVStore
+// Deprecated: use key.Key instead
 type Key interface {
 	// AsKey returns the byte representation of the key. If given, uses a delimiter string to separate prefixes
 	AsKey(delimiter ...string) []byte
 	Prepend(prefix Key) Key
 	Append(key Key) Key
-	Equals(key Key) bool
 }
 
 // StringKey extends the Key interface for simplified appending and prepending
+// Deprecated: use key.Key instead
 type StringKey interface {
 	Key
 	AppendStr(key string, stringTransformations ...func(string) string) StringKey
@@ -44,16 +49,24 @@ func NewNormalizedStore(store sdk.KVStore, cdc codec.BinaryCodec) KVStore {
 }
 
 // Set marshals the value and stores it under the given key
+// Deprecated: use SetNew instead
 func (store KVStore) Set(key Key, value codec.ProtoMarshaler) {
 	store.KVStore.Set(key.AsKey(), store.cdc.MustMarshalLengthPrefixed(value))
 }
 
+// SetNew marshals the value and stores it under the given key
+func (store KVStore) SetNew(k key.Key, value codec.ProtoMarshaler) {
+	store.KVStore.Set(k.Bytes(), store.cdc.MustMarshalLengthPrefixed(value))
+}
+
 // SetRaw stores the value under the given key
+// Deprecated: use SetNew instead
 func (store KVStore) SetRaw(key Key, value []byte) {
 	store.KVStore.Set(key.AsKey(), value)
 }
 
 // Get unmarshals the raw bytes stored under the given key into the value object. Returns true if the key exists.
+// Deprecated: use GetNew instead
 func (store KVStore) Get(key Key, value codec.ProtoMarshaler) bool {
 	bz := store.KVStore.Get(key.AsKey())
 	if bz == nil {
@@ -63,7 +76,18 @@ func (store KVStore) Get(key Key, value codec.ProtoMarshaler) bool {
 	return true
 }
 
+// GetNew unmarshals the raw bytes stored under the given key into the value object. Returns true if the key exists.
+func (store KVStore) GetNew(key key.Key, value codec.ProtoMarshaler) bool {
+	bz := store.KVStore.Get(key.Bytes())
+	if bz == nil {
+		return false
+	}
+	store.cdc.MustUnmarshalLengthPrefixed(bz, value)
+	return true
+}
+
 // GetRaw returns the raw bytes stored under the given key. Returns nil with key does not exist.
+// Deprecated: use GetNew instead
 func (store KVStore) GetRaw(key Key) []byte {
 	return store.KVStore.Get(key.AsKey())
 }
@@ -78,9 +102,21 @@ func (store KVStore) Delete(key Key) {
 	store.KVStore.Delete(key.AsKey())
 }
 
+// DeleteRaw deletes the value stored under the given raw key, if it exists
+func (store KVStore) DeleteRaw(key []byte) {
+	store.KVStore.Delete(key)
+}
+
 // Iterator returns an Iterator that can handle a structured Key
 func (store KVStore) Iterator(prefix Key) Iterator {
 	iter := sdk.KVStorePrefixIterator(store.KVStore, append(prefix.AsKey(), []byte(DefaultDelimiter)...))
+	return iterator{Iterator: iter, cdc: store.cdc}
+}
+
+// ReverseIterator returns an Iterator that can handle a structured Key and
+// interate reversely
+func (store KVStore) ReverseIterator(prefix Key) Iterator {
+	iter := sdk.KVStoreReversePrefixIterator(store.KVStore, append(prefix.AsKey(), []byte(DefaultDelimiter)...))
 	return iterator{Iterator: iter, cdc: store.cdc}
 }
 
@@ -106,7 +142,7 @@ func (i iterator) GetKey() Key {
 	return KeyFromBz(i.Key())
 }
 
-type key struct {
+type basicKey struct {
 	prefix Key
 	key    []byte
 }
@@ -116,7 +152,7 @@ func KeyFromStr(k string, stringTransformations ...func(string) string) StringKe
 	for _, transform := range stringTransformations {
 		k = transform(k)
 	}
-	return key{
+	return basicKey{
 		prefix: nil,
 		key:    []byte(k),
 	}
@@ -129,21 +165,26 @@ func LowerCaseKey(k string) StringKey {
 
 // KeyFromBz returns a structured key
 func KeyFromBz(k []byte) StringKey {
-	return key{
+	return basicKey{
 		prefix: nil,
 		key:    k,
 	}
 }
 
+// KeyFromInt returns a structured key
+func KeyFromInt[T constraints.Integer](k T) StringKey {
+	return KeyFromBz(convert.IntToBytes(k))
+}
+
 // AsKey returns the byte representation of the key. If given, uses a delimiter string to separate prefixes (default is "_")
-func (k key) AsKey(delimiter ...string) []byte {
+func (k basicKey) AsKey(delimiter ...string) []byte {
 	if len(delimiter) == 0 {
 		return k.asKey(DefaultDelimiter)
 	}
 	return k.asKey(delimiter[0])
 }
 
-func (k key) asKey(delimiter string) []byte {
+func (k basicKey) asKey(delimiter string) []byte {
 	if k.prefix != nil {
 		prefix := k.prefix.AsKey(delimiter)
 		delim := []byte(delimiter)
@@ -154,7 +195,7 @@ func (k key) asKey(delimiter string) []byte {
 }
 
 // Prepend prepends the given prefix to the key
-func (k key) Prepend(prefix Key) Key {
+func (k basicKey) Prepend(prefix Key) Key {
 	if k.prefix != nil {
 		k.prefix = k.prefix.Prepend(prefix)
 	} else {
@@ -165,22 +206,22 @@ func (k key) Prepend(prefix Key) Key {
 }
 
 // PrependStr prepends the given string to this key
-func (k key) PrependStr(prefix string, stringTransformations ...func(string) string) StringKey {
+func (k basicKey) PrependStr(prefix string, stringTransformations ...func(string) string) StringKey {
 	return k.Prepend(KeyFromStr(prefix, stringTransformations...)).(StringKey)
 }
 
 // Append appends the given key to this key
-func (k key) Append(key Key) Key {
+func (k basicKey) Append(key Key) Key {
 	return key.Prepend(k)
 }
 
 // AppendStr appends the given string to this key
-func (k key) AppendStr(key string, stringTransformations ...func(string) string) StringKey {
+func (k basicKey) AppendStr(key string, stringTransformations ...func(string) string) StringKey {
 	return KeyFromStr(key, stringTransformations...).Prepend(k).(StringKey)
 }
 
 // Equals compares two keys for equality
-func (k key) Equals(other Key) bool {
+func (k basicKey) Equals(other Key) bool {
 	return bytes.Equal(k.AsKey(), other.AsKey())
 }
 

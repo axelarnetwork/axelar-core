@@ -1,51 +1,52 @@
 package keeper_test
 
 import (
+	"encoding/hex"
 	"fmt"
 	"math/big"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
-	btc "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	evmKeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/evm/types/mock"
 	evmTest "github.com/axelarnetwork/axelar-core/x/evm/types/testutils"
+	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
+	multisigTestutils "github.com/axelarnetwork/axelar-core/x/multisig/exported/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
-	tssTestUtils "github.com/axelarnetwork/axelar-core/x/tss/exported/testutils"
-	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
 func TestQueryPendingCommands(t *testing.T) {
 	var (
-		chainKeeper *mock.ChainKeeperMock
-		baseKeeper  *mock.BaseKeeperMock
-		signer      *mock.SignerMock
-		nexusKeeper *mock.NexusMock
-		ctx         sdk.Context
-		evmChain    nexus.ChainName
-		asset       string
-		symbol      string
-		chainID     sdk.Int
-		keyID       tss.KeyID
-		cmds        []types.Command
+		chainKeeper    *mock.ChainKeeperMock
+		baseKeeper     *mock.BaseKeeperMock
+		signer         *mock.SignerMock
+		multisigKeeper *mock.MultisigKeeperMock
+		nexusKeeper    *mock.NexusMock
+		ctx            sdk.Context
+		evmChain       nexus.ChainName
+		asset          string
+		symbol         string
+		chainID        sdk.Int
+		keyID          multisig.KeyID
+		cmds           []types.Command
 	)
 
 	setup := func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 		evmChain = nexus.ChainName(rand.StrBetween(5, 10))
-		asset = btc.NativeAsset
-		symbol = "axelarBTC"
+		asset = rand.Str(5)
+		symbol = rand.Str(5)
 		chainID = sdk.NewInt(1)
-		keyID = tssTestUtils.RandKeyID()
+		keyID = multisigTestutils.KeyID()
 		dailyMintLimit := sdk.NewUint(uint64(rand.PosI64()))
 		cmdDeploy, _ := types.CreateDeployTokenCommand(chainID, keyID, asset, createDetails(asset, symbol), types.ZeroAddress, dailyMintLimit)
 		cmdMint, _ := types.CreateMintTokenCommand(keyID, types.NewCommandID(rand.Bytes(10), chainID), symbol, common.BytesToAddress(rand.Bytes(common.AddressLength)), big.NewInt(rand.I64Between(1000, 100000)))
@@ -89,7 +90,7 @@ func TestQueryPendingCommands(t *testing.T) {
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
 
-		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer)
+		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer, multisigKeeper)
 
 		res, err := q.PendingCommands(sdk.WrapSDKContext(ctx), &types.PendingCommandsRequest{Chain: evmChain.String()})
 		assert.NoError(t, err)
@@ -110,6 +111,7 @@ func TestQueryDepositState(t *testing.T) {
 	var (
 		baseKeeper      *mock.BaseKeeperMock
 		signer          *mock.SignerMock
+		multisig        *mock.MultisigKeeperMock
 		ctx             sdk.Context
 		evmChain        nexus.ChainName
 		expectedDeposit types.ERC20Deposit
@@ -132,9 +134,6 @@ func TestQueryDepositState(t *testing.T) {
 
 		chainKeeper = &mock.ChainKeeperMock{
 			GetNameFunc: func() string { return evmChain.String() },
-			GetPendingDepositFunc: func(sdk.Context, vote.PollKey) (types.ERC20Deposit, bool) {
-				return types.ERC20Deposit{}, false
-			},
 			GetDepositFunc: func(_ sdk.Context, txID common.Hash, burnerAddr common.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
 				return types.ERC20Deposit{}, 0, false
 			},
@@ -157,7 +156,7 @@ func TestQueryDepositState(t *testing.T) {
 			},
 		}
 
-		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer)
+		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer, multisig)
 		grpcQuerier = &q
 	}
 	repeatCount := 20
@@ -175,41 +174,10 @@ func TestQueryDepositState(t *testing.T) {
 		assert := assert.New(t)
 		assert.NoError(err)
 		assert.Len(chainKeeper.GetNameCalls(), 1)
-		assert.Len(chainKeeper.GetPendingDepositCalls(), 1)
 		assert.Len(chainKeeper.GetDepositCalls(), 1)
 		assert.Len(nexusKeeper.GetChainCalls(), 1)
 
 		assert.Equal(types.DepositStatus_None, res.Status)
-	}).Repeat(repeatCount))
-
-	t.Run("deposit pending", testutils.Func(func(t *testing.T) {
-		setup()
-		pollKey := vote.NewPollKey(types.ModuleName, fmt.Sprintf("%s_%s_%d", expectedDeposit.TxID.Hex(), expectedDeposit.BurnerAddress.Hex(), expectedDeposit.Amount.Uint64()))
-		chainKeeper.GetPendingDepositFunc = func(_ sdk.Context, k vote.PollKey) (types.ERC20Deposit, bool) {
-			if pollKey == k {
-				return expectedDeposit, true
-			}
-			return types.ERC20Deposit{}, false
-		}
-
-		res, err := grpcQuerier.DepositState(sdk.WrapSDKContext(ctx), &types.DepositStateRequest{
-			Chain: evmChain,
-			Params: &types.QueryDepositStateParams{
-				TxID:          expectedDeposit.TxID,
-				BurnerAddress: expectedDeposit.BurnerAddress,
-				Amount:        expectedDeposit.Amount.String(),
-			},
-		})
-
-		assert := assert.New(t)
-		assert.NoError(err)
-		assert.Len(chainKeeper.GetNameCalls(), 1)
-		assert.Len(chainKeeper.GetPendingDepositCalls(), 1)
-		assert.Len(chainKeeper.GetDepositCalls(), 1)
-		assert.Len(nexusKeeper.GetChainCalls(), 1)
-
-		assert.Equal(types.DepositStatus_Pending, res.Status)
-
 	}).Repeat(repeatCount))
 
 	t.Run("deposit confirmed", testutils.Func(func(t *testing.T) {
@@ -233,7 +201,6 @@ func TestQueryDepositState(t *testing.T) {
 		assert := assert.New(t)
 		assert.NoError(err)
 		assert.Len(chainKeeper.GetNameCalls(), 1)
-		assert.Len(chainKeeper.GetPendingDepositCalls(), 1)
 		assert.Len(chainKeeper.GetDepositCalls(), 1)
 		assert.Len(nexusKeeper.GetChainCalls(), 1)
 
@@ -262,7 +229,6 @@ func TestQueryDepositState(t *testing.T) {
 		assert := assert.New(t)
 		assert.NoError(err)
 		assert.Len(chainKeeper.GetNameCalls(), 1)
-		assert.Len(chainKeeper.GetPendingDepositCalls(), 1)
 		assert.Len(chainKeeper.GetDepositCalls(), 1)
 		assert.Len(nexusKeeper.GetChainCalls(), 1)
 
@@ -294,6 +260,7 @@ func TestChains(t *testing.T) {
 	var (
 		baseKeeper  *mock.BaseKeeperMock
 		signer      *mock.SignerMock
+		multisig    *mock.MultisigKeeperMock
 		nexusKeeper *mock.NexusMock
 		ctx         sdk.Context
 		evmChain    nexus.ChainName
@@ -330,7 +297,7 @@ func TestChains(t *testing.T) {
 			},
 		}
 
-		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer)
+		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer, multisig)
 		grpcQuerier = &q
 		res, err := grpcQuerier.Chains(sdk.WrapSDKContext(ctx), &types.ChainsRequest{})
 
@@ -355,7 +322,7 @@ func TestChains(t *testing.T) {
 			},
 		}
 
-		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer)
+		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer, multisig)
 		grpcQuerier = &q
 		res, err := grpcQuerier.Chains(sdk.WrapSDKContext(ctx), &types.ChainsRequest{})
 
@@ -370,6 +337,7 @@ func TestGateway(t *testing.T) {
 	var (
 		baseKeeper    *mock.BaseKeeperMock
 		signer        *mock.SignerMock
+		multisig      *mock.MultisigKeeperMock
 		nexusKeeper   *mock.NexusMock
 		chainKeeper   *mock.ChainKeeperMock
 		ctx           sdk.Context
@@ -399,7 +367,7 @@ func TestGateway(t *testing.T) {
 			},
 		}
 
-		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer)
+		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer, multisig)
 		grpcQuerier = &q
 	}
 
@@ -455,6 +423,7 @@ func TestBytecode(t *testing.T) {
 	var (
 		baseKeeper     *mock.BaseKeeperMock
 		signer         *mock.SignerMock
+		multisig       *mock.MultisigKeeperMock
 		nexusKeeper    *mock.NexusMock
 		chainKeeper    *mock.ChainKeeperMock
 		ctx            sdk.Context
@@ -506,7 +475,7 @@ func TestBytecode(t *testing.T) {
 			},
 		}
 
-		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer)
+		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer, multisig)
 		grpcQuerier = &q
 	}
 
@@ -539,6 +508,7 @@ func TestEvent(t *testing.T) {
 	var (
 		baseKeeper         *mock.BaseKeeperMock
 		signer             *mock.SignerMock
+		multisig           *mock.MultisigKeeperMock
 		chainKeeper        *mock.ChainKeeperMock
 		nexusKeeper        *mock.NexusMock
 		ctx                sdk.Context
@@ -585,7 +555,7 @@ func TestEvent(t *testing.T) {
 			},
 		}
 
-		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer)
+		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer, multisig)
 		grpcQuerier = &q
 	}
 
@@ -688,7 +658,7 @@ func TestERC20Tokens(t *testing.T) {
 			},
 		}
 
-		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, nil)
+		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, nil, nil)
 		grpcQuerier = &q
 	}
 
@@ -697,7 +667,17 @@ func TestERC20Tokens(t *testing.T) {
 	t.Run("all erc20 tokens", testutils.Func(func(t *testing.T) {
 		setup()
 
-		expectedRes = types.ERC20TokensResponse{Assets: []string{external.GetAsset(), internal.GetAsset()}}
+		expectedTokens := []types.ERC20TokensResponse_Token{
+			{
+				Asset:  external.GetAsset(),
+				Symbol: external.GetDetails().Symbol,
+			},
+			{
+				Asset:  internal.GetAsset(),
+				Symbol: internal.GetDetails().Symbol,
+			},
+		}
+		expectedRes = types.ERC20TokensResponse{Tokens: expectedTokens}
 
 		res, err := grpcQuerier.ERC20Tokens(sdk.WrapSDKContext(ctx), &types.ERC20TokensRequest{Chain: existingChain.String()})
 		assert := assert.New(t)
@@ -709,7 +689,11 @@ func TestERC20Tokens(t *testing.T) {
 	t.Run("internal erc20 tokens only", testutils.Func(func(t *testing.T) {
 		setup()
 
-		expectedRes = types.ERC20TokensResponse{Assets: []string{internal.GetAsset()}}
+		expectedTokens := []types.ERC20TokensResponse_Token{{
+			Asset:  internal.GetAsset(),
+			Symbol: internal.GetDetails().Symbol,
+		}}
+		expectedRes = types.ERC20TokensResponse{Tokens: expectedTokens}
 
 		res, err := grpcQuerier.ERC20Tokens(sdk.WrapSDKContext(ctx), &types.ERC20TokensRequest{Chain: existingChain.String(), Type: types.Internal})
 		assert := assert.New(t)
@@ -720,7 +704,11 @@ func TestERC20Tokens(t *testing.T) {
 	t.Run("external erc20 tokens only", testutils.Func(func(t *testing.T) {
 		setup()
 
-		expectedRes = types.ERC20TokensResponse{Assets: []string{external.GetAsset()}}
+		expectedTokens := []types.ERC20TokensResponse_Token{{
+			Asset:  external.GetAsset(),
+			Symbol: external.GetDetails().Symbol,
+		}}
+		expectedRes = types.ERC20TokensResponse{Tokens: expectedTokens}
 
 		res, err := grpcQuerier.ERC20Tokens(sdk.WrapSDKContext(ctx), &types.ERC20TokensRequest{Chain: existingChain.String(), Type: types.External})
 		assert := assert.New(t)
@@ -742,6 +730,7 @@ func TestTokenInfo(t *testing.T) {
 	var (
 		baseKeeper    *mock.BaseKeeperMock
 		signer        *mock.SignerMock
+		multisig      *mock.MultisigKeeperMock
 		nexusKeeper   *mock.NexusMock
 		chainKeeper   *mock.ChainKeeperMock
 		existingChain nexus.ChainName
@@ -749,12 +738,18 @@ func TestTokenInfo(t *testing.T) {
 		grpcQuerier   *evmKeeper.Querier
 	)
 
+	burnerCode, err := hex.DecodeString(rand.HexStr(200))
+	if err != nil {
+		panic(err)
+	}
+	burnerCodeHash := types.Hash(crypto.Keccak256Hash(burnerCode)).Hex()
 	token := types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{
 		Asset:        "token",
 		Details:      types.NewTokenDetails("Token", "TOKEN", 10, sdk.NewInt(0)),
 		TokenAddress: types.ZeroAddress,
 		Status:       types.Confirmed,
 		IsExternal:   true,
+		BurnerCode:   burnerCode,
 	})
 
 	setup := func() {
@@ -796,17 +791,18 @@ func TestTokenInfo(t *testing.T) {
 			},
 		}
 
-		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer)
+		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, signer, multisig)
 		grpcQuerier = &q
 	}
 
 	repeatCount := 1
 	expectedRes := types.TokenInfoResponse{
-		Asset:      token.GetAsset(),
-		Details:    token.GetDetails(),
-		Address:    token.GetAddress().Hex(),
-		Confirmed:  token.Is(types.Confirmed),
-		IsExternal: token.IsExternal(),
+		Asset:          token.GetAsset(),
+		Details:        token.GetDetails(),
+		Address:        token.GetAddress().Hex(),
+		Confirmed:      token.Is(types.Confirmed),
+		IsExternal:     token.IsExternal(),
+		BurnerCodeHash: burnerCodeHash,
 	}
 
 	t.Run("token detail by asset", testutils.Func(func(t *testing.T) {

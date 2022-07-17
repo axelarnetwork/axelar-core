@@ -1,12 +1,14 @@
 package types
 
 import (
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
@@ -14,7 +16,7 @@ import (
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
-//go:generate moq -out ./mock/expected_keepers.go -pkg mock . TSS Voter Signer Nexus Snapshotter BaseKeeper ChainKeeper Rewarder
+//go:generate moq -out ./mock/expected_keepers.go -pkg mock . Voter Signer Nexus Snapshotter BaseKeeper ChainKeeper Rewarder StakingKeeper SlashingKeeper MultisigKeeper
 
 // BaseKeeper is implemented by this module's base keeper
 type BaseKeeper interface {
@@ -46,19 +48,11 @@ type ChainKeeper interface {
 	GetGatewayAddress(ctx sdk.Context) (common.Address, bool)
 	GetDeposit(ctx sdk.Context, txID common.Hash, burnerAddr common.Address) (ERC20Deposit, DepositStatus, bool)
 	GetBurnerInfo(ctx sdk.Context, address Address) *BurnerInfo
-	SetPendingDeposit(ctx sdk.Context, key vote.PollKey, deposit *ERC20Deposit)
 	GetBurnerAddressAndSalt(ctx sdk.Context, token ERC20Token, recipient string, gatewayAddr common.Address) (Address, Hash, error)
 	SetBurnerInfo(ctx sdk.Context, burnerInfo BurnerInfo)
-	GetPendingDeposit(ctx sdk.Context, key vote.PollKey) (ERC20Deposit, bool)
-	DeletePendingDeposit(ctx sdk.Context, key vote.PollKey)
 	DeleteDeposit(ctx sdk.Context, deposit ERC20Deposit)
 	SetDeposit(ctx sdk.Context, deposit ERC20Deposit, state DepositStatus)
 	GetConfirmedDeposits(ctx sdk.Context) []ERC20Deposit
-	GetPendingTransferKey(ctx sdk.Context, key vote.PollKey) (TransferKey, bool)
-	SetPendingTransferKey(ctx sdk.Context, key vote.PollKey, transferOwnership *TransferKey)
-	GetArchivedTransferKey(ctx sdk.Context, key vote.PollKey) (TransferKey, bool)
-	ArchiveTransferKey(ctx sdk.Context, key vote.PollKey)
-	DeletePendingTransferKey(ctx sdk.Context, key vote.PollKey)
 	GetNetworkByID(ctx sdk.Context, id sdk.Int) (string, bool)
 	GetChainIDByNetwork(ctx sdk.Context, network string) (sdk.Int, bool)
 	GetVotingThreshold(ctx sdk.Context) (utils.Threshold, bool)
@@ -72,7 +66,7 @@ type ChainKeeper interface {
 	EnqueueCommand(ctx sdk.Context, cmd Command) error
 	GetCommand(ctx sdk.Context, id CommandID) (Command, bool)
 	GetPendingCommands(ctx sdk.Context) []Command
-	CreateNewBatchToSign(ctx sdk.Context, signer Signer) (CommandBatch, error)
+	CreateNewBatchToSign(ctx sdk.Context) (CommandBatch, error)
 	SetLatestSignedCommandBatchID(ctx sdk.Context, id []byte)
 	GetLatestCommandBatch(ctx sdk.Context) CommandBatch
 	GetBatchByID(ctx sdk.Context, id []byte) CommandBatch
@@ -83,7 +77,6 @@ type ChainKeeper interface {
 	SetConfirmedEvent(ctx sdk.Context, event Event) error
 	SetEventCompleted(ctx sdk.Context, eventID EventID) error
 	SetEventFailed(ctx sdk.Context, eventID EventID) error
-	SetFailedEvent(ctx sdk.Context, event Event) error
 }
 
 // ParamsKeeper represents a global paramstore
@@ -92,18 +85,9 @@ type ParamsKeeper interface {
 	GetSubspace(s string) (params.Subspace, bool)
 }
 
-// TSS exposes key functionality
-type TSS interface {
-	GetKeyRequirement(ctx sdk.Context, keyRole tss.KeyRole, keyType tss.KeyType) (tss.KeyRequirement, bool)
-	GetRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) int64
-}
-
 // Voter exposes voting functionality
 type Voter interface {
-	InitializePoll(ctx sdk.Context, key vote.PollKey, voters []sdk.ValAddress, pollProperties ...vote.PollProperty) error
-	// Deprecated: InitializePollWithSnapshot will be removed soon
-	InitializePollWithSnapshot(ctx sdk.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error
-	GetPoll(ctx sdk.Context, pollKey vote.PollKey) vote.Poll
+	InitializePoll(ctx sdk.Context, pollBuilder vote.PollBuilder) (vote.PollID, error)
 }
 
 // Nexus provides functionality to manage cross-chain transfers
@@ -132,28 +116,13 @@ type Nexus interface {
 // because the concrete implementation of Signer (specifically StartSign) is defined in a different package using another (identical)
 // InitPoller interface. Go cannot match the types otherwise
 type InitPoller = interface {
-	// Deprecated: InitializePollWithSnapshot will be removed soon
-	InitializePollWithSnapshot(ctx sdk.Context, key vote.PollKey, snapshotSeqNo int64, pollProperties ...vote.PollProperty) error
+	InitializePoll(ctx sdk.Context, pollBuilder vote.PollBuilder) (vote.PollID, error)
 }
 
 // Signer provides keygen and signing functionality
 type Signer interface {
-	StartSign(ctx sdk.Context, info tss.SignInfo, snapshotter Snapshotter, voter InitPoller) error
 	GetSig(ctx sdk.Context, sigID string) (tss.Signature, tss.SigStatus)
 	GetKey(ctx sdk.Context, keyID tss.KeyID) (tss.Key, bool)
-	GetKeyRole(ctx sdk.Context, keyID tss.KeyID) tss.KeyRole
-	GetCurrentKeyID(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool)
-	GetCurrentKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
-	GetNextKeyID(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool)
-	GetSnapshotCounterForKeyID(ctx sdk.Context, keyID tss.KeyID) (int64, bool)
-	AssignNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, keyID tss.KeyID) error
-	RotateKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) error
-	AssertMatchesRequirements(ctx sdk.Context, snapshotter Snapshotter, chain nexus.Chain, keyID tss.KeyID, keyRole tss.KeyRole) error
-	GetExternalMultisigThreshold(ctx sdk.Context) utils.Threshold
-	GetExternalKeyIDs(ctx sdk.Context, chain nexus.Chain) ([]tss.KeyID, bool)
-	GetKeyRequirement(ctx sdk.Context, keyRole tss.KeyRole, keyType tss.KeyType) (tss.KeyRequirement, bool)
-	GetKeyType(ctx sdk.Context, keyID tss.KeyID) tss.KeyType
-	GetRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) int64
 }
 
 // Snapshotter provides access to the snapshot functionality
@@ -162,4 +131,25 @@ type Snapshotter = snapshot.Snapshotter
 // Rewarder provides reward functionality
 type Rewarder interface {
 	GetPool(ctx sdk.Context, name string) reward.RewardPool
+}
+
+// StakingKeeper adopts the methods from "github.com/cosmos/cosmos-sdk/x/staking/exported" that are
+// actually used by this module
+type StakingKeeper interface {
+	PowerReduction(ctx sdk.Context) sdk.Int
+}
+
+// SlashingKeeper provides functionality to manage slashing info for a validator
+type SlashingKeeper interface {
+	IsTombstoned(ctx sdk.Context, consAddr sdk.ConsAddress) bool
+}
+
+// MultisigKeeper provides functionality to the multisig module
+type MultisigKeeper interface {
+	GetCurrentKeyID(ctx sdk.Context, chainName nexus.ChainName) (multisig.KeyID, bool)
+	GetNextKeyID(ctx sdk.Context, chainName nexus.ChainName) (multisig.KeyID, bool)
+	GetKey(ctx sdk.Context, keyID multisig.KeyID) (multisig.Key, bool)
+	AssignKey(ctx sdk.Context, chainName nexus.ChainName, keyID multisig.KeyID) error
+	RotateKey(ctx sdk.Context, chainName nexus.ChainName) error
+	Sign(ctx sdk.Context, keyID multisig.KeyID, payloadHash multisig.Hash, module string, moduleMetadata ...codec.ProtoMarshaler) error
 }

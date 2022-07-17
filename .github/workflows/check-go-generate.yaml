@@ -1,0 +1,70 @@
+name: Check format and go generated files up-to-date
+
+on:
+  - pull_request
+
+jobs:
+  check-go-generate-up-to-date:
+    strategy:
+      matrix:
+        go-version:
+          - 1.18
+        os:
+          - ubuntu-18.04
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Setup Golang with cache
+        uses: magnetikonline/action-golang-cache@v2
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - name: Install Python
+        uses: actions/setup-python@v3
+
+      - name: Cache Python
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: pip-cache
+
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Get Bytecode Version
+        id: bytecode_version
+        run: echo ::set-output name=VERSION::$(cat contract-version.json | jq -r '.gateway')
+
+      - name: Download Bytecode
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          repo: axelarnetwork/solidity-cgp-gateway
+          workflow: publish-bytecode.yaml
+          name: Bytecode-${{ steps.bytecode_version.outputs.VERSION }}
+          path: contract-artifacts
+          search_artifacts: true
+
+      - name: Install prereqs
+        run: |
+          go install golang.org/x/tools/cmd/goimports
+          go install github.com/matryer/moq
+          pip3 install mdformat
+
+      - name: Run go generate
+        run: make generate
+
+      - name: Run goimports
+        run: make goimports
+
+      - name: Check for changes
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo Following files are changed...
+            git status
+
+            echo Changes:
+            git diff
+
+            exit 1;
+          else
+            exit 0;
+          fi

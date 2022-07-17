@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"fmt"
-	"strings"
 	"testing"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -15,7 +14,9 @@ import (
 	"github.com/axelarnetwork/axelar-core/app/params"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
-	"github.com/axelarnetwork/axelar-core/utils"
+	utilstestutils "github.com/axelarnetwork/axelar-core/utils/testutils"
+	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
+	snapshottestutils "github.com/axelarnetwork/axelar-core/x/snapshot/exported/testutils"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/types"
 	"github.com/axelarnetwork/axelar-core/x/vote/types/mock"
@@ -30,6 +31,7 @@ func setup() (sdk.Context, Keeper, *mock.SnapshotterMock, *mock.StakingKeeperMoc
 	encodingConfig := params.MakeEncodingConfig()
 	types.RegisterLegacyAminoCodec(encodingConfig.Amino)
 	types.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	evmtypes.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 	subspace := paramstypes.NewSubspace(encodingConfig.Codec, encodingConfig.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "vote")
 
 	keeper := NewKeeper(
@@ -45,44 +47,33 @@ func setup() (sdk.Context, Keeper, *mock.SnapshotterMock, *mock.StakingKeeperMoc
 }
 
 func initializeRandomPoll(ctx sdk.Context, keeper Keeper) exported.PollMetadata {
-	voterCount := rand.I64Between(10, 100)
-	voters := make([]exported.Voter, voterCount)
-	for i := range voters {
-		voters[i] = exported.Voter{
-			Validator:   rand.ValAddr(),
-			VotingPower: rand.I64Between(1, 10),
-		}
-	}
-
-	pollKey := exported.PollKey{Module: randomNormalizedStr(5), ID: randomNormalizedStr(10)}
-	err := keeper.initializePoll(ctx, pollKey, voters,
-		exported.ExpiryAt(rand.PosI64()),
-		exported.RewardPool(randomNormalizedStr(5)),
-		exported.MinVoterCount(rand.I64Between(0, int64(len(voters)))),
-		exported.Threshold(utils.NewThreshold(rand.I64Between(1, 101), 100)),
-		exported.GracePeriod(rand.I64Between(0, 10)),
+	votingThreshold := utilstestutils.RandThreshold()
+	snapshot := snapshottestutils.Snapshot(uint64(rand.I64Between(1, 100)), votingThreshold)
+	pollID, err := keeper.InitializePoll(
+		ctx,
+		exported.NewPollBuilder(rand.NormalizedStr(5), votingThreshold, snapshot, rand.I64Between(1, 100)).
+			RewardPoolName(rand.NormalizedStr(5)).
+			MinVoterCount(rand.I64Between(0, int64(len(snapshot.Participants)))).
+			GracePeriod(rand.I64Between(0, 10)),
 	)
 	if err != nil {
 		panic(err)
 	}
 
-	metadata, ok := keeper.getPollMetadata(ctx, pollKey)
+	metadata, ok := keeper.getPollMetadata(ctx, pollID)
 	if !ok {
 		panic(fmt.Errorf("poll metadata not found"))
 	}
 
-	pollStates := []exported.PollState{exported.Completed, exported.Failed, exported.Expired, exported.AllowOverride}
-	poll := types.NewPoll(metadata, keeper.newPollStore(ctx, metadata.Key))
-	poll.State = rand.Of(pollStates...)
-
-	if poll.Is(exported.Completed) {
-		poll.Result = &codectypes.Any{}
-		poll.CompletedAt = rand.PosI64()
+	metadata.State = rand.Of(exported.Completed, exported.Failed)
+	if metadata.Is(exported.Completed) {
+		metadata.Result = &codectypes.Any{}
+		metadata.CompletedAt = rand.PosI64()
 	}
 
-	poll.SetMetadata(poll.PollMetadata)
+	keeper.setPollMetadata(ctx, metadata)
 
-	return poll.PollMetadata
+	return metadata
 }
 
 func TestExportGenesisInitGenesis(t *testing.T) {
@@ -112,8 +103,4 @@ func TestExportGenesisInitGenesis(t *testing.T) {
 	assert.Equal(t, expected.Params, actual.Params)
 	assert.ElementsMatch(t, expected.PollMetadatas, actual.PollMetadatas)
 	assert.NoError(t, actual.Validate())
-}
-
-func randomNormalizedStr(size int) string {
-	return strings.ReplaceAll(utils.NormalizeString(rand.Str(size)), utils.DefaultDelimiter, "-")
 }

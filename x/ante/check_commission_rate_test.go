@@ -85,6 +85,24 @@ func TestCheckCommissionRate(t *testing.T) {
 		Run(t)
 
 	givenCheckCommissionRateAnteHandler.
+		When("a tx with MsgEditValidator with unspecified commission rate is received", func() {
+			msg = &stakingtypes.MsgEditValidator{
+				CommissionRate: nil,
+			}
+
+			tx = &mock.TxMock{
+				GetMsgsFunc: func() []sdk.Msg {
+					return []sdk.Msg{msg}
+				},
+			}
+		}).
+		Then("should go through", func(t *testing.T) {
+			_, err := handler.AnteHandle(sdk.Context{}, tx, false, func(sdk.Context, sdk.Tx, bool) (sdk.Context, error) { return sdk.Context{}, nil })
+			assert.NoError(t, err)
+		}).
+		Run(t)
+
+	givenCheckCommissionRateAnteHandler.
 		When("a tx with eligible MsgCreateValidator and MsgEditValidator is received", func() {
 			commissionRate := sdk.NewDecWithPrec(51, 3)
 

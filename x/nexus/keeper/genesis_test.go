@@ -16,7 +16,6 @@ import (
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	axelarnetkeeper "github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	axelarnetTypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
-	bitcoin "github.com/axelarnetwork/axelar-core/x/bitcoin/exported"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	evmkeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
@@ -97,14 +96,6 @@ func TestExportGenesisInitGenesis(t *testing.T) {
 		panic(err)
 	}
 
-	keeper.SetChain(ctx, bitcoin.Bitcoin)
-	if err := keeper.RegisterAsset(ctx, bitcoin.Bitcoin, exported.NewAsset(bitcoin.NativeAsset, true)); err != nil {
-		panic(err)
-	}
-	if err := keeper.RegisterFee(ctx, bitcoin.Bitcoin, randFee(bitcoin.Bitcoin.Name, bitcoin.NativeAsset)); err != nil {
-		panic(err)
-	}
-
 	if err := keeper.RegisterAsset(ctx, evm.Ethereum, exported.NewAsset(axelarnet.NativeAsset, false)); err != nil {
 		panic(err)
 	}
@@ -112,12 +103,11 @@ func TestExportGenesisInitGenesis(t *testing.T) {
 		panic(err)
 	}
 
-	expected.Chains = append(expected.Chains, bitcoin.Bitcoin)
 	for _, chain := range expected.Chains {
 		keeper.ActivateChain(ctx, chain)
 	}
 
-	linkedAddressesCount := rand.I64Between(100, 1000)
+	linkedAddressesCount := rand.I64Between(100, 200)
 	expectedLinkedAddresses := make([]types.LinkedAddresses, linkedAddressesCount)
 	for i := 0; i < int(linkedAddressesCount); i++ {
 		depositAddress := getRandomAxelarnetAddress()
@@ -177,11 +167,6 @@ func TestExportGenesisInitGenesis(t *testing.T) {
 		{
 			Chain:     evm.Ethereum,
 			Assets:    []exported.Asset{exported.NewAsset(axelarnet.NativeAsset, false)},
-			Activated: true,
-		},
-		{
-			Chain:     bitcoin.Bitcoin,
-			Assets:    []exported.Asset{exported.NewAsset(bitcoin.NativeAsset, true)},
 			Activated: true,
 		},
 	}

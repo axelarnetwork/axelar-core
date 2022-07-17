@@ -18,7 +18,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	tmLog "github.com/tendermint/tendermint/libs/log"
 
-	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm/rpc"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/parse"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
@@ -34,10 +34,8 @@ import (
 var (
 	ERC20TransferSig                 = crypto.Keccak256Hash([]byte("Transfer(address,address,uint256)"))
 	ERC20TokenDeploymentSig          = crypto.Keccak256Hash([]byte("TokenDeployed(string,address)"))
-	SinglesigTransferOwnershipSig    = crypto.Keccak256Hash([]byte("OwnershipTransferred(address,address)"))
 	SinglesigTransferOperatorshipSig = crypto.Keccak256Hash([]byte("OperatorshipTransferred(address,address)"))
-	MultisigTransferOwnershipSig     = crypto.Keccak256Hash([]byte("OwnershipTransferred(address[],uint256,address[],uint256)"))
-	MultisigTransferOperatorshipSig  = crypto.Keccak256Hash([]byte("OperatorshipTransferred(address[],uint256,address[],uint256)"))
+	MultisigTransferOperatorshipSig  = crypto.Keccak256Hash([]byte("OperatorshipTransferred(bytes)"))
 	ContractCallSig                  = crypto.Keccak256Hash([]byte("ContractCall(address,string,string,bytes32,bytes)"))
 	ContractCallWithTokenSig         = crypto.Keccak256Hash([]byte("ContractCallWithToken(address,string,string,bytes32,bytes,string,uint256)"))
 	TokenSentSig                     = crypto.Keccak256Hash([]byte("TokenSent(address,string,string,string,uint256)"))
@@ -48,12 +46,12 @@ type Mgr struct {
 	cliCtx      sdkClient.Context
 	logger      tmLog.Logger
 	rpcs        map[string]rpc.Client
-	broadcaster types.Broadcaster
+	broadcaster broadcast.Broadcaster
 	cdc         *codec.LegacyAmino
 }
 
 // NewMgr returns a new Mgr instance
-func NewMgr(rpcs map[string]rpc.Client, cliCtx sdkClient.Context, broadcaster types.Broadcaster, logger tmLog.Logger, cdc *codec.LegacyAmino) *Mgr {
+func NewMgr(rpcs map[string]rpc.Client, cliCtx sdkClient.Context, broadcaster broadcast.Broadcaster, logger tmLog.Logger, cdc *codec.LegacyAmino) *Mgr {
 	return &Mgr{
 		rpcs:        rpcs,
 		cliCtx:      cliCtx,
@@ -76,7 +74,7 @@ func (mgr Mgr) ProcessNewChain(e tmEvents.Event) (err error) {
 
 // ProcessDepositConfirmation votes on the correctness of an EVM chain token deposit
 func (mgr Mgr) ProcessDepositConfirmation(e tmEvents.Event) (err error) {
-	chain, txID, burnAddr, tokenAddr, confHeight, pollKey, err := parseDepositConfirmationParams(mgr.cdc, e.Attributes)
+	chain, txID, burnAddr, tokenAddr, confHeight, pollID, err := parseDepositConfirmationParams(mgr.cdc, e.Attributes)
 	if err != nil {
 		return sdkerrors.Wrap(err, "EVM deposit confirmation failed")
 	}
@@ -119,19 +117,15 @@ func (mgr Mgr) ProcessDepositConfirmation(e tmEvents.Event) (err error) {
 		return true
 	})
 
-	v, err := packEvents(chain, events)
-	if err != nil {
-		return err
-	}
-	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, pollKey, v)
-	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", events, pollKey.String()))
+	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, pollID, evmTypes.NewVoteEvents(chain, events))
+	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", events, pollID.String()))
 	_, err = mgr.broadcaster.Broadcast(context.TODO(), msg)
 	return err
 }
 
 // ProcessTokenConfirmation votes on the correctness of an EVM chain token deployment
 func (mgr Mgr) ProcessTokenConfirmation(e tmEvents.Event) error {
-	chain, txID, gatewayAddr, tokenAddr, symbol, confHeight, pollKey, err := parseTokenConfirmationParams(mgr.cdc, e.Attributes)
+	chain, txID, gatewayAddr, tokenAddr, symbol, confHeight, pollID, err := parseTokenConfirmationParams(mgr.cdc, e.Attributes)
 	if err != nil {
 		return sdkerrors.Wrap(err, "EVM token deployment confirmation failed")
 	}
@@ -175,19 +169,15 @@ func (mgr Mgr) ProcessTokenConfirmation(e tmEvents.Event) error {
 		return true
 	})
 
-	v, err := packEvents(chain, events)
-	if err != nil {
-		return err
-	}
-	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, pollKey, v)
-	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", events, pollKey.String()))
+	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, pollID, evmTypes.NewVoteEvents(chain, events))
+	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", events, pollID.String()))
 	_, err = mgr.broadcaster.Broadcast(context.TODO(), msg)
 	return err
 }
 
 // ProcessTransferKeyConfirmation votes on the correctness of an EVM chain key transfer
 func (mgr Mgr) ProcessTransferKeyConfirmation(e tmEvents.Event) (err error) {
-	chain, txID, transferKeyType, keyType, gatewayAddr, confHeight, pollKey, err := parseTransferKeyConfirmationParams(mgr.cdc, e.Attributes)
+	chain, txID, keyType, gatewayAddr, confHeight, pollID, err := parseTransferKeyConfirmationParams(mgr.cdc, e.Attributes)
 	if err != nil {
 		return sdkerrors.Wrap(err, "EVM key transfer confirmation failed")
 	}
@@ -207,78 +197,38 @@ func (mgr Mgr) ProcessTransferKeyConfirmation(e tmEvents.Event) (err error) {
 				continue
 			}
 
-			switch keyType {
-			case tss.Threshold:
-				switch log.Topics[0] {
-				case SinglesigTransferOwnershipSig:
-					event, err := decodeSinglesigOwnershipTransferredEvent(log)
-					if err != nil {
-						mgr.logger.Debug(sdkerrors.Wrapf(err, "%s key transfer confirmation failed", transferKeyType.SimpleString()).Error())
-						continue
-					}
-
-					events = append(events, evmTypes.Event{
-						Chain: chain,
-						TxId:  evmTypes.Hash(txID),
-						Index: uint64(i),
-						Event: &evmTypes.Event_SinglesigOwnershipTransferred{
-							SinglesigOwnershipTransferred: &event,
-						},
-					})
-				case SinglesigTransferOperatorshipSig:
-					event, err := decodeSinglesigOperatorshipTransferredEvent(log)
-					if err != nil {
-						mgr.logger.Debug(sdkerrors.Wrapf(err, "%s key transfer confirmation failed", transferKeyType.SimpleString()).Error())
-						continue
-					}
-
-					events = append(events, evmTypes.Event{
-						Chain: chain,
-						TxId:  evmTypes.Hash(txID),
-						Index: uint64(i),
-						Event: &evmTypes.Event_SinglesigOperatorshipTransferred{
-							SinglesigOperatorshipTransferred: &event,
-						},
-					})
-				default:
+			switch {
+			case keyType == tss.Threshold && log.Topics[0] == SinglesigTransferOperatorshipSig:
+				event, err := decodeSinglesigOperatorshipTransferredEvent(log)
+				if err != nil {
+					mgr.logger.Debug(sdkerrors.Wrap(err, "key transfer confirmation failed").Error())
+					continue
 				}
-			case tss.Multisig:
-				switch log.Topics[0] {
-				case MultisigTransferOwnershipSig:
-					event, err := decodeMultisigOwnershipTransferredEvent(log)
-					if err != nil {
-						mgr.logger.Debug(sdkerrors.Wrapf(err, "%s key transfer confirmation failed", transferKeyType.SimpleString()).Error())
-						continue
-					}
 
-					events = append(events, evmTypes.Event{
-						Chain: chain,
-						TxId:  evmTypes.Hash(txID),
-						Index: uint64(i),
-						Event: &evmTypes.Event_MultisigOwnershipTransferred{
-							MultisigOwnershipTransferred: &event,
-						},
-					})
-				case MultisigTransferOperatorshipSig:
-					event, err := decodeMultisigOperatorshipTransferredEvent(log)
-					if err != nil {
-						mgr.logger.Debug(sdkerrors.Wrapf(err, "%s key transfer confirmation failed", transferKeyType.SimpleString()).Error())
-						continue
-					}
-
-					events = append(events, evmTypes.Event{
-						Chain: chain,
-						TxId:  evmTypes.Hash(txID),
-						Index: uint64(i),
-						Event: &evmTypes.Event_MultisigOperatorshipTransferred{
-							MultisigOperatorshipTransferred: &event,
-						},
-					})
-				default:
+				events = append(events, evmTypes.Event{
+					Chain: chain,
+					TxId:  evmTypes.Hash(txID),
+					Index: uint64(i),
+					Event: &evmTypes.Event_SinglesigOperatorshipTransferred{
+						SinglesigOperatorshipTransferred: &event,
+					},
+				})
+			case keyType == tss.Multisig && log.Topics[0] == MultisigTransferOperatorshipSig:
+				event, err := decodeMultisigOperatorshipTransferredEvent(log)
+				if err != nil {
+					mgr.logger.Debug(sdkerrors.Wrap(err, "key transfer confirmation failed").Error())
+					continue
 				}
+
+				events = append(events, evmTypes.Event{
+					Chain: chain,
+					TxId:  evmTypes.Hash(txID),
+					Index: uint64(i),
+					Event: &evmTypes.Event_MultisigOperatorshipTransferred{
+						MultisigOperatorshipTransferred: &event,
+					},
+				})
 			default:
-				mgr.logger.Error(fmt.Sprintf("unknown key type %s", keyType.SimpleString()))
-				return false
 			}
 
 			// There might be several transfer ownership/operatorship event. Only interest in the last one.
@@ -286,22 +236,19 @@ func (mgr Mgr) ProcessTransferKeyConfirmation(e tmEvents.Event) (err error) {
 				break
 			}
 		}
+
 		return true
 	})
 
-	v, err := packEvents(chain, events)
-	if err != nil {
-		return err
-	}
-	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, pollKey, v)
-	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", events, pollKey.String()))
+	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, pollID, evmTypes.NewVoteEvents(chain, events))
+	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", events, pollID.String()))
 	_, err = mgr.broadcaster.Broadcast(context.TODO(), msg)
 	return err
 }
 
 // ProcessGatewayTxConfirmation votes on the correctness of an EVM chain gateway's transactions
 func (mgr Mgr) ProcessGatewayTxConfirmation(e tmEvents.Event) error {
-	chain, gatewayAddress, txID, confHeight, pollKey, err := parseGatewayTxConfirmationParams(mgr.cdc, e.Attributes)
+	chain, gatewayAddress, txID, confHeight, pollID, err := parseGatewayTxConfirmationParams(mgr.cdc, e.Attributes)
 	if err != nil {
 		return sdkerrors.Wrap(err, "EVM gateway transaction confirmation failed")
 	}
@@ -390,12 +337,8 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(e tmEvents.Event) error {
 		return true
 	})
 
-	v, err := packEvents(chain, events)
-	if err != nil {
-		return err
-	}
-	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, pollKey, v)
-	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", events, pollKey.String()))
+	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, pollID, evmTypes.NewVoteEvents(chain, events))
+	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", events, pollID.String()))
 	_, err = mgr.broadcaster.Broadcast(context.TODO(), msg)
 	return err
 }
@@ -503,7 +446,7 @@ func parseGatewayTxConfirmationParams(cdc *codec.LegacyAmino, attributes map[str
 	gatewayAddress common.Address,
 	txID common.Hash,
 	confHeight uint64,
-	pollKey vote.PollKey,
+	pollID vote.PollID,
 	err error,
 ) {
 	parsers := []*parse.AttributeParser{
@@ -518,22 +461,21 @@ func parseGatewayTxConfirmationParams(cdc *codec.LegacyAmino, attributes map[str
 		}},
 		{Key: evmTypes.AttributeKeyConfHeight, Map: func(s string) (interface{}, error) { return strconv.ParseUint(s, 10, 64) }},
 		{Key: evmTypes.AttributeKeyPoll, Map: func(s string) (interface{}, error) {
-			cdc.MustUnmarshalJSON([]byte(s), &pollKey)
-
-			return pollKey, nil
+			id, err := strconv.ParseUint(s, 10, 64)
+			return vote.PollID(id), err
 		}},
 	}
 
 	results, err := parse.Parse(attributes, parsers)
 	if err != nil {
-		return "", common.Address{}, common.Hash{}, 0, vote.PollKey{}, err
+		return "", common.Address{}, common.Hash{}, 0, 0, err
 	}
 
 	return results[0].(nexus.ChainName),
 		results[1].(common.Address),
 		results[2].(common.Hash),
 		results[3].(uint64),
-		results[4].(vote.PollKey),
+		results[4].(vote.PollID),
 		nil
 }
 
@@ -558,7 +500,7 @@ func parseDepositConfirmationParams(cdc *codec.LegacyAmino, attributes map[strin
 	txID common.Hash,
 	burnAddr, tokenAddr common.Address,
 	confHeight uint64,
-	pollKey vote.PollKey,
+	pollID vote.PollID,
 	err error,
 ) {
 	parsers := []*parse.AttributeParser{
@@ -576,14 +518,18 @@ func parseDepositConfirmationParams(cdc *codec.LegacyAmino, attributes map[strin
 		}},
 		{Key: evmTypes.AttributeKeyConfHeight, Map: func(s string) (interface{}, error) { return strconv.ParseUint(s, 10, 64) }},
 		{Key: evmTypes.AttributeKeyPoll, Map: func(s string) (interface{}, error) {
-			cdc.MustUnmarshalJSON([]byte(s), &pollKey)
-			return pollKey, nil
+			id, err := strconv.ParseUint(s, 10, 64)
+			if err != nil {
+				return vote.PollID(0), err
+			}
+
+			return vote.PollID(id), nil
 		}},
 	}
 
 	results, err := parse.Parse(attributes, parsers)
 	if err != nil {
-		return "", [32]byte{}, [20]byte{}, [20]byte{}, 0, vote.PollKey{}, err
+		return "", [32]byte{}, [20]byte{}, [20]byte{}, 0, 0, err
 	}
 
 	return results[0].(nexus.ChainName),
@@ -591,7 +537,7 @@ func parseDepositConfirmationParams(cdc *codec.LegacyAmino, attributes map[strin
 		results[2].(common.Address),
 		results[3].(common.Address),
 		results[4].(uint64),
-		results[5].(vote.PollKey),
+		results[5].(vote.PollID),
 		nil
 }
 
@@ -601,7 +547,7 @@ func parseTokenConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]
 	gatewayAddr, tokenAddr common.Address,
 	symbol string,
 	confHeight uint64,
-	pollKey vote.PollKey,
+	pollID vote.PollID,
 	err error,
 ) {
 	parsers := []*parse.AttributeParser{
@@ -620,14 +566,18 @@ func parseTokenConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]
 		{Key: evmTypes.AttributeKeySymbol, Map: parse.IdentityMap},
 		{Key: evmTypes.AttributeKeyConfHeight, Map: func(s string) (interface{}, error) { return strconv.ParseUint(s, 10, 64) }},
 		{Key: evmTypes.AttributeKeyPoll, Map: func(s string) (interface{}, error) {
-			cdc.MustUnmarshalJSON([]byte(s), &pollKey)
-			return pollKey, nil
+			id, err := strconv.ParseUint(s, 10, 64)
+			if err != nil {
+				return vote.PollID(0), err
+			}
+
+			return vote.PollID(id), nil
 		}},
 	}
 
 	results, err := parse.Parse(attributes, parsers)
 	if err != nil {
-		return "", [32]byte{}, [20]byte{}, [20]byte{}, "", 0, vote.PollKey{}, err
+		return "", [32]byte{}, [20]byte{}, [20]byte{}, "", 0, 0, err
 	}
 
 	return results[0].(nexus.ChainName),
@@ -636,18 +586,17 @@ func parseTokenConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]
 		results[3].(common.Address),
 		results[4].(string),
 		results[5].(uint64),
-		results[6].(vote.PollKey),
+		results[6].(vote.PollID),
 		nil
 }
 
 func parseTransferKeyConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]string) (
 	chain nexus.ChainName,
 	txID common.Hash,
-	transferKeyType evmTypes.TransferKeyType,
 	keyType tss.KeyType,
 	gatewayAddr common.Address,
 	confHeight uint64,
-	pollKey vote.PollKey,
+	pollID vote.PollID,
 	err error,
 ) {
 	parsers := []*parse.AttributeParser{
@@ -657,9 +606,6 @@ func parseTransferKeyConfirmationParams(cdc *codec.LegacyAmino, attributes map[s
 		{Key: evmTypes.AttributeKeyTxID, Map: func(s string) (interface{}, error) {
 			return common.HexToHash(s), nil
 		}},
-		{Key: evmTypes.AttributeKeyTransferKeyType, Map: func(s string) (interface{}, error) {
-			return evmTypes.TransferKeyTypeFromSimpleStr(s)
-		}},
 		{Key: evmTypes.AttributeKeyKeyType, Map: func(s string) (interface{}, error) {
 			return tss.KeyTypeFromSimpleStr(s)
 		}},
@@ -668,23 +614,26 @@ func parseTransferKeyConfirmationParams(cdc *codec.LegacyAmino, attributes map[s
 		}},
 		{Key: evmTypes.AttributeKeyConfHeight, Map: func(s string) (interface{}, error) { return strconv.ParseUint(s, 10, 64) }},
 		{Key: evmTypes.AttributeKeyPoll, Map: func(s string) (interface{}, error) {
-			cdc.MustUnmarshalJSON([]byte(s), &pollKey)
-			return pollKey, nil
+			id, err := strconv.ParseUint(s, 10, 64)
+			if err != nil {
+				return vote.PollID(0), err
+			}
+
+			return vote.PollID(id), nil
 		}},
 	}
 
 	results, err := parse.Parse(attributes, parsers)
 	if err != nil {
-		return "", common.Hash{}, evmTypes.UnspecifiedTransferKeyType, tss.KEY_TYPE_UNSPECIFIED, common.Address{}, 0, vote.PollKey{}, err
+		return "", common.Hash{}, tss.KEY_TYPE_UNSPECIFIED, common.Address{}, 0, 0, err
 	}
 
 	return results[0].(nexus.ChainName),
 		results[1].(common.Hash),
-		results[2].(evmTypes.TransferKeyType),
-		results[3].(tss.KeyType),
-		results[4].(common.Address),
-		results[5].(uint64),
-		results[6].(vote.PollKey),
+		results[2].(tss.KeyType),
+		results[3].(common.Address),
+		results[4].(uint64),
+		results[5].(vote.PollID),
 		nil
 }
 
@@ -827,37 +776,8 @@ func decodeERC20TokenDeploymentEvent(log *geth.Log) (evmTypes.EventTokenDeployed
 	}, nil
 }
 
-func decodeSinglesigKeyTransferEvent(log *geth.Log, transferKeyType evmTypes.TransferKeyType) (common.Address, error) {
-	var topic common.Hash
-	switch transferKeyType {
-	case evmTypes.Ownership:
-		topic = SinglesigTransferOwnershipSig
-	case evmTypes.Operatorship:
-		topic = SinglesigTransferOperatorshipSig
-	default:
-		return common.Address{}, fmt.Errorf("unknown transfer key type %s", transferKeyType.SimpleString())
-	}
-
-	if len(log.Topics) != 3 || log.Topics[0] != topic {
-		return common.Address{}, fmt.Errorf("event is not for a transfer singlesig key")
-	}
-
-	return common.BytesToAddress(log.Topics[2][:]), nil
-}
-
-func decodeSinglesigOwnershipTransferredEvent(log *geth.Log) (evmTypes.EventSinglesigOwnershipTransferred, error) {
-	if len(log.Topics) != 3 || log.Topics[0] != SinglesigTransferOwnershipSig {
-		return evmTypes.EventSinglesigOwnershipTransferred{}, fmt.Errorf("event is not for a transfer singlesig key")
-	}
-
-	return evmTypes.EventSinglesigOwnershipTransferred{
-		PreOwner: evmTypes.Address(common.BytesToAddress(log.Topics[1][:])),
-		NewOwner: evmTypes.Address(common.BytesToAddress(log.Topics[2][:])),
-	}, nil
-}
-
 func decodeSinglesigOperatorshipTransferredEvent(log *geth.Log) (evmTypes.EventSinglesigOperatorshipTransferred, error) {
-	if len(log.Topics) != 3 || log.Topics[0] != SinglesigTransferOwnershipSig {
+	if len(log.Topics) != 3 || log.Topics[0] != SinglesigTransferOperatorshipSig {
 		return evmTypes.EventSinglesigOperatorshipTransferred{}, fmt.Errorf("event is not for a transfer singlesig key")
 	}
 
@@ -867,98 +787,47 @@ func decodeSinglesigOperatorshipTransferredEvent(log *geth.Log) (evmTypes.EventS
 	}, nil
 }
 
-func decodeMultisigOwnershipTransferredEvent(log *geth.Log) (evmTypes.EventMultisigOwnershipTransferred, error) {
-	if len(log.Topics) != 1 || log.Topics[0] != MultisigTransferOwnershipSig {
-		return evmTypes.EventMultisigOwnershipTransferred{}, fmt.Errorf("event is not a MultisigTransferOwnershipSig")
-	}
-
-	preAddresses, preThreshold, newAddresses, newThreshold, err := unpackMultisigTransferKeyEvent(log)
-	if err != nil {
-		return evmTypes.EventMultisigOwnershipTransferred{}, err
-	}
-
-	f := func(addr common.Address) evmTypes.Address { return evmTypes.Address(addr) }
-
-	return evmTypes.EventMultisigOwnershipTransferred{
-		PreOwners:     slices.Map(preAddresses, f),
-		PrevThreshold: sdk.NewUintFromBigInt(preThreshold),
-		NewOwners:     slices.Map(newAddresses, f),
-		NewThreshold:  sdk.NewUintFromBigInt(newThreshold),
-	}, nil
-}
-
 func decodeMultisigOperatorshipTransferredEvent(log *geth.Log) (evmTypes.EventMultisigOperatorshipTransferred, error) {
 	if len(log.Topics) != 1 || log.Topics[0] != MultisigTransferOperatorshipSig {
 		return evmTypes.EventMultisigOperatorshipTransferred{}, fmt.Errorf("event is not a MultisigTransferOwnershipSig")
 	}
 
-	preAddresses, preThreshold, newAddresses, newThreshold, err := unpackMultisigTransferKeyEvent(log)
+	newAddresses, newThreshold, err := unpackMultisigTransferKeyEvent(log)
 	if err != nil {
 		return evmTypes.EventMultisigOperatorshipTransferred{}, err
 	}
 
-	f := func(addr common.Address) evmTypes.Address { return evmTypes.Address(addr) }
-
 	return evmTypes.EventMultisigOperatorshipTransferred{
-		PreOperators:  slices.Map(preAddresses, f),
-		PrevThreshold: sdk.NewUintFromBigInt(preThreshold),
-		NewOperators:  slices.Map(newAddresses, f),
-		NewThreshold:  sdk.NewUintFromBigInt(newThreshold),
+		NewOperators: slices.Map(newAddresses, func(addr common.Address) evmTypes.Address { return evmTypes.Address(addr) }),
+		NewThreshold: sdk.NewUintFromBigInt(newThreshold),
 	}, nil
 }
 
-func unpackMultisigTransferKeyEvent(log *geth.Log) ([]common.Address, *big.Int, []common.Address, *big.Int, error) {
+func unpackMultisigTransferKeyEvent(log *geth.Log) ([]common.Address, *big.Int, error) {
+	bytesType, err := abi.NewType("bytes", "bytes", nil)
+	if err != nil {
+		return []common.Address{}, &big.Int{}, err
+	}
+
+	operatorData, err := evmTypes.StrictDecode(abi.Arguments{{Type: bytesType}}, log.Data)
+	if err != nil {
+		return []common.Address{}, &big.Int{}, err
+	}
+
 	addressesType, err := abi.NewType("address[]", "address[]", nil)
 	if err != nil {
-		return []common.Address{}, &big.Int{}, []common.Address{}, &big.Int{}, err
+		return []common.Address{}, &big.Int{}, err
 	}
 
 	uint256Type, err := abi.NewType("uint256", "uint256", nil)
 	if err != nil {
-		return []common.Address{}, &big.Int{}, []common.Address{}, &big.Int{}, err
+		return []common.Address{}, &big.Int{}, err
 	}
 
-	arguments := abi.Arguments{{Type: addressesType}, {Type: uint256Type}, {Type: addressesType}, {Type: uint256Type}}
-	params, err := evmTypes.StrictDecode(arguments, log.Data)
+	params, err := evmTypes.StrictDecode(abi.Arguments{{Type: addressesType}, {Type: uint256Type}}, operatorData[0].([]byte))
 	if err != nil {
-		return []common.Address{}, &big.Int{}, []common.Address{}, &big.Int{}, err
+		return []common.Address{}, &big.Int{}, err
 	}
 
-	if len(params) != 4 {
-		return []common.Address{}, &big.Int{}, []common.Address{}, &big.Int{}, fmt.Errorf("event is not for a transfer multisig key")
-	}
-
-	preAddresses, ok := params[0].([]common.Address)
-	if !ok {
-		return []common.Address{}, &big.Int{}, []common.Address{}, &big.Int{}, fmt.Errorf("event is not for a transfer multisig key")
-	}
-
-	preThreshold, ok := params[1].(*big.Int)
-	if !ok {
-		return []common.Address{}, &big.Int{}, []common.Address{}, &big.Int{}, fmt.Errorf("event is not for a transfer multisig key")
-	}
-
-	newAddresses, ok := params[2].([]common.Address)
-	if !ok {
-		return []common.Address{}, &big.Int{}, []common.Address{}, &big.Int{}, fmt.Errorf("event is not for a transfer multisig key")
-	}
-
-	newThreshold, ok := params[3].(*big.Int)
-	if !ok {
-		return []common.Address{}, &big.Int{}, []common.Address{}, &big.Int{}, fmt.Errorf("event is not for a transfer multisig key")
-	}
-
-	return preAddresses, preThreshold, newAddresses, newThreshold, nil
-}
-
-func packEvents(chain nexus.ChainName, events []evmTypes.Event) (vote.Vote, error) {
-	var v vote.Vote
-
-	voteEvents, err := evmTypes.PackEvents(chain, events)
-	if err != nil {
-		return vote.Vote{}, sdkerrors.Wrap(err, "Pack events failed")
-	}
-	v.Result = voteEvents
-
-	return v, nil
+	return params[0].([]common.Address), params[1].(*big.Int), nil
 }

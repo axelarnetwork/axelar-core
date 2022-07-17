@@ -13,8 +13,8 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	multisigTestutils "github.com/axelarnetwork/axelar-core/x/multisig/exported/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 // RandomChains returns a random (valid) slice of chains for testing
@@ -30,7 +30,7 @@ func RandomChains(cdc codec.Codec) []types.GenesisState_Chain {
 
 // RandomChain returns a random (valid) chain for testing
 func RandomChain(cdc codec.Codec) types.GenesisState_Chain {
-	eventCount := rand.I64Between(1, 1000)
+	eventCount := rand.I64Between(1, 100)
 	events := make([]types.Event, eventCount)
 	for i := 0; i < int(eventCount); i++ {
 		events[i] = RandomEvent(types.EventConfirmed, types.EventCompleted, types.EventFailed)
@@ -177,7 +177,7 @@ func RandomCommand() types.Command {
 		ID:         RandomCommandID(),
 		Command:    randomNormalizedStr(5, 20),
 		Params:     rand.Bytes(int(rand.I64Between(1, 100))),
-		KeyID:      exported.KeyID(randomNormalizedStr(5, 20)),
+		KeyID:      multisigTestutils.KeyID(),
 		MaxGasCost: uint32(rand.I64Between(0, 100000)),
 	}
 }
@@ -211,7 +211,7 @@ func RandomBatch() types.CommandBatchMetadata {
 		Data:                  rand.Bytes(int(rand.I64Between(1, 1000))),
 		SigHash:               RandomHash(),
 		Status:                types.BatchedCommandsStatus(rand.I64Between(1, int64(len(types.BatchedCommandsStatus_name)))),
-		KeyID:                 exported.KeyID(randomNormalizedStr(5, 20)),
+		KeyID:                 multisigTestutils.KeyID(),
 		PrevBatchedCommandsID: rand.Bytes(int(rand.I64Between(1, 100))),
 	}
 }

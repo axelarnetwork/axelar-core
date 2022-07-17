@@ -31,7 +31,6 @@ axelard tx evm [flags]
 - [axelard tx evm confirm-erc20-token](axelard_tx_evm_confirm-erc20-token.md)	 - Confirm an ERC20 token deployment in an EVM chain transaction for a given asset of some origin chain and gateway address
 - [axelard tx evm confirm-gateway-tx](axelard_tx_evm_confirm-gateway-tx.md)	 - Confirm a gateway transaction in an EVM chain
 - [axelard tx evm confirm-transfer-operatorship](axelard_tx_evm_confirm-transfer-operatorship.md)	 - Confirm a transfer operatorship in an EVM chain transaction
-- [axelard tx evm confirm-transfer-ownership](axelard_tx_evm_confirm-transfer-ownership.md)	 - Confirm a transfer ownership in an EVM chain transaction
 - [axelard tx evm create-burn-tokens](axelard_tx_evm_create-burn-tokens.md)	 - Create burn commands for all confirmed token deposits in an EVM chain
 - [axelard tx evm create-deploy-token](axelard_tx_evm_create-deploy-token.md)	 - Create a deploy token command with the AxelarGateway contract
 - [axelard tx evm create-pending-transfers](axelard_tx_evm_create-pending-transfers.md)	 - Create commands for handling all pending transfers to an EVM chain

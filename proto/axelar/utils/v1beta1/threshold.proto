@@ -8,6 +8,7 @@ import "gogoproto/gogo.proto";
 option (gogoproto.goproto_getters_all) = false;
 
 message Threshold {
+  option (gogoproto.goproto_stringer) = false;
   // split threshold into Numerator and denominator to avoid floating point
   // errors down the line
   int64 numerator = 1;

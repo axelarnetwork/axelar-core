@@ -42,36 +42,24 @@ message BatchedCommandsResponse {
 }
 
 message KeyAddressRequest {
+  reserved 2, 3;
+
   string chain = 1;
-  oneof key {
-    int32 role = 2
-        [ (gogoproto.casttype) =
-              "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyRole" ];
-    string id = 3 [
-      (gogoproto.customname) = "KeyID",
-      (gogoproto.casttype) =
-          "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
-    ];
-  }
+  string key_id = 4 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
+  ];
 }
 
 message KeyAddressResponse {
-  message MultisigAddresses {
-    repeated string addresses = 1;
-    uint32 threshold = 2;
-  }
-
-  message ThresholdAddress { string address = 1; }
-
   string key_id = 1 [
     (gogoproto.customname) = "KeyID",
     (gogoproto.casttype) =
-        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
   ];
-  oneof address {
-    MultisigAddresses multisig_addresses = 2;
-    ThresholdAddress threshold_address = 3;
-  }
+  map<string, string> address_weights = 2;
+  string threshold = 3;
 }
 
 message QueryTokenAddressResponse {
@@ -169,12 +157,23 @@ enum TokenType {
   TOKEN_TYPE_EXTERNAL = 2 [ (gogoproto.enumvalue_customname) = "External" ];
 }
 
+// ERC20TokensRequest describes the chain for which the type of ERC20 tokens are
+// requested.
 message ERC20TokensRequest {
   string chain = 1;
   TokenType type = 2;
 }
 
-message ERC20TokensResponse { repeated string assets = 1; }
+// ERC20TokensResponse describes the asset and symbol for all
+// ERC20 tokens requested for a chain
+message ERC20TokensResponse {
+  message Token {
+    string asset = 1;
+    string symbol = 2;
+  }
+
+  repeated Token tokens = 1 [ (gogoproto.nullable) = false ];
+}
 
 message TokenInfoRequest {
   string chain = 1;
@@ -190,4 +189,5 @@ message TokenInfoResponse {
   string address = 3;
   bool confirmed = 4;
   bool is_external = 5;
+  string burner_code_hash = 6;
 }

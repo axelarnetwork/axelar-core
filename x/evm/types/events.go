@@ -23,7 +23,6 @@ const (
 	AttributeKeyThreshold          = "threshold"
 	AttributeKeyPoll               = "poll"
 	AttributeKeyTxID               = "txID"
-	AttributeKeyTransferKeyType    = "transferKeyType"
 	AttributeKeyKeyType            = "keyType"
 	AttributeKeyAmount             = "amount"
 	AttributeKeyDepositAddress     = "depositAddress"
@@ -42,6 +41,7 @@ const (
 	AttributeKeyTransferID         = "transferID"
 	AttributeKeyEventType          = "eventType"
 	AttributeKeyEventID            = "eventID"
+	AttributeKeyKeyID              = "keyID"
 )
 
 // Event attribute values

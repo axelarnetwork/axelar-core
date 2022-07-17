@@ -15,6 +15,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
 	utilsMock "github.com/axelarnetwork/axelar-core/utils/mock"
+	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 	exportedMock "github.com/axelarnetwork/axelar-core/x/vote/exported/mock"
 	"github.com/axelarnetwork/axelar-core/x/vote/types"
@@ -37,17 +38,19 @@ func TestHandlePollsAtExpiry(t *testing.T) {
 		pollQueue = &utilsMock.KVQueueMock{}
 		voteHandler = &exportedMock.VoteHandlerMock{}
 		poll = &exportedMock.PollMock{
-			GetKeyFunc: func() exported.PollKey { return exported.NewPollKey(rand.Str(5), rand.HexStr(32)) },
+			GetIDFunc:     func() exported.PollID { return exported.PollID(rand.PosI64()) },
+			GetModuleFunc: func() string { return evmtypes.ModuleName },
 		}
 		keeper = &mock.VoterMock{
 			LoggerFunc:       func(ctx sdk.Context) log.Logger { return log.NewNopLogger() },
 			GetPollQueueFunc: func(ctx sdk.Context) utils.KVQueue { return pollQueue },
-			GetPollFunc:      func(ctx sdk.Context, key exported.PollKey) exported.Poll { return poll },
+			GetPollFunc:      func(ctx sdk.Context, id exported.PollID) (exported.Poll, bool) { return poll, true },
 			GetVoteRouterFunc: func() types.VoteRouter {
 				return &mock.VoteRouterMock{
 					GetHandlerFunc: func(module string) exported.VoteHandler { return voteHandler },
 				}
 			},
+			DeletePollFunc: func(sdk.Context, exported.PollID) {},
 		}
 	})
 
@@ -60,7 +63,7 @@ func TestHandlePollsAtExpiry(t *testing.T) {
 		}
 
 		return When(fmt.Sprintf("having poll (state=%s,expired=%t)", state.String(), expired), func() {
-			poll.IsFunc = func(s exported.PollState) bool { return state == s }
+			poll.GetStateFunc = func() exported.PollState { return state }
 
 			dequeued := false
 			pollQueue.DequeueIfFunc = func(value codec.ProtoMarshaler, filter func(value codec.ProtoMarshaler) bool) bool {
@@ -93,53 +96,39 @@ func TestHandlePollsAtExpiry(t *testing.T) {
 
 	givenPollQueue.
 		When2(withPoll(true, exported.Pending)).
-		Then("set poll as expired", func(t *testing.T) {
-			poll.SetExpiredFunc = func() {}
-			poll.AllowOverrideFunc = func() {}
+		Then("should delete poll", func(t *testing.T) {
 			voteHandler.HandleExpiredPollFunc = func(ctx sdk.Context, poll exported.Poll) error { return nil }
 
 			err := handlePollsAtExpiry(ctx, keeper)
 			assert.NoError(t, err)
-
-			assert.Len(t, poll.SetExpiredCalls(), 1)
-			assert.Len(t, poll.AllowOverrideCalls(), 1)
+			assert.Len(t, keeper.DeletePollCalls(), 1)
 			assert.Len(t, voteHandler.HandleExpiredPollCalls(), 1)
 		}).
 		Run(t, repeats)
 
 	givenPollQueue.
 		When2(withPoll(true, exported.Failed)).
-		Then("set poll as allow override", func(t *testing.T) {
-			poll.AllowOverrideFunc = func() {}
+		Then("should delete poll", func(t *testing.T) {
 
 			err := handlePollsAtExpiry(ctx, keeper)
 			assert.NoError(t, err)
-
-			assert.Len(t, poll.AllowOverrideCalls(), 1)
+			assert.Len(t, keeper.DeletePollCalls(), 1)
 		}).
 		Run(t, repeats)
 
 	givenPollQueue.
 		When2(withPoll(true, exported.Completed)).
-		Then("should handle it as completed", func(t *testing.T) {
+		Then("should handle it as completed and delete poll", func(t *testing.T) {
 			poll.GetResultFunc = func() codec.ProtoMarshaler { return &gogoprototypes.StringValue{} }
 			voteHandler.HandleCompletedPollFunc = func(ctx sdk.Context, poll exported.Poll) error { return nil }
 
 			isResultFalsy := rand.Bools(0.5).Next()
-			if isResultFalsy {
-				poll.AllowOverrideFunc = func() {}
-			}
 			voteHandler.IsFalsyResultFunc = func(result codec.ProtoMarshaler) bool { return isResultFalsy }
 
 			err := handlePollsAtExpiry(ctx, keeper)
 			assert.NoError(t, err)
-
-			if isResultFalsy {
-				assert.Len(t, poll.AllowOverrideCalls(), 1)
-			} else {
-				assert.Len(t, poll.AllowOverrideCalls(), 0)
-			}
 			assert.Len(t, voteHandler.HandleCompletedPollCalls(), 1)
+			assert.Len(t, keeper.DeletePollCalls(), 1)
 		}).
 		Run(t, repeats)
 }

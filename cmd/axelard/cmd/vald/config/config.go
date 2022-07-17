@@ -4,6 +4,7 @@ import (
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/tendermint/tendermint/config"
 
 	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -11,8 +12,8 @@ import (
 
 // ValdConfig contains all necessary vald configurations
 type ValdConfig struct {
-	tss.TssConfig         `mapstructure:",squash"`
-	BroadcastConfig       `mapstructure:",squash"`
+	tss.TssConfig         `mapstructure:"tss"`
+	BroadcastConfig       `mapstructure:"broadcast"`
 	BatchSizeLimit        int           `mapstructure:"max_batch_size"`
 	BatchThreshold        int           `mapstructure:"batch_threshold"`
 	MaxBlocksBehindLatest int64         `mapstructure:"max_blocks_behind_latest"` // The max amount of blocks behind the latest until which the cached height is considered valid.
@@ -36,15 +37,17 @@ func DefaultValdConfig() ValdConfig {
 
 // BroadcastConfig is the configuration for transaction broadcasting
 type BroadcastConfig struct {
-	MaxRetries int            `mapstructure:"max_retries"`
-	MinTimeout time.Duration  `mapstructure:"min_timeout"`
-	FeeGranter sdk.AccAddress `mapstructure:"fee_granter"`
+	MaxRetries          int            `mapstructure:"max_retries"`
+	MinSleepBeforeRetry time.Duration  `mapstructure:"min_sleep_before_retry"`
+	MaxTimeout          time.Duration  `mapstructure:"max_timeout"`
+	FeeGranter          sdk.AccAddress `mapstructure:"fee_granter"`
 }
 
 // DefaultBroadcastConfig returns a configurations populated with default values
 func DefaultBroadcastConfig() BroadcastConfig {
 	return BroadcastConfig{
-		MaxRetries: 10,
-		MinTimeout: 5 * time.Second,
+		MaxRetries:          10,
+		MinSleepBeforeRetry: 5 * time.Second,
+		MaxTimeout:          config.DefaultRPCConfig().TimeoutBroadcastTxCommit,
 	}
 }

@@ -17,7 +17,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	broadcasterTypes "github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcaster/types"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/parse"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/tss/rpc"
 	rewardtypes "github.com/axelarnetwork/axelar-core/x/reward/types"
@@ -156,9 +156,9 @@ type Mgr struct {
 	timeoutQueue   *TimeoutQueue
 	Timeout        time.Duration
 	principalAddr  string
-	Keys           map[string][][]byte
+	keys           map[string][][]byte
 	Logger         log.Logger
-	broadcaster    broadcasterTypes.Broadcaster
+	broadcaster    broadcast.Broadcaster
 	cdc            *codec.LegacyAmino
 }
 
@@ -173,7 +173,7 @@ func Connect(host string, port string, timeout time.Duration, logger log.Logger)
 }
 
 // NewMgr returns a new tss manager instance
-func NewMgr(client rpc.Client, multiSigClient rpc.MultiSigClient, cliCtx sdkClient.Context, timeout time.Duration, principalAddr string, broadcaster broadcasterTypes.Broadcaster, logger log.Logger, cdc *codec.LegacyAmino) *Mgr {
+func NewMgr(client rpc.Client, multiSigClient rpc.MultiSigClient, cliCtx sdkClient.Context, timeout time.Duration, principalAddr string, broadcaster broadcast.Broadcaster, logger log.Logger, cdc *codec.LegacyAmino) *Mgr {
 	return &Mgr{
 		client:         client,
 		multiSigClient: multiSigClient,
@@ -185,7 +185,7 @@ func NewMgr(client rpc.Client, multiSigClient rpc.MultiSigClient, cliCtx sdkClie
 		timeoutQueue:   NewTimeoutQueue(),
 		Timeout:        timeout,
 		principalAddr:  principalAddr,
-		Keys:           make(map[string][][]byte),
+		keys:           make(map[string][][]byte),
 		Logger:         logger.With("listener", "tss"),
 		broadcaster:    broadcaster,
 		cdc:            cdc,
@@ -210,17 +210,35 @@ func (mgr *Mgr) RefreshKeys(ctx context.Context) error {
 		return sdkerrors.Wrap(err, "failed to execute query")
 	}
 
-	mgr.Keys = make(map[string][][]byte, len(valKeysResponse.Keys))
+	mgr.keygen.Lock()
+	defer mgr.keygen.Unlock()
+
+	mgr.keys = make(map[string][][]byte, len(valKeysResponse.Keys))
 	for keyID, keys := range valKeysResponse.Keys {
 		if len(keys.Keys) == 0 {
 			return fmt.Errorf("received no keys for key id %s", keyID)
 		}
 
 		mgr.Logger.Info(fmt.Sprintf("retrieved key %s", keyID))
-		mgr.Keys[keyID] = keys.Keys
+		mgr.keys[keyID] = keys.Keys
 	}
 
 	return nil
+}
+
+func (mgr *Mgr) getKey(keyID string) ([][]byte, bool) {
+	mgr.keygen.RLock()
+	defer mgr.keygen.RUnlock()
+
+	keys, ok := mgr.keys[keyID]
+	return keys, ok
+}
+
+func (mgr *Mgr) setKey(keyID string, keys [][]byte) {
+	mgr.keygen.Lock()
+	defer mgr.keygen.Unlock()
+
+	mgr.keys[keyID] = keys
 }
 
 // Recover instructs tofnd to recover the node's shares given the recovery info provided
@@ -300,7 +318,7 @@ func (mgr *Mgr) ProcessHeartBeatEvent(e tmEvents.Event) error {
 			}
 			response, err = mgr.client.KeyPresence(grpcCtx, request)
 		case exported.Multisig:
-			pubKeys, found := mgr.Keys[string(keyInfo.KeyID)]
+			pubKeys, found := mgr.getKey(string(keyInfo.KeyID))
 			if !found {
 				continue
 			}

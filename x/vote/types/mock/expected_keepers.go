@@ -7,9 +7,9 @@ import (
 	utils "github.com/axelarnetwork/axelar-core/utils"
 	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
-	exported "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	github_com_axelarnetwork_axelar_core_x_vote_exported "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/types"
-	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/tendermint/tendermint/libs/log"
 	"sync"
@@ -25,16 +25,19 @@ var _ types.Voter = &VoterMock{}
 //
 // 		// make and configure a mocked types.Voter
 // 		mockedVoter := &VoterMock{
-// 			GetPollFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported.PollKey) exported.Poll {
+// 			DeletePollFunc: func(ctx sdk.Context, pollID github_com_axelarnetwork_axelar_core_x_vote_exported.PollID)  {
+// 				panic("mock out the DeletePoll method")
+// 			},
+// 			GetPollFunc: func(ctx sdk.Context, id github_com_axelarnetwork_axelar_core_x_vote_exported.PollID) (github_com_axelarnetwork_axelar_core_x_vote_exported.Poll, bool) {
 // 				panic("mock out the GetPoll method")
 // 			},
-// 			GetPollQueueFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.KVQueue {
+// 			GetPollQueueFunc: func(ctx sdk.Context) utils.KVQueue {
 // 				panic("mock out the GetPollQueue method")
 // 			},
 // 			GetVoteRouterFunc: func() types.VoteRouter {
 // 				panic("mock out the GetVoteRouter method")
 // 			},
-// 			LoggerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger {
+// 			LoggerFunc: func(ctx sdk.Context) log.Logger {
 // 				panic("mock out the Logger method")
 // 			},
 // 		}
@@ -44,31 +47,41 @@ var _ types.Voter = &VoterMock{}
 //
 // 	}
 type VoterMock struct {
+	// DeletePollFunc mocks the DeletePoll method.
+	DeletePollFunc func(ctx sdk.Context, pollID github_com_axelarnetwork_axelar_core_x_vote_exported.PollID)
+
 	// GetPollFunc mocks the GetPoll method.
-	GetPollFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported.PollKey) exported.Poll
+	GetPollFunc func(ctx sdk.Context, id github_com_axelarnetwork_axelar_core_x_vote_exported.PollID) (github_com_axelarnetwork_axelar_core_x_vote_exported.Poll, bool)
 
 	// GetPollQueueFunc mocks the GetPollQueue method.
-	GetPollQueueFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.KVQueue
+	GetPollQueueFunc func(ctx sdk.Context) utils.KVQueue
 
 	// GetVoteRouterFunc mocks the GetVoteRouter method.
 	GetVoteRouterFunc func() types.VoteRouter
 
 	// LoggerFunc mocks the Logger method.
-	LoggerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger
+	LoggerFunc func(ctx sdk.Context) log.Logger
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// DeletePoll holds details about calls to the DeletePoll method.
+		DeletePoll []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// PollID is the pollID argument value.
+			PollID github_com_axelarnetwork_axelar_core_x_vote_exported.PollID
+		}
 		// GetPoll holds details about calls to the GetPoll method.
 		GetPoll []struct {
 			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Key is the key argument value.
-			Key exported.PollKey
+			Ctx sdk.Context
+			// ID is the id argument value.
+			ID github_com_axelarnetwork_axelar_core_x_vote_exported.PollID
 		}
 		// GetPollQueue holds details about calls to the GetPollQueue method.
 		GetPollQueue []struct {
 			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			Ctx sdk.Context
 		}
 		// GetVoteRouter holds details about calls to the GetVoteRouter method.
 		GetVoteRouter []struct {
@@ -76,43 +89,79 @@ type VoterMock struct {
 		// Logger holds details about calls to the Logger method.
 		Logger []struct {
 			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			Ctx sdk.Context
 		}
 	}
+	lockDeletePoll    sync.RWMutex
 	lockGetPoll       sync.RWMutex
 	lockGetPollQueue  sync.RWMutex
 	lockGetVoteRouter sync.RWMutex
 	lockLogger        sync.RWMutex
 }
 
+// DeletePoll calls DeletePollFunc.
+func (mock *VoterMock) DeletePoll(ctx sdk.Context, pollID github_com_axelarnetwork_axelar_core_x_vote_exported.PollID) {
+	if mock.DeletePollFunc == nil {
+		panic("VoterMock.DeletePollFunc: method is nil but Voter.DeletePoll was just called")
+	}
+	callInfo := struct {
+		Ctx    sdk.Context
+		PollID github_com_axelarnetwork_axelar_core_x_vote_exported.PollID
+	}{
+		Ctx:    ctx,
+		PollID: pollID,
+	}
+	mock.lockDeletePoll.Lock()
+	mock.calls.DeletePoll = append(mock.calls.DeletePoll, callInfo)
+	mock.lockDeletePoll.Unlock()
+	mock.DeletePollFunc(ctx, pollID)
+}
+
+// DeletePollCalls gets all the calls that were made to DeletePoll.
+// Check the length with:
+//     len(mockedVoter.DeletePollCalls())
+func (mock *VoterMock) DeletePollCalls() []struct {
+	Ctx    sdk.Context
+	PollID github_com_axelarnetwork_axelar_core_x_vote_exported.PollID
+} {
+	var calls []struct {
+		Ctx    sdk.Context
+		PollID github_com_axelarnetwork_axelar_core_x_vote_exported.PollID
+	}
+	mock.lockDeletePoll.RLock()
+	calls = mock.calls.DeletePoll
+	mock.lockDeletePoll.RUnlock()
+	return calls
+}
+
 // GetPoll calls GetPollFunc.
-func (mock *VoterMock) GetPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, key exported.PollKey) exported.Poll {
+func (mock *VoterMock) GetPoll(ctx sdk.Context, id github_com_axelarnetwork_axelar_core_x_vote_exported.PollID) (github_com_axelarnetwork_axelar_core_x_vote_exported.Poll, bool) {
 	if mock.GetPollFunc == nil {
 		panic("VoterMock.GetPollFunc: method is nil but Voter.GetPoll was just called")
 	}
 	callInfo := struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
-		Key exported.PollKey
+		Ctx sdk.Context
+		ID  github_com_axelarnetwork_axelar_core_x_vote_exported.PollID
 	}{
 		Ctx: ctx,
-		Key: key,
+		ID:  id,
 	}
 	mock.lockGetPoll.Lock()
 	mock.calls.GetPoll = append(mock.calls.GetPoll, callInfo)
 	mock.lockGetPoll.Unlock()
-	return mock.GetPollFunc(ctx, key)
+	return mock.GetPollFunc(ctx, id)
 }
 
 // GetPollCalls gets all the calls that were made to GetPoll.
 // Check the length with:
 //     len(mockedVoter.GetPollCalls())
 func (mock *VoterMock) GetPollCalls() []struct {
-	Ctx github_com_cosmos_cosmos_sdk_types.Context
-	Key exported.PollKey
+	Ctx sdk.Context
+	ID  github_com_axelarnetwork_axelar_core_x_vote_exported.PollID
 } {
 	var calls []struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
-		Key exported.PollKey
+		Ctx sdk.Context
+		ID  github_com_axelarnetwork_axelar_core_x_vote_exported.PollID
 	}
 	mock.lockGetPoll.RLock()
 	calls = mock.calls.GetPoll
@@ -121,12 +170,12 @@ func (mock *VoterMock) GetPollCalls() []struct {
 }
 
 // GetPollQueue calls GetPollQueueFunc.
-func (mock *VoterMock) GetPollQueue(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.KVQueue {
+func (mock *VoterMock) GetPollQueue(ctx sdk.Context) utils.KVQueue {
 	if mock.GetPollQueueFunc == nil {
 		panic("VoterMock.GetPollQueueFunc: method is nil but Voter.GetPollQueue was just called")
 	}
 	callInfo := struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
+		Ctx sdk.Context
 	}{
 		Ctx: ctx,
 	}
@@ -140,10 +189,10 @@ func (mock *VoterMock) GetPollQueue(ctx github_com_cosmos_cosmos_sdk_types.Conte
 // Check the length with:
 //     len(mockedVoter.GetPollQueueCalls())
 func (mock *VoterMock) GetPollQueueCalls() []struct {
-	Ctx github_com_cosmos_cosmos_sdk_types.Context
+	Ctx sdk.Context
 } {
 	var calls []struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
+		Ctx sdk.Context
 	}
 	mock.lockGetPollQueue.RLock()
 	calls = mock.calls.GetPollQueue
@@ -178,12 +227,12 @@ func (mock *VoterMock) GetVoteRouterCalls() []struct {
 }
 
 // Logger calls LoggerFunc.
-func (mock *VoterMock) Logger(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger {
+func (mock *VoterMock) Logger(ctx sdk.Context) log.Logger {
 	if mock.LoggerFunc == nil {
 		panic("VoterMock.LoggerFunc: method is nil but Voter.Logger was just called")
 	}
 	callInfo := struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
+		Ctx sdk.Context
 	}{
 		Ctx: ctx,
 	}
@@ -197,10 +246,10 @@ func (mock *VoterMock) Logger(ctx github_com_cosmos_cosmos_sdk_types.Context) lo
 // Check the length with:
 //     len(mockedVoter.LoggerCalls())
 func (mock *VoterMock) LoggerCalls() []struct {
-	Ctx github_com_cosmos_cosmos_sdk_types.Context
+	Ctx sdk.Context
 } {
 	var calls []struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
+		Ctx sdk.Context
 	}
 	mock.lockLogger.RLock()
 	calls = mock.calls.Logger
@@ -218,10 +267,10 @@ var _ types.Snapshotter = &SnapshotterMock{}
 //
 // 		// make and configure a mocked types.Snapshotter
 // 		mockedSnapshotter := &SnapshotterMock{
-// 			GetOperatorFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, proxy github_com_cosmos_cosmos_sdk_types.AccAddress) github_com_cosmos_cosmos_sdk_types.ValAddress {
+// 			GetOperatorFunc: func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress {
 // 				panic("mock out the GetOperator method")
 // 			},
-// 			GetSnapshotFunc: func(context github_com_cosmos_cosmos_sdk_types.Context, n int64) (snapshot.Snapshot, bool) {
+// 			GetSnapshotFunc: func(context sdk.Context, n int64) (snapshot.Snapshot, bool) {
 // 				panic("mock out the GetSnapshot method")
 // 			},
 // 		}
@@ -232,24 +281,24 @@ var _ types.Snapshotter = &SnapshotterMock{}
 // 	}
 type SnapshotterMock struct {
 	// GetOperatorFunc mocks the GetOperator method.
-	GetOperatorFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, proxy github_com_cosmos_cosmos_sdk_types.AccAddress) github_com_cosmos_cosmos_sdk_types.ValAddress
+	GetOperatorFunc func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress
 
 	// GetSnapshotFunc mocks the GetSnapshot method.
-	GetSnapshotFunc func(context github_com_cosmos_cosmos_sdk_types.Context, n int64) (snapshot.Snapshot, bool)
+	GetSnapshotFunc func(context sdk.Context, n int64) (snapshot.Snapshot, bool)
 
 	// calls tracks calls to the methods.
 	calls struct {
 		// GetOperator holds details about calls to the GetOperator method.
 		GetOperator []struct {
 			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			Ctx sdk.Context
 			// Proxy is the proxy argument value.
-			Proxy github_com_cosmos_cosmos_sdk_types.AccAddress
+			Proxy sdk.AccAddress
 		}
 		// GetSnapshot holds details about calls to the GetSnapshot method.
 		GetSnapshot []struct {
 			// Context is the context argument value.
-			Context github_com_cosmos_cosmos_sdk_types.Context
+			Context sdk.Context
 			// N is the n argument value.
 			N int64
 		}
@@ -259,13 +308,13 @@ type SnapshotterMock struct {
 }
 
 // GetOperator calls GetOperatorFunc.
-func (mock *SnapshotterMock) GetOperator(ctx github_com_cosmos_cosmos_sdk_types.Context, proxy github_com_cosmos_cosmos_sdk_types.AccAddress) github_com_cosmos_cosmos_sdk_types.ValAddress {
+func (mock *SnapshotterMock) GetOperator(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress {
 	if mock.GetOperatorFunc == nil {
 		panic("SnapshotterMock.GetOperatorFunc: method is nil but Snapshotter.GetOperator was just called")
 	}
 	callInfo := struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Proxy github_com_cosmos_cosmos_sdk_types.AccAddress
+		Ctx   sdk.Context
+		Proxy sdk.AccAddress
 	}{
 		Ctx:   ctx,
 		Proxy: proxy,
@@ -280,12 +329,12 @@ func (mock *SnapshotterMock) GetOperator(ctx github_com_cosmos_cosmos_sdk_types.
 // Check the length with:
 //     len(mockedSnapshotter.GetOperatorCalls())
 func (mock *SnapshotterMock) GetOperatorCalls() []struct {
-	Ctx   github_com_cosmos_cosmos_sdk_types.Context
-	Proxy github_com_cosmos_cosmos_sdk_types.AccAddress
+	Ctx   sdk.Context
+	Proxy sdk.AccAddress
 } {
 	var calls []struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Proxy github_com_cosmos_cosmos_sdk_types.AccAddress
+		Ctx   sdk.Context
+		Proxy sdk.AccAddress
 	}
 	mock.lockGetOperator.RLock()
 	calls = mock.calls.GetOperator
@@ -294,12 +343,12 @@ func (mock *SnapshotterMock) GetOperatorCalls() []struct {
 }
 
 // GetSnapshot calls GetSnapshotFunc.
-func (mock *SnapshotterMock) GetSnapshot(context github_com_cosmos_cosmos_sdk_types.Context, n int64) (snapshot.Snapshot, bool) {
+func (mock *SnapshotterMock) GetSnapshot(context sdk.Context, n int64) (snapshot.Snapshot, bool) {
 	if mock.GetSnapshotFunc == nil {
 		panic("SnapshotterMock.GetSnapshotFunc: method is nil but Snapshotter.GetSnapshot was just called")
 	}
 	callInfo := struct {
-		Context github_com_cosmos_cosmos_sdk_types.Context
+		Context sdk.Context
 		N       int64
 	}{
 		Context: context,
@@ -315,11 +364,11 @@ func (mock *SnapshotterMock) GetSnapshot(context github_com_cosmos_cosmos_sdk_ty
 // Check the length with:
 //     len(mockedSnapshotter.GetSnapshotCalls())
 func (mock *SnapshotterMock) GetSnapshotCalls() []struct {
-	Context github_com_cosmos_cosmos_sdk_types.Context
+	Context sdk.Context
 	N       int64
 } {
 	var calls []struct {
-		Context github_com_cosmos_cosmos_sdk_types.Context
+		Context sdk.Context
 		N       int64
 	}
 	mock.lockGetSnapshot.RLock()
@@ -338,13 +387,13 @@ var _ types.StakingKeeper = &StakingKeeperMock{}
 //
 // 		// make and configure a mocked types.StakingKeeper
 // 		mockedStakingKeeper := &StakingKeeperMock{
-// 			GetLastTotalPowerFunc: func(context github_com_cosmos_cosmos_sdk_types.Context) github_com_cosmos_cosmos_sdk_types.Int {
+// 			GetLastTotalPowerFunc: func(context sdk.Context) sdk.Int {
 // 				panic("mock out the GetLastTotalPower method")
 // 			},
-// 			PowerReductionFunc: func(context github_com_cosmos_cosmos_sdk_types.Context) github_com_cosmos_cosmos_sdk_types.Int {
+// 			PowerReductionFunc: func(context sdk.Context) sdk.Int {
 // 				panic("mock out the PowerReduction method")
 // 			},
-// 			ValidatorFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, addr github_com_cosmos_cosmos_sdk_types.ValAddress) stakingtypes.ValidatorI {
+// 			ValidatorFunc: func(ctx sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI {
 // 				panic("mock out the Validator method")
 // 			},
 // 		}
@@ -355,32 +404,32 @@ var _ types.StakingKeeper = &StakingKeeperMock{}
 // 	}
 type StakingKeeperMock struct {
 	// GetLastTotalPowerFunc mocks the GetLastTotalPower method.
-	GetLastTotalPowerFunc func(context github_com_cosmos_cosmos_sdk_types.Context) github_com_cosmos_cosmos_sdk_types.Int
+	GetLastTotalPowerFunc func(context sdk.Context) sdk.Int
 
 	// PowerReductionFunc mocks the PowerReduction method.
-	PowerReductionFunc func(context github_com_cosmos_cosmos_sdk_types.Context) github_com_cosmos_cosmos_sdk_types.Int
+	PowerReductionFunc func(context sdk.Context) sdk.Int
 
 	// ValidatorFunc mocks the Validator method.
-	ValidatorFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, addr github_com_cosmos_cosmos_sdk_types.ValAddress) stakingtypes.ValidatorI
+	ValidatorFunc func(ctx sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI
 
 	// calls tracks calls to the methods.
 	calls struct {
 		// GetLastTotalPower holds details about calls to the GetLastTotalPower method.
 		GetLastTotalPower []struct {
 			// Context is the context argument value.
-			Context github_com_cosmos_cosmos_sdk_types.Context
+			Context sdk.Context
 		}
 		// PowerReduction holds details about calls to the PowerReduction method.
 		PowerReduction []struct {
 			// Context is the context argument value.
-			Context github_com_cosmos_cosmos_sdk_types.Context
+			Context sdk.Context
 		}
 		// Validator holds details about calls to the Validator method.
 		Validator []struct {
 			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			Ctx sdk.Context
 			// Addr is the addr argument value.
-			Addr github_com_cosmos_cosmos_sdk_types.ValAddress
+			Addr sdk.ValAddress
 		}
 	}
 	lockGetLastTotalPower sync.RWMutex
@@ -389,12 +438,12 @@ type StakingKeeperMock struct {
 }
 
 // GetLastTotalPower calls GetLastTotalPowerFunc.
-func (mock *StakingKeeperMock) GetLastTotalPower(context github_com_cosmos_cosmos_sdk_types.Context) github_com_cosmos_cosmos_sdk_types.Int {
+func (mock *StakingKeeperMock) GetLastTotalPower(context sdk.Context) sdk.Int {
 	if mock.GetLastTotalPowerFunc == nil {
 		panic("StakingKeeperMock.GetLastTotalPowerFunc: method is nil but StakingKeeper.GetLastTotalPower was just called")
 	}
 	callInfo := struct {
-		Context github_com_cosmos_cosmos_sdk_types.Context
+		Context sdk.Context
 	}{
 		Context: context,
 	}
@@ -408,10 +457,10 @@ func (mock *StakingKeeperMock) GetLastTotalPower(context github_com_cosmos_cosmo
 // Check the length with:
 //     len(mockedStakingKeeper.GetLastTotalPowerCalls())
 func (mock *StakingKeeperMock) GetLastTotalPowerCalls() []struct {
-	Context github_com_cosmos_cosmos_sdk_types.Context
+	Context sdk.Context
 } {
 	var calls []struct {
-		Context github_com_cosmos_cosmos_sdk_types.Context
+		Context sdk.Context
 	}
 	mock.lockGetLastTotalPower.RLock()
 	calls = mock.calls.GetLastTotalPower
@@ -420,12 +469,12 @@ func (mock *StakingKeeperMock) GetLastTotalPowerCalls() []struct {
 }
 
 // PowerReduction calls PowerReductionFunc.
-func (mock *StakingKeeperMock) PowerReduction(context github_com_cosmos_cosmos_sdk_types.Context) github_com_cosmos_cosmos_sdk_types.Int {
+func (mock *StakingKeeperMock) PowerReduction(context sdk.Context) sdk.Int {
 	if mock.PowerReductionFunc == nil {
 		panic("StakingKeeperMock.PowerReductionFunc: method is nil but StakingKeeper.PowerReduction was just called")
 	}
 	callInfo := struct {
-		Context github_com_cosmos_cosmos_sdk_types.Context
+		Context sdk.Context
 	}{
 		Context: context,
 	}
@@ -439,10 +488,10 @@ func (mock *StakingKeeperMock) PowerReduction(context github_com_cosmos_cosmos_s
 // Check the length with:
 //     len(mockedStakingKeeper.PowerReductionCalls())
 func (mock *StakingKeeperMock) PowerReductionCalls() []struct {
-	Context github_com_cosmos_cosmos_sdk_types.Context
+	Context sdk.Context
 } {
 	var calls []struct {
-		Context github_com_cosmos_cosmos_sdk_types.Context
+		Context sdk.Context
 	}
 	mock.lockPowerReduction.RLock()
 	calls = mock.calls.PowerReduction
@@ -451,13 +500,13 @@ func (mock *StakingKeeperMock) PowerReductionCalls() []struct {
 }
 
 // Validator calls ValidatorFunc.
-func (mock *StakingKeeperMock) Validator(ctx github_com_cosmos_cosmos_sdk_types.Context, addr github_com_cosmos_cosmos_sdk_types.ValAddress) stakingtypes.ValidatorI {
+func (mock *StakingKeeperMock) Validator(ctx sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI {
 	if mock.ValidatorFunc == nil {
 		panic("StakingKeeperMock.ValidatorFunc: method is nil but StakingKeeper.Validator was just called")
 	}
 	callInfo := struct {
-		Ctx  github_com_cosmos_cosmos_sdk_types.Context
-		Addr github_com_cosmos_cosmos_sdk_types.ValAddress
+		Ctx  sdk.Context
+		Addr sdk.ValAddress
 	}{
 		Ctx:  ctx,
 		Addr: addr,
@@ -472,12 +521,12 @@ func (mock *StakingKeeperMock) Validator(ctx github_com_cosmos_cosmos_sdk_types.
 // Check the length with:
 //     len(mockedStakingKeeper.ValidatorCalls())
 func (mock *StakingKeeperMock) ValidatorCalls() []struct {
-	Ctx  github_com_cosmos_cosmos_sdk_types.Context
-	Addr github_com_cosmos_cosmos_sdk_types.ValAddress
+	Ctx  sdk.Context
+	Addr sdk.ValAddress
 } {
 	var calls []struct {
-		Ctx  github_com_cosmos_cosmos_sdk_types.Context
-		Addr github_com_cosmos_cosmos_sdk_types.ValAddress
+		Ctx  sdk.Context
+		Addr sdk.ValAddress
 	}
 	mock.lockValidator.RLock()
 	calls = mock.calls.Validator
@@ -495,7 +544,7 @@ var _ types.Rewarder = &RewarderMock{}
 //
 // 		// make and configure a mocked types.Rewarder
 // 		mockedRewarder := &RewarderMock{
-// 			GetPoolFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, name string) reward.RewardPool {
+// 			GetPoolFunc: func(ctx sdk.Context, name string) reward.RewardPool {
 // 				panic("mock out the GetPool method")
 // 			},
 // 		}
@@ -506,14 +555,14 @@ var _ types.Rewarder = &RewarderMock{}
 // 	}
 type RewarderMock struct {
 	// GetPoolFunc mocks the GetPool method.
-	GetPoolFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, name string) reward.RewardPool
+	GetPoolFunc func(ctx sdk.Context, name string) reward.RewardPool
 
 	// calls tracks calls to the methods.
 	calls struct {
 		// GetPool holds details about calls to the GetPool method.
 		GetPool []struct {
 			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			Ctx sdk.Context
 			// Name is the name argument value.
 			Name string
 		}
@@ -522,12 +571,12 @@ type RewarderMock struct {
 }
 
 // GetPool calls GetPoolFunc.
-func (mock *RewarderMock) GetPool(ctx github_com_cosmos_cosmos_sdk_types.Context, name string) reward.RewardPool {
+func (mock *RewarderMock) GetPool(ctx sdk.Context, name string) reward.RewardPool {
 	if mock.GetPoolFunc == nil {
 		panic("RewarderMock.GetPoolFunc: method is nil but Rewarder.GetPool was just called")
 	}
 	callInfo := struct {
-		Ctx  github_com_cosmos_cosmos_sdk_types.Context
+		Ctx  sdk.Context
 		Name string
 	}{
 		Ctx:  ctx,
@@ -543,11 +592,11 @@ func (mock *RewarderMock) GetPool(ctx github_com_cosmos_cosmos_sdk_types.Context
 // Check the length with:
 //     len(mockedRewarder.GetPoolCalls())
 func (mock *RewarderMock) GetPoolCalls() []struct {
-	Ctx  github_com_cosmos_cosmos_sdk_types.Context
+	Ctx  sdk.Context
 	Name string
 } {
 	var calls []struct {
-		Ctx  github_com_cosmos_cosmos_sdk_types.Context
+		Ctx  sdk.Context
 		Name string
 	}
 	mock.lockGetPool.RLock()

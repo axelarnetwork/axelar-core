@@ -6,18 +6,26 @@ option go_package = "github.com/axelarnetwork/axelar-core/x/vote/types";
 import "google/protobuf/any.proto";
 import "gogoproto/gogo.proto";
 import "cosmos_proto/cosmos.proto";
-import "axelar/vote/exported/v1beta1/types.proto";
 import "axelar/permission/exported/v1beta1/types.proto";
+import "axelar/vote/v1beta1/types.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
 message VoteRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
+
+  reserved 2, 3; // poll_key and vote were removed in v0.20
+
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-
-  vote.exported.v1beta1.PollKey poll_key = 2 [ (gogoproto.nullable) = false ];
-  vote.exported.v1beta1.Vote vote = 3 [ (gogoproto.nullable) = false ];
+  uint64 poll_id = 4 [
+    (gogoproto.customname) = "PollID",
+    (gogoproto.customtype) =
+        "github.com/axelarnetwork/axelar-core/x/vote/exported.PollID",
+    (gogoproto.nullable) = false
+  ];
+  google.protobuf.Any vote = 5 [ (cosmos_proto.accepts_interface) =
+                                     "github.com/cosmos/codec/ProtoMarshaler" ];
 }
 
 message VoteResponse { string log = 1; }

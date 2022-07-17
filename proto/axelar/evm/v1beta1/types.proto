@@ -3,9 +3,11 @@ package axelar.evm.v1beta1;
 
 option go_package = "github.com/axelarnetwork/axelar-core/x/evm/types";
 
+import "google/protobuf/any.proto";
 import "gogoproto/gogo.proto";
+import "cosmos_proto/cosmos.proto";
 import "axelar/nexus/exported/v1beta1/types.proto";
-import "axelar/tss/exported/v1beta1/types.proto";
+import "axelar/multisig/exported/v1beta1/types.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
@@ -109,6 +111,8 @@ message EventTokenDeployed {
 }
 
 message EventMultisigOwnershipTransferred {
+  option deprecated = true;
+
   repeated bytes pre_owners = 1
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
   bytes prev_threshold = 2 [
@@ -124,12 +128,8 @@ message EventMultisigOwnershipTransferred {
 }
 
 message EventMultisigOperatorshipTransferred {
-  repeated bytes pre_operators = 1
-      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
-  bytes prev_threshold = 2 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
-    (gogoproto.nullable) = false
-  ];
+  reserved 1, 2; // pre_operators and prev_threshold were removed in v0.20
+
   repeated bytes new_operators = 3
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
   bytes new_threshold = 4 [
@@ -139,6 +139,8 @@ message EventMultisigOperatorshipTransferred {
 }
 
 message EventSinglesigOwnershipTransferred {
+  option deprecated = true;
+
   bytes pre_owner = 1
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
   bytes new_owner = 2
@@ -243,7 +245,7 @@ message Command {
   string key_id = 4 [
     (gogoproto.customname) = "KeyID",
     (gogoproto.casttype) =
-        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
   ];
   uint32 max_gas_cost = 5;
 }
@@ -275,21 +277,13 @@ message CommandBatchMetadata {
   string key_id = 6 [
     (gogoproto.customname) = "KeyID",
     (gogoproto.casttype) =
-        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
   ];
   bytes prev_batched_commands_id = 7
       [ (gogoproto.customname) = "PrevBatchedCommandsID" ];
-}
-
-enum TransferKeyType {
-  option (gogoproto.goproto_enum_prefix) = false;
-
-  TRANSFER_KEY_TYPE_UNSPECIFIED = 0
-      [ (gogoproto.enumvalue_customname) = "UnspecifiedTransferKeyType" ];
-  TRANSFER_KEY_TYPE_OWNERSHIP = 1
-      [ (gogoproto.enumvalue_customname) = "Ownership" ];
-  TRANSFER_KEY_TYPE_OPERATORSHIP = 2
-      [ (gogoproto.enumvalue_customname) = "Operatorship" ];
+  google.protobuf.Any signature = 8
+      [ (cosmos_proto.accepts_interface) =
+            "github.com/cosmos/codec/ProtoMarshaler" ];
 }
 
 // SigMetadata stores necessary information for external apps to map signature
@@ -299,6 +293,8 @@ message SigMetadata {
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  bytes command_batch_id = 3 [ (gogoproto.customname) = "CommandBatchID" ];
+  ;
 }
 
 enum SigType {
@@ -312,17 +308,17 @@ enum SigType {
 
 // TransferKey contains information for a transfer ownership or operatorship
 message TransferKey {
+  reserved 2; // type was deleted in v0.20
 
   bytes tx_id = 1 [
     (gogoproto.nullable) = false,
     (gogoproto.customtype) = "Hash",
     (gogoproto.customname) = "TxID"
   ];
-  TransferKeyType type = 2;
   string next_key_id = 3 [
     (gogoproto.customname) = "NextKeyID",
     (gogoproto.casttype) =
-        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
   ];
 }
 
