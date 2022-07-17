@@ -7,6 +7,7 @@ import (
 	context "context"
 	"crypto/ecdsa"
 	utils "github.com/axelarnetwork/axelar-core/utils"
+	multisigexported "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	multisigtypes "github.com/axelarnetwork/axelar-core/x/multisig/types"
 	github_com_axelarnetwork_axelar_core_x_nexus_exported "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
@@ -14,7 +15,7 @@ import (
 	github_com_axelarnetwork_axelar_core_x_tss_exported "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	tofnd "github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
-	exported1 "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	voteexported "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -926,10 +927,10 @@ var _ tsstypes.Voter = &VoterMock{}
 //
 // 		// make and configure a mocked tsstypes.Voter
 // 		mockedVoter := &VoterMock{
-// 			GetPollFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, pollID exported1.PollID) (exported1.Poll, bool) {
+// 			GetPollFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, pollID voteexported.PollID) (voteexported.Poll, bool) {
 // 				panic("mock out the GetPoll method")
 // 			},
-// 			InitializePollFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, pollBuilder exported1.PollBuilder) (exported1.PollID, error) {
+// 			InitializePollFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, pollBuilder voteexported.PollBuilder) (voteexported.PollID, error) {
 // 				panic("mock out the InitializePoll method")
 // 			},
 // 		}
@@ -940,10 +941,10 @@ var _ tsstypes.Voter = &VoterMock{}
 // 	}
 type VoterMock struct {
 	// GetPollFunc mocks the GetPoll method.
-	GetPollFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, pollID exported1.PollID) (exported1.Poll, bool)
+	GetPollFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, pollID voteexported.PollID) (voteexported.Poll, bool)
 
 	// InitializePollFunc mocks the InitializePoll method.
-	InitializePollFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, pollBuilder exported1.PollBuilder) (exported1.PollID, error)
+	InitializePollFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, pollBuilder voteexported.PollBuilder) (voteexported.PollID, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -952,14 +953,14 @@ type VoterMock struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// PollID is the pollID argument value.
-			PollID exported1.PollID
+			PollID voteexported.PollID
 		}
 		// InitializePoll holds details about calls to the InitializePoll method.
 		InitializePoll []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// PollBuilder is the pollBuilder argument value.
-			PollBuilder exported1.PollBuilder
+			PollBuilder voteexported.PollBuilder
 		}
 	}
 	lockGetPoll        sync.RWMutex
@@ -967,13 +968,13 @@ type VoterMock struct {
 }
 
 // GetPoll calls GetPollFunc.
-func (mock *VoterMock) GetPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, pollID exported1.PollID) (exported1.Poll, bool) {
+func (mock *VoterMock) GetPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, pollID voteexported.PollID) (voteexported.Poll, bool) {
 	if mock.GetPollFunc == nil {
 		panic("VoterMock.GetPollFunc: method is nil but Voter.GetPoll was just called")
 	}
 	callInfo := struct {
 		Ctx    github_com_cosmos_cosmos_sdk_types.Context
-		PollID exported1.PollID
+		PollID voteexported.PollID
 	}{
 		Ctx:    ctx,
 		PollID: pollID,
@@ -989,11 +990,11 @@ func (mock *VoterMock) GetPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, p
 //     len(mockedVoter.GetPollCalls())
 func (mock *VoterMock) GetPollCalls() []struct {
 	Ctx    github_com_cosmos_cosmos_sdk_types.Context
-	PollID exported1.PollID
+	PollID voteexported.PollID
 } {
 	var calls []struct {
 		Ctx    github_com_cosmos_cosmos_sdk_types.Context
-		PollID exported1.PollID
+		PollID voteexported.PollID
 	}
 	mock.lockGetPoll.RLock()
 	calls = mock.calls.GetPoll
@@ -1002,13 +1003,13 @@ func (mock *VoterMock) GetPollCalls() []struct {
 }
 
 // InitializePoll calls InitializePollFunc.
-func (mock *VoterMock) InitializePoll(ctx github_com_cosmos_cosmos_sdk_types.Context, pollBuilder exported1.PollBuilder) (exported1.PollID, error) {
+func (mock *VoterMock) InitializePoll(ctx github_com_cosmos_cosmos_sdk_types.Context, pollBuilder voteexported.PollBuilder) (voteexported.PollID, error) {
 	if mock.InitializePollFunc == nil {
 		panic("VoterMock.InitializePollFunc: method is nil but Voter.InitializePoll was just called")
 	}
 	callInfo := struct {
 		Ctx         github_com_cosmos_cosmos_sdk_types.Context
-		PollBuilder exported1.PollBuilder
+		PollBuilder voteexported.PollBuilder
 	}{
 		Ctx:         ctx,
 		PollBuilder: pollBuilder,
@@ -1024,11 +1025,11 @@ func (mock *VoterMock) InitializePoll(ctx github_com_cosmos_cosmos_sdk_types.Con
 //     len(mockedVoter.InitializePollCalls())
 func (mock *VoterMock) InitializePollCalls() []struct {
 	Ctx         github_com_cosmos_cosmos_sdk_types.Context
-	PollBuilder exported1.PollBuilder
+	PollBuilder voteexported.PollBuilder
 } {
 	var calls []struct {
 		Ctx         github_com_cosmos_cosmos_sdk_types.Context
-		PollBuilder exported1.PollBuilder
+		PollBuilder voteexported.PollBuilder
 	}
 	mock.lockInitializePoll.RLock()
 	calls = mock.calls.InitializePoll
@@ -1365,7 +1366,7 @@ var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 // 			StartKeygenFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, voter tsstypes.Voter, keyInfo tsstypes.KeyInfo, snapshot github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot) error {
 // 				panic("mock out the StartKeygen method")
 // 			},
-// 			StartSignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo, snapshotter github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshotter, voter interface{InitializePoll(ctx github_com_cosmos_cosmos_sdk_types.Context, pollBuilder exported1.PollBuilder) (exported1.PollID, error)}) error {
+// 			StartSignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo, snapshotter github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshotter, voter interface{InitializePoll(ctx github_com_cosmos_cosmos_sdk_types.Context, pollBuilder voteexported.PollBuilder) (voteexported.PollID, error)}) error {
 // 				panic("mock out the StartSign method")
 // 			},
 // 			SubmitPubKeysFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, validator github_com_cosmos_cosmos_sdk_types.ValAddress, pubKeys ...[]byte) bool {
@@ -1539,7 +1540,7 @@ type TSSKeeperMock struct {
 
 	// StartSignFunc mocks the StartSign method.
 	StartSignFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo, snapshotter github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshotter, voter interface {
-		InitializePoll(ctx github_com_cosmos_cosmos_sdk_types.Context, pollBuilder exported1.PollBuilder) (exported1.PollID, error)
+		InitializePoll(ctx github_com_cosmos_cosmos_sdk_types.Context, pollBuilder voteexported.PollBuilder) (voteexported.PollID, error)
 	}) error
 
 	// SubmitPubKeysFunc mocks the SubmitPubKeys method.
@@ -1962,7 +1963,7 @@ type TSSKeeperMock struct {
 			Snapshotter github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshotter
 			// Voter is the voter argument value.
 			Voter interface {
-				InitializePoll(ctx github_com_cosmos_cosmos_sdk_types.Context, pollBuilder exported1.PollBuilder) (exported1.PollID, error)
+				InitializePoll(ctx github_com_cosmos_cosmos_sdk_types.Context, pollBuilder voteexported.PollBuilder) (voteexported.PollID, error)
 			}
 		}
 		// SubmitPubKeys holds details about calls to the SubmitPubKeys method.
@@ -3942,7 +3943,7 @@ func (mock *TSSKeeperMock) StartKeygenCalls() []struct {
 
 // StartSign calls StartSignFunc.
 func (mock *TSSKeeperMock) StartSign(ctx github_com_cosmos_cosmos_sdk_types.Context, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo, snapshotter github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshotter, voter interface {
-	InitializePoll(ctx github_com_cosmos_cosmos_sdk_types.Context, pollBuilder exported1.PollBuilder) (exported1.PollID, error)
+	InitializePoll(ctx github_com_cosmos_cosmos_sdk_types.Context, pollBuilder voteexported.PollBuilder) (voteexported.PollID, error)
 }) error {
 	if mock.StartSignFunc == nil {
 		panic("TSSKeeperMock.StartSignFunc: method is nil but TSSKeeper.StartSign was just called")
@@ -3952,7 +3953,7 @@ func (mock *TSSKeeperMock) StartSign(ctx github_com_cosmos_cosmos_sdk_types.Cont
 		Info        github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
 		Snapshotter github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshotter
 		Voter       interface {
-			InitializePoll(ctx github_com_cosmos_cosmos_sdk_types.Context, pollBuilder exported1.PollBuilder) (exported1.PollID, error)
+			InitializePoll(ctx github_com_cosmos_cosmos_sdk_types.Context, pollBuilder voteexported.PollBuilder) (voteexported.PollID, error)
 		}
 	}{
 		Ctx:         ctx,
@@ -3974,7 +3975,7 @@ func (mock *TSSKeeperMock) StartSignCalls() []struct {
 	Info        github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
 	Snapshotter github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshotter
 	Voter       interface {
-		InitializePoll(ctx github_com_cosmos_cosmos_sdk_types.Context, pollBuilder exported1.PollBuilder) (exported1.PollID, error)
+		InitializePoll(ctx github_com_cosmos_cosmos_sdk_types.Context, pollBuilder voteexported.PollBuilder) (voteexported.PollID, error)
 	}
 } {
 	var calls []struct {
@@ -3982,7 +3983,7 @@ func (mock *TSSKeeperMock) StartSignCalls() []struct {
 		Info        github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo
 		Snapshotter github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshotter
 		Voter       interface {
-			InitializePoll(ctx github_com_cosmos_cosmos_sdk_types.Context, pollBuilder exported1.PollBuilder) (exported1.PollID, error)
+			InitializePoll(ctx github_com_cosmos_cosmos_sdk_types.Context, pollBuilder voteexported.PollBuilder) (voteexported.PollID, error)
 		}
 	}
 	mock.lockStartSign.RLock()
@@ -4649,6 +4650,12 @@ var _ tsstypes.MultiSigKeeper = &MultiSigKeeperMock{}
 //
 // 		// make and configure a mocked tsstypes.MultiSigKeeper
 // 		mockedMultiSigKeeper := &MultiSigKeeperMock{
+// 			AssignKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, id multisigexported.KeyID) error {
+// 				panic("mock out the AssignKey method")
+// 			},
+// 			RotateKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) error {
+// 				panic("mock out the RotateKey method")
+// 			},
 // 			SetKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, key multisigtypes.Key)  {
 // 				panic("mock out the SetKey method")
 // 			},
@@ -4659,11 +4666,33 @@ var _ tsstypes.MultiSigKeeper = &MultiSigKeeperMock{}
 //
 // 	}
 type MultiSigKeeperMock struct {
+	// AssignKeyFunc mocks the AssignKey method.
+	AssignKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, id multisigexported.KeyID) error
+
+	// RotateKeyFunc mocks the RotateKey method.
+	RotateKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) error
+
 	// SetKeyFunc mocks the SetKey method.
 	SetKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, key multisigtypes.Key)
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// AssignKey holds details about calls to the AssignKey method.
+		AssignKey []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Chain is the chain argument value.
+			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+			// ID is the id argument value.
+			ID multisigexported.KeyID
+		}
+		// RotateKey holds details about calls to the RotateKey method.
+		RotateKey []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Chain is the chain argument value.
+			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+		}
 		// SetKey holds details about calls to the SetKey method.
 		SetKey []struct {
 			// Ctx is the ctx argument value.
@@ -4672,7 +4701,83 @@ type MultiSigKeeperMock struct {
 			Key multisigtypes.Key
 		}
 	}
-	lockSetKey sync.RWMutex
+	lockAssignKey sync.RWMutex
+	lockRotateKey sync.RWMutex
+	lockSetKey    sync.RWMutex
+}
+
+// AssignKey calls AssignKeyFunc.
+func (mock *MultiSigKeeperMock) AssignKey(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, id multisigexported.KeyID) error {
+	if mock.AssignKeyFunc == nil {
+		panic("MultiSigKeeperMock.AssignKeyFunc: method is nil but MultiSigKeeper.AssignKey was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+		ID    multisigexported.KeyID
+	}{
+		Ctx:   ctx,
+		Chain: chain,
+		ID:    id,
+	}
+	mock.lockAssignKey.Lock()
+	mock.calls.AssignKey = append(mock.calls.AssignKey, callInfo)
+	mock.lockAssignKey.Unlock()
+	return mock.AssignKeyFunc(ctx, chain, id)
+}
+
+// AssignKeyCalls gets all the calls that were made to AssignKey.
+// Check the length with:
+//     len(mockedMultiSigKeeper.AssignKeyCalls())
+func (mock *MultiSigKeeperMock) AssignKeyCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+	ID    multisigexported.KeyID
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+		ID    multisigexported.KeyID
+	}
+	mock.lockAssignKey.RLock()
+	calls = mock.calls.AssignKey
+	mock.lockAssignKey.RUnlock()
+	return calls
+}
+
+// RotateKey calls RotateKeyFunc.
+func (mock *MultiSigKeeperMock) RotateKey(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) error {
+	if mock.RotateKeyFunc == nil {
+		panic("MultiSigKeeperMock.RotateKeyFunc: method is nil but MultiSigKeeper.RotateKey was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+	}{
+		Ctx:   ctx,
+		Chain: chain,
+	}
+	mock.lockRotateKey.Lock()
+	mock.calls.RotateKey = append(mock.calls.RotateKey, callInfo)
+	mock.lockRotateKey.Unlock()
+	return mock.RotateKeyFunc(ctx, chain)
+}
+
+// RotateKeyCalls gets all the calls that were made to RotateKey.
+// Check the length with:
+//     len(mockedMultiSigKeeper.RotateKeyCalls())
+func (mock *MultiSigKeeperMock) RotateKeyCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+	}
+	mock.lockRotateKey.RLock()
+	calls = mock.calls.RotateKey
+	mock.lockRotateKey.RUnlock()
+	return calls
 }
 
 // SetKey calls SetKeyFunc.

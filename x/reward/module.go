@@ -81,7 +81,7 @@ type AppModule struct {
 	nexus          types.Nexus
 	minter         types.Minter
 	staker         types.Staker
-	tss            types.Tss
+	multiSig       types.MultiSig
 	snapshotter    types.Snapshotter
 	msgSvcRouter   *baseapp.MsgServiceRouter
 	router         sdk.Router
@@ -96,7 +96,7 @@ func NewAppModule(
 	nexus types.Nexus,
 	minter types.Minter,
 	staker types.Staker,
-	tss types.Tss,
+	multiSig types.MultiSig,
 	snapshotter types.Snapshotter,
 	bank types.Banker,
 	msgSvcRouter *baseapp.MsgServiceRouter,
@@ -110,7 +110,7 @@ func NewAppModule(
 		nexus:          nexus,
 		minter:         minter,
 		staker:         staker,
-		tss:            tss,
+		multiSig:       multiSig,
 		snapshotter:    snapshotter,
 		msgSvcRouter:   msgSvcRouter,
 		router:         router,
@@ -170,7 +170,7 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 
 // EndBlock executes all state transitions this module requires at the end of each new block
 func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
-	return EndBlocker(ctx, req, am.keeper, am.nexus, am.minter, am.staker, am.tss, am.snapshotter)
+	return EndBlocker(ctx, req, am.keeper, am.nexus, am.minter, am.staker, am.multiSig, am.snapshotter)
 }
 
 // ConsensusVersion implements AppModule/ConsensusVersion.

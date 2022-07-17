@@ -527,7 +527,6 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		nexusTypes.ModuleName,
 		permissionTypes.ModuleName,
 		multisigTypes.ModuleName,
-		tssTypes.ModuleName,
 		evmTypes.ModuleName,
 		snapTypes.ModuleName,
 		axelarnetTypes.ModuleName,
@@ -554,7 +553,6 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 
 		// axelar custom modules
 		multisigTypes.ModuleName,
-		tssTypes.ModuleName,
 		evmTypes.ModuleName,
 		nexusTypes.ModuleName,
 		rewardTypes.ModuleName,
@@ -634,7 +632,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		ante.NewAnteHandlerDecorator(baseAnteHandler),
 		ante.NewLogMsgDecorator(appCodec),
 		ante.NewCheckCommissionRate(),
-		ante.NewValidateValidatorDeregisteredTssDecorator(tssK, nexusK, snapK),
+		ante.NewUndelegateDecorator(multisigK, nexusK, snapK),
 		ante.NewCheckRefundFeeDecorator(app.interfaceRegistry, accountK, stakingK, snapK, rewardK),
 		ante.NewCheckProxy(snapK),
 		ante.NewRestrictedTx(permissionK),

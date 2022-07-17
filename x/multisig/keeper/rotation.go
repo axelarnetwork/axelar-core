@@ -97,6 +97,30 @@ func (k Keeper) RotateKey(ctx sdk.Context, chainName nexus.ChainName) error {
 	return nil
 }
 
+func (k Keeper) GetActiveKeyIDs(ctx sdk.Context, chainName nexus.ChainName) []exported.KeyID {
+	epochs := k.getStore(ctx).ReverseIterator(keyEpochPrefix.AppendStr(chainName.String()))
+	utils.CloseLogError(epochs, k.Logger(ctx))
+
+	var keys []exported.KeyID
+	for ; epochs.Valid(); epochs.Next() {
+		var epoch types.KeyEpoch
+		epochs.UnmarshalValue(&epoch)
+		key := funcs.MustOk(k.getKey(ctx, epoch.KeyID))
+
+		switch key.State {
+		case types.Inactive:
+			return keys
+		case types.Assigned:
+			continue
+		case types.Active:
+			keys = append(keys, key.ID)
+		default:
+			panic(fmt.Sprintf("unexpected key state %s", key.State.String()))
+		}
+	}
+	return keys
+}
+
 func (k Keeper) getKeyEpoch(ctx sdk.Context, chainName nexus.ChainName, epoch uint64) (keyEpoch types.KeyEpoch, ok bool) {
 	return keyEpoch, k.getStore(ctx).Get(keyEpochPrefix.AppendStr(chainName.String()).Append(utils.KeyFromInt(epoch)), &keyEpoch)
 }

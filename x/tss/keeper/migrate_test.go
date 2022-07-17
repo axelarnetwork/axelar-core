@@ -1,23 +1,191 @@
 package keeper
 
 import (
+	"crypto/ecdsa"
 	"testing"
 
-	"github.com/axelarnetwork/axelar-core/app"
-	"github.com/axelarnetwork/axelar-core/x/evm/types"
-	"github.com/axelarnetwork/axelar-core/x/tss/types/mock"
+	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
+	"github.com/stretchr/testify/assert"
+
+	"github.com/axelarnetwork/axelar-core/app/params"
+	"github.com/axelarnetwork/axelar-core/testutils/fake"
+	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
+	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
+	multisigKeeper "github.com/axelarnetwork/axelar-core/x/multisig/keeper"
+	multisig "github.com/axelarnetwork/axelar-core/x/multisig/types"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	"github.com/axelarnetwork/axelar-core/x/tss/exported"
+	"github.com/axelarnetwork/axelar-core/x/tss/types"
+	"github.com/axelarnetwork/axelar-core/x/tss/types/mock"
+	"github.com/axelarnetwork/utils/funcs"
+	"github.com/axelarnetwork/utils/slices"
+	. "github.com/axelarnetwork/utils/test"
 )
 
 func TestGetMigrationHandler(t *testing.T) {
-	encCfg := app.MakeEncodingConfig()
-	storeKey := sdk.NewKVStoreKey(paramstypes.StoreKey)
-	tstoreKey := sdk.NewKVStoreKey(paramstypes.TStoreKey)
-	subspace := paramstypes.NewSubspace(encCfg.Codec, encCfg.Amino, storeKey, tstoreKey, types.ModuleName)
-	k := NewKeeper(encCfg.Codec, storeKey, subspace, &mock.SlasherMock{}, &mock.RewarderMock{})
-	GetMigrationHandler(k, &mock.MultiSigKeeperMock{}, &mock.NexusMock{}, &mock.SnapshotterMock{})
+	encCfg := params.MakeEncodingConfig()
+	paramsStoreKey := sdk.NewKVStoreKey(paramstypes.StoreKey)
+	paramsTSstoreKey := sdk.NewKVStoreKey(paramstypes.TStoreKey)
+	chains := []nexus.Chain{
+		{
+			Name:   "ethereum",
+			Module: evm.ModuleName,
+		},
+		{
+			Name:   "avalanche",
+			Module: evm.ModuleName,
+		},
+		{
+			Name:   "osmosis",
+			Module: axelarnet.ModuleName,
+		},
+	}
+	var (
+		ctx          sdk.Context
+		k            Keeper
+		msk          multisigKeeper.Keeper
+		handler      func(ctx sdk.Context) error
+		expectedKeys []exported.Key
+	)
 
-	// TODO: finish this test
-	panic("implement me")
+	givenSetup := Given("a context", func() {
+		ctx = rand.Context(fake.NewMultiStore())
+		expectedKeys = []exported.Key{}
+	}).
+		Given("a tss keeper", func() {
+			subspace := paramstypes.NewSubspace(encCfg.Codec, encCfg.Amino, paramsStoreKey, paramsTSstoreKey, types.ModuleName)
+			k = NewKeeper(encCfg.Codec, sdk.NewKVStoreKey(types.StoreKey), subspace, &mock.SlasherMock{}, &mock.RewarderMock{})
+
+			k.SetParams(ctx, types.DefaultParams())
+		}).
+		Given("a multisig keeper", func() {
+			subspace := paramstypes.NewSubspace(encCfg.Codec, encCfg.Amino, paramsStoreKey, paramsTSstoreKey, multisig.ModuleName)
+			msk = multisigKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey(multisig.StoreKey), subspace)
+		}).
+		Given("a migration handler", func() {
+			n := &mock.NexusMock{GetChainsFunc: func(ctx sdk.Context) []nexus.Chain { return chains }}
+
+			snapshotter := &mock.SnapshotterMock{
+				GetSnapshotFunc: func(ctx sdk.Context, seqNo int64) (snapshot.Snapshot, bool) { return snap, true },
+			}
+			handler = GetMigrationHandler(k, msk, n, snapshotter)
+		})
+
+	givenSetup.When("there are no keys to migrate", func() {}).
+		Then("do not fail", func(t *testing.T) {
+			assert.NoError(t, handler(ctx))
+		}).Run(t)
+
+	givenSetup.
+		When("there is only a current key", func() {
+			expectedKeys = append(expectedKeys, setKey(ctx, k, chains[1].Name))
+
+			funcs.MustNoErr(k.AssignNextKey(ctx, chains[1], exported.SecondaryKey, expectedKeys[0].ID))
+			funcs.MustNoErr(k.RotateKey(ctx, chains[1], exported.SecondaryKey))
+		}).
+		Then("migrate the current key", func(t *testing.T) {
+			assert.NoError(t, handler(ctx))
+
+			keyIDs := msk.GetActiveKeyIDs(ctx, nexus.ChainName(expectedKeys[0].Chain))
+
+			assert.Len(t, keyIDs, 1)
+			keyID := keyIDs[0]
+			key, ok := msk.GetKey(ctx, keyID)
+			assert.True(t, ok)
+			assert.EqualValues(t, expectedKeys[0].ID, key.GetKeyID())
+			currentKey := key.(*multisig.Key)
+			assert.Equal(t, multisig.Active, currentKey.State)
+			assert.Equal(t, key, funcs.MustOk(msk.GetCurrentKey(ctx, nexus.ChainName(expectedKeys[0].Chain))))
+		}).Run(t)
+
+	givenSetup.
+		When("there is only a next key", func() {
+			expectedKeys = append(expectedKeys, setKey(ctx, k, chains[0].Name))
+
+			funcs.MustNoErr(k.AssignNextKey(ctx, chains[0], exported.SecondaryKey, expectedKeys[0].ID))
+		}).
+		Then("migrate the next key", func(t *testing.T) {
+			assert.NoError(t, handler(ctx))
+
+			keyID := funcs.MustOk(msk.GetNextKeyID(ctx, nexus.ChainName(expectedKeys[0].Chain)))
+
+			assert.EqualValues(t, expectedKeys[0].ID, keyID)
+			key, ok := msk.GetKey(ctx, keyID)
+			assert.True(t, ok)
+			assert.EqualValues(t, expectedKeys[0].ID, key.GetKeyID())
+			nextKey := key.(*multisig.Key)
+			assert.Equal(t, multisig.Assigned, nextKey.State)
+		}).Run(t)
+
+	givenSetup.
+		When("there are old, current and next keys", func() {
+			for i := 0; i < 20; i++ {
+				key := setKey(ctx, k, chains[2].Name)
+				expectedKeys = append(expectedKeys, key)
+				funcs.MustNoErr(k.AssignNextKey(ctx, chains[2], exported.SecondaryKey, key.ID))
+				funcs.MustNoErr(k.RotateKey(ctx, chains[2], exported.SecondaryKey))
+			}
+			expectedKeys = append(expectedKeys, setKey(ctx, k, chains[2].Name))
+			funcs.MustNoErr(k.AssignNextKey(ctx, chains[2], exported.SecondaryKey, expectedKeys[len(expectedKeys)-1].ID))
+		}).
+		Then("migrate all keys", func(t *testing.T) {
+			assert.NoError(t, handler(ctx))
+
+			keyIDs := msk.GetActiveKeyIDs(ctx, nexus.ChainName(expectedKeys[0].Chain))
+			assert.Len(t, keyIDs, int(types.DefaultParams().UnbondingLockingKeyRotationCount+1))
+
+			expectedActiveKeys := slices.Reverse(expectedKeys[len(expectedKeys)-1-len(keyIDs) : len(expectedKeys)-1])
+			for i := 1; i < len(keyIDs); i++ {
+				key, ok := msk.GetKey(ctx, keyIDs[i])
+				assert.True(t, ok)
+				assert.EqualValues(t, expectedActiveKeys[i].ID, key.GetKeyID())
+				oldActiveKey := key.(*multisig.Key)
+				assert.Equal(t, multisig.Active, oldActiveKey.State)
+				assert.Len(t, oldActiveKey.GetParticipants(), len(validators))
+				assert.Len(t, oldActiveKey.Snapshot.Participants, len(validators))
+			}
+
+			key := funcs.MustOk(msk.GetCurrentKey(ctx, nexus.ChainName(expectedActiveKeys[0].Chain)))
+			assert.EqualValues(t, expectedActiveKeys[0].ID, key.GetKeyID())
+			assert.EqualValues(t, key.GetKeyID(), keyIDs[0])
+			currentKey := key.(*multisig.Key)
+			assert.Equal(t, multisig.Active, currentKey.State)
+			assert.Len(t, currentKey.GetParticipants(), len(validators))
+			assert.Len(t, currentKey.Snapshot.Participants, len(validators))
+
+			keyID := funcs.MustOk(msk.GetNextKeyID(ctx, nexus.ChainName(expectedKeys[len(expectedKeys)-1].Chain)))
+			key, ok := msk.GetKey(ctx, keyID)
+			assert.True(t, ok)
+			assert.EqualValues(t, expectedKeys[len(expectedKeys)-1].ID, key.GetKeyID())
+			nextKey := key.(*multisig.Key)
+			assert.Equal(t, multisig.Assigned, nextKey.State)
+
+			assert.Len(t, nextKey.GetParticipants(), len(validators))
+
+			assert.Len(t, nextKey.Snapshot.Participants, len(validators))
+		}).Run(t)
+}
+
+func setKey(ctx sdk.Context, k Keeper, chain nexus.ChainName) exported.Key {
+	var expectedKey exported.Key
+	expectedKey = generateMultisigKey(exported.KeyID(rand.Str(10)))
+	expectedKey.Chain = string(chain)
+	expectedKey.SnapshotCounter = rand.PosI64()
+	k.setSnapshotCounterForKeyID(ctx, expectedKey.ID, expectedKey.SnapshotCounter)
+	k.SetKey(ctx, expectedKey)
+	k.SetMultisigKeygenInfo(ctx, types.MultisigInfo{
+		ID:        string(expectedKey.ID),
+		Timeout:   rand.PosI64(),
+		TargetNum: rand.PosI64(),
+	})
+	for _, validator := range validators {
+		pubKeys := slices.Expand(func(idx int) ecdsa.PublicKey { return generatePubKey() }, 2)
+		serializedPubKeys := slices.Map(pubKeys, func(pk ecdsa.PublicKey) []byte { pk2 := btcec.PublicKey(pk); return pk2.SerializeCompressed() })
+		k.SubmitPubKeys(ctx, expectedKey.ID, validator.GetSDKValidator().GetOperator(), serializedPubKeys...)
+	}
+	return expectedKey
 }

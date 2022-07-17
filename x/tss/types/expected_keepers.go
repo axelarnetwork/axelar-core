@@ -3,13 +3,14 @@ package types
 import (
 	"crypto/ecdsa"
 
-	"github.com/axelarnetwork/axelar-core/x/multisig/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	exported1 "github.com/axelarnetwork/axelar-core/x/multisig/exported"
+	"github.com/axelarnetwork/axelar-core/x/multisig/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
@@ -130,6 +131,8 @@ type Rewarder interface {
 
 type MultiSigKeeper interface {
 	SetKey(ctx sdk.Context, key types.Key)
+	AssignKey(ctx sdk.Context, chain nexus.ChainName, id exported1.KeyID) error
+	RotateKey(ctx sdk.Context, chain nexus.ChainName) error
 }
 
 type Slasher interface {

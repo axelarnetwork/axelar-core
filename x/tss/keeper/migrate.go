@@ -3,13 +3,13 @@ package keeper
 import (
 	"fmt"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/axelarnetwork/axelar-core/utils"
 	multisigExported "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	multisigTypes "github.com/axelarnetwork/axelar-core/x/multisig/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshotexported "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
@@ -33,64 +33,91 @@ func migrateKeys(ctx sdk.Context, tss Keeper, multisig types.MultiSigKeeper, nex
 	for _, chain := range chains {
 		keys, err := tss.GetOldActiveKeys(ctx, chain, exported.SecondaryKey)
 		if err != nil {
-			return fmt.Errorf("failed to migrate old %s keys for chain %s", exported.SecondaryKey.SimpleString(), chain.Name)
-		}
-
-		if err := migrate(ctx, tss, multisig, snapshotter, chain.Name, keys...); err != nil {
 			return err
 		}
+		if len(keys) == 0 {
+			tss.Logger(ctx).Debug(fmt.Sprintf("no old active %s keys found for chain %s", exported.SecondaryKey.SimpleString(), chain.Name))
+		} else {
+			for _, key := range keys {
+				if err := migrate(ctx, tss, multisig, snapshotter, chain.Name, key); err != nil {
+					return err
+				}
+				if err := multisig.AssignKey(ctx, chain.Name, multisigExported.KeyID(key.ID)); err != nil {
+					return err
+				}
 
+				if err := multisig.RotateKey(ctx, chain.Name); err != nil {
+					return err
+				}
+			}
+		}
 		key, ok := tss.GetCurrentKey(ctx, chain, exported.SecondaryKey)
 		if !ok {
-			return fmt.Errorf("failed to migrate active %s key for chain %s", exported.SecondaryKey.SimpleString(), chain.Name)
-		}
-		if err := migrate(ctx, tss, multisig, snapshotter, chain.Name, key); err != nil {
-			return err
+			tss.Logger(ctx).Debug(fmt.Sprintf("no active %s key found for chain %s", exported.SecondaryKey.SimpleString(), chain.Name))
+		} else {
+			if err := migrate(ctx, tss, multisig, snapshotter, chain.Name, key); err != nil {
+				return err
+			}
+			if err := multisig.AssignKey(ctx, chain.Name, multisigExported.KeyID(key.ID)); err != nil {
+				return err
+			}
+			if err := multisig.RotateKey(ctx, chain.Name); err != nil {
+				return err
+			}
 		}
 
 		key, ok = tss.GetNextKey(ctx, chain, exported.SecondaryKey)
 		if !ok {
-			return fmt.Errorf("failed to migrate next %s key in rotation for chain %s", exported.SecondaryKey.SimpleString(), chain.Name)
+			tss.Logger(ctx).Debug(fmt.Sprintf("no next %s key found for chain %s", exported.SecondaryKey.SimpleString(), chain.Name))
+		} else {
+			if err := migrate(ctx, tss, multisig, snapshotter, chain.Name, key); err != nil {
+				return err
+			}
+			if err := multisig.AssignKey(ctx, chain.Name, multisigExported.KeyID(key.ID)); err != nil {
+				return err
+			}
+
 		}
-		return migrate(ctx, tss, multisig, snapshotter, chain.Name, key)
 	}
 	return nil
 }
 
-func migrate(ctx sdk.Context, tss Keeper, multisig types.MultiSigKeeper, snapshotter types.Snapshotter, chain nexus.ChainName, keys ...exported.Key) error {
-	for _, key := range keys {
-		s, ok := snapshotter.GetSnapshot(ctx, key.SnapshotCounter)
-		for _, validator := range s.Validators {
-			valAddress := validator.GetSDKValidator().GetOperator()
-			s.Participants[valAddress.String()] = snapshotexported.NewParticipant(valAddress, sdk.NewUint(uint64(validator.ShareCount)))
-			s.BondedWeight = sdk.NewUintFromBigInt(s.TotalShareCount.BigInt())
-		}
-		if !ok {
-			return fmt.Errorf("failed to migrate key %s for chain %s, no snapshot found", key.ID, chain)
-		}
-		info, found := tss.GetMultisigKeygenInfo(ctx, key.ID)
-		keyInfo, ok := info.(*types.MultisigInfo)
-		if !found || !ok {
-			return fmt.Errorf("failed to migrate key %s for chain %s, key info not found", key.ID, chain)
-		}
-		pubkeys := make(map[string]multisigExported.PublicKey)
-		for _, infos := range keyInfo.Infos {
-
-			val := infos.Participant.String()
-			keys := infos.Data
-			if len(keys) < 1 {
-				return fmt.Errorf("failed to migrate key %s for chain %s, validator %s is participant without pubkey", key.ID, chain, infos.Participant.String())
-			}
-			pubkeys[val] = keys[0]
-		}
-		multisig.SetKey(ctx, multisigTypes.Key{
-			ID:               multisigExported.KeyID(key.ID),
-			Snapshot:         s,
-			PubKeys:          pubkeys,
-			SigningThreshold: utils.NewThreshold(keyInfo.TargetNum, keyInfo.Count()),
-		})
-
-		tss.Logger(ctx).Debug(fmt.Sprintf("successfully migrated %s key %s for chain %s", exported.SecondaryKey, key.ID, chain))
+func migrate(ctx sdk.Context, tss Keeper, multisig types.MultiSigKeeper, snapshotter types.Snapshotter, chain nexus.ChainName, key exported.Key) error {
+	s, ok := snapshotter.GetSnapshot(ctx, key.SnapshotCounter)
+	if s.Participants == nil {
+		s.Participants = make(map[string]snapshotexported.Participant)
 	}
+	for _, validator := range s.Validators {
+		valAddress := validator.GetSDKValidator().GetOperator()
+		s.Participants[valAddress.String()] = snapshotexported.NewParticipant(valAddress, sdk.NewUint(uint64(validator.ShareCount)))
+		s.BondedWeight = sdk.NewUintFromBigInt(s.TotalShareCount.BigInt())
+	}
+	if !ok {
+		return fmt.Errorf("failed to migrate key %s for chain %s, no snapshot found", key.ID, chain)
+	}
+	info, found := tss.GetMultisigKeygenInfo(ctx, key.ID)
+	keyInfo, ok := info.(*types.MultisigInfo)
+	if !found || !ok {
+		return fmt.Errorf("failed to migrate key %s for chain %s, key info not found", key.ID, chain)
+	}
+	pubkeys := make(map[string]multisigExported.PublicKey)
+	for _, infos := range keyInfo.Infos {
+
+		val := infos.Participant.String()
+		keys := infos.Data
+		if len(keys) < 1 {
+			return fmt.Errorf("failed to migrate key %s for chain %s, validator %s is participant without pubkey", key.ID, chain, infos.Participant.String())
+		}
+		pubkeys[val] = keys[0]
+	}
+	newKey := multisigTypes.Key{
+		ID:               multisigExported.KeyID(key.ID),
+		Snapshot:         s,
+		PubKeys:          pubkeys,
+		SigningThreshold: utils.NewThreshold(keyInfo.TargetNum, keyInfo.Count()),
+	}
+	multisig.SetKey(ctx, newKey)
+
+	tss.Logger(ctx).Debug(fmt.Sprintf("successfully migrated %s key %s for chain %s", exported.SecondaryKey, key.ID, chain))
 	return nil
 }

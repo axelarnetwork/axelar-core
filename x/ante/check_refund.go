@@ -12,7 +12,7 @@ import (
 	rewardtypes "github.com/axelarnetwork/axelar-core/x/reward/types"
 )
 
-// CheckRefundFeeDecorator record potential refund for tss and vote txs
+// CheckRefundFeeDecorator record potential refund for multiSig and vote txs
 type CheckRefundFeeDecorator struct {
 	registry    cdctypes.InterfaceRegistry
 	ak          antetypes.AccountKeeper
@@ -32,7 +32,7 @@ func NewCheckRefundFeeDecorator(registry cdctypes.InterfaceRegistry, ak antetype
 	}
 }
 
-// AnteHandle record qualified refund for the tss and vote transactions
+// AnteHandle record qualified refund for the multiSig and vote transactions
 func (d CheckRefundFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
 	msgs := tx.GetMsgs()
 
