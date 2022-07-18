@@ -290,9 +290,6 @@ func TestCreateBurnTokens(t *testing.T) {
 			},
 		}
 		multisigKeeper = &mock.MultisigKeeperMock{
-			GetNextKeyIDFunc: func(ctx sdk.Context, chain nexus.ChainName) (multisig.KeyID, bool) {
-				return "", false
-			},
 			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.ChainName) (multisig.KeyID, bool) {
 				return keyID, true
 			},
@@ -312,25 +309,6 @@ func TestCreateBurnTokens(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, evmChainKeeper.DeleteDepositCalls(), 0)
-	}).Repeat(repeats))
-
-	t.Run("should return error if the next key is assigned", testutils.Func(func(t *testing.T) {
-		setup()
-
-		evmChainKeeper.GetConfirmedDepositsFunc = func(ctx sdk.Context) []types.ERC20Deposit {
-			return []types.ERC20Deposit{{}}
-		}
-		multisigKeeper.GetNextKeyIDFunc = func(ctx sdk.Context, chain nexus.ChainName) (multisig.KeyID, bool) {
-			if chain == exported.Ethereum.Name {
-				return multisigTestUtils.KeyID(), true
-			}
-
-			return "", false
-		}
-
-		_, err := server.CreateBurnTokens(sdk.WrapSDKContext(ctx), req)
-
-		assert.Error(t, err)
 	}).Repeat(repeats))
 
 	t.Run("should create burn commands", testutils.Func(func(t *testing.T) {
@@ -1144,9 +1122,6 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.ChainName) (multisig.KeyID, bool) {
 				return multisigTestUtils.KeyID(), true
 			},
-			GetNextKeyIDFunc: func(ctx sdk.Context, chain nexus.ChainName) (multisig.KeyID, bool) {
-				return "", false
-			},
 		}
 
 		server = keeper.NewMsgServerImpl(basek, n, v, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{}, multisigKeeper)
@@ -1191,17 +1166,6 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 	t.Run("should return error when asset is not registered on the origin chain", testutils.Func(func(t *testing.T) {
 		setup()
 		n.IsAssetRegisteredFunc = func(sdk.Context, nexus.Chain, string) bool { return false }
-
-		_, err := server.CreateDeployToken(sdk.WrapSDKContext(ctx), msg)
-
-		assert.Error(t, err)
-	}).Repeat(repeats))
-
-	t.Run("should return error when next key is set", testutils.Func(func(t *testing.T) {
-		setup()
-		multisigKeeper.GetNextKeyIDFunc = func(ctx sdk.Context, chain nexus.ChainName) (multisig.KeyID, bool) {
-			return multisigTestUtils.KeyID(), true
-		}
 
 		_, err := server.CreateDeployToken(sdk.WrapSDKContext(ctx), msg)
 

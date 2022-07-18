@@ -16,6 +16,7 @@ var (
 	KeyKeygenGracePeriod  = []byte("KeygenGracePeriod")
 	KeySigningTimeout     = []byte("SigningTimeout")
 	KeySigningGracePeriod = []byte("SigningGracePeriod")
+	KeyActiveEpochCount   = []byte("ActiveEpochCount")
 )
 
 // KeyTable returns a subspace.KeyTable that has registered all parameter types in this module's parameter set
@@ -32,6 +33,7 @@ func DefaultParams() Params {
 		KeygenGracePeriod:  5,
 		SigningTimeout:     10,
 		SigningGracePeriod: 1,
+		ActiveEpochCount:   5,
 	}
 }
 
@@ -51,6 +53,7 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 		params.NewParamSetPair(KeyKeygenGracePeriod, &m.KeygenGracePeriod, validateGracePeriod),
 		params.NewParamSetPair(KeySigningTimeout, &m.SigningTimeout, validateTimeout),
 		params.NewParamSetPair(KeySigningGracePeriod, &m.SigningGracePeriod, validateGracePeriod),
+		params.NewParamSetPair(KeyActiveEpochCount, &m.ActiveEpochCount, validateActiveEpochCount),
 	}
 }
 
@@ -77,6 +80,10 @@ func (m Params) Validate() error {
 	}
 
 	if err := validateGracePeriod(m.SigningGracePeriod); err != nil {
+		return err
+	}
+
+	if err := validateActiveEpochCount(m.ActiveEpochCount); err != nil {
 		return err
 	}
 
@@ -117,6 +124,19 @@ func validateGracePeriod(i interface{}) error {
 
 	if gracePeriod < 0 {
 		return fmt.Errorf("grace period must be >=0")
+	}
+
+	return nil
+}
+
+func validateActiveEpochCount(i interface{}) error {
+	activeEpochCount, ok := i.(uint64)
+	if !ok {
+		return fmt.Errorf("invalid parameter type for active epoch count: %T", i)
+	}
+
+	if activeEpochCount <= 0 {
+		return fmt.Errorf("active epoch count must be >0")
 	}
 
 	return nil
