@@ -11,7 +11,6 @@ option (gogoproto.goproto_getters_all) = false;
 message KeyIDRequest { string chain = 1; }
 
 // KeyIDResponse contains the key ID of the key assigned to a given chain.
-// If no key is assigned, it contains the empty string.
 message KeyIDResponse {
   string key_id = 1 [
     (gogoproto.customname) = "KeyID",
@@ -23,7 +22,7 @@ message KeyIDResponse {
 message NextKeyIDRequest { string chain = 1; }
 
 // NextKeyIDResponse contains the key ID for the next rotation on the given
-// chain. If no key rotation is in progress, it contains the empty string.
+// chain
 message NextKeyIDResponse {
   string key_id = 1 [
     (gogoproto.customname) = "KeyID",
@@ -31,3 +30,9 @@ message NextKeyIDResponse {
         "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
   ];
 }
+
+message AssignableKeyRequest { string chain = 1; }
+
+// AssignableKeyResponse contains true if no key is assigned
+// for rotation on the given chain, and false otherwise
+message AssignableKeyResponse { bool assignable = 1; }
