@@ -171,7 +171,7 @@ func (s msgServer) activateChain(ctx sdk.Context, chain exported.Chain) {
 	}
 
 	// no chain maintainer for cosmos chains
-	if !s.axelarnet.IsCosmosChain(ctx, chain.Name) && s.isActivationThresholdMet(ctx, s.Nexus, s.slashing, s.snapshotter, chain) {
+	if !s.axelarnet.IsCosmosChain(ctx, chain.Name) && !s.isActivationThresholdMet(ctx, s.Nexus, s.slashing, s.snapshotter, chain) {
 		return
 	}
 
