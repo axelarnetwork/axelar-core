@@ -134,6 +134,14 @@ func (p poll) GetModule() string {
 	return p.Module
 }
 
+func (p poll) GetMetaData() (codec.ProtoMarshaler, bool) {
+	if p.ModuleMetadata == nil {
+		return nil, false
+	}
+
+	return p.ModuleMetadata.GetCachedValue().(codec.ProtoMarshaler), true
+}
+
 func (p poll) voteLate(voter sdk.ValAddress, data codec.ProtoMarshaler) {
 	talliedVote, ok := p.k.getTalliedVote(p.ctx, p.ID, proto.Hash(data))
 	if !ok {
