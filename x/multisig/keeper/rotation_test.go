@@ -17,6 +17,7 @@ import (
 	typestestutils "github.com/axelarnetwork/axelar-core/x/multisig/types/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/utils/funcs"
+	"github.com/axelarnetwork/utils/slices"
 	. "github.com/axelarnetwork/utils/test"
 )
 
@@ -31,7 +32,7 @@ func TestKeeper(t *testing.T) {
 		keyID2 exported.KeyID
 	)
 
-	givenKeeper := When("multisig keeper", func() {
+	givenKeeper := Given("multisig keeper", func() {
 		subspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "multisig")
 		k = keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey(types.StoreKey), subspace)
 		ctx = testutilsrand.Context(fake.NewMultiStore())
@@ -54,10 +55,11 @@ func TestKeeper(t *testing.T) {
 	t.Run("AssignKey", func(t *testing.T) {
 		givenKeeper.
 			Branch(
-				Then("should fail if key does not exist", func(t *testing.T) {
-					err := k.AssignKey(ctx, chainName, exportedtestutils.KeyID())
-					assert.Error(t, err)
-				}),
+				When("no key exists", func() {}).
+					Then("should fail", func(t *testing.T) {
+						err := k.AssignKey(ctx, chainName, exportedtestutils.KeyID())
+						assert.Error(t, err)
+					}),
 
 				whenKeysExist.
 					Branch(
@@ -150,4 +152,36 @@ func TestKeeper(t *testing.T) {
 			}).
 			Run(t)
 	})
+}
+
+func TestKeeper_GetActiveKeyIDs(t *testing.T) {
+	encCfg := app.MakeEncodingConfig()
+	chainName := nexus.ChainName(testutilsrand.NormalizedStr(5))
+
+	var (
+		k            keeper.Keeper
+		ctx          sdk.Context
+		expectedKeys []types.Key
+	)
+
+	Given("multisig keeper", func() {
+		subspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "multisig")
+		k = keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey(types.StoreKey), subspace)
+		ctx = testutilsrand.Context(fake.NewMultiStore())
+
+		k.InitGenesis(ctx, types.DefaultGenesisState())
+	}).When("multiple keys are in the store", func() {
+		expectedKeys = []types.Key{}
+		for i := 0; i < 20; i++ {
+			key := types.Key{ID: exportedtestutils.KeyID()}
+			expectedKeys = append(expectedKeys, key)
+			k.SetKey(ctx, key)
+			funcs.MustNoErr(k.AssignKey(ctx, chainName, key.ID))
+			funcs.MustNoErr(k.RotateKey(ctx, chainName))
+		}
+
+	}).Then("get active keys", func(t *testing.T) {
+		expectedKeys = expectedKeys[len(expectedKeys)-int(types.DefaultParams().ActiveEpochCount):]
+		assert.ElementsMatch(t, slices.Map(expectedKeys, func(key types.Key) exported.KeyID { return key.ID }), k.GetActiveKeyIDs(ctx, chainName))
+	}).Run(t)
 }
