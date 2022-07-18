@@ -84,6 +84,9 @@ func migrateKeys(ctx sdk.Context, tss Keeper, multisig types.MultiSigKeeper, nex
 
 func migrate(ctx sdk.Context, tss Keeper, multisig types.MultiSigKeeper, snapshotter types.Snapshotter, chain nexus.ChainName, key exported.Key) error {
 	s, ok := snapshotter.GetSnapshot(ctx, key.SnapshotCounter)
+	if !ok {
+		return fmt.Errorf("failed to migrate key %s for chain %s, no snapshot found", key.ID, chain)
+	}
 	if s.Participants == nil {
 		s.Participants = make(map[string]snapshotexported.Participant)
 	}
@@ -93,9 +96,6 @@ func migrate(ctx sdk.Context, tss Keeper, multisig types.MultiSigKeeper, snapsho
 	}
 	s.BondedWeight = sdk.NewUintFromBigInt(s.TotalShareCount.BigInt())
 
-	if !ok {
-		return fmt.Errorf("failed to migrate key %s for chain %s, no snapshot found", key.ID, chain)
-	}
 	info, found := tss.GetMultisigKeygenInfo(ctx, key.ID)
 	keyInfo, ok := info.(*types.MultisigInfo)
 	if !found || !ok {
