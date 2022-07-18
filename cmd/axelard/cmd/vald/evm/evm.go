@@ -726,7 +726,7 @@ func decodeMultisigOperatorshipTransferredEvent(log *geth.Log) (evmTypes.EventMu
 		NewWeights:   slices.Map(newWeights, sdk.NewUintFromBigInt),
 		NewThreshold: sdk.NewUintFromBigInt(newThreshold),
 	}
-	if err := event.Validate(); err != nil {
+	if err := event.ValidateBasic(); err != nil {
 		return evmTypes.EventMultisigOperatorshipTransferred{}, err
 	}
 

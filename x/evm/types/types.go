@@ -1511,14 +1511,14 @@ func (m Event) ValidateBasic() error {
 		if event.MultisigOwnershipTransferred == nil {
 			return fmt.Errorf("missing event MultisigOwnershipTransferred")
 		}
-		if err := event.MultisigOwnershipTransferred.Validate(); err != nil {
+		if err := event.MultisigOwnershipTransferred.ValidateBasic(); err != nil {
 			return sdkerrors.Wrap(err, "invalid event MultisigOwnershipTransferred")
 		}
 	case *Event_MultisigOperatorshipTransferred:
 		if event.MultisigOperatorshipTransferred == nil {
 			return fmt.Errorf("missing event MultisigOperatorshipTransferred")
 		}
-		if err := event.MultisigOperatorshipTransferred.Validate(); err != nil {
+		if err := event.MultisigOperatorshipTransferred.ValidateBasic(); err != nil {
 			return sdkerrors.Wrap(err, "invalid event MultisigOperatorshipTransferred")
 		}
 	default:
@@ -1637,8 +1637,8 @@ func (m EventTokenDeployed) ValidateBasic() error {
 	return nil
 }
 
-// Validate returns an error if the event multisig ownership transferred is invalid
-func (m EventMultisigOwnershipTransferred) Validate() error {
+// ValidateBasic returns an error if the event multisig ownership transferred is invalid
+func (m EventMultisigOwnershipTransferred) ValidateBasic() error {
 	NonzeroAddress := func(addr Address) bool { return !addr.IsZeroAddress() }
 
 	if !slices.All(m.PreOwners, NonzeroAddress) {
@@ -1657,8 +1657,8 @@ func (m EventMultisigOwnershipTransferred) Validate() error {
 	return nil
 }
 
-// Validate returns an error if the event multisig ownership transferred is invalid
-func (m EventMultisigOperatorshipTransferred) Validate() error {
+// ValidateBasic returns an error if the event multisig ownership transferred is invalid
+func (m EventMultisigOperatorshipTransferred) ValidateBasic() error {
 	if slices.Any(m.NewOperators, Address.IsZeroAddress) {
 		return fmt.Errorf("invalid new operators")
 	}
