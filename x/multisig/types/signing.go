@@ -155,7 +155,7 @@ func (m SigningSession) Result() (MultiSig, error) {
 
 // GetParticipantsWeight returns the total weights of the participants
 func (m SigningSession) GetParticipantsWeight() sdk.Uint {
-	return slices.Reduce(m.MultiSig.getParticipants(), sdk.ZeroUint(), func(total sdk.Uint, p sdk.ValAddress) sdk.Uint {
+	return slices.Reduce(m.MultiSig.GetParticipants(), sdk.ZeroUint(), func(total sdk.Uint, p sdk.ValAddress) sdk.Uint {
 		return total.Add(m.Key.Snapshot.GetParticipantWeight(p))
 	})
 }
@@ -218,7 +218,8 @@ func (m MultiSig) ValidateBasic() error {
 	return nil
 }
 
-func (m MultiSig) getParticipants() []sdk.ValAddress {
+// GetParticipants returns the participants of the given multi sig
+func (m MultiSig) GetParticipants() []sdk.ValAddress {
 	return sortAddresses(
 		slices.Map(maps.Keys(m.Sigs), func(a string) sdk.ValAddress { return funcs.Must(sdk.ValAddressFromBech32(a)) }),
 	)
