@@ -3103,10 +3103,10 @@ ERC20 tokens requested for a chain
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `operators` | [bytes](#bytes) | repeated |  |
-| `weight` | [bytes](#bytes) | repeated |  |
-| `threshold` | [bytes](#bytes) |  |  |
-| `signature` | [string](#string) | repeated |  |
+| `addresses` | [string](#string) | repeated |  |
+| `weights` | [string](#string) | repeated |  |
+| `threshold` | [string](#string) |  |  |
+| `signatures` | [string](#string) | repeated |  |
 
 
 

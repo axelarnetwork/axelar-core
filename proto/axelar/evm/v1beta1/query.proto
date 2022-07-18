@@ -194,15 +194,8 @@ message TokenInfoResponse {
 }
 
 message Proof {
-  repeated bytes operators = 1
-      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
-  repeated bytes weight = 2 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
-    (gogoproto.nullable) = false
-  ];
-  bytes threshold = 3 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
-    (gogoproto.nullable) = false
-  ];
-  repeated string signature = 4;
+  repeated string addresses = 1;
+  repeated string weights = 2;
+  string threshold = 3;
+  repeated string signatures = 4;
 }

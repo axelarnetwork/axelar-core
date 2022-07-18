@@ -479,7 +479,7 @@ func KeysToAddresses(keys ...ecdsa.PublicKey) []common.Address {
 
 // CreateExecuteDataMultisig wraps the specific command data and includes the command signatures.
 // Returns the data that goes into the data field of an EVM transaction
-func CreateExecuteDataMultisig(data []byte, authData AuthData) ([]byte, error) {
+func CreateExecuteDataMultisig(data []byte, addresses []common.Address, weights []*big.Int, threshold *big.Int, signatures [][]byte) ([]byte, error) {
 	abiEncoder, err := abi.JSON(strings.NewReader(axelarGatewayABI))
 	if err != nil {
 		return nil, err
@@ -490,7 +490,7 @@ func CreateExecuteDataMultisig(data []byte, authData AuthData) ([]byte, error) {
 		return nil, err
 	}
 
-	proof, err := authData.abiEncode()
+	proof, err := getWeightedSignaturesProof(addresses, weights, threshold, signatures)
 	if err != nil {
 		return nil, err
 	}
@@ -826,15 +826,7 @@ func CreateMintTokenCommand(keyID multisig.KeyID, id CommandID, symbol string, a
 
 // CreateMultisigTransferCommand creates a command to transfer ownership/operator of the multisig contract
 func CreateMultisigTransferCommand(chainID sdk.Int, keyID multisig.KeyID, nextKey multisig.Key) Command {
-	addressWeights, threshold := ParseMultisigKey(nextKey)
-	addresses := slices.Map(maps.Keys(addressWeights), common.HexToAddress)
-	sort.SliceStable(addresses, func(i, j int) bool {
-		return bytes.Compare(addresses[i].Bytes(), addresses[j].Bytes()) < 0
-	})
-	weights := slices.Map(addresses, func(address common.Address) *big.Int {
-		return addressWeights[address.Hex()].BigInt()
-	})
-
+	addresses, weights, threshold := GetMultisigAddressesAndWeight(nextKey)
 	params := createTransferMultisigParams(addresses, weights, threshold.BigInt())
 
 	var concat []byte
@@ -1743,15 +1735,18 @@ func NewVoteEvents(chain nexus.ChainName, events []Event) *VoteEvents {
 	}
 }
 
-// GetMultisigAddresses coverts a tss multisig key to addresses
-func GetMultisigAddresses(key tss.Key) ([]common.Address, uint8, error) {
-	multisigPubKeys, err := key.GetMultisigPubKey()
-	if err != nil {
-		return nil, 0, err
-	}
+// GetMultisigAddressesAndWeight coverts a multisig key to sorted addresses and weights
+func GetMultisigAddressesAndWeight(key multisig.Key) ([]common.Address, []*big.Int, sdk.Uint) {
+	addressWeights, threshold := ParseMultisigKey(key)
+	addresses := slices.Map(maps.Keys(addressWeights), common.HexToAddress)
+	sort.SliceStable(addresses, func(i, j int) bool {
+		return bytes.Compare(addresses[i].Bytes(), addresses[j].Bytes()) < 0
+	})
+	weights := slices.Map(addresses, func(address common.Address) *big.Int {
+		return addressWeights[address.Hex()].BigInt()
+	})
 
-	threshold := uint8(key.GetMultisigKey().Threshold)
-	return KeysToAddresses(multisigPubKeys...), threshold, nil
+	return addresses, weights, threshold
 }
 
 func getType(val interface{}) string {
@@ -1798,7 +1793,7 @@ func ParseMultisigKey(key multisig.Key) (map[string]sdk.Uint, sdk.Uint) {
 	for _, p := range participants {
 		pubKey := funcs.MustOk(key.GetPubKey(p))
 		weight := key.GetWeight(p)
-		address := crypto.PubkeyToAddress(*funcs.Must(btcec.ParsePubKey(pubKey, btcec.S256())).ToECDSA())
+		address := crypto.PubkeyToAddress(pubKey.ToECDSAPubKey())
 
 		addressWeights[address.Hex()] = weight
 	}
@@ -1828,29 +1823,15 @@ func (o Operator) GetSignature() []byte {
 	return o.Signature
 }
 
-// AuthData represents the proof for a batch command
-type AuthData struct {
-	Operators        []Operator
-	MinPassingWeight sdk.Uint
+// NewSigMetadata is the constructor for sig metadata
+func NewSigMetadata(sigType SigType, chain nexus.ChainName) *SigMetadata {
+	return &SigMetadata{
+		Type:  sigType,
+		Chain: chain,
+	}
 }
 
-// GetOperatorAddresses returns all operator addresses
-func (a AuthData) GetOperatorAddresses() []Address {
-	return slices.Map(a.Operators, Operator.GetAddress)
-}
-
-// GetWeights returns all operator weights
-func (a AuthData) GetWeights() []sdk.Uint {
-	return slices.Map(a.Operators, Operator.GetWeight)
-}
-
-// GetSignatures returns all operator signatures
-func (a AuthData) GetSignatures() [][]byte {
-	return slices.Filter(slices.Map(a.Operators, Operator.GetSignature), func(b []byte) bool { return b != nil })
-}
-
-// abiEncode encodes operators, weights, threshold and signatures
-func (a AuthData) abiEncode() ([]byte, error) {
+func getWeightedSignaturesProof(addresses []common.Address, weights []*big.Int, threshold *big.Int, signatures [][]byte) ([]byte, error) {
 	addressesType, err := abi.NewType("address[]", "address[]", nil)
 	if err != nil {
 		return nil, err
@@ -1876,23 +1857,14 @@ func (a AuthData) abiEncode() ([]byte, error) {
 		{Type: weightsType},
 		{Type: thresholdType},
 		{Type: signaturesType}}.Pack(
-		a.GetOperatorAddresses(),
-		slices.Map(a.GetWeights(), sdk.Uint.BigInt),
-		a.MinPassingWeight.BigInt(),
-		a.GetSignatures(),
+		addresses,
+		weights,
+		threshold,
+		signatures,
 	)
 	if err != nil {
 		return nil, err
 	}
 
 	return proof, nil
-}
-
-// NewSigMetadata is the constructor for sig metadata
-func NewSigMetadata(sigType SigType, chain nexus.ChainName, commandBatchID []byte) *SigMetadata {
-	return &SigMetadata{
-		Type:           sigType,
-		Chain:          chain,
-		CommandBatchID: commandBatchID,
-	}
 }

@@ -1,17 +1,17 @@
 package keeper
 
 import (
-	"bytes"
 	"context"
 	"encoding/hex"
 	"fmt"
+	"math/big"
 	"sort"
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
+	"golang.org/x/exp/maps"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -76,67 +76,60 @@ func (q Querier) BurnerInfo(c context.Context, req *types.BurnerInfoRequest) (*t
 	return nil, status.Error(codes.NotFound, "unknown address")
 }
 
-func optimizeSignatureSet(key multisig.Key, operators []types.Operator) []types.Operator {
-	sort.SliceStable(operators, func(i, j int) bool {
-		return operators[i].GetWeight().GT(operators[j].GetWeight())
+func optimizeSignatureSet(sigs map[string]multisigtypes.Signature, addressWeights map[string]sdk.Uint, threshold sdk.Uint) [][]byte {
+	addresses := maps.Keys(addressWeights)
+	sort.SliceStable(addresses, func(i, j int) bool {
+		return addressWeights[addresses[i]].GT(addressWeights[addresses[j]])
 	})
 
+	var optimizedSig [][]byte
 	cumWeight := sdk.ZeroUint()
-	for _, o := range operators {
-		if cumWeight.GTE(key.GetMinPassingWeight()) {
-			o.Signature = nil
-		} else if o.Signature != nil {
-			cumWeight = cumWeight.Add(o.Weight)
+	for _, addr := range maps.Keys(addressWeights) {
+		if cumWeight.GTE(threshold) {
+			break
 		}
-	}
 
-	sort.SliceStable(operators, func(i, j int) bool {
-		return bytes.Compare(operators[i].Address.Bytes(), operators[j].Address.Bytes()) < 0
-	})
-
-	return operators
-}
-
-func getProof(ctx sdk.Context, commandBatch types.CommandBatch, s types.MultisigKeeper) (types.AuthData, error) {
-	signature := commandBatch.GetSignature().(*multisigtypes.MultiSig)
-
-	key, ok := s.GetKey(ctx, signature.KeyID)
-	if !ok {
-		return types.AuthData{}, fmt.Errorf("key %s not found", signature.KeyID)
-	}
-
-	operators := slices.Map(key.GetParticipants(), func(val sdk.ValAddress) types.Operator {
-		pubKey := funcs.MustOk(key.GetPubKey(val))
-		pk := pubKey.GetECDSAPubKey()
-		weight := key.GetWeight(val)
-
-		addr := crypto.PubkeyToAddress(pk)
-		sig, _ := signature.Sigs[val.String()]
+		sig, _ := sigs[addr]
 		if sig != nil {
-			sig = funcs.Must(types.NewSignature(sig)).ToHomesteadSig()
+			optimizedSig = append(optimizedSig, sig)
+			cumWeight = cumWeight.Add(addressWeights[addr])
 		}
-
-		return types.Operator{
-			Address:   types.Address(addr),
-			Signature: sig,
-			Weight:    weight,
-		}
-	})
-
-	proof := types.AuthData{
-		Operators:        optimizeSignatureSet(key, operators),
-		MinPassingWeight: key.GetMinPassingWeight(),
 	}
 
-	return proof, nil
+	return optimizedSig
 }
 
-func getExecuteDataAndSigs(ctx sdk.Context, multisig types.MultisigKeeper, commandBatch types.CommandBatch) ([]byte, types.AuthData, error) {
-	proof, err := getProof(ctx, commandBatch, multisig)
+func getProof(ctx sdk.Context, commandBatch types.CommandBatch, s types.MultisigKeeper) ([]common.Address, []*big.Int, *big.Int, [][]byte) {
+	multisig := commandBatch.GetSignature().(*multisigtypes.MultiSig)
 
-	executeData, err := types.CreateExecuteDataMultisig(commandBatch.GetData(), proof)
+	key := funcs.MustOk(s.GetKey(ctx, multisig.KeyID))
+	participants := key.GetParticipants()
+
+	addressWeights := make(map[string]sdk.Uint, len(participants))
+	for _, p := range participants {
+		weight := key.GetWeight(p)
+		addressWeights[p.String()] = weight
+	}
+
+	signatures := optimizeSignatureSet(multisig.Sigs, addressWeights, key.GetMinPassingWeight())
+	addresses, weights, threshold := types.GetMultisigAddressesAndWeight(key)
+
+	return addresses, weights, threshold.BigInt(), signatures
+}
+
+func getExecuteDataAndSigs(ctx sdk.Context, multisig types.MultisigKeeper, commandBatch types.CommandBatch) ([]byte, types.Proof, error) {
+	addresses, weights, threshold, signatures := getProof(ctx, commandBatch, multisig)
+
+	executeData, err := types.CreateExecuteDataMultisig(commandBatch.GetData(), addresses, weights, threshold, signatures)
 	if err != nil {
-		return nil, types.AuthData{}, fmt.Errorf("could not create transaction data: %s", err)
+		return nil, types.Proof{}, fmt.Errorf("could not create transaction data: %s", err)
+	}
+
+	proof := types.Proof{
+		Addresses:  slices.Map(addresses, common.Address.Hex),
+		Weights:    slices.Map(weights, (*big.Int).String),
+		Threshold:  threshold.String(),
+		Signatures: slices.Map(signatures, hex.EncodeToString),
 	}
 
 	return executeData, proof, nil
@@ -154,16 +147,9 @@ func commandBatchToResp(ctx sdk.Context, commandBatch types.CommandBatch, multis
 
 	switch {
 	case commandBatch.Is(types.BatchSigned):
-		executeData, authData, err := getExecuteDataAndSigs(ctx, multisig, commandBatch)
+		executeData, proof, err := getExecuteDataAndSigs(ctx, multisig, commandBatch)
 		if err != nil {
 			return types.BatchedCommandsResponse{}, sdkerrors.Wrap(types.ErrEVM, err.Error())
-		}
-
-		proof := types.Proof{
-			Operators: authData.GetOperatorAddresses(),
-			Weight:    authData.GetWeights(),
-			Threshold: authData.MinPassingWeight,
-			Signature: slices.Map(authData.GetSignatures(), hex.EncodeToString),
 		}
 
 		return types.BatchedCommandsResponse{

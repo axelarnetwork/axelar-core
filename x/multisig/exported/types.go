@@ -80,8 +80,8 @@ func (pk PublicKey) String() string {
 	return hex.EncodeToString(pk)
 }
 
-// GetECDSAPubKey returns the ECDSA public key
-func (pk PublicKey) GetECDSAPubKey() ecdsa.PublicKey {
+// ToECDSAPubKey returns the ECDSA public key
+func (pk PublicKey) ToECDSAPubKey() ecdsa.PublicKey {
 	btcecKey := funcs.Must(btcec.ParsePubKey(pk, btcec.S256()))
 
 	return *btcecKey.ToECDSA()
