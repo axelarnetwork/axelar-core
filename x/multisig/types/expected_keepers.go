@@ -12,7 +12,7 @@ import (
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 )
 
-//go:generate moq -pkg mock -out ./mock/expected_keepers.go . Keeper Snapshotter Staker Slasher Rewarder
+//go:generate moq -pkg mock -out ./mock/expected_keepers.go . Keeper Snapshotter Staker Slasher Rewarder Nexus
 
 // Keeper provides keeper functionality of this module
 type Keeper interface {
@@ -53,4 +53,9 @@ type Slasher interface {
 // Rewarder provides reward keeper functionality
 type Rewarder interface {
 	GetPool(ctx sdk.Context, name string) reward.RewardPool
+}
+
+// Nexus provides nexus keeper functionality
+type Nexus interface {
+	GetChain(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool)
 }

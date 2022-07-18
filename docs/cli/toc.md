@@ -254,6 +254,7 @@
     - [ibc-transfer](axelard_tx_ibc-transfer.md)	 - IBC fungible token transfer transaction subcommands
       - [transfer \[src-port\] \[src-channel\] \[receiver\] \[amount\]](axelard_tx_ibc-transfer_transfer.md)	 - Transfer a fungible token through IBC
     - [multisig](axelard_tx_multisig.md)	 - multisig transactions subcommands
+      - [rotate \[chain\] \[keyID\]](axelard_tx_multisig_rotate.md)	 - Rotate the given chain to the given key
       - [start-keygen](axelard_tx_multisig_start-keygen.md)	 - Initiate key generation protocol
     - [multisign \[file\] \[name\] \[\[signature\]...\]](axelard_tx_multisign.md)	 - Generate multisig signatures for transactions generated offline
     - [multisign-batch \[file\] \[name\] \[\[signature-file\]...\]](axelard_tx_multisign-batch.md)	 - Assemble multisig transactions in batch from batch signatures

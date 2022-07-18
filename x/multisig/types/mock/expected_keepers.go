@@ -853,3 +853,74 @@ func (mock *RewarderMock) GetPoolCalls() []struct {
 	mock.lockGetPool.RUnlock()
 	return calls
 }
+
+// Ensure, that NexusMock does implement types.Nexus.
+// If this is not the case, regenerate this file with moq.
+var _ types.Nexus = &NexusMock{}
+
+// NexusMock is a mock implementation of types.Nexus.
+//
+// 	func TestSomethingThatUsesNexus(t *testing.T) {
+//
+// 		// make and configure a mocked types.Nexus
+// 		mockedNexus := &NexusMock{
+// 			GetChainFunc: func(ctx sdk.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, bool) {
+// 				panic("mock out the GetChain method")
+// 			},
+// 		}
+//
+// 		// use mockedNexus in code that requires types.Nexus
+// 		// and then make assertions.
+//
+// 	}
+type NexusMock struct {
+	// GetChainFunc mocks the GetChain method.
+	GetChainFunc func(ctx sdk.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, bool)
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// GetChain holds details about calls to the GetChain method.
+		GetChain []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Chain is the chain argument value.
+			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+		}
+	}
+	lockGetChain sync.RWMutex
+}
+
+// GetChain calls GetChainFunc.
+func (mock *NexusMock) GetChain(ctx sdk.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, bool) {
+	if mock.GetChainFunc == nil {
+		panic("NexusMock.GetChainFunc: method is nil but Nexus.GetChain was just called")
+	}
+	callInfo := struct {
+		Ctx   sdk.Context
+		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+	}{
+		Ctx:   ctx,
+		Chain: chain,
+	}
+	mock.lockGetChain.Lock()
+	mock.calls.GetChain = append(mock.calls.GetChain, callInfo)
+	mock.lockGetChain.Unlock()
+	return mock.GetChainFunc(ctx, chain)
+}
+
+// GetChainCalls gets all the calls that were made to GetChain.
+// Check the length with:
+//     len(mockedNexus.GetChainCalls())
+func (mock *NexusMock) GetChainCalls() []struct {
+	Ctx   sdk.Context
+	Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+} {
+	var calls []struct {
+		Ctx   sdk.Context
+		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+	}
+	mock.lockGetChain.RLock()
+	calls = mock.calls.GetChain
+	mock.lockGetChain.RUnlock()
+	return calls
+}
