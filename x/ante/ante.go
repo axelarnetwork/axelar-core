@@ -12,7 +12,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/x/ante/types"
 	"github.com/axelarnetwork/axelar-core/x/multisig/exported"
-	"github.com/axelarnetwork/utils/slices"
+	"github.com/axelarnetwork/utils/funcs"
 )
 
 func logger(ctx sdk.Context) log.Logger {
@@ -109,15 +109,15 @@ func (d UndelegateDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate boo
 
 			for _, chain := range chains {
 				nextKeyID, idFound := d.multiSig.GetNextKeyID(ctx, chain.Name)
-				key, keyFound := d.multiSig.GetKey(ctx, nextKeyID)
-				if !(idFound && keyFound && holdsShares(key, valAddress)) {
+				key := funcs.MustOk(d.multiSig.GetKey(ctx, nextKeyID))
+				if !(idFound && holdsShares(key, valAddress)) {
 					return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "validator %s cannot unbond while holding multiSig share of %s's next key %s", valAddress, chain.Name, nextKeyID)
 				}
 
 				activeKeyIDs := d.multiSig.GetActiveKeyIDs(ctx, chain.Name)
 				for _, activeKeyID := range activeKeyIDs {
-					key, keyFound := d.multiSig.GetKey(ctx, activeKeyID)
-					if !(keyFound && holdsShares(key, valAddress)) {
+					key := funcs.MustOk(d.multiSig.GetKey(ctx, activeKeyID))
+					if !holdsShares(key, valAddress) {
 						return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "validator %s cannot unbond while holding multiSig share of %s's active key %s", valAddress, chain.Name, activeKeyID)
 					}
 				}
@@ -131,5 +131,6 @@ func (d UndelegateDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate boo
 }
 
 func holdsShares(key exported.Key, valAddress sdk.ValAddress) bool {
-	return slices.Any(key.GetParticipants(), func(v sdk.ValAddress) bool { return v.Equals(valAddress) })
+	_, ok := key.GetPubKey(valAddress)
+	return ok
 }
