@@ -5,10 +5,10 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 
+	multisigTypes "github.com/axelarnetwork/axelar-core/x/multisig/types"
 	"github.com/axelarnetwork/axelar-core/x/reward/exported"
 	"github.com/axelarnetwork/axelar-core/x/reward/types"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
-	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	"github.com/axelarnetwork/utils/slices"
 )
 
@@ -16,9 +16,9 @@ import (
 func BeginBlocker(ctx sdk.Context, _ abci.RequestBeginBlock, _ types.Rewarder) {}
 
 // EndBlocker is called at the end of every block, process external chain voting inflation
-func EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock, k types.Rewarder, n types.Nexus, m types.Minter, s types.Staker, t types.Tss, ss types.Snapshotter) []abci.ValidatorUpdate {
+func EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock, k types.Rewarder, n types.Nexus, m types.Minter, s types.Staker, msig types.MultiSig, ss types.Snapshotter) []abci.ValidatorUpdate {
 	handleExternalChainVotingInflation(ctx, k, n, m, s)
-	handleTssInflation(ctx, k, m, s, t, ss)
+	handleKeyMgmtInflation(ctx, k, m, s, msig, ss)
 
 	return nil
 }
@@ -45,20 +45,18 @@ func addRewardsByConsensusPower(ctx sdk.Context, s types.Staker, rewardPool expo
 
 }
 
-func handleTssInflation(ctx sdk.Context, k types.Rewarder, m types.Minter, s types.Staker, t types.Tss, ss types.Snapshotter) {
-	rewardPool := k.GetPool(ctx, tsstypes.ModuleName)
+func handleKeyMgmtInflation(ctx sdk.Context, k types.Rewarder, m types.Minter, s types.Staker, mSig types.MultiSig, ss types.Snapshotter) {
+	rewardPool := k.GetPool(ctx, multisigTypes.ModuleName)
 	minter := m.GetMinter(ctx)
 	mintParams := m.GetParams(ctx)
-	totalAmount := minter.BlockProvision(mintParams).Amount.ToDec().Mul(k.GetParams(ctx).TssRelativeInflationRate)
+	totalAmount := minter.BlockProvision(mintParams).Amount.ToDec().Mul(k.GetParams(ctx).KeyMgmtRelativeInflationRate)
 
 	var validators []stakingtypes.Validator
 
 	validatorIterFn := func(_ int64, v stakingtypes.ValidatorI) bool {
-		if !t.IsOperatorAvailable(ctx, v.GetOperator()) {
-			return false
-		}
-
 		validator := v.(stakingtypes.Validator)
+
+		// TODO: remove tss dependency
 		illegibility, err := ss.GetValidatorIllegibility(ctx, &validator)
 		if err != nil {
 			panic(err)

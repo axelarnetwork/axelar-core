@@ -13,12 +13,15 @@ import (
 	"strings"
 
 	"github.com/btcsuite/btcd/btcec"
+	"github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
+	"golang.org/x/exp/maps"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
@@ -27,6 +30,8 @@ import (
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 )
+
+var _ codectypes.UnpackInterfacesMessage = CommandBatchMetadata{}
 
 // Ethereum network labels
 const (
@@ -856,51 +861,31 @@ func CreateMintTokenCommand(keyID multisig.KeyID, id CommandID, symbol string, a
 	}, nil
 }
 
-// CreateSinglesigTransferCommand creates a command to transfer ownership/operator of the singlesig contract
-func CreateSinglesigTransferCommand(
-	chainID sdk.Int,
-	keyID multisig.KeyID,
-	address common.Address) (Command, error) {
-	params, err := createTransferSinglesigParams(address)
-	if err != nil {
-		return Command{}, err
-	}
-
-	return createTransferCmd(NewCommandID(address.Bytes(), chainID), params, keyID)
-}
-
 // CreateMultisigTransferCommand creates a command to transfer ownership/operator of the multisig contract
-func CreateMultisigTransferCommand(
-	chainID sdk.Int,
-	keyID multisig.KeyID,
-	threshold uint8,
-	addresses ...common.Address) (Command, error) {
+func CreateMultisigTransferCommand(chainID sdk.Int, keyID multisig.KeyID, nextKey multisig.Key) Command {
+	addressWeights, threshold := ParseMultisigKey(nextKey)
+	addresses := slices.Map(maps.Keys(addressWeights), common.HexToAddress)
+	sort.SliceStable(addresses, func(i, j int) bool {
+		return bytes.Compare(addresses[i].Bytes(), addresses[j].Bytes()) < 0
+	})
+	weights := slices.Map(addresses, func(address common.Address) *big.Int {
+		return addressWeights[address.Hex()].BigInt()
+	})
 
-	if len(addresses) <= 0 {
-		return Command{}, fmt.Errorf("transfer ownership command requires at least one key (received %d)", len(addresses))
-	}
+	params := createTransferMultisigParams(addresses, weights, threshold.BigInt())
 
 	var concat []byte
 	for _, addr := range addresses {
 		concat = append(concat, addr.Bytes()...)
 	}
 
-	params, err := createTransferMultisigParams(addresses, threshold)
-	if err != nil {
-		return Command{}, err
-	}
-
-	return createTransferCmd(NewCommandID(concat, chainID), params, keyID)
-}
-
-func createTransferCmd(id CommandID, params []byte, keyID multisig.KeyID) (Command, error) {
 	return Command{
-		ID:         id,
+		ID:         NewCommandID(concat, chainID),
 		Command:    AxelarGatewayCommandTransferOperatorship,
 		Params:     params,
 		KeyID:      keyID,
 		MaxGasCost: transferOperatorshipMaxGasCost,
-	}, nil
+	}
 }
 
 // Clone returns an exacy copy of Command
@@ -971,6 +956,15 @@ func (b CommandBatch) GetCommandIDs() []CommandID {
 	return b.metadata.CommandIDs
 }
 
+// GetSignature returns the batch's signature
+func (b CommandBatch) GetSignature() codec.ProtoMarshaler {
+	if b.metadata.Signature == nil {
+		return nil
+	}
+
+	return b.metadata.Signature.GetCachedValue().(codec.ProtoMarshaler)
+}
+
 // Is returns true if batched commands is in the given status; false otherwise
 func (b CommandBatch) Is(status BatchedCommandsStatus) bool {
 	return b.metadata.Status == status
@@ -985,6 +979,21 @@ func (b *CommandBatch) SetStatus(status BatchedCommandsStatus) bool {
 	}
 
 	return false
+}
+
+// SetSigned sets the signature and signed status for the batch
+func (b *CommandBatch) SetSigned(signature codec.ProtoMarshaler) error {
+	if b.metadata.Status != BatchSigning {
+		return fmt.Errorf("command batch %s is not being signed", hex.EncodeToString(b.GetID()))
+	}
+
+	b.metadata.Status = BatchSigned
+	sig := funcs.Must(codectypes.NewAnyWithValue(signature))
+	b.metadata.Signature = sig
+
+	b.setter(b.metadata)
+
+	return nil
 }
 
 // NewCommandBatchMetadata assembles a CommandBatchMetadata struct from the provided arguments
@@ -1015,6 +1024,13 @@ func NewCommandBatchMetadata(blockHeight int64, chainID sdk.Int, keyID multisig.
 		Status:     BatchSigning,
 		KeyID:      keyID,
 	}, nil
+}
+
+// UnpackInterfaces implements UnpackInterfacesMessage
+func (m CommandBatchMetadata) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
+	var data codec.ProtoMarshaler
+
+	return unpacker.UnpackAny(m.Signature, &data)
 }
 
 const commandIDSize = 32
@@ -1327,21 +1343,6 @@ func decodeBurnTokenParams(bz []byte) (string, common.Hash, error) {
 	return params[0].(string), params[1].([common.HashLength]byte), nil
 }
 
-func createTransferSinglesigParams(addr common.Address) ([]byte, error) {
-	addressType, err := abi.NewType("address", "address", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	arguments := abi.Arguments{{Type: addressType}}
-	result, err := arguments.Pack(addr)
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
-}
-
 // decodeTransferSinglesigParams unpacks the parameters of a single sig transfer command
 func decodeTransferSinglesigParams(bz []byte) (common.Address, error) {
 	addressType, err := abi.NewType("address", "address", nil)
@@ -1358,48 +1359,29 @@ func decodeTransferSinglesigParams(bz []byte) (common.Address, error) {
 	return params[0].(common.Address), nil
 }
 
-func createTransferMultisigParams(addrs []common.Address, threshold uint8) ([]byte, error) {
-	sortedAddrs := slices.Map(addrs, func(a common.Address) Address { return Address(a) })
-	sort.SliceStable(sortedAddrs, func(i, j int) bool { return bytes.Compare(sortedAddrs[i].Bytes(), sortedAddrs[j].Bytes()) < 0 })
+func createTransferMultisigParams(addresses []common.Address, weights []*big.Int, threshold *big.Int) []byte {
+	addressesType := funcs.Must(abi.NewType("address[]", "address[]", nil))
+	uint256ArrayType := funcs.Must(abi.NewType("uint256[]", "uint256[]", nil))
+	uint256Type := funcs.Must(abi.NewType("uint256", "uint256", nil))
 
-	addressesType, err := abi.NewType("address[]", "address[]", nil)
-	if err != nil {
-		return nil, err
-	}
+	arguments := abi.Arguments{{Type: addressesType}, {Type: uint256ArrayType}, {Type: uint256Type}}
 
-	uint256Type, err := abi.NewType("uint256", "uint256", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	arguments := abi.Arguments{{Type: addressesType}, {Type: uint256Type}}
-	result, err := arguments.Pack(sortedAddrs, big.NewInt(int64(threshold)))
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	return funcs.Must(arguments.Pack(addresses, weights, threshold))
 }
 
 // decodeTransferMultisigParams unpacks the parameters of a multi sig transfer command
-func decodeTransferMultisigParams(bz []byte) ([]common.Address, uint8, error) {
-	addressesType, err := abi.NewType("address[]", "address[]", nil)
-	if err != nil {
-		return []common.Address{}, 0, err
-	}
+func decodeTransferMultisigParams(bz []byte) ([]common.Address, []*big.Int, *big.Int, error) {
+	addressesType := funcs.Must(abi.NewType("address[]", "address[]", nil))
+	uint256ArrayType := funcs.Must(abi.NewType("uint256[]", "uint256[]", nil))
+	uint256Type := funcs.Must(abi.NewType("uint256", "uint256", nil))
 
-	uint256Type, err := abi.NewType("uint256", "uint256", nil)
-	if err != nil {
-		return []common.Address{}, 0, err
-	}
-
-	arguments := abi.Arguments{{Type: addressesType}, {Type: uint256Type}}
+	arguments := abi.Arguments{{Type: addressesType}, {Type: uint256ArrayType}, {Type: uint256Type}}
 	params, err := StrictDecode(arguments, bz)
 	if err != nil {
-		return []common.Address{}, 0, err
+		return nil, nil, nil, err
 	}
 
-	return params[0].([]common.Address), uint8(params[1].(*big.Int).Uint64()), nil
+	return params[0].([]common.Address), params[1].([]*big.Int), params[2].(*big.Int), nil
 }
 
 // ValidateBasic does stateless validation of the object
@@ -1751,19 +1733,15 @@ func (c Command) DecodeParams() (map[string]string, error) {
 		params["salt"] = salt.Hex()
 	case AxelarGatewayCommandTransferOperatorship:
 		address, decodeSinglesigErr := decodeTransferSinglesigParams(c.Params)
-		addresses, threshold, decodeMultisigErr := decodeTransferMultisigParams(c.Params)
+		addresses, weights, threshold, decodeMultisigErr := decodeTransferMultisigParams(c.Params)
 
 		switch {
 		case decodeSinglesigErr == nil:
 			params["newOperator"] = address.Hex()
 		case decodeMultisigErr == nil:
-			var addressStrs []string
-			for _, address := range addresses {
-				addressStrs = append(addressStrs, address.Hex())
-			}
-
-			params["newOperators"] = strings.Join(addressStrs, ";")
-			params["newThreshold"] = strconv.FormatUint(uint64(threshold), 10)
+			params["newOperators"] = strings.Join(slices.Map(addresses, common.Address.Hex), ";")
+			params["newWeights"] = strings.Join(slices.Map(weights, func(w *big.Int) string { return w.String() }), ";")
+			params["newThreshold"] = threshold.String()
 		default:
 			return nil, fmt.Errorf("unsupported type of transfer key")
 		}
@@ -1857,4 +1835,12 @@ func ParseMultisigKey(key multisig.Key) (map[string]sdk.Uint, sdk.Uint) {
 	}
 
 	return addressWeights, key.GetMinPassingWeight()
+}
+
+// NewSigMetadata is the constructor for sig metadata
+func NewSigMetadata(sigType SigType, chain nexus.ChainName) *SigMetadata {
+	return &SigMetadata{
+		Type:  sigType,
+		Chain: chain,
+	}
 }

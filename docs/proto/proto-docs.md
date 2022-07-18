@@ -109,6 +109,10 @@
     - [MsgService](#axelar.axelarnet.v1beta1.MsgService)
     - [QueryService](#axelar.axelarnet.v1beta1.QueryService)
   
+- [axelar/evm/v1beta1/events.proto](#axelar/evm/v1beta1/events.proto)
+    - [PollExpired](#axelar.evm.v1beta1.PollExpired)
+    - [PollFailed](#axelar.evm.v1beta1.PollFailed)
+  
 - [axelar/utils/v1beta1/queuer.proto](#axelar/utils/v1beta1/queuer.proto)
     - [QueueState](#axelar.utils.v1beta1.QueueState)
     - [QueueState.Item](#axelar.utils.v1beta1.QueueState.Item)
@@ -136,6 +140,7 @@
     - [EventTransfer](#axelar.evm.v1beta1.EventTransfer)
     - [Gateway](#axelar.evm.v1beta1.Gateway)
     - [NetworkInfo](#axelar.evm.v1beta1.NetworkInfo)
+    - [PollMetadata](#axelar.evm.v1beta1.PollMetadata)
     - [SigMetadata](#axelar.evm.v1beta1.SigMetadata)
     - [TokenDetails](#axelar.evm.v1beta1.TokenDetails)
     - [TransactionMetadata](#axelar.evm.v1beta1.TransactionMetadata)
@@ -260,7 +265,15 @@
 - [axelar/multisig/v1beta1/genesis.proto](#axelar/multisig/v1beta1/genesis.proto)
     - [GenesisState](#axelar.multisig.v1beta1.GenesisState)
   
+- [axelar/multisig/v1beta1/query.proto](#axelar/multisig/v1beta1/query.proto)
+    - [KeyIDRequest](#axelar.multisig.v1beta1.KeyIDRequest)
+    - [KeyIDResponse](#axelar.multisig.v1beta1.KeyIDResponse)
+    - [NextKeyIDRequest](#axelar.multisig.v1beta1.NextKeyIDRequest)
+    - [NextKeyIDResponse](#axelar.multisig.v1beta1.NextKeyIDResponse)
+  
 - [axelar/multisig/v1beta1/tx.proto](#axelar/multisig/v1beta1/tx.proto)
+    - [RotateKeyRequest](#axelar.multisig.v1beta1.RotateKeyRequest)
+    - [RotateKeyResponse](#axelar.multisig.v1beta1.RotateKeyResponse)
     - [StartKeygenRequest](#axelar.multisig.v1beta1.StartKeygenRequest)
     - [StartKeygenResponse](#axelar.multisig.v1beta1.StartKeygenResponse)
     - [SubmitPubKeyRequest](#axelar.multisig.v1beta1.SubmitPubKeyRequest)
@@ -270,6 +283,7 @@
   
 - [axelar/multisig/v1beta1/service.proto](#axelar/multisig/v1beta1/service.proto)
     - [MsgService](#axelar.multisig.v1beta1.MsgService)
+    - [QueryService](#axelar.multisig.v1beta1.QueryService)
   
 - [axelar/multisig/v1beta1/types.proto](#axelar/multisig/v1beta1/types.proto)
     - [Key](#axelar.multisig.v1beta1.Key)
@@ -1874,6 +1888,56 @@ QueryService defines the gRPC querier service.
 
 
 
+<a name="axelar/evm/v1beta1/events.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/evm/v1beta1/events.proto
+
+
+
+<a name="axelar.evm.v1beta1.PollExpired"></a>
+
+### PollExpired
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tx_id` | [string](#string) |  |  |
+| `chain` | [string](#string) |  |  |
+| `poll_id` | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.PollFailed"></a>
+
+### PollFailed
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tx_id` | [string](#string) |  |  |
+| `chain` | [string](#string) |  |  |
+| `poll_id` | [uint64](#uint64) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
 <a name="axelar/utils/v1beta1/queuer.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -2044,6 +2108,7 @@ that is deposited by an user
 | `status` | [BatchedCommandsStatus](#axelar.evm.v1beta1.BatchedCommandsStatus) |  |  |
 | `key_id` | [string](#string) |  |  |
 | `prev_batched_commands_id` | [bytes](#bytes) |  |  |
+| `signature` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
 
 
 
@@ -2305,6 +2370,22 @@ NetworkInfo describes information about a network
 
 
 
+<a name="axelar.evm.v1beta1.PollMetadata"></a>
+
+### PollMetadata
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `tx_id` | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="axelar.evm.v1beta1.SigMetadata"></a>
 
 ### SigMetadata
@@ -2316,6 +2397,7 @@ results to evm relay transaction types
 | ----- | ---- | ----- | ----------- |
 | `type` | [SigType](#axelar.evm.v1beta1.SigType) |  |  |
 | `chain` | [string](#string) |  |  |
+| `command_batch_id` | [bytes](#bytes) |  |  |
 
 
 
@@ -4008,6 +4090,7 @@ Params represent the genesis parameters for the module
 | `keygen_grace_period` | [int64](#int64) |  |  |
 | `signing_timeout` | [int64](#int64) |  |  |
 | `signing_grace_period` | [int64](#int64) |  |  |
+| `active_epoch_count` | [uint64](#uint64) |  |  |
 
 
 
@@ -4054,10 +4137,114 @@ GenesisState represents the genesis state
 
 
 
+<a name="axelar/multisig/v1beta1/query.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/multisig/v1beta1/query.proto
+
+
+
+<a name="axelar.multisig.v1beta1.KeyIDRequest"></a>
+
+### KeyIDRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.KeyIDResponse"></a>
+
+### KeyIDResponse
+KeyIDResponse contains the key ID of the key assigned to a given chain.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.NextKeyIDRequest"></a>
+
+### NextKeyIDRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.NextKeyIDResponse"></a>
+
+### NextKeyIDResponse
+NextKeyIDResponse contains the key ID for the next rotation on the given
+chain
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_id` | [string](#string) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
 <a name="axelar/multisig/v1beta1/tx.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
 ## axelar/multisig/v1beta1/tx.proto
+
+
+
+<a name="axelar.multisig.v1beta1.RotateKeyRequest"></a>
+
+### RotateKeyRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
+| `key_id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.RotateKeyResponse"></a>
+
+### RotateKeyResponse
+
+
+
+
 
 
 
@@ -4171,9 +4358,21 @@ Msg defines the multisig Msg service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `StartKeygen` | [StartKeygenRequest](#axelar.multisig.v1beta1.StartKeygenRequest) | [StartKeygenResponse](#axelar.multisig.v1beta1.StartKeygenResponse) |  | POST|/axelar/multisig/keygen|
-| `SubmitPubKey` | [SubmitPubKeyRequest](#axelar.multisig.v1beta1.SubmitPubKeyRequest) | [SubmitPubKeyResponse](#axelar.multisig.v1beta1.SubmitPubKeyResponse) |  | POST|/axelar/multisig/submit_pk|
-| `SubmitSignature` | [SubmitSignatureRequest](#axelar.multisig.v1beta1.SubmitSignatureRequest) | [SubmitSignatureResponse](#axelar.multisig.v1beta1.SubmitSignatureResponse) |  | POST|/axelar/multisig/submit_sig|
+| `StartKeygen` | [StartKeygenRequest](#axelar.multisig.v1beta1.StartKeygenRequest) | [StartKeygenResponse](#axelar.multisig.v1beta1.StartKeygenResponse) |  | POST|/axelar/multisig/start_keygen|
+| `SubmitPubKey` | [SubmitPubKeyRequest](#axelar.multisig.v1beta1.SubmitPubKeyRequest) | [SubmitPubKeyResponse](#axelar.multisig.v1beta1.SubmitPubKeyResponse) |  | POST|/axelar/multisig/submit_pub_key|
+| `SubmitSignature` | [SubmitSignatureRequest](#axelar.multisig.v1beta1.SubmitSignatureRequest) | [SubmitSignatureResponse](#axelar.multisig.v1beta1.SubmitSignatureResponse) |  | POST|/axelar/multisig/submit_signature|
+| `RotateKey` | [RotateKeyRequest](#axelar.multisig.v1beta1.RotateKeyRequest) | [RotateKeyResponse](#axelar.multisig.v1beta1.RotateKeyResponse) |  | POST|/axelar/multisig/rotate_key|
+
+
+<a name="axelar.multisig.v1beta1.QueryService"></a>
+
+### QueryService
+Query defines the gRPC querier service.
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `KeyID` | [KeyIDRequest](#axelar.multisig.v1beta1.KeyIDRequest) | [KeyIDResponse](#axelar.multisig.v1beta1.KeyIDResponse) | KeyID returns the key ID of a key assigned to a given chain. If no key is assigned, it returns an empty string. | GET|/axelar/multisig/v1beta1/key_id/{chain}|
+| `NextKeyID` | [NextKeyIDRequest](#axelar.multisig.v1beta1.NextKeyIDRequest) | [NextKeyIDResponse](#axelar.multisig.v1beta1.NextKeyIDResponse) | NextKeyID returns the key ID assigned for the next rotation on a given chain. If no key rotation is in progress, it returns the empty string. | GET|/axelar/multisig/v1beta1/next_key_id/{chain}|
 
  <!-- end services -->
 
@@ -4902,7 +5101,7 @@ Params represent the genesis parameters for the module
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `external_chain_voting_inflation_rate` | [bytes](#bytes) |  |  |
-| `tss_relative_inflation_rate` | [bytes](#bytes) |  |  |
+| `key_mgmt_relative_inflation_rate` | [bytes](#bytes) |  |  |
 
 
 

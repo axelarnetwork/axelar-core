@@ -17,15 +17,17 @@ type msgServer struct {
 	Keeper
 	snapshotter Snapshotter
 	staker      types.Staker
+	nexus       types.Nexus
 }
 
 // NewMsgServer returns an implementation of the MsgServiceServer interface
 // for the provided Keeper.
-func NewMsgServer(keeper Keeper, snapshotter Snapshotter, staker types.Staker) types.MsgServiceServer {
+func NewMsgServer(keeper Keeper, snapshotter Snapshotter, staker types.Staker, nexus types.Nexus) types.MsgServiceServer {
 	return msgServer{
 		Keeper:      keeper,
 		snapshotter: snapshotter,
 		staker:      staker,
+		nexus:       nexus,
 	}
 }
 
@@ -110,4 +112,26 @@ func (s msgServer) SubmitSignature(c context.Context, req *types.SubmitSignature
 	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewSignatureSubmitted(req.SigID, participant, req.Signature)))
 
 	return &types.SubmitSignatureResponse{}, nil
+}
+
+func (s msgServer) RotateKey(c context.Context, req *types.RotateKeyRequest) (*types.RotateKeyResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	if _, ok := s.nexus.GetChain(ctx, req.Chain); !ok {
+		return nil, fmt.Errorf("unknown chain")
+	}
+
+	if _, ok := s.GetCurrentKeyID(ctx, req.Chain); ok {
+		return nil, fmt.Errorf("manual key rotation is only allowed when no key is active")
+	}
+
+	if err := s.AssignKey(ctx, req.Chain, req.KeyID); err != nil {
+		return nil, sdkerrors.Wrap(err, "failed to assign the next key")
+	}
+
+	if err := s.Keeper.RotateKey(ctx, req.Chain); err != nil {
+		return nil, sdkerrors.Wrap(err, "failed to rotate the next key")
+	}
+
+	return &types.RotateKeyResponse{}, nil
 }

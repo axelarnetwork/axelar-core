@@ -15,7 +15,6 @@ import (
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/permission/exported"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
 	"github.com/axelarnetwork/utils/slices"
 	. "github.com/axelarnetwork/utils/test"
 )
@@ -71,7 +70,7 @@ func TestRestrictedTx(t *testing.T) {
 
 	msgRoleIsUnrestricted := func() { tx = txWithMsg(&evm.LinkRequest{}) }
 	msgRoleIsUnspecified := func() { tx = txWithMsg(&banktypes.MsgSend{}) }
-	msgRoleIsChainManagement := func() { tx = txWithMsg(&tss.RotateKeyRequest{}) }
+	msgRoleIsChainManagement := func() { tx = txWithMsg(&evm.CreateDeployTokenRequest{}) }
 	msgRoleIsAccessControl := func() { tx = txWithMsg(&axelarnet.RegisterFeeCollectorRequest{}) }
 
 	Given("a restricted tx ante handler", func() {

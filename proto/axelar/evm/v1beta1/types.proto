@@ -3,7 +3,9 @@ package axelar.evm.v1beta1;
 
 option go_package = "github.com/axelarnetwork/axelar-core/x/evm/types";
 
+import "google/protobuf/any.proto";
 import "gogoproto/gogo.proto";
+import "cosmos_proto/cosmos.proto";
 import "axelar/nexus/exported/v1beta1/types.proto";
 import "axelar/multisig/exported/v1beta1/types.proto";
 
@@ -279,6 +281,9 @@ message CommandBatchMetadata {
   ];
   bytes prev_batched_commands_id = 7
       [ (gogoproto.customname) = "PrevBatchedCommandsID" ];
+  google.protobuf.Any signature = 8
+      [ (cosmos_proto.accepts_interface) =
+            "github.com/cosmos/codec/ProtoMarshaler" ];
 }
 
 // SigMetadata stores necessary information for external apps to map signature
@@ -288,6 +293,8 @@ message SigMetadata {
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  bytes command_batch_id = 3 [ (gogoproto.customname) = "CommandBatchID" ];
+  ;
 }
 
 enum SigType {
@@ -359,4 +366,11 @@ message Gateway {
   bytes address = 1
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
   Status status = 2 [ deprecated = true ];
+}
+
+message PollMetadata {
+  string chain = 1
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string tx_id = 2 [ (gogoproto.customname) = "TxID" ];
 }

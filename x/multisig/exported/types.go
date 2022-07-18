@@ -13,7 +13,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 )
 
-//go:generate moq -out ./mock/types.go -pkg mock . SigHandler
+//go:generate moq -out ./mock/types.go -pkg mock . SigHandler Key
 
 // Key provides an interface to work with the key
 type Key interface {

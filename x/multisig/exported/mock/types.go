@@ -135,3 +135,183 @@ func (mock *SigHandlerMock) HandleFailedCalls() []struct {
 	mock.lockHandleFailed.RUnlock()
 	return calls
 }
+
+// Ensure, that KeyMock does implement exported.Key.
+// If this is not the case, regenerate this file with moq.
+var _ exported.Key = &KeyMock{}
+
+// KeyMock is a mock implementation of exported.Key.
+//
+// 	func TestSomethingThatUsesKey(t *testing.T) {
+//
+// 		// make and configure a mocked exported.Key
+// 		mockedKey := &KeyMock{
+// 			GetMinPassingWeightFunc: func() sdk.Uint {
+// 				panic("mock out the GetMinPassingWeight method")
+// 			},
+// 			GetParticipantsFunc: func() []sdk.ValAddress {
+// 				panic("mock out the GetParticipants method")
+// 			},
+// 			GetPubKeyFunc: func(valAddress sdk.ValAddress) (exported.PublicKey, bool) {
+// 				panic("mock out the GetPubKey method")
+// 			},
+// 			GetWeightFunc: func(valAddress sdk.ValAddress) sdk.Uint {
+// 				panic("mock out the GetWeight method")
+// 			},
+// 		}
+//
+// 		// use mockedKey in code that requires exported.Key
+// 		// and then make assertions.
+//
+// 	}
+type KeyMock struct {
+	// GetMinPassingWeightFunc mocks the GetMinPassingWeight method.
+	GetMinPassingWeightFunc func() sdk.Uint
+
+	// GetParticipantsFunc mocks the GetParticipants method.
+	GetParticipantsFunc func() []sdk.ValAddress
+
+	// GetPubKeyFunc mocks the GetPubKey method.
+	GetPubKeyFunc func(valAddress sdk.ValAddress) (exported.PublicKey, bool)
+
+	// GetWeightFunc mocks the GetWeight method.
+	GetWeightFunc func(valAddress sdk.ValAddress) sdk.Uint
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// GetMinPassingWeight holds details about calls to the GetMinPassingWeight method.
+		GetMinPassingWeight []struct {
+		}
+		// GetParticipants holds details about calls to the GetParticipants method.
+		GetParticipants []struct {
+		}
+		// GetPubKey holds details about calls to the GetPubKey method.
+		GetPubKey []struct {
+			// ValAddress is the valAddress argument value.
+			ValAddress sdk.ValAddress
+		}
+		// GetWeight holds details about calls to the GetWeight method.
+		GetWeight []struct {
+			// ValAddress is the valAddress argument value.
+			ValAddress sdk.ValAddress
+		}
+	}
+	lockGetMinPassingWeight sync.RWMutex
+	lockGetParticipants     sync.RWMutex
+	lockGetPubKey           sync.RWMutex
+	lockGetWeight           sync.RWMutex
+}
+
+// GetMinPassingWeight calls GetMinPassingWeightFunc.
+func (mock *KeyMock) GetMinPassingWeight() sdk.Uint {
+	if mock.GetMinPassingWeightFunc == nil {
+		panic("KeyMock.GetMinPassingWeightFunc: method is nil but Key.GetMinPassingWeight was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockGetMinPassingWeight.Lock()
+	mock.calls.GetMinPassingWeight = append(mock.calls.GetMinPassingWeight, callInfo)
+	mock.lockGetMinPassingWeight.Unlock()
+	return mock.GetMinPassingWeightFunc()
+}
+
+// GetMinPassingWeightCalls gets all the calls that were made to GetMinPassingWeight.
+// Check the length with:
+//     len(mockedKey.GetMinPassingWeightCalls())
+func (mock *KeyMock) GetMinPassingWeightCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockGetMinPassingWeight.RLock()
+	calls = mock.calls.GetMinPassingWeight
+	mock.lockGetMinPassingWeight.RUnlock()
+	return calls
+}
+
+// GetParticipants calls GetParticipantsFunc.
+func (mock *KeyMock) GetParticipants() []sdk.ValAddress {
+	if mock.GetParticipantsFunc == nil {
+		panic("KeyMock.GetParticipantsFunc: method is nil but Key.GetParticipants was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockGetParticipants.Lock()
+	mock.calls.GetParticipants = append(mock.calls.GetParticipants, callInfo)
+	mock.lockGetParticipants.Unlock()
+	return mock.GetParticipantsFunc()
+}
+
+// GetParticipantsCalls gets all the calls that were made to GetParticipants.
+// Check the length with:
+//     len(mockedKey.GetParticipantsCalls())
+func (mock *KeyMock) GetParticipantsCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockGetParticipants.RLock()
+	calls = mock.calls.GetParticipants
+	mock.lockGetParticipants.RUnlock()
+	return calls
+}
+
+// GetPubKey calls GetPubKeyFunc.
+func (mock *KeyMock) GetPubKey(valAddress sdk.ValAddress) (exported.PublicKey, bool) {
+	if mock.GetPubKeyFunc == nil {
+		panic("KeyMock.GetPubKeyFunc: method is nil but Key.GetPubKey was just called")
+	}
+	callInfo := struct {
+		ValAddress sdk.ValAddress
+	}{
+		ValAddress: valAddress,
+	}
+	mock.lockGetPubKey.Lock()
+	mock.calls.GetPubKey = append(mock.calls.GetPubKey, callInfo)
+	mock.lockGetPubKey.Unlock()
+	return mock.GetPubKeyFunc(valAddress)
+}
+
+// GetPubKeyCalls gets all the calls that were made to GetPubKey.
+// Check the length with:
+//     len(mockedKey.GetPubKeyCalls())
+func (mock *KeyMock) GetPubKeyCalls() []struct {
+	ValAddress sdk.ValAddress
+} {
+	var calls []struct {
+		ValAddress sdk.ValAddress
+	}
+	mock.lockGetPubKey.RLock()
+	calls = mock.calls.GetPubKey
+	mock.lockGetPubKey.RUnlock()
+	return calls
+}
+
+// GetWeight calls GetWeightFunc.
+func (mock *KeyMock) GetWeight(valAddress sdk.ValAddress) sdk.Uint {
+	if mock.GetWeightFunc == nil {
+		panic("KeyMock.GetWeightFunc: method is nil but Key.GetWeight was just called")
+	}
+	callInfo := struct {
+		ValAddress sdk.ValAddress
+	}{
+		ValAddress: valAddress,
+	}
+	mock.lockGetWeight.Lock()
+	mock.calls.GetWeight = append(mock.calls.GetWeight, callInfo)
+	mock.lockGetWeight.Unlock()
+	return mock.GetWeightFunc(valAddress)
+}
+
+// GetWeightCalls gets all the calls that were made to GetWeight.
+// Check the length with:
+//     len(mockedKey.GetWeightCalls())
+func (mock *KeyMock) GetWeightCalls() []struct {
+	ValAddress sdk.ValAddress
+} {
+	var calls []struct {
+		ValAddress sdk.ValAddress
+	}
+	mock.lockGetWeight.RLock()
+	calls = mock.calls.GetWeight
+	mock.lockGetWeight.RUnlock()
+	return calls
+}

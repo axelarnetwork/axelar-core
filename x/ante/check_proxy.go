@@ -20,7 +20,7 @@ func NewCheckProxy(snapshotter types.Snapshotter) CheckProxy {
 	}
 }
 
-// AnteHandle fails the transaction if it finds any validator holding tss share of active keys is trying to unbond
+// AnteHandle fails the transaction if it finds any validator holding multiSig share of active keys is trying to unbond
 func (d CheckProxy) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
 	// exempt genesis validator(s) from this check
 	if ctx.BlockHeight() == 0 {
