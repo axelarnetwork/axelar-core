@@ -117,7 +117,7 @@ func (d UndelegateDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate boo
 				activeKeyIDs := d.multiSig.GetActiveKeyIDs(ctx, chain.Name)
 				for _, activeKeyID := range activeKeyIDs {
 					key, keyFound := d.multiSig.GetKey(ctx, activeKeyID)
-					if !(idFound && keyFound && holdsShares(key, valAddress)) {
+					if !(keyFound && holdsShares(key, valAddress)) {
 						return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "validator %s cannot unbond while holding multiSig share of %s's active key %s", valAddress, chain.Name, activeKeyID)
 					}
 				}
