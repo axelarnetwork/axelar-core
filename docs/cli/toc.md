@@ -1,0 +1,296 @@
+# CLI command overview
+
+- [axelard](axelard.md)	 - Axelar App
+  - [add-genesis-account \[address_or_key_name\] \[coin\]\[,\[coin\]\]](axelard_add-genesis-account.md)	 - Add a genesis account to genesis.json
+  - [add-genesis-evm-chain \[name\]](axelard_add-genesis-evm-chain.md)	 - Adds an EVM chain in genesis.json
+  - [collect-gentxs](axelard_collect-gentxs.md)	 - Collect genesis txs and output a genesis.json file
+  - [debug](axelard_debug.md)	 - Tool for helping with debugging your application
+    - [addr \[address\]](axelard_debug_addr.md)	 - Convert an address between hex and bech32
+    - [pubkey \[pubkey\]](axelard_debug_pubkey.md)	 - Decode a pubkey from proto JSON
+    - [raw-bytes \[raw-bytes\]](axelard_debug_raw-bytes.md)	 - Convert raw bytes output (eg. \[10 21 13 255\]) to hex
+  - [export](axelard_export.md)	 - Export state to JSON
+  - [gentx \[key_name\] \[amount\]](axelard_gentx.md)	 - Generate a genesis tx carrying a self delegation
+  - [health-check](axelard_health-check.md)	 -
+  - [init \[moniker\]](axelard_init.md)	 - Initialize private validator, p2p, genesis, and application configuration files
+  - [keys](axelard_keys.md)	 - Manage your application's keys
+    - [add \<name>](axelard_keys_add.md)	 - Add an encrypted private key (either newly generated or recovered), encrypt it, and save to <name> file
+    - [delete \<name>...](axelard_keys_delete.md)	 - Delete the given keys
+    - [export \<name>](axelard_keys_export.md)	 - Export private keys
+    - [import \<name> \<keyfile>](axelard_keys_import.md)	 - Import private keys into the local keybase
+    - [list](axelard_keys_list.md)	 - List all keys
+    - [migrate \<old_home_dir>](axelard_keys_migrate.md)	 - Migrate keys from the legacy (db-based) Keybase
+    - [mnemonic](axelard_keys_mnemonic.md)	 - Compute the bip39 mnemonic for some input entropy
+    - [parse \<hex-or-bech32-address>](axelard_keys_parse.md)	 - Parse address from hex to bech32 and vice versa
+    - [show \[name_or_address \[name_or_address...\]\]](axelard_keys_show.md)	 - Retrieve key information by name or address
+  - [migrate \[target-version\] \[genesis-file\]](axelard_migrate.md)	 - Migrate genesis to a specified target version
+  - [query](axelard_query.md)	 - Querying subcommands
+    - [account \[address\]](axelard_query_account.md)	 - Query for account by address
+    - [auth](axelard_query_auth.md)	 - Querying commands for the auth module
+      - [account \[address\]](axelard_query_auth_account.md)	 - Query for account by address
+      - [accounts](axelard_query_auth_accounts.md)	 - Query all the accounts
+      - [params](axelard_query_auth_params.md)	 - Query the current auth parameters
+    - [axelarnet](axelard_query_axelarnet.md)	 - Querying commands for the axelarnet module
+      - [ibc-transfer-count](axelard_query_axelarnet_ibc-transfer-count.md)	 - returns the number of pending IBC transfers per chain
+    - [bank](axelard_query_bank.md)	 - Querying commands for the bank module
+      - [balances \[address\]](axelard_query_bank_balances.md)	 - Query for account balances by address
+      - [denom-metadata](axelard_query_bank_denom-metadata.md)	 - Query the client metadata for coin denominations
+      - [total](axelard_query_bank_total.md)	 - Query the total supply of coins of the chain
+    - [block \[height\]](axelard_query_block.md)	 - Get verified data for a the block at given height
+    - [distribution](axelard_query_distribution.md)	 - Querying commands for the distribution module
+      - [commission \[validator\]](axelard_query_distribution_commission.md)	 - Query distribution validator commission
+      - [community-pool](axelard_query_distribution_community-pool.md)	 - Query the amount of coins in the community pool
+      - [params](axelard_query_distribution_params.md)	 - Query distribution params
+      - [rewards \[delegator-addr\] \[validator-addr\]](axelard_query_distribution_rewards.md)	 - Query all distribution delegator rewards or rewards from a particular validator
+      - [slashes \[validator\] \[start-height\] \[end-height\]](axelard_query_distribution_slashes.md)	 - Query distribution validator slashes
+      - [validator-outstanding-rewards \[validator\]](axelard_query_distribution_validator-outstanding-rewards.md)	 - Query distribution outstanding (un-withdrawn) rewards for a validator and all their delegations
+    - [evidence](axelard_query_evidence.md)	 - Query for evidence by hash or for all (paginated) submitted evidence
+    - [evm](axelard_query_evm.md)	 - Querying commands for the evm module
+      - [address \[chain\]](axelard_query_evm_address.md)	 - Returns the EVM address
+      - [batched-commands \[chain\] \[batchedCommandsID\]](axelard_query_evm_batched-commands.md)	 - Get the signed batched commands that can be wrapped in an EVM transaction to be executed in Axelar Gateway
+      - [burner-info \[deposit address\]](axelard_query_evm_burner-info.md)	 - Get information about a burner address
+      - [bytecode \[chain\] \[contract\]](axelard_query_evm_bytecode.md)	 - Fetch the bytecode of an EVM contract \[contract\] for chain \[chain\]
+      - [chains](axelard_query_evm_chains.md)	 - Get EVM chains
+      - [command \[chain\] \[id\]](axelard_query_evm_command.md)	 - Get information about an EVM gateway command given a chain and the command ID
+      - [confirmation-height \[chain\]](axelard_query_evm_confirmation-height.md)	 - Returns the minimum confirmation height for the given chain
+      - [deposit-state \[chain\] \[txID\] \[burner address\] \[amount\]](axelard_query_evm_deposit-state.md)	 - Query the state of a deposit transaction
+      - [erc20-tokens \[chain\]](axelard_query_evm_erc20-tokens.md)	 - Returns the ERC20 tokens for the given chain
+      - [gateway-address \[chain\]](axelard_query_evm_gateway-address.md)	 - Query the Axelar Gateway contract address
+      - [latest-batched-commands \[chain\]](axelard_query_evm_latest-batched-commands.md)	 - Get the latest batched commands that can be wrapped in an EVM transaction to be executed in Axelar Gateway
+      - [pending-commands \[chain\]](axelard_query_evm_pending-commands.md)	 - Get the list of commands not yet added to a batch
+      - [token-address \[chain\]](axelard_query_evm_token-address.md)	 - Query a token address by by either symbol or asset
+      - [token-info \[chain\]](axelard_query_evm_token-info.md)	 - Returns the info of token by either symbol or asset
+    - [feegrant](axelard_query_feegrant.md)	 - Querying commands for the feegrant module
+      - [grant \[granter\] \[grantee\]](axelard_query_feegrant_grant.md)	 - Query details of a single grant
+      - [grants \[grantee\]](axelard_query_feegrant_grants.md)	 - Query all grants of a grantee
+    - [gov](axelard_query_gov.md)	 - Querying commands for the governance module
+      - [deposit \[proposal-id\] \[depositer-addr\]](axelard_query_gov_deposit.md)	 - Query details of a deposit
+      - [deposits \[proposal-id\]](axelard_query_gov_deposits.md)	 - Query deposits on a proposal
+      - [param \[param-type\]](axelard_query_gov_param.md)	 - Query the parameters (voting|tallying|deposit) of the governance process
+      - [params](axelard_query_gov_params.md)	 - Query the parameters of the governance process
+      - [proposal \[proposal-id\]](axelard_query_gov_proposal.md)	 - Query details of a single proposal
+      - [proposals](axelard_query_gov_proposals.md)	 - Query proposals with optional filters
+      - [proposer \[proposal-id\]](axelard_query_gov_proposer.md)	 - Query the proposer of a governance proposal
+      - [tally \[proposal-id\]](axelard_query_gov_tally.md)	 - Get the tally of a proposal vote
+      - [vote \[proposal-id\] \[voter-addr\]](axelard_query_gov_vote.md)	 - Query details of a single vote
+      - [votes \[proposal-id\]](axelard_query_gov_votes.md)	 - Query votes on a proposal
+    - [ibc](axelard_query_ibc.md)	 - Querying commands for the IBC module
+      - [channel](axelard_query_ibc_channel.md)	 - IBC channel query subcommands
+        - [channels](axelard_query_ibc_channel_channels.md)	 - Query all channels
+        - [client-state \[port-id\] \[channel-id\]](axelard_query_ibc_channel_client-state.md)	 - Query the client state associated with a channel
+        - [connections \[connection-id\]](axelard_query_ibc_channel_connections.md)	 - Query all channels associated with a connection
+        - [end \[port-id\] \[channel-id\]](axelard_query_ibc_channel_end.md)	 - Query a channel end
+        - [next-sequence-receive \[port-id\] \[channel-id\]](axelard_query_ibc_channel_next-sequence-receive.md)	 - Query a next receive sequence
+        - [packet-ack \[port-id\] \[channel-id\] \[sequence\]](axelard_query_ibc_channel_packet-ack.md)	 - Query a packet acknowledgement
+        - [packet-commitment \[port-id\] \[channel-id\] \[sequence\]](axelard_query_ibc_channel_packet-commitment.md)	 - Query a packet commitment
+        - [packet-commitments \[port-id\] \[channel-id\]](axelard_query_ibc_channel_packet-commitments.md)	 - Query all packet commitments associated with a channel
+        - [packet-receipt \[port-id\] \[channel-id\] \[sequence\]](axelard_query_ibc_channel_packet-receipt.md)	 - Query a packet receipt
+        - [unreceived-acks \[port-id\] \[channel-id\]](axelard_query_ibc_channel_unreceived-acks.md)	 - Query all the unreceived acks associated with a channel
+        - [unreceived-packets \[port-id\] \[channel-id\]](axelard_query_ibc_channel_unreceived-packets.md)	 - Query all the unreceived packets associated with a channel
+      - [client](axelard_query_ibc_client.md)	 - IBC client query subcommands
+        - [consensus-state \[client-id\] \[height\]](axelard_query_ibc_client_consensus-state.md)	 - Query the consensus state of a client at a given height
+        - [consensus-states \[client-id\]](axelard_query_ibc_client_consensus-states.md)	 - Query all the consensus states of a client.
+        - [header](axelard_query_ibc_client_header.md)	 - Query the latest header of the running chain
+        - [params](axelard_query_ibc_client_params.md)	 - Query the current ibc client parameters
+        - [self-consensus-state](axelard_query_ibc_client_self-consensus-state.md)	 - Query the self consensus state for this chain
+        - [state \[client-id\]](axelard_query_ibc_client_state.md)	 - Query a client state
+        - [states](axelard_query_ibc_client_states.md)	 - Query all available light clients
+        - [status \[client-id\]](axelard_query_ibc_client_status.md)	 - Query client status
+      - [connection](axelard_query_ibc_connection.md)	 - IBC connection query subcommands
+        - [connections](axelard_query_ibc_connection_connections.md)	 - Query all connections
+        - [end \[connection-id\]](axelard_query_ibc_connection_end.md)	 - Query stored connection end
+        - [path \[client-id\]](axelard_query_ibc_connection_path.md)	 - Query stored client connection paths
+    - [ibc-transfer](axelard_query_ibc-transfer.md)	 - IBC fungible token transfer query subcommands
+      - [denom-hash \[trace\]](axelard_query_ibc-transfer_denom-hash.md)	 - Query the denom hash info from a given denom trace
+      - [denom-trace \[hash\]](axelard_query_ibc-transfer_denom-trace.md)	 - Query the denom trace info from a given trace hash
+      - [denom-traces](axelard_query_ibc-transfer_denom-traces.md)	 - Query the trace info for all token denominations
+      - [escrow-address](axelard_query_ibc-transfer_escrow-address.md)	 - Get the escrow address for a channel
+      - [params](axelard_query_ibc-transfer_params.md)	 - Query the current ibc-transfer parameters
+    - [mint](axelard_query_mint.md)	 - Querying commands for the minting module
+      - [annual-provisions](axelard_query_mint_annual-provisions.md)	 - Query the current minting annual provisions value
+      - [inflation](axelard_query_mint_inflation.md)	 - Query the current minting inflation value
+      - [params](axelard_query_mint_params.md)	 - Query the current minting parameters
+    - [nexus](axelard_query_nexus.md)	 - Querying commands for the nexus module
+      - [assets \[chain\]](axelard_query_nexus_assets.md)	 - Returns the registered assets of a chain
+      - [chain-by-asset \[asset\]](axelard_query_nexus_chain-by-asset.md)	 - Returns the chains an asset is registered on
+      - [chain-maintainers \[chain\]](axelard_query_nexus_chain-maintainers.md)	 - Returns the chain maintainers for the given chain
+      - [chain-state \[chain\]](axelard_query_nexus_chain-state.md)	 - Returns the chain state
+      - [chains](axelard_query_nexus_chains.md)	 - Returns the registered chain names
+      - [fee-info \[chain\] \[asset\]](axelard_query_nexus_fee-info.md)	 - Returns the per-chain fee for a registered asset
+      - [latest-deposit-address \[deposit chain\] \[recipient chain\] \[recipient address\]](axelard_query_nexus_latest-deposit-address.md)	 - Query for account by address
+      - [transfer-fee \[source-chain\] \[destination-chain\] \[amount\]](axelard_query_nexus_transfer-fee.md)	 - Returns the fee incurred on a cross-chain transfer
+      - [transfers-for-chain \[chain\] \[state (pending|archived|insufficient_amount)\]](axelard_query_nexus_transfers-for-chain.md)	 - Query for account by address
+    - [params](axelard_query_params.md)	 - Querying commands for the params module
+      - [subspace \[subspace\] \[key\]](axelard_query_params_subspace.md)	 - Query for raw parameters by subspace and key
+    - [permission](axelard_query_permission.md)	 - Querying commands for the permission module
+      - [governance-key](axelard_query_permission_governance-key.md)	 - Returns the governance key
+    - [slashing](axelard_query_slashing.md)	 - Querying commands for the slashing module
+      - [params](axelard_query_slashing_params.md)	 - Query the current slashing parameters
+      - [signing-info \[validator-conspub\]](axelard_query_slashing_signing-info.md)	 - Query a validator's signing information
+      - [signing-infos](axelard_query_slashing_signing-infos.md)	 - Query signing information of all validators
+    - [snapshot](axelard_query_snapshot.md)	 - Querying commands for the snapshot module
+      - [info \[counter\]](axelard_query_snapshot_info.md)	 - Fetch the snapshot for a given counter
+      - [operator \[proxy address\]](axelard_query_snapshot_operator.md)	 - Fetch the operator address associated with \[proxy address\]
+      - [proxy \[operator address\]](axelard_query_snapshot_proxy.md)	 - Fetch the proxy address associated with \[operator address\] and status (active/inactive)
+      - [validators](axelard_query_snapshot_validators.md)	 - Fetch the validators and their information
+    - [staking](axelard_query_staking.md)	 - Querying commands for the staking module
+      - [delegation \[delegator-addr\] \[validator-addr\]](axelard_query_staking_delegation.md)	 - Query a delegation based on address and validator address
+      - [delegations \[delegator-addr\]](axelard_query_staking_delegations.md)	 - Query all delegations made by one delegator
+      - [delegations-to \[validator-addr\]](axelard_query_staking_delegations-to.md)	 - Query all delegations made to one validator
+      - [historical-info \[height\]](axelard_query_staking_historical-info.md)	 - Query historical info at given height
+      - [params](axelard_query_staking_params.md)	 - Query the current staking parameters information
+      - [pool](axelard_query_staking_pool.md)	 - Query the current staking pool values
+      - [redelegation \[delegator-addr\] \[src-validator-addr\] \[dst-validator-addr\]](axelard_query_staking_redelegation.md)	 - Query a redelegation record based on delegator and a source and destination validator address
+      - [redelegations \[delegator-addr\]](axelard_query_staking_redelegations.md)	 - Query all redelegations records for one delegator
+      - [redelegations-from \[validator-addr\]](axelard_query_staking_redelegations-from.md)	 - Query all outgoing redelegatations from a validator
+      - [unbonding-delegation \[delegator-addr\] \[validator-addr\]](axelard_query_staking_unbonding-delegation.md)	 - Query an unbonding-delegation record based on delegator and validator address
+      - [unbonding-delegations \[delegator-addr\]](axelard_query_staking_unbonding-delegations.md)	 - Query all unbonding-delegations records for one delegator
+      - [unbonding-delegations-from \[validator-addr\]](axelard_query_staking_unbonding-delegations-from.md)	 - Query all unbonding delegatations from a validator
+      - [validator \[validator-addr\]](axelard_query_staking_validator.md)	 - Query a validator
+      - [validators](axelard_query_staking_validators.md)	 - Query for all validators
+    - [tendermint-validator-set \[height\]](axelard_query_tendermint-validator-set.md)	 - Get the full tendermint validator set at given height
+    - [tss](axelard_query_tss.md)	 - Querying commands for the tss module
+      - [active-old-keys \[chain\] \[role\]](axelard_query_tss_active-old-keys.md)	 - Query active old key IDs by validator
+      - [active-old-keys-by-validator \[validator address\]](axelard_query_tss_active-old-keys-by-validator.md)	 - Query active old key IDs by validator
+      - [assignable-key \[chain\] \[role\]](axelard_query_tss_assignable-key.md)	 - Returns the true if a key can be assigned for the next rotation on a given chain and for the given key role
+      - [deactivated-operators](axelard_query_tss_deactivated-operators.md)	 - Fetch the list of deactivated operator addresses
+      - [external-key-id \[chain\]](axelard_query_tss_external-key-id.md)	 - Returns the key IDs of the current external keys for the given chain
+      - [key \[key ID\]](axelard_query_tss_key.md)	 - Query a key by key ID
+      - [key-id \[chain\] \[role\]](axelard_query_tss_key-id.md)	 - Query the keyID using keyChain and keyRole
+      - [key-shares-by-key-id \[key ID\]](axelard_query_tss_key-shares-by-key-id.md)	 - Query key shares information by key ID
+      - [key-shares-by-validator \[validator address\]](axelard_query_tss_key-shares-by-validator.md)	 - Query key shares information by validator
+      - [next-key-id \[chain\] \[role\]](axelard_query_tss_next-key-id.md)	 - Returns the key ID assigned for the next rotation on a given chain and for the given key role
+      - [recover \[validator address\] \[key ID #1\] ... \[key ID #N\]](axelard_query_tss_recover.md)	 - Attempt to recover the shares for the specified key ID
+      - [signature \[sig ID\]](axelard_query_tss_signature.md)	 - Query a signature by sig ID
+    - [tx --type=\[hash|acc_seq|signature\] \[hash|acc_seq|signature\]](axelard_query_tx.md)	 - Query for a transaction by hash, "<addr>/<seq>" combination or comma-separated signatures in a committed block
+    - [txs](axelard_query_txs.md)	 - Query for paginated transactions that match a set of events
+    - [upgrade](axelard_query_upgrade.md)	 - Querying commands for the upgrade module
+      - [applied \[upgrade-name\]](axelard_query_upgrade_applied.md)	 - block header for height at which a completed upgrade was applied
+      - [module_versions \[optional module_name\]](axelard_query_upgrade_module_versions.md)	 - get the list of module versions
+      - [plan](axelard_query_upgrade_plan.md)	 - get upgrade plan (if one exists)
+  - [rollback](axelard_rollback.md)	 - rollback cosmos-sdk and tendermint state by one height
+  - [rosetta](axelard_rosetta.md)	 - spin up a rosetta server
+  - [set-genesis-auth](axelard_set-genesis-auth.md)	 - Set the genesis parameters for the auth module
+  - [set-genesis-chain-params evm \[chain\]](axelard_set-genesis-chain-params.md)	 - Set chain parameters in genesis.json
+  - [set-genesis-crisis](axelard_set-genesis-crisis.md)	 - Set the genesis parameters for the crisis module
+  - [set-genesis-evm-contracts](axelard_set-genesis-evm-contracts.md)	 - Set the EVM's contract parameters in genesis.json
+  - [set-genesis-gov](axelard_set-genesis-gov.md)	 - Set the genesis parameters for the governance module
+  - [set-genesis-mint](axelard_set-genesis-mint.md)	 - Set the genesis parameters for the mint module
+  - [set-genesis-reward](axelard_set-genesis-reward.md)	 - Set the genesis parameters for the reward module
+  - [set-genesis-slashing](axelard_set-genesis-slashing.md)	 - Set the genesis parameters for the slashing module
+  - [set-genesis-snapshot](axelard_set-genesis-snapshot.md)	 - Set the genesis parameters for the snapshot module
+  - [set-genesis-staking](axelard_set-genesis-staking.md)	 - Set the genesis parameters for the staking module
+  - [set-genesis-tss](axelard_set-genesis-tss.md)	 - Set the genesis parameters for the tss module
+  - [set-genesis-vote](axelard_set-genesis-vote.md)	 - Set the genesis parameters for the vote module
+  - [set-governance-key \[threshold\] \[\[pubKey\]...\]](axelard_set-governance-key.md)	 - Set the genesis multisig governance key for the axelar network
+  - [start](axelard_start.md)	 - Run the full node
+  - [status](axelard_status.md)	 - Query remote node for status
+  - [tendermint](axelard_tendermint.md)	 - Tendermint subcommands
+    - [reset-state](axelard_tendermint_reset-state.md)	 - Remove all the data and WAL
+    - [show-address](axelard_tendermint_show-address.md)	 - Shows this node's tendermint validator consensus address
+    - [show-node-id](axelard_tendermint_show-node-id.md)	 - Show this node's ID
+    - [show-validator](axelard_tendermint_show-validator.md)	 - Show this node's tendermint validator info
+    - [unsafe-reset-all](axelard_tendermint_unsafe-reset-all.md)	 - (unsafe) Remove all the data and WAL, reset this node's validator to genesis state
+    - [version](axelard_tendermint_version.md)	 - Print tendermint libraries' version
+  - [tx](axelard_tx.md)	 - Transactions subcommands
+    - [axelarnet](axelard_tx_axelarnet.md)	 - axelarnet transactions subcommands
+      - [add-cosmos-based-chain \[name\] \[address prefix\] \[native asset\]...](axelard_tx_axelarnet_add-cosmos-based-chain.md)	 - Add a new cosmos based chain
+      - [confirm-deposit \[denom\] \[burnerAddr\]](axelard_tx_axelarnet_confirm-deposit.md)	 - Confirm a deposit to Axelar chain that sent given the asset denomination and the burner address
+      - [execute-pending-transfers](axelard_tx_axelarnet_execute-pending-transfers.md)	 - Send all pending transfers to Axelar chain
+      - [link \[recipient chain\] \[recipient address\] \[asset\]](axelard_tx_axelarnet_link.md)	 - Link a cross chain address to an Axelar address
+      - [register-asset \[chain\] \[denom\]](axelard_tx_axelarnet_register-asset.md)	 - Register a new asset to a cosmos based chain
+      - [register-fee-collector \[fee collector\]](axelard_tx_axelarnet_register-fee-collector.md)	 - Register axelarnet fee collector account
+      - [register-path \[chain\] \[path\]](axelard_tx_axelarnet_register-path.md)	 - Register an ibc path for a cosmos chain
+      - [route-ibc-transfers](axelard_tx_axelarnet_route-ibc-transfers.md)	 - Routes pending transfers to cosmos chains
+    - [bank](axelard_tx_bank.md)	 - Bank transaction subcommands
+      - [send \[from_key_or_address\] \[to_address\] \[amount\]](axelard_tx_bank_send.md)	 - Send funds from one account to another. Note, the'--from' flag is
+        ignored as it is implied from \[from_key_or_address\].
+    - [broadcast \[file_path\]](axelard_tx_broadcast.md)	 - Broadcast transactions generated offline
+    - [crisis](axelard_tx_crisis.md)	 - Crisis transactions subcommands
+      - [invariant-broken \[module-name\] \[invariant-route\]](axelard_tx_crisis_invariant-broken.md)	 - Submit proof that an invariant broken to halt the chain
+    - [decode \[amino-byte-string\]](axelard_tx_decode.md)	 - Decode a binary encoded transaction string
+    - [distribution](axelard_tx_distribution.md)	 - Distribution transactions subcommands
+      - [fund-community-pool \[amount\]](axelard_tx_distribution_fund-community-pool.md)	 - Funds the community pool with the specified amount
+      - [set-withdraw-addr \[withdraw-addr\]](axelard_tx_distribution_set-withdraw-addr.md)	 - change the default withdraw address for rewards associated with an address
+      - [withdraw-all-rewards](axelard_tx_distribution_withdraw-all-rewards.md)	 - withdraw all delegations rewards for a delegator
+      - [withdraw-rewards \[validator-addr\]](axelard_tx_distribution_withdraw-rewards.md)	 - Withdraw rewards from a given delegation address, and optionally withdraw validator commission if the delegation address given is a validator operator
+    - [encode \[file\]](axelard_tx_encode.md)	 - Encode transactions generated offline
+    - [evidence](axelard_tx_evidence.md)	 - Evidence transaction subcommands
+    - [evm](axelard_tx_evm.md)	 - evm transactions subcommands
+      - [add-chain \[name\] \[key type\] \[chain config\]](axelard_tx_evm_add-chain.md)	 - Add a new EVM chain
+      - [confirm-erc20-deposit \[chain\] \[txID\] \[burnerAddr\]](axelard_tx_evm_confirm-erc20-deposit.md)	 - Confirm ERC20 deposits in an EVM chain transaction to a burner address
+      - [confirm-erc20-token \[chain\] \[origin chain\] \[origin asset\] \[txID\]](axelard_tx_evm_confirm-erc20-token.md)	 - Confirm an ERC20 token deployment in an EVM chain transaction for a given asset of some origin chain and gateway address
+      - [confirm-gateway-tx \[chain\] \[txID\]](axelard_tx_evm_confirm-gateway-tx.md)	 - Confirm a gateway transaction in an EVM chain
+      - [confirm-transfer-operatorship \[chain\] \[txID\]](axelard_tx_evm_confirm-transfer-operatorship.md)	 - Confirm a transfer operatorship in an EVM chain transaction
+      - [create-burn-tokens \[chain\]](axelard_tx_evm_create-burn-tokens.md)	 - Create burn commands for all confirmed token deposits in an EVM chain
+      - [create-deploy-token \[evm chain\] \[origin chain\] \[origin asset\] \[token name\] \[symbol\] \[decimals\] \[capacity\] \[dailyMintLimit\]](axelard_tx_evm_create-deploy-token.md)	 - Create a deploy token command with the AxelarGateway contract
+      - [create-pending-transfers \[chain\]](axelard_tx_evm_create-pending-transfers.md)	 - Create commands for handling all pending transfers to an EVM chain
+      - [link \[chain\] \[recipient chain\] \[recipient address\] \[asset name\]](axelard_tx_evm_link.md)	 - Link a cross chain address to an EVM chain address created by Axelar
+      - [retry-event \[chain\] \[event ID\]](axelard_tx_evm_retry-event.md)	 - Retry a failed event
+      - [set-gateway \[chain\] \[address\]](axelard_tx_evm_set-gateway.md)	 - Set the gateway address for the given evm chain
+      - [sign-commands \[chain\]](axelard_tx_evm_sign-commands.md)	 - Sign pending commands for an EVM chain contract
+      - [transfer-operatorship \[chain\] \[keyID\]](axelard_tx_evm_transfer-operatorship.md)	 - Create transfer operatorship command for an EVM chain contract
+      - [transfer-ownership \[chain\] \[keyID\]](axelard_tx_evm_transfer-ownership.md)	 - Create transfer ownership command for an EVM chain contract
+    - [feegrant](axelard_tx_feegrant.md)	 - Feegrant transactions subcommands
+      - [grant \[granter_key_or_address\] \[grantee\]](axelard_tx_feegrant_grant.md)	 - Grant Fee allowance to an address
+      - [revoke \[granter\] \[grantee\]](axelard_tx_feegrant_revoke.md)	 - revoke fee-grant
+    - [gov](axelard_tx_gov.md)	 - Governance transactions subcommands
+      - [deposit \[proposal-id\] \[deposit\]](axelard_tx_gov_deposit.md)	 - Deposit tokens for an active proposal
+      - [submit-proposal](axelard_tx_gov_submit-proposal.md)	 - Submit a proposal along with an initial deposit
+        - [cancel-software-upgrade \[flags\]](axelard_tx_gov_submit-proposal_cancel-software-upgrade.md)	 - Cancel the current software upgrade proposal
+        - [community-pool-spend \[proposal-file\]](axelard_tx_gov_submit-proposal_community-pool-spend.md)	 - Submit a community pool spend proposal
+        - [ibc-upgrade \[name\] \[height\] \[path/to/upgraded_client_state.json\] \[flags\]](axelard_tx_gov_submit-proposal_ibc-upgrade.md)	 - Submit an IBC upgrade proposal
+        - [param-change \[proposal-file\]](axelard_tx_gov_submit-proposal_param-change.md)	 - Submit a parameter change proposal
+        - [software-upgrade \[name\] (--upgrade-height \[height\]) (--upgrade-info \[info\]) \[flags\]](axelard_tx_gov_submit-proposal_software-upgrade.md)	 - Submit a software upgrade proposal
+        - [update-client \[subject-client-id\] \[substitute-client-id\]](axelard_tx_gov_submit-proposal_update-client.md)	 - Submit an update IBC client proposal
+      - [vote \[proposal-id\] \[option\]](axelard_tx_gov_vote.md)	 - Vote for an active proposal, options: yes/no/no_with_veto/abstain
+      - [weighted-vote \[proposal-id\] \[weighted-options\]](axelard_tx_gov_weighted-vote.md)	 - Vote for an active proposal, options: yes/no/no_with_veto/abstain
+    - [ibc](axelard_tx_ibc.md)	 - IBC transaction subcommands
+      - [channel](axelard_tx_ibc_channel.md)	 - IBC channel transaction subcommands
+      - [client](axelard_tx_ibc_client.md)	 - IBC client transaction subcommands
+        - [create \[path/to/client_state.json\] \[path/to/consensus_state.json\]](axelard_tx_ibc_client_create.md)	 - create new IBC client
+        - [misbehaviour \[path/to/misbehaviour.json\]](axelard_tx_ibc_client_misbehaviour.md)	 - submit a client misbehaviour
+        - [update \[client-id\] \[path/to/header.json\]](axelard_tx_ibc_client_update.md)	 - update existing client with a header
+        - [upgrade \[client-identifier\] \[path/to/client_state.json\] \[path/to/consensus_state.json\] \[upgrade-client-proof\] \[upgrade-consensus-state-proof\]](axelard_tx_ibc_client_upgrade.md)	 - upgrade an IBC client
+    - [ibc-transfer](axelard_tx_ibc-transfer.md)	 - IBC fungible token transfer transaction subcommands
+      - [transfer \[src-port\] \[src-channel\] \[receiver\] \[amount\]](axelard_tx_ibc-transfer_transfer.md)	 - Transfer a fungible token through IBC
+    - [multisig](axelard_tx_multisig.md)	 - multisig transactions subcommands
+      - [rotate \[chain\] \[keyID\]](axelard_tx_multisig_rotate.md)	 - Rotate the given chain to the given key
+      - [start-keygen](axelard_tx_multisig_start-keygen.md)	 - Initiate key generation protocol
+    - [multisign \[file\] \[name\] \[\[signature\]...\]](axelard_tx_multisign.md)	 - Generate multisig signatures for transactions generated offline
+    - [multisign-batch \[file\] \[name\] \[\[signature-file\]...\]](axelard_tx_multisign-batch.md)	 - Assemble multisig transactions in batch from batch signatures
+    - [nexus](axelard_tx_nexus.md)	 - nexus transactions subcommands
+      - [activate-chain \[chain\]...](axelard_tx_nexus_activate-chain.md)	 - activate the given chains
+      - [deactivate-chain \[chain\]...](axelard_tx_nexus_deactivate-chain.md)	 - deactivate the given chains
+      - [deregister-chain-maintainer \[chain\]...](axelard_tx_nexus_deregister-chain-maintainer.md)	 - deregister a validator as a chain maintainer for the given chains
+      - [register-asset-fee \[chain\] \[asset\] \[fee-rate\] \[min-fee\] \[max-fee\]](axelard_tx_nexus_register-asset-fee.md)	 - register fees for an asset on a chain
+      - [register-chain-maintainer \[chain\]...](axelard_tx_nexus_register-chain-maintainer.md)	 - register a validator as a chain maintainer for the given chains
+    - [permission](axelard_tx_permission.md)	 - permission transactions subcommands
+      - [deregister-controller \[controller\]](axelard_tx_permission_deregister-controller.md)	 - Deregister controller account
+      - [register-controller \[controller\]](axelard_tx_permission_register-controller.md)	 - Register controller account
+      - [update-governance-key \[threshold\] \[\[pubKey\]...\]](axelard_tx_permission_update-governance-key.md)	 - Update the multisig governance key for axelar network
+    - [sign \[file\]](axelard_tx_sign.md)	 - Sign a transaction generated offline
+    - [sign-batch \[file\]](axelard_tx_sign-batch.md)	 - Sign transaction batch files
+    - [slashing](axelard_tx_slashing.md)	 - Slashing transaction subcommands
+      - [unjail](axelard_tx_slashing_unjail.md)	 - unjail validator previously jailed for downtime
+    - [snapshot](axelard_tx_snapshot.md)	 - snapshot transactions subcommands
+      - [deactivate-proxy](axelard_tx_snapshot_deactivate-proxy.md)	 - Deactivate the proxy account of the sender
+      - [register-proxy \[proxy address\]](axelard_tx_snapshot_register-proxy.md)	 - Register a proxy account for a specific validator principal to broadcast transactions in its stead
+      - [send-tokens \[amount\] \[address 1\] ... \[address n\]](axelard_tx_snapshot_send-tokens.md)	 - Sends the specified amount of tokens to the designated addresses
+    - [staking](axelard_tx_staking.md)	 - Staking transaction subcommands
+      - [create-validator](axelard_tx_staking_create-validator.md)	 - create new validator initialized with a self-delegation to it
+      - [delegate \[validator-addr\] \[amount\]](axelard_tx_staking_delegate.md)	 - Delegate liquid tokens to a validator
+      - [edit-validator](axelard_tx_staking_edit-validator.md)	 - edit an existing validator account
+      - [redelegate \[src-validator-addr\] \[dst-validator-addr\] \[amount\]](axelard_tx_staking_redelegate.md)	 - Redelegate illiquid tokens from one validator to another
+      - [unbond \[validator-addr\] \[amount\]](axelard_tx_staking_unbond.md)	 - Unbond shares from a validator
+    - [tss](axelard_tx_tss.md)	 - tss transactions subcommands
+      - [register-external-keys \[chain\]](axelard_tx_tss_register-external-keys.md)	 - Register the external keys for the given chain
+      - [rotate \[chain\] \[role\] \[keyID\]](axelard_tx_tss_rotate.md)	 - Rotate the given chain from the old key to the given key
+      - [start-keygen](axelard_tx_tss_start-keygen.md)	 - Initiate key generation protocol
+    - [validate-signatures \[file\]](axelard_tx_validate-signatures.md)	 - validate transactions signatures
+    - [vesting](axelard_tx_vesting.md)	 - Vesting transaction subcommands
+      - [create-vesting-account \[to_address\] \[amount\] \[end_time\]](axelard_tx_vesting_create-vesting-account.md)	 - Create a new vesting account funded with an allocation of tokens.
+    - [vesting](axelard_tx_vesting.md)	 - Vesting transaction subcommands
+      - [create-vesting-account \[to_address\] \[amount\] \[end_time\]](axelard_tx_vesting_create-vesting-account.md)	 - Create a new vesting account funded with an allocation of tokens.
+  - [vald-start](axelard_vald-start.md)	 -
+  - [validate-genesis \[file\]](axelard_validate-genesis.md)	 - validates the genesis file at the default location or at the location passed as an arg
+  - [version](axelard_version.md)	 - Print the application binary version information
