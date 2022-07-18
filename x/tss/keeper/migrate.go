@@ -90,8 +90,9 @@ func migrate(ctx sdk.Context, tss Keeper, multisig types.MultiSigKeeper, snapsho
 	for _, validator := range s.Validators {
 		valAddress := validator.GetSDKValidator().GetOperator()
 		s.Participants[valAddress.String()] = snapshotexported.NewParticipant(valAddress, sdk.NewUint(uint64(validator.ShareCount)))
-		s.BondedWeight = sdk.NewUintFromBigInt(s.TotalShareCount.BigInt())
 	}
+	s.BondedWeight = sdk.NewUintFromBigInt(s.TotalShareCount.BigInt())
+
 	if !ok {
 		return fmt.Errorf("failed to migrate key %s for chain %s, no snapshot found", key.ID, chain)
 	}
