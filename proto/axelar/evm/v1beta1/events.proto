@@ -24,3 +24,30 @@ message ConfirmKeyTransfer {
         "github.com/axelarnetwork/axelar-core/x/vote/exported.PollID"
   ];
 }
+
+message PollFailed {
+  string tx_id = 1 [ (gogoproto.customname) = "TxID" ];
+  string chain = 2
+  [ (gogoproto.casttype) =
+      "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  uint64 poll_id = 3 [
+    (gogoproto.customname) = "PollID",
+    (gogoproto.customtype) =
+        "github.com/axelarnetwork/axelar-core/x/vote/exported.PollID",
+    (gogoproto.nullable) = false
+  ];
+}
+
+message PollExpired {
+  string tx_id = 1 [ (gogoproto.customname) = "TxID" ];
+  string chain = 2
+  [ (gogoproto.casttype) =
+      "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  uint64 poll_id = 3 [
+    (gogoproto.customname) = "PollID",
+    (gogoproto.customtype) =
+        "github.com/axelarnetwork/axelar-core/x/vote/exported.PollID",
+    (gogoproto.nullable) = false
+  ];
+}
+

@@ -4,25 +4,20 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
+	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	permission "github.com/axelarnetwork/axelar-core/x/permission/exported"
 	rewardtypes "github.com/axelarnetwork/axelar-core/x/reward/types"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
-	"github.com/axelarnetwork/axelar-core/x/tss/exported"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 //go:generate moq -pkg mock -out ./mock/expected_keepers.go . Permission
 
-// Tss provides access to the tss functionality
-type Tss interface {
-	GetCurrentKeyID(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool)
-	GetNextKeyID(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool)
-	GetSnapshotCounterForKeyID(ctx sdk.Context, keyID tss.KeyID) (int64, bool)
-	GetKeyUnbondingLockingKeyRotationCount(ctx sdk.Context) int64
-	GetRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) int64
-	GetKeyByRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, rotationCount int64) (exported.Key, bool)
-	GetOldActiveKeys(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) ([]tss.Key, error)
+// MultiSig provides access to the tss functionality
+type MultiSig interface {
+	GetNextKeyID(ctx sdk.Context, chain nexus.ChainName) (multisig.KeyID, bool)
+	GetActiveKeyIDs(ctx sdk.Context, chain nexus.ChainName) []multisig.KeyID
+	GetKey(ctx sdk.Context, keyID multisig.KeyID) (multisig.Key, bool)
 }
 
 // Nexus provides access to the nexus functionality

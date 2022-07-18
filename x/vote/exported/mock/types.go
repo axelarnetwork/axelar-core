@@ -23,6 +23,9 @@ var _ exported.Poll = &PollMock{}
 // 			GetIDFunc: func() exported.PollID {
 // 				panic("mock out the GetID method")
 // 			},
+// 			GetMetaDataFunc: func() (codec.ProtoMarshaler, bool) {
+// 				panic("mock out the GetMetaData method")
+// 			},
 // 			GetModuleFunc: func() string {
 // 				panic("mock out the GetModule method")
 // 			},
@@ -57,6 +60,9 @@ type PollMock struct {
 	// GetIDFunc mocks the GetID method.
 	GetIDFunc func() exported.PollID
 
+	// GetMetaDataFunc mocks the GetMetaData method.
+	GetMetaDataFunc func() (codec.ProtoMarshaler, bool)
+
 	// GetModuleFunc mocks the GetModule method.
 	GetModuleFunc func() string
 
@@ -85,6 +91,9 @@ type PollMock struct {
 	calls struct {
 		// GetID holds details about calls to the GetID method.
 		GetID []struct {
+		}
+		// GetMetaData holds details about calls to the GetMetaData method.
+		GetMetaData []struct {
 		}
 		// GetModule holds details about calls to the GetModule method.
 		GetModule []struct {
@@ -122,6 +131,7 @@ type PollMock struct {
 		}
 	}
 	lockGetID             sync.RWMutex
+	lockGetMetaData       sync.RWMutex
 	lockGetModule         sync.RWMutex
 	lockGetResult         sync.RWMutex
 	lockGetRewardPoolName sync.RWMutex
@@ -155,6 +165,32 @@ func (mock *PollMock) GetIDCalls() []struct {
 	mock.lockGetID.RLock()
 	calls = mock.calls.GetID
 	mock.lockGetID.RUnlock()
+	return calls
+}
+
+// GetMetaData calls GetMetaDataFunc.
+func (mock *PollMock) GetMetaData() (codec.ProtoMarshaler, bool) {
+	if mock.GetMetaDataFunc == nil {
+		panic("PollMock.GetMetaDataFunc: method is nil but Poll.GetMetaData was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockGetMetaData.Lock()
+	mock.calls.GetMetaData = append(mock.calls.GetMetaData, callInfo)
+	mock.lockGetMetaData.Unlock()
+	return mock.GetMetaDataFunc()
+}
+
+// GetMetaDataCalls gets all the calls that were made to GetMetaData.
+// Check the length with:
+//     len(mockedPoll.GetMetaDataCalls())
+func (mock *PollMock) GetMetaDataCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockGetMetaData.RLock()
+	calls = mock.calls.GetMetaData
+	mock.lockGetMetaData.RUnlock()
 	return calls
 }
 
@@ -405,6 +441,9 @@ var _ exported.VoteHandler = &VoteHandlerMock{}
 // 			HandleExpiredPollFunc: func(ctx sdk.Context, poll exported.Poll) error {
 // 				panic("mock out the HandleExpiredPoll method")
 // 			},
+// 			HandleFailedPollFunc: func(ctx sdk.Context, poll exported.Poll) error {
+// 				panic("mock out the HandleFailedPoll method")
+// 			},
 // 			HandleResultFunc: func(ctx sdk.Context, result codec.ProtoMarshaler) error {
 // 				panic("mock out the HandleResult method")
 // 			},
@@ -423,6 +462,9 @@ type VoteHandlerMock struct {
 
 	// HandleExpiredPollFunc mocks the HandleExpiredPoll method.
 	HandleExpiredPollFunc func(ctx sdk.Context, poll exported.Poll) error
+
+	// HandleFailedPollFunc mocks the HandleFailedPoll method.
+	HandleFailedPollFunc func(ctx sdk.Context, poll exported.Poll) error
 
 	// HandleResultFunc mocks the HandleResult method.
 	HandleResultFunc func(ctx sdk.Context, result codec.ProtoMarshaler) error
@@ -446,6 +488,13 @@ type VoteHandlerMock struct {
 			// Poll is the poll argument value.
 			Poll exported.Poll
 		}
+		// HandleFailedPoll holds details about calls to the HandleFailedPoll method.
+		HandleFailedPoll []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Poll is the poll argument value.
+			Poll exported.Poll
+		}
 		// HandleResult holds details about calls to the HandleResult method.
 		HandleResult []struct {
 			// Ctx is the ctx argument value.
@@ -461,6 +510,7 @@ type VoteHandlerMock struct {
 	}
 	lockHandleCompletedPoll sync.RWMutex
 	lockHandleExpiredPoll   sync.RWMutex
+	lockHandleFailedPoll    sync.RWMutex
 	lockHandleResult        sync.RWMutex
 	lockIsFalsyResult       sync.RWMutex
 }
@@ -532,6 +582,41 @@ func (mock *VoteHandlerMock) HandleExpiredPollCalls() []struct {
 	mock.lockHandleExpiredPoll.RLock()
 	calls = mock.calls.HandleExpiredPoll
 	mock.lockHandleExpiredPoll.RUnlock()
+	return calls
+}
+
+// HandleFailedPoll calls HandleFailedPollFunc.
+func (mock *VoteHandlerMock) HandleFailedPoll(ctx sdk.Context, poll exported.Poll) error {
+	if mock.HandleFailedPollFunc == nil {
+		panic("VoteHandlerMock.HandleFailedPollFunc: method is nil but VoteHandler.HandleFailedPoll was just called")
+	}
+	callInfo := struct {
+		Ctx  sdk.Context
+		Poll exported.Poll
+	}{
+		Ctx:  ctx,
+		Poll: poll,
+	}
+	mock.lockHandleFailedPoll.Lock()
+	mock.calls.HandleFailedPoll = append(mock.calls.HandleFailedPoll, callInfo)
+	mock.lockHandleFailedPoll.Unlock()
+	return mock.HandleFailedPollFunc(ctx, poll)
+}
+
+// HandleFailedPollCalls gets all the calls that were made to HandleFailedPoll.
+// Check the length with:
+//     len(mockedVoteHandler.HandleFailedPollCalls())
+func (mock *VoteHandlerMock) HandleFailedPollCalls() []struct {
+	Ctx  sdk.Context
+	Poll exported.Poll
+} {
+	var calls []struct {
+		Ctx  sdk.Context
+		Poll exported.Poll
+	}
+	mock.lockHandleFailedPoll.RLock()
+	calls = mock.calls.HandleFailedPoll
+	mock.lockHandleFailedPoll.RUnlock()
 	return calls
 }
 

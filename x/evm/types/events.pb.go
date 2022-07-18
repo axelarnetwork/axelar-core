@@ -25,26 +25,24 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-type ConfirmKeyTransfer struct {
-	Chain              github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,1,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
-	TxID               Hash                                                            `protobuf:"bytes,2,opt,name=tx_id,json=txId,proto3,customtype=Hash" json:"tx_id"`
-	GatewayAddress     Address                                                         `protobuf:"bytes,3,opt,name=gateway_address,json=gatewayAddress,proto3,customtype=Address" json:"gateway_address"`
-	ConfirmationHeight uint64                                                          `protobuf:"varint,4,opt,name=confirmation_height,json=confirmationHeight,proto3" json:"confirmation_height,omitempty"`
-	PollID             github_com_axelarnetwork_axelar_core_x_vote_exported.PollID     `protobuf:"varint,5,opt,name=poll_id,json=pollId,proto3,customtype=github.com/axelarnetwork/axelar-core/x/vote/exported.PollID" json:"poll_id"`
+type PollFailed struct {
+	TxID   string                                                          `protobuf:"bytes,1,opt,name=tx_id,json=txId,proto3" json:"tx_id,omitempty"`
+	Chain  github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
+	PollID github_com_axelarnetwork_axelar_core_x_vote_exported.PollID     `protobuf:"varint,3,opt,name=poll_id,json=pollId,proto3,customtype=github.com/axelarnetwork/axelar-core/x/vote/exported.PollID" json:"poll_id"`
 }
 
-func (m *ConfirmKeyTransfer) Reset()         { *m = ConfirmKeyTransfer{} }
-func (m *ConfirmKeyTransfer) String() string { return proto.CompactTextString(m) }
-func (*ConfirmKeyTransfer) ProtoMessage()    {}
-func (*ConfirmKeyTransfer) Descriptor() ([]byte, []int) {
+func (m *PollFailed) Reset()         { *m = PollFailed{} }
+func (m *PollFailed) String() string { return proto.CompactTextString(m) }
+func (*PollFailed) ProtoMessage()    {}
+func (*PollFailed) Descriptor() ([]byte, []int) {
 	return fileDescriptor_091c22a44ca6f0af, []int{0}
 }
-func (m *ConfirmKeyTransfer) XXX_Unmarshal(b []byte) error {
+func (m *PollFailed) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ConfirmKeyTransfer) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *PollFailed) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_ConfirmKeyTransfer.Marshal(b, m, deterministic)
+		return xxx_messageInfo_PollFailed.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -54,67 +52,117 @@ func (m *ConfirmKeyTransfer) XXX_Marshal(b []byte, deterministic bool) ([]byte, 
 		return b[:n], nil
 	}
 }
-func (m *ConfirmKeyTransfer) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ConfirmKeyTransfer.Merge(m, src)
+func (m *PollFailed) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PollFailed.Merge(m, src)
 }
-func (m *ConfirmKeyTransfer) XXX_Size() int {
+func (m *PollFailed) XXX_Size() int {
 	return m.Size()
 }
-func (m *ConfirmKeyTransfer) XXX_DiscardUnknown() {
-	xxx_messageInfo_ConfirmKeyTransfer.DiscardUnknown(m)
+func (m *PollFailed) XXX_DiscardUnknown() {
+	xxx_messageInfo_PollFailed.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ConfirmKeyTransfer proto.InternalMessageInfo
+var xxx_messageInfo_PollFailed proto.InternalMessageInfo
 
-func (m *ConfirmKeyTransfer) GetChain() github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName {
+func (m *PollFailed) GetTxID() string {
+	if m != nil {
+		return m.TxID
+	}
+	return ""
+}
+
+func (m *PollFailed) GetChain() github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName {
 	if m != nil {
 		return m.Chain
 	}
 	return ""
 }
 
-func (m *ConfirmKeyTransfer) GetConfirmationHeight() uint64 {
-	if m != nil {
-		return m.ConfirmationHeight
+type PollExpired struct {
+	TxID   string                                                          `protobuf:"bytes,1,opt,name=tx_id,json=txId,proto3" json:"tx_id,omitempty"`
+	Chain  github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
+	PollID github_com_axelarnetwork_axelar_core_x_vote_exported.PollID     `protobuf:"varint,3,opt,name=poll_id,json=pollId,proto3,customtype=github.com/axelarnetwork/axelar-core/x/vote/exported.PollID" json:"poll_id"`
+}
+
+func (m *PollExpired) Reset()         { *m = PollExpired{} }
+func (m *PollExpired) String() string { return proto.CompactTextString(m) }
+func (*PollExpired) ProtoMessage()    {}
+func (*PollExpired) Descriptor() ([]byte, []int) {
+	return fileDescriptor_091c22a44ca6f0af, []int{1}
+}
+func (m *PollExpired) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *PollExpired) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_PollExpired.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
 	}
-	return 0
+}
+func (m *PollExpired) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PollExpired.Merge(m, src)
+}
+func (m *PollExpired) XXX_Size() int {
+	return m.Size()
+}
+func (m *PollExpired) XXX_DiscardUnknown() {
+	xxx_messageInfo_PollExpired.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_PollExpired proto.InternalMessageInfo
+
+func (m *PollExpired) GetTxID() string {
+	if m != nil {
+		return m.TxID
+	}
+	return ""
+}
+
+func (m *PollExpired) GetChain() github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName {
+	if m != nil {
+		return m.Chain
+	}
+	return ""
 }
 
 func init() {
-	proto.RegisterType((*ConfirmKeyTransfer)(nil), "axelar.evm.v1beta1.ConfirmKeyTransfer")
+	proto.RegisterType((*PollFailed)(nil), "axelar.evm.v1beta1.PollFailed")
+	proto.RegisterType((*PollExpired)(nil), "axelar.evm.v1beta1.PollExpired")
 }
 
 func init() { proto.RegisterFile("axelar/evm/v1beta1/events.proto", fileDescriptor_091c22a44ca6f0af) }
 
 var fileDescriptor_091c22a44ca6f0af = []byte{
-	// 370 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x91, 0x3f, 0x4f, 0xb3, 0x50,
-	0x14, 0xc6, 0xa1, 0x2f, 0x6d, 0xf3, 0x92, 0x37, 0x6f, 0x93, 0x6b, 0x07, 0xe2, 0x00, 0x8d, 0x53,
-	0x1d, 0xe4, 0xda, 0xb8, 0x98, 0x38, 0x18, 0x69, 0x87, 0xa2, 0xd1, 0x18, 0xd2, 0x45, 0x97, 0xe6,
-	0x16, 0x4e, 0x81, 0x08, 0x5c, 0x72, 0xb9, 0xa5, 0xf4, 0x5b, 0xf8, 0xb1, 0x3a, 0x76, 0x34, 0x0e,
-	0xc4, 0xd0, 0xd9, 0x2f, 0xe0, 0x64, 0xf8, 0x93, 0xe8, 0xd8, 0xed, 0x9c, 0xfb, 0xfc, 0xce, 0x73,
-	0xee, 0x93, 0x23, 0x6b, 0x24, 0x83, 0x80, 0x30, 0x0c, 0x69, 0x88, 0xd3, 0xd1, 0x02, 0x38, 0x19,
-	0x61, 0x48, 0x21, 0xe2, 0x89, 0x1e, 0x33, 0xca, 0x29, 0x42, 0x35, 0xa0, 0x43, 0x1a, 0xea, 0x0d,
-	0x70, 0xdc, 0x77, 0xa9, 0x4b, 0x2b, 0x19, 0x97, 0x55, 0x4d, 0x9e, 0x7c, 0xb6, 0x64, 0x34, 0xa6,
-	0xd1, 0xd2, 0x67, 0xe1, 0x1d, 0x6c, 0x66, 0x8c, 0x44, 0xc9, 0x12, 0x18, 0x7a, 0x92, 0xdb, 0xb6,
-	0x47, 0xfc, 0x48, 0x11, 0x07, 0xe2, 0xf0, 0xaf, 0x31, 0xfe, 0xca, 0xb5, 0x6b, 0xd7, 0xe7, 0xde,
-	0x6a, 0xa1, 0xdb, 0x34, 0xc4, 0xb5, 0x7d, 0x04, 0x7c, 0x4d, 0xd9, 0x4b, 0xd3, 0x9d, 0xd9, 0x94,
-	0x01, 0xce, 0x70, 0x04, 0xd9, 0x2a, 0xc1, 0x90, 0xc5, 0x94, 0x71, 0x70, 0xf4, 0x71, 0x69, 0xf3,
-	0x40, 0x42, 0xb0, 0x6a, 0x47, 0x74, 0x2a, 0xb7, 0x79, 0x36, 0xf7, 0x1d, 0xa5, 0x35, 0x10, 0x87,
-	0xff, 0x8c, 0xfe, 0x36, 0xd7, 0x84, 0xf7, 0x5c, 0x93, 0xa6, 0x24, 0xf1, 0x8a, 0x5c, 0x93, 0x66,
-	0x99, 0x39, 0xb1, 0x24, 0x9e, 0x99, 0x0e, 0xba, 0x94, 0x7b, 0x2e, 0xe1, 0xb0, 0x26, 0x9b, 0x39,
-	0x71, 0x1c, 0x06, 0x49, 0xa2, 0xfc, 0xa9, 0x86, 0x7a, 0xcd, 0x50, 0xf7, 0xa6, 0x7e, 0xb6, 0xfe,
-	0x37, 0x5c, 0xd3, 0x23, 0x2c, 0x1f, 0xd9, 0x75, 0x2a, 0xc2, 0x7d, 0x1a, 0xcd, 0x3d, 0xf0, 0x5d,
-	0x8f, 0x2b, 0xd2, 0x40, 0x1c, 0x4a, 0x16, 0xfa, 0x2d, 0x4d, 0x2b, 0x05, 0x2d, 0xe5, 0x6e, 0x4c,
-	0x83, 0xa0, 0xfc, 0x57, 0xbb, 0x84, 0x8c, 0xfb, 0x66, 0xc5, 0xd5, 0x81, 0xb1, 0x53, 0xca, 0xe1,
-	0x27, 0xf5, 0x23, 0x0d, 0x02, 0x73, 0x52, 0xe4, 0x5a, 0xa7, 0xae, 0xac, 0x4e, 0xe9, 0x6e, 0x3a,
-	0xc6, 0xed, 0xb6, 0x50, 0xc5, 0x5d, 0xa1, 0x8a, 0x1f, 0x85, 0x2a, 0xbe, 0xee, 0x55, 0x61, 0xb7,
-	0x57, 0x85, 0xb7, 0xbd, 0x2a, 0x3c, 0x9f, 0x1f, 0xb8, 0xa8, 0x3c, 0x3a, 0xdf, 0xc4, 0x90, 0x2c,
-	0x3a, 0xd5, 0x09, 0x2f, 0xbe, 0x03, 0x00, 0x00, 0xff, 0xff, 0xfd, 0xd1, 0xfe, 0xe0, 0x0f, 0x02,
-	0x00, 0x00,
+	// 308 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe4, 0x92, 0x31, 0x4b, 0xc3, 0x40,
+	0x14, 0xc7, 0x73, 0xda, 0x56, 0x3d, 0xb7, 0xe0, 0x50, 0x04, 0xef, 0x4a, 0xa7, 0x2e, 0xe6, 0x2c,
+	0x8e, 0x0e, 0x42, 0x5b, 0x85, 0x08, 0x8a, 0x14, 0x17, 0x5d, 0xe4, 0xda, 0x3c, 0xdb, 0xe0, 0x25,
+	0x17, 0x2e, 0xd7, 0x78, 0x7e, 0x0b, 0x3f, 0x56, 0xc7, 0x8e, 0xe2, 0x10, 0x24, 0xd9, 0x75, 0x77,
+	0x92, 0x4b, 0x0a, 0xae, 0xdd, 0xdd, 0xde, 0xdd, 0xfb, 0xf3, 0xfb, 0xf1, 0xe0, 0x8f, 0x29, 0x37,
+	0x20, 0xb8, 0x62, 0x90, 0x45, 0x2c, 0xeb, 0x4f, 0x40, 0xf3, 0x3e, 0x83, 0x0c, 0x62, 0x9d, 0x7a,
+	0x89, 0x92, 0x5a, 0xba, 0x6e, 0x1d, 0xf0, 0x20, 0x8b, 0xbc, 0x75, 0xe0, 0xf0, 0x60, 0x26, 0x67,
+	0xb2, 0x5a, 0x33, 0x3b, 0xd5, 0xc9, 0xee, 0x17, 0xc2, 0xf8, 0x56, 0x0a, 0x71, 0xc9, 0x43, 0x01,
+	0x81, 0x7b, 0x84, 0x9b, 0xda, 0x3c, 0x86, 0x41, 0x1b, 0x75, 0x50, 0x6f, 0x6f, 0xb0, 0x5b, 0xe4,
+	0xb4, 0x71, 0x67, 0xfc, 0xd1, 0xb8, 0xa1, 0x8d, 0x1f, 0xb8, 0xf7, 0xb8, 0x39, 0x9d, 0xf3, 0x30,
+	0x6e, 0x6f, 0x55, 0xeb, 0xe1, 0x4f, 0x4e, 0xcf, 0x67, 0xa1, 0x9e, 0x2f, 0x26, 0xde, 0x54, 0x46,
+	0xac, 0xb6, 0xc6, 0xa0, 0x5f, 0xa4, 0x7a, 0x5e, 0xbf, 0x8e, 0xa7, 0x52, 0x01, 0x33, 0x2c, 0x06,
+	0xb3, 0x48, 0x19, 0x98, 0x44, 0x2a, 0x0d, 0x81, 0x37, 0xb4, 0x98, 0x1b, 0x1e, 0xc1, 0xb8, 0x26,
+	0xba, 0x4f, 0x78, 0x27, 0x91, 0x42, 0x58, 0xf7, 0x76, 0x07, 0xf5, 0x1a, 0x83, 0xeb, 0x65, 0x4e,
+	0x9d, 0x8f, 0x9c, 0x9e, 0x6d, 0x28, 0xc8, 0xa4, 0x86, 0x3f, 0xbe, 0xbd, 0xc9, 0x1f, 0x15, 0x39,
+	0x6d, 0xd5, 0xd3, 0xb8, 0x65, 0xe9, 0x7e, 0xd0, 0xfd, 0x46, 0x78, 0xdf, 0x7e, 0x5d, 0x98, 0x24,
+	0x54, 0xff, 0xe1, 0xe2, 0xc1, 0xd5, 0xb2, 0x20, 0x68, 0x55, 0x10, 0xf4, 0x59, 0x10, 0xf4, 0x56,
+	0x12, 0x67, 0x55, 0x12, 0xe7, 0xbd, 0x24, 0xce, 0xc3, 0xc9, 0x86, 0x22, 0xdb, 0x33, 0xfd, 0x9a,
+	0x40, 0x3a, 0x69, 0x55, 0xad, 0x39, 0xfd, 0x0d, 0x00, 0x00, 0xff, 0xff, 0xa3, 0xbb, 0xcc, 0x9a,
+	0x82, 0x02, 0x00, 0x00,
 }
 
-func (m *ConfirmKeyTransfer) Marshal() (dAtA []byte, err error) {
+func (m *PollFailed) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -124,12 +172,12 @@ func (m *ConfirmKeyTransfer) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ConfirmKeyTransfer) MarshalTo(dAtA []byte) (int, error) {
+func (m *PollFailed) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *ConfirmKeyTransfer) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *PollFailed) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -137,37 +185,61 @@ func (m *ConfirmKeyTransfer) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	if m.PollID != 0 {
 		i = encodeVarintEvents(dAtA, i, uint64(m.PollID))
 		i--
-		dAtA[i] = 0x28
+		dAtA[i] = 0x18
 	}
-	if m.ConfirmationHeight != 0 {
-		i = encodeVarintEvents(dAtA, i, uint64(m.ConfirmationHeight))
-		i--
-		dAtA[i] = 0x20
-	}
-	{
-		size := m.GatewayAddress.Size()
-		i -= size
-		if _, err := m.GatewayAddress.MarshalTo(dAtA[i:]); err != nil {
-			return 0, err
-		}
-		i = encodeVarintEvents(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0x1a
-	{
-		size := m.TxID.Size()
-		i -= size
-		if _, err := m.TxID.MarshalTo(dAtA[i:]); err != nil {
-			return 0, err
-		}
-		i = encodeVarintEvents(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0x12
 	if len(m.Chain) > 0 {
 		i -= len(m.Chain)
 		copy(dAtA[i:], m.Chain)
 		i = encodeVarintEvents(dAtA, i, uint64(len(m.Chain)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.TxID) > 0 {
+		i -= len(m.TxID)
+		copy(dAtA[i:], m.TxID)
+		i = encodeVarintEvents(dAtA, i, uint64(len(m.TxID)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *PollExpired) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *PollExpired) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *PollExpired) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.PollID != 0 {
+		i = encodeVarintEvents(dAtA, i, uint64(m.PollID))
+		i--
+		dAtA[i] = 0x18
+	}
+	if len(m.Chain) > 0 {
+		i -= len(m.Chain)
+		copy(dAtA[i:], m.Chain)
+		i = encodeVarintEvents(dAtA, i, uint64(len(m.Chain)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.TxID) > 0 {
+		i -= len(m.TxID)
+		copy(dAtA[i:], m.TxID)
+		i = encodeVarintEvents(dAtA, i, uint64(len(m.TxID)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -185,22 +257,39 @@ func encodeVarintEvents(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *ConfirmKeyTransfer) Size() (n int) {
+func (m *PollFailed) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
+	l = len(m.TxID)
+	if l > 0 {
+		n += 1 + l + sovEvents(uint64(l))
+	}
 	l = len(m.Chain)
 	if l > 0 {
 		n += 1 + l + sovEvents(uint64(l))
 	}
-	l = m.TxID.Size()
-	n += 1 + l + sovEvents(uint64(l))
-	l = m.GatewayAddress.Size()
-	n += 1 + l + sovEvents(uint64(l))
-	if m.ConfirmationHeight != 0 {
-		n += 1 + sovEvents(uint64(m.ConfirmationHeight))
+	if m.PollID != 0 {
+		n += 1 + sovEvents(uint64(m.PollID))
+	}
+	return n
+}
+
+func (m *PollExpired) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.TxID)
+	if l > 0 {
+		n += 1 + l + sovEvents(uint64(l))
+	}
+	l = len(m.Chain)
+	if l > 0 {
+		n += 1 + l + sovEvents(uint64(l))
 	}
 	if m.PollID != 0 {
 		n += 1 + sovEvents(uint64(m.PollID))
@@ -214,7 +303,7 @@ func sovEvents(x uint64) (n int) {
 func sozEvents(x uint64) (n int) {
 	return sovEvents(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *ConfirmKeyTransfer) Unmarshal(dAtA []byte) error {
+func (m *PollFailed) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -237,13 +326,45 @@ func (m *ConfirmKeyTransfer) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ConfirmKeyTransfer: wiretype end group for non-group")
+			return fmt.Errorf("proto: PollFailed: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ConfirmKeyTransfer: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: PollFailed: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TxID", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvents
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvents
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvents
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TxID = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Chain", wireType)
 			}
@@ -275,11 +396,80 @@ func (m *ConfirmKeyTransfer) Unmarshal(dAtA []byte) error {
 			}
 			m.Chain = github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 2:
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PollID", wireType)
+			}
+			m.PollID = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvents
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.PollID |= github_com_axelarnetwork_axelar_core_x_vote_exported.PollID(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipEvents(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthEvents
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *PollExpired) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowEvents
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: PollExpired: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: PollExpired: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field TxID", wireType)
 			}
-			var byteLen int
+			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowEvents
@@ -289,78 +479,57 @@ func (m *ConfirmKeyTransfer) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				byteLen |= int(b&0x7F) << shift
+				stringLen |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			if byteLen < 0 {
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
 				return ErrInvalidLengthEvents
 			}
-			postIndex := iNdEx + byteLen
+			postIndex := iNdEx + intStringLen
 			if postIndex < 0 {
 				return ErrInvalidLengthEvents
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.TxID.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			m.TxID = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Chain", wireType)
 			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvents
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvents
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvents
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Chain = github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field GatewayAddress", wireType)
-			}
-			var byteLen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvents
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				byteLen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if byteLen < 0 {
-				return ErrInvalidLengthEvents
-			}
-			postIndex := iNdEx + byteLen
-			if postIndex < 0 {
-				return ErrInvalidLengthEvents
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.GatewayAddress.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 4:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ConfirmationHeight", wireType)
-			}
-			m.ConfirmationHeight = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvents
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.ConfirmationHeight |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 5:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field PollID", wireType)
 			}

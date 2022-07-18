@@ -53,7 +53,7 @@ func (k Keeper) SetKey(ctx sdk.Context, key types.Key) {
 
 	participants := key.GetParticipants()
 	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewKeygenCompleted(key.ID)))
-	k.Logger(ctx).Info("keygen session completed",
+	k.Logger(ctx).Info("setting key",
 		"key_id", key.ID,
 		"participant_count", len(participants),
 		"participants", strings.Join(slices.Map(participants, sdk.ValAddress.String), ", "),

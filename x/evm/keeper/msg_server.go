@@ -91,25 +91,7 @@ func (s msgServer) ConfirmGatewayTx(c context.Context, req *types.ConfirmGateway
 		return nil, fmt.Errorf("axelar gateway address not set")
 	}
 
-	params := keeper.GetParams(ctx)
-	snapshot, err := s.snapshotter.CreateSnapshot(
-		ctx,
-		s.nexus.GetChainMaintainers(ctx, chain),
-		excludeJailedOrTombstoned(ctx, s.slashing),
-		snapshot.QuadraticWeightFunc,
-		params.VotingThreshold,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	pollID, err := s.voter.InitializePoll(
-		ctx,
-		vote.NewPollBuilder(types.ModuleName, params.VotingThreshold, snapshot, ctx.BlockHeight()+params.RevoteLockingPeriod).
-			MinVoterCount(params.MinVoterCount).
-			RewardPoolName(chain.Name.String()).
-			GracePeriod(keeper.GetParams(ctx).VotingGracePeriod),
-	)
+	pollID, err := s.initializePoll(ctx, chain, req.TxID)
 	if err != nil {
 		return nil, err
 	}
@@ -272,25 +254,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, err
 	}
 
-	params := keeper.GetParams(ctx)
-	snapshot, err := s.snapshotter.CreateSnapshot(
-		ctx,
-		s.nexus.GetChainMaintainers(ctx, chain),
-		excludeJailedOrTombstoned(ctx, s.slashing),
-		snapshot.QuadraticWeightFunc,
-		params.VotingThreshold,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	pollID, err := s.voter.InitializePoll(
-		ctx,
-		vote.NewPollBuilder(types.ModuleName, params.VotingThreshold, snapshot, ctx.BlockHeight()+params.RevoteLockingPeriod).
-			MinVoterCount(params.MinVoterCount).
-			RewardPoolName(chain.Name.String()).
-			GracePeriod(keeper.GetParams(ctx).VotingGracePeriod),
-	)
+	pollID, err := s.initializePoll(ctx, chain, req.TxID)
 	if err != nil {
 		return nil, err
 	}
@@ -336,25 +300,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, fmt.Errorf("no burner info found for address %s", req.BurnerAddress.Hex())
 	}
 
-	params := keeper.GetParams(ctx)
-	snapshot, err := s.snapshotter.CreateSnapshot(
-		ctx,
-		s.nexus.GetChainMaintainers(ctx, chain),
-		excludeJailedOrTombstoned(ctx, s.slashing),
-		snapshot.QuadraticWeightFunc,
-		params.VotingThreshold,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	pollID, err := s.voter.InitializePoll(
-		ctx,
-		vote.NewPollBuilder(types.ModuleName, params.VotingThreshold, snapshot, ctx.BlockHeight()+params.RevoteLockingPeriod).
-			MinVoterCount(params.MinVoterCount).
-			RewardPoolName(chain.Name.String()).
-			GracePeriod(keeper.GetParams(ctx).VotingGracePeriod),
-	)
+	pollID, err := s.initializePoll(ctx, chain, req.TxID)
 	if err != nil {
 		return nil, err
 	}
@@ -399,25 +345,7 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 		return nil, fmt.Errorf("axelar gateway address not set")
 	}
 
-	params := keeper.GetParams(ctx)
-	snapshot, err := s.snapshotter.CreateSnapshot(
-		ctx,
-		s.nexus.GetChainMaintainers(ctx, chain),
-		excludeJailedOrTombstoned(ctx, s.slashing),
-		snapshot.QuadraticWeightFunc,
-		params.VotingThreshold,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	pollID, err := s.voter.InitializePoll(
-		ctx,
-		vote.NewPollBuilder(types.ModuleName, params.VotingThreshold, snapshot, ctx.BlockHeight()+params.RevoteLockingPeriod).
-			MinVoterCount(params.MinVoterCount).
-			RewardPoolName(chain.Name.String()).
-			GracePeriod(keeper.GetParams(ctx).VotingGracePeriod),
-	)
+	pollID, err := s.initializePoll(ctx, chain, req.TxID)
 	if err != nil {
 		return nil, err
 	}
@@ -825,4 +753,31 @@ func (s msgServer) RetryFailedEvent(c context.Context, req *types.RetryFailedEve
 	)
 
 	return &types.RetryFailedEventResponse{}, nil
+}
+
+func (s msgServer) initializePoll(ctx sdk.Context, chain nexus.Chain, txID types.Hash) (vote.PollID, error) {
+	keeper := s.ForChain(chain.Name)
+	params := keeper.GetParams(ctx)
+	snap, err := s.snapshotter.CreateSnapshot(
+		ctx,
+		s.nexus.GetChainMaintainers(ctx, chain),
+		excludeJailedOrTombstoned(ctx, s.slashing),
+		snapshot.QuadraticWeightFunc,
+		params.VotingThreshold,
+	)
+	if err != nil {
+		return 0, err
+	}
+
+	return s.voter.InitializePoll(
+		ctx,
+		vote.NewPollBuilder(types.ModuleName, params.VotingThreshold, snap, ctx.BlockHeight()+params.RevoteLockingPeriod).
+			MinVoterCount(params.MinVoterCount).
+			RewardPoolName(chain.Name.String()).
+			GracePeriod(keeper.GetParams(ctx).VotingGracePeriod).
+			ModuleMetadata(&types.PollMetadata{
+				Chain: chain.Name,
+				TxID:  txID.Hex(),
+			}),
+	)
 }
