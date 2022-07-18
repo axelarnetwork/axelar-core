@@ -7,6 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
@@ -67,15 +69,17 @@ func TestKeyID(t *testing.T) {
 		assert.Equal(expectedRes, *res)
 	}).Repeat(repeatCount))
 
-	t.Run("if chain does not exist, should get empty response", testutils.Func(func(t *testing.T) {
+	t.Run("if chain does not exist, should get NotFound grpc code", testutils.Func(func(t *testing.T) {
 		chain := "non-existing-chain"
 		res, err := grpcQuerier.KeyID(sdk.WrapSDKContext(ctx), &types.KeyIDRequest{
 			Chain: chain,
 		})
 
 		assert := assert.New(t)
-		assert.Nil(err)
-		assert.Equal(res.KeyID, multisig.KeyID(""))
+		assert.Nil(res)
+		s, ok := status.FromError(err)
+		assert.Equal(codes.NotFound, s.Code())
+		assert.Equal(true, ok)
 	}).Repeat(repeatCount))
 }
 
@@ -129,14 +133,16 @@ func TestNextKeyID(t *testing.T) {
 		assert.Equal(expectedRes, *res)
 	}).Repeat(repeatCount))
 
-	t.Run("if chain does not exist, should get empty response", testutils.Func(func(t *testing.T) {
+	t.Run("if chain does not exist, should get NotFound grpc code", testutils.Func(func(t *testing.T) {
 		chain := "non-existing-chain"
 		res, err := grpcQuerier.NextKeyID(sdk.WrapSDKContext(ctx), &types.NextKeyIDRequest{
 			Chain: chain,
 		})
 
 		assert := assert.New(t)
-		assert.Nil(err)
-		assert.Equal(res.KeyID, multisig.KeyID(""))
+		assert.Nil(res)
+		s, ok := status.FromError(err)
+		assert.Equal(codes.NotFound, s.Code())
+		assert.Equal(true, ok)
 	}).Repeat(repeatCount))
 }
