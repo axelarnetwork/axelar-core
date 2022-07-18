@@ -16,6 +16,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
 	typestestutils "github.com/axelarnetwork/axelar-core/x/multisig/types/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/utils/funcs"
 	. "github.com/axelarnetwork/utils/test"
 )
 
@@ -117,10 +118,30 @@ func TestKeeper(t *testing.T) {
 
 						currentKey, ok := k.GetCurrentKey(ctx, chainName)
 						assert.True(t, ok)
-						assert.Equal(t, keyID1, currentKey.GetKeyID())
+						assert.Equal(t, keyID1, currentKey.(*types.Key).ID)
 						assert.Equal(t, types.Active, currentKey.(*types.Key).State)
 					}),
 			).
+			Run(t)
+
+		keys := make([]types.Key, types.DefaultParams().ActiveEpochCount+1)
+		givenKeeper.
+			When("(ActiveEpochCount+1) keys exist", func() {
+				for i := 0; i < int(types.DefaultParams().ActiveEpochCount+1); i++ {
+					keys[i] = typestestutils.Key()
+					k.SetKey(ctx, keys[i])
+				}
+			}).
+			Then("rotating the last key should deactivate the first one", func(t *testing.T) {
+				for i := 0; i < int(types.DefaultParams().ActiveEpochCount+1); i++ {
+					funcs.MustNoErr(k.AssignKey(ctx, chainName, keys[i].ID))
+					funcs.MustNoErr(k.RotateKey(ctx, chainName))
+				}
+
+				firstKey, ok := k.GetKey(ctx, keys[0].ID)
+				assert.True(t, ok)
+				assert.Equal(t, types.Inactive, firstKey.(*types.Key).State)
+			}).
 			Run(t)
 	})
 }
