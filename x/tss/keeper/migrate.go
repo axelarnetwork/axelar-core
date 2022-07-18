@@ -39,9 +39,11 @@ func migrateKeys(ctx sdk.Context, tss Keeper, multisig types.MultiSigKeeper, nex
 			tss.Logger(ctx).Debug(fmt.Sprintf("no old active %s keys found for chain %s", exported.SecondaryKey.SimpleString(), chain.Name))
 		} else {
 			for _, key := range keys {
-				if err := migrate(ctx, tss, multisig, snapshotter, chain.Name, key); err != nil {
+				newKey, err := migrateKeyType(ctx, tss, snapshotter, chain.Name, key)
+				if err != nil {
 					return err
 				}
+				multisig.SetKey(ctx, newKey)
 				if err := multisig.AssignKey(ctx, chain.Name, multisigExported.KeyID(key.ID)); err != nil {
 					return err
 				}
@@ -55,9 +57,11 @@ func migrateKeys(ctx sdk.Context, tss Keeper, multisig types.MultiSigKeeper, nex
 		if !ok {
 			tss.Logger(ctx).Debug(fmt.Sprintf("no active %s key found for chain %s", exported.SecondaryKey.SimpleString(), chain.Name))
 		} else {
-			if err := migrate(ctx, tss, multisig, snapshotter, chain.Name, key); err != nil {
+			newKey, err := migrateKeyType(ctx, tss, snapshotter, chain.Name, key)
+			if err != nil {
 				return err
 			}
+			multisig.SetKey(ctx, newKey)
 			if err := multisig.AssignKey(ctx, chain.Name, multisigExported.KeyID(key.ID)); err != nil {
 				return err
 			}
@@ -70,9 +74,12 @@ func migrateKeys(ctx sdk.Context, tss Keeper, multisig types.MultiSigKeeper, nex
 		if !ok {
 			tss.Logger(ctx).Debug(fmt.Sprintf("no next %s key found for chain %s", exported.SecondaryKey.SimpleString(), chain.Name))
 		} else {
-			if err := migrate(ctx, tss, multisig, snapshotter, chain.Name, key); err != nil {
+			newKey, err := migrateKeyType(ctx, tss, snapshotter, chain.Name, key)
+			if err != nil {
 				return err
 			}
+			multisig.SetKey(ctx, newKey)
+
 			if err := multisig.AssignKey(ctx, chain.Name, multisigExported.KeyID(key.ID)); err != nil {
 				return err
 			}
@@ -82,10 +89,10 @@ func migrateKeys(ctx sdk.Context, tss Keeper, multisig types.MultiSigKeeper, nex
 	return nil
 }
 
-func migrate(ctx sdk.Context, tss Keeper, multisig types.MultiSigKeeper, snapshotter types.Snapshotter, chain nexus.ChainName, key exported.Key) error {
+func migrateKeyType(ctx sdk.Context, tss Keeper, snapshotter types.Snapshotter, chain nexus.ChainName, key exported.Key) (multisigTypes.Key, error) {
 	s, ok := snapshotter.GetSnapshot(ctx, key.SnapshotCounter)
 	if !ok {
-		return fmt.Errorf("failed to migrate key %s for chain %s, no snapshot found", key.ID, chain)
+		return multisigTypes.Key{}, fmt.Errorf("failed to migrateKeyType key %s for chain %s, no snapshot found", key.ID, chain)
 	}
 	if s.Participants == nil {
 		s.Participants = make(map[string]snapshotexported.Participant)
@@ -99,7 +106,7 @@ func migrate(ctx sdk.Context, tss Keeper, multisig types.MultiSigKeeper, snapsho
 	info, found := tss.GetMultisigKeygenInfo(ctx, key.ID)
 	keyInfo, ok := info.(*types.MultisigInfo)
 	if !found || !ok {
-		return fmt.Errorf("failed to migrate key %s for chain %s, key info not found", key.ID, chain)
+		return multisigTypes.Key{}, fmt.Errorf("failed to migrateKeyType key %s for chain %s, key info not found", key.ID, chain)
 	}
 	pubkeys := make(map[string]multisigExported.PublicKey)
 	for _, infos := range keyInfo.Infos {
@@ -107,7 +114,7 @@ func migrate(ctx sdk.Context, tss Keeper, multisig types.MultiSigKeeper, snapsho
 		val := infos.Participant.String()
 		keys := infos.Data
 		if len(keys) < 1 {
-			return fmt.Errorf("failed to migrate key %s for chain %s, validator %s is participant without pubkey", key.ID, chain, infos.Participant.String())
+			return multisigTypes.Key{}, fmt.Errorf("failed to migrateKeyType key %s for chain %s, validator %s is participant without pubkey", key.ID, chain, infos.Participant.String())
 		}
 		pubkeys[val] = keys[0]
 	}
@@ -119,10 +126,9 @@ func migrate(ctx sdk.Context, tss Keeper, multisig types.MultiSigKeeper, snapsho
 	}
 
 	if err := newKey.ValidateBasic(); err != nil {
-		return err
+		return multisigTypes.Key{}, err
 	}
-	multisig.SetKey(ctx, newKey)
 
 	tss.Logger(ctx).Debug(fmt.Sprintf("successfully migrated %s key %s for chain %s", exported.SecondaryKey, key.ID, chain))
-	return nil
+	return newKey, nil
 }
