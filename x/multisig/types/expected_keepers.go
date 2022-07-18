@@ -7,6 +7,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/multisig/exported"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 )
@@ -16,6 +17,8 @@ import (
 // Keeper provides keeper functionality of this module
 type Keeper interface {
 	Logger(ctx sdk.Context) log.Logger
+	GetCurrentKeyID(ctx sdk.Context, chainName nexus.ChainName) (exported.KeyID, bool)
+	GetNextKeyID(ctx sdk.Context, chainName nexus.ChainName) (exported.KeyID, bool)
 	GetKeygenSessionsByExpiry(ctx sdk.Context, expiry int64) []KeygenSession
 	SetKey(ctx sdk.Context, key Key)
 	DeleteKeygenSession(ctx sdk.Context, id exported.KeyID)
