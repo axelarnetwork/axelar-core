@@ -3,6 +3,7 @@ package keeper
 import (
 	"crypto/ecdsa"
 	"testing"
+	"time"
 
 	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -24,12 +25,27 @@ import (
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 	. "github.com/axelarnetwork/utils/test"
+	rand2 "github.com/axelarnetwork/utils/test/rand"
 )
 
 func TestGetMigrationHandler(t *testing.T) {
 	encCfg := params.MakeEncodingConfig()
 	paramsStoreKey := sdk.NewKVStoreKey(paramstypes.StoreKey)
 	paramsTSstoreKey := sdk.NewKVStoreKey(paramstypes.TStoreKey)
+
+	val1 := newValidator(rand.ValAddr(), 10)
+	val2 := newValidator(rand.ValAddr(), 10)
+	val3 := newValidator(rand.ValAddr(), 10)
+	val4 := newValidator(rand.ValAddr(), 10)
+	validators := []snapshot.Validator{val1, val2, val3, val4}
+	snap := snapshot.Snapshot{
+		Validators:      validators,
+		Timestamp:       time.Now(),
+		Height:          rand.I64Between(1, 1000000),
+		TotalShareCount: sdk.NewInt(40),
+		Counter:         rand.I64Between(0, 100000),
+	}
+
 	chains := []nexus.Chain{
 		{
 			Name:   "ethereum",
@@ -82,7 +98,7 @@ func TestGetMigrationHandler(t *testing.T) {
 
 	givenSetup.
 		When("there is only a current key", func() {
-			expectedKeys = append(expectedKeys, setKey(ctx, k, chains[1].Name))
+			expectedKeys = append(expectedKeys, setKey(ctx, k, chains[1].Name, validators))
 
 			funcs.MustNoErr(k.AssignNextKey(ctx, chains[1], exported.SecondaryKey, expectedKeys[0].ID))
 			funcs.MustNoErr(k.RotateKey(ctx, chains[1], exported.SecondaryKey))
@@ -104,7 +120,7 @@ func TestGetMigrationHandler(t *testing.T) {
 
 	givenSetup.
 		When("there is only a next key", func() {
-			expectedKeys = append(expectedKeys, setKey(ctx, k, chains[0].Name))
+			expectedKeys = append(expectedKeys, setKey(ctx, k, chains[0].Name, validators))
 
 			funcs.MustNoErr(k.AssignNextKey(ctx, chains[0], exported.SecondaryKey, expectedKeys[0].ID))
 		}).
@@ -124,12 +140,12 @@ func TestGetMigrationHandler(t *testing.T) {
 	givenSetup.
 		When("there are old, current and next keys", func() {
 			for i := 0; i < 20; i++ {
-				key := setKey(ctx, k, chains[2].Name)
+				key := setKey(ctx, k, chains[2].Name, validators)
 				expectedKeys = append(expectedKeys, key)
 				funcs.MustNoErr(k.AssignNextKey(ctx, chains[2], exported.SecondaryKey, key.ID))
 				funcs.MustNoErr(k.RotateKey(ctx, chains[2], exported.SecondaryKey))
 			}
-			expectedKeys = append(expectedKeys, setKey(ctx, k, chains[2].Name))
+			expectedKeys = append(expectedKeys, setKey(ctx, k, chains[2].Name, validators))
 			funcs.MustNoErr(k.AssignNextKey(ctx, chains[2], exported.SecondaryKey, expectedKeys[len(expectedKeys)-1].ID))
 		}).
 		Then("migrate all keys", func(t *testing.T) {
@@ -170,9 +186,9 @@ func TestGetMigrationHandler(t *testing.T) {
 		}).Run(t)
 }
 
-func setKey(ctx sdk.Context, k Keeper, chain nexus.ChainName) exported.Key {
+func setKey(ctx sdk.Context, k Keeper, chain nexus.ChainName, validators []snapshot.Validator) exported.Key {
 	var expectedKey exported.Key
-	expectedKey = generateMultisigKey(exported.KeyID(rand.Str(10)))
+	expectedKey = generateMultisigKey(exported.KeyID(rand2.AlphaStrBetween(5, 10)))
 	expectedKey.Chain = string(chain)
 	expectedKey.SnapshotCounter = rand.PosI64()
 	k.setSnapshotCounterForKeyID(ctx, expectedKey.ID, expectedKey.SnapshotCounter)
@@ -180,7 +196,7 @@ func setKey(ctx sdk.Context, k Keeper, chain nexus.ChainName) exported.Key {
 	k.SetMultisigKeygenInfo(ctx, types.MultisigInfo{
 		ID:        string(expectedKey.ID),
 		Timeout:   rand.PosI64(),
-		TargetNum: rand.PosI64(),
+		TargetNum: 1,
 	})
 	for _, validator := range validators {
 		pubKeys := slices.Expand(func(idx int) ecdsa.PublicKey { return generatePubKey() }, 2)

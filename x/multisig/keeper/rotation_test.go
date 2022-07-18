@@ -55,10 +55,11 @@ func TestKeeper(t *testing.T) {
 	t.Run("AssignKey", func(t *testing.T) {
 		givenKeeper.
 			Branch(
-				Then("should fail if key does not exist", func(t *testing.T) {
-					err := k.AssignKey(ctx, chainName, exportedtestutils.KeyID())
-					assert.Error(t, err)
-				}),
+				When("no key exists", func() {}).
+					Then("should fail", func(t *testing.T) {
+						err := k.AssignKey(ctx, chainName, exportedtestutils.KeyID())
+						assert.Error(t, err)
+					}),
 
 				whenKeysExist.
 					Branch(
