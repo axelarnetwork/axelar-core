@@ -32,7 +32,7 @@ message BatchedCommandsResponse {
   string key_id = 4 [
     (gogoproto.customname) = "KeyID",
     (gogoproto.casttype) =
-        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
   ];
   repeated string signature = 5;
   string execute_data = 6;

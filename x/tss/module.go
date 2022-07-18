@@ -90,10 +90,11 @@ type AppModule struct {
 	nexus       types.Nexus
 	staker      types.StakingKeeper
 	rewarder    types.Rewarder
+	multisig    types.MultiSigKeeper
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(k keeper.Keeper, s types.Snapshotter, v types.Voter, n types.Nexus, sk types.StakingKeeper, rewarder types.Rewarder) AppModule {
+func NewAppModule(k keeper.Keeper, s types.Snapshotter, v types.Voter, n types.Nexus, sk types.StakingKeeper, rewarder types.Rewarder, multisig types.MultiSigKeeper) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
@@ -102,6 +103,7 @@ func NewAppModule(k keeper.Keeper, s types.Snapshotter, v types.Voter, n types.N
 		nexus:          n,
 		staker:         sk,
 		rewarder:       rewarder,
+		multisig:       multisig,
 	}
 }
 
@@ -139,7 +141,7 @@ func (AppModule) QuerierRoute() string {
 func (am AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterQueryServiceServer(cfg.QueryServer(), keeper.NewGRPCQuerier(am.keeper, am.nexus, am.staker))
 
-	err := cfg.RegisterMigration(types.ModuleName, 1, keeper.GetMigrationHandler(am.keeper))
+	err := cfg.RegisterMigration(types.ModuleName, 2, keeper.GetMigrationHandler(am.keeper, am.multisig, am.nexus, am.snapshotter))
 	if err != nil {
 		panic(err)
 	}
@@ -161,4 +163,4 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 }
 
 // ConsensusVersion implements AppModule/ConsensusVersion.
-func (AppModule) ConsensusVersion() uint64 { return 2 }
+func (AppModule) ConsensusVersion() uint64 { return 3 }

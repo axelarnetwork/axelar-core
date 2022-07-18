@@ -1,0 +1,32 @@
+syntax = "proto3";
+package axelar.multisig.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/multisig/types";
+
+import "gogoproto/gogo.proto";
+import "axelar/multisig/exported/v1beta1/types.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+message KeyIDRequest { string chain = 1; }
+
+// KeyIDResponse contains the key ID of the key assigned to a given chain.
+message KeyIDResponse {
+  string key_id = 1 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
+  ];
+}
+
+message NextKeyIDRequest { string chain = 1; }
+
+// NextKeyIDResponse contains the key ID for the next rotation on the given
+// chain
+message NextKeyIDResponse {
+  string key_id = 1 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
+  ];
+}
