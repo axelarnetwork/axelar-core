@@ -527,6 +527,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		nexusTypes.ModuleName,
 		permissionTypes.ModuleName,
 		multisigTypes.ModuleName,
+		tssTypes.ModuleName,
 		evmTypes.ModuleName,
 		snapTypes.ModuleName,
 		axelarnetTypes.ModuleName,
@@ -553,6 +554,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 
 		// axelar custom modules
 		multisigTypes.ModuleName,
+		tssTypes.ModuleName,
 		evmTypes.ModuleName,
 		nexusTypes.ModuleName,
 		rewardTypes.ModuleName,
