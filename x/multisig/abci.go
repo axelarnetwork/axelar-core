@@ -37,7 +37,10 @@ func handleKeygens(ctx sdk.Context, k types.Keeper, rewarder types.Rewarder) {
 			continue
 		}
 
-		k.SetKey(ctx, funcs.Must(keygen.Result()))
+		key := funcs.Must(keygen.Result())
+
+		slices.ForEach(key.GetParticipants(), func(p sdk.ValAddress) { funcs.MustNoErr(rewarder.GetPool(ctx, types.ModuleName).ReleaseRewards(p)) })
+		k.SetKey(ctx, key)
 	}
 }
 
@@ -61,6 +64,7 @@ func handleSignings(ctx sdk.Context, k types.Keeper, rewarder types.Rewarder) {
 
 			sig := funcs.Must(signing.Result())
 
+			slices.ForEach(sig.GetParticipants(), func(p sdk.ValAddress) { funcs.MustNoErr(rewarder.GetPool(ctx, types.ModuleName).ReleaseRewards(p)) })
 			funcs.MustNoErr(k.GetSigRouter().GetHandler(module).HandleCompleted(cachedCtx, &sig, signing.GetMetadata()))
 
 			funcs.MustNoErr(cachedCtx.EventManager().EmitTypedEvent(types.NewSigningCompleted(signing.GetID())))

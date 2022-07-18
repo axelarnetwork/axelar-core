@@ -33,9 +33,10 @@ import (
 
 func TestEndBlocker(t *testing.T) {
 	var (
-		ctx      sdk.Context
-		k        *mock.KeeperMock
-		rewarder *mock.RewarderMock
+		ctx           sdk.Context
+		k             *mock.KeeperMock
+		rewarder      *mock.RewarderMock
+		keygenSession types.KeygenSession
 	)
 
 	givenKeepersAndCtx := Given("keepers", func() {
@@ -83,18 +84,23 @@ func TestEndBlocker(t *testing.T) {
 
 		givenKeepersAndCtx.
 			When("a completed keygen session expiry equal to the block height", func() {
+				keygenSession = types.KeygenSession{
+					Key:   typestestutils.Key(),
+					State: exported.Completed,
+				}
 				k.GetKeygenSessionsByExpiryFunc = func(_ sdk.Context, expiry int64) []types.KeygenSession {
 					if expiry != ctx.BlockHeight() {
 						return nil
 					}
 
-					return []types.KeygenSession{{
-						Key:   typestestutils.Key(),
-						State: exported.Completed,
-					}}
+					return []types.KeygenSession{keygenSession}
 				}
 			}).
 			Then("should delete and set key", func(t *testing.T) {
+				pool := rewardmock.RewardPoolMock{
+					ReleaseRewardsFunc: func(sdk.ValAddress) error { return nil },
+				}
+				rewarder.GetPoolFunc = func(sdk.Context, string) reward.RewardPool { return &pool }
 				k.DeleteKeygenSessionFunc = func(sdk.Context, exported.KeyID) {}
 				k.SetKeyFunc = func(sdk.Context, types.Key) {}
 
@@ -103,14 +109,16 @@ func TestEndBlocker(t *testing.T) {
 				assert.NoError(t, err)
 				assert.Len(t, k.DeleteKeygenSessionCalls(), 1)
 				assert.Len(t, k.SetKeyCalls(), 1)
+				assert.Len(t, pool.ReleaseRewardsCalls(), len(keygenSession.Key.Snapshot.GetParticipantAddresses()))
 			}).
 			Run(t)
 	})
 
 	t.Run("handleSignings", func(t *testing.T) {
 		var (
-			module     string
-			sigHandler *exportedmock.SigHandlerMock
+			module         string
+			sigHandler     *exportedmock.SigHandlerMock
+			signingSession types.SigningSession
 		)
 
 		givenKeepersAndCtx.
@@ -165,15 +173,20 @@ func TestEndBlocker(t *testing.T) {
 					}),
 
 				When("a completed signing session expiry equal to the block height", func() {
+					signingSession = newSigningSession(module)
 					k.GetSigningSessionsByExpiryFunc = func(_ sdk.Context, expiry int64) []types.SigningSession {
 						if expiry != ctx.BlockHeight() {
 							return nil
 						}
 
-						return []types.SigningSession{newSigningSession(module)}
+						return []types.SigningSession{signingSession}
 					}
 				}).
 					Then("should delete and set sig", func(t *testing.T) {
+						pool := rewardmock.RewardPoolMock{
+							ReleaseRewardsFunc: func(sdk.ValAddress) error { return nil },
+						}
+						rewarder.GetPoolFunc = func(sdk.Context, string) reward.RewardPool { return &pool }
 						k.DeleteSigningSessionFunc = func(sdk.Context, uint64) {}
 						sigHandler.HandleCompletedFunc = func(sdk.Context, codec.ProtoMarshaler, codec.ProtoMarshaler) error { return nil }
 
@@ -182,6 +195,7 @@ func TestEndBlocker(t *testing.T) {
 						assert.NoError(t, err)
 						assert.Len(t, k.DeleteSigningSessionCalls(), 1)
 						assert.Len(t, sigHandler.HandleCompletedCalls(), 1)
+						assert.Len(t, pool.ReleaseRewardsCalls(), len(signingSession.Key.GetParticipants()))
 					}),
 
 				When("a multiple completed signing sessions are triggered", func() {
