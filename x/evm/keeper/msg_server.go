@@ -656,7 +656,7 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		commandBatch.GetKeyID(),
 		commandBatch.GetSigHash().Bytes(),
 		types.ModuleName,
-		types.NewSigMetadata(types.SigCommand, chain.Name),
+		types.NewSigMetadata(types.SigCommand, chain.Name, commandBatch.GetID()),
 	); err != nil {
 		return nil, err
 	}
