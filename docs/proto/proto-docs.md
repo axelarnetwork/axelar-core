@@ -4010,6 +4010,7 @@ Params represent the genesis parameters for the module
 | `keygen_grace_period` | [int64](#int64) |  |  |
 | `signing_timeout` | [int64](#int64) |  |  |
 | `signing_grace_period` | [int64](#int64) |  |  |
+| `active_epoch_count` | [uint64](#uint64) |  |  |
 
 
 

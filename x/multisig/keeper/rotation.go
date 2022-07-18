@@ -88,6 +88,11 @@ func (k Keeper) RotateKey(ctx sdk.Context, chainName nexus.ChainName) error {
 	k.SetKey(ctx, key)
 	k.setKeyRotationCount(ctx, chainName, nextRotationCount)
 
+	params := k.getParams(ctx)
+	if keyEpoch.Epoch > params.ActiveEpochCount {
+		k.deactivateKeyAtEpoch(ctx, chainName, keyEpoch.Epoch-params.ActiveEpochCount)
+	}
+
 	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewKeyRotated(chainName, keyEpoch.GetKeyID())))
 	k.Logger(ctx).Info("new key rotated",
 		"chain", chainName,
@@ -123,6 +128,14 @@ func (k Keeper) GetActiveKeyIDs(ctx sdk.Context, chainName nexus.ChainName) []ex
 
 	// TODO: deactivate old epochs, otherwise this only returns once all epochs are iterated (and returns all keys)
 	return keys
+}
+
+func (k Keeper) deactivateKeyAtEpoch(ctx sdk.Context, chainName nexus.ChainName, epoch uint64) {
+	keyEpoch := funcs.MustOk(k.getKeyEpoch(ctx, chainName, epoch))
+	key := funcs.MustOk(k.getKey(ctx, keyEpoch.GetKeyID()))
+
+	key.State = types.Inactive
+	k.SetKey(ctx, key)
 }
 
 func (k Keeper) getKeyEpoch(ctx sdk.Context, chainName nexus.ChainName, epoch uint64) (keyEpoch types.KeyEpoch, ok bool) {

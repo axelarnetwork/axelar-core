@@ -146,9 +146,6 @@ var _ exported.Key = &KeyMock{}
 //
 // 		// make and configure a mocked exported.Key
 // 		mockedKey := &KeyMock{
-// 			GetKeyIDFunc: func() exported.KeyID {
-// 				panic("mock out the GetKeyID method")
-// 			},
 // 			GetMinPassingWeightFunc: func() sdk.Uint {
 // 				panic("mock out the GetMinPassingWeight method")
 // 			},
@@ -168,9 +165,6 @@ var _ exported.Key = &KeyMock{}
 //
 // 	}
 type KeyMock struct {
-	// GetKeyIDFunc mocks the GetKeyID method.
-	GetKeyIDFunc func() exported.KeyID
-
 	// GetMinPassingWeightFunc mocks the GetMinPassingWeight method.
 	GetMinPassingWeightFunc func() sdk.Uint
 
@@ -185,9 +179,6 @@ type KeyMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
-		// GetKeyID holds details about calls to the GetKeyID method.
-		GetKeyID []struct {
-		}
 		// GetMinPassingWeight holds details about calls to the GetMinPassingWeight method.
 		GetMinPassingWeight []struct {
 		}
@@ -205,37 +196,10 @@ type KeyMock struct {
 			ValAddress sdk.ValAddress
 		}
 	}
-	lockGetKeyID            sync.RWMutex
 	lockGetMinPassingWeight sync.RWMutex
 	lockGetParticipants     sync.RWMutex
 	lockGetPubKey           sync.RWMutex
 	lockGetWeight           sync.RWMutex
-}
-
-// GetKeyID calls GetKeyIDFunc.
-func (mock *KeyMock) GetKeyID() exported.KeyID {
-	if mock.GetKeyIDFunc == nil {
-		panic("KeyMock.GetKeyIDFunc: method is nil but Key.GetKeyID was just called")
-	}
-	callInfo := struct {
-	}{}
-	mock.lockGetKeyID.Lock()
-	mock.calls.GetKeyID = append(mock.calls.GetKeyID, callInfo)
-	mock.lockGetKeyID.Unlock()
-	return mock.GetKeyIDFunc()
-}
-
-// GetKeyIDCalls gets all the calls that were made to GetKeyID.
-// Check the length with:
-//     len(mockedKey.GetKeyIDCalls())
-func (mock *KeyMock) GetKeyIDCalls() []struct {
-} {
-	var calls []struct {
-	}
-	mock.lockGetKeyID.RLock()
-	calls = mock.calls.GetKeyID
-	mock.lockGetKeyID.RUnlock()
-	return calls
 }
 
 // GetMinPassingWeight calls GetMinPassingWeightFunc.
