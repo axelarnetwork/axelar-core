@@ -100,7 +100,7 @@ func (k Keeper) RotateKey(ctx sdk.Context, chainName nexus.ChainName) error {
 // GetActiveKeyIDs returns all active keys in reverse temporal order. The first key is the key of the current epoch
 func (k Keeper) GetActiveKeyIDs(ctx sdk.Context, chainName nexus.ChainName) []exported.KeyID {
 	epochs := k.getStore(ctx).ReverseIterator(keyEpochPrefix.AppendStr(chainName.String()))
-	utils.CloseLogError(epochs, k.Logger(ctx))
+	defer utils.CloseLogError(epochs, k.Logger(ctx))
 
 	var keys []exported.KeyID
 	for ; epochs.Valid(); epochs.Next() {
