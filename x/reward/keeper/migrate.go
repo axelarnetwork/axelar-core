@@ -13,8 +13,9 @@ import (
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
-var OldKeyInflationRate = []byte("TssRelativeInflationRate")
-
+// GetMigrationHandler returns the migration handler for the reward module
+// - migrating params key TssRelativeInflationRate to KeyMgmtRelativeInflationRate
+// - migrate tss rewards pool to multisig
 func GetMigrationHandler(keeper Keeper, paramStoreKey sdk.StoreKey, paramTStoreKey sdk.StoreKey) func(ctx sdk.Context) error {
 	return func(ctx sdk.Context) error {
 		migrateParamKey(ctx, keeper, paramStoreKey, paramTStoreKey)
@@ -24,11 +25,11 @@ func GetMigrationHandler(keeper Keeper, paramStoreKey sdk.StoreKey, paramTStoreK
 
 func migrateParamKey(ctx sdk.Context, keeper Keeper, paramStoreKey sdk.StoreKey, paramTStoreKey sdk.StoreKey) {
 	oldSubspace := paramtypes.NewSubspace(keeper.cdc, types.ModuleCdc.LegacyAmino, paramStoreKey, paramTStoreKey, keeper.paramSpace.Name()).
-		WithKeyTable(paramtypes.NewKeyTable().RegisterParamSet(&OldParams{}))
-	var params OldParams
+		WithKeyTable(paramtypes.NewKeyTable().RegisterParamSet(&oldParams{}))
+	var params oldParams
 	oldSubspace.GetParamSet(ctx, &params)
 	store := prefix.NewStore(ctx.KVStore(paramStoreKey), append([]byte(oldSubspace.Name()), '/'))
-	store.Delete(KeyTssRelativeInflationRate)
+	store.Delete(keyTssRelativeInflationRate)
 
 	keeper.SetParams(ctx, types.Params(params))
 }
@@ -56,14 +57,14 @@ func (k Keeper) deletePool(ctx sdk.Context, name string) {
 	k.getStore(ctx).Delete(key)
 }
 
-var KeyTssRelativeInflationRate = []byte("TssRelativeInflationRate")
+var keyTssRelativeInflationRate = []byte("TssRelativeInflationRate")
 
-type OldParams types.Params
+type oldParams types.Params
 
-func (m *OldParams) ParamSetPairs() paramtypes.ParamSetPairs {
+func (m *oldParams) ParamSetPairs() paramtypes.ParamSetPairs {
 	return paramtypes.ParamSetPairs{
 		paramtypes.NewParamSetPair(types.KeyExternalChainVotingInflationRate, &m.ExternalChainVotingInflationRate, validateExternalChainVotingInflationRate),
-		paramtypes.NewParamSetPair(KeyTssRelativeInflationRate, &m.KeyMgmtRelativeInflationRate, validateTSSRelativeInflationRate),
+		paramtypes.NewParamSetPair(keyTssRelativeInflationRate, &m.KeyMgmtRelativeInflationRate, validateTSSRelativeInflationRate),
 	}
 }
 

@@ -62,7 +62,7 @@ func (k Keeper) AssignKey(ctx sdk.Context, chainName nexus.ChainName, keyID expo
 	k.SetKey(ctx, key)
 	k.setKeyEpoch(ctx, types.NewKeyEpoch(nextRotationCount, chainName, keyID))
 
-	ctx.EventManager().EmitTypedEvent(types.NewKeyAssigned(chainName, keyID))
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewKeyAssigned(chainName, keyID)))
 	k.Logger(ctx).Info("new key assigned",
 		"chain", chainName,
 		"keyID", keyID,
@@ -88,7 +88,7 @@ func (k Keeper) RotateKey(ctx sdk.Context, chainName nexus.ChainName) error {
 	k.SetKey(ctx, key)
 	k.setKeyRotationCount(ctx, chainName, nextRotationCount)
 
-	ctx.EventManager().EmitTypedEvent(types.NewKeyRotated(chainName, keyEpoch.GetKeyID()))
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewKeyRotated(chainName, keyEpoch.GetKeyID())))
 	k.Logger(ctx).Info("new key rotated",
 		"chain", chainName,
 		"keyID", keyEpoch.GetKeyID(),
@@ -97,6 +97,7 @@ func (k Keeper) RotateKey(ctx sdk.Context, chainName nexus.ChainName) error {
 	return nil
 }
 
+// GetActiveKeyIDs returns all active keys in reverse temporal order. The first key is the key of the current epoch
 func (k Keeper) GetActiveKeyIDs(ctx sdk.Context, chainName nexus.ChainName) []exported.KeyID {
 	epochs := k.getStore(ctx).ReverseIterator(keyEpochPrefix.AppendStr(chainName.String()))
 	utils.CloseLogError(epochs, k.Logger(ctx))

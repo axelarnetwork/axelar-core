@@ -129,12 +129,14 @@ type Rewarder interface {
 	GetPool(ctx sdk.Context, name string) reward.RewardPool
 }
 
+// MultiSigKeeper provides multisig functionality
 type MultiSigKeeper interface {
 	SetKey(ctx sdk.Context, key types.Key)
 	AssignKey(ctx sdk.Context, chain nexus.ChainName, id exported1.KeyID) error
 	RotateKey(ctx sdk.Context, chain nexus.ChainName) error
 }
 
+// Slasher provides slasher functionality
 type Slasher interface {
 	GetValidatorSigningInfo(ctx sdk.Context, address sdk.ConsAddress) (slashingtypes.ValidatorSigningInfo, bool)
 	SignedBlocksWindow(ctx sdk.Context) int64

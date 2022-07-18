@@ -61,7 +61,7 @@ func TestGetMigrationHandler(t *testing.T) {
 			}
 
 			paramstore.Set(types.KeyExternalChainVotingInflationRate, funcs.Must(types.ModuleCdc.LegacyAmino.MarshalJSON(expectedParams.ExternalChainVotingInflationRate)))
-			paramstore.Set(KeyTssRelativeInflationRate, funcs.Must(types.ModuleCdc.LegacyAmino.MarshalJSON(expectedParams.KeyMgmtRelativeInflationRate)))
+			paramstore.Set(keyTssRelativeInflationRate, funcs.Must(types.ModuleCdc.LegacyAmino.MarshalJSON(expectedParams.KeyMgmtRelativeInflationRate)))
 
 			// Params with the post-migration keeper reads different keys, so it shouldn't be able to fill the params correctly
 			assert.NotEqual(t, expectedParams, k.GetParams(ctx))
@@ -77,7 +77,7 @@ func TestGetMigrationHandler(t *testing.T) {
 			handler := GetMigrationHandler(k, paramStoreKey, paramTStoreKey)
 			assert.NoError(t, handler(ctx))
 
-			assert.Nil(t, paramstore.Get(KeyTssRelativeInflationRate))
+			assert.Nil(t, paramstore.Get(keyTssRelativeInflationRate))
 
 			actualParams := k.GetParams(ctx)
 			assert.Equal(t, expectedParams, actualParams)
