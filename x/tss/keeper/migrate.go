@@ -116,6 +116,10 @@ func migrate(ctx sdk.Context, tss Keeper, multisig types.MultiSigKeeper, snapsho
 		PubKeys:          pubkeys,
 		SigningThreshold: utils.NewThreshold(keyInfo.TargetNum, keyInfo.Count()),
 	}
+
+	if err := newKey.ValidateBasic(); err != nil {
+		return err
+	}
 	multisig.SetKey(ctx, newKey)
 
 	tss.Logger(ctx).Debug(fmt.Sprintf("successfully migrated %s key %s for chain %s", exported.SecondaryKey, key.ID, chain))
