@@ -286,7 +286,7 @@
           "blockExplorerUrls": ["https://moonbase.moonscan.io"]
         }
       ],
-      "image": "/images/chains/moonbeam.png"
+      "image": "/images/chains/moonbase.png"
     },
     {
       "id": "aurora",
