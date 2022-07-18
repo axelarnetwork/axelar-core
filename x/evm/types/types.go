@@ -1511,14 +1511,14 @@ func (m Event) ValidateBasic() error {
 		if event.MultisigOwnershipTransferred == nil {
 			return fmt.Errorf("missing event MultisigOwnershipTransferred")
 		}
-		if err := event.MultisigOwnershipTransferred.Validate(); err != nil {
+		if err := event.MultisigOwnershipTransferred.ValidateBasic(); err != nil {
 			return sdkerrors.Wrap(err, "invalid event MultisigOwnershipTransferred")
 		}
 	case *Event_MultisigOperatorshipTransferred:
 		if event.MultisigOperatorshipTransferred == nil {
 			return fmt.Errorf("missing event MultisigOperatorshipTransferred")
 		}
-		if err := event.MultisigOperatorshipTransferred.Validate(); err != nil {
+		if err := event.MultisigOperatorshipTransferred.ValidateBasic(); err != nil {
 			return sdkerrors.Wrap(err, "invalid event MultisigOperatorshipTransferred")
 		}
 	default:
@@ -1637,8 +1637,8 @@ func (m EventTokenDeployed) ValidateBasic() error {
 	return nil
 }
 
-// Validate returns an error if the event multisig ownership transferred is invalid
-func (m EventMultisigOwnershipTransferred) Validate() error {
+// ValidateBasic returns an error if the event multisig ownership transferred is invalid
+func (m EventMultisigOwnershipTransferred) ValidateBasic() error {
 	NonzeroAddress := func(addr Address) bool { return !addr.IsZeroAddress() }
 
 	if !slices.All(m.PreOwners, NonzeroAddress) {
@@ -1657,14 +1657,20 @@ func (m EventMultisigOwnershipTransferred) Validate() error {
 	return nil
 }
 
-// Validate returns an error if the event multisig ownership transferred is invalid
-func (m EventMultisigOperatorshipTransferred) Validate() error {
-	NonzeroAddress := func(addr Address) bool { return !addr.IsZeroAddress() }
-
-	if !slices.All(m.NewOperators, NonzeroAddress) {
+// ValidateBasic returns an error if the event multisig ownership transferred is invalid
+func (m EventMultisigOperatorshipTransferred) ValidateBasic() error {
+	if slices.Any(m.NewOperators, Address.IsZeroAddress) {
 		return fmt.Errorf("invalid new operators")
 	}
-	if m.NewThreshold.IsZero() {
+
+	if len(m.NewOperators) != len(m.NewWeights) {
+		return fmt.Errorf("length of new operators does not match new weights")
+	}
+
+	totalWeight := sdk.ZeroUint()
+	slices.ForEach(m.NewWeights, func(w sdk.Uint) { totalWeight = totalWeight.Add(w) })
+
+	if m.NewThreshold.IsZero() || m.NewThreshold.GT(totalWeight) {
 		return fmt.Errorf("invalid new threshold")
 	}
 
