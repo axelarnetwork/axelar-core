@@ -11,7 +11,6 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/x/ante/types"
-	"github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	"github.com/axelarnetwork/utils/funcs"
 )
 
@@ -110,14 +109,14 @@ func (d UndelegateDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate boo
 			for _, chain := range chains {
 				nextKeyID, idFound := d.multiSig.GetNextKeyID(ctx, chain.Name)
 				key := funcs.MustOk(d.multiSig.GetKey(ctx, nextKeyID))
-				if !(idFound && holdsShares(key, valAddress)) {
+				if idFound && key.GetWeight(valAddress).IsZero() {
 					return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "validator %s cannot unbond while holding multiSig share of %s's next key %s", valAddress, chain.Name, nextKeyID)
 				}
 
 				activeKeyIDs := d.multiSig.GetActiveKeyIDs(ctx, chain.Name)
 				for _, activeKeyID := range activeKeyIDs {
 					key := funcs.MustOk(d.multiSig.GetKey(ctx, activeKeyID))
-					if !holdsShares(key, valAddress) {
+					if key.GetWeight(valAddress).IsZero() {
 						return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "validator %s cannot unbond while holding multiSig share of %s's active key %s", valAddress, chain.Name, activeKeyID)
 					}
 				}
@@ -128,9 +127,4 @@ func (d UndelegateDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate boo
 	}
 
 	return next(ctx, tx, simulate)
-}
-
-func holdsShares(key exported.Key, valAddress sdk.ValAddress) bool {
-	_, ok := key.GetPubKey(valAddress)
-	return ok
 }
