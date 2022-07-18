@@ -20,6 +20,8 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/multisig/keeper/mock"
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
 	mock2 "github.com/axelarnetwork/axelar-core/x/multisig/types/mock"
+	"github.com/axelarnetwork/axelar-core/x/multisig/types/testutils"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
@@ -37,6 +39,7 @@ func TestMsgServer(t *testing.T) {
 		ctx         sdk.Context
 		req         *types.SubmitPubKeyRequest
 		snapshotter *mock.SnapshotterMock
+		nexusK      *mock2.NexusMock
 		keyID       exported.KeyID
 		expiresAt   int64
 	)
@@ -52,8 +55,9 @@ func TestMsgServer(t *testing.T) {
 				return snapshot.NewSnapshot(ctx.BlockTime(), ctx.BlockHeight(), validators, sdk.NewUint(10)), nil
 			},
 		}
+		nexusK = &mock2.NexusMock{}
 
-		msgServer = keeper.NewMsgServer(k, snapshotter, &mock2.StakerMock{})
+		msgServer = keeper.NewMsgServer(k, snapshotter, &mock2.StakerMock{}, nexusK)
 	})
 
 	whenSenderIsProxy := When("the sender is a proxy", func() {
@@ -323,4 +327,42 @@ func TestMsgServer(t *testing.T) {
 			Run(t)
 	})
 
+	t.Run("RotateKey", func(t *testing.T) {
+		var (
+			keyID exported.KeyID
+			chain nexus.ChainName
+		)
+
+		givenMsgServer.
+			When("key is generated", func() {
+				key := testutils.Key()
+				keyID = key.GetID()
+
+				k.SetKey(ctx, key)
+			}).
+			Branch(
+				When("chain is unknown", func() {
+					nexusK.GetChainFunc = func(sdk.Context, nexus.ChainName) (nexus.Chain, bool) { return nexus.Chain{}, false }
+				}).
+					Then("should fail", func(t *testing.T) {
+						_, err := msgServer.RotateKey(sdk.WrapSDKContext(ctx), types.NewRotateKeyRequest(rand.AccAddr(), nexus.ChainName(rand.AlphaStrBetween(1, 5)), keyID))
+						assert.Error(t, err)
+					}),
+
+				When("chain is known", func() {
+					chain = nexus.ChainName(rand.AlphaStrBetween(1, 5))
+					nexusK.GetChainFunc = func(ctx sdk.Context, cn nexus.ChainName) (nexus.Chain, bool) {
+						return nexus.Chain{}, cn == chain
+					}
+				}).
+					Then("should succeed but only once", func(t *testing.T) {
+						_, err := msgServer.RotateKey(sdk.WrapSDKContext(ctx), types.NewRotateKeyRequest(rand.AccAddr(), chain, keyID))
+						assert.NoError(t, err)
+
+						_, err = msgServer.RotateKey(sdk.WrapSDKContext(ctx), types.NewRotateKeyRequest(rand.AccAddr(), chain, keyID))
+						assert.Error(t, err)
+					}),
+			).
+			Run(t)
+	})
 }

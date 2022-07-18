@@ -80,16 +80,18 @@ type AppModule struct {
 	staker      types.Staker
 	snapshotter keeper.Snapshotter
 	rewarder    types.Rewarder
+	nexus       types.Nexus
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(k keeper.Keeper, staker types.Staker, slasher types.Slasher, snapshotter types.Snapshotter, rewarder types.Rewarder) AppModule {
+func NewAppModule(k keeper.Keeper, staker types.Staker, slasher types.Slasher, snapshotter types.Snapshotter, rewarder types.Rewarder, nexus types.Nexus) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
 		staker:         staker,
 		snapshotter:    keeper.NewSnapshotCreator(snapshotter, staker, slasher),
 		rewarder:       rewarder,
+		nexus:          nexus,
 	}
 }
 
@@ -130,7 +132,7 @@ func (am AppModule) LegacyQuerierHandler(*codec.LegacyAmino) sdk.Querier {
 // RegisterServices registers a GRPC query service to respond to the
 // module-specific GRPC queries.
 func (am AppModule) RegisterServices(cfg module.Configurator) {
-	types.RegisterMsgServiceServer(utils.ErrorWrapper{Server: cfg.MsgServer(), Err: types.ErrMultisig, Logger: am.keeper.Logger}, keeper.NewMsgServer(am.keeper, am.snapshotter, am.staker))
+	types.RegisterMsgServiceServer(utils.ErrorWrapper{Server: cfg.MsgServer(), Err: types.ErrMultisig, Logger: am.keeper.Logger}, keeper.NewMsgServer(am.keeper, am.snapshotter, am.staker, am.nexus))
 }
 
 // BeginBlock executes all state transitions this module requires at the beginning of each new block

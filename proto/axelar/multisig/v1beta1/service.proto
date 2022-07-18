@@ -32,4 +32,11 @@ service MsgService {
       body : "*"
     };
   }
+
+  rpc RotateKey(RotateKeyRequest) returns (RotateKeyResponse) {
+    option (google.api.http) = {
+      post : "/axelar/multisig/rotate_key"
+      body : "*"
+    };
+  }
 }
