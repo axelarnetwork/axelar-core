@@ -254,7 +254,7 @@ func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, ax
 	evmNewChain := subscribe(evmTypes.EventTypeNewChain, evmTypes.ModuleName, evmTypes.AttributeValueUpdate)
 	evmDepConf := subscribe(evmTypes.EventTypeDepositConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
 	evmTokConf := subscribe(evmTypes.EventTypeTokenConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
-	evmTraConf := subscribe(evmTypes.EventTypeTransferKeyConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
+	evmTraConf := eventBus.Subscribe(eventFilter[*evmTypes.ConfirmKeyTransfer]())
 	evmGatewayTxConf := subscribe(evmTypes.EventTypeGatewayTxConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
 
 	multisigKeygen := eventBus.Subscribe(eventFilter[*multisigTypes.KeygenStarted]())
@@ -300,7 +300,7 @@ func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, ax
 		createJob(evmNewChain, evmMgr.ProcessNewChain, cancelEventCtx, logger),
 		createJob(evmDepConf, evmMgr.ProcessDepositConfirmation, cancelEventCtx, logger),
 		createJob(evmTokConf, evmMgr.ProcessTokenConfirmation, cancelEventCtx, logger),
-		createJob(evmTraConf, evmMgr.ProcessTransferKeyConfirmation, cancelEventCtx, logger),
+		createJobTyped(evmTraConf, evmMgr.ProcessTransferKeyConfirmation, cancelEventCtx, logger),
 		createJob(evmGatewayTxConf, evmMgr.ProcessGatewayTxConfirmation, cancelEventCtx, logger),
 		createJobTyped(multisigKeygen, multisigMgr.ProcessKeygenStarted, cancelEventCtx, logger),
 		createJobTyped(multisigSigning, multisigMgr.ProcessSigningStarted, cancelEventCtx, logger),

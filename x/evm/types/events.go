@@ -1,5 +1,10 @@
 package types
 
+import (
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
+)
+
 // Event types
 const (
 	EventTypeNewChain                = "newChain"
@@ -52,3 +57,14 @@ const (
 	AttributeValueConfirm = "confirm"
 	AttributeValueVote    = "vote"
 )
+
+// NewConfirmKeyTransfer is the constructor for event confirm key transfer
+func NewConfirmKeyTransfer(chain nexus.ChainName, txID Hash, gatewayAddress Address, confirmationHeight uint64, pollID vote.PollID) *ConfirmKeyTransfer {
+	return &ConfirmKeyTransfer{
+		Chain:              chain,
+		TxID:               txID,
+		GatewayAddress:     gatewayAddress,
+		ConfirmationHeight: confirmationHeight,
+		PollID:             pollID,
+	}
+}
