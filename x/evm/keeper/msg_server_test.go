@@ -314,25 +314,6 @@ func TestCreateBurnTokens(t *testing.T) {
 		assert.Len(t, evmChainKeeper.DeleteDepositCalls(), 0)
 	}).Repeat(repeats))
 
-	t.Run("should return error if the next key is assigned", testutils.Func(func(t *testing.T) {
-		setup()
-
-		evmChainKeeper.GetConfirmedDepositsFunc = func(ctx sdk.Context) []types.ERC20Deposit {
-			return []types.ERC20Deposit{{}}
-		}
-		multisigKeeper.GetNextKeyIDFunc = func(ctx sdk.Context, chain nexus.ChainName) (multisig.KeyID, bool) {
-			if chain == exported.Ethereum.Name {
-				return multisigTestUtils.KeyID(), true
-			}
-
-			return "", false
-		}
-
-		_, err := server.CreateBurnTokens(sdk.WrapSDKContext(ctx), req)
-
-		assert.Error(t, err)
-	}).Repeat(repeats))
-
 	t.Run("should create burn commands", testutils.Func(func(t *testing.T) {
 		setup()
 
