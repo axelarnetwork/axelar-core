@@ -171,11 +171,8 @@ func (s msgServer) activateChain(ctx sdk.Context, chain exported.Chain) {
 	}
 
 	// no chain maintainer for cosmos chains
-	if !s.axelarnet.IsCosmosChain(ctx, chain.Name) {
-		if err := isActivationThresholdMet(ctx, s.Nexus, s.slashing, s.snapshotter, chain); err != nil {
-			s.Logger(ctx).Info(fmt.Sprintf("activation threshold is not met for %s due to: %s", chain.Name, err.Error()))
-			return
-		}
+	if !s.axelarnet.IsCosmosChain(ctx, chain.Name) && s.isActivationThresholdMet(ctx, s.Nexus, s.slashing, s.snapshotter, chain) {
+		return
 	}
 
 	s.Nexus.ActivateChain(ctx, chain)
@@ -210,7 +207,7 @@ func (s msgServer) deactivateChain(ctx sdk.Context, chain exported.Chain) {
 	)
 }
 
-func isActivationThresholdMet(ctx sdk.Context, nexus types.Nexus, slashing types.SlashingKeeper, snapshotter types.Snapshotter, chain exported.Chain) error {
+func (s msgServer) isActivationThresholdMet(ctx sdk.Context, nexus types.Nexus, slashing types.SlashingKeeper, snapshotter types.Snapshotter, chain exported.Chain) bool {
 	isTombstoned := func(v snapshot.ValidatorI) bool {
 		consAdd, err := v.GetConsAddr()
 		if err != nil {
@@ -242,8 +239,11 @@ func isActivationThresholdMet(ctx sdk.Context, nexus types.Nexus, slashing types
 		snapshot.QuadraticWeightFunc,
 		params.ChainActivationThreshold,
 	)
+	if err != nil {
+		s.Logger(ctx).Info(fmt.Sprintf("activation threshold is not met for %s due to: %s", chain.Name, err.Error()))
+	}
 
-	return err
+	return err == nil
 }
 
 func (s msgServer) RegisterAssetFee(c context.Context, req *types.RegisterAssetFeeRequest) (*types.RegisterAssetFeeResponse, error) {
