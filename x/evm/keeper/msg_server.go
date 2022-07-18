@@ -17,6 +17,7 @@ import (
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	"github.com/axelarnetwork/utils/funcs"
 )
 
 var _ types.MsgServiceServer = msgServer{}
@@ -350,7 +351,8 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 		return nil, err
 	}
 
-	ctx.EventManager().EmitTypedEvent(types.NewConfirmKeyTransfer(chain.Name, req.TxID, types.Address(gatewayAddr), params.ConfirmationHeight, pollID))
+	params := keeper.GetParams(ctx)
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewConfirmKeyTransfer(chain.Name, req.TxID, types.Address(gatewayAddr), params.ConfirmationHeight, pollID)))
 	// TODO: remove the legacy event
 	ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeTransferKeyConfirmation,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),

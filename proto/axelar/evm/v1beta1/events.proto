@@ -28,8 +28,8 @@ message ConfirmKeyTransfer {
 message PollFailed {
   string tx_id = 1 [ (gogoproto.customname) = "TxID" ];
   string chain = 2
-  [ (gogoproto.casttype) =
-      "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
   uint64 poll_id = 3 [
     (gogoproto.customname) = "PollID",
     (gogoproto.customtype) =
@@ -41,8 +41,8 @@ message PollFailed {
 message PollExpired {
   string tx_id = 1 [ (gogoproto.customname) = "TxID" ];
   string chain = 2
-  [ (gogoproto.casttype) =
-      "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
   uint64 poll_id = 3 [
     (gogoproto.customname) = "PollID",
     (gogoproto.customtype) =
@@ -50,4 +50,3 @@ message PollExpired {
     (gogoproto.nullable) = false
   ];
 }
-

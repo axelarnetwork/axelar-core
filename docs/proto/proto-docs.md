@@ -110,6 +110,7 @@
     - [QueryService](#axelar.axelarnet.v1beta1.QueryService)
   
 - [axelar/evm/v1beta1/events.proto](#axelar/evm/v1beta1/events.proto)
+    - [ConfirmKeyTransfer](#axelar.evm.v1beta1.ConfirmKeyTransfer)
     - [PollExpired](#axelar.evm.v1beta1.PollExpired)
     - [PollFailed](#axelar.evm.v1beta1.PollFailed)
   
@@ -1895,6 +1896,25 @@ QueryService defines the gRPC querier service.
 
 
 
+<a name="axelar.evm.v1beta1.ConfirmKeyTransfer"></a>
+
+### ConfirmKeyTransfer
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `tx_id` | [bytes](#bytes) |  |  |
+| `gateway_address` | [bytes](#bytes) |  |  |
+| `confirmation_height` | [uint64](#uint64) |  |  |
+| `poll_id` | [uint64](#uint64) |  |  |
+
+
+
+
+
+
 <a name="axelar.evm.v1beta1.PollExpired"></a>
 
 ### PollExpired
@@ -2231,6 +2251,7 @@ ERC20TokenMetadata describes information about an ERC20 token
 | ----- | ---- | ----- | ----------- |
 | `new_operators` | [bytes](#bytes) | repeated |  |
 | `new_threshold` | [bytes](#bytes) |  |  |
+| `new_weights` | [bytes](#bytes) | repeated |  |
 
 
 
