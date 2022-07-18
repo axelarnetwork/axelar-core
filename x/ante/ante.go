@@ -108,15 +108,15 @@ func (d UndelegateDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate boo
 
 			for _, chain := range chains {
 				nextKeyID, idFound := d.multiSig.GetNextKeyID(ctx, chain.Name)
-				key := funcs.MustOk(d.multiSig.GetKey(ctx, nextKeyID))
-				if idFound && key.GetWeight(valAddress).IsZero() {
+				key, keyFound := d.multiSig.GetKey(ctx, nextKeyID)
+				if idFound && keyFound && !key.GetWeight(valAddress).IsZero() {
 					return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "validator %s cannot unbond while holding multiSig share of %s's next key %s", valAddress, chain.Name, nextKeyID)
 				}
 
 				activeKeyIDs := d.multiSig.GetActiveKeyIDs(ctx, chain.Name)
 				for _, activeKeyID := range activeKeyIDs {
 					key := funcs.MustOk(d.multiSig.GetKey(ctx, activeKeyID))
-					if key.GetWeight(valAddress).IsZero() {
+					if !key.GetWeight(valAddress).IsZero() {
 						return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "validator %s cannot unbond while holding multiSig share of %s's active key %s", valAddress, chain.Name, activeKeyID)
 					}
 				}
