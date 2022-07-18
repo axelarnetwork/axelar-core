@@ -125,8 +125,13 @@ func (s msgServer) RotateKey(c context.Context, req *types.RotateKeyRequest) (*t
 		return nil, fmt.Errorf("manual key rotation is only allowed when no key is active")
 	}
 
-	s.AssignKey(ctx, req.Chain, req.KeyID)
-	s.Keeper.RotateKey(ctx, req.Chain)
+	if err := s.AssignKey(ctx, req.Chain, req.KeyID); err != nil {
+		return nil, sdkerrors.Wrap(err, "failed to assign the next key")
+	}
+
+	if err := s.Keeper.RotateKey(ctx, req.Chain); err != nil {
+		return nil, sdkerrors.Wrap(err, "failed to rotate the next key")
+	}
 
 	return &types.RotateKeyResponse{}, nil
 }
