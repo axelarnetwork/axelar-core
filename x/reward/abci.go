@@ -55,6 +55,8 @@ func handleKeyMgmtInflation(ctx sdk.Context, k types.Rewarder, m types.Minter, s
 
 	validatorIterFn := func(_ int64, v stakingtypes.ValidatorI) bool {
 		validator := v.(stakingtypes.Validator)
+
+		// TODO: remove tss dependency
 		illegibility, err := ss.GetValidatorIllegibility(ctx, &validator)
 		if err != nil {
 			panic(err)
