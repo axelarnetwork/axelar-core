@@ -10,7 +10,7 @@ message PollFailed {
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
-  uint64 poll_id = 4 [
+  uint64 poll_id = 3 [
     (gogoproto.customname) = "PollID",
     (gogoproto.customtype) =
         "github.com/axelarnetwork/axelar-core/x/vote/exported.PollID",
@@ -23,7 +23,7 @@ message PollExpired {
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
-  uint64 poll_id = 4 [
+  uint64 poll_id = 3 [
     (gogoproto.customname) = "PollID",
     (gogoproto.customtype) =
         "github.com/axelarnetwork/axelar-core/x/vote/exported.PollID",
