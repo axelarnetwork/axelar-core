@@ -62,7 +62,7 @@ func (k Keeper) AssignKey(ctx sdk.Context, chainName nexus.ChainName, keyID expo
 	k.SetKey(ctx, key)
 	k.setKeyEpoch(ctx, types.NewKeyEpoch(nextRotationCount, chainName, keyID))
 
-	ctx.EventManager().EmitTypedEvent(types.NewKeyAssigned(chainName, keyID))
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewKeyAssigned(chainName, keyID)))
 	k.Logger(ctx).Info("new key assigned",
 		"chain", chainName,
 		"keyID", keyID,
@@ -93,13 +93,41 @@ func (k Keeper) RotateKey(ctx sdk.Context, chainName nexus.ChainName) error {
 		k.deactivateKeyAtEpoch(ctx, chainName, keyEpoch.Epoch-params.ActiveEpochCount)
 	}
 
-	ctx.EventManager().EmitTypedEvent(types.NewKeyRotated(chainName, keyEpoch.GetKeyID()))
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewKeyRotated(chainName, keyEpoch.GetKeyID())))
 	k.Logger(ctx).Info("new key rotated",
 		"chain", chainName,
 		"keyID", keyEpoch.GetKeyID(),
 	)
 
 	return nil
+}
+
+// GetActiveKeyIDs returns all active keys in reverse temporal order. The first key is the key of the current epoch
+func (k Keeper) GetActiveKeyIDs(ctx sdk.Context, chainName nexus.ChainName) []exported.KeyID {
+	epochs := k.getStore(ctx).ReverseIterator(keyEpochPrefix.AppendStr(chainName.String()))
+	defer utils.CloseLogError(epochs, k.Logger(ctx))
+
+	var keys []exported.KeyID
+	for ; epochs.Valid(); epochs.Next() {
+		var epoch types.KeyEpoch
+		epochs.UnmarshalValue(&epoch)
+		key := funcs.MustOk(k.getKey(ctx, epoch.KeyID))
+
+		switch key.State {
+		case types.Inactive:
+			// assumption: once an epoch is inactive, no older epoch is active so we can return early
+			return keys
+		case types.Assigned:
+			continue
+		case types.Active:
+			keys = append(keys, key.ID)
+		default:
+			panic(fmt.Sprintf("unexpected key state %s", key.State.String()))
+		}
+	}
+
+	// TODO: deactivate old epochs, otherwise this only returns once all epochs are iterated (and returns all keys)
+	return keys
 }
 
 func (k Keeper) deactivateKeyAtEpoch(ctx sdk.Context, chainName nexus.ChainName, epoch uint64) {

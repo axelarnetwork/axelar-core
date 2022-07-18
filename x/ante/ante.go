@@ -11,7 +11,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/x/ante/types"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	"github.com/axelarnetwork/utils/funcs"
 )
 
 func logger(ctx sdk.Context) log.Logger {
@@ -66,24 +66,24 @@ func (d LogMsgDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, n
 	return next(ctx, tx, simulate)
 }
 
-// ValidateValidatorDeregisteredTssDecorator checks if the unbonding validator holds any tss share of active crypto keys
-type ValidateValidatorDeregisteredTssDecorator struct {
-	tss         types.Tss
+// UndelegateDecorator checks if the unbonding validator holds any multiSig share of active crypto keys
+type UndelegateDecorator struct {
+	multiSig    types.MultiSig
 	nexus       types.Nexus
 	snapshotter types.Snapshotter
 }
 
-// NewValidateValidatorDeregisteredTssDecorator constructor for ValidateValidatorDeregisteredTssDecorator
-func NewValidateValidatorDeregisteredTssDecorator(tss types.Tss, nexus types.Nexus, snapshotter types.Snapshotter) ValidateValidatorDeregisteredTssDecorator {
-	return ValidateValidatorDeregisteredTssDecorator{
-		tss,
+// NewUndelegateDecorator constructor for UndelegateDecorator
+func NewUndelegateDecorator(multiSig types.MultiSig, nexus types.Nexus, snapshotter types.Snapshotter) UndelegateDecorator {
+	return UndelegateDecorator{
+		multiSig,
 		nexus,
 		snapshotter,
 	}
 }
 
-// AnteHandle fails the transaction if it finds any validator holding tss share of active keys is trying to unbond
-func (d ValidateValidatorDeregisteredTssDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
+// AnteHandle fails the transaction if it finds any validator holding multiSig share of active keys is trying to unbond
+func (d UndelegateDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
 	msgs := tx.GetMsgs()
 
 	for _, msg := range msgs {
@@ -107,26 +107,17 @@ func (d ValidateValidatorDeregisteredTssDecorator) AnteHandle(ctx sdk.Context, t
 			chains := d.nexus.GetChains(ctx)
 
 			for _, chain := range chains {
-				for _, keyRole := range tss.GetKeyRoles() {
-					currentKeyID, found := d.tss.GetCurrentKeyID(ctx, chain, keyRole)
-					if found && isValidatorHoldingTssShareOf(ctx, d.tss, d.snapshotter, valAddress, currentKeyID) {
-						return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "validator %s cannot unbond while holding tss share of %s's current %s key %s", valAddress, chain.Name, keyRole.SimpleString(), currentKeyID)
-					}
+				nextKeyID, idFound := d.multiSig.GetNextKeyID(ctx, chain.Name)
+				key, keyFound := d.multiSig.GetKey(ctx, nextKeyID)
+				if idFound && keyFound && !key.GetWeight(valAddress).IsZero() {
+					return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "validator %s cannot unbond while holding multiSig share of %s's next key %s", valAddress, chain.Name, nextKeyID)
+				}
 
-					nextKeyID, found := d.tss.GetNextKeyID(ctx, chain, keyRole)
-					if found && isValidatorHoldingTssShareOf(ctx, d.tss, d.snapshotter, valAddress, nextKeyID) {
-						return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "validator %s cannot unbond while holding tss share of %s's next %s key %s", valAddress, chain.Name, keyRole.SimpleString(), nextKeyID)
-					}
-
-					oldActiveKeys, err := d.tss.GetOldActiveKeys(ctx, chain, keyRole)
-					if err != nil {
-						return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, err.Error())
-					}
-
-					for _, oldActiveKey := range oldActiveKeys {
-						if isValidatorHoldingTssShareOf(ctx, d.tss, d.snapshotter, valAddress, oldActiveKey.ID) {
-							return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "validator %s cannot unbond while holding tss share of %s's old active %s key %s", valAddress, chain.Name, keyRole.SimpleString(), oldActiveKey.ID)
-						}
+				activeKeyIDs := d.multiSig.GetActiveKeyIDs(ctx, chain.Name)
+				for _, activeKeyID := range activeKeyIDs {
+					key := funcs.MustOk(d.multiSig.GetKey(ctx, activeKeyID))
+					if !key.GetWeight(valAddress).IsZero() {
+						return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "validator %s cannot unbond while holding multiSig share of %s's active key %s", valAddress, chain.Name, activeKeyID)
 					}
 				}
 			}
@@ -136,28 +127,4 @@ func (d ValidateValidatorDeregisteredTssDecorator) AnteHandle(ctx sdk.Context, t
 	}
 
 	return next(ctx, tx, simulate)
-}
-
-func isValidatorHoldingTssShareOf(ctx sdk.Context, tss types.Tss, snapshotter types.Snapshotter, valAddress sdk.ValAddress, keyID tss.KeyID) bool {
-	counter, ok := tss.GetSnapshotCounterForKeyID(ctx, keyID)
-	if !ok {
-		logger(ctx).Error(fmt.Sprintf("no snapshot counter for key ID %s registered", keyID))
-
-		return false
-	}
-
-	snapshot, ok := snapshotter.GetSnapshot(ctx, counter)
-	if !ok {
-		logger(ctx).Error(fmt.Sprintf("no snapshot found for counter num %d", counter))
-
-		return false
-	}
-
-	for _, validator := range snapshot.Validators {
-		if validator.GetSDKValidator().GetOperator().Equals(valAddress) {
-			return true
-		}
-	}
-
-	return false
 }

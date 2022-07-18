@@ -1,6 +1,7 @@
 package multisig
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
@@ -15,6 +16,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/x/evm/client/rest"
 	"github.com/axelarnetwork/axelar-core/x/multisig/client/cli"
 	"github.com/axelarnetwork/axelar-core/x/multisig/keeper"
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
@@ -58,10 +60,16 @@ func (AppModuleBasic) ValidateGenesis(cdc codec.JSONCodec, _ client.TxEncodingCo
 }
 
 // RegisterRESTRoutes registers the REST routes for this module
-func (AppModuleBasic) RegisterRESTRoutes(client.Context, *mux.Router) {}
+func (AppModuleBasic) RegisterRESTRoutes(clientCtx client.Context, rtr *mux.Router) {
+	rest.RegisterRoutes(clientCtx, rtr)
+}
 
 // RegisterGRPCGatewayRoutes registers the gRPC Gateway routes for the module.
-func (AppModuleBasic) RegisterGRPCGatewayRoutes(client.Context, *runtime.ServeMux) {}
+func (AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *runtime.ServeMux) {
+	if err := types.RegisterQueryServiceHandlerClient(context.Background(), mux, types.NewQueryServiceClient(clientCtx)); err != nil {
+		panic(err)
+	}
+}
 
 // GetTxCmd returns all CLI tx commands for this module
 func (AppModuleBasic) GetTxCmd() *cobra.Command {
@@ -132,6 +140,7 @@ func (am AppModule) LegacyQuerierHandler(*codec.LegacyAmino) sdk.Querier {
 // RegisterServices registers a GRPC query service to respond to the
 // module-specific GRPC queries.
 func (am AppModule) RegisterServices(cfg module.Configurator) {
+	types.RegisterQueryServiceServer(cfg.QueryServer(), keeper.NewGRPCQuerier(am.keeper, am.staker))
 	types.RegisterMsgServiceServer(utils.ErrorWrapper{Server: cfg.MsgServer(), Err: types.ErrMultisig, Logger: am.keeper.Logger}, keeper.NewMsgServer(am.keeper, am.snapshotter, am.staker, am.nexus))
 }
 

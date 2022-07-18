@@ -17,14 +17,14 @@ import (
 
 const (
 	flagExternalChainVotingInflationRate = "external-chain-voting-inflation-rate"
-	flagTssRelativeInflationRate         = "tss-relative-inflation-rate"
+	flagKeyMgmtRelativeInflationRate     = "key-mgmt-relative-inflation-rate"
 )
 
 // SetGenesisRewardCmd returns set-genesis-chain-params cobra Command.
 func SetGenesisRewardCmd(defaultNodeHome string) *cobra.Command {
 	var (
 		externalChainVotingInflationRate string
-		tssRelativeInflationRate         string
+		keyMgmtRelativeInflationRate     string
 	)
 
 	cmd := &cobra.Command{
@@ -56,13 +56,13 @@ func SetGenesisRewardCmd(defaultNodeHome string) *cobra.Command {
 				genesisReward.Params.ExternalChainVotingInflationRate = rate
 			}
 
-			if tssRelativeInflationRate != "" {
-				rate, err := sdk.NewDecFromStr(tssRelativeInflationRate)
+			if keyMgmtRelativeInflationRate != "" {
+				rate, err := sdk.NewDecFromStr(keyMgmtRelativeInflationRate)
 				if err != nil {
 					return err
 				}
 
-				genesisReward.Params.TssRelativeInflationRate = rate
+				genesisReward.Params.KeyMgmtRelativeInflationRate = rate
 			}
 
 			genesisRewardBz, err := cdc.MarshalJSON(&genesisReward)
@@ -84,7 +84,7 @@ func SetGenesisRewardCmd(defaultNodeHome string) *cobra.Command {
 	cmd.Flags().String(flags.FlagHome, defaultNodeHome, "node's home directory")
 
 	cmd.Flags().StringVar(&externalChainVotingInflationRate, flagExternalChainVotingInflationRate, "", "The fraction of total stake per year that's distributed among external chain voters (e.g., \"0.02\").")
-	cmd.Flags().StringVar(&tssRelativeInflationRate, flagTssRelativeInflationRate, "", "The fraction of current inflation rate that's rewarded for participating in TSS (e.g., \"1.00\").")
+	cmd.Flags().StringVar(&keyMgmtRelativeInflationRate, flagKeyMgmtRelativeInflationRate, "", "The fraction of current inflation rate that's rewarded for participating in TSS (e.g., \"1.00\").")
 
 	return cmd
 }

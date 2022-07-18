@@ -9,7 +9,6 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/reward/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 //go:generate moq -pkg mock -out ./mock/expected_keepers.go . Rewarder Refunder Nexus Minter Distributor Staker Banker
@@ -62,9 +61,8 @@ type Banker interface {
 	MintCoins(ctx sdk.Context, name string, amt sdk.Coins) error
 }
 
-// Tss provides tss functionality
-type Tss interface {
-	IsOperatorAvailable(ctx sdk.Context, validator sdk.ValAddress, keyIDs ...tss.KeyID) bool
+// MultiSig provides mutlisig functionality
+type MultiSig interface {
 }
 
 // Snapshotter provides snapshot functionality
