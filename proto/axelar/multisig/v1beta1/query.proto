@@ -30,9 +30,3 @@ message NextKeyIDResponse {
         "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
   ];
 }
-
-message AssignableKeyRequest { string chain = 1; }
-
-// AssignableKeyResponse contains true if no key is assigned
-// for rotation on the given chain, and false otherwise
-message AssignableKeyResponse { bool assignable = 1; }

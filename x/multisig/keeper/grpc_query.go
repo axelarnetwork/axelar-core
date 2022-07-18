@@ -52,12 +52,3 @@ func (q Querier) NextKeyID(c context.Context, req *types.NextKeyIDRequest) (*typ
 
 	return &types.NextKeyIDResponse{KeyID: keyID}, nil
 }
-
-// AssignableKey returns true if no key is assigned for rotation on the given chain, and false otherwise
-func (q Querier) AssignableKey(c context.Context, req *types.AssignableKeyRequest) (*types.AssignableKeyResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-
-	_, assigned := q.keeper.GetNextKeyID(ctx, nexus.ChainName(req.Chain))
-
-	return &types.AssignableKeyResponse{Assignable: !assigned}, nil
-}

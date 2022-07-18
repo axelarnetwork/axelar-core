@@ -49,11 +49,4 @@ service QueryService {
     option (google.api.http).get =
         "/axelar/multisig/v1beta1/next_key_id/{chain}";
   }
-
-  // AssignableKey returns true if there is no assigned key for the
-  // next rotation on a given chain, and false otherwise
-  rpc AssignableKey(AssignableKeyRequest) returns (AssignableKeyResponse) {
-    option (google.api.http).get =
-        "/axelar/multisig/v1beta1/assignable_key/{chain}";
-  }
 }

@@ -261,8 +261,6 @@
     - [GenesisState](#axelar.multisig.v1beta1.GenesisState)
   
 - [axelar/multisig/v1beta1/query.proto](#axelar/multisig/v1beta1/query.proto)
-    - [AssignableKeyRequest](#axelar.multisig.v1beta1.AssignableKeyRequest)
-    - [AssignableKeyResponse](#axelar.multisig.v1beta1.AssignableKeyResponse)
     - [KeyIDRequest](#axelar.multisig.v1beta1.KeyIDRequest)
     - [KeyIDResponse](#axelar.multisig.v1beta1.KeyIDResponse)
     - [NextKeyIDRequest](#axelar.multisig.v1beta1.NextKeyIDRequest)
@@ -4073,37 +4071,6 @@ GenesisState represents the genesis state
 
 
 
-<a name="axelar.multisig.v1beta1.AssignableKeyRequest"></a>
-
-### AssignableKeyRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `chain` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="axelar.multisig.v1beta1.AssignableKeyResponse"></a>
-
-### AssignableKeyResponse
-AssignableKeyResponse contains true if no key is assigned
-for rotation on the given chain, and false otherwise
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `assignable` | [bool](#bool) |  |  |
-
-
-
-
-
-
 <a name="axelar.multisig.v1beta1.KeyIDRequest"></a>
 
 ### KeyIDRequest
@@ -4305,7 +4272,6 @@ Query defines the gRPC querier service.
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `KeyID` | [KeyIDRequest](#axelar.multisig.v1beta1.KeyIDRequest) | [KeyIDResponse](#axelar.multisig.v1beta1.KeyIDResponse) | KeyID returns the key ID of a key assigned to a given chain. If no key is assigned, it returns an empty string. | GET|/axelar/multisig/v1beta1/key_id/{chain}|
 | `NextKeyID` | [NextKeyIDRequest](#axelar.multisig.v1beta1.NextKeyIDRequest) | [NextKeyIDResponse](#axelar.multisig.v1beta1.NextKeyIDResponse) | NextKeyID returns the key ID assigned for the next rotation on a given chain. If no key rotation is in progress, it returns the empty string. | GET|/axelar/multisig/v1beta1/next_key_id/{chain}|
-| `AssignableKey` | [AssignableKeyRequest](#axelar.multisig.v1beta1.AssignableKeyRequest) | [AssignableKeyResponse](#axelar.multisig.v1beta1.AssignableKeyResponse) | AssignableKey returns true if there is no assigned key for the next rotation on a given chain, and false otherwise | GET|/axelar/multisig/v1beta1/assignable_key/{chain}|
 
  <!-- end services -->
 
