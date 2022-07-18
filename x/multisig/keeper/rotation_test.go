@@ -181,6 +181,7 @@ func TestKeeper_GetActiveKeyIDs(t *testing.T) {
 		}
 
 	}).Then("get active keys", func(t *testing.T) {
-		assert.ElementsMatch(t, slices.Map(expectedKeys, types.Key.GetID), k.GetActiveKeyIDs(ctx, chainName))
+		expectedKeys = expectedKeys[len(expectedKeys)-int(types.DefaultParams().ActiveEpochCount):]
+		assert.ElementsMatch(t, slices.Map(expectedKeys, func(key types.Key) exported.KeyID { return key.ID }), k.GetActiveKeyIDs(ctx, chainName))
 	}).Run(t)
 }

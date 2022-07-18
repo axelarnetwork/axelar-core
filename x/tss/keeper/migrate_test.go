@@ -81,6 +81,7 @@ func TestGetMigrationHandler(t *testing.T) {
 		Given("a multisig keeper", func() {
 			subspace := paramstypes.NewSubspace(encCfg.Codec, encCfg.Amino, paramsStoreKey, paramsTSstoreKey, multisig.ModuleName)
 			msk = multisigKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey(multisig.StoreKey), subspace)
+			msk.InitGenesis(ctx, multisig.DefaultGenesisState())
 		}).
 		Given("a migration handler", func() {
 			n := &mock.NexusMock{GetChainsFunc: func(ctx sdk.Context) []nexus.Chain { return chains }}
@@ -110,12 +111,11 @@ func TestGetMigrationHandler(t *testing.T) {
 
 			assert.Len(t, keyIDs, 1)
 			keyID := keyIDs[0]
-			key, ok := msk.GetKey(ctx, keyID)
+			currentKey, ok := funcs.MustOk(msk.GetKey(ctx, keyID)).(*multisig.Key)
 			assert.True(t, ok)
-			assert.EqualValues(t, expectedKeys[0].ID, key.GetKeyID())
-			currentKey := key.(*multisig.Key)
+			assert.EqualValues(t, expectedKeys[0].ID, currentKey.ID)
 			assert.Equal(t, multisig.Active, currentKey.State)
-			assert.Equal(t, key, funcs.MustOk(msk.GetCurrentKey(ctx, nexus.ChainName(expectedKeys[0].Chain))))
+			assert.Equal(t, currentKey, funcs.MustOk(msk.GetCurrentKey(ctx, nexus.ChainName(expectedKeys[0].Chain))))
 		}).Run(t)
 
 	givenSetup.
@@ -130,10 +130,9 @@ func TestGetMigrationHandler(t *testing.T) {
 			keyID := funcs.MustOk(msk.GetNextKeyID(ctx, nexus.ChainName(expectedKeys[0].Chain)))
 
 			assert.EqualValues(t, expectedKeys[0].ID, keyID)
-			key, ok := msk.GetKey(ctx, keyID)
+			nextKey, ok := funcs.MustOk(msk.GetKey(ctx, keyID)).(*multisig.Key)
 			assert.True(t, ok)
-			assert.EqualValues(t, expectedKeys[0].ID, key.GetKeyID())
-			nextKey := key.(*multisig.Key)
+			assert.EqualValues(t, expectedKeys[0].ID, nextKey.ID)
 			assert.Equal(t, multisig.Assigned, nextKey.State)
 		}).Run(t)
 
@@ -156,28 +155,25 @@ func TestGetMigrationHandler(t *testing.T) {
 
 			expectedActiveKeys := slices.Reverse(expectedKeys[len(expectedKeys)-1-len(keyIDs) : len(expectedKeys)-1])
 			for i := 1; i < len(keyIDs); i++ {
-				key, ok := msk.GetKey(ctx, keyIDs[i])
+				oldActiveKey, ok := funcs.MustOk(msk.GetKey(ctx, keyIDs[i])).(*multisig.Key)
 				assert.True(t, ok)
-				assert.EqualValues(t, expectedActiveKeys[i].ID, key.GetKeyID())
-				oldActiveKey := key.(*multisig.Key)
+				assert.EqualValues(t, expectedActiveKeys[i].ID, oldActiveKey.ID)
 				assert.Equal(t, multisig.Active, oldActiveKey.State)
 				assert.Len(t, oldActiveKey.GetParticipants(), len(validators))
 				assert.Len(t, oldActiveKey.Snapshot.Participants, len(validators))
 			}
 
-			key := funcs.MustOk(msk.GetCurrentKey(ctx, nexus.ChainName(expectedActiveKeys[0].Chain)))
-			assert.EqualValues(t, expectedActiveKeys[0].ID, key.GetKeyID())
-			assert.EqualValues(t, key.GetKeyID(), keyIDs[0])
-			currentKey := key.(*multisig.Key)
+			currentKey := funcs.MustOk(msk.GetCurrentKey(ctx, nexus.ChainName(expectedActiveKeys[0].Chain))).(*multisig.Key)
+			assert.EqualValues(t, expectedActiveKeys[0].ID, currentKey.ID)
+			assert.EqualValues(t, currentKey.ID, keyIDs[0])
 			assert.Equal(t, multisig.Active, currentKey.State)
 			assert.Len(t, currentKey.GetParticipants(), len(validators))
 			assert.Len(t, currentKey.Snapshot.Participants, len(validators))
 
 			keyID := funcs.MustOk(msk.GetNextKeyID(ctx, nexus.ChainName(expectedKeys[len(expectedKeys)-1].Chain)))
-			key, ok := msk.GetKey(ctx, keyID)
+			nextKey, ok := funcs.MustOk(msk.GetKey(ctx, keyID)).(*multisig.Key)
 			assert.True(t, ok)
-			assert.EqualValues(t, expectedKeys[len(expectedKeys)-1].ID, key.GetKeyID())
-			nextKey := key.(*multisig.Key)
+			assert.EqualValues(t, expectedKeys[len(expectedKeys)-1].ID, nextKey.ID)
 			assert.Equal(t, multisig.Assigned, nextKey.State)
 
 			assert.Len(t, nextKey.GetParticipants(), len(validators))
