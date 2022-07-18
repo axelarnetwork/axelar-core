@@ -255,6 +255,9 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 	}
 
 	pollID, err := s.initializePoll(ctx, chain, req.TxID)
+	if err != nil {
+		return nil, err
+	}
 
 	// if token was initialized, both token and gateway addresses are available
 	tokenAddr := token.GetAddress()
