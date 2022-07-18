@@ -110,6 +110,7 @@ func (k Keeper) GetActiveKeyIDs(ctx sdk.Context, chainName nexus.ChainName) []ex
 
 		switch key.State {
 		case types.Inactive:
+			// assumption: once an epoch is inactive, no older epoch is active so we can return early
 			return keys
 		case types.Assigned:
 			continue
@@ -119,6 +120,8 @@ func (k Keeper) GetActiveKeyIDs(ctx sdk.Context, chainName nexus.ChainName) []ex
 			panic(fmt.Sprintf("unexpected key state %s", key.State.String()))
 		}
 	}
+
+	// TODO: deactivate old epochs, otherwise this only returns once all epochs are iterated (and returns all keys)
 	return keys
 }
 
