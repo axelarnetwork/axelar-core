@@ -432,17 +432,6 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 			return false
 		}
 
-		// skip if destination chain key rotation is in progress
-		if _, nextKeyAssigned := multisig.GetNextKeyID(ctx, destinationChain.Name); nextKeyAssigned {
-			bk.Logger(ctx).Debug(fmt.Sprintf("skipping confirmed event %s due to destination chain in the middle of key rotation", event.GetID()),
-				"chain", event.Chain.String(),
-				"destination_chain", destinationChainName.String(),
-				"eventID", event.GetID(),
-			)
-
-			return false
-		}
-
 		return true
 	}
 
