@@ -138,9 +138,15 @@ func TestKeeper(t *testing.T) {
 					funcs.MustNoErr(k.RotateKey(ctx, chainName))
 				}
 
-				firstKey, ok := k.GetKey(ctx, keys[0].ID)
-				assert.True(t, ok)
-				assert.Equal(t, types.Inactive, firstKey.(*types.Key).State)
+				for i := 0; i < int(types.DefaultParams().ActiveEpochCount+1); i++ {
+					key := funcs.MustOk(k.GetKey(ctx, keys[i].ID))
+
+					if i == 0 {
+						assert.Equal(t, types.Inactive, key.(*types.Key).State)
+					} else {
+						assert.Equal(t, types.Active, key.(*types.Key).State)
+					}
+				}
 			}).
 			Run(t)
 	})
