@@ -480,10 +480,6 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 		}
 	}
 
-	if _, ok := s.multisigKeeper.GetNextKeyID(ctx, chain.Name); ok {
-		return nil, s.newErrRotationInProgress(chain)
-	}
-
 	keyID, ok := s.multisigKeeper.GetCurrentKeyID(ctx, chain.Name)
 	if !ok {
 		return nil, fmt.Errorf("current key not set for chain %s", chain.Name)
@@ -534,10 +530,6 @@ func (s msgServer) CreateBurnTokens(c context.Context, req *types.CreateBurnToke
 		return nil, fmt.Errorf("could not find chain ID for '%s'", chain.Name)
 	}
 
-	if _, ok := s.multisigKeeper.GetNextKeyID(ctx, chain.Name); ok {
-		return nil, s.newErrRotationInProgress(chain)
-	}
-
 	keyID, ok := s.multisigKeeper.GetCurrentKeyID(ctx, chain.Name)
 	if !ok {
 		return nil, fmt.Errorf("current key not set for chain %s", chain.Name)
@@ -579,10 +571,6 @@ func (s msgServer) CreateBurnTokens(c context.Context, req *types.CreateBurnToke
 	return &types.CreateBurnTokensResponse{}, nil
 }
 
-func (s msgServer) newErrRotationInProgress(chain nexus.Chain) error {
-	return sdkerrors.Wrapf(types.ErrRotationInProgress, "finish rotating to next key for chain %s first", chain.Name)
-}
-
 func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePendingTransfersRequest) (*types.CreatePendingTransfersResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
@@ -601,10 +589,6 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 	if len(pendingTransfers) == 0 {
 		s.Logger(ctx).Debug("no pending transfers found")
 		return &types.CreatePendingTransfersResponse{}, nil
-	}
-
-	if _, ok := s.multisigKeeper.GetNextKeyID(ctx, chain.Name); ok {
-		return nil, s.newErrRotationInProgress(chain)
 	}
 
 	keyID, ok := s.multisigKeeper.GetCurrentKeyID(ctx, chain.Name)
@@ -679,7 +663,7 @@ func (s msgServer) createTransferKeyCommand(ctx sdk.Context, keeper types.ChainK
 	}
 
 	if _, ok := s.multisigKeeper.GetNextKeyID(ctx, chain.Name); ok {
-		return types.Command{}, s.newErrRotationInProgress(chain)
+		return types.Command{}, sdkerrors.Wrapf(types.ErrRotationInProgress, "finish rotating to next key for chain %s first", chain.Name)
 	}
 
 	if err := s.multisigKeeper.AssignKey(ctx, chain.Name, nextKeyID); err != nil {
