@@ -53,12 +53,17 @@ message KeyAddressRequest {
 }
 
 message KeyAddressResponse {
+  message WeightedAddress {
+    string address = 1;
+    string weight = 2;
+  };
+
   string key_id = 1 [
     (gogoproto.customname) = "KeyID",
     (gogoproto.casttype) =
         "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
   ];
-  map<string, string> address_weights = 2;
+  repeated WeightedAddress addresses = 2 [ (gogoproto.nullable) = false ];
   string threshold = 3;
 }
 
