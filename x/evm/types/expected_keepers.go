@@ -12,6 +12,7 @@ import (
 	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	"github.com/axelarnetwork/axelar-core/x/tss/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
@@ -122,6 +123,7 @@ type InitPoller = interface {
 type Signer interface {
 	GetSig(ctx sdk.Context, sigID string) (tss.Signature, tss.SigStatus)
 	GetKey(ctx sdk.Context, keyID tss.KeyID) (tss.Key, bool)
+	GetMultisigSignInfo(ctx sdk.Context, sigID string) (types.MultisigSignInfo, bool)
 }
 
 // Snapshotter provides access to the snapshot functionality
