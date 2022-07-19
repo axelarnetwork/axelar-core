@@ -333,18 +333,14 @@ func queryAddressByKeyID(ctx sdk.Context, multisig types.MultisigKeeper, chain n
 		return types.KeyAddressResponse{}, sdkerrors.Wrapf(types.ErrEVM, "key %s not found for chain %s", keyID, chain.Name)
 	}
 
-	weights, threshold := types.ParseMultisigKey(key)
+	addresses, weights, threshold := types.GetMultisigAddressesAndWeights(key)
 	weightedAddresses := make([]types.KeyAddressResponse_WeightedAddress, len(weights))
-	for address, weight := range weights {
+	for i, address := range addresses {
 		weightedAddresses = append(weightedAddresses, types.KeyAddressResponse_WeightedAddress{
-			Address: address,
-			Weight:  weight.String(),
+			Address: address.Hex(),
+			Weight:  weights[i].String(),
 		})
 	}
-
-	sort.SliceStable(weightedAddresses, func(i, j int) bool {
-		return bytes.Compare(funcs.Must(hex.DecodeString(weightedAddresses[i].Address)), funcs.Must(hex.DecodeString(weightedAddresses[j].Address))) < 0
-	})
 
 	return types.KeyAddressResponse{
 		KeyID:     keyID,
