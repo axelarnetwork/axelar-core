@@ -9,6 +9,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/reward/exported"
 	"github.com/axelarnetwork/axelar-core/x/reward/types"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 )
 
@@ -16,9 +17,9 @@ import (
 func BeginBlocker(ctx sdk.Context, _ abci.RequestBeginBlock, _ types.Rewarder) {}
 
 // EndBlocker is called at the end of every block, process external chain voting inflation
-func EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock, k types.Rewarder, n types.Nexus, m types.Minter, s types.Staker, msig types.MultiSig, ss types.Snapshotter) []abci.ValidatorUpdate {
+func EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock, k types.Rewarder, n types.Nexus, m types.Minter, s types.Staker, slasher types.Slasher, msig types.MultiSig, ss types.Snapshotter) []abci.ValidatorUpdate {
 	handleExternalChainVotingInflation(ctx, k, n, m, s)
-	handleKeyMgmtInflation(ctx, k, m, s, msig, ss)
+	handleKeyMgmtInflation(ctx, k, m, s, slasher, msig, ss)
 
 	return nil
 }
@@ -45,7 +46,7 @@ func addRewardsByConsensusPower(ctx sdk.Context, s types.Staker, rewardPool expo
 
 }
 
-func handleKeyMgmtInflation(ctx sdk.Context, k types.Rewarder, m types.Minter, s types.Staker, mSig types.MultiSig, ss types.Snapshotter) {
+func handleKeyMgmtInflation(ctx sdk.Context, k types.Rewarder, m types.Minter, s types.Staker, slasher types.Slasher, mSig types.MultiSig, ss types.Snapshotter) {
 	rewardPool := k.GetPool(ctx, multisigTypes.ModuleName)
 	minter := m.GetMinter(ctx)
 	mintParams := m.GetParams(ctx)
@@ -54,15 +55,18 @@ func handleKeyMgmtInflation(ctx sdk.Context, k types.Rewarder, m types.Minter, s
 	var validators []stakingtypes.Validator
 
 	validatorIterFn := func(_ int64, v stakingtypes.ValidatorI) bool {
-		validator := v.(stakingtypes.Validator)
-
-		// TODO: remove tss dependency
-		illegibility, err := ss.GetValidatorIllegibility(ctx, &validator)
-		if err != nil {
-			panic(err)
+		validator, ok := v.(stakingtypes.Validator)
+		if !ok {
+			return false
 		}
 
-		if !illegibility.Is(snapshot.None) {
+		filter := funcs.And(
+			funcs.Not(snapshot.ValidatorI.IsJailed),
+			funcs.Not(snapshot.IsTombstoned(ctx, slasher)),
+			snapshot.IsProxyActive(ctx, ss.GetProxy),
+		)
+
+		if !filter(validator) {
 			return false
 		}
 

@@ -11,7 +11,7 @@ import (
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 )
 
-//go:generate moq -pkg mock -out ./mock/expected_keepers.go . Rewarder Refunder Nexus Minter Distributor Staker Banker
+//go:generate moq -pkg mock -out ./mock/expected_keepers.go . Rewarder Refunder Nexus Minter Distributor Staker Slasher Banker
 
 // Rewarder provides reward functionality
 type Rewarder interface {
@@ -54,6 +54,11 @@ type Staker interface {
 	IterateBondedValidatorsByPower(ctx sdk.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool))
 }
 
+// Slasher provides necessary functions to the validator information
+type Slasher interface {
+	IsTombstoned(ctx sdk.Context, consAddr sdk.ConsAddress) bool // whether a validator is tombstoned
+}
+
 // Banker provides bank functionality
 type Banker interface {
 	SendCoinsFromModuleToModule(ctx sdk.Context, senderModule, recipientModule string, amt sdk.Coins) error
@@ -68,4 +73,5 @@ type MultiSig interface {
 // Snapshotter provides snapshot functionality
 type Snapshotter interface {
 	GetValidatorIllegibility(ctx sdk.Context, validator snapshot.SDKValidator) (snapshot.ValidatorIllegibility, error)
+	GetProxy(ctx sdk.Context, operator sdk.ValAddress) (sdk.AccAddress, bool)
 }
