@@ -6965,7 +6965,6 @@ Msg defines the tss Msg service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `RegisterExternalKeys` | [RegisterExternalKeysRequest](#axelar.tss.v1beta1.RegisterExternalKeysRequest) | [RegisterExternalKeysResponse](#axelar.tss.v1beta1.RegisterExternalKeysResponse) |  | POST|/axelar/tss/register_external_keys|
 | `HeartBeat` | [HeartBeatRequest](#axelar.tss.v1beta1.HeartBeatRequest) | [HeartBeatResponse](#axelar.tss.v1beta1.HeartBeatResponse) |  | POST|/axelar/tss/heartbeat|
 
 
