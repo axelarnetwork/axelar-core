@@ -109,6 +109,9 @@
       - [annual-provisions](axelard_query_mint_annual-provisions.md)	 - Query the current minting annual provisions value
       - [inflation](axelard_query_mint_inflation.md)	 - Query the current minting inflation value
       - [params](axelard_query_mint_params.md)	 - Query the current minting parameters
+    - [multisig](axelard_query_multisig.md)	 - Querying commands for the multisig module
+      - [key-id \[chain\]](axelard_query_multisig_key-id.md)	 - Returns the key ID assigned to a given chain
+      - [next-key-id \[chain\]](axelard_query_multisig_next-key-id.md)	 - Returns the key ID assigned for the next rotation on a given chain and for the given key role
     - [nexus](axelard_query_nexus.md)	 - Querying commands for the nexus module
       - [assets \[chain\]](axelard_query_nexus_assets.md)	 - Returns the registered assets of a chain
       - [chain-by-asset \[asset\]](axelard_query_nexus_chain-by-asset.md)	 - Returns the chains an asset is registered on
