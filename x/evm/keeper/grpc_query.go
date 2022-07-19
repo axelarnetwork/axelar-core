@@ -113,7 +113,7 @@ func getProof(key multisig.Key, signature *multisigtypes.MultiSig) ([]common.Add
 		}
 	})
 
-	addresses, weights, threshold := types.GetMultisigAddressesAndWeight(key)
+	addresses, weights, threshold := types.GetMultisigAddressesAndWeights(key)
 	signatures := optimizeSignatureSet(operators, key.GetMinPassingWeight())
 
 	return addresses, weights, threshold, signatures

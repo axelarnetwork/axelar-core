@@ -826,7 +826,7 @@ func CreateMintTokenCommand(keyID multisig.KeyID, id CommandID, symbol string, a
 
 // CreateMultisigTransferCommand creates a command to transfer ownership/operator of the multisig contract
 func CreateMultisigTransferCommand(chainID sdk.Int, keyID multisig.KeyID, nextKey multisig.Key) Command {
-	addresses, weights, threshold := GetMultisigAddressesAndWeight(nextKey)
+	addresses, weights, threshold := GetMultisigAddressesAndWeights(nextKey)
 	params := createTransferMultisigParams(addresses, slices.Map(weights, sdk.Uint.BigInt), threshold.BigInt())
 
 	var concat []byte
@@ -1735,8 +1735,8 @@ func NewVoteEvents(chain nexus.ChainName, events []Event) *VoteEvents {
 	}
 }
 
-// GetMultisigAddressesAndWeight coverts a multisig key to sorted addresses and weights
-func GetMultisigAddressesAndWeight(key multisig.Key) ([]common.Address, []sdk.Uint, sdk.Uint) {
+// GetMultisigAddressesAndWeights coverts a multisig key to sorted addresses, weights and threshold
+func GetMultisigAddressesAndWeights(key multisig.Key) ([]common.Address, []sdk.Uint, sdk.Uint) {
 	addressWeights, threshold := ParseMultisigKey(key)
 	addresses := slices.Map(maps.Keys(addressWeights), common.HexToAddress)
 	sort.SliceStable(addresses, func(i, j int) bool {
