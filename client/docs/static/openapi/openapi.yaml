@@ -2018,14 +2018,6 @@ paths:
                   format: byte
                 name:
                   type: string
-                key_type:
-                  type: string
-                  enum:
-                    - KEY_TYPE_UNSPECIFIED
-                    - KEY_TYPE_NONE
-                    - KEY_TYPE_THRESHOLD
-                    - KEY_TYPE_MULTISIG
-                  default: KEY_TYPE_UNSPECIFIED
                 params:
                   type: string
                   format: byte
@@ -38635,14 +38627,6 @@ components:
           format: byte
         name:
           type: string
-        key_type:
-          type: string
-          enum:
-            - KEY_TYPE_UNSPECIFIED
-            - KEY_TYPE_NONE
-            - KEY_TYPE_THRESHOLD
-            - KEY_TYPE_MULTISIG
-          default: KEY_TYPE_UNSPECIFIED
         params:
           type: string
           format: byte

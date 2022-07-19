@@ -14,8 +14,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
-	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
+	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 )
 
 const (
@@ -327,7 +326,7 @@ func GetCmdCreateTransferOwnership() *cobra.Command {
 				return err
 			}
 
-			msg := types.NewCreateTransferOwnershipRequest(cliCtx.GetFromAddress(), args[0], args[1])
+			msg := types.NewCreateTransferOwnershipRequest(cliCtx.GetFromAddress(), args[0], multisig.KeyID(args[1]))
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -351,7 +350,7 @@ func GetCmdCreateTransferOperatorship() *cobra.Command {
 				return err
 			}
 
-			msg := types.NewCreateTransferOperatorshipRequest(cliCtx.GetFromAddress(), args[0], args[1])
+			msg := types.NewCreateTransferOperatorshipRequest(cliCtx.GetFromAddress(), args[0], multisig.KeyID(args[1]))
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -390,27 +389,17 @@ func GetCmdSignCommands() *cobra.Command {
 // GetCmdAddChain returns the cli command to add a new evm chain command
 func GetCmdAddChain() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "add-chain [name] [key type] [chain config]",
+		Use:   "add-chain [name] [chain config]",
 		Short: "Add a new EVM chain",
 		Long:  "Add a new EVM chain. The chain config parameter should be the path to a json file containing the key requirements and the evm module parameters",
-		Args:  cobra.ExactArgs(3),
+		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
 				return err
 			}
 			name := args[0]
-			keyTypeStr := args[1]
-			jsonFile := args[2]
-
-			keyType, err := tss.KeyTypeFromSimpleStr(keyTypeStr)
-			if err != nil {
-				return err
-			}
-
-			if !tsstypes.TSSEnabled && keyType == tss.Threshold {
-				return fmt.Errorf("TSS is disabled")
-			}
+			jsonFile := args[1]
 
 			byteValue, err := ioutil.ReadFile(jsonFile)
 			if err != nil {
@@ -424,7 +413,7 @@ func GetCmdAddChain() *cobra.Command {
 				return err
 			}
 
-			msg := types.NewAddChainRequest(cliCtx.GetFromAddress(), name, keyType, chainConf.Params)
+			msg := types.NewAddChainRequest(cliCtx.GetFromAddress(), name, chainConf.Params)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

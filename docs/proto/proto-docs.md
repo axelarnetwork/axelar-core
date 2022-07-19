@@ -3430,7 +3430,6 @@ vote can have any data type
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `name` | [string](#string) |  |  |
-| `key_type` | [axelar.tss.exported.v1beta1.KeyType](#axelar.tss.exported.v1beta1.KeyType) |  |  |
 | `params` | [bytes](#bytes) |  |  |
 
 

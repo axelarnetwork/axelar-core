@@ -15,9 +15,8 @@ import (
 	clientUtils "github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
-	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
 // rest routes
@@ -133,7 +132,6 @@ type ReqSignCommands struct {
 type ReqAddChain struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 	Name    string       `json:"name" yaml:"name"`
-	KeyType string       `json:"key_type" yaml:"key_type"`
 	Params  types.Params `json:"params" yaml:"params"`
 }
 
@@ -369,7 +367,7 @@ func GetHandlerCreateTransferOperatorship(cliCtx client.Context) http.HandlerFun
 		if !ok {
 			return
 		}
-		msg := types.NewCreateTransferOperatorshipRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], req.KeyID)
+		msg := types.NewCreateTransferOperatorshipRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], multisig.KeyID(req.KeyID))
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -420,18 +418,7 @@ func GetHandlerAddChain(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		keyType, err := tss.KeyTypeFromSimpleStr(req.KeyType)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
-		}
-
-		if !tsstypes.TSSEnabled && keyType == tss.Threshold {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, "TSS is disabled")
-			return
-		}
-
-		msg := types.NewAddChainRequest(fromAddr, req.Name, keyType, req.Params)
+		msg := types.NewAddChainRequest(fromAddr, req.Name, req.Params)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

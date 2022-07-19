@@ -10,11 +10,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
-
-// TODO: make this a param when we can easily switch between different kinds of keys and different settings
-var keyRole = tss.SecondaryKey
 
 func validateChains(ctx sdk.Context, sourceChainName nexus.ChainName, destinationChainName nexus.ChainName, bk types.BaseKeeper, n types.Nexus) (nexus.Chain, nexus.Chain, error) {
 	sourceChain, ok := n.GetChain(ctx, sourceChainName)
@@ -321,7 +317,7 @@ func handleMultisigTransferKey(ctx sdk.Context, event types.Event, ck types.Chai
 
 	nextKeyID, ok := multisig.GetNextKeyID(ctx, chain.Name)
 	if !ok {
-		ck.Logger(ctx).Info(fmt.Sprintf("next %s key for chain %s not found", keyRole.SimpleString(), chain.Name))
+		ck.Logger(ctx).Info(fmt.Sprintf("next key for chain %s not found", chain.Name))
 		return false
 	}
 
