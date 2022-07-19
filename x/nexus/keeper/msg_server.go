@@ -171,7 +171,7 @@ func (s msgServer) activateChain(ctx sdk.Context, chain exported.Chain) {
 	}
 
 	// no chain maintainer for cosmos chains
-	if !s.axelarnet.IsCosmosChain(ctx, chain.Name) && !s.isActivationThresholdMet(ctx, s.Nexus, s.slashing, s.snapshotter, chain) {
+	if !s.axelarnet.IsCosmosChain(ctx, chain.Name) && !s.isActivationThresholdMet(ctx, chain) {
 		return
 	}
 
@@ -207,18 +207,18 @@ func (s msgServer) deactivateChain(ctx sdk.Context, chain exported.Chain) {
 	)
 }
 
-func (s msgServer) isActivationThresholdMet(ctx sdk.Context, nexus types.Nexus, slashing types.SlashingKeeper, snapshotter types.Snapshotter, chain exported.Chain) bool {
+func (s msgServer) isActivationThresholdMet(ctx sdk.Context, chain exported.Chain) bool {
 	isTombstoned := func(v snapshot.ValidatorI) bool {
 		consAdd, err := v.GetConsAddr()
 		if err != nil {
 			return true
 		}
 
-		return slashing.IsTombstoned(ctx, consAdd)
+		return s.slashing.IsTombstoned(ctx, consAdd)
 	}
 
 	isProxyActive := func(v snapshot.ValidatorI) bool {
-		_, isActive := snapshotter.GetProxy(ctx, v.GetOperator())
+		_, isActive := s.snapshotter.GetProxy(ctx, v.GetOperator())
 
 		return isActive
 	}
@@ -230,11 +230,11 @@ func (s msgServer) isActivationThresholdMet(ctx sdk.Context, nexus types.Nexus, 
 		isProxyActive,
 	)
 
-	params := nexus.GetParams(ctx)
+	params := s.Nexus.GetParams(ctx)
 
-	_, err := snapshotter.CreateSnapshot(
+	_, err := s.snapshotter.CreateSnapshot(
 		ctx,
-		nexus.GetChainMaintainers(ctx, chain),
+		s.Nexus.GetChainMaintainers(ctx, chain),
 		filter,
 		snapshot.QuadraticWeightFunc,
 		params.ChainActivationThreshold,
