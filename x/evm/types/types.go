@@ -26,7 +26,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 )
@@ -270,31 +269,6 @@ func (t *ERC20Token) ConfirmDeployment() error {
 	t.setMeta(t.metadata)
 
 	return nil
-}
-
-// SigKeyPairs is an array of SigKeyPair
-type SigKeyPairs []tss.SigKeyPair
-
-func (s SigKeyPairs) Len() int {
-	return len(s)
-}
-
-func (s SigKeyPairs) Less(i, j int) bool {
-	pubKeyI, err := btcec.ParsePubKey(s[i].PubKey, btcec.S256())
-	if err != nil {
-		panic(err)
-	}
-
-	pubKeyJ, err := btcec.ParsePubKey(s[j].PubKey, btcec.S256())
-	if err != nil {
-		panic(err)
-	}
-
-	return bytes.Compare(crypto.PubkeyToAddress(*pubKeyI.ToECDSA()).Bytes(), crypto.PubkeyToAddress(*pubKeyJ.ToECDSA()).Bytes()) < 0
-}
-
-func (s SigKeyPairs) Swap(i, j int) {
-	s[i], s[j] = s[j], s[i]
 }
 
 // NilToken is a nil erc20 token
