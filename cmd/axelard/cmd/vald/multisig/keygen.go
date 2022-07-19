@@ -17,7 +17,7 @@ func (mgr *Mgr) ProcessKeygenStarted(event *types.KeygenStarted) error {
 		return nil
 	}
 
-	keyUID := event.GetKeyID().String()
+	keyUID := fmt.Sprintf("%s_%d", event.GetKeyID().String(), 0)
 	partyUID := mgr.participant.String()
 
 	pubKey, err := mgr.generateKey(keyUID, partyUID)
