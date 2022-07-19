@@ -1,10 +1,11 @@
 package keeper
 
 import (
+	"bytes"
 	"context"
 	"encoding/hex"
 	"fmt"
-	"math/big"
+	"github.com/ethereum/go-ethereum/crypto"
 	"sort"
 	"strings"
 
@@ -76,45 +77,70 @@ func (q Querier) BurnerInfo(c context.Context, req *types.BurnerInfoRequest) (*t
 	return nil, status.Error(codes.NotFound, "unknown address")
 }
 
-func optimizeSignatureSet(sigs map[string]multisigtypes.Signature, addressWeights map[string]sdk.Uint, threshold sdk.Uint) [][]byte {
+// optimizeSignatureSet returns optimized signature set, sorted in ascending order by corresponding evm address
+func optimizeSignatureSet(multisig *multisigtypes.MultiSig, key multisig.Key) [][]byte {
+	participants := key.GetParticipants()
+	addressWeights, threshold := types.ParseMultisigKey(key)
+
+	// EVM address -> signature map
+	addressSigs := make(map[string][]byte, len(participants))
+	for _, p := range participants {
+		pubKey := funcs.MustOk(key.GetPubKey(p))
+		sig, ok := multisig.Sigs[p.String()]
+		if !ok {
+			continue
+		}
+
+		address := crypto.PubkeyToAddress(pubKey.ToECDSAPubKey())
+		addressSigs[address.Hex()] = sig
+	}
+
+	// Sort EVM addresses in descending order by weights
 	addresses := maps.Keys(addressWeights)
 	sort.SliceStable(addresses, func(i, j int) bool {
 		return addressWeights[addresses[i]].GT(addressWeights[addresses[j]])
 	})
 
-	var optimizedSig [][]byte
+	// Build sig set by weight
+	optimizedSig := make(map[string][]byte)
 	cumWeight := sdk.ZeroUint()
-	for _, addr := range maps.Keys(addressWeights) {
+	for _, addr := range addresses {
 		if cumWeight.GTE(threshold) {
 			break
 		}
 
-		sig, _ := sigs[addr]
-		if sig != nil {
-			optimizedSig = append(optimizedSig, sig)
-			cumWeight = cumWeight.Add(addressWeights[addr])
+		// Sig map does not necessarily contain all key participants.
+		// Participants may late or absent in a signing session
+		sig, ok := addressSigs[addr]
+		if !ok {
+			continue
 		}
+		optimizedSig[addr] = sig
+
+		weight, ok := addressWeights[addr]
+		if !ok {
+			panic("failed to get weight")
+		}
+		cumWeight = cumWeight.Add(weight)
 	}
 
-	return optimizedSig
+	// Sort the corresponding address in ascending order
+	sigAddresses := slices.Map(maps.Keys(optimizedSig), common.HexToAddress)
+	sort.SliceStable(sigAddresses, func(i, j int) bool {
+		return bytes.Compare(sigAddresses[i].Bytes(), sigAddresses[j].Bytes()) < 0
+	})
+
+	return slices.Map(sigAddresses, func(addr common.Address) []byte { return optimizedSig[addr.Hex()] })
 }
 
-func getProof(ctx sdk.Context, commandBatch types.CommandBatch, s types.MultisigKeeper) ([]common.Address, []*big.Int, *big.Int, [][]byte) {
+func getProof(ctx sdk.Context, commandBatch types.CommandBatch, s types.MultisigKeeper) ([]common.Address, []sdk.Uint, sdk.Uint, [][]byte) {
 	multisig := commandBatch.GetSignature().(*multisigtypes.MultiSig)
 
 	key := funcs.MustOk(s.GetKey(ctx, multisig.KeyID))
-	participants := key.GetParticipants()
-
-	addressWeights := make(map[string]sdk.Uint, len(participants))
-	for _, p := range participants {
-		weight := key.GetWeight(p)
-		addressWeights[p.String()] = weight
-	}
-
-	signatures := optimizeSignatureSet(multisig.Sigs, addressWeights, key.GetMinPassingWeight())
 	addresses, weights, threshold := types.GetMultisigAddressesAndWeight(key)
+	signatures := optimizeSignatureSet(multisig, key)
 
-	return addresses, weights, threshold.BigInt(), signatures
+	return addresses, weights, threshold, signatures
 }
 
 func getExecuteDataAndSigs(ctx sdk.Context, multisig types.MultisigKeeper, commandBatch types.CommandBatch) ([]byte, types.Proof, error) {
@@ -127,7 +153,7 @@ func getExecuteDataAndSigs(ctx sdk.Context, multisig types.MultisigKeeper, comma
 
 	proof := types.Proof{
 		Addresses:  slices.Map(addresses, common.Address.Hex),
-		Weights:    slices.Map(weights, (*big.Int).String),
+		Weights:    slices.Map(weights, sdk.Uint.String),
 		Threshold:  threshold.String(),
 		Signatures: slices.Map(signatures, hex.EncodeToString),
 	}

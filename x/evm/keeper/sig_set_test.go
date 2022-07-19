@@ -1,6 +1,10 @@
 package keeper
 
 import (
+	"bytes"
+	"github.com/axelarnetwork/utils/funcs"
+	"golang.org/x/exp/maps"
+	"sort"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -18,11 +22,14 @@ import (
 
 func TestOptimizeSignatureSet(t *testing.T) {
 	var key multisig.Key
-	var addressWeights map[string]sdk.Uint
-	var addressSigs map[string]multisigtypes.Signature
-	var sigAddresses map[string]string // for testing
+	var multisigKey *multisigtypes.MultiSig
 
-	// calculate cumulative weights from sig set
+	// For testing
+	var addressWeights map[string]sdk.Uint
+	var participantSigs map[string]multisigtypes.Signature
+	var sigAddresses map[string]string
+
+	// Calculate cumulative weights from sig set
 	f := func(c sdk.Uint, sig []byte) sdk.Uint {
 		addr, ok := sigAddresses[common.Bytes2Hex(sig)]
 		if !ok {
@@ -36,30 +43,57 @@ func TestOptimizeSignatureSet(t *testing.T) {
 		participants := key.GetParticipants()
 
 		addressWeights = make(map[string]sdk.Uint, len(participants))
-		addressSigs = make(map[string]multisigtypes.Signature, len(participants))
+		participantSigs = make(map[string]multisigtypes.Signature, len(participants))
 		sigAddresses = make(map[string]string, len(participants))
 
 		for _, p := range participants {
-			weight := key.GetWeight(p)
-			addressWeights[p.String()] = weight
 			randSig := rand.Bytes(crypto.SignatureLength)
-			addressSigs[p.String()] = randSig
-			sigAddresses[common.Bytes2Hex(randSig)] = p.String()
+
+			pubKey := funcs.MustOk(key.GetPubKey(p))
+			address := crypto.PubkeyToAddress(pubKey.ToECDSAPubKey())
+			sigAddresses[common.Bytes2Hex(randSig)] = address.Hex()
+
+			weight := key.GetWeight(p)
+			addressWeights[address.Hex()] = weight
+			participantSigs[p.String()] = randSig
 		}
+		multisigKey = &multisigtypes.MultiSig{
+			Sigs: participantSigs,
+		}
+	})
+	shouldOptimizeSigSet := Then("should optimize signature set", func(t *testing.T) {
+		optimizedSigs := optimizeSignatureSet(multisigKey, key)
+
+		// Optimized sigs should pass threshold
+		assert.True(t, slices.Reduce(optimizedSigs, sdk.ZeroUint(), f).GTE(key.GetMinPassingWeight()))
+
+		// Sig set addresses should be in ascending order
+		sortedAddresses := slices.Map(maps.Keys(addressWeights), common.HexToAddress)
+		sort.SliceStable(sortedAddresses, func(i, j int) bool {
+			return bytes.Compare(sortedAddresses[i].Bytes(), sortedAddresses[j].Bytes()) < 0
+		})
+
+		optimizedAddresses := slices.Map(optimizedSigs, func(sig []byte) common.Address {
+			return common.HexToAddress(sigAddresses[common.Bytes2Hex(sig)])
+		})
+
+		assert.True(t, isSigSetOrdered(optimizedAddresses, sortedAddresses))
+
+		minWeightedSig := slices.Reduce(optimizedSigs[1:], optimizedSigs[0], func(c []byte, s []byte) []byte {
+			minWeight := addressWeights[common.Bytes2Hex(c)]
+			next := addressWeights[common.Bytes2Hex(s)]
+			if next.LT(minWeight) {
+				c = s
+			}
+
+			return c
+		})
+		assert.False(t, slices.Reduce(optimizedSigs, sdk.ZeroUint(), f).Sub(addressWeights[sigAddresses[common.Bytes2Hex(minWeightedSig)]]).GTE(key.GetMinPassingWeight()))
 
 	})
-
 	givenWeightsAndSigs.
 		When("", func() {}).
-		Then("should optimize signature set", func(t *testing.T) {
-			optimizedSigs := optimizeSignatureSet(addressSigs, addressWeights, key.GetMinPassingWeight())
-
-			// optimized sigs should pass threshold
-			assert.True(t, slices.Reduce(optimizedSigs, sdk.ZeroUint(), f).GTE(key.GetMinPassingWeight()))
-
-			// should not pass threshold without last sig
-			assert.False(t, slices.Reduce(optimizedSigs[:len(optimizedSigs)-1], sdk.ZeroUint(), f).GTE(key.GetMinPassingWeight()))
-		}).
+		Then2(shouldOptimizeSigSet).
 		Run(t, 20)
 
 	givenWeightsAndSigs.
@@ -72,49 +106,33 @@ func TestOptimizeSignatureSet(t *testing.T) {
 			currWeight := totalWeight
 			for _, p := range key.GetParticipants() {
 				if currWeight.Sub(key.GetWeight(p)).GTE(key.GetMinPassingWeight()) {
-					delete(addressSigs, p.String())
+					delete(participantSigs, p.String())
 					currWeight = currWeight.Sub(key.GetWeight(p))
 				}
 			}
-
+			multisigKey.Sigs = participantSigs
 		}).
-		Then("should optimize signature set", func(t *testing.T) {
-			f := func(c sdk.Uint, sig []byte) sdk.Uint {
-				addr := sigAddresses[common.Bytes2Hex(sig)]
-				return c.Add(addressWeights[addr])
-			}
-
-			optimizedSigs := optimizeSignatureSet(addressSigs, addressWeights, key.GetMinPassingWeight())
-
-			// optimized sigs should pass threshold
-			assert.True(t, slices.Reduce(optimizedSigs, sdk.ZeroUint(), f).GTE(key.GetMinPassingWeight()))
-
-			// should not pass threshold without last sig
-			assert.False(t, slices.Reduce(optimizedSigs[:len(optimizedSigs)-1], sdk.ZeroUint(), f).GTE(key.GetMinPassingWeight()))
-		}).
+		Then2(shouldOptimizeSigSet).
 		Run(t, 20)
+}
 
-	//givenOperators.
-	//	Then("should optimize signature set", func(t *testing.T) {
-	//		optimizedSigs := optimizeSignatureSet(addressSigs, addressWeights, key.GetMinPassingWeight())
-	//
-	//		// includes all operators
-	//		assert.Equal(t, len(operators), len(optimized))
-	//
-	//		// sorted by address
-	//		assert.True(t, sort.SliceIsSorted(optimized, func(i, j int) bool {
-	//			return bytes.Compare(operators[i].Address.Bytes(), operators[j].Address.Bytes()) < 0
-	//		}))
-	//
-	//		// optimized sigs should be above threshold
-	//		operatorsWithSig := slices.Filter(optimized, func(o types.Operator) bool { return o.Signature != nil })
-	//		assert.True(t, slices.Reduce(operatorsWithSig, sdk.ZeroUint(), func(c sdk.Uint, o types.Operator) sdk.Uint {
-	//			return c.Add(o.Weight)
-	//		}).GTE(key.GetMinPassingWeight()))
-	//
-	//		// sig should be nil after pass the threshold
-	//		operatorsWithoutSig := slices.Filter(optimized, func(o types.Operator) bool { return o.Signature == nil })
-	//		assert.Equal(t, len(operators), len(operatorsWithSig)+len(operatorsWithoutSig))
-	//	}).
-	//	Run(t, 20)
+func isSigSetOrdered(optimizedAddresses, sortedAddresses []common.Address) bool {
+	i := 0
+	j := 0
+	for i < len(optimizedAddresses) {
+		if j >= len(sortedAddresses) {
+			return false
+		}
+		switch bytes.Compare(optimizedAddresses[i].Bytes(), sortedAddresses[j].Bytes()) {
+		case 0:
+			i++
+			j++
+		case 1:
+			j++
+		default:
+			return false
+		}
+
+	}
+	return true
 }
