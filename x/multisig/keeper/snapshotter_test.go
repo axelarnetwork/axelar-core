@@ -28,38 +28,27 @@ func TestSnapshotCreator_CreateSnapshot(t *testing.T) {
 			GetBondedValidatorsByPowerFunc: func(ctx sdk.Context) []stakingtypes.Validator { return bondedValidators },
 		}
 
-		notBondedAddr  = rand2.ValAddr()
 		jailedAddr     = rand2.ValAddr()
 		tombstonedAddr = rand2.ValAddr()
 		inactiveAddr   = rand2.ValAddr()
 		activeAddr     = rand2.ValAddr()
 
-		notBondedVal = &mock2.ValidatorIMock{
-			IsBondedFunc:    func() bool { return false },
-			IsJailedFunc:    func() bool { return false },
-			GetConsAddrFunc: func() (sdk.ConsAddress, error) { return sdk.ConsAddress(notBondedAddr), nil },
-			GetOperatorFunc: func() sdk.ValAddress { return notBondedAddr },
-		}
 		jailedVal = &mock2.ValidatorIMock{
-			IsBondedFunc:    func() bool { return true },
 			IsJailedFunc:    func() bool { return true },
 			GetConsAddrFunc: func() (sdk.ConsAddress, error) { return sdk.ConsAddress(jailedAddr), nil },
 			GetOperatorFunc: func() sdk.ValAddress { return jailedAddr },
 		}
 		tombstonedVal = &mock2.ValidatorIMock{
-			IsBondedFunc:    func() bool { return true },
 			IsJailedFunc:    func() bool { return false },
 			GetConsAddrFunc: func() (sdk.ConsAddress, error) { return sdk.ConsAddress(tombstonedAddr), nil },
 			GetOperatorFunc: func() sdk.ValAddress { return tombstonedAddr },
 		}
 		inactiveVal = &mock2.ValidatorIMock{
-			IsBondedFunc:    func() bool { return true },
 			IsJailedFunc:    func() bool { return false },
 			GetConsAddrFunc: func() (sdk.ConsAddress, error) { return sdk.ConsAddress(inactiveAddr), nil },
 			GetOperatorFunc: func() sdk.ValAddress { return inactiveAddr },
 		}
 		activeVal = &mock2.ValidatorIMock{
-			IsBondedFunc:    func() bool { return true },
 			IsJailedFunc:    func() bool { return false },
 			GetConsAddrFunc: func() (sdk.ConsAddress, error) { return sdk.ConsAddress(activeAddr), nil },
 			GetOperatorFunc: func() sdk.ValAddress { return activeAddr },
@@ -94,7 +83,6 @@ func TestSnapshotCreator_CreateSnapshot(t *testing.T) {
 		) (snapshot.Snapshot, error) {
 			assert.ElementsMatch(t, candidates, slices.Map(bondedValidators, stakingtypes.Validator.GetOperator))
 
-			assert.False(t, filterFunc(notBondedVal))
 			assert.False(t, filterFunc(jailedVal))
 			assert.False(t, filterFunc(tombstonedVal))
 			assert.False(t, filterFunc(inactiveVal))
