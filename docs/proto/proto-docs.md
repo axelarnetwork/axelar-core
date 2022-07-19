@@ -186,9 +186,10 @@
     - [GatewayAddressResponse](#axelar.evm.v1beta1.GatewayAddressResponse)
     - [KeyAddressRequest](#axelar.evm.v1beta1.KeyAddressRequest)
     - [KeyAddressResponse](#axelar.evm.v1beta1.KeyAddressResponse)
-    - [KeyAddressResponse.AddressWeightsEntry](#axelar.evm.v1beta1.KeyAddressResponse.AddressWeightsEntry)
+    - [KeyAddressResponse.WeightedAddress](#axelar.evm.v1beta1.KeyAddressResponse.WeightedAddress)
     - [PendingCommandsRequest](#axelar.evm.v1beta1.PendingCommandsRequest)
     - [PendingCommandsResponse](#axelar.evm.v1beta1.PendingCommandsResponse)
+    - [Proof](#axelar.evm.v1beta1.Proof)
     - [QueryBurnerAddressResponse](#axelar.evm.v1beta1.QueryBurnerAddressResponse)
     - [QueryCommandResponse](#axelar.evm.v1beta1.QueryCommandResponse)
     - [QueryCommandResponse.ParamsEntry](#axelar.evm.v1beta1.QueryCommandResponse.ParamsEntry)
@@ -2729,10 +2730,10 @@ GenesisState represents the genesis state
 | `data` | [string](#string) |  |  |
 | `status` | [BatchedCommandsStatus](#axelar.evm.v1beta1.BatchedCommandsStatus) |  |  |
 | `key_id` | [string](#string) |  |  |
-| `signature` | [string](#string) | repeated |  |
 | `execute_data` | [string](#string) |  |  |
 | `prev_batched_commands_id` | [string](#string) |  |  |
 | `command_ids` | [string](#string) | repeated |  |
+| `proof` | [Proof](#axelar.evm.v1beta1.Proof) |  |  |
 
 
 
@@ -3040,7 +3041,7 @@ ERC20 tokens requested for a chain
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `key_id` | [string](#string) |  |  |
-| `address_weights` | [KeyAddressResponse.AddressWeightsEntry](#axelar.evm.v1beta1.KeyAddressResponse.AddressWeightsEntry) | repeated |  |
+| `addresses` | [KeyAddressResponse.WeightedAddress](#axelar.evm.v1beta1.KeyAddressResponse.WeightedAddress) | repeated |  |
 | `threshold` | [string](#string) |  |  |
 
 
@@ -3048,16 +3049,16 @@ ERC20 tokens requested for a chain
 
 
 
-<a name="axelar.evm.v1beta1.KeyAddressResponse.AddressWeightsEntry"></a>
+<a name="axelar.evm.v1beta1.KeyAddressResponse.WeightedAddress"></a>
 
-### KeyAddressResponse.AddressWeightsEntry
+### KeyAddressResponse.WeightedAddress
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `key` | [string](#string) |  |  |
-| `value` | [string](#string) |  |  |
+| `address` | [string](#string) |  |  |
+| `weight` | [string](#string) |  |  |
 
 
 
@@ -3088,6 +3089,24 @@ ERC20 tokens requested for a chain
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `commands` | [QueryCommandResponse](#axelar.evm.v1beta1.QueryCommandResponse) | repeated |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.Proof"></a>
+
+### Proof
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `addresses` | [string](#string) | repeated |  |
+| `weights` | [string](#string) | repeated |  |
+| `threshold` | [string](#string) |  |  |
+| `signatures` | [string](#string) | repeated |  |
 
 
 
