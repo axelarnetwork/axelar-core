@@ -495,11 +495,35 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	)
 
 	app.mm.SetOrderMigrations(
-		multisigTypes.ModuleName, // new module and therefore need to init genesis
+		// auth module needs to go first
+		authtypes.ModuleName,
+		// sdk modules
+		upgradetypes.ModuleName,
+		capabilitytypes.ModuleName,
+		crisistypes.ModuleName,
+		govtypes.ModuleName,
+		stakingtypes.ModuleName,
+		ibctransfertypes.ModuleName,
+		ibchost.ModuleName,
+		banktypes.ModuleName,
+		distrtypes.ModuleName,
+		slashingtypes.ModuleName,
+		minttypes.ModuleName,
+		genutiltypes.ModuleName,
+		evidencetypes.ModuleName,
+		feegrant.ModuleName,
+		paramstypes.ModuleName,
+		vestingtypes.ModuleName,
+		// axelar modules
+		multisigTypes.ModuleName,
 		tssTypes.ModuleName,
 		rewardTypes.ModuleName,
 		voteTypes.ModuleName,
 		evmTypes.ModuleName,
+		nexusTypes.ModuleName,
+		permissionTypes.ModuleName,
+		snapTypes.ModuleName,
+		axelarnetTypes.ModuleName,
 	)
 	// During begin block slashing happens after distr.BeginBlocker so that
 	// there is nothing left over in the validator fee pool, so as to keep the
