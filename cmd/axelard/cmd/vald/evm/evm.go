@@ -69,6 +69,7 @@ func (mgr Mgr) ProcessNewChain(event *types.ChainAdded) (err error) {
 func (mgr Mgr) ProcessDepositConfirmation(event *evmTypes.ConfirmDepositStarted) error {
 	if !slices.Any(event.Participants, func(v sdk.ValAddress) bool { return v.Equals(mgr.validator) }) {
 		mgr.logger.Debug("ignoring deposit confirmation poll: not a participant", "pollID", event.PollID)
+		return nil
 	}
 
 	rpcClient, found := mgr.rpcs[strings.ToLower(event.Chain.String())]
@@ -119,6 +120,7 @@ func (mgr Mgr) ProcessDepositConfirmation(event *evmTypes.ConfirmDepositStarted)
 func (mgr Mgr) ProcessTokenConfirmation(event *evmTypes.ConfirmTokenStarted) error {
 	if !slices.Any(event.Participants, func(v sdk.ValAddress) bool { return v.Equals(mgr.validator) }) {
 		mgr.logger.Debug("ignoring token confirmation poll: not a participant", "pollID", event.PollID)
+		return nil
 	}
 
 	rpcClient, found := mgr.rpcs[strings.ToLower(event.Chain.String())]
@@ -170,6 +172,7 @@ func (mgr Mgr) ProcessTokenConfirmation(event *evmTypes.ConfirmTokenStarted) err
 func (mgr Mgr) ProcessTransferKeyConfirmation(event *types.ConfirmKeyTransferStarted) error {
 	if !slices.Any(event.Participants, func(v sdk.ValAddress) bool { return v.Equals(mgr.validator) }) {
 		mgr.logger.Debug("ignoring key transfer confirmation poll: not a participant", "pollID", event.PollID)
+		return nil
 	}
 
 	rpcClient, ok := mgr.rpcs[strings.ToLower(event.Chain.String())]
@@ -226,6 +229,7 @@ func (mgr Mgr) ProcessTransferKeyConfirmation(event *types.ConfirmKeyTransferSta
 func (mgr Mgr) ProcessGatewayTxConfirmation(event *evmTypes.ConfirmGatewayTxStarted) error {
 	if !slices.Any(event.Participants, func(v sdk.ValAddress) bool { return v.Equals(mgr.validator) }) {
 		mgr.logger.Debug("ignoring gateway tx confirmation poll: not a participant", "pollID", event.PollID)
+		return nil
 	}
 
 	rpcClient, found := mgr.rpcs[strings.ToLower(event.Chain.String())]
