@@ -494,6 +494,13 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		permission.NewAppModule(permissionK),
 	)
 
+	app.mm.SetOrderMigrations(
+		multisigTypes.ModuleName, // new module and therefore need to init genesis
+		tssTypes.ModuleName,
+		rewardTypes.ModuleName,
+		voteTypes.ModuleName,
+		evmTypes.ModuleName,
+	)
 	// During begin block slashing happens after distr.BeginBlocker so that
 	// there is nothing left over in the validator fee pool, so as to keep the
 	// CanWithdrawInvariant invariant.
