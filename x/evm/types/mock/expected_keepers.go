@@ -10,7 +10,7 @@ import (
 	github_com_axelarnetwork_axelar_core_x_nexus_exported "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	exported "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/cosmos/cosmos-sdk/codec"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
@@ -99,10 +99,10 @@ var _ types.Signer = &SignerMock{}
 //
 // 		// make and configure a mocked types.Signer
 // 		mockedSigner := &SignerMock{
-// 			GetKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID tss.KeyID) (tss.Key, bool) {
+// 			GetKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID exported.KeyID) (exported.Key, bool) {
 // 				panic("mock out the GetKey method")
 // 			},
-// 			GetSigFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string) (tss.Signature, tss.SigStatus) {
+// 			GetSigFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string) (exported.Signature, exported.SigStatus) {
 // 				panic("mock out the GetSig method")
 // 			},
 // 		}
@@ -113,10 +113,10 @@ var _ types.Signer = &SignerMock{}
 // 	}
 type SignerMock struct {
 	// GetKeyFunc mocks the GetKey method.
-	GetKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID tss.KeyID) (tss.Key, bool)
+	GetKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID exported.KeyID) (exported.Key, bool)
 
 	// GetSigFunc mocks the GetSig method.
-	GetSigFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string) (tss.Signature, tss.SigStatus)
+	GetSigFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string) (exported.Signature, exported.SigStatus)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -125,7 +125,7 @@ type SignerMock struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// KeyID is the keyID argument value.
-			KeyID tss.KeyID
+			KeyID exported.KeyID
 		}
 		// GetSig holds details about calls to the GetSig method.
 		GetSig []struct {
@@ -140,13 +140,13 @@ type SignerMock struct {
 }
 
 // GetKey calls GetKeyFunc.
-func (mock *SignerMock) GetKey(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID tss.KeyID) (tss.Key, bool) {
+func (mock *SignerMock) GetKey(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID exported.KeyID) (exported.Key, bool) {
 	if mock.GetKeyFunc == nil {
 		panic("SignerMock.GetKeyFunc: method is nil but Signer.GetKey was just called")
 	}
 	callInfo := struct {
 		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		KeyID tss.KeyID
+		KeyID exported.KeyID
 	}{
 		Ctx:   ctx,
 		KeyID: keyID,
@@ -162,11 +162,11 @@ func (mock *SignerMock) GetKey(ctx github_com_cosmos_cosmos_sdk_types.Context, k
 //     len(mockedSigner.GetKeyCalls())
 func (mock *SignerMock) GetKeyCalls() []struct {
 	Ctx   github_com_cosmos_cosmos_sdk_types.Context
-	KeyID tss.KeyID
+	KeyID exported.KeyID
 } {
 	var calls []struct {
 		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		KeyID tss.KeyID
+		KeyID exported.KeyID
 	}
 	mock.lockGetKey.RLock()
 	calls = mock.calls.GetKey
@@ -175,7 +175,7 @@ func (mock *SignerMock) GetKeyCalls() []struct {
 }
 
 // GetSig calls GetSigFunc.
-func (mock *SignerMock) GetSig(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string) (tss.Signature, tss.SigStatus) {
+func (mock *SignerMock) GetSig(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string) (exported.Signature, exported.SigStatus) {
 	if mock.GetSigFunc == nil {
 		panic("SignerMock.GetSigFunc: method is nil but Signer.GetSig was just called")
 	}
@@ -1213,7 +1213,7 @@ var _ types.Snapshotter = &SnapshotterMock{}
 // 			GetValidatorIllegibilityFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator snapshot.SDKValidator) (snapshot.ValidatorIllegibility, error) {
 // 				panic("mock out the GetValidatorIllegibility method")
 // 			},
-// 			TakeSnapshotFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRequirement tss.KeyRequirement) (snapshot.Snapshot, error) {
+// 			TakeSnapshotFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRequirement exported.KeyRequirement) (snapshot.Snapshot, error) {
 // 				panic("mock out the TakeSnapshot method")
 // 			},
 // 		}
@@ -1242,7 +1242,7 @@ type SnapshotterMock struct {
 	GetValidatorIllegibilityFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator snapshot.SDKValidator) (snapshot.ValidatorIllegibility, error)
 
 	// TakeSnapshotFunc mocks the TakeSnapshot method.
-	TakeSnapshotFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRequirement tss.KeyRequirement) (snapshot.Snapshot, error)
+	TakeSnapshotFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRequirement exported.KeyRequirement) (snapshot.Snapshot, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -1297,7 +1297,7 @@ type SnapshotterMock struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// KeyRequirement is the keyRequirement argument value.
-			KeyRequirement tss.KeyRequirement
+			KeyRequirement exported.KeyRequirement
 		}
 	}
 	lockCreateSnapshot           sync.RWMutex
@@ -1528,13 +1528,13 @@ func (mock *SnapshotterMock) GetValidatorIllegibilityCalls() []struct {
 }
 
 // TakeSnapshot calls TakeSnapshotFunc.
-func (mock *SnapshotterMock) TakeSnapshot(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRequirement tss.KeyRequirement) (snapshot.Snapshot, error) {
+func (mock *SnapshotterMock) TakeSnapshot(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRequirement exported.KeyRequirement) (snapshot.Snapshot, error) {
 	if mock.TakeSnapshotFunc == nil {
 		panic("SnapshotterMock.TakeSnapshotFunc: method is nil but Snapshotter.TakeSnapshot was just called")
 	}
 	callInfo := struct {
 		Ctx            github_com_cosmos_cosmos_sdk_types.Context
-		KeyRequirement tss.KeyRequirement
+		KeyRequirement exported.KeyRequirement
 	}{
 		Ctx:            ctx,
 		KeyRequirement: keyRequirement,
@@ -1550,11 +1550,11 @@ func (mock *SnapshotterMock) TakeSnapshot(ctx github_com_cosmos_cosmos_sdk_types
 //     len(mockedSnapshotter.TakeSnapshotCalls())
 func (mock *SnapshotterMock) TakeSnapshotCalls() []struct {
 	Ctx            github_com_cosmos_cosmos_sdk_types.Context
-	KeyRequirement tss.KeyRequirement
+	KeyRequirement exported.KeyRequirement
 } {
 	var calls []struct {
 		Ctx            github_com_cosmos_cosmos_sdk_types.Context
-		KeyRequirement tss.KeyRequirement
+		KeyRequirement exported.KeyRequirement
 	}
 	mock.lockTakeSnapshot.RLock()
 	calls = mock.calls.TakeSnapshot
