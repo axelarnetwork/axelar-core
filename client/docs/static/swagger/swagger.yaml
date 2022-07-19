@@ -7066,10 +7066,15 @@ paths:
             properties:
               key_id:
                 type: string
-              address_weights:
-                type: object
-                additionalProperties:
-                  type: string
+              addresses:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    address:
+                      type: string
+                    weight:
+                      type: string
               threshold:
                 type: string
         default:
@@ -40889,11 +40894,23 @@ definitions:
     properties:
       key_id:
         type: string
-      address_weights:
-        type: object
-        additionalProperties:
-          type: string
+      addresses:
+        type: array
+        items:
+          type: object
+          properties:
+            address:
+              type: string
+            weight:
+              type: string
       threshold:
+        type: string
+  axelar.evm.v1beta1.KeyAddressResponse.WeightedAddress:
+    type: object
+    properties:
+      address:
+        type: string
+      weight:
         type: string
   axelar.evm.v1beta1.LinkRequest:
     type: object

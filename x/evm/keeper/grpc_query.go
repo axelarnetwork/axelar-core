@@ -330,19 +330,22 @@ func (q Querier) PendingCommands(c context.Context, req *types.PendingCommandsRe
 func queryAddressByKeyID(ctx sdk.Context, multisig types.MultisigKeeper, chain nexustypes.Chain, keyID multisig.KeyID) (types.KeyAddressResponse, error) {
 	key, ok := multisig.GetKey(ctx, keyID)
 	if !ok {
-		return types.KeyAddressResponse{}, sdkerrors.Wrapf(types.ErrEVM, "threshold key %s not found", keyID)
+		return types.KeyAddressResponse{}, sdkerrors.Wrapf(types.ErrEVM, "key %s not found for chain %s", keyID, chain.Name)
 	}
 
-	weights, threshold := types.ParseMultisigKey(key)
-	addressWeights := make(map[string]string, len(weights))
-	for address, weight := range weights {
-		addressWeights[address] = weight.String()
+	addresses, weights, threshold := types.GetMultisigAddressesAndWeights(key)
+	weightedAddresses := make([]types.KeyAddressResponse_WeightedAddress, len(weights))
+	for i, address := range addresses {
+		weightedAddresses = append(weightedAddresses, types.KeyAddressResponse_WeightedAddress{
+			Address: address.Hex(),
+			Weight:  weights[i].String(),
+		})
 	}
 
 	return types.KeyAddressResponse{
-		KeyID:          keyID,
-		AddressWeights: addressWeights,
-		Threshold:      threshold.String(),
+		KeyID:     keyID,
+		Addresses: weightedAddresses,
+		Threshold: threshold.String(),
 	}, nil
 }
 
@@ -359,7 +362,7 @@ func (q Querier) KeyAddress(c context.Context, req *types.KeyAddressRequest) (*t
 	if keyID == "" {
 		keyID, ok = q.multisig.GetCurrentKeyID(ctx, chain.Name)
 		if !ok {
-			return nil, status.Error(codes.NotFound, sdkerrors.Wrapf(types.ErrEVM, "key not found for chain %s", req.Chain).Error())
+			return nil, status.Error(codes.NotFound, sdkerrors.Wrapf(types.ErrEVM, "current key not found for chain %s", req.Chain).Error())
 		}
 	}
 
