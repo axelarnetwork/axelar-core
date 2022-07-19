@@ -4,10 +4,12 @@
 package mock
 
 import (
+	utils "github.com/axelarnetwork/axelar-core/utils"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
 	exported "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
+	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/tendermint/libs/log"
 	"sync"
@@ -939,6 +941,9 @@ var _ types.Snapshotter = &SnapshotterMock{}
 //
 // 		// make and configure a mocked types.Snapshotter
 // 		mockedSnapshotter := &SnapshotterMock{
+// 			CreateSnapshotFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, candidates []github_com_cosmos_cosmos_sdk_types.ValAddress, filterFunc func(snapshot.ValidatorI) bool, weightFunc func(consensusPower github_com_cosmos_cosmos_sdk_types.Uint) github_com_cosmos_cosmos_sdk_types.Uint, threshold utils.Threshold) (snapshot.Snapshot, error) {
+// 				panic("mock out the CreateSnapshot method")
+// 			},
 // 			GetOperatorFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, proxy github_com_cosmos_cosmos_sdk_types.AccAddress) github_com_cosmos_cosmos_sdk_types.ValAddress {
 // 				panic("mock out the GetOperator method")
 // 			},
@@ -952,6 +957,9 @@ var _ types.Snapshotter = &SnapshotterMock{}
 //
 // 	}
 type SnapshotterMock struct {
+	// CreateSnapshotFunc mocks the CreateSnapshot method.
+	CreateSnapshotFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, candidates []github_com_cosmos_cosmos_sdk_types.ValAddress, filterFunc func(snapshot.ValidatorI) bool, weightFunc func(consensusPower github_com_cosmos_cosmos_sdk_types.Uint) github_com_cosmos_cosmos_sdk_types.Uint, threshold utils.Threshold) (snapshot.Snapshot, error)
+
 	// GetOperatorFunc mocks the GetOperator method.
 	GetOperatorFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, proxy github_com_cosmos_cosmos_sdk_types.AccAddress) github_com_cosmos_cosmos_sdk_types.ValAddress
 
@@ -960,6 +968,19 @@ type SnapshotterMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// CreateSnapshot holds details about calls to the CreateSnapshot method.
+		CreateSnapshot []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Candidates is the candidates argument value.
+			Candidates []github_com_cosmos_cosmos_sdk_types.ValAddress
+			// FilterFunc is the filterFunc argument value.
+			FilterFunc func(snapshot.ValidatorI) bool
+			// WeightFunc is the weightFunc argument value.
+			WeightFunc func(consensusPower github_com_cosmos_cosmos_sdk_types.Uint) github_com_cosmos_cosmos_sdk_types.Uint
+			// Threshold is the threshold argument value.
+			Threshold utils.Threshold
+		}
 		// GetOperator holds details about calls to the GetOperator method.
 		GetOperator []struct {
 			// Ctx is the ctx argument value.
@@ -975,8 +996,56 @@ type SnapshotterMock struct {
 			Operator github_com_cosmos_cosmos_sdk_types.ValAddress
 		}
 	}
-	lockGetOperator sync.RWMutex
-	lockGetProxy    sync.RWMutex
+	lockCreateSnapshot sync.RWMutex
+	lockGetOperator    sync.RWMutex
+	lockGetProxy       sync.RWMutex
+}
+
+// CreateSnapshot calls CreateSnapshotFunc.
+func (mock *SnapshotterMock) CreateSnapshot(ctx github_com_cosmos_cosmos_sdk_types.Context, candidates []github_com_cosmos_cosmos_sdk_types.ValAddress, filterFunc func(snapshot.ValidatorI) bool, weightFunc func(consensusPower github_com_cosmos_cosmos_sdk_types.Uint) github_com_cosmos_cosmos_sdk_types.Uint, threshold utils.Threshold) (snapshot.Snapshot, error) {
+	if mock.CreateSnapshotFunc == nil {
+		panic("SnapshotterMock.CreateSnapshotFunc: method is nil but Snapshotter.CreateSnapshot was just called")
+	}
+	callInfo := struct {
+		Ctx        github_com_cosmos_cosmos_sdk_types.Context
+		Candidates []github_com_cosmos_cosmos_sdk_types.ValAddress
+		FilterFunc func(snapshot.ValidatorI) bool
+		WeightFunc func(consensusPower github_com_cosmos_cosmos_sdk_types.Uint) github_com_cosmos_cosmos_sdk_types.Uint
+		Threshold  utils.Threshold
+	}{
+		Ctx:        ctx,
+		Candidates: candidates,
+		FilterFunc: filterFunc,
+		WeightFunc: weightFunc,
+		Threshold:  threshold,
+	}
+	mock.lockCreateSnapshot.Lock()
+	mock.calls.CreateSnapshot = append(mock.calls.CreateSnapshot, callInfo)
+	mock.lockCreateSnapshot.Unlock()
+	return mock.CreateSnapshotFunc(ctx, candidates, filterFunc, weightFunc, threshold)
+}
+
+// CreateSnapshotCalls gets all the calls that were made to CreateSnapshot.
+// Check the length with:
+//     len(mockedSnapshotter.CreateSnapshotCalls())
+func (mock *SnapshotterMock) CreateSnapshotCalls() []struct {
+	Ctx        github_com_cosmos_cosmos_sdk_types.Context
+	Candidates []github_com_cosmos_cosmos_sdk_types.ValAddress
+	FilterFunc func(snapshot.ValidatorI) bool
+	WeightFunc func(consensusPower github_com_cosmos_cosmos_sdk_types.Uint) github_com_cosmos_cosmos_sdk_types.Uint
+	Threshold  utils.Threshold
+} {
+	var calls []struct {
+		Ctx        github_com_cosmos_cosmos_sdk_types.Context
+		Candidates []github_com_cosmos_cosmos_sdk_types.ValAddress
+		FilterFunc func(snapshot.ValidatorI) bool
+		WeightFunc func(consensusPower github_com_cosmos_cosmos_sdk_types.Uint) github_com_cosmos_cosmos_sdk_types.Uint
+		Threshold  utils.Threshold
+	}
+	mock.lockCreateSnapshot.RLock()
+	calls = mock.calls.CreateSnapshot
+	mock.lockCreateSnapshot.RUnlock()
+	return calls
 }
 
 // GetOperator calls GetOperatorFunc.
@@ -1253,5 +1322,76 @@ func (mock *RewardKeeperMock) GetPoolCalls() []struct {
 	mock.lockGetPool.RLock()
 	calls = mock.calls.GetPool
 	mock.lockGetPool.RUnlock()
+	return calls
+}
+
+// Ensure, that SlashingKeeperMock does implement types.SlashingKeeper.
+// If this is not the case, regenerate this file with moq.
+var _ types.SlashingKeeper = &SlashingKeeperMock{}
+
+// SlashingKeeperMock is a mock implementation of types.SlashingKeeper.
+//
+// 	func TestSomethingThatUsesSlashingKeeper(t *testing.T) {
+//
+// 		// make and configure a mocked types.SlashingKeeper
+// 		mockedSlashingKeeper := &SlashingKeeperMock{
+// 			IsTombstonedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, consAddr github_com_cosmos_cosmos_sdk_types.ConsAddress) bool {
+// 				panic("mock out the IsTombstoned method")
+// 			},
+// 		}
+//
+// 		// use mockedSlashingKeeper in code that requires types.SlashingKeeper
+// 		// and then make assertions.
+//
+// 	}
+type SlashingKeeperMock struct {
+	// IsTombstonedFunc mocks the IsTombstoned method.
+	IsTombstonedFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, consAddr github_com_cosmos_cosmos_sdk_types.ConsAddress) bool
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// IsTombstoned holds details about calls to the IsTombstoned method.
+		IsTombstoned []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// ConsAddr is the consAddr argument value.
+			ConsAddr github_com_cosmos_cosmos_sdk_types.ConsAddress
+		}
+	}
+	lockIsTombstoned sync.RWMutex
+}
+
+// IsTombstoned calls IsTombstonedFunc.
+func (mock *SlashingKeeperMock) IsTombstoned(ctx github_com_cosmos_cosmos_sdk_types.Context, consAddr github_com_cosmos_cosmos_sdk_types.ConsAddress) bool {
+	if mock.IsTombstonedFunc == nil {
+		panic("SlashingKeeperMock.IsTombstonedFunc: method is nil but SlashingKeeper.IsTombstoned was just called")
+	}
+	callInfo := struct {
+		Ctx      github_com_cosmos_cosmos_sdk_types.Context
+		ConsAddr github_com_cosmos_cosmos_sdk_types.ConsAddress
+	}{
+		Ctx:      ctx,
+		ConsAddr: consAddr,
+	}
+	mock.lockIsTombstoned.Lock()
+	mock.calls.IsTombstoned = append(mock.calls.IsTombstoned, callInfo)
+	mock.lockIsTombstoned.Unlock()
+	return mock.IsTombstonedFunc(ctx, consAddr)
+}
+
+// IsTombstonedCalls gets all the calls that were made to IsTombstoned.
+// Check the length with:
+//     len(mockedSlashingKeeper.IsTombstonedCalls())
+func (mock *SlashingKeeperMock) IsTombstonedCalls() []struct {
+	Ctx      github_com_cosmos_cosmos_sdk_types.Context
+	ConsAddr github_com_cosmos_cosmos_sdk_types.ConsAddress
+} {
+	var calls []struct {
+		Ctx      github_com_cosmos_cosmos_sdk_types.Context
+		ConsAddr github_com_cosmos_cosmos_sdk_types.ConsAddress
+	}
+	mock.lockIsTombstoned.RLock()
+	calls = mock.calls.IsTombstoned
+	mock.lockIsTombstoned.RUnlock()
 	return calls
 }

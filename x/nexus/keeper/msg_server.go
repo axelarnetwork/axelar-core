@@ -9,6 +9,8 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
+	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	"github.com/axelarnetwork/utils/funcs"
 )
 
 var _ types.MsgServiceServer = msgServer{}
@@ -18,15 +20,17 @@ const allChain = ":all:"
 type msgServer struct {
 	types.Nexus
 	snapshotter types.Snapshotter
+	slashing    types.SlashingKeeper
 	staking     types.StakingKeeper
 	axelarnet   types.AxelarnetKeeper
 }
 
 // NewMsgServerImpl returns an implementation of the nexus MsgServiceServer interface for the provided Keeper.
-func NewMsgServerImpl(k types.Nexus, snapshotter types.Snapshotter, staking types.StakingKeeper, axelarnet types.AxelarnetKeeper) types.MsgServiceServer {
+func NewMsgServerImpl(k types.Nexus, snapshotter types.Snapshotter, slashing types.SlashingKeeper, staking types.StakingKeeper, axelarnet types.AxelarnetKeeper) types.MsgServiceServer {
 	return msgServer{
 		Nexus:       k,
 		snapshotter: snapshotter,
+		slashing:    slashing,
 		staking:     staking,
 		axelarnet:   axelarnet,
 	}
@@ -167,8 +171,7 @@ func (s msgServer) activateChain(ctx sdk.Context, chain exported.Chain) {
 	}
 
 	// no chain maintainer for cosmos chains
-	if !s.axelarnet.IsCosmosChain(ctx, chain.Name) && !isActivationThresholdMet(ctx, s.Nexus, s.staking, chain) {
-		s.Logger(ctx).Info(fmt.Sprintf("activation threshold is not met for %s", chain.Name))
+	if !s.axelarnet.IsCosmosChain(ctx, chain.Name) && !s.isActivationThresholdMet(ctx, chain) {
 		return
 	}
 
@@ -204,21 +207,43 @@ func (s msgServer) deactivateChain(ctx sdk.Context, chain exported.Chain) {
 	)
 }
 
-func isActivationThresholdMet(ctx sdk.Context, nexus types.Nexus, staking types.StakingKeeper, chain exported.Chain) bool {
-	sumConsensusPower := sdk.ZeroInt()
-	maintainers := nexus.GetChainMaintainers(ctx, chain)
-
-	for _, maintainer := range maintainers {
-		validator := staking.Validator(ctx, maintainer)
-
-		if validator == nil || !validator.IsBonded() || validator.IsJailed() {
-			continue
+func (s msgServer) isActivationThresholdMet(ctx sdk.Context, chain exported.Chain) bool {
+	isTombstoned := func(v snapshot.ValidatorI) bool {
+		consAdd, err := v.GetConsAddr()
+		if err != nil {
+			return true
 		}
 
-		sumConsensusPower = sumConsensusPower.AddRaw(validator.GetConsensusPower(staking.PowerReduction(ctx)))
+		return s.slashing.IsTombstoned(ctx, consAdd)
 	}
 
-	return nexus.GetParams(ctx).ChainActivationThreshold.IsMet(sumConsensusPower, staking.GetLastTotalPower(ctx))
+	isProxyActive := func(v snapshot.ValidatorI) bool {
+		_, isActive := s.snapshotter.GetProxy(ctx, v.GetOperator())
+
+		return isActive
+	}
+
+	filter := funcs.And(
+		snapshot.ValidatorI.IsBonded,
+		funcs.Not(snapshot.ValidatorI.IsJailed),
+		funcs.Not(isTombstoned),
+		isProxyActive,
+	)
+
+	params := s.Nexus.GetParams(ctx)
+
+	_, err := s.snapshotter.CreateSnapshot(
+		ctx,
+		s.Nexus.GetChainMaintainers(ctx, chain),
+		filter,
+		snapshot.QuadraticWeightFunc,
+		params.ChainActivationThreshold,
+	)
+	if err != nil {
+		s.Logger(ctx).Info(fmt.Sprintf("activation threshold is not met for %s due to: %s", chain.Name, err.Error()))
+	}
+
+	return err == nil
 }
 
 func (s msgServer) RegisterAssetFee(c context.Context, req *types.RegisterAssetFeeRequest) (*types.RegisterAssetFeeResponse, error) {

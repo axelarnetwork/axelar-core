@@ -487,7 +487,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		multisig.NewAppModule(multisigK, stakingK, slashingK, snapK, rewardK, nexusK),
 		tss.NewAppModule(tssK, snapK, votingK, nexusK, stakingK, rewardK, multisigK),
 		vote.NewAppModule(votingK),
-		nexus.NewAppModule(nexusK, snapK, stakingK, axelarnetK, evmK, rewardK),
+		nexus.NewAppModule(nexusK, snapK, slashingK, stakingK, axelarnetK, evmK, rewardK),
 		evm.NewAppModule(evmK, votingK, tssK, nexusK, snapK, stakingK, slashingK, multisigK, logger),
 		axelarnetModule,
 		reward.NewAppModule(rewardK, nexusK, mintK, stakingK, tssK, snapK, bankK, bApp.MsgServiceRouter(), bApp.Router(), keys[paramstypes.StoreKey], tkeys[paramstypes.TStoreKey]),
@@ -629,7 +629,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	anteHandler := sdk.ChainAnteDecorators(
 		ante.NewAnteHandlerDecorator(baseAnteHandler),
 		ante.NewLogMsgDecorator(appCodec),
-		ante.NewCheckCommissionRate(),
+		ante.NewCheckCommissionRate(stakingK),
 		ante.NewUndelegateDecorator(multisigK, nexusK, snapK),
 		ante.NewCheckRefundFeeDecorator(app.interfaceRegistry, accountK, stakingK, snapK, rewardK),
 		ante.NewCheckProxy(snapK),
