@@ -11,7 +11,7 @@ import (
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 )
 
-//go:generate moq -pkg mock -out ./mock/expected_keepers.go . Permission
+//go:generate moq -pkg mock -out ./mock/expected_keepers.go . Permission Staking
 
 // MultiSig provides access to the tss functionality
 type MultiSig interface {
