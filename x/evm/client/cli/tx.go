@@ -14,7 +14,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 const (
@@ -413,7 +412,7 @@ func GetCmdAddChain() *cobra.Command {
 				return err
 			}
 
-			msg := types.NewAddChainRequest(cliCtx.GetFromAddress(), name, tss.Multisig, chainConf.Params)
+			msg := types.NewAddChainRequest(cliCtx.GetFromAddress(), name, chainConf.Params)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

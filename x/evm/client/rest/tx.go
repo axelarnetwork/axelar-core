@@ -16,7 +16,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 // rest routes
@@ -419,7 +418,7 @@ func GetHandlerAddChain(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewAddChainRequest(fromAddr, req.Name, tss.Multisig, req.Params)
+		msg := types.NewAddChainRequest(fromAddr, req.Name, req.Params)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
