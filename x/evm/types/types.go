@@ -1847,3 +1847,10 @@ func getWeightedSignaturesProof(addresses []common.Address, weights []sdk.Uint, 
 
 	return proof, nil
 }
+
+// Operator binds the signer's address, signature and weight
+type Operator struct {
+	Address   common.Address
+	Signature []byte
+	Weight    sdk.Uint
+}

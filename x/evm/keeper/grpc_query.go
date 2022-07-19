@@ -5,14 +5,13 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"github.com/ethereum/go-ethereum/crypto"
 	"sort"
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
-	"golang.org/x/exp/maps"
+	"github.com/ethereum/go-ethereum/crypto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -78,73 +77,53 @@ func (q Querier) BurnerInfo(c context.Context, req *types.BurnerInfoRequest) (*t
 }
 
 // optimizeSignatureSet returns optimized signature set, sorted in ascending order by corresponding evm address
-func optimizeSignatureSet(multisig *multisigtypes.MultiSig, key multisig.Key) [][]byte {
-	participants := key.GetParticipants()
-	addressWeights, threshold := types.ParseMultisigKey(key)
-
-	// EVM address -> signature map
-	addressSigs := make(map[string][]byte, len(participants))
-	for _, p := range participants {
-		pubKey := funcs.MustOk(key.GetPubKey(p))
-		sig, ok := multisig.Sigs[p.String()]
-		if !ok {
-			continue
-		}
-
-		address := crypto.PubkeyToAddress(pubKey.ToECDSAPubKey())
-		addressSigs[address.Hex()] = sig
-	}
-
-	// Sort EVM addresses in descending order by weights
-	addresses := maps.Keys(addressWeights)
-	sort.SliceStable(addresses, func(i, j int) bool {
-		return addressWeights[addresses[i]].GT(addressWeights[addresses[j]])
+func optimizeSignatureSet(operators []types.Operator, minPassingWeight sdk.Uint) [][]byte {
+	sort.SliceStable(operators, func(i, j int) bool {
+		return operators[i].Weight.GT(operators[j].Weight)
 	})
 
-	// Build sig set by weight
-	optimizedSig := make(map[string][]byte)
 	cumWeight := sdk.ZeroUint()
-	for _, addr := range addresses {
-		if cumWeight.GTE(threshold) {
-			break
+	operators = slices.Filter(operators, func(operator types.Operator) bool {
+		if cumWeight.GTE(minPassingWeight) {
+			return false
 		}
 
-		// Sig map does not necessarily contain all key participants.
-		// Participants may late or absent in a signing session
-		sig, ok := addressSigs[addr]
-		if !ok {
-			continue
-		}
-		optimizedSig[addr] = sig
-
-		weight, ok := addressWeights[addr]
-		if !ok {
-			panic("failed to get weight")
-		}
-		cumWeight = cumWeight.Add(weight)
-	}
-
-	// Sort the corresponding address in ascending order
-	sigAddresses := slices.Map(maps.Keys(optimizedSig), common.HexToAddress)
-	sort.SliceStable(sigAddresses, func(i, j int) bool {
-		return bytes.Compare(sigAddresses[i].Bytes(), sigAddresses[j].Bytes()) < 0
+		cumWeight = cumWeight.Add(operator.Weight)
+		return true
 	})
 
-	return slices.Map(sigAddresses, func(addr common.Address) []byte { return optimizedSig[addr.Hex()] })
+	sort.SliceStable(operators, func(i, j int) bool {
+		return bytes.Compare(operators[i].Address.Bytes(), operators[j].Address.Bytes()) < 0
+	})
+
+	return slices.Map(operators, func(operator types.Operator) []byte { return operator.Signature })
 }
 
-func getProof(ctx sdk.Context, commandBatch types.CommandBatch, s types.MultisigKeeper) ([]common.Address, []sdk.Uint, sdk.Uint, [][]byte) {
-	multisig := commandBatch.GetSignature().(*multisigtypes.MultiSig)
+func getProof(key multisig.Key, signature *multisigtypes.MultiSig) ([]common.Address, []sdk.Uint, sdk.Uint, [][]byte) {
+	participantsWithSigs := slices.Filter(key.GetParticipants(), func(v sdk.ValAddress) bool {
+		_, ok := signature.Sigs[v.String()]
+		return ok
+	})
 
-	key := funcs.MustOk(s.GetKey(ctx, multisig.KeyID))
+	operators := slices.Map(participantsWithSigs, func(val sdk.ValAddress) types.Operator {
+		return types.Operator{
+			Address:   crypto.PubkeyToAddress(funcs.MustOk(key.GetPubKey(val)).ToECDSAPubKey()),
+			Signature: funcs.Must(types.NewSignature(signature.Sigs[val.String()])).ToHomesteadSig(),
+			Weight:    key.GetWeight(val),
+		}
+	})
+
 	addresses, weights, threshold := types.GetMultisigAddressesAndWeight(key)
-	signatures := optimizeSignatureSet(multisig, key)
+	signatures := optimizeSignatureSet(operators, key.GetMinPassingWeight())
 
 	return addresses, weights, threshold, signatures
 }
 
 func getExecuteDataAndSigs(ctx sdk.Context, multisig types.MultisigKeeper, commandBatch types.CommandBatch) ([]byte, types.Proof, error) {
-	addresses, weights, threshold, signatures := getProof(ctx, commandBatch, multisig)
+	signature := commandBatch.GetSignature().(*multisigtypes.MultiSig)
+	key := funcs.MustOk(multisig.GetKey(ctx, signature.KeyID))
+
+	addresses, weights, threshold, signatures := getProof(key, signature)
 
 	executeData, err := types.CreateExecuteDataMultisig(commandBatch.GetData(), addresses, weights, threshold, signatures)
 	if err != nil {
