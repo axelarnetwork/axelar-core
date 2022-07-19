@@ -3,6 +3,7 @@ package keeper_test
 import (
 	"testing"
 
+	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/stretchr/testify/assert"
@@ -14,6 +15,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	utilstestutils "github.com/axelarnetwork/axelar-core/utils/testutils"
+	snapshottypes "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	snapshottestutils "github.com/axelarnetwork/axelar-core/x/snapshot/exported/testutils"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/keeper"
@@ -51,6 +53,7 @@ func TestKeeper(t *testing.T) {
 		ctx         sdk.Context
 		k           keeper.Keeper
 		pollBuilder exported.PollBuilder
+		snapshot    snapshottypes.Snapshot
 	)
 
 	givenKeeper := Given("vote keeper", func() {
@@ -60,7 +63,7 @@ func TestKeeper(t *testing.T) {
 	t.Run("InitializePoll", testutils.Func(func(t *testing.T) {
 		whenPollBuilderIsSet := When("poll builder is set", func() {
 			votingThreshold := utilstestutils.RandThreshold()
-			snapshot := snapshottestutils.Snapshot(uint64(rand.I64Between(1, 100)), votingThreshold)
+			snapshot = snapshottestutils.Snapshot(uint64(rand.I64Between(1, 100)), votingThreshold)
 			pollBuilder = exported.NewPollBuilder(rand.NormalizedStr(5), votingThreshold, snapshot, rand.PosI64()).
 				RewardPoolName(rand.NormalizedStr(5)).
 				MinVoterCount(rand.I64Between(0, int64(len(snapshot.Participants)))).
@@ -90,6 +93,24 @@ func TestKeeper(t *testing.T) {
 				_, err := k.InitializePoll(ctx, pollBuilder)
 				assert.Error(t, err)
 			}).
-			Run(t)
+			Run(t, 20)
+
+		givenKeeper.
+			When2(whenPollBuilderIsSet).
+			Then("should bump up gas cost", func(t *testing.T) {
+				gasBefore := ctx.GasMeter().GasConsumed()
+				actual, err := k.InitializePoll(ctx, pollBuilder)
+				gasAfter := ctx.GasMeter().GasConsumed()
+				assert.NoError(t, err)
+
+				voteCostPerMaintainer := storetypes.Gas(20000)
+				gasBump := uint64(len(snapshot.GetParticipantAddresses())) * voteCostPerMaintainer
+				assert.True(t, gasAfter-gasBefore > gasBump)
+
+				_, ok := k.GetPoll(ctx, actual)
+				assert.True(t, ok)
+
+			}).
+			Run(t, 20)
 	}))
 }
