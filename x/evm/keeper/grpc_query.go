@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"bytes"
 	"context"
 	"encoding/hex"
 	"fmt"
@@ -18,6 +19,7 @@ import (
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	nexustypes "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 )
 
@@ -333,6 +335,10 @@ func queryAddressByKeyID(ctx sdk.Context, multisig types.MultisigKeeper, chain n
 			Weight:  weight.String(),
 		})
 	}
+
+	sort.SliceStable(weightedAddresses, func(i, j int) bool {
+		return bytes.Compare(funcs.Must(hex.DecodeString(weightedAddresses[i].Address)), funcs.Must(hex.DecodeString(weightedAddresses[j].Address))) < 0
+	})
 
 	return types.KeyAddressResponse{
 		KeyID:     keyID,
