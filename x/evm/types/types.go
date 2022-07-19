@@ -1844,9 +1844,10 @@ func ParseMultisigKey(key multisig.Key) (map[string]sdk.Uint, sdk.Uint) {
 }
 
 // NewSigMetadata is the constructor for sig metadata
-func NewSigMetadata(sigType SigType, chain nexus.ChainName) *SigMetadata {
+func NewSigMetadata(sigType SigType, chain nexus.ChainName, commandBatchID []byte) *SigMetadata {
 	return &SigMetadata{
-		Type:  sigType,
-		Chain: chain,
+		Type:           sigType,
+		Chain:          chain,
+		CommandBatchID: commandBatchID,
 	}
 }
