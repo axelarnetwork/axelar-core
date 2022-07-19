@@ -4925,10 +4925,6 @@ paths:
                 default: BATCHED_COMMANDS_STATUS_UNSPECIFIED
               key_id:
                 type: string
-              signature:
-                type: array
-                items:
-                  type: string
               execute_data:
                 type: string
               prev_batched_commands_id:
@@ -4937,6 +4933,23 @@ paths:
                 type: array
                 items:
                   type: string
+              proof:
+                type: object
+                properties:
+                  addresses:
+                    type: array
+                    items:
+                      type: string
+                  weights:
+                    type: array
+                    items:
+                      type: string
+                  threshold:
+                    type: string
+                  signatures:
+                    type: array
+                    items:
+                      type: string
         default:
           description: An unexpected error response
           schema:
@@ -7053,10 +7066,15 @@ paths:
             properties:
               key_id:
                 type: string
-              address_weights:
-                type: object
-                additionalProperties:
-                  type: string
+              addresses:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    address:
+                      type: string
+                    weight:
+                      type: string
               threshold:
                 type: string
         default:
@@ -40181,10 +40199,6 @@ definitions:
         default: BATCHED_COMMANDS_STATUS_UNSPECIFIED
       key_id:
         type: string
-      signature:
-        type: array
-        items:
-          type: string
       execute_data:
         type: string
       prev_batched_commands_id:
@@ -40193,6 +40207,23 @@ definitions:
         type: array
         items:
           type: string
+      proof:
+        type: object
+        properties:
+          addresses:
+            type: array
+            items:
+              type: string
+          weights:
+            type: array
+            items:
+              type: string
+          threshold:
+            type: string
+          signatures:
+            type: array
+            items:
+              type: string
   axelar.evm.v1beta1.BatchedCommandsStatus:
     type: string
     enum:
@@ -40863,11 +40894,23 @@ definitions:
     properties:
       key_id:
         type: string
-      address_weights:
-        type: object
-        additionalProperties:
-          type: string
+      addresses:
+        type: array
+        items:
+          type: object
+          properties:
+            address:
+              type: string
+            weight:
+              type: string
       threshold:
+        type: string
+  axelar.evm.v1beta1.KeyAddressResponse.WeightedAddress:
+    type: object
+    properties:
+      address:
+        type: string
+      weight:
         type: string
   axelar.evm.v1beta1.LinkRequest:
     type: object
@@ -40914,6 +40957,23 @@ definitions:
             max_gas_cost:
               type: integer
               format: int64
+  axelar.evm.v1beta1.Proof:
+    type: object
+    properties:
+      addresses:
+        type: array
+        items:
+          type: string
+      weights:
+        type: array
+        items:
+          type: string
+      threshold:
+        type: string
+      signatures:
+        type: array
+        items:
+          type: string
   axelar.evm.v1beta1.QueryCommandResponse:
     type: object
     properties:
