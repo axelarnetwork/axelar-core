@@ -33,7 +33,8 @@ func (d CheckCommissionRate) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate boo
 				return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "validator commission rate has to be >=%s", minCommissionRate.String())
 			}
 		case *stakingtypes.MsgEditValidator:
-			if msg.CommissionRate == nil || msg.CommissionRate.GTE(minCommissionRate) {
+			// if commission rate isn't being changed, then let it pass
+			if msg.CommissionRate == nil {
 				continue
 			}
 
@@ -47,13 +48,10 @@ func (d CheckCommissionRate) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate boo
 				return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "not a validator")
 			}
 
+			// if existing commission rate
 			commissionRate := val.GetCommission()
-			if commissionRate.GTE(minCommissionRate) {
+			if commissionRate.GTE(minCommissionRate) && msg.CommissionRate.LT(minCommissionRate) {
 				return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "validator commission rate has to be >=%s", minCommissionRate.String())
-			}
-
-			if commissionRate.LT(minCommissionRate) && msg.CommissionRate.LT(commissionRate) {
-				return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "validator with existing commission rate below min %s cannot be decreased more", minCommissionRate.String())
 			}
 		default:
 		}

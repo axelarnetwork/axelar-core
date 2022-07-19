@@ -104,11 +104,6 @@ func TestCheckCommissionRate(t *testing.T) {
 		Run(t)
 
 	givenCheckCommissionRateAnteHandler.
-		When("a tx with MsgEditValidator for validator with existing commission rate below minimum being decreased is received", editValidator(sdk.NewDecWithPrec(39, 3), sdk.NewDecWithPrec(30, 3))).
-		Then("should return an error", stopTx).
-		Run(t)
-
-	givenCheckCommissionRateAnteHandler.
 		When("a tx with MsgEditValidator with unspecified commission rate is received", func() {
 			msg = &stakingtypes.MsgEditValidator{
 				ValidatorAddress: valAddr,
