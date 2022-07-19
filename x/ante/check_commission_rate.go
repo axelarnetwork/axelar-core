@@ -48,7 +48,8 @@ func (d CheckCommissionRate) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate boo
 				return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "not a validator")
 			}
 
-			// if existing commission rate
+			// if existing commission rate is lower than the min rate, then let it pass.
+			// if it's >= min rate, then don't allow decreasing it to < min rate.
 			commissionRate := val.GetCommission()
 			if commissionRate.GTE(minCommissionRate) && msg.CommissionRate.LT(minCommissionRate) {
 				return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "validator commission rate has to be >=%s", minCommissionRate.String())
