@@ -451,10 +451,6 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	// No more routes can be added
 	app.ibcKeeper.SetRouter(ibcRouter)
 
-	tssRouter := tssTypes.NewRouter()
-	tssRouter.AddRoute(evmTypes.ModuleName, evmKeeper.NewTssHandler(appCodec, evmK, tssK))
-	tssK.SetRouter(tssRouter)
-
 	voteRouter := voteTypes.NewRouter()
 	voteRouter.AddHandler(evmTypes.ModuleName, evmKeeper.NewVoteHandler(appCodec, evmK, nexusK, rewardK))
 	votingK.SetVoteRouter(voteRouter)
