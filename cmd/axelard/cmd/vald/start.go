@@ -245,12 +245,6 @@ func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, ax
 
 	heartbeat := subscribe(tssTypes.EventTypeHeartBeat, tssTypes.ModuleName, tssTypes.AttributeValueSend)
 
-	keygenStart := subscribe(tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueStart)
-	signStart := subscribe(tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueStart)
-
-	keygenMsg := subscribe(tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
-	signMsg := subscribe(tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
-
 	evmNewChain := subscribe(evmTypes.EventTypeNewChain, evmTypes.ModuleName, evmTypes.AttributeValueUpdate)
 	evmDepConf := subscribe(evmTypes.EventTypeDepositConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
 	evmTokConf := subscribe(evmTypes.EventTypeTokenConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
@@ -293,10 +287,6 @@ func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, ax
 		fetchEvents,
 		createJob(blockHeaderSub, processBlockHeader, cancelEventCtx, logger),
 		createJob(heartbeat, tssMgr.ProcessHeartBeatEvent, cancelEventCtx, logger),
-		createJob(keygenStart, tssMgr.ProcessKeygenStart, cancelEventCtx, logger),
-		createJob(keygenMsg, tssMgr.ProcessKeygenMsg, cancelEventCtx, logger),
-		createJob(signStart, tssMgr.ProcessSignStart, cancelEventCtx, logger),
-		createJob(signMsg, tssMgr.ProcessSignMsg, cancelEventCtx, logger),
 		createJob(evmNewChain, evmMgr.ProcessNewChain, cancelEventCtx, logger),
 		createJob(evmDepConf, evmMgr.ProcessDepositConfirmation, cancelEventCtx, logger),
 		createJob(evmTokConf, evmMgr.ProcessTokenConfirmation, cancelEventCtx, logger),

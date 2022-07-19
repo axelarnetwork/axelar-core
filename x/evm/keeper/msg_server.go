@@ -708,11 +708,7 @@ func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*typ
 		return nil, err
 	}
 
-	if req.KeyType == tss.Threshold {
-		return nil, fmt.Errorf("TSS is disabled")
-	}
-
-	chain := nexus.Chain{Name: req.Name, SupportsForeignAssets: true, KeyType: req.KeyType, Module: types.ModuleName}
+	chain := nexus.Chain{Name: req.Name, SupportsForeignAssets: true, KeyType: tss.Multisig, Module: types.ModuleName}
 	s.nexus.SetChain(ctx, chain)
 	s.ForChain(chain.Name).SetParams(ctx, req.Params)
 

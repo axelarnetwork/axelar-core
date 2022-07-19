@@ -15,7 +15,6 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
-	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
 const (
@@ -400,17 +399,7 @@ func GetCmdAddChain() *cobra.Command {
 				return err
 			}
 			name := args[0]
-			keyTypeStr := args[1]
 			jsonFile := args[2]
-
-			keyType, err := tss.KeyTypeFromSimpleStr(keyTypeStr)
-			if err != nil {
-				return err
-			}
-
-			if !tsstypes.TSSEnabled && keyType == tss.Threshold {
-				return fmt.Errorf("TSS is disabled")
-			}
 
 			byteValue, err := ioutil.ReadFile(jsonFile)
 			if err != nil {
@@ -424,7 +413,7 @@ func GetCmdAddChain() *cobra.Command {
 				return err
 			}
 
-			msg := types.NewAddChainRequest(cliCtx.GetFromAddress(), name, keyType, chainConf.Params)
+			msg := types.NewAddChainRequest(cliCtx.GetFromAddress(), name, tss.Multisig, chainConf.Params)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

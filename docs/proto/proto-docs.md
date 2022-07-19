@@ -3430,7 +3430,7 @@ vote can have any data type
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `name` | [string](#string) |  |  |
-| `key_type` | [axelar.tss.exported.v1beta1.KeyType](#axelar.tss.exported.v1beta1.KeyType) |  |  |
+| `key_type` | [axelar.tss.exported.v1beta1.KeyType](#axelar.tss.exported.v1beta1.KeyType) |  | **Deprecated.**  |
 | `params` | [bytes](#bytes) |  |  |
 
 
@@ -6948,14 +6948,6 @@ Msg defines the tss Msg service.
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `RegisterExternalKeys` | [RegisterExternalKeysRequest](#axelar.tss.v1beta1.RegisterExternalKeysRequest) | [RegisterExternalKeysResponse](#axelar.tss.v1beta1.RegisterExternalKeysResponse) |  | POST|/axelar/tss/register_external_keys|
 | `HeartBeat` | [HeartBeatRequest](#axelar.tss.v1beta1.HeartBeatRequest) | [HeartBeatResponse](#axelar.tss.v1beta1.HeartBeatResponse) |  | POST|/axelar/tss/heartbeat|
-| `StartKeygen` | [StartKeygenRequest](#axelar.tss.v1beta1.StartKeygenRequest) | [StartKeygenResponse](#axelar.tss.v1beta1.StartKeygenResponse) |  | POST|/axelar/tss/start_keygen|
-| `ProcessKeygenTraffic` | [ProcessKeygenTrafficRequest](#axelar.tss.v1beta1.ProcessKeygenTrafficRequest) | [ProcessKeygenTrafficResponse](#axelar.tss.v1beta1.ProcessKeygenTrafficResponse) |  | POST|/axelar/tss/process_keygen_traffic|
-| `RotateKey` | [RotateKeyRequest](#axelar.tss.v1beta1.RotateKeyRequest) | [RotateKeyResponse](#axelar.tss.v1beta1.RotateKeyResponse) |  | POST|/axelar/tss/rotate_key|
-| `VotePubKey` | [VotePubKeyRequest](#axelar.tss.v1beta1.VotePubKeyRequest) | [VotePubKeyResponse](#axelar.tss.v1beta1.VotePubKeyResponse) |  | POST|/axelar/tss/vote_pub_key|
-| `ProcessSignTraffic` | [ProcessSignTrafficRequest](#axelar.tss.v1beta1.ProcessSignTrafficRequest) | [ProcessSignTrafficResponse](#axelar.tss.v1beta1.ProcessSignTrafficResponse) |  | POST|/axelar/tss/process_sign_traffic|
-| `VoteSig` | [VoteSigRequest](#axelar.tss.v1beta1.VoteSigRequest) | [VoteSigResponse](#axelar.tss.v1beta1.VoteSigResponse) |  | POST|/axelar/tss/vote_sig|
-| `SubmitMultisigPubKeys` | [SubmitMultisigPubKeysRequest](#axelar.tss.v1beta1.SubmitMultisigPubKeysRequest) | [SubmitMultisigPubKeysResponse](#axelar.tss.v1beta1.SubmitMultisigPubKeysResponse) |  | POST|/axelar/tss/submit_multisig_pub_keys|
-| `SubmitMultisigSignatures` | [SubmitMultisigSignaturesRequest](#axelar.tss.v1beta1.SubmitMultisigSignaturesRequest) | [SubmitMultisigSignaturesResponse](#axelar.tss.v1beta1.SubmitMultisigSignaturesResponse) |  | POST|/axelar/tss/submit_multisig_signatures|
 
 
 <a name="axelar.tss.v1beta1.QueryService"></a>
