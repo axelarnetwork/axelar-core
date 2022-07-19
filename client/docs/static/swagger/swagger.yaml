@@ -6602,6 +6602,11 @@ paths:
                       new_threshold:
                         type: string
                         format: byte
+                      new_weights:
+                        type: array
+                        items:
+                          type: string
+                          format: byte
                   singlesig_ownership_transferred:
                     type: object
                     properties:
@@ -42426,6 +42431,11 @@ definitions:
           new_threshold:
             type: string
             format: byte
+          new_weights:
+            type: array
+            items:
+              type: string
+              format: byte
       singlesig_ownership_transferred:
         type: object
         properties:
@@ -42494,6 +42504,11 @@ definitions:
       new_threshold:
         type: string
         format: byte
+      new_weights:
+        type: array
+        items:
+          type: string
+          format: byte
   axelar.evm.v1beta1.EventMultisigOwnershipTransferred:
     type: object
     properties:
@@ -42628,6 +42643,11 @@ definitions:
               new_threshold:
                 type: string
                 format: byte
+              new_weights:
+                type: array
+                items:
+                  type: string
+                  format: byte
           singlesig_ownership_transferred:
             type: object
             properties:

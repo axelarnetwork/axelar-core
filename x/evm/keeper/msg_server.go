@@ -356,19 +356,19 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 		return nil, err
 	}
 
-	height, _ := keeper.GetRequiredConfirmationHeight(ctx)
-
-	event := sdk.NewEvent(types.EventTypeTransferKeyConfirmation,
+	params := keeper.GetParams(ctx)
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewConfirmKeyTransfer(chain.Name, req.TxID, types.Address(gatewayAddr), params.ConfirmationHeight, pollID)))
+	// TODO: remove the legacy event
+	ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeTransferKeyConfirmation,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
 		sdk.NewAttribute(types.AttributeKeyChain, chain.Name.String()),
 		sdk.NewAttribute(types.AttributeKeyTxID, req.TxID.Hex()),
 		sdk.NewAttribute(types.AttributeKeyKeyType, chain.KeyType.SimpleString()),
 		sdk.NewAttribute(types.AttributeKeyGatewayAddress, gatewayAddr.Hex()),
-		sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
+		sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(params.ConfirmationHeight, 10)),
 		sdk.NewAttribute(types.AttributeKeyPoll, pollID.String()),
-	)
-	defer func() { ctx.EventManager().EmitEvent(event) }()
+	))
 
 	return &types.ConfirmTransferKeyResponse{}, nil
 }

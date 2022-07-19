@@ -136,6 +136,10 @@ message EventMultisigOperatorshipTransferred {
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
     (gogoproto.nullable) = false
   ];
+  repeated bytes new_weights = 5 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.nullable) = false
+  ];
 }
 
 message EventSinglesigOwnershipTransferred {
