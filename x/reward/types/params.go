@@ -10,7 +10,7 @@ import (
 // Parameter store keys
 var (
 	KeyExternalChainVotingInflationRate = []byte("ExternalChainVotingInflationRate")
-	KeyTssRelativeInflationRate         = []byte("TssRelativeInflationRate")
+	KeyKeyMgmtRelativeInflationRate     = []byte("KeyMgmtRelativeInflationRate")
 )
 
 // KeyTable retrieves a subspace table for the module
@@ -22,7 +22,7 @@ func KeyTable() paramtypes.KeyTable {
 func DefaultParams() Params {
 	return Params{
 		ExternalChainVotingInflationRate: sdk.ZeroDec(),
-		TssRelativeInflationRate:         sdk.ZeroDec(),
+		KeyMgmtRelativeInflationRate:     sdk.ZeroDec(),
 	}
 }
 
@@ -37,7 +37,7 @@ func (m *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 	*/
 	return paramtypes.ParamSetPairs{
 		paramtypes.NewParamSetPair(KeyExternalChainVotingInflationRate, &m.ExternalChainVotingInflationRate, validateExternalChainVotingInflationRate),
-		paramtypes.NewParamSetPair(KeyTssRelativeInflationRate, &m.TssRelativeInflationRate, validateTssRelativeInflationRate),
+		paramtypes.NewParamSetPair(KeyKeyMgmtRelativeInflationRate, &m.KeyMgmtRelativeInflationRate, validateKeyMgmtRelativeInflationRate),
 	}
 }
 
@@ -47,7 +47,7 @@ func (m Params) Validate() error {
 		return err
 	}
 
-	if err := validateTssRelativeInflationRate(m.TssRelativeInflationRate); err != nil {
+	if err := validateKeyMgmtRelativeInflationRate(m.KeyMgmtRelativeInflationRate); err != nil {
 		return err
 	}
 
@@ -70,17 +70,17 @@ func validateExternalChainVotingInflationRate(i interface{}) error {
 	return nil
 }
 
-func validateTssRelativeInflationRate(i interface{}) error {
+func validateKeyMgmtRelativeInflationRate(i interface{}) error {
 	v, ok := i.(sdk.Dec)
 	if !ok {
 		return fmt.Errorf("invalid parameter type: %T", i)
 	}
 
 	if v.IsNegative() {
-		return fmt.Errorf("tss inflation rate cannot be negative: %s", v)
+		return fmt.Errorf("key management inflation rate cannot be negative: %s", v)
 	}
 	if v.GT(sdk.OneDec()) {
-		return fmt.Errorf("tss inflation rate too large: %s", v)
+		return fmt.Errorf("key management inflation rate too large: %s", v)
 	}
 
 	return nil

@@ -77,15 +77,17 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 // AppModule implements module.AppModule
 type AppModule struct {
 	AppModuleBasic
-	keeper       keeper.Keeper
-	nexus        types.Nexus
-	minter       types.Minter
-	staker       types.Staker
-	tss          types.Tss
-	snapshotter  types.Snapshotter
-	msgSvcRouter *baseapp.MsgServiceRouter
-	router       sdk.Router
-	bank         types.Banker
+	keeper         keeper.Keeper
+	nexus          types.Nexus
+	minter         types.Minter
+	staker         types.Staker
+	multiSig       types.MultiSig
+	snapshotter    types.Snapshotter
+	msgSvcRouter   *baseapp.MsgServiceRouter
+	router         sdk.Router
+	bank           types.Banker
+	paramStoreKey  sdk.StoreKey
+	paramTStoreKey sdk.StoreKey
 }
 
 // NewAppModule creates a new AppModule object
@@ -94,11 +96,13 @@ func NewAppModule(
 	nexus types.Nexus,
 	minter types.Minter,
 	staker types.Staker,
-	tss types.Tss,
+	multiSig types.MultiSig,
 	snapshotter types.Snapshotter,
 	bank types.Banker,
 	msgSvcRouter *baseapp.MsgServiceRouter,
 	router sdk.Router,
+	paramStoreKey sdk.StoreKey,
+	paramTStoreKey sdk.StoreKey,
 ) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
@@ -106,11 +110,13 @@ func NewAppModule(
 		nexus:          nexus,
 		minter:         minter,
 		staker:         staker,
-		tss:            tss,
+		multiSig:       multiSig,
 		snapshotter:    snapshotter,
 		msgSvcRouter:   msgSvcRouter,
 		router:         router,
 		bank:           bank,
+		paramStoreKey:  paramStoreKey,
+		paramTStoreKey: paramTStoreKey,
 	}
 }
 
@@ -150,7 +156,12 @@ func (am AppModule) LegacyQuerierHandler(*codec.LegacyAmino) sdk.Querier {
 
 // RegisterServices registers a GRPC query service to respond to the
 // module-specific GRPC queries.
-func (am AppModule) RegisterServices(module.Configurator) {}
+func (am AppModule) RegisterServices(cfg module.Configurator) {
+	err := cfg.RegisterMigration(types.ModuleName, 1, keeper.GetMigrationHandler(am.keeper, am.paramStoreKey, am.paramTStoreKey))
+	if err != nil {
+		panic(err)
+	}
+}
 
 // BeginBlock executes all state transitions this module requires at the beginning of each new block
 func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
@@ -159,8 +170,8 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 
 // EndBlock executes all state transitions this module requires at the end of each new block
 func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
-	return EndBlocker(ctx, req, am.keeper, am.nexus, am.minter, am.staker, am.tss, am.snapshotter)
+	return EndBlocker(ctx, req, am.keeper, am.nexus, am.minter, am.staker, am.multiSig, am.snapshotter)
 }
 
 // ConsensusVersion implements AppModule/ConsensusVersion.
-func (AppModule) ConsensusVersion() uint64 { return 1 }
+func (AppModule) ConsensusVersion() uint64 { return 2 }

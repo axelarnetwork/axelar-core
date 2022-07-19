@@ -1,9 +1,7 @@
 package keeper
 
 import (
-	"bytes"
 	"context"
-	"crypto/ecdsa"
 	"encoding/hex"
 	"fmt"
 	"sort"
@@ -17,6 +15,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	nexustypes "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/utils/slices"
@@ -26,17 +25,19 @@ var _ types.QueryServiceServer = Querier{}
 
 // Querier implements the grpc querier
 type Querier struct {
-	keeper types.BaseKeeper
-	nexus  types.Nexus
-	signer types.Signer
+	keeper   types.BaseKeeper
+	nexus    types.Nexus
+	signer   types.Signer
+	multisig types.MultisigKeeper
 }
 
 // NewGRPCQuerier returns a new Querier
-func NewGRPCQuerier(k types.BaseKeeper, n types.Nexus, s types.Signer) Querier {
+func NewGRPCQuerier(k types.BaseKeeper, n types.Nexus, s types.Signer, multisig types.MultisigKeeper) Querier {
 	return Querier{
-		keeper: k,
-		nexus:  n,
-		signer: s,
+		keeper:   k,
+		nexus:    n,
+		signer:   s,
+		multisig: multisig,
 	}
 }
 
@@ -96,7 +97,7 @@ func getExecuteDataAndSigs(ctx sdk.Context, s types.Signer, commandBatch types.C
 		sigKeyPairs := types.SigKeyPairs(sig.MultiSig.SigKeyPairs)
 		sort.Stable(sigKeyPairs)
 
-		key, ok := s.GetKey(ctx, commandBatch.GetKeyID())
+		key, ok := s.GetKey(ctx, tss.KeyID(commandBatch.GetKeyID()))
 		if !ok {
 			return nil, nil, fmt.Errorf("key %s not found", commandBatch.GetKeyID())
 		}
@@ -318,46 +319,23 @@ func (q Querier) PendingCommands(c context.Context, req *types.PendingCommandsRe
 	return &types.PendingCommandsResponse{Commands: commands}, nil
 }
 
-func queryAddressByKeyID(ctx sdk.Context, s types.Signer, chain nexustypes.Chain, keyID tss.KeyID) (types.KeyAddressResponse, error) {
-	key, ok := s.GetKey(ctx, keyID)
+func queryAddressByKeyID(ctx sdk.Context, multisig types.MultisigKeeper, chain nexustypes.Chain, keyID multisig.KeyID) (types.KeyAddressResponse, error) {
+	key, ok := multisig.GetKey(ctx, keyID)
 	if !ok {
 		return types.KeyAddressResponse{}, sdkerrors.Wrapf(types.ErrEVM, "threshold key %s not found", keyID)
 	}
 
-	switch chain.KeyType {
-	case tss.Multisig:
-		multisigPubKey, err := key.GetMultisigPubKey()
-		if err != nil {
-			return types.KeyAddressResponse{}, sdkerrors.Wrap(types.ErrEVM, err.Error())
-		}
-
-		addresses := slices.Map(multisigPubKey, func(p ecdsa.PublicKey) types.Address { return types.Address(crypto.PubkeyToAddress(p)) })
-		sort.SliceStable(addresses, func(i, j int) bool { return bytes.Compare(addresses[i].Bytes(), addresses[j].Bytes()) < 0 })
-
-		threshold := uint32(key.GetMultisigKey().Threshold)
-
-		resp := types.KeyAddressResponse{
-			Address: &types.KeyAddressResponse_MultisigAddresses_{MultisigAddresses: &types.KeyAddressResponse_MultisigAddresses{Addresses: slices.Map(addresses, types.Address.Hex), Threshold: threshold}},
-			KeyID:   keyID,
-		}
-
-		return resp, nil
-	case tss.Threshold:
-		pk, err := key.GetECDSAPubKey()
-		if err != nil {
-			return types.KeyAddressResponse{}, sdkerrors.Wrap(types.ErrEVM, err.Error())
-		}
-
-		address := crypto.PubkeyToAddress(pk)
-		resp := types.KeyAddressResponse{
-			Address: &types.KeyAddressResponse_ThresholdAddress_{ThresholdAddress: &types.KeyAddressResponse_ThresholdAddress{Address: address.Hex()}},
-			KeyID:   key.ID,
-		}
-
-		return resp, nil
-	default:
-		return types.KeyAddressResponse{}, sdkerrors.Wrapf(types.ErrEVM, "unknown key type %s of chain %s", chain.KeyType, chain.Name)
+	weights, threshold := types.ParseMultisigKey(key)
+	addressWeights := make(map[string]string, len(weights))
+	for address, weight := range weights {
+		addressWeights[address] = weight.String()
 	}
+
+	return types.KeyAddressResponse{
+		KeyID:          keyID,
+		AddressWeights: addressWeights,
+		Threshold:      threshold.String(),
+	}, nil
 }
 
 // KeyAddress returns the address the specified key for the specified chain
@@ -371,13 +349,13 @@ func (q Querier) KeyAddress(c context.Context, req *types.KeyAddressRequest) (*t
 
 	keyID := req.KeyID
 	if keyID == "" {
-		keyID, ok = q.signer.GetCurrentKeyID(ctx, chain, keyRole)
+		keyID, ok = q.multisig.GetCurrentKeyID(ctx, chain.Name)
 		if !ok {
 			return nil, status.Error(codes.NotFound, sdkerrors.Wrapf(types.ErrEVM, "key not found for chain %s", req.Chain).Error())
 		}
 	}
 
-	res, err := queryAddressByKeyID(ctx, q.signer, chain, keyID)
+	res, err := queryAddressByKeyID(ctx, q.multisig, chain, keyID)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, err.Error())
 	}

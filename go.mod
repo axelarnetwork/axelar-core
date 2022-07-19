@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/armon/go-metrics v0.3.11
 	github.com/axelarnetwork/tm-events v0.0.0-20220427211200-9114fb26a603
-	github.com/axelarnetwork/utils v0.0.0-20220713192931-4f2b1df4b2bb
+	github.com/axelarnetwork/utils v0.0.0-20220718015848-54e462418ae3
 	github.com/btcsuite/btcd v0.22.1
 	github.com/btcsuite/btcd/btcec/v2 v2.1.2
 	github.com/cosmos/cosmos-sdk v0.45.4
@@ -138,7 +138,7 @@ require (
 	go.etcd.io/bbolt v1.3.6 // indirect
 	golang.org/x/net v0.0.0-20220412020605-290c469a71a5 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
-	golang.org/x/sys v0.0.0-20220712014510-0a85c31ab51e // indirect
+	golang.org/x/sys v0.0.0-20220715151400-c0bba94af5f8 // indirect
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
 	golang.org/x/xerrors v0.0.0-20220609144429-65e65417b02f // indirect
 	gopkg.in/ini.v1 v1.66.4 // indirect

@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/big"
-	"strconv"
 	"strings"
 	"testing"
 
@@ -14,14 +13,17 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
+	multisigMock "github.com/axelarnetwork/axelar-core/x/multisig/exported/mock"
+	multisigTestutils "github.com/axelarnetwork/axelar-core/x/multisig/exported/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
-	tssTestUtils "github.com/axelarnetwork/axelar-core/x/tss/exported/testutils"
+	"github.com/axelarnetwork/utils/funcs"
+	"github.com/axelarnetwork/utils/slices"
 )
 
 func TestCreateApproveContractCallWithMintCommand(t *testing.T) {
 	chainID := sdk.NewInt(1)
-	keyID := tssTestUtils.RandKeyID()
+	keyID := multisigTestutils.KeyID()
 	sourceChain := nexus.ChainName("polygon")
 	txID := Hash(common.HexToHash("0x5bb45dc24ddd6b90fa37f26eecfcf203328427c3226db29d1c01051b965ca93b"))
 	index := uint64(99)
@@ -78,8 +80,7 @@ func TestNewCommandBatchMetadata(t *testing.T) {
 	actual, err := NewCommandBatchMetadata(
 		rand.PosI64(),
 		chainID,
-		tssTestUtils.RandKeyID(),
-		tss.MasterKey,
+		multisigTestutils.KeyID(),
 		commands,
 	)
 
@@ -89,7 +90,7 @@ func TestNewCommandBatchMetadata(t *testing.T) {
 
 func TestDeployToken(t *testing.T) {
 	chainID := sdk.NewInt(1)
-	keyID := tssTestUtils.RandKeyID()
+	keyID := multisigTestutils.KeyID()
 
 	details := TokenDetails{
 		TokenName: rand.Str(10),
@@ -134,7 +135,7 @@ func TestDeployToken(t *testing.T) {
 
 func TestCreateMintTokenCommand(t *testing.T) {
 	chainID := sdk.NewInt(1)
-	keyID := tssTestUtils.RandKeyID()
+	keyID := multisigTestutils.KeyID()
 	commandID := NewCommandID(rand.Bytes(32), chainID)
 	symbol := rand.Str(3)
 	address := common.BytesToAddress(rand.Bytes(common.AddressLength))
@@ -164,7 +165,7 @@ func TestCreateMintTokenCommand(t *testing.T) {
 
 func TestCreateBurnTokenCommand(t *testing.T) {
 	chainID := sdk.NewInt(1)
-	keyID := tssTestUtils.RandKeyID()
+	keyID := multisigTestutils.KeyID()
 	symbol := rand.Str(3)
 	salt := common.BytesToHash(rand.Bytes(common.HashLength))
 	height := rand.I64Between(100, 10000)
@@ -190,69 +191,56 @@ func TestCreateBurnTokenCommand(t *testing.T) {
 	assert.Equal(t, salt, decodedSalt)
 }
 
-func TestCreateSinglesigTransferCommand_Operatorship(t *testing.T) {
-	chainID := sdk.NewInt(1)
-	keyID := tssTestUtils.RandKeyID()
-	newOperatorAddr := common.BytesToAddress(rand.Bytes(common.AddressLength))
-
-	expectedParams := fmt.Sprintf("000000000000000000000000%s", hex.EncodeToString(newOperatorAddr.Bytes()))
-	actual, err := CreateSinglesigTransferCommand(
-		chainID,
-		keyID,
-		newOperatorAddr,
-	)
-
-	assert.NoError(t, err)
-	assert.Equal(t, expectedParams, hex.EncodeToString(actual.Params))
-
-	decodedAddr, err := decodeTransferSinglesigParams(actual.Params)
-	assert.NoError(t, err)
-	assert.Equal(t, newOperatorAddr, decodedAddr)
-
-	_, _, err = decodeTransferMultisigParams(actual.Params)
-	assert.Error(t, err)
-
-	params, err := actual.DecodeParams()
-	assert.NoError(t, err)
-	assert.Equal(t, map[string]string{"newOperator": newOperatorAddr.Hex()}, params)
-}
-
 func TestCreateMultisigTransferCommand_Operatorship(t *testing.T) {
-	chainID := sdk.NewInt(1)
-	keyID := tssTestUtils.RandKeyID()
+	pubKeys := slices.Map([]string{
+		"046e0fc68835979b6f0248e284035fdc5084d15bf974908d06cafcba8c6da0ef4ab98be05e6a08529b0c869ab0cc2497dbe11b4293255a528ce53396305d7a09cf",
+		"02f7f54741653c9f1ad9b84645a507e43e75f7dc6fe81d2629aeb36bd161f065ae",
+		"03b13092611105a5d31403a7b6519c8149867932559c79fea8931a3948d413e625",
+		"02c027059d874f594a6a36b9a4baac92a6fa50846d68434f6ac78c294a2b8decf7",
+		"03b448a1acb25e9085bcd1f8d869043245f3d0a26b7d6112cdae44d9a2267aae50",
+		"027a4089cf8ea231a8d09a01e420c327dfd62b8848621a1b21694e82869876d6fc",
+		"02e659958a5e3c5ac33765342ab28e0ce0ed8a9f8833e837feb1c3ce29639f0b23",
+		"034b2d8119648d8678220594750779618ee704228858f7238a8d0965cf70df1001",
+	}, func(pk string) multisig.PublicKey { return funcs.Must(hex.DecodeString(pk)) })
+	weights := slices.Map([]uint64{1, 2, 3, 4, 5, 6, 7, 8}, sdk.NewUint)
+	participants := slices.Expand(func(_ int) sdk.ValAddress { return rand.ValAddr() }, len(pubKeys))
 
-	addrs := []common.Address{
-		common.HexToAddress("0xd59ca627Af68D29C547B91066297a7c469a7bF72"),
-		common.HexToAddress("0xc2FCc7Bcf743153C58Efd44E6E723E9819E9A10A"),
-		common.HexToAddress("0x2ad611e02E4F7063F515C8f190E5728719937205"),
+	key := &multisigMock.KeyMock{
+		GetParticipantsFunc: func() []sdk.ValAddress { return participants },
+		GetPubKeyFunc: func(v sdk.ValAddress) (multisig.PublicKey, bool) {
+			for i, p := range participants {
+				if v.Equals(p) {
+					return pubKeys[i], true
+				}
+			}
+
+			return nil, false
+		},
+		GetWeightFunc: func(v sdk.ValAddress) sdk.Uint {
+			for i, p := range participants {
+				if v.Equals(p) {
+					return weights[i]
+				}
+			}
+
+			return sdk.ZeroUint()
+		},
+		GetMinPassingWeightFunc: func() sdk.Uint { return sdk.NewUint(30) },
 	}
-	threshold := uint8(2)
 
-	expectedParams := "0000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000030000000000000000000000002ad611e02e4f7063f515c8f190e5728719937205000000000000000000000000c2fcc7bcf743153c58efd44e6e723e9819e9a10a000000000000000000000000d59ca627af68d29c547b91066297a7c469a7bf72"
-	actual, err := CreateMultisigTransferCommand(
-		chainID,
-		keyID,
-		threshold,
-		addrs...,
-	)
+	chainID := sdk.NewInt(1)
+	keyID := multisigTestutils.KeyID()
+	actual := CreateMultisigTransferCommand(chainID, keyID, key)
+	expectedParams := "00000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000180000000000000000000000000000000000000000000000000000000000000001e000000000000000000000000000000000000000000000000000000000000000800000000000000000000000019cc2044857d23129a29f763d0338da837ce35f60000000000000000000000002ab6fa7de5e9e9423125a4246e4de1b9c755607400000000000000000000000037cc4b7e8f9f505ca8126db8a9d070566ed5dae70000000000000000000000003e56f0d4497ac44993d9ea272d4707f8be6b42a6000000000000000000000000462b96f617d5d92f63f9949c6f4626623ea73fa400000000000000000000000068b93045fe7d8794a7caf327e7f855cd6cd03bb80000000000000000000000009e77c30badbbc412a0c20c6ce43b671c6f103434000000000000000000000000c1c0c8d2131cc866834c6382096eadfef1af2f52000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000070000000000000000000000000000000000000000000000000000000000000005"
 
-	assert.NoError(t, err)
 	assert.Equal(t, expectedParams, hex.EncodeToString(actual.Params))
+	assert.Equal(t, keyID, actual.KeyID)
 
-	decodedAddrs, decodedThreshold, err := decodeTransferMultisigParams(actual.Params)
+	decodedAddresses, decodedWeights, decodedThreshold, err := decodeTransferMultisigParams(actual.Params)
 	assert.NoError(t, err)
-	assert.ElementsMatch(t, addrs, decodedAddrs)
-	assert.Equal(t, threshold, decodedThreshold)
-
-	_, err = decodeTransferSinglesigParams(actual.Params)
-	assert.Error(t, err)
-
-	params, err := actual.DecodeParams()
-	assert.NoError(t, err)
-	assert.Equal(t, map[string]string{
-		"newOperators": "0x2ad611e02E4F7063F515C8f190E5728719937205;0xc2FCc7Bcf743153C58Efd44E6E723E9819E9A10A;0xd59ca627Af68D29C547B91066297a7c469a7bF72",
-		"newThreshold": strconv.FormatUint(uint64(threshold), 10),
-	}, params)
+	assert.Len(t, decodedAddresses, len(participants))
+	assert.Len(t, decodedWeights, len(participants))
+	assert.EqualValues(t, 30, decodedThreshold.Uint64())
 }
 
 func TestGetSignHash(t *testing.T) {

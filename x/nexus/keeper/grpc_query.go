@@ -230,6 +230,6 @@ func (q Querier) RecipientAddress(c context.Context, req *types.RecipientAddress
 
 	return &types.RecipientAddressResponse{
 		RecipientAddr:  linkedAddresses.RecipientAddress.Address,
-		RecipientChain: linkedAddresses.RecipientAddress.Chain.String(),
+		RecipientChain: linkedAddresses.RecipientAddress.Chain.Name.String(),
 	}, nil
 }

@@ -36,13 +36,24 @@ func (k Keeper) GetKeygenSessionsByExpiry(ctx sdk.Context, expiry int64) []types
 	return results
 }
 
+// GetKey returns the key of the given ID
+func (k Keeper) GetKey(ctx sdk.Context, keyID exported.KeyID) (exported.Key, bool) {
+	var key types.Key
+	ok := k.getStore(ctx).Get(keyPrefix.AppendStr(keyID.String()), &key)
+	if !ok {
+		return nil, false
+	}
+
+	return &key, true
+}
+
 // SetKey sets the given key
 func (k Keeper) SetKey(ctx sdk.Context, key types.Key) {
 	k.getStore(ctx).Set(keyPrefix.AppendStr(key.ID.String()), &key)
 
 	participants := key.GetParticipants()
 	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewKeygenCompleted(key.ID)))
-	k.Logger(ctx).Info("keygen session completed",
+	k.Logger(ctx).Info("setting key",
 		"key_id", key.ID,
 		"participant_count", len(participants),
 		"participants", strings.Join(slices.Map(participants, sdk.ValAddress.String), ", "),

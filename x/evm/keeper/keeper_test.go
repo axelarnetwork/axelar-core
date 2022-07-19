@@ -20,9 +20,8 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 	evmKeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
-	"github.com/axelarnetwork/axelar-core/x/evm/types/mock"
+	multisigTestUtils "github.com/axelarnetwork/axelar-core/x/multisig/exported/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 func TestCommands(t *testing.T) {
@@ -54,7 +53,7 @@ func TestCommands(t *testing.T) {
 
 		for i := 0; i < numCmds; i++ {
 			tokenDetails := createDetails(rand.NormalizedStr(10), rand.NormalizedStr(10))
-			cmd, err := types.CreateDeployTokenCommand(chainID, tss.KeyID(rand.HexStr(10)), rand.Str(5), tokenDetails, types.ZeroAddress, sdk.NewUint(uint64(rand.PosI64())))
+			cmd, err := types.CreateDeployTokenCommand(chainID, multisigTestUtils.KeyID(), rand.Str(5), tokenDetails, types.ZeroAddress, sdk.NewUint(uint64(rand.PosI64())))
 			assert.NoError(t, err)
 
 			err = chainKeeper.EnqueueCommand(ctx, cmd)
@@ -72,9 +71,7 @@ func TestCommands(t *testing.T) {
 
 		lastLength := len(chainKeeper.GetPendingCommands(ctx))
 		for {
-			_, err := chainKeeper.CreateNewBatchToSign(ctx, &mock.SignerMock{
-				GetKeyRoleFunc: func(_ sdk.Context, _ tss.KeyID) tss.KeyRole { return tss.MasterKey },
-			})
+			_, err := chainKeeper.CreateNewBatchToSign(ctx)
 			assert.NoError(t, err)
 			remainingCmds := chainKeeper.GetPendingCommands(ctx)
 			assert.Less(t, len(remainingCmds), lastLength)

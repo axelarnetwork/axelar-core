@@ -26,6 +26,7 @@ func (m PollMetadata) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
 type VoteHandler interface {
 	IsFalsyResult(result codec.ProtoMarshaler) bool
 	HandleExpiredPoll(ctx sdk.Context, poll Poll) error
+	HandleFailedPoll(ctx sdk.Context, poll Poll) error
 	HandleCompletedPoll(ctx sdk.Context, poll Poll) error
 	HandleResult(ctx sdk.Context, result codec.ProtoMarshaler) error
 }
@@ -198,4 +199,5 @@ type Poll interface {
 	GetVoters() []sdk.ValAddress
 	Vote(voter sdk.ValAddress, blockHeight int64, data codec.ProtoMarshaler) (VoteResult, error)
 	GetModule() string
+	GetMetaData() (codec.ProtoMarshaler, bool)
 }

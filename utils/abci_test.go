@@ -33,7 +33,7 @@ func TestRunEndBlocker(t *testing.T) {
 	t.Run("should recover and return nil if end blocker panics", func(t *testing.T) {
 		ctx, l, store, cacheStore := setup()
 
-		actual := utils.RunEndBlocker(ctx, l, func(sdk.Context) ([]types.ValidatorUpdate, error) {
+		actual := utils.RunCached(ctx, l, func(sdk.Context) ([]types.ValidatorUpdate, error) {
 			panic(fmt.Errorf("panic"))
 		})
 
@@ -45,7 +45,7 @@ func TestRunEndBlocker(t *testing.T) {
 	t.Run("should return nil and not write if end blocker fails", func(t *testing.T) {
 		ctx, l, store, cacheStore := setup()
 
-		actual := utils.RunEndBlocker(ctx, l, func(sdk.Context) ([]types.ValidatorUpdate, error) {
+		actual := utils.RunCached(ctx, l, func(sdk.Context) ([]types.ValidatorUpdate, error) {
 			return []types.ValidatorUpdate{{}}, fmt.Errorf("error")
 		})
 
@@ -58,7 +58,7 @@ func TestRunEndBlocker(t *testing.T) {
 		ctx, l, store, cacheStore := setup()
 
 		expected := []types.ValidatorUpdate{{}}
-		actual := utils.RunEndBlocker(ctx, l, func(sdk.Context) ([]types.ValidatorUpdate, error) {
+		actual := utils.RunCached(ctx, l, func(sdk.Context) ([]types.ValidatorUpdate, error) {
 			return expected, nil
 		})
 
@@ -78,7 +78,7 @@ func TestRunEndBlocker(t *testing.T) {
 			WithMultiStore(store).
 			WithEventManager(sdk.NewEventManager())
 	}).When("running an end blocker that emits events", func() {
-		utils.RunEndBlocker(baseCtx, logger, func(cachedCtx sdk.Context) ([]types.ValidatorUpdate, error) {
+		utils.RunCached(baseCtx, logger, func(cachedCtx sdk.Context) ([]types.ValidatorUpdate, error) {
 			cachedCtx.EventManager().EmitEvent(sdk.Event{})
 			return nil, nil
 		})

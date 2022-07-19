@@ -1,12 +1,14 @@
 package types
 
 import (
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
@@ -14,7 +16,7 @@ import (
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
-//go:generate moq -out ./mock/expected_keepers.go -pkg mock . TSS Voter Signer Nexus Snapshotter BaseKeeper ChainKeeper Rewarder StakingKeeper SlashingKeeper
+//go:generate moq -out ./mock/expected_keepers.go -pkg mock . Voter Signer Nexus Snapshotter BaseKeeper ChainKeeper Rewarder StakingKeeper SlashingKeeper MultisigKeeper
 
 // BaseKeeper is implemented by this module's base keeper
 type BaseKeeper interface {
@@ -64,7 +66,7 @@ type ChainKeeper interface {
 	EnqueueCommand(ctx sdk.Context, cmd Command) error
 	GetCommand(ctx sdk.Context, id CommandID) (Command, bool)
 	GetPendingCommands(ctx sdk.Context) []Command
-	CreateNewBatchToSign(ctx sdk.Context, signer Signer) (CommandBatch, error)
+	CreateNewBatchToSign(ctx sdk.Context) (CommandBatch, error)
 	SetLatestSignedCommandBatchID(ctx sdk.Context, id []byte)
 	GetLatestCommandBatch(ctx sdk.Context) CommandBatch
 	GetBatchByID(ctx sdk.Context, id []byte) CommandBatch
@@ -81,12 +83,6 @@ type ChainKeeper interface {
 type ParamsKeeper interface {
 	Subspace(s string) params.Subspace
 	GetSubspace(s string) (params.Subspace, bool)
-}
-
-// TSS exposes key functionality
-type TSS interface {
-	GetKeyRequirement(ctx sdk.Context, keyRole tss.KeyRole, keyType tss.KeyType) (tss.KeyRequirement, bool)
-	GetRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) int64
 }
 
 // Voter exposes voting functionality
@@ -125,22 +121,8 @@ type InitPoller = interface {
 
 // Signer provides keygen and signing functionality
 type Signer interface {
-	StartSign(ctx sdk.Context, info tss.SignInfo, snapshotter Snapshotter, voter InitPoller) error
 	GetSig(ctx sdk.Context, sigID string) (tss.Signature, tss.SigStatus)
 	GetKey(ctx sdk.Context, keyID tss.KeyID) (tss.Key, bool)
-	GetKeyRole(ctx sdk.Context, keyID tss.KeyID) tss.KeyRole
-	GetCurrentKeyID(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool)
-	GetCurrentKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.Key, bool)
-	GetNextKeyID(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) (tss.KeyID, bool)
-	GetSnapshotCounterForKeyID(ctx sdk.Context, keyID tss.KeyID) (int64, bool)
-	AssignNextKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole, keyID tss.KeyID) error
-	RotateKey(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) error
-	AssertMatchesRequirements(ctx sdk.Context, snapshotter Snapshotter, chain nexus.Chain, keyID tss.KeyID, keyRole tss.KeyRole) error
-	GetExternalMultisigThreshold(ctx sdk.Context) utils.Threshold
-	GetExternalKeyIDs(ctx sdk.Context, chain nexus.Chain) ([]tss.KeyID, bool)
-	GetKeyRequirement(ctx sdk.Context, keyRole tss.KeyRole, keyType tss.KeyType) (tss.KeyRequirement, bool)
-	GetKeyType(ctx sdk.Context, keyID tss.KeyID) tss.KeyType
-	GetRotationCount(ctx sdk.Context, chain nexus.Chain, keyRole tss.KeyRole) int64
 }
 
 // Snapshotter provides access to the snapshot functionality
@@ -160,4 +142,14 @@ type StakingKeeper interface {
 // SlashingKeeper provides functionality to manage slashing info for a validator
 type SlashingKeeper interface {
 	IsTombstoned(ctx sdk.Context, consAddr sdk.ConsAddress) bool
+}
+
+// MultisigKeeper provides functionality to the multisig module
+type MultisigKeeper interface {
+	GetCurrentKeyID(ctx sdk.Context, chainName nexus.ChainName) (multisig.KeyID, bool)
+	GetNextKeyID(ctx sdk.Context, chainName nexus.ChainName) (multisig.KeyID, bool)
+	GetKey(ctx sdk.Context, keyID multisig.KeyID) (multisig.Key, bool)
+	AssignKey(ctx sdk.Context, chainName nexus.ChainName, keyID multisig.KeyID) error
+	RotateKey(ctx sdk.Context, chainName nexus.ChainName) error
+	Sign(ctx sdk.Context, keyID multisig.KeyID, payloadHash multisig.Hash, module string, moduleMetadata ...codec.ProtoMarshaler) error
 }
