@@ -480,6 +480,7 @@ func (k Keeper) CreateSnapshot(
 ) (exported.Snapshot, error) {
 	powerReduction := k.staking.PowerReduction(ctx)
 	participants := make([]exported.Participant, 0, len(candidates))
+
 	for _, candidate := range candidates {
 		validator := k.staking.Validator(ctx, candidate)
 		if validator == nil || !filterFunc(validator) {

@@ -768,6 +768,9 @@ var _ snapshotexported.ValidatorI = &ValidatorIMock{}
 // 			GetOperatorFunc: func() github_com_cosmos_cosmos_sdk_types.ValAddress {
 // 				panic("mock out the GetOperator method")
 // 			},
+// 			IsBondedFunc: func() bool {
+// 				panic("mock out the IsBonded method")
+// 			},
 // 			IsJailedFunc: func() bool {
 // 				panic("mock out the IsJailed method")
 // 			},
@@ -787,6 +790,9 @@ type ValidatorIMock struct {
 	// GetOperatorFunc mocks the GetOperator method.
 	GetOperatorFunc func() github_com_cosmos_cosmos_sdk_types.ValAddress
 
+	// IsBondedFunc mocks the IsBonded method.
+	IsBondedFunc func() bool
+
 	// IsJailedFunc mocks the IsJailed method.
 	IsJailedFunc func() bool
 
@@ -803,6 +809,9 @@ type ValidatorIMock struct {
 		// GetOperator holds details about calls to the GetOperator method.
 		GetOperator []struct {
 		}
+		// IsBonded holds details about calls to the IsBonded method.
+		IsBonded []struct {
+		}
 		// IsJailed holds details about calls to the IsJailed method.
 		IsJailed []struct {
 		}
@@ -810,6 +819,7 @@ type ValidatorIMock struct {
 	lockGetConsAddr       sync.RWMutex
 	lockGetConsensusPower sync.RWMutex
 	lockGetOperator       sync.RWMutex
+	lockIsBonded          sync.RWMutex
 	lockIsJailed          sync.RWMutex
 }
 
@@ -893,6 +903,32 @@ func (mock *ValidatorIMock) GetOperatorCalls() []struct {
 	mock.lockGetOperator.RLock()
 	calls = mock.calls.GetOperator
 	mock.lockGetOperator.RUnlock()
+	return calls
+}
+
+// IsBonded calls IsBondedFunc.
+func (mock *ValidatorIMock) IsBonded() bool {
+	if mock.IsBondedFunc == nil {
+		panic("ValidatorIMock.IsBondedFunc: method is nil but ValidatorI.IsBonded was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockIsBonded.Lock()
+	mock.calls.IsBonded = append(mock.calls.IsBonded, callInfo)
+	mock.lockIsBonded.Unlock()
+	return mock.IsBondedFunc()
+}
+
+// IsBondedCalls gets all the calls that were made to IsBonded.
+// Check the length with:
+//     len(mockedValidatorI.IsBondedCalls())
+func (mock *ValidatorIMock) IsBondedCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockIsBonded.RLock()
+	calls = mock.calls.IsBonded
+	mock.lockIsBonded.RUnlock()
 	return calls
 }
 
