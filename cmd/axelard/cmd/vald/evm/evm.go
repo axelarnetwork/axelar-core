@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"math/big"
-	"strconv"
 	"strings"
 
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
@@ -20,26 +19,22 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/broadcast"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm/rpc"
-	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/parse"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
-	tmEvents "github.com/axelarnetwork/tm-events/events"
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 )
 
 // Smart contract event signatures
 var (
-	ERC20TransferSig                 = crypto.Keccak256Hash([]byte("Transfer(address,address,uint256)"))
-	ERC20TokenDeploymentSig          = crypto.Keccak256Hash([]byte("TokenDeployed(string,address)"))
-	SinglesigTransferOperatorshipSig = crypto.Keccak256Hash([]byte("OperatorshipTransferred(address,address)"))
-	MultisigTransferOperatorshipSig  = crypto.Keccak256Hash([]byte("OperatorshipTransferred(bytes)"))
-	ContractCallSig                  = crypto.Keccak256Hash([]byte("ContractCall(address,string,string,bytes32,bytes)"))
-	ContractCallWithTokenSig         = crypto.Keccak256Hash([]byte("ContractCallWithToken(address,string,string,bytes32,bytes,string,uint256)"))
-	TokenSentSig                     = crypto.Keccak256Hash([]byte("TokenSent(address,string,string,string,uint256)"))
+	ERC20TransferSig                = crypto.Keccak256Hash([]byte("Transfer(address,address,uint256)"))
+	ERC20TokenDeploymentSig         = crypto.Keccak256Hash([]byte("TokenDeployed(string,address)"))
+	MultisigTransferOperatorshipSig = crypto.Keccak256Hash([]byte("OperatorshipTransferred(bytes)"))
+	ContractCallSig                 = crypto.Keccak256Hash([]byte("ContractCall(address,string,string,bytes32,bytes)"))
+	ContractCallWithTokenSig        = crypto.Keccak256Hash([]byte("ContractCallWithToken(address,string,string,bytes32,bytes,string,uint256)"))
+	TokenSentSig                    = crypto.Keccak256Hash([]byte("TokenSent(address,string,string,string,uint256)"))
 )
 
 // Mgr manages all communication with Ethereum
@@ -49,66 +44,62 @@ type Mgr struct {
 	rpcs        map[string]rpc.Client
 	broadcaster broadcast.Broadcaster
 	cdc         *codec.LegacyAmino
+	validator   sdk.ValAddress
 }
 
 // NewMgr returns a new Mgr instance
-func NewMgr(rpcs map[string]rpc.Client, cliCtx sdkClient.Context, broadcaster broadcast.Broadcaster, logger tmLog.Logger, cdc *codec.LegacyAmino) *Mgr {
+func NewMgr(rpcs map[string]rpc.Client, cliCtx sdkClient.Context, broadcaster broadcast.Broadcaster, logger tmLog.Logger, cdc *codec.LegacyAmino, valAddr sdk.ValAddress) *Mgr {
 	return &Mgr{
 		rpcs:        rpcs,
 		cliCtx:      cliCtx,
 		broadcaster: broadcaster,
 		logger:      logger.With("listener", "evm"),
 		cdc:         cdc,
+		validator:   valAddr,
 	}
 }
 
 // ProcessNewChain notifies the operator that vald needs to be restarted/udpated for a new chain
-func (mgr Mgr) ProcessNewChain(e tmEvents.Event) (err error) {
-	chain, nativeAsset, err := parseNewChainParams(e.Attributes)
-	if err != nil {
-		return sdkerrors.Wrap(err, "Invalid update event")
-	}
-
-	mgr.logger.Info(fmt.Sprintf("VALD needs to be updated and restarted for new chain %s with native asset %s", chain.String(), nativeAsset))
+func (mgr Mgr) ProcessNewChain(event *types.ChainAdded) (err error) {
+	mgr.logger.Info(fmt.Sprintf("VALD needs to be updated and restarted for new chain %s", event.Chain.String()))
 	return nil
 }
 
 // ProcessDepositConfirmation votes on the correctness of an EVM chain token deposit
-func (mgr Mgr) ProcessDepositConfirmation(e tmEvents.Event) (err error) {
-	chain, txID, burnAddr, tokenAddr, confHeight, pollID, err := parseDepositConfirmationParams(mgr.cdc, e.Attributes)
-	if err != nil {
-		return sdkerrors.Wrap(err, "EVM deposit confirmation failed")
+func (mgr Mgr) ProcessDepositConfirmation(event *evmTypes.ConfirmDepositStarted) error {
+	if !slices.Any(event.Participants, func(v sdk.ValAddress) bool { return v.Equals(mgr.validator) }) {
+		mgr.logger.Debug("ignoring deposit confirmation poll: not a participant", "pollID", event.PollID)
 	}
 
-	rpc, found := mgr.rpcs[strings.ToLower(chain.String())]
+	rpcClient, found := mgr.rpcs[strings.ToLower(event.Chain.String())]
 	if !found {
-		return sdkerrors.Wrap(err, fmt.Sprintf("Unable to find an RPC for chain '%s'", chain))
+		return fmt.Errorf("unable to find an RPC for chain '%s'", event.Chain.String())
 	}
 	var events []evmTypes.Event
-	_ = mgr.validate(rpc, txID, confHeight, func(_ *geth.Transaction, txReceipt *geth.Receipt) bool {
+	_ = mgr.validate(rpcClient, common.Hash(event.TxID), event.ConfirmationHeight, func(_ *geth.Transaction, txReceipt *geth.Receipt) bool {
 		for i, log := range txReceipt.Logs {
 			switch log.Topics[0] {
 			case ERC20TransferSig:
-				if !bytes.Equal(tokenAddr.Bytes(), log.Address.Bytes()) {
+				if !bytes.Equal(event.TokenAddress.Bytes(), log.Address.Bytes()) {
 					continue
 				}
 
-				event, err := decodeERC20TransferEvent(log)
+				erc20Event, err := decodeERC20TransferEvent(log)
 				if err != nil {
 					mgr.logger.Debug(sdkerrors.Wrap(err, "decode event Transfer failed").Error())
 					continue
 				}
 
-				if event.To != evmTypes.Address(burnAddr) {
+				if erc20Event.To != event.DepositAddress {
 					continue
 				}
 
 				events = append(events, evmTypes.Event{
-					Chain: chain,
-					TxId:  evmTypes.Hash(txID),
+					Chain: event.Chain,
+					TxID:  event.TxID,
 					Index: uint64(i),
 					Event: &evmTypes.Event_Transfer{
-						Transfer: &event,
+						Transfer: &erc20Event,
 					},
 				})
 			default:
@@ -118,47 +109,46 @@ func (mgr Mgr) ProcessDepositConfirmation(e tmEvents.Event) (err error) {
 		return true
 	})
 
-	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, pollID, evmTypes.NewVoteEvents(chain, events))
-	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", events, pollID.String()))
-	_, err = mgr.broadcaster.Broadcast(context.TODO(), msg)
+	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, event.PollID, evmTypes.NewVoteEvents(event.Chain, events))
+	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", events, event.PollID.String()))
+	_, err := mgr.broadcaster.Broadcast(context.TODO(), msg)
 	return err
 }
 
 // ProcessTokenConfirmation votes on the correctness of an EVM chain token deployment
-func (mgr Mgr) ProcessTokenConfirmation(e tmEvents.Event) error {
-	chain, txID, gatewayAddr, tokenAddr, symbol, confHeight, pollID, err := parseTokenConfirmationParams(mgr.cdc, e.Attributes)
-	if err != nil {
-		return sdkerrors.Wrap(err, "EVM token deployment confirmation failed")
+func (mgr Mgr) ProcessTokenConfirmation(event *evmTypes.ConfirmTokenStarted) error {
+	if !slices.Any(event.Participants, func(v sdk.ValAddress) bool { return v.Equals(mgr.validator) }) {
+		mgr.logger.Debug("ignoring token confirmation poll: not a participant", "pollID", event.PollID)
 	}
 
-	rpc, found := mgr.rpcs[strings.ToLower(chain.String())]
+	rpcClient, found := mgr.rpcs[strings.ToLower(event.Chain.String())]
 	if !found {
-		return sdkerrors.Wrap(err, fmt.Sprintf("Unable to find an RPC for chain '%s'", chain))
+		return fmt.Errorf("unable to find an RPC for chain '%s'", event.Chain)
 	}
 
 	var events []evmTypes.Event
-	_ = mgr.validate(rpc, txID, confHeight, func(_ *geth.Transaction, txReceipt *geth.Receipt) bool {
+	_ = mgr.validate(rpcClient, common.Hash(event.TxID), event.ConfirmationHeight, func(_ *geth.Transaction, txReceipt *geth.Receipt) bool {
 		for i, log := range txReceipt.Logs {
-			if !bytes.Equal(gatewayAddr.Bytes(), log.Address.Bytes()) {
+			if !bytes.Equal(event.GatewayAddress.Bytes(), log.Address.Bytes()) {
 				continue
 			}
 
 			switch log.Topics[0] {
 			case ERC20TokenDeploymentSig:
-				event, err := decodeERC20TokenDeploymentEvent(log)
+				erc20Event, err := decodeERC20TokenDeploymentEvent(log)
 				if err != nil {
 					mgr.logger.Debug(sdkerrors.Wrap(err, "decode event TokenDeployed failed").Error())
 					continue
 				}
-				if event.TokenAddress != evmTypes.Address(tokenAddr) || event.Symbol != symbol {
+				if erc20Event.TokenAddress != erc20Event.TokenAddress || erc20Event.Symbol != event.TokenDetails.Symbol {
 					continue
 				}
 				events = append(events, evmTypes.Event{
-					Chain: chain,
-					TxId:  evmTypes.Hash(txID),
+					Chain: event.Chain,
+					TxID:  event.TxID,
 					Index: uint64(i),
 					Event: &evmTypes.Event_TokenDeployed{
-						TokenDeployed: &event,
+						TokenDeployed: &erc20Event,
 					},
 				})
 
@@ -170,21 +160,25 @@ func (mgr Mgr) ProcessTokenConfirmation(e tmEvents.Event) error {
 		return true
 	})
 
-	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, pollID, evmTypes.NewVoteEvents(chain, events))
-	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", events, pollID.String()))
-	_, err = mgr.broadcaster.Broadcast(context.TODO(), msg)
+	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, event.PollID, evmTypes.NewVoteEvents(event.Chain, events))
+	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", events, event.PollID.String()))
+	_, err := mgr.broadcaster.Broadcast(context.TODO(), msg)
 	return err
 }
 
 // ProcessTransferKeyConfirmation votes on the correctness of an EVM chain key transfer
-func (mgr Mgr) ProcessTransferKeyConfirmation(event *types.ConfirmKeyTransfer) (err error) {
-	rpc, ok := mgr.rpcs[strings.ToLower(event.Chain.String())]
+func (mgr Mgr) ProcessTransferKeyConfirmation(event *types.ConfirmKeyTransferStarted) error {
+	if !slices.Any(event.Participants, func(v sdk.ValAddress) bool { return v.Equals(mgr.validator) }) {
+		mgr.logger.Debug("ignoring key transfer confirmation poll: not a participant", "pollID", event.PollID)
+	}
+
+	rpcClient, ok := mgr.rpcs[strings.ToLower(event.Chain.String())]
 	if !ok {
-		return sdkerrors.Wrap(err, fmt.Sprintf("unable to find the RPC for chain %s", event.Chain))
+		return fmt.Errorf("unable to find the RPC for chain %s", event.Chain)
 	}
 
 	var operatorshipTransferred evmTypes.Event
-	ok = mgr.validate(rpc, common.Hash(event.TxID), event.ConfirmationHeight, func(_ *geth.Transaction, txReceipt *geth.Receipt) bool {
+	ok = mgr.validate(rpcClient, common.Hash(event.TxID), event.ConfirmationHeight, func(_ *geth.Transaction, txReceipt *geth.Receipt) bool {
 		for i := len(txReceipt.Logs) - 1; i >= 0; i-- {
 			log := txReceipt.Logs[i]
 
@@ -205,7 +199,7 @@ func (mgr Mgr) ProcessTransferKeyConfirmation(event *types.ConfirmKeyTransfer) (
 
 			operatorshipTransferred = evmTypes.Event{
 				Chain: event.Chain,
-				TxId:  event.TxID,
+				TxID:  event.TxID,
 				Index: uint64(i),
 				Event: &evmTypes.Event_MultisigOperatorshipTransferred{
 					MultisigOperatorshipTransferred: &e,
@@ -216,100 +210,99 @@ func (mgr Mgr) ProcessTransferKeyConfirmation(event *types.ConfirmKeyTransfer) (
 		return false
 	})
 
-	evmEvents := []evmTypes.Event{}
+	var evmEvents []evmTypes.Event
 	if ok {
 		evmEvents = append(evmEvents, operatorshipTransferred)
 	}
 
 	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, event.PollID, evmTypes.NewVoteEvents(event.Chain, evmEvents))
 	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", evmEvents, event.PollID.String()))
-	_, err = mgr.broadcaster.Broadcast(context.TODO(), msg)
+	_, err := mgr.broadcaster.Broadcast(context.TODO(), msg)
 
 	return err
 }
 
 // ProcessGatewayTxConfirmation votes on the correctness of an EVM chain gateway's transactions
-func (mgr Mgr) ProcessGatewayTxConfirmation(e tmEvents.Event) error {
-	chain, gatewayAddress, txID, confHeight, pollID, err := parseGatewayTxConfirmationParams(mgr.cdc, e.Attributes)
-	if err != nil {
-		return sdkerrors.Wrap(err, "EVM gateway transaction confirmation failed")
+func (mgr Mgr) ProcessGatewayTxConfirmation(event *evmTypes.ConfirmGatewayTxStarted) error {
+	if !slices.Any(event.Participants, func(v sdk.ValAddress) bool { return v.Equals(mgr.validator) }) {
+		mgr.logger.Debug("ignoring gateway tx confirmation poll: not a participant", "pollID", event.PollID)
 	}
 
-	rpc, found := mgr.rpcs[strings.ToLower(chain.String())]
+	rpcClient, found := mgr.rpcs[strings.ToLower(event.Chain.String())]
 	if !found {
-		return sdkerrors.Wrap(err, fmt.Sprintf("Unable to find an RPC for chain '%s'", chain))
+		return fmt.Errorf("unable to find an RPC for chain '%s'", event.Chain.String())
 	}
 
 	var events []evmTypes.Event
-	_ = mgr.validate(rpc, txID, confHeight, func(_ *geth.Transaction, txReceipt *geth.Receipt) bool {
+	_ = mgr.validate(rpcClient, common.Hash(event.TxID), event.ConfirmationHeight, func(_ *geth.Transaction, txReceipt *geth.Receipt) bool {
 		for i, log := range txReceipt.Logs {
-			if !bytes.Equal(gatewayAddress.Bytes(), log.Address.Bytes()) {
+			if !bytes.Equal(event.GatewayAddress.Bytes(), log.Address.Bytes()) {
 				continue
 			}
 
 			switch log.Topics[0] {
 			case ContractCallSig:
-				event, err := decodeEventContractCall(log)
+				erc20Event, err := decodeEventContractCall(log)
 				if err != nil {
 					mgr.logger.Debug(sdkerrors.Wrap(err, "decode event ContractCall failed").Error())
 
 					return false
 				}
 
-				err = event.ValidateBasic()
+				err = erc20Event.ValidateBasic()
 				if err != nil {
 					mgr.logger.Debug(sdkerrors.Wrap(err, "invalid event ContractCall").Error())
 					continue
 				}
 
 				events = append(events, evmTypes.Event{
-					Chain: chain,
-					TxId:  evmTypes.Hash(txID),
+					Chain: event.Chain,
+					TxID:  event.TxID,
 					Index: uint64(i),
 					Event: &evmTypes.Event_ContractCall{
-						ContractCall: &event,
+						ContractCall: &erc20Event,
 					},
 				})
 			case ContractCallWithTokenSig:
-				event, err := decodeEventContractCallWithToken(log)
+				erc20Event, err := decodeEventContractCallWithToken(log)
 				if err != nil {
 					mgr.logger.Debug(sdkerrors.Wrap(err, "decode event ContractCallWithToken failed").Error())
 
 					return false
 				}
 
-				err = event.ValidateBasic()
+				err = erc20Event.ValidateBasic()
 				if err != nil {
 					mgr.logger.Debug(sdkerrors.Wrap(err, "invalid event ContractCallWithToken").Error())
 					continue
 				}
 
 				events = append(events, evmTypes.Event{
-					Chain: chain,
-					TxId:  evmTypes.Hash(txID),
+					Chain: event.Chain,
+					TxID:  event.TxID,
 					Index: uint64(i),
 					Event: &evmTypes.Event_ContractCallWithToken{
-						ContractCallWithToken: &event,
+						ContractCallWithToken: &erc20Event,
 					},
 				})
 			case TokenSentSig:
-				event, err := decodeEventTokenSent(log)
+				erc20Event, err := decodeEventTokenSent(log)
 				if err != nil {
 					mgr.logger.Debug(sdkerrors.Wrap(err, "decode event TokenSent failed").Error())
 				}
 
-				err = event.ValidateBasic()
+				err = erc20Event.ValidateBasic()
 				if err != nil {
 					mgr.logger.Debug(sdkerrors.Wrap(err, "invalid event TokenSent").Error())
 					continue
 				}
 
 				events = append(events, evmTypes.Event{
-					Chain: chain,
-					TxId:  evmTypes.Hash(txID),
+					Chain: event.Chain,
+					TxID:  event.TxID,
 					Index: uint64(i),
 					Event: &evmTypes.Event_TokenSent{
-						TokenSent: &event,
+						TokenSent: &erc20Event,
 					},
 				})
 			default:
@@ -319,9 +312,9 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(e tmEvents.Event) error {
 		return true
 	})
 
-	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, pollID, evmTypes.NewVoteEvents(chain, events))
-	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", events, pollID.String()))
-	_, err = mgr.broadcaster.Broadcast(context.TODO(), msg)
+	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, event.PollID, evmTypes.NewVoteEvents(event.Chain, events))
+	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", events, event.PollID.String()))
+	_, err := mgr.broadcaster.Broadcast(context.TODO(), msg)
 	return err
 }
 
@@ -421,155 +414,6 @@ func decodeEventContractCallWithToken(log *geth.Log) (evmTypes.EventContractCall
 		Symbol:           params[3].(string),
 		Amount:           sdk.NewUintFromBigInt(params[4].(*big.Int)),
 	}, nil
-}
-
-func parseGatewayTxConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]string) (
-	chain nexus.ChainName,
-	gatewayAddress common.Address,
-	txID common.Hash,
-	confHeight uint64,
-	pollID vote.PollID,
-	err error,
-) {
-	parsers := []*parse.AttributeParser{
-		{Key: evmTypes.AttributeKeyChain, Map: func(s string) (interface{}, error) {
-			return nexus.ChainName(s), nil
-		}},
-		{Key: evmTypes.AttributeKeyGatewayAddress, Map: func(s string) (interface{}, error) {
-			return common.HexToAddress(s), nil
-		}},
-		{Key: evmTypes.AttributeKeyTxID, Map: func(s string) (interface{}, error) {
-			return common.HexToHash(s), nil
-		}},
-		{Key: evmTypes.AttributeKeyConfHeight, Map: func(s string) (interface{}, error) { return strconv.ParseUint(s, 10, 64) }},
-		{Key: evmTypes.AttributeKeyPoll, Map: func(s string) (interface{}, error) {
-			id, err := strconv.ParseUint(s, 10, 64)
-			return vote.PollID(id), err
-		}},
-	}
-
-	results, err := parse.Parse(attributes, parsers)
-	if err != nil {
-		return "", common.Address{}, common.Hash{}, 0, 0, err
-	}
-
-	return results[0].(nexus.ChainName),
-		results[1].(common.Address),
-		results[2].(common.Hash),
-		results[3].(uint64),
-		results[4].(vote.PollID),
-		nil
-}
-
-func parseNewChainParams(attributes map[string]string) (chain nexus.ChainName, nativeAsset string, err error) {
-	parsers := []*parse.AttributeParser{
-		{Key: evmTypes.AttributeKeyChain, Map: func(s string) (interface{}, error) {
-			return nexus.ChainName(s), nil
-		}},
-		{Key: evmTypes.AttributeKeyNativeAsset, Map: parse.IdentityMap},
-	}
-
-	results, err := parse.Parse(attributes, parsers)
-	if err != nil {
-		return "", "", err
-	}
-
-	return results[0].(nexus.ChainName), results[1].(string), nil
-}
-
-func parseDepositConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]string) (
-	chain nexus.ChainName,
-	txID common.Hash,
-	burnAddr, tokenAddr common.Address,
-	confHeight uint64,
-	pollID vote.PollID,
-	err error,
-) {
-	parsers := []*parse.AttributeParser{
-		{Key: evmTypes.AttributeKeyChain, Map: func(s string) (interface{}, error) {
-			return nexus.ChainName(s), nil
-		}},
-		{Key: evmTypes.AttributeKeyTxID, Map: func(s string) (interface{}, error) {
-			return common.HexToHash(s), nil
-		}},
-		{Key: evmTypes.AttributeKeyDepositAddress, Map: func(s string) (interface{}, error) {
-			return common.HexToAddress(s), nil
-		}},
-		{Key: evmTypes.AttributeKeyTokenAddress, Map: func(s string) (interface{}, error) {
-			return common.HexToAddress(s), nil
-		}},
-		{Key: evmTypes.AttributeKeyConfHeight, Map: func(s string) (interface{}, error) { return strconv.ParseUint(s, 10, 64) }},
-		{Key: evmTypes.AttributeKeyPoll, Map: func(s string) (interface{}, error) {
-			id, err := strconv.ParseUint(s, 10, 64)
-			if err != nil {
-				return vote.PollID(0), err
-			}
-
-			return vote.PollID(id), nil
-		}},
-	}
-
-	results, err := parse.Parse(attributes, parsers)
-	if err != nil {
-		return "", [32]byte{}, [20]byte{}, [20]byte{}, 0, 0, err
-	}
-
-	return results[0].(nexus.ChainName),
-		results[1].(common.Hash),
-		results[2].(common.Address),
-		results[3].(common.Address),
-		results[4].(uint64),
-		results[5].(vote.PollID),
-		nil
-}
-
-func parseTokenConfirmationParams(cdc *codec.LegacyAmino, attributes map[string]string) (
-	chain nexus.ChainName,
-	txID common.Hash,
-	gatewayAddr, tokenAddr common.Address,
-	symbol string,
-	confHeight uint64,
-	pollID vote.PollID,
-	err error,
-) {
-	parsers := []*parse.AttributeParser{
-		{Key: evmTypes.AttributeKeyChain, Map: func(s string) (interface{}, error) {
-			return nexus.ChainName(s), nil
-		}},
-		{Key: evmTypes.AttributeKeyTxID, Map: func(s string) (interface{}, error) {
-			return common.HexToHash(s), nil
-		}},
-		{Key: evmTypes.AttributeKeyGatewayAddress, Map: func(s string) (interface{}, error) {
-			return common.HexToAddress(s), nil
-		}},
-		{Key: evmTypes.AttributeKeyTokenAddress, Map: func(s string) (interface{}, error) {
-			return common.HexToAddress(s), nil
-		}},
-		{Key: evmTypes.AttributeKeySymbol, Map: parse.IdentityMap},
-		{Key: evmTypes.AttributeKeyConfHeight, Map: func(s string) (interface{}, error) { return strconv.ParseUint(s, 10, 64) }},
-		{Key: evmTypes.AttributeKeyPoll, Map: func(s string) (interface{}, error) {
-			id, err := strconv.ParseUint(s, 10, 64)
-			if err != nil {
-				return vote.PollID(0), err
-			}
-
-			return vote.PollID(id), nil
-		}},
-	}
-
-	results, err := parse.Parse(attributes, parsers)
-	if err != nil {
-		return "", [32]byte{}, [20]byte{}, [20]byte{}, "", 0, 0, err
-	}
-
-	return results[0].(nexus.ChainName),
-		results[1].(common.Hash),
-		results[2].(common.Address),
-		results[3].(common.Address),
-		results[4].(string),
-		results[5].(uint64),
-		results[6].(vote.PollID),
-		nil
 }
 
 func getLatestFinalizedBlockNumber(client rpc.Client, confHeight uint64) (*big.Int, error) {

@@ -1455,7 +1455,7 @@ func CommandIDsToStrings(commandIDs []CommandID) []string {
 
 // GetID returns an unique ID for the event
 func (m Event) GetID() EventID {
-	return EventID(fmt.Sprintf("%s-%d", m.TxId.Hex(), m.Index))
+	return EventID(fmt.Sprintf("%s-%d", m.TxID.Hex(), m.Index))
 }
 
 // ValidateBasic returns an error if the event is invalid
@@ -1464,7 +1464,7 @@ func (m Event) ValidateBasic() error {
 		return sdkerrors.Wrap(err, "invalid source chain")
 	}
 
-	if m.TxId.IsZero() {
+	if m.TxID.IsZero() {
 		return fmt.Errorf("invalid tx id")
 	}
 

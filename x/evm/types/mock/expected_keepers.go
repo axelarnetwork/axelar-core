@@ -14,7 +14,6 @@ import (
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/cosmos/cosmos-sdk/codec"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/tendermint/tendermint/libs/log"
 	"sync"
 )
@@ -1840,7 +1839,7 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			GetBatchByIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, id []byte) types.CommandBatch {
 // 				panic("mock out the GetBatchByID method")
 // 			},
-// 			GetBurnerAddressAndSaltFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, token types.ERC20Token, recipient string, gatewayAddr common.Address) (types.Address, types.Hash, error) {
+// 			GetBurnerAddressAndSaltFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, token types.ERC20Token, recipient string, gatewayAddr types.Address) (types.Address, types.Hash, error) {
 // 				panic("mock out the GetBurnerAddressAndSalt method")
 // 			},
 // 			GetBurnerByteCodeFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, bool) {
@@ -1864,7 +1863,7 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			GetConfirmedEventQueueFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.KVQueue {
 // 				panic("mock out the GetConfirmedEventQueue method")
 // 			},
-// 			GetDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID common.Hash, burnerAddr common.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
+// 			GetDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID types.Hash, burnerAddr types.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
 // 				panic("mock out the GetDeposit method")
 // 			},
 // 			GetERC20TokenByAssetFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string) types.ERC20Token {
@@ -1876,7 +1875,7 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			GetEventFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, eventID types.EventID) (types.Event, bool) {
 // 				panic("mock out the GetEvent method")
 // 			},
-// 			GetGatewayAddressFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (common.Address, bool) {
+// 			GetGatewayAddressFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (types.Address, bool) {
 // 				panic("mock out the GetGatewayAddress method")
 // 			},
 // 			GetLatestCommandBatchFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) types.CommandBatch {
@@ -1968,7 +1967,7 @@ type ChainKeeperMock struct {
 	GetBatchByIDFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, id []byte) types.CommandBatch
 
 	// GetBurnerAddressAndSaltFunc mocks the GetBurnerAddressAndSalt method.
-	GetBurnerAddressAndSaltFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, token types.ERC20Token, recipient string, gatewayAddr common.Address) (types.Address, types.Hash, error)
+	GetBurnerAddressAndSaltFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, token types.ERC20Token, recipient string, gatewayAddr types.Address) (types.Address, types.Hash, error)
 
 	// GetBurnerByteCodeFunc mocks the GetBurnerByteCode method.
 	GetBurnerByteCodeFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, bool)
@@ -1992,7 +1991,7 @@ type ChainKeeperMock struct {
 	GetConfirmedEventQueueFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.KVQueue
 
 	// GetDepositFunc mocks the GetDeposit method.
-	GetDepositFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID common.Hash, burnerAddr common.Address) (types.ERC20Deposit, types.DepositStatus, bool)
+	GetDepositFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID types.Hash, burnerAddr types.Address) (types.ERC20Deposit, types.DepositStatus, bool)
 
 	// GetERC20TokenByAssetFunc mocks the GetERC20TokenByAsset method.
 	GetERC20TokenByAssetFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string) types.ERC20Token
@@ -2004,7 +2003,7 @@ type ChainKeeperMock struct {
 	GetEventFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, eventID types.EventID) (types.Event, bool)
 
 	// GetGatewayAddressFunc mocks the GetGatewayAddress method.
-	GetGatewayAddressFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (common.Address, bool)
+	GetGatewayAddressFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (types.Address, bool)
 
 	// GetLatestCommandBatchFunc mocks the GetLatestCommandBatch method.
 	GetLatestCommandBatchFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) types.CommandBatch
@@ -2122,7 +2121,7 @@ type ChainKeeperMock struct {
 			// Recipient is the recipient argument value.
 			Recipient string
 			// GatewayAddr is the gatewayAddr argument value.
-			GatewayAddr common.Address
+			GatewayAddr types.Address
 		}
 		// GetBurnerByteCode holds details about calls to the GetBurnerByteCode method.
 		GetBurnerByteCode []struct {
@@ -2170,9 +2169,9 @@ type ChainKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// TxID is the txID argument value.
-			TxID common.Hash
+			TxID types.Hash
 			// BurnerAddr is the burnerAddr argument value.
-			BurnerAddr common.Address
+			BurnerAddr types.Address
 		}
 		// GetERC20TokenByAsset holds details about calls to the GetERC20TokenByAsset method.
 		GetERC20TokenByAsset []struct {
@@ -2577,7 +2576,7 @@ func (mock *ChainKeeperMock) GetBatchByIDCalls() []struct {
 }
 
 // GetBurnerAddressAndSalt calls GetBurnerAddressAndSaltFunc.
-func (mock *ChainKeeperMock) GetBurnerAddressAndSalt(ctx github_com_cosmos_cosmos_sdk_types.Context, token types.ERC20Token, recipient string, gatewayAddr common.Address) (types.Address, types.Hash, error) {
+func (mock *ChainKeeperMock) GetBurnerAddressAndSalt(ctx github_com_cosmos_cosmos_sdk_types.Context, token types.ERC20Token, recipient string, gatewayAddr types.Address) (types.Address, types.Hash, error) {
 	if mock.GetBurnerAddressAndSaltFunc == nil {
 		panic("ChainKeeperMock.GetBurnerAddressAndSaltFunc: method is nil but ChainKeeper.GetBurnerAddressAndSalt was just called")
 	}
@@ -2585,7 +2584,7 @@ func (mock *ChainKeeperMock) GetBurnerAddressAndSalt(ctx github_com_cosmos_cosmo
 		Ctx         github_com_cosmos_cosmos_sdk_types.Context
 		Token       types.ERC20Token
 		Recipient   string
-		GatewayAddr common.Address
+		GatewayAddr types.Address
 	}{
 		Ctx:         ctx,
 		Token:       token,
@@ -2605,13 +2604,13 @@ func (mock *ChainKeeperMock) GetBurnerAddressAndSaltCalls() []struct {
 	Ctx         github_com_cosmos_cosmos_sdk_types.Context
 	Token       types.ERC20Token
 	Recipient   string
-	GatewayAddr common.Address
+	GatewayAddr types.Address
 } {
 	var calls []struct {
 		Ctx         github_com_cosmos_cosmos_sdk_types.Context
 		Token       types.ERC20Token
 		Recipient   string
-		GatewayAddr common.Address
+		GatewayAddr types.Address
 	}
 	mock.lockGetBurnerAddressAndSalt.RLock()
 	calls = mock.calls.GetBurnerAddressAndSalt
@@ -2849,14 +2848,14 @@ func (mock *ChainKeeperMock) GetConfirmedEventQueueCalls() []struct {
 }
 
 // GetDeposit calls GetDepositFunc.
-func (mock *ChainKeeperMock) GetDeposit(ctx github_com_cosmos_cosmos_sdk_types.Context, txID common.Hash, burnerAddr common.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
+func (mock *ChainKeeperMock) GetDeposit(ctx github_com_cosmos_cosmos_sdk_types.Context, txID types.Hash, burnerAddr types.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
 	if mock.GetDepositFunc == nil {
 		panic("ChainKeeperMock.GetDepositFunc: method is nil but ChainKeeper.GetDeposit was just called")
 	}
 	callInfo := struct {
 		Ctx        github_com_cosmos_cosmos_sdk_types.Context
-		TxID       common.Hash
-		BurnerAddr common.Address
+		TxID       types.Hash
+		BurnerAddr types.Address
 	}{
 		Ctx:        ctx,
 		TxID:       txID,
@@ -2873,13 +2872,13 @@ func (mock *ChainKeeperMock) GetDeposit(ctx github_com_cosmos_cosmos_sdk_types.C
 //     len(mockedChainKeeper.GetDepositCalls())
 func (mock *ChainKeeperMock) GetDepositCalls() []struct {
 	Ctx        github_com_cosmos_cosmos_sdk_types.Context
-	TxID       common.Hash
-	BurnerAddr common.Address
+	TxID       types.Hash
+	BurnerAddr types.Address
 } {
 	var calls []struct {
 		Ctx        github_com_cosmos_cosmos_sdk_types.Context
-		TxID       common.Hash
-		BurnerAddr common.Address
+		TxID       types.Hash
+		BurnerAddr types.Address
 	}
 	mock.lockGetDeposit.RLock()
 	calls = mock.calls.GetDeposit
@@ -2993,7 +2992,7 @@ func (mock *ChainKeeperMock) GetEventCalls() []struct {
 }
 
 // GetGatewayAddress calls GetGatewayAddressFunc.
-func (mock *ChainKeeperMock) GetGatewayAddress(ctx github_com_cosmos_cosmos_sdk_types.Context) (common.Address, bool) {
+func (mock *ChainKeeperMock) GetGatewayAddress(ctx github_com_cosmos_cosmos_sdk_types.Context) (types.Address, bool) {
 	if mock.GetGatewayAddressFunc == nil {
 		panic("ChainKeeperMock.GetGatewayAddressFunc: method is nil but ChainKeeper.GetGatewayAddress was just called")
 	}

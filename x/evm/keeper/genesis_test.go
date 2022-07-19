@@ -74,6 +74,7 @@ func assertChainsEqual(t *testing.T, initial types.GenesisState, exported types.
 		assert.ElementsMatch(t, initial.Chains[i].CommandBatches, exported.Chains[i].CommandBatches)
 		assert.Equal(t, initial.Chains[i].Gateway, exported.Chains[i].Gateway)
 		assert.Equal(t, initial.Chains[i].Params, exported.Chains[i].Params)
+		assert.Equal(t, initial.Chains[0].Events[0], exported.Chains[0].Events[0])
 		assert.ElementsMatch(t, initial.Chains[i].Events, exported.Chains[i].Events)
 		assert.Equal(t, initial.Chains[i].ConfirmedEventQueue, exported.Chains[i].ConfirmedEventQueue)
 	}

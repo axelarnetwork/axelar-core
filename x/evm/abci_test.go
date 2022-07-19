@@ -60,7 +60,7 @@ func TestHandleContractCall(t *testing.T) {
 	givenContractCallEvent := Given("a ContractCall event", func() {
 		event = types.Event{
 			Chain: sourceChainName,
-			TxId:  evmTestUtils.RandomHash(),
+			TxID:  evmTestUtils.RandomHash(),
 			Index: uint64(rand.PosI64()),
 			Event: &types.Event_ContractCall{
 				ContractCall: &types.EventContractCall{
@@ -221,7 +221,7 @@ func TestHandleTokenSent(t *testing.T) {
 	givenTokenSentEvent := Given("a TokenSent event", func() {
 		event = types.Event{
 			Chain: sourceChainName,
-			TxId:  evmTestUtils.RandomHash(),
+			TxID:  evmTestUtils.RandomHash(),
 			Index: uint64(rand.PosI64()),
 			Event: &types.Event_TokenSent{
 				TokenSent: &types.EventTokenSent{
@@ -394,7 +394,7 @@ func TestHandleContractCallWithToken(t *testing.T) {
 	destinationChainName := nexus.ChainName(rand.Str(5))
 	event := types.Event{
 		Chain: sourceChainName,
-		TxId:  evmTestUtils.RandomHash(),
+		TxID:  evmTestUtils.RandomHash(),
 		Index: uint64(rand.PosI64()),
 		Event: &types.Event_ContractCallWithToken{
 			ContractCallWithToken: &types.EventContractCallWithToken{
@@ -719,7 +719,7 @@ func TestHandleConfirmDeposit(t *testing.T) {
 	givenTransferEvent := Given("a Transfer event", func() {
 		event = types.Event{
 			Chain: sourceChainName,
-			TxId:  evmTestUtils.RandomHash(),
+			TxID:  evmTestUtils.RandomHash(),
 			Index: uint64(rand.PosI64()),
 			Event: &types.Event_Transfer{
 				Transfer: &types.EventTransfer{
@@ -774,7 +774,7 @@ func TestHandleConfirmDeposit(t *testing.T) {
 
 	depositFound := func(found bool) func() {
 		return func() {
-			sourceCk.GetDepositFunc = func(ctx sdk.Context, txID common.Hash, burnerAddr common.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
+			sourceCk.GetDepositFunc = func(ctx sdk.Context, txID types.Hash, burnerAddr types.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
 				return types.ERC20Deposit{}, types.DepositStatus_Confirmed, found
 			}
 		}
@@ -835,7 +835,7 @@ func TestHandleConfirmToken(t *testing.T) {
 	givenTokenDeployedEvent := Given("a TokenDeployed event", func() {
 		event = types.Event{
 			Chain: sourceChainName,
-			TxId:  evmTestUtils.RandomHash(),
+			TxID:  evmTestUtils.RandomHash(),
 			Index: uint64(rand.PosI64()),
 			Event: &types.Event_TokenDeployed{
 				TokenDeployed: &types.EventTokenDeployed{
@@ -1007,7 +1007,7 @@ func TestHandleTransferKey(t *testing.T) {
 func randTransferKeyEvent(chain nexus.ChainName) types.Event {
 	event := types.Event{
 		Chain: chain,
-		TxId:  types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
+		TxID:  types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
 		Index: uint64(rand.I64Between(1, 50)),
 	}
 
