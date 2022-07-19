@@ -173,7 +173,7 @@ message CreateTransferOwnershipRequest {
   string key_id = 3 [
     (gogoproto.customname) = "KeyID",
     (gogoproto.casttype) =
-        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
   ];
 }
 
@@ -189,7 +189,7 @@ message CreateTransferOperatorshipRequest {
   string key_id = 3 [
     (gogoproto.customname) = "KeyID",
     (gogoproto.casttype) =
-        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
   ];
 }
 
@@ -219,7 +219,7 @@ message AddChainRequest {
   string name = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
-  tss.exported.v1beta1.KeyType key_type = 4;
+  tss.exported.v1beta1.KeyType key_type = 4 [ deprecated = true ];
   bytes params = 5
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Params" ];
 }

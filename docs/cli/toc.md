@@ -182,7 +182,6 @@
   - [set-genesis-slashing](axelard_set-genesis-slashing.md)	 - Set the genesis parameters for the slashing module
   - [set-genesis-snapshot](axelard_set-genesis-snapshot.md)	 - Set the genesis parameters for the snapshot module
   - [set-genesis-staking](axelard_set-genesis-staking.md)	 - Set the genesis parameters for the staking module
-  - [set-genesis-tss](axelard_set-genesis-tss.md)	 - Set the genesis parameters for the tss module
   - [set-genesis-vote](axelard_set-genesis-vote.md)	 - Set the genesis parameters for the vote module
   - [set-governance-key \[threshold\] \[\[pubKey\]...\]](axelard_set-governance-key.md)	 - Set the genesis multisig governance key for the axelar network
   - [start](axelard_start.md)	 - Run the full node
@@ -285,10 +284,6 @@
       - [edit-validator](axelard_tx_staking_edit-validator.md)	 - edit an existing validator account
       - [redelegate \[src-validator-addr\] \[dst-validator-addr\] \[amount\]](axelard_tx_staking_redelegate.md)	 - Redelegate illiquid tokens from one validator to another
       - [unbond \[validator-addr\] \[amount\]](axelard_tx_staking_unbond.md)	 - Unbond shares from a validator
-    - [tss](axelard_tx_tss.md)	 - tss transactions subcommands
-      - [register-external-keys \[chain\]](axelard_tx_tss_register-external-keys.md)	 - Register the external keys for the given chain
-      - [rotate \[chain\] \[role\] \[keyID\]](axelard_tx_tss_rotate.md)	 - Rotate the given chain from the old key to the given key
-      - [start-keygen](axelard_tx_tss_start-keygen.md)	 - Initiate key generation protocol
     - [validate-signatures \[file\]](axelard_tx_validate-signatures.md)	 - validate transactions signatures
     - [vesting](axelard_tx_vesting.md)	 - Vesting transaction subcommands
       - [create-vesting-account \[to_address\] \[amount\] \[end_time\]](axelard_tx_vesting_create-vesting-account.md)	 - Create a new vesting account funded with an allocation of tokens.

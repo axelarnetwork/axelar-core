@@ -58,11 +58,6 @@ type ReqKeyRotate struct {
 
 // RegisterRoutes registers all REST routes with the given router
 func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
-	registerTx := clientUtils.RegisterTxHandlerFn(r, types.RestRoute)
-	registerTx(GetHandlerKeygenStart(cliCtx), TxKeygenStart)
-	registerTx(GetHandlerKeyRotate(cliCtx), TxMasterKeyRotate, clientUtils.PathVarChain)
-	registerTx(GetHandlerRegisterExternalKeys(cliCtx), TxRegisterExternalKeys, clientUtils.PathVarChain)
-
 	registerQuery := clientUtils.RegisterQueryHandlerFn(r, types.RestRoute)
 	registerQuery(QueryHandlerSigStatus(cliCtx), QuerySignature, clientUtils.PathVarSigID)
 	registerQuery(QueryHandlerKeyStatus(cliCtx), QueryKey, clientUtils.PathVarKeyID)
