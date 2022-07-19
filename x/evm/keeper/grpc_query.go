@@ -481,12 +481,17 @@ func (q Querier) TokenInfo(c context.Context, req *types.TokenInfoRequest) (*typ
 		}
 	}
 
+	burnerCodeHashHex := ""
+	if burnerCodeHash, ok := token.GetBurnerCodeHash(); ok {
+		burnerCodeHashHex = burnerCodeHash.Hex()
+	}
+
 	return &types.TokenInfoResponse{
 		Asset:          token.GetAsset(),
 		Details:        token.GetDetails(),
 		Address:        token.GetAddress().Hex(),
 		Confirmed:      token.Is(types.Confirmed),
 		IsExternal:     token.IsExternal(),
-		BurnerCodeHash: token.GetBurnerCodeHash().Hex(),
+		BurnerCodeHash: burnerCodeHashHex,
 	}, nil
 }

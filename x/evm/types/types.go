@@ -160,9 +160,13 @@ func (t ERC20Token) GetBurnerCode() []byte {
 	return t.metadata.BurnerCode
 }
 
-// GetBurnerCodeHash returns the version of the burner the token is deployed with
-func (t ERC20Token) GetBurnerCodeHash() Hash {
-	return Hash(crypto.Keccak256Hash(t.metadata.BurnerCode))
+// GetBurnerCodeHash returns the version of the burner the token is deployed with if it exists
+func (t ERC20Token) GetBurnerCodeHash() (Hash, bool) {
+	if t.metadata.BurnerCode == nil {
+		return Hash{}, false
+	}
+
+	return Hash(crypto.Keccak256Hash(t.metadata.BurnerCode)), true
 }
 
 // CreateDeployCommand returns a token deployment command for the token

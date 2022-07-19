@@ -15,6 +15,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	"github.com/axelarnetwork/utils/funcs"
 )
 
 var (
@@ -243,7 +244,7 @@ func (k chainKeeper) GetBurnerAddressAndSalt(ctx sdk.Context, token types.ERC20T
 		}
 		tokenBurnerCodeHash = types.Hash(crypto.Keccak256Hash(burnerCode))
 	} else {
-		tokenBurnerCodeHash = token.GetBurnerCodeHash()
+		tokenBurnerCodeHash = funcs.MustOk(token.GetBurnerCodeHash())
 	}
 
 	var initCodeHash types.Hash
