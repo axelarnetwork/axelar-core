@@ -11,8 +11,8 @@ import (
 )
 
 // NewHandler returns the handler of the nexus module
-func NewHandler(k types.Nexus, snapshotter types.Snapshotter, staking types.StakingKeeper, axelarnet types.AxelarnetKeeper) sdk.Handler {
-	server := keeper.NewMsgServerImpl(k, snapshotter, staking, axelarnet)
+func NewHandler(k types.Nexus, snapshotter types.Snapshotter, slashing types.SlashingKeeper, staking types.StakingKeeper, axelarnet types.AxelarnetKeeper) sdk.Handler {
+	server := keeper.NewMsgServerImpl(k, snapshotter, slashing, staking, axelarnet)
 	h := func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
