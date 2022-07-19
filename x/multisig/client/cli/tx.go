@@ -10,6 +10,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
 // GetTxCmd returns the transaction commands for this module
@@ -24,14 +25,14 @@ func GetTxCmd() *cobra.Command {
 	}
 
 	txCmd.AddCommand(
-		GetCmdStartKeygen(),
+		getCmdStartKeygen(),
+		getCmdRotateKey(),
 	)
 
 	return txCmd
 }
 
-// GetCmdStartKeygen returns the cli command to start keygen
-func GetCmdStartKeygen() *cobra.Command {
+func getCmdStartKeygen() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "start-keygen",
 		Short: "Initiate key generation protocol",
@@ -55,6 +56,34 @@ func GetCmdStartKeygen() *cobra.Command {
 		}
 
 		return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
+	}
+
+	flags.AddTxFlagsToCmd(cmd)
+
+	return cmd
+}
+
+func getCmdRotateKey() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "rotate [chain] [keyID]",
+		Short: "Rotate the given chain to the given key",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			chain := nexus.ChainName(args[0])
+			keyID := exported.KeyID(args[1])
+
+			msg := types.NewRotateKeyRequest(clientCtx.FromAddress, chain, keyID)
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
+		},
 	}
 
 	flags.AddTxFlagsToCmd(cmd)

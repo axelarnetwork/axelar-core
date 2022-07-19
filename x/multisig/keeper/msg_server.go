@@ -17,15 +17,17 @@ type msgServer struct {
 	Keeper
 	snapshotter Snapshotter
 	staker      types.Staker
+	nexus       types.Nexus
 }
 
 // NewMsgServer returns an implementation of the MsgServiceServer interface
 // for the provided Keeper.
-func NewMsgServer(keeper Keeper, snapshotter Snapshotter, staker types.Staker) types.MsgServiceServer {
+func NewMsgServer(keeper Keeper, snapshotter Snapshotter, staker types.Staker, nexus types.Nexus) types.MsgServiceServer {
 	return msgServer{
 		Keeper:      keeper,
 		snapshotter: snapshotter,
 		staker:      staker,
+		nexus:       nexus,
 	}
 }
 
@@ -77,4 +79,59 @@ func (s msgServer) SubmitPubKey(c context.Context, req *types.SubmitPubKeyReques
 	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewPubKeySubmitted(req.KeyID, participant, req.PubKey)))
 
 	return &types.SubmitPubKeyResponse{}, nil
+}
+
+func (s msgServer) SubmitSignature(c context.Context, req *types.SubmitSignatureRequest) (*types.SubmitSignatureResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	signingSession, ok := s.getSigningSession(ctx, req.SigID)
+	if !ok {
+		return nil, fmt.Errorf("signing session %d not found", req.SigID)
+	}
+
+	participant := s.snapshotter.GetOperator(ctx, req.Sender)
+	if participant.Empty() {
+		return nil, fmt.Errorf("sender %s is not a registered proxy", req.Sender.String())
+	}
+
+	if err := signingSession.AddSig(ctx.BlockHeight(), participant, req.Signature); err != nil {
+		return nil, sdkerrors.Wrap(err, "unable to add signature for signing")
+	}
+
+	s.setSigningSession(ctx, signingSession)
+
+	s.Logger(ctx).Debug("new signature submitted",
+		"sig_id", signingSession.GetID(),
+		"participant", participant.String(),
+		"participants_weight", signingSession.GetParticipantsWeight().String(),
+		"bonded_weight", signingSession.Key.Snapshot.BondedWeight.String(),
+		"signing_threshold", signingSession.Key.SigningThreshold.String(),
+		"expires_at", signingSession.ExpiresAt,
+	)
+
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewSignatureSubmitted(req.SigID, participant, req.Signature)))
+
+	return &types.SubmitSignatureResponse{}, nil
+}
+
+func (s msgServer) RotateKey(c context.Context, req *types.RotateKeyRequest) (*types.RotateKeyResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	if _, ok := s.nexus.GetChain(ctx, req.Chain); !ok {
+		return nil, fmt.Errorf("unknown chain")
+	}
+
+	if _, ok := s.GetCurrentKeyID(ctx, req.Chain); ok {
+		return nil, fmt.Errorf("manual key rotation is only allowed when no key is active")
+	}
+
+	if err := s.AssignKey(ctx, req.Chain, req.KeyID); err != nil {
+		return nil, sdkerrors.Wrap(err, "failed to assign the next key")
+	}
+
+	if err := s.Keeper.RotateKey(ctx, req.Chain); err != nil {
+		return nil, sdkerrors.Wrap(err, "failed to rotate the next key")
+	}
+
+	return &types.RotateKeyResponse{}, nil
 }

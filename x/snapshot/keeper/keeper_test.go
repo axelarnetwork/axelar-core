@@ -465,7 +465,7 @@ func TestKeeper(t *testing.T) {
 				}
 			}).
 			Then("don't include validators with zero weight in snapshot", func(t *testing.T) {
-				s, err := k.CreateSnapshot(ctx, candidates, filterFunc, weightFunc, threshold)
+				s, err := k.CreateSnapshot(ctx, candidates, filterFunc, weightFunc, utils.NewThreshold(9, 10))
 
 				assert.NoError(t, err)
 				participantsWithNonZeroWeights := slices.Map(validators[1:], func(v stakingtypes.ValidatorI) sdk.ValAddress {
@@ -474,6 +474,20 @@ func TestKeeper(t *testing.T) {
 				assert.ElementsMatch(t, participantsWithNonZeroWeights, slices.Map(maps.Values(s.Participants),
 					func(p exported.Participant) sdk.ValAddress { return p.Address }))
 			}).Run(t)
+
+		givenKeeper.
+			When2(whenAllParamsAreGood).
+			When("candidate is not a validator", func() {
+				candidates = []sdk.ValAddress{rand.ValAddr()}
+				threshold = utils.ZeroThreshold
+			}).
+			Then("no participants are selected", func(t *testing.T) {
+				_, err := k.CreateSnapshot(ctx, candidates, filterFunc, weightFunc, threshold)
+
+				assert.ErrorContains(t, err, "snapshot cannot have no participant")
+			}).
+			Run(t)
+
 	})
 }
 

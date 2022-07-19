@@ -9,7 +9,7 @@ import (
 
 var _ sdk.Msg = &StartKeygenRequest{}
 
-// NewStartKeygenRequest constructor for AckRequest
+// NewStartKeygenRequest constructor for StartKeygenRequest
 func NewStartKeygenRequest(sender sdk.AccAddress, keyID exported.KeyID) *StartKeygenRequest {
 	return &StartKeygenRequest{
 		Sender: sender,

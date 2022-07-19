@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"bytes"
 	"strings"
 	"testing"
 
@@ -24,14 +25,14 @@ func TestKey(t *testing.T) {
 		lck1 := KeyFromStr(keyStr, strings.ToLower)
 		lck2 := LowerCaseKey(keyStr)
 
-		assert.True(t, lck1.Equals(lck2))
+		assert.True(t, bytes.Equal(lck1.AsKey(), lck2.AsKey()))
 	}).Repeat(repeats))
 
 	t.Run("different keys", testutils.Func(func(t *testing.T) {
 		key1 := KeyFromStr(rand.StrBetween(1, 30))
 		key2 := KeyFromStr(rand.StrBetween(1, 30))
 
-		assert.False(t, key1.Equals(key2))
+		assert.False(t, bytes.Equal(key1.AsKey(), key2.AsKey()))
 	}).Repeat(repeats))
 
 	t.Run("prepends creates same key as append", testutils.Func(func(t *testing.T) {
@@ -43,7 +44,7 @@ func TestKey(t *testing.T) {
 		compKey1 := key1.Append(key2).Append(key3).Append(key4).Append(key5)
 		compKey2 := key5.Prepend(key4).Prepend(key3).Prepend(key2).Prepend(key1)
 
-		assert.True(t, compKey1.Equals(compKey2))
+		assert.True(t, bytes.Equal(compKey1.AsKey(), compKey2.AsKey()))
 	}).Repeat(repeats))
 
 	t.Run("key from integer", func(t *testing.T) {

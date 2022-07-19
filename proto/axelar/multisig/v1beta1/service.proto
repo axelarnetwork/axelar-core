@@ -6,6 +6,7 @@ option go_package = "github.com/axelarnetwork/axelar-core/x/multisig/types";
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "axelar/multisig/v1beta1/tx.proto";
+import "axelar/multisig/v1beta1/query.proto";
 
 option (gogoproto.goproto_registration) = true;
 
@@ -13,15 +14,46 @@ option (gogoproto.goproto_registration) = true;
 service MsgService {
   rpc StartKeygen(StartKeygenRequest) returns (StartKeygenResponse) {
     option (google.api.http) = {
-      post : "/axelar/multisig/keygen"
+      post : "/axelar/multisig/start_keygen"
       body : "*"
     };
   }
 
   rpc SubmitPubKey(SubmitPubKeyRequest) returns (SubmitPubKeyResponse) {
     option (google.api.http) = {
-      post : "/axelar/multisig/submit_pk"
+      post : "/axelar/multisig/submit_pub_key"
       body : "*"
     };
+  }
+
+  rpc SubmitSignature(SubmitSignatureRequest)
+      returns (SubmitSignatureResponse) {
+    option (google.api.http) = {
+      post : "/axelar/multisig/submit_signature"
+      body : "*"
+    };
+  }
+
+  rpc RotateKey(RotateKeyRequest) returns (RotateKeyResponse) {
+    option (google.api.http) = {
+      post : "/axelar/multisig/rotate_key"
+      body : "*"
+    };
+  }
+}
+
+// Query defines the gRPC querier service.
+service QueryService {
+  // KeyID returns the key ID of a key assigned to a given chain.
+  // If no key is assigned, it returns an empty string.
+  rpc KeyID(KeyIDRequest) returns (KeyIDResponse) {
+    option (google.api.http).get = "/axelar/multisig/v1beta1/key_id/{chain}";
+  }
+
+  // NextKeyID returns the key ID assigned for the next rotation on a given
+  // chain. If no key rotation is in progress, it returns the empty string.
+  rpc NextKeyID(NextKeyIDRequest) returns (NextKeyIDResponse) {
+    option (google.api.http).get =
+        "/axelar/multisig/v1beta1/next_key_id/{chain}";
   }
 }

@@ -6,6 +6,7 @@ package types
 import (
 	fmt "fmt"
 	github_com_axelarnetwork_axelar_core_x_multisig_exported "github.com/axelarnetwork/axelar-core/x/multisig/exported"
+	github_com_axelarnetwork_axelar_core_x_nexus_exported "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	_ "github.com/axelarnetwork/axelar-core/x/permission/exported"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
 	_ "github.com/gogo/protobuf/gogoproto"
@@ -101,10 +102,10 @@ func (m *StartKeygenResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_StartKeygenResponse proto.InternalMessageInfo
 
 type SubmitPubKeyRequest struct {
-	Sender    github_com_cosmos_cosmos_sdk_types.AccAddress                  `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
-	KeyID     github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID `protobuf:"bytes,2,opt,name=key_id,json=keyId,proto3,casttype=github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID" json:"key_id,omitempty"`
-	PubKey    PublicKey                                                      `protobuf:"bytes,3,opt,name=pub_key,json=pubKey,proto3,casttype=PublicKey" json:"pub_key,omitempty"`
-	Signature Signature                                                      `protobuf:"bytes,4,opt,name=signature,proto3,casttype=Signature" json:"signature,omitempty"`
+	Sender    github_com_cosmos_cosmos_sdk_types.AccAddress                      `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
+	KeyID     github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID     `protobuf:"bytes,2,opt,name=key_id,json=keyId,proto3,casttype=github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID" json:"key_id,omitempty"`
+	PubKey    github_com_axelarnetwork_axelar_core_x_multisig_exported.PublicKey `protobuf:"bytes,3,opt,name=pub_key,json=pubKey,proto3,casttype=github.com/axelarnetwork/axelar-core/x/multisig/exported.PublicKey" json:"pub_key,omitempty"`
+	Signature Signature                                                          `protobuf:"bytes,4,opt,name=signature,proto3,casttype=Signature" json:"signature,omitempty"`
 }
 
 func (m *SubmitPubKeyRequest) Reset()         { *m = SubmitPubKeyRequest{} }
@@ -176,42 +177,204 @@ func (m *SubmitPubKeyResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_SubmitPubKeyResponse proto.InternalMessageInfo
 
+type SubmitSignatureRequest struct {
+	Sender    github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
+	SigID     uint64                                        `protobuf:"varint,2,opt,name=sig_id,json=sigId,proto3" json:"sig_id,omitempty"`
+	Signature Signature                                     `protobuf:"bytes,3,opt,name=signature,proto3,casttype=Signature" json:"signature,omitempty"`
+}
+
+func (m *SubmitSignatureRequest) Reset()         { *m = SubmitSignatureRequest{} }
+func (m *SubmitSignatureRequest) String() string { return proto.CompactTextString(m) }
+func (*SubmitSignatureRequest) ProtoMessage()    {}
+func (*SubmitSignatureRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_22993cd2eb246944, []int{4}
+}
+func (m *SubmitSignatureRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *SubmitSignatureRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_SubmitSignatureRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *SubmitSignatureRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SubmitSignatureRequest.Merge(m, src)
+}
+func (m *SubmitSignatureRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *SubmitSignatureRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_SubmitSignatureRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SubmitSignatureRequest proto.InternalMessageInfo
+
+type SubmitSignatureResponse struct {
+}
+
+func (m *SubmitSignatureResponse) Reset()         { *m = SubmitSignatureResponse{} }
+func (m *SubmitSignatureResponse) String() string { return proto.CompactTextString(m) }
+func (*SubmitSignatureResponse) ProtoMessage()    {}
+func (*SubmitSignatureResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_22993cd2eb246944, []int{5}
+}
+func (m *SubmitSignatureResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *SubmitSignatureResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_SubmitSignatureResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *SubmitSignatureResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SubmitSignatureResponse.Merge(m, src)
+}
+func (m *SubmitSignatureResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *SubmitSignatureResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_SubmitSignatureResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SubmitSignatureResponse proto.InternalMessageInfo
+
+type RotateKeyRequest struct {
+	Sender github_com_cosmos_cosmos_sdk_types.AccAddress                   `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
+	Chain  github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
+	KeyID  github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID  `protobuf:"bytes,3,opt,name=key_id,json=keyId,proto3,casttype=github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID" json:"key_id,omitempty"`
+}
+
+func (m *RotateKeyRequest) Reset()         { *m = RotateKeyRequest{} }
+func (m *RotateKeyRequest) String() string { return proto.CompactTextString(m) }
+func (*RotateKeyRequest) ProtoMessage()    {}
+func (*RotateKeyRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_22993cd2eb246944, []int{6}
+}
+func (m *RotateKeyRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *RotateKeyRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_RotateKeyRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *RotateKeyRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RotateKeyRequest.Merge(m, src)
+}
+func (m *RotateKeyRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *RotateKeyRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_RotateKeyRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RotateKeyRequest proto.InternalMessageInfo
+
+type RotateKeyResponse struct {
+}
+
+func (m *RotateKeyResponse) Reset()         { *m = RotateKeyResponse{} }
+func (m *RotateKeyResponse) String() string { return proto.CompactTextString(m) }
+func (*RotateKeyResponse) ProtoMessage()    {}
+func (*RotateKeyResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_22993cd2eb246944, []int{7}
+}
+func (m *RotateKeyResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *RotateKeyResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_RotateKeyResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *RotateKeyResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RotateKeyResponse.Merge(m, src)
+}
+func (m *RotateKeyResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *RotateKeyResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_RotateKeyResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RotateKeyResponse proto.InternalMessageInfo
+
 func init() {
 	proto.RegisterType((*StartKeygenRequest)(nil), "axelar.multisig.v1beta1.StartKeygenRequest")
 	proto.RegisterType((*StartKeygenResponse)(nil), "axelar.multisig.v1beta1.StartKeygenResponse")
 	proto.RegisterType((*SubmitPubKeyRequest)(nil), "axelar.multisig.v1beta1.SubmitPubKeyRequest")
 	proto.RegisterType((*SubmitPubKeyResponse)(nil), "axelar.multisig.v1beta1.SubmitPubKeyResponse")
+	proto.RegisterType((*SubmitSignatureRequest)(nil), "axelar.multisig.v1beta1.SubmitSignatureRequest")
+	proto.RegisterType((*SubmitSignatureResponse)(nil), "axelar.multisig.v1beta1.SubmitSignatureResponse")
+	proto.RegisterType((*RotateKeyRequest)(nil), "axelar.multisig.v1beta1.RotateKeyRequest")
+	proto.RegisterType((*RotateKeyResponse)(nil), "axelar.multisig.v1beta1.RotateKeyResponse")
 }
 
 func init() { proto.RegisterFile("axelar/multisig/v1beta1/tx.proto", fileDescriptor_22993cd2eb246944) }
 
 var fileDescriptor_22993cd2eb246944 = []byte{
-	// 398 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xd4, 0x92, 0x3d, 0x8e, 0xd3, 0x40,
-	0x18, 0x86, 0x3d, 0x61, 0xd7, 0x28, 0x23, 0x68, 0xbc, 0x0b, 0x58, 0x5b, 0xd8, 0x91, 0x0b, 0xb4,
-	0x12, 0x8a, 0xad, 0x08, 0xd1, 0x50, 0x20, 0x6d, 0x44, 0x13, 0xb9, 0x59, 0xd9, 0x1d, 0x4d, 0xe4,
-	0xb1, 0x3f, 0x99, 0x91, 0x63, 0x8f, 0x99, 0x1f, 0xb0, 0x3b, 0x8e, 0xc0, 0x0d, 0x38, 0x05, 0x77,
-	0x08, 0x5d, 0x4a, 0x2a, 0x0b, 0x9c, 0x5b, 0xa4, 0x42, 0xb1, 0x1d, 0x99, 0x94, 0x94, 0x5b, 0xcd,
-	0xdf, 0xa3, 0x47, 0xf3, 0xbe, 0xfa, 0xf0, 0x2c, 0xaa, 0x60, 0x13, 0x71, 0x2f, 0x57, 0x1b, 0x49,
-	0x05, 0x4d, 0xbd, 0xcf, 0x0b, 0x02, 0x32, 0x5a, 0x78, 0xb2, 0x72, 0x4b, 0xce, 0x24, 0x33, 0x5e,
-	0xf4, 0x84, 0x7b, 0x22, 0xdc, 0x81, 0xb8, 0xb9, 0x4e, 0x59, 0xca, 0x3a, 0xc6, 0x3b, 0xee, 0x7a,
-	0xfc, 0xc6, 0x1d, 0x84, 0x25, 0xf0, 0x9c, 0x0a, 0x41, 0x59, 0xe1, 0x41, 0x55, 0x32, 0x2e, 0x21,
-	0x19, 0xdd, 0x75, 0x09, 0xa2, 0xe7, 0x9d, 0x9f, 0x08, 0x1b, 0xa1, 0x8c, 0xb8, 0xf4, 0xa1, 0x4e,
-	0xa1, 0x08, 0xe0, 0x93, 0x02, 0x21, 0x8d, 0x15, 0xd6, 0x05, 0x14, 0x09, 0x70, 0x13, 0xcd, 0xd0,
-	0xed, 0x74, 0xb9, 0x38, 0x34, 0xf6, 0x3c, 0xa5, 0xf2, 0xa3, 0x22, 0x6e, 0xcc, 0x72, 0x2f, 0x66,
-	0x22, 0x67, 0x62, 0x58, 0xe6, 0x22, 0xc9, 0x06, 0xe9, 0x5d, 0x1c, 0xdf, 0x25, 0x09, 0x07, 0x21,
-	0x82, 0x41, 0x60, 0x10, 0xac, 0x67, 0x50, 0xaf, 0x69, 0x62, 0x4e, 0x3a, 0x95, 0xdf, 0x36, 0xf6,
-	0xa5, 0x0f, 0xf5, 0xea, 0xfd, 0xa1, 0xb1, 0xdf, 0xfd, 0xe3, 0xec, 0x7f, 0x5e, 0x80, 0xfc, 0xc2,
-	0x78, 0x36, 0x9c, 0xe6, 0x31, 0xe3, 0xe0, 0x55, 0x63, 0x3f, 0xa7, 0x30, 0x6e, 0x67, 0x08, 0x2e,
-	0x33, 0xa8, 0x57, 0xc9, 0xdb, 0x8b, 0xaf, 0x3f, 0xcc, 0x89, 0xf3, 0x0c, 0x5f, 0x9d, 0x45, 0x11,
-	0x25, 0x2b, 0x04, 0x38, 0xdf, 0x27, 0xf8, 0x2a, 0x54, 0x24, 0xa7, 0xf2, 0x5e, 0x11, 0x1f, 0xea,
-	0x87, 0x99, 0xd1, 0x78, 0x89, 0x1f, 0x97, 0x8a, 0xac, 0x33, 0xa8, 0xcd, 0x47, 0x33, 0x74, 0xfb,
-	0x64, 0xf9, 0xf4, 0xd0, 0xd8, 0xd3, 0x7b, 0x45, 0x36, 0x34, 0x3e, 0xa6, 0xd2, 0xcb, 0x2e, 0x9d,
-	0xf1, 0x0a, 0x4f, 0x05, 0x4d, 0x8b, 0x48, 0x2a, 0x0e, 0xe6, 0xc5, 0x48, 0x86, 0xa7, 0xcb, 0x60,
-	0x7c, 0xef, 0x8a, 0x43, 0xce, 0x73, 0x7c, 0x7d, 0x5e, 0x50, 0xdf, 0xdc, 0x32, 0xdc, 0xfe, 0xb1,
-	0xb4, 0x6d, 0x6b, 0xa1, 0x5d, 0x6b, 0xa1, 0xdf, 0xad, 0x85, 0xbe, 0xed, 0x2d, 0x6d, 0xb7, 0xb7,
-	0xb4, 0x5f, 0x7b, 0x4b, 0xfb, 0xf0, 0xe6, 0x7f, 0x73, 0x75, 0xf5, 0x11, 0xbd, 0x1b, 0xbc, 0xd7,
-	0x7f, 0x03, 0x00, 0x00, 0xff, 0xff, 0xdf, 0xd5, 0x02, 0x64, 0xfb, 0x02, 0x00, 0x00,
+	// 515 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xd4, 0x94, 0x4d, 0x8b, 0xd3, 0x4e,
+	0x1c, 0xc7, 0x9b, 0x3e, 0xe4, 0x4f, 0x87, 0xfd, 0x83, 0xa6, 0xeb, 0x6e, 0xdc, 0x43, 0x52, 0x7a,
+	0x5a, 0x90, 0x26, 0x14, 0xf1, 0xe2, 0x41, 0xd9, 0xac, 0x08, 0xa5, 0x20, 0x4b, 0x72, 0xd2, 0x4b,
+	0xc9, 0xc3, 0x8f, 0xec, 0x90, 0x26, 0x13, 0x67, 0x26, 0x9a, 0xdc, 0x7c, 0x09, 0xbe, 0x06, 0xdf,
+	0x83, 0xe0, 0x4b, 0x58, 0x6f, 0x7b, 0xdc, 0x53, 0xd0, 0xf6, 0x5d, 0xe4, 0x24, 0x79, 0x28, 0x69,
+	0x11, 0x61, 0x7d, 0x3a, 0x78, 0x6a, 0x93, 0xf9, 0xe6, 0x33, 0xf3, 0xfd, 0xcc, 0x24, 0x68, 0x6c,
+	0xa7, 0xb0, 0xb2, 0xa9, 0x1e, 0x26, 0x2b, 0x8e, 0x19, 0xf6, 0xf5, 0x37, 0x33, 0x07, 0xb8, 0x3d,
+	0xd3, 0x79, 0xaa, 0xc5, 0x94, 0x70, 0x22, 0x1d, 0xd7, 0x09, 0x6d, 0x9b, 0xd0, 0x9a, 0xc4, 0xc9,
+	0xa1, 0x4f, 0x7c, 0x52, 0x65, 0xf4, 0xf2, 0x5f, 0x1d, 0x3f, 0xd1, 0x1a, 0x60, 0x0c, 0x34, 0xc4,
+	0x8c, 0x61, 0x12, 0xe9, 0x90, 0xc6, 0x84, 0x72, 0xf0, 0x5a, 0x76, 0x16, 0x03, 0xab, 0xf3, 0x93,
+	0xcf, 0x02, 0x92, 0x2c, 0x6e, 0x53, 0xbe, 0x80, 0xcc, 0x87, 0xc8, 0x84, 0xd7, 0x09, 0x30, 0x2e,
+	0xcd, 0x91, 0xc8, 0x20, 0xf2, 0x80, 0xca, 0xc2, 0x58, 0x38, 0x1d, 0x1a, 0xb3, 0x22, 0x57, 0xa7,
+	0x3e, 0xe6, 0x97, 0x89, 0xa3, 0xb9, 0x24, 0xd4, 0x5d, 0xc2, 0x42, 0xc2, 0x9a, 0x9f, 0x29, 0xf3,
+	0x82, 0x06, 0x7a, 0xe6, 0xba, 0x67, 0x9e, 0x47, 0x81, 0x31, 0xb3, 0x01, 0x48, 0x0e, 0x12, 0x03,
+	0xc8, 0x96, 0xd8, 0x93, 0xbb, 0x15, 0x6a, 0xb1, 0xce, 0xd5, 0xc1, 0x02, 0xb2, 0xf9, 0xb3, 0x22,
+	0x57, 0x9f, 0xec, 0x30, 0xeb, 0x95, 0x47, 0xc0, 0xdf, 0x12, 0x1a, 0x34, 0x57, 0x53, 0x97, 0x50,
+	0xd0, 0xd3, 0xd6, 0xcf, 0xb6, 0x8c, 0x56, 0x11, 0xcc, 0x41, 0x00, 0xd9, 0xdc, 0x7b, 0xdc, 0x7f,
+	0xf7, 0x51, 0xee, 0x4e, 0xee, 0xa1, 0xd1, 0x5e, 0x15, 0x16, 0x93, 0x88, 0xc1, 0xe4, 0xa6, 0x8b,
+	0x46, 0x56, 0xe2, 0x84, 0x98, 0x5f, 0x24, 0xce, 0x02, 0xb2, 0x7f, 0xb3, 0xa3, 0xb4, 0x44, 0xff,
+	0xc5, 0x89, 0xb3, 0x0c, 0x20, 0x93, 0x7b, 0x63, 0xe1, 0xf4, 0xc0, 0x78, 0x5e, 0xe4, 0xaa, 0xf1,
+	0xcb, 0xec, 0x8b, 0xc4, 0x59, 0x61, 0xb7, 0xd4, 0x21, 0xc6, 0x95, 0x16, 0xe9, 0x01, 0x1a, 0x32,
+	0xec, 0x47, 0x36, 0x4f, 0x28, 0xc8, 0xfd, 0x6a, 0x8a, 0xff, 0x8b, 0x5c, 0x1d, 0x5a, 0xdb, 0x9b,
+	0x66, 0x3b, 0x5e, 0x19, 0x17, 0x26, 0x47, 0xe8, 0x70, 0xdf, 0x6c, 0xa3, 0xfc, 0x93, 0x80, 0x8e,
+	0xea, 0x81, 0xf6, 0xe1, 0x3f, 0x6f, 0x7d, 0x8c, 0x44, 0x86, 0xfd, 0xad, 0xf5, 0xbe, 0x31, 0x2c,
+	0xad, 0x5b, 0xd8, 0x2f, 0x9d, 0x31, 0xec, 0xcf, 0xbd, 0xfd, 0x4a, 0xbd, 0x5b, 0x55, 0xba, 0x8f,
+	0x8e, 0xbf, 0x5b, 0x79, 0xd3, 0xea, 0x43, 0x17, 0xdd, 0x31, 0x09, 0xb7, 0x39, 0xfc, 0xf0, 0x14,
+	0x1d, 0xfc, 0x4e, 0x9f, 0x97, 0x68, 0xe0, 0x5e, 0xda, 0x38, 0x6a, 0x0e, 0xd1, 0x79, 0x91, 0xab,
+	0x4f, 0x6f, 0xb9, 0xbf, 0x11, 0xa4, 0x09, 0x6b, 0x37, 0xf7, 0xbc, 0xc4, 0xbc, 0xb0, 0x43, 0x30,
+	0x6b, 0xe2, 0xce, 0x01, 0xed, 0xfd, 0xe5, 0x97, 0x70, 0x84, 0xee, 0xee, 0x38, 0xaa, 0xcd, 0x19,
+	0xd6, 0xd5, 0x57, 0xa5, 0x73, 0xb5, 0x56, 0x84, 0xeb, 0xb5, 0x22, 0x7c, 0x59, 0x2b, 0xc2, 0xfb,
+	0x8d, 0xd2, 0xb9, 0xde, 0x28, 0x9d, 0x9b, 0x8d, 0xd2, 0x79, 0xf5, 0xe8, 0x67, 0xe7, 0xaf, 0x0c,
+	0x3a, 0x62, 0xf5, 0x05, 0x7b, 0xf8, 0x2d, 0x00, 0x00, 0xff, 0xff, 0xc4, 0x6e, 0xd3, 0x18, 0x44,
+	0x05, 0x00, 0x00,
 }
 
 func (m *StartKeygenRequest) Marshal() (dAtA []byte, err error) {
@@ -348,6 +511,138 @@ func (m *SubmitPubKeyResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *SubmitSignatureRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *SubmitSignatureRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *SubmitSignatureRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Signature) > 0 {
+		i -= len(m.Signature)
+		copy(dAtA[i:], m.Signature)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Signature)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if m.SigID != 0 {
+		i = encodeVarintTx(dAtA, i, uint64(m.SigID))
+		i--
+		dAtA[i] = 0x10
+	}
+	if len(m.Sender) > 0 {
+		i -= len(m.Sender)
+		copy(dAtA[i:], m.Sender)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Sender)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *SubmitSignatureResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *SubmitSignatureResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *SubmitSignatureResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
+func (m *RotateKeyRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *RotateKeyRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *RotateKeyRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.KeyID) > 0 {
+		i -= len(m.KeyID)
+		copy(dAtA[i:], m.KeyID)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.KeyID)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.Chain) > 0 {
+		i -= len(m.Chain)
+		copy(dAtA[i:], m.Chain)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Chain)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Sender) > 0 {
+		i -= len(m.Sender)
+		copy(dAtA[i:], m.Sender)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Sender)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *RotateKeyResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *RotateKeyResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *RotateKeyResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintTx(dAtA []byte, offset int, v uint64) int {
 	offset -= sovTx(v)
 	base := offset
@@ -411,6 +706,65 @@ func (m *SubmitPubKeyRequest) Size() (n int) {
 }
 
 func (m *SubmitPubKeyResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
+func (m *SubmitSignatureRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Sender)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	if m.SigID != 0 {
+		n += 1 + sovTx(uint64(m.SigID))
+	}
+	l = len(m.Signature)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	return n
+}
+
+func (m *SubmitSignatureResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
+func (m *RotateKeyRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Sender)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = len(m.Chain)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = len(m.KeyID)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	return n
+}
+
+func (m *RotateKeyResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -798,6 +1152,389 @@ func (m *SubmitPubKeyResponse) Unmarshal(dAtA []byte) error {
 		}
 		if fieldNum <= 0 {
 			return fmt.Errorf("proto: SubmitPubKeyResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SubmitSignatureRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SubmitSignatureRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SubmitSignatureRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Sender", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Sender = github_com_cosmos_cosmos_sdk_types.AccAddress(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SigID", wireType)
+			}
+			m.SigID = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.SigID |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Signature", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Signature = append(m.Signature[:0], dAtA[iNdEx:postIndex]...)
+			if m.Signature == nil {
+				m.Signature = []byte{}
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SubmitSignatureResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SubmitSignatureResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SubmitSignatureResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *RotateKeyRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: RotateKeyRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: RotateKeyRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Sender", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Sender = append(m.Sender[:0], dAtA[iNdEx:postIndex]...)
+			if m.Sender == nil {
+				m.Sender = []byte{}
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Chain", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Chain = github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field KeyID", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.KeyID = github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *RotateKeyResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: RotateKeyResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: RotateKeyResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		default:

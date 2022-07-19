@@ -32,7 +32,7 @@ message BatchedCommandsResponse {
   string key_id = 4 [
     (gogoproto.customname) = "KeyID",
     (gogoproto.casttype) =
-        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
   ];
   repeated string signature = 5;
   string execute_data = 6;
@@ -48,27 +48,18 @@ message KeyAddressRequest {
   string key_id = 4 [
     (gogoproto.customname) = "KeyID",
     (gogoproto.casttype) =
-        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
   ];
 }
 
 message KeyAddressResponse {
-  message MultisigAddresses {
-    repeated string addresses = 1;
-    uint32 threshold = 2;
-  }
-
-  message ThresholdAddress { string address = 1; }
-
   string key_id = 1 [
     (gogoproto.customname) = "KeyID",
     (gogoproto.casttype) =
-        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
   ];
-  oneof address {
-    MultisigAddresses multisig_addresses = 2;
-    ThresholdAddress threshold_address = 3;
-  }
+  map<string, string> address_weights = 2;
+  string threshold = 3;
 }
 
 message QueryTokenAddressResponse {

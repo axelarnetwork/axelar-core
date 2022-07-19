@@ -9,6 +9,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 )
 
@@ -29,6 +30,21 @@ func NewVoteHandler(cdc codec.Codec, keeper types.BaseKeeper, nexus types.Nexus,
 		nexus:    nexus,
 		rewarder: rewarder,
 	}
+}
+
+func (v voteHandler) HandleFailedPoll(ctx sdk.Context, poll vote.Poll) error {
+	md := funcs.MustOk(poll.GetMetaData())
+	chainTxID, ok := md.(*types.PollMetadata)
+	if !ok {
+		panic(fmt.Sprintf("poll metadata should be of type %T", &types.PollMetadata{}))
+	}
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.PollFailed{
+		TxID:   chainTxID.TxID,
+		Chain:  chainTxID.Chain,
+		PollID: poll.GetID(),
+	}))
+
+	return nil
 }
 
 func (v voteHandler) IsFalsyResult(result codec.ProtoMarshaler) bool {
@@ -53,6 +69,17 @@ func (v voteHandler) HandleExpiredPoll(ctx sdk.Context, poll vote.Poll) error {
 				"poll", poll.GetID().String())
 		}
 	}
+
+	md := funcs.MustOk(poll.GetMetaData())
+	chainTxID, ok := md.(*types.PollMetadata)
+	if !ok {
+		panic(fmt.Sprintf("poll metadata should be of type %T", &types.PollMetadata{}))
+	}
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.PollExpired{
+		TxID:   chainTxID.TxID,
+		Chain:  chainTxID.Chain,
+		PollID: poll.GetID(),
+	}))
 
 	return nil
 }

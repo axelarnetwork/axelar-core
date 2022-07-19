@@ -15,4 +15,7 @@ message Params {
       [ (gogoproto.nullable) = false ];
   int64 keygen_timeout = 3;
   int64 keygen_grace_period = 4;
+  int64 signing_timeout = 5;
+  int64 signing_grace_period = 6;
+  uint64 active_epoch_count = 7;
 }

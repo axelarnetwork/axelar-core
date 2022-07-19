@@ -6,6 +6,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	utilstestutils "github.com/axelarnetwork/axelar-core/utils/testutils"
+	"github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	multisigtestutils "github.com/axelarnetwork/axelar-core/x/multisig/exported/testutils"
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
 	snapshottestutils "github.com/axelarnetwork/axelar-core/x/snapshot/exported/testutils"
@@ -14,7 +15,7 @@ import (
 )
 
 // PublicKey returns a random public key
-func PublicKey() types.PublicKey {
+func PublicKey() exported.PublicKey {
 	privKey, _ := btcec.NewPrivateKey(btcec.S256())
 
 	return privKey.PubKey().SerializeCompressed()
@@ -25,7 +26,7 @@ func Key() types.Key {
 	threshold := utilstestutils.RandThreshold()
 	snapshot := snapshottestutils.Snapshot(uint64(rand.I64Between(10, 20)), threshold)
 	participants := snapshot.GetParticipantAddresses()
-	pubKeys := make(map[string]types.PublicKey, len(participants))
+	pubKeys := make(map[string]exported.PublicKey, len(participants))
 
 	for _, p := range participants {
 		pubKeys[p.String()] = PublicKey()
@@ -41,7 +42,7 @@ func Key() types.Key {
 
 // MultiSig returns a random multi sig
 func MultiSig() types.MultiSig {
-	payloadHash := rand.Bytes(types.HashLength)
+	payloadHash := rand.Bytes(exported.HashLength)
 	participants := slices.Expand(func(int) sdk.ValAddress { return rand.ValAddr() }, int(rand.I64Between(5, 10)))
 	sigs := make(map[string]types.Signature, len(participants))
 
@@ -51,10 +52,8 @@ func MultiSig() types.MultiSig {
 	}
 
 	return types.MultiSig{
-		ID:          uint64(rand.PosI64()),
 		KeyID:       multisigtestutils.KeyID(),
 		Sigs:        sigs,
 		PayloadHash: payloadHash,
-		Module:      rand.NormalizedStr(5),
 	}
 }

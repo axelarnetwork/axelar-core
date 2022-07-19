@@ -31,8 +31,38 @@ message SubmitPubKeyRequest {
     (gogoproto.casttype) =
         "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
   ];
-  bytes pub_key = 3 [ (gogoproto.casttype) = "PublicKey" ];
+  bytes pub_key = 3 [
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.PublicKey"
+  ];
   bytes signature = 4 [ (gogoproto.casttype) = "Signature" ];
 }
 
 message SubmitPubKeyResponse {}
+
+message SubmitSignatureRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
+
+  string sender = 1 [ (gogoproto.casttype) =
+                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  uint64 sig_id = 2 [ (gogoproto.customname) = "SigID" ];
+  bytes signature = 3 [ (gogoproto.casttype) = "Signature" ];
+}
+
+message SubmitSignatureResponse {}
+
+message RotateKeyRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string key_id = 3 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
+  ];
+}
+
+message RotateKeyResponse {}

@@ -109,10 +109,18 @@
     - [MsgService](#axelar.axelarnet.v1beta1.MsgService)
     - [QueryService](#axelar.axelarnet.v1beta1.QueryService)
   
+- [axelar/evm/v1beta1/events.proto](#axelar/evm/v1beta1/events.proto)
+    - [ConfirmKeyTransfer](#axelar.evm.v1beta1.ConfirmKeyTransfer)
+    - [PollExpired](#axelar.evm.v1beta1.PollExpired)
+    - [PollFailed](#axelar.evm.v1beta1.PollFailed)
+  
 - [axelar/utils/v1beta1/queuer.proto](#axelar/utils/v1beta1/queuer.proto)
     - [QueueState](#axelar.utils.v1beta1.QueueState)
     - [QueueState.Item](#axelar.utils.v1beta1.QueueState.Item)
     - [QueueState.ItemsEntry](#axelar.utils.v1beta1.QueueState.ItemsEntry)
+  
+- [axelar/multisig/exported/v1beta1/types.proto](#axelar/multisig/exported/v1beta1/types.proto)
+    - [MultisigState](#axelar.multisig.exported.v1beta1.MultisigState)
   
 - [axelar/evm/v1beta1/types.proto](#axelar/evm/v1beta1/types.proto)
     - [Asset](#axelar.evm.v1beta1.Asset)
@@ -133,6 +141,7 @@
     - [EventTransfer](#axelar.evm.v1beta1.EventTransfer)
     - [Gateway](#axelar.evm.v1beta1.Gateway)
     - [NetworkInfo](#axelar.evm.v1beta1.NetworkInfo)
+    - [PollMetadata](#axelar.evm.v1beta1.PollMetadata)
     - [SigMetadata](#axelar.evm.v1beta1.SigMetadata)
     - [TokenDetails](#axelar.evm.v1beta1.TokenDetails)
     - [TransactionMetadata](#axelar.evm.v1beta1.TransactionMetadata)
@@ -177,8 +186,7 @@
     - [GatewayAddressResponse](#axelar.evm.v1beta1.GatewayAddressResponse)
     - [KeyAddressRequest](#axelar.evm.v1beta1.KeyAddressRequest)
     - [KeyAddressResponse](#axelar.evm.v1beta1.KeyAddressResponse)
-    - [KeyAddressResponse.MultisigAddresses](#axelar.evm.v1beta1.KeyAddressResponse.MultisigAddresses)
-    - [KeyAddressResponse.ThresholdAddress](#axelar.evm.v1beta1.KeyAddressResponse.ThresholdAddress)
+    - [KeyAddressResponse.AddressWeightsEntry](#axelar.evm.v1beta1.KeyAddressResponse.AddressWeightsEntry)
     - [PendingCommandsRequest](#axelar.evm.v1beta1.PendingCommandsRequest)
     - [PendingCommandsResponse](#axelar.evm.v1beta1.PendingCommandsResponse)
     - [QueryBurnerAddressResponse](#axelar.evm.v1beta1.QueryBurnerAddressResponse)
@@ -239,14 +247,18 @@
     - [MsgService](#axelar.evm.v1beta1.MsgService)
     - [QueryService](#axelar.evm.v1beta1.QueryService)
   
-- [axelar/multisig/exported/v1beta1/types.proto](#axelar/multisig/exported/v1beta1/types.proto)
-    - [MultisigState](#axelar.multisig.exported.v1beta1.MultisigState)
-  
 - [axelar/multisig/v1beta1/events.proto](#axelar/multisig/v1beta1/events.proto)
+    - [KeyAssigned](#axelar.multisig.v1beta1.KeyAssigned)
+    - [KeyRotated](#axelar.multisig.v1beta1.KeyRotated)
     - [KeygenCompleted](#axelar.multisig.v1beta1.KeygenCompleted)
     - [KeygenExpired](#axelar.multisig.v1beta1.KeygenExpired)
     - [KeygenStarted](#axelar.multisig.v1beta1.KeygenStarted)
     - [PubKeySubmitted](#axelar.multisig.v1beta1.PubKeySubmitted)
+    - [SignatureSubmitted](#axelar.multisig.v1beta1.SignatureSubmitted)
+    - [SigningCompleted](#axelar.multisig.v1beta1.SigningCompleted)
+    - [SigningExpired](#axelar.multisig.v1beta1.SigningExpired)
+    - [SigningStarted](#axelar.multisig.v1beta1.SigningStarted)
+    - [SigningStarted.PubKeysEntry](#axelar.multisig.v1beta1.SigningStarted.PubKeysEntry)
   
 - [axelar/multisig/v1beta1/params.proto](#axelar/multisig/v1beta1/params.proto)
     - [Params](#axelar.multisig.v1beta1.Params)
@@ -254,23 +266,37 @@
 - [axelar/multisig/v1beta1/genesis.proto](#axelar/multisig/v1beta1/genesis.proto)
     - [GenesisState](#axelar.multisig.v1beta1.GenesisState)
   
+- [axelar/multisig/v1beta1/query.proto](#axelar/multisig/v1beta1/query.proto)
+    - [KeyIDRequest](#axelar.multisig.v1beta1.KeyIDRequest)
+    - [KeyIDResponse](#axelar.multisig.v1beta1.KeyIDResponse)
+    - [NextKeyIDRequest](#axelar.multisig.v1beta1.NextKeyIDRequest)
+    - [NextKeyIDResponse](#axelar.multisig.v1beta1.NextKeyIDResponse)
+  
 - [axelar/multisig/v1beta1/tx.proto](#axelar/multisig/v1beta1/tx.proto)
+    - [RotateKeyRequest](#axelar.multisig.v1beta1.RotateKeyRequest)
+    - [RotateKeyResponse](#axelar.multisig.v1beta1.RotateKeyResponse)
     - [StartKeygenRequest](#axelar.multisig.v1beta1.StartKeygenRequest)
     - [StartKeygenResponse](#axelar.multisig.v1beta1.StartKeygenResponse)
     - [SubmitPubKeyRequest](#axelar.multisig.v1beta1.SubmitPubKeyRequest)
     - [SubmitPubKeyResponse](#axelar.multisig.v1beta1.SubmitPubKeyResponse)
+    - [SubmitSignatureRequest](#axelar.multisig.v1beta1.SubmitSignatureRequest)
+    - [SubmitSignatureResponse](#axelar.multisig.v1beta1.SubmitSignatureResponse)
   
 - [axelar/multisig/v1beta1/service.proto](#axelar/multisig/v1beta1/service.proto)
     - [MsgService](#axelar.multisig.v1beta1.MsgService)
+    - [QueryService](#axelar.multisig.v1beta1.QueryService)
   
 - [axelar/multisig/v1beta1/types.proto](#axelar/multisig/v1beta1/types.proto)
     - [Key](#axelar.multisig.v1beta1.Key)
     - [Key.PubKeysEntry](#axelar.multisig.v1beta1.Key.PubKeysEntry)
+    - [KeyEpoch](#axelar.multisig.v1beta1.KeyEpoch)
     - [KeygenSession](#axelar.multisig.v1beta1.KeygenSession)
     - [KeygenSession.IsPubKeyReceivedEntry](#axelar.multisig.v1beta1.KeygenSession.IsPubKeyReceivedEntry)
     - [MultiSig](#axelar.multisig.v1beta1.MultiSig)
     - [MultiSig.SigsEntry](#axelar.multisig.v1beta1.MultiSig.SigsEntry)
     - [SigningSession](#axelar.multisig.v1beta1.SigningSession)
+  
+    - [KeyState](#axelar.multisig.v1beta1.KeyState)
   
 - [axelar/nexus/v1beta1/params.proto](#axelar/nexus/v1beta1/params.proto)
     - [Params](#axelar.nexus.v1beta1.Params)
@@ -1863,6 +1889,75 @@ QueryService defines the gRPC querier service.
 
 
 
+<a name="axelar/evm/v1beta1/events.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/evm/v1beta1/events.proto
+
+
+
+<a name="axelar.evm.v1beta1.ConfirmKeyTransfer"></a>
+
+### ConfirmKeyTransfer
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `tx_id` | [bytes](#bytes) |  |  |
+| `gateway_address` | [bytes](#bytes) |  |  |
+| `confirmation_height` | [uint64](#uint64) |  |  |
+| `poll_id` | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.PollExpired"></a>
+
+### PollExpired
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tx_id` | [string](#string) |  |  |
+| `chain` | [string](#string) |  |  |
+| `poll_id` | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.PollFailed"></a>
+
+### PollFailed
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tx_id` | [string](#string) |  |  |
+| `chain` | [string](#string) |  |  |
+| `poll_id` | [uint64](#uint64) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
 <a name="axelar/utils/v1beta1/queuer.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -1917,6 +2012,35 @@ QueryService defines the gRPC querier service.
 
 
  <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="axelar/multisig/exported/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/multisig/exported/v1beta1/types.proto
+
+
+ <!-- end messages -->
+
+
+<a name="axelar.multisig.exported.v1beta1.MultisigState"></a>
+
+### MultisigState
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| MULTISIG_STATE_UNSPECIFIED | 0 |  |
+| MULTISIG_STATE_PENDING | 1 |  |
+| MULTISIG_STATE_COMPLETED | 2 |  |
+
 
  <!-- end enums -->
 
@@ -2004,6 +2128,7 @@ that is deposited by an user
 | `status` | [BatchedCommandsStatus](#axelar.evm.v1beta1.BatchedCommandsStatus) |  |  |
 | `key_id` | [string](#string) |  |  |
 | `prev_batched_commands_id` | [bytes](#bytes) |  |  |
+| `signature` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
 
 
 
@@ -2126,6 +2251,7 @@ ERC20TokenMetadata describes information about an ERC20 token
 | ----- | ---- | ----- | ----------- |
 | `new_operators` | [bytes](#bytes) | repeated |  |
 | `new_threshold` | [bytes](#bytes) |  |  |
+| `new_weights` | [bytes](#bytes) | repeated |  |
 
 
 
@@ -2265,6 +2391,22 @@ NetworkInfo describes information about a network
 
 
 
+<a name="axelar.evm.v1beta1.PollMetadata"></a>
+
+### PollMetadata
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `tx_id` | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="axelar.evm.v1beta1.SigMetadata"></a>
 
 ### SigMetadata
@@ -2276,6 +2418,7 @@ results to evm relay transaction types
 | ----- | ---- | ----- | ----------- |
 | `type` | [SigType](#axelar.evm.v1beta1.SigType) |  |  |
 | `chain` | [string](#string) |  |  |
+| `command_batch_id` | [bytes](#bytes) |  |  |
 
 
 
@@ -2897,39 +3040,24 @@ ERC20 tokens requested for a chain
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `key_id` | [string](#string) |  |  |
-| `multisig_addresses` | [KeyAddressResponse.MultisigAddresses](#axelar.evm.v1beta1.KeyAddressResponse.MultisigAddresses) |  |  |
-| `threshold_address` | [KeyAddressResponse.ThresholdAddress](#axelar.evm.v1beta1.KeyAddressResponse.ThresholdAddress) |  |  |
+| `address_weights` | [KeyAddressResponse.AddressWeightsEntry](#axelar.evm.v1beta1.KeyAddressResponse.AddressWeightsEntry) | repeated |  |
+| `threshold` | [string](#string) |  |  |
 
 
 
 
 
 
-<a name="axelar.evm.v1beta1.KeyAddressResponse.MultisigAddresses"></a>
+<a name="axelar.evm.v1beta1.KeyAddressResponse.AddressWeightsEntry"></a>
 
-### KeyAddressResponse.MultisigAddresses
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `addresses` | [string](#string) | repeated |  |
-| `threshold` | [uint32](#uint32) |  |  |
-
-
-
-
-
-
-<a name="axelar.evm.v1beta1.KeyAddressResponse.ThresholdAddress"></a>
-
-### KeyAddressResponse.ThresholdAddress
+### KeyAddressResponse.AddressWeightsEntry
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `address` | [string](#string) |  |  |
+| `key` | [string](#string) |  |  |
+| `value` | [string](#string) |  |  |
 
 
 
@@ -3759,39 +3887,44 @@ QueryService defines the gRPC querier service.
 
 
 
-<a name="axelar/multisig/exported/v1beta1/types.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## axelar/multisig/exported/v1beta1/types.proto
-
-
- <!-- end messages -->
-
-
-<a name="axelar.multisig.exported.v1beta1.MultisigState"></a>
-
-### MultisigState
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| MULTISIG_STATE_UNSPECIFIED | 0 |  |
-| MULTISIG_STATE_PENDING | 1 |  |
-| MULTISIG_STATE_COMPLETED | 2 |  |
-
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
 <a name="axelar/multisig/v1beta1/events.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
 ## axelar/multisig/v1beta1/events.proto
+
+
+
+<a name="axelar.multisig.v1beta1.KeyAssigned"></a>
+
+### KeyAssigned
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `module` | [string](#string) |  |  |
+| `chain` | [string](#string) |  |  |
+| `key_id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.KeyRotated"></a>
+
+### KeyRotated
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `module` | [string](#string) |  |  |
+| `chain` | [string](#string) |  |  |
+| `key_id` | [string](#string) |  |  |
+
+
+
 
 
 
@@ -3861,6 +3994,92 @@ QueryService defines the gRPC querier service.
 
 
 
+
+<a name="axelar.multisig.v1beta1.SignatureSubmitted"></a>
+
+### SignatureSubmitted
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `module` | [string](#string) |  |  |
+| `sig_id` | [uint64](#uint64) |  |  |
+| `participant` | [bytes](#bytes) |  |  |
+| `signature` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.SigningCompleted"></a>
+
+### SigningCompleted
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `module` | [string](#string) |  |  |
+| `sig_id` | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.SigningExpired"></a>
+
+### SigningExpired
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `module` | [string](#string) |  |  |
+| `sig_id` | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.SigningStarted"></a>
+
+### SigningStarted
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `module` | [string](#string) |  |  |
+| `sig_id` | [uint64](#uint64) |  |  |
+| `key_id` | [string](#string) |  |  |
+| `pub_keys` | [SigningStarted.PubKeysEntry](#axelar.multisig.v1beta1.SigningStarted.PubKeysEntry) | repeated |  |
+| `payload_hash` | [bytes](#bytes) |  |  |
+| `requesting_module` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.SigningStarted.PubKeysEntry"></a>
+
+### SigningStarted.PubKeysEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key` | [string](#string) |  |  |
+| `value` | [bytes](#bytes) |  |  |
+
+
+
+
+
  <!-- end messages -->
 
  <!-- end enums -->
@@ -3890,6 +4109,9 @@ Params represent the genesis parameters for the module
 | `signing_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
 | `keygen_timeout` | [int64](#int64) |  |  |
 | `keygen_grace_period` | [int64](#int64) |  |  |
+| `signing_timeout` | [int64](#int64) |  |  |
+| `signing_grace_period` | [int64](#int64) |  |  |
+| `active_epoch_count` | [uint64](#uint64) |  |  |
 
 
 
@@ -3936,10 +4158,114 @@ GenesisState represents the genesis state
 
 
 
+<a name="axelar/multisig/v1beta1/query.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/multisig/v1beta1/query.proto
+
+
+
+<a name="axelar.multisig.v1beta1.KeyIDRequest"></a>
+
+### KeyIDRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.KeyIDResponse"></a>
+
+### KeyIDResponse
+KeyIDResponse contains the key ID of the key assigned to a given chain.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.NextKeyIDRequest"></a>
+
+### NextKeyIDRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.NextKeyIDResponse"></a>
+
+### NextKeyIDResponse
+NextKeyIDResponse contains the key ID for the next rotation on the given
+chain
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_id` | [string](#string) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
 <a name="axelar/multisig/v1beta1/tx.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
 ## axelar/multisig/v1beta1/tx.proto
+
+
+
+<a name="axelar.multisig.v1beta1.RotateKeyRequest"></a>
+
+### RotateKeyRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
+| `key_id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.RotateKeyResponse"></a>
+
+### RotateKeyResponse
+
+
+
+
 
 
 
@@ -3996,6 +4322,33 @@ GenesisState represents the genesis state
 
 
 
+
+<a name="axelar.multisig.v1beta1.SubmitSignatureRequest"></a>
+
+### SubmitSignatureRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [string](#string) |  |  |
+| `sig_id` | [uint64](#uint64) |  |  |
+| `signature` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.SubmitSignatureResponse"></a>
+
+### SubmitSignatureResponse
+
+
+
+
+
+
  <!-- end messages -->
 
  <!-- end enums -->
@@ -4026,8 +4379,21 @@ Msg defines the multisig Msg service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `StartKeygen` | [StartKeygenRequest](#axelar.multisig.v1beta1.StartKeygenRequest) | [StartKeygenResponse](#axelar.multisig.v1beta1.StartKeygenResponse) |  | POST|/axelar/multisig/keygen|
-| `SubmitPubKey` | [SubmitPubKeyRequest](#axelar.multisig.v1beta1.SubmitPubKeyRequest) | [SubmitPubKeyResponse](#axelar.multisig.v1beta1.SubmitPubKeyResponse) |  | POST|/axelar/multisig/submit_pk|
+| `StartKeygen` | [StartKeygenRequest](#axelar.multisig.v1beta1.StartKeygenRequest) | [StartKeygenResponse](#axelar.multisig.v1beta1.StartKeygenResponse) |  | POST|/axelar/multisig/start_keygen|
+| `SubmitPubKey` | [SubmitPubKeyRequest](#axelar.multisig.v1beta1.SubmitPubKeyRequest) | [SubmitPubKeyResponse](#axelar.multisig.v1beta1.SubmitPubKeyResponse) |  | POST|/axelar/multisig/submit_pub_key|
+| `SubmitSignature` | [SubmitSignatureRequest](#axelar.multisig.v1beta1.SubmitSignatureRequest) | [SubmitSignatureResponse](#axelar.multisig.v1beta1.SubmitSignatureResponse) |  | POST|/axelar/multisig/submit_signature|
+| `RotateKey` | [RotateKeyRequest](#axelar.multisig.v1beta1.RotateKeyRequest) | [RotateKeyResponse](#axelar.multisig.v1beta1.RotateKeyResponse) |  | POST|/axelar/multisig/rotate_key|
+
+
+<a name="axelar.multisig.v1beta1.QueryService"></a>
+
+### QueryService
+Query defines the gRPC querier service.
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `KeyID` | [KeyIDRequest](#axelar.multisig.v1beta1.KeyIDRequest) | [KeyIDResponse](#axelar.multisig.v1beta1.KeyIDResponse) | KeyID returns the key ID of a key assigned to a given chain. If no key is assigned, it returns an empty string. | GET|/axelar/multisig/v1beta1/key_id/{chain}|
+| `NextKeyID` | [NextKeyIDRequest](#axelar.multisig.v1beta1.NextKeyIDRequest) | [NextKeyIDResponse](#axelar.multisig.v1beta1.NextKeyIDResponse) | NextKeyID returns the key ID assigned for the next rotation on a given chain. If no key rotation is in progress, it returns the empty string. | GET|/axelar/multisig/v1beta1/next_key_id/{chain}|
 
  <!-- end services -->
 
@@ -4052,6 +4418,7 @@ Msg defines the multisig Msg service.
 | `snapshot` | [axelar.snapshot.exported.v1beta1.Snapshot](#axelar.snapshot.exported.v1beta1.Snapshot) |  |  |
 | `pub_keys` | [Key.PubKeysEntry](#axelar.multisig.v1beta1.Key.PubKeysEntry) | repeated |  |
 | `signing_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
+| `state` | [KeyState](#axelar.multisig.v1beta1.KeyState) |  |  |
 
 
 
@@ -4068,6 +4435,23 @@ Msg defines the multisig Msg service.
 | ----- | ---- | ----- | ----------- |
 | `key` | [string](#string) |  |  |
 | `value` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.KeyEpoch"></a>
+
+### KeyEpoch
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `epoch` | [uint64](#uint64) |  |  |
+| `chain` | [string](#string) |  |  |
+| `key_id` | [string](#string) |  |  |
 
 
 
@@ -4119,12 +4503,9 @@ Msg defines the multisig Msg service.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `id` | [uint64](#uint64) |  |  |
 | `key_id` | [string](#string) |  |  |
 | `payload_hash` | [bytes](#bytes) |  |  |
 | `sigs` | [MultiSig.SigsEntry](#axelar.multisig.v1beta1.MultiSig.SigsEntry) | repeated |  |
-| `module` | [string](#string) |  |  |
-| `module_metadata` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
 
 
 
@@ -4155,18 +4536,34 @@ Msg defines the multisig Msg service.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| `id` | [uint64](#uint64) |  |  |
 | `multi_sig` | [MultiSig](#axelar.multisig.v1beta1.MultiSig) |  |  |
 | `state` | [axelar.multisig.exported.v1beta1.MultisigState](#axelar.multisig.exported.v1beta1.MultisigState) |  |  |
 | `key` | [Key](#axelar.multisig.v1beta1.Key) |  |  |
 | `expires_at` | [int64](#int64) |  |  |
 | `completed_at` | [int64](#int64) |  |  |
 | `grace_period` | [int64](#int64) |  |  |
+| `module` | [string](#string) |  |  |
+| `module_metadata` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
 
 
 
 
 
  <!-- end messages -->
+
+
+<a name="axelar.multisig.v1beta1.KeyState"></a>
+
+### KeyState
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| KEY_STATE_UNSPECIFIED | 0 |  |
+| KEY_STATE_ASSIGNED | 1 |  |
+| KEY_STATE_ACTIVE | 2 |  |
+
 
  <!-- end enums -->
 
@@ -4725,7 +5122,7 @@ Params represent the genesis parameters for the module
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `external_chain_voting_inflation_rate` | [bytes](#bytes) |  |  |
-| `tss_relative_inflation_rate` | [bytes](#bytes) |  |  |
+| `key_mgmt_relative_inflation_rate` | [bytes](#bytes) |  |  |
 
 
 
