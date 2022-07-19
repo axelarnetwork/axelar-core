@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"bytes"
 	"context"
 	"encoding/hex"
 	"fmt"
@@ -16,8 +17,10 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
+	multisigtypes "github.com/axelarnetwork/axelar-core/x/multisig/types"
 	nexustypes "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 )
 
@@ -73,66 +76,71 @@ func (q Querier) BurnerInfo(c context.Context, req *types.BurnerInfoRequest) (*t
 	return nil, status.Error(codes.NotFound, "unknown address")
 }
 
-func getExecuteDataAndSigs(ctx sdk.Context, s types.Signer, commandBatch types.CommandBatch) ([]byte, []types.Signature, error) {
-	id := hex.EncodeToString(commandBatch.GetID())
-	sig, sigStatus := s.GetSig(ctx, id)
-	if sigStatus != tss.SigStatus_Signed {
-		return nil, nil, fmt.Errorf("could not find a corresponding signature for sig ID %s", id)
-	}
+// optimizeSignatureSet returns optimized signature set, sorted in ascending order by corresponding evm address
+func optimizeSignatureSet(operators []types.Operator, minPassingWeight sdk.Uint) [][]byte {
+	sort.SliceStable(operators, func(i, j int) bool {
+		return operators[i].Weight.GT(operators[j].Weight)
+	})
 
-	switch sig := sig.GetSig().(type) {
-	case *tss.Signature_SingleSig_:
-		commandBatchSig, err := getCommandBatchSig(sig.SingleSig.SigKeyPair, commandBatch.GetSigHash())
-		if err != nil {
-			return nil, nil, err
+	cumWeight := sdk.ZeroUint()
+	operators = slices.Filter(operators, func(operator types.Operator) bool {
+		if cumWeight.GTE(minPassingWeight) {
+			return false
 		}
 
-		executeData, err := types.CreateExecuteDataSinglesig(commandBatch.GetData(), commandBatchSig)
-		if err != nil {
-			return nil, nil, fmt.Errorf("could not create transaction data: %s", err)
-		}
+		cumWeight = cumWeight.Add(operator.Weight)
+		return true
+	})
 
-		return executeData, []types.Signature{commandBatchSig}, nil
-	case *tss.Signature_MultiSig_:
-		sigKeyPairs := types.SigKeyPairs(sig.MultiSig.SigKeyPairs)
-		sort.Stable(sigKeyPairs)
+	sort.SliceStable(operators, func(i, j int) bool {
+		return bytes.Compare(operators[i].Address.Bytes(), operators[j].Address.Bytes()) < 0
+	})
 
-		key, ok := s.GetKey(ctx, tss.KeyID(commandBatch.GetKeyID()))
-		if !ok {
-			return nil, nil, fmt.Errorf("key %s not found", commandBatch.GetKeyID())
-		}
-
-		multisigPubKeys, err := key.GetMultisigPubKey()
-		if err != nil {
-			return nil, nil, err
-		}
-
-		commandBatchSigs := make([]types.Signature, len(sigKeyPairs))
-		for i, pair := range sigKeyPairs {
-			commandBatchSig, err := getCommandBatchSig(pair, commandBatch.GetSigHash())
-			if err != nil {
-				return nil, nil, err
-			}
-
-			commandBatchSigs[i] = commandBatchSig
-		}
-
-		executeData, err := types.CreateExecuteDataMultisig(
-			commandBatch.GetData(),
-			slices.Map(multisigPubKeys, crypto.PubkeyToAddress),
-			commandBatchSigs,
-		)
-		if err != nil {
-			return nil, nil, fmt.Errorf("could not create transaction data: %s", err)
-		}
-
-		return executeData, commandBatchSigs, nil
-	default:
-		panic(fmt.Errorf("unsupported type of signature %T", sig))
-	}
+	return slices.Map(operators, func(operator types.Operator) []byte { return operator.Signature })
 }
 
-func commandBatchToResp(ctx sdk.Context, commandBatch types.CommandBatch, s types.Signer) (types.BatchedCommandsResponse, error) {
+func getProof(key multisig.Key, signature *multisigtypes.MultiSig) ([]common.Address, []sdk.Uint, sdk.Uint, [][]byte) {
+	participantsWithSigs := slices.Filter(key.GetParticipants(), func(v sdk.ValAddress) bool {
+		_, ok := signature.Sigs[v.String()]
+		return ok
+	})
+
+	operators := slices.Map(participantsWithSigs, func(val sdk.ValAddress) types.Operator {
+		return types.Operator{
+			Address:   crypto.PubkeyToAddress(funcs.MustOk(key.GetPubKey(val)).ToECDSAPubKey()),
+			Signature: funcs.Must(types.NewSignature(signature.Sigs[val.String()])).ToHomesteadSig(),
+			Weight:    key.GetWeight(val),
+		}
+	})
+
+	addresses, weights, threshold := types.GetMultisigAddressesAndWeights(key)
+	signatures := optimizeSignatureSet(operators, key.GetMinPassingWeight())
+
+	return addresses, weights, threshold, signatures
+}
+
+func getExecuteDataAndSigs(ctx sdk.Context, multisig types.MultisigKeeper, commandBatch types.CommandBatch) ([]byte, types.Proof, error) {
+	signature := commandBatch.GetSignature().(*multisigtypes.MultiSig)
+	key := funcs.MustOk(multisig.GetKey(ctx, signature.KeyID))
+
+	addresses, weights, threshold, signatures := getProof(key, signature)
+
+	executeData, err := types.CreateExecuteDataMultisig(commandBatch.GetData(), addresses, weights, threshold, signatures)
+	if err != nil {
+		return nil, types.Proof{}, fmt.Errorf("could not create transaction data: %s", err)
+	}
+
+	proof := types.Proof{
+		Addresses:  slices.Map(addresses, common.Address.Hex),
+		Weights:    slices.Map(weights, sdk.Uint.String),
+		Threshold:  threshold.String(),
+		Signatures: slices.Map(signatures, hex.EncodeToString),
+	}
+
+	return executeData, proof, nil
+}
+
+func commandBatchToResp(ctx sdk.Context, commandBatch types.CommandBatch, multisig types.MultisigKeeper) (types.BatchedCommandsResponse, error) {
 	id := hex.EncodeToString(commandBatch.GetID())
 
 	prevID := ""
@@ -144,7 +152,7 @@ func commandBatchToResp(ctx sdk.Context, commandBatch types.CommandBatch, s type
 
 	switch {
 	case commandBatch.Is(types.BatchSigned):
-		executeData, signatures, err := getExecuteDataAndSigs(ctx, s, commandBatch)
+		executeData, proof, err := getExecuteDataAndSigs(ctx, multisig, commandBatch)
 		if err != nil {
 			return types.BatchedCommandsResponse{}, sdkerrors.Wrap(types.ErrEVM, err.Error())
 		}
@@ -154,10 +162,10 @@ func commandBatchToResp(ctx sdk.Context, commandBatch types.CommandBatch, s type
 			Data:                  hex.EncodeToString(commandBatch.GetData()),
 			Status:                commandBatch.GetStatus(),
 			KeyID:                 commandBatch.GetKeyID(),
-			Signature:             slices.Map(signatures, types.Signature.Hex),
 			ExecuteData:           hex.EncodeToString(executeData),
 			PrevBatchedCommandsID: prevID,
 			CommandIDs:            commandIDs,
+			Proof:                 &proof,
 		}, nil
 	default:
 		return types.BatchedCommandsResponse{
@@ -165,10 +173,10 @@ func commandBatchToResp(ctx sdk.Context, commandBatch types.CommandBatch, s type
 			Data:                  hex.EncodeToString(commandBatch.GetData()),
 			Status:                commandBatch.GetStatus(),
 			KeyID:                 commandBatch.GetKeyID(),
-			Signature:             nil,
 			ExecuteData:           "",
 			PrevBatchedCommandsID: prevID,
 			CommandIDs:            commandIDs,
+			Proof:                 nil,
 		}, nil
 	}
 }
@@ -221,7 +229,7 @@ func (q Querier) BatchedCommands(c context.Context, req *types.BatchedCommandsRe
 		}
 	}
 
-	resp, err := commandBatchToResp(ctx, commandBatch, q.signer)
+	resp, err := commandBatchToResp(ctx, commandBatch, q.multisig)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, err.Error())
 	}
