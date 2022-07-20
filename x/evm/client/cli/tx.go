@@ -388,17 +388,17 @@ func GetCmdSignCommands() *cobra.Command {
 // GetCmdAddChain returns the cli command to add a new evm chain command
 func GetCmdAddChain() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "add-chain [name] [key type] [chain config]",
+		Use:   "add-chain [name] [chain config]",
 		Short: "Add a new EVM chain",
 		Long:  "Add a new EVM chain. The chain config parameter should be the path to a json file containing the key requirements and the evm module parameters",
-		Args:  cobra.ExactArgs(3),
+		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
 				return err
 			}
 			name := args[0]
-			jsonFile := args[2]
+			jsonFile := args[1]
 
 			byteValue, err := ioutil.ReadFile(jsonFile)
 			if err != nil {

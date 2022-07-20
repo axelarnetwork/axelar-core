@@ -8,6 +8,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 // NewAddChainRequest is the constructor for NewAddChainRequest
@@ -38,7 +39,7 @@ func (m AddChainRequest) ValidateBasic() error {
 	chain := nexus.Chain{
 		Name:                  m.Name,
 		SupportsForeignAssets: true,
-		KeyType:               m.KeyType,
+		KeyType:               tss.Multisig,
 		Module:                ModuleName,
 	}
 

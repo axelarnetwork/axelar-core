@@ -334,7 +334,7 @@ func queryAddressByKeyID(ctx sdk.Context, multisig types.MultisigKeeper, chain n
 	}
 
 	addresses, weights, threshold := types.GetMultisigAddressesAndWeights(key)
-	weightedAddresses := make([]types.KeyAddressResponse_WeightedAddress, len(weights))
+	weightedAddresses := make([]types.KeyAddressResponse_WeightedAddress, 0, len(weights))
 	for i, address := range addresses {
 		weightedAddresses = append(weightedAddresses, types.KeyAddressResponse_WeightedAddress{
 			Address: address.Hex(),
