@@ -108,7 +108,7 @@ func handleContractCall(ctx sdk.Context, event types.Event, bk types.BaseKeeper,
 		destinationChainID,
 		keyID,
 		sourceChain.Name,
-		event.TxId,
+		event.TxID,
 		event.Index,
 		*e,
 	)
@@ -181,7 +181,7 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 		destinationChainID,
 		keyID,
 		sourceChain.Name,
-		event.TxId,
+		event.TxID,
 		event.Index,
 		*e,
 		e.Amount,
@@ -233,15 +233,15 @@ func handleConfirmDeposit(ctx sdk.Context, event types.Event, ck types.ChainKeep
 
 	// set confirmed deposit
 	erc20Deposit := types.ERC20Deposit{
-		TxID:             event.TxId,
+		TxID:             event.TxID,
 		Amount:           e.Amount,
 		Asset:            burnerInfo.Asset,
 		DestinationChain: burnerInfo.DestinationChain,
 		BurnerAddress:    burnerInfo.BurnerAddress,
 	}
 
-	if _, _, ok := ck.GetDeposit(ctx, common.Hash(event.TxId), common.Address(burnerInfo.BurnerAddress)); ok {
-		ck.Logger(ctx).Info(fmt.Sprintf("%s deposit %s-%s already exists", chain.Name.String(), event.TxId.Hex(), burnerInfo.BurnerAddress.Hex()))
+	if _, _, ok := ck.GetDeposit(ctx, event.TxID, burnerInfo.BurnerAddress); ok {
+		ck.Logger(ctx).Info(fmt.Sprintf("%s deposit %s-%s already exists", chain.Name.String(), event.TxID.Hex(), burnerInfo.BurnerAddress.Hex()))
 		return false
 	}
 	ck.SetDeposit(ctx, erc20Deposit, types.DepositStatus_Confirmed)
@@ -259,7 +259,7 @@ func handleConfirmDeposit(ctx sdk.Context, event types.Event, ck types.ChainKeep
 			sdk.NewAttribute(types.AttributeKeyAsset, burnerInfo.Asset),
 			sdk.NewAttribute(types.AttributeKeyDepositAddress, depositAddr.Address),
 			sdk.NewAttribute(types.AttributeKeyTokenAddress, burnerInfo.TokenAddress.Hex()),
-			sdk.NewAttribute(types.AttributeKeyTxID, event.TxId.Hex()),
+			sdk.NewAttribute(types.AttributeKeyTxID, event.TxID.Hex()),
 			sdk.NewAttribute(types.AttributeKeyTransferID, transferID.String()),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm),
 		))
@@ -298,7 +298,7 @@ func handleTokenDeployed(ctx sdk.Context, event types.Event, ck types.ChainKeepe
 			sdk.NewAttribute(types.AttributeKeyAsset, token.GetAsset()),
 			sdk.NewAttribute(types.AttributeKeySymbol, token.GetDetails().Symbol),
 			sdk.NewAttribute(types.AttributeKeyTokenAddress, token.GetAddress().Hex()),
-			sdk.NewAttribute(types.AttributeKeyTxID, event.TxId.Hex()),
+			sdk.NewAttribute(types.AttributeKeyTxID, event.TxID.Hex()),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm),
 		))
 
@@ -366,7 +366,7 @@ func handleMultisigTransferKey(ctx sdk.Context, event types.Event, ck types.Chai
 	}
 
 	ck.Logger(ctx).Info(fmt.Sprintf("successfully confirmed key transfer for chain %s", chain.Name),
-		"txID", event.TxId.Hex(),
+		"txID", event.TxID.Hex(),
 		"keyID", nextKeyID,
 	)
 

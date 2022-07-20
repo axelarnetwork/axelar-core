@@ -176,13 +176,13 @@ func handleEvent(ctx sdk.Context, ck types.ChainKeeper, event types.Event, chain
 	if err := ck.SetConfirmedEvent(ctx, event); err != nil {
 		panic(err)
 	}
-	ck.Logger(ctx).Info(fmt.Sprintf("confirmed %s event %s in transaction %s", chain.Name, eventID, event.TxId.Hex()))
+	ck.Logger(ctx).Info(fmt.Sprintf("confirmed %s event %s in transaction %s", chain.Name, eventID, event.TxID.Hex()))
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeEventConfirmation,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(types.AttributeKeyChain, event.Chain.String()),
-			sdk.NewAttribute(types.AttributeKeyTxID, event.TxId.Hex()),
+			sdk.NewAttribute(types.AttributeKeyTxID, event.TxID.Hex()),
 			sdk.NewAttribute(types.AttributeKeyEventID, string(event.GetID())),
 			sdk.NewAttribute(types.AttributeKeyEventType, event.GetEventType()),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)),

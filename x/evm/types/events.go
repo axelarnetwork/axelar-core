@@ -9,8 +9,6 @@ import (
 const (
 	EventTypeNewChain                = "newChain"
 	EventTypeGateway                 = "gateway"
-	EventTypeChainConfirmation       = "chainConfirmation"
-	EventTypeGatewayTxConfirmation   = "gatewayTxConfirmation"
 	EventTypeDepositConfirmation     = "depositConfirmation"
 	EventTypeTokenConfirmation       = "tokenConfirmation"
 	EventTypeTransferKeyConfirmation = "transferKeyConfirmation"
@@ -25,22 +23,17 @@ const (
 	AttributeKeyChain              = "chain"
 	AttributeKeySourceChain        = "sourceChain"
 	AttributeKeyAddress            = "address"
-	AttributeKeyThreshold          = "threshold"
 	AttributeKeyPoll               = "poll"
 	AttributeKeyTxID               = "txID"
-	AttributeKeyKeyType            = "keyType"
 	AttributeKeyAmount             = "amount"
 	AttributeKeyDepositAddress     = "depositAddress"
 	AttributeKeyTokenAddress       = "tokenAddress"
 	AttributeKeyGatewayAddress     = "gatewayAddress"
-	AttributeKeyBytecodeHash       = "bytecodeHash"
 	AttributeKeyConfHeight         = "confHeight"
 	AttributeKeyAsset              = "asset"
 	AttributeKeySymbol             = "symbol"
-	AttributeKeyNativeAsset        = "nativeAsset"
 	AttributeKeyDestinationChain   = "destinationChain"
 	AttributeKeyDestinationAddress = "destinationAddress"
-	AttributeKeyValue              = "value"
 	AttributeKeyCommandsID         = "commandID"
 	AttributeKeyCommandsIDs        = "commandIDs"
 	AttributeKeyTransferID         = "transferID"
@@ -51,20 +44,17 @@ const (
 
 // Event attribute values
 const (
-	AttributeValueUpdate  = "update"
 	AttributeValueStart   = "start"
-	AttributeValueReject  = "reject"
 	AttributeValueConfirm = "confirm"
-	AttributeValueVote    = "vote"
 )
 
-// NewConfirmKeyTransfer is the constructor for event confirm key transfer
-func NewConfirmKeyTransfer(chain nexus.ChainName, txID Hash, gatewayAddress Address, confirmationHeight uint64, pollID vote.PollID) *ConfirmKeyTransfer {
-	return &ConfirmKeyTransfer{
+// NewConfirmKeyTransferStarted is the constructor for event confirm key transfer
+func NewConfirmKeyTransferStarted(chain nexus.ChainName, txID Hash, gatewayAddress Address, confirmationHeight uint64, participants vote.PollParticipants) *ConfirmKeyTransferStarted {
+	return &ConfirmKeyTransferStarted{
 		Chain:              chain,
 		TxID:               txID,
 		GatewayAddress:     gatewayAddress,
 		ConfirmationHeight: confirmationHeight,
-		PollID:             pollID,
+		PollParticipants:   participants,
 	}
 }

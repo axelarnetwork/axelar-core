@@ -35,8 +35,11 @@ message Event {
   string chain = 1
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
-  bytes tx_id = 2
-      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Hash" ];
+  bytes tx_id = 2 [
+    (gogoproto.customname) = "TxID",
+    (gogoproto.nullable) = false,
+    (gogoproto.customtype) = "Hash"
+  ];
   uint64 index = 3;
   Status status = 4;
 
@@ -376,5 +379,9 @@ message PollMetadata {
   string chain = 1
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
-  string tx_id = 2 [ (gogoproto.customname) = "TxID" ];
+  bytes tx_id = 2 [
+    (gogoproto.customname) = "TxID",
+    (gogoproto.nullable) = false,
+    (gogoproto.customtype) = "Hash"
+  ];
 }

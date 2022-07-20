@@ -19,18 +19,24 @@ import (
 func NewGenesisState(chains []GenesisState_Chain) GenesisState {
 	sort.Slice(chains, less(chains))
 
+	for _, chain := range chains {
+		sort.SliceStable(chain.Events, func(i, j int) bool {
+			return chain.Events[i].Index < chain.Events[j].Index
+		})
+	}
+
 	return GenesisState{Chains: chains}
 }
 
 func less(chains []GenesisState_Chain) func(i int, j int) bool {
 	return func(i, j int) bool {
-		return chains[i].Params.Chain < chains[j].Params.Chain
+		return chains[i].Params.Chain.String() < chains[j].Params.Chain.String()
 	}
 }
 
 // DefaultGenesisState returns a default genesis state
 func DefaultGenesisState() GenesisState {
-	return GenesisState{Chains: DefaultChains()}
+	return NewGenesisState(DefaultChains())
 }
 
 // DefaultChains returns the default chains for a genesis state
@@ -51,6 +57,7 @@ func DefaultChains() []GenesisState_Chain {
 		}
 		chains = append(chains, chain)
 	}
+
 	return chains
 }
 

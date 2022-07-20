@@ -44,7 +44,7 @@ func (s msgServer) Vote(c context.Context, req *types.VoteRequest) (*types.VoteR
 
 	if voteResult != vote.NoVote {
 		funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(
-			&types.Vote{
+			&types.Voted{
 				Module: types.ModuleName,
 				Action: types.AttributeValueVote,
 				Poll:   req.PollID.String(),
