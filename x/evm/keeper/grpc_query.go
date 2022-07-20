@@ -276,7 +276,7 @@ func queryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, para
 		return -1, fmt.Sprintf("%s is not a registered chain", k.GetName()), codes.NotFound
 	}
 
-	_, state, ok := k.GetDeposit(ctx, common.Hash(params.TxID), common.Address(params.BurnerAddress))
+	_, state, ok := k.GetDeposit(ctx, params.TxID, params.BurnerAddress)
 	if !ok {
 		return types.DepositStatus_None, "deposit transaction is not confirmed", codes.OK
 	}
@@ -334,7 +334,7 @@ func queryAddressByKeyID(ctx sdk.Context, multisig types.MultisigKeeper, chain n
 	}
 
 	addresses, weights, threshold := types.GetMultisigAddressesAndWeights(key)
-	weightedAddresses := make([]types.KeyAddressResponse_WeightedAddress, len(weights))
+	weightedAddresses := make([]types.KeyAddressResponse_WeightedAddress, 0, len(weights))
 	for i, address := range addresses {
 		weightedAddresses = append(weightedAddresses, types.KeyAddressResponse_WeightedAddress{
 			Address: address.Hex(),

@@ -191,45 +191,45 @@ func (k chainKeeper) getBurnerInfos(ctx sdk.Context) []types.BurnerInfo {
 }
 
 // calculates the token address for some asset with the provided axelar gateway address
-func (k chainKeeper) getTokenAddress(ctx sdk.Context, details types.TokenDetails, gatewayAddr common.Address) (common.Address, error) {
+func (k chainKeeper) getTokenAddress(ctx sdk.Context, details types.TokenDetails, gatewayAddr types.Address) (types.Address, error) {
 	var saltToken [32]byte
 	copy(saltToken[:], crypto.Keccak256Hash([]byte(details.Symbol)).Bytes())
 
 	uint8Type, err := abi.NewType("uint8", "uint8", nil)
 	if err != nil {
-		return common.Address{}, err
+		return types.Address{}, err
 	}
 
 	uint256Type, err := abi.NewType("uint256", "uint256", nil)
 	if err != nil {
-		return common.Address{}, err
+		return types.Address{}, err
 	}
 
 	stringType, err := abi.NewType("string", "string", nil)
 	if err != nil {
-		return common.Address{}, err
+		return types.Address{}, err
 	}
 
 	arguments := abi.Arguments{{Type: stringType}, {Type: stringType}, {Type: uint8Type}, {Type: uint256Type}}
 	packed, err := arguments.Pack(details.TokenName, details.Symbol, details.Decimals, details.Capacity.BigInt())
 	if err != nil {
-		return common.Address{}, err
+		return types.Address{}, err
 	}
 
 	bytecode, ok := k.GetTokenByteCode(ctx)
 	if !ok {
-		return common.Address{}, fmt.Errorf("bytecode for token contract not found")
+		return types.Address{}, fmt.Errorf("bytecode for token contract not found")
 	}
 
 	tokenInitCode := append(bytecode, packed...)
 	tokenInitCodeHash := crypto.Keccak256Hash(tokenInitCode)
 
-	tokenAddr := crypto.CreateAddress2(gatewayAddr, saltToken, tokenInitCodeHash.Bytes())
+	tokenAddr := types.Address(crypto.CreateAddress2(common.Address(gatewayAddr), saltToken, tokenInitCodeHash.Bytes()))
 	return tokenAddr, nil
 }
 
 // GetBurnerAddressAndSalt calculates a burner address and the corresponding salt for the given token address, recipient and axelar gateway address
-func (k chainKeeper) GetBurnerAddressAndSalt(ctx sdk.Context, token types.ERC20Token, recipient string, gatewayAddr common.Address) (types.Address, types.Hash, error) {
+func (k chainKeeper) GetBurnerAddressAndSalt(ctx sdk.Context, token types.ERC20Token, recipient string, gatewayAddr types.Address) (types.Address, types.Hash, error) {
 	nonce := utils.GetNonce(ctx.HeaderHash(), ctx.BlockGasMeter())
 	bz := []byte(recipient)
 	bz = append(bz, nonce[:]...)
@@ -273,7 +273,7 @@ func (k chainKeeper) GetBurnerAddressAndSalt(ctx sdk.Context, token types.ERC20T
 		return types.Address{}, types.Hash{}, fmt.Errorf("unsupported burner code with hash %s for chain %s", tokenBurnerCodeHash.Hex(), k.chainLowerKey)
 	}
 
-	return types.Address(crypto.CreateAddress2(gatewayAddr, salt, initCodeHash.Bytes())), salt, nil
+	return types.Address(crypto.CreateAddress2(common.Address(gatewayAddr), salt, initCodeHash.Bytes())), salt, nil
 }
 
 // GetBurnerByteCode returns the bytecode for the burner contract
@@ -349,7 +349,7 @@ func (k chainKeeper) GetConfirmedEventQueue(ctx sdk.Context) utils.KVQueue {
 			binary.BigEndian.PutUint64(indexBz, event.Index)
 
 			return utils.KeyFromBz(blockHeightBz).
-				Append(utils.KeyFromBz(event.TxId.Bytes())).
+				Append(utils.KeyFromBz(event.TxID.Bytes())).
 				Append(utils.KeyFromBz(indexBz))
 		},
 	)
@@ -392,7 +392,7 @@ func (k chainKeeper) GetPendingCommands(ctx sdk.Context) []types.Command {
 }
 
 // GetDeposit retrieves a confirmed/burned deposit
-func (k chainKeeper) GetDeposit(ctx sdk.Context, txID common.Hash, burnAddr common.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
+func (k chainKeeper) GetDeposit(ctx sdk.Context, txID types.Hash, burnAddr types.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
 	var deposit types.ERC20Deposit
 
 	if k.getStore(ctx, k.chainLowerKey).Get(confirmedDepositPrefix.AppendStr(txID.Hex()).AppendStr(burnAddr.Hex()), &deposit) {
@@ -792,12 +792,12 @@ func (k chainKeeper) SetGateway(ctx sdk.Context, address types.Address) {
 }
 
 // GetGatewayAddress returns the confirmed address of gateway
-func (k chainKeeper) GetGatewayAddress(ctx sdk.Context) (common.Address, bool) {
+func (k chainKeeper) GetGatewayAddress(ctx sdk.Context) (types.Address, bool) {
 	if gateway := k.getGateway(ctx); !gateway.Address.IsZeroAddress() {
-		return common.Address(gateway.Address), true
+		return gateway.Address, true
 	}
 
-	return common.Address{}, false
+	return types.Address{}, false
 }
 
 func (k chainKeeper) setGateway(ctx sdk.Context, gateway types.Gateway) {

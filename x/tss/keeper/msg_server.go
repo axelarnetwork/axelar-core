@@ -2,20 +2,12 @@ package keeper
 
 import (
 	"context"
-	"crypto/sha256"
 	"fmt"
-	"strconv"
-	"strings"
 
-	"github.com/armon/go-metrics"
-	"github.com/btcsuite/btcd/btcec"
-	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
+	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
-	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
@@ -25,470 +17,39 @@ type msgServer struct {
 	types.TSSKeeper
 	snapshotter types.Snapshotter
 	staker      types.StakingKeeper
-	voter       types.Voter
-	nexus       types.Nexus
-	rewarder    types.Rewarder
+	multisig    types.MultiSigKeeper
 }
 
 // NewMsgServerImpl returns an implementation of the broadcast MsgServiceServer interface
 // for the provided Keeper.
-func NewMsgServerImpl(keeper types.TSSKeeper, s types.Snapshotter, staker types.StakingKeeper, v types.Voter, n types.Nexus, rewarder types.Rewarder) types.MsgServiceServer {
+func NewMsgServerImpl(keeper types.TSSKeeper, s types.Snapshotter, staker types.StakingKeeper, multisig types.MultiSigKeeper) types.MsgServiceServer {
 	return msgServer{
 		TSSKeeper:   keeper,
 		snapshotter: s,
 		staker:      staker,
-		voter:       v,
-		nexus:       n,
-		rewarder:    rewarder,
+		multisig:    multisig,
 	}
-}
-
-func (s msgServer) RegisterExternalKeys(c context.Context, req *types.RegisterExternalKeysRequest) (*types.RegisterExternalKeysResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-
-	chain, ok := s.nexus.GetChain(ctx, req.Chain)
-	if !ok {
-		return nil, fmt.Errorf("unknown chain %s", req.Chain)
-	}
-
-	requiredExternalKeyCount := s.GetExternalMultisigThreshold(ctx).Denominator
-	if len(req.ExternalKeys) != int(requiredExternalKeyCount) {
-		return nil, fmt.Errorf("%d external keys are required for chain %s", requiredExternalKeyCount, chain.Name)
-	}
-
-	keyIDs := make([]exported.KeyID, len(req.ExternalKeys))
-	for i, externalKey := range req.ExternalKeys {
-		if _, ok := s.GetKey(ctx, externalKey.ID); ok || s.HasKeygenStarted(ctx, externalKey.ID) {
-			return nil, fmt.Errorf("key ID %s is already used", externalKey.ID)
-		}
-
-		_, err := btcec.ParsePubKey(externalKey.PubKey, btcec.S256())
-		if err != nil {
-			return nil, fmt.Errorf("invalid external key received")
-		}
-
-		s.SetKey(ctx, exported.Key{
-			ID:    externalKey.ID,
-			Role:  exported.ExternalKey,
-			Type:  exported.None,
-			Chain: req.Chain.String(),
-			PublicKey: &exported.Key_ECDSAKey_{
-				ECDSAKey: &exported.Key_ECDSAKey{
-					Value: externalKey.PubKey,
-				},
-			},
-		})
-		keyIDs[i] = externalKey.ID
-
-		ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeKey,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueAssigned),
-			sdk.NewAttribute(types.AttributeChain, chain.Name.String()),
-			sdk.NewAttribute(types.AttributeKeyRole, exported.ExternalKey.SimpleString()),
-			sdk.NewAttribute(types.AttributeKeyKeyID, string(externalKey.ID)),
-		))
-	}
-
-	s.SetExternalKeyIDs(ctx, chain, keyIDs)
-
-	return &types.RegisterExternalKeysResponse{}, nil
 }
 
 func (s msgServer) HeartBeat(c context.Context, req *types.HeartBeatRequest) (*types.HeartBeatResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	valAddr := s.snapshotter.GetOperator(ctx, req.Sender)
-	if valAddr.Empty() {
-		return nil, fmt.Errorf("sender [%s] is not a registered proxy", req.Sender)
-	}
-
-	for _, k := range req.KeyIDs {
-		_, ok := s.GetKey(ctx, k)
-		if !ok {
-			return nil, fmt.Errorf("operator %s sent heartbeat for unknown key ID %s", valAddr.String(), k)
-		}
+	participant := s.snapshotter.GetOperator(ctx, req.Sender)
+	if participant.Empty() {
+		return nil, fmt.Errorf("sender %s is not a registered proxy", req.Sender.String())
 	}
 
 	// this could happen after register proxy but before create validator
-	validatorI := s.staker.Validator(ctx, valAddr)
-	if validatorI == nil {
-		return nil, fmt.Errorf("%s is not a validator", valAddr)
+	if s.staker.Validator(ctx, participant) == nil {
+		return nil, fmt.Errorf("%s is not a validator", participant)
 	}
 
-	// this explicit type cast is necessary, because snapshot needs to call UnpackInterfaces() on the validator
-	// and it is not exposed in the ValidatorI interface
-	validator, ok := validatorI.(stakingtypes.Validator)
-	if !ok {
-		s.Logger(ctx).Error(fmt.Sprintf("unexpected validator type: expected %T, got %T", stakingtypes.Validator{}, validatorI))
-		return &types.HeartBeatResponse{}, nil
-	}
-
-	illegibility, err := s.snapshotter.GetValidatorIllegibility(ctx, &validator)
-	if err != nil {
-		s.Logger(ctx).Error(err.Error())
-		return &types.HeartBeatResponse{}, nil
-	}
-
-	s.Logger(ctx).Debug(fmt.Sprintf("updating availability of operator %s (proxy address %s) for keys %v at block %d",
-		valAddr.String(), req.Sender, req.KeyIDs, ctx.BlockHeight()))
-	s.SetAvailableOperator(ctx, valAddr, req.KeyIDs...)
-	if err := s.rewarder.GetPool(ctx, types.ModuleName).ReleaseRewards(valAddr); err != nil {
-		return nil, err
-	}
-
-	response := &types.HeartBeatResponse{
-		KeygenIllegibility: illegibility.FilterIllegibilityForNewKey(),
-		// TODO: split into TssSigningIllegibility and MultisigSigningIllegibility
-		SigningIllegibility: illegibility.FilterIllegibilityForMultisigSigning(),
-	}
-
-	if !response.KeygenIllegibility.Is(snapshot.None) {
-		s.Logger(ctx).Error(fmt.Sprintf("validator %s not ready to participate in keygen due to: %s", valAddr.String(), response.KeygenIllegibility.String()))
-	}
-	if !response.SigningIllegibility.Is(snapshot.None) {
-		s.Logger(ctx).Error(fmt.Sprintf("validator %s not ready to participate in signing due to: %s", valAddr.String(), response.SigningIllegibility.String()))
-	}
-
-	// metrics
-	keygenIll := illegibility.FilterIllegibilityForNewKey()
-	// TODO: split into TssSigningIllegibility and MultisigSigningIllegibility
-	signIll := illegibility.FilterIllegibilityForMultisigSigning()
-	for _, ill := range snapshot.GetValidatorIllegibilities() {
-		gauge := float32(0)
-		if keygenIll.Is(ill) {
-			gauge = 1
+	for _, keyID := range req.KeyIDs {
+		_, ok := s.multisig.GetKey(ctx, multisig.KeyID(keyID))
+		if !ok {
+			return nil, fmt.Errorf("operator %s sent heartbeat for unknown key ID %s", participant.String(), keyID)
 		}
-
-		telemetry.SetGaugeWithLabels([]string{types.ModuleName, "keygen_illegibility_" + ill.String()},
-			gauge, []metrics.Label{telemetry.NewLabel("address", valAddr.String())})
-
-		gauge = 0
-		if signIll.Is(ill) {
-			gauge = 1
-		}
-
-		telemetry.SetGaugeWithLabels([]string{types.ModuleName, "sign_illegibility_" + ill.String()},
-			gauge, []metrics.Label{telemetry.NewLabel("address", valAddr.String())})
 	}
 
-	return response, nil
-}
-
-func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest) (*types.StartKeygenResponse, error) {
-	if !types.TSSEnabled && req.KeyInfo.KeyType == exported.Threshold {
-		return nil, fmt.Errorf("threshold signing is disabled")
-	}
-
-	ctx := sdk.UnwrapSDKContext(c)
-
-	keyRequirement, ok := s.GetKeyRequirement(ctx, req.KeyInfo.KeyRole, req.KeyInfo.KeyType)
-	if !ok {
-		return nil, fmt.Errorf("key requirement for key role %s type %s not found", req.KeyInfo.KeyRole.SimpleString(), req.KeyInfo.KeyType.SimpleString())
-	}
-
-	// record the snapshot of active validators that we'll use for the key
-	snapshot, err := s.snapshotter.TakeSnapshot(ctx, keyRequirement)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := s.TSSKeeper.StartKeygen(ctx, s.voter, req.KeyInfo, snapshot); err != nil {
-		return nil, err
-	}
-
-	participants := make([]string, 0, len(snapshot.Validators))
-	participantShareCounts := make([]uint32, 0, len(snapshot.Validators))
-	for _, validator := range snapshot.Validators {
-		participants = append(participants, validator.GetSDKValidator().GetOperator().String())
-		participantShareCounts = append(participantShareCounts, uint32(validator.ShareCount))
-	}
-
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(types.EventTypeKeygen,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
-			sdk.NewAttribute(types.AttributeKeyKeyType, req.KeyInfo.KeyType.SimpleString()),
-			sdk.NewAttribute(types.AttributeKeyKeyID, string(req.KeyInfo.KeyID)),
-			sdk.NewAttribute(types.AttributeKeyThreshold, strconv.FormatInt(snapshot.CorruptionThreshold, 10)),
-			sdk.NewAttribute(types.AttributeKeyParticipants, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(participants))),
-			sdk.NewAttribute(types.AttributeKeyParticipantShareCounts, string(types.ModuleCdc.LegacyAmino.MustMarshalJSON(participantShareCounts))),
-			sdk.NewAttribute(types.AttributeKeyTimeout, strconv.FormatInt(keyRequirement.KeygenTimeout, 10)),
-		),
-	)
-
-	s.Logger(ctx).Info(fmt.Sprintf("new Keygen: key_id [%s] threshold [%d] key_share_distribution_policy [%s]", req.KeyInfo.KeyID, snapshot.CorruptionThreshold, keyRequirement.KeyShareDistributionPolicy.SimpleString()))
-
-	// keygen metrics
-	telemetry.SetGaugeWithLabels(
-		[]string{types.ModuleName, "corruption", "threshold"},
-		float32(snapshot.CorruptionThreshold),
-		[]metrics.Label{telemetry.NewLabel("keyID", string(req.KeyInfo.KeyID))})
-
-	minKeygenThreshold := keyRequirement.MinKeygenThreshold
-	telemetry.SetGauge(float32(minKeygenThreshold.Numerator*100/minKeygenThreshold.Denominator), types.ModuleName, "minimum", "keygen", "threshold")
-
-	return &types.StartKeygenResponse{}, nil
-}
-
-func (s msgServer) ProcessKeygenTraffic(c context.Context, req *types.ProcessKeygenTrafficRequest) (*types.ProcessKeygenTrafficResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-
-	senderAddress := s.snapshotter.GetOperator(ctx, req.Sender)
-	if senderAddress.Empty() {
-		return nil, fmt.Errorf("invalid message: sender [%s] is not a validator", req.Sender)
-	}
-
-	keyID := exported.KeyID(req.SessionID)
-	if err := keyID.Validate(); err != nil {
-		return nil, err
-	}
-
-	counter, ok := s.GetSnapshotCounterForKeyID(ctx, keyID)
-	if !ok {
-		return nil, fmt.Errorf("could not obtain snapshot counter for key ID %s", keyID)
-	}
-
-	snapshot, ok := s.snapshotter.GetSnapshot(ctx, counter)
-	if !ok {
-		return nil, fmt.Errorf("could not obtain snapshot for counter %d", counter)
-	}
-
-	if _, ok := snapshot.GetValidator(senderAddress); !ok {
-		return nil, fmt.Errorf("invalid message: sender [%.20s] does not participate in keygen [%s] ", senderAddress, req.SessionID)
-	}
-
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(types.EventTypeKeygen,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueMsg),
-			sdk.NewAttribute(types.AttributeKeySessionID, req.SessionID),
-			sdk.NewAttribute(sdk.AttributeKeySender, senderAddress.String()),
-			sdk.NewAttribute(types.AttributeKeyPayload, string(types.ModuleCdc.MustMarshalJSON(&req.Payload)))))
-
-	return &types.ProcessKeygenTrafficResponse{}, nil
-}
-
-func (s msgServer) RotateKey(c context.Context, req *types.RotateKeyRequest) (*types.RotateKeyResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-
-	chain, ok := s.nexus.GetChain(ctx, req.Chain)
-	if !ok {
-		return nil, fmt.Errorf("unknown chain")
-	}
-
-	_, hasActiveKey := s.TSSKeeper.GetCurrentKeyID(ctx, chain, req.KeyRole)
-	if hasActiveKey {
-		return nil, fmt.Errorf("manual key rotation is only allowed when no key is active")
-	}
-
-	if err := s.TSSKeeper.AssertMatchesRequirements(ctx, s.snapshotter, chain, req.KeyID, req.KeyRole); err != nil {
-		return nil, sdkerrors.Wrapf(err, "key %s does not match requirements for chain %s key %s type and key role %s",
-			req.KeyID, chain.Name, chain.KeyType.SimpleString(), req.KeyRole.SimpleString())
-	}
-
-	if err := s.TSSKeeper.AssignNextKey(ctx, chain, req.KeyRole, req.KeyID); err != nil {
-		return nil, err
-	}
-
-	if err := s.TSSKeeper.RotateKey(ctx, chain, req.KeyRole); err != nil {
-		return nil, err
-	}
-
-	s.Logger(ctx).Debug(fmt.Sprintf("rotated %s key for chain %s", req.KeyRole.SimpleString(), chain.Name))
-
-	telemetry.IncrCounter(1, types.ModuleName, strings.ToLower(chain.Name.String()), req.KeyRole.SimpleString(), "key", "rotation", "count")
-	telemetry.SetGaugeWithLabels(
-		[]string{types.ModuleName, strings.ToLower(chain.Name.String()), req.KeyRole.SimpleString(), "key", "id"},
-		0,
-		[]metrics.Label{
-			telemetry.NewLabel("timestamp", strconv.FormatInt(ctx.BlockTime().Unix(), 10)),
-			telemetry.NewLabel("keyID", string(req.KeyID)),
-		})
-
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(sdk.AttributeKeySender, req.Sender.String()),
-			sdk.NewAttribute(types.AttributeChain, chain.Name.String()),
-		),
-	)
-
-	return &types.RotateKeyResponse{}, nil
-}
-
-func (s msgServer) VotePubKey(c context.Context, req *types.VotePubKeyRequest) (*types.VotePubKeyResponse, error) {
-	return nil, sdkerrors.ErrUnknownRequest
-}
-
-func (s msgServer) ProcessSignTraffic(c context.Context, req *types.ProcessSignTrafficRequest) (*types.ProcessSignTrafficResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-
-	senderAddress := s.snapshotter.GetOperator(ctx, req.Sender)
-	if senderAddress.Empty() {
-		return nil, fmt.Errorf("invalid message: sender [%s] is not a validator", req.Sender)
-	}
-
-	if !s.DoesValidatorParticipateInSign(ctx, req.SessionID, senderAddress) {
-		return nil, fmt.Errorf("invalid message: sender [%.20s] does not participate in sign [%s] ", senderAddress, req.SessionID)
-	}
-
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(types.EventTypeSign,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueMsg),
-			sdk.NewAttribute(types.AttributeKeySessionID, req.SessionID),
-			sdk.NewAttribute(sdk.AttributeKeySender, senderAddress.String()),
-			sdk.NewAttribute(types.AttributeKeyPayload, string(types.ModuleCdc.MustMarshalJSON(&req.Payload)))))
-
-	return &types.ProcessSignTrafficResponse{}, nil
-}
-
-func (s msgServer) VoteSig(c context.Context, req *types.VoteSigRequest) (*types.VoteSigResponse, error) {
-	return nil, sdkerrors.ErrUnknownRequest
-}
-
-func (s msgServer) SubmitMultisigPubKeys(c context.Context, req *types.SubmitMultisigPubKeysRequest) (*types.SubmitMultisigPubKeysResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-	validator := s.snapshotter.GetOperator(ctx, req.Sender)
-	if validator.Empty() {
-		return nil, fmt.Errorf("sender [%s] is not a validator", req.Sender)
-	}
-
-	counter, ok := s.GetSnapshotCounterForKeyID(ctx, req.KeyID)
-	if !ok {
-		return nil, fmt.Errorf("could not obtain snapshot counter for key ID %s", req.KeyID)
-	}
-
-	snapshot, ok := s.snapshotter.GetSnapshot(ctx, counter)
-	if !ok {
-		return nil, fmt.Errorf("could not obtain snapshot for counter %d", counter)
-	}
-
-	val, ok := snapshot.GetValidator(validator)
-	if !ok {
-		return nil, fmt.Errorf("could not find validator %s in snapshot #%d", val.String(), counter)
-	}
-
-	if s.IsMultisigKeygenCompleted(ctx, req.KeyID) {
-		return nil, fmt.Errorf("multisig keygen %s has completed", req.KeyID)
-	}
-
-	if int64(len(req.SigKeyPairs)) != val.ShareCount {
-		return nil, fmt.Errorf("expect %d pub keys, got %d", val.ShareCount, len(req.SigKeyPairs))
-	}
-
-	s.Logger(ctx).Debug(fmt.Sprintf("stores %s multisig pubkeys for operator %s (proxy address %s): %v",
-		req.KeyID, validator.String(), req.Sender, req.SigKeyPairs))
-
-	var pks [][]byte
-	for _, pair := range req.SigKeyPairs {
-		pubKey, err := btcec.ParsePubKey(pair.PubKey, btcec.S256())
-		if err != nil {
-			return nil, fmt.Errorf("could not parse public key bytes: [%w]", err)
-		}
-
-		sig, err := btcec.ParseDERSignature(pair.Signature, btcec.S256())
-		if err != nil {
-			return nil, fmt.Errorf("could not parse signature bytes: [%w]", err)
-		}
-
-		d := sha256.Sum256([]byte(validator.String()))
-		if !sig.Verify(d[:], pubKey) {
-			return nil, fmt.Errorf("signature is invalid")
-		}
-
-		pks = append(pks, pair.PubKey)
-	}
-
-	ok = s.SubmitPubKeys(ctx, req.KeyID, validator, pks...)
-	if !ok {
-		s.Logger(ctx).Debug(fmt.Sprintf("duplicate multisig pub key detected for validator %s", validator))
-		return &types.SubmitMultisigPubKeysResponse{}, fmt.Errorf("duplicate pub key")
-	}
-
-	// existence is checked before
-	keygenInfo, _ := s.GetMultisigKeygenInfo(ctx, req.KeyID)
-	if keygenInfo.IsCompleted() {
-		s.SetKey(ctx, exported.Key{
-			ID: req.KeyID,
-			PublicKey: &exported.Key_MultisigKey_{
-				MultisigKey: &exported.Key_MultisigKey{
-					Values:    keygenInfo.GetData(),
-					Threshold: snapshot.CorruptionThreshold + 1,
-				},
-			},
-		})
-
-		s.Logger(ctx).Debug(fmt.Sprintf("multisig keygen %s completed", req.KeyID))
-		ctx.EventManager().EmitEvent(
-			sdk.NewEvent(
-				types.EventTypeKeygen,
-				sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-				sdk.NewAttribute(types.AttributeKeyKeyID, string(req.KeyID)),
-				sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDecided)),
-		)
-	}
-
-	return &types.SubmitMultisigPubKeysResponse{}, nil
-}
-
-func (s msgServer) SubmitMultisigSignatures(c context.Context, req *types.SubmitMultisigSignaturesRequest) (*types.SubmitMultisigSignaturesResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-
-	if _, status := s.GetSig(ctx, req.SigID); status == exported.SigStatus_Signed {
-		// the signature is already set, no need for further processing of the vote
-		s.Logger(ctx).Debug(fmt.Sprintf("signature %s already verified", req.SigID))
-		return &types.SubmitMultisigSignaturesResponse{}, nil
-	}
-
-	valAddr := s.snapshotter.GetOperator(ctx, req.Sender)
-	if valAddr == nil {
-		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
-	}
-
-	info, ok := s.GetInfoForSig(ctx, req.SigID)
-	if !ok {
-		return nil, fmt.Errorf("sig info does not exist")
-	}
-
-	pubKeys, ok := s.GetMultisigPubKeysByValidator(ctx, info.KeyID, valAddr)
-	if !ok {
-		return nil, fmt.Errorf("could not find multisig key info %s", info.KeyID)
-	}
-
-	if len(req.Signatures) != len(pubKeys) {
-		return nil, fmt.Errorf("expect %d signatures, got %d", len(pubKeys), len(req.Signatures))
-	}
-
-	s.Logger(ctx).Debug(fmt.Sprintf("stores %s multisig signatures for operator %s (proxy address %s): %v",
-		req.SigID, valAddr, req.Sender, req.Signatures))
-
-	var sigKeyPairs [][]byte
-	for i, signature := range req.Signatures {
-		sig, err := btcec.ParseDERSignature(signature, btcec.S256())
-		if err != nil {
-			return nil, fmt.Errorf("could not parse signature bytes: [%w]", err)
-		}
-
-		p := btcec.PublicKey(pubKeys[i])
-		if !sig.Verify(info.Msg, &p) {
-			return nil, fmt.Errorf("signature is invalid")
-		}
-
-		sigKeyPair := exported.SigKeyPair{PubKey: p.SerializeCompressed(), Signature: signature}
-		bz, err := sigKeyPair.Marshal()
-		if err != nil {
-			return nil, err
-		}
-		sigKeyPairs = append(sigKeyPairs, bz)
-	}
-
-	if !s.SubmitSignatures(ctx, req.SigID, valAddr, sigKeyPairs...) {
-		s.Logger(ctx).Debug(fmt.Sprintf("duplicate signatures detected for validator %s", valAddr))
-
-		return &types.SubmitMultisigSignaturesResponse{}, fmt.Errorf("duplicate signature")
-	}
-
-	return &types.SubmitMultisigSignaturesResponse{}, nil
+	return &types.HeartBeatResponse{KeygenIllegibility: snapshot.None, SigningIllegibility: snapshot.None}, nil
 }

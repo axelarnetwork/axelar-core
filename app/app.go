@@ -382,6 +382,11 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	multisigK := multisigKeeper.NewKeeper(
 		appCodec, keys[multisigTypes.StoreKey], app.getSubspace(multisigTypes.ModuleName),
 	)
+
+	multisigRounter := multisigTypes.NewSigRouter()
+	multisigRounter.AddHandler(evmTypes.ModuleName, evmKeeper.NewSigHandler(appCodec, evmK))
+	multisigK.SetSigRouter(multisigRounter)
+
 	tssK := tssKeeper.NewKeeper(
 		appCodec, keys[tssTypes.StoreKey], app.getSubspace(tssTypes.ModuleName), slashingK, rewardK,
 	)
@@ -485,7 +490,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 
 		snapshot.NewAppModule(snapK),
 		multisig.NewAppModule(multisigK, stakingK, slashingK, snapK, rewardK, nexusK),
-		tss.NewAppModule(tssK, snapK, votingK, nexusK, stakingK, rewardK, multisigK),
+		tss.NewAppModule(tssK, snapK, nexusK, stakingK, multisigK),
 		vote.NewAppModule(votingK),
 		nexus.NewAppModule(nexusK, snapK, slashingK, stakingK, axelarnetK, evmK, rewardK),
 		evm.NewAppModule(evmK, votingK, tssK, nexusK, snapK, stakingK, slashingK, multisigK, logger),

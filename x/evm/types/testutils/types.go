@@ -353,7 +353,7 @@ func RandomEvent(statuses ...types.Event_Status) types.Event {
 	return rand.Of(
 		types.Event{
 			Chain:  nexus.ChainName(randomNormalizedStr(5, 20)),
-			TxId:   RandomHash(),
+			TxID:   RandomHash(),
 			Index:  uint64(rand.PosI64()),
 			Status: rand.Of(statuses...),
 			Event: &types.Event_ContractCall{
@@ -367,7 +367,7 @@ func RandomEvent(statuses ...types.Event_Status) types.Event {
 		},
 		types.Event{
 			Chain:  nexus.ChainName(randomNormalizedStr(5, 20)),
-			TxId:   RandomHash(),
+			TxID:   RandomHash(),
 			Index:  uint64(rand.PosI64()),
 			Status: rand.Of(statuses...),
 			Event: &types.Event_ContractCallWithToken{
@@ -383,7 +383,7 @@ func RandomEvent(statuses ...types.Event_Status) types.Event {
 		},
 		types.Event{
 			Chain:  nexus.ChainName(randomNormalizedStr(5, 20)),
-			TxId:   RandomHash(),
+			TxID:   RandomHash(),
 			Index:  uint64(rand.PosI64()),
 			Status: rand.Of(statuses...),
 			Event: &types.Event_TokenSent{

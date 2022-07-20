@@ -4,7 +4,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -45,10 +44,10 @@ type ChainKeeper interface {
 	GetBurnerByteCode(ctx sdk.Context) ([]byte, bool)
 	GetTokenByteCode(ctx sdk.Context) ([]byte, bool)
 	SetGateway(ctx sdk.Context, address Address)
-	GetGatewayAddress(ctx sdk.Context) (common.Address, bool)
-	GetDeposit(ctx sdk.Context, txID common.Hash, burnerAddr common.Address) (ERC20Deposit, DepositStatus, bool)
+	GetGatewayAddress(ctx sdk.Context) (Address, bool)
+	GetDeposit(ctx sdk.Context, txID Hash, burnerAddr Address) (ERC20Deposit, DepositStatus, bool)
 	GetBurnerInfo(ctx sdk.Context, address Address) *BurnerInfo
-	GetBurnerAddressAndSalt(ctx sdk.Context, token ERC20Token, recipient string, gatewayAddr common.Address) (Address, Hash, error)
+	GetBurnerAddressAndSalt(ctx sdk.Context, token ERC20Token, recipient string, gatewayAddr Address) (Address, Hash, error)
 	SetBurnerInfo(ctx sdk.Context, burnerInfo BurnerInfo)
 	DeleteDeposit(ctx sdk.Context, deposit ERC20Deposit)
 	SetDeposit(ctx sdk.Context, deposit ERC20Deposit, state DepositStatus)

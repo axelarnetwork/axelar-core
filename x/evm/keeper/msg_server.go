@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"strconv"
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -97,7 +96,7 @@ func (s msgServer) ConfirmGatewayTx(c context.Context, req *types.ConfirmGateway
 		return nil, fmt.Errorf("axelar gateway address not set")
 	}
 
-	pollID, err := s.initializePoll(ctx, chain, req.TxID)
+	pollParticipants, err := s.initializePoll(ctx, chain, req.TxID)
 	if err != nil {
 		return nil, err
 	}
@@ -107,17 +106,13 @@ func (s msgServer) ConfirmGatewayTx(c context.Context, req *types.ConfirmGateway
 		return nil, fmt.Errorf("required confirmation height not found")
 	}
 
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(types.EventTypeGatewayTxConfirmation,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
-			sdk.NewAttribute(types.AttributeKeyChain, chain.Name.String()),
-			sdk.NewAttribute(types.AttributeKeyGatewayAddress, gatewayAddress.Hex()),
-			sdk.NewAttribute(types.AttributeKeyTxID, req.TxID.Hex()),
-			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
-			sdk.NewAttribute(types.AttributeKeyPoll, pollID.String()),
-		),
-	)
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.ConfirmGatewayTxStarted{
+		TxID:               req.TxID,
+		Chain:              chain.Name,
+		GatewayAddress:     gatewayAddress,
+		ConfirmationHeight: height,
+		PollParticipants:   pollParticipants,
+	}))
 
 	return &types.ConfirmGatewayTxResponse{}, nil
 }
@@ -260,29 +255,20 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, err
 	}
 
-	pollID, err := s.initializePoll(ctx, chain, req.TxID)
+	pollParticipants, err := s.initializePoll(ctx, chain, req.TxID)
 	if err != nil {
 		return nil, err
 	}
 
-	// if token was initialized, both token and gateway addresses are available
-	tokenAddr := token.GetAddress()
-	gatewayAddr, _ := keeper.GetGatewayAddress(ctx)
-	height, _ := keeper.GetRequiredConfirmationHeight(ctx)
-
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(types.EventTypeTokenConfirmation,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
-			sdk.NewAttribute(types.AttributeKeyChain, chain.Name.String()),
-			sdk.NewAttribute(types.AttributeKeyTxID, req.TxID.Hex()),
-			sdk.NewAttribute(types.AttributeKeyGatewayAddress, gatewayAddr.Hex()),
-			sdk.NewAttribute(types.AttributeKeyTokenAddress, tokenAddr.Hex()),
-			sdk.NewAttribute(types.AttributeKeySymbol, token.GetDetails().Symbol),
-			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
-			sdk.NewAttribute(types.AttributeKeyPoll, pollID.String()),
-		),
-	)
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.ConfirmTokenStarted{
+		TxID:               req.TxID,
+		Chain:              chain.Name,
+		GatewayAddress:     funcs.MustOk(keeper.GetGatewayAddress(ctx)),
+		TokenAddress:       token.GetAddress(),
+		TokenDetails:       token.GetDetails(),
+		ConfirmationHeight: funcs.MustOk(keeper.GetRequiredConfirmationHeight(ctx)),
+		PollParticipants:   pollParticipants,
+	}))
 
 	return &types.ConfirmTokenResponse{}, nil
 }
@@ -306,24 +292,20 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, fmt.Errorf("no burner info found for address %s", req.BurnerAddress.Hex())
 	}
 
-	pollID, err := s.initializePoll(ctx, chain, req.TxID)
+	pollParticipants, err := s.initializePoll(ctx, chain, req.TxID)
 	if err != nil {
 		return nil, err
 	}
 
 	height, _ := keeper.GetRequiredConfirmationHeight(ctx)
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(types.EventTypeDepositConfirmation,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
-			sdk.NewAttribute(types.AttributeKeyChain, chain.Name.String()),
-			sdk.NewAttribute(types.AttributeKeyTxID, req.TxID.Hex()),
-			sdk.NewAttribute(types.AttributeKeyDepositAddress, req.BurnerAddress.Hex()),
-			sdk.NewAttribute(types.AttributeKeyTokenAddress, burnerInfo.TokenAddress.Hex()),
-			sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(height, 10)),
-			sdk.NewAttribute(types.AttributeKeyPoll, pollID.String()),
-		),
-	)
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.ConfirmDepositStarted{
+		TxID:               req.TxID,
+		Chain:              chain.Name,
+		DepositAddress:     req.BurnerAddress,
+		TokenAddress:       burnerInfo.TokenAddress,
+		ConfirmationHeight: height,
+		PollParticipants:   pollParticipants,
+	}))
 
 	return &types.ConfirmDepositResponse{}, nil
 }
@@ -351,24 +333,13 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 		return nil, fmt.Errorf("axelar gateway address not set")
 	}
 
-	pollID, err := s.initializePoll(ctx, chain, req.TxID)
+	pollParticipants, err := s.initializePoll(ctx, chain, req.TxID)
 	if err != nil {
 		return nil, err
 	}
 
 	params := keeper.GetParams(ctx)
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewConfirmKeyTransfer(chain.Name, req.TxID, types.Address(gatewayAddr), params.ConfirmationHeight, pollID)))
-	// TODO: remove the legacy event
-	ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeTransferKeyConfirmation,
-		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
-		sdk.NewAttribute(types.AttributeKeyChain, chain.Name.String()),
-		sdk.NewAttribute(types.AttributeKeyTxID, req.TxID.Hex()),
-		sdk.NewAttribute(types.AttributeKeyKeyType, chain.KeyType.SimpleString()),
-		sdk.NewAttribute(types.AttributeKeyGatewayAddress, gatewayAddr.Hex()),
-		sdk.NewAttribute(types.AttributeKeyConfHeight, strconv.FormatUint(params.ConfirmationHeight, 10)),
-		sdk.NewAttribute(types.AttributeKeyPoll, pollID.String()),
-	))
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewConfirmKeyTransferStarted(chain.Name, req.TxID, gatewayAddr, params.ConfirmationHeight, pollParticipants)))
 
 	return &types.ConfirmTransferKeyResponse{}, nil
 }
@@ -712,13 +683,7 @@ func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*typ
 	s.nexus.SetChain(ctx, chain)
 	s.ForChain(chain.Name).SetParams(ctx, req.Params)
 
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(types.EventTypeNewChain,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueUpdate),
-			sdk.NewAttribute(types.AttributeKeyChain, req.Name.String()),
-		),
-	)
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.ChainAdded{Chain: req.Name}))
 
 	return &types.AddChainResponse{}, nil
 }
@@ -758,7 +723,7 @@ func (s msgServer) RetryFailedEvent(c context.Context, req *types.RetryFailedEve
 	return &types.RetryFailedEventResponse{}, nil
 }
 
-func (s msgServer) initializePoll(ctx sdk.Context, chain nexus.Chain, txID types.Hash) (vote.PollID, error) {
+func (s msgServer) initializePoll(ctx sdk.Context, chain nexus.Chain, txID types.Hash) (vote.PollParticipants, error) {
 	keeper := s.ForChain(chain.Name)
 	params := keeper.GetParams(ctx)
 	snap, err := s.snapshotter.CreateSnapshot(
@@ -769,10 +734,10 @@ func (s msgServer) initializePoll(ctx sdk.Context, chain nexus.Chain, txID types
 		params.VotingThreshold,
 	)
 	if err != nil {
-		return 0, err
+		return vote.PollParticipants{}, err
 	}
 
-	return s.voter.InitializePoll(
+	pollID, err := s.voter.InitializePoll(
 		ctx,
 		vote.NewPollBuilder(types.ModuleName, params.VotingThreshold, snap, ctx.BlockHeight()+params.RevoteLockingPeriod).
 			MinVoterCount(params.MinVoterCount).
@@ -780,7 +745,11 @@ func (s msgServer) initializePoll(ctx sdk.Context, chain nexus.Chain, txID types
 			GracePeriod(keeper.GetParams(ctx).VotingGracePeriod).
 			ModuleMetadata(&types.PollMetadata{
 				Chain: chain.Name,
-				TxID:  txID.Hex(),
+				TxID:  txID,
 			}),
 	)
+	return vote.PollParticipants{
+		PollID:       pollID,
+		Participants: snap.GetParticipantAddresses(),
+	}, err
 }

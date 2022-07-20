@@ -86,23 +86,19 @@ type AppModule struct {
 	AppModuleBasic
 	keeper      keeper.Keeper
 	snapshotter types.Snapshotter
-	voter       types.Voter
 	nexus       types.Nexus
 	staker      types.StakingKeeper
-	rewarder    types.Rewarder
 	multisig    types.MultiSigKeeper
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(k keeper.Keeper, s types.Snapshotter, v types.Voter, n types.Nexus, sk types.StakingKeeper, rewarder types.Rewarder, multisig types.MultiSigKeeper) AppModule {
+func NewAppModule(k keeper.Keeper, s types.Snapshotter, n types.Nexus, sk types.StakingKeeper, multisig types.MultiSigKeeper) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
 		snapshotter:    s,
-		voter:          v,
 		nexus:          n,
 		staker:         sk,
-		rewarder:       rewarder,
 		multisig:       multisig,
 	}
 }
@@ -128,7 +124,7 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.Raw
 
 // Route returns the module's route
 func (am AppModule) Route() sdk.Route {
-	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper, am.snapshotter, am.nexus, am.voter, am.staker, am.rewarder))
+	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper, am.snapshotter, am.staker, am.multisig))
 }
 
 // QuerierRoute returns this module's query route
@@ -149,7 +145,7 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 
 // LegacyQuerierHandler returns this module's Querier.
 func (am AppModule) LegacyQuerierHandler(*codec.LegacyAmino) sdk.Querier {
-	return keeper.NewQuerier(am.keeper, am.voter, am.snapshotter, am.staker, am.nexus)
+	return keeper.NewQuerier(am.keeper, am.snapshotter, am.staker, am.nexus)
 }
 
 // BeginBlock executes all state transitions this module requires at the beginning of each new block
@@ -159,7 +155,7 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 
 // EndBlock executes all state transitions this module requires at the end of each new block
 func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
-	return EndBlocker(ctx, req, am.keeper, am.voter, am.nexus, am.snapshotter)
+	return EndBlocker(ctx, req, am.keeper, am.multisig, am.nexus)
 }
 
 // ConsensusVersion implements AppModule/ConsensusVersion.

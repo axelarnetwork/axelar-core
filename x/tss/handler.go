@@ -11,8 +11,8 @@ import (
 )
 
 // NewHandler returns the handler for the tss module
-func NewHandler(k keeper.Keeper, s types.Snapshotter, n types.Nexus, v types.Voter, staker types.StakingKeeper, rewarder types.Rewarder) sdk.Handler {
-	server := keeper.NewMsgServerImpl(k, s, staker, v, n, rewarder)
+func NewHandler(k keeper.Keeper, s types.Snapshotter, staker types.StakingKeeper, multisig types.MultiSigKeeper) sdk.Handler {
+	server := keeper.NewMsgServerImpl(k, s, staker, multisig)
 	h := func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
