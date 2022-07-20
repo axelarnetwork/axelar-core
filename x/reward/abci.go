@@ -61,13 +61,13 @@ func excludeJailedOrTombstoned(ctx sdk.Context, slasher types.Slasher, snapshott
 		return isActive
 	}
 
-	filter := funcs.And(
-		funcs.Not(snapshot.ValidatorI.IsJailed),
-		funcs.Not(isTombstoned),
-		isProxyActive,
+	filter := funcs.Or(
+		snapshot.ValidatorI.IsJailed,
+		isTombstoned,
+		funcs.Not(isProxyActive),
 	)
 
-	return !filter(v)
+	return filter(v)
 }
 
 func handleKeyMgmtInflation(ctx sdk.Context, k types.Rewarder, m types.Minter, s types.Staker, slasher types.Slasher, mSig types.MultiSig, ss types.Snapshotter) {
