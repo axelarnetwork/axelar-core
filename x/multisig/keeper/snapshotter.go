@@ -44,10 +44,25 @@ func (sc SnapshotCreator) GetOperator(ctx sdk.Context, proxy sdk.AccAddress) sdk
 
 // CreateSnapshot creates a snapshot for multisig keygen
 func (sc SnapshotCreator) CreateSnapshot(ctx sdk.Context, threshold utils.Threshold) (snapshot.Snapshot, error) {
+	isTombstoned := func(v snapshot.ValidatorI) bool {
+		consAdd, err := v.GetConsAddr()
+		if err != nil {
+			return true
+		}
+
+		return sc.slasher.IsTombstoned(ctx, consAdd)
+	}
+
+	isProxyActive := func(v snapshot.ValidatorI) bool {
+		_, isActive := sc.snapshotter.GetProxy(ctx, v.GetOperator())
+
+		return isActive
+	}
+
 	filter := funcs.And(
 		funcs.Not(snapshot.ValidatorI.IsJailed),
-		funcs.Not(snapshot.IsTombstoned(ctx, sc.slasher)),
-		snapshot.IsProxyActive(ctx, sc.snapshotter.GetProxy),
+		funcs.Not(isTombstoned),
+		isProxyActive,
 	)
 
 	candidates := slices.Map(sc.staker.GetBondedValidatorsByPower(ctx), stakingTypes.Validator.GetOperator)

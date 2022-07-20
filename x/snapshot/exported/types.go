@@ -20,15 +20,6 @@ import (
 
 //go:generate moq -out ./mock/types.go -pkg mock . SDKValidator Snapshotter ValidatorI
 
-// ValidatorI provides necessary functions to the validator information
-type ValidatorI interface {
-	GetConsensusPower(sdk.Int) int64       // validation power in tendermint
-	GetOperator() sdk.ValAddress           // operator address to receive/return validators coins
-	GetConsAddr() (sdk.ConsAddress, error) // validation consensus address
-	IsJailed() bool                        // whether the validator is jailed
-	IsBonded() bool                        // whether the validator is bonded
-}
-
 // QuadraticWeightFunc returns floor(sqrt(consensusPower)) as the weight
 func QuadraticWeightFunc(consensusPower sdk.Uint) sdk.Uint {
 	bigInt := consensusPower.BigInt()
@@ -36,30 +27,13 @@ func QuadraticWeightFunc(consensusPower sdk.Uint) sdk.Uint {
 	return sdk.NewUintFromBigInt(bigInt.Sqrt(bigInt))
 }
 
-// Slasher provides necessary functions to the validator information
-type Slasher interface {
-	IsTombstoned(ctx sdk.Context, consAddr sdk.ConsAddress) bool // whether a validator is tombstoned
-}
-
-// IsTombstoned returns a function that checks if validator is tombstoned
-func IsTombstoned(ctx sdk.Context, slasher Slasher) func(ValidatorI) bool {
-	return func(v ValidatorI) bool {
-		consAdd, err := v.GetConsAddr()
-		if err != nil {
-			return true
-		}
-
-		return slasher.IsTombstoned(ctx, consAdd)
-	}
-}
-
-// IsProxyActive returns a function that checks if validator proxy is active
-func IsProxyActive(ctx sdk.Context, proxyFunc func(sdk.Context, sdk.ValAddress) (sdk.AccAddress, bool)) func(ValidatorI) bool {
-	return func(v ValidatorI) bool {
-		_, isActive := proxyFunc(ctx, v.GetOperator())
-
-		return isActive
-	}
+// ValidatorI provides necessary functions to the validator information
+type ValidatorI interface {
+	GetConsensusPower(sdk.Int) int64       // validation power in tendermint
+	GetOperator() sdk.ValAddress           // operator address to receive/return validators coins
+	GetConsAddr() (sdk.ConsAddress, error) // validation consensus address
+	IsJailed() bool                        // whether the validator is jailed
+	IsBonded() bool                        // whether the validator is bonded
 }
 
 // NewSnapshot is the constructor of Snapshot
