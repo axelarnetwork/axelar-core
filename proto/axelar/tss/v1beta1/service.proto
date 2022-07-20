@@ -13,14 +13,6 @@ option (gogoproto.goproto_registration) = true;
 
 // Msg defines the tss Msg service.
 service MsgService {
-  rpc RegisterExternalKeys(tss.v1beta1.RegisterExternalKeysRequest)
-      returns (tss.v1beta1.RegisterExternalKeysResponse) {
-    option (google.api.http) = {
-      post : "/axelar/tss/register_external_keys"
-      body : "*"
-    };
-  }
-
   rpc HeartBeat(tss.v1beta1.HeartBeatRequest)
       returns (tss.v1beta1.HeartBeatResponse) {
     option (google.api.http) = {

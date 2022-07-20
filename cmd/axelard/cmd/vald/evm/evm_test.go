@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"hash"
 	"math/big"
-	"strconv"
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -32,7 +31,6 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
-	tmEvents "github.com/axelarnetwork/tm-events/events"
 	"github.com/axelarnetwork/utils/funcs"
 	. "github.com/axelarnetwork/utils/test"
 )
@@ -251,10 +249,11 @@ func TestMgr_validate(t *testing.T) {
 func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 	var (
 		mgr            *Mgr
-		attributes     map[string]string
+		event          *evmTypes.ConfirmDepositStarted
 		rpc            *mock.ClientMock
 		broadcaster    *mock2.BroadcasterMock
 		encodingConfig params.EncodingConfig
+		valAddr        sdk.ValAddress
 	)
 	setup := func() {
 		encodingConfig = app.MakeEncodingConfig()
@@ -266,13 +265,17 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 		blockNumber := rand.PInt64Gen().Where(func(i int64) bool { return i != 0 }).Next() // restrict to int64 so the block number in the receipt doesn't overflow
 		confHeight := rand.I64Between(0, blockNumber-1)
 		amount := rand.PosI64() // restrict to int64 so the amount in the receipt doesn't overflow
-		attributes = map[string]string{
-			evmTypes.AttributeKeyChain:          "Ethereum",
-			evmTypes.AttributeKeyTxID:           common.Bytes2Hex(rand.Bytes(common.HashLength)),
-			evmTypes.AttributeKeyDepositAddress: common.Bytes2Hex(burnAddrBytes),
-			evmTypes.AttributeKeyTokenAddress:   common.Bytes2Hex(tokenAddrBytes),
-			evmTypes.AttributeKeyConfHeight:     strconv.FormatUint(uint64(confHeight), 10),
-			evmTypes.AttributeKeyPoll:           pollID.String(),
+		valAddr = rand.ValAddr()
+		event = &types.ConfirmDepositStarted{
+			TxID:               types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
+			Chain:              "Ethereum",
+			DepositAddress:     types.Address(common.BytesToAddress(burnAddrBytes)),
+			TokenAddress:       types.Address(common.BytesToAddress(tokenAddrBytes)),
+			ConfirmationHeight: uint64(confHeight),
+			PollParticipants: vote.PollParticipants{
+				PollID:       pollID,
+				Participants: []sdk.ValAddress{valAddr},
+			},
 		}
 
 		tx := geth.NewTransaction(0, common.BytesToAddress(rand.Bytes(common.HashLength)), big.NewInt(0), 21000, big.NewInt(1), []byte{})
@@ -341,13 +344,13 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 		}
 		evmMap := make(map[string]evmRpc.Client)
 		evmMap["ethereum"] = rpc
-		mgr = NewMgr(evmMap, client.Context{}, broadcaster, log.TestingLogger(), cdc)
+		mgr = NewMgr(evmMap, client.Context{}, broadcaster, log.TestingLogger(), cdc, valAddr)
 	}
 	repeats := 20
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
 
-		err := mgr.ProcessDepositConfirmation(tmEvents.Event{Attributes: attributes})
+		err := mgr.ProcessDepositConfirmation(event)
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
@@ -358,22 +361,11 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 		assert.Len(t, actualVoteEvents.Events, 1)
 	}).Repeat(repeats))
 
-	t.Run("missing attributes", testutils.Func(func(t *testing.T) {
-		setup()
-		for key := range attributes {
-			delete(attributes, key)
-
-			err := mgr.ProcessDepositConfirmation(tmEvents.Event{Attributes: attributes})
-			assert.Error(t, err)
-			assert.Len(t, broadcaster.BroadcastCalls(), 0)
-		}
-	}).Repeat(repeats))
-
 	t.Run("no tx receipt", testutils.Func(func(t *testing.T) {
 		setup()
 		rpc.TransactionReceiptFunc = func(context.Context, common.Hash) (*geth.Receipt, error) { return nil, fmt.Errorf("error") }
 
-		err := mgr.ProcessDepositConfirmation(tmEvents.Event{Attributes: attributes})
+		err := mgr.ProcessDepositConfirmation(event)
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
@@ -390,7 +382,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 			return 0, fmt.Errorf("error")
 		}
 
-		err := mgr.ProcessDepositConfirmation(tmEvents.Event{Attributes: attributes})
+		err := mgr.ProcessDepositConfirmation(event)
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
@@ -405,11 +397,12 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 	var (
 		mgr              *Mgr
-		attributes       map[string]string
+		event            *evmTypes.ConfirmTokenStarted
 		rpc              *mock.ClientMock
 		broadcaster      *mock2.BroadcasterMock
 		gatewayAddrBytes []byte
 		encodingConfig   params.EncodingConfig
+		valAddr          sdk.ValAddress
 	)
 	setup := func() {
 		encodingConfig = app.MakeEncodingConfig()
@@ -422,14 +415,18 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		confHeight := rand.I64Between(0, blockNumber-1)
 
 		symbol := rand.StrBetween(5, 20)
-		attributes = map[string]string{
-			evmTypes.AttributeKeyChain:          "Ethereum",
-			evmTypes.AttributeKeyTxID:           common.Bytes2Hex(rand.Bytes(common.HashLength)),
-			evmTypes.AttributeKeyGatewayAddress: common.Bytes2Hex(gatewayAddrBytes),
-			evmTypes.AttributeKeyTokenAddress:   common.Bytes2Hex(tokenAddrBytes),
-			evmTypes.AttributeKeySymbol:         symbol,
-			evmTypes.AttributeKeyConfHeight:     strconv.FormatUint(uint64(confHeight), 10),
-			evmTypes.AttributeKeyPoll:           pollID.String(),
+		valAddr = rand.ValAddr()
+		event = &types.ConfirmTokenStarted{
+			TxID:               types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
+			Chain:              "Ethereum",
+			GatewayAddress:     types.Address(common.BytesToAddress(gatewayAddrBytes)),
+			TokenAddress:       types.Address(common.BytesToAddress(tokenAddrBytes)),
+			TokenDetails:       types.TokenDetails{Symbol: symbol},
+			ConfirmationHeight: uint64(confHeight),
+			PollParticipants: vote.PollParticipants{
+				PollID:       pollID,
+				Participants: []sdk.ValAddress{valAddr},
+			},
 		}
 
 		tx := geth.NewTransaction(0, common.BytesToAddress(rand.Bytes(common.HashLength)), big.NewInt(0), 21000, big.NewInt(1), []byte{})
@@ -464,14 +461,14 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		}
 		evmMap := make(map[string]evmRpc.Client)
 		evmMap["ethereum"] = rpc
-		mgr = NewMgr(evmMap, client.Context{}, broadcaster, log.TestingLogger(), cdc)
+		mgr = NewMgr(evmMap, client.Context{}, broadcaster, log.TestingLogger(), cdc, valAddr)
 	}
 
 	repeats := 20
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
 
-		err := mgr.ProcessTokenConfirmation(tmEvents.Event{Attributes: attributes})
+		err := mgr.ProcessTokenConfirmation(event)
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
@@ -482,22 +479,11 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		assert.Len(t, actualVoteEvents.Events, 1)
 	}).Repeat(repeats))
 
-	t.Run("missing attributes", testutils.Func(func(t *testing.T) {
-		setup()
-		for key := range attributes {
-			delete(attributes, key)
-
-			err := mgr.ProcessTokenConfirmation(tmEvents.Event{Attributes: attributes})
-			assert.Error(t, err)
-			assert.Len(t, broadcaster.BroadcastCalls(), 0)
-		}
-	}).Repeat(repeats))
-
 	t.Run("no tx receipt", testutils.Func(func(t *testing.T) {
 		setup()
 		rpc.TransactionReceiptFunc = func(context.Context, common.Hash) (*geth.Receipt, error) { return nil, fmt.Errorf("error") }
 
-		err := mgr.ProcessTokenConfirmation(tmEvents.Event{Attributes: attributes})
+		err := mgr.ProcessTokenConfirmation(event)
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
@@ -514,7 +500,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 			return 0, fmt.Errorf("error")
 		}
 
-		err := mgr.ProcessTokenConfirmation(tmEvents.Event{Attributes: attributes})
+		err := mgr.ProcessTokenConfirmation(event)
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
@@ -539,7 +525,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		receipt.Logs = append(receipt.Logs[:correctLogIdx], receipt.Logs[correctLogIdx+1:]...)
 		rpc.TransactionReceiptFunc = func(context.Context, common.Hash) (*geth.Receipt, error) { return receipt, nil }
 
-		err := mgr.ProcessTokenConfirmation(tmEvents.Event{Attributes: attributes})
+		err := mgr.ProcessTokenConfirmation(event)
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
@@ -562,7 +548,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		}
 		rpc.TransactionReceiptFunc = func(context.Context, common.Hash) (*geth.Receipt, error) { return receipt, nil }
 
-		err := mgr.ProcessTokenConfirmation(tmEvents.Event{Attributes: attributes})
+		err := mgr.ProcessTokenConfirmation(event)
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
@@ -577,13 +563,14 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 	var (
 		mgr            *Mgr
-		event          *types.ConfirmKeyTransfer
+		event          *types.ConfirmKeyTransferStarted
 		rpc            *mock.ClientMock
 		broadcaster    *mock2.BroadcasterMock
 		txID           types.Hash
 		gatewayAddress types.Address
 		pollID         vote.PollID
 		txReceipt      *geth.Receipt
+		valAddr        sdk.ValAddress
 	)
 
 	givenEvmMgr := Given("EVM mgr", func() {
@@ -593,8 +580,8 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 		}
 		evmMap := make(map[string]evmRpc.Client)
 		evmMap["ethereum"] = rpc
-
-		mgr = NewMgr(evmMap, client.Context{}, broadcaster, log.TestingLogger(), app.MakeEncodingConfig().Amino)
+		valAddr = rand.ValAddr()
+		mgr = NewMgr(evmMap, client.Context{}, broadcaster, log.TestingLogger(), app.MakeEncodingConfig().Amino, valAddr)
 	})
 
 	givenTxReceiptAndBlockAreFound := Given("tx receipt and block can be found", func() {
@@ -633,12 +620,15 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 	givenEventConfirmKeyTransfer := Given("event confirm key transfer", func() {
 		gatewayAddress = types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength)))
 		pollID = vote.PollID(rand.PosI64())
-		event = types.NewConfirmKeyTransfer(
+		event = types.NewConfirmKeyTransferStarted(
 			exported.Ethereum.Name,
 			txID,
 			gatewayAddress,
 			evmTypes.DefaultParams()[0].ConfirmationHeight,
-			pollID,
+			vote.PollParticipants{
+				PollID:       pollID,
+				Participants: []sdk.ValAddress{valAddr},
+			},
 		)
 	})
 
@@ -708,7 +698,7 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 					actual := assertAndGetVoteEvents(t, false)
 					assert.Equal(t, exported.Ethereum.Name, actual.Chain)
 					assert.Equal(t, exported.Ethereum.Name, actual.Events[0].Chain)
-					assert.Equal(t, txID, actual.Events[0].TxId)
+					assert.Equal(t, txID, actual.Events[0].TxID)
 					assert.EqualValues(t, 1, actual.Events[0].Index)
 					assert.IsType(t, &types.Event_MultisigOperatorshipTransferred{}, actual.Events[0].Event)
 

@@ -162,7 +162,7 @@ func randTransferEvents(n int) []types.Event {
 		}
 		events[i] = types.Event{
 			Chain: evmChain,
-			TxId:  types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
+			TxID:  types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
 			Index: uint64(rand.I64Between(1, 50)),
 			Event: &types.Event_Transfer{
 				Transfer: &transfer,

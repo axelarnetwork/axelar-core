@@ -134,7 +134,7 @@ func TestQueryDepositState(t *testing.T) {
 
 		chainKeeper = &mock.ChainKeeperMock{
 			GetNameFunc: func() string { return evmChain.String() },
-			GetDepositFunc: func(_ sdk.Context, txID common.Hash, burnerAddr common.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
+			GetDepositFunc: func(_ sdk.Context, txID types.Hash, burnerAddr types.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
 				return types.ERC20Deposit{}, 0, false
 			},
 		}
@@ -182,8 +182,8 @@ func TestQueryDepositState(t *testing.T) {
 
 	t.Run("deposit confirmed", testutils.Func(func(t *testing.T) {
 		setup()
-		chainKeeper.GetDepositFunc = func(_ sdk.Context, txID common.Hash, burnerAddr common.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
-			if types.Hash(txID) == expectedDeposit.TxID && types.Address(burnerAddr) == expectedDeposit.BurnerAddress {
+		chainKeeper.GetDepositFunc = func(_ sdk.Context, txID types.Hash, burnerAddr types.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
+			if txID == expectedDeposit.TxID && burnerAddr == expectedDeposit.BurnerAddress {
 				return expectedDeposit, types.DepositStatus_Confirmed, true
 			}
 			return types.ERC20Deposit{}, 0, false
@@ -210,8 +210,8 @@ func TestQueryDepositState(t *testing.T) {
 
 	t.Run("deposit burned", testutils.Func(func(t *testing.T) {
 		setup()
-		chainKeeper.GetDepositFunc = func(_ sdk.Context, txID common.Hash, burnerAddr common.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
-			if types.Hash(txID) == expectedDeposit.TxID && types.Address(burnerAddr) == expectedDeposit.BurnerAddress {
+		chainKeeper.GetDepositFunc = func(_ sdk.Context, txID types.Hash, burnerAddr types.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
+			if txID == expectedDeposit.TxID && burnerAddr == expectedDeposit.BurnerAddress {
 				return expectedDeposit, types.DepositStatus_Burned, true
 			}
 			return types.ERC20Deposit{}, 0, false
@@ -343,16 +343,16 @@ func TestGateway(t *testing.T) {
 		ctx           sdk.Context
 		expectedRes   types.GatewayAddressResponse
 		grpcQuerier   *evmKeeper.Querier
-		address       common.Address
+		address       types.Address
 		existingChain nexus.ChainName
 	)
 
 	setup := func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
-		address = common.BytesToAddress([]byte{0})
+		address = types.Address(common.BytesToAddress([]byte{0}))
 
 		chainKeeper = &mock.ChainKeeperMock{
-			GetGatewayAddressFunc: func(ctx sdk.Context) (common.Address, bool) {
+			GetGatewayAddressFunc: func(ctx sdk.Context) (types.Address, bool) {
 				return address, true
 			},
 		}
@@ -405,7 +405,7 @@ func TestGateway(t *testing.T) {
 		setup()
 
 		chainKeeper = &mock.ChainKeeperMock{
-			GetGatewayAddressFunc: func(ctx sdk.Context) (common.Address, bool) {
+			GetGatewayAddressFunc: func(ctx sdk.Context) (types.Address, bool) {
 				return address, false
 			},
 		}
@@ -536,7 +536,7 @@ func TestEvent(t *testing.T) {
 				if eventID == types.EventID(existingEventID) {
 					return types.Event{
 						Chain:  existingChain,
-						TxId:   types.Hash(common.HexToHash(existingTxID)),
+						TxID:   types.Hash(common.HexToHash(existingTxID)),
 						Index:  0,
 						Status: existingStatus,
 						Event:  nil,
@@ -570,7 +570,7 @@ func TestEvent(t *testing.T) {
 			expectedResp = types.EventResponse{
 				Event: &types.Event{
 					Chain:  existingChain,
-					TxId:   types.Hash(common.HexToHash(existingTxID)),
+					TxID:   types.Hash(common.HexToHash(existingTxID)),
 					Index:  0,
 					Status: existingStatus,
 					Event:  nil,

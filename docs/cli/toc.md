@@ -218,7 +218,7 @@
     - [encode \[file\]](axelard_tx_encode.md)	 - Encode transactions generated offline
     - [evidence](axelard_tx_evidence.md)	 - Evidence transaction subcommands
     - [evm](axelard_tx_evm.md)	 - evm transactions subcommands
-      - [add-chain \[name\] \[key type\] \[chain config\]](axelard_tx_evm_add-chain.md)	 - Add a new EVM chain
+      - [add-chain \[name\] \[chain config\]](axelard_tx_evm_add-chain.md)	 - Add a new EVM chain
       - [confirm-erc20-deposit \[chain\] \[txID\] \[burnerAddr\]](axelard_tx_evm_confirm-erc20-deposit.md)	 - Confirm ERC20 deposits in an EVM chain transaction to a burner address
       - [confirm-erc20-token \[chain\] \[origin chain\] \[origin asset\] \[txID\]](axelard_tx_evm_confirm-erc20-token.md)	 - Confirm an ERC20 token deployment in an EVM chain transaction for a given asset of some origin chain and gateway address
       - [confirm-gateway-tx \[chain\] \[txID\]](axelard_tx_evm_confirm-gateway-tx.md)	 - Confirm a gateway transaction in an EVM chain

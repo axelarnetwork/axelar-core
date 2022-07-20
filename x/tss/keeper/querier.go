@@ -31,7 +31,7 @@ const (
 )
 
 // NewQuerier returns a new querier for the TSS module
-func NewQuerier(k types.TSSKeeper, v types.Voter, s types.Snapshotter, staking types.StakingKeeper, n types.Nexus) sdk.Querier {
+func NewQuerier(k types.TSSKeeper, s types.Snapshotter, staking types.StakingKeeper, n types.Nexus) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
 		var res []byte
 		var err error
@@ -39,14 +39,14 @@ func NewQuerier(k types.TSSKeeper, v types.Voter, s types.Snapshotter, staking t
 		case QExternalKeyID:
 			res, err = QueryExternalKeyID(ctx, k, n, path[1])
 		case QuerySignature:
-			res, err = querySignatureStatus(ctx, k, v, path[1])
+			res, err = querySignatureStatus(ctx, k, path[1])
 		case QueryKey:
 			keyID := exported.KeyID(path[1])
 			err = keyID.Validate()
 			if err != nil {
 				break
 			}
-			res, err = queryKeyStatus(ctx, k, v, keyID)
+			res, err = queryKeyStatus(ctx, k, keyID)
 		case QueryRecovery:
 			keyID := exported.KeyID(path[1])
 			err = keyID.Validate()
@@ -146,7 +146,7 @@ func queryRecovery(ctx sdk.Context, k types.TSSKeeper, s types.Snapshotter, keyI
 	return resp.Marshal()
 }
 
-func querySignatureStatus(ctx sdk.Context, k types.TSSKeeper, v types.Voter, sigID string) ([]byte, error) {
+func querySignatureStatus(ctx sdk.Context, k types.TSSKeeper, sigID string) ([]byte, error) {
 	if sig, status := k.GetSig(ctx, sigID); status == exported.SigStatus_Signed {
 		// poll was successful
 		switch signature := sig.GetSig().(type) {
@@ -194,7 +194,7 @@ func querySignatureStatus(ctx sdk.Context, k types.TSSKeeper, v types.Voter, sig
 	return nil, fmt.Errorf("signature not found")
 }
 
-func queryKeyStatus(ctx sdk.Context, k types.TSSKeeper, v types.Voter, keyID exported.KeyID) ([]byte, error) {
+func queryKeyStatus(ctx sdk.Context, k types.TSSKeeper, keyID exported.KeyID) ([]byte, error) {
 	if key, ok := k.GetKey(ctx, keyID); ok {
 		switch pubKey := key.GetPublicKey().(type) {
 		// poll was successful
