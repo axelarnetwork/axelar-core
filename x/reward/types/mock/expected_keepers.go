@@ -888,6 +888,77 @@ func (mock *StakerMock) ValidatorCalls() []struct {
 	return calls
 }
 
+// Ensure, that SlasherMock does implement rewardtypes.Slasher.
+// If this is not the case, regenerate this file with moq.
+var _ rewardtypes.Slasher = &SlasherMock{}
+
+// SlasherMock is a mock implementation of rewardtypes.Slasher.
+//
+// 	func TestSomethingThatUsesSlasher(t *testing.T) {
+//
+// 		// make and configure a mocked rewardtypes.Slasher
+// 		mockedSlasher := &SlasherMock{
+// 			IsTombstonedFunc: func(ctx cosmossdktypes.Context, consAddr cosmossdktypes.ConsAddress) bool {
+// 				panic("mock out the IsTombstoned method")
+// 			},
+// 		}
+//
+// 		// use mockedSlasher in code that requires rewardtypes.Slasher
+// 		// and then make assertions.
+//
+// 	}
+type SlasherMock struct {
+	// IsTombstonedFunc mocks the IsTombstoned method.
+	IsTombstonedFunc func(ctx cosmossdktypes.Context, consAddr cosmossdktypes.ConsAddress) bool
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// IsTombstoned holds details about calls to the IsTombstoned method.
+		IsTombstoned []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// ConsAddr is the consAddr argument value.
+			ConsAddr cosmossdktypes.ConsAddress
+		}
+	}
+	lockIsTombstoned sync.RWMutex
+}
+
+// IsTombstoned calls IsTombstonedFunc.
+func (mock *SlasherMock) IsTombstoned(ctx cosmossdktypes.Context, consAddr cosmossdktypes.ConsAddress) bool {
+	if mock.IsTombstonedFunc == nil {
+		panic("SlasherMock.IsTombstonedFunc: method is nil but Slasher.IsTombstoned was just called")
+	}
+	callInfo := struct {
+		Ctx      cosmossdktypes.Context
+		ConsAddr cosmossdktypes.ConsAddress
+	}{
+		Ctx:      ctx,
+		ConsAddr: consAddr,
+	}
+	mock.lockIsTombstoned.Lock()
+	mock.calls.IsTombstoned = append(mock.calls.IsTombstoned, callInfo)
+	mock.lockIsTombstoned.Unlock()
+	return mock.IsTombstonedFunc(ctx, consAddr)
+}
+
+// IsTombstonedCalls gets all the calls that were made to IsTombstoned.
+// Check the length with:
+//     len(mockedSlasher.IsTombstonedCalls())
+func (mock *SlasherMock) IsTombstonedCalls() []struct {
+	Ctx      cosmossdktypes.Context
+	ConsAddr cosmossdktypes.ConsAddress
+} {
+	var calls []struct {
+		Ctx      cosmossdktypes.Context
+		ConsAddr cosmossdktypes.ConsAddress
+	}
+	mock.lockIsTombstoned.RLock()
+	calls = mock.calls.IsTombstoned
+	mock.lockIsTombstoned.RUnlock()
+	return calls
+}
+
 // Ensure, that BankerMock does implement rewardtypes.Banker.
 // If this is not the case, regenerate this file with moq.
 var _ rewardtypes.Banker = &BankerMock{}
