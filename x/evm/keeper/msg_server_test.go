@@ -14,6 +14,7 @@ import (
 	evmTypes "github.com/ethereum/go-ethereum/core/types"
 	evmCrypto "github.com/ethereum/go-ethereum/crypto"
 	evmParams "github.com/ethereum/go-ethereum/params"
+	"github.com/gogo/protobuf/proto"
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
@@ -103,8 +104,8 @@ func TestSetGateway(t *testing.T) {
 			return multisigTestUtils.KeyID(), true
 		}
 		baseKeeper.ForChainFunc = func(chain nexus.ChainName) types.ChainKeeper { return chainKeeper }
-		chainKeeper.GetGatewayAddressFunc = func(ctx sdk.Context) (common.Address, bool) {
-			return common.Address(evmTestUtils.RandomAddress()), true
+		chainKeeper.GetGatewayAddressFunc = func(ctx sdk.Context) (types.Address, bool) {
+			return evmTestUtils.RandomAddress(), true
 		}
 
 		_, err := msgServer.SetGateway(sdk.WrapSDKContext(ctx), req)
@@ -128,8 +129,8 @@ func TestSetGateway(t *testing.T) {
 			return multisigTestUtils.KeyID(), true
 		}
 		baseKeeper.ForChainFunc = func(chain nexus.ChainName) types.ChainKeeper { return chainKeeper }
-		chainKeeper.GetGatewayAddressFunc = func(ctx sdk.Context) (common.Address, bool) {
-			return common.Address{}, false
+		chainKeeper.GetGatewayAddressFunc = func(ctx sdk.Context) (types.Address, bool) {
+			return types.Address{}, false
 		}
 		chainKeeper.SetGatewayFunc = func(ctx sdk.Context, address types.Address) {}
 
@@ -589,7 +590,7 @@ func TestLink_Success(t *testing.T) {
 	}
 
 	recipient := nexus.CrossChainAddress{Address: rand.ValAddr().String(), Chain: axelarnet.Axelarnet}
-	burnAddr, salt, err := k.ForChain(chain).GetBurnerAddressAndSalt(ctx, token, recipient.Address, common.HexToAddress(gateway))
+	burnAddr, salt, err := k.ForChain(chain).GetBurnerAddressAndSalt(ctx, token, recipient.Address, types.Address(common.HexToAddress(gateway)))
 	if err != nil {
 		panic(err)
 	}
@@ -748,8 +749,8 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 				return utils.Threshold{Numerator: 15, Denominator: 100}, true
 			},
 			GetMinVoterCountFunc: func(sdk.Context) (int64, bool) { return 15, true },
-			GetGatewayAddressFunc: func(sdk.Context) (common.Address, bool) {
-				return common.BytesToAddress(rand.Bytes(common.AddressLength)), true
+			GetGatewayAddressFunc: func(sdk.Context) (types.Address, bool) {
+				return types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))), true
 			},
 			GetRevoteLockingPeriodFunc:        func(sdk.Context) (int64, bool) { return rand.PosI64(), true },
 			GetRequiredConfirmationHeightFunc: func(sdk.Context) (uint64, bool) { return mathRand.Uint64(), true },
@@ -809,7 +810,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 		_, err := server.ConfirmToken(sdk.WrapSDKContext(ctx), msg)
 
 		assert.NoError(t, err)
-		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeTokenConfirmation }), 1)
+		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == proto.MessageName(&types.ConfirmTokenStarted{}) }), 1)
 	}).Repeat(repeats))
 
 	t.Run("unknown chain", testutils.Func(func(t *testing.T) {
@@ -926,7 +927,7 @@ func TestAddChain(t *testing.T) {
 		assert.Equal(t, params, chaink.SetParamsCalls()[0].P)
 		assert.Equal(t, name, n.SetChainCalls()[0].Chain.Name)
 
-		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeNewChain }), 1)
+		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == proto.MessageName(&types.ChainAdded{}) }), 1)
 
 	}).Repeat(repeats))
 
@@ -964,7 +965,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			},
 		}
 		chaink = &mock.ChainKeeperMock{
-			GetDepositFunc: func(sdk.Context, common.Hash, common.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
+			GetDepositFunc: func(sdk.Context, types.Hash, types.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
 				return types.ERC20Deposit{}, 0, false
 			},
 			GetBurnerInfoFunc: func(sdk.Context, types.Address) *types.BurnerInfo {
@@ -1029,7 +1030,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 
 		assert.NoError(t, err)
-		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == types.EventTypeDepositConfirmation }), 1)
+		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == proto.MessageName(&types.ConfirmDepositStarted{}) }), 1)
 		assert.Equal(t, len(v.InitializePollCalls()), 1)
 	}).Repeat(repeats))
 
@@ -1090,8 +1091,8 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 					CommandsGasLimit:    5000000,
 				}
 			},
-			GetGatewayAddressFunc: func(sdk.Context) (common.Address, bool) {
-				return common.BytesToAddress(rand.Bytes(common.AddressLength)), true
+			GetGatewayAddressFunc: func(sdk.Context) (types.Address, bool) {
+				return types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))), true
 			},
 			GetChainIDByNetworkFunc: func(ctx sdk.Context, network string) (sdk.Int, bool) {
 				return sdk.NewInt(rand.I64Between(1, 1000)), true
@@ -1147,7 +1148,7 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 
 	t.Run("should return error when gateway is not set", testutils.Func(func(t *testing.T) {
 		setup()
-		chaink.GetGatewayAddressFunc = func(sdk.Context) (common.Address, bool) { return common.Address{}, false }
+		chaink.GetGatewayAddressFunc = func(sdk.Context) (types.Address, bool) { return types.Address{}, false }
 
 		_, err := server.CreateDeployToken(sdk.WrapSDKContext(ctx), msg)
 

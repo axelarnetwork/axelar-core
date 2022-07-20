@@ -109,15 +109,20 @@
     - [MsgService](#axelar.axelarnet.v1beta1.MsgService)
     - [QueryService](#axelar.axelarnet.v1beta1.QueryService)
   
-- [axelar/evm/v1beta1/events.proto](#axelar/evm/v1beta1/events.proto)
-    - [ConfirmKeyTransfer](#axelar.evm.v1beta1.ConfirmKeyTransfer)
-    - [PollExpired](#axelar.evm.v1beta1.PollExpired)
-    - [PollFailed](#axelar.evm.v1beta1.PollFailed)
+- [axelar/snapshot/exported/v1beta1/types.proto](#axelar/snapshot/exported/v1beta1/types.proto)
+    - [Participant](#axelar.snapshot.exported.v1beta1.Participant)
+    - [Snapshot](#axelar.snapshot.exported.v1beta1.Snapshot)
+    - [Snapshot.ParticipantsEntry](#axelar.snapshot.exported.v1beta1.Snapshot.ParticipantsEntry)
+    - [Validator](#axelar.snapshot.exported.v1beta1.Validator)
   
-- [axelar/utils/v1beta1/queuer.proto](#axelar/utils/v1beta1/queuer.proto)
-    - [QueueState](#axelar.utils.v1beta1.QueueState)
-    - [QueueState.Item](#axelar.utils.v1beta1.QueueState.Item)
-    - [QueueState.ItemsEntry](#axelar.utils.v1beta1.QueueState.ItemsEntry)
+    - [ValidatorIllegibility](#axelar.snapshot.exported.v1beta1.ValidatorIllegibility)
+  
+- [axelar/vote/exported/v1beta1/types.proto](#axelar/vote/exported/v1beta1/types.proto)
+    - [PollKey](#axelar.vote.exported.v1beta1.PollKey)
+    - [PollMetadata](#axelar.vote.exported.v1beta1.PollMetadata)
+    - [PollParticipants](#axelar.vote.exported.v1beta1.PollParticipants)
+  
+    - [PollState](#axelar.vote.exported.v1beta1.PollState)
   
 - [axelar/multisig/exported/v1beta1/types.proto](#axelar/multisig/exported/v1beta1/types.proto)
     - [MultisigState](#axelar.multisig.exported.v1beta1.MultisigState)
@@ -154,6 +159,20 @@
     - [Gateway.Status](#axelar.evm.v1beta1.Gateway.Status)
     - [SigType](#axelar.evm.v1beta1.SigType)
     - [Status](#axelar.evm.v1beta1.Status)
+  
+- [axelar/evm/v1beta1/events.proto](#axelar/evm/v1beta1/events.proto)
+    - [ChainAdded](#axelar.evm.v1beta1.ChainAdded)
+    - [ConfirmDepositStarted](#axelar.evm.v1beta1.ConfirmDepositStarted)
+    - [ConfirmGatewayTxStarted](#axelar.evm.v1beta1.ConfirmGatewayTxStarted)
+    - [ConfirmKeyTransferStarted](#axelar.evm.v1beta1.ConfirmKeyTransferStarted)
+    - [ConfirmTokenStarted](#axelar.evm.v1beta1.ConfirmTokenStarted)
+    - [PollExpired](#axelar.evm.v1beta1.PollExpired)
+    - [PollFailed](#axelar.evm.v1beta1.PollFailed)
+  
+- [axelar/utils/v1beta1/queuer.proto](#axelar/utils/v1beta1/queuer.proto)
+    - [QueueState](#axelar.utils.v1beta1.QueueState)
+    - [QueueState.Item](#axelar.utils.v1beta1.QueueState.Item)
+    - [QueueState.ItemsEntry](#axelar.utils.v1beta1.QueueState.ItemsEntry)
   
 - [axelar/evm/v1beta1/params.proto](#axelar/evm/v1beta1/params.proto)
     - [Params](#axelar.evm.v1beta1.Params)
@@ -199,20 +218,6 @@
     - [TokenInfoResponse](#axelar.evm.v1beta1.TokenInfoResponse)
   
     - [TokenType](#axelar.evm.v1beta1.TokenType)
-  
-- [axelar/snapshot/exported/v1beta1/types.proto](#axelar/snapshot/exported/v1beta1/types.proto)
-    - [Participant](#axelar.snapshot.exported.v1beta1.Participant)
-    - [Snapshot](#axelar.snapshot.exported.v1beta1.Snapshot)
-    - [Snapshot.ParticipantsEntry](#axelar.snapshot.exported.v1beta1.Snapshot.ParticipantsEntry)
-    - [Validator](#axelar.snapshot.exported.v1beta1.Validator)
-  
-    - [ValidatorIllegibility](#axelar.snapshot.exported.v1beta1.ValidatorIllegibility)
-  
-- [axelar/vote/exported/v1beta1/types.proto](#axelar/vote/exported/v1beta1/types.proto)
-    - [PollKey](#axelar.vote.exported.v1beta1.PollKey)
-    - [PollMetadata](#axelar.vote.exported.v1beta1.PollMetadata)
-  
-    - [PollState](#axelar.vote.exported.v1beta1.PollState)
   
 - [axelar/evm/v1beta1/tx.proto](#axelar/evm/v1beta1/tx.proto)
     - [AddChainRequest](#axelar.evm.v1beta1.AddChainRequest)
@@ -489,7 +494,7 @@
     - [QueryService](#axelar.tss.v1beta1.QueryService)
   
 - [axelar/vote/v1beta1/events.proto](#axelar/vote/v1beta1/events.proto)
-    - [Vote](#axelar.vote.v1beta1.Vote)
+    - [Voted](#axelar.vote.v1beta1.Voted)
   
 - [axelar/vote/v1beta1/params.proto](#axelar/vote/v1beta1/params.proto)
     - [Params](#axelar.vote.v1beta1.Params)
@@ -1890,66 +1895,101 @@ QueryService defines the gRPC querier service.
 
 
 
-<a name="axelar/evm/v1beta1/events.proto"></a>
+<a name="axelar/snapshot/exported/v1beta1/types.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/evm/v1beta1/events.proto
+## axelar/snapshot/exported/v1beta1/types.proto
 
 
 
-<a name="axelar.evm.v1beta1.ConfirmKeyTransfer"></a>
+<a name="axelar.snapshot.exported.v1beta1.Participant"></a>
 
-### ConfirmKeyTransfer
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `chain` | [string](#string) |  |  |
-| `tx_id` | [bytes](#bytes) |  |  |
-| `gateway_address` | [bytes](#bytes) |  |  |
-| `confirmation_height` | [uint64](#uint64) |  |  |
-| `poll_id` | [uint64](#uint64) |  |  |
-
-
-
-
-
-
-<a name="axelar.evm.v1beta1.PollExpired"></a>
-
-### PollExpired
+### Participant
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `tx_id` | [string](#string) |  |  |
-| `chain` | [string](#string) |  |  |
-| `poll_id` | [uint64](#uint64) |  |  |
+| `address` | [bytes](#bytes) |  |  |
+| `weight` | [bytes](#bytes) |  |  |
 
 
 
 
 
 
-<a name="axelar.evm.v1beta1.PollFailed"></a>
+<a name="axelar.snapshot.exported.v1beta1.Snapshot"></a>
 
-### PollFailed
+### Snapshot
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `tx_id` | [string](#string) |  |  |
-| `chain` | [string](#string) |  |  |
-| `poll_id` | [uint64](#uint64) |  |  |
+| `validators` | [Validator](#axelar.snapshot.exported.v1beta1.Validator) | repeated | **Deprecated.**  |
+| `total_share_count` | [bytes](#bytes) |  | **Deprecated.**  |
+| `counter` | [int64](#int64) |  | **Deprecated.**  |
+| `key_share_distribution_policy` | [axelar.tss.exported.v1beta1.KeyShareDistributionPolicy](#axelar.tss.exported.v1beta1.KeyShareDistributionPolicy) |  | **Deprecated.**  |
+| `corruption_threshold` | [int64](#int64) |  | **Deprecated.**  |
+| `timestamp` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
+| `height` | [int64](#int64) |  |  |
+| `participants` | [Snapshot.ParticipantsEntry](#axelar.snapshot.exported.v1beta1.Snapshot.ParticipantsEntry) | repeated |  |
+| `bonded_weight` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="axelar.snapshot.exported.v1beta1.Snapshot.ParticipantsEntry"></a>
+
+### Snapshot.ParticipantsEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key` | [string](#string) |  |  |
+| `value` | [Participant](#axelar.snapshot.exported.v1beta1.Participant) |  |  |
+
+
+
+
+
+
+<a name="axelar.snapshot.exported.v1beta1.Validator"></a>
+
+### Validator
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sdk_validator` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
+| `share_count` | [int64](#int64) |  |  |
 
 
 
 
 
  <!-- end messages -->
+
+
+<a name="axelar.snapshot.exported.v1beta1.ValidatorIllegibility"></a>
+
+### ValidatorIllegibility
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| VALIDATOR_ILLEGIBILITY_UNSPECIFIED | 0 | these enum values are used for bitwise operations, therefore they need to be powers of 2 |
+| VALIDATOR_ILLEGIBILITY_TOMBSTONED | 1 |  |
+| VALIDATOR_ILLEGIBILITY_JAILED | 2 |  |
+| VALIDATOR_ILLEGIBILITY_MISSED_TOO_MANY_BLOCKS | 4 |  |
+| VALIDATOR_ILLEGIBILITY_NO_PROXY_REGISTERED | 8 |  |
+| VALIDATOR_ILLEGIBILITY_TSS_SUSPENDED | 16 |  |
+| VALIDATOR_ILLEGIBILITY_PROXY_INSUFICIENT_FUNDS | 32 |  |
+
 
  <!-- end enums -->
 
@@ -1959,60 +1999,86 @@ QueryService defines the gRPC querier service.
 
 
 
-<a name="axelar/utils/v1beta1/queuer.proto"></a>
+<a name="axelar/vote/exported/v1beta1/types.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/utils/v1beta1/queuer.proto
+## axelar/vote/exported/v1beta1/types.proto
 
 
 
-<a name="axelar.utils.v1beta1.QueueState"></a>
+<a name="axelar.vote.exported.v1beta1.PollKey"></a>
 
-### QueueState
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `items` | [QueueState.ItemsEntry](#axelar.utils.v1beta1.QueueState.ItemsEntry) | repeated |  |
-
-
-
-
-
-
-<a name="axelar.utils.v1beta1.QueueState.Item"></a>
-
-### QueueState.Item
-
+### PollKey
+PollKey represents the key data for a poll
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `key` | [bytes](#bytes) |  |  |
-| `value` | [bytes](#bytes) |  |  |
+| `module` | [string](#string) |  |  |
+| `id` | [string](#string) |  |  |
 
 
 
 
 
 
-<a name="axelar.utils.v1beta1.QueueState.ItemsEntry"></a>
+<a name="axelar.vote.exported.v1beta1.PollMetadata"></a>
 
-### QueueState.ItemsEntry
-
+### PollMetadata
+PollMetadata represents a poll with write-in voting, i.e. the result of the
+vote can have any data type
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `key` | [string](#string) |  |  |
-| `value` | [QueueState.Item](#axelar.utils.v1beta1.QueueState.Item) |  |  |
+| `expires_at` | [int64](#int64) |  |  |
+| `result` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
+| `voting_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
+| `state` | [PollState](#axelar.vote.exported.v1beta1.PollState) |  |  |
+| `min_voter_count` | [int64](#int64) |  |  |
+| `reward_pool_name` | [string](#string) |  |  |
+| `grace_period` | [int64](#int64) |  |  |
+| `completed_at` | [int64](#int64) |  |  |
+| `id` | [uint64](#uint64) |  |  |
+| `snapshot` | [axelar.snapshot.exported.v1beta1.Snapshot](#axelar.snapshot.exported.v1beta1.Snapshot) |  |  |
+| `module` | [string](#string) |  |  |
+| `module_metadata` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
+
+
+
+
+
+
+<a name="axelar.vote.exported.v1beta1.PollParticipants"></a>
+
+### PollParticipants
+PollParticipants should be embedded in poll events in other modules
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `poll_id` | [uint64](#uint64) |  |  |
+| `participants` | [bytes](#bytes) | repeated |  |
 
 
 
 
 
  <!-- end messages -->
+
+
+<a name="axelar.vote.exported.v1beta1.PollState"></a>
+
+### PollState
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| POLL_STATE_UNSPECIFIED | 0 |  |
+| POLL_STATE_PENDING | 1 |  |
+| POLL_STATE_COMPLETED | 2 |  |
+| POLL_STATE_FAILED | 3 |  |
+
 
  <!-- end enums -->
 
@@ -2401,7 +2467,7 @@ NetworkInfo describes information about a network
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `chain` | [string](#string) |  |  |
-| `tx_id` | [string](#string) |  |  |
+| `tx_id` | [bytes](#bytes) |  |  |
 
 
 
@@ -2574,6 +2640,213 @@ TransferKey contains information for a transfer ownership or operatorship
 | STATUS_PENDING | 2 |  |
 | STATUS_CONFIRMED | 4 |  |
 
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="axelar/evm/v1beta1/events.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/evm/v1beta1/events.proto
+
+
+
+<a name="axelar.evm.v1beta1.ChainAdded"></a>
+
+### ChainAdded
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.ConfirmDepositStarted"></a>
+
+### ConfirmDepositStarted
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tx_id` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
+| `deposit_address` | [bytes](#bytes) |  |  |
+| `token_address` | [bytes](#bytes) |  |  |
+| `confirmation_height` | [uint64](#uint64) |  |  |
+| `participants` | [axelar.vote.exported.v1beta1.PollParticipants](#axelar.vote.exported.v1beta1.PollParticipants) |  |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.ConfirmGatewayTxStarted"></a>
+
+### ConfirmGatewayTxStarted
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tx_id` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
+| `gateway_address` | [bytes](#bytes) |  |  |
+| `confirmation_height` | [uint64](#uint64) |  |  |
+| `participants` | [axelar.vote.exported.v1beta1.PollParticipants](#axelar.vote.exported.v1beta1.PollParticipants) |  |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.ConfirmKeyTransferStarted"></a>
+
+### ConfirmKeyTransferStarted
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `tx_id` | [bytes](#bytes) |  |  |
+| `gateway_address` | [bytes](#bytes) |  |  |
+| `confirmation_height` | [uint64](#uint64) |  |  |
+| `participants` | [axelar.vote.exported.v1beta1.PollParticipants](#axelar.vote.exported.v1beta1.PollParticipants) |  |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.ConfirmTokenStarted"></a>
+
+### ConfirmTokenStarted
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tx_id` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
+| `gateway_address` | [bytes](#bytes) |  |  |
+| `token_address` | [bytes](#bytes) |  |  |
+| `token_details` | [TokenDetails](#axelar.evm.v1beta1.TokenDetails) |  |  |
+| `confirmation_height` | [uint64](#uint64) |  |  |
+| `participants` | [axelar.vote.exported.v1beta1.PollParticipants](#axelar.vote.exported.v1beta1.PollParticipants) |  |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.PollExpired"></a>
+
+### PollExpired
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tx_id` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
+| `poll_id` | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.PollFailed"></a>
+
+### PollFailed
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tx_id` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
+| `poll_id` | [uint64](#uint64) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="axelar/utils/v1beta1/queuer.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/utils/v1beta1/queuer.proto
+
+
+
+<a name="axelar.utils.v1beta1.QueueState"></a>
+
+### QueueState
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `items` | [QueueState.ItemsEntry](#axelar.utils.v1beta1.QueueState.ItemsEntry) | repeated |  |
+
+
+
+
+
+
+<a name="axelar.utils.v1beta1.QueueState.Item"></a>
+
+### QueueState.Item
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key` | [bytes](#bytes) |  |  |
+| `value` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="axelar.utils.v1beta1.QueueState.ItemsEntry"></a>
+
+### QueueState.ItemsEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key` | [string](#string) |  |  |
+| `value` | [QueueState.Item](#axelar.utils.v1beta1.QueueState.Item) |  |  |
+
+
+
+
+
+ <!-- end messages -->
 
  <!-- end enums -->
 
@@ -3245,183 +3518,6 @@ ERC20 tokens requested for a chain
 | TOKEN_TYPE_UNSPECIFIED | 0 |  |
 | TOKEN_TYPE_INTERNAL | 1 |  |
 | TOKEN_TYPE_EXTERNAL | 2 |  |
-
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
-<a name="axelar/snapshot/exported/v1beta1/types.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## axelar/snapshot/exported/v1beta1/types.proto
-
-
-
-<a name="axelar.snapshot.exported.v1beta1.Participant"></a>
-
-### Participant
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `address` | [bytes](#bytes) |  |  |
-| `weight` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="axelar.snapshot.exported.v1beta1.Snapshot"></a>
-
-### Snapshot
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `validators` | [Validator](#axelar.snapshot.exported.v1beta1.Validator) | repeated | **Deprecated.**  |
-| `total_share_count` | [bytes](#bytes) |  | **Deprecated.**  |
-| `counter` | [int64](#int64) |  | **Deprecated.**  |
-| `key_share_distribution_policy` | [axelar.tss.exported.v1beta1.KeyShareDistributionPolicy](#axelar.tss.exported.v1beta1.KeyShareDistributionPolicy) |  | **Deprecated.**  |
-| `corruption_threshold` | [int64](#int64) |  | **Deprecated.**  |
-| `timestamp` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
-| `height` | [int64](#int64) |  |  |
-| `participants` | [Snapshot.ParticipantsEntry](#axelar.snapshot.exported.v1beta1.Snapshot.ParticipantsEntry) | repeated |  |
-| `bonded_weight` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="axelar.snapshot.exported.v1beta1.Snapshot.ParticipantsEntry"></a>
-
-### Snapshot.ParticipantsEntry
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `key` | [string](#string) |  |  |
-| `value` | [Participant](#axelar.snapshot.exported.v1beta1.Participant) |  |  |
-
-
-
-
-
-
-<a name="axelar.snapshot.exported.v1beta1.Validator"></a>
-
-### Validator
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `sdk_validator` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
-| `share_count` | [int64](#int64) |  |  |
-
-
-
-
-
- <!-- end messages -->
-
-
-<a name="axelar.snapshot.exported.v1beta1.ValidatorIllegibility"></a>
-
-### ValidatorIllegibility
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| VALIDATOR_ILLEGIBILITY_UNSPECIFIED | 0 | these enum values are used for bitwise operations, therefore they need to be powers of 2 |
-| VALIDATOR_ILLEGIBILITY_TOMBSTONED | 1 |  |
-| VALIDATOR_ILLEGIBILITY_JAILED | 2 |  |
-| VALIDATOR_ILLEGIBILITY_MISSED_TOO_MANY_BLOCKS | 4 |  |
-| VALIDATOR_ILLEGIBILITY_NO_PROXY_REGISTERED | 8 |  |
-| VALIDATOR_ILLEGIBILITY_TSS_SUSPENDED | 16 |  |
-| VALIDATOR_ILLEGIBILITY_PROXY_INSUFICIENT_FUNDS | 32 |  |
-
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
-<a name="axelar/vote/exported/v1beta1/types.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## axelar/vote/exported/v1beta1/types.proto
-
-
-
-<a name="axelar.vote.exported.v1beta1.PollKey"></a>
-
-### PollKey
-PollKey represents the key data for a poll
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `module` | [string](#string) |  |  |
-| `id` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="axelar.vote.exported.v1beta1.PollMetadata"></a>
-
-### PollMetadata
-PollMetadata represents a poll with write-in voting, i.e. the result of the
-vote can have any data type
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `expires_at` | [int64](#int64) |  |  |
-| `result` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
-| `voting_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
-| `state` | [PollState](#axelar.vote.exported.v1beta1.PollState) |  |  |
-| `min_voter_count` | [int64](#int64) |  |  |
-| `reward_pool_name` | [string](#string) |  |  |
-| `grace_period` | [int64](#int64) |  |  |
-| `completed_at` | [int64](#int64) |  |  |
-| `id` | [uint64](#uint64) |  |  |
-| `snapshot` | [axelar.snapshot.exported.v1beta1.Snapshot](#axelar.snapshot.exported.v1beta1.Snapshot) |  |  |
-| `module` | [string](#string) |  |  |
-| `module_metadata` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
-
-
-
-
-
- <!-- end messages -->
-
-
-<a name="axelar.vote.exported.v1beta1.PollState"></a>
-
-### PollState
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| POLL_STATE_UNSPECIFIED | 0 |  |
-| POLL_STATE_PENDING | 1 |  |
-| POLL_STATE_COMPLETED | 2 |  |
-| POLL_STATE_FAILED | 3 |  |
 
 
  <!-- end enums -->
@@ -6990,9 +7086,9 @@ Query defines the gRPC querier service.
 
 
 
-<a name="axelar.vote.v1beta1.Vote"></a>
+<a name="axelar.vote.v1beta1.Voted"></a>
 
-### Vote
+### Voted
 
 
 

@@ -382,6 +382,11 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	multisigK := multisigKeeper.NewKeeper(
 		appCodec, keys[multisigTypes.StoreKey], app.getSubspace(multisigTypes.ModuleName),
 	)
+
+	multisigRounter := multisigTypes.NewSigRouter()
+	multisigRounter.AddHandler(evmTypes.ModuleName, evmKeeper.NewSigHandler(appCodec, evmK))
+	multisigK.SetSigRouter(multisigRounter)
+
 	tssK := tssKeeper.NewKeeper(
 		appCodec, keys[tssTypes.StoreKey], app.getSubspace(tssTypes.ModuleName), slashingK, rewardK,
 	)
