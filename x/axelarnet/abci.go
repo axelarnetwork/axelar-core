@@ -7,6 +7,7 @@ import (
 	clienttypes "github.com/cosmos/ibc-go/v2/modules/core/02-client/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 )
 
@@ -23,17 +24,17 @@ func EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock, bk types.BaseKeeper, t 
 		var transfer types.IBCTransfer
 		queue.Dequeue(&transfer)
 
-		cacheCtx, writeCache := ctx.CacheContext()
-		err := sendIBCTransfer(cacheCtx, bk, t, c, transfer)
-		if err != nil {
-			bk.Logger(cacheCtx).Error(fmt.Sprintf("failed to send IBC transfer %s for %s:  %s", transfer.Token, transfer.Receiver, err))
-			failed = append(failed, transfer)
-			continue
-		}
-		writeCache()
-		ctx.EventManager().EmitEvents(cacheCtx.EventManager().Events())
+		_ = utils.RunCached(ctx, bk, func(cachedCtx sdk.Context) ([]abci.ValidatorUpdate, error) {
+			err := sendIBCTransfer(ctx, bk, t, c, transfer)
+			if err != nil {
+				bk.Logger(ctx).Error(fmt.Sprintf("failed to send IBC transfer %s with id %s for %s:  %s", transfer.Token, transfer.ID.String(), transfer.Receiver, err))
+				failed = append(failed, transfer)
+				return nil, err
+			}
 
-		bk.Logger(ctx).Debug(fmt.Sprintf("successfully sent IBC transfer %s from %s to %s", transfer.Token, transfer.Sender, transfer.Receiver))
+			bk.Logger(ctx).Debug(fmt.Sprintf("successfully sent IBC transfer %s from %s to %s", transfer.Token, transfer.Sender, transfer.Receiver))
+			return nil, nil
+		})
 	}
 
 	// re-queue
