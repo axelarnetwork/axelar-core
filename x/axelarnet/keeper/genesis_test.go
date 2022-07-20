@@ -8,6 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
+	ibctransfertypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
@@ -73,12 +74,14 @@ func randomTransfers() []types.IBCTransfer {
 
 func randomIBCTransfer() types.IBCTransfer {
 	denom := rand.Strings(5, 20).WithAlphabet([]rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXY")).Next()
+	channel := fmt.Sprintf("%s%d", "channel-", rand.I64Between(0, 9999))
+
 	return types.IBCTransfer{
 		Sender:    rand.AccAddr(),
 		Receiver:  randomNormalizedStr(5, 20),
 		Token:     sdk.NewCoin(denom, sdk.NewInt(rand.PosI64())),
-		PortID:    randomNormalizedStr(5, 20),
-		ChannelID: randomNormalizedStr(5, 20),
+		PortID:    ibctransfertypes.PortID,
+		ChannelID: channel,
 		ID:        nexus.TransferID(uint64(rand.PosI64())),
 	}
 }

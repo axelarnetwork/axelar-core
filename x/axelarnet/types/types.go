@@ -119,6 +119,7 @@ func (m *IBCTransfer) SetID(id uint64) {
 	m.ID = nexus.TransferID(id)
 }
 
+// ValidateBasic returns an error if the given IBCTransfer is invalid; nil otherwise
 func (m IBCTransfer) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(err, "invalid transfer sender")

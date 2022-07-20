@@ -32,7 +32,7 @@ func EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock, bk types.BaseKeeper, t 
 				return nil, err
 			}
 
-			bk.Logger(ctx).Debug(fmt.Sprintf("successfully sent IBC transfer %s from %s to %s", transfer.Token, transfer.Sender, transfer.Receiver))
+			bk.Logger(ctx).Debug(fmt.Sprintf("successfully sent IBC transfer %s with id %s from %s to %s", transfer.Token, transfer.ID.String(), transfer.Sender, transfer.Receiver))
 			return nil, nil
 		})
 	}
