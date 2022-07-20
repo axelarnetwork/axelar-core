@@ -104,7 +104,7 @@ func (k Keeper) RotateKey(ctx sdk.Context, chainName nexus.ChainName) error {
 
 // GetActiveKeyIDs returns all active keys in reverse temporal order. The first key is the key of the current epoch
 func (k Keeper) GetActiveKeyIDs(ctx sdk.Context, chainName nexus.ChainName) []exported.KeyID {
-	epochs := k.getStore(ctx).ReverseIterator(keyEpochPrefix.AppendStr(chainName.String()))
+	epochs := k.getStore(ctx).ReverseIterator(keyEpochPrefix.Append(utils.LowerCaseKey(chainName.String())))
 	defer utils.CloseLogError(epochs, k.Logger(ctx))
 
 	var keys []exported.KeyID
@@ -139,20 +139,20 @@ func (k Keeper) deactivateKeyAtEpoch(ctx sdk.Context, chainName nexus.ChainName,
 }
 
 func (k Keeper) getKeyEpoch(ctx sdk.Context, chainName nexus.ChainName, epoch uint64) (keyEpoch types.KeyEpoch, ok bool) {
-	return keyEpoch, k.getStore(ctx).Get(keyEpochPrefix.AppendStr(chainName.String()).Append(utils.KeyFromInt(epoch)), &keyEpoch)
+	return keyEpoch, k.getStore(ctx).Get(keyEpochPrefix.Append(utils.LowerCaseKey(chainName.String())).Append(utils.KeyFromInt(epoch)), &keyEpoch)
 }
 
 func (k Keeper) setKeyEpoch(ctx sdk.Context, keyEpoch types.KeyEpoch) {
-	k.getStore(ctx).Set(keyEpochPrefix.AppendStr(keyEpoch.Chain.String()).Append(utils.KeyFromInt(keyEpoch.Epoch)), &keyEpoch)
+	k.getStore(ctx).Set(keyEpochPrefix.Append(utils.LowerCaseKey(keyEpoch.Chain.String())).Append(utils.KeyFromInt(keyEpoch.Epoch)), &keyEpoch)
 }
 
 func (k Keeper) setKeyRotationCount(ctx sdk.Context, chainName nexus.ChainName, count uint64) {
-	k.getStore(ctx).Set(keyRotationCountPrefix.AppendStr(chainName.String()), &gogoprototypes.UInt64Value{Value: count})
+	k.getStore(ctx).Set(keyRotationCountPrefix.Append(utils.LowerCaseKey(chainName.String())), &gogoprototypes.UInt64Value{Value: count})
 }
 
 func (k Keeper) getKeyRotationCount(ctx sdk.Context, chainName nexus.ChainName) uint64 {
 	var value gogoprototypes.UInt64Value
-	k.getStore(ctx).Get(keyRotationCountPrefix.AppendStr(chainName.String()), &value)
+	k.getStore(ctx).Get(keyRotationCountPrefix.Append(utils.LowerCaseKey(chainName.String())), &value)
 
 	return value.Value
 }
