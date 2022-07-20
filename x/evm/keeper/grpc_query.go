@@ -481,7 +481,7 @@ func (q Querier) TokenInfo(c context.Context, req *types.TokenInfoRequest) (*typ
 		}
 	}
 
-	burnerCodeHashHex := ""
+	var burnerCodeHashHex string
 	if burnerCodeHash, ok := token.GetBurnerCodeHash(); ok {
 		burnerCodeHashHex = burnerCodeHash.Hex()
 	}
