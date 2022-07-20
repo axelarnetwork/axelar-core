@@ -4,7 +4,10 @@ package axelar.multisig.v1beta1;
 option go_package = "github.com/axelarnetwork/axelar-core/x/multisig/types";
 
 import "gogoproto/gogo.proto";
+import "google/protobuf/timestamp.proto";
 import "axelar/multisig/exported/v1beta1/types.proto";
+import "axelar/multisig/v1beta1/types.proto";
+import "axelar/utils/v1beta1/threshold.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
@@ -29,4 +32,43 @@ message NextKeyIDResponse {
     (gogoproto.casttype) =
         "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
   ];
+}
+
+message KeyRequest {
+  string key_id = 1 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
+  ];
+}
+
+// KeyResponse contains the key corresponding to a given key id.
+message KeyResponse {
+  message Participant {
+    bytes weight = 1 [
+      (gogoproto.nullable) = false,
+      (gogoproto.castvalue) = "github.com/cosmos/cosmos-sdk/types.Uint"
+    ];
+    string pub_key = 2;
+  }
+
+  string id = 1 [
+    (gogoproto.customname) = "ID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
+  ];
+  multisig.v1beta1.KeyState state = 2;
+  int64 height = 3;
+  google.protobuf.Timestamp timestamp = 4
+      [ (gogoproto.nullable) = false, (gogoproto.stdtime) = true ];
+  bytes threshold_weight = 5 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.nullable) = false
+  ];
+  bytes bonded_weight = 6 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.nullable) = false
+  ];
+  // Keygen participants in descending order by weight
+  repeated Participant participants = 7 [ (gogoproto.nullable) = false ];
 }
