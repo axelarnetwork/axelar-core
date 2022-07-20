@@ -164,24 +164,33 @@ func TestKeeper_GetActiveKeyIDs(t *testing.T) {
 		expectedKeys []types.Key
 	)
 
-	Given("multisig keeper", func() {
+	givenMultisigKeeper := Given("multisig keeper", func() {
 		subspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "multisig")
 		k = keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey(types.StoreKey), subspace)
 		ctx = testutilsrand.Context(fake.NewMultiStore())
 
 		k.InitGenesis(ctx, types.DefaultGenesisState())
-	}).When("multiple keys are in the store", func() {
-		expectedKeys = []types.Key{}
-		for i := 0; i < 20; i++ {
-			key := types.Key{ID: exportedtestutils.KeyID()}
-			expectedKeys = append(expectedKeys, key)
-			k.SetKey(ctx, key)
-			funcs.MustNoErr(k.AssignKey(ctx, chainName, key.ID))
-			funcs.MustNoErr(k.RotateKey(ctx, chainName))
-		}
+	})
 
-	}).Then("get active keys", func(t *testing.T) {
-		expectedKeys = expectedKeys[len(expectedKeys)-int(types.DefaultParams().ActiveEpochCount):]
-		assert.ElementsMatch(t, slices.Map(expectedKeys, func(key types.Key) exported.KeyID { return key.ID }), k.GetActiveKeyIDs(ctx, chainName))
-	}).Run(t)
+	givenMultisigKeeper.
+		When("no keys are in the store", func() {}).
+		Then("get empty list of active keys", func(t *testing.T) {
+			assert.ElementsMatch(t, []exported.KeyID{}, k.GetActiveKeyIDs(ctx, chainName))
+		}).Run(t)
+
+	givenMultisigKeeper.
+		When("multiple keys are in the store", func() {
+			expectedKeys = []types.Key{}
+			for i := 0; i < 20; i++ {
+				key := types.Key{ID: exportedtestutils.KeyID()}
+				expectedKeys = append(expectedKeys, key)
+				k.SetKey(ctx, key)
+				funcs.MustNoErr(k.AssignKey(ctx, chainName, key.ID))
+				funcs.MustNoErr(k.RotateKey(ctx, chainName))
+			}
+		}).
+		Then("get active keys", func(t *testing.T) {
+			expectedKeys = expectedKeys[len(expectedKeys)-int(types.DefaultParams().ActiveEpochCount):]
+			assert.ElementsMatch(t, slices.Map(expectedKeys, func(key types.Key) exported.KeyID { return key.ID }), k.GetActiveKeyIDs(ctx, chainName))
+		}).Run(t)
 }

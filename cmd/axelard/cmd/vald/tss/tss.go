@@ -319,7 +319,7 @@ func (mgr *Mgr) ProcessHeartBeatEvent(e tmEvents.Event) error {
 			response, err = mgr.client.KeyPresence(grpcCtx, request)
 		case exported.Multisig:
 			request = &tofnd.KeyPresenceRequest{
-                                fmt.Sprintf("%s_%d", string(keyInfo.KeyID), 0)
+				KeyUid: fmt.Sprintf("%s_%d", string(keyInfo.KeyID), 0),
 				PubKey: []byte{},
 			}
 
