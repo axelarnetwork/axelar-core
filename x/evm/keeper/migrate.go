@@ -22,6 +22,7 @@ import (
 // - migrate contracts bytecode (CRUCIAL AND DO NOT DELETE) for all evm chains
 // - set BurnerCode for external token to nil
 // - migrate tss signature to multisig signature
+// - set EndBlockerLimit parameter
 func GetMigrationHandler(k BaseKeeper, n types.Nexus, s types.Signer, m types.MultisigKeeper) func(ctx sdk.Context) error {
 	return func(ctx sdk.Context) error {
 		// migrate contracts bytecode (CRUCIAL AND DO NOT DELETE) for all evm chains
@@ -42,6 +43,8 @@ func GetMigrationHandler(k BaseKeeper, n types.Nexus, s types.Signer, m types.Mu
 			if err := migrateCommandBatchSignature(ctx, ck, s, m); err != nil {
 				return sdkerrors.Wrap(err, fmt.Sprintf("failed to migrate signature for chain %s", chain.Name))
 			}
+
+			setEndBlockerLimitParam(ctx, ck)
 		}
 
 		return nil
@@ -157,6 +160,12 @@ func setCommandBatchSignature(ctx sdk.Context, ck chainKeeper, commandBatchMetad
 func setCommandBatchAborted(ctx sdk.Context, ck chainKeeper, commandBatchMetadata types.CommandBatchMetadata) {
 	commandBatchMetadata.Status = types.BatchAborted
 	ck.setCommandBatchMetadata(ctx, commandBatchMetadata)
+}
+
+func setEndBlockerLimitParam(ctx sdk.Context, ck chainKeeper) {
+	params := ck.GetParams(ctx)
+	params.EndBlockerLimit = types.DefaultParams()[0].EndBlockerLimit
+	ck.SetParams(ctx, params)
 }
 
 // this function migrates the contracts bytecode to the latest for every existing

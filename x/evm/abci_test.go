@@ -1018,7 +1018,6 @@ func TestHandleLimitNumberOfEventsPerBlock(t *testing.T) {
 
 		confirmedEventQueue *utilsMock.KVQueueMock
 	)
-	const maxConfirmedEventsPerBlock = 50
 
 	confirmedEventQueue = &utilsMock.KVQueueMock{}
 	sourceChainName := nexus.ChainName(rand.Str(5))
@@ -1054,8 +1053,8 @@ func TestHandleLimitNumberOfEventsPerBlock(t *testing.T) {
 
 		destinationCk.GetChainIDFunc = func(ctx sdk.Context) (sdk.Int, bool) { return sdk.ZeroInt(), true }
 		destinationCk.EnqueueCommandFunc = func(ctx sdk.Context, cmd types.Command) error { return nil }
-		destinationCk.GetGatewayAddressFunc = func(sdk.Context) (common.Address, bool) {
-			return common.BytesToAddress(rand.Bytes(common.AddressLength)), true
+		destinationCk.GetGatewayAddressFunc = func(sdk.Context) (types.Address, bool) {
+			return types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))), true
 		}
 
 		multisigKeeper.GetCurrentKeyIDFunc = func(ctx sdk.Context, chainName nexus.ChainName) (multisig.KeyID, bool) {
@@ -1072,11 +1071,18 @@ func TestHandleLimitNumberOfEventsPerBlock(t *testing.T) {
 	})
 
 	givenConfirmedEventQueue.
+		When("end blocker limit is set", func() {
+			sourceCk.GetParamsFunc = func(ctx sdk.Context) types.Params {
+				return types.Params{
+					EndBlockerLimit: 50,
+				}
+			}
+		}).
 		When("events in queue exceeds limit", func() {
 			confirmedEventQueue.IsEmptyFunc = func() bool { return false }
 			event := types.Event{
 				Chain: sourceChainName,
-				TxId:  evmTestUtils.RandomHash(),
+				TxID:  evmTestUtils.RandomHash(),
 				Index: uint64(rand.PosI64()),
 				Event: &types.Event_ContractCall{
 					ContractCall: &types.EventContractCall{
@@ -1099,8 +1105,8 @@ func TestHandleLimitNumberOfEventsPerBlock(t *testing.T) {
 		Then("should handle limited number of events", func(t *testing.T) {
 			err := handleConfirmedEvents(ctx, bk, n, multisigKeeper)
 			assert.NoError(t, err)
-			assert.Len(t, sourceCk.SetEventCompletedCalls(), maxConfirmedEventsPerBlock)
-			assert.Len(t, destinationCk.EnqueueCommandCalls(), maxConfirmedEventsPerBlock)
+			assert.Len(t, sourceCk.SetEventCompletedCalls(), int(sourceCk.GetParams(ctx).EndBlockerLimit))
+			assert.Len(t, destinationCk.EnqueueCommandCalls(), int(sourceCk.GetParams(ctx).EndBlockerLimit))
 		}).
 		Run(t)
 }

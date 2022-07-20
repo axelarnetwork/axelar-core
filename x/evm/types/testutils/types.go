@@ -325,6 +325,7 @@ func RandomParams() types.Params {
 		VotingThreshold:     utils.NewThreshold(nominator, denominator),
 		MinVoterCount:       rand.PosI64(),
 		CommandsGasLimit:    uint32(rand.I64Between(0, 10000000)),
+		EndBlockerLimit:     rand.PosI64(),
 	}
 
 	params.Network = params.Networks[int(rand.I64Between(0, int64(len(params.Networks))))].Name

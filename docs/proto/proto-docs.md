@@ -2882,6 +2882,7 @@ Params is the parameter set for this module
 | `min_voter_count` | [int64](#int64) |  |  |
 | `commands_gas_limit` | [uint32](#uint32) |  |  |
 | `voting_grace_period` | [int64](#int64) |  |  |
+| `end_blocker_limit` | [int64](#int64) |  |  |
 
 
 

@@ -95,7 +95,7 @@ func TestGetMigrationHandler(t *testing.T) {
 		},
 	}
 
-	whenTokensAreSetup := Given("the migration handler", func() {
+	givenMigrationHandler := Given("the migration handler", func() {
 		ctx, keeper = setup()
 		nexus := mock.NexusMock{
 			GetChainsFunc: func(_ sdk.Context) []nexus.Chain {
@@ -104,7 +104,9 @@ func TestGetMigrationHandler(t *testing.T) {
 		}
 
 		handler = GetMigrationHandler(keeper, &nexus, &mock.SignerMock{}, &mock.MultisigKeeperMock{})
-	}).
+	})
+
+	whenTokensAreSetup := givenMigrationHandler.
 		When("tokens are setup for evm chains", func() {
 			for _, chain := range evmChains {
 				for _, token := range tokens {
@@ -132,6 +134,17 @@ func TestGetMigrationHandler(t *testing.T) {
 			}
 		}).Run(t)
 
+	givenMigrationHandler.
+		When("migration runs", func() {
+			err := handler(ctx)
+			assert.NoError(t, err)
+		}).
+		Then("should set EndBlockerLimit param", func(t *testing.T) {
+			for _, chain := range evmChains {
+				ck := keeper.ForChain(chain.Name).(chainKeeper)
+				assert.Equal(t, types.DefaultParams()[0].EndBlockerLimit, ck.GetParams(ctx).EndBlockerLimit)
+			}
+		})
 }
 
 func TestMigrateCommandBatchSignature(t *testing.T) {
