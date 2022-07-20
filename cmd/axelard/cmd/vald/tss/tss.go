@@ -318,14 +318,9 @@ func (mgr *Mgr) ProcessHeartBeatEvent(e tmEvents.Event) error {
 			}
 			response, err = mgr.client.KeyPresence(grpcCtx, request)
 		case exported.Multisig:
-			pubKeys, found := mgr.getKey(string(keyInfo.KeyID))
-			if !found {
-				continue
-			}
-
 			request = &tofnd.KeyPresenceRequest{
 				KeyUid: fmt.Sprintf("%s_%d", string(keyInfo.KeyID), 0),
-				PubKey: pubKeys[0],
+				PubKey: []byte{},
 			}
 
 			response, err = mgr.multiSigClient.KeyPresence(grpcCtx, request)
