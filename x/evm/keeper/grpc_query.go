@@ -99,16 +99,19 @@ func optimizeSignatureSet(operators []types.Operator, minPassingWeight sdk.Uint)
 	return slices.Map(operators, func(operator types.Operator) []byte { return operator.Signature })
 }
 
-func getProof(key multisig.Key, signature *multisigtypes.MultiSig) ([]common.Address, []sdk.Uint, sdk.Uint, [][]byte) {
+func getProof(key multisig.Key, signature multisig.Multisig) ([]common.Address, []sdk.Uint, sdk.Uint, [][]byte) {
 	participantsWithSigs := slices.Filter(key.GetParticipants(), func(v sdk.ValAddress) bool {
-		_, ok := signature.Sigs[v.String()]
+		_, ok := signature.GetSignature(v)
 		return ok
 	})
 
 	operators := slices.Map(participantsWithSigs, func(val sdk.ValAddress) types.Operator {
+		pubKey := funcs.MustOk(key.GetPubKey(val)).ToECDSAPubKey()
+		evmSignature := funcs.Must(types.ToSignature(funcs.MustOk(signature.GetSignature(val)), common.BytesToHash(signature.GetPayloadHash()), pubKey))
+
 		return types.Operator{
-			Address:   crypto.PubkeyToAddress(funcs.MustOk(key.GetPubKey(val)).ToECDSAPubKey()),
-			Signature: funcs.Must(types.NewSignature(signature.Sigs[val.String()])).ToHomesteadSig(),
+			Address:   crypto.PubkeyToAddress(pubKey),
+			Signature: evmSignature.ToHomesteadSig(),
 			Weight:    key.GetWeight(val),
 		}
 	})
@@ -119,9 +122,9 @@ func getProof(key multisig.Key, signature *multisigtypes.MultiSig) ([]common.Add
 	return addresses, weights, threshold, signatures
 }
 
-func getExecuteDataAndSigs(ctx sdk.Context, multisig types.MultisigKeeper, commandBatch types.CommandBatch) ([]byte, types.Proof, error) {
-	signature := commandBatch.GetSignature().(*multisigtypes.MultiSig)
-	key := funcs.MustOk(multisig.GetKey(ctx, signature.KeyID))
+func getExecuteDataAndSigs(ctx sdk.Context, multisigK types.MultisigKeeper, commandBatch types.CommandBatch) ([]byte, types.Proof, error) {
+	signature := multisig.Multisig(commandBatch.GetSignature().(*multisigtypes.MultiSig))
+	key := funcs.MustOk(multisigK.GetKey(ctx, signature.GetKeyID()))
 
 	addresses, weights, threshold, signatures := getProof(key, signature)
 
