@@ -99,7 +99,7 @@ func optimizeSignatureSet(operators []types.Operator, minPassingWeight sdk.Uint)
 	return slices.Map(operators, func(operator types.Operator) []byte { return operator.Signature })
 }
 
-func getProof(key multisig.Key, signature multisig.Multisig) ([]common.Address, []sdk.Uint, sdk.Uint, [][]byte) {
+func getProof(key multisig.Key, signature multisig.MultiSig) ([]common.Address, []sdk.Uint, sdk.Uint, [][]byte) {
 	participantsWithSigs := slices.Filter(key.GetParticipants(), func(v sdk.ValAddress) bool {
 		_, ok := signature.GetSignature(v)
 		return ok
@@ -123,7 +123,7 @@ func getProof(key multisig.Key, signature multisig.Multisig) ([]common.Address, 
 }
 
 func getExecuteDataAndSigs(ctx sdk.Context, multisigK types.MultisigKeeper, commandBatch types.CommandBatch) ([]byte, types.Proof, error) {
-	signature := multisig.Multisig(commandBatch.GetSignature().(*multisigtypes.MultiSig))
+	signature := multisig.MultiSig(commandBatch.GetSignature().(*multisigtypes.MultiSig))
 	key := funcs.MustOk(multisigK.GetKey(ctx, signature.GetKeyID()))
 
 	addresses, weights, threshold, signatures := getProof(key, signature)

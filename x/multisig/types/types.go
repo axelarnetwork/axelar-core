@@ -68,6 +68,7 @@ func NewKeyEpoch(epoch uint64, chain nexus.ChainName, keyID exported.KeyID) KeyE
 	}
 }
 
+// GetSignature returns the ECDSA signature of the given participant
 func (m MultiSig) GetSignature(p sdk.ValAddress) (btcec.Signature, bool) {
 	sig, ok := m.Sigs[p.String()]
 	if !ok {
