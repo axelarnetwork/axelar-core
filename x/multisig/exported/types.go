@@ -25,6 +25,13 @@ type Key interface {
 	GetMinPassingWeight() sdk.Uint
 }
 
+// MultiSig provides an interface to work with the multi sig
+type MultiSig interface {
+	GetSignature(p sdk.ValAddress) (btcec.Signature, bool)
+	GetPayloadHash() Hash
+	GetKeyID() KeyID
+}
+
 // SigHandler defines the interface for the requesting module to implement in
 // order to handle the different results of signing session
 type SigHandler interface {
