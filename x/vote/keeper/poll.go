@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"encoding/hex"
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -46,8 +47,8 @@ func (p poll) Logger() log.Logger {
 func (p poll) tallyLogger(voter sdk.ValAddress, talliedVote types.TalliedVote) log.Logger {
 	return p.Logger().With(
 		"voter", voter.String(),
-		"data_hash", talliedVote.Data,
-		"tally_weight", talliedVote.Tally,
+		"data_hash", hex.EncodeToString(proto.Hash(talliedVote.Data.GetCachedValue().(codec.ProtoMarshaler))),
+		"tally_weight", talliedVote.Tally.String(),
 		"tally_voter_count", len(talliedVote.IsVoterLate),
 	)
 }
