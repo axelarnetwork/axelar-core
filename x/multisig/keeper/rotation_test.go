@@ -80,8 +80,10 @@ func TestKeeper(t *testing.T) {
 							}),
 
 						Then("should succeed", func(t *testing.T) {
+							eventCountBefore := len(ctx.EventManager().Events())
 							err := k.AssignKey(ctx, chainName, keyID1)
 							assert.NoError(t, err)
+							assert.Equal(t, 1, len(ctx.EventManager().Events())-eventCountBefore)
 
 							actual, ok := k.GetNextKeyID(ctx, chainName)
 							assert.True(t, ok)
@@ -108,8 +110,10 @@ func TestKeeper(t *testing.T) {
 					k.AssignKey(ctx, chainName, keyID1)
 				}).
 					Then("should succeed", func(t *testing.T) {
+						eventCountBefore := len(ctx.EventManager().Events())
 						err := k.RotateKey(ctx, chainName)
 						assert.NoError(t, err)
+						assert.Equal(t, 1, len(ctx.EventManager().Events())-eventCountBefore)
 
 						_, ok := k.GetNextKeyID(ctx, chainName)
 						assert.False(t, ok)
