@@ -605,6 +605,13 @@
           "symbol": "AXL",
           "decimals": 6,
           "transfer_fee": 0.1
+        },
+        {
+          "chain": "aurora",
+          "address": "0x1AA14c03783e3C31b14615a83a58E1eAF98Bf596",
+          "symbol": "AXL",
+          "decimals": 6,
+          "transfer_fee": 0.1
         }
       ]
     },
@@ -652,6 +659,13 @@
         {
           "chain": "binance",
           "address": "0x920fA0DbB65cE928C29103AeC7B5c188bbea2f24",
+          "symbol": "WMATIC",
+          "decimals": 18,
+          "transfer_fee": 0.07
+        },
+        {
+          "chain": "aurora",
+          "address": "0x56F1a7a69e5Aa09C1A6ee1AC9989e931cA906EB1",
           "symbol": "WMATIC",
           "decimals": 18,
           "transfer_fee": 0.07
@@ -705,6 +719,13 @@
           "symbol": "WFTM",
           "decimals": 18,
           "transfer_fee": 0.08
+        },
+        {
+          "chain": "aurora",
+          "address": "0x0660F60B6cC54a3E1e526113a1D25d516273AF3E",
+          "symbol": "WFTM",
+          "decimals": 18,
+          "transfer_fee": 0.08
         }
       ]
     },
@@ -752,6 +773,13 @@
         {
           "chain": "binance",
           "address": "0x03Dc012b7851b7D65592Aebc40a6aF9A171E9315",
+          "symbol": "WETH",
+          "decimals": 18,
+          "transfer_fee": 4e-05
+        },
+        {
+          "chain": "aurora",
+          "address": "0xcfF68Bea15e24aec8ECfdb82862ff776C3e972d1",
           "symbol": "WETH",
           "decimals": 18,
           "transfer_fee": 4e-05
@@ -805,6 +833,13 @@
           "symbol": "WAVAX",
           "decimals": 18,
           "transfer_fee": 0.001
+        },
+        {
+          "chain": "aurora",
+          "address": "0xb47BAb33cAE8FCa71FA28516ADCE3AF0B3e040e3",
+          "symbol": "WAVAX",
+          "decimals": 18,
+          "transfer_fee": 0.001
         }
       ]
     },
@@ -852,6 +887,13 @@
         {
           "chain": "binance",
           "address": "0xa893Fd868c3159B294f6416F512203be53315fd8",
+          "symbol": "WDEV",
+          "decimals": 18,
+          "transfer_fee": 0.04
+        },
+        {
+          "chain": "aurora",
+          "address": "0xC43178D657171A831d826f01ECa657c9439457c6",
           "symbol": "WDEV",
           "decimals": 18,
           "transfer_fee": 0.04
@@ -905,6 +947,13 @@
           "symbol": "aUSDC",
           "decimals": 6,
           "transfer_fee": 0.1
+        },
+        {
+          "chain": "aurora",
+          "address": "0xFfB4749710EC6286b3A0dC2F24165DA622dA2ff5",
+          "symbol": "aUSDC",
+          "decimals": 6,
+          "transfer_fee": 0.1
         }
       ]
     },
@@ -927,7 +976,7 @@
       "id": "wbnb-wei",
       "name": "WBNB - Wrapped BNB",
       "symbol": "WBNB",
-      "image": "/images/assets/bnb.png",
+      "image": "/images/assets/wbnb.png",
       "contracts": [
         {
           "chain": "moonbeam",
@@ -967,6 +1016,13 @@
         {
           "chain": "binance",
           "address": "0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd",
+          "symbol": "WBNB",
+          "decimals": 18,
+          "transfer_fee": 0.0003
+        },
+        {
+          "chain": "aurora",
+          "address": "0x57A2d26A9079AF0CdB7aEf83d6978a78192f94Ab",
           "symbol": "WBNB",
           "decimals": 18,
           "transfer_fee": 0.0003
