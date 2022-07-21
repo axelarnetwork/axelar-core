@@ -4,8 +4,8 @@ go 1.18
 
 require (
 	github.com/armon/go-metrics v0.4.0
-	github.com/axelarnetwork/tm-events v0.0.0-20220427211200-9114fb26a603
-	github.com/axelarnetwork/utils v0.0.0-20220718015848-54e462418ae3
+	github.com/axelarnetwork/tm-events v0.0.0-20220721191213-8376c96b70b4
+	github.com/axelarnetwork/utils v0.0.0-20220721182426-f9baa0158e5b
 	github.com/btcsuite/btcd v0.22.1
 	github.com/btcsuite/btcd/btcec/v2 v2.2.0
 	github.com/cosmos/cosmos-sdk v0.45.6
@@ -33,7 +33,7 @@ require (
 	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4
 	golang.org/x/text v0.3.7
 	golang.org/x/tools v0.1.11
-	google.golang.org/genproto v0.0.0-20220714211235-042d03aeabc9
+	google.golang.org/genproto v0.0.0-20220720214146-176da50484ac
 	google.golang.org/grpc v1.48.0
 	google.golang.org/protobuf v1.28.0
 )

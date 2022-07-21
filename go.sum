@@ -159,10 +159,10 @@ github.com/aws/aws-sdk-go-v2/service/sso v1.1.1/go.mod h1:SuZJxklHxLAXgLTc1iFXbE
 github.com/aws/aws-sdk-go-v2/service/sts v1.1.1/go.mod h1:Wi0EBZwiz/K44YliU0EKxqTCJGUfYTWXrrBwkq736bM=
 github.com/aws/smithy-go v1.1.0/go.mod h1:EzMw8dbp/YJL4A5/sbhGddag+NPT7q084agLbB9LgIw=
 github.com/aws/smithy-go v1.8.0/go.mod h1:SObp3lf9smib00L/v3U2eAKG8FyQ7iLrJnQiAmR5n+E=
-github.com/axelarnetwork/tm-events v0.0.0-20220427211200-9114fb26a603 h1:wnbzsavBCo9AWbu48gFBlMQamIkJeTe4YQwPbHAXMoE=
-github.com/axelarnetwork/tm-events v0.0.0-20220427211200-9114fb26a603/go.mod h1:Cf48K6ErGItPHyRu2fzJMDmbap91DKrDoyszueIKxLE=
-github.com/axelarnetwork/utils v0.0.0-20220718015848-54e462418ae3 h1:CjcvzZRyfpEb316nOd9N7QXho9/B1soLDz54WiLbXYo=
-github.com/axelarnetwork/utils v0.0.0-20220718015848-54e462418ae3/go.mod h1:7l+gvhurXux3THcqHo7k7XR40oWNqVxnGlbKw52MrMI=
+github.com/axelarnetwork/tm-events v0.0.0-20220721191213-8376c96b70b4 h1:25M81qKmgAI0NpBy5NgVCDDDfOsbwOBAfqnJPamh/KU=
+github.com/axelarnetwork/tm-events v0.0.0-20220721191213-8376c96b70b4/go.mod h1:RHkPsu6GoNB3rtF+rhoRCP/DaUjn1G1QuwgKCKSCV5A=
+github.com/axelarnetwork/utils v0.0.0-20220721182426-f9baa0158e5b h1:rkU6vRsbrUEoupW0m3BnRlhywsnM2aQpjZOszc6g5gM=
+github.com/axelarnetwork/utils v0.0.0-20220721182426-f9baa0158e5b/go.mod h1:jmFx9qieuivUb86Ek5k71znjLrar6a5FitLQj62X9nk=
 github.com/benbjohnson/clock v1.1.0/go.mod h1:J11/hYXuz8f4ySSvYwY0FKfm+ezbsZBKZxNJlLklBHA=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
 github.com/beorn7/perks v1.0.0/go.mod h1:KWe93zE9D1o94FZ5RNwFwVgaQK1VOXiVxmqh+CedLV8=
@@ -1695,8 +1695,8 @@ google.golang.org/genproto v0.0.0-20211028162531-8db9c33dc351/go.mod h1:5CzLGKJ6
 google.golang.org/genproto v0.0.0-20211118181313-81c1377c94b1/go.mod h1:5CzLGKJ67TSI2B9POpiiyGha0AjJvZIUgRMt1dSmuhc=
 google.golang.org/genproto v0.0.0-20211206160659-862468c7d6e0/go.mod h1:5CzLGKJ67TSI2B9POpiiyGha0AjJvZIUgRMt1dSmuhc=
 google.golang.org/genproto v0.0.0-20211208223120-3a66f561d7aa/go.mod h1:5CzLGKJ67TSI2B9POpiiyGha0AjJvZIUgRMt1dSmuhc=
-google.golang.org/genproto v0.0.0-20220714211235-042d03aeabc9 h1:zfXhTgBfGlIh3jMXN06W8qbhFGsh6MJNJiYEuhTddOI=
-google.golang.org/genproto v0.0.0-20220714211235-042d03aeabc9/go.mod h1:GkXuJDJ6aQ7lnJcRF+SJVgFdQhypqgl3LB1C9vabdRE=
+google.golang.org/genproto v0.0.0-20220720214146-176da50484ac h1:EOa+Yrhx1C0O+4pHeXeWrCwdI0tWI6IfUU56Vebs9wQ=
+google.golang.org/genproto v0.0.0-20220720214146-176da50484ac/go.mod h1:GkXuJDJ6aQ7lnJcRF+SJVgFdQhypqgl3LB1C9vabdRE=
 google.golang.org/grpc v1.33.2 h1:EQyQC3sa8M+p6Ulc8yy9SWSS2GVwyRc83gAbG8lrl4o=
 google.golang.org/grpc v1.33.2/go.mod h1:JMHMWHQWaTccqQQlmk3MJZS+GWXOdAesneDmEnv2fbc=
 google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.1.0/go.mod h1:6Kw0yEErY5E/yWrBtf03jp27GLLJujG4z/JK95pnjjw=
