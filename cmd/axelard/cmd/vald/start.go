@@ -74,6 +74,13 @@ func GetValdCommand() *cobra.Command {
 			logger := serverCtx.Logger.With("module", "vald")
 			v := serverCtx.Viper
 
+			if err := v.BindPFlag("tss.tofnd-host", cmd.PersistentFlags().Lookup("tofnd-host")); err != nil {
+				return err
+			}
+			if err := v.BindPFlag("tss.tofnd-port", cmd.PersistentFlags().Lookup("tofnd-port")); err != nil {
+				return err
+			}
+
 			cliCtx, err := sdkClient.GetClientTxContext(cmd)
 			if err != nil {
 				return err
