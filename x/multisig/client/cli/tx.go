@@ -37,27 +37,20 @@ func getCmdStartKeygen() *cobra.Command {
 		Use:   "start-keygen",
 		Short: "Initiate key generation protocol",
 		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewStartKeygenRequest(cliCtx.FromAddress)
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
+		},
 	}
-
-	keyID := cmd.Flags().String("id", "", "unique ID for new key (required)")
-	if err := cmd.MarkFlagRequired("id"); err != nil {
-		panic("id flag not set")
-	}
-
-	cmd.RunE = func(cmd *cobra.Command, args []string) error {
-		cliCtx, err := client.GetClientTxContext(cmd)
-		if err != nil {
-			return err
-		}
-
-		msg := types.NewStartKeygenRequest(cliCtx.FromAddress, exported.KeyID(*keyID))
-		if err := msg.ValidateBasic(); err != nil {
-			return err
-		}
-
-		return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
-	}
-
 	flags.AddTxFlagsToCmd(cmd)
 
 	return cmd

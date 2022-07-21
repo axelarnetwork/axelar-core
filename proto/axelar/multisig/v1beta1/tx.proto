@@ -12,14 +12,15 @@ message StartKeygenRequest {
 
   string sender = 1 [ (gogoproto.casttype) =
                           "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  string key_id = 2 [
+}
+
+message StartKeygenResponse {
+  string key_id = 1 [
     (gogoproto.customname) = "KeyID",
     (gogoproto.casttype) =
         "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
   ];
 }
-
-message StartKeygenResponse {}
 
 message SubmitPubKeyRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;

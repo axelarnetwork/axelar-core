@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	gogoprototypes "github.com/gogo/protobuf/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/multisig/exported"
@@ -74,23 +75,15 @@ func (k Keeper) DeleteKeygenSession(ctx sdk.Context, id exported.KeyID) {
 	k.getStore(ctx).Delete(getKeygenSessionKey(id))
 }
 
-func (k Keeper) createKeygenSession(ctx sdk.Context, id exported.KeyID, snapshot snapshot.Snapshot) error {
-	if _, ok := k.getKeygenSession(ctx, id); ok {
-		return fmt.Errorf("key %s already being generated", id)
-	}
-
-	if _, ok := k.getKey(ctx, id); ok {
-		return fmt.Errorf("key %s already set", id)
-	}
-
+func (k Keeper) createKeygenSession(ctx sdk.Context, snapshot snapshot.Snapshot) (exported.KeyID, error) {
+	id := k.nextKeyID(ctx)
 	params := k.getParams(ctx)
-
 	expiresAt := ctx.BlockHeight() + params.KeygenTimeout
+
 	keygenSession := types.NewKeygenSession(id, params.KeygenThreshold, params.SigningThreshold, snapshot, expiresAt, params.KeygenGracePeriod)
 	if err := keygenSession.ValidateBasic(); err != nil {
-		return err
+		return "", err
 	}
-
 	k.setKeygenSession(ctx, keygenSession)
 
 	participants := snapshot.GetParticipantAddresses()
@@ -107,7 +100,7 @@ func (k Keeper) createKeygenSession(ctx sdk.Context, id exported.KeyID, snapshot
 		"expires_at", expiresAt,
 	)
 
-	return nil
+	return id, nil
 }
 
 func (k Keeper) getKey(ctx sdk.Context, id exported.KeyID) (key types.Key, ok bool) {
@@ -137,4 +130,12 @@ func getKeygenSessionExpiryKey(keygen types.KeygenSession) utils.Key {
 
 func getKeygenSessionKey(id exported.KeyID) utils.Key {
 	return keygenPrefix.AppendStr(id.String())
+}
+
+func (k Keeper) nextKeyID(ctx sdk.Context) exported.KeyID {
+	var val gogoprototypes.UInt64Value
+	k.getStore(ctx).Get(keygenSessionCountKey, &val)
+	defer k.getStore(ctx).Set(keygenSessionCountKey, &gogoprototypes.UInt64Value{Value: val.Value + 1})
+
+	return exported.KeyID(fmt.Sprintf("%08d", val.Value))
 }

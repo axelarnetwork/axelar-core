@@ -21,7 +21,8 @@ var (
 	keyEpochPrefix         = utils.KeyFromInt(6)
 	keyRotationCountPrefix = utils.KeyFromInt(7)
 
-	signingSessionCountKey = utils.KeyFromInt(100)
+	keygenSessionCountKey  = utils.KeyFromInt(100)
+	signingSessionCountKey = utils.KeyFromInt(101)
 )
 
 var _ types.Keeper = &Keeper{}

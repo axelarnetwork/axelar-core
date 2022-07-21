@@ -64,13 +64,14 @@ func TestMsgServer(t *testing.T) {
 		snapshotter.GetOperatorFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return rand.Sample(validators, 1)[0].Address }
 	})
 	keySessionExists := When("a key session exists", func() {
-		keyID = exported.KeyID(rand.HexStr(5))
-		_, err := msgServer.StartKeygen(sdk.WrapSDKContext(ctx), types.NewStartKeygenRequest(rand.AccAddr(), keyID))
+		res, err := msgServer.StartKeygen(sdk.WrapSDKContext(ctx), types.NewStartKeygenRequest(rand.AccAddr()))
 		expiresAt = ctx.BlockHeight() + types.DefaultParams().KeygenTimeout
 
 		assert.NoError(t, err)
 		assert.Len(t, k.GetKeygenSessionsByExpiry(ctx, expiresAt), 1)
 		assert.Len(t, k.GetKeygenSessionsByExpiry(ctx, ctx.BlockHeight()+types.DefaultParams().KeygenGracePeriod), 0)
+
+		keyID = res.KeyID
 	})
 	requestIsMade := When("a request is made", func() {
 		sk := funcs.Must(btcec.NewPrivateKey())
@@ -84,6 +85,14 @@ func TestMsgServer(t *testing.T) {
 	t.Run("keygen", func(t *testing.T) {
 		givenMsgServer.
 			Branch(
+				keySessionExists.
+					Then("should start a new keygen session with different key ID", func(t *testing.T) {
+						res, err := msgServer.StartKeygen(sdk.WrapSDKContext(ctx), types.NewStartKeygenRequest(rand.AccAddr()))
+
+						assert.NoError(t, err)
+						assert.NotEqual(t, keyID, res.KeyID)
+					}),
+
 				whenSenderIsProxy.
 					When("the key ID does not exist", func() {
 						// do not call StartKeygen
@@ -113,29 +122,7 @@ func TestMsgServer(t *testing.T) {
 						}
 					}).
 					Then("keygen fails", func(t *testing.T) {
-						req := types.NewStartKeygenRequest(rand.AccAddr(), exported.KeyID(rand.HexStr(5)))
-						_, err := msgServer.StartKeygen(sdk.WrapSDKContext(ctx), req)
-						assert.Error(t, err)
-					}),
-
-				whenSenderIsProxy.
-					When2(keySessionExists).
-					Then("keygen with same KeyID fails", func(t *testing.T) {
-						req := types.NewStartKeygenRequest(rand.AccAddr(), keyID)
-						_, err := msgServer.StartKeygen(sdk.WrapSDKContext(ctx), req)
-						assert.Error(t, err)
-					}),
-
-				whenSenderIsProxy.
-					When("key exists", func() {
-						k.SetKey(ctx, types.Key{
-							ID:               keyID,
-							Snapshot:         snapshot.NewSnapshot(ctx.BlockTime(), ctx.BlockHeight(), validators, sdk.NewUint(10)),
-							SigningThreshold: types.DefaultParams().SigningThreshold,
-						})
-					}).
-					Then("keygen with same KeyID fails", func(t *testing.T) {
-						req := types.NewStartKeygenRequest(rand.AccAddr(), keyID)
+						req := types.NewStartKeygenRequest(rand.AccAddr())
 						_, err := msgServer.StartKeygen(sdk.WrapSDKContext(ctx), req)
 						assert.Error(t, err)
 					}),

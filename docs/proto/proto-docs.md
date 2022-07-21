@@ -4393,7 +4393,6 @@ chain
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [string](#string) |  |  |
-| `key_id` | [string](#string) |  |  |
 
 
 
@@ -4404,6 +4403,11 @@ chain
 
 ### StartKeygenResponse
 
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_id` | [string](#string) |  |  |
 
 
 

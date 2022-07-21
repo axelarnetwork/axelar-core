@@ -39,12 +39,12 @@ func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest)
 		return nil, sdkerrors.Wrap(err, "unable to create snapshot for keygen")
 	}
 
-	err = s.createKeygenSession(ctx, req.KeyID, snap)
+	keyID, err := s.createKeygenSession(ctx, snap)
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "unable to start keygen")
 	}
 
-	return &types.StartKeygenResponse{}, nil
+	return &types.StartKeygenResponse{KeyID: keyID}, nil
 }
 
 func (s msgServer) SubmitPubKey(c context.Context, req *types.SubmitPubKeyRequest) (*types.SubmitPubKeyResponse, error) {
