@@ -89,7 +89,6 @@ type AppModule struct {
 	AppModuleBasic
 	logger      log.Logger
 	keeper      keeper.BaseKeeper
-	tss         types.TSS
 	voter       types.Voter
 	nexus       types.Nexus
 	signer      types.Signer
@@ -102,7 +101,6 @@ type AppModule struct {
 // NewAppModule creates a new AppModule object
 func NewAppModule(
 	k keeper.BaseKeeper,
-	tss types.TSS,
 	voter types.Voter,
 	signer types.Signer,
 	nexus types.Nexus,
@@ -115,9 +113,7 @@ func NewAppModule(
 		AppModuleBasic: AppModuleBasic{},
 		logger:         logger,
 		keeper:         k,
-		tss:            tss,
 		voter:          voter,
-		signer:         signer,
 		nexus:          nexus,
 		snapshotter:    snapshotter,
 		staking:        staking,
@@ -148,7 +144,7 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.Raw
 
 // Route returns the module's route
 func (am AppModule) Route() sdk.Route {
-	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper, am.tss, am.voter, am.signer, am.nexus, am.snapshotter, am.staking, am.slashing))
+	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper, am.voter, am.nexus, am.snapshotter, am.staking, am.slashing, am.multisig))
 }
 
 // QuerierRoute returns this module's query route
@@ -179,7 +175,7 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 
 // EndBlock executes all state transitions this module requires at the end of each new block
 func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
-	return utils.RunEndBlocker(ctx, am.keeper, func(ctx sdk.Context) ([]abci.ValidatorUpdate, error) {
+	return utils.RunCached(ctx, am.keeper, func(ctx sdk.Context) ([]abci.ValidatorUpdate, error) {
 		return EndBlocker(ctx, req, am.keeper, am.nexus, am.multisig)
 	})
 }

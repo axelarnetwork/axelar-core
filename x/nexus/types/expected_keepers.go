@@ -5,12 +5,14 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/tendermint/tendermint/libs/log"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
+	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 )
 
-//go:generate moq -out ./mock/expected_keepers.go -pkg mock . Nexus Snapshotter AxelarnetKeeper EVMBaseKeeper RewardKeeper
+//go:generate moq -out ./mock/expected_keepers.go -pkg mock . Nexus Snapshotter AxelarnetKeeper EVMBaseKeeper RewardKeeper SlashingKeeper
 
 // Nexus provides functionality to manage cross-chain transfers
 type Nexus interface {
@@ -39,6 +41,7 @@ type Nexus interface {
 
 // Snapshotter provides functionality to the snapshot module
 type Snapshotter interface {
+	CreateSnapshot(ctx sdk.Context, candidates []sdk.ValAddress, filterFunc func(snapshot.ValidatorI) bool, weightFunc func(consensusPower sdk.Uint) sdk.Uint, threshold utils.Threshold) (snapshot.Snapshot, error)
 	GetOperator(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress
 	GetProxy(ctx sdk.Context, operator sdk.ValAddress) (addr sdk.AccAddress, active bool)
 }
@@ -63,4 +66,9 @@ type EVMBaseKeeper interface {
 // RewardKeeper provides functionality to get reward keeper
 type RewardKeeper interface {
 	GetPool(ctx sdk.Context, name string) reward.RewardPool
+}
+
+// SlashingKeeper provides functionality to manage slashing info for a validator
+type SlashingKeeper interface {
+	IsTombstoned(ctx sdk.Context, consAddr sdk.ConsAddress) bool
 }

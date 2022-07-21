@@ -59,3 +59,15 @@ enum PollState {
   POLL_STATE_COMPLETED = 2 [ (gogoproto.enumvalue_customname) = "Completed" ];
   POLL_STATE_FAILED = 3 [ (gogoproto.enumvalue_customname) = "Failed" ];
 }
+
+// PollParticipants should be embedded in poll events in other modules
+message PollParticipants {
+  uint64 poll_id = 1 [
+    (gogoproto.customname) = "PollID",
+    (gogoproto.customtype) = "PollID",
+    (gogoproto.nullable) = false
+  ];
+  repeated bytes participants = 2
+      [ (gogoproto.casttype) =
+            "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
+}

@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/codec"
+	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	gogoprototypes "github.com/gogo/protobuf/types"
@@ -28,6 +29,10 @@ var (
 
 	// Deprecated
 	voterPrefix = utils.KeyFromStr("voter")
+)
+
+const (
+	voteCostPerMaintainer = storetypes.Gas(20000)
 )
 
 // Keeper - the vote module's keeper
@@ -77,6 +82,8 @@ func (k Keeper) InitializePoll(ctx sdk.Context, pollBuilder exported.PollBuilder
 	if err != nil {
 		return 0, err
 	}
+
+	ctx.GasMeter().ConsumeGas(voteCostPerMaintainer*uint64(len(pollMetadata.Snapshot.GetParticipantAddresses())), "initialize poll")
 
 	k.GetPollQueue(ctx).Enqueue(pollPrefix.AppendStr(pollMetadata.ID.String()), &pollMetadata)
 

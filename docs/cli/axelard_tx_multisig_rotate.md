@@ -1,9 +1,9 @@
-## axelard tx tss register-external-keys
+## axelard tx multisig rotate
 
-Register the external keys for the given chain
+Rotate the given chain to the given key
 
 ```
-axelard tx tss register-external-keys [chain] [flags]
+axelard tx multisig rotate [chain] [keyID] [flags]
 ```
 
 ### Options
@@ -19,8 +19,7 @@ axelard tx tss register-external-keys [chain] [flags]
       --gas-adjustment float     adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default 1)
       --gas-prices string        Gas prices in decimal format to determine the transaction fee (e.g. 0.1uatom) (default "0.00005uaxl")
       --generate-only            Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)
-  -h, --help                     help for register-external-keys
-      --key strings              key ID and public key in the hex format, e.g. [keyID:keyHex]
+  -h, --help                     help for rotate
       --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "file")
       --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
       --ledger                   Use a connected Ledger device
@@ -46,4 +45,4 @@ axelard tx tss register-external-keys [chain] [flags]
 
 ### SEE ALSO
 
-- [axelard tx tss](axelard_tx_tss.md)	 - tss transactions subcommands
+- [axelard tx multisig](axelard_tx_multisig.md)	 - multisig transactions subcommands

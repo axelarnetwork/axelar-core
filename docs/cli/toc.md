@@ -109,6 +109,9 @@
       - [annual-provisions](axelard_query_mint_annual-provisions.md)	 - Query the current minting annual provisions value
       - [inflation](axelard_query_mint_inflation.md)	 - Query the current minting inflation value
       - [params](axelard_query_mint_params.md)	 - Query the current minting parameters
+    - [multisig](axelard_query_multisig.md)	 - Querying commands for the multisig module
+      - [key-id \[chain\]](axelard_query_multisig_key-id.md)	 - Returns the key ID assigned to a given chain
+      - [next-key-id \[chain\]](axelard_query_multisig_next-key-id.md)	 - Returns the key ID assigned for the next rotation on a given chain and for the given key role
     - [nexus](axelard_query_nexus.md)	 - Querying commands for the nexus module
       - [assets \[chain\]](axelard_query_nexus_assets.md)	 - Returns the registered assets of a chain
       - [chain-by-asset \[asset\]](axelard_query_nexus_chain-by-asset.md)	 - Returns the chains an asset is registered on
@@ -179,7 +182,6 @@
   - [set-genesis-slashing](axelard_set-genesis-slashing.md)	 - Set the genesis parameters for the slashing module
   - [set-genesis-snapshot](axelard_set-genesis-snapshot.md)	 - Set the genesis parameters for the snapshot module
   - [set-genesis-staking](axelard_set-genesis-staking.md)	 - Set the genesis parameters for the staking module
-  - [set-genesis-tss](axelard_set-genesis-tss.md)	 - Set the genesis parameters for the tss module
   - [set-genesis-vote](axelard_set-genesis-vote.md)	 - Set the genesis parameters for the vote module
   - [set-governance-key \[threshold\] \[\[pubKey\]...\]](axelard_set-governance-key.md)	 - Set the genesis multisig governance key for the axelar network
   - [start](axelard_start.md)	 - Run the full node
@@ -216,7 +218,7 @@
     - [encode \[file\]](axelard_tx_encode.md)	 - Encode transactions generated offline
     - [evidence](axelard_tx_evidence.md)	 - Evidence transaction subcommands
     - [evm](axelard_tx_evm.md)	 - evm transactions subcommands
-      - [add-chain \[name\] \[key type\] \[chain config\]](axelard_tx_evm_add-chain.md)	 - Add a new EVM chain
+      - [add-chain \[name\] \[chain config\]](axelard_tx_evm_add-chain.md)	 - Add a new EVM chain
       - [confirm-erc20-deposit \[chain\] \[txID\] \[burnerAddr\]](axelard_tx_evm_confirm-erc20-deposit.md)	 - Confirm ERC20 deposits in an EVM chain transaction to a burner address
       - [confirm-erc20-token \[chain\] \[origin chain\] \[origin asset\] \[txID\]](axelard_tx_evm_confirm-erc20-token.md)	 - Confirm an ERC20 token deployment in an EVM chain transaction for a given asset of some origin chain and gateway address
       - [confirm-gateway-tx \[chain\] \[txID\]](axelard_tx_evm_confirm-gateway-tx.md)	 - Confirm a gateway transaction in an EVM chain
@@ -254,6 +256,7 @@
     - [ibc-transfer](axelard_tx_ibc-transfer.md)	 - IBC fungible token transfer transaction subcommands
       - [transfer \[src-port\] \[src-channel\] \[receiver\] \[amount\]](axelard_tx_ibc-transfer_transfer.md)	 - Transfer a fungible token through IBC
     - [multisig](axelard_tx_multisig.md)	 - multisig transactions subcommands
+      - [rotate \[chain\] \[keyID\]](axelard_tx_multisig_rotate.md)	 - Rotate the given chain to the given key
       - [start-keygen](axelard_tx_multisig_start-keygen.md)	 - Initiate key generation protocol
     - [multisign \[file\] \[name\] \[\[signature\]...\]](axelard_tx_multisign.md)	 - Generate multisig signatures for transactions generated offline
     - [multisign-batch \[file\] \[name\] \[\[signature-file\]...\]](axelard_tx_multisign-batch.md)	 - Assemble multisig transactions in batch from batch signatures
@@ -281,10 +284,6 @@
       - [edit-validator](axelard_tx_staking_edit-validator.md)	 - edit an existing validator account
       - [redelegate \[src-validator-addr\] \[dst-validator-addr\] \[amount\]](axelard_tx_staking_redelegate.md)	 - Redelegate illiquid tokens from one validator to another
       - [unbond \[validator-addr\] \[amount\]](axelard_tx_staking_unbond.md)	 - Unbond shares from a validator
-    - [tss](axelard_tx_tss.md)	 - tss transactions subcommands
-      - [register-external-keys \[chain\]](axelard_tx_tss_register-external-keys.md)	 - Register the external keys for the given chain
-      - [rotate \[chain\] \[role\] \[keyID\]](axelard_tx_tss_rotate.md)	 - Rotate the given chain from the old key to the given key
-      - [start-keygen](axelard_tx_tss_start-keygen.md)	 - Initiate key generation protocol
     - [validate-signatures \[file\]](axelard_tx_validate-signatures.md)	 - validate transactions signatures
     - [vesting](axelard_tx_vesting.md)	 - Vesting transaction subcommands
       - [create-vesting-account \[to_address\] \[amount\] \[end_time\]](axelard_tx_vesting_create-vesting-account.md)	 - Create a new vesting account funded with an allocation of tokens.

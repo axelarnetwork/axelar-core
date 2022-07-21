@@ -10,11 +10,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
-
-// TODO: make this a param when we can easily switch between different kinds of keys and different settings
-var keyRole = tss.SecondaryKey
 
 func validateChains(ctx sdk.Context, sourceChainName nexus.ChainName, destinationChainName nexus.ChainName, bk types.BaseKeeper, n types.Nexus) (nexus.Chain, nexus.Chain, error) {
 	sourceChain, ok := n.GetChain(ctx, sourceChainName)
@@ -112,7 +108,7 @@ func handleContractCall(ctx sdk.Context, event types.Event, bk types.BaseKeeper,
 		destinationChainID,
 		keyID,
 		sourceChain.Name,
-		event.TxId,
+		event.TxID,
 		event.Index,
 		*e,
 	)
@@ -185,7 +181,7 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 		destinationChainID,
 		keyID,
 		sourceChain.Name,
-		event.TxId,
+		event.TxID,
 		event.Index,
 		*e,
 		e.Amount,
@@ -237,15 +233,15 @@ func handleConfirmDeposit(ctx sdk.Context, event types.Event, ck types.ChainKeep
 
 	// set confirmed deposit
 	erc20Deposit := types.ERC20Deposit{
-		TxID:             event.TxId,
+		TxID:             event.TxID,
 		Amount:           e.Amount,
 		Asset:            burnerInfo.Asset,
 		DestinationChain: burnerInfo.DestinationChain,
 		BurnerAddress:    burnerInfo.BurnerAddress,
 	}
 
-	if _, _, ok := ck.GetDeposit(ctx, common.Hash(event.TxId), common.Address(burnerInfo.BurnerAddress)); ok {
-		ck.Logger(ctx).Info(fmt.Sprintf("%s deposit %s-%s already exists", chain.Name.String(), event.TxId.Hex(), burnerInfo.BurnerAddress.Hex()))
+	if _, _, ok := ck.GetDeposit(ctx, event.TxID, burnerInfo.BurnerAddress); ok {
+		ck.Logger(ctx).Info(fmt.Sprintf("%s deposit %s-%s already exists", chain.Name.String(), event.TxID.Hex(), burnerInfo.BurnerAddress.Hex()))
 		return false
 	}
 	ck.SetDeposit(ctx, erc20Deposit, types.DepositStatus_Confirmed)
@@ -263,7 +259,7 @@ func handleConfirmDeposit(ctx sdk.Context, event types.Event, ck types.ChainKeep
 			sdk.NewAttribute(types.AttributeKeyAsset, burnerInfo.Asset),
 			sdk.NewAttribute(types.AttributeKeyDepositAddress, depositAddr.Address),
 			sdk.NewAttribute(types.AttributeKeyTokenAddress, burnerInfo.TokenAddress.Hex()),
-			sdk.NewAttribute(types.AttributeKeyTxID, event.TxId.Hex()),
+			sdk.NewAttribute(types.AttributeKeyTxID, event.TxID.Hex()),
 			sdk.NewAttribute(types.AttributeKeyTransferID, transferID.String()),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm),
 		))
@@ -302,7 +298,7 @@ func handleTokenDeployed(ctx sdk.Context, event types.Event, ck types.ChainKeepe
 			sdk.NewAttribute(types.AttributeKeyAsset, token.GetAsset()),
 			sdk.NewAttribute(types.AttributeKeySymbol, token.GetDetails().Symbol),
 			sdk.NewAttribute(types.AttributeKeyTokenAddress, token.GetAddress().Hex()),
-			sdk.NewAttribute(types.AttributeKeyTxID, event.TxId.Hex()),
+			sdk.NewAttribute(types.AttributeKeyTxID, event.TxID.Hex()),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm),
 		))
 
@@ -315,13 +311,13 @@ func handleMultisigTransferKey(ctx sdk.Context, event types.Event, ck types.Chai
 		panic(fmt.Errorf("event is nil"))
 	}
 
-	// TODO: add weights to the event and also check
 	newAddresses := e.NewOperators
+	newWeights := e.NewWeights
 	newThreshold := e.NewThreshold
 
 	nextKeyID, ok := multisig.GetNextKeyID(ctx, chain.Name)
 	if !ok {
-		ck.Logger(ctx).Info(fmt.Sprintf("next %s key for chain %s not found", keyRole.SimpleString(), chain.Name))
+		ck.Logger(ctx).Info(fmt.Sprintf("next key for chain %s not found", chain.Name))
 		return false
 	}
 
@@ -339,7 +335,7 @@ func handleMultisigTransferKey(ctx sdk.Context, event types.Event, ck types.Chai
 	}
 
 	addressSeen := make(map[string]bool)
-	for _, newAddress := range newAddresses {
+	for i, newAddress := range newAddresses {
 		newAddressHex := newAddress.Hex()
 		if addressSeen[newAddressHex] {
 			ck.Logger(ctx).Info("duplicate address in new addresses")
@@ -347,9 +343,14 @@ func handleMultisigTransferKey(ctx sdk.Context, event types.Event, ck types.Chai
 		}
 		addressSeen[newAddressHex] = true
 
-		_, ok := expectedAddressWeights[newAddressHex]
+		expectedWeight, ok := expectedAddressWeights[newAddressHex]
 		if !ok {
 			ck.Logger(ctx).Info("new addresses do not match")
+			return false
+		}
+
+		if !expectedWeight.Equal(newWeights[i]) {
+			ck.Logger(ctx).Info("new weights do not match")
 			return false
 		}
 	}
@@ -365,7 +366,7 @@ func handleMultisigTransferKey(ctx sdk.Context, event types.Event, ck types.Chai
 	}
 
 	ck.Logger(ctx).Info(fmt.Sprintf("successfully confirmed key transfer for chain %s", chain.Name),
-		"txID", event.TxId.Hex(),
+		"txID", event.TxID.Hex(),
 		"keyID", nextKeyID,
 	)
 
@@ -424,17 +425,6 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 		// skip if destination chain has not got gateway set yet
 		if _, ok := bk.ForChain(destinationChainName).GetGatewayAddress(ctx); !ok {
 			bk.Logger(ctx).Debug(fmt.Sprintf("skipping confirmed event %s due to destination chain not having gateway set", event.GetID()),
-				"chain", event.Chain.String(),
-				"destination_chain", destinationChainName.String(),
-				"eventID", event.GetID(),
-			)
-
-			return false
-		}
-
-		// skip if destination chain key rotation is in progress
-		if _, nextKeyAssigned := multisig.GetNextKeyID(ctx, destinationChain.Name); nextKeyAssigned {
-			bk.Logger(ctx).Debug(fmt.Sprintf("skipping confirmed event %s due to destination chain in the middle of key rotation", event.GetID()),
 				"chain", event.Chain.String(),
 				"destination_chain", destinationChainName.String(),
 				"eventID", event.GetID(),

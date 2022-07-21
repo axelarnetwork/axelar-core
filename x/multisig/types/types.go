@@ -10,6 +10,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/utils/funcs"
 )
 
 // Signature is an alias for signature in raw bytes
@@ -45,6 +46,10 @@ func (sig Signature) String() string {
 	return hex.EncodeToString(sig)
 }
 
+func (sig Signature) toECDSASignature() btcec.Signature {
+	return *funcs.Must(btcec.ParseDERSignature(sig, btcec.S256()))
+}
+
 func sortAddresses[T sdk.Address](addrs []T) []T {
 	sorted := make([]T, len(addrs))
 	copy(sorted, addrs)
@@ -61,4 +66,14 @@ func NewKeyEpoch(epoch uint64, chain nexus.ChainName, keyID exported.KeyID) KeyE
 		Chain: chain,
 		KeyID: keyID,
 	}
+}
+
+// GetSignature returns the ECDSA signature of the given participant
+func (m MultiSig) GetSignature(p sdk.ValAddress) (btcec.Signature, bool) {
+	sig, ok := m.Sigs[p.String()]
+	if !ok {
+		return btcec.Signature{}, false
+	}
+
+	return sig.toECDSASignature(), true
 }

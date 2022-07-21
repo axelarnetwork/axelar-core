@@ -6,7 +6,7 @@ package mock
 import (
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/cosmos/cosmos-sdk/codec"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
 	"sync"
 )
 
@@ -23,6 +23,9 @@ var _ exported.Poll = &PollMock{}
 // 			GetIDFunc: func() exported.PollID {
 // 				panic("mock out the GetID method")
 // 			},
+// 			GetMetaDataFunc: func() (codec.ProtoMarshaler, bool) {
+// 				panic("mock out the GetMetaData method")
+// 			},
 // 			GetModuleFunc: func() string {
 // 				panic("mock out the GetModule method")
 // 			},
@@ -35,16 +38,16 @@ var _ exported.Poll = &PollMock{}
 // 			GetStateFunc: func() exported.PollState {
 // 				panic("mock out the GetState method")
 // 			},
-// 			GetVotersFunc: func() []sdk.ValAddress {
+// 			GetVotersFunc: func() []github_com_cosmos_cosmos_sdk_types.ValAddress {
 // 				panic("mock out the GetVoters method")
 // 			},
-// 			HasVotedFunc: func(voter sdk.ValAddress) bool {
+// 			HasVotedFunc: func(voter github_com_cosmos_cosmos_sdk_types.ValAddress) bool {
 // 				panic("mock out the HasVoted method")
 // 			},
-// 			HasVotedCorrectlyFunc: func(voter sdk.ValAddress) bool {
+// 			HasVotedCorrectlyFunc: func(voter github_com_cosmos_cosmos_sdk_types.ValAddress) bool {
 // 				panic("mock out the HasVotedCorrectly method")
 // 			},
-// 			VoteFunc: func(voter sdk.ValAddress, blockHeight int64, data codec.ProtoMarshaler) (exported.VoteResult, error) {
+// 			VoteFunc: func(voter github_com_cosmos_cosmos_sdk_types.ValAddress, blockHeight int64, data codec.ProtoMarshaler) (exported.VoteResult, error) {
 // 				panic("mock out the Vote method")
 // 			},
 // 		}
@@ -56,6 +59,9 @@ var _ exported.Poll = &PollMock{}
 type PollMock struct {
 	// GetIDFunc mocks the GetID method.
 	GetIDFunc func() exported.PollID
+
+	// GetMetaDataFunc mocks the GetMetaData method.
+	GetMetaDataFunc func() (codec.ProtoMarshaler, bool)
 
 	// GetModuleFunc mocks the GetModule method.
 	GetModuleFunc func() string
@@ -70,21 +76,24 @@ type PollMock struct {
 	GetStateFunc func() exported.PollState
 
 	// GetVotersFunc mocks the GetVoters method.
-	GetVotersFunc func() []sdk.ValAddress
+	GetVotersFunc func() []github_com_cosmos_cosmos_sdk_types.ValAddress
 
 	// HasVotedFunc mocks the HasVoted method.
-	HasVotedFunc func(voter sdk.ValAddress) bool
+	HasVotedFunc func(voter github_com_cosmos_cosmos_sdk_types.ValAddress) bool
 
 	// HasVotedCorrectlyFunc mocks the HasVotedCorrectly method.
-	HasVotedCorrectlyFunc func(voter sdk.ValAddress) bool
+	HasVotedCorrectlyFunc func(voter github_com_cosmos_cosmos_sdk_types.ValAddress) bool
 
 	// VoteFunc mocks the Vote method.
-	VoteFunc func(voter sdk.ValAddress, blockHeight int64, data codec.ProtoMarshaler) (exported.VoteResult, error)
+	VoteFunc func(voter github_com_cosmos_cosmos_sdk_types.ValAddress, blockHeight int64, data codec.ProtoMarshaler) (exported.VoteResult, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
 		// GetID holds details about calls to the GetID method.
 		GetID []struct {
+		}
+		// GetMetaData holds details about calls to the GetMetaData method.
+		GetMetaData []struct {
 		}
 		// GetModule holds details about calls to the GetModule method.
 		GetModule []struct {
@@ -104,17 +113,17 @@ type PollMock struct {
 		// HasVoted holds details about calls to the HasVoted method.
 		HasVoted []struct {
 			// Voter is the voter argument value.
-			Voter sdk.ValAddress
+			Voter github_com_cosmos_cosmos_sdk_types.ValAddress
 		}
 		// HasVotedCorrectly holds details about calls to the HasVotedCorrectly method.
 		HasVotedCorrectly []struct {
 			// Voter is the voter argument value.
-			Voter sdk.ValAddress
+			Voter github_com_cosmos_cosmos_sdk_types.ValAddress
 		}
 		// Vote holds details about calls to the Vote method.
 		Vote []struct {
 			// Voter is the voter argument value.
-			Voter sdk.ValAddress
+			Voter github_com_cosmos_cosmos_sdk_types.ValAddress
 			// BlockHeight is the blockHeight argument value.
 			BlockHeight int64
 			// Data is the data argument value.
@@ -122,6 +131,7 @@ type PollMock struct {
 		}
 	}
 	lockGetID             sync.RWMutex
+	lockGetMetaData       sync.RWMutex
 	lockGetModule         sync.RWMutex
 	lockGetResult         sync.RWMutex
 	lockGetRewardPoolName sync.RWMutex
@@ -155,6 +165,32 @@ func (mock *PollMock) GetIDCalls() []struct {
 	mock.lockGetID.RLock()
 	calls = mock.calls.GetID
 	mock.lockGetID.RUnlock()
+	return calls
+}
+
+// GetMetaData calls GetMetaDataFunc.
+func (mock *PollMock) GetMetaData() (codec.ProtoMarshaler, bool) {
+	if mock.GetMetaDataFunc == nil {
+		panic("PollMock.GetMetaDataFunc: method is nil but Poll.GetMetaData was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockGetMetaData.Lock()
+	mock.calls.GetMetaData = append(mock.calls.GetMetaData, callInfo)
+	mock.lockGetMetaData.Unlock()
+	return mock.GetMetaDataFunc()
+}
+
+// GetMetaDataCalls gets all the calls that were made to GetMetaData.
+// Check the length with:
+//     len(mockedPoll.GetMetaDataCalls())
+func (mock *PollMock) GetMetaDataCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockGetMetaData.RLock()
+	calls = mock.calls.GetMetaData
+	mock.lockGetMetaData.RUnlock()
 	return calls
 }
 
@@ -263,7 +299,7 @@ func (mock *PollMock) GetStateCalls() []struct {
 }
 
 // GetVoters calls GetVotersFunc.
-func (mock *PollMock) GetVoters() []sdk.ValAddress {
+func (mock *PollMock) GetVoters() []github_com_cosmos_cosmos_sdk_types.ValAddress {
 	if mock.GetVotersFunc == nil {
 		panic("PollMock.GetVotersFunc: method is nil but Poll.GetVoters was just called")
 	}
@@ -289,12 +325,12 @@ func (mock *PollMock) GetVotersCalls() []struct {
 }
 
 // HasVoted calls HasVotedFunc.
-func (mock *PollMock) HasVoted(voter sdk.ValAddress) bool {
+func (mock *PollMock) HasVoted(voter github_com_cosmos_cosmos_sdk_types.ValAddress) bool {
 	if mock.HasVotedFunc == nil {
 		panic("PollMock.HasVotedFunc: method is nil but Poll.HasVoted was just called")
 	}
 	callInfo := struct {
-		Voter sdk.ValAddress
+		Voter github_com_cosmos_cosmos_sdk_types.ValAddress
 	}{
 		Voter: voter,
 	}
@@ -308,10 +344,10 @@ func (mock *PollMock) HasVoted(voter sdk.ValAddress) bool {
 // Check the length with:
 //     len(mockedPoll.HasVotedCalls())
 func (mock *PollMock) HasVotedCalls() []struct {
-	Voter sdk.ValAddress
+	Voter github_com_cosmos_cosmos_sdk_types.ValAddress
 } {
 	var calls []struct {
-		Voter sdk.ValAddress
+		Voter github_com_cosmos_cosmos_sdk_types.ValAddress
 	}
 	mock.lockHasVoted.RLock()
 	calls = mock.calls.HasVoted
@@ -320,12 +356,12 @@ func (mock *PollMock) HasVotedCalls() []struct {
 }
 
 // HasVotedCorrectly calls HasVotedCorrectlyFunc.
-func (mock *PollMock) HasVotedCorrectly(voter sdk.ValAddress) bool {
+func (mock *PollMock) HasVotedCorrectly(voter github_com_cosmos_cosmos_sdk_types.ValAddress) bool {
 	if mock.HasVotedCorrectlyFunc == nil {
 		panic("PollMock.HasVotedCorrectlyFunc: method is nil but Poll.HasVotedCorrectly was just called")
 	}
 	callInfo := struct {
-		Voter sdk.ValAddress
+		Voter github_com_cosmos_cosmos_sdk_types.ValAddress
 	}{
 		Voter: voter,
 	}
@@ -339,10 +375,10 @@ func (mock *PollMock) HasVotedCorrectly(voter sdk.ValAddress) bool {
 // Check the length with:
 //     len(mockedPoll.HasVotedCorrectlyCalls())
 func (mock *PollMock) HasVotedCorrectlyCalls() []struct {
-	Voter sdk.ValAddress
+	Voter github_com_cosmos_cosmos_sdk_types.ValAddress
 } {
 	var calls []struct {
-		Voter sdk.ValAddress
+		Voter github_com_cosmos_cosmos_sdk_types.ValAddress
 	}
 	mock.lockHasVotedCorrectly.RLock()
 	calls = mock.calls.HasVotedCorrectly
@@ -351,12 +387,12 @@ func (mock *PollMock) HasVotedCorrectlyCalls() []struct {
 }
 
 // Vote calls VoteFunc.
-func (mock *PollMock) Vote(voter sdk.ValAddress, blockHeight int64, data codec.ProtoMarshaler) (exported.VoteResult, error) {
+func (mock *PollMock) Vote(voter github_com_cosmos_cosmos_sdk_types.ValAddress, blockHeight int64, data codec.ProtoMarshaler) (exported.VoteResult, error) {
 	if mock.VoteFunc == nil {
 		panic("PollMock.VoteFunc: method is nil but Poll.Vote was just called")
 	}
 	callInfo := struct {
-		Voter       sdk.ValAddress
+		Voter       github_com_cosmos_cosmos_sdk_types.ValAddress
 		BlockHeight int64
 		Data        codec.ProtoMarshaler
 	}{
@@ -374,12 +410,12 @@ func (mock *PollMock) Vote(voter sdk.ValAddress, blockHeight int64, data codec.P
 // Check the length with:
 //     len(mockedPoll.VoteCalls())
 func (mock *PollMock) VoteCalls() []struct {
-	Voter       sdk.ValAddress
+	Voter       github_com_cosmos_cosmos_sdk_types.ValAddress
 	BlockHeight int64
 	Data        codec.ProtoMarshaler
 } {
 	var calls []struct {
-		Voter       sdk.ValAddress
+		Voter       github_com_cosmos_cosmos_sdk_types.ValAddress
 		BlockHeight int64
 		Data        codec.ProtoMarshaler
 	}
@@ -399,13 +435,16 @@ var _ exported.VoteHandler = &VoteHandlerMock{}
 //
 // 		// make and configure a mocked exported.VoteHandler
 // 		mockedVoteHandler := &VoteHandlerMock{
-// 			HandleCompletedPollFunc: func(ctx sdk.Context, poll exported.Poll) error {
+// 			HandleCompletedPollFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.Poll) error {
 // 				panic("mock out the HandleCompletedPoll method")
 // 			},
-// 			HandleExpiredPollFunc: func(ctx sdk.Context, poll exported.Poll) error {
+// 			HandleExpiredPollFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.Poll) error {
 // 				panic("mock out the HandleExpiredPoll method")
 // 			},
-// 			HandleResultFunc: func(ctx sdk.Context, result codec.ProtoMarshaler) error {
+// 			HandleFailedPollFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.Poll) error {
+// 				panic("mock out the HandleFailedPoll method")
+// 			},
+// 			HandleResultFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, result codec.ProtoMarshaler) error {
 // 				panic("mock out the HandleResult method")
 // 			},
 // 			IsFalsyResultFunc: func(result codec.ProtoMarshaler) bool {
@@ -419,13 +458,16 @@ var _ exported.VoteHandler = &VoteHandlerMock{}
 // 	}
 type VoteHandlerMock struct {
 	// HandleCompletedPollFunc mocks the HandleCompletedPoll method.
-	HandleCompletedPollFunc func(ctx sdk.Context, poll exported.Poll) error
+	HandleCompletedPollFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.Poll) error
 
 	// HandleExpiredPollFunc mocks the HandleExpiredPoll method.
-	HandleExpiredPollFunc func(ctx sdk.Context, poll exported.Poll) error
+	HandleExpiredPollFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.Poll) error
+
+	// HandleFailedPollFunc mocks the HandleFailedPoll method.
+	HandleFailedPollFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.Poll) error
 
 	// HandleResultFunc mocks the HandleResult method.
-	HandleResultFunc func(ctx sdk.Context, result codec.ProtoMarshaler) error
+	HandleResultFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, result codec.ProtoMarshaler) error
 
 	// IsFalsyResultFunc mocks the IsFalsyResult method.
 	IsFalsyResultFunc func(result codec.ProtoMarshaler) bool
@@ -435,21 +477,28 @@ type VoteHandlerMock struct {
 		// HandleCompletedPoll holds details about calls to the HandleCompletedPoll method.
 		HandleCompletedPoll []struct {
 			// Ctx is the ctx argument value.
-			Ctx sdk.Context
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Poll is the poll argument value.
 			Poll exported.Poll
 		}
 		// HandleExpiredPoll holds details about calls to the HandleExpiredPoll method.
 		HandleExpiredPoll []struct {
 			// Ctx is the ctx argument value.
-			Ctx sdk.Context
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Poll is the poll argument value.
+			Poll exported.Poll
+		}
+		// HandleFailedPoll holds details about calls to the HandleFailedPoll method.
+		HandleFailedPoll []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Poll is the poll argument value.
 			Poll exported.Poll
 		}
 		// HandleResult holds details about calls to the HandleResult method.
 		HandleResult []struct {
 			// Ctx is the ctx argument value.
-			Ctx sdk.Context
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Result is the result argument value.
 			Result codec.ProtoMarshaler
 		}
@@ -461,17 +510,18 @@ type VoteHandlerMock struct {
 	}
 	lockHandleCompletedPoll sync.RWMutex
 	lockHandleExpiredPoll   sync.RWMutex
+	lockHandleFailedPoll    sync.RWMutex
 	lockHandleResult        sync.RWMutex
 	lockIsFalsyResult       sync.RWMutex
 }
 
 // HandleCompletedPoll calls HandleCompletedPollFunc.
-func (mock *VoteHandlerMock) HandleCompletedPoll(ctx sdk.Context, poll exported.Poll) error {
+func (mock *VoteHandlerMock) HandleCompletedPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.Poll) error {
 	if mock.HandleCompletedPollFunc == nil {
 		panic("VoteHandlerMock.HandleCompletedPollFunc: method is nil but VoteHandler.HandleCompletedPoll was just called")
 	}
 	callInfo := struct {
-		Ctx  sdk.Context
+		Ctx  github_com_cosmos_cosmos_sdk_types.Context
 		Poll exported.Poll
 	}{
 		Ctx:  ctx,
@@ -487,11 +537,11 @@ func (mock *VoteHandlerMock) HandleCompletedPoll(ctx sdk.Context, poll exported.
 // Check the length with:
 //     len(mockedVoteHandler.HandleCompletedPollCalls())
 func (mock *VoteHandlerMock) HandleCompletedPollCalls() []struct {
-	Ctx  sdk.Context
+	Ctx  github_com_cosmos_cosmos_sdk_types.Context
 	Poll exported.Poll
 } {
 	var calls []struct {
-		Ctx  sdk.Context
+		Ctx  github_com_cosmos_cosmos_sdk_types.Context
 		Poll exported.Poll
 	}
 	mock.lockHandleCompletedPoll.RLock()
@@ -501,12 +551,12 @@ func (mock *VoteHandlerMock) HandleCompletedPollCalls() []struct {
 }
 
 // HandleExpiredPoll calls HandleExpiredPollFunc.
-func (mock *VoteHandlerMock) HandleExpiredPoll(ctx sdk.Context, poll exported.Poll) error {
+func (mock *VoteHandlerMock) HandleExpiredPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.Poll) error {
 	if mock.HandleExpiredPollFunc == nil {
 		panic("VoteHandlerMock.HandleExpiredPollFunc: method is nil but VoteHandler.HandleExpiredPoll was just called")
 	}
 	callInfo := struct {
-		Ctx  sdk.Context
+		Ctx  github_com_cosmos_cosmos_sdk_types.Context
 		Poll exported.Poll
 	}{
 		Ctx:  ctx,
@@ -522,11 +572,11 @@ func (mock *VoteHandlerMock) HandleExpiredPoll(ctx sdk.Context, poll exported.Po
 // Check the length with:
 //     len(mockedVoteHandler.HandleExpiredPollCalls())
 func (mock *VoteHandlerMock) HandleExpiredPollCalls() []struct {
-	Ctx  sdk.Context
+	Ctx  github_com_cosmos_cosmos_sdk_types.Context
 	Poll exported.Poll
 } {
 	var calls []struct {
-		Ctx  sdk.Context
+		Ctx  github_com_cosmos_cosmos_sdk_types.Context
 		Poll exported.Poll
 	}
 	mock.lockHandleExpiredPoll.RLock()
@@ -535,13 +585,48 @@ func (mock *VoteHandlerMock) HandleExpiredPollCalls() []struct {
 	return calls
 }
 
+// HandleFailedPoll calls HandleFailedPollFunc.
+func (mock *VoteHandlerMock) HandleFailedPoll(ctx github_com_cosmos_cosmos_sdk_types.Context, poll exported.Poll) error {
+	if mock.HandleFailedPollFunc == nil {
+		panic("VoteHandlerMock.HandleFailedPollFunc: method is nil but VoteHandler.HandleFailedPoll was just called")
+	}
+	callInfo := struct {
+		Ctx  github_com_cosmos_cosmos_sdk_types.Context
+		Poll exported.Poll
+	}{
+		Ctx:  ctx,
+		Poll: poll,
+	}
+	mock.lockHandleFailedPoll.Lock()
+	mock.calls.HandleFailedPoll = append(mock.calls.HandleFailedPoll, callInfo)
+	mock.lockHandleFailedPoll.Unlock()
+	return mock.HandleFailedPollFunc(ctx, poll)
+}
+
+// HandleFailedPollCalls gets all the calls that were made to HandleFailedPoll.
+// Check the length with:
+//     len(mockedVoteHandler.HandleFailedPollCalls())
+func (mock *VoteHandlerMock) HandleFailedPollCalls() []struct {
+	Ctx  github_com_cosmos_cosmos_sdk_types.Context
+	Poll exported.Poll
+} {
+	var calls []struct {
+		Ctx  github_com_cosmos_cosmos_sdk_types.Context
+		Poll exported.Poll
+	}
+	mock.lockHandleFailedPoll.RLock()
+	calls = mock.calls.HandleFailedPoll
+	mock.lockHandleFailedPoll.RUnlock()
+	return calls
+}
+
 // HandleResult calls HandleResultFunc.
-func (mock *VoteHandlerMock) HandleResult(ctx sdk.Context, result codec.ProtoMarshaler) error {
+func (mock *VoteHandlerMock) HandleResult(ctx github_com_cosmos_cosmos_sdk_types.Context, result codec.ProtoMarshaler) error {
 	if mock.HandleResultFunc == nil {
 		panic("VoteHandlerMock.HandleResultFunc: method is nil but VoteHandler.HandleResult was just called")
 	}
 	callInfo := struct {
-		Ctx    sdk.Context
+		Ctx    github_com_cosmos_cosmos_sdk_types.Context
 		Result codec.ProtoMarshaler
 	}{
 		Ctx:    ctx,
@@ -557,11 +642,11 @@ func (mock *VoteHandlerMock) HandleResult(ctx sdk.Context, result codec.ProtoMar
 // Check the length with:
 //     len(mockedVoteHandler.HandleResultCalls())
 func (mock *VoteHandlerMock) HandleResultCalls() []struct {
-	Ctx    sdk.Context
+	Ctx    github_com_cosmos_cosmos_sdk_types.Context
 	Result codec.ProtoMarshaler
 } {
 	var calls []struct {
-		Ctx    sdk.Context
+		Ctx    github_com_cosmos_cosmos_sdk_types.Context
 		Result codec.ProtoMarshaler
 	}
 	mock.lockHandleResult.RLock()

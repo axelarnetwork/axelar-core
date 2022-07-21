@@ -4,19 +4,22 @@ import (
 	"crypto/ecdsa"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
+	"github.com/axelarnetwork/axelar-core/x/multisig/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
-	tofnd2 "github.com/axelarnetwork/axelar-core/x/tss/tofnd"
+	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
-//go:generate moq -pkg mock -out ./mock/expected_keepers.go . TofndClient TofndKeyGenClient TofndSignClient Voter StakingKeeper TSSKeeper Snapshotter Nexus Rewarder
+//go:generate moq -pkg mock -out ./mock/expected_keepers.go . TofndClient TofndKeyGenClient TofndSignClient Voter StakingKeeper TSSKeeper Snapshotter Nexus Rewarder MultiSigKeeper Slasher
 
 // Snapshotter provides snapshot functionality
 type Snapshotter = snapshot.Snapshotter
@@ -40,17 +43,17 @@ type InitPoller = interface {
 
 // TofndClient wraps around TofndKeyGenClient and TofndSignClient
 type TofndClient interface {
-	tofnd2.GG20Client
+	tofnd.GG20Client
 }
 
 // TofndKeyGenClient provides keygen functionality
 type TofndKeyGenClient interface {
-	tofnd2.GG20_KeygenClient
+	tofnd.GG20_KeygenClient
 }
 
 // TofndSignClient provides signing functionality
 type TofndSignClient interface {
-	tofnd2.GG20_SignClient
+	tofnd.GG20_SignClient
 }
 
 // StakingKeeper adopts the methods from "github.com/cosmos/cosmos-sdk/x/staking/exported" that are
@@ -78,7 +81,7 @@ type TSSKeeper interface {
 	GetSig(ctx sdk.Context, sigID string) (exported.Signature, exported.SigStatus)
 	SetSig(ctx sdk.Context, signature exported.Signature)
 	DoesValidatorParticipateInSign(ctx sdk.Context, sigID string, validator sdk.ValAddress) bool
-	PenalizeCriminal(ctx sdk.Context, criminal sdk.ValAddress, crimeType tofnd2.MessageOut_CriminalList_Criminal_CrimeType)
+	PenalizeCriminal(ctx sdk.Context, criminal sdk.ValAddress, crimeType tofnd.MessageOut_CriminalList_Criminal_CrimeType)
 	StartSign(ctx sdk.Context, info exported.SignInfo, snapshotter Snapshotter, voter InitPoller) error
 	StartKeygen(ctx sdk.Context, voter Voter, keyInfo KeyInfo, snapshot snapshot.Snapshot) error
 	SetAvailableOperator(ctx sdk.Context, validator sdk.ValAddress, keyIDs ...exported.KeyID)
@@ -124,4 +127,20 @@ type TSSKeeper interface {
 // Rewarder provides reward functionality
 type Rewarder interface {
 	GetPool(ctx sdk.Context, name string) reward.RewardPool
+}
+
+// MultiSigKeeper provides multisig functionality
+type MultiSigKeeper interface {
+	SetKey(ctx sdk.Context, key types.Key)
+	AssignKey(ctx sdk.Context, chain nexus.ChainName, id multisig.KeyID) error
+	RotateKey(ctx sdk.Context, chain nexus.ChainName) error
+	GetKey(ctx sdk.Context, keyID multisig.KeyID) (multisig.Key, bool)
+	GetActiveKeyIDs(ctx sdk.Context, chainName nexus.ChainName) []multisig.KeyID
+}
+
+// Slasher provides slasher functionality
+type Slasher interface {
+	GetValidatorSigningInfo(ctx sdk.Context, address sdk.ConsAddress) (slashingtypes.ValidatorSigningInfo, bool)
+	SignedBlocksWindow(ctx sdk.Context) int64
+	GetValidatorMissedBlockBitArray(ctx sdk.Context, address sdk.ConsAddress, index int64) bool
 }

@@ -11,7 +11,7 @@ axelard set-genesis-reward [flags]
 ```
       --external-chain-voting-inflation-rate string   The fraction of total stake per year that's distributed among external chain voters (e.g., "0.02").
   -h, --help                                          help for set-genesis-reward
-      --tss-relative-inflation-rate string            The fraction of current inflation rate that's rewarded for participating in TSS (e.g., "1.00").
+      --key-mgmt-relative-inflation-rate string       The fraction of current inflation rate that's rewarded for participating in TSS (e.g., "1.00").
 ```
 
 ### Options inherited from parent commands

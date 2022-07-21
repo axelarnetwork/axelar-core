@@ -33,6 +33,7 @@ type ValidatorI interface {
 	GetOperator() sdk.ValAddress           // operator address to receive/return validators coins
 	GetConsAddr() (sdk.ConsAddress, error) // validation consensus address
 	IsJailed() bool                        // whether the validator is jailed
+	IsBonded() bool                        // whether the validator is bonded
 }
 
 // NewSnapshot is the constructor of Snapshot
@@ -63,7 +64,6 @@ func (m Snapshot) ValidateBasic() error {
 		return fmt.Errorf("snapshot must have timestamp >0")
 	}
 
-	participantsWeight := sdk.ZeroUint()
 	for addr, p := range m.Participants {
 		if err := p.ValidateBasic(); err != nil {
 			return err
@@ -72,11 +72,9 @@ func (m Snapshot) ValidateBasic() error {
 		if addr != p.Address.String() {
 			return fmt.Errorf("invalid snapshot")
 		}
-
-		participantsWeight = participantsWeight.Add(p.Weight)
 	}
 
-	if participantsWeight.GT(m.BondedWeight) {
+	if m.GetParticipantsWeight().GT(m.BondedWeight) {
 		return fmt.Errorf("snapshot cannot have sum of participants weight greater than bonded weight")
 	}
 
@@ -146,6 +144,7 @@ func (m Snapshot) CalculateMinPassingWeight(threshold utils.Threshold) sdk.Uint 
 }
 
 // Validate returns an error if the snapshot is not valid; nil otherwise
+// Deprecated
 func (m Snapshot) Validate() error {
 	if len(m.Validators) == 0 {
 		return fmt.Errorf("missing validators")

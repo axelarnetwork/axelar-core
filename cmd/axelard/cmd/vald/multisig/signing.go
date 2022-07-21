@@ -16,7 +16,7 @@ func (mgr *Mgr) ProcessSigningStarted(event *types.SigningStarted) error {
 		return nil
 	}
 
-	keyUID := event.GetKeyID().String()
+	keyUID := fmt.Sprintf("%s_%d", event.GetKeyID().String(), 0)
 	partyUID := mgr.participant.String()
 
 	sig, err := mgr.sign(keyUID, event.GetPayloadHash(), partyUID, pubKey)

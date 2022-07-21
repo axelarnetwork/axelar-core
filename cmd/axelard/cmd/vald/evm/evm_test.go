@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"hash"
 	"math/big"
-	"strconv"
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -26,14 +25,14 @@ import (
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald/evm/rpc/mock"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
-	"github.com/axelarnetwork/axelar-core/x/vote/exported"
+	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
-	tmEvents "github.com/axelarnetwork/tm-events/events"
-	"github.com/axelarnetwork/utils/slices"
+	"github.com/axelarnetwork/utils/funcs"
+	. "github.com/axelarnetwork/utils/test"
 )
 
 // testHasher is the helper tool for transaction/receipt list hashing.
@@ -195,64 +194,6 @@ func TestDecodeErc20TransferEvent_CorrectData(t *testing.T) {
 	assert.Equal(t, expectedAmount, transfer.Amount)
 }
 
-func TestDecodeMultisigKeyTransferEvent(t *testing.T) {
-	t.Run("should decode the new multisig addresses and threshold", testutils.Func(func(t *testing.T) {
-		log := geth.Log{
-			Topics: []common.Hash{
-				MultisigTransferOperatorshipSig,
-			},
-			Data: common.Hex2Bytes("00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000005000000000000000000000000280ad463eb19ca60f7fccf90b02d9e4bf46b198c0000000000000000000000004ee55a9d900c1b69b8f54e168b3b5b2f8293960a00000000000000000000000068c4e69c910615f42e170d18d40a2b3bce5ef45b0000000000000000000000009e65862b2cc70aac35c9bedcd7563ac1f02a9171000000000000000000000000a38882218377bbaab0d498d7d6cf474a80072cbf"),
-		}
-
-		expectedAddresses := []common.Address{
-			common.HexToAddress("0x280ad463EB19ca60F7FCCf90B02d9e4bF46B198C"),
-			common.HexToAddress("0x4ee55a9d900C1B69b8f54E168B3b5b2f8293960a"),
-			common.HexToAddress("0x68C4E69C910615f42e170D18D40A2b3bCe5EF45b"),
-			common.HexToAddress("0x9e65862b2cC70AaC35c9beDcD7563AC1f02a9171"),
-			common.HexToAddress("0xa38882218377BBAAB0d498D7d6Cf474A80072CBf"),
-		}
-		expectedThreshold := uint64(3)
-		operatorshipTransferredEvent, err := decodeMultisigOperatorshipTransferredEvent(&log)
-
-		assert.NoError(t, err)
-		assert.Equal(t, expectedAddresses, slices.Map(operatorshipTransferredEvent.NewOperators, func(addr evmTypes.Address) common.Address { return common.Address(addr) }))
-		assert.Equal(t, expectedThreshold, operatorshipTransferredEvent.NewThreshold.Uint64())
-	}))
-
-	t.Run("should return error when event is not about transfer of the correct multisig keys", testutils.Func(func(t *testing.T) {
-		// wrong number of topics
-		log := geth.Log{
-			Topics: []common.Hash{
-				MultisigTransferOperatorshipSig,
-				MultisigTransferOperatorshipSig,
-			},
-			Data: common.Hex2Bytes("0000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000020000000000000000000000006d4017d4b1dcd36e6ea88b7900e8ec64a1d1315b000000000000000000000000b7900e8ec64a1d1315b6d4017d4b1dcd36e6ea88"),
-		}
-		_, err := decodeMultisigOperatorshipTransferredEvent(&log)
-		assert.Error(t, err)
-
-		// wrong topics[0]
-		log = geth.Log{
-			Topics: []common.Hash{
-				common.BytesToHash(rand.Bytes(common.HashLength)),
-			},
-			Data: common.Hex2Bytes("0000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000020000000000000000000000006d4017d4b1dcd36e6ea88b7900e8ec64a1d1315b000000000000000000000000b7900e8ec64a1d1315b6d4017d4b1dcd36e6ea88"),
-		}
-		_, err = decodeMultisigOperatorshipTransferredEvent(&log)
-		assert.Error(t, err)
-
-		// wrong data
-		log = geth.Log{
-			Topics: []common.Hash{
-				MultisigTransferOperatorshipSig,
-			},
-			Data: rand.Bytes(int(rand.I64Between(10, 1000))),
-		}
-		_, err = decodeMultisigOperatorshipTransferredEvent(&log)
-		assert.Error(t, err)
-	}))
-}
-
 func TestMgr_validate(t *testing.T) {
 	t.Run("should work for moonbeam", testutils.Func(func(t *testing.T) {
 		mgr := Mgr{logger: log.TestingLogger()}
@@ -308,28 +249,33 @@ func TestMgr_validate(t *testing.T) {
 func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 	var (
 		mgr            *Mgr
-		attributes     map[string]string
+		event          *evmTypes.ConfirmDepositStarted
 		rpc            *mock.ClientMock
 		broadcaster    *mock2.BroadcasterMock
 		encodingConfig params.EncodingConfig
+		valAddr        sdk.ValAddress
 	)
 	setup := func() {
 		encodingConfig = app.MakeEncodingConfig()
 		cdc := encodingConfig.Amino
-		pollID := exported.PollID(rand.I64Between(10, 100))
+		pollID := vote.PollID(rand.I64Between(10, 100))
 
 		burnAddrBytes := rand.Bytes(common.AddressLength)
 		tokenAddrBytes := rand.Bytes(common.AddressLength)
 		blockNumber := rand.PInt64Gen().Where(func(i int64) bool { return i != 0 }).Next() // restrict to int64 so the block number in the receipt doesn't overflow
 		confHeight := rand.I64Between(0, blockNumber-1)
 		amount := rand.PosI64() // restrict to int64 so the amount in the receipt doesn't overflow
-		attributes = map[string]string{
-			evmTypes.AttributeKeyChain:          "Ethereum",
-			evmTypes.AttributeKeyTxID:           common.Bytes2Hex(rand.Bytes(common.HashLength)),
-			evmTypes.AttributeKeyDepositAddress: common.Bytes2Hex(burnAddrBytes),
-			evmTypes.AttributeKeyTokenAddress:   common.Bytes2Hex(tokenAddrBytes),
-			evmTypes.AttributeKeyConfHeight:     strconv.FormatUint(uint64(confHeight), 10),
-			evmTypes.AttributeKeyPoll:           pollID.String(),
+		valAddr = rand.ValAddr()
+		event = &types.ConfirmDepositStarted{
+			TxID:               types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
+			Chain:              "Ethereum",
+			DepositAddress:     types.Address(common.BytesToAddress(burnAddrBytes)),
+			TokenAddress:       types.Address(common.BytesToAddress(tokenAddrBytes)),
+			ConfirmationHeight: uint64(confHeight),
+			PollParticipants: vote.PollParticipants{
+				PollID:       pollID,
+				Participants: []sdk.ValAddress{valAddr},
+			},
 		}
 
 		tx := geth.NewTransaction(0, common.BytesToAddress(rand.Bytes(common.HashLength)), big.NewInt(0), 21000, big.NewInt(1), []byte{})
@@ -398,13 +344,13 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 		}
 		evmMap := make(map[string]evmRpc.Client)
 		evmMap["ethereum"] = rpc
-		mgr = NewMgr(evmMap, client.Context{}, broadcaster, log.TestingLogger(), cdc)
+		mgr = NewMgr(evmMap, client.Context{}, broadcaster, log.TestingLogger(), cdc, valAddr)
 	}
 	repeats := 20
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
 
-		err := mgr.ProcessDepositConfirmation(tmEvents.Event{Attributes: attributes})
+		err := mgr.ProcessDepositConfirmation(event)
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
@@ -415,22 +361,11 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 		assert.Len(t, actualVoteEvents.Events, 1)
 	}).Repeat(repeats))
 
-	t.Run("missing attributes", testutils.Func(func(t *testing.T) {
-		setup()
-		for key := range attributes {
-			delete(attributes, key)
-
-			err := mgr.ProcessDepositConfirmation(tmEvents.Event{Attributes: attributes})
-			assert.Error(t, err)
-			assert.Len(t, broadcaster.BroadcastCalls(), 0)
-		}
-	}).Repeat(repeats))
-
 	t.Run("no tx receipt", testutils.Func(func(t *testing.T) {
 		setup()
 		rpc.TransactionReceiptFunc = func(context.Context, common.Hash) (*geth.Receipt, error) { return nil, fmt.Errorf("error") }
 
-		err := mgr.ProcessDepositConfirmation(tmEvents.Event{Attributes: attributes})
+		err := mgr.ProcessDepositConfirmation(event)
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
@@ -447,7 +382,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 			return 0, fmt.Errorf("error")
 		}
 
-		err := mgr.ProcessDepositConfirmation(tmEvents.Event{Attributes: attributes})
+		err := mgr.ProcessDepositConfirmation(event)
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
@@ -462,16 +397,17 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 	var (
 		mgr              *Mgr
-		attributes       map[string]string
+		event            *evmTypes.ConfirmTokenStarted
 		rpc              *mock.ClientMock
 		broadcaster      *mock2.BroadcasterMock
 		gatewayAddrBytes []byte
 		encodingConfig   params.EncodingConfig
+		valAddr          sdk.ValAddress
 	)
 	setup := func() {
 		encodingConfig = app.MakeEncodingConfig()
 		cdc := encodingConfig.Amino
-		pollID := exported.PollID(rand.I64Between(10, 100))
+		pollID := vote.PollID(rand.I64Between(10, 100))
 
 		gatewayAddrBytes = rand.Bytes(common.AddressLength)
 		tokenAddrBytes := rand.Bytes(common.AddressLength)
@@ -479,14 +415,18 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		confHeight := rand.I64Between(0, blockNumber-1)
 
 		symbol := rand.StrBetween(5, 20)
-		attributes = map[string]string{
-			evmTypes.AttributeKeyChain:          "Ethereum",
-			evmTypes.AttributeKeyTxID:           common.Bytes2Hex(rand.Bytes(common.HashLength)),
-			evmTypes.AttributeKeyGatewayAddress: common.Bytes2Hex(gatewayAddrBytes),
-			evmTypes.AttributeKeyTokenAddress:   common.Bytes2Hex(tokenAddrBytes),
-			evmTypes.AttributeKeySymbol:         symbol,
-			evmTypes.AttributeKeyConfHeight:     strconv.FormatUint(uint64(confHeight), 10),
-			evmTypes.AttributeKeyPoll:           pollID.String(),
+		valAddr = rand.ValAddr()
+		event = &types.ConfirmTokenStarted{
+			TxID:               types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
+			Chain:              "Ethereum",
+			GatewayAddress:     types.Address(common.BytesToAddress(gatewayAddrBytes)),
+			TokenAddress:       types.Address(common.BytesToAddress(tokenAddrBytes)),
+			TokenDetails:       types.TokenDetails{Symbol: symbol},
+			ConfirmationHeight: uint64(confHeight),
+			PollParticipants: vote.PollParticipants{
+				PollID:       pollID,
+				Participants: []sdk.ValAddress{valAddr},
+			},
 		}
 
 		tx := geth.NewTransaction(0, common.BytesToAddress(rand.Bytes(common.HashLength)), big.NewInt(0), 21000, big.NewInt(1), []byte{})
@@ -521,14 +461,14 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		}
 		evmMap := make(map[string]evmRpc.Client)
 		evmMap["ethereum"] = rpc
-		mgr = NewMgr(evmMap, client.Context{}, broadcaster, log.TestingLogger(), cdc)
+		mgr = NewMgr(evmMap, client.Context{}, broadcaster, log.TestingLogger(), cdc, valAddr)
 	}
 
 	repeats := 20
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
 		setup()
 
-		err := mgr.ProcessTokenConfirmation(tmEvents.Event{Attributes: attributes})
+		err := mgr.ProcessTokenConfirmation(event)
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
@@ -539,22 +479,11 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		assert.Len(t, actualVoteEvents.Events, 1)
 	}).Repeat(repeats))
 
-	t.Run("missing attributes", testutils.Func(func(t *testing.T) {
-		setup()
-		for key := range attributes {
-			delete(attributes, key)
-
-			err := mgr.ProcessTokenConfirmation(tmEvents.Event{Attributes: attributes})
-			assert.Error(t, err)
-			assert.Len(t, broadcaster.BroadcastCalls(), 0)
-		}
-	}).Repeat(repeats))
-
 	t.Run("no tx receipt", testutils.Func(func(t *testing.T) {
 		setup()
 		rpc.TransactionReceiptFunc = func(context.Context, common.Hash) (*geth.Receipt, error) { return nil, fmt.Errorf("error") }
 
-		err := mgr.ProcessTokenConfirmation(tmEvents.Event{Attributes: attributes})
+		err := mgr.ProcessTokenConfirmation(event)
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
@@ -571,7 +500,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 			return 0, fmt.Errorf("error")
 		}
 
-		err := mgr.ProcessTokenConfirmation(tmEvents.Event{Attributes: attributes})
+		err := mgr.ProcessTokenConfirmation(event)
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
@@ -596,7 +525,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		receipt.Logs = append(receipt.Logs[:correctLogIdx], receipt.Logs[correctLogIdx+1:]...)
 		rpc.TransactionReceiptFunc = func(context.Context, common.Hash) (*geth.Receipt, error) { return receipt, nil }
 
-		err := mgr.ProcessTokenConfirmation(tmEvents.Event{Attributes: attributes})
+		err := mgr.ProcessTokenConfirmation(event)
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
@@ -619,7 +548,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		}
 		rpc.TransactionReceiptFunc = func(context.Context, common.Hash) (*geth.Receipt, error) { return receipt, nil }
 
-		err := mgr.ProcessTokenConfirmation(tmEvents.Event{Attributes: attributes})
+		err := mgr.ProcessTokenConfirmation(event)
 
 		assert.NoError(t, err)
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
@@ -633,191 +562,153 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 
 func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 	var (
-		mgr                   *Mgr
-		attributes            map[string]string
-		rpc                   *mock.ClientMock
-		broadcaster           *mock2.BroadcasterMock
-		prevNewOwnerAddrBytes []byte
-		encodingConfig        params.EncodingConfig
+		mgr            *Mgr
+		event          *types.ConfirmKeyTransferStarted
+		rpc            *mock.ClientMock
+		broadcaster    *mock2.BroadcasterMock
+		txID           types.Hash
+		gatewayAddress types.Address
+		pollID         vote.PollID
+		txReceipt      *geth.Receipt
+		valAddr        sdk.ValAddress
 	)
-	setup := func() {
-		encodingConfig = app.MakeEncodingConfig()
-		cdc := encodingConfig.Amino
-		pollID := exported.PollID(rand.I64Between(10, 100))
 
-		gatewayAddrBytes := rand.Bytes(common.AddressLength)
-		newOwnerAddrBytes := rand.Bytes(common.AddressLength)
-		prevNewOwnerAddrBytes = rand.Bytes(common.AddressLength)
-		blockNumber := rand.PInt64Gen().Where(func(i int64) bool { return i != 0 }).Next() // restrict to int64 so the block number in the receipt doesn't overflow
-		confHeight := rand.I64Between(0, blockNumber-1)
-
-		attributes = map[string]string{
-			evmTypes.AttributeKeyChain:          "Ethereum",
-			evmTypes.AttributeKeyTxID:           common.Bytes2Hex(rand.Bytes(common.HashLength)),
-			evmTypes.AttributeKeyKeyType:        tss.Threshold.SimpleString(),
-			evmTypes.AttributeKeyGatewayAddress: common.Bytes2Hex(gatewayAddrBytes),
-			evmTypes.AttributeKeyConfHeight:     strconv.FormatUint(uint64(confHeight), 10),
-			evmTypes.AttributeKeyPoll:           pollID.String(),
-		}
-
-		tx := geth.NewTransaction(0, common.BytesToAddress(rand.Bytes(common.HashLength)), big.NewInt(0), 21000, big.NewInt(1), []byte{})
-		receipt := &geth.Receipt{
-			TxHash:      tx.Hash(),
-			BlockNumber: big.NewInt(rand.I64Between(0, blockNumber-confHeight)),
-			Logs: []*geth.Log{
-				/* previous transfer ownership event */
-				{
-					Address: common.BytesToAddress(gatewayAddrBytes),
-					Topics: []common.Hash{
-						SinglesigTransferOperatorshipSig,
-						common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
-						common.BytesToHash(common.LeftPadBytes(prevNewOwnerAddrBytes, common.HashLength)),
-					},
-					Data: nil,
-				},
-				/* a transfer ownership of our concern */
-				{
-					Address: common.BytesToAddress(gatewayAddrBytes),
-					Topics: []common.Hash{
-						SinglesigTransferOperatorshipSig,
-						common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
-						common.BytesToHash(common.LeftPadBytes(newOwnerAddrBytes, common.HashLength)),
-					},
-					Data: nil,
-				},
-				/* an invalid transfer ownership */
-				{
-					Address: common.BytesToAddress(gatewayAddrBytes),
-					Topics: []common.Hash{
-						SinglesigTransferOperatorshipSig,
-						common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
-					},
-					Data: nil,
-				},
-				/* not a transfer ownership event */
-				{
-					Address: common.BytesToAddress(gatewayAddrBytes),
-					Topics: []common.Hash{
-						common.BytesToHash(rand.Bytes(common.HashLength)),
-						common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
-						common.BytesToHash(common.LeftPadBytes(newOwnerAddrBytes, common.HashLength)),
-					},
-					Data: nil,
-				},
-				/* transfer ownership event from a random address */
-				{
-					Address: common.BytesToAddress(rand.Bytes(common.AddressLength)),
-					Topics: []common.Hash{
-						SinglesigTransferOperatorshipSig,
-						common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
-						common.BytesToHash(common.LeftPadBytes(newOwnerAddrBytes, common.HashLength)),
-					},
-					Data: nil,
-				},
-			},
-			Status: 1,
-		}
-		rpc = &mock.ClientMock{
-			BlockByNumberFunc: func(ctx context.Context, number *big.Int) (*geth.Block, error) {
-				return geth.NewBlock(&geth.Header{}, []*geth.Transaction{tx}, []*geth.Header{}, []*geth.Receipt{receipt}, newHasher()), nil
-			},
-			BlockNumberFunc: func(context.Context) (uint64, error) {
-				return uint64(blockNumber), nil
-			},
-			TransactionByHashFunc: func(ctx context.Context, hash common.Hash) (*geth.Transaction, bool, error) {
-				return &geth.Transaction{}, false, nil
-			},
-			TransactionReceiptFunc: func(context.Context, common.Hash) (*geth.Receipt, error) {
-				return receipt, nil
-			},
-		}
+	givenEvmMgr := Given("EVM mgr", func() {
+		rpc = &mock.ClientMock{}
 		broadcaster = &mock2.BroadcasterMock{
-			BroadcastFunc: func(context.Context, ...sdk.Msg) (*sdk.TxResponse, error) { return nil, nil },
+			BroadcastFunc: func(ctx context.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error) { return nil, nil },
 		}
 		evmMap := make(map[string]evmRpc.Client)
 		evmMap["ethereum"] = rpc
-		mgr = NewMgr(evmMap, client.Context{}, broadcaster, log.TestingLogger(), cdc)
+		valAddr = rand.ValAddr()
+		mgr = NewMgr(evmMap, client.Context{}, broadcaster, log.TestingLogger(), app.MakeEncodingConfig().Amino, valAddr)
+	})
+
+	givenTxReceiptAndBlockAreFound := Given("tx receipt and block can be found", func() {
+		tx := geth.NewTransaction(0, common.BytesToAddress(rand.Bytes(common.HashLength)), big.NewInt(0), 21000, big.NewInt(1), []byte{})
+		blockNumber := uint64(rand.I64Between(1, 1000))
+
+		txID = types.Hash(tx.Hash())
+		txReceipt = &geth.Receipt{
+			TxHash:      common.Hash(txID),
+			BlockNumber: big.NewInt(rand.I64Between(0, int64(blockNumber-evmTypes.DefaultParams()[0].ConfirmationHeight+2))),
+			Logs:        []*geth.Log{},
+			Status:      1,
+		}
+		block := *geth.NewBlock(&geth.Header{Number: big.NewInt(int64(blockNumber))}, []*geth.Transaction{tx}, []*geth.Header{}, []*geth.Receipt{txReceipt}, newHasher())
+
+		rpc.TransactionByHashFunc = func(_ context.Context, hash common.Hash) (*geth.Transaction, bool, error) {
+			return &geth.Transaction{}, false, nil
+		}
+		rpc.TransactionReceiptFunc = func(ctx context.Context, txHash common.Hash) (*geth.Receipt, error) {
+			if txHash == common.Hash(txID) {
+				return txReceipt, nil
+			}
+
+			return nil, fmt.Errorf("not found")
+		}
+		rpc.BlockNumberFunc = func(ctx context.Context) (uint64, error) { return blockNumber, nil }
+		rpc.BlockByNumberFunc = func(ctx context.Context, number *big.Int) (*geth.Block, error) {
+			if number.Cmp(txReceipt.BlockNumber) == 0 {
+				return &block, nil
+			}
+
+			return nil, fmt.Errorf("not found")
+		}
+	})
+
+	givenEventConfirmKeyTransfer := Given("event confirm key transfer", func() {
+		gatewayAddress = types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength)))
+		pollID = vote.PollID(rand.PosI64())
+		event = types.NewConfirmKeyTransferStarted(
+			exported.Ethereum.Name,
+			txID,
+			gatewayAddress,
+			evmTypes.DefaultParams()[0].ConfirmationHeight,
+			vote.PollParticipants{
+				PollID:       pollID,
+				Participants: []sdk.ValAddress{valAddr},
+			},
+		)
+	})
+
+	assertAndGetVoteEvents := func(t *testing.T, isEmpty bool) *evmTypes.VoteEvents {
+		assert.Len(t, broadcaster.BroadcastCalls(), 1)
+		assert.Len(t, broadcaster.BroadcastCalls()[0].Msgs, 1)
+
+		voteEvents := broadcaster.BroadcastCalls()[0].Msgs[0].(*voteTypes.VoteRequest).Vote.GetCachedValue().(*evmTypes.VoteEvents)
+		if isEmpty {
+			assert.Empty(t, voteEvents.Events)
+		} else {
+			assert.Len(t, voteEvents.Events, 1)
+		}
+
+		return voteEvents
 	}
 
-	repeats := 20
-	t.Run("happy path", testutils.Func(func(t *testing.T) {
-		setup()
-
-		err := mgr.ProcessTransferKeyConfirmation(tmEvents.Event{Attributes: attributes})
-
+	thenShouldVoteNoEvent := Then("should vote no event", func(t *testing.T) {
+		err := mgr.ProcessTransferKeyConfirmation(event)
 		assert.NoError(t, err)
-		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 
-		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		actualVoteEvents := msg.(*voteTypes.VoteRequest).Vote.GetCachedValue().(*types.VoteEvents)
-		assert.Equal(t, nexus.ChainName("Ethereum"), actualVoteEvents.Chain)
-		assert.Len(t, actualVoteEvents.Events, 1)
-	}).Repeat(repeats))
+		assertAndGetVoteEvents(t, true)
+	})
 
-	t.Run("missing attributes", testutils.Func(func(t *testing.T) {
-		setup()
-		for key := range attributes {
-			delete(attributes, key)
+	givenEvmMgr.
+		Given2(givenTxReceiptAndBlockAreFound).
+		Given2(givenEventConfirmKeyTransfer).
+		Branch(
+			When("is not operatorship transferred event", func() {
+				txReceipt.Logs = append(txReceipt.Logs, &geth.Log{
+					Address: common.Address(gatewayAddress),
+					Topics:  []common.Hash{common.BytesToHash(rand.Bytes(common.HashLength))},
+				})
+			}).
+				Then2(thenShouldVoteNoEvent),
 
-			err := mgr.ProcessTransferKeyConfirmation(tmEvents.Event{Attributes: attributes})
-			assert.Error(t, err)
-			assert.Len(t, broadcaster.BroadcastCalls(), 0)
-		}
-	}).Repeat(repeats))
+			When("is not emitted from the gateway", func() {
+				txReceipt.Logs = append(txReceipt.Logs, &geth.Log{
+					Address: common.BytesToAddress(rand.Bytes(common.AddressLength)),
+					Topics:  []common.Hash{MultisigTransferOperatorshipSig},
+				})
+			}).
+				Then2(thenShouldVoteNoEvent),
 
-	t.Run("no tx receipt", testutils.Func(func(t *testing.T) {
-		setup()
-		rpc.TransactionReceiptFunc = func(context.Context, common.Hash) (*geth.Receipt, error) { return nil, fmt.Errorf("error") }
+			When("is invalid operatorship transferred event", func() {
+				txReceipt.Logs = append(txReceipt.Logs, &geth.Log{
+					Address: common.Address(gatewayAddress),
+					Topics:  []common.Hash{MultisigTransferOperatorshipSig},
+					Data:    rand.Bytes(int(rand.I64Between(0, 1000))),
+				})
+			}).
+				Then2(thenShouldVoteNoEvent),
 
-		err := mgr.ProcessTransferKeyConfirmation(tmEvents.Event{Attributes: attributes})
+			When("is valid operatorship transferred event", func() {
+				newOperatorsData := common.Hex2Bytes("00000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000180000000000000000000000000000000000000000000000000000000000000001e000000000000000000000000000000000000000000000000000000000000000800000000000000000000000019cc2044857d23129a29f763d0338da837ce35f60000000000000000000000002ab6fa7de5e9e9423125a4246e4de1b9c755607400000000000000000000000037cc4b7e8f9f505ca8126db8a9d070566ed5dae70000000000000000000000003e56f0d4497ac44993d9ea272d4707f8be6b42a6000000000000000000000000462b96f617d5d92f63f9949c6f4626623ea73fa400000000000000000000000068b93045fe7d8794a7caf327e7f855cd6cd03bb80000000000000000000000009e77c30badbbc412a0c20c6ce43b671c6f103434000000000000000000000000c1c0c8d2131cc866834c6382096eadfef1af2f52000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000070000000000000000000000000000000000000000000000000000000000000005")
+				txReceipt.Logs = append(txReceipt.Logs, &geth.Log{})
+				txReceipt.Logs = append(txReceipt.Logs, &geth.Log{
+					Address: common.Address(gatewayAddress),
+					Topics:  []common.Hash{MultisigTransferOperatorshipSig},
+					Data:    funcs.Must(abi.Arguments{{Type: funcs.Must(abi.NewType("bytes", "bytes", nil))}}.Pack(newOperatorsData)),
+				})
+			}).
+				Then("should vote for the correct event", func(t *testing.T) {
+					err := mgr.ProcessTransferKeyConfirmation(event)
+					assert.NoError(t, err)
 
-		assert.NoError(t, err)
-		assert.Len(t, broadcaster.BroadcastCalls(), 1)
+					actual := assertAndGetVoteEvents(t, false)
+					assert.Equal(t, exported.Ethereum.Name, actual.Chain)
+					assert.Equal(t, exported.Ethereum.Name, actual.Events[0].Chain)
+					assert.Equal(t, txID, actual.Events[0].TxID)
+					assert.EqualValues(t, 1, actual.Events[0].Index)
+					assert.IsType(t, &types.Event_MultisigOperatorshipTransferred{}, actual.Events[0].Event)
 
-		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		actualVoteEvents := msg.(*voteTypes.VoteRequest).Vote.GetCachedValue().(*types.VoteEvents)
-		assert.Equal(t, nexus.ChainName("Ethereum"), actualVoteEvents.Chain)
-		assert.Len(t, actualVoteEvents.Events, 0)
-	}).Repeat(repeats))
-
-	t.Run("no block number", testutils.Func(func(t *testing.T) {
-		setup()
-		rpc.BlockNumberFunc = func(context.Context) (uint64, error) {
-			return 0, fmt.Errorf("error")
-		}
-
-		err := mgr.ProcessTransferKeyConfirmation(tmEvents.Event{Attributes: attributes})
-
-		assert.NoError(t, err)
-		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-
-		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		actualVoteEvents := msg.(*voteTypes.VoteRequest).Vote.GetCachedValue().(*types.VoteEvents)
-		assert.Equal(t, nexus.ChainName("Ethereum"), actualVoteEvents.Chain)
-		assert.Len(t, actualVoteEvents.Events, 0)
-	}).Repeat(repeats))
-
-	t.Run("receipt status failed", testutils.Func(func(t *testing.T) {
-		setup()
-		rpc.TransactionReceiptFunc = func(context.Context, common.Hash) (*geth.Receipt, error) {
-			receipt := &geth.Receipt{
-				BlockNumber: big.NewInt(1),
-				Logs:        nil,
-				Status:      0,
-			}
-			return receipt, nil
-		}
-		err := mgr.ProcessTransferKeyConfirmation(tmEvents.Event{Attributes: attributes})
-
-		assert.NoError(t, err)
-		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-
-		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		actualVoteEvents := msg.(*voteTypes.VoteRequest).Vote.GetCachedValue().(*types.VoteEvents)
-		assert.Equal(t, nexus.ChainName("Ethereum"), actualVoteEvents.Chain)
-		assert.Len(t, actualVoteEvents.Events, 0)
-	}).Repeat(repeats))
-
+					actualEvent := actual.Events[0].Event.(*types.Event_MultisigOperatorshipTransferred)
+					assert.Len(t, actualEvent.MultisigOperatorshipTransferred.NewOperators, 8)
+					assert.Len(t, actualEvent.MultisigOperatorshipTransferred.NewWeights, 8)
+					assert.EqualValues(t, 30, actualEvent.MultisigOperatorshipTransferred.NewThreshold.BigInt().Int64())
+				}),
+		).
+		Run(t, 5)
 }
 
 func createTokenLogs(denom string, gateway, tokenAddr common.Address, deploySig common.Hash, hasCorrectLog bool) []*geth.Log {

@@ -7,6 +7,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/ante/types"
 	permission "github.com/axelarnetwork/axelar-core/x/permission/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"sync"
 )
 
@@ -78,5 +79,76 @@ func (mock *PermissionMock) GetRoleCalls() []struct {
 	mock.lockGetRole.RLock()
 	calls = mock.calls.GetRole
 	mock.lockGetRole.RUnlock()
+	return calls
+}
+
+// Ensure, that StakingMock does implement types.Staking.
+// If this is not the case, regenerate this file with moq.
+var _ types.Staking = &StakingMock{}
+
+// StakingMock is a mock implementation of types.Staking.
+//
+// 	func TestSomethingThatUsesStaking(t *testing.T) {
+//
+// 		// make and configure a mocked types.Staking
+// 		mockedStaking := &StakingMock{
+// 			ValidatorFunc: func(ctx sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI {
+// 				panic("mock out the Validator method")
+// 			},
+// 		}
+//
+// 		// use mockedStaking in code that requires types.Staking
+// 		// and then make assertions.
+//
+// 	}
+type StakingMock struct {
+	// ValidatorFunc mocks the Validator method.
+	ValidatorFunc func(ctx sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// Validator holds details about calls to the Validator method.
+		Validator []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Addr is the addr argument value.
+			Addr sdk.ValAddress
+		}
+	}
+	lockValidator sync.RWMutex
+}
+
+// Validator calls ValidatorFunc.
+func (mock *StakingMock) Validator(ctx sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI {
+	if mock.ValidatorFunc == nil {
+		panic("StakingMock.ValidatorFunc: method is nil but Staking.Validator was just called")
+	}
+	callInfo := struct {
+		Ctx  sdk.Context
+		Addr sdk.ValAddress
+	}{
+		Ctx:  ctx,
+		Addr: addr,
+	}
+	mock.lockValidator.Lock()
+	mock.calls.Validator = append(mock.calls.Validator, callInfo)
+	mock.lockValidator.Unlock()
+	return mock.ValidatorFunc(ctx, addr)
+}
+
+// ValidatorCalls gets all the calls that were made to Validator.
+// Check the length with:
+//     len(mockedStaking.ValidatorCalls())
+func (mock *StakingMock) ValidatorCalls() []struct {
+	Ctx  sdk.Context
+	Addr sdk.ValAddress
+} {
+	var calls []struct {
+		Ctx  sdk.Context
+		Addr sdk.ValAddress
+	}
+	mock.lockValidator.RLock()
+	calls = mock.calls.Validator
+	mock.lockValidator.RUnlock()
 	return calls
 }

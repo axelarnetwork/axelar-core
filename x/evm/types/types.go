@@ -21,11 +21,11 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
+	"golang.org/x/exp/maps"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 )
@@ -160,9 +160,13 @@ func (t ERC20Token) GetBurnerCode() []byte {
 	return t.metadata.BurnerCode
 }
 
-// GetBurnerCodeHash returns the version of the burner the token is deployed with
-func (t ERC20Token) GetBurnerCodeHash() Hash {
-	return Hash(crypto.Keccak256Hash(t.metadata.BurnerCode))
+// GetBurnerCodeHash returns the version of the burner the token is deployed with if it exists
+func (t ERC20Token) GetBurnerCodeHash() (Hash, bool) {
+	if t.metadata.BurnerCode == nil {
+		return Hash{}, false
+	}
+
+	return Hash(crypto.Keccak256Hash(t.metadata.BurnerCode)), true
 }
 
 // CreateDeployCommand returns a token deployment command for the token
@@ -269,31 +273,6 @@ func (t *ERC20Token) ConfirmDeployment() error {
 	t.setMeta(t.metadata)
 
 	return nil
-}
-
-// SigKeyPairs is an array of SigKeyPair
-type SigKeyPairs []tss.SigKeyPair
-
-func (s SigKeyPairs) Len() int {
-	return len(s)
-}
-
-func (s SigKeyPairs) Less(i, j int) bool {
-	pubKeyI, err := btcec.ParsePubKey(s[i].PubKey, btcec.S256())
-	if err != nil {
-		panic(err)
-	}
-
-	pubKeyJ, err := btcec.ParsePubKey(s[j].PubKey, btcec.S256())
-	if err != nil {
-		panic(err)
-	}
-
-	return bytes.Compare(crypto.PubkeyToAddress(*pubKeyI.ToECDSA()).Bytes(), crypto.PubkeyToAddress(*pubKeyJ.ToECDSA()).Bytes()) < 0
-}
-
-func (s SigKeyPairs) Swap(i, j int) {
-	s[i], s[j] = s[j], s[i]
 }
 
 // NilToken is a nil erc20 token
@@ -407,15 +386,33 @@ func (h Hash) Size() int {
 type Signature [crypto.SignatureLength]byte
 
 // NewSignature is the constructor of Signature
-func NewSignature(bz []byte) (sig Signature) {
+func NewSignature(bz []byte) (sig Signature, err error) {
+	if len(bz) != crypto.SignatureLength {
+		return Signature{}, fmt.Errorf("invalid signature length")
+	}
+
 	copy(sig[:], bz)
 
-	return sig
+	return sig, nil
 }
 
 // Hex returns the hex-encoding of the given Signature
 func (s Signature) Hex() string {
 	return hex.EncodeToString(s[:])
+}
+
+// ToHomesteadSig converts signature to openzeppelin compatible
+func (s Signature) ToHomesteadSig() []byte {
+	/* TODO: We have to make v 27 or 28 due to openzeppelin's implementation at https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/cryptography/ECDSA.sol
+	requiring that. Consider copying and modifying it to require v to be just 0 or 1
+	instead.
+	*/
+	bz := s[:]
+	if bz[crypto.SignatureLength-1] == 0 || bz[crypto.SignatureLength-1] == 1 {
+		bz[crypto.SignatureLength-1] += 27
+	}
+
+	return bz
 }
 
 // ToSignature transforms an Axelar generated signature into a recoverable signature
@@ -458,75 +455,20 @@ func KeysToAddresses(keys ...ecdsa.PublicKey) []common.Address {
 	return addresses
 }
 
-func toHomesteadSig(sig Signature) []byte {
-	/* TODO: We have to make v 27 or 28 due to openzeppelin's implementation at https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/cryptography/ECDSA.sol
-	requiring that. Consider copying and modifying it to require v to be just 0 or 1
-	instead.
-	*/
-	bz := sig[:]
-	if bz[crypto.SignatureLength-1] == 0 || bz[crypto.SignatureLength-1] == 1 {
-		bz[crypto.SignatureLength-1] += 27
-	}
-
-	return bz
-}
-
-// CreateExecuteDataSinglesig wraps the specific command data and includes the command signature.
-// Returns the data that goes into the data field of an EVM transaction
-func CreateExecuteDataSinglesig(data []byte, sig Signature) ([]byte, error) {
-	abiEncoder, err := abi.JSON(strings.NewReader(axelarGatewayABI))
-	if err != nil {
-		return nil, err
-	}
-
-	bytesType, err := abi.NewType("bytes", "bytes", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	arguments := abi.Arguments{{Type: bytesType}, {Type: bytesType}}
-	executeData, err := arguments.Pack(data, toHomesteadSig(sig))
-	if err != nil {
-		return nil, err
-	}
-
-	result, err := abiEncoder.Pack(axelarGatewayFuncExecute, executeData)
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
-}
-
 // CreateExecuteDataMultisig wraps the specific command data and includes the command signatures.
 // Returns the data that goes into the data field of an EVM transaction
-func CreateExecuteDataMultisig(data []byte, signers []common.Address, sigs []Signature) ([]byte, error) {
-	sortedSigners := slices.Map(signers, func(a common.Address) Address { return Address(a) })
-	sort.SliceStable(sortedSigners, func(i, j int) bool { return bytes.Compare(sortedSigners[i].Bytes(), sortedSigners[j].Bytes()) < 0 })
-
+func CreateExecuteDataMultisig(data []byte, addresses []common.Address, weights []sdk.Uint, threshold sdk.Uint, signatures [][]byte) ([]byte, error) {
 	abiEncoder, err := abi.JSON(strings.NewReader(axelarGatewayABI))
 	if err != nil {
 		return nil, err
 	}
-
-	homesteadSigs := slices.Map(sigs, toHomesteadSig)
 
 	bytesType, err := abi.NewType("bytes", "bytes", nil)
 	if err != nil {
 		return nil, err
 	}
 
-	bytesArrayType, err := abi.NewType("bytes[]", "bytes[]", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	addressesType, err := abi.NewType("address[]", "address[]", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	proof, err := abi.Arguments{{Type: addressesType}, {Type: bytesArrayType}}.Pack(sortedSigners, homesteadSigs)
+	proof, err := getWeightedSignaturesProof(addresses, weights, threshold, signatures)
 	if err != nil {
 		return nil, err
 	}
@@ -860,51 +802,23 @@ func CreateMintTokenCommand(keyID multisig.KeyID, id CommandID, symbol string, a
 	}, nil
 }
 
-// CreateSinglesigTransferCommand creates a command to transfer ownership/operator of the singlesig contract
-func CreateSinglesigTransferCommand(
-	chainID sdk.Int,
-	keyID multisig.KeyID,
-	address common.Address) (Command, error) {
-	params, err := createTransferSinglesigParams(address)
-	if err != nil {
-		return Command{}, err
-	}
-
-	return createTransferCmd(NewCommandID(address.Bytes(), chainID), params, keyID)
-}
-
 // CreateMultisigTransferCommand creates a command to transfer ownership/operator of the multisig contract
-func CreateMultisigTransferCommand(
-	chainID sdk.Int,
-	keyID multisig.KeyID,
-	threshold uint8,
-	addresses ...common.Address) (Command, error) {
-
-	if len(addresses) <= 0 {
-		return Command{}, fmt.Errorf("transfer ownership command requires at least one key (received %d)", len(addresses))
-	}
+func CreateMultisigTransferCommand(chainID sdk.Int, keyID multisig.KeyID, nextKey multisig.Key) Command {
+	addresses, weights, threshold := GetMultisigAddressesAndWeights(nextKey)
+	params := createTransferMultisigParams(addresses, slices.Map(weights, sdk.Uint.BigInt), threshold.BigInt())
 
 	var concat []byte
 	for _, addr := range addresses {
 		concat = append(concat, addr.Bytes()...)
 	}
 
-	params, err := createTransferMultisigParams(addresses, threshold)
-	if err != nil {
-		return Command{}, err
-	}
-
-	return createTransferCmd(NewCommandID(concat, chainID), params, keyID)
-}
-
-func createTransferCmd(id CommandID, params []byte, keyID multisig.KeyID) (Command, error) {
 	return Command{
-		ID:         id,
+		ID:         NewCommandID(concat, chainID),
 		Command:    AxelarGatewayCommandTransferOperatorship,
 		Params:     params,
 		KeyID:      keyID,
 		MaxGasCost: transferOperatorshipMaxGasCost,
-	}, nil
+	}
 }
 
 // Clone returns an exacy copy of Command
@@ -1362,21 +1276,6 @@ func decodeBurnTokenParams(bz []byte) (string, common.Hash, error) {
 	return params[0].(string), params[1].([common.HashLength]byte), nil
 }
 
-func createTransferSinglesigParams(addr common.Address) ([]byte, error) {
-	addressType, err := abi.NewType("address", "address", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	arguments := abi.Arguments{{Type: addressType}}
-	result, err := arguments.Pack(addr)
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
-}
-
 // decodeTransferSinglesigParams unpacks the parameters of a single sig transfer command
 func decodeTransferSinglesigParams(bz []byte) (common.Address, error) {
 	addressType, err := abi.NewType("address", "address", nil)
@@ -1393,48 +1292,29 @@ func decodeTransferSinglesigParams(bz []byte) (common.Address, error) {
 	return params[0].(common.Address), nil
 }
 
-func createTransferMultisigParams(addrs []common.Address, threshold uint8) ([]byte, error) {
-	sortedAddrs := slices.Map(addrs, func(a common.Address) Address { return Address(a) })
-	sort.SliceStable(sortedAddrs, func(i, j int) bool { return bytes.Compare(sortedAddrs[i].Bytes(), sortedAddrs[j].Bytes()) < 0 })
+func createTransferMultisigParams(addresses []common.Address, weights []*big.Int, threshold *big.Int) []byte {
+	addressesType := funcs.Must(abi.NewType("address[]", "address[]", nil))
+	uint256ArrayType := funcs.Must(abi.NewType("uint256[]", "uint256[]", nil))
+	uint256Type := funcs.Must(abi.NewType("uint256", "uint256", nil))
 
-	addressesType, err := abi.NewType("address[]", "address[]", nil)
-	if err != nil {
-		return nil, err
-	}
+	arguments := abi.Arguments{{Type: addressesType}, {Type: uint256ArrayType}, {Type: uint256Type}}
 
-	uint256Type, err := abi.NewType("uint256", "uint256", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	arguments := abi.Arguments{{Type: addressesType}, {Type: uint256Type}}
-	result, err := arguments.Pack(sortedAddrs, big.NewInt(int64(threshold)))
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	return funcs.Must(arguments.Pack(addresses, weights, threshold))
 }
 
 // decodeTransferMultisigParams unpacks the parameters of a multi sig transfer command
-func decodeTransferMultisigParams(bz []byte) ([]common.Address, uint8, error) {
-	addressesType, err := abi.NewType("address[]", "address[]", nil)
-	if err != nil {
-		return []common.Address{}, 0, err
-	}
+func decodeTransferMultisigParams(bz []byte) ([]common.Address, []*big.Int, *big.Int, error) {
+	addressesType := funcs.Must(abi.NewType("address[]", "address[]", nil))
+	uint256ArrayType := funcs.Must(abi.NewType("uint256[]", "uint256[]", nil))
+	uint256Type := funcs.Must(abi.NewType("uint256", "uint256", nil))
 
-	uint256Type, err := abi.NewType("uint256", "uint256", nil)
-	if err != nil {
-		return []common.Address{}, 0, err
-	}
-
-	arguments := abi.Arguments{{Type: addressesType}, {Type: uint256Type}}
+	arguments := abi.Arguments{{Type: addressesType}, {Type: uint256ArrayType}, {Type: uint256Type}}
 	params, err := StrictDecode(arguments, bz)
 	if err != nil {
-		return []common.Address{}, 0, err
+		return nil, nil, nil, err
 	}
 
-	return params[0].([]common.Address), uint8(params[1].(*big.Int).Uint64()), nil
+	return params[0].([]common.Address), params[1].([]*big.Int), params[2].(*big.Int), nil
 }
 
 // ValidateBasic does stateless validation of the object
@@ -1508,7 +1388,7 @@ func CommandIDsToStrings(commandIDs []CommandID) []string {
 
 // GetID returns an unique ID for the event
 func (m Event) GetID() EventID {
-	return EventID(fmt.Sprintf("%s-%d", m.TxId.Hex(), m.Index))
+	return EventID(fmt.Sprintf("%s-%d", m.TxID.Hex(), m.Index))
 }
 
 // ValidateBasic returns an error if the event is invalid
@@ -1517,7 +1397,7 @@ func (m Event) ValidateBasic() error {
 		return sdkerrors.Wrap(err, "invalid source chain")
 	}
 
-	if m.TxId.IsZero() {
+	if m.TxID.IsZero() {
 		return fmt.Errorf("invalid tx id")
 	}
 
@@ -1564,14 +1444,14 @@ func (m Event) ValidateBasic() error {
 		if event.MultisigOwnershipTransferred == nil {
 			return fmt.Errorf("missing event MultisigOwnershipTransferred")
 		}
-		if err := event.MultisigOwnershipTransferred.Validate(); err != nil {
+		if err := event.MultisigOwnershipTransferred.ValidateBasic(); err != nil {
 			return sdkerrors.Wrap(err, "invalid event MultisigOwnershipTransferred")
 		}
 	case *Event_MultisigOperatorshipTransferred:
 		if event.MultisigOperatorshipTransferred == nil {
 			return fmt.Errorf("missing event MultisigOperatorshipTransferred")
 		}
-		if err := event.MultisigOperatorshipTransferred.Validate(); err != nil {
+		if err := event.MultisigOperatorshipTransferred.ValidateBasic(); err != nil {
 			return sdkerrors.Wrap(err, "invalid event MultisigOperatorshipTransferred")
 		}
 	default:
@@ -1690,8 +1570,8 @@ func (m EventTokenDeployed) ValidateBasic() error {
 	return nil
 }
 
-// Validate returns an error if the event multisig ownership transferred is invalid
-func (m EventMultisigOwnershipTransferred) Validate() error {
+// ValidateBasic returns an error if the event multisig ownership transferred is invalid
+func (m EventMultisigOwnershipTransferred) ValidateBasic() error {
 	NonzeroAddress := func(addr Address) bool { return !addr.IsZeroAddress() }
 
 	if !slices.All(m.PreOwners, NonzeroAddress) {
@@ -1710,14 +1590,20 @@ func (m EventMultisigOwnershipTransferred) Validate() error {
 	return nil
 }
 
-// Validate returns an error if the event multisig ownership transferred is invalid
-func (m EventMultisigOperatorshipTransferred) Validate() error {
-	NonzeroAddress := func(addr Address) bool { return !addr.IsZeroAddress() }
-
-	if !slices.All(m.NewOperators, NonzeroAddress) {
+// ValidateBasic returns an error if the event multisig ownership transferred is invalid
+func (m EventMultisigOperatorshipTransferred) ValidateBasic() error {
+	if slices.Any(m.NewOperators, Address.IsZeroAddress) {
 		return fmt.Errorf("invalid new operators")
 	}
-	if m.NewThreshold.IsZero() {
+
+	if len(m.NewOperators) != len(m.NewWeights) {
+		return fmt.Errorf("length of new operators does not match new weights")
+	}
+
+	totalWeight := sdk.ZeroUint()
+	slices.ForEach(m.NewWeights, func(w sdk.Uint) { totalWeight = totalWeight.Add(w) })
+
+	if m.NewThreshold.IsZero() || m.NewThreshold.GT(totalWeight) {
 		return fmt.Errorf("invalid new threshold")
 	}
 
@@ -1786,19 +1672,15 @@ func (c Command) DecodeParams() (map[string]string, error) {
 		params["salt"] = salt.Hex()
 	case AxelarGatewayCommandTransferOperatorship:
 		address, decodeSinglesigErr := decodeTransferSinglesigParams(c.Params)
-		addresses, threshold, decodeMultisigErr := decodeTransferMultisigParams(c.Params)
+		addresses, weights, threshold, decodeMultisigErr := decodeTransferMultisigParams(c.Params)
 
 		switch {
 		case decodeSinglesigErr == nil:
 			params["newOperator"] = address.Hex()
 		case decodeMultisigErr == nil:
-			var addressStrs []string
-			for _, address := range addresses {
-				addressStrs = append(addressStrs, address.Hex())
-			}
-
-			params["newOperators"] = strings.Join(addressStrs, ";")
-			params["newThreshold"] = strconv.FormatUint(uint64(threshold), 10)
+			params["newOperators"] = strings.Join(slices.Map(addresses, common.Address.Hex), ";")
+			params["newWeights"] = strings.Join(slices.Map(weights, func(w *big.Int) string { return w.String() }), ";")
+			params["newThreshold"] = threshold.String()
 		default:
 			return nil, fmt.Errorf("unsupported type of transfer key")
 		}
@@ -1831,15 +1713,18 @@ func NewVoteEvents(chain nexus.ChainName, events []Event) *VoteEvents {
 	}
 }
 
-// GetMultisigAddresses coverts a tss multisig key to addresses
-func GetMultisigAddresses(key tss.Key) ([]common.Address, uint8, error) {
-	multisigPubKeys, err := key.GetMultisigPubKey()
-	if err != nil {
-		return nil, 0, err
-	}
+// GetMultisigAddressesAndWeights coverts a multisig key to sorted addresses, weights and threshold
+func GetMultisigAddressesAndWeights(key multisig.Key) ([]common.Address, []sdk.Uint, sdk.Uint) {
+	addressWeights, threshold := ParseMultisigKey(key)
+	addresses := slices.Map(maps.Keys(addressWeights), common.HexToAddress)
+	sort.SliceStable(addresses, func(i, j int) bool {
+		return bytes.Compare(addresses[i].Bytes(), addresses[j].Bytes()) < 0
+	})
+	weights := slices.Map(addresses, func(address common.Address) sdk.Uint {
+		return addressWeights[address.Hex()]
+	})
 
-	threshold := uint8(key.GetMultisigKey().Threshold)
-	return KeysToAddresses(multisigPubKeys...), threshold, nil
+	return addresses, weights, threshold
 }
 
 func getType(val interface{}) string {
@@ -1886,10 +1771,64 @@ func ParseMultisigKey(key multisig.Key) (map[string]sdk.Uint, sdk.Uint) {
 	for _, p := range participants {
 		pubKey := funcs.MustOk(key.GetPubKey(p))
 		weight := key.GetWeight(p)
-		address := crypto.PubkeyToAddress(*funcs.Must(btcec.ParsePubKey(pubKey, btcec.S256())).ToECDSA())
+		address := crypto.PubkeyToAddress(pubKey.ToECDSAPubKey())
 
 		addressWeights[address.Hex()] = weight
 	}
 
 	return addressWeights, key.GetMinPassingWeight()
+}
+
+// NewSigMetadata is the constructor for sig metadata
+func NewSigMetadata(sigType SigType, chain nexus.ChainName, commandBatchID []byte) *SigMetadata {
+	return &SigMetadata{
+		Type:           sigType,
+		Chain:          chain,
+		CommandBatchID: commandBatchID,
+	}
+}
+
+func getWeightedSignaturesProof(addresses []common.Address, weights []sdk.Uint, threshold sdk.Uint, signatures [][]byte) ([]byte, error) {
+	addressesType, err := abi.NewType("address[]", "address[]", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	weightsType, err := abi.NewType("uint256[]", "uint256[]", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	thresholdType, err := abi.NewType("uint256", "uint256", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	signaturesType, err := abi.NewType("bytes[]", "bytes[]", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	proof, err := abi.Arguments{
+		{Type: addressesType},
+		{Type: weightsType},
+		{Type: thresholdType},
+		{Type: signaturesType}}.Pack(
+		addresses,
+		slices.Map(weights, sdk.Uint.BigInt),
+		threshold.BigInt(),
+		signatures,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return proof, nil
+}
+
+// Operator binds the signer's address, signature and weight
+type Operator struct {
+	Address   common.Address
+	Signature []byte
+	Weight    sdk.Uint
 }

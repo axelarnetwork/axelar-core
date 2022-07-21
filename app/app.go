@@ -382,6 +382,11 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	multisigK := multisigKeeper.NewKeeper(
 		appCodec, keys[multisigTypes.StoreKey], app.getSubspace(multisigTypes.ModuleName),
 	)
+
+	multisigRounter := multisigTypes.NewSigRouter()
+	multisigRounter.AddHandler(evmTypes.ModuleName, evmKeeper.NewSigHandler(appCodec, evmK))
+	multisigK.SetSigRouter(multisigRounter)
+
 	tssK := tssKeeper.NewKeeper(
 		appCodec, keys[tssTypes.StoreKey], app.getSubspace(tssTypes.ModuleName), slashingK, rewardK,
 	)
@@ -451,10 +456,6 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	// No more routes can be added
 	app.ibcKeeper.SetRouter(ibcRouter)
 
-	tssRouter := tssTypes.NewRouter()
-	tssRouter.AddRoute(evmTypes.ModuleName, evmKeeper.NewTssHandler(appCodec, evmK, tssK))
-	tssK.SetRouter(tssRouter)
-
 	voteRouter := voteTypes.NewRouter()
 	voteRouter.AddHandler(evmTypes.ModuleName, evmKeeper.NewVoteHandler(appCodec, evmK, nexusK, rewardK))
 	votingK.SetVoteRouter(voteRouter)
@@ -488,16 +489,47 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		feegrantmodule.NewAppModule(appCodec, accountK, bankK, feegrantK, app.interfaceRegistry),
 
 		snapshot.NewAppModule(snapK),
-		multisig.NewAppModule(multisigK, stakingK, slashingK, snapK, rewardK),
-		tss.NewAppModule(tssK, snapK, votingK, nexusK, stakingK, rewardK),
+		multisig.NewAppModule(multisigK, stakingK, slashingK, snapK, rewardK, nexusK),
+		tss.NewAppModule(tssK, snapK, nexusK, stakingK, multisigK),
 		vote.NewAppModule(votingK),
-		nexus.NewAppModule(nexusK, snapK, stakingK, axelarnetK, evmK, rewardK),
-		evm.NewAppModule(evmK, tssK, votingK, tssK, nexusK, snapK, stakingK, slashingK, multisigK, logger),
+		nexus.NewAppModule(nexusK, snapK, slashingK, stakingK, axelarnetK, evmK, rewardK),
+		evm.NewAppModule(evmK, votingK, tssK, nexusK, snapK, stakingK, slashingK, multisigK, logger),
 		axelarnetModule,
-		reward.NewAppModule(rewardK, nexusK, mintK, stakingK, tssK, snapK, bankK, bApp.MsgServiceRouter(), bApp.Router()),
+		reward.NewAppModule(rewardK, nexusK, mintK, stakingK, slashingK, tssK, snapK, bankK, bApp.MsgServiceRouter(), bApp.Router(), keys[paramstypes.StoreKey], tkeys[paramstypes.TStoreKey]),
 		permission.NewAppModule(permissionK),
 	)
 
+	app.mm.SetOrderMigrations(
+		// auth module needs to go first
+		authtypes.ModuleName,
+		// sdk modules
+		upgradetypes.ModuleName,
+		capabilitytypes.ModuleName,
+		crisistypes.ModuleName,
+		govtypes.ModuleName,
+		stakingtypes.ModuleName,
+		ibctransfertypes.ModuleName,
+		ibchost.ModuleName,
+		banktypes.ModuleName,
+		distrtypes.ModuleName,
+		slashingtypes.ModuleName,
+		minttypes.ModuleName,
+		genutiltypes.ModuleName,
+		evidencetypes.ModuleName,
+		feegrant.ModuleName,
+		paramstypes.ModuleName,
+		vestingtypes.ModuleName,
+		// axelar modules
+		multisigTypes.ModuleName,
+		tssTypes.ModuleName,
+		rewardTypes.ModuleName,
+		voteTypes.ModuleName,
+		evmTypes.ModuleName,
+		nexusTypes.ModuleName,
+		permissionTypes.ModuleName,
+		snapTypes.ModuleName,
+		axelarnetTypes.ModuleName,
+	)
 	// During begin block slashing happens after distr.BeginBlocker so that
 	// there is nothing left over in the validator fee pool, so as to keep the
 	// CanWithdrawInvariant invariant.
@@ -633,8 +665,8 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	anteHandler := sdk.ChainAnteDecorators(
 		ante.NewAnteHandlerDecorator(baseAnteHandler),
 		ante.NewLogMsgDecorator(appCodec),
-		ante.NewCheckCommissionRate(),
-		ante.NewValidateValidatorDeregisteredTssDecorator(tssK, nexusK, snapK),
+		ante.NewCheckCommissionRate(stakingK),
+		ante.NewUndelegateDecorator(multisigK, nexusK, snapK),
 		ante.NewCheckRefundFeeDecorator(app.interfaceRegistry, accountK, stakingK, snapK, rewardK),
 		ante.NewCheckProxy(snapK),
 		ante.NewRestrictedTx(permissionK),

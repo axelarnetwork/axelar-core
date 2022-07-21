@@ -20,10 +20,8 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 	evmKeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
-	"github.com/axelarnetwork/axelar-core/x/evm/types/mock"
 	multisigTestUtils "github.com/axelarnetwork/axelar-core/x/multisig/exported/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 func TestCommands(t *testing.T) {
@@ -73,9 +71,7 @@ func TestCommands(t *testing.T) {
 
 		lastLength := len(chainKeeper.GetPendingCommands(ctx))
 		for {
-			_, err := chainKeeper.CreateNewBatchToSign(ctx, &mock.SignerMock{
-				GetKeyRoleFunc: func(_ sdk.Context, _ tss.KeyID) tss.KeyRole { return tss.MasterKey },
-			})
+			_, err := chainKeeper.CreateNewBatchToSign(ctx)
 			assert.NoError(t, err)
 			remainingCmds := chainKeeper.GetPendingCommands(ctx)
 			assert.Less(t, len(remainingCmds), lastLength)
@@ -181,7 +177,7 @@ func TestGetTokenAddress(t *testing.T) {
 	capacity := sdk.NewIntFromUint64(uint64(10000))
 
 	axelarGateway := types.Address(common.HexToAddress("0xA193E42526F1FEA8C99AF609dcEabf30C1c29fAA"))
-	expected := "0x696fec8ABd9D8095C8469BE173F9168A011F1598"
+	expected := "0x483141ff4Eab195F926b76EB84430cc1c0708953"
 
 	keeper := k.ForChain(chain)
 	keeper.SetParams(ctx, types.DefaultParams()[0])
@@ -207,7 +203,7 @@ func TestGetBurnerAddressAndSalt(t *testing.T) {
 	}
 
 	t.Run("should work for internal erc20 tokens", testutils.Func(func(t *testing.T) {
-		axelarGateway := common.HexToAddress("0xA193E42526F1FEA8C99AF609dcEabf30C1c29fAA")
+		axelarGateway := types.Address(common.HexToAddress("0xA193E42526F1FEA8C99AF609dcEabf30C1c29fAA"))
 		recipient := "1KDeqnsTRzFeXRaENA6XLN1EwdTujchr4L"
 		tokenAddr := types.Address(common.HexToAddress("0xE7481ECB61F9C84b91C03414F3D5d48E5436045D"))
 		expectedBurnerAddr := "0x294C0419D756F7C31A521659f9b3EA7a7575d4b0"
@@ -228,7 +224,7 @@ func TestGetBurnerAddressAndSalt(t *testing.T) {
 	}))
 
 	t.Run("should work for external erc20 tokens", testutils.Func(func(t *testing.T) {
-		axelarGateway := common.HexToAddress("0xA193E42526F1FEA8C99AF609dcEabf30C1c29fAA")
+		axelarGateway := types.Address(common.HexToAddress("0xA193E42526F1FEA8C99AF609dcEabf30C1c29fAA"))
 		recipient := "axelar1aguuy756cpaqnfd5t5qn68u7ck7w2sp64023hk"
 		tokenAddr := types.Address(common.HexToAddress("0xFDFEF9D10d929cB3905C71400ce6be1990EA0F34"))
 		expectedBurnerAddr := "0x3EF0e1bdF7A9c239016ce3904eAc4f458C1503D7"

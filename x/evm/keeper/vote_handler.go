@@ -9,6 +9,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 )
 
@@ -29,6 +30,21 @@ func NewVoteHandler(cdc codec.Codec, keeper types.BaseKeeper, nexus types.Nexus,
 		nexus:    nexus,
 		rewarder: rewarder,
 	}
+}
+
+func (v voteHandler) HandleFailedPoll(ctx sdk.Context, poll vote.Poll) error {
+	md := funcs.MustOk(poll.GetMetaData())
+	chainTxID, ok := md.(*types.PollMetadata)
+	if !ok {
+		panic(fmt.Sprintf("poll metadata should be of type %T", &types.PollMetadata{}))
+	}
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.PollFailed{
+		TxID:   chainTxID.TxID,
+		Chain:  chainTxID.Chain,
+		PollID: poll.GetID(),
+	}))
+
+	return nil
 }
 
 func (v voteHandler) IsFalsyResult(result codec.ProtoMarshaler) bool {
@@ -53,6 +69,17 @@ func (v voteHandler) HandleExpiredPoll(ctx sdk.Context, poll vote.Poll) error {
 				"poll", poll.GetID().String())
 		}
 	}
+
+	md := funcs.MustOk(poll.GetMetaData())
+	chainTxID, ok := md.(*types.PollMetadata)
+	if !ok {
+		panic(fmt.Sprintf("poll metadata should be of type %T", &types.PollMetadata{}))
+	}
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.PollExpired{
+		TxID:   chainTxID.TxID,
+		Chain:  chainTxID.Chain,
+		PollID: poll.GetID(),
+	}))
 
 	return nil
 }
@@ -149,13 +176,13 @@ func handleEvent(ctx sdk.Context, ck types.ChainKeeper, event types.Event, chain
 	if err := ck.SetConfirmedEvent(ctx, event); err != nil {
 		panic(err)
 	}
-	ck.Logger(ctx).Info(fmt.Sprintf("confirmed %s event %s in transaction %s", chain.Name, eventID, event.TxId.Hex()))
+	ck.Logger(ctx).Info(fmt.Sprintf("confirmed %s event %s in transaction %s", chain.Name, eventID, event.TxID.Hex()))
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeEventConfirmation,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(types.AttributeKeyChain, event.Chain.String()),
-			sdk.NewAttribute(types.AttributeKeyTxID, event.TxId.Hex()),
+			sdk.NewAttribute(types.AttributeKeyTxID, event.TxID.Hex()),
 			sdk.NewAttribute(types.AttributeKeyEventID, string(event.GetID())),
 			sdk.NewAttribute(types.AttributeKeyEventType, event.GetEventType()),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm)),

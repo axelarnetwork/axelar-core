@@ -35,8 +35,11 @@ message Event {
   string chain = 1
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
-  bytes tx_id = 2
-      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Hash" ];
+  bytes tx_id = 2 [
+    (gogoproto.customname) = "TxID",
+    (gogoproto.nullable) = false,
+    (gogoproto.customtype) = "Hash"
+  ];
   uint64 index = 3;
   Status status = 4;
 
@@ -133,6 +136,10 @@ message EventMultisigOperatorshipTransferred {
   repeated bytes new_operators = 3
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
   bytes new_threshold = 4 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.nullable) = false
+  ];
+  repeated bytes new_weights = 5 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
     (gogoproto.nullable) = false
   ];
@@ -366,4 +373,15 @@ message Gateway {
   bytes address = 1
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
   Status status = 2 [ deprecated = true ];
+}
+
+message PollMetadata {
+  string chain = 1
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  bytes tx_id = 2 [
+    (gogoproto.customname) = "TxID",
+    (gogoproto.nullable) = false,
+    (gogoproto.customtype) = "Hash"
+  ];
 }

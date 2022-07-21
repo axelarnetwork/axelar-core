@@ -39,7 +39,7 @@ func (m SubmitPubKeyRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, err.Error())
 	}
 
-	hash := sha256.Sum256([]byte(m.KeyID))
+	hash := sha256.Sum256([]byte(m.Sender))
 	if !m.Signature.Verify(hash[:], m.PubKey) {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "signature does not match the public key")
 	}

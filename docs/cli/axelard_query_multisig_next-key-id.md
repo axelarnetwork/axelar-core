@@ -1,15 +1,17 @@
-## axelard tx tss
+## axelard query multisig next-key-id
 
-tss transactions subcommands
+Returns the key ID assigned for the next rotation on a given chain and for the given key role
 
 ```
-axelard tx tss [flags]
+axelard query multisig next-key-id [chain] [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for tss
+      --height int    Use a specific height to query state at (this can error if the node is pruning state)
+  -h, --help          help for next-key-id
+      --node string   <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
 ```
 
 ### Options inherited from parent commands
@@ -25,7 +27,4 @@ axelard tx tss [flags]
 
 ### SEE ALSO
 
-- [axelard tx](axelard_tx.md)	 - Transactions subcommands
-- [axelard tx tss register-external-keys](axelard_tx_tss_register-external-keys.md)	 - Register the external keys for the given chain
-- [axelard tx tss rotate](axelard_tx_tss_rotate.md)	 - Rotate the given chain from the old key to the given key
-- [axelard tx tss start-keygen](axelard_tx_tss_start-keygen.md)	 - Initiate key generation protocol
+- [axelard query multisig](axelard_query_multisig.md)	 - Querying commands for the multisig module

@@ -39,6 +39,7 @@ axelard query [flags]
 - [axelard query ibc](axelard_query_ibc.md)	 - Querying commands for the IBC module
 - [axelard query ibc-transfer](axelard_query_ibc-transfer.md)	 - IBC fungible token transfer query subcommands
 - [axelard query mint](axelard_query_mint.md)	 - Querying commands for the minting module
+- [axelard query multisig](axelard_query_multisig.md)	 - Querying commands for the multisig module
 - [axelard query nexus](axelard_query_nexus.md)	 - Querying commands for the nexus module
 - [axelard query params](axelard_query_params.md)	 - Querying commands for the params module
 - [axelard query permission](axelard_query_permission.md)	 - Querying commands for the permission module

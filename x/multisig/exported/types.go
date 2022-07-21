@@ -2,6 +2,7 @@ package exported
 
 import (
 	"bytes"
+	"crypto/ecdsa"
 	"encoding/hex"
 	"fmt"
 
@@ -11,9 +12,10 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/utils/funcs"
 )
 
-//go:generate moq -out ./mock/types.go -pkg mock . SigHandler
+//go:generate moq -out ./mock/types.go -pkg mock . SigHandler Key
 
 // Key provides an interface to work with the key
 type Key interface {
@@ -21,6 +23,13 @@ type Key interface {
 	GetPubKey(sdk.ValAddress) (PublicKey, bool)
 	GetWeight(sdk.ValAddress) sdk.Uint
 	GetMinPassingWeight() sdk.Uint
+}
+
+// MultiSig provides an interface to work with the multi sig
+type MultiSig interface {
+	GetSignature(p sdk.ValAddress) (btcec.Signature, bool)
+	GetPayloadHash() Hash
+	GetKeyID() KeyID
 }
 
 // SigHandler defines the interface for the requesting module to implement in
@@ -76,6 +85,13 @@ func (pk PublicKey) ValidateBasic() error {
 // String returns the hex encoding of the given public key
 func (pk PublicKey) String() string {
 	return hex.EncodeToString(pk)
+}
+
+// ToECDSAPubKey returns the ECDSA public key
+func (pk PublicKey) ToECDSAPubKey() ecdsa.PublicKey {
+	btcecKey := funcs.Must(btcec.ParsePubKey(pk, btcec.S256()))
+
+	return *btcecKey.ToECDSA()
 }
 
 const (

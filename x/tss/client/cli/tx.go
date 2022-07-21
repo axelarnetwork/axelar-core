@@ -16,21 +16,7 @@ import (
 
 // GetTxCmd returns the transaction commands for this module
 func GetTxCmd() *cobra.Command {
-	tssTxCmd := &cobra.Command{
-		Use:                        types.ModuleName,
-		Short:                      fmt.Sprintf("%s transactions subcommands", types.ModuleName),
-		DisableFlagParsing:         true,
-		SuggestionsMinimumDistance: 2,
-		RunE:                       client.ValidateCmd,
-	}
-
-	tssTxCmd.AddCommand(
-		getCmdKeygenStart(),
-		getCmdRotateKey(),
-		GetCmdRegisterExternalKeys(),
-	)
-
-	return tssTxCmd
+	return nil
 }
 
 func getCmdKeygenStart() *cobra.Command {

@@ -1,0 +1,117 @@
+syntax = "proto3";
+package axelar.evm.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/evm/types";
+
+import "gogoproto/gogo.proto";
+import "axelar/vote/exported/v1beta1/types.proto";
+import "axelar/evm/v1beta1/types.proto";
+
+message PollFailed {
+  bytes tx_id = 1 [
+    (gogoproto.nullable) = false,
+    (gogoproto.customtype) = "Hash",
+    (gogoproto.customname) = "TxID"
+  ];
+  string chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  uint64 poll_id = 3 [
+    (gogoproto.customname) = "PollID",
+    (gogoproto.customtype) =
+        "github.com/axelarnetwork/axelar-core/x/vote/exported.PollID",
+    (gogoproto.nullable) = false
+  ];
+}
+
+message PollExpired {
+  bytes tx_id = 1 [
+    (gogoproto.nullable) = false,
+    (gogoproto.customtype) = "Hash",
+    (gogoproto.customname) = "TxID"
+  ];
+  string chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  uint64 poll_id = 3 [
+    (gogoproto.customname) = "PollID",
+    (gogoproto.customtype) =
+        "github.com/axelarnetwork/axelar-core/x/vote/exported.PollID",
+    (gogoproto.nullable) = false
+  ];
+}
+
+message ConfirmKeyTransferStarted {
+  string chain = 1
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  bytes tx_id = 2 [
+    (gogoproto.nullable) = false,
+    (gogoproto.customtype) = "Hash",
+    (gogoproto.customname) = "TxID"
+  ];
+  bytes gateway_address = 3
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+  uint64 confirmation_height = 4;
+  vote.exported.v1beta1.PollParticipants participants = 5
+      [ (gogoproto.nullable) = false, (gogoproto.embed) = true ];
+}
+
+message ConfirmGatewayTxStarted {
+  bytes tx_id = 1 [
+    (gogoproto.nullable) = false,
+    (gogoproto.customtype) = "Hash",
+    (gogoproto.customname) = "TxID"
+  ];
+  string chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  bytes gateway_address = 3
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+  uint64 confirmation_height = 4;
+  vote.exported.v1beta1.PollParticipants participants = 5
+      [ (gogoproto.nullable) = false, (gogoproto.embed) = true ];
+}
+
+message ConfirmDepositStarted {
+  bytes tx_id = 1 [
+    (gogoproto.nullable) = false,
+    (gogoproto.customtype) = "Hash",
+    (gogoproto.customname) = "TxID"
+  ];
+  string chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  bytes deposit_address = 3
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+  bytes token_address = 4
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+  uint64 confirmation_height = 5;
+  vote.exported.v1beta1.PollParticipants participants = 6
+      [ (gogoproto.nullable) = false, (gogoproto.embed) = true ];
+}
+
+message ConfirmTokenStarted {
+  bytes tx_id = 1 [
+    (gogoproto.nullable) = false,
+    (gogoproto.customtype) = "Hash",
+    (gogoproto.customname) = "TxID"
+  ];
+  string chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  bytes gateway_address = 3
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+  bytes token_address = 4
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+  evm.v1beta1.TokenDetails token_details = 5 [ (gogoproto.nullable) = false ];
+  uint64 confirmation_height = 6;
+  vote.exported.v1beta1.PollParticipants participants = 7
+      [ (gogoproto.nullable) = false, (gogoproto.embed) = true ];
+}
+
+message ChainAdded {
+  string chain = 1
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+}

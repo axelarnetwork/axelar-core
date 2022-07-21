@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 )
 
@@ -15,24 +14,24 @@ type Logger interface {
 	Logger(ctx sdk.Context) log.Logger
 }
 
-// RunEndBlocker wraps the given EndBlocker and handles error/panic
-func RunEndBlocker(c sdk.Context, l Logger, endBlocker func(sdk.Context) ([]abci.ValidatorUpdate, error)) []abci.ValidatorUpdate {
+// RunCached wraps the given function, handles error/panic and rolls back the state if necessary
+func RunCached[T any](c sdk.Context, l Logger, f func(sdk.Context) (T, error)) T {
 	ctx, writeCache := c.CacheContext()
 
 	defer func() {
 		if r := recover(); r != nil {
-			l.Logger(ctx).Error(fmt.Sprintf("panicked running end blocker due to error %v", r))
+			l.Logger(ctx).Error(fmt.Sprintf("recovered from panic in cached context: %v", r))
 		}
 	}()
 
-	updates, err := endBlocker(ctx)
+	result, err := f(ctx)
 	if err != nil {
-		l.Logger(ctx).Debug(fmt.Sprintf("failed running end blocker due to error %s", err.Error()))
-		return nil
+		l.Logger(ctx).Debug(fmt.Sprintf("recovered from error in cached context: %s", err.Error()))
+		return *new(T)
 	}
 
 	writeCache()
 	c.EventManager().EmitEvents(ctx.EventManager().Events())
 
-	return updates
+	return result
 }

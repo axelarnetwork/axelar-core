@@ -69,6 +69,7 @@ func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 }
 
 // TakeSnapshot attempts to create a new snapshot based on the given key requirment
+// Deprecated
 func (k Keeper) TakeSnapshot(ctx sdk.Context, keyRequirement tss.KeyRequirement) (exported.Snapshot, error) {
 	count := k.getSnapshotCount(ctx)
 	k.setSnapshotCount(ctx, count+1)
@@ -146,6 +147,7 @@ func (k Keeper) GetMinProxyBalance(ctx sdk.Context) sdk.Int {
 	return sdk.NewInt(minBalance)
 }
 
+// Deprecated
 func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, keyRequirement tss.KeyRequirement) (exported.Snapshot, error) {
 	var validators []exported.SDKValidator
 	var participants []exported.Validator
@@ -480,6 +482,7 @@ func (k Keeper) CreateSnapshot(
 ) (exported.Snapshot, error) {
 	powerReduction := k.staking.PowerReduction(ctx)
 	participants := make([]exported.Participant, 0, len(candidates))
+
 	for _, candidate := range candidates {
 		validator := k.staking.Validator(ctx, candidate)
 		if validator == nil || !filterFunc(validator) {

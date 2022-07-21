@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"encoding/hex"
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -46,8 +47,8 @@ func (p poll) Logger() log.Logger {
 func (p poll) tallyLogger(voter sdk.ValAddress, talliedVote types.TalliedVote) log.Logger {
 	return p.Logger().With(
 		"voter", voter.String(),
-		"data_hash", talliedVote.Data,
-		"tally_weight", talliedVote.Tally,
+		"data_hash", hex.EncodeToString(proto.Hash(talliedVote.Data.GetCachedValue().(codec.ProtoMarshaler))),
+		"tally_weight", talliedVote.Tally.String(),
 		"tally_voter_count", len(talliedVote.IsVoterLate),
 	)
 }
@@ -132,6 +133,14 @@ func (p *poll) Vote(voter sdk.ValAddress, blockHeight int64, data codec.ProtoMar
 // GetModule returns the module the poll is associated with
 func (p poll) GetModule() string {
 	return p.Module
+}
+
+func (p poll) GetMetaData() (codec.ProtoMarshaler, bool) {
+	if p.ModuleMetadata == nil {
+		return nil, false
+	}
+
+	return p.ModuleMetadata.GetCachedValue().(codec.ProtoMarshaler), true
 }
 
 func (p poll) voteLate(voter sdk.ValAddress, data codec.ProtoMarshaler) {

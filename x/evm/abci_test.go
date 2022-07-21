@@ -4,14 +4,13 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	evmCrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+	"golang.org/x/exp/maps"
 
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
@@ -24,7 +23,6 @@ import (
 	multisigTestUtils "github.com/axelarnetwork/axelar-core/x/multisig/exported/testutils"
 	multisigTypesTestuilts "github.com/axelarnetwork/axelar-core/x/multisig/types/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 	. "github.com/axelarnetwork/utils/test"
 )
@@ -62,7 +60,7 @@ func TestHandleContractCall(t *testing.T) {
 	givenContractCallEvent := Given("a ContractCall event", func() {
 		event = types.Event{
 			Chain: sourceChainName,
-			TxId:  evmTestUtils.RandomHash(),
+			TxID:  evmTestUtils.RandomHash(),
 			Index: uint64(rand.PosI64()),
 			Event: &types.Event_ContractCall{
 				ContractCall: &types.EventContractCall{
@@ -223,7 +221,7 @@ func TestHandleTokenSent(t *testing.T) {
 	givenTokenSentEvent := Given("a TokenSent event", func() {
 		event = types.Event{
 			Chain: sourceChainName,
-			TxId:  evmTestUtils.RandomHash(),
+			TxID:  evmTestUtils.RandomHash(),
 			Index: uint64(rand.PosI64()),
 			Event: &types.Event_TokenSent{
 				TokenSent: &types.EventTokenSent{
@@ -396,7 +394,7 @@ func TestHandleContractCallWithToken(t *testing.T) {
 	destinationChainName := nexus.ChainName(rand.Str(5))
 	event := types.Event{
 		Chain: sourceChainName,
-		TxId:  evmTestUtils.RandomHash(),
+		TxID:  evmTestUtils.RandomHash(),
 		Index: uint64(rand.PosI64()),
 		Event: &types.Event_ContractCallWithToken{
 			ContractCallWithToken: &types.EventContractCallWithToken{
@@ -721,7 +719,7 @@ func TestHandleConfirmDeposit(t *testing.T) {
 	givenTransferEvent := Given("a Transfer event", func() {
 		event = types.Event{
 			Chain: sourceChainName,
-			TxId:  evmTestUtils.RandomHash(),
+			TxID:  evmTestUtils.RandomHash(),
 			Index: uint64(rand.PosI64()),
 			Event: &types.Event_Transfer{
 				Transfer: &types.EventTransfer{
@@ -776,7 +774,7 @@ func TestHandleConfirmDeposit(t *testing.T) {
 
 	depositFound := func(found bool) func() {
 		return func() {
-			sourceCk.GetDepositFunc = func(ctx sdk.Context, txID common.Hash, burnerAddr common.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
+			sourceCk.GetDepositFunc = func(ctx sdk.Context, txID types.Hash, burnerAddr types.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
 				return types.ERC20Deposit{}, types.DepositStatus_Confirmed, found
 			}
 		}
@@ -837,7 +835,7 @@ func TestHandleConfirmToken(t *testing.T) {
 	givenTokenDeployedEvent := Given("a TokenDeployed event", func() {
 		event = types.Event{
 			Chain: sourceChainName,
-			TxId:  evmTestUtils.RandomHash(),
+			TxID:  evmTestUtils.RandomHash(),
 			Index: uint64(rand.PosI64()),
 			Event: &types.Event_TokenDeployed{
 				TokenDeployed: &types.EventTokenDeployed{
@@ -947,21 +945,19 @@ func TestHandleTransferKey(t *testing.T) {
 	}
 
 	keyMatches := func() {
-		key := multisig.Key(multisigTypesTestuilts.Key())
+		key := multisigTypesTestuilts.Key()
 		multisigKeeper.GetKeyFunc = func(sdk.Context, multisig.KeyID) (multisig.Key, bool) {
 			return key, true
 		}
-		multisigPubKeys := slices.Map(key.GetParticipants(), func(p sdk.ValAddress) multisig.PublicKey { return funcs.MustOk(key.GetPubKey(p)) })
-		expectedAddresses := slices.Map(multisigPubKeys, func(pk multisig.PublicKey) common.Address {
-			return crypto.PubkeyToAddress(*funcs.Must(btcec.ParsePubKey(pk, btcec.S256())).ToECDSA())
-		})
-		threshold := key.GetMinPassingWeight()
-
-		newOwners := slices.Map(expectedAddresses, func(addr common.Address) types.Address { return types.Address(addr) })
+		addressWeights, newThreshold := types.ParseMultisigKey(key)
+		addresses := maps.Keys(addressWeights)
+		newOperators := slices.Map(addresses, func(a string) types.Address { return types.Address(common.HexToAddress(a)) })
+		newWeights := slices.Map(addresses, func(a string) sdk.Uint { return addressWeights[a] })
 
 		operatorshipTransferred := types.EventMultisigOperatorshipTransferred{
-			NewOperators: newOwners,
-			NewThreshold: threshold,
+			NewOperators: newOperators,
+			NewWeights:   newWeights,
+			NewThreshold: newThreshold,
 		}
 		event.Event = &types.Event_MultisigOperatorshipTransferred{
 			MultisigOperatorshipTransferred: &operatorshipTransferred,
@@ -1011,18 +1007,26 @@ func TestHandleTransferKey(t *testing.T) {
 func randTransferKeyEvent(chain nexus.ChainName) types.Event {
 	event := types.Event{
 		Chain: chain,
-		TxId:  types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
+		TxID:  types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
 		Index: uint64(rand.I64Between(1, 50)),
 	}
 
-	newAddresses := make([]types.Address, rand.I64Between(10, 50))
-	for i := 0; i < len(newAddresses); i++ {
-		newAddresses[i] = types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength)))
-	}
+	newAddresses := slices.Expand(func(_ int) types.Address {
+		return types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength)))
+	}, int(rand.I64Between(10, 50)))
+
+	totalWeight := sdk.ZeroUint()
+	newWeights := slices.Expand(func(_ int) sdk.Uint {
+		newWeight := sdk.NewUint(uint64(rand.I64Between(1, 20)))
+		totalWeight = totalWeight.Add(newWeight)
+
+		return newWeight
+	}, len(newAddresses))
 
 	operatorshipTransferred := types.EventMultisigOperatorshipTransferred{
 		NewOperators: newAddresses,
-		NewThreshold: sdk.NewUint(uint64(rand.I64Between(10, 50))),
+		NewWeights:   newWeights,
+		NewThreshold: sdk.NewUint(uint64(rand.I64Between(1, totalWeight.BigInt().Int64()+1))),
 	}
 	event.Event = &types.Event_MultisigOperatorshipTransferred{
 		MultisigOperatorshipTransferred: &operatorshipTransferred,

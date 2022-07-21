@@ -66,10 +66,21 @@
       }
     },
     {
+      "url": "../../tmp-swagger-gen/cosmos/base/tendermint/v1beta1/query.swagger.json"
+    },
+    {
       "url": "../../tmp-swagger-gen/cosmos/distribution/v1beta1/query.swagger.json",
       "operationIds": {
         "rename": {
           "Params": "DistributionParams"
+        }
+      }
+    },
+    {
+      "url": "../../tmp-swagger-gen/cosmos/feegrant/v1beta1/query.swagger.json",
+      "operationIds": {
+        "rename": {
+          "Params": "FeegrantParams"
         }
       }
     },
@@ -86,6 +97,14 @@
       "operationIds": {
         "rename": {
           "Params": "GovParams"
+        }
+      }
+    },
+    {
+      "url": "../../tmp-swagger-gen/cosmos/mint/v1beta1/query.swagger.json",
+      "operationIds": {
+        "rename": {
+          "Params": "MintParams"
         }
       }
     },
@@ -145,6 +164,14 @@
       "operationIds": {
         "rename": {
           "Params": "IBCConnectionParams"
+        }
+      }
+    },
+    {
+      "url": "../../tmp-swagger-gen/ibc/core/port/v1/query.swagger.json",
+      "operationIds": {
+        "rename": {
+          "Params": "IBCPortParams"
         }
       }
     },

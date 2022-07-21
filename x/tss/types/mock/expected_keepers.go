@@ -7,14 +7,17 @@ import (
 	context "context"
 	"crypto/ecdsa"
 	utils "github.com/axelarnetwork/axelar-core/utils"
+	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
+	multisigtypes "github.com/axelarnetwork/axelar-core/x/multisig/types"
 	github_com_axelarnetwork_axelar_core_x_nexus_exported "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 	github_com_axelarnetwork_axelar_core_x_snapshot_exported "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	github_com_axelarnetwork_axelar_core_x_tss_exported "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	tofnd "github.com/axelarnetwork/axelar-core/x/tss/tofnd"
-	"github.com/axelarnetwork/axelar-core/x/tss/types"
+	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	exported1 "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
+	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/tendermint/tendermint/libs/log"
 	grpc "google.golang.org/grpc"
@@ -22,15 +25,15 @@ import (
 	"sync"
 )
 
-// Ensure, that TofndClientMock does implement types.TofndClient.
+// Ensure, that TofndClientMock does implement tsstypes.TofndClient.
 // If this is not the case, regenerate this file with moq.
-var _ types.TofndClient = &TofndClientMock{}
+var _ tsstypes.TofndClient = &TofndClientMock{}
 
-// TofndClientMock is a mock implementation of types.TofndClient.
+// TofndClientMock is a mock implementation of tsstypes.TofndClient.
 //
 // 	func TestSomethingThatUsesTofndClient(t *testing.T) {
 //
-// 		// make and configure a mocked types.TofndClient
+// 		// make and configure a mocked tsstypes.TofndClient
 // 		mockedTofndClient := &TofndClientMock{
 // 			KeyPresenceFunc: func(ctx context.Context, in *tofnd.KeyPresenceRequest, opts ...grpc.CallOption) (*tofnd.KeyPresenceResponse, error) {
 // 				panic("mock out the KeyPresence method")
@@ -46,7 +49,7 @@ var _ types.TofndClient = &TofndClientMock{}
 // 			},
 // 		}
 //
-// 		// use mockedTofndClient in code that requires types.TofndClient
+// 		// use mockedTofndClient in code that requires tsstypes.TofndClient
 // 		// and then make assertions.
 //
 // 	}
@@ -252,15 +255,15 @@ func (mock *TofndClientMock) SignCalls() []struct {
 	return calls
 }
 
-// Ensure, that TofndKeyGenClientMock does implement types.TofndKeyGenClient.
+// Ensure, that TofndKeyGenClientMock does implement tsstypes.TofndKeyGenClient.
 // If this is not the case, regenerate this file with moq.
-var _ types.TofndKeyGenClient = &TofndKeyGenClientMock{}
+var _ tsstypes.TofndKeyGenClient = &TofndKeyGenClientMock{}
 
-// TofndKeyGenClientMock is a mock implementation of types.TofndKeyGenClient.
+// TofndKeyGenClientMock is a mock implementation of tsstypes.TofndKeyGenClient.
 //
 // 	func TestSomethingThatUsesTofndKeyGenClient(t *testing.T) {
 //
-// 		// make and configure a mocked types.TofndKeyGenClient
+// 		// make and configure a mocked tsstypes.TofndKeyGenClient
 // 		mockedTofndKeyGenClient := &TofndKeyGenClientMock{
 // 			CloseSendFunc: func() error {
 // 				panic("mock out the CloseSend method")
@@ -288,7 +291,7 @@ var _ types.TofndKeyGenClient = &TofndKeyGenClientMock{}
 // 			},
 // 		}
 //
-// 		// use mockedTofndKeyGenClient in code that requires types.TofndKeyGenClient
+// 		// use mockedTofndKeyGenClient in code that requires tsstypes.TofndKeyGenClient
 // 		// and then make assertions.
 //
 // 	}
@@ -583,15 +586,15 @@ func (mock *TofndKeyGenClientMock) TrailerCalls() []struct {
 	return calls
 }
 
-// Ensure, that TofndSignClientMock does implement types.TofndSignClient.
+// Ensure, that TofndSignClientMock does implement tsstypes.TofndSignClient.
 // If this is not the case, regenerate this file with moq.
-var _ types.TofndSignClient = &TofndSignClientMock{}
+var _ tsstypes.TofndSignClient = &TofndSignClientMock{}
 
-// TofndSignClientMock is a mock implementation of types.TofndSignClient.
+// TofndSignClientMock is a mock implementation of tsstypes.TofndSignClient.
 //
 // 	func TestSomethingThatUsesTofndSignClient(t *testing.T) {
 //
-// 		// make and configure a mocked types.TofndSignClient
+// 		// make and configure a mocked tsstypes.TofndSignClient
 // 		mockedTofndSignClient := &TofndSignClientMock{
 // 			CloseSendFunc: func() error {
 // 				panic("mock out the CloseSend method")
@@ -619,7 +622,7 @@ var _ types.TofndSignClient = &TofndSignClientMock{}
 // 			},
 // 		}
 //
-// 		// use mockedTofndSignClient in code that requires types.TofndSignClient
+// 		// use mockedTofndSignClient in code that requires tsstypes.TofndSignClient
 // 		// and then make assertions.
 //
 // 	}
@@ -914,15 +917,15 @@ func (mock *TofndSignClientMock) TrailerCalls() []struct {
 	return calls
 }
 
-// Ensure, that VoterMock does implement types.Voter.
+// Ensure, that VoterMock does implement tsstypes.Voter.
 // If this is not the case, regenerate this file with moq.
-var _ types.Voter = &VoterMock{}
+var _ tsstypes.Voter = &VoterMock{}
 
-// VoterMock is a mock implementation of types.Voter.
+// VoterMock is a mock implementation of tsstypes.Voter.
 //
 // 	func TestSomethingThatUsesVoter(t *testing.T) {
 //
-// 		// make and configure a mocked types.Voter
+// 		// make and configure a mocked tsstypes.Voter
 // 		mockedVoter := &VoterMock{
 // 			GetPollFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, pollID exported1.PollID) (exported1.Poll, bool) {
 // 				panic("mock out the GetPoll method")
@@ -932,7 +935,7 @@ var _ types.Voter = &VoterMock{}
 // 			},
 // 		}
 //
-// 		// use mockedVoter in code that requires types.Voter
+// 		// use mockedVoter in code that requires tsstypes.Voter
 // 		// and then make assertions.
 //
 // 	}
@@ -1034,15 +1037,15 @@ func (mock *VoterMock) InitializePollCalls() []struct {
 	return calls
 }
 
-// Ensure, that StakingKeeperMock does implement types.StakingKeeper.
+// Ensure, that StakingKeeperMock does implement tsstypes.StakingKeeper.
 // If this is not the case, regenerate this file with moq.
-var _ types.StakingKeeper = &StakingKeeperMock{}
+var _ tsstypes.StakingKeeper = &StakingKeeperMock{}
 
-// StakingKeeperMock is a mock implementation of types.StakingKeeper.
+// StakingKeeperMock is a mock implementation of tsstypes.StakingKeeper.
 //
 // 	func TestSomethingThatUsesStakingKeeper(t *testing.T) {
 //
-// 		// make and configure a mocked types.StakingKeeper
+// 		// make and configure a mocked tsstypes.StakingKeeper
 // 		mockedStakingKeeper := &StakingKeeperMock{
 // 			GetLastTotalPowerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) github_com_cosmos_cosmos_sdk_types.Int {
 // 				panic("mock out the GetLastTotalPower method")
@@ -1055,7 +1058,7 @@ var _ types.StakingKeeper = &StakingKeeperMock{}
 // 			},
 // 		}
 //
-// 		// use mockedStakingKeeper in code that requires types.StakingKeeper
+// 		// use mockedStakingKeeper in code that requires tsstypes.StakingKeeper
 // 		// and then make assertions.
 //
 // 	}
@@ -1197,15 +1200,15 @@ func (mock *StakingKeeperMock) ValidatorCalls() []struct {
 	return calls
 }
 
-// Ensure, that TSSKeeperMock does implement types.TSSKeeper.
+// Ensure, that TSSKeeperMock does implement tsstypes.TSSKeeper.
 // If this is not the case, regenerate this file with moq.
-var _ types.TSSKeeper = &TSSKeeperMock{}
+var _ tsstypes.TSSKeeper = &TSSKeeperMock{}
 
-// TSSKeeperMock is a mock implementation of types.TSSKeeper.
+// TSSKeeperMock is a mock implementation of tsstypes.TSSKeeper.
 //
 // 	func TestSomethingThatUsesTSSKeeper(t *testing.T) {
 //
-// 		// make and configure a mocked types.TSSKeeper
+// 		// make and configure a mocked tsstypes.TSSKeeper
 // 		mockedTSSKeeper := &TSSKeeperMock{
 // 			AssertMatchesRequirementsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, snapshotter github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshotter, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) error {
 // 				panic("mock out the AssertMatchesRequirements method")
@@ -1270,13 +1273,13 @@ var _ types.TSSKeeper = &TSSKeeperMock{}
 // 			GetMaxSimultaneousSignSharesFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64 {
 // 				panic("mock out the GetMaxSimultaneousSignShares method")
 // 			},
-// 			GetMultisigKeygenInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) (types.MultisigKeygenInfo, bool) {
+// 			GetMultisigKeygenInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) (tsstypes.MultisigKeygenInfo, bool) {
 // 				panic("mock out the GetMultisigKeygenInfo method")
 // 			},
 // 			GetMultisigPubKeysByValidatorFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, val github_com_cosmos_cosmos_sdk_types.ValAddress) ([]ecdsa.PublicKey, bool) {
 // 				panic("mock out the GetMultisigPubKeysByValidator method")
 // 			},
-// 			GetMultisigSignInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string) (types.MultisigSignInfo, bool) {
+// 			GetMultisigSignInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string) (tsstypes.MultisigSignInfo, bool) {
 // 				panic("mock out the GetMultisigSignInfo method")
 // 			},
 // 			GetNextKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) (github_com_axelarnetwork_axelar_core_x_tss_exported.Key, bool) {
@@ -1288,13 +1291,13 @@ var _ types.TSSKeeper = &TSSKeeperMock{}
 // 			GetOldActiveKeysFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) ([]github_com_axelarnetwork_axelar_core_x_tss_exported.Key, error) {
 // 				panic("mock out the GetOldActiveKeys method")
 // 			},
-// 			GetParamsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) types.Params {
+// 			GetParamsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) tsstypes.Params {
 // 				panic("mock out the GetParams method")
 // 			},
 // 			GetPrivateRecoveryInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.ValAddress, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) []byte {
 // 				panic("mock out the GetPrivateRecoveryInfo method")
 // 			},
-// 			GetRouterFunc: func() types.Router {
+// 			GetRouterFunc: func() tsstypes.Router {
 // 				panic("mock out the GetRouter method")
 // 			},
 // 			GetSigFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string) (github_com_axelarnetwork_axelar_core_x_tss_exported.Signature, github_com_axelarnetwork_axelar_core_x_tss_exported.SigStatus) {
@@ -1348,7 +1351,7 @@ var _ types.TSSKeeper = &TSSKeeperMock{}
 // 			SetKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, key github_com_axelarnetwork_axelar_core_x_tss_exported.Key)  {
 // 				panic("mock out the SetKey method")
 // 			},
-// 			SetParamsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, p types.Params)  {
+// 			SetParamsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, p tsstypes.Params)  {
 // 				panic("mock out the SetParams method")
 // 			},
 // 			SetPrivateRecoveryInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.ValAddress, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, recoveryInfo []byte)  {
@@ -1360,7 +1363,7 @@ var _ types.TSSKeeper = &TSSKeeperMock{}
 // 			SetSigStatusFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string, status github_com_axelarnetwork_axelar_core_x_tss_exported.SigStatus)  {
 // 				panic("mock out the SetSigStatus method")
 // 			},
-// 			StartKeygenFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, voter types.Voter, keyInfo types.KeyInfo, snapshot github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot) error {
+// 			StartKeygenFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, voter tsstypes.Voter, keyInfo tsstypes.KeyInfo, snapshot github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot) error {
 // 				panic("mock out the StartKeygen method")
 // 			},
 // 			StartSignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo, snapshotter github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshotter, voter interface{InitializePoll(ctx github_com_cosmos_cosmos_sdk_types.Context, pollBuilder exported1.PollBuilder) (exported1.PollID, error)}) error {
@@ -1374,7 +1377,7 @@ var _ types.TSSKeeper = &TSSKeeperMock{}
 // 			},
 // 		}
 //
-// 		// use mockedTSSKeeper in code that requires types.TSSKeeper
+// 		// use mockedTSSKeeper in code that requires tsstypes.TSSKeeper
 // 		// and then make assertions.
 //
 // 	}
@@ -1443,13 +1446,13 @@ type TSSKeeperMock struct {
 	GetMaxSimultaneousSignSharesFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64
 
 	// GetMultisigKeygenInfoFunc mocks the GetMultisigKeygenInfo method.
-	GetMultisigKeygenInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) (types.MultisigKeygenInfo, bool)
+	GetMultisigKeygenInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) (tsstypes.MultisigKeygenInfo, bool)
 
 	// GetMultisigPubKeysByValidatorFunc mocks the GetMultisigPubKeysByValidator method.
 	GetMultisigPubKeysByValidatorFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, val github_com_cosmos_cosmos_sdk_types.ValAddress) ([]ecdsa.PublicKey, bool)
 
 	// GetMultisigSignInfoFunc mocks the GetMultisigSignInfo method.
-	GetMultisigSignInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string) (types.MultisigSignInfo, bool)
+	GetMultisigSignInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string) (tsstypes.MultisigSignInfo, bool)
 
 	// GetNextKeyFunc mocks the GetNextKey method.
 	GetNextKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) (github_com_axelarnetwork_axelar_core_x_tss_exported.Key, bool)
@@ -1461,13 +1464,13 @@ type TSSKeeperMock struct {
 	GetOldActiveKeysFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, keyRole github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRole) ([]github_com_axelarnetwork_axelar_core_x_tss_exported.Key, error)
 
 	// GetParamsFunc mocks the GetParams method.
-	GetParamsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) types.Params
+	GetParamsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) tsstypes.Params
 
 	// GetPrivateRecoveryInfoFunc mocks the GetPrivateRecoveryInfo method.
 	GetPrivateRecoveryInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.ValAddress, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) []byte
 
 	// GetRouterFunc mocks the GetRouter method.
-	GetRouterFunc func() types.Router
+	GetRouterFunc func() tsstypes.Router
 
 	// GetSigFunc mocks the GetSig method.
 	GetSigFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string) (github_com_axelarnetwork_axelar_core_x_tss_exported.Signature, github_com_axelarnetwork_axelar_core_x_tss_exported.SigStatus)
@@ -1521,7 +1524,7 @@ type TSSKeeperMock struct {
 	SetKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, key github_com_axelarnetwork_axelar_core_x_tss_exported.Key)
 
 	// SetParamsFunc mocks the SetParams method.
-	SetParamsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, p types.Params)
+	SetParamsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, p tsstypes.Params)
 
 	// SetPrivateRecoveryInfoFunc mocks the SetPrivateRecoveryInfo method.
 	SetPrivateRecoveryInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_cosmos_cosmos_sdk_types.ValAddress, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID, recoveryInfo []byte)
@@ -1533,7 +1536,7 @@ type TSSKeeperMock struct {
 	SetSigStatusFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string, status github_com_axelarnetwork_axelar_core_x_tss_exported.SigStatus)
 
 	// StartKeygenFunc mocks the StartKeygen method.
-	StartKeygenFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, voter types.Voter, keyInfo types.KeyInfo, snapshot github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot) error
+	StartKeygenFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, voter tsstypes.Voter, keyInfo tsstypes.KeyInfo, snapshot github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot) error
 
 	// StartSignFunc mocks the StartSign method.
 	StartSignFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, info github_com_axelarnetwork_axelar_core_x_tss_exported.SignInfo, snapshotter github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshotter, voter interface {
@@ -1910,7 +1913,7 @@ type TSSKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// P is the p argument value.
-			P types.Params
+			P tsstypes.Params
 		}
 		// SetPrivateRecoveryInfo holds details about calls to the SetPrivateRecoveryInfo method.
 		SetPrivateRecoveryInfo []struct {
@@ -1944,9 +1947,9 @@ type TSSKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Voter is the voter argument value.
-			Voter types.Voter
+			Voter tsstypes.Voter
 			// KeyInfo is the keyInfo argument value.
-			KeyInfo types.KeyInfo
+			KeyInfo tsstypes.KeyInfo
 			// Snapshot is the snapshot argument value.
 			Snapshot github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot
 		}
@@ -2803,7 +2806,7 @@ func (mock *TSSKeeperMock) GetMaxSimultaneousSignSharesCalls() []struct {
 }
 
 // GetMultisigKeygenInfo calls GetMultisigKeygenInfoFunc.
-func (mock *TSSKeeperMock) GetMultisigKeygenInfo(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) (types.MultisigKeygenInfo, bool) {
+func (mock *TSSKeeperMock) GetMultisigKeygenInfo(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID) (tsstypes.MultisigKeygenInfo, bool) {
 	if mock.GetMultisigKeygenInfoFunc == nil {
 		panic("TSSKeeperMock.GetMultisigKeygenInfoFunc: method is nil but TSSKeeper.GetMultisigKeygenInfo was just called")
 	}
@@ -2877,7 +2880,7 @@ func (mock *TSSKeeperMock) GetMultisigPubKeysByValidatorCalls() []struct {
 }
 
 // GetMultisigSignInfo calls GetMultisigSignInfoFunc.
-func (mock *TSSKeeperMock) GetMultisigSignInfo(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string) (types.MultisigSignInfo, bool) {
+func (mock *TSSKeeperMock) GetMultisigSignInfo(ctx github_com_cosmos_cosmos_sdk_types.Context, sigID string) (tsstypes.MultisigSignInfo, bool) {
 	if mock.GetMultisigSignInfoFunc == nil {
 		panic("TSSKeeperMock.GetMultisigSignInfoFunc: method is nil but TSSKeeper.GetMultisigSignInfo was just called")
 	}
@@ -3029,7 +3032,7 @@ func (mock *TSSKeeperMock) GetOldActiveKeysCalls() []struct {
 }
 
 // GetParams calls GetParamsFunc.
-func (mock *TSSKeeperMock) GetParams(ctx github_com_cosmos_cosmos_sdk_types.Context) types.Params {
+func (mock *TSSKeeperMock) GetParams(ctx github_com_cosmos_cosmos_sdk_types.Context) tsstypes.Params {
 	if mock.GetParamsFunc == nil {
 		panic("TSSKeeperMock.GetParamsFunc: method is nil but TSSKeeper.GetParams was just called")
 	}
@@ -3099,7 +3102,7 @@ func (mock *TSSKeeperMock) GetPrivateRecoveryInfoCalls() []struct {
 }
 
 // GetRouter calls GetRouterFunc.
-func (mock *TSSKeeperMock) GetRouter() types.Router {
+func (mock *TSSKeeperMock) GetRouter() tsstypes.Router {
 	if mock.GetRouterFunc == nil {
 		panic("TSSKeeperMock.GetRouterFunc: method is nil but TSSKeeper.GetRouter was just called")
 	}
@@ -3744,13 +3747,13 @@ func (mock *TSSKeeperMock) SetKeyCalls() []struct {
 }
 
 // SetParams calls SetParamsFunc.
-func (mock *TSSKeeperMock) SetParams(ctx github_com_cosmos_cosmos_sdk_types.Context, p types.Params) {
+func (mock *TSSKeeperMock) SetParams(ctx github_com_cosmos_cosmos_sdk_types.Context, p tsstypes.Params) {
 	if mock.SetParamsFunc == nil {
 		panic("TSSKeeperMock.SetParamsFunc: method is nil but TSSKeeper.SetParams was just called")
 	}
 	callInfo := struct {
 		Ctx github_com_cosmos_cosmos_sdk_types.Context
-		P   types.Params
+		P   tsstypes.Params
 	}{
 		Ctx: ctx,
 		P:   p,
@@ -3766,11 +3769,11 @@ func (mock *TSSKeeperMock) SetParams(ctx github_com_cosmos_cosmos_sdk_types.Cont
 //     len(mockedTSSKeeper.SetParamsCalls())
 func (mock *TSSKeeperMock) SetParamsCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
-	P   types.Params
+	P   tsstypes.Params
 } {
 	var calls []struct {
 		Ctx github_com_cosmos_cosmos_sdk_types.Context
-		P   types.Params
+		P   tsstypes.Params
 	}
 	mock.lockSetParams.RLock()
 	calls = mock.calls.SetParams
@@ -3896,14 +3899,14 @@ func (mock *TSSKeeperMock) SetSigStatusCalls() []struct {
 }
 
 // StartKeygen calls StartKeygenFunc.
-func (mock *TSSKeeperMock) StartKeygen(ctx github_com_cosmos_cosmos_sdk_types.Context, voter types.Voter, keyInfo types.KeyInfo, snapshot github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot) error {
+func (mock *TSSKeeperMock) StartKeygen(ctx github_com_cosmos_cosmos_sdk_types.Context, voter tsstypes.Voter, keyInfo tsstypes.KeyInfo, snapshot github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot) error {
 	if mock.StartKeygenFunc == nil {
 		panic("TSSKeeperMock.StartKeygenFunc: method is nil but TSSKeeper.StartKeygen was just called")
 	}
 	callInfo := struct {
 		Ctx      github_com_cosmos_cosmos_sdk_types.Context
-		Voter    types.Voter
-		KeyInfo  types.KeyInfo
+		Voter    tsstypes.Voter
+		KeyInfo  tsstypes.KeyInfo
 		Snapshot github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot
 	}{
 		Ctx:      ctx,
@@ -3922,14 +3925,14 @@ func (mock *TSSKeeperMock) StartKeygen(ctx github_com_cosmos_cosmos_sdk_types.Co
 //     len(mockedTSSKeeper.StartKeygenCalls())
 func (mock *TSSKeeperMock) StartKeygenCalls() []struct {
 	Ctx      github_com_cosmos_cosmos_sdk_types.Context
-	Voter    types.Voter
-	KeyInfo  types.KeyInfo
+	Voter    tsstypes.Voter
+	KeyInfo  tsstypes.KeyInfo
 	Snapshot github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot
 } {
 	var calls []struct {
 		Ctx      github_com_cosmos_cosmos_sdk_types.Context
-		Voter    types.Voter
-		KeyInfo  types.KeyInfo
+		Voter    tsstypes.Voter
+		KeyInfo  tsstypes.KeyInfo
 		Snapshot github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot
 	}
 	mock.lockStartKeygen.RLock()
@@ -4075,15 +4078,15 @@ func (mock *TSSKeeperMock) SubmitSignaturesCalls() []struct {
 	return calls
 }
 
-// Ensure, that SnapshotterMock does implement types.Snapshotter.
+// Ensure, that SnapshotterMock does implement tsstypes.Snapshotter.
 // If this is not the case, regenerate this file with moq.
-var _ types.Snapshotter = &SnapshotterMock{}
+var _ tsstypes.Snapshotter = &SnapshotterMock{}
 
-// SnapshotterMock is a mock implementation of types.Snapshotter.
+// SnapshotterMock is a mock implementation of tsstypes.Snapshotter.
 //
 // 	func TestSomethingThatUsesSnapshotter(t *testing.T) {
 //
-// 		// make and configure a mocked types.Snapshotter
+// 		// make and configure a mocked tsstypes.Snapshotter
 // 		mockedSnapshotter := &SnapshotterMock{
 // 			CreateSnapshotFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, candidates []github_com_cosmos_cosmos_sdk_types.ValAddress, filterFunc func(github_com_axelarnetwork_axelar_core_x_snapshot_exported.ValidatorI) bool, weightFunc func(consensusPower github_com_cosmos_cosmos_sdk_types.Uint) github_com_cosmos_cosmos_sdk_types.Uint, threshold utils.Threshold) (github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot, error) {
 // 				panic("mock out the CreateSnapshot method")
@@ -4108,7 +4111,7 @@ var _ types.Snapshotter = &SnapshotterMock{}
 // 			},
 // 		}
 //
-// 		// use mockedSnapshotter in code that requires types.Snapshotter
+// 		// use mockedSnapshotter in code that requires tsstypes.Snapshotter
 // 		// and then make assertions.
 //
 // 	}
@@ -4452,15 +4455,15 @@ func (mock *SnapshotterMock) TakeSnapshotCalls() []struct {
 	return calls
 }
 
-// Ensure, that NexusMock does implement types.Nexus.
+// Ensure, that NexusMock does implement tsstypes.Nexus.
 // If this is not the case, regenerate this file with moq.
-var _ types.Nexus = &NexusMock{}
+var _ tsstypes.Nexus = &NexusMock{}
 
-// NexusMock is a mock implementation of types.Nexus.
+// NexusMock is a mock implementation of tsstypes.Nexus.
 //
 // 	func TestSomethingThatUsesNexus(t *testing.T) {
 //
-// 		// make and configure a mocked types.Nexus
+// 		// make and configure a mocked tsstypes.Nexus
 // 		mockedNexus := &NexusMock{
 // 			GetChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, bool) {
 // 				panic("mock out the GetChain method")
@@ -4470,7 +4473,7 @@ var _ types.Nexus = &NexusMock{}
 // 			},
 // 		}
 //
-// 		// use mockedNexus in code that requires types.Nexus
+// 		// use mockedNexus in code that requires tsstypes.Nexus
 // 		// and then make assertions.
 //
 // 	}
@@ -4566,22 +4569,22 @@ func (mock *NexusMock) GetChainsCalls() []struct {
 	return calls
 }
 
-// Ensure, that RewarderMock does implement types.Rewarder.
+// Ensure, that RewarderMock does implement tsstypes.Rewarder.
 // If this is not the case, regenerate this file with moq.
-var _ types.Rewarder = &RewarderMock{}
+var _ tsstypes.Rewarder = &RewarderMock{}
 
-// RewarderMock is a mock implementation of types.Rewarder.
+// RewarderMock is a mock implementation of tsstypes.Rewarder.
 //
 // 	func TestSomethingThatUsesRewarder(t *testing.T) {
 //
-// 		// make and configure a mocked types.Rewarder
+// 		// make and configure a mocked tsstypes.Rewarder
 // 		mockedRewarder := &RewarderMock{
 // 			GetPoolFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, name string) reward.RewardPool {
 // 				panic("mock out the GetPool method")
 // 			},
 // 		}
 //
-// 		// use mockedRewarder in code that requires types.Rewarder
+// 		// use mockedRewarder in code that requires tsstypes.Rewarder
 // 		// and then make assertions.
 //
 // 	}
@@ -4634,5 +4637,447 @@ func (mock *RewarderMock) GetPoolCalls() []struct {
 	mock.lockGetPool.RLock()
 	calls = mock.calls.GetPool
 	mock.lockGetPool.RUnlock()
+	return calls
+}
+
+// Ensure, that MultiSigKeeperMock does implement tsstypes.MultiSigKeeper.
+// If this is not the case, regenerate this file with moq.
+var _ tsstypes.MultiSigKeeper = &MultiSigKeeperMock{}
+
+// MultiSigKeeperMock is a mock implementation of tsstypes.MultiSigKeeper.
+//
+// 	func TestSomethingThatUsesMultiSigKeeper(t *testing.T) {
+//
+// 		// make and configure a mocked tsstypes.MultiSigKeeper
+// 		mockedMultiSigKeeper := &MultiSigKeeperMock{
+// 			AssignKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, id multisig.KeyID) error {
+// 				panic("mock out the AssignKey method")
+// 			},
+// 			GetActiveKeyIDsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) []multisig.KeyID {
+// 				panic("mock out the GetActiveKeyIDs method")
+// 			},
+// 			GetKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID multisig.KeyID) (multisig.Key, bool) {
+// 				panic("mock out the GetKey method")
+// 			},
+// 			RotateKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) error {
+// 				panic("mock out the RotateKey method")
+// 			},
+// 			SetKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, key multisigtypes.Key)  {
+// 				panic("mock out the SetKey method")
+// 			},
+// 		}
+//
+// 		// use mockedMultiSigKeeper in code that requires tsstypes.MultiSigKeeper
+// 		// and then make assertions.
+//
+// 	}
+type MultiSigKeeperMock struct {
+	// AssignKeyFunc mocks the AssignKey method.
+	AssignKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, id multisig.KeyID) error
+
+	// GetActiveKeyIDsFunc mocks the GetActiveKeyIDs method.
+	GetActiveKeyIDsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) []multisig.KeyID
+
+	// GetKeyFunc mocks the GetKey method.
+	GetKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID multisig.KeyID) (multisig.Key, bool)
+
+	// RotateKeyFunc mocks the RotateKey method.
+	RotateKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) error
+
+	// SetKeyFunc mocks the SetKey method.
+	SetKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, key multisigtypes.Key)
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// AssignKey holds details about calls to the AssignKey method.
+		AssignKey []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Chain is the chain argument value.
+			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+			// ID is the id argument value.
+			ID multisig.KeyID
+		}
+		// GetActiveKeyIDs holds details about calls to the GetActiveKeyIDs method.
+		GetActiveKeyIDs []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// ChainName is the chainName argument value.
+			ChainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+		}
+		// GetKey holds details about calls to the GetKey method.
+		GetKey []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// KeyID is the keyID argument value.
+			KeyID multisig.KeyID
+		}
+		// RotateKey holds details about calls to the RotateKey method.
+		RotateKey []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Chain is the chain argument value.
+			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+		}
+		// SetKey holds details about calls to the SetKey method.
+		SetKey []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Key is the key argument value.
+			Key multisigtypes.Key
+		}
+	}
+	lockAssignKey       sync.RWMutex
+	lockGetActiveKeyIDs sync.RWMutex
+	lockGetKey          sync.RWMutex
+	lockRotateKey       sync.RWMutex
+	lockSetKey          sync.RWMutex
+}
+
+// AssignKey calls AssignKeyFunc.
+func (mock *MultiSigKeeperMock) AssignKey(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, id multisig.KeyID) error {
+	if mock.AssignKeyFunc == nil {
+		panic("MultiSigKeeperMock.AssignKeyFunc: method is nil but MultiSigKeeper.AssignKey was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+		ID    multisig.KeyID
+	}{
+		Ctx:   ctx,
+		Chain: chain,
+		ID:    id,
+	}
+	mock.lockAssignKey.Lock()
+	mock.calls.AssignKey = append(mock.calls.AssignKey, callInfo)
+	mock.lockAssignKey.Unlock()
+	return mock.AssignKeyFunc(ctx, chain, id)
+}
+
+// AssignKeyCalls gets all the calls that were made to AssignKey.
+// Check the length with:
+//     len(mockedMultiSigKeeper.AssignKeyCalls())
+func (mock *MultiSigKeeperMock) AssignKeyCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+	ID    multisig.KeyID
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+		ID    multisig.KeyID
+	}
+	mock.lockAssignKey.RLock()
+	calls = mock.calls.AssignKey
+	mock.lockAssignKey.RUnlock()
+	return calls
+}
+
+// GetActiveKeyIDs calls GetActiveKeyIDsFunc.
+func (mock *MultiSigKeeperMock) GetActiveKeyIDs(ctx github_com_cosmos_cosmos_sdk_types.Context, chainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) []multisig.KeyID {
+	if mock.GetActiveKeyIDsFunc == nil {
+		panic("MultiSigKeeperMock.GetActiveKeyIDsFunc: method is nil but MultiSigKeeper.GetActiveKeyIDs was just called")
+	}
+	callInfo := struct {
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
+		ChainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+	}{
+		Ctx:       ctx,
+		ChainName: chainName,
+	}
+	mock.lockGetActiveKeyIDs.Lock()
+	mock.calls.GetActiveKeyIDs = append(mock.calls.GetActiveKeyIDs, callInfo)
+	mock.lockGetActiveKeyIDs.Unlock()
+	return mock.GetActiveKeyIDsFunc(ctx, chainName)
+}
+
+// GetActiveKeyIDsCalls gets all the calls that were made to GetActiveKeyIDs.
+// Check the length with:
+//     len(mockedMultiSigKeeper.GetActiveKeyIDsCalls())
+func (mock *MultiSigKeeperMock) GetActiveKeyIDsCalls() []struct {
+	Ctx       github_com_cosmos_cosmos_sdk_types.Context
+	ChainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+} {
+	var calls []struct {
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
+		ChainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+	}
+	mock.lockGetActiveKeyIDs.RLock()
+	calls = mock.calls.GetActiveKeyIDs
+	mock.lockGetActiveKeyIDs.RUnlock()
+	return calls
+}
+
+// GetKey calls GetKeyFunc.
+func (mock *MultiSigKeeperMock) GetKey(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID multisig.KeyID) (multisig.Key, bool) {
+	if mock.GetKeyFunc == nil {
+		panic("MultiSigKeeperMock.GetKeyFunc: method is nil but MultiSigKeeper.GetKey was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		KeyID multisig.KeyID
+	}{
+		Ctx:   ctx,
+		KeyID: keyID,
+	}
+	mock.lockGetKey.Lock()
+	mock.calls.GetKey = append(mock.calls.GetKey, callInfo)
+	mock.lockGetKey.Unlock()
+	return mock.GetKeyFunc(ctx, keyID)
+}
+
+// GetKeyCalls gets all the calls that were made to GetKey.
+// Check the length with:
+//     len(mockedMultiSigKeeper.GetKeyCalls())
+func (mock *MultiSigKeeperMock) GetKeyCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	KeyID multisig.KeyID
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		KeyID multisig.KeyID
+	}
+	mock.lockGetKey.RLock()
+	calls = mock.calls.GetKey
+	mock.lockGetKey.RUnlock()
+	return calls
+}
+
+// RotateKey calls RotateKeyFunc.
+func (mock *MultiSigKeeperMock) RotateKey(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) error {
+	if mock.RotateKeyFunc == nil {
+		panic("MultiSigKeeperMock.RotateKeyFunc: method is nil but MultiSigKeeper.RotateKey was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+	}{
+		Ctx:   ctx,
+		Chain: chain,
+	}
+	mock.lockRotateKey.Lock()
+	mock.calls.RotateKey = append(mock.calls.RotateKey, callInfo)
+	mock.lockRotateKey.Unlock()
+	return mock.RotateKeyFunc(ctx, chain)
+}
+
+// RotateKeyCalls gets all the calls that were made to RotateKey.
+// Check the length with:
+//     len(mockedMultiSigKeeper.RotateKeyCalls())
+func (mock *MultiSigKeeperMock) RotateKeyCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+	}
+	mock.lockRotateKey.RLock()
+	calls = mock.calls.RotateKey
+	mock.lockRotateKey.RUnlock()
+	return calls
+}
+
+// SetKey calls SetKeyFunc.
+func (mock *MultiSigKeeperMock) SetKey(ctx github_com_cosmos_cosmos_sdk_types.Context, key multisigtypes.Key) {
+	if mock.SetKeyFunc == nil {
+		panic("MultiSigKeeperMock.SetKeyFunc: method is nil but MultiSigKeeper.SetKey was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+		Key multisigtypes.Key
+	}{
+		Ctx: ctx,
+		Key: key,
+	}
+	mock.lockSetKey.Lock()
+	mock.calls.SetKey = append(mock.calls.SetKey, callInfo)
+	mock.lockSetKey.Unlock()
+	mock.SetKeyFunc(ctx, key)
+}
+
+// SetKeyCalls gets all the calls that were made to SetKey.
+// Check the length with:
+//     len(mockedMultiSigKeeper.SetKeyCalls())
+func (mock *MultiSigKeeperMock) SetKeyCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+	Key multisigtypes.Key
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+		Key multisigtypes.Key
+	}
+	mock.lockSetKey.RLock()
+	calls = mock.calls.SetKey
+	mock.lockSetKey.RUnlock()
+	return calls
+}
+
+// Ensure, that SlasherMock does implement tsstypes.Slasher.
+// If this is not the case, regenerate this file with moq.
+var _ tsstypes.Slasher = &SlasherMock{}
+
+// SlasherMock is a mock implementation of tsstypes.Slasher.
+//
+// 	func TestSomethingThatUsesSlasher(t *testing.T) {
+//
+// 		// make and configure a mocked tsstypes.Slasher
+// 		mockedSlasher := &SlasherMock{
+// 			GetValidatorMissedBlockBitArrayFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress, index int64) bool {
+// 				panic("mock out the GetValidatorMissedBlockBitArray method")
+// 			},
+// 			GetValidatorSigningInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress) (slashingtypes.ValidatorSigningInfo, bool) {
+// 				panic("mock out the GetValidatorSigningInfo method")
+// 			},
+// 			SignedBlocksWindowFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64 {
+// 				panic("mock out the SignedBlocksWindow method")
+// 			},
+// 		}
+//
+// 		// use mockedSlasher in code that requires tsstypes.Slasher
+// 		// and then make assertions.
+//
+// 	}
+type SlasherMock struct {
+	// GetValidatorMissedBlockBitArrayFunc mocks the GetValidatorMissedBlockBitArray method.
+	GetValidatorMissedBlockBitArrayFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress, index int64) bool
+
+	// GetValidatorSigningInfoFunc mocks the GetValidatorSigningInfo method.
+	GetValidatorSigningInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress) (slashingtypes.ValidatorSigningInfo, bool)
+
+	// SignedBlocksWindowFunc mocks the SignedBlocksWindow method.
+	SignedBlocksWindowFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// GetValidatorMissedBlockBitArray holds details about calls to the GetValidatorMissedBlockBitArray method.
+		GetValidatorMissedBlockBitArray []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Address is the address argument value.
+			Address github_com_cosmos_cosmos_sdk_types.ConsAddress
+			// Index is the index argument value.
+			Index int64
+		}
+		// GetValidatorSigningInfo holds details about calls to the GetValidatorSigningInfo method.
+		GetValidatorSigningInfo []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Address is the address argument value.
+			Address github_com_cosmos_cosmos_sdk_types.ConsAddress
+		}
+		// SignedBlocksWindow holds details about calls to the SignedBlocksWindow method.
+		SignedBlocksWindow []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+		}
+	}
+	lockGetValidatorMissedBlockBitArray sync.RWMutex
+	lockGetValidatorSigningInfo         sync.RWMutex
+	lockSignedBlocksWindow              sync.RWMutex
+}
+
+// GetValidatorMissedBlockBitArray calls GetValidatorMissedBlockBitArrayFunc.
+func (mock *SlasherMock) GetValidatorMissedBlockBitArray(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress, index int64) bool {
+	if mock.GetValidatorMissedBlockBitArrayFunc == nil {
+		panic("SlasherMock.GetValidatorMissedBlockBitArrayFunc: method is nil but Slasher.GetValidatorMissedBlockBitArray was just called")
+	}
+	callInfo := struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Address github_com_cosmos_cosmos_sdk_types.ConsAddress
+		Index   int64
+	}{
+		Ctx:     ctx,
+		Address: address,
+		Index:   index,
+	}
+	mock.lockGetValidatorMissedBlockBitArray.Lock()
+	mock.calls.GetValidatorMissedBlockBitArray = append(mock.calls.GetValidatorMissedBlockBitArray, callInfo)
+	mock.lockGetValidatorMissedBlockBitArray.Unlock()
+	return mock.GetValidatorMissedBlockBitArrayFunc(ctx, address, index)
+}
+
+// GetValidatorMissedBlockBitArrayCalls gets all the calls that were made to GetValidatorMissedBlockBitArray.
+// Check the length with:
+//     len(mockedSlasher.GetValidatorMissedBlockBitArrayCalls())
+func (mock *SlasherMock) GetValidatorMissedBlockBitArrayCalls() []struct {
+	Ctx     github_com_cosmos_cosmos_sdk_types.Context
+	Address github_com_cosmos_cosmos_sdk_types.ConsAddress
+	Index   int64
+} {
+	var calls []struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Address github_com_cosmos_cosmos_sdk_types.ConsAddress
+		Index   int64
+	}
+	mock.lockGetValidatorMissedBlockBitArray.RLock()
+	calls = mock.calls.GetValidatorMissedBlockBitArray
+	mock.lockGetValidatorMissedBlockBitArray.RUnlock()
+	return calls
+}
+
+// GetValidatorSigningInfo calls GetValidatorSigningInfoFunc.
+func (mock *SlasherMock) GetValidatorSigningInfo(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress) (slashingtypes.ValidatorSigningInfo, bool) {
+	if mock.GetValidatorSigningInfoFunc == nil {
+		panic("SlasherMock.GetValidatorSigningInfoFunc: method is nil but Slasher.GetValidatorSigningInfo was just called")
+	}
+	callInfo := struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Address github_com_cosmos_cosmos_sdk_types.ConsAddress
+	}{
+		Ctx:     ctx,
+		Address: address,
+	}
+	mock.lockGetValidatorSigningInfo.Lock()
+	mock.calls.GetValidatorSigningInfo = append(mock.calls.GetValidatorSigningInfo, callInfo)
+	mock.lockGetValidatorSigningInfo.Unlock()
+	return mock.GetValidatorSigningInfoFunc(ctx, address)
+}
+
+// GetValidatorSigningInfoCalls gets all the calls that were made to GetValidatorSigningInfo.
+// Check the length with:
+//     len(mockedSlasher.GetValidatorSigningInfoCalls())
+func (mock *SlasherMock) GetValidatorSigningInfoCalls() []struct {
+	Ctx     github_com_cosmos_cosmos_sdk_types.Context
+	Address github_com_cosmos_cosmos_sdk_types.ConsAddress
+} {
+	var calls []struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Address github_com_cosmos_cosmos_sdk_types.ConsAddress
+	}
+	mock.lockGetValidatorSigningInfo.RLock()
+	calls = mock.calls.GetValidatorSigningInfo
+	mock.lockGetValidatorSigningInfo.RUnlock()
+	return calls
+}
+
+// SignedBlocksWindow calls SignedBlocksWindowFunc.
+func (mock *SlasherMock) SignedBlocksWindow(ctx github_com_cosmos_cosmos_sdk_types.Context) int64 {
+	if mock.SignedBlocksWindowFunc == nil {
+		panic("SlasherMock.SignedBlocksWindowFunc: method is nil but Slasher.SignedBlocksWindow was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockSignedBlocksWindow.Lock()
+	mock.calls.SignedBlocksWindow = append(mock.calls.SignedBlocksWindow, callInfo)
+	mock.lockSignedBlocksWindow.Unlock()
+	return mock.SignedBlocksWindowFunc(ctx)
+}
+
+// SignedBlocksWindowCalls gets all the calls that were made to SignedBlocksWindow.
+// Check the length with:
+//     len(mockedSlasher.SignedBlocksWindowCalls())
+func (mock *SlasherMock) SignedBlocksWindowCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}
+	mock.lockSignedBlocksWindow.RLock()
+	calls = mock.calls.SignedBlocksWindow
+	mock.lockSignedBlocksWindow.RUnlock()
 	return calls
 }

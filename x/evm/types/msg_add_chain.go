@@ -12,12 +12,11 @@ import (
 )
 
 // NewAddChainRequest is the constructor for NewAddChainRequest
-func NewAddChainRequest(sender sdk.AccAddress, name string, keyType tss.KeyType, params Params) *AddChainRequest {
+func NewAddChainRequest(sender sdk.AccAddress, name string, params Params) *AddChainRequest {
 	return &AddChainRequest{
-		Sender:  sender,
-		Name:    nexus.ChainName(utils.NormalizeString(name)),
-		KeyType: keyType,
-		Params:  params,
+		Sender: sender,
+		Name:   nexus.ChainName(utils.NormalizeString(name)),
+		Params: params,
 	}
 }
 
@@ -40,7 +39,7 @@ func (m AddChainRequest) ValidateBasic() error {
 	chain := nexus.Chain{
 		Name:                  m.Name,
 		SupportsForeignAssets: true,
-		KeyType:               m.KeyType,
+		KeyType:               tss.Multisig,
 		Module:                ModuleName,
 	}
 

@@ -38,7 +38,6 @@ Axelar App
 - [axelard set-genesis-slashing](axelard_set-genesis-slashing.md)	 - Set the genesis parameters for the slashing module
 - [axelard set-genesis-snapshot](axelard_set-genesis-snapshot.md)	 - Set the genesis parameters for the snapshot module
 - [axelard set-genesis-staking](axelard_set-genesis-staking.md)	 - Set the genesis parameters for the staking module
-- [axelard set-genesis-tss](axelard_set-genesis-tss.md)	 - Set the genesis parameters for the tss module
 - [axelard set-genesis-vote](axelard_set-genesis-vote.md)	 - Set the genesis parameters for the vote module
 - [axelard set-governance-key](axelard_set-governance-key.md)	 - Set the genesis multisig governance key for the axelar network
 - [axelard start](axelard_start.md)	 - Run the full node

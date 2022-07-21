@@ -123,8 +123,8 @@ func runVald(ctx context.Context, cliCtx sdkClient.Context, txf tx.Factory, logg
 		panic(err)
 	}
 
-	valAddr := viper.GetString("validator-addr")
-	if _, err := sdk.ValAddressFromBech32(valAddr); err != nil {
+	valAddr, err := sdk.ValAddressFromBech32(viper.GetString("validator-addr"))
+	if err != nil {
 		return sdkerrors.Wrap(err, "invalid validator operator address")
 	}
 
@@ -174,7 +174,7 @@ func setPersistentFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().String(flags.FlagChainID, app.Name, "The network chain ID")
 }
 
-func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, valAddr string, recoveryJSON []byte, stateSource ReadWriter, logger log.Logger) {
+func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, valAddr sdk.ValAddress, recoveryJSON []byte, stateSource ReadWriter, logger log.Logger) {
 	encCfg := app.MakeEncodingConfig()
 	cdc := encCfg.Amino
 	sender, err := clientCtx.Keyring.Key(clientCtx.From)
@@ -199,14 +199,14 @@ func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, ax
 		}
 		return cl, nil
 	})
-	tssMgr := createTSSMgr(bc, clientCtx, axelarCfg, logger, valAddr, cdc)
+	tssMgr := createTSSMgr(bc, clientCtx, axelarCfg, logger, valAddr.String(), cdc)
 	if len(recoveryJSON) > 0 {
 		if err = tssMgr.Recover(recoveryJSON); err != nil {
 			panic(fmt.Errorf("unable to perform tss recovery: %v", err))
 		}
 	}
 
-	evmMgr := createEVMMgr(axelarCfg, clientCtx, bc, logger, cdc)
+	evmMgr := createEVMMgr(axelarCfg, clientCtx, bc, logger, cdc, valAddr)
 	multisigMgr := createMultisigMgr(bc, clientCtx, axelarCfg, logger, valAddr)
 
 	nodeHeight, err := waitTillNetworkSync(axelarCfg, robustClient, logger)
@@ -245,17 +245,11 @@ func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, ax
 
 	heartbeat := subscribe(tssTypes.EventTypeHeartBeat, tssTypes.ModuleName, tssTypes.AttributeValueSend)
 
-	keygenStart := subscribe(tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueStart)
-	signStart := subscribe(tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueStart)
-
-	keygenMsg := subscribe(tssTypes.EventTypeKeygen, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
-	signMsg := subscribe(tssTypes.EventTypeSign, tssTypes.ModuleName, tssTypes.AttributeValueMsg)
-
-	evmNewChain := subscribe(evmTypes.EventTypeNewChain, evmTypes.ModuleName, evmTypes.AttributeValueUpdate)
-	evmDepConf := subscribe(evmTypes.EventTypeDepositConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
-	evmTokConf := subscribe(evmTypes.EventTypeTokenConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
-	evmTraConf := subscribe(evmTypes.EventTypeTransferKeyConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
-	evmGatewayTxConf := subscribe(evmTypes.EventTypeGatewayTxConfirmation, evmTypes.ModuleName, evmTypes.AttributeValueStart)
+	evmNewChain := eventBus.Subscribe(eventFilter[*evmTypes.ChainAdded]())
+	evmDepConf := eventBus.Subscribe(eventFilter[*evmTypes.ConfirmDepositStarted]())
+	evmTokConf := eventBus.Subscribe(eventFilter[*evmTypes.ConfirmTokenStarted]())
+	evmTraConf := eventBus.Subscribe(eventFilter[*evmTypes.ConfirmKeyTransferStarted]())
+	evmGatewayTxConf := eventBus.Subscribe(eventFilter[*evmTypes.ConfirmGatewayTxStarted]())
 
 	multisigKeygen := eventBus.Subscribe(eventFilter[*multisigTypes.KeygenStarted]())
 	multisigSigning := eventBus.Subscribe(eventFilter[*multisigTypes.SigningStarted]())
@@ -293,15 +287,11 @@ func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, ax
 		fetchEvents,
 		createJob(blockHeaderSub, processBlockHeader, cancelEventCtx, logger),
 		createJob(heartbeat, tssMgr.ProcessHeartBeatEvent, cancelEventCtx, logger),
-		createJob(keygenStart, tssMgr.ProcessKeygenStart, cancelEventCtx, logger),
-		createJob(keygenMsg, tssMgr.ProcessKeygenMsg, cancelEventCtx, logger),
-		createJob(signStart, tssMgr.ProcessSignStart, cancelEventCtx, logger),
-		createJob(signMsg, tssMgr.ProcessSignMsg, cancelEventCtx, logger),
-		createJob(evmNewChain, evmMgr.ProcessNewChain, cancelEventCtx, logger),
-		createJob(evmDepConf, evmMgr.ProcessDepositConfirmation, cancelEventCtx, logger),
-		createJob(evmTokConf, evmMgr.ProcessTokenConfirmation, cancelEventCtx, logger),
-		createJob(evmTraConf, evmMgr.ProcessTransferKeyConfirmation, cancelEventCtx, logger),
-		createJob(evmGatewayTxConf, evmMgr.ProcessGatewayTxConfirmation, cancelEventCtx, logger),
+		createJobTyped(evmNewChain, evmMgr.ProcessNewChain, cancelEventCtx, logger),
+		createJobTyped(evmDepConf, evmMgr.ProcessDepositConfirmation, cancelEventCtx, logger),
+		createJobTyped(evmTokConf, evmMgr.ProcessTokenConfirmation, cancelEventCtx, logger),
+		createJobTyped(evmTraConf, evmMgr.ProcessTransferKeyConfirmation, cancelEventCtx, logger),
+		createJobTyped(evmGatewayTxConf, evmMgr.ProcessGatewayTxConfirmation, cancelEventCtx, logger),
 		createJobTyped(multisigKeygen, multisigMgr.ProcessKeygenStarted, cancelEventCtx, logger),
 		createJobTyped(multisigSigning, multisigMgr.ProcessSigningStarted, cancelEventCtx, logger),
 	}
@@ -415,14 +405,14 @@ func createRefundableBroadcaster(txf tx.Factory, ctx sdkClient.Context, axelarCf
 	return broadcaster
 }
 
-func createMultisigMgr(broadcaster broadcast.Broadcaster, cliCtx client.Context, axelarCfg config.ValdConfig, logger log.Logger, valAddr string) *multisig.Mgr {
+func createMultisigMgr(broadcaster broadcast.Broadcaster, cliCtx client.Context, axelarCfg config.ValdConfig, logger log.Logger, valAddr sdk.ValAddress) *multisig.Mgr {
 	conn, err := grpc.Connect(axelarCfg.TssConfig.Host, axelarCfg.TssConfig.Port, axelarCfg.TssConfig.DialTimeout, logger)
 	if err != nil {
 		panic(sdkerrors.Wrap(err, "failed to create multisig manager"))
 	}
 	logger.Debug("successful connection to tofnd gRPC server")
 
-	return multisig.NewMgr(tofnd.NewMultisigClient(conn), cliCtx, funcs.Must(sdk.ValAddressFromBech32(valAddr)), logger, broadcaster, timeout)
+	return multisig.NewMgr(tofnd.NewMultisigClient(conn), cliCtx, valAddr, logger, broadcaster, timeout)
 }
 
 func createTSSMgr(broadcaster broadcast.Broadcaster, cliCtx client.Context, axelarCfg config.ValdConfig, logger log.Logger, valAddr string, cdc *codec.LegacyAmino) *tss.Mgr {
@@ -450,7 +440,7 @@ func createTSSMgr(broadcaster broadcast.Broadcaster, cliCtx client.Context, axel
 	return mgr
 }
 
-func createEVMMgr(axelarCfg config.ValdConfig, cliCtx client.Context, b broadcast.Broadcaster, logger log.Logger, cdc *codec.LegacyAmino) *evm.Mgr {
+func createEVMMgr(axelarCfg config.ValdConfig, cliCtx sdkClient.Context, b broadcast.Broadcaster, logger log.Logger, cdc *codec.LegacyAmino, valAddr sdk.ValAddress) *evm.Mgr {
 	rpcs := make(map[string]evmRPC.Client)
 
 	for _, evmChainConf := range axelarCfg.EVMConfig {
@@ -478,7 +468,7 @@ func createEVMMgr(axelarCfg config.ValdConfig, cliCtx client.Context, b broadcas
 		logger.Info(fmt.Sprintf("Successfully connected to EVM bridge for chain %s", evmChainConf.Name))
 	}
 
-	evmMgr := evm.NewMgr(rpcs, cliCtx, b, logger, cdc)
+	evmMgr := evm.NewMgr(rpcs, cliCtx, b, logger, cdc, valAddr)
 	return evmMgr
 }
 
