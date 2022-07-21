@@ -49,7 +49,7 @@ func (k Keeper) GetKey(ctx sdk.Context, keyID exported.KeyID) (exported.Key, boo
 
 // SetKey sets the given key
 func (k Keeper) SetKey(ctx sdk.Context, key types.Key) {
-	k.getStore(ctx).Set(keyPrefix.Append(utils.LowerCaseKey(key.ID.String())), &key)
+	k.setKey(ctx, key)
 
 	participants := key.GetParticipants()
 	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewKeygenCompleted(key.ID)))
@@ -108,6 +108,10 @@ func (k Keeper) createKeygenSession(ctx sdk.Context, id exported.KeyID, snapshot
 	)
 
 	return nil
+}
+
+func (k Keeper) setKey(ctx sdk.Context, key types.Key) {
+	k.getStore(ctx).Set(keyPrefix.Append(utils.LowerCaseKey(key.ID.String())), &key)
 }
 
 func (k Keeper) getKey(ctx sdk.Context, id exported.KeyID) (key types.Key, ok bool) {

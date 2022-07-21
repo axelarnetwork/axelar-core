@@ -59,7 +59,7 @@ func (k Keeper) AssignKey(ctx sdk.Context, chainName nexus.ChainName, keyID expo
 	}
 
 	key.State = types.Assigned
-	k.SetKey(ctx, key)
+	k.setKey(ctx, key)
 	k.setKeyEpoch(ctx, types.NewKeyEpoch(nextRotationCount, chainName, keyID))
 
 	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewKeyAssigned(chainName, keyID)))
@@ -85,7 +85,7 @@ func (k Keeper) RotateKey(ctx sdk.Context, chainName nexus.ChainName) error {
 	}
 	key.State = types.Active
 
-	k.SetKey(ctx, key)
+	k.setKey(ctx, key)
 	k.setKeyRotationCount(ctx, chainName, nextRotationCount)
 
 	params := k.getParams(ctx)
@@ -135,7 +135,7 @@ func (k Keeper) deactivateKeyAtEpoch(ctx sdk.Context, chainName nexus.ChainName,
 	key := funcs.MustOk(k.getKey(ctx, keyEpoch.GetKeyID()))
 
 	key.State = types.Inactive
-	k.SetKey(ctx, key)
+	k.setKey(ctx, key)
 }
 
 func (k Keeper) getKeyEpoch(ctx sdk.Context, chainName nexus.ChainName, epoch uint64) (keyEpoch types.KeyEpoch, ok bool) {
