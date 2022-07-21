@@ -43,7 +43,12 @@ func migrateKeys(ctx sdk.Context, tss Keeper, multisig types.MultiSigKeeper, nex
 				if err != nil {
 					return err
 				}
+
+				if _, ok := multisig.GetKey(ctx, newKey.ID); ok {
+					return fmt.Errorf("key %s already set", newKey.ID)
+				}
 				multisig.SetKey(ctx, newKey)
+
 				if err := multisig.AssignKey(ctx, chain.Name, multisigExported.KeyID(key.ID)); err != nil {
 					return err
 				}
@@ -61,7 +66,12 @@ func migrateKeys(ctx sdk.Context, tss Keeper, multisig types.MultiSigKeeper, nex
 			if err != nil {
 				return err
 			}
+
+			if _, ok := multisig.GetKey(ctx, newKey.ID); ok {
+				return fmt.Errorf("key %s already set", newKey.ID)
+			}
 			multisig.SetKey(ctx, newKey)
+
 			if err := multisig.AssignKey(ctx, chain.Name, multisigExported.KeyID(key.ID)); err != nil {
 				return err
 			}
@@ -77,6 +87,10 @@ func migrateKeys(ctx sdk.Context, tss Keeper, multisig types.MultiSigKeeper, nex
 			newKey, err := migrateKeyType(ctx, tss, snapshotter, chain.Name, key)
 			if err != nil {
 				return err
+			}
+
+			if _, ok := multisig.GetKey(ctx, newKey.ID); ok {
+				return fmt.Errorf("key %s already set", newKey.ID)
 			}
 			multisig.SetKey(ctx, newKey)
 
