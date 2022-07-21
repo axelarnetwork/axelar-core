@@ -27,7 +27,7 @@ axelard tx staking edit-validator [flags]
       --keyring-dir string           The client Keyring directory; if omitted, the default 'home' directory will be used
       --ledger                       Use a connected Ledger device
       --min-self-delegation string   The minimum self delegation required on the validator
-      --moniker string               The validator's name (default "node")
+      --new-moniker string           The validator's name (default "[do-not-modify]")
       --node string                  <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
       --note string                  Note to add a description to the transaction (previously --memo)
       --offline                      Offline mode (does not allow any online functionality

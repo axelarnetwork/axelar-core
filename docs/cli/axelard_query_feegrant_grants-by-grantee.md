@@ -1,4 +1,4 @@
-## axelard query feegrant grants
+## axelard query feegrant grants-by-grantee
 
 Query all grants of a grantee
 
@@ -7,10 +7,10 @@ Query all grants of a grantee
 Queries all the grants for a grantee address.
 
 Example:
-$ <appd> query feegrant grants \[grantee\]
+$ <appd> query feegrant grants-by-grantee \[grantee\]
 
 ```
-axelard query feegrant grants [grantee] [flags]
+axelard query feegrant grants-by-grantee [grantee] [flags]
 ```
 
 ### Options
@@ -18,7 +18,7 @@ axelard query feegrant grants [grantee] [flags]
 ```
       --count-total       count total number of records in grants to query for
       --height int        Use a specific height to query state at (this can error if the node is pruning state)
-  -h, --help              help for grants
+  -h, --help              help for grants-by-grantee
       --limit uint        pagination limit of grants to query for (default 100)
       --node string       <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
       --offset uint       pagination offset of grants to query for
