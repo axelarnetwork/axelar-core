@@ -70,16 +70,23 @@ func migrateCommandBatchSignature(ctx sdk.Context, ck chainKeeper, signer types.
 		}
 		commandBatchID = commandBatchMetadata.PrevBatchedCommandsID
 
+		// only migrate secondary key
+		tssKey, ok := signer.GetKey(ctx, tss.KeyID(commandBatchMetadata.KeyID))
+		if tssKey.Role != tss.SecondaryKey {
+			continue
+		}
+
+		// only migrate command batch signed by active key
+		key, ok := multisig.GetKey(ctx, commandBatchMetadata.KeyID)
+		if !ok {
+			break
+		}
+
 		if commandBatchMetadata.Status != types.BatchSigned {
 			if commandBatchMetadata.Status == types.BatchSigning {
 				setCommandBatchAborted(ctx, ck, commandBatchMetadata)
 			}
 			continue
-		}
-
-		key, ok := multisig.GetKey(ctx, commandBatchMetadata.KeyID)
-		if !ok {
-			break
 		}
 
 		sigID := hex.EncodeToString(commandBatchMetadata.ID)

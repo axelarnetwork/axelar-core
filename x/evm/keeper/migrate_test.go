@@ -151,8 +151,13 @@ func TestMigrateCommandBatchSignature(t *testing.T) {
 	givenSetup := Given("a context and keeper", func() {
 		ctx, keeper = setup()
 	}).
-		Given("signed command batches", func() {
-			commandBatches = slices.Map(testutils.RandomBatches(), func(c types.CommandBatchMetadata) types.CommandBatchMetadata {
+		Given("non-empty signed command batches", func() {
+			for {
+				if commandBatches = testutils.RandomBatches(); len(commandBatches) != 0 {
+					break
+				}
+			}
+			commandBatches = slices.Map(commandBatches, func(c types.CommandBatchMetadata) types.CommandBatchMetadata {
 				c.Status = types.BatchSigned
 				return c
 			})
@@ -181,9 +186,11 @@ func TestMigrateCommandBatchSignature(t *testing.T) {
 					infos = append(infos, &tsstypes.MultisigInfo_Info{Participant: p, Data: [][]byte{funcs.Must(sigKeyPair.Marshal())}})
 				}
 
-				keys[batch.KeyID] = multisigtypes.Key{
-					ID:      batch.KeyID,
-					PubKeys: pubKeys,
+				if batch.KeyID != commandBatches[0].KeyID {
+					keys[batch.KeyID] = multisigtypes.Key{
+						ID:      batch.KeyID,
+						PubKeys: pubKeys,
+					}
 				}
 
 				tssMultiSign[sigID] = tsstypes.MultisigSignInfo(&tsstypes.MultisigInfo{Infos: infos})
@@ -194,6 +201,9 @@ func TestMigrateCommandBatchSignature(t *testing.T) {
 				GetMultisigSignInfoFunc: func(ctx sdk.Context, sigID string) (tsstypes.MultisigSignInfo, bool) {
 					info, ok := tssMultiSign[sigID]
 					return info, ok
+				},
+				GetKeyFunc: func(ctx sdk.Context, keyID tss.KeyID) (tss.Key, bool) {
+					return tss.Key{Role: tss.SecondaryKey}, true
 				},
 			}
 
@@ -209,16 +219,13 @@ func TestMigrateCommandBatchSignature(t *testing.T) {
 		When("command batches are set", func() {
 			slices.ForEach(evmChains, func(chain nexus.Chain) {
 				ck := keeper.ForChain(chain.Name).(chainKeeper)
-				if len(commandBatches) == 0 {
-					return
-				}
 				ck.setLatestBatchMetadata(ctx, commandBatches[len(commandBatches)-1])
 				slices.ForEach(commandBatches, func(c types.CommandBatchMetadata) {
 					ck.setCommandBatchMetadata(ctx, c)
 				})
 			})
 		}).
-		Then("should migrate tss signature to multisig", func(t *testing.T) {
+		Then("should migrate active key signature", func(t *testing.T) {
 			slices.ForEach(evmChains, func(chain nexus.Chain) {
 				ck := keeper.ForChain(chain.Name).(chainKeeper)
 				err := migrateCommandBatchSignature(ctx, ck, signer, multisigK)
@@ -226,14 +233,20 @@ func TestMigrateCommandBatchSignature(t *testing.T) {
 
 				commandBatches2 := ck.getCommandBatchesMetadata(ctx)
 				assert.Equal(t, len(commandBatches), len(commandBatches2))
-				slices.ForEach(commandBatches2, func(c types.CommandBatchMetadata) {
+
+				slices.ForEach(commandBatches2[1:], func(c types.CommandBatchMetadata) {
+					// key for the first batch is not active
+					if c.KeyID == commandBatches[0].KeyID {
+						assert.Nil(t, c.Signature)
+						return
+					}
+
 					assert.NotEmpty(t, c.Signature)
 
 					signature := c.Signature.GetCachedValue().(codec.ProtoMarshaler).(*multisigtypes.MultiSig)
 					assert.Equal(t, c.KeyID, signature.KeyID)
 					assert.True(t, bytes.Equal(c.SigHash.Bytes(), signature.PayloadHash))
 					assert.Equal(t, keys[c.KeyID].GetParticipants(), signature.GetParticipants())
-
 				})
 			})
 		}).
