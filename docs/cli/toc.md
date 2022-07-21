@@ -61,7 +61,8 @@
       - [token-info \[chain\]](axelard_query_evm_token-info.md)	 - Returns the info of token by either symbol or asset
     - [feegrant](axelard_query_feegrant.md)	 - Querying commands for the feegrant module
       - [grant \[granter\] \[grantee\]](axelard_query_feegrant_grant.md)	 - Query details of a single grant
-      - [grants \[grantee\]](axelard_query_feegrant_grants.md)	 - Query all grants of a grantee
+      - [grants-by-grantee \[grantee\]](axelard_query_feegrant_grants-by-grantee.md)	 - Query all grants of a grantee
+      - [grants-by-granter \[granter\]](axelard_query_feegrant_grants-by-granter.md)	 - Query all grants by a granter
     - [gov](axelard_query_gov.md)	 - Querying commands for the governance module
       - [deposit \[proposal-id\] \[depositer-addr\]](axelard_query_gov_deposit.md)	 - Query details of a deposit
       - [deposits \[proposal-id\]](axelard_query_gov_deposits.md)	 - Query deposits on a proposal
