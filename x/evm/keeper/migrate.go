@@ -62,13 +62,9 @@ func removeExternalTokenBurnerCode(ctx sdk.Context, ck chainKeeper) error {
 }
 
 func migrateCommandBatchSignature(ctx sdk.Context, ck chainKeeper, signer types.Signer, multisig types.MultisigKeeper) error {
-	commandBatchID := ck.getLatestSignedCommandBatchID(ctx)
-	for {
-		commandBatchMetadata := ck.getCommandBatchMetadata(ctx, commandBatchID)
-		if commandBatchMetadata.ID == nil {
-			break
-		}
-		commandBatchID = commandBatchMetadata.PrevBatchedCommandsID
+	var commandBatchMetadata types.CommandBatchMetadata
+	for commandBatchID := ck.getLatestSignedCommandBatchID(ctx); commandBatchID != nil; commandBatchID = commandBatchMetadata.PrevBatchedCommandsID {
+		commandBatchMetadata = ck.getCommandBatchMetadata(ctx, commandBatchID)
 
 		// only migrate secondary key
 		tssKey, ok := signer.GetKey(ctx, tss.KeyID(commandBatchMetadata.KeyID))
@@ -118,7 +114,7 @@ func migrateCommandBatchSignature(ctx sdk.Context, ck chainKeeper, signer types.
 
 			pubKey, ok := key.GetPubKey(info.Participant)
 			if !ok {
-				return fmt.Errorf("validator %s does not participant for signing %s", info.Participant.String(), sigID)
+				return fmt.Errorf("alidator %s is not a participant for signing %s", info.Participant.String(), sigID)
 			}
 
 			signature, err := getSigByPubKey(pubKey, sigKeyPairs)
@@ -151,7 +147,6 @@ func getSigByPubKey(pubKey []byte, sigKeyPairs []tss.SigKeyPair) ([]byte, error)
 	}
 
 	return nil, fmt.Errorf("failed to find signature for the given pubkey")
-
 }
 
 func setCommandBatchSignature(ctx sdk.Context, ck chainKeeper, commandBatchMetadata types.CommandBatchMetadata, newMultisig multisigTypes.MultiSig) {
