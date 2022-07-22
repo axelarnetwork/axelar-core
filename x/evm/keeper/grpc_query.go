@@ -123,7 +123,12 @@ func getProof(key multisig.Key, signature multisig.MultiSig) ([]common.Address, 
 }
 
 func getExecuteDataAndSigs(ctx sdk.Context, multisigK types.MultisigKeeper, commandBatch types.CommandBatch) ([]byte, types.Proof, error) {
-	signature := multisig.MultiSig(commandBatch.GetSignature().(*multisigtypes.MultiSig))
+	sig := commandBatch.GetSignature()
+	if sig == nil {
+		return nil, types.Proof{}, fmt.Errorf("could not find signature")
+	}
+
+	signature := multisig.MultiSig(sig.(*multisigtypes.MultiSig))
 	key := funcs.MustOk(multisigK.GetKey(ctx, signature.GetKeyID()))
 
 	addresses, weights, threshold, signatures := getProof(key, signature)
@@ -154,7 +159,7 @@ func commandBatchToResp(ctx sdk.Context, commandBatch types.CommandBatch, multis
 	commandIDs := slices.Map(commandBatch.GetCommandIDs(), types.CommandID.Hex)
 
 	switch {
-	case commandBatch.Is(types.BatchSigned):
+	case commandBatch.Is(types.BatchSigned) && commandBatch.GetSignature() != nil: // check signature for unmigrated batches
 		executeData, proof, err := getExecuteDataAndSigs(ctx, multisig, commandBatch)
 		if err != nil {
 			return types.BatchedCommandsResponse{}, sdkerrors.Wrap(types.ErrEVM, err.Error())
