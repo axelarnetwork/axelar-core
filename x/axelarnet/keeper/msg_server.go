@@ -8,7 +8,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	ibctransfertypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
-	clienttypes "github.com/cosmos/ibc-go/v2/modules/core/02-client/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -24,18 +23,16 @@ type msgServer struct {
 	nexus       types.Nexus
 	bank        types.BankKeeper
 	ibcTransfer types.IBCTransferKeeper
-	ibcChannel  types.ChannelKeeper
 	account     types.AccountKeeper
 }
 
 // NewMsgServerImpl returns an implementation of the axelarnet MsgServiceServer interface for the provided Keeper.
-func NewMsgServerImpl(k types.BaseKeeper, n types.Nexus, b types.BankKeeper, t types.IBCTransferKeeper, c types.ChannelKeeper, a types.AccountKeeper) types.MsgServiceServer {
+func NewMsgServerImpl(k types.BaseKeeper, n types.Nexus, b types.BankKeeper, t types.IBCTransferKeeper, a types.AccountKeeper) types.MsgServiceServer {
 	return msgServer{
 		BaseKeeper:  k,
 		nexus:       n,
 		bank:        b,
 		ibcTransfer: t,
-		ibcChannel:  c,
 		account:     a,
 	}
 }
@@ -326,6 +323,7 @@ func (s msgServer) RouteIBCTransfers(c context.Context, _ *types.RouteIBCTransfe
 			s.Logger(ctx).Error(fmt.Sprintf("%s is not a registered chain", chain.Name))
 			continue
 		}
+
 		if chain.Name.Equals(exported.Axelarnet.Name) {
 			continue
 		}
@@ -337,6 +335,13 @@ func (s msgServer) RouteIBCTransfers(c context.Context, _ *types.RouteIBCTransfe
 			continue
 		}
 
+		pathSplit := strings.SplitN(path, "/", 2)
+		if len(pathSplit) != 2 {
+			s.Logger(ctx).Error(fmt.Sprintf("invalid path %s for chain %s", path, chain.Name))
+			continue
+		}
+		portID, channelID := pathSplit[0], pathSplit[1]
+
 		pendingTransfers := s.nexus.GetTransfersForChain(ctx, chain, nexus.Pending)
 		for _, p := range pendingTransfers {
 			token, sender, err := prepareTransfer(ctx, s.BaseKeeper, s.nexus, s.bank, s.account, p.Asset)
@@ -345,53 +350,22 @@ func (s msgServer) RouteIBCTransfers(c context.Context, _ *types.RouteIBCTransfe
 				continue
 			}
 
-			err = IBCTransfer(ctx, s.BaseKeeper, s.ibcTransfer, s.ibcChannel, token, sender, p.Recipient.Address, path)
+			err = s.BaseKeeper.EnqueueTransfer(ctx, types.IBCTransfer{
+				Sender:    sender,
+				Receiver:  p.Recipient.Address,
+				Token:     token,
+				PortID:    portID,
+				ChannelID: channelID,
+			})
 			if err != nil {
-				s.Logger(ctx).Error(fmt.Sprintf("failed to send IBC transfer %s for %s:  %s", token, p.Recipient.Address, err))
-				continue
+				return nil, err
 			}
-			s.Logger(ctx).Debug(fmt.Sprintf("successfully sent IBC transfer %s from %s to %s", token, sender, p.Recipient.Address))
+
 			s.nexus.ArchivePendingTransfer(ctx, p)
 		}
 	}
 
 	return &types.RouteIBCTransfersResponse{}, nil
-}
-
-// IBCTransfer inits an IBC transfer
-func IBCTransfer(ctx sdk.Context, k types.BaseKeeper, t types.IBCTransferKeeper, c types.ChannelKeeper, token sdk.Coin, sender sdk.AccAddress, receiver string, path string) error {
-	// split path to portID and channelID
-	pathSplit := strings.SplitN(path, "/", 2)
-	if len(pathSplit) != 2 {
-		return fmt.Errorf("invalid path %s", path)
-	}
-	portID, channelID := pathSplit[0], pathSplit[1]
-	_, state, err := c.GetChannelClientState(ctx, portID, channelID)
-	if err != nil {
-		return err
-	}
-
-	height := clienttypes.NewHeight(state.GetLatestHeight().GetRevisionNumber(), state.GetLatestHeight().GetRevisionHeight()+k.GetRouteTimeoutWindow(ctx))
-	err = t.SendTransfer(ctx, portID, channelID, token, sender, receiver, height, 0)
-	if err == nil {
-		seq, ok := c.GetNextSequenceSend(ctx, portID, channelID)
-		if !ok {
-			return fmt.Errorf("no next sequence number found for channel ID '%s' at port ID '%s'", channelID, portID)
-		}
-		if seq == 0 {
-			return fmt.Errorf("next sequence number for channel ID '%s' at port ID '%s' is zero", channelID, portID)
-		}
-
-		k.SetPendingIBCTransfer(ctx, types.IBCTransfer{
-			Sender:    sender,
-			Receiver:  receiver,
-			Token:     token,
-			PortID:    portID,
-			ChannelID: channelID,
-			Sequence:  seq - 1,
-		})
-	}
-	return err
 }
 
 // RegisterFeeCollector handles register axelar fee collector account

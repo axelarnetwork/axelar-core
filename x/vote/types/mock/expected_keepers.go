@@ -28,6 +28,9 @@ var _ types.Voter = &VoterMock{}
 // 			DeletePollFunc: func(ctx sdk.Context, pollID github_com_axelarnetwork_axelar_core_x_vote_exported.PollID)  {
 // 				panic("mock out the DeletePoll method")
 // 			},
+// 			GetParamsFunc: func(ctx sdk.Context) types.Params {
+// 				panic("mock out the GetParams method")
+// 			},
 // 			GetPollFunc: func(ctx sdk.Context, id github_com_axelarnetwork_axelar_core_x_vote_exported.PollID) (github_com_axelarnetwork_axelar_core_x_vote_exported.Poll, bool) {
 // 				panic("mock out the GetPoll method")
 // 			},
@@ -50,6 +53,9 @@ type VoterMock struct {
 	// DeletePollFunc mocks the DeletePoll method.
 	DeletePollFunc func(ctx sdk.Context, pollID github_com_axelarnetwork_axelar_core_x_vote_exported.PollID)
 
+	// GetParamsFunc mocks the GetParams method.
+	GetParamsFunc func(ctx sdk.Context) types.Params
+
 	// GetPollFunc mocks the GetPoll method.
 	GetPollFunc func(ctx sdk.Context, id github_com_axelarnetwork_axelar_core_x_vote_exported.PollID) (github_com_axelarnetwork_axelar_core_x_vote_exported.Poll, bool)
 
@@ -70,6 +76,11 @@ type VoterMock struct {
 			Ctx sdk.Context
 			// PollID is the pollID argument value.
 			PollID github_com_axelarnetwork_axelar_core_x_vote_exported.PollID
+		}
+		// GetParams holds details about calls to the GetParams method.
+		GetParams []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
 		}
 		// GetPoll holds details about calls to the GetPoll method.
 		GetPoll []struct {
@@ -93,6 +104,7 @@ type VoterMock struct {
 		}
 	}
 	lockDeletePoll    sync.RWMutex
+	lockGetParams     sync.RWMutex
 	lockGetPoll       sync.RWMutex
 	lockGetPollQueue  sync.RWMutex
 	lockGetVoteRouter sync.RWMutex
@@ -131,6 +143,37 @@ func (mock *VoterMock) DeletePollCalls() []struct {
 	mock.lockDeletePoll.RLock()
 	calls = mock.calls.DeletePoll
 	mock.lockDeletePoll.RUnlock()
+	return calls
+}
+
+// GetParams calls GetParamsFunc.
+func (mock *VoterMock) GetParams(ctx sdk.Context) types.Params {
+	if mock.GetParamsFunc == nil {
+		panic("VoterMock.GetParamsFunc: method is nil but Voter.GetParams was just called")
+	}
+	callInfo := struct {
+		Ctx sdk.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetParams.Lock()
+	mock.calls.GetParams = append(mock.calls.GetParams, callInfo)
+	mock.lockGetParams.Unlock()
+	return mock.GetParamsFunc(ctx)
+}
+
+// GetParamsCalls gets all the calls that were made to GetParams.
+// Check the length with:
+//     len(mockedVoter.GetParamsCalls())
+func (mock *VoterMock) GetParamsCalls() []struct {
+	Ctx sdk.Context
+} {
+	var calls []struct {
+		Ctx sdk.Context
+	}
+	mock.lockGetParams.RLock()
+	calls = mock.calls.GetParams
+	mock.lockGetParams.RUnlock()
 	return calls
 }
 

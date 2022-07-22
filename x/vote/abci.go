@@ -22,8 +22,12 @@ func handlePollsAtExpiry(ctx sdk.Context, k types.Voter) error {
 		return ctx.BlockHeight() >= value.(*exported.PollMetadata).ExpiresAt
 	}
 
+	endBlockerLimit := k.GetParams(ctx).EndBlockerLimit
+	handledPolls := int64(0)
 	var pollMetadata exported.PollMetadata
-	for pollQueue.DequeueIf(&pollMetadata, hasPollExpired) {
+	for handledPolls < endBlockerLimit && pollQueue.DequeueIf(&pollMetadata, hasPollExpired) {
+		handledPolls++
+
 		pollID := pollMetadata.ID
 		poll, ok := k.GetPoll(ctx, pollID)
 		if !ok {

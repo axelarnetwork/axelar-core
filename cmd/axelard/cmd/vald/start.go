@@ -74,6 +74,16 @@ func GetValdCommand() *cobra.Command {
 			logger := serverCtx.Logger.With("module", "vald")
 			v := serverCtx.Viper
 
+			if err := v.BindPFlag("tss.tofnd-host", cmd.PersistentFlags().Lookup("tofnd-host")); err != nil {
+				return err
+			}
+			if err := v.BindPFlag("tss.tofnd-port", cmd.PersistentFlags().Lookup("tofnd-port")); err != nil {
+				return err
+			}
+			if err := v.BindPFlag("tss.tofnd-dial-timeout", cmd.PersistentFlags().Lookup("tofnd-dial-timeout")); err != nil {
+				return err
+			}
+
 			cliCtx, err := sdkClient.GetClientTxContext(cmd)
 			if err != nil {
 				return err
@@ -169,6 +179,7 @@ func setPersistentFlags(cmd *cobra.Command) {
 	defaultConf := tssTypes.DefaultConfig()
 	cmd.PersistentFlags().String("tofnd-host", defaultConf.Host, "host name for tss daemon")
 	cmd.PersistentFlags().String("tofnd-port", defaultConf.Port, "port for tss daemon")
+	cmd.PersistentFlags().String("tofnd-dial-timeout", defaultConf.DialTimeout.String(), "dialup timeout to the tss daemon")
 	cmd.PersistentFlags().String("tofnd-recovery", "", "json file with recovery request")
 	cmd.PersistentFlags().String("validator-addr", "", "the address of the validator operator, i.e axelarvaloper1..")
 	cmd.PersistentFlags().String(flags.FlagChainID, app.Name, "The network chain ID")

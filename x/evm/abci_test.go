@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	evmCrypto "github.com/ethereum/go-ethereum/crypto"
@@ -15,6 +16,8 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	"github.com/axelarnetwork/axelar-core/utils"
+	utilsMock "github.com/axelarnetwork/axelar-core/utils/mock"
 	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/evm/types/mock"
@@ -1000,6 +1003,110 @@ func TestHandleTransferKey(t *testing.T) {
 			assert.True(t, ok)
 			assert.Len(t, multisigKeeper.RotateKeyCalls(), 1)
 
+		}).
+		Run(t)
+}
+
+func TestHandleLimitNumberOfEventsPerBlock(t *testing.T) {
+	var (
+		ctx            sdk.Context
+		bk             *mock.BaseKeeperMock
+		n              *mock.NexusMock
+		multisigKeeper *mock.MultisigKeeperMock
+		sourceCk       *mock.ChainKeeperMock
+		destinationCk  *mock.ChainKeeperMock
+
+		confirmedEventQueue *utilsMock.KVQueueMock
+	)
+
+	confirmedEventQueue = &utilsMock.KVQueueMock{}
+	sourceChainName := nexus.ChainName(rand.Str(5))
+	destinationChainName := nexus.ChainName(rand.Str(5))
+
+	givenConfirmedEventQueue := Given("confirmedEvent queue", func() {
+		ctx, bk, n, multisigKeeper, sourceCk, destinationCk = setup()
+		confirmedEventQueue = &utilsMock.KVQueueMock{}
+		bk.ForChainFunc = func(chain nexus.ChainName) types.ChainKeeper {
+			switch chain {
+			case sourceChainName:
+				return sourceCk
+			case destinationChainName:
+				return destinationCk
+			default:
+				return nil
+			}
+		}
+		bk.HasChainFunc = func(ctx sdk.Context, chain nexus.ChainName) bool { return true }
+
+		n.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
+			switch chain {
+			case sourceChainName, destinationChainName:
+				return nexus.Chain{Name: chain}, true
+			default:
+				return nexus.Chain{}, true
+			}
+		}
+		n.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return true }
+		n.GetChainsFunc = func(_ sdk.Context) []nexus.Chain {
+			return []nexus.Chain{{Name: sourceChainName}}
+		}
+
+		destinationCk.GetChainIDFunc = func(ctx sdk.Context) (sdk.Int, bool) { return sdk.ZeroInt(), true }
+		destinationCk.EnqueueCommandFunc = func(ctx sdk.Context, cmd types.Command) error { return nil }
+		destinationCk.GetGatewayAddressFunc = func(sdk.Context) (types.Address, bool) {
+			return types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))), true
+		}
+
+		multisigKeeper.GetCurrentKeyIDFunc = func(ctx sdk.Context, chainName nexus.ChainName) (multisig.KeyID, bool) {
+			return multisigTestUtils.KeyID(), true
+		}
+		multisigKeeper.GetNextKeyIDFunc = func(ctx sdk.Context, chainName nexus.ChainName) (multisig.KeyID, bool) {
+			return "", false
+		}
+
+		sourceCk.SetEventCompletedFunc = func(ctx sdk.Context, eventID types.EventID) error { return nil }
+		sourceCk.GetConfirmedEventQueueFunc = func(sdk.Context) utils.KVQueue {
+			return confirmedEventQueue
+		}
+	})
+
+	givenConfirmedEventQueue.
+		When("end blocker limit is set", func() {
+			sourceCk.GetParamsFunc = func(ctx sdk.Context) types.Params {
+				return types.Params{
+					EndBlockerLimit: 50,
+				}
+			}
+		}).
+		When("events in queue exceeds limit", func() {
+			confirmedEventQueue.IsEmptyFunc = func() bool { return false }
+			event := types.Event{
+				Chain: sourceChainName,
+				TxID:  evmTestUtils.RandomHash(),
+				Index: uint64(rand.PosI64()),
+				Event: &types.Event_ContractCall{
+					ContractCall: &types.EventContractCall{
+						Sender:           evmTestUtils.RandomAddress(),
+						DestinationChain: destinationChainName,
+						ContractAddress:  evmTestUtils.RandomAddress().Hex(),
+						PayloadHash:      types.Hash(evmCrypto.Keccak256Hash(rand.Bytes(100))),
+					},
+				},
+			}
+			confirmedEventQueue.DequeueUntilFunc = func(value codec.ProtoMarshaler, filter func(value codec.ProtoMarshaler) bool) bool {
+				bz, _ := event.Marshal()
+				if err := value.Unmarshal(bz); err != nil {
+					panic(err)
+				}
+
+				return true
+			}
+		}).
+		Then("should handle limited number of events", func(t *testing.T) {
+			err := handleConfirmedEvents(ctx, bk, n, multisigKeeper)
+			assert.NoError(t, err)
+			assert.Len(t, sourceCk.SetEventCompletedCalls(), int(sourceCk.GetParams(ctx).EndBlockerLimit))
+			assert.Len(t, destinationCk.EnqueueCommandCalls(), int(sourceCk.GetParams(ctx).EndBlockerLimit))
 		}).
 		Run(t)
 }

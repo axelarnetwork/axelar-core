@@ -13,6 +13,7 @@ import (
 	utilstestutils "github.com/axelarnetwork/axelar-core/utils/testutils"
 	snapshottestutils "github.com/axelarnetwork/axelar-core/x/snapshot/exported/testutils"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
+	"github.com/axelarnetwork/axelar-core/x/vote/types"
 	. "github.com/axelarnetwork/utils/test"
 )
 
@@ -28,6 +29,7 @@ func TestGetMigrationHandler(t *testing.T) {
 
 	givenTheMigrationHandler := Given("the migration handler", func() {
 		ctx, k, _, _, _ = setup()
+		k.SetParams(ctx, types.DefaultParams())
 		handler = GetMigrationHandler(k)
 	})
 
@@ -84,4 +86,18 @@ func TestGetMigrationHandler(t *testing.T) {
 			assert.True(t, k.GetPollQueue(ctx).IsEmpty())
 		}).
 		Run(t, repeats)
+
+	givenTheMigrationHandler.
+		When("EndBlockerLimit param is not set", func() {
+			k.paramSpace.Set(ctx, types.KeyEndBlockerLimit, int64(0))
+		}).
+		Then("should set EndBlockerLimit param", func(t *testing.T) {
+			assert.Zero(t, k.GetParams(ctx).EndBlockerLimit)
+
+			err := handler(ctx)
+			assert.NoError(t, err)
+
+			assert.Equal(t, types.DefaultParams().EndBlockerLimit, k.GetParams(ctx).EndBlockerLimit)
+		}).
+		Run(t)
 }

@@ -1,11 +1,14 @@
 package keeper_test
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
+	ibctransfertypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
@@ -36,7 +39,7 @@ func TestGenesis(t *testing.T) {
 		}).
 		When("the state is initialized from a genesis state",
 			func() {
-				initialGenesis = types.NewGenesisState(types.DefaultParams(), rand.AccAddr(), randomChains(), randomTransfers())
+				initialGenesis = types.NewGenesisState(types.DefaultParams(), rand.AccAddr(), randomChains(), randomTransferQueue(cfg.Codec))
 				assert.NoError(t, initialGenesis.Validate())
 
 				ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
@@ -49,7 +52,7 @@ func TestGenesis(t *testing.T) {
 
 				assert.Equal(t, initialGenesis.CollectorAddress, exportedGenesis.CollectorAddress)
 				assert.Equal(t, initialGenesis.Params, exportedGenesis.Params)
-				assert.ElementsMatch(t, initialGenesis.PendingTransfers, exportedGenesis.PendingTransfers)
+				assert.Equal(t, initialGenesis.TransferQueue, exportedGenesis.TransferQueue)
 				assert.Equal(t, len(initialGenesis.Chains), len(exportedGenesis.Chains))
 
 				for i := range initialGenesis.Chains {
@@ -71,13 +74,15 @@ func randomTransfers() []types.IBCTransfer {
 
 func randomIBCTransfer() types.IBCTransfer {
 	denom := rand.Strings(5, 20).WithAlphabet([]rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXY")).Next()
+	channel := fmt.Sprintf("%s%d", "channel-", rand.I64Between(0, 9999))
+
 	return types.IBCTransfer{
 		Sender:    rand.AccAddr(),
 		Receiver:  randomNormalizedStr(5, 20),
 		Token:     sdk.NewCoin(denom, sdk.NewInt(rand.PosI64())),
-		PortID:    randomNormalizedStr(5, 20),
-		ChannelID: randomNormalizedStr(5, 20),
-		Sequence:  uint64(rand.PosI64()),
+		PortID:    ibctransfertypes.PortID,
+		ChannelID: channel,
+		ID:        nexus.TransferID(uint64(rand.PosI64())),
 	}
 }
 
@@ -100,4 +105,23 @@ func randomChain() types.CosmosChain {
 
 func randomNormalizedStr(min, max int) string {
 	return strings.ReplaceAll(utils.NormalizeString(rand.StrBetween(min, max)), utils.DefaultDelimiter, "-")
+}
+
+// randomTransferQueue returns a random (valid) transfer queue state for testing
+func randomTransferQueue(cdc codec.Codec) utils.QueueState {
+	qs := utils.QueueState{Items: make(map[string]utils.QueueState_Item)}
+	queueName := "ibc_transfer_queue"
+	queueLen := rand.I64Between(0, 20)
+	keyPrefix := utils.KeyFromStr("transfer")
+
+	for i := int64(0); i < queueLen; i++ {
+		transfer := randomIBCTransfer()
+
+		qs.Items[fmt.Sprintf("%s_%d_%s", queueName, rand.PosI64(), transfer.ID.String())] = utils.QueueState_Item{
+			Key:   keyPrefix.AppendStr(transfer.ID.String()).AsKey(),
+			Value: cdc.MustMarshalLengthPrefixed(&transfer),
+		}
+	}
+
+	return qs
 }

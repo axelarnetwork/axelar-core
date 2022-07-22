@@ -6,18 +6,18 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 )
 
 // NewGenesisState returns a new GenesisState instance
-func NewGenesisState(p Params, feeCollector sdk.AccAddress, chains []CosmosChain, transfers []IBCTransfer) *GenesisState {
+func NewGenesisState(p Params, feeCollector sdk.AccAddress, chains []CosmosChain, transferQueue utils.QueueState) *GenesisState {
 	SortChains(chains)
-	SortTransfers(transfers)
 	return &GenesisState{
 		Params:           p,
 		CollectorAddress: feeCollector,
 		Chains:           chains,
-		PendingTransfers: transfers,
+		TransferQueue:    transferQueue,
 	}
 }
 
@@ -30,7 +30,7 @@ func DefaultGenesisState() *GenesisState {
 			Name:       exported.Axelarnet.Name,
 			AddrPrefix: "axelar",
 		}},
-		PendingTransfers: []IBCTransfer{},
+		TransferQueue: utils.QueueState{},
 	}
 }
 
@@ -52,10 +52,8 @@ func (m GenesisState) Validate() error {
 		}
 	}
 
-	for i, transfer := range m.PendingTransfers {
-		if err := transfer.Validate(); err != nil {
-			return getValidateError(sdkerrors.Wrap(err, fmt.Sprintf("faulty transfer entry %d", i)))
-		}
+	if err := m.TransferQueue.ValidateBasic(); err != nil {
+		return getValidateError(sdkerrors.Wrapf(err, "invalid transfer queue state"))
 	}
 
 	return nil
