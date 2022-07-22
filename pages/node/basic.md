@@ -7,13 +7,16 @@ Start and stop your node, test whether your blockchain is downloaded. Backup you
 ## Prerequisites
 
 - Configure your environment as per [CLI configuration](config-cli) and [Node configuration](config-node).
+- Install lz4
+- Ensure AXELARD_HOME variable is set in your current session. See https://docs.axelar.dev/node/config-node#home-directory (example AXELARD_HOME="$HOME/.axelar").
+
 
 ## Start your Axelar node
 
-You may wish to redirect log output to a file:
+You may wish to redirect log output to a file (your command will be launched in background):
 
 ```bash
-axelard start --home $AXELARD_HOME >> $AXELARD_HOME/logs/axelard.log 2>&1
+$AXELARD_HOME/bin/axelard start --home $AXELARD_HOME >> $AXELARD_HOME/logs/axelard.log 2>&1 &
 ```
 
 View your logs in real time:
@@ -29,13 +32,14 @@ Eventually your Axelar node will download the entire Axelar blockchain and exit 
 You can test whether your Axelar node has exited `catching_up` mode:
 
 ```bash
-axelard status
+$AXELARD_HOME/bin/axelard status
 ```
 
 Look for the field `catching_up`:
 
 - `true`: you are still downloading the blockchain.
 - `false`: you have finished downloading the blockchain.
+
 
 ## Stop your Axelar node
 
@@ -44,6 +48,14 @@ Stop your currently running Axelar node:
 ```bash
 pkill -f "axelard start"
 ```
+
+## Check your Axelar node status
+
+```bash
+ps aux | grep "axelard start"
+```
+
+No process should be running.
 
 ## Backup and restore your node and validator keys
 
@@ -63,13 +75,13 @@ These files will be created if they do not already exist. You can restore them f
 Backup your entire node's state simply by copying the `$AXELARD_HOME` directory:
 
 ```bash
-cp -r $AXELARD_HOME ${AXELARD_HOME}_backup
+cp -r $AXELARD_HOME ${AXELARD_HOME}_backup.$(date +"%Y%m%d_%H%M%S")
 ```
 
 ## Create an account
 
 ```bash
-axelard keys add my_account --home $AXELARD_HOME
+$AXELARD_HOME/bin/axelard keys add my_account --home $AXELARD_HOME
 ```
 
 <Callout type="warning" emoji="⚠️">
@@ -81,7 +93,7 @@ axelard keys add my_account --home $AXELARD_HOME
 The public address of your account `my_account` was printed to stdout when you created it. You can display the address at any time:
 
 ```bash
-axelard keys show validator -a --home $AXELARD_HOME
+$AXELARD_HOME/bin/axelard keys show validator -a --home $AXELARD_HOME
 ```
 
 ## Check your AXL balance
@@ -93,7 +105,7 @@ Let `{MY_ADDRESS}` denote the address of your `my_account` account.
 </Callout>
 
 ```bash
-axelard q bank balances {MY_ADDRESS}
+$AXELARD_HOME/bin/axelard q bank balances {MY_ADDRESS}
 ```
 
 If this is a new account then you should see no token balances.
