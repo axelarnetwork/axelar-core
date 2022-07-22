@@ -79,7 +79,7 @@ content: <CodeBlock language="bash">
 Start your node with the newly configured `axelard` version:
 
 ```bash
-$AXELARD_HOME/bin/axelard start --home $AXELARD_HOME
+$AXELARD_HOME/bin/axelard start --home $AXELARD_HOME >> $AXELARD_HOME/logs/axelard.log 2>&1 &
 ```
 
 Your Axelar node will resume downloading the blockchain.
@@ -90,4 +90,10 @@ After your blockchain has reached `UPGRADE_HEIGHT` you will see a panic in the l
 panic: UPGRADE {NAME} NEEDED at height: {UPGRADE_HEIGHT}:
 ```
 
-Repeat this process for each entry in the upgrade path.
+## View your logs in real time
+
+```bash
+tail -f $AXELARD_HOME/logs/axelard.log
+```
+
+Repeat this process for each entry in the upgrade path when the "panic" message appears in the logs.
