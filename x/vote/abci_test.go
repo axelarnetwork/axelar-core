@@ -51,6 +51,9 @@ func TestHandlePollsAtExpiry(t *testing.T) {
 				}
 			},
 			DeletePollFunc: func(sdk.Context, exported.PollID) {},
+			GetParamsFunc: func(ctx sdk.Context) types.Params {
+				return types.DefaultParams()
+			},
 		}
 	})
 
@@ -131,4 +134,24 @@ func TestHandlePollsAtExpiry(t *testing.T) {
 			assert.Len(t, keeper.DeletePollCalls(), 1)
 		}).
 		Run(t, repeats)
+
+	const maxPollsPerBlock = 100
+	givenPollQueue.
+		When("polls in queue exceeds limit", func() {
+			poll.GetResultFunc = func() codec.ProtoMarshaler { return &gogoprototypes.StringValue{} }
+			poll.GetStateFunc = func() exported.PollState { return exported.Completed }
+			voteHandler.HandleCompletedPollFunc = func(ctx sdk.Context, poll exported.Poll) error { return nil }
+			isResultFalsy := rand.Bools(0.5).Next()
+			voteHandler.IsFalsyResultFunc = func(result codec.ProtoMarshaler) bool { return isResultFalsy }
+
+			pollQueue.DequeueIfFunc = func(value codec.ProtoMarshaler, filter func(value codec.ProtoMarshaler) bool) bool { return true }
+		}).
+		Then("should handle limited number of polls", func(t *testing.T) {
+			err := handlePollsAtExpiry(ctx, keeper)
+			assert.NoError(t, err)
+			assert.Len(t, voteHandler.HandleCompletedPollCalls(), maxPollsPerBlock)
+			assert.Len(t, keeper.DeletePollCalls(), maxPollsPerBlock)
+		}).
+		Run(t)
+
 }

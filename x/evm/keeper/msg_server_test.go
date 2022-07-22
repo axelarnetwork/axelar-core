@@ -440,6 +440,7 @@ func TestLink_UnknownChain(t *testing.T) {
 		VotingThreshold:     utils.Threshold{Numerator: 15, Denominator: 100},
 		MinVoterCount:       15,
 		CommandsGasLimit:    5000000,
+		EndBlockerLimit:     50,
 	})
 
 	recipient := nexus.CrossChainAddress{Address: rand.ValAddr().String(), Chain: axelarnet.Axelarnet}
@@ -475,6 +476,7 @@ func TestLink_NoGateway(t *testing.T) {
 		VotingThreshold:     utils.Threshold{Numerator: 15, Denominator: 100},
 		MinVoterCount:       15,
 		CommandsGasLimit:    5000000,
+		EndBlockerLimit:     50,
 	})
 
 	recipient := nexus.CrossChainAddress{Address: rand.ValAddr().String(), Chain: axelarnet.Axelarnet}
@@ -1336,6 +1338,7 @@ func newKeeper(ctx sdk.Context, chain nexus.ChainName, confHeight int64) types.B
 			Name: network,
 			Id:   sdk.NewIntFromUint64(uint64(rand.I64Between(1, 10))),
 		}},
+		EndBlockerLimit: 50,
 	})
 	k.ForChain(chain).SetGateway(ctx, types.Address(common.HexToAddress(gateway)))
 

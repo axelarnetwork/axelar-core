@@ -22,6 +22,7 @@ import (
 // - migrate contracts bytecode (CRUCIAL AND DO NOT DELETE) for all evm chains
 // - set BurnerCode for external token to nil
 // - migrate tss signature to multisig signature
+// - set EndBlockerLimit parameter
 func GetMigrationHandler(k BaseKeeper, n types.Nexus, s types.Signer, m types.MultisigKeeper) func(ctx sdk.Context) error {
 	return func(ctx sdk.Context) error {
 		// migrate contracts bytecode (CRUCIAL AND DO NOT DELETE) for all evm chains
@@ -41,6 +42,10 @@ func GetMigrationHandler(k BaseKeeper, n types.Nexus, s types.Signer, m types.Mu
 
 			if err := migrateCommandBatchSignature(ctx, ck, s, m); err != nil {
 				return sdkerrors.Wrap(err, fmt.Sprintf("failed to migrate signature for chain %s", chain.Name))
+			}
+
+			if err := addEndBlockerLimitParam(ctx, ck); err != nil {
+				return err
 			}
 		}
 
@@ -157,6 +162,17 @@ func setCommandBatchSignature(ctx sdk.Context, ck chainKeeper, commandBatchMetad
 func setCommandBatchAborted(ctx sdk.Context, ck chainKeeper, commandBatchMetadata types.CommandBatchMetadata) {
 	commandBatchMetadata.Status = types.BatchAborted
 	ck.setCommandBatchMetadata(ctx, commandBatchMetadata)
+}
+
+func addEndBlockerLimitParam(ctx sdk.Context, ck chainKeeper) error {
+	subspace, ok := ck.getSubspace(ctx)
+	if !ok {
+		return fmt.Errorf("param subspace for chain %s should exist", ck.GetName())
+	}
+
+	subspace.Set(ctx, types.KeyEndBlockerLimit, types.DefaultParams()[0].EndBlockerLimit)
+
+	return nil
 }
 
 // this function migrates the contracts bytecode to the latest for every existing
