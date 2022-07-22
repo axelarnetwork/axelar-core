@@ -3,6 +3,8 @@ package types
 import (
 	"fmt"
 
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/cosmos-sdk/x/gov/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -11,6 +13,7 @@ import (
 // Parameter store keys
 var (
 	KeyDefaultVotingThreshold = []byte("DefaultVotingThreshold")
+	KeyEndBlockerLimit        = []byte("endBlockerLimit")
 )
 
 // KeyTable retrieves a subspace table for the module
@@ -22,6 +25,7 @@ func KeyTable() paramtypes.KeyTable {
 func DefaultParams() Params {
 	return Params{
 		DefaultVotingThreshold: utils.NewThreshold(2, 3),
+		EndBlockerLimit:        100,
 	}
 }
 
@@ -36,6 +40,7 @@ func (m *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 	*/
 	return paramtypes.ParamSetPairs{
 		paramtypes.NewParamSetPair(KeyDefaultVotingThreshold, &m.DefaultVotingThreshold, validateDefaultVotingThreshold),
+		paramtypes.NewParamSetPair(KeyEndBlockerLimit, &m.EndBlockerLimit, validateEndBlockerLimit),
 	}
 }
 
@@ -56,6 +61,18 @@ func validateDefaultVotingThreshold(i interface{}) error {
 
 	if v.LTE(utils.ZeroThreshold) || v.GT(utils.OneThreshold) {
 		return fmt.Errorf("default voting threshold must be >0 and <=1: %s", v.String())
+	}
+
+	return nil
+}
+
+func validateEndBlockerLimit(limit interface{}) error {
+	h, ok := limit.(int64)
+	if !ok {
+		return fmt.Errorf("invalid parameter type for end blocker limit: %T", limit)
+	}
+	if h <= 0 {
+		return sdkerrors.Wrap(types.ErrInvalidGenesis, "end blocker limit must be greater >0")
 	}
 
 	return nil

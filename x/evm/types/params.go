@@ -28,6 +28,7 @@ var (
 	KeyMinVoterCount       = []byte("minVoterCount")
 	KeyCommandsGasLimit    = []byte("commandsGasLimit")
 	KeyVotingGracePeriod   = []byte("votingGracePeriod")
+	KeyEndBlockerLimit     = []byte("endBlockerLimit")
 )
 
 // KeyTable returns a subspace.KeyTable that has registered all parameter types in this module's parameter set
@@ -80,6 +81,7 @@ func DefaultParams() []Params {
 		VotingGracePeriod: 3,
 		MinVoterCount:     1,
 		CommandsGasLimit:  5000000,
+		EndBlockerLimit:   50,
 	}}
 }
 
@@ -104,6 +106,7 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 		params.NewParamSetPair(KeyMinVoterCount, &m.MinVoterCount, validateMinVoterCount),
 		params.NewParamSetPair(KeyCommandsGasLimit, &m.CommandsGasLimit, validateCommandsGasLimit),
 		params.NewParamSetPair(KeyVotingGracePeriod, &m.VotingGracePeriod, validateVotingGracePeriod),
+		params.NewParamSetPair(KeyEndBlockerLimit, &m.EndBlockerLimit, validateEndBlockerLimit),
 	}
 }
 
@@ -249,6 +252,18 @@ func validateBurnable(i interface{}) error {
 	return nil
 }
 
+func validateEndBlockerLimit(limit interface{}) error {
+	h, ok := limit.(int64)
+	if !ok {
+		return fmt.Errorf("invalid parameter type for end blocker limit: %T", limit)
+	}
+	if h <= 0 {
+		return fmt.Errorf("end blocker limit must be >0")
+	}
+
+	return nil
+}
+
 // Validate checks the validity of the values of the parameter set
 func (m Params) Validate() error {
 	if err := validateConfirmationHeight(m.ConfirmationHeight); err != nil {
@@ -301,6 +316,10 @@ func (m Params) Validate() error {
 	}
 
 	if err := validateBurnable(m.Burnable); err != nil {
+		return err
+	}
+
+	if err := validateEndBlockerLimit(m.EndBlockerLimit); err != nil {
 		return err
 	}
 

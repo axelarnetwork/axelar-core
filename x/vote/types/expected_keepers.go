@@ -20,6 +20,7 @@ type Voter interface {
 	GetPoll(ctx sdk.Context, id exported.PollID) (exported.Poll, bool)
 	GetPollQueue(ctx sdk.Context) utils.KVQueue
 	DeletePoll(ctx sdk.Context, pollID exported.PollID)
+	GetParams(ctx sdk.Context) (params Params)
 }
 
 // Snapshotter provides snapshot functionality

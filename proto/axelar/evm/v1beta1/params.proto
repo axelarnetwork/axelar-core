@@ -27,6 +27,7 @@ message Params {
   uint32 commands_gas_limit = 11;
   reserved 12; // transaction_fee_rate was removed in v0.15
   int64 voting_grace_period = 13;
+  int64 end_blocker_limit = 14;
 }
 
 message PendingChain {
