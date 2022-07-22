@@ -142,7 +142,7 @@ func (mgr Mgr) ProcessTokenConfirmation(event *evmTypes.ConfirmTokenStarted) err
 					mgr.logger.Debug(sdkerrors.Wrap(err, "decode event TokenDeployed failed").Error())
 					continue
 				}
-				if erc20Event.TokenAddress != erc20Event.TokenAddress || erc20Event.Symbol != event.TokenDetails.Symbol {
+				if erc20Event.TokenAddress != event.TokenAddress || erc20Event.Symbol != event.TokenDetails.Symbol {
 					continue
 				}
 				events = append(events, evmTypes.Event{
