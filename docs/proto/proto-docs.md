@@ -12,6 +12,11 @@
     - [CosmosChain](#axelar.axelarnet.v1beta1.CosmosChain)
     - [IBCTransfer](#axelar.axelarnet.v1beta1.IBCTransfer)
   
+- [axelar/utils/v1beta1/queuer.proto](#axelar/utils/v1beta1/queuer.proto)
+    - [QueueState](#axelar.utils.v1beta1.QueueState)
+    - [QueueState.Item](#axelar.utils.v1beta1.QueueState.Item)
+    - [QueueState.ItemsEntry](#axelar.utils.v1beta1.QueueState.ItemsEntry)
+  
 - [axelar/axelarnet/v1beta1/genesis.proto](#axelar/axelarnet/v1beta1/genesis.proto)
     - [GenesisState](#axelar.axelarnet.v1beta1.GenesisState)
   
@@ -168,11 +173,6 @@
     - [ConfirmTokenStarted](#axelar.evm.v1beta1.ConfirmTokenStarted)
     - [PollExpired](#axelar.evm.v1beta1.PollExpired)
     - [PollFailed](#axelar.evm.v1beta1.PollFailed)
-  
-- [axelar/utils/v1beta1/queuer.proto](#axelar/utils/v1beta1/queuer.proto)
-    - [QueueState](#axelar.utils.v1beta1.QueueState)
-    - [QueueState.Item](#axelar.utils.v1beta1.QueueState.Item)
-    - [QueueState.ItemsEntry](#axelar.utils.v1beta1.QueueState.ItemsEntry)
   
 - [axelar/evm/v1beta1/params.proto](#axelar/evm/v1beta1/params.proto)
     - [Params](#axelar.evm.v1beta1.Params)
@@ -602,7 +602,71 @@ Params represent the genesis parameters for the module
 | `token` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 | `port_id` | [string](#string) |  |  |
 | `channel_id` | [string](#string) |  |  |
-| `sequence` | [uint64](#uint64) |  |  |
+| `sequence` | [uint64](#uint64) |  | **Deprecated.**  |
+| `id` | [uint64](#uint64) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="axelar/utils/v1beta1/queuer.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/utils/v1beta1/queuer.proto
+
+
+
+<a name="axelar.utils.v1beta1.QueueState"></a>
+
+### QueueState
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `items` | [QueueState.ItemsEntry](#axelar.utils.v1beta1.QueueState.ItemsEntry) | repeated |  |
+
+
+
+
+
+
+<a name="axelar.utils.v1beta1.QueueState.Item"></a>
+
+### QueueState.Item
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key` | [bytes](#bytes) |  |  |
+| `value` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="axelar.utils.v1beta1.QueueState.ItemsEntry"></a>
+
+### QueueState.ItemsEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key` | [string](#string) |  |  |
+| `value` | [QueueState.Item](#axelar.utils.v1beta1.QueueState.Item) |  |  |
 
 
 
@@ -636,7 +700,7 @@ Params represent the genesis parameters for the module
 | `params` | [Params](#axelar.axelarnet.v1beta1.Params) |  |  |
 | `collector_address` | [bytes](#bytes) |  |  |
 | `chains` | [CosmosChain](#axelar.axelarnet.v1beta1.CosmosChain) | repeated |  |
-| `pending_transfers` | [IBCTransfer](#axelar.axelarnet.v1beta1.IBCTransfer) | repeated |  |
+| `transfer_queue` | [axelar.utils.v1beta1.QueueState](#axelar.utils.v1beta1.QueueState) |  |  |
 
 
 
@@ -2778,69 +2842,6 @@ TransferKey contains information for a transfer ownership or operatorship
 | `tx_id` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
 | `poll_id` | [uint64](#uint64) |  |  |
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
-<a name="axelar/utils/v1beta1/queuer.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## axelar/utils/v1beta1/queuer.proto
-
-
-
-<a name="axelar.utils.v1beta1.QueueState"></a>
-
-### QueueState
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `items` | [QueueState.ItemsEntry](#axelar.utils.v1beta1.QueueState.ItemsEntry) | repeated |  |
-
-
-
-
-
-
-<a name="axelar.utils.v1beta1.QueueState.Item"></a>
-
-### QueueState.Item
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `key` | [bytes](#bytes) |  |  |
-| `value` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="axelar.utils.v1beta1.QueueState.ItemsEntry"></a>
-
-### QueueState.ItemsEntry
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `key` | [string](#string) |  |  |
-| `value` | [QueueState.Item](#axelar.utils.v1beta1.QueueState.Item) |  |  |
 
 
 

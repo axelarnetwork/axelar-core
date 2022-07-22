@@ -3,6 +3,7 @@ package keeper
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 )
 
@@ -19,9 +20,10 @@ func (k Keeper) InitGenesis(ctx sdk.Context, genState *types.GenesisState) {
 		k.SetCosmosChain(ctx, chain)
 	}
 
-	for _, transfer := range genState.PendingTransfers {
-		k.SetPendingIBCTransfer(ctx, transfer)
+	if err := k.validateIBCTransferQueueState(genState.TransferQueue, ibcTransferQueueName); err != nil {
+		panic(err)
 	}
+	k.GetIBCTransferQueue(ctx).(utils.GeneralKVQueue).ImportState(genState.TransferQueue)
 }
 
 // ExportGenesis returns the reward module's genesis state.
@@ -32,6 +34,6 @@ func (k Keeper) ExportGenesis(ctx sdk.Context) *types.GenesisState {
 		k.getParams(ctx),
 		collector,
 		k.getCosmosChains(ctx),
-		k.getPendingIBCTransfers(ctx),
+		k.GetIBCTransferQueue(ctx).(utils.GeneralKVQueue).ExportState(),
 	)
 }
