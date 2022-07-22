@@ -5,15 +5,9 @@ import (
 	"fmt"
 	mathRand "math/rand"
 	"testing"
-	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	ibctypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
-	clienttypes "github.com/cosmos/ibc-go/v2/modules/core/02-client/types"
-	commitmenttypes "github.com/cosmos/ibc-go/v2/modules/core/23-commitment/types"
-	ibcclient "github.com/cosmos/ibc-go/v2/modules/core/exported"
-	ibctmtypes "github.com/cosmos/ibc-go/v2/modules/light-clients/07-tendermint/types"
-	ibctesting "github.com/cosmos/ibc-go/v2/testing"
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
@@ -59,7 +53,7 @@ func TestHandleMsgLink(t *testing.T) {
 		}
 
 		ctx = rand.Context(nil)
-		server = keeper.NewMsgServerImpl(axelarnetKeeper, nexusKeeper, &mock.BankKeeperMock{}, &mock.IBCTransferKeeperMock{}, &mock.ChannelKeeperMock{}, &mock.AccountKeeperMock{})
+		server = keeper.NewMsgServerImpl(axelarnetKeeper, nexusKeeper, &mock.BankKeeperMock{}, &mock.IBCTransferKeeperMock{}, &mock.AccountKeeperMock{})
 	}
 
 	repeatCount := 20
@@ -149,7 +143,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			},
 		}
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
-		server = keeper.NewMsgServerImpl(axelarnetKeeper, nexusKeeper, bankKeeper, transferKeeper, &mock.ChannelKeeperMock{}, &mock.AccountKeeperMock{})
+		server = keeper.NewMsgServerImpl(axelarnetKeeper, nexusKeeper, bankKeeper, transferKeeper, &mock.AccountKeeperMock{})
 	}
 
 	repeatCount := 20
@@ -362,7 +356,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 			GetModuleAddressFunc: func(string) sdk.AccAddress { return rand.AccAddr() },
 		}
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
-		server = keeper.NewMsgServerImpl(axelarnetKeeper, nexusKeeper, bankKeeper, &mock.IBCTransferKeeperMock{}, &mock.ChannelKeeperMock{}, accountKeeper)
+		server = keeper.NewMsgServerImpl(axelarnetKeeper, nexusKeeper, bankKeeper, &mock.IBCTransferKeeperMock{}, accountKeeper)
 	}
 
 	repeatCount := 20
@@ -444,7 +438,7 @@ func TestHandleMsgRegisterIBCPath(t *testing.T) {
 		}
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 
-		server = keeper.NewMsgServerImpl(axelarnetKeeper, &mock.NexusMock{}, &mock.BankKeeperMock{}, &mock.IBCTransferKeeperMock{}, &mock.ChannelKeeperMock{}, &mock.AccountKeeperMock{})
+		server = keeper.NewMsgServerImpl(axelarnetKeeper, &mock.NexusMock{}, &mock.BankKeeperMock{}, &mock.IBCTransferKeeperMock{}, &mock.AccountKeeperMock{})
 	}
 
 	repeatCount := 20
@@ -471,7 +465,6 @@ func TestHandleMsgRouteIBCTransfers(t *testing.T) {
 		axelarnetKeeper *mock.BaseKeeperMock
 		nexusKeeper     *mock.NexusMock
 		bankKeeper      *mock.BankKeeperMock
-		channelKeeper   *mock.ChannelKeeperMock
 		transferKeeper  *mock.IBCTransferKeeperMock
 		accountKeeper   *mock.AccountKeeperMock
 		ctx             sdk.Context
@@ -493,9 +486,11 @@ func TestHandleMsgRouteIBCTransfers(t *testing.T) {
 			},
 
 			GetRouteTimeoutWindowFunc: func(ctx sdk.Context) uint64 { return 10 },
-			SetPendingIBCTransferFunc: func(ctx sdk.Context, transfer types.IBCTransfer) {},
 			GetCosmosChainByNameFunc: func(sdk.Context, nexus.ChainName) (types.CosmosChain, bool) {
 				return types.CosmosChain{Name: testChain, AddrPrefix: rand.Str(5)}, true
+			},
+			EnqueueTransferFunc: func(sdk.Context, types.IBCTransfer) error {
+				return nil
 			},
 		}
 		nexusKeeper = &mock.NexusMock{
@@ -526,23 +521,12 @@ func TestHandleMsgRouteIBCTransfers(t *testing.T) {
 		bankKeeper = &mock.BankKeeperMock{
 			MintCoinsFunc: func(sdk.Context, string, sdk.Coins) error { return nil },
 		}
-		channelKeeper = &mock.ChannelKeeperMock{
-			GetChannelClientStateFunc: func(sdk.Context, string, string) (string, ibcclient.ClientState, error) {
-				return "07-tendermint-0", clientState(), nil
-			},
-			GetNextSequenceSendFunc: func(ctx sdk.Context, portID, channelID string) (uint64, bool) { return uint64(rand.PosI64()), true },
-		}
-		transferKeeper = &mock.IBCTransferKeeperMock{
-			SendTransferFunc: func(ctx sdk.Context, sourcePort, sourceChannel string, token sdk.Coin, sender sdk.AccAddress, receiver string, timeoutHeight clienttypes.Height, timeoutTimestamp uint64) error {
-				return nil
-			},
-		}
 		accountKeeper = &mock.AccountKeeperMock{
 			GetModuleAddressFunc: func(string) sdk.AccAddress { return rand.AccAddr() },
 		}
 
 		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
-		server = keeper.NewMsgServerImpl(axelarnetKeeper, nexusKeeper, bankKeeper, transferKeeper, channelKeeper, accountKeeper)
+		server = keeper.NewMsgServerImpl(axelarnetKeeper, nexusKeeper, bankKeeper, transferKeeper, accountKeeper)
 	}
 	repeatCount := 20
 	t.Run("should route ibc token back to cosmos chains, and archive pending transfers when get pending transfers from nexus keeper", testutils.Func(func(t *testing.T) {
@@ -551,7 +535,6 @@ func TestHandleMsgRouteIBCTransfers(t *testing.T) {
 		_, err := server.RouteIBCTransfers(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
 		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), len(transfers))
-		assert.Len(t, axelarnetKeeper.SetPendingIBCTransferCalls(), len(transfers))
 	}).Repeat(repeatCount))
 
 	t.Run("should mint wrapped token and route to cosmos chains, and archive pending transfers when get pending transfers from nexus keeper", testutils.Func(func(t *testing.T) {
@@ -566,7 +549,6 @@ func TestHandleMsgRouteIBCTransfers(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, nexusKeeper.ArchivePendingTransferCalls(), len(transfers))
 		assert.Len(t, bankKeeper.MintCoinsCalls(), len(transfers))
-		assert.Len(t, axelarnetKeeper.SetPendingIBCTransferCalls(), len(transfers))
 	}).Repeat(repeatCount))
 
 	t.Run("should continue when no path registered for cosmos chain", testutils.Func(func(t *testing.T) {
@@ -622,19 +604,4 @@ func randomTransfer(asset string, chain nexus.ChainName) nexus.CrossChainTransfe
 
 func randomIBCDenom() string {
 	return "ibc/" + rand.HexStr(64)
-}
-
-func clientState() *ibctmtypes.ClientState {
-	return ibctmtypes.NewClientState(
-		"07-tendermint-0",
-		ibctmtypes.DefaultTrustLevel,
-		time.Hour*24*7*2,
-		time.Hour*24*7*3,
-		time.Second*10,
-		clienttypes.NewHeight(0, 5),
-		commitmenttypes.GetSDKSpecs(),
-		ibctesting.UpgradePath,
-		false,
-		false,
-	)
 }
