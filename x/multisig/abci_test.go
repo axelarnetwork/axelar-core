@@ -80,7 +80,7 @@ func TestEndBlocker(t *testing.T) {
 				assert.Len(t, k.DeleteKeygenSessionCalls(), 1)
 				assert.Len(t, pool.ClearRewardsCalls(), 10)
 			}).
-			Run(t)
+			Run(t, 20)
 
 		givenKeepersAndCtx.
 			When("a completed keygen session expiry equal to the block height", func() {
@@ -111,7 +111,43 @@ func TestEndBlocker(t *testing.T) {
 				assert.Len(t, k.SetKeyCalls(), 1)
 				assert.Len(t, pool.ReleaseRewardsCalls(), len(keygenSession.Key.Snapshot.GetParticipantAddresses()))
 			}).
-			Run(t)
+			Run(t, 20)
+
+		givenKeepersAndCtx.
+			When("a completed keygen session with missing participants expiry equal to the block height", func() {
+				key := typestestutils.KeyWithMissingParticipants()
+
+				keygenSession = types.KeygenSession{
+					Key:   key,
+					State: exported.Completed,
+				}
+				k.GetKeygenSessionsByExpiryFunc = func(_ sdk.Context, expiry int64) []types.KeygenSession {
+					if expiry != ctx.BlockHeight() {
+						return nil
+					}
+
+					return []types.KeygenSession{keygenSession}
+				}
+			}).
+			Then("should delete and set key", func(t *testing.T) {
+				pool := rewardmock.RewardPoolMock{
+					ClearRewardsFunc:   func(sdk.ValAddress) {},
+					ReleaseRewardsFunc: func(sdk.ValAddress) error { return nil },
+				}
+				rewarder.GetPoolFunc = func(sdk.Context, string) reward.RewardPool { return &pool }
+				k.DeleteKeygenSessionFunc = func(sdk.Context, exported.KeyID) {}
+				k.SetKeyFunc = func(sdk.Context, types.Key) {}
+
+				_, err := multisig.EndBlocker(ctx, abci.RequestEndBlock{}, k, rewarder)
+
+				assert.NoError(t, err)
+				assert.Len(t, k.DeleteKeygenSessionCalls(), 1)
+				assert.Len(t, k.SetKeyCalls(), 1)
+				missingCount := len(keygenSession.GetMissingParticipants())
+				assert.Len(t, pool.ReleaseRewardsCalls(), len(keygenSession.Key.Snapshot.GetParticipantAddresses())-missingCount)
+				assert.Len(t, pool.ClearRewardsCalls(), missingCount)
+			}).
+			Run(t, 20)
 	})
 
 	t.Run("handleSignings", func(t *testing.T) {
@@ -119,6 +155,7 @@ func TestEndBlocker(t *testing.T) {
 			module         string
 			sigHandler     *exportedmock.SigHandlerMock
 			signingSession types.SigningSession
+			missingCount   uint64
 		)
 
 		givenKeepersAndCtx.
@@ -198,15 +235,73 @@ func TestEndBlocker(t *testing.T) {
 						assert.Len(t, pool.ReleaseRewardsCalls(), len(signingSession.Key.GetParticipants()))
 					}),
 
-				When("a multiple completed signing sessions are triggered", func() {
+				When("a completed signing session with missing participants and expiry equal to the block height", func() {
+					missingCount = uint64(rand.I64Between(1, 5))
+					signingSession = newSigningSessionWithMissingParticipants(module, missingCount)
+					k.GetSigningSessionsByExpiryFunc = func(_ sdk.Context, expiry int64) []types.SigningSession {
+						if expiry != ctx.BlockHeight() {
+							return nil
+						}
+
+						return []types.SigningSession{signingSession}
+					}
+				}).
+					Then("should delete and set sig", func(t *testing.T) {
+						pool := rewardmock.RewardPoolMock{
+							ClearRewardsFunc:   func(sdk.ValAddress) {},
+							ReleaseRewardsFunc: func(sdk.ValAddress) error { return nil },
+						}
+						rewarder.GetPoolFunc = func(sdk.Context, string) reward.RewardPool { return &pool }
+						k.DeleteSigningSessionFunc = func(sdk.Context, uint64) {}
+						sigHandler.HandleCompletedFunc = func(sdk.Context, codec.ProtoMarshaler, codec.ProtoMarshaler) error { return nil }
+
+						_, err := multisig.EndBlocker(ctx, abci.RequestEndBlock{}, k, rewarder)
+
+						assert.NoError(t, err)
+						assert.Len(t, k.DeleteSigningSessionCalls(), 1)
+						assert.Len(t, sigHandler.HandleCompletedCalls(), 1)
+						assert.Len(t, pool.ReleaseRewardsCalls(), len(signingSession.Key.GetParticipants())-int(missingCount))
+						assert.Len(t, pool.ClearRewardsCalls(), int(missingCount))
+					}),
+
+				When("multiple completed signing sessions are triggered", func() {
 					k.GetSigningSessionsByExpiryFunc = func(_ sdk.Context, expiry int64) []types.SigningSession {
 						if expiry != ctx.BlockHeight() {
 							return nil
 						}
 						return []types.SigningSession{
+							newSigningSessionWithMissingParticipants(module, uint64(rand.I64Between(1, 5))),
 							newSigningSession(module),
+							newSigningSessionWithMissingParticipants(module, uint64(rand.I64Between(1, 5))),
 							newSigningSession(module),
+						}
+					}
+				}).
+					Then("should delete and set sig", func(t *testing.T) {
+						pool := rewardmock.RewardPoolMock{
+							ClearRewardsFunc:   func(sdk.ValAddress) {},
+							ReleaseRewardsFunc: func(sdk.ValAddress) error { return nil },
+						}
+						rewarder.GetPoolFunc = func(sdk.Context, string) reward.RewardPool { return &pool }
+						k.DeleteSigningSessionFunc = func(sdk.Context, uint64) {}
+						sigHandler.HandleCompletedFunc = func(sdk.Context, codec.ProtoMarshaler, codec.ProtoMarshaler) error { return nil }
+
+						_, err := multisig.EndBlocker(ctx, abci.RequestEndBlock{}, k, rewarder)
+
+						assert.NoError(t, err)
+						assert.Len(t, k.DeleteSigningSessionCalls(), 4)
+						assert.Len(t, sigHandler.HandleCompletedCalls(), 4)
+					}),
+
+				When("multiple completed signing sessions are triggered", func() {
+					k.GetSigningSessionsByExpiryFunc = func(_ sdk.Context, expiry int64) []types.SigningSession {
+						if expiry != ctx.BlockHeight() {
+							return nil
+						}
+						return []types.SigningSession{
+							newSigningSessionWithMissingParticipants(module, uint64(rand.I64Between(1, 5))),
 							newSigningSession(module),
+							newSigningSessionWithMissingParticipants(module, uint64(rand.I64Between(1, 5))),
 							newSigningSession(module),
 						}
 					}
@@ -228,13 +323,18 @@ func TestEndBlocker(t *testing.T) {
 						assert.Equal(t, len(k.DeleteSigningSessionCalls()), len(k.GetSigningSessionsByExpiry(ctx, ctx.BlockHeight())))
 					}),
 			).
-			Run(t)
+			Run(t, 20)
 	})
 }
 
 func newSigningSession(module string) types.SigningSession {
+	return newSigningSessionWithMissingParticipants(module, 0)
+}
+
+func newSigningSessionWithMissingParticipants(module string, missingCount uint64) types.SigningSession {
 	sig := typestestutils.MultiSig()
 	validators := maps.Keys(sig.GetSigs())
+	validators = append(validators, slices.Expand(func(_ int) string { return rand.ValAddr().String() }, int(missingCount))...)
 
 	pubKeys := make(map[string]exported.PublicKey)
 	for _, v := range validators {
@@ -255,7 +355,7 @@ func newSigningSession(module string) types.SigningSession {
 				Participants: participants,
 				BondedWeight: sdk.OneUint().MulUint64(uint64(len(participants))),
 			},
-			SigningThreshold: utils.OneThreshold,
+			SigningThreshold: utils.NewThreshold(int64(len(participants))-int64(missingCount), int64(len(participants))),
 		},
 		State:  exported.Completed,
 		Module: module,
