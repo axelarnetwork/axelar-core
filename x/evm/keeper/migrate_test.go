@@ -135,11 +135,23 @@ func TestGetMigrationHandler(t *testing.T) {
 		}).Run(t)
 
 	givenMigrationHandler.
-		When("migration runs", func() {
-			err := handler(ctx)
-			assert.NoError(t, err)
+		When("EndBlockerLimit param is not set", func() {
+			for _, chain := range evmChains {
+				ck := keeper.ForChain(chain.Name).(chainKeeper)
+				subspace, _ := ck.getSubspace(ctx)
+				subspace.Set(ctx, types.KeyEndBlockerLimit, int64(0))
+			}
+
 		}).
 		Then("should set EndBlockerLimit param", func(t *testing.T) {
+			for _, chain := range evmChains {
+				ck := keeper.ForChain(chain.Name).(chainKeeper)
+				assert.Zero(t, ck.GetParams(ctx).EndBlockerLimit)
+			}
+
+			err := handler(ctx)
+			assert.NoError(t, err)
+
 			for _, chain := range evmChains {
 				ck := keeper.ForChain(chain.Name).(chainKeeper)
 				assert.Equal(t, types.DefaultParams()[0].EndBlockerLimit, ck.GetParams(ctx).EndBlockerLimit)

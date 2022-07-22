@@ -12,4 +12,5 @@ option (gogoproto.goproto_getters_all) = false;
 message Params {
   utils.v1beta1.Threshold default_voting_threshold = 1
       [ (gogoproto.nullable) = false ];
+  int64 end_blocker_limit = 2;
 }

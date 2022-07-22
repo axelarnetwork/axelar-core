@@ -44,7 +44,9 @@ func GetMigrationHandler(k BaseKeeper, n types.Nexus, s types.Signer, m types.Mu
 				return sdkerrors.Wrap(err, fmt.Sprintf("failed to migrate signature for chain %s", chain.Name))
 			}
 
-			setEndBlockerLimitParam(ctx, ck)
+			if err := addEndBlockerLimitParam(ctx, ck); err != nil {
+				return err
+			}
 		}
 
 		return nil
@@ -162,10 +164,15 @@ func setCommandBatchAborted(ctx sdk.Context, ck chainKeeper, commandBatchMetadat
 	ck.setCommandBatchMetadata(ctx, commandBatchMetadata)
 }
 
-func setEndBlockerLimitParam(ctx sdk.Context, ck chainKeeper) {
-	params := ck.GetParams(ctx)
-	params.EndBlockerLimit = types.DefaultParams()[0].EndBlockerLimit
-	ck.SetParams(ctx, params)
+func addEndBlockerLimitParam(ctx sdk.Context, ck chainKeeper) error {
+	subspace, ok := ck.getSubspace(ctx)
+	if !ok {
+		return fmt.Errorf("param subspace for chain %s should exist", ck.GetName())
+	}
+
+	subspace.Set(ctx, types.KeyEndBlockerLimit, types.DefaultParams()[0].EndBlockerLimit)
+
+	return nil
 }
 
 // this function migrates the contracts bytecode to the latest for every existing

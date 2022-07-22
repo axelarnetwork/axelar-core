@@ -444,9 +444,10 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 			continue
 		}
 
+		endBlockerLimit := ck.GetParams(ctx).EndBlockerLimit
 		handledEvents := int64(0)
 		var event types.Event
-		for handledEvents < ck.GetParams(ctx).EndBlockerLimit && queue.DequeueUntil(&event, shouldHandleEvent) {
+		for handledEvents < endBlockerLimit && queue.DequeueUntil(&event, shouldHandleEvent) {
 			handledEvents++
 			bk.Logger(ctx).Debug("handling confirmed event",
 				"chain", chain.Name.String(),

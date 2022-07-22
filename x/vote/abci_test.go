@@ -51,6 +51,9 @@ func TestHandlePollsAtExpiry(t *testing.T) {
 				}
 			},
 			DeletePollFunc: func(sdk.Context, exported.PollID) {},
+			GetParamsFunc: func(ctx sdk.Context) types.Params {
+				return types.DefaultParams()
+			},
 		}
 	})
 

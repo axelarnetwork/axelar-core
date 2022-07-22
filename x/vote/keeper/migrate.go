@@ -5,11 +5,13 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
+	"github.com/axelarnetwork/axelar-core/x/vote/types"
 )
 
 // GetMigrationHandler returns the handler that performs in-place store migrations from v0.19 to v0.20. The
 // migration includes:
 // - delete all polls
+// - add EndBlockerLimit parameter
 func GetMigrationHandler(k Keeper) func(ctx sdk.Context) error {
 	return func(ctx sdk.Context) error {
 		emptyPollQueue(ctx, k)
@@ -17,6 +19,8 @@ func GetMigrationHandler(k Keeper) func(ctx sdk.Context) error {
 		deleteAllWithPrefix(ctx, k, pollPrefix)
 		deleteAllWithPrefix(ctx, k, votesPrefix)
 		deleteAllWithPrefix(ctx, k, voterPrefix)
+
+		addEndBlockerLimitParam(ctx, k)
 
 		return nil
 	}
@@ -42,4 +46,8 @@ func deleteAllWithPrefix(ctx sdk.Context, k Keeper, prefix utils.Key) {
 	for _, key := range keys {
 		k.getKVStore(ctx).DeleteRaw(key)
 	}
+}
+
+func addEndBlockerLimitParam(ctx sdk.Context, k Keeper) {
+	k.paramSpace.Set(ctx, types.KeyEndBlockerLimit, types.DefaultParams().EndBlockerLimit)
 }
