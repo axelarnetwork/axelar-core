@@ -119,6 +119,7 @@ func NewAppModule(
 		staking:        staking,
 		slashing:       slashing,
 		multisig:       multisig,
+		signer:         signer,
 	}
 }
 
@@ -162,7 +163,7 @@ func (am AppModule) LegacyQuerierHandler(*codec.LegacyAmino) sdk.Querier {
 func (am AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterQueryServiceServer(cfg.QueryServer(), keeper.NewGRPCQuerier(am.keeper, am.nexus, am.signer, am.multisig))
 
-	err := cfg.RegisterMigration(types.ModuleName, 4, keeper.GetMigrationHandler(am.keeper, am.nexus))
+	err := cfg.RegisterMigration(types.ModuleName, 4, keeper.GetMigrationHandler(am.keeper, am.nexus, am.signer, am.multisig))
 	if err != nil {
 		panic(err)
 	}
