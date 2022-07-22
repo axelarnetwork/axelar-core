@@ -12,8 +12,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/vote/types"
 )
 
-const maxPollsPerBlock = 100
-
 // BeginBlocker check for infraction evidence or downtime of validators
 // on every begin block
 func BeginBlocker(_ sdk.Context, _ abci.RequestBeginBlock, _ keeper.Keeper) {}
