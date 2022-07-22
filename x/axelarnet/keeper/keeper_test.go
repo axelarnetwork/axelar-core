@@ -109,5 +109,5 @@ func TestKeeper_RegisterCosmosChain(t *testing.T) {
 func randomIBCPath() string {
 	port := rand.NormalizedStrBetween(5, 10)
 	identifier := fmt.Sprintf("%s%d", "channel-", rand.I64Between(0, 9999))
-	return port + "/" + identifier
+	return fmt.Sprintf("%s/%s", port, identifier)
 }

@@ -14,7 +14,12 @@ message IBCTransfer {
   cosmos.base.v1beta1.Coin token = 3 [ (gogoproto.nullable) = false ];
   string port_id = 4 [ (gogoproto.customname) = "PortID" ];
   string channel_id = 5 [ (gogoproto.customname) = "ChannelID" ];
-  uint64 sequence = 6;
+  uint64 sequence = 6 [ deprecated = true ];
+  uint64 id = 7 [
+    (gogoproto.customname) = "ID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/nexus/exported.TransferID"
+  ];
 }
 
 message CosmosChain {

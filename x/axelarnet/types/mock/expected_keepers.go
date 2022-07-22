@@ -4,6 +4,7 @@
 package mock
 
 import (
+	utils "github.com/axelarnetwork/axelar-core/utils"
 	axelarnettypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	github_com_axelarnetwork_axelar_core_x_nexus_exported "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	cosmossdktypes "github.com/cosmos/cosmos-sdk/types"
@@ -25,8 +26,8 @@ var _ axelarnettypes.BaseKeeper = &BaseKeeperMock{}
 //
 // 		// make and configure a mocked axelarnettypes.BaseKeeper
 // 		mockedBaseKeeper := &BaseKeeperMock{
-// 			DeletePendingIBCTransferFunc: func(ctx cosmossdktypes.Context, portID string, channelID string, sequence uint64)  {
-// 				panic("mock out the DeletePendingIBCTransfer method")
+// 			EnqueueTransferFunc: func(ctx cosmossdktypes.Context, transfer axelarnettypes.IBCTransfer) error {
+// 				panic("mock out the EnqueueTransfer method")
 // 			},
 // 			GetCosmosChainByNameFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (axelarnettypes.CosmosChain, bool) {
 // 				panic("mock out the GetCosmosChainByName method")
@@ -40,8 +41,8 @@ var _ axelarnettypes.BaseKeeper = &BaseKeeperMock{}
 // 			GetIBCPathFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (string, bool) {
 // 				panic("mock out the GetIBCPath method")
 // 			},
-// 			GetPendingIBCTransferFunc: func(ctx cosmossdktypes.Context, portID string, channelID string, sequence uint64) (axelarnettypes.IBCTransfer, bool) {
-// 				panic("mock out the GetPendingIBCTransfer method")
+// 			GetIBCTransferQueueFunc: func(ctx cosmossdktypes.Context) utils.KVQueue {
+// 				panic("mock out the GetIBCTransferQueue method")
 // 			},
 // 			GetRouteTimeoutWindowFunc: func(ctx cosmossdktypes.Context) uint64 {
 // 				panic("mock out the GetRouteTimeoutWindow method")
@@ -58,9 +59,6 @@ var _ axelarnettypes.BaseKeeper = &BaseKeeperMock{}
 // 			SetFeeCollectorFunc: func(ctx cosmossdktypes.Context, address cosmossdktypes.AccAddress) error {
 // 				panic("mock out the SetFeeCollector method")
 // 			},
-// 			SetPendingIBCTransferFunc: func(ctx cosmossdktypes.Context, transfer axelarnettypes.IBCTransfer)  {
-// 				panic("mock out the SetPendingIBCTransfer method")
-// 			},
 // 		}
 //
 // 		// use mockedBaseKeeper in code that requires axelarnettypes.BaseKeeper
@@ -68,8 +66,8 @@ var _ axelarnettypes.BaseKeeper = &BaseKeeperMock{}
 //
 // 	}
 type BaseKeeperMock struct {
-	// DeletePendingIBCTransferFunc mocks the DeletePendingIBCTransfer method.
-	DeletePendingIBCTransferFunc func(ctx cosmossdktypes.Context, portID string, channelID string, sequence uint64)
+	// EnqueueTransferFunc mocks the EnqueueTransfer method.
+	EnqueueTransferFunc func(ctx cosmossdktypes.Context, transfer axelarnettypes.IBCTransfer) error
 
 	// GetCosmosChainByNameFunc mocks the GetCosmosChainByName method.
 	GetCosmosChainByNameFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (axelarnettypes.CosmosChain, bool)
@@ -83,8 +81,8 @@ type BaseKeeperMock struct {
 	// GetIBCPathFunc mocks the GetIBCPath method.
 	GetIBCPathFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (string, bool)
 
-	// GetPendingIBCTransferFunc mocks the GetPendingIBCTransfer method.
-	GetPendingIBCTransferFunc func(ctx cosmossdktypes.Context, portID string, channelID string, sequence uint64) (axelarnettypes.IBCTransfer, bool)
+	// GetIBCTransferQueueFunc mocks the GetIBCTransferQueue method.
+	GetIBCTransferQueueFunc func(ctx cosmossdktypes.Context) utils.KVQueue
 
 	// GetRouteTimeoutWindowFunc mocks the GetRouteTimeoutWindow method.
 	GetRouteTimeoutWindowFunc func(ctx cosmossdktypes.Context) uint64
@@ -101,21 +99,14 @@ type BaseKeeperMock struct {
 	// SetFeeCollectorFunc mocks the SetFeeCollector method.
 	SetFeeCollectorFunc func(ctx cosmossdktypes.Context, address cosmossdktypes.AccAddress) error
 
-	// SetPendingIBCTransferFunc mocks the SetPendingIBCTransfer method.
-	SetPendingIBCTransferFunc func(ctx cosmossdktypes.Context, transfer axelarnettypes.IBCTransfer)
-
 	// calls tracks calls to the methods.
 	calls struct {
-		// DeletePendingIBCTransfer holds details about calls to the DeletePendingIBCTransfer method.
-		DeletePendingIBCTransfer []struct {
+		// EnqueueTransfer holds details about calls to the EnqueueTransfer method.
+		EnqueueTransfer []struct {
 			// Ctx is the ctx argument value.
 			Ctx cosmossdktypes.Context
-			// PortID is the portID argument value.
-			PortID string
-			// ChannelID is the channelID argument value.
-			ChannelID string
-			// Sequence is the sequence argument value.
-			Sequence uint64
+			// Transfer is the transfer argument value.
+			Transfer axelarnettypes.IBCTransfer
 		}
 		// GetCosmosChainByName holds details about calls to the GetCosmosChainByName method.
 		GetCosmosChainByName []struct {
@@ -141,16 +132,10 @@ type BaseKeeperMock struct {
 			// Chain is the chain argument value.
 			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
 		}
-		// GetPendingIBCTransfer holds details about calls to the GetPendingIBCTransfer method.
-		GetPendingIBCTransfer []struct {
+		// GetIBCTransferQueue holds details about calls to the GetIBCTransferQueue method.
+		GetIBCTransferQueue []struct {
 			// Ctx is the ctx argument value.
 			Ctx cosmossdktypes.Context
-			// PortID is the portID argument value.
-			PortID string
-			// ChannelID is the channelID argument value.
-			ChannelID string
-			// Sequence is the sequence argument value.
-			Sequence uint64
 		}
 		// GetRouteTimeoutWindow holds details about calls to the GetRouteTimeoutWindow method.
 		GetRouteTimeoutWindow []struct {
@@ -185,68 +170,52 @@ type BaseKeeperMock struct {
 			// Address is the address argument value.
 			Address cosmossdktypes.AccAddress
 		}
-		// SetPendingIBCTransfer holds details about calls to the SetPendingIBCTransfer method.
-		SetPendingIBCTransfer []struct {
-			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
-			// Transfer is the transfer argument value.
-			Transfer axelarnettypes.IBCTransfer
-		}
 	}
-	lockDeletePendingIBCTransfer sync.RWMutex
-	lockGetCosmosChainByName     sync.RWMutex
-	lockGetCosmosChains          sync.RWMutex
-	lockGetFeeCollector          sync.RWMutex
-	lockGetIBCPath               sync.RWMutex
-	lockGetPendingIBCTransfer    sync.RWMutex
-	lockGetRouteTimeoutWindow    sync.RWMutex
-	lockLogger                   sync.RWMutex
-	lockRegisterIBCPath          sync.RWMutex
-	lockSetCosmosChain           sync.RWMutex
-	lockSetFeeCollector          sync.RWMutex
-	lockSetPendingIBCTransfer    sync.RWMutex
+	lockEnqueueTransfer       sync.RWMutex
+	lockGetCosmosChainByName  sync.RWMutex
+	lockGetCosmosChains       sync.RWMutex
+	lockGetFeeCollector       sync.RWMutex
+	lockGetIBCPath            sync.RWMutex
+	lockGetIBCTransferQueue   sync.RWMutex
+	lockGetRouteTimeoutWindow sync.RWMutex
+	lockLogger                sync.RWMutex
+	lockRegisterIBCPath       sync.RWMutex
+	lockSetCosmosChain        sync.RWMutex
+	lockSetFeeCollector       sync.RWMutex
 }
 
-// DeletePendingIBCTransfer calls DeletePendingIBCTransferFunc.
-func (mock *BaseKeeperMock) DeletePendingIBCTransfer(ctx cosmossdktypes.Context, portID string, channelID string, sequence uint64) {
-	if mock.DeletePendingIBCTransferFunc == nil {
-		panic("BaseKeeperMock.DeletePendingIBCTransferFunc: method is nil but BaseKeeper.DeletePendingIBCTransfer was just called")
+// EnqueueTransfer calls EnqueueTransferFunc.
+func (mock *BaseKeeperMock) EnqueueTransfer(ctx cosmossdktypes.Context, transfer axelarnettypes.IBCTransfer) error {
+	if mock.EnqueueTransferFunc == nil {
+		panic("BaseKeeperMock.EnqueueTransferFunc: method is nil but BaseKeeper.EnqueueTransfer was just called")
 	}
 	callInfo := struct {
-		Ctx       cosmossdktypes.Context
-		PortID    string
-		ChannelID string
-		Sequence  uint64
+		Ctx      cosmossdktypes.Context
+		Transfer axelarnettypes.IBCTransfer
 	}{
-		Ctx:       ctx,
-		PortID:    portID,
-		ChannelID: channelID,
-		Sequence:  sequence,
+		Ctx:      ctx,
+		Transfer: transfer,
 	}
-	mock.lockDeletePendingIBCTransfer.Lock()
-	mock.calls.DeletePendingIBCTransfer = append(mock.calls.DeletePendingIBCTransfer, callInfo)
-	mock.lockDeletePendingIBCTransfer.Unlock()
-	mock.DeletePendingIBCTransferFunc(ctx, portID, channelID, sequence)
+	mock.lockEnqueueTransfer.Lock()
+	mock.calls.EnqueueTransfer = append(mock.calls.EnqueueTransfer, callInfo)
+	mock.lockEnqueueTransfer.Unlock()
+	return mock.EnqueueTransferFunc(ctx, transfer)
 }
 
-// DeletePendingIBCTransferCalls gets all the calls that were made to DeletePendingIBCTransfer.
+// EnqueueTransferCalls gets all the calls that were made to EnqueueTransfer.
 // Check the length with:
-//     len(mockedBaseKeeper.DeletePendingIBCTransferCalls())
-func (mock *BaseKeeperMock) DeletePendingIBCTransferCalls() []struct {
-	Ctx       cosmossdktypes.Context
-	PortID    string
-	ChannelID string
-	Sequence  uint64
+//     len(mockedBaseKeeper.EnqueueTransferCalls())
+func (mock *BaseKeeperMock) EnqueueTransferCalls() []struct {
+	Ctx      cosmossdktypes.Context
+	Transfer axelarnettypes.IBCTransfer
 } {
 	var calls []struct {
-		Ctx       cosmossdktypes.Context
-		PortID    string
-		ChannelID string
-		Sequence  uint64
+		Ctx      cosmossdktypes.Context
+		Transfer axelarnettypes.IBCTransfer
 	}
-	mock.lockDeletePendingIBCTransfer.RLock()
-	calls = mock.calls.DeletePendingIBCTransfer
-	mock.lockDeletePendingIBCTransfer.RUnlock()
+	mock.lockEnqueueTransfer.RLock()
+	calls = mock.calls.EnqueueTransfer
+	mock.lockEnqueueTransfer.RUnlock()
 	return calls
 }
 
@@ -382,46 +351,34 @@ func (mock *BaseKeeperMock) GetIBCPathCalls() []struct {
 	return calls
 }
 
-// GetPendingIBCTransfer calls GetPendingIBCTransferFunc.
-func (mock *BaseKeeperMock) GetPendingIBCTransfer(ctx cosmossdktypes.Context, portID string, channelID string, sequence uint64) (axelarnettypes.IBCTransfer, bool) {
-	if mock.GetPendingIBCTransferFunc == nil {
-		panic("BaseKeeperMock.GetPendingIBCTransferFunc: method is nil but BaseKeeper.GetPendingIBCTransfer was just called")
+// GetIBCTransferQueue calls GetIBCTransferQueueFunc.
+func (mock *BaseKeeperMock) GetIBCTransferQueue(ctx cosmossdktypes.Context) utils.KVQueue {
+	if mock.GetIBCTransferQueueFunc == nil {
+		panic("BaseKeeperMock.GetIBCTransferQueueFunc: method is nil but BaseKeeper.GetIBCTransferQueue was just called")
 	}
 	callInfo := struct {
-		Ctx       cosmossdktypes.Context
-		PortID    string
-		ChannelID string
-		Sequence  uint64
+		Ctx cosmossdktypes.Context
 	}{
-		Ctx:       ctx,
-		PortID:    portID,
-		ChannelID: channelID,
-		Sequence:  sequence,
+		Ctx: ctx,
 	}
-	mock.lockGetPendingIBCTransfer.Lock()
-	mock.calls.GetPendingIBCTransfer = append(mock.calls.GetPendingIBCTransfer, callInfo)
-	mock.lockGetPendingIBCTransfer.Unlock()
-	return mock.GetPendingIBCTransferFunc(ctx, portID, channelID, sequence)
+	mock.lockGetIBCTransferQueue.Lock()
+	mock.calls.GetIBCTransferQueue = append(mock.calls.GetIBCTransferQueue, callInfo)
+	mock.lockGetIBCTransferQueue.Unlock()
+	return mock.GetIBCTransferQueueFunc(ctx)
 }
 
-// GetPendingIBCTransferCalls gets all the calls that were made to GetPendingIBCTransfer.
+// GetIBCTransferQueueCalls gets all the calls that were made to GetIBCTransferQueue.
 // Check the length with:
-//     len(mockedBaseKeeper.GetPendingIBCTransferCalls())
-func (mock *BaseKeeperMock) GetPendingIBCTransferCalls() []struct {
-	Ctx       cosmossdktypes.Context
-	PortID    string
-	ChannelID string
-	Sequence  uint64
+//     len(mockedBaseKeeper.GetIBCTransferQueueCalls())
+func (mock *BaseKeeperMock) GetIBCTransferQueueCalls() []struct {
+	Ctx cosmossdktypes.Context
 } {
 	var calls []struct {
-		Ctx       cosmossdktypes.Context
-		PortID    string
-		ChannelID string
-		Sequence  uint64
+		Ctx cosmossdktypes.Context
 	}
-	mock.lockGetPendingIBCTransfer.RLock()
-	calls = mock.calls.GetPendingIBCTransfer
-	mock.lockGetPendingIBCTransfer.RUnlock()
+	mock.lockGetIBCTransferQueue.RLock()
+	calls = mock.calls.GetIBCTransferQueue
+	mock.lockGetIBCTransferQueue.RUnlock()
 	return calls
 }
 
@@ -593,41 +550,6 @@ func (mock *BaseKeeperMock) SetFeeCollectorCalls() []struct {
 	mock.lockSetFeeCollector.RLock()
 	calls = mock.calls.SetFeeCollector
 	mock.lockSetFeeCollector.RUnlock()
-	return calls
-}
-
-// SetPendingIBCTransfer calls SetPendingIBCTransferFunc.
-func (mock *BaseKeeperMock) SetPendingIBCTransfer(ctx cosmossdktypes.Context, transfer axelarnettypes.IBCTransfer) {
-	if mock.SetPendingIBCTransferFunc == nil {
-		panic("BaseKeeperMock.SetPendingIBCTransferFunc: method is nil but BaseKeeper.SetPendingIBCTransfer was just called")
-	}
-	callInfo := struct {
-		Ctx      cosmossdktypes.Context
-		Transfer axelarnettypes.IBCTransfer
-	}{
-		Ctx:      ctx,
-		Transfer: transfer,
-	}
-	mock.lockSetPendingIBCTransfer.Lock()
-	mock.calls.SetPendingIBCTransfer = append(mock.calls.SetPendingIBCTransfer, callInfo)
-	mock.lockSetPendingIBCTransfer.Unlock()
-	mock.SetPendingIBCTransferFunc(ctx, transfer)
-}
-
-// SetPendingIBCTransferCalls gets all the calls that were made to SetPendingIBCTransfer.
-// Check the length with:
-//     len(mockedBaseKeeper.SetPendingIBCTransferCalls())
-func (mock *BaseKeeperMock) SetPendingIBCTransferCalls() []struct {
-	Ctx      cosmossdktypes.Context
-	Transfer axelarnettypes.IBCTransfer
-} {
-	var calls []struct {
-		Ctx      cosmossdktypes.Context
-		Transfer axelarnettypes.IBCTransfer
-	}
-	mock.lockSetPendingIBCTransfer.RLock()
-	calls = mock.calls.SetPendingIBCTransfer
-	mock.lockSetPendingIBCTransfer.RUnlock()
 	return calls
 }
 
