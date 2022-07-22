@@ -1,12 +1,19 @@
 package keeper
 
 import (
+	"bytes"
 	"encoding/hex"
 	"fmt"
 
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	multisigTypes "github.com/axelarnetwork/axelar-core/x/multisig/types"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
+	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 )
 
@@ -14,7 +21,8 @@ import (
 // migration includes:
 // - migrate contracts bytecode (CRUCIAL AND DO NOT DELETE) for all evm chains
 // - set BurnerCode for external token to nil
-func GetMigrationHandler(k BaseKeeper, n types.Nexus) func(ctx sdk.Context) error {
+// - migrate tss signature to multisig signature
+func GetMigrationHandler(k BaseKeeper, n types.Nexus, s types.Signer, m types.MultisigKeeper) func(ctx sdk.Context) error {
 	return func(ctx sdk.Context) error {
 		// migrate contracts bytecode (CRUCIAL AND DO NOT DELETE) for all evm chains
 		for _, chain := range slices.Filter(n.GetChains(ctx), types.IsEVMChain) {
@@ -29,6 +37,10 @@ func GetMigrationHandler(k BaseKeeper, n types.Nexus) func(ctx sdk.Context) erro
 			ck := k.ForChain(chain.Name).(chainKeeper)
 			if err := removeExternalTokenBurnerCode(ctx, ck); err != nil {
 				return err
+			}
+
+			if err := migrateCommandBatchSignature(ctx, ck, s, m); err != nil {
+				return sdkerrors.Wrap(err, fmt.Sprintf("failed to migrate signature for chain %s", chain.Name))
 			}
 		}
 
@@ -47,6 +59,104 @@ func removeExternalTokenBurnerCode(ctx sdk.Context, ck chainKeeper) error {
 	}
 
 	return nil
+}
+
+func migrateCommandBatchSignature(ctx sdk.Context, ck chainKeeper, signer types.Signer, multisig types.MultisigKeeper) error {
+	var commandBatchMetadata types.CommandBatchMetadata
+	for commandBatchID := ck.getLatestSignedCommandBatchID(ctx); commandBatchID != nil; commandBatchID = commandBatchMetadata.PrevBatchedCommandsID {
+		commandBatchMetadata = ck.getCommandBatchMetadata(ctx, commandBatchID)
+
+		// only migrate secondary key
+		tssKey, ok := signer.GetKey(ctx, tss.KeyID(commandBatchMetadata.KeyID))
+		if tssKey.Role != tss.SecondaryKey {
+			continue
+		}
+
+		// only migrate command batch signed by active key
+		key, ok := multisig.GetKey(ctx, commandBatchMetadata.KeyID)
+		if !ok {
+			break
+		}
+
+		if commandBatchMetadata.Status != types.BatchSigned {
+			if commandBatchMetadata.Status == types.BatchSigning {
+				setCommandBatchAborted(ctx, ck, commandBatchMetadata)
+			}
+			continue
+		}
+
+		sigID := hex.EncodeToString(commandBatchMetadata.ID)
+		multisigInfo, found := signer.GetMultisigSignInfo(ctx, sigID)
+		signInfo, ok := multisigInfo.(*tsstypes.MultisigInfo)
+		if !found || !ok {
+			return fmt.Errorf("sign info %s not found", sigID)
+		}
+
+		payloadHash := commandBatchMetadata.SigHash.Bytes()
+
+		// convert to multisig
+		newMultisig := multisigTypes.MultiSig{
+			KeyID:       commandBatchMetadata.KeyID,
+			PayloadHash: payloadHash,
+			Sigs:        make(map[string]multisigTypes.Signature),
+		}
+
+		for _, info := range signInfo.Infos {
+			if len(info.Data) < 1 {
+				return fmt.Errorf("validator %s is participant without signature for signing %s", info.Participant.String(), sigID)
+			}
+
+			sigKeyPairs := slices.Map(info.Data, func(bz []byte) tss.SigKeyPair {
+				var pair tss.SigKeyPair
+				funcs.MustNoErr(pair.Unmarshal(bz))
+				return pair
+			})
+
+			pubKey, ok := key.GetPubKey(info.Participant)
+			if !ok {
+				return fmt.Errorf("alidator %s is not a participant for signing %s", info.Participant.String(), sigID)
+			}
+
+			signature, err := getSigByPubKey(pubKey, sigKeyPairs)
+			if err != nil {
+				return err
+			}
+
+			if !multisigTypes.Signature(signature).Verify(payloadHash, pubKey) {
+				return fmt.Errorf("signature and pubkey mismatch from participant %s for signing %s", info.Participant.String(), sigID)
+			}
+
+			newMultisig.Sigs[info.Participant.String()] = signature
+		}
+
+		if err := newMultisig.ValidateBasic(); err != nil {
+			return err
+		}
+
+		setCommandBatchSignature(ctx, ck, commandBatchMetadata, newMultisig)
+	}
+
+	return nil
+}
+
+func getSigByPubKey(pubKey []byte, sigKeyPairs []tss.SigKeyPair) ([]byte, error) {
+	for _, sigKeyPair := range sigKeyPairs {
+		if bytes.Equal(sigKeyPair.PubKey, pubKey) {
+			return sigKeyPair.Signature, nil
+		}
+	}
+
+	return nil, fmt.Errorf("failed to find signature for the given pubkey")
+}
+
+func setCommandBatchSignature(ctx sdk.Context, ck chainKeeper, commandBatchMetadata types.CommandBatchMetadata, newMultisig multisigTypes.MultiSig) {
+	commandBatchMetadata.Signature = funcs.Must(codectypes.NewAnyWithValue(&newMultisig))
+	ck.setCommandBatchMetadata(ctx, commandBatchMetadata)
+}
+
+func setCommandBatchAborted(ctx sdk.Context, ck chainKeeper, commandBatchMetadata types.CommandBatchMetadata) {
+	commandBatchMetadata.Status = types.BatchAborted
+	ck.setCommandBatchMetadata(ctx, commandBatchMetadata)
 }
 
 // this function migrates the contracts bytecode to the latest for every existing
