@@ -26,13 +26,13 @@ func handleKeygens(ctx sdk.Context, k types.Keeper, rewarder types.Rewarder) {
 	for _, keygen := range k.GetKeygenSessionsByExpiry(ctx, ctx.BlockHeight()) {
 		k.DeleteKeygenSession(ctx, keygen.GetKeyID())
 
+		slices.ForEach(keygen.GetMissingParticipants(), rewarder.GetPool(ctx, types.ModuleName).ClearRewards)
+
 		if keygen.State != exported.Completed {
 			funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewKeygenExpired(keygen.GetKeyID())))
 			k.Logger(ctx).Info("keygen session expired",
 				"key_id", keygen.GetKeyID(),
 			)
-
-			slices.ForEach(keygen.GetMissingParticipants(), rewarder.GetPool(ctx, types.ModuleName).ClearRewards)
 
 			continue
 		}
@@ -51,6 +51,8 @@ func handleSignings(ctx sdk.Context, k types.Keeper, rewarder types.Rewarder) {
 			k.DeleteSigningSession(cachedCtx, signing.GetID())
 			module := signing.GetModule()
 
+			slices.ForEach(signing.GetMissingParticipants(), rewarder.GetPool(cachedCtx, types.ModuleName).ClearRewards)
+
 			if signing.State != exported.Completed {
 				funcs.MustNoErr(cachedCtx.EventManager().EmitTypedEvent(types.NewSigningExpired(signing.GetID())))
 				k.Logger(cachedCtx).Info("signing session expired",
@@ -58,7 +60,6 @@ func handleSignings(ctx sdk.Context, k types.Keeper, rewarder types.Rewarder) {
 				)
 
 				funcs.MustNoErr(k.GetSigRouter().GetHandler(module).HandleFailed(cachedCtx, signing.GetMetadata()))
-				slices.ForEach(signing.GetMissingParticipants(), rewarder.GetPool(cachedCtx, types.ModuleName).ClearRewards)
 				return nil, nil
 			}
 
