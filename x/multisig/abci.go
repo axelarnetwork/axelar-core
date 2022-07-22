@@ -26,7 +26,8 @@ func handleKeygens(ctx sdk.Context, k types.Keeper, rewarder types.Rewarder) {
 	for _, keygen := range k.GetKeygenSessionsByExpiry(ctx, ctx.BlockHeight()) {
 		k.DeleteKeygenSession(ctx, keygen.GetKeyID())
 
-		slices.ForEach(keygen.GetMissingParticipants(), rewarder.GetPool(ctx, types.ModuleName).ClearRewards)
+		pool := rewarder.GetPool(ctx, types.ModuleName)
+		slices.ForEach(keygen.GetMissingParticipants(), pool.ClearRewards)
 
 		if keygen.State != exported.Completed {
 			funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewKeygenExpired(keygen.GetKeyID())))
@@ -39,7 +40,7 @@ func handleKeygens(ctx sdk.Context, k types.Keeper, rewarder types.Rewarder) {
 
 		key := funcs.Must(keygen.Result())
 
-		slices.ForEach(key.GetParticipants(), func(p sdk.ValAddress) { funcs.MustNoErr(rewarder.GetPool(ctx, types.ModuleName).ReleaseRewards(p)) })
+		slices.ForEach(key.GetParticipants(), func(p sdk.ValAddress) { funcs.MustNoErr(pool.ReleaseRewards(p)) })
 		k.SetKey(ctx, key)
 	}
 }
@@ -51,7 +52,8 @@ func handleSignings(ctx sdk.Context, k types.Keeper, rewarder types.Rewarder) {
 			k.DeleteSigningSession(cachedCtx, signing.GetID())
 			module := signing.GetModule()
 
-			slices.ForEach(signing.GetMissingParticipants(), rewarder.GetPool(cachedCtx, types.ModuleName).ClearRewards)
+			pool := rewarder.GetPool(cachedCtx, types.ModuleName)
+			slices.ForEach(signing.GetMissingParticipants(), pool.ClearRewards)
 
 			if signing.State != exported.Completed {
 				funcs.MustNoErr(cachedCtx.EventManager().EmitTypedEvent(types.NewSigningExpired(signing.GetID())))
@@ -65,7 +67,7 @@ func handleSignings(ctx sdk.Context, k types.Keeper, rewarder types.Rewarder) {
 
 			sig := funcs.Must(signing.Result())
 
-			slices.ForEach(sig.GetParticipants(), func(p sdk.ValAddress) { funcs.MustNoErr(rewarder.GetPool(ctx, types.ModuleName).ReleaseRewards(p)) })
+			slices.ForEach(sig.GetParticipants(), func(p sdk.ValAddress) { funcs.MustNoErr(pool.ReleaseRewards(p)) })
 			funcs.MustNoErr(k.GetSigRouter().GetHandler(module).HandleCompleted(cachedCtx, &sig, signing.GetMetadata()))
 
 			funcs.MustNoErr(cachedCtx.EventManager().EmitTypedEvent(types.NewSigningCompleted(signing.GetID())))

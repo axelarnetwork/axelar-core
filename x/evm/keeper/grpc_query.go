@@ -17,7 +17,6 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
-	multisigtypes "github.com/axelarnetwork/axelar-core/x/multisig/types"
 	nexustypes "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/utils/funcs"
@@ -122,13 +121,7 @@ func getProof(key multisig.Key, signature multisig.MultiSig) ([]common.Address, 
 	return addresses, weights, threshold, signatures
 }
 
-func getExecuteDataAndSigs(ctx sdk.Context, multisigK types.MultisigKeeper, commandBatch types.CommandBatch) ([]byte, types.Proof, error) {
-	sig := commandBatch.GetSignature()
-	if sig == nil {
-		return nil, types.Proof{}, fmt.Errorf("could not find signature")
-	}
-
-	signature := multisig.MultiSig(sig.(*multisigtypes.MultiSig))
+func getExecuteDataAndSigs(ctx sdk.Context, multisigK types.MultisigKeeper, commandBatch types.CommandBatch, signature multisig.MultiSig) ([]byte, types.Proof, error) {
 	key := funcs.MustOk(multisigK.GetKey(ctx, signature.GetKeyID()))
 
 	addresses, weights, threshold, signatures := getProof(key, signature)
@@ -148,7 +141,7 @@ func getExecuteDataAndSigs(ctx sdk.Context, multisigK types.MultisigKeeper, comm
 	return executeData, proof, nil
 }
 
-func commandBatchToResp(ctx sdk.Context, commandBatch types.CommandBatch, multisig types.MultisigKeeper) (types.BatchedCommandsResponse, error) {
+func commandBatchToResp(ctx sdk.Context, commandBatch types.CommandBatch, multisigK types.MultisigKeeper) (types.BatchedCommandsResponse, error) {
 	id := hex.EncodeToString(commandBatch.GetID())
 
 	prevID := ""
@@ -160,7 +153,8 @@ func commandBatchToResp(ctx sdk.Context, commandBatch types.CommandBatch, multis
 
 	switch {
 	case commandBatch.Is(types.BatchSigned) && commandBatch.GetSignature() != nil: // check signature for unmigrated batches
-		executeData, proof, err := getExecuteDataAndSigs(ctx, multisig, commandBatch)
+		signature := commandBatch.GetSignature().(multisig.MultiSig)
+		executeData, proof, err := getExecuteDataAndSigs(ctx, multisigK, commandBatch, signature)
 		if err != nil {
 			return types.BatchedCommandsResponse{}, sdkerrors.Wrap(types.ErrEVM, err.Error())
 		}
