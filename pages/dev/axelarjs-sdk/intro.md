@@ -10,15 +10,15 @@ npm i @axelar-network/axelarjs-sdk@alpha
 
 Current modules:
 
-- `AxelarAssetTransfer`.
+- `AxelarAssetTransfer`
     - Used for cross-chain token transfer via deposit address generation.
-    - [[Token Transfer via Deposit Address](token-transfer-dep-addr)].
+    - [Token Transfer via Deposit Address](token-transfer-dep-addr).
 
-- `AxelarGMPRecoveryAPI`.
+- `AxelarGMPRecoveryAPI`
     - API library to track and recover (if needed) GMP transactions (both `callContract` and `callContractWithToken`).
     - Transactions are indexed by the transaction hash initiated on the source chain when invoking either `callContract` or `callContractWithToken`.
-    - [[GMP transaction status and recovery](tx-status-query-recovery)].
+    - [GMP transaction status and recovery](tx-status-query-recovery).
 
-- `AxelarQueryAPI`.
-    - Collection of helpful predefined queries into the network, e.g. for transaction fees for token transfers, cross-chain gas prices for GMP transactions, denom conversions, etc.
-    - [[Axelar Query API](axelar-query-api)].
+- `AxelarQueryAPI`
+    - Collection of helpful predefined queries into the network, e.g., transaction fees for token transfers, cross-chain gas prices for GMP transactions, denom conversions, etc.
+    - [Axelar Query API](axelar-query-api).

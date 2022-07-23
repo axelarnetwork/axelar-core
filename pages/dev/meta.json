@@ -1,9 +1,11 @@
 {
   "intro": "Introduction",
-  "get-started": "Get started",
-  "tokens": "Send tokens",
-  "gmp": "General Message Passing",
-  "axelarjs-sdk": "AxelarJS SDK",
-  "chain-names": "Chain names",
-  "solidity-utilities": "Solidity Utilities"
+  "hello-world": "'Hello World' example dApp",
+  "gmp-overview": "General Message Passing overview",
+  "build": "Build",
+  "guides": "Guides",
+  "gas-services": "Gas & executor services",
+  "debug": "Debug",
+  "monitor-recover": "Monitor & recover",
+  "axelarjs-sdk": "AxelarJS SDK"
 }

@@ -11,7 +11,7 @@ html {
 }
 
 [data-reach-skip-link]:focus {
-  @apply not-sr-only fixed ml-6 top-0 bg-white text-lg px-6 py-2 mt-2 outline-none focus:ring z-50;
+  @apply fixed top-0 z-50 px-6 py-2 mt-2 ml-6 text-lg bg-white outline-none not-sr-only focus:ring;
 }
 
 .dark .invert-on-dark {
@@ -79,4 +79,8 @@ div {
   background-color: rgb(147 197 253/var(--tw-bg-opacity)) !important;
   --tw-bg-opacity: 0.1;
   color: var(--shiki-color-text) !important;
+}
+
+a {
+  text-decoration-line: none !important;
 }

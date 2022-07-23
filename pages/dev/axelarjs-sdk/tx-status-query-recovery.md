@@ -1,15 +1,15 @@
-# Query and Recover GMP transactions
+# Query and recover GMP transactions
 
 Occasionally, transactions can get "stuck" in the pipeline from a source to destination chain (e.g. due to one-off issues that arise with relayers that operate on top of the network).
 
-The `AxelarGMPRecoveryAPI` module in the AxelarJS SDK can be used by your dApp to query the status of any General Message Passing (GMP) transaction (triggered by either `callContract` or `callContractWithToken`) on the gateway contract of a source chain and trigger a manual relay from source to destination if necessary. - The [[GMP status tracker](../gmp/gmp-tracker-recovery/recovery)] on Axelarscan makes use of this feature.
+The `AxelarGMPRecoveryAPI` module in the AxelarJS SDK can be used by your dApp to query the status of any General Message Passing (GMP) transaction (triggered by either `callContract` or `callContractWithToken`) on the gateway contract of a source chain and trigger a manual relay from source to destination if necessary. - The [GMP status tracker](../monitor-recover/recovery) on Axelarscan makes use of this feature.
 
-### Install the AxelarJS SDK module (AxelarGMPRecoveryAPI)
+### Install the AxelarJS SDK module (`AxelarGMPRecoveryAPI`)
 
 Install the AxelarJS SDK:
 
 ```bash
-npm i @axelar-network/axelarjs-sdk@alpha
+npm i @axelar-network/axelarjs-sdk
 ```
 
 Instantiate the `AxelarGMPRecoveryAPI` module:
@@ -35,7 +35,7 @@ const txHash: string =
 const txStatus: GMPStatusResponse = await sdk.queryTransactionStatus(txHash);
 ```
 
-where possible status responses for txStatus are outlined below:
+Possible status responses for txStatus are outlined below:
 
 ```ts
 interface GMPStatusResponse {
@@ -71,15 +71,36 @@ The following method, once invoked, will:
 2. Recover from source to destination if needed.
 
 ```ts
-const txHash =
-  "0xfb6fb85f11496ef58b088116cb611497e87e9c72ff0c9333aa21491e4cdd397a";
-const src = "Ethereum";
-const dest = "Avalanche";
-const debug = true;
-const recover = await api.manualRelayToDestChain({ txHash, src, dest, debug });
+const sourceTxHash = "0x..";
+const provider = new ethers.providers.JsonRpcProvider(
+  "https://ropsten.infura.io/v3/projectId"
+);
+
+// Optional
+// By default, The sdk uses `window.ethereum` wallet as a sender wallet e.g. Metamask.
+// This option allows caller to pass `privateKey` or `provider` to the sdk directly
+const senderOptions = { privateKey: "0x", provider };
+
+const response = await sdk.manualRelayToDestChain(
+  sourceTxHash,
+  senderOptions /* can be skipped */
+);
 ```
 
-Possible return values are: - `already executed` - Transaction was already executed and a manual recovery was not necessary. - `triggered relay` - The `manualRelayToDestChain` trigggered a manual relay through our network. - `approved but not executed` - The transaction already reached the destination chain but was not executed to reach the intended destination contract address. - => WHEN IN THIS STATE, THERE ARE TWO OPTIONS TO REMEDIATE (BELOW).
+Possible response values are:
+
+```ts
+export interface ApproveGatewayResponse {
+  success: boolean;
+  error?: ApproveGatewayError | string;
+  confirmTx?: AxelarTxResponse;
+  createPendingTransferTx?: AxelarTxResponse;
+  signCommandTx?: AxelarTxResponse;
+  approveTx?: any;
+}
+```
+
+When in this state, there are two options to remediate (below). 
 
 ### Execute manually OR increase gas payment
 
@@ -88,33 +109,39 @@ Possible return values are: - `already executed` - Transaction was already execu
 When invoking this method, you will manually execute (and pay for) the executable method on your specified contract on the destination chain of your cross-chain transaction.
 
 ```ts
-// TODO: the txState query can be improved
-const testnetCachingServiceAPI: string =
-  "https://testnet.api.gmp.axelarscan.io";
-const txState = await api.execGet(testnetCachingServiceAPI, {
-  method: "searchGMP",
-  txHash,
-});
-await sdk.executeManually(res[0], (data: any) => console.log(data));
+const sourceTxHash = "0x..";
+const provider = new ethers.providers.JsonRpcProvider(
+  "https://ropsten.infura.io/v3/projectId"
+);
+
+// Optional
+// By default, The sdk uses `window.ethereum` wallet as a sender wallet e.g. Metamask.
+// This option allows caller to pass `privateKey` or `provider` to the sdk directly
+const senderOptions = { privateKey: "0x", provider };
+
+const response = await sdk.execute(
+  sourceTxHash,
+  senderOptions /* can be skipped */
+);
 ```
 
-Possible return values are:
+Possible response values are:
 
 ```ts
 {
-    status: "pending" | "success" | "failed",
-    message: "Wait for confirmation" | "Execute successful" | <ERROR>,
-    txHash: tx.hash,
+    success: "success" | "failed",
+    data: ethers.ContractReceipt | undefined,
+    error: string | undefined
 }
 ```
 
-#### 2. Increase Gas Payment
+#### 2. Increase gas payment
 
-There're two different functions to increase gas payment depending on type of the token.
+There are two different functions to increase gas payment depending on type of the token.
 
-##### 2.1 Native Gas Payment
+##### 2.1 Native gas payment
 
-Invoking this method will execute the `addNativeGas` method on the gas receiver contract on the source chain of your cross-chain transaction to increase the amount of the gas payment, in the form of **native token**. The amount to be added is automatically calculated based on many factors e.g. token price of the destination chain, token price of the source chain, current gas price at the destination chain, etc. However, it can be overrided by specifying amount in the `options`.
+Invoking this method will execute the `addNativeGas` method on the Gas Receiver contract on the source chain of your cross-chain transaction to increase the amount of the gas payment, in the source chain native token. The amount to be added is automatically calculated based on many factors e.g. token price of the destination chain, token price of the source chain, current gas price at the destination chain, etc. However, it can be overriden by specifying amount in the `options`.
 
 ```ts
 import {
@@ -145,9 +172,19 @@ if (success) {
 }
 ```
 
+Possible response values are:
+
+```ts
+{
+    success: "success" | "failed",
+    data: ethers.ContractReceipt | undefined,
+    error: string | undefined
+}
+```
+
 ##### 2.2 ERC-20 Gas Payment
 
-This is similar to native gas payment except using **ERC-20 token** for gas payment. However, the supported ERC-20 tokens are limited. See the list of supported tokens here: [[Mainnet](/resources/mainnet) | [Testnet](/resources/testnet) | [Testnet-2](/resources/testnet-2)]
+This is similar to native gas payment except using **ERC-20 token** for gas payment. However, the supported ERC-20 tokens are limited. See the list of supported tokens here: [[Mainnet](../build/contract-addresses/mainnet) | [Testnet](../build/contract-addresses/testnet)]
 
 ```ts
 import {
@@ -170,7 +207,7 @@ const options: AddGasOptions = {
 const environment = Environment.TESTNET; // Can be `Environment.TESTNET` or `Environment.MAINNET`
 const api = new AxelarGMPRecoveryAPI({ environment });
 
-// Approve gas token to the gas receiver contract
+// Approve gas token to the Gas Receiver contract
 const gasToken = "0xGasTokenAddress";
 const erc20 = new ethers.Contract(gasToken, erc20Abi, gasPayer);
 await erc20
@@ -189,5 +226,15 @@ if (success) {
   console.log("Added gas tx:", transaction?.transactionHash);
 } else {
   console.log("Cannot add gas", error);
+}
+```
+
+Possible response values are:
+
+```ts
+{
+    success: "success" | "failed",
+    data: ethers.ContractReceipt | undefined,
+    error: string | undefined
 }
 ```

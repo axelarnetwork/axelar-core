@@ -2,8 +2,6 @@
 
 import Callout from 'nextra-theme-docs/callout'
 import MarkdownPath from '../../components/markdown'
-import EVMChains from '../../components/evm/chains'
-import EVMAssets from '../../components/evm/assets'
 import IBCChannels from '../../components/ibc/channels'
 import TransferFeeCalculator from '../../components/transfer-fee/calculator'
 
@@ -13,15 +11,9 @@ import TransferFeeCalculator from '../../components/transfer-fee/calculator'
 | `vald` version        | `v0.19.2` |
 | `tofnd` version       | `v0.10.1` |
 
-<div className="space-y-1 mt-4">
-  ## EVM Chains
-  <EVMChains environment="mainnet" />
-</div>
 
-<div className="space-y-1 mt-4">
-  ## Assets
-  <EVMAssets environment="mainnet" />
-</div>
+## EVM contract addresses
+Moved [here](../dev/build/contract-addresses/mainnet)
 
 <div className="space-y-1 mt-4">
   ## IBC Channels

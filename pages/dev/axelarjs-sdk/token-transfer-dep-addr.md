@@ -1,7 +1,7 @@
 
 # Get a deposit address
 
-A _deposit address_ is a special address created and monitored by Axelar relayer services on behalf of the requester. It is similar to how centralized exchanges generate a monitored, one-time deposit address that facilitates your token transfers.
+A deposit address is a special address created and monitored by Axelar relayer services on behalf of the requester. It is similar to how centralized exchanges generate a monitored, one-time deposit address that facilitates your token transfers.
 
 ### Deposit address workflow:
 
@@ -10,7 +10,7 @@ A _deposit address_ is a special address created and monitored by Axelar relayer
 3. Axelar relayers observe the deposit transaction on the source chain and complete it on the destination chain.
 4. Watch your tokens arrive on the destination chain.
 
-### 1. Install the AxelarJS SDK module (AxelarAssetTransfer)
+### 1. Install the AxelarJS SDK module (`AxelarAssetTransfer`)
 
 We'll use the AxelarJS SDK, which is an `npm` dependency that empowers developers to make requests into the Axelar network from a front end. The Axelar SDK provides a wrapper for API calls that you can use to generate a deposit address. (Alternately, you can generate a deposit address using the CLI instead of the Axelar SDK. [See examples, here](../../learn/cli).) 
 
@@ -59,7 +59,7 @@ const depositAddress = await sdk.getDepositAddress(
 );
 ```
 
-Example: EVM to Cosmos (Avalanche to Osmosis)
+Example: EVM to Cosmos (Avalanche to Osmosis):
 
 ```tsx
 const sdk = new AxelarAssetTransfer({
@@ -74,6 +74,6 @@ const depositAddress = await sdk.getDepositAddress(
 );
 ```
 
-Note: The destination address format is validated based on the destination chain. Make sure the destination address is a valid address on the destination chain. For instance, Osmosis with “osmo,” etc.
+Note: The destination address format is validated based on the destination chain. Make sure the destination address is a valid address on the destination chain. For instance, Osmosis addresses begin with “osmo,” etc.
 
 Once the deposit address has been generated, the user can make a token transfer (on blockchain) to the deposit address. The transfer will be picked up by the Axelar network and relayed to the destination chain.

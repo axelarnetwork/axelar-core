@@ -1,8 +1,8 @@
-# Axelar Query API
+# Axelar query API
 
-This module is a nice-to-have of common queries made into the Axelar network and its services that are abstracted into easy-to-use Javascript one-liners.
+This module is a nice-to-have of common queries made into the Axelar network and its services that are abstracted into easy-to-use JavaScript one-liners.
 
-### Install the AxelarJS SDK module (AxelarQueryAPI)
+### Install the AxelarJS SDK module (`AxelarQueryAPI`)
 
 Install the AxelarJS SDK:
 
@@ -20,9 +20,9 @@ const sdk = new AxelarQueryAPI({
 
 ### Possible queries
 
-#### estimateGasFee
+#### `estimateGasFee`
 
-Useful query for GMP transactions, when invoking `callContract` or `callContractWithToken` to get an estimate of the appropriate gas payment to be made to the gas receiver on the source chain.
+This is a useful query for GMP transactions, when invoking `callContract` or `callContractWithToken` to get an estimate of the appropriate gas payment to be made to the gas receiver on the source chain.
 
 ```ts
 // (Optional) An estimated gas amount required to execute `executeWithToken` function. The default value is 700000 which sufficients for most transaction.
@@ -39,7 +39,7 @@ const gasFee = await sdk.estimateGasFee(
 
 #### getTransferFee
 
-Given a source chain, destination chain, and amount of an asset, retrieves the base fee that the network would assess for that transaction
+Given a source chain, destination chain and amount of an asset, this query retrieves the base fee that the network would assess for that transaction.
 
 ```ts
 /**
@@ -60,7 +60,7 @@ public async getTransferFee(
 
 #### getFeeForChainAndAsset
 
-Given a chain and asset, retrieves the base fee that the network would assess
+Given a chain and asset, retrieves the base fee that the network would assess.
 
 ```ts
 /**
@@ -77,7 +77,7 @@ public async getFeeForChainAndAsset(
 
 #### getDenomFromSymbol
 
-Get the denom for an asset given its symbol on a chain
+Get the denom for an asset given its symbol on a chain.
 
 ```ts
 /**
