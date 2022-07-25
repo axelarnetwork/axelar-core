@@ -5,7 +5,7 @@ package mock
 
 import (
 	"context"
-	"github.com/axelarnetwork/axelar-core/vald/broadcast"
+	"github.com/axelarnetwork/axelar-core/sdk-utils/broadcast"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"sync"
 )

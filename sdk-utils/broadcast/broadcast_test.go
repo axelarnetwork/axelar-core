@@ -29,9 +29,9 @@ import (
 	tm "github.com/tendermint/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/app"
+	"github.com/axelarnetwork/axelar-core/sdk-utils/broadcast"
+	mock2 "github.com/axelarnetwork/axelar-core/sdk-utils/broadcast/mock"
 	"github.com/axelarnetwork/axelar-core/utils"
-	"github.com/axelarnetwork/axelar-core/vald/broadcast"
-	"github.com/axelarnetwork/axelar-core/vald/broadcast/mock"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/reward/types"
 	"github.com/axelarnetwork/utils/slices"
@@ -42,8 +42,8 @@ import (
 func TestStatefulBroadcaster(t *testing.T) {
 	var (
 		clientCtx        client.Context
-		clientMock       *mock.ClientMock
-		accountRetriever *mock.AccountRetrieverMock
+		clientMock       *mock2.ClientMock
+		accountRetriever *mock2.AccountRetrieverMock
 		txf              tx.Factory
 		broadcaster      broadcast.Broadcaster
 		msgCount         int
@@ -51,7 +51,7 @@ func TestStatefulBroadcaster(t *testing.T) {
 	)
 
 	givenClientContext := Given("a client context in sync mode", func() {
-		clientMock = &mock.ClientMock{}
+		clientMock = &mock2.ClientMock{}
 		clientCtx = client.Context{
 			BroadcastMode: flags.BroadcastSync,
 			Client:        clientMock,
@@ -59,8 +59,8 @@ func TestStatefulBroadcaster(t *testing.T) {
 		}
 	})
 	txFactory := Given("a tx factory", func() {
-		accountRetriever = &mock.AccountRetrieverMock{}
-		keyringInfoMock := &mock.InfoMock{
+		accountRetriever = &mock2.AccountRetrieverMock{}
+		keyringInfoMock := &mock2.InfoMock{
 			GetPubKeyFunc: func() cryptotypes.PubKey { return ed25519.GenPrivKey().PubKey() },
 		}
 		txf = tx.Factory{}.
@@ -68,7 +68,7 @@ func TestStatefulBroadcaster(t *testing.T) {
 			WithSimulateAndExecute(true).
 			WithAccountRetriever(accountRetriever).
 			WithTxConfig(clientCtx.TxConfig).
-			WithKeybase(&mock.KeyringMock{
+			WithKeybase(&mock2.KeyringMock{
 				KeyFunc: func(string) (keyring.Info, error) {
 					return keyringInfoMock, nil
 				},
@@ -227,12 +227,12 @@ func TestStatefulBroadcaster(t *testing.T) {
 
 func TestWithRefund(t *testing.T) {
 	var (
-		broadcaster *mock.BroadcasterMock
+		broadcaster *mock2.BroadcasterMock
 		refunder    broadcast.Broadcaster
 	)
 
 	Given("a refunding broadcaster", func() {
-		broadcaster = &mock.BroadcasterMock{}
+		broadcaster = &mock2.BroadcasterMock{}
 		refunder = broadcast.WithRefund(broadcaster)
 	}).
 		When("the response contains the msgs of the tx", func() {
@@ -252,7 +252,7 @@ func TestWithRefund(t *testing.T) {
 
 func TestInBatches(t *testing.T) {
 	var (
-		broadcaster      *mock.BroadcasterMock
+		broadcaster      *mock2.BroadcasterMock
 		batched          broadcast.Broadcaster
 		msgs             []sdk.Msg
 		broadcastCalled  chan struct{}
@@ -260,7 +260,7 @@ func TestInBatches(t *testing.T) {
 	)
 
 	Given("a batched broadcaster", func() {
-		broadcaster = &mock.BroadcasterMock{}
+		broadcaster = &mock2.BroadcasterMock{}
 		batched = broadcast.Batched(broadcaster, 1, 5, log.TestingLogger())
 	}).Branch(
 		When("trying to broadcast 0 msgs", func() {
@@ -332,12 +332,12 @@ func TestInBatches(t *testing.T) {
 
 func TestWithRetry(t *testing.T) {
 	var (
-		broadcaster *mock.BroadcasterMock
+		broadcaster *mock2.BroadcasterMock
 		retry       broadcast.Broadcaster
 	)
 
 	Given("a retry broadcaster", func() {
-		broadcaster = &mock.BroadcasterMock{}
+		broadcaster = &mock2.BroadcasterMock{}
 		retry = broadcast.WithRetry(broadcaster, 3, 1*time.Nanosecond, log.TestingLogger())
 	}).Branch(
 		When("one of the msgs fails", func() {
@@ -402,7 +402,7 @@ func TestWithRetry(t *testing.T) {
 }
 
 func TestSuppressExecutionErrs(t *testing.T) {
-	broadcaster := &mock.BroadcasterMock{
+	broadcaster := &mock2.BroadcasterMock{
 		BroadcastFunc: func(context.Context, ...sdk.Msg) (*sdk.TxResponse, error) {
 			return nil, sdkerrors.New("codespace", mathRand.Uint32(), "error")
 		}}
