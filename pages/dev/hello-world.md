@@ -1,4 +1,4 @@
-# `Hello World` example dApp
+# "Hello World" example dApp
 
 What better way to start than to lead by example? And a simple one we're all familiar with: "Hello World!"
 
