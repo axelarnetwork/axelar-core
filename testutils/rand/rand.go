@@ -33,6 +33,12 @@ func PosI64() int64 {
 	return x
 }
 
+// UintBetween returns a random integer between lower (inclusive) and upper (exclusive).
+// It panics if upper <= lower.
+func UintBetween(lower sdk.Uint, upper sdk.Uint) sdk.Uint {
+	return sdk.NewUint(uint64(rand.Int63n(upper.Sub(lower).BigInt().Int64()))).Add(lower)
+}
+
 // I64Between returns a random integer between lower (inclusive) and upper (exclusive).
 // It panics if  upper <= lower.
 func I64Between(lower int64, upper int64) int64 {
