@@ -39,8 +39,8 @@ import (
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/app/params"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/utils"
-	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/vald"
 	"github.com/axelarnetwork/axelar-core/config"
+	"github.com/axelarnetwork/axelar-core/vald"
 )
 
 const minGasPrice = "0.00005uaxl"

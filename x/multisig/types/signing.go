@@ -3,6 +3,7 @@ package types
 import (
 	fmt "fmt"
 
+	"github.com/btcsuite/btcd/btcec"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -216,6 +217,16 @@ func (m MultiSig) ValidateBasic() error {
 	}
 
 	return nil
+}
+
+// GetSignature returns the ECDSA signature of the given participant
+func (m MultiSig) GetSignature(p sdk.ValAddress) (btcec.Signature, bool) {
+	sig, ok := m.Sigs[p.String()]
+	if !ok {
+		return btcec.Signature{}, false
+	}
+
+	return sig.toECDSASignature(), true
 }
 
 // GetParticipants returns the participants of the given multi sig
