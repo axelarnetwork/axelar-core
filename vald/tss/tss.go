@@ -17,7 +17,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/axelarnetwork/axelar-core/vald/broadcast"
+	"github.com/axelarnetwork/axelar-core/sdk-utils/broadcast"
 	"github.com/axelarnetwork/axelar-core/vald/parse"
 	"github.com/axelarnetwork/axelar-core/vald/tss/rpc"
 	rewardtypes "github.com/axelarnetwork/axelar-core/x/reward/types"

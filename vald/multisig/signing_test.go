@@ -13,8 +13,8 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	"google.golang.org/grpc"
 
+	broadcastmock "github.com/axelarnetwork/axelar-core/sdk-utils/broadcast/mock"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
-	broadcastmock "github.com/axelarnetwork/axelar-core/vald/broadcast/mock"
 	"github.com/axelarnetwork/axelar-core/vald/multisig"
 	"github.com/axelarnetwork/axelar-core/vald/multisig/mock"
 	"github.com/axelarnetwork/axelar-core/x/multisig/exported"
