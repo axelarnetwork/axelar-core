@@ -14,9 +14,9 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/axelarnetwork/axelar-core/app"
+	mock2 "github.com/axelarnetwork/axelar-core/sdk-utils/broadcast/mock"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
-	mock2 "github.com/axelarnetwork/axelar-core/vald/broadcast/mock"
 	"github.com/axelarnetwork/axelar-core/vald/tss/rpc/mock"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"

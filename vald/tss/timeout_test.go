@@ -9,9 +9,9 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/app"
+	broadcastMock "github.com/axelarnetwork/axelar-core/sdk-utils/broadcast/mock"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
-	broadcastMock "github.com/axelarnetwork/axelar-core/vald/broadcast/mock"
 	"github.com/axelarnetwork/axelar-core/vald/tss/rpc/mock"
 )
 
