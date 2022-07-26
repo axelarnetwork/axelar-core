@@ -29,7 +29,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/utils"
-	"github.com/axelarnetwork/axelar-core/vald/broadcast"
+	"github.com/axelarnetwork/axelar-core/sdk-utils/broadcast"
 	"github.com/axelarnetwork/axelar-core/vald/config"
 	"github.com/axelarnetwork/axelar-core/vald/evm"
 	evmRPC "github.com/axelarnetwork/axelar-core/vald/evm/rpc"

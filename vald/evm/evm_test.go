@@ -20,9 +20,9 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/app/params"
+	mock2 "github.com/axelarnetwork/axelar-core/sdk-utils/broadcast/mock"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
-	mock2 "github.com/axelarnetwork/axelar-core/vald/broadcast/mock"
 	evmRpc "github.com/axelarnetwork/axelar-core/vald/evm/rpc"
 	"github.com/axelarnetwork/axelar-core/vald/evm/rpc/mock"
 	"github.com/axelarnetwork/axelar-core/x/evm/exported"
