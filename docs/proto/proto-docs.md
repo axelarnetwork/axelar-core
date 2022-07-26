@@ -167,8 +167,8 @@
   
 - [axelar/evm/v1beta1/events.proto](#axelar/evm/v1beta1/events.proto)
     - [ChainAdded](#axelar.evm.v1beta1.ChainAdded)
-    - [CommandBatchSignCompleted](#axelar.evm.v1beta1.CommandBatchSignCompleted)
-    - [CommandBatchSignFailed](#axelar.evm.v1beta1.CommandBatchSignFailed)
+    - [CommandBatchAborted](#axelar.evm.v1beta1.CommandBatchAborted)
+    - [CommandBatchSigned](#axelar.evm.v1beta1.CommandBatchSigned)
     - [ConfirmDepositStarted](#axelar.evm.v1beta1.ConfirmDepositStarted)
     - [ConfirmGatewayTxStarted](#axelar.evm.v1beta1.ConfirmGatewayTxStarted)
     - [ConfirmKeyTransferStarted](#axelar.evm.v1beta1.ConfirmKeyTransferStarted)
@@ -2737,9 +2737,9 @@ TransferKey contains information for a transfer ownership or operatorship
 
 
 
-<a name="axelar.evm.v1beta1.CommandBatchSignCompleted"></a>
+<a name="axelar.evm.v1beta1.CommandBatchAborted"></a>
 
-### CommandBatchSignCompleted
+### CommandBatchAborted
 
 
 
@@ -2753,9 +2753,9 @@ TransferKey contains information for a transfer ownership or operatorship
 
 
 
-<a name="axelar.evm.v1beta1.CommandBatchSignFailed"></a>
+<a name="axelar.evm.v1beta1.CommandBatchSigned"></a>
 
-### CommandBatchSignFailed
+### CommandBatchSigned
 
 
 

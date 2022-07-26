@@ -116,7 +116,7 @@ message ChainAdded {
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
 }
 
-message CommandBatchSignCompleted {
+message CommandBatchSigned {
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
@@ -124,7 +124,7 @@ message CommandBatchSignCompleted {
   ;
 }
 
-message CommandBatchSignFailed {
+message CommandBatchAborted {
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
