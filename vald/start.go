@@ -256,14 +256,14 @@ func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, ax
 
 	heartbeat := subscribe(tssTypes.EventTypeHeartBeat, tssTypes.ModuleName, tssTypes.AttributeValueSend)
 
-	evmNewChain := eventBus.Subscribe(eventFilter[*evmTypes.ChainAdded]())
-	evmDepConf := eventBus.Subscribe(eventFilter[*evmTypes.ConfirmDepositStarted]())
-	evmTokConf := eventBus.Subscribe(eventFilter[*evmTypes.ConfirmTokenStarted]())
-	evmTraConf := eventBus.Subscribe(eventFilter[*evmTypes.ConfirmKeyTransferStarted]())
-	evmGatewayTxConf := eventBus.Subscribe(eventFilter[*evmTypes.ConfirmGatewayTxStarted]())
+	evmNewChain := eventBus.Subscribe(tmEvents.Filter[*evmTypes.ChainAdded]())
+	evmDepConf := eventBus.Subscribe(tmEvents.Filter[*evmTypes.ConfirmDepositStarted]())
+	evmTokConf := eventBus.Subscribe(tmEvents.Filter[*evmTypes.ConfirmTokenStarted]())
+	evmTraConf := eventBus.Subscribe(tmEvents.Filter[*evmTypes.ConfirmKeyTransferStarted]())
+	evmGatewayTxConf := eventBus.Subscribe(tmEvents.Filter[*evmTypes.ConfirmGatewayTxStarted]())
 
-	multisigKeygen := eventBus.Subscribe(eventFilter[*multisigTypes.KeygenStarted]())
-	multisigSigning := eventBus.Subscribe(eventFilter[*multisigTypes.SigningStarted]())
+	multisigKeygen := eventBus.Subscribe(tmEvents.Filter[*multisigTypes.KeygenStarted]())
+	multisigSigning := eventBus.Subscribe(tmEvents.Filter[*multisigTypes.SigningStarted]())
 
 	eventCtx, cancelEventCtx := context.WithCancel(context.Background())
 	mgr := jobs.NewMgr(eventCtx)
@@ -498,14 +498,3 @@ func (f RWFile) ReadAll() ([]byte, error) { return os.ReadFile(f.path) }
 
 // WriteAll writes the given bytes to a file. Creates a new fille if it does not exist, overwrites the previous content otherwise.
 func (f RWFile) WriteAll(bz []byte) error { return os.WriteFile(f.path, bz, RW) }
-
-func eventFilter[T proto.Message]() func(e tmEvents.ABCIEventWithHeight) bool {
-	return func(e tmEvents.ABCIEventWithHeight) bool {
-		typedEvent, err := sdk.ParseTypedEvent(e.Event)
-		if err != nil {
-			return false
-		}
-
-		return proto.MessageName(typedEvent) == proto.MessageName(*new(T))
-	}
-}
