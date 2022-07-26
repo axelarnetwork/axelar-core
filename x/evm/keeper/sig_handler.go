@@ -26,18 +26,25 @@ func NewSigHandler(cdc codec.Codec, keeper types.BaseKeeper) multisig.SigHandler
 }
 
 func (s sigHandler) HandleCompleted(ctx sdk.Context, sig codec.ProtoMarshaler, moduleMetadata codec.ProtoMarshaler) error {
-	commandBatch, err := s.getCommandBatch(ctx, moduleMetadata)
+	sigMetadata := moduleMetadata.(*types.SigMetadata)
+	commandBatch, err := s.getCommandBatch(ctx, sigMetadata)
 	if err != nil {
 		return err
 	}
 
 	funcs.MustNoErr(commandBatch.SetSigned(sig))
 
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.CommandBatchSignCompleted{
+		Chain:          sigMetadata.Chain,
+		CommandBatchID: sigMetadata.CommandBatchID,
+	}))
+
 	return nil
 }
 
 func (s sigHandler) HandleFailed(ctx sdk.Context, moduleMetadata codec.ProtoMarshaler) error {
-	commandBatch, err := s.getCommandBatch(ctx, moduleMetadata)
+	sigMetadata := moduleMetadata.(*types.SigMetadata)
+	commandBatch, err := s.getCommandBatch(ctx, sigMetadata)
 	if err != nil {
 		return err
 	}
@@ -47,12 +54,15 @@ func (s sigHandler) HandleFailed(ctx sdk.Context, moduleMetadata codec.ProtoMars
 		panic(fmt.Errorf("failed to abort command batch %s", hex.EncodeToString(commandBatch.GetID())))
 	}
 
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.CommandBatchSignFailed{
+		Chain:          sigMetadata.Chain,
+		CommandBatchID: sigMetadata.CommandBatchID,
+	}))
+
 	return nil
 }
 
-func (s sigHandler) getCommandBatch(ctx sdk.Context, moduleMetadata codec.ProtoMarshaler) (types.CommandBatch, error) {
-	sigMetadata := moduleMetadata.(*types.SigMetadata)
-
+func (s sigHandler) getCommandBatch(ctx sdk.Context, sigMetadata *types.SigMetadata) (types.CommandBatch, error) {
 	if !s.keeper.HasChain(ctx, sigMetadata.Chain) {
 		return types.CommandBatch{}, fmt.Errorf("chain %s does not exist as an EVM chain", sigMetadata.Chain)
 	}

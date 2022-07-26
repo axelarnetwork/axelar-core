@@ -167,6 +167,8 @@
   
 - [axelar/evm/v1beta1/events.proto](#axelar/evm/v1beta1/events.proto)
     - [ChainAdded](#axelar.evm.v1beta1.ChainAdded)
+    - [CommandBatchSignCompleted](#axelar.evm.v1beta1.CommandBatchSignCompleted)
+    - [CommandBatchSignFailed](#axelar.evm.v1beta1.CommandBatchSignFailed)
     - [ConfirmDepositStarted](#axelar.evm.v1beta1.ConfirmDepositStarted)
     - [ConfirmGatewayTxStarted](#axelar.evm.v1beta1.ConfirmGatewayTxStarted)
     - [ConfirmKeyTransferStarted](#axelar.evm.v1beta1.ConfirmKeyTransferStarted)
@@ -2729,6 +2731,38 @@ TransferKey contains information for a transfer ownership or operatorship
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.CommandBatchSignCompleted"></a>
+
+### CommandBatchSignCompleted
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `command_batch_id` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.CommandBatchSignFailed"></a>
+
+### CommandBatchSignFailed
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `command_batch_id` | [bytes](#bytes) |  |  |
 
 
 
