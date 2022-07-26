@@ -86,6 +86,16 @@
       "id": "terra",
       "name": "Terra",
       "image": "/images/chains/terra.png"
+    },
+    {
+      "id": "sei",
+      "name": "Sei",
+      "image": "/images/chains/sei.png"
+    },
+    {
+      "id": "fetch",
+      "name": "Fetch",
+      "image": "/images/chains/fetch.png"
     }
   ],
   "testnet-2": [

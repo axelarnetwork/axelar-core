@@ -45,8 +45,7 @@
           "blockExplorerUrls": ["https://bscscan.com"]
         }
       ],
-      "image": "/images/chains/binance.png",
-      "is_staging": true
+      "image": "/images/chains/binance.png"
     },
     {
       "id": "avalanche",

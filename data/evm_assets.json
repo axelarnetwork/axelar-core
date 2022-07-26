@@ -40,6 +40,13 @@
           "symbol": "axlUSDC",
           "decimals": 6,
           "transfer_fee": 1.0
+        },
+        {
+          "chain": "binance",
+          "address": "0x4268B8F0B87b6Eae5d897996E6b845ddbD99Adf3",
+          "symbol": "axlUSDC",
+          "decimals": 6,
+          "transfer_fee": 1.0
         }
       ]
     },
@@ -97,6 +104,49 @@
           "address": "0xDDc9E2891FA11a4CC5C223145e8d14B44f3077c9",
           "symbol": "axlDAI",
           "decimals": 18,
+          "transfer_fee": 1.0
+        }
+      ]
+    },
+    {
+      "id": "uusdt",
+      "name": "USDT - Tether USD",
+      "symbol": "USDT",
+      "image": "/images/assets/usdt.png",
+      "contracts": [
+        {
+          "chain": "moonbeam",
+          "address": "0xDFd74aF792bC6D45D1803F425CE62Dd16f8Ae038",
+          "symbol": "axlUSDT",
+          "decimals": 6,
+          "transfer_fee": 1.0
+        },
+        {
+          "chain": "fantom",
+          "address": "0xd226392C23fb3476274ED6759D4a478db3197d82",
+          "symbol": "axlUSDT",
+          "decimals": 6,
+          "transfer_fee": 1.0
+        },
+        {
+          "chain": "ethereum",
+          "address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "symbol": "USDT",
+          "decimals": 6,
+          "transfer_fee": 20.0
+        },
+        {
+          "chain": "avalanche",
+          "address": "0xF976ba91b6bb3468C91E4f02E68B37bc64a57e66",
+          "symbol": "axlUSDT",
+          "decimals": 6,
+          "transfer_fee": 1.0
+        },
+        {
+          "chain": "polygon",
+          "address": "0xCeED2671d8634e3ee65000EDbbEe66139b132fBf",
+          "symbol": "axlUSDT",
+          "decimals": 6,
           "transfer_fee": 1.0
         }
       ]
@@ -177,6 +227,21 @@
       ]
     },
     {
+      "id": "wbnb-wei",
+      "name": "WBNB - Wrapped BNB",
+      "symbol": "WBNB",
+      "image": "/images/assets/wbnb.png",
+      "contracts": [
+        {
+          "chain": "binance",
+          "address": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
+          "symbol": "WBNB",
+          "decimals": 18,
+          "transfer_fee": 0.005
+        }
+      ]
+    },
+    {
       "id": "wftm-wei",
       "name": "WFTM - Wrapped Fantom",
       "symbol": "WFTM",
@@ -231,49 +296,6 @@
           "symbol": "axlATOM",
           "decimals": 6,
           "transfer_fee": 0.1
-        }
-      ]
-    },
-    {
-      "id": "uusdt",
-      "name": "USDT - Tether USD",
-      "symbol": "USDT",
-      "image": "/images/assets/usdt.png",
-      "contracts": [
-        {
-          "chain": "moonbeam",
-          "address": "0xDFd74aF792bC6D45D1803F425CE62Dd16f8Ae038",
-          "symbol": "axlUSDT",
-          "decimals": 6,
-          "transfer_fee": 1.0
-        },
-        {
-          "chain": "fantom",
-          "address": "0xd226392C23fb3476274ED6759D4a478db3197d82",
-          "symbol": "axlUSDT",
-          "decimals": 6,
-          "transfer_fee": 1.0
-        },
-        {
-          "chain": "ethereum",
-          "address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
-          "symbol": "USDT",
-          "decimals": 6,
-          "transfer_fee": 20.0
-        },
-        {
-          "chain": "avalanche",
-          "address": "0xF976ba91b6bb3468C91E4f02E68B37bc64a57e66",
-          "symbol": "axlUSDT",
-          "decimals": 6,
-          "transfer_fee": 1.0
-        },
-        {
-          "chain": "polygon",
-          "address": "0xCeED2671d8634e3ee65000EDbbEe66139b132fBf",
-          "symbol": "axlUSDT",
-          "decimals": 6,
-          "transfer_fee": 1.0
         }
       ]
     },

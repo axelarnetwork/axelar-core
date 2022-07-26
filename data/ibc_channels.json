@@ -141,6 +141,26 @@
       "from": "axelarnet",
       "to": "kujira",
       "channel_id": "channel-19"
+    },
+    {
+      "from": "sei",
+      "to": "axelarnet",
+      "channel_id": "channel-29"
+    },
+    {
+      "from": "axelarnet",
+      "to": "sei",
+      "channel_id": "channel-35"
+    },
+    {
+      "from": "fetch",
+      "to": "axelarnet",
+      "channel_id": "channel-6"
+    },
+    {
+      "from": "axelarnet",
+      "to": "fetch",
+      "channel_id": "channel-25"
     }
   ]
 }
