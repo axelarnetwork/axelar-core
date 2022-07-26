@@ -34,10 +34,7 @@ func (s sigHandler) HandleCompleted(ctx sdk.Context, sig codec.ProtoMarshaler, m
 
 	funcs.MustNoErr(commandBatch.SetSigned(sig))
 
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.CommandBatchSignCompleted{
-		Chain:          sigMetadata.Chain,
-		CommandBatchID: sigMetadata.CommandBatchID,
-	}))
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewCommandBatchSigned(sigMetadata.Chain, sigMetadata.CommandBatchID)))
 
 	return nil
 }
@@ -54,10 +51,7 @@ func (s sigHandler) HandleFailed(ctx sdk.Context, moduleMetadata codec.ProtoMars
 		panic(fmt.Errorf("failed to abort command batch %s", hex.EncodeToString(commandBatch.GetID())))
 	}
 
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.CommandBatchSignFailed{
-		Chain:          sigMetadata.Chain,
-		CommandBatchID: sigMetadata.CommandBatchID,
-	}))
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewCommandBatchAborted(sigMetadata.Chain, sigMetadata.CommandBatchID)))
 
 	return nil
 }

@@ -58,3 +58,13 @@ func NewConfirmKeyTransferStarted(chain nexus.ChainName, txID Hash, gatewayAddre
 		PollParticipants:   participants,
 	}
 }
+
+// NewCommandBatchSigned returns a new CommandBatchSigned instance
+func NewCommandBatchSigned(chain nexus.ChainName, batchID []byte) *CommandBatchSigned {
+	return &CommandBatchSigned{Chain: chain, CommandBatchID: batchID}
+}
+
+// NewCommandBatchAborted returns a new CommandBatchAborted instance
+func NewCommandBatchAborted(chain nexus.ChainName, batchID []byte) *CommandBatchAborted {
+	return &CommandBatchAborted{Chain: chain, CommandBatchID: batchID}
+}
