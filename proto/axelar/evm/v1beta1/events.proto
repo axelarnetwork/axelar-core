@@ -115,3 +115,19 @@ message ChainAdded {
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
 }
+
+message CommandBatchSigned {
+  string chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  bytes command_batch_id = 3 [ (gogoproto.customname) = "CommandBatchID" ];
+  ;
+}
+
+message CommandBatchAborted {
+  string chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  bytes command_batch_id = 3 [ (gogoproto.customname) = "CommandBatchID" ];
+  ;
+}
