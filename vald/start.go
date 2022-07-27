@@ -211,11 +211,6 @@ func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, ax
 		return cl, nil
 	})
 	tssMgr := createTSSMgr(bc, clientCtx, axelarCfg, logger, valAddr.String(), cdc)
-	if len(recoveryJSON) > 0 {
-		if err = tssMgr.Recover(recoveryJSON); err != nil {
-			panic(fmt.Errorf("unable to perform tss recovery: %v", err))
-		}
-	}
 
 	evmMgr := createEVMMgr(axelarCfg, clientCtx, bc, logger, cdc, valAddr)
 	multisigMgr := createMultisigMgr(bc, clientCtx, axelarCfg, logger, valAddr)
@@ -228,11 +223,6 @@ func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, ax
 	stateStore := NewStateStore(stateSource)
 	startBlock, err := getStartBlock(axelarCfg, stateStore, nodeHeight, robustClient, logger)
 	if err != nil {
-		panic(err)
-	}
-
-	// Refresh keys after the node has synced
-	if err := tssMgr.RefreshKeys(ctx); err != nil {
 		panic(err)
 	}
 
@@ -290,7 +280,6 @@ func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, ax
 	}
 
 	processBlockHeader := func(event tmEvents.Event) error {
-		tssMgr.ProcessNewBlockHeader(event.Height)
 		return stateStore.SetState(event.Height)
 	}
 
@@ -434,11 +423,10 @@ func createTSSMgr(broadcaster broadcast.Broadcaster, cliCtx client.Context, axel
 		}
 		logger.Debug("successful connection to tofnd gRPC server")
 
-		// creates clients to communicate with the external tofnd process service
-		gg20client := tofnd.NewGG20Client(conn)
+		// creates client to communicate with the external tofnd process service
 		multiSigClient := tofnd.NewMultisigClient(conn)
 
-		tssMgr := tss.NewMgr(gg20client, multiSigClient, cliCtx, 2*time.Hour, valAddr, broadcaster, logger, cdc)
+		tssMgr := tss.NewMgr(multiSigClient, cliCtx, 2*time.Hour, valAddr, broadcaster, logger, cdc)
 
 		return tssMgr, nil
 	}
