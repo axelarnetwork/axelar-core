@@ -12,6 +12,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 )
 
@@ -65,23 +66,17 @@ func (q Querier) Key(c context.Context, req *types.KeyRequest) (*types.KeyRespon
 	}
 
 	participants := slices.Map(key.GetParticipants(), func(p sdk.ValAddress) types.KeyResponse_Participant {
-		pubKey, ok := key.GetPubKey(p)
-		if !ok {
-			panic("could not find pub key for participant")
-		}
-
 		return types.KeyResponse_Participant{
 			Weight: key.GetWeight(p),
-			PubKey: pubKey.String(),
+			PubKey: funcs.MustOk(key.GetPubKey(p)).String(),
 		}
 	})
-
 	sort.SliceStable(participants, func(i, j int) bool {
 		return participants[i].Weight.GT(participants[j].Weight)
 	})
 
 	return &types.KeyResponse{
-		ID:              req.KeyID,
+		KeyID:           req.KeyID,
 		Height:          key.GetHeight(),
 		Timestamp:       key.GetTimestamp(),
 		ThresholdWeight: key.GetMinPassingWeight(),

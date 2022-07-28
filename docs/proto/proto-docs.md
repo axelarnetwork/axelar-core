@@ -291,8 +291,7 @@
     - [KeyIDResponse](#axelar.multisig.v1beta1.KeyIDResponse)
     - [KeyRequest](#axelar.multisig.v1beta1.KeyRequest)
     - [KeyResponse](#axelar.multisig.v1beta1.KeyResponse)
-    - [KeyResponse.ParticipantsEntry](#axelar.multisig.v1beta1.KeyResponse.ParticipantsEntry)
-    - [KeyResponse.PubKeysEntry](#axelar.multisig.v1beta1.KeyResponse.PubKeysEntry)
+    - [KeyResponse.Participant](#axelar.multisig.v1beta1.KeyResponse.Participant)
     - [NextKeyIDRequest](#axelar.multisig.v1beta1.NextKeyIDRequest)
     - [NextKeyIDResponse](#axelar.multisig.v1beta1.NextKeyIDResponse)
   
@@ -4547,46 +4546,29 @@ KeyResponse contains the key corresponding to a given key id.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `id` | [string](#string) |  |  |
-| `pub_keys` | [KeyResponse.PubKeysEntry](#axelar.multisig.v1beta1.KeyResponse.PubKeysEntry) | repeated |  |
-| `threshold_weight` | [bytes](#bytes) |  |  |
-| `state` | [KeyState](#axelar.multisig.v1beta1.KeyState) |  |  |
+| `key_id` | [string](#string) |  |  |
+| `state` | [axelar.multisig.exported.v1beta1.MultisigState](#axelar.multisig.exported.v1beta1.MultisigState) |  |  |
 | `height` | [int64](#int64) |  |  |
 | `timestamp` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
-| `participants` | [KeyResponse.ParticipantsEntry](#axelar.multisig.v1beta1.KeyResponse.ParticipantsEntry) | repeated |  |
-| `bonded_weight` | [bytes](#bytes) |  |  |
+| `threshold_weight` | [string](#string) |  |  |
+| `bonded_weight` | [string](#string) |  |  |
+| `participants` | [KeyResponse.Participant](#axelar.multisig.v1beta1.KeyResponse.Participant) | repeated | Keygen participants in descending order by weight |
 
 
 
 
 
 
-<a name="axelar.multisig.v1beta1.KeyResponse.ParticipantsEntry"></a>
+<a name="axelar.multisig.v1beta1.KeyResponse.Participant"></a>
 
-### KeyResponse.ParticipantsEntry
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `key` | [string](#string) |  |  |
-| `value` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="axelar.multisig.v1beta1.KeyResponse.PubKeysEntry"></a>
-
-### KeyResponse.PubKeysEntry
+### KeyResponse.Participant
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `key` | [string](#string) |  |  |
-| `value` | [bytes](#bytes) |  |  |
+| `weight` | [string](#string) |  |  |
+| `pub_key` | [string](#string) |  |  |
 
 
 
