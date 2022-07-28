@@ -942,7 +942,9 @@ func TestHandleTransferKey(t *testing.T) {
 					return nil, false
 				}
 
-				return multisigTypesTestuilts.Key(), true
+				key := multisigTypesTestuilts.Key()
+
+				return &key, true
 			}
 		}
 	}
@@ -950,9 +952,9 @@ func TestHandleTransferKey(t *testing.T) {
 	keyMatches := func() {
 		key := multisigTypesTestuilts.Key()
 		multisigKeeper.GetKeyFunc = func(sdk.Context, multisig.KeyID) (multisig.Key, bool) {
-			return key, true
+			return &key, true
 		}
-		addressWeights, newThreshold := types.ParseMultisigKey(key)
+		addressWeights, newThreshold := types.ParseMultisigKey(&key)
 		addresses := maps.Keys(addressWeights)
 		newOperators := slices.Map(addresses, func(a string) types.Address { return types.Address(common.HexToAddress(a)) })
 		newWeights := slices.Map(addresses, func(a string) sdk.Uint { return addressWeights[a] })

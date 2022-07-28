@@ -77,6 +77,7 @@ func (q Querier) Key(c context.Context, req *types.KeyRequest) (*types.KeyRespon
 
 	return &types.KeyResponse{
 		KeyID:           req.KeyID,
+		State:           key.GetState(),
 		Height:          key.GetHeight(),
 		Timestamp:       key.GetTimestamp(),
 		ThresholdWeight: key.GetMinPassingWeight(),

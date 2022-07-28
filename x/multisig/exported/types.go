@@ -24,6 +24,7 @@ type Key interface {
 	GetPubKey(sdk.ValAddress) (PublicKey, bool)
 	GetWeight(sdk.ValAddress) sdk.Uint
 	GetMinPassingWeight() sdk.Uint
+	GetState() KeyState
 	GetHeight() int64
 	GetTimestamp() time.Time
 	GetBondedWeight() sdk.Uint

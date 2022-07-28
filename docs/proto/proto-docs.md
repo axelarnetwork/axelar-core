@@ -130,6 +130,7 @@
     - [PollState](#axelar.vote.exported.v1beta1.PollState)
   
 - [axelar/multisig/exported/v1beta1/types.proto](#axelar/multisig/exported/v1beta1/types.proto)
+    - [KeyState](#axelar.multisig.exported.v1beta1.KeyState)
     - [MultisigState](#axelar.multisig.exported.v1beta1.MultisigState)
   
 - [axelar/evm/v1beta1/types.proto](#axelar/evm/v1beta1/types.proto)
@@ -283,8 +284,6 @@
     - [MultiSig](#axelar.multisig.v1beta1.MultiSig)
     - [MultiSig.SigsEntry](#axelar.multisig.v1beta1.MultiSig.SigsEntry)
     - [SigningSession](#axelar.multisig.v1beta1.SigningSession)
-  
-    - [KeyState](#axelar.multisig.v1beta1.KeyState)
   
 - [axelar/multisig/v1beta1/query.proto](#axelar/multisig/v1beta1/query.proto)
     - [KeyIDRequest](#axelar.multisig.v1beta1.KeyIDRequest)
@@ -2164,6 +2163,19 @@ PollParticipants should be embedded in poll events in other modules
 
 
  <!-- end messages -->
+
+
+<a name="axelar.multisig.exported.v1beta1.KeyState"></a>
+
+### KeyState
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| KEY_STATE_UNSPECIFIED | 0 |  |
+| KEY_STATE_ASSIGNED | 1 |  |
+| KEY_STATE_ACTIVE | 2 |  |
+
 
 
 <a name="axelar.multisig.exported.v1beta1.MultisigState"></a>
@@ -4331,7 +4343,7 @@ GenesisState represents the genesis state
 | `snapshot` | [axelar.snapshot.exported.v1beta1.Snapshot](#axelar.snapshot.exported.v1beta1.Snapshot) |  |  |
 | `pub_keys` | [Key.PubKeysEntry](#axelar.multisig.v1beta1.Key.PubKeysEntry) | repeated |  |
 | `signing_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
-| `state` | [KeyState](#axelar.multisig.v1beta1.KeyState) |  |  |
+| `state` | [axelar.multisig.exported.v1beta1.KeyState](#axelar.multisig.exported.v1beta1.KeyState) |  |  |
 
 
 
@@ -4465,19 +4477,6 @@ GenesisState represents the genesis state
 
  <!-- end messages -->
 
-
-<a name="axelar.multisig.v1beta1.KeyState"></a>
-
-### KeyState
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| KEY_STATE_UNSPECIFIED | 0 |  |
-| KEY_STATE_ASSIGNED | 1 |  |
-| KEY_STATE_ACTIVE | 2 |  |
-
-
  <!-- end enums -->
 
  <!-- end HasExtensions -->
@@ -4547,7 +4546,7 @@ KeyResponse contains the key corresponding to a given key id.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `key_id` | [string](#string) |  |  |
-| `state` | [axelar.multisig.exported.v1beta1.MultisigState](#axelar.multisig.exported.v1beta1.MultisigState) |  |  |
+| `state` | [axelar.multisig.exported.v1beta1.KeyState](#axelar.multisig.exported.v1beta1.KeyState) |  |  |
 | `height` | [int64](#int64) |  |  |
 | `timestamp` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
 | `threshold_weight` | [string](#string) |  |  |
@@ -4774,7 +4773,7 @@ Query defines the gRPC querier service.
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `KeyID` | [KeyIDRequest](#axelar.multisig.v1beta1.KeyIDRequest) | [KeyIDResponse](#axelar.multisig.v1beta1.KeyIDResponse) | KeyID returns the key ID of a key assigned to a given chain. If no key is assigned, it returns the grpc NOT_FOUND error. | GET|/axelar/multisig/v1beta1/key_id/{chain}|
 | `NextKeyID` | [NextKeyIDRequest](#axelar.multisig.v1beta1.NextKeyIDRequest) | [NextKeyIDResponse](#axelar.multisig.v1beta1.NextKeyIDResponse) | NextKeyID returns the key ID assigned for the next rotation on a given chain. If no key rotation is in progress, it returns the grpc NOT_FOUND error. | GET|/axelar/multisig/v1beta1/next_key_id/{chain}|
-| `Key` | [KeyRequest](#axelar.multisig.v1beta1.KeyRequest) | [KeyResponse](#axelar.multisig.v1beta1.KeyResponse) | Key returns the key corresponding to a given key ID. If no key is found, it returns the grpc NOT_FOUND error. | GET|/axelar/multisig/v1beta1/key/{key_id}|
+| `Key` | [KeyRequest](#axelar.multisig.v1beta1.KeyRequest) | [KeyResponse](#axelar.multisig.v1beta1.KeyResponse) | Key returns the key corresponding to a given key ID. If no key is found, it returns the grpc NOT_FOUND error. | GET|/axelar/multisig/v1beta1/key|
 
  <!-- end services -->
 

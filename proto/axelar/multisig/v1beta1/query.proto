@@ -57,7 +57,7 @@ message KeyResponse {
     (gogoproto.casttype) =
         "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
   ];
-  multisig.exported.v1beta1.MultisigState state = 2;
+  multisig.exported.v1beta1.KeyState state = 2;
   int64 height = 3;
   google.protobuf.Timestamp timestamp = 4
       [ (gogoproto.nullable) = false, (gogoproto.stdtime) = true ];
