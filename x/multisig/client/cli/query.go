@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
 )
 
@@ -24,6 +25,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 	multisigQueryCmd.AddCommand(
 		GetCmdKeyID(queryRoute),
 		GetCmdNextKeyID(queryRoute),
+		GetCmdKey(queryRoute),
 	)
 
 	return multisigQueryCmd
@@ -59,7 +61,7 @@ func GetCmdKeyID(queryRoute string) *cobra.Command {
 	return cmd
 }
 
-// GetCmdNextKeyID returns the key ID assigned for the next rotation on a given chain and empty if none is assigned
+// GetCmdNextKeyID returns the key ID assigned for the next rotation on a given chain
 func GetCmdNextKeyID(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "next-key-id [chain]",
@@ -76,6 +78,36 @@ func GetCmdNextKeyID(queryRoute string) *cobra.Command {
 			res, err := queryClient.NextKeyID(cmd.Context(),
 				&types.NextKeyIDRequest{
 					Chain: chain,
+				})
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdKey returns the key of the given ID
+func GetCmdKey(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "key [key-id]",
+		Short: "Returns the key of the given ID",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			keyID := multisig.KeyID(utils.NormalizeString(args[0]))
+			queryClient := types.NewQueryServiceClient(clientCtx)
+			res, err := queryClient.Key(cmd.Context(),
+				&types.KeyRequest{
+					KeyID: keyID,
 				})
 			if err != nil {
 				return err

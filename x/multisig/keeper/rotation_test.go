@@ -125,7 +125,7 @@ func TestKeeper(t *testing.T) {
 						currentKey, ok := k.GetCurrentKey(ctx, chainName)
 						assert.True(t, ok)
 						assert.Equal(t, keyID1, currentKey.(*types.Key).ID)
-						assert.Equal(t, types.Active, currentKey.(*types.Key).State)
+						assert.Equal(t, exported.Active, currentKey.(*types.Key).State)
 					}),
 			).
 			Run(t)
@@ -148,9 +148,9 @@ func TestKeeper(t *testing.T) {
 					key := funcs.MustOk(k.GetKey(ctx, keys[i].ID))
 
 					if i == 0 {
-						assert.Equal(t, types.Inactive, key.(*types.Key).State)
+						assert.Equal(t, exported.Inactive, key.(*types.Key).State)
 					} else {
-						assert.Equal(t, types.Active, key.(*types.Key).State)
+						assert.Equal(t, exported.Active, key.(*types.Key).State)
 					}
 				}
 			}).

@@ -52,7 +52,8 @@ func TestOptimizeSignatureSet(t *testing.T) {
 	}
 
 	givenWeightsAndSigs := Given("a multisig key", func() {
-		key = multisig.Key(multisigTestutils2.Key())
+		k := multisigTestutils2.Key()
+		key = multisig.Key(&k)
 		participants = key.GetParticipants()
 
 		addressWeights = make(map[string]sdk.Uint, len(participants))

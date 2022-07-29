@@ -8,6 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"sync"
+	"time"
 )
 
 // Ensure, that SigHandlerMock does implement exported.SigHandler.
@@ -146,6 +147,12 @@ var _ exported.Key = &KeyMock{}
 //
 // 		// make and configure a mocked exported.Key
 // 		mockedKey := &KeyMock{
+// 			GetBondedWeightFunc: func() sdk.Uint {
+// 				panic("mock out the GetBondedWeight method")
+// 			},
+// 			GetHeightFunc: func() int64 {
+// 				panic("mock out the GetHeight method")
+// 			},
 // 			GetMinPassingWeightFunc: func() sdk.Uint {
 // 				panic("mock out the GetMinPassingWeight method")
 // 			},
@@ -154,6 +161,12 @@ var _ exported.Key = &KeyMock{}
 // 			},
 // 			GetPubKeyFunc: func(valAddress sdk.ValAddress) (exported.PublicKey, bool) {
 // 				panic("mock out the GetPubKey method")
+// 			},
+// 			GetStateFunc: func() exported.KeyState {
+// 				panic("mock out the GetState method")
+// 			},
+// 			GetTimestampFunc: func() time.Time {
+// 				panic("mock out the GetTimestamp method")
 // 			},
 // 			GetWeightFunc: func(valAddress sdk.ValAddress) sdk.Uint {
 // 				panic("mock out the GetWeight method")
@@ -165,6 +178,12 @@ var _ exported.Key = &KeyMock{}
 //
 // 	}
 type KeyMock struct {
+	// GetBondedWeightFunc mocks the GetBondedWeight method.
+	GetBondedWeightFunc func() sdk.Uint
+
+	// GetHeightFunc mocks the GetHeight method.
+	GetHeightFunc func() int64
+
 	// GetMinPassingWeightFunc mocks the GetMinPassingWeight method.
 	GetMinPassingWeightFunc func() sdk.Uint
 
@@ -174,11 +193,23 @@ type KeyMock struct {
 	// GetPubKeyFunc mocks the GetPubKey method.
 	GetPubKeyFunc func(valAddress sdk.ValAddress) (exported.PublicKey, bool)
 
+	// GetStateFunc mocks the GetState method.
+	GetStateFunc func() exported.KeyState
+
+	// GetTimestampFunc mocks the GetTimestamp method.
+	GetTimestampFunc func() time.Time
+
 	// GetWeightFunc mocks the GetWeight method.
 	GetWeightFunc func(valAddress sdk.ValAddress) sdk.Uint
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// GetBondedWeight holds details about calls to the GetBondedWeight method.
+		GetBondedWeight []struct {
+		}
+		// GetHeight holds details about calls to the GetHeight method.
+		GetHeight []struct {
+		}
 		// GetMinPassingWeight holds details about calls to the GetMinPassingWeight method.
 		GetMinPassingWeight []struct {
 		}
@@ -190,16 +221,78 @@ type KeyMock struct {
 			// ValAddress is the valAddress argument value.
 			ValAddress sdk.ValAddress
 		}
+		// GetState holds details about calls to the GetState method.
+		GetState []struct {
+		}
+		// GetTimestamp holds details about calls to the GetTimestamp method.
+		GetTimestamp []struct {
+		}
 		// GetWeight holds details about calls to the GetWeight method.
 		GetWeight []struct {
 			// ValAddress is the valAddress argument value.
 			ValAddress sdk.ValAddress
 		}
 	}
+	lockGetBondedWeight     sync.RWMutex
+	lockGetHeight           sync.RWMutex
 	lockGetMinPassingWeight sync.RWMutex
 	lockGetParticipants     sync.RWMutex
 	lockGetPubKey           sync.RWMutex
+	lockGetState            sync.RWMutex
+	lockGetTimestamp        sync.RWMutex
 	lockGetWeight           sync.RWMutex
+}
+
+// GetBondedWeight calls GetBondedWeightFunc.
+func (mock *KeyMock) GetBondedWeight() sdk.Uint {
+	if mock.GetBondedWeightFunc == nil {
+		panic("KeyMock.GetBondedWeightFunc: method is nil but Key.GetBondedWeight was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockGetBondedWeight.Lock()
+	mock.calls.GetBondedWeight = append(mock.calls.GetBondedWeight, callInfo)
+	mock.lockGetBondedWeight.Unlock()
+	return mock.GetBondedWeightFunc()
+}
+
+// GetBondedWeightCalls gets all the calls that were made to GetBondedWeight.
+// Check the length with:
+//     len(mockedKey.GetBondedWeightCalls())
+func (mock *KeyMock) GetBondedWeightCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockGetBondedWeight.RLock()
+	calls = mock.calls.GetBondedWeight
+	mock.lockGetBondedWeight.RUnlock()
+	return calls
+}
+
+// GetHeight calls GetHeightFunc.
+func (mock *KeyMock) GetHeight() int64 {
+	if mock.GetHeightFunc == nil {
+		panic("KeyMock.GetHeightFunc: method is nil but Key.GetHeight was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockGetHeight.Lock()
+	mock.calls.GetHeight = append(mock.calls.GetHeight, callInfo)
+	mock.lockGetHeight.Unlock()
+	return mock.GetHeightFunc()
+}
+
+// GetHeightCalls gets all the calls that were made to GetHeight.
+// Check the length with:
+//     len(mockedKey.GetHeightCalls())
+func (mock *KeyMock) GetHeightCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockGetHeight.RLock()
+	calls = mock.calls.GetHeight
+	mock.lockGetHeight.RUnlock()
+	return calls
 }
 
 // GetMinPassingWeight calls GetMinPassingWeightFunc.
@@ -282,6 +375,58 @@ func (mock *KeyMock) GetPubKeyCalls() []struct {
 	mock.lockGetPubKey.RLock()
 	calls = mock.calls.GetPubKey
 	mock.lockGetPubKey.RUnlock()
+	return calls
+}
+
+// GetState calls GetStateFunc.
+func (mock *KeyMock) GetState() exported.KeyState {
+	if mock.GetStateFunc == nil {
+		panic("KeyMock.GetStateFunc: method is nil but Key.GetState was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockGetState.Lock()
+	mock.calls.GetState = append(mock.calls.GetState, callInfo)
+	mock.lockGetState.Unlock()
+	return mock.GetStateFunc()
+}
+
+// GetStateCalls gets all the calls that were made to GetState.
+// Check the length with:
+//     len(mockedKey.GetStateCalls())
+func (mock *KeyMock) GetStateCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockGetState.RLock()
+	calls = mock.calls.GetState
+	mock.lockGetState.RUnlock()
+	return calls
+}
+
+// GetTimestamp calls GetTimestampFunc.
+func (mock *KeyMock) GetTimestamp() time.Time {
+	if mock.GetTimestampFunc == nil {
+		panic("KeyMock.GetTimestampFunc: method is nil but Key.GetTimestamp was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockGetTimestamp.Lock()
+	mock.calls.GetTimestamp = append(mock.calls.GetTimestamp, callInfo)
+	mock.lockGetTimestamp.Unlock()
+	return mock.GetTimestampFunc()
+}
+
+// GetTimestampCalls gets all the calls that were made to GetTimestamp.
+// Check the length with:
+//     len(mockedKey.GetTimestampCalls())
+func (mock *KeyMock) GetTimestampCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockGetTimestamp.RLock()
+	calls = mock.calls.GetTimestamp
+	mock.lockGetTimestamp.RUnlock()
 	return calls
 }
 
