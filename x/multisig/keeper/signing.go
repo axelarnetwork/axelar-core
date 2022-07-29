@@ -73,7 +73,7 @@ func (k Keeper) Sign(ctx sdk.Context, keyID exported.KeyID, payloadHash exported
 	if !ok {
 		return fmt.Errorf("key %s not found", keyID)
 	}
-	if key.State != types.Active {
+	if key.State != exported.Active {
 		return fmt.Errorf("key %s is not activated yet", keyID)
 	}
 

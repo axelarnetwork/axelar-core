@@ -45,15 +45,22 @@ service MsgService {
 // Query defines the gRPC querier service.
 service QueryService {
   // KeyID returns the key ID of a key assigned to a given chain.
-  // If no key is assigned, it returns an empty string.
+  // If no key is assigned, it returns the grpc NOT_FOUND error.
   rpc KeyID(KeyIDRequest) returns (KeyIDResponse) {
     option (google.api.http).get = "/axelar/multisig/v1beta1/key_id/{chain}";
   }
 
   // NextKeyID returns the key ID assigned for the next rotation on a given
-  // chain. If no key rotation is in progress, it returns the empty string.
+  // chain. If no key rotation is in progress, it returns the grpc NOT_FOUND
+  // error.
   rpc NextKeyID(NextKeyIDRequest) returns (NextKeyIDResponse) {
     option (google.api.http).get =
         "/axelar/multisig/v1beta1/next_key_id/{chain}";
+  }
+
+  // Key returns the key corresponding to a given key ID.
+  // If no key is found, it returns the grpc NOT_FOUND error.
+  rpc Key(KeyRequest) returns (KeyResponse) {
+    option (google.api.http).get = "/axelar/multisig/v1beta1/key";
   }
 }

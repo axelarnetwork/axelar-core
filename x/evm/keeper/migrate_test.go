@@ -212,7 +212,7 @@ func TestMigrateCommandBatchSignature(t *testing.T) {
 				}
 
 				if batch.KeyID != commandBatches[0].KeyID {
-					keys[batch.KeyID] = multisigtypes.Key{
+					keys[batch.KeyID] = &multisigtypes.Key{
 						ID:      batch.KeyID,
 						PubKeys: pubKeys,
 					}

@@ -49,7 +49,7 @@ func (k Keeper) AssignKey(ctx sdk.Context, chainName nexus.ChainName, keyID expo
 	if !ok {
 		return fmt.Errorf("key %s not found", keyID)
 	}
-	if key.State != types.Inactive {
+	if key.State != exported.Inactive {
 		return fmt.Errorf("key %s is already assigned", keyID)
 	}
 
@@ -58,7 +58,7 @@ func (k Keeper) AssignKey(ctx sdk.Context, chainName nexus.ChainName, keyID expo
 		return fmt.Errorf("next key of chain %s already assigned", chainName)
 	}
 
-	key.State = types.Assigned
+	key.State = exported.Assigned
 	k.setKey(ctx, key)
 	k.setKeyEpoch(ctx, types.NewKeyEpoch(nextRotationCount, chainName, keyID))
 
@@ -80,10 +80,10 @@ func (k Keeper) RotateKey(ctx sdk.Context, chainName nexus.ChainName) error {
 	}
 
 	key := funcs.MustOk(k.getKey(ctx, keyEpoch.GetKeyID()))
-	if key.State != types.Assigned {
+	if key.State != exported.Assigned {
 		panic(fmt.Errorf("key must be assigned when being rotated to"))
 	}
-	key.State = types.Active
+	key.State = exported.Active
 
 	k.setKey(ctx, key)
 	k.setKeyRotationCount(ctx, chainName, nextRotationCount)
@@ -114,12 +114,12 @@ func (k Keeper) GetActiveKeyIDs(ctx sdk.Context, chainName nexus.ChainName) []ex
 		key := funcs.MustOk(k.getKey(ctx, epoch.KeyID))
 
 		switch key.State {
-		case types.Inactive:
+		case exported.Inactive:
 			// assumption: once an epoch is inactive, no older epoch is active so we can return early
 			return keys
-		case types.Assigned:
+		case exported.Assigned:
 			continue
-		case types.Active:
+		case exported.Active:
 			keys = append(keys, key.ID)
 		default:
 			panic(fmt.Sprintf("unexpected key state %s", key.State.String()))
@@ -134,7 +134,7 @@ func (k Keeper) deactivateKeyAtEpoch(ctx sdk.Context, chainName nexus.ChainName,
 	keyEpoch := funcs.MustOk(k.getKeyEpoch(ctx, chainName, epoch))
 	key := funcs.MustOk(k.getKey(ctx, keyEpoch.GetKeyID()))
 
-	key.State = types.Inactive
+	key.State = exported.Inactive
 	k.setKey(ctx, key)
 }
 

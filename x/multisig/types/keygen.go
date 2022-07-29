@@ -2,6 +2,7 @@ package types
 
 import (
 	fmt "fmt"
+	time "time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"golang.org/x/exp/maps"
@@ -167,6 +168,21 @@ func (m Key) GetPubKey(p sdk.ValAddress) (exported.PublicKey, bool) {
 // GetWeight returns the weight of the given participant
 func (m Key) GetWeight(p sdk.ValAddress) sdk.Uint {
 	return m.Snapshot.GetParticipantWeight(p)
+}
+
+// GetHeight returns the height of the key snapshot
+func (m Key) GetHeight() int64 {
+	return m.Snapshot.Height
+}
+
+// GetTimestamp returns the timestamp of the key snapshot
+func (m Key) GetTimestamp() time.Time {
+	return m.Snapshot.Timestamp
+}
+
+// GetBondedWeight returns the bonded weight of the key snapshot
+func (m Key) GetBondedWeight() sdk.Uint {
+	return m.Snapshot.BondedWeight
 }
 
 // ValidateBasic returns an error if the given key is invalid; nil otherwise
