@@ -110,10 +110,14 @@ message ChainsByAssetResponse {
 // recipient address for a given deposit address
 message RecipientAddressRequest {
   string deposit_addr = 1;
-  string deposit_chain = 2;
+  string deposit_chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
 }
 
 message RecipientAddressResponse {
   string recipient_addr = 1;
-  string recipient_chain = 2;
+  string recipient_chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
 };
