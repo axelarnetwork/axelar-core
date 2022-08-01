@@ -22,8 +22,8 @@ var (
 
 	transferPrefix       = utils.KeyFromStr("ibc_transfer")
 	ibcTransferQueueName = "ibc_transfer_queue"
-	nonceKey             = key.FromUInt(uint(1))
-	failedTransferPrefix = key.FromUInt(uint(2))
+	nonceKey             = key.FromUInt[uint64](1)
+	failedTransferPrefix = key.FromUInt[uint64](2)
 )
 
 // Keeper provides access to all state changes regarding the Axelarnet module
