@@ -350,13 +350,7 @@ func (s msgServer) RouteIBCTransfers(c context.Context, _ *types.RouteIBCTransfe
 				continue
 			}
 
-			err = s.BaseKeeper.EnqueueTransfer(ctx, types.IBCTransfer{
-				Sender:    sender,
-				Receiver:  p.Recipient.Address,
-				Token:     token,
-				PortID:    portID,
-				ChannelID: channelID,
-			})
+			err = s.BaseKeeper.EnqueueTransfer(ctx, types.NewIBCTransfer(sender, p.Recipient.Address, token, portID, channelID))
 			if err != nil {
 				return nil, err
 			}
