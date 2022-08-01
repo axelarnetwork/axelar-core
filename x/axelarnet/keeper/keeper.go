@@ -1,15 +1,16 @@
 package keeper
 
 import (
-	"encoding/binary"
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
+	gogoprototypes "github.com/gogo/protobuf/types"
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/utils/key"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/utils/slices"
@@ -19,9 +20,10 @@ var (
 	cosmosChainPrefix = utils.KeyFromStr("cosmos_chain")
 	feeCollector      = utils.KeyFromStr("fee_collector")
 
-	nonceKey             = utils.KeyFromStr("nonce")
 	transferPrefix       = utils.KeyFromStr("ibc_transfer")
 	ibcTransferQueueName = "ibc_transfer_queue"
+	nonceKey             = key.FromUInt(uint(1))
+	failedTransferPrefix = key.FromUInt(uint(2))
 )
 
 // Keeper provides access to all state changes regarding the Axelarnet module
@@ -171,9 +173,7 @@ func (k Keeper) GetIBCTransferQueue(ctx sdk.Context) utils.KVQueue {
 
 // EnqueueTransfer stores the pending ibc transfer in the queue
 func (k Keeper) EnqueueTransfer(ctx sdk.Context, transfer types.IBCTransfer) error {
-	id := k.getNonce(ctx)
-	transfer.SetID(id)
-	k.setNonce(ctx, id+1)
+	transfer.SetID(k.nextTransferID(ctx))
 
 	key := transferPrefix.AppendStr(transfer.ID.String())
 	if k.getStore(ctx).Has(key) {
@@ -184,19 +184,12 @@ func (k Keeper) EnqueueTransfer(ctx sdk.Context, transfer types.IBCTransfer) err
 	return nil
 }
 
-func (k Keeper) getNonce(ctx sdk.Context) uint64 {
-	if bz := k.getStore(ctx).GetRaw(nonceKey); bz != nil {
-		return binary.LittleEndian.Uint64(bz)
-	}
+func (k Keeper) nextTransferID(ctx sdk.Context) nexus.TransferID {
+	var val gogoprototypes.UInt64Value
+	k.getStore(ctx).GetNew(nonceKey, &val)
+	defer k.getStore(ctx).SetNew(nonceKey, &gogoprototypes.UInt64Value{Value: val.Value + 1})
 
-	return 0
-}
-
-func (k Keeper) setNonce(ctx sdk.Context, nonce uint64) {
-	bz := make([]byte, 8)
-	binary.LittleEndian.PutUint64(bz, nonce)
-
-	k.getStore(ctx).SetRaw(nonceKey, bz)
+	return nexus.TransferID(val.Value)
 }
 
 // validateIBCTransferQueueState checks if the keys of the given map have the correct format to be imported as ibc transfer queue state.
@@ -217,4 +210,39 @@ func (k Keeper) validateIBCTransferQueueState(state utils.QueueState, queueName 
 	}
 
 	return nil
+}
+
+func getFailedTransferKey(id nexus.TransferID) key.Key {
+	return failedTransferPrefix.Append(key.FromBz(id.Bytes()))
+}
+
+// GetFailedTransfer returns the failed transfer for the given transfer ID
+func (k Keeper) GetFailedTransfer(ctx sdk.Context, id nexus.TransferID) (transfer types.IBCTransfer, ok bool) {
+	return transfer, k.getStore(ctx).GetNew(getFailedTransferKey(id), &transfer)
+}
+
+// SetFailedTransfer saves failed IBC transfer
+func (k Keeper) SetFailedTransfer(ctx sdk.Context, transfer types.IBCTransfer) {
+	transfer.SetID(k.nextTransferID(ctx))
+	k.getStore(ctx).SetNew(getFailedTransferKey(transfer.ID), &transfer)
+
+	k.Logger(ctx).With(
+		"id", transfer.ID.String(),
+		"recipient", transfer.Receiver,
+		"token", transfer.Token,
+	).Info(fmt.Sprintf("set failed IBC transfer"))
+}
+
+func (k Keeper) getFailedTransfers(ctx sdk.Context) (failedTransfers []types.IBCTransfer) {
+	iter := k.getStore(ctx).IteratorNew(failedTransferPrefix)
+	defer utils.CloseLogError(iter, k.Logger(ctx))
+
+	for ; iter.Valid(); iter.Next() {
+		var t types.IBCTransfer
+		iter.UnmarshalValue(&t)
+
+		failedTransfers = append(failedTransfers, t)
+	}
+
+	return failedTransfers
 }

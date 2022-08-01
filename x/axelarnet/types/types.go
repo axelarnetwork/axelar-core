@@ -114,9 +114,20 @@ func (m CosmosChain) Validate() error {
 	return nil
 }
 
+// NewIBCTransfer creates an IBC transfer
+func NewIBCTransfer(sender sdk.AccAddress, receiver string, token sdk.Coin, portID string, channelID string) IBCTransfer {
+	return IBCTransfer{
+		Sender:    sender,
+		Receiver:  receiver,
+		Token:     token,
+		PortID:    portID,
+		ChannelID: channelID,
+	}
+}
+
 // SetID set the ID for IBCTransfer
-func (m *IBCTransfer) SetID(id uint64) {
-	m.ID = nexus.TransferID(id)
+func (m *IBCTransfer) SetID(id nexus.TransferID) {
+	m.ID = id
 }
 
 // ValidateBasic returns an error if the given IBCTransfer is invalid; nil otherwise

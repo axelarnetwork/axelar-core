@@ -56,6 +56,9 @@ var _ axelarnettypes.BaseKeeper = &BaseKeeperMock{}
 // 			SetCosmosChainFunc: func(ctx cosmossdktypes.Context, chain axelarnettypes.CosmosChain)  {
 // 				panic("mock out the SetCosmosChain method")
 // 			},
+// 			SetFailedTransferFunc: func(ctx cosmossdktypes.Context, transfer axelarnettypes.IBCTransfer)  {
+// 				panic("mock out the SetFailedTransfer method")
+// 			},
 // 			SetFeeCollectorFunc: func(ctx cosmossdktypes.Context, address cosmossdktypes.AccAddress) error {
 // 				panic("mock out the SetFeeCollector method")
 // 			},
@@ -95,6 +98,9 @@ type BaseKeeperMock struct {
 
 	// SetCosmosChainFunc mocks the SetCosmosChain method.
 	SetCosmosChainFunc func(ctx cosmossdktypes.Context, chain axelarnettypes.CosmosChain)
+
+	// SetFailedTransferFunc mocks the SetFailedTransfer method.
+	SetFailedTransferFunc func(ctx cosmossdktypes.Context, transfer axelarnettypes.IBCTransfer)
 
 	// SetFeeCollectorFunc mocks the SetFeeCollector method.
 	SetFeeCollectorFunc func(ctx cosmossdktypes.Context, address cosmossdktypes.AccAddress) error
@@ -163,6 +169,13 @@ type BaseKeeperMock struct {
 			// Chain is the chain argument value.
 			Chain axelarnettypes.CosmosChain
 		}
+		// SetFailedTransfer holds details about calls to the SetFailedTransfer method.
+		SetFailedTransfer []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// Transfer is the transfer argument value.
+			Transfer axelarnettypes.IBCTransfer
+		}
 		// SetFeeCollector holds details about calls to the SetFeeCollector method.
 		SetFeeCollector []struct {
 			// Ctx is the ctx argument value.
@@ -181,6 +194,7 @@ type BaseKeeperMock struct {
 	lockLogger                sync.RWMutex
 	lockRegisterIBCPath       sync.RWMutex
 	lockSetCosmosChain        sync.RWMutex
+	lockSetFailedTransfer     sync.RWMutex
 	lockSetFeeCollector       sync.RWMutex
 }
 
@@ -515,6 +529,41 @@ func (mock *BaseKeeperMock) SetCosmosChainCalls() []struct {
 	mock.lockSetCosmosChain.RLock()
 	calls = mock.calls.SetCosmosChain
 	mock.lockSetCosmosChain.RUnlock()
+	return calls
+}
+
+// SetFailedTransfer calls SetFailedTransferFunc.
+func (mock *BaseKeeperMock) SetFailedTransfer(ctx cosmossdktypes.Context, transfer axelarnettypes.IBCTransfer) {
+	if mock.SetFailedTransferFunc == nil {
+		panic("BaseKeeperMock.SetFailedTransferFunc: method is nil but BaseKeeper.SetFailedTransfer was just called")
+	}
+	callInfo := struct {
+		Ctx      cosmossdktypes.Context
+		Transfer axelarnettypes.IBCTransfer
+	}{
+		Ctx:      ctx,
+		Transfer: transfer,
+	}
+	mock.lockSetFailedTransfer.Lock()
+	mock.calls.SetFailedTransfer = append(mock.calls.SetFailedTransfer, callInfo)
+	mock.lockSetFailedTransfer.Unlock()
+	mock.SetFailedTransferFunc(ctx, transfer)
+}
+
+// SetFailedTransferCalls gets all the calls that were made to SetFailedTransfer.
+// Check the length with:
+//     len(mockedBaseKeeper.SetFailedTransferCalls())
+func (mock *BaseKeeperMock) SetFailedTransferCalls() []struct {
+	Ctx      cosmossdktypes.Context
+	Transfer axelarnettypes.IBCTransfer
+} {
+	var calls []struct {
+		Ctx      cosmossdktypes.Context
+		Transfer axelarnettypes.IBCTransfer
+	}
+	mock.lockSetFailedTransfer.RLock()
+	calls = mock.calls.SetFailedTransfer
+	mock.lockSetFailedTransfer.RUnlock()
 	return calls
 }
 

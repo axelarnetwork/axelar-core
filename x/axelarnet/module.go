@@ -275,15 +275,25 @@ func (am AppModule) OnAcknowledgementPacket(
 	relayer sdk.AccAddress,
 ) error {
 	err := am.transferModule.OnAcknowledgementPacket(ctx, packet, acknowledgement, relayer)
-	if err == nil {
-		var ack channeltypes.Acknowledgement
-		_ = types.ModuleCdc.UnmarshalJSON(acknowledgement, &ack)
-		switch ack.Response.(type) {
-		case *channeltypes.Acknowledgement_Error:
-			err = requeueTransfer(ctx, am.keeper, packet)
-		}
+	if err != nil {
+		return err
 	}
-	return err
+
+	var ack channeltypes.Acknowledgement
+	_ = types.ModuleCdc.UnmarshalJSON(acknowledgement, &ack)
+	switch ack.Response.(type) {
+	case *channeltypes.Acknowledgement_Error:
+		t, err := packetToTransfer(packet)
+		if err != nil {
+			return err
+		}
+		am.keeper.SetFailedTransfer(ctx, t)
+		return nil
+	default:
+		// the acknowledgement succeeded on the receiving chain so nothing
+		// needs to be executed and no error needs to be returned
+		return nil
+	}
 }
 
 // OnTimeoutPacket implements the IBCModule interface
@@ -293,20 +303,30 @@ func (am AppModule) OnTimeoutPacket(
 	relayer sdk.AccAddress,
 ) error {
 	err := am.transferModule.OnTimeoutPacket(ctx, packet, relayer)
-	if err == nil {
-		err = requeueTransfer(ctx, am.keeper, packet)
+	if err != nil {
+		return err
 	}
-	return err
+
+	t, err := packetToTransfer(packet)
+	if err != nil {
+		return err
+	}
+	// requeue transfer
+	err = am.keeper.EnqueueTransfer(ctx, t)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-func requeueTransfer(ctx sdk.Context, k keeper.Keeper, packet channeltypes.Packet) error {
+func packetToTransfer(packet channeltypes.Packet) (types.IBCTransfer, error) {
 	var data ibctransfertypes.FungibleTokenPacketData
 	if err := types.ModuleCdc.UnmarshalJSON(packet.GetData(), &data); err != nil {
-		return sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "cannot unmarshal ICS-20 transfer packet data: %s", err.Error())
+		return types.IBCTransfer{}, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "cannot unmarshal ICS-20 transfer packet data: %s", err.Error())
 	}
 	sender, err := sdk.AccAddressFromBech32(data.Sender)
 	if err != nil {
-		return err
+		return types.IBCTransfer{}, err
 	}
 
 	// parse the denomination from the full denom path
@@ -315,23 +335,11 @@ func requeueTransfer(ctx sdk.Context, k keeper.Keeper, packet channeltypes.Packe
 	// parse the transfer amount
 	transferAmount, ok := sdk.NewIntFromString(data.Amount)
 	if !ok {
-		return sdkerrors.Wrapf(ibctransfertypes.ErrInvalidAmount, "unable to parse transfer amount (%s) into sdk.Int", data.Amount)
+		return types.IBCTransfer{}, sdkerrors.Wrapf(ibctransfertypes.ErrInvalidAmount, "unable to parse transfer amount (%s) into sdk.Int", data.Amount)
 	}
 	token := sdk.NewCoin(trace.IBCDenom(), transferAmount)
 
-	// requeue transfer
-	err = k.EnqueueTransfer(ctx, types.IBCTransfer{
-		Sender:    sender,
-		Receiver:  data.Receiver,
-		Token:     token,
-		PortID:    packet.GetSourcePort(),
-		ChannelID: packet.GetSourceChannel(),
-	})
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return types.NewIBCTransfer(sender, data.Receiver, token, packet.GetSourcePort(), packet.GetSourceChannel()), nil
 }
 
 // NegotiateAppVersion implements the IBCModule interface
