@@ -35,6 +35,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		GetCommandAssets(),
 		GetCommandChainState(),
 		GetCommandChainsByAsset(),
+		GetCmdRecipientAddress(),
 	)
 
 	return queryCmd
@@ -353,5 +354,39 @@ func GetCommandChainsByAsset() *cobra.Command {
 
 	flags.AddQueryFlagsToCmd(cmd)
 
+	return cmd
+}
+
+// GetCmdRecipientAddress returns the query for a recipient address by deposit address
+func GetCmdRecipientAddress() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "recipient-address [chain] [address]",
+		Short: "Returns the recipient address corresponding to the given deposit address",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			queryClient := types.NewQueryServiceClient(clientCtx)
+			chainName := nexus.ChainName(args[0])
+			if err := chainName.Validate(); err != nil {
+				return err
+			}
+
+			res, err := queryClient.RecipientAddress(cmd.Context(), &types.RecipientAddressRequest{
+				DepositAddr:  args[1],
+				DepositChain: chainName.String(),
+			})
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
 	return cmd
 }
