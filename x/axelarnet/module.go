@@ -9,11 +9,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
 	"github.com/cosmos/ibc-go/v2/modules/apps/transfer"
-	ibctransfertypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
 	channeltypes "github.com/cosmos/ibc-go/v2/modules/core/04-channel/types"
 	ibcexported "github.com/cosmos/ibc-go/v2/modules/core/exported"
 	"github.com/gorilla/mux"
@@ -283,7 +281,7 @@ func (am AppModule) OnAcknowledgementPacket(
 	_ = types.ModuleCdc.UnmarshalJSON(acknowledgement, &ack)
 	switch ack.Response.(type) {
 	case *channeltypes.Acknowledgement_Error:
-		t, err := packetToTransfer(packet)
+		t, err := types.PacketToTransfer(packet)
 		if err != nil {
 			return err
 		}
@@ -307,7 +305,7 @@ func (am AppModule) OnTimeoutPacket(
 		return err
 	}
 
-	t, err := packetToTransfer(packet)
+	t, err := types.PacketToTransfer(packet)
 	if err != nil {
 		return err
 	}
@@ -317,29 +315,6 @@ func (am AppModule) OnTimeoutPacket(
 		return err
 	}
 	return nil
-}
-
-func packetToTransfer(packet channeltypes.Packet) (types.IBCTransfer, error) {
-	var data ibctransfertypes.FungibleTokenPacketData
-	if err := types.ModuleCdc.UnmarshalJSON(packet.GetData(), &data); err != nil {
-		return types.IBCTransfer{}, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "cannot unmarshal ICS-20 transfer packet data: %s", err.Error())
-	}
-	sender, err := sdk.AccAddressFromBech32(data.Sender)
-	if err != nil {
-		return types.IBCTransfer{}, err
-	}
-
-	// parse the denomination from the full denom path
-	trace := ibctransfertypes.ParseDenomTrace(data.Denom)
-
-	// parse the transfer amount
-	transferAmount, ok := sdk.NewIntFromString(data.Amount)
-	if !ok {
-		return types.IBCTransfer{}, sdkerrors.Wrapf(ibctransfertypes.ErrInvalidAmount, "unable to parse transfer amount (%s) into sdk.Int", data.Amount)
-	}
-	token := sdk.NewCoin(trace.IBCDenom(), transferAmount)
-
-	return types.NewIBCTransfer(sender, data.Receiver, token, packet.GetSourcePort(), packet.GetSourceChannel()), nil
 }
 
 // NegotiateAppVersion implements the IBCModule interface

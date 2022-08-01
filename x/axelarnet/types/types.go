@@ -8,7 +8,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/address"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
 	host "github.com/cosmos/ibc-go/v2/modules/core/24-host"
+	ibc "github.com/cosmos/ibc-go/v2/modules/core/exported"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
@@ -153,4 +155,27 @@ func (m IBCTransfer) ValidateBasic() error {
 	}
 
 	return nil
+}
+
+func PacketToTransfer(packet ibc.PacketI) (IBCTransfer, error) {
+	var data types.FungibleTokenPacketData
+	if err := ModuleCdc.UnmarshalJSON(packet.GetData(), &data); err != nil {
+		return IBCTransfer{}, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "cannot unmarshal ICS-20 transfer packet data: %s", err.Error())
+	}
+	sender, err := sdk.AccAddressFromBech32(data.Sender)
+	if err != nil {
+		return IBCTransfer{}, err
+	}
+
+	// parse the denomination from the full denom path
+	trace := types.ParseDenomTrace(data.Denom)
+
+	// parse the transfer amount
+	transferAmount, ok := sdk.NewIntFromString(data.Amount)
+	if !ok {
+		return IBCTransfer{}, sdkerrors.Wrapf(types.ErrInvalidAmount, "unable to parse transfer amount (%s) into sdk.Int", data.Amount)
+	}
+	token := sdk.NewCoin(trace.IBCDenom(), transferAmount)
+
+	return NewIBCTransfer(sender, data.Receiver, token, packet.GetSourcePort(), packet.GetSourceChannel()), nil
 }
