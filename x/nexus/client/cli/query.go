@@ -357,6 +357,7 @@ func GetCommandChainsByAsset() *cobra.Command {
 	return cmd
 }
 
+// GetCmdRecipientAddress returns the query for a recipient address by deposit address
 func GetCmdRecipientAddress() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "recipient-address [chain] [address]",
@@ -376,7 +377,7 @@ func GetCmdRecipientAddress() *cobra.Command {
 
 			res, err := queryClient.RecipientAddress(cmd.Context(), &types.RecipientAddressRequest{
 				DepositAddr:  args[1],
-				DepositChain: chainName,
+				DepositChain: chainName.String(),
 			})
 			if err != nil {
 				return err
