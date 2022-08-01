@@ -216,7 +216,7 @@ func (q Querier) ChainsByAsset(c context.Context, req *types.ChainsByAssetReques
 func (q Querier) RecipientAddress(c context.Context, req *types.RecipientAddressRequest) (*types.RecipientAddressResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	chain, ok := q.keeper.GetChain(ctx, req.DepositChain)
+	chain, ok := q.keeper.GetChain(ctx, nexus.ChainName(req.DepositChain))
 	if !ok {
 		return nil, fmt.Errorf("chain %s not found", req.DepositChain)
 	}
@@ -230,6 +230,6 @@ func (q Querier) RecipientAddress(c context.Context, req *types.RecipientAddress
 
 	return &types.RecipientAddressResponse{
 		RecipientAddr:  linkedAddresses.RecipientAddress.Address,
-		RecipientChain: linkedAddresses.RecipientAddress.Chain.Name,
+		RecipientChain: linkedAddresses.RecipientAddress.Chain.Name.String(),
 	}, nil
 }
