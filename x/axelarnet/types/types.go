@@ -157,6 +157,7 @@ func (m IBCTransfer) ValidateBasic() error {
 	return nil
 }
 
+// PacketToTransfer converts IBC packet to IBC transfer
 func PacketToTransfer(packet ibc.PacketI) (IBCTransfer, error) {
 	var data types.FungibleTokenPacketData
 	if err := ModuleCdc.UnmarshalJSON(packet.GetData(), &data); err != nil {
