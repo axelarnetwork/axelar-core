@@ -37,11 +37,9 @@ func EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock, bk types.BaseKeeper, t 
 		})
 	}
 
-	// re-queue
+	// park the failed transfer aside
 	for _, f := range failed {
-		if err := bk.EnqueueTransfer(ctx, f); err != nil {
-			return nil, err
-		}
+		bk.SetFailedTransfer(ctx, f)
 	}
 
 	return nil, nil

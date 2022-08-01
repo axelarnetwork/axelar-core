@@ -9,11 +9,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
 	"github.com/cosmos/ibc-go/v2/modules/apps/transfer"
-	ibctransfertypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
 	channeltypes "github.com/cosmos/ibc-go/v2/modules/core/04-channel/types"
 	ibcexported "github.com/cosmos/ibc-go/v2/modules/core/exported"
 	"github.com/gorilla/mux"
@@ -275,15 +273,25 @@ func (am AppModule) OnAcknowledgementPacket(
 	relayer sdk.AccAddress,
 ) error {
 	err := am.transferModule.OnAcknowledgementPacket(ctx, packet, acknowledgement, relayer)
-	if err == nil {
-		var ack channeltypes.Acknowledgement
-		_ = types.ModuleCdc.UnmarshalJSON(acknowledgement, &ack)
-		switch ack.Response.(type) {
-		case *channeltypes.Acknowledgement_Error:
-			err = requeueTransfer(ctx, am.keeper, packet)
-		}
+	if err != nil {
+		return err
 	}
-	return err
+
+	var ack channeltypes.Acknowledgement
+	_ = types.ModuleCdc.UnmarshalJSON(acknowledgement, &ack)
+	switch ack.Response.(type) {
+	case *channeltypes.Acknowledgement_Error:
+		t, err := types.PacketToTransfer(packet)
+		if err != nil {
+			return err
+		}
+		am.keeper.SetFailedTransfer(ctx, t)
+		return nil
+	default:
+		// the acknowledgement succeeded on the receiving chain so nothing
+		// needs to be executed and no error needs to be returned
+		return nil
+	}
 }
 
 // OnTimeoutPacket implements the IBCModule interface
@@ -293,44 +301,19 @@ func (am AppModule) OnTimeoutPacket(
 	relayer sdk.AccAddress,
 ) error {
 	err := am.transferModule.OnTimeoutPacket(ctx, packet, relayer)
-	if err == nil {
-		err = requeueTransfer(ctx, am.keeper, packet)
-	}
-	return err
-}
-
-func requeueTransfer(ctx sdk.Context, k keeper.Keeper, packet channeltypes.Packet) error {
-	var data ibctransfertypes.FungibleTokenPacketData
-	if err := types.ModuleCdc.UnmarshalJSON(packet.GetData(), &data); err != nil {
-		return sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "cannot unmarshal ICS-20 transfer packet data: %s", err.Error())
-	}
-	sender, err := sdk.AccAddressFromBech32(data.Sender)
 	if err != nil {
 		return err
 	}
 
-	// parse the denomination from the full denom path
-	trace := ibctransfertypes.ParseDenomTrace(data.Denom)
-
-	// parse the transfer amount
-	transferAmount, ok := sdk.NewIntFromString(data.Amount)
-	if !ok {
-		return sdkerrors.Wrapf(ibctransfertypes.ErrInvalidAmount, "unable to parse transfer amount (%s) into sdk.Int", data.Amount)
+	t, err := types.PacketToTransfer(packet)
+	if err != nil {
+		return err
 	}
-	token := sdk.NewCoin(trace.IBCDenom(), transferAmount)
-
 	// requeue transfer
-	err = k.EnqueueTransfer(ctx, types.IBCTransfer{
-		Sender:    sender,
-		Receiver:  data.Receiver,
-		Token:     token,
-		PortID:    packet.GetSourcePort(),
-		ChannelID: packet.GetSourceChannel(),
-	})
+	err = am.keeper.EnqueueTransfer(ctx, t)
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 
