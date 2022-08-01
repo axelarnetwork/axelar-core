@@ -10,7 +10,7 @@ import (
 	cosmossdktypes "github.com/cosmos/cosmos-sdk/types"
 	ibctypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
 	clienttypes "github.com/cosmos/ibc-go/v2/modules/core/02-client/types"
-	ibcclient "github.com/cosmos/ibc-go/v2/modules/core/exported"
+	ibc "github.com/cosmos/ibc-go/v2/modules/core/exported"
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 	"github.com/tendermint/tendermint/libs/log"
 	"sync"
@@ -1870,7 +1870,7 @@ var _ axelarnettypes.ChannelKeeper = &ChannelKeeperMock{}
 //
 // 		// make and configure a mocked axelarnettypes.ChannelKeeper
 // 		mockedChannelKeeper := &ChannelKeeperMock{
-// 			GetChannelClientStateFunc: func(ctx cosmossdktypes.Context, portID string, channelID string) (string, ibcclient.ClientState, error) {
+// 			GetChannelClientStateFunc: func(ctx cosmossdktypes.Context, portID string, channelID string) (string, ibc.ClientState, error) {
 // 				panic("mock out the GetChannelClientState method")
 // 			},
 // 			GetNextSequenceSendFunc: func(ctx cosmossdktypes.Context, portID string, channelID string) (uint64, bool) {
@@ -1884,7 +1884,7 @@ var _ axelarnettypes.ChannelKeeper = &ChannelKeeperMock{}
 // 	}
 type ChannelKeeperMock struct {
 	// GetChannelClientStateFunc mocks the GetChannelClientState method.
-	GetChannelClientStateFunc func(ctx cosmossdktypes.Context, portID string, channelID string) (string, ibcclient.ClientState, error)
+	GetChannelClientStateFunc func(ctx cosmossdktypes.Context, portID string, channelID string) (string, ibc.ClientState, error)
 
 	// GetNextSequenceSendFunc mocks the GetNextSequenceSend method.
 	GetNextSequenceSendFunc func(ctx cosmossdktypes.Context, portID string, channelID string) (uint64, bool)
@@ -1915,7 +1915,7 @@ type ChannelKeeperMock struct {
 }
 
 // GetChannelClientState calls GetChannelClientStateFunc.
-func (mock *ChannelKeeperMock) GetChannelClientState(ctx cosmossdktypes.Context, portID string, channelID string) (string, ibcclient.ClientState, error) {
+func (mock *ChannelKeeperMock) GetChannelClientState(ctx cosmossdktypes.Context, portID string, channelID string) (string, ibc.ClientState, error) {
 	if mock.GetChannelClientStateFunc == nil {
 		panic("ChannelKeeperMock.GetChannelClientStateFunc: method is nil but ChannelKeeper.GetChannelClientState was just called")
 	}
