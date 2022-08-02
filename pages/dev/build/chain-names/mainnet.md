@@ -6,6 +6,7 @@
 The following values are legal arguments for token transfers and General Message Passing calls such as `callContract` and `callContractWithToken`:
 
 - `Avalanche`
+- `Binance`
 - `Ethereum`
 - `Fantom`
 - `Moonbeam`
@@ -15,7 +16,6 @@ The following values are legal arguments for token transfers and General Message
 
 The following values are legal arguments for token transfers:
 
-- `Axelarnet`
 - `cosmoshub`
 - `crescent`
 - `e-money`
