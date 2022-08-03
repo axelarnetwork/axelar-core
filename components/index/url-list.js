@@ -33,7 +33,7 @@ const items = [
     icon: (
       <BsFileEarmarkTextFill size={24} />
     ),
-    url: "https://axelar.network/wp-content/uploads/2021/07/axelar_whitepaper.pdf",
+    url: "https://axelar.network/axelar_whitepaper.pdf",
     external: true,
   },
   {
