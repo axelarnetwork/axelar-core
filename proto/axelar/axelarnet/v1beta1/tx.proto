@@ -122,3 +122,16 @@ message RegisterFeeCollectorRequest {
 }
 
 message RegisterFeeCollectorResponse {}
+
+message RetryFailedTransferRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  uint64 id = 2 [
+    (gogoproto.customname) = "ID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/nexus/exported.TransferID"
+  ];
+}
+
+message RetryFailedTransferResponse {}

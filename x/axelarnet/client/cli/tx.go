@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -37,6 +38,7 @@ func GetTxCmd() *cobra.Command {
 		GetCmdRegisterAsset(),
 		GetCmdRouteIBCTransfersTx(),
 		GetCmdRegisterFeeCollector(),
+		getRetryFailedTransfer(),
 	)
 
 	return axelarTxCmd
@@ -252,6 +254,34 @@ func GetCmdRegisterFeeCollector() *cobra.Command {
 				return err
 			}
 			msg := types.NewRegisterFeeCollectorRequest(cliCtx.GetFromAddress(), feeCollector)
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
+		},
+	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+func getRetryFailedTransfer() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "retry-failed-transfer [transfer ID]",
+		Short: "Retry a failed IBC transfer",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			transferID, err := strconv.ParseUint(args[0], 10, 64)
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewRetryFailedTransferRequest(cliCtx.GetFromAddress(), transferID)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

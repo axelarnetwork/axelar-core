@@ -107,6 +107,8 @@
     - [RegisterFeeCollectorResponse](#axelar.axelarnet.v1beta1.RegisterFeeCollectorResponse)
     - [RegisterIBCPathRequest](#axelar.axelarnet.v1beta1.RegisterIBCPathRequest)
     - [RegisterIBCPathResponse](#axelar.axelarnet.v1beta1.RegisterIBCPathResponse)
+    - [RetryFailedTransferRequest](#axelar.axelarnet.v1beta1.RetryFailedTransferRequest)
+    - [RetryFailedTransferResponse](#axelar.axelarnet.v1beta1.RetryFailedTransferResponse)
     - [RouteIBCTransfersRequest](#axelar.axelarnet.v1beta1.RouteIBCTransfersRequest)
     - [RouteIBCTransfersResponse](#axelar.axelarnet.v1beta1.RouteIBCTransfersResponse)
   
@@ -1886,6 +1888,32 @@ a cosmos chain
 
 
 
+<a name="axelar.axelarnet.v1beta1.RetryFailedTransferRequest"></a>
+
+### RetryFailedTransferRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `id` | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="axelar.axelarnet.v1beta1.RetryFailedTransferResponse"></a>
+
+### RetryFailedTransferResponse
+
+
+
+
+
+
+
 <a name="axelar.axelarnet.v1beta1.RouteIBCTransfersRequest"></a>
 
 ### RouteIBCTransfersRequest
@@ -1949,6 +1977,7 @@ Msg defines the axelarnet Msg service.
 | `RegisterAsset` | [RegisterAssetRequest](#axelar.axelarnet.v1beta1.RegisterAssetRequest) | [RegisterAssetResponse](#axelar.axelarnet.v1beta1.RegisterAssetResponse) |  | POST|/axelar/axelarnet/register_asset|
 | `RouteIBCTransfers` | [RouteIBCTransfersRequest](#axelar.axelarnet.v1beta1.RouteIBCTransfersRequest) | [RouteIBCTransfersResponse](#axelar.axelarnet.v1beta1.RouteIBCTransfersResponse) |  | POST|/axelar/axelarnet/route_ibc_transfers|
 | `RegisterFeeCollector` | [RegisterFeeCollectorRequest](#axelar.axelarnet.v1beta1.RegisterFeeCollectorRequest) | [RegisterFeeCollectorResponse](#axelar.axelarnet.v1beta1.RegisterFeeCollectorResponse) |  | POST|/axelar/axelarnet/register_fee_collector|
+| `RetryFailedTransfer` | [RetryFailedTransferRequest](#axelar.axelarnet.v1beta1.RetryFailedTransferRequest) | [RetryFailedTransferResponse](#axelar.axelarnet.v1beta1.RetryFailedTransferResponse) |  | POST|/axelar/axelarnet/retry_failed_transfer|
 
 
 <a name="axelar.axelarnet.v1beta1.QueryService"></a>

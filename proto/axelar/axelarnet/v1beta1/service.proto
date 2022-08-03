@@ -72,6 +72,14 @@ service MsgService {
       body : "*"
     };
   }
+
+  rpc RetryFailedTransfer(RetryFailedTransferRequest)
+      returns (RetryFailedTransferResponse) {
+    option (google.api.http) = {
+      post : "/axelar/axelarnet/retry_failed_transfer"
+      body : "*"
+    };
+  }
 }
 
 // QueryService defines the gRPC querier service.

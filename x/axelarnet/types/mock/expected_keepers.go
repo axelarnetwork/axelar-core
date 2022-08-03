@@ -35,6 +35,9 @@ var _ axelarnettypes.BaseKeeper = &BaseKeeperMock{}
 // 			GetCosmosChainsFunc: func(ctx cosmossdktypes.Context) []github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName {
 // 				panic("mock out the GetCosmosChains method")
 // 			},
+// 			GetFailedTransferFunc: func(ctx cosmossdktypes.Context, id github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferID) (axelarnettypes.IBCTransfer, bool) {
+// 				panic("mock out the GetFailedTransfer method")
+// 			},
 // 			GetFeeCollectorFunc: func(ctx cosmossdktypes.Context) (cosmossdktypes.AccAddress, bool) {
 // 				panic("mock out the GetFeeCollector method")
 // 			},
@@ -77,6 +80,9 @@ type BaseKeeperMock struct {
 
 	// GetCosmosChainsFunc mocks the GetCosmosChains method.
 	GetCosmosChainsFunc func(ctx cosmossdktypes.Context) []github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+
+	// GetFailedTransferFunc mocks the GetFailedTransfer method.
+	GetFailedTransferFunc func(ctx cosmossdktypes.Context, id github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferID) (axelarnettypes.IBCTransfer, bool)
 
 	// GetFeeCollectorFunc mocks the GetFeeCollector method.
 	GetFeeCollectorFunc func(ctx cosmossdktypes.Context) (cosmossdktypes.AccAddress, bool)
@@ -125,6 +131,13 @@ type BaseKeeperMock struct {
 		GetCosmosChains []struct {
 			// Ctx is the ctx argument value.
 			Ctx cosmossdktypes.Context
+		}
+		// GetFailedTransfer holds details about calls to the GetFailedTransfer method.
+		GetFailedTransfer []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// ID is the id argument value.
+			ID github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferID
 		}
 		// GetFeeCollector holds details about calls to the GetFeeCollector method.
 		GetFeeCollector []struct {
@@ -187,6 +200,7 @@ type BaseKeeperMock struct {
 	lockEnqueueTransfer       sync.RWMutex
 	lockGetCosmosChainByName  sync.RWMutex
 	lockGetCosmosChains       sync.RWMutex
+	lockGetFailedTransfer     sync.RWMutex
 	lockGetFeeCollector       sync.RWMutex
 	lockGetIBCPath            sync.RWMutex
 	lockGetIBCTransferQueue   sync.RWMutex
@@ -296,6 +310,41 @@ func (mock *BaseKeeperMock) GetCosmosChainsCalls() []struct {
 	mock.lockGetCosmosChains.RLock()
 	calls = mock.calls.GetCosmosChains
 	mock.lockGetCosmosChains.RUnlock()
+	return calls
+}
+
+// GetFailedTransfer calls GetFailedTransferFunc.
+func (mock *BaseKeeperMock) GetFailedTransfer(ctx cosmossdktypes.Context, id github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferID) (axelarnettypes.IBCTransfer, bool) {
+	if mock.GetFailedTransferFunc == nil {
+		panic("BaseKeeperMock.GetFailedTransferFunc: method is nil but BaseKeeper.GetFailedTransfer was just called")
+	}
+	callInfo := struct {
+		Ctx cosmossdktypes.Context
+		ID  github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferID
+	}{
+		Ctx: ctx,
+		ID:  id,
+	}
+	mock.lockGetFailedTransfer.Lock()
+	mock.calls.GetFailedTransfer = append(mock.calls.GetFailedTransfer, callInfo)
+	mock.lockGetFailedTransfer.Unlock()
+	return mock.GetFailedTransferFunc(ctx, id)
+}
+
+// GetFailedTransferCalls gets all the calls that were made to GetFailedTransfer.
+// Check the length with:
+//     len(mockedBaseKeeper.GetFailedTransferCalls())
+func (mock *BaseKeeperMock) GetFailedTransferCalls() []struct {
+	Ctx cosmossdktypes.Context
+	ID  github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferID
+} {
+	var calls []struct {
+		Ctx cosmossdktypes.Context
+		ID  github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferID
+	}
+	mock.lockGetFailedTransfer.RLock()
+	calls = mock.calls.GetFailedTransfer
+	mock.lockGetFailedTransfer.RUnlock()
 	return calls
 }
 

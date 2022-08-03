@@ -69,6 +69,10 @@ func NewHandler(k types.BaseKeeper, n types.Nexus, b types.BankKeeper, t types.I
 			res, err := server.RegisterFeeCollector(sdk.WrapSDKContext(ctx), msg)
 			result, err := sdk.WrapServiceResult(ctx, res, err)
 			return result, err
+		case *types.RetryFailedTransferRequest:
+			res, err := server.RetryFailedTransfer(sdk.WrapSDKContext(ctx), msg)
+			result, err := sdk.WrapServiceResult(ctx, res, err)
+			return result, err
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))

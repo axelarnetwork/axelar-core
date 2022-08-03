@@ -15,12 +15,15 @@ import (
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/testutils"
+	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types/mock"
+	axelartestutils "github.com/axelarnetwork/axelar-core/x/axelarnet/types/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	. "github.com/axelarnetwork/utils/test"
 )
 
 const (
@@ -558,6 +561,55 @@ func TestHandleMsgRouteIBCTransfers(t *testing.T) {
 		_, err := server.RouteIBCTransfers(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
 	}).Repeat(repeatCount))
+}
+
+func TestRetryFailedTransfer(t *testing.T) {
+	var (
+		server types.MsgServiceServer
+		bk     *mock.BaseKeeperMock
+		n      *mock.NexusMock
+		b      *mock.BankKeeperMock
+		i      *mock.IBCTransferKeeperMock
+		a      *mock.AccountKeeperMock
+		ctx    sdk.Context
+	)
+
+	givenMessageServer := Given("a message server", func() {
+		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+		bk = &mock.BaseKeeperMock{}
+		n = &mock.NexusMock{}
+		b = &mock.BankKeeperMock{}
+		a = &mock.AccountKeeperMock{}
+		i = &mock.IBCTransferKeeperMock{}
+		bk.LoggerFunc = func(ctx sdk.Context) log.Logger { return ctx.Logger() }
+		server = keeper.NewMsgServerImpl(bk, n, b, i, a)
+	})
+
+	givenMessageServer.
+		Branch(
+			When("transfer id not found", func() {
+				bk.GetFailedTransferFunc = func(ctx sdk.Context, id nexus.TransferID) (types.IBCTransfer, bool) {
+					return types.IBCTransfer{}, false
+				}
+			}).
+				Then("should return error", func(t *testing.T) {
+					req := types.NewRetryFailedTransferRequest(rand.AccAddr(), uint64(rand.I64Between(1, 1000)))
+					_, err := server.RetryFailedTransfer(sdk.WrapSDKContext(ctx), req)
+					assert.Error(t, err)
+				}),
+			When("transfer id exists", func() {
+				bk.GetFailedTransferFunc = func(ctx sdk.Context, id nexus.TransferID) (types.IBCTransfer, bool) {
+					return axelartestutils.RandomIBCTransfer(), true
+				}
+				bk.EnqueueTransferFunc = func(sdk.Context, types.IBCTransfer) error { return nil }
+			}).
+				Then("should requeue transfer", func(t *testing.T) {
+					req := types.NewRetryFailedTransferRequest(rand.AccAddr(), uint64(rand.I64Between(1, 1000)))
+					_, err := server.RetryFailedTransfer(sdk.WrapSDKContext(ctx), req)
+					assert.NoError(t, err)
+				}),
+		).Run(t)
+
 }
 
 func randomMsgLink() *types.LinkRequest {
