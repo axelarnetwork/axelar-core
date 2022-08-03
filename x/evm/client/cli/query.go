@@ -29,28 +29,29 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 	}
 
 	evmQueryCmd.AddCommand(
-		GetCmdAddress(queryRoute),
-		GetCmdAxelarGatewayAddress(queryRoute),
-		GetCmdTokenAddress(queryRoute),
-		GetCmdDepositState(queryRoute),
-		GetCmdBytecode(queryRoute),
-		GetCmdQueryBatchedCommands(queryRoute),
-		GetCmdLatestBatchedCommands(queryRoute),
-		GetCmdPendingCommands(queryRoute),
-		GetCmdCommand(queryRoute),
-		GetCmdBurnerInfo(queryRoute),
-		GetCmdChains(queryRoute),
-		GetCmdConfirmationHeight(queryRoute),
-		GetCmdERC20Tokens(queryRoute),
-		GetCmdTokenInfo(queryRoute),
+		getCmdAddress(queryRoute),
+		getCmdAxelarGatewayAddress(queryRoute),
+		getCmdTokenAddress(queryRoute),
+		getCmdDepositState(queryRoute),
+		getCmdBytecode(queryRoute),
+		getCmdQueryBatchedCommands(queryRoute),
+		getCmdLatestBatchedCommands(queryRoute),
+		getCmdPendingCommands(queryRoute),
+		getCmdCommand(queryRoute),
+		getCmdBurnerInfo(queryRoute),
+		getCmdChains(queryRoute),
+		getCmdConfirmationHeight(queryRoute),
+		getCmdERC20Tokens(queryRoute),
+		getCmdTokenInfo(queryRoute),
+		getCmdEvent(queryRoute),
 	)
 
 	return evmQueryCmd
 
 }
 
-// GetCmdAddress returns the query for an EVM chain address
-func GetCmdAddress(queryRoute string) *cobra.Command {
+// getCmdAddress returns the query for an EVM chain address
+func getCmdAddress(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "address [chain]",
 		Short: "Returns the EVM address",
@@ -83,8 +84,8 @@ func GetCmdAddress(queryRoute string) *cobra.Command {
 	return cmd
 }
 
-// GetCmdTokenAddress returns the query for an EVM chain master address that owns the AxelarGateway contract
-func GetCmdTokenAddress(queryRoute string) *cobra.Command {
+// getCmdTokenAddress returns the query for an EVM chain master address that owns the AxelarGateway contract
+func getCmdTokenAddress(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "token-address [chain]",
 		Short: fmt.Sprintf("Query a token address by by either %s or %s", keeper.BySymbol, keeper.ByAsset),
@@ -124,8 +125,8 @@ func GetCmdTokenAddress(queryRoute string) *cobra.Command {
 	return cmd
 }
 
-// GetCmdDepositState returns the query for an ERC20 deposit transaction state
-func GetCmdDepositState(queryRoute string) *cobra.Command {
+// getCmdDepositState returns the query for an ERC20 deposit transaction state
+func getCmdDepositState(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "deposit-state [chain] [txID] [burner address] [amount]",
 		Short: "Query the state of a deposit transaction",
@@ -163,8 +164,8 @@ func GetCmdDepositState(queryRoute string) *cobra.Command {
 	return cmd
 }
 
-// GetCmdAxelarGatewayAddress returns the query for the AxelarGateway contract address
-func GetCmdAxelarGatewayAddress(queryRoute string) *cobra.Command {
+// getCmdAxelarGatewayAddress returns the query for the AxelarGateway contract address
+func getCmdAxelarGatewayAddress(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "gateway-address [chain]",
 		Short: "Query the Axelar Gateway contract address",
@@ -195,8 +196,8 @@ func GetCmdAxelarGatewayAddress(queryRoute string) *cobra.Command {
 	return cmd
 }
 
-// GetCmdBytecode fetches the bytecodes of an EVM contract
-func GetCmdBytecode(queryRoute string) *cobra.Command {
+// getCmdBytecode fetches the bytecodes of an EVM contract
+func getCmdBytecode(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "bytecode [chain] [contract]",
 		Short: "Fetch the bytecode of an EVM contract [contract] for chain [chain]",
@@ -229,8 +230,8 @@ func GetCmdBytecode(queryRoute string) *cobra.Command {
 	return cmd
 }
 
-// GetCmdQueryBatchedCommands returns the query to get the batched commands
-func GetCmdQueryBatchedCommands(queryRoute string) *cobra.Command {
+// getCmdQueryBatchedCommands returns the query to get the batched commands
+func getCmdQueryBatchedCommands(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "batched-commands [chain] [batchedCommandsID]",
 		Short: "Get the signed batched commands that can be wrapped in an EVM transaction to be executed in Axelar Gateway",
@@ -262,8 +263,8 @@ func GetCmdQueryBatchedCommands(queryRoute string) *cobra.Command {
 	return cmd
 }
 
-// GetCmdLatestBatchedCommands returns the query to get the latest batched commands
-func GetCmdLatestBatchedCommands(queryRoute string) *cobra.Command {
+// getCmdLatestBatchedCommands returns the query to get the latest batched commands
+func getCmdLatestBatchedCommands(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "latest-batched-commands [chain]",
 		Short: "Get the latest batched commands that can be wrapped in an EVM transaction to be executed in Axelar Gateway",
@@ -293,8 +294,8 @@ func GetCmdLatestBatchedCommands(queryRoute string) *cobra.Command {
 	return cmd
 }
 
-// GetCmdPendingCommands returns the query to get the list of commands not yet added to a batch
-func GetCmdPendingCommands(queryRoute string) *cobra.Command {
+// getCmdPendingCommands returns the query to get the list of commands not yet added to a batch
+func getCmdPendingCommands(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "pending-commands [chain]",
 		Short: "Get the list of commands not yet added to a batch",
@@ -322,8 +323,8 @@ func GetCmdPendingCommands(queryRoute string) *cobra.Command {
 	return cmd
 }
 
-// GetCmdCommand returns the query to get the command with the given ID on the specified chain
-func GetCmdCommand(queryRoute string) *cobra.Command {
+// getCmdCommand returns the query to get the command with the given ID on the specified chain
+func getCmdCommand(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "command [chain] [id]",
 		Short: "Get information about an EVM gateway command given a chain and the command ID",
@@ -346,8 +347,8 @@ func GetCmdCommand(queryRoute string) *cobra.Command {
 	return cmd
 }
 
-// GetCmdBurnerInfo returns the query to get the burner info for the specified address
-func GetCmdBurnerInfo(queryRoute string) *cobra.Command {
+// getCmdBurnerInfo returns the query to get the burner info for the specified address
+func getCmdBurnerInfo(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "burner-info [deposit address]",
 		Short: "Get information about a burner address",
@@ -375,8 +376,8 @@ func GetCmdBurnerInfo(queryRoute string) *cobra.Command {
 	return cmd
 }
 
-// GetCmdChains returns the query to get all EVM chains
-func GetCmdChains(queryRoute string) *cobra.Command {
+// getCmdChains returns the query to get all EVM chains
+func getCmdChains(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "chains",
 		Short: "Get EVM chains",
@@ -402,8 +403,8 @@ func GetCmdChains(queryRoute string) *cobra.Command {
 	return cmd
 }
 
-// GetCmdConfirmationHeight returns the query to get the minimum confirmation height for the given chain
-func GetCmdConfirmationHeight(queryRoute string) *cobra.Command {
+// getCmdConfirmationHeight returns the query to get the minimum confirmation height for the given chain
+func getCmdConfirmationHeight(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "confirmation-height [chain]",
 		Short: "Returns the minimum confirmation height for the given chain",
@@ -433,8 +434,8 @@ func GetCmdConfirmationHeight(queryRoute string) *cobra.Command {
 	return cmd
 }
 
-// GetCmdEvent returns the query to an event for a chain based on the event's txID
-func GetCmdEvent(queryRoute string) *cobra.Command {
+// getCmdEvent returns the query to an event for a chain based on the event's txID
+func getCmdEvent(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "event [chain] [event-id]",
 		Short: "Returns an event for the given chain",
@@ -468,8 +469,8 @@ func GetCmdEvent(queryRoute string) *cobra.Command {
 	return cmd
 }
 
-// GetCmdERC20Tokens returns the query to get the ERC20 tokens for a given chain
-func GetCmdERC20Tokens(queryRoute string) *cobra.Command {
+// getCmdERC20Tokens returns the query to get the ERC20 tokens for a given chain
+func getCmdERC20Tokens(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "erc20-tokens [chain]",
 		Short: "Returns the ERC20 tokens for the given chain",
@@ -511,8 +512,8 @@ func GetCmdERC20Tokens(queryRoute string) *cobra.Command {
 	return cmd
 }
 
-// GetCmdTokenInfo returns the query to get the details for an ERC20 token
-func GetCmdTokenInfo(queryRoute string) *cobra.Command {
+// getCmdTokenInfo returns the query to get the details for an ERC20 token
+func getCmdTokenInfo(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "token-info [chain]",
 		Short: fmt.Sprintf("Returns the info of token by either %s or %s", keeper.BySymbol, keeper.ByAsset),
