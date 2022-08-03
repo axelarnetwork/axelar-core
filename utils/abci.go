@@ -20,13 +20,13 @@ func RunCached[T any](c sdk.Context, l Logger, f func(sdk.Context) (T, error)) T
 
 	defer func() {
 		if r := recover(); r != nil {
-			l.Logger(ctx).Error(fmt.Sprintf("recovered from panic in cached context: %v", r))
+			l.Logger(c).Error(fmt.Sprintf("recovered from panic in cached context: %v", r))
 		}
 	}()
 
 	result, err := f(ctx)
 	if err != nil {
-		l.Logger(ctx).Debug(fmt.Sprintf("recovered from error in cached context: %s", err.Error()))
+		l.Logger(c).Debug(fmt.Sprintf("recovered from error in cached context: %s", err.Error()))
 		return *new(T)
 	}
 
