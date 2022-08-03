@@ -11,13 +11,14 @@ import (
 )
 
 // NewGenesisState returns a new GenesisState instance
-func NewGenesisState(p Params, feeCollector sdk.AccAddress, chains []CosmosChain, transferQueue utils.QueueState) *GenesisState {
+func NewGenesisState(p Params, feeCollector sdk.AccAddress, chains []CosmosChain, transferQueue utils.QueueState, failedTransfers []IBCTransfer) *GenesisState {
 	SortChains(chains)
 	return &GenesisState{
 		Params:           p,
 		CollectorAddress: feeCollector,
 		Chains:           chains,
 		TransferQueue:    transferQueue,
+		FailedTransfers:  failedTransfers,
 	}
 }
 

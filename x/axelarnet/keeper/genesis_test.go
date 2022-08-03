@@ -1,14 +1,15 @@
 package keeper_test
 
 import (
+	"bytes"
 	"fmt"
+	"sort"
 	"strings"
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
-	ibctransfertypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
@@ -19,7 +20,9 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
+	"github.com/axelarnetwork/axelar-core/x/axelarnet/types/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/utils/slices"
 	. "github.com/axelarnetwork/utils/test"
 )
 
@@ -39,7 +42,7 @@ func TestGenesis(t *testing.T) {
 		}).
 		When("the state is initialized from a genesis state",
 			func() {
-				initialGenesis = types.NewGenesisState(types.DefaultParams(), rand.AccAddr(), randomChains(), randomTransferQueue(cfg.Codec))
+				initialGenesis = types.NewGenesisState(types.DefaultParams(), rand.AccAddr(), randomChains(), randomTransferQueue(cfg.Codec), randomTransfers())
 				assert.NoError(t, initialGenesis.Validate())
 
 				ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
@@ -54,36 +57,34 @@ func TestGenesis(t *testing.T) {
 				assert.Equal(t, initialGenesis.Params, exportedGenesis.Params)
 				assert.Equal(t, initialGenesis.TransferQueue, exportedGenesis.TransferQueue)
 				assert.Equal(t, len(initialGenesis.Chains), len(exportedGenesis.Chains))
-
 				for i := range initialGenesis.Chains {
 					assert.Equal(t, initialGenesis.Chains[i].Name, exportedGenesis.Chains[i].Name)
 					assert.Equal(t, initialGenesis.Chains[i].IBCPath, exportedGenesis.Chains[i].IBCPath)
 					assert.Equal(t, initialGenesis.Chains[i].AddrPrefix, exportedGenesis.Chains[i].AddrPrefix)
 				}
+
+				for i := range initialGenesis.FailedTransfers {
+					assert.Equal(t, initialGenesis.FailedTransfers[i].ID, exportedGenesis.FailedTransfers[i].ID)
+					assert.Equal(t, initialGenesis.FailedTransfers[i].ChannelID, exportedGenesis.FailedTransfers[i].ChannelID)
+					assert.Equal(t, initialGenesis.FailedTransfers[i].PortID, exportedGenesis.FailedTransfers[i].PortID)
+					assert.Equal(t, initialGenesis.FailedTransfers[i].Receiver, exportedGenesis.FailedTransfers[i].Receiver)
+					assert.True(t, initialGenesis.FailedTransfers[i].Token.Equal(exportedGenesis.FailedTransfers[i].Token))
+					assert.True(t, initialGenesis.FailedTransfers[i].Sender.Equals(exportedGenesis.FailedTransfers[i].Sender))
+				}
 			}).Run(t, 10)
 }
 
 func randomTransfers() []types.IBCTransfer {
-	transferCount := rand.I64Between(0, 100)
-	var transfers []types.IBCTransfer
-	for i := int64(0); i < transferCount; i++ {
-		transfers = append(transfers, randomIBCTransfer())
-	}
+	transfers := slices.Expand(
+		func(_ int) types.IBCTransfer { return testutils.RandomIBCTransfer() },
+		int(rand.I64Between(0, 100)),
+	)
+
+	sort.SliceStable(transfers, func(i, j int) bool {
+		return bytes.Compare(transfers[i].ID.Bytes(), transfers[j].ID.Bytes()) < 0
+	})
+
 	return transfers
-}
-
-func randomIBCTransfer() types.IBCTransfer {
-	denom := rand.Strings(5, 20).WithAlphabet([]rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXY")).Next()
-	channel := fmt.Sprintf("%s%d", "channel-", rand.I64Between(0, 9999))
-
-	return types.IBCTransfer{
-		Sender:    rand.AccAddr(),
-		Receiver:  randomNormalizedStr(5, 20),
-		Token:     sdk.NewCoin(denom, sdk.NewInt(rand.PosI64())),
-		PortID:    ibctransfertypes.PortID,
-		ChannelID: channel,
-		ID:        nexus.TransferID(uint64(rand.PosI64())),
-	}
 }
 
 func randomChains() []types.CosmosChain {
@@ -115,7 +116,7 @@ func randomTransferQueue(cdc codec.Codec) utils.QueueState {
 	keyPrefix := utils.KeyFromStr("transfer")
 
 	for i := int64(0); i < queueLen; i++ {
-		transfer := randomIBCTransfer()
+		transfer := testutils.RandomIBCTransfer()
 
 		qs.Items[fmt.Sprintf("%s_%d_%s", queueName, rand.PosI64(), transfer.ID.String())] = utils.QueueState_Item{
 			Key:   keyPrefix.AppendStr(transfer.ID.String()).AsKey(),

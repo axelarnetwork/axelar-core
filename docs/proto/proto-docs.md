@@ -705,6 +705,7 @@ Params represent the genesis parameters for the module
 | `collector_address` | [bytes](#bytes) |  |  |
 | `chains` | [CosmosChain](#axelar.axelarnet.v1beta1.CosmosChain) | repeated |  |
 | `transfer_queue` | [axelar.utils.v1beta1.QueueState](#axelar.utils.v1beta1.QueueState) |  |  |
+| `failed_transfers` | [IBCTransfer](#axelar.axelarnet.v1beta1.IBCTransfer) | repeated |  |
 
 
 
