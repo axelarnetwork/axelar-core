@@ -33,14 +33,10 @@ func NewVoteHandler(cdc codec.Codec, keeper types.BaseKeeper, nexus types.Nexus,
 }
 
 func (v voteHandler) HandleFailedPoll(ctx sdk.Context, poll vote.Poll) error {
-	md := funcs.MustOk(poll.GetMetaData())
-	chainTxID, ok := md.(*types.PollMetadata)
-	if !ok {
-		panic(fmt.Sprintf("poll metadata should be of type %T", &types.PollMetadata{}))
-	}
+	md := mustGetMetadata(poll)
 	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.PollFailed{
-		TxID:   chainTxID.TxID,
-		Chain:  chainTxID.Chain,
+		TxID:   md.TxID,
+		Chain:  md.Chain,
 		PollID: poll.GetID(),
 	}))
 
@@ -70,14 +66,10 @@ func (v voteHandler) HandleExpiredPoll(ctx sdk.Context, poll vote.Poll) error {
 		}
 	}
 
-	md := funcs.MustOk(poll.GetMetaData())
-	chainTxID, ok := md.(*types.PollMetadata)
-	if !ok {
-		panic(fmt.Sprintf("poll metadata should be of type %T", &types.PollMetadata{}))
-	}
+	md := mustGetMetadata(poll)
 	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.PollExpired{
-		TxID:   chainTxID.TxID,
-		Chain:  chainTxID.Chain,
+		TxID:   md.TxID,
+		Chain:  md.Chain,
 		PollID: poll.GetID(),
 	}))
 
@@ -126,6 +118,15 @@ func (v voteHandler) HandleCompletedPoll(ctx sdk.Context, poll vote.Poll) error 
 				"voter", voter.String(),
 				"poll", poll.GetID().String())
 		}
+	}
+
+	if v.IsFalsyResult(voteEvents) {
+		md := mustGetMetadata(poll)
+		funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.NoEventsConfirmed{
+			TxID:   md.TxID,
+			Chain:  md.Chain,
+			PollID: poll.GetID(),
+		}))
 	}
 
 	return nil
@@ -189,4 +190,13 @@ func handleEvent(ctx sdk.Context, ck types.ChainKeeper, event types.Event, chain
 	)
 
 	return nil
+}
+
+func mustGetMetadata(poll vote.Poll) types.PollMetadata {
+	md := funcs.MustOk(poll.GetMetaData())
+	chainTxID, ok := md.(*types.PollMetadata)
+	if !ok {
+		panic(fmt.Sprintf("poll metadata should be of type %T", &types.PollMetadata{}))
+	}
+	return *chainTxID
 }
