@@ -174,6 +174,7 @@
     - [ConfirmGatewayTxStarted](#axelar.evm.v1beta1.ConfirmGatewayTxStarted)
     - [ConfirmKeyTransferStarted](#axelar.evm.v1beta1.ConfirmKeyTransferStarted)
     - [ConfirmTokenStarted](#axelar.evm.v1beta1.ConfirmTokenStarted)
+    - [NoEventsConfirmed](#axelar.evm.v1beta1.NoEventsConfirmed)
     - [PollExpired](#axelar.evm.v1beta1.PollExpired)
     - [PollFailed](#axelar.evm.v1beta1.PollFailed)
   
@@ -2858,6 +2859,23 @@ TransferKey contains information for a transfer ownership or operatorship
 | `token_details` | [TokenDetails](#axelar.evm.v1beta1.TokenDetails) |  |  |
 | `confirmation_height` | [uint64](#uint64) |  |  |
 | `participants` | [axelar.vote.exported.v1beta1.PollParticipants](#axelar.vote.exported.v1beta1.PollParticipants) |  |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.NoEventsConfirmed"></a>
+
+### NoEventsConfirmed
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tx_id` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
+| `poll_id` | [uint64](#uint64) |  |  |
 
 
 
