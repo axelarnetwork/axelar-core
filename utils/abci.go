@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/go-errors/errors"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 )
@@ -22,6 +23,7 @@ func RunEndBlocker(c sdk.Context, l Logger, endBlocker func(sdk.Context) ([]abci
 	defer func() {
 		if r := recover(); r != nil {
 			l.Logger(ctx).Error(fmt.Sprintf("panicked running end blocker due to error %v", r))
+			l.Logger(ctx).Debug(errors.Wrap(r, 1).ErrorStack())
 		}
 	}()
 

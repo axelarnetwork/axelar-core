@@ -55,6 +55,8 @@ func (store KVStore) SetRaw(key Key, value []byte) {
 
 // Get unmarshals the raw bytes stored under the given key into the value object. Returns true if the key exists.
 func (store KVStore) Get(key Key, value codec.ProtoMarshaler) bool {
+	value.Reset()
+
 	bz := store.KVStore.Get(key.AsKey())
 	if bz == nil {
 		return false
@@ -98,6 +100,7 @@ type iterator struct {
 
 // UnmarshalValue returns the value marshalled into the given type
 func (i iterator) UnmarshalValue(value codec.ProtoMarshaler) {
+	value.Reset()
 	i.cdc.MustUnmarshalLengthPrefixed(i.Value(), value)
 }
 
