@@ -5,6 +5,7 @@ import MarkdownPath from '../../components/markdown'
 import EVMChains from '../../components/evm/chains'
 import EVMAssets from '../../components/evm/assets'
 import IBCChannels from '../../components/ibc/channels'
+import Typeform from '../../components/typeform'
 
 | Variable              | Value     |
 | --------------------- | --------- |
@@ -83,3 +84,5 @@ The gas relayer fee does not include any transaction fee assessed by the source 
 ## Upgrade Path
 
 <MarkdownPath src="/md/testnet-2/upgrade-path.md" />
+
+<Typeform />

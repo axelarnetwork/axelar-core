@@ -15,6 +15,7 @@
     "@headlessui/react": "^1.6.5",
     "@reach/skip-nav": "^0.17.0",
     "@redux-devtools/extension": "^3.2.2",
+    "@typeform/embed-react": "^1.19.0",
     "lodash": "^4.17.21",
     "markdown-to-jsx": "^7.1.7",
     "next": "^12.2.0",

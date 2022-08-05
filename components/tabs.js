@@ -2,30 +2,30 @@ import { useState, useEffect } from "react";
 import { useSelector, useDispatch, shallowEqual } from "react-redux";
 
 import { equals_ignore_case } from "../utils";
-import { ENVIRONMENT } from "../reducers/types";
+import { ENVIRONMENT_ID } from "../reducers/types";
 
 export default ({
   tabs,
   children,
 }) => {
   const dispatch = useDispatch();
-  const { _environment } = useSelector(state => ({ _environment: state.environment }), shallowEqual);
-  const { environment } = { ..._environment };
+  const { environment } = useSelector(state => ({ environment: state.environment }), shallowEqual);
+  const { environment_id } = { ...environment };
 
   const [openTab, setOpenTab] = useState(0);
 
   useEffect(() => {
-    if (environment) {
+    if (environment_id) {
       const index = tabs?.filter(t => !t?.hidden)
-        .findIndex(t => equals_ignore_case(t?.title, environment));
+        .findIndex(t => equals_ignore_case(t?.title, environment_id));
       setOpenTab(index > -1 ? index : 0);
     }
-  }, [environment]);
+  }, [environment_id]);
 
   const onClick = (tab, i) => {
     setOpenTab(i);
     dispatch({
-      type: ENVIRONMENT,
+      type: ENVIRONMENT_ID,
       value: tab?.title?.toLowerCase() || i,
     });
   };

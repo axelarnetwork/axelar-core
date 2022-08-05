@@ -84,3 +84,7 @@ div {
 a {
   text-decoration-line: none !important;
 }
+
+.tf-v1-popover-tooltip-text {
+  @apply dark:text-black;
+}
