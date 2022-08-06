@@ -154,8 +154,7 @@
           "blockExplorerUrls": ["https://aurorascan.dev"]
         }
       ],
-      "image": "/images/chains/aurora.png",
-      "is_staging": true
+      "image": "/images/chains/aurora.png"
     }
   ],
   "testnet": [
