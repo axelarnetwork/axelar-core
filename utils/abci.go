@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/go-errors/errors"
 	"github.com/tendermint/tendermint/libs/log"
 )
 
@@ -21,6 +22,7 @@ func RunCached[T any](c sdk.Context, l Logger, f func(sdk.Context) (T, error)) T
 	defer func() {
 		if r := recover(); r != nil {
 			l.Logger(ctx).Error(fmt.Sprintf("recovered from panic in cached context: %v", r))
+			l.Logger(ctx).Debug(errors.Wrap(r, 1).ErrorStack())
 		}
 	}()
 
