@@ -111,8 +111,8 @@ func checkTofnd(ctx context.Context, clientCtx client.Context, serverCtx *server
 	}
 	nopLogger.Debug("successful connection to tofnd gRPC server")
 
-	// creates client to communicate with the external tofnd process gg20 service
-	gg20client := tofnd.NewGG20Client(conn)
+	// creates client to communicate with the external tofnd process multisig service
+	client := tofnd.NewMultisigClient(conn)
 
 	grpcCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
@@ -124,7 +124,7 @@ func checkTofnd(ctx context.Context, clientCtx client.Context, serverCtx *server
 		KeyUid: keyID,
 	}
 
-	response, err := gg20client.KeyPresence(grpcCtx, request)
+	response, err := client.KeyPresence(grpcCtx, request)
 
 	if err != nil {
 		return fmt.Errorf("failed to invoke tofnd grpc: %s", err.Error())

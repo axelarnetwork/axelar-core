@@ -3,7 +3,6 @@ package vald
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -147,24 +146,11 @@ func runVald(ctx context.Context, cliCtx sdkClient.Context, txf tx.Factory, logg
 		}
 	}
 
-	var recoveryJSON []byte
-	recoveryFile := viper.GetString("tofnd-recovery")
-	if recoveryFile != "" {
-		var err error
-		recoveryJSON, err = ioutil.ReadFile(recoveryFile)
-		if err != nil {
-			return err
-		}
-		if len(recoveryJSON) == 0 {
-			return fmt.Errorf("JSON file is empty")
-		}
-	}
-
 	fPath := filepath.Join(valdHome, "state.json")
 	stateSource := NewRWFile(fPath)
 
 	logger.Info("start listening to events")
-	listen(ctx, cliCtx, txf, valdConf, valAddr, recoveryJSON, stateSource, logger)
+	listen(ctx, cliCtx, txf, valdConf, valAddr, stateSource, logger)
 	logger.Info("shutting down")
 	return nil
 }
@@ -180,12 +166,11 @@ func setPersistentFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().String("tofnd-host", defaultConf.Host, "host name for tss daemon")
 	cmd.PersistentFlags().String("tofnd-port", defaultConf.Port, "port for tss daemon")
 	cmd.PersistentFlags().String("tofnd-dial-timeout", defaultConf.DialTimeout.String(), "dialup timeout to the tss daemon")
-	cmd.PersistentFlags().String("tofnd-recovery", "", "json file with recovery request")
 	cmd.PersistentFlags().String("validator-addr", "", "the address of the validator operator, i.e axelarvaloper1..")
 	cmd.PersistentFlags().String(flags.FlagChainID, app.Name, "The network chain ID")
 }
 
-func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, valAddr sdk.ValAddress, recoveryJSON []byte, stateSource ReadWriter, logger log.Logger) {
+func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, valAddr sdk.ValAddress, stateSource ReadWriter, logger log.Logger) {
 	encCfg := app.MakeEncodingConfig()
 	cdc := encCfg.Amino
 	sender, err := clientCtx.Keyring.Key(clientCtx.From)
@@ -211,11 +196,6 @@ func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, ax
 		return cl, nil
 	})
 	tssMgr := createTSSMgr(bc, clientCtx, axelarCfg, logger, valAddr.String(), cdc)
-	if len(recoveryJSON) > 0 {
-		if err = tssMgr.Recover(recoveryJSON); err != nil {
-			panic(fmt.Errorf("unable to perform tss recovery: %v", err))
-		}
-	}
 
 	evmMgr := createEVMMgr(axelarCfg, clientCtx, bc, logger, cdc, valAddr)
 	multisigMgr := createMultisigMgr(bc, clientCtx, axelarCfg, logger, valAddr)
@@ -228,11 +208,6 @@ func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, ax
 	stateStore := NewStateStore(stateSource)
 	startBlock, err := getStartBlock(axelarCfg, stateStore, nodeHeight, robustClient, logger)
 	if err != nil {
-		panic(err)
-	}
-
-	// Refresh keys after the node has synced
-	if err := tssMgr.RefreshKeys(ctx); err != nil {
 		panic(err)
 	}
 
@@ -290,7 +265,6 @@ func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, ax
 	}
 
 	processBlockHeader := func(event tmEvents.Event) error {
-		tssMgr.ProcessNewBlockHeader(event.Height)
 		return stateStore.SetState(event.Height)
 	}
 
@@ -434,11 +408,10 @@ func createTSSMgr(broadcaster broadcast.Broadcaster, cliCtx client.Context, axel
 		}
 		logger.Debug("successful connection to tofnd gRPC server")
 
-		// creates clients to communicate with the external tofnd process service
-		gg20client := tofnd.NewGG20Client(conn)
+		// creates client to communicate with the external tofnd process service
 		multiSigClient := tofnd.NewMultisigClient(conn)
 
-		tssMgr := tss.NewMgr(gg20client, multiSigClient, cliCtx, 2*time.Hour, valAddr, broadcaster, logger, cdc)
+		tssMgr := tss.NewMgr(multiSigClient, cliCtx, 2*time.Hour, valAddr, broadcaster, logger, cdc)
 
 		return tssMgr, nil
 	}
