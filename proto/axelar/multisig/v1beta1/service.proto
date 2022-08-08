@@ -61,12 +61,12 @@ service QueryService {
   // Key returns the key corresponding to a given key ID.
   // If no key is found, it returns the grpc NOT_FOUND error.
   rpc Key(KeyRequest) returns (KeyResponse) {
-    option (google.api.http).get = "/axelar/multisig/v1beta1/key/{key_id}";
+    option (google.api.http).get = "/axelar/multisig/v1beta1/key";
   }
 
   // Snapshot returns the snapshot corresponding to a given key ID.
   // If no snapshot is found, it returns the grpc NOT_FOUND error.
   rpc Snapshot(SnapshotRequest) returns (SnapshotResponse) {
-    option (google.api.http).get = "/axelar/multisig/v1beta1/snapshot/{key_id}";
+    option (google.api.http).get = "/axelar/multisig/v1beta1/snapshot";
   }
 }

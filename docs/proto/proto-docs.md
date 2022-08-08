@@ -4846,8 +4846,8 @@ Query defines the gRPC querier service.
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `KeyID` | [KeyIDRequest](#axelar.multisig.v1beta1.KeyIDRequest) | [KeyIDResponse](#axelar.multisig.v1beta1.KeyIDResponse) | KeyID returns the key ID of a key assigned to a given chain. If no key is assigned, it returns the grpc NOT_FOUND error. | GET|/axelar/multisig/v1beta1/key_id/{chain}|
 | `NextKeyID` | [NextKeyIDRequest](#axelar.multisig.v1beta1.NextKeyIDRequest) | [NextKeyIDResponse](#axelar.multisig.v1beta1.NextKeyIDResponse) | NextKeyID returns the key ID assigned for the next rotation on a given chain. If no key rotation is in progress, it returns the grpc NOT_FOUND error. | GET|/axelar/multisig/v1beta1/next_key_id/{chain}|
-| `Key` | [KeyRequest](#axelar.multisig.v1beta1.KeyRequest) | [KeyResponse](#axelar.multisig.v1beta1.KeyResponse) | Key returns the key corresponding to a given key ID. If no key is found, it returns the grpc NOT_FOUND error. | GET|/axelar/multisig/v1beta1/key/{key_id}|
-| `Snapshot` | [SnapshotRequest](#axelar.multisig.v1beta1.SnapshotRequest) | [SnapshotResponse](#axelar.multisig.v1beta1.SnapshotResponse) | Snapshot returns the snapshot corresponding to a given key ID. If no snapshot is found, it returns the grpc NOT_FOUND error. | GET|/axelar/multisig/v1beta1/snapshot/{key_id}|
+| `Key` | [KeyRequest](#axelar.multisig.v1beta1.KeyRequest) | [KeyResponse](#axelar.multisig.v1beta1.KeyResponse) | Key returns the key corresponding to a given key ID. If no key is found, it returns the grpc NOT_FOUND error. | GET|/axelar/multisig/v1beta1/key|
+| `Snapshot` | [SnapshotRequest](#axelar.multisig.v1beta1.SnapshotRequest) | [SnapshotResponse](#axelar.multisig.v1beta1.SnapshotResponse) | Snapshot returns the snapshot corresponding to a given key ID. If no snapshot is found, it returns the grpc NOT_FOUND error. | GET|/axelar/multisig/v1beta1/snapshot|
 
  <!-- end services -->
 
