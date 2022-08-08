@@ -31,3 +31,4 @@ jobs:
           RELEASE_BRANCHES: main,releases.*
           WITH_V: true
           DRY_RUN: true
+          VERBOSE: true
