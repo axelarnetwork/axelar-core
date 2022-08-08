@@ -177,7 +177,7 @@ func TestGetTokenAddress(t *testing.T) {
 	capacity := sdk.NewIntFromUint64(uint64(10000))
 
 	axelarGateway := types.Address(common.HexToAddress("0xA193E42526F1FEA8C99AF609dcEabf30C1c29fAA"))
-	expected := "0x483141ff4Eab195F926b76EB84430cc1c0708953"
+	expected := "0x7779c3e9a8b1856b4E3Ab40da37200dbd007d594"
 
 	keeper := k.ForChain(chain)
 	keeper.SetParams(ctx, types.DefaultParams()[0])
