@@ -67,8 +67,9 @@ func (q Querier) Key(c context.Context, req *types.KeyRequest) (*types.KeyRespon
 
 	participants := slices.Map(key.GetParticipants(), func(p sdk.ValAddress) types.KeyResponse_Participant {
 		return types.KeyResponse_Participant{
-			Weight: key.GetWeight(p),
-			PubKey: funcs.MustOk(key.GetPubKey(p)).String(),
+			Address: p.String(),
+			Weight:  key.GetWeight(p),
+			PubKey:  fmt.Sprintf("0x%s", funcs.MustOk(key.GetPubKey(p)).String()),
 		}
 	})
 	sort.SliceStable(participants, func(i, j int) bool {
@@ -78,6 +79,36 @@ func (q Querier) Key(c context.Context, req *types.KeyRequest) (*types.KeyRespon
 	return &types.KeyResponse{
 		KeyID:           req.KeyID,
 		State:           key.GetState(),
+		Height:          key.GetHeight(),
+		Timestamp:       key.GetTimestamp(),
+		ThresholdWeight: key.GetMinPassingWeight(),
+		BondedWeight:    key.GetBondedWeight(),
+		Participants:    participants,
+	}, nil
+}
+
+// Snapshot returns the snapshot corresponding to a given key ID
+func (q Querier) Snapshot(c context.Context, req *types.SnapshotRequest) (*types.SnapshotResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	key, ok := q.keeper.GetKey(ctx, req.KeyID)
+	if !ok {
+		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrMultisig, fmt.Sprintf("key not found for key id [%s]", req.KeyID)).Error())
+	}
+
+	snapshot := key.GetSnapshot()
+
+	participants := slices.Map(snapshot.GetParticipantAddresses(), func(p sdk.ValAddress) types.SnapshotResponse_Participant {
+		return types.SnapshotResponse_Participant{
+			Address: p.String(),
+			Weight:  snapshot.GetParticipantWeight(p),
+		}
+	})
+	sort.SliceStable(participants, func(i, j int) bool {
+		return participants[i].Weight.GT(participants[j].Weight)
+	})
+
+	return &types.SnapshotResponse{
 		Height:          key.GetHeight(),
 		Timestamp:       key.GetTimestamp(),
 		ThresholdWeight: key.GetMinPassingWeight(),

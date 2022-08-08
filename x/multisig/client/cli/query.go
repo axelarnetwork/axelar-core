@@ -26,6 +26,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		GetCmdKeyID(queryRoute),
 		GetCmdNextKeyID(queryRoute),
 		GetCmdKey(queryRoute),
+		GetCmdSnapshot(queryRoute),
 	)
 
 	return multisigQueryCmd
@@ -107,6 +108,36 @@ func GetCmdKey(queryRoute string) *cobra.Command {
 			queryClient := types.NewQueryServiceClient(clientCtx)
 			res, err := queryClient.Key(cmd.Context(),
 				&types.KeyRequest{
+					KeyID: keyID,
+				})
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdSnapshot returns the snapshot for the given key ID
+func GetCmdSnapshot(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "snapshot [key-id]",
+		Short: "Returns the snapshot for the given key ID",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			keyID := multisig.KeyID(utils.NormalizeString(args[0]))
+			queryClient := types.NewQueryServiceClient(clientCtx)
+			res, err := queryClient.Snapshot(cmd.Context(),
+				&types.SnapshotRequest{
 					KeyID: keyID,
 				})
 			if err != nil {

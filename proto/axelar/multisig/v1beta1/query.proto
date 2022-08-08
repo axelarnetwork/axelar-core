@@ -45,11 +45,12 @@ message KeyRequest {
 // KeyResponse contains the key corresponding to a given key id.
 message KeyResponse {
   message Participant {
-    string weight = 1 [
+    string address = 1;
+    bytes weight = 2 [
       (gogoproto.nullable) = false,
       (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint"
     ];
-    string pub_key = 2;
+    string pub_key = 3;
   }
 
   string key_id = 1 [
@@ -61,14 +62,47 @@ message KeyResponse {
   int64 height = 3;
   google.protobuf.Timestamp timestamp = 4
       [ (gogoproto.nullable) = false, (gogoproto.stdtime) = true ];
-  string threshold_weight = 5 [
+  bytes threshold_weight = 5 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
     (gogoproto.nullable) = false
   ];
-  string bonded_weight = 6 [
+  bytes bonded_weight = 6 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
     (gogoproto.nullable) = false
   ];
-  // // Keygen participants in descending order by weight
+  // Keygen participants in descending order by weight
   repeated Participant participants = 7 [ (gogoproto.nullable) = false ];
+}
+
+message SnapshotRequest {
+  string key_id = 1 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
+  ];
+}
+
+// SnapshotResponse contains the snapshot corresponding to a key id.
+message SnapshotResponse {
+  message Participant {
+    string address = 1;
+    bytes weight = 2 [
+      (gogoproto.nullable) = false,
+      (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint"
+    ];
+  }
+
+  int64 height = 1;
+  google.protobuf.Timestamp timestamp = 2
+      [ (gogoproto.nullable) = false, (gogoproto.stdtime) = true ];
+  bytes threshold_weight = 3 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.nullable) = false
+  ];
+  bytes bonded_weight = 4 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.nullable) = false
+  ];
+  // Snapshot participants in descending order by weight
+  repeated Participant participants = 5 [ (gogoproto.nullable) = false ];
 }
