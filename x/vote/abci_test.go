@@ -112,6 +112,7 @@ func TestHandlePollsAtExpiry(t *testing.T) {
 	givenPollQueue.
 		When2(withPoll(true, exported.Failed)).
 		Then("should delete poll", func(t *testing.T) {
+			voteHandler.HandleFailedPollFunc = func(ctx sdk.Context, poll exported.Poll) error { return nil }
 
 			err := handlePollsAtExpiry(ctx, keeper)
 			assert.NoError(t, err)
