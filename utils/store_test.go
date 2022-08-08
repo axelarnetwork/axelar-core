@@ -14,6 +14,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	"github.com/axelarnetwork/axelar-core/utils/key"
 )
 
 func TestKey(t *testing.T) {
@@ -70,6 +71,22 @@ func TestKVStore_Get(t *testing.T) {
 	store.Set(KeyFromStr("key"), &emptyState)
 
 	assert.True(t, store.Get(KeyFromStr("key"), &filledState))
+	assert.Equal(t, emptyState, filledState)
+}
+
+func TestKVStore_GetNew(t *testing.T) {
+	encConf := params.MakeEncodingConfig()
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	store := NewNormalizedStore(ctx.KVStore(sdk.NewKVStoreKey("test")), encConf.Codec)
+
+	filledState := QueueState{
+		Items: map[string]QueueState_Item{"state": {Key: []byte("stateKey1"), Value: []byte("stateValue1")}},
+	}
+	emptyState := QueueState{}
+
+	store.SetNew(key.FromStr("key"), &emptyState)
+
+	assert.True(t, store.GetNew(key.FromStr("key"), &filledState))
 	assert.Equal(t, emptyState, filledState)
 }
 
