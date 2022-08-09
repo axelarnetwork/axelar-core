@@ -250,7 +250,7 @@ func TestPoll(t *testing.T) {
 
 		givenPollBuilder.
 			When2(whenPollIsInitialized).
-			Then("should not be able to vote for a compelted poll outside the grace period", func(t *testing.T) {
+			Then("should not be able to vote for a completed poll outside the grace period", func(t *testing.T) {
 				for _, voter := range voters[0:3] {
 					poll.Vote(voter, ctx.BlockHeight(), &evmtypes.VoteEvents{})
 				}
