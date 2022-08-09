@@ -38,6 +38,7 @@ func Key() types.Key {
 
 	return types.Key{
 		ID:               multisigtestutils.KeyID(),
+		State:            exported.Inactive,
 		Snapshot:         snapshot,
 		PubKeys:          pubKeys,
 		SigningThreshold: threshold,
