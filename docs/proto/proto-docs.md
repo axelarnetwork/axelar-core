@@ -107,6 +107,8 @@
     - [RegisterFeeCollectorResponse](#axelar.axelarnet.v1beta1.RegisterFeeCollectorResponse)
     - [RegisterIBCPathRequest](#axelar.axelarnet.v1beta1.RegisterIBCPathRequest)
     - [RegisterIBCPathResponse](#axelar.axelarnet.v1beta1.RegisterIBCPathResponse)
+    - [RetryIBCTransferRequest](#axelar.axelarnet.v1beta1.RetryIBCTransferRequest)
+    - [RetryIBCTransferResponse](#axelar.axelarnet.v1beta1.RetryIBCTransferResponse)
     - [RouteIBCTransfersRequest](#axelar.axelarnet.v1beta1.RouteIBCTransfersRequest)
     - [RouteIBCTransfersResponse](#axelar.axelarnet.v1beta1.RouteIBCTransfersResponse)
   
@@ -1887,6 +1889,33 @@ a cosmos chain
 
 
 
+<a name="axelar.axelarnet.v1beta1.RetryIBCTransferRequest"></a>
+
+### RetryIBCTransferRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
+| `id` | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="axelar.axelarnet.v1beta1.RetryIBCTransferResponse"></a>
+
+### RetryIBCTransferResponse
+
+
+
+
+
+
+
 <a name="axelar.axelarnet.v1beta1.RouteIBCTransfersRequest"></a>
 
 ### RouteIBCTransfersRequest
@@ -1950,6 +1979,7 @@ Msg defines the axelarnet Msg service.
 | `RegisterAsset` | [RegisterAssetRequest](#axelar.axelarnet.v1beta1.RegisterAssetRequest) | [RegisterAssetResponse](#axelar.axelarnet.v1beta1.RegisterAssetResponse) |  | POST|/axelar/axelarnet/register_asset|
 | `RouteIBCTransfers` | [RouteIBCTransfersRequest](#axelar.axelarnet.v1beta1.RouteIBCTransfersRequest) | [RouteIBCTransfersResponse](#axelar.axelarnet.v1beta1.RouteIBCTransfersResponse) |  | POST|/axelar/axelarnet/route_ibc_transfers|
 | `RegisterFeeCollector` | [RegisterFeeCollectorRequest](#axelar.axelarnet.v1beta1.RegisterFeeCollectorRequest) | [RegisterFeeCollectorResponse](#axelar.axelarnet.v1beta1.RegisterFeeCollectorResponse) |  | POST|/axelar/axelarnet/register_fee_collector|
+| `RetryIBCTransfer` | [RetryIBCTransferRequest](#axelar.axelarnet.v1beta1.RetryIBCTransferRequest) | [RetryIBCTransferResponse](#axelar.axelarnet.v1beta1.RetryIBCTransferResponse) |  | POST|/axelar/axelarnet/retry_ibc_transfer|
 
 
 <a name="axelar.axelarnet.v1beta1.QueryService"></a>

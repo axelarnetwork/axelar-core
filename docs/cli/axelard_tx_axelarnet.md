@@ -33,4 +33,5 @@ axelard tx axelarnet [flags]
 - [axelard tx axelarnet register-asset](axelard_tx_axelarnet_register-asset.md)	 - Register a new asset to a cosmos based chain
 - [axelard tx axelarnet register-fee-collector](axelard_tx_axelarnet_register-fee-collector.md)	 - Register axelarnet fee collector account
 - [axelard tx axelarnet register-path](axelard_tx_axelarnet_register-path.md)	 - Register an ibc path for a cosmos chain
+- [axelard tx axelarnet retry-failed-transfer](axelard_tx_axelarnet_retry-failed-transfer.md)	 - Retry a failed IBC transfer
 - [axelard tx axelarnet route-ibc-transfers](axelard_tx_axelarnet_route-ibc-transfers.md)	 - Routes pending transfers to cosmos chains
