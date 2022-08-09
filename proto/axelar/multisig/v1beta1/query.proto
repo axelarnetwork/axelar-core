@@ -74,7 +74,7 @@ message KeyResponse {
   repeated Participant participants = 7 [ (gogoproto.nullable) = false ];
 }
 
-message SnapshotRequest {
+message KeygenCandidatesRequest {
   string key_id = 1 [
     (gogoproto.customname) = "KeyID",
     (gogoproto.casttype) =
@@ -82,8 +82,8 @@ message SnapshotRequest {
   ];
 }
 
-// SnapshotResponse contains the snapshot corresponding to a key id.
-message SnapshotResponse {
+// KeygenCandidatesResponse contains the candidates chosen for a keygen.
+message KeygenCandidatesResponse {
   message Participant {
     string address = 1;
     bytes weight = 2 [
@@ -103,6 +103,6 @@ message SnapshotResponse {
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
     (gogoproto.nullable) = false
   ];
-  // Snapshot participants in descending order by weight
+  // Keygen candidates in descending order by weight
   repeated Participant participants = 5 [ (gogoproto.nullable) = false ];
 }

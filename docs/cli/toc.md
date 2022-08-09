@@ -114,8 +114,8 @@
     - [multisig](axelard_query_multisig.md)	 - Querying commands for the multisig module
       - [key \[key-id\]](axelard_query_multisig_key.md)	 - Returns the key of the given ID
       - [key-id \[chain\]](axelard_query_multisig_key-id.md)	 - Returns the key ID assigned to a given chain
+      - [keygen-candidates \[key-id\]](axelard_query_multisig_keygen-candidates.md)	 - Returns the candidates chosen for a keygen corresponding to the given key ID
       - [next-key-id \[chain\]](axelard_query_multisig_next-key-id.md)	 - Returns the key ID assigned for the next rotation on a given chain and for the given key role
-      - [snapshot \[key-id\]](axelard_query_multisig_snapshot.md)	 - Returns the snapshot for the given key ID
     - [nexus](axelard_query_nexus.md)	 - Querying commands for the nexus module
       - [assets \[chain\]](axelard_query_nexus_assets.md)	 - Returns the registered assets of a chain
       - [chain-by-asset \[asset\]](axelard_query_nexus_chain-by-asset.md)	 - Returns the chains an asset is registered on

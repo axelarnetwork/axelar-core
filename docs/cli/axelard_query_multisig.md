@@ -28,5 +28,5 @@ axelard query multisig [flags]
 - [axelard query](axelard_query.md)	 - Querying subcommands
 - [axelard query multisig key](axelard_query_multisig_key.md)	 - Returns the key of the given ID
 - [axelard query multisig key-id](axelard_query_multisig_key-id.md)	 - Returns the key ID assigned to a given chain
+- [axelard query multisig keygen-candidates](axelard_query_multisig_keygen-candidates.md)	 - Returns the candidates chosen for a keygen corresponding to the given key ID
 - [axelard query multisig next-key-id](axelard_query_multisig_next-key-id.md)	 - Returns the key ID assigned for the next rotation on a given chain and for the given key role
-- [axelard query multisig snapshot](axelard_query_multisig_snapshot.md)	 - Returns the snapshot for the given key ID

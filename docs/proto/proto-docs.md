@@ -294,11 +294,11 @@
     - [KeyRequest](#axelar.multisig.v1beta1.KeyRequest)
     - [KeyResponse](#axelar.multisig.v1beta1.KeyResponse)
     - [KeyResponse.Participant](#axelar.multisig.v1beta1.KeyResponse.Participant)
+    - [KeygenCandidatesRequest](#axelar.multisig.v1beta1.KeygenCandidatesRequest)
+    - [KeygenCandidatesResponse](#axelar.multisig.v1beta1.KeygenCandidatesResponse)
+    - [KeygenCandidatesResponse.Participant](#axelar.multisig.v1beta1.KeygenCandidatesResponse.Participant)
     - [NextKeyIDRequest](#axelar.multisig.v1beta1.NextKeyIDRequest)
     - [NextKeyIDResponse](#axelar.multisig.v1beta1.NextKeyIDResponse)
-    - [SnapshotRequest](#axelar.multisig.v1beta1.SnapshotRequest)
-    - [SnapshotResponse](#axelar.multisig.v1beta1.SnapshotResponse)
-    - [SnapshotResponse.Participant](#axelar.multisig.v1beta1.SnapshotResponse.Participant)
   
 - [axelar/multisig/v1beta1/tx.proto](#axelar/multisig/v1beta1/tx.proto)
     - [RotateKeyRequest](#axelar.multisig.v1beta1.RotateKeyRequest)
@@ -4627,6 +4627,56 @@ KeyResponse contains the key corresponding to a given key id.
 
 
 
+<a name="axelar.multisig.v1beta1.KeygenCandidatesRequest"></a>
+
+### KeygenCandidatesRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.KeygenCandidatesResponse"></a>
+
+### KeygenCandidatesResponse
+KeygenCandidatesResponse contains the candidates chosen for a keygen.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `height` | [int64](#int64) |  |  |
+| `timestamp` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
+| `threshold_weight` | [bytes](#bytes) |  |  |
+| `bonded_weight` | [bytes](#bytes) |  |  |
+| `participants` | [KeygenCandidatesResponse.Participant](#axelar.multisig.v1beta1.KeygenCandidatesResponse.Participant) | repeated | Keygen candidates in descending order by weight |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.KeygenCandidatesResponse.Participant"></a>
+
+### KeygenCandidatesResponse.Participant
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [string](#string) |  |  |
+| `weight` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
 <a name="axelar.multisig.v1beta1.NextKeyIDRequest"></a>
 
 ### NextKeyIDRequest
@@ -4652,56 +4702,6 @@ chain
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `key_id` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="axelar.multisig.v1beta1.SnapshotRequest"></a>
-
-### SnapshotRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `key_id` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="axelar.multisig.v1beta1.SnapshotResponse"></a>
-
-### SnapshotResponse
-SnapshotResponse contains the snapshot corresponding to a key id.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `height` | [int64](#int64) |  |  |
-| `timestamp` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
-| `threshold_weight` | [bytes](#bytes) |  |  |
-| `bonded_weight` | [bytes](#bytes) |  |  |
-| `participants` | [SnapshotResponse.Participant](#axelar.multisig.v1beta1.SnapshotResponse.Participant) | repeated | Snapshot participants in descending order by weight |
-
-
-
-
-
-
-<a name="axelar.multisig.v1beta1.SnapshotResponse.Participant"></a>
-
-### SnapshotResponse.Participant
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `address` | [string](#string) |  |  |
-| `weight` | [bytes](#bytes) |  |  |
 
 
 
@@ -4877,7 +4877,7 @@ Query defines the gRPC querier service.
 | `KeyID` | [KeyIDRequest](#axelar.multisig.v1beta1.KeyIDRequest) | [KeyIDResponse](#axelar.multisig.v1beta1.KeyIDResponse) | KeyID returns the key ID of a key assigned to a given chain. If no key is assigned, it returns the grpc NOT_FOUND error. | GET|/axelar/multisig/v1beta1/key_id/{chain}|
 | `NextKeyID` | [NextKeyIDRequest](#axelar.multisig.v1beta1.NextKeyIDRequest) | [NextKeyIDResponse](#axelar.multisig.v1beta1.NextKeyIDResponse) | NextKeyID returns the key ID assigned for the next rotation on a given chain. If no key rotation is in progress, it returns the grpc NOT_FOUND error. | GET|/axelar/multisig/v1beta1/next_key_id/{chain}|
 | `Key` | [KeyRequest](#axelar.multisig.v1beta1.KeyRequest) | [KeyResponse](#axelar.multisig.v1beta1.KeyResponse) | Key returns the key corresponding to a given key ID. If no key is found, it returns the grpc NOT_FOUND error. | GET|/axelar/multisig/v1beta1/key|
-| `Snapshot` | [SnapshotRequest](#axelar.multisig.v1beta1.SnapshotRequest) | [SnapshotResponse](#axelar.multisig.v1beta1.SnapshotResponse) | Snapshot returns the snapshot corresponding to a given key ID. If no snapshot is found, it returns the grpc NOT_FOUND error. | GET|/axelar/multisig/v1beta1/snapshot|
+| `KeygenCandidates` | [KeygenCandidatesRequest](#axelar.multisig.v1beta1.KeygenCandidatesRequest) | [KeygenCandidatesResponse](#axelar.multisig.v1beta1.KeygenCandidatesResponse) | KeygenCandidates returns the candidates chosen for a keygen corresponding to a given key ID. If no key is found, it returns the grpc NOT_FOUND error. | GET|/axelar/multisig/v1beta1/keygen_candidates|
 
  <!-- end services -->
 

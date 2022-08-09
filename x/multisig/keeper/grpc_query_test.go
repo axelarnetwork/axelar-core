@@ -213,7 +213,7 @@ func TestKey(t *testing.T) {
 		Run(t)
 }
 
-func TestSnapshot(t *testing.T) {
+func TestKeygenCandidates(t *testing.T) {
 	var (
 		multisigKeeper *mock.KeeperMock
 		stakingKeeper  *mock.StakerMock
@@ -235,7 +235,7 @@ func TestSnapshot(t *testing.T) {
 			multisigKeeper.GetKeyFunc = func(sdk.Context, multisig.KeyID) (multisig.Key, bool) { return nil, false }
 		}).
 		Then("should return error NotFound", func(t *testing.T) {
-			res, err := querier.Snapshot(sdk.WrapSDKContext(ctx), &types.SnapshotRequest{KeyID: multisigTestutils.KeyID()})
+			res, err := querier.KeygenCandidates(sdk.WrapSDKContext(ctx), &types.KeygenCandidatesRequest{KeyID: multisigTestutils.KeyID()})
 
 			assert.Nil(t, res)
 			s, ok := status.FromError(err)
@@ -249,8 +249,8 @@ func TestSnapshot(t *testing.T) {
 			key = typesTestutils.Key()
 			multisigKeeper.GetKeyFunc = func(sdk.Context, multisig.KeyID) (multisig.Key, bool) { return &key, true }
 		}).
-		Then("should return snapshot", func(t *testing.T) {
-			res, err := querier.Snapshot(sdk.WrapSDKContext(ctx), &types.SnapshotRequest{KeyID: key.ID})
+		Then("should return candidates", func(t *testing.T) {
+			res, err := querier.KeygenCandidates(sdk.WrapSDKContext(ctx), &types.KeygenCandidatesRequest{KeyID: key.ID})
 
 			assert.NoError(t, err)
 			assert.NotNil(t, res)

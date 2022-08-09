@@ -1,16 +1,16 @@
-## axelard query multisig snapshot
+## axelard query multisig keygen-candidates
 
-Returns the snapshot for the given key ID
+Returns the candidates chosen for a keygen corresponding to the given key ID
 
 ```
-axelard query multisig snapshot [key-id] [flags]
+axelard query multisig keygen-candidates [key-id] [flags]
 ```
 
 ### Options
 
 ```
       --height int    Use a specific height to query state at (this can error if the node is pruning state)
-  -h, --help          help for snapshot
+  -h, --help          help for keygen-candidates
       --node string   <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
 ```
 

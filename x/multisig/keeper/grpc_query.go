@@ -87,8 +87,8 @@ func (q Querier) Key(c context.Context, req *types.KeyRequest) (*types.KeyRespon
 	}, nil
 }
 
-// Snapshot returns the snapshot corresponding to a given key ID
-func (q Querier) Snapshot(c context.Context, req *types.SnapshotRequest) (*types.SnapshotResponse, error) {
+// KeygenCandidates returns the candidates chosen for a keygen corresponding to a given key ID
+func (q Querier) KeygenCandidates(c context.Context, req *types.KeygenCandidatesRequest) (*types.KeygenCandidatesResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
 	key, ok := q.keeper.GetKey(ctx, req.KeyID)
@@ -98,8 +98,8 @@ func (q Querier) Snapshot(c context.Context, req *types.SnapshotRequest) (*types
 
 	snapshot := key.GetSnapshot()
 
-	participants := slices.Map(snapshot.GetParticipantAddresses(), func(p sdk.ValAddress) types.SnapshotResponse_Participant {
-		return types.SnapshotResponse_Participant{
+	participants := slices.Map(snapshot.GetParticipantAddresses(), func(p sdk.ValAddress) types.KeygenCandidatesResponse_Participant {
+		return types.KeygenCandidatesResponse_Participant{
 			Address: p.String(),
 			Weight:  snapshot.GetParticipantWeight(p),
 		}
@@ -108,7 +108,7 @@ func (q Querier) Snapshot(c context.Context, req *types.SnapshotRequest) (*types
 		return participants[i].Weight.GT(participants[j].Weight)
 	})
 
-	return &types.SnapshotResponse{
+	return &types.KeygenCandidatesResponse{
 		Height:          key.GetHeight(),
 		Timestamp:       key.GetTimestamp(),
 		ThresholdWeight: key.GetMinPassingWeight(),
