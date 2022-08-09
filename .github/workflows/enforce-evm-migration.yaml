@@ -27,7 +27,7 @@ jobs:
           evm_module=./x/evm/module.go
           echo "Comparing current branch with tag $tag"
           
-          if git diff "$tag" -s --exit-code ./contract-artifacts; then
+          if git diff -s --exit-code "$tag"  -- ./contract-artifacts; then
           echo "The contract version has not changed, no need to enforce a migration"
           exit 0
           fi
