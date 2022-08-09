@@ -1,17 +1,27 @@
-package keeper
+package keeper_test
 
 import (
 	"testing"
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
+	"github.com/tendermint/tendermint/libs/log"
+	abci "github.com/tendermint/tendermint/proto/tendermint/types"
 
+	"github.com/axelarnetwork/axelar-core/app/params"
+	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
 	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
+	"github.com/axelarnetwork/axelar-core/x/vote/keeper"
+	"github.com/axelarnetwork/axelar-core/x/vote/types"
+	"github.com/axelarnetwork/axelar-core/x/vote/types/mock"
+	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 	. "github.com/axelarnetwork/utils/test"
 )
@@ -19,7 +29,7 @@ import (
 func TestPoll(t *testing.T) {
 	var (
 		ctx         sdk.Context
-		k           Keeper
+		k           keeper.Keeper
 		voters      [4]sdk.ValAddress
 		pollBuilder exported.PollBuilder
 		poll        exported.Poll
@@ -205,7 +215,7 @@ func TestPoll(t *testing.T) {
 
 		givenPollBuilder.
 			When2(whenPollIsInitialized).
-			Then("should be able to vote for a compeleted poll within the grace period", func(t *testing.T) {
+			Then("should be able to vote for a completed poll within the grace period", func(t *testing.T) {
 				for _, voter := range voters[0:3] {
 					poll.Vote(voter, ctx.BlockHeight(), &evmtypes.VoteEvents{})
 				}
@@ -220,7 +230,7 @@ func TestPoll(t *testing.T) {
 
 		givenPollBuilder.
 			When2(whenPollIsInitialized).
-			Then("should not be able to vote for a compeleted poll outside the grace period", func(t *testing.T) {
+			Then("should not be able to vote for a compelted poll outside the grace period", func(t *testing.T) {
 				for _, voter := range voters[0:3] {
 					poll.Vote(voter, ctx.BlockHeight(), &evmtypes.VoteEvents{})
 				}
@@ -285,5 +295,40 @@ func TestPoll(t *testing.T) {
 			}).
 			Run(t)
 	})
+}
+
+func TestPoll_GetMetaData(t *testing.T) {
+	encCfg := params.MakeEncodingConfig()
+	evmtypes.RegisterInterfaces(encCfg.InterfaceRegistry)
+
+	subspace := paramstypes.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "vote")
+	k := keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey(types.StoreKey), subspace, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.RewarderMock{})
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	snap := snapshot.NewSnapshot(
+		time.Now(),
+		rand.I64Between(1, 100),
+		slices.Expand(func(_ int) snapshot.Participant { return snapshot.NewParticipant(rand.ValAddr(), sdk.OneUint()) }, 5),
+		sdk.NewUint(5),
+	)
+	expectedMetadata := &evmtypes.PollMetadata{
+		Chain: "chain",
+		TxID:  [common.HashLength]byte{},
+	}
+	pollBuilder := exported.NewPollBuilder(
+		"some_module",
+		utils.NewThreshold(51, 100),
+		snap,
+		ctx.BlockHeight()+100,
+	).
+		GracePeriod(1).
+		ModuleMetadata(expectedMetadata)
+
+	pollID := funcs.Must(k.InitializePoll(ctx, pollBuilder))
+
+	poll := funcs.MustOk(k.GetPoll(ctx, pollID))
+
+	md, ok := poll.GetMetaData()
+	assert.True(t, ok)
+	assert.Equal(t, expectedMetadata, md)
 
 }
