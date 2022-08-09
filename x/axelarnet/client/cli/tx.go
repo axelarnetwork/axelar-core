@@ -38,7 +38,7 @@ func GetTxCmd() *cobra.Command {
 		GetCmdRegisterAsset(),
 		GetCmdRouteIBCTransfersTx(),
 		GetCmdRegisterFeeCollector(),
-		getRetryFailedTransfer(),
+		getRetryIBCTransfer(),
 	)
 
 	return axelarTxCmd
@@ -265,7 +265,7 @@ func GetCmdRegisterFeeCollector() *cobra.Command {
 	return cmd
 }
 
-func getRetryFailedTransfer() *cobra.Command {
+func getRetryIBCTransfer() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "retry-failed-transfer [transfer ID]",
 		Short: "Retry a failed IBC transfer",
@@ -281,7 +281,7 @@ func getRetryFailedTransfer() *cobra.Command {
 				return err
 			}
 
-			msg := types.NewRetryFailedTransferRequest(cliCtx.GetFromAddress(), transferID)
+			msg := types.NewRetryIBCTransferRequest(cliCtx.GetFromAddress(), nexus.TransferID(transferID))
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

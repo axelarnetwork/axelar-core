@@ -123,7 +123,7 @@ message RegisterFeeCollectorRequest {
 
 message RegisterFeeCollectorResponse {}
 
-message RetryFailedTransferRequest {
+message RetryIBCTransferRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
@@ -134,4 +134,4 @@ message RetryFailedTransferRequest {
   ];
 }
 
-message RetryFailedTransferResponse {}
+message RetryIBCTransferResponse {}

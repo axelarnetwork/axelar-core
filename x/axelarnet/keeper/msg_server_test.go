@@ -563,7 +563,7 @@ func TestHandleMsgRouteIBCTransfers(t *testing.T) {
 	}).Repeat(repeatCount))
 }
 
-func TestRetryFailedTransfer(t *testing.T) {
+func TestRetryIBCTransfer(t *testing.T) {
 	var (
 		server types.MsgServiceServer
 		bk     *mock.BaseKeeperMock
@@ -593,8 +593,8 @@ func TestRetryFailedTransfer(t *testing.T) {
 				}
 			}).
 				Then("should return error", func(t *testing.T) {
-					req := types.NewRetryFailedTransferRequest(rand.AccAddr(), uint64(rand.I64Between(1, 1000)))
-					_, err := server.RetryFailedTransfer(sdk.WrapSDKContext(ctx), req)
+					req := types.NewRetryIBCTransferRequest(rand.AccAddr(), nexus.TransferID(rand.I64Between(1, 1000)))
+					_, err := server.RetryIBCTransfer(sdk.WrapSDKContext(ctx), req)
 					assert.Error(t, err)
 				}),
 			When("transfer id exists", func() {
@@ -604,8 +604,8 @@ func TestRetryFailedTransfer(t *testing.T) {
 				bk.EnqueueTransferFunc = func(sdk.Context, types.IBCTransfer) error { return nil }
 			}).
 				Then("should requeue transfer", func(t *testing.T) {
-					req := types.NewRetryFailedTransferRequest(rand.AccAddr(), uint64(rand.I64Between(1, 1000)))
-					_, err := server.RetryFailedTransfer(sdk.WrapSDKContext(ctx), req)
+					req := types.NewRetryIBCTransferRequest(rand.AccAddr(), nexus.TransferID(rand.I64Between(1, 1000)))
+					_, err := server.RetryIBCTransfer(sdk.WrapSDKContext(ctx), req)
 					assert.NoError(t, err)
 				}),
 		).Run(t)

@@ -73,10 +73,10 @@ service MsgService {
     };
   }
 
-  rpc RetryFailedTransfer(RetryFailedTransferRequest)
-      returns (RetryFailedTransferResponse) {
+  rpc RetryIBCTransfer(RetryIBCTransferRequest)
+      returns (RetryIBCTransferResponse) {
     option (google.api.http) = {
-      post : "/axelar/axelarnet/retry_failed_transfer"
+      post : "/axelar/axelarnet/retry_ibc_transfer"
       body : "*"
     };
   }

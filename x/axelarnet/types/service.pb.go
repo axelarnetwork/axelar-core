@@ -103,7 +103,7 @@ type MsgServiceClient interface {
 	RegisterAsset(ctx context.Context, in *RegisterAssetRequest, opts ...grpc.CallOption) (*RegisterAssetResponse, error)
 	RouteIBCTransfers(ctx context.Context, in *RouteIBCTransfersRequest, opts ...grpc.CallOption) (*RouteIBCTransfersResponse, error)
 	RegisterFeeCollector(ctx context.Context, in *RegisterFeeCollectorRequest, opts ...grpc.CallOption) (*RegisterFeeCollectorResponse, error)
-	RetryFailedTransfer(ctx context.Context, in *RetryFailedTransferRequest, opts ...grpc.CallOption) (*RetryFailedTransferResponse, error)
+	RetryIBCTransfer(ctx context.Context, in *RetryIBCTransferRequest, opts ...grpc.CallOption) (*RetryIBCTransferResponse, error)
 }
 
 type msgServiceClient struct {
@@ -186,9 +186,9 @@ func (c *msgServiceClient) RegisterFeeCollector(ctx context.Context, in *Registe
 	return out, nil
 }
 
-func (c *msgServiceClient) RetryFailedTransfer(ctx context.Context, in *RetryFailedTransferRequest, opts ...grpc.CallOption) (*RetryFailedTransferResponse, error) {
-	out := new(RetryFailedTransferResponse)
-	err := c.cc.Invoke(ctx, "/axelar.axelarnet.v1beta1.MsgService/RetryFailedTransfer", in, out, opts...)
+func (c *msgServiceClient) RetryIBCTransfer(ctx context.Context, in *RetryIBCTransferRequest, opts ...grpc.CallOption) (*RetryIBCTransferResponse, error) {
+	out := new(RetryIBCTransferResponse)
+	err := c.cc.Invoke(ctx, "/axelar.axelarnet.v1beta1.MsgService/RetryIBCTransfer", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -205,7 +205,7 @@ type MsgServiceServer interface {
 	RegisterAsset(context.Context, *RegisterAssetRequest) (*RegisterAssetResponse, error)
 	RouteIBCTransfers(context.Context, *RouteIBCTransfersRequest) (*RouteIBCTransfersResponse, error)
 	RegisterFeeCollector(context.Context, *RegisterFeeCollectorRequest) (*RegisterFeeCollectorResponse, error)
-	RetryFailedTransfer(context.Context, *RetryFailedTransferRequest) (*RetryFailedTransferResponse, error)
+	RetryIBCTransfer(context.Context, *RetryIBCTransferRequest) (*RetryIBCTransferResponse, error)
 }
 
 // UnimplementedMsgServiceServer can be embedded to have forward compatible implementations.
@@ -236,8 +236,8 @@ func (*UnimplementedMsgServiceServer) RouteIBCTransfers(ctx context.Context, req
 func (*UnimplementedMsgServiceServer) RegisterFeeCollector(ctx context.Context, req *RegisterFeeCollectorRequest) (*RegisterFeeCollectorResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RegisterFeeCollector not implemented")
 }
-func (*UnimplementedMsgServiceServer) RetryFailedTransfer(ctx context.Context, req *RetryFailedTransferRequest) (*RetryFailedTransferResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RetryFailedTransfer not implemented")
+func (*UnimplementedMsgServiceServer) RetryIBCTransfer(ctx context.Context, req *RetryIBCTransferRequest) (*RetryIBCTransferResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RetryIBCTransfer not implemented")
 }
 
 func RegisterMsgServiceServer(s grpc1.Server, srv MsgServiceServer) {
@@ -388,20 +388,20 @@ func _MsgService_RegisterFeeCollector_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MsgService_RetryFailedTransfer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RetryFailedTransferRequest)
+func _MsgService_RetryIBCTransfer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RetryIBCTransferRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MsgServiceServer).RetryFailedTransfer(ctx, in)
+		return srv.(MsgServiceServer).RetryIBCTransfer(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/axelar.axelarnet.v1beta1.MsgService/RetryFailedTransfer",
+		FullMethod: "/axelar.axelarnet.v1beta1.MsgService/RetryIBCTransfer",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServiceServer).RetryFailedTransfer(ctx, req.(*RetryFailedTransferRequest))
+		return srv.(MsgServiceServer).RetryIBCTransfer(ctx, req.(*RetryIBCTransferRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -443,8 +443,8 @@ var _MsgService_serviceDesc = grpc.ServiceDesc{
 			Handler:    _MsgService_RegisterFeeCollector_Handler,
 		},
 		{
-			MethodName: "RetryFailedTransfer",
-			Handler:    _MsgService_RetryFailedTransfer_Handler,
+			MethodName: "RetryIBCTransfer",
+			Handler:    _MsgService_RetryIBCTransfer_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

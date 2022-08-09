@@ -373,8 +373,8 @@ func (s msgServer) RegisterFeeCollector(c context.Context, req *types.RegisterFe
 	return &types.RegisterFeeCollectorResponse{}, nil
 }
 
-// RetryFailedTransfer handles retry a failed IBC transfer
-func (s msgServer) RetryFailedTransfer(c context.Context, req *types.RetryFailedTransferRequest) (*types.RetryFailedTransferResponse, error) {
+// RetryIBCTransfer handles retry a failed IBC transfer
+func (s msgServer) RetryIBCTransfer(c context.Context, req *types.RetryIBCTransferRequest) (*types.RetryIBCTransferResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 	t, ok := s.BaseKeeper.GetFailedTransfer(ctx, req.ID)
 	if !ok {
@@ -386,7 +386,7 @@ func (s msgServer) RetryFailedTransfer(c context.Context, req *types.RetryFailed
 		return nil, err
 	}
 
-	return &types.RetryFailedTransferResponse{}, nil
+	return &types.RetryIBCTransferResponse{}, nil
 }
 
 // isIBCDenom validates that the given denomination is a valid ICS token representation (ibc/{hash})

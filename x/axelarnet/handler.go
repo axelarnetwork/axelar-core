@@ -69,8 +69,8 @@ func NewHandler(k types.BaseKeeper, n types.Nexus, b types.BankKeeper, t types.I
 			res, err := server.RegisterFeeCollector(sdk.WrapSDKContext(ctx), msg)
 			result, err := sdk.WrapServiceResult(ctx, res, err)
 			return result, err
-		case *types.RetryFailedTransferRequest:
-			res, err := server.RetryFailedTransfer(sdk.WrapSDKContext(ctx), msg)
+		case *types.RetryIBCTransferRequest:
+			res, err := server.RetryIBCTransfer(sdk.WrapSDKContext(ctx), msg)
 			result, err := sdk.WrapServiceResult(ctx, res, err)
 			return result, err
 		default:

@@ -643,23 +643,23 @@ func (m *RegisterFeeCollectorResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_RegisterFeeCollectorResponse proto.InternalMessageInfo
 
-type RetryFailedTransferRequest struct {
+type RetryIBCTransferRequest struct {
 	Sender github_com_cosmos_cosmos_sdk_types.AccAddress                    `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
 	ID     github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferID `protobuf:"varint,2,opt,name=id,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.TransferID" json:"id,omitempty"`
 }
 
-func (m *RetryFailedTransferRequest) Reset()         { *m = RetryFailedTransferRequest{} }
-func (m *RetryFailedTransferRequest) String() string { return proto.CompactTextString(m) }
-func (*RetryFailedTransferRequest) ProtoMessage()    {}
-func (*RetryFailedTransferRequest) Descriptor() ([]byte, []int) {
+func (m *RetryIBCTransferRequest) Reset()         { *m = RetryIBCTransferRequest{} }
+func (m *RetryIBCTransferRequest) String() string { return proto.CompactTextString(m) }
+func (*RetryIBCTransferRequest) ProtoMessage()    {}
+func (*RetryIBCTransferRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_1a4116e5c79e2c4a, []int{16}
 }
-func (m *RetryFailedTransferRequest) XXX_Unmarshal(b []byte) error {
+func (m *RetryIBCTransferRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *RetryFailedTransferRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *RetryIBCTransferRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_RetryFailedTransferRequest.Marshal(b, m, deterministic)
+		return xxx_messageInfo_RetryIBCTransferRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -669,33 +669,33 @@ func (m *RetryFailedTransferRequest) XXX_Marshal(b []byte, deterministic bool) (
 		return b[:n], nil
 	}
 }
-func (m *RetryFailedTransferRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RetryFailedTransferRequest.Merge(m, src)
+func (m *RetryIBCTransferRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RetryIBCTransferRequest.Merge(m, src)
 }
-func (m *RetryFailedTransferRequest) XXX_Size() int {
+func (m *RetryIBCTransferRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *RetryFailedTransferRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_RetryFailedTransferRequest.DiscardUnknown(m)
+func (m *RetryIBCTransferRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_RetryIBCTransferRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_RetryFailedTransferRequest proto.InternalMessageInfo
+var xxx_messageInfo_RetryIBCTransferRequest proto.InternalMessageInfo
 
-type RetryFailedTransferResponse struct {
+type RetryIBCTransferResponse struct {
 }
 
-func (m *RetryFailedTransferResponse) Reset()         { *m = RetryFailedTransferResponse{} }
-func (m *RetryFailedTransferResponse) String() string { return proto.CompactTextString(m) }
-func (*RetryFailedTransferResponse) ProtoMessage()    {}
-func (*RetryFailedTransferResponse) Descriptor() ([]byte, []int) {
+func (m *RetryIBCTransferResponse) Reset()         { *m = RetryIBCTransferResponse{} }
+func (m *RetryIBCTransferResponse) String() string { return proto.CompactTextString(m) }
+func (*RetryIBCTransferResponse) ProtoMessage()    {}
+func (*RetryIBCTransferResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_1a4116e5c79e2c4a, []int{17}
 }
-func (m *RetryFailedTransferResponse) XXX_Unmarshal(b []byte) error {
+func (m *RetryIBCTransferResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *RetryFailedTransferResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *RetryIBCTransferResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_RetryFailedTransferResponse.Marshal(b, m, deterministic)
+		return xxx_messageInfo_RetryIBCTransferResponse.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -705,17 +705,17 @@ func (m *RetryFailedTransferResponse) XXX_Marshal(b []byte, deterministic bool) 
 		return b[:n], nil
 	}
 }
-func (m *RetryFailedTransferResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RetryFailedTransferResponse.Merge(m, src)
+func (m *RetryIBCTransferResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RetryIBCTransferResponse.Merge(m, src)
 }
-func (m *RetryFailedTransferResponse) XXX_Size() int {
+func (m *RetryIBCTransferResponse) XXX_Size() int {
 	return m.Size()
 }
-func (m *RetryFailedTransferResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_RetryFailedTransferResponse.DiscardUnknown(m)
+func (m *RetryIBCTransferResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_RetryIBCTransferResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_RetryFailedTransferResponse proto.InternalMessageInfo
+var xxx_messageInfo_RetryIBCTransferResponse proto.InternalMessageInfo
 
 func init() {
 	proto.RegisterType((*LinkRequest)(nil), "axelar.axelarnet.v1beta1.LinkRequest")
@@ -734,8 +734,8 @@ func init() {
 	proto.RegisterType((*RouteIBCTransfersResponse)(nil), "axelar.axelarnet.v1beta1.RouteIBCTransfersResponse")
 	proto.RegisterType((*RegisterFeeCollectorRequest)(nil), "axelar.axelarnet.v1beta1.RegisterFeeCollectorRequest")
 	proto.RegisterType((*RegisterFeeCollectorResponse)(nil), "axelar.axelarnet.v1beta1.RegisterFeeCollectorResponse")
-	proto.RegisterType((*RetryFailedTransferRequest)(nil), "axelar.axelarnet.v1beta1.RetryFailedTransferRequest")
-	proto.RegisterType((*RetryFailedTransferResponse)(nil), "axelar.axelarnet.v1beta1.RetryFailedTransferResponse")
+	proto.RegisterType((*RetryIBCTransferRequest)(nil), "axelar.axelarnet.v1beta1.RetryIBCTransferRequest")
+	proto.RegisterType((*RetryIBCTransferResponse)(nil), "axelar.axelarnet.v1beta1.RetryIBCTransferResponse")
 }
 
 func init() { proto.RegisterFile("axelar/axelarnet/v1beta1/tx.proto", fileDescriptor_1a4116e5c79e2c4a) }
@@ -1331,7 +1331,7 @@ func (m *RegisterFeeCollectorResponse) MarshalToSizedBuffer(dAtA []byte) (int, e
 	return len(dAtA) - i, nil
 }
 
-func (m *RetryFailedTransferRequest) Marshal() (dAtA []byte, err error) {
+func (m *RetryIBCTransferRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1341,12 +1341,12 @@ func (m *RetryFailedTransferRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *RetryFailedTransferRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *RetryIBCTransferRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *RetryFailedTransferRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *RetryIBCTransferRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -1366,7 +1366,7 @@ func (m *RetryFailedTransferRequest) MarshalToSizedBuffer(dAtA []byte) (int, err
 	return len(dAtA) - i, nil
 }
 
-func (m *RetryFailedTransferResponse) Marshal() (dAtA []byte, err error) {
+func (m *RetryIBCTransferResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1376,12 +1376,12 @@ func (m *RetryFailedTransferResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *RetryFailedTransferResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *RetryIBCTransferResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *RetryFailedTransferResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *RetryIBCTransferResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -1630,7 +1630,7 @@ func (m *RegisterFeeCollectorResponse) Size() (n int) {
 	return n
 }
 
-func (m *RetryFailedTransferRequest) Size() (n int) {
+func (m *RetryIBCTransferRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1646,7 +1646,7 @@ func (m *RetryFailedTransferRequest) Size() (n int) {
 	return n
 }
 
-func (m *RetryFailedTransferResponse) Size() (n int) {
+func (m *RetryIBCTransferResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -3189,7 +3189,7 @@ func (m *RegisterFeeCollectorResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *RetryFailedTransferRequest) Unmarshal(dAtA []byte) error {
+func (m *RetryIBCTransferRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3212,10 +3212,10 @@ func (m *RetryFailedTransferRequest) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: RetryFailedTransferRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: RetryIBCTransferRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: RetryFailedTransferRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: RetryIBCTransferRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -3292,7 +3292,7 @@ func (m *RetryFailedTransferRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *RetryFailedTransferResponse) Unmarshal(dAtA []byte) error {
+func (m *RetryIBCTransferResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3315,10 +3315,10 @@ func (m *RetryFailedTransferResponse) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: RetryFailedTransferResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: RetryIBCTransferResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: RetryFailedTransferResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: RetryIBCTransferResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		default:
