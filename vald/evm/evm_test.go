@@ -312,6 +312,16 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 					},
 					Data: common.LeftPadBytes(big.NewInt(rand.PosI64()).Bytes(), common.HashLength),
 				},
+				/* an ERC20 transfer with 0 amount */
+				{
+					Address: common.BytesToAddress(tokenAddrBytes),
+					Topics: []common.Hash{
+						ERC20TransferSig,
+						common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
+						common.BytesToHash(common.LeftPadBytes(burnAddrBytes, common.HashLength)),
+					},
+					Data: common.LeftPadBytes(big.NewInt(0).Bytes(), common.HashLength),
+				},
 				/* an ERC20 transfer of our concern */
 				{
 					Address: common.BytesToAddress(tokenAddrBytes),
