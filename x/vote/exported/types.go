@@ -19,7 +19,15 @@ var _ codectypes.UnpackInterfacesMessage = PollMetadata{}
 // UnpackInterfaces implements UnpackInterfacesMessage
 func (m PollMetadata) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
 	var data codec.ProtoMarshaler
-	return unpacker.UnpackAny(m.Result, &data)
+	if err := unpacker.UnpackAny(m.Result, &data); err != nil {
+		return err
+	}
+
+	if err := unpacker.UnpackAny(m.ModuleMetadata, &data); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // VoteHandler defines a struct that can handle the poll result
