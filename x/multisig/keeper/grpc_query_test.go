@@ -202,8 +202,8 @@ func TestKey(t *testing.T) {
 			assert.Len(t, res.Participants, len(key.GetParticipants()))
 
 			for i, p := range res.Participants {
-				assert.Equal(t, p.Weight, key.GetWeight(sdk.ValAddress(p.Address)))
-				assert.Equal(t, p.PubKey, fmt.Sprintf("0x%s", funcs.MustOk(key.GetPubKey(sdk.ValAddress(p.Address))).String()))
+				assert.Equal(t, p.Weight, key.GetWeight(funcs.Must(sdk.ValAddressFromBech32(p.Address))))
+				assert.Equal(t, p.PubKey, fmt.Sprintf("0x%s", funcs.MustOk(key.GetPubKey(funcs.Must(sdk.ValAddressFromBech32(p.Address)))).String()))
 
 				if i < len(res.Participants)-1 {
 					assert.True(t, p.Weight.GTE(res.Participants[i+1].Weight))
@@ -261,7 +261,7 @@ func TestSnapshot(t *testing.T) {
 			assert.Len(t, res.Participants, len(key.GetSnapshot().GetParticipantAddresses()))
 
 			for i, p := range res.Participants {
-				assert.Equal(t, p.Weight, key.GetWeight(sdk.ValAddress(p.Address)))
+				assert.Equal(t, p.Weight, key.GetWeight(funcs.Must(sdk.ValAddressFromBech32(p.Address))))
 
 				if i < len(res.Participants)-1 {
 					assert.True(t, p.Weight.GTE(res.Participants[i+1].Weight))
