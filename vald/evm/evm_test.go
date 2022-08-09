@@ -414,7 +414,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		blockNumber := rand.PInt64Gen().Where(func(i int64) bool { return i != 0 }).Next() // restrict to int64 so the block number in the receipt doesn't overflow
 		confHeight := rand.I64Between(0, blockNumber-1)
 
-		symbol := rand.StrBetween(5, 20)
+		symbol := rand.Denom(5, 20)
 		valAddr = rand.ValAddr()
 		event = &types.ConfirmTokenStarted{
 			TxID:               types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
