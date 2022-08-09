@@ -1,6 +1,9 @@
 package types
 
 import (
+	"fmt"
+	"strings"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	host "github.com/cosmos/ibc-go/v2/modules/core/24-host"
@@ -46,6 +49,12 @@ func (m RegisterIBCPathRequest) ValidateBasic() error {
 	})
 	if err := f(m.Path); err != nil {
 		return sdkerrors.Wrap(err, "invalid path")
+	}
+
+	// we only support direct IBC connections
+	pathSplit := strings.SplitN(m.Path, "/", 2)
+	if len(pathSplit) != 2 {
+		return fmt.Errorf(fmt.Sprintf("invalid path %s", m.Path))
 	}
 
 	return nil

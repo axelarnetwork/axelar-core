@@ -385,7 +385,7 @@ func (s msgServer) RetryIBCTransfer(c context.Context, req *types.RetryIBCTransf
 		return nil, fmt.Errorf("chain %s is not activated", chain.Name)
 	}
 
-	path, ok := s.BaseKeeper.GetIBCPath(ctx, req.Chain)
+	path, ok := s.BaseKeeper.GetIBCPath(ctx, chain.Name)
 	if !ok {
 		return nil, fmt.Errorf("%s does not have a valid IBC path", chain.Name)
 	}
