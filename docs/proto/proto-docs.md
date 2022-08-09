@@ -3546,7 +3546,6 @@ ERC20 tokens requested for a chain
 | ----- | ---- | ----- | ----------- |
 | `tx_id` | [bytes](#bytes) |  |  |
 | `burner_address` | [bytes](#bytes) |  |  |
-| `amount` | [string](#string) |  |  |
 
 
 
