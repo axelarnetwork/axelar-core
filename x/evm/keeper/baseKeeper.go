@@ -16,8 +16,6 @@ import (
 )
 
 var (
-	pendingChainKey = utils.KeyFromStr("pending_chain_asset")
-
 	chainPrefix    = utils.KeyFromStr("chain")
 	subspacePrefix = utils.KeyFromStr("subspace")
 )
