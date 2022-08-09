@@ -52,9 +52,9 @@ func (m RegisterIBCPathRequest) ValidateBasic() error {
 	}
 
 	// we only support direct IBC connections
-	pathSplit := strings.SplitN(m.Path, "/", 2)
+	pathSplit := strings.Split(m.Path, "/")
 	if len(pathSplit) != 2 {
-		return fmt.Errorf(fmt.Sprintf("invalid path %s", m.Path))
+		return fmt.Errorf(fmt.Sprintf("invalid IBC path %s", m.Path))
 	}
 
 	return nil
