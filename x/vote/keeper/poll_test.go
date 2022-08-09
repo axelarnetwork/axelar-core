@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/ethereum/go-ethereum/common"
@@ -43,7 +44,26 @@ func TestPoll(t *testing.T) {
 	})
 
 	givenPollBuilder := Given("a poll builder", func() {
-		ctx, k, _, _, _ = setup()
+		snapshotter := mock.SnapshotterMock{}
+		staking := mock.StakingKeeperMock{}
+		rewarder := mock.RewarderMock{}
+
+		ctx = sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+		encodingConfig := params.MakeEncodingConfig()
+		types.RegisterLegacyAminoCodec(encodingConfig.Amino)
+		types.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+		encodingConfig.InterfaceRegistry.RegisterImplementations((*codec.ProtoMarshaler)(nil), &evmtypes.VoteEvents{})
+		subspace := paramstypes.NewSubspace(encodingConfig.Codec, encodingConfig.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "vote")
+
+		k = keeper.NewKeeper(
+			encodingConfig.Codec,
+			sdk.NewKVStoreKey(types.StoreKey),
+			subspace,
+			&snapshotter,
+			&staking,
+			&rewarder,
+		)
+		k.SetParams(ctx, types.DefaultParams())
 		module := rand.NormalizedStr(5)
 
 		snapshot := snapshot.NewSnapshot(time.Now(), rand.I64Between(1, 100), participants, sdk.NewUint(5))
