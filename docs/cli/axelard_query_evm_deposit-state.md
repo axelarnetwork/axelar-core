@@ -3,7 +3,7 @@
 Query the state of a deposit transaction
 
 ```
-axelard query evm deposit-state [chain] [txID] [burner address] [amount] [flags]
+axelard query evm deposit-state [chain] [txID] [burner address] [flags]
 ```
 
 ### Options
