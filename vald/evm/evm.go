@@ -95,6 +95,11 @@ func (mgr Mgr) ProcessDepositConfirmation(event *evmTypes.ConfirmDepositStarted)
 					continue
 				}
 
+				if err := erc20Event.ValidateBasic(); err != nil {
+					mgr.logger.Debug(sdkerrors.Wrap(err, "invalid event Transfer").Error())
+					continue
+				}
+
 				events = append(events, evmTypes.Event{
 					Chain: event.Chain,
 					TxID:  event.TxID,
@@ -145,6 +150,12 @@ func (mgr Mgr) ProcessTokenConfirmation(event *evmTypes.ConfirmTokenStarted) err
 				if erc20Event.TokenAddress != event.TokenAddress || erc20Event.Symbol != event.TokenDetails.Symbol {
 					continue
 				}
+
+				if err := erc20Event.ValidateBasic(); err != nil {
+					mgr.logger.Debug(sdkerrors.Wrap(err, "invalid event ERC20TokenDeployment").Error())
+					continue
+				}
+
 				events = append(events, evmTypes.Event{
 					Chain: event.Chain,
 					TxID:  event.TxID,
@@ -194,9 +205,14 @@ func (mgr Mgr) ProcessTransferKeyConfirmation(event *types.ConfirmKeyTransferSta
 				continue
 			}
 
-			e, err := decodeMultisigOperatorshipTransferredEvent(log)
+			transferOperatorshipEvent, err := decodeMultisigOperatorshipTransferredEvent(log)
 			if err != nil {
 				mgr.logger.Debug(sdkerrors.Wrap(err, "failed decoding operatorship transferred event").Error())
+				continue
+			}
+
+			if err := transferOperatorshipEvent.ValidateBasic(); err != nil {
+				mgr.logger.Debug(sdkerrors.Wrap(err, "invalid event MultisigTransferOperatorship").Error())
 				continue
 			}
 
@@ -205,7 +221,7 @@ func (mgr Mgr) ProcessTransferKeyConfirmation(event *types.ConfirmKeyTransferSta
 				TxID:  event.TxID,
 				Index: uint64(i),
 				Event: &evmTypes.Event_MultisigOperatorshipTransferred{
-					MultisigOperatorshipTransferred: &e,
+					MultisigOperatorshipTransferred: &transferOperatorshipEvent,
 				}}
 			return true
 		}
@@ -246,14 +262,14 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(event *evmTypes.ConfirmGatewayTxStar
 
 			switch log.Topics[0] {
 			case ContractCallSig:
-				erc20Event, err := decodeEventContractCall(log)
+				gatewayEvent, err := decodeEventContractCall(log)
 				if err != nil {
 					mgr.logger.Debug(sdkerrors.Wrap(err, "decode event ContractCall failed").Error())
 
 					return false
 				}
 
-				err = erc20Event.ValidateBasic()
+				err = gatewayEvent.ValidateBasic()
 				if err != nil {
 					mgr.logger.Debug(sdkerrors.Wrap(err, "invalid event ContractCall").Error())
 					continue
@@ -264,18 +280,18 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(event *evmTypes.ConfirmGatewayTxStar
 					TxID:  event.TxID,
 					Index: uint64(i),
 					Event: &evmTypes.Event_ContractCall{
-						ContractCall: &erc20Event,
+						ContractCall: &gatewayEvent,
 					},
 				})
 			case ContractCallWithTokenSig:
-				erc20Event, err := decodeEventContractCallWithToken(log)
+				gatewayEvent, err := decodeEventContractCallWithToken(log)
 				if err != nil {
 					mgr.logger.Debug(sdkerrors.Wrap(err, "decode event ContractCallWithToken failed").Error())
 
 					return false
 				}
 
-				err = erc20Event.ValidateBasic()
+				err = gatewayEvent.ValidateBasic()
 				if err != nil {
 					mgr.logger.Debug(sdkerrors.Wrap(err, "invalid event ContractCallWithToken").Error())
 					continue
@@ -286,16 +302,16 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(event *evmTypes.ConfirmGatewayTxStar
 					TxID:  event.TxID,
 					Index: uint64(i),
 					Event: &evmTypes.Event_ContractCallWithToken{
-						ContractCallWithToken: &erc20Event,
+						ContractCallWithToken: &gatewayEvent,
 					},
 				})
 			case TokenSentSig:
-				erc20Event, err := decodeEventTokenSent(log)
+				gatewayEvent, err := decodeEventTokenSent(log)
 				if err != nil {
 					mgr.logger.Debug(sdkerrors.Wrap(err, "decode event TokenSent failed").Error())
 				}
 
-				err = erc20Event.ValidateBasic()
+				err = gatewayEvent.ValidateBasic()
 				if err != nil {
 					mgr.logger.Debug(sdkerrors.Wrap(err, "invalid event TokenSent").Error())
 					continue
@@ -306,7 +322,7 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(event *evmTypes.ConfirmGatewayTxStar
 					TxID:  event.TxID,
 					Index: uint64(i),
 					Event: &evmTypes.Event_TokenSent{
-						TokenSent: &erc20Event,
+						TokenSent: &gatewayEvent,
 					},
 				})
 			default:
@@ -573,9 +589,6 @@ func decodeMultisigOperatorshipTransferredEvent(log *geth.Log) (evmTypes.EventMu
 		NewOperators: slices.Map(newAddresses, func(addr common.Address) evmTypes.Address { return evmTypes.Address(addr) }),
 		NewWeights:   slices.Map(newWeights, sdk.NewUintFromBigInt),
 		NewThreshold: sdk.NewUintFromBigInt(newThreshold),
-	}
-	if err := event.ValidateBasic(); err != nil {
-		return evmTypes.EventMultisigOperatorshipTransferred{}, err
 	}
 
 	return event, nil

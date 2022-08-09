@@ -312,6 +312,16 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 					},
 					Data: common.LeftPadBytes(big.NewInt(rand.PosI64()).Bytes(), common.HashLength),
 				},
+				/* an ERC20 transfer with 0 amount */
+				{
+					Address: common.BytesToAddress(tokenAddrBytes),
+					Topics: []common.Hash{
+						ERC20TransferSig,
+						common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
+						common.BytesToHash(common.LeftPadBytes(burnAddrBytes, common.HashLength)),
+					},
+					Data: common.LeftPadBytes(big.NewInt(0).Bytes(), common.HashLength),
+				},
 				/* an ERC20 transfer of our concern */
 				{
 					Address: common.BytesToAddress(tokenAddrBytes),
@@ -414,7 +424,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		blockNumber := rand.PInt64Gen().Where(func(i int64) bool { return i != 0 }).Next() // restrict to int64 so the block number in the receipt doesn't overflow
 		confHeight := rand.I64Between(0, blockNumber-1)
 
-		symbol := rand.StrBetween(5, 20)
+		symbol := rand.Denom(5, 20)
 		valAddr = rand.ValAddr()
 		event = &types.ConfirmTokenStarted{
 			TxID:               types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
