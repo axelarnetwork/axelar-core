@@ -811,7 +811,7 @@ var (
 
 	pattern_MsgService_RegisterFeeCollector_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "axelarnet", "register_fee_collector"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_MsgService_RetryIBCTransfer_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "axelarnet", "retry_failed_transfer"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_MsgService_RetryIBCTransfer_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "axelarnet", "retry_ibc_transfer"}, "", runtime.AssumeColonVerbOpt(true)))
 )
 
 var (

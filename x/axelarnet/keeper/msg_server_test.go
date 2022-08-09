@@ -577,11 +577,23 @@ func TestRetryIBCTransfer(t *testing.T) {
 	givenMessageServer := Given("a message server", func() {
 		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 		bk = &mock.BaseKeeperMock{}
-		n = &mock.NexusMock{}
 		b = &mock.BankKeeperMock{}
 		a = &mock.AccountKeeperMock{}
 		i = &mock.IBCTransferKeeperMock{}
+
+		n = &mock.NexusMock{
+			GetChainFunc: func(_ sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
+				return nexus.Chain{
+					Name:                  chain,
+					SupportsForeignAssets: true,
+					Module:                rand.Str(10),
+				}, true
+			},
+			IsChainActivatedFunc: func(ctx2 sdk.Context, chain nexus.Chain) bool { return true },
+		}
+
 		bk.LoggerFunc = func(ctx sdk.Context) log.Logger { return ctx.Logger() }
+
 		server = keeper.NewMsgServerImpl(bk, n, b, i, a)
 	})
 
@@ -591,20 +603,41 @@ func TestRetryIBCTransfer(t *testing.T) {
 				bk.GetFailedTransferFunc = func(ctx sdk.Context, id nexus.TransferID) (types.IBCTransfer, bool) {
 					return types.IBCTransfer{}, false
 				}
+				bk.GetIBCPathFunc = func(ctx sdk.Context, chain nexus.ChainName) (string, bool) {
+					return "transfer/channel-0", true
+				}
 			}).
 				Then("should return error", func(t *testing.T) {
-					req := types.NewRetryIBCTransferRequest(rand.AccAddr(), nexus.TransferID(rand.I64Between(1, 1000)))
+					req := types.NewRetryIBCTransferRequest(rand.AccAddr(), nexus.ChainName(rand.Str(10)), nexus.TransferID(rand.I64Between(1, 1000)))
+					_, err := server.RetryIBCTransfer(sdk.WrapSDKContext(ctx), req)
+					assert.Error(t, err)
+				}),
+			When("ibc path does not match", func() {
+				transfer := axelartestutils.RandomIBCTransfer()
+				bk.GetFailedTransferFunc = func(ctx sdk.Context, id nexus.TransferID) (types.IBCTransfer, bool) {
+					return transfer, true
+				}
+				bk.GetIBCPathFunc = func(ctx sdk.Context, chain nexus.ChainName) (string, bool) {
+					return rand.Str(10), true
+				}
+			}).
+				Then("should return error", func(t *testing.T) {
+					req := types.NewRetryIBCTransferRequest(rand.AccAddr(), nexus.ChainName(rand.Str(10)), nexus.TransferID(rand.I64Between(1, 1000)))
 					_, err := server.RetryIBCTransfer(sdk.WrapSDKContext(ctx), req)
 					assert.Error(t, err)
 				}),
 			When("transfer id exists", func() {
+				transfer := axelartestutils.RandomIBCTransfer()
 				bk.GetFailedTransferFunc = func(ctx sdk.Context, id nexus.TransferID) (types.IBCTransfer, bool) {
-					return axelartestutils.RandomIBCTransfer(), true
+					return transfer, true
+				}
+				bk.GetIBCPathFunc = func(ctx sdk.Context, chain nexus.ChainName) (string, bool) {
+					return fmt.Sprintf("%s/%s", transfer.PortID, transfer.ChannelID), true
 				}
 				bk.EnqueueTransferFunc = func(sdk.Context, types.IBCTransfer) error { return nil }
 			}).
 				Then("should requeue transfer", func(t *testing.T) {
-					req := types.NewRetryIBCTransferRequest(rand.AccAddr(), nexus.TransferID(rand.I64Between(1, 1000)))
+					req := types.NewRetryIBCTransferRequest(rand.AccAddr(), nexus.ChainName(rand.Str(10)), nexus.TransferID(rand.I64Between(1, 1000)))
 					_, err := server.RetryIBCTransfer(sdk.WrapSDKContext(ctx), req)
 					assert.NoError(t, err)
 				}),

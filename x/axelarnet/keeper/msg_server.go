@@ -376,9 +376,27 @@ func (s msgServer) RegisterFeeCollector(c context.Context, req *types.RegisterFe
 // RetryIBCTransfer handles retry a failed IBC transfer
 func (s msgServer) RetryIBCTransfer(c context.Context, req *types.RetryIBCTransferRequest) (*types.RetryIBCTransferResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
+	chain, ok := s.nexus.GetChain(ctx, req.Chain)
+	if !ok {
+		return nil, fmt.Errorf("invalid chain %s", req.Chain)
+	}
+
+	if !s.nexus.IsChainActivated(ctx, chain) {
+		return nil, fmt.Errorf("chain %s is not activated", chain.Name)
+	}
+
+	path, ok := s.BaseKeeper.GetIBCPath(ctx, req.Chain)
+	if !ok {
+		return nil, fmt.Errorf("%s does not have a valid IBC path", chain.Name)
+	}
+
 	t, ok := s.BaseKeeper.GetFailedTransfer(ctx, req.ID)
 	if !ok {
 		return nil, fmt.Errorf("transfer %s not found", req.ID.String())
+	}
+
+	if path != fmt.Sprintf("%s/%s", t.PortID, t.ChannelID) {
+		return nil, fmt.Errorf("chain %s IBC path doesn't match %s IBC transfer path", chain.Name, path)
 	}
 
 	err := s.BaseKeeper.EnqueueTransfer(ctx, t)

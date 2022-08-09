@@ -8,9 +8,10 @@ import (
 )
 
 // NewRetryIBCTransferRequest creates a message of type RetryIBCTransferRequest
-func NewRetryIBCTransferRequest(sender sdk.AccAddress, id nexus.TransferID) *RetryIBCTransferRequest {
+func NewRetryIBCTransferRequest(sender sdk.AccAddress, chain nexus.ChainName, id nexus.TransferID) *RetryIBCTransferRequest {
 	return &RetryIBCTransferRequest{
 		Sender: sender,
+		Chain:  chain,
 		ID:     id,
 	}
 }
@@ -30,6 +31,11 @@ func (m RetryIBCTransferRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
+
+	if err := m.Chain.Validate(); err != nil {
+		return err
+	}
+
 	return nil
 }
 

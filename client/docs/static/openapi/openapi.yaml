@@ -1441,9 +1441,9 @@ paths:
         required: true
       tags:
         - MsgService
-  /axelar/axelarnet/retry_failed_transfer:
+  /axelar/axelarnet/retry_ibc_transfer:
     post:
-      operationId: RetryFailedTransfer
+      operationId: RetryIBCTransfer
       responses:
         "200":
           description: A successful response.
@@ -1630,6 +1630,8 @@ paths:
                 sender:
                   type: string
                   format: byte
+                chain:
+                  type: string
                 id:
                   type: string
                   format: uint64
@@ -37227,16 +37229,18 @@ components:
         a cosmos chain
     axelar.axelarnet.v1beta1.RegisterIBCPathResponse:
       type: object
-    axelar.axelarnet.v1beta1.RetryFailedTransferRequest:
+    axelar.axelarnet.v1beta1.RetryIBCTransferRequest:
       type: object
       properties:
         sender:
           type: string
           format: byte
+        chain:
+          type: string
         id:
           type: string
           format: uint64
-    axelar.axelarnet.v1beta1.RetryFailedTransferResponse:
+    axelar.axelarnet.v1beta1.RetryIBCTransferResponse:
       type: object
     axelar.axelarnet.v1beta1.RouteIBCTransfersRequest:
       type: object
