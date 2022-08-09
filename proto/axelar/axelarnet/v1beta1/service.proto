@@ -72,6 +72,14 @@ service MsgService {
       body : "*"
     };
   }
+
+  rpc RetryIBCTransfer(RetryIBCTransferRequest)
+      returns (RetryIBCTransferResponse) {
+    option (google.api.http) = {
+      post : "/axelar/axelarnet/retry_ibc_transfer"
+      body : "*"
+    };
+  }
 }
 
 // QueryService defines the gRPC querier service.

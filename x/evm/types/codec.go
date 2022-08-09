@@ -49,6 +49,7 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		&SigMetadata{},
 		&Event{},
 		&VoteEvents{},
+		&PollMetadata{},
 	)
 }
 
