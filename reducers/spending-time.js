@@ -2,7 +2,7 @@ import { SPENDING_TIME_SECONDS } from "./types";
 
 export default (
   state = {
-    [`${SPENDING_TIME_SECONDS}`]: 30,
+    [`${SPENDING_TIME_SECONDS}`]: 1,
   },
   action,
 ) => {
