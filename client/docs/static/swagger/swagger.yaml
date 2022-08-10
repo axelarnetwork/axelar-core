@@ -6474,10 +6474,6 @@ paths:
           required: false
           type: string
           format: byte
-        - name: params.amount
-          in: query
-          required: false
-          type: string
       tags:
         - QueryService
   /axelar/evm/v1beta1/erc20_tokens/{chain}:
@@ -41384,8 +41380,6 @@ definitions:
       burner_address:
         type: string
         format: byte
-      amount:
-        type: string
   axelar.evm.v1beta1.RetryFailedEventRequest:
     type: object
     properties:

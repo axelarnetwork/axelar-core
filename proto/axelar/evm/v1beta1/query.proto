@@ -83,7 +83,6 @@ message QueryDepositStateParams {
   ];
   bytes burner_address = 2
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
-  string amount = 3;
 }
 
 message DepositStateRequest {

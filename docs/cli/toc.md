@@ -52,7 +52,7 @@
       - [chains](axelard_query_evm_chains.md)	 - Get EVM chains
       - [command \[chain\] \[id\]](axelard_query_evm_command.md)	 - Get information about an EVM gateway command given a chain and the command ID
       - [confirmation-height \[chain\]](axelard_query_evm_confirmation-height.md)	 - Returns the minimum confirmation height for the given chain
-      - [deposit-state \[chain\] \[txID\] \[burner address\] \[amount\]](axelard_query_evm_deposit-state.md)	 - Query the state of a deposit transaction
+      - [deposit-state \[chain\] \[txID\] \[burner address\]](axelard_query_evm_deposit-state.md)	 - Query the state of a deposit transaction
       - [erc20-tokens \[chain\]](axelard_query_evm_erc20-tokens.md)	 - Returns the ERC20 tokens for the given chain
       - [event \[chain\] \[event-id\]](axelard_query_evm_event.md)	 - Returns an event for the given chain
       - [gateway-address \[chain\]](axelard_query_evm_gateway-address.md)	 - Query the Axelar Gateway contract address
