@@ -23,7 +23,9 @@ func EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock, k types.Keeper, rewarde
 }
 
 func handleKeygens(ctx sdk.Context, k types.Keeper, rewarder types.Rewarder) {
-	for _, keygen := range k.GetKeygenSessionsByExpiry(ctx, ctx.BlockHeight()) {
+	// we handle sessions that'll expire on the next block,
+	// to avoid waiting for an additional block
+	for _, keygen := range k.GetKeygenSessionsByExpiry(ctx, ctx.BlockHeight()+1) {
 		k.DeleteKeygenSession(ctx, keygen.GetKeyID())
 
 		pool := rewarder.GetPool(ctx, types.ModuleName)
@@ -46,8 +48,9 @@ func handleKeygens(ctx sdk.Context, k types.Keeper, rewarder types.Rewarder) {
 }
 
 func handleSignings(ctx sdk.Context, k types.Keeper, rewarder types.Rewarder) {
-	for _, signing := range k.GetSigningSessionsByExpiry(ctx, ctx.BlockHeight()) {
-
+	// we handle sessions that'll expire on the next block,
+	// to avoid waiting for an additional block
+	for _, signing := range k.GetSigningSessionsByExpiry(ctx, ctx.BlockHeight()+1) {
 		_ = utils.RunCached(ctx, k, func(cachedCtx sdk.Context) ([]abci.ValidatorUpdate, error) {
 			k.DeleteSigningSession(cachedCtx, signing.GetID())
 			module := signing.GetModule()
