@@ -20,6 +20,7 @@ type Keeper interface {
 	GetCurrentKeyID(ctx sdk.Context, chainName nexus.ChainName) (exported.KeyID, bool)
 	GetNextKeyID(ctx sdk.Context, chainName nexus.ChainName) (exported.KeyID, bool)
 	GetKeygenSessionsByExpiry(ctx sdk.Context, expiry int64) []KeygenSession
+	GetKey(ctx sdk.Context, keyID exported.KeyID) (exported.Key, bool)
 	SetKey(ctx sdk.Context, key Key)
 	DeleteKeygenSession(ctx sdk.Context, id exported.KeyID)
 	GetSigningSessionsByExpiry(ctx sdk.Context, expiry int64) []SigningSession

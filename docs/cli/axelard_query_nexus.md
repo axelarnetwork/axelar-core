@@ -33,5 +33,6 @@ axelard query nexus [flags]
 - [axelard query nexus chains](axelard_query_nexus_chains.md)	 - Returns the registered chain names
 - [axelard query nexus fee-info](axelard_query_nexus_fee-info.md)	 - Returns the per-chain fee for a registered asset
 - [axelard query nexus latest-deposit-address](axelard_query_nexus_latest-deposit-address.md)	 - Query for account by address
+- [axelard query nexus recipient-address](axelard_query_nexus_recipient-address.md)	 - Returns the recipient address corresponding to the given deposit address
 - [axelard query nexus transfer-fee](axelard_query_nexus_transfer-fee.md)	 - Returns the fee incurred on a cross-chain transfer
 - [axelard query nexus transfers-for-chain](axelard_query_nexus_transfers-for-chain.md)	 - Query for account by address

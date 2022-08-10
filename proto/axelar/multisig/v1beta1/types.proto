@@ -10,15 +10,6 @@ import "axelar/utils/v1beta1/threshold.proto";
 import "axelar/snapshot/exported/v1beta1/types.proto";
 import "axelar/multisig/exported/v1beta1/types.proto";
 
-enum KeyState {
-  option (gogoproto.goproto_enum_prefix) = false;
-  option (gogoproto.goproto_enum_stringer) = true;
-
-  KEY_STATE_UNSPECIFIED = 0 [ (gogoproto.enumvalue_customname) = "Inactive" ];
-  KEY_STATE_ASSIGNED = 1 [ (gogoproto.enumvalue_customname) = "Assigned" ];
-  KEY_STATE_ACTIVE = 2 [ (gogoproto.enumvalue_customname) = "Active" ];
-}
-
 message Key {
   option (gogoproto.stable_marshaler) = true;
 
@@ -35,7 +26,7 @@ message Key {
   ];
   utils.v1beta1.Threshold signing_threshold = 4
       [ (gogoproto.nullable) = false ];
-  KeyState state = 5;
+  multisig.exported.v1beta1.KeyState state = 5;
 }
 
 message KeygenSession {

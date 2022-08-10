@@ -15,8 +15,9 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
+	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	multisigKeeper "github.com/axelarnetwork/axelar-core/x/multisig/keeper"
-	multisig "github.com/axelarnetwork/axelar-core/x/multisig/types"
+	multisigTypes "github.com/axelarnetwork/axelar-core/x/multisig/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/exported"
@@ -79,9 +80,9 @@ func TestGetMigrationHandler(t *testing.T) {
 			k.SetParams(ctx, types.DefaultParams())
 		}).
 		Given("a multisig keeper", func() {
-			subspace := paramstypes.NewSubspace(encCfg.Codec, encCfg.Amino, paramsStoreKey, paramsTSstoreKey, multisig.ModuleName)
-			msk = multisigKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey(multisig.StoreKey), subspace)
-			msk.InitGenesis(ctx, multisig.DefaultGenesisState())
+			subspace := paramstypes.NewSubspace(encCfg.Codec, encCfg.Amino, paramsStoreKey, paramsTSstoreKey, multisigTypes.ModuleName)
+			msk = multisigKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey(multisigTypes.StoreKey), subspace)
+			msk.InitGenesis(ctx, multisigTypes.DefaultGenesisState())
 		}).
 		Given("a migration handler", func() {
 			n := &mock.NexusMock{GetChainsFunc: func(ctx sdk.Context) []nexus.Chain { return chains }}
@@ -111,7 +112,7 @@ func TestGetMigrationHandler(t *testing.T) {
 
 			assert.Len(t, keyIDs, 1)
 			keyID := keyIDs[0]
-			currentKey, ok := funcs.MustOk(msk.GetKey(ctx, keyID)).(*multisig.Key)
+			currentKey, ok := funcs.MustOk(msk.GetKey(ctx, keyID)).(*multisigTypes.Key)
 			assert.True(t, ok)
 			assert.EqualValues(t, expectedKeys[0].ID, currentKey.ID)
 			assert.Equal(t, multisig.Active, currentKey.State)
@@ -130,7 +131,7 @@ func TestGetMigrationHandler(t *testing.T) {
 			keyID := funcs.MustOk(msk.GetNextKeyID(ctx, nexus.ChainName(expectedKeys[0].Chain)))
 
 			assert.EqualValues(t, expectedKeys[0].ID, keyID)
-			nextKey, ok := funcs.MustOk(msk.GetKey(ctx, keyID)).(*multisig.Key)
+			nextKey, ok := funcs.MustOk(msk.GetKey(ctx, keyID)).(*multisigTypes.Key)
 			assert.True(t, ok)
 			assert.EqualValues(t, expectedKeys[0].ID, nextKey.ID)
 			assert.Equal(t, multisig.Assigned, nextKey.State)
@@ -155,7 +156,7 @@ func TestGetMigrationHandler(t *testing.T) {
 
 			expectedActiveKeys := slices.Reverse(expectedKeys[len(expectedKeys)-1-len(keyIDs) : len(expectedKeys)-1])
 			for i := 1; i < len(keyIDs); i++ {
-				oldActiveKey, ok := funcs.MustOk(msk.GetKey(ctx, keyIDs[i])).(*multisig.Key)
+				oldActiveKey, ok := funcs.MustOk(msk.GetKey(ctx, keyIDs[i])).(*multisigTypes.Key)
 				assert.True(t, ok)
 				assert.EqualValues(t, expectedActiveKeys[i].ID, oldActiveKey.ID)
 				assert.Equal(t, multisig.Active, oldActiveKey.State)
@@ -163,7 +164,7 @@ func TestGetMigrationHandler(t *testing.T) {
 				assert.Len(t, oldActiveKey.Snapshot.Participants, len(validators))
 			}
 
-			currentKey := funcs.MustOk(msk.GetCurrentKey(ctx, nexus.ChainName(expectedActiveKeys[0].Chain))).(*multisig.Key)
+			currentKey := funcs.MustOk(msk.GetCurrentKey(ctx, nexus.ChainName(expectedActiveKeys[0].Chain))).(*multisigTypes.Key)
 			assert.EqualValues(t, expectedActiveKeys[0].ID, currentKey.ID)
 			assert.EqualValues(t, currentKey.ID, keyIDs[0])
 			assert.Equal(t, multisig.Active, currentKey.State)
@@ -171,7 +172,7 @@ func TestGetMigrationHandler(t *testing.T) {
 			assert.Len(t, currentKey.Snapshot.Participants, len(validators))
 
 			keyID := funcs.MustOk(msk.GetNextKeyID(ctx, nexus.ChainName(expectedKeys[len(expectedKeys)-1].Chain)))
-			nextKey, ok := funcs.MustOk(msk.GetKey(ctx, keyID)).(*multisig.Key)
+			nextKey, ok := funcs.MustOk(msk.GetKey(ctx, keyID)).(*multisigTypes.Key)
 			assert.True(t, ok)
 			assert.EqualValues(t, expectedKeys[len(expectedKeys)-1].ID, nextKey.ID)
 			assert.Equal(t, multisig.Assigned, nextKey.State)

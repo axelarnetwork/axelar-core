@@ -5,10 +5,16 @@ import (
 	"strings"
 	"testing"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
+	"github.com/tendermint/tendermint/libs/log"
+	abci "github.com/tendermint/tendermint/proto/tendermint/types"
 
+	"github.com/axelarnetwork/axelar-core/app/params"
 	"github.com/axelarnetwork/axelar-core/testutils"
+	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	"github.com/axelarnetwork/axelar-core/utils/key"
 )
 
 func TestKey(t *testing.T) {
@@ -49,5 +55,70 @@ func TestKey(t *testing.T) {
 
 	t.Run("key from integer", func(t *testing.T) {
 		assert.Equal(t, []byte{0, 0, 0, 0, 0, 0, 0, 0x10}, KeyFromInt(16).AsKey())
+	})
+}
+
+func TestKVStore_Get(t *testing.T) {
+	encConf := params.MakeEncodingConfig()
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	store := NewNormalizedStore(ctx.KVStore(sdk.NewKVStoreKey("test")), encConf.Codec)
+
+	filledState := QueueState{
+		Items: map[string]QueueState_Item{"state": {Key: []byte("stateKey1"), Value: []byte("stateValue1")}},
+	}
+	emptyState := QueueState{}
+
+	store.Set(KeyFromStr("key"), &emptyState)
+
+	assert.True(t, store.Get(KeyFromStr("key"), &filledState))
+	assert.Equal(t, emptyState, filledState)
+}
+
+func TestKVStore_GetNew(t *testing.T) {
+	encConf := params.MakeEncodingConfig()
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	store := NewNormalizedStore(ctx.KVStore(sdk.NewKVStoreKey("test")), encConf.Codec)
+
+	filledState := QueueState{
+		Items: map[string]QueueState_Item{"state": {Key: []byte("stateKey1"), Value: []byte("stateValue1")}},
+	}
+	emptyState := QueueState{}
+
+	store.SetNew(key.FromStr("key"), &emptyState)
+
+	assert.True(t, store.GetNew(key.FromStr("key"), &filledState))
+	assert.Equal(t, emptyState, filledState)
+}
+
+func TestKVStore_Iterator(t *testing.T) {
+	encConf := params.MakeEncodingConfig()
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	store := NewNormalizedStore(ctx.KVStore(sdk.NewKVStoreKey("test")), encConf.Codec)
+
+	filledState := QueueState{
+		Items: map[string]QueueState_Item{"state": {Key: []byte("stateKey1"), Value: []byte("stateValue1")}},
+	}
+	emptyState := QueueState{}
+
+	storeKey := KeyFromStr("prefix_key")
+	store.Set(storeKey, &emptyState)
+
+	iter := store.Iterator(KeyFromStr("prefix"))
+
+	assert.True(t, iter.Valid())
+	iter.UnmarshalValue(&filledState)
+
+	assert.Equal(t, emptyState, filledState)
+}
+
+func Test_Reset(t *testing.T) {
+	var state QueueState
+	assert.NotPanics(t, func() {
+		(&state).Reset()
+	})
+
+	assert.NotPanics(t, func() {
+		state = QueueState{}
+		(&state).Reset()
 	})
 }

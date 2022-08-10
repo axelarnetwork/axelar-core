@@ -167,7 +167,6 @@ func TestQueryDepositState(t *testing.T) {
 			Params: &types.QueryDepositStateParams{
 				TxID:          expectedDeposit.TxID,
 				BurnerAddress: expectedDeposit.BurnerAddress,
-				Amount:        expectedDeposit.Amount.String(),
 			},
 		})
 
@@ -194,7 +193,6 @@ func TestQueryDepositState(t *testing.T) {
 			Params: &types.QueryDepositStateParams{
 				TxID:          expectedDeposit.TxID,
 				BurnerAddress: expectedDeposit.BurnerAddress,
-				Amount:        expectedDeposit.Amount.String(),
 			},
 		})
 
@@ -222,7 +220,6 @@ func TestQueryDepositState(t *testing.T) {
 			Params: &types.QueryDepositStateParams{
 				TxID:          expectedDeposit.TxID,
 				BurnerAddress: expectedDeposit.BurnerAddress,
-				Amount:        expectedDeposit.Amount.String(),
 			},
 		})
 
@@ -246,7 +243,6 @@ func TestQueryDepositState(t *testing.T) {
 			Params: &types.QueryDepositStateParams{
 				TxID:          expectedDeposit.TxID,
 				BurnerAddress: expectedDeposit.BurnerAddress,
-				Amount:        expectedDeposit.Amount.String(),
 			},
 		})
 

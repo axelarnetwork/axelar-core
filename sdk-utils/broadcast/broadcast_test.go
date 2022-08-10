@@ -325,7 +325,7 @@ func TestInBatches(t *testing.T) {
 				}
 				close(unblockBroadcast)
 				wg.Wait()
-				assert.Less(t, len(broadcaster.BroadcastCalls()), 9)
+				assert.Less(t, len(broadcaster.BroadcastCalls()), 10)
 			}),
 	).Run(t)
 }

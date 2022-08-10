@@ -234,7 +234,7 @@ func TestMsgServer(t *testing.T) {
 				}),
 
 				Then("should fail if the key is assigned", func(t *testing.T) {
-					key.State = types.Assigned
+					key.State = exported.Assigned
 					k.SetKey(ctx, key)
 
 					err := k.Sign(ctx, keyID, rand.Bytes(exported.HashLength), module)
@@ -243,7 +243,7 @@ func TestMsgServer(t *testing.T) {
 				}),
 
 				When("key is active", func() {
-					key.State = types.Active
+					key.State = exported.Active
 					k.SetKey(ctx, key)
 				}).Branch(
 					Then("should fail if payload hash is invalid", func(t *testing.T) {

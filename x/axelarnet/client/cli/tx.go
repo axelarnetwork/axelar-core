@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -9,6 +10,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
@@ -37,6 +39,7 @@ func GetTxCmd() *cobra.Command {
 		GetCmdRegisterAsset(),
 		GetCmdRouteIBCTransfersTx(),
 		GetCmdRegisterFeeCollector(),
+		getRetryIBCTransfer(),
 	)
 
 	return axelarTxCmd
@@ -252,6 +255,36 @@ func GetCmdRegisterFeeCollector() *cobra.Command {
 				return err
 			}
 			msg := types.NewRegisterFeeCollectorRequest(cliCtx.GetFromAddress(), feeCollector)
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
+		},
+	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+func getRetryIBCTransfer() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "retry-failed-transfer [chain] [transfer ID]",
+		Short: "Retry a failed IBC transfer",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			chain := utils.NormalizeString(args[0])
+
+			transferID, err := strconv.ParseUint(args[1], 10, 64)
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewRetryIBCTransferRequest(cliCtx.GetFromAddress(), nexus.ChainName(chain), nexus.TransferID(transferID))
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

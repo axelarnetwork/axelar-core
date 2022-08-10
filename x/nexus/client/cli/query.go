@@ -26,22 +26,22 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 	}
 
 	queryCmd.AddCommand(
-		GetCommandChainMaintainers(queryRoute),
-		GetCommandLatestDepositAddress(),
-		GetCommandTransfersForChain(),
-		GetCommandFee(),
-		GetCommandTransferFee(),
-		GetCommandChains(),
-		GetCommandAssets(),
-		GetCommandChainState(),
-		GetCommandChainsByAsset(),
+		getCmdChainMaintainers(queryRoute),
+		getCmdLatestDepositAddress(),
+		getCmdTransfersForChain(),
+		getCmdFee(),
+		getCmdTransferFee(),
+		getCmdChains(),
+		getCmdAssets(),
+		getCmdChainState(),
+		getCmdChainsByAsset(),
+		getCmdRecipientAddress(),
 	)
 
 	return queryCmd
 }
 
-// GetCommandChainMaintainers returns the query for getting chain maintainers for the given chain
-func GetCommandChainMaintainers(queryRoute string) *cobra.Command {
+func getCmdChainMaintainers(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "chain-maintainers [chain]",
 		Short: "Returns the chain maintainers for the given chain",
@@ -68,8 +68,7 @@ func GetCommandChainMaintainers(queryRoute string) *cobra.Command {
 	return cmd
 }
 
-// GetCommandLatestDepositAddress returns the query for getting the latest deposit address of some recipient
-func GetCommandLatestDepositAddress() *cobra.Command {
+func getCmdLatestDepositAddress() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "latest-deposit-address [deposit chain] [recipient chain] [recipient address]",
 		Short: "Query for account by address",
@@ -101,10 +100,10 @@ func GetCommandLatestDepositAddress() *cobra.Command {
 	return cmd
 }
 
-// GetCommandTransfersForChain returns the query for the transfers for a given chain
-func GetCommandTransfersForChain() *cobra.Command {
+func getCmdTransfersForChain() *cobra.Command {
+	cmdName := "transfers-for-chain"
 	cmd := &cobra.Command{
-		Use:   "transfers-for-chain [chain] [state (pending|archived|insufficient_amount)]",
+		Use:   fmt.Sprintf("%s [chain] [state (pending|archived|insufficient_amount)]", cmdName),
 		Short: "Query for account by address",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -145,13 +144,12 @@ func GetCommandTransfersForChain() *cobra.Command {
 	}
 
 	flags.AddQueryFlagsToCmd(cmd)
-	flags.AddPaginationFlagsToCmd(cmd, "transfers")
+	flags.AddPaginationFlagsToCmd(cmd, cmdName)
 
 	return cmd
 }
 
-// GetCommandFee returns the query for the fee info of an asset registered on a chain
-func GetCommandFee() *cobra.Command {
+func getCmdFee() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "fee-info [chain] [asset]",
 		Short: "Returns the per-chain fee for a registered asset",
@@ -182,8 +180,7 @@ func GetCommandFee() *cobra.Command {
 	return cmd
 }
 
-// GetCommandTransferFee returns the query for the transfers for a given chain
-func GetCommandTransferFee() *cobra.Command {
+func getCmdTransferFee() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "transfer-fee [source-chain] [destination-chain] [amount]",
 		Short: "Returns the fee incurred on a cross-chain transfer",
@@ -220,8 +217,7 @@ func GetCommandTransferFee() *cobra.Command {
 	return cmd
 }
 
-// GetCommandChains returns the query for retrieving the registered chains
-func GetCommandChains() *cobra.Command {
+func getCmdChains() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "chains",
 		Short: "Returns the registered chain names",
@@ -248,8 +244,7 @@ func GetCommandChains() *cobra.Command {
 	return cmd
 }
 
-// GetCommandAssets returns the query for retrieving the registered assets of a chain
-func GetCommandAssets() *cobra.Command {
+func getCmdAssets() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "assets [chain]",
 		Short: "Returns the registered assets of a chain",
@@ -284,8 +279,7 @@ func GetCommandAssets() *cobra.Command {
 	return cmd
 }
 
-// GetCommandChainState returns the query for retrieving the chain state
-func GetCommandChainState() *cobra.Command {
+func getCmdChainState() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "chain-state [chain]",
 		Short: "Returns the chain state",
@@ -320,8 +314,7 @@ func GetCommandChainState() *cobra.Command {
 	return cmd
 }
 
-// GetCommandChainsByAsset returns the query for retrieving the chains where an asset is registered
-func GetCommandChainsByAsset() *cobra.Command {
+func getCmdChainsByAsset() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "chain-by-asset [asset]",
 		Short: "Returns the chains an asset is registered on",
@@ -353,5 +346,38 @@ func GetCommandChainsByAsset() *cobra.Command {
 
 	flags.AddQueryFlagsToCmd(cmd)
 
+	return cmd
+}
+
+func getCmdRecipientAddress() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "recipient-address [chain] [address]",
+		Short: "Returns the recipient address corresponding to the given deposit address",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			queryClient := types.NewQueryServiceClient(clientCtx)
+			chainName := nexus.ChainName(args[0])
+			if err := chainName.Validate(); err != nil {
+				return err
+			}
+
+			res, err := queryClient.RecipientAddress(cmd.Context(), &types.RecipientAddressRequest{
+				DepositAddr:  args[1],
+				DepositChain: chainName.String(),
+			})
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
 	return cmd
 }

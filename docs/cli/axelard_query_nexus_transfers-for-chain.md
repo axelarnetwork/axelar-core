@@ -9,14 +9,14 @@ axelard query nexus transfers-for-chain [chain] [state (pending|archived|insuffi
 ### Options
 
 ```
-      --count-total       count total number of records in transfers to query for
+      --count-total       count total number of records in transfers-for-chain to query for
       --height int        Use a specific height to query state at (this can error if the node is pruning state)
   -h, --help              help for transfers-for-chain
-      --limit uint        pagination limit of transfers to query for (default 100)
+      --limit uint        pagination limit of transfers-for-chain to query for (default 100)
       --node string       <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
-      --offset uint       pagination offset of transfers to query for
-      --page uint         pagination page of transfers to query for. This sets offset to a multiple of limit (default 1)
-      --page-key string   pagination page-key of transfers to query for
+      --offset uint       pagination offset of transfers-for-chain to query for
+      --page uint         pagination page of transfers-for-chain to query for. This sets offset to a multiple of limit (default 1)
+      --page-key string   pagination page-key of transfers-for-chain to query for
       --reverse           results are sorted in descending order
 ```
 

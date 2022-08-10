@@ -52,8 +52,9 @@
       - [chains](axelard_query_evm_chains.md)	 - Get EVM chains
       - [command \[chain\] \[id\]](axelard_query_evm_command.md)	 - Get information about an EVM gateway command given a chain and the command ID
       - [confirmation-height \[chain\]](axelard_query_evm_confirmation-height.md)	 - Returns the minimum confirmation height for the given chain
-      - [deposit-state \[chain\] \[txID\] \[burner address\] \[amount\]](axelard_query_evm_deposit-state.md)	 - Query the state of a deposit transaction
+      - [deposit-state \[chain\] \[txID\] \[burner address\]](axelard_query_evm_deposit-state.md)	 - Query the state of a deposit transaction
       - [erc20-tokens \[chain\]](axelard_query_evm_erc20-tokens.md)	 - Returns the ERC20 tokens for the given chain
+      - [event \[chain\] \[event-id\]](axelard_query_evm_event.md)	 - Returns an event for the given chain
       - [gateway-address \[chain\]](axelard_query_evm_gateway-address.md)	 - Query the Axelar Gateway contract address
       - [latest-batched-commands \[chain\]](axelard_query_evm_latest-batched-commands.md)	 - Get the latest batched commands that can be wrapped in an EVM transaction to be executed in Axelar Gateway
       - [pending-commands \[chain\]](axelard_query_evm_pending-commands.md)	 - Get the list of commands not yet added to a batch
@@ -111,6 +112,7 @@
       - [inflation](axelard_query_mint_inflation.md)	 - Query the current minting inflation value
       - [params](axelard_query_mint_params.md)	 - Query the current minting parameters
     - [multisig](axelard_query_multisig.md)	 - Querying commands for the multisig module
+      - [key \[key-id\]](axelard_query_multisig_key.md)	 - Returns the key of the given ID
       - [key-id \[chain\]](axelard_query_multisig_key-id.md)	 - Returns the key ID assigned to a given chain
       - [next-key-id \[chain\]](axelard_query_multisig_next-key-id.md)	 - Returns the key ID assigned for the next rotation on a given chain and for the given key role
     - [nexus](axelard_query_nexus.md)	 - Querying commands for the nexus module
@@ -121,6 +123,7 @@
       - [chains](axelard_query_nexus_chains.md)	 - Returns the registered chain names
       - [fee-info \[chain\] \[asset\]](axelard_query_nexus_fee-info.md)	 - Returns the per-chain fee for a registered asset
       - [latest-deposit-address \[deposit chain\] \[recipient chain\] \[recipient address\]](axelard_query_nexus_latest-deposit-address.md)	 - Query for account by address
+      - [recipient-address \[chain\] \[address\]](axelard_query_nexus_recipient-address.md)	 - Returns the recipient address corresponding to the given deposit address
       - [transfer-fee \[source-chain\] \[destination-chain\] \[amount\]](axelard_query_nexus_transfer-fee.md)	 - Returns the fee incurred on a cross-chain transfer
       - [transfers-for-chain \[chain\] \[state (pending|archived|insufficient_amount)\]](axelard_query_nexus_transfers-for-chain.md)	 - Query for account by address
     - [params](axelard_query_params.md)	 - Querying commands for the params module
@@ -203,6 +206,7 @@
       - [register-asset \[chain\] \[denom\]](axelard_tx_axelarnet_register-asset.md)	 - Register a new asset to a cosmos based chain
       - [register-fee-collector \[fee collector\]](axelard_tx_axelarnet_register-fee-collector.md)	 - Register axelarnet fee collector account
       - [register-path \[chain\] \[path\]](axelard_tx_axelarnet_register-path.md)	 - Register an ibc path for a cosmos chain
+      - [retry-failed-transfer \[chain\] \[transfer ID\]](axelard_tx_axelarnet_retry-failed-transfer.md)	 - Retry a failed IBC transfer
       - [route-ibc-transfers](axelard_tx_axelarnet_route-ibc-transfers.md)	 - Routes pending transfers to cosmos chains
     - [bank](axelard_tx_bank.md)	 - Bank transaction subcommands
       - [send \[from_key_or_address\] \[to_address\] \[amount\]](axelard_tx_bank_send.md)	 - Send funds from one account to another. Note, the'--from' flag is

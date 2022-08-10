@@ -5,6 +5,7 @@ import (
 	"crypto/ecdsa"
 	"encoding/hex"
 	"fmt"
+	"time"
 
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -23,6 +24,10 @@ type Key interface {
 	GetPubKey(sdk.ValAddress) (PublicKey, bool)
 	GetWeight(sdk.ValAddress) sdk.Uint
 	GetMinPassingWeight() sdk.Uint
+	GetState() KeyState
+	GetHeight() int64
+	GetTimestamp() time.Time
+	GetBondedWeight() sdk.Uint
 }
 
 // MultiSig provides an interface to work with the multi sig

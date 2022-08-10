@@ -46,6 +46,10 @@ func handlePollsAtExpiry(ctx sdk.Context, k types.Voter) error {
 				"poll", pollID.String(),
 			)
 		case exported.Failed:
+			if err := voteHandler.HandleFailedPoll(ctx, poll); err != nil {
+				return err
+			}
+
 			k.Logger(ctx).Debug("poll failed",
 				"poll", pollID.String(),
 			)
