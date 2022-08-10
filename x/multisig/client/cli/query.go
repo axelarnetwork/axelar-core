@@ -26,7 +26,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		GetCmdKeyID(queryRoute),
 		GetCmdNextKeyID(queryRoute),
 		GetCmdKey(queryRoute),
-		GetCmdKeygenCandidates(queryRoute),
+		GetCmdKeygenSession(queryRoute),
 	)
 
 	return multisigQueryCmd
@@ -122,11 +122,11 @@ func GetCmdKey(queryRoute string) *cobra.Command {
 	return cmd
 }
 
-// GetCmdKeygenCandidates returns the candidates chosen for a keygen corresponding to the given key ID
-func GetCmdKeygenCandidates(queryRoute string) *cobra.Command {
+// GetCmdKeygenSession returns the keygen session info for the given key ID
+func GetCmdKeygenSession(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "keygen-candidates [key-id]",
-		Short: "Returns the candidates chosen for a keygen corresponding to the given key ID",
+		Use:   "keygen-session [key-id]",
+		Short: "Returns the keygen session info for the given key ID",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)
@@ -136,8 +136,8 @@ func GetCmdKeygenCandidates(queryRoute string) *cobra.Command {
 
 			keyID := multisig.KeyID(utils.NormalizeString(args[0]))
 			queryClient := types.NewQueryServiceClient(clientCtx)
-			res, err := queryClient.KeygenCandidates(cmd.Context(),
-				&types.KeygenCandidatesRequest{
+			res, err := queryClient.KeygenSession(cmd.Context(),
+				&types.KeygenSessionRequest{
 					KeyID: keyID,
 				})
 			if err != nil {

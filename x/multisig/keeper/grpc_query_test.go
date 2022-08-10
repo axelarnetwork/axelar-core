@@ -195,8 +195,8 @@ func TestKey(t *testing.T) {
 			assert.NotNil(t, res)
 			assert.Equal(t, key.ID, res.KeyID)
 			assert.Equal(t, key.State, res.State)
-			assert.Equal(t, key.GetHeight(), res.Height)
-			assert.Equal(t, key.GetTimestamp(), res.Timestamp)
+			assert.Equal(t, key.GetHeight(), res.StartedAt)
+			assert.Equal(t, key.GetTimestamp(), res.StartedAtTimestamp)
 			assert.Equal(t, key.GetMinPassingWeight(), res.ThresholdWeight)
 			assert.Equal(t, key.GetBondedWeight(), res.BondedWeight)
 			assert.Len(t, res.Participants, len(key.GetParticipants()))
@@ -213,13 +213,14 @@ func TestKey(t *testing.T) {
 		Run(t)
 }
 
-func TestKeygenCandidates(t *testing.T) {
+func TestKeygenSession(t *testing.T) {
 	var (
 		multisigKeeper *mock.KeeperMock
 		stakingKeeper  *mock.StakerMock
 		ctx            sdk.Context
 		querier        keeper.Querier
 		key            types.Key
+		session        types.KeygenSession
 	)
 
 	givenQuerier := Given("multisig querier", func() {
@@ -233,9 +234,10 @@ func TestKeygenCandidates(t *testing.T) {
 	givenQuerier.
 		When("key is not found", func() {
 			multisigKeeper.GetKeyFunc = func(sdk.Context, multisig.KeyID) (multisig.Key, bool) { return nil, false }
+			multisigKeeper.GetKeygenSessionFunc = func(sdk.Context, multisig.KeyID) (types.KeygenSession, bool) { return types.KeygenSession{}, false }
 		}).
 		Then("should return error NotFound", func(t *testing.T) {
-			res, err := querier.KeygenCandidates(sdk.WrapSDKContext(ctx), &types.KeygenCandidatesRequest{KeyID: multisigTestutils.KeyID()})
+			res, err := querier.KeygenSession(sdk.WrapSDKContext(ctx), &types.KeygenSessionRequest{KeyID: multisigTestutils.KeyID()})
 
 			assert.Nil(t, res)
 			s, ok := status.FromError(err)
@@ -245,18 +247,23 @@ func TestKeygenCandidates(t *testing.T) {
 		Run(t)
 
 	givenQuerier.
-		When("key is found", func() {
+		When("completed key is found", func() {
 			key = typesTestutils.Key()
 			multisigKeeper.GetKeyFunc = func(sdk.Context, multisig.KeyID) (multisig.Key, bool) { return &key, true }
+			multisigKeeper.GetKeygenSessionFunc = func(sdk.Context, multisig.KeyID) (types.KeygenSession, bool) { return types.KeygenSession{}, false }
 		}).
-		Then("should return candidates", func(t *testing.T) {
-			res, err := querier.KeygenCandidates(sdk.WrapSDKContext(ctx), &types.KeygenCandidatesRequest{KeyID: key.ID})
+		Then("should return the session", func(t *testing.T) {
+			res, err := querier.KeygenSession(sdk.WrapSDKContext(ctx), &types.KeygenSessionRequest{KeyID: key.ID})
 
 			assert.NoError(t, err)
 			assert.NotNil(t, res)
-			assert.Equal(t, key.GetHeight(), res.Height)
-			assert.Equal(t, key.GetTimestamp(), res.Timestamp)
-			assert.Equal(t, key.GetMinPassingWeight(), res.ThresholdWeight)
+			assert.Equal(t, key.GetHeight(), res.CreatedAt)
+			assert.Equal(t, key.GetTimestamp(), res.CreatedAtTimestamp)
+			assert.Equal(t, int64(0), res.ExpiresAt)
+			assert.Equal(t, int64(0), res.CompletedAt)
+			assert.Equal(t, int64(0), res.GracePeriod)
+			assert.Equal(t, sdk.ZeroUint(), res.KeygenThresholdWeight)
+			assert.Equal(t, key.GetMinPassingWeight(), res.SigningThresholdWeight)
 			assert.Equal(t, key.GetBondedWeight(), res.BondedWeight)
 			assert.Len(t, res.Participants, len(key.GetSnapshot().GetParticipantAddresses()))
 
@@ -268,5 +275,39 @@ func TestKeygenCandidates(t *testing.T) {
 				}
 			}
 		}).
-		Run(t)
+		Run(t, 10)
+
+	givenQuerier.
+		When("key is not found", func() {
+			multisigKeeper.GetKeyFunc = func(sdk.Context, multisig.KeyID) (multisig.Key, bool) { return nil, false }
+		}).
+		When("keygen session is found", func() {
+			session = typesTestutils.KeygenSession()
+			multisigKeeper.GetKeygenSessionFunc = func(sdk.Context, multisig.KeyID) (types.KeygenSession, bool) { return session, true }
+		}).
+		Then("should return the session", func(t *testing.T) {
+			res, err := querier.KeygenSession(sdk.WrapSDKContext(ctx), &types.KeygenSessionRequest{KeyID: key.ID})
+			key = session.GetKey()
+
+			assert.NoError(t, err)
+			assert.NotNil(t, res)
+			assert.Equal(t, key.GetHeight(), res.CreatedAt)
+			assert.Equal(t, key.GetTimestamp(), res.CreatedAtTimestamp)
+			assert.Equal(t, session.GetExpiresAt(), res.ExpiresAt)
+			assert.Equal(t, session.GetCompletedAt(), res.CompletedAt)
+			assert.Equal(t, session.GetGracePeriod(), res.GracePeriod)
+			assert.Equal(t, key.Snapshot.CalculateMinPassingWeight(session.GetKeygenThreshold()), res.KeygenThresholdWeight)
+			assert.Equal(t, key.GetMinPassingWeight(), res.SigningThresholdWeight)
+			assert.Equal(t, key.GetBondedWeight(), res.BondedWeight)
+			assert.Len(t, res.Participants, len(key.GetSnapshot().GetParticipantAddresses()))
+
+			for i, p := range res.Participants {
+				assert.Equal(t, p.Weight, key.GetWeight(funcs.Must(sdk.ValAddressFromBech32(p.Address))))
+
+				if i < len(res.Participants)-1 {
+					assert.True(t, p.Weight.GTE(res.Participants[i+1].Weight))
+				}
+			}
+		}).
+		Run(t, 10)
 }

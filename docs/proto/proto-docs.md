@@ -293,10 +293,9 @@
     - [KeyIDResponse](#axelar.multisig.v1beta1.KeyIDResponse)
     - [KeyRequest](#axelar.multisig.v1beta1.KeyRequest)
     - [KeyResponse](#axelar.multisig.v1beta1.KeyResponse)
-    - [KeyResponse.Participant](#axelar.multisig.v1beta1.KeyResponse.Participant)
-    - [KeygenCandidatesRequest](#axelar.multisig.v1beta1.KeygenCandidatesRequest)
-    - [KeygenCandidatesResponse](#axelar.multisig.v1beta1.KeygenCandidatesResponse)
-    - [KeygenCandidatesResponse.Participant](#axelar.multisig.v1beta1.KeygenCandidatesResponse.Participant)
+    - [KeygenParticipant](#axelar.multisig.v1beta1.KeygenParticipant)
+    - [KeygenSessionRequest](#axelar.multisig.v1beta1.KeygenSessionRequest)
+    - [KeygenSessionResponse](#axelar.multisig.v1beta1.KeygenSessionResponse)
     - [NextKeyIDRequest](#axelar.multisig.v1beta1.NextKeyIDRequest)
     - [NextKeyIDResponse](#axelar.multisig.v1beta1.NextKeyIDResponse)
   
@@ -4599,20 +4598,20 @@ KeyResponse contains the key corresponding to a given key id.
 | ----- | ---- | ----- | ----------- |
 | `key_id` | [string](#string) |  |  |
 | `state` | [axelar.multisig.exported.v1beta1.KeyState](#axelar.multisig.exported.v1beta1.KeyState) |  |  |
-| `height` | [int64](#int64) |  |  |
-| `timestamp` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
+| `started_at` | [int64](#int64) |  |  |
+| `started_at_timestamp` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
 | `threshold_weight` | [bytes](#bytes) |  |  |
 | `bonded_weight` | [bytes](#bytes) |  |  |
-| `participants` | [KeyResponse.Participant](#axelar.multisig.v1beta1.KeyResponse.Participant) | repeated | Keygen participants in descending order by weight |
+| `participants` | [KeygenParticipant](#axelar.multisig.v1beta1.KeygenParticipant) | repeated | Keygen participants in descending order by weight |
 
 
 
 
 
 
-<a name="axelar.multisig.v1beta1.KeyResponse.Participant"></a>
+<a name="axelar.multisig.v1beta1.KeygenParticipant"></a>
 
-### KeyResponse.Participant
+### KeygenParticipant
 
 
 
@@ -4627,9 +4626,9 @@ KeyResponse contains the key corresponding to a given key id.
 
 
 
-<a name="axelar.multisig.v1beta1.KeygenCandidatesRequest"></a>
+<a name="axelar.multisig.v1beta1.KeygenSessionRequest"></a>
 
-### KeygenCandidatesRequest
+### KeygenSessionRequest
 
 
 
@@ -4642,35 +4641,24 @@ KeyResponse contains the key corresponding to a given key id.
 
 
 
-<a name="axelar.multisig.v1beta1.KeygenCandidatesResponse"></a>
+<a name="axelar.multisig.v1beta1.KeygenSessionResponse"></a>
 
-### KeygenCandidatesResponse
-KeygenCandidatesResponse contains the candidates chosen for a keygen.
+### KeygenSessionResponse
+KeygenSessionResponse contains the keygen session info for a given key ID.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `height` | [int64](#int64) |  |  |
-| `timestamp` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
-| `threshold_weight` | [bytes](#bytes) |  |  |
+| `created_at` | [int64](#int64) |  |  |
+| `created_at_timestamp` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
+| `expires_at` | [int64](#int64) |  |  |
+| `completed_at` | [int64](#int64) |  |  |
+| `grace_period` | [int64](#int64) |  |  |
+| `state` | [axelar.multisig.exported.v1beta1.MultisigState](#axelar.multisig.exported.v1beta1.MultisigState) |  |  |
+| `keygen_threshold_weight` | [bytes](#bytes) |  |  |
+| `signing_threshold_weight` | [bytes](#bytes) |  |  |
 | `bonded_weight` | [bytes](#bytes) |  |  |
-| `participants` | [KeygenCandidatesResponse.Participant](#axelar.multisig.v1beta1.KeygenCandidatesResponse.Participant) | repeated | Keygen candidates in descending order by weight |
-
-
-
-
-
-
-<a name="axelar.multisig.v1beta1.KeygenCandidatesResponse.Participant"></a>
-
-### KeygenCandidatesResponse.Participant
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `address` | [string](#string) |  |  |
-| `weight` | [bytes](#bytes) |  |  |
+| `participants` | [KeygenParticipant](#axelar.multisig.v1beta1.KeygenParticipant) | repeated | Keygen candidates in descending order by weight |
 
 
 
@@ -4877,7 +4865,7 @@ Query defines the gRPC querier service.
 | `KeyID` | [KeyIDRequest](#axelar.multisig.v1beta1.KeyIDRequest) | [KeyIDResponse](#axelar.multisig.v1beta1.KeyIDResponse) | KeyID returns the key ID of a key assigned to a given chain. If no key is assigned, it returns the grpc NOT_FOUND error. | GET|/axelar/multisig/v1beta1/key_id/{chain}|
 | `NextKeyID` | [NextKeyIDRequest](#axelar.multisig.v1beta1.NextKeyIDRequest) | [NextKeyIDResponse](#axelar.multisig.v1beta1.NextKeyIDResponse) | NextKeyID returns the key ID assigned for the next rotation on a given chain. If no key rotation is in progress, it returns the grpc NOT_FOUND error. | GET|/axelar/multisig/v1beta1/next_key_id/{chain}|
 | `Key` | [KeyRequest](#axelar.multisig.v1beta1.KeyRequest) | [KeyResponse](#axelar.multisig.v1beta1.KeyResponse) | Key returns the key corresponding to a given key ID. If no key is found, it returns the grpc NOT_FOUND error. | GET|/axelar/multisig/v1beta1/key|
-| `KeygenCandidates` | [KeygenCandidatesRequest](#axelar.multisig.v1beta1.KeygenCandidatesRequest) | [KeygenCandidatesResponse](#axelar.multisig.v1beta1.KeygenCandidatesResponse) | KeygenCandidates returns the candidates chosen for a keygen corresponding to a given key ID. If no key is found, it returns the grpc NOT_FOUND error. | GET|/axelar/multisig/v1beta1/keygen_candidates|
+| `KeygenSession` | [KeygenSessionRequest](#axelar.multisig.v1beta1.KeygenSessionRequest) | [KeygenSessionResponse](#axelar.multisig.v1beta1.KeygenSessionResponse) | KeygenSession returns the keygen session info for a given key ID. If no key is found, it returns the grpc NOT_FOUND error. | GET|/axelar/multisig/v1beta1/keygen_session|
 
  <!-- end services -->
 

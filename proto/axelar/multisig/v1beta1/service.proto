@@ -64,10 +64,9 @@ service QueryService {
     option (google.api.http).get = "/axelar/multisig/v1beta1/key";
   }
 
-  // KeygenCandidates returns the candidates chosen for a keygen corresponding
-  // to a given key ID. If no key is found, it returns the grpc NOT_FOUND error.
-  rpc KeygenCandidates(KeygenCandidatesRequest)
-      returns (KeygenCandidatesResponse) {
-    option (google.api.http).get = "/axelar/multisig/v1beta1/keygen_candidates";
+  // KeygenSession returns the keygen session info for a given key ID.
+  // If no key is found, it returns the grpc NOT_FOUND error.
+  rpc KeygenSession(KeygenSessionRequest) returns (KeygenSessionResponse) {
+    option (google.api.http).get = "/axelar/multisig/v1beta1/keygen_session";
   }
 }

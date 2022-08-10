@@ -1,16 +1,16 @@
-## axelard query multisig keygen-candidates
+## axelard query multisig keygen-session
 
-Returns the candidates chosen for a keygen corresponding to the given key ID
+Returns the keygen session info for the given key ID
 
 ```
-axelard query multisig keygen-candidates [key-id] [flags]
+axelard query multisig keygen-session [key-id] [flags]
 ```
 
 ### Options
 
 ```
       --height int    Use a specific height to query state at (this can error if the node is pruning state)
-  -h, --help          help for keygen-candidates
+  -h, --help          help for keygen-session
       --node string   <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
 ```
 
