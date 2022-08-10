@@ -84,8 +84,8 @@ message KeygenSessionRequest {
 
 // KeygenSessionResponse contains the keygen session info for a given key ID.
 message KeygenSessionResponse {
-  int64 created_at = 1;
-  google.protobuf.Timestamp created_at_timestamp = 2
+  int64 started_at = 1;
+  google.protobuf.Timestamp started_at_timestamp = 2
       [ (gogoproto.nullable) = false, (gogoproto.stdtime) = true ];
   int64 expires_at = 3;
   int64 completed_at = 4;

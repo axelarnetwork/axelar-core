@@ -1,7 +1,6 @@
 package keeper_test
 
 import (
-	"fmt"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -203,7 +202,7 @@ func TestKey(t *testing.T) {
 
 			for i, p := range res.Participants {
 				assert.Equal(t, p.Weight, key.GetWeight(funcs.Must(sdk.ValAddressFromBech32(p.Address))))
-				assert.Equal(t, p.PubKey, fmt.Sprintf("0x%s", funcs.MustOk(key.GetPubKey(funcs.Must(sdk.ValAddressFromBech32(p.Address)))).String()))
+				assert.Equal(t, p.PubKey, funcs.MustOk(key.GetPubKey(funcs.Must(sdk.ValAddressFromBech32(p.Address)))).String())
 
 				if i < len(res.Participants)-1 {
 					assert.True(t, p.Weight.GTE(res.Participants[i+1].Weight))
@@ -257,8 +256,8 @@ func TestKeygenSession(t *testing.T) {
 
 			assert.NoError(t, err)
 			assert.NotNil(t, res)
-			assert.Equal(t, key.GetHeight(), res.CreatedAt)
-			assert.Equal(t, key.GetTimestamp(), res.CreatedAtTimestamp)
+			assert.Equal(t, key.GetHeight(), res.StartedAt)
+			assert.Equal(t, key.GetTimestamp(), res.StartedAtTimestamp)
 			assert.Equal(t, int64(0), res.ExpiresAt)
 			assert.Equal(t, int64(0), res.CompletedAt)
 			assert.Equal(t, int64(0), res.GracePeriod)
@@ -291,8 +290,8 @@ func TestKeygenSession(t *testing.T) {
 
 			assert.NoError(t, err)
 			assert.NotNil(t, res)
-			assert.Equal(t, key.GetHeight(), res.CreatedAt)
-			assert.Equal(t, key.GetTimestamp(), res.CreatedAtTimestamp)
+			assert.Equal(t, key.GetHeight(), res.StartedAt)
+			assert.Equal(t, key.GetTimestamp(), res.StartedAtTimestamp)
 			assert.Equal(t, session.GetExpiresAt(), res.ExpiresAt)
 			assert.Equal(t, session.GetCompletedAt(), res.CompletedAt)
 			assert.Equal(t, session.GetGracePeriod(), res.GracePeriod)

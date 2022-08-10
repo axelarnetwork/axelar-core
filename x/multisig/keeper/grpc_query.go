@@ -71,7 +71,7 @@ func (q Querier) Key(c context.Context, req *types.KeyRequest) (*types.KeyRespon
 		return types.KeygenParticipant{
 			Address: p.String(),
 			Weight:  key.GetWeight(p),
-			PubKey:  fmt.Sprintf("0x%s", funcs.MustOk(key.GetPubKey(p)).String()),
+			PubKey:  funcs.MustOk(key.GetPubKey(p)).String(),
 		}
 	})
 	sort.SliceStable(participants, func(i, j int) bool {
@@ -99,21 +99,22 @@ func (q Querier) KeygenSession(c context.Context, req *types.KeygenSessionReques
 	var state exported.MultisigState
 	if !ok {
 		key, ok = q.keeper.GetKey(ctx, req.KeyID)
+		if !ok {
+			return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrMultisig, fmt.Sprintf("key not found for key id [%s]", req.KeyID)).Error())
+		}
+
 		session = types.KeygenSession{KeygenThreshold: utils.ZeroThreshold}
 		state = exported.Completed
 	} else {
 		key = &session.Key
 		state = session.GetState()
 	}
-	if !ok {
-		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrMultisig, fmt.Sprintf("key not found for key id [%s]", req.KeyID)).Error())
-	}
 
 	snapshot := key.GetSnapshot()
 	participants := slices.Map(snapshot.GetParticipantAddresses(), func(p sdk.ValAddress) types.KeygenParticipant {
 		var pubKey string
 		if pub, ok := key.GetPubKey(p); ok {
-			pubKey = fmt.Sprintf("0x%s", pub.String())
+			pubKey = pub.String()
 		}
 
 		return types.KeygenParticipant{
@@ -127,8 +128,8 @@ func (q Querier) KeygenSession(c context.Context, req *types.KeygenSessionReques
 	})
 
 	return &types.KeygenSessionResponse{
-		CreatedAt:              key.GetHeight(),
-		CreatedAtTimestamp:     key.GetTimestamp(),
+		StartedAt:              key.GetHeight(),
+		StartedAtTimestamp:     key.GetTimestamp(),
 		ExpiresAt:              session.GetExpiresAt(),
 		CompletedAt:            session.GetCompletedAt(),
 		GracePeriod:            session.GetGracePeriod(),

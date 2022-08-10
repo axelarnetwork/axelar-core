@@ -4648,8 +4648,8 @@ KeygenSessionResponse contains the keygen session info for a given key ID.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `created_at` | [int64](#int64) |  |  |
-| `created_at_timestamp` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
+| `started_at` | [int64](#int64) |  |  |
+| `started_at_timestamp` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
 | `expires_at` | [int64](#int64) |  |  |
 | `completed_at` | [int64](#int64) |  |  |
 | `grace_period` | [int64](#int64) |  |  |
