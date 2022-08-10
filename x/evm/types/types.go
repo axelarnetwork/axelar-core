@@ -90,7 +90,7 @@ const (
 		}
 	]`
 	AxelarGatewayCommandMintToken                   = "mintToken"
-	mintTokenMaxGasCost                             = 150000
+	mintTokenMaxGasCost                             = 100000
 	AxelarGatewayCommandDeployToken                 = "deployToken"
 	deployTokenMaxGasCost                           = 1400000
 	AxelarGatewayCommandBurnToken                   = "burnToken"
@@ -99,9 +99,9 @@ const (
 	AxelarGatewayCommandTransferOperatorship        = "transferOperatorship"
 	transferOperatorshipMaxGasCost                  = 120000
 	AxelarGatewayCommandApproveContractCallWithMint = "approveContractCallWithMint"
-	approveContractCallWithMintMaxGasCost           = 120000
+	approveContractCallWithMintMaxGasCost           = 100000
 	AxelarGatewayCommandApproveContractCall         = "approveContractCall"
-	approveContractCallMaxGasCost                   = 120000
+	approveContractCallMaxGasCost                   = 100000
 	axelarGatewayFuncExecute                        = "execute"
 )
 
