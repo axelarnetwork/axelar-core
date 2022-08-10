@@ -212,8 +212,19 @@ func TestSigningSession(t *testing.T) {
 			Run(t)
 
 		givenNewSignSession.
+			When("completed at is not set", func() {
+				signingSession.CompletedAt = rand.I64Between(-2, 1)
+				signingSession.State = exported.Completed
+			}).
+			Then("should return error", func(t *testing.T) {
+				assert.Error(t, signingSession.ValidateBasic())
+			}).
+			Run(t, 2)
+
+		givenNewSignSession.
 			When("completed at is set", func() {
 				signingSession.CompletedAt = 10
+				signingSession.State = exported.Pending
 			}).
 			Then("should return error", func(t *testing.T) {
 				assert.Error(t, signingSession.ValidateBasic())
@@ -221,8 +232,9 @@ func TestSigningSession(t *testing.T) {
 			Run(t)
 
 		givenNewSignSession.
-			When("completed at is set", func() {
+			When("completed at is greater than expires at", func() {
 				signingSession.CompletedAt = 10
+				signingSession.ExpiresAt = 9
 			}).
 			Then("should return error", func(t *testing.T) {
 				assert.Error(t, signingSession.ValidateBasic())
@@ -325,7 +337,7 @@ func TestSigningSession(t *testing.T) {
 			When2(whenIsNotExpired).
 			When2(whenParticipantIsValid).
 			When("participant has already submitted its signature", func() {
-				signingSession.AddSig(blockHeight, participant, signature)
+				funcs.MustNoErr(signingSession.AddSig(blockHeight, participant, signature))
 			}).
 			Then("should return error", func(t *testing.T) {
 				assert.Error(t, signingSession.AddSig(blockHeight, participant, signature))
@@ -349,8 +361,8 @@ func TestSigningSession(t *testing.T) {
 			When2(whenIsNotExpired).
 			When2(whenParticipantIsValid).
 			When("is completed", func() {
-				signingSession.AddSig(blockHeight, validators[2], signatures[validators[2].String()])
-				signingSession.AddSig(blockHeight, validators[1], signatures[validators[1].String()])
+				funcs.MustNoErr(signingSession.AddSig(blockHeight, validators[2], signatures[validators[2].String()]))
+				funcs.MustNoErr(signingSession.AddSig(blockHeight, validators[1], signatures[validators[1].String()]))
 			}).
 			When("is outside the grace period", func() {
 				blockHeight = signingSession.CompletedAt + signingSession.GracePeriod + 1
@@ -389,7 +401,7 @@ func TestSigningSession(t *testing.T) {
 				blockHeight := signingSession.ExpiresAt - 1
 				participant = rand.Of(validators...)
 
-				signingSession.AddSig(blockHeight, participant, signatures[participant.String()])
+				funcs.MustNoErr(signingSession.AddSig(blockHeight, participant, signatures[participant.String()]))
 			}).
 			Then("should return the correct missing participants", func(t *testing.T) {
 				actual := signingSession.GetMissingParticipants()
@@ -415,8 +427,8 @@ func TestSigningSession(t *testing.T) {
 			When("is completed", func() {
 				blockHeight := signingSession.ExpiresAt - 1
 
-				signingSession.AddSig(blockHeight, validators[2], signatures[validators[2].String()])
-				signingSession.AddSig(blockHeight, validators[1], signatures[validators[1].String()])
+				funcs.MustNoErr(signingSession.AddSig(blockHeight, validators[2], signatures[validators[2].String()]))
+				funcs.MustNoErr(signingSession.AddSig(blockHeight, validators[1], signatures[validators[1].String()]))
 			}).
 			Then("should get valid multi sig", func(t *testing.T) {
 				actual, err := signingSession.Result()
