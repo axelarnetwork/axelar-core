@@ -92,6 +92,7 @@ func (k Keeper) createKeygenSession(ctx sdk.Context, id exported.KeyID, snapshot
 	}
 
 	k.setKeygenSession(ctx, keygenSession)
+	k.setKeygenSessionExpiry(ctx, keygenSession)
 
 	participants := snapshot.GetParticipantAddresses()
 	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewKeygenStarted(id, participants)))
@@ -121,6 +122,10 @@ func (k Keeper) getKey(ctx sdk.Context, id exported.KeyID) (key types.Key, ok bo
 // UpdateKeygenSessionExpiry updates the keygen session expiry
 func (k Keeper) UpdateKeygenSessionExpiry(ctx sdk.Context, keygen types.KeygenSession) {
 	k.getStore(ctx).Delete(expiryKeygenPrefix.Append(utils.KeyFromInt(keygen.ExpiresAt)).Append(utils.LowerCaseKey(keygen.GetKeyID().String())))
+	k.setKeygenSessionExpiry(ctx, keygen)
+}
+
+func (k Keeper) setKeygenSessionExpiry(ctx sdk.Context, keygen types.KeygenSession) {
 	k.getStore(ctx).SetRaw(getKeygenSessionExpiryKey(keygen), []byte(keygen.GetKeyID()))
 }
 

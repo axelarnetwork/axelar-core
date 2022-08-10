@@ -86,6 +86,7 @@ func (k Keeper) Sign(ctx sdk.Context, keyID exported.KeyID, payloadHash exported
 	}
 
 	k.setSigningSession(ctx, signingSession)
+	k.setSigningSessionExpiry(ctx, signingSession)
 
 	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewSigningStarted(signingSession.GetID(), key, payloadHash[:], module)))
 	k.Logger(ctx).Info("signing session started",
@@ -105,7 +106,7 @@ func (k Keeper) Sign(ctx sdk.Context, keyID exported.KeyID, payloadHash exported
 // UpdateSigningSessionExpiry updates the signing session expiry
 func (k Keeper) UpdateSigningSessionExpiry(ctx sdk.Context, signing types.SigningSession) {
 	k.getStore(ctx).Delete(expirySigningPrefix.Append(utils.KeyFromInt(signing.ExpiresAt)).Append(utils.KeyFromInt(signing.GetID())))
-	k.getStore(ctx).Set(getSigningSessionExpiryKey(signing), &gogoprototypes.UInt64Value{Value: signing.GetID()})
+	k.setSigningSessionExpiry(ctx, signing)
 }
 
 // DeleteSigningSession deletes the signing session with the given ID
@@ -117,6 +118,10 @@ func (k Keeper) DeleteSigningSession(ctx sdk.Context, id uint64) {
 
 	k.getStore(ctx).Delete(getSigningSessionExpiryKey(signing))
 	k.getStore(ctx).Delete(getSigningSessionKey(id))
+}
+
+func (k Keeper) setSigningSessionExpiry(ctx sdk.Context, signing types.SigningSession) {
+	k.getStore(ctx).Set(getSigningSessionExpiryKey(signing), &gogoprototypes.UInt64Value{Value: signing.GetID()})
 }
 
 func (k Keeper) setSigningSession(ctx sdk.Context, signing types.SigningSession) {
