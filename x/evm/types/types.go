@@ -90,7 +90,7 @@ const (
 		}
 	]`
 	AxelarGatewayCommandMintToken                   = "mintToken"
-	mintTokenMaxGasCost                             = 150000
+	mintTokenMaxGasCost                             = 100000
 	AxelarGatewayCommandDeployToken                 = "deployToken"
 	deployTokenMaxGasCost                           = 1400000
 	AxelarGatewayCommandBurnToken                   = "burnToken"
