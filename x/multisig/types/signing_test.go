@@ -312,7 +312,7 @@ func TestSigningSession(t *testing.T) {
 		givenNewSignSession.
 			When2(whenSignaturesAreCreated).
 			When("is expired", func() {
-				blockHeight = signingSession.ExpiresAt + 1
+				blockHeight = signingSession.ExpiresAt
 			}).
 			When2(whenParticipantIsValid).
 			Then("should return error", func(t *testing.T) {
@@ -361,7 +361,6 @@ func TestSigningSession(t *testing.T) {
 			When2(whenIsNotExpired).
 			When2(whenParticipantIsValid).
 			When("is completed", func() {
-				blockHeight -= 1
 				funcs.MustNoErr(signingSession.AddSig(blockHeight, validators[2], signatures[validators[2].String()]))
 				funcs.MustNoErr(signingSession.AddSig(blockHeight, validators[1], signatures[validators[1].String()]))
 			}).

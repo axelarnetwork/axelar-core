@@ -70,7 +70,7 @@ func TestMsgServer(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, k.GetKeygenSessionsByExpiry(ctx, expiresAt), 1)
-		assert.Len(t, k.GetKeygenSessionsByExpiry(ctx, ctx.BlockHeight()+types.DefaultParams().KeygenGracePeriod+1), 0)
+		assert.Len(t, k.GetKeygenSessionsByExpiry(ctx, ctx.BlockHeight()+types.DefaultParams().KeygenGracePeriod), 0)
 	})
 	requestIsMade := When("a request is made", func() {
 		sk := funcs.Must(btcec.NewPrivateKey())
