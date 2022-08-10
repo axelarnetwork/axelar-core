@@ -53,7 +53,7 @@ func TestEndBlocker(t *testing.T) {
 		givenKeepersAndCtx.
 			When("a pending keygen session expiry equal to the block height", func() {
 				k.GetKeygenSessionsByExpiryFunc = func(_ sdk.Context, expiry int64) []types.KeygenSession {
-					if expiry != ctx.BlockHeight() {
+					if expiry != ctx.BlockHeight()+1 {
 						return nil
 					}
 
@@ -89,7 +89,7 @@ func TestEndBlocker(t *testing.T) {
 					State: exported.Completed,
 				}
 				k.GetKeygenSessionsByExpiryFunc = func(_ sdk.Context, expiry int64) []types.KeygenSession {
-					if expiry != ctx.BlockHeight() {
+					if expiry != ctx.BlockHeight()+1 {
 						return nil
 					}
 
@@ -122,7 +122,7 @@ func TestEndBlocker(t *testing.T) {
 					State: exported.Completed,
 				}
 				k.GetKeygenSessionsByExpiryFunc = func(_ sdk.Context, expiry int64) []types.KeygenSession {
-					if expiry != ctx.BlockHeight() {
+					if expiry != ctx.BlockHeight()+1 {
 						return nil
 					}
 
@@ -174,7 +174,7 @@ func TestEndBlocker(t *testing.T) {
 			Branch(
 				When("a pending signing session expiry equal to the block height", func() {
 					k.GetSigningSessionsByExpiryFunc = func(_ sdk.Context, expiry int64) []types.SigningSession {
-						if expiry != ctx.BlockHeight() {
+						if expiry != ctx.BlockHeight()+1 {
 							return nil
 						}
 
@@ -212,7 +212,7 @@ func TestEndBlocker(t *testing.T) {
 				When("a completed signing session expiry equal to the block height", func() {
 					signingSession = newSigningSession(module)
 					k.GetSigningSessionsByExpiryFunc = func(_ sdk.Context, expiry int64) []types.SigningSession {
-						if expiry != ctx.BlockHeight() {
+						if expiry != ctx.BlockHeight()+1 {
 							return nil
 						}
 
@@ -239,7 +239,7 @@ func TestEndBlocker(t *testing.T) {
 					missingCount = uint64(rand.I64Between(1, 5))
 					signingSession = newSigningSessionWithMissingParticipants(module, missingCount)
 					k.GetSigningSessionsByExpiryFunc = func(_ sdk.Context, expiry int64) []types.SigningSession {
-						if expiry != ctx.BlockHeight() {
+						if expiry != ctx.BlockHeight()+1 {
 							return nil
 						}
 
@@ -266,7 +266,7 @@ func TestEndBlocker(t *testing.T) {
 
 				When("multiple completed signing sessions are triggered", func() {
 					k.GetSigningSessionsByExpiryFunc = func(_ sdk.Context, expiry int64) []types.SigningSession {
-						if expiry != ctx.BlockHeight() {
+						if expiry != ctx.BlockHeight()+1 {
 							return nil
 						}
 						return []types.SigningSession{
@@ -295,7 +295,7 @@ func TestEndBlocker(t *testing.T) {
 
 				When("multiple completed signing sessions are triggered", func() {
 					k.GetSigningSessionsByExpiryFunc = func(_ sdk.Context, expiry int64) []types.SigningSession {
-						if expiry != ctx.BlockHeight() {
+						if expiry != ctx.BlockHeight()+1 {
 							return nil
 						}
 						return []types.SigningSession{
@@ -320,7 +320,7 @@ func TestEndBlocker(t *testing.T) {
 						_, err := multisig.EndBlocker(ctx, abci.RequestEndBlock{}, k, rewarder)
 						assert.NoError(t, err)
 						assert.False(t, ctx.MultiStore().GetKVStore(storeKey).Has(rolledBackKey))
-						assert.Equal(t, len(k.DeleteSigningSessionCalls()), len(k.GetSigningSessionsByExpiry(ctx, ctx.BlockHeight())))
+						assert.Equal(t, len(k.DeleteSigningSessionCalls()), len(k.GetSigningSessionsByExpiry(ctx, ctx.BlockHeight()+1)))
 					}),
 			).
 			Run(t, 20)
