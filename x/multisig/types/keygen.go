@@ -31,17 +31,6 @@ func NewKeygenSession(id exported.KeyID, keygenThreshold utils.Threshold, signin
 
 // ValidateBasic returns an error if the given keygen session is invalid; nil otherwise
 func (m KeygenSession) ValidateBasic() error {
-	var keyErr error
-	if m.State == exported.Completed {
-		keyErr = m.Key.ValidateBasic()
-	} else {
-		keyErr = validateBasicPendingKey(m.Key)
-	}
-
-	if keyErr != nil {
-		return keyErr
-	}
-
 	if m.KeygenThreshold.LT(m.Key.SigningThreshold) {
 		return fmt.Errorf("keygen threshold must be >=signing threshold")
 	}
@@ -50,12 +39,33 @@ func (m KeygenSession) ValidateBasic() error {
 		return fmt.Errorf("expires at must be >0")
 	}
 
-	if m.State == exported.Completed && m.CompletedAt == 0 {
-		return fmt.Errorf("completed keygen session must have completed at set")
+	if m.CompletedAt > m.ExpiresAt {
+		return fmt.Errorf("completed at must be <= expires at")
 	}
 
-	if m.State != exported.Completed && m.CompletedAt != 0 {
-		return fmt.Errorf("pending keygen session must not have completed at set")
+	if m.GracePeriod < 0 {
+		return fmt.Errorf("grace period must be >=0")
+	}
+
+	switch m.GetState() {
+	case exported.Pending:
+		if m.CompletedAt != 0 {
+			return fmt.Errorf("pending keygen session must not have completed at set")
+		}
+
+		if err := validateBasicPendingKey(m.Key); err != nil {
+			return err
+		}
+	case exported.Completed:
+		if m.CompletedAt <= 0 {
+			return fmt.Errorf("completed keygen session must have completed at set")
+		}
+
+		if err := m.Key.ValidateBasic(); err != nil {
+			return err
+		}
+	default:
+		return fmt.Errorf("unexpected state %s", m.GetState())
 	}
 
 	return nil

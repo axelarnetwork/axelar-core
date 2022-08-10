@@ -119,8 +119,8 @@ func (k Keeper) getKey(ctx sdk.Context, id exported.KeyID) (key types.Key, ok bo
 	return key, k.getStore(ctx).Get(keyPrefix.Append(utils.LowerCaseKey(id.String())), &key)
 }
 
-// UpdateKeygenSessionExpiry updates the keygen session expiry
-func (k Keeper) UpdateKeygenSessionExpiry(ctx sdk.Context, keygen types.KeygenSession) {
+// updateKeygenSessionExpiry updates the keygen session expiry
+func (k Keeper) updateKeygenSessionExpiry(ctx sdk.Context, keygen types.KeygenSession) {
 	k.getStore(ctx).Delete(expiryKeygenPrefix.Append(utils.KeyFromInt(keygen.ExpiresAt)).Append(utils.LowerCaseKey(keygen.GetKeyID().String())))
 	k.setKeygenSessionExpiry(ctx, keygen)
 }

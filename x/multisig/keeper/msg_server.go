@@ -66,7 +66,7 @@ func (s msgServer) SubmitPubKey(c context.Context, req *types.SubmitPubKeyReques
 	}
 
 	if completed {
-		s.UpdateKeygenSessionExpiry(ctx, keygenSession)
+		s.updateKeygenSessionExpiry(ctx, keygenSession)
 	}
 
 	s.setKeygenSession(ctx, keygenSession)
@@ -104,7 +104,7 @@ func (s msgServer) SubmitSignature(c context.Context, req *types.SubmitSignature
 	}
 
 	if completed {
-		s.UpdateSigningSessionExpiry(ctx, signingSession)
+		s.updateSigningSessionExpiry(ctx, signingSession)
 	}
 
 	s.setSigningSession(ctx, signingSession)

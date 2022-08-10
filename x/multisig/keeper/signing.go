@@ -103,8 +103,8 @@ func (k Keeper) Sign(ctx sdk.Context, keyID exported.KeyID, payloadHash exported
 	return nil
 }
 
-// UpdateSigningSessionExpiry updates the signing session expiry
-func (k Keeper) UpdateSigningSessionExpiry(ctx sdk.Context, signing types.SigningSession) {
+// updateSigningSessionExpiry updates the signing session expiry
+func (k Keeper) updateSigningSessionExpiry(ctx sdk.Context, signing types.SigningSession) {
 	k.getStore(ctx).Delete(expirySigningPrefix.Append(utils.KeyFromInt(signing.ExpiresAt)).Append(utils.KeyFromInt(signing.GetID())))
 	k.setSigningSessionExpiry(ctx, signing)
 }

@@ -61,6 +61,10 @@ func (m SigningSession) ValidateBasic() error {
 		return fmt.Errorf("completed at must be <= expires at")
 	}
 
+	if m.GracePeriod < 0 {
+		return fmt.Errorf("grace period must be >=0")
+	}
+
 	if err := utils.ValidateString(m.Module); err != nil {
 		return err
 	}
@@ -78,7 +82,6 @@ func (m SigningSession) ValidateBasic() error {
 		if m.GetParticipantsWeight().LT(m.Key.GetMinPassingWeight()) {
 			return fmt.Errorf("completed signing session must have completed multi signature")
 		}
-
 	default:
 		return fmt.Errorf("unexpected state %s", m.GetState())
 	}
