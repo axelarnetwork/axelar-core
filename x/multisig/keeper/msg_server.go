@@ -60,9 +60,13 @@ func (s msgServer) SubmitPubKey(c context.Context, req *types.SubmitPubKeyReques
 		return nil, fmt.Errorf("sender %s is not a registered proxy", req.Sender.String())
 	}
 
-	err := keygenSession.AddKey(ctx.BlockHeight(), participant, req.PubKey)
+	completed, err := keygenSession.AddKey(ctx.BlockHeight(), participant, req.PubKey)
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "unable to add public key for keygen")
+	}
+
+	if completed {
+		s.UpdateKeygenSessionExpiry(ctx, keygenSession)
 	}
 
 	s.setKeygenSession(ctx, keygenSession)
@@ -94,8 +98,13 @@ func (s msgServer) SubmitSignature(c context.Context, req *types.SubmitSignature
 		return nil, fmt.Errorf("sender %s is not a registered proxy", req.Sender.String())
 	}
 
-	if err := signingSession.AddSig(ctx.BlockHeight(), participant, req.Signature); err != nil {
+	completed, err := signingSession.AddSig(ctx.BlockHeight(), participant, req.Signature)
+	if err != nil {
 		return nil, sdkerrors.Wrap(err, "unable to add signature for signing")
+	}
+
+	if completed {
+		s.UpdateSigningSessionExpiry(ctx, signingSession)
 	}
 
 	s.setSigningSession(ctx, signingSession)

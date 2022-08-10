@@ -154,13 +154,13 @@ func TestMsgServer(t *testing.T) {
 					}).
 					Then("should update the keygen expiry", func(t *testing.T) {
 						assert.Len(t, k.GetKeygenSessionsByExpiry(ctx, expiresAt), 0)
-						assert.Len(t, k.GetKeygenSessionsByExpiry(ctx, ctx.BlockHeight()+types.DefaultParams().KeygenGracePeriod+1), 1)
-						assert.Equal(t, keyID, k.GetKeygenSessionsByExpiry(ctx, ctx.BlockHeight()+types.DefaultParams().KeygenGracePeriod+1)[0].GetKeyID())
+						assert.Len(t, k.GetKeygenSessionsByExpiry(ctx, ctx.BlockHeight()+types.DefaultParams().KeygenGracePeriod), 1)
+						assert.Equal(t, keyID, k.GetKeygenSessionsByExpiry(ctx, ctx.BlockHeight()+types.DefaultParams().KeygenGracePeriod)[0].GetKeyID())
 					}),
 
 				keySessionExists.
 					When("all participants submitted the public keys and the grace period goes beyond the expires at", func() {
-						ctx = ctx.WithBlockHeight(ctx.BlockHeight() + types.DefaultParams().KeygenTimeout - types.DefaultParams().KeygenGracePeriod)
+						ctx = ctx.WithBlockHeight(ctx.BlockHeight() + types.DefaultParams().KeygenTimeout - types.DefaultParams().KeygenGracePeriod + 1)
 
 						for _, v := range validators {
 							snapshotter.GetOperatorFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return v.Address }
@@ -218,7 +218,7 @@ func TestMsgServer(t *testing.T) {
 					Snapshot: snapshot.NewSnapshot(ctx.BlockTime(), ctx.BlockHeight(), participants, sdk.NewUint(uint64(participantCount))),
 					PubKeys: slices.ToMap(publicKeys, func(pk exported.PublicKey) string {
 						result := validators[pubKeyIndex]
-						pubKeyIndex += 1
+						pubKeyIndex++
 
 						return result.String()
 					}),
@@ -277,7 +277,7 @@ func TestMsgServer(t *testing.T) {
 
 					When("signing session exists", func() {
 						payloadHash = rand.Bytes(exported.HashLength)
-						k.Sign(ctx, keyID, payloadHash, module)
+						funcs.MustNoErr(k.Sign(ctx, keyID, payloadHash, module))
 
 						events := ctx.EventManager().Events().ToABCIEvents()
 						sigID = funcs.Must(sdk.ParseTypedEvent(events[len(events)-1])).(*types.SigningStarted).SigID
@@ -307,7 +307,7 @@ func TestMsgServer(t *testing.T) {
 								}
 
 								assert.Len(t, k.GetSigningSessionsByExpiry(ctx, ctx.BlockHeight()+types.DefaultParams().SigningTimeout), 0)
-								actual := k.GetSigningSessionsByExpiry(ctx, ctx.BlockHeight()+types.DefaultParams().SigningGracePeriod+1)
+								actual := k.GetSigningSessionsByExpiry(ctx, ctx.BlockHeight()+types.DefaultParams().SigningGracePeriod)
 								assert.Len(t, actual, 1)
 
 								sig, err := actual[0].Result()

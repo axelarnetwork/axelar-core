@@ -118,11 +118,13 @@ func (k Keeper) getKey(ctx sdk.Context, id exported.KeyID) (key types.Key, ok bo
 	return key, k.getStore(ctx).Get(keyPrefix.Append(utils.LowerCaseKey(id.String())), &key)
 }
 
-func (k Keeper) setKeygenSession(ctx sdk.Context, keygen types.KeygenSession) {
-	// the deletion is necessary because we may update it to a different location depending on the current state of the session
+// UpdateKeygenSessionExpiry updates the keygen session expiry
+func (k Keeper) UpdateKeygenSessionExpiry(ctx sdk.Context, keygen types.KeygenSession) {
 	k.getStore(ctx).Delete(expiryKeygenPrefix.Append(utils.KeyFromInt(keygen.ExpiresAt)).Append(utils.LowerCaseKey(keygen.GetKeyID().String())))
 	k.getStore(ctx).SetRaw(getKeygenSessionExpiryKey(keygen), []byte(keygen.GetKeyID()))
+}
 
+func (k Keeper) setKeygenSession(ctx sdk.Context, keygen types.KeygenSession) {
 	k.getStore(ctx).Set(getKeygenSessionKey(keygen.GetKeyID()), &keygen)
 }
 
@@ -133,7 +135,7 @@ func (k Keeper) getKeygenSession(ctx sdk.Context, id exported.KeyID) (keygen typ
 func getKeygenSessionExpiryKey(keygen types.KeygenSession) utils.Key {
 	expiry := keygen.ExpiresAt
 	if keygen.State == exported.Completed {
-		expiry = math.Min(keygen.ExpiresAt, keygen.CompletedAt+keygen.GracePeriod+1)
+		expiry = math.Min(keygen.ExpiresAt, keygen.CompletedAt+keygen.GracePeriod)
 	}
 
 	return expiryKeygenPrefix.Append(utils.KeyFromInt(expiry)).Append(utils.LowerCaseKey(keygen.GetKeyID().String()))

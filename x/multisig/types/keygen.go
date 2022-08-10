@@ -67,30 +67,30 @@ func (m KeygenSession) GetKeyID() exported.KeyID {
 }
 
 // AddKey adds a new public key for the given participant into the keygen session
-func (m *KeygenSession) AddKey(blockHeight int64, participant sdk.ValAddress, pubKey exported.PublicKey) error {
+func (m *KeygenSession) AddKey(blockHeight int64, participant sdk.ValAddress, pubKey exported.PublicKey) (bool, error) {
 	if m.Key.PubKeys == nil {
 		m.Key.PubKeys = make(map[string]exported.PublicKey)
 		m.IsPubKeyReceived = make(map[string]bool)
 	}
 
 	if m.isExpired(blockHeight) {
-		return fmt.Errorf("keygen session %s has expired", m.GetKeyID())
+		return false, fmt.Errorf("keygen session %s has expired", m.GetKeyID())
 	}
 
 	if m.Key.Snapshot.GetParticipantWeight(participant).IsZero() {
-		return fmt.Errorf("%s is not a participant of keygen %s", participant.String(), m.GetKeyID())
+		return false, fmt.Errorf("%s is not a participant of keygen %s", participant.String(), m.GetKeyID())
 	}
 
 	if _, ok := m.Key.PubKeys[participant.String()]; ok {
-		return fmt.Errorf("participant %s already submitted its public key for keygen %s", participant.String(), m.GetKeyID())
+		return false, fmt.Errorf("participant %s already submitted its public key for keygen %s", participant.String(), m.GetKeyID())
 	}
 
 	if m.IsPubKeyReceived[pubKey.String()] {
-		return fmt.Errorf("duplicate public key received")
+		return false, fmt.Errorf("duplicate public key received")
 	}
 
 	if m.State == exported.Completed && !m.isWithinGracePeriod(blockHeight) {
-		return fmt.Errorf("keygen session %s has closed", m.GetKeyID())
+		return false, fmt.Errorf("keygen session %s has closed", m.GetKeyID())
 	}
 
 	m.addKey(participant, pubKey)
@@ -98,9 +98,10 @@ func (m *KeygenSession) AddKey(blockHeight int64, participant sdk.ValAddress, pu
 	if m.State != exported.Completed && m.Key.GetParticipantsWeight().GTE(m.Key.Snapshot.CalculateMinPassingWeight(m.KeygenThreshold)) {
 		m.CompletedAt = blockHeight
 		m.State = exported.Completed
+		return true, nil
 	}
 
-	return nil
+	return false, nil
 }
 
 // GetMissingParticipants returns all participants who failed to submit their public keys
@@ -130,7 +131,7 @@ func (m KeygenSession) isWithinGracePeriod(blockHeight int64) bool {
 }
 
 func (m KeygenSession) isExpired(blockHeight int64) bool {
-	return blockHeight >= m.ExpiresAt
+	return blockHeight > m.ExpiresAt
 }
 
 func (m *KeygenSession) addKey(participant sdk.ValAddress, pubKey exported.PublicKey) {

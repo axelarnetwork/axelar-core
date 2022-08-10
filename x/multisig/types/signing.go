@@ -57,6 +57,10 @@ func (m SigningSession) ValidateBasic() error {
 		return fmt.Errorf("expires at must be >0")
 	}
 
+	if m.CompletedAt > m.ExpiresAt {
+		return fmt.Errorf("completed at must be <= expires at")
+	}
+
 	if err := utils.ValidateString(m.Module); err != nil {
 		return err
 	}
@@ -67,7 +71,7 @@ func (m SigningSession) ValidateBasic() error {
 			return fmt.Errorf("pending signing session must not have completed at set")
 		}
 	case exported.Completed:
-		if m.CompletedAt == 0 {
+		if m.CompletedAt <= 0 {
 			return fmt.Errorf("completed signing session must have completed at set")
 		}
 
@@ -94,29 +98,29 @@ func (m SigningSession) ValidateBasic() error {
 }
 
 // AddSig adds a new signature for the given participant into the signing session
-func (m *SigningSession) AddSig(blockHeight int64, participant sdk.ValAddress, sig Signature) error {
+func (m *SigningSession) AddSig(blockHeight int64, participant sdk.ValAddress, sig Signature) (bool, error) {
 	if m.MultiSig.Sigs == nil {
 		m.MultiSig.Sigs = make(map[string]Signature)
 	}
 
 	if m.isExpired(blockHeight) {
-		return fmt.Errorf("signing session %d has expired", m.GetID())
+		return false, fmt.Errorf("signing session %d has expired", m.GetID())
 	}
 
 	if _, ok := m.Key.PubKeys[participant.String()]; !ok {
-		return fmt.Errorf("%s is not a participant of signing %d", participant.String(), m.GetID())
+		return false, fmt.Errorf("%s is not a participant of signing %d", participant.String(), m.GetID())
 	}
 
 	if _, ok := m.MultiSig.Sigs[participant.String()]; ok {
-		return fmt.Errorf("participant %s already submitted its signature for signing %d", participant.String(), m.GetID())
+		return false, fmt.Errorf("participant %s already submitted its signature for signing %d", participant.String(), m.GetID())
 	}
 
 	if !sig.Verify(m.MultiSig.PayloadHash, m.Key.PubKeys[participant.String()]) {
-		return fmt.Errorf("invalid signature received from participant %s for signing %d", participant.String(), m.GetID())
+		return false, fmt.Errorf("invalid signature received from participant %s for signing %d", participant.String(), m.GetID())
 	}
 
 	if m.GetState() == exported.Completed && !m.isWithinGracePeriod(blockHeight) {
-		return fmt.Errorf("signing session %d has closed", m.GetID())
+		return false, fmt.Errorf("signing session %d has closed", m.GetID())
 	}
 
 	m.addSig(participant, sig)
@@ -124,9 +128,10 @@ func (m *SigningSession) AddSig(blockHeight int64, participant sdk.ValAddress, s
 	if m.GetState() != exported.Completed && m.GetParticipantsWeight().GTE(m.Key.GetMinPassingWeight()) {
 		m.CompletedAt = blockHeight
 		m.State = exported.Completed
+		return true, nil
 	}
 
-	return nil
+	return false, nil
 }
 
 // GetMissingParticipants returns all participants who failed to submit their signatures
@@ -186,7 +191,7 @@ func (m SigningSession) isWithinGracePeriod(blockHeight int64) bool {
 }
 
 func (m SigningSession) isExpired(blockHeight int64) bool {
-	return blockHeight >= m.ExpiresAt
+	return blockHeight > m.ExpiresAt
 }
 
 // ValidateBasic returns an error if the given sig is invalid; nil otherwise

@@ -94,10 +94,10 @@ func TestKeygenSession(t *testing.T) {
 		givenNewKeygenSession.
 			When("", func() {}).
 			Then("should complete after all participants have submitted their public key", func(t *testing.T) {
-				blockHeight := keygenSession.ExpiresAt - 1
+				blockHeight := keygenSession.ExpiresAt
 
 				for _, p := range keygenSession.Key.Snapshot.GetParticipantAddresses() {
-					err := keygenSession.AddKey(blockHeight, p, typestestutils.PublicKey())
+					_, err := keygenSession.AddKey(blockHeight, p, typestestutils.PublicKey())
 					assert.NoError(t, err)
 				}
 
@@ -108,53 +108,53 @@ func TestKeygenSession(t *testing.T) {
 
 		givenNewKeygenSession.
 			When("block height is after expiry", func() {
-				blockHeight = keygenSession.GetExpiresAt() + rand.I64Between(0, 10)
+				blockHeight = keygenSession.GetExpiresAt() + rand.I64Between(1, 10)
 				participant = keygenSession.GetKey().Snapshot.GetParticipantAddresses()[0]
 				pubKey = typestestutils.PublicKey()
 			}).
 			Then("should return error", func(t *testing.T) {
-				err := keygenSession.AddKey(blockHeight, participant, typestestutils.PublicKey())
+				_, err := keygenSession.AddKey(blockHeight, participant, typestestutils.PublicKey())
 				assert.ErrorContains(t, err, "expired")
 			}).
 			Run(t)
 
 		givenNewKeygenSession.
 			When("participant is not in the snapshot", func() {
-				blockHeight = keygenSession.GetExpiresAt() - 1
+				blockHeight = keygenSession.GetExpiresAt()
 				participant = rand.ValAddr()
 				pubKey = typestestutils.PublicKey()
 			}).
 			Then("should return error", func(t *testing.T) {
-				err := keygenSession.AddKey(blockHeight, participant, pubKey)
+				_, err := keygenSession.AddKey(blockHeight, participant, pubKey)
 				assert.ErrorContains(t, err, "not a participant")
 			}).
 			Run(t)
 
 		givenNewKeygenSession.
 			When("participant has already submitted its public key", func() {
-				blockHeight = keygenSession.GetExpiresAt() - 1
+				blockHeight = keygenSession.GetExpiresAt()
 				participant = keygenSession.GetKey().Snapshot.GetParticipantAddresses()[0]
 				pubKey = typestestutils.PublicKey()
 
-				keygenSession.AddKey(blockHeight, participant, pubKey)
+				funcs.Must(keygenSession.AddKey(blockHeight, participant, pubKey))
 			}).
 			Then("should return error", func(t *testing.T) {
-				err := keygenSession.AddKey(blockHeight, participant, pubKey)
+				_, err := keygenSession.AddKey(blockHeight, participant, pubKey)
 				assert.ErrorContains(t, err, "already submitted")
 			}).
 			Run(t)
 
 		givenNewKeygenSession.
 			When("duplicate public key is received", func() {
-				blockHeight = keygenSession.GetExpiresAt() - 1
+				blockHeight = keygenSession.GetExpiresAt()
 				participant = keygenSession.GetKey().Snapshot.GetParticipantAddresses()[0]
 				pubKey = typestestutils.PublicKey()
 
-				keygenSession.AddKey(blockHeight, participant, pubKey)
+				funcs.Must(keygenSession.AddKey(blockHeight, participant, pubKey))
 				participant = keygenSession.GetKey().Snapshot.GetParticipantAddresses()[1]
 			}).
 			Then("should return error", func(t *testing.T) {
-				err := keygenSession.AddKey(blockHeight, participant, pubKey)
+				_, err := keygenSession.AddKey(blockHeight, participant, pubKey)
 				assert.ErrorContains(t, err, "duplicate")
 			}).
 			Run(t)
@@ -162,11 +162,11 @@ func TestKeygenSession(t *testing.T) {
 		givenNewKeygenSession.
 			When("keygen is already completed", func() {
 				keygenSession.State = exported.Completed
-				keygenSession.CompletedAt = keygenSession.ExpiresAt - keygenSession.GracePeriod - 2
+				keygenSession.CompletedAt = keygenSession.ExpiresAt - keygenSession.GracePeriod - 1
 			}).
 			Then("should fail if past the grace period", func(t *testing.T) {
 				blockHeight := keygenSession.CompletedAt + keygenSession.GracePeriod + 1
-				err := keygenSession.AddKey(blockHeight, keygenSession.Key.Snapshot.GetParticipantAddresses()[0], typestestutils.PublicKey())
+				_, err := keygenSession.AddKey(blockHeight, keygenSession.Key.Snapshot.GetParticipantAddresses()[0], typestestutils.PublicKey())
 				assert.ErrorContains(t, err, "closed")
 			}).
 			Run(t)
@@ -184,11 +184,11 @@ func TestKeygenSession(t *testing.T) {
 
 		givenNewKeygenSession.
 			When("some participant has submitted its public key", func() {
-				blockHeight = keygenSession.GetExpiresAt() - 1
+				blockHeight = keygenSession.GetExpiresAt()
 				participant = keygenSession.GetKey().Snapshot.GetParticipantAddresses()[0]
 				pubKey = typestestutils.PublicKey()
 
-				keygenSession.AddKey(blockHeight, participant, pubKey)
+				funcs.Must(keygenSession.AddKey(blockHeight, participant, pubKey))
 			}).
 			Then("should exclude those have submitted already", func(t *testing.T) {
 				actual := keygenSession.GetMissingParticipants()
@@ -212,7 +212,7 @@ func TestKeygenSession(t *testing.T) {
 		givenNewKeygenSession.
 			When("enough participants have submitted their public keys", func() {
 				for _, p := range keygenSession.Key.Snapshot.GetParticipantAddresses() {
-					keygenSession.AddKey(keygenSession.ExpiresAt-1, p, typestestutils.PublicKey())
+					funcs.Must(keygenSession.AddKey(keygenSession.ExpiresAt, p, typestestutils.PublicKey()))
 				}
 			}).
 			Then("should return a valid key", func(t *testing.T) {
@@ -323,7 +323,6 @@ func TestKey(t *testing.T) {
 }
 
 func TestSignature_Verify(t *testing.T) {
-
 	var (
 		sk      *btcec.PrivateKey
 		payload []byte
@@ -334,7 +333,6 @@ func TestSignature_Verify(t *testing.T) {
 	}).
 		Given("a payload", func() {
 			payload = rand.Bytes(30)
-
 		}).
 		Branch(
 			When("a signature is created", func() {
@@ -353,5 +351,4 @@ func TestSignature_Verify(t *testing.T) {
 					assert.False(t, sig.Verify(payload, sk.PubKey().SerializeCompressed()))
 				}),
 		).Run(t)
-
 }
