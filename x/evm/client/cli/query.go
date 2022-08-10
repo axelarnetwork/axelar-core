@@ -5,7 +5,6 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/spf13/cobra"
@@ -128,9 +127,9 @@ func getCmdTokenAddress(queryRoute string) *cobra.Command {
 // getCmdDepositState returns the query for an ERC20 deposit transaction state
 func getCmdDepositState(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "deposit-state [chain] [txID] [burner address] [amount]",
+		Use:   "deposit-state [chain] [txID] [burner address]",
 		Short: "Query the state of a deposit transaction",
-		Args:  cobra.ExactArgs(4),
+		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
@@ -140,7 +139,6 @@ func getCmdDepositState(queryRoute string) *cobra.Command {
 			chain := args[0]
 			txID := common.HexToHash(args[1])
 			burnerAddress := common.HexToAddress(args[2])
-			amount := sdk.NewUintFromString(args[3])
 
 			queryClient := types.NewQueryServiceClient(cliCtx)
 
@@ -149,7 +147,6 @@ func getCmdDepositState(queryRoute string) *cobra.Command {
 				Params: &types.QueryDepositStateParams{
 					TxID:          types.Hash(txID),
 					BurnerAddress: types.Address(burnerAddress),
-					Amount:        amount.String(),
 				},
 			})
 			if err != nil {
