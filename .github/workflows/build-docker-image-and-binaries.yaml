@@ -15,7 +15,7 @@ jobs:
       matrix:
         go-version:
           - 1.18
-        os: [ubuntu-18.04, macos-latest]
+        os: [ubuntu-22.04, macos-latest]
         arch: [amd64, arm64, arm]
         exclude:
           - {os: "macos-latest", arch: "arm"}
@@ -66,7 +66,7 @@ jobs:
           OS_TYPE: ${{ matrix.os }}
           SEMVER: ${{ github.event.inputs.tag }}
         run: |
-          OS=$(echo "$OS_TYPE" | sed -e 's/ubuntu-18.04/linux/; s/macos-latest/darwin/')
+          OS=$(echo "$OS_TYPE" | sed -e 's/ubuntu-22.04/linux/; s/macos-latest/darwin/')
           make build-binaries-multiarch
           mv ./bin/axelard ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
           gpg --armor --detach-sign  ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
@@ -128,7 +128,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-18.04]
+        os: [ubuntu-22.04]
         platform: [linux/arm64,linux/amd64,linux/arm/v7,linux/arm/v6]
 
     permissions:
@@ -178,7 +178,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-18.04]
+        os: [ubuntu-22.04]
 
     permissions:
       contents: write
