@@ -13,7 +13,7 @@ import (
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
-//go:generate moq -pkg mock -out ./mock/expected_keepers.go . Keeper Snapshotter Staker Slasher Rewarder Nexus
+//go:generate moq -pkg mock -out ./mock/expected_keepers.go . Keeper Snapshotter Staker Slasher Rewarder Nexus Tss
 
 // Keeper provides keeper functionality of this module
 type Keeper interface {
