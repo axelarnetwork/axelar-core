@@ -36,6 +36,11 @@ func (k Keeper) GetKeygenSessionsByExpiry(ctx sdk.Context, expiry int64) []types
 	return results
 }
 
+// GetKeygenSession returns a keygen session by key ID if it exists
+func (k Keeper) GetKeygenSession(ctx sdk.Context, id exported.KeyID) (types.KeygenSession, bool) {
+	return k.getKeygenSession(ctx, id)
+}
+
 // GetKey returns the key of the given ID
 func (k Keeper) GetKey(ctx sdk.Context, keyID exported.KeyID) (exported.Key, bool) {
 	var key types.Key

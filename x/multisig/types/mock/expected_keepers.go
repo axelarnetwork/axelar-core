@@ -39,6 +39,9 @@ var _ types.Keeper = &KeeperMock{}
 // 			GetKeyFunc: func(ctx sdk.Context, keyID github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID) (github_com_axelarnetwork_axelar_core_x_multisig_exported.Key, bool) {
 // 				panic("mock out the GetKey method")
 // 			},
+// 			GetKeygenSessionFunc: func(ctx sdk.Context, id github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID) (types.KeygenSession, bool) {
+// 				panic("mock out the GetKeygenSession method")
+// 			},
 // 			GetKeygenSessionsByExpiryFunc: func(ctx sdk.Context, expiry int64) []types.KeygenSession {
 // 				panic("mock out the GetKeygenSessionsByExpiry method")
 // 			},
@@ -75,6 +78,9 @@ type KeeperMock struct {
 
 	// GetKeyFunc mocks the GetKey method.
 	GetKeyFunc func(ctx sdk.Context, keyID github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID) (github_com_axelarnetwork_axelar_core_x_multisig_exported.Key, bool)
+
+	// GetKeygenSessionFunc mocks the GetKeygenSession method.
+	GetKeygenSessionFunc func(ctx sdk.Context, id github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID) (types.KeygenSession, bool)
 
 	// GetKeygenSessionsByExpiryFunc mocks the GetKeygenSessionsByExpiry method.
 	GetKeygenSessionsByExpiryFunc func(ctx sdk.Context, expiry int64) []types.KeygenSession
@@ -124,6 +130,13 @@ type KeeperMock struct {
 			// KeyID is the keyID argument value.
 			KeyID github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID
 		}
+		// GetKeygenSession holds details about calls to the GetKeygenSession method.
+		GetKeygenSession []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// ID is the id argument value.
+			ID github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID
+		}
 		// GetKeygenSessionsByExpiry holds details about calls to the GetKeygenSessionsByExpiry method.
 		GetKeygenSessionsByExpiry []struct {
 			// Ctx is the ctx argument value.
@@ -165,6 +178,7 @@ type KeeperMock struct {
 	lockDeleteSigningSession       sync.RWMutex
 	lockGetCurrentKeyID            sync.RWMutex
 	lockGetKey                     sync.RWMutex
+	lockGetKeygenSession           sync.RWMutex
 	lockGetKeygenSessionsByExpiry  sync.RWMutex
 	lockGetNextKeyID               sync.RWMutex
 	lockGetSigRouter               sync.RWMutex
@@ -310,6 +324,41 @@ func (mock *KeeperMock) GetKeyCalls() []struct {
 	mock.lockGetKey.RLock()
 	calls = mock.calls.GetKey
 	mock.lockGetKey.RUnlock()
+	return calls
+}
+
+// GetKeygenSession calls GetKeygenSessionFunc.
+func (mock *KeeperMock) GetKeygenSession(ctx sdk.Context, id github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID) (types.KeygenSession, bool) {
+	if mock.GetKeygenSessionFunc == nil {
+		panic("KeeperMock.GetKeygenSessionFunc: method is nil but Keeper.GetKeygenSession was just called")
+	}
+	callInfo := struct {
+		Ctx sdk.Context
+		ID  github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID
+	}{
+		Ctx: ctx,
+		ID:  id,
+	}
+	mock.lockGetKeygenSession.Lock()
+	mock.calls.GetKeygenSession = append(mock.calls.GetKeygenSession, callInfo)
+	mock.lockGetKeygenSession.Unlock()
+	return mock.GetKeygenSessionFunc(ctx, id)
+}
+
+// GetKeygenSessionCalls gets all the calls that were made to GetKeygenSession.
+// Check the length with:
+//     len(mockedKeeper.GetKeygenSessionCalls())
+func (mock *KeeperMock) GetKeygenSessionCalls() []struct {
+	Ctx sdk.Context
+	ID  github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID
+} {
+	var calls []struct {
+		Ctx sdk.Context
+		ID  github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID
+	}
+	mock.lockGetKeygenSession.RLock()
+	calls = mock.calls.GetKeygenSession
+	mock.lockGetKeygenSession.RUnlock()
 	return calls
 }
 
