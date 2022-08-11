@@ -136,7 +136,7 @@ func TestKeygenSession(t *testing.T) {
 				participant = keygenSession.GetKey().Snapshot.GetParticipantAddresses()[0]
 				pubKey = typestestutils.PublicKey()
 
-				keygenSession.AddKey(blockHeight, participant, pubKey)
+				funcs.MustNoErr(keygenSession.AddKey(blockHeight, participant, pubKey))
 			}).
 			Then("should return error", func(t *testing.T) {
 				err := keygenSession.AddKey(blockHeight, participant, pubKey)
@@ -150,7 +150,7 @@ func TestKeygenSession(t *testing.T) {
 				participant = keygenSession.GetKey().Snapshot.GetParticipantAddresses()[0]
 				pubKey = typestestutils.PublicKey()
 
-				keygenSession.AddKey(blockHeight, participant, pubKey)
+				funcs.MustNoErr(keygenSession.AddKey(blockHeight, participant, pubKey))
 				participant = keygenSession.GetKey().Snapshot.GetParticipantAddresses()[1]
 			}).
 			Then("should return error", func(t *testing.T) {
@@ -323,7 +323,6 @@ func TestKey(t *testing.T) {
 }
 
 func TestSignature_Verify(t *testing.T) {
-
 	var (
 		sk      *btcec.PrivateKey
 		payload []byte
@@ -334,7 +333,6 @@ func TestSignature_Verify(t *testing.T) {
 	}).
 		Given("a payload", func() {
 			payload = rand.Bytes(30)
-
 		}).
 		Branch(
 			When("a signature is created", func() {
@@ -353,5 +351,4 @@ func TestSignature_Verify(t *testing.T) {
 					assert.False(t, sig.Verify(payload, sk.PubKey().SerializeCompressed()))
 				}),
 		).Run(t)
-
 }

@@ -205,7 +205,7 @@ func TestMsgServer(t *testing.T) {
 					Snapshot: snapshot.NewSnapshot(ctx.BlockTime(), ctx.BlockHeight(), participants, sdk.NewUint(uint64(participantCount))),
 					PubKeys: slices.ToMap(publicKeys, func(pk exported.PublicKey) string {
 						result := validators[pubKeyIndex]
-						pubKeyIndex += 1
+						pubKeyIndex++
 
 						return result.String()
 					}),
@@ -264,7 +264,7 @@ func TestMsgServer(t *testing.T) {
 
 					When("signing session exists", func() {
 						payloadHash = rand.Bytes(exported.HashLength)
-						k.Sign(ctx, keyID, payloadHash, module)
+						funcs.MustNoErr(k.Sign(ctx, keyID, payloadHash, module))
 
 						events := ctx.EventManager().Events().ToABCIEvents()
 						sigID = funcs.Must(sdk.ParseTypedEvent(events[len(events)-1])).(*types.SigningStarted).SigID
