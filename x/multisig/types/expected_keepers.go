@@ -63,6 +63,7 @@ type Nexus interface {
 	GetChains(ctx sdk.Context) []nexus.Chain
 }
 
+// Tss provides tss keeper functionality
 type Tss interface {
 	GetKey(ctx sdk.Context, keyID tss.KeyID) (key tss.Key, ok bool)
 }
