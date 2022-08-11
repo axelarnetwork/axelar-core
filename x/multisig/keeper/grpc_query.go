@@ -89,6 +89,27 @@ func (q Querier) Key(c context.Context, req *types.KeyRequest) (*types.KeyRespon
 	}, nil
 }
 
+func getKeygenParticipants(key exported.Key) []types.KeygenParticipant {
+	snapshot := key.GetSnapshot()
+	participants := slices.Map(snapshot.GetParticipantAddresses(), func(p sdk.ValAddress) types.KeygenParticipant {
+		var pubKey string
+		if pub, ok := key.GetPubKey(p); ok {
+			pubKey = pub.String()
+		}
+
+		return types.KeygenParticipant{
+			Address: p.String(),
+			Weight:  snapshot.GetParticipantWeight(p),
+			PubKey:  pubKey,
+		}
+	})
+	sort.SliceStable(participants, func(i, j int) bool {
+		return participants[i].Weight.GT(participants[j].Weight)
+	})
+
+	return participants
+}
+
 // KeygenSession returns the keygen session info for the given key ID
 func (q Querier) KeygenSession(c context.Context, req *types.KeygenSessionRequest) (*types.KeygenSessionResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
@@ -110,23 +131,6 @@ func (q Querier) KeygenSession(c context.Context, req *types.KeygenSessionReques
 		state = session.GetState()
 	}
 
-	snapshot := key.GetSnapshot()
-	participants := slices.Map(snapshot.GetParticipantAddresses(), func(p sdk.ValAddress) types.KeygenParticipant {
-		var pubKey string
-		if pub, ok := key.GetPubKey(p); ok {
-			pubKey = pub.String()
-		}
-
-		return types.KeygenParticipant{
-			Address: p.String(),
-			Weight:  snapshot.GetParticipantWeight(p),
-			PubKey:  pubKey,
-		}
-	})
-	sort.SliceStable(participants, func(i, j int) bool {
-		return participants[i].Weight.GT(participants[j].Weight)
-	})
-
 	return &types.KeygenSessionResponse{
 		StartedAt:              key.GetHeight(),
 		StartedAtTimestamp:     key.GetTimestamp(),
@@ -137,6 +141,6 @@ func (q Querier) KeygenSession(c context.Context, req *types.KeygenSessionReques
 		KeygenThresholdWeight:  key.GetSnapshot().CalculateMinPassingWeight(session.KeygenThreshold),
 		SigningThresholdWeight: key.GetMinPassingWeight(),
 		BondedWeight:           key.GetBondedWeight(),
-		Participants:           participants,
+		Participants:           getKeygenParticipants(key),
 	}, nil
 }
