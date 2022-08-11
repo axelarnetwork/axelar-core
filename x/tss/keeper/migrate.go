@@ -136,7 +136,7 @@ func migrateKeyType(ctx sdk.Context, tss Keeper, snapshotter types.Snapshotter, 
 		ID:               multisigExported.KeyID(key.ID),
 		Snapshot:         s,
 		PubKeys:          pubkeys,
-		SigningThreshold: utils.NewThreshold(keyInfo.TargetNum, keyInfo.Count()),
+		SigningThreshold: utils.NewThreshold(keyInfo.TargetNum, int64(len(s.Participants))),
 	}
 
 	if err := newKey.ValidateBasic(); err != nil {
