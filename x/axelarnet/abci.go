@@ -25,14 +25,14 @@ func EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock, bk types.BaseKeeper, t 
 		queue.Dequeue(&transfer)
 
 		_ = utils.RunCached(ctx, bk, func(cachedCtx sdk.Context) ([]abci.ValidatorUpdate, error) {
-			err := sendIBCTransfer(ctx, bk, t, c, transfer)
+			err := sendIBCTransfer(cachedCtx, bk, t, c, transfer)
 			if err != nil {
-				bk.Logger(ctx).Error(fmt.Sprintf("failed to send IBC transfer %s with id %s for %s:  %s", transfer.Token, transfer.ID.String(), transfer.Receiver, err))
+				bk.Logger(cachedCtx).Error(fmt.Sprintf("failed to send IBC transfer %s with id %s for %s:  %s", transfer.Token, transfer.ID.String(), transfer.Receiver, err))
 				failed = append(failed, transfer)
 				return nil, err
 			}
 
-			bk.Logger(ctx).Debug(fmt.Sprintf("successfully sent IBC transfer %s with id %s from %s to %s", transfer.Token, transfer.ID.String(), transfer.Sender, transfer.Receiver))
+			bk.Logger(cachedCtx).Debug(fmt.Sprintf("successfully sent IBC transfer %s with id %s from %s to %s", transfer.Token, transfer.ID.String(), transfer.Sender, transfer.Receiver))
 			return nil, nil
 		})
 	}
