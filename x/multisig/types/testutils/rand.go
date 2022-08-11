@@ -25,6 +25,20 @@ func PublicKey() exported.PublicKey {
 	return privKey.PubKey().SerializeCompressed()
 }
 
+// KeygenSession returns a random multisig keygen session
+func KeygenSession() types.KeygenSession {
+	key := Key()
+	keygenThreshold := utils.NewThreshold(rand.I64Between(key.SigningThreshold.Numerator, key.SigningThreshold.Denominator+1), key.SigningThreshold.Denominator)
+	return types.KeygenSession{
+		Key:             key,
+		State:           exported.Pending,
+		ExpiresAt:       rand.I64Between(1, 100),
+		CompletedAt:     rand.I64Between(1, 100),
+		GracePeriod:     rand.I64Between(1, 10),
+		KeygenThreshold: keygenThreshold,
+	}
+}
+
 // Key returns a random multisig key
 func Key() types.Key {
 	threshold := utilstestutils.RandThreshold()
@@ -38,6 +52,7 @@ func Key() types.Key {
 
 	return types.Key{
 		ID:               multisigtestutils.KeyID(),
+		State:            exported.Inactive,
 		Snapshot:         snapshot,
 		PubKeys:          pubKeys,
 		SigningThreshold: threshold,

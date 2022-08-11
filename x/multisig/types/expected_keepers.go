@@ -19,6 +19,7 @@ type Keeper interface {
 	Logger(ctx sdk.Context) log.Logger
 	GetCurrentKeyID(ctx sdk.Context, chainName nexus.ChainName) (exported.KeyID, bool)
 	GetNextKeyID(ctx sdk.Context, chainName nexus.ChainName) (exported.KeyID, bool)
+	GetKeygenSession(ctx sdk.Context, id exported.KeyID) (KeygenSession, bool)
 	GetKeygenSessionsByExpiry(ctx sdk.Context, expiry int64) []KeygenSession
 	GetKey(ctx sdk.Context, keyID exported.KeyID) (exported.Key, bool)
 	SetKey(ctx sdk.Context, key Key)

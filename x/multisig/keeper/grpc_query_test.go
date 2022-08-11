@@ -19,6 +19,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/multisig/types/mock"
 	typesTestutils "github.com/axelarnetwork/axelar-core/x/multisig/types/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/utils/funcs"
 	. "github.com/axelarnetwork/utils/test"
 )
 
@@ -170,11 +171,29 @@ func TestKey(t *testing.T) {
 	givenQuerier.
 		When("key is not found", func() {
 			multisigKeeper.GetKeyFunc = func(sdk.Context, multisig.KeyID) (multisig.Key, bool) { return nil, false }
+			multisigKeeper.GetKeygenSessionFunc = func(sdk.Context, multisig.KeyID) (types.KeygenSession, bool) { return types.KeygenSession{}, false }
 		}).
 		Then("should return error NotFound", func(t *testing.T) {
 			res, err := querier.Key(sdk.WrapSDKContext(ctx), &types.KeyRequest{KeyID: multisigTestutils.KeyID()})
 
 			assert.Nil(t, res)
+			assert.ErrorContains(t, err, "key not found")
+			s, ok := status.FromError(err)
+			assert.Equal(t, codes.NotFound, s.Code())
+			assert.True(t, ok)
+		}).
+		Run(t)
+
+	givenQuerier.
+		When("keygen is in progress", func() {
+			multisigKeeper.GetKeyFunc = func(sdk.Context, multisig.KeyID) (multisig.Key, bool) { return nil, false }
+			multisigKeeper.GetKeygenSessionFunc = func(sdk.Context, multisig.KeyID) (types.KeygenSession, bool) { return types.KeygenSession{}, true }
+		}).
+		Then("should return error NotFound", func(t *testing.T) {
+			res, err := querier.Key(sdk.WrapSDKContext(ctx), &types.KeyRequest{KeyID: multisigTestutils.KeyID()})
+
+			assert.Nil(t, res)
+			assert.ErrorContains(t, err, "keygen in progress")
 			s, ok := status.FromError(err)
 			assert.Equal(t, codes.NotFound, s.Code())
 			assert.True(t, ok)
@@ -185,25 +204,128 @@ func TestKey(t *testing.T) {
 		When("key is found", func() {
 			key = typesTestutils.Key()
 			multisigKeeper.GetKeyFunc = func(sdk.Context, multisig.KeyID) (multisig.Key, bool) { return &key, true }
+			multisigKeeper.GetKeygenSessionFunc = func(sdk.Context, multisig.KeyID) (types.KeygenSession, bool) { return types.KeygenSession{}, false }
 		}).
-		Then("should return error NotFound", func(t *testing.T) {
+		Then("should return key", func(t *testing.T) {
 			res, err := querier.Key(sdk.WrapSDKContext(ctx), &types.KeyRequest{KeyID: key.ID})
 
 			assert.NoError(t, err)
 			assert.NotNil(t, res)
 			assert.Equal(t, key.ID, res.KeyID)
 			assert.Equal(t, key.State, res.State)
-			assert.Equal(t, key.GetHeight(), res.Height)
-			assert.Equal(t, key.GetTimestamp(), res.Timestamp)
+			assert.Equal(t, key.GetHeight(), res.StartedAt)
+			assert.Equal(t, key.GetTimestamp(), res.StartedAtTimestamp)
 			assert.Equal(t, key.GetMinPassingWeight(), res.ThresholdWeight)
 			assert.Equal(t, key.GetBondedWeight(), res.BondedWeight)
 			assert.Len(t, res.Participants, len(key.GetParticipants()))
 
 			for i, p := range res.Participants {
+				assert.Equal(t, p.Weight, key.GetWeight(funcs.Must(sdk.ValAddressFromBech32(p.Address))))
+				assert.Equal(t, p.PubKey, funcs.MustOk(key.GetPubKey(funcs.Must(sdk.ValAddressFromBech32(p.Address)))).String())
+
 				if i < len(res.Participants)-1 {
 					assert.True(t, p.Weight.GTE(res.Participants[i+1].Weight))
 				}
 			}
 		}).
 		Run(t)
+}
+
+func TestKeygenSession(t *testing.T) {
+	var (
+		multisigKeeper *mock.KeeperMock
+		stakingKeeper  *mock.StakerMock
+		ctx            sdk.Context
+		querier        keeper.Querier
+		key            types.Key
+		session        types.KeygenSession
+	)
+
+	givenQuerier := Given("multisig querier", func() {
+		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+		multisigKeeper = &mock.KeeperMock{}
+		stakingKeeper = &mock.StakerMock{}
+
+		querier = keeper.NewGRPCQuerier(multisigKeeper, stakingKeeper)
+	})
+
+	givenQuerier.
+		When("key is not found", func() {
+			multisigKeeper.GetKeyFunc = func(sdk.Context, multisig.KeyID) (multisig.Key, bool) { return nil, false }
+			multisigKeeper.GetKeygenSessionFunc = func(sdk.Context, multisig.KeyID) (types.KeygenSession, bool) { return types.KeygenSession{}, false }
+		}).
+		Then("should return error NotFound", func(t *testing.T) {
+			res, err := querier.KeygenSession(sdk.WrapSDKContext(ctx), &types.KeygenSessionRequest{KeyID: multisigTestutils.KeyID()})
+
+			assert.Nil(t, res)
+			s, ok := status.FromError(err)
+			assert.Equal(t, codes.NotFound, s.Code())
+			assert.True(t, ok)
+		}).
+		Run(t)
+
+	givenQuerier.
+		When("completed key is found", func() {
+			key = typesTestutils.Key()
+			multisigKeeper.GetKeyFunc = func(sdk.Context, multisig.KeyID) (multisig.Key, bool) { return &key, true }
+			multisigKeeper.GetKeygenSessionFunc = func(sdk.Context, multisig.KeyID) (types.KeygenSession, bool) { return types.KeygenSession{}, false }
+		}).
+		Then("should return the session", func(t *testing.T) {
+			res, err := querier.KeygenSession(sdk.WrapSDKContext(ctx), &types.KeygenSessionRequest{KeyID: key.ID})
+
+			assert.NoError(t, err)
+			assert.NotNil(t, res)
+			assert.Equal(t, key.GetHeight(), res.StartedAt)
+			assert.Equal(t, key.GetTimestamp(), res.StartedAtTimestamp)
+			assert.Equal(t, int64(0), res.ExpiresAt)
+			assert.Equal(t, int64(0), res.CompletedAt)
+			assert.Equal(t, int64(0), res.GracePeriod)
+			assert.Equal(t, sdk.ZeroUint(), res.KeygenThresholdWeight)
+			assert.Equal(t, key.GetMinPassingWeight(), res.SigningThresholdWeight)
+			assert.Equal(t, key.GetBondedWeight(), res.BondedWeight)
+			assert.Len(t, res.Participants, len(key.GetSnapshot().GetParticipantAddresses()))
+
+			for i, p := range res.Participants {
+				assert.Equal(t, p.Weight, key.GetWeight(funcs.Must(sdk.ValAddressFromBech32(p.Address))))
+
+				if i < len(res.Participants)-1 {
+					assert.True(t, p.Weight.GTE(res.Participants[i+1].Weight))
+				}
+			}
+		}).
+		Run(t, 10)
+
+	givenQuerier.
+		When("key is not found", func() {
+			multisigKeeper.GetKeyFunc = func(sdk.Context, multisig.KeyID) (multisig.Key, bool) { return nil, false }
+		}).
+		When("keygen session is found", func() {
+			session = typesTestutils.KeygenSession()
+			multisigKeeper.GetKeygenSessionFunc = func(sdk.Context, multisig.KeyID) (types.KeygenSession, bool) { return session, true }
+		}).
+		Then("should return the session", func(t *testing.T) {
+			res, err := querier.KeygenSession(sdk.WrapSDKContext(ctx), &types.KeygenSessionRequest{KeyID: key.ID})
+			key = session.GetKey()
+
+			assert.NoError(t, err)
+			assert.NotNil(t, res)
+			assert.Equal(t, key.GetHeight(), res.StartedAt)
+			assert.Equal(t, key.GetTimestamp(), res.StartedAtTimestamp)
+			assert.Equal(t, session.GetExpiresAt(), res.ExpiresAt)
+			assert.Equal(t, session.GetCompletedAt(), res.CompletedAt)
+			assert.Equal(t, session.GetGracePeriod(), res.GracePeriod)
+			assert.Equal(t, key.Snapshot.CalculateMinPassingWeight(session.GetKeygenThreshold()), res.KeygenThresholdWeight)
+			assert.Equal(t, key.GetMinPassingWeight(), res.SigningThresholdWeight)
+			assert.Equal(t, key.GetBondedWeight(), res.BondedWeight)
+			assert.Len(t, res.Participants, len(key.GetSnapshot().GetParticipantAddresses()))
+
+			for i, p := range res.Participants {
+				assert.Equal(t, p.Weight, key.GetWeight(funcs.Must(sdk.ValAddressFromBech32(p.Address))))
+
+				if i < len(res.Participants)-1 {
+					assert.True(t, p.Weight.GTE(res.Participants[i+1].Weight))
+				}
+			}
+		}).
+		Run(t, 10)
 }
