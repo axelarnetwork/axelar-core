@@ -62,6 +62,10 @@ func (q Querier) NextKeyID(c context.Context, req *types.NextKeyIDRequest) (*typ
 func (q Querier) Key(c context.Context, req *types.KeyRequest) (*types.KeyResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
+	if _, ok := q.keeper.GetKeygenSession(ctx, req.KeyID); ok {
+		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrMultisig, fmt.Sprintf("keygen in progress for key id [%s]", req.KeyID)).Error())
+	}
+
 	key, ok := q.keeper.GetKey(ctx, req.KeyID)
 	if !ok {
 		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrMultisig, fmt.Sprintf("key not found for key id [%s]", req.KeyID)).Error())

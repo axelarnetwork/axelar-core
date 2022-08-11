@@ -171,11 +171,29 @@ func TestKey(t *testing.T) {
 	givenQuerier.
 		When("key is not found", func() {
 			multisigKeeper.GetKeyFunc = func(sdk.Context, multisig.KeyID) (multisig.Key, bool) { return nil, false }
+			multisigKeeper.GetKeygenSessionFunc = func(sdk.Context, multisig.KeyID) (types.KeygenSession, bool) { return types.KeygenSession{}, false }
 		}).
 		Then("should return error NotFound", func(t *testing.T) {
 			res, err := querier.Key(sdk.WrapSDKContext(ctx), &types.KeyRequest{KeyID: multisigTestutils.KeyID()})
 
 			assert.Nil(t, res)
+			assert.ErrorContains(t, err, "key not found")
+			s, ok := status.FromError(err)
+			assert.Equal(t, codes.NotFound, s.Code())
+			assert.True(t, ok)
+		}).
+		Run(t)
+
+	givenQuerier.
+		When("keygen is in progress", func() {
+			multisigKeeper.GetKeyFunc = func(sdk.Context, multisig.KeyID) (multisig.Key, bool) { return nil, false }
+			multisigKeeper.GetKeygenSessionFunc = func(sdk.Context, multisig.KeyID) (types.KeygenSession, bool) { return types.KeygenSession{}, true }
+		}).
+		Then("should return error NotFound", func(t *testing.T) {
+			res, err := querier.Key(sdk.WrapSDKContext(ctx), &types.KeyRequest{KeyID: multisigTestutils.KeyID()})
+
+			assert.Nil(t, res)
+			assert.ErrorContains(t, err, "keygen in progress")
 			s, ok := status.FromError(err)
 			assert.Equal(t, codes.NotFound, s.Code())
 			assert.True(t, ok)
@@ -186,6 +204,7 @@ func TestKey(t *testing.T) {
 		When("key is found", func() {
 			key = typesTestutils.Key()
 			multisigKeeper.GetKeyFunc = func(sdk.Context, multisig.KeyID) (multisig.Key, bool) { return &key, true }
+			multisigKeeper.GetKeygenSessionFunc = func(sdk.Context, multisig.KeyID) (types.KeygenSession, bool) { return types.KeygenSession{}, false }
 		}).
 		Then("should return key", func(t *testing.T) {
 			res, err := querier.Key(sdk.WrapSDKContext(ctx), &types.KeyRequest{KeyID: key.ID})
