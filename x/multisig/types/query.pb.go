@@ -219,23 +219,62 @@ func (m *KeyRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_KeyRequest proto.InternalMessageInfo
 
+type KeygenParticipant struct {
+	Address string                                  `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
+	Weight  github_com_cosmos_cosmos_sdk_types.Uint `protobuf:"bytes,2,opt,name=weight,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Uint" json:"weight"`
+	PubKey  string                                  `protobuf:"bytes,3,opt,name=pub_key,json=pubKey,proto3" json:"pub_key,omitempty"`
+}
+
+func (m *KeygenParticipant) Reset()         { *m = KeygenParticipant{} }
+func (m *KeygenParticipant) String() string { return proto.CompactTextString(m) }
+func (*KeygenParticipant) ProtoMessage()    {}
+func (*KeygenParticipant) Descriptor() ([]byte, []int) {
+	return fileDescriptor_4c5266980cca9f48, []int{5}
+}
+func (m *KeygenParticipant) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *KeygenParticipant) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_KeygenParticipant.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *KeygenParticipant) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_KeygenParticipant.Merge(m, src)
+}
+func (m *KeygenParticipant) XXX_Size() int {
+	return m.Size()
+}
+func (m *KeygenParticipant) XXX_DiscardUnknown() {
+	xxx_messageInfo_KeygenParticipant.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_KeygenParticipant proto.InternalMessageInfo
+
 // KeyResponse contains the key corresponding to a given key id.
 type KeyResponse struct {
-	KeyID           github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID `protobuf:"bytes,1,opt,name=key_id,json=keyId,proto3,casttype=github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID" json:"key_id,omitempty"`
-	State           exported.KeyState                                              `protobuf:"varint,2,opt,name=state,proto3,enum=axelar.multisig.exported.v1beta1.KeyState" json:"state,omitempty"`
-	Height          int64                                                          `protobuf:"varint,3,opt,name=height,proto3" json:"height,omitempty"`
-	Timestamp       time.Time                                                      `protobuf:"bytes,4,opt,name=timestamp,proto3,stdtime" json:"timestamp"`
-	ThresholdWeight github_com_cosmos_cosmos_sdk_types.Uint                        `protobuf:"bytes,5,opt,name=threshold_weight,json=thresholdWeight,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Uint" json:"threshold_weight"`
-	BondedWeight    github_com_cosmos_cosmos_sdk_types.Uint                        `protobuf:"bytes,6,opt,name=bonded_weight,json=bondedWeight,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Uint" json:"bonded_weight"`
-	// // Keygen participants in descending order by weight
-	Participants []KeyResponse_Participant `protobuf:"bytes,7,rep,name=participants,proto3" json:"participants"`
+	KeyID              github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID `protobuf:"bytes,1,opt,name=key_id,json=keyId,proto3,casttype=github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID" json:"key_id,omitempty"`
+	State              exported.KeyState                                              `protobuf:"varint,2,opt,name=state,proto3,enum=axelar.multisig.exported.v1beta1.KeyState" json:"state,omitempty"`
+	StartedAt          int64                                                          `protobuf:"varint,3,opt,name=started_at,json=startedAt,proto3" json:"started_at,omitempty"`
+	StartedAtTimestamp time.Time                                                      `protobuf:"bytes,4,opt,name=started_at_timestamp,json=startedAtTimestamp,proto3,stdtime" json:"started_at_timestamp"`
+	ThresholdWeight    github_com_cosmos_cosmos_sdk_types.Uint                        `protobuf:"bytes,5,opt,name=threshold_weight,json=thresholdWeight,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Uint" json:"threshold_weight"`
+	BondedWeight       github_com_cosmos_cosmos_sdk_types.Uint                        `protobuf:"bytes,6,opt,name=bonded_weight,json=bondedWeight,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Uint" json:"bonded_weight"`
+	// Keygen participants in descending order by weight
+	Participants []KeygenParticipant `protobuf:"bytes,7,rep,name=participants,proto3" json:"participants"`
 }
 
 func (m *KeyResponse) Reset()         { *m = KeyResponse{} }
 func (m *KeyResponse) String() string { return proto.CompactTextString(m) }
 func (*KeyResponse) ProtoMessage()    {}
 func (*KeyResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_4c5266980cca9f48, []int{5}
+	return fileDescriptor_4c5266980cca9f48, []int{6}
 }
 func (m *KeyResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -264,23 +303,22 @@ func (m *KeyResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_KeyResponse proto.InternalMessageInfo
 
-type KeyResponse_Participant struct {
-	Weight github_com_cosmos_cosmos_sdk_types.Uint `protobuf:"bytes,1,opt,name=weight,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Uint" json:"weight"`
-	PubKey string                                  `protobuf:"bytes,2,opt,name=pub_key,json=pubKey,proto3" json:"pub_key,omitempty"`
+type KeygenSessionRequest struct {
+	KeyID github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID `protobuf:"bytes,1,opt,name=key_id,json=keyId,proto3,casttype=github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID" json:"key_id,omitempty"`
 }
 
-func (m *KeyResponse_Participant) Reset()         { *m = KeyResponse_Participant{} }
-func (m *KeyResponse_Participant) String() string { return proto.CompactTextString(m) }
-func (*KeyResponse_Participant) ProtoMessage()    {}
-func (*KeyResponse_Participant) Descriptor() ([]byte, []int) {
-	return fileDescriptor_4c5266980cca9f48, []int{5, 0}
+func (m *KeygenSessionRequest) Reset()         { *m = KeygenSessionRequest{} }
+func (m *KeygenSessionRequest) String() string { return proto.CompactTextString(m) }
+func (*KeygenSessionRequest) ProtoMessage()    {}
+func (*KeygenSessionRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_4c5266980cca9f48, []int{7}
 }
-func (m *KeyResponse_Participant) XXX_Unmarshal(b []byte) error {
+func (m *KeygenSessionRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *KeyResponse_Participant) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *KeygenSessionRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_KeyResponse_Participant.Marshal(b, m, deterministic)
+		return xxx_messageInfo_KeygenSessionRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -290,17 +328,65 @@ func (m *KeyResponse_Participant) XXX_Marshal(b []byte, deterministic bool) ([]b
 		return b[:n], nil
 	}
 }
-func (m *KeyResponse_Participant) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_KeyResponse_Participant.Merge(m, src)
+func (m *KeygenSessionRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_KeygenSessionRequest.Merge(m, src)
 }
-func (m *KeyResponse_Participant) XXX_Size() int {
+func (m *KeygenSessionRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *KeyResponse_Participant) XXX_DiscardUnknown() {
-	xxx_messageInfo_KeyResponse_Participant.DiscardUnknown(m)
+func (m *KeygenSessionRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_KeygenSessionRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_KeyResponse_Participant proto.InternalMessageInfo
+var xxx_messageInfo_KeygenSessionRequest proto.InternalMessageInfo
+
+// KeygenSessionResponse contains the keygen session info for a given key ID.
+type KeygenSessionResponse struct {
+	StartedAt              int64                                   `protobuf:"varint,1,opt,name=started_at,json=startedAt,proto3" json:"started_at,omitempty"`
+	StartedAtTimestamp     time.Time                               `protobuf:"bytes,2,opt,name=started_at_timestamp,json=startedAtTimestamp,proto3,stdtime" json:"started_at_timestamp"`
+	ExpiresAt              int64                                   `protobuf:"varint,3,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	CompletedAt            int64                                   `protobuf:"varint,4,opt,name=completed_at,json=completedAt,proto3" json:"completed_at,omitempty"`
+	GracePeriod            int64                                   `protobuf:"varint,5,opt,name=grace_period,json=gracePeriod,proto3" json:"grace_period,omitempty"`
+	State                  exported.MultisigState                  `protobuf:"varint,6,opt,name=state,proto3,enum=axelar.multisig.exported.v1beta1.MultisigState" json:"state,omitempty"`
+	KeygenThresholdWeight  github_com_cosmos_cosmos_sdk_types.Uint `protobuf:"bytes,7,opt,name=keygen_threshold_weight,json=keygenThresholdWeight,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Uint" json:"keygen_threshold_weight"`
+	SigningThresholdWeight github_com_cosmos_cosmos_sdk_types.Uint `protobuf:"bytes,8,opt,name=signing_threshold_weight,json=signingThresholdWeight,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Uint" json:"signing_threshold_weight"`
+	BondedWeight           github_com_cosmos_cosmos_sdk_types.Uint `protobuf:"bytes,9,opt,name=bonded_weight,json=bondedWeight,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Uint" json:"bonded_weight"`
+	// Keygen candidates in descending order by weight
+	Participants []KeygenParticipant `protobuf:"bytes,10,rep,name=participants,proto3" json:"participants"`
+}
+
+func (m *KeygenSessionResponse) Reset()         { *m = KeygenSessionResponse{} }
+func (m *KeygenSessionResponse) String() string { return proto.CompactTextString(m) }
+func (*KeygenSessionResponse) ProtoMessage()    {}
+func (*KeygenSessionResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_4c5266980cca9f48, []int{8}
+}
+func (m *KeygenSessionResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *KeygenSessionResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_KeygenSessionResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *KeygenSessionResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_KeygenSessionResponse.Merge(m, src)
+}
+func (m *KeygenSessionResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *KeygenSessionResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_KeygenSessionResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_KeygenSessionResponse proto.InternalMessageInfo
 
 func init() {
 	proto.RegisterType((*KeyIDRequest)(nil), "axelar.multisig.v1beta1.KeyIDRequest")
@@ -308,8 +394,10 @@ func init() {
 	proto.RegisterType((*NextKeyIDRequest)(nil), "axelar.multisig.v1beta1.NextKeyIDRequest")
 	proto.RegisterType((*NextKeyIDResponse)(nil), "axelar.multisig.v1beta1.NextKeyIDResponse")
 	proto.RegisterType((*KeyRequest)(nil), "axelar.multisig.v1beta1.KeyRequest")
+	proto.RegisterType((*KeygenParticipant)(nil), "axelar.multisig.v1beta1.KeygenParticipant")
 	proto.RegisterType((*KeyResponse)(nil), "axelar.multisig.v1beta1.KeyResponse")
-	proto.RegisterType((*KeyResponse_Participant)(nil), "axelar.multisig.v1beta1.KeyResponse.Participant")
+	proto.RegisterType((*KeygenSessionRequest)(nil), "axelar.multisig.v1beta1.KeygenSessionRequest")
+	proto.RegisterType((*KeygenSessionResponse)(nil), "axelar.multisig.v1beta1.KeygenSessionResponse")
 }
 
 func init() {
@@ -317,42 +405,53 @@ func init() {
 }
 
 var fileDescriptor_4c5266980cca9f48 = []byte{
-	// 557 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x94, 0x41, 0x8b, 0xd3, 0x4e,
-	0x18, 0xc6, 0x9b, 0xff, 0x6e, 0xb2, 0xff, 0x4e, 0xbb, 0xba, 0x86, 0xc5, 0x2d, 0x3d, 0x24, 0xa5,
-	0x2e, 0x18, 0xc4, 0x9d, 0xb8, 0x15, 0xaf, 0x22, 0x45, 0x90, 0xa5, 0x20, 0x92, 0x5d, 0x11, 0x7a,
-	0x29, 0x49, 0xf3, 0x9a, 0x0c, 0x6d, 0x33, 0xd9, 0xcc, 0xc4, 0x36, 0x5f, 0x42, 0xf6, 0x63, 0xf5,
-	0xb8, 0x47, 0xf1, 0x50, 0xb5, 0xfd, 0x16, 0x9e, 0xa4, 0x99, 0x69, 0x5a, 0x57, 0x16, 0x74, 0x0f,
-	0x3d, 0xb5, 0x2f, 0xfc, 0x9e, 0xf7, 0x79, 0x66, 0xe6, 0x7d, 0x83, 0x1e, 0xb9, 0x13, 0x18, 0xba,
-	0x89, 0x3d, 0x4a, 0x87, 0x9c, 0x30, 0x12, 0xd8, 0x9f, 0x4e, 0x3d, 0xe0, 0xee, 0xa9, 0x7d, 0x99,
-	0x42, 0x92, 0xe1, 0x38, 0xa1, 0x9c, 0xea, 0x47, 0x02, 0xc2, 0x2b, 0x08, 0x4b, 0xa8, 0x7e, 0x18,
-	0xd0, 0x80, 0xe6, 0x8c, 0xbd, 0xfc, 0x27, 0xf0, 0xba, 0x19, 0x50, 0x1a, 0x0c, 0xc1, 0xce, 0x2b,
-	0x2f, 0xfd, 0x68, 0x73, 0x32, 0x02, 0xc6, 0xdd, 0x51, 0x2c, 0x81, 0xa7, 0x37, 0x4d, 0x61, 0x12,
-	0xd3, 0x84, 0x83, 0x5f, 0xb8, 0xf3, 0x2c, 0x06, 0x26, 0xe9, 0x5b, 0x23, 0x6e, 0x42, 0xc7, 0x12,
-	0x4a, 0x39, 0x19, 0xb2, 0x35, 0x11, 0x26, 0xc0, 0x42, 0x3a, 0xf4, 0x05, 0xd5, 0x3c, 0x46, 0xd5,
-	0x0e, 0x64, 0x67, 0xaf, 0x1d, 0xb8, 0x4c, 0x81, 0x71, 0xfd, 0x10, 0xa9, 0xfd, 0xd0, 0x25, 0x51,
-	0x4d, 0x69, 0x28, 0x56, 0xd9, 0x11, 0x45, 0x93, 0xa1, 0x7d, 0x49, 0xb1, 0x98, 0x46, 0x0c, 0x74,
-	0x0f, 0x69, 0x03, 0xc8, 0x7a, 0xc4, 0x17, 0x5c, 0xbb, 0x33, 0x9f, 0x99, 0x6a, 0x8e, 0xfc, 0x9c,
-	0x99, 0x2f, 0x03, 0xc2, 0xc3, 0xd4, 0xc3, 0x7d, 0x3a, 0xb2, 0x45, 0x88, 0x08, 0xf8, 0x98, 0x26,
-	0x03, 0x59, 0x9d, 0xf4, 0x69, 0x02, 0xf6, 0xe4, 0xcf, 0xc3, 0x62, 0x61, 0xa2, 0x0e, 0x20, 0x3b,
-	0xf3, 0x9b, 0x16, 0x3a, 0x78, 0x0b, 0x13, 0xfe, 0x17, 0xf1, 0xc6, 0xe8, 0xc1, 0x06, 0xb9, 0xc5,
-	0x88, 0x31, 0x42, 0x1d, 0xc8, 0x56, 0xe1, 0xb6, 0xe1, 0xf8, 0x59, 0x45, 0x95, 0xdc, 0x72, 0x7b,
-	0xa7, 0xd4, 0x5f, 0x21, 0x95, 0x71, 0x97, 0x43, 0xed, 0xbf, 0x86, 0x62, 0xdd, 0x6b, 0x3d, 0xc1,
-	0x37, 0x87, 0xbf, 0x90, 0xc9, 0x29, 0x5b, 0xca, 0xcf, 0x97, 0x0a, 0x47, 0x08, 0xf5, 0x87, 0x48,
-	0x0b, 0x81, 0x04, 0x21, 0xaf, 0xed, 0x34, 0x14, 0x6b, 0xc7, 0x91, 0x95, 0xde, 0x46, 0xe5, 0x62,
-	0x13, 0x6a, 0xbb, 0x0d, 0xc5, 0xaa, 0xb4, 0xea, 0x58, 0xec, 0x0a, 0x5e, 0xed, 0x0a, 0xbe, 0x58,
-	0x11, 0xed, 0xff, 0xa7, 0x33, 0xb3, 0x74, 0xf5, 0xcd, 0x54, 0x9c, 0xb5, 0x4c, 0xef, 0xa2, 0x83,
-	0x62, 0xa8, 0x7b, 0x63, 0xe1, 0xa2, 0xe6, 0x77, 0x61, 0x2f, 0xf1, 0xaf, 0x33, 0xf3, 0xf1, 0xc6,
-	0x35, 0xf4, 0x29, 0x1b, 0x51, 0x26, 0x7f, 0x4e, 0x98, 0x3f, 0x90, 0x3b, 0xf3, 0x9e, 0x44, 0xdc,
-	0xb9, 0x5f, 0x34, 0xfa, 0x20, 0xf2, 0x5d, 0xa0, 0x7d, 0x8f, 0x46, 0x3e, 0x14, 0x8d, 0xb5, 0xbb,
-	0x35, 0xae, 0x8a, 0x2e, 0xb2, 0x6b, 0x17, 0x55, 0x63, 0x37, 0xe1, 0xa4, 0x4f, 0x62, 0x37, 0xe2,
-	0xac, 0xb6, 0xd7, 0xd8, 0xb1, 0x2a, 0xad, 0x67, 0xf8, 0x96, 0x6f, 0x0a, 0xde, 0x78, 0x6f, 0xfc,
-	0x6e, 0x2d, 0x6c, 0xef, 0x2e, 0x63, 0x38, 0xbf, 0xf5, 0xaa, 0x53, 0x54, 0xd9, 0x40, 0xf4, 0x37,
-	0x48, 0x93, 0xc9, 0x95, 0xbb, 0x25, 0x97, 0x72, 0xfd, 0x08, 0xed, 0xc5, 0xa9, 0xd7, 0x1b, 0x40,
-	0x96, 0x4f, 0x41, 0xd9, 0xd1, 0xe2, 0xd4, 0xeb, 0x40, 0xd6, 0x3e, 0x9f, 0xfe, 0x30, 0x4a, 0xd3,
-	0xb9, 0xa1, 0x5c, 0xcf, 0x0d, 0xe5, 0xfb, 0xdc, 0x50, 0xae, 0x16, 0x46, 0xe9, 0x7a, 0x61, 0x94,
-	0xbe, 0x2c, 0x8c, 0x52, 0xf7, 0xc5, 0xbf, 0x4e, 0x60, 0x6e, 0xed, 0x69, 0xf9, 0xe3, 0x3f, 0xff,
-	0x15, 0x00, 0x00, 0xff, 0xff, 0x8a, 0x82, 0x7d, 0x1f, 0x8c, 0x05, 0x00, 0x00,
+	// 725 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x93, 0x4f, 0x6f, 0x12, 0x4f,
+	0x18, 0xc7, 0xd9, 0xf2, 0xaf, 0x1d, 0xe8, 0xef, 0xd7, 0x6e, 0xa8, 0x25, 0x4d, 0x0a, 0x88, 0x4d,
+	0x24, 0xc6, 0xee, 0xa6, 0x35, 0x5e, 0x8d, 0x25, 0x1a, 0xd3, 0x10, 0x4d, 0xb3, 0x45, 0x4d, 0x7a,
+	0x21, 0xbb, 0xec, 0xe3, 0x32, 0x01, 0x76, 0xb6, 0x3b, 0xb3, 0x96, 0xf5, 0x4d, 0xd8, 0xd7, 0xe2,
+	0xd1, 0x57, 0xd0, 0x63, 0x8f, 0xc6, 0x03, 0x2a, 0x7d, 0x17, 0x9e, 0x0c, 0x33, 0xc3, 0x16, 0xa8,
+	0xa6, 0x15, 0x95, 0x13, 0xcc, 0xb3, 0x9f, 0xe7, 0xcf, 0x3c, 0xf3, 0xfd, 0xa2, 0x3b, 0x66, 0x0f,
+	0x3a, 0xa6, 0xaf, 0x77, 0x83, 0x0e, 0xc3, 0x14, 0x3b, 0xfa, 0xdb, 0x1d, 0x0b, 0x98, 0xb9, 0xa3,
+	0x1f, 0x07, 0xe0, 0x87, 0x9a, 0xe7, 0x13, 0x46, 0xd4, 0x75, 0x01, 0x69, 0x23, 0x48, 0x93, 0xd0,
+	0x46, 0xce, 0x21, 0x0e, 0xe1, 0x8c, 0x3e, 0xfc, 0x27, 0xf0, 0x8d, 0xa2, 0x43, 0x88, 0xd3, 0x01,
+	0x9d, 0x9f, 0xac, 0xe0, 0x8d, 0xce, 0x70, 0x17, 0x28, 0x33, 0xbb, 0x9e, 0x04, 0xee, 0x4f, 0x37,
+	0x85, 0x9e, 0x47, 0x7c, 0x06, 0x76, 0xd4, 0x9d, 0x85, 0x1e, 0x50, 0x49, 0xff, 0x72, 0xc4, 0x71,
+	0x68, 0x4b, 0x42, 0x01, 0xc3, 0x1d, 0x7a, 0x49, 0xb4, 0x7c, 0xa0, 0x2d, 0xd2, 0xb1, 0x05, 0x55,
+	0xde, 0x42, 0xd9, 0x1a, 0x84, 0xfb, 0x4f, 0x0c, 0x38, 0x0e, 0x80, 0x32, 0x35, 0x87, 0x92, 0xcd,
+	0x96, 0x89, 0xdd, 0xbc, 0x52, 0x52, 0x2a, 0x4b, 0x86, 0x38, 0x94, 0x29, 0x5a, 0x96, 0x14, 0xf5,
+	0x88, 0x4b, 0x41, 0xb5, 0x50, 0xaa, 0x0d, 0x61, 0x03, 0xdb, 0x82, 0xab, 0xd6, 0x06, 0xfd, 0x62,
+	0x92, 0x23, 0xdf, 0xfb, 0xc5, 0x47, 0x0e, 0x66, 0xad, 0xc0, 0xd2, 0x9a, 0xa4, 0xab, 0x8b, 0x21,
+	0x5c, 0x60, 0x27, 0xc4, 0x6f, 0xcb, 0xd3, 0x76, 0x93, 0xf8, 0xa0, 0xf7, 0xae, 0x5e, 0x56, 0x13,
+	0x4d, 0x92, 0x6d, 0x08, 0xf7, 0xed, 0x72, 0x05, 0xad, 0xbc, 0x80, 0x1e, 0xbb, 0xc1, 0x78, 0x27,
+	0x68, 0x75, 0x8c, 0x9c, 0xe3, 0x88, 0x1e, 0x42, 0x35, 0x08, 0x47, 0xc3, 0xcd, 0xa3, 0xe3, 0x7b,
+	0x05, 0xad, 0xd6, 0x20, 0x74, 0xc0, 0x3d, 0x30, 0x7d, 0x86, 0x9b, 0xd8, 0x33, 0x5d, 0xa6, 0xe6,
+	0x51, 0xda, 0xb4, 0x6d, 0x1f, 0x28, 0x95, 0x8b, 0x19, 0x1d, 0xd5, 0x67, 0x28, 0x75, 0x02, 0xd8,
+	0x69, 0xb1, 0xfc, 0x42, 0x49, 0xa9, 0x64, 0xab, 0xfa, 0x59, 0xbf, 0x18, 0xfb, 0xdc, 0x2f, 0xde,
+	0x1d, 0x1b, 0xa7, 0x49, 0x68, 0x97, 0x50, 0xf9, 0xb3, 0x4d, 0xed, 0xb6, 0xd4, 0xd1, 0x4b, 0xec,
+	0x32, 0x43, 0xa6, 0xab, 0xeb, 0x28, 0xed, 0x05, 0x56, 0xa3, 0x0d, 0x61, 0x3e, 0xce, 0x5b, 0xa4,
+	0xbc, 0xc0, 0xaa, 0x41, 0x58, 0xfe, 0x90, 0x40, 0x19, 0xbe, 0x84, 0xf9, 0xed, 0x5d, 0x7d, 0x8c,
+	0x92, 0x94, 0x99, 0x0c, 0xf8, 0xa5, 0xfe, 0xdb, 0xbd, 0xa7, 0x4d, 0xdb, 0x31, 0x4a, 0x93, 0xba,
+	0x1f, 0xa6, 0x1f, 0x0e, 0x33, 0x0c, 0x91, 0xa8, 0x6e, 0x22, 0x44, 0x99, 0x39, 0x44, 0x1a, 0x26,
+	0xe3, 0x37, 0x8a, 0x1b, 0x4b, 0x32, 0xb2, 0xc7, 0xd4, 0x57, 0x28, 0x77, 0xf9, 0xb9, 0x11, 0xb9,
+	0x35, 0x9f, 0x28, 0x29, 0x95, 0xcc, 0xee, 0x86, 0x26, 0xfc, 0xac, 0x8d, 0xfc, 0xac, 0xd5, 0x47,
+	0x44, 0x75, 0x71, 0xb8, 0xe0, 0xd3, 0x2f, 0x45, 0xc5, 0x50, 0xa3, 0x72, 0xd1, 0x57, 0xf5, 0x08,
+	0xad, 0x44, 0x0e, 0x6c, 0xc8, 0x87, 0x49, 0xce, 0xf6, 0x30, 0xff, 0x47, 0x85, 0x5e, 0x8b, 0x17,
+	0xaa, 0xa3, 0x65, 0x8b, 0xb8, 0x36, 0x44, 0x85, 0x53, 0xb3, 0x15, 0xce, 0x8a, 0x2a, 0x51, 0xd5,
+	0xac, 0x77, 0xa9, 0x34, 0x9a, 0x4f, 0x97, 0xe2, 0x95, 0xcc, 0x4f, 0x36, 0x3e, 0xb6, 0xe8, 0x49,
+	0x71, 0x56, 0x13, 0xc3, 0x01, 0x8c, 0x89, 0x2a, 0xe5, 0x77, 0x28, 0x27, 0xc0, 0x43, 0xa0, 0x14,
+	0x13, 0x77, 0x9e, 0x16, 0xfa, 0x98, 0x44, 0x6b, 0x53, 0xcd, 0xa5, 0x74, 0x27, 0x45, 0xa1, 0xdc,
+	0x54, 0x14, 0x0b, 0x7f, 0x28, 0x8a, 0x4d, 0x84, 0xa0, 0xe7, 0x61, 0x1f, 0xe8, 0x98, 0x16, 0x65,
+	0x64, 0x8f, 0xa9, 0xb7, 0x51, 0xb6, 0x49, 0xba, 0x5e, 0x07, 0xe4, 0x5c, 0x09, 0x0e, 0x64, 0xa2,
+	0x98, 0x40, 0x1c, 0xdf, 0x6c, 0x42, 0xc3, 0x03, 0x1f, 0x13, 0x9b, 0x4b, 0x2a, 0x6e, 0x64, 0x78,
+	0xec, 0x80, 0x87, 0xd4, 0xa7, 0x23, 0xcb, 0xa4, 0xb8, 0x65, 0xf4, 0xeb, 0x2d, 0xf3, 0x5c, 0x7e,
+	0x99, 0xf0, 0x8d, 0x83, 0xd6, 0xdb, 0x7c, 0x77, 0x8d, 0x2b, 0x3a, 0x4e, 0xcf, 0x26, 0xb7, 0x35,
+	0x51, 0xaf, 0x3e, 0xa5, 0x66, 0x8c, 0xf2, 0x14, 0x3b, 0x2e, 0x76, 0x9d, 0xab, 0x9d, 0x16, 0x67,
+	0xeb, 0x74, 0x4b, 0x16, 0xac, 0x5f, 0x67, 0x9c, 0xa5, 0x7f, 0x61, 0x1c, 0xf4, 0x37, 0x8c, 0x53,
+	0x3d, 0x3c, 0xfb, 0x56, 0x88, 0x9d, 0x0d, 0x0a, 0xca, 0xf9, 0xa0, 0xa0, 0x7c, 0x1d, 0x14, 0x94,
+	0xd3, 0x8b, 0x42, 0xec, 0xfc, 0xa2, 0x10, 0xfb, 0x74, 0x51, 0x88, 0x1d, 0x3d, 0xfc, 0x5d, 0x87,
+	0xf0, 0xe9, 0xad, 0x14, 0x97, 0xec, 0x83, 0x1f, 0x01, 0x00, 0x00, 0xff, 0xff, 0xbd, 0x0d, 0x91,
+	0x10, 0xfb, 0x08, 0x00, 0x00,
 }
 
 func (m *KeyIDRequest) Marshal() (dAtA []byte, err error) {
@@ -505,6 +604,53 @@ func (m *KeyRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *KeygenParticipant) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *KeygenParticipant) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *KeygenParticipant) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.PubKey) > 0 {
+		i -= len(m.PubKey)
+		copy(dAtA[i:], m.PubKey)
+		i = encodeVarintQuery(dAtA, i, uint64(len(m.PubKey)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	{
+		size := m.Weight.Size()
+		i -= size
+		if _, err := m.Weight.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintQuery(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x12
+	if len(m.Address) > 0 {
+		i -= len(m.Address)
+		copy(dAtA[i:], m.Address)
+		i = encodeVarintQuery(dAtA, i, uint64(len(m.Address)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *KeyResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -559,7 +705,7 @@ func (m *KeyResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	i--
 	dAtA[i] = 0x2a
-	n1, err1 := github_com_gogo_protobuf_types.StdTimeMarshalTo(m.Timestamp, dAtA[i-github_com_gogo_protobuf_types.SizeOfStdTime(m.Timestamp):])
+	n1, err1 := github_com_gogo_protobuf_types.StdTimeMarshalTo(m.StartedAtTimestamp, dAtA[i-github_com_gogo_protobuf_types.SizeOfStdTime(m.StartedAtTimestamp):])
 	if err1 != nil {
 		return 0, err1
 	}
@@ -567,8 +713,8 @@ func (m *KeyResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i = encodeVarintQuery(dAtA, i, uint64(n1))
 	i--
 	dAtA[i] = 0x22
-	if m.Height != 0 {
-		i = encodeVarintQuery(dAtA, i, uint64(m.Height))
+	if m.StartedAt != 0 {
+		i = encodeVarintQuery(dAtA, i, uint64(m.StartedAt))
 		i--
 		dAtA[i] = 0x18
 	}
@@ -587,7 +733,7 @@ func (m *KeyResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *KeyResponse_Participant) Marshal() (dAtA []byte, err error) {
+func (m *KeygenSessionRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -597,33 +743,123 @@ func (m *KeyResponse_Participant) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *KeyResponse_Participant) MarshalTo(dAtA []byte) (int, error) {
+func (m *KeygenSessionRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *KeyResponse_Participant) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *KeygenSessionRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
-	if len(m.PubKey) > 0 {
-		i -= len(m.PubKey)
-		copy(dAtA[i:], m.PubKey)
-		i = encodeVarintQuery(dAtA, i, uint64(len(m.PubKey)))
+	if len(m.KeyID) > 0 {
+		i -= len(m.KeyID)
+		copy(dAtA[i:], m.KeyID)
+		i = encodeVarintQuery(dAtA, i, uint64(len(m.KeyID)))
 		i--
-		dAtA[i] = 0x12
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *KeygenSessionResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *KeygenSessionResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *KeygenSessionResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Participants) > 0 {
+		for iNdEx := len(m.Participants) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Participants[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintQuery(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x52
+		}
 	}
 	{
-		size := m.Weight.Size()
+		size := m.BondedWeight.Size()
 		i -= size
-		if _, err := m.Weight.MarshalTo(dAtA[i:]); err != nil {
+		if _, err := m.BondedWeight.MarshalTo(dAtA[i:]); err != nil {
 			return 0, err
 		}
 		i = encodeVarintQuery(dAtA, i, uint64(size))
 	}
 	i--
-	dAtA[i] = 0xa
+	dAtA[i] = 0x4a
+	{
+		size := m.SigningThresholdWeight.Size()
+		i -= size
+		if _, err := m.SigningThresholdWeight.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintQuery(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x42
+	{
+		size := m.KeygenThresholdWeight.Size()
+		i -= size
+		if _, err := m.KeygenThresholdWeight.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintQuery(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x3a
+	if m.State != 0 {
+		i = encodeVarintQuery(dAtA, i, uint64(m.State))
+		i--
+		dAtA[i] = 0x30
+	}
+	if m.GracePeriod != 0 {
+		i = encodeVarintQuery(dAtA, i, uint64(m.GracePeriod))
+		i--
+		dAtA[i] = 0x28
+	}
+	if m.CompletedAt != 0 {
+		i = encodeVarintQuery(dAtA, i, uint64(m.CompletedAt))
+		i--
+		dAtA[i] = 0x20
+	}
+	if m.ExpiresAt != 0 {
+		i = encodeVarintQuery(dAtA, i, uint64(m.ExpiresAt))
+		i--
+		dAtA[i] = 0x18
+	}
+	n2, err2 := github_com_gogo_protobuf_types.StdTimeMarshalTo(m.StartedAtTimestamp, dAtA[i-github_com_gogo_protobuf_types.SizeOfStdTime(m.StartedAtTimestamp):])
+	if err2 != nil {
+		return 0, err2
+	}
+	i -= n2
+	i = encodeVarintQuery(dAtA, i, uint64(n2))
+	i--
+	dAtA[i] = 0x12
+	if m.StartedAt != 0 {
+		i = encodeVarintQuery(dAtA, i, uint64(m.StartedAt))
+		i--
+		dAtA[i] = 0x8
+	}
 	return len(dAtA) - i, nil
 }
 
@@ -703,6 +939,25 @@ func (m *KeyRequest) Size() (n int) {
 	return n
 }
 
+func (m *KeygenParticipant) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Address)
+	if l > 0 {
+		n += 1 + l + sovQuery(uint64(l))
+	}
+	l = m.Weight.Size()
+	n += 1 + l + sovQuery(uint64(l))
+	l = len(m.PubKey)
+	if l > 0 {
+		n += 1 + l + sovQuery(uint64(l))
+	}
+	return n
+}
+
 func (m *KeyResponse) Size() (n int) {
 	if m == nil {
 		return 0
@@ -716,10 +971,10 @@ func (m *KeyResponse) Size() (n int) {
 	if m.State != 0 {
 		n += 1 + sovQuery(uint64(m.State))
 	}
-	if m.Height != 0 {
-		n += 1 + sovQuery(uint64(m.Height))
+	if m.StartedAt != 0 {
+		n += 1 + sovQuery(uint64(m.StartedAt))
 	}
-	l = github_com_gogo_protobuf_types.SizeOfStdTime(m.Timestamp)
+	l = github_com_gogo_protobuf_types.SizeOfStdTime(m.StartedAtTimestamp)
 	n += 1 + l + sovQuery(uint64(l))
 	l = m.ThresholdWeight.Size()
 	n += 1 + l + sovQuery(uint64(l))
@@ -734,17 +989,53 @@ func (m *KeyResponse) Size() (n int) {
 	return n
 }
 
-func (m *KeyResponse_Participant) Size() (n int) {
+func (m *KeygenSessionRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	l = m.Weight.Size()
-	n += 1 + l + sovQuery(uint64(l))
-	l = len(m.PubKey)
+	l = len(m.KeyID)
 	if l > 0 {
 		n += 1 + l + sovQuery(uint64(l))
+	}
+	return n
+}
+
+func (m *KeygenSessionResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.StartedAt != 0 {
+		n += 1 + sovQuery(uint64(m.StartedAt))
+	}
+	l = github_com_gogo_protobuf_types.SizeOfStdTime(m.StartedAtTimestamp)
+	n += 1 + l + sovQuery(uint64(l))
+	if m.ExpiresAt != 0 {
+		n += 1 + sovQuery(uint64(m.ExpiresAt))
+	}
+	if m.CompletedAt != 0 {
+		n += 1 + sovQuery(uint64(m.CompletedAt))
+	}
+	if m.GracePeriod != 0 {
+		n += 1 + sovQuery(uint64(m.GracePeriod))
+	}
+	if m.State != 0 {
+		n += 1 + sovQuery(uint64(m.State))
+	}
+	l = m.KeygenThresholdWeight.Size()
+	n += 1 + l + sovQuery(uint64(l))
+	l = m.SigningThresholdWeight.Size()
+	n += 1 + l + sovQuery(uint64(l))
+	l = m.BondedWeight.Size()
+	n += 1 + l + sovQuery(uint64(l))
+	if len(m.Participants) > 0 {
+		for _, e := range m.Participants {
+			l = e.Size()
+			n += 1 + l + sovQuery(uint64(l))
+		}
 	}
 	return n
 }
@@ -1165,6 +1456,153 @@ func (m *KeyRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+func (m *KeygenParticipant) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: KeygenParticipant: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: KeygenParticipant: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Address", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Address = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Weight", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.Weight.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PubKey", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.PubKey = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *KeyResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -1247,9 +1685,9 @@ func (m *KeyResponse) Unmarshal(dAtA []byte) error {
 			}
 		case 3:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Height", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field StartedAt", wireType)
 			}
-			m.Height = 0
+			m.StartedAt = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowQuery
@@ -1259,14 +1697,14 @@ func (m *KeyResponse) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.Height |= int64(b&0x7F) << shift
+				m.StartedAt |= int64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
 		case 4:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Timestamp", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field StartedAtTimestamp", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -1293,7 +1731,7 @@ func (m *KeyResponse) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := github_com_gogo_protobuf_types.StdTimeUnmarshal(&m.Timestamp, dAtA[iNdEx:postIndex]); err != nil {
+			if err := github_com_gogo_protobuf_types.StdTimeUnmarshal(&m.StartedAtTimestamp, dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1301,7 +1739,7 @@ func (m *KeyResponse) Unmarshal(dAtA []byte) error {
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ThresholdWeight", wireType)
 			}
-			var stringLen uint64
+			var byteLen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowQuery
@@ -1311,16 +1749,15 @@ func (m *KeyResponse) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				byteLen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if byteLen < 0 {
 				return ErrInvalidLengthQuery
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + byteLen
 			if postIndex < 0 {
 				return ErrInvalidLengthQuery
 			}
@@ -1335,7 +1772,7 @@ func (m *KeyResponse) Unmarshal(dAtA []byte) error {
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field BondedWeight", wireType)
 			}
-			var stringLen uint64
+			var byteLen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowQuery
@@ -1345,16 +1782,15 @@ func (m *KeyResponse) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				byteLen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if byteLen < 0 {
 				return ErrInvalidLengthQuery
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + byteLen
 			if postIndex < 0 {
 				return ErrInvalidLengthQuery
 			}
@@ -1394,7 +1830,7 @@ func (m *KeyResponse) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Participants = append(m.Participants, KeyResponse_Participant{})
+			m.Participants = append(m.Participants, KeygenParticipant{})
 			if err := m.Participants[len(m.Participants)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -1420,7 +1856,7 @@ func (m *KeyResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *KeyResponse_Participant) Unmarshal(dAtA []byte) error {
+func (m *KeygenSessionRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1443,15 +1879,15 @@ func (m *KeyResponse_Participant) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: Participant: wiretype end group for non-group")
+			return fmt.Errorf("proto: KeygenSessionRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: Participant: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: KeygenSessionRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Weight", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field KeyID", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -1479,15 +1915,115 @@ func (m *KeyResponse_Participant) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.Weight.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			m.KeyID = github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *KeygenSessionResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: KeygenSessionResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: KeygenSessionResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field StartedAt", wireType)
+			}
+			m.StartedAt = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.StartedAt |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field StartedAtTimestamp", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := github_com_gogo_protobuf_types.StdTimeUnmarshal(&m.StartedAtTimestamp, dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field PubKey", wireType)
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExpiresAt", wireType)
 			}
-			var stringLen uint64
+			m.ExpiresAt = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowQuery
@@ -1497,23 +2033,200 @@ func (m *KeyResponse_Participant) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				m.ExpiresAt |= int64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CompletedAt", wireType)
+			}
+			m.CompletedAt = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.CompletedAt |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field GracePeriod", wireType)
+			}
+			m.GracePeriod = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.GracePeriod |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field State", wireType)
+			}
+			m.State = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.State |= exported.MultisigState(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field KeygenThresholdWeight", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
 				return ErrInvalidLengthQuery
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + byteLen
 			if postIndex < 0 {
 				return ErrInvalidLengthQuery
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.PubKey = string(dAtA[iNdEx:postIndex])
+			if err := m.KeygenThresholdWeight.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SigningThresholdWeight", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.SigningThresholdWeight.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BondedWeight", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.BondedWeight.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 10:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Participants", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Participants = append(m.Participants, KeygenParticipant{})
+			if err := m.Participants[len(m.Participants)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
