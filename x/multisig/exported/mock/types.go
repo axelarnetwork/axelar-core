@@ -4,22 +4,23 @@
 package mock
 
 import (
-	"github.com/axelarnetwork/axelar-core/x/multisig/exported"
+	multisigexported "github.com/axelarnetwork/axelar-core/x/multisig/exported"
+	snapshotexported "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"sync"
 	"time"
 )
 
-// Ensure, that SigHandlerMock does implement exported.SigHandler.
+// Ensure, that SigHandlerMock does implement multisigexported.SigHandler.
 // If this is not the case, regenerate this file with moq.
-var _ exported.SigHandler = &SigHandlerMock{}
+var _ multisigexported.SigHandler = &SigHandlerMock{}
 
-// SigHandlerMock is a mock implementation of exported.SigHandler.
+// SigHandlerMock is a mock implementation of multisigexported.SigHandler.
 //
 // 	func TestSomethingThatUsesSigHandler(t *testing.T) {
 //
-// 		// make and configure a mocked exported.SigHandler
+// 		// make and configure a mocked multisigexported.SigHandler
 // 		mockedSigHandler := &SigHandlerMock{
 // 			HandleCompletedFunc: func(ctx sdk.Context, sig codec.ProtoMarshaler, moduleMetadata codec.ProtoMarshaler) error {
 // 				panic("mock out the HandleCompleted method")
@@ -29,7 +30,7 @@ var _ exported.SigHandler = &SigHandlerMock{}
 // 			},
 // 		}
 //
-// 		// use mockedSigHandler in code that requires exported.SigHandler
+// 		// use mockedSigHandler in code that requires multisigexported.SigHandler
 // 		// and then make assertions.
 //
 // 	}
@@ -137,15 +138,15 @@ func (mock *SigHandlerMock) HandleFailedCalls() []struct {
 	return calls
 }
 
-// Ensure, that KeyMock does implement exported.Key.
+// Ensure, that KeyMock does implement multisigexported.Key.
 // If this is not the case, regenerate this file with moq.
-var _ exported.Key = &KeyMock{}
+var _ multisigexported.Key = &KeyMock{}
 
-// KeyMock is a mock implementation of exported.Key.
+// KeyMock is a mock implementation of multisigexported.Key.
 //
 // 	func TestSomethingThatUsesKey(t *testing.T) {
 //
-// 		// make and configure a mocked exported.Key
+// 		// make and configure a mocked multisigexported.Key
 // 		mockedKey := &KeyMock{
 // 			GetBondedWeightFunc: func() sdk.Uint {
 // 				panic("mock out the GetBondedWeight method")
@@ -159,10 +160,13 @@ var _ exported.Key = &KeyMock{}
 // 			GetParticipantsFunc: func() []sdk.ValAddress {
 // 				panic("mock out the GetParticipants method")
 // 			},
-// 			GetPubKeyFunc: func(valAddress sdk.ValAddress) (exported.PublicKey, bool) {
+// 			GetPubKeyFunc: func(valAddress sdk.ValAddress) (multisigexported.PublicKey, bool) {
 // 				panic("mock out the GetPubKey method")
 // 			},
-// 			GetStateFunc: func() exported.KeyState {
+// 			GetSnapshotFunc: func() snapshotexported.Snapshot {
+// 				panic("mock out the GetSnapshot method")
+// 			},
+// 			GetStateFunc: func() multisigexported.KeyState {
 // 				panic("mock out the GetState method")
 // 			},
 // 			GetTimestampFunc: func() time.Time {
@@ -173,7 +177,7 @@ var _ exported.Key = &KeyMock{}
 // 			},
 // 		}
 //
-// 		// use mockedKey in code that requires exported.Key
+// 		// use mockedKey in code that requires multisigexported.Key
 // 		// and then make assertions.
 //
 // 	}
@@ -191,10 +195,13 @@ type KeyMock struct {
 	GetParticipantsFunc func() []sdk.ValAddress
 
 	// GetPubKeyFunc mocks the GetPubKey method.
-	GetPubKeyFunc func(valAddress sdk.ValAddress) (exported.PublicKey, bool)
+	GetPubKeyFunc func(valAddress sdk.ValAddress) (multisigexported.PublicKey, bool)
+
+	// GetSnapshotFunc mocks the GetSnapshot method.
+	GetSnapshotFunc func() snapshotexported.Snapshot
 
 	// GetStateFunc mocks the GetState method.
-	GetStateFunc func() exported.KeyState
+	GetStateFunc func() multisigexported.KeyState
 
 	// GetTimestampFunc mocks the GetTimestamp method.
 	GetTimestampFunc func() time.Time
@@ -221,6 +228,9 @@ type KeyMock struct {
 			// ValAddress is the valAddress argument value.
 			ValAddress sdk.ValAddress
 		}
+		// GetSnapshot holds details about calls to the GetSnapshot method.
+		GetSnapshot []struct {
+		}
 		// GetState holds details about calls to the GetState method.
 		GetState []struct {
 		}
@@ -238,6 +248,7 @@ type KeyMock struct {
 	lockGetMinPassingWeight sync.RWMutex
 	lockGetParticipants     sync.RWMutex
 	lockGetPubKey           sync.RWMutex
+	lockGetSnapshot         sync.RWMutex
 	lockGetState            sync.RWMutex
 	lockGetTimestamp        sync.RWMutex
 	lockGetWeight           sync.RWMutex
@@ -348,7 +359,7 @@ func (mock *KeyMock) GetParticipantsCalls() []struct {
 }
 
 // GetPubKey calls GetPubKeyFunc.
-func (mock *KeyMock) GetPubKey(valAddress sdk.ValAddress) (exported.PublicKey, bool) {
+func (mock *KeyMock) GetPubKey(valAddress sdk.ValAddress) (multisigexported.PublicKey, bool) {
 	if mock.GetPubKeyFunc == nil {
 		panic("KeyMock.GetPubKeyFunc: method is nil but Key.GetPubKey was just called")
 	}
@@ -378,8 +389,34 @@ func (mock *KeyMock) GetPubKeyCalls() []struct {
 	return calls
 }
 
+// GetSnapshot calls GetSnapshotFunc.
+func (mock *KeyMock) GetSnapshot() snapshotexported.Snapshot {
+	if mock.GetSnapshotFunc == nil {
+		panic("KeyMock.GetSnapshotFunc: method is nil but Key.GetSnapshot was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockGetSnapshot.Lock()
+	mock.calls.GetSnapshot = append(mock.calls.GetSnapshot, callInfo)
+	mock.lockGetSnapshot.Unlock()
+	return mock.GetSnapshotFunc()
+}
+
+// GetSnapshotCalls gets all the calls that were made to GetSnapshot.
+// Check the length with:
+//     len(mockedKey.GetSnapshotCalls())
+func (mock *KeyMock) GetSnapshotCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockGetSnapshot.RLock()
+	calls = mock.calls.GetSnapshot
+	mock.lockGetSnapshot.RUnlock()
+	return calls
+}
+
 // GetState calls GetStateFunc.
-func (mock *KeyMock) GetState() exported.KeyState {
+func (mock *KeyMock) GetState() multisigexported.KeyState {
 	if mock.GetStateFunc == nil {
 		panic("KeyMock.GetStateFunc: method is nil but Key.GetState was just called")
 	}

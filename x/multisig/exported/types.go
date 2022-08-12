@@ -13,6 +13,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/utils/funcs"
 )
 
@@ -28,6 +29,7 @@ type Key interface {
 	GetHeight() int64
 	GetTimestamp() time.Time
 	GetBondedWeight() sdk.Uint
+	GetSnapshot() exported.Snapshot
 }
 
 // MultiSig provides an interface to work with the multi sig

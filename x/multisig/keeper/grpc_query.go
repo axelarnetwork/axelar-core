@@ -10,6 +10,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/utils/funcs"
@@ -60,15 +62,20 @@ func (q Querier) NextKeyID(c context.Context, req *types.NextKeyIDRequest) (*typ
 func (q Querier) Key(c context.Context, req *types.KeyRequest) (*types.KeyResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
+	if _, ok := q.keeper.GetKeygenSession(ctx, req.KeyID); ok {
+		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrMultisig, fmt.Sprintf("keygen in progress for key id [%s]", req.KeyID)).Error())
+	}
+
 	key, ok := q.keeper.GetKey(ctx, req.KeyID)
 	if !ok {
 		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrMultisig, fmt.Sprintf("key not found for key id [%s]", req.KeyID)).Error())
 	}
 
-	participants := slices.Map(key.GetParticipants(), func(p sdk.ValAddress) types.KeyResponse_Participant {
-		return types.KeyResponse_Participant{
-			Weight: key.GetWeight(p),
-			PubKey: funcs.MustOk(key.GetPubKey(p)).String(),
+	participants := slices.Map(key.GetParticipants(), func(p sdk.ValAddress) types.KeygenParticipant {
+		return types.KeygenParticipant{
+			Address: p.String(),
+			Weight:  key.GetWeight(p),
+			PubKey:  funcs.MustOk(key.GetPubKey(p)).String(),
 		}
 	})
 	sort.SliceStable(participants, func(i, j int) bool {
@@ -76,12 +83,68 @@ func (q Querier) Key(c context.Context, req *types.KeyRequest) (*types.KeyRespon
 	})
 
 	return &types.KeyResponse{
-		KeyID:           req.KeyID,
-		State:           key.GetState(),
-		Height:          key.GetHeight(),
-		Timestamp:       key.GetTimestamp(),
-		ThresholdWeight: key.GetMinPassingWeight(),
-		BondedWeight:    key.GetBondedWeight(),
-		Participants:    participants,
+		KeyID:              req.KeyID,
+		State:              key.GetState(),
+		StartedAt:          key.GetHeight(),
+		StartedAtTimestamp: key.GetTimestamp(),
+		ThresholdWeight:    key.GetMinPassingWeight(),
+		BondedWeight:       key.GetBondedWeight(),
+		Participants:       participants,
+	}, nil
+}
+
+func getKeygenParticipants(key exported.Key) []types.KeygenParticipant {
+	snapshot := key.GetSnapshot()
+	participants := slices.Map(snapshot.GetParticipantAddresses(), func(p sdk.ValAddress) types.KeygenParticipant {
+		var pubKey string
+		if pub, ok := key.GetPubKey(p); ok {
+			pubKey = pub.String()
+		}
+
+		return types.KeygenParticipant{
+			Address: p.String(),
+			Weight:  snapshot.GetParticipantWeight(p),
+			PubKey:  pubKey,
+		}
+	})
+	sort.SliceStable(participants, func(i, j int) bool {
+		return participants[i].Weight.GT(participants[j].Weight)
+	})
+
+	return participants
+}
+
+// KeygenSession returns the keygen session info for the given key ID
+func (q Querier) KeygenSession(c context.Context, req *types.KeygenSessionRequest) (*types.KeygenSessionResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	session, ok := q.keeper.GetKeygenSession(ctx, req.KeyID)
+
+	var key exported.Key
+	var state exported.MultisigState
+	if !ok {
+		key, ok = q.keeper.GetKey(ctx, req.KeyID)
+		if !ok {
+			return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrMultisig, fmt.Sprintf("key not found for key id [%s]", req.KeyID)).Error())
+		}
+
+		session = types.KeygenSession{KeygenThreshold: utils.ZeroThreshold}
+		state = exported.Completed
+	} else {
+		key = &session.Key
+		state = session.GetState()
+	}
+
+	return &types.KeygenSessionResponse{
+		StartedAt:              key.GetHeight(),
+		StartedAtTimestamp:     key.GetTimestamp(),
+		ExpiresAt:              session.GetExpiresAt(),
+		CompletedAt:            session.GetCompletedAt(),
+		GracePeriod:            session.GetGracePeriod(),
+		State:                  state,
+		KeygenThresholdWeight:  key.GetSnapshot().CalculateMinPassingWeight(session.KeygenThreshold),
+		SigningThresholdWeight: key.GetMinPassingWeight(),
+		BondedWeight:           key.GetBondedWeight(),
+		Participants:           getKeygenParticipants(key),
 	}, nil
 }
