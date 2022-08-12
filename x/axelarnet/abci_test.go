@@ -41,13 +41,14 @@ func setup() (*fakeMock.MultiStoreMock, sdk.Context) {
 }
 func TestEndBlocker(t *testing.T) {
 	var (
-		keeper            *mock.BaseKeeperMock
-		transferKeeper    *mock.IBCTransferKeeperMock
-		channelKeeper     *mock.ChannelKeeperMock
-		transferQueue     *utilsMock.KVQueueMock
-		queueSize         int
-		queueIdx          int
-		ibcTransferErrors int
+		keeper               *mock.BaseKeeperMock
+		transferKeeper       *mock.IBCTransferKeeperMock
+		channelKeeper        *mock.ChannelKeeperMock
+		transferQueue        *utilsMock.KVQueueMock
+		queueSize            int
+		queueIdx             int
+		ibcTransferErrors    int
+		panicOnTransferError bool
 	)
 
 	store := &fakeMock.MultiStoreMock{}
@@ -74,7 +75,11 @@ func TestEndBlocker(t *testing.T) {
 		transferKeeper = &mock.IBCTransferKeeperMock{
 			SendTransferFunc: func(ctx sdk.Context, sourcePort string, sourceChannel string, token sdk.Coin, sender sdk.AccAddress, receiver string, timeoutHeight clienttypes.Height, timeoutTimestamp uint64) error {
 				if queueIdx <= ibcTransferErrors {
-					return fmt.Errorf("failed to send transfer")
+					if panicOnTransferError {
+						return fmt.Errorf("failed to send transfer")
+					} else {
+						panic("panicked on transfer")
+					}
 				}
 
 				ctx.EventManager().EmitEvent(
@@ -111,6 +116,7 @@ func TestEndBlocker(t *testing.T) {
 
 		queueIdx = 0
 		ibcTransferErrors = 0
+		panicOnTransferError = false
 	})
 
 	givenTransferQueue.
@@ -145,6 +151,27 @@ func TestEndBlocker(t *testing.T) {
 		When("given a queue size and some ibc transfer errors", func() {
 			queueSize = int(rand.I64Between(50, 200))
 			ibcTransferErrors = int(rand.I64Between(1, int64(queueSize)) + 1)
+		}).
+		Then("should set failed transfers", func(t *testing.T) {
+			_, err := EndBlocker(ctx, abci.RequestEndBlock{Height: ctx.BlockHeight()}, keeper, transferKeeper, channelKeeper)
+			assert.NoError(t, err)
+			assert.Equal(t, queueSize, len(transferQueue.DequeueCalls()))
+			assert.Equal(t, queueSize, len(transferKeeper.SendTransferCalls()))
+			assert.Equal(t, queueSize-ibcTransferErrors, slices.Reduce(ctx.EventManager().Events().ToABCIEvents(), 0, func(c int, e abci.Event) int {
+				if e.Type == ibcchanneltypes.EventTypeSendPacket {
+					c++
+				}
+				return c
+			}))
+			assert.Equal(t, ibcTransferErrors, len(keeper.SetFailedTransferCalls()))
+		}).
+		Run(t, repeats)
+
+	givenTransferQueue.
+		When("given a queue size and some ibc transfer panics", func() {
+			queueSize = int(rand.I64Between(50, 200))
+			ibcTransferErrors = int(rand.I64Between(1, int64(queueSize)) + 1)
+			panicOnTransferError = true
 		}).
 		Then("should set failed transfers", func(t *testing.T) {
 			_, err := EndBlocker(ctx, abci.RequestEndBlock{Height: ctx.BlockHeight()}, keeper, transferKeeper, channelKeeper)
