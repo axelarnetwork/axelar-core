@@ -76,10 +76,10 @@ func TestEndBlocker(t *testing.T) {
 			SendTransferFunc: func(ctx sdk.Context, sourcePort string, sourceChannel string, token sdk.Coin, sender sdk.AccAddress, receiver string, timeoutHeight clienttypes.Height, timeoutTimestamp uint64) error {
 				if queueIdx <= ibcTransferErrors {
 					if panicOnTransferError {
-						return fmt.Errorf("failed to send transfer")
-					} else {
 						panic("panicked on transfer")
 					}
+
+					return fmt.Errorf("failed to send transfer")
 				}
 
 				ctx.EventManager().EmitEvent(
