@@ -10,6 +10,7 @@ import (
 	github_com_axelarnetwork_axelar_core_x_nexus_exported "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 	exported "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingTypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/tendermint/tendermint/libs/log"
@@ -37,6 +38,9 @@ var _ types.Keeper = &KeeperMock{}
 // 			},
 // 			GetKeyFunc: func(ctx sdk.Context, keyID github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID) (github_com_axelarnetwork_axelar_core_x_multisig_exported.Key, bool) {
 // 				panic("mock out the GetKey method")
+// 			},
+// 			GetKeygenSessionFunc: func(ctx sdk.Context, id github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID) (types.KeygenSession, bool) {
+// 				panic("mock out the GetKeygenSession method")
 // 			},
 // 			GetKeygenSessionsByExpiryFunc: func(ctx sdk.Context, expiry int64) []types.KeygenSession {
 // 				panic("mock out the GetKeygenSessionsByExpiry method")
@@ -74,6 +78,9 @@ type KeeperMock struct {
 
 	// GetKeyFunc mocks the GetKey method.
 	GetKeyFunc func(ctx sdk.Context, keyID github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID) (github_com_axelarnetwork_axelar_core_x_multisig_exported.Key, bool)
+
+	// GetKeygenSessionFunc mocks the GetKeygenSession method.
+	GetKeygenSessionFunc func(ctx sdk.Context, id github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID) (types.KeygenSession, bool)
 
 	// GetKeygenSessionsByExpiryFunc mocks the GetKeygenSessionsByExpiry method.
 	GetKeygenSessionsByExpiryFunc func(ctx sdk.Context, expiry int64) []types.KeygenSession
@@ -123,6 +130,13 @@ type KeeperMock struct {
 			// KeyID is the keyID argument value.
 			KeyID github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID
 		}
+		// GetKeygenSession holds details about calls to the GetKeygenSession method.
+		GetKeygenSession []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// ID is the id argument value.
+			ID github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID
+		}
 		// GetKeygenSessionsByExpiry holds details about calls to the GetKeygenSessionsByExpiry method.
 		GetKeygenSessionsByExpiry []struct {
 			// Ctx is the ctx argument value.
@@ -164,6 +178,7 @@ type KeeperMock struct {
 	lockDeleteSigningSession       sync.RWMutex
 	lockGetCurrentKeyID            sync.RWMutex
 	lockGetKey                     sync.RWMutex
+	lockGetKeygenSession           sync.RWMutex
 	lockGetKeygenSessionsByExpiry  sync.RWMutex
 	lockGetNextKeyID               sync.RWMutex
 	lockGetSigRouter               sync.RWMutex
@@ -309,6 +324,41 @@ func (mock *KeeperMock) GetKeyCalls() []struct {
 	mock.lockGetKey.RLock()
 	calls = mock.calls.GetKey
 	mock.lockGetKey.RUnlock()
+	return calls
+}
+
+// GetKeygenSession calls GetKeygenSessionFunc.
+func (mock *KeeperMock) GetKeygenSession(ctx sdk.Context, id github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID) (types.KeygenSession, bool) {
+	if mock.GetKeygenSessionFunc == nil {
+		panic("KeeperMock.GetKeygenSessionFunc: method is nil but Keeper.GetKeygenSession was just called")
+	}
+	callInfo := struct {
+		Ctx sdk.Context
+		ID  github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID
+	}{
+		Ctx: ctx,
+		ID:  id,
+	}
+	mock.lockGetKeygenSession.Lock()
+	mock.calls.GetKeygenSession = append(mock.calls.GetKeygenSession, callInfo)
+	mock.lockGetKeygenSession.Unlock()
+	return mock.GetKeygenSessionFunc(ctx, id)
+}
+
+// GetKeygenSessionCalls gets all the calls that were made to GetKeygenSession.
+// Check the length with:
+//     len(mockedKeeper.GetKeygenSessionCalls())
+func (mock *KeeperMock) GetKeygenSessionCalls() []struct {
+	Ctx sdk.Context
+	ID  github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID
+} {
+	var calls []struct {
+		Ctx sdk.Context
+		ID  github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID
+	}
+	mock.lockGetKeygenSession.RLock()
+	calls = mock.calls.GetKeygenSession
+	mock.lockGetKeygenSession.RUnlock()
 	return calls
 }
 
@@ -916,6 +966,9 @@ var _ types.Nexus = &NexusMock{}
 // 			GetChainFunc: func(ctx sdk.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, bool) {
 // 				panic("mock out the GetChain method")
 // 			},
+// 			GetChainsFunc: func(ctx sdk.Context) []github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain {
+// 				panic("mock out the GetChains method")
+// 			},
 // 		}
 //
 // 		// use mockedNexus in code that requires types.Nexus
@@ -926,6 +979,9 @@ type NexusMock struct {
 	// GetChainFunc mocks the GetChain method.
 	GetChainFunc func(ctx sdk.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, bool)
 
+	// GetChainsFunc mocks the GetChains method.
+	GetChainsFunc func(ctx sdk.Context) []github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
+
 	// calls tracks calls to the methods.
 	calls struct {
 		// GetChain holds details about calls to the GetChain method.
@@ -935,8 +991,14 @@ type NexusMock struct {
 			// Chain is the chain argument value.
 			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
 		}
+		// GetChains holds details about calls to the GetChains method.
+		GetChains []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+		}
 	}
-	lockGetChain sync.RWMutex
+	lockGetChain  sync.RWMutex
+	lockGetChains sync.RWMutex
 }
 
 // GetChain calls GetChainFunc.
@@ -971,5 +1033,107 @@ func (mock *NexusMock) GetChainCalls() []struct {
 	mock.lockGetChain.RLock()
 	calls = mock.calls.GetChain
 	mock.lockGetChain.RUnlock()
+	return calls
+}
+
+// GetChains calls GetChainsFunc.
+func (mock *NexusMock) GetChains(ctx sdk.Context) []github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain {
+	if mock.GetChainsFunc == nil {
+		panic("NexusMock.GetChainsFunc: method is nil but Nexus.GetChains was just called")
+	}
+	callInfo := struct {
+		Ctx sdk.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetChains.Lock()
+	mock.calls.GetChains = append(mock.calls.GetChains, callInfo)
+	mock.lockGetChains.Unlock()
+	return mock.GetChainsFunc(ctx)
+}
+
+// GetChainsCalls gets all the calls that were made to GetChains.
+// Check the length with:
+//     len(mockedNexus.GetChainsCalls())
+func (mock *NexusMock) GetChainsCalls() []struct {
+	Ctx sdk.Context
+} {
+	var calls []struct {
+		Ctx sdk.Context
+	}
+	mock.lockGetChains.RLock()
+	calls = mock.calls.GetChains
+	mock.lockGetChains.RUnlock()
+	return calls
+}
+
+// Ensure, that TssMock does implement types.Tss.
+// If this is not the case, regenerate this file with moq.
+var _ types.Tss = &TssMock{}
+
+// TssMock is a mock implementation of types.Tss.
+//
+// 	func TestSomethingThatUsesTss(t *testing.T) {
+//
+// 		// make and configure a mocked types.Tss
+// 		mockedTss := &TssMock{
+// 			GetKeyFunc: func(ctx sdk.Context, keyID tss.KeyID) (tss.Key, bool) {
+// 				panic("mock out the GetKey method")
+// 			},
+// 		}
+//
+// 		// use mockedTss in code that requires types.Tss
+// 		// and then make assertions.
+//
+// 	}
+type TssMock struct {
+	// GetKeyFunc mocks the GetKey method.
+	GetKeyFunc func(ctx sdk.Context, keyID tss.KeyID) (tss.Key, bool)
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// GetKey holds details about calls to the GetKey method.
+		GetKey []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// KeyID is the keyID argument value.
+			KeyID tss.KeyID
+		}
+	}
+	lockGetKey sync.RWMutex
+}
+
+// GetKey calls GetKeyFunc.
+func (mock *TssMock) GetKey(ctx sdk.Context, keyID tss.KeyID) (tss.Key, bool) {
+	if mock.GetKeyFunc == nil {
+		panic("TssMock.GetKeyFunc: method is nil but Tss.GetKey was just called")
+	}
+	callInfo := struct {
+		Ctx   sdk.Context
+		KeyID tss.KeyID
+	}{
+		Ctx:   ctx,
+		KeyID: keyID,
+	}
+	mock.lockGetKey.Lock()
+	mock.calls.GetKey = append(mock.calls.GetKey, callInfo)
+	mock.lockGetKey.Unlock()
+	return mock.GetKeyFunc(ctx, keyID)
+}
+
+// GetKeyCalls gets all the calls that were made to GetKey.
+// Check the length with:
+//     len(mockedTss.GetKeyCalls())
+func (mock *TssMock) GetKeyCalls() []struct {
+	Ctx   sdk.Context
+	KeyID tss.KeyID
+} {
+	var calls []struct {
+		Ctx   sdk.Context
+		KeyID tss.KeyID
+	}
+	mock.lockGetKey.RLock()
+	calls = mock.calls.GetKey
+	mock.lockGetKey.RUnlock()
 	return calls
 }

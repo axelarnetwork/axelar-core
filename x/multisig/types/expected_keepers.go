@@ -10,15 +10,17 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
-//go:generate moq -pkg mock -out ./mock/expected_keepers.go . Keeper Snapshotter Staker Slasher Rewarder Nexus
+//go:generate moq -pkg mock -out ./mock/expected_keepers.go . Keeper Snapshotter Staker Slasher Rewarder Nexus Tss
 
 // Keeper provides keeper functionality of this module
 type Keeper interface {
 	Logger(ctx sdk.Context) log.Logger
 	GetCurrentKeyID(ctx sdk.Context, chainName nexus.ChainName) (exported.KeyID, bool)
 	GetNextKeyID(ctx sdk.Context, chainName nexus.ChainName) (exported.KeyID, bool)
+	GetKeygenSession(ctx sdk.Context, id exported.KeyID) (KeygenSession, bool)
 	GetKeygenSessionsByExpiry(ctx sdk.Context, expiry int64) []KeygenSession
 	GetKey(ctx sdk.Context, keyID exported.KeyID) (exported.Key, bool)
 	SetKey(ctx sdk.Context, key Key)
@@ -59,4 +61,10 @@ type Rewarder interface {
 // Nexus provides nexus keeper functionality
 type Nexus interface {
 	GetChain(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool)
+	GetChains(ctx sdk.Context) []nexus.Chain
+}
+
+// Tss provides tss keeper functionality
+type Tss interface {
+	GetKey(ctx sdk.Context, keyID tss.KeyID) (key tss.Key, ok bool)
 }
