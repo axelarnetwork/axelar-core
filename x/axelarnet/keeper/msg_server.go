@@ -404,6 +404,8 @@ func (s msgServer) RetryIBCTransfer(c context.Context, req *types.RetryIBCTransf
 		return nil, err
 	}
 
+	s.BaseKeeper.DeleteFailedTransfer(ctx, req.ID)
+
 	return &types.RetryIBCTransferResponse{}, nil
 }
 

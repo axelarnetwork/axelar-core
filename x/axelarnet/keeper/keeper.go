@@ -221,6 +221,11 @@ func (k Keeper) GetFailedTransfer(ctx sdk.Context, id nexus.TransferID) (transfe
 	return transfer, k.getStore(ctx).GetNew(getFailedTransferKey(id), &transfer)
 }
 
+// DeleteFailedTransfer removes the failed transfer for the given transfer ID
+func (k Keeper) DeleteFailedTransfer(ctx sdk.Context, id nexus.TransferID) {
+	k.getStore(ctx).DeleteNew(getFailedTransferKey(id))
+}
+
 // SetFailedTransfer saves failed IBC transfer
 func (k Keeper) SetFailedTransfer(ctx sdk.Context, transfer types.IBCTransfer) {
 	transfer.SetID(k.nextTransferID(ctx))

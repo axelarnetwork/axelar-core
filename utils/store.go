@@ -106,6 +106,11 @@ func (store KVStore) Delete(key Key) {
 	store.KVStore.Delete(key.AsKey())
 }
 
+// DeleteNew deletes the value stored under the given key, if it exists
+func (store KVStore) DeleteNew(key key.Key) {
+	store.KVStore.Delete(key.Bytes())
+}
+
 // DeleteRaw deletes the value stored under the given raw key, if it exists
 func (store KVStore) DeleteRaw(key []byte) {
 	store.KVStore.Delete(key)

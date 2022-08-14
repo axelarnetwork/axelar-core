@@ -30,6 +30,7 @@ type BaseKeeper interface {
 	GetIBCTransferQueue(ctx sdk.Context) utils.KVQueue
 	SetFailedTransfer(ctx sdk.Context, transfer IBCTransfer)
 	GetFailedTransfer(ctx sdk.Context, id nexus.TransferID) (IBCTransfer, bool)
+	DeleteFailedTransfer(ctx sdk.Context, id nexus.TransferID)
 }
 
 // Nexus provides functionality to manage cross-chain transfers
