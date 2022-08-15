@@ -71,6 +71,13 @@ func (p *rewardPool) ReleaseRewards(validator sdk.ValAddress) error {
 		return nil
 	}
 
+	defer p.ClearRewards(validator)
+
+	v := p.staker.Validator(p.ctx, validator)
+	if v == nil {
+		return nil
+	}
+
 	if err := p.banker.MintCoins(p.ctx, types.ModuleName, rewards); err != nil {
 		return err
 	}
@@ -83,10 +90,9 @@ func (p *rewardPool) ReleaseRewards(validator sdk.ValAddress) error {
 
 	p.distributor.AllocateTokensToValidator(
 		p.ctx,
-		p.staker.Validator(p.ctx, validator),
+		v,
 		sdk.NewDecCoinsFromCoins(rewards...),
 	)
-	p.ClearRewards(validator)
 
 	return nil
 }
