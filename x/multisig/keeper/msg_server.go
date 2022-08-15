@@ -76,7 +76,7 @@ func (s msgServer) SubmitPubKey(c context.Context, req *types.SubmitPubKeyReques
 		"expires_at", keygenSession.ExpiresAt,
 	)
 
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewPubKeySubmitted(req.KeyID, participant, req.PubKey)))
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewPubKeySubmitted(req.KeyID, participant, req.PubKey, keygenSession.Key.GetWeight(participant))))
 
 	return &types.SubmitPubKeyResponse{}, nil
 }
@@ -109,7 +109,7 @@ func (s msgServer) SubmitSignature(c context.Context, req *types.SubmitSignature
 		"expires_at", signingSession.ExpiresAt,
 	)
 
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewSignatureSubmitted(req.SigID, participant, req.Signature)))
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewSignatureSubmitted(req.SigID, participant, req.Signature, signingSession.GetWeight(participant))))
 
 	return &types.SubmitSignatureResponse{}, nil
 }

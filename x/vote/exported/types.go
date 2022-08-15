@@ -200,6 +200,7 @@ const (
 type Poll interface {
 	GetID() PollID
 	GetState() PollState
+	GetParticipantWeight(voter sdk.ValAddress) sdk.Uint
 	HasVotedCorrectly(voter sdk.ValAddress) bool
 	HasVoted(voter sdk.ValAddress) bool
 	GetResult() codec.ProtoMarshaler

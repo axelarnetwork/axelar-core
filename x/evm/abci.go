@@ -251,6 +251,7 @@ func handleConfirmDeposit(ctx sdk.Context, event types.Event, ck types.ChainKeep
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeDepositConfirmation,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+			sdk.NewAttribute(types.AttributeKeyEventID, string(event.GetID())),
 			sdk.NewAttribute(types.AttributeKeyChain, chain.Name.String()),
 			sdk.NewAttribute(types.AttributeKeySourceChain, chain.Name.String()),
 			sdk.NewAttribute(types.AttributeKeyDestinationChain, recipient.Chain.Name.String()),

@@ -46,10 +46,10 @@ func (s msgServer) Vote(c context.Context, req *types.VoteRequest) (*types.VoteR
 		funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(
 			&types.Voted{
 				Module: types.ModuleName,
-				Action: types.AttributeValueVote,
-				Poll:   req.PollID.String(),
-				Voter:  req.Sender.String(),
-				State:  poll.GetState().String(),
+				PollID: req.PollID,
+				State:  poll.GetState(),
+				Voter:  voter,
+				Weight: poll.GetParticipantWeight(voter),
 			}))
 	}
 

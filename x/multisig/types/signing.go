@@ -168,6 +168,11 @@ func (m SigningSession) GetParticipantsWeight() sdk.Uint {
 	})
 }
 
+// GetWeight returns the weight of a participant
+func (m SigningSession) GetWeight(participant sdk.ValAddress) sdk.Uint {
+	return m.Key.Snapshot.GetParticipantWeight(participant)
+}
+
 // UnpackInterfaces implements UnpackInterfacesMessage
 func (m SigningSession) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
 	var data codec.ProtoMarshaler

@@ -97,6 +97,11 @@ func (p poll) GetState() exported.PollState {
 	return p.State
 }
 
+// GetParticipantWeight returns the weight of a voter in the poll
+func (p poll) GetParticipantWeight(voter sdk.ValAddress) sdk.Uint {
+	return p.Snapshot.GetParticipantWeight(voter)
+}
+
 // Vote records the given vote
 func (p *poll) Vote(voter sdk.ValAddress, blockHeight int64, data codec.ProtoMarshaler) (exported.VoteResult, error) {
 	if p.Is(exported.NonExistent) {
@@ -187,7 +192,7 @@ func (p *poll) voteBeforeCompletion(voter sdk.ValAddress, blockHeight int64, dat
 }
 
 func (p poll) hasEnoughVotes(majority sdk.Uint) bool {
-	return majority.GTE(p.Snapshot.CalculateMinPassingWeight(p.VotingThreshold)) &&
+	return majority.GTE(p.passingWeight.Value()) &&
 		p.getVoterCount() >= p.MinVoterCount
 }
 
@@ -197,7 +202,7 @@ func (p poll) cannotWin(majority sdk.Uint) bool {
 
 	return majority.
 		Add(missingVotingPower).
-		LT(p.Snapshot.CalculateMinPassingWeight(p.VotingThreshold))
+		LT(p.passingWeight.Value())
 }
 
 func (p poll) getTalliedVotingPower() sdk.Uint {

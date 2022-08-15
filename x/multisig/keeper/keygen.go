@@ -99,7 +99,8 @@ func (k Keeper) createKeygenSession(ctx sdk.Context, id exported.KeyID, snapshot
 	k.setKeygenSession(ctx, keygenSession)
 
 	participants := snapshot.GetParticipantAddresses()
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewKeygenStarted(id, participants)))
+	weights := slices.Map(participants, snapshot.GetParticipantWeight)
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewKeygenStarted(id, participants, weights)))
 
 	k.Logger(ctx).Info("keygen session started",
 		"key_id", id,

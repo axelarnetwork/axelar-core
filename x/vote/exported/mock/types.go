@@ -29,6 +29,9 @@ var _ exported.Poll = &PollMock{}
 // 			GetModuleFunc: func() string {
 // 				panic("mock out the GetModule method")
 // 			},
+// 			GetParticipantWeightFunc: func(voter github_com_cosmos_cosmos_sdk_types.ValAddress) github_com_cosmos_cosmos_sdk_types.Uint {
+// 				panic("mock out the GetParticipantWeight method")
+// 			},
 // 			GetResultFunc: func() codec.ProtoMarshaler {
 // 				panic("mock out the GetResult method")
 // 			},
@@ -66,6 +69,9 @@ type PollMock struct {
 	// GetModuleFunc mocks the GetModule method.
 	GetModuleFunc func() string
 
+	// GetParticipantWeightFunc mocks the GetParticipantWeight method.
+	GetParticipantWeightFunc func(voter github_com_cosmos_cosmos_sdk_types.ValAddress) github_com_cosmos_cosmos_sdk_types.Uint
+
 	// GetResultFunc mocks the GetResult method.
 	GetResultFunc func() codec.ProtoMarshaler
 
@@ -97,6 +103,11 @@ type PollMock struct {
 		}
 		// GetModule holds details about calls to the GetModule method.
 		GetModule []struct {
+		}
+		// GetParticipantWeight holds details about calls to the GetParticipantWeight method.
+		GetParticipantWeight []struct {
+			// Voter is the voter argument value.
+			Voter github_com_cosmos_cosmos_sdk_types.ValAddress
 		}
 		// GetResult holds details about calls to the GetResult method.
 		GetResult []struct {
@@ -130,16 +141,17 @@ type PollMock struct {
 			Data codec.ProtoMarshaler
 		}
 	}
-	lockGetID             sync.RWMutex
-	lockGetMetaData       sync.RWMutex
-	lockGetModule         sync.RWMutex
-	lockGetResult         sync.RWMutex
-	lockGetRewardPoolName sync.RWMutex
-	lockGetState          sync.RWMutex
-	lockGetVoters         sync.RWMutex
-	lockHasVoted          sync.RWMutex
-	lockHasVotedCorrectly sync.RWMutex
-	lockVote              sync.RWMutex
+	lockGetID                sync.RWMutex
+	lockGetMetaData          sync.RWMutex
+	lockGetModule            sync.RWMutex
+	lockGetParticipantWeight sync.RWMutex
+	lockGetResult            sync.RWMutex
+	lockGetRewardPoolName    sync.RWMutex
+	lockGetState             sync.RWMutex
+	lockGetVoters            sync.RWMutex
+	lockHasVoted             sync.RWMutex
+	lockHasVotedCorrectly    sync.RWMutex
+	lockVote                 sync.RWMutex
 }
 
 // GetID calls GetIDFunc.
@@ -217,6 +229,37 @@ func (mock *PollMock) GetModuleCalls() []struct {
 	mock.lockGetModule.RLock()
 	calls = mock.calls.GetModule
 	mock.lockGetModule.RUnlock()
+	return calls
+}
+
+// GetParticipantWeight calls GetParticipantWeightFunc.
+func (mock *PollMock) GetParticipantWeight(voter github_com_cosmos_cosmos_sdk_types.ValAddress) github_com_cosmos_cosmos_sdk_types.Uint {
+	if mock.GetParticipantWeightFunc == nil {
+		panic("PollMock.GetParticipantWeightFunc: method is nil but Poll.GetParticipantWeight was just called")
+	}
+	callInfo := struct {
+		Voter github_com_cosmos_cosmos_sdk_types.ValAddress
+	}{
+		Voter: voter,
+	}
+	mock.lockGetParticipantWeight.Lock()
+	mock.calls.GetParticipantWeight = append(mock.calls.GetParticipantWeight, callInfo)
+	mock.lockGetParticipantWeight.Unlock()
+	return mock.GetParticipantWeightFunc(voter)
+}
+
+// GetParticipantWeightCalls gets all the calls that were made to GetParticipantWeight.
+// Check the length with:
+//     len(mockedPoll.GetParticipantWeightCalls())
+func (mock *PollMock) GetParticipantWeightCalls() []struct {
+	Voter github_com_cosmos_cosmos_sdk_types.ValAddress
+} {
+	var calls []struct {
+		Voter github_com_cosmos_cosmos_sdk_types.ValAddress
+	}
+	mock.lockGetParticipantWeight.RLock()
+	calls = mock.calls.GetParticipantWeight
+	mock.lockGetParticipantWeight.RUnlock()
 	return calls
 }
 

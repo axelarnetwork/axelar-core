@@ -4187,6 +4187,7 @@ QueryService defines the gRPC querier service.
 | `module` | [string](#string) |  |  |
 | `key_id` | [string](#string) |  |  |
 | `participants` | [bytes](#bytes) | repeated |  |
+| `weights` | [bytes](#bytes) | repeated |  |
 
 
 
@@ -4205,6 +4206,7 @@ QueryService defines the gRPC querier service.
 | `key_id` | [string](#string) |  |  |
 | `participant` | [bytes](#bytes) |  |  |
 | `pub_key` | [bytes](#bytes) |  |  |
+| `weight` | [bytes](#bytes) |  |  |
 
 
 
@@ -4223,6 +4225,7 @@ QueryService defines the gRPC querier service.
 | `sig_id` | [uint64](#uint64) |  |  |
 | `participant` | [bytes](#bytes) |  |  |
 | `signature` | [bytes](#bytes) |  |  |
+| `weight` | [bytes](#bytes) |  |  |
 
 
 
@@ -7277,10 +7280,10 @@ Query defines the gRPC querier service.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `module` | [string](#string) |  |  |
-| `action` | [string](#string) |  |  |
-| `poll` | [string](#string) |  |  |
-| `voter` | [string](#string) |  |  |
-| `state` | [string](#string) |  |  |
+| `poll_id` | [uint64](#uint64) |  |  |
+| `state` | [axelar.vote.exported.v1beta1.PollState](#axelar.vote.exported.v1beta1.PollState) |  |  |
+| `voter` | [bytes](#bytes) |  |  |
+| `weight` | [bytes](#bytes) |  |  |
 
 
 
