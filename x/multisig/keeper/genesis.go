@@ -9,9 +9,16 @@ import (
 // InitGenesis initializes the state from a genesis file
 func (k Keeper) InitGenesis(ctx sdk.Context, state *types.GenesisState) {
 	k.setParams(ctx, state.Params)
+
 }
 
 // ExportGenesis generates a genesis file from the state
 func (k Keeper) ExportGenesis(ctx sdk.Context) *types.GenesisState {
-	return types.NewGenesisState(k.getParams(ctx), []types.KeygenSession{}, []types.SigningSession{}, []types.Key{}, []types.KeyEpoch{})
+	return types.NewGenesisState(
+		k.getParams(ctx),
+		k.getKeygenSessions(ctx),
+		k.getSigningSessions(ctx),
+		k.getKeys(ctx),
+		k.getKeyEpochs(ctx),
+	)
 }

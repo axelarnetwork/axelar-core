@@ -145,3 +145,17 @@ func getSigningSessionExpiryKey(signing types.SigningSession) utils.Key {
 func getSigningSessionKey(id uint64) utils.Key {
 	return signingPrefix.Append(utils.KeyFromInt(id))
 }
+
+func (k Keeper) getSigningSessions(ctx sdk.Context) (signingSessions []types.SigningSession) {
+	iter := k.getStore(ctx).Iterator(signingPrefix)
+	defer utils.CloseLogError(iter, k.Logger(ctx))
+
+	for ; iter.Valid(); iter.Next() {
+		var signingSession types.SigningSession
+		iter.UnmarshalValue(&signingSession)
+
+		signingSessions = append(signingSessions, signingSession)
+	}
+
+	return signingSessions
+}

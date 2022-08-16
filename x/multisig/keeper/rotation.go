@@ -156,3 +156,17 @@ func (k Keeper) getKeyRotationCount(ctx sdk.Context, chainName nexus.ChainName) 
 
 	return value.Value
 }
+
+func (k Keeper) getKeyEpochs(ctx sdk.Context) (keyEpochs []types.KeyEpoch) {
+	iter := k.getStore(ctx).Iterator(keyEpochPrefix)
+	defer utils.CloseLogError(iter, k.Logger(ctx))
+
+	for ; iter.Valid(); iter.Next() {
+		var keyEpoch types.KeyEpoch
+		iter.UnmarshalValue(&keyEpoch)
+
+		keyEpochs = append(keyEpochs, keyEpoch)
+	}
+
+	return keyEpochs
+}
