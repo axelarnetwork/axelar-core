@@ -6,10 +6,11 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/axelarnetwork/axelar-core/x/multisig/exported"
-	"github.com/axelarnetwork/utils/slices"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	"github.com/axelarnetwork/axelar-core/x/multisig/exported"
+	"github.com/axelarnetwork/utils/slices"
 )
 
 // NewGenesisState is the constructor for GenesisState
