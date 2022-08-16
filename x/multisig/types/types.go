@@ -3,6 +3,7 @@ package types
 import (
 	"bytes"
 	"encoding/hex"
+	"fmt"
 	"sort"
 
 	"github.com/btcsuite/btcd/btcec"
@@ -66,4 +67,21 @@ func NewKeyEpoch(epoch uint64, chain nexus.ChainName, keyID exported.KeyID) KeyE
 		Chain: chain,
 		KeyID: keyID,
 	}
+}
+
+// ValidateBasic returns an error if the key epoch is invalid
+func (m KeyEpoch) ValidateBasic() error {
+	if m.Epoch == 0 {
+		return fmt.Errorf("epoch must be >0")
+	}
+
+	if err := m.Chain.Validate(); err != nil {
+		return err
+	}
+
+	if err := m.KeyID.ValidateBasic(); err != nil {
+		return err
+	}
+
+	return nil
 }

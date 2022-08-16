@@ -275,9 +275,6 @@
 - [axelar/multisig/v1beta1/params.proto](#axelar/multisig/v1beta1/params.proto)
     - [Params](#axelar.multisig.v1beta1.Params)
   
-- [axelar/multisig/v1beta1/genesis.proto](#axelar/multisig/v1beta1/genesis.proto)
-    - [GenesisState](#axelar.multisig.v1beta1.GenesisState)
-  
 - [axelar/multisig/v1beta1/types.proto](#axelar/multisig/v1beta1/types.proto)
     - [Key](#axelar.multisig.v1beta1.Key)
     - [Key.PubKeysEntry](#axelar.multisig.v1beta1.Key.PubKeysEntry)
@@ -287,6 +284,9 @@
     - [MultiSig](#axelar.multisig.v1beta1.MultiSig)
     - [MultiSig.SigsEntry](#axelar.multisig.v1beta1.MultiSig.SigsEntry)
     - [SigningSession](#axelar.multisig.v1beta1.SigningSession)
+  
+- [axelar/multisig/v1beta1/genesis.proto](#axelar/multisig/v1beta1/genesis.proto)
+    - [GenesisState](#axelar.multisig.v1beta1.GenesisState)
   
 - [axelar/multisig/v1beta1/query.proto](#axelar/multisig/v1beta1/query.proto)
     - [KeyIDRequest](#axelar.multisig.v1beta1.KeyIDRequest)
@@ -4343,37 +4343,6 @@ Params represent the genesis parameters for the module
 
 
 
-<a name="axelar/multisig/v1beta1/genesis.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## axelar/multisig/v1beta1/genesis.proto
-
-
-
-<a name="axelar.multisig.v1beta1.GenesisState"></a>
-
-### GenesisState
-GenesisState represents the genesis state
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `params` | [Params](#axelar.multisig.v1beta1.Params) |  |  |
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
 <a name="axelar/multisig/v1beta1/types.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -4520,6 +4489,41 @@ GenesisState represents the genesis state
 | `grace_period` | [int64](#int64) |  |  |
 | `module` | [string](#string) |  |  |
 | `module_metadata` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="axelar/multisig/v1beta1/genesis.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/multisig/v1beta1/genesis.proto
+
+
+
+<a name="axelar.multisig.v1beta1.GenesisState"></a>
+
+### GenesisState
+GenesisState represents the genesis state
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `params` | [Params](#axelar.multisig.v1beta1.Params) |  |  |
+| `keygen_sessions` | [KeygenSession](#axelar.multisig.v1beta1.KeygenSession) | repeated |  |
+| `signing_sessions` | [SigningSession](#axelar.multisig.v1beta1.SigningSession) | repeated |  |
+| `keys` | [Key](#axelar.multisig.v1beta1.Key) | repeated |  |
+| `key_epochs` | [KeyEpoch](#axelar.multisig.v1beta1.KeyEpoch) | repeated |  |
 
 
 
