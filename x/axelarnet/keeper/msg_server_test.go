@@ -176,7 +176,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 	})
 
 	pathIsRegistered := When("denom path matches registered path", func() {
-		err := k.RegisterIBCPath(ctx, chain.Name, ibcPath)
+		err := k.SetIBCPath(ctx, chain.Name, ibcPath)
 		assert.NoError(t, err)
 	})
 
@@ -253,7 +253,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 					When2(chainIsActivated).
 					When2(assetIsLinkedToCosmosChain).
 					When("denom path does not match registered path", func() {
-						funcs.MustNoErr(k.RegisterIBCPath(ctx, chain.Name, randomIBCPath()))
+						funcs.MustNoErr(k.SetIBCPath(ctx, chain.Name, randomIBCPath()))
 					}).
 					When2(confirmExternalICS20TokenRequest).
 					Then2(confirmDepositFails),
@@ -405,7 +405,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 			AddrPrefix: rand.StrBetween(1, 10),
 		})
 		assert.NotPanics(t, func() {
-			funcs.MustNoErr(k.RegisterIBCPath(ctx, chain.Name, randomIBCPath()))
+			funcs.MustNoErr(k.SetIBCPath(ctx, chain.Name, randomIBCPath()))
 		})
 		nexusK.GetChainByNativeAssetFunc = func(sdk.Context, string) (nexus.Chain, bool) {
 			return chain, true
@@ -569,7 +569,7 @@ func TestHandleMsgRegisterIBCPath(t *testing.T) {
 
 				whenChainIsACosmosChain.
 					When("path is already registered", func() {
-						funcs.MustNoErr(k.RegisterIBCPath(ctx, req.Chain, randomIBCPath()))
+						funcs.MustNoErr(k.SetIBCPath(ctx, req.Chain, randomIBCPath()))
 					}).
 					When2(requestIsMade).
 					Then2(registerFailed),
@@ -767,7 +767,7 @@ func TestRetryIBCTransfer(t *testing.T) {
 		chain = nexustestutils.Chain()
 		path = randomIBCPath()
 		k.SetCosmosChain(ctx, types.CosmosChain{Name: chain.Name})
-		funcs.MustNoErr(k.RegisterIBCPath(ctx, chain.Name, path))
+		funcs.MustNoErr(k.SetIBCPath(ctx, chain.Name, path))
 
 		b = &mock.BankKeeperMock{}
 		a = &mock.AccountKeeperMock{}

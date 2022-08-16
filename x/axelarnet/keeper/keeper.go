@@ -60,8 +60,8 @@ func (k Keeper) GetRouteTimeoutWindow(ctx sdk.Context) uint64 {
 	return result
 }
 
-// RegisterIBCPath registers an IBC path for a cosmos chain
-func (k Keeper) RegisterIBCPath(ctx sdk.Context, chain nexus.ChainName, path string) error {
+// SetIBCPath set an IBC path for a cosmos chain. Path can only be set once.
+func (k Keeper) SetIBCPath(ctx sdk.Context, chain nexus.ChainName, path string) error {
 	cosmosChain, ok := k.getCosmosChain(ctx, chain)
 	if !ok {
 		return fmt.Errorf("unknown cosmos chain %s", chain)

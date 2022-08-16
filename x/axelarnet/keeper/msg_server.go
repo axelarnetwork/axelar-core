@@ -121,7 +121,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		if !ok {
 			return nil, fmt.Errorf("asset %s is not linked to a cosmos chain", denomTrace.GetBaseDenom())
 		}
-		path, ok := s.Keeper.GetIBCPath(ctx, chain.Name)
+		path, ok := s.GetIBCPath(ctx, chain.Name)
 		if !ok {
 			return nil, fmt.Errorf("path not found for chain %s", chain.Name)
 		}
@@ -251,7 +251,7 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, _ *types.ExecutePe
 // RegisterIBCPath handles register an IBC path for a chain
 func (s msgServer) RegisterIBCPath(c context.Context, req *types.RegisterIBCPathRequest) (*types.RegisterIBCPathResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
-	if err := s.Keeper.RegisterIBCPath(ctx, req.Chain, req.Path); err != nil {
+	if err := s.SetIBCPath(ctx, req.Chain, req.Path); err != nil {
 		return nil, err
 	}
 
@@ -279,7 +279,7 @@ func (s msgServer) AddCosmosBasedChain(c context.Context, req *types.AddCosmosBa
 		}
 	}
 
-	s.Keeper.SetCosmosChain(ctx, types.CosmosChain{
+	s.SetCosmosChain(ctx, types.CosmosChain{
 		Name:       req.Chain.Name,
 		AddrPrefix: req.AddrPrefix,
 	})
@@ -296,7 +296,7 @@ func (s msgServer) RegisterAsset(c context.Context, req *types.RegisterAssetRequ
 		return &types.RegisterAssetResponse{}, fmt.Errorf("chain '%s' not found", req.Chain)
 	}
 
-	if _, found := s.Keeper.GetCosmosChainByName(ctx, req.Chain); !found {
+	if _, found := s.GetCosmosChainByName(ctx, req.Chain); !found {
 		return &types.RegisterAssetResponse{}, fmt.Errorf("chain '%s' is not a cosmos chain", req.Chain)
 	}
 
@@ -317,7 +317,7 @@ func (s msgServer) RegisterAsset(c context.Context, req *types.RegisterAssetRequ
 func (s msgServer) RouteIBCTransfers(c context.Context, _ *types.RouteIBCTransfersRequest) (*types.RouteIBCTransfersResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 	// loop through all cosmos chains
-	for _, c := range s.Keeper.GetCosmosChains(ctx) {
+	for _, c := range s.GetCosmosChains(ctx) {
 		chain, ok := s.nexus.GetChain(ctx, c)
 		if !ok {
 			s.Logger(ctx).Error(fmt.Sprintf("%s is not a registered chain", chain.Name))
@@ -329,7 +329,7 @@ func (s msgServer) RouteIBCTransfers(c context.Context, _ *types.RouteIBCTransfe
 		}
 
 		// Get the channel id for the chain
-		path, ok := s.Keeper.GetIBCPath(ctx, chain.Name)
+		path, ok := s.GetIBCPath(ctx, chain.Name)
 		if !ok {
 			s.Logger(ctx).Error(fmt.Sprintf("%s is not a registered chain", chain.Name))
 			continue
@@ -350,7 +350,7 @@ func (s msgServer) RouteIBCTransfers(c context.Context, _ *types.RouteIBCTransfe
 				continue
 			}
 
-			err = s.Keeper.EnqueueTransfer(ctx, types.NewIBCTransfer(sender, p.Recipient.Address, token, portID, channelID))
+			err = s.EnqueueTransfer(ctx, types.NewIBCTransfer(sender, p.Recipient.Address, token, portID, channelID))
 			if err != nil {
 				return nil, err
 			}
@@ -366,7 +366,7 @@ func (s msgServer) RouteIBCTransfers(c context.Context, _ *types.RouteIBCTransfe
 func (s msgServer) RegisterFeeCollector(c context.Context, req *types.RegisterFeeCollectorRequest) (*types.RegisterFeeCollectorResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	if err := s.Keeper.SetFeeCollector(ctx, req.FeeCollector); err != nil {
+	if err := s.SetFeeCollector(ctx, req.FeeCollector); err != nil {
 		return nil, err
 	}
 
@@ -385,12 +385,12 @@ func (s msgServer) RetryIBCTransfer(c context.Context, req *types.RetryIBCTransf
 		return nil, fmt.Errorf("chain %s is not activated", chain.Name)
 	}
 
-	path, ok := s.Keeper.GetIBCPath(ctx, chain.Name)
+	path, ok := s.GetIBCPath(ctx, chain.Name)
 	if !ok {
 		return nil, fmt.Errorf("%s does not have a valid IBC path", chain.Name)
 	}
 
-	t, ok := s.Keeper.GetFailedTransfer(ctx, req.ID)
+	t, ok := s.GetFailedTransfer(ctx, req.ID)
 	if !ok {
 		return nil, fmt.Errorf("transfer %s not found", req.ID.String())
 	}
@@ -399,7 +399,7 @@ func (s msgServer) RetryIBCTransfer(c context.Context, req *types.RetryIBCTransf
 		return nil, fmt.Errorf("chain %s IBC path doesn't match %s IBC transfer path", chain.Name, path)
 	}
 
-	err := s.Keeper.EnqueueTransfer(ctx, t)
+	err := s.EnqueueTransfer(ctx, t)
 	if err != nil {
 		return nil, err
 	}

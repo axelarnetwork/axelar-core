@@ -47,7 +47,7 @@ func TestKeeper_GetIBCPath(t *testing.T) {
 		chain := randomChain()
 		chain.IBCPath = ""
 		k.SetCosmosChain(ctx, chain)
-		err := k.RegisterIBCPath(ctx, chain.Name, path)
+		err := k.SetIBCPath(ctx, chain.Name, path)
 		assert.NoError(t, err)
 		result, ok := k.GetIBCPath(ctx, chain.Name)
 		assert.Equal(t, path, result)
@@ -60,10 +60,10 @@ func TestKeeper_GetIBCPath(t *testing.T) {
 		chain := randomChain()
 		chain.IBCPath = ""
 		k.SetCosmosChain(ctx, chain)
-		err := k.RegisterIBCPath(ctx, chain.Name, path)
+		err := k.SetIBCPath(ctx, chain.Name, path)
 		assert.NoError(t, err)
 		path2 := randomIBCPath()
-		err2 := k.RegisterIBCPath(ctx, chain.Name, path2)
+		err2 := k.SetIBCPath(ctx, chain.Name, path2)
 		assert.Error(t, err2)
 	}).Repeat(repeats))
 
