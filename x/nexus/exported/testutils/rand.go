@@ -8,8 +8,8 @@ import (
 // Chain returns a random nexus chain
 func Chain() exported.Chain {
 	return exported.Chain{
-		Name:                  exported.ChainName(rand.StrBetween(5, 20)),
-		Module:                rand.StrBetween(5, 20),
+		Name:                  exported.ChainName(rand.NormalizedStrBetween(5, 20)),
+		Module:                rand.NormalizedStrBetween(5, 20),
 		SupportsForeignAssets: true,
 	}
 }
