@@ -8,6 +8,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
+	ibctransfertypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
@@ -121,7 +122,7 @@ func TestSetFailedTransfer(t *testing.T) {
 }
 
 func randomIBCPath() string {
-	port := rand.NormalizedStrBetween(5, 10)
+	port := ibctransfertypes.PortID
 	identifier := fmt.Sprintf("%s%d", "channel-", rand.I64Between(0, 9999))
 	return fmt.Sprintf("%s/%s", port, identifier)
 }
