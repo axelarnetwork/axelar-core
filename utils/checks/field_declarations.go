@@ -21,6 +21,7 @@ import (
 const excludeFieldsFlag = "excludeFields"
 const excludeTypesFlag = "excludeTypes"
 
+// FieldDeclarations returns a command that checks if structs have been correctly initialized
 func FieldDeclarations() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:  "decls package-path...",
@@ -50,7 +51,7 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 
 	for _, pkg := range pkgs {
-		if pkg.Errors != nil{
+		if pkg.Errors != nil {
 			writeErrs(pkg, cmd.OutOrStderr())
 			return fmt.Errorf("error loading package %s", pkg.Name)
 		}
