@@ -36,7 +36,7 @@ type testWriter struct {
 }
 
 func (t *testWriter) Write(bz []byte) (int, error) {
-	t.Called += 1
+	t.Called++
 	t.out = append(t.out, bz...)
 
 	return len(bz), nil
