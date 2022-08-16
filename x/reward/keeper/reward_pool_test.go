@@ -59,36 +59,55 @@ func TestAddReward(t *testing.T) {
 }
 
 func TestReleaseRewards(t *testing.T) {
-	ctx, keeper, banker, distributor, staker := setup()
-	pool := keeper.GetPool(ctx, rand.Str(10))
-	validator := rand.ValAddr()
-	coin := sdk.NewCoin(denom, sdk.NewInt(rand.I64Between(10, 10000000)))
+	t.Run("when validator not found", func(t *testing.T) {
+		ctx, keeper, _, _, staker := setup()
+		pool := keeper.GetPool(ctx, rand.Str(10))
+		validator := rand.ValAddr()
+		coin := sdk.NewCoin(denom, sdk.NewInt(rand.I64Between(10, 10000000)))
 
-	banker.MintCoinsFunc = func(ctx sdk.Context, name string, amt sdk.Coins) error { return nil }
-	banker.SendCoinsFromModuleToModuleFunc = func(ctx sdk.Context, senderModule string, recipientModule string, amt sdk.Coins) error {
-		return nil
-	}
-	staker.ValidatorFunc = func(ctx sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI { return stakingtypes.Validator{} }
-	distributor.AllocateTokensToValidatorFunc = func(ctx sdk.Context, val stakingtypes.ValidatorI, tokens sdk.DecCoins) {}
+		staker.ValidatorFunc = func(ctx sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI { return nil }
 
-	pool.AddReward(validator, coin)
-	err := pool.ReleaseRewards(validator)
-	p := pool.(*rewardPool)
+		pool.AddReward(validator, coin)
+		err := pool.ReleaseRewards(validator)
+		p := pool.(*rewardPool)
 
-	assert.NoError(t, err)
-	assert.Len(t, banker.MintCoinsCalls(), 1)
-	assert.Len(t, banker.MintCoinsCalls()[0].Amt, 1)
-	assert.Equal(t, coin, banker.MintCoinsCalls()[0].Amt[0])
-	assert.Len(t, banker.SendCoinsFromModuleToModuleCalls(), 1)
-	assert.Len(t, banker.SendCoinsFromModuleToModuleCalls()[0].Amt, 1)
-	assert.Equal(t, coin, banker.SendCoinsFromModuleToModuleCalls()[0].Amt[0])
-	assert.Len(t, staker.ValidatorCalls(), 1)
-	assert.Equal(t, validator, staker.ValidatorCalls()[0].Addr)
-	assert.Len(t, distributor.AllocateTokensToValidatorCalls(), 1)
-	assert.Len(t, distributor.AllocateTokensToValidatorCalls()[0].Tokens, 1)
-	assert.Equal(t, sdk.NewDecCoinFromCoin(coin), distributor.AllocateTokensToValidatorCalls()[0].Tokens[0])
-	assert.Len(t, p.Rewards, 0)
-	assert.Len(t, keeper.GetPool(ctx, p.Name).(*rewardPool).Rewards, 0)
+		assert.NoError(t, err)
+		assert.Len(t, p.Rewards, 0)
+		assert.Len(t, keeper.GetPool(ctx, p.Name).(*rewardPool).Rewards, 0)
+	})
+
+	t.Run("when validator is found", func(t *testing.T) {
+		ctx, keeper, banker, distributor, staker := setup()
+		pool := keeper.GetPool(ctx, rand.Str(10))
+		validator := rand.ValAddr()
+		coin := sdk.NewCoin(denom, sdk.NewInt(rand.I64Between(10, 10000000)))
+
+		banker.MintCoinsFunc = func(ctx sdk.Context, name string, amt sdk.Coins) error { return nil }
+		banker.SendCoinsFromModuleToModuleFunc = func(ctx sdk.Context, senderModule string, recipientModule string, amt sdk.Coins) error {
+			return nil
+		}
+		staker.ValidatorFunc = func(ctx sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI { return stakingtypes.Validator{} }
+		distributor.AllocateTokensToValidatorFunc = func(ctx sdk.Context, val stakingtypes.ValidatorI, tokens sdk.DecCoins) {}
+
+		pool.AddReward(validator, coin)
+		err := pool.ReleaseRewards(validator)
+		p := pool.(*rewardPool)
+
+		assert.NoError(t, err)
+		assert.Len(t, banker.MintCoinsCalls(), 1)
+		assert.Len(t, banker.MintCoinsCalls()[0].Amt, 1)
+		assert.Equal(t, coin, banker.MintCoinsCalls()[0].Amt[0])
+		assert.Len(t, banker.SendCoinsFromModuleToModuleCalls(), 1)
+		assert.Len(t, banker.SendCoinsFromModuleToModuleCalls()[0].Amt, 1)
+		assert.Equal(t, coin, banker.SendCoinsFromModuleToModuleCalls()[0].Amt[0])
+		assert.Len(t, staker.ValidatorCalls(), 1)
+		assert.Equal(t, validator, staker.ValidatorCalls()[0].Addr)
+		assert.Len(t, distributor.AllocateTokensToValidatorCalls(), 1)
+		assert.Len(t, distributor.AllocateTokensToValidatorCalls()[0].Tokens, 1)
+		assert.Equal(t, sdk.NewDecCoinFromCoin(coin), distributor.AllocateTokensToValidatorCalls()[0].Tokens[0])
+		assert.Len(t, p.Rewards, 0)
+		assert.Len(t, keeper.GetPool(ctx, p.Name).(*rewardPool).Rewards, 0)
+	})
 }
 
 func TestClearRewards(t *testing.T) {
