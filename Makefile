@@ -66,6 +66,11 @@ build-binaries-in-docker:  guard-SEMVER
 		-f Dockerfile.binaries .
 	./scripts/copy-binaries-from-image.sh
 
+
+.PHONY: build-check
+build-checks: go.sum
+		go build -o ./bin/check -mod=readonly $(BUILD_FLAGS) ./utils/checks/main
+
 # Build the project with debug flags
 .PHONY: debug
 debug:  go.sum

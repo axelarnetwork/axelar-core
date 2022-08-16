@@ -1,7 +1,7 @@
-package checks_test
+package checks
 
-// add types packages for all modules here
 import (
+	// add packages for all modules here
 	_ "github.com/axelarnetwork/axelar-core/x/ante/types"
 	_ "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	_ "github.com/axelarnetwork/axelar-core/x/evm/types"
