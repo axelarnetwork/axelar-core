@@ -67,3 +67,16 @@ func NewKeyEpoch(epoch uint64, chain nexus.ChainName, keyID exported.KeyID) KeyE
 		KeyID: keyID,
 	}
 }
+
+// ValidateBasic returns an error if the key epoch is invalid
+func (m KeyEpoch) ValidateBasic() error {
+	if err := m.Chain.Validate(); err != nil {
+		return err
+	}
+
+	if err := m.KeyID.ValidateBasic(); err != nil {
+		return err
+	}
+
+	return nil
+}
