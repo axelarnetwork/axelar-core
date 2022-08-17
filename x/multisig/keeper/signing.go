@@ -133,6 +133,10 @@ func (k Keeper) nextSigID(ctx sdk.Context) uint64 {
 	return val.Value
 }
 
+func (k Keeper) setSigningSessionCount(ctx sdk.Context, count uint64) {
+	k.getStore(ctx).Set(signingSessionCountKey, &gogoprototypes.UInt64Value{Value: count + 1})
+}
+
 func getSigningSessionExpiryKey(signing types.SigningSession) utils.Key {
 	expiry := signing.ExpiresAt
 	if signing.State == exported.Completed {
