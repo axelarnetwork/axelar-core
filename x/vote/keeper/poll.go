@@ -187,7 +187,7 @@ func (p *poll) voteBeforeCompletion(voter sdk.ValAddress, blockHeight int64, dat
 }
 
 func (p poll) hasEnoughVotes(majority sdk.Uint) bool {
-	return majority.GTE(p.Snapshot.CalculateMinPassingWeight(p.VotingThreshold)) &&
+	return majority.GTE(p.passingWeight.Value()) &&
 		p.getVoterCount() >= p.MinVoterCount
 }
 
@@ -197,7 +197,7 @@ func (p poll) cannotWin(majority sdk.Uint) bool {
 
 	return majority.
 		Add(missingVotingPower).
-		LT(p.Snapshot.CalculateMinPassingWeight(p.VotingThreshold))
+		LT(p.passingWeight.Value())
 }
 
 func (p poll) getTalliedVotingPower() sdk.Uint {
