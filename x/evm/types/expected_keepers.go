@@ -48,7 +48,8 @@ type ChainKeeper interface {
 	GetGatewayAddress(ctx sdk.Context) (Address, bool)
 	GetDeposit(ctx sdk.Context, txID Hash, burnerAddr Address) (ERC20Deposit, DepositStatus, bool)
 	GetBurnerInfo(ctx sdk.Context, address Address) *BurnerInfo
-	GetBurnerAddressAndSalt(ctx sdk.Context, token ERC20Token, recipient string, gatewayAddr Address) (Address, Hash, error)
+	GenerateSalt(ctx sdk.Context, recipient string) Hash
+	GetBurnerAddress(ctx sdk.Context, token ERC20Token, salt Hash, gatewayAddr Address) (Address, error)
 	SetBurnerInfo(ctx sdk.Context, burnerInfo BurnerInfo)
 	DeleteDeposit(ctx sdk.Context, deposit ERC20Deposit)
 	SetDeposit(ctx sdk.Context, deposit ERC20Deposit, state DepositStatus)
