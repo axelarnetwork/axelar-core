@@ -4,11 +4,12 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	clienttypes "github.com/cosmos/ibc-go/v2/modules/core/02-client/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
+	"github.com/axelarnetwork/utils/funcs"
 )
 
 // BeginBlocker check for infraction evidence or downtime of validators
@@ -26,7 +27,7 @@ func EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock, bk types.BaseKeeper, t 
 
 		succeeded := false
 		_ = utils.RunCached(ctx, bk, func(cachedCtx sdk.Context) ([]abci.ValidatorUpdate, error) {
-			err := sendIBCTransfer(cachedCtx, bk, t, c, transfer)
+			err := keeper.SendIBCTransfer(cachedCtx, bk, t, c, transfer)
 			if err != nil {
 				bk.Logger(cachedCtx).Error(fmt.Sprintf("failed to send IBC transfer %s with id %s for %s:  %s", transfer.Token, transfer.ID.String(), transfer.Receiver, err))
 				return nil, err
@@ -42,27 +43,10 @@ func EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock, bk types.BaseKeeper, t 
 		}
 	}
 
-	// park the failed transfer aside
+	// set transfer as failed
 	for _, f := range failed {
-		bk.SetFailedTransfer(ctx, f)
+		funcs.MustNoErr(bk.SetTransferFailed(ctx, f.ID))
 	}
 
 	return nil, nil
-}
-
-// IBCTransfer inits an IBC transfer
-func sendIBCTransfer(ctx sdk.Context, k types.BaseKeeper, t types.IBCTransferKeeper, c types.ChannelKeeper, transfer types.IBCTransfer) error {
-
-	_, state, err := c.GetChannelClientState(ctx, transfer.PortID, transfer.ChannelID)
-	if err != nil {
-		return err
-	}
-
-	height := clienttypes.NewHeight(state.GetLatestHeight().GetRevisionNumber(), state.GetLatestHeight().GetRevisionHeight()+k.GetRouteTimeoutWindow(ctx))
-	err = t.SendTransfer(ctx, transfer.PortID, transfer.ChannelID, transfer.Token, transfer.Sender, transfer.Receiver, height, 0)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

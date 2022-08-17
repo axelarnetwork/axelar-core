@@ -12,6 +12,8 @@
     - [CosmosChain](#axelar.axelarnet.v1beta1.CosmosChain)
     - [IBCTransfer](#axelar.axelarnet.v1beta1.IBCTransfer)
   
+    - [IBCTransfer.Status](#axelar.axelarnet.v1beta1.IBCTransfer.Status)
+  
 - [axelar/utils/v1beta1/queuer.proto](#axelar/utils/v1beta1/queuer.proto)
     - [QueueState](#axelar.utils.v1beta1.QueueState)
     - [QueueState.Item](#axelar.utils.v1beta1.QueueState.Item)
@@ -613,12 +615,27 @@ Params represent the genesis parameters for the module
 | `channel_id` | [string](#string) |  |  |
 | `sequence` | [uint64](#uint64) |  | **Deprecated.**  |
 | `id` | [uint64](#uint64) |  |  |
+| `status` | [IBCTransfer.Status](#axelar.axelarnet.v1beta1.IBCTransfer.Status) |  |  |
 
 
 
 
 
  <!-- end messages -->
+
+
+<a name="axelar.axelarnet.v1beta1.IBCTransfer.Status"></a>
+
+### IBCTransfer.Status
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| STATUS_UNSPECIFIED | 0 |  |
+| STATUS_PENDING | 1 |  |
+| STATUS_COMPLETED | 2 |  |
+| STATUS_FAILED | 3 |  |
+
 
  <!-- end enums -->
 

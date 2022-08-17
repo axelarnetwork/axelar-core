@@ -149,7 +149,7 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.Raw
 
 // Route returns the module's route
 func (am AppModule) Route() sdk.Route {
-	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper, am.nexus, am.bank, am.transfer, am.account))
+	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper, am.nexus, am.bank, am.transfer, am.channel, am.account))
 }
 
 // QuerierRoute returns this module's query route
@@ -281,16 +281,9 @@ func (am AppModule) OnAcknowledgementPacket(
 	_ = types.ModuleCdc.UnmarshalJSON(acknowledgement, &ack)
 	switch ack.Response.(type) {
 	case *channeltypes.Acknowledgement_Error:
-		t, err := types.PacketToTransfer(packet)
-		if err != nil {
-			return err
-		}
-		am.keeper.SetFailedTransfer(ctx, t)
-		return nil
+		return setTransferFailed(ctx, am.keeper, packet.SourcePort, packet.SourceChannel, packet.Sequence)
 	default:
-		// the acknowledgement succeeded on the receiving chain so nothing
-		// needs to be executed and no error needs to be returned
-		return nil
+		return setTransferCompleted(ctx, am.keeper, packet.SourcePort, packet.SourceChannel, packet.Sequence)
 	}
 }
 
@@ -305,19 +298,49 @@ func (am AppModule) OnTimeoutPacket(
 		return err
 	}
 
-	t, err := types.PacketToTransfer(packet)
-	if err != nil {
-		return err
-	}
-	// requeue transfer
-	err = am.keeper.EnqueueTransfer(ctx, t)
-	if err != nil {
-		return err
-	}
-	return nil
+	return retryTransfer(ctx, am.keeper, am.transfer, am.channel, packet)
 }
 
 // NegotiateAppVersion implements the IBCModule interface
 func (am AppModule) NegotiateAppVersion(ctx sdk.Context, order channeltypes.Order, connectionID string, portID string, counterparty channeltypes.Counterparty, proposedVersion string) (version string, err error) {
 	return am.transferModule.NegotiateAppVersion(ctx, order, connectionID, portID, counterparty, proposedVersion)
+}
+
+func setTransferFailed(ctx sdk.Context, k keeper.Keeper, portID, channelID string, seq uint64) error {
+	transferID, ok := k.GetSeqIDMapping(ctx, portID, channelID, seq)
+	if !ok {
+		return nil
+	}
+
+	k.DeleteSeqIDMapping(ctx, portID, channelID, seq)
+
+	return k.SetTransferFailed(ctx, transferID)
+
+}
+
+func setTransferCompleted(ctx sdk.Context, k keeper.Keeper, portID, channelID string, seq uint64) error {
+	transferID, ok := k.GetSeqIDMapping(ctx, portID, channelID, seq)
+	if !ok {
+		return nil
+	}
+
+	k.DeleteSeqIDMapping(ctx, portID, channelID, seq)
+
+	return k.SetTransferCompleted(ctx, transferID)
+}
+
+func retryTransfer(ctx sdk.Context, k keeper.Keeper, transferK types.IBCTransferKeeper, channelK types.ChannelKeeper, packet ibcexported.PacketI) error {
+	transferID, ok := k.GetSeqIDMapping(ctx, packet.GetSourcePort(), packet.GetSourceChannel(), packet.GetSequence())
+	if !ok {
+		return nil
+	}
+
+	t, ok := k.GetTransfer(ctx, transferID)
+	if !ok {
+		return nil
+	}
+
+	k.DeleteSeqIDMapping(ctx, t.PortID, t.ChannelID, packet.GetSequence())
+
+	return keeper.SendIBCTransfer(ctx, k, transferK, channelK, t)
 }

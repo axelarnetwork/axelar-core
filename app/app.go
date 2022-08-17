@@ -398,7 +398,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		appCodec, keys[voteTypes.StoreKey], app.getSubspace(voteTypes.ModuleName), snapK, stakingK, rewardK,
 	)
 	axelarnetK := axelarnetKeeper.NewKeeper(
-		appCodec, keys[axelarnetTypes.StoreKey], app.getSubspace(axelarnetTypes.ModuleName),
+		appCodec, keys[axelarnetTypes.StoreKey], app.getSubspace(axelarnetTypes.ModuleName), app.ibcKeeper.ChannelKeeper,
 	)
 	nexusK := nexusKeeper.NewKeeper(
 		appCodec, keys[nexusTypes.StoreKey], app.getSubspace(nexusTypes.ModuleName),
