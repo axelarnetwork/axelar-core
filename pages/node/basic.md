@@ -7,7 +7,7 @@ Start and stop your node, test whether your blockchain is downloaded. Backup you
 ## Prerequisites
 
 - Configure your environment as per [CLI configuration](config-cli) and [Node configuration](config-node).
-- Install lz4
+- Install [lz4](https://lz4.github.io/lz4/)
 - Ensure AXELARD_HOME variable is set in your current session. See https://docs.axelar.dev/node/config-node#home-directory (example AXELARD_HOME="$HOME/.axelar").
 
 
