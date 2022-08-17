@@ -17,7 +17,6 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&CreatePendingTransfersRequest{}, "evm/CreatePendingTransfers", nil)
 	cdc.RegisterConcrete(&CreateDeployTokenRequest{}, "evm/CreateDeployToken", nil)
 	cdc.RegisterConcrete(&CreateBurnTokensRequest{}, "evm/CreateBurnTokens", nil)
-	cdc.RegisterConcrete(&CreateTransferOwnershipRequest{}, "evm/CreateTransferOwnership", nil)
 	cdc.RegisterConcrete(&CreateTransferOperatorshipRequest{}, "evm/CreateTransferOperatorship", nil)
 	cdc.RegisterConcrete(&SignCommandsRequest{}, "evm/SignCommands", nil)
 	cdc.RegisterConcrete(&AddChainRequest{}, "evm/AddChainRequest", nil)
@@ -36,7 +35,6 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		&CreatePendingTransfersRequest{},
 		&CreateDeployTokenRequest{},
 		&CreateBurnTokensRequest{},
-		&CreateTransferOwnershipRequest{},
 		&CreateTransferOperatorshipRequest{},
 		&SignCommandsRequest{},
 		&AddChainRequest{},

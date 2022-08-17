@@ -393,7 +393,7 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 		case *types.Event_TokenSent:
 			destinationChainName = event.TokenSent.DestinationChain
 		case *types.Event_Transfer, *types.Event_TokenDeployed,
-			*types.Event_MultisigOwnershipTransferred, *types.Event_MultisigOperatorshipTransferred:
+			*types.Event_MultisigOperatorshipTransferred:
 			// skip checks for non-gateway tx event
 			return true
 		default:
