@@ -1886,11 +1886,14 @@ var _ evmtypes.ChainKeeper = &ChainKeeperMock{}
 // 			EnqueueCommandFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, cmd evmtypes.Command) error {
 // 				panic("mock out the EnqueueCommand method")
 // 			},
+// 			GenerateSaltFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, recipient string) evmtypes.Hash {
+// 				panic("mock out the GenerateSalt method")
+// 			},
 // 			GetBatchByIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, id []byte) evmtypes.CommandBatch {
 // 				panic("mock out the GetBatchByID method")
 // 			},
-// 			GetBurnerAddressAndSaltFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, token evmtypes.ERC20Token, recipient string, gatewayAddr evmtypes.Address) (evmtypes.Address, evmtypes.Hash, error) {
-// 				panic("mock out the GetBurnerAddressAndSalt method")
+// 			GetBurnerAddressFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, token evmtypes.ERC20Token, salt evmtypes.Hash, gatewayAddr evmtypes.Address) (evmtypes.Address, error) {
+// 				panic("mock out the GetBurnerAddress method")
 // 			},
 // 			GetBurnerByteCodeFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, bool) {
 // 				panic("mock out the GetBurnerByteCode method")
@@ -2013,11 +2016,14 @@ type ChainKeeperMock struct {
 	// EnqueueCommandFunc mocks the EnqueueCommand method.
 	EnqueueCommandFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, cmd evmtypes.Command) error
 
+	// GenerateSaltFunc mocks the GenerateSalt method.
+	GenerateSaltFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, recipient string) evmtypes.Hash
+
 	// GetBatchByIDFunc mocks the GetBatchByID method.
 	GetBatchByIDFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, id []byte) evmtypes.CommandBatch
 
-	// GetBurnerAddressAndSaltFunc mocks the GetBurnerAddressAndSalt method.
-	GetBurnerAddressAndSaltFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, token evmtypes.ERC20Token, recipient string, gatewayAddr evmtypes.Address) (evmtypes.Address, evmtypes.Hash, error)
+	// GetBurnerAddressFunc mocks the GetBurnerAddress method.
+	GetBurnerAddressFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, token evmtypes.ERC20Token, salt evmtypes.Hash, gatewayAddr evmtypes.Address) (evmtypes.Address, error)
 
 	// GetBurnerByteCodeFunc mocks the GetBurnerByteCode method.
 	GetBurnerByteCodeFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, bool)
@@ -2155,6 +2161,13 @@ type ChainKeeperMock struct {
 			// Cmd is the cmd argument value.
 			Cmd evmtypes.Command
 		}
+		// GenerateSalt holds details about calls to the GenerateSalt method.
+		GenerateSalt []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Recipient is the recipient argument value.
+			Recipient string
+		}
 		// GetBatchByID holds details about calls to the GetBatchByID method.
 		GetBatchByID []struct {
 			// Ctx is the ctx argument value.
@@ -2162,14 +2175,14 @@ type ChainKeeperMock struct {
 			// ID is the id argument value.
 			ID []byte
 		}
-		// GetBurnerAddressAndSalt holds details about calls to the GetBurnerAddressAndSalt method.
-		GetBurnerAddressAndSalt []struct {
+		// GetBurnerAddress holds details about calls to the GetBurnerAddress method.
+		GetBurnerAddress []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Token is the token argument value.
 			Token evmtypes.ERC20Token
-			// Recipient is the recipient argument value.
-			Recipient string
+			// Salt is the salt argument value.
+			Salt evmtypes.Hash
 			// GatewayAddr is the gatewayAddr argument value.
 			GatewayAddr evmtypes.Address
 		}
@@ -2378,8 +2391,9 @@ type ChainKeeperMock struct {
 	lockDeleteDeposit                 sync.RWMutex
 	lockDeleteUnsignedCommandBatchID  sync.RWMutex
 	lockEnqueueCommand                sync.RWMutex
+	lockGenerateSalt                  sync.RWMutex
 	lockGetBatchByID                  sync.RWMutex
-	lockGetBurnerAddressAndSalt       sync.RWMutex
+	lockGetBurnerAddress              sync.RWMutex
 	lockGetBurnerByteCode             sync.RWMutex
 	lockGetBurnerInfo                 sync.RWMutex
 	lockGetChainID                    sync.RWMutex
@@ -2590,6 +2604,41 @@ func (mock *ChainKeeperMock) EnqueueCommandCalls() []struct {
 	return calls
 }
 
+// GenerateSalt calls GenerateSaltFunc.
+func (mock *ChainKeeperMock) GenerateSalt(ctx github_com_cosmos_cosmos_sdk_types.Context, recipient string) evmtypes.Hash {
+	if mock.GenerateSaltFunc == nil {
+		panic("ChainKeeperMock.GenerateSaltFunc: method is nil but ChainKeeper.GenerateSalt was just called")
+	}
+	callInfo := struct {
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
+		Recipient string
+	}{
+		Ctx:       ctx,
+		Recipient: recipient,
+	}
+	mock.lockGenerateSalt.Lock()
+	mock.calls.GenerateSalt = append(mock.calls.GenerateSalt, callInfo)
+	mock.lockGenerateSalt.Unlock()
+	return mock.GenerateSaltFunc(ctx, recipient)
+}
+
+// GenerateSaltCalls gets all the calls that were made to GenerateSalt.
+// Check the length with:
+//     len(mockedChainKeeper.GenerateSaltCalls())
+func (mock *ChainKeeperMock) GenerateSaltCalls() []struct {
+	Ctx       github_com_cosmos_cosmos_sdk_types.Context
+	Recipient string
+} {
+	var calls []struct {
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
+		Recipient string
+	}
+	mock.lockGenerateSalt.RLock()
+	calls = mock.calls.GenerateSalt
+	mock.lockGenerateSalt.RUnlock()
+	return calls
+}
+
 // GetBatchByID calls GetBatchByIDFunc.
 func (mock *ChainKeeperMock) GetBatchByID(ctx github_com_cosmos_cosmos_sdk_types.Context, id []byte) evmtypes.CommandBatch {
 	if mock.GetBatchByIDFunc == nil {
@@ -2625,46 +2674,46 @@ func (mock *ChainKeeperMock) GetBatchByIDCalls() []struct {
 	return calls
 }
 
-// GetBurnerAddressAndSalt calls GetBurnerAddressAndSaltFunc.
-func (mock *ChainKeeperMock) GetBurnerAddressAndSalt(ctx github_com_cosmos_cosmos_sdk_types.Context, token evmtypes.ERC20Token, recipient string, gatewayAddr evmtypes.Address) (evmtypes.Address, evmtypes.Hash, error) {
-	if mock.GetBurnerAddressAndSaltFunc == nil {
-		panic("ChainKeeperMock.GetBurnerAddressAndSaltFunc: method is nil but ChainKeeper.GetBurnerAddressAndSalt was just called")
+// GetBurnerAddress calls GetBurnerAddressFunc.
+func (mock *ChainKeeperMock) GetBurnerAddress(ctx github_com_cosmos_cosmos_sdk_types.Context, token evmtypes.ERC20Token, salt evmtypes.Hash, gatewayAddr evmtypes.Address) (evmtypes.Address, error) {
+	if mock.GetBurnerAddressFunc == nil {
+		panic("ChainKeeperMock.GetBurnerAddressFunc: method is nil but ChainKeeper.GetBurnerAddress was just called")
 	}
 	callInfo := struct {
 		Ctx         github_com_cosmos_cosmos_sdk_types.Context
 		Token       evmtypes.ERC20Token
-		Recipient   string
+		Salt        evmtypes.Hash
 		GatewayAddr evmtypes.Address
 	}{
 		Ctx:         ctx,
 		Token:       token,
-		Recipient:   recipient,
+		Salt:        salt,
 		GatewayAddr: gatewayAddr,
 	}
-	mock.lockGetBurnerAddressAndSalt.Lock()
-	mock.calls.GetBurnerAddressAndSalt = append(mock.calls.GetBurnerAddressAndSalt, callInfo)
-	mock.lockGetBurnerAddressAndSalt.Unlock()
-	return mock.GetBurnerAddressAndSaltFunc(ctx, token, recipient, gatewayAddr)
+	mock.lockGetBurnerAddress.Lock()
+	mock.calls.GetBurnerAddress = append(mock.calls.GetBurnerAddress, callInfo)
+	mock.lockGetBurnerAddress.Unlock()
+	return mock.GetBurnerAddressFunc(ctx, token, salt, gatewayAddr)
 }
 
-// GetBurnerAddressAndSaltCalls gets all the calls that were made to GetBurnerAddressAndSalt.
+// GetBurnerAddressCalls gets all the calls that were made to GetBurnerAddress.
 // Check the length with:
-//     len(mockedChainKeeper.GetBurnerAddressAndSaltCalls())
-func (mock *ChainKeeperMock) GetBurnerAddressAndSaltCalls() []struct {
+//     len(mockedChainKeeper.GetBurnerAddressCalls())
+func (mock *ChainKeeperMock) GetBurnerAddressCalls() []struct {
 	Ctx         github_com_cosmos_cosmos_sdk_types.Context
 	Token       evmtypes.ERC20Token
-	Recipient   string
+	Salt        evmtypes.Hash
 	GatewayAddr evmtypes.Address
 } {
 	var calls []struct {
 		Ctx         github_com_cosmos_cosmos_sdk_types.Context
 		Token       evmtypes.ERC20Token
-		Recipient   string
+		Salt        evmtypes.Hash
 		GatewayAddr evmtypes.Address
 	}
-	mock.lockGetBurnerAddressAndSalt.RLock()
-	calls = mock.calls.GetBurnerAddressAndSalt
-	mock.lockGetBurnerAddressAndSalt.RUnlock()
+	mock.lockGetBurnerAddress.RLock()
+	calls = mock.calls.GetBurnerAddress
+	mock.lockGetBurnerAddress.RUnlock()
 	return calls
 }
 
