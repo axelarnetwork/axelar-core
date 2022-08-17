@@ -43,7 +43,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/vald"
 )
 
-const minGasPrice = "0.00005uaxl"
+const minGasPrice = "0.007uaxl"
 
 // NewRootCmd creates a new root command for axelard. It is called once in the
 // main function.

@@ -49,12 +49,13 @@ message Event {
     EventContractCallWithToken contract_call_with_token = 7;
     EventTransfer transfer = 8;
     EventTokenDeployed token_deployed = 9;
-    EventMultisigOwnershipTransferred multisig_ownership_transferred = 10;
+    EventMultisigOwnershipTransferred multisig_ownership_transferred = 10
+        [ deprecated = true ];
     EventMultisigOperatorshipTransferred multisig_operatorship_transferred = 11;
-    EventSinglesigOwnershipTransferred singlesig_ownership_transferred = 12;
-    EventSinglesigOperatorshipTransferred singlesig_operatorship_transferred =
-        13;
   }
+
+  reserved 12; // singlesig_ownership_transferred was removed in v0.23
+  reserved 13; // singlesig_operatorship_transferred was removed in v0.23
 }
 
 message EventTokenSent {
@@ -143,22 +144,6 @@ message EventMultisigOperatorshipTransferred {
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
     (gogoproto.nullable) = false
   ];
-}
-
-message EventSinglesigOwnershipTransferred {
-  option deprecated = true;
-
-  bytes pre_owner = 1
-      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
-  bytes new_owner = 2
-      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
-}
-
-message EventSinglesigOperatorshipTransferred {
-  bytes pre_operator = 1
-      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
-  bytes new_operator = 2
-      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
 }
 
 // NetworkInfo describes information about a network
@@ -313,7 +298,7 @@ enum SigType {
   SIG_TYPE_COMMAND = 2 [ (gogoproto.enumvalue_customname) = "SigCommand" ];
 }
 
-// TransferKey contains information for a transfer ownership or operatorship
+// TransferKey contains information for a transfer operatorship
 message TransferKey {
   reserved 2; // type was deleted in v0.20
 

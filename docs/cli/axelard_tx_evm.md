@@ -39,4 +39,3 @@ axelard tx evm [flags]
 - [axelard tx evm set-gateway](axelard_tx_evm_set-gateway.md)	 - Set the gateway address for the given evm chain
 - [axelard tx evm sign-commands](axelard_tx_evm_sign-commands.md)	 - Sign pending commands for an EVM chain contract
 - [axelard tx evm transfer-operatorship](axelard_tx_evm_transfer-operatorship.md)	 - Create transfer operatorship command for an EVM chain contract
-- [axelard tx evm transfer-ownership](axelard_tx_evm_transfer-ownership.md)	 - Create transfer ownership command for an EVM chain contract
