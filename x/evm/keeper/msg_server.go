@@ -181,7 +181,8 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		return nil, fmt.Errorf("asset '%s' not registered for chain '%s'", req.Asset, recipientChain.Name)
 	}
 
-	burnerAddress, salt, err := keeper.GetBurnerAddressAndSalt(ctx, token, req.RecipientAddr, gatewayAddr)
+	salt := keeper.GenerateSalt(ctx, req.RecipientAddr)
+	burnerAddress, err := keeper.GetBurnerAddress(ctx, token, salt, gatewayAddr)
 	if err != nil {
 		return nil, err
 	}
@@ -286,10 +287,28 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 	}
 
 	keeper := s.ForChain(chain.Name)
+	gatewayAddr, ok := keeper.GetGatewayAddress(ctx)
+	if !ok {
+		return nil, fmt.Errorf("gateway address not set for chain %s", chain.Name)
+	}
 
 	burnerInfo := keeper.GetBurnerInfo(ctx, req.BurnerAddress)
 	if burnerInfo == nil {
 		return nil, fmt.Errorf("no burner info found for address %s", req.BurnerAddress.Hex())
+	}
+
+	token := keeper.GetERC20TokenByAsset(ctx, burnerInfo.Asset)
+	if !token.Is(types.Confirmed) {
+		return nil, fmt.Errorf("token %s is not confirmed on %s", token.GetAsset(), chain.Name)
+	}
+
+	burnerAddress, err := keeper.GetBurnerAddress(ctx, token, burnerInfo.Salt, gatewayAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	if burnerAddress != req.BurnerAddress {
+		return nil, fmt.Errorf("provided burner address %s doesn't match expected address %s", req.BurnerAddress, burnerAddress)
 	}
 
 	pollParticipants, err := s.initializePoll(ctx, chain, req.TxID)
