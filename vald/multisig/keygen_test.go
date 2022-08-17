@@ -52,7 +52,7 @@ func TestMgr_ProcessKeygenStarted(t *testing.T) {
 
 	givenMgr.
 		When("is not part of the listed participants", func() {
-			event = types.NewKeygenStarted(testutils.KeyID(), slices.Expand(func(int) sdk.ValAddress { return rand.ValAddr() }, 10))
+			event = types.NewKeygenStarted(testutils.KeyID(), slices.Expand(func(int) sdk.ValAddress { return rand.ValAddr() }, 10), slices.Expand(func(int) sdk.Uint { return rand.UintBetween(sdk.OneUint(), sdk.NewUint(100)) }, 10))
 		}).
 		Then("should ignore", func(t *testing.T) {
 			err := mgr.ProcessKeygenStarted(event)
@@ -63,7 +63,7 @@ func TestMgr_ProcessKeygenStarted(t *testing.T) {
 
 	givenMgr.
 		When("is part of the listed participants", func() {
-			event = types.NewKeygenStarted(testutils.KeyID(), []sdk.ValAddress{rand.ValAddr(), participant, rand.ValAddr()})
+			event = types.NewKeygenStarted(testutils.KeyID(), []sdk.ValAddress{rand.ValAddr(), participant, rand.ValAddr()}, slices.Expand(func(int) sdk.Uint { return rand.UintBetween(sdk.OneUint(), sdk.NewUint(100)) }, 3))
 		}).
 		Then("should handle", func(t *testing.T) {
 			sk := funcs.Must(btcec.NewPrivateKey(btcec.S256()))
