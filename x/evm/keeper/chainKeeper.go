@@ -228,19 +228,23 @@ func (k chainKeeper) getTokenAddress(ctx sdk.Context, details types.TokenDetails
 	return tokenAddr, nil
 }
 
-// GetBurnerAddressAndSalt calculates a burner address and the corresponding salt for the given token address, recipient and axelar gateway address
-func (k chainKeeper) GetBurnerAddressAndSalt(ctx sdk.Context, token types.ERC20Token, recipient string, gatewayAddr types.Address) (types.Address, types.Hash, error) {
+// GenerateSalt calculates a salt based on network params and recipient address to use for burner address generation
+func (k chainKeeper) GenerateSalt(ctx sdk.Context, recipient string) types.Hash {
 	nonce := utils.GetNonce(ctx.HeaderHash(), ctx.BlockGasMeter())
 	bz := []byte(recipient)
 	bz = append(bz, nonce[:]...)
 	salt := types.Hash(common.BytesToHash(crypto.Keccak256Hash(bz).Bytes()))
+	return salt
+}
 
+// GetBurnerAddress calculates a burner address for the given token address, salt, and axelar gateway address
+func (k chainKeeper) GetBurnerAddress(ctx sdk.Context, token types.ERC20Token, salt types.Hash, gatewayAddr types.Address) (types.Address, error) {
 	var tokenBurnerCodeHash types.Hash
 	if token.IsExternal() {
 		// always use the latest burner byte code for external token
 		burnerCode, ok := k.GetBurnerByteCode(ctx)
 		if !ok {
-			return types.Address{}, types.Hash{}, fmt.Errorf("burner code not found for chain %s", k.chainLowerKey)
+			return types.Address{}, fmt.Errorf("burner code not found for chain %s", k.chainLowerKey)
 		}
 		tokenBurnerCodeHash = types.Hash(crypto.Keccak256Hash(burnerCode))
 	} else {
@@ -252,28 +256,28 @@ func (k chainKeeper) GetBurnerAddressAndSalt(ctx sdk.Context, token types.ERC20T
 	case types.BurnerCodeHashV1:
 		addressType, err := abi.NewType("address", "address", nil)
 		if err != nil {
-			return types.Address{}, types.Hash{}, err
+			return types.Address{}, err
 		}
 
 		bytes32Type, err := abi.NewType("bytes32", "bytes32", nil)
 		if err != nil {
-			return types.Address{}, types.Hash{}, err
+			return types.Address{}, err
 		}
 
 		arguments := abi.Arguments{{Type: addressType}, {Type: bytes32Type}}
 		params, err := arguments.Pack(token.GetAddress(), salt)
 		if err != nil {
-			return types.Address{}, types.Hash{}, err
+			return types.Address{}, err
 		}
 
 		initCodeHash = types.Hash(crypto.Keccak256Hash(append(token.GetBurnerCode(), params...)))
 	case types.BurnerCodeHashV2, types.BurnerCodeHashV3, types.BurnerCodeHashV4, types.BurnerCodeHashV5:
 		initCodeHash = tokenBurnerCodeHash
 	default:
-		return types.Address{}, types.Hash{}, fmt.Errorf("unsupported burner code with hash %s for chain %s", tokenBurnerCodeHash.Hex(), k.chainLowerKey)
+		return types.Address{}, fmt.Errorf("unsupported burner code with hash %s for chain %s", tokenBurnerCodeHash.Hex(), k.chainLowerKey)
 	}
 
-	return types.Address(crypto.CreateAddress2(common.Address(gatewayAddr), salt, initCodeHash.Bytes())), salt, nil
+	return types.Address(crypto.CreateAddress2(common.Address(gatewayAddr), salt, initCodeHash.Bytes())), nil
 }
 
 // GetBurnerByteCode returns the bytecode for the burner contract
@@ -851,7 +855,7 @@ func (k chainKeeper) SetConfirmedEvent(ctx sdk.Context, event types.Event) error
 
 	switch event.GetEvent().(type) {
 	case *types.Event_ContractCall, *types.Event_ContractCallWithToken, *types.Event_TokenSent,
-		*types.Event_Transfer, *types.Event_TokenDeployed, *types.Event_MultisigOwnershipTransferred, *types.Event_MultisigOperatorshipTransferred:
+		*types.Event_Transfer, *types.Event_TokenDeployed, *types.Event_MultisigOperatorshipTransferred:
 		k.GetConfirmedEventQueue(ctx).Enqueue(getEventKey(eventID), &event)
 	default:
 		return fmt.Errorf("unsupported event type %T", event)

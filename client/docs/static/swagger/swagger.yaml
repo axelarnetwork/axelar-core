@@ -6833,24 +6833,6 @@ paths:
                         items:
                           type: string
                           format: byte
-                  singlesig_ownership_transferred:
-                    type: object
-                    properties:
-                      pre_owner:
-                        type: string
-                        format: byte
-                      new_owner:
-                        type: string
-                        format: byte
-                  singlesig_operatorship_transferred:
-                    type: object
-                    properties:
-                      pre_operator:
-                        type: string
-                        format: byte
-                      new_operator:
-                        type: string
-                        format: byte
         default:
           description: An unexpected error response
           schema:
@@ -40985,24 +40967,6 @@ definitions:
             items:
               type: string
               format: byte
-      singlesig_ownership_transferred:
-        type: object
-        properties:
-          pre_owner:
-            type: string
-            format: byte
-          new_owner:
-            type: string
-            format: byte
-      singlesig_operatorship_transferred:
-        type: object
-        properties:
-          pre_operator:
-            type: string
-            format: byte
-          new_operator:
-            type: string
-            format: byte
   axelar.evm.v1beta1.Event.Status:
     type: string
     enum:
@@ -41197,42 +41161,6 @@ definitions:
                 items:
                   type: string
                   format: byte
-          singlesig_ownership_transferred:
-            type: object
-            properties:
-              pre_owner:
-                type: string
-                format: byte
-              new_owner:
-                type: string
-                format: byte
-          singlesig_operatorship_transferred:
-            type: object
-            properties:
-              pre_operator:
-                type: string
-                format: byte
-              new_operator:
-                type: string
-                format: byte
-  axelar.evm.v1beta1.EventSinglesigOperatorshipTransferred:
-    type: object
-    properties:
-      pre_operator:
-        type: string
-        format: byte
-      new_operator:
-        type: string
-        format: byte
-  axelar.evm.v1beta1.EventSinglesigOwnershipTransferred:
-    type: object
-    properties:
-      pre_owner:
-        type: string
-        format: byte
-      new_owner:
-        type: string
-        format: byte
   axelar.evm.v1beta1.EventTokenDeployed:
     type: object
     properties:
