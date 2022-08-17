@@ -17,16 +17,17 @@ import (
 func (k Keeper) InitGenesis(ctx sdk.Context, state *types.GenesisState) {
 	k.setParams(ctx, state.Params)
 
-	slices.ForEach(state.KeygenSessions, func(keygenSession types.KeygenSession) { k.setKeygenSession(ctx, keygenSession) })
-	slices.ForEach(state.Keys, func(key types.Key) { k.setKey(ctx, key) })
-	slices.ForEach(state.SigningSessions, func(signingSession types.SigningSession) { k.setSigningSession(ctx, signingSession) })
-	slices.ForEach(state.KeyEpochs, func(keyEpoch types.KeyEpoch) { k.setKeyEpoch(ctx, keyEpoch) })
+	slices.ForEach(state.KeygenSessions, withContext(ctx, k.setKeygenSession))
+	slices.ForEach(state.Keys, withContext(ctx, k.setKey))
+	slices.ForEach(state.SigningSessions, withContext(ctx, k.setSigningSession))
+	slices.ForEach(state.KeyEpochs, withContext(ctx, k.setKeyEpoch))
 
 	keyEpochsByChain := slices.GroupBy(state.KeyEpochs, func(keyEpoch types.KeyEpoch) nexus.ChainName { return keyEpoch.GetChain() })
 	for chain, keyEpochs := range keyEpochsByChain {
 		sort.SliceStable(keyEpochs, func(i, j int) bool { return keyEpochs[i].Epoch < keyEpochs[j].Epoch })
+		latestKeyEpoch := slices.Last(keyEpochs)
 
-		key := funcs.MustOk(k.getKey(ctx, keyEpochs[len(keyEpochs)-1].GetKeyID()))
+		key := funcs.MustOk(k.getKey(ctx, latestKeyEpoch.GetKeyID()))
 		switch key.State {
 		case exported.Assigned:
 			k.setKeyRotationCount(ctx, chain, uint64(len(keyEpochs)-1))
@@ -49,4 +50,10 @@ func (k Keeper) ExportGenesis(ctx sdk.Context) *types.GenesisState {
 		k.getKeys(ctx),
 		k.getKeyEpochs(ctx),
 	)
+}
+
+func withContext[T any](ctx sdk.Context, fn func(sdk.Context, T)) func(T) {
+	return func(t T) {
+		fn(ctx, t)
+	}
 }
