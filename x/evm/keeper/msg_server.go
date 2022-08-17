@@ -329,7 +329,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 	return &types.ConfirmDepositResponse{}, nil
 }
 
-// ConfirmTransferKey handles transfer ownership/operatorship confirmations
+// ConfirmTransferKey handles transfer operatorship confirmation
 func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTransferKeyRequest) (*types.ConfirmTransferKeyResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 	chain, ok := s.nexus.GetChain(ctx, req.Chain)

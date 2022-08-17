@@ -802,7 +802,7 @@ func CreateMintTokenCommand(keyID multisig.KeyID, id CommandID, symbol string, a
 	}, nil
 }
 
-// CreateMultisigTransferCommand creates a command to transfer ownership/operator of the multisig contract
+// CreateMultisigTransferCommand creates a command to transfer operator of the multisig contract
 func CreateMultisigTransferCommand(chainID sdk.Int, keyID multisig.KeyID, nextKey multisig.Key) Command {
 	addresses, weights, threshold := GetMultisigAddressesAndWeights(nextKey)
 	params := createTransferMultisigParams(addresses, slices.Map(weights, sdk.Uint.BigInt), threshold.BigInt())
@@ -1440,13 +1440,6 @@ func (m Event) ValidateBasic() error {
 		if err := event.TokenDeployed.ValidateBasic(); err != nil {
 			return sdkerrors.Wrap(err, "invalid event TokenDeployed")
 		}
-	case *Event_MultisigOwnershipTransferred:
-		if event.MultisigOwnershipTransferred == nil {
-			return fmt.Errorf("missing event MultisigOwnershipTransferred")
-		}
-		if err := event.MultisigOwnershipTransferred.ValidateBasic(); err != nil {
-			return sdkerrors.Wrap(err, "invalid event MultisigOwnershipTransferred")
-		}
 	case *Event_MultisigOperatorshipTransferred:
 		if event.MultisigOperatorshipTransferred == nil {
 			return fmt.Errorf("missing event MultisigOperatorshipTransferred")
@@ -1570,27 +1563,7 @@ func (m EventTokenDeployed) ValidateBasic() error {
 	return nil
 }
 
-// ValidateBasic returns an error if the event multisig ownership transferred is invalid
-func (m EventMultisigOwnershipTransferred) ValidateBasic() error {
-	NonzeroAddress := func(addr Address) bool { return !addr.IsZeroAddress() }
-
-	if !slices.All(m.PreOwners, NonzeroAddress) {
-		return fmt.Errorf("invalid pre owners")
-	}
-	if m.PrevThreshold.IsZero() {
-		return fmt.Errorf("invalid pre threshold")
-	}
-	if !slices.All(m.NewOwners, NonzeroAddress) {
-		return fmt.Errorf("invalid new owners")
-	}
-	if m.NewThreshold.IsZero() {
-		return fmt.Errorf("invalid new threshold")
-	}
-
-	return nil
-}
-
-// ValidateBasic returns an error if the event multisig ownership transferred is invalid
+// ValidateBasic returns an error if the event multisig operatorship transferred is invalid
 func (m EventMultisigOperatorshipTransferred) ValidateBasic() error {
 	if slices.Any(m.NewOperators, Address.IsZeroAddress) {
 		return fmt.Errorf("invalid new operators")
