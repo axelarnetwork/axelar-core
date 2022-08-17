@@ -19,6 +19,8 @@ message Voted {
   axelar.vote.exported.v1beta1.PollState state = 3;
   bytes voter = 4 [ (gogoproto.casttype) =
                         "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
-  bytes weight = 5
-      [ (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.Uint" ];
+  bytes weight = 5 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.nullable) = false
+  ];
 }
