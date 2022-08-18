@@ -21,6 +21,7 @@
   
 - [axelar/axelarnet/v1beta1/genesis.proto](#axelar/axelarnet/v1beta1/genesis.proto)
     - [GenesisState](#axelar.axelarnet.v1beta1.GenesisState)
+    - [GenesisState.SeqIdMappingEntry](#axelar.axelarnet.v1beta1.GenesisState.SeqIdMappingEntry)
   
 - [axelar/utils/v1beta1/threshold.proto](#axelar/utils/v1beta1/threshold.proto)
     - [Threshold](#axelar.utils.v1beta1.Threshold)
@@ -725,7 +726,24 @@ Params represent the genesis parameters for the module
 | `collector_address` | [bytes](#bytes) |  |  |
 | `chains` | [CosmosChain](#axelar.axelarnet.v1beta1.CosmosChain) | repeated |  |
 | `transfer_queue` | [axelar.utils.v1beta1.QueueState](#axelar.utils.v1beta1.QueueState) |  |  |
-| `failed_transfers` | [IBCTransfer](#axelar.axelarnet.v1beta1.IBCTransfer) | repeated |  |
+| `ibc_transfers` | [IBCTransfer](#axelar.axelarnet.v1beta1.IBCTransfer) | repeated |  |
+| `seq_id_mapping` | [GenesisState.SeqIdMappingEntry](#axelar.axelarnet.v1beta1.GenesisState.SeqIdMappingEntry) | repeated |  |
+
+
+
+
+
+
+<a name="axelar.axelarnet.v1beta1.GenesisState.SeqIdMappingEntry"></a>
+
+### GenesisState.SeqIdMappingEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key` | [string](#string) |  |  |
+| `value` | [uint64](#uint64) |  |  |
 
 
 
