@@ -24,7 +24,9 @@ var (
 
 	transferPrefix       = utils.KeyFromStr("ibc_transfer")
 	ibcTransferQueueName = "route_transfer_queue"
-	nonceKey             = key.FromUInt[uint64](1)
+	// nonceKey is deprecated in v0.23
+	nonceKey = key.FromUInt[uint64](1)
+	// failedTransferPrefix is deprecated in v0.23
 	failedTransferPrefix = key.FromUInt[uint64](2)
 	seqIDMappingPrefix   = key.FromUInt[uint64](3)
 )

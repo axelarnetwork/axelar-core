@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -17,6 +18,7 @@ func GetMigrationHandler(k Keeper) func(_ sdk.Context) error {
 		setIBCTransfersCompleted(ctx, k)
 		removeFailedTransfers(ctx, k)
 		removeNonce(ctx, k)
+		migrationRouteIBCTransferQueue(ctx, k)
 
 		return nil
 	}
@@ -40,4 +42,34 @@ func removeFailedTransfers(ctx sdk.Context, k Keeper) {
 
 func removeNonce(ctx sdk.Context, k Keeper) {
 	k.getStore(ctx).DeleteRaw(nonceKey.Bytes())
+}
+
+func migrationRouteIBCTransferQueue(ctx sdk.Context, k Keeper) {
+	oldQueue := GetOldIBCTransferQueue(ctx, k)
+	for !oldQueue.IsEmpty() {
+		var t types.IBCTransfer
+		oldQueue.Dequeue(&t)
+		// enqueue should overwrite with the same transfer
+		k.GetIBCTransferQueue(ctx).Enqueue(getTransferKey(t.ID), &t)
+	}
+
+	iter := k.getStore(ctx).Iterator(utils.KeyFromStr("ibc_transfer_queue"))
+	defer utils.CloseLogError(iter, k.Logger(ctx))
+
+	for ; iter.Valid(); iter.Next() {
+		k.getStore(ctx).DeleteRaw(iter.Key())
+	}
+}
+
+// GetOldIBCTransferQueue returns the queue of IBC transfers
+func GetOldIBCTransferQueue(ctx sdk.Context, keeper Keeper) utils.KVQueue {
+	return utils.NewGeneralKVQueue(
+		"ibc_transfer_queue",
+		keeper.getStore(ctx),
+		keeper.Logger(ctx),
+		func(value codec.ProtoMarshaler) utils.Key {
+			transfer := value.(*types.IBCTransfer)
+			return utils.KeyFromBz(transfer.ID.Bytes())
+		},
+	)
 }

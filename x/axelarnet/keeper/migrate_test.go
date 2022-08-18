@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"fmt"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -17,6 +18,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types/mock"
 	axelarnettestutils "github.com/axelarnetwork/axelar-core/x/axelarnet/types/testutils"
+	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 	. "github.com/axelarnetwork/utils/test"
 )
@@ -96,6 +98,26 @@ func TestGetMigrationHandler(t *testing.T) {
 					assert.Empty(t, getFailedTransfers(ctx, keeper))
 				}),
 		).Run(t)
+
+	givenMigrationHandler.
+		Branch(
+			When("no old IBC transfer queue is empty", func() {}).
+				When2(whenMigrationRuns).
+				Then("should do nothing", func(t *testing.T) {
+					assert.True(t, keeper.GetIBCTransferQueue(ctx).IsEmpty())
+				}),
+			When("old IBC transfer queue is not empty", func() {
+
+				slices.ForEach(transfers, func(t types.IBCTransfer) { funcs.MustNoErr(enqueueIBCTransferToOldQueue(ctx, keeper, t)) })
+				assert.False(t, GetOldIBCTransferQueue(ctx, keeper).IsEmpty())
+			}).
+				When2(whenMigrationRuns).
+				Then("should migrate from old queue to new", func(t *testing.T) {
+					assert.True(t, GetOldIBCTransferQueue(ctx, keeper).IsEmpty())
+					assert.False(t, keeper.GetIBCTransferQueue(ctx).IsEmpty())
+					assert.Equal(t, len(transfers), len(keeper.getIBCTransfers(ctx)))
+				}),
+		).Run(t)
 }
 
 func getFailedTransfers(ctx sdk.Context, k Keeper) (failedTransfers []types.IBCTransfer) {
@@ -114,4 +136,14 @@ func getFailedTransfers(ctx sdk.Context, k Keeper) (failedTransfers []types.IBCT
 
 func setFailedTransfer(ctx sdk.Context, k Keeper, transfer types.IBCTransfer) {
 	k.getStore(ctx).SetNew(failedTransferPrefix.Append(key.FromBz(transfer.ID.Bytes())), &transfer)
+}
+
+func enqueueIBCTransferToOldQueue(ctx sdk.Context, k Keeper, transfer types.IBCTransfer) error {
+	key := getTransferKey(transfer.ID)
+	if k.getStore(ctx).Has(key) {
+		return fmt.Errorf("transfer %s already exists", transfer.ID.String())
+	}
+
+	GetOldIBCTransferQueue(ctx, k).Enqueue(key, &transfer)
+	return nil
 }
