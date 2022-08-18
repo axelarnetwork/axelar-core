@@ -46,7 +46,7 @@ func NewHandler(k types.BaseKeeper, v types.Voter, n types.Nexus, snapshotter ty
 			res, err := server.ConfirmTransferKey(sdk.WrapSDKContext(ctx), msg)
 			result, err := sdk.WrapServiceResult(ctx, res, err)
 			if err == nil {
-				result.Log = fmt.Sprintf("votes on confirmation of transfer ownership %s started", msg.TxID.Hex())
+				result.Log = fmt.Sprintf("votes on confirmation of transfer operatorship %s started", msg.TxID.Hex())
 			}
 			return result, err
 		case *types.ConfirmGatewayTxRequest:

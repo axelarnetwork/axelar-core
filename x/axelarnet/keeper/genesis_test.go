@@ -20,6 +20,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
+	"github.com/axelarnetwork/axelar-core/x/axelarnet/types/mock"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/utils/slices"
@@ -37,7 +38,7 @@ func TestGenesis(t *testing.T) {
 	Given("a keeper",
 		func() {
 			subspace := paramstypes.NewSubspace(cfg.Codec, cfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "axelarnet")
-			k = keeper.NewKeeper(cfg.Codec, sdk.NewKVStoreKey(types.StoreKey), subspace)
+			k = keeper.NewKeeper(cfg.Codec, sdk.NewKVStoreKey(types.StoreKey), subspace, &mock.ChannelKeeperMock{})
 
 		}).
 		When("the state is initialized from a genesis state",
@@ -111,7 +112,7 @@ func randomNormalizedStr(min, max int) string {
 // randomTransferQueue returns a random (valid) transfer queue state for testing
 func randomTransferQueue(cdc codec.Codec) utils.QueueState {
 	qs := utils.QueueState{Items: make(map[string]utils.QueueState_Item)}
-	queueName := "ibc_transfer_queue"
+	queueName := "route_transfer_queue"
 	queueLen := rand.I64Between(0, 20)
 	keyPrefix := utils.KeyFromStr("transfer")
 

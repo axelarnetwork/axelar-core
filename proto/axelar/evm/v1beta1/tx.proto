@@ -164,6 +164,7 @@ message CreatePendingTransfersRequest {
 message CreatePendingTransfersResponse {}
 
 message CreateTransferOwnershipRequest {
+  option deprecated = true;
   option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
@@ -177,7 +178,7 @@ message CreateTransferOwnershipRequest {
   ];
 }
 
-message CreateTransferOwnershipResponse {}
+message CreateTransferOwnershipResponse { option deprecated = true; }
 
 message CreateTransferOperatorshipRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;

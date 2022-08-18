@@ -23,7 +23,6 @@ const (
 	TxLink                        = "link"
 	TxConfirmTokenDeploy          = "confirm-erc20-deploy"
 	TxConfirmDeposit              = "confirm-erc20-deposit"
-	TxConfirmTransferOwnership    = "confirm-transfer-ownership"
 	TxConfirmTransferOperatorship = "confirm-transfer-operatorship"
 	TxCreatePendingTransfers      = "create-pending-transfers"
 	TxCreateDeployToken           = "create-deploy-token"
@@ -87,7 +86,7 @@ type ReqConfirmDeposit struct {
 	BurnerAddress string       `json:"burner_address" yaml:"burner_address"`
 }
 
-// ReqConfirmTransferKey represents a request to confirm a transfer ownership
+// ReqConfirmTransferKey represents a request to confirm a transfer operatorship
 type ReqConfirmTransferKey struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 	TxID    string       `json:"tx_id" yaml:"tx_id"`
@@ -225,7 +224,7 @@ func GetHandlerConfirmDeposit(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
-// GetHandlerConfirmTransferKey returns a handler to confirm a transfer ownership
+// GetHandlerConfirmTransferKey returns a handler to confirm a transfer operatorship
 func GetHandlerConfirmTransferKey(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req ReqConfirmTransferKey

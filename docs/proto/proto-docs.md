@@ -12,6 +12,8 @@
     - [CosmosChain](#axelar.axelarnet.v1beta1.CosmosChain)
     - [IBCTransfer](#axelar.axelarnet.v1beta1.IBCTransfer)
   
+    - [IBCTransfer.Status](#axelar.axelarnet.v1beta1.IBCTransfer.Status)
+  
 - [axelar/utils/v1beta1/queuer.proto](#axelar/utils/v1beta1/queuer.proto)
     - [QueueState](#axelar.utils.v1beta1.QueueState)
     - [QueueState.Item](#axelar.utils.v1beta1.QueueState.Item)
@@ -147,8 +149,6 @@
     - [EventContractCallWithToken](#axelar.evm.v1beta1.EventContractCallWithToken)
     - [EventMultisigOperatorshipTransferred](#axelar.evm.v1beta1.EventMultisigOperatorshipTransferred)
     - [EventMultisigOwnershipTransferred](#axelar.evm.v1beta1.EventMultisigOwnershipTransferred)
-    - [EventSinglesigOperatorshipTransferred](#axelar.evm.v1beta1.EventSinglesigOperatorshipTransferred)
-    - [EventSinglesigOwnershipTransferred](#axelar.evm.v1beta1.EventSinglesigOwnershipTransferred)
     - [EventTokenDeployed](#axelar.evm.v1beta1.EventTokenDeployed)
     - [EventTokenSent](#axelar.evm.v1beta1.EventTokenSent)
     - [EventTransfer](#axelar.evm.v1beta1.EventTransfer)
@@ -275,9 +275,6 @@
 - [axelar/multisig/v1beta1/params.proto](#axelar/multisig/v1beta1/params.proto)
     - [Params](#axelar.multisig.v1beta1.Params)
   
-- [axelar/multisig/v1beta1/genesis.proto](#axelar/multisig/v1beta1/genesis.proto)
-    - [GenesisState](#axelar.multisig.v1beta1.GenesisState)
-  
 - [axelar/multisig/v1beta1/types.proto](#axelar/multisig/v1beta1/types.proto)
     - [Key](#axelar.multisig.v1beta1.Key)
     - [Key.PubKeysEntry](#axelar.multisig.v1beta1.Key.PubKeysEntry)
@@ -287,6 +284,9 @@
     - [MultiSig](#axelar.multisig.v1beta1.MultiSig)
     - [MultiSig.SigsEntry](#axelar.multisig.v1beta1.MultiSig.SigsEntry)
     - [SigningSession](#axelar.multisig.v1beta1.SigningSession)
+  
+- [axelar/multisig/v1beta1/genesis.proto](#axelar/multisig/v1beta1/genesis.proto)
+    - [GenesisState](#axelar.multisig.v1beta1.GenesisState)
   
 - [axelar/multisig/v1beta1/query.proto](#axelar/multisig/v1beta1/query.proto)
     - [KeyIDRequest](#axelar.multisig.v1beta1.KeyIDRequest)
@@ -613,12 +613,27 @@ Params represent the genesis parameters for the module
 | `channel_id` | [string](#string) |  |  |
 | `sequence` | [uint64](#uint64) |  | **Deprecated.**  |
 | `id` | [uint64](#uint64) |  |  |
+| `status` | [IBCTransfer.Status](#axelar.axelarnet.v1beta1.IBCTransfer.Status) |  |  |
 
 
 
 
 
  <!-- end messages -->
+
+
+<a name="axelar.axelarnet.v1beta1.IBCTransfer.Status"></a>
+
+### IBCTransfer.Status
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| STATUS_UNSPECIFIED | 0 |  |
+| STATUS_PENDING | 1 |  |
+| STATUS_COMPLETED | 2 |  |
+| STATUS_FAILED | 3 |  |
+
 
  <!-- end enums -->
 
@@ -2375,10 +2390,8 @@ ERC20TokenMetadata describes information about an ERC20 token
 | `contract_call_with_token` | [EventContractCallWithToken](#axelar.evm.v1beta1.EventContractCallWithToken) |  |  |
 | `transfer` | [EventTransfer](#axelar.evm.v1beta1.EventTransfer) |  |  |
 | `token_deployed` | [EventTokenDeployed](#axelar.evm.v1beta1.EventTokenDeployed) |  |  |
-| `multisig_ownership_transferred` | [EventMultisigOwnershipTransferred](#axelar.evm.v1beta1.EventMultisigOwnershipTransferred) |  |  |
+| `multisig_ownership_transferred` | [EventMultisigOwnershipTransferred](#axelar.evm.v1beta1.EventMultisigOwnershipTransferred) |  | **Deprecated.**  |
 | `multisig_operatorship_transferred` | [EventMultisigOperatorshipTransferred](#axelar.evm.v1beta1.EventMultisigOperatorshipTransferred) |  |  |
-| `singlesig_ownership_transferred` | [EventSinglesigOwnershipTransferred](#axelar.evm.v1beta1.EventSinglesigOwnershipTransferred) |  |  |
-| `singlesig_operatorship_transferred` | [EventSinglesigOperatorshipTransferred](#axelar.evm.v1beta1.EventSinglesigOperatorshipTransferred) |  |  |
 
 
 
@@ -2452,38 +2465,6 @@ ERC20TokenMetadata describes information about an ERC20 token
 | `prev_threshold` | [bytes](#bytes) |  |  |
 | `new_owners` | [bytes](#bytes) | repeated |  |
 | `new_threshold` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="axelar.evm.v1beta1.EventSinglesigOperatorshipTransferred"></a>
-
-### EventSinglesigOperatorshipTransferred
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `pre_operator` | [bytes](#bytes) |  |  |
-| `new_operator` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="axelar.evm.v1beta1.EventSinglesigOwnershipTransferred"></a>
-
-### EventSinglesigOwnershipTransferred
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `pre_owner` | [bytes](#bytes) |  |  |
-| `new_owner` | [bytes](#bytes) |  |  |
 
 
 
@@ -2644,7 +2625,7 @@ results to evm relay transaction types
 <a name="axelar.evm.v1beta1.TransferKey"></a>
 
 ### TransferKey
-TransferKey contains information for a transfer ownership or operatorship
+TransferKey contains information for a transfer operatorship
 
 
 | Field | Type | Label | Description |
@@ -4343,37 +4324,6 @@ Params represent the genesis parameters for the module
 
 
 
-<a name="axelar/multisig/v1beta1/genesis.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## axelar/multisig/v1beta1/genesis.proto
-
-
-
-<a name="axelar.multisig.v1beta1.GenesisState"></a>
-
-### GenesisState
-GenesisState represents the genesis state
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `params` | [Params](#axelar.multisig.v1beta1.Params) |  |  |
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
 <a name="axelar/multisig/v1beta1/types.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -4520,6 +4470,41 @@ GenesisState represents the genesis state
 | `grace_period` | [int64](#int64) |  |  |
 | `module` | [string](#string) |  |  |
 | `module_metadata` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="axelar/multisig/v1beta1/genesis.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/multisig/v1beta1/genesis.proto
+
+
+
+<a name="axelar.multisig.v1beta1.GenesisState"></a>
+
+### GenesisState
+GenesisState represents the genesis state
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `params` | [Params](#axelar.multisig.v1beta1.Params) |  |  |
+| `keygen_sessions` | [KeygenSession](#axelar.multisig.v1beta1.KeygenSession) | repeated |  |
+| `signing_sessions` | [SigningSession](#axelar.multisig.v1beta1.SigningSession) | repeated |  |
+| `keys` | [Key](#axelar.multisig.v1beta1.Key) | repeated |  |
+| `key_epochs` | [KeyEpoch](#axelar.multisig.v1beta1.KeyEpoch) | repeated |  |
 
 
 

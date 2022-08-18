@@ -1,6 +1,8 @@
 package codec
 
 import (
+	"fmt"
+
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/gogo/protobuf/proto"
@@ -23,7 +25,12 @@ type customRegistry interface {
 // refactor done in https://github.com/axelarnetwork/axelar-core/commit/2d5e35d7da4fb02ac55fb040fed420954d3be020
 // to keep transaction query backwards compatible
 func RegisterLegacyMsgInterfaces(registry cdctypes.InterfaceRegistry) {
-	r := registry.(customRegistry)
+	r, ok := registry.(customRegistry)
+	if !ok {
+		panic(fmt.Errorf("failed to convert registry type %T", registry))
+	}
+
+	r.RegisterCustomTypeURL((*sdk.Msg)(nil), "/axelar.evm.v1beta1.CreateTransferOwnershipRequest", &evmtypes.CreateTransferOwnershipRequest{})
 
 	r.RegisterCustomTypeURL((*sdk.Msg)(nil), "/axelarnet.v1beta1.LinkRequest", &axelarnettypes.LinkRequest{})
 	r.RegisterCustomTypeURL((*sdk.Msg)(nil), "/axelarnet.v1beta1.ConfirmDepositRequest", &axelarnettypes.ConfirmDepositRequest{})
