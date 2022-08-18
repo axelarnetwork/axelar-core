@@ -15,10 +15,10 @@ import (
 // - remove nonce
 func GetMigrationHandler(k Keeper) func(_ sdk.Context) error {
 	return func(ctx sdk.Context) error {
+		migrationRouteIBCTransferQueue(ctx, k)
 		setIBCTransfersCompleted(ctx, k)
 		removeFailedTransfers(ctx, k)
 		removeNonce(ctx, k)
-		migrationRouteIBCTransferQueue(ctx, k)
 
 		return nil
 	}
@@ -49,15 +49,8 @@ func migrationRouteIBCTransferQueue(ctx sdk.Context, k Keeper) {
 	for !oldQueue.IsEmpty() {
 		var t types.IBCTransfer
 		oldQueue.Dequeue(&t)
-		// enqueue should overwrite with the same transfer
+		// enqueue should overwrite with the transfer status pending
 		k.GetIBCTransferQueue(ctx).Enqueue(getTransferKey(t.ID), &t)
-	}
-
-	iter := k.getStore(ctx).Iterator(utils.KeyFromStr("ibc_transfer_queue"))
-	defer utils.CloseLogError(iter, k.Logger(ctx))
-
-	for ; iter.Valid(); iter.Next() {
-		k.getStore(ctx).DeleteRaw(iter.Key())
 	}
 }
 
