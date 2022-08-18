@@ -10,7 +10,7 @@ jobs:
         go-version:
           - 1.18
         os:
-          - ubuntu-22.04
+          - ubuntu-18.04
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout code
@@ -26,12 +26,12 @@ jobs:
           current_commit=$(git rev-parse HEAD)
           evm_module=./x/evm/module.go
           echo "Comparing current branch with tag $tag"
-
+          
           if git diff -s --exit-code "$tag"  -- ./contract-artifacts; then
           echo "The contract version has not changed, no need to enforce a migration"
           exit 0
           fi
-
+          
           echo "The contract version has changed"
           # Check out the latest tag, increment the consensus version and check if it matches the version in the current commit
           git checkout -q "$tag"  $evm_module
@@ -40,6 +40,6 @@ jobs:
           echo "EVM module consensus version needs to be incremented"
           exit 1
           fi
-
+          
           echo "EVM module consensus version has been incremented"
-
+        
