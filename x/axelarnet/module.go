@@ -25,6 +25,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/client/rest"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
 var (
@@ -98,6 +99,7 @@ type AppModule struct {
 	transfer types.IBCTransferKeeper
 	channel  types.ChannelKeeper
 	account  types.AccountKeeper
+	ibcK     keeper.IBCKeeper
 
 	transferModule transfer.AppModule
 }
@@ -108,8 +110,8 @@ func NewAppModule(
 	nexus types.Nexus,
 	bank types.BankKeeper,
 	transfer types.IBCTransferKeeper,
-	channel types.ChannelKeeper,
 	account types.AccountKeeper,
+	ibcK keeper.IBCKeeper,
 	transferModule transfer.AppModule,
 	logger log.Logger) AppModule {
 	return AppModule{
@@ -119,8 +121,8 @@ func NewAppModule(
 		nexus:          nexus,
 		bank:           bank,
 		transfer:       transfer,
-		channel:        channel,
 		account:        account,
+		ibcK:           ibcK,
 		transferModule: transferModule,
 	}
 }
@@ -149,7 +151,7 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.Raw
 
 // Route returns the module's route
 func (am AppModule) Route() sdk.Route {
-	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper, am.nexus, am.bank, am.transfer, am.channel, am.account))
+	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper, am.nexus, am.bank, am.transfer, am.account, am.ibcK))
 }
 
 // QuerierRoute returns this module's query route
@@ -181,7 +183,7 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 // EndBlock executes all state transitions this module requires at the end of each new block
 func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
 	return utils.RunCached(ctx, am.keeper, func(ctx sdk.Context) ([]abci.ValidatorUpdate, error) {
-		return EndBlocker(ctx, req, am.keeper, am.transfer, am.channel)
+		return EndBlocker(ctx, req, am.keeper, am.ibcK)
 	})
 }
 
@@ -298,7 +300,7 @@ func (am AppModule) OnTimeoutPacket(
 		return err
 	}
 
-	return retryTransfer(ctx, am.keeper, am.transfer, am.channel, packet)
+	return setTransferFailed(ctx, am.keeper, packet.SourcePort, packet.SourceChannel, packet.Sequence)
 }
 
 // NegotiateAppVersion implements the IBCModule interface
@@ -306,41 +308,28 @@ func (am AppModule) NegotiateAppVersion(ctx sdk.Context, order channeltypes.Orde
 	return am.transferModule.NegotiateAppVersion(ctx, order, connectionID, portID, counterparty, proposedVersion)
 }
 
+// returns true if mapping exits
+func getSeqIDMapping(ctx sdk.Context, k keeper.Keeper, portID, channelID string, seq uint64) (nexus.TransferID, bool) {
+	k.DeleteSeqIDMapping(ctx, portID, channelID, seq)
+
+	return k.GetSeqIDMapping(ctx, portID, channelID, seq)
+}
+
 func setTransferFailed(ctx sdk.Context, k keeper.Keeper, portID, channelID string, seq uint64) error {
-	transferID, ok := k.GetSeqIDMapping(ctx, portID, channelID, seq)
+	transferID, ok := getSeqIDMapping(ctx, k, portID, channelID, seq)
 	if !ok {
 		return nil
 	}
-
-	k.DeleteSeqIDMapping(ctx, portID, channelID, seq)
 
 	return k.SetTransferFailed(ctx, transferID)
 
 }
 
 func setTransferCompleted(ctx sdk.Context, k keeper.Keeper, portID, channelID string, seq uint64) error {
-	transferID, ok := k.GetSeqIDMapping(ctx, portID, channelID, seq)
+	transferID, ok := getSeqIDMapping(ctx, k, portID, channelID, seq)
 	if !ok {
 		return nil
 	}
-
-	k.DeleteSeqIDMapping(ctx, portID, channelID, seq)
 
 	return k.SetTransferCompleted(ctx, transferID)
-}
-
-func retryTransfer(ctx sdk.Context, k keeper.Keeper, transferK types.IBCTransferKeeper, channelK types.ChannelKeeper, packet ibcexported.PacketI) error {
-	transferID, ok := k.GetSeqIDMapping(ctx, packet.GetSourcePort(), packet.GetSourceChannel(), packet.GetSequence())
-	if !ok {
-		return nil
-	}
-
-	t, ok := k.GetTransfer(ctx, transferID)
-	if !ok {
-		return nil
-	}
-
-	k.DeleteSeqIDMapping(ctx, t.PortID, t.ChannelID, packet.GetSequence())
-
-	return keeper.SendIBCTransfer(ctx, k, transferK, channelK, t)
 }

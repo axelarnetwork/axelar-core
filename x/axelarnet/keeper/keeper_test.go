@@ -34,7 +34,6 @@ func setup() (sdk.Context, keeper.Keeper, *mock.ChannelKeeperMock) {
 	channelK := &mock.ChannelKeeperMock{}
 
 	k := keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("axelarnet"), axelarnetSubspace, channelK)
-
 	return ctx, k, channelK
 }
 
@@ -112,24 +111,10 @@ func TestKeeper_RegisterCosmosChain(t *testing.T) {
 
 }
 
-func TestSetFailedTransfer(t *testing.T) {
-	ctx, k, _ := setup()
-	n := int(rand.I64Between(0, 100))
-	for i := 0; i < n; i++ {
-		k.SetFailedTransfer(ctx, axelartestutils.RandomIBCTransfer())
-	}
-
-	for i := 0; i < n; i++ {
-		transfer, ok := k.GetFailedTransfer(ctx, nexus.TransferID(i))
-		assert.True(t, ok)
-		assert.Equal(t, transfer.ID, nexus.TransferID(i))
-	}
-}
-
 func TestSeqIDMap(t *testing.T) {
 	ctx, k, channelK := setup()
 
-	nextSeq := 2
+	nextSeq := 1
 	channelK.GetNextSequenceSendFunc = func(ctx sdk.Context, portID, channelID string) (uint64, bool) {
 		return uint64(nextSeq), true
 	}
@@ -164,28 +149,21 @@ func TestSeqIDMap(t *testing.T) {
 func TestSetTransferStatus(t *testing.T) {
 	ctx, k, _ := setup()
 
-	nonExistent := axelartestutils.RandomIBCTransfer()
-	nonExistent.Status = types.TransferNonExistent
-	assert.Error(t, k.EnqueueTransfer(ctx, nonExistent))
-
-	_, ok := k.GetTransfer(ctx, nonExistent.ID)
-	assert.False(t, ok)
-
 	pending := axelartestutils.RandomIBCTransfer()
-	assert.NoError(t, k.EnqueueTransfer(ctx, pending))
-	actual, ok := k.GetTransfer(ctx, 1)
+	assert.NoError(t, k.EnqueueIBCTransfer(ctx, pending))
+	actual, ok := k.GetTransfer(ctx, pending.ID)
 	assert.True(t, ok)
 	assert.Equal(t, pending.ChannelID, actual.ChannelID)
 	assert.True(t, pending.Token.IsEqual(actual.Token))
-	assert.NoError(t, k.SetTransferCompleted(ctx, 1))
-	assert.Error(t, k.SetTransferFailed(ctx, 1))
+	assert.NoError(t, k.SetTransferCompleted(ctx, pending.ID))
+	assert.Error(t, k.SetTransferFailed(ctx, pending.ID))
 
 	pending2 := axelartestutils.RandomIBCTransfer()
-	assert.NoError(t, k.EnqueueTransfer(ctx, pending2))
-	_, ok = k.GetTransfer(ctx, 2)
+	assert.NoError(t, k.EnqueueIBCTransfer(ctx, pending2))
+	_, ok = k.GetTransfer(ctx, pending2.ID)
 	assert.True(t, ok)
-	assert.NoError(t, k.SetTransferFailed(ctx, 2))
-	assert.NoError(t, k.SetTransferPending(ctx, 2))
+	assert.NoError(t, k.SetTransferFailed(ctx, pending2.ID))
+	assert.NoError(t, k.SetTransferPending(ctx, pending2.ID))
 	assert.True(t, ok)
 }
 

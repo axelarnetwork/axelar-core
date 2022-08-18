@@ -180,13 +180,8 @@ func getTransferKey(id nexus.TransferID) utils.Key {
 	return transferPrefix.AppendStr(id.String())
 }
 
-// EnqueueTransfer stores the pending ibc transfer in the queue
-func (k Keeper) EnqueueTransfer(ctx sdk.Context, transfer types.IBCTransfer) error {
-	err := transfer.SetID(k.nextTransferID(ctx))
-	if err != nil {
-		return err
-	}
-
+// EnqueueIBCTransfer stores the pending ibc transfer in the queue
+func (k Keeper) EnqueueIBCTransfer(ctx sdk.Context, transfer types.IBCTransfer) error {
 	key := getTransferKey(transfer.ID)
 	if k.getStore(ctx).Has(key) {
 		return fmt.Errorf("transfer %s already exists", transfer.ID.String())
@@ -194,14 +189,6 @@ func (k Keeper) EnqueueTransfer(ctx sdk.Context, transfer types.IBCTransfer) err
 
 	k.GetIBCTransferQueue(ctx).Enqueue(key, &transfer)
 	return nil
-}
-
-func (k Keeper) nextTransferID(ctx sdk.Context) nexus.TransferID {
-	var val gogoprototypes.UInt64Value
-	k.getStore(ctx).GetNew(nonceKey, &val)
-	defer k.getStore(ctx).SetNew(nonceKey, &gogoprototypes.UInt64Value{Value: val.Value + 1})
-
-	return nexus.TransferID(val.Value)
 }
 
 // validateIBCTransferQueueState checks if the keys of the given map have the correct format to be imported as ibc transfer queue state.
@@ -244,18 +231,6 @@ func (k Keeper) setTransfer(ctx sdk.Context, transfer types.IBCTransfer) {
 	k.getStore(ctx).Set(getTransferKey(transfer.ID), &transfer)
 }
 
-// SetFailedTransfer saves failed IBC transfer
-func (k Keeper) SetFailedTransfer(ctx sdk.Context, transfer types.IBCTransfer) {
-	transfer.SetID(k.nextTransferID(ctx))
-	k.getStore(ctx).SetNew(getFailedTransferKey(transfer.ID), &transfer)
-
-	k.Logger(ctx).With(
-		"id", transfer.ID.String(),
-		"recipient", transfer.Receiver,
-		"token", transfer.Token,
-	).Info(fmt.Sprintf("set failed IBC transfer"))
-}
-
 func (k Keeper) getFailedTransfers(ctx sdk.Context) (failedTransfers []types.IBCTransfer) {
 	iter := k.getStore(ctx).IteratorNew(failedTransferPrefix)
 	defer utils.CloseLogError(iter, k.Logger(ctx))
@@ -270,43 +245,34 @@ func (k Keeper) getFailedTransfers(ctx sdk.Context) (failedTransfers []types.IBC
 	return failedTransfers
 }
 
-// SetTransferCompleted sets the transfer as completed
-func (k Keeper) SetTransferCompleted(ctx sdk.Context, transferID nexus.TransferID) error {
+func (k Keeper) setTransferStatus(ctx sdk.Context, transferID nexus.TransferID, status types.IBCTransfer_Status) error {
 	t, ok := k.GetTransfer(ctx, transferID)
-	if !ok || t.Status != types.TransferPending {
-		return fmt.Errorf("transfer %s is not pending", transferID)
+	if !ok {
+		return fmt.Errorf("transfer %s not found", transferID)
 	}
 
-	t.Status = types.TransferCompleted
-	k.setTransfer(ctx, t)
+	err := t.SetStatus(status)
+	if err != nil {
+		return err
+	}
 
+	k.setTransfer(ctx, t)
 	return nil
+}
+
+// SetTransferCompleted sets the transfer as completed
+func (k Keeper) SetTransferCompleted(ctx sdk.Context, transferID nexus.TransferID) error {
+	return k.setTransferStatus(ctx, transferID, types.TransferCompleted)
 }
 
 // SetTransferFailed sets the transfer as failed
 func (k Keeper) SetTransferFailed(ctx sdk.Context, transferID nexus.TransferID) error {
-	t, ok := k.GetTransfer(ctx, transferID)
-	if !ok || t.Status != types.TransferPending {
-		return fmt.Errorf("transfer %s is not pending", transferID)
-	}
-
-	t.Status = types.TransferFailed
-	k.setTransfer(ctx, t)
-
-	return nil
+	return k.setTransferStatus(ctx, transferID, types.TransferFailed)
 }
 
 // SetTransferPending sets the transfer as pending
 func (k Keeper) SetTransferPending(ctx sdk.Context, transferID nexus.TransferID) error {
-	t, ok := k.GetTransfer(ctx, transferID)
-	if !ok || t.Status != types.TransferFailed {
-		return fmt.Errorf("transfer %s is not failed", transferID)
-	}
-
-	t.Status = types.TransferPending
-	k.setTransfer(ctx, t)
-
-	return nil
+	return k.setTransferStatus(ctx, transferID, types.TransferPending)
 }
 
 func getSeqIDMappingKey(portID, channelID string, seq uint64) key.Key {

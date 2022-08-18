@@ -115,24 +115,36 @@ func (m CosmosChain) Validate() error {
 }
 
 // NewIBCTransfer creates a new pending IBC transfer
-func NewIBCTransfer(sender sdk.AccAddress, receiver string, token sdk.Coin, portID string, channelID string) IBCTransfer {
+func NewIBCTransfer(sender sdk.AccAddress, receiver string, token sdk.Coin, portID string, channelID string, id nexus.TransferID) IBCTransfer {
 	return IBCTransfer{
 		Sender:    sender,
 		Receiver:  receiver,
 		Token:     token,
 		PortID:    portID,
 		ChannelID: channelID,
+		ID:        id,
 		Status:    TransferPending,
 	}
 }
 
-// SetID set the transfer ID for IBCTransfer
-func (m *IBCTransfer) SetID(id nexus.TransferID) error {
-	if m.Status != TransferPending {
-		return fmt.Errorf("transfer is not %s", TransferPending)
+// SetStatus sets the transfer status
+func (m *IBCTransfer) SetStatus(status IBCTransfer_Status) error {
+	switch status {
+	case TransferCompleted, TransferFailed:
+		// set from pending to completed or failed
+		if m.Status != TransferPending {
+			return fmt.Errorf("transfer is not pending")
+		}
+	case TransferPending:
+		// set from failed to pending
+		if m.Status != TransferFailed {
+			return fmt.Errorf("transfer is not failed")
+		}
+	default:
+		return fmt.Errorf("invalid status %s", status)
 	}
 
-	m.ID = id
+	m.Status = status
 	return nil
 }
 

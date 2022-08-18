@@ -8,7 +8,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	ibctransfertypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
-	clienttypes "github.com/cosmos/ibc-go/v2/modules/core/02-client/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -25,19 +24,19 @@ type msgServer struct {
 	nexus       types.Nexus
 	bank        types.BankKeeper
 	ibcTransfer types.IBCTransferKeeper
-	channelK    types.ChannelKeeper
 	account     types.AccountKeeper
+	ibcK        IBCKeeper
 }
 
 // NewMsgServerImpl returns an implementation of the axelarnet MsgServiceServer interface for the provided Keeper.
-func NewMsgServerImpl(k Keeper, n types.Nexus, b types.BankKeeper, t types.IBCTransferKeeper, c types.ChannelKeeper, a types.AccountKeeper) types.MsgServiceServer {
+func NewMsgServerImpl(k Keeper, n types.Nexus, b types.BankKeeper, t types.IBCTransferKeeper, a types.AccountKeeper, ibcK IBCKeeper) types.MsgServiceServer {
 	return msgServer{
 		Keeper:      k,
 		nexus:       n,
 		bank:        b,
 		ibcTransfer: t,
-		channelK:    c,
 		account:     a,
+		ibcK:        ibcK,
 	}
 }
 
@@ -354,7 +353,7 @@ func (s msgServer) RouteIBCTransfers(c context.Context, _ *types.RouteIBCTransfe
 				continue
 			}
 
-			funcs.MustNoErr(s.EnqueueTransfer(ctx, types.NewIBCTransfer(sender, p.Recipient.Address, token, portID, channelID)))
+			funcs.MustNoErr(s.EnqueueIBCTransfer(ctx, types.NewIBCTransfer(sender, p.Recipient.Address, token, portID, channelID, p.ID)))
 			s.nexus.ArchivePendingTransfer(ctx, p)
 		}
 	}
@@ -402,8 +401,7 @@ func (s msgServer) RetryIBCTransfer(c context.Context, req *types.RetryIBCTransf
 	if path != fmt.Sprintf("%s/%s", t.PortID, t.ChannelID) {
 		return nil, fmt.Errorf("chain %s IBC path doesn't match %s IBC transfer path", chain.Name, path)
 	}
-
-	err := SendIBCTransfer(ctx, s.Keeper, s.ibcTransfer, s.channelK, t)
+	err := s.ibcK.SendIBCTransfer(ctx, t)
 	if err != nil {
 		return nil, err
 	}
@@ -520,27 +518,4 @@ func prepareTransfer(ctx sdk.Context, k Keeper, n types.Nexus, b types.BankKeepe
 	}
 
 	return coin, sender, nil
-}
-
-// SendIBCTransfer inits an IBC transfer
-func SendIBCTransfer(ctx sdk.Context, k types.BaseKeeper, t types.IBCTransferKeeper, c types.ChannelKeeper, transfer types.IBCTransfer) error {
-	// map the packet sequence to transfer id
-	err := k.SetSeqIDMapping(ctx, transfer)
-	if err != nil {
-		return err
-	}
-
-	_, state, err := c.GetChannelClientState(ctx, transfer.PortID, transfer.ChannelID)
-	if err != nil {
-		return err
-	}
-
-	height := clienttypes.NewHeight(state.GetLatestHeight().GetRevisionNumber(), state.GetLatestHeight().GetRevisionHeight()+k.GetRouteTimeoutWindow(ctx))
-	ctx.Logger().Info(fmt.Sprintf("timeout height %s", height.String()))
-	err = t.SendTransfer(ctx, transfer.PortID, transfer.ChannelID, transfer.Token, transfer.Sender, transfer.Receiver, height, 0)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

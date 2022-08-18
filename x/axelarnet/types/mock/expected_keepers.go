@@ -26,8 +26,8 @@ var _ axelarnettypes.BaseKeeper = &BaseKeeperMock{}
 //
 // 		// make and configure a mocked axelarnettypes.BaseKeeper
 // 		mockedBaseKeeper := &BaseKeeperMock{
-// 			EnqueueTransferFunc: func(ctx cosmossdktypes.Context, transfer axelarnettypes.IBCTransfer) error {
-// 				panic("mock out the EnqueueTransfer method")
+// 			EnqueueIBCTransferFunc: func(ctx cosmossdktypes.Context, transfer axelarnettypes.IBCTransfer) error {
+// 				panic("mock out the EnqueueIBCTransfer method")
 // 			},
 // 			GetCosmosChainsFunc: func(ctx cosmossdktypes.Context) []github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName {
 // 				panic("mock out the GetCosmosChains method")
@@ -54,8 +54,8 @@ var _ axelarnettypes.BaseKeeper = &BaseKeeperMock{}
 //
 // 	}
 type BaseKeeperMock struct {
-	// EnqueueTransferFunc mocks the EnqueueTransfer method.
-	EnqueueTransferFunc func(ctx cosmossdktypes.Context, transfer axelarnettypes.IBCTransfer) error
+	// EnqueueIBCTransferFunc mocks the EnqueueIBCTransfer method.
+	EnqueueIBCTransferFunc func(ctx cosmossdktypes.Context, transfer axelarnettypes.IBCTransfer) error
 
 	// GetCosmosChainsFunc mocks the GetCosmosChains method.
 	GetCosmosChainsFunc func(ctx cosmossdktypes.Context) []github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
@@ -77,8 +77,8 @@ type BaseKeeperMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
-		// EnqueueTransfer holds details about calls to the EnqueueTransfer method.
-		EnqueueTransfer []struct {
+		// EnqueueIBCTransfer holds details about calls to the EnqueueIBCTransfer method.
+		EnqueueIBCTransfer []struct {
 			// Ctx is the ctx argument value.
 			Ctx cosmossdktypes.Context
 			// Transfer is the transfer argument value.
@@ -119,7 +119,7 @@ type BaseKeeperMock struct {
 			TransferID github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferID
 		}
 	}
-	lockEnqueueTransfer       sync.RWMutex
+	lockEnqueueIBCTransfer    sync.RWMutex
 	lockGetCosmosChains       sync.RWMutex
 	lockGetIBCTransferQueue   sync.RWMutex
 	lockGetRouteTimeoutWindow sync.RWMutex
@@ -128,10 +128,10 @@ type BaseKeeperMock struct {
 	lockSetTransferFailed     sync.RWMutex
 }
 
-// EnqueueTransfer calls EnqueueTransferFunc.
-func (mock *BaseKeeperMock) EnqueueTransfer(ctx cosmossdktypes.Context, transfer axelarnettypes.IBCTransfer) error {
-	if mock.EnqueueTransferFunc == nil {
-		panic("BaseKeeperMock.EnqueueTransferFunc: method is nil but BaseKeeper.EnqueueTransfer was just called")
+// EnqueueIBCTransfer calls EnqueueIBCTransferFunc.
+func (mock *BaseKeeperMock) EnqueueIBCTransfer(ctx cosmossdktypes.Context, transfer axelarnettypes.IBCTransfer) error {
+	if mock.EnqueueIBCTransferFunc == nil {
+		panic("BaseKeeperMock.EnqueueIBCTransferFunc: method is nil but BaseKeeper.EnqueueIBCTransfer was just called")
 	}
 	callInfo := struct {
 		Ctx      cosmossdktypes.Context
@@ -140,16 +140,16 @@ func (mock *BaseKeeperMock) EnqueueTransfer(ctx cosmossdktypes.Context, transfer
 		Ctx:      ctx,
 		Transfer: transfer,
 	}
-	mock.lockEnqueueTransfer.Lock()
-	mock.calls.EnqueueTransfer = append(mock.calls.EnqueueTransfer, callInfo)
-	mock.lockEnqueueTransfer.Unlock()
-	return mock.EnqueueTransferFunc(ctx, transfer)
+	mock.lockEnqueueIBCTransfer.Lock()
+	mock.calls.EnqueueIBCTransfer = append(mock.calls.EnqueueIBCTransfer, callInfo)
+	mock.lockEnqueueIBCTransfer.Unlock()
+	return mock.EnqueueIBCTransferFunc(ctx, transfer)
 }
 
-// EnqueueTransferCalls gets all the calls that were made to EnqueueTransfer.
+// EnqueueIBCTransferCalls gets all the calls that were made to EnqueueIBCTransfer.
 // Check the length with:
-//     len(mockedBaseKeeper.EnqueueTransferCalls())
-func (mock *BaseKeeperMock) EnqueueTransferCalls() []struct {
+//     len(mockedBaseKeeper.EnqueueIBCTransferCalls())
+func (mock *BaseKeeperMock) EnqueueIBCTransferCalls() []struct {
 	Ctx      cosmossdktypes.Context
 	Transfer axelarnettypes.IBCTransfer
 } {
@@ -157,9 +157,9 @@ func (mock *BaseKeeperMock) EnqueueTransferCalls() []struct {
 		Ctx      cosmossdktypes.Context
 		Transfer axelarnettypes.IBCTransfer
 	}
-	mock.lockEnqueueTransfer.RLock()
-	calls = mock.calls.EnqueueTransfer
-	mock.lockEnqueueTransfer.RUnlock()
+	mock.lockEnqueueIBCTransfer.RLock()
+	calls = mock.calls.EnqueueIBCTransfer
+	mock.lockEnqueueIBCTransfer.RUnlock()
 	return calls
 }
 

@@ -17,7 +17,7 @@ import (
 func BeginBlocker(_ sdk.Context, _ abci.RequestBeginBlock) {}
 
 // EndBlocker called every block, process inflation, update validator set.
-func EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock, bk types.BaseKeeper, t types.IBCTransferKeeper, c types.ChannelKeeper) ([]abci.ValidatorUpdate, error) {
+func EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock, bk types.BaseKeeper, ibcKeeper keeper.IBCKeeper) ([]abci.ValidatorUpdate, error) {
 	queue := bk.GetIBCTransferQueue(ctx)
 
 	var failed []types.IBCTransfer
@@ -27,7 +27,7 @@ func EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock, bk types.BaseKeeper, t 
 
 		succeeded := false
 		_ = utils.RunCached(ctx, bk, func(cachedCtx sdk.Context) ([]abci.ValidatorUpdate, error) {
-			err := keeper.SendIBCTransfer(cachedCtx, bk, t, c, transfer)
+			err := ibcKeeper.SendIBCTransfer(cachedCtx, transfer)
 			if err != nil {
 				bk.Logger(cachedCtx).Error(fmt.Sprintf("failed to send IBC transfer %s with id %s for %s:  %s", transfer.Token, transfer.ID.String(), transfer.Receiver, err))
 				return nil, err
