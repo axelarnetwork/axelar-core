@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"fmt"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -99,6 +98,7 @@ func TestGetMigrationHandler(t *testing.T) {
 				}),
 		).Run(t)
 
+	var pendingTransferIdx int
 	givenMigrationHandler.
 		Branch(
 			When("no old IBC transfer queue is empty", func() {}).
@@ -106,16 +106,26 @@ func TestGetMigrationHandler(t *testing.T) {
 				Then("should do nothing", func(t *testing.T) {
 					assert.True(t, keeper.GetIBCTransferQueue(ctx).IsEmpty())
 				}),
-			When("old IBC transfer queue is not empty", func() {
+			whenTransfersExist.
+				When("old IBC transfer queue is not empty", func() {
+					slices.ForEach(transfers, func(t types.IBCTransfer) { keeper.setTransfer(ctx, t) })
 
-				slices.ForEach(transfers, func(t types.IBCTransfer) { funcs.MustNoErr(enqueueIBCTransferToOldQueue(ctx, keeper, t)) })
-				assert.False(t, GetOldIBCTransferQueue(ctx, keeper).IsEmpty())
-			}).
+					// assume half of transfers are pending
+					pendingTransferIdx = len(transfers) / 2
+					slices.ForEach(transfers, func(t types.IBCTransfer) { funcs.MustNoErr(enqueueIBCTransferToOldQueue(ctx, keeper, t)) })
+
+					slices.ForEach(transfers[pendingTransferIdx:], func(t types.IBCTransfer) { funcs.MustNoErr(enqueueIBCTransferToOldQueue(ctx, keeper, t)) })
+					assert.False(t, GetOldIBCTransferQueue(ctx, keeper).IsEmpty())
+				}).
 				When2(whenMigrationRuns).
-				Then("should migrate from old queue to new", func(t *testing.T) {
+				Then("should migrate pending transfers from old queue to new", func(t *testing.T) {
 					assert.True(t, GetOldIBCTransferQueue(ctx, keeper).IsEmpty())
 					assert.False(t, keeper.GetIBCTransferQueue(ctx).IsEmpty())
 					assert.Equal(t, len(transfers), len(keeper.getIBCTransfers(ctx)))
+					for _, pendingT := range transfers[pendingTransferIdx:] {
+						axtualTransfer := funcs.MustOk(keeper.GetTransfer(ctx, pendingT.ID))
+						assert.Equal(t, types.TransferPending, axtualTransfer.Status)
+					}
 				}),
 		).Run(t)
 }
@@ -140,9 +150,6 @@ func setFailedTransfer(ctx sdk.Context, k Keeper, transfer types.IBCTransfer) {
 
 func enqueueIBCTransferToOldQueue(ctx sdk.Context, k Keeper, transfer types.IBCTransfer) error {
 	key := getTransferKey(transfer.ID)
-	if k.getStore(ctx).Has(key) {
-		return fmt.Errorf("transfer %s already exists", transfer.ID.String())
-	}
 
 	GetOldIBCTransferQueue(ctx, k).Enqueue(key, &transfer)
 	return nil
