@@ -23,8 +23,10 @@ var (
 	feeCollector      = utils.KeyFromStr("fee_collector")
 
 	transferPrefix       = utils.KeyFromStr("ibc_transfer")
-	ibcTransferQueueName = "ibc_transfer_queue"
-	nonceKey             = key.FromUInt[uint64](1)
+	ibcTransferQueueName = "route_transfer_queue"
+	// nonceKey is deprecated in v0.23
+	nonceKey = key.FromUInt[uint64](1)
+	// failedTransferPrefix is deprecated in v0.23
 	failedTransferPrefix = key.FromUInt[uint64](2)
 	seqIDMappingPrefix   = key.FromUInt[uint64](3)
 )
@@ -304,4 +306,18 @@ func (k Keeper) GetSeqIDMapping(ctx sdk.Context, portID, channelID string, seq u
 // DeleteSeqIDMapping deletes (port, channel, packet seq) -> transfer ID mapping
 func (k Keeper) DeleteSeqIDMapping(ctx sdk.Context, portID, channelID string, seq uint64) {
 	k.getStore(ctx).DeleteRaw(getSeqIDMappingKey(portID, channelID, seq).Bytes())
+}
+
+func (k Keeper) getIBCTransfers(ctx sdk.Context) (transfers []types.IBCTransfer) {
+	iter := k.getStore(ctx).Iterator(transferPrefix)
+	defer utils.CloseLogError(iter, k.Logger(ctx))
+
+	for ; iter.Valid(); iter.Next() {
+		var t types.IBCTransfer
+		iter.UnmarshalValue(&t)
+
+		transfers = append(transfers, t)
+	}
+
+	return transfers
 }
