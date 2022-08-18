@@ -7,6 +7,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 )
 
+// IBCKeeper provides function to send IBC transfer
 type IBCKeeper struct {
 	k            Keeper
 	ibcTransferK types.IBCTransferKeeper

@@ -31,6 +31,7 @@ func RandomIBCTransfer() types.IBCTransfer {
 	return transfer
 }
 
+// ClientState creates a new client state
 func ClientState() *ibctmtypes.ClientState {
 	return ibctmtypes.NewClientState(
 		"07-tendermint-0",
