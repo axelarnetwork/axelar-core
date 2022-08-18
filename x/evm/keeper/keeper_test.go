@@ -71,8 +71,7 @@ func TestCommands(t *testing.T) {
 
 		lastLength := len(chainKeeper.GetPendingCommands(ctx))
 		for {
-			_, err := chainKeeper.CreateNewBatchToSign(ctx)
-			assert.NoError(t, err)
+			chainKeeper.CreateCommandBatch(ctx)
 			remainingCmds := chainKeeper.GetPendingCommands(ctx)
 			assert.Less(t, len(remainingCmds), lastLength)
 			lastLength = len(remainingCmds)

@@ -184,8 +184,8 @@ func TestSignCommands(t *testing.T) {
 		chainKeeper.GetLatestCommandBatchFunc = func(ctx sdk.Context) types.CommandBatch {
 			return types.NonExistentCommand
 		}
-		chainKeeper.CreateNewBatchToSignFunc = func(ctx sdk.Context) (types.CommandBatch, error) {
-			return types.NewCommandBatch(expected, func(batch types.CommandBatchMetadata) {}), nil
+		chainKeeper.CreateCommandBatchFunc = func(ctx sdk.Context) types.CommandBatch {
+			return types.NewCommandBatch(expected, func(batch types.CommandBatchMetadata) {})
 		}
 		multisigKeeper.SignFunc = func(ctx sdk.Context, keyID multisig.KeyID, payloadHash multisig.Hash, module string, moduleMetadata ...codec.ProtoMarshaler) error {
 			return nil
@@ -195,9 +195,9 @@ func TestSignCommands(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Equal(t, uint32(len(expected.CommandIDs)), res.CommandCount)
-		assert.Equal(t, expected.ID, res.BatchedCommandsID)
+		assert.Equal(t, expected.ID, res.CommandBatchID)
 
-		assert.Len(t, chainKeeper.CreateNewBatchToSignCalls(), 1)
+		assert.Len(t, chainKeeper.CreateCommandBatchCalls(), 1)
 		assert.Len(t, multisigKeeper.SignCalls(), 1)
 	}))
 
@@ -232,9 +232,9 @@ func TestSignCommands(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Equal(t, uint32(len(commandBatch.CommandIDs)), res.CommandCount)
-		assert.Equal(t, commandBatch.ID, res.BatchedCommandsID)
+		assert.Equal(t, commandBatch.ID, res.CommandBatchID)
 
-		assert.Len(t, chainKeeper.CreateNewBatchToSignCalls(), 0)
+		assert.Len(t, chainKeeper.CreateCommandBatchCalls(), 0)
 		assert.Len(t, signerKeeper.SignCalls(), 1)
 	}))
 }

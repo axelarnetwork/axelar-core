@@ -67,11 +67,9 @@ type ChainKeeper interface {
 	EnqueueCommand(ctx sdk.Context, cmd Command) error
 	GetCommand(ctx sdk.Context, id CommandID) (Command, bool)
 	GetPendingCommands(ctx sdk.Context) []Command
-	CreateNewBatchToSign(ctx sdk.Context) (CommandBatch, error)
-	SetLatestSignedCommandBatchID(ctx sdk.Context, id []byte)
+	CreateCommandBatch(ctx sdk.Context) CommandBatch
 	GetLatestCommandBatch(ctx sdk.Context) CommandBatch
 	GetBatchByID(ctx sdk.Context, id []byte) CommandBatch
-	DeleteUnsignedCommandBatchID(ctx sdk.Context)
 
 	GetConfirmedEventQueue(ctx sdk.Context) utils.KVQueue
 	GetEvent(ctx sdk.Context, eventID EventID) (Event, bool)

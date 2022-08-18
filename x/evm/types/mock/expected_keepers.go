@@ -1847,11 +1847,11 @@ var _ evmtypes.ChainKeeper = &ChainKeeperMock{}
 //
 // 		// make and configure a mocked evmtypes.ChainKeeper
 // 		mockedChainKeeper := &ChainKeeperMock{
+// 			CreateCommandBatchFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) evmtypes.CommandBatch {
+// 				panic("mock out the CreateCommandBatch method")
+// 			},
 // 			CreateERC20TokenFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string, details evmtypes.TokenDetails, address evmtypes.Address) (evmtypes.ERC20Token, error) {
 // 				panic("mock out the CreateERC20Token method")
-// 			},
-// 			CreateNewBatchToSignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (evmtypes.CommandBatch, error) {
-// 				panic("mock out the CreateNewBatchToSign method")
 // 			},
 // 			DeleteDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, deposit evmtypes.ERC20Deposit)  {
 // 				panic("mock out the DeleteDeposit method")
@@ -1977,11 +1977,11 @@ var _ evmtypes.ChainKeeper = &ChainKeeperMock{}
 //
 // 	}
 type ChainKeeperMock struct {
+	// CreateCommandBatchFunc mocks the CreateCommandBatch method.
+	CreateCommandBatchFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) evmtypes.CommandBatch
+
 	// CreateERC20TokenFunc mocks the CreateERC20Token method.
 	CreateERC20TokenFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string, details evmtypes.TokenDetails, address evmtypes.Address) (evmtypes.ERC20Token, error)
-
-	// CreateNewBatchToSignFunc mocks the CreateNewBatchToSign method.
-	CreateNewBatchToSignFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (evmtypes.CommandBatch, error)
 
 	// DeleteDepositFunc mocks the DeleteDeposit method.
 	DeleteDepositFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, deposit evmtypes.ERC20Deposit)
@@ -2102,6 +2102,11 @@ type ChainKeeperMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// CreateCommandBatch holds details about calls to the CreateCommandBatch method.
+		CreateCommandBatch []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+		}
 		// CreateERC20Token holds details about calls to the CreateERC20Token method.
 		CreateERC20Token []struct {
 			// Ctx is the ctx argument value.
@@ -2112,11 +2117,6 @@ type ChainKeeperMock struct {
 			Details evmtypes.TokenDetails
 			// Address is the address argument value.
 			Address evmtypes.Address
-		}
-		// CreateNewBatchToSign holds details about calls to the CreateNewBatchToSign method.
-		CreateNewBatchToSign []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
 		// DeleteDeposit holds details about calls to the DeleteDeposit method.
 		DeleteDeposit []struct {
@@ -2362,8 +2362,8 @@ type ChainKeeperMock struct {
 			P evmtypes.Params
 		}
 	}
+	lockCreateCommandBatch            sync.RWMutex
 	lockCreateERC20Token              sync.RWMutex
-	lockCreateNewBatchToSign          sync.RWMutex
 	lockDeleteDeposit                 sync.RWMutex
 	lockDeleteUnsignedCommandBatchID  sync.RWMutex
 	lockEnqueueCommand                sync.RWMutex
@@ -2403,6 +2403,37 @@ type ChainKeeperMock struct {
 	lockSetGateway                    sync.RWMutex
 	lockSetLatestSignedCommandBatchID sync.RWMutex
 	lockSetParams                     sync.RWMutex
+}
+
+// CreateCommandBatch calls CreateCommandBatchFunc.
+func (mock *ChainKeeperMock) CreateCommandBatch(ctx github_com_cosmos_cosmos_sdk_types.Context) evmtypes.CommandBatch {
+	if mock.CreateCommandBatchFunc == nil {
+		panic("ChainKeeperMock.CreateCommandBatchFunc: method is nil but ChainKeeper.CreateCommandBatch was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockCreateCommandBatch.Lock()
+	mock.calls.CreateCommandBatch = append(mock.calls.CreateCommandBatch, callInfo)
+	mock.lockCreateCommandBatch.Unlock()
+	return mock.CreateCommandBatchFunc(ctx)
+}
+
+// CreateCommandBatchCalls gets all the calls that were made to CreateCommandBatch.
+// Check the length with:
+//     len(mockedChainKeeper.CreateCommandBatchCalls())
+func (mock *ChainKeeperMock) CreateCommandBatchCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+	}
+	mock.lockCreateCommandBatch.RLock()
+	calls = mock.calls.CreateCommandBatch
+	mock.lockCreateCommandBatch.RUnlock()
+	return calls
 }
 
 // CreateERC20Token calls CreateERC20TokenFunc.
@@ -2445,37 +2476,6 @@ func (mock *ChainKeeperMock) CreateERC20TokenCalls() []struct {
 	mock.lockCreateERC20Token.RLock()
 	calls = mock.calls.CreateERC20Token
 	mock.lockCreateERC20Token.RUnlock()
-	return calls
-}
-
-// CreateNewBatchToSign calls CreateNewBatchToSignFunc.
-func (mock *ChainKeeperMock) CreateNewBatchToSign(ctx github_com_cosmos_cosmos_sdk_types.Context) (evmtypes.CommandBatch, error) {
-	if mock.CreateNewBatchToSignFunc == nil {
-		panic("ChainKeeperMock.CreateNewBatchToSignFunc: method is nil but ChainKeeper.CreateNewBatchToSign was just called")
-	}
-	callInfo := struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
-	}{
-		Ctx: ctx,
-	}
-	mock.lockCreateNewBatchToSign.Lock()
-	mock.calls.CreateNewBatchToSign = append(mock.calls.CreateNewBatchToSign, callInfo)
-	mock.lockCreateNewBatchToSign.Unlock()
-	return mock.CreateNewBatchToSignFunc(ctx)
-}
-
-// CreateNewBatchToSignCalls gets all the calls that were made to CreateNewBatchToSign.
-// Check the length with:
-//     len(mockedChainKeeper.CreateNewBatchToSignCalls())
-func (mock *ChainKeeperMock) CreateNewBatchToSignCalls() []struct {
-	Ctx github_com_cosmos_cosmos_sdk_types.Context
-} {
-	var calls []struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
-	}
-	mock.lockCreateNewBatchToSign.RLock()
-	calls = mock.calls.CreateNewBatchToSign
-	mock.lockCreateNewBatchToSign.RUnlock()
 	return calls
 }
 

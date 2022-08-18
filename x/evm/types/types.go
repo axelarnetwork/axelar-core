@@ -930,7 +930,7 @@ func (b *CommandBatch) SetSigned(signature codec.ProtoMarshaler) error {
 }
 
 // NewCommandBatchMetadata assembles a CommandBatchMetadata struct from the provided arguments
-func NewCommandBatchMetadata(blockHeight int64, chainID sdk.Int, keyID multisig.KeyID, cmds []Command) (CommandBatchMetadata, error) {
+func NewCommandBatchMetadata(blockHeight int64, chainID sdk.Int, keyID multisig.KeyID, cmds []Command) CommandBatchMetadata {
 	var commandIDs []CommandID
 	var commands []string
 	var commandParams [][]byte
@@ -941,11 +941,7 @@ func NewCommandBatchMetadata(blockHeight int64, chainID sdk.Int, keyID multisig.
 		commandParams = append(commandParams, cmd.Params)
 	}
 
-	data, err := packArguments(chainID, commandIDs, commands, commandParams)
-	if err != nil {
-		return CommandBatchMetadata{}, err
-	}
-
+	data := packArguments(chainID, commandIDs, commands, commandParams)
 	bz := make([]byte, 8)
 	binary.BigEndian.PutUint64(bz, uint64(blockHeight))
 
@@ -956,7 +952,7 @@ func NewCommandBatchMetadata(blockHeight int64, chainID sdk.Int, keyID multisig.
 		SigHash:    Hash(GetSignHash(data)),
 		Status:     BatchSigning,
 		KeyID:      keyID,
-	}, nil
+	}
 }
 
 // UnpackInterfaces implements UnpackInterfacesMessage
@@ -1075,43 +1071,24 @@ func (m TokenDetails) Validate() error {
 	return nil
 }
 
-func packArguments(chainID sdk.Int, commandIDs []CommandID, commands []string, commandParams [][]byte) ([]byte, error) {
+func packArguments(chainID sdk.Int, commandIDs []CommandID, commands []string, commandParams [][]byte) []byte {
 	if len(commandIDs) != len(commands) || len(commandIDs) != len(commandParams) {
-		return nil, fmt.Errorf("length mismatch for command arguments")
+		panic(fmt.Errorf("length mismatch for command arguments"))
 	}
 
-	uint256Type, err := abi.NewType("uint256", "uint256", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	bytes32ArrayType, err := abi.NewType("bytes32[]", "bytes32[]", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	stringArrayType, err := abi.NewType("string[]", "string[]", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	bytesArrayType, err := abi.NewType("bytes[]", "bytes[]", nil)
-	if err != nil {
-		return nil, err
-	}
+	uint256Type := funcs.Must(abi.NewType("uint256", "uint256", nil))
+	bytes32ArrayType := funcs.Must(abi.NewType("bytes32[]", "bytes32[]", nil))
+	stringArrayType := funcs.Must(abi.NewType("string[]", "string[]", nil))
+	bytesArrayType := funcs.Must(abi.NewType("bytes[]", "bytes[]", nil))
 
 	arguments := abi.Arguments{{Type: uint256Type}, {Type: bytes32ArrayType}, {Type: stringArrayType}, {Type: bytesArrayType}}
-	result, err := arguments.Pack(
+
+	return funcs.Must(arguments.Pack(
 		chainID.BigInt(),
 		commandIDs,
 		commands,
 		commandParams,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	))
 }
 
 func createMintTokenParams(symbol string, address common.Address, amount *big.Int) ([]byte, error) {

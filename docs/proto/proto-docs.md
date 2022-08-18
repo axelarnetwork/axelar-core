@@ -3994,6 +3994,7 @@ address
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
+| `command_batch_id` | [bytes](#bytes) |  |  |
 
 
 
@@ -4008,7 +4009,7 @@ address
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `batched_commands_id` | [bytes](#bytes) |  |  |
+| `command_batch_id` | [bytes](#bytes) |  |  |
 | `command_count` | [uint32](#uint32) |  |  |
 
 

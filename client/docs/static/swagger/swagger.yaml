@@ -4900,7 +4900,7 @@ paths:
           schema:
             type: object
             properties:
-              batched_commands_id:
+              command_batch_id:
                 type: string
                 format: byte
               command_count:
@@ -5110,6 +5110,9 @@ paths:
                 format: byte
               chain:
                 type: string
+              command_batch_id:
+                type: string
+                format: byte
       tags:
         - MsgService
   /axelar/evm/v1beta1/batched_commands/{chain}/{id}:
@@ -41341,10 +41344,13 @@ definitions:
         format: byte
       chain:
         type: string
+      command_batch_id:
+        type: string
+        format: byte
   axelar.evm.v1beta1.SignCommandsResponse:
     type: object
     properties:
-      batched_commands_id:
+      command_batch_id:
         type: string
         format: byte
       command_count:

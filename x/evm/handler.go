@@ -72,7 +72,7 @@ func NewHandler(k types.BaseKeeper, v types.Voter, n types.Nexus, snapshotter ty
 				if res.CommandCount == 0 {
 					result.Log = "no command to sign found"
 				} else {
-					result.Log = fmt.Sprintf("successfully started signing batched commands with ID %s", hex.EncodeToString(res.BatchedCommandsID))
+					result.Log = fmt.Sprintf("successfully started signing batched commands with ID %s", hex.EncodeToString(res.CommandBatchID))
 				}
 			}
 			return result, err

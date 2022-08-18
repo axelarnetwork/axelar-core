@@ -608,17 +608,17 @@ func (s msgServer) createTransferKeyCommand(ctx sdk.Context, keeper types.ChainK
 	return types.CreateMultisigTransferCommand(chainID, keyID, nextKey), nil
 }
 
-func getCommandBatchToSign(ctx sdk.Context, keeper types.ChainKeeper) (types.CommandBatch, error) {
-	latest := keeper.GetLatestCommandBatch(ctx)
-
-	switch latest.GetStatus() {
-	case types.BatchSigning:
-		return types.CommandBatch{}, sdkerrors.Wrapf(types.ErrSignCommandsInProgress, "command batch '%s'", hex.EncodeToString(latest.GetID()))
-	case types.BatchAborted:
-		return latest, nil
-	default:
-		return keeper.CreateNewBatchToSign(ctx)
+func getCommandBatchToSign(ctx sdk.Context, keeper types.ChainKeeper, commandBatchID []byte) (types.CommandBatch, error) {
+	if commandBatchID == nil {
+		return keeper.CreateCommandBatch(ctx), nil
 	}
+
+	commandBatch := keeper.GetBatchByID(ctx, commandBatchID)
+	if !commandBatch.Is(types.BatchAborted) {
+		return types.CommandBatch{}, fmt.Errorf("command batch %s with status %s cannot be signed", hex.EncodeToString(commandBatchID), commandBatch.GetStatus().String())
+	}
+
+	return commandBatch, nil
 }
 
 func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsRequest) (*types.SignCommandsResponse, error) {
@@ -638,12 +638,12 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		return nil, fmt.Errorf("could not find chain ID for '%s'", chain.Name)
 	}
 
-	commandBatch, err := getCommandBatchToSign(ctx, keeper)
+	commandBatch, err := getCommandBatchToSign(ctx, keeper, req.CommandBatchID)
 	if err != nil {
 		return nil, err
 	}
 	if len(commandBatch.GetCommandIDs()) == 0 {
-		return &types.SignCommandsResponse{CommandCount: 0, BatchedCommandsID: nil}, nil
+		return &types.SignCommandsResponse{CommandCount: 0, CommandBatchID: nil}, nil
 	}
 
 	if err := s.multisigKeeper.Sign(
@@ -684,7 +684,7 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		),
 	)
 
-	return &types.SignCommandsResponse{CommandCount: uint32(len(commandBatch.GetCommandIDs())), BatchedCommandsID: commandBatch.GetID()}, nil
+	return &types.SignCommandsResponse{CommandCount: uint32(len(commandBatch.GetCommandIDs())), CommandBatchID: commandBatch.GetID()}, nil
 }
 
 func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*types.AddChainResponse, error) {

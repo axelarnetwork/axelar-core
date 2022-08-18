@@ -6,6 +6,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/utils/slices"
 )
 
 // InitGenesis initializes the state from a genesis file
@@ -32,15 +33,12 @@ func (k BaseKeeper) InitGenesis(ctx sdk.Context, state types.GenesisState) {
 			ck.SetDeposit(ctx, deposit, types.DepositStatus_Burned)
 		}
 
-		var latestBatch types.CommandBatchMetadata
 		for _, batch := range chain.CommandBatches {
 			ck.setCommandBatchMetadata(ctx, batch)
-			latestBatch = batch
 		}
 
-		if latestBatch.Status != types.BatchNonExistent {
-			ck.setLatestBatchMetadata(ctx, latestBatch)
-			ck.SetLatestSignedCommandBatchID(ctx, latestBatch.ID)
+		if len(chain.CommandBatches) > 0 {
+			ck.setLatestCommandBatchID(ctx, slices.Last(chain.CommandBatches).ID)
 		}
 
 		ck.setGateway(ctx, chain.Gateway)

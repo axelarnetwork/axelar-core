@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"encoding/binary"
-	"encoding/hex"
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -19,9 +18,8 @@ import (
 )
 
 var (
-	gatewayKey             = utils.KeyFromStr("gateway")
-	unsignedBatchIDKey     = utils.KeyFromStr("unsigned_command_batch_id")
-	latestSignedBatchIDKey = utils.KeyFromStr("latest_signed_command_batch_id")
+	gatewayKey              = utils.KeyFromStr("gateway")
+	latestCommandBatchIDKey = utils.KeyFromStr("latest_signed_command_batch_id")
 
 	tokenMetadataByAssetPrefix  = utils.KeyFromStr("token_deployment_by_asset")
 	tokenMetadataBySymbolPrefix = utils.KeyFromStr("token_deployment_by_symbol")
@@ -549,13 +547,10 @@ func (k chainKeeper) GetLatestCommandBatch(ctx sdk.Context) types.CommandBatch {
 }
 
 func (k chainKeeper) getLatestCommandBatchMetadata(ctx sdk.Context) types.CommandBatchMetadata {
-	if batch := k.getUnsignedCommandBatch(ctx); batch.Status != types.BatchNonExistent {
-		return batch
-	}
-
-	if id := k.getLatestSignedCommandBatchID(ctx); id != nil {
+	if id := k.getLatestCommandBatchID(ctx); id != nil {
 		return k.getCommandBatchMetadata(ctx, id)
 	}
+
 	return types.CommandBatchMetadata{Status: types.BatchNonExistent}
 }
 
@@ -573,34 +568,20 @@ func (k chainKeeper) getCommandBatchesMetadata(ctx sdk.Context) []types.CommandB
 	return batches
 }
 
-func (k chainKeeper) getLatestSignedCommandBatchID(ctx sdk.Context) []byte {
-	return k.getStore(ctx, k.chainLowerKey).GetRaw(latestSignedBatchIDKey)
+func (k chainKeeper) getLatestCommandBatchID(ctx sdk.Context) []byte {
+	return k.getStore(ctx, k.chainLowerKey).GetRaw(latestCommandBatchIDKey)
 }
 
-// SetLatestSignedCommandBatchID stores the latest signed command batch ID
-func (k chainKeeper) SetLatestSignedCommandBatchID(ctx sdk.Context, id []byte) {
-	k.getStore(ctx, k.chainLowerKey).SetRaw(latestSignedBatchIDKey, id)
+func (k chainKeeper) setLatestCommandBatchID(ctx sdk.Context, id []byte) {
+	k.getStore(ctx, k.chainLowerKey).SetRaw(latestCommandBatchIDKey, id)
 }
 
-func (k chainKeeper) setLatestBatchMetadata(ctx sdk.Context, batch types.CommandBatchMetadata) {
-	switch batch.Status {
-	case types.BatchNonExistent:
-		return
-	case types.BatchSigning, types.BatchAborted:
-		k.setUnsignedCommandBatchID(ctx, batch.ID)
-	case types.BatchSigned:
-		k.SetLatestSignedCommandBatchID(ctx, batch.ID)
-	default:
-		panic(fmt.Sprintf("batch status %s is not handled", batch.Status.String()))
-	}
-}
-
-// CreateNewBatchToSign creates a new batch of commands to be signed
-func (k chainKeeper) CreateNewBatchToSign(ctx sdk.Context) (types.CommandBatch, error) {
+// CreateCommandBatch creates a new batch of commands to be signed
+func (k chainKeeper) CreateCommandBatch(ctx sdk.Context) types.CommandBatch {
 	var firstCmd types.Command
 	ok := k.getCommandQueue(ctx).Dequeue(&firstCmd)
 	if !ok {
-		return types.CommandBatch{}, nil
+		return types.CommandBatch{}
 	}
 
 	chainID := sdk.NewIntFromBigInt(k.getSigner(ctx).ChainID())
@@ -625,41 +606,16 @@ func (k chainKeeper) CreateNewBatchToSign(ctx sdk.Context) (types.CommandBatch, 
 		commands = append(commands, cmd.Clone())
 	}
 
-	commandBatch, err := types.NewCommandBatchMetadata(ctx.BlockHeight(), chainID, keyID, commands)
-	if err != nil {
-		return types.CommandBatch{}, err
-	}
+	commandBatch := types.NewCommandBatchMetadata(ctx.BlockHeight(), chainID, keyID, commands)
 
-	latest := k.GetLatestCommandBatch(ctx)
-	if !latest.Is(types.BatchSigned) && !latest.Is(types.BatchNonExistent) {
-		return types.CommandBatch{}, fmt.Errorf("latest command batch %s is still being processed", hex.EncodeToString(latest.GetID()))
-	}
-
-	commandBatch.PrevBatchedCommandsID = latest.GetID()
+	commandBatch.PrevBatchedCommandsID = k.GetLatestCommandBatch(ctx).GetID()
 	k.setCommandBatchMetadata(ctx, commandBatch)
-	k.setUnsignedCommandBatchID(ctx, commandBatch.ID)
+	k.setLatestCommandBatchID(ctx, commandBatch.ID)
 
 	setter := func(m types.CommandBatchMetadata) {
 		k.setCommandBatchMetadata(ctx, m)
 	}
-	return types.NewCommandBatch(commandBatch, setter), nil
-}
-
-// DeleteUnsignedCommandBatchID deletes the unsigned command batch ID
-func (k chainKeeper) DeleteUnsignedCommandBatchID(ctx sdk.Context) {
-	k.getStore(ctx, k.chainLowerKey).Delete(unsignedBatchIDKey)
-}
-
-func (k chainKeeper) getUnsignedCommandBatch(ctx sdk.Context) types.CommandBatchMetadata {
-	if id := k.getStore(ctx, k.chainLowerKey).GetRaw(unsignedBatchIDKey); id != nil {
-		return k.getCommandBatchMetadata(ctx, id)
-	}
-
-	return types.CommandBatchMetadata{}
-}
-
-func (k chainKeeper) setUnsignedCommandBatchID(ctx sdk.Context, id []byte) {
-	k.getStore(ctx, k.chainLowerKey).SetRaw(unsignedBatchIDKey, id)
+	return types.NewCommandBatch(commandBatch, setter)
 }
 
 // returns the queue of commands

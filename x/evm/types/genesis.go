@@ -135,10 +135,6 @@ func (m GenesisState) Validate() error {
 			return getValidateError(j, sdkerrors.Wrapf(err, "invalid command batches"))
 		}
 
-		if err := validateCommandBatches(chain.CommandBatches); err != nil {
-			return getValidateError(j, sdkerrors.Wrapf(err, "invalid command batches"))
-		}
-
 		if err := chain.CommandQueue.ValidateBasic(); err != nil {
 			return getValidateError(j, sdkerrors.Wrapf(err, "invalid command queue state"))
 		}
@@ -170,15 +166,10 @@ func (m GenesisState) Validate() error {
 
 func validateCommandBatches(batches []CommandBatchMetadata) error {
 	var batchesWithoutPreviousBatch []string
-	var batchesWithoutCompleteSign []string
 
 	for i, batch := range batches {
 		if batch.Status == BatchNonExistent {
 			return fmt.Errorf("status of command batch %d not set", i)
-		}
-
-		if batch.Status != BatchSigned {
-			batchesWithoutCompleteSign = append(batchesWithoutCompleteSign, strconv.Itoa(i))
 		}
 
 		if batch.ID == nil {
@@ -193,10 +184,6 @@ func validateCommandBatches(batches []CommandBatchMetadata) error {
 			return fmt.Errorf("previous batch ID mismatch at index %d (want '%s', got '%s')",
 				i, hex.EncodeToString(batches[i-1].ID), hex.EncodeToString(batch.PrevBatchedCommandsID))
 		}
-	}
-
-	if len(batchesWithoutCompleteSign) > 1 {
-		return fmt.Errorf("multiple uncompleted command batches: %s", strings.Join(batchesWithoutCompleteSign, ", "))
 	}
 
 	if len(batchesWithoutPreviousBatch) > 1 {

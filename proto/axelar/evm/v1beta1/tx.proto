@@ -203,11 +203,11 @@ message SignCommandsRequest {
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  bytes command_batch_id = 3 [ (gogoproto.customname) = "CommandBatchID" ];
 }
 
 message SignCommandsResponse {
-  bytes batched_commands_id = 1
-      [ (gogoproto.customname) = "BatchedCommandsID" ];
+  bytes command_batch_id = 1 [ (gogoproto.customname) = "CommandBatchID" ];
   uint32 command_count = 2;
 }
 
