@@ -1720,8 +1720,12 @@ func (id EventID) Validate() error {
 	}
 
 	bz, err := hexutil.Decode(arr[0])
-	if err != nil || len(bz) != common.HashLength {
-		return sdkerrors.Wrap(err, "invalid tx hash")
+	if err != nil {
+		return sdkerrors.Wrap(err, "invalid tx hash hex encoding")
+	}
+
+	if len(bz) != common.HashLength {
+		return fmt.Errorf("invalid tx hash length")
 	}
 
 	_, err = strconv.ParseInt(arr[1], 10, 64)
