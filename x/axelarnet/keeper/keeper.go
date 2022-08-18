@@ -224,7 +224,6 @@ func (k Keeper) GetFailedTransfer(ctx sdk.Context, id nexus.TransferID) (transfe
 func (k Keeper) GetTransfer(ctx sdk.Context, id nexus.TransferID) (transfer types.IBCTransfer, ok bool) {
 	k.getStore(ctx).Get(getTransferKey(id), &transfer)
 	return transfer, transfer.Status != types.TransferNonExistent
-
 }
 
 func (k Keeper) setTransfer(ctx sdk.Context, transfer types.IBCTransfer) {

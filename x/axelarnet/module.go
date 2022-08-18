@@ -282,10 +282,10 @@ func (am AppModule) OnAcknowledgementPacket(
 	var ack channeltypes.Acknowledgement
 	_ = types.ModuleCdc.UnmarshalJSON(acknowledgement, &ack)
 	switch ack.Response.(type) {
-	case *channeltypes.Acknowledgement_Error:
-		return setTransferFailed(ctx, am.keeper, packet.SourcePort, packet.SourceChannel, packet.Sequence)
-	default:
+	case *channeltypes.Acknowledgement_Result:
 		return setTransferCompleted(ctx, am.keeper, packet.SourcePort, packet.SourceChannel, packet.Sequence)
+	default:
+		return setTransferFailed(ctx, am.keeper, packet.SourcePort, packet.SourceChannel, packet.Sequence)
 	}
 }
 
@@ -310,7 +310,7 @@ func (am AppModule) NegotiateAppVersion(ctx sdk.Context, order channeltypes.Orde
 
 // returns true if mapping exits
 func getSeqIDMapping(ctx sdk.Context, k keeper.Keeper, portID, channelID string, seq uint64) (nexus.TransferID, bool) {
-	k.DeleteSeqIDMapping(ctx, portID, channelID, seq)
+	defer k.DeleteSeqIDMapping(ctx, portID, channelID, seq)
 
 	return k.GetSeqIDMapping(ctx, portID, channelID, seq)
 }
