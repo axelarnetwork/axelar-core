@@ -112,7 +112,7 @@ func randomNormalizedStr(min, max int) string {
 // randomTransferQueue returns a random (valid) transfer queue state for testing
 func randomTransferQueue(cdc codec.Codec) utils.QueueState {
 	qs := utils.QueueState{Items: make(map[string]utils.QueueState_Item)}
-	queueName := "ibc_transfer_queue"
+	queueName := "route_transfer_queue"
 	queueLen := rand.I64Between(0, 20)
 	keyPrefix := utils.KeyFromStr("transfer")
 
