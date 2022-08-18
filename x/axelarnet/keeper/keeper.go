@@ -22,11 +22,11 @@ var (
 	cosmosChainPrefix = utils.KeyFromStr("cosmos_chain")
 	feeCollector      = utils.KeyFromStr("fee_collector")
 
-	transferPrefix       = utils.KeyFromStr("ibc_transfer")
-	ibcTransferQueueName = "ibc_transfer_queue"
-	nonceKey             = key.FromUInt[uint64](1)
-	failedTransferPrefix = key.FromUInt[uint64](2)
-	seqIDMappingPrefix   = key.FromUInt[uint64](3)
+	transferPrefix         = utils.KeyFromStr("ibc_transfer")
+	routeTransferQueueName = "route_transfer_queue"
+	nonceKey               = key.FromUInt[uint64](1)
+	failedTransferPrefix   = key.FromUInt[uint64](2)
+	seqIDMappingPrefix     = key.FromUInt[uint64](3)
 )
 
 // Keeper provides access to all state changes regarding the Axelarnet module
@@ -166,7 +166,7 @@ func (k Keeper) getStore(ctx sdk.Context) utils.KVStore {
 // GetIBCTransferQueue returns the queue of IBC transfers
 func (k Keeper) GetIBCTransferQueue(ctx sdk.Context) utils.KVQueue {
 	return utils.NewGeneralKVQueue(
-		ibcTransferQueueName,
+		routeTransferQueueName,
 		k.getStore(ctx),
 		k.Logger(ctx),
 		func(value codec.ProtoMarshaler) utils.Key {
@@ -211,15 +211,6 @@ func (k Keeper) validateIBCTransferQueueState(state utils.QueueState, queueName 
 	return nil
 }
 
-func getFailedTransferKey(id nexus.TransferID) key.Key {
-	return failedTransferPrefix.Append(key.FromBz(id.Bytes()))
-}
-
-// GetFailedTransfer returns the failed transfer for the given transfer ID
-func (k Keeper) GetFailedTransfer(ctx sdk.Context, id nexus.TransferID) (transfer types.IBCTransfer, ok bool) {
-	return transfer, k.getStore(ctx).GetNew(getFailedTransferKey(id), &transfer)
-}
-
 // GetTransfer returns the ibc transfer for the given transfer ID
 func (k Keeper) GetTransfer(ctx sdk.Context, id nexus.TransferID) (transfer types.IBCTransfer, ok bool) {
 	k.getStore(ctx).Get(getTransferKey(id), &transfer)
@@ -230,18 +221,18 @@ func (k Keeper) setTransfer(ctx sdk.Context, transfer types.IBCTransfer) {
 	k.getStore(ctx).Set(getTransferKey(transfer.ID), &transfer)
 }
 
-func (k Keeper) getFailedTransfers(ctx sdk.Context) (failedTransfers []types.IBCTransfer) {
-	iter := k.getStore(ctx).IteratorNew(failedTransferPrefix)
+func (k Keeper) getIBCTransfers(ctx sdk.Context) (transfers []types.IBCTransfer) {
+	iter := k.getStore(ctx).Iterator(transferPrefix)
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
 	for ; iter.Valid(); iter.Next() {
 		var t types.IBCTransfer
 		iter.UnmarshalValue(&t)
 
-		failedTransfers = append(failedTransfers, t)
+		transfers = append(transfers, t)
 	}
 
-	return failedTransfers
+	return transfers
 }
 
 func (k Keeper) setTransferStatus(ctx sdk.Context, transferID nexus.TransferID, status types.IBCTransfer_Status) error {
@@ -304,4 +295,20 @@ func (k Keeper) GetSeqIDMapping(ctx sdk.Context, portID, channelID string, seq u
 // DeleteSeqIDMapping deletes (port, channel, packet seq) -> transfer ID mapping
 func (k Keeper) DeleteSeqIDMapping(ctx sdk.Context, portID, channelID string, seq uint64) {
 	k.getStore(ctx).DeleteRaw(getSeqIDMappingKey(portID, channelID, seq).Bytes())
+}
+
+func (k Keeper) getSeqIDMappings(ctx sdk.Context) map[string]uint64 {
+	mapping := make(map[string]uint64)
+
+	iter := k.getStore(ctx).IteratorNew(seqIDMappingPrefix)
+	defer utils.CloseLogError(iter, k.Logger(ctx))
+
+	for ; iter.Valid(); iter.Next() {
+		var val gogoprototypes.UInt64Value
+		iter.UnmarshalValue(&val)
+
+		mapping[string(iter.Key())] = val.Value
+	}
+
+	return mapping
 }

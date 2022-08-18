@@ -8,17 +8,19 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
 // NewGenesisState returns a new GenesisState instance
-func NewGenesisState(p Params, feeCollector sdk.AccAddress, chains []CosmosChain, transferQueue utils.QueueState, failedTransfers []IBCTransfer) *GenesisState {
+func NewGenesisState(p Params, feeCollector sdk.AccAddress, chains []CosmosChain, transferQueue utils.QueueState, transfers []IBCTransfer, seqIDMapping map[string]uint64) *GenesisState {
 	SortChains(chains)
 	return &GenesisState{
 		Params:           p,
 		CollectorAddress: feeCollector,
 		Chains:           chains,
 		TransferQueue:    transferQueue,
-		FailedTransfers:  failedTransfers,
+		IBCTransfers:     transfers,
+		SeqIDMapping:     seqIDMapping,
 	}
 }
 
@@ -32,6 +34,7 @@ func DefaultGenesisState() *GenesisState {
 			AddrPrefix: "axelar",
 		}},
 		TransferQueue: utils.QueueState{},
+		IBCTransfers:  nil,
 	}
 }
 
@@ -55,6 +58,34 @@ func (m GenesisState) Validate() error {
 
 	if err := m.TransferQueue.ValidateBasic(); err != nil {
 		return getValidateError(sdkerrors.Wrapf(err, "invalid transfer queue state"))
+	}
+
+	// ibc transfer ID should be unique
+	transferSeen := make(map[nexus.TransferID]bool)
+	for _, t := range m.IBCTransfers {
+		if transferSeen[t.ID] {
+			return getValidateError(fmt.Errorf("duplicate transfer ID %d", t.ID))
+		}
+
+		if t.Status == TransferNonExistent {
+			return getValidateError(fmt.Errorf("invalid status of transfer %s", t.ID))
+		}
+
+		if err := t.ValidateBasic(); err != nil {
+			return getValidateError(sdkerrors.Wrapf(err, "invalid transfer %s", t.ID))
+		}
+
+		transferSeen[t.ID] = true
+	}
+
+	// IBCTransfer ID should be uniquely mapped
+	transferIDSeen := make(map[uint64]bool)
+	for seqKey, id := range m.SeqIDMapping {
+		if transferIDSeen[id] {
+			return getValidateError(fmt.Errorf("duplicate transfer ID %d for %s", id, seqKey))
+		}
+
+		transferIDSeen[id] = true
 	}
 
 	return nil

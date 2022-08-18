@@ -10,6 +10,8 @@ import "axelar/utils/v1beta1/queuer.proto";
 option (gogoproto.goproto_getters_all) = false;
 
 message GenesisState {
+  option (gogoproto.stable_marshaler) = true;
+
   Params params = 1 [ (gogoproto.nullable) = false ];
   bytes collector_address = 2
       [ (gogoproto.casttype) =
@@ -17,5 +19,9 @@ message GenesisState {
   repeated CosmosChain chains = 3 [ (gogoproto.nullable) = false ];
   reserved 4; // pending_transfers was removed in v0.20
   utils.v1beta1.QueueState transfer_queue = 5 [ (gogoproto.nullable) = false ];
-  repeated IBCTransfer failed_transfers = 6 [ (gogoproto.nullable) = false ];
+  reserved 6; // failed_transfers was removed in v0.22
+  repeated IBCTransfer ibc_transfers = 7
+      [ (gogoproto.nullable) = false, (gogoproto.customname) = "IBCTransfers" ];
+  map<string, uint64> seq_id_mapping = 8
+      [ (gogoproto.nullable) = false, (gogoproto.customname) = "SeqIDMapping" ];
 }
