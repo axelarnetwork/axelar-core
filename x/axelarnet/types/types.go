@@ -8,9 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/address"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
 	host "github.com/cosmos/ibc-go/v2/modules/core/24-host"
-	ibc "github.com/cosmos/ibc-go/v2/modules/core/exported"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
@@ -116,20 +114,38 @@ func (m CosmosChain) Validate() error {
 	return nil
 }
 
-// NewIBCTransfer creates an IBC transfer
-func NewIBCTransfer(sender sdk.AccAddress, receiver string, token sdk.Coin, portID string, channelID string) IBCTransfer {
+// NewIBCTransfer creates a new pending IBC transfer
+func NewIBCTransfer(sender sdk.AccAddress, receiver string, token sdk.Coin, portID string, channelID string, id nexus.TransferID) IBCTransfer {
 	return IBCTransfer{
 		Sender:    sender,
 		Receiver:  receiver,
 		Token:     token,
 		PortID:    portID,
 		ChannelID: channelID,
+		ID:        id,
+		Status:    TransferPending,
 	}
 }
 
-// SetID set the ID for IBCTransfer
-func (m *IBCTransfer) SetID(id nexus.TransferID) {
-	m.ID = id
+// SetStatus sets the transfer status
+func (m *IBCTransfer) SetStatus(status IBCTransfer_Status) error {
+	switch status {
+	case TransferCompleted, TransferFailed:
+		// set from pending to completed or failed
+		if m.Status != TransferPending {
+			return fmt.Errorf("transfer %s is not pending", m.ID)
+		}
+	case TransferPending:
+		// set from failed to pending
+		if m.Status != TransferFailed {
+			return fmt.Errorf("transfer %s is not failed", m.ID)
+		}
+	default:
+		return fmt.Errorf("invalid status %s", status)
+	}
+
+	m.Status = status
+	return nil
 }
 
 // ValidateBasic returns an error if the given IBCTransfer is invalid; nil otherwise
@@ -155,28 +171,4 @@ func (m IBCTransfer) ValidateBasic() error {
 	}
 
 	return nil
-}
-
-// PacketToTransfer converts IBC packet to IBC transfer
-func PacketToTransfer(packet ibc.PacketI) (IBCTransfer, error) {
-	var data types.FungibleTokenPacketData
-	if err := ModuleCdc.UnmarshalJSON(packet.GetData(), &data); err != nil {
-		return IBCTransfer{}, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "cannot unmarshal ICS-20 transfer packet data: %s", err.Error())
-	}
-	sender, err := sdk.AccAddressFromBech32(data.Sender)
-	if err != nil {
-		return IBCTransfer{}, err
-	}
-
-	// parse the denomination from the full denom path
-	trace := types.ParseDenomTrace(data.Denom)
-
-	// parse the transfer amount
-	transferAmount, ok := sdk.NewIntFromString(data.Amount)
-	if !ok {
-		return IBCTransfer{}, sdkerrors.Wrapf(types.ErrInvalidAmount, "unable to parse transfer amount (%s) into sdk.Int", data.Amount)
-	}
-	token := sdk.NewCoin(trace.IBCDenom(), transferAmount)
-
-	return NewIBCTransfer(sender, data.Receiver, token, packet.GetSourcePort(), packet.GetSourceChannel()), nil
 }

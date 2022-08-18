@@ -4,10 +4,13 @@ import (
 	"crypto/sha256"
 	"fmt"
 	mathRand "math/rand"
+	"strings"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	ibctypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
+	clienttypes "github.com/cosmos/ibc-go/v2/modules/core/02-client/types"
+	ibcclient "github.com/cosmos/ibc-go/v2/modules/core/exported"
 	"github.com/stretchr/testify/assert"
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 
@@ -34,11 +37,11 @@ func TestHandleMsgLink(t *testing.T) {
 	)
 
 	givenMsgServer := Given("an axelarnet msg server", func() {
-		ctx, k = setup()
+		ctx, k, _ = setup()
 		k.InitGenesis(ctx, types.DefaultGenesisState())
 		nexusK = &mock.NexusMock{}
-
-		server = keeper.NewMsgServerImpl(k, nexusK, &mock.BankKeeperMock{}, &mock.IBCTransferKeeperMock{}, &mock.AccountKeeperMock{})
+		ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{}, &mock.ChannelKeeperMock{})
+		server = keeper.NewMsgServerImpl(k, nexusK, &mock.BankKeeperMock{}, &mock.IBCTransferKeeperMock{}, &mock.AccountKeeperMock{}, ibcK)
 	})
 
 	whenChainIsRegistered := When("chain is registered", func() {
@@ -116,7 +119,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 	ibcPath := randomIBCPath()
 	chain := nexustestutils.Chain()
 	givenMsgServer := Given("an axelarnet msg server", func() {
-		ctx, k = setup()
+		ctx, k, _ = setup()
 		k.InitGenesis(ctx, types.DefaultGenesisState())
 		k.SetCosmosChain(ctx, types.CosmosChain{
 			Name:       chain.Name,
@@ -140,7 +143,8 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 				}, true
 			},
 		}
-		server = keeper.NewMsgServerImpl(k, nexusK, bankK, transferK, &mock.AccountKeeperMock{})
+		ibcK := keeper.NewIBCKeeper(k, transferK, &mock.ChannelKeeperMock{})
+		server = keeper.NewMsgServerImpl(k, nexusK, bankK, transferK, &mock.AccountKeeperMock{}, ibcK)
 	})
 
 	recipientIsFound := When("recipient is found", func() {
@@ -375,7 +379,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 	)
 
 	givenMsgServer := Given("an axelarnet msg server", func() {
-		ctx, k = setup()
+		ctx, k, _ = setup()
 		k.InitGenesis(ctx, types.DefaultGenesisState())
 		funcs.MustNoErr(k.SetFeeCollector(ctx, rand.AccAddr()))
 		nexusK = &mock.NexusMock{
@@ -395,7 +399,8 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 				return rand.AccAddr()
 			},
 		}
-		server = keeper.NewMsgServerImpl(k, nexusK, bankK, transferK, accountK)
+		ibcK := keeper.NewIBCKeeper(k, transferK, &mock.ChannelKeeperMock{})
+		server = keeper.NewMsgServerImpl(k, nexusK, bankK, transferK, accountK, ibcK)
 	})
 
 	whenAssetOriginsFromExternalCosmosChain := When("asset is from external cosmos chain", func() {
@@ -537,10 +542,10 @@ func TestHandleMsgRegisterIBCPath(t *testing.T) {
 	)
 
 	givenMsgServer := Given("an axelarnet msg server", func() {
-		ctx, k = setup()
+		ctx, k, _ = setup()
 		k.InitGenesis(ctx, types.DefaultGenesisState())
-
-		server = keeper.NewMsgServerImpl(k, &mock.NexusMock{}, &mock.BankKeeperMock{}, &mock.IBCTransferKeeperMock{}, &mock.AccountKeeperMock{})
+		ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{}, &mock.ChannelKeeperMock{})
+		server = keeper.NewMsgServerImpl(k, &mock.NexusMock{}, &mock.BankKeeperMock{}, &mock.IBCTransferKeeperMock{}, &mock.AccountKeeperMock{}, ibcK)
 	})
 
 	whenChainIsACosmosChain := When("chain is a cosmos chain", func() {
@@ -599,7 +604,7 @@ func TestHandleMsgRouteIBCTransfers(t *testing.T) {
 	)
 
 	givenMsgServer := Given("an axelarnet msg server", func() {
-		ctx, k = setup()
+		ctx, k, _ = setup()
 		k.InitGenesis(ctx, types.DefaultGenesisState())
 		transfersNum = 0
 		cosmosChains = slices.Expand(func(i int) types.CosmosChain {
@@ -630,7 +635,8 @@ func TestHandleMsgRouteIBCTransfers(t *testing.T) {
 				return rand.AccAddr()
 			},
 		}
-		server = keeper.NewMsgServerImpl(k, nexusK, bankK, transferK, accountK)
+		ibcK := keeper.NewIBCKeeper(k, transferK, &mock.ChannelKeeperMock{})
+		server = keeper.NewMsgServerImpl(k, nexusK, bankK, transferK, accountK, ibcK)
 	})
 
 	whenAssetOriginsFromExternalCosmosChain := When("asset is from external cosmos chain", func() {
@@ -750,20 +756,23 @@ func TestHandleMsgRouteIBCTransfers(t *testing.T) {
 
 func TestRetryIBCTransfer(t *testing.T) {
 	var (
-		server types.MsgServiceServer
-		k      keeper.Keeper
-		n      *mock.NexusMock
-		b      *mock.BankKeeperMock
-		i      *mock.IBCTransferKeeperMock
-		a      *mock.AccountKeeperMock
-		ctx    sdk.Context
-		chain  nexus.Chain
-		req    *types.RetryIBCTransferRequest
-		path   string
+		server   types.MsgServiceServer
+		k        keeper.Keeper
+		n        *mock.NexusMock
+		b        *mock.BankKeeperMock
+		i        *mock.IBCTransferKeeperMock
+		a        *mock.AccountKeeperMock
+		channelK *mock.ChannelKeeperMock
+		ctx      sdk.Context
+		chain    nexus.Chain
+		req      *types.RetryIBCTransferRequest
+		path     string
+		transfer types.IBCTransfer
 	)
 
 	givenMessageServer := Given("a message server", func() {
-		ctx, k = setup()
+		ctx, k, channelK = setup()
+		k.InitGenesis(ctx, types.DefaultGenesisState())
 		chain = nexustestutils.Chain()
 		path = randomIBCPath()
 		k.SetCosmosChain(ctx, types.CosmosChain{Name: chain.Name})
@@ -771,7 +780,11 @@ func TestRetryIBCTransfer(t *testing.T) {
 
 		b = &mock.BankKeeperMock{}
 		a = &mock.AccountKeeperMock{}
-		i = &mock.IBCTransferKeeperMock{}
+		i = &mock.IBCTransferKeeperMock{
+			SendTransferFunc: func(sdk.Context, string, string, sdk.Coin, sdk.AccAddress, string, clienttypes.Height, uint64) error {
+				return nil
+			},
+		}
 
 		n = &mock.NexusMock{
 			GetChainFunc: func(sdk.Context, nexus.ChainName) (nexus.Chain, bool) {
@@ -782,34 +795,72 @@ func TestRetryIBCTransfer(t *testing.T) {
 				return nexus.TransferID(rand.I64Between(1, 9999)), nil
 			},
 		}
-
-		server = keeper.NewMsgServerImpl(k, n, b, i, a)
+		channelK.GetNextSequenceSendFunc = func(sdk.Context, string, string) (uint64, bool) {
+			return uint64(rand.I64Between(1, 99999)), true
+		}
+		channelK.GetChannelClientStateFunc = func(sdk.Context, string, string) (string, ibcclient.ClientState, error) {
+			return "07-tendermint-0", axelartestutils.ClientState(), nil
+		}
+		ibcK := keeper.NewIBCKeeper(k, i, channelK)
+		server = keeper.NewMsgServerImpl(k, n, b, i, a, ibcK)
 	})
 
 	requestIsMade := When("a retry failed transfer request is made", func() {
 		req = types.NewRetryIBCTransferRequest(
 			rand.AccAddr(),
 			chain.Name,
-			nexus.TransferID(rand.I64Between(1, 9999)),
+			transfer.ID,
 		)
+	})
+
+	whenTransferIsFailed := When("transfer is failed", func() {
+		transfer = axelartestutils.RandomIBCTransfer()
+		transfer.ChannelID = strings.Split(path, "/")[1]
+		funcs.MustNoErr(k.EnqueueIBCTransfer(ctx, transfer))
+		funcs.MustNoErr(k.SetTransferFailed(ctx, transfer.ID))
 	})
 
 	givenMessageServer.
 		Branch(
-			When("transfer id not found", func() {}).
+			When("transfer is not found", func() {}).
 				When2(requestIsMade).
 				Then("should return error", func(t *testing.T) {
 					_, err := server.RetryIBCTransfer(sdk.WrapSDKContext(ctx), req)
 					assert.Error(t, err)
 				}),
-			When("ibc path does not match", func() {
+
+			When("transfer is not failed", func() {
 				transfer := axelartestutils.RandomIBCTransfer()
-				k.SetFailedTransfer(ctx, transfer)
+				funcs.MustNoErr(k.EnqueueIBCTransfer(ctx, transfer))
+				funcs.MustNoErr(k.SetTransferCompleted(ctx, transfer.ID))
 			}).
 				When2(requestIsMade).
 				Then("should return error", func(t *testing.T) {
 					_, err := server.RetryIBCTransfer(sdk.WrapSDKContext(ctx), req)
 					assert.Error(t, err)
+				}),
+
+			When("ibc path does not match", func() {
+				transfer := axelartestutils.RandomIBCTransfer()
+				funcs.MustNoErr(k.EnqueueIBCTransfer(ctx, transfer))
+				funcs.MustNoErr(k.SetTransferFailed(ctx, transfer.ID))
+			}).
+				When2(requestIsMade).
+				Then("should return error", func(t *testing.T) {
+					_, err := server.RetryIBCTransfer(sdk.WrapSDKContext(ctx), req)
+					assert.Error(t, err)
+				}),
+
+			whenTransferIsFailed.
+				When("ibc path matches", func() {}).
+				When("send transfer succeeds", func() {}).
+				When2(requestIsMade).
+				Then("retry succeeds", func(t *testing.T) {
+					_, err := server.RetryIBCTransfer(sdk.WrapSDKContext(ctx), req)
+					assert.NoError(t, err)
+					retiedTransfer, ok := k.GetTransfer(ctx, transfer.ID)
+					assert.True(t, ok)
+					assert.Equal(t, types.TransferPending, retiedTransfer.Status)
 				}),
 		).Run(t)
 

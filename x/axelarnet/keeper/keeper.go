@@ -5,7 +5,9 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
+	channeltypes "github.com/cosmos/ibc-go/v2/modules/core/04-channel/types"
 	gogoprototypes "github.com/gogo/protobuf/types"
 	"github.com/tendermint/tendermint/libs/log"
 
@@ -24,6 +26,7 @@ var (
 	ibcTransferQueueName = "ibc_transfer_queue"
 	nonceKey             = key.FromUInt[uint64](1)
 	failedTransferPrefix = key.FromUInt[uint64](2)
+	seqIDMappingPrefix   = key.FromUInt[uint64](3)
 )
 
 // Keeper provides access to all state changes regarding the Axelarnet module
@@ -31,11 +34,13 @@ type Keeper struct {
 	storeKey sdk.StoreKey
 	cdc      codec.BinaryCodec
 	params   params.Subspace
+
+	channelK types.ChannelKeeper
 }
 
 // NewKeeper returns a new axelarnet keeper
-func NewKeeper(cdc codec.BinaryCodec, storeKey sdk.StoreKey, paramSpace params.Subspace) Keeper {
-	return Keeper{cdc: cdc, storeKey: storeKey, params: paramSpace.WithKeyTable(types.KeyTable())}
+func NewKeeper(cdc codec.BinaryCodec, storeKey sdk.StoreKey, paramSpace params.Subspace, channelK types.ChannelKeeper) Keeper {
+	return Keeper{cdc: cdc, storeKey: storeKey, params: paramSpace.WithKeyTable(types.KeyTable()), channelK: channelK}
 }
 
 // Logger returns a module-specific logger.
@@ -171,25 +176,19 @@ func (k Keeper) GetIBCTransferQueue(ctx sdk.Context) utils.KVQueue {
 	)
 }
 
-// EnqueueTransfer stores the pending ibc transfer in the queue
-func (k Keeper) EnqueueTransfer(ctx sdk.Context, transfer types.IBCTransfer) error {
-	transfer.SetID(k.nextTransferID(ctx))
+func getTransferKey(id nexus.TransferID) utils.Key {
+	return transferPrefix.AppendStr(id.String())
+}
 
-	key := transferPrefix.AppendStr(transfer.ID.String())
+// EnqueueIBCTransfer stores the pending ibc transfer in the queue
+func (k Keeper) EnqueueIBCTransfer(ctx sdk.Context, transfer types.IBCTransfer) error {
+	key := getTransferKey(transfer.ID)
 	if k.getStore(ctx).Has(key) {
 		return fmt.Errorf("transfer %s already exists", transfer.ID.String())
 	}
 
 	k.GetIBCTransferQueue(ctx).Enqueue(key, &transfer)
 	return nil
-}
-
-func (k Keeper) nextTransferID(ctx sdk.Context) nexus.TransferID {
-	var val gogoprototypes.UInt64Value
-	k.getStore(ctx).GetNew(nonceKey, &val)
-	defer k.getStore(ctx).SetNew(nonceKey, &gogoprototypes.UInt64Value{Value: val.Value + 1})
-
-	return nexus.TransferID(val.Value)
 }
 
 // validateIBCTransferQueueState checks if the keys of the given map have the correct format to be imported as ibc transfer queue state.
@@ -221,16 +220,14 @@ func (k Keeper) GetFailedTransfer(ctx sdk.Context, id nexus.TransferID) (transfe
 	return transfer, k.getStore(ctx).GetNew(getFailedTransferKey(id), &transfer)
 }
 
-// SetFailedTransfer saves failed IBC transfer
-func (k Keeper) SetFailedTransfer(ctx sdk.Context, transfer types.IBCTransfer) {
-	transfer.SetID(k.nextTransferID(ctx))
-	k.getStore(ctx).SetNew(getFailedTransferKey(transfer.ID), &transfer)
+// GetTransfer returns the ibc transfer for the given transfer ID
+func (k Keeper) GetTransfer(ctx sdk.Context, id nexus.TransferID) (transfer types.IBCTransfer, ok bool) {
+	k.getStore(ctx).Get(getTransferKey(id), &transfer)
+	return transfer, transfer.Status != types.TransferNonExistent
+}
 
-	k.Logger(ctx).With(
-		"id", transfer.ID.String(),
-		"recipient", transfer.Receiver,
-		"token", transfer.Token,
-	).Info(fmt.Sprintf("set failed IBC transfer"))
+func (k Keeper) setTransfer(ctx sdk.Context, transfer types.IBCTransfer) {
+	k.getStore(ctx).Set(getTransferKey(transfer.ID), &transfer)
 }
 
 func (k Keeper) getFailedTransfers(ctx sdk.Context) (failedTransfers []types.IBCTransfer) {
@@ -245,4 +242,66 @@ func (k Keeper) getFailedTransfers(ctx sdk.Context) (failedTransfers []types.IBC
 	}
 
 	return failedTransfers
+}
+
+func (k Keeper) setTransferStatus(ctx sdk.Context, transferID nexus.TransferID, status types.IBCTransfer_Status) error {
+	t, ok := k.GetTransfer(ctx, transferID)
+	if !ok {
+		return fmt.Errorf("transfer %s not found", transferID)
+	}
+
+	err := t.SetStatus(status)
+	if err != nil {
+		return err
+	}
+
+	k.setTransfer(ctx, t)
+	return nil
+}
+
+// SetTransferCompleted sets the transfer as completed
+func (k Keeper) SetTransferCompleted(ctx sdk.Context, transferID nexus.TransferID) error {
+	return k.setTransferStatus(ctx, transferID, types.TransferCompleted)
+}
+
+// SetTransferFailed sets the transfer as failed
+func (k Keeper) SetTransferFailed(ctx sdk.Context, transferID nexus.TransferID) error {
+	return k.setTransferStatus(ctx, transferID, types.TransferFailed)
+}
+
+// SetTransferPending sets the transfer as pending
+func (k Keeper) SetTransferPending(ctx sdk.Context, transferID nexus.TransferID) error {
+	return k.setTransferStatus(ctx, transferID, types.TransferPending)
+}
+
+func getSeqIDMappingKey(portID, channelID string, seq uint64) key.Key {
+	return seqIDMappingPrefix.
+		Append(key.FromStr(portID)).
+		Append(key.FromStr(channelID)).
+		Append(key.FromUInt(seq))
+}
+
+// SetSeqIDMapping sets transfer ID by port, channel and packet seq
+func (k Keeper) SetSeqIDMapping(ctx sdk.Context, t types.IBCTransfer) error {
+	nextSeq, ok := k.channelK.GetNextSequenceSend(ctx, t.PortID, t.ChannelID)
+	if !ok {
+		return sdkerrors.Wrapf(
+			channeltypes.ErrSequenceSendNotFound,
+			"source port: %s, source channel: %s", t.PortID, t.ChannelID,
+		)
+	}
+	k.getStore(ctx).SetNew(getSeqIDMappingKey(t.PortID, t.ChannelID, nextSeq), &gogoprototypes.UInt64Value{Value: uint64(t.ID)})
+
+	return nil
+}
+
+// GetSeqIDMapping gets transfer ID by port, channel and packet seq
+func (k Keeper) GetSeqIDMapping(ctx sdk.Context, portID, channelID string, seq uint64) (nexus.TransferID, bool) {
+	var val gogoprototypes.UInt64Value
+	return nexus.TransferID(val.Value), k.getStore(ctx).GetNew(getSeqIDMappingKey(portID, channelID, seq), &val)
+}
+
+// DeleteSeqIDMapping deletes (port, channel, packet seq) -> transfer ID mapping
+func (k Keeper) DeleteSeqIDMapping(ctx sdk.Context, portID, channelID string, seq uint64) {
+	k.getStore(ctx).DeleteRaw(getSeqIDMappingKey(portID, channelID, seq).Bytes())
 }

@@ -14,6 +14,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/utils/funcs"
 )
 
 var _ types.MsgServiceServer = msgServer{}
@@ -24,16 +25,18 @@ type msgServer struct {
 	bank        types.BankKeeper
 	ibcTransfer types.IBCTransferKeeper
 	account     types.AccountKeeper
+	ibcK        IBCKeeper
 }
 
 // NewMsgServerImpl returns an implementation of the axelarnet MsgServiceServer interface for the provided Keeper.
-func NewMsgServerImpl(k Keeper, n types.Nexus, b types.BankKeeper, t types.IBCTransferKeeper, a types.AccountKeeper) types.MsgServiceServer {
+func NewMsgServerImpl(k Keeper, n types.Nexus, b types.BankKeeper, t types.IBCTransferKeeper, a types.AccountKeeper, ibcK IBCKeeper) types.MsgServiceServer {
 	return msgServer{
 		Keeper:      k,
 		nexus:       n,
 		bank:        b,
 		ibcTransfer: t,
 		account:     a,
+		ibcK:        ibcK,
 	}
 }
 
@@ -350,11 +353,7 @@ func (s msgServer) RouteIBCTransfers(c context.Context, _ *types.RouteIBCTransfe
 				continue
 			}
 
-			err = s.EnqueueTransfer(ctx, types.NewIBCTransfer(sender, p.Recipient.Address, token, portID, channelID))
-			if err != nil {
-				return nil, err
-			}
-
+			funcs.MustNoErr(s.EnqueueIBCTransfer(ctx, types.NewIBCTransfer(sender, p.Recipient.Address, token, portID, channelID, p.ID)))
 			s.nexus.ArchivePendingTransfer(ctx, p)
 		}
 	}
@@ -390,19 +389,24 @@ func (s msgServer) RetryIBCTransfer(c context.Context, req *types.RetryIBCTransf
 		return nil, fmt.Errorf("%s does not have a valid IBC path", chain.Name)
 	}
 
-	t, ok := s.GetFailedTransfer(ctx, req.ID)
+	t, ok := s.GetTransfer(ctx, req.ID)
 	if !ok {
 		return nil, fmt.Errorf("transfer %s not found", req.ID.String())
+	}
+
+	if t.Status != types.TransferFailed {
+		return nil, fmt.Errorf("IBC transfer %s does not have failed status", req.ID.String())
 	}
 
 	if path != fmt.Sprintf("%s/%s", t.PortID, t.ChannelID) {
 		return nil, fmt.Errorf("chain %s IBC path doesn't match %s IBC transfer path", chain.Name, path)
 	}
-
-	err := s.EnqueueTransfer(ctx, t)
+	err := s.ibcK.SendIBCTransfer(ctx, t)
 	if err != nil {
 		return nil, err
 	}
+
+	funcs.MustNoErr(s.SetTransferPending(ctx, t.ID))
 
 	return &types.RetryIBCTransferResponse{}, nil
 }

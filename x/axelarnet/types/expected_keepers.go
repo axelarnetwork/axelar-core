@@ -19,9 +19,10 @@ type BaseKeeper interface {
 	Logger(ctx sdk.Context) log.Logger
 	GetRouteTimeoutWindow(ctx sdk.Context) uint64
 	GetCosmosChains(ctx sdk.Context) []nexus.ChainName
-	EnqueueTransfer(ctx sdk.Context, transfer IBCTransfer) error
+	EnqueueIBCTransfer(ctx sdk.Context, transfer IBCTransfer) error
 	GetIBCTransferQueue(ctx sdk.Context) utils.KVQueue
-	SetFailedTransfer(ctx sdk.Context, transfer IBCTransfer)
+	SetSeqIDMapping(ctx sdk.Context, t IBCTransfer) error
+	SetTransferFailed(ctx sdk.Context, transferID nexus.TransferID) error
 }
 
 // Nexus provides functionality to manage cross-chain transfers
