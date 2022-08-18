@@ -40,7 +40,10 @@ func TestKeeper_TransfersForChain(t *testing.T) {
 	Given("a nexus keeper", func() {
 		encCfg := app.MakeEncodingConfig()
 		nexusSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("nexusKey"), sdk.NewKVStoreKey("tNexusKey"), "nexus")
-		k = nexusKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("nexus"), nexusSubspace, &mock.BankKeeperMock{})
+		bank := &mock.BankKeeperMock{
+			BlockedAddrFunc: func(addr sdk.AccAddress) bool { return false },
+		}
+		k = nexusKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("nexus"), nexusSubspace, bank)
 		q = nexusKeeper.NewGRPCQuerier(k, axelarnetKeeper)
 	}).
 		When("a correct context", func() {
@@ -61,7 +64,6 @@ func TestKeeper_TransfersForChain(t *testing.T) {
 				return nil
 			})
 			k.SetRouter(nexusRouter)
-
 		}).
 		When("there are some pending transfers", func() {
 			totalTransfers = rand.I64Between(10, 50)

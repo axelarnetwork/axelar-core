@@ -30,12 +30,15 @@ func setup() (sdk.Context, Keeper) {
 	types.RegisterLegacyAminoCodec(encodingConfig.Amino)
 	types.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 	subspace := paramstypes.NewSubspace(encodingConfig.Codec, encodingConfig.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "nexus")
+	bank := &mock.BankKeeperMock{
+		BlockedAddrFunc: func(addr sdk.AccAddress) bool { return false },
+	}
 
 	keeper := NewKeeper(
 		encodingConfig.Codec,
 		sdk.NewKVStoreKey(types.StoreKey),
 		subspace,
-		&mock.BankKeeperMock{},
+		bank,
 	)
 
 	return ctx, keeper
