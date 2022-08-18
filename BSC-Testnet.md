@@ -1,20 +1,22 @@
-# You need server with following requierements
+**Server requierements**
 
-2CPU/8GBRAM/200++GB SSD
+- 2 CPU cores
+- 8 GB RAM
+- 200GB SSD
 
-## 1. Upgrade your server
+**1. Upgrade your server**
 ```
 sudo apt update && sudo apt upgrade -y
 ```
 ```
 sudo apt install make clang pkg-config libssl-dev libclang-dev build-essential git curl ntp jq llvm tmux htop screen unzip -y
 ```
-Install Go 1.19
+Install Go 1.18.3
 ```
-wget https://golang.org/dl/go1.19.linux-amd64.tar.gz
+wget https://golang.org/dl/go1.18.3.linux-amd64.tar.gz
 ```
 ```
-sudo tar -C /usr/local -xzf go1.19.linux-amd64.tar.gz
+sudo tar -C /usr/local -xzf go1.18.3.linux-amd64.tar.gz
 ```
 ```
 cat <<EOF >> ~/.profile
@@ -25,28 +27,28 @@ export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin
 EOF
 source ~/.profile
 go version
-rm -rf go1.19.linux-amd64.tar.gz
+rm -rf go1.18.3.linux-amd64.tar.gz
 ```
-## 2. Install BSC tesnet node
+**2. Install BSC tesnet node**
 ```
 git clone https://github.com/bnb-chain/bsc
 cd bsc
 make geth
 ```
-## 3. Download the config files
+**3. Download the config files**
 
 You can download the pre-build binaries from [release page](https://github.com/bnb-chain/bsc/releases/latest) or follow the instructions bellow
 ```
-wget https://github.com/bnb-chain/bsc/releases/download/v1.1.12/geth_linux
+wget https://github.com/bnb-chain/bsc/releases/download/v1.1.11/geth_linux
 ```
- # Testnet
+# Testnet
 ```
-wget https://github.com/bnb-chain/bsc/releases/download/v1.1.12/testnet.zip
+wget https://github.com/bnb-chain/bsc/releases/download/v1.1.11/testnet.zip
 unzip testnet.zip
 ```
- # Mainnet
+# Mainnet
 ```
-wget https://github.com/bnb-chain/bsc/releases/download/v1.1.12/mainnet.zip
+wget https://github.com/bnb-chain/bsc/releases/download/v1.1.11/mainnet.zip
 unzip mainnet.zip
 ```
 ```
@@ -54,7 +56,7 @@ mv geth_linux /usr/bin/geth
 chmod +x /usr/bin/geth
 rm -rf testnet.zip
 ```
-## 4. Configure config.toml file
+**4. Configure config.toml file**
 ```
 nano config.toml
 ```
@@ -70,11 +72,11 @@ Level = "info"
 ```
 Save it by command ``CTRL+X,Y``
 
-## 5. Write state genesis localy
+**5. Write state genesis localy**
 ```
 geth --datadir node init genesis.json
 ```
-## 6. Configure systemd service file
+**6. Configure systemd service file**
 ```
 tee /etc/systemd/system/bscd.service > /dev/null <<EOF
 [Unit]
@@ -98,7 +100,7 @@ Checkec that node start synching
 ```
 journalctl -u bscd -f -n 100
 ```
-## 7. Synch status
+**7. Sync status**
 
 Once your BSC node is fully synced, you can run a cURL request to see the status of your node: Please change ``YOUR_IP_ADDRESS`` on your IP.
 ```
@@ -106,17 +108,17 @@ curl -H "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method":
 ```
 If the node is successfully synced, the output from above will print ``{"jsonrpc":"2.0","id":1,"result":false}``
 
-## 8. Connect your BSC to Axelar
+**8. Connect your BSC to Axelar**
 
 Axelar Network will be connecting to the EVM compatible ``Binance``, so your rpc_addr should be exposed in this format:
 
 ``http://IP:PORT``
 
-#for Testnet
+# Testnet
 
 Example: ``http://5.168.135.185:8575``
 
 
-#for Mainnet
+# Mainnet
 
 Example: ``http://5.168.135.185:8545``
