@@ -1395,3 +1395,68 @@ func (mock *SlashingKeeperMock) IsTombstonedCalls() []struct {
 	mock.lockIsTombstoned.RUnlock()
 	return calls
 }
+
+// Ensure, that BankKeeperMock does implement types.BankKeeper.
+// If this is not the case, regenerate this file with moq.
+var _ types.BankKeeper = &BankKeeperMock{}
+
+// BankKeeperMock is a mock implementation of types.BankKeeper.
+//
+// 	func TestSomethingThatUsesBankKeeper(t *testing.T) {
+//
+// 		// make and configure a mocked types.BankKeeper
+// 		mockedBankKeeper := &BankKeeperMock{
+// 			BlockedAddrFunc: func(addr github_com_cosmos_cosmos_sdk_types.AccAddress) bool {
+// 				panic("mock out the BlockedAddr method")
+// 			},
+// 		}
+//
+// 		// use mockedBankKeeper in code that requires types.BankKeeper
+// 		// and then make assertions.
+//
+// 	}
+type BankKeeperMock struct {
+	// BlockedAddrFunc mocks the BlockedAddr method.
+	BlockedAddrFunc func(addr github_com_cosmos_cosmos_sdk_types.AccAddress) bool
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// BlockedAddr holds details about calls to the BlockedAddr method.
+		BlockedAddr []struct {
+			// Addr is the addr argument value.
+			Addr github_com_cosmos_cosmos_sdk_types.AccAddress
+		}
+	}
+	lockBlockedAddr sync.RWMutex
+}
+
+// BlockedAddr calls BlockedAddrFunc.
+func (mock *BankKeeperMock) BlockedAddr(addr github_com_cosmos_cosmos_sdk_types.AccAddress) bool {
+	if mock.BlockedAddrFunc == nil {
+		panic("BankKeeperMock.BlockedAddrFunc: method is nil but BankKeeper.BlockedAddr was just called")
+	}
+	callInfo := struct {
+		Addr github_com_cosmos_cosmos_sdk_types.AccAddress
+	}{
+		Addr: addr,
+	}
+	mock.lockBlockedAddr.Lock()
+	mock.calls.BlockedAddr = append(mock.calls.BlockedAddr, callInfo)
+	mock.lockBlockedAddr.Unlock()
+	return mock.BlockedAddrFunc(addr)
+}
+
+// BlockedAddrCalls gets all the calls that were made to BlockedAddr.
+// Check the length with:
+//     len(mockedBankKeeper.BlockedAddrCalls())
+func (mock *BankKeeperMock) BlockedAddrCalls() []struct {
+	Addr github_com_cosmos_cosmos_sdk_types.AccAddress
+} {
+	var calls []struct {
+		Addr github_com_cosmos_cosmos_sdk_types.AccAddress
+	}
+	mock.lockBlockedAddr.RLock()
+	calls = mock.calls.BlockedAddr
+	mock.lockBlockedAddr.RUnlock()
+	return calls
+}
