@@ -16,12 +16,12 @@ import (
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	axelarnetkeeper "github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	axelarnetTypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
-	"github.com/axelarnetwork/axelar-core/x/axelarnet/types/mock"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	evmkeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
+	"github.com/axelarnetwork/axelar-core/x/nexus/types/mock"
 )
 
 func setup() (sdk.Context, Keeper) {
