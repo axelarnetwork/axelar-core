@@ -106,6 +106,12 @@ func (k Keeper) EnqueueTransfer(ctx sdk.Context, senderChain exported.Chain, rec
 		return 0, fmt.Errorf("recipient's chain %s does not support foreign assets", recipient.Chain.Name)
 	}
 
+	if validator := k.GetRouter().GetAddressValidator(recipient.Chain.Module); validator == nil {
+		return 0, fmt.Errorf("unknown module for recipient chain %s", recipient.Chain.String())
+	} else if err := validator(ctx, recipient); err != nil {
+		return 0, err
+	}
+
 	// merging transfers below minimum for the specified recipient
 	insufficientAmountTransfer, found := k.getTransfer(ctx, recipient, asset.Denom, exported.InsufficientAmount)
 	if found {

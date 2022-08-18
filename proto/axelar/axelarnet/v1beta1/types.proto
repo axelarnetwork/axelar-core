@@ -8,6 +8,17 @@ import "cosmos/base/v1beta1/coin.proto";
 option (gogoproto.goproto_getters_all) = false;
 
 message IBCTransfer {
+  enum Status {
+    option (gogoproto.goproto_enum_prefix) = false;
+    option (gogoproto.goproto_enum_stringer) = true;
+
+    STATUS_UNSPECIFIED = 0
+        [ (gogoproto.enumvalue_customname) = "TransferNonExistent" ];
+    STATUS_PENDING = 1 [ (gogoproto.enumvalue_customname) = "TransferPending" ];
+    STATUS_COMPLETED = 2
+        [ (gogoproto.enumvalue_customname) = "TransferCompleted" ];
+    STATUS_FAILED = 3 [ (gogoproto.enumvalue_customname) = "TransferFailed" ];
+  }
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string receiver = 2;
@@ -20,6 +31,7 @@ message IBCTransfer {
     (gogoproto.casttype) =
         "github.com/axelarnetwork/axelar-core/x/nexus/exported.TransferID"
   ];
+  Status status = 8;
 }
 
 message CosmosChain {
