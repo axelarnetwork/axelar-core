@@ -4,8 +4,10 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 )
@@ -73,6 +75,10 @@ func (k Keeper) LinkAddresses(ctx sdk.Context, depositAddress exported.CrossChai
 
 	if !k.IsChainActivated(ctx, recipientAddress.Chain) {
 		return fmt.Errorf("recipient chain '%s' is not activated", recipientAddress.Chain.Name)
+	}
+
+	if recipientAddress.Chain.Name == axelarnet.Axelarnet.Name && k.bank.BlockedAddr(sdk.MustAccAddressFromBech32(recipientAddress.Address)) {
+		return sdkerrors.Wrapf(sdkerrors.ErrUnauthorized, "%s is not allowed to receive funds", recipientAddress.Address)
 	}
 
 	linkedAddresses := types.NewLinkedAddresses(depositAddress, recipientAddress)

@@ -18,6 +18,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	axelarnetTypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
+	"github.com/axelarnetwork/axelar-core/x/axelarnet/types/mock"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -30,6 +31,7 @@ import (
 const maxAmount int64 = 100000000000
 
 var keeper nexusKeeper.Keeper
+var bank *mock.BankKeeperMock
 
 func addressValidator() types.Router {
 	router := types.NewRouter()
@@ -58,7 +60,8 @@ func addressValidator() types.Router {
 func init() {
 	encCfg := app.MakeEncodingConfig()
 	nexusSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("nexusKey"), sdk.NewKVStoreKey("tNexusKey"), "nexus")
-	keeper = nexusKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("nexus"), nexusSubspace)
+	bank = &mock.BankKeeperMock{}
+	keeper = nexusKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("nexus"), nexusSubspace, bank)
 	keeper.SetRouter(addressValidator())
 }
 
@@ -74,7 +77,7 @@ func TestKeeper(t *testing.T) {
 		encCfg := app.MakeEncodingConfig()
 		nexusSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("nexusKey"), sdk.NewKVStoreKey("tNexusKey"), "nexus")
 		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
-		keeper = nexusKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("nexus"), nexusSubspace)
+		keeper = nexusKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("nexus"), nexusSubspace, &mock.BankKeeperMock{})
 		keeper.SetParams(ctx, types.DefaultParams())
 	})
 
@@ -139,6 +142,7 @@ func TestLinkAddress(t *testing.T) {
 	setup := func() {
 		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 		keeper.SetParams(ctx, types.DefaultParams())
+		bank.BlockedAddrFunc = func(addr sdk.AccAddress) bool { return false }
 
 		// set chain
 		for _, chain := range []exported.Chain{evm.Ethereum, axelarnet.Axelarnet} {
@@ -155,6 +159,17 @@ func TestLinkAddress(t *testing.T) {
 		)
 
 		assert.NoError(t, err)
+	}))
+
+	t.Run("should return error for blocked addresses", testutils.Func(func(t *testing.T) {
+		setup()
+		bank.BlockedAddrFunc = func(addr sdk.AccAddress) bool { return true }
+		err := keeper.LinkAddresses(ctx,
+			exported.CrossChainAddress{Chain: evm.Ethereum, Address: "0x68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8"},
+			exported.CrossChainAddress{Chain: axelarnet.Axelarnet, Address: "axelar1t66w8cazua870wu7t2hsffndmy2qy2v556ymndnczs83qpz2h45sq6lq9w"},
+		)
+
+		assert.ErrorContains(t, err, "is not allowed to receive")
 	}))
 
 	t.Run("should return error when link invalid addresses", testutils.Func(func(t *testing.T) {

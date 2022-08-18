@@ -12,7 +12,7 @@ import (
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 )
 
-//go:generate moq -out ./mock/expected_keepers.go -pkg mock . Nexus Snapshotter AxelarnetKeeper EVMBaseKeeper RewardKeeper SlashingKeeper
+//go:generate moq -out ./mock/expected_keepers.go -pkg mock . Nexus Snapshotter AxelarnetKeeper EVMBaseKeeper RewardKeeper SlashingKeeper BankKeeper
 
 // Nexus provides functionality to manage cross-chain transfers
 type Nexus interface {
@@ -71,4 +71,9 @@ type RewardKeeper interface {
 // SlashingKeeper provides functionality to manage slashing info for a validator
 type SlashingKeeper interface {
 	IsTombstoned(ctx sdk.Context, consAddr sdk.ConsAddress) bool
+}
+
+// BankKeeper provides functionality of the bank module
+type BankKeeper interface {
+	BlockedAddr(addr sdk.AccAddress) bool
 }

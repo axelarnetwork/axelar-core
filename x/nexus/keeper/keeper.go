@@ -32,10 +32,12 @@ type Keeper struct {
 	cdc      codec.BinaryCodec
 	params   params.Subspace
 	router   types.Router
+
+	bank types.BankKeeper
 }
 
 // NewKeeper returns a new nexus keeper
-func NewKeeper(cdc codec.BinaryCodec, storeKey sdk.StoreKey, paramSpace params.Subspace) Keeper {
+func NewKeeper(cdc codec.BinaryCodec, storeKey sdk.StoreKey, paramSpace params.Subspace, bank types.BankKeeper) Keeper {
 	return Keeper{cdc: cdc, storeKey: storeKey, params: paramSpace.WithKeyTable(types.KeyTable())}
 }
 

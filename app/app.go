@@ -401,7 +401,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		appCodec, keys[axelarnetTypes.StoreKey], app.getSubspace(axelarnetTypes.ModuleName),
 	)
 	nexusK := nexusKeeper.NewKeeper(
-		appCodec, keys[nexusTypes.StoreKey], app.getSubspace(nexusTypes.ModuleName),
+		appCodec, keys[nexusTypes.StoreKey], app.getSubspace(nexusTypes.ModuleName), bankK,
 	)
 	permissionK := permissionKeeper.NewKeeper(
 		appCodec, keys[permissionTypes.StoreKey], app.getSubspace(permissionTypes.ModuleName),
