@@ -237,7 +237,6 @@
       - [set-gateway \[chain\] \[address\]](axelard_tx_evm_set-gateway.md)	 - Set the gateway address for the given evm chain
       - [sign-commands \[chain\]](axelard_tx_evm_sign-commands.md)	 - Sign pending commands for an EVM chain contract
       - [transfer-operatorship \[chain\] \[keyID\]](axelard_tx_evm_transfer-operatorship.md)	 - Create transfer operatorship command for an EVM chain contract
-      - [transfer-ownership \[chain\] \[keyID\]](axelard_tx_evm_transfer-ownership.md)	 - Create transfer ownership command for an EVM chain contract
     - [feegrant](axelard_tx_feegrant.md)	 - Feegrant transactions subcommands
       - [grant \[granter_key_or_address\] \[grantee\]](axelard_tx_feegrant_grant.md)	 - Grant Fee allowance to an address
       - [revoke \[granter\] \[grantee\]](axelard_tx_feegrant_revoke.md)	 - revoke fee-grant
