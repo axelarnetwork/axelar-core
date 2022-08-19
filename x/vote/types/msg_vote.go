@@ -43,7 +43,7 @@ func (m VoteRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
-	if m.Vote == nil{
+	if m.Vote == nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "vote must not be nil")
 	}
 
