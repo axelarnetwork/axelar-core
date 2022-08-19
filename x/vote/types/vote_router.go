@@ -74,12 +74,29 @@ type handlerWrapper struct {
 }
 
 func (w handlerWrapper) HandleResult(ctx sdk.Context, result codec.ProtoMarshaler) error {
-	cachedCtx, writeCache := ctx.CacheContext()
-	if err := w.VoteHandler.HandleResult(cachedCtx, result); err != nil {
-		return err
-	}
+	return cache(w.VoteHandler.HandleResult)(ctx, result)
+}
 
-	writeCache()
-	ctx.EventManager().EmitEvents(cachedCtx.EventManager().Events())
-	return nil
+func (w handlerWrapper) HandleFailedPoll(ctx sdk.Context, poll exported.Poll) error {
+	return cache(w.VoteHandler.HandleFailedPoll)(ctx, poll)
+}
+
+func (w handlerWrapper) HandleCompletedPoll(ctx sdk.Context, poll exported.Poll) error {
+	return cache(w.VoteHandler.HandleCompletedPoll)(ctx, poll)
+}
+
+func (w handlerWrapper) HandleExpiredPoll(ctx sdk.Context, poll exported.Poll) error {
+	return cache(w.VoteHandler.HandleExpiredPoll)(ctx, poll)
+}
+
+func cache[T any](f func(ctx sdk.Context, x T) error) func(ctx sdk.Context, x T) error {
+	return func(ctx sdk.Context, x T) error {
+		cachedCtx, writeCache := ctx.CacheContext()
+		if err := f(cachedCtx, x); err != nil {
+			return err
+		}
+		writeCache()
+		ctx.EventManager().EmitEvents(cachedCtx.EventManager().Events())
+		return nil
+	}
 }
