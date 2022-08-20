@@ -32,6 +32,9 @@ var _ axelarnettypes.BaseKeeper = &BaseKeeperMock{}
 // 			EnqueueIBCTransferFunc: func(ctx cosmossdktypes.Context, transfer axelarnettypes.IBCTransfer) error {
 // 				panic("mock out the EnqueueIBCTransfer method")
 // 			},
+// 			GetCosmosChainByNameFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (axelarnettypes.CosmosChain, bool) {
+// 				panic("mock out the GetCosmosChainByName method")
+// 			},
 // 			GetCosmosChainsFunc: func(ctx cosmossdktypes.Context) []github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName {
 // 				panic("mock out the GetCosmosChains method")
 // 			},
@@ -60,6 +63,9 @@ type BaseKeeperMock struct {
 	// EnqueueIBCTransferFunc mocks the EnqueueIBCTransfer method.
 	EnqueueIBCTransferFunc func(ctx cosmossdktypes.Context, transfer axelarnettypes.IBCTransfer) error
 
+	// GetCosmosChainByNameFunc mocks the GetCosmosChainByName method.
+	GetCosmosChainByNameFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (axelarnettypes.CosmosChain, bool)
+
 	// GetCosmosChainsFunc mocks the GetCosmosChains method.
 	GetCosmosChainsFunc func(ctx cosmossdktypes.Context) []github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
 
@@ -86,6 +92,13 @@ type BaseKeeperMock struct {
 			Ctx cosmossdktypes.Context
 			// Transfer is the transfer argument value.
 			Transfer axelarnettypes.IBCTransfer
+		}
+		// GetCosmosChainByName holds details about calls to the GetCosmosChainByName method.
+		GetCosmosChainByName []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// Chain is the chain argument value.
+			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
 		}
 		// GetCosmosChains holds details about calls to the GetCosmosChains method.
 		GetCosmosChains []struct {
@@ -123,6 +136,7 @@ type BaseKeeperMock struct {
 		}
 	}
 	lockEnqueueIBCTransfer    sync.RWMutex
+	lockGetCosmosChainByName  sync.RWMutex
 	lockGetCosmosChains       sync.RWMutex
 	lockGetIBCTransferQueue   sync.RWMutex
 	lockGetRouteTimeoutWindow sync.RWMutex
@@ -163,6 +177,41 @@ func (mock *BaseKeeperMock) EnqueueIBCTransferCalls() []struct {
 	mock.lockEnqueueIBCTransfer.RLock()
 	calls = mock.calls.EnqueueIBCTransfer
 	mock.lockEnqueueIBCTransfer.RUnlock()
+	return calls
+}
+
+// GetCosmosChainByName calls GetCosmosChainByNameFunc.
+func (mock *BaseKeeperMock) GetCosmosChainByName(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (axelarnettypes.CosmosChain, bool) {
+	if mock.GetCosmosChainByNameFunc == nil {
+		panic("BaseKeeperMock.GetCosmosChainByNameFunc: method is nil but BaseKeeper.GetCosmosChainByName was just called")
+	}
+	callInfo := struct {
+		Ctx   cosmossdktypes.Context
+		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+	}{
+		Ctx:   ctx,
+		Chain: chain,
+	}
+	mock.lockGetCosmosChainByName.Lock()
+	mock.calls.GetCosmosChainByName = append(mock.calls.GetCosmosChainByName, callInfo)
+	mock.lockGetCosmosChainByName.Unlock()
+	return mock.GetCosmosChainByNameFunc(ctx, chain)
+}
+
+// GetCosmosChainByNameCalls gets all the calls that were made to GetCosmosChainByName.
+// Check the length with:
+//     len(mockedBaseKeeper.GetCosmosChainByNameCalls())
+func (mock *BaseKeeperMock) GetCosmosChainByNameCalls() []struct {
+	Ctx   cosmossdktypes.Context
+	Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+} {
+	var calls []struct {
+		Ctx   cosmossdktypes.Context
+		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+	}
+	mock.lockGetCosmosChainByName.RLock()
+	calls = mock.calls.GetCosmosChainByName
+	mock.lockGetCosmosChainByName.RUnlock()
 	return calls
 }
 
