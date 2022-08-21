@@ -3,6 +3,11 @@ package keeper_test
 import (
 	"testing"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/stretchr/testify/assert"
+	"github.com/tendermint/tendermint/libs/log"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
@@ -11,10 +16,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types/mock"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/stretchr/testify/assert"
-	"github.com/tendermint/tendermint/libs/log"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 )
 
 func TestAddressValidator(t *testing.T) {
