@@ -22,6 +22,9 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	multisigTestUtils "github.com/axelarnetwork/axelar-core/x/multisig/exported/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+
+	"github.com/axelarnetwork/utils/funcs"
+	. "github.com/axelarnetwork/utils/test"
 )
 
 func TestCommands(t *testing.T) {
@@ -245,4 +248,108 @@ func TestGetBurnerAddress(t *testing.T) {
 		assert.Equal(t, expectedBurnerAddr, actualburnerAddr.Hex())
 		assert.Equal(t, common.Bytes2Hex(expectedSalt), common.Bytes2Hex(actualSalt[:]))
 	}))
+}
+
+func TestReconfirmFailedEvent(t *testing.T) {
+	var (
+		ck    types.ChainKeeper
+		event types.Event
+	)
+
+	encCfg := app.MakeEncodingConfig()
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+	ctx = ctx.WithHeaderHash(common.Hex2Bytes("CA36CA3751A5B6E8B8ED4072BFA5E6E5BAC8B6E06E02DE029E1BD86AB141F2F1"))
+	ctx = ctx.WithBlockGasMeter(sdk.NewGasMeter(1000000))
+
+	givenEVMKeeper := Given("a keeper", func() {
+		paramsK := paramsKeeper.NewKeeper(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"))
+		k := evmKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("testKey"), paramsK)
+
+		ck = k.ForChain(exported.Ethereum.Name)
+		ck.SetParams(ctx, types.DefaultParams()[0])
+	})
+
+	createEvent := When("an event exists", func() {
+		event = types.Event{
+			Chain: exported.Ethereum.Name,
+			TxID:  types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
+			Index: uint64(rand.I64Between(0, 100)),
+			Event: &types.Event_ContractCall{
+				ContractCall: &types.EventContractCall{
+					ContractAddress: rand.HexStr(40),
+				},
+			},
+		}
+	})
+
+	getStatus := func() types.Event_Status {
+		if e, ok := ck.GetEvent(ctx, event.GetID()); !ok {
+			return types.EventNonExistent
+		} else {
+			return e.Status
+		}
+	}
+
+	confirmEvent := When("event is confirmed", func() {
+		funcs.MustNoErr(ck.SetConfirmedEvent(ctx, event))
+	})
+
+	completeEvent := When("event is completed", func() {
+		funcs.MustNoErr(ck.SetEventCompleted(ctx, event.GetID()))
+	})
+
+	failEvent := When("event is failed", func() {
+		funcs.MustNoErr(ck.SetEventFailed(ctx, event.GetID()))
+	})
+
+	noError := Then("should reconfirm event", func(t *testing.T) {
+		err := ck.ReconfirmFailedEvent(ctx, event)
+		assert.NoError(t, err)
+		assert.Equal(t, types.EventConfirmed, getStatus())
+	})
+
+	reconfirmError := Then("should return error", func(t *testing.T) {
+		status := getStatus()
+		err := ck.ReconfirmFailedEvent(ctx, event)
+		assert.Error(t, err)
+		assert.Equal(t, status, getStatus())
+	})
+
+	givenEVMKeeper.
+		When2(createEvent).
+		When("there is no event set", func() {}).
+		Then2(reconfirmError).
+		Run(t)
+
+	givenEVMKeeper.
+		When2(createEvent).
+		When2(confirmEvent).
+		Then2(reconfirmError).
+		Run(t)
+
+	givenEVMKeeper.
+		When2(createEvent).
+		When2(confirmEvent).
+		When2(completeEvent).
+		Then2(reconfirmError).
+		Run(t)
+
+	givenEVMKeeper.
+		When2(createEvent).
+		When2(confirmEvent).
+		When2(failEvent).
+		Then2(noError).
+		Run(t)
+
+	givenEVMKeeper.
+		When2(createEvent).
+		When2(confirmEvent).
+		When2(failEvent).
+		Then2(noError).
+		Then("should return error", func(t *testing.T) {
+			err := ck.ReconfirmFailedEvent(ctx, event)
+			assert.Error(t, err)
+			assert.Equal(t, types.EventConfirmed, getStatus())
+		}).
+		Run(t)
 }

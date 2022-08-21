@@ -1683,7 +1683,7 @@ func NewVoteEvents(chain nexus.ChainName, events []Event) *VoteEvents {
 	}
 }
 
-// GetMultisigAddressesAndWeights coverts a multisig key to sorted addresses, weights and threshold
+// GetMultisigAddressesAndWeights converts a multisig key to sorted addresses, weights and threshold
 func GetMultisigAddressesAndWeights(key multisig.Key) ([]common.Address, []sdk.Uint, sdk.Uint) {
 	addressWeights, threshold := ParseMultisigKey(key)
 	addresses := slices.Map(maps.Keys(addressWeights), common.HexToAddress)
