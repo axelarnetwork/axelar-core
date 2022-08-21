@@ -22,7 +22,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	multisigTestUtils "github.com/axelarnetwork/axelar-core/x/multisig/exported/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-
 	"github.com/axelarnetwork/utils/funcs"
 	. "github.com/axelarnetwork/utils/test"
 )
