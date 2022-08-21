@@ -165,40 +165,34 @@ func TestLinkAddress(t *testing.T) {
 			exported.CrossChainAddress{Chain: axelarnet.Axelarnet, Address: "axelar1t66w8cazua870wu7t2hsffndmy2qy2v556ymndnczs83qpz2h45sq6lq9w"},
 		)
 		assert.NoError(t, err)
+
+		err = keeper.LinkAddresses(ctx,
+			evmAddr,
+			exported.CrossChainAddress{Chain: terra, Address: "terra18zhnqjv70v0d2f8v0s5lape0gr5ua94eqkk8ex"},
+		)
+		assert.NoError(t, err)
+
+		err = keeper.LinkAddresses(ctx,
+			exported.CrossChainAddress{Chain: evm.Ethereum, Address: "68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8"},
+			axelarAddr,
+		)
+		assert.NoError(t, err)
 	}))
 
 	t.Run("should return error when linking invalid addresses", testutils.Func(func(t *testing.T) {
 		setup()
 
 		err := keeper.LinkAddresses(ctx,
-			exported.CrossChainAddress{Chain: evm.Ethereum, Address: "68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8"},
-			axelarAddr,
-		)
-		assert.ErrorContains(t, err, "not an hex address")
-
-		err = keeper.LinkAddresses(ctx,
 			exported.CrossChainAddress{Chain: evm.Ethereum, Address: "0xZ8B93045fe7D8794a7cAF327e7f855CD6Cd03BB8"},
 			axelarAddr,
 		)
 		assert.ErrorContains(t, err, "not an hex address")
 
 		err = keeper.LinkAddresses(ctx,
-			exported.CrossChainAddress{Chain: axelarnet.Axelarnet, Address: evmAddr.Address},
-			exported.CrossChainAddress{Chain: evm.Ethereum, Address: "axelar1t66w8cazua870wu7t2hsffndmy2qy2v556ymndnczs83qpz2h45sq6lq9w"},
-		)
-		assert.ErrorContains(t, err, "decoding bech32 failed")
-
-		err = keeper.LinkAddresses(ctx,
 			evmAddr,
 			exported.CrossChainAddress{Chain: axelarnet.Axelarnet, Address: rand.StrBetween(10, 30)},
 		)
 		assert.ErrorContains(t, err, "decoding bech32 failed")
-
-		err = keeper.LinkAddresses(ctx,
-			evmAddr,
-			exported.CrossChainAddress{Chain: terra, Address: "terra1t66w8cazua870wu7t2hsffndmy2qy2v556ymndnczs83qpz2h45sq6lq9w"},
-		)
-		assert.ErrorContains(t, err, "invalid checksum")
 	}))
 
 	t.Run("should return error for blocked addresses", testutils.Func(func(t *testing.T) {
@@ -229,26 +223,7 @@ func TestLinkAddress(t *testing.T) {
 			exported.CrossChainAddress{Chain: axelarnet.Axelarnet, Address: rand.AccAddr().String()},
 		)
 		assert.NoError(t, err)
-
-		bankK.BlockedAddrFunc = func(addr sdk.AccAddress) bool { return true }
-		err = keeper.LinkAddresses(ctx,
-			evmAddr,
-			exported.CrossChainAddress{Chain: axelarnet.Axelarnet, Address: rand.AccAddr().String()},
-		)
-		assert.ErrorContains(t, err, "is not allowed to receive")
-
-		err = keeper.LinkAddresses(ctx,
-			exported.CrossChainAddress{Chain: axelarnet.Axelarnet, Address: rand.AccAddr().String()},
-			exported.CrossChainAddress{Chain: evm.Ethereum, Address: "0x68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8"},
-		)
-		assert.ErrorContains(t, err, "is not allowed to receive")
-
-		err = keeper.LinkAddresses(ctx,
-			evmAddr,
-			exported.CrossChainAddress{Chain: terra, Address: "terra1t66w8cazua870wu7t2hsffndmy2qy2v556ymndnczs83qpz2h45snlv7eu"},
-		)
-		assert.NoError(t, err)
-	}).Repeat(repeats))
+	}))
 
 	t.Run("should return error when link chain does not support foreign asset", testutils.Func(func(t *testing.T) {
 		setup()
