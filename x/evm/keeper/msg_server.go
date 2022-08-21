@@ -730,8 +730,9 @@ func (s msgServer) RetryFailedEvent(c context.Context, req *types.RetryFailedEve
 		return nil, fmt.Errorf("event %s is not a failed event", req.EventID)
 	}
 
-	event.Status = types.EventConfirmed
-	keeper.GetConfirmedEventQueue(ctx).Enqueue(getEventKey(req.EventID), &event)
+	if err := keeper.ReconfirmFailedEvent(ctx, event); err != nil {
+		return nil, err
+	}
 
 	s.Logger(ctx).Info(
 		"re-queued failed event",

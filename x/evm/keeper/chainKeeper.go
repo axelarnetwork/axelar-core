@@ -844,6 +844,22 @@ func (k chainKeeper) GetEvent(ctx sdk.Context, eventID types.EventID) (event typ
 	return event, event.Status != types.EventNonExistent
 }
 
+// setConfirmedEvent sets the event as confirmed and adds it to the confirmed event queue
+func (k chainKeeper) setConfirmedEvent(ctx sdk.Context, event types.Event) error {
+	event.Status = types.EventConfirmed
+	k.setEvent(ctx, event)
+
+	switch event.GetEvent().(type) {
+	case *types.Event_ContractCall, *types.Event_ContractCallWithToken, *types.Event_TokenSent,
+		*types.Event_Transfer, *types.Event_TokenDeployed, *types.Event_MultisigOperatorshipTransferred:
+		k.GetConfirmedEventQueue(ctx).Enqueue(getEventKey(event.GetID()), &event)
+	default:
+		return fmt.Errorf("unsupported event type %T", event)
+	}
+
+	return nil
+}
+
 // SetConfirmedEvent sets the event as confirmed
 func (k chainKeeper) SetConfirmedEvent(ctx sdk.Context, event types.Event) error {
 	eventID := event.GetID()
@@ -851,17 +867,17 @@ func (k chainKeeper) SetConfirmedEvent(ctx sdk.Context, event types.Event) error
 		return fmt.Errorf("event %s is already confirmed", eventID)
 	}
 
-	event.Status = types.EventConfirmed
+	return k.setConfirmedEvent(ctx, event)
+}
 
-	switch event.GetEvent().(type) {
-	case *types.Event_ContractCall, *types.Event_ContractCallWithToken, *types.Event_TokenSent,
-		*types.Event_Transfer, *types.Event_TokenDeployed, *types.Event_MultisigOperatorshipTransferred:
-		k.GetConfirmedEventQueue(ctx).Enqueue(getEventKey(eventID), &event)
-	default:
-		return fmt.Errorf("unsupported event type %T", event)
+// ReconfirmFailedEvent sets a failed event as confirmed to allow it to be retried
+func (k chainKeeper) ReconfirmFailedEvent(ctx sdk.Context, event types.Event) error {
+	eventID := event.GetID()
+	if e, ok := k.GetEvent(ctx, eventID); !ok || e.Status != types.EventFailed {
+		return fmt.Errorf("event %s does not have failed status", eventID)
 	}
 
-	return nil
+	return k.setConfirmedEvent(ctx, event)
 }
 
 // SetEventCompleted sets the event as completed

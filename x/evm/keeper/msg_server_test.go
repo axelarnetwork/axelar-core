@@ -26,7 +26,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
-	utilsMock "github.com/axelarnetwork/axelar-core/utils/mock"
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
@@ -1261,25 +1260,21 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 
 func TestRetryFailedEvent(t *testing.T) {
 	var (
-		ctx sdk.Context
-		bk  *mock.BaseKeeperMock
-		ck  *mock.ChainKeeperMock
-		n   *mock.NexusMock
+		ctx       sdk.Context
+		bk        *mock.BaseKeeperMock
+		ck        *mock.ChainKeeperMock
+		n         *mock.NexusMock
+		msgServer types.MsgServiceServer
 	)
 
-	ctx, msgServer, bk, n, _, _, _ := setup()
-	contractCallQueue := &utilsMock.KVQueueMock{
-		EnqueueFunc: func(key utils.Key, value codec.ProtoMarshaler) {},
-	}
-	ck = &mock.ChainKeeperMock{
-		GetConfirmedEventQueueFunc: func(ctx sdk.Context) utils.KVQueue {
-			return contractCallQueue
-		},
-	}
-	bk.ForChainFunc = func(chain nexus.ChainName) types.ChainKeeper {
-		return ck
-	}
-	bk.LoggerFunc = func(ctx sdk.Context) log.Logger { return ctx.Logger() }
+	givenMsgServer := Given("an evm msg server", func() {
+		ctx, msgServer, bk, n, _, _, _ = setup()
+		ck = &mock.ChainKeeperMock{}
+		bk.ForChainFunc = func(chain nexus.ChainName) types.ChainKeeper {
+			return ck
+		}
+		bk.LoggerFunc = func(ctx sdk.Context) log.Logger { return ctx.Logger() }
+	})
 
 	req := types.NewRetryFailedEventRequest(rand.AccAddr(), rand.Str(5), rand.Str(5))
 
@@ -1313,48 +1308,71 @@ func TestRetryFailedEvent(t *testing.T) {
 		}
 	}
 
-	When("chain is not found", chainFound(false)).
-		Then("should return error", func(t *testing.T) {
-			_, err := msgServer.RetryFailedEvent(sdk.WrapSDKContext(ctx), req)
-			assert.Error(t, err)
-		}).
-		Run(t)
+	reconfirmEvent := func(succeeds bool) func() {
+		return func() {
+			ck.ReconfirmFailedEventFunc = func(ctx sdk.Context, event types.Event) error {
+				if !succeeds {
+					return fmt.Errorf("cannot reconfirm event")
+				}
+				return nil
+			}
+		}
+	}
 
-	When("chain is found", chainFound(true)).
-		When("chain is not activated", isChainActivated(false)).
-		Then("should return error", func(t *testing.T) {
-			_, err := msgServer.RetryFailedEvent(sdk.WrapSDKContext(ctx), req)
-			assert.Error(t, err)
-		}).
-		Run(t)
+	givenMsgServer.Branch(
+		When("chain is not found", chainFound(false)).
+			Then("should return error", func(t *testing.T) {
+				_, err := msgServer.RetryFailedEvent(sdk.WrapSDKContext(ctx), req)
+				assert.Error(t, err)
+				assert.Len(t, ck.ReconfirmFailedEventCalls(), 0)
+			}),
 
-	When("chain is found", chainFound(true)).
-		When("chain is activated", isChainActivated(true)).
-		When("event not found", eventFound(false, types.EventNonExistent)).
-		Then("should return error", func(t *testing.T) {
-			_, err := msgServer.RetryFailedEvent(sdk.WrapSDKContext(ctx), req)
-			assert.Error(t, err)
-		}).
-		Run(t)
+		When("chain is found", chainFound(true)).
+			When("chain is not activated", isChainActivated(false)).
+			Then("should return error", func(t *testing.T) {
+				_, err := msgServer.RetryFailedEvent(sdk.WrapSDKContext(ctx), req)
+				assert.Error(t, err)
+				assert.Len(t, ck.ReconfirmFailedEventCalls(), 0)
+			}),
 
-	When("chain is found", chainFound(true)).
-		When("chain is activated", isChainActivated(true)).
-		When("event is completed", eventFound(true, types.EventCompleted)).
-		Then("should return error", func(t *testing.T) {
-			_, err := msgServer.RetryFailedEvent(sdk.WrapSDKContext(ctx), req)
-			assert.Error(t, err)
-		}).
-		Run(t)
+		When("chain is found", chainFound(true)).
+			When("chain is activated", isChainActivated(true)).
+			When("event not found", eventFound(false, types.EventNonExistent)).
+			Then("should return error", func(t *testing.T) {
+				_, err := msgServer.RetryFailedEvent(sdk.WrapSDKContext(ctx), req)
+				assert.Error(t, err)
+				assert.Len(t, ck.ReconfirmFailedEventCalls(), 0)
+			}),
 
-	When("chain is found", chainFound(true)).
-		When("chain is activated", isChainActivated(true)).
-		When("event is failed", eventFound(true, types.EventFailed)).
-		Then("should retry event", func(t *testing.T) {
-			_, err := msgServer.RetryFailedEvent(sdk.WrapSDKContext(ctx), req)
-			assert.NoError(t, err)
-			assert.Len(t, contractCallQueue.EnqueueCalls(), 1)
-		}).
-		Run(t)
+		When("chain is found", chainFound(true)).
+			When("chain is activated", isChainActivated(true)).
+			When("event is completed", eventFound(true, types.EventCompleted)).
+			Then("should return error", func(t *testing.T) {
+				_, err := msgServer.RetryFailedEvent(sdk.WrapSDKContext(ctx), req)
+				assert.Error(t, err)
+				assert.Len(t, ck.ReconfirmFailedEventCalls(), 0)
+			}),
+
+		When("chain is found", chainFound(true)).
+			When("chain is activated", isChainActivated(true)).
+			When("event is failed", eventFound(true, types.EventFailed)).
+			When("reconfirm failed", reconfirmEvent(false)).
+			Then("should return error", func(t *testing.T) {
+				_, err := msgServer.RetryFailedEvent(sdk.WrapSDKContext(ctx), req)
+				assert.Error(t, err)
+				assert.Len(t, ck.ReconfirmFailedEventCalls(), 1)
+			}),
+
+		When("chain is found", chainFound(true)).
+			When("chain is activated", isChainActivated(true)).
+			When("event is failed", eventFound(true, types.EventFailed)).
+			When("reconfirm succeeds", reconfirmEvent(true)).
+			Then("should retry event", func(t *testing.T) {
+				_, err := msgServer.RetryFailedEvent(sdk.WrapSDKContext(ctx), req)
+				assert.NoError(t, err)
+				assert.Len(t, ck.ReconfirmFailedEventCalls(), 1)
+			}),
+	).Run(t)
 }
 
 func createSignedDeployTx() *evmTypes.Transaction {

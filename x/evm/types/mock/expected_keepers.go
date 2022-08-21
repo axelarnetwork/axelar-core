@@ -1970,6 +1970,9 @@ var _ evmtypes.ChainKeeper = &ChainKeeperMock{}
 // 			LoggerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger {
 // 				panic("mock out the Logger method")
 // 			},
+// 			ReconfirmFailedEventFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, event evmtypes.Event) error {
+// 				panic("mock out the ReconfirmFailedEvent method")
+// 			},
 // 			SetBurnerInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, burnerInfo evmtypes.BurnerInfo)  {
 // 				panic("mock out the SetBurnerInfo method")
 // 			},
@@ -2099,6 +2102,9 @@ type ChainKeeperMock struct {
 
 	// LoggerFunc mocks the Logger method.
 	LoggerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger
+
+	// ReconfirmFailedEventFunc mocks the ReconfirmFailedEvent method.
+	ReconfirmFailedEventFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, event evmtypes.Event) error
 
 	// SetBurnerInfoFunc mocks the SetBurnerInfo method.
 	SetBurnerInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, burnerInfo evmtypes.BurnerInfo)
@@ -2327,6 +2333,13 @@ type ChainKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
+		// ReconfirmFailedEvent holds details about calls to the ReconfirmFailedEvent method.
+		ReconfirmFailedEvent []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Event is the event argument value.
+			Event evmtypes.Event
+		}
 		// SetBurnerInfo holds details about calls to the SetBurnerInfo method.
 		SetBurnerInfo []struct {
 			// Ctx is the ctx argument value.
@@ -2419,6 +2432,7 @@ type ChainKeeperMock struct {
 	lockGetTokens                     sync.RWMutex
 	lockGetVotingThreshold            sync.RWMutex
 	lockLogger                        sync.RWMutex
+	lockReconfirmFailedEvent          sync.RWMutex
 	lockSetBurnerInfo                 sync.RWMutex
 	lockSetConfirmedEvent             sync.RWMutex
 	lockSetDeposit                    sync.RWMutex
@@ -3520,6 +3534,41 @@ func (mock *ChainKeeperMock) LoggerCalls() []struct {
 	mock.lockLogger.RLock()
 	calls = mock.calls.Logger
 	mock.lockLogger.RUnlock()
+	return calls
+}
+
+// ReconfirmFailedEvent calls ReconfirmFailedEventFunc.
+func (mock *ChainKeeperMock) ReconfirmFailedEvent(ctx github_com_cosmos_cosmos_sdk_types.Context, event evmtypes.Event) error {
+	if mock.ReconfirmFailedEventFunc == nil {
+		panic("ChainKeeperMock.ReconfirmFailedEventFunc: method is nil but ChainKeeper.ReconfirmFailedEvent was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Event evmtypes.Event
+	}{
+		Ctx:   ctx,
+		Event: event,
+	}
+	mock.lockReconfirmFailedEvent.Lock()
+	mock.calls.ReconfirmFailedEvent = append(mock.calls.ReconfirmFailedEvent, callInfo)
+	mock.lockReconfirmFailedEvent.Unlock()
+	return mock.ReconfirmFailedEventFunc(ctx, event)
+}
+
+// ReconfirmFailedEventCalls gets all the calls that were made to ReconfirmFailedEvent.
+// Check the length with:
+//     len(mockedChainKeeper.ReconfirmFailedEventCalls())
+func (mock *ChainKeeperMock) ReconfirmFailedEventCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	Event evmtypes.Event
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Event evmtypes.Event
+	}
+	mock.lockReconfirmFailedEvent.RLock()
+	calls = mock.calls.ReconfirmFailedEvent
+	mock.lockReconfirmFailedEvent.RUnlock()
 	return calls
 }
 
