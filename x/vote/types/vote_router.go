@@ -70,16 +70,37 @@ func (r *router) GetHandler(module string) exported.VoteHandler {
 }
 
 type handlerWrapper struct {
-	exported.VoteHandler
+	handler exported.VoteHandler
+}
+
+func (w handlerWrapper) IsFalsyResult(result codec.ProtoMarshaler) bool {
+	return w.handler.IsFalsyResult(result)
 }
 
 func (w handlerWrapper) HandleResult(ctx sdk.Context, result codec.ProtoMarshaler) error {
-	cachedCtx, writeCache := ctx.CacheContext()
-	if err := w.VoteHandler.HandleResult(cachedCtx, result); err != nil {
-		return err
-	}
+	return cache(w.handler.HandleResult)(ctx, result)
+}
 
-	writeCache()
-	ctx.EventManager().EmitEvents(cachedCtx.EventManager().Events())
-	return nil
+func (w handlerWrapper) HandleFailedPoll(ctx sdk.Context, poll exported.Poll) error {
+	return cache(w.handler.HandleFailedPoll)(ctx, poll)
+}
+
+func (w handlerWrapper) HandleCompletedPoll(ctx sdk.Context, poll exported.Poll) error {
+	return cache(w.handler.HandleCompletedPoll)(ctx, poll)
+}
+
+func (w handlerWrapper) HandleExpiredPoll(ctx sdk.Context, poll exported.Poll) error {
+	return cache(w.handler.HandleExpiredPoll)(ctx, poll)
+}
+
+func cache[T any](f func(ctx sdk.Context, x T) error) func(ctx sdk.Context, x T) error {
+	return func(ctx sdk.Context, x T) error {
+		cachedCtx, writeCache := ctx.CacheContext()
+		if err := f(cachedCtx, x); err != nil {
+			return err
+		}
+		writeCache()
+		ctx.EventManager().EmitEvents(cachedCtx.EventManager().Events())
+		return nil
+	}
 }
