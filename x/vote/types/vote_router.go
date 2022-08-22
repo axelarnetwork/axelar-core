@@ -70,23 +70,27 @@ func (r *router) GetHandler(module string) exported.VoteHandler {
 }
 
 type handlerWrapper struct {
-	exported.VoteHandler
+	handler exported.VoteHandler
+}
+
+func (w handlerWrapper) IsFalsyResult(result codec.ProtoMarshaler) bool {
+	return w.handler.IsFalsyResult(result)
 }
 
 func (w handlerWrapper) HandleResult(ctx sdk.Context, result codec.ProtoMarshaler) error {
-	return cache(w.VoteHandler.HandleResult)(ctx, result)
+	return cache(w.handler.HandleResult)(ctx, result)
 }
 
 func (w handlerWrapper) HandleFailedPoll(ctx sdk.Context, poll exported.Poll) error {
-	return cache(w.VoteHandler.HandleFailedPoll)(ctx, poll)
+	return cache(w.handler.HandleFailedPoll)(ctx, poll)
 }
 
 func (w handlerWrapper) HandleCompletedPoll(ctx sdk.Context, poll exported.Poll) error {
-	return cache(w.VoteHandler.HandleCompletedPoll)(ctx, poll)
+	return cache(w.handler.HandleCompletedPoll)(ctx, poll)
 }
 
 func (w handlerWrapper) HandleExpiredPoll(ctx sdk.Context, poll exported.Poll) error {
-	return cache(w.VoteHandler.HandleExpiredPoll)(ctx, poll)
+	return cache(w.handler.HandleExpiredPoll)(ctx, poll)
 }
 
 func cache[T any](f func(ctx sdk.Context, x T) error) func(ctx sdk.Context, x T) error {
