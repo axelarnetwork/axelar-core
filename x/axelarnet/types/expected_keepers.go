@@ -2,9 +2,13 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/auth/types"
+	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
 	ibctypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
 	clienttypes "github.com/cosmos/ibc-go/v2/modules/core/02-client/types"
+	channeltypes "github.com/cosmos/ibc-go/v2/modules/core/04-channel/types"
 	ibcclient "github.com/cosmos/ibc-go/v2/modules/core/exported"
+	ibcexported "github.com/cosmos/ibc-go/v2/modules/core/exported"
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 	"github.com/tendermint/tendermint/libs/log"
 
@@ -12,7 +16,7 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
-//go:generate moq -out ./mock/expected_keepers.go -pkg mock . BaseKeeper  Nexus  BankKeeper IBCTransferKeeper ChannelKeeper AccountKeeper
+//go:generate moq -out ./mock/expected_keepers.go -pkg mock . BaseKeeper  Nexus  BankKeeper IBCTransferKeeper ChannelKeeper AccountKeeper PortKeeper
 
 // BaseKeeper is implemented by this module's base keeper
 type BaseKeeper interface {
@@ -52,6 +56,8 @@ type BankKeeper interface {
 	SendCoinsFromModuleToAccount(ctx sdk.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error
 	SendCoinsFromAccountToModule(ctx sdk.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error
 	GetBalance(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin
+
+	BlockedAddr(addr sdk.AccAddress) bool // used in module_test
 }
 
 // IBCTransferKeeper provides functionality to manage IBC transfers
@@ -64,13 +70,23 @@ type IBCTransferKeeper interface {
 type ChannelKeeper interface {
 	GetNextSequenceSend(ctx sdk.Context, portID, channelID string) (uint64, bool)
 	GetChannelClientState(ctx sdk.Context, portID, channelID string) (string, ibcclient.ClientState, error)
+
+	GetChannel(ctx sdk.Context, srcPort string, srcChan string) (channel channeltypes.Channel, found bool) // used in module_test
+	SendPacket(ctx sdk.Context, channelCap *capabilitytypes.Capability, packet ibcexported.PacketI) error  // used in module_test
 }
 
 // AccountKeeper defines the account contract that must be fulfilled when
 // creating a x/bank keeper.
 type AccountKeeper interface {
 	GetModuleAddress(moduleName string) sdk.AccAddress
+
+	GetModuleAccount(ctx sdk.Context, moduleName string) types.ModuleAccountI // used in module_test
 }
 
 // CosmosChainGetter exposes GetCosmosChainByName
 type CosmosChainGetter func(ctx sdk.Context, chain nexus.ChainName) (CosmosChain, bool)
+
+// PortKeeper used in module_test
+type PortKeeper interface {
+	BindPort(ctx sdk.Context, portID string) *capabilitytypes.Capability
+}
