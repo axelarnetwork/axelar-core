@@ -16,13 +16,14 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
-//go:generate moq -out ./mock/expected_keepers.go -pkg mock . BaseKeeper  Nexus  BankKeeper IBCTransferKeeper ChannelKeeper AccountKeeper PortKeeper
+//go:generate moq -out ./mock/expected_keepers.go -pkg mock . BaseKeeper Nexus BankKeeper IBCTransferKeeper ChannelKeeper AccountKeeper PortKeeper
 
 // BaseKeeper is implemented by this module's base keeper
 type BaseKeeper interface {
 	Logger(ctx sdk.Context) log.Logger
 	GetRouteTimeoutWindow(ctx sdk.Context) uint64
 	GetCosmosChains(ctx sdk.Context) []nexus.ChainName
+	GetCosmosChainByName(ctx sdk.Context, chain nexus.ChainName) (CosmosChain, bool)
 	EnqueueIBCTransfer(ctx sdk.Context, transfer IBCTransfer) error
 	GetIBCTransferQueue(ctx sdk.Context) utils.KVQueue
 	SetSeqIDMapping(ctx sdk.Context, t IBCTransfer) error
@@ -56,8 +57,7 @@ type BankKeeper interface {
 	SendCoinsFromModuleToAccount(ctx sdk.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error
 	SendCoinsFromAccountToModule(ctx sdk.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error
 	GetBalance(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin
-
-	BlockedAddr(addr sdk.AccAddress) bool // used in module_test
+	BlockedAddr(addr sdk.AccAddress) bool
 }
 
 // IBCTransferKeeper provides functionality to manage IBC transfers

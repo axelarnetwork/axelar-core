@@ -224,10 +224,15 @@ func handleConfirmDeposit(ctx sdk.Context, event types.Event, ck types.ChainKeep
 		return false
 	}
 
+	if _, _, ok := ck.GetDeposit(ctx, event.TxID, burnerInfo.BurnerAddress); ok {
+		ck.Logger(ctx).Info(fmt.Sprintf("%s deposit %s-%s already exists", chain.Name.String(), event.TxID.Hex(), burnerInfo.BurnerAddress.Hex()))
+		return false
+	}
+
 	amount := sdk.NewCoin(burnerInfo.Asset, sdk.NewIntFromBigInt(e.Amount.BigInt()))
 	transferID, err := n.EnqueueForTransfer(ctx, depositAddr, amount)
 	if err != nil {
-		ck.Logger(ctx).Info(err.Error())
+		ck.Logger(ctx).Error(err.Error())
 		return false
 	}
 
@@ -240,10 +245,6 @@ func handleConfirmDeposit(ctx sdk.Context, event types.Event, ck types.ChainKeep
 		BurnerAddress:    burnerInfo.BurnerAddress,
 	}
 
-	if _, _, ok := ck.GetDeposit(ctx, event.TxID, burnerInfo.BurnerAddress); ok {
-		ck.Logger(ctx).Info(fmt.Sprintf("%s deposit %s-%s already exists", chain.Name.String(), event.TxID.Hex(), burnerInfo.BurnerAddress.Hex()))
-		return false
-	}
 	ck.SetDeposit(ctx, erc20Deposit, types.DepositStatus_Confirmed)
 
 	ck.Logger(ctx).Info(fmt.Sprintf("deposit confirmation result to %s %s", e.To.Hex(), e.Amount), "chain", chain.Name)
