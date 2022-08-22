@@ -30,17 +30,12 @@ func setup() (sdk.Context, Keeper) {
 	types.RegisterLegacyAminoCodec(encodingConfig.Amino)
 	types.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 	subspace := paramstypes.NewSubspace(encodingConfig.Codec, encodingConfig.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "nexus")
-	// bankSubspace := paramstypes.NewSubspace(encodingConfig.Codec, encodingConfig.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "bank")
 
 	keeper := NewKeeper(
 		encodingConfig.Codec,
 		sdk.NewKVStoreKey(types.StoreKey),
 		subspace,
 	)
-
-	// bank := bankkeeper.NewBaseKeeper(
-	// 	encodingConfig.Codec, "bank", accountK, app.getSubspace(banktypes.ModuleName), app.ModuleAccountAddrs(),
-	// )
 
 	return ctx, keeper
 }
