@@ -9,9 +9,11 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
 	"github.com/cosmos/ibc-go/v2/modules/apps/transfer"
+	ibctransfertypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
 	channeltypes "github.com/cosmos/ibc-go/v2/modules/core/04-channel/types"
 	ibcexported "github.com/cosmos/ibc-go/v2/modules/core/exported"
 	"github.com/gorilla/mux"
@@ -280,7 +282,9 @@ func (am AppModule) OnAcknowledgementPacket(
 	}
 
 	var ack channeltypes.Acknowledgement
-	_ = types.ModuleCdc.UnmarshalJSON(acknowledgement, &ack)
+	if err := ibctransfertypes.ModuleCdc.UnmarshalJSON(acknowledgement, &ack); err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "cannot unmarshal ICS-20 transfer packet acknowledgement: %v", err)
+	}
 	switch ack.Response.(type) {
 	case *channeltypes.Acknowledgement_Result:
 		return setTransferCompleted(ctx, am.keeper, packet.SourcePort, packet.SourceChannel, packet.Sequence)
@@ -321,6 +325,7 @@ func setTransferFailed(ctx sdk.Context, k keeper.Keeper, portID, channelID strin
 		return nil
 	}
 
+	k.Logger(ctx).Info(fmt.Sprintf("set IBC transfer %d failed", transferID))
 	return k.SetTransferFailed(ctx, transferID)
 
 }
@@ -331,5 +336,6 @@ func setTransferCompleted(ctx sdk.Context, k keeper.Keeper, portID, channelID st
 		return nil
 	}
 
+	k.Logger(ctx).Info(fmt.Sprintf("set IBC transfer %d completed", transferID))
 	return k.SetTransferCompleted(ctx, transferID)
 }
