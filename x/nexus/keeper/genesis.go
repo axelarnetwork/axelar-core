@@ -24,6 +24,9 @@ func (k Keeper) InitGenesis(ctx sdk.Context, genState *types.GenesisState) {
 	}
 
 	for _, chainState := range genState.ChainStates {
+		if _, ok := k.getChainState(ctx, chainState.Chain); ok {
+			panic(fmt.Errorf("chain state %s already set", chainState.Chain.Name))
+		}
 		for _, asset := range chainState.Assets {
 			if asset.IsNativeAsset {
 				k.setChainByNativeAsset(ctx, asset.Denom, chainState.Chain)

@@ -25,17 +25,14 @@ func (k Keeper) getChainStates(ctx sdk.Context) (chainStates []types.ChainState)
 	return chainStates
 }
 
-func (k Keeper) getChainState(ctx sdk.Context, chain exported.Chain) (chainState types.ChainState) {
-	ok := k.getStore(ctx).Get(chainStatePrefix.Append(utils.LowerCaseKey(chain.Name.String())), &chainState)
-	if !ok {
-		chainState.Chain = chain
-	}
-	return chainState
+func (k Keeper) getChainState(ctx sdk.Context, chain exported.Chain) (chainState types.ChainState, ok bool) {
+	return chainState, k.getStore(ctx).Get(chainStatePrefix.Append(utils.LowerCaseKey(chain.Name.String())), &chainState)
 }
 
 // RegisterAsset indicates that the specified asset is supported by the given chain
 func (k Keeper) RegisterAsset(ctx sdk.Context, chain exported.Chain, asset exported.Asset) error {
-	chainState := k.getChainState(ctx, chain)
+	chainState, _ := k.getChainState(ctx, chain)
+	chainState.Chain = chain
 
 	if asset.IsNativeAsset {
 		if c, ok := k.GetChainByNativeAsset(ctx, asset.Denom); ok {
@@ -55,7 +52,10 @@ func (k Keeper) RegisterAsset(ctx sdk.Context, chain exported.Chain, asset expor
 
 // IsAssetRegistered returns true if the specified asset is supported by the given chain
 func (k Keeper) IsAssetRegistered(ctx sdk.Context, chain exported.Chain, denom string) bool {
-	chainState := k.getChainState(ctx, chain)
+	chainState, ok := k.getChainState(ctx, chain)
+	if !ok {
+		return false
+	}
 
 	return chainState.HasAsset(denom)
 }
@@ -102,7 +102,8 @@ func (k Keeper) RegisterFee(ctx sdk.Context, chain exported.Chain, feeInfo expor
 
 // ActivateChain activates the given chain
 func (k Keeper) ActivateChain(ctx sdk.Context, chain exported.Chain) {
-	chainState := k.getChainState(ctx, chain)
+	chainState, _ := k.getChainState(ctx, chain)
+	chainState.Chain = chain
 	chainState.Activated = true
 
 	k.SetChainState(ctx, &chainState)
@@ -110,7 +111,8 @@ func (k Keeper) ActivateChain(ctx sdk.Context, chain exported.Chain) {
 
 // DeactivateChain deactivates the given chain
 func (k Keeper) DeactivateChain(ctx sdk.Context, chain exported.Chain) {
-	chainState := k.getChainState(ctx, chain)
+	chainState, _ := k.getChainState(ctx, chain)
+	chainState.Chain = chain
 	chainState.Activated = false
 
 	k.SetChainState(ctx, &chainState)
@@ -118,14 +120,21 @@ func (k Keeper) DeactivateChain(ctx sdk.Context, chain exported.Chain) {
 
 // IsChainActivated returns true if the given chain is activated; false otherwise
 func (k Keeper) IsChainActivated(ctx sdk.Context, chain exported.Chain) bool {
-	chainState := k.getChainState(ctx, chain)
+	chainState, ok := k.getChainState(ctx, chain)
+	if !ok {
+		return false
+	}
 
 	return chainState.Activated
 }
 
 // GetChainMaintainerStates returns the maintainer states of the given chain
 func (k Keeper) GetChainMaintainerStates(ctx sdk.Context, chain exported.Chain) []types.MaintainerState {
-	chainState := k.getChainState(ctx, chain)
+	chainState, ok := k.getChainState(ctx, chain)
+	if !ok {
+		return []types.MaintainerState{}
+	}
+
 	return chainState.MaintainerStates
 }
 
@@ -138,13 +147,18 @@ func (k Keeper) GetChainMaintainers(ctx sdk.Context, chain exported.Chain) []sdk
 
 // IsChainMaintainer returns true if the given address is one of the given chain's maintainers; false otherwise
 func (k Keeper) IsChainMaintainer(ctx sdk.Context, chain exported.Chain, address sdk.ValAddress) bool {
-	chainState := k.getChainState(ctx, chain)
+	chainState, ok := k.getChainState(ctx, chain)
+	if !ok {
+		return false
+	}
+
 	return chainState.HasMaintainer(address)
 }
 
 // AddChainMaintainer adds the given address to be one of the given chain's maintainers
 func (k Keeper) AddChainMaintainer(ctx sdk.Context, chain exported.Chain, address sdk.ValAddress) error {
-	chainState := k.getChainState(ctx, chain)
+	chainState, _ := k.getChainState(ctx, chain)
+	chainState.Chain = chain
 
 	if err := chainState.AddMaintainer(address); err != nil {
 		return err
@@ -157,7 +171,8 @@ func (k Keeper) AddChainMaintainer(ctx sdk.Context, chain exported.Chain, addres
 
 // RemoveChainMaintainer removes the given address from the given chain's maintainers
 func (k Keeper) RemoveChainMaintainer(ctx sdk.Context, chain exported.Chain, address sdk.ValAddress) error {
-	chainState := k.getChainState(ctx, chain)
+	chainState, _ := k.getChainState(ctx, chain)
+	chainState.Chain = chain
 
 	if err := chainState.RemoveMaintainer(address); err != nil {
 		return err
@@ -202,8 +217,11 @@ func (k Keeper) GetChainByNativeAsset(ctx sdk.Context, asset string) (chain expo
 	return chain, k.getStore(ctx).Get(chainByNativeAssetPrefix.Append(utils.LowerCaseKey(asset)), &chain)
 }
 
-func (k Keeper) GetChainState(ctx sdk.Context, chainState exported.Chain) exported.ChainState {
-	state := k.getChainState(ctx, chainState)
+func (k Keeper) GetChainState(ctx sdk.Context, chain exported.Chain) exported.ChainState {
+	state, ok := k.getChainState(ctx, chain)
+	if !ok {
+		state.Chain = chain
+	}
 	return &state
 }
 

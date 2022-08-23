@@ -162,7 +162,10 @@ func (q Querier) Assets(c context.Context, req *types.AssetsRequest) (*types.Ass
 		return nil, fmt.Errorf("chain %s not found", req.Chain)
 	}
 
-	chainState := q.keeper.getChainState(ctx, chain)
+	chainState, ok := q.keeper.getChainState(ctx, chain)
+	if !ok {
+		return nil, fmt.Errorf("chain state not found for %s", chain.Name)
+	}
 
 	assets := make([]string, len(chainState.Assets))
 	for i, asset := range chainState.Assets {
@@ -181,7 +184,10 @@ func (q Querier) ChainState(c context.Context, req *types.ChainStateRequest) (*t
 		return nil, fmt.Errorf("chain %s not found", req.Chain)
 	}
 
-	chainState := q.keeper.getChainState(ctx, chain)
+	chainState, ok := q.keeper.getChainState(ctx, chain)
+	if !ok {
+		return nil, fmt.Errorf("chain state not found for %s", chain.Name)
+	}
 
 	return &types.ChainStateResponse{State: chainState}, nil
 }
