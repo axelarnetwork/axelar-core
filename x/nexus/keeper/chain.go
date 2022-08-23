@@ -25,10 +25,6 @@ func (k Keeper) getChainStates(ctx sdk.Context) (chainStates []types.ChainState)
 	return chainStates
 }
 
-func (k Keeper) setChainState(ctx sdk.Context, chainState types.ChainState) {
-	k.getStore(ctx).Set(chainStatePrefix.Append(utils.LowerCaseKey(chainState.Chain.Name.String())), &chainState)
-}
-
 func (k Keeper) getChainState(ctx sdk.Context, chain exported.Chain) (chainState types.ChainState, ok bool) {
 	return chainState, k.getStore(ctx).Get(chainStatePrefix.Append(utils.LowerCaseKey(chain.Name.String())), &chainState)
 }
@@ -49,7 +45,7 @@ func (k Keeper) RegisterAsset(ctx sdk.Context, chain exported.Chain, asset expor
 		return err
 	}
 
-	k.setChainState(ctx, chainState)
+	k.SetChainState(ctx, &chainState)
 
 	return nil
 }
@@ -110,7 +106,7 @@ func (k Keeper) ActivateChain(ctx sdk.Context, chain exported.Chain) {
 	chainState.Chain = chain
 	chainState.Activated = true
 
-	k.setChainState(ctx, chainState)
+	k.SetChainState(ctx, &chainState)
 }
 
 // DeactivateChain deactivates the given chain
@@ -119,7 +115,7 @@ func (k Keeper) DeactivateChain(ctx sdk.Context, chain exported.Chain) {
 	chainState.Chain = chain
 	chainState.Activated = false
 
-	k.setChainState(ctx, chainState)
+	k.SetChainState(ctx, &chainState)
 }
 
 // IsChainActivated returns true if the given chain is activated; false otherwise
@@ -168,7 +164,7 @@ func (k Keeper) AddChainMaintainer(ctx sdk.Context, chain exported.Chain, addres
 		return err
 	}
 
-	k.setChainState(ctx, chainState)
+	k.SetChainState(ctx, &chainState)
 
 	return nil
 }
@@ -182,37 +178,9 @@ func (k Keeper) RemoveChainMaintainer(ctx sdk.Context, chain exported.Chain, add
 		return err
 	}
 
-	k.setChainState(ctx, chainState)
+	k.SetChainState(ctx, &chainState)
 
 	return nil
-}
-
-// MarkChainMaintainerMissingVote marks the given chain maintainer for missing vote of a poll
-func (k Keeper) MarkChainMaintainerMissingVote(ctx sdk.Context, chain exported.Chain, address sdk.ValAddress, missingVote bool) {
-	k.markMisbehave(ctx, chain, address, missingVote, func(maintainerState *types.MaintainerState) *utils.Bitmap {
-		return &maintainerState.MissingVotes
-	})
-}
-
-// MarkChainMaintainerIncorrectVote marks the given chain maintainer for voting incorrectly of a poll
-func (k Keeper) MarkChainMaintainerIncorrectVote(ctx sdk.Context, chain exported.Chain, address sdk.ValAddress, incorrectVote bool) {
-	k.markMisbehave(ctx, chain, address, incorrectVote, func(maintainerState *types.MaintainerState) *utils.Bitmap {
-		return &maintainerState.IncorrectVotes
-	})
-}
-
-func (k Keeper) markMisbehave(ctx sdk.Context, chain exported.Chain, address sdk.ValAddress, misbehaved bool, selectMisbehaveType func(maintainerState *types.MaintainerState) *utils.Bitmap) {
-	chainState, _ := k.getChainState(ctx, chain)
-	chainState.Chain = chain
-
-	i := chainState.IndexOfMaintainer(address)
-	if i == -1 {
-		return
-	}
-
-	votes := selectMisbehaveType(&chainState.MaintainerStates[i])
-	votes.Add(misbehaved)
-	k.setChainState(ctx, chainState)
 }
 
 // GetChains retrieves the specification for all supported blockchains
@@ -247,4 +215,18 @@ func (k Keeper) setChainByNativeAsset(ctx sdk.Context, asset string, chain expor
 // GetChainByNativeAsset gets a chain by the native asset
 func (k Keeper) GetChainByNativeAsset(ctx sdk.Context, asset string) (chain exported.Chain, ok bool) {
 	return chain, k.getStore(ctx).Get(chainByNativeAssetPrefix.Append(utils.LowerCaseKey(asset)), &chain)
+}
+
+// GetChainState returns the state of the given chain, initializes it if not known
+func (k Keeper) GetChainState(ctx sdk.Context, chain exported.Chain) exported.ChainState {
+	state, ok := k.getChainState(ctx, chain)
+	if !ok {
+		state.Chain = chain
+	}
+	return &state
+}
+
+// SetChainState persists the given chain state
+func (k Keeper) SetChainState(ctx sdk.Context, chainState exported.ChainState) {
+	k.getStore(ctx).Set(chainStatePrefix.Append(utils.LowerCaseKey(chainState.ChainName().String())), chainState)
 }

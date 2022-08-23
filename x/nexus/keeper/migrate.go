@@ -47,7 +47,7 @@ func deregisterUaxlAsset(ctx sdk.Context, k Keeper) {
 			return a.Denom != uaxlAsset
 		})
 
-		k.setChainState(ctx, chainState)
+		k.SetChainState(ctx, &chainState)
 	}
 }
 

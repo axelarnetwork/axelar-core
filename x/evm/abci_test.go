@@ -788,6 +788,8 @@ func TestHandleConfirmDeposit(t *testing.T) {
 		Then("should return false", func(t *testing.T) {
 			ok := handleConfirmDeposit(ctx, event, sourceCk, n, exported.Ethereum)
 			assert.False(t, ok)
+			assert.Len(t, n.EnqueueForTransferCalls(), 0)
+			assert.Len(t, sourceCk.SetDepositCalls(), 0)
 		}).
 		Run(t)
 
@@ -797,24 +799,41 @@ func TestHandleConfirmDeposit(t *testing.T) {
 		Then("should return false", func(t *testing.T) {
 			ok := handleConfirmDeposit(ctx, event, sourceCk, n, exported.Ethereum)
 			assert.False(t, ok)
+			assert.Len(t, n.EnqueueForTransferCalls(), 0)
+			assert.Len(t, sourceCk.SetDepositCalls(), 0)
 		}).
 		Run(t)
 
 	givenTransferEvent.
 		When("burner info found", burnerInfoFound(true)).
 		When("recipient found", recipientFound(true)).
+		When("deposit exists", depositFound(true)).
+		Then("should return false", func(t *testing.T) {
+			ok := handleConfirmDeposit(ctx, event, sourceCk, n, exported.Ethereum)
+			assert.False(t, ok)
+			assert.Len(t, n.EnqueueForTransferCalls(), 0)
+			assert.Len(t, sourceCk.SetDepositCalls(), 0)
+		}).
+		Run(t)
+
+	givenTransferEvent.
+		When("burner info found", burnerInfoFound(true)).
+		When("recipient found", recipientFound(true)).
+		When("deposit does not exist", depositFound(false)).
 		When("failed to enqueue the transfer", enqueueTransferSucceed(false)).
 		Then("should return false", func(t *testing.T) {
 			ok := handleConfirmDeposit(ctx, event, sourceCk, n, exported.Ethereum)
 			assert.False(t, ok)
+			assert.Len(t, n.EnqueueForTransferCalls(), 1)
+			assert.Len(t, sourceCk.SetDepositCalls(), 0)
 		}).
 		Run(t)
 
 	givenTransferEvent.
 		When("burner info found", burnerInfoFound(true)).
 		When("recipient found", recipientFound(true)).
-		When("enqueue the transfer", enqueueTransferSucceed(true)).
 		When("deposit does not exist", depositFound(false)).
+		When("enqueue the transfer", enqueueTransferSucceed(true)).
 		Then("should return true", func(t *testing.T) {
 			ok := handleConfirmDeposit(ctx, event, sourceCk, n, exported.Ethereum)
 			assert.True(t, ok)
