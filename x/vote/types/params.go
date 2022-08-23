@@ -50,6 +50,10 @@ func (m Params) Validate() error {
 		return err
 	}
 
+	if err := validateEndBlockerLimit(m.EndBlockerLimit); err != nil {
+		return err
+	}
+
 	return nil
 }
 

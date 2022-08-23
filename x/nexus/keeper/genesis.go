@@ -32,7 +32,7 @@ func (k Keeper) InitGenesis(ctx sdk.Context, genState *types.GenesisState) {
 				k.setChainByNativeAsset(ctx, asset.Denom, chainState.Chain)
 			}
 		}
-		k.setChainState(ctx, chainState)
+		k.SetChainState(ctx, &chainState)
 	}
 
 	for _, linkedAddresses := range genState.LinkedAddresses {

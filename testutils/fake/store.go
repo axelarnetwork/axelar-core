@@ -35,7 +35,7 @@ func NewMultiStore() sdk.MultiStore {
 		if store, ok := ms.kvstore[storeKey.String()]; ok {
 			return store
 		}
-		store := NewTestKVStore()
+		store := newTestKVStore()
 		ms.kvstore[storeKey.String()] = store
 		return store
 
@@ -64,7 +64,10 @@ func NewCachedMultiStore(ms MultiStore) sdk.CacheMultiStore {
 		if store, ok := cached.kvstore[storeKey.String()]; ok {
 			return store
 		}
-		store := NewTestKVStore()
+		store := newTestKVStore()
+		store.write = func() {
+			ms.kvstore[storeKey.String()] = store
+		}
 		cached.kvstore[storeKey.String()] = store
 		return store
 	}
@@ -88,8 +91,8 @@ func (t TestKVStore) Write() {
 	t.write()
 }
 
-// NewTestKVStore returns a new kv store instance for testing
-func NewTestKVStore() interfaces.KVStore {
+// newTestKVStore returns a new kv store instance for testing
+func newTestKVStore() *TestKVStore {
 	return &TestKVStore{
 		mutex: &sync.RWMutex{},
 		store: map[string][]byte{},
