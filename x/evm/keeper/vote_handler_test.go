@@ -69,7 +69,7 @@ func TestHandleResult(t *testing.T) {
 		}
 		r = &mock.RewarderMock{}
 		encCfg := params.MakeEncodingConfig()
-		handler = keeper.NewVoteHandler(encCfg.Codec, basek, n,&mock.ChainStaterMock{}, r)
+		handler = keeper.NewVoteHandler(encCfg.Codec, basek, n, r)
 	}
 
 	repeats := 20

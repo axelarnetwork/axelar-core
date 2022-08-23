@@ -16,21 +16,19 @@ import (
 var _ vote.VoteHandler = &voteHandler{}
 
 type voteHandler struct {
-	cdc         codec.Codec
-	keeper      types.BaseKeeper
-	nexus       types.Nexus
-	rewarder    types.Rewarder
-	chainStater types.ChainStater
+	cdc      codec.Codec
+	keeper   types.BaseKeeper
+	nexus    types.Nexus
+	rewarder types.Rewarder
 }
 
 // NewVoteHandler returns the handler for processing vote delivered by the vote module
-func NewVoteHandler(cdc codec.Codec, keeper types.BaseKeeper, nexus types.Nexus, chainStater types.ChainStater, rewarder types.Rewarder) vote.VoteHandler {
+func NewVoteHandler(cdc codec.Codec, keeper types.BaseKeeper, nexus types.Nexus, rewarder types.Rewarder) vote.VoteHandler {
 	return voteHandler{
-		cdc:         cdc,
-		keeper:      keeper,
-		nexus:       nexus,
-		rewarder:    rewarder,
-		chainStater: chainStater,
+		cdc:      cdc,
+		keeper:   keeper,
+		nexus:    nexus,
+		rewarder: rewarder,
 	}
 }
 
@@ -93,13 +91,13 @@ func (v voteHandler) HandleCompletedPoll(ctx sdk.Context, poll vote.Poll) error 
 
 	rewardPool := v.rewarder.GetPool(ctx, rewardPoolName)
 
-	defer v.chainStater.Persist(ctx)
+	chainState := v.nexus.GetChainState(ctx, chain)
 	for _, voter := range poll.GetVoters() {
 		hasVoted := poll.HasVoted(voter)
 		hasVotedIncorrectly := hasVoted && !poll.HasVotedCorrectly(voter)
 
-		v.chainStater.MarkMissingVote(ctx, chain, voter, !hasVoted)
-		v.chainStater.MarkIncorrectVote(ctx, chain, voter, hasVotedIncorrectly)
+		chainState.MarkMissingVote(voter, !hasVoted)
+		chainState.MarkIncorrectVote(voter, hasVotedIncorrectly)
 
 		v.keeper.Logger(ctx).Debug(fmt.Sprintf("marked voter %s behaviour", voter.String()),
 			"voter", voter.String(),
@@ -122,6 +120,7 @@ func (v voteHandler) HandleCompletedPoll(ctx sdk.Context, poll vote.Poll) error 
 				"poll", poll.GetID().String())
 		}
 	}
+	v.nexus.SetChainState(ctx, chainState)
 
 	if v.IsFalsyResult(voteEvents) {
 		md := mustGetMetadata(poll)

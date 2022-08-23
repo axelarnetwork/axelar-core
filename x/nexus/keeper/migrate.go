@@ -38,16 +38,13 @@ func deregisterUaxlAsset(ctx sdk.Context, k Keeper) {
 			continue
 		}
 
-		chainState, ok := k.getChainState(ctx, chain)
-		if !ok {
-			continue
-		}
+		chainState := k.getChainState(ctx, chain)
 
 		chainState.Assets = slices.Filter(chainState.Assets, func(a exported.Asset) bool {
 			return a.Denom != uaxlAsset
 		})
 
-		k.setChainState(ctx, chainState)
+		k.SetChainState(ctx, &chainState)
 	}
 }
 

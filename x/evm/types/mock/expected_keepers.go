@@ -293,6 +293,9 @@ var _ evmtypes.Nexus = &NexusMock{}
 // 			GetChainMaintainersFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain) []github_com_cosmos_cosmos_sdk_types.ValAddress {
 // 				panic("mock out the GetChainMaintainers method")
 // 			},
+// 			GetChainStateFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain) github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainState {
+// 				panic("mock out the GetChainState method")
+// 			},
 // 			GetChainsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain {
 // 				panic("mock out the GetChains method")
 // 			},
@@ -316,6 +319,9 @@ var _ evmtypes.Nexus = &NexusMock{}
 // 			},
 // 			SetChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain)  {
 // 				panic("mock out the SetChain method")
+// 			},
+// 			SetChainStateFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, state github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainState)  {
+// 				panic("mock out the SetChainState method")
 // 			},
 // 		}
 //
@@ -348,6 +354,9 @@ type NexusMock struct {
 	// GetChainMaintainersFunc mocks the GetChainMaintainers method.
 	GetChainMaintainersFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain) []github_com_cosmos_cosmos_sdk_types.ValAddress
 
+	// GetChainStateFunc mocks the GetChainState method.
+	GetChainStateFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain) github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainState
+
 	// GetChainsFunc mocks the GetChains method.
 	GetChainsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) []github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 
@@ -371,6 +380,9 @@ type NexusMock struct {
 
 	// SetChainFunc mocks the SetChain method.
 	SetChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain)
+
+	// SetChainStateFunc mocks the SetChainState method.
+	SetChainStateFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, state github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainState)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -440,6 +452,13 @@ type NexusMock struct {
 			// Chain is the chain argument value.
 			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 		}
+		// GetChainState holds details about calls to the GetChainState method.
+		GetChainState []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Chain is the chain argument value.
+			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
+		}
 		// GetChains holds details about calls to the GetChains method.
 		GetChains []struct {
 			// Ctx is the ctx argument value.
@@ -502,6 +521,13 @@ type NexusMock struct {
 			// Chain is the chain argument value.
 			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 		}
+		// SetChainState holds details about calls to the SetChainState method.
+		SetChainState []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// State is the state argument value.
+			State github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainState
+		}
 	}
 	lockAddTransferFee         sync.RWMutex
 	lockArchivePendingTransfer sync.RWMutex
@@ -511,6 +537,7 @@ type NexusMock struct {
 	lockGetChain               sync.RWMutex
 	lockGetChainByNativeAsset  sync.RWMutex
 	lockGetChainMaintainers    sync.RWMutex
+	lockGetChainState          sync.RWMutex
 	lockGetChains              sync.RWMutex
 	lockGetRecipient           sync.RWMutex
 	lockGetTransfersForChain   sync.RWMutex
@@ -519,6 +546,7 @@ type NexusMock struct {
 	lockLinkAddresses          sync.RWMutex
 	lockRegisterAsset          sync.RWMutex
 	lockSetChain               sync.RWMutex
+	lockSetChainState          sync.RWMutex
 }
 
 // AddTransferFee calls AddTransferFeeFunc.
@@ -821,6 +849,41 @@ func (mock *NexusMock) GetChainMaintainersCalls() []struct {
 	return calls
 }
 
+// GetChainState calls GetChainStateFunc.
+func (mock *NexusMock) GetChainState(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain) github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainState {
+	if mock.GetChainStateFunc == nil {
+		panic("NexusMock.GetChainStateFunc: method is nil but Nexus.GetChainState was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
+	}{
+		Ctx:   ctx,
+		Chain: chain,
+	}
+	mock.lockGetChainState.Lock()
+	mock.calls.GetChainState = append(mock.calls.GetChainState, callInfo)
+	mock.lockGetChainState.Unlock()
+	return mock.GetChainStateFunc(ctx, chain)
+}
+
+// GetChainStateCalls gets all the calls that were made to GetChainState.
+// Check the length with:
+//     len(mockedNexus.GetChainStateCalls())
+func (mock *NexusMock) GetChainStateCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
+	}
+	mock.lockGetChainState.RLock()
+	calls = mock.calls.GetChainState
+	mock.lockGetChainState.RUnlock()
+	return calls
+}
+
 // GetChains calls GetChainsFunc.
 func (mock *NexusMock) GetChains(ctx github_com_cosmos_cosmos_sdk_types.Context) []github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain {
 	if mock.GetChainsFunc == nil {
@@ -1113,190 +1176,38 @@ func (mock *NexusMock) SetChainCalls() []struct {
 	return calls
 }
 
-// Ensure, that ChainStaterMock does implement evmtypes.ChainStater.
-// If this is not the case, regenerate this file with moq.
-var _ evmtypes.ChainStater = &ChainStaterMock{}
-
-// ChainStaterMock is a mock implementation of evmtypes.ChainStater.
-//
-// 	func TestSomethingThatUsesChainStater(t *testing.T) {
-//
-// 		// make and configure a mocked evmtypes.ChainStater
-// 		mockedChainStater := &ChainStaterMock{
-// 			MarkIncorrectVoteFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, address github_com_cosmos_cosmos_sdk_types.ValAddress, incorrectVote bool)  {
-// 				panic("mock out the MarkIncorrectVote method")
-// 			},
-// 			MarkMissingVoteFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, address github_com_cosmos_cosmos_sdk_types.ValAddress, missingVote bool)  {
-// 				panic("mock out the MarkMissingVote method")
-// 			},
-// 			PersistFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context)  {
-// 				panic("mock out the Persist method")
-// 			},
-// 		}
-//
-// 		// use mockedChainStater in code that requires evmtypes.ChainStater
-// 		// and then make assertions.
-//
-// 	}
-type ChainStaterMock struct {
-	// MarkIncorrectVoteFunc mocks the MarkIncorrectVote method.
-	MarkIncorrectVoteFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, address github_com_cosmos_cosmos_sdk_types.ValAddress, incorrectVote bool)
-
-	// MarkMissingVoteFunc mocks the MarkMissingVote method.
-	MarkMissingVoteFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, address github_com_cosmos_cosmos_sdk_types.ValAddress, missingVote bool)
-
-	// PersistFunc mocks the Persist method.
-	PersistFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context)
-
-	// calls tracks calls to the methods.
-	calls struct {
-		// MarkIncorrectVote holds details about calls to the MarkIncorrectVote method.
-		MarkIncorrectVote []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Chain is the chain argument value.
-			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-			// Address is the address argument value.
-			Address github_com_cosmos_cosmos_sdk_types.ValAddress
-			// IncorrectVote is the incorrectVote argument value.
-			IncorrectVote bool
-		}
-		// MarkMissingVote holds details about calls to the MarkMissingVote method.
-		MarkMissingVote []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Chain is the chain argument value.
-			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-			// Address is the address argument value.
-			Address github_com_cosmos_cosmos_sdk_types.ValAddress
-			// MissingVote is the missingVote argument value.
-			MissingVote bool
-		}
-		// Persist holds details about calls to the Persist method.
-		Persist []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-		}
-	}
-	lockMarkIncorrectVote sync.RWMutex
-	lockMarkMissingVote   sync.RWMutex
-	lockPersist           sync.RWMutex
-}
-
-// MarkIncorrectVote calls MarkIncorrectVoteFunc.
-func (mock *ChainStaterMock) MarkIncorrectVote(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, address github_com_cosmos_cosmos_sdk_types.ValAddress, incorrectVote bool) {
-	if mock.MarkIncorrectVoteFunc == nil {
-		panic("ChainStaterMock.MarkIncorrectVoteFunc: method is nil but ChainStater.MarkIncorrectVote was just called")
+// SetChainState calls SetChainStateFunc.
+func (mock *NexusMock) SetChainState(ctx github_com_cosmos_cosmos_sdk_types.Context, state github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainState) {
+	if mock.SetChainStateFunc == nil {
+		panic("NexusMock.SetChainStateFunc: method is nil but Nexus.SetChainState was just called")
 	}
 	callInfo := struct {
-		Ctx           github_com_cosmos_cosmos_sdk_types.Context
-		Chain         github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-		Address       github_com_cosmos_cosmos_sdk_types.ValAddress
-		IncorrectVote bool
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		State github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainState
 	}{
-		Ctx:           ctx,
-		Chain:         chain,
-		Address:       address,
-		IncorrectVote: incorrectVote,
+		Ctx:   ctx,
+		State: state,
 	}
-	mock.lockMarkIncorrectVote.Lock()
-	mock.calls.MarkIncorrectVote = append(mock.calls.MarkIncorrectVote, callInfo)
-	mock.lockMarkIncorrectVote.Unlock()
-	mock.MarkIncorrectVoteFunc(ctx, chain, address, incorrectVote)
+	mock.lockSetChainState.Lock()
+	mock.calls.SetChainState = append(mock.calls.SetChainState, callInfo)
+	mock.lockSetChainState.Unlock()
+	mock.SetChainStateFunc(ctx, state)
 }
 
-// MarkIncorrectVoteCalls gets all the calls that were made to MarkIncorrectVote.
+// SetChainStateCalls gets all the calls that were made to SetChainState.
 // Check the length with:
-//     len(mockedChainStater.MarkIncorrectVoteCalls())
-func (mock *ChainStaterMock) MarkIncorrectVoteCalls() []struct {
-	Ctx           github_com_cosmos_cosmos_sdk_types.Context
-	Chain         github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-	Address       github_com_cosmos_cosmos_sdk_types.ValAddress
-	IncorrectVote bool
+//     len(mockedNexus.SetChainStateCalls())
+func (mock *NexusMock) SetChainStateCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	State github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainState
 } {
 	var calls []struct {
-		Ctx           github_com_cosmos_cosmos_sdk_types.Context
-		Chain         github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-		Address       github_com_cosmos_cosmos_sdk_types.ValAddress
-		IncorrectVote bool
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		State github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainState
 	}
-	mock.lockMarkIncorrectVote.RLock()
-	calls = mock.calls.MarkIncorrectVote
-	mock.lockMarkIncorrectVote.RUnlock()
-	return calls
-}
-
-// MarkMissingVote calls MarkMissingVoteFunc.
-func (mock *ChainStaterMock) MarkMissingVote(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, address github_com_cosmos_cosmos_sdk_types.ValAddress, missingVote bool) {
-	if mock.MarkMissingVoteFunc == nil {
-		panic("ChainStaterMock.MarkMissingVoteFunc: method is nil but ChainStater.MarkMissingVote was just called")
-	}
-	callInfo := struct {
-		Ctx         github_com_cosmos_cosmos_sdk_types.Context
-		Chain       github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-		Address     github_com_cosmos_cosmos_sdk_types.ValAddress
-		MissingVote bool
-	}{
-		Ctx:         ctx,
-		Chain:       chain,
-		Address:     address,
-		MissingVote: missingVote,
-	}
-	mock.lockMarkMissingVote.Lock()
-	mock.calls.MarkMissingVote = append(mock.calls.MarkMissingVote, callInfo)
-	mock.lockMarkMissingVote.Unlock()
-	mock.MarkMissingVoteFunc(ctx, chain, address, missingVote)
-}
-
-// MarkMissingVoteCalls gets all the calls that were made to MarkMissingVote.
-// Check the length with:
-//     len(mockedChainStater.MarkMissingVoteCalls())
-func (mock *ChainStaterMock) MarkMissingVoteCalls() []struct {
-	Ctx         github_com_cosmos_cosmos_sdk_types.Context
-	Chain       github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-	Address     github_com_cosmos_cosmos_sdk_types.ValAddress
-	MissingVote bool
-} {
-	var calls []struct {
-		Ctx         github_com_cosmos_cosmos_sdk_types.Context
-		Chain       github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-		Address     github_com_cosmos_cosmos_sdk_types.ValAddress
-		MissingVote bool
-	}
-	mock.lockMarkMissingVote.RLock()
-	calls = mock.calls.MarkMissingVote
-	mock.lockMarkMissingVote.RUnlock()
-	return calls
-}
-
-// Persist calls PersistFunc.
-func (mock *ChainStaterMock) Persist(ctx github_com_cosmos_cosmos_sdk_types.Context) {
-	if mock.PersistFunc == nil {
-		panic("ChainStaterMock.PersistFunc: method is nil but ChainStater.Persist was just called")
-	}
-	callInfo := struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
-	}{
-		Ctx: ctx,
-	}
-	mock.lockPersist.Lock()
-	mock.calls.Persist = append(mock.calls.Persist, callInfo)
-	mock.lockPersist.Unlock()
-	mock.PersistFunc(ctx)
-}
-
-// PersistCalls gets all the calls that were made to Persist.
-// Check the length with:
-//     len(mockedChainStater.PersistCalls())
-func (mock *ChainStaterMock) PersistCalls() []struct {
-	Ctx github_com_cosmos_cosmos_sdk_types.Context
-} {
-	var calls []struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
-	}
-	mock.lockPersist.RLock()
-	calls = mock.calls.Persist
-	mock.lockPersist.RUnlock()
+	mock.lockSetChainState.RLock()
+	calls = mock.calls.SetChainState
+	mock.lockSetChainState.RUnlock()
 	return calls
 }
 

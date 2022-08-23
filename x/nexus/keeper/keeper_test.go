@@ -71,7 +71,6 @@ func init() {
 func TestChainKeeper(t *testing.T) {
 	var (
 		ctx sdk.Context
-		ck  *nexusKeeper.ChainKeeper
 	)
 
 	repeats := 20
@@ -82,7 +81,6 @@ func TestChainKeeper(t *testing.T) {
 		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 		k := nexusKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("nexus"), nexusSubspace)
 		k.SetParams(ctx, types.DefaultParams())
-		ck = nexusKeeper.NewChainKeeper(k)
 	})
 
 	t.Run("MarkMissingVote", testutils.Func(func(t *testing.T) {
@@ -101,7 +99,9 @@ func TestChainKeeper(t *testing.T) {
 				}
 			}).
 			Then("should mark missing vote", func(t *testing.T) {
-				ck.MarkMissingVote(ctx, chain, maintainer, true)
+				state := keeper.GetChainState(ctx, chain)
+				state.MarkMissingVote(maintainer, true)
+				keeper.SetChainState(ctx, state)
 
 				maintainerStates := keeper.GetChainMaintainerStates(ctx, chain)
 				assert.Len(t, maintainerStates, 1)
@@ -127,7 +127,9 @@ func TestChainKeeper(t *testing.T) {
 				}
 			}).
 			Then("should mark missing vote", func(t *testing.T) {
-				ck.MarkIncorrectVote(ctx, chain, maintainer, true)
+				state := keeper.GetChainState(ctx, chain)
+				state.MarkIncorrectVote(maintainer, true)
+				keeper.SetChainState(ctx, state)
 
 				maintainerStates := keeper.GetChainMaintainerStates(ctx, chain)
 				assert.Len(t, maintainerStates, 1)
