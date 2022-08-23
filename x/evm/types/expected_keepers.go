@@ -16,7 +16,7 @@ import (
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
-//go:generate moq -out ./mock/expected_keepers.go -pkg mock . Voter Signer Nexus Snapshotter BaseKeeper ChainKeeper Rewarder StakingKeeper SlashingKeeper MultisigKeeper
+//go:generate moq -out ./mock/expected_keepers.go -pkg mock . Voter Signer Nexus ChainStater Snapshotter BaseKeeper ChainKeeper Rewarder StakingKeeper SlashingKeeper MultisigKeeper
 
 // BaseKeeper is implemented by this module's base keeper
 type BaseKeeper interface {
@@ -109,8 +109,12 @@ type Nexus interface {
 	GetChainByNativeAsset(ctx sdk.Context, asset string) (chain nexus.Chain, ok bool)
 	ComputeTransferFee(ctx sdk.Context, sourceChain nexus.Chain, destinationChain nexus.Chain, asset sdk.Coin) (sdk.Coin, error)
 	AddTransferFee(ctx sdk.Context, coin sdk.Coin)
-	MarkChainMaintainerMissingVote(ctx sdk.Context, chain nexus.Chain, address sdk.ValAddress, missingVote bool)
-	MarkChainMaintainerIncorrectVote(ctx sdk.Context, chain nexus.Chain, address sdk.ValAddress, incorrectVote bool)
+}
+
+type ChainStater interface {
+	MarkMissingVote(ctx sdk.Context, chain nexus.Chain, address sdk.ValAddress, missingVote bool)
+	MarkIncorrectVote(ctx sdk.Context, chain nexus.Chain, address sdk.ValAddress, incorrectVote bool)
+	Persist(ctx sdk.Context)
 }
 
 // InitPoller is a minimal interface to start a poll. This must be a type alias instead of a type definition,

@@ -456,7 +456,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	app.ibcKeeper.SetRouter(ibcRouter)
 
 	voteRouter := voteTypes.NewRouter()
-	voteRouter.AddHandler(evmTypes.ModuleName, evmKeeper.NewVoteHandler(appCodec, evmK, nexusK, rewardK))
+	voteRouter.AddHandler(evmTypes.ModuleName, evmKeeper.NewVoteHandler(appCodec, evmK, nexusK, nexusKeeper.NewChainKeeper(nexusK), rewardK))
 	votingK.SetVoteRouter(voteRouter)
 
 	/****  Module Options ****/

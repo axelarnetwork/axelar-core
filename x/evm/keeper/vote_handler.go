@@ -16,19 +16,21 @@ import (
 var _ vote.VoteHandler = &voteHandler{}
 
 type voteHandler struct {
-	cdc      codec.Codec
-	keeper   types.BaseKeeper
-	nexus    types.Nexus
-	rewarder types.Rewarder
+	cdc         codec.Codec
+	keeper      types.BaseKeeper
+	nexus       types.Nexus
+	rewarder    types.Rewarder
+	chainStater types.ChainStater
 }
 
 // NewVoteHandler returns the handler for processing vote delivered by the vote module
-func NewVoteHandler(cdc codec.Codec, keeper types.BaseKeeper, nexus types.Nexus, rewarder types.Rewarder) vote.VoteHandler {
+func NewVoteHandler(cdc codec.Codec, keeper types.BaseKeeper, nexus types.Nexus, chainStater types.ChainStater, rewarder types.Rewarder) vote.VoteHandler {
 	return voteHandler{
-		cdc:      cdc,
-		keeper:   keeper,
-		nexus:    nexus,
-		rewarder: rewarder,
+		cdc:         cdc,
+		keeper:      keeper,
+		nexus:       nexus,
+		rewarder:    rewarder,
+		chainStater: chainStater,
 	}
 }
 
@@ -53,7 +55,7 @@ func (v voteHandler) HandleExpiredPoll(ctx sdk.Context, poll vote.Poll) error {
 		return fmt.Errorf("reward pool not set for poll %s", poll.GetID().String())
 	}
 
-	// TODO: MarkChainMaintainerMissingVote for those who didn't vote in time. Need
+	// TODO: MarkMissingVote for those who didn't vote in time. Need
 	// to be able to get chain of expired polls in order to do it.
 	rewardPool := v.rewarder.GetPool(ctx, rewardPoolName)
 	// Penalize voters who failed to vote
@@ -91,12 +93,13 @@ func (v voteHandler) HandleCompletedPoll(ctx sdk.Context, poll vote.Poll) error 
 
 	rewardPool := v.rewarder.GetPool(ctx, rewardPoolName)
 
+	defer v.chainStater.Persist(ctx)
 	for _, voter := range poll.GetVoters() {
 		hasVoted := poll.HasVoted(voter)
 		hasVotedIncorrectly := hasVoted && !poll.HasVotedCorrectly(voter)
 
-		v.nexus.MarkChainMaintainerMissingVote(ctx, chain, voter, !hasVoted)
-		v.nexus.MarkChainMaintainerIncorrectVote(ctx, chain, voter, hasVotedIncorrectly)
+		v.chainStater.MarkMissingVote(ctx, chain, voter, !hasVoted)
+		v.chainStater.MarkIncorrectVote(ctx, chain, voter, hasVotedIncorrectly)
 
 		v.keeper.Logger(ctx).Debug(fmt.Sprintf("marked voter %s behaviour", voter.String()),
 			"voter", voter.String(),

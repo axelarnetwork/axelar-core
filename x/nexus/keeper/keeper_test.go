@@ -68,10 +68,10 @@ func init() {
 	keeper.SetRouter(addressValidator())
 }
 
-func TestKeeper(t *testing.T) {
+func TestChainKeeper(t *testing.T) {
 	var (
-		ctx    sdk.Context
-		keeper nexusKeeper.Keeper
+		ctx sdk.Context
+		ck  *nexusKeeper.ChainKeeper
 	)
 
 	repeats := 20
@@ -80,11 +80,12 @@ func TestKeeper(t *testing.T) {
 		encCfg := app.MakeEncodingConfig()
 		nexusSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("nexusKey"), sdk.NewKVStoreKey("tNexusKey"), "nexus")
 		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
-		keeper = nexusKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("nexus"), nexusSubspace)
-		keeper.SetParams(ctx, types.DefaultParams())
+		k := nexusKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("nexus"), nexusSubspace)
+		k.SetParams(ctx, types.DefaultParams())
+		ck = nexusKeeper.NewChainKeeper(k)
 	})
 
-	t.Run("MarkChainMaintainerMissingVote", testutils.Func(func(t *testing.T) {
+	t.Run("MarkMissingVote", testutils.Func(func(t *testing.T) {
 		var (
 			chain      exported.Chain
 			maintainer sdk.ValAddress
@@ -100,7 +101,7 @@ func TestKeeper(t *testing.T) {
 				}
 			}).
 			Then("should mark missing vote", func(t *testing.T) {
-				keeper.MarkChainMaintainerMissingVote(ctx, chain, maintainer, true)
+				ck.MarkMissingVote(ctx, chain, maintainer, true)
 
 				maintainerStates := keeper.GetChainMaintainerStates(ctx, chain)
 				assert.Len(t, maintainerStates, 1)
@@ -110,7 +111,7 @@ func TestKeeper(t *testing.T) {
 			})
 	}).Repeat(repeats))
 
-	t.Run("MarkChainMaintainerIncorrectVote", testutils.Func(func(t *testing.T) {
+	t.Run("MarkIncorrectVote", testutils.Func(func(t *testing.T) {
 		var (
 			chain      exported.Chain
 			maintainer sdk.ValAddress
@@ -126,7 +127,7 @@ func TestKeeper(t *testing.T) {
 				}
 			}).
 			Then("should mark missing vote", func(t *testing.T) {
-				keeper.MarkChainMaintainerIncorrectVote(ctx, chain, maintainer, true)
+				ck.MarkIncorrectVote(ctx, chain, maintainer, true)
 
 				maintainerStates := keeper.GetChainMaintainerStates(ctx, chain)
 				assert.Len(t, maintainerStates, 1)

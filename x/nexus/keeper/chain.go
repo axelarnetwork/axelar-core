@@ -2,12 +2,15 @@ package keeper
 
 import (
 	"fmt"
+	"sort"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"golang.org/x/exp/maps"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
+	"github.com/axelarnetwork/utils/monads/cached"
 	"github.com/axelarnetwork/utils/slices"
 )
 
@@ -187,34 +190,6 @@ func (k Keeper) RemoveChainMaintainer(ctx sdk.Context, chain exported.Chain, add
 	return nil
 }
 
-// MarkChainMaintainerMissingVote marks the given chain maintainer for missing vote of a poll
-func (k Keeper) MarkChainMaintainerMissingVote(ctx sdk.Context, chain exported.Chain, address sdk.ValAddress, missingVote bool) {
-	k.markMisbehave(ctx, chain, address, missingVote, func(maintainerState *types.MaintainerState) *utils.Bitmap {
-		return &maintainerState.MissingVotes
-	})
-}
-
-// MarkChainMaintainerIncorrectVote marks the given chain maintainer for voting incorrectly of a poll
-func (k Keeper) MarkChainMaintainerIncorrectVote(ctx sdk.Context, chain exported.Chain, address sdk.ValAddress, incorrectVote bool) {
-	k.markMisbehave(ctx, chain, address, incorrectVote, func(maintainerState *types.MaintainerState) *utils.Bitmap {
-		return &maintainerState.IncorrectVotes
-	})
-}
-
-func (k Keeper) markMisbehave(ctx sdk.Context, chain exported.Chain, address sdk.ValAddress, misbehaved bool, selectMisbehaveType func(maintainerState *types.MaintainerState) *utils.Bitmap) {
-	chainState, _ := k.getChainState(ctx, chain)
-	chainState.Chain = chain
-
-	i := chainState.IndexOfMaintainer(address)
-	if i == -1 {
-		return
-	}
-
-	votes := selectMisbehaveType(&chainState.MaintainerStates[i])
-	votes.Add(misbehaved)
-	k.setChainState(ctx, chainState)
-}
-
 // GetChains retrieves the specification for all supported blockchains
 func (k Keeper) GetChains(ctx sdk.Context) (chains []exported.Chain) {
 	iter := k.getStore(ctx).Iterator(chainPrefix)
@@ -247,4 +222,76 @@ func (k Keeper) setChainByNativeAsset(ctx sdk.Context, asset string, chain expor
 // GetChainByNativeAsset gets a chain by the native asset
 func (k Keeper) GetChainByNativeAsset(ctx sdk.Context, asset string) (chain exported.Chain, ok bool) {
 	return chain, k.getStore(ctx).Get(chainByNativeAssetPrefix.Append(utils.LowerCaseKey(asset)), &chain)
+}
+
+type ChainKeeper struct {
+	k      Keeper
+	states map[string]*cached.Cached[types.ChainState]
+	dirty  map[string]bool
+}
+
+func NewChainKeeper(k Keeper) *ChainKeeper {
+	return &ChainKeeper{
+		k:      k,
+		dirty:  map[string]bool{},
+		states: map[string]*cached.Cached[types.ChainState]{},
+	}
+}
+
+// MarkChainMaintainerMissingVote marks the given chain maintainer for missing vote of a poll
+func (k *ChainKeeper) MarkMissingVote(ctx sdk.Context, chain exported.Chain, address sdk.ValAddress, missingVote bool) {
+	k.markMisbehave(ctx, chain, address, missingVote, func(maintainerState *types.MaintainerState) *utils.Bitmap {
+		return &maintainerState.MissingVotes
+	})
+}
+
+// MarkChainMaintainerIncorrectVote marks the given chain maintainer for voting incorrectly of a poll
+func (k *ChainKeeper) MarkIncorrectVote(ctx sdk.Context, chain exported.Chain, address sdk.ValAddress, incorrectVote bool) {
+	k.markMisbehave(ctx, chain, address, incorrectVote, func(maintainerState *types.MaintainerState) *utils.Bitmap {
+		return &maintainerState.IncorrectVotes
+	})
+}
+
+func (k *ChainKeeper) markMisbehave(ctx sdk.Context, chain exported.Chain, address sdk.ValAddress, misbehaved bool, selectMisbehaveType func(maintainerState *types.MaintainerState) *utils.Bitmap) {
+	chainState := k.getChainState(ctx, chain)
+
+	i := chainState.IndexOfMaintainer(address)
+	if i == -1 {
+		return
+	}
+
+	votes := selectMisbehaveType(&chainState.MaintainerStates[i])
+	votes.Add(misbehaved)
+	k.dirty[chain.Name.String()] = true
+}
+
+func (k *ChainKeeper) Persist(ctx sdk.Context) {
+	keys := maps.Keys(k.states)
+	sort.Strings(keys)
+	for _, chain := range keys {
+		if !k.dirty[chain] {
+			continue
+		}
+		k.k.setChainState(ctx, k.states[chain].Value())
+		delete(k.dirty, chain)
+	}
+}
+
+func (k *ChainKeeper) getChainState(ctx sdk.Context, chain exported.Chain) types.ChainState {
+	var (
+		state *cached.Cached[types.ChainState]
+		ok    bool
+	)
+	if state, ok = k.states[chain.Name.String()]; !ok {
+		s := cached.New(func() (chainState types.ChainState) {
+			if ok := k.k.getStore(ctx).Get(chainStatePrefix.Append(utils.LowerCaseKey(chain.Name.String())), &chainState); !ok {
+				chainState.Chain = chain
+			}
+			return chainState
+		})
+		state = &s
+		k.states[chain.Name.String()] = state
+	}
+
+	return state.Value()
 }
