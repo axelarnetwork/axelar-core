@@ -171,7 +171,7 @@ func (m *ChainState) MarkIncorrectVote(address sdk.ValAddress, incorrectVote boo
 		return
 	}
 
-	m.MaintainerStates[i].MissingVotes.Add(incorrectVote)
+	m.MaintainerStates[i].IncorrectVotes.Add(incorrectVote)
 }
 
 func (m ChainState) ChainName() exported.ChainName {
