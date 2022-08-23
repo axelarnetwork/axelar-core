@@ -217,6 +217,7 @@ func (k Keeper) GetChainByNativeAsset(ctx sdk.Context, asset string) (chain expo
 	return chain, k.getStore(ctx).Get(chainByNativeAssetPrefix.Append(utils.LowerCaseKey(asset)), &chain)
 }
 
+// GetChainState returns the state of the given chain, initializes it if not known
 func (k Keeper) GetChainState(ctx sdk.Context, chain exported.Chain) exported.ChainState {
 	state, ok := k.getChainState(ctx, chain)
 	if !ok {
@@ -225,6 +226,7 @@ func (k Keeper) GetChainState(ctx sdk.Context, chain exported.Chain) exported.Ch
 	return &state
 }
 
+// SetChainState persists the given chain state
 func (k Keeper) SetChainState(ctx sdk.Context, chainState exported.ChainState) {
 	k.getStore(ctx).Set(chainStatePrefix.Append(utils.LowerCaseKey(chainState.ChainName().String())), chainState)
 }

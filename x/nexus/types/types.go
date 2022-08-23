@@ -174,6 +174,7 @@ func (m *ChainState) MarkIncorrectVote(address sdk.ValAddress, incorrectVote boo
 	m.MaintainerStates[i].IncorrectVotes.Add(incorrectVote)
 }
 
+// ChainName returns the chain name for the given state
 func (m ChainState) ChainName() exported.ChainName {
 	return m.Chain.Name
 }
