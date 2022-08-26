@@ -3,7 +3,10 @@ package keeper
 import (
 	"context"
 	"fmt"
+	"time"
 
+	"github.com/armon/go-metrics"
+	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
@@ -50,6 +53,9 @@ func (s msgServer) HeartBeat(c context.Context, req *types.HeartBeatRequest) (*t
 			return nil, fmt.Errorf("operator %s sent heartbeat for unknown key ID %s", participant.String(), keyID)
 		}
 	}
+
+	metrics.MeasureSinceWithLabels([]string{types.ModuleName, "heartbeat_last_block_sent"},
+		time.Unix(ctx.BlockHeight(), 0), []metrics.Label{telemetry.NewLabel("address", s.snapshotter.GetOperator(ctx, req.Sender).String())})
 
 	return &types.HeartBeatResponse{KeygenIllegibility: snapshot.None, SigningIllegibility: snapshot.None}, nil
 }
