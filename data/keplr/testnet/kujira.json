@@ -1,0 +1,46 @@
+{
+    "rpc": "https://rpc-harpoon.kujira.app",
+    "rest": "https://lcd-harpoon.kujira.app",
+    "chainId": "harpoon-4",
+    "chainName": "Kujira Testnet",
+    "stakeCurrency": {
+        "coinDenom": "KUJI",
+        "coinMinimalDenom": "ukuji",
+        "coinDecimals": 6
+    },
+    "bech32Config": {
+        "bech32PrefixAccAddr": "kujira",
+        "bech32PrefixAccPub": "kujirapub",
+        "bech32PrefixValAddr": "kujiravaloper",
+        "bech32PrefixValPub": "kujiravaloperpub",
+        "bech32PrefixConsAddr": "kujiravalcons",
+        "bech32PrefixConsPub": "kujiravalconspub"
+    },
+    "bip44": {
+        "coinType": 118
+    },
+    "currencies": [
+        {
+            "coinDenom": "KUJI",
+            "coinMinimalDenom": "ukuji",
+            "coinDecimals": 6
+        }
+    ],
+    "feeCurrencies": [
+        {
+            "coinDenom": "KUJI",
+            "coinMinimalDenom": "ukuji",
+            "coinDecimals": 6
+        }
+    ],
+    "gasPriceStep": {
+        "low": 0.05,
+        "average": 0.125,
+        "high": 0.2
+    },
+    "features": [
+        "stargate",
+        "no-legacy-stdTx",
+        "ibc-transfer"
+    ]
+}

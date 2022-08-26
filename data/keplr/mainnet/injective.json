@@ -1,0 +1,46 @@
+{
+    "rpc": "https://tm.injective.network",
+    "rest": "https://lcd.injective.network",
+    "chainId": "injective-1",
+    "chainName": "Injective Mainnet",
+    "stakeCurrency": {
+        "coinDenom": "INJ",
+        "coinMinimalDenom": "uinj",
+        "coinDecimals": 6
+    },
+    "bech32Config": {
+        "bech32PrefixAccAddr": "inj",
+        "bech32PrefixAccPub": "injpub",
+        "bech32PrefixValAddr": "injvaloper",
+        "bech32PrefixValPub": "injvaloperpub",
+        "bech32PrefixConsAddr": "injvalcons",
+        "bech32PrefixConsPub": "injvalconspub"
+    },
+    "bip44": {
+        "coinType": 118
+    },
+    "currencies": [
+        {
+            "coinDenom": "INJ",
+            "coinMinimalDenom": "uinj",
+            "coinDecimals": 6
+        }
+    ],
+    "feeCurrencies": [
+        {
+            "coinDenom": "INJ",
+            "coinMinimalDenom": "uinj",
+            "coinDecimals": 6
+        }
+    ],
+    "gasPriceStep": {
+        "low": 5000000000,
+        "average": 25000000000,
+        "high": 40000000000
+    },
+    "features": [
+        "stargate",
+        "no-legacy-stdTx",
+        "ibc-transfer"
+    ]
+}

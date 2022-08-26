@@ -1,0 +1,46 @@
+{
+    "rpc": "https://testnet-rpc.osmosis.zone",
+    "rest": "https://testnet-rest.osmosis.zone",
+    "chainId": "osmo-test-4",
+    "chainName": "Osmosis Testnet",
+    "stakeCurrency": {
+        "coinDenom": "OSMO",
+        "coinMinimalDenom": "uosmo",
+        "coinDecimals": 6
+    },
+    "bech32Config": {
+        "bech32PrefixAccAddr": "osmo",
+        "bech32PrefixAccPub": "osmopub",
+        "bech32PrefixValAddr": "osmovaloper",
+        "bech32PrefixValPub": "osmovaloperpub",
+        "bech32PrefixConsAddr": "osmovalcons",
+        "bech32PrefixConsPub": "osmovalconspub"
+    },
+    "bip44": {
+        "coinType": 118
+    },
+    "currencies": [
+        {
+            "coinDenom": "OSMO",
+            "coinMinimalDenom": "uosmo",
+            "coinDecimals": 6
+        }
+    ],
+    "feeCurrencies": [
+        {
+            "coinDenom": "OSMO",
+            "coinMinimalDenom": "uosmo",
+            "coinDecimals": 6
+        }
+    ],
+    "gasPriceStep": {
+        "low": 0,
+        "average": 0,
+        "high": 0.025
+    },
+    "features": [
+        "stargate",
+        "no-legacy-stdTx",
+        "ibc-transfer"
+    ]
+}

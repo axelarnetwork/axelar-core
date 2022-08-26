@@ -1,0 +1,46 @@
+{
+    "rpc": "https://rpc-dorado.fetch.ai:443",
+    "rest": "https://rest-dorado.fetch.ai:443",
+    "chainId": "dorado-1",
+    "chainName": "FetchHub Testnet",
+    "stakeCurrency": {
+        "coinDenom": "FET",
+        "coinMinimalDenom": "atestfet",
+        "coinDecimals": 18
+    },
+    "bech32Config": {
+        "bech32PrefixAccAddr": "fetch",
+        "bech32PrefixAccPub": "fetchpub",
+        "bech32PrefixValAddr": "fetchvaloper",
+        "bech32PrefixValPub": "fetchvaloperpub",
+        "bech32PrefixConsAddr": "fetchvalcons",
+        "bech32PrefixConsPub": "fetchvalconspub"
+    },
+    "bip44": {
+        "coinType": 118
+    },
+    "currencies": [
+        {
+            "coinDenom": "FET",
+            "coinMinimalDenom": "atestfet",
+            "coinDecimals": 18
+        }
+    ],
+    "feeCurrencies": [
+        {
+            "coinDenom": "FET",
+            "coinMinimalDenom": "atestfet",
+            "coinDecimals": 18
+        }
+    ],
+    "gasPriceStep": {
+        "low": 0,
+        "average": 5000000000,
+        "high": 6250000000
+    },
+    "features": [
+        "stargate",
+        "no-legacy-stdTx",
+        "ibc-transfer"
+    ]
+}

@@ -1,0 +1,46 @@
+{
+    "rpc": "https://rpc.kaiyo.kujira.setten.io",
+    "rest": "https://lcd.kaiyo.kujira.setten.io",
+    "chainId": "kaiyo-1",
+    "chainName": "Kujira Mainnet",
+    "stakeCurrency": {
+        "coinDenom": "KUJI",
+        "coinMinimalDenom": "ukuji",
+        "coinDecimals": 6
+    },
+    "bech32Config": {
+        "bech32PrefixAccAddr": "kujira",
+        "bech32PrefixAccPub": "kujirapub",
+        "bech32PrefixValAddr": "kujiravaloper",
+        "bech32PrefixValPub": "kujiravaloperpub",
+        "bech32PrefixConsAddr": "kujiravalcons",
+        "bech32PrefixConsPub": "kujiravalconspub"
+    },
+    "bip44": {
+        "coinType": 118
+    },
+    "currencies": [
+        {
+            "coinDenom": "KUJI",
+            "coinMinimalDenom": "ukuji",
+            "coinDecimals": 6
+        }
+    ],
+    "feeCurrencies": [
+        {
+            "coinDenom": "KUJI",
+            "coinMinimalDenom": "ukuji",
+            "coinDecimals": 6
+        }
+    ],
+    "gasPriceStep": {
+        "low": 0.01,
+        "average": 0.025,
+        "high": 0.03
+    },
+    "features": [
+        "stargate",
+        "no-legacy-stdTx",
+        "ibc-transfer"
+    ]
+}

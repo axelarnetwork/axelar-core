@@ -1,0 +1,46 @@
+{
+    "rpc": "https://rpc-sei-ia.notional.ventures",
+    "rest": "https://sei-testnet-api.polkachu.com",
+    "chainId": "atlantic-1",
+    "chainName": "Sei Testnet",
+    "stakeCurrency": {
+        "coinDenom": "SEI",
+        "coinMinimalDenom": "usei",
+        "coinDecimals": 6
+    },
+    "bech32Config": {
+        "bech32PrefixAccAddr": "sei",
+        "bech32PrefixAccPub": "seipub",
+        "bech32PrefixValAddr": "seivaloper",
+        "bech32PrefixValPub": "seivaloperpub",
+        "bech32PrefixConsAddr": "seivalcons",
+        "bech32PrefixConsPub": "seivalconspub"
+    },
+    "bip44": {
+        "coinType": 118
+    },
+    "currencies": [
+        {
+            "coinDenom": "SEI",
+            "coinMinimalDenom": "usei",
+            "coinDecimals": 6
+        }
+    ],
+    "feeCurrencies": [
+        {
+            "coinDenom": "SEI",
+            "coinMinimalDenom": "usei",
+            "coinDecimals": 6
+        }
+    ],
+    "gasPriceStep": {
+        "low": 0.05,
+        "average": 0.125,
+        "high": 0.2
+    },
+    "features": [
+        "stargate",
+        "no-legacy-stdTx",
+        "ibc-transfer"
+    ]
+}

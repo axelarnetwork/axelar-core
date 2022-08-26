@@ -1,0 +1,46 @@
+{
+    "rpc": "https://testnet-endpoint.crescent.network/rpc/crescent",
+    "rest": "https://testnet-endpoint.crescent.network/api/crescent",
+    "chainId": "mooncat-1-1",
+    "chainName": "Crescent Testnet",
+    "stakeCurrency": {
+        "coinDenom": "CRE",
+        "coinMinimalDenom": "ucre",
+        "coinDecimals": 6
+    },
+    "bech32Config": {
+        "bech32PrefixAccAddr": "cre",
+        "bech32PrefixAccPub": "crepub",
+        "bech32PrefixValAddr": "crevaloper",
+        "bech32PrefixValPub": "crevaloperpub",
+        "bech32PrefixConsAddr": "crevalcons",
+        "bech32PrefixConsPub": "crevalconspub"
+    },
+    "bip44": {
+        "coinType": 118
+    },
+    "currencies": [
+        {
+            "coinDenom": "CRE",
+            "coinMinimalDenom": "ucre",
+            "coinDecimals": 6
+        }
+    ],
+    "feeCurrencies": [
+        {
+            "coinDenom": "CRE",
+            "coinMinimalDenom": "ucre",
+            "coinDecimals": 6
+        }
+    ],
+    "gasPriceStep": {
+        "low": 1,
+        "average": 1,
+        "high": 1
+    },
+    "features": [
+        "stargate",
+        "no-legacy-stdTx",
+        "ibc-transfer"
+    ]
+}

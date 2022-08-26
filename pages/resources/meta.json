@@ -4,5 +4,6 @@
   "testnet-2": "Testnet-2",
   "satellite": "Satellite",
   "metamask": "Set up Metamask",
+  "keplr": "Add Network to Keplr Wallet",
   "wrapped-tokens": "Wrap/unwrap tokens"
 }
