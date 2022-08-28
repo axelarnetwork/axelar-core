@@ -2,7 +2,9 @@
 
 ### EVM Networks
 
-The following values are legal arguments for token transfers and General Message Passing calls such as `callContract` and `callContractWithToken`:
+The following values are legal arguments for token transfers and General Message Passing calls such as `callContract` and `callContractWithToken`.
+The contract call approval at the Axelar gateway and IAxelarExecutable contracts will receive
+precisely these values for the source chain.
 
 - `aurora`
 - `Avalanche`
@@ -17,10 +19,7 @@ The following values are legal arguments for token transfers and General Message
 The following values are legal arguments for token transfers:
 
 - `Axelarnet`
-- `cosmoshub`
-- `crescent`
-- `juno`
 - `kujira`
 - `osmosis-4`
 - `sei`
-- `terra-2`
+- `fetch`
