@@ -8,8 +8,8 @@ import Typeform from '../../components/typeform'
 
 | Variable              | Value     |
 | --------------------- | --------- |
-| `axelar-core` version | `v0.20.0` |
-| `vald` version        | `v0.20.0` |
+| `axelar-core` version | `v0.21.1` |
+| `vald` version        | `v0.21.1` |
 | `tofnd` version       | `v0.10.1` |
 
 
