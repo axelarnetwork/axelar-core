@@ -9,6 +9,14 @@
       "transfer_fee": 0.5
     },
     {
+      "id": "uaxl",
+      "name": "AXL - Axelar",
+      "symbol": "AXL",
+      "image": "/images/assets/axl.png",
+      "decimals": 6,
+      "transfer_fee": 0.5
+    },
+    {
       "id": "weth-wei",
       "name": "WETH - Wrapped Ether",
       "symbol": "WETH",
@@ -22,6 +30,14 @@
       "symbol": "DAI",
       "image": "/images/assets/dai.png",
       "decimals": 18,
+      "transfer_fee": 0.5
+    },
+    {
+      "id": "uusdt",
+      "name": "USDT - Tether USD",
+      "symbol": "USDT",
+      "image": "/images/assets/usdt.png",
+      "decimals": 6,
       "transfer_fee": 0.5
     },
     {
@@ -65,6 +81,14 @@
       "transfer_fee": 2e-05
     },
     {
+      "id": "wbnb-wei",
+      "name": "WBNB - Wrapped BNB",
+      "symbol": "WBNB",
+      "image": "/images/assets/wbnb.png",
+      "decimals": 18,
+      "transfer_fee": 0.002
+    },
+    {
       "id": "wftm-wei",
       "name": "WFTM - Wrapped Fantom",
       "symbol": "WFTM",
@@ -74,19 +98,11 @@
     },
     {
       "id": "uatom",
-      "name": "ATOM - Axelar Wrapped ATOM",
+      "name": "ATOM - Cosmoshub staking token",
       "symbol": "ATOM",
       "image": "/images/assets/atom.png",
       "decimals": 6,
       "transfer_fee": 0.07
-    },
-    {
-      "id": "uusdt",
-      "name": "USDT - Tether USD",
-      "symbol": "USDT",
-      "image": "/images/assets/usdt.png",
-      "decimals": 6,
-      "transfer_fee": 0.5
     },
     {
       "id": "ungm",
@@ -127,14 +143,6 @@
       "image": "/images/assets/aave.png",
       "decimals": 18,
       "transfer_fee": 0.008
-    },
-    {
-      "id": "steth-wei",
-      "name": "stETH - Liquid staked Ether 2.0",
-      "symbol": "stETH",
-      "image": "/images/assets/steth.png",
-      "decimals": 18,
-      "transfer_fee": 0.0005
     },
     {
       "id": "frax-wei",

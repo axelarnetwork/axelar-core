@@ -51,6 +51,56 @@
       ]
     },
     {
+      "id": "uaxl",
+      "name": "AXL - Axelar",
+      "symbol": "AXL",
+      "image": "/images/assets/axl.png",
+      "contracts": [
+        {
+          "chain": "moonbeam",
+          "address": "0x467719aD09025FcC6cF6F8311755809d45a5E5f3",
+          "symbol": "AXL",
+          "decimals": 6,
+          "transfer_fee": 1.0
+        },
+        {
+          "chain": "fantom",
+          "address": "0x8b1f4432F943c465A973FeDC6d7aa50Fc96f1f65",
+          "symbol": "AXL",
+          "decimals": 6,
+          "transfer_fee": 1.0
+        },
+        {
+          "chain": "ethereum",
+          "address": "0x467719aD09025FcC6cF6F8311755809d45a5E5f3",
+          "symbol": "AXL",
+          "decimals": 6,
+          "transfer_fee": 20.0
+        },
+        {
+          "chain": "avalanche",
+          "address": "0x44c784266cf024a60e8acF2427b9857Ace194C5d",
+          "symbol": "AXL",
+          "decimals": 6,
+          "transfer_fee": 1.0
+        },
+        {
+          "chain": "polygon",
+          "address": "0x6e4E624106Cb12E168E6533F8ec7c82263358940",
+          "symbol": "AXL",
+          "decimals": 6,
+          "transfer_fee": 1.0
+        },
+        {
+          "chain": "binance",
+          "address": "0x8b1f4432F943c465A973FeDC6d7aa50Fc96f1f65",
+          "symbol": "AXL",
+          "decimals": 6,
+          "transfer_fee": 1.0
+        }
+      ]
+    },
+    {
       "id": "weth-wei",
       "name": "WETH - Wrapped Ether",
       "symbol": "WETH",
@@ -427,21 +477,6 @@
           "symbol": "AAVE",
           "decimals": 18,
           "transfer_fee": 0.3
-        }
-      ]
-    },
-    {
-      "id": "steth-wei",
-      "name": "stETH - Liquid staked Ether 2.0",
-      "symbol": "stETH",
-      "image": "/images/assets/steth.png",
-      "contracts": [
-        {
-          "chain": "ethereum",
-          "address": "0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84",
-          "symbol": "stETH",
-          "decimals": 18,
-          "transfer_fee": 0.02
         }
       ]
     },
