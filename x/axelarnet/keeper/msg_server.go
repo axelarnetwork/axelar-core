@@ -395,7 +395,7 @@ func (s msgServer) RetryIBCTransfer(c context.Context, req *types.RetryIBCTransf
 	}
 
 	if t.Status != types.TransferFailed {
-		return nil, fmt.Errorf("transfer %s is not failed", req.ID.String())
+		return nil, fmt.Errorf("IBC transfer %s does not have failed status", req.ID.String())
 	}
 
 	if path != fmt.Sprintf("%s/%s", t.PortID, t.ChannelID) {

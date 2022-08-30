@@ -116,7 +116,7 @@ func TestGetMigrationHandler_migrateChainMaintainers(t *testing.T) {
 		Chain:       exported.Chain{Name: exported.ChainName(rand.NormalizedStr(5))},
 		Maintainers: maintainers,
 	}
-	keeper.setChainState(ctx, chainState)
+	keeper.SetChainState(ctx, &chainState)
 
 	handler := GetMigrationHandler(keeper)
 	err := handler(ctx)

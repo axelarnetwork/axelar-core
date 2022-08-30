@@ -7,6 +7,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	"github.com/axelarnetwork/utils/funcs"
 )
 
 var _ codectypes.UnpackInterfacesMessage = VoteRequest{}
@@ -19,15 +20,10 @@ func (m VoteRequest) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
 
 // NewVoteRequest creates a message of type VoteMsgRequest
 func NewVoteRequest(sender sdk.AccAddress, id vote.PollID, vote codec.ProtoMarshaler) *VoteRequest {
-	any, err := codectypes.NewAnyWithValue(vote)
-	if err != nil {
-		panic(err)
-	}
-
 	return &VoteRequest{
 		Sender: sender,
 		PollID: id,
-		Vote:   any,
+		Vote:   funcs.Must(codectypes.NewAnyWithValue(vote)),
 	}
 }
 
@@ -45,6 +41,10 @@ func (m VoteRequest) Type() string {
 func (m VoteRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
+	}
+
+	if m.Vote == nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "vote must not be nil")
 	}
 
 	vote := m.Vote.GetCachedValue()

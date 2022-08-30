@@ -1469,8 +1469,7 @@ func (m EventTokenSent) ValidateBasic() error {
 		return sdkerrors.Wrap(err, "invalid destination chain")
 	}
 
-	err := utils.ValidateString(m.DestinationAddress)
-	if err != nil || common.IsHexAddress(m.DestinationAddress) {
+	if err := utils.ValidateString(m.DestinationAddress); err != nil {
 		return sdkerrors.Wrap(err, "invalid destination address")
 	}
 
@@ -1495,9 +1494,8 @@ func (m EventContractCall) ValidateBasic() error {
 		return sdkerrors.Wrap(err, "invalid destination chain")
 	}
 
-	err := utils.ValidateString(m.ContractAddress)
-	if err != nil || common.IsHexAddress(m.ContractAddress) {
-		return sdkerrors.Wrap(err, "invalid contract address")
+	if !common.IsHexAddress(m.ContractAddress) {
+		return fmt.Errorf("invalid contract address")
 	}
 
 	if m.PayloadHash.IsZero() {
@@ -1517,9 +1515,8 @@ func (m EventContractCallWithToken) ValidateBasic() error {
 		return sdkerrors.Wrap(err, "invalid destination chain")
 	}
 
-	err := utils.ValidateString(m.ContractAddress)
-	if err != nil || common.IsHexAddress(m.ContractAddress) {
-		return sdkerrors.Wrap(err, "invalid contract address")
+	if !common.IsHexAddress(m.ContractAddress) {
+		return fmt.Errorf("invalid contract address")
 	}
 
 	if m.PayloadHash.IsZero() {
@@ -1723,8 +1720,12 @@ func (id EventID) Validate() error {
 	}
 
 	bz, err := hexutil.Decode(arr[0])
-	if err != nil || len(bz) != common.HashLength {
-		return sdkerrors.Wrap(err, "invalid tx hash")
+	if err != nil {
+		return sdkerrors.Wrap(err, "invalid tx hash hex encoding")
+	}
+
+	if len(bz) != common.HashLength {
+		return fmt.Errorf("invalid tx hash length")
 	}
 
 	_, err = strconv.ParseInt(arr[1], 10, 64)

@@ -133,12 +133,12 @@ func (m *IBCTransfer) SetStatus(status IBCTransfer_Status) error {
 	case TransferCompleted, TransferFailed:
 		// set from pending to completed or failed
 		if m.Status != TransferPending {
-			return fmt.Errorf("transfer is not pending")
+			return fmt.Errorf("transfer %s is not pending", m.ID)
 		}
 	case TransferPending:
 		// set from failed to pending
 		if m.Status != TransferFailed {
-			return fmt.Errorf("transfer is not failed")
+			return fmt.Errorf("transfer %s is not failed", m.ID)
 		}
 	default:
 		return fmt.Errorf("invalid status %s", status)

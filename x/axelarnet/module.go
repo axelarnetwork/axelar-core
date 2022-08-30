@@ -9,9 +9,11 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
 	"github.com/cosmos/ibc-go/v2/modules/apps/transfer"
+	ibctransfertypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
 	channeltypes "github.com/cosmos/ibc-go/v2/modules/core/04-channel/types"
 	ibcexported "github.com/cosmos/ibc-go/v2/modules/core/exported"
 	"github.com/gorilla/mux"
@@ -169,7 +171,7 @@ func (am AppModule) LegacyQuerierHandler(*codec.LegacyAmino) sdk.Querier {
 func (am AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterQueryServiceServer(cfg.QueryServer(), keeper.NewGRPCQuerier(am.keeper, am.nexus))
 
-	err := cfg.RegisterMigration(types.ModuleName, 1, keeper.GetMigrationHandler())
+	err := cfg.RegisterMigration(types.ModuleName, 2, keeper.GetMigrationHandler(am.keeper))
 	if err != nil {
 		panic(err)
 	}
@@ -188,7 +190,7 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 }
 
 // ConsensusVersion implements AppModule/ConsensusVersion.
-func (AppModule) ConsensusVersion() uint64 { return 2 }
+func (AppModule) ConsensusVersion() uint64 { return 3 }
 
 // OnChanOpenInit implements the IBCModule interface
 func (am AppModule) OnChanOpenInit(
@@ -280,12 +282,14 @@ func (am AppModule) OnAcknowledgementPacket(
 	}
 
 	var ack channeltypes.Acknowledgement
-	_ = types.ModuleCdc.UnmarshalJSON(acknowledgement, &ack)
+	if err := ibctransfertypes.ModuleCdc.UnmarshalJSON(acknowledgement, &ack); err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "cannot unmarshal ICS-20 transfer packet acknowledgement: %v", err)
+	}
 	switch ack.Response.(type) {
-	case *channeltypes.Acknowledgement_Error:
-		return setTransferFailed(ctx, am.keeper, packet.SourcePort, packet.SourceChannel, packet.Sequence)
-	default:
+	case *channeltypes.Acknowledgement_Result:
 		return setTransferCompleted(ctx, am.keeper, packet.SourcePort, packet.SourceChannel, packet.Sequence)
+	default:
+		return setTransferFailed(ctx, am.keeper, packet.SourcePort, packet.SourceChannel, packet.Sequence)
 	}
 }
 
@@ -310,7 +314,7 @@ func (am AppModule) NegotiateAppVersion(ctx sdk.Context, order channeltypes.Orde
 
 // returns true if mapping exits
 func getSeqIDMapping(ctx sdk.Context, k keeper.Keeper, portID, channelID string, seq uint64) (nexus.TransferID, bool) {
-	k.DeleteSeqIDMapping(ctx, portID, channelID, seq)
+	defer k.DeleteSeqIDMapping(ctx, portID, channelID, seq)
 
 	return k.GetSeqIDMapping(ctx, portID, channelID, seq)
 }
@@ -321,6 +325,7 @@ func setTransferFailed(ctx sdk.Context, k keeper.Keeper, portID, channelID strin
 		return nil
 	}
 
+	k.Logger(ctx).Info(fmt.Sprintf("set IBC transfer %d failed", transferID))
 	return k.SetTransferFailed(ctx, transferID)
 
 }
@@ -331,5 +336,6 @@ func setTransferCompleted(ctx sdk.Context, k keeper.Keeper, portID, channelID st
 		return nil
 	}
 
+	k.Logger(ctx).Info(fmt.Sprintf("set IBC transfer %d completed", transferID))
 	return k.SetTransferCompleted(ctx, transferID)
 }

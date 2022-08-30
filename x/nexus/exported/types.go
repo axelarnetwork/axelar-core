@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -208,4 +209,12 @@ func (c ChainName) String() string {
 // Equals returns boolean for whether two chain names are case-insensitive equal
 func (c ChainName) Equals(c2 ChainName) bool {
 	return strings.EqualFold(c.String(), c2.String())
+}
+
+// ChainState allows to record vote status of chain maintainers
+type ChainState interface {
+	codec.ProtoMarshaler
+	MarkMissingVote(maintainer sdk.ValAddress, missingVote bool)
+	MarkIncorrectVote(maintainer sdk.ValAddress, incorrectVote bool)
+	ChainName() ChainName
 }
