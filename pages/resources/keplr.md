@@ -17,6 +17,7 @@ Chain Name  | Testnet                                               | Mainnet   
 Axelar      | <AddKeplr environment="testnet" chain="axelar" />     | Already Supported                                     |
 Crescent    | <AddKeplr environment="testnet" chain="crescent" />   | <AddKeplr environment="mainnet" chain="crescent" />   |
 e-Money     | N/A                                                   | Already Supported                                     |
+Evmos       | <AddKeplr environment="testnet" chain="evmos" />      | N/A                                                   |
 Fetch       | <AddKeplr environment="testnet" chain="fetch" />      | N/A                                                   |
 Injective   | N/A                                                   | <AddKeplr environment="mainnet" chain="injective" />  |
 Juno        | N/A                                                   | Already Supported                                     |
