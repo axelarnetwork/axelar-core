@@ -12,6 +12,7 @@ import (
 	paramsKeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 	"github.com/ethereum/go-ethereum/common"
 	evmTypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	evmCrypto "github.com/ethereum/go-ethereum/crypto"
 	evmParams "github.com/ethereum/go-ethereum/params"
 	"github.com/gogo/protobuf/proto"
@@ -37,6 +38,7 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	"github.com/axelarnetwork/utils/funcs"
 	. "github.com/axelarnetwork/utils/test"
 )
 
@@ -592,7 +594,8 @@ func TestLink_Success(t *testing.T) {
 	}
 
 	recipient := nexus.CrossChainAddress{Address: rand.ValAddr().String(), Chain: axelarnet.Axelarnet}
-	burnAddr, salt, err := k.ForChain(chain).GetBurnerAddressAndSalt(ctx, token, recipient.Address, types.Address(common.HexToAddress(gateway)))
+	salt := k.ForChain(chain).GenerateSalt(ctx, recipient.Address)
+	burnAddr, err := k.ForChain(chain).GetBurnerAddress(ctx, token, salt, types.Address(common.HexToAddress(gateway)))
 	if err != nil {
 		panic(err)
 	}
@@ -955,6 +958,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		msg            *types.ConfirmDepositRequest
 		server         types.MsgServiceServer
 	)
+
 	setup := func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
 
@@ -966,16 +970,53 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 				return nil
 			},
 		}
+
+		token := types.CreateERC20Token(func(m types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{
+			Asset:        rand.StrBetween(5, 10),
+			BurnerCode:   burnerBC,
+			IsExternal:   rand.Bools(float64(0.5)).Next(),
+			TokenAddress: types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
+			Status:       types.Confirmed,
+		})
+
+		salt := types.Hash(common.BytesToHash(rand.Bytes(common.HashLength)))
+		gatewayAddr := types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength)))
+		burnerAddress := types.Address(crypto.CreateAddress2(common.Address(gatewayAddr), salt, funcs.MustOk(token.GetBurnerCodeHash()).Bytes()))
+
 		chaink = &mock.ChainKeeperMock{
 			GetDepositFunc: func(sdk.Context, types.Hash, types.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
 				return types.ERC20Deposit{}, 0, false
 			},
-			GetBurnerInfoFunc: func(sdk.Context, types.Address) *types.BurnerInfo {
-				return &types.BurnerInfo{
-					TokenAddress: types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
-					Symbol:       rand.StrBetween(5, 10),
-					Salt:         types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
+			GetBurnerAddressFunc: func(ctx sdk.Context, token types.ERC20Token, salt types.Hash, gatewayAddr types.Address) (types.Address, error) {
+				_, ok := token.GetBurnerCodeHash()
+				if !ok {
+					return types.Address{}, fmt.Errorf("codehash not found")
 				}
+				return burnerAddress, nil
+			},
+			GetBurnerByteCodeFunc: func(ctx sdk.Context) ([]byte, bool) {
+				return burnerBC, true
+			},
+			GetBurnerInfoFunc: func(ctx sdk.Context, address types.Address) *types.BurnerInfo {
+				if burnerAddress != address {
+					return nil
+				}
+
+				return &types.BurnerInfo{
+					TokenAddress: token.GetAddress(),
+					Asset:        token.GetAsset(),
+					Symbol:       rand.StrBetween(5, 10),
+					Salt:         salt,
+				}
+			},
+			GetERC20TokenByAssetFunc: func(ctx sdk.Context, asset string) types.ERC20Token {
+				if asset == token.GetAsset() {
+					return token
+				}
+				return types.NilToken
+			},
+			GetGatewayAddressFunc: func(sdk.Context) (types.Address, bool) {
+				return gatewayAddr, true
 			},
 			GetRevoteLockingPeriodFunc:        func(sdk.Context) (int64, bool) { return rand.PosI64(), true },
 			GetRequiredConfirmationHeightFunc: func(sdk.Context) (uint64, bool) { return mathRand.Uint64(), true },
@@ -1007,9 +1048,10 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		}
 
 		msg = &types.ConfirmDepositRequest{
-			Sender: rand.AccAddr(),
-			Chain:  evmChain,
-			TxID:   types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
+			Sender:        rand.AccAddr(),
+			Chain:         evmChain,
+			TxID:          types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
+			BurnerAddress: burnerAddress,
 		}
 		snapshotKeeper := &mock.SnapshotterMock{
 			GetOperatorFunc: func(sdk.Context, sdk.AccAddress) sdk.ValAddress {
@@ -1042,17 +1084,48 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 
-		assert.Error(t, err)
+		assert.ErrorContains(t, err, "not a registered chain")
+	}).Repeat(repeats))
+
+	t.Run("unknown gateway address", testutils.Func(func(t *testing.T) {
+		setup()
+		chaink.GetGatewayAddressFunc = func(sdk.Context) (types.Address, bool) { return types.Address{}, false }
+
+		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
+
+		assert.ErrorContains(t, err, "gateway address not set for chain")
+	}).Repeat(repeats))
+
+	t.Run("invalid asset", testutils.Func(func(t *testing.T) {
+		setup()
+		chaink.GetERC20TokenByAssetFunc = func(ctx sdk.Context, asset string) types.ERC20Token { return types.NilToken }
+
+		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
+
+		assert.ErrorContains(t, err, "is not confirmed on")
+	}).Repeat(repeats))
+
+	t.Run("invalid burner address", testutils.Func(func(t *testing.T) {
+		setup()
+		chaink.GetBurnerAddressFunc = func(ctx sdk.Context, token types.ERC20Token, salt types.Hash, gatewayAddr types.Address) (types.Address, error) {
+			return types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))), nil
+		}
+
+		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
+
+		assert.ErrorContains(t, err, "provided burner address")
+		assert.ErrorContains(t, err, "doesn't match expected address")
 	}).Repeat(repeats))
 
 	t.Run("init poll failed", testutils.Func(func(t *testing.T) {
 		setup()
+		errMsg := "failed to initialize poll"
 		v.InitializePollFunc = func(ctx sdk.Context, pollBuilder vote.PollBuilder) (vote.PollID, error) {
-			return 0, fmt.Errorf("failed")
+			return 0, fmt.Errorf(errMsg)
 		}
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 
-		assert.Error(t, err)
+		assert.ErrorContains(t, err, errMsg)
 	}).Repeat(repeats))
 }
 

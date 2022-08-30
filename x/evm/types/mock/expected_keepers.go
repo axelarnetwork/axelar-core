@@ -293,6 +293,9 @@ var _ evmtypes.Nexus = &NexusMock{}
 // 			GetChainMaintainersFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain) []github_com_cosmos_cosmos_sdk_types.ValAddress {
 // 				panic("mock out the GetChainMaintainers method")
 // 			},
+// 			GetChainStateFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain) github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainState {
+// 				panic("mock out the GetChainState method")
+// 			},
 // 			GetChainsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain {
 // 				panic("mock out the GetChains method")
 // 			},
@@ -311,17 +314,14 @@ var _ evmtypes.Nexus = &NexusMock{}
 // 			LinkAddressesFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress) error {
 // 				panic("mock out the LinkAddresses method")
 // 			},
-// 			MarkChainMaintainerIncorrectVoteFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, address github_com_cosmos_cosmos_sdk_types.ValAddress, incorrectVote bool)  {
-// 				panic("mock out the MarkChainMaintainerIncorrectVote method")
-// 			},
-// 			MarkChainMaintainerMissingVoteFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, address github_com_cosmos_cosmos_sdk_types.ValAddress, missingVote bool)  {
-// 				panic("mock out the MarkChainMaintainerMissingVote method")
-// 			},
 // 			RegisterAssetFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset) error {
 // 				panic("mock out the RegisterAsset method")
 // 			},
 // 			SetChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain)  {
 // 				panic("mock out the SetChain method")
+// 			},
+// 			SetChainStateFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, state github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainState)  {
+// 				panic("mock out the SetChainState method")
 // 			},
 // 		}
 //
@@ -354,6 +354,9 @@ type NexusMock struct {
 	// GetChainMaintainersFunc mocks the GetChainMaintainers method.
 	GetChainMaintainersFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain) []github_com_cosmos_cosmos_sdk_types.ValAddress
 
+	// GetChainStateFunc mocks the GetChainState method.
+	GetChainStateFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain) github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainState
+
 	// GetChainsFunc mocks the GetChains method.
 	GetChainsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) []github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 
@@ -372,17 +375,14 @@ type NexusMock struct {
 	// LinkAddressesFunc mocks the LinkAddresses method.
 	LinkAddressesFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress) error
 
-	// MarkChainMaintainerIncorrectVoteFunc mocks the MarkChainMaintainerIncorrectVote method.
-	MarkChainMaintainerIncorrectVoteFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, address github_com_cosmos_cosmos_sdk_types.ValAddress, incorrectVote bool)
-
-	// MarkChainMaintainerMissingVoteFunc mocks the MarkChainMaintainerMissingVote method.
-	MarkChainMaintainerMissingVoteFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, address github_com_cosmos_cosmos_sdk_types.ValAddress, missingVote bool)
-
 	// RegisterAssetFunc mocks the RegisterAsset method.
 	RegisterAssetFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset) error
 
 	// SetChainFunc mocks the SetChain method.
 	SetChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain)
+
+	// SetChainStateFunc mocks the SetChainState method.
+	SetChainStateFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, state github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainState)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -452,6 +452,13 @@ type NexusMock struct {
 			// Chain is the chain argument value.
 			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 		}
+		// GetChainState holds details about calls to the GetChainState method.
+		GetChainState []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Chain is the chain argument value.
+			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
+		}
 		// GetChains holds details about calls to the GetChains method.
 		GetChains []struct {
 			// Ctx is the ctx argument value.
@@ -498,28 +505,6 @@ type NexusMock struct {
 			// Recipient is the recipient argument value.
 			Recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
 		}
-		// MarkChainMaintainerIncorrectVote holds details about calls to the MarkChainMaintainerIncorrectVote method.
-		MarkChainMaintainerIncorrectVote []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Chain is the chain argument value.
-			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-			// Address is the address argument value.
-			Address github_com_cosmos_cosmos_sdk_types.ValAddress
-			// IncorrectVote is the incorrectVote argument value.
-			IncorrectVote bool
-		}
-		// MarkChainMaintainerMissingVote holds details about calls to the MarkChainMaintainerMissingVote method.
-		MarkChainMaintainerMissingVote []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Chain is the chain argument value.
-			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-			// Address is the address argument value.
-			Address github_com_cosmos_cosmos_sdk_types.ValAddress
-			// MissingVote is the missingVote argument value.
-			MissingVote bool
-		}
 		// RegisterAsset holds details about calls to the RegisterAsset method.
 		RegisterAsset []struct {
 			// Ctx is the ctx argument value.
@@ -536,25 +521,32 @@ type NexusMock struct {
 			// Chain is the chain argument value.
 			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 		}
+		// SetChainState holds details about calls to the SetChainState method.
+		SetChainState []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// State is the state argument value.
+			State github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainState
+		}
 	}
-	lockAddTransferFee                   sync.RWMutex
-	lockArchivePendingTransfer           sync.RWMutex
-	lockComputeTransferFee               sync.RWMutex
-	lockEnqueueForTransfer               sync.RWMutex
-	lockEnqueueTransfer                  sync.RWMutex
-	lockGetChain                         sync.RWMutex
-	lockGetChainByNativeAsset            sync.RWMutex
-	lockGetChainMaintainers              sync.RWMutex
-	lockGetChains                        sync.RWMutex
-	lockGetRecipient                     sync.RWMutex
-	lockGetTransfersForChain             sync.RWMutex
-	lockIsAssetRegistered                sync.RWMutex
-	lockIsChainActivated                 sync.RWMutex
-	lockLinkAddresses                    sync.RWMutex
-	lockMarkChainMaintainerIncorrectVote sync.RWMutex
-	lockMarkChainMaintainerMissingVote   sync.RWMutex
-	lockRegisterAsset                    sync.RWMutex
-	lockSetChain                         sync.RWMutex
+	lockAddTransferFee         sync.RWMutex
+	lockArchivePendingTransfer sync.RWMutex
+	lockComputeTransferFee     sync.RWMutex
+	lockEnqueueForTransfer     sync.RWMutex
+	lockEnqueueTransfer        sync.RWMutex
+	lockGetChain               sync.RWMutex
+	lockGetChainByNativeAsset  sync.RWMutex
+	lockGetChainMaintainers    sync.RWMutex
+	lockGetChainState          sync.RWMutex
+	lockGetChains              sync.RWMutex
+	lockGetRecipient           sync.RWMutex
+	lockGetTransfersForChain   sync.RWMutex
+	lockIsAssetRegistered      sync.RWMutex
+	lockIsChainActivated       sync.RWMutex
+	lockLinkAddresses          sync.RWMutex
+	lockRegisterAsset          sync.RWMutex
+	lockSetChain               sync.RWMutex
+	lockSetChainState          sync.RWMutex
 }
 
 // AddTransferFee calls AddTransferFeeFunc.
@@ -857,6 +849,41 @@ func (mock *NexusMock) GetChainMaintainersCalls() []struct {
 	return calls
 }
 
+// GetChainState calls GetChainStateFunc.
+func (mock *NexusMock) GetChainState(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain) github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainState {
+	if mock.GetChainStateFunc == nil {
+		panic("NexusMock.GetChainStateFunc: method is nil but Nexus.GetChainState was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
+	}{
+		Ctx:   ctx,
+		Chain: chain,
+	}
+	mock.lockGetChainState.Lock()
+	mock.calls.GetChainState = append(mock.calls.GetChainState, callInfo)
+	mock.lockGetChainState.Unlock()
+	return mock.GetChainStateFunc(ctx, chain)
+}
+
+// GetChainStateCalls gets all the calls that were made to GetChainState.
+// Check the length with:
+//     len(mockedNexus.GetChainStateCalls())
+func (mock *NexusMock) GetChainStateCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
+	}
+	mock.lockGetChainState.RLock()
+	calls = mock.calls.GetChainState
+	mock.lockGetChainState.RUnlock()
+	return calls
+}
+
 // GetChains calls GetChainsFunc.
 func (mock *NexusMock) GetChains(ctx github_com_cosmos_cosmos_sdk_types.Context) []github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain {
 	if mock.GetChainsFunc == nil {
@@ -1075,92 +1102,6 @@ func (mock *NexusMock) LinkAddressesCalls() []struct {
 	return calls
 }
 
-// MarkChainMaintainerIncorrectVote calls MarkChainMaintainerIncorrectVoteFunc.
-func (mock *NexusMock) MarkChainMaintainerIncorrectVote(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, address github_com_cosmos_cosmos_sdk_types.ValAddress, incorrectVote bool) {
-	if mock.MarkChainMaintainerIncorrectVoteFunc == nil {
-		panic("NexusMock.MarkChainMaintainerIncorrectVoteFunc: method is nil but Nexus.MarkChainMaintainerIncorrectVote was just called")
-	}
-	callInfo := struct {
-		Ctx           github_com_cosmos_cosmos_sdk_types.Context
-		Chain         github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-		Address       github_com_cosmos_cosmos_sdk_types.ValAddress
-		IncorrectVote bool
-	}{
-		Ctx:           ctx,
-		Chain:         chain,
-		Address:       address,
-		IncorrectVote: incorrectVote,
-	}
-	mock.lockMarkChainMaintainerIncorrectVote.Lock()
-	mock.calls.MarkChainMaintainerIncorrectVote = append(mock.calls.MarkChainMaintainerIncorrectVote, callInfo)
-	mock.lockMarkChainMaintainerIncorrectVote.Unlock()
-	mock.MarkChainMaintainerIncorrectVoteFunc(ctx, chain, address, incorrectVote)
-}
-
-// MarkChainMaintainerIncorrectVoteCalls gets all the calls that were made to MarkChainMaintainerIncorrectVote.
-// Check the length with:
-//     len(mockedNexus.MarkChainMaintainerIncorrectVoteCalls())
-func (mock *NexusMock) MarkChainMaintainerIncorrectVoteCalls() []struct {
-	Ctx           github_com_cosmos_cosmos_sdk_types.Context
-	Chain         github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-	Address       github_com_cosmos_cosmos_sdk_types.ValAddress
-	IncorrectVote bool
-} {
-	var calls []struct {
-		Ctx           github_com_cosmos_cosmos_sdk_types.Context
-		Chain         github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-		Address       github_com_cosmos_cosmos_sdk_types.ValAddress
-		IncorrectVote bool
-	}
-	mock.lockMarkChainMaintainerIncorrectVote.RLock()
-	calls = mock.calls.MarkChainMaintainerIncorrectVote
-	mock.lockMarkChainMaintainerIncorrectVote.RUnlock()
-	return calls
-}
-
-// MarkChainMaintainerMissingVote calls MarkChainMaintainerMissingVoteFunc.
-func (mock *NexusMock) MarkChainMaintainerMissingVote(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, address github_com_cosmos_cosmos_sdk_types.ValAddress, missingVote bool) {
-	if mock.MarkChainMaintainerMissingVoteFunc == nil {
-		panic("NexusMock.MarkChainMaintainerMissingVoteFunc: method is nil but Nexus.MarkChainMaintainerMissingVote was just called")
-	}
-	callInfo := struct {
-		Ctx         github_com_cosmos_cosmos_sdk_types.Context
-		Chain       github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-		Address     github_com_cosmos_cosmos_sdk_types.ValAddress
-		MissingVote bool
-	}{
-		Ctx:         ctx,
-		Chain:       chain,
-		Address:     address,
-		MissingVote: missingVote,
-	}
-	mock.lockMarkChainMaintainerMissingVote.Lock()
-	mock.calls.MarkChainMaintainerMissingVote = append(mock.calls.MarkChainMaintainerMissingVote, callInfo)
-	mock.lockMarkChainMaintainerMissingVote.Unlock()
-	mock.MarkChainMaintainerMissingVoteFunc(ctx, chain, address, missingVote)
-}
-
-// MarkChainMaintainerMissingVoteCalls gets all the calls that were made to MarkChainMaintainerMissingVote.
-// Check the length with:
-//     len(mockedNexus.MarkChainMaintainerMissingVoteCalls())
-func (mock *NexusMock) MarkChainMaintainerMissingVoteCalls() []struct {
-	Ctx         github_com_cosmos_cosmos_sdk_types.Context
-	Chain       github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-	Address     github_com_cosmos_cosmos_sdk_types.ValAddress
-	MissingVote bool
-} {
-	var calls []struct {
-		Ctx         github_com_cosmos_cosmos_sdk_types.Context
-		Chain       github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-		Address     github_com_cosmos_cosmos_sdk_types.ValAddress
-		MissingVote bool
-	}
-	mock.lockMarkChainMaintainerMissingVote.RLock()
-	calls = mock.calls.MarkChainMaintainerMissingVote
-	mock.lockMarkChainMaintainerMissingVote.RUnlock()
-	return calls
-}
-
 // RegisterAsset calls RegisterAssetFunc.
 func (mock *NexusMock) RegisterAsset(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset) error {
 	if mock.RegisterAssetFunc == nil {
@@ -1232,6 +1173,41 @@ func (mock *NexusMock) SetChainCalls() []struct {
 	mock.lockSetChain.RLock()
 	calls = mock.calls.SetChain
 	mock.lockSetChain.RUnlock()
+	return calls
+}
+
+// SetChainState calls SetChainStateFunc.
+func (mock *NexusMock) SetChainState(ctx github_com_cosmos_cosmos_sdk_types.Context, state github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainState) {
+	if mock.SetChainStateFunc == nil {
+		panic("NexusMock.SetChainStateFunc: method is nil but Nexus.SetChainState was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		State github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainState
+	}{
+		Ctx:   ctx,
+		State: state,
+	}
+	mock.lockSetChainState.Lock()
+	mock.calls.SetChainState = append(mock.calls.SetChainState, callInfo)
+	mock.lockSetChainState.Unlock()
+	mock.SetChainStateFunc(ctx, state)
+}
+
+// SetChainStateCalls gets all the calls that were made to SetChainState.
+// Check the length with:
+//     len(mockedNexus.SetChainStateCalls())
+func (mock *NexusMock) SetChainStateCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	State github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainState
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		State github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainState
+	}
+	mock.lockSetChainState.RLock()
+	calls = mock.calls.SetChainState
+	mock.lockSetChainState.RUnlock()
 	return calls
 }
 
@@ -1886,11 +1862,14 @@ var _ evmtypes.ChainKeeper = &ChainKeeperMock{}
 // 			EnqueueCommandFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, cmd evmtypes.Command) error {
 // 				panic("mock out the EnqueueCommand method")
 // 			},
+// 			GenerateSaltFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, recipient string) evmtypes.Hash {
+// 				panic("mock out the GenerateSalt method")
+// 			},
 // 			GetBatchByIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, id []byte) evmtypes.CommandBatch {
 // 				panic("mock out the GetBatchByID method")
 // 			},
-// 			GetBurnerAddressAndSaltFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, token evmtypes.ERC20Token, recipient string, gatewayAddr evmtypes.Address) (evmtypes.Address, evmtypes.Hash, error) {
-// 				panic("mock out the GetBurnerAddressAndSalt method")
+// 			GetBurnerAddressFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, token evmtypes.ERC20Token, salt evmtypes.Hash, gatewayAddr evmtypes.Address) (evmtypes.Address, error) {
+// 				panic("mock out the GetBurnerAddress method")
 // 			},
 // 			GetBurnerByteCodeFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, bool) {
 // 				panic("mock out the GetBurnerByteCode method")
@@ -2013,11 +1992,14 @@ type ChainKeeperMock struct {
 	// EnqueueCommandFunc mocks the EnqueueCommand method.
 	EnqueueCommandFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, cmd evmtypes.Command) error
 
+	// GenerateSaltFunc mocks the GenerateSalt method.
+	GenerateSaltFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, recipient string) evmtypes.Hash
+
 	// GetBatchByIDFunc mocks the GetBatchByID method.
 	GetBatchByIDFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, id []byte) evmtypes.CommandBatch
 
-	// GetBurnerAddressAndSaltFunc mocks the GetBurnerAddressAndSalt method.
-	GetBurnerAddressAndSaltFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, token evmtypes.ERC20Token, recipient string, gatewayAddr evmtypes.Address) (evmtypes.Address, evmtypes.Hash, error)
+	// GetBurnerAddressFunc mocks the GetBurnerAddress method.
+	GetBurnerAddressFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, token evmtypes.ERC20Token, salt evmtypes.Hash, gatewayAddr evmtypes.Address) (evmtypes.Address, error)
 
 	// GetBurnerByteCodeFunc mocks the GetBurnerByteCode method.
 	GetBurnerByteCodeFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, bool)
@@ -2155,6 +2137,13 @@ type ChainKeeperMock struct {
 			// Cmd is the cmd argument value.
 			Cmd evmtypes.Command
 		}
+		// GenerateSalt holds details about calls to the GenerateSalt method.
+		GenerateSalt []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Recipient is the recipient argument value.
+			Recipient string
+		}
 		// GetBatchByID holds details about calls to the GetBatchByID method.
 		GetBatchByID []struct {
 			// Ctx is the ctx argument value.
@@ -2162,14 +2151,14 @@ type ChainKeeperMock struct {
 			// ID is the id argument value.
 			ID []byte
 		}
-		// GetBurnerAddressAndSalt holds details about calls to the GetBurnerAddressAndSalt method.
-		GetBurnerAddressAndSalt []struct {
+		// GetBurnerAddress holds details about calls to the GetBurnerAddress method.
+		GetBurnerAddress []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Token is the token argument value.
 			Token evmtypes.ERC20Token
-			// Recipient is the recipient argument value.
-			Recipient string
+			// Salt is the salt argument value.
+			Salt evmtypes.Hash
 			// GatewayAddr is the gatewayAddr argument value.
 			GatewayAddr evmtypes.Address
 		}
@@ -2378,8 +2367,9 @@ type ChainKeeperMock struct {
 	lockDeleteDeposit                 sync.RWMutex
 	lockDeleteUnsignedCommandBatchID  sync.RWMutex
 	lockEnqueueCommand                sync.RWMutex
+	lockGenerateSalt                  sync.RWMutex
 	lockGetBatchByID                  sync.RWMutex
-	lockGetBurnerAddressAndSalt       sync.RWMutex
+	lockGetBurnerAddress              sync.RWMutex
 	lockGetBurnerByteCode             sync.RWMutex
 	lockGetBurnerInfo                 sync.RWMutex
 	lockGetChainID                    sync.RWMutex
@@ -2590,6 +2580,41 @@ func (mock *ChainKeeperMock) EnqueueCommandCalls() []struct {
 	return calls
 }
 
+// GenerateSalt calls GenerateSaltFunc.
+func (mock *ChainKeeperMock) GenerateSalt(ctx github_com_cosmos_cosmos_sdk_types.Context, recipient string) evmtypes.Hash {
+	if mock.GenerateSaltFunc == nil {
+		panic("ChainKeeperMock.GenerateSaltFunc: method is nil but ChainKeeper.GenerateSalt was just called")
+	}
+	callInfo := struct {
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
+		Recipient string
+	}{
+		Ctx:       ctx,
+		Recipient: recipient,
+	}
+	mock.lockGenerateSalt.Lock()
+	mock.calls.GenerateSalt = append(mock.calls.GenerateSalt, callInfo)
+	mock.lockGenerateSalt.Unlock()
+	return mock.GenerateSaltFunc(ctx, recipient)
+}
+
+// GenerateSaltCalls gets all the calls that were made to GenerateSalt.
+// Check the length with:
+//     len(mockedChainKeeper.GenerateSaltCalls())
+func (mock *ChainKeeperMock) GenerateSaltCalls() []struct {
+	Ctx       github_com_cosmos_cosmos_sdk_types.Context
+	Recipient string
+} {
+	var calls []struct {
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
+		Recipient string
+	}
+	mock.lockGenerateSalt.RLock()
+	calls = mock.calls.GenerateSalt
+	mock.lockGenerateSalt.RUnlock()
+	return calls
+}
+
 // GetBatchByID calls GetBatchByIDFunc.
 func (mock *ChainKeeperMock) GetBatchByID(ctx github_com_cosmos_cosmos_sdk_types.Context, id []byte) evmtypes.CommandBatch {
 	if mock.GetBatchByIDFunc == nil {
@@ -2625,46 +2650,46 @@ func (mock *ChainKeeperMock) GetBatchByIDCalls() []struct {
 	return calls
 }
 
-// GetBurnerAddressAndSalt calls GetBurnerAddressAndSaltFunc.
-func (mock *ChainKeeperMock) GetBurnerAddressAndSalt(ctx github_com_cosmos_cosmos_sdk_types.Context, token evmtypes.ERC20Token, recipient string, gatewayAddr evmtypes.Address) (evmtypes.Address, evmtypes.Hash, error) {
-	if mock.GetBurnerAddressAndSaltFunc == nil {
-		panic("ChainKeeperMock.GetBurnerAddressAndSaltFunc: method is nil but ChainKeeper.GetBurnerAddressAndSalt was just called")
+// GetBurnerAddress calls GetBurnerAddressFunc.
+func (mock *ChainKeeperMock) GetBurnerAddress(ctx github_com_cosmos_cosmos_sdk_types.Context, token evmtypes.ERC20Token, salt evmtypes.Hash, gatewayAddr evmtypes.Address) (evmtypes.Address, error) {
+	if mock.GetBurnerAddressFunc == nil {
+		panic("ChainKeeperMock.GetBurnerAddressFunc: method is nil but ChainKeeper.GetBurnerAddress was just called")
 	}
 	callInfo := struct {
 		Ctx         github_com_cosmos_cosmos_sdk_types.Context
 		Token       evmtypes.ERC20Token
-		Recipient   string
+		Salt        evmtypes.Hash
 		GatewayAddr evmtypes.Address
 	}{
 		Ctx:         ctx,
 		Token:       token,
-		Recipient:   recipient,
+		Salt:        salt,
 		GatewayAddr: gatewayAddr,
 	}
-	mock.lockGetBurnerAddressAndSalt.Lock()
-	mock.calls.GetBurnerAddressAndSalt = append(mock.calls.GetBurnerAddressAndSalt, callInfo)
-	mock.lockGetBurnerAddressAndSalt.Unlock()
-	return mock.GetBurnerAddressAndSaltFunc(ctx, token, recipient, gatewayAddr)
+	mock.lockGetBurnerAddress.Lock()
+	mock.calls.GetBurnerAddress = append(mock.calls.GetBurnerAddress, callInfo)
+	mock.lockGetBurnerAddress.Unlock()
+	return mock.GetBurnerAddressFunc(ctx, token, salt, gatewayAddr)
 }
 
-// GetBurnerAddressAndSaltCalls gets all the calls that were made to GetBurnerAddressAndSalt.
+// GetBurnerAddressCalls gets all the calls that were made to GetBurnerAddress.
 // Check the length with:
-//     len(mockedChainKeeper.GetBurnerAddressAndSaltCalls())
-func (mock *ChainKeeperMock) GetBurnerAddressAndSaltCalls() []struct {
+//     len(mockedChainKeeper.GetBurnerAddressCalls())
+func (mock *ChainKeeperMock) GetBurnerAddressCalls() []struct {
 	Ctx         github_com_cosmos_cosmos_sdk_types.Context
 	Token       evmtypes.ERC20Token
-	Recipient   string
+	Salt        evmtypes.Hash
 	GatewayAddr evmtypes.Address
 } {
 	var calls []struct {
 		Ctx         github_com_cosmos_cosmos_sdk_types.Context
 		Token       evmtypes.ERC20Token
-		Recipient   string
+		Salt        evmtypes.Hash
 		GatewayAddr evmtypes.Address
 	}
-	mock.lockGetBurnerAddressAndSalt.RLock()
-	calls = mock.calls.GetBurnerAddressAndSalt
-	mock.lockGetBurnerAddressAndSalt.RUnlock()
+	mock.lockGetBurnerAddress.RLock()
+	calls = mock.calls.GetBurnerAddress
+	mock.lockGetBurnerAddress.RUnlock()
 	return calls
 }
 

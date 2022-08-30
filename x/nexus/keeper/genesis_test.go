@@ -16,6 +16,7 @@ import (
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	axelarnetkeeper "github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	axelarnetTypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
+	"github.com/axelarnetwork/axelar-core/x/axelarnet/types/mock"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	evmkeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
@@ -79,15 +80,21 @@ func assertChainStatesEqual(t *testing.T, expected, actual *types.GenesisState) 
 func TestExportGenesisInitGenesis(t *testing.T) {
 	ctx, keeper := setup()
 
-	getter := func(sdk.Context, exported.ChainName) (axelarnetTypes.CosmosChain, bool) {
-		return axelarnetTypes.CosmosChain{Name: axelarnet.Axelarnet.Name, AddrPrefix: "axelar"}, true
+	keeper.InitGenesis(ctx, types.DefaultGenesisState())
+
+	axelarnetK := &mock.BaseKeeperMock{
+		GetCosmosChainByNameFunc: func(ctx sdk.Context, chain exported.ChainName) (axelarnetTypes.CosmosChain, bool) {
+			return axelarnetTypes.CosmosChain{Name: axelarnet.Axelarnet.Name, AddrPrefix: "axelar"}, true
+		},
 	}
 
-	keeper.InitGenesis(ctx, types.DefaultGenesisState())
+	bankK := &mock.BankKeeperMock{
+		BlockedAddrFunc: func(addr sdk.AccAddress) bool { return false },
+	}
 
 	router := types.NewRouter()
 	router.AddAddressValidator(evmTypes.ModuleName, evmkeeper.NewAddressValidator()).
-		AddAddressValidator(axelarnetTypes.ModuleName, axelarnetkeeper.NewAddressValidator(getter))
+		AddAddressValidator(axelarnetTypes.ModuleName, axelarnetkeeper.NewAddressValidator(axelarnetK, bankK))
 	keeper.SetRouter(router)
 
 	expected := types.DefaultGenesisState()

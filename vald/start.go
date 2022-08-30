@@ -105,7 +105,7 @@ func GetValdCommand() *cobra.Command {
 	utils.OverwriteFlagDefaults(cmd, map[string]string{
 		flags.FlagBroadcastMode:  flags.BroadcastBlock,
 		flags.FlagChainID:        app.Name,
-		flags.FlagGasPrices:      "0.00005uaxl",
+		flags.FlagGasPrices:      "0.007uaxl",
 		flags.FlagKeyringBackend: "file",
 	}, false)
 

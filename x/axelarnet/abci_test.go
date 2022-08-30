@@ -3,97 +3,99 @@ package axelarnet
 import (
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	clienttypes "github.com/cosmos/ibc-go/v2/modules/core/02-client/types"
 	ibcchanneltypes "github.com/cosmos/ibc-go/v2/modules/core/04-channel/types"
-	commitmenttypes "github.com/cosmos/ibc-go/v2/modules/core/23-commitment/types"
 	ibcclient "github.com/cosmos/ibc-go/v2/modules/core/exported"
-	ibctmtypes "github.com/cosmos/ibc-go/v2/modules/light-clients/07-tendermint/types"
-	ibctesting "github.com/cosmos/ibc-go/v2/testing"
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	fakeMock "github.com/axelarnetwork/axelar-core/testutils/fake/interfaces/mock"
+	appParams "github.com/axelarnetwork/axelar-core/app/params"
+	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
 	utilsMock "github.com/axelarnetwork/axelar-core/utils/mock"
+	"github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types/mock"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types/testutils"
+	axelartestutils "github.com/axelarnetwork/axelar-core/x/axelarnet/types/testutils"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/utils/slices"
 	. "github.com/axelarnetwork/utils/test"
 )
 
-func setup() (*fakeMock.MultiStoreMock, sdk.Context) {
-	store := &fakeMock.MultiStoreMock{}
-	cacheStore := &fakeMock.CacheMultiStoreMock{
-		WriteFunc: func() {},
-	}
-	store.CacheMultiStoreFunc = func() sdk.CacheMultiStore { return cacheStore }
-	ctx := sdk.NewContext(store, tmproto.Header{}, false, log.TestingLogger()).WithBlockHeight(rand.I64Between(10, 100))
+func setup() (sdk.Context, keeper.IBCKeeper, *mock.ChannelKeeperMock, *mock.IBCTransferKeeperMock) {
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+	encCfg := appParams.MakeEncodingConfig()
+	axelarnetSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("axelarnetKey"), sdk.NewKVStoreKey("tAxelarnetKey"), "axelarnet")
 
-	return store, ctx
+	channelK := &mock.ChannelKeeperMock{
+		GetNextSequenceSendFunc: func(ctx sdk.Context, portID string, channelID string) (uint64, bool) {
+			return uint64(rand.I64Between(1, 999999)), true
+		},
+	}
+	transferK := &mock.IBCTransferKeeperMock{}
+
+	k := keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("axelarnet"), axelarnetSubspace, channelK)
+	k.InitGenesis(ctx, types.DefaultGenesisState())
+	ibcK := keeper.NewIBCKeeper(k, transferK, channelK)
+	return ctx, ibcK, channelK, transferK
 }
+
 func TestEndBlocker(t *testing.T) {
 	var (
-		keeper               *mock.BaseKeeperMock
-		transferKeeper       *mock.IBCTransferKeeperMock
-		channelKeeper        *mock.ChannelKeeperMock
+		bk                   *mock.BaseKeeperMock
+		transferK            *mock.IBCTransferKeeperMock
+		channelK             *mock.ChannelKeeperMock
+		ibcK                 keeper.IBCKeeper
 		transferQueue        *utilsMock.KVQueueMock
 		queueSize            int
 		queueIdx             int
 		ibcTransferErrors    int
 		panicOnTransferError bool
+		ctx                  sdk.Context
 	)
 
-	store := &fakeMock.MultiStoreMock{}
-	cacheStore := &fakeMock.CacheMultiStoreMock{
-		WriteFunc: func() {},
-	}
-	store.CacheMultiStoreFunc = func() sdk.CacheMultiStore { return cacheStore }
-
-	ctx := sdk.NewContext(store, tmproto.Header{}, false, log.TestingLogger()).WithBlockHeight(rand.I64Between(10, 100))
 	repeats := 20
 
 	givenTransferQueue := Given("transfer queue", func() {
-		store, ctx = setup()
+		ctx, ibcK, channelK, transferK = setup()
 
-		keeper = &mock.BaseKeeperMock{
+		bk = &mock.BaseKeeperMock{
 			LoggerFunc:                func(ctx sdk.Context) log.Logger { return log.NewNopLogger() },
 			GetIBCTransferQueueFunc:   func(ctx sdk.Context) utils.KVQueue { return transferQueue },
 			GetRouteTimeoutWindowFunc: func(ctx sdk.Context) uint64 { return 10 },
-			EnqueueTransferFunc: func(ctx sdk.Context, transfer types.IBCTransfer) error {
+			SetTransferFailedFunc: func(sdk.Context, nexus.TransferID) error {
 				return nil
 			},
-			SetFailedTransferFunc: func(sdk.Context, types.IBCTransfer) {},
 		}
-		transferKeeper = &mock.IBCTransferKeeperMock{
-			SendTransferFunc: func(ctx sdk.Context, sourcePort string, sourceChannel string, token sdk.Coin, sender sdk.AccAddress, receiver string, timeoutHeight clienttypes.Height, timeoutTimestamp uint64) error {
-				if queueIdx <= ibcTransferErrors {
-					if panicOnTransferError {
-						panic("panicked on transfer")
-					}
 
-					return fmt.Errorf("failed to send transfer")
+		transferK.SendTransferFunc = func(sdk.Context, string, string, sdk.Coin, sdk.AccAddress, string, clienttypes.Height, uint64) error {
+			if queueIdx <= ibcTransferErrors {
+				if panicOnTransferError {
+					panic("panicked on transfer")
 				}
 
-				ctx.EventManager().EmitEvent(
-					sdk.NewEvent(
-						ibcchanneltypes.EventTypeSendPacket,
-					))
-				return nil
-			},
+				return fmt.Errorf("failed to send transfer")
+			}
+
+			ctx.EventManager().EmitEvent(
+				sdk.NewEvent(
+					ibcchanneltypes.EventTypeSendPacket,
+				))
+			return nil
 		}
-		channelKeeper = &mock.ChannelKeeperMock{
-			GetChannelClientStateFunc: func(sdk.Context, string, string) (string, ibcclient.ClientState, error) {
-				return "07-tendermint-0", clientState(), nil
-			},
+
+		channelK.GetChannelClientStateFunc = func(ctx sdk.Context, portID string, channelID string) (string, ibcclient.ClientState, error) {
+			return "07-tendermint-0", axelartestutils.ClientState(), nil
 		}
+
 		transferQueue = &utilsMock.KVQueueMock{
 			IsEmptyFunc: func() bool {
 				return queueIdx == queueSize
@@ -124,9 +126,9 @@ func TestEndBlocker(t *testing.T) {
 			queueSize = 0
 		}).
 		Then("should do nothing", func(t *testing.T) {
-			EndBlocker(ctx, abci.RequestEndBlock{Height: ctx.BlockHeight()}, keeper, transferKeeper, channelKeeper)
+			EndBlocker(ctx, abci.RequestEndBlock{Height: ctx.BlockHeight()}, bk, ibcK)
 			assert.Equal(t, len(transferQueue.DequeueCalls()), 0)
-			assert.Equal(t, len(transferKeeper.SendTransferCalls()), 0)
+			assert.Equal(t, len(transferK.SendTransferCalls()), 0)
 		}).
 		Run(t, repeats)
 
@@ -135,9 +137,9 @@ func TestEndBlocker(t *testing.T) {
 			queueSize = int(rand.I64Between(50, 200))
 		}).
 		Then("should init ibc transfers", func(t *testing.T) {
-			EndBlocker(ctx, abci.RequestEndBlock{Height: ctx.BlockHeight()}, keeper, transferKeeper, channelKeeper)
+			EndBlocker(ctx, abci.RequestEndBlock{Height: ctx.BlockHeight()}, bk, ibcK)
 			assert.Equal(t, queueSize, len(transferQueue.DequeueCalls()))
-			assert.Equal(t, queueSize, len(transferKeeper.SendTransferCalls()))
+			assert.Equal(t, queueSize, len(transferK.SendTransferCalls()))
 			assert.Equal(t, queueSize, slices.Reduce(ctx.EventManager().Events().ToABCIEvents(), 0, func(c int, e abci.Event) int {
 				if e.Type == ibcchanneltypes.EventTypeSendPacket {
 					c++
@@ -153,17 +155,17 @@ func TestEndBlocker(t *testing.T) {
 			ibcTransferErrors = int(rand.I64Between(1, int64(queueSize)) + 1)
 		}).
 		Then("should set failed transfers", func(t *testing.T) {
-			_, err := EndBlocker(ctx, abci.RequestEndBlock{Height: ctx.BlockHeight()}, keeper, transferKeeper, channelKeeper)
+			_, err := EndBlocker(ctx, abci.RequestEndBlock{Height: ctx.BlockHeight()}, bk, ibcK)
 			assert.NoError(t, err)
 			assert.Equal(t, queueSize, len(transferQueue.DequeueCalls()))
-			assert.Equal(t, queueSize, len(transferKeeper.SendTransferCalls()))
+			assert.Equal(t, queueSize, len(transferK.SendTransferCalls()))
 			assert.Equal(t, queueSize-ibcTransferErrors, slices.Reduce(ctx.EventManager().Events().ToABCIEvents(), 0, func(c int, e abci.Event) int {
 				if e.Type == ibcchanneltypes.EventTypeSendPacket {
 					c++
 				}
 				return c
 			}))
-			assert.Equal(t, ibcTransferErrors, len(keeper.SetFailedTransferCalls()))
+			assert.Equal(t, ibcTransferErrors, len(bk.SetTransferFailedCalls()))
 		}).
 		Run(t, repeats)
 
@@ -173,33 +175,18 @@ func TestEndBlocker(t *testing.T) {
 			ibcTransferErrors = int(rand.I64Between(1, int64(queueSize)) + 1)
 			panicOnTransferError = true
 		}).
-		Then("should set failed transfers", func(t *testing.T) {
-			_, err := EndBlocker(ctx, abci.RequestEndBlock{Height: ctx.BlockHeight()}, keeper, transferKeeper, channelKeeper)
+		Then("should set transfers failed", func(t *testing.T) {
+			_, err := EndBlocker(ctx, abci.RequestEndBlock{Height: ctx.BlockHeight()}, bk, ibcK)
 			assert.NoError(t, err)
 			assert.Equal(t, queueSize, len(transferQueue.DequeueCalls()))
-			assert.Equal(t, queueSize, len(transferKeeper.SendTransferCalls()))
+			assert.Equal(t, queueSize, len(transferK.SendTransferCalls()))
 			assert.Equal(t, queueSize-ibcTransferErrors, slices.Reduce(ctx.EventManager().Events().ToABCIEvents(), 0, func(c int, e abci.Event) int {
 				if e.Type == ibcchanneltypes.EventTypeSendPacket {
 					c++
 				}
 				return c
 			}))
-			assert.Equal(t, ibcTransferErrors, len(keeper.SetFailedTransferCalls()))
+			assert.Equal(t, ibcTransferErrors, len(bk.SetTransferFailedCalls()))
 		}).
 		Run(t, repeats)
-}
-
-func clientState() *ibctmtypes.ClientState {
-	return ibctmtypes.NewClientState(
-		"07-tendermint-0",
-		ibctmtypes.DefaultTrustLevel,
-		time.Hour*24*7*2,
-		time.Hour*24*7*3,
-		time.Second*10,
-		clienttypes.NewHeight(0, 5),
-		commitmenttypes.GetSDKSpecs(),
-		ibctesting.UpgradePath,
-		false,
-		false,
-	)
 }

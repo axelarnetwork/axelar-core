@@ -10,9 +10,9 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/types"
+	"github.com/axelarnetwork/utils/monads/cached"
 	"github.com/axelarnetwork/utils/proto"
 	"github.com/axelarnetwork/utils/slices"
-	"github.com/axelarnetwork/utils/wrapper"
 )
 
 var _ exported.Poll = &poll{}
@@ -21,7 +21,7 @@ type poll struct {
 	exported.PollMetadata
 	ctx           sdk.Context
 	k             Keeper
-	passingWeight wrapper.Cached[sdk.Uint]
+	passingWeight cached.Cached[sdk.Uint]
 }
 
 func newPoll(ctx sdk.Context, k Keeper, metadata exported.PollMetadata) *poll {
@@ -29,7 +29,7 @@ func newPoll(ctx sdk.Context, k Keeper, metadata exported.PollMetadata) *poll {
 		ctx:          ctx,
 		k:            k,
 		PollMetadata: metadata,
-		passingWeight: wrapper.NewCached(func() sdk.Uint {
+		passingWeight: cached.New(func() sdk.Uint {
 			return metadata.Snapshot.CalculateMinPassingWeight(metadata.VotingThreshold)
 		}),
 	}
@@ -187,7 +187,7 @@ func (p *poll) voteBeforeCompletion(voter sdk.ValAddress, blockHeight int64, dat
 }
 
 func (p poll) hasEnoughVotes(majority sdk.Uint) bool {
-	return majority.GTE(p.Snapshot.CalculateMinPassingWeight(p.VotingThreshold)) &&
+	return majority.GTE(p.passingWeight.Value()) &&
 		p.getVoterCount() >= p.MinVoterCount
 }
 
@@ -197,7 +197,7 @@ func (p poll) cannotWin(majority sdk.Uint) bool {
 
 	return majority.
 		Add(missingVotingPower).
-		LT(p.Snapshot.CalculateMinPassingWeight(p.VotingThreshold))
+		LT(p.passingWeight.Value())
 }
 
 func (p poll) getTalliedVotingPower() sdk.Uint {

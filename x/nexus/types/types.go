@@ -153,3 +153,28 @@ func (m *ChainState) RemoveMaintainer(address sdk.ValAddress) error {
 
 	return nil
 }
+
+// MarkMissingVote marks the given chain maintainer for missing vote of a poll
+func (m *ChainState) MarkMissingVote(address sdk.ValAddress, missingVote bool) {
+	i := m.IndexOfMaintainer(address)
+	if i == -1 {
+		return
+	}
+
+	m.MaintainerStates[i].MissingVotes.Add(missingVote)
+}
+
+// MarkIncorrectVote marks the given chain maintainer for voting incorrectly of a poll
+func (m *ChainState) MarkIncorrectVote(address sdk.ValAddress, incorrectVote bool) {
+	i := m.IndexOfMaintainer(address)
+	if i == -1 {
+		return
+	}
+
+	m.MaintainerStates[i].IncorrectVotes.Add(incorrectVote)
+}
+
+// ChainName returns the chain name for the given state
+func (m ChainState) ChainName() exported.ChainName {
+	return m.Chain.Name
+}

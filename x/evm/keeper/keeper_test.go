@@ -188,7 +188,7 @@ func TestGetTokenAddress(t *testing.T) {
 	assert.Equal(t, expected, token.GetAddress().Hex())
 }
 
-func TestGetBurnerAddressAndSalt(t *testing.T) {
+func TestGetBurnerAddress(t *testing.T) {
 	encCfg := app.MakeEncodingConfig()
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 	ctx = ctx.WithHeaderHash(common.Hex2Bytes("CA36CA3751A5B6E8B8ED4072BFA5E6E5BAC8B6E06E02DE029E1BD86AB141F2F1"))
@@ -216,7 +216,8 @@ func TestGetBurnerAddressAndSalt(t *testing.T) {
 			IsExternal:   false,
 			BurnerCode:   bzBurnable,
 		})
-		actualburnerAddr, actualSalt, err := chainKeeper.GetBurnerAddressAndSalt(ctx, token, recipient, axelarGateway)
+		actualSalt := chainKeeper.GenerateSalt(ctx, recipient)
+		actualburnerAddr, err := chainKeeper.GetBurnerAddress(ctx, token, actualSalt, axelarGateway)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedBurnerAddr, actualburnerAddr.Hex())
@@ -237,7 +238,8 @@ func TestGetBurnerAddressAndSalt(t *testing.T) {
 			IsExternal:   true,
 			BurnerCode:   nil,
 		})
-		actualburnerAddr, actualSalt, err := chainKeeper.GetBurnerAddressAndSalt(ctx, token, recipient, axelarGateway)
+		actualSalt := chainKeeper.GenerateSalt(ctx, recipient)
+		actualburnerAddr, err := chainKeeper.GetBurnerAddress(ctx, token, actualSalt, axelarGateway)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedBurnerAddr, actualburnerAddr.Hex())

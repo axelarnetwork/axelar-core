@@ -41,7 +41,6 @@ func GetTxCmd() *cobra.Command {
 		GetCmdCreatePendingTransfers(),
 		GetCmdCreateDeployToken(),
 		GetCmdCreateBurnTokens(),
-		GetCmdCreateTransferOwnership(),
 		GetCmdCreateTransferOperatorship(),
 		GetCmdSignCommands(),
 		GetCmdAddChain(),
@@ -302,30 +301,6 @@ func GetCmdCreateBurnTokens() *cobra.Command {
 			}
 
 			msg := types.NewCreateBurnTokensRequest(cliCtx.GetFromAddress(), args[0])
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
-
-			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
-		},
-	}
-	flags.AddTxFlagsToCmd(cmd)
-	return cmd
-}
-
-// GetCmdCreateTransferOwnership returns the cli command to create transfer-ownership command for an EVM chain contract
-func GetCmdCreateTransferOwnership() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "transfer-ownership [chain] [keyID]",
-		Short: "Create transfer ownership command for an EVM chain contract",
-		Args:  cobra.ExactArgs(2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx, err := client.GetClientTxContext(cmd)
-			if err != nil {
-				return err
-			}
-
-			msg := types.NewCreateTransferOwnershipRequest(cliCtx.GetFromAddress(), args[0], args[1])
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

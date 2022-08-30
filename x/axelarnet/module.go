@@ -9,9 +9,11 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
 	"github.com/cosmos/ibc-go/v2/modules/apps/transfer"
+	ibctransfertypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
 	channeltypes "github.com/cosmos/ibc-go/v2/modules/core/04-channel/types"
 	ibcexported "github.com/cosmos/ibc-go/v2/modules/core/exported"
 	"github.com/gorilla/mux"
@@ -25,6 +27,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/client/rest"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
 var (
@@ -98,6 +101,7 @@ type AppModule struct {
 	transfer types.IBCTransferKeeper
 	channel  types.ChannelKeeper
 	account  types.AccountKeeper
+	ibcK     keeper.IBCKeeper
 
 	transferModule transfer.AppModule
 }
@@ -108,8 +112,8 @@ func NewAppModule(
 	nexus types.Nexus,
 	bank types.BankKeeper,
 	transfer types.IBCTransferKeeper,
-	channel types.ChannelKeeper,
 	account types.AccountKeeper,
+	ibcK keeper.IBCKeeper,
 	transferModule transfer.AppModule,
 	logger log.Logger) AppModule {
 	return AppModule{
@@ -119,8 +123,8 @@ func NewAppModule(
 		nexus:          nexus,
 		bank:           bank,
 		transfer:       transfer,
-		channel:        channel,
 		account:        account,
+		ibcK:           ibcK,
 		transferModule: transferModule,
 	}
 }
@@ -149,7 +153,7 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.Raw
 
 // Route returns the module's route
 func (am AppModule) Route() sdk.Route {
-	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper, am.nexus, am.bank, am.transfer, am.account))
+	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper, am.nexus, am.bank, am.transfer, am.account, am.ibcK))
 }
 
 // QuerierRoute returns this module's query route
@@ -167,7 +171,7 @@ func (am AppModule) LegacyQuerierHandler(*codec.LegacyAmino) sdk.Querier {
 func (am AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterQueryServiceServer(cfg.QueryServer(), keeper.NewGRPCQuerier(am.keeper, am.nexus))
 
-	err := cfg.RegisterMigration(types.ModuleName, 1, keeper.GetMigrationHandler())
+	err := cfg.RegisterMigration(types.ModuleName, 2, keeper.GetMigrationHandler(am.keeper))
 	if err != nil {
 		panic(err)
 	}
@@ -181,12 +185,12 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 // EndBlock executes all state transitions this module requires at the end of each new block
 func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
 	return utils.RunCached(ctx, am.keeper, func(ctx sdk.Context) ([]abci.ValidatorUpdate, error) {
-		return EndBlocker(ctx, req, am.keeper, am.transfer, am.channel)
+		return EndBlocker(ctx, req, am.keeper, am.ibcK)
 	})
 }
 
 // ConsensusVersion implements AppModule/ConsensusVersion.
-func (AppModule) ConsensusVersion() uint64 { return 2 }
+func (AppModule) ConsensusVersion() uint64 { return 3 }
 
 // OnChanOpenInit implements the IBCModule interface
 func (am AppModule) OnChanOpenInit(
@@ -278,19 +282,14 @@ func (am AppModule) OnAcknowledgementPacket(
 	}
 
 	var ack channeltypes.Acknowledgement
-	_ = types.ModuleCdc.UnmarshalJSON(acknowledgement, &ack)
+	if err := ibctransfertypes.ModuleCdc.UnmarshalJSON(acknowledgement, &ack); err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "cannot unmarshal ICS-20 transfer packet acknowledgement: %v", err)
+	}
 	switch ack.Response.(type) {
-	case *channeltypes.Acknowledgement_Error:
-		t, err := types.PacketToTransfer(packet)
-		if err != nil {
-			return err
-		}
-		am.keeper.SetFailedTransfer(ctx, t)
-		return nil
+	case *channeltypes.Acknowledgement_Result:
+		return setTransferCompleted(ctx, am.keeper, packet.SourcePort, packet.SourceChannel, packet.Sequence)
 	default:
-		// the acknowledgement succeeded on the receiving chain so nothing
-		// needs to be executed and no error needs to be returned
-		return nil
+		return setTransferFailed(ctx, am.keeper, packet.SourcePort, packet.SourceChannel, packet.Sequence)
 	}
 }
 
@@ -305,19 +304,38 @@ func (am AppModule) OnTimeoutPacket(
 		return err
 	}
 
-	t, err := types.PacketToTransfer(packet)
-	if err != nil {
-		return err
-	}
-	// requeue transfer
-	err = am.keeper.EnqueueTransfer(ctx, t)
-	if err != nil {
-		return err
-	}
-	return nil
+	return setTransferFailed(ctx, am.keeper, packet.SourcePort, packet.SourceChannel, packet.Sequence)
 }
 
 // NegotiateAppVersion implements the IBCModule interface
 func (am AppModule) NegotiateAppVersion(ctx sdk.Context, order channeltypes.Order, connectionID string, portID string, counterparty channeltypes.Counterparty, proposedVersion string) (version string, err error) {
 	return am.transferModule.NegotiateAppVersion(ctx, order, connectionID, portID, counterparty, proposedVersion)
+}
+
+// returns true if mapping exits
+func getSeqIDMapping(ctx sdk.Context, k keeper.Keeper, portID, channelID string, seq uint64) (nexus.TransferID, bool) {
+	defer k.DeleteSeqIDMapping(ctx, portID, channelID, seq)
+
+	return k.GetSeqIDMapping(ctx, portID, channelID, seq)
+}
+
+func setTransferFailed(ctx sdk.Context, k keeper.Keeper, portID, channelID string, seq uint64) error {
+	transferID, ok := getSeqIDMapping(ctx, k, portID, channelID, seq)
+	if !ok {
+		return nil
+	}
+
+	k.Logger(ctx).Info(fmt.Sprintf("set IBC transfer %d failed", transferID))
+	return k.SetTransferFailed(ctx, transferID)
+
+}
+
+func setTransferCompleted(ctx sdk.Context, k keeper.Keeper, portID, channelID string, seq uint64) error {
+	transferID, ok := getSeqIDMapping(ctx, k, portID, channelID, seq)
+	if !ok {
+		return nil
+	}
+
+	k.Logger(ctx).Info(fmt.Sprintf("set IBC transfer %d completed", transferID))
+	return k.SetTransferCompleted(ctx, transferID)
 }
