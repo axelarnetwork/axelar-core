@@ -28,6 +28,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/utils/funcs"
 )
 
 var (
@@ -325,9 +326,16 @@ func setTransferFailed(ctx sdk.Context, k keeper.Keeper, portID, channelID strin
 		return nil
 	}
 
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(
+		&types.IBCTransferFailed{
+			ID:        transferID,
+			Sequence:  seq,
+			PortID:    portID,
+			ChannelID: channelID,
+		}))
+
 	k.Logger(ctx).Info(fmt.Sprintf("set IBC transfer %d failed", transferID))
 	return k.SetTransferFailed(ctx, transferID)
-
 }
 
 func setTransferCompleted(ctx sdk.Context, k keeper.Keeper, portID, channelID string, seq uint64) error {
@@ -335,6 +343,14 @@ func setTransferCompleted(ctx sdk.Context, k keeper.Keeper, portID, channelID st
 	if !ok {
 		return nil
 	}
+
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(
+		&types.IBCTransferCompleted{
+			ID:        transferID,
+			Sequence:  seq,
+			PortID:    portID,
+			ChannelID: channelID,
+		}))
 
 	k.Logger(ctx).Info(fmt.Sprintf("set IBC transfer %d completed", transferID))
 	return k.SetTransferCompleted(ctx, transferID)

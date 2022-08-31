@@ -1,0 +1,42 @@
+syntax = "proto3";
+package axelar.axelarnet.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/axelarnet/types";
+
+import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
+
+message IBCTransferSent {
+  uint64 id = 1 [
+    (gogoproto.customname) = "ID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/nexus/exported.TransferID"
+  ];
+  string receiver = 2;
+  cosmos.base.v1beta1.Coin token = 3 [ (gogoproto.nullable) = false ];
+  uint64 sequence = 4;
+  string portId = 5 [ (gogoproto.customname) = "PortID" ];
+  string channelId = 6 [ (gogoproto.customname) = "ChannelID" ];
+}
+
+message IBCTransferCompleted {
+  uint64 id = 1 [
+    (gogoproto.customname) = "ID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/nexus/exported.TransferID"
+  ];
+  uint64 sequence = 2;
+  string portId = 3 [ (gogoproto.customname) = "PortID" ];
+  string channelId = 4 [ (gogoproto.customname) = "ChannelID" ];
+}
+
+message IBCTransferFailed {
+  uint64 id = 1 [
+    (gogoproto.customname) = "ID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/nexus/exported.TransferID"
+  ];
+  uint64 sequence = 2;
+  string portId = 3 [ (gogoproto.customname) = "PortID" ];
+  string channelId = 4 [ (gogoproto.customname) = "ChannelID" ];
+}

@@ -4,6 +4,11 @@
 
 ## Table of Contents
 
+- [axelar/axelarnet/events.proto](#axelar/axelarnet/events.proto)
+    - [IBCTransferCompleted](#axelar.axelarnet.v1beta1.IBCTransferCompleted)
+    - [IBCTransferFailed](#axelar.axelarnet.v1beta1.IBCTransferFailed)
+    - [IBCTransferSent](#axelar.axelarnet.v1beta1.IBCTransferSent)
+  
 - [axelar/axelarnet/v1beta1/params.proto](#axelar/axelarnet/v1beta1/params.proto)
     - [Params](#axelar.axelarnet.v1beta1.Params)
   
@@ -523,6 +528,78 @@
     - [MsgService](#axelar.vote.v1beta1.MsgService)
   
 - [Scalar Value Types](#scalar-value-types)
+
+
+
+<a name="axelar/axelarnet/events.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/axelarnet/events.proto
+
+
+
+<a name="axelar.axelarnet.v1beta1.IBCTransferCompleted"></a>
+
+### IBCTransferCompleted
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [uint64](#uint64) |  |  |
+| `sequence` | [uint64](#uint64) |  |  |
+| `portId` | [string](#string) |  |  |
+| `channelId` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.axelarnet.v1beta1.IBCTransferFailed"></a>
+
+### IBCTransferFailed
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [uint64](#uint64) |  |  |
+| `sequence` | [uint64](#uint64) |  |  |
+| `portId` | [string](#string) |  |  |
+| `channelId` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.axelarnet.v1beta1.IBCTransferSent"></a>
+
+### IBCTransferSent
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [uint64](#uint64) |  |  |
+| `receiver` | [string](#string) |  |  |
+| `token` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+| `sequence` | [uint64](#uint64) |  |  |
+| `portId` | [string](#string) |  |  |
+| `channelId` | [string](#string) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
 
 
 
