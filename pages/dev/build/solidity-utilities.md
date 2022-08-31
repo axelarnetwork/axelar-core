@@ -4,10 +4,15 @@ To facilitate cross-chain development, we have provided some Solidity utilites. 
 
 ## Constant Address Deployer
 
-Creating a cross-chain dApp will often require the same contract to be deployed on multiple chains. Furthermore, it is useful to know each address of this contract on each chain, either to know where to send remote contract calls, or where to trust remote contract calls from -- often both.
+Creating a cross-chain dApp will often require the same contract to be deployed on multiple chains.
+Furthermore, it is useful to know each address of this contract on each chain, either to know where to send remote contract calls, or where to trust remote contract calls from -- often both.
 If we can guarantee that the contracts in question will be deployed at the same address on each network, then the above is trivial.
-This can be achieved by deploying each contract from the same address with the same nonce at each network, or by using [`create2`](https://eips.ethereum.org/EIPS/eip-1014). For this purpose, we deployed [`ConstAddressDeployer`](https://github.com/axelarnetwork/axelar-utils-solidity/blob/main/contracts/ConstAddressDeployer.sol) at `0x617179a15fEAa53Fa82ae80b0fc3E85b7359a748` on every EVM testnet and mainnet that is supported by Axelar. We plan on deploying it on future supported testnets and mainnets, too. `ConstAddressDeployer` exposes the following functions:
+This can be achieved by deploying each contract from the same address with the same nonce at each network, or by using [`create2`](https://eips.ethereum.org/EIPS/eip-1014).
+For this purpose, we deployed [`ConstAddressDeployer`](https://github.com/axelarnetwork/axelar-utils-solidity/blob/main/contracts/ConstAddressDeployer.sol) at
+`0x98b2920d53612483f91f12ed7754e51b4a77919e` on every EVM testnet and mainnet that is supported by Axelar.
+We plan on deploying it on future supported testnets and mainnets, too.
 
+`ConstAddressDeployer` exposes the following functions:
 - `deployedAddress(bytes bytecode, address sender, bytes32 salt)`: calculates the address of contracts that has been/will be deployed with a certain bytecode and salt, by a certain sender.
 - `deploy(bytes bytecode, bytes32 salt)`: deploys a contract with a certain bytecode and salt.
 - `deployAndInit(bytes bytecode, bytes32 salt, bytes init)`: deploys a contract with a certain bytecode and salt, and runs `deployedContract.call(init)` afterwards. Use in case you need constructor arguments that are not constant across chains, as different constructor arguments result in different bytecodes.
