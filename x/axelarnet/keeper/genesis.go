@@ -23,18 +23,14 @@ func (k Keeper) InitGenesis(ctx sdk.Context, genState *types.GenesisState) {
 		}
 	}
 
-	for _, chain := range genState.Chains {
-		k.SetCosmosChain(ctx, chain)
-	}
+	slices.ForEach(genState.Chains, func(c types.CosmosChain) { k.SetCosmosChain(ctx, c) })
 
-	if err := k.validateIBCTransferQueueState(genState.TransferQueue, routeTransferQueueName); err != nil {
+	if err := k.validateIBCTransferQueueState(genState.TransferQueue, ibcTransferQueueName); err != nil {
 		panic(err)
 	}
 	k.GetIBCTransferQueue(ctx).(utils.GeneralKVQueue).ImportState(genState.TransferQueue)
 
-	for _, t := range genState.IBCTransfers {
-		k.setTransfer(ctx, t)
-	}
+	slices.ForEach(genState.IBCTransfers, func(t types.IBCTransfer) { k.setTransfer(ctx, t) })
 
 	seqKeys := maps.Keys(genState.SeqIDMapping)
 	sort.SliceStable(seqKeys, func(i, j int) bool { return strings.Compare(seqKeys[i], seqKeys[j]) < 0 })

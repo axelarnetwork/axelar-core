@@ -60,7 +60,7 @@ func (m GenesisState) Validate() error {
 		return getValidateError(sdkerrors.Wrapf(err, "invalid transfer queue state"))
 	}
 
-	// ibc transfer ID should be unique
+	// IBCTransfer ID should be unique
 	transferSeen := make(map[nexus.TransferID]bool)
 	for _, t := range m.IBCTransfers {
 		if transferSeen[t.ID] {
