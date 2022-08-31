@@ -91,13 +91,14 @@ func (v voteHandler) HandleCompletedPoll(ctx sdk.Context, poll vote.Poll) error 
 
 	rewardPool := v.rewarder.GetPool(ctx, rewardPoolName)
 
-	chainState := v.nexus.GetChainState(ctx, chain)
 	for _, voter := range poll.GetVoters() {
 		hasVoted := poll.HasVoted(voter)
 		hasVotedIncorrectly := hasVoted && !poll.HasVotedCorrectly(voter)
 
-		chainState.MarkMissingVote(voter, !hasVoted)
-		chainState.MarkIncorrectVote(voter, hasVotedIncorrectly)
+		maintainerState := funcs.MustOk(v.nexus.GetChainMaintainerState(ctx, chain, voter))
+		maintainerState.MarkMissingVote(!hasVoted)
+		maintainerState.MarkIncorrectVote(hasVotedIncorrectly)
+		v.nexus.SetChainMaintainerState(ctx, maintainerState)
 
 		v.keeper.Logger(ctx).Debug(fmt.Sprintf("marked voter %s behaviour", voter.String()),
 			"voter", voter.String(),
@@ -120,7 +121,6 @@ func (v voteHandler) HandleCompletedPoll(ctx sdk.Context, poll vote.Poll) error 
 				"poll", poll.GetID().String())
 		}
 	}
-	v.nexus.SetChainState(ctx, chainState)
 
 	if v.IsFalsyResult(voteEvents) {
 		md := mustGetMetadata(poll)

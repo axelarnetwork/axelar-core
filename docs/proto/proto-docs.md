@@ -1220,10 +1220,9 @@ ChainState represents the state of a registered blockchain
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `chain` | [axelar.nexus.exported.v1beta1.Chain](#axelar.nexus.exported.v1beta1.Chain) |  |  |
-| `maintainers` | [bytes](#bytes) | repeated | **Deprecated.**  |
 | `activated` | [bool](#bool) |  |  |
 | `assets` | [axelar.nexus.exported.v1beta1.Asset](#axelar.nexus.exported.v1beta1.Asset) | repeated |  |
-| `maintainer_states` | [MaintainerState](#axelar.nexus.v1beta1.MaintainerState) | repeated |  |
+| `maintainer_states` | [MaintainerState](#axelar.nexus.v1beta1.MaintainerState) | repeated | **Deprecated.**  |
 
 
 
@@ -1257,6 +1256,7 @@ ChainState represents the state of a registered blockchain
 | `address` | [bytes](#bytes) |  |  |
 | `missing_votes` | [axelar.utils.v1beta1.Bitmap](#axelar.utils.v1beta1.Bitmap) |  |  |
 | `incorrect_votes` | [axelar.utils.v1beta1.Bitmap](#axelar.utils.v1beta1.Bitmap) |  |  |
+| `chain` | [string](#string) |  |  |
 
 
 

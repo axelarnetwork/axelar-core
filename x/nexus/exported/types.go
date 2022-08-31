@@ -211,10 +211,12 @@ func (c ChainName) Equals(c2 ChainName) bool {
 	return strings.EqualFold(c.String(), c2.String())
 }
 
-// ChainState allows to record vote status of chain maintainers
-type ChainState interface {
+// MaintainerState allows to record status of chain maintainer
+type MaintainerState interface {
 	codec.ProtoMarshaler
-	MarkMissingVote(maintainer sdk.ValAddress, missingVote bool)
-	MarkIncorrectVote(maintainer sdk.ValAddress, incorrectVote bool)
-	ChainName() ChainName
+	MarkMissingVote(missingVote bool)
+	MarkIncorrectVote(incorrectVote bool)
+	CountMissingVotes(window int) uint64
+	CountIncorrectVotes(window int) uint64
+	GetAddress() sdk.ValAddress
 }

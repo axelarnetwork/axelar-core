@@ -36,10 +36,10 @@ func checkChainMaintainers(ctx sdk.Context, n types.Nexus, r types.RewardKeeper,
 		params := n.GetParams(ctx)
 
 		for _, maintainerState := range n.GetChainMaintainerStates(ctx, chain) {
-			missingVoteCount := maintainerState.MissingVotes.CountTrue(int(params.ChainMaintainerCheckWindow))
-			incorrectVoteCount := maintainerState.IncorrectVotes.CountTrue(int(params.ChainMaintainerCheckWindow))
-			window := params.ChainMaintainerCheckWindow
-			_, hasProxyActive := s.GetProxy(ctx, maintainerState.Address)
+			window := int(params.ChainMaintainerCheckWindow)
+			missingVoteCount := maintainerState.CountMissingVotes(window)
+			incorrectVoteCount := maintainerState.CountIncorrectVotes(window)
+			_, hasProxyActive := s.GetProxy(ctx, maintainerState.GetAddress())
 
 			if hasProxyActive &&
 				utils.NewThreshold(int64(missingVoteCount), int64(window)).LTE(params.ChainMaintainerMissingVoteThreshold) &&
@@ -47,8 +47,8 @@ func checkChainMaintainers(ctx sdk.Context, n types.Nexus, r types.RewardKeeper,
 				continue
 			}
 
-			rewardPool.ClearRewards(maintainerState.Address)
-			if err := n.RemoveChainMaintainer(ctx, chain, maintainerState.Address); err != nil {
+			rewardPool.ClearRewards(maintainerState.GetAddress())
+			if err := n.RemoveChainMaintainer(ctx, chain, maintainerState.GetAddress()); err != nil {
 				return err
 			}
 
@@ -58,11 +58,11 @@ func checkChainMaintainers(ctx sdk.Context, n types.Nexus, r types.RewardKeeper,
 					sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 					sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDeregister),
 					sdk.NewAttribute(types.AttributeKeyChain, chain.Name.String()),
-					sdk.NewAttribute(types.AttributeKeyChainMaintainerAddress, maintainerState.Address.String()),
+					sdk.NewAttribute(types.AttributeKeyChainMaintainerAddress, maintainerState.GetAddress().String()),
 				),
 			)
 
-			n.Logger(ctx).Info(fmt.Sprintf("deregistered validator %s as maintainer for chain %s", maintainerState.Address.String(), chain.Name))
+			n.Logger(ctx).Info(fmt.Sprintf("deregistered validator %s as maintainer for chain %s", maintainerState.GetAddress().String(), chain.Name))
 		}
 	}
 
