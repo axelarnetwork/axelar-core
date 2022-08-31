@@ -33,14 +33,14 @@ func EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock, bk types.BaseKeeper, ib
 				return nil, err
 			}
 
-			funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(
+			funcs.MustNoErr(cachedCtx.EventManager().EmitTypedEvent(
 				&types.IBCTransferSent{
-					ID:        transfer.ID,
-					Receiver:  transfer.Receiver,
-					Token:     transfer.Token,
-					Sequence:  transfer.Sequence,
-					PortID:    transfer.PortID,
-					ChannelID: transfer.ChannelID,
+					ID:         transfer.ID,
+					Receipient: transfer.Receiver,
+					Asset:      transfer.Token,
+					Sequence:   transfer.Sequence,
+					PortID:     transfer.PortID,
+					ChannelID:  transfer.ChannelID,
 				}))
 
 			bk.Logger(cachedCtx).Debug(fmt.Sprintf("successfully sent IBC transfer %s with id %s from %s to %s", transfer.Token, transfer.ID.String(), transfer.Sender, transfer.Receiver))

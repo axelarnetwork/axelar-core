@@ -5,6 +5,8 @@
 ## Table of Contents
 
 - [axelar/axelarnet/events.proto](#axelar/axelarnet/events.proto)
+    - [AxelarTransferCompleted](#axelar.axelarnet.v1beta1.AxelarTransferCompleted)
+    - [FeeCollected](#axelar.axelarnet.v1beta1.FeeCollected)
     - [IBCTransferCompleted](#axelar.axelarnet.v1beta1.IBCTransferCompleted)
     - [IBCTransferFailed](#axelar.axelarnet.v1beta1.IBCTransferFailed)
     - [IBCTransferSent](#axelar.axelarnet.v1beta1.IBCTransferSent)
@@ -538,6 +540,38 @@
 
 
 
+<a name="axelar.axelarnet.v1beta1.AxelarTransferCompleted"></a>
+
+### AxelarTransferCompleted
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [uint64](#uint64) |  |  |
+| `receipient` | [string](#string) |  |  |
+| `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+
+
+
+
+
+
+<a name="axelar.axelarnet.v1beta1.FeeCollected"></a>
+
+### FeeCollected
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `fee` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+
+
+
+
+
+
 <a name="axelar.axelarnet.v1beta1.IBCTransferCompleted"></a>
 
 ### IBCTransferCompleted
@@ -583,8 +617,8 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `id` | [uint64](#uint64) |  |  |
-| `receiver` | [string](#string) |  |  |
-| `token` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+| `receipient` | [string](#string) |  |  |
+| `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 | `sequence` | [uint64](#uint64) |  |  |
 | `portId` | [string](#string) |  |  |
 | `channelId` | [string](#string) |  |  |

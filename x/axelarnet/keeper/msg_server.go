@@ -234,6 +234,14 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, _ *types.ExecutePe
 			s.Logger(ctx).Error("failed to transfer asset to axelarnet", "err", err)
 			continue
 		}
+
+		funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(
+			&types.AxelarTransferCompleted{
+				ID:         pendingTransfer.ID,
+				Receipient: pendingTransfer.Recipient.Address,
+				Asset:      pendingTransfer.Asset,
+			}))
+
 		s.nexus.ArchivePendingTransfer(ctx, pendingTransfer)
 	}
 
@@ -244,6 +252,12 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, _ *types.ExecutePe
 				s.Logger(ctx).Error("failed to collect fees", "err", err)
 				continue
 			}
+
+			funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(
+				&types.FeeCollected{
+					Fee: fee,
+				}))
+
 			s.nexus.SubTransferFee(ctx, fee)
 		}
 	}
