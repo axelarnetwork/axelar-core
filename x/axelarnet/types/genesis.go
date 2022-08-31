@@ -105,6 +105,7 @@ func getValidateError(err error) error {
 	return sdkerrors.Wrapf(err, "genesis state for module %s is invalid", ModuleName)
 }
 
+// SortedMapKeys returns sorted map keys
 func SortedMapKeys[T comparable, S any](m map[T]S, compare func(t1, t2 T) int) []T {
 	keys := maps.Keys(m)
 	sort.SliceStable(keys, func(i, j int) bool { return compare(keys[i], keys[j]) < 0 })
