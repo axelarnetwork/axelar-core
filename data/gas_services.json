@@ -2,27 +2,27 @@
   "mainnet": [
     {
       "id": "ethereum",
-      "address": "0x4154CF6eea0633DD9c4933E76a077fD7E9260738"
+      "address": "0x2d5d7d31F671F86C782533cc367F14109a082712"
     },
     {
       "id": "binance",
-      "address": ""
+      "address": "0x2d5d7d31F671F86C782533cc367F14109a082712"
     },
     {
       "id": "avalanche",
-      "address": "0xB53C693544363912D2A034f70D9d98808D5E192a"
+      "address": "0x2d5d7d31F671F86C782533cc367F14109a082712"
     },
     {
       "id": "polygon",
-      "address": "0xc8E0b617c388c7E800a7643adDD01218E14a727a"
+      "address": "0x2d5d7d31F671F86C782533cc367F14109a082712"
     },
     {
       "id": "fantom",
-      "address": "0x2879da536D9d107D6b92D95D7c4CFaA5De7088f4"
+      "address": "0x2d5d7d31F671F86C782533cc367F14109a082712"
     },
     {
       "id": "moonbeam",
-      "address": "0x27927CD55db998b720214205e598aA9AD614AEE3"
+      "address": "0x2d5d7d31F671F86C782533cc367F14109a082712"
     },
     {
       "id": "aurora",
