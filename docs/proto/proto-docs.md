@@ -4,7 +4,7 @@
 
 ## Table of Contents
 
-- [axelar/axelarnet/events.proto](#axelar/axelarnet/events.proto)
+- [axelar/axelarnet/v1beta1/events.proto](#axelar/axelarnet/v1beta1/events.proto)
     - [AxelarTransferCompleted](#axelar.axelarnet.v1beta1.AxelarTransferCompleted)
     - [FeeCollected](#axelar.axelarnet.v1beta1.FeeCollected)
     - [IBCTransferCompleted](#axelar.axelarnet.v1beta1.IBCTransferCompleted)
@@ -533,10 +533,10 @@
 
 
 
-<a name="axelar/axelarnet/events.proto"></a>
+<a name="axelar/axelarnet/v1beta1/events.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/axelarnet/events.proto
+## axelar/axelarnet/v1beta1/events.proto
 
 
 
