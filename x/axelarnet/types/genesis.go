@@ -2,9 +2,12 @@ package types
 
 import (
 	"fmt"
+	"sort"
+	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"golang.org/x/exp/maps"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
@@ -80,6 +83,13 @@ func (m GenesisState) Validate() error {
 
 	// IBCTransfer ID should be uniquely mapped
 	transferIDSeen := make(map[uint64]bool)
+	sortedKeys := SortedMapKeys(m.SeqIDMapping, strings.Compare)
+	for _, seqKey := range sortedKeys {
+		if transferIDSeen[m.SeqIDMapping[seqKey]] {
+			return getValidateError(fmt.Errorf("duplicate transfer ID %d for %s", m.SeqIDMapping[seqKey], seqKey))
+		}
+	}
+
 	for seqKey, id := range m.SeqIDMapping {
 		if transferIDSeen[id] {
 			return getValidateError(fmt.Errorf("duplicate transfer ID %d for %s", id, seqKey))
@@ -93,4 +103,11 @@ func (m GenesisState) Validate() error {
 
 func getValidateError(err error) error {
 	return sdkerrors.Wrapf(err, "genesis state for module %s is invalid", ModuleName)
+}
+
+func SortedMapKeys[T comparable, S any](m map[T]S, compare func(t1, t2 T) int) []T {
+	keys := maps.Keys(m)
+	sort.SliceStable(keys, func(i, j int) bool { return compare(keys[i], keys[j]) < 0 })
+
+	return keys
 }

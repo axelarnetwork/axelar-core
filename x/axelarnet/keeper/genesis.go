@@ -1,12 +1,10 @@
 package keeper
 
 import (
-	"sort"
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	gogoprototypes "github.com/gogo/protobuf/types"
-	"golang.org/x/exp/maps"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/key"
@@ -32,9 +30,8 @@ func (k Keeper) InitGenesis(ctx sdk.Context, genState *types.GenesisState) {
 
 	slices.ForEach(genState.IBCTransfers, func(t types.IBCTransfer) { k.setTransfer(ctx, t) })
 
-	seqKeys := maps.Keys(genState.SeqIDMapping)
-	sort.SliceStable(seqKeys, func(i, j int) bool { return strings.Compare(seqKeys[i], seqKeys[j]) < 0 })
-	slices.ForEach(seqKeys, func(seqKey string) {
+	sortedKeys := types.SortedMapKeys(genState.SeqIDMapping, strings.Compare)
+	slices.ForEach(sortedKeys, func(seqKey string) {
 		k.getStore(ctx).SetNew(key.FromBz([]byte(seqKey)), &gogoprototypes.UInt64Value{Value: genState.SeqIDMapping[seqKey]})
 	})
 }
