@@ -1,9 +1,9 @@
-## axelard tx axelarnet retry-failed-transfer
+## axelard tx axelarnet retry-ibc-transfer
 
 Retry a failed IBC transfer
 
 ```
-axelard tx axelarnet retry-failed-transfer [chain] [transfer ID] [flags]
+axelard tx axelarnet retry-ibc-transfer [chain] [transfer ID] [flags]
 ```
 
 ### Options
@@ -19,7 +19,7 @@ axelard tx axelarnet retry-failed-transfer [chain] [transfer ID] [flags]
       --gas-adjustment float     adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default 1)
       --gas-prices string        Gas prices in decimal format to determine the transaction fee (e.g. 0.1uatom) (default "0.007uaxl")
       --generate-only            Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)
-  -h, --help                     help for retry-failed-transfer
+  -h, --help                     help for retry-ibc-transfer
       --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "file")
       --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
       --ledger                   Use a connected Ledger device
