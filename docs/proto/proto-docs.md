@@ -565,6 +565,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| `collector` | [bytes](#bytes) |  |  |
 | `fee` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 
 
@@ -582,8 +583,8 @@
 | ----- | ---- | ----- | ----------- |
 | `id` | [uint64](#uint64) |  |  |
 | `sequence` | [uint64](#uint64) |  |  |
-| `portId` | [string](#string) |  |  |
-| `channelId` | [string](#string) |  |  |
+| `port_id` | [string](#string) |  |  |
+| `channel_id` | [string](#string) |  |  |
 
 
 
@@ -600,8 +601,8 @@
 | ----- | ---- | ----- | ----------- |
 | `id` | [uint64](#uint64) |  |  |
 | `sequence` | [uint64](#uint64) |  |  |
-| `portId` | [string](#string) |  |  |
-| `channelId` | [string](#string) |  |  |
+| `port_id` | [string](#string) |  |  |
+| `channel_id` | [string](#string) |  |  |
 
 
 
@@ -620,8 +621,8 @@
 | `receipient` | [string](#string) |  |  |
 | `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 | `sequence` | [uint64](#uint64) |  |  |
-| `portId` | [string](#string) |  |  |
-| `channelId` | [string](#string) |  |  |
+| `port_id` | [string](#string) |  |  |
+| `channel_id` | [string](#string) |  |  |
 
 
 

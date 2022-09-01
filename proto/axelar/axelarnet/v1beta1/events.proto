@@ -15,8 +15,8 @@ message IBCTransferSent {
   string receipient = 2;
   cosmos.base.v1beta1.Coin asset = 3 [ (gogoproto.nullable) = false ];
   uint64 sequence = 4;
-  string portId = 5 [ (gogoproto.customname) = "PortID" ];
-  string channelId = 6 [ (gogoproto.customname) = "ChannelID" ];
+  string port_id = 5 [ (gogoproto.customname) = "PortID" ];
+  string channel_id = 6 [ (gogoproto.customname) = "ChannelID" ];
 }
 
 message IBCTransferCompleted {
@@ -26,8 +26,8 @@ message IBCTransferCompleted {
         "github.com/axelarnetwork/axelar-core/x/nexus/exported.TransferID"
   ];
   uint64 sequence = 2;
-  string portId = 3 [ (gogoproto.customname) = "PortID" ];
-  string channelId = 4 [ (gogoproto.customname) = "ChannelID" ];
+  string port_id = 3 [ (gogoproto.customname) = "PortID" ];
+  string channel_id = 4 [ (gogoproto.customname) = "ChannelID" ];
 }
 
 message IBCTransferFailed {
@@ -37,8 +37,8 @@ message IBCTransferFailed {
         "github.com/axelarnetwork/axelar-core/x/nexus/exported.TransferID"
   ];
   uint64 sequence = 2;
-  string portId = 3 [ (gogoproto.customname) = "PortID" ];
-  string channelId = 4 [ (gogoproto.customname) = "ChannelID" ];
+  string port_id = 3 [ (gogoproto.customname) = "PortID" ];
+  string channel_id = 4 [ (gogoproto.customname) = "ChannelID" ];
 }
 
 message AxelarTransferCompleted {
@@ -52,5 +52,7 @@ message AxelarTransferCompleted {
 }
 
 message FeeCollected {
-  cosmos.base.v1beta1.Coin fee = 1 [ (gogoproto.nullable) = false ];
+  bytes collector = 1 [ (gogoproto.casttype) =
+                            "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  cosmos.base.v1beta1.Coin fee = 2 [ (gogoproto.nullable) = false ];
 }

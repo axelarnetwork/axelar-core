@@ -255,7 +255,8 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, _ *types.ExecutePe
 
 			funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(
 				&types.FeeCollected{
-					Fee: fee,
+					Collector: collector,
+					Fee:       fee,
 				}))
 
 			s.nexus.SubTransferFee(ctx, fee)
