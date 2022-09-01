@@ -423,6 +423,16 @@ func (s msgServer) RetryIBCTransfer(c context.Context, req *types.RetryIBCTransf
 
 	funcs.MustNoErr(s.SetTransferPending(ctx, t.ID))
 
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(
+		&types.IBCTransferSent{
+			ID:         t.ID,
+			Receipient: t.Receiver,
+			Asset:      t.Token,
+			Sequence:   t.Sequence,
+			PortID:     t.PortID,
+			ChannelID:  t.ChannelID,
+		}))
+
 	return &types.RetryIBCTransferResponse{}, nil
 }
 
