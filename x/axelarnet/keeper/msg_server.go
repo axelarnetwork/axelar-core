@@ -234,6 +234,14 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, _ *types.ExecutePe
 			s.Logger(ctx).Error("failed to transfer asset to axelarnet", "err", err)
 			continue
 		}
+
+		funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(
+			&types.AxelarTransferCompleted{
+				ID:         pendingTransfer.ID,
+				Receipient: pendingTransfer.Recipient.Address,
+				Asset:      pendingTransfer.Asset,
+			}))
+
 		s.nexus.ArchivePendingTransfer(ctx, pendingTransfer)
 	}
 
@@ -244,6 +252,13 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, _ *types.ExecutePe
 				s.Logger(ctx).Error("failed to collect fees", "err", err)
 				continue
 			}
+
+			funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(
+				&types.FeeCollected{
+					Collector: collector,
+					Fee:       fee,
+				}))
+
 			s.nexus.SubTransferFee(ctx, fee)
 		}
 	}
@@ -407,6 +422,16 @@ func (s msgServer) RetryIBCTransfer(c context.Context, req *types.RetryIBCTransf
 	}
 
 	funcs.MustNoErr(s.SetTransferPending(ctx, t.ID))
+
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(
+		&types.IBCTransferSent{
+			ID:         t.ID,
+			Receipient: t.Receiver,
+			Asset:      t.Token,
+			Sequence:   t.Sequence,
+			PortID:     t.PortID,
+			ChannelID:  t.ChannelID,
+		}))
 
 	return &types.RetryIBCTransferResponse{}, nil
 }
