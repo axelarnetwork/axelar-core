@@ -52,17 +52,6 @@ func (m LinkedAddresses) Validate() error {
 	return nil
 }
 
-// IndexOfMaintainer returns the index of the maintainer in the given chain state
-func (m ChainState) IndexOfMaintainer(address sdk.ValAddress) int {
-	for i, ms := range m.MaintainerStates {
-		if ms.Address.Equals(address) {
-			return i
-		}
-	}
-
-	return -1
-}
-
 func (m ChainState) indexOfAsset(asset string) int {
 	for i := range m.Assets {
 		if m.Assets[i].Denom == asset {
