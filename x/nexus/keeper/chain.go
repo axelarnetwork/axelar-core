@@ -161,9 +161,7 @@ func (k Keeper) SetChainMaintainerState(ctx sdk.Context, maintainerState exporte
 
 // GetChainMaintainers returns the maintainers of the given chain
 func (k Keeper) GetChainMaintainers(ctx sdk.Context, chain exported.Chain) []sdk.ValAddress {
-	return slices.Map(k.getChainMaintainerStates(ctx, chain.Name), func(ms types.MaintainerState) sdk.ValAddress {
-		return ms.Address
-	})
+	return slices.Map(k.getChainMaintainerStates(ctx, chain.Name), types.MaintainerState.GetAddress)
 }
 
 // IsChainMaintainer returns true if the given address is one of the given chain's maintainers; false otherwise

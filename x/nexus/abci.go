@@ -34,9 +34,9 @@ func checkChainMaintainers(ctx sdk.Context, n types.Nexus, r types.RewardKeeper,
 
 		rewardPool := r.GetPool(ctx, chain.Name.String())
 		params := n.GetParams(ctx)
+		window := int(params.ChainMaintainerCheckWindow)
 
 		for _, maintainerState := range n.GetChainMaintainerStates(ctx, chain) {
-			window := int(params.ChainMaintainerCheckWindow)
 			missingVoteCount := maintainerState.CountMissingVotes(window)
 			incorrectVoteCount := maintainerState.CountIncorrectVotes(window)
 			_, hasProxyActive := s.GetProxy(ctx, maintainerState.GetAddress())
