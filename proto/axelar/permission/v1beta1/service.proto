@@ -20,7 +20,8 @@ service Msg {
     };
   }
 
-  rpc DeregisterController(axelar.permission.v1beta1.DeregisterControllerRequest)
+  rpc DeregisterController(
+      axelar.permission.v1beta1.DeregisterControllerRequest)
       returns (axelar.permission.v1beta1.DeregisterControllerResponse) {
     option (google.api.http) = {
       post : "/axelar/permission/deregister_controller"
