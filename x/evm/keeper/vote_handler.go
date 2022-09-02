@@ -98,7 +98,7 @@ func (v voteHandler) HandleCompletedPoll(ctx sdk.Context, poll vote.Poll) error 
 		maintainerState := funcs.MustOk(v.nexus.GetChainMaintainerState(ctx, chain, voter))
 		maintainerState.MarkMissingVote(!hasVoted)
 		maintainerState.MarkIncorrectVote(hasVotedIncorrectly)
-		v.nexus.SetChainMaintainerState(ctx, maintainerState)
+		funcs.MustNoErr(v.nexus.SetChainMaintainerState(ctx, maintainerState))
 
 		v.keeper.Logger(ctx).Debug(fmt.Sprintf("marked voter %s behaviour", voter.String()),
 			"voter", voter.String(),
