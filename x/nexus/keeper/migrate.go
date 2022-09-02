@@ -22,6 +22,11 @@ func migrateMaintainerStates(ctx sdk.Context, k Keeper) {
 			k.setChainMaintainerState(ctx, &maintainerState)
 		}
 
+		k.Logger(ctx).Debug("migrated maintainer states",
+			"chain", chainState.ChainName().String(),
+			"maintainer_state_count", len(chainState.MaintainerStates),
+		)
+
 		chainState.MaintainerStates = nil
 		k.setChainState(ctx, chainState)
 	}
