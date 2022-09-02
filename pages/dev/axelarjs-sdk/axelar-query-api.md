@@ -77,7 +77,9 @@ public async getFeeForChainAndAsset(
 
 #### getDenomFromSymbol
 
-Get the denom for an asset given its symbol on a chain.
+Get the denom for an asset given its symbol on a chain. For all the assets that Axelar supports natively, the network identifies the asset by a `denom`, while most EVM chains have a `symbol` for the asset. 
+
+The method below allows you to translate the asset symbol (as identified on an EVM chain) to the underlying denom.
 
 ```ts
 /**
@@ -85,12 +87,31 @@ Get the denom for an asset given its symbol on a chain.
  * @param chainName
  * @returns
  */
-public getDenomFromSymbol(symbol: string, chainName: string)
+public async getDenomFromSymbol(symbol: string, chainName: string)
 ```
+For example, let's say you have Axelar's canonical testnet `aUSDC`. The symbol for this asset on EVM chains is `aUSDC`, and the denom is `uausdc`. Sample usage to get denom from symbol:
+
+```ts
+  const queryConfig: AxelarQueryAPIConfig = {
+    environment: Environment.TESTNET
+  }
+  const api = new AxelarQueryAPI(queryConfig);
+
+  async function main() {
+    const denom = await api.getDenomFromSymbol("aUSDC", "moonbeam");
+    console.log("denom: ",denom);
+    return denom;
+  }
+
+  //expected returned result: uausdc
+```
+
 
 #### getSymbolFromDenom
 
-Get the symbol for an asset on a given chain given its denom
+Get the symbol for an asset on a given chain given its denom. For all the assets that Axelar supports natively, the network identifies the asset by a `denom`, while most EVM chains have a `symbol` for the asset. 
+
+The method below allows you to translate the asset denom to the asset symbol (as identified on an EVM chain).
 
 ```ts
 /**
@@ -98,5 +119,21 @@ Get the symbol for an asset on a given chain given its denom
  * @param chainName
  * @returns
  */
-public getSymbolFromDenom(denom: string, chainName: string)
+public async getSymbolFromDenom(denom: string, chainName: string)
+```
+For example, let's say you have Axelar's canonical testnet `aUSDC`. The symbol for this asset on EVM chains is `aUSDC`, and the denom is `uausdc`. Sample usage to get symbol from denom:
+
+```ts
+  const queryConfig: AxelarQueryAPIConfig = {
+    environment: Environment.TESTNET
+  }
+  const api = new AxelarQueryAPI(queryConfig);
+
+  async function main() {
+    const symbol = await api.getSymbolFromDenom("uausdc", "moonbeam");
+    console.log("symbol: ",symbol);
+    return symbol;
+  }
+
+  //expected returned result: aUSDC
 ```

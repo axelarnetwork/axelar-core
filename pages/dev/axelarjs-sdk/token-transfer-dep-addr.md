@@ -38,7 +38,7 @@ async getDepositAddress(
   fromChain: string, // source chain
   toChain: string, // destination chain
   destinationAddress: string, // destination address to transfer the token to
-  asset: string, // common key of the asset
+  asset: string, // denom of asset. See note (2) below
   options?: {
     _traceId: string;
   }
@@ -55,7 +55,7 @@ const depositAddress = await sdk.getDepositAddress(
   "osmosis", // source chain
   "avalanche", // destination chain
   "0xF16DfB26e1FEc993E085092563ECFAEaDa7eD7fD", // destination address
-  "uausdc" // asset to transfer in atomic denom units
+  "uausdc" // denom of asset. See note (2) below
 );
 ```
 
@@ -70,10 +70,14 @@ const depositAddress = await sdk.getDepositAddress(
   "avalanche", // source chain
   "osmosis", // destination chain
   "osmo1x3z2vepjd7fhe30epncxjrk0lehq7xdqe8ltsn", // destination address
-  "uausdc" // asset to transfer in atomic denom units
+  "uausdc" // denom of asset. See note (2) below
 );
 ```
 
-Note: The destination address format is validated based on the destination chain. Make sure the destination address is a valid address on the destination chain. For instance, Osmosis addresses begin with “osmo,” etc.
+Notes: 
+
+(1) The destination address format is validated based on the destination chain. Make sure the destination address is a valid address on the destination chain. For instance, Osmosis addresses begin with “osmo,” etc.
 
 Once the deposit address has been generated, the user can make a token transfer (on blockchain) to the deposit address. The transfer will be picked up by the Axelar network and relayed to the destination chain.
+
+(2) For all the assets that Axelar supports natively, the network identifies the asset by a `denom`. If you are accustomed to the `symbol` typically used on EVM chains, you will have to convert that `symbol` to a `denom`. The SDK has an API method you can use to convert symbol to denom: [getDenomFromSymbol](./axelar-query-api#getdenomfromsymbol) 
