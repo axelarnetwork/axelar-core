@@ -96,14 +96,26 @@ func (store KVStore) GetRaw(key Key) []byte {
 	return store.KVStore.Get(key.AsKey())
 }
 
-// Has returns true if the key exists.
+// Has returns true if the key exists
+// Deprecated: use HasNew instead
 func (store KVStore) Has(key Key) bool {
 	return store.KVStore.Has(key.AsKey())
 }
 
+// HasNew deletes the value stored under the given key, if it exists
+func (store KVStore) HasNew(k key.Key) bool {
+	return store.KVStore.Has(k.Bytes())
+}
+
 // Delete deletes the value stored under the given key, if it exists
+// Deprecated: use DeleteNew instead
 func (store KVStore) Delete(key Key) {
 	store.KVStore.Delete(key.AsKey())
+}
+
+// DeleteNew deletes the value stored under the given key, if it exists
+func (store KVStore) DeleteNew(k key.Key) {
+	store.KVStore.Delete(k.Bytes())
 }
 
 // DeleteRaw deletes the value stored under the given raw key, if it exists

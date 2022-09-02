@@ -9288,11 +9288,6 @@ paths:
                       module:
                         type: string
                     title: Chain represents the properties of a registered blockchain
-                  maintainers:
-                    type: array
-                    items:
-                      type: string
-                      format: byte
                   activated:
                     type: boolean
                     format: boolean
@@ -9348,6 +9343,8 @@ paths:
                                 max_size:
                                   type: integer
                                   format: int32
+                        chain:
+                          type: string
                 title: ChainState represents the state of a registered blockchain
         default:
           description: An unexpected error response
@@ -41545,11 +41542,6 @@ definitions:
           module:
             type: string
         title: Chain represents the properties of a registered blockchain
-      maintainers:
-        type: array
-        items:
-          type: string
-          format: byte
       activated:
         type: boolean
         format: boolean
@@ -41605,6 +41597,8 @@ definitions:
                     max_size:
                       type: integer
                       format: int32
+            chain:
+              type: string
     title: ChainState represents the state of a registered blockchain
   axelar.nexus.v1beta1.ChainStateResponse:
     type: object
@@ -41631,11 +41625,6 @@ definitions:
               module:
                 type: string
             title: Chain represents the properties of a registered blockchain
-          maintainers:
-            type: array
-            items:
-              type: string
-              format: byte
           activated:
             type: boolean
             format: boolean
@@ -41691,6 +41680,8 @@ definitions:
                         max_size:
                           type: integer
                           format: int32
+                chain:
+                  type: string
         title: ChainState represents the state of a registered blockchain
   axelar.nexus.v1beta1.ChainStatus:
     type: string
@@ -41802,6 +41793,8 @@ definitions:
               max_size:
                 type: integer
                 format: int32
+      chain:
+        type: string
   axelar.nexus.v1beta1.RecipientAddressResponse:
     type: object
     properties:

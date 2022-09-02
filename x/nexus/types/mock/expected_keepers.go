@@ -6,7 +6,7 @@ package mock
 import (
 	utils "github.com/axelarnetwork/axelar-core/utils"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
-	exported "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	github_com_axelarnetwork_axelar_core_x_nexus_exported "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
@@ -25,31 +25,31 @@ var _ types.Nexus = &NexusMock{}
 //
 // 		// make and configure a mocked types.Nexus
 // 		mockedNexus := &NexusMock{
-// 			ActivateChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain)  {
+// 			ActivateChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain)  {
 // 				panic("mock out the ActivateChain method")
 // 			},
-// 			AddChainMaintainerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, validator github_com_cosmos_cosmos_sdk_types.ValAddress) error {
+// 			AddChainMaintainerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, validator github_com_cosmos_cosmos_sdk_types.ValAddress) error {
 // 				panic("mock out the AddChainMaintainer method")
 // 			},
-// 			DeactivateChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain)  {
+// 			DeactivateChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain)  {
 // 				panic("mock out the DeactivateChain method")
 // 			},
 // 			ExportGenesisFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) *types.GenesisState {
 // 				panic("mock out the ExportGenesis method")
 // 			},
-// 			GetChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.ChainName) (exported.Chain, bool) {
+// 			GetChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, bool) {
 // 				panic("mock out the GetChain method")
 // 			},
-// 			GetChainMaintainerStatesFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain) []types.MaintainerState {
+// 			GetChainMaintainerStatesFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain) []github_com_axelarnetwork_axelar_core_x_nexus_exported.MaintainerState {
 // 				panic("mock out the GetChainMaintainerStates method")
 // 			},
-// 			GetChainMaintainersFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain) []github_com_cosmos_cosmos_sdk_types.ValAddress {
+// 			GetChainMaintainersFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain) []github_com_cosmos_cosmos_sdk_types.ValAddress {
 // 				panic("mock out the GetChainMaintainers method")
 // 			},
-// 			GetChainsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []exported.Chain {
+// 			GetChainsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain {
 // 				panic("mock out the GetChains method")
 // 			},
-// 			GetFeeInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, asset string) (exported.FeeInfo, bool) {
+// 			GetFeeInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset string) (github_com_axelarnetwork_axelar_core_x_nexus_exported.FeeInfo, bool) {
 // 				panic("mock out the GetFeeInfo method")
 // 			},
 // 			GetParamsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) types.Params {
@@ -58,22 +58,22 @@ var _ types.Nexus = &NexusMock{}
 // 			InitGenesisFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, genState *types.GenesisState)  {
 // 				panic("mock out the InitGenesis method")
 // 			},
-// 			IsChainActivatedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain) bool {
+// 			IsChainActivatedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain) bool {
 // 				panic("mock out the IsChainActivated method")
 // 			},
-// 			IsChainMaintainerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, maintainer github_com_cosmos_cosmos_sdk_types.ValAddress) bool {
+// 			IsChainMaintainerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, maintainer github_com_cosmos_cosmos_sdk_types.ValAddress) bool {
 // 				panic("mock out the IsChainMaintainer method")
 // 			},
-// 			LinkAddressesFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) error {
+// 			LinkAddressesFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress) error {
 // 				panic("mock out the LinkAddresses method")
 // 			},
 // 			LoggerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger {
 // 				panic("mock out the Logger method")
 // 			},
-// 			RegisterFeeFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, feeInfo exported.FeeInfo) error {
+// 			RegisterFeeFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, feeInfo github_com_axelarnetwork_axelar_core_x_nexus_exported.FeeInfo) error {
 // 				panic("mock out the RegisterFee method")
 // 			},
-// 			RemoveChainMaintainerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, validator github_com_cosmos_cosmos_sdk_types.ValAddress) error {
+// 			RemoveChainMaintainerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, validator github_com_cosmos_cosmos_sdk_types.ValAddress) error {
 // 				panic("mock out the RemoveChainMaintainer method")
 // 			},
 // 			SetParamsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, p types.Params)  {
@@ -87,31 +87,31 @@ var _ types.Nexus = &NexusMock{}
 // 	}
 type NexusMock struct {
 	// ActivateChainFunc mocks the ActivateChain method.
-	ActivateChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain)
+	ActivateChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain)
 
 	// AddChainMaintainerFunc mocks the AddChainMaintainer method.
-	AddChainMaintainerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, validator github_com_cosmos_cosmos_sdk_types.ValAddress) error
+	AddChainMaintainerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, validator github_com_cosmos_cosmos_sdk_types.ValAddress) error
 
 	// DeactivateChainFunc mocks the DeactivateChain method.
-	DeactivateChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain)
+	DeactivateChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain)
 
 	// ExportGenesisFunc mocks the ExportGenesis method.
 	ExportGenesisFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) *types.GenesisState
 
 	// GetChainFunc mocks the GetChain method.
-	GetChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.ChainName) (exported.Chain, bool)
+	GetChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, bool)
 
 	// GetChainMaintainerStatesFunc mocks the GetChainMaintainerStates method.
-	GetChainMaintainerStatesFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain) []types.MaintainerState
+	GetChainMaintainerStatesFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain) []github_com_axelarnetwork_axelar_core_x_nexus_exported.MaintainerState
 
 	// GetChainMaintainersFunc mocks the GetChainMaintainers method.
-	GetChainMaintainersFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain) []github_com_cosmos_cosmos_sdk_types.ValAddress
+	GetChainMaintainersFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain) []github_com_cosmos_cosmos_sdk_types.ValAddress
 
 	// GetChainsFunc mocks the GetChains method.
-	GetChainsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) []exported.Chain
+	GetChainsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) []github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 
 	// GetFeeInfoFunc mocks the GetFeeInfo method.
-	GetFeeInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, asset string) (exported.FeeInfo, bool)
+	GetFeeInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset string) (github_com_axelarnetwork_axelar_core_x_nexus_exported.FeeInfo, bool)
 
 	// GetParamsFunc mocks the GetParams method.
 	GetParamsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) types.Params
@@ -120,22 +120,22 @@ type NexusMock struct {
 	InitGenesisFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, genState *types.GenesisState)
 
 	// IsChainActivatedFunc mocks the IsChainActivated method.
-	IsChainActivatedFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain) bool
+	IsChainActivatedFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain) bool
 
 	// IsChainMaintainerFunc mocks the IsChainMaintainer method.
-	IsChainMaintainerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, maintainer github_com_cosmos_cosmos_sdk_types.ValAddress) bool
+	IsChainMaintainerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, maintainer github_com_cosmos_cosmos_sdk_types.ValAddress) bool
 
 	// LinkAddressesFunc mocks the LinkAddresses method.
-	LinkAddressesFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) error
+	LinkAddressesFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress) error
 
 	// LoggerFunc mocks the Logger method.
 	LoggerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger
 
 	// RegisterFeeFunc mocks the RegisterFee method.
-	RegisterFeeFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, feeInfo exported.FeeInfo) error
+	RegisterFeeFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, feeInfo github_com_axelarnetwork_axelar_core_x_nexus_exported.FeeInfo) error
 
 	// RemoveChainMaintainerFunc mocks the RemoveChainMaintainer method.
-	RemoveChainMaintainerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, validator github_com_cosmos_cosmos_sdk_types.ValAddress) error
+	RemoveChainMaintainerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, validator github_com_cosmos_cosmos_sdk_types.ValAddress) error
 
 	// SetParamsFunc mocks the SetParams method.
 	SetParamsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, p types.Params)
@@ -147,14 +147,14 @@ type NexusMock struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Chain is the chain argument value.
-			Chain exported.Chain
+			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 		}
 		// AddChainMaintainer holds details about calls to the AddChainMaintainer method.
 		AddChainMaintainer []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Chain is the chain argument value.
-			Chain exported.Chain
+			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 			// Validator is the validator argument value.
 			Validator github_com_cosmos_cosmos_sdk_types.ValAddress
 		}
@@ -163,7 +163,7 @@ type NexusMock struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Chain is the chain argument value.
-			Chain exported.Chain
+			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 		}
 		// ExportGenesis holds details about calls to the ExportGenesis method.
 		ExportGenesis []struct {
@@ -175,21 +175,21 @@ type NexusMock struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Chain is the chain argument value.
-			Chain exported.ChainName
+			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
 		}
 		// GetChainMaintainerStates holds details about calls to the GetChainMaintainerStates method.
 		GetChainMaintainerStates []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Chain is the chain argument value.
-			Chain exported.Chain
+			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 		}
 		// GetChainMaintainers holds details about calls to the GetChainMaintainers method.
 		GetChainMaintainers []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Chain is the chain argument value.
-			Chain exported.Chain
+			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 		}
 		// GetChains holds details about calls to the GetChains method.
 		GetChains []struct {
@@ -201,7 +201,7 @@ type NexusMock struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Chain is the chain argument value.
-			Chain exported.Chain
+			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 			// Asset is the asset argument value.
 			Asset string
 		}
@@ -222,14 +222,14 @@ type NexusMock struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Chain is the chain argument value.
-			Chain exported.Chain
+			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 		}
 		// IsChainMaintainer holds details about calls to the IsChainMaintainer method.
 		IsChainMaintainer []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Chain is the chain argument value.
-			Chain exported.Chain
+			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 			// Maintainer is the maintainer argument value.
 			Maintainer github_com_cosmos_cosmos_sdk_types.ValAddress
 		}
@@ -238,9 +238,9 @@ type NexusMock struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Sender is the sender argument value.
-			Sender exported.CrossChainAddress
+			Sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
 			// Recipient is the recipient argument value.
-			Recipient exported.CrossChainAddress
+			Recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
 		}
 		// Logger holds details about calls to the Logger method.
 		Logger []struct {
@@ -252,16 +252,16 @@ type NexusMock struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Chain is the chain argument value.
-			Chain exported.Chain
+			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 			// FeeInfo is the feeInfo argument value.
-			FeeInfo exported.FeeInfo
+			FeeInfo github_com_axelarnetwork_axelar_core_x_nexus_exported.FeeInfo
 		}
 		// RemoveChainMaintainer holds details about calls to the RemoveChainMaintainer method.
 		RemoveChainMaintainer []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Chain is the chain argument value.
-			Chain exported.Chain
+			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 			// Validator is the validator argument value.
 			Validator github_com_cosmos_cosmos_sdk_types.ValAddress
 		}
@@ -294,13 +294,13 @@ type NexusMock struct {
 }
 
 // ActivateChain calls ActivateChainFunc.
-func (mock *NexusMock) ActivateChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain) {
+func (mock *NexusMock) ActivateChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain) {
 	if mock.ActivateChainFunc == nil {
 		panic("NexusMock.ActivateChainFunc: method is nil but Nexus.ActivateChain was just called")
 	}
 	callInfo := struct {
 		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Chain exported.Chain
+		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 	}{
 		Ctx:   ctx,
 		Chain: chain,
@@ -316,11 +316,11 @@ func (mock *NexusMock) ActivateChain(ctx github_com_cosmos_cosmos_sdk_types.Cont
 //     len(mockedNexus.ActivateChainCalls())
 func (mock *NexusMock) ActivateChainCalls() []struct {
 	Ctx   github_com_cosmos_cosmos_sdk_types.Context
-	Chain exported.Chain
+	Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 } {
 	var calls []struct {
 		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Chain exported.Chain
+		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 	}
 	mock.lockActivateChain.RLock()
 	calls = mock.calls.ActivateChain
@@ -329,13 +329,13 @@ func (mock *NexusMock) ActivateChainCalls() []struct {
 }
 
 // AddChainMaintainer calls AddChainMaintainerFunc.
-func (mock *NexusMock) AddChainMaintainer(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, validator github_com_cosmos_cosmos_sdk_types.ValAddress) error {
+func (mock *NexusMock) AddChainMaintainer(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, validator github_com_cosmos_cosmos_sdk_types.ValAddress) error {
 	if mock.AddChainMaintainerFunc == nil {
 		panic("NexusMock.AddChainMaintainerFunc: method is nil but Nexus.AddChainMaintainer was just called")
 	}
 	callInfo := struct {
 		Ctx       github_com_cosmos_cosmos_sdk_types.Context
-		Chain     exported.Chain
+		Chain     github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 		Validator github_com_cosmos_cosmos_sdk_types.ValAddress
 	}{
 		Ctx:       ctx,
@@ -353,12 +353,12 @@ func (mock *NexusMock) AddChainMaintainer(ctx github_com_cosmos_cosmos_sdk_types
 //     len(mockedNexus.AddChainMaintainerCalls())
 func (mock *NexusMock) AddChainMaintainerCalls() []struct {
 	Ctx       github_com_cosmos_cosmos_sdk_types.Context
-	Chain     exported.Chain
+	Chain     github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 	Validator github_com_cosmos_cosmos_sdk_types.ValAddress
 } {
 	var calls []struct {
 		Ctx       github_com_cosmos_cosmos_sdk_types.Context
-		Chain     exported.Chain
+		Chain     github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 		Validator github_com_cosmos_cosmos_sdk_types.ValAddress
 	}
 	mock.lockAddChainMaintainer.RLock()
@@ -368,13 +368,13 @@ func (mock *NexusMock) AddChainMaintainerCalls() []struct {
 }
 
 // DeactivateChain calls DeactivateChainFunc.
-func (mock *NexusMock) DeactivateChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain) {
+func (mock *NexusMock) DeactivateChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain) {
 	if mock.DeactivateChainFunc == nil {
 		panic("NexusMock.DeactivateChainFunc: method is nil but Nexus.DeactivateChain was just called")
 	}
 	callInfo := struct {
 		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Chain exported.Chain
+		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 	}{
 		Ctx:   ctx,
 		Chain: chain,
@@ -390,11 +390,11 @@ func (mock *NexusMock) DeactivateChain(ctx github_com_cosmos_cosmos_sdk_types.Co
 //     len(mockedNexus.DeactivateChainCalls())
 func (mock *NexusMock) DeactivateChainCalls() []struct {
 	Ctx   github_com_cosmos_cosmos_sdk_types.Context
-	Chain exported.Chain
+	Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 } {
 	var calls []struct {
 		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Chain exported.Chain
+		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 	}
 	mock.lockDeactivateChain.RLock()
 	calls = mock.calls.DeactivateChain
@@ -434,13 +434,13 @@ func (mock *NexusMock) ExportGenesisCalls() []struct {
 }
 
 // GetChain calls GetChainFunc.
-func (mock *NexusMock) GetChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.ChainName) (exported.Chain, bool) {
+func (mock *NexusMock) GetChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, bool) {
 	if mock.GetChainFunc == nil {
 		panic("NexusMock.GetChainFunc: method is nil but Nexus.GetChain was just called")
 	}
 	callInfo := struct {
 		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Chain exported.ChainName
+		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
 	}{
 		Ctx:   ctx,
 		Chain: chain,
@@ -456,11 +456,11 @@ func (mock *NexusMock) GetChain(ctx github_com_cosmos_cosmos_sdk_types.Context, 
 //     len(mockedNexus.GetChainCalls())
 func (mock *NexusMock) GetChainCalls() []struct {
 	Ctx   github_com_cosmos_cosmos_sdk_types.Context
-	Chain exported.ChainName
+	Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
 } {
 	var calls []struct {
 		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Chain exported.ChainName
+		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
 	}
 	mock.lockGetChain.RLock()
 	calls = mock.calls.GetChain
@@ -469,13 +469,13 @@ func (mock *NexusMock) GetChainCalls() []struct {
 }
 
 // GetChainMaintainerStates calls GetChainMaintainerStatesFunc.
-func (mock *NexusMock) GetChainMaintainerStates(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain) []types.MaintainerState {
+func (mock *NexusMock) GetChainMaintainerStates(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain) []github_com_axelarnetwork_axelar_core_x_nexus_exported.MaintainerState {
 	if mock.GetChainMaintainerStatesFunc == nil {
 		panic("NexusMock.GetChainMaintainerStatesFunc: method is nil but Nexus.GetChainMaintainerStates was just called")
 	}
 	callInfo := struct {
 		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Chain exported.Chain
+		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 	}{
 		Ctx:   ctx,
 		Chain: chain,
@@ -491,11 +491,11 @@ func (mock *NexusMock) GetChainMaintainerStates(ctx github_com_cosmos_cosmos_sdk
 //     len(mockedNexus.GetChainMaintainerStatesCalls())
 func (mock *NexusMock) GetChainMaintainerStatesCalls() []struct {
 	Ctx   github_com_cosmos_cosmos_sdk_types.Context
-	Chain exported.Chain
+	Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 } {
 	var calls []struct {
 		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Chain exported.Chain
+		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 	}
 	mock.lockGetChainMaintainerStates.RLock()
 	calls = mock.calls.GetChainMaintainerStates
@@ -504,13 +504,13 @@ func (mock *NexusMock) GetChainMaintainerStatesCalls() []struct {
 }
 
 // GetChainMaintainers calls GetChainMaintainersFunc.
-func (mock *NexusMock) GetChainMaintainers(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain) []github_com_cosmos_cosmos_sdk_types.ValAddress {
+func (mock *NexusMock) GetChainMaintainers(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain) []github_com_cosmos_cosmos_sdk_types.ValAddress {
 	if mock.GetChainMaintainersFunc == nil {
 		panic("NexusMock.GetChainMaintainersFunc: method is nil but Nexus.GetChainMaintainers was just called")
 	}
 	callInfo := struct {
 		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Chain exported.Chain
+		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 	}{
 		Ctx:   ctx,
 		Chain: chain,
@@ -526,11 +526,11 @@ func (mock *NexusMock) GetChainMaintainers(ctx github_com_cosmos_cosmos_sdk_type
 //     len(mockedNexus.GetChainMaintainersCalls())
 func (mock *NexusMock) GetChainMaintainersCalls() []struct {
 	Ctx   github_com_cosmos_cosmos_sdk_types.Context
-	Chain exported.Chain
+	Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 } {
 	var calls []struct {
 		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Chain exported.Chain
+		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 	}
 	mock.lockGetChainMaintainers.RLock()
 	calls = mock.calls.GetChainMaintainers
@@ -539,7 +539,7 @@ func (mock *NexusMock) GetChainMaintainersCalls() []struct {
 }
 
 // GetChains calls GetChainsFunc.
-func (mock *NexusMock) GetChains(ctx github_com_cosmos_cosmos_sdk_types.Context) []exported.Chain {
+func (mock *NexusMock) GetChains(ctx github_com_cosmos_cosmos_sdk_types.Context) []github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain {
 	if mock.GetChainsFunc == nil {
 		panic("NexusMock.GetChainsFunc: method is nil but Nexus.GetChains was just called")
 	}
@@ -570,13 +570,13 @@ func (mock *NexusMock) GetChainsCalls() []struct {
 }
 
 // GetFeeInfo calls GetFeeInfoFunc.
-func (mock *NexusMock) GetFeeInfo(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, asset string) (exported.FeeInfo, bool) {
+func (mock *NexusMock) GetFeeInfo(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset string) (github_com_axelarnetwork_axelar_core_x_nexus_exported.FeeInfo, bool) {
 	if mock.GetFeeInfoFunc == nil {
 		panic("NexusMock.GetFeeInfoFunc: method is nil but Nexus.GetFeeInfo was just called")
 	}
 	callInfo := struct {
 		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Chain exported.Chain
+		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 		Asset string
 	}{
 		Ctx:   ctx,
@@ -594,12 +594,12 @@ func (mock *NexusMock) GetFeeInfo(ctx github_com_cosmos_cosmos_sdk_types.Context
 //     len(mockedNexus.GetFeeInfoCalls())
 func (mock *NexusMock) GetFeeInfoCalls() []struct {
 	Ctx   github_com_cosmos_cosmos_sdk_types.Context
-	Chain exported.Chain
+	Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 	Asset string
 } {
 	var calls []struct {
 		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Chain exported.Chain
+		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 		Asset string
 	}
 	mock.lockGetFeeInfo.RLock()
@@ -675,13 +675,13 @@ func (mock *NexusMock) InitGenesisCalls() []struct {
 }
 
 // IsChainActivated calls IsChainActivatedFunc.
-func (mock *NexusMock) IsChainActivated(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain) bool {
+func (mock *NexusMock) IsChainActivated(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain) bool {
 	if mock.IsChainActivatedFunc == nil {
 		panic("NexusMock.IsChainActivatedFunc: method is nil but Nexus.IsChainActivated was just called")
 	}
 	callInfo := struct {
 		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Chain exported.Chain
+		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 	}{
 		Ctx:   ctx,
 		Chain: chain,
@@ -697,11 +697,11 @@ func (mock *NexusMock) IsChainActivated(ctx github_com_cosmos_cosmos_sdk_types.C
 //     len(mockedNexus.IsChainActivatedCalls())
 func (mock *NexusMock) IsChainActivatedCalls() []struct {
 	Ctx   github_com_cosmos_cosmos_sdk_types.Context
-	Chain exported.Chain
+	Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 } {
 	var calls []struct {
 		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Chain exported.Chain
+		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 	}
 	mock.lockIsChainActivated.RLock()
 	calls = mock.calls.IsChainActivated
@@ -710,13 +710,13 @@ func (mock *NexusMock) IsChainActivatedCalls() []struct {
 }
 
 // IsChainMaintainer calls IsChainMaintainerFunc.
-func (mock *NexusMock) IsChainMaintainer(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, maintainer github_com_cosmos_cosmos_sdk_types.ValAddress) bool {
+func (mock *NexusMock) IsChainMaintainer(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, maintainer github_com_cosmos_cosmos_sdk_types.ValAddress) bool {
 	if mock.IsChainMaintainerFunc == nil {
 		panic("NexusMock.IsChainMaintainerFunc: method is nil but Nexus.IsChainMaintainer was just called")
 	}
 	callInfo := struct {
 		Ctx        github_com_cosmos_cosmos_sdk_types.Context
-		Chain      exported.Chain
+		Chain      github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 		Maintainer github_com_cosmos_cosmos_sdk_types.ValAddress
 	}{
 		Ctx:        ctx,
@@ -734,12 +734,12 @@ func (mock *NexusMock) IsChainMaintainer(ctx github_com_cosmos_cosmos_sdk_types.
 //     len(mockedNexus.IsChainMaintainerCalls())
 func (mock *NexusMock) IsChainMaintainerCalls() []struct {
 	Ctx        github_com_cosmos_cosmos_sdk_types.Context
-	Chain      exported.Chain
+	Chain      github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 	Maintainer github_com_cosmos_cosmos_sdk_types.ValAddress
 } {
 	var calls []struct {
 		Ctx        github_com_cosmos_cosmos_sdk_types.Context
-		Chain      exported.Chain
+		Chain      github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 		Maintainer github_com_cosmos_cosmos_sdk_types.ValAddress
 	}
 	mock.lockIsChainMaintainer.RLock()
@@ -749,14 +749,14 @@ func (mock *NexusMock) IsChainMaintainerCalls() []struct {
 }
 
 // LinkAddresses calls LinkAddressesFunc.
-func (mock *NexusMock) LinkAddresses(ctx github_com_cosmos_cosmos_sdk_types.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) error {
+func (mock *NexusMock) LinkAddresses(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress) error {
 	if mock.LinkAddressesFunc == nil {
 		panic("NexusMock.LinkAddressesFunc: method is nil but Nexus.LinkAddresses was just called")
 	}
 	callInfo := struct {
 		Ctx       github_com_cosmos_cosmos_sdk_types.Context
-		Sender    exported.CrossChainAddress
-		Recipient exported.CrossChainAddress
+		Sender    github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
+		Recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
 	}{
 		Ctx:       ctx,
 		Sender:    sender,
@@ -773,13 +773,13 @@ func (mock *NexusMock) LinkAddresses(ctx github_com_cosmos_cosmos_sdk_types.Cont
 //     len(mockedNexus.LinkAddressesCalls())
 func (mock *NexusMock) LinkAddressesCalls() []struct {
 	Ctx       github_com_cosmos_cosmos_sdk_types.Context
-	Sender    exported.CrossChainAddress
-	Recipient exported.CrossChainAddress
+	Sender    github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
+	Recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
 } {
 	var calls []struct {
 		Ctx       github_com_cosmos_cosmos_sdk_types.Context
-		Sender    exported.CrossChainAddress
-		Recipient exported.CrossChainAddress
+		Sender    github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
+		Recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
 	}
 	mock.lockLinkAddresses.RLock()
 	calls = mock.calls.LinkAddresses
@@ -819,14 +819,14 @@ func (mock *NexusMock) LoggerCalls() []struct {
 }
 
 // RegisterFee calls RegisterFeeFunc.
-func (mock *NexusMock) RegisterFee(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, feeInfo exported.FeeInfo) error {
+func (mock *NexusMock) RegisterFee(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, feeInfo github_com_axelarnetwork_axelar_core_x_nexus_exported.FeeInfo) error {
 	if mock.RegisterFeeFunc == nil {
 		panic("NexusMock.RegisterFeeFunc: method is nil but Nexus.RegisterFee was just called")
 	}
 	callInfo := struct {
 		Ctx     github_com_cosmos_cosmos_sdk_types.Context
-		Chain   exported.Chain
-		FeeInfo exported.FeeInfo
+		Chain   github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
+		FeeInfo github_com_axelarnetwork_axelar_core_x_nexus_exported.FeeInfo
 	}{
 		Ctx:     ctx,
 		Chain:   chain,
@@ -843,13 +843,13 @@ func (mock *NexusMock) RegisterFee(ctx github_com_cosmos_cosmos_sdk_types.Contex
 //     len(mockedNexus.RegisterFeeCalls())
 func (mock *NexusMock) RegisterFeeCalls() []struct {
 	Ctx     github_com_cosmos_cosmos_sdk_types.Context
-	Chain   exported.Chain
-	FeeInfo exported.FeeInfo
+	Chain   github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
+	FeeInfo github_com_axelarnetwork_axelar_core_x_nexus_exported.FeeInfo
 } {
 	var calls []struct {
 		Ctx     github_com_cosmos_cosmos_sdk_types.Context
-		Chain   exported.Chain
-		FeeInfo exported.FeeInfo
+		Chain   github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
+		FeeInfo github_com_axelarnetwork_axelar_core_x_nexus_exported.FeeInfo
 	}
 	mock.lockRegisterFee.RLock()
 	calls = mock.calls.RegisterFee
@@ -858,13 +858,13 @@ func (mock *NexusMock) RegisterFeeCalls() []struct {
 }
 
 // RemoveChainMaintainer calls RemoveChainMaintainerFunc.
-func (mock *NexusMock) RemoveChainMaintainer(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.Chain, validator github_com_cosmos_cosmos_sdk_types.ValAddress) error {
+func (mock *NexusMock) RemoveChainMaintainer(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, validator github_com_cosmos_cosmos_sdk_types.ValAddress) error {
 	if mock.RemoveChainMaintainerFunc == nil {
 		panic("NexusMock.RemoveChainMaintainerFunc: method is nil but Nexus.RemoveChainMaintainer was just called")
 	}
 	callInfo := struct {
 		Ctx       github_com_cosmos_cosmos_sdk_types.Context
-		Chain     exported.Chain
+		Chain     github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 		Validator github_com_cosmos_cosmos_sdk_types.ValAddress
 	}{
 		Ctx:       ctx,
@@ -882,12 +882,12 @@ func (mock *NexusMock) RemoveChainMaintainer(ctx github_com_cosmos_cosmos_sdk_ty
 //     len(mockedNexus.RemoveChainMaintainerCalls())
 func (mock *NexusMock) RemoveChainMaintainerCalls() []struct {
 	Ctx       github_com_cosmos_cosmos_sdk_types.Context
-	Chain     exported.Chain
+	Chain     github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 	Validator github_com_cosmos_cosmos_sdk_types.ValAddress
 } {
 	var calls []struct {
 		Ctx       github_com_cosmos_cosmos_sdk_types.Context
-		Chain     exported.Chain
+		Chain     github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 		Validator github_com_cosmos_cosmos_sdk_types.ValAddress
 	}
 	mock.lockRemoveChainMaintainer.RLock()
@@ -1128,7 +1128,7 @@ var _ types.AxelarnetKeeper = &AxelarnetKeeperMock{}
 //
 // 		// make and configure a mocked types.AxelarnetKeeper
 // 		mockedAxelarnetKeeper := &AxelarnetKeeperMock{
-// 			IsCosmosChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.ChainName) bool {
+// 			IsCosmosChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) bool {
 // 				panic("mock out the IsCosmosChain method")
 // 			},
 // 		}
@@ -1139,7 +1139,7 @@ var _ types.AxelarnetKeeper = &AxelarnetKeeperMock{}
 // 	}
 type AxelarnetKeeperMock struct {
 	// IsCosmosChainFunc mocks the IsCosmosChain method.
-	IsCosmosChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.ChainName) bool
+	IsCosmosChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) bool
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -1148,20 +1148,20 @@ type AxelarnetKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Chain is the chain argument value.
-			Chain exported.ChainName
+			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
 		}
 	}
 	lockIsCosmosChain sync.RWMutex
 }
 
 // IsCosmosChain calls IsCosmosChainFunc.
-func (mock *AxelarnetKeeperMock) IsCosmosChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain exported.ChainName) bool {
+func (mock *AxelarnetKeeperMock) IsCosmosChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) bool {
 	if mock.IsCosmosChainFunc == nil {
 		panic("AxelarnetKeeperMock.IsCosmosChainFunc: method is nil but AxelarnetKeeper.IsCosmosChain was just called")
 	}
 	callInfo := struct {
 		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Chain exported.ChainName
+		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
 	}{
 		Ctx:   ctx,
 		Chain: chain,
@@ -1177,11 +1177,11 @@ func (mock *AxelarnetKeeperMock) IsCosmosChain(ctx github_com_cosmos_cosmos_sdk_
 //     len(mockedAxelarnetKeeper.IsCosmosChainCalls())
 func (mock *AxelarnetKeeperMock) IsCosmosChainCalls() []struct {
 	Ctx   github_com_cosmos_cosmos_sdk_types.Context
-	Chain exported.ChainName
+	Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
 } {
 	var calls []struct {
 		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Chain exported.ChainName
+		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
 	}
 	mock.lockIsCosmosChain.RLock()
 	calls = mock.calls.IsCosmosChain
@@ -1199,7 +1199,7 @@ var _ types.EVMBaseKeeper = &EVMBaseKeeperMock{}
 //
 // 		// make and configure a mocked types.EVMBaseKeeper
 // 		mockedEVMBaseKeeper := &EVMBaseKeeperMock{
-// 			ForChainFunc: func(chain exported.ChainName) evm.ChainKeeper {
+// 			ForChainFunc: func(chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) evm.ChainKeeper {
 // 				panic("mock out the ForChain method")
 // 			},
 // 		}
@@ -1210,26 +1210,26 @@ var _ types.EVMBaseKeeper = &EVMBaseKeeperMock{}
 // 	}
 type EVMBaseKeeperMock struct {
 	// ForChainFunc mocks the ForChain method.
-	ForChainFunc func(chain exported.ChainName) evm.ChainKeeper
+	ForChainFunc func(chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) evm.ChainKeeper
 
 	// calls tracks calls to the methods.
 	calls struct {
 		// ForChain holds details about calls to the ForChain method.
 		ForChain []struct {
 			// Chain is the chain argument value.
-			Chain exported.ChainName
+			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
 		}
 	}
 	lockForChain sync.RWMutex
 }
 
 // ForChain calls ForChainFunc.
-func (mock *EVMBaseKeeperMock) ForChain(chain exported.ChainName) evm.ChainKeeper {
+func (mock *EVMBaseKeeperMock) ForChain(chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) evm.ChainKeeper {
 	if mock.ForChainFunc == nil {
 		panic("EVMBaseKeeperMock.ForChainFunc: method is nil but EVMBaseKeeper.ForChain was just called")
 	}
 	callInfo := struct {
-		Chain exported.ChainName
+		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
 	}{
 		Chain: chain,
 	}
@@ -1243,10 +1243,10 @@ func (mock *EVMBaseKeeperMock) ForChain(chain exported.ChainName) evm.ChainKeepe
 // Check the length with:
 //     len(mockedEVMBaseKeeper.ForChainCalls())
 func (mock *EVMBaseKeeperMock) ForChainCalls() []struct {
-	Chain exported.ChainName
+	Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
 } {
 	var calls []struct {
-		Chain exported.ChainName
+		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
 	}
 	mock.lockForChain.RLock()
 	calls = mock.calls.ForChain
