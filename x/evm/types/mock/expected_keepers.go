@@ -290,11 +290,11 @@ var _ evmtypes.Nexus = &NexusMock{}
 // 			GetChainByNativeAssetFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string) (github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, bool) {
 // 				panic("mock out the GetChainByNativeAsset method")
 // 			},
+// 			GetChainMaintainerStateFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, address github_com_cosmos_cosmos_sdk_types.ValAddress) (github_com_axelarnetwork_axelar_core_x_nexus_exported.MaintainerState, bool) {
+// 				panic("mock out the GetChainMaintainerState method")
+// 			},
 // 			GetChainMaintainersFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain) []github_com_cosmos_cosmos_sdk_types.ValAddress {
 // 				panic("mock out the GetChainMaintainers method")
-// 			},
-// 			GetChainStateFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain) github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainState {
-// 				panic("mock out the GetChainState method")
 // 			},
 // 			GetChainsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain {
 // 				panic("mock out the GetChains method")
@@ -320,8 +320,8 @@ var _ evmtypes.Nexus = &NexusMock{}
 // 			SetChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain)  {
 // 				panic("mock out the SetChain method")
 // 			},
-// 			SetChainStateFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, state github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainState)  {
-// 				panic("mock out the SetChainState method")
+// 			SetChainMaintainerStateFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, maintainerState github_com_axelarnetwork_axelar_core_x_nexus_exported.MaintainerState) error {
+// 				panic("mock out the SetChainMaintainerState method")
 // 			},
 // 		}
 //
@@ -351,11 +351,11 @@ type NexusMock struct {
 	// GetChainByNativeAssetFunc mocks the GetChainByNativeAsset method.
 	GetChainByNativeAssetFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string) (github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, bool)
 
+	// GetChainMaintainerStateFunc mocks the GetChainMaintainerState method.
+	GetChainMaintainerStateFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, address github_com_cosmos_cosmos_sdk_types.ValAddress) (github_com_axelarnetwork_axelar_core_x_nexus_exported.MaintainerState, bool)
+
 	// GetChainMaintainersFunc mocks the GetChainMaintainers method.
 	GetChainMaintainersFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain) []github_com_cosmos_cosmos_sdk_types.ValAddress
-
-	// GetChainStateFunc mocks the GetChainState method.
-	GetChainStateFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain) github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainState
 
 	// GetChainsFunc mocks the GetChains method.
 	GetChainsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) []github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
@@ -381,8 +381,8 @@ type NexusMock struct {
 	// SetChainFunc mocks the SetChain method.
 	SetChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain)
 
-	// SetChainStateFunc mocks the SetChainState method.
-	SetChainStateFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, state github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainState)
+	// SetChainMaintainerStateFunc mocks the SetChainMaintainerState method.
+	SetChainMaintainerStateFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, maintainerState github_com_axelarnetwork_axelar_core_x_nexus_exported.MaintainerState) error
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -445,15 +445,17 @@ type NexusMock struct {
 			// Asset is the asset argument value.
 			Asset string
 		}
-		// GetChainMaintainers holds details about calls to the GetChainMaintainers method.
-		GetChainMaintainers []struct {
+		// GetChainMaintainerState holds details about calls to the GetChainMaintainerState method.
+		GetChainMaintainerState []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Chain is the chain argument value.
 			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
+			// Address is the address argument value.
+			Address github_com_cosmos_cosmos_sdk_types.ValAddress
 		}
-		// GetChainState holds details about calls to the GetChainState method.
-		GetChainState []struct {
+		// GetChainMaintainers holds details about calls to the GetChainMaintainers method.
+		GetChainMaintainers []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Chain is the chain argument value.
@@ -521,32 +523,32 @@ type NexusMock struct {
 			// Chain is the chain argument value.
 			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 		}
-		// SetChainState holds details about calls to the SetChainState method.
-		SetChainState []struct {
+		// SetChainMaintainerState holds details about calls to the SetChainMaintainerState method.
+		SetChainMaintainerState []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// State is the state argument value.
-			State github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainState
+			// MaintainerState is the maintainerState argument value.
+			MaintainerState github_com_axelarnetwork_axelar_core_x_nexus_exported.MaintainerState
 		}
 	}
-	lockAddTransferFee         sync.RWMutex
-	lockArchivePendingTransfer sync.RWMutex
-	lockComputeTransferFee     sync.RWMutex
-	lockEnqueueForTransfer     sync.RWMutex
-	lockEnqueueTransfer        sync.RWMutex
-	lockGetChain               sync.RWMutex
-	lockGetChainByNativeAsset  sync.RWMutex
-	lockGetChainMaintainers    sync.RWMutex
-	lockGetChainState          sync.RWMutex
-	lockGetChains              sync.RWMutex
-	lockGetRecipient           sync.RWMutex
-	lockGetTransfersForChain   sync.RWMutex
-	lockIsAssetRegistered      sync.RWMutex
-	lockIsChainActivated       sync.RWMutex
-	lockLinkAddresses          sync.RWMutex
-	lockRegisterAsset          sync.RWMutex
-	lockSetChain               sync.RWMutex
-	lockSetChainState          sync.RWMutex
+	lockAddTransferFee          sync.RWMutex
+	lockArchivePendingTransfer  sync.RWMutex
+	lockComputeTransferFee      sync.RWMutex
+	lockEnqueueForTransfer      sync.RWMutex
+	lockEnqueueTransfer         sync.RWMutex
+	lockGetChain                sync.RWMutex
+	lockGetChainByNativeAsset   sync.RWMutex
+	lockGetChainMaintainerState sync.RWMutex
+	lockGetChainMaintainers     sync.RWMutex
+	lockGetChains               sync.RWMutex
+	lockGetRecipient            sync.RWMutex
+	lockGetTransfersForChain    sync.RWMutex
+	lockIsAssetRegistered       sync.RWMutex
+	lockIsChainActivated        sync.RWMutex
+	lockLinkAddresses           sync.RWMutex
+	lockRegisterAsset           sync.RWMutex
+	lockSetChain                sync.RWMutex
+	lockSetChainMaintainerState sync.RWMutex
 }
 
 // AddTransferFee calls AddTransferFeeFunc.
@@ -814,6 +816,45 @@ func (mock *NexusMock) GetChainByNativeAssetCalls() []struct {
 	return calls
 }
 
+// GetChainMaintainerState calls GetChainMaintainerStateFunc.
+func (mock *NexusMock) GetChainMaintainerState(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, address github_com_cosmos_cosmos_sdk_types.ValAddress) (github_com_axelarnetwork_axelar_core_x_nexus_exported.MaintainerState, bool) {
+	if mock.GetChainMaintainerStateFunc == nil {
+		panic("NexusMock.GetChainMaintainerStateFunc: method is nil but Nexus.GetChainMaintainerState was just called")
+	}
+	callInfo := struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Chain   github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
+		Address github_com_cosmos_cosmos_sdk_types.ValAddress
+	}{
+		Ctx:     ctx,
+		Chain:   chain,
+		Address: address,
+	}
+	mock.lockGetChainMaintainerState.Lock()
+	mock.calls.GetChainMaintainerState = append(mock.calls.GetChainMaintainerState, callInfo)
+	mock.lockGetChainMaintainerState.Unlock()
+	return mock.GetChainMaintainerStateFunc(ctx, chain, address)
+}
+
+// GetChainMaintainerStateCalls gets all the calls that were made to GetChainMaintainerState.
+// Check the length with:
+//     len(mockedNexus.GetChainMaintainerStateCalls())
+func (mock *NexusMock) GetChainMaintainerStateCalls() []struct {
+	Ctx     github_com_cosmos_cosmos_sdk_types.Context
+	Chain   github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
+	Address github_com_cosmos_cosmos_sdk_types.ValAddress
+} {
+	var calls []struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Chain   github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
+		Address github_com_cosmos_cosmos_sdk_types.ValAddress
+	}
+	mock.lockGetChainMaintainerState.RLock()
+	calls = mock.calls.GetChainMaintainerState
+	mock.lockGetChainMaintainerState.RUnlock()
+	return calls
+}
+
 // GetChainMaintainers calls GetChainMaintainersFunc.
 func (mock *NexusMock) GetChainMaintainers(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain) []github_com_cosmos_cosmos_sdk_types.ValAddress {
 	if mock.GetChainMaintainersFunc == nil {
@@ -846,41 +887,6 @@ func (mock *NexusMock) GetChainMaintainersCalls() []struct {
 	mock.lockGetChainMaintainers.RLock()
 	calls = mock.calls.GetChainMaintainers
 	mock.lockGetChainMaintainers.RUnlock()
-	return calls
-}
-
-// GetChainState calls GetChainStateFunc.
-func (mock *NexusMock) GetChainState(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain) github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainState {
-	if mock.GetChainStateFunc == nil {
-		panic("NexusMock.GetChainStateFunc: method is nil but Nexus.GetChainState was just called")
-	}
-	callInfo := struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-	}{
-		Ctx:   ctx,
-		Chain: chain,
-	}
-	mock.lockGetChainState.Lock()
-	mock.calls.GetChainState = append(mock.calls.GetChainState, callInfo)
-	mock.lockGetChainState.Unlock()
-	return mock.GetChainStateFunc(ctx, chain)
-}
-
-// GetChainStateCalls gets all the calls that were made to GetChainState.
-// Check the length with:
-//     len(mockedNexus.GetChainStateCalls())
-func (mock *NexusMock) GetChainStateCalls() []struct {
-	Ctx   github_com_cosmos_cosmos_sdk_types.Context
-	Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-} {
-	var calls []struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-	}
-	mock.lockGetChainState.RLock()
-	calls = mock.calls.GetChainState
-	mock.lockGetChainState.RUnlock()
 	return calls
 }
 
@@ -1176,38 +1182,38 @@ func (mock *NexusMock) SetChainCalls() []struct {
 	return calls
 }
 
-// SetChainState calls SetChainStateFunc.
-func (mock *NexusMock) SetChainState(ctx github_com_cosmos_cosmos_sdk_types.Context, state github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainState) {
-	if mock.SetChainStateFunc == nil {
-		panic("NexusMock.SetChainStateFunc: method is nil but Nexus.SetChainState was just called")
+// SetChainMaintainerState calls SetChainMaintainerStateFunc.
+func (mock *NexusMock) SetChainMaintainerState(ctx github_com_cosmos_cosmos_sdk_types.Context, maintainerState github_com_axelarnetwork_axelar_core_x_nexus_exported.MaintainerState) error {
+	if mock.SetChainMaintainerStateFunc == nil {
+		panic("NexusMock.SetChainMaintainerStateFunc: method is nil but Nexus.SetChainMaintainerState was just called")
 	}
 	callInfo := struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		State github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainState
+		Ctx             github_com_cosmos_cosmos_sdk_types.Context
+		MaintainerState github_com_axelarnetwork_axelar_core_x_nexus_exported.MaintainerState
 	}{
-		Ctx:   ctx,
-		State: state,
+		Ctx:             ctx,
+		MaintainerState: maintainerState,
 	}
-	mock.lockSetChainState.Lock()
-	mock.calls.SetChainState = append(mock.calls.SetChainState, callInfo)
-	mock.lockSetChainState.Unlock()
-	mock.SetChainStateFunc(ctx, state)
+	mock.lockSetChainMaintainerState.Lock()
+	mock.calls.SetChainMaintainerState = append(mock.calls.SetChainMaintainerState, callInfo)
+	mock.lockSetChainMaintainerState.Unlock()
+	return mock.SetChainMaintainerStateFunc(ctx, maintainerState)
 }
 
-// SetChainStateCalls gets all the calls that were made to SetChainState.
+// SetChainMaintainerStateCalls gets all the calls that were made to SetChainMaintainerState.
 // Check the length with:
-//     len(mockedNexus.SetChainStateCalls())
-func (mock *NexusMock) SetChainStateCalls() []struct {
-	Ctx   github_com_cosmos_cosmos_sdk_types.Context
-	State github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainState
+//     len(mockedNexus.SetChainMaintainerStateCalls())
+func (mock *NexusMock) SetChainMaintainerStateCalls() []struct {
+	Ctx             github_com_cosmos_cosmos_sdk_types.Context
+	MaintainerState github_com_axelarnetwork_axelar_core_x_nexus_exported.MaintainerState
 } {
 	var calls []struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		State github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainState
+		Ctx             github_com_cosmos_cosmos_sdk_types.Context
+		MaintainerState github_com_axelarnetwork_axelar_core_x_nexus_exported.MaintainerState
 	}
-	mock.lockSetChainState.RLock()
-	calls = mock.calls.SetChainState
-	mock.lockSetChainState.RUnlock()
+	mock.lockSetChainMaintainerState.RLock()
+	calls = mock.calls.SetChainMaintainerState
+	mock.lockSetChainMaintainerState.RUnlock()
 	return calls
 }
 

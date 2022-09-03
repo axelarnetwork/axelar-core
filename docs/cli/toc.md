@@ -207,7 +207,7 @@
       - [register-asset \[chain\] \[denom\]](axelard_tx_axelarnet_register-asset.md)	 - Register a new asset to a cosmos based chain
       - [register-fee-collector \[fee collector\]](axelard_tx_axelarnet_register-fee-collector.md)	 - Register axelarnet fee collector account
       - [register-path \[chain\] \[path\]](axelard_tx_axelarnet_register-path.md)	 - Register an ibc path for a cosmos chain
-      - [retry-failed-transfer \[chain\] \[transfer ID\]](axelard_tx_axelarnet_retry-failed-transfer.md)	 - Retry a failed IBC transfer
+      - [retry-ibc-transfer \[chain\] \[transfer ID\]](axelard_tx_axelarnet_retry-ibc-transfer.md)	 - Retry a failed IBC transfer
       - [route-ibc-transfers](axelard_tx_axelarnet_route-ibc-transfers.md)	 - Routes pending transfers to cosmos chains
     - [bank](axelard_tx_bank.md)	 - Bank transaction subcommands
       - [send \[from_key_or_address\] \[to_address\] \[amount\]](axelard_tx_bank_send.md)	 - Send funds from one account to another. Note, the'--from' flag is

@@ -17,23 +17,23 @@ message MaintainerState {
       [ (gogoproto.nullable) = false ];
   axelar.utils.v1beta1.Bitmap incorrect_votes = 3
       [ (gogoproto.nullable) = false ];
+  string chain = 4
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
 }
 
 // ChainState represents the state of a registered blockchain
 message ChainState {
   reserved 4; // total was removed in v0.13
+  reserved 2; // maintainers was removed in v0.24
 
   axelar.nexus.exported.v1beta1.Chain chain = 1
       [ (gogoproto.nullable) = false ];
-  repeated bytes maintainers = 2 [
-    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.ValAddress",
-    deprecated = true
-  ];
   bool activated = 3;
   repeated axelar.nexus.exported.v1beta1.Asset assets = 5
       [ (gogoproto.nullable) = false ];
   repeated MaintainerState maintainer_states = 6
-      [ (gogoproto.nullable) = false ];
+      [ (gogoproto.nullable) = false, deprecated = true ];
 }
 
 message LinkedAddresses {
