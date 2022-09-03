@@ -11,6 +11,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	geth "github.com/ethereum/go-ethereum/core/types"
@@ -20,7 +21,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/sdk-utils/broadcast"
 	"github.com/axelarnetwork/axelar-core/vald/evm/rpc"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
-	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 	"github.com/axelarnetwork/utils/funcs"
@@ -66,116 +66,121 @@ func (mgr Mgr) ProcessNewChain(event *types.ChainAdded) (err error) {
 }
 
 // ProcessDepositConfirmation votes on the correctness of an EVM chain token deposit
-func (mgr Mgr) ProcessDepositConfirmation(event *evmTypes.ConfirmDepositStarted) error {
+func (mgr Mgr) ProcessDepositConfirmation(event *types.ConfirmDepositStarted) error {
 	if !slices.Any(event.Participants, func(v sdk.ValAddress) bool { return v.Equals(mgr.validator) }) {
 		mgr.logger.Debug("ignoring deposit confirmation poll: not a participant", "pollID", event.PollID)
 		return nil
 	}
 
-	rpcClient, found := mgr.rpcs[strings.ToLower(event.Chain.String())]
-	if !found {
-		return fmt.Errorf("unable to find an RPC for chain '%s'", event.Chain.String())
+	txReceipt, err := mgr.getTxReceiptIfFinalized(event.Chain, common.Hash(event.TxID), event.ConfirmationHeight)
+	if err != nil {
+		return err
 	}
-	var events []evmTypes.Event
-	_ = mgr.validate(rpcClient, common.Hash(event.TxID), event.ConfirmationHeight, func(_ *geth.Transaction, txReceipt *geth.Receipt) bool {
-		for i, log := range txReceipt.Logs {
-			switch log.Topics[0] {
-			case ERC20TransferSig:
-				if !bytes.Equal(event.TokenAddress.Bytes(), log.Address.Bytes()) {
-					continue
-				}
+	if txReceipt == nil {
+		mgr.logger.Info(fmt.Sprintf("broadcasting empty vote for poll %s", event.PollID.String()))
+		_, err := mgr.broadcaster.Broadcast(context.TODO(), voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, event.PollID, types.NewVoteEvents(event.Chain, nil)))
 
-				erc20Event, err := decodeERC20TransferEvent(log)
-				if err != nil {
-					mgr.logger.Debug(sdkerrors.Wrap(err, "decode event Transfer failed").Error())
-					continue
-				}
+		return err
+	}
 
-				if erc20Event.To != event.DepositAddress {
-					continue
-				}
-
-				if err := erc20Event.ValidateBasic(); err != nil {
-					mgr.logger.Debug(sdkerrors.Wrap(err, "invalid event Transfer").Error())
-					continue
-				}
-
-				events = append(events, evmTypes.Event{
-					Chain: event.Chain,
-					TxID:  event.TxID,
-					Index: uint64(i),
-					Event: &evmTypes.Event_Transfer{
-						Transfer: &erc20Event,
-					},
-				})
-			default:
-			}
-
+	var events []types.Event
+	for i, log := range txReceipt.Logs {
+		if log.Topics[0] != ERC20TransferSig {
+			continue
 		}
-		return true
-	})
 
-	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, event.PollID, evmTypes.NewVoteEvents(event.Chain, events))
+		if !bytes.Equal(event.TokenAddress.Bytes(), log.Address.Bytes()) {
+			continue
+		}
+
+		erc20Event, err := decodeERC20TransferEvent(log)
+		if err != nil {
+			mgr.logger.Debug(sdkerrors.Wrap(err, "decode event Transfer failed").Error())
+			continue
+		}
+
+		if erc20Event.To != event.DepositAddress {
+			continue
+		}
+
+		if err := erc20Event.ValidateBasic(); err != nil {
+			mgr.logger.Debug(sdkerrors.Wrap(err, "invalid event Transfer").Error())
+			continue
+		}
+
+		events = append(events, types.Event{
+			Chain: event.Chain,
+			TxID:  event.TxID,
+			Index: uint64(i),
+			Event: &types.Event_Transfer{
+				Transfer: &erc20Event,
+			},
+		})
+	}
+
 	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", events, event.PollID.String()))
-	_, err := mgr.broadcaster.Broadcast(context.TODO(), msg)
+	_, err = mgr.broadcaster.Broadcast(context.TODO(), voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, event.PollID, types.NewVoteEvents(event.Chain, events)))
+
 	return err
 }
 
 // ProcessTokenConfirmation votes on the correctness of an EVM chain token deployment
-func (mgr Mgr) ProcessTokenConfirmation(event *evmTypes.ConfirmTokenStarted) error {
+func (mgr Mgr) ProcessTokenConfirmation(event *types.ConfirmTokenStarted) error {
 	if !slices.Any(event.Participants, func(v sdk.ValAddress) bool { return v.Equals(mgr.validator) }) {
 		mgr.logger.Debug("ignoring token confirmation poll: not a participant", "pollID", event.PollID)
 		return nil
 	}
 
-	rpcClient, found := mgr.rpcs[strings.ToLower(event.Chain.String())]
-	if !found {
-		return fmt.Errorf("unable to find an RPC for chain '%s'", event.Chain)
+	txReceipt, err := mgr.getTxReceiptIfFinalized(event.Chain, common.Hash(event.TxID), event.ConfirmationHeight)
+	if err != nil {
+		return err
+	}
+	if txReceipt == nil {
+		mgr.logger.Info(fmt.Sprintf("broadcasting empty vote for poll %s", event.PollID.String()))
+		_, err := mgr.broadcaster.Broadcast(context.TODO(), voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, event.PollID, types.NewVoteEvents(event.Chain, nil)))
+
+		return err
 	}
 
-	var events []evmTypes.Event
-	_ = mgr.validate(rpcClient, common.Hash(event.TxID), event.ConfirmationHeight, func(_ *geth.Transaction, txReceipt *geth.Receipt) bool {
-		for i, log := range txReceipt.Logs {
-			if !bytes.Equal(event.GatewayAddress.Bytes(), log.Address.Bytes()) {
-				continue
-			}
-
-			switch log.Topics[0] {
-			case ERC20TokenDeploymentSig:
-				erc20Event, err := decodeERC20TokenDeploymentEvent(log)
-				if err != nil {
-					mgr.logger.Debug(sdkerrors.Wrap(err, "decode event TokenDeployed failed").Error())
-					continue
-				}
-				if erc20Event.TokenAddress != event.TokenAddress || erc20Event.Symbol != event.TokenDetails.Symbol {
-					continue
-				}
-
-				if err := erc20Event.ValidateBasic(); err != nil {
-					mgr.logger.Debug(sdkerrors.Wrap(err, "invalid event ERC20TokenDeployment").Error())
-					continue
-				}
-
-				events = append(events, evmTypes.Event{
-					Chain: event.Chain,
-					TxID:  event.TxID,
-					Index: uint64(i),
-					Event: &evmTypes.Event_TokenDeployed{
-						TokenDeployed: &erc20Event,
-					},
-				})
-
-				return true
-			default:
-			}
+	var events []types.Event
+	for i, log := range txReceipt.Logs {
+		if log.Topics[0] != ERC20TokenDeploymentSig {
+			continue
 		}
 
-		return true
-	})
+		if !bytes.Equal(event.GatewayAddress.Bytes(), log.Address.Bytes()) {
+			continue
+		}
 
-	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, event.PollID, evmTypes.NewVoteEvents(event.Chain, events))
+		erc20Event, err := decodeERC20TokenDeploymentEvent(log)
+		if err != nil {
+			mgr.logger.Debug(sdkerrors.Wrap(err, "decode event TokenDeployed failed").Error())
+			continue
+		}
+
+		if erc20Event.TokenAddress != event.TokenAddress || erc20Event.Symbol != event.TokenDetails.Symbol {
+			continue
+		}
+
+		if err := erc20Event.ValidateBasic(); err != nil {
+			mgr.logger.Debug(sdkerrors.Wrap(err, "invalid event ERC20TokenDeployment").Error())
+			continue
+		}
+
+		events = append(events, types.Event{
+			Chain: event.Chain,
+			TxID:  event.TxID,
+			Index: uint64(i),
+			Event: &types.Event_TokenDeployed{
+				TokenDeployed: &erc20Event,
+			},
+		})
+		break
+	}
+
 	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", events, event.PollID.String()))
-	_, err := mgr.broadcaster.Broadcast(context.TODO(), msg)
+	_, err = mgr.broadcaster.Broadcast(context.TODO(), voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, event.PollID, types.NewVoteEvents(event.Chain, events)))
+
 	return err
 }
 
@@ -186,167 +191,160 @@ func (mgr Mgr) ProcessTransferKeyConfirmation(event *types.ConfirmKeyTransferSta
 		return nil
 	}
 
-	rpcClient, ok := mgr.rpcs[strings.ToLower(event.Chain.String())]
-	if !ok {
-		return fmt.Errorf("unable to find the RPC for chain %s", event.Chain)
+	txReceipt, err := mgr.getTxReceiptIfFinalized(event.Chain, common.Hash(event.TxID), event.ConfirmationHeight)
+	if err != nil {
+		return err
+	}
+	if txReceipt == nil {
+		mgr.logger.Info(fmt.Sprintf("broadcasting empty vote for poll %s", event.PollID.String()))
+		_, err := mgr.broadcaster.Broadcast(context.TODO(), voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, event.PollID, types.NewVoteEvents(event.Chain, nil)))
+
+		return err
 	}
 
-	var operatorshipTransferred evmTypes.Event
-	ok = mgr.validate(rpcClient, common.Hash(event.TxID), event.ConfirmationHeight, func(_ *geth.Transaction, txReceipt *geth.Receipt) bool {
-		for i := len(txReceipt.Logs) - 1; i >= 0; i-- {
-			log := txReceipt.Logs[i]
+	var events []types.Event
+	for i := len(txReceipt.Logs) - 1; i >= 0; i-- {
+		log := txReceipt.Logs[i]
 
-			// Event is not emitted by the axelar gateway
-			if log.Address != common.Address(event.GatewayAddress) {
-				continue
-			}
-
-			if log.Topics[0] != MultisigTransferOperatorshipSig {
-				continue
-			}
-
-			transferOperatorshipEvent, err := decodeMultisigOperatorshipTransferredEvent(log)
-			if err != nil {
-				mgr.logger.Debug(sdkerrors.Wrap(err, "failed decoding operatorship transferred event").Error())
-				continue
-			}
-
-			if err := transferOperatorshipEvent.ValidateBasic(); err != nil {
-				mgr.logger.Debug(sdkerrors.Wrap(err, "invalid event MultisigTransferOperatorship").Error())
-				continue
-			}
-
-			operatorshipTransferred = evmTypes.Event{
-				Chain: event.Chain,
-				TxID:  event.TxID,
-				Index: uint64(i),
-				Event: &evmTypes.Event_MultisigOperatorshipTransferred{
-					MultisigOperatorshipTransferred: &transferOperatorshipEvent,
-				}}
-			return true
+		if log.Topics[0] != MultisigTransferOperatorshipSig {
+			continue
 		}
 
-		return false
-	})
+		// Event is not emitted by the axelar gateway
+		if log.Address != common.Address(event.GatewayAddress) {
+			continue
+		}
 
-	var evmEvents []evmTypes.Event
-	if ok {
-		evmEvents = append(evmEvents, operatorshipTransferred)
+		transferOperatorshipEvent, err := decodeMultisigOperatorshipTransferredEvent(log)
+		if err != nil {
+			mgr.logger.Debug(sdkerrors.Wrap(err, "failed decoding operatorship transferred event").Error())
+			continue
+		}
+
+		if err := transferOperatorshipEvent.ValidateBasic(); err != nil {
+			mgr.logger.Debug(sdkerrors.Wrap(err, "invalid event MultisigTransferOperatorship").Error())
+			continue
+		}
+
+		events = append(events, types.Event{
+			Chain: event.Chain,
+			TxID:  event.TxID,
+			Index: uint64(i),
+			Event: &types.Event_MultisigOperatorshipTransferred{
+				MultisigOperatorshipTransferred: &transferOperatorshipEvent,
+			}})
+		break
 	}
 
-	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, event.PollID, evmTypes.NewVoteEvents(event.Chain, evmEvents))
-	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", evmEvents, event.PollID.String()))
-	_, err := mgr.broadcaster.Broadcast(context.TODO(), msg)
+	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", events, event.PollID.String()))
+	_, err = mgr.broadcaster.Broadcast(context.TODO(), voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, event.PollID, types.NewVoteEvents(event.Chain, events)))
 
 	return err
 }
 
 // ProcessGatewayTxConfirmation votes on the correctness of an EVM chain gateway's transactions
-func (mgr Mgr) ProcessGatewayTxConfirmation(event *evmTypes.ConfirmGatewayTxStarted) error {
+func (mgr Mgr) ProcessGatewayTxConfirmation(event *types.ConfirmGatewayTxStarted) error {
 	if !slices.Any(event.Participants, func(v sdk.ValAddress) bool { return v.Equals(mgr.validator) }) {
 		mgr.logger.Debug("ignoring gateway tx confirmation poll: not a participant", "pollID", event.PollID)
 		return nil
 	}
 
-	rpcClient, found := mgr.rpcs[strings.ToLower(event.Chain.String())]
-	if !found {
-		return fmt.Errorf("unable to find an RPC for chain '%s'", event.Chain.String())
+	txReceipt, err := mgr.getTxReceiptIfFinalized(event.Chain, common.Hash(event.TxID), event.ConfirmationHeight)
+	if err != nil {
+		return err
+	}
+	if txReceipt == nil {
+		mgr.logger.Info(fmt.Sprintf("broadcasting empty vote for poll %s", event.PollID.String()))
+		_, err := mgr.broadcaster.Broadcast(context.TODO(), voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, event.PollID, types.NewVoteEvents(event.Chain, nil)))
+
+		return err
 	}
 
-	var events []evmTypes.Event
-	_ = mgr.validate(rpcClient, common.Hash(event.TxID), event.ConfirmationHeight, func(_ *geth.Transaction, txReceipt *geth.Receipt) bool {
-		for i, log := range txReceipt.Logs {
-			if !bytes.Equal(event.GatewayAddress.Bytes(), log.Address.Bytes()) {
+	var events []types.Event
+	for i, log := range txReceipt.Logs {
+		if !bytes.Equal(event.GatewayAddress.Bytes(), log.Address.Bytes()) {
+			continue
+		}
+
+		switch log.Topics[0] {
+		case ContractCallSig:
+			gatewayEvent, err := decodeEventContractCall(log)
+			if err != nil {
+				mgr.logger.Debug(sdkerrors.Wrap(err, "decode event ContractCall failed").Error())
 				continue
 			}
 
-			switch log.Topics[0] {
-			case ContractCallSig:
-				gatewayEvent, err := decodeEventContractCall(log)
-				if err != nil {
-					mgr.logger.Debug(sdkerrors.Wrap(err, "decode event ContractCall failed").Error())
-
-					return false
-				}
-
-				err = gatewayEvent.ValidateBasic()
-				if err != nil {
-					mgr.logger.Debug(sdkerrors.Wrap(err, "invalid event ContractCall").Error())
-					continue
-				}
-
-				events = append(events, evmTypes.Event{
-					Chain: event.Chain,
-					TxID:  event.TxID,
-					Index: uint64(i),
-					Event: &evmTypes.Event_ContractCall{
-						ContractCall: &gatewayEvent,
-					},
-				})
-			case ContractCallWithTokenSig:
-				gatewayEvent, err := decodeEventContractCallWithToken(log)
-				if err != nil {
-					mgr.logger.Debug(sdkerrors.Wrap(err, "decode event ContractCallWithToken failed").Error())
-
-					return false
-				}
-
-				err = gatewayEvent.ValidateBasic()
-				if err != nil {
-					mgr.logger.Debug(sdkerrors.Wrap(err, "invalid event ContractCallWithToken").Error())
-					continue
-				}
-
-				events = append(events, evmTypes.Event{
-					Chain: event.Chain,
-					TxID:  event.TxID,
-					Index: uint64(i),
-					Event: &evmTypes.Event_ContractCallWithToken{
-						ContractCallWithToken: &gatewayEvent,
-					},
-				})
-			case TokenSentSig:
-				gatewayEvent, err := decodeEventTokenSent(log)
-				if err != nil {
-					mgr.logger.Debug(sdkerrors.Wrap(err, "decode event TokenSent failed").Error())
-				}
-
-				err = gatewayEvent.ValidateBasic()
-				if err != nil {
-					mgr.logger.Debug(sdkerrors.Wrap(err, "invalid event TokenSent").Error())
-					continue
-				}
-
-				events = append(events, evmTypes.Event{
-					Chain: event.Chain,
-					TxID:  event.TxID,
-					Index: uint64(i),
-					Event: &evmTypes.Event_TokenSent{
-						TokenSent: &gatewayEvent,
-					},
-				})
-			default:
+			if err := gatewayEvent.ValidateBasic(); err != nil {
+				mgr.logger.Debug(sdkerrors.Wrap(err, "invalid event ContractCall").Error())
+				continue
 			}
+
+			events = append(events, types.Event{
+				Chain: event.Chain,
+				TxID:  event.TxID,
+				Index: uint64(i),
+				Event: &types.Event_ContractCall{
+					ContractCall: &gatewayEvent,
+				},
+			})
+		case ContractCallWithTokenSig:
+			gatewayEvent, err := decodeEventContractCallWithToken(log)
+			if err != nil {
+				mgr.logger.Debug(sdkerrors.Wrap(err, "decode event ContractCallWithToken failed").Error())
+				continue
+			}
+
+			if err := gatewayEvent.ValidateBasic(); err != nil {
+				mgr.logger.Debug(sdkerrors.Wrap(err, "invalid event ContractCallWithToken").Error())
+				continue
+			}
+
+			events = append(events, types.Event{
+				Chain: event.Chain,
+				TxID:  event.TxID,
+				Index: uint64(i),
+				Event: &types.Event_ContractCallWithToken{
+					ContractCallWithToken: &gatewayEvent,
+				},
+			})
+		case TokenSentSig:
+			gatewayEvent, err := decodeEventTokenSent(log)
+			if err != nil {
+				mgr.logger.Debug(sdkerrors.Wrap(err, "decode event TokenSent failed").Error())
+			}
+
+			if err := gatewayEvent.ValidateBasic(); err != nil {
+				mgr.logger.Debug(sdkerrors.Wrap(err, "invalid event TokenSent").Error())
+				continue
+			}
+
+			events = append(events, types.Event{
+				Chain: event.Chain,
+				TxID:  event.TxID,
+				Index: uint64(i),
+				Event: &types.Event_TokenSent{
+					TokenSent: &gatewayEvent,
+				},
+			})
+		default:
 		}
+	}
 
-		return true
-	})
-
-	msg := voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, event.PollID, evmTypes.NewVoteEvents(event.Chain, events))
 	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", events, event.PollID.String()))
-	_, err := mgr.broadcaster.Broadcast(context.TODO(), msg)
+	_, err = mgr.broadcaster.Broadcast(context.TODO(), voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, event.PollID, types.NewVoteEvents(event.Chain, events)))
+
 	return err
 }
 
-func decodeEventTokenSent(log *geth.Log) (evmTypes.EventTokenSent, error) {
+func decodeEventTokenSent(log *geth.Log) (types.EventTokenSent, error) {
 	stringType, err := abi.NewType("string", "string", nil)
 	if err != nil {
-		return evmTypes.EventTokenSent{}, err
+		return types.EventTokenSent{}, err
 	}
 
 	uint256Type, err := abi.NewType("uint256", "uint256", nil)
 	if err != nil {
-		return evmTypes.EventTokenSent{}, err
+		return types.EventTokenSent{}, err
 	}
 
 	arguments := abi.Arguments{
@@ -355,13 +353,13 @@ func decodeEventTokenSent(log *geth.Log) (evmTypes.EventTokenSent, error) {
 		{Type: stringType},
 		{Type: uint256Type},
 	}
-	params, err := evmTypes.StrictDecode(arguments, log.Data)
+	params, err := types.StrictDecode(arguments, log.Data)
 	if err != nil {
-		return evmTypes.EventTokenSent{}, err
+		return types.EventTokenSent{}, err
 	}
 
-	return evmTypes.EventTokenSent{
-		Sender:             evmTypes.Address(common.BytesToAddress(log.Topics[1].Bytes())),
+	return types.EventTokenSent{
+		Sender:             types.Address(common.BytesToAddress(log.Topics[1].Bytes())),
 		DestinationChain:   nexus.ChainName(params[0].(string)),
 		DestinationAddress: params[1].(string),
 		Symbol:             params[2].(string),
@@ -369,15 +367,15 @@ func decodeEventTokenSent(log *geth.Log) (evmTypes.EventTokenSent, error) {
 	}, nil
 }
 
-func decodeEventContractCall(log *geth.Log) (evmTypes.EventContractCall, error) {
+func decodeEventContractCall(log *geth.Log) (types.EventContractCall, error) {
 	stringType, err := abi.NewType("string", "string", nil)
 	if err != nil {
-		return evmTypes.EventContractCall{}, err
+		return types.EventContractCall{}, err
 	}
 
 	bytesType, err := abi.NewType("bytes", "bytes", nil)
 	if err != nil {
-		return evmTypes.EventContractCall{}, err
+		return types.EventContractCall{}, err
 	}
 
 	arguments := abi.Arguments{
@@ -385,33 +383,33 @@ func decodeEventContractCall(log *geth.Log) (evmTypes.EventContractCall, error) 
 		{Type: stringType},
 		{Type: bytesType},
 	}
-	params, err := evmTypes.StrictDecode(arguments, log.Data)
+	params, err := types.StrictDecode(arguments, log.Data)
 	if err != nil {
-		return evmTypes.EventContractCall{}, err
+		return types.EventContractCall{}, err
 	}
 
-	return evmTypes.EventContractCall{
-		Sender:           evmTypes.Address(common.BytesToAddress(log.Topics[1].Bytes())),
+	return types.EventContractCall{
+		Sender:           types.Address(common.BytesToAddress(log.Topics[1].Bytes())),
 		DestinationChain: nexus.ChainName(params[0].(string)),
 		ContractAddress:  params[1].(string),
-		PayloadHash:      evmTypes.Hash(common.BytesToHash(log.Topics[2].Bytes())),
+		PayloadHash:      types.Hash(common.BytesToHash(log.Topics[2].Bytes())),
 	}, nil
 }
 
-func decodeEventContractCallWithToken(log *geth.Log) (evmTypes.EventContractCallWithToken, error) {
+func decodeEventContractCallWithToken(log *geth.Log) (types.EventContractCallWithToken, error) {
 	stringType, err := abi.NewType("string", "string", nil)
 	if err != nil {
-		return evmTypes.EventContractCallWithToken{}, err
+		return types.EventContractCallWithToken{}, err
 	}
 
 	bytesType, err := abi.NewType("bytes", "bytes", nil)
 	if err != nil {
-		return evmTypes.EventContractCallWithToken{}, err
+		return types.EventContractCallWithToken{}, err
 	}
 
 	uint256Type, err := abi.NewType("uint256", "uint256", nil)
 	if err != nil {
-		return evmTypes.EventContractCallWithToken{}, err
+		return types.EventContractCallWithToken{}, err
 	}
 
 	arguments := abi.Arguments{
@@ -421,16 +419,16 @@ func decodeEventContractCallWithToken(log *geth.Log) (evmTypes.EventContractCall
 		{Type: stringType},
 		{Type: uint256Type},
 	}
-	params, err := evmTypes.StrictDecode(arguments, log.Data)
+	params, err := types.StrictDecode(arguments, log.Data)
 	if err != nil {
-		return evmTypes.EventContractCallWithToken{}, err
+		return types.EventContractCallWithToken{}, err
 	}
 
-	return evmTypes.EventContractCallWithToken{
-		Sender:           evmTypes.Address(common.BytesToAddress(log.Topics[1].Bytes())),
+	return types.EventContractCallWithToken{
+		Sender:           types.Address(common.BytesToAddress(log.Topics[1].Bytes())),
 		DestinationChain: nexus.ChainName(params[0].(string)),
 		ContractAddress:  params[1].(string),
-		PayloadHash:      evmTypes.Hash(common.BytesToHash(log.Topics[2].Bytes())),
+		PayloadHash:      types.Hash(common.BytesToHash(log.Topics[2].Bytes())),
 		Symbol:           params[3].(string),
 		Amount:           sdk.NewUintFromBigInt(params[4].(*big.Int)),
 	}, nil
@@ -466,69 +464,50 @@ func getLatestFinalizedBlockNumber(client rpc.Client, confHeight uint64) (*big.I
 	return big.NewInt(int64(blockNumber - confHeight + 1)), nil
 }
 
-func (mgr Mgr) validate(client rpc.Client, txID common.Hash, confHeight uint64, validateTx func(tx *geth.Transaction, txReceipt *geth.Receipt) bool) bool {
-	tx, _, err := client.TransactionByHash(context.Background(), txID)
-	if err != nil {
-		mgr.logger.Debug(sdkerrors.Wrap(err, "get transaction by hash call failed").Error())
-		return false
+func (mgr Mgr) getTxReceiptIfFinalized(chain nexus.ChainName, txID common.Hash, confHeight uint64) (*geth.Receipt, error) {
+	client, ok := mgr.rpcs[strings.ToLower(chain.String())]
+	if !ok {
+		return nil, fmt.Errorf("rpc client not found for chain %s", chain.String())
 	}
 
 	txReceipt, err := client.TransactionReceipt(context.Background(), txID)
-	if err != nil {
-		mgr.logger.Debug(sdkerrors.Wrap(err, "get transaction receipt call failed").Error())
-		return false
+	if err == ethereum.NotFound {
+		return nil, nil
 	}
-
-	if !isTxSuccessful(txReceipt) {
-		mgr.logger.Debug(fmt.Sprintf("transaction %s failed", txReceipt.TxHash.String()))
-		return false
+	if err != nil {
+		return nil, sdkerrors.Wrap(err, "failed getting transaction receipt")
 	}
 
 	latestFinalizedBlockNumber, err := getLatestFinalizedBlockNumber(client, confHeight)
 	if err != nil {
-		mgr.logger.Debug(sdkerrors.Wrap(err, "get latest finalized block number failed").Error())
-		return false
+		return nil, sdkerrors.Wrap(err, "failed getting latest finalized block number")
 	}
 
 	if latestFinalizedBlockNumber.Cmp(txReceipt.BlockNumber) < 0 {
-		mgr.logger.Debug(fmt.Sprintf("transaction %s is not finalized yet", txReceipt.TxHash.String()))
-		return false
+		return nil, nil
 	}
 
-	txBlock, err := client.BlockByNumber(context.Background(), txReceipt.BlockNumber)
+	block, err := client.BlockByNumber(context.Background(), txReceipt.BlockNumber)
 	if err != nil {
-		mgr.logger.Debug(sdkerrors.Wrap(err, "get block by number call failed").Error())
-		return false
+		return nil, sdkerrors.Wrap(err, "failed getting block")
 	}
 
-	txFound := false
-	for _, t := range txBlock.Body().Transactions {
-		if bytes.Equal(t.Hash().Bytes(), txReceipt.TxHash.Bytes()) {
-			txFound = true
-			break
-		}
-	}
-
+	txFound := slices.Any(block.Body().Transactions, func(tx *geth.Transaction) bool { return bytes.Equal(tx.Hash().Bytes(), txReceipt.TxHash.Bytes()) })
 	if !txFound {
-		mgr.logger.Debug(fmt.Sprintf("transaction %s is not found in block number %d and hash %s", txReceipt.TxHash.String(), txBlock.NumberU64(), txBlock.Hash().String()))
-		return false
+		return nil, nil
 	}
 
-	return validateTx(tx, txReceipt)
+	return txReceipt, nil
 }
 
-func isTxSuccessful(txReceipt *geth.Receipt) bool {
-	return txReceipt.Status == 1
-}
-
-func decodeERC20TransferEvent(log *geth.Log) (evmTypes.EventTransfer, error) {
+func decodeERC20TransferEvent(log *geth.Log) (types.EventTransfer, error) {
 	if len(log.Topics) != 3 || log.Topics[0] != ERC20TransferSig {
-		return evmTypes.EventTransfer{}, fmt.Errorf("log is not an ERC20 transfer")
+		return types.EventTransfer{}, fmt.Errorf("log is not an ERC20 transfer")
 	}
 
 	uint256Type, err := abi.NewType("uint256", "uint256", nil)
 	if err != nil {
-		return evmTypes.EventTransfer{}, err
+		return types.EventTransfer{}, err
 	}
 
 	to := common.BytesToAddress(log.Topics[2][:])
@@ -539,54 +518,54 @@ func decodeERC20TransferEvent(log *geth.Log) (evmTypes.EventTransfer, error) {
 
 	params, err := arguments.Unpack(log.Data)
 	if err != nil {
-		return evmTypes.EventTransfer{}, err
+		return types.EventTransfer{}, err
 	}
 
-	return evmTypes.EventTransfer{
-		To:     evmTypes.Address(to),
+	return types.EventTransfer{
+		To:     types.Address(to),
 		Amount: sdk.NewUintFromBigInt(params[0].(*big.Int)),
 	}, nil
 }
 
-func decodeERC20TokenDeploymentEvent(log *geth.Log) (evmTypes.EventTokenDeployed, error) {
+func decodeERC20TokenDeploymentEvent(log *geth.Log) (types.EventTokenDeployed, error) {
 	if len(log.Topics) != 1 || log.Topics[0] != ERC20TokenDeploymentSig {
-		return evmTypes.EventTokenDeployed{}, fmt.Errorf("event is not for an ERC20 token deployment")
+		return types.EventTokenDeployed{}, fmt.Errorf("event is not for an ERC20 token deployment")
 	}
 
 	// Decode the data field
 	stringType, err := abi.NewType("string", "string", nil)
 	if err != nil {
-		return evmTypes.EventTokenDeployed{}, err
+		return types.EventTokenDeployed{}, err
 	}
 	addressType, err := abi.NewType("address", "address", nil)
 	if err != nil {
-		return evmTypes.EventTokenDeployed{}, err
+		return types.EventTokenDeployed{}, err
 	}
 
 	arguments := abi.Arguments{{Type: stringType}, {Type: addressType}}
-	params, err := evmTypes.StrictDecode(arguments, log.Data)
+	params, err := types.StrictDecode(arguments, log.Data)
 	if err != nil {
-		return evmTypes.EventTokenDeployed{}, err
+		return types.EventTokenDeployed{}, err
 	}
 
-	return evmTypes.EventTokenDeployed{
+	return types.EventTokenDeployed{
 		Symbol:       params[0].(string),
-		TokenAddress: evmTypes.Address(params[1].(common.Address)),
+		TokenAddress: types.Address(params[1].(common.Address)),
 	}, nil
 }
 
-func decodeMultisigOperatorshipTransferredEvent(log *geth.Log) (evmTypes.EventMultisigOperatorshipTransferred, error) {
+func decodeMultisigOperatorshipTransferredEvent(log *geth.Log) (types.EventMultisigOperatorshipTransferred, error) {
 	if len(log.Topics) != 1 || log.Topics[0] != MultisigTransferOperatorshipSig {
-		return evmTypes.EventMultisigOperatorshipTransferred{}, fmt.Errorf("event is not OperatorshipTransferred")
+		return types.EventMultisigOperatorshipTransferred{}, fmt.Errorf("event is not OperatorshipTransferred")
 	}
 
 	newAddresses, newWeights, newThreshold, err := unpackMultisigTransferKeyEvent(log)
 	if err != nil {
-		return evmTypes.EventMultisigOperatorshipTransferred{}, err
+		return types.EventMultisigOperatorshipTransferred{}, err
 	}
 
-	event := evmTypes.EventMultisigOperatorshipTransferred{
-		NewOperators: slices.Map(newAddresses, func(addr common.Address) evmTypes.Address { return evmTypes.Address(addr) }),
+	event := types.EventMultisigOperatorshipTransferred{
+		NewOperators: slices.Map(newAddresses, func(addr common.Address) types.Address { return types.Address(addr) }),
 		NewWeights:   slices.Map(newWeights, sdk.NewUintFromBigInt),
 		NewThreshold: sdk.NewUintFromBigInt(newThreshold),
 	}
@@ -596,7 +575,7 @@ func decodeMultisigOperatorshipTransferredEvent(log *geth.Log) (evmTypes.EventMu
 
 func unpackMultisigTransferKeyEvent(log *geth.Log) ([]common.Address, []*big.Int, *big.Int, error) {
 	bytesType := funcs.Must(abi.NewType("bytes", "bytes", nil))
-	newOperatorsData, err := evmTypes.StrictDecode(abi.Arguments{{Type: bytesType}}, log.Data)
+	newOperatorsData, err := types.StrictDecode(abi.Arguments{{Type: bytesType}}, log.Data)
 	if err != nil {
 		return nil, nil, nil, err
 	}
