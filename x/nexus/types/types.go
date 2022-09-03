@@ -13,8 +13,9 @@ import (
 const maxBitmapSize = 1 << 15 // 32,768
 
 // NewMaintainerState is the constructor for MaintainerState
-func NewMaintainerState(address sdk.ValAddress) MaintainerState {
-	return MaintainerState{
+func NewMaintainerState(chain exported.ChainName, address sdk.ValAddress) *MaintainerState {
+	return &MaintainerState{
+		Chain:          chain,
 		Address:        address,
 		MissingVotes:   utils.NewBitmap(maxBitmapSize),
 		IncorrectVotes: utils.NewBitmap(maxBitmapSize),
@@ -49,17 +50,6 @@ func (m LinkedAddresses) Validate() error {
 	}
 
 	return nil
-}
-
-// IndexOfMaintainer returns the index of the maintainer in the given chain state
-func (m ChainState) IndexOfMaintainer(address sdk.ValAddress) int {
-	for i, ms := range m.MaintainerStates {
-		if ms.Address.Equals(address) {
-			return i
-		}
-	}
-
-	return -1
 }
 
 func (m ChainState) indexOfAsset(asset string) int {
@@ -125,56 +115,32 @@ func (m *ChainState) AddAsset(asset exported.Asset) error {
 	return nil
 }
 
-// HasMaintainer returns true if the given maintainer is registered for the chain; false otherwise
-func (m ChainState) HasMaintainer(address sdk.ValAddress) bool {
-	return m.IndexOfMaintainer(address) != -1
-}
-
-// AddMaintainer registers the given maintainer for the chain
-func (m *ChainState) AddMaintainer(address sdk.ValAddress) error {
-	if m.HasMaintainer(address) {
-		return fmt.Errorf("maintainer %s is already registered for chain %s", address.String(), m.Chain.Name)
-	}
-
-	m.MaintainerStates = append(m.MaintainerStates, NewMaintainerState(address))
-
-	return nil
-}
-
-// RemoveMaintainer deregisters the given maintainer for the chain
-func (m *ChainState) RemoveMaintainer(address sdk.ValAddress) error {
-	i := m.IndexOfMaintainer(address)
-	if i == -1 {
-		return fmt.Errorf("maintainer %s is not registered for chain %s", address.String(), m.Chain.Name)
-	}
-
-	m.MaintainerStates[i] = m.MaintainerStates[len(m.MaintainerStates)-1]
-	m.MaintainerStates = m.MaintainerStates[:len(m.MaintainerStates)-1]
-
-	return nil
-}
-
-// MarkMissingVote marks the given chain maintainer for missing vote of a poll
-func (m *ChainState) MarkMissingVote(address sdk.ValAddress, missingVote bool) {
-	i := m.IndexOfMaintainer(address)
-	if i == -1 {
-		return
-	}
-
-	m.MaintainerStates[i].MissingVotes.Add(missingVote)
-}
-
-// MarkIncorrectVote marks the given chain maintainer for voting incorrectly of a poll
-func (m *ChainState) MarkIncorrectVote(address sdk.ValAddress, incorrectVote bool) {
-	i := m.IndexOfMaintainer(address)
-	if i == -1 {
-		return
-	}
-
-	m.MaintainerStates[i].IncorrectVotes.Add(incorrectVote)
-}
-
 // ChainName returns the chain name for the given state
 func (m ChainState) ChainName() exported.ChainName {
 	return m.Chain.Name
 }
+
+var _ exported.MaintainerState = &MaintainerState{}
+
+// MarkMissingVote marks the given maintainer for missing vote of a poll
+func (m *MaintainerState) MarkMissingVote(missingVote bool) {
+	m.MissingVotes.Add(missingVote)
+}
+
+// MarkIncorrectVote marks the given maintainer for voting incorrectly of a poll
+func (m *MaintainerState) MarkIncorrectVote(incorrectVote bool) {
+	m.IncorrectVotes.Add(incorrectVote)
+}
+
+// CountMissingVotes returns the number of missing votes within the given window
+func (m MaintainerState) CountMissingVotes(window int) uint64 {
+	return m.MissingVotes.CountTrue(window)
+}
+
+// CountIncorrectVotes returns the number of incorrect votes within the given window
+func (m MaintainerState) CountIncorrectVotes(window int) uint64 {
+	return m.IncorrectVotes.CountTrue(window)
+}
+
+// GetAddress returns the address of the maintainer
+func (m MaintainerState) GetAddress() sdk.ValAddress { return m.Address }

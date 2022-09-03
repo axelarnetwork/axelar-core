@@ -9,19 +9,21 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/utils/key"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 )
 
 var (
 	nonceKey = utils.KeyFromStr("nonce")
 
-	chainPrefix              = utils.KeyFromStr("chain")
-	chainStatePrefix         = utils.KeyFromStr("state")
-	chainByNativeAssetPrefix = utils.KeyFromStr("native_asset_chain")
-	linkedAddressesPrefix    = utils.KeyFromStr("linked_addresses")
-	transferPrefix           = utils.KeyFromStr("transfer")
-	transferFee              = utils.KeyFromStr("fee")
-	assetFeePrefix           = utils.KeyFromStr("asset_fee")
+	chainPrefix                = utils.KeyFromStr("chain")
+	chainStatePrefix           = utils.KeyFromStr("state")
+	chainByNativeAssetPrefix   = utils.KeyFromStr("native_asset_chain")
+	linkedAddressesPrefix      = utils.KeyFromStr("linked_addresses")
+	transferPrefix             = utils.KeyFromStr("transfer")
+	transferFee                = utils.KeyFromStr("fee")
+	assetFeePrefix             = utils.KeyFromStr("asset_fee")
+	chainMaintainerStatePrefix = key.FromUInt[uint64](1)
 	// temporary
 	latestDepositAddressPrefix = utils.KeyFromStr("latest_deposit_address")
 )

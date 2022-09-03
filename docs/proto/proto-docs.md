@@ -4,6 +4,13 @@
 
 ## Table of Contents
 
+- [axelar/axelarnet/v1beta1/events.proto](#axelar/axelarnet/v1beta1/events.proto)
+    - [AxelarTransferCompleted](#axelar.axelarnet.v1beta1.AxelarTransferCompleted)
+    - [FeeCollected](#axelar.axelarnet.v1beta1.FeeCollected)
+    - [IBCTransferCompleted](#axelar.axelarnet.v1beta1.IBCTransferCompleted)
+    - [IBCTransferFailed](#axelar.axelarnet.v1beta1.IBCTransferFailed)
+    - [IBCTransferSent](#axelar.axelarnet.v1beta1.IBCTransferSent)
+  
 - [axelar/axelarnet/v1beta1/params.proto](#axelar/axelarnet/v1beta1/params.proto)
     - [Params](#axelar.axelarnet.v1beta1.Params)
   
@@ -523,6 +530,111 @@
     - [MsgService](#axelar.vote.v1beta1.MsgService)
   
 - [Scalar Value Types](#scalar-value-types)
+
+
+
+<a name="axelar/axelarnet/v1beta1/events.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/axelarnet/v1beta1/events.proto
+
+
+
+<a name="axelar.axelarnet.v1beta1.AxelarTransferCompleted"></a>
+
+### AxelarTransferCompleted
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [uint64](#uint64) |  |  |
+| `receipient` | [string](#string) |  |  |
+| `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+
+
+
+
+
+
+<a name="axelar.axelarnet.v1beta1.FeeCollected"></a>
+
+### FeeCollected
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `collector` | [bytes](#bytes) |  |  |
+| `fee` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+
+
+
+
+
+
+<a name="axelar.axelarnet.v1beta1.IBCTransferCompleted"></a>
+
+### IBCTransferCompleted
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [uint64](#uint64) |  |  |
+| `sequence` | [uint64](#uint64) |  |  |
+| `port_id` | [string](#string) |  |  |
+| `channel_id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.axelarnet.v1beta1.IBCTransferFailed"></a>
+
+### IBCTransferFailed
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [uint64](#uint64) |  |  |
+| `sequence` | [uint64](#uint64) |  |  |
+| `port_id` | [string](#string) |  |  |
+| `channel_id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.axelarnet.v1beta1.IBCTransferSent"></a>
+
+### IBCTransferSent
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [uint64](#uint64) |  |  |
+| `receipient` | [string](#string) |  |  |
+| `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+| `sequence` | [uint64](#uint64) |  |  |
+| `port_id` | [string](#string) |  |  |
+| `channel_id` | [string](#string) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
 
 
 
@@ -1220,10 +1332,9 @@ ChainState represents the state of a registered blockchain
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `chain` | [axelar.nexus.exported.v1beta1.Chain](#axelar.nexus.exported.v1beta1.Chain) |  |  |
-| `maintainers` | [bytes](#bytes) | repeated | **Deprecated.**  |
 | `activated` | [bool](#bool) |  |  |
 | `assets` | [axelar.nexus.exported.v1beta1.Asset](#axelar.nexus.exported.v1beta1.Asset) | repeated |  |
-| `maintainer_states` | [MaintainerState](#axelar.nexus.v1beta1.MaintainerState) | repeated |  |
+| `maintainer_states` | [MaintainerState](#axelar.nexus.v1beta1.MaintainerState) | repeated | **Deprecated.**  |
 
 
 
@@ -1257,6 +1368,7 @@ ChainState represents the state of a registered blockchain
 | `address` | [bytes](#bytes) |  |  |
 | `missing_votes` | [axelar.utils.v1beta1.Bitmap](#axelar.utils.v1beta1.Bitmap) |  |  |
 | `incorrect_votes` | [axelar.utils.v1beta1.Bitmap](#axelar.utils.v1beta1.Bitmap) |  |  |
+| `chain` | [string](#string) |  |  |
 
 
 

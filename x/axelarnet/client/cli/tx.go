@@ -268,7 +268,7 @@ func GetCmdRegisterFeeCollector() *cobra.Command {
 
 func getRetryIBCTransfer() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "retry-failed-transfer [chain] [transfer ID]",
+		Use:   "retry-ibc-transfer [chain] [transfer ID]",
 		Short: "Retry a failed IBC transfer",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {

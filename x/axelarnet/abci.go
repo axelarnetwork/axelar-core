@@ -33,6 +33,16 @@ func EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock, bk types.BaseKeeper, ib
 				return nil, err
 			}
 
+			funcs.MustNoErr(cachedCtx.EventManager().EmitTypedEvent(
+				&types.IBCTransferSent{
+					ID:         transfer.ID,
+					Receipient: transfer.Receiver,
+					Asset:      transfer.Token,
+					Sequence:   transfer.Sequence,
+					PortID:     transfer.PortID,
+					ChannelID:  transfer.ChannelID,
+				}))
+
 			bk.Logger(cachedCtx).Debug(fmt.Sprintf("successfully sent IBC transfer %s with id %s from %s to %s", transfer.Token, transfer.ID.String(), transfer.Sender, transfer.Receiver))
 			succeeded = true
 			return nil, nil
@@ -46,6 +56,14 @@ func EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock, bk types.BaseKeeper, ib
 	// set transfer as failed
 	for _, f := range failed {
 		funcs.MustNoErr(bk.SetTransferFailed(ctx, f.ID))
+
+		funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(
+			&types.IBCTransferFailed{
+				ID:        f.ID,
+				Sequence:  f.Sequence,
+				PortID:    f.PortID,
+				ChannelID: f.ChannelID,
+			}))
 	}
 
 	return nil, nil
