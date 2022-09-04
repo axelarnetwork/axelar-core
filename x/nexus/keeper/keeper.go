@@ -16,13 +16,13 @@ import (
 var (
 	nonceKey = utils.KeyFromStr("nonce")
 
-	chainPrefix                = utils.KeyFromStr("chain")
-	chainStatePrefix           = utils.KeyFromStr("state")
-	chainByNativeAssetPrefix   = utils.KeyFromStr("native_asset_chain")
+	chainPrefix                = key.FromStr("chain")
+	chainStatePrefix           = key.FromStr("state")
+	chainByNativeAssetPrefix   = key.FromStr("native_asset_chain")
 	linkedAddressesPrefix      = key.FromStr("linked_addresses")
 	transferPrefix             = utils.KeyFromStr("transfer")
-	transferFee                = utils.KeyFromStr("fee")
-	assetFeePrefix             = utils.KeyFromStr("asset_fee")
+	transferFee                = key.FromStr("fee")
+	assetFeePrefix             = key.FromStr("asset_fee")
 	chainMaintainerStatePrefix = key.FromUInt[uint64](1)
 	// temporary
 	latestDepositAddressPrefix = key.FromStr("latest_deposit_address")

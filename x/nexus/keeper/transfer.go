@@ -52,11 +52,11 @@ func (k Keeper) setNewTransfer(ctx sdk.Context, recipient exported.CrossChainAdd
 }
 
 func (k Keeper) setTransferFee(ctx sdk.Context, fee exported.TransferFee) {
-	k.getStore(ctx).Set(transferFee, &fee)
+	k.getStore(ctx).SetNew(transferFee, &fee)
 }
 
 func (k Keeper) getTransferFee(ctx sdk.Context) (fee exported.TransferFee) {
-	k.getStore(ctx).Get(transferFee, &fee)
+	k.getStore(ctx).GetNew(transferFee, &fee)
 	return fee
 }
 

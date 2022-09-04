@@ -4,6 +4,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/utils/key"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/types"
 )
@@ -34,10 +35,10 @@ func emptyPollQueue(ctx sdk.Context, k Keeper) {
 	}
 }
 
-func deleteAllWithPrefix(ctx sdk.Context, k Keeper, prefix utils.Key) {
+func deleteAllWithPrefix(ctx sdk.Context, k Keeper, prefix key.Key) {
 	var keys [][]byte
 
-	iter := k.getKVStore(ctx).Iterator(prefix)
+	iter := k.getKVStore(ctx).IteratorNew(prefix)
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
 	for ; iter.Valid(); iter.Next() {

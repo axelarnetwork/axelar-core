@@ -147,6 +147,7 @@ type Iterator interface {
 	sdk.Iterator
 	UnmarshalValue(marshaler codec.ProtoMarshaler)
 	GetKey() Key
+	GetNewKey() key.Key
 }
 
 type iterator struct {
@@ -163,6 +164,11 @@ func (i iterator) UnmarshalValue(value codec.ProtoMarshaler) {
 // GetKey returns the key of the current iterator value
 func (i iterator) GetKey() Key {
 	return KeyFromBz(i.Key())
+}
+
+// GetNewKey returns the key of the current iterator value
+func (i iterator) GetNewKey() key.Key {
+	return key.FromBz(i.Key())
 }
 
 type basicKey struct {

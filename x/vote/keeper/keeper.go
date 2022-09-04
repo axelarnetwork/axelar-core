@@ -15,15 +15,16 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/utils/key"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/types"
 	"github.com/axelarnetwork/utils/proto"
 )
 
 var (
-	pollPrefix  = utils.KeyFromStr("poll")
-	votesPrefix = utils.KeyFromStr("votes")
-	countKey    = utils.KeyFromStr("count")
+	pollPrefix  = key.FromStr("poll")
+	votesPrefix = key.FromStr("votes")
+	countKey    = key.FromStr("count")
 
 	pollQueueName = "pending_poll_queue"
 
@@ -85,7 +86,7 @@ func (k Keeper) InitializePoll(ctx sdk.Context, pollBuilder exported.PollBuilder
 
 	ctx.GasMeter().ConsumeGas(voteCostPerMaintainer*uint64(len(pollMetadata.Snapshot.GetParticipantAddresses())), "initialize poll")
 
-	k.GetPollQueue(ctx).Enqueue(pollPrefix.AppendStr(pollMetadata.ID.String()), &pollMetadata)
+	k.GetPollQueue(ctx).EnqueueNew(pollPrefix.Append(key.From(pollMetadata.ID)), &pollMetadata)
 
 	poll := newPoll(ctx, k, pollMetadata)
 	poll.Logger().Info("created poll")
@@ -144,32 +145,32 @@ func (k Keeper) GetPollQueue(ctx sdk.Context) utils.KVQueue {
 // DeletePoll deletes the poll with the given ID
 func (k Keeper) DeletePoll(ctx sdk.Context, pollID exported.PollID) {
 	// delete poll metadata
-	k.getKVStore(ctx).Delete(pollPrefix.AppendStr(pollID.String()))
+	k.getKVStore(ctx).DeleteNew(pollPrefix.Append(key.From(pollID)))
 
 	// delete tallied votes index for poll
-	iter := k.getKVStore(ctx).Iterator(votesPrefix.AppendStr(pollID.String()))
+	iter := k.getKVStore(ctx).IteratorNew(votesPrefix.Append(key.From(pollID)))
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
 	for ; iter.Valid(); iter.Next() {
-		k.getKVStore(ctx).Delete(iter.GetKey())
+		k.getKVStore(ctx).DeleteNew(iter.GetNewKey())
 	}
 }
 
 func (k Keeper) nextPollID(ctx sdk.Context) exported.PollID {
 	var val gogoprototypes.UInt64Value
-	k.getKVStore(ctx).Get(countKey, &val)
-	defer k.getKVStore(ctx).Set(countKey, &gogoprototypes.UInt64Value{Value: val.Value + 1})
+	k.getKVStore(ctx).GetNew(countKey, &val)
+	defer k.getKVStore(ctx).SetNew(countKey, &gogoprototypes.UInt64Value{Value: val.Value + 1})
 
 	return exported.PollID(val.Value)
 }
 
 func (k Keeper) setPollMetadata(ctx sdk.Context, metadata exported.PollMetadata) {
-	k.getKVStore(ctx).Set(pollPrefix.AppendStr(metadata.ID.String()), &metadata)
+	k.getKVStore(ctx).SetNew(pollPrefix.Append(key.From(metadata.ID)), &metadata)
 }
 
 func (k Keeper) getPollMetadata(ctx sdk.Context, id exported.PollID) (exported.PollMetadata, bool) {
 	var poll exported.PollMetadata
-	if ok := k.getKVStore(ctx).Get(pollPrefix.AppendStr(id.String()), &poll); !ok {
+	if ok := k.getKVStore(ctx).GetNew(pollPrefix.Append(key.From(id)), &poll); !ok {
 		return exported.PollMetadata{}, false
 	}
 
@@ -177,18 +178,7 @@ func (k Keeper) getPollMetadata(ctx sdk.Context, id exported.PollID) (exported.P
 }
 
 func (k Keeper) getPollMetadatas(ctx sdk.Context) []exported.PollMetadata {
-	var pollMetadatas []exported.PollMetadata
-
-	iter := k.getKVStore(ctx).Iterator(pollPrefix)
-	defer utils.CloseLogError(iter, k.Logger(ctx))
-
-	for ; iter.Valid(); iter.Next() {
-		var pollMetadata exported.PollMetadata
-		iter.UnmarshalValue(&pollMetadata)
-		pollMetadatas = append(pollMetadatas, pollMetadata)
-	}
-
-	return pollMetadatas
+	return utils.GetValues[exported.PollMetadata](k.getKVStore(ctx), pollPrefix)
 }
 
 func (k Keeper) getKVStore(ctx sdk.Context) utils.KVStore {
@@ -196,35 +186,23 @@ func (k Keeper) getKVStore(ctx sdk.Context) utils.KVStore {
 }
 
 func (k Keeper) getTalliedVotes(ctx sdk.Context, id exported.PollID) []types.TalliedVote {
-	var results []types.TalliedVote
-
-	iter := k.getKVStore(ctx).Iterator(votesPrefix.AppendStr(id.String()))
-	defer utils.CloseLogError(iter, k.Logger(ctx))
-
-	for ; iter.Valid(); iter.Next() {
-		var vote types.TalliedVote
-		iter.UnmarshalValue(&vote)
-
-		results = append(results, vote)
-	}
-
-	return results
+	return utils.GetValues[types.TalliedVote](k.getKVStore(ctx), votesPrefix.Append(key.From(id)))
 }
 
 func (k Keeper) setTalliedVote(ctx sdk.Context, talliedVote types.TalliedVote) {
-	k.getKVStore(ctx).Set(
+	k.getKVStore(ctx).SetNew(
 		votesPrefix.
-			AppendStr(talliedVote.PollID.String()).
-			Append(utils.KeyFromBz(proto.Hash(talliedVote.Data.GetCachedValue().(codec.ProtoMarshaler)))),
+			Append(key.From(talliedVote.PollID)).
+			Append(key.FromBz(proto.Hash(talliedVote.Data.GetCachedValue().(codec.ProtoMarshaler)))),
 		&talliedVote,
 	)
 }
 
 func (k Keeper) getTalliedVote(ctx sdk.Context, pollID exported.PollID, dataHash []byte) (talliedVote types.TalliedVote, ok bool) {
-	return talliedVote, k.getKVStore(ctx).Get(
+	return talliedVote, k.getKVStore(ctx).GetNew(
 		votesPrefix.
-			AppendStr(pollID.String()).
-			Append(utils.KeyFromBz(dataHash)),
+			Append(key.From(pollID)).
+			Append(key.FromBz(dataHash)),
 		&talliedVote,
 	)
 }

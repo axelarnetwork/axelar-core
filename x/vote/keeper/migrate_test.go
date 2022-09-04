@@ -10,6 +10,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/utils/key"
 	utilstestutils "github.com/axelarnetwork/axelar-core/utils/testutils"
 	snapshottestutils "github.com/axelarnetwork/axelar-core/x/snapshot/exported/testutils"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -53,7 +54,7 @@ func TestGetMigrationHandler(t *testing.T) {
 					pollMeta.Result = d
 					pollMeta.CompletedAt = 0
 				case exported.Pending:
-					k.GetPollQueue(ctx).Enqueue(pollPrefix.AppendStr(pollMeta.ID.String()), &pollMeta)
+					k.GetPollQueue(ctx).EnqueueNew(pollPrefix.Append(key.From(pollMeta.ID)), &pollMeta)
 				}
 
 				k.setPollMetadata(ctx, pollMeta)
@@ -71,7 +72,7 @@ func TestGetMigrationHandler(t *testing.T) {
 			err := handler(ctx)
 			assert.NoError(t, err)
 
-			iter := k.getKVStore(ctx).Iterator(pollPrefix)
+			iter := k.getKVStore(ctx).IteratorNew(pollPrefix)
 			defer utils.CloseLogError(iter, k.Logger(ctx))
 			assert.False(t, iter.Valid())
 		}).

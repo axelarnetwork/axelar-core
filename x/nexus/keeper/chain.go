@@ -12,22 +12,12 @@ import (
 	"github.com/axelarnetwork/utils/slices"
 )
 
-func (k Keeper) getChainStates(ctx sdk.Context) (chainStates []types.ChainState) {
-	iter := k.getStore(ctx).Iterator(chainStatePrefix)
-	defer utils.CloseLogError(iter, k.Logger(ctx))
-
-	for ; iter.Valid(); iter.Next() {
-		var chainState types.ChainState
-		iter.UnmarshalValue(&chainState)
-
-		chainStates = append(chainStates, chainState)
-	}
-
-	return chainStates
+func (k Keeper) getChainStates(ctx sdk.Context) []types.ChainState {
+	return utils.GetValues[types.ChainState](k.getStore(ctx), chainPrefix)
 }
 
 func (k Keeper) getChainState(ctx sdk.Context, chain exported.Chain) (chainState types.ChainState, ok bool) {
-	return chainState, k.getStore(ctx).Get(chainStatePrefix.Append(utils.LowerCaseKey(chain.Name.String())), &chainState)
+	return chainState, k.getStore(ctx).GetNew(chainStatePrefix.Append(key.From(chain.Name)), &chainState)
 }
 
 // RegisterAsset indicates that the specified asset is supported by the given chain
@@ -61,27 +51,17 @@ func (k Keeper) IsAssetRegistered(ctx sdk.Context, chain exported.Chain, denom s
 	return chainState.HasAsset(denom)
 }
 
-func (k Keeper) getFeeInfos(ctx sdk.Context) (feeInfos []exported.FeeInfo) {
-	iter := k.getStore(ctx).Iterator(assetFeePrefix)
-	defer utils.CloseLogError(iter, k.Logger(ctx))
-
-	for ; iter.Valid(); iter.Next() {
-		var feeInfo exported.FeeInfo
-		iter.UnmarshalValue(&feeInfo)
-
-		feeInfos = append(feeInfos, feeInfo)
-	}
-
-	return feeInfos
+func (k Keeper) getFeeInfos(ctx sdk.Context) []exported.FeeInfo {
+	return utils.GetValues[exported.FeeInfo](k.getStore(ctx), assetFeePrefix)
 }
 
 func (k Keeper) setFeeInfo(ctx sdk.Context, chain exported.Chain, asset string, feeInfo exported.FeeInfo) {
-	k.getStore(ctx).Set(assetFeePrefix.Append(utils.LowerCaseKey(chain.Name.String())).Append(utils.KeyFromStr(asset)), &feeInfo)
+	k.getStore(ctx).SetNew(assetFeePrefix.Append(key.From(chain.Name)).Append(key.FromStr(asset)), &feeInfo)
 }
 
 // GetFeeInfo retrieves the fee info for an asset on a chain, and returns zero fees if it doesn't exist
 func (k Keeper) GetFeeInfo(ctx sdk.Context, chain exported.Chain, asset string) (feeInfo exported.FeeInfo, found bool) {
-	found = k.getStore(ctx).Get(assetFeePrefix.Append(utils.LowerCaseKey(chain.Name.String())).Append(utils.KeyFromStr(asset)), &feeInfo)
+	found = k.getStore(ctx).GetNew(assetFeePrefix.Append(key.From(chain.Name)).Append(key.FromStr(asset)), &feeInfo)
 	if !found {
 		feeInfo = exported.ZeroFeeInfo(chain.Name, asset)
 	}
@@ -192,57 +172,35 @@ func (k Keeper) RemoveChainMaintainer(ctx sdk.Context, chain exported.Chain, add
 }
 
 // GetChains retrieves the specification for all supported blockchains
-func (k Keeper) GetChains(ctx sdk.Context) (chains []exported.Chain) {
-	iter := k.getStore(ctx).Iterator(chainPrefix)
-	defer utils.CloseLogError(iter, k.Logger(ctx))
-
-	for ; iter.Valid(); iter.Next() {
-		var chain exported.Chain
-		iter.UnmarshalValue(&chain)
-
-		chains = append(chains, chain)
-	}
-
-	return chains
+func (k Keeper) GetChains(ctx sdk.Context) []exported.Chain {
+	return utils.GetValues[exported.Chain](k.getStore(ctx), chainPrefix)
 }
 
 // GetChain retrieves the specification for a supported blockchain
 func (k Keeper) GetChain(ctx sdk.Context, chainName exported.ChainName) (chain exported.Chain, ok bool) {
-	return chain, k.getStore(ctx).Get(chainPrefix.Append(utils.LowerCaseKey(chainName.String())), &chain)
+	return chain, k.getStore(ctx).GetNew(chainPrefix.Append(key.From(chainName)), &chain)
 }
 
 // SetChain sets the specification for a supported chain
 func (k Keeper) SetChain(ctx sdk.Context, chain exported.Chain) {
-	k.getStore(ctx).Set(chainPrefix.Append(utils.LowerCaseKey(chain.Name.String())), &chain)
+	k.getStore(ctx).SetNew(chainPrefix.Append(key.From(chain.Name)), &chain)
 }
 
 func (k Keeper) setChainByNativeAsset(ctx sdk.Context, asset string, chain exported.Chain) {
-	k.getStore(ctx).Set(chainByNativeAssetPrefix.Append(utils.LowerCaseKey(asset)), &chain)
+	k.getStore(ctx).SetNew(chainByNativeAssetPrefix.Append(key.FromStr(asset)), &chain)
 }
 
 // GetChainByNativeAsset gets a chain by the native asset
 func (k Keeper) GetChainByNativeAsset(ctx sdk.Context, asset string) (chain exported.Chain, ok bool) {
-	return chain, k.getStore(ctx).Get(chainByNativeAssetPrefix.Append(utils.LowerCaseKey(asset)), &chain)
+	return chain, k.getStore(ctx).GetNew(chainByNativeAssetPrefix.Append(key.FromStr(asset)), &chain)
 }
 
 func (k Keeper) setChainState(ctx sdk.Context, chainState types.ChainState) {
-	k.getStore(ctx).Set(chainStatePrefix.Append(utils.LowerCaseKey(chainState.ChainName().String())), &chainState)
+	k.getStore(ctx).SetNew(chainStatePrefix.Append(key.From(chainState.ChainName())), &chainState)
 }
 
 func (k Keeper) getChainMaintainerStates(ctx sdk.Context, chain exported.ChainName) []types.MaintainerState {
-	var results []types.MaintainerState
-
-	iter := k.getStore(ctx).IteratorNew(chainMaintainerStatePrefix.Append(key.FromStr(chain.String())))
-	defer utils.CloseLogError(iter, k.Logger(ctx))
-
-	for ; iter.Valid(); iter.Next() {
-		var maintainerState types.MaintainerState
-		iter.UnmarshalValue(&maintainerState)
-
-		results = append(results, maintainerState)
-	}
-
-	return results
+	return utils.GetValues[types.MaintainerState](k.getStore(ctx), chainMaintainerStatePrefix.Append(key.FromStr(chain.String())))
 }
 
 func (k Keeper) getChainMaintainerState(ctx sdk.Context, chain exported.ChainName, address sdk.ValAddress) (ms types.MaintainerState, ok bool) {
