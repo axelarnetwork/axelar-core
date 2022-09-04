@@ -60,7 +60,7 @@ func TestGetMigrationHandler(t *testing.T) {
 				k.setPollMetadata(ctx, pollMeta)
 
 				for _, voter := range pollMeta.Snapshot.Participants {
-					k.getKVStore(ctx).SetRaw(voterPrefix.AppendStr(pollMeta.ID.String()).AppendStr(voter.Address.String()), []byte{0x01})
+					k.getKVStore(ctx).SetRaw(utils.KeyFromBz(voterPrefix.Append(key.From(pollMeta.ID)).Append(key.From(voter.Address)).Bytes()), []byte{0x01})
 				}
 			}
 		})

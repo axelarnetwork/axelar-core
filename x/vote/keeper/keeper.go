@@ -29,7 +29,7 @@ var (
 	pollQueueName = "pending_poll_queue"
 
 	// Deprecated
-	voterPrefix = utils.KeyFromStr("voter")
+	voterPrefix = key.FromStr("voter")
 )
 
 const (

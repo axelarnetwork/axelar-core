@@ -10,13 +10,14 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/utils/key"
 	"github.com/axelarnetwork/axelar-core/x/permission/exported"
 	"github.com/axelarnetwork/axelar-core/x/permission/types"
 )
 
 var (
-	governanceKey = utils.KeyFromStr("governance")
-	accountPrefix = utils.KeyFromStr("account")
+	governanceKey = key.FromStr("governance")
+	accountPrefix = key.FromStr("account")
 )
 
 // Keeper provides access to all state changes regarding the gov module
@@ -54,13 +55,13 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 
 // setGovernanceKey sets the multisig governance key
 func (k Keeper) setGovernanceKey(ctx sdk.Context, key multisig.LegacyAminoPubKey) {
-	k.getStore(ctx).Set(governanceKey, &key)
+	k.getStore(ctx).SetNew(governanceKey, &key)
 }
 
 // GetGovernanceKey gets the multisig governance key
 func (k Keeper) GetGovernanceKey(ctx sdk.Context) (multisig.LegacyAminoPubKey, bool) {
 	var key multisig.LegacyAminoPubKey
-	ok := k.getStore(ctx).Get(governanceKey, &key)
+	ok := k.getStore(ctx).GetNew(governanceKey, &key)
 
 	return key, ok
 }
@@ -76,32 +77,19 @@ func (k Keeper) GetRole(ctx sdk.Context, address sdk.AccAddress) exported.Role {
 }
 
 func (k Keeper) setGovAccount(ctx sdk.Context, govAccount types.GovAccount) {
-	k.getStore(ctx).Set(accountPrefix.Append(utils.KeyFromBz(govAccount.Address)), &govAccount)
+	k.getStore(ctx).SetNew(accountPrefix.Append(key.FromBz(govAccount.Address)), &govAccount)
 }
 
 func (k Keeper) deleteGovAccount(ctx sdk.Context, address sdk.AccAddress) {
-	k.getStore(ctx).Delete(accountPrefix.Append(utils.KeyFromBz(address)))
+	k.getStore(ctx).DeleteNew(accountPrefix.Append(key.FromBz(address)))
 }
 
 func (k Keeper) getGovAccount(ctx sdk.Context, address sdk.AccAddress) (govAccount types.GovAccount, ok bool) {
-	return govAccount, k.getStore(ctx).Get(accountPrefix.Append(utils.KeyFromBz(address)), &govAccount)
+	return govAccount, k.getStore(ctx).GetNew(accountPrefix.Append(key.FromBz(address)), &govAccount)
 }
 
 func (k Keeper) getGovAccounts(ctx sdk.Context) []types.GovAccount {
-	var accounts []types.GovAccount
-
-	store := k.getStore(ctx)
-	iter := store.Iterator(accountPrefix)
-	defer utils.CloseLogError(iter, k.Logger(ctx))
-
-	for ; iter.Valid(); iter.Next() {
-		var account types.GovAccount
-		iter.UnmarshalValue(&account)
-
-		accounts = append(accounts, account)
-	}
-
-	return accounts
+	return utils.GetValues[types.GovAccount](k.getStore(ctx), accountPrefix)
 }
 
 func (k Keeper) getStore(ctx sdk.Context) utils.KVStore {

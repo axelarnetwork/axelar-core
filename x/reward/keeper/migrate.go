@@ -8,6 +8,7 @@ import (
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/utils/key"
 	multisigTypes "github.com/axelarnetwork/axelar-core/x/multisig/types"
 	"github.com/axelarnetwork/axelar-core/x/reward/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -47,14 +48,14 @@ func migrateTssPool(ctx sdk.Context, keeper Keeper) error {
 
 func (k Keeper) getPool(ctx sdk.Context, name string) (types.Pool, bool) {
 	var pool types.Pool
-	key := poolNamePrefix.Append(utils.LowerCaseKey(name))
-	ok := k.getStore(ctx).Get(key, &pool)
+	key := poolNamePrefix.Append(key.FromStr(name))
+	ok := k.getStore(ctx).GetNew(key, &pool)
 	return pool, ok
 }
 
 func (k Keeper) deletePool(ctx sdk.Context, name string) {
-	key := poolNamePrefix.Append(utils.LowerCaseKey(name))
-	k.getStore(ctx).Delete(key)
+	key := poolNamePrefix.Append(key.FromStr(name))
+	k.getStore(ctx).DeleteNew(key)
 }
 
 var keyTssRelativeInflationRate = []byte("TssRelativeInflationRate")
