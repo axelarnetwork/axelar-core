@@ -50,7 +50,7 @@ function _executeWithToken(
     uint256 amount
 ) internal virtual {
     // decode recipient
-    address memory recipient = abi.decode(payload, (address));
+    address recipient = abi.decode(payload, (address));
     // get ERC-20 address from gateway
     address tokenAddress = gateway.tokenAddresses(tokenSymbol);
 
