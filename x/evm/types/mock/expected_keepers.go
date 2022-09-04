@@ -302,7 +302,7 @@ var _ evmtypes.Nexus = &NexusMock{}
 // 			GetRecipientFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress) (github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, bool) {
 // 				panic("mock out the GetRecipient method")
 // 			},
-// 			GetTransfersForChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, state github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferState) []github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainTransfer {
+// 			GetTransfersForChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, state github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferState, transferLimit uint64) []github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainTransfer {
 // 				panic("mock out the GetTransfersForChain method")
 // 			},
 // 			IsAssetRegisteredFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, denom string) bool {
@@ -364,7 +364,7 @@ type NexusMock struct {
 	GetRecipientFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress) (github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, bool)
 
 	// GetTransfersForChainFunc mocks the GetTransfersForChain method.
-	GetTransfersForChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, state github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferState) []github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainTransfer
+	GetTransfersForChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, state github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferState, transferLimit uint64) []github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainTransfer
 
 	// IsAssetRegisteredFunc mocks the IsAssetRegistered method.
 	IsAssetRegisteredFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, denom string) bool
@@ -481,6 +481,8 @@ type NexusMock struct {
 			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 			// State is the state argument value.
 			State github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferState
+			// TransferLimit is the transferLimit argument value.
+			TransferLimit uint64
 		}
 		// IsAssetRegistered holds details about calls to the IsAssetRegistered method.
 		IsAssetRegistered []struct {
@@ -957,37 +959,41 @@ func (mock *NexusMock) GetRecipientCalls() []struct {
 }
 
 // GetTransfersForChain calls GetTransfersForChainFunc.
-func (mock *NexusMock) GetTransfersForChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, state github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferState) []github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainTransfer {
+func (mock *NexusMock) GetTransfersForChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, state github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferState, transferLimit uint64) []github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainTransfer {
 	if mock.GetTransfersForChainFunc == nil {
 		panic("NexusMock.GetTransfersForChainFunc: method is nil but Nexus.GetTransfersForChain was just called")
 	}
 	callInfo := struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-		State github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferState
+		Ctx           github_com_cosmos_cosmos_sdk_types.Context
+		Chain         github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
+		State         github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferState
+		TransferLimit uint64
 	}{
-		Ctx:   ctx,
-		Chain: chain,
-		State: state,
+		Ctx:           ctx,
+		Chain:         chain,
+		State:         state,
+		TransferLimit: transferLimit,
 	}
 	mock.lockGetTransfersForChain.Lock()
 	mock.calls.GetTransfersForChain = append(mock.calls.GetTransfersForChain, callInfo)
 	mock.lockGetTransfersForChain.Unlock()
-	return mock.GetTransfersForChainFunc(ctx, chain, state)
+	return mock.GetTransfersForChainFunc(ctx, chain, state, transferLimit)
 }
 
 // GetTransfersForChainCalls gets all the calls that were made to GetTransfersForChain.
 // Check the length with:
 //     len(mockedNexus.GetTransfersForChainCalls())
 func (mock *NexusMock) GetTransfersForChainCalls() []struct {
-	Ctx   github_com_cosmos_cosmos_sdk_types.Context
-	Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-	State github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferState
+	Ctx           github_com_cosmos_cosmos_sdk_types.Context
+	Chain         github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
+	State         github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferState
+	TransferLimit uint64
 } {
 	var calls []struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-		State github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferState
+		Ctx           github_com_cosmos_cosmos_sdk_types.Context
+		Chain         github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
+		State         github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferState
+		TransferLimit uint64
 	}
 	mock.lockGetTransfersForChain.RLock()
 	calls = mock.calls.GetTransfersForChain

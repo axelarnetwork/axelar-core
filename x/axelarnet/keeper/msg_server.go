@@ -215,7 +215,8 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, _ *types.ExecutePe
 		return nil, fmt.Errorf("%s is not a registered chain", types.ModuleName)
 	}
 
-	pendingTransfers := s.nexus.GetTransfersForChain(ctx, chain, nexus.Pending)
+	transferLimit := s.Keeper.GetTransferLimit(ctx)
+	pendingTransfers := s.nexus.GetTransfersForChain(ctx, chain, nexus.Pending, transferLimit)
 
 	if len(pendingTransfers) == 0 {
 		s.Logger(ctx).Debug("no pending transfers found")
@@ -360,7 +361,8 @@ func (s msgServer) RouteIBCTransfers(c context.Context, _ *types.RouteIBCTransfe
 		}
 		portID, channelID := pathSplit[0], pathSplit[1]
 
-		pendingTransfers := s.nexus.GetTransfersForChain(ctx, chain, nexus.Pending)
+		transferLimit := s.Keeper.GetTransferLimit(ctx)
+		pendingTransfers := s.nexus.GetTransfersForChain(ctx, chain, nexus.Pending, transferLimit)
 		for _, p := range pendingTransfers {
 			token, sender, err := prepareTransfer(ctx, s.Keeper, s.nexus, s.bank, s.account, p.Asset)
 			if err != nil {

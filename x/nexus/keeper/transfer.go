@@ -185,19 +185,20 @@ func (k Keeper) ArchivePendingTransfer(ctx sdk.Context, transfer exported.CrossC
 }
 
 // GetTransfersForChain returns the current set of transfers with the given state for the given chain
-func (k Keeper) GetTransfersForChain(ctx sdk.Context, chain exported.Chain, state exported.TransferState) (transfers []exported.CrossChainTransfer) {
+func (k Keeper) GetTransfersForChain(ctx sdk.Context, chain exported.Chain, state exported.TransferState, transferLimit uint64) (transfers []exported.CrossChainTransfer) {
 	if !k.IsChainActivated(ctx, chain) {
-		return transfers
+		return []exported.CrossChainTransfer{}
 	}
 
 	iter := k.getStore(ctx).Iterator(getTransferPrefix(chain.Name, state))
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
-	for ; iter.Valid(); iter.Next() {
+	for count := uint64(0); iter.Valid() && count < transferLimit; iter.Next() {
 		var transfer exported.CrossChainTransfer
 		iter.UnmarshalValue(&transfer)
 
 		transfers = append(transfers, transfer)
+		count++
 	}
 
 	return transfers

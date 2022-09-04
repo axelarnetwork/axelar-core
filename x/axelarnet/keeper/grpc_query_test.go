@@ -13,6 +13,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types/mock"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/utils/math"
 	. "github.com/axelarnetwork/utils/test"
 	"github.com/axelarnetwork/utils/test/rand"
 )
@@ -23,6 +24,7 @@ func TestQuerier_PendingIBCTransferCount(t *testing.T) {
 		response                 *types.PendingIBCTransferCountResponse
 		expectedChains           []nexus.ChainName
 		expectedTransfersByChain map[string]uint32
+		transferLimit            uint64
 	)
 
 	Given("existing pending IBC transfers", func() {
@@ -40,10 +42,14 @@ func TestQuerier_PendingIBCTransferCount(t *testing.T) {
 		}
 	}).
 		When("a querier", func() {
-			k := &mock.BaseKeeperMock{GetCosmosChainsFunc: func(sdk.Context) []nexus.ChainName { return expectedChains }}
-			n := &mock.NexusMock{GetTransfersForChainFunc: func(ctx sdk.Context, chain nexus.Chain, state nexus.TransferState) []nexus.CrossChainTransfer {
+			transferLimit = uint64(rand.I64Between(0, 50))
+			k := &mock.BaseKeeperMock{
+				GetCosmosChainsFunc:  func(sdk.Context) []nexus.ChainName { return expectedChains },
+				GetTransferLimitFunc: func(sdk.Context) uint64 { return transferLimit },
+			}
+			n := &mock.NexusMock{GetTransfersForChainFunc: func(ctx sdk.Context, chain nexus.Chain, state nexus.TransferState, transferLimit uint64) []nexus.CrossChainTransfer {
 				var transfers []nexus.CrossChainTransfer
-				for i := 0; i < int(expectedTransfersByChain[chain.Name.String()]); i++ {
+				for i := 0; i < int(expectedTransfersByChain[chain.Name.String()]) && i < int(transferLimit); i++ {
 					transfers = append(transfers, nexus.CrossChainTransfer{})
 				}
 				return transfers
@@ -61,6 +67,11 @@ func TestQuerier_PendingIBCTransferCount(t *testing.T) {
 			assert.NoError(t, err)
 		}).
 		Then("return the correct number for each chain", func(t *testing.T) {
-			assert.Equal(t, expectedTransfersByChain, response.TransfersByChain)
+			assert.Equal(t, len(expectedTransfersByChain), len(response.TransfersByChain))
+			for chain, count := range response.TransfersByChain {
+				expectedTransfersCount, ok := expectedTransfersByChain[chain]
+				assert.True(t, ok, "Chain %s expected to be present", chain)
+				assert.Equal(t, math.Min(expectedTransfersCount, uint32(transferLimit)), count)
+			}
 		}).Run(t, 20)
 }

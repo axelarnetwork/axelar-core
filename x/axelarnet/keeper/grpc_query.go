@@ -27,18 +27,19 @@ func NewGRPCQuerier(k types.BaseKeeper, n types.Nexus) Querier {
 	}
 }
 
-// PendingIBCTransferCount returns the number of pending IBC transfers per Cosmos chain
+// PendingIBCTransferCount returns the number of pending IBC transfers per Cosmos chain, upto the transfer limit
 func (q Querier) PendingIBCTransferCount(c context.Context, _ *types.PendingIBCTransferCountRequest) (*types.PendingIBCTransferCountResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
 	chains := q.keeper.GetCosmosChains(ctx)
 	counts := make(map[string]uint32, len(chains))
+	transferLimit := q.keeper.GetTransferLimit(ctx)
 	for _, c := range chains {
 		chain, ok := q.nexus.GetChain(ctx, c)
 		if !ok {
 			return nil, fmt.Errorf("cosmos chain %s not found in the %s module", c, nexusTypes.ModuleName)
 		}
-		transfers := q.nexus.GetTransfersForChain(ctx, chain, exported.Pending)
+		transfers := q.nexus.GetTransfersForChain(ctx, chain, exported.Pending, transferLimit)
 		counts[c.String()] = uint32(len(transfers)) // assert: there should never be more than 4294967295 transfers in the queue
 	}
 

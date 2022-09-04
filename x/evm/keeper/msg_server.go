@@ -308,7 +308,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 	}
 
 	if burnerAddress != req.BurnerAddress {
-		return nil, fmt.Errorf("provided burner address %s doesn't match expected address %s", req.BurnerAddress, burnerAddress)
+		return nil, fmt.Errorf("provided burner address %s doesn't match expected address %s", req.BurnerAddress.Hex(), burnerAddress.Hex())
 	}
 
 	pollParticipants, err := s.initializePoll(ctx, chain, req.TxID)
@@ -509,8 +509,9 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 	}
 
 	keeper := s.ForChain(chain.Name)
+	transferLimit := uint64(keeper.GetParams(ctx).EndBlockerLimit)
 
-	pendingTransfers := s.nexus.GetTransfersForChain(ctx, chain, nexus.Pending)
+	pendingTransfers := s.nexus.GetTransfersForChain(ctx, chain, nexus.Pending, transferLimit)
 	if len(pendingTransfers) == 0 {
 		s.Logger(ctx).Debug("no pending transfers found")
 		return &types.CreatePendingTransfersResponse{}, nil

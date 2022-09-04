@@ -418,7 +418,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 	})
 
 	hasPendingTransfers := When("has pending transfers", func() {
-		nexusK.GetTransfersForChainFunc = func(sdk.Context, nexus.Chain, nexus.TransferState) []nexus.CrossChainTransfer {
+		nexusK.GetTransfersForChainFunc = func(sdk.Context, nexus.Chain, nexus.TransferState, uint64) []nexus.CrossChainTransfer {
 			return []nexus.CrossChainTransfer{randomTransfer(rand.Denom(2, 10), nexus.ChainName(rand.StrBetween(2, 10)))}
 		}
 	})
@@ -437,7 +437,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 		givenMsgServer.
 			Branch(
 				When("no pending transfer", func() {
-					nexusK.GetTransfersForChainFunc = func(ctx sdk.Context, chain nexus.Chain, state nexus.TransferState) []nexus.CrossChainTransfer {
+					nexusK.GetTransfersForChainFunc = func(ctx sdk.Context, chain nexus.Chain, state nexus.TransferState, limit uint64) []nexus.CrossChainTransfer {
 						return []nexus.CrossChainTransfer{}
 					}
 				}).
@@ -528,6 +528,37 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 						assert.Len(t, bankK.MintCoinsCalls(), 1)
 						assert.Len(t, bankK.SendCoinsCalls(), 1)
 						assert.Len(t, nexusK.ArchivePendingTransferCalls(), 1)
+					}),
+
+				When("asset is registered", func() {
+					nexusK.IsAssetRegisteredFunc = func(sdk.Context, nexus.Chain, string) bool {
+						return true
+					}
+					nexusK.GetChainByNativeAssetFunc = func(sdk.Context, string) (nexus.Chain, bool) {
+						return nexustestutils.Chain(), true
+					}
+				}).
+					When("has many pending transfers", func() {
+						nexusK.GetTransfersForChainFunc = func(ctx sdk.Context, chain nexus.Chain, state nexus.TransferState, limit uint64) []nexus.CrossChainTransfer {
+							return slices.Expand(func(int) nexus.CrossChainTransfer {
+								return randomTransfer(rand.Denom(2, 10), nexus.ChainName(rand.StrBetween(2, 10)))
+							}, int(limit))
+						}
+					}).
+					When("mint coins succeeds", func() {
+						bankK.MintCoinsFunc = func(sdk.Context, string, sdk.Coins) error {
+							return nil
+						}
+					}).
+					When2(sendCoinSucceeds).
+					When2(requestIsMade).
+					Then("mint coin and archive the transfer", func(t *testing.T) {
+						transferLimit := int(k.GetTransferLimit(ctx))
+						_, err := server.ExecutePendingTransfers(sdk.WrapSDKContext(ctx), req)
+						assert.NoError(t, err)
+						assert.Len(t, bankK.MintCoinsCalls(), transferLimit)
+						assert.Len(t, bankK.SendCoinsCalls(), transferLimit)
+						assert.Len(t, nexusK.ArchivePendingTransferCalls(), transferLimit)
 					}),
 			).Run(t)
 	})
@@ -647,7 +678,7 @@ func TestHandleMsgRouteIBCTransfers(t *testing.T) {
 
 	})
 	hasPendingTranfers := When("has pending transfers", func() {
-		nexusK.GetTransfersForChainFunc = func(_ sdk.Context, chain nexus.Chain, _ nexus.TransferState) []nexus.CrossChainTransfer {
+		nexusK.GetTransfersForChainFunc = func(_ sdk.Context, chain nexus.Chain, _ nexus.TransferState, _ uint64) []nexus.CrossChainTransfer {
 			var transfers []nexus.CrossChainTransfer
 			for i := int64(0); i < rand.I64Between(1, 5); i++ {
 				chainName := chain.Name
@@ -689,7 +720,7 @@ func TestHandleMsgRouteIBCTransfers(t *testing.T) {
 					Then2(doNothing),
 
 				When("no pending transfer", func() {
-					nexusK.GetTransfersForChainFunc = func(sdk.Context, nexus.Chain, nexus.TransferState) []nexus.CrossChainTransfer {
+					nexusK.GetTransfersForChainFunc = func(sdk.Context, nexus.Chain, nexus.TransferState, uint64) []nexus.CrossChainTransfer {
 						return []nexus.CrossChainTransfer{}
 					}
 				}).

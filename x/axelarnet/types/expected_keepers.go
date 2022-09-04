@@ -22,6 +22,7 @@ import (
 type BaseKeeper interface {
 	Logger(ctx sdk.Context) log.Logger
 	GetRouteTimeoutWindow(ctx sdk.Context) uint64
+	GetTransferLimit(ctx sdk.Context) uint64
 	GetCosmosChains(ctx sdk.Context) []nexus.ChainName
 	GetCosmosChainByName(ctx sdk.Context, chain nexus.ChainName) (CosmosChain, bool)
 	EnqueueIBCTransfer(ctx sdk.Context, transfer IBCTransfer) error
@@ -33,7 +34,7 @@ type BaseKeeper interface {
 // Nexus provides functionality to manage cross-chain transfers
 type Nexus interface {
 	EnqueueForTransfer(ctx sdk.Context, sender nexus.CrossChainAddress, amount sdk.Coin) (nexus.TransferID, error)
-	GetTransfersForChain(ctx sdk.Context, chain nexus.Chain, state nexus.TransferState) []nexus.CrossChainTransfer
+	GetTransfersForChain(ctx sdk.Context, chain nexus.Chain, state nexus.TransferState, limit uint64) []nexus.CrossChainTransfer
 	ArchivePendingTransfer(ctx sdk.Context, transfer nexus.CrossChainTransfer)
 	GetChain(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool)
 	LinkAddresses(ctx sdk.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress) error

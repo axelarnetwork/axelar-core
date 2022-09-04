@@ -44,6 +44,9 @@ var _ axelarnettypes.BaseKeeper = &BaseKeeperMock{}
 // 			GetRouteTimeoutWindowFunc: func(ctx cosmossdktypes.Context) uint64 {
 // 				panic("mock out the GetRouteTimeoutWindow method")
 // 			},
+// 			GetTransferLimitFunc: func(ctx cosmossdktypes.Context) uint64 {
+// 				panic("mock out the GetTransferLimit method")
+// 			},
 // 			LoggerFunc: func(ctx cosmossdktypes.Context) log.Logger {
 // 				panic("mock out the Logger method")
 // 			},
@@ -74,6 +77,9 @@ type BaseKeeperMock struct {
 
 	// GetRouteTimeoutWindowFunc mocks the GetRouteTimeoutWindow method.
 	GetRouteTimeoutWindowFunc func(ctx cosmossdktypes.Context) uint64
+
+	// GetTransferLimitFunc mocks the GetTransferLimit method.
+	GetTransferLimitFunc func(ctx cosmossdktypes.Context) uint64
 
 	// LoggerFunc mocks the Logger method.
 	LoggerFunc func(ctx cosmossdktypes.Context) log.Logger
@@ -115,6 +121,11 @@ type BaseKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx cosmossdktypes.Context
 		}
+		// GetTransferLimit holds details about calls to the GetTransferLimit method.
+		GetTransferLimit []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+		}
 		// Logger holds details about calls to the Logger method.
 		Logger []struct {
 			// Ctx is the ctx argument value.
@@ -140,6 +151,7 @@ type BaseKeeperMock struct {
 	lockGetCosmosChains       sync.RWMutex
 	lockGetIBCTransferQueue   sync.RWMutex
 	lockGetRouteTimeoutWindow sync.RWMutex
+	lockGetTransferLimit      sync.RWMutex
 	lockLogger                sync.RWMutex
 	lockSetSeqIDMapping       sync.RWMutex
 	lockSetTransferFailed     sync.RWMutex
@@ -308,6 +320,37 @@ func (mock *BaseKeeperMock) GetRouteTimeoutWindowCalls() []struct {
 	return calls
 }
 
+// GetTransferLimit calls GetTransferLimitFunc.
+func (mock *BaseKeeperMock) GetTransferLimit(ctx cosmossdktypes.Context) uint64 {
+	if mock.GetTransferLimitFunc == nil {
+		panic("BaseKeeperMock.GetTransferLimitFunc: method is nil but BaseKeeper.GetTransferLimit was just called")
+	}
+	callInfo := struct {
+		Ctx cosmossdktypes.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetTransferLimit.Lock()
+	mock.calls.GetTransferLimit = append(mock.calls.GetTransferLimit, callInfo)
+	mock.lockGetTransferLimit.Unlock()
+	return mock.GetTransferLimitFunc(ctx)
+}
+
+// GetTransferLimitCalls gets all the calls that were made to GetTransferLimit.
+// Check the length with:
+//     len(mockedBaseKeeper.GetTransferLimitCalls())
+func (mock *BaseKeeperMock) GetTransferLimitCalls() []struct {
+	Ctx cosmossdktypes.Context
+} {
+	var calls []struct {
+		Ctx cosmossdktypes.Context
+	}
+	mock.lockGetTransferLimit.RLock()
+	calls = mock.calls.GetTransferLimit
+	mock.lockGetTransferLimit.RUnlock()
+	return calls
+}
+
 // Logger calls LoggerFunc.
 func (mock *BaseKeeperMock) Logger(ctx cosmossdktypes.Context) log.Logger {
 	if mock.LoggerFunc == nil {
@@ -440,7 +483,7 @@ var _ axelarnettypes.Nexus = &NexusMock{}
 // 			GetTransferFeesFunc: func(ctx cosmossdktypes.Context) cosmossdktypes.Coins {
 // 				panic("mock out the GetTransferFees method")
 // 			},
-// 			GetTransfersForChainFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, state github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferState) []github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainTransfer {
+// 			GetTransfersForChainFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, state github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferState, limit uint64) []github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainTransfer {
 // 				panic("mock out the GetTransfersForChain method")
 // 			},
 // 			IsAssetRegisteredFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, denom string) bool {
@@ -490,7 +533,7 @@ type NexusMock struct {
 	GetTransferFeesFunc func(ctx cosmossdktypes.Context) cosmossdktypes.Coins
 
 	// GetTransfersForChainFunc mocks the GetTransfersForChain method.
-	GetTransfersForChainFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, state github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferState) []github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainTransfer
+	GetTransfersForChainFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, state github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferState, limit uint64) []github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainTransfer
 
 	// IsAssetRegisteredFunc mocks the IsAssetRegistered method.
 	IsAssetRegisteredFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, denom string) bool
@@ -569,6 +612,8 @@ type NexusMock struct {
 			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 			// State is the state argument value.
 			State github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferState
+			// Limit is the limit argument value.
+			Limit uint64
 		}
 		// IsAssetRegistered holds details about calls to the IsAssetRegistered method.
 		IsAssetRegistered []struct {
@@ -881,7 +926,7 @@ func (mock *NexusMock) GetTransferFeesCalls() []struct {
 }
 
 // GetTransfersForChain calls GetTransfersForChainFunc.
-func (mock *NexusMock) GetTransfersForChain(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, state github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferState) []github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainTransfer {
+func (mock *NexusMock) GetTransfersForChain(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, state github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferState, limit uint64) []github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainTransfer {
 	if mock.GetTransfersForChainFunc == nil {
 		panic("NexusMock.GetTransfersForChainFunc: method is nil but Nexus.GetTransfersForChain was just called")
 	}
@@ -889,15 +934,17 @@ func (mock *NexusMock) GetTransfersForChain(ctx cosmossdktypes.Context, chain gi
 		Ctx   cosmossdktypes.Context
 		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 		State github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferState
+		Limit uint64
 	}{
 		Ctx:   ctx,
 		Chain: chain,
 		State: state,
+		Limit: limit,
 	}
 	mock.lockGetTransfersForChain.Lock()
 	mock.calls.GetTransfersForChain = append(mock.calls.GetTransfersForChain, callInfo)
 	mock.lockGetTransfersForChain.Unlock()
-	return mock.GetTransfersForChainFunc(ctx, chain, state)
+	return mock.GetTransfersForChainFunc(ctx, chain, state, limit)
 }
 
 // GetTransfersForChainCalls gets all the calls that were made to GetTransfersForChain.
@@ -907,11 +954,13 @@ func (mock *NexusMock) GetTransfersForChainCalls() []struct {
 	Ctx   cosmossdktypes.Context
 	Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 	State github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferState
+	Limit uint64
 } {
 	var calls []struct {
 		Ctx   cosmossdktypes.Context
 		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 		State github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferState
+		Limit uint64
 	}
 	mock.lockGetTransfersForChain.RLock()
 	calls = mock.calls.GetTransfersForChain

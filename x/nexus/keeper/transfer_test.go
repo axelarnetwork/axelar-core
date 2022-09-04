@@ -14,7 +14,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/app/params"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
-	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
@@ -24,7 +23,9 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
+	utilsmath "github.com/axelarnetwork/utils/math"
 	. "github.com/axelarnetwork/utils/test"
+	"github.com/axelarnetwork/utils/test/rand"
 )
 
 var (
@@ -251,8 +252,8 @@ func TestTransfer(t *testing.T) {
 				func(t *testing.T) {
 					for chainName, expected := range expectedTransfers {
 						chain, _ := k.GetChain(ctx, chainName)
-						pendingTransfers := k.GetTransfersForChain(ctx, chain, nexus.Pending)
-						insufficientAmountTransfers := k.GetTransfersForChain(ctx, chain, nexus.InsufficientAmount)
+						pendingTransfers := k.GetTransfersForChain(ctx, chain, nexus.Pending, 0)
+						insufficientAmountTransfers := k.GetTransfersForChain(ctx, chain, nexus.InsufficientAmount, 0)
 
 						// total number of pending transfer match
 						assert.Equal(t, 0, len(pendingTransfers))
@@ -293,8 +294,8 @@ func TestTransfer(t *testing.T) {
 				func(t *testing.T) {
 					for chainName, expected := range expectedTransfers {
 						chain, _ := k.GetChain(ctx, chainName)
-						pendingTransfers := k.GetTransfersForChain(ctx, chain, nexus.Pending)
-						insufficientTransfers := k.GetTransfersForChain(ctx, chain, nexus.InsufficientAmount)
+						pendingTransfers := k.GetTransfersForChain(ctx, chain, nexus.Pending, 0)
+						insufficientTransfers := k.GetTransfersForChain(ctx, chain, nexus.InsufficientAmount, 0)
 
 						// total number of insufficient amount transfer match
 						assert.Equal(t, 0, len(insufficientTransfers))
@@ -332,7 +333,7 @@ func TestTransfer(t *testing.T) {
 				assert.True(t, ok)
 				assert.Equal(t, recipient, actualRecipient)
 
-				actualTransfers := k.GetTransfersForChain(ctx, recipient.Chain, nexus.Pending)
+				actualTransfers := k.GetTransfersForChain(ctx, recipient.Chain, nexus.Pending, 10)
 				assert.Len(t, actualTransfers, 1)
 			}).
 		When("enqueue transfer second time",
@@ -347,7 +348,7 @@ func TestTransfer(t *testing.T) {
 				assert.True(t, ok)
 				assert.Equal(t, recipient, actualRecipient)
 
-				actualTransfers := k.GetTransfersForChain(ctx, recipient.Chain, nexus.Pending)
+				actualTransfers := k.GetTransfersForChain(ctx, recipient.Chain, nexus.Pending, 10)
 				assert.Len(t, actualTransfers, 1)
 			},
 		).Run(t, repeated)
@@ -374,14 +375,16 @@ func TestTransfer(t *testing.T) {
 
 				for chainName, expected := range expectedTransfers {
 					chain, _ := k.GetChain(ctx, chainName)
-					assert.Equal(t, expected.count, len(k.GetTransfersForChain(ctx, chain, nexus.Pending)))
+					assert.Equal(t, expected.count, len(k.GetTransfersForChain(ctx, chain, nexus.Pending, uint64(expected.count+1))))
+					transferLimit := uint64(rand.I64Between(int(0), 2*expected.count))
+					assert.Equal(t, utilsmath.Min(expected.count, int(transferLimit)), len(k.GetTransfersForChain(ctx, chain, nexus.Pending, transferLimit)))
 				}
 			}).
 		When("archive pending transfers",
 			func() {
-				for chainName := range expectedTransfers {
+				for chainName, expected := range expectedTransfers {
 					chain, _ := k.GetChain(ctx, chainName)
-					for _, transfer := range k.GetTransfersForChain(ctx, chain, nexus.Pending) {
+					for _, transfer := range k.GetTransfersForChain(ctx, chain, nexus.Pending, uint64(expected.count)) {
 						k.ArchivePendingTransfer(ctx, transfer)
 					}
 				}
@@ -390,10 +393,10 @@ func TestTransfer(t *testing.T) {
 			func(t *testing.T) {
 				for chainName, expected := range expectedTransfers {
 					chain, _ := k.GetChain(ctx, chainName)
-					pendingTransfers := k.GetTransfersForChain(ctx, chain, nexus.Pending)
+					pendingTransfers := k.GetTransfersForChain(ctx, chain, nexus.Pending, 1)
 					assert.Equal(t, 0, len(pendingTransfers))
 
-					archivedTransfers := k.GetTransfersForChain(ctx, chain, nexus.Archived)
+					archivedTransfers := k.GetTransfersForChain(ctx, chain, nexus.Archived, uint64(expected.count)+1)
 					assert.Equal(t, expected.count, len(archivedTransfers))
 				}
 
