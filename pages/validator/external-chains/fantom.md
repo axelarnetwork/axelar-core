@@ -46,10 +46,10 @@ make
 
 ```bash
 cd build/
-wget https://opera.fantom.network/mainnet.g
+wget https://download.fantom.network/mainnet-109331-pruned-mpt.g
 
 #Testnet
-# wget https://opera.fantom.network/testnet.g
+# wget https://download.fantom.network/testnet-6226-pruned-mpt.g
 ```
 
 ### 3. Create systemd service file
@@ -69,7 +69,7 @@ After=network.target
 [Service]
 User=$USER
 Type=simple
-ExecStart=/root/go-opera/build/opera --genesis /root/go-opera/build/mainnet.g --identity <your_name> --cache 8096 --http --http.addr 0.0.0.0 --http.corsdomain '*' --http.vhosts "*" --http.api "eth,net,web3" 
+ExecStart=/root/go-opera/build/opera --genesis /root/go-opera/build/mainnet-109331-pruned-mpt.g --identity <your_name> --cache 8096 --http --http.addr 0.0.0.0 --http.corsdomain '*' --http.vhosts "*" --http.api "eth,net,web3" 
 Restart=on-failure
 LimitNOFILE=65535
 
@@ -78,7 +78,7 @@ WantedBy=multi-user.target
 EOF
 ```
 <Callout type="error" emoji="⚠️">
- If you would like to run a node on the Testnet instead, you need to replace `--genesis /root/go-opera/build/testnet.g` in the configuration above.
+ If you would like to run a node on the Testnet instead, you need to replace `--genesis /root/go-opera/build/testnet-6226-pruned-mpt.g` in the configuration above.
 </Callout>
 
 ### 4. Enable and start the `fantom` service
