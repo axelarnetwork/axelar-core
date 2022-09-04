@@ -151,6 +151,6 @@ func setFailedTransfer(ctx sdk.Context, k Keeper, transfer types.IBCTransfer) {
 func enqueueIBCTransferToOldQueue(ctx sdk.Context, k Keeper, transfer types.IBCTransfer) error {
 	key := getTransferKey(transfer.ID)
 
-	GetOldIBCTransferQueue(ctx, k).Enqueue(key, &transfer)
+	GetOldIBCTransferQueue(ctx, k).EnqueueNew(key, &transfer)
 	return nil
 }

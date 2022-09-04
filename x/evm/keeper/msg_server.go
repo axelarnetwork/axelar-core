@@ -731,7 +731,7 @@ func (s msgServer) RetryFailedEvent(c context.Context, req *types.RetryFailedEve
 	}
 
 	event.Status = types.EventConfirmed
-	keeper.GetConfirmedEventQueue(ctx).Enqueue(getEventKey(req.EventID), &event)
+	keeper.GetConfirmedEventQueue(ctx).EnqueueNew(getEventKey(req.EventID), &event)
 
 	s.Logger(ctx).Info(
 		"re-queued failed event",

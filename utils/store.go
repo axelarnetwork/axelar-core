@@ -6,12 +6,12 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/tendermint/tendermint/libs/log"
 	"golang.org/x/exp/constraints"
 
 	"github.com/axelarnetwork/axelar-core/utils/key"
 	"github.com/axelarnetwork/utils/convert"
+	"github.com/axelarnetwork/utils/funcs"
 )
 
 // DefaultDelimiter represents the default delimiter used for the KV store keys
@@ -249,9 +249,54 @@ func (k basicKey) Equals(other Key) bool {
 }
 
 // CloseLogError closes the given iterator and logs if an error is returned
-func CloseLogError(iter sdk.Iterator, logger log.Logger) {
-	err := iter.Close()
-	if err != nil {
-		logger.Error(sdkerrors.Wrap(err, "failed to close kv store iterator").Error())
+func CloseLogError(iter sdk.Iterator, _ log.Logger) {
+	funcs.MustNoErr(iter.Close())
+}
+
+type ProtoMarshalerWrapper[T any] interface {
+	*T
+	codec.ProtoMarshaler
+}
+
+// GetValues returns all values corresponding to keys with a given prefix
+func GetValues[T any, V ProtoMarshalerWrapper[T]](store KVStore, prefix key.Key) (values []T) {
+	iter := store.IteratorNew(prefix)
+	defer CloseLogError(iter, nil)
+
+	for ; iter.Valid(); iter.Next() {
+		var value T
+		iter.UnmarshalValue(V(&value))
+
+		values = append(values, value)
 	}
+
+	return values
+}
+
+// ProcessValues process all values corresponding to keys with a given prefix
+func ProcessValues[T any, V ProtoMarshalerWrapper[T]](store KVStore, prefix key.Key, f func(value T)) {
+	iter := store.IteratorNew(prefix)
+	defer CloseLogError(iter, nil)
+
+	for ; iter.Valid(); iter.Next() {
+		var value T
+		iter.UnmarshalValue(V(&value))
+		f(value)
+	}
+}
+
+// GetValuesBounded returns upto `limit` values corresponding to keys with a given prefix.
+func GetValuesBounded[T any, V ProtoMarshalerWrapper[T]](store KVStore, prefix key.Key, limit uint64) (values []T) {
+	iter := store.IteratorNew(prefix)
+	defer CloseLogError(iter, nil)
+
+	for count := uint64(0); iter.Valid() && count < limit; iter.Next() {
+		var value T
+		iter.UnmarshalValue(V(&value))
+
+		values = append(values, value)
+		count++
+	}
+
+	return values
 }

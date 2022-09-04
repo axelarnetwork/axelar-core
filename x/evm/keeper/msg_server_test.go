@@ -26,6 +26,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/utils/key"
 	utilsMock "github.com/axelarnetwork/axelar-core/utils/mock"
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/exported"
@@ -1269,7 +1270,7 @@ func TestRetryFailedEvent(t *testing.T) {
 
 	ctx, msgServer, bk, n, _, _, _ := setup()
 	contractCallQueue := &utilsMock.KVQueueMock{
-		EnqueueFunc: func(key utils.Key, value codec.ProtoMarshaler) {},
+		EnqueueNewFunc: func(key key.Key, value codec.ProtoMarshaler) {},
 	}
 	ck = &mock.ChainKeeperMock{
 		GetConfirmedEventQueueFunc: func(ctx sdk.Context) utils.KVQueue {
@@ -1352,7 +1353,7 @@ func TestRetryFailedEvent(t *testing.T) {
 		Then("should retry event", func(t *testing.T) {
 			_, err := msgServer.RetryFailedEvent(sdk.WrapSDKContext(ctx), req)
 			assert.NoError(t, err)
-			assert.Len(t, contractCallQueue.EnqueueCalls(), 1)
+			assert.Len(t, contractCallQueue.EnqueueNewCalls(), 1)
 		}).
 		Run(t)
 }

@@ -62,8 +62,8 @@ func (s sigHandler) getCommandBatch(ctx sdk.Context, sigMetadata *types.SigMetad
 	}
 
 	ck := s.keeper.ForChain(sigMetadata.Chain)
-	commandBatch := ck.GetBatchByID(ctx, sigMetadata.CommandBatchID)
-	if !commandBatch.Is(types.BatchSigning) {
+	commandBatch, ok := ck.GetBatchByID(ctx, sigMetadata.CommandBatchID)
+	if !ok || !commandBatch.Is(types.BatchSigning) {
 		return types.CommandBatch{}, fmt.Errorf("the command batch %s of chain %s is not being signed", hex.EncodeToString(sigMetadata.CommandBatchID), sigMetadata.Chain)
 	}
 

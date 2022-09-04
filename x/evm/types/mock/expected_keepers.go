@@ -1871,7 +1871,7 @@ var _ evmtypes.ChainKeeper = &ChainKeeperMock{}
 // 			GenerateSaltFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, recipient string) evmtypes.Hash {
 // 				panic("mock out the GenerateSalt method")
 // 			},
-// 			GetBatchByIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, id []byte) evmtypes.CommandBatch {
+// 			GetBatchByIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, id []byte) (evmtypes.CommandBatch, bool) {
 // 				panic("mock out the GetBatchByID method")
 // 			},
 // 			GetBurnerAddressFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, token evmtypes.ERC20Token, salt evmtypes.Hash, gatewayAddr evmtypes.Address) (evmtypes.Address, error) {
@@ -2002,7 +2002,7 @@ type ChainKeeperMock struct {
 	GenerateSaltFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, recipient string) evmtypes.Hash
 
 	// GetBatchByIDFunc mocks the GetBatchByID method.
-	GetBatchByIDFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, id []byte) evmtypes.CommandBatch
+	GetBatchByIDFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, id []byte) (evmtypes.CommandBatch, bool)
 
 	// GetBurnerAddressFunc mocks the GetBurnerAddress method.
 	GetBurnerAddressFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, token evmtypes.ERC20Token, salt evmtypes.Hash, gatewayAddr evmtypes.Address) (evmtypes.Address, error)
@@ -2622,7 +2622,7 @@ func (mock *ChainKeeperMock) GenerateSaltCalls() []struct {
 }
 
 // GetBatchByID calls GetBatchByIDFunc.
-func (mock *ChainKeeperMock) GetBatchByID(ctx github_com_cosmos_cosmos_sdk_types.Context, id []byte) evmtypes.CommandBatch {
+func (mock *ChainKeeperMock) GetBatchByID(ctx github_com_cosmos_cosmos_sdk_types.Context, id []byte) (evmtypes.CommandBatch, bool) {
 	if mock.GetBatchByIDFunc == nil {
 		panic("ChainKeeperMock.GetBatchByIDFunc: method is nil but ChainKeeper.GetBatchByID was just called")
 	}

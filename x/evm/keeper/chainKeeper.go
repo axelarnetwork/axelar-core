@@ -14,23 +14,24 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/utils/key"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/utils/funcs"
 )
 
 var (
-	gatewayKey             = utils.KeyFromStr("gateway")
+	gatewayKey             = key.FromStr("gateway")
 	unsignedBatchIDKey     = utils.KeyFromStr("unsigned_command_batch_id")
 	latestSignedBatchIDKey = utils.KeyFromStr("latest_signed_command_batch_id")
 
-	tokenMetadataByAssetPrefix  = utils.KeyFromStr("token_deployment_by_asset")
-	tokenMetadataBySymbolPrefix = utils.KeyFromStr("token_deployment_by_symbol")
-	confirmedDepositPrefix      = utils.KeyFromStr("confirmed_deposit")
-	burnedDepositPrefix         = utils.KeyFromStr("burned_deposit")
-	commandBatchPrefix          = utils.KeyFromStr("batched_commands")
-	commandPrefix               = utils.KeyFromStr("command")
-	burnerAddrPrefix            = utils.KeyFromStr("burnerAddr")
-	eventPrefix                 = utils.KeyFromStr("event")
+	tokenMetadataByAssetPrefix  = key.FromStr("token_deployment_by_asset")
+	tokenMetadataBySymbolPrefix = key.FromStr("token_deployment_by_symbol")
+	confirmedDepositPrefix      = key.FromStr("confirmed_deposit")
+	burnedDepositPrefix         = key.FromStr("burned_deposit")
+	commandBatchPrefix          = key.FromStr("batched_commands")
+	commandPrefix               = key.FromStr("command")
+	burnerAddrPrefix            = key.FromBz([]byte("burnerAddr"))
+	eventPrefix                 = key.FromStr("event")
 
 	commandQueueName        = "cmd_queue"
 	confirmedEventQueueName = "confirmed_event_queue"
@@ -161,15 +162,15 @@ func (k chainKeeper) GetMinVoterCount(ctx sdk.Context) (int64, bool) {
 
 // SetBurnerInfo saves the burner info for a given address
 func (k chainKeeper) SetBurnerInfo(ctx sdk.Context, burnerInfo types.BurnerInfo) {
-	key := burnerAddrPrefix.AppendStr(burnerInfo.BurnerAddress.Hex())
-	k.getStore(ctx, k.chainLowerKey).Set(key, &burnerInfo)
+	key := burnerAddrPrefix.Append(key.FromStr(burnerInfo.BurnerAddress.Hex()))
+	k.getStore(ctx, k.chainLowerKey).SetNew(key, &burnerInfo)
 }
 
 // GetBurnerInfo retrieves the burner info for a given address
 func (k chainKeeper) GetBurnerInfo(ctx sdk.Context, burnerAddr types.Address) *types.BurnerInfo {
-	key := burnerAddrPrefix.AppendStr(burnerAddr.Hex())
+	key := burnerAddrPrefix.Append(key.FromStr(burnerAddr.Hex()))
 	var result types.BurnerInfo
-	if !k.getStore(ctx, k.chainLowerKey).Get(key, &result) {
+	if !k.getStore(ctx, k.chainLowerKey).GetNew(key, &result) {
 		return nil
 	}
 
@@ -177,17 +178,7 @@ func (k chainKeeper) GetBurnerInfo(ctx sdk.Context, burnerAddr types.Address) *t
 }
 
 func (k chainKeeper) getBurnerInfos(ctx sdk.Context) []types.BurnerInfo {
-	iter := k.getStore(ctx, k.chainLowerKey).Iterator(burnerAddrPrefix)
-	defer utils.CloseLogError(iter, k.Logger(ctx))
-
-	var burners []types.BurnerInfo
-	for ; iter.Valid(); iter.Next() {
-		var burner types.BurnerInfo
-		iter.UnmarshalValue(&burner)
-		burners = append(burners, burner)
-	}
-
-	return burners
+	return utils.GetValues[types.BurnerInfo](k.getStore(ctx, k.chainLowerKey), burnerAddrPrefix)
 }
 
 // calculates the token address for some asset with the provided axelar gateway address
@@ -361,22 +352,18 @@ func (k chainKeeper) GetConfirmedEventQueue(ctx sdk.Context) utils.KVQueue {
 
 // EnqueueCommand stores the given command; note that overwriting is not allowed
 func (k chainKeeper) EnqueueCommand(ctx sdk.Context, command types.Command) error {
-	key := commandPrefix.AppendStr(command.ID.Hex())
-	if k.getStore(ctx, k.chainLowerKey).Has(key) {
+	key := commandPrefix.Append(key.FromStr(command.ID.Hex()))
+	if k.getStore(ctx, k.chainLowerKey).HasNew(key) {
 		return fmt.Errorf("command %s already exists", command.ID.Hex())
 	}
 
-	k.getCommandQueue(ctx).Enqueue(key, &command)
+	k.getCommandQueue(ctx).EnqueueNew(key, &command)
 	return nil
 }
 
 // GetCommand returns the command specified by the given ID
-func (k chainKeeper) GetCommand(ctx sdk.Context, id types.CommandID) (types.Command, bool) {
-	key := commandPrefix.AppendStr(id.Hex())
-	var cmd types.Command
-	found := k.getStore(ctx, k.chainLowerKey).Get(key, &cmd)
-
-	return cmd, found
+func (k chainKeeper) GetCommand(ctx sdk.Context, id types.CommandID) (cmd types.Command, ok bool) {
+	return cmd, k.getStore(ctx, k.chainLowerKey).GetNew(commandPrefix.Append(key.FromStr(id.Hex())), &cmd)
 }
 
 // GetPendingCommands returns the list of commands not yet added to any batch
@@ -399,10 +386,10 @@ func (k chainKeeper) GetPendingCommands(ctx sdk.Context) []types.Command {
 func (k chainKeeper) GetDeposit(ctx sdk.Context, txID types.Hash, burnAddr types.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
 	var deposit types.ERC20Deposit
 
-	if k.getStore(ctx, k.chainLowerKey).Get(confirmedDepositPrefix.AppendStr(txID.Hex()).AppendStr(burnAddr.Hex()), &deposit) {
+	if k.getStore(ctx, k.chainLowerKey).GetNew(confirmedDepositPrefix.Append(key.FromStr(txID.Hex())).Append(key.FromStr(burnAddr.Hex())), &deposit) {
 		return deposit, types.DepositStatus_Confirmed, true
 	}
-	if k.getStore(ctx, k.chainLowerKey).Get(burnedDepositPrefix.AppendStr(txID.Hex()).AppendStr(burnAddr.Hex()), &deposit) {
+	if k.getStore(ctx, k.chainLowerKey).GetNew(burnedDepositPrefix.Append(key.FromStr(txID.Hex())).Append(key.FromStr(burnAddr.Hex())), &deposit) {
 		return deposit, types.DepositStatus_Burned, true
 	}
 
@@ -411,32 +398,12 @@ func (k chainKeeper) GetDeposit(ctx sdk.Context, txID types.Hash, burnAddr types
 
 // GetConfirmedDeposits retrieves all the confirmed ERC20 deposits
 func (k chainKeeper) GetConfirmedDeposits(ctx sdk.Context) []types.ERC20Deposit {
-	var deposits []types.ERC20Deposit
-	iter := k.getStore(ctx, k.chainLowerKey).Iterator(confirmedDepositPrefix)
-	defer utils.CloseLogError(iter, k.Logger(ctx))
-
-	for ; iter.Valid(); iter.Next() {
-		var deposit types.ERC20Deposit
-		iter.UnmarshalValue(&deposit)
-		deposits = append(deposits, deposit)
-	}
-
-	return deposits
+	return utils.GetValues[types.ERC20Deposit](k.getStore(ctx, k.chainLowerKey), confirmedDepositPrefix)
 }
 
 // getBurnedDeposits retrieves all the burned ERC20 deposits
 func (k chainKeeper) getBurnedDeposits(ctx sdk.Context) []types.ERC20Deposit {
-	var deposits []types.ERC20Deposit
-	iter := k.getStore(ctx, k.chainLowerKey).Iterator(burnedDepositPrefix)
-	defer utils.CloseLogError(iter, k.Logger(ctx))
-
-	for ; iter.Valid(); iter.Next() {
-		var deposit types.ERC20Deposit
-		iter.UnmarshalValue(&deposit)
-		deposits = append(deposits, deposit)
-	}
-
-	return deposits
+	return utils.GetValues[types.ERC20Deposit](k.getStore(ctx, k.chainLowerKey), burnedDepositPrefix)
 }
 
 func (k chainKeeper) getSigner(ctx sdk.Context) evmTypes.EIP155Signer {
@@ -462,9 +429,9 @@ func (k chainKeeper) getSigner(ctx sdk.Context) evmTypes.EIP155Signer {
 func (k chainKeeper) SetDeposit(ctx sdk.Context, deposit types.ERC20Deposit, state types.DepositStatus) {
 	switch state {
 	case types.DepositStatus_Confirmed:
-		k.getStore(ctx, k.chainLowerKey).Set(confirmedDepositPrefix.AppendStr(deposit.TxID.Hex()).AppendStr(deposit.BurnerAddress.Hex()), &deposit)
+		k.getStore(ctx, k.chainLowerKey).SetNew(confirmedDepositPrefix.Append(key.FromStr(deposit.TxID.Hex())).Append(key.FromStr(deposit.BurnerAddress.Hex())), &deposit)
 	case types.DepositStatus_Burned:
-		k.getStore(ctx, k.chainLowerKey).Set(burnedDepositPrefix.AppendStr(deposit.TxID.Hex()).AppendStr(deposit.BurnerAddress.Hex()), &deposit)
+		k.getStore(ctx, k.chainLowerKey).SetNew(burnedDepositPrefix.Append(key.FromStr(deposit.TxID.Hex())).Append(key.FromStr(deposit.BurnerAddress.Hex())), &deposit)
 	default:
 		panic("invalid deposit state")
 	}
@@ -472,8 +439,8 @@ func (k chainKeeper) SetDeposit(ctx sdk.Context, deposit types.ERC20Deposit, sta
 
 // DeleteDeposit deletes the given deposit
 func (k chainKeeper) DeleteDeposit(ctx sdk.Context, deposit types.ERC20Deposit) {
-	k.getStore(ctx, k.chainLowerKey).Delete(confirmedDepositPrefix.AppendStr(deposit.TxID.Hex()).AppendStr(deposit.BurnerAddress.Hex()))
-	k.getStore(ctx, k.chainLowerKey).Delete(burnedDepositPrefix.AppendStr(deposit.TxID.Hex()).AppendStr(deposit.BurnerAddress.Hex()))
+	k.getStore(ctx, k.chainLowerKey).DeleteNew(confirmedDepositPrefix.Append(key.FromStr(deposit.TxID.Hex())).Append(key.FromStr(deposit.BurnerAddress.Hex())))
+	k.getStore(ctx, k.chainLowerKey).DeleteNew(burnedDepositPrefix.Append(key.FromStr(deposit.TxID.Hex())).Append(key.FromStr(deposit.BurnerAddress.Hex())))
 }
 
 // GetNetworkByID returns the network name for a given chain and network ID
@@ -516,24 +483,25 @@ func (k chainKeeper) GetChainIDByNetwork(ctx sdk.Context, network string) (sdk.I
 }
 
 func (k chainKeeper) setCommandBatchMetadata(ctx sdk.Context, meta types.CommandBatchMetadata) {
-	k.getStore(ctx, k.chainLowerKey).Set(commandBatchPrefix.AppendStr(string(meta.ID)), &meta)
+	k.getStore(ctx, k.chainLowerKey).SetNew(commandBatchPrefix.Append(key.FromBz(meta.ID)), &meta)
 }
 
 // GetBatchByID retrieves the specified batch if it exists
-func (k chainKeeper) GetBatchByID(ctx sdk.Context, id []byte) types.CommandBatch {
-	batch := k.getCommandBatchMetadata(ctx, id)
+func (k chainKeeper) GetBatchByID(ctx sdk.Context, id []byte) (types.CommandBatch, bool) {
+	batch, ok := k.getCommandBatchMetadata(ctx, id)
+	if !ok {
+		return types.CommandBatch{}, false
+	}
 
 	setter := func(m types.CommandBatchMetadata) {
 		k.setCommandBatchMetadata(ctx, m)
 	}
 
-	return types.NewCommandBatch(batch, setter)
+	return types.NewCommandBatch(batch, setter), true
 }
 
-func (k chainKeeper) getCommandBatchMetadata(ctx sdk.Context, id []byte) types.CommandBatchMetadata {
-	var batch types.CommandBatchMetadata
-	k.getStore(ctx, k.chainLowerKey).Get(commandBatchPrefix.AppendStr(string(id)), &batch)
-	return batch
+func (k chainKeeper) getCommandBatchMetadata(ctx sdk.Context, id []byte) (batch types.CommandBatchMetadata, ok bool) {
+	return batch, k.getStore(ctx, k.chainLowerKey).GetNew(commandBatchPrefix.Append(key.FromBz(id)), &batch)
 }
 
 // GetLatestCommandBatch returns the latest batch of signed commands, if it exists
@@ -554,23 +522,13 @@ func (k chainKeeper) getLatestCommandBatchMetadata(ctx sdk.Context) types.Comman
 	}
 
 	if id := k.getLatestSignedCommandBatchID(ctx); id != nil {
-		return k.getCommandBatchMetadata(ctx, id)
+		return funcs.MustOk(k.getCommandBatchMetadata(ctx, id))
 	}
 	return types.CommandBatchMetadata{Status: types.BatchNonExistent}
 }
 
 func (k chainKeeper) getCommandBatchesMetadata(ctx sdk.Context) []types.CommandBatchMetadata {
-	iter := k.getStore(ctx, k.chainLowerKey).Iterator(commandBatchPrefix)
-	defer utils.CloseLogError(iter, k.Logger(ctx))
-
-	var batches []types.CommandBatchMetadata
-	for ; iter.Valid(); iter.Next() {
-		var batch types.CommandBatchMetadata
-		iter.UnmarshalValue(&batch)
-		batches = append(batches, batch)
-	}
-
-	return batches
+	return utils.GetValues[types.CommandBatchMetadata](k.getStore(ctx, k.chainLowerKey), commandBatchPrefix)
 }
 
 func (k chainKeeper) getLatestSignedCommandBatchID(ctx sdk.Context) []byte {
@@ -652,7 +610,7 @@ func (k chainKeeper) DeleteUnsignedCommandBatchID(ctx sdk.Context) {
 
 func (k chainKeeper) getUnsignedCommandBatch(ctx sdk.Context) types.CommandBatchMetadata {
 	if id := k.getStore(ctx, k.chainLowerKey).GetRaw(unsignedBatchIDKey); id != nil {
-		return k.getCommandBatchMetadata(ctx, id)
+		return funcs.MustOk(k.getCommandBatchMetadata(ctx, id))
 	}
 
 	return types.CommandBatchMetadata{}
@@ -674,26 +632,26 @@ func (k chainKeeper) getCommandQueue(ctx sdk.Context) utils.BlockHeightKVQueue {
 
 func (k chainKeeper) setTokenMetadata(ctx sdk.Context, meta types.ERC20TokenMetadata) {
 	// lookup by asset
-	key := tokenMetadataByAssetPrefix.Append(utils.LowerCaseKey(meta.Asset))
-	k.getStore(ctx, k.chainLowerKey).Set(key, &meta)
+	assetKey := tokenMetadataByAssetPrefix.Append(key.FromStr(meta.Asset))
+	k.getStore(ctx, k.chainLowerKey).SetNew(assetKey, &meta)
 
 	// lookup by symbol
-	key = tokenMetadataBySymbolPrefix.Append(utils.LowerCaseKey(meta.Details.Symbol))
-	k.getStore(ctx, k.chainLowerKey).Set(key, &meta)
+	symbolKey := tokenMetadataBySymbolPrefix.Append(key.FromStr(meta.Details.Symbol))
+	k.getStore(ctx, k.chainLowerKey).SetNew(symbolKey, &meta)
 }
 
 func (k chainKeeper) getTokenMetadataByAsset(ctx sdk.Context, asset string) (types.ERC20TokenMetadata, bool) {
 	var result types.ERC20TokenMetadata
-	key := tokenMetadataByAssetPrefix.Append(utils.LowerCaseKey(asset))
-	found := k.getStore(ctx, k.chainLowerKey).Get(key, &result)
+	assetKey := tokenMetadataByAssetPrefix.Append(key.FromStr(asset))
+	found := k.getStore(ctx, k.chainLowerKey).GetNew(assetKey, &result)
 
 	return result, found
 }
 
 func (k chainKeeper) getTokenMetadataBySymbol(ctx sdk.Context, symbol string) (types.ERC20TokenMetadata, bool) {
 	var result types.ERC20TokenMetadata
-	key := tokenMetadataBySymbolPrefix.Append(utils.LowerCaseKey(symbol))
-	found := k.getStore(ctx, k.chainLowerKey).Get(key, &result)
+	symbolKey := tokenMetadataBySymbolPrefix.Append(key.FromStr(symbol))
+	found := k.getStore(ctx, k.chainLowerKey).GetNew(symbolKey, &result)
 
 	return result, found
 }
@@ -712,16 +670,7 @@ func (k chainKeeper) GetTokens(ctx sdk.Context) []types.ERC20Token {
 }
 
 func (k chainKeeper) getTokensMetadata(ctx sdk.Context) []types.ERC20TokenMetadata {
-	iter := k.getStore(ctx, k.chainLowerKey).Iterator(tokenMetadataByAssetPrefix)
-	defer utils.CloseLogError(iter, k.Logger(ctx))
-
-	var tokens []types.ERC20TokenMetadata
-	for ; iter.Valid(); iter.Next() {
-		var token types.ERC20TokenMetadata
-		iter.UnmarshalValue(&token)
-		tokens = append(tokens, token)
-	}
-	return tokens
+	return utils.GetValues[types.ERC20TokenMetadata](k.getStore(ctx, k.chainLowerKey), tokenMetadataByAssetPrefix)
 }
 
 func (k chainKeeper) initTokenMetadata(ctx sdk.Context, asset string, details types.TokenDetails, address types.Address) (types.ERC20TokenMetadata, error) {
@@ -805,41 +754,31 @@ func (k chainKeeper) GetGatewayAddress(ctx sdk.Context) (types.Address, bool) {
 }
 
 func (k chainKeeper) setGateway(ctx sdk.Context, gateway types.Gateway) {
-	k.getStore(ctx, k.chainLowerKey).Set(gatewayKey, &gateway)
+	k.getStore(ctx, k.chainLowerKey).SetNew(gatewayKey, &gateway)
 }
 
 func (k chainKeeper) getGateway(ctx sdk.Context) types.Gateway {
 	var gateway types.Gateway
-	k.getStore(ctx, k.chainLowerKey).Get(gatewayKey, &gateway)
+	k.getStore(ctx, k.chainLowerKey).GetNew(gatewayKey, &gateway)
 
 	return gateway
 }
 
-func getEventKey(eventID types.EventID) utils.Key {
-	return eventPrefix.Append(utils.LowerCaseKey(string(eventID)))
+func getEventKey(eventID types.EventID) key.Key {
+	return eventPrefix.Append(key.FromStr(string(eventID)))
 }
 
 func (k chainKeeper) setEvent(ctx sdk.Context, event types.Event) {
-	k.getStore(ctx, k.chainLowerKey).Set(getEventKey(event.GetID()), &event)
+	k.getStore(ctx, k.chainLowerKey).SetNew(getEventKey(event.GetID()), &event)
 }
 
 func (k chainKeeper) getEvents(ctx sdk.Context) []types.Event {
-	iter := k.getStore(ctx, k.chainLowerKey).Iterator(eventPrefix)
-	defer utils.CloseLogError(iter, k.Logger(ctx))
-
-	var events []types.Event
-	for ; iter.Valid(); iter.Next() {
-		var event types.Event
-		iter.UnmarshalValue(&event)
-		events = append(events, event)
-	}
-
-	return events
+	return utils.GetValues[types.Event](k.getStore(ctx, k.chainLowerKey), eventPrefix)
 }
 
 // GetEvent returns the event for the given event ID
 func (k chainKeeper) GetEvent(ctx sdk.Context, eventID types.EventID) (event types.Event, ok bool) {
-	k.getStore(ctx, k.chainLowerKey).Get(getEventKey(eventID), &event)
+	k.getStore(ctx, k.chainLowerKey).GetNew(getEventKey(eventID), &event)
 
 	return event, event.Status != types.EventNonExistent
 }
@@ -856,7 +795,7 @@ func (k chainKeeper) SetConfirmedEvent(ctx sdk.Context, event types.Event) error
 	switch event.GetEvent().(type) {
 	case *types.Event_ContractCall, *types.Event_ContractCallWithToken, *types.Event_TokenSent,
 		*types.Event_Transfer, *types.Event_TokenDeployed, *types.Event_MultisigOperatorshipTransferred:
-		k.GetConfirmedEventQueue(ctx).Enqueue(getEventKey(eventID), &event)
+		k.GetConfirmedEventQueue(ctx).EnqueueNew(getEventKey(eventID), &event)
 	default:
 		return fmt.Errorf("unsupported event type %T", event)
 	}

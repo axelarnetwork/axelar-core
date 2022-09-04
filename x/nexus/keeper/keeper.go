@@ -19,13 +19,13 @@ var (
 	chainPrefix                = utils.KeyFromStr("chain")
 	chainStatePrefix           = utils.KeyFromStr("state")
 	chainByNativeAssetPrefix   = utils.KeyFromStr("native_asset_chain")
-	linkedAddressesPrefix      = utils.KeyFromStr("linked_addresses")
+	linkedAddressesPrefix      = key.FromStr("linked_addresses")
 	transferPrefix             = utils.KeyFromStr("transfer")
 	transferFee                = utils.KeyFromStr("fee")
 	assetFeePrefix             = utils.KeyFromStr("asset_fee")
 	chainMaintainerStatePrefix = key.FromUInt[uint64](1)
 	// temporary
-	latestDepositAddressPrefix = utils.KeyFromStr("latest_deposit_address")
+	latestDepositAddressPrefix = key.FromStr("latest_deposit_address")
 )
 
 // Keeper represents a nexus keeper

@@ -225,8 +225,8 @@ func (q Querier) BatchedCommands(c context.Context, req *types.BatchedCommandsRe
 			return nil, status.Error(codes.InvalidArgument, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("invalid batched commands ID: %v", err)).Error())
 		}
 
-		commandBatch = ck.GetBatchByID(ctx, commandBatchID)
-		if commandBatch.Is(types.BatchNonExistent) {
+		commandBatch, ok := ck.GetBatchByID(ctx, commandBatchID)
+		if !ok || commandBatch.Is(types.BatchNonExistent) {
 			return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("batched commands with ID %s not found", req.Id)).Error())
 		}
 	}

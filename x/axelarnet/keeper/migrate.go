@@ -57,7 +57,7 @@ func migrateFromOldQueueToNew(ctx sdk.Context, k Keeper) (transfers []types.IBCT
 		var t types.IBCTransfer
 		oldQueue.Dequeue(&t)
 		t.Status = types.TransferPending
-		k.GetIBCTransferQueue(ctx).Enqueue(getTransferKey(t.ID), &t)
+		k.GetIBCTransferQueue(ctx).EnqueueNew(getTransferKey(t.ID), &t)
 	}
 
 	return transfers

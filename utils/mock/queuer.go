@@ -5,6 +5,7 @@ package mock
 
 import (
 	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/utils/key"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"sync"
 )
@@ -31,6 +32,9 @@ var _ utils.KVQueue = &KVQueueMock{}
 // 			EnqueueFunc: func(key utils.Key, value codec.ProtoMarshaler)  {
 // 				panic("mock out the Enqueue method")
 // 			},
+// 			EnqueueNewFunc: func(keyMoqParam key.Key, value codec.ProtoMarshaler)  {
+// 				panic("mock out the EnqueueNew method")
+// 			},
 // 			IsEmptyFunc: func() bool {
 // 				panic("mock out the IsEmpty method")
 // 			},
@@ -55,6 +59,9 @@ type KVQueueMock struct {
 
 	// EnqueueFunc mocks the Enqueue method.
 	EnqueueFunc func(key utils.Key, value codec.ProtoMarshaler)
+
+	// EnqueueNewFunc mocks the EnqueueNew method.
+	EnqueueNewFunc func(keyMoqParam key.Key, value codec.ProtoMarshaler)
 
 	// IsEmptyFunc mocks the IsEmpty method.
 	IsEmptyFunc func() bool
@@ -90,6 +97,13 @@ type KVQueueMock struct {
 			// Value is the value argument value.
 			Value codec.ProtoMarshaler
 		}
+		// EnqueueNew holds details about calls to the EnqueueNew method.
+		EnqueueNew []struct {
+			// KeyMoqParam is the keyMoqParam argument value.
+			KeyMoqParam key.Key
+			// Value is the value argument value.
+			Value codec.ProtoMarshaler
+		}
 		// IsEmpty holds details about calls to the IsEmpty method.
 		IsEmpty []struct {
 		}
@@ -101,6 +115,7 @@ type KVQueueMock struct {
 	lockDequeueIf    sync.RWMutex
 	lockDequeueUntil sync.RWMutex
 	lockEnqueue      sync.RWMutex
+	lockEnqueueNew   sync.RWMutex
 	lockIsEmpty      sync.RWMutex
 	lockKeys         sync.RWMutex
 }
@@ -238,6 +253,41 @@ func (mock *KVQueueMock) EnqueueCalls() []struct {
 	mock.lockEnqueue.RLock()
 	calls = mock.calls.Enqueue
 	mock.lockEnqueue.RUnlock()
+	return calls
+}
+
+// EnqueueNew calls EnqueueNewFunc.
+func (mock *KVQueueMock) EnqueueNew(keyMoqParam key.Key, value codec.ProtoMarshaler) {
+	if mock.EnqueueNewFunc == nil {
+		panic("KVQueueMock.EnqueueNewFunc: method is nil but KVQueue.EnqueueNew was just called")
+	}
+	callInfo := struct {
+		KeyMoqParam key.Key
+		Value       codec.ProtoMarshaler
+	}{
+		KeyMoqParam: keyMoqParam,
+		Value:       value,
+	}
+	mock.lockEnqueueNew.Lock()
+	mock.calls.EnqueueNew = append(mock.calls.EnqueueNew, callInfo)
+	mock.lockEnqueueNew.Unlock()
+	mock.EnqueueNewFunc(keyMoqParam, value)
+}
+
+// EnqueueNewCalls gets all the calls that were made to EnqueueNew.
+// Check the length with:
+//     len(mockedKVQueue.EnqueueNewCalls())
+func (mock *KVQueueMock) EnqueueNewCalls() []struct {
+	KeyMoqParam key.Key
+	Value       codec.ProtoMarshaler
+} {
+	var calls []struct {
+		KeyMoqParam key.Key
+		Value       codec.ProtoMarshaler
+	}
+	mock.lockEnqueueNew.RLock()
+	calls = mock.calls.EnqueueNew
+	mock.lockEnqueueNew.RUnlock()
 	return calls
 }
 

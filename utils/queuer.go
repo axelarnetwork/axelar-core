@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/axelarnetwork/axelar-core/utils/key"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	gogoprototypes "github.com/gogo/protobuf/types"
@@ -18,6 +19,8 @@ import (
 type KVQueue interface {
 	// Enqueue pushes the given value into the queue with the given key
 	Enqueue(key Key, value codec.ProtoMarshaler)
+	// EnqueueNew pushes the given value into the queue with the given key
+	EnqueueNew(key key.Key, value codec.ProtoMarshaler)
 	// Dequeue pops the first item in queue and stores it in the given value
 	Dequeue(value codec.ProtoMarshaler) bool
 	// DequeueIf pops the first item in queue iff it matches the given filter and stores it in the given value
@@ -56,6 +59,12 @@ func NewGeneralKVQueue(name string, store KVStore, logger log.Logger, prioritize
 func (q GeneralKVQueue) Enqueue(key Key, value codec.ProtoMarshaler) {
 	q.store.Set(q.name.Append(q.prioritizer(value)).Append(key), &gogoprototypes.BytesValue{Value: key.AsKey()})
 	q.store.Set(key, value)
+}
+
+// EnqueueNew pushes the given value onto the top of the queue and stores the value at given key
+func (q GeneralKVQueue) EnqueueNew(key key.Key, value codec.ProtoMarshaler) {
+	q.store.Set(q.name.Append(q.prioritizer(value)).Append(KeyFromBz(key.Bytes())), &gogoprototypes.BytesValue{Value: key.Bytes()})
+	q.store.SetNew(key, value)
 }
 
 func noopFilter(_ codec.ProtoMarshaler) bool {

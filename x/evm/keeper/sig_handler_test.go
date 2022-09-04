@@ -87,10 +87,10 @@ func TestHandleCompleted(t *testing.T) {
 
 	givenSigsAndModuleMetadata.
 		When("batch status is not signing", func() {
-			chaink.GetBatchByIDFunc = func(ctx sdk.Context, id []byte) types.CommandBatch {
+			chaink.GetBatchByIDFunc = func(ctx sdk.Context, id []byte) (types.CommandBatch, bool) {
 				return types.NewCommandBatch(
 					types.CommandBatchMetadata{Status: rand.Of(types.BatchAborted, types.BatchNonExistent, types.BatchSigned)},
-					func(batch types.CommandBatchMetadata) {})
+					func(batch types.CommandBatchMetadata) {}), true
 			}
 		}).
 		Then("should return error", func(t *testing.T) {
@@ -100,11 +100,11 @@ func TestHandleCompleted(t *testing.T) {
 
 	givenSigsAndModuleMetadata.
 		When("batch status is signing", func() {
-			chaink.GetBatchByIDFunc = func(ctx sdk.Context, id []byte) types.CommandBatch {
+			chaink.GetBatchByIDFunc = func(ctx sdk.Context, id []byte) (types.CommandBatch, bool) {
 				commandBatchMetadata = types.CommandBatchMetadata{Status: types.BatchSigning}
 				return types.NewCommandBatch(
 					commandBatchMetadata,
-					func(batch types.CommandBatchMetadata) { commandBatchMetadata = batch })
+					func(batch types.CommandBatchMetadata) { commandBatchMetadata = batch }), true
 			}
 		}).
 		Then("should set command status and signature", func(t *testing.T) {

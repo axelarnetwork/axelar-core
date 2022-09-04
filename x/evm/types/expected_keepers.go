@@ -70,7 +70,7 @@ type ChainKeeper interface {
 	CreateNewBatchToSign(ctx sdk.Context) (CommandBatch, error)
 	SetLatestSignedCommandBatchID(ctx sdk.Context, id []byte)
 	GetLatestCommandBatch(ctx sdk.Context) CommandBatch
-	GetBatchByID(ctx sdk.Context, id []byte) CommandBatch
+	GetBatchByID(ctx sdk.Context, id []byte) (CommandBatch, bool)
 	DeleteUnsignedCommandBatchID(ctx sdk.Context)
 
 	GetConfirmedEventQueue(ctx sdk.Context) utils.KVQueue

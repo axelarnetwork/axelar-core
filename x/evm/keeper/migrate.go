@@ -69,7 +69,7 @@ func removeExternalTokenBurnerCode(ctx sdk.Context, ck chainKeeper) error {
 func migrateCommandBatchSignature(ctx sdk.Context, ck chainKeeper, signer types.Signer, multisig types.MultisigKeeper) error {
 	var commandBatchMetadata types.CommandBatchMetadata
 	for commandBatchID := ck.getLatestSignedCommandBatchID(ctx); commandBatchID != nil; commandBatchID = commandBatchMetadata.PrevBatchedCommandsID {
-		commandBatchMetadata = ck.getCommandBatchMetadata(ctx, commandBatchID)
+		commandBatchMetadata = funcs.MustOk(ck.getCommandBatchMetadata(ctx, commandBatchID))
 
 		// only migrate secondary key
 		tssKey, ok := signer.GetKey(ctx, tss.KeyID(commandBatchMetadata.KeyID))

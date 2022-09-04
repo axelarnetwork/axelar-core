@@ -6,51 +6,42 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/utils/key"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 )
 
-func getLatestDepositAddressKey(depositChain exported.ChainName, recipientAddress exported.CrossChainAddress) utils.Key {
+func getLatestDepositAddressKey(depositChain exported.ChainName, recipientAddress exported.CrossChainAddress) key.Key {
 	return latestDepositAddressPrefix.
-		Append(utils.LowerCaseKey(depositChain.String())).
-		Append(utils.LowerCaseKey(recipientAddress.Chain.Name.String())).
-		Append(utils.LowerCaseKey(recipientAddress.Address))
+		Append(key.From(depositChain)).
+		Append(key.From(recipientAddress.Chain.Name)).
+		Append(key.FromStr(recipientAddress.Address))
 }
 
 func (k Keeper) setLatestDepositAddress(ctx sdk.Context, recipientAddress, depositAddress exported.CrossChainAddress) {
-	k.getStore(ctx).Set(getLatestDepositAddressKey(depositAddress.Chain.Name, recipientAddress), &depositAddress)
+	k.getStore(ctx).SetNew(getLatestDepositAddressKey(depositAddress.Chain.Name, recipientAddress), &depositAddress)
 }
 
 func (k Keeper) getLatestDepositAddress(ctx sdk.Context, depositChain exported.ChainName, recipientAddress exported.CrossChainAddress) (depositAddress exported.CrossChainAddress, ok bool) {
-	return depositAddress, k.getStore(ctx).Get(getLatestDepositAddressKey(depositChain, recipientAddress), &depositAddress)
+	return depositAddress, k.getStore(ctx).GetNew(getLatestDepositAddressKey(depositChain, recipientAddress), &depositAddress)
 }
 
-func getLinkedAddressesKey(depositAddress exported.CrossChainAddress) utils.Key {
+func getLinkedAddressesKey(depositAddress exported.CrossChainAddress) key.Key {
 	return linkedAddressesPrefix.
-		Append(utils.LowerCaseKey(depositAddress.Chain.Name.String())).
-		Append(utils.LowerCaseKey(depositAddress.Address))
+		Append(key.From(depositAddress.Chain.Name)).
+		Append(key.FromStr(depositAddress.Address))
 }
 
 func (k Keeper) setLinkedAddresses(ctx sdk.Context, linkedAddresses types.LinkedAddresses) {
-	k.getStore(ctx).Set(getLinkedAddressesKey(linkedAddresses.DepositAddress), &linkedAddresses)
+	k.getStore(ctx).SetNew(getLinkedAddressesKey(linkedAddresses.DepositAddress), &linkedAddresses)
 }
 
 func (k Keeper) getLinkedAddresses(ctx sdk.Context, depositAddress exported.CrossChainAddress) (linkedAddresses types.LinkedAddresses, ok bool) {
-	return linkedAddresses, k.getStore(ctx).Get(getLinkedAddressesKey(depositAddress), &linkedAddresses)
+	return linkedAddresses, k.getStore(ctx).GetNew(getLinkedAddressesKey(depositAddress), &linkedAddresses)
 }
 
-func (k Keeper) getAllLinkedAddresses(ctx sdk.Context) (results []types.LinkedAddresses) {
-	iter := k.getStore(ctx).Iterator(linkedAddressesPrefix)
-	defer utils.CloseLogError(iter, k.Logger(ctx))
-
-	for ; iter.Valid(); iter.Next() {
-		var linkedAddresses types.LinkedAddresses
-		iter.UnmarshalValue(&linkedAddresses)
-
-		results = append(results, linkedAddresses)
-	}
-
-	return results
+func (k Keeper) getAllLinkedAddresses(ctx sdk.Context) []types.LinkedAddresses {
+	return utils.GetValues[types.LinkedAddresses](k.getStore(ctx), linkedAddressesPrefix)
 }
 
 // LinkAddresses links a sender address to a cross-chain recipient address
