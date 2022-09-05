@@ -60,10 +60,10 @@ func (m GenesisState) Validate() error {
 
 func validateKeyEpochs(keys map[exported.KeyID]Key, keyEpochs []KeyEpoch) error {
 	keyIDSeen := make(map[string]bool, len(keyEpochs))
-	for _, kes := range slices.GroupBy(keyEpochs, func(keyEpoch KeyEpoch) string { return keyEpoch.GetChain().String() }) {
-		sort.SliceStable(kes, func(i, j int) bool { return kes[i].Epoch < kes[j].Epoch })
+	for _, keyEpochsOfChain := range slices.GroupBy(keyEpochs, func(keyEpoch KeyEpoch) string { return keyEpoch.GetChain().String() }) {
+		sort.SliceStable(keyEpochsOfChain, func(i, j int) bool { return keyEpochsOfChain[i].Epoch < keyEpochsOfChain[j].Epoch })
 
-		for i, keyEpoch := range kes {
+		for i, keyEpoch := range keyEpochsOfChain {
 			if keyEpoch.Epoch != uint64(i+1) {
 				return fmt.Errorf("invalid epoch set for key epoch")
 			}
@@ -74,8 +74,18 @@ func validateKeyEpochs(keys map[exported.KeyID]Key, keyEpochs []KeyEpoch) error 
 			}
 			keyIDSeen[keyIDLowerCase] = true
 
-			if _, ok := keys[keyEpoch.GetKeyID()]; !ok {
+			key, ok := keys[keyEpoch.GetKeyID()]
+			if !ok {
 				return fmt.Errorf("key ID %s in key epoch does not exist", keyEpoch.GetKeyID())
+			}
+
+			switch key.State {
+			case exported.Assigned:
+				if i != len(keyEpochsOfChain)-1 {
+					return fmt.Errorf("invalid state for key %s", key.GetID())
+				}
+			case exported.Inactive:
+				return fmt.Errorf("invalid state for key %s", key.GetID())
 			}
 
 			if err := keyEpoch.ValidateBasic(); err != nil {
@@ -83,6 +93,7 @@ func validateKeyEpochs(keys map[exported.KeyID]Key, keyEpochs []KeyEpoch) error 
 			}
 		}
 	}
+
 	return nil
 }
 
@@ -102,6 +113,7 @@ func validateSigningSessions(keys map[exported.KeyID]Key, signingSessions []Sign
 			return err
 		}
 	}
+
 	return nil
 }
 
