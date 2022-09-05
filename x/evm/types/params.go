@@ -268,11 +268,11 @@ func validateEndBlockerLimit(limit interface{}) error {
 }
 
 func validateTransferLimit(limit interface{}) error {
-	h, ok := limit.(int64)
+	h, ok := limit.(uint64)
 	if !ok {
 		return fmt.Errorf("invalid parameter type for transfer limit: %T", limit)
 	}
-	if h <= 0 {
+	if h == 0 {
 		return fmt.Errorf("transfer limit must be >0")
 	}
 

@@ -445,7 +445,7 @@ func (s msgServer) CreateBurnTokens(c context.Context, req *types.CreateBurnToke
 	}
 
 	keeper := s.ForChain(chain.Name)
-	transferLimit := uint64(keeper.GetParams(ctx).TransferLimit)
+	transferLimit := keeper.GetParams(ctx).TransferLimit
 	pageRequest := &query.PageRequest{
 		Key:        nil,
 		Offset:     0,
@@ -520,7 +520,7 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 	}
 
 	keeper := s.ForChain(chain.Name)
-	transferLimit := uint64(keeper.GetParams(ctx).TransferLimit)
+	transferLimit := keeper.GetParams(ctx).TransferLimit
 	pageRequest := &query.PageRequest{
 		Key:        nil,
 		Offset:     0,

@@ -12,6 +12,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/app/params"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
+	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/evm/types/mock"
@@ -46,6 +47,44 @@ func TestGetMigrationHandler(t *testing.T) {
 	)
 
 	evmChains := []nexus.Chain{exported.Ethereum}
+	tokens := []types.ERC20TokenMetadata{
+		{
+			Asset: rand.NormalizedStr(5),
+			Details: types.TokenDetails{
+				TokenName: rand.NormalizedStr(5),
+				Symbol:    rand.NormalizedStr(5),
+				Decimals:  8,
+				Capacity:  sdk.ZeroInt(),
+			},
+			Status:     types.Confirmed,
+			IsExternal: true,
+			BurnerCode: types.DefaultParams()[0].Burnable,
+		},
+		{
+			Asset: rand.NormalizedStr(5),
+			Details: types.TokenDetails{
+				TokenName: rand.NormalizedStr(5),
+				Symbol:    rand.NormalizedStr(5),
+				Decimals:  8,
+				Capacity:  sdk.ZeroInt(),
+			},
+			Status:     types.Pending,
+			IsExternal: false,
+			BurnerCode: types.DefaultParams()[0].Burnable,
+		},
+		{
+			Asset: rand.NormalizedStr(5),
+			Details: types.TokenDetails{
+				TokenName: rand.NormalizedStr(5),
+				Symbol:    rand.NormalizedStr(5),
+				Decimals:  8,
+				Capacity:  sdk.ZeroInt(),
+			},
+			Status:     types.Pending,
+			IsExternal: true,
+			BurnerCode: types.DefaultParams()[0].Burnable,
+		},
+	}
 
 	givenMigrationHandler := Given("the migration handler", func() {
 		ctx, keeper = setup()
@@ -57,6 +96,34 @@ func TestGetMigrationHandler(t *testing.T) {
 
 		handler = GetMigrationHandler(keeper, &nexus, &mock.SignerMock{}, &mock.MultisigKeeperMock{})
 	})
+
+	whenTokensAreSetup := givenMigrationHandler.
+		When("tokens are setup for evm chains", func() {
+			for _, chain := range evmChains {
+				for _, token := range tokens {
+					keeper.ForChain(chain.Name).(chainKeeper).setTokenMetadata(ctx, token)
+				}
+			}
+		})
+
+	whenTokensAreSetup.
+		When("migration runs", func() {
+			err := handler(ctx)
+			assert.NoError(t, err)
+		}).
+		Then("should remove burner code for external tokens", func(t *testing.T) {
+			for _, chain := range evmChains {
+				ck := keeper.ForChain(chain.Name).(chainKeeper)
+
+				for _, meta := range ck.getTokensMetadata(ctx) {
+					if meta.IsExternal {
+						assert.Nil(t, meta.BurnerCode)
+					} else {
+						assert.Equal(t, meta.BurnerCode, types.DefaultParams()[0].Burnable)
+					}
+				}
+			}
+		}).Run(t)
 
 	givenMigrationHandler.
 		When("TransferLimit param is not set", func() {
