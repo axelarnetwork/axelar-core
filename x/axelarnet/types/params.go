@@ -58,6 +58,10 @@ func (m Params) Validate() error {
 		return err
 	}
 
+	if err := validatePosUInt64("EndBlockerLimit")(m.EndBlockerLimit); err != nil {
+		return err
+	}
+
 	return nil
 }
 
