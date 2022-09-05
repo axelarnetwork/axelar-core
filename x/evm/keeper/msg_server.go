@@ -445,8 +445,18 @@ func (s msgServer) CreateBurnTokens(c context.Context, req *types.CreateBurnToke
 	}
 
 	keeper := s.ForChain(chain.Name)
-
-	deposits := keeper.GetConfirmedDeposits(ctx)
+	transferLimit := uint64(keeper.GetParams(ctx).TransferLimit)
+	pageRequest := &query.PageRequest{
+		Key:        nil,
+		Offset:     0,
+		Limit:      transferLimit,
+		CountTotal: false,
+		Reverse:    false,
+	}
+	deposits, _, err := keeper.GetConfirmedDepositsPaginated(ctx, pageRequest)
+	if err != nil {
+		return nil, err
+	}
 	if len(deposits) == 0 {
 		return &types.CreateBurnTokensResponse{}, nil
 	}
@@ -510,7 +520,7 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 	}
 
 	keeper := s.ForChain(chain.Name)
-	transferLimit := uint64(keeper.GetParams(ctx).EndBlockerLimit)
+	transferLimit := uint64(keeper.GetParams(ctx).TransferLimit)
 	pageRequest := &query.PageRequest{
 		Key:        nil,
 		Offset:     0,

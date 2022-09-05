@@ -3077,6 +3077,7 @@ Params is the parameter set for this module
 | `commands_gas_limit` | [uint32](#uint32) |  |  |
 | `voting_grace_period` | [int64](#int64) |  |  |
 | `end_blocker_limit` | [int64](#int64) |  |  |
+| `transfer_limit` | [int64](#int64) |  |  |
 
 
 

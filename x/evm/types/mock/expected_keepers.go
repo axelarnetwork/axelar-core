@@ -1899,8 +1899,8 @@ var _ evmtypes.ChainKeeper = &ChainKeeperMock{}
 // 			GetCommandFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, id evmtypes.CommandID) (evmtypes.Command, bool) {
 // 				panic("mock out the GetCommand method")
 // 			},
-// 			GetConfirmedDepositsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []evmtypes.ERC20Deposit {
-// 				panic("mock out the GetConfirmedDeposits method")
+// 			GetConfirmedDepositsPaginatedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, pageRequest *query.PageRequest) ([]evmtypes.ERC20Deposit, *query.PageResponse, error) {
+// 				panic("mock out the GetConfirmedDepositsPaginated method")
 // 			},
 // 			GetConfirmedEventQueueFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.KVQueue {
 // 				panic("mock out the GetConfirmedEventQueue method")
@@ -2029,8 +2029,8 @@ type ChainKeeperMock struct {
 	// GetCommandFunc mocks the GetCommand method.
 	GetCommandFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, id evmtypes.CommandID) (evmtypes.Command, bool)
 
-	// GetConfirmedDepositsFunc mocks the GetConfirmedDeposits method.
-	GetConfirmedDepositsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) []evmtypes.ERC20Deposit
+	// GetConfirmedDepositsPaginatedFunc mocks the GetConfirmedDepositsPaginated method.
+	GetConfirmedDepositsPaginatedFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, pageRequest *query.PageRequest) ([]evmtypes.ERC20Deposit, *query.PageResponse, error)
 
 	// GetConfirmedEventQueueFunc mocks the GetConfirmedEventQueue method.
 	GetConfirmedEventQueueFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.KVQueue
@@ -2206,10 +2206,12 @@ type ChainKeeperMock struct {
 			// ID is the id argument value.
 			ID evmtypes.CommandID
 		}
-		// GetConfirmedDeposits holds details about calls to the GetConfirmedDeposits method.
-		GetConfirmedDeposits []struct {
+		// GetConfirmedDepositsPaginated holds details about calls to the GetConfirmedDepositsPaginated method.
+		GetConfirmedDepositsPaginated []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// PageRequest is the pageRequest argument value.
+			PageRequest *query.PageRequest
 		}
 		// GetConfirmedEventQueue holds details about calls to the GetConfirmedEventQueue method.
 		GetConfirmedEventQueue []struct {
@@ -2388,7 +2390,7 @@ type ChainKeeperMock struct {
 	lockGetChainID                    sync.RWMutex
 	lockGetChainIDByNetwork           sync.RWMutex
 	lockGetCommand                    sync.RWMutex
-	lockGetConfirmedDeposits          sync.RWMutex
+	lockGetConfirmedDepositsPaginated sync.RWMutex
 	lockGetConfirmedEventQueue        sync.RWMutex
 	lockGetDeposit                    sync.RWMutex
 	lockGetERC20TokenByAsset          sync.RWMutex
@@ -2873,34 +2875,38 @@ func (mock *ChainKeeperMock) GetCommandCalls() []struct {
 	return calls
 }
 
-// GetConfirmedDeposits calls GetConfirmedDepositsFunc.
-func (mock *ChainKeeperMock) GetConfirmedDeposits(ctx github_com_cosmos_cosmos_sdk_types.Context) []evmtypes.ERC20Deposit {
-	if mock.GetConfirmedDepositsFunc == nil {
-		panic("ChainKeeperMock.GetConfirmedDepositsFunc: method is nil but ChainKeeper.GetConfirmedDeposits was just called")
+// GetConfirmedDepositsPaginated calls GetConfirmedDepositsPaginatedFunc.
+func (mock *ChainKeeperMock) GetConfirmedDepositsPaginated(ctx github_com_cosmos_cosmos_sdk_types.Context, pageRequest *query.PageRequest) ([]evmtypes.ERC20Deposit, *query.PageResponse, error) {
+	if mock.GetConfirmedDepositsPaginatedFunc == nil {
+		panic("ChainKeeperMock.GetConfirmedDepositsPaginatedFunc: method is nil but ChainKeeper.GetConfirmedDepositsPaginated was just called")
 	}
 	callInfo := struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
+		Ctx         github_com_cosmos_cosmos_sdk_types.Context
+		PageRequest *query.PageRequest
 	}{
-		Ctx: ctx,
+		Ctx:         ctx,
+		PageRequest: pageRequest,
 	}
-	mock.lockGetConfirmedDeposits.Lock()
-	mock.calls.GetConfirmedDeposits = append(mock.calls.GetConfirmedDeposits, callInfo)
-	mock.lockGetConfirmedDeposits.Unlock()
-	return mock.GetConfirmedDepositsFunc(ctx)
+	mock.lockGetConfirmedDepositsPaginated.Lock()
+	mock.calls.GetConfirmedDepositsPaginated = append(mock.calls.GetConfirmedDepositsPaginated, callInfo)
+	mock.lockGetConfirmedDepositsPaginated.Unlock()
+	return mock.GetConfirmedDepositsPaginatedFunc(ctx, pageRequest)
 }
 
-// GetConfirmedDepositsCalls gets all the calls that were made to GetConfirmedDeposits.
+// GetConfirmedDepositsPaginatedCalls gets all the calls that were made to GetConfirmedDepositsPaginated.
 // Check the length with:
-//     len(mockedChainKeeper.GetConfirmedDepositsCalls())
-func (mock *ChainKeeperMock) GetConfirmedDepositsCalls() []struct {
-	Ctx github_com_cosmos_cosmos_sdk_types.Context
+//     len(mockedChainKeeper.GetConfirmedDepositsPaginatedCalls())
+func (mock *ChainKeeperMock) GetConfirmedDepositsPaginatedCalls() []struct {
+	Ctx         github_com_cosmos_cosmos_sdk_types.Context
+	PageRequest *query.PageRequest
 } {
 	var calls []struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
+		Ctx         github_com_cosmos_cosmos_sdk_types.Context
+		PageRequest *query.PageRequest
 	}
-	mock.lockGetConfirmedDeposits.RLock()
-	calls = mock.calls.GetConfirmedDeposits
-	mock.lockGetConfirmedDeposits.RUnlock()
+	mock.lockGetConfirmedDepositsPaginated.RLock()
+	calls = mock.calls.GetConfirmedDepositsPaginated
+	mock.lockGetConfirmedDepositsPaginated.RUnlock()
 	return calls
 }
 

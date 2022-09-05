@@ -55,7 +55,7 @@ type ChainKeeper interface {
 	SetBurnerInfo(ctx sdk.Context, burnerInfo BurnerInfo)
 	DeleteDeposit(ctx sdk.Context, deposit ERC20Deposit)
 	SetDeposit(ctx sdk.Context, deposit ERC20Deposit, state DepositStatus)
-	GetConfirmedDeposits(ctx sdk.Context) []ERC20Deposit
+	GetConfirmedDepositsPaginated(ctx sdk.Context, pageRequest *query.PageRequest) ([]ERC20Deposit, *query.PageResponse, error)
 	GetNetworkByID(ctx sdk.Context, id sdk.Int) (string, bool)
 	GetChainIDByNetwork(ctx sdk.Context, network string) (sdk.Int, bool)
 	GetVotingThreshold(ctx sdk.Context) (utils.Threshold, bool)
