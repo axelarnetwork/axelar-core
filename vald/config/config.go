@@ -4,7 +4,6 @@ import (
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/tendermint/tendermint/config"
 
 	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -29,7 +28,7 @@ func DefaultValdConfig() ValdConfig {
 		BroadcastConfig:       DefaultBroadcastConfig(),
 		BatchSizeLimit:        250,
 		BatchThreshold:        3,
-		MaxBlocksBehindLatest: 50, // Max voting/sign/heartbeats periods are 50 blocks
+		MaxBlocksBehindLatest: 10, // Max voting/sign/heartbeats periods are under 10 blocks
 		MaxLatestBlockAge:     15 * time.Second,
 		EVMConfig:             evm.DefaultConfig(),
 	}
@@ -46,8 +45,8 @@ type BroadcastConfig struct {
 // DefaultBroadcastConfig returns a configurations populated with default values
 func DefaultBroadcastConfig() BroadcastConfig {
 	return BroadcastConfig{
-		MaxRetries:          10,
+		MaxRetries:          3,
 		MinSleepBeforeRetry: 5 * time.Second,
-		MaxTimeout:          config.DefaultRPCConfig().TimeoutBroadcastTxCommit,
+		MaxTimeout:          15 * time.Second,
 	}
 }
