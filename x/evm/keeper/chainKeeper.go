@@ -6,7 +6,9 @@ import (
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/query"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
@@ -409,8 +411,8 @@ func (k chainKeeper) GetDeposit(ctx sdk.Context, txID types.Hash, burnAddr types
 	return types.ERC20Deposit{}, 0, false
 }
 
-// GetConfirmedDeposits retrieves all the confirmed ERC20 deposits
-func (k chainKeeper) GetConfirmedDeposits(ctx sdk.Context) []types.ERC20Deposit {
+// getConfirmedDeposits retrieves all the confirmed ERC20 deposits
+func (k chainKeeper) getConfirmedDeposits(ctx sdk.Context) []types.ERC20Deposit {
 	var deposits []types.ERC20Deposit
 	iter := k.getStore(ctx, k.chainLowerKey).Iterator(confirmedDepositPrefix)
 	defer utils.CloseLogError(iter, k.Logger(ctx))
@@ -422,6 +424,23 @@ func (k chainKeeper) GetConfirmedDeposits(ctx sdk.Context) []types.ERC20Deposit 
 	}
 
 	return deposits
+}
+
+// GetConfirmedDepositsPaginated retrieves all the confirmed ERC20 deposits with the given pagination properties
+func (k chainKeeper) GetConfirmedDepositsPaginated(ctx sdk.Context, pageRequest *query.PageRequest) ([]types.ERC20Deposit, *query.PageResponse, error) {
+	var deposits []types.ERC20Deposit
+
+	resp, err := query.Paginate(prefix.NewStore(k.getStore(ctx, k.chainLowerKey).KVStore, confirmedDepositPrefix.AsKey()), pageRequest, func(key []byte, value []byte) error {
+		var deposit types.ERC20Deposit
+		k.cdc.MustUnmarshalLengthPrefixed(value, &deposit)
+		deposits = append(deposits, deposit)
+		return nil
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return deposits, resp, nil
 }
 
 // getBurnedDeposits retrieves all the burned ERC20 deposits
@@ -886,6 +905,18 @@ func (k chainKeeper) SetEventFailed(ctx sdk.Context, eventID types.EventID) erro
 
 	event.Status = types.EventFailed
 	k.setEvent(ctx, event)
+
+	k.Logger(ctx).Debug("failed handling event",
+		"chain", event.Chain,
+		"eventID", event.GetID(),
+	)
+
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(
+		&types.EVMEventFailed{
+			EventID: event.GetID(),
+			Chain:   event.Chain,
+		}),
+	)
 
 	return nil
 }
