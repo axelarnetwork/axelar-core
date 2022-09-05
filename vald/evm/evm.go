@@ -78,7 +78,7 @@ func (mgr Mgr) ProcessDepositConfirmation(event *types.ConfirmDepositStarted) er
 	}
 	if txReceipt == nil {
 		mgr.logger.Info(fmt.Sprintf("broadcasting empty vote for poll %s", event.PollID.String()))
-		_, err := mgr.broadcaster.Broadcast(context.TODO(), voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, event.PollID, types.NewVoteEvents(event.Chain, nil)))
+		_, err := mgr.broadcaster.Broadcast(context.TODO(), voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, event.PollID, types.NewVoteEvents(event.Chain)))
 
 		return err
 	}
@@ -119,7 +119,7 @@ func (mgr Mgr) ProcessDepositConfirmation(event *types.ConfirmDepositStarted) er
 	}
 
 	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", events, event.PollID.String()))
-	_, err = mgr.broadcaster.Broadcast(context.TODO(), voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, event.PollID, types.NewVoteEvents(event.Chain, events)))
+	_, err = mgr.broadcaster.Broadcast(context.TODO(), voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, event.PollID, types.NewVoteEvents(event.Chain, events...)))
 
 	return err
 }
@@ -137,7 +137,7 @@ func (mgr Mgr) ProcessTokenConfirmation(event *types.ConfirmTokenStarted) error 
 	}
 	if txReceipt == nil {
 		mgr.logger.Info(fmt.Sprintf("broadcasting empty vote for poll %s", event.PollID.String()))
-		_, err := mgr.broadcaster.Broadcast(context.TODO(), voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, event.PollID, types.NewVoteEvents(event.Chain, nil)))
+		_, err := mgr.broadcaster.Broadcast(context.TODO(), voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, event.PollID, types.NewVoteEvents(event.Chain)))
 
 		return err
 	}
@@ -179,7 +179,7 @@ func (mgr Mgr) ProcessTokenConfirmation(event *types.ConfirmTokenStarted) error 
 	}
 
 	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", events, event.PollID.String()))
-	_, err = mgr.broadcaster.Broadcast(context.TODO(), voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, event.PollID, types.NewVoteEvents(event.Chain, events)))
+	_, err = mgr.broadcaster.Broadcast(context.TODO(), voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, event.PollID, types.NewVoteEvents(event.Chain, events...)))
 
 	return err
 }
@@ -197,7 +197,7 @@ func (mgr Mgr) ProcessTransferKeyConfirmation(event *types.ConfirmKeyTransferSta
 	}
 	if txReceipt == nil {
 		mgr.logger.Info(fmt.Sprintf("broadcasting empty vote for poll %s", event.PollID.String()))
-		_, err := mgr.broadcaster.Broadcast(context.TODO(), voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, event.PollID, types.NewVoteEvents(event.Chain, nil)))
+		_, err := mgr.broadcaster.Broadcast(context.TODO(), voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, event.PollID, types.NewVoteEvents(event.Chain)))
 
 		return err
 	}
@@ -237,7 +237,7 @@ func (mgr Mgr) ProcessTransferKeyConfirmation(event *types.ConfirmKeyTransferSta
 	}
 
 	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", events, event.PollID.String()))
-	_, err = mgr.broadcaster.Broadcast(context.TODO(), voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, event.PollID, types.NewVoteEvents(event.Chain, events)))
+	_, err = mgr.broadcaster.Broadcast(context.TODO(), voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, event.PollID, types.NewVoteEvents(event.Chain, events...)))
 
 	return err
 }
@@ -255,7 +255,7 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(event *types.ConfirmGatewayTxStarted
 	}
 	if txReceipt == nil {
 		mgr.logger.Info(fmt.Sprintf("broadcasting empty vote for poll %s", event.PollID.String()))
-		_, err := mgr.broadcaster.Broadcast(context.TODO(), voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, event.PollID, types.NewVoteEvents(event.Chain, nil)))
+		_, err := mgr.broadcaster.Broadcast(context.TODO(), voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, event.PollID, types.NewVoteEvents(event.Chain)))
 
 		return err
 	}
@@ -331,7 +331,7 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(event *types.ConfirmGatewayTxStarted
 	}
 
 	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", events, event.PollID.String()))
-	_, err = mgr.broadcaster.Broadcast(context.TODO(), voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, event.PollID, types.NewVoteEvents(event.Chain, events)))
+	_, err = mgr.broadcaster.Broadcast(context.TODO(), voteTypes.NewVoteRequest(mgr.cliCtx.FromAddress, event.PollID, types.NewVoteEvents(event.Chain, events...)))
 
 	return err
 }
