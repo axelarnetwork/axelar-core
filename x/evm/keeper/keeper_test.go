@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/query"
 	paramsKeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/ethereum/go-ethereum/common"
@@ -17,11 +18,13 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 	evmKeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	multisigTestUtils "github.com/axelarnetwork/axelar-core/x/multisig/exported/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	. "github.com/axelarnetwork/utils/test"
 )
 
 func TestCommands(t *testing.T) {
@@ -245,4 +248,111 @@ func TestGetBurnerAddress(t *testing.T) {
 		assert.Equal(t, expectedBurnerAddr, actualburnerAddr.Hex())
 		assert.Equal(t, common.Bytes2Hex(expectedSalt), common.Bytes2Hex(actualSalt[:]))
 	}))
+}
+
+func TestGetConfirmedDepositsPaginated(t *testing.T) {
+	var (
+		ctx         sdk.Context
+		keeper      types.BaseKeeper
+		chain       nexus.ChainName
+		chainKeeper types.ChainKeeper
+		deposits    map[string]types.ERC20Deposit
+	)
+
+	setup := func() {
+		encCfg := params.MakeEncodingConfig()
+		paramsK := paramsKeeper.NewKeeper(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("params"), sdk.NewKVStoreKey("tparams"))
+		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+		keeper = evmKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("evm"), paramsK)
+		chain = "Ethereum"
+	}
+
+	repeats := 20
+
+	whenDepositsAreConfirmed := When("set confirmed deposits", func() {
+		setup()
+		chainKeeper = keeper.ForChain(chain)
+		chainKeeper.SetParams(ctx, types.DefaultParams()[0])
+
+		depositCount := int(rand.I64Between(1, 20))
+		deposits = make(map[string]types.ERC20Deposit, depositCount)
+		for i := 0; i < depositCount; i++ {
+			deposit := types.ERC20Deposit{
+				TxID:             types.Hash(common.HexToHash(rand.HexStr(common.HashLength))),
+				Amount:           sdk.NewUint(uint64(rand.I64Between(1000, 1000000))),
+				Asset:            rand.Str(5),
+				DestinationChain: axelarnet.Axelarnet.Name,
+				BurnerAddress:    types.Address(common.HexToAddress(rand.HexStr(common.AddressLength))),
+			}
+			deposits[deposit.BurnerAddress.Hex()] = deposit
+
+			chainKeeper.SetDeposit(ctx, deposit, types.DepositStatus_Confirmed)
+		}
+	})
+
+	whenDepositsAreConfirmed.
+		Then("retrieve one", func(t *testing.T) {
+			confirmedDeposits, resp, err := chainKeeper.GetConfirmedDepositsPaginated(ctx, &query.PageRequest{Offset: 0, Limit: 1})
+			assert.NoError(t, err)
+			assert.NotNil(t, resp)
+			assert.Len(t, confirmedDeposits, 1)
+			_, ok := deposits[confirmedDeposits[0].BurnerAddress.Hex()]
+			assert.True(t, ok)
+		}).Run(t, repeats)
+
+	whenDepositsAreConfirmed.
+		Then("retrieve all deposits", func(t *testing.T) {
+			confirmedDeposits, resp, err := chainKeeper.GetConfirmedDepositsPaginated(ctx, &query.PageRequest{Offset: 0, Limit: uint64(len(deposits))})
+			assert.NoError(t, err)
+			assert.NotNil(t, resp)
+			assert.Len(t, confirmedDeposits, len(deposits))
+			for _, confirmedDeposit := range confirmedDeposits {
+				_, ok := deposits[confirmedDeposit.BurnerAddress.Hex()]
+				assert.True(t, ok)
+
+				chainKeeper.DeleteDeposit(ctx, confirmedDeposit)
+				chainKeeper.SetDeposit(ctx, confirmedDeposit, types.DepositStatus_Burned)
+			}
+
+			confirmedDeposits, resp, err = chainKeeper.GetConfirmedDepositsPaginated(ctx, &query.PageRequest{Offset: 0, Limit: uint64(len(deposits))})
+			assert.NoError(t, err)
+			assert.NotNil(t, resp)
+			assert.Len(t, confirmedDeposits, 0)
+		}).
+		Run(t, repeats)
+
+	whenDepositsAreConfirmed.
+		Then("retrieve batches of deposits", func(t *testing.T) {
+			batchSize := int(rand.I64Between(1, int64(len(deposits)+1)))
+			seen := make(map[string]types.ERC20Deposit, len(deposits))
+
+			for i := 0; i < len(deposits); i += batchSize {
+				confirmedDeposits, resp, err := chainKeeper.GetConfirmedDepositsPaginated(ctx, &query.PageRequest{Offset: uint64(i), Limit: uint64(batchSize)})
+				assert.NoError(t, err)
+				assert.NotNil(t, resp)
+
+				size := batchSize
+				if i+batchSize > len(deposits) {
+					size = len(deposits) - i
+				}
+				assert.Len(t, confirmedDeposits, size)
+
+				for _, confirmedDeposit := range confirmedDeposits {
+					seen[confirmedDeposit.BurnerAddress.Hex()] = confirmedDeposit
+				}
+			}
+
+			assert.Equal(t, deposits, seen)
+
+			for _, confirmedDeposit := range seen {
+				chainKeeper.DeleteDeposit(ctx, confirmedDeposit)
+				chainKeeper.SetDeposit(ctx, confirmedDeposit, types.DepositStatus_Burned)
+			}
+
+			confirmedDeposits, resp, err := chainKeeper.GetConfirmedDepositsPaginated(ctx, &query.PageRequest{Offset: 0, Limit: uint64(len(deposits))})
+			assert.NoError(t, err)
+			assert.NotNil(t, resp)
+			assert.Len(t, confirmedDeposits, 0)
+		}).
+		Run(t, repeats)
 }
