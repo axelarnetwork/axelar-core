@@ -141,6 +141,34 @@ func getKeygenSessionKey(id exported.KeyID) utils.Key {
 	return keygenPrefix.Append(utils.LowerCaseKey(id.String()))
 }
 
+func (k Keeper) getKeygenSessions(ctx sdk.Context) (keygenSessions []types.KeygenSession) {
+	iter := k.getStore(ctx).Iterator(keygenPrefix)
+	defer utils.CloseLogError(iter, k.Logger(ctx))
+
+	for ; iter.Valid(); iter.Next() {
+		var keygenSession types.KeygenSession
+		iter.UnmarshalValue(&keygenSession)
+
+		keygenSessions = append(keygenSessions, keygenSession)
+	}
+
+	return keygenSessions
+}
+
+func (k Keeper) getKeys(ctx sdk.Context) (keys []types.Key) {
+	iter := k.getStore(ctx).Iterator(keyPrefix)
+	defer utils.CloseLogError(iter, k.Logger(ctx))
+
+	for ; iter.Valid(); iter.Next() {
+		var key types.Key
+		iter.UnmarshalValue(&key)
+
+		keys = append(keys, key)
+	}
+
+	return keys
+}
+
 func (k Keeper) nextKeyID(ctx sdk.Context) exported.KeyID {
 	var val gogoprototypes.UInt64Value
 	k.getStore(ctx).Get(keygenSessionCountKey, &val)
