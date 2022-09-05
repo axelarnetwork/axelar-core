@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"testing"
 
-	. "github.com/axelarnetwork/utils/test"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
 	paramsKeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
@@ -25,6 +24,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	multisigTestUtils "github.com/axelarnetwork/axelar-core/x/multisig/exported/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	. "github.com/axelarnetwork/utils/test"
 )
 
 func TestCommands(t *testing.T) {
