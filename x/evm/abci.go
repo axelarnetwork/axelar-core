@@ -10,9 +10,10 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/utils/funcs"
 )
 
-func validateChains(ctx sdk.Context, sourceChainName nexus.ChainName, destinationChainName nexus.ChainName, bk types.BaseKeeper, n types.Nexus) (nexus.Chain, nexus.Chain, error) {
+func validateChains(ctx sdk.Context, sourceChainName nexus.ChainName, destinationChainName nexus.ChainName, n types.Nexus) (nexus.Chain, nexus.Chain, error) {
 	sourceChain, ok := n.GetChain(ctx, sourceChainName)
 	if !ok {
 		panic(fmt.Errorf("%s is not a registered chain", sourceChainName))
@@ -32,7 +33,7 @@ func handleTokenSent(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n 
 		panic(fmt.Errorf("event is nil"))
 	}
 
-	sourceChain, destinationChain, err := validateChains(ctx, event.Chain, e.DestinationChain, bk, n)
+	sourceChain, destinationChain, err := validateChains(ctx, event.Chain, e.DestinationChain, n)
 	if err != nil {
 		bk.Logger(ctx).Info(err.Error())
 		return false
@@ -81,7 +82,7 @@ func handleContractCall(ctx sdk.Context, event types.Event, bk types.BaseKeeper,
 		panic(fmt.Errorf("event is nil"))
 	}
 
-	sourceChain, destinationChain, err := validateChains(ctx, event.Chain, e.DestinationChain, bk, n)
+	sourceChain, destinationChain, err := validateChains(ctx, event.Chain, e.DestinationChain, n)
 	if err != nil {
 		bk.Logger(ctx).Info(err.Error())
 		return false
@@ -135,7 +136,7 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 		panic(fmt.Errorf("event is nil"))
 	}
 
-	sourceChain, destinationChain, err := validateChains(ctx, event.Chain, e.DestinationChain, bk, n)
+	sourceChain, destinationChain, err := validateChains(ctx, event.Chain, e.DestinationChain, n)
 	if err != nil {
 		bk.Logger(ctx).Info(err.Error())
 		return false
@@ -401,10 +402,16 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 			panic(fmt.Errorf("unsupported event type %T", event))
 		}
 
-		// would handle event as failure if destination chain is not registered
+		// skip if destination chain is not registered
 		destinationChain, ok := n.GetChain(ctx, destinationChainName)
 		if !ok {
-			return true
+			bk.Logger(ctx).Debug(fmt.Sprintf("skipping confirmed event %s due to destination chain is not registered", event.GetID()),
+				"chain", event.Chain.String(),
+				"destination_chain", destinationChainName.String(),
+				"eventID", event.GetID(),
+			)
+
+			return false
 		}
 
 		// skip if destination chain is not activated
@@ -448,8 +455,13 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 		endBlockerLimit := ck.GetParams(ctx).EndBlockerLimit
 		handledEvents := int64(0)
 		var event types.Event
-		for handledEvents < endBlockerLimit && queue.DequeueUntil(&event, shouldHandleEvent) {
+		for handledEvents < endBlockerLimit && queue.Dequeue(&event) {
 			handledEvents++
+			if !shouldHandleEvent(&event) {
+				funcs.MustNoErr(ck.SetEventFailed(ctx, event.GetID()))
+				continue
+			}
+
 			bk.Logger(ctx).Debug("handling confirmed event",
 				"chain", chain.Name.String(),
 				"eventID", event.GetID(),
@@ -480,15 +492,7 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 			}
 
 			if !ok {
-				if err := ck.SetEventFailed(ctx, event.GetID()); err != nil {
-					return err
-				}
-
-				ck.Logger(ctx).Debug("failed handling event",
-					"chain", chain.Name,
-					"eventID", event.GetID(),
-				)
-
+				funcs.MustNoErr(ck.SetEventFailed(ctx, event.GetID()))
 				continue
 			}
 

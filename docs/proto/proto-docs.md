@@ -183,6 +183,7 @@
     - [ConfirmGatewayTxStarted](#axelar.evm.v1beta1.ConfirmGatewayTxStarted)
     - [ConfirmKeyTransferStarted](#axelar.evm.v1beta1.ConfirmKeyTransferStarted)
     - [ConfirmTokenStarted](#axelar.evm.v1beta1.ConfirmTokenStarted)
+    - [EVMEventFailed](#axelar.evm.v1beta1.EVMEventFailed)
     - [NoEventsConfirmed](#axelar.evm.v1beta1.NoEventsConfirmed)
     - [PollExpired](#axelar.evm.v1beta1.PollExpired)
     - [PollFailed](#axelar.evm.v1beta1.PollFailed)
@@ -2984,6 +2985,22 @@ TransferKey contains information for a transfer operatorship
 | `token_details` | [TokenDetails](#axelar.evm.v1beta1.TokenDetails) |  |  |
 | `confirmation_height` | [uint64](#uint64) |  |  |
 | `participants` | [axelar.vote.exported.v1beta1.PollParticipants](#axelar.vote.exported.v1beta1.PollParticipants) |  |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.EVMEventFailed"></a>
+
+### EVMEventFailed
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `event_id` | [string](#string) |  |  |
+| `chain` | [string](#string) |  |  |
 
 
 

@@ -906,6 +906,18 @@ func (k chainKeeper) SetEventFailed(ctx sdk.Context, eventID types.EventID) erro
 	event.Status = types.EventFailed
 	k.setEvent(ctx, event)
 
+	k.Logger(ctx).Debug("failed handling event",
+		"chain", event.Chain,
+		"eventID", event.GetID(),
+	)
+
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(
+		&types.EVMEventFailed{
+			EventID: event.GetID(),
+			Chain:   event.Chain,
+		}),
+	)
+
 	return nil
 }
 
