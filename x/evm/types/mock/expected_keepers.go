@@ -15,6 +15,7 @@ import (
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/cosmos/cosmos-sdk/codec"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/query"
 	"github.com/tendermint/tendermint/libs/log"
 	"sync"
 )
@@ -302,8 +303,8 @@ var _ evmtypes.Nexus = &NexusMock{}
 // 			GetRecipientFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress) (github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, bool) {
 // 				panic("mock out the GetRecipient method")
 // 			},
-// 			GetTransfersForChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, state github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferState) []github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainTransfer {
-// 				panic("mock out the GetTransfersForChain method")
+// 			GetTransfersForChainPaginatedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, state github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferState, pageRequest *query.PageRequest) ([]github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainTransfer, *query.PageResponse, error) {
+// 				panic("mock out the GetTransfersForChainPaginated method")
 // 			},
 // 			IsAssetRegisteredFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, denom string) bool {
 // 				panic("mock out the IsAssetRegistered method")
@@ -363,8 +364,8 @@ type NexusMock struct {
 	// GetRecipientFunc mocks the GetRecipient method.
 	GetRecipientFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress) (github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, bool)
 
-	// GetTransfersForChainFunc mocks the GetTransfersForChain method.
-	GetTransfersForChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, state github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferState) []github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainTransfer
+	// GetTransfersForChainPaginatedFunc mocks the GetTransfersForChainPaginated method.
+	GetTransfersForChainPaginatedFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, state github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferState, pageRequest *query.PageRequest) ([]github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainTransfer, *query.PageResponse, error)
 
 	// IsAssetRegisteredFunc mocks the IsAssetRegistered method.
 	IsAssetRegisteredFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, denom string) bool
@@ -473,14 +474,16 @@ type NexusMock struct {
 			// Sender is the sender argument value.
 			Sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
 		}
-		// GetTransfersForChain holds details about calls to the GetTransfersForChain method.
-		GetTransfersForChain []struct {
+		// GetTransfersForChainPaginated holds details about calls to the GetTransfersForChainPaginated method.
+		GetTransfersForChainPaginated []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Chain is the chain argument value.
 			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 			// State is the state argument value.
 			State github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferState
+			// PageRequest is the pageRequest argument value.
+			PageRequest *query.PageRequest
 		}
 		// IsAssetRegistered holds details about calls to the IsAssetRegistered method.
 		IsAssetRegistered []struct {
@@ -531,24 +534,24 @@ type NexusMock struct {
 			MaintainerState github_com_axelarnetwork_axelar_core_x_nexus_exported.MaintainerState
 		}
 	}
-	lockAddTransferFee          sync.RWMutex
-	lockArchivePendingTransfer  sync.RWMutex
-	lockComputeTransferFee      sync.RWMutex
-	lockEnqueueForTransfer      sync.RWMutex
-	lockEnqueueTransfer         sync.RWMutex
-	lockGetChain                sync.RWMutex
-	lockGetChainByNativeAsset   sync.RWMutex
-	lockGetChainMaintainerState sync.RWMutex
-	lockGetChainMaintainers     sync.RWMutex
-	lockGetChains               sync.RWMutex
-	lockGetRecipient            sync.RWMutex
-	lockGetTransfersForChain    sync.RWMutex
-	lockIsAssetRegistered       sync.RWMutex
-	lockIsChainActivated        sync.RWMutex
-	lockLinkAddresses           sync.RWMutex
-	lockRegisterAsset           sync.RWMutex
-	lockSetChain                sync.RWMutex
-	lockSetChainMaintainerState sync.RWMutex
+	lockAddTransferFee                sync.RWMutex
+	lockArchivePendingTransfer        sync.RWMutex
+	lockComputeTransferFee            sync.RWMutex
+	lockEnqueueForTransfer            sync.RWMutex
+	lockEnqueueTransfer               sync.RWMutex
+	lockGetChain                      sync.RWMutex
+	lockGetChainByNativeAsset         sync.RWMutex
+	lockGetChainMaintainerState       sync.RWMutex
+	lockGetChainMaintainers           sync.RWMutex
+	lockGetChains                     sync.RWMutex
+	lockGetRecipient                  sync.RWMutex
+	lockGetTransfersForChainPaginated sync.RWMutex
+	lockIsAssetRegistered             sync.RWMutex
+	lockIsChainActivated              sync.RWMutex
+	lockLinkAddresses                 sync.RWMutex
+	lockRegisterAsset                 sync.RWMutex
+	lockSetChain                      sync.RWMutex
+	lockSetChainMaintainerState       sync.RWMutex
 }
 
 // AddTransferFee calls AddTransferFeeFunc.
@@ -956,42 +959,46 @@ func (mock *NexusMock) GetRecipientCalls() []struct {
 	return calls
 }
 
-// GetTransfersForChain calls GetTransfersForChainFunc.
-func (mock *NexusMock) GetTransfersForChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, state github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferState) []github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainTransfer {
-	if mock.GetTransfersForChainFunc == nil {
-		panic("NexusMock.GetTransfersForChainFunc: method is nil but Nexus.GetTransfersForChain was just called")
+// GetTransfersForChainPaginated calls GetTransfersForChainPaginatedFunc.
+func (mock *NexusMock) GetTransfersForChainPaginated(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, state github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferState, pageRequest *query.PageRequest) ([]github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainTransfer, *query.PageResponse, error) {
+	if mock.GetTransfersForChainPaginatedFunc == nil {
+		panic("NexusMock.GetTransfersForChainPaginatedFunc: method is nil but Nexus.GetTransfersForChainPaginated was just called")
 	}
 	callInfo := struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-		State github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferState
+		Ctx         github_com_cosmos_cosmos_sdk_types.Context
+		Chain       github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
+		State       github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferState
+		PageRequest *query.PageRequest
 	}{
-		Ctx:   ctx,
-		Chain: chain,
-		State: state,
+		Ctx:         ctx,
+		Chain:       chain,
+		State:       state,
+		PageRequest: pageRequest,
 	}
-	mock.lockGetTransfersForChain.Lock()
-	mock.calls.GetTransfersForChain = append(mock.calls.GetTransfersForChain, callInfo)
-	mock.lockGetTransfersForChain.Unlock()
-	return mock.GetTransfersForChainFunc(ctx, chain, state)
+	mock.lockGetTransfersForChainPaginated.Lock()
+	mock.calls.GetTransfersForChainPaginated = append(mock.calls.GetTransfersForChainPaginated, callInfo)
+	mock.lockGetTransfersForChainPaginated.Unlock()
+	return mock.GetTransfersForChainPaginatedFunc(ctx, chain, state, pageRequest)
 }
 
-// GetTransfersForChainCalls gets all the calls that were made to GetTransfersForChain.
+// GetTransfersForChainPaginatedCalls gets all the calls that were made to GetTransfersForChainPaginated.
 // Check the length with:
-//     len(mockedNexus.GetTransfersForChainCalls())
-func (mock *NexusMock) GetTransfersForChainCalls() []struct {
-	Ctx   github_com_cosmos_cosmos_sdk_types.Context
-	Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-	State github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferState
+//     len(mockedNexus.GetTransfersForChainPaginatedCalls())
+func (mock *NexusMock) GetTransfersForChainPaginatedCalls() []struct {
+	Ctx         github_com_cosmos_cosmos_sdk_types.Context
+	Chain       github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
+	State       github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferState
+	PageRequest *query.PageRequest
 } {
 	var calls []struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-		State github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferState
+		Ctx         github_com_cosmos_cosmos_sdk_types.Context
+		Chain       github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
+		State       github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferState
+		PageRequest *query.PageRequest
 	}
-	mock.lockGetTransfersForChain.RLock()
-	calls = mock.calls.GetTransfersForChain
-	mock.lockGetTransfersForChain.RUnlock()
+	mock.lockGetTransfersForChainPaginated.RLock()
+	calls = mock.calls.GetTransfersForChainPaginated
+	mock.lockGetTransfersForChainPaginated.RUnlock()
 	return calls
 }
 

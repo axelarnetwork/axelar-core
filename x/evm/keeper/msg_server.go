@@ -9,6 +9,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/cosmos-sdk/types/query"
 
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
@@ -308,7 +309,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 	}
 
 	if burnerAddress != req.BurnerAddress {
-		return nil, fmt.Errorf("provided burner address %s doesn't match expected address %s", req.BurnerAddress, burnerAddress)
+		return nil, fmt.Errorf("provided burner address %s doesn't match expected address %s", req.BurnerAddress.Hex(), burnerAddress.Hex())
 	}
 
 	pollParticipants, err := s.initializePoll(ctx, chain, req.TxID)
@@ -509,8 +510,19 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 	}
 
 	keeper := s.ForChain(chain.Name)
+	transferLimit := uint64(keeper.GetParams(ctx).EndBlockerLimit)
+	pageRequest := &query.PageRequest{
+		Key:        nil,
+		Offset:     0,
+		Limit:      transferLimit,
+		CountTotal: false,
+		Reverse:    false,
+	}
+	pendingTransfers, _, err := s.nexus.GetTransfersForChainPaginated(ctx, chain, nexus.Pending, pageRequest)
+	if err != nil {
+		return nil, err
+	}
 
-	pendingTransfers := s.nexus.GetTransfersForChain(ctx, chain, nexus.Pending)
 	if len(pendingTransfers) == 0 {
 		s.Logger(ctx).Debug("no pending transfers found")
 		return &types.CreatePendingTransfersResponse{}, nil
