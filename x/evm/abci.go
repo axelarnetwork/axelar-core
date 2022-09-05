@@ -457,15 +457,15 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 		var event types.Event
 		for handledEvents < endBlockerLimit && queue.Dequeue(&event) {
 			handledEvents++
-			bk.Logger(ctx).Debug("handling confirmed event",
-				"chain", chain.Name.String(),
-				"eventID", event.GetID(),
-			)
-
 			if !shouldHandleEvent(&event) {
 				setEventFailed(ctx, ck, event, chain.Name)
 				continue
 			}
+
+			bk.Logger(ctx).Debug("handling confirmed event",
+				"chain", chain.Name.String(),
+				"eventID", event.GetID(),
+			)
 
 			var ok bool
 
