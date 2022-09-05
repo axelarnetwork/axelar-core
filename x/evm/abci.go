@@ -458,7 +458,7 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 		for handledEvents < endBlockerLimit && queue.Dequeue(&event) {
 			handledEvents++
 			if !shouldHandleEvent(&event) {
-				setEventFailed(ctx, ck, event, chain.Name)
+				funcs.MustNoErr(ck.SetEventFailed(ctx, event.GetID()))
 				continue
 			}
 
@@ -492,7 +492,7 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 			}
 
 			if !ok {
-				setEventFailed(ctx, ck, event, chain.Name)
+				funcs.MustNoErr(ck.SetEventFailed(ctx, event.GetID()))
 				continue
 			}
 
@@ -508,23 +508,6 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 	}
 
 	return nil
-}
-
-func setEventFailed(ctx sdk.Context, ck types.ChainKeeper, event types.Event, chainName nexus.ChainName) {
-	funcs.MustNoErr(ck.SetEventFailed(ctx, event.GetID()))
-
-	ck.Logger(ctx).Debug("failed handling event",
-		"chain", chainName,
-		"eventID", event.GetID(),
-	)
-
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(
-		&types.EVMEventFailed{
-			EventID: event.GetID(),
-			Chain:   chainName,
-		}),
-	)
-
 }
 
 // BeginBlocker check for infraction evidence or downtime of validators
