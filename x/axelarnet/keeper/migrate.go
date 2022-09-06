@@ -13,7 +13,6 @@ import (
 func GetMigrationHandler(k Keeper) func(_ sdk.Context) error {
 	return func(ctx sdk.Context) error {
 		addTransferLimitParam(ctx, k)
-
 		addEndBlockerLimitParam(ctx, k)
 
 		return nil
