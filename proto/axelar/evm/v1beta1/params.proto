@@ -28,6 +28,7 @@ message Params {
   reserved 12; // transaction_fee_rate was removed in v0.15
   int64 voting_grace_period = 13;
   int64 end_blocker_limit = 14;
+  uint64 transfer_limit = 15;
 }
 
 message PendingChain {
