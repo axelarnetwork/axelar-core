@@ -11,7 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
-//go:generate moq -out ./mock/rpcClient.go -pkg mock . Client MoonbeamClient
+//go:generate moq -out ./mock/rpcClient.go -pkg mock . Client MoonbeamClient Eth2Client
 
 // Client provides calls to EVM JSON-RPC endpoints
 type Client interface {
