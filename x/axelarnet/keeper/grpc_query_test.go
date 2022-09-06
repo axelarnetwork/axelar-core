@@ -1,9 +1,11 @@
 package keeper_test
 
 import (
+	"fmt"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/query"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 	abci "github.com/tendermint/tendermint/proto/tendermint/types"
@@ -41,12 +43,12 @@ func TestQuerier_PendingIBCTransferCount(t *testing.T) {
 	}).
 		When("a querier", func() {
 			k := &mock.BaseKeeperMock{GetCosmosChainsFunc: func(sdk.Context) []nexus.ChainName { return expectedChains }}
-			n := &mock.NexusMock{GetTransfersForChainFunc: func(ctx sdk.Context, chain nexus.Chain, state nexus.TransferState) []nexus.CrossChainTransfer {
-				var transfers []nexus.CrossChainTransfer
-				for i := 0; i < int(expectedTransfersByChain[chain.Name.String()]); i++ {
-					transfers = append(transfers, nexus.CrossChainTransfer{})
+			n := &mock.NexusMock{GetTransfersForChainPaginatedFunc: func(ctx sdk.Context, chain nexus.Chain, state nexus.TransferState, pageRequest *query.PageRequest) ([]nexus.CrossChainTransfer, *query.PageResponse, error) {
+				if pageRequest.CountTotal {
+					return []nexus.CrossChainTransfer{}, &query.PageResponse{Total: uint64(expectedTransfersByChain[chain.Name.String()])}, nil
 				}
-				return transfers
+
+				return []nexus.CrossChainTransfer{}, nil, fmt.Errorf("count total not set in page request")
 			},
 				GetChainFunc: func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 					return nexus.Chain{Name: chain}, true
