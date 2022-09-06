@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"hash"
 	"math/big"
+	"strings"
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -27,7 +29,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/vald/evm/rpc/mock"
 	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
-	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
@@ -68,8 +69,8 @@ func TestDecodeEventTokenSent(t *testing.T) {
 		Data: common.Hex2Bytes("000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000001200000000000000000000000000000000000000000000000000000000000989680000000000000000000000000000000000000000000000000000000000000000a657468657265756d2d3200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002a30783538656134313033656439353564434262646338613066456261626133393542366534346431354600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f657468657265756d2d312d7561786c0000000000000000000000000000000000"),
 	}
 
-	expected := evmTypes.EventTokenSent{
-		Sender:             evmTypes.Address(common.HexToAddress("0x68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8")),
+	expected := types.EventTokenSent{
+		Sender:             types.Address(common.HexToAddress("0x68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8")),
 		DestinationChain:   "ethereum-2",
 		DestinationAddress: "0x58ea4103ed955dCBbdc8a0fEbaba395B6e44d15F",
 		Symbol:             "ethereum-1-uaxl",
@@ -91,11 +92,11 @@ func TestDecodeEventContractCall(t *testing.T) {
 		Data: common.Hex2Bytes("000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000a657468657265756d2d3200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002a3078623938343566393234376138354565353932323733613739363035663334453836303764376537350000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000066275666665720000000000000000000000000000000000000000000000000000"),
 	}
 
-	expected := evmTypes.EventContractCall{
-		Sender:           evmTypes.Address(common.HexToAddress("0xD48E199950589A4336E4dc43bd2C72Ba0C0baA86")),
+	expected := types.EventContractCall{
+		Sender:           types.Address(common.HexToAddress("0xD48E199950589A4336E4dc43bd2C72Ba0C0baA86")),
 		DestinationChain: "ethereum-2",
 		ContractAddress:  "0xb9845f9247a85Ee592273a79605f34E8607d7e75",
-		PayloadHash:      evmTypes.Hash(common.HexToHash("0x9fcef596d62dca8e51b6ba3414901947c0e6821d4483b2f3327ce87c2d4e662e")),
+		PayloadHash:      types.Hash(common.HexToHash("0x9fcef596d62dca8e51b6ba3414901947c0e6821d4483b2f3327ce87c2d4e662e")),
 	}
 	actual, err := decodeEventContractCall(log)
 
@@ -113,11 +114,11 @@ func TestDecodeEventContractCallWithToken(t *testing.T) {
 		Data: common.Hex2Bytes("00000000000000000000000000000000000000000000000000000000000000a000000000000000000000000000000000000000000000000000000000000000e00000000000000000000000000000000000000000000000000000000000000140000000000000000000000000000000000000000000000000000000000000018000000000000000000000000000000000000000000000000000000000009896800000000000000000000000000000000000000000000000000000000000000008657468657265756d000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002a307837366130363034333339313731326245333941333433643166343331363538353466434636446533000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006627566666572000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000047561786c00000000000000000000000000000000000000000000000000000000"),
 	}
 
-	expected := evmTypes.EventContractCallWithToken{
-		Sender:           evmTypes.Address(common.HexToAddress("0x68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8")),
+	expected := types.EventContractCallWithToken{
+		Sender:           types.Address(common.HexToAddress("0x68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8")),
 		DestinationChain: "ethereum",
 		ContractAddress:  "0x76a06043391712bE39A343d1f43165854fCF6De3",
-		PayloadHash:      evmTypes.Hash(common.HexToHash("0x9fcef596d62dca8e51b6ba3414901947c0e6821d4483b2f3327ce87c2d4e662e")),
+		PayloadHash:      types.Hash(common.HexToHash("0x9fcef596d62dca8e51b6ba3414901947c0e6821d4483b2f3327ce87c2d4e662e")),
 		Symbol:           "uaxl",
 		Amount:           sdk.NewUint(10000000),
 	}
@@ -139,7 +140,7 @@ func TestDecodeTokenDeployEvent_CorrectData(t *testing.T) {
 	tokenDeployed, err := decodeERC20TokenDeploymentEvent(l)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedSymbol, tokenDeployed.Symbol)
-	assert.Equal(t, evmTypes.Address(expectedAddr), tokenDeployed.TokenAddress)
+	assert.Equal(t, types.Address(expectedAddr), tokenDeployed.TokenAddress)
 }
 
 func TestDecodeErc20TransferEvent_NotErc20Transfer(t *testing.T) {
@@ -190,66 +191,151 @@ func TestDecodeErc20TransferEvent_CorrectData(t *testing.T) {
 	transfer, err := decodeERC20TransferEvent(&l)
 
 	assert.NoError(t, err)
-	assert.Equal(t, evmTypes.Address(expectedTo), transfer.To)
+	assert.Equal(t, types.Address(expectedTo), transfer.To)
 	assert.Equal(t, expectedAmount, transfer.Amount)
 }
 
-func TestMgr_validate(t *testing.T) {
-	t.Run("should work for moonbeam", testutils.Func(func(t *testing.T) {
-		mgr := Mgr{logger: log.TestingLogger()}
+func TestMgr_getTxReceiptIfFinalized(t *testing.T) {
+	chain := nexus.ChainName(strings.ToLower(rand.NormalizedStr(5)))
+	tx := geth.NewTransaction(0, common.BytesToAddress(rand.Bytes(common.HashLength)), big.NewInt(rand.PosI64()), uint64(rand.PosI64()), big.NewInt(rand.PosI64()), rand.Bytes(int(rand.I64Between(100, 1000))))
 
-		latestFinalizedBlockHash := common.BytesToHash(rand.Bytes(common.HashLength))
-		latestFinalizedBlockNumber := rand.I64Between(1000, 10000)
-		tx := geth.NewTransaction(0, common.BytesToAddress(rand.Bytes(common.HashLength)), big.NewInt(rand.PosI64()), uint64(rand.PosI64()), big.NewInt(rand.PosI64()), rand.Bytes(int(rand.I64Between(100, 1000))))
-		receipt := &geth.Receipt{
-			BlockNumber: big.NewInt(latestFinalizedBlockNumber - rand.I64Between(1, 100)),
-			TxHash:      tx.Hash(),
-			Status:      1,
-		}
+	var (
+		mgr        Mgr
+		confHeight uint64
+	)
 
-		rpc := &mock.MoonbeamClientMock{
-			TransactionByHashFunc: func(_ context.Context, hash common.Hash) (*geth.Transaction, bool, error) {
-				if bytes.Equal(hash.Bytes(), tx.Hash().Bytes()) {
-					return tx, false, nil
-				}
+	givenMgr := Given("evm mgr", func() {
+		mgr = Mgr{logger: log.TestingLogger(), rpcs: make(map[string]evmRpc.Client)}
+		confHeight = uint64(rand.I64Between(1, 50))
+	})
 
-				return nil, false, fmt.Errorf("not found")
-			},
-			TransactionReceiptFunc: func(_ context.Context, txHash common.Hash) (*geth.Receipt, error) {
-				if bytes.Equal(txHash.Bytes(), tx.Hash().Bytes()) {
-					return receipt, nil
-				}
+	givenMgr.
+		When("chain is eth1", func() {
+			latestFinalizedBlockNumber := rand.I64Between(1000, 10000)
+			receipt := &geth.Receipt{
+				BlockNumber: big.NewInt(latestFinalizedBlockNumber - rand.I64Between(1, 100)),
+				TxHash:      tx.Hash(),
+				Status:      1,
+			}
 
-				return nil, fmt.Errorf("not found")
-			},
-			ChainGetFinalizedHeadFunc: func(_ context.Context) (common.Hash, error) { return latestFinalizedBlockHash, nil },
-			ChainGetHeaderFunc: func(ctx context.Context, hash common.Hash) (*evmRpc.MoonbeamHeader, error) {
-				if bytes.Equal(hash.Bytes(), latestFinalizedBlockHash.Bytes()) {
-					blockNumber := hexutil.Big(*big.NewInt(latestFinalizedBlockNumber))
+			mgr.rpcs[chain.String()] = &mock.Eth2ClientMock{
+				TransactionReceiptFunc: func(_ context.Context, txHash common.Hash) (*geth.Receipt, error) {
+					if bytes.Equal(txHash.Bytes(), tx.Hash().Bytes()) {
+						return receipt, nil
+					}
 
-					return &evmRpc.MoonbeamHeader{Number: &blockNumber}, nil
-				}
+					return nil, fmt.Errorf("not found")
+				},
+				FinalizedHeaderFunc: func(ctx context.Context) (*geth.Header, error) {
+					return nil, fmt.Errorf("not found")
+				},
+				BlockNumberFunc: func(ctx context.Context) (uint64, error) {
+					return uint64(latestFinalizedBlockNumber) + confHeight - 1, nil
+				},
+				BlockByNumberFunc: func(ctx context.Context, number *big.Int) (*geth.Block, error) {
+					if number.Cmp(receipt.BlockNumber) == 0 {
+						return geth.NewBlock(&geth.Header{}, []*geth.Transaction{tx}, []*geth.Header{}, []*geth.Receipt{receipt}, newHasher()), nil
+					}
 
-				return nil, fmt.Errorf("not found")
-			},
-			BlockByNumberFunc: func(ctx context.Context, number *big.Int) (*geth.Block, error) {
-				if number.Cmp(receipt.BlockNumber) == 0 {
-					return geth.NewBlock(&geth.Header{}, []*geth.Transaction{tx}, []*geth.Header{}, []*geth.Receipt{receipt}, newHasher()), nil
-				}
+					return nil, fmt.Errorf("not found")
+				},
+			}
+		}).
+		Then("it should work", func(t *testing.T) {
+			txReceipt, err := mgr.getTxReceiptIfFinalized(chain, tx.Hash(), confHeight)
 
-				return nil, fmt.Errorf("not found")
-			},
-		}
+			assert.NoError(t, err)
+			assert.NotNil(t, txReceipt)
+		}).
+		Run(t, 5)
 
-		isFinalized := mgr.validate(rpc, tx.Hash(), 0, func(_ *geth.Transaction, _ *geth.Receipt) bool { return true })
-		assert.True(t, isFinalized)
-	}))
+	givenMgr.
+		When("chain is eth2", func() {
+			latestFinalizedBlockNumber := rand.I64Between(1000, 10000)
+			receipt := &geth.Receipt{
+				BlockNumber: big.NewInt(latestFinalizedBlockNumber - rand.I64Between(1, 100)),
+				TxHash:      tx.Hash(),
+				Status:      1,
+			}
+
+			mgr.rpcs[chain.String()] = &mock.Eth2ClientMock{
+				TransactionReceiptFunc: func(_ context.Context, txHash common.Hash) (*geth.Receipt, error) {
+					if bytes.Equal(txHash.Bytes(), tx.Hash().Bytes()) {
+						return receipt, nil
+					}
+
+					return nil, fmt.Errorf("not found")
+				},
+				FinalizedHeaderFunc: func(ctx context.Context) (*geth.Header, error) {
+					return &geth.Header{Number: big.NewInt(latestFinalizedBlockNumber)}, nil
+				},
+				BlockByNumberFunc: func(ctx context.Context, number *big.Int) (*geth.Block, error) {
+					if number.Cmp(receipt.BlockNumber) == 0 {
+						return geth.NewBlock(&geth.Header{}, []*geth.Transaction{tx}, []*geth.Header{}, []*geth.Receipt{receipt}, newHasher()), nil
+					}
+
+					return nil, fmt.Errorf("not found")
+				},
+			}
+		}).
+		Then("it should work", func(t *testing.T) {
+			txReceipt, err := mgr.getTxReceiptIfFinalized(chain, tx.Hash(), confHeight)
+
+			assert.NoError(t, err)
+			assert.NotNil(t, txReceipt)
+		}).
+		Run(t, 5)
+
+	givenMgr.
+		When("chain is moonbeam", func() {
+			latestFinalizedBlockHash := common.BytesToHash(rand.Bytes(common.HashLength))
+			latestFinalizedBlockNumber := rand.I64Between(1000, 10000)
+			receipt := &geth.Receipt{
+				BlockNumber: big.NewInt(latestFinalizedBlockNumber - rand.I64Between(1, 100)),
+				TxHash:      tx.Hash(),
+				Status:      1,
+			}
+
+			mgr.rpcs[chain.String()] = &mock.MoonbeamClientMock{
+				TransactionReceiptFunc: func(_ context.Context, txHash common.Hash) (*geth.Receipt, error) {
+					if bytes.Equal(txHash.Bytes(), tx.Hash().Bytes()) {
+						return receipt, nil
+					}
+
+					return nil, fmt.Errorf("not found")
+				},
+				ChainGetFinalizedHeadFunc: func(_ context.Context) (common.Hash, error) { return latestFinalizedBlockHash, nil },
+				ChainGetHeaderFunc: func(ctx context.Context, hash common.Hash) (*evmRpc.MoonbeamHeader, error) {
+					if bytes.Equal(hash.Bytes(), latestFinalizedBlockHash.Bytes()) {
+						blockNumber := hexutil.Big(*big.NewInt(latestFinalizedBlockNumber))
+
+						return &evmRpc.MoonbeamHeader{Number: &blockNumber}, nil
+					}
+
+					return nil, fmt.Errorf("not found")
+				},
+				BlockByNumberFunc: func(ctx context.Context, number *big.Int) (*geth.Block, error) {
+					if number.Cmp(receipt.BlockNumber) == 0 {
+						return geth.NewBlock(&geth.Header{}, []*geth.Transaction{tx}, []*geth.Header{}, []*geth.Receipt{receipt}, newHasher()), nil
+					}
+
+					return nil, fmt.Errorf("not found")
+				},
+			}
+		}).
+		Then("it should work", func(t *testing.T) {
+			txReceipt, err := mgr.getTxReceiptIfFinalized(chain, tx.Hash(), confHeight)
+
+			assert.NoError(t, err)
+			assert.NotNil(t, txReceipt)
+		}).
+		Run(t, 5)
 }
 
 func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 	var (
 		mgr            *Mgr
-		event          *evmTypes.ConfirmDepositStarted
+		event          *types.ConfirmDepositStarted
 		rpc            *mock.ClientMock
 		broadcaster    *mock2.BroadcasterMock
 		encodingConfig params.EncodingConfig
@@ -373,7 +459,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 
 	t.Run("no tx receipt", testutils.Func(func(t *testing.T) {
 		setup()
-		rpc.TransactionReceiptFunc = func(context.Context, common.Hash) (*geth.Receipt, error) { return nil, fmt.Errorf("error") }
+		rpc.TransactionReceiptFunc = func(context.Context, common.Hash) (*geth.Receipt, error) { return nil, ethereum.NotFound }
 
 		err := mgr.ProcessDepositConfirmation(event)
 
@@ -394,20 +480,15 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 
 		err := mgr.ProcessDepositConfirmation(event)
 
-		assert.NoError(t, err)
-		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-
-		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		actualVoteEvents := msg.(*voteTypes.VoteRequest).Vote.GetCachedValue().(*types.VoteEvents)
-		assert.Equal(t, nexus.ChainName("Ethereum"), actualVoteEvents.Chain)
-		assert.Len(t, actualVoteEvents.Events, 0)
+		assert.Error(t, err)
+		assert.Len(t, broadcaster.BroadcastCalls(), 0)
 	}).Repeat(repeats))
 }
 
 func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 	var (
 		mgr              *Mgr
-		event            *evmTypes.ConfirmTokenStarted
+		event            *types.ConfirmTokenStarted
 		rpc              *mock.ClientMock
 		broadcaster      *mock2.BroadcasterMock
 		gatewayAddrBytes []byte
@@ -491,7 +572,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 
 	t.Run("no tx receipt", testutils.Func(func(t *testing.T) {
 		setup()
-		rpc.TransactionReceiptFunc = func(context.Context, common.Hash) (*geth.Receipt, error) { return nil, fmt.Errorf("error") }
+		rpc.TransactionReceiptFunc = func(context.Context, common.Hash) (*geth.Receipt, error) { return nil, ethereum.NotFound }
 
 		err := mgr.ProcessTokenConfirmation(event)
 
@@ -512,13 +593,8 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 
 		err := mgr.ProcessTokenConfirmation(event)
 
-		assert.NoError(t, err)
-		assert.Len(t, broadcaster.BroadcastCalls(), 1)
-
-		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		actualVoteEvents := msg.(*voteTypes.VoteRequest).Vote.GetCachedValue().(*types.VoteEvents)
-		assert.Equal(t, nexus.ChainName("Ethereum"), actualVoteEvents.Chain)
-		assert.Len(t, actualVoteEvents.Events, 0)
+		assert.Error(t, err)
+		assert.Len(t, broadcaster.BroadcastCalls(), 0)
 	}).Repeat(repeats))
 
 	t.Run("no deploy event", testutils.Func(func(t *testing.T) {
@@ -601,7 +677,7 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 		txID = types.Hash(tx.Hash())
 		txReceipt = &geth.Receipt{
 			TxHash:      common.Hash(txID),
-			BlockNumber: big.NewInt(rand.I64Between(0, int64(blockNumber-evmTypes.DefaultParams()[0].ConfirmationHeight+2))),
+			BlockNumber: big.NewInt(rand.I64Between(0, int64(blockNumber-types.DefaultParams()[0].ConfirmationHeight+2))),
 			Logs:        []*geth.Log{},
 			Status:      1,
 		}
@@ -634,7 +710,7 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 			exported.Ethereum.Name,
 			txID,
 			gatewayAddress,
-			evmTypes.DefaultParams()[0].ConfirmationHeight,
+			types.DefaultParams()[0].ConfirmationHeight,
 			vote.PollParticipants{
 				PollID:       pollID,
 				Participants: []sdk.ValAddress{valAddr},
@@ -642,11 +718,11 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 		)
 	})
 
-	assertAndGetVoteEvents := func(t *testing.T, isEmpty bool) *evmTypes.VoteEvents {
+	assertAndGetVoteEvents := func(t *testing.T, isEmpty bool) *types.VoteEvents {
 		assert.Len(t, broadcaster.BroadcastCalls(), 1)
 		assert.Len(t, broadcaster.BroadcastCalls()[0].Msgs, 1)
 
-		voteEvents := broadcaster.BroadcastCalls()[0].Msgs[0].(*voteTypes.VoteRequest).Vote.GetCachedValue().(*evmTypes.VoteEvents)
+		voteEvents := broadcaster.BroadcastCalls()[0].Msgs[0].(*voteTypes.VoteRequest).Vote.GetCachedValue().(*types.VoteEvents)
 		if isEmpty {
 			assert.Empty(t, voteEvents.Events)
 		} else {
