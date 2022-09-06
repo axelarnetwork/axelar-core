@@ -1676,7 +1676,7 @@ func StrictDecode(arguments abi.Arguments, bz []byte) ([]interface{}, error) {
 }
 
 // NewVoteEvents is the constructor for vote events
-func NewVoteEvents(chain nexus.ChainName, events []Event) *VoteEvents {
+func NewVoteEvents(chain nexus.ChainName, events ...Event) *VoteEvents {
 	return &VoteEvents{
 		Chain:  chain,
 		Events: events,

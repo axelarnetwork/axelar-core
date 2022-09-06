@@ -183,6 +183,7 @@
     - [ConfirmGatewayTxStarted](#axelar.evm.v1beta1.ConfirmGatewayTxStarted)
     - [ConfirmKeyTransferStarted](#axelar.evm.v1beta1.ConfirmKeyTransferStarted)
     - [ConfirmTokenStarted](#axelar.evm.v1beta1.ConfirmTokenStarted)
+    - [EVMEventFailed](#axelar.evm.v1beta1.EVMEventFailed)
     - [NoEventsConfirmed](#axelar.evm.v1beta1.NoEventsConfirmed)
     - [PollExpired](#axelar.evm.v1beta1.PollExpired)
     - [PollFailed](#axelar.evm.v1beta1.PollFailed)
@@ -2990,6 +2991,22 @@ TransferKey contains information for a transfer operatorship
 
 
 
+<a name="axelar.evm.v1beta1.EVMEventFailed"></a>
+
+### EVMEventFailed
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `event_id` | [string](#string) |  |  |
+| `chain` | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="axelar.evm.v1beta1.NoEventsConfirmed"></a>
 
 ### NoEventsConfirmed
@@ -3077,6 +3094,7 @@ Params is the parameter set for this module
 | `commands_gas_limit` | [uint32](#uint32) |  |  |
 | `voting_grace_period` | [int64](#int64) |  |  |
 | `end_blocker_limit` | [int64](#int64) |  |  |
+| `transfer_limit` | [uint64](#uint64) |  |  |
 
 
 

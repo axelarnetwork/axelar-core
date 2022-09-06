@@ -146,3 +146,11 @@ message CommandBatchAborted {
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
   bytes command_batch_id = 3 [ (gogoproto.customname) = "CommandBatchID" ];
 }
+
+message EVMEventFailed {
+  string event_id = 1
+      [ (gogoproto.customname) = "EventID", (gogoproto.casttype) = "EventID" ];
+  string chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+}
