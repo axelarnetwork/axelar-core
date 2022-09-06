@@ -42,7 +42,7 @@ func (q Querier) PendingIBCTransferCount(c context.Context, _ *types.PendingIBCT
 		pageRequest := &query.PageRequest{
 			Key:        nil,
 			Offset:     0,
-			Limit:      1,
+			Limit:      1, // 1 minimizes the number of values processed, and is independent of counting the total matches
 			CountTotal: true,
 			Reverse:    false,
 		}
