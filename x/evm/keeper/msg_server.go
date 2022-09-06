@@ -779,7 +779,7 @@ func (s msgServer) RetryFailedEvent(c context.Context, req *types.RetryFailedEve
 		"eventID", event.GetID(),
 	)
 
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.EVMEventConfirmed{
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.EVMEventRetryFailed{
 		Chain:   event.Chain,
 		EventID: event.GetID(),
 		Type:    event.GetEventType(),

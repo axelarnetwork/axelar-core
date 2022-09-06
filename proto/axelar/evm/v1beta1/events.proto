@@ -195,6 +195,15 @@ message EVMEventFailed {
   string type = 3;
 }
 
+message EVMEventRetryFailed {
+  string chain = 1
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string event_id = 2
+      [ (gogoproto.customname) = "EventID", (gogoproto.casttype) = "EventID" ];
+  string type = 3;
+}
+
 message ContractCallApproved {
   string chain = 1
       [ (gogoproto.casttype) =

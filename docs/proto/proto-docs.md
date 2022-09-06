@@ -189,6 +189,7 @@
     - [EVMEventCompleted](#axelar.evm.v1beta1.EVMEventCompleted)
     - [EVMEventConfirmed](#axelar.evm.v1beta1.EVMEventConfirmed)
     - [EVMEventFailed](#axelar.evm.v1beta1.EVMEventFailed)
+    - [EVMEventRetryFailed](#axelar.evm.v1beta1.EVMEventRetryFailed)
     - [MintCommand](#axelar.evm.v1beta1.MintCommand)
     - [NoEventsConfirmed](#axelar.evm.v1beta1.NoEventsConfirmed)
     - [PollCompleted](#axelar.evm.v1beta1.PollCompleted)
@@ -3099,6 +3100,23 @@ TransferKey contains information for a transfer operatorship
 <a name="axelar.evm.v1beta1.EVMEventFailed"></a>
 
 ### EVMEventFailed
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `event_id` | [string](#string) |  |  |
+| `type` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.EVMEventRetryFailed"></a>
+
+### EVMEventRetryFailed
 
 
 
