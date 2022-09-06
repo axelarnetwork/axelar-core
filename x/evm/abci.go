@@ -74,13 +74,13 @@ func handleTokenSent(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n 
 	)
 
 	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.TokenSent{
-		Chain:            event.Chain,
-		EventID:          event.GetID(),
-		TransferID:       transferID,
-		Sender:           e.Sender.Hex(),
-		DestinationChain: e.DestinationChain,
-		Receipient:       e.DestinationAddress,
-		Asset:            amount,
+		Chain:              event.Chain,
+		EventID:            event.GetID(),
+		TransferID:         transferID,
+		Sender:             e.Sender.Hex(),
+		DestinationChain:   e.DestinationChain,
+		DestinationAddress: e.DestinationAddress,
+		Asset:              amount,
 	}))
 
 	return true

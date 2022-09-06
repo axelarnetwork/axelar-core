@@ -176,6 +176,7 @@
     - [Status](#axelar.evm.v1beta1.Status)
   
 - [axelar/evm/v1beta1/events.proto](#axelar/evm/v1beta1/events.proto)
+    - [BurnCommand](#axelar.evm.v1beta1.BurnCommand)
     - [ChainAdded](#axelar.evm.v1beta1.ChainAdded)
     - [CommandBatchAborted](#axelar.evm.v1beta1.CommandBatchAborted)
     - [CommandBatchSigned](#axelar.evm.v1beta1.CommandBatchSigned)
@@ -188,6 +189,7 @@
     - [EVMEventCompleted](#axelar.evm.v1beta1.EVMEventCompleted)
     - [EVMEventConfirmed](#axelar.evm.v1beta1.EVMEventConfirmed)
     - [EVMEventFailed](#axelar.evm.v1beta1.EVMEventFailed)
+    - [MintCommand](#axelar.evm.v1beta1.MintCommand)
     - [NoEventsConfirmed](#axelar.evm.v1beta1.NoEventsConfirmed)
     - [PollCompleted](#axelar.evm.v1beta1.PollCompleted)
     - [PollExpired](#axelar.evm.v1beta1.PollExpired)
@@ -2871,6 +2873,25 @@ TransferKey contains information for a transfer operatorship
 
 
 
+<a name="axelar.evm.v1beta1.BurnCommand"></a>
+
+### BurnCommand
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `command_id` | [bytes](#bytes) |  |  |
+| `destination_chain` | [string](#string) |  |  |
+| `deposit_address` | [string](#string) |  |  |
+| `asset` | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="axelar.evm.v1beta1.ChainAdded"></a>
 
 ### ChainAdded
@@ -2932,6 +2953,7 @@ TransferKey contains information for a transfer operatorship
 | `token_address` | [bytes](#bytes) |  |  |
 | `confirmation_height` | [uint64](#uint64) |  |  |
 | `participants` | [axelar.vote.exported.v1beta1.PollParticipants](#axelar.vote.exported.v1beta1.PollParticipants) |  |  |
+| `asset` | [string](#string) |  |  |
 
 
 
@@ -3091,6 +3113,26 @@ TransferKey contains information for a transfer operatorship
 
 
 
+<a name="axelar.evm.v1beta1.MintCommand"></a>
+
+### MintCommand
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `transfer_id` | [uint64](#uint64) |  |  |
+| `command_id` | [bytes](#bytes) |  |  |
+| `destination_chain` | [string](#string) |  |  |
+| `destination_address` | [string](#string) |  |  |
+| `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+
+
+
+
+
+
 <a name="axelar.evm.v1beta1.NoEventsConfirmed"></a>
 
 ### NoEventsConfirmed
@@ -3172,7 +3214,7 @@ TransferKey contains information for a transfer operatorship
 | `transfer_id` | [uint64](#uint64) |  |  |
 | `sender` | [string](#string) |  |  |
 | `destination_chain` | [string](#string) |  |  |
-| `receipient` | [string](#string) |  |  |
+| `destination_address` | [string](#string) |  |  |
 | `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 
 

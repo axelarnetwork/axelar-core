@@ -124,6 +124,7 @@ message ConfirmDepositStarted {
   uint64 confirmation_height = 5;
   vote.exported.v1beta1.PollParticipants participants = 6
       [ (gogoproto.nullable) = false, (gogoproto.embed) = true ];
+  string asset = 7;
 }
 
 message ConfirmTokenStarted {
@@ -250,6 +251,43 @@ message TokenSent {
   string destination_chain = 5
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
-  string receipient = 6;
+  string destination_address = 6;
   cosmos.base.v1beta1.Coin asset = 7 [ (gogoproto.nullable) = false ];
+}
+
+message MintCommand {
+  string chain = 1
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  uint64 transfer_id = 2 [
+    (gogoproto.customname) = "TransferID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/nexus/exported.TransferID"
+  ];
+  bytes command_id = 3 [
+    (gogoproto.nullable) = false,
+    (gogoproto.customname) = "CommandID",
+    (gogoproto.customtype) = "CommandID"
+  ];
+  string destination_chain = 4
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string destination_address = 5;
+  cosmos.base.v1beta1.Coin asset = 6 [ (gogoproto.nullable) = false ];
+}
+
+message BurnCommand {
+  string chain = 1
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  bytes command_id = 2 [
+    (gogoproto.nullable) = false,
+    (gogoproto.customname) = "CommandID",
+    (gogoproto.customtype) = "CommandID"
+  ];
+  string destination_chain = 3
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string deposit_address = 4;
+  string asset = 5;
 }
