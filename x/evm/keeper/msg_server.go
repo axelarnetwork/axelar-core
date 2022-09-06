@@ -758,8 +758,14 @@ func (s msgServer) RetryFailedEvent(c context.Context, req *types.RetryFailedEve
 	s.Logger(ctx).Info(
 		"re-queued failed event",
 		types.AttributeKeyChain, chain.Name,
-		"eventID", req.EventID,
+		"eventID", event.GetID(),
 	)
+
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.EVMEventConfirmed{
+		Chain:   event.Chain,
+		EventID: event.GetID(),
+		Type:    event.GetEventType(),
+	}))
 
 	return &types.RetryFailedEventResponse{}, nil
 }

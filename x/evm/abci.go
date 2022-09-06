@@ -73,6 +73,16 @@ func handleTokenSent(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n 
 		"transferID", transferID.String(),
 	)
 
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.TokenSent{
+		Chain:            event.Chain,
+		EventID:          event.GetID(),
+		TransferID:       transferID,
+		Sender:           e.Sender.Hex(),
+		DestinationChain: e.DestinationChain,
+		Receipient:       e.DestinationAddress,
+		Asset:            amount,
+	}))
+
 	return true
 }
 
@@ -126,6 +136,16 @@ func handleContractCall(ctx sdk.Context, event types.Event, bk types.BaseKeeper,
 		"eventID", event.GetID(),
 		"commandID", cmd.ID.Hex(),
 	)
+
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.ContractCallApproved{
+		Chain:            event.Chain,
+		EventID:          event.GetID(),
+		CommandID:        cmd.ID,
+		Sender:           e.Sender.Hex(),
+		DestinationChain: e.DestinationChain,
+		ContractAddress:  e.ContractAddress,
+		PayloadHash:      e.PayloadHash,
+	}))
 
 	return true
 }
@@ -202,6 +222,17 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 		"commandID", cmd.ID.Hex(),
 	)
 
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.ContractCallWithMintApproved{
+		Chain:            event.Chain,
+		EventID:          event.GetID(),
+		CommandID:        cmd.ID,
+		Sender:           e.Sender.Hex(),
+		DestinationChain: e.DestinationChain,
+		ContractAddress:  e.ContractAddress,
+		PayloadHash:      e.PayloadHash,
+		Asset:            sdk.NewCoin(asset, sdk.Int(e.Amount)),
+	}))
+
 	return true
 }
 
@@ -248,7 +279,12 @@ func handleConfirmDeposit(ctx sdk.Context, event types.Event, ck types.ChainKeep
 
 	ck.SetDeposit(ctx, erc20Deposit, types.DepositStatus_Confirmed)
 
-	ck.Logger(ctx).Info(fmt.Sprintf("deposit confirmation result to %s %s", e.To.Hex(), e.Amount), "chain", chain.Name)
+	ck.Logger(ctx).Info(fmt.Sprintf("deposit confirmation result to %s %s", e.To.Hex(), e.Amount),
+		"chain", chain.Name,
+		"depositAddress", depositAddr.Address,
+		"eventID", event.GetID(),
+		"txID", event.TxID.Hex(),
+	)
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeDepositConfirmation,
@@ -263,6 +299,7 @@ func handleConfirmDeposit(ctx sdk.Context, event types.Event, ck types.ChainKeep
 			sdk.NewAttribute(types.AttributeKeyTokenAddress, burnerInfo.TokenAddress.Hex()),
 			sdk.NewAttribute(types.AttributeKeyTxID, event.TxID.Hex()),
 			sdk.NewAttribute(types.AttributeKeyTransferID, transferID.String()),
+			sdk.NewAttribute(types.AttributeKeyEventID, string(event.GetID())),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm),
 		))
 
@@ -291,7 +328,12 @@ func handleTokenDeployed(ctx sdk.Context, event types.Event, ck types.ChainKeepe
 		return false
 	}
 
-	ck.Logger(ctx).Info(fmt.Sprintf("token %s deployment confirmed on chain %s", e.Symbol, chain.Name))
+	ck.Logger(ctx).Info(fmt.Sprintf("token %s deployment confirmed on chain %s", e.Symbol, chain.Name),
+		"chain", chain.Name,
+		"asset", token.GetAsset(),
+		"eventID", event.GetID(),
+		"txID", event.TxID.Hex(),
+	)
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeTokenConfirmation,
@@ -301,6 +343,7 @@ func handleTokenDeployed(ctx sdk.Context, event types.Event, ck types.ChainKeepe
 			sdk.NewAttribute(types.AttributeKeySymbol, token.GetDetails().Symbol),
 			sdk.NewAttribute(types.AttributeKeyTokenAddress, token.GetAddress().Hex()),
 			sdk.NewAttribute(types.AttributeKeyTxID, event.TxID.Hex()),
+			sdk.NewAttribute(types.AttributeKeyEventID, string(event.GetID())),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm),
 		))
 
@@ -368,7 +411,9 @@ func handleMultisigTransferKey(ctx sdk.Context, event types.Event, ck types.Chai
 	}
 
 	ck.Logger(ctx).Info(fmt.Sprintf("successfully confirmed key transfer for chain %s", chain.Name),
+		"chain", chain.Name,
 		"txID", event.TxID.Hex(),
+		"eventID", event.GetID(),
 		"keyID", nextKeyID,
 	)
 
@@ -376,6 +421,8 @@ func handleMultisigTransferKey(ctx sdk.Context, event types.Event, ck types.Chai
 		types.EventTypeTransferKeyConfirmation,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 		sdk.NewAttribute(types.AttributeKeyChain, chain.Name.String()),
+		sdk.NewAttribute(types.AttributeKeyTxID, event.TxID.Hex()),
+		sdk.NewAttribute(types.AttributeKeyEventID, string(event.GetID())),
 		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm),
 	))
 

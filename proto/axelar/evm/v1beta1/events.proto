@@ -6,6 +6,7 @@ option go_package = "github.com/axelarnetwork/axelar-core/x/evm/types";
 import "gogoproto/gogo.proto";
 import "axelar/vote/exported/v1beta1/types.proto";
 import "axelar/evm/v1beta1/types.proto";
+import "cosmos/base/v1beta1/coin.proto";
 
 message PollFailed {
   bytes tx_id = 1 [
@@ -25,6 +26,23 @@ message PollFailed {
 }
 
 message PollExpired {
+  bytes tx_id = 1 [
+    (gogoproto.nullable) = false,
+    (gogoproto.customtype) = "Hash",
+    (gogoproto.customname) = "TxID"
+  ];
+  string chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  uint64 poll_id = 3 [
+    (gogoproto.customname) = "PollID",
+    (gogoproto.customtype) =
+        "github.com/axelarnetwork/axelar-core/x/vote/exported.PollID",
+    (gogoproto.nullable) = false
+  ];
+}
+
+message PollCompleted {
   bytes tx_id = 1 [
     (gogoproto.nullable) = false,
     (gogoproto.customtype) = "Hash",
@@ -149,10 +167,89 @@ message CommandBatchAborted {
   ;
 }
 
-message EVMEventFailed {
-  string event_id = 1
-      [ (gogoproto.customname) = "EventID", (gogoproto.casttype) = "EventID" ];
-  string chain = 2
+message EVMEventConfirmed {
+  string chain = 1
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string event_id = 2
+      [ (gogoproto.customname) = "EventID", (gogoproto.casttype) = "EventID" ];
+  string type = 3;
+}
+
+message EVMEventCompleted {
+  string chain = 1
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string event_id = 2
+      [ (gogoproto.customname) = "EventID", (gogoproto.casttype) = "EventID" ];
+  string type = 3;
+}
+
+message EVMEventFailed {
+  string chain = 1
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string event_id = 2
+      [ (gogoproto.customname) = "EventID", (gogoproto.casttype) = "EventID" ];
+  string type = 3;
+}
+
+message ContractCallApproved {
+  string chain = 1
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string event_id = 2
+      [ (gogoproto.customname) = "EventID", (gogoproto.casttype) = "EventID" ];
+  bytes command_id = 3 [
+    (gogoproto.nullable) = false,
+    (gogoproto.customname) = "CommandID",
+    (gogoproto.customtype) = "CommandID"
+  ];
+  string sender = 4;
+  string destination_chain = 5
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string contract_address = 6;
+  bytes payload_hash = 7
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Hash" ];
+}
+
+message ContractCallWithMintApproved {
+  string chain = 1
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string event_id = 2
+      [ (gogoproto.customname) = "EventID", (gogoproto.casttype) = "EventID" ];
+  bytes command_id = 3 [
+    (gogoproto.nullable) = false,
+    (gogoproto.customname) = "CommandID",
+    (gogoproto.customtype) = "CommandID"
+  ];
+  string sender = 4;
+  string destination_chain = 5
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string contract_address = 6;
+  bytes payload_hash = 7
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Hash" ];
+  cosmos.base.v1beta1.Coin asset = 8 [ (gogoproto.nullable) = false ];
+}
+
+message TokenSent {
+  string chain = 1
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string event_id = 2
+      [ (gogoproto.customname) = "EventID", (gogoproto.casttype) = "EventID" ];
+  uint64 transfer_id = 3 [
+    (gogoproto.customname) = "TransferID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/nexus/exported.TransferID"
+  ];
+  string sender = 4;
+  string destination_chain = 5
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string receipient = 6;
+  cosmos.base.v1beta1.Coin asset = 7 [ (gogoproto.nullable) = false ];
 }

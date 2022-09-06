@@ -183,10 +183,16 @@
     - [ConfirmGatewayTxStarted](#axelar.evm.v1beta1.ConfirmGatewayTxStarted)
     - [ConfirmKeyTransferStarted](#axelar.evm.v1beta1.ConfirmKeyTransferStarted)
     - [ConfirmTokenStarted](#axelar.evm.v1beta1.ConfirmTokenStarted)
+    - [ContractCallApproved](#axelar.evm.v1beta1.ContractCallApproved)
+    - [ContractCallWithMintApproved](#axelar.evm.v1beta1.ContractCallWithMintApproved)
+    - [EVMEventCompleted](#axelar.evm.v1beta1.EVMEventCompleted)
+    - [EVMEventConfirmed](#axelar.evm.v1beta1.EVMEventConfirmed)
     - [EVMEventFailed](#axelar.evm.v1beta1.EVMEventFailed)
     - [NoEventsConfirmed](#axelar.evm.v1beta1.NoEventsConfirmed)
+    - [PollCompleted](#axelar.evm.v1beta1.PollCompleted)
     - [PollExpired](#axelar.evm.v1beta1.PollExpired)
     - [PollFailed](#axelar.evm.v1beta1.PollFailed)
+    - [TokenSent](#axelar.evm.v1beta1.TokenSent)
   
 - [axelar/evm/v1beta1/params.proto](#axelar/evm/v1beta1/params.proto)
     - [Params](#axelar.evm.v1beta1.Params)
@@ -2991,6 +2997,83 @@ TransferKey contains information for a transfer operatorship
 
 
 
+<a name="axelar.evm.v1beta1.ContractCallApproved"></a>
+
+### ContractCallApproved
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `event_id` | [string](#string) |  |  |
+| `command_id` | [bytes](#bytes) |  |  |
+| `sender` | [string](#string) |  |  |
+| `destination_chain` | [string](#string) |  |  |
+| `contract_address` | [string](#string) |  |  |
+| `payload_hash` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.ContractCallWithMintApproved"></a>
+
+### ContractCallWithMintApproved
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `event_id` | [string](#string) |  |  |
+| `command_id` | [bytes](#bytes) |  |  |
+| `sender` | [string](#string) |  |  |
+| `destination_chain` | [string](#string) |  |  |
+| `contract_address` | [string](#string) |  |  |
+| `payload_hash` | [bytes](#bytes) |  |  |
+| `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.EVMEventCompleted"></a>
+
+### EVMEventCompleted
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `event_id` | [string](#string) |  |  |
+| `type` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.EVMEventConfirmed"></a>
+
+### EVMEventConfirmed
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `event_id` | [string](#string) |  |  |
+| `type` | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="axelar.evm.v1beta1.EVMEventFailed"></a>
 
 ### EVMEventFailed
@@ -2999,8 +3082,9 @@ TransferKey contains information for a transfer operatorship
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `event_id` | [string](#string) |  |  |
 | `chain` | [string](#string) |  |  |
+| `event_id` | [string](#string) |  |  |
+| `type` | [string](#string) |  |  |
 
 
 
@@ -3010,6 +3094,23 @@ TransferKey contains information for a transfer operatorship
 <a name="axelar.evm.v1beta1.NoEventsConfirmed"></a>
 
 ### NoEventsConfirmed
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tx_id` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
+| `poll_id` | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.PollCompleted"></a>
+
+### PollCompleted
 
 
 
@@ -3052,6 +3153,27 @@ TransferKey contains information for a transfer operatorship
 | `tx_id` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
 | `poll_id` | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.TokenSent"></a>
+
+### TokenSent
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `event_id` | [string](#string) |  |  |
+| `transfer_id` | [uint64](#uint64) |  |  |
+| `sender` | [string](#string) |  |  |
+| `destination_chain` | [string](#string) |  |  |
+| `receipient` | [string](#string) |  |  |
+| `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 
 
 
