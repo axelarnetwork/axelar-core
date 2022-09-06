@@ -9,6 +9,8 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/axelar-core/x/nexus/types"
+	"github.com/axelarnetwork/utils/funcs"
 )
 
 func getTransferPrefix(chain exported.ChainName, state exported.TransferState) utils.Key {
@@ -96,40 +98,50 @@ func (k Keeper) ComputeTransferFee(ctx sdk.Context, sourceChain exported.Chain, 
 }
 
 // EnqueueTransfer enqueues an asset transfer to the given recipient address
-func (k Keeper) EnqueueTransfer(ctx sdk.Context, senderChain exported.Chain, recipient exported.CrossChainAddress, asset sdk.Coin) (exported.TransferID, error) {
+func (k Keeper) EnqueueTransfer(ctx sdk.Context, senderChain exported.Chain, receipient exported.CrossChainAddress, asset sdk.Coin) (exported.TransferID, error) {
 	chain, isNativeAsset := k.GetChainByNativeAsset(ctx, asset.Denom)
 	if !senderChain.SupportsForeignAssets && !(isNativeAsset && senderChain.Name == chain.Name) {
 		return 0, fmt.Errorf("sender's chain %s does not support foreign assets", senderChain.Name)
 	}
 
-	if !recipient.Chain.SupportsForeignAssets && !(isNativeAsset && senderChain.Name == chain.Name) {
-		return 0, fmt.Errorf("recipient's chain %s does not support foreign assets", recipient.Chain.Name)
+	if !receipient.Chain.SupportsForeignAssets && !(isNativeAsset && senderChain.Name == chain.Name) {
+		return 0, fmt.Errorf("recipient's chain %s does not support foreign assets", receipient.Chain.Name)
 	}
 
-	if validator := k.GetRouter().GetAddressValidator(recipient.Chain.Module); validator == nil {
-		return 0, fmt.Errorf("unknown module for recipient chain %s", recipient.Chain.String())
-	} else if err := validator(ctx, recipient); err != nil {
+	if validator := k.GetRouter().GetAddressValidator(receipient.Chain.Module); validator == nil {
+		return 0, fmt.Errorf("unknown module for recipient chain %s", receipient.Chain.String())
+	} else if err := validator(ctx, receipient); err != nil {
 		return 0, err
 	}
 
 	// merging transfers below minimum for the specified recipient
-	insufficientAmountTransfer, found := k.getTransfer(ctx, recipient, asset.Denom, exported.InsufficientAmount)
+	insufficientAmountTransfer, found := k.getTransfer(ctx, receipient, asset.Denom, exported.InsufficientAmount)
 	if found {
 		asset = asset.Add(insufficientAmountTransfer.Asset)
 		k.deleteTransfer(ctx, insufficientAmountTransfer)
 	}
 
 	// collect fee
-	fee, err := k.ComputeTransferFee(ctx, senderChain, recipient.Chain, asset)
+	fee, err := k.ComputeTransferFee(ctx, senderChain, receipient.Chain, asset)
 	if err != nil {
 		return 0, err
 	}
 
 	if fee.Amount.GTE(asset.Amount) {
 		k.Logger(ctx).Debug(fmt.Sprintf("skipping deposit from chain %s to chain %s and recipient %s due to deposited amount being below fees %s for asset %s",
-			senderChain.Name, recipient.Chain.Name, recipient.Address, fee.String(), asset.String()))
+			senderChain.Name, receipient.Chain.Name, receipient.Address, fee.String(), asset.String()))
 
-		return k.setNewTransfer(ctx, recipient, asset, exported.InsufficientAmount), nil
+		transferID := k.setNewTransfer(ctx, receipient, asset, exported.InsufficientAmount)
+
+		funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.InsufficientFee{
+			TransferID:        transferID,
+			ReceipientChain:   receipient.Chain.Name,
+			ReceipientAddress: receipient.Address,
+			Amount:            asset,
+			Fee:               fee,
+		}))
+
+		return transferID, nil
 	}
 
 	if fee.IsPositive() {
@@ -138,16 +150,25 @@ func (k Keeper) EnqueueTransfer(ctx sdk.Context, senderChain exported.Chain, rec
 	}
 
 	// merging transfers for the specified recipient
-	previousTransfer, found := k.getTransfer(ctx, recipient, asset.Denom, exported.Pending)
+	previousTransfer, found := k.getTransfer(ctx, receipient, asset.Denom, exported.Pending)
 	if found {
 		asset = asset.Add(previousTransfer.Asset)
 		k.deleteTransfer(ctx, previousTransfer)
 	}
 
 	k.Logger(ctx).Info(fmt.Sprintf("transfer %s from chain %s to chain %s and recipient %s is successfully prepared",
-		asset.String(), senderChain.Name, recipient.Chain.Name, recipient.Address))
+		asset.String(), senderChain.Name, receipient.Chain.Name, receipient.Address))
 
-	return k.setNewTransfer(ctx, recipient, asset, exported.Pending), nil
+	transferID := k.setNewTransfer(ctx, receipient, asset, exported.Pending)
+
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.FeeDeducted{
+		TransferID:        transferID,
+		ReceipientChain:   receipient.Chain.Name,
+		ReceipientAddress: receipient.Address,
+		Fee:               fee,
+	}))
+
+	return transferID, nil
 }
 
 // EnqueueForTransfer enqueues an asset transfer for the given deposit address
