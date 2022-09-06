@@ -41,6 +41,19 @@ message IBCTransferFailed {
   string channel_id = 4 [ (gogoproto.customname) = "ChannelID" ];
 }
 
+message IBCTransferRetried {
+  uint64 id = 1 [
+    (gogoproto.customname) = "ID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/nexus/exported.TransferID"
+  ];
+  string receipient = 2;
+  cosmos.base.v1beta1.Coin asset = 3 [ (gogoproto.nullable) = false ];
+  uint64 sequence = 4;
+  string port_id = 5 [ (gogoproto.customname) = "PortID" ];
+  string channel_id = 6 [ (gogoproto.customname) = "ChannelID" ];
+}
+
 message AxelarTransferCompleted {
   uint64 id = 1 [
     (gogoproto.customname) = "ID",

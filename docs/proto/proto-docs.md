@@ -9,6 +9,7 @@
     - [FeeCollected](#axelar.axelarnet.v1beta1.FeeCollected)
     - [IBCTransferCompleted](#axelar.axelarnet.v1beta1.IBCTransferCompleted)
     - [IBCTransferFailed](#axelar.axelarnet.v1beta1.IBCTransferFailed)
+    - [IBCTransferRetried](#axelar.axelarnet.v1beta1.IBCTransferRetried)
     - [IBCTransferSent](#axelar.axelarnet.v1beta1.IBCTransferSent)
   
 - [axelar/axelarnet/v1beta1/params.proto](#axelar/axelarnet/v1beta1/params.proto)
@@ -610,6 +611,26 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `id` | [uint64](#uint64) |  |  |
+| `sequence` | [uint64](#uint64) |  |  |
+| `port_id` | [string](#string) |  |  |
+| `channel_id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.axelarnet.v1beta1.IBCTransferRetried"></a>
+
+### IBCTransferRetried
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [uint64](#uint64) |  |  |
+| `receipient` | [string](#string) |  |  |
+| `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 | `sequence` | [uint64](#uint64) |  |  |
 | `port_id` | [string](#string) |  |  |
 | `channel_id` | [string](#string) |  |  |
