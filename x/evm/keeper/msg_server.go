@@ -325,6 +325,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		TokenAddress:       burnerInfo.TokenAddress,
 		ConfirmationHeight: height,
 		PollParticipants:   pollParticipants,
+		Asset:              burnerInfo.Asset,
 	}))
 
 	return &types.ConfirmDepositResponse{}, nil
@@ -501,6 +502,14 @@ func (s msgServer) CreateBurnTokens(c context.Context, req *types.CreateBurnToke
 			return nil, err
 		}
 
+		funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.BurnCommand{
+			Chain:            chain.Name,
+			CommandID:        cmd.ID,
+			DestinationChain: deposit.DestinationChain,
+			DepositAddress:   deposit.BurnerAddress.Hex(),
+			Asset:            token.GetAsset(),
+		}))
+
 		seen[burnerAddressHex] = true
 	}
 
@@ -567,6 +576,15 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 		if err := keeper.EnqueueCommand(ctx, cmd); err != nil {
 			return nil, err
 		}
+
+		funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.MintCommand{
+			Chain:              chain.Name,
+			TransferID:         transfer.ID,
+			CommandID:          cmd.ID,
+			DestinationChain:   transfer.Recipient.Chain.Name,
+			DestinationAddress: transfer.Recipient.Address,
+			Asset:              transfer.Asset,
+		}))
 
 		s.nexus.ArchivePendingTransfer(ctx, transfer)
 	}
@@ -758,8 +776,14 @@ func (s msgServer) RetryFailedEvent(c context.Context, req *types.RetryFailedEve
 	s.Logger(ctx).Info(
 		"re-queued failed event",
 		types.AttributeKeyChain, chain.Name,
-		"eventID", req.EventID,
+		"eventID", event.GetID(),
 	)
+
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.EVMEventRetryFailed{
+		Chain:   event.Chain,
+		EventID: event.GetID(),
+		Type:    event.GetEventType(),
+	}))
 
 	return &types.RetryFailedEventResponse{}, nil
 }

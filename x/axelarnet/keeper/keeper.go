@@ -67,6 +67,22 @@ func (k Keeper) GetRouteTimeoutWindow(ctx sdk.Context) uint64 {
 	return result
 }
 
+// GetTransferLimit returns the transfer limit for transfers processed by axelarnet
+func (k Keeper) GetTransferLimit(ctx sdk.Context) uint64 {
+	var result uint64
+	k.params.Get(ctx, types.KeyTransferLimit, &result)
+
+	return result
+}
+
+// GetEndBlockerLimit returns the transfer limit for IBC transfers routed in the end blocker by axelarnet
+func (k Keeper) GetEndBlockerLimit(ctx sdk.Context) uint64 {
+	var result uint64
+	k.params.Get(ctx, types.KeyEndBlockerLimit, &result)
+
+	return result
+}
+
 // SetIBCPath set an IBC path for a cosmos chain. Path can only be set once.
 func (k Keeper) SetIBCPath(ctx sdk.Context, chain nexus.ChainName, path string) error {
 	cosmosChain, ok := k.getCosmosChain(ctx, chain)

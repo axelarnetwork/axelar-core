@@ -19,11 +19,14 @@ func BeginBlocker(_ sdk.Context, _ abci.RequestBeginBlock) {}
 // EndBlocker called every block, process inflation, update validator set.
 func EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock, bk types.BaseKeeper, ibcKeeper keeper.IBCKeeper) ([]abci.ValidatorUpdate, error) {
 	queue := bk.GetIBCTransferQueue(ctx)
+	endBlockerLimit := bk.GetEndBlockerLimit(ctx)
 
 	var failed []types.IBCTransfer
-	for !queue.IsEmpty() {
+	count := uint64(0)
+	for count < endBlockerLimit && !queue.IsEmpty() {
 		var transfer types.IBCTransfer
 		queue.Dequeue(&transfer)
+		count++
 
 		succeeded := false
 		_ = utils.RunCached(ctx, bk, func(cachedCtx sdk.Context) ([]abci.ValidatorUpdate, error) {
