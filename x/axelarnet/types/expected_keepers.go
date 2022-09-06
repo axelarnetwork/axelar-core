@@ -2,6 +2,7 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/query"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
 	ibctypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
@@ -22,6 +23,8 @@ import (
 type BaseKeeper interface {
 	Logger(ctx sdk.Context) log.Logger
 	GetRouteTimeoutWindow(ctx sdk.Context) uint64
+	GetTransferLimit(ctx sdk.Context) uint64
+	GetEndBlockerLimit(ctx sdk.Context) uint64
 	GetCosmosChains(ctx sdk.Context) []nexus.ChainName
 	GetCosmosChainByName(ctx sdk.Context, chain nexus.ChainName) (CosmosChain, bool)
 	EnqueueIBCTransfer(ctx sdk.Context, transfer IBCTransfer) error
@@ -33,7 +36,7 @@ type BaseKeeper interface {
 // Nexus provides functionality to manage cross-chain transfers
 type Nexus interface {
 	EnqueueForTransfer(ctx sdk.Context, sender nexus.CrossChainAddress, amount sdk.Coin) (nexus.TransferID, error)
-	GetTransfersForChain(ctx sdk.Context, chain nexus.Chain, state nexus.TransferState) []nexus.CrossChainTransfer
+	GetTransfersForChainPaginated(ctx sdk.Context, chain nexus.Chain, state nexus.TransferState, pageRequest *query.PageRequest) ([]nexus.CrossChainTransfer, *query.PageResponse, error)
 	ArchivePendingTransfer(ctx sdk.Context, transfer nexus.CrossChainTransfer)
 	GetChain(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool)
 	LinkAddresses(ctx sdk.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress) error

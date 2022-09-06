@@ -664,6 +664,8 @@ Params represent the genesis parameters for the module
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `route_timeout_window` | [uint64](#uint64) |  | IBC packet route timeout window |
+| `transfer_limit` | [uint64](#uint64) |  |  |
+| `end_blocker_limit` | [uint64](#uint64) |  |  |
 
 
 
