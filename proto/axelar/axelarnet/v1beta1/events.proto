@@ -41,7 +41,7 @@ message IBCTransferFailed {
   string channel_id = 4 [ (gogoproto.customname) = "ChannelID" ];
 }
 
-message IBCTransferRetryFailed {
+message IBCTransferRetry {
   uint64 id = 1 [
     (gogoproto.customname) = "ID",
     (gogoproto.casttype) =

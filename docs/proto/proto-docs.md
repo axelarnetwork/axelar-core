@@ -9,7 +9,7 @@
     - [FeeCollected](#axelar.axelarnet.v1beta1.FeeCollected)
     - [IBCTransferCompleted](#axelar.axelarnet.v1beta1.IBCTransferCompleted)
     - [IBCTransferFailed](#axelar.axelarnet.v1beta1.IBCTransferFailed)
-    - [IBCTransferRetryFailed](#axelar.axelarnet.v1beta1.IBCTransferRetryFailed)
+    - [IBCTransferRetry](#axelar.axelarnet.v1beta1.IBCTransferRetry)
     - [IBCTransferSent](#axelar.axelarnet.v1beta1.IBCTransferSent)
   
 - [axelar/axelarnet/v1beta1/params.proto](#axelar/axelarnet/v1beta1/params.proto)
@@ -620,9 +620,9 @@
 
 
 
-<a name="axelar.axelarnet.v1beta1.IBCTransferRetryFailed"></a>
+<a name="axelar.axelarnet.v1beta1.IBCTransferRetry"></a>
 
-### IBCTransferRetryFailed
+### IBCTransferRetry
 
 
 
