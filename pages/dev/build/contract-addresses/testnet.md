@@ -6,6 +6,8 @@ import EVMAssets from '../../../../components/evm/assets'
 <div className="space-y-1 mt-4">
   ### EVM Chains
   <EVMChains environment="testnet" />
+
+  `Constant Address Deployer`:  `0x98b2920d53612483f91f12ed7754e51b4a77919e`
 </div>
 
 <div className="space-y-1 mt-4">
