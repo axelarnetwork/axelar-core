@@ -25,8 +25,6 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 	evmQueryCmd.AddCommand(
 		GetCmdGetProxy(queryRoute),
 		GetCmdGetOperator(queryRoute),
-		GetCmdGetSnapshot(queryRoute),
-		GetCmdGetValidators(queryRoute),
 	)
 
 	return evmQueryCmd
@@ -77,58 +75,6 @@ func GetCmdGetOperator(queryRoute string) *cobra.Command {
 
 			fmt.Println(string(res))
 			return nil
-		},
-	}
-	flags.AddQueryFlagsToCmd(cmd)
-	return cmd
-}
-
-// GetCmdGetSnapshot returns the snapshot for a given counter
-func GetCmdGetSnapshot(queryRoute string) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "info [counter]",
-		Short: "Fetch the snapshot for a given counter",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx, err := client.GetClientQueryContext(cmd)
-			if err != nil {
-				return err
-			}
-
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QInfo, args[0]), nil)
-			if err != nil {
-				return sdkerrors.Wrapf(err, types.ErrFSnapshot)
-			}
-
-			fmt.Println(string(res))
-			return nil
-		},
-	}
-	flags.AddQueryFlagsToCmd(cmd)
-	return cmd
-}
-
-// GetCmdGetValidators returns the validators
-func GetCmdGetValidators(queryRoute string) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "validators",
-		Short: "Fetch the validators and their information",
-		Args:  cobra.ExactArgs(0),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx, err := client.GetClientQueryContext(cmd)
-			if err != nil {
-				return err
-			}
-
-			bz, _, err := cliCtx.Query(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QValidators))
-			if err != nil {
-				return sdkerrors.Wrapf(err, types.ErrValidators)
-			}
-
-			var res types.QueryValidatorsResponse
-			types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
-
-			return cliCtx.PrintProto(&res)
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)

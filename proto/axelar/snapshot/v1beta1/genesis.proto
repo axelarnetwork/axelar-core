@@ -6,7 +6,6 @@ option go_package = "github.com/axelarnetwork/axelar-core/x/snapshot/types";
 import "gogoproto/gogo.proto";
 import "axelar/snapshot/v1beta1/params.proto";
 import "axelar/snapshot/v1beta1/types.proto";
-import "axelar/snapshot/exported/v1beta1/types.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
@@ -14,8 +13,6 @@ option (gogoproto.goproto_getters_all) = false;
 message GenesisState {
   Params params = 1 [ (gogoproto.nullable) = false ];
 
-  repeated snapshot.exported.v1beta1.Snapshot snapshots = 2
-      [ (gogoproto.nullable) = false ];
-  repeated ProxiedValidator proxied_validators = 3
+  repeated ProxiedValidator proxied_validators = 2
       [ (gogoproto.nullable) = false ];
 }

@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"bytes"
-	"encoding/binary"
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -14,19 +13,12 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 const (
-	snapshotCountKey = "count"
-
 	operatorPrefix = "operator_"
 	proxyPrefix    = "proxy_"
-	snapshotPrefix = "snapshot_"
 )
-
-// Make sure the keeper implements the Snapshotter interface
-var _ exported.Snapshotter = Keeper{}
 
 // Keeper represents the snapshot keeper
 type Keeper struct {
@@ -66,88 +58,11 @@ func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 	return
 }
 
-// TakeSnapshot attempts to create a new snapshot based on the given key requirment
-// Deprecated
-func (k Keeper) TakeSnapshot(ctx sdk.Context, keyRequirement tss.KeyRequirement) (exported.Snapshot, error) {
-	count := k.getSnapshotCount(ctx)
-	k.setSnapshotCount(ctx, count+1)
-
-	return k.executeSnapshot(ctx, count, keyRequirement)
-}
-
-// GetLatestSnapshot retrieves the last created snapshot
-func (k Keeper) GetLatestSnapshot(ctx sdk.Context) (exported.Snapshot, bool) {
-	count := k.getSnapshotCount(ctx)
-	if count == 0 {
-		return exported.Snapshot{}, false
-	}
-
-	return k.GetSnapshot(ctx, count)
-}
-
-// GetSnapshot retrieves a snapshot by counter, if it exists
-func (k Keeper) GetSnapshot(ctx sdk.Context, counter int64) (exported.Snapshot, bool) {
-	bz := ctx.KVStore(k.storeKey).Get(getSnapshotKey(counter))
-	if bz == nil {
-		return exported.Snapshot{}, false
-	}
-
-	var snapshot exported.Snapshot
-	k.cdc.MustUnmarshalLengthPrefixed(bz, &snapshot)
-
-	return snapshot, true
-}
-
-func (k Keeper) setSnapshot(ctx sdk.Context, snapshot exported.Snapshot) {
-	ctx.KVStore(k.storeKey).Set(getSnapshotKey(snapshot.Counter), k.cdc.MustMarshalLengthPrefixed(&snapshot))
-}
-
-func getSnapshotKey(counter int64) []byte {
-	return []byte(fmt.Sprintf("%s%d", snapshotPrefix, counter))
-}
-
-func (k Keeper) getSnapshots(ctx sdk.Context) []exported.Snapshot {
-	count := k.getSnapshotCount(ctx)
-	snapshots := make([]exported.Snapshot, count)
-
-	for i := int64(0); i < count; i++ {
-		snapshot, ok := k.GetSnapshot(ctx, i)
-		if !ok {
-			panic(fmt.Errorf("snapshot %d not found", i))
-		}
-
-		snapshots[i] = snapshot
-	}
-
-	return snapshots
-}
-
-func (k Keeper) getSnapshotCount(ctx sdk.Context) int64 {
-	bz := ctx.KVStore(k.storeKey).Get([]byte(snapshotCountKey))
-	if bz == nil {
-		return 0
-	}
-
-	return int64(binary.LittleEndian.Uint64(bz))
-}
-
-func (k Keeper) setSnapshotCount(ctx sdk.Context, counter int64) {
-	bz := make([]byte, 8)
-	binary.LittleEndian.PutUint64(bz, uint64(counter))
-
-	ctx.KVStore(k.storeKey).Set([]byte(snapshotCountKey), bz)
-}
-
 // GetMinProxyBalance returns the minimum balance proxies must hold
 func (k Keeper) GetMinProxyBalance(ctx sdk.Context) sdk.Int {
 	var minBalance int64
 	k.params.Get(ctx, types.KeyMinProxyBalance, &minBalance)
 	return sdk.NewInt(minBalance)
-}
-
-// Deprecated
-func (k Keeper) executeSnapshot(ctx sdk.Context, counter int64, keyRequirement tss.KeyRequirement) (exported.Snapshot, error) {
-	panic("to be removed")
 }
 
 // ActivateProxy registers a proxy address for a given operator, which can broadcast messages in the principal's name
@@ -257,11 +172,6 @@ func (k Keeper) GetProxy(ctx sdk.Context, operator sdk.ValAddress) (addr sdk.Acc
 	}
 
 	return nil, false
-}
-
-// GetValidatorIllegibility returns the illegibility of the given validator
-func (k Keeper) GetValidatorIllegibility(ctx sdk.Context, validator exported.SDKValidator) (exported.ValidatorIllegibility, error) {
-	panic("to be removed")
 }
 
 // CreateSnapshot returns a new snapshot giving each candidate its proper weight,
