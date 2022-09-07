@@ -1314,7 +1314,11 @@ func TestRetryFailedEvent(t *testing.T) {
 				if !found {
 					return types.Event{}, false
 				}
-				return types.Event{Status: eventStatus}, true
+				return types.Event{
+					Status: eventStatus,
+					Event: &types.Event_ContractCall{
+						ContractCall: &types.EventContractCall{},
+					}}, true
 			}
 		}
 	}

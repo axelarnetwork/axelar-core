@@ -122,14 +122,20 @@ func (v voteHandler) HandleCompletedPoll(ctx sdk.Context, poll vote.Poll) error 
 		}
 	}
 
+	md := mustGetMetadata(poll)
 	if v.IsFalsyResult(voteEvents) {
-		md := mustGetMetadata(poll)
 		funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.NoEventsConfirmed{
 			TxID:   md.TxID,
 			Chain:  md.Chain,
 			PollID: poll.GetID(),
 		}))
 	}
+
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.PollCompleted{
+		TxID:   md.TxID,
+		Chain:  md.Chain,
+		PollID: poll.GetID(),
+	}))
 
 	return nil
 }
@@ -181,6 +187,7 @@ func handleEvent(ctx sdk.Context, ck types.ChainKeeper, event types.Event, chain
 	}
 	ck.Logger(ctx).Info(fmt.Sprintf("confirmed %s event %s in transaction %s", chain.Name, eventID, event.TxID.Hex()))
 
+	// Deprecated
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeEventConfirmation,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),

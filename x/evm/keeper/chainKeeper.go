@@ -880,6 +880,12 @@ func (k chainKeeper) SetConfirmedEvent(ctx sdk.Context, event types.Event) error
 		return fmt.Errorf("unsupported event type %T", event)
 	}
 
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.EVMEventConfirmed{
+		Chain:   event.Chain,
+		EventID: event.GetID(),
+		Type:    event.GetEventType(),
+	}))
+
 	return nil
 }
 
@@ -892,6 +898,14 @@ func (k chainKeeper) SetEventCompleted(ctx sdk.Context, eventID types.EventID) e
 
 	event.Status = types.EventCompleted
 	k.setEvent(ctx, event)
+
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(
+		&types.EVMEventCompleted{
+			Chain:   event.Chain,
+			EventID: event.GetID(),
+			Type:    event.GetEventType(),
+		}),
+	)
 
 	return nil
 }
@@ -913,8 +927,9 @@ func (k chainKeeper) SetEventFailed(ctx sdk.Context, eventID types.EventID) erro
 
 	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(
 		&types.EVMEventFailed{
-			EventID: event.GetID(),
 			Chain:   event.Chain,
+			EventID: event.GetID(),
+			Type:    event.GetEventType(),
 		}),
 	)
 

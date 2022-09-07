@@ -9,6 +9,7 @@
     - [FeeCollected](#axelar.axelarnet.v1beta1.FeeCollected)
     - [IBCTransferCompleted](#axelar.axelarnet.v1beta1.IBCTransferCompleted)
     - [IBCTransferFailed](#axelar.axelarnet.v1beta1.IBCTransferFailed)
+    - [IBCTransferRetried](#axelar.axelarnet.v1beta1.IBCTransferRetried)
     - [IBCTransferSent](#axelar.axelarnet.v1beta1.IBCTransferSent)
   
 - [axelar/axelarnet/v1beta1/params.proto](#axelar/axelarnet/v1beta1/params.proto)
@@ -176,6 +177,7 @@
     - [Status](#axelar.evm.v1beta1.Status)
   
 - [axelar/evm/v1beta1/events.proto](#axelar/evm/v1beta1/events.proto)
+    - [BurnCommand](#axelar.evm.v1beta1.BurnCommand)
     - [ChainAdded](#axelar.evm.v1beta1.ChainAdded)
     - [CommandBatchAborted](#axelar.evm.v1beta1.CommandBatchAborted)
     - [CommandBatchSigned](#axelar.evm.v1beta1.CommandBatchSigned)
@@ -183,10 +185,18 @@
     - [ConfirmGatewayTxStarted](#axelar.evm.v1beta1.ConfirmGatewayTxStarted)
     - [ConfirmKeyTransferStarted](#axelar.evm.v1beta1.ConfirmKeyTransferStarted)
     - [ConfirmTokenStarted](#axelar.evm.v1beta1.ConfirmTokenStarted)
+    - [ContractCallApproved](#axelar.evm.v1beta1.ContractCallApproved)
+    - [ContractCallWithMintApproved](#axelar.evm.v1beta1.ContractCallWithMintApproved)
+    - [EVMEventCompleted](#axelar.evm.v1beta1.EVMEventCompleted)
+    - [EVMEventConfirmed](#axelar.evm.v1beta1.EVMEventConfirmed)
     - [EVMEventFailed](#axelar.evm.v1beta1.EVMEventFailed)
+    - [EVMEventRetryFailed](#axelar.evm.v1beta1.EVMEventRetryFailed)
+    - [MintCommand](#axelar.evm.v1beta1.MintCommand)
     - [NoEventsConfirmed](#axelar.evm.v1beta1.NoEventsConfirmed)
+    - [PollCompleted](#axelar.evm.v1beta1.PollCompleted)
     - [PollExpired](#axelar.evm.v1beta1.PollExpired)
     - [PollFailed](#axelar.evm.v1beta1.PollFailed)
+    - [TokenSent](#axelar.evm.v1beta1.TokenSent)
   
 - [axelar/evm/v1beta1/params.proto](#axelar/evm/v1beta1/params.proto)
     - [Params](#axelar.evm.v1beta1.Params)
@@ -614,6 +624,26 @@
 
 
 
+<a name="axelar.axelarnet.v1beta1.IBCTransferRetried"></a>
+
+### IBCTransferRetried
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [uint64](#uint64) |  |  |
+| `receipient` | [string](#string) |  |  |
+| `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+| `sequence` | [uint64](#uint64) |  |  |
+| `port_id` | [string](#string) |  |  |
+| `channel_id` | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="axelar.axelarnet.v1beta1.IBCTransferSent"></a>
 
 ### IBCTransferSent
@@ -659,6 +689,8 @@ Params represent the genesis parameters for the module
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `route_timeout_window` | [uint64](#uint64) |  | IBC packet route timeout window |
+| `transfer_limit` | [uint64](#uint64) |  |  |
+| `end_blocker_limit` | [uint64](#uint64) |  |  |
 
 
 
@@ -2869,6 +2901,25 @@ TransferKey contains information for a transfer operatorship
 
 
 
+<a name="axelar.evm.v1beta1.BurnCommand"></a>
+
+### BurnCommand
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `command_id` | [bytes](#bytes) |  |  |
+| `destination_chain` | [string](#string) |  |  |
+| `deposit_address` | [string](#string) |  |  |
+| `asset` | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="axelar.evm.v1beta1.ChainAdded"></a>
 
 ### ChainAdded
@@ -2930,6 +2981,7 @@ TransferKey contains information for a transfer operatorship
 | `token_address` | [bytes](#bytes) |  |  |
 | `confirmation_height` | [uint64](#uint64) |  |  |
 | `participants` | [axelar.vote.exported.v1beta1.PollParticipants](#axelar.vote.exported.v1beta1.PollParticipants) |  |  |
+| `asset` | [string](#string) |  |  |
 
 
 
@@ -2995,6 +3047,83 @@ TransferKey contains information for a transfer operatorship
 
 
 
+<a name="axelar.evm.v1beta1.ContractCallApproved"></a>
+
+### ContractCallApproved
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `event_id` | [string](#string) |  |  |
+| `command_id` | [bytes](#bytes) |  |  |
+| `sender` | [string](#string) |  |  |
+| `destination_chain` | [string](#string) |  |  |
+| `contract_address` | [string](#string) |  |  |
+| `payload_hash` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.ContractCallWithMintApproved"></a>
+
+### ContractCallWithMintApproved
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `event_id` | [string](#string) |  |  |
+| `command_id` | [bytes](#bytes) |  |  |
+| `sender` | [string](#string) |  |  |
+| `destination_chain` | [string](#string) |  |  |
+| `contract_address` | [string](#string) |  |  |
+| `payload_hash` | [bytes](#bytes) |  |  |
+| `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.EVMEventCompleted"></a>
+
+### EVMEventCompleted
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `event_id` | [string](#string) |  |  |
+| `type` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.EVMEventConfirmed"></a>
+
+### EVMEventConfirmed
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `event_id` | [string](#string) |  |  |
+| `type` | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="axelar.evm.v1beta1.EVMEventFailed"></a>
 
 ### EVMEventFailed
@@ -3003,8 +3132,46 @@ TransferKey contains information for a transfer operatorship
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `event_id` | [string](#string) |  |  |
 | `chain` | [string](#string) |  |  |
+| `event_id` | [string](#string) |  |  |
+| `type` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.EVMEventRetryFailed"></a>
+
+### EVMEventRetryFailed
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `event_id` | [string](#string) |  |  |
+| `type` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.MintCommand"></a>
+
+### MintCommand
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `transfer_id` | [uint64](#uint64) |  |  |
+| `command_id` | [bytes](#bytes) |  |  |
+| `destination_chain` | [string](#string) |  |  |
+| `destination_address` | [string](#string) |  |  |
+| `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 
 
 
@@ -3014,6 +3181,23 @@ TransferKey contains information for a transfer operatorship
 <a name="axelar.evm.v1beta1.NoEventsConfirmed"></a>
 
 ### NoEventsConfirmed
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tx_id` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
+| `poll_id` | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.PollCompleted"></a>
+
+### PollCompleted
 
 
 
@@ -3056,6 +3240,27 @@ TransferKey contains information for a transfer operatorship
 | `tx_id` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
 | `poll_id` | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.TokenSent"></a>
+
+### TokenSent
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `event_id` | [string](#string) |  |  |
+| `transfer_id` | [uint64](#uint64) |  |  |
+| `sender` | [string](#string) |  |  |
+| `destination_chain` | [string](#string) |  |  |
+| `destination_address` | [string](#string) |  |  |
+| `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 
 
 

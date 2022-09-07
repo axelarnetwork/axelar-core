@@ -14,6 +14,8 @@ const (
 // Parameter keys
 var (
 	KeyRouteTimeoutWindow = []byte("routeTimeoutWindow")
+	KeyTransferLimit      = []byte("transferLimit")
+	KeyEndBlockerLimit    = []byte("endBlockerLimit")
 )
 
 // KeyTable retrieves a subspace table for the module
@@ -25,6 +27,8 @@ func KeyTable() params.KeyTable {
 func DefaultParams() Params {
 	return Params{
 		RouteTimeoutWindow: 17000,
+		TransferLimit:      20,
+		EndBlockerLimit:    50,
 	}
 }
 
@@ -39,12 +43,22 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 	*/
 	return params.ParamSetPairs{
 		params.NewParamSetPair(KeyRouteTimeoutWindow, &m.RouteTimeoutWindow, validatePosUInt64("RouteTimeoutWindow")),
+		params.NewParamSetPair(KeyTransferLimit, &m.TransferLimit, validatePosUInt64("TransferLimit")),
+		params.NewParamSetPair(KeyEndBlockerLimit, &m.EndBlockerLimit, validatePosUInt64("EndBlockerLimit")),
 	}
 }
 
 // Validate checks if the parameters are valid
 func (m Params) Validate() error {
 	if err := validatePosUInt64("RouteTimeoutWindow")(m.RouteTimeoutWindow); err != nil {
+		return err
+	}
+
+	if err := validatePosUInt64("TransferLimit")(m.TransferLimit); err != nil {
+		return err
+	}
+
+	if err := validatePosUInt64("EndBlockerLimit")(m.EndBlockerLimit); err != nil {
 		return err
 	}
 
