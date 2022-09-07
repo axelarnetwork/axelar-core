@@ -34,38 +34,30 @@ func handlePollsAtExpiry(ctx sdk.Context, k types.Voter) error {
 			panic(fmt.Errorf("poll %s not found", pollID))
 		}
 
-		voteHandler := k.GetVoteRouter().GetHandler(poll.GetModule())
+		logger := k.Logger(ctx).With("poll", pollID.String())
 
+		voteHandler := k.GetVoteRouter().GetHandler(poll.GetModule())
 		switch poll.GetState() {
 		case exported.Pending:
+			logger.Debug("poll expired")
 			if err := voteHandler.HandleExpiredPoll(ctx, poll); err != nil {
 				return err
 			}
 
-			k.Logger(ctx).Debug("poll expired",
-				"poll", pollID.String(),
-			)
 		case exported.Failed:
+			logger.Debug("poll failed")
 			if err := voteHandler.HandleFailedPoll(ctx, poll); err != nil {
 				return err
 			}
 
-			k.Logger(ctx).Debug("poll failed",
-				"poll", pollID.String(),
-			)
 		case exported.Completed:
+			if voteHandler.IsFalsyResult(poll.GetResult()) {
+				logger.Debug("poll completed with falsy result")
+			} else {
+				logger.Debug("poll completed with final result")
+			}
 			if err := voteHandler.HandleCompletedPoll(ctx, poll); err != nil {
 				return err
-			}
-
-			if voteHandler.IsFalsyResult(poll.GetResult()) {
-				k.Logger(ctx).Debug("poll completed with falsy result",
-					"poll", pollID.String(),
-				)
-			} else {
-				k.Logger(ctx).Debug("poll completed with final result",
-					"poll", pollID.String(),
-				)
 			}
 		default:
 			panic(fmt.Errorf("unexpected poll state %s", poll.GetState().String()))
