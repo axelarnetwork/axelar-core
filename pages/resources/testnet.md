@@ -8,8 +8,8 @@ import Typeform from '../../components/typeform'
 
 | Variable              | Value     |
 | --------------------- | --------- |
-| `axelar-core` version | `v0.25.0` |
-| `vald` version        | `v0.25.0` |
+| `axelar-core` version | `v0.26.0` |
+| `vald` version        | `v0.26.0` |
 | `tofnd` version       | `v0.10.1` |
 
 ## EVM contract addresses
