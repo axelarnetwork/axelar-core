@@ -1,0 +1,144 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "axelar/snapshot/v1beta1/service.proto",
+    "version": "version not set"
+  },
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/axelar/snapshot/deactivate_proxy": {
+      "post": {
+        "summary": "DeactivateProxy defines a method for deregistering a proxy account.",
+        "operationId": "DeactivateProxy",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/axelar.snapshot.v1beta1.DeactivateProxyResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/axelar.snapshot.v1beta1.DeactivateProxyRequest"
+            }
+          }
+        ],
+        "tags": [
+          "MsgService"
+        ]
+      }
+    },
+    "/axelar/snapshot/register_proxy": {
+      "post": {
+        "summary": "RegisterProxy defines a method for registering a proxy account that can act\nin a validator account's stead.",
+        "operationId": "RegisterProxy",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/axelar.snapshot.v1beta1.RegisterProxyResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/axelar.snapshot.v1beta1.RegisterProxyRequest"
+            }
+          }
+        ],
+        "tags": [
+          "MsgService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "axelar.snapshot.v1beta1.DeactivateProxyRequest": {
+      "type": "object",
+      "properties": {
+        "sender": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "axelar.snapshot.v1beta1.DeactivateProxyResponse": {
+      "type": "object"
+    },
+    "axelar.snapshot.v1beta1.RegisterProxyRequest": {
+      "type": "object",
+      "properties": {
+        "sender": {
+          "type": "string",
+          "format": "byte"
+        },
+        "proxy_addr": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "axelar.snapshot.v1beta1.RegisterProxyResponse": {
+      "type": "object"
+    },
+    "google.protobuf.Any": {
+      "type": "object",
+      "properties": {
+        "type_url": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "grpc.gateway.runtime.Error": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "string"
+        },
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/google.protobuf.Any"
+          }
+        }
+      }
+    }
+  }
+}

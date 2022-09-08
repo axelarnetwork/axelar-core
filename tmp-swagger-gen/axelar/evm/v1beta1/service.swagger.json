@@ -1,0 +1,1712 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "axelar/evm/v1beta1/service.proto",
+    "version": "version not set"
+  },
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/axelar/evm/add_chain": {
+      "post": {
+        "operationId": "AddChain",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/axelar.evm.v1beta1.AddChainResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/axelar.evm.v1beta1.AddChainRequest"
+            }
+          }
+        ],
+        "tags": [
+          "MsgService"
+        ]
+      }
+    },
+    "/axelar/evm/confirm_deposit": {
+      "post": {
+        "operationId": "ConfirmDeposit",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/axelar.evm.v1beta1.ConfirmDepositResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/axelar.evm.v1beta1.ConfirmDepositRequest"
+            }
+          }
+        ],
+        "tags": [
+          "MsgService"
+        ]
+      }
+    },
+    "/axelar/evm/confirm_gateway_tx": {
+      "post": {
+        "operationId": "ConfirmGatewayTx",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/axelar.evm.v1beta1.ConfirmGatewayTxResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/axelar.evm.v1beta1.ConfirmGatewayTxRequest"
+            }
+          }
+        ],
+        "tags": [
+          "MsgService"
+        ]
+      }
+    },
+    "/axelar/evm/confirm_token": {
+      "post": {
+        "operationId": "ConfirmToken",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/axelar.evm.v1beta1.ConfirmTokenResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/axelar.evm.v1beta1.ConfirmTokenRequest"
+            }
+          }
+        ],
+        "tags": [
+          "MsgService"
+        ]
+      }
+    },
+    "/axelar/evm/confirm_transfer_key": {
+      "post": {
+        "operationId": "ConfirmTransferKey",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/axelar.evm.v1beta1.ConfirmTransferKeyResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/axelar.evm.v1beta1.ConfirmTransferKeyRequest"
+            }
+          }
+        ],
+        "tags": [
+          "MsgService"
+        ]
+      }
+    },
+    "/axelar/evm/create_burn_tokens": {
+      "post": {
+        "operationId": "CreateBurnTokens",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/axelar.evm.v1beta1.CreateBurnTokensResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/axelar.evm.v1beta1.CreateBurnTokensRequest"
+            }
+          }
+        ],
+        "tags": [
+          "MsgService"
+        ]
+      }
+    },
+    "/axelar/evm/create_deploy_token": {
+      "post": {
+        "operationId": "CreateDeployToken",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/axelar.evm.v1beta1.CreateDeployTokenResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/axelar.evm.v1beta1.CreateDeployTokenRequest"
+            }
+          }
+        ],
+        "tags": [
+          "MsgService"
+        ]
+      }
+    },
+    "/axelar/evm/create_pending_transfers": {
+      "post": {
+        "operationId": "CreatePendingTransfers",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/axelar.evm.v1beta1.CreatePendingTransfersResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/axelar.evm.v1beta1.CreatePendingTransfersRequest"
+            }
+          }
+        ],
+        "tags": [
+          "MsgService"
+        ]
+      }
+    },
+    "/axelar/evm/create_transfer_operatorship": {
+      "post": {
+        "operationId": "CreateTransferOperatorship",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/axelar.evm.v1beta1.CreateTransferOperatorshipResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/axelar.evm.v1beta1.CreateTransferOperatorshipRequest"
+            }
+          }
+        ],
+        "tags": [
+          "MsgService"
+        ]
+      }
+    },
+    "/axelar/evm/link": {
+      "post": {
+        "operationId": "Link",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/axelar.evm.v1beta1.LinkResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/axelar.evm.v1beta1.LinkRequest"
+            }
+          }
+        ],
+        "tags": [
+          "MsgService"
+        ]
+      }
+    },
+    "/axelar/evm/retry-failed-event": {
+      "post": {
+        "operationId": "RetryFailedEvent",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/axelar.evm.v1beta1.RetryFailedEventResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/axelar.evm.v1beta1.RetryFailedEventRequest"
+            }
+          }
+        ],
+        "tags": [
+          "MsgService"
+        ]
+      }
+    },
+    "/axelar/evm/set_gateway": {
+      "post": {
+        "operationId": "SetGateway",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/axelar.evm.v1beta1.SetGatewayResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/axelar.evm.v1beta1.SetGatewayRequest"
+            }
+          }
+        ],
+        "tags": [
+          "MsgService"
+        ]
+      }
+    },
+    "/axelar/evm/sign_commands": {
+      "post": {
+        "operationId": "SignCommands",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/axelar.evm.v1beta1.SignCommandsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/axelar.evm.v1beta1.SignCommandsRequest"
+            }
+          }
+        ],
+        "tags": [
+          "MsgService"
+        ]
+      }
+    },
+    "/axelar/evm/v1beta1/batched_commands/{chain}/{id}": {
+      "get": {
+        "summary": "BatchedCommands queries the batched commands for a specified chain and\nBatchedCommandsID if no BatchedCommandsID is specified, then it returns the\nlatest batched commands",
+        "operationId": "BatchedCommands",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/axelar.evm.v1beta1.BatchedCommandsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "chain",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "id",
+            "description": "id defines an optional id for the commandsbatch. If not specified the\nlatest will be returned",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "QueryService"
+        ]
+      }
+    },
+    "/axelar/evm/v1beta1/burner_info": {
+      "get": {
+        "summary": "BurnerInfo queries the burner info for the specified address",
+        "operationId": "BurnerInfo",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/axelar.evm.v1beta1.BurnerInfoResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "address",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "byte"
+          }
+        ],
+        "tags": [
+          "QueryService"
+        ]
+      }
+    },
+    "/axelar/evm/v1beta1/bytecode/{chain}/{contract}": {
+      "get": {
+        "summary": "Bytecode queries the bytecode of a specified gateway at the specified chain",
+        "operationId": "Bytecode",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/axelar.evm.v1beta1.BytecodeResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "chain",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "contract",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "QueryService"
+        ]
+      }
+    },
+    "/axelar/evm/v1beta1/chains": {
+      "get": {
+        "summary": "Chains queries the available evm chains",
+        "operationId": "Chains",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/axelar.evm.v1beta1.ChainsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "tags": [
+          "QueryService"
+        ]
+      }
+    },
+    "/axelar/evm/v1beta1/confirmation_height/{chain}": {
+      "get": {
+        "summary": "ConfirmationHeight queries the confirmation height for the specified chain",
+        "operationId": "ConfirmationHeight",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/axelar.evm.v1beta1.ConfirmationHeightResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "chain",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "QueryService"
+        ]
+      }
+    },
+    "/axelar/evm/v1beta1/deposit_state": {
+      "get": {
+        "summary": "DepositState queries the state of the specified deposit",
+        "operationId": "DepositState",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/axelar.evm.v1beta1.DepositStateResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "chain",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "params.tx_id",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "byte"
+          },
+          {
+            "name": "params.burner_address",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "byte"
+          }
+        ],
+        "tags": [
+          "QueryService"
+        ]
+      }
+    },
+    "/axelar/evm/v1beta1/erc20_tokens/{chain}": {
+      "get": {
+        "summary": "ERC20Tokens queries the ERC20 tokens registered for a chain",
+        "operationId": "ERC20Tokens",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/axelar.evm.v1beta1.ERC20TokensResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "chain",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "TOKEN_TYPE_UNSPECIFIED",
+              "TOKEN_TYPE_INTERNAL",
+              "TOKEN_TYPE_EXTERNAL"
+            ],
+            "default": "TOKEN_TYPE_UNSPECIFIED"
+          }
+        ],
+        "tags": [
+          "QueryService"
+        ]
+      }
+    },
+    "/axelar/evm/v1beta1/event/{chain}/{event_id}": {
+      "get": {
+        "summary": "Event queries an event at the specified chain",
+        "operationId": "Event",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/axelar.evm.v1beta1.EventResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "chain",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "QueryService"
+        ]
+      }
+    },
+    "/axelar/evm/v1beta1/gateway_address/{chain}": {
+      "get": {
+        "summary": "GatewayAddress queries the address of axelar gateway at the specified chain",
+        "operationId": "GatewayAddress",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/axelar.evm.v1beta1.GatewayAddressResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "chain",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "QueryService"
+        ]
+      }
+    },
+    "/axelar/evm/v1beta1/key_address/{chain}": {
+      "get": {
+        "summary": "KeyAddress queries the address of key of a chain",
+        "operationId": "KeyAddress",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/axelar.evm.v1beta1.KeyAddressResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "chain",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "key_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "QueryService"
+        ]
+      }
+    },
+    "/axelar/evm/v1beta1/pending_commands/{chain}": {
+      "get": {
+        "summary": "PendingCommands queries the pending commands for the specified chain",
+        "operationId": "PendingCommands",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/axelar.evm.v1beta1.PendingCommandsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "chain",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "QueryService"
+        ]
+      }
+    },
+    "/axelar/evm/v1beta1/token_info/{chain}": {
+      "get": {
+        "summary": "TokenInfo queries the token info for a registered ERC20 Token",
+        "operationId": "TokenInfo",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/axelar.evm.v1beta1.TokenInfoResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "chain",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "asset",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "symbol",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "QueryService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "axelar.evm.v1beta1.AddChainRequest": {
+      "type": "object",
+      "properties": {
+        "sender": {
+          "type": "string",
+          "format": "byte"
+        },
+        "name": {
+          "type": "string"
+        },
+        "key_type": {
+          "$ref": "#/definitions/axelar.tss.exported.v1beta1.KeyType"
+        },
+        "params": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "axelar.evm.v1beta1.AddChainResponse": {
+      "type": "object"
+    },
+    "axelar.evm.v1beta1.Asset": {
+      "type": "object",
+      "properties": {
+        "chain": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "axelar.evm.v1beta1.BatchedCommandsResponse": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "data": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/axelar.evm.v1beta1.BatchedCommandsStatus"
+        },
+        "key_id": {
+          "type": "string"
+        },
+        "execute_data": {
+          "type": "string"
+        },
+        "prev_batched_commands_id": {
+          "type": "string"
+        },
+        "command_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "proof": {
+          "$ref": "#/definitions/axelar.evm.v1beta1.Proof"
+        }
+      }
+    },
+    "axelar.evm.v1beta1.BatchedCommandsStatus": {
+      "type": "string",
+      "enum": [
+        "BATCHED_COMMANDS_STATUS_UNSPECIFIED",
+        "BATCHED_COMMANDS_STATUS_SIGNING",
+        "BATCHED_COMMANDS_STATUS_ABORTED",
+        "BATCHED_COMMANDS_STATUS_SIGNED"
+      ],
+      "default": "BATCHED_COMMANDS_STATUS_UNSPECIFIED"
+    },
+    "axelar.evm.v1beta1.BurnerInfo": {
+      "type": "object",
+      "properties": {
+        "burner_address": {
+          "type": "string",
+          "format": "byte"
+        },
+        "token_address": {
+          "type": "string",
+          "format": "byte"
+        },
+        "destination_chain": {
+          "type": "string"
+        },
+        "symbol": {
+          "type": "string"
+        },
+        "asset": {
+          "type": "string"
+        },
+        "salt": {
+          "type": "string",
+          "format": "byte"
+        }
+      },
+      "title": "BurnerInfo describes information required to burn token at an burner address\nthat is deposited by an user"
+    },
+    "axelar.evm.v1beta1.BurnerInfoResponse": {
+      "type": "object",
+      "properties": {
+        "chain": {
+          "type": "string"
+        },
+        "burner_info": {
+          "$ref": "#/definitions/axelar.evm.v1beta1.BurnerInfo"
+        }
+      }
+    },
+    "axelar.evm.v1beta1.BytecodeResponse": {
+      "type": "object",
+      "properties": {
+        "bytecode": {
+          "type": "string"
+        }
+      }
+    },
+    "axelar.evm.v1beta1.ChainsResponse": {
+      "type": "object",
+      "properties": {
+        "chains": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "axelar.evm.v1beta1.ConfirmDepositRequest": {
+      "type": "object",
+      "properties": {
+        "sender": {
+          "type": "string",
+          "format": "byte"
+        },
+        "chain": {
+          "type": "string"
+        },
+        "tx_id": {
+          "type": "string",
+          "format": "byte"
+        },
+        "amount": {
+          "type": "string",
+          "format": "byte"
+        },
+        "burner_address": {
+          "type": "string",
+          "format": "byte"
+        }
+      },
+      "title": "MsgConfirmDeposit represents an erc20 deposit confirmation message"
+    },
+    "axelar.evm.v1beta1.ConfirmDepositResponse": {
+      "type": "object"
+    },
+    "axelar.evm.v1beta1.ConfirmGatewayTxRequest": {
+      "type": "object",
+      "properties": {
+        "sender": {
+          "type": "string",
+          "format": "byte"
+        },
+        "chain": {
+          "type": "string"
+        },
+        "tx_id": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "axelar.evm.v1beta1.ConfirmGatewayTxResponse": {
+      "type": "object"
+    },
+    "axelar.evm.v1beta1.ConfirmTokenRequest": {
+      "type": "object",
+      "properties": {
+        "sender": {
+          "type": "string",
+          "format": "byte"
+        },
+        "chain": {
+          "type": "string"
+        },
+        "tx_id": {
+          "type": "string",
+          "format": "byte"
+        },
+        "asset": {
+          "$ref": "#/definitions/axelar.evm.v1beta1.Asset"
+        }
+      },
+      "title": "MsgConfirmToken represents a token deploy confirmation message"
+    },
+    "axelar.evm.v1beta1.ConfirmTokenResponse": {
+      "type": "object"
+    },
+    "axelar.evm.v1beta1.ConfirmTransferKeyRequest": {
+      "type": "object",
+      "properties": {
+        "sender": {
+          "type": "string",
+          "format": "byte"
+        },
+        "chain": {
+          "type": "string"
+        },
+        "tx_id": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "axelar.evm.v1beta1.ConfirmTransferKeyResponse": {
+      "type": "object"
+    },
+    "axelar.evm.v1beta1.ConfirmationHeightResponse": {
+      "type": "object",
+      "properties": {
+        "height": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
+    "axelar.evm.v1beta1.CreateBurnTokensRequest": {
+      "type": "object",
+      "properties": {
+        "sender": {
+          "type": "string",
+          "format": "byte"
+        },
+        "chain": {
+          "type": "string"
+        }
+      },
+      "title": "CreateBurnTokensRequest represents the message to create commands to burn\ntokens with AxelarGateway"
+    },
+    "axelar.evm.v1beta1.CreateBurnTokensResponse": {
+      "type": "object"
+    },
+    "axelar.evm.v1beta1.CreateDeployTokenRequest": {
+      "type": "object",
+      "properties": {
+        "sender": {
+          "type": "string",
+          "format": "byte"
+        },
+        "chain": {
+          "type": "string"
+        },
+        "asset": {
+          "$ref": "#/definitions/axelar.evm.v1beta1.Asset"
+        },
+        "token_details": {
+          "$ref": "#/definitions/axelar.evm.v1beta1.TokenDetails"
+        },
+        "address": {
+          "type": "string",
+          "format": "byte"
+        },
+        "daily_mint_limit": {
+          "type": "string"
+        }
+      },
+      "title": "CreateDeployTokenRequest represents the message to create a deploy token\ncommand for AxelarGateway"
+    },
+    "axelar.evm.v1beta1.CreateDeployTokenResponse": {
+      "type": "object"
+    },
+    "axelar.evm.v1beta1.CreatePendingTransfersRequest": {
+      "type": "object",
+      "properties": {
+        "sender": {
+          "type": "string",
+          "format": "byte"
+        },
+        "chain": {
+          "type": "string"
+        }
+      },
+      "title": "CreatePendingTransfersRequest represents a message to trigger the creation of\ncommands handling all pending transfers"
+    },
+    "axelar.evm.v1beta1.CreatePendingTransfersResponse": {
+      "type": "object"
+    },
+    "axelar.evm.v1beta1.CreateTransferOperatorshipRequest": {
+      "type": "object",
+      "properties": {
+        "sender": {
+          "type": "string",
+          "format": "byte"
+        },
+        "chain": {
+          "type": "string"
+        },
+        "key_id": {
+          "type": "string"
+        }
+      }
+    },
+    "axelar.evm.v1beta1.CreateTransferOperatorshipResponse": {
+      "type": "object"
+    },
+    "axelar.evm.v1beta1.DepositStateResponse": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "$ref": "#/definitions/axelar.evm.v1beta1.DepositStatus"
+        }
+      }
+    },
+    "axelar.evm.v1beta1.DepositStatus": {
+      "type": "string",
+      "enum": [
+        "DEPOSIT_STATUS_UNSPECIFIED",
+        "DEPOSIT_STATUS_PENDING",
+        "DEPOSIT_STATUS_CONFIRMED",
+        "DEPOSIT_STATUS_BURNED"
+      ],
+      "default": "DEPOSIT_STATUS_UNSPECIFIED"
+    },
+    "axelar.evm.v1beta1.ERC20TokensResponse": {
+      "type": "object",
+      "properties": {
+        "tokens": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/axelar.evm.v1beta1.ERC20TokensResponse.Token"
+          }
+        }
+      },
+      "title": "ERC20TokensResponse describes the asset and symbol for all\nERC20 tokens requested for a chain"
+    },
+    "axelar.evm.v1beta1.ERC20TokensResponse.Token": {
+      "type": "object",
+      "properties": {
+        "asset": {
+          "type": "string"
+        },
+        "symbol": {
+          "type": "string"
+        }
+      }
+    },
+    "axelar.evm.v1beta1.Event": {
+      "type": "object",
+      "properties": {
+        "chain": {
+          "type": "string"
+        },
+        "tx_id": {
+          "type": "string",
+          "format": "byte"
+        },
+        "index": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "status": {
+          "$ref": "#/definitions/axelar.evm.v1beta1.Event.Status"
+        },
+        "token_sent": {
+          "$ref": "#/definitions/axelar.evm.v1beta1.EventTokenSent"
+        },
+        "contract_call": {
+          "$ref": "#/definitions/axelar.evm.v1beta1.EventContractCall"
+        },
+        "contract_call_with_token": {
+          "$ref": "#/definitions/axelar.evm.v1beta1.EventContractCallWithToken"
+        },
+        "transfer": {
+          "$ref": "#/definitions/axelar.evm.v1beta1.EventTransfer"
+        },
+        "token_deployed": {
+          "$ref": "#/definitions/axelar.evm.v1beta1.EventTokenDeployed"
+        },
+        "multisig_ownership_transferred": {
+          "$ref": "#/definitions/axelar.evm.v1beta1.EventMultisigOwnershipTransferred"
+        },
+        "multisig_operatorship_transferred": {
+          "$ref": "#/definitions/axelar.evm.v1beta1.EventMultisigOperatorshipTransferred"
+        }
+      }
+    },
+    "axelar.evm.v1beta1.Event.Status": {
+      "type": "string",
+      "enum": [
+        "STATUS_UNSPECIFIED",
+        "STATUS_CONFIRMED",
+        "STATUS_COMPLETED",
+        "STATUS_FAILED"
+      ],
+      "default": "STATUS_UNSPECIFIED"
+    },
+    "axelar.evm.v1beta1.EventContractCall": {
+      "type": "object",
+      "properties": {
+        "sender": {
+          "type": "string",
+          "format": "byte"
+        },
+        "destination_chain": {
+          "type": "string"
+        },
+        "contract_address": {
+          "type": "string"
+        },
+        "payload_hash": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "axelar.evm.v1beta1.EventContractCallWithToken": {
+      "type": "object",
+      "properties": {
+        "sender": {
+          "type": "string",
+          "format": "byte"
+        },
+        "destination_chain": {
+          "type": "string"
+        },
+        "contract_address": {
+          "type": "string"
+        },
+        "payload_hash": {
+          "type": "string",
+          "format": "byte"
+        },
+        "symbol": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "axelar.evm.v1beta1.EventMultisigOperatorshipTransferred": {
+      "type": "object",
+      "properties": {
+        "new_operators": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "byte"
+          }
+        },
+        "new_threshold": {
+          "type": "string",
+          "format": "byte"
+        },
+        "new_weights": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "byte"
+          }
+        }
+      }
+    },
+    "axelar.evm.v1beta1.EventMultisigOwnershipTransferred": {
+      "type": "object",
+      "properties": {
+        "pre_owners": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "byte"
+          }
+        },
+        "prev_threshold": {
+          "type": "string",
+          "format": "byte"
+        },
+        "new_owners": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "byte"
+          }
+        },
+        "new_threshold": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "axelar.evm.v1beta1.EventResponse": {
+      "type": "object",
+      "properties": {
+        "event": {
+          "$ref": "#/definitions/axelar.evm.v1beta1.Event"
+        }
+      }
+    },
+    "axelar.evm.v1beta1.EventTokenDeployed": {
+      "type": "object",
+      "properties": {
+        "symbol": {
+          "type": "string"
+        },
+        "token_address": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "axelar.evm.v1beta1.EventTokenSent": {
+      "type": "object",
+      "properties": {
+        "sender": {
+          "type": "string",
+          "format": "byte"
+        },
+        "destination_chain": {
+          "type": "string"
+        },
+        "destination_address": {
+          "type": "string"
+        },
+        "symbol": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "axelar.evm.v1beta1.EventTransfer": {
+      "type": "object",
+      "properties": {
+        "to": {
+          "type": "string",
+          "format": "byte"
+        },
+        "amount": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "axelar.evm.v1beta1.GatewayAddressResponse": {
+      "type": "object",
+      "properties": {
+        "address": {
+          "type": "string"
+        }
+      }
+    },
+    "axelar.evm.v1beta1.KeyAddressResponse": {
+      "type": "object",
+      "properties": {
+        "key_id": {
+          "type": "string"
+        },
+        "addresses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/axelar.evm.v1beta1.KeyAddressResponse.WeightedAddress"
+          }
+        },
+        "threshold": {
+          "type": "string"
+        }
+      }
+    },
+    "axelar.evm.v1beta1.KeyAddressResponse.WeightedAddress": {
+      "type": "object",
+      "properties": {
+        "address": {
+          "type": "string"
+        },
+        "weight": {
+          "type": "string"
+        }
+      }
+    },
+    "axelar.evm.v1beta1.LinkRequest": {
+      "type": "object",
+      "properties": {
+        "sender": {
+          "type": "string",
+          "format": "byte"
+        },
+        "chain": {
+          "type": "string"
+        },
+        "recipient_addr": {
+          "type": "string"
+        },
+        "asset": {
+          "type": "string"
+        },
+        "recipient_chain": {
+          "type": "string"
+        }
+      },
+      "title": "MsgLink represents the message that links a cross chain address to a burner\naddress"
+    },
+    "axelar.evm.v1beta1.LinkResponse": {
+      "type": "object",
+      "properties": {
+        "deposit_addr": {
+          "type": "string"
+        }
+      }
+    },
+    "axelar.evm.v1beta1.PendingCommandsResponse": {
+      "type": "object",
+      "properties": {
+        "commands": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/axelar.evm.v1beta1.QueryCommandResponse"
+          }
+        }
+      }
+    },
+    "axelar.evm.v1beta1.Proof": {
+      "type": "object",
+      "properties": {
+        "addresses": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "weights": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "threshold": {
+          "type": "string"
+        },
+        "signatures": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "axelar.evm.v1beta1.QueryCommandResponse": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "params": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "key_id": {
+          "type": "string"
+        },
+        "max_gas_cost": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "axelar.evm.v1beta1.QueryDepositStateParams": {
+      "type": "object",
+      "properties": {
+        "tx_id": {
+          "type": "string",
+          "format": "byte"
+        },
+        "burner_address": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "axelar.evm.v1beta1.RetryFailedEventRequest": {
+      "type": "object",
+      "properties": {
+        "sender": {
+          "type": "string",
+          "format": "byte"
+        },
+        "chain": {
+          "type": "string"
+        },
+        "event_id": {
+          "type": "string"
+        }
+      }
+    },
+    "axelar.evm.v1beta1.RetryFailedEventResponse": {
+      "type": "object"
+    },
+    "axelar.evm.v1beta1.SetGatewayRequest": {
+      "type": "object",
+      "properties": {
+        "sender": {
+          "type": "string",
+          "format": "byte"
+        },
+        "chain": {
+          "type": "string"
+        },
+        "address": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "axelar.evm.v1beta1.SetGatewayResponse": {
+      "type": "object"
+    },
+    "axelar.evm.v1beta1.SignCommandsRequest": {
+      "type": "object",
+      "properties": {
+        "sender": {
+          "type": "string",
+          "format": "byte"
+        },
+        "chain": {
+          "type": "string"
+        }
+      }
+    },
+    "axelar.evm.v1beta1.SignCommandsResponse": {
+      "type": "object",
+      "properties": {
+        "batched_commands_id": {
+          "type": "string",
+          "format": "byte"
+        },
+        "command_count": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "axelar.evm.v1beta1.TokenDetails": {
+      "type": "object",
+      "properties": {
+        "token_name": {
+          "type": "string"
+        },
+        "symbol": {
+          "type": "string"
+        },
+        "decimals": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "capacity": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "axelar.evm.v1beta1.TokenInfoResponse": {
+      "type": "object",
+      "properties": {
+        "asset": {
+          "type": "string"
+        },
+        "details": {
+          "$ref": "#/definitions/axelar.evm.v1beta1.TokenDetails"
+        },
+        "address": {
+          "type": "string"
+        },
+        "confirmed": {
+          "type": "boolean",
+          "format": "boolean"
+        },
+        "is_external": {
+          "type": "boolean",
+          "format": "boolean"
+        },
+        "burner_code_hash": {
+          "type": "string"
+        }
+      }
+    },
+    "axelar.evm.v1beta1.TokenType": {
+      "type": "string",
+      "enum": [
+        "TOKEN_TYPE_UNSPECIFIED",
+        "TOKEN_TYPE_INTERNAL",
+        "TOKEN_TYPE_EXTERNAL"
+      ],
+      "default": "TOKEN_TYPE_UNSPECIFIED"
+    },
+    "axelar.tss.exported.v1beta1.KeyType": {
+      "type": "string",
+      "enum": [
+        "KEY_TYPE_UNSPECIFIED",
+        "KEY_TYPE_NONE",
+        "KEY_TYPE_THRESHOLD",
+        "KEY_TYPE_MULTISIG"
+      ],
+      "default": "KEY_TYPE_UNSPECIFIED"
+    },
+    "google.protobuf.Any": {
+      "type": "object",
+      "properties": {
+        "type_url": {
+          "type": "string",
+          "description": "A URL/resource name that uniquely identifies the type of the serialized\nprotocol buffer message. This string must contain at least\none \"/\" character. The last segment of the URL's path must represent\nthe fully qualified name of the type (as in\n`path/google.protobuf.Duration`). The name should be in a canonical form\n(e.g., leading \".\" is not accepted).\n\nIn practice, teams usually precompile into the binary all types that they\nexpect it to use in the context of Any. However, for URLs which use the\nscheme `http`, `https`, or no scheme, one can optionally set up a type\nserver that maps type URLs to message definitions as follows:\n\n* If no scheme is provided, `https` is assumed.\n* An HTTP GET on the URL must yield a [google.protobuf.Type][]\n  value in binary format, or produce an error.\n* Applications are allowed to cache lookup results based on the\n  URL, or have them precompiled into a binary to avoid any\n  lookup. Therefore, binary compatibility needs to be preserved\n  on changes to types. (Use versioned type names to manage\n  breaking changes.)\n\nNote: this functionality is not currently available in the official\nprotobuf release, and it is not used for type URLs beginning with\ntype.googleapis.com.\n\nSchemes other than `http`, `https` (or the empty scheme) might be\nused with implementation specific semantics."
+        },
+        "value": {
+          "type": "string",
+          "format": "byte",
+          "description": "Must be a valid serialized protocol buffer of the above specified type."
+        }
+      },
+      "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nProtobuf library provides support to pack/unpack Any values in the form\nof utility functions or additional generated methods of the Any type.\n\nExample 1: Pack and unpack a message in C++.\n\n    Foo foo = ...;\n    Any any;\n    any.PackFrom(foo);\n    ...\n    if (any.UnpackTo(\u0026foo)) {\n      ...\n    }\n\nExample 2: Pack and unpack a message in Java.\n\n    Foo foo = ...;\n    Any any = Any.pack(foo);\n    ...\n    if (any.is(Foo.class)) {\n      foo = any.unpack(Foo.class);\n    }\n\n Example 3: Pack and unpack a message in Python.\n\n    foo = Foo(...)\n    any = Any()\n    any.Pack(foo)\n    ...\n    if any.Is(Foo.DESCRIPTOR):\n      any.Unpack(foo)\n      ...\n\n Example 4: Pack and unpack a message in Go\n\n     foo := \u0026pb.Foo{...}\n     any, err := anypb.New(foo)\n     if err != nil {\n       ...\n     }\n     ...\n     foo := \u0026pb.Foo{}\n     if err := any.UnmarshalTo(foo); err != nil {\n       ...\n     }\n\nThe pack methods provided by protobuf library will by default use\n'type.googleapis.com/full.type.name' as the type URL and the unpack\nmethods only use the fully qualified type name after the last '/'\nin the type URL, for example \"foo.bar.com/x/y.z\" will yield type\nname \"y.z\".\n\n\nJSON\n====\nThe JSON representation of an `Any` value uses the regular\nrepresentation of the deserialized, embedded message, with an\nadditional field `@type` which contains the type URL. Example:\n\n    package google.profile;\n    message Person {\n      string first_name = 1;\n      string last_name = 2;\n    }\n\n    {\n      \"@type\": \"type.googleapis.com/google.profile.Person\",\n      \"firstName\": \u003cstring\u003e,\n      \"lastName\": \u003cstring\u003e\n    }\n\nIf the embedded message type is well-known and has a custom JSON\nrepresentation, that representation will be embedded adding a field\n`value` which holds the custom JSON in addition to the `@type`\nfield. Example (for message [google.protobuf.Duration][]):\n\n    {\n      \"@type\": \"type.googleapis.com/google.protobuf.Duration\",\n      \"value\": \"1.212s\"\n    }"
+    },
+    "grpc.gateway.runtime.Error": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "string"
+        },
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/google.protobuf.Any"
+          }
+        }
+      }
+    }
+  }
+}
