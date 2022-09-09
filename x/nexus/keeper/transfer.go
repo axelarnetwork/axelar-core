@@ -98,47 +98,47 @@ func (k Keeper) ComputeTransferFee(ctx sdk.Context, sourceChain exported.Chain, 
 }
 
 // EnqueueTransfer enqueues an asset transfer to the given recipient address
-func (k Keeper) EnqueueTransfer(ctx sdk.Context, senderChain exported.Chain, receipient exported.CrossChainAddress, asset sdk.Coin) (exported.TransferID, error) {
+func (k Keeper) EnqueueTransfer(ctx sdk.Context, senderChain exported.Chain, recipient exported.CrossChainAddress, asset sdk.Coin) (exported.TransferID, error) {
 	chain, isNativeAsset := k.GetChainByNativeAsset(ctx, asset.Denom)
 	if !senderChain.SupportsForeignAssets && !(isNativeAsset && senderChain.Name == chain.Name) {
 		return 0, fmt.Errorf("sender's chain %s does not support foreign assets", senderChain.Name)
 	}
 
-	if !receipient.Chain.SupportsForeignAssets && !(isNativeAsset && senderChain.Name == chain.Name) {
-		return 0, fmt.Errorf("recipient's chain %s does not support foreign assets", receipient.Chain.Name)
+	if !recipient.Chain.SupportsForeignAssets && !(isNativeAsset && senderChain.Name == chain.Name) {
+		return 0, fmt.Errorf("recipient's chain %s does not support foreign assets", recipient.Chain.Name)
 	}
 
-	if validator := k.GetRouter().GetAddressValidator(receipient.Chain.Module); validator == nil {
-		return 0, fmt.Errorf("unknown module for recipient chain %s", receipient.Chain.String())
-	} else if err := validator(ctx, receipient); err != nil {
+	if validator := k.GetRouter().GetAddressValidator(recipient.Chain.Module); validator == nil {
+		return 0, fmt.Errorf("unknown module for recipient chain %s", recipient.Chain.String())
+	} else if err := validator(ctx, recipient); err != nil {
 		return 0, err
 	}
 
 	// merging transfers below minimum for the specified recipient
-	insufficientAmountTransfer, found := k.getTransfer(ctx, receipient, asset.Denom, exported.InsufficientAmount)
+	insufficientAmountTransfer, found := k.getTransfer(ctx, recipient, asset.Denom, exported.InsufficientAmount)
 	if found {
 		asset = asset.Add(insufficientAmountTransfer.Asset)
 		k.deleteTransfer(ctx, insufficientAmountTransfer)
 	}
 
 	// collect fee
-	fee, err := k.ComputeTransferFee(ctx, senderChain, receipient.Chain, asset)
+	fee, err := k.ComputeTransferFee(ctx, senderChain, recipient.Chain, asset)
 	if err != nil {
 		return 0, err
 	}
 
 	if fee.Amount.GTE(asset.Amount) {
 		k.Logger(ctx).Debug(fmt.Sprintf("skipping deposit from chain %s to chain %s and recipient %s due to deposited amount being below fees %s for asset %s",
-			senderChain.Name, receipient.Chain.Name, receipient.Address, fee.String(), asset.String()))
+			senderChain.Name, recipient.Chain.Name, recipient.Address, fee.String(), asset.String()))
 
-		transferID := k.setNewTransfer(ctx, receipient, asset, exported.InsufficientAmount)
+		transferID := k.setNewTransfer(ctx, recipient, asset, exported.InsufficientAmount)
 
 		funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.InsufficientFee{
-			TransferID:        transferID,
-			ReceipientChain:   receipient.Chain.Name,
-			ReceipientAddress: receipient.Address,
-			Amount:            asset,
-			Fee:               fee,
+			TransferID:       transferID,
+			RecipientChain:   recipient.Chain.Name,
+			RecipientAddress: recipient.Address,
+			Amount:           asset,
+			Fee:              fee,
 		}))
 
 		return transferID, nil
@@ -150,22 +150,22 @@ func (k Keeper) EnqueueTransfer(ctx sdk.Context, senderChain exported.Chain, rec
 	}
 
 	// merging transfers for the specified recipient
-	previousTransfer, found := k.getTransfer(ctx, receipient, asset.Denom, exported.Pending)
+	previousTransfer, found := k.getTransfer(ctx, recipient, asset.Denom, exported.Pending)
 	if found {
 		asset = asset.Add(previousTransfer.Asset)
 		k.deleteTransfer(ctx, previousTransfer)
 	}
 
 	k.Logger(ctx).Info(fmt.Sprintf("transfer %s from chain %s to chain %s and recipient %s is successfully prepared",
-		asset.String(), senderChain.Name, receipient.Chain.Name, receipient.Address))
+		asset.String(), senderChain.Name, recipient.Chain.Name, recipient.Address))
 
-	transferID := k.setNewTransfer(ctx, receipient, asset, exported.Pending)
+	transferID := k.setNewTransfer(ctx, recipient, asset, exported.Pending)
 
 	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.FeeDeducted{
-		TransferID:        transferID,
-		ReceipientChain:   receipient.Chain.Name,
-		ReceipientAddress: receipient.Address,
-		Fee:               fee,
+		TransferID:       transferID,
+		RecipientChain:   recipient.Chain.Name,
+		RecipientAddress: recipient.Address,
+		Fee:              fee,
 	}))
 
 	return transferID, nil

@@ -5210,8 +5210,8 @@ Query defines the gRPC querier service.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `transfer_id` | [uint64](#uint64) |  |  |
-| `receipient_chain` | [string](#string) |  |  |
-| `receipient_address` | [string](#string) |  |  |
+| `recipient_chain` | [string](#string) |  |  |
+| `recipient_address` | [string](#string) |  |  |
 | `amount` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 | `fee` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 
@@ -5229,8 +5229,8 @@ Query defines the gRPC querier service.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `transfer_id` | [uint64](#uint64) |  |  |
-| `receipient_chain` | [string](#string) |  |  |
-| `receipient_address` | [string](#string) |  |  |
+| `recipient_chain` | [string](#string) |  |  |
+| `recipient_address` | [string](#string) |  |  |
 | `amount` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 | `fee` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 

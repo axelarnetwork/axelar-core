@@ -26,11 +26,11 @@ var _ = math.Inf
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 type FeeDeducted struct {
-	TransferID        github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferID `protobuf:"varint,1,opt,name=transfer_id,json=transferId,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.TransferID" json:"transfer_id,omitempty"`
-	ReceipientChain   github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName  `protobuf:"bytes,2,opt,name=receipient_chain,json=receipientChain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"receipient_chain,omitempty"`
-	ReceipientAddress string                                                           `protobuf:"bytes,3,opt,name=receipient_address,json=receipientAddress,proto3" json:"receipient_address,omitempty"`
-	Amount            types.Coin                                                       `protobuf:"bytes,4,opt,name=amount,proto3" json:"amount"`
-	Fee               types.Coin                                                       `protobuf:"bytes,5,opt,name=fee,proto3" json:"fee"`
+	TransferID       github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferID `protobuf:"varint,1,opt,name=transfer_id,json=transferId,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.TransferID" json:"transfer_id,omitempty"`
+	RecipientChain   github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName  `protobuf:"bytes,2,opt,name=recipient_chain,json=recipientChain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"recipient_chain,omitempty"`
+	RecipientAddress string                                                           `protobuf:"bytes,3,opt,name=recipient_address,json=recipientAddress,proto3" json:"recipient_address,omitempty"`
+	Amount           types.Coin                                                       `protobuf:"bytes,4,opt,name=amount,proto3" json:"amount"`
+	Fee              types.Coin                                                       `protobuf:"bytes,5,opt,name=fee,proto3" json:"fee"`
 }
 
 func (m *FeeDeducted) Reset()         { *m = FeeDeducted{} }
@@ -73,16 +73,16 @@ func (m *FeeDeducted) GetTransferID() github_com_axelarnetwork_axelar_core_x_nex
 	return 0
 }
 
-func (m *FeeDeducted) GetReceipientChain() github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName {
+func (m *FeeDeducted) GetRecipientChain() github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName {
 	if m != nil {
-		return m.ReceipientChain
+		return m.RecipientChain
 	}
 	return ""
 }
 
-func (m *FeeDeducted) GetReceipientAddress() string {
+func (m *FeeDeducted) GetRecipientAddress() string {
 	if m != nil {
-		return m.ReceipientAddress
+		return m.RecipientAddress
 	}
 	return ""
 }
@@ -102,11 +102,11 @@ func (m *FeeDeducted) GetFee() types.Coin {
 }
 
 type InsufficientFee struct {
-	TransferID        github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferID `protobuf:"varint,1,opt,name=transfer_id,json=transferId,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.TransferID" json:"transfer_id,omitempty"`
-	ReceipientChain   github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName  `protobuf:"bytes,2,opt,name=receipient_chain,json=receipientChain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"receipient_chain,omitempty"`
-	ReceipientAddress string                                                           `protobuf:"bytes,3,opt,name=receipient_address,json=receipientAddress,proto3" json:"receipient_address,omitempty"`
-	Amount            types.Coin                                                       `protobuf:"bytes,4,opt,name=amount,proto3" json:"amount"`
-	Fee               types.Coin                                                       `protobuf:"bytes,5,opt,name=fee,proto3" json:"fee"`
+	TransferID       github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferID `protobuf:"varint,1,opt,name=transfer_id,json=transferId,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.TransferID" json:"transfer_id,omitempty"`
+	RecipientChain   github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName  `protobuf:"bytes,2,opt,name=recipient_chain,json=recipientChain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"recipient_chain,omitempty"`
+	RecipientAddress string                                                           `protobuf:"bytes,3,opt,name=recipient_address,json=recipientAddress,proto3" json:"recipient_address,omitempty"`
+	Amount           types.Coin                                                       `protobuf:"bytes,4,opt,name=amount,proto3" json:"amount"`
+	Fee              types.Coin                                                       `protobuf:"bytes,5,opt,name=fee,proto3" json:"fee"`
 }
 
 func (m *InsufficientFee) Reset()         { *m = InsufficientFee{} }
@@ -149,16 +149,16 @@ func (m *InsufficientFee) GetTransferID() github_com_axelarnetwork_axelar_core_x
 	return 0
 }
 
-func (m *InsufficientFee) GetReceipientChain() github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName {
+func (m *InsufficientFee) GetRecipientChain() github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName {
 	if m != nil {
-		return m.ReceipientChain
+		return m.RecipientChain
 	}
 	return ""
 }
 
-func (m *InsufficientFee) GetReceipientAddress() string {
+func (m *InsufficientFee) GetRecipientAddress() string {
 	if m != nil {
-		return m.ReceipientAddress
+		return m.RecipientAddress
 	}
 	return ""
 }
@@ -185,31 +185,32 @@ func init() {
 func init() { proto.RegisterFile("axelar/nexus/v1beta1/events.proto", fileDescriptor_4433ea5171b09eb9) }
 
 var fileDescriptor_4433ea5171b09eb9 = []byte{
-	// 383 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xec, 0x93, 0xbf, 0xce, 0xd3, 0x30,
-	0x14, 0xc5, 0x13, 0x52, 0x3e, 0x09, 0x77, 0x28, 0x44, 0x1d, 0x42, 0x87, 0xa4, 0x74, 0xea, 0x52,
-	0x47, 0x2d, 0x03, 0x23, 0x90, 0x56, 0x95, 0x2a, 0x21, 0x86, 0x88, 0x89, 0xa5, 0x72, 0x9c, 0x9b,
-	0xd6, 0x82, 0xd8, 0x91, 0xed, 0x94, 0xf0, 0x10, 0x48, 0xf0, 0x56, 0x1d, 0x3b, 0x32, 0x45, 0x28,
-	0x7d, 0x8b, 0x4e, 0x28, 0x7f, 0x4a, 0x19, 0x81, 0x85, 0xe5, 0xdb, 0x92, 0x7b, 0x7f, 0x3e, 0xe7,
-	0xfa, 0x5c, 0x19, 0x3d, 0x23, 0x05, 0x7c, 0x24, 0xd2, 0xe7, 0x50, 0xe4, 0xca, 0x3f, 0xcc, 0x23,
-	0xd0, 0x64, 0xee, 0xc3, 0x01, 0xb8, 0x56, 0x38, 0x93, 0x42, 0x0b, 0x7b, 0xd8, 0x22, 0xb8, 0x41,
-	0x70, 0x87, 0x8c, 0x86, 0x3b, 0xb1, 0x13, 0x0d, 0xe0, 0xd7, 0x5f, 0x2d, 0x3b, 0x72, 0xa9, 0x50,
-	0xa9, 0x50, 0x7e, 0x44, 0x14, 0xfc, 0x52, 0xa3, 0x82, 0xf1, 0xb6, 0x3f, 0xf9, 0x62, 0xa1, 0xfe,
-	0x1a, 0x60, 0x05, 0x71, 0x4e, 0x35, 0xc4, 0xb6, 0x42, 0x7d, 0x2d, 0x09, 0x57, 0x09, 0xc8, 0x2d,
-	0x8b, 0x1d, 0x73, 0x6c, 0x4e, 0x7b, 0x41, 0x58, 0x95, 0x1e, 0x7a, 0xd7, 0x95, 0x37, 0xab, 0x4b,
-	0xe9, 0xbd, 0xda, 0x31, 0xbd, 0xcf, 0x23, 0x4c, 0x45, 0xea, 0xb7, 0xd3, 0x70, 0xd0, 0x9f, 0x84,
-	0xfc, 0xd0, 0xfd, 0xcd, 0xa8, 0x90, 0xe0, 0x17, 0xdd, 0x2d, 0xa0, 0xc8, 0x84, 0xd4, 0x10, 0xe3,
-	0x9b, 0x46, 0x88, 0xae, 0x36, 0x9b, 0xd8, 0xe6, 0xe8, 0xb1, 0x04, 0x0a, 0x2c, 0x63, 0xc0, 0xf5,
-	0x96, 0xee, 0x09, 0xe3, 0xce, 0x83, 0xb1, 0x39, 0x7d, 0x14, 0x2c, 0x2f, 0xa5, 0xf7, 0xf2, 0xdf,
-	0xbc, 0x96, 0xb5, 0xcc, 0x5b, 0x92, 0x42, 0x38, 0xb8, 0x89, 0x37, 0x45, 0x7b, 0x86, 0xec, 0xdf,
-	0xfc, 0x48, 0x1c, 0x4b, 0x50, 0xca, 0xb1, 0x6a, 0xc7, 0xf0, 0xc9, 0xad, 0xf3, 0xba, 0x6d, 0xd8,
-	0x2f, 0xd0, 0x1d, 0x49, 0x45, 0xce, 0xb5, 0xd3, 0x1b, 0x9b, 0xd3, 0xfe, 0xe2, 0x29, 0x6e, 0x43,
-	0xc5, 0x75, 0xa8, 0xd7, 0xfc, 0xf1, 0x52, 0x30, 0x1e, 0xf4, 0x8e, 0xa5, 0x67, 0x84, 0x1d, 0x6e,
-	0xcf, 0x91, 0x95, 0x00, 0x38, 0x0f, 0xff, 0xec, 0x54, 0xcd, 0x4e, 0xbe, 0x59, 0x68, 0xb0, 0xe1,
-	0x2a, 0x4f, 0x12, 0x46, 0xeb, 0x19, 0xd6, 0x00, 0xf7, 0x3b, 0xf9, 0xbf, 0x3b, 0x09, 0xde, 0x1c,
-	0x2b, 0xd7, 0x3c, 0x55, 0xae, 0xf9, 0xa3, 0x72, 0xcd, 0xaf, 0x67, 0xd7, 0x38, 0x9d, 0x5d, 0xe3,
-	0xfb, 0xd9, 0x35, 0xde, 0x2f, 0xfe, 0x2a, 0x06, 0xfd, 0x39, 0x03, 0x15, 0xdd, 0x35, 0x0f, 0xef,
-	0xf9, 0xcf, 0x00, 0x00, 0x00, 0xff, 0xff, 0x45, 0x03, 0x7e, 0x69, 0xe9, 0x03, 0x00, 0x00,
+	// 385 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xec, 0x93, 0xbf, 0xae, 0xd3, 0x30,
+	0x14, 0xc6, 0x13, 0x52, 0xae, 0x84, 0x2b, 0x71, 0x21, 0xba, 0x43, 0xe8, 0x90, 0x94, 0x4e, 0x95,
+	0x10, 0x8e, 0x5a, 0x06, 0x46, 0x20, 0xad, 0x2a, 0x55, 0x42, 0x0c, 0x11, 0x13, 0x4b, 0xe5, 0x38,
+	0x27, 0xad, 0x45, 0x63, 0x47, 0xb6, 0x53, 0xc2, 0x23, 0x30, 0x20, 0xf1, 0x58, 0x1d, 0x3b, 0x32,
+	0x45, 0x28, 0x7d, 0x8b, 0x4e, 0x28, 0x7f, 0xda, 0xae, 0xc0, 0xc2, 0x72, 0xb7, 0xe4, 0x9c, 0x9f,
+	0xbf, 0xef, 0xf8, 0x3b, 0x32, 0x7a, 0x4e, 0x0a, 0xd8, 0x12, 0xe9, 0x73, 0x28, 0x72, 0xe5, 0xef,
+	0x26, 0x11, 0x68, 0x32, 0xf1, 0x61, 0x07, 0x5c, 0x2b, 0x9c, 0x49, 0xa1, 0x85, 0x7d, 0xd7, 0x22,
+	0xb8, 0x41, 0x70, 0x87, 0x0c, 0xee, 0xd6, 0x62, 0x2d, 0x1a, 0xc0, 0xaf, 0xbf, 0x5a, 0x76, 0xe0,
+	0x52, 0xa1, 0x52, 0xa1, 0xfc, 0x88, 0x28, 0xb8, 0xa8, 0x51, 0xc1, 0x78, 0xdb, 0x1f, 0x7d, 0xb3,
+	0x50, 0x7f, 0x01, 0x30, 0x87, 0x38, 0xa7, 0x1a, 0x62, 0x5b, 0xa1, 0xbe, 0x96, 0x84, 0xab, 0x04,
+	0xe4, 0x8a, 0xc5, 0x8e, 0x39, 0x34, 0xc7, 0xbd, 0x20, 0xac, 0x4a, 0x0f, 0x7d, 0xec, 0xca, 0xcb,
+	0xf9, 0xa9, 0xf4, 0xde, 0xae, 0x99, 0xde, 0xe4, 0x11, 0xa6, 0x22, 0xf5, 0xdb, 0x69, 0x38, 0xe8,
+	0x2f, 0x42, 0x7e, 0xee, 0xfe, 0x5e, 0x52, 0x21, 0xc1, 0x2f, 0xba, 0x5b, 0x40, 0x91, 0x09, 0xa9,
+	0x21, 0xc6, 0x57, 0x8d, 0x10, 0x9d, 0x6d, 0x96, 0xb1, 0xbd, 0x45, 0xb7, 0x12, 0x28, 0xcb, 0x18,
+	0x70, 0xbd, 0xa2, 0x1b, 0xc2, 0xb8, 0xf3, 0x60, 0x68, 0x8e, 0x1f, 0x05, 0xb3, 0x53, 0xe9, 0xbd,
+	0xf9, 0x37, 0xab, 0x59, 0x2d, 0xf3, 0x81, 0xa4, 0x10, 0x3e, 0xbe, 0x68, 0x37, 0x35, 0xfb, 0x05,
+	0x7a, 0x7a, 0x75, 0x23, 0x71, 0x2c, 0x41, 0x29, 0xc7, 0xaa, 0xfd, 0xc2, 0x27, 0x97, 0xc6, 0xbb,
+	0xb6, 0x6e, 0xbf, 0x46, 0x37, 0x24, 0x15, 0x39, 0xd7, 0x4e, 0x6f, 0x68, 0x8e, 0xfb, 0xd3, 0x67,
+	0xb8, 0x0d, 0x14, 0xd7, 0x81, 0x9e, 0xb3, 0xc7, 0x33, 0xc1, 0x78, 0xd0, 0xdb, 0x97, 0x9e, 0x11,
+	0x76, 0xb8, 0x3d, 0x41, 0x56, 0x02, 0xe0, 0x3c, 0xfc, 0xb3, 0x53, 0x35, 0x3b, 0xfa, 0x6e, 0xa1,
+	0xdb, 0x25, 0x57, 0x79, 0x92, 0x30, 0x5a, 0xcf, 0xb0, 0x00, 0xb8, 0xdf, 0xc7, 0xff, 0xdb, 0x47,
+	0xf0, 0x7e, 0x5f, 0xb9, 0xe6, 0xa1, 0x72, 0xcd, 0x5f, 0x95, 0x6b, 0xfe, 0x38, 0xba, 0xc6, 0xe1,
+	0xe8, 0x1a, 0x3f, 0x8f, 0xae, 0xf1, 0x69, 0xfa, 0x57, 0x19, 0xe8, 0xaf, 0x19, 0xa8, 0xe8, 0xa6,
+	0x79, 0x70, 0xaf, 0x7e, 0x07, 0x00, 0x00, 0xff, 0xff, 0xd2, 0x9c, 0x8d, 0x7a, 0xe1, 0x03, 0x00,
+	0x00,
 }
 
 func (m *FeeDeducted) Marshal() (dAtA []byte, err error) {
@@ -252,17 +253,17 @@ func (m *FeeDeducted) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	i--
 	dAtA[i] = 0x22
-	if len(m.ReceipientAddress) > 0 {
-		i -= len(m.ReceipientAddress)
-		copy(dAtA[i:], m.ReceipientAddress)
-		i = encodeVarintEvents(dAtA, i, uint64(len(m.ReceipientAddress)))
+	if len(m.RecipientAddress) > 0 {
+		i -= len(m.RecipientAddress)
+		copy(dAtA[i:], m.RecipientAddress)
+		i = encodeVarintEvents(dAtA, i, uint64(len(m.RecipientAddress)))
 		i--
 		dAtA[i] = 0x1a
 	}
-	if len(m.ReceipientChain) > 0 {
-		i -= len(m.ReceipientChain)
-		copy(dAtA[i:], m.ReceipientChain)
-		i = encodeVarintEvents(dAtA, i, uint64(len(m.ReceipientChain)))
+	if len(m.RecipientChain) > 0 {
+		i -= len(m.RecipientChain)
+		copy(dAtA[i:], m.RecipientChain)
+		i = encodeVarintEvents(dAtA, i, uint64(len(m.RecipientChain)))
 		i--
 		dAtA[i] = 0x12
 	}
@@ -314,17 +315,17 @@ func (m *InsufficientFee) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	i--
 	dAtA[i] = 0x22
-	if len(m.ReceipientAddress) > 0 {
-		i -= len(m.ReceipientAddress)
-		copy(dAtA[i:], m.ReceipientAddress)
-		i = encodeVarintEvents(dAtA, i, uint64(len(m.ReceipientAddress)))
+	if len(m.RecipientAddress) > 0 {
+		i -= len(m.RecipientAddress)
+		copy(dAtA[i:], m.RecipientAddress)
+		i = encodeVarintEvents(dAtA, i, uint64(len(m.RecipientAddress)))
 		i--
 		dAtA[i] = 0x1a
 	}
-	if len(m.ReceipientChain) > 0 {
-		i -= len(m.ReceipientChain)
-		copy(dAtA[i:], m.ReceipientChain)
-		i = encodeVarintEvents(dAtA, i, uint64(len(m.ReceipientChain)))
+	if len(m.RecipientChain) > 0 {
+		i -= len(m.RecipientChain)
+		copy(dAtA[i:], m.RecipientChain)
+		i = encodeVarintEvents(dAtA, i, uint64(len(m.RecipientChain)))
 		i--
 		dAtA[i] = 0x12
 	}
@@ -356,11 +357,11 @@ func (m *FeeDeducted) Size() (n int) {
 	if m.TransferID != 0 {
 		n += 1 + sovEvents(uint64(m.TransferID))
 	}
-	l = len(m.ReceipientChain)
+	l = len(m.RecipientChain)
 	if l > 0 {
 		n += 1 + l + sovEvents(uint64(l))
 	}
-	l = len(m.ReceipientAddress)
+	l = len(m.RecipientAddress)
 	if l > 0 {
 		n += 1 + l + sovEvents(uint64(l))
 	}
@@ -380,11 +381,11 @@ func (m *InsufficientFee) Size() (n int) {
 	if m.TransferID != 0 {
 		n += 1 + sovEvents(uint64(m.TransferID))
 	}
-	l = len(m.ReceipientChain)
+	l = len(m.RecipientChain)
 	if l > 0 {
 		n += 1 + l + sovEvents(uint64(l))
 	}
-	l = len(m.ReceipientAddress)
+	l = len(m.RecipientAddress)
 	if l > 0 {
 		n += 1 + l + sovEvents(uint64(l))
 	}
@@ -451,7 +452,7 @@ func (m *FeeDeducted) Unmarshal(dAtA []byte) error {
 			}
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ReceipientChain", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field RecipientChain", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -479,11 +480,11 @@ func (m *FeeDeducted) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ReceipientChain = github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName(dAtA[iNdEx:postIndex])
+			m.RecipientChain = github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ReceipientAddress", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field RecipientAddress", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -511,7 +512,7 @@ func (m *FeeDeducted) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ReceipientAddress = string(dAtA[iNdEx:postIndex])
+			m.RecipientAddress = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 4:
 			if wireType != 2 {
@@ -650,7 +651,7 @@ func (m *InsufficientFee) Unmarshal(dAtA []byte) error {
 			}
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ReceipientChain", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field RecipientChain", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -678,11 +679,11 @@ func (m *InsufficientFee) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ReceipientChain = github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName(dAtA[iNdEx:postIndex])
+			m.RecipientChain = github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ReceipientAddress", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field RecipientAddress", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -710,7 +711,7 @@ func (m *InsufficientFee) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ReceipientAddress = string(dAtA[iNdEx:postIndex])
+			m.RecipientAddress = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 4:
 			if wireType != 2 {

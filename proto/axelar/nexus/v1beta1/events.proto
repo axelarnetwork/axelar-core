@@ -12,10 +12,10 @@ message FeeDeducted {
     (gogoproto.casttype) =
         "github.com/axelarnetwork/axelar-core/x/nexus/exported.TransferID"
   ];
-  string receipient_chain = 2
+  string recipient_chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
-  string receipient_address = 3;
+  string recipient_address = 3;
   cosmos.base.v1beta1.Coin amount = 4 [ (gogoproto.nullable) = false ];
   cosmos.base.v1beta1.Coin fee = 5 [ (gogoproto.nullable) = false ];
 }
@@ -26,10 +26,10 @@ message InsufficientFee {
     (gogoproto.casttype) =
         "github.com/axelarnetwork/axelar-core/x/nexus/exported.TransferID"
   ];
-  string receipient_chain = 2
+  string recipient_chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
-  string receipient_address = 3;
+  string recipient_address = 3;
   cosmos.base.v1beta1.Coin amount = 4 [ (gogoproto.nullable) = false ];
   cosmos.base.v1beta1.Coin fee = 5 [ (gogoproto.nullable) = false ];
 }
