@@ -83,8 +83,8 @@
   ],
   "testnet": [
     {
-      "id": "axelar",
-      "name": "axelar",
+      "id": "axelarnet",
+      "name": "Axelar",
       "image": "/images/chains/axelar.png"
     },
     {
