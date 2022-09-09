@@ -36,6 +36,7 @@ type StringKey interface {
 	PrependStr(key string, stringTransformations ...func(string) string) StringKey
 }
 
+// ValidatedProtoMarshaler is a ProtoMarshaler that can also be validated
 type ValidatedProtoMarshaler interface {
 	codec.ProtoMarshaler
 	ValidateBasic() error
