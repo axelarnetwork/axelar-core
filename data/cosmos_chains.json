@@ -3,11 +3,11 @@
     {
       "id": "axelarnet",
       "name": "Axelar",
-      "image": "/images/chains/axelarnet.png"
+      "image": "/images/chains/axelar.png"
     },
     {
       "id": "cosmoshub",
-      "name": "Cosmos",
+      "name": "Cosmoshub",
       "image": "/images/chains/cosmoshub.png"
     },
     {
@@ -16,14 +16,14 @@
       "image": "/images/chains/osmosis.png"
     },
     {
+      "id": "juno",
+      "name": "Juno",
+      "image": "/images/chains/juno.png"
+    },
+    {
       "id": "emoney",
       "name": "e-Money",
       "image": "/images/chains/emoney.png"
-    },
-    {
-      "id": "juno",
-      "name": "Junø",
-      "image": "/images/chains/juno.png"
     },
     {
       "id": "crescent",
@@ -49,65 +49,78 @@
       "id": "kujira",
       "name": "Kujira",
       "image": "/images/chains/kujira.png"
-    }
-  ],
-  "testnet": [
-    {
-      "id": "axelarnet",
-      "name": "Axelar",
-      "image": "/images/chains/axelarnet.png"
     },
     {
-      "id": "cosmoshub",
-      "name": "Cosmos",
-      "image": "/images/chains/cosmoshub.png"
+      "id": "stargaze",
+      "name": "Stargaze",
+      "image": "/images/chains/stargaze.png"
     },
     {
-      "id": "osmosis",
-      "name": "Osmosis",
-      "image": "/images/chains/osmosis.png"
-    },
-    {
-      "id": "juno",
-      "name": "Junø",
-      "image": "/images/chains/juno.png"
-    },
-    {
-      "id": "crescent",
-      "name": "Crescent",
-      "image": "/images/chains/crescent.png"
-    },
-    {
-      "id": "kujira",
-      "name": "Kujira",
-      "image": "/images/chains/kujira.png"
-    },
-    {
-      "id": "terra",
-      "name": "Terra",
-      "image": "/images/chains/terra.png"
-    },
-    {
-      "id": "sei",
-      "name": "Sei",
-      "image": "/images/chains/sei.png"
+      "id": "assetmantle",
+      "name": "Assetmantle",
+      "image": "/images/chains/assetmantle.png"
     },
     {
       "id": "fetch",
       "name": "Fetch",
       "image": "/images/chains/fetch.png"
-    }
-  ],
-  "testnet-2": [
-    {
-      "id": "axelarnet",
-      "name": "Axelar",
-      "image": "/images/chains/axelarnet.png"
     },
     {
-      "id": "terra",
-      "name": "Terra",
-      "image": "/images/chains/terra.png"
+      "id": "kichain",
+      "name": "Kichain",
+      "image": "/images/chains/kichain.png"
+    },
+    {
+      "id": "evmos",
+      "name": "Evmos",
+      "image": "/images/chains/evmos.png"
+    },
+    {
+      "id": "regen",
+      "name": "Regen",
+      "image": "/images/chains/regen.png"
+    }
+  ],
+  "testnet": [
+    {
+      "id": "axelar",
+      "name": "axelar",
+      "image": "/images/chains/axelar.png"
+    },
+    {
+      "id": "aura",
+      "name": "aura",
+      "image": "/images/chains/aura.png"
+    },
+    {
+      "id": "comdex",
+      "name": "comdex",
+      "image": "/images/chains/comdex.png"
+    },
+    {
+      "id": "evmos",
+      "name": "evmos",
+      "image": "/images/chains/evmos.png"
+    },
+    {
+      "id": "sei",
+      "name": "sei",
+      "image": "/images/chains/sei.png"
+    },
+    {
+      "id": "osmosis",
+      "name": "osmosis",
+      "image": "/images/chains/osmosis.png"
+    },
+    {
+      "id": "kujira",
+      "name": "kujira",
+      "image": "/images/chains/kujira.png"
+    },
+    {
+      "id": "fetch",
+      "name": "fetch",
+      "image": "/images/chains/fetch.png"
     }
   ]
 }
