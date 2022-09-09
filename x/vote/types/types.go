@@ -4,6 +4,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/pkg/errors"
 
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
@@ -44,4 +45,16 @@ func (m *TalliedVote) TallyVote(voter sdk.ValAddress, votingPower sdk.Uint, isLa
 
 	m.IsVoterLate[voter.String()] = isLate
 	m.Tally = m.Tally.Add(votingPower)
+}
+
+func (m TalliedVote) ValidateBasic() error {
+	if m.Data == nil {
+		return errors.New("data is nil")
+	}
+
+	if m.Tally.IsZero() {
+		return errors.New("vote tally is zero")
+	}
+
+	return nil
 }

@@ -157,7 +157,7 @@ func (m PollMetadata) ValidateBasic() error {
 	}
 
 	if m.Is(Completed) == (m.CompletedAt <= 0) {
-		return fmt.Errorf("completed poll must have completed at set and non-completed poll must not")
+		return fmt.Errorf("completed poll must have completed_at set and non-completed poll must not")
 	}
 
 	if m.Is(NonExistent) {
