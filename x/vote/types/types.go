@@ -47,6 +47,7 @@ func (m *TalliedVote) TallyVote(voter sdk.ValAddress, votingPower sdk.Uint, isLa
 	m.Tally = m.Tally.Add(votingPower)
 }
 
+// ValidateBasic returns an error if the TalliedVote is not valid
 func (m TalliedVote) ValidateBasic() error {
 	if m.Data == nil {
 		return errors.New("data is nil")
