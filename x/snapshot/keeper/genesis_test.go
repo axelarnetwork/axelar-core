@@ -23,11 +23,10 @@ import (
 
 const bondDenom = "test"
 
-func setup() (sdk.Context, Keeper, *mock.StakingKeeperMock, *mock.BankKeeperMock, *mock.SlasherMock, *mock.TssMock) {
+func setup() (sdk.Context, Keeper, *mock.StakingKeeperMock, *mock.BankKeeperMock, *mock.SlasherMock) {
 	staking := mock.StakingKeeperMock{}
 	bank := mock.BankKeeperMock{}
 	slasher := mock.SlasherMock{}
-	tss := mock.TssMock{}
 
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	encodingConfig := params.MakeEncodingConfig()
@@ -41,10 +40,9 @@ func setup() (sdk.Context, Keeper, *mock.StakingKeeperMock, *mock.BankKeeperMock
 		&staking,
 		&bank,
 		&slasher,
-		&tss,
 	)
 
-	return ctx, keeper, &staking, &bank, &slasher, &tss
+	return ctx, keeper, &staking, &bank, &slasher
 }
 
 func getRandomSnapshot(counter int64) exported.Snapshot {
@@ -73,7 +71,7 @@ func getRandomSnapshot(counter int64) exported.Snapshot {
 }
 
 func TestExportGenesis(t *testing.T) {
-	ctx, keeper, staking, bank, _, _ := setup()
+	ctx, keeper, staking, bank, _ := setup()
 	keeper.InitGenesis(ctx, types.NewGenesisState(types.DefaultParams(), []exported.Snapshot{}, []types.ProxiedValidator{}))
 
 	staking.BondDenomFunc = func(sdk.Context) string {
@@ -126,7 +124,7 @@ func TestExportGenesis(t *testing.T) {
 }
 
 func TestInitGenesis(t *testing.T) {
-	ctx, keeper, _, _, _, _ := setup()
+	ctx, keeper, _, _, _ := setup()
 
 	snapshotCount := rand.I64Between(10, 100)
 	expectedSnapshots := make([]exported.Snapshot, snapshotCount)

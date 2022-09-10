@@ -11,7 +11,6 @@ import (
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
-	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	staking "github.com/cosmos/cosmos-sdk/x/staking/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/stretchr/testify/assert"
@@ -32,7 +31,6 @@ import (
 	keeperMock "github.com/axelarnetwork/axelar-core/x/snapshot/keeper/mock"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types/mock"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 	. "github.com/axelarnetwork/utils/test"
@@ -64,101 +62,6 @@ func init() {
 	encCfg.Amino.RegisterConcrete("", "string", nil)
 }
 
-// Tests the snapshot functionality
-func TestSnapshots(t *testing.T) {
-	keyRequirement := tss.KeyRequirement{
-		KeyRole:                    tss.MasterKey,
-		MinKeygenThreshold:         utils.Threshold{Numerator: 5, Denominator: 6},
-		SafetyThreshold:            utils.Threshold{Numerator: 2, Denominator: 3},
-		KeyShareDistributionPolicy: tss.WeightedByStake,
-		MaxTotalShareCount:         75,
-		KeygenVotingThreshold:      utils.Threshold{Numerator: 5, Denominator: 6},
-		SignVotingThreshold:        utils.Threshold{Numerator: 2, Denominator: 3},
-		KeygenTimeout:              250,
-		SignTimeout:                250,
-	}
-
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("Test-%d", i), func(t *testing.T) {
-			ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
-			validators := genValidators(t, testCase.numValidators, testCase.totalPower)
-			staker := newMockStaker(validators...)
-			assert.True(t, staker.GetLastTotalPower(ctx).Equal(sdk.NewInt(int64(testCase.totalPower))))
-
-			snapSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
-
-			slashingKeeper := &mock.SlasherMock{
-				GetValidatorSigningInfoFunc: func(ctx sdk.Context, address sdk.ConsAddress) (slashingtypes.ValidatorSigningInfo, bool) {
-					newInfo := slashingtypes.NewValidatorSigningInfo(
-						address,
-						int64(0),        // height at which validator was first a candidate OR was unjailed
-						int64(3),        // index offset into signed block bit array. TODO: check if needs to be set correctly.
-						time.Unix(0, 0), // jailed until
-						false,           // tomstoned
-						int64(0),        // missed blocks
-					)
-
-					return newInfo, true
-				},
-				SignedBlocksWindowFunc: func(sdk.Context) int64 { return 100 },
-			}
-
-			tssMock := &mock.TssMock{
-				HasMissedTooManyBlocksFunc: func(sdk.Context, sdk.ConsAddress) (bool, error) {
-					return false, nil
-				},
-				GetSuspendedUntilFunc: func(sdk.Context, sdk.ValAddress) int64 { return 0 },
-				IsOperatorAvailableFunc: func(_ sdk.Context, v sdk.ValAddress, keyIDs ...tss.KeyID) bool {
-					for _, validator := range validators {
-						if validator.GetOperator().String() == v.String() {
-							return true
-						}
-					}
-					return false
-				},
-			}
-
-			bank := &mock.BankKeeperMock{
-				GetBalanceFunc: func(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin {
-					return sdk.NewCoin("uaxl", sdk.NewInt(5000000))
-				},
-			}
-
-			snapshotKeeper := keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("staking"), snapSubspace, staker, bank, slashingKeeper, tssMock)
-			snapshotKeeper.SetParams(ctx, types.DefaultParams())
-			for _, v := range validators {
-				addr := rand.AccAddr()
-				_ = snapshotKeeper.ActivateProxy(ctx, v.GetOperator(), addr)
-			}
-
-			_, ok := snapshotKeeper.GetSnapshot(ctx, 0)
-			assert.False(t, ok)
-
-			_, ok = snapshotKeeper.GetLatestSnapshot(ctx)
-			assert.False(t, ok)
-
-			snapshot, err := snapshotKeeper.TakeSnapshot(ctx, keyRequirement)
-			assert.NoError(t, err)
-
-			for i, val := range validators {
-				assert.Equal(t, val.GetConsensusPower(sdk.DefaultPowerReduction), snapshot.Validators[i].GetSDKValidator().GetConsensusPower(sdk.DefaultPowerReduction))
-				assert.Equal(t, val.GetOperator(), snapshot.Validators[i].GetSDKValidator().GetOperator())
-			}
-
-			_, err = snapshotKeeper.TakeSnapshot(ctx, keyRequirement)
-			assert.NoError(t, err)
-
-			snapshot, ok = snapshotKeeper.GetSnapshot(ctx, 1)
-
-			assert.True(t, ok)
-			for i, val := range validators {
-				assert.Equal(t, val.GetConsensusPower(sdk.DefaultPowerReduction), snapshot.Validators[i].GetSDKValidator().GetConsensusPower(sdk.DefaultPowerReduction))
-				assert.Equal(t, val.GetOperator(), snapshot.Validators[i].GetSDKValidator().GetOperator())
-			}
-		})
-	}
-}
-
 func TestKeeper_RegisterProxy(t *testing.T) {
 	var (
 		ctx              sdk.Context
@@ -187,7 +90,7 @@ func TestKeeper_RegisterProxy(t *testing.T) {
 			},
 		}
 
-		snapshotKeeper = keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("staking"), snapSubspace, staker, bank, &mock.SlasherMock{}, &mock.TssMock{})
+		snapshotKeeper = keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("staking"), snapSubspace, staker, bank, &mock.SlasherMock{})
 		snapshotKeeper.SetParams(ctx, types.DefaultParams())
 	}
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
@@ -263,7 +166,7 @@ func TestKeeper_DeregisterProxy(t *testing.T) {
 			},
 		}
 
-		snapshotKeeper = keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("staking"), snapSubspace, staker, bank, &mock.SlasherMock{}, &mock.TssMock{})
+		snapshotKeeper = keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("staking"), snapSubspace, staker, bank, &mock.SlasherMock{})
 		snapshotKeeper.SetParams(ctx, types.DefaultParams())
 
 		if err := snapshotKeeper.ActivateProxy(ctx, principalAddress, expectedProxy); err != nil {
@@ -326,7 +229,7 @@ func TestKeeper(t *testing.T) {
 		subspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
 
 		staking = &mock.StakingKeeperMock{}
-		k = keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("snapshot"), subspace, staking, &mock.BankKeeperMock{}, &mock.SlasherMock{}, &mock.TssMock{})
+		k = keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("snapshot"), subspace, staking, &mock.BankKeeperMock{}, &mock.SlasherMock{})
 		k.SetParams(ctx, types.DefaultParams())
 	})
 

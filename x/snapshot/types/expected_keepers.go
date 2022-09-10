@@ -7,10 +7,9 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	exported2 "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
-//go:generate moq -pkg mock -out ./mock/expected_keepers.go . StakingKeeper BankKeeper Slasher Tss
+//go:generate moq -pkg mock -out ./mock/expected_keepers.go . StakingKeeper BankKeeper Slasher
 
 // StakingKeeper adopts the methods from "github.com/cosmos/cosmos-sdk/x/staking/exported" that are
 // actually used by this module
@@ -39,13 +38,4 @@ type Slasher interface {
 	GetValidatorSigningInfo(ctx sdk.Context, address sdk.ConsAddress) (info types.ValidatorSigningInfo, found bool)
 	SignedBlocksWindow(ctx sdk.Context) (res int64)
 	GetValidatorMissedBlockBitArray(ctx sdk.Context, address sdk.ConsAddress, index int64) bool
-}
-
-// Tss provides functionality to tss module
-type Tss interface {
-	GetSuspendedUntil(ctx sdk.Context, validator sdk.ValAddress) int64
-	GetNextKey(ctx sdk.Context, chain nexus.Chain, keyRole exported2.KeyRole) (exported2.Key, bool)
-	IsOperatorAvailable(ctx sdk.Context, validator sdk.ValAddress, keyIDs ...exported2.KeyID) bool
-	GetKeyRequirement(ctx sdk.Context, keyRole exported2.KeyRole, keyType exported2.KeyType) (exported2.KeyRequirement, bool)
-	HasMissedTooManyBlocks(ctx sdk.Context, address sdk.ConsAddress) (bool, error)
 }

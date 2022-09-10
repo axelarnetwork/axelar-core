@@ -89,11 +89,10 @@ type AppModule struct {
 	snapshotter keeper.Snapshotter
 	rewarder    types.Rewarder
 	nexus       types.Nexus
-	tss         types.Tss
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(k keeper.Keeper, staker types.Staker, slasher types.Slasher, snapshotter types.Snapshotter, rewarder types.Rewarder, nexus types.Nexus, tss types.Tss) AppModule {
+func NewAppModule(k keeper.Keeper, staker types.Staker, slasher types.Slasher, snapshotter types.Snapshotter, rewarder types.Rewarder, nexus types.Nexus) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
@@ -101,7 +100,6 @@ func NewAppModule(k keeper.Keeper, staker types.Staker, slasher types.Slasher, s
 		snapshotter:    keeper.NewSnapshotCreator(snapshotter, staker, slasher),
 		rewarder:       rewarder,
 		nexus:          nexus,
-		tss:            tss,
 	}
 }
 
@@ -145,7 +143,7 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterQueryServiceServer(cfg.QueryServer(), keeper.NewGRPCQuerier(am.keeper, am.staker))
 	types.RegisterMsgServiceServer(utils.ErrorWrapper{Server: cfg.MsgServer(), Err: types.ErrMultisig, Logger: am.keeper.Logger}, keeper.NewMsgServer(am.keeper, am.snapshotter, am.staker, am.nexus))
 
-	err := cfg.RegisterMigration(types.ModuleName, 1, keeper.GetMigrationHandler(am.keeper, am.tss, am.nexus))
+	err := cfg.RegisterMigration(types.ModuleName, 1, keeper.GetMigrationHandler())
 	if err != nil {
 		panic(err)
 	}
