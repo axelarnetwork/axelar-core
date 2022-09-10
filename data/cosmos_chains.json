@@ -89,37 +89,37 @@
     },
     {
       "id": "aura",
-      "name": "aura",
+      "name": "Aura",
       "image": "/images/chains/aura.png"
     },
     {
       "id": "comdex",
-      "name": "comdex",
+      "name": "Comdex",
       "image": "/images/chains/comdex.png"
     },
     {
       "id": "evmos",
-      "name": "evmos",
+      "name": "Evmos",
       "image": "/images/chains/evmos.png"
     },
     {
       "id": "sei",
-      "name": "sei",
+      "name": "Sei",
       "image": "/images/chains/sei.png"
     },
     {
       "id": "osmosis",
-      "name": "osmosis",
+      "name": "Osmosis",
       "image": "/images/chains/osmosis.png"
     },
     {
       "id": "kujira",
-      "name": "kujira",
+      "name": "Kujira",
       "image": "/images/chains/kujira.png"
     },
     {
       "id": "fetch",
-      "name": "fetch",
+      "name": "Fetch",
       "image": "/images/chains/fetch.png"
     }
   ]
