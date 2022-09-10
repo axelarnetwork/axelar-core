@@ -13,6 +13,8 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 )
 
+//go:generate moq -out ./mock/types.go -pkg mock . MaintainerState
+
 // AddressValidator defines a function that implements address verification upon a request to link addresses
 type AddressValidator func(ctx sdk.Context, address CrossChainAddress) error
 
