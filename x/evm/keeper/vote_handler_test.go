@@ -13,6 +13,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/app/params"
 	"github.com/axelarnetwork/axelar-core/testutils"
+	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	fakeMock "github.com/axelarnetwork/axelar-core/testutils/fake/interfaces/mock"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/evm/exported"
@@ -20,7 +21,12 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/evm/types/mock"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
+	mock3 "github.com/axelarnetwork/axelar-core/x/reward/exported/mock"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	mock2 "github.com/axelarnetwork/axelar-core/x/vote/exported/mock"
+	"github.com/axelarnetwork/utils/slices"
+	. "github.com/axelarnetwork/utils/test"
 )
 
 func TestHandleResult(t *testing.T) {
@@ -131,7 +137,7 @@ func TestHandleResult(t *testing.T) {
 
 		result = types.NewConfirmGatewayTxRequest(rand.AccAddr(), rand.Str(5), types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))))
 		assert.Panics(t, func() {
-			handler.HandleResult(ctx, result)
+			_ = handler.HandleResult(ctx, result)
 		})
 	}).Repeat(repeats))
 
@@ -150,6 +156,48 @@ func TestHandleResult(t *testing.T) {
 
 		assert.Error(t, err)
 	}).Repeat(repeats))
+
+	var (
+		poll      *mock2.PollMock
+		nexusMock *mock.NexusMock
+	)
+
+	Given("a vote handler", func() {
+		encCfg := params.MakeEncodingConfig()
+		nexusMock = &mock.NexusMock{
+			GetChainFunc: func(_ sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
+				return nexus.Chain{
+					Name:                  chain,
+					SupportsForeignAssets: true,
+					Module:                types.ModuleName,
+				}, true
+			},
+		}
+		rewarder := &mock.RewarderMock{
+			GetPoolFunc: func(sdk.Context, string) reward.RewardPool { return &mock3.RewardPoolMock{} },
+		}
+		handler = keeper.NewVoteHandler(encCfg.Codec, &mock.BaseKeeperMock{}, nexusMock, rewarder)
+	}).
+		Given("a completed poll", func() {
+			poll = &mock2.PollMock{
+				GetStateFunc:          func() vote.PollState { return vote.Completed },
+				GetResultFunc:         func() codec.ProtoMarshaler { return &types.VoteEvents{Chain: "ethereum", Events: nil} },
+				GetRewardPoolNameFunc: func() (string, bool) { return "rewards", true },
+				GetIDFunc:             func() vote.PollID { return vote.PollID(rand.PosI64()) },
+				GetMetaDataFunc:       func() (codec.ProtoMarshaler, bool) { return &types.PollMetadata{Chain: "ethereum"}, true },
+				GetVotersFunc:         func() []sdk.ValAddress { return slices.Expand(func(int) sdk.ValAddress { return rand.ValAddr() }, 10) },
+			}
+		}).
+		When("a voter is not a chain maintainer", func() {
+			nexusMock.GetChainMaintainerStateFunc = func(sdk.Context, nexus.Chain, sdk.ValAddress) (nexus.MaintainerState, bool) {
+				return nil, false
+			}
+		}).
+		Then("ignore that voter", func(t *testing.T) {
+			ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+			assert.NoError(t, handler.HandleCompletedPoll(ctx, poll))
+			assert.Len(t, nexusMock.SetChainMaintainerStateCalls(), 0)
+		}).Run(t)
 }
 
 func randTransferEvents(n int) []types.Event {

@@ -92,10 +92,14 @@ func (v voteHandler) HandleCompletedPoll(ctx sdk.Context, poll vote.Poll) error 
 	rewardPool := v.rewarder.GetPool(ctx, rewardPoolName)
 
 	for _, voter := range poll.GetVoters() {
+		maintainerState, ok := v.nexus.GetChainMaintainerState(ctx, chain, voter)
+		if !ok {
+			continue // voter is no longer a chain maintainer, so recording the state is irrelevant
+		}
+
 		hasVoted := poll.HasVoted(voter)
 		hasVotedIncorrectly := hasVoted && !poll.HasVotedCorrectly(voter)
 
-		maintainerState := funcs.MustOk(v.nexus.GetChainMaintainerState(ctx, chain, voter))
 		maintainerState.MarkMissingVote(!hasVoted)
 		maintainerState.MarkIncorrectVote(hasVotedIncorrectly)
 		funcs.MustNoErr(v.nexus.SetChainMaintainerState(ctx, maintainerState))
