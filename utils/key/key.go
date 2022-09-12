@@ -61,5 +61,5 @@ func From(key fmt.Stringer) Key {
 
 // FromUInt creates a new Key from any unsigned integer type
 func FromUInt[T constraints.Unsigned](key T) Key {
-	return FromBz(convert.IntToBytes[T](key))
+	return FromBz(convert.IntToBytes(key))
 }
