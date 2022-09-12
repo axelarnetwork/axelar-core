@@ -7,7 +7,6 @@ import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "axelar/snapshot/v1beta1/tx.proto";
 import "axelar/tss/v1beta1/tx.proto";
-import "axelar/tss/v1beta1/query.proto";
 
 option (gogoproto.goproto_registration) = true;
 
@@ -23,27 +22,4 @@ service MsgService {
 }
 
 // Query defines the gRPC querier service.
-service QueryService {
-
-  // NextKeyID returns the key ID assigned for the next rotation on a given
-  // chain and for the given key role
-  rpc NextKeyID(NextKeyIDRequest) returns (NextKeyIDResponse) {
-    option (google.api.http).get =
-        "/axelar/tss/v1beta1/next_key_id/{chain}/{key_role}";
-  }
-
-  // AssignableKey returns true if there is no assigned key for the
-  // next rotation on a given chain, and false otherwise
-  rpc AssignableKey(AssignableKeyRequest) returns (AssignableKeyResponse) {
-    option (google.api.http).get =
-        "/axelar/tss/v1beta1/assignable_key/{chain}/{key_role}";
-  }
-
-  // ValidatorMultisigKeys returns the validator's multisig pubkeys
-  // corresponding to each active key ID
-  rpc ValidatorMultisigKeys(ValidatorMultisigKeysRequest)
-      returns (ValidatorMultisigKeysResponse) {
-    option (google.api.http).get =
-        "/axelar/tss/v1beta1/validator_multisig_keys/{address}";
-  }
-}
+service QueryService {}

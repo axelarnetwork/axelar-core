@@ -599,3 +599,294 @@ func (mock *MoonbeamClientMock) TransactionReceiptCalls() []struct {
 	mock.lockTransactionReceipt.RUnlock()
 	return calls
 }
+
+// Ensure, that Eth2ClientMock does implement rpc.Eth2Client.
+// If this is not the case, regenerate this file with moq.
+var _ rpc.Eth2Client = &Eth2ClientMock{}
+
+// Eth2ClientMock is a mock implementation of rpc.Eth2Client.
+//
+// 	func TestSomethingThatUsesEth2Client(t *testing.T) {
+//
+// 		// make and configure a mocked rpc.Eth2Client
+// 		mockedEth2Client := &Eth2ClientMock{
+// 			BlockByNumberFunc: func(ctx context.Context, number *big.Int) (*types.Block, error) {
+// 				panic("mock out the BlockByNumber method")
+// 			},
+// 			BlockNumberFunc: func(ctx context.Context) (uint64, error) {
+// 				panic("mock out the BlockNumber method")
+// 			},
+// 			CloseFunc: func()  {
+// 				panic("mock out the Close method")
+// 			},
+// 			FinalizedHeaderFunc: func(ctx context.Context) (*types.Header, error) {
+// 				panic("mock out the FinalizedHeader method")
+// 			},
+// 			TransactionByHashFunc: func(ctx context.Context, hash common.Hash) (*types.Transaction, bool, error) {
+// 				panic("mock out the TransactionByHash method")
+// 			},
+// 			TransactionReceiptFunc: func(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {
+// 				panic("mock out the TransactionReceipt method")
+// 			},
+// 		}
+//
+// 		// use mockedEth2Client in code that requires rpc.Eth2Client
+// 		// and then make assertions.
+//
+// 	}
+type Eth2ClientMock struct {
+	// BlockByNumberFunc mocks the BlockByNumber method.
+	BlockByNumberFunc func(ctx context.Context, number *big.Int) (*types.Block, error)
+
+	// BlockNumberFunc mocks the BlockNumber method.
+	BlockNumberFunc func(ctx context.Context) (uint64, error)
+
+	// CloseFunc mocks the Close method.
+	CloseFunc func()
+
+	// FinalizedHeaderFunc mocks the FinalizedHeader method.
+	FinalizedHeaderFunc func(ctx context.Context) (*types.Header, error)
+
+	// TransactionByHashFunc mocks the TransactionByHash method.
+	TransactionByHashFunc func(ctx context.Context, hash common.Hash) (*types.Transaction, bool, error)
+
+	// TransactionReceiptFunc mocks the TransactionReceipt method.
+	TransactionReceiptFunc func(ctx context.Context, txHash common.Hash) (*types.Receipt, error)
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// BlockByNumber holds details about calls to the BlockByNumber method.
+		BlockByNumber []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Number is the number argument value.
+			Number *big.Int
+		}
+		// BlockNumber holds details about calls to the BlockNumber method.
+		BlockNumber []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+		}
+		// Close holds details about calls to the Close method.
+		Close []struct {
+		}
+		// FinalizedHeader holds details about calls to the FinalizedHeader method.
+		FinalizedHeader []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+		}
+		// TransactionByHash holds details about calls to the TransactionByHash method.
+		TransactionByHash []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Hash is the hash argument value.
+			Hash common.Hash
+		}
+		// TransactionReceipt holds details about calls to the TransactionReceipt method.
+		TransactionReceipt []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// TxHash is the txHash argument value.
+			TxHash common.Hash
+		}
+	}
+	lockBlockByNumber      sync.RWMutex
+	lockBlockNumber        sync.RWMutex
+	lockClose              sync.RWMutex
+	lockFinalizedHeader    sync.RWMutex
+	lockTransactionByHash  sync.RWMutex
+	lockTransactionReceipt sync.RWMutex
+}
+
+// BlockByNumber calls BlockByNumberFunc.
+func (mock *Eth2ClientMock) BlockByNumber(ctx context.Context, number *big.Int) (*types.Block, error) {
+	if mock.BlockByNumberFunc == nil {
+		panic("Eth2ClientMock.BlockByNumberFunc: method is nil but Eth2Client.BlockByNumber was just called")
+	}
+	callInfo := struct {
+		Ctx    context.Context
+		Number *big.Int
+	}{
+		Ctx:    ctx,
+		Number: number,
+	}
+	mock.lockBlockByNumber.Lock()
+	mock.calls.BlockByNumber = append(mock.calls.BlockByNumber, callInfo)
+	mock.lockBlockByNumber.Unlock()
+	return mock.BlockByNumberFunc(ctx, number)
+}
+
+// BlockByNumberCalls gets all the calls that were made to BlockByNumber.
+// Check the length with:
+//     len(mockedEth2Client.BlockByNumberCalls())
+func (mock *Eth2ClientMock) BlockByNumberCalls() []struct {
+	Ctx    context.Context
+	Number *big.Int
+} {
+	var calls []struct {
+		Ctx    context.Context
+		Number *big.Int
+	}
+	mock.lockBlockByNumber.RLock()
+	calls = mock.calls.BlockByNumber
+	mock.lockBlockByNumber.RUnlock()
+	return calls
+}
+
+// BlockNumber calls BlockNumberFunc.
+func (mock *Eth2ClientMock) BlockNumber(ctx context.Context) (uint64, error) {
+	if mock.BlockNumberFunc == nil {
+		panic("Eth2ClientMock.BlockNumberFunc: method is nil but Eth2Client.BlockNumber was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockBlockNumber.Lock()
+	mock.calls.BlockNumber = append(mock.calls.BlockNumber, callInfo)
+	mock.lockBlockNumber.Unlock()
+	return mock.BlockNumberFunc(ctx)
+}
+
+// BlockNumberCalls gets all the calls that were made to BlockNumber.
+// Check the length with:
+//     len(mockedEth2Client.BlockNumberCalls())
+func (mock *Eth2ClientMock) BlockNumberCalls() []struct {
+	Ctx context.Context
+} {
+	var calls []struct {
+		Ctx context.Context
+	}
+	mock.lockBlockNumber.RLock()
+	calls = mock.calls.BlockNumber
+	mock.lockBlockNumber.RUnlock()
+	return calls
+}
+
+// Close calls CloseFunc.
+func (mock *Eth2ClientMock) Close() {
+	if mock.CloseFunc == nil {
+		panic("Eth2ClientMock.CloseFunc: method is nil but Eth2Client.Close was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockClose.Lock()
+	mock.calls.Close = append(mock.calls.Close, callInfo)
+	mock.lockClose.Unlock()
+	mock.CloseFunc()
+}
+
+// CloseCalls gets all the calls that were made to Close.
+// Check the length with:
+//     len(mockedEth2Client.CloseCalls())
+func (mock *Eth2ClientMock) CloseCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockClose.RLock()
+	calls = mock.calls.Close
+	mock.lockClose.RUnlock()
+	return calls
+}
+
+// FinalizedHeader calls FinalizedHeaderFunc.
+func (mock *Eth2ClientMock) FinalizedHeader(ctx context.Context) (*types.Header, error) {
+	if mock.FinalizedHeaderFunc == nil {
+		panic("Eth2ClientMock.FinalizedHeaderFunc: method is nil but Eth2Client.FinalizedHeader was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockFinalizedHeader.Lock()
+	mock.calls.FinalizedHeader = append(mock.calls.FinalizedHeader, callInfo)
+	mock.lockFinalizedHeader.Unlock()
+	return mock.FinalizedHeaderFunc(ctx)
+}
+
+// FinalizedHeaderCalls gets all the calls that were made to FinalizedHeader.
+// Check the length with:
+//     len(mockedEth2Client.FinalizedHeaderCalls())
+func (mock *Eth2ClientMock) FinalizedHeaderCalls() []struct {
+	Ctx context.Context
+} {
+	var calls []struct {
+		Ctx context.Context
+	}
+	mock.lockFinalizedHeader.RLock()
+	calls = mock.calls.FinalizedHeader
+	mock.lockFinalizedHeader.RUnlock()
+	return calls
+}
+
+// TransactionByHash calls TransactionByHashFunc.
+func (mock *Eth2ClientMock) TransactionByHash(ctx context.Context, hash common.Hash) (*types.Transaction, bool, error) {
+	if mock.TransactionByHashFunc == nil {
+		panic("Eth2ClientMock.TransactionByHashFunc: method is nil but Eth2Client.TransactionByHash was just called")
+	}
+	callInfo := struct {
+		Ctx  context.Context
+		Hash common.Hash
+	}{
+		Ctx:  ctx,
+		Hash: hash,
+	}
+	mock.lockTransactionByHash.Lock()
+	mock.calls.TransactionByHash = append(mock.calls.TransactionByHash, callInfo)
+	mock.lockTransactionByHash.Unlock()
+	return mock.TransactionByHashFunc(ctx, hash)
+}
+
+// TransactionByHashCalls gets all the calls that were made to TransactionByHash.
+// Check the length with:
+//     len(mockedEth2Client.TransactionByHashCalls())
+func (mock *Eth2ClientMock) TransactionByHashCalls() []struct {
+	Ctx  context.Context
+	Hash common.Hash
+} {
+	var calls []struct {
+		Ctx  context.Context
+		Hash common.Hash
+	}
+	mock.lockTransactionByHash.RLock()
+	calls = mock.calls.TransactionByHash
+	mock.lockTransactionByHash.RUnlock()
+	return calls
+}
+
+// TransactionReceipt calls TransactionReceiptFunc.
+func (mock *Eth2ClientMock) TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {
+	if mock.TransactionReceiptFunc == nil {
+		panic("Eth2ClientMock.TransactionReceiptFunc: method is nil but Eth2Client.TransactionReceipt was just called")
+	}
+	callInfo := struct {
+		Ctx    context.Context
+		TxHash common.Hash
+	}{
+		Ctx:    ctx,
+		TxHash: txHash,
+	}
+	mock.lockTransactionReceipt.Lock()
+	mock.calls.TransactionReceipt = append(mock.calls.TransactionReceipt, callInfo)
+	mock.lockTransactionReceipt.Unlock()
+	return mock.TransactionReceiptFunc(ctx, txHash)
+}
+
+// TransactionReceiptCalls gets all the calls that were made to TransactionReceipt.
+// Check the length with:
+//     len(mockedEth2Client.TransactionReceiptCalls())
+func (mock *Eth2ClientMock) TransactionReceiptCalls() []struct {
+	Ctx    context.Context
+	TxHash common.Hash
+} {
+	var calls []struct {
+		Ctx    context.Context
+		TxHash common.Hash
+	}
+	mock.lockTransactionReceipt.RLock()
+	calls = mock.calls.TransactionReceipt
+	mock.lockTransactionReceipt.RUnlock()
+	return calls
+}

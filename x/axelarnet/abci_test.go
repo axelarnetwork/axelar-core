@@ -26,6 +26,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types/testutils"
 	axelartestutils "github.com/axelarnetwork/axelar-core/x/axelarnet/types/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/utils/math"
 	"github.com/axelarnetwork/utils/slices"
 	. "github.com/axelarnetwork/utils/test"
 )
@@ -58,6 +59,7 @@ func TestEndBlocker(t *testing.T) {
 		queueSize            int
 		queueIdx             int
 		ibcTransferErrors    int
+		transferLimit        int
 		panicOnTransferError bool
 		ctx                  sdk.Context
 	)
@@ -71,6 +73,7 @@ func TestEndBlocker(t *testing.T) {
 			LoggerFunc:                func(ctx sdk.Context) log.Logger { return log.NewNopLogger() },
 			GetIBCTransferQueueFunc:   func(ctx sdk.Context) utils.KVQueue { return transferQueue },
 			GetRouteTimeoutWindowFunc: func(ctx sdk.Context) uint64 { return 10 },
+			GetEndBlockerLimitFunc:    func(ctx sdk.Context) uint64 { return 1000 },
 			SetTransferFailedFunc: func(sdk.Context, nexus.TransferID) error {
 				return nil
 			},
@@ -141,6 +144,28 @@ func TestEndBlocker(t *testing.T) {
 			assert.Equal(t, queueSize, len(transferQueue.DequeueCalls()))
 			assert.Equal(t, queueSize, len(transferK.SendTransferCalls()))
 			assert.Equal(t, queueSize, slices.Reduce(ctx.EventManager().Events().ToABCIEvents(), 0, func(c int, e abci.Event) int {
+				if e.Type == ibcchanneltypes.EventTypeSendPacket {
+					c++
+				}
+				return c
+			}))
+		}).
+		Run(t, repeats)
+
+	givenTransferQueue.
+		When("given a queue size", func() {
+			queueSize = int(rand.I64Between(50, 200))
+		}).
+		When("there is a transfer limit", func() {
+			transferLimit = int(rand.I64Between(0, 200))
+			bk.GetEndBlockerLimitFunc = func(ctx sdk.Context) uint64 { return uint64(transferLimit) }
+		}).
+		Then("should init ibc transfers", func(t *testing.T) {
+			numTransfers := math.Min(queueSize, transferLimit)
+			EndBlocker(ctx, abci.RequestEndBlock{Height: ctx.BlockHeight()}, bk, ibcK)
+			assert.Equal(t, numTransfers, len(transferQueue.DequeueCalls()))
+			assert.Equal(t, numTransfers, len(transferK.SendTransferCalls()))
+			assert.Equal(t, numTransfers, slices.Reduce(ctx.EventManager().Events().ToABCIEvents(), 0, func(c int, e abci.Event) int {
 				if e.Type == ibcchanneltypes.EventTypeSendPacket {
 					c++
 				}
