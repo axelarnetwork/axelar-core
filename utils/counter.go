@@ -3,10 +3,11 @@ package utils
 import (
 	"encoding/binary"
 
-	"github.com/axelarnetwork/axelar-core/utils/key"
-	"github.com/axelarnetwork/utils/convert"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"golang.org/x/exp/constraints"
+
+	"github.com/axelarnetwork/axelar-core/utils/key"
+	"github.com/axelarnetwork/utils/convert"
 )
 
 // Counter is a stateful counter that works with the kv store and starts from zero

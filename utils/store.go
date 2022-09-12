@@ -14,6 +14,8 @@ import (
 	"github.com/axelarnetwork/utils/convert"
 )
 
+//go:generate moq -pkg mock -out ./mock/store.go . ValidatedProtoMarshaler
+
 // DefaultDelimiter represents the default delimiter used for the KV store keys
 const DefaultDelimiter = "_"
 
@@ -32,6 +34,12 @@ type StringKey interface {
 	Key
 	AppendStr(key string, stringTransformations ...func(string) string) StringKey
 	PrependStr(key string, stringTransformations ...func(string) string) StringKey
+}
+
+// ValidatedProtoMarshaler is a ProtoMarshaler that can also be validated
+type ValidatedProtoMarshaler interface {
+	codec.ProtoMarshaler
+	ValidateBasic() error
 }
 
 // KVStore is a wrapper around the cosmos-sdk KVStore to provide more safety regarding key management and better ease-of-use
@@ -62,6 +70,16 @@ func (store KVStore) SetNew(k key.Key, value codec.ProtoMarshaler) {
 // SetRawNew stores the value under the given key
 func (store KVStore) SetRawNew(k key.Key, value []byte) {
 	store.KVStore.Set(k.Bytes(), value)
+}
+
+// SetNewValidated marshals the value and stores it under the given key if it is valid
+func (store KVStore) SetNewValidated(k key.Key, value ValidatedProtoMarshaler) error {
+	if err := value.ValidateBasic(); err != nil {
+		return err
+	}
+
+	store.KVStore.Set(k.Bytes(), store.cdc.MustMarshalLengthPrefixed(value))
+	return nil
 }
 
 // SetRaw stores the value under the given key
