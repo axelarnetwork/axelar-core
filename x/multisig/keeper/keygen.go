@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	gogoprototypes "github.com/gogo/protobuf/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/multisig/exported"
@@ -170,9 +169,5 @@ func (k Keeper) getKeys(ctx sdk.Context) (keys []types.Key) {
 }
 
 func (k Keeper) nextKeyID(ctx sdk.Context) exported.KeyID {
-	var val gogoprototypes.UInt64Value
-	k.getStore(ctx).Get(keygenSessionCountKey, &val)
-	defer k.getStore(ctx).Set(keygenSessionCountKey, &gogoprototypes.UInt64Value{Value: val.Value + 1})
-
-	return exported.KeyID(fmt.Sprintf("%08d", val.Value))
+	return exported.KeyID(fmt.Sprintf("%08d", utils.NewCounter[uint64](keygenSessionCountKey, k.getStore(ctx)).Incr(ctx)))
 }

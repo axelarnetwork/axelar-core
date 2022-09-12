@@ -9,6 +9,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/utils/key"
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
 )
 
@@ -21,7 +22,7 @@ var (
 	keyEpochPrefix         = utils.KeyFromInt(6)
 	keyRotationCountPrefix = utils.KeyFromInt(7)
 
-	keygenSessionCountKey  = utils.KeyFromInt(100)
+	keygenSessionCountKey  = key.FromUInt[uint64](100)
 	signingSessionCountKey = utils.KeyFromInt(101)
 )
 
