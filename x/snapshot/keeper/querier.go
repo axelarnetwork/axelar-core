@@ -3,24 +3,18 @@ package keeper
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
-	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
 )
 
 //Query labels
 const (
-	QProxy      = "proxy"
-	QOperator   = "operator"
-	QInfo       = "info"
-	QValidators = "validators"
+	QProxy    = "proxy"
+	QOperator = "operator"
 )
 
 // NewQuerier returns a new querier for the evm module
@@ -31,10 +25,6 @@ func NewQuerier(k Keeper) sdk.Querier {
 			return queryProxy(ctx, k, path[1])
 		case QOperator:
 			return queryOperator(ctx, k, path[1])
-		case QInfo:
-			return querySnapshot(ctx, k, path[1])
-		case QValidators:
-			return QueryValidators(ctx, k)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown snapshot query endpoint: %s", path[0]))
 		}
@@ -85,68 +75,4 @@ func queryOperator(ctx sdk.Context, k Keeper, proxy string) ([]byte, error) {
 	}
 
 	return []byte(operator.String()), nil
-}
-
-func querySnapshot(ctx sdk.Context, k Keeper, counter string) ([]byte, error) {
-	var found bool
-	var snapshot exported.Snapshot
-
-	if strings.ToLower(counter) == "latest" {
-		snapshot, found = k.GetLatestSnapshot(ctx)
-	} else {
-		c, err := strconv.ParseInt(counter, 10, 64)
-		if err != nil {
-			return nil, sdkerrors.Wrap(types.ErrSnapshot, err.Error())
-		}
-
-		snapshot, found = k.GetSnapshot(ctx, c)
-	}
-
-	if !found {
-		return nil, sdkerrors.Wrap(types.ErrSnapshot, "no snapshot found")
-	}
-
-	bz, err := snapshot.GetSuccinctJSON()
-	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrSnapshot, err.Error())
-	}
-
-	return bz, nil
-}
-
-// QueryValidators returns validators' tss information
-func QueryValidators(ctx sdk.Context, k Keeper) ([]byte, error) {
-	var validators []*types.QueryValidatorsResponse_Validator
-
-	validatorIter := func(_ int64, validator stakingtypes.ValidatorI) (stop bool) {
-		v, ok := validator.(stakingtypes.Validator)
-		if !ok {
-			return false
-		}
-
-		illegibility, err := k.GetValidatorIllegibility(ctx, &v)
-		if err != nil {
-			return false
-		}
-
-		validators = append(validators, &types.QueryValidatorsResponse_Validator{
-			OperatorAddress: v.OperatorAddress,
-			Moniker:         v.GetMoniker(),
-			TssIllegibilityInfo: types.QueryValidatorsResponse_TssIllegibilityInfo{
-				Tombstoned:            illegibility.Is(exported.Tombstoned),
-				Jailed:                illegibility.Is(exported.Jailed),
-				MissedTooManyBlocks:   illegibility.Is(exported.MissedTooManyBlocks),
-				NoProxyRegistered:     illegibility.Is(exported.NoProxyRegistered),
-				TssSuspended:          illegibility.Is(exported.TssSuspended),
-				ProxyInsuficientFunds: illegibility.Is(exported.ProxyInsuficientFunds),
-			},
-		})
-
-		return false
-	}
-
-	k.staking.IterateBondedValidatorsByPower(ctx, validatorIter)
-	resp := types.QueryValidatorsResponse{Validators: validators}
-
-	return types.ModuleCdc.MarshalLengthPrefixed(&resp)
 }

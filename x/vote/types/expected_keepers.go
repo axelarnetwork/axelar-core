@@ -7,7 +7,6 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
-	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
@@ -25,7 +24,6 @@ type Voter interface {
 
 // Snapshotter provides snapshot functionality
 type Snapshotter interface {
-	GetSnapshot(sdk.Context, int64) (snapshot.Snapshot, bool)
 	GetOperator(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress
 }
 
