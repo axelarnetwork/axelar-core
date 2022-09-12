@@ -16,8 +16,8 @@ func GetMigrationHandler(k Keeper) func(ctx sdk.Context) error {
 	return func(ctx sdk.Context) error {
 		emptyPollQueue(ctx, k)
 
-		deleteAllWithPrefix(ctx, k, pollPrefix)
-		deleteAllWithPrefix(ctx, k, votesPrefix)
+		deleteAllWithPrefix(ctx, k, utils.KeyFromStr(pollPrefix))
+		deleteAllWithPrefix(ctx, k, utils.KeyFromStr(votesPrefix))
 		deleteAllWithPrefix(ctx, k, voterPrefix)
 
 		addEndBlockerLimitParam(ctx, k)

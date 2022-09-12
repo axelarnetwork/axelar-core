@@ -37,9 +37,12 @@ func TestGetMigrationHandler(t *testing.T) {
 		return When("some polls exist", func() {
 			for i := 0; i < int(pollCount); i++ {
 				pollMeta := exported.PollMetadata{
-					ID:       exported.PollID(rand.PosI64()),
-					State:    rand.Of(exported.Completed, exported.Failed, exported.Pending),
-					Snapshot: snapshottestutils.Snapshot(uint64(rand.I64Between(1, 10)), utilstestutils.RandThreshold()),
+					ID:              exported.PollID(rand.PosI64()),
+					State:           rand.Of(exported.Completed, exported.Failed, exported.Pending),
+					Snapshot:        snapshottestutils.Snapshot(uint64(rand.I64Between(1, 10)), utilstestutils.RandThreshold()),
+					Module:          types.ModuleName,
+					ExpiresAt:       rand.PosI64(),
+					VotingThreshold: utils.NewThreshold(1, 100),
 				}
 
 				switch pollMeta.State {
@@ -51,9 +54,9 @@ func TestGetMigrationHandler(t *testing.T) {
 					}
 
 					pollMeta.Result = d
-					pollMeta.CompletedAt = 0
+					pollMeta.CompletedAt = rand.PosI64()
 				case exported.Pending:
-					k.GetPollQueue(ctx).Enqueue(pollPrefix.AppendStr(pollMeta.ID.String()), &pollMeta)
+					k.GetPollQueue(ctx).Enqueue(utils.KeyFromStr(pollPrefix).AppendStr(pollMeta.ID.String()), &pollMeta)
 				}
 
 				k.setPollMetadata(ctx, pollMeta)
@@ -71,7 +74,7 @@ func TestGetMigrationHandler(t *testing.T) {
 			err := handler(ctx)
 			assert.NoError(t, err)
 
-			iter := k.getKVStore(ctx).Iterator(pollPrefix)
+			iter := k.getKVStore(ctx).Iterator(utils.KeyFromStr(pollPrefix))
 			defer utils.CloseLogError(iter, k.Logger(ctx))
 			assert.False(t, iter.Valid())
 		}).
