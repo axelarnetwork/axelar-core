@@ -232,7 +232,7 @@ func (k Keeper) setChainState(ctx sdk.Context, chainState types.ChainState) {
 func (k Keeper) getChainMaintainerStates(ctx sdk.Context, chain exported.ChainName) []types.MaintainerState {
 	var results []types.MaintainerState
 
-	iter := k.getStore(ctx).IteratorNew(chainMaintainerStatePrefix.Append(key.FromStr(chain.String())))
+	iter := k.getStore(ctx).IteratorNew(chainMaintainerStatePrefix.Append(key.From(chain)))
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
 	for ; iter.Valid(); iter.Next() {
@@ -246,17 +246,17 @@ func (k Keeper) getChainMaintainerStates(ctx sdk.Context, chain exported.ChainNa
 }
 
 func (k Keeper) getChainMaintainerState(ctx sdk.Context, chain exported.ChainName, address sdk.ValAddress) (ms types.MaintainerState, ok bool) {
-	return ms, k.getStore(ctx).GetNew(chainMaintainerStatePrefix.Append(key.FromStr(chain.String())).Append(key.FromBz(address.Bytes())), &ms)
+	return ms, k.getStore(ctx).GetNew(chainMaintainerStatePrefix.Append(key.From(chain)).Append(key.FromBz(address.Bytes())), &ms)
 }
 
 func (k Keeper) setChainMaintainerState(ctx sdk.Context, maintainerState *types.MaintainerState) {
-	k.getStore(ctx).SetNew(chainMaintainerStatePrefix.Append(key.FromStr(maintainerState.Chain.String())).Append(key.FromBz(maintainerState.Address.Bytes())), maintainerState)
+	k.getStore(ctx).SetNew(chainMaintainerStatePrefix.Append(key.From(maintainerState.Chain)).Append(key.FromBz(maintainerState.Address.Bytes())), maintainerState)
 }
 
 func (k Keeper) deleteChainMaintainerState(ctx sdk.Context, chain exported.ChainName, address sdk.ValAddress) {
-	k.getStore(ctx).DeleteNew(chainMaintainerStatePrefix.Append(key.FromStr(chain.String())).Append(key.FromBz(address.Bytes())))
+	k.getStore(ctx).DeleteNew(chainMaintainerStatePrefix.Append(key.From(chain)).Append(key.FromBz(address.Bytes())))
 }
 
 func (k Keeper) hasChainMaintainerState(ctx sdk.Context, chain exported.ChainName, address sdk.ValAddress) bool {
-	return k.getStore(ctx).HasNew(chainMaintainerStatePrefix.Append(key.FromStr(chain.String())).Append(key.FromBz(address.Bytes())))
+	return k.getStore(ctx).HasNew(chainMaintainerStatePrefix.Append(key.From(chain)).Append(key.FromBz(address.Bytes())))
 }
