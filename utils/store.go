@@ -59,12 +59,13 @@ func (store KVStore) SetNew(k key.Key, value codec.ProtoMarshaler) {
 	store.KVStore.Set(k.Bytes(), store.cdc.MustMarshalLengthPrefixed(value))
 }
 
+// SetRawNew stores the value under the given key
 func (store KVStore) SetRawNew(k key.Key, value []byte) {
 	store.KVStore.Set(k.Bytes(), value)
 }
 
 // SetRaw stores the value under the given key
-// Deprecated: use SetNew instead
+// Deprecated: use SetRawNew instead
 func (store KVStore) SetRaw(key Key, value []byte) {
 	store.KVStore.Set(key.AsKey(), value)
 }
@@ -94,12 +95,13 @@ func (store KVStore) GetNew(key key.Key, value codec.ProtoMarshaler) bool {
 	return true
 }
 
+// GetRawNew returns the raw bytes stored under the given key. Returns nil with key does not exist.
 func (store KVStore) GetRawNew(key key.Key) []byte {
 	return store.KVStore.Get(key.Bytes())
 }
 
 // GetRaw returns the raw bytes stored under the given key. Returns nil with key does not exist.
-// Deprecated: use GetNew instead
+// Deprecated: use GetRawNew instead
 func (store KVStore) GetRaw(key Key) []byte {
 	return store.KVStore.Get(key.AsKey())
 }

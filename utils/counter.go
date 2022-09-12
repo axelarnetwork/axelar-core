@@ -6,10 +6,10 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils/key"
 	"github.com/axelarnetwork/utils/convert"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/tendermint/tendermint/libs/log"
 	"golang.org/x/exp/constraints"
 )
 
+// Counter is a stateful counter that works with the kv store and starts from zero
 type Counter[T constraints.Unsigned] interface {
 	// Incr increments the counter and returns the value before the increment
 	Incr(ctx sdk.Context) T
@@ -18,26 +18,30 @@ type Counter[T constraints.Unsigned] interface {
 }
 
 type counter[T constraints.Unsigned] struct {
-	key    key.Key
-	store  KVStore
-	logger log.Logger
+	key   key.Key
+	store KVStore
 }
 
-func NewCounter[T constraints.Unsigned](key key.Key, store KVStore, logger log.Logger) Counter[T] {
+// NewCounter is the constructor for counter
+func NewCounter[T constraints.Unsigned](key key.Key, store KVStore) Counter[T] {
 	return counter[T]{
-		key:    key,
-		store:  store,
-		logger: logger,
+		key:   key,
+		store: store,
 	}
 }
 
 func (c counter[T]) Incr(ctx sdk.Context) T {
 	curr := c.Curr(ctx)
-	defer c.store.SetRawNew(c.key, convert.IntToBytes(curr+1))
+	c.store.SetRawNew(c.key, convert.IntToBytes(curr+1))
 
 	return curr
 }
 
 func (c counter[T]) Curr(ctx sdk.Context) T {
-	return T(binary.BigEndian.Uint64(c.store.GetRawNew(c.key)))
+	bz := c.store.GetRawNew(c.key)
+	if bz == nil {
+		return 0
+	}
+
+	return T(binary.BigEndian.Uint64(bz))
 }
