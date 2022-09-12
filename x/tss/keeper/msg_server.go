@@ -7,7 +7,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
-	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
@@ -51,5 +50,5 @@ func (s msgServer) HeartBeat(c context.Context, req *types.HeartBeatRequest) (*t
 		}
 	}
 
-	return &types.HeartBeatResponse{KeygenIllegibility: snapshot.None, SigningIllegibility: snapshot.None}, nil
+	return &types.HeartBeatResponse{}, nil
 }
