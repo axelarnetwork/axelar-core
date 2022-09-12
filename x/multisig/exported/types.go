@@ -52,7 +52,7 @@ const (
 	KeyIDLengthMax = 256
 )
 
-// KeyID ensures a correctly formatted tss key ID
+// KeyID ensures a correctly formatted key ID
 type KeyID string
 
 // ValidateBasic returns an error if the given key ID is invalid; nil otherwise

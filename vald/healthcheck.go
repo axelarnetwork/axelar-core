@@ -19,7 +19,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/vald/config"
 	"github.com/axelarnetwork/axelar-core/vald/tss"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
-	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	snapshotTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -55,8 +54,7 @@ func GetHealthCheckCommand() *cobra.Command {
 			serverCtx := server.GetServerContextFromCmd(cmd)
 
 			ok := execCheck(context.Background(), clientCtx, serverCtx, "tofnd", skipTofnd, checkTofnd) &&
-				execCheck(cmd.Context(), clientCtx, serverCtx, "broadcaster", skipBroadcaster, checkBroadcaster) &&
-				execCheck(context.TODO(), clientCtx, serverCtx, "operator", skipOperator, checkOperator)
+				execCheck(cmd.Context(), clientCtx, serverCtx, "broadcaster", skipBroadcaster, checkBroadcaster)
 
 			// enforce a non-zero exit code in case health checks fail without printing cobra output
 			if !ok {
@@ -186,37 +184,4 @@ func checkBroadcaster(ctx context.Context, clientCtx client.Context, serverCtx *
 	}
 
 	return nil
-}
-
-func checkOperator(_ context.Context, clientCtx client.Context, serverCtx *server.Context) error {
-	addr := serverCtx.Viper.GetString(flagOperatorAddr)
-	if addr == "" {
-		return fmt.Errorf("no operator address specified")
-	}
-
-	bz, _, err := clientCtx.Query(fmt.Sprintf("custom/%s/%s", snapshotTypes.QuerierRoute, keeper.QValidators))
-	if err != nil {
-		return err
-	}
-
-	var resValidators types.QueryValidatorsResponse
-	types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &resValidators)
-
-	for _, v := range resValidators.Validators {
-		if v.OperatorAddress == addr {
-			if v.TssIllegibilityInfo.Jailed ||
-				v.TssIllegibilityInfo.MissedTooManyBlocks ||
-				v.TssIllegibilityInfo.NoProxyRegistered ||
-				v.TssIllegibilityInfo.Tombstoned ||
-				v.TssIllegibilityInfo.TssSuspended ||
-				v.TssIllegibilityInfo.ProxyInsuficientFunds ||
-				v.TssIllegibilityInfo.StaleTssHeartbeat {
-				return fmt.Errorf("health check to operator %s failed due to the following issues: %v",
-					addr, string(snapshotTypes.ModuleCdc.MustMarshalJSON(&v.TssIllegibilityInfo)))
-			}
-			return nil
-		}
-	}
-
-	return fmt.Errorf("operator address %s not found amongst current set of validators", addr)
 }

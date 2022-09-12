@@ -6,13 +6,14 @@ import (
 
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 )
 
 //go:generate moq -pkg mock -out ./mock/expected_keepers.go . StakingKeeper Snapshotter Nexus MultiSigKeeper
 
-// Snapshotter provides snapshot functionality
-type Snapshotter = snapshot.Snapshotter
+// Snapshotter provides access to the snapshot functionality
+type Snapshotter interface {
+	GetOperator(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress
+}
 
 // Nexus provides access to the nexus functionality
 type Nexus interface {

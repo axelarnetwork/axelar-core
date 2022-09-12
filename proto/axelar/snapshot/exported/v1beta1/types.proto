@@ -13,14 +13,6 @@ import "cosmos/staking/v1beta1/staking.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
-message Validator {
-  google.protobuf.Any sdk_validator = 1 [
-    (cosmos_proto.accepts_interface) = "exported.SDKValidator",
-    (gogoproto.customname) = "SDKValidator"
-  ];
-  int64 share_count = 2;
-}
-
 message Participant {
   bytes address = 1 [ (gogoproto.casttype) =
                           "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
@@ -31,19 +23,10 @@ message Participant {
 }
 
 message Snapshot {
-  option (gogoproto.stable_marshaler) = true;
+  reserved 1, 4, 5, 6, 7; // validators, total_share_count, counter and
+                          // corruption_threshold were deleted in v0.26
 
-  repeated Validator validators = 1
-      [ (gogoproto.nullable) = false, deprecated = true ];
-  bytes total_share_count = 4 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.nullable) = false,
-    deprecated = true
-  ];
-  int64 counter = 5 [ deprecated = true ];
-  tss.exported.v1beta1.KeyShareDistributionPolicy
-      key_share_distribution_policy = 6 [ deprecated = true ];
-  int64 corruption_threshold = 7 [ deprecated = true ];
+  option (gogoproto.stable_marshaler) = true;
 
   google.protobuf.Timestamp timestamp = 2
       [ (gogoproto.nullable) = false, (gogoproto.stdtime) = true ];
@@ -53,26 +36,4 @@ message Snapshot {
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
     (gogoproto.nullable) = false
   ];
-}
-
-enum ValidatorIllegibility {
-  option (gogoproto.goproto_enum_prefix) = false;
-  option (gogoproto.goproto_enum_stringer) = false;
-
-  // these enum values are used for bitwise operations, therefore they need to
-  // be powers of 2
-  VALIDATOR_ILLEGIBILITY_UNSPECIFIED = 0
-      [ (gogoproto.enumvalue_customname) = "None" ];
-  VALIDATOR_ILLEGIBILITY_TOMBSTONED = 1
-      [ (gogoproto.enumvalue_customname) = "Tombstoned" ];
-  VALIDATOR_ILLEGIBILITY_JAILED = 2
-      [ (gogoproto.enumvalue_customname) = "Jailed" ];
-  VALIDATOR_ILLEGIBILITY_MISSED_TOO_MANY_BLOCKS = 4
-      [ (gogoproto.enumvalue_customname) = "MissedTooManyBlocks" ];
-  VALIDATOR_ILLEGIBILITY_NO_PROXY_REGISTERED = 8
-      [ (gogoproto.enumvalue_customname) = "NoProxyRegistered" ];
-  VALIDATOR_ILLEGIBILITY_TSS_SUSPENDED = 16
-      [ (gogoproto.enumvalue_customname) = "TssSuspended" ];
-  VALIDATOR_ILLEGIBILITY_PROXY_INSUFICIENT_FUNDS = 32
-      [ (gogoproto.enumvalue_customname) = "ProxyInsuficientFunds" ];
 }
