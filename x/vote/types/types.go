@@ -63,7 +63,7 @@ func (m TalliedVote) ValidateBasic() error {
 	addrs := maps.Keys(m.IsVoterLate)
 	slices.Sort(addrs)
 	for _, addr := range addrs {
-		if _, err := sdk.AccAddressFromBech32(addr); err != nil {
+		if _, err := sdk.ValAddressFromBech32(addr); err != nil {
 			return sdkerrors.Wrapf(err, "voter %s is not a valid address", addr)
 		}
 	}
