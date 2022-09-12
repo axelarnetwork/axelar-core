@@ -15,6 +15,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils/key"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 )
 
@@ -308,7 +309,12 @@ func (k Keeper) SetSeqIDMapping(ctx sdk.Context, t types.IBCTransfer) error {
 			"source port: %s, source channel: %s", t.PortID, t.ChannelID,
 		)
 	}
-	k.getStore(ctx).SetNew(getSeqIDMappingKey(t.PortID, t.ChannelID, nextSeq), &gogoprototypes.UInt64Value{Value: uint64(t.ID)})
+	funcs.MustNoErr(
+		k.getStore(ctx).SetNewValidated(
+			getSeqIDMappingKey(t.PortID, t.ChannelID, nextSeq),
+			utils.NoValidation(&gogoprototypes.UInt64Value{Value: uint64(t.ID)}),
+		),
+	)
 
 	return nil
 }

@@ -15,7 +15,7 @@ func DefaultParams() Params {
 }
 
 // ParamSetPairs implements the ParamSet interface and returns all the key/value pairs
-// pairs of tss module's parameters.
+// pairs of permission module's parameters.
 func (m *Params) ParamSetPairs() params.ParamSetPairs {
 	/*
 		because the subspace package makes liberal use of pointers to set and get values from the store,

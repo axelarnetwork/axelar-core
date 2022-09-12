@@ -8,7 +8,6 @@ import (
 
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/reward/exported"
-	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 )
 
 //go:generate moq -pkg mock -out ./mock/expected_keepers.go . Rewarder Refunder Nexus Minter Distributor Staker Slasher Banker
@@ -72,6 +71,5 @@ type MultiSig interface {
 
 // Snapshotter provides snapshot functionality
 type Snapshotter interface {
-	GetValidatorIllegibility(ctx sdk.Context, validator snapshot.SDKValidator) (snapshot.ValidatorIllegibility, error)
 	GetProxy(ctx sdk.Context, operator sdk.ValAddress) (sdk.AccAddress, bool)
 }
