@@ -2,6 +2,7 @@ package key
 
 import (
 	"bytes"
+	"fmt"
 	"strings"
 
 	"golang.org/x/exp/constraints"
@@ -51,6 +52,11 @@ func FromBz(key []byte) Key {
 // FromStr creates a new Key from a string
 func FromStr(key string) Key {
 	return FromBz([]byte(strings.ToLower(key)))
+}
+
+// From creates a new Key from a fmt.Stringer interface
+func From(key fmt.Stringer) Key {
+	return FromBz([]byte(strings.ToLower(key.String())))
 }
 
 // FromUInt creates a new Key from any unsigned integer type
