@@ -4,7 +4,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/pkg/errors"
+	"golang.org/x/exp/maps"
 
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
@@ -57,5 +59,10 @@ func (m TalliedVote) ValidateBasic() error {
 		return errors.New("vote tally is zero")
 	}
 
+	for _, addr := range maps.Keys(m.IsVoterLate) {
+		if _, err:= sdk.AccAddressFromBech32(addr); err!= nil{
+			return sdkerrors.Wrapf(err, "voter %s is not a valid address", addr)
+		}
+	}
 	return nil
 }
