@@ -14,7 +14,7 @@ import (
 var _ types.MsgServiceServer = msgServer{}
 
 type msgServer struct {
-	types.TSSKeeper
+	Keeper
 	snapshotter types.Snapshotter
 	staker      types.StakingKeeper
 	multisig    types.MultiSigKeeper
@@ -22,9 +22,9 @@ type msgServer struct {
 
 // NewMsgServerImpl returns an implementation of the broadcast MsgServiceServer interface
 // for the provided Keeper.
-func NewMsgServerImpl(keeper types.TSSKeeper, s types.Snapshotter, staker types.StakingKeeper, multisig types.MultiSigKeeper) types.MsgServiceServer {
+func NewMsgServerImpl(keeper Keeper, s types.Snapshotter, staker types.StakingKeeper, multisig types.MultiSigKeeper) types.MsgServiceServer {
 	return msgServer{
-		TSSKeeper:   keeper,
+		Keeper:      keeper,
 		snapshotter: s,
 		staker:      staker,
 		multisig:    multisig,

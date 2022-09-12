@@ -9,16 +9,4 @@ import "axelar/tss/exported/v1beta1/types.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
-message GenesisState {
-  Params params = 1 [ (gogoproto.nullable) = false ];
-
-  repeated KeyRecoveryInfo key_recovery_infos = 2
-      [ (gogoproto.nullable) = false ];
-  repeated tss.exported.v1beta1.Key keys = 3 [ (gogoproto.nullable) = false ];
-  repeated MultisigInfo multisig_infos = 4 [ (gogoproto.nullable) = false ];
-  repeated ExternalKeys external_keys = 5 [ (gogoproto.nullable) = false ];
-  repeated tss.exported.v1beta1.Signature signatures = 6
-      [ (gogoproto.nullable) = false ];
-  repeated ValidatorStatus validator_statuses = 7
-      [ (gogoproto.nullable) = false ];
-}
+message GenesisState { Params params = 1 [ (gogoproto.nullable) = false ]; }
