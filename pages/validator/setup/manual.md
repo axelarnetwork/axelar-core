@@ -22,7 +22,7 @@ Check the appropriate version for the network accordingly:
 {
 title: "Mainnet",
 content: <CodeBlock language="bash">
-{`AXELARD_RELEASE=v0.24.0
+{`AXELARD_RELEASE=v0.26.0
 TOFND_RELEASE=v0.10.1`}
 </CodeBlock>
 },
