@@ -82,5 +82,15 @@ func RegisterLegacyMsgInterfaces(registry cdctypes.InterfaceRegistry) {
 	r.RegisterCustomTypeURL((*sdk.Msg)(nil), "/tss.v1beta1.SubmitMultisigPubKeysRequest", &tsstypes.SubmitMultisigPubKeysRequest{})
 	r.RegisterCustomTypeURL((*sdk.Msg)(nil), "/tss.v1beta1.SubmitMultisigSignaturesRequest", &tsstypes.SubmitMultisigSignaturesRequest{})
 
+	r.RegisterCustomTypeURL((*sdk.Msg)(nil), "/axelar.tss.v1beta1.StartKeygenRequest", &tsstypes.StartKeygenRequest{})
+	r.RegisterCustomTypeURL((*sdk.Msg)(nil), "/axelar.tss.v1beta1.ProcessKeygenTrafficRequest", &tsstypes.ProcessKeygenTrafficRequest{})
+	r.RegisterCustomTypeURL((*sdk.Msg)(nil), "/axelar.tss.v1beta1.ProcessSignTrafficRequest", &tsstypes.ProcessSignTrafficRequest{})
+	r.RegisterCustomTypeURL((*sdk.Msg)(nil), "/axelar.tss.v1beta1.RotateKeyRequest", &tsstypes.RotateKeyRequest{})
+	r.RegisterCustomTypeURL((*sdk.Msg)(nil), "/axelar.tss.v1beta1.VoteSigRequest", &tsstypes.VoteSigRequest{})
+	r.RegisterCustomTypeURL((*sdk.Msg)(nil), "/axelar.tss.v1beta1.VotePubKeyRequest", &tsstypes.VotePubKeyRequest{})
+	r.RegisterCustomTypeURL((*sdk.Msg)(nil), "/axelar.tss.v1beta1.RegisterExternalKeysRequest", &tsstypes.RegisterExternalKeysRequest{})
+	r.RegisterCustomTypeURL((*sdk.Msg)(nil), "/axelar.tss.v1beta1.SubmitMultisigPubKeysRequest", &tsstypes.SubmitMultisigPubKeysRequest{})
+	r.RegisterCustomTypeURL((*sdk.Msg)(nil), "/axelar.tss.v1beta1.SubmitMultisigSignaturesRequest", &tsstypes.SubmitMultisigSignaturesRequest{})
+
 	r.RegisterCustomTypeURL((*sdk.Msg)(nil), "/vote.v1beta1.VoteRequest", &votetypes.VoteRequest{})
 }

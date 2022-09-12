@@ -13,12 +13,10 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
-	"github.com/axelarnetwork/axelar-core/x/tss/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
-//go:generate moq -out ./mock/expected_keepers.go -pkg mock . Voter Signer Nexus Snapshotter BaseKeeper ChainKeeper Rewarder StakingKeeper SlashingKeeper MultisigKeeper
+//go:generate moq -out ./mock/expected_keepers.go -pkg mock . Voter Nexus Snapshotter BaseKeeper ChainKeeper Rewarder StakingKeeper SlashingKeeper MultisigKeeper
 
 // BaseKeeper is implemented by this module's base keeper
 type BaseKeeper interface {
@@ -120,13 +118,6 @@ type Nexus interface {
 // InitPoller interface. Go cannot match the types otherwise
 type InitPoller = interface {
 	InitializePoll(ctx sdk.Context, pollBuilder vote.PollBuilder) (vote.PollID, error)
-}
-
-// Signer provides keygen and signing functionality
-type Signer interface {
-	GetSig(ctx sdk.Context, sigID string) (tss.Signature, tss.SigStatus)
-	GetKey(ctx sdk.Context, keyID tss.KeyID) (tss.Key, bool)
-	GetMultisigSignInfo(ctx sdk.Context, sigID string) (types.MultisigSignInfo, bool)
 }
 
 // Snapshotter provides access to the snapshot functionality
