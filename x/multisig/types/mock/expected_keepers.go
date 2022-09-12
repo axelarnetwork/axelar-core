@@ -10,7 +10,6 @@ import (
 	github_com_axelarnetwork_axelar_core_x_nexus_exported "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 	exported "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingTypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/tendermint/tendermint/libs/log"
@@ -1064,76 +1063,5 @@ func (mock *NexusMock) GetChainsCalls() []struct {
 	mock.lockGetChains.RLock()
 	calls = mock.calls.GetChains
 	mock.lockGetChains.RUnlock()
-	return calls
-}
-
-// Ensure, that TssMock does implement types.Tss.
-// If this is not the case, regenerate this file with moq.
-var _ types.Tss = &TssMock{}
-
-// TssMock is a mock implementation of types.Tss.
-//
-// 	func TestSomethingThatUsesTss(t *testing.T) {
-//
-// 		// make and configure a mocked types.Tss
-// 		mockedTss := &TssMock{
-// 			GetKeyFunc: func(ctx sdk.Context, keyID tss.KeyID) (tss.Key, bool) {
-// 				panic("mock out the GetKey method")
-// 			},
-// 		}
-//
-// 		// use mockedTss in code that requires types.Tss
-// 		// and then make assertions.
-//
-// 	}
-type TssMock struct {
-	// GetKeyFunc mocks the GetKey method.
-	GetKeyFunc func(ctx sdk.Context, keyID tss.KeyID) (tss.Key, bool)
-
-	// calls tracks calls to the methods.
-	calls struct {
-		// GetKey holds details about calls to the GetKey method.
-		GetKey []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// KeyID is the keyID argument value.
-			KeyID tss.KeyID
-		}
-	}
-	lockGetKey sync.RWMutex
-}
-
-// GetKey calls GetKeyFunc.
-func (mock *TssMock) GetKey(ctx sdk.Context, keyID tss.KeyID) (tss.Key, bool) {
-	if mock.GetKeyFunc == nil {
-		panic("TssMock.GetKeyFunc: method is nil but Tss.GetKey was just called")
-	}
-	callInfo := struct {
-		Ctx   sdk.Context
-		KeyID tss.KeyID
-	}{
-		Ctx:   ctx,
-		KeyID: keyID,
-	}
-	mock.lockGetKey.Lock()
-	mock.calls.GetKey = append(mock.calls.GetKey, callInfo)
-	mock.lockGetKey.Unlock()
-	return mock.GetKeyFunc(ctx, keyID)
-}
-
-// GetKeyCalls gets all the calls that were made to GetKey.
-// Check the length with:
-//     len(mockedTss.GetKeyCalls())
-func (mock *TssMock) GetKeyCalls() []struct {
-	Ctx   sdk.Context
-	KeyID tss.KeyID
-} {
-	var calls []struct {
-		Ctx   sdk.Context
-		KeyID tss.KeyID
-	}
-	mock.lockGetKey.RLock()
-	calls = mock.calls.GetKey
-	mock.lockGetKey.RUnlock()
 	return calls
 }

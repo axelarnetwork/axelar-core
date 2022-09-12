@@ -29,16 +29,14 @@ var _ types.QueryServiceServer = Querier{}
 type Querier struct {
 	keeper   types.BaseKeeper
 	nexus    types.Nexus
-	signer   types.Signer
 	multisig types.MultisigKeeper
 }
 
 // NewGRPCQuerier returns a new Querier
-func NewGRPCQuerier(k types.BaseKeeper, n types.Nexus, s types.Signer, multisig types.MultisigKeeper) Querier {
+func NewGRPCQuerier(k types.BaseKeeper, n types.Nexus, multisig types.MultisigKeeper) Querier {
 	return Querier{
 		keeper:   k,
 		nexus:    n,
-		signer:   s,
 		multisig: multisig,
 	}
 }

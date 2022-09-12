@@ -14,7 +14,7 @@ import (
 // The migration includes:
 // - migrate contracts bytecode (CRUCIAL AND DO NOT DELETE) for all evm chains
 // - set TransferLimit parameter
-func GetMigrationHandler(k BaseKeeper, n types.Nexus, s types.Signer, m types.MultisigKeeper) func(ctx sdk.Context) error {
+func GetMigrationHandler(k BaseKeeper, n types.Nexus, m types.MultisigKeeper) func(ctx sdk.Context) error {
 	return func(ctx sdk.Context) error {
 		// migrate contracts bytecode (CRUCIAL AND DO NOT DELETE) for all evm chains
 		for _, chain := range slices.Filter(n.GetChains(ctx), types.IsEVMChain) {

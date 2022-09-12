@@ -17,7 +17,7 @@ func BeginBlocker(_ sdk.Context, _ abci.RequestBeginBlock, _ keeper.Keeper) {}
 
 // EndBlocker called every block, process inflation, update validator set.
 func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, keeper keeper.Keeper, m types.MultiSigKeeper, n types.Nexus) []abci.ValidatorUpdate {
-	if ctx.BlockHeight() > 0 && (ctx.BlockHeight()%keeper.GetHeartbeatPeriodInBlocks(ctx)) == 0 {
+	if ctx.BlockHeight() > 0 && (ctx.BlockHeight()%keeper.GetParams(ctx).HeartbeatPeriodInBlocks) == 0 {
 		emitHeartbeatEvent(ctx, m, n)
 	}
 
