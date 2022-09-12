@@ -801,9 +801,6 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 			Asset:  types.NewAsset(axelarnet.Axelarnet.Name.String(), axelarnet.NativeAsset),
 		}
 		snapshotKeeper := &mock.SnapshotterMock{
-			GetOperatorFunc: func(sdk.Context, sdk.AccAddress) sdk.ValAddress {
-				return rand.ValAddr()
-			},
 			CreateSnapshotFunc: func(sdk.Context, []sdk.ValAddress, func(snapshot.ValidatorI) bool, func(consensusPower sdk.Uint) sdk.Uint, utils.Threshold) (snapshot.Snapshot, error) {
 				return snapshot.Snapshot{}, nil
 			},
@@ -1060,9 +1057,6 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			BurnerAddress: burnerAddress,
 		}
 		snapshotKeeper := &mock.SnapshotterMock{
-			GetOperatorFunc: func(sdk.Context, sdk.AccAddress) sdk.ValAddress {
-				return rand.ValAddr()
-			},
 			CreateSnapshotFunc: func(sdk.Context, []sdk.ValAddress, func(snapshot.ValidatorI) bool, func(consensusPower sdk.Uint) sdk.Uint, utils.Threshold) (snapshot.Snapshot, error) {
 				return snapshot.Snapshot{}, nil
 			},
