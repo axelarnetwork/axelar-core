@@ -121,7 +121,10 @@ type InitPoller = interface {
 }
 
 // Snapshotter provides access to the snapshot functionality
-type Snapshotter = snapshot.Snapshotter
+type Snapshotter interface {
+	CreateSnapshot(ctx sdk.Context, candidates []sdk.ValAddress, filterFunc func(snapshot.ValidatorI) bool, weightFunc func(consensusPower sdk.Uint) sdk.Uint, threshold utils.Threshold) (snapshot.Snapshot, error)
+	GetProxy(ctx sdk.Context, principal sdk.ValAddress) (addr sdk.AccAddress, active bool)
+}
 
 // Rewarder provides reward functionality
 type Rewarder interface {

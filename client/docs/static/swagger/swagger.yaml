@@ -11809,13 +11809,6 @@ paths:
           description: A successful response.
           schema:
             type: object
-            properties:
-              keygen_illegibility:
-                type: integer
-                format: int32
-              signing_illegibility:
-                type: integer
-                format: int32
         default:
           description: An unexpected error response
           schema:
@@ -41433,13 +41426,6 @@ definitions:
           type: string
   axelar.tss.v1beta1.HeartBeatResponse:
     type: object
-    properties:
-      keygen_illegibility:
-        type: integer
-        format: int32
-      signing_illegibility:
-        type: integer
-        format: int32
   cosmos.auth.v1beta1.Params:
     type: object
     properties:

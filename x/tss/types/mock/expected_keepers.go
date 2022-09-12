@@ -4,11 +4,8 @@
 package mock
 
 import (
-	utils "github.com/axelarnetwork/axelar-core/utils"
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	github_com_axelarnetwork_axelar_core_x_nexus_exported "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	github_com_axelarnetwork_axelar_core_x_snapshot_exported "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
-	github_com_axelarnetwork_axelar_core_x_tss_exported "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -96,26 +93,8 @@ var _ types.Snapshotter = &SnapshotterMock{}
 //
 // 		// make and configure a mocked types.Snapshotter
 // 		mockedSnapshotter := &SnapshotterMock{
-// 			CreateSnapshotFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, candidates []github_com_cosmos_cosmos_sdk_types.ValAddress, filterFunc func(github_com_axelarnetwork_axelar_core_x_snapshot_exported.ValidatorI) bool, weightFunc func(consensusPower github_com_cosmos_cosmos_sdk_types.Uint) github_com_cosmos_cosmos_sdk_types.Uint, threshold utils.Threshold) (github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot, error) {
-// 				panic("mock out the CreateSnapshot method")
-// 			},
-// 			GetLatestSnapshotFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot, bool) {
-// 				panic("mock out the GetLatestSnapshot method")
-// 			},
 // 			GetOperatorFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, proxy github_com_cosmos_cosmos_sdk_types.AccAddress) github_com_cosmos_cosmos_sdk_types.ValAddress {
 // 				panic("mock out the GetOperator method")
-// 			},
-// 			GetProxyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, principal github_com_cosmos_cosmos_sdk_types.ValAddress) (github_com_cosmos_cosmos_sdk_types.AccAddress, bool) {
-// 				panic("mock out the GetProxy method")
-// 			},
-// 			GetSnapshotFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, seqNo int64) (github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot, bool) {
-// 				panic("mock out the GetSnapshot method")
-// 			},
-// 			GetValidatorIllegibilityFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_axelarnetwork_axelar_core_x_snapshot_exported.SDKValidator) (github_com_axelarnetwork_axelar_core_x_snapshot_exported.ValidatorIllegibility, error) {
-// 				panic("mock out the GetValidatorIllegibility method")
-// 			},
-// 			TakeSnapshotFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRequirement github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRequirement) (github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot, error) {
-// 				panic("mock out the TakeSnapshot method")
 // 			},
 // 		}
 //
@@ -124,47 +103,11 @@ var _ types.Snapshotter = &SnapshotterMock{}
 //
 // 	}
 type SnapshotterMock struct {
-	// CreateSnapshotFunc mocks the CreateSnapshot method.
-	CreateSnapshotFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, candidates []github_com_cosmos_cosmos_sdk_types.ValAddress, filterFunc func(github_com_axelarnetwork_axelar_core_x_snapshot_exported.ValidatorI) bool, weightFunc func(consensusPower github_com_cosmos_cosmos_sdk_types.Uint) github_com_cosmos_cosmos_sdk_types.Uint, threshold utils.Threshold) (github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot, error)
-
-	// GetLatestSnapshotFunc mocks the GetLatestSnapshot method.
-	GetLatestSnapshotFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot, bool)
-
 	// GetOperatorFunc mocks the GetOperator method.
 	GetOperatorFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, proxy github_com_cosmos_cosmos_sdk_types.AccAddress) github_com_cosmos_cosmos_sdk_types.ValAddress
 
-	// GetProxyFunc mocks the GetProxy method.
-	GetProxyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, principal github_com_cosmos_cosmos_sdk_types.ValAddress) (github_com_cosmos_cosmos_sdk_types.AccAddress, bool)
-
-	// GetSnapshotFunc mocks the GetSnapshot method.
-	GetSnapshotFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, seqNo int64) (github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot, bool)
-
-	// GetValidatorIllegibilityFunc mocks the GetValidatorIllegibility method.
-	GetValidatorIllegibilityFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_axelarnetwork_axelar_core_x_snapshot_exported.SDKValidator) (github_com_axelarnetwork_axelar_core_x_snapshot_exported.ValidatorIllegibility, error)
-
-	// TakeSnapshotFunc mocks the TakeSnapshot method.
-	TakeSnapshotFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRequirement github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRequirement) (github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot, error)
-
 	// calls tracks calls to the methods.
 	calls struct {
-		// CreateSnapshot holds details about calls to the CreateSnapshot method.
-		CreateSnapshot []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Candidates is the candidates argument value.
-			Candidates []github_com_cosmos_cosmos_sdk_types.ValAddress
-			// FilterFunc is the filterFunc argument value.
-			FilterFunc func(github_com_axelarnetwork_axelar_core_x_snapshot_exported.ValidatorI) bool
-			// WeightFunc is the weightFunc argument value.
-			WeightFunc func(consensusPower github_com_cosmos_cosmos_sdk_types.Uint) github_com_cosmos_cosmos_sdk_types.Uint
-			// Threshold is the threshold argument value.
-			Threshold utils.Threshold
-		}
-		// GetLatestSnapshot holds details about calls to the GetLatestSnapshot method.
-		GetLatestSnapshot []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-		}
 		// GetOperator holds details about calls to the GetOperator method.
 		GetOperator []struct {
 			// Ctx is the ctx argument value.
@@ -172,120 +115,8 @@ type SnapshotterMock struct {
 			// Proxy is the proxy argument value.
 			Proxy github_com_cosmos_cosmos_sdk_types.AccAddress
 		}
-		// GetProxy holds details about calls to the GetProxy method.
-		GetProxy []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Principal is the principal argument value.
-			Principal github_com_cosmos_cosmos_sdk_types.ValAddress
-		}
-		// GetSnapshot holds details about calls to the GetSnapshot method.
-		GetSnapshot []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// SeqNo is the seqNo argument value.
-			SeqNo int64
-		}
-		// GetValidatorIllegibility holds details about calls to the GetValidatorIllegibility method.
-		GetValidatorIllegibility []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Validator is the validator argument value.
-			Validator github_com_axelarnetwork_axelar_core_x_snapshot_exported.SDKValidator
-		}
-		// TakeSnapshot holds details about calls to the TakeSnapshot method.
-		TakeSnapshot []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// KeyRequirement is the keyRequirement argument value.
-			KeyRequirement github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRequirement
-		}
 	}
-	lockCreateSnapshot           sync.RWMutex
-	lockGetLatestSnapshot        sync.RWMutex
-	lockGetOperator              sync.RWMutex
-	lockGetProxy                 sync.RWMutex
-	lockGetSnapshot              sync.RWMutex
-	lockGetValidatorIllegibility sync.RWMutex
-	lockTakeSnapshot             sync.RWMutex
-}
-
-// CreateSnapshot calls CreateSnapshotFunc.
-func (mock *SnapshotterMock) CreateSnapshot(ctx github_com_cosmos_cosmos_sdk_types.Context, candidates []github_com_cosmos_cosmos_sdk_types.ValAddress, filterFunc func(github_com_axelarnetwork_axelar_core_x_snapshot_exported.ValidatorI) bool, weightFunc func(consensusPower github_com_cosmos_cosmos_sdk_types.Uint) github_com_cosmos_cosmos_sdk_types.Uint, threshold utils.Threshold) (github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot, error) {
-	if mock.CreateSnapshotFunc == nil {
-		panic("SnapshotterMock.CreateSnapshotFunc: method is nil but Snapshotter.CreateSnapshot was just called")
-	}
-	callInfo := struct {
-		Ctx        github_com_cosmos_cosmos_sdk_types.Context
-		Candidates []github_com_cosmos_cosmos_sdk_types.ValAddress
-		FilterFunc func(github_com_axelarnetwork_axelar_core_x_snapshot_exported.ValidatorI) bool
-		WeightFunc func(consensusPower github_com_cosmos_cosmos_sdk_types.Uint) github_com_cosmos_cosmos_sdk_types.Uint
-		Threshold  utils.Threshold
-	}{
-		Ctx:        ctx,
-		Candidates: candidates,
-		FilterFunc: filterFunc,
-		WeightFunc: weightFunc,
-		Threshold:  threshold,
-	}
-	mock.lockCreateSnapshot.Lock()
-	mock.calls.CreateSnapshot = append(mock.calls.CreateSnapshot, callInfo)
-	mock.lockCreateSnapshot.Unlock()
-	return mock.CreateSnapshotFunc(ctx, candidates, filterFunc, weightFunc, threshold)
-}
-
-// CreateSnapshotCalls gets all the calls that were made to CreateSnapshot.
-// Check the length with:
-//     len(mockedSnapshotter.CreateSnapshotCalls())
-func (mock *SnapshotterMock) CreateSnapshotCalls() []struct {
-	Ctx        github_com_cosmos_cosmos_sdk_types.Context
-	Candidates []github_com_cosmos_cosmos_sdk_types.ValAddress
-	FilterFunc func(github_com_axelarnetwork_axelar_core_x_snapshot_exported.ValidatorI) bool
-	WeightFunc func(consensusPower github_com_cosmos_cosmos_sdk_types.Uint) github_com_cosmos_cosmos_sdk_types.Uint
-	Threshold  utils.Threshold
-} {
-	var calls []struct {
-		Ctx        github_com_cosmos_cosmos_sdk_types.Context
-		Candidates []github_com_cosmos_cosmos_sdk_types.ValAddress
-		FilterFunc func(github_com_axelarnetwork_axelar_core_x_snapshot_exported.ValidatorI) bool
-		WeightFunc func(consensusPower github_com_cosmos_cosmos_sdk_types.Uint) github_com_cosmos_cosmos_sdk_types.Uint
-		Threshold  utils.Threshold
-	}
-	mock.lockCreateSnapshot.RLock()
-	calls = mock.calls.CreateSnapshot
-	mock.lockCreateSnapshot.RUnlock()
-	return calls
-}
-
-// GetLatestSnapshot calls GetLatestSnapshotFunc.
-func (mock *SnapshotterMock) GetLatestSnapshot(ctx github_com_cosmos_cosmos_sdk_types.Context) (github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot, bool) {
-	if mock.GetLatestSnapshotFunc == nil {
-		panic("SnapshotterMock.GetLatestSnapshotFunc: method is nil but Snapshotter.GetLatestSnapshot was just called")
-	}
-	callInfo := struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
-	}{
-		Ctx: ctx,
-	}
-	mock.lockGetLatestSnapshot.Lock()
-	mock.calls.GetLatestSnapshot = append(mock.calls.GetLatestSnapshot, callInfo)
-	mock.lockGetLatestSnapshot.Unlock()
-	return mock.GetLatestSnapshotFunc(ctx)
-}
-
-// GetLatestSnapshotCalls gets all the calls that were made to GetLatestSnapshot.
-// Check the length with:
-//     len(mockedSnapshotter.GetLatestSnapshotCalls())
-func (mock *SnapshotterMock) GetLatestSnapshotCalls() []struct {
-	Ctx github_com_cosmos_cosmos_sdk_types.Context
-} {
-	var calls []struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
-	}
-	mock.lockGetLatestSnapshot.RLock()
-	calls = mock.calls.GetLatestSnapshot
-	mock.lockGetLatestSnapshot.RUnlock()
-	return calls
+	lockGetOperator sync.RWMutex
 }
 
 // GetOperator calls GetOperatorFunc.
@@ -320,146 +151,6 @@ func (mock *SnapshotterMock) GetOperatorCalls() []struct {
 	mock.lockGetOperator.RLock()
 	calls = mock.calls.GetOperator
 	mock.lockGetOperator.RUnlock()
-	return calls
-}
-
-// GetProxy calls GetProxyFunc.
-func (mock *SnapshotterMock) GetProxy(ctx github_com_cosmos_cosmos_sdk_types.Context, principal github_com_cosmos_cosmos_sdk_types.ValAddress) (github_com_cosmos_cosmos_sdk_types.AccAddress, bool) {
-	if mock.GetProxyFunc == nil {
-		panic("SnapshotterMock.GetProxyFunc: method is nil but Snapshotter.GetProxy was just called")
-	}
-	callInfo := struct {
-		Ctx       github_com_cosmos_cosmos_sdk_types.Context
-		Principal github_com_cosmos_cosmos_sdk_types.ValAddress
-	}{
-		Ctx:       ctx,
-		Principal: principal,
-	}
-	mock.lockGetProxy.Lock()
-	mock.calls.GetProxy = append(mock.calls.GetProxy, callInfo)
-	mock.lockGetProxy.Unlock()
-	return mock.GetProxyFunc(ctx, principal)
-}
-
-// GetProxyCalls gets all the calls that were made to GetProxy.
-// Check the length with:
-//     len(mockedSnapshotter.GetProxyCalls())
-func (mock *SnapshotterMock) GetProxyCalls() []struct {
-	Ctx       github_com_cosmos_cosmos_sdk_types.Context
-	Principal github_com_cosmos_cosmos_sdk_types.ValAddress
-} {
-	var calls []struct {
-		Ctx       github_com_cosmos_cosmos_sdk_types.Context
-		Principal github_com_cosmos_cosmos_sdk_types.ValAddress
-	}
-	mock.lockGetProxy.RLock()
-	calls = mock.calls.GetProxy
-	mock.lockGetProxy.RUnlock()
-	return calls
-}
-
-// GetSnapshot calls GetSnapshotFunc.
-func (mock *SnapshotterMock) GetSnapshot(ctx github_com_cosmos_cosmos_sdk_types.Context, seqNo int64) (github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot, bool) {
-	if mock.GetSnapshotFunc == nil {
-		panic("SnapshotterMock.GetSnapshotFunc: method is nil but Snapshotter.GetSnapshot was just called")
-	}
-	callInfo := struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		SeqNo int64
-	}{
-		Ctx:   ctx,
-		SeqNo: seqNo,
-	}
-	mock.lockGetSnapshot.Lock()
-	mock.calls.GetSnapshot = append(mock.calls.GetSnapshot, callInfo)
-	mock.lockGetSnapshot.Unlock()
-	return mock.GetSnapshotFunc(ctx, seqNo)
-}
-
-// GetSnapshotCalls gets all the calls that were made to GetSnapshot.
-// Check the length with:
-//     len(mockedSnapshotter.GetSnapshotCalls())
-func (mock *SnapshotterMock) GetSnapshotCalls() []struct {
-	Ctx   github_com_cosmos_cosmos_sdk_types.Context
-	SeqNo int64
-} {
-	var calls []struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		SeqNo int64
-	}
-	mock.lockGetSnapshot.RLock()
-	calls = mock.calls.GetSnapshot
-	mock.lockGetSnapshot.RUnlock()
-	return calls
-}
-
-// GetValidatorIllegibility calls GetValidatorIllegibilityFunc.
-func (mock *SnapshotterMock) GetValidatorIllegibility(ctx github_com_cosmos_cosmos_sdk_types.Context, validator github_com_axelarnetwork_axelar_core_x_snapshot_exported.SDKValidator) (github_com_axelarnetwork_axelar_core_x_snapshot_exported.ValidatorIllegibility, error) {
-	if mock.GetValidatorIllegibilityFunc == nil {
-		panic("SnapshotterMock.GetValidatorIllegibilityFunc: method is nil but Snapshotter.GetValidatorIllegibility was just called")
-	}
-	callInfo := struct {
-		Ctx       github_com_cosmos_cosmos_sdk_types.Context
-		Validator github_com_axelarnetwork_axelar_core_x_snapshot_exported.SDKValidator
-	}{
-		Ctx:       ctx,
-		Validator: validator,
-	}
-	mock.lockGetValidatorIllegibility.Lock()
-	mock.calls.GetValidatorIllegibility = append(mock.calls.GetValidatorIllegibility, callInfo)
-	mock.lockGetValidatorIllegibility.Unlock()
-	return mock.GetValidatorIllegibilityFunc(ctx, validator)
-}
-
-// GetValidatorIllegibilityCalls gets all the calls that were made to GetValidatorIllegibility.
-// Check the length with:
-//     len(mockedSnapshotter.GetValidatorIllegibilityCalls())
-func (mock *SnapshotterMock) GetValidatorIllegibilityCalls() []struct {
-	Ctx       github_com_cosmos_cosmos_sdk_types.Context
-	Validator github_com_axelarnetwork_axelar_core_x_snapshot_exported.SDKValidator
-} {
-	var calls []struct {
-		Ctx       github_com_cosmos_cosmos_sdk_types.Context
-		Validator github_com_axelarnetwork_axelar_core_x_snapshot_exported.SDKValidator
-	}
-	mock.lockGetValidatorIllegibility.RLock()
-	calls = mock.calls.GetValidatorIllegibility
-	mock.lockGetValidatorIllegibility.RUnlock()
-	return calls
-}
-
-// TakeSnapshot calls TakeSnapshotFunc.
-func (mock *SnapshotterMock) TakeSnapshot(ctx github_com_cosmos_cosmos_sdk_types.Context, keyRequirement github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRequirement) (github_com_axelarnetwork_axelar_core_x_snapshot_exported.Snapshot, error) {
-	if mock.TakeSnapshotFunc == nil {
-		panic("SnapshotterMock.TakeSnapshotFunc: method is nil but Snapshotter.TakeSnapshot was just called")
-	}
-	callInfo := struct {
-		Ctx            github_com_cosmos_cosmos_sdk_types.Context
-		KeyRequirement github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRequirement
-	}{
-		Ctx:            ctx,
-		KeyRequirement: keyRequirement,
-	}
-	mock.lockTakeSnapshot.Lock()
-	mock.calls.TakeSnapshot = append(mock.calls.TakeSnapshot, callInfo)
-	mock.lockTakeSnapshot.Unlock()
-	return mock.TakeSnapshotFunc(ctx, keyRequirement)
-}
-
-// TakeSnapshotCalls gets all the calls that were made to TakeSnapshot.
-// Check the length with:
-//     len(mockedSnapshotter.TakeSnapshotCalls())
-func (mock *SnapshotterMock) TakeSnapshotCalls() []struct {
-	Ctx            github_com_cosmos_cosmos_sdk_types.Context
-	KeyRequirement github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRequirement
-} {
-	var calls []struct {
-		Ctx            github_com_cosmos_cosmos_sdk_types.Context
-		KeyRequirement github_com_axelarnetwork_axelar_core_x_tss_exported.KeyRequirement
-	}
-	mock.lockTakeSnapshot.RLock()
-	calls = mock.calls.TakeSnapshot
-	mock.lockTakeSnapshot.RUnlock()
 	return calls
 }
 

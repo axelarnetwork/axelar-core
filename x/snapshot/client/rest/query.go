@@ -53,23 +53,3 @@ func GetHandlerQueryOperator(cliCtx client.Context) http.HandlerFunc {
 		rest.PostProcessResponse(w, cliCtx, string(res))
 	}
 }
-
-// GetHandlerQuerySnapshot returns the snapshot for a given counter
-func GetHandlerQuerySnapshot(cliCtx client.Context) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
-		if !ok {
-			return
-		}
-		counter := mux.Vars(r)[utils.PathVarCounter]
-
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QInfo, counter), nil)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, sdkerrors.Wrap(err, types.ErrFSnapshot).Error())
-			return
-		}
-
-		rest.PostProcessResponse(w, cliCtx, res)
-	}
-}
