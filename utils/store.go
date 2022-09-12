@@ -36,12 +36,6 @@ type StringKey interface {
 	PrependStr(key string, stringTransformations ...func(string) string) StringKey
 }
 
-// ValidatedProtoMarshaler is a ProtoMarshaler that can also be validated
-type ValidatedProtoMarshaler interface {
-	codec.ProtoMarshaler
-	ValidateBasic() error
-}
-
 // KVStore is a wrapper around the cosmos-sdk KVStore to provide more safety regarding key management and better ease-of-use
 type KVStore struct {
 	sdk.KVStore
@@ -60,16 +54,6 @@ func NewNormalizedStore(store sdk.KVStore, cdc codec.BinaryCodec) KVStore {
 // Deprecated: use SetNewValidated instead
 func (store KVStore) Set(key Key, value codec.ProtoMarshaler) {
 	store.KVStore.Set(key.AsKey(), store.cdc.MustMarshalLengthPrefixed(value))
-}
-
-// SetNewValidated marshals the value and stores it under the given key if it is valid
-func (store KVStore) SetNewValidated(k key.Key, value ValidatedProtoMarshaler) error {
-	if err := value.ValidateBasic(); err != nil {
-		return err
-	}
-
-	store.KVStore.Set(k.Bytes(), store.cdc.MustMarshalLengthPrefixed(value))
-	return nil
 }
 
 // SetNewValidated marshals the value and stores it under the given key if it is valid
