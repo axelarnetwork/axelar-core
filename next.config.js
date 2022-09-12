@@ -1,3 +1,5 @@
+const { createSecureHeaders } = require("next-secure-headers");
+
 const withNextra = require("nextra")({
   theme: "nextra-theme-docs",
   themeConfig: "./theme.config.js",
@@ -6,6 +8,14 @@ const withNextra = require("nextra")({
 });
 
 module.exports = withNextra({
+  headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: createSecureHeaders(),
+      },
+    ];
+  },
   redirects: () => {
     return [
       {
