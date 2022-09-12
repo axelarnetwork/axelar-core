@@ -11,34 +11,29 @@ import (
 )
 
 // Counter is a stateful counter that works with the kv store and starts from zero
-type Counter[T constraints.Unsigned] interface {
-	// Incr increments the counter and returns the value before the increment
-	Incr(ctx sdk.Context) T
-	// Curr returns the current value of the counter
-	Curr(ctx sdk.Context) T
-}
-
-type counter[T constraints.Unsigned] struct {
+type Counter[T constraints.Unsigned] struct {
 	key   key.Key
 	store KVStore
 }
 
 // NewCounter is the constructor for counter
 func NewCounter[T constraints.Unsigned](key key.Key, store KVStore) Counter[T] {
-	return counter[T]{
+	return Counter[T]{
 		key:   key,
 		store: store,
 	}
 }
 
-func (c counter[T]) Incr(ctx sdk.Context) T {
+// Incr increments the counter and returns the value before the increment
+func (c Counter[T]) Incr(ctx sdk.Context) T {
 	curr := c.Curr(ctx)
 	c.store.SetRawNew(c.key, convert.IntToBytes(curr+1))
 
 	return curr
 }
 
-func (c counter[T]) Curr(ctx sdk.Context) T {
+// Curr returns the current value of the counter
+func (c Counter[T]) Curr(ctx sdk.Context) T {
 	bz := c.store.GetRawNew(c.key)
 	if bz == nil {
 		return 0
