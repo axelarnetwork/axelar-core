@@ -9,6 +9,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils/key"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
+	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 )
 
@@ -250,7 +251,10 @@ func (k Keeper) getChainMaintainerState(ctx sdk.Context, chain exported.ChainNam
 }
 
 func (k Keeper) setChainMaintainerState(ctx sdk.Context, maintainerState *types.MaintainerState) {
-	k.getStore(ctx).SetNew(chainMaintainerStatePrefix.Append(key.From(maintainerState.Chain)).Append(key.FromBz(maintainerState.Address.Bytes())), maintainerState)
+	funcs.MustNoErr(
+		k.getStore(ctx).SetNewValidated(
+			chainMaintainerStatePrefix.Append(key.From(maintainerState.Chain)).Append(key.FromBz(maintainerState.Address.Bytes())),
+			maintainerState))
 }
 
 func (k Keeper) deleteChainMaintainerState(ctx sdk.Context, chain exported.ChainName, address sdk.ValAddress) {
