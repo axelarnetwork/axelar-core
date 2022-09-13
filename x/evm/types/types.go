@@ -1683,6 +1683,25 @@ func NewVoteEvents(chain nexus.ChainName, events ...Event) *VoteEvents {
 	}
 }
 
+// ValidateBasic does stateless validation of the object
+func (m VoteEvents) ValidateBasic() error {
+	if err := m.Chain.Validate(); err != nil {
+		return err
+	}
+
+	for _, event := range m.Events {
+		if err := event.ValidateBasic(); err != nil {
+			return err
+		}
+
+		if event.Chain != m.Chain {
+			return fmt.Errorf("events are not from the same source chain")
+		}
+	}
+
+	return nil
+}
+
 // GetMultisigAddressesAndWeights coverts a multisig key to sorted addresses, weights and threshold
 func GetMultisigAddressesAndWeights(key multisig.Key) ([]common.Address, []sdk.Uint, sdk.Uint) {
 	addressWeights, threshold := ParseMultisigKey(key)
