@@ -1028,7 +1028,7 @@ func TestHandleTransferKey(t *testing.T) {
 		Run(t)
 }
 
-func TestHandleLimitNumberOfEventsPerBlock(t *testing.T) {
+func TestHandleConfirmedEvent(t *testing.T) {
 	var (
 		ctx            sdk.Context
 		bk             *mock.BaseKeeperMock
@@ -1089,6 +1089,7 @@ func TestHandleLimitNumberOfEventsPerBlock(t *testing.T) {
 		sourceCk.GetConfirmedEventQueueFunc = func(sdk.Context) utils.KVQueue {
 			return confirmedEventQueue
 		}
+		sourceCk.SetEventFailedFunc = func(sdk.Context, types.EventID) error { return nil }
 	})
 
 	givenConfirmedEventQueue.
@@ -1114,7 +1115,7 @@ func TestHandleLimitNumberOfEventsPerBlock(t *testing.T) {
 					},
 				},
 			}
-			confirmedEventQueue.DequeueUntilFunc = func(value codec.ProtoMarshaler, filter func(value codec.ProtoMarshaler) bool) bool {
+			confirmedEventQueue.DequeueFunc = func(value codec.ProtoMarshaler) bool {
 				bz, _ := event.Marshal()
 				if err := value.Unmarshal(bz); err != nil {
 					panic(err)
@@ -1130,6 +1131,82 @@ func TestHandleLimitNumberOfEventsPerBlock(t *testing.T) {
 			assert.Len(t, destinationCk.EnqueueCommandCalls(), int(sourceCk.GetParams(ctx).EndBlockerLimit))
 		}).
 		Run(t)
+
+	withEvents := func(num int) WhenStatement {
+		return When(fmt.Sprintf("having %d events", num), func() {
+			count := 0
+			confirmedEventQueue.IsEmptyFunc = func() bool { return false }
+			confirmedEventQueue.DequeueFunc = func(value codec.ProtoMarshaler) bool {
+				if count >= num {
+					return false
+				}
+				count++
+
+				event := evmTestUtils.RandomEvent(types.EventConfirmed)
+				switch event.GetEvent().(type) {
+				case *types.Event_ContractCall:
+					e := event.GetEvent().(*types.Event_ContractCall)
+					e.ContractCall.DestinationChain = destinationChainName
+					event.Event = e
+				case *types.Event_ContractCallWithToken:
+					e := event.GetEvent().(*types.Event_ContractCallWithToken)
+					e.ContractCallWithToken.DestinationChain = destinationChainName
+					event.Event = e
+				case *types.Event_TokenSent:
+					e := event.GetEvent().(*types.Event_TokenSent)
+					e.TokenSent.DestinationChain = destinationChainName
+					event.Event = e
+				}
+				bz, _ := event.Marshal()
+				if err := value.Unmarshal(bz); err != nil {
+					panic(err)
+				}
+
+				return true
+			}
+		})
+	}
+
+	eventNums := int(rand.I64Between(1, 10))
+	shouldSetEventFailed := Then("should set event failed", func(t *testing.T) {
+		err := handleConfirmedEvents(ctx, bk, n, multisigKeeper)
+		assert.NoError(t, err)
+		assert.Len(t, sourceCk.SetEventFailedCalls(), eventNums)
+	})
+
+	givenConfirmedEventQueueWithEvents := givenConfirmedEventQueue.
+		When("end blocker limit is set", func() {
+			sourceCk.GetParamsFunc = func(ctx sdk.Context) types.Params {
+				return types.Params{
+					EndBlockerLimit: 50,
+				}
+			}
+		}).
+		When2(withEvents(eventNums))
+
+	givenConfirmedEventQueueWithEvents.
+		When("chain is not registered", func() {
+			n.GetChainFunc = func(sdk.Context, nexus.ChainName) (nexus.Chain, bool) {
+				return nexus.Chain{}, false
+			}
+		}).
+		Then2(shouldSetEventFailed).Run(t)
+
+	givenConfirmedEventQueueWithEvents.
+		When("chain is not activated", func() {
+			n.IsChainActivatedFunc = func(sdk.Context, nexus.Chain) bool {
+				return false
+			}
+		}).
+		Then2(shouldSetEventFailed).Run(t)
+
+	givenConfirmedEventQueueWithEvents.
+		When("gateway is not set", func() {
+			destinationCk.GetGatewayAddressFunc = func(sdk.Context) (types.Address, bool) {
+				return types.Address{}, false
+			}
+		}).
+		Then2(shouldSetEventFailed).Run(t)
 }
 
 func randTransferKeyEvent(chain nexus.ChainName) types.Event {

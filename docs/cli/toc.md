@@ -136,10 +136,8 @@
       - [signing-info \[validator-conspub\]](axelard_query_slashing_signing-info.md)	 - Query a validator's signing information
       - [signing-infos](axelard_query_slashing_signing-infos.md)	 - Query signing information of all validators
     - [snapshot](axelard_query_snapshot.md)	 - Querying commands for the snapshot module
-      - [info \[counter\]](axelard_query_snapshot_info.md)	 - Fetch the snapshot for a given counter
       - [operator \[proxy address\]](axelard_query_snapshot_operator.md)	 - Fetch the operator address associated with \[proxy address\]
       - [proxy \[operator address\]](axelard_query_snapshot_proxy.md)	 - Fetch the proxy address associated with \[operator address\] and status (active/inactive)
-      - [validators](axelard_query_snapshot_validators.md)	 - Fetch the validators and their information
     - [staking](axelard_query_staking.md)	 - Querying commands for the staking module
       - [delegation \[delegator-addr\] \[validator-addr\]](axelard_query_staking_delegation.md)	 - Query a delegation based on address and validator address
       - [delegations \[delegator-addr\]](axelard_query_staking_delegations.md)	 - Query all delegations made by one delegator
@@ -156,19 +154,6 @@
       - [validator \[validator-addr\]](axelard_query_staking_validator.md)	 - Query a validator
       - [validators](axelard_query_staking_validators.md)	 - Query for all validators
     - [tendermint-validator-set \[height\]](axelard_query_tendermint-validator-set.md)	 - Get the full tendermint validator set at given height
-    - [tss](axelard_query_tss.md)	 - Querying commands for the tss module
-      - [active-old-keys \[chain\] \[role\]](axelard_query_tss_active-old-keys.md)	 - Query active old key IDs by validator
-      - [active-old-keys-by-validator \[validator address\]](axelard_query_tss_active-old-keys-by-validator.md)	 - Query active old key IDs by validator
-      - [assignable-key \[chain\] \[role\]](axelard_query_tss_assignable-key.md)	 - Returns the true if a key can be assigned for the next rotation on a given chain and for the given key role
-      - [deactivated-operators](axelard_query_tss_deactivated-operators.md)	 - Fetch the list of deactivated operator addresses
-      - [external-key-id \[chain\]](axelard_query_tss_external-key-id.md)	 - Returns the key IDs of the current external keys for the given chain
-      - [key \[key ID\]](axelard_query_tss_key.md)	 - Query a key by key ID
-      - [key-id \[chain\] \[role\]](axelard_query_tss_key-id.md)	 - Query the keyID using keyChain and keyRole
-      - [key-shares-by-key-id \[key ID\]](axelard_query_tss_key-shares-by-key-id.md)	 - Query key shares information by key ID
-      - [key-shares-by-validator \[validator address\]](axelard_query_tss_key-shares-by-validator.md)	 - Query key shares information by validator
-      - [next-key-id \[chain\] \[role\]](axelard_query_tss_next-key-id.md)	 - Returns the key ID assigned for the next rotation on a given chain and for the given key role
-      - [recover \[validator address\] \[key ID #1\] ... \[key ID #N\]](axelard_query_tss_recover.md)	 - Attempt to recover the shares for the specified key ID
-      - [signature \[sig ID\]](axelard_query_tss_signature.md)	 - Query a signature by sig ID
     - [tx --type=\[hash|acc_seq|signature\] \[hash|acc_seq|signature\]](axelard_query_tx.md)	 - Query for a transaction by hash, "<addr>/<seq>" combination or comma-separated signatures in a committed block
     - [txs](axelard_query_txs.md)	 - Query for paginated transactions that match a set of events
     - [upgrade](axelard_query_upgrade.md)	 - Querying commands for the upgrade module
@@ -207,7 +192,7 @@
       - [register-asset \[chain\] \[denom\]](axelard_tx_axelarnet_register-asset.md)	 - Register a new asset to a cosmos based chain
       - [register-fee-collector \[fee collector\]](axelard_tx_axelarnet_register-fee-collector.md)	 - Register axelarnet fee collector account
       - [register-path \[chain\] \[path\]](axelard_tx_axelarnet_register-path.md)	 - Register an ibc path for a cosmos chain
-      - [retry-failed-transfer \[chain\] \[transfer ID\]](axelard_tx_axelarnet_retry-failed-transfer.md)	 - Retry a failed IBC transfer
+      - [retry-ibc-transfer \[chain\] \[transfer ID\]](axelard_tx_axelarnet_retry-ibc-transfer.md)	 - Retry a failed IBC transfer
       - [route-ibc-transfers](axelard_tx_axelarnet_route-ibc-transfers.md)	 - Routes pending transfers to cosmos chains
     - [bank](axelard_tx_bank.md)	 - Bank transaction subcommands
       - [send \[from_key_or_address\] \[to_address\] \[amount\]](axelard_tx_bank_send.md)	 - Send funds from one account to another. Note, the'--from' flag is

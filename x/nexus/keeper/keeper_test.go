@@ -26,7 +26,6 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
-	. "github.com/axelarnetwork/utils/test"
 )
 
 const maxAmount int64 = 100000000000
@@ -66,78 +65,6 @@ func init() {
 	nexusSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("nexusKey"), sdk.NewKVStoreKey("tNexusKey"), "nexus")
 	keeper = nexusKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("nexus"), nexusSubspace)
 	keeper.SetRouter(addressValidator())
-}
-
-func TestChainKeeper(t *testing.T) {
-	var (
-		ctx sdk.Context
-	)
-
-	repeats := 20
-
-	givenKeeper := Given("nexus keeper", func() {
-		encCfg := app.MakeEncodingConfig()
-		nexusSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("nexusKey"), sdk.NewKVStoreKey("tNexusKey"), "nexus")
-		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
-		k := nexusKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("nexus"), nexusSubspace)
-		k.SetParams(ctx, types.DefaultParams())
-	})
-
-	t.Run("MarkMissingVote", testutils.Func(func(t *testing.T) {
-		var (
-			chain      exported.Chain
-			maintainer sdk.ValAddress
-		)
-
-		givenKeeper.
-			When("chain maintainer exists", func() {
-				maintainer = rand.ValAddr()
-				chain = makeRandomChain(rand.Str(5))
-
-				if err := keeper.AddChainMaintainer(ctx, chain, maintainer); err != nil {
-					panic(err)
-				}
-			}).
-			Then("should mark missing vote", func(t *testing.T) {
-				state := keeper.GetChainState(ctx, chain)
-				state.MarkMissingVote(maintainer, true)
-				keeper.SetChainState(ctx, state)
-
-				maintainerStates := keeper.GetChainMaintainerStates(ctx, chain)
-				assert.Len(t, maintainerStates, 1)
-				assert.Equal(t, maintainer, maintainerStates[0].Address)
-				assert.Equal(t, 1, maintainerStates[0].MissingVotes.CountTrue(100))
-				assert.Equal(t, 0, maintainerStates[0].IncorrectVotes.CountTrue(100))
-			})
-	}).Repeat(repeats))
-
-	t.Run("MarkIncorrectVote", testutils.Func(func(t *testing.T) {
-		var (
-			chain      exported.Chain
-			maintainer sdk.ValAddress
-		)
-
-		givenKeeper.
-			When("chain maintainer exists", func() {
-				maintainer = rand.ValAddr()
-				chain = makeRandomChain(rand.Str(5))
-
-				if err := keeper.AddChainMaintainer(ctx, chain, maintainer); err != nil {
-					panic(err)
-				}
-			}).
-			Then("should mark missing vote", func(t *testing.T) {
-				state := keeper.GetChainState(ctx, chain)
-				state.MarkIncorrectVote(maintainer, true)
-				keeper.SetChainState(ctx, state)
-
-				maintainerStates := keeper.GetChainMaintainerStates(ctx, chain)
-				assert.Len(t, maintainerStates, 1)
-				assert.Equal(t, maintainer, maintainerStates[0].Address)
-				assert.Equal(t, 0, maintainerStates[0].MissingVotes.CountTrue(100))
-				assert.Equal(t, 1, maintainerStates[0].IncorrectVotes.CountTrue(100))
-			})
-	}).Repeat(repeats))
 }
 
 func TestLinkAddress(t *testing.T) {

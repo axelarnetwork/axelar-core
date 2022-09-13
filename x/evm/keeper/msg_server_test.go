@@ -9,6 +9,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/query"
 	paramsKeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 	"github.com/ethereum/go-ethereum/common"
 	evmTypes "github.com/ethereum/go-ethereum/core/types"
@@ -261,8 +262,8 @@ func TestCreateBurnTokens(t *testing.T) {
 		keyID = multisigTestUtils.KeyID()
 
 		evmChainKeeper = &mock.ChainKeeperMock{
-			GetConfirmedDepositsFunc: func(ctx sdk.Context) []types.ERC20Deposit {
-				return []types.ERC20Deposit{}
+			GetConfirmedDepositsPaginatedFunc: func(ctx sdk.Context, pageRequest *query.PageRequest) ([]types.ERC20Deposit, *query.PageResponse, error) {
+				return []types.ERC20Deposit{}, nil, nil
 			},
 			GetChainIDByNetworkFunc: func(ctx sdk.Context, network string) (sdk.Int, bool) {
 				return sdk.NewIntFromBigInt(evmParams.AllCliqueProtocolChanges.ChainID), true
@@ -275,6 +276,9 @@ func TestCreateBurnTokens(t *testing.T) {
 			EnqueueCommandFunc: func(ctx sdk.Context, cmd types.Command) error { return nil },
 			GetChainIDFunc: func(sdk.Context) (sdk.Int, bool) {
 				return sdk.NewInt(rand.PosI64()), true
+			},
+			GetParamsFunc: func(ctx sdk.Context) types.Params {
+				return types.DefaultParams()[0]
 			},
 		}
 		evmBaseKeeper = &mock.BaseKeeperMock{
@@ -339,8 +343,8 @@ func TestCreateBurnTokens(t *testing.T) {
 			}
 		}
 
-		evmChainKeeper.GetConfirmedDepositsFunc = func(ctx sdk.Context) []types.ERC20Deposit {
-			return deposits
+		evmChainKeeper.GetConfirmedDepositsPaginatedFunc = func(ctx sdk.Context, pageRequest *query.PageRequest) ([]types.ERC20Deposit, *query.PageResponse, error) {
+			return deposits, nil, nil
 		}
 		evmChainKeeper.GetBurnerInfoFunc = func(ctx sdk.Context, address types.Address) *types.BurnerInfo {
 			if burnerInfo, ok := burnerInfos[address.Hex()]; ok {
@@ -406,8 +410,8 @@ func TestCreateBurnTokens(t *testing.T) {
 			Salt:             types.Hash(common.HexToHash(rand.HexStr(common.HashLength))),
 		}
 
-		evmChainKeeper.GetConfirmedDepositsFunc = func(ctx sdk.Context) []types.ERC20Deposit {
-			return []types.ERC20Deposit{deposit1, deposit2, deposit3}
+		evmChainKeeper.GetConfirmedDepositsPaginatedFunc = func(ctx sdk.Context, pageRequest *query.PageRequest) ([]types.ERC20Deposit, *query.PageResponse, error) {
+			return []types.ERC20Deposit{deposit1, deposit2, deposit3}, nil, nil
 		}
 		evmChainKeeper.GetBurnerInfoFunc = func(ctx sdk.Context, address types.Address) *types.BurnerInfo {
 			return &burnerInfo
@@ -443,6 +447,7 @@ func TestLink_UnknownChain(t *testing.T) {
 		MinVoterCount:       15,
 		CommandsGasLimit:    5000000,
 		EndBlockerLimit:     50,
+		TransferLimit:       50,
 	})
 
 	recipient := nexus.CrossChainAddress{Address: rand.ValAddr().String(), Chain: axelarnet.Axelarnet}
@@ -479,6 +484,7 @@ func TestLink_NoGateway(t *testing.T) {
 		MinVoterCount:       15,
 		CommandsGasLimit:    5000000,
 		EndBlockerLimit:     50,
+		TransferLimit:       50,
 	})
 
 	recipient := nexus.CrossChainAddress{Address: rand.ValAddr().String(), Chain: axelarnet.Axelarnet}
@@ -795,9 +801,6 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 			Asset:  types.NewAsset(axelarnet.Axelarnet.Name.String(), axelarnet.NativeAsset),
 		}
 		snapshotKeeper := &mock.SnapshotterMock{
-			GetOperatorFunc: func(sdk.Context, sdk.AccAddress) sdk.ValAddress {
-				return rand.ValAddr()
-			},
 			CreateSnapshotFunc: func(sdk.Context, []sdk.ValAddress, func(snapshot.ValidatorI) bool, func(consensusPower sdk.Uint) sdk.Uint, utils.Threshold) (snapshot.Snapshot, error) {
 				return snapshot.Snapshot{}, nil
 			},
@@ -1054,9 +1057,6 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			BurnerAddress: burnerAddress,
 		}
 		snapshotKeeper := &mock.SnapshotterMock{
-			GetOperatorFunc: func(sdk.Context, sdk.AccAddress) sdk.ValAddress {
-				return rand.ValAddr()
-			},
 			CreateSnapshotFunc: func(sdk.Context, []sdk.ValAddress, func(snapshot.ValidatorI) bool, func(consensusPower sdk.Uint) sdk.Uint, utils.Threshold) (snapshot.Snapshot, error) {
 				return snapshot.Snapshot{}, nil
 			},
@@ -1308,7 +1308,11 @@ func TestRetryFailedEvent(t *testing.T) {
 				if !found {
 					return types.Event{}, false
 				}
-				return types.Event{Status: eventStatus}, true
+				return types.Event{
+					Status: eventStatus,
+					Event: &types.Event_ContractCall{
+						ContractCall: &types.EventContractCall{},
+					}}, true
 			}
 		}
 	}
@@ -1412,6 +1416,7 @@ func newKeeper(ctx sdk.Context, chain nexus.ChainName, confHeight int64) types.B
 			Id:   sdk.NewIntFromUint64(uint64(rand.I64Between(1, 10))),
 		}},
 		EndBlockerLimit: 50,
+		TransferLimit:   50,
 	})
 	k.ForChain(chain).SetGateway(ctx, types.Address(common.HexToAddress(gateway)))
 

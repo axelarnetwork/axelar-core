@@ -11,4 +11,6 @@ message Params {
   // IBC packet route timeout window
   uint64 route_timeout_window = 1;
   reserved 2; // transaction_fee_rate was removed in v0.15
+  uint64 transfer_limit = 3;
+  uint64 end_blocker_limit = 4;
 }

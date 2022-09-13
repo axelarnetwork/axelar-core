@@ -3,20 +3,20 @@ package types
 import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/query"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
+	exported "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
-	"github.com/axelarnetwork/axelar-core/x/tss/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
-//go:generate moq -out ./mock/expected_keepers.go -pkg mock . Voter Signer Nexus Snapshotter BaseKeeper ChainKeeper Rewarder StakingKeeper SlashingKeeper MultisigKeeper
+//go:generate moq -out ./mock/expected_keepers.go -pkg mock . Voter Nexus Snapshotter BaseKeeper ChainKeeper Rewarder StakingKeeper SlashingKeeper MultisigKeeper
 
 // BaseKeeper is implemented by this module's base keeper
 type BaseKeeper interface {
@@ -53,7 +53,7 @@ type ChainKeeper interface {
 	SetBurnerInfo(ctx sdk.Context, burnerInfo BurnerInfo)
 	DeleteDeposit(ctx sdk.Context, deposit ERC20Deposit)
 	SetDeposit(ctx sdk.Context, deposit ERC20Deposit, state DepositStatus)
-	GetConfirmedDeposits(ctx sdk.Context) []ERC20Deposit
+	GetConfirmedDepositsPaginated(ctx sdk.Context, pageRequest *query.PageRequest) ([]ERC20Deposit, *query.PageResponse, error)
 	GetNetworkByID(ctx sdk.Context, id sdk.Int) (string, bool)
 	GetChainIDByNetwork(ctx sdk.Context, network string) (sdk.Int, bool)
 	GetVotingThreshold(ctx sdk.Context) (utils.Threshold, bool)
@@ -97,7 +97,7 @@ type Nexus interface {
 	GetRecipient(ctx sdk.Context, sender nexus.CrossChainAddress) (nexus.CrossChainAddress, bool)
 	EnqueueTransfer(ctx sdk.Context, senderChain nexus.Chain, recipient nexus.CrossChainAddress, asset sdk.Coin) (nexus.TransferID, error)
 	EnqueueForTransfer(ctx sdk.Context, sender nexus.CrossChainAddress, amount sdk.Coin) (nexus.TransferID, error)
-	GetTransfersForChain(ctx sdk.Context, chain nexus.Chain, state nexus.TransferState) []nexus.CrossChainTransfer
+	GetTransfersForChainPaginated(ctx sdk.Context, chain nexus.Chain, state nexus.TransferState, pageRequest *query.PageRequest) ([]exported.CrossChainTransfer, *query.PageResponse, error)
 	ArchivePendingTransfer(ctx sdk.Context, transfer nexus.CrossChainTransfer)
 	SetChain(ctx sdk.Context, chain nexus.Chain)
 	GetChains(ctx sdk.Context) []nexus.Chain
@@ -109,8 +109,8 @@ type Nexus interface {
 	GetChainByNativeAsset(ctx sdk.Context, asset string) (chain nexus.Chain, ok bool)
 	ComputeTransferFee(ctx sdk.Context, sourceChain nexus.Chain, destinationChain nexus.Chain, asset sdk.Coin) (sdk.Coin, error)
 	AddTransferFee(ctx sdk.Context, coin sdk.Coin)
-	GetChainState(ctx sdk.Context, chain nexus.Chain) nexus.ChainState
-	SetChainState(ctx sdk.Context, state nexus.ChainState)
+	GetChainMaintainerState(ctx sdk.Context, chain nexus.Chain, address sdk.ValAddress) (nexus.MaintainerState, bool)
+	SetChainMaintainerState(ctx sdk.Context, maintainerState nexus.MaintainerState) error
 }
 
 // InitPoller is a minimal interface to start a poll. This must be a type alias instead of a type definition,
@@ -120,15 +120,11 @@ type InitPoller = interface {
 	InitializePoll(ctx sdk.Context, pollBuilder vote.PollBuilder) (vote.PollID, error)
 }
 
-// Signer provides keygen and signing functionality
-type Signer interface {
-	GetSig(ctx sdk.Context, sigID string) (tss.Signature, tss.SigStatus)
-	GetKey(ctx sdk.Context, keyID tss.KeyID) (tss.Key, bool)
-	GetMultisigSignInfo(ctx sdk.Context, sigID string) (types.MultisigSignInfo, bool)
-}
-
 // Snapshotter provides access to the snapshot functionality
-type Snapshotter = snapshot.Snapshotter
+type Snapshotter interface {
+	CreateSnapshot(ctx sdk.Context, candidates []sdk.ValAddress, filterFunc func(snapshot.ValidatorI) bool, weightFunc func(consensusPower sdk.Uint) sdk.Uint, threshold utils.Threshold) (snapshot.Snapshot, error)
+	GetProxy(ctx sdk.Context, principal sdk.ValAddress) (addr sdk.AccAddress, active bool)
+}
 
 // Rewarder provides reward functionality
 type Rewarder interface {

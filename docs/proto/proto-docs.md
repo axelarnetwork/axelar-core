@@ -4,6 +4,14 @@
 
 ## Table of Contents
 
+- [axelar/axelarnet/v1beta1/events.proto](#axelar/axelarnet/v1beta1/events.proto)
+    - [AxelarTransferCompleted](#axelar.axelarnet.v1beta1.AxelarTransferCompleted)
+    - [FeeCollected](#axelar.axelarnet.v1beta1.FeeCollected)
+    - [IBCTransferCompleted](#axelar.axelarnet.v1beta1.IBCTransferCompleted)
+    - [IBCTransferFailed](#axelar.axelarnet.v1beta1.IBCTransferFailed)
+    - [IBCTransferRetried](#axelar.axelarnet.v1beta1.IBCTransferRetried)
+    - [IBCTransferSent](#axelar.axelarnet.v1beta1.IBCTransferSent)
+  
 - [axelar/axelarnet/v1beta1/params.proto](#axelar/axelarnet/v1beta1/params.proto)
     - [Params](#axelar.axelarnet.v1beta1.Params)
   
@@ -27,21 +35,12 @@
     - [Threshold](#axelar.utils.v1beta1.Threshold)
   
 - [axelar/tss/exported/v1beta1/types.proto](#axelar/tss/exported/v1beta1/types.proto)
-    - [Key](#axelar.tss.exported.v1beta1.Key)
-    - [Key.ECDSAKey](#axelar.tss.exported.v1beta1.Key.ECDSAKey)
-    - [Key.MultisigKey](#axelar.tss.exported.v1beta1.Key.MultisigKey)
     - [KeyRequirement](#axelar.tss.exported.v1beta1.KeyRequirement)
     - [SigKeyPair](#axelar.tss.exported.v1beta1.SigKeyPair)
-    - [SignInfo](#axelar.tss.exported.v1beta1.SignInfo)
-    - [Signature](#axelar.tss.exported.v1beta1.Signature)
-    - [Signature.MultiSig](#axelar.tss.exported.v1beta1.Signature.MultiSig)
-    - [Signature.SingleSig](#axelar.tss.exported.v1beta1.Signature.SingleSig)
   
-    - [AckType](#axelar.tss.exported.v1beta1.AckType)
     - [KeyRole](#axelar.tss.exported.v1beta1.KeyRole)
     - [KeyShareDistributionPolicy](#axelar.tss.exported.v1beta1.KeyShareDistributionPolicy)
     - [KeyType](#axelar.tss.exported.v1beta1.KeyType)
-    - [SigStatus](#axelar.tss.exported.v1beta1.SigStatus)
   
 - [axelar/nexus/exported/v1beta1/types.proto](#axelar/nexus/exported/v1beta1/types.proto)
     - [Asset](#axelar.nexus.exported.v1beta1.Asset)
@@ -123,9 +122,6 @@
     - [Participant](#axelar.snapshot.exported.v1beta1.Participant)
     - [Snapshot](#axelar.snapshot.exported.v1beta1.Snapshot)
     - [Snapshot.ParticipantsEntry](#axelar.snapshot.exported.v1beta1.Snapshot.ParticipantsEntry)
-    - [Validator](#axelar.snapshot.exported.v1beta1.Validator)
-  
-    - [ValidatorIllegibility](#axelar.snapshot.exported.v1beta1.ValidatorIllegibility)
   
 - [axelar/vote/exported/v1beta1/types.proto](#axelar/vote/exported/v1beta1/types.proto)
     - [PollKey](#axelar.vote.exported.v1beta1.PollKey)
@@ -170,6 +166,7 @@
     - [Status](#axelar.evm.v1beta1.Status)
   
 - [axelar/evm/v1beta1/events.proto](#axelar/evm/v1beta1/events.proto)
+    - [BurnCommand](#axelar.evm.v1beta1.BurnCommand)
     - [ChainAdded](#axelar.evm.v1beta1.ChainAdded)
     - [CommandBatchAborted](#axelar.evm.v1beta1.CommandBatchAborted)
     - [CommandBatchSigned](#axelar.evm.v1beta1.CommandBatchSigned)
@@ -177,9 +174,18 @@
     - [ConfirmGatewayTxStarted](#axelar.evm.v1beta1.ConfirmGatewayTxStarted)
     - [ConfirmKeyTransferStarted](#axelar.evm.v1beta1.ConfirmKeyTransferStarted)
     - [ConfirmTokenStarted](#axelar.evm.v1beta1.ConfirmTokenStarted)
+    - [ContractCallApproved](#axelar.evm.v1beta1.ContractCallApproved)
+    - [ContractCallWithMintApproved](#axelar.evm.v1beta1.ContractCallWithMintApproved)
+    - [EVMEventCompleted](#axelar.evm.v1beta1.EVMEventCompleted)
+    - [EVMEventConfirmed](#axelar.evm.v1beta1.EVMEventConfirmed)
+    - [EVMEventFailed](#axelar.evm.v1beta1.EVMEventFailed)
+    - [EVMEventRetryFailed](#axelar.evm.v1beta1.EVMEventRetryFailed)
+    - [MintCommand](#axelar.evm.v1beta1.MintCommand)
     - [NoEventsConfirmed](#axelar.evm.v1beta1.NoEventsConfirmed)
+    - [PollCompleted](#axelar.evm.v1beta1.PollCompleted)
     - [PollExpired](#axelar.evm.v1beta1.PollExpired)
     - [PollFailed](#axelar.evm.v1beta1.PollFailed)
+    - [TokenSent](#axelar.evm.v1beta1.TokenSent)
   
 - [axelar/evm/v1beta1/params.proto](#axelar/evm/v1beta1/params.proto)
     - [Params](#axelar.evm.v1beta1.Params)
@@ -448,34 +454,6 @@
 - [axelar/tss/v1beta1/genesis.proto](#axelar/tss/v1beta1/genesis.proto)
     - [GenesisState](#axelar.tss.v1beta1.GenesisState)
   
-- [axelar/tss/v1beta1/query.proto](#axelar/tss/v1beta1/query.proto)
-    - [AssignableKeyRequest](#axelar.tss.v1beta1.AssignableKeyRequest)
-    - [AssignableKeyResponse](#axelar.tss.v1beta1.AssignableKeyResponse)
-    - [NextKeyIDRequest](#axelar.tss.v1beta1.NextKeyIDRequest)
-    - [NextKeyIDResponse](#axelar.tss.v1beta1.NextKeyIDResponse)
-    - [QueryActiveOldKeysResponse](#axelar.tss.v1beta1.QueryActiveOldKeysResponse)
-    - [QueryActiveOldKeysValidatorResponse](#axelar.tss.v1beta1.QueryActiveOldKeysValidatorResponse)
-    - [QueryActiveOldKeysValidatorResponse.KeyInfo](#axelar.tss.v1beta1.QueryActiveOldKeysValidatorResponse.KeyInfo)
-    - [QueryDeactivatedOperatorsResponse](#axelar.tss.v1beta1.QueryDeactivatedOperatorsResponse)
-    - [QueryExternalKeyIDResponse](#axelar.tss.v1beta1.QueryExternalKeyIDResponse)
-    - [QueryKeyResponse](#axelar.tss.v1beta1.QueryKeyResponse)
-    - [QueryKeyResponse.ECDSAKey](#axelar.tss.v1beta1.QueryKeyResponse.ECDSAKey)
-    - [QueryKeyResponse.Key](#axelar.tss.v1beta1.QueryKeyResponse.Key)
-    - [QueryKeyResponse.MultisigKey](#axelar.tss.v1beta1.QueryKeyResponse.MultisigKey)
-    - [QueryKeyShareResponse](#axelar.tss.v1beta1.QueryKeyShareResponse)
-    - [QueryKeyShareResponse.ShareInfo](#axelar.tss.v1beta1.QueryKeyShareResponse.ShareInfo)
-    - [QueryRecoveryResponse](#axelar.tss.v1beta1.QueryRecoveryResponse)
-    - [QuerySignatureResponse](#axelar.tss.v1beta1.QuerySignatureResponse)
-    - [QuerySignatureResponse.MultisigSignature](#axelar.tss.v1beta1.QuerySignatureResponse.MultisigSignature)
-    - [QuerySignatureResponse.Signature](#axelar.tss.v1beta1.QuerySignatureResponse.Signature)
-    - [QuerySignatureResponse.ThresholdSignature](#axelar.tss.v1beta1.QuerySignatureResponse.ThresholdSignature)
-    - [ValidatorMultisigKeysRequest](#axelar.tss.v1beta1.ValidatorMultisigKeysRequest)
-    - [ValidatorMultisigKeysResponse](#axelar.tss.v1beta1.ValidatorMultisigKeysResponse)
-    - [ValidatorMultisigKeysResponse.Keys](#axelar.tss.v1beta1.ValidatorMultisigKeysResponse.Keys)
-    - [ValidatorMultisigKeysResponse.KeysEntry](#axelar.tss.v1beta1.ValidatorMultisigKeysResponse.KeysEntry)
-  
-    - [VoteStatus](#axelar.tss.v1beta1.VoteStatus)
-  
 - [axelar/tss/v1beta1/tx.proto](#axelar/tss/v1beta1/tx.proto)
     - [HeartBeatRequest](#axelar.tss.v1beta1.HeartBeatRequest)
     - [HeartBeatResponse](#axelar.tss.v1beta1.HeartBeatResponse)
@@ -527,6 +505,131 @@
 
 
 
+<a name="axelar/axelarnet/v1beta1/events.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/axelarnet/v1beta1/events.proto
+
+
+
+<a name="axelar.axelarnet.v1beta1.AxelarTransferCompleted"></a>
+
+### AxelarTransferCompleted
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [uint64](#uint64) |  |  |
+| `receipient` | [string](#string) |  |  |
+| `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+
+
+
+
+
+
+<a name="axelar.axelarnet.v1beta1.FeeCollected"></a>
+
+### FeeCollected
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `collector` | [bytes](#bytes) |  |  |
+| `fee` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+
+
+
+
+
+
+<a name="axelar.axelarnet.v1beta1.IBCTransferCompleted"></a>
+
+### IBCTransferCompleted
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [uint64](#uint64) |  |  |
+| `sequence` | [uint64](#uint64) |  |  |
+| `port_id` | [string](#string) |  |  |
+| `channel_id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.axelarnet.v1beta1.IBCTransferFailed"></a>
+
+### IBCTransferFailed
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [uint64](#uint64) |  |  |
+| `sequence` | [uint64](#uint64) |  |  |
+| `port_id` | [string](#string) |  |  |
+| `channel_id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.axelarnet.v1beta1.IBCTransferRetried"></a>
+
+### IBCTransferRetried
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [uint64](#uint64) |  |  |
+| `receipient` | [string](#string) |  |  |
+| `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+| `sequence` | [uint64](#uint64) |  |  |
+| `port_id` | [string](#string) |  |  |
+| `channel_id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.axelarnet.v1beta1.IBCTransferSent"></a>
+
+### IBCTransferSent
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [uint64](#uint64) |  |  |
+| `receipient` | [string](#string) |  |  |
+| `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+| `sequence` | [uint64](#uint64) |  |  |
+| `port_id` | [string](#string) |  |  |
+| `channel_id` | [string](#string) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
 <a name="axelar/axelarnet/v1beta1/params.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -543,6 +646,8 @@ Params represent the genesis parameters for the module
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `route_timeout_window` | [uint64](#uint64) |  | IBC packet route timeout window |
+| `transfer_limit` | [uint64](#uint64) |  |  |
+| `end_blocker_limit` | [uint64](#uint64) |  |  |
 
 
 
@@ -798,60 +903,6 @@ Params represent the genesis parameters for the module
 
 
 
-<a name="axelar.tss.exported.v1beta1.Key"></a>
-
-### Key
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `id` | [string](#string) |  |  |
-| `role` | [KeyRole](#axelar.tss.exported.v1beta1.KeyRole) |  |  |
-| `type` | [KeyType](#axelar.tss.exported.v1beta1.KeyType) |  |  |
-| `ecdsa_key` | [Key.ECDSAKey](#axelar.tss.exported.v1beta1.Key.ECDSAKey) |  |  |
-| `multisig_key` | [Key.MultisigKey](#axelar.tss.exported.v1beta1.Key.MultisigKey) |  |  |
-| `rotated_at` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
-| `rotation_count` | [int64](#int64) |  |  |
-| `chain` | [string](#string) |  |  |
-| `snapshot_counter` | [int64](#int64) |  |  |
-
-
-
-
-
-
-<a name="axelar.tss.exported.v1beta1.Key.ECDSAKey"></a>
-
-### Key.ECDSAKey
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `value` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="axelar.tss.exported.v1beta1.Key.MultisigKey"></a>
-
-### Key.MultisigKey
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `values` | [bytes](#bytes) | repeated |  |
-| `threshold` | [int64](#int64) |  |  |
-
-
-
-
-
-
 <a name="axelar.tss.exported.v1beta1.KeyRequirement"></a>
 
 ### KeyRequirement
@@ -892,89 +943,7 @@ PubKeyInfo holds a pubkey and a signature
 
 
 
-
-<a name="axelar.tss.exported.v1beta1.SignInfo"></a>
-
-### SignInfo
-SignInfo holds information about a sign request
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `key_id` | [string](#string) |  |  |
-| `sig_id` | [string](#string) |  |  |
-| `msg` | [bytes](#bytes) |  |  |
-| `snapshot_counter` | [int64](#int64) |  |  |
-| `request_module` | [string](#string) |  |  |
-| `metadata` | [string](#string) |  | **Deprecated.**  |
-| `module_metadata` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
-
-
-
-
-
-
-<a name="axelar.tss.exported.v1beta1.Signature"></a>
-
-### Signature
-Signature holds public key and ECDSA signature
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `sig_id` | [string](#string) |  |  |
-| `single_sig` | [Signature.SingleSig](#axelar.tss.exported.v1beta1.Signature.SingleSig) |  |  |
-| `multi_sig` | [Signature.MultiSig](#axelar.tss.exported.v1beta1.Signature.MultiSig) |  |  |
-| `sig_status` | [SigStatus](#axelar.tss.exported.v1beta1.SigStatus) |  |  |
-
-
-
-
-
-
-<a name="axelar.tss.exported.v1beta1.Signature.MultiSig"></a>
-
-### Signature.MultiSig
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `sig_key_pairs` | [SigKeyPair](#axelar.tss.exported.v1beta1.SigKeyPair) | repeated |  |
-
-
-
-
-
-
-<a name="axelar.tss.exported.v1beta1.Signature.SingleSig"></a>
-
-### Signature.SingleSig
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `sig_key_pair` | [SigKeyPair](#axelar.tss.exported.v1beta1.SigKeyPair) |  |  |
-
-
-
-
-
  <!-- end messages -->
-
-
-<a name="axelar.tss.exported.v1beta1.AckType"></a>
-
-### AckType
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| ACK_TYPE_UNSPECIFIED | 0 |  |
-| ACK_TYPE_KEYGEN | 1 |  |
-| ACK_TYPE_SIGN | 2 |  |
-
 
 
 <a name="axelar.tss.exported.v1beta1.KeyRole"></a>
@@ -1015,22 +984,6 @@ Signature holds public key and ECDSA signature
 | KEY_TYPE_NONE | 1 |  |
 | KEY_TYPE_THRESHOLD | 2 |  |
 | KEY_TYPE_MULTISIG | 3 |  |
-
-
-
-<a name="axelar.tss.exported.v1beta1.SigStatus"></a>
-
-### SigStatus
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| SIG_STATUS_UNSPECIFIED | 0 |  |
-| SIG_STATUS_QUEUED | 1 |  |
-| SIG_STATUS_SIGNING | 2 |  |
-| SIG_STATUS_SIGNED | 3 |  |
-| SIG_STATUS_ABORTED | 4 |  |
-| SIG_STATUS_INVALID | 5 |  |
 
 
  <!-- end enums -->
@@ -1238,10 +1191,9 @@ ChainState represents the state of a registered blockchain
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `chain` | [axelar.nexus.exported.v1beta1.Chain](#axelar.nexus.exported.v1beta1.Chain) |  |  |
-| `maintainers` | [bytes](#bytes) | repeated | **Deprecated.**  |
 | `activated` | [bool](#bool) |  |  |
 | `assets` | [axelar.nexus.exported.v1beta1.Asset](#axelar.nexus.exported.v1beta1.Asset) | repeated |  |
-| `maintainer_states` | [MaintainerState](#axelar.nexus.v1beta1.MaintainerState) | repeated |  |
+| `maintainer_states` | [MaintainerState](#axelar.nexus.v1beta1.MaintainerState) | repeated | **Deprecated.**  |
 
 
 
@@ -1275,6 +1227,7 @@ ChainState represents the state of a registered blockchain
 | `address` | [bytes](#bytes) |  |  |
 | `missing_votes` | [axelar.utils.v1beta1.Bitmap](#axelar.utils.v1beta1.Bitmap) |  |  |
 | `incorrect_votes` | [axelar.utils.v1beta1.Bitmap](#axelar.utils.v1beta1.Bitmap) |  |  |
+| `chain` | [string](#string) |  |  |
 
 
 
@@ -2061,11 +2014,6 @@ QueryService defines the gRPC querier service.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `validators` | [Validator](#axelar.snapshot.exported.v1beta1.Validator) | repeated | **Deprecated.**  |
-| `total_share_count` | [bytes](#bytes) |  | **Deprecated.**  |
-| `counter` | [int64](#int64) |  | **Deprecated.**  |
-| `key_share_distribution_policy` | [axelar.tss.exported.v1beta1.KeyShareDistributionPolicy](#axelar.tss.exported.v1beta1.KeyShareDistributionPolicy) |  | **Deprecated.**  |
-| `corruption_threshold` | [int64](#int64) |  | **Deprecated.**  |
 | `timestamp` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
 | `height` | [int64](#int64) |  |  |
 | `participants` | [Snapshot.ParticipantsEntry](#axelar.snapshot.exported.v1beta1.Snapshot.ParticipantsEntry) | repeated |  |
@@ -2091,40 +2039,7 @@ QueryService defines the gRPC querier service.
 
 
 
-
-<a name="axelar.snapshot.exported.v1beta1.Validator"></a>
-
-### Validator
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `sdk_validator` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
-| `share_count` | [int64](#int64) |  |  |
-
-
-
-
-
  <!-- end messages -->
-
-
-<a name="axelar.snapshot.exported.v1beta1.ValidatorIllegibility"></a>
-
-### ValidatorIllegibility
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| VALIDATOR_ILLEGIBILITY_UNSPECIFIED | 0 | these enum values are used for bitwise operations, therefore they need to be powers of 2 |
-| VALIDATOR_ILLEGIBILITY_TOMBSTONED | 1 |  |
-| VALIDATOR_ILLEGIBILITY_JAILED | 2 |  |
-| VALIDATOR_ILLEGIBILITY_MISSED_TOO_MANY_BLOCKS | 4 |  |
-| VALIDATOR_ILLEGIBILITY_NO_PROXY_REGISTERED | 8 |  |
-| VALIDATOR_ILLEGIBILITY_TSS_SUSPENDED | 16 |  |
-| VALIDATOR_ILLEGIBILITY_PROXY_INSUFICIENT_FUNDS | 32 |  |
-
 
  <!-- end enums -->
 
@@ -2770,6 +2685,25 @@ TransferKey contains information for a transfer operatorship
 
 
 
+<a name="axelar.evm.v1beta1.BurnCommand"></a>
+
+### BurnCommand
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `command_id` | [bytes](#bytes) |  |  |
+| `destination_chain` | [string](#string) |  |  |
+| `deposit_address` | [string](#string) |  |  |
+| `asset` | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="axelar.evm.v1beta1.ChainAdded"></a>
 
 ### ChainAdded
@@ -2831,6 +2765,7 @@ TransferKey contains information for a transfer operatorship
 | `token_address` | [bytes](#bytes) |  |  |
 | `confirmation_height` | [uint64](#uint64) |  |  |
 | `participants` | [axelar.vote.exported.v1beta1.PollParticipants](#axelar.vote.exported.v1beta1.PollParticipants) |  |  |
+| `asset` | [string](#string) |  |  |
 
 
 
@@ -2896,9 +2831,157 @@ TransferKey contains information for a transfer operatorship
 
 
 
+<a name="axelar.evm.v1beta1.ContractCallApproved"></a>
+
+### ContractCallApproved
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `event_id` | [string](#string) |  |  |
+| `command_id` | [bytes](#bytes) |  |  |
+| `sender` | [string](#string) |  |  |
+| `destination_chain` | [string](#string) |  |  |
+| `contract_address` | [string](#string) |  |  |
+| `payload_hash` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.ContractCallWithMintApproved"></a>
+
+### ContractCallWithMintApproved
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `event_id` | [string](#string) |  |  |
+| `command_id` | [bytes](#bytes) |  |  |
+| `sender` | [string](#string) |  |  |
+| `destination_chain` | [string](#string) |  |  |
+| `contract_address` | [string](#string) |  |  |
+| `payload_hash` | [bytes](#bytes) |  |  |
+| `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.EVMEventCompleted"></a>
+
+### EVMEventCompleted
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `event_id` | [string](#string) |  |  |
+| `type` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.EVMEventConfirmed"></a>
+
+### EVMEventConfirmed
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `event_id` | [string](#string) |  |  |
+| `type` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.EVMEventFailed"></a>
+
+### EVMEventFailed
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `event_id` | [string](#string) |  |  |
+| `type` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.EVMEventRetryFailed"></a>
+
+### EVMEventRetryFailed
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `event_id` | [string](#string) |  |  |
+| `type` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.MintCommand"></a>
+
+### MintCommand
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `transfer_id` | [uint64](#uint64) |  |  |
+| `command_id` | [bytes](#bytes) |  |  |
+| `destination_chain` | [string](#string) |  |  |
+| `destination_address` | [string](#string) |  |  |
+| `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+
+
+
+
+
+
 <a name="axelar.evm.v1beta1.NoEventsConfirmed"></a>
 
 ### NoEventsConfirmed
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tx_id` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
+| `poll_id` | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.PollCompleted"></a>
+
+### PollCompleted
 
 
 
@@ -2946,6 +3029,27 @@ TransferKey contains information for a transfer operatorship
 
 
 
+
+<a name="axelar.evm.v1beta1.TokenSent"></a>
+
+### TokenSent
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `event_id` | [string](#string) |  |  |
+| `transfer_id` | [uint64](#uint64) |  |  |
+| `sender` | [string](#string) |  |  |
+| `destination_chain` | [string](#string) |  |  |
+| `destination_address` | [string](#string) |  |  |
+| `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+
+
+
+
+
  <!-- end messages -->
 
  <!-- end enums -->
@@ -2983,6 +3087,7 @@ Params is the parameter set for this module
 | `commands_gas_limit` | [uint32](#uint32) |  |  |
 | `voting_grace_period` | [int64](#int64) |  |  |
 | `end_blocker_limit` | [int64](#int64) |  |  |
+| `transfer_limit` | [uint64](#uint64) |  |  |
 
 
 
@@ -5688,7 +5793,6 @@ GenesisState represents the genesis state
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `params` | [Params](#axelar.snapshot.v1beta1.Params) |  |  |
-| `snapshots` | [axelar.snapshot.exported.v1beta1.Snapshot](#axelar.snapshot.exported.v1beta1.Snapshot) | repeated |  |
 | `proxied_validators` | [ProxiedValidator](#axelar.snapshot.v1beta1.ProxiedValidator) | repeated |  |
 
 
@@ -6474,432 +6578,12 @@ KeyInfo holds information about a key
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `params` | [Params](#axelar.tss.v1beta1.Params) |  |  |
-| `key_recovery_infos` | [KeyRecoveryInfo](#axelar.tss.v1beta1.KeyRecoveryInfo) | repeated |  |
-| `keys` | [axelar.tss.exported.v1beta1.Key](#axelar.tss.exported.v1beta1.Key) | repeated |  |
-| `multisig_infos` | [MultisigInfo](#axelar.tss.v1beta1.MultisigInfo) | repeated |  |
-| `external_keys` | [ExternalKeys](#axelar.tss.v1beta1.ExternalKeys) | repeated |  |
-| `signatures` | [axelar.tss.exported.v1beta1.Signature](#axelar.tss.exported.v1beta1.Signature) | repeated |  |
-| `validator_statuses` | [ValidatorStatus](#axelar.tss.v1beta1.ValidatorStatus) | repeated |  |
 
 
 
 
 
  <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
-<a name="axelar/tss/v1beta1/query.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## axelar/tss/v1beta1/query.proto
-
-
-
-<a name="axelar.tss.v1beta1.AssignableKeyRequest"></a>
-
-### AssignableKeyRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `chain` | [string](#string) |  |  |
-| `key_role` | [axelar.tss.exported.v1beta1.KeyRole](#axelar.tss.exported.v1beta1.KeyRole) |  |  |
-
-
-
-
-
-
-<a name="axelar.tss.v1beta1.AssignableKeyResponse"></a>
-
-### AssignableKeyResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `assignable` | [bool](#bool) |  |  |
-
-
-
-
-
-
-<a name="axelar.tss.v1beta1.NextKeyIDRequest"></a>
-
-### NextKeyIDRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `chain` | [string](#string) |  |  |
-| `key_role` | [axelar.tss.exported.v1beta1.KeyRole](#axelar.tss.exported.v1beta1.KeyRole) |  |  |
-
-
-
-
-
-
-<a name="axelar.tss.v1beta1.NextKeyIDResponse"></a>
-
-### NextKeyIDResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `key_id` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="axelar.tss.v1beta1.QueryActiveOldKeysResponse"></a>
-
-### QueryActiveOldKeysResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `key_ids` | [string](#string) | repeated |  |
-
-
-
-
-
-
-<a name="axelar.tss.v1beta1.QueryActiveOldKeysValidatorResponse"></a>
-
-### QueryActiveOldKeysValidatorResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `keys_info` | [QueryActiveOldKeysValidatorResponse.KeyInfo](#axelar.tss.v1beta1.QueryActiveOldKeysValidatorResponse.KeyInfo) | repeated |  |
-
-
-
-
-
-
-<a name="axelar.tss.v1beta1.QueryActiveOldKeysValidatorResponse.KeyInfo"></a>
-
-### QueryActiveOldKeysValidatorResponse.KeyInfo
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `id` | [string](#string) |  |  |
-| `chain` | [string](#string) |  |  |
-| `role` | [int32](#int32) |  |  |
-
-
-
-
-
-
-<a name="axelar.tss.v1beta1.QueryDeactivatedOperatorsResponse"></a>
-
-### QueryDeactivatedOperatorsResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `operator_addresses` | [string](#string) | repeated |  |
-
-
-
-
-
-
-<a name="axelar.tss.v1beta1.QueryExternalKeyIDResponse"></a>
-
-### QueryExternalKeyIDResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `key_ids` | [string](#string) | repeated |  |
-
-
-
-
-
-
-<a name="axelar.tss.v1beta1.QueryKeyResponse"></a>
-
-### QueryKeyResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `ecdsa_key` | [QueryKeyResponse.ECDSAKey](#axelar.tss.v1beta1.QueryKeyResponse.ECDSAKey) |  |  |
-| `multisig_key` | [QueryKeyResponse.MultisigKey](#axelar.tss.v1beta1.QueryKeyResponse.MultisigKey) |  |  |
-| `role` | [axelar.tss.exported.v1beta1.KeyRole](#axelar.tss.exported.v1beta1.KeyRole) |  |  |
-| `rotated_at` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
-
-
-
-
-
-
-<a name="axelar.tss.v1beta1.QueryKeyResponse.ECDSAKey"></a>
-
-### QueryKeyResponse.ECDSAKey
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `vote_status` | [VoteStatus](#axelar.tss.v1beta1.VoteStatus) |  |  |
-| `key` | [QueryKeyResponse.Key](#axelar.tss.v1beta1.QueryKeyResponse.Key) |  |  |
-
-
-
-
-
-
-<a name="axelar.tss.v1beta1.QueryKeyResponse.Key"></a>
-
-### QueryKeyResponse.Key
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `x` | [string](#string) |  |  |
-| `y` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="axelar.tss.v1beta1.QueryKeyResponse.MultisigKey"></a>
-
-### QueryKeyResponse.MultisigKey
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `threshold` | [int64](#int64) |  |  |
-| `key` | [QueryKeyResponse.Key](#axelar.tss.v1beta1.QueryKeyResponse.Key) | repeated |  |
-
-
-
-
-
-
-<a name="axelar.tss.v1beta1.QueryKeyShareResponse"></a>
-
-### QueryKeyShareResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `share_infos` | [QueryKeyShareResponse.ShareInfo](#axelar.tss.v1beta1.QueryKeyShareResponse.ShareInfo) | repeated |  |
-
-
-
-
-
-
-<a name="axelar.tss.v1beta1.QueryKeyShareResponse.ShareInfo"></a>
-
-### QueryKeyShareResponse.ShareInfo
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `key_id` | [string](#string) |  |  |
-| `key_chain` | [string](#string) |  |  |
-| `key_role` | [string](#string) |  |  |
-| `snapshot_block_number` | [int64](#int64) |  |  |
-| `validator_address` | [string](#string) |  |  |
-| `num_validator_shares` | [int64](#int64) |  |  |
-| `num_total_shares` | [int64](#int64) |  |  |
-
-
-
-
-
-
-<a name="axelar.tss.v1beta1.QueryRecoveryResponse"></a>
-
-### QueryRecoveryResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `party_uids` | [string](#string) | repeated |  |
-| `party_share_counts` | [uint32](#uint32) | repeated |  |
-| `threshold` | [uint32](#uint32) |  |  |
-| `keygen_output` | [axelar.tss.tofnd.v1beta1.KeygenOutput](#axelar.tss.tofnd.v1beta1.KeygenOutput) |  |  |
-
-
-
-
-
-
-<a name="axelar.tss.v1beta1.QuerySignatureResponse"></a>
-
-### QuerySignatureResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `threshold_signature` | [QuerySignatureResponse.ThresholdSignature](#axelar.tss.v1beta1.QuerySignatureResponse.ThresholdSignature) |  |  |
-| `multisig_signature` | [QuerySignatureResponse.MultisigSignature](#axelar.tss.v1beta1.QuerySignatureResponse.MultisigSignature) |  |  |
-
-
-
-
-
-
-<a name="axelar.tss.v1beta1.QuerySignatureResponse.MultisigSignature"></a>
-
-### QuerySignatureResponse.MultisigSignature
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `sig_status` | [axelar.tss.exported.v1beta1.SigStatus](#axelar.tss.exported.v1beta1.SigStatus) |  |  |
-| `signatures` | [QuerySignatureResponse.Signature](#axelar.tss.v1beta1.QuerySignatureResponse.Signature) | repeated |  |
-
-
-
-
-
-
-<a name="axelar.tss.v1beta1.QuerySignatureResponse.Signature"></a>
-
-### QuerySignatureResponse.Signature
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `r` | [string](#string) |  |  |
-| `s` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="axelar.tss.v1beta1.QuerySignatureResponse.ThresholdSignature"></a>
-
-### QuerySignatureResponse.ThresholdSignature
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `vote_status` | [VoteStatus](#axelar.tss.v1beta1.VoteStatus) |  |  |
-| `signature` | [QuerySignatureResponse.Signature](#axelar.tss.v1beta1.QuerySignatureResponse.Signature) |  |  |
-
-
-
-
-
-
-<a name="axelar.tss.v1beta1.ValidatorMultisigKeysRequest"></a>
-
-### ValidatorMultisigKeysRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `address` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="axelar.tss.v1beta1.ValidatorMultisigKeysResponse"></a>
-
-### ValidatorMultisigKeysResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `keys` | [ValidatorMultisigKeysResponse.KeysEntry](#axelar.tss.v1beta1.ValidatorMultisigKeysResponse.KeysEntry) | repeated |  |
-
-
-
-
-
-
-<a name="axelar.tss.v1beta1.ValidatorMultisigKeysResponse.Keys"></a>
-
-### ValidatorMultisigKeysResponse.Keys
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `keys` | [bytes](#bytes) | repeated |  |
-
-
-
-
-
-
-<a name="axelar.tss.v1beta1.ValidatorMultisigKeysResponse.KeysEntry"></a>
-
-### ValidatorMultisigKeysResponse.KeysEntry
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `key` | [string](#string) |  |  |
-| `value` | [ValidatorMultisigKeysResponse.Keys](#axelar.tss.v1beta1.ValidatorMultisigKeysResponse.Keys) |  |  |
-
-
-
-
-
- <!-- end messages -->
-
-
-<a name="axelar.tss.v1beta1.VoteStatus"></a>
-
-### VoteStatus
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| VOTE_STATUS_UNSPECIFIED | 0 |  |
-| VOTE_STATUS_NOT_FOUND | 1 |  |
-| VOTE_STATUS_PENDING | 2 |  |
-| VOTE_STATUS_DECIDED | 3 |  |
-
 
  <!-- end enums -->
 
@@ -6936,12 +6620,6 @@ KeyInfo holds information about a key
 
 ### HeartBeatResponse
 
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `keygen_illegibility` | [int32](#int32) |  |  |
-| `signing_illegibility` | [int32](#int32) |  |  |
 
 
 
@@ -7256,9 +6934,6 @@ Query defines the gRPC querier service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `NextKeyID` | [NextKeyIDRequest](#axelar.tss.v1beta1.NextKeyIDRequest) | [NextKeyIDResponse](#axelar.tss.v1beta1.NextKeyIDResponse) | NextKeyID returns the key ID assigned for the next rotation on a given chain and for the given key role | GET|/axelar/tss/v1beta1/next_key_id/{chain}/{key_role}|
-| `AssignableKey` | [AssignableKeyRequest](#axelar.tss.v1beta1.AssignableKeyRequest) | [AssignableKeyResponse](#axelar.tss.v1beta1.AssignableKeyResponse) | AssignableKey returns true if there is no assigned key for the next rotation on a given chain, and false otherwise | GET|/axelar/tss/v1beta1/assignable_key/{chain}/{key_role}|
-| `ValidatorMultisigKeys` | [ValidatorMultisigKeysRequest](#axelar.tss.v1beta1.ValidatorMultisigKeysRequest) | [ValidatorMultisigKeysResponse](#axelar.tss.v1beta1.ValidatorMultisigKeysResponse) | ValidatorMultisigKeys returns the validator's multisig pubkeys corresponding to each active key ID | GET|/axelar/tss/v1beta1/validator_multisig_keys/{address}|
 
  <!-- end services -->
 

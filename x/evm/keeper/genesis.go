@@ -77,7 +77,7 @@ func (k BaseKeeper) getChains(ctx sdk.Context) []types.GenesisState_Chain {
 			Params:              ck.GetParams(ctx),
 			BurnerInfos:         ck.getBurnerInfos(ctx),
 			CommandQueue:        ck.getCommandQueue(ctx).ExportState(),
-			ConfirmedDeposits:   ck.GetConfirmedDeposits(ctx),
+			ConfirmedDeposits:   ck.getConfirmedDeposits(ctx),
 			BurnedDeposits:      ck.getBurnedDeposits(ctx),
 			CommandBatches:      ck.getCommandBatchesMetadata(ctx),
 			Gateway:             ck.getGateway(ctx),

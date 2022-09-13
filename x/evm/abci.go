@@ -10,9 +10,10 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/utils/funcs"
 )
 
-func validateChains(ctx sdk.Context, sourceChainName nexus.ChainName, destinationChainName nexus.ChainName, bk types.BaseKeeper, n types.Nexus) (nexus.Chain, nexus.Chain, error) {
+func validateChains(ctx sdk.Context, sourceChainName nexus.ChainName, destinationChainName nexus.ChainName, n types.Nexus) (nexus.Chain, nexus.Chain, error) {
 	sourceChain, ok := n.GetChain(ctx, sourceChainName)
 	if !ok {
 		panic(fmt.Errorf("%s is not a registered chain", sourceChainName))
@@ -32,7 +33,7 @@ func handleTokenSent(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n 
 		panic(fmt.Errorf("event is nil"))
 	}
 
-	sourceChain, destinationChain, err := validateChains(ctx, event.Chain, e.DestinationChain, bk, n)
+	sourceChain, destinationChain, err := validateChains(ctx, event.Chain, e.DestinationChain, n)
 	if err != nil {
 		bk.Logger(ctx).Info(err.Error())
 		return false
@@ -72,6 +73,16 @@ func handleTokenSent(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n 
 		"transferID", transferID.String(),
 	)
 
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.TokenSent{
+		Chain:              event.Chain,
+		EventID:            event.GetID(),
+		TransferID:         transferID,
+		Sender:             e.Sender.Hex(),
+		DestinationChain:   e.DestinationChain,
+		DestinationAddress: e.DestinationAddress,
+		Asset:              amount,
+	}))
+
 	return true
 }
 
@@ -81,7 +92,7 @@ func handleContractCall(ctx sdk.Context, event types.Event, bk types.BaseKeeper,
 		panic(fmt.Errorf("event is nil"))
 	}
 
-	sourceChain, destinationChain, err := validateChains(ctx, event.Chain, e.DestinationChain, bk, n)
+	sourceChain, destinationChain, err := validateChains(ctx, event.Chain, e.DestinationChain, n)
 	if err != nil {
 		bk.Logger(ctx).Info(err.Error())
 		return false
@@ -126,6 +137,16 @@ func handleContractCall(ctx sdk.Context, event types.Event, bk types.BaseKeeper,
 		"commandID", cmd.ID.Hex(),
 	)
 
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.ContractCallApproved{
+		Chain:            event.Chain,
+		EventID:          event.GetID(),
+		CommandID:        cmd.ID,
+		Sender:           e.Sender.Hex(),
+		DestinationChain: e.DestinationChain,
+		ContractAddress:  e.ContractAddress,
+		PayloadHash:      e.PayloadHash,
+	}))
+
 	return true
 }
 
@@ -135,7 +156,7 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 		panic(fmt.Errorf("event is nil"))
 	}
 
-	sourceChain, destinationChain, err := validateChains(ctx, event.Chain, e.DestinationChain, bk, n)
+	sourceChain, destinationChain, err := validateChains(ctx, event.Chain, e.DestinationChain, n)
 	if err != nil {
 		bk.Logger(ctx).Info(err.Error())
 		return false
@@ -201,6 +222,17 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 		"commandID", cmd.ID.Hex(),
 	)
 
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.ContractCallWithMintApproved{
+		Chain:            event.Chain,
+		EventID:          event.GetID(),
+		CommandID:        cmd.ID,
+		Sender:           e.Sender.Hex(),
+		DestinationChain: e.DestinationChain,
+		ContractAddress:  e.ContractAddress,
+		PayloadHash:      e.PayloadHash,
+		Asset:            sdk.NewCoin(asset, sdk.Int(e.Amount)),
+	}))
+
 	return true
 }
 
@@ -247,7 +279,12 @@ func handleConfirmDeposit(ctx sdk.Context, event types.Event, ck types.ChainKeep
 
 	ck.SetDeposit(ctx, erc20Deposit, types.DepositStatus_Confirmed)
 
-	ck.Logger(ctx).Info(fmt.Sprintf("deposit confirmation result to %s %s", e.To.Hex(), e.Amount), "chain", chain.Name)
+	ck.Logger(ctx).Info(fmt.Sprintf("deposit confirmation result to %s %s", e.To.Hex(), e.Amount),
+		"chain", chain.Name,
+		"depositAddress", depositAddr.Address,
+		"eventID", event.GetID(),
+		"txID", event.TxID.Hex(),
+	)
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeDepositConfirmation,
@@ -262,6 +299,7 @@ func handleConfirmDeposit(ctx sdk.Context, event types.Event, ck types.ChainKeep
 			sdk.NewAttribute(types.AttributeKeyTokenAddress, burnerInfo.TokenAddress.Hex()),
 			sdk.NewAttribute(types.AttributeKeyTxID, event.TxID.Hex()),
 			sdk.NewAttribute(types.AttributeKeyTransferID, transferID.String()),
+			sdk.NewAttribute(types.AttributeKeyEventID, string(event.GetID())),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm),
 		))
 
@@ -290,7 +328,12 @@ func handleTokenDeployed(ctx sdk.Context, event types.Event, ck types.ChainKeepe
 		return false
 	}
 
-	ck.Logger(ctx).Info(fmt.Sprintf("token %s deployment confirmed on chain %s", e.Symbol, chain.Name))
+	ck.Logger(ctx).Info(fmt.Sprintf("token %s deployment confirmed on chain %s", e.Symbol, chain.Name),
+		"chain", chain.Name,
+		"asset", token.GetAsset(),
+		"eventID", event.GetID(),
+		"txID", event.TxID.Hex(),
+	)
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.EventTypeTokenConfirmation,
@@ -300,6 +343,7 @@ func handleTokenDeployed(ctx sdk.Context, event types.Event, ck types.ChainKeepe
 			sdk.NewAttribute(types.AttributeKeySymbol, token.GetDetails().Symbol),
 			sdk.NewAttribute(types.AttributeKeyTokenAddress, token.GetAddress().Hex()),
 			sdk.NewAttribute(types.AttributeKeyTxID, event.TxID.Hex()),
+			sdk.NewAttribute(types.AttributeKeyEventID, string(event.GetID())),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm),
 		))
 
@@ -367,7 +411,9 @@ func handleMultisigTransferKey(ctx sdk.Context, event types.Event, ck types.Chai
 	}
 
 	ck.Logger(ctx).Info(fmt.Sprintf("successfully confirmed key transfer for chain %s", chain.Name),
+		"chain", chain.Name,
 		"txID", event.TxID.Hex(),
+		"eventID", event.GetID(),
 		"keyID", nextKeyID,
 	)
 
@@ -375,6 +421,8 @@ func handleMultisigTransferKey(ctx sdk.Context, event types.Event, ck types.Chai
 		types.EventTypeTransferKeyConfirmation,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 		sdk.NewAttribute(types.AttributeKeyChain, chain.Name.String()),
+		sdk.NewAttribute(types.AttributeKeyTxID, event.TxID.Hex()),
+		sdk.NewAttribute(types.AttributeKeyEventID, string(event.GetID())),
 		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm),
 	))
 
@@ -401,10 +449,16 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 			panic(fmt.Errorf("unsupported event type %T", event))
 		}
 
-		// would handle event as failure if destination chain is not registered
+		// skip if destination chain is not registered
 		destinationChain, ok := n.GetChain(ctx, destinationChainName)
 		if !ok {
-			return true
+			bk.Logger(ctx).Debug(fmt.Sprintf("skipping confirmed event %s due to destination chain is not registered", event.GetID()),
+				"chain", event.Chain.String(),
+				"destination_chain", destinationChainName.String(),
+				"eventID", event.GetID(),
+			)
+
+			return false
 		}
 
 		// skip if destination chain is not activated
@@ -448,8 +502,13 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 		endBlockerLimit := ck.GetParams(ctx).EndBlockerLimit
 		handledEvents := int64(0)
 		var event types.Event
-		for handledEvents < endBlockerLimit && queue.DequeueUntil(&event, shouldHandleEvent) {
+		for handledEvents < endBlockerLimit && queue.Dequeue(&event) {
 			handledEvents++
+			if !shouldHandleEvent(&event) {
+				funcs.MustNoErr(ck.SetEventFailed(ctx, event.GetID()))
+				continue
+			}
+
 			bk.Logger(ctx).Debug("handling confirmed event",
 				"chain", chain.Name.String(),
 				"eventID", event.GetID(),
@@ -480,15 +539,7 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 			}
 
 			if !ok {
-				if err := ck.SetEventFailed(ctx, event.GetID()); err != nil {
-					return err
-				}
-
-				ck.Logger(ctx).Debug("failed handling event",
-					"chain", chain.Name,
-					"eventID", event.GetID(),
-				)
-
+				funcs.MustNoErr(ck.SetEventFailed(ctx, event.GetID()))
 				continue
 			}
 

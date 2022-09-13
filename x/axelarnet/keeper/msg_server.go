@@ -7,6 +7,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/cosmos-sdk/types/query"
 	ibctransfertypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -215,7 +216,18 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, _ *types.ExecutePe
 		return nil, fmt.Errorf("%s is not a registered chain", types.ModuleName)
 	}
 
-	pendingTransfers := s.nexus.GetTransfersForChain(ctx, chain, nexus.Pending)
+	transferLimit := s.Keeper.GetTransferLimit(ctx)
+	pageRequest := &query.PageRequest{
+		Key:        nil,
+		Offset:     0,
+		Limit:      transferLimit,
+		CountTotal: false,
+		Reverse:    false,
+	}
+	pendingTransfers, _, err := s.nexus.GetTransfersForChainPaginated(ctx, chain, nexus.Pending, pageRequest)
+	if err != nil {
+		return nil, err
+	}
 
 	if len(pendingTransfers) == 0 {
 		s.Logger(ctx).Debug("no pending transfers found")
@@ -234,6 +246,14 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, _ *types.ExecutePe
 			s.Logger(ctx).Error("failed to transfer asset to axelarnet", "err", err)
 			continue
 		}
+
+		funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(
+			&types.AxelarTransferCompleted{
+				ID:         pendingTransfer.ID,
+				Receipient: pendingTransfer.Recipient.Address,
+				Asset:      pendingTransfer.Asset,
+			}))
+
 		s.nexus.ArchivePendingTransfer(ctx, pendingTransfer)
 	}
 
@@ -244,6 +264,13 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, _ *types.ExecutePe
 				s.Logger(ctx).Error("failed to collect fees", "err", err)
 				continue
 			}
+
+			funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(
+				&types.FeeCollected{
+					Collector: collector,
+					Fee:       fee,
+				}))
+
 			s.nexus.SubTransferFee(ctx, fee)
 		}
 	}
@@ -345,7 +372,18 @@ func (s msgServer) RouteIBCTransfers(c context.Context, _ *types.RouteIBCTransfe
 		}
 		portID, channelID := pathSplit[0], pathSplit[1]
 
-		pendingTransfers := s.nexus.GetTransfersForChain(ctx, chain, nexus.Pending)
+		transferLimit := s.Keeper.GetTransferLimit(ctx)
+		pageRequest := &query.PageRequest{
+			Key:        nil,
+			Offset:     0,
+			Limit:      transferLimit,
+			CountTotal: false,
+			Reverse:    false,
+		}
+		pendingTransfers, _, err := s.nexus.GetTransfersForChainPaginated(ctx, chain, nexus.Pending, pageRequest)
+		if err != nil {
+			return nil, err
+		}
 		for _, p := range pendingTransfers {
 			token, sender, err := prepareTransfer(ctx, s.Keeper, s.nexus, s.bank, s.account, p.Asset)
 			if err != nil {
@@ -407,6 +445,16 @@ func (s msgServer) RetryIBCTransfer(c context.Context, req *types.RetryIBCTransf
 	}
 
 	funcs.MustNoErr(s.SetTransferPending(ctx, t.ID))
+
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(
+		&types.IBCTransferRetried{
+			ID:         t.ID,
+			Receipient: t.Receiver,
+			Asset:      t.Token,
+			Sequence:   t.Sequence,
+			PortID:     t.PortID,
+			ChannelID:  t.ChannelID,
+		}))
 
 	return &types.RetryIBCTransferResponse{}, nil
 }

@@ -109,6 +109,7 @@ func TestTalliedVote(t *testing.T) {
 
 				assert.True(t, talliedVote.IsVoterLate[voter.String()])
 				assert.Equal(t, sdk.OneUint(), talliedVote.Tally)
+				assert.NoError(t, talliedVote.ValidateBasic())
 			}).
 			Run(t)
 	})

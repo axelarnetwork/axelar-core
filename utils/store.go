@@ -14,6 +14,8 @@ import (
 	"github.com/axelarnetwork/utils/convert"
 )
 
+//go:generate moq -pkg mock -out ./mock/store.go . ValidatedProtoMarshaler
+
 // DefaultDelimiter represents the default delimiter used for the KV store keys
 const DefaultDelimiter = "_"
 
@@ -49,18 +51,28 @@ func NewNormalizedStore(store sdk.KVStore, cdc codec.BinaryCodec) KVStore {
 }
 
 // Set marshals the value and stores it under the given key
-// Deprecated: use SetNew instead
+// Deprecated: use SetNewValidated instead
 func (store KVStore) Set(key Key, value codec.ProtoMarshaler) {
 	store.KVStore.Set(key.AsKey(), store.cdc.MustMarshalLengthPrefixed(value))
 }
 
-// SetNew marshals the value and stores it under the given key
-func (store KVStore) SetNew(k key.Key, value codec.ProtoMarshaler) {
+// SetRawNew stores the value under the given key
+func (store KVStore) SetRawNew(k key.Key, value []byte) {
+	store.KVStore.Set(k.Bytes(), value)
+}
+
+// SetNewValidated marshals the value and stores it under the given key if it is valid
+func (store KVStore) SetNewValidated(k key.Key, value ValidatedProtoMarshaler) error {
+	if err := value.ValidateBasic(); err != nil {
+		return err
+	}
+
 	store.KVStore.Set(k.Bytes(), store.cdc.MustMarshalLengthPrefixed(value))
+	return nil
 }
 
 // SetRaw stores the value under the given key
-// Deprecated: use SetNew instead
+// Deprecated: use SetRawNew instead
 func (store KVStore) SetRaw(key Key, value []byte) {
 	store.KVStore.Set(key.AsKey(), value)
 }
@@ -90,20 +102,37 @@ func (store KVStore) GetNew(key key.Key, value codec.ProtoMarshaler) bool {
 	return true
 }
 
+// GetRawNew returns the raw bytes stored under the given key. Returns nil with key does not exist.
+func (store KVStore) GetRawNew(key key.Key) []byte {
+	return store.KVStore.Get(key.Bytes())
+}
+
 // GetRaw returns the raw bytes stored under the given key. Returns nil with key does not exist.
-// Deprecated: use GetNew instead
+// Deprecated: use GetRawNew instead
 func (store KVStore) GetRaw(key Key) []byte {
 	return store.KVStore.Get(key.AsKey())
 }
 
-// Has returns true if the key exists.
+// Has returns true if the key exists
+// Deprecated: use HasNew instead
 func (store KVStore) Has(key Key) bool {
 	return store.KVStore.Has(key.AsKey())
 }
 
+// HasNew deletes the value stored under the given key, if it exists
+func (store KVStore) HasNew(k key.Key) bool {
+	return store.KVStore.Has(k.Bytes())
+}
+
 // Delete deletes the value stored under the given key, if it exists
+// Deprecated: use DeleteNew instead
 func (store KVStore) Delete(key Key) {
 	store.KVStore.Delete(key.AsKey())
+}
+
+// DeleteNew deletes the value stored under the given key, if it exists
+func (store KVStore) DeleteNew(k key.Key) {
+	store.KVStore.Delete(k.Bytes())
 }
 
 // DeleteRaw deletes the value stored under the given raw key, if it exists

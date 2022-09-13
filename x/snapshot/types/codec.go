@@ -6,9 +6,6 @@ import (
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/msgservice"
-	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-
-	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 )
 
 // RegisterLegacyAminoCodec registers concrete types on codec
@@ -19,10 +16,6 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 
 // RegisterInterfaces registers types and interfaces with the given registry
 func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
-	registry.RegisterInterface("exported.SDKValidator",
-		(*exported.SDKValidator)(nil),
-		&stakingtypes.Validator{},
-	)
 	registry.RegisterImplementations((*sdk.Msg)(nil),
 		&RegisterProxyRequest{},
 		&DeactivateProxyRequest{},

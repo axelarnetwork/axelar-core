@@ -15,6 +15,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils/key"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 )
 
@@ -63,6 +64,22 @@ func (k Keeper) setParams(ctx sdk.Context, p types.Params) {
 func (k Keeper) GetRouteTimeoutWindow(ctx sdk.Context) uint64 {
 	var result uint64
 	k.params.Get(ctx, types.KeyRouteTimeoutWindow, &result)
+
+	return result
+}
+
+// GetTransferLimit returns the transfer limit for transfers processed by axelarnet
+func (k Keeper) GetTransferLimit(ctx sdk.Context) uint64 {
+	var result uint64
+	k.params.Get(ctx, types.KeyTransferLimit, &result)
+
+	return result
+}
+
+// GetEndBlockerLimit returns the transfer limit for IBC transfers routed in the end blocker by axelarnet
+func (k Keeper) GetEndBlockerLimit(ctx sdk.Context) uint64 {
+	var result uint64
+	k.params.Get(ctx, types.KeyEndBlockerLimit, &result)
 
 	return result
 }
@@ -292,7 +309,12 @@ func (k Keeper) SetSeqIDMapping(ctx sdk.Context, t types.IBCTransfer) error {
 			"source port: %s, source channel: %s", t.PortID, t.ChannelID,
 		)
 	}
-	k.getStore(ctx).SetNew(getSeqIDMappingKey(t.PortID, t.ChannelID, nextSeq), &gogoprototypes.UInt64Value{Value: uint64(t.ID)})
+	funcs.MustNoErr(
+		k.getStore(ctx).SetNewValidated(
+			getSeqIDMappingKey(t.PortID, t.ChannelID, nextSeq),
+			utils.NoValidation(&gogoprototypes.UInt64Value{Value: uint64(t.ID)}),
+		),
+	)
 
 	return nil
 }
