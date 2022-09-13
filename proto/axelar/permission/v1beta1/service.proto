@@ -12,24 +12,25 @@ option (gogoproto.goproto_registration) = true;
 
 // Msg defines the gov Msg service.
 service Msg {
-  rpc RegisterController(permission.v1beta1.RegisterControllerRequest)
-      returns (permission.v1beta1.RegisterControllerResponse) {
+  rpc RegisterController(axelar.permission.v1beta1.RegisterControllerRequest)
+      returns (axelar.permission.v1beta1.RegisterControllerResponse) {
     option (google.api.http) = {
       post : "/axelar/permission/register_controller"
       body : "*"
     };
   }
 
-  rpc DeregisterController(permission.v1beta1.DeregisterControllerRequest)
-      returns (permission.v1beta1.DeregisterControllerResponse) {
+  rpc DeregisterController(
+      axelar.permission.v1beta1.DeregisterControllerRequest)
+      returns (axelar.permission.v1beta1.DeregisterControllerResponse) {
     option (google.api.http) = {
       post : "/axelar/permission/deregister_controller"
       body : "*"
     };
   }
 
-  rpc UpdateGovernanceKey(permission.v1beta1.UpdateGovernanceKeyRequest)
-      returns (permission.v1beta1.UpdateGovernanceKeyResponse) {
+  rpc UpdateGovernanceKey(axelar.permission.v1beta1.UpdateGovernanceKeyRequest)
+      returns (axelar.permission.v1beta1.UpdateGovernanceKeyResponse) {
     option (google.api.http) = {
       post : "/axelar/permission/update_governance_key"
       body : "*"
