@@ -32,7 +32,10 @@ func (k Keeper) InitGenesis(ctx sdk.Context, genState *types.GenesisState) {
 
 	sortedKeys := types.SortedMapKeys(genState.SeqIDMapping, strings.Compare)
 	slices.ForEach(sortedKeys, func(seqKey string) {
-		funcs.MustNoErr(k.getStore(ctx).SetNewValidated(key.FromBz([]byte(seqKey)), &gogoprototypes.UInt64Value{Value: genState.SeqIDMapping[seqKey]}))
+		funcs.MustNoErr(k.getStore(ctx).SetNewValidated(
+			key.FromBz([]byte(seqKey)),
+			utils.NoValidation(&gogoprototypes.UInt64Value{Value: genState.SeqIDMapping[seqKey]}),
+		))
 	})
 }
 

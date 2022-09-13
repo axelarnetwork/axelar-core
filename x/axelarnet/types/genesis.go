@@ -38,6 +38,7 @@ func DefaultGenesisState() *GenesisState {
 		}},
 		TransferQueue: utils.QueueState{},
 		IBCTransfers:  nil,
+		SeqIDMapping:  nil,
 	}
 }
 
