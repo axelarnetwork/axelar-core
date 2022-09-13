@@ -173,11 +173,12 @@ func (m IBCTransfer) ValidateBasic() error {
 	return nil
 }
 
+// CoinType on can be ICS20 token, native asset, or wrapped asset from external chains
 type CoinType int
 
 const (
-	Unrecognized = iota
-	Native       = 1 // native token on Axelarnet
-	ICS20        = 2 // from IBC chains
-	External     = 3 // from external chains, e.g. EVM chains
+	Unrecognized = iota // coin type is unrecognized
+	Native       = 1    // native token on Axelarnet
+	ICS20        = 2    // from IBC chains
+	External     = 3    // from external chains, e.g. EVM chains
 )
