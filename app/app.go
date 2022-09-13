@@ -445,7 +445,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	nexusK.SetRouter(nexusRouter)
 
 	ibcK := axelarnetKeeper.NewIBCKeeper(axelarnetK, app.transferKeeper, app.ibcKeeper.ChannelKeeper)
-	axelarnetModule := axelarnet.NewAppModule(axelarnetK, nexusK, bankK, app.transferKeeper, accountK, ibcK, transferModule, logger)
+	axelarnetModule := axelarnet.NewAppModule(axelarnetK, nexusK, bankK, accountK, ibcK, transferModule, logger)
 
 	// Create static IBC router, add transfer route, then set and seal it
 	ibcRouter := porttypes.NewRouter()
