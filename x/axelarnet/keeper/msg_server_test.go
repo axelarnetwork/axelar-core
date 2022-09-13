@@ -42,7 +42,7 @@ func TestHandleMsgLink(t *testing.T) {
 		k.InitGenesis(ctx, types.DefaultGenesisState())
 		nexusK = &mock.NexusMock{}
 		ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{}, &mock.ChannelKeeperMock{})
-		server = keeper.NewMsgServerImpl(k, nexusK, &mock.BankKeeperMock{}, &mock.IBCTransferKeeperMock{}, &mock.AccountKeeperMock{}, ibcK)
+		server = keeper.NewMsgServerImpl(k, nexusK, &mock.BankKeeperMock{}, &mock.AccountKeeperMock{}, ibcK)
 	})
 
 	whenChainIsRegistered := When("chain is registered", func() {
@@ -145,7 +145,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			},
 		}
 		ibcK := keeper.NewIBCKeeper(k, transferK, &mock.ChannelKeeperMock{})
-		server = keeper.NewMsgServerImpl(k, nexusK, bankK, transferK, &mock.AccountKeeperMock{}, ibcK)
+		server = keeper.NewMsgServerImpl(k, nexusK, bankK, &mock.AccountKeeperMock{}, ibcK)
 	})
 
 	recipientIsFound := When("recipient is found", func() {
@@ -401,7 +401,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 			},
 		}
 		ibcK := keeper.NewIBCKeeper(k, transferK, &mock.ChannelKeeperMock{})
-		server = keeper.NewMsgServerImpl(k, nexusK, bankK, transferK, accountK, ibcK)
+		server = keeper.NewMsgServerImpl(k, nexusK, bankK, accountK, ibcK)
 	})
 
 	whenAssetOriginsFromExternalCosmosChain := When("asset is from external cosmos chain", func() {
@@ -577,7 +577,7 @@ func TestHandleMsgRegisterIBCPath(t *testing.T) {
 		ctx, k, _ = setup()
 		k.InitGenesis(ctx, types.DefaultGenesisState())
 		ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{}, &mock.ChannelKeeperMock{})
-		server = keeper.NewMsgServerImpl(k, &mock.NexusMock{}, &mock.BankKeeperMock{}, &mock.IBCTransferKeeperMock{}, &mock.AccountKeeperMock{}, ibcK)
+		server = keeper.NewMsgServerImpl(k, &mock.NexusMock{}, &mock.BankKeeperMock{}, &mock.AccountKeeperMock{}, ibcK)
 	})
 
 	whenChainIsACosmosChain := When("chain is a cosmos chain", func() {
@@ -668,7 +668,7 @@ func TestHandleMsgRouteIBCTransfers(t *testing.T) {
 			},
 		}
 		ibcK := keeper.NewIBCKeeper(k, transferK, &mock.ChannelKeeperMock{})
-		server = keeper.NewMsgServerImpl(k, nexusK, bankK, transferK, accountK, ibcK)
+		server = keeper.NewMsgServerImpl(k, nexusK, bankK, accountK, ibcK)
 	})
 
 	whenAssetOriginsFromExternalCosmosChain := When("asset is from external cosmos chain", func() {
@@ -834,7 +834,7 @@ func TestRetryIBCTransfer(t *testing.T) {
 			return "07-tendermint-0", axelartestutils.ClientState(), nil
 		}
 		ibcK := keeper.NewIBCKeeper(k, i, channelK)
-		server = keeper.NewMsgServerImpl(k, n, b, i, a, ibcK)
+		server = keeper.NewMsgServerImpl(k, n, b, a, ibcK)
 	})
 
 	requestIsMade := When("a retry failed transfer request is made", func() {
