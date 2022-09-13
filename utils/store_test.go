@@ -88,7 +88,7 @@ func TestKVStore_GetNew(t *testing.T) {
 	}
 	emptyState := utils.QueueState{}
 
-	store.SetNew(key.FromStr("key"), &emptyState)
+	assert.NoError(t, store.SetNewValidated(key.FromStr("key"), utils.NoValidation(&emptyState)))
 
 	assert.True(t, store.GetNew(key.FromStr("key"), &filledState))
 	assert.Equal(t, emptyState, filledState)

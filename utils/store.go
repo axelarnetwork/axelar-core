@@ -36,12 +36,6 @@ type StringKey interface {
 	PrependStr(key string, stringTransformations ...func(string) string) StringKey
 }
 
-// ValidatedProtoMarshaler is a ProtoMarshaler that can also be validated
-type ValidatedProtoMarshaler interface {
-	codec.ProtoMarshaler
-	ValidateBasic() error
-}
-
 // KVStore is a wrapper around the cosmos-sdk KVStore to provide more safety regarding key management and better ease-of-use
 type KVStore struct {
 	sdk.KVStore
@@ -57,14 +51,14 @@ func NewNormalizedStore(store sdk.KVStore, cdc codec.BinaryCodec) KVStore {
 }
 
 // Set marshals the value and stores it under the given key
-// Deprecated: use SetNew instead
+// Deprecated: use SetNewValidated instead
 func (store KVStore) Set(key Key, value codec.ProtoMarshaler) {
 	store.KVStore.Set(key.AsKey(), store.cdc.MustMarshalLengthPrefixed(value))
 }
 
-// SetNew marshals the value and stores it under the given key
-func (store KVStore) SetNew(k key.Key, value codec.ProtoMarshaler) {
-	store.KVStore.Set(k.Bytes(), store.cdc.MustMarshalLengthPrefixed(value))
+// SetRawNew stores the value under the given key
+func (store KVStore) SetRawNew(k key.Key, value []byte) {
+	store.KVStore.Set(k.Bytes(), value)
 }
 
 // SetNewValidated marshals the value and stores it under the given key if it is valid
@@ -78,7 +72,7 @@ func (store KVStore) SetNewValidated(k key.Key, value ValidatedProtoMarshaler) e
 }
 
 // SetRaw stores the value under the given key
-// Deprecated: use SetNew instead
+// Deprecated: use SetRawNew instead
 func (store KVStore) SetRaw(key Key, value []byte) {
 	store.KVStore.Set(key.AsKey(), value)
 }
@@ -108,8 +102,13 @@ func (store KVStore) GetNew(key key.Key, value codec.ProtoMarshaler) bool {
 	return true
 }
 
+// GetRawNew returns the raw bytes stored under the given key. Returns nil with key does not exist.
+func (store KVStore) GetRawNew(key key.Key) []byte {
+	return store.KVStore.Get(key.Bytes())
+}
+
 // GetRaw returns the raw bytes stored under the given key. Returns nil with key does not exist.
-// Deprecated: use GetNew instead
+// Deprecated: use GetRawNew instead
 func (store KVStore) GetRaw(key Key) []byte {
 	return store.KVStore.Get(key.AsKey())
 }

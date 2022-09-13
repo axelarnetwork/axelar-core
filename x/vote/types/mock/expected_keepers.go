@@ -6,7 +6,6 @@ package mock
 import (
 	utils "github.com/axelarnetwork/axelar-core/utils"
 	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
-	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	github_com_axelarnetwork_axelar_core_x_vote_exported "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -313,9 +312,6 @@ var _ types.Snapshotter = &SnapshotterMock{}
 // 			GetOperatorFunc: func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress {
 // 				panic("mock out the GetOperator method")
 // 			},
-// 			GetSnapshotFunc: func(context sdk.Context, n int64) (snapshot.Snapshot, bool) {
-// 				panic("mock out the GetSnapshot method")
-// 			},
 // 		}
 //
 // 		// use mockedSnapshotter in code that requires types.Snapshotter
@@ -326,9 +322,6 @@ type SnapshotterMock struct {
 	// GetOperatorFunc mocks the GetOperator method.
 	GetOperatorFunc func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress
 
-	// GetSnapshotFunc mocks the GetSnapshot method.
-	GetSnapshotFunc func(context sdk.Context, n int64) (snapshot.Snapshot, bool)
-
 	// calls tracks calls to the methods.
 	calls struct {
 		// GetOperator holds details about calls to the GetOperator method.
@@ -338,16 +331,8 @@ type SnapshotterMock struct {
 			// Proxy is the proxy argument value.
 			Proxy sdk.AccAddress
 		}
-		// GetSnapshot holds details about calls to the GetSnapshot method.
-		GetSnapshot []struct {
-			// Context is the context argument value.
-			Context sdk.Context
-			// N is the n argument value.
-			N int64
-		}
 	}
 	lockGetOperator sync.RWMutex
-	lockGetSnapshot sync.RWMutex
 }
 
 // GetOperator calls GetOperatorFunc.
@@ -382,41 +367,6 @@ func (mock *SnapshotterMock) GetOperatorCalls() []struct {
 	mock.lockGetOperator.RLock()
 	calls = mock.calls.GetOperator
 	mock.lockGetOperator.RUnlock()
-	return calls
-}
-
-// GetSnapshot calls GetSnapshotFunc.
-func (mock *SnapshotterMock) GetSnapshot(context sdk.Context, n int64) (snapshot.Snapshot, bool) {
-	if mock.GetSnapshotFunc == nil {
-		panic("SnapshotterMock.GetSnapshotFunc: method is nil but Snapshotter.GetSnapshot was just called")
-	}
-	callInfo := struct {
-		Context sdk.Context
-		N       int64
-	}{
-		Context: context,
-		N:       n,
-	}
-	mock.lockGetSnapshot.Lock()
-	mock.calls.GetSnapshot = append(mock.calls.GetSnapshot, callInfo)
-	mock.lockGetSnapshot.Unlock()
-	return mock.GetSnapshotFunc(context, n)
-}
-
-// GetSnapshotCalls gets all the calls that were made to GetSnapshot.
-// Check the length with:
-//     len(mockedSnapshotter.GetSnapshotCalls())
-func (mock *SnapshotterMock) GetSnapshotCalls() []struct {
-	Context sdk.Context
-	N       int64
-} {
-	var calls []struct {
-		Context sdk.Context
-		N       int64
-	}
-	mock.lockGetSnapshot.RLock()
-	calls = mock.calls.GetSnapshot
-	mock.lockGetSnapshot.RUnlock()
 	return calls
 }
 
