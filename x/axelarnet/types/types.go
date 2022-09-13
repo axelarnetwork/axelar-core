@@ -172,3 +172,12 @@ func (m IBCTransfer) ValidateBasic() error {
 
 	return nil
 }
+
+type CoinType int
+
+const (
+	Unrecognized = iota
+	Native       = 1 // native token on Axelarnet
+	ICS20        = 2 // from IBC chains
+	External     = 3 // from external chains, e.g. EVM chains
+)
