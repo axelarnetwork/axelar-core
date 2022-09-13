@@ -90,14 +90,6 @@ func (m GenesisState) Validate() error {
 		}
 	}
 
-	for seqKey, id := range m.SeqIDMapping {
-		if transferIDSeen[id] {
-			return getValidateError(fmt.Errorf("duplicate transfer ID %d for %s", id, seqKey))
-		}
-
-		transferIDSeen[id] = true
-	}
-
 	return nil
 }
 
