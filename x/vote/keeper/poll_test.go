@@ -48,7 +48,7 @@ func TestPoll(t *testing.T) {
 		staking := mock.StakingKeeperMock{}
 		rewarder := mock.RewarderMock{}
 
-		ctx = sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+		ctx = sdk.NewContext(fake.NewMultiStore(), abci.Header{Height: rand.PosI64()}, false, log.TestingLogger())
 		encodingConfig := params.MakeEncodingConfig()
 		types.RegisterLegacyAminoCodec(encodingConfig.Amino)
 		types.RegisterInterfaces(encodingConfig.InterfaceRegistry)
