@@ -1,0 +1,35 @@
+syntax = "proto3";
+package axelar.nexus.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/nexus/types";
+
+import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
+
+message FeeDeducted {
+  uint64 transfer_id = 1 [
+    (gogoproto.customname) = "TransferID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/nexus/exported.TransferID"
+  ];
+  string recipient_chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string recipient_address = 3;
+  cosmos.base.v1beta1.Coin amount = 4 [ (gogoproto.nullable) = false ];
+  cosmos.base.v1beta1.Coin fee = 5 [ (gogoproto.nullable) = false ];
+}
+
+message InsufficientFee {
+  uint64 transfer_id = 1 [
+    (gogoproto.customname) = "TransferID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/nexus/exported.TransferID"
+  ];
+  string recipient_chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string recipient_address = 3;
+  cosmos.base.v1beta1.Coin amount = 4 [ (gogoproto.nullable) = false ];
+  cosmos.base.v1beta1.Coin fee = 5 [ (gogoproto.nullable) = false ];
+}
