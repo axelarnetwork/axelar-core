@@ -76,7 +76,7 @@ func TestGetMigrationHandler(t *testing.T) {
 		}
 
 		transferK := ibctransferkeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("transfer"), transferSubspace, &mock.ChannelKeeperMock{}, &mock.PortKeeperMock{}, accountK, bankK, scopedTransferK)
-		appModule = axelarnet.NewAppModule(k, &mock.NexusMock{}, bankK, &mock.IBCTransferKeeperMock{}, accountK, ibcK, ibctransfer.NewAppModule(transferK), log.TestingLogger())
+		appModule = axelarnet.NewAppModule(k, &mock.NexusMock{}, bankK, accountK, ibcK, ibctransfer.NewAppModule(transferK), log.TestingLogger())
 	})
 
 	fungibleTokenPacket := ibctransfertypes.NewFungibleTokenPacketData(rand.Denom(5, 10), "1", rand.AccAddr().String(), rand.AccAddr().String())
