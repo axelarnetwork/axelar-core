@@ -471,8 +471,9 @@ func (mgr Mgr) getTxReceiptIfFinalized(chain nexus.ChainName, txID common.Hash, 
 	}
 
 	txReceipt, err := client.TransactionReceipt(context.Background(), txID)
+	logger := mgr.logger.With("chain", chain.String(), "tx_ID", txID.Hex(), "conf_height", confHeight)
 	if err == ethereum.NotFound {
-		mgr.logger.Debug(fmt.Sprintf("transaction receipt %s not found", txID.Hex()))
+		logger.Debug(fmt.Sprintf("transaction receipt %s not found", txID.Hex()))
 		return nil, nil
 	}
 	if err != nil {
@@ -485,7 +486,7 @@ func (mgr Mgr) getTxReceiptIfFinalized(chain nexus.ChainName, txID common.Hash, 
 	}
 
 	if latestFinalizedBlockNumber.Cmp(txReceipt.BlockNumber) < 0 {
-		mgr.logger.Debug(fmt.Sprintf("transaction %s in block %s not finalized", txID.Hex(), txReceipt.BlockNumber.String()))
+		logger.Debug(fmt.Sprintf("transaction %s in block %s not finalized", txID.Hex(), txReceipt.BlockNumber.String()))
 		return nil, nil
 	}
 
@@ -496,7 +497,7 @@ func (mgr Mgr) getTxReceiptIfFinalized(chain nexus.ChainName, txID common.Hash, 
 
 	txFound := slices.Any(block.Body().Transactions, func(tx *geth.Transaction) bool { return bytes.Equal(tx.Hash().Bytes(), txReceipt.TxHash.Bytes()) })
 	if !txFound {
-		mgr.logger.Debug(fmt.Sprintf("transaction %s not found in block %s", txID.Hex(), txReceipt.BlockNumber.String()))
+		logger.Debug(fmt.Sprintf("transaction %s not found in block %s", txID.Hex(), txReceipt.BlockNumber.String()))
 		return nil, nil
 	}
 
