@@ -494,7 +494,7 @@ func (mgr Mgr) getTxReceiptIfFinalized(chain nexus.ChainName, txID common.Hash, 
 
 	block, err := client.BlockByNumber(context.Background(), txReceipt.BlockNumber)
 	if err != nil {
-		return nil, sdkerrors.Wrap(errors.With(err, keyvals...), "failed getting block")
+		return nil, sdkerrors.Wrapf(errors.With(err, keyvals...), "failed getting block %d", txReceipt.BlockNumber)
 	}
 
 	txFound := slices.Any(block.Body().Transactions, func(tx *geth.Transaction) bool { return bytes.Equal(tx.Hash().Bytes(), txReceipt.TxHash.Bytes()) })
