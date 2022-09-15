@@ -83,7 +83,7 @@ func (e errorWithKeyVals) KeyVals() []interface{} {
 }
 
 func (e errorWithKeyVals) With(keyvals ...interface{}) ErrWithKeyVals {
-	kvs := make([]interface{}, len(e.keyVals)+len(keyvals), len(e.keyVals))
+	kvs := make([]interface{}, len(e.keyVals), len(e.keyVals)+len(keyvals))
 	copy(kvs, e.keyVals)
 	return errorWithKeyVals{
 		error:   e.error,
