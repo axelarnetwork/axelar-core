@@ -290,7 +290,9 @@ func createJob(sub <-chan tmEvents.ABCIEventWithHeight, processor func(event tmE
 	return func(ctx context.Context) error {
 		processWithLog := func(e tmEvents.ABCIEventWithHeight) {
 			err := processor(tmEvents.Map(e))
-			logger.Error(err.Error(), errors2.KeyVals(err))
+			if err != nil {
+				logger.Error(err.Error(), errors2.KeyVals(err))
+			}
 		}
 		consume := tmEvents.Consume(sub, processWithLog)
 		err := consume(ctx)
@@ -307,7 +309,9 @@ func createJobTyped[T proto.Message](sub <-chan tmEvents.ABCIEventWithHeight, pr
 		processWithLog := func(e tmEvents.ABCIEventWithHeight) {
 			event := funcs.Must(sdk.ParseTypedEvent(e.Event)).(T)
 			err := processor(event)
-			logger.Error(err.Error(), errors2.KeyVals(err))
+			if err != nil {
+				logger.Error(err.Error(), errors2.KeyVals(err))
+			}
 		}
 
 		consume := tmEvents.Consume(sub, processWithLog)
