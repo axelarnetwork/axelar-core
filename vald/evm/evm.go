@@ -472,7 +472,7 @@ func (mgr Mgr) getTxReceiptIfFinalized(chain nexus.ChainName, txID common.Hash, 
 	}
 
 	txReceipt, err := client.TransactionReceipt(context.Background(), txID)
-	keyvals := []interface{}{"chain", chain.String(), "tx_ID", txID.Hex(), "conf_height", confHeight}
+	keyvals := []interface{}{"chain", chain.String(), "tx_id", txID.Hex()}
 	logger := mgr.logger.With(keyvals...)
 	if err == ethereum.NotFound {
 		logger.Debug(fmt.Sprintf("transaction receipt %s not found", txID.Hex()))
