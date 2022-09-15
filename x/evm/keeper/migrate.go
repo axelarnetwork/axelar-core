@@ -11,19 +11,8 @@ import (
 )
 
 // Migrate5To6 returns the handler that performs in-place store migrations
-// The migration includes:
-// -
-// - set TransferLimit parameter
 func Migrate5To6(k BaseKeeper, n types.Nexus) func(ctx sdk.Context) error {
 	return func(ctx sdk.Context) error {
-		// set TransferLimit param
-		for _, chain := range slices.Filter(n.GetChains(ctx), types.IsEVMChain) {
-			ck := k.ForChain(chain.Name).(chainKeeper)
-			if err := addTransferLimitParam(ctx, ck); err != nil {
-				return err
-			}
-		}
-
 		return nil
 	}
 }
