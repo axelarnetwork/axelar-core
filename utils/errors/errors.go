@@ -95,7 +95,7 @@ func (e errorWithKeyVals) With(keyvals ...interface{}) ErrWithKeyVals {
 func With(err error, keyvals ...interface{}) ErrWithKeyVals {
 	return errorWithKeyVals{
 		error:   err,
-		keyVals: keyvals,
+		keyVals: append(KeyVals(err), keyvals...),
 	}
 }
 
