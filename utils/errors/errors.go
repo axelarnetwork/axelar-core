@@ -54,6 +54,7 @@ func (r ServerWithSDKErrors) RegisterService(sd *grpc2.ServiceDesc, server inter
 	r.Server.RegisterService(sd, server)
 }
 
+// ErrWithKeyVals is an error with additional capabilities for easier logging
 type ErrWithKeyVals interface {
 	error
 	KeyVals() []interface{}
@@ -90,6 +91,7 @@ func (e errorWithKeyVals) With(keyvals ...interface{}) ErrWithKeyVals {
 	}
 }
 
+// With returns an error with attached key values for logging
 func With(err error, keyvals ...interface{}) ErrWithKeyVals {
 	return errorWithKeyVals{
 		error:   err,
@@ -97,6 +99,7 @@ func With(err error, keyvals ...interface{}) ErrWithKeyVals {
 	}
 }
 
+// KeyVals returns key values if error is a (wrapped) ErrWithKeyVals, nil otherwise
 func KeyVals(err error) []interface{} {
 	switch e := err.(type) {
 	case errorWithKeyVals:
