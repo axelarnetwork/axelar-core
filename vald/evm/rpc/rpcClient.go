@@ -106,7 +106,7 @@ func NewClient(url string) (Client, error) {
 		return nil, sdkerrors.Wrapf(err, "cannot query latest block number with the given EVM JSON-RPC url %s", url)
 	}
 
-	moonbeamClient := MoonbeamClientImpl{
+	moonbeamClient := &MoonbeamClientImpl{
 		Client: evmClient,
 		url:    url,
 	}
@@ -114,11 +114,13 @@ func NewClient(url string) (Client, error) {
 		return moonbeamClient, nil
 	}
 
-	eth2Client := Eth2ClientImpl{
+	eth2Client := &Eth2ClientImpl{
 		Client: evmClient,
 		url:    url,
 	}
+	if _, err := eth2Client.FinalizedHeader(context.Background()); err == nil {
+		return eth2Client, nil
+	}
 
-	// TODO: not return a eth2 client after the merge is settled on ethereum mainnet
-	return eth2Client, nil
+	return evmClient, nil
 }
