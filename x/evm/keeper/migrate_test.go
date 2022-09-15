@@ -54,7 +54,7 @@ func TestGetMigrationHandler(t *testing.T) {
 			},
 		}
 
-		handler = GetMigrationHandler(keeper, &nexus, &mock.MultisigKeeperMock{})
+		handler = Migrate5To6(keeper, &nexus)
 	})
 
 	givenMigrationHandler.
