@@ -319,6 +319,10 @@
     - [MsgService](#axelar.multisig.v1beta1.MsgService)
     - [QueryService](#axelar.multisig.v1beta1.QueryService)
   
+- [axelar/nexus/v1beta1/events.proto](#axelar/nexus/v1beta1/events.proto)
+    - [FeeDeducted](#axelar.nexus.v1beta1.FeeDeducted)
+    - [InsufficientFee](#axelar.nexus.v1beta1.InsufficientFee)
+  
 - [axelar/nexus/v1beta1/params.proto](#axelar/nexus/v1beta1/params.proto)
     - [Params](#axelar.nexus.v1beta1.Params)
   
@@ -4959,6 +4963,60 @@ Query defines the gRPC querier service.
 | `NextKeyID` | [NextKeyIDRequest](#axelar.multisig.v1beta1.NextKeyIDRequest) | [NextKeyIDResponse](#axelar.multisig.v1beta1.NextKeyIDResponse) | NextKeyID returns the key ID assigned for the next rotation on a given chain. If no key rotation is in progress, it returns the grpc NOT_FOUND error. | GET|/axelar/multisig/v1beta1/next_key_id/{chain}|
 | `Key` | [KeyRequest](#axelar.multisig.v1beta1.KeyRequest) | [KeyResponse](#axelar.multisig.v1beta1.KeyResponse) | Key returns the key corresponding to a given key ID. If no key is found, it returns the grpc NOT_FOUND error. | GET|/axelar/multisig/v1beta1/key|
 | `KeygenSession` | [KeygenSessionRequest](#axelar.multisig.v1beta1.KeygenSessionRequest) | [KeygenSessionResponse](#axelar.multisig.v1beta1.KeygenSessionResponse) | KeygenSession returns the keygen session info for a given key ID. If no key is found, it returns the grpc NOT_FOUND error. | GET|/axelar/multisig/v1beta1/keygen_session|
+
+ <!-- end services -->
+
+
+
+<a name="axelar/nexus/v1beta1/events.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/nexus/v1beta1/events.proto
+
+
+
+<a name="axelar.nexus.v1beta1.FeeDeducted"></a>
+
+### FeeDeducted
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `transfer_id` | [uint64](#uint64) |  |  |
+| `recipient_chain` | [string](#string) |  |  |
+| `recipient_address` | [string](#string) |  |  |
+| `amount` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+| `fee` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+
+
+
+
+
+
+<a name="axelar.nexus.v1beta1.InsufficientFee"></a>
+
+### InsufficientFee
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `transfer_id` | [uint64](#uint64) |  |  |
+| `recipient_chain` | [string](#string) |  |  |
+| `recipient_address` | [string](#string) |  |  |
+| `amount` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+| `fee` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
 
  <!-- end services -->
 

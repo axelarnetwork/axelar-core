@@ -95,14 +95,13 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 // AppModule implements module.AppModule
 type AppModule struct {
 	AppModuleBasic
-	logger   log.Logger
-	keeper   keeper.Keeper
-	nexus    types.Nexus
-	bank     types.BankKeeper
-	transfer types.IBCTransferKeeper
-	channel  types.ChannelKeeper
-	account  types.AccountKeeper
-	ibcK     keeper.IBCKeeper
+	logger  log.Logger
+	keeper  keeper.Keeper
+	nexus   types.Nexus
+	bank    types.BankKeeper
+	channel types.ChannelKeeper
+	account types.AccountKeeper
+	ibcK    keeper.IBCKeeper
 
 	transferModule transfer.AppModule
 }
@@ -112,7 +111,6 @@ func NewAppModule(
 	k keeper.Keeper,
 	nexus types.Nexus,
 	bank types.BankKeeper,
-	transfer types.IBCTransferKeeper,
 	account types.AccountKeeper,
 	ibcK keeper.IBCKeeper,
 	transferModule transfer.AppModule,
@@ -123,7 +121,6 @@ func NewAppModule(
 		keeper:         k,
 		nexus:          nexus,
 		bank:           bank,
-		transfer:       transfer,
 		account:        account,
 		ibcK:           ibcK,
 		transferModule: transferModule,
@@ -154,7 +151,7 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.Raw
 
 // Route returns the module's route
 func (am AppModule) Route() sdk.Route {
-	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper, am.nexus, am.bank, am.transfer, am.account, am.ibcK))
+	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper, am.nexus, am.bank, am.account, am.ibcK))
 }
 
 // QuerierRoute returns this module's query route
