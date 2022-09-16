@@ -1,3 +1,18 @@
 {
-  "cli": "CLI"
+  "intro": {
+    "title": "Intro",
+    "type": "doc"
+  },
+  "network": {
+    "title": "Network",
+    "type": "doc"
+  },
+  "validators": {
+    "title": "Registering external chains for validators",
+    "type": "doc"
+  },
+  "cli": {
+    "title": "CLI",
+    "type": "doc"
+  }
 }
