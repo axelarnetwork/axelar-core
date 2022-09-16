@@ -44,6 +44,10 @@ func (c coin) Lock(bankK types.BankKeeper, depositAddr sdk.AccAddress) error {
 			return err
 		}
 
+		if !ics20.Equal(bankK.GetBalance(c.ctx, depositAddr, ics20.GetDenom())) {
+			return fmt.Errorf("balance does not match expected %s", ics20)
+		}
+
 		// lock tokens in escrow address
 		escrowAddress := types.GetEscrowAddress(c.Denom)
 		if err := bankK.SendCoins(

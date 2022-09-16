@@ -60,6 +60,14 @@ func TestCoin(t *testing.T) {
 		bankK.SendCoinsFunc = func(sdk.Context, sdk.AccAddress, sdk.AccAddress, sdk.Coins) error {
 			return nil
 		}
+		bankK.GetBalanceFunc = func(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin {
+			switch coin.coinType {
+			case types.ICS20:
+				return funcs.Must(coin.toICS20(coin.Denom))
+			default:
+				return coin.Coin
+			}
+		}
 	})
 
 	whenCoinIsNative := When("coin is native", func() {

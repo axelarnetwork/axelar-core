@@ -177,8 +177,12 @@ func (m IBCTransfer) ValidateBasic() error {
 type CoinType int
 
 const (
-	Unrecognized = iota // coin type is unrecognized
-	Native       = 1    // native token on Axelarnet
-	ICS20        = 2    // from IBC chains
-	External     = 3    // from external chains, e.g. EVM chains
+	// Unrecognized means coin type is unrecognized
+	Unrecognized = iota
+	// Native means native token on Axelarnet
+	Native = 1
+	// ICS20 means coin from IBC chains
+	ICS20 = 2
+	// External means from external chains, such as EVM chains
+	External = 3
 )
