@@ -15,32 +15,31 @@ import (
 type coin struct {
 	sdk.Coin
 	ctx      sdk.Context
-	k        Keeper
+	ibcK     IBCKeeper
 	nexusK   types.Nexus
 	coinType types.CoinType
 }
 
-func newCoin(ctx sdk.Context, k Keeper, nexusK types.Nexus, c sdk.Coin) coin {
-	return coin{
+// newCoin creates a coin struct, assign a coin type and normalize the denom if it's a ICS20 token
+func newCoin(ctx sdk.Context, ibcK IBCKeeper, nexusK types.Nexus, c sdk.Coin) (coin, error) {
+	c2 := coin{
 		Coin:     c,
 		ctx:      ctx,
-		k:        k,
+		ibcK:     ibcK,
 		nexusK:   nexusK,
 		coinType: getCoinType(ctx, nexusK, c.Denom),
 	}
+	err := c2.normalizeDenom()
+
+	return c2, err
 }
 
-// lock locks coin from deposit address to escrow address
-func (c coin) lock(ibcK IBCKeeper, bankK types.BankKeeper, depositAddr sdk.AccAddress) error {
+// Lock locks coin from deposit address to escrow address
+func (c coin) Lock(bankK types.BankKeeper, depositAddr sdk.AccAddress) error {
 	switch c.coinType {
 	case types.ICS20:
-		// get base denomination and tracing path
-		denomTrace, err := ibcK.ParseIBCDenom(c.ctx, c.Denom)
-		if err != nil {
-			return err
-		}
-
-		err = c.validateDenomTrace(denomTrace)
+		// convert to IBC denom
+		ics20, err := c.toICS20(c.GetDenom())
 		if err != nil {
 			return err
 		}
@@ -48,7 +47,7 @@ func (c coin) lock(ibcK IBCKeeper, bankK types.BankKeeper, depositAddr sdk.AccAd
 		// lock tokens in escrow address
 		escrowAddress := types.GetEscrowAddress(c.Denom)
 		if err := bankK.SendCoins(
-			c.ctx, depositAddr, escrowAddress, sdk.NewCoins(c.Coin),
+			c.ctx, depositAddr, escrowAddress, sdk.NewCoins(ics20),
 		); err != nil {
 			return err
 		}
@@ -79,43 +78,48 @@ func (c coin) lock(ibcK IBCKeeper, bankK types.BankKeeper, depositAddr sdk.AccAd
 	return nil
 }
 
-func (c coin) normalizeDenom(ibcK IBCKeeper) (sdk.Coin, error) {
-	switch c.coinType {
-	case types.ICS20:
-		// get base denomination and tracing path
-		denomTrace, err := ibcK.ParseIBCDenom(c.ctx, c.Denom)
-		if err != nil {
-			return sdk.Coin{}, err
-		}
-
-		// convert denomination from 'ibc/{hash}' to native asset that recognized by nexus module
-		return sdk.NewCoin(denomTrace.GetBaseDenom(), c.Amount), nil
-	default:
-		return c.Coin, nil
+// normalizeDenom converts from 'ibc/{hash}' to native asset that recognized by nexus module,
+// returns error if trace is not found in IBC transfer store
+func (c *coin) normalizeDenom() error {
+	if !isIBCDenom(c.GetDenom()) || c.coinType != types.ICS20 {
+		return nil
 	}
+
+	// get base denomination and tracing path
+	denomTrace, err := c.ibcK.ParseIBCDenom(c.ctx, c.Denom)
+	if err != nil {
+		return err
+	}
+
+	// convert denomination from 'ibc/{hash}' to native asset that recognized by nexus module
+	c.Coin = sdk.NewCoin(denomTrace.GetBaseDenom(), c.Amount)
+
+	return nil
 }
 
-func (c coin) validateDenomTrace(denomTrace ibctypes.DenomTrace) error {
+// toICS20 creates an ICS20 token from base denom, returns error if the asset is not registered on Axelarnet
+func (c coin) toICS20(denom string) (sdk.Coin, error) {
 	if c.coinType != types.ICS20 {
-		return fmt.Errorf("%s is not ICS20 token", c.GetDenom())
+		return sdk.Coin{}, fmt.Errorf("%s is not ICS20 token", c.GetDenom())
 	}
 
 	// check if the asset registered with a path
-	chain, ok := c.nexusK.GetChainByNativeAsset(c.ctx, denomTrace.GetBaseDenom())
+	chain, ok := c.nexusK.GetChainByNativeAsset(c.ctx, denom)
 	if !ok {
-		return fmt.Errorf("asset %s is not linked to a cosmos chain", denomTrace.GetBaseDenom())
+		return sdk.Coin{}, fmt.Errorf("asset %s is not linked to a cosmos chain", denom)
 	}
 
-	path, ok := c.k.GetIBCPath(c.ctx, chain.Name)
+	path, ok := c.ibcK.GetIBCPath(c.ctx, chain.Name)
 	if !ok {
-		return fmt.Errorf("path not found for chain %s", chain.Name)
+		return sdk.Coin{}, fmt.Errorf("path not found for chain %s", chain.Name)
 	}
 
-	if path != denomTrace.Path {
-		return fmt.Errorf("path %s does not match registered path %s for asset %s", denomTrace.GetPath(), path, denomTrace.GetBaseDenom())
+	trace := ibctypes.DenomTrace{
+		Path:      path,
+		BaseDenom: denom,
 	}
 
-	return nil
+	return sdk.NewCoin(trace.IBCDenom(), c.Amount), nil
 }
 
 func getCoinType(ctx sdk.Context, nexusK types.Nexus, denom string) types.CoinType {

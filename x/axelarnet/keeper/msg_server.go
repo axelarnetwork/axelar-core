@@ -105,18 +105,17 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, fmt.Errorf("recipient chain '%s' is not activated", recipient.Chain.Name)
 	}
 
-	coin := newCoin(ctx, s.Keeper, s.nexus, amount)
-	err := coin.lock(s.ibcK, s.bank, req.DepositAddress)
+	coin, err := newCoin(ctx, s.ibcK, s.nexus, amount)
 	if err != nil {
 		return nil, err
 	}
 
-	normalized, err := coin.normalizeDenom(s.ibcK)
+	err = coin.Lock(s.bank, req.DepositAddress)
 	if err != nil {
 		return nil, err
 	}
 
-	transferID, err := s.nexus.EnqueueForTransfer(ctx, depositAddr, normalized)
+	transferID, err := s.nexus.EnqueueForTransfer(ctx, depositAddr, coin.Coin)
 	if err != nil {
 		return nil, err
 	}
