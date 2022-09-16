@@ -22,14 +22,19 @@ type coin struct {
 
 // newCoin creates a coin struct, assign a coin type and normalize the denom if it's a ICS20 token
 func newCoin(ctx sdk.Context, ibcK IBCKeeper, nexusK types.Nexus, c sdk.Coin) (coin, error) {
+	ct, err := getCoinType(ctx, nexusK, c.Denom)
+	if err != nil {
+		return coin{}, err
+	}
+
 	c2 := coin{
 		Coin:     c,
 		ctx:      ctx,
 		ibcK:     ibcK,
 		nexusK:   nexusK,
-		coinType: getCoinType(ctx, nexusK, c.Denom),
+		coinType: ct,
 	}
-	err := c2.normalizeDenom()
+	err = c2.normalizeDenom()
 
 	return c2, err
 }
@@ -126,17 +131,17 @@ func (c coin) toICS20(denom string) (sdk.Coin, error) {
 	return sdk.NewCoin(trace.IBCDenom(), c.Amount), nil
 }
 
-func getCoinType(ctx sdk.Context, nexusK types.Nexus, denom string) types.CoinType {
+func getCoinType(ctx sdk.Context, nexusK types.Nexus, denom string) (types.CoinType, error) {
 	switch {
 	// check if the format of token denomination is 'ibc/{hash}'
 	case isIBCDenom(denom):
-		return types.ICS20
+		return types.ICS20, nil
 	case isNativeAssetOnAxelarnet(ctx, nexusK, denom):
-		return types.Native
+		return types.Native, nil
 	case nexusK.IsAssetRegistered(ctx, exported.Axelarnet, denom):
-		return types.External
+		return types.External, nil
 	default:
-		return types.Unrecognized
+		return types.Unrecognized, fmt.Errorf("unrecognized coin %s", denom)
 	}
 }
 
