@@ -1,14 +1,13 @@
 package keeper
 
 import (
-	"github.com/axelarnetwork/utils/funcs"
-	ibctypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
-	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
+	ibctypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
 	"github.com/stretchr/testify/assert"
+	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
@@ -21,6 +20,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexustestutils "github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
+	"github.com/axelarnetwork/utils/funcs"
 	. "github.com/axelarnetwork/utils/test"
 )
 
