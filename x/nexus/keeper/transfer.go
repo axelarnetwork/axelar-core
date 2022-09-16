@@ -9,6 +9,8 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/axelar-core/x/nexus/types"
+	"github.com/axelarnetwork/utils/funcs"
 )
 
 func getTransferPrefix(chain exported.ChainName, state exported.TransferState) utils.Key {
@@ -129,7 +131,17 @@ func (k Keeper) EnqueueTransfer(ctx sdk.Context, senderChain exported.Chain, rec
 		k.Logger(ctx).Debug(fmt.Sprintf("skipping deposit from chain %s to chain %s and recipient %s due to deposited amount being below fees %s for asset %s",
 			senderChain.Name, recipient.Chain.Name, recipient.Address, fee.String(), asset.String()))
 
-		return k.setNewTransfer(ctx, recipient, asset, exported.InsufficientAmount), nil
+		transferID := k.setNewTransfer(ctx, recipient, asset, exported.InsufficientAmount)
+
+		funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.InsufficientFee{
+			TransferID:       transferID,
+			RecipientChain:   recipient.Chain.Name,
+			RecipientAddress: recipient.Address,
+			Amount:           asset,
+			Fee:              fee,
+		}))
+
+		return transferID, nil
 	}
 
 	if fee.IsPositive() {
@@ -147,7 +159,16 @@ func (k Keeper) EnqueueTransfer(ctx sdk.Context, senderChain exported.Chain, rec
 	k.Logger(ctx).Info(fmt.Sprintf("transfer %s from chain %s to chain %s and recipient %s is successfully prepared",
 		asset.String(), senderChain.Name, recipient.Chain.Name, recipient.Address))
 
-	return k.setNewTransfer(ctx, recipient, asset, exported.Pending), nil
+	transferID := k.setNewTransfer(ctx, recipient, asset, exported.Pending)
+
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.FeeDeducted{
+		TransferID:       transferID,
+		RecipientChain:   recipient.Chain.Name,
+		RecipientAddress: recipient.Address,
+		Fee:              fee,
+	}))
+
+	return transferID, nil
 }
 
 // EnqueueForTransfer enqueues an asset transfer for the given deposit address

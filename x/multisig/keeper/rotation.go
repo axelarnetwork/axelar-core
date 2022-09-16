@@ -126,7 +126,6 @@ func (k Keeper) GetActiveKeyIDs(ctx sdk.Context, chainName nexus.ChainName) []ex
 		}
 	}
 
-	// TODO: deactivate old epochs, otherwise this only returns once all epochs are iterated (and returns all keys)
 	return keys
 }
 
