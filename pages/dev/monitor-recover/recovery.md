@@ -28,18 +28,18 @@ Click the ‘Connect’ button under the label ‘Execute at destination chain�
 
 ![gmp-execute.png](/images/gmp-execute.png)
 
-If the manual execution fails, you will get an error message with the explained reason.
+Suppose the manual execution fails, you will get an error message with explained reason.
 ![gmp-execute-error-reverted.png](/images/gmp-execute-error-reverted.png)
 
-Please debug the deployed contract logic and make a new call. 
+**What to do next:** We suggest debugging your contract and then making a new call. You can try to follow the [Debugging your smart contract](/dev/monitor-recover/recovery) guide.
 
 ### Increase gas payment to the gas receiver on the source chain
-The prepaid gas to the Gas Service contract could be insufficient when the destination chain is too busy (with many transfers or other conditions). Therefore, Axelarscan provides an option to resubmit a new amount of gas for executing the transaction. 
+The prepaid gas to the Gas Service contract could be insufficient when the destination chain is too busy (with many transfers or other conditions). Therefore, Axelarscan provides an option to increase gas payment to relay the transaction. 
 
 To do this:
-1. Click the `Connect` button to connect your MetaMask wallet. Then switch the wallet network to the transfer’s source chain by clicking the `Switch Network` button under the label ‘Pay new gas at source chain‘.
-![gmp-pay-gas-connect-wallet.png](/images/gmp-pay-gas-connect-wallet.png)
-2. Click the `Pay new gas` button. The new paid gas information will be updated in the `GAS PAID` section. Then the executor service will execute the transaction with the latest gas paid amount and update the execution result in the `Executed` section.
+1. Click the `Connect` button to connect your MetaMask wallet. Then switch the wallet network to the transfer’s source chain by clicking the `Switch Network` button under the label ‘Add gas at source chain‘.
+![egmp-pay-gas-button.png](/images/gmp-pay-gas-button.png)
+2. Click the `Add gas` button. The new paid gas information will be updated in the `GAS PAID` section. Then, the call will be relayed and executed.
 ![gmp-pay-gas-success.png](/images/gmp-pay-gas-success.png)
 
 ## 2. the AxelarJS SDK

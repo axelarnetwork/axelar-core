@@ -5,22 +5,28 @@ Axelar provides two options to check each GMP transaction status:
 2. The [AxelarJS SDK](/dev/axelarjs-sdk/tx-status-query-recovery).
 
 ## 1. Axelarscan UI
-Anyone can view a General Message Passing transaction on the GMP page of the Axelarscan block explorer: [Mainnet](https://axelarscan.io/gmp) | [Testnet](https://testnet.axelarscan.io/gmp).
+Anyone can view General Message Passing calls in realtime on Axelarscan: [Mainnet](https://axelarscan.io/gmp) | [Testnet](https://testnet.axelarscan.io/gmp).
 
-![gmp-tracker.png](/images/gmp-tracker-2.png)
+![gmp-tracker.png](/images/gmp-tracker.png)
 
-To search for a particular transfer, enter a transaction hash or a sender address in the search bar. 
+You can also search for a particular transfer by a transaction hash or a sender address via the search bar. 
 ![gmp-searchbar.png](/images/gmp-searchbar.png)
 
-Once you navigate to the detailed transfer page, you will see four main statuses with an additional status, as displayed in the image below.
+Each GMP call comprises five statuses, as described below.
 ![gmp-detailed-page .png](/images/gmp-detailed-page.png)
 
 - **CONTRACT CALL** provides the contract call (`callContract` or `callContractWithToken`) information, including the transaction hash, the block height on the source chain, the gateway address, etc.
-- **GAS PAID** displays the gas prepaid to Axelar Gas Receiver contract.
-- **CALL APPROVED** displays the information on the call approval. This section will be updated once the Axelar network approves the call. 
-- **EXECUTED** informs the execution result whether the execution is successful or not. If it's unsuccessful, there will be an [error message](/dev/gmp/gmp-tracker-recovery/error-debugging) with the cause of the error, displayed in this section. 
-- **GAS REFUNDED** provides the refund information (if any), including the amount of gas paid, the amount of gas used, the refund amount, etc. This information will appear only when there’s a refund.
+- **GAS PAID** displays the information of gas prepaid to Axelar Gas Receiver contract.
+- **CALL APPROVED** displays the information of the call approval. This section will be updated once the GMP call is approved by the Axelar network.
+- **EXECUTED** informs the executed result whether it is successful or not. If you see an error message in this section, we suggest following this [guide](/dev/debug/error-debugging) to find the root cause and recover the transfer.
+- **GAS REFUNDED** provides the refund information (if any), including the amount of gas paid, the amount of gas used, the refund amount, etc.
 
+import Callout from 'nextra-theme-docs/callout'
+
+<Callout emoji="ℹ️">
+	If the `Insufficient Fee` tag appears, it means that the prepaid gas is not enough to relay the transaction. Please follow the [Increase gas payment to the gas receiver on the source chain](/dev/monitor-recover/recovery#increase-gas-payment-to-the-gas-receiver-on-the-source-chain) section to recover the transfer.
+	![error-msg-insufficient-fee.png](/images/error-msg-insufficient-fee.png)
+</Callout>
 
 ## 2. AxelarJS SDK
 

@@ -158,13 +158,19 @@ The function names are prety self-explanatory. The following is true for the arg
 ## Two-way call
 The Executor Service supports relaying two-way calls.
 
-A two-way call refers to the scenario of sending a message from a source chain and immediately executing it at a destination chain. Then, finally, return another message call to the source chain.
+A two-way call refers to the scenario of sending a message from a source chain and immediately executing it at a destination chain. Finally, return another message call to the source chain.
 
-Once a two-way call is detected, the Executor Service automatically uses the remaining gas that was prepaid to relay the second call.
 
-If the remaining gas amount is insufficient for the second call, the service refunds it to the payer's address. Users can still pay a new gas amount to relay the second call of the transfer through the [Axelar SDK](/dev/axelarjs-sdk/tx-status-query-recovery#2-increase-gas-payment) or [Axelarscan UI](/dev/monitor-recover/recovery#increase-gas-payment-to-the-gas-receiver-on-the-source-chain).
+```
+Outbound call: a GMP call from chain A to chain B
+Returned call: a GMP call returned from chain B to chain A
+```
+
+Once an outbound call is executed on chain B and sends another call to return a message to chain A, the Executor service automatically forwards the remaining gas to relay the returned trip.
+
+Suppose the remaining gas amount is insufficient for the returned trip, the `Insufficient Fee` tag will show up on Axelarscan UI (see [Monitoring state of GMP transactions](/dev/monitor-recover/monitoring)). In that case, the returned call won't be relayed until the gas is added. You can increase more gas to relay the call to the destination contract via the [Axelar SDK](/dev/axelarjs-sdk/tx-status-query-recovery#2-increase-gas-payment) or [Axelarscan UI](/dev/monitor-recover/recovery#increase-gas-payment-to-the-gas-receiver-on-the-source-chain).
 
 ## Sending messages to multiple destination chains from a single transaction
-The Executor Service also supports relaying multiple message calls from a transaction on a source chain. To do so, the application must pay gas to the Gas Receiver separately for each message. Please see the below message call as an example.  
+The Executor Service also supports relaying multiple message calls from a transaction. To do so, the application must pay gas to the Gas Receiver separately for each message. Please see the below message call as an example.  
 
 Example: [Transaction on the source chain](https://moonbase.moonscan.io/tx/0x25f0bdcdec0da17e1039161342603d3d537cb6ddc6637d1b22dbdf1ebf9706ed), [Message #1 information](https://testnet.axelarscan.io/gmp/0x25f0bdcdec0da17e1039161342603d3d537cb6ddc6637d1b22dbdf1ebf9706ed:1), [Message #2 information](https://testnet.axelarscan.io/gmp/0x25f0bdcdec0da17e1039161342603d3d537cb6ddc6637d1b22dbdf1ebf9706ed:3)

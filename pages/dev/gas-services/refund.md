@@ -1,11 +1,11 @@
 # Refund the prepaid gas
 
-The prepaid gas to `payGasForContractCall` or `payGasForContractCallWithToken` could exceed the needed amount for relaying a message to the destination contract.
+The prepaid gas to `payGasForContractCall` or `payGasForContractCallWithToken` could exceed the actual amount needed for relaying a message to the destination contract.
 
-The Executor Service automatically calculates the excess gas submitted and determines the amount to refund.
+The Executor Service automatically tracks the excess gas amount and refund it to the payer's wallet address by calling `Refund` in the Gas Service contract.
 ```
-The refunded amount = The prepaid amount - the actual gas used - the estimated gas for transferring the refund.
+The refunded amount = The total paid amount - the network base fee - the actual gas used - the estimated gas for transferring the refund.
 ```
-After getting the refund amount, the service calls `Refund` in the Gas Receiver contract to refund it to the payer account. Then, the refund status will be shown on Axelarscan UI.
+You can check the refund status on Axelarscan UI. See [Monitoring state of GMP transactions](/dev/monitor-recover/monitoring#1-axelarscan-ui).
 
 ![gmp-gas-refund.png](/images/gmp-gas-refund.png)
