@@ -1,20 +1,16 @@
-package keeper
+package keeper_test
 
 import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	ibctypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
 	"github.com/stretchr/testify/assert"
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
-	"github.com/tendermint/tendermint/libs/log"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	appParams "github.com/axelarnetwork/axelar-core/app/params"
-	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
+	"github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types/mock"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types/testutils"
@@ -24,33 +20,24 @@ import (
 	. "github.com/axelarnetwork/utils/test"
 )
 
-func setup() (sdk.Context, Keeper) {
-	encCfg := appParams.MakeEncodingConfig()
-	subspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("axelarnetKey"), sdk.NewKVStoreKey("tAxelarnetKey"), "axelarnet")
-	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
-	k := NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("axelarnet"), subspace, &mock.ChannelKeeperMock{})
-
-	return ctx, k
-}
-
 func TestCoin(t *testing.T) {
 	var (
 		ctx       sdk.Context
 		nexusK    *mock.NexusMock
 		bankK     *mock.BankKeeperMock
 		transferK *mock.IBCTransferKeeperMock
-		ibcK      IBCKeeper
+		ibcK      keeper.IBCKeeper
 		chain     nexus.Chain
-		coin      coin
+		coin      keeper.Coin
 	)
 
 	givenAKeeper := Given("a keeper", func() {
-		ctx2, k := setup()
+		ctx2, k, _ := setup()
 		ctx = ctx2
 		nexusK = &mock.NexusMock{}
 		bankK = &mock.BankKeeperMock{}
 		transferK = &mock.IBCTransferKeeperMock{}
-		ibcK = NewIBCKeeper(k, transferK, &mock.ChannelKeeperMock{})
+		ibcK = keeper.NewIBCKeeper(k, transferK, &mock.ChannelKeeperMock{})
 		bankK.SendCoinsFromAccountToModuleFunc = func(sdk.Context, sdk.AccAddress, string, sdk.Coins) error {
 			return nil
 		}
@@ -61,12 +48,7 @@ func TestCoin(t *testing.T) {
 			return nil
 		}
 		bankK.GetBalanceFunc = func(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin {
-			switch coin.coinType {
-			case types.ICS20:
-				return funcs.Must(coin.toICS20(coin.Denom))
-			default:
-				return coin.Coin
-			}
+			return coin.Coin
 		}
 	})
 
@@ -74,7 +56,7 @@ func TestCoin(t *testing.T) {
 		nexusK.GetChainByNativeAssetFunc = func(sdk.Context, string) (nexus.Chain, bool) {
 			return exported.Axelarnet, true
 		}
-		coin = funcs.Must(newCoin(ctx, ibcK, nexusK, sdk.NewCoin("uaxl", sdk.NewInt(rand.PosI64()))))
+		coin = funcs.Must(keeper.NewCoin(ctx, ibcK, nexusK, sdk.NewCoin("uaxl", sdk.NewInt(rand.PosI64()))))
 	})
 
 	whenCoinIsExternal := When("coin is external", func() {
@@ -84,18 +66,19 @@ func TestCoin(t *testing.T) {
 		nexusK.IsAssetRegisteredFunc = func(sdk.Context, nexus.Chain, string) bool {
 			return true
 		}
-		coin = funcs.Must(newCoin(ctx, ibcK, nexusK, sdk.NewCoin(rand.Denom(5, 10), sdk.NewInt(rand.PosI64()))))
+		coin = funcs.Must(keeper.NewCoin(ctx, ibcK, nexusK, sdk.NewCoin(rand.Denom(5, 10), sdk.NewInt(rand.PosI64()))))
 	})
 
 	whenCoinIsICS20 := When("coin is from ICS20", func() {
 		// setup
 		path := testutils.RandomIBCPath()
 		chain = nexustestutils.Chain()
+		trace := ibctypes.DenomTrace{
+			Path:      path,
+			BaseDenom: rand.Denom(5, 10),
+		}
 		transferK.GetDenomTraceFunc = func(ctx sdk.Context, denomTraceHash tmbytes.HexBytes) (ibctypes.DenomTrace, bool) {
-			return ibctypes.DenomTrace{
-				Path:      path,
-				BaseDenom: rand.Denom(5, 10),
-			}, true
+			return trace, true
 		}
 
 		ibcK.SetCosmosChain(ctx, types.CosmosChain{
@@ -104,25 +87,12 @@ func TestCoin(t *testing.T) {
 			IBCPath:    path,
 		})
 
-		coin = funcs.Must(newCoin(ctx, ibcK, nexusK, sdk.NewCoin(testutils.RandomIBCDenom(), sdk.NewInt(rand.PosI64()))))
+		coin = funcs.Must(keeper.NewCoin(ctx, ibcK, nexusK, sdk.NewCoin(trace.IBCDenom(), sdk.NewInt(rand.PosI64()))))
+
+		bankK.GetBalanceFunc = func(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin {
+			return sdk.NewCoin(trace.IBCDenom(), coin.Amount)
+		}
 	})
-
-	givenAKeeper.
-		Branch(
-			whenCoinIsNative.
-				Then("coin type should be native", func(t *testing.T) {
-					assert.Equal(t, types.CoinType(types.Native), coin.coinType)
-				}),
-			whenCoinIsExternal.
-				Then("coin type should be external", func(t *testing.T) {
-					assert.Equal(t, types.CoinType(types.External), coin.coinType)
-				}),
-
-			whenCoinIsICS20.
-				Then("coin type should be ICS20", func(t *testing.T) {
-					assert.Equal(t, types.CoinType(types.ICS20), coin.coinType)
-				}),
-		).Run(t)
 
 	givenAKeeper.
 		Branch(

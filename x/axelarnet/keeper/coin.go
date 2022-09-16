@@ -12,7 +12,8 @@ import (
 	"github.com/axelarnetwork/utils/funcs"
 )
 
-type coin struct {
+// Coin provides functionality to lock and release coins
+type Coin struct {
 	sdk.Coin
 	ctx      sdk.Context
 	ibcK     IBCKeeper
@@ -20,14 +21,14 @@ type coin struct {
 	coinType types.CoinType
 }
 
-// newCoin creates a coin struct, assign a coin type and normalize the denom if it's a ICS20 token
-func newCoin(ctx sdk.Context, ibcK IBCKeeper, nexusK types.Nexus, c sdk.Coin) (coin, error) {
+// NewCoin creates a coin struct, assign a coin type and normalize the denom if it's a ICS20 token
+func NewCoin(ctx sdk.Context, ibcK IBCKeeper, nexusK types.Nexus, c sdk.Coin) (Coin, error) {
 	ct, err := getCoinType(ctx, nexusK, c.Denom)
 	if err != nil {
-		return coin{}, err
+		return Coin{}, err
 	}
 
-	c2 := coin{
+	c2 := Coin{
 		Coin:     c,
 		ctx:      ctx,
 		ibcK:     ibcK,
@@ -40,7 +41,7 @@ func newCoin(ctx sdk.Context, ibcK IBCKeeper, nexusK types.Nexus, c sdk.Coin) (c
 }
 
 // Lock locks coin from deposit address to escrow address
-func (c coin) Lock(bankK types.BankKeeper, depositAddr sdk.AccAddress) error {
+func (c Coin) Lock(bankK types.BankKeeper, depositAddr sdk.AccAddress) error {
 	switch c.coinType {
 	case types.ICS20:
 		// convert to IBC denom
@@ -89,7 +90,7 @@ func (c coin) Lock(bankK types.BankKeeper, depositAddr sdk.AccAddress) error {
 
 // normalizeDenom converts from 'ibc/{hash}' to native asset that recognized by nexus module,
 // returns error if trace is not found in IBC transfer store
-func (c *coin) normalizeDenom() error {
+func (c *Coin) normalizeDenom() error {
 	if !isIBCDenom(c.GetDenom()) || c.coinType != types.ICS20 {
 		return nil
 	}
@@ -107,7 +108,7 @@ func (c *coin) normalizeDenom() error {
 }
 
 // toICS20 creates an ICS20 token from base denom, returns error if the asset is not registered on Axelarnet
-func (c coin) toICS20(denom string) (sdk.Coin, error) {
+func (c Coin) toICS20(denom string) (sdk.Coin, error) {
 	if c.coinType != types.ICS20 {
 		return sdk.Coin{}, fmt.Errorf("%s is not ICS20 token", c.GetDenom())
 	}
