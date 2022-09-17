@@ -445,6 +445,11 @@ func createEVMMgr(axelarCfg config.ValdConfig, cliCtx sdkClient.Context, b broad
 			logger.Error(err.Error())
 			panic(err)
 		}
+		logger.Debug(fmt.Sprintf("created JSON-RPC client of type %T", rpc),
+			"chain", evmChainConf.Name,
+			"url", evmChainConf.RPCAddr,
+		)
+
 		// clean up evmRPC connection on process shutdown
 		cleanupCommands = append(cleanupCommands, rpc.Close)
 
