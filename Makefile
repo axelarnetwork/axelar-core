@@ -6,7 +6,7 @@ COMMIT := $(shell git log -1 --format='%H')
 BUILD_TAGS := ledger
 DOCKER := $(shell which docker)
 DOCKER_BUF := $(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace bufbuild/buf
-HTTPS_GIT := https://github.com/axelarnetowrk/axelar-core.git
+HTTPS_GIT := https://github.com/axelarnetwork/axelar-core.git
 PUSH_DOCKER_IMAGE=true
 ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=axelar \
 	-X github.com/cosmos/cosmos-sdk/version.AppName=axelard \
@@ -108,11 +108,11 @@ docker-image-debug:
 # Install all generate prerequisites
 .Phony: prereqs
 prereqs:
-	@which goimports &>/dev/null	||	go install golang.org/x/tools/cmd/goimports
-	@which moq &>/dev/null			||	go install github.com/matryer/moq
-	@which statik &>/dev/null       ||	go install github.com/rakyll/statik
-	@which mdformat &>/dev/null 	||	pip3 install mdformat
-	@which protoc &>/dev/null 		|| 	echo "Please install protoc for grpc (https://grpc.io/docs/languages/go/quickstart/)"
+	@which goimports &>/dev/null	&&	go install golang.org/x/tools/cmd/goimports
+	@which moq &>/dev/null			&&	go install github.com/matryer/moq
+	@which statik &>/dev/null       &&	go install github.com/rakyll/statik
+	@which mdformat &>/dev/null 	&&	pip3 install mdformat
+	@which protoc &>/dev/null 		&& 	echo "Please install protoc for grpc (https://grpc.io/docs/languages/go/quickstart/)"
 
 # Run all the code generators in the project
 .PHONY: generate
@@ -142,6 +142,8 @@ proto-gen:
 
 proto-format:
 	@echo "Formatting Protobuf files"
+	@sudo mkdir -p /sys/fs/cgroup/systemd
+	@sudo mount -t cgroup -o none,name=systemd cgroup /sys/fs/cgroup/systemd || true
 	@$(DOCKER) run --rm -v $(CURDIR):/workspace \
 	--workdir /workspace tendermintdev/docker-build-proto \
 	find ./ -not -path "./third_party/*" -name "*.proto" -exec clang-format -i {} \;
