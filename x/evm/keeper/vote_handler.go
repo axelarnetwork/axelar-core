@@ -10,7 +10,6 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/axelarnetwork/utils/funcs"
-	"github.com/axelarnetwork/utils/slices"
 )
 
 var _ vote.VoteHandler = &voteHandler{}
@@ -166,10 +165,6 @@ func (v voteHandler) HandleResult(ctx sdk.Context, result codec.ProtoMarshaler) 
 		return nil
 	}
 
-	if slices.Any(voteEvents.Events, func(event types.Event) bool { return event.Chain != voteEvents.Chain }) {
-		return fmt.Errorf("events are not from the same source chain")
-	}
-
 	chain, ok := v.nexus.GetChain(ctx, voteEvents.Chain)
 	if !ok {
 		return fmt.Errorf("%s is not a registered chain", voteEvents.Chain)
@@ -190,12 +185,6 @@ func (v voteHandler) HandleResult(ctx sdk.Context, result codec.ProtoMarshaler) 
 }
 
 func handleEvent(ctx sdk.Context, ck types.ChainKeeper, event types.Event, chain nexus.Chain) error {
-	// validate event
-	// TODO: move to ValidateBasic of msg_vote
-	if err := event.ValidateBasic(); err != nil {
-		return fmt.Errorf("event %s: %s", event.GetID(), err.Error())
-	}
-
 	// check if event confirmed before
 	eventID := event.GetID()
 	if _, ok := ck.GetEvent(ctx, eventID); ok {
