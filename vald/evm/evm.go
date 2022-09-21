@@ -450,19 +450,22 @@ func getLatestFinalizedBlockNumber(client rpc.Client, confHeight uint64) (*big.I
 
 		return header.Number.ToInt(), nil
 	case rpc.Eth2Client:
-		// TODO: check error after the merge is settled on ethereum mainnet
-		finalizedHeader, _ := client.FinalizedHeader(context.Background())
-		if finalizedHeader != nil {
-			return finalizedHeader.Number, nil
+		finalizedHeader, err := client.FinalizedHeader(context.Background())
+		if err != nil {
+			return nil, err
 		}
-	}
 
-	blockNumber, err := client.BlockNumber(context.Background())
-	if err != nil {
-		return nil, err
-	}
+		return finalizedHeader.Number, nil
+	case rpc.Client:
+		blockNumber, err := client.BlockNumber(context.Background())
+		if err != nil {
+			return nil, err
+		}
 
-	return big.NewInt(int64(blockNumber - confHeight + 1)), nil
+		return big.NewInt(int64(blockNumber - confHeight + 1)), nil
+	default:
+		panic(fmt.Errorf("unsupported type of rpc client %T", client))
+	}
 }
 
 func (mgr Mgr) getTxReceiptIfFinalized(chain nexus.ChainName, txID common.Hash, confHeight uint64) (*geth.Receipt, error) {
