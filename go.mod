@@ -34,6 +34,7 @@ require (
 	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4
 	golang.org/x/text v0.3.7
 	golang.org/x/tools v0.1.13-0.20220812184215-3f9b119300de
+	golang.org/x/xerrors v0.0.0-20220517211312-f3a8303e98df
 	google.golang.org/genproto v0.0.0-20220720214146-176da50484ac
 	google.golang.org/grpc v1.48.0
 	google.golang.org/protobuf v1.28.0
