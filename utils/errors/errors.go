@@ -1,14 +1,7 @@
 package errors
 
 import (
-	"context"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/gogo/protobuf/grpc"
-	"github.com/tendermint/tendermint/libs/log"
 	"golang.org/x/xerrors"
-	grpc2 "google.golang.org/grpc"
 )
 
 type causer interface {
@@ -29,29 +22,6 @@ func Is[T error](err error) bool {
 	default:
 		return false
 	}
-}
-
-// ServerWithSDKErrors wraps around a grpc server to return registered errors
-type ServerWithSDKErrors struct {
-	grpc.Server
-	Err    *sdkerrors.Error
-	Logger func(ctx sdk.Context) log.Logger
-}
-
-// RegisterService ensures that every server method that gets registered returns a registered error
-func (r ServerWithSDKErrors) RegisterService(sd *grpc2.ServiceDesc, server interface{}) {
-	for _, method := range sd.Methods {
-		method.Handler = func(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc2.UnaryServerInterceptor) (interface{}, error) {
-			res, err := method.Handler(srv, ctx, dec, interceptor)
-			if err != nil && !Is[*sdkerrors.Error](err) {
-				err = r.Err.Wrap(err.Error())
-				r.Logger(sdk.UnwrapSDKContext(ctx)).Debug(err.Error())
-			}
-			return res, err
-		}
-	}
-
-	r.Server.RegisterService(sd, server)
 }
 
 // ErrWithKeyVals is an error with additional capabilities for easier logging
