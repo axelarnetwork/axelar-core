@@ -381,7 +381,6 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	// when the params keeper is used outside the evm module's context
 	evmK.InitChains(bApp.NewContext(false, tmproto.Header{}).WithGasMeter(sdk.NewInfiniteGasMeter()))
 
-
 	rewardK := rewardKeeper.NewKeeper(
 		appCodec, keys[rewardTypes.StoreKey], app.getSubspace(rewardTypes.ModuleName), bankK, distrK, stakingK,
 	)

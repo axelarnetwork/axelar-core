@@ -70,6 +70,7 @@ func (k BaseKeeper) HasChain(ctx sdk.Context, chain nexus.ChainName) bool {
 	return k.getBaseStore(ctx).Has(subspacePrefix.AppendStr(strings.ToLower(chain.String())))
 }
 
+// InitChains initializes all existing EVM chains and their respective param subspaces
 func (k BaseKeeper) InitChains(ctx sdk.Context) {
 	iter := k.getBaseStore(ctx).Iterator(subspacePrefix)
 	defer utils.CloseLogError(iter, k.Logger(ctx))
