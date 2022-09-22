@@ -5,6 +5,8 @@ import MarkdownPath from '../../components/markdown'
 import IBCChannels from '../../components/ibc/channels'
 import TransferFeeCalculator from '../../components/transfer-fee/calculator'
 import Typeform from '../../components/typeform'
+import EVMChains from '../../components/evm/chains'
+import EVMAssets from '../../components/evm/assets'
 
 | Variable              | Value     |
 | --------------------- | --------- |
@@ -13,7 +15,16 @@ import Typeform from '../../components/typeform'
 | `tofnd` version       | `v0.10.1` |
 
 ## EVM contract addresses
-Moved [here](../dev/build/contract-addresses/testnet)
+<div className="space-y-1 mt-4">
+  <EVMChains environment="testnet" />
+
+  `Constant Address Deployer`:  `0x98b2920d53612483f91f12ed7754e51b4a77919e`
+</div>
+
+<div className="space-y-1 mt-4">
+  ### Assets
+  <EVMAssets environment="testnet" />
+</div>
 
 <div className="space-y-1 mt-4">
   ## IBC Channels
