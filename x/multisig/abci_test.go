@@ -225,7 +225,7 @@ func TestEndBlocker(t *testing.T) {
 						}
 						rewarder.GetPoolFunc = func(sdk.Context, string) reward.RewardPool { return &pool }
 						k.DeleteSigningSessionFunc = func(sdk.Context, uint64) {}
-						sigHandler.HandleCompletedFunc = func(sdk.Context, codec.ProtoMarshaler, codec.ProtoMarshaler) error { return nil }
+						sigHandler.HandleCompletedFunc = func(sdk.Context, utils.ValidatedProtoMarshaler, codec.ProtoMarshaler) error { return nil }
 
 						_, err := multisig.EndBlocker(ctx, abci.RequestEndBlock{}, k, rewarder)
 
@@ -253,7 +253,7 @@ func TestEndBlocker(t *testing.T) {
 						}
 						rewarder.GetPoolFunc = func(sdk.Context, string) reward.RewardPool { return &pool }
 						k.DeleteSigningSessionFunc = func(sdk.Context, uint64) {}
-						sigHandler.HandleCompletedFunc = func(sdk.Context, codec.ProtoMarshaler, codec.ProtoMarshaler) error { return nil }
+						sigHandler.HandleCompletedFunc = func(sdk.Context, utils.ValidatedProtoMarshaler, codec.ProtoMarshaler) error { return nil }
 
 						_, err := multisig.EndBlocker(ctx, abci.RequestEndBlock{}, k, rewarder)
 
@@ -284,7 +284,7 @@ func TestEndBlocker(t *testing.T) {
 						}
 						rewarder.GetPoolFunc = func(sdk.Context, string) reward.RewardPool { return &pool }
 						k.DeleteSigningSessionFunc = func(sdk.Context, uint64) {}
-						sigHandler.HandleCompletedFunc = func(sdk.Context, codec.ProtoMarshaler, codec.ProtoMarshaler) error { return nil }
+						sigHandler.HandleCompletedFunc = func(sdk.Context, utils.ValidatedProtoMarshaler, codec.ProtoMarshaler) error { return nil }
 
 						_, err := multisig.EndBlocker(ctx, abci.RequestEndBlock{}, k, rewarder)
 
@@ -307,11 +307,16 @@ func TestEndBlocker(t *testing.T) {
 					}
 				}).
 					When("sigHandler fails", func() {
-						sigHandler.HandleCompletedFunc = func(sdk.Context, codec.ProtoMarshaler, codec.ProtoMarshaler) error {
+						sigHandler.HandleCompletedFunc = func(sdk.Context, utils.ValidatedProtoMarshaler, codec.ProtoMarshaler) error {
 							return fmt.Errorf("some error")
 						}
 					}).
 					Then("recover and roll back state", func(t *testing.T) {
+						pool := rewardmock.RewardPoolMock{
+							ClearRewardsFunc:   func(sdk.ValAddress) {},
+							ReleaseRewardsFunc: func(sdk.ValAddress) error { return nil },
+						}
+						rewarder.GetPoolFunc = func(sdk.Context, string) reward.RewardPool { return &pool }
 						storeKey := sdk.NewKVStoreKey("cache")
 						rolledBackKey := []byte("ephemeral")
 						k.DeleteSigningSessionFunc = func(ctx sdk.Context, _ uint64) {

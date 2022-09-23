@@ -15,6 +15,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/app/params"
 	fakeMock "github.com/axelarnetwork/axelar-core/testutils/fake/interfaces/mock"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
@@ -47,7 +48,7 @@ func TestHandleCompleted(t *testing.T) {
 		ctx                  sdk.Context
 		basek                *mock.BaseKeeperMock
 		chaink               *mock.ChainKeeperMock
-		sig                  codec.ProtoMarshaler
+		sig                  utils.ValidatedProtoMarshaler
 		moduleMetadata       codec.ProtoMarshaler
 		handler              multisig.SigHandler
 		commandBatchMetadata types.CommandBatchMetadata

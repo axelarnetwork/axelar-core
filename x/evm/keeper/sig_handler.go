@@ -7,6 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	"github.com/axelarnetwork/utils/funcs"
@@ -25,7 +26,7 @@ func NewSigHandler(cdc codec.Codec, keeper types.BaseKeeper) multisig.SigHandler
 	}
 }
 
-func (s sigHandler) HandleCompleted(ctx sdk.Context, sig codec.ProtoMarshaler, moduleMetadata codec.ProtoMarshaler) error {
+func (s sigHandler) HandleCompleted(ctx sdk.Context, sig utils.ValidatedProtoMarshaler, moduleMetadata codec.ProtoMarshaler) error {
 	sigMetadata := moduleMetadata.(*types.SigMetadata)
 	commandBatch, err := s.getCommandBatch(ctx, sigMetadata)
 	if err != nil {

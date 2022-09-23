@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -14,7 +15,9 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	multisigTestutils "github.com/axelarnetwork/axelar-core/x/multisig/exported/testutils"
+	"github.com/axelarnetwork/axelar-core/x/multisig/types/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/utils/funcs"
 )
 
 // RandomChains returns a random (valid) slice of chains for testing
@@ -192,6 +195,8 @@ func RandomBatches() []types.CommandBatchMetadata {
 		batch := RandomBatch()
 		if i < batchCount-1 {
 			batch.Status = types.BatchSigned
+			sig := testutils.MultiSig()
+			batch.Signature = funcs.Must(codectypes.NewAnyWithValue(&sig))
 		}
 		batch.PrevBatchedCommandsID = prevBatch.ID
 
@@ -205,15 +210,21 @@ func RandomBatches() []types.CommandBatchMetadata {
 
 // RandomBatch returns a random (valid) command batch for testing
 func RandomBatch() types.CommandBatchMetadata {
-	return types.CommandBatchMetadata{
-		ID:                    rand.Bytes(int(rand.I64Between(1, 100))),
+	md := types.CommandBatchMetadata{
+		ID:                    rand.Bytes(32),
 		CommandIDs:            RandomCommandIDs(),
 		Data:                  rand.Bytes(int(rand.I64Between(1, 1000))),
 		SigHash:               RandomHash(),
 		Status:                types.BatchedCommandsStatus(rand.I64Between(1, int64(len(types.BatchedCommandsStatus_name)))),
 		KeyID:                 multisigTestutils.KeyID(),
-		PrevBatchedCommandsID: rand.Bytes(int(rand.I64Between(1, 100))),
+		PrevBatchedCommandsID: rand.Bytes(32),
 	}
+
+	if md.Status == types.BatchSigned {
+		sig := testutils.MultiSig()
+		md.Signature = funcs.Must(codectypes.NewAnyWithValue(&sig))
+	}
+	return md
 }
 
 // RandomCommandIDs returns a random (valid) slice of command IDs for testing
