@@ -6,7 +6,6 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
-	"math/big"
 	"reflect"
 	"sort"
 	"strconv"
@@ -90,20 +89,8 @@ const (
 			"type": "function"
 		}
 	]`
-	AxelarGatewayCommandMintToken                   = "mintToken"
-	mintTokenMaxGasCost                             = 100000
-	AxelarGatewayCommandDeployToken                 = "deployToken"
-	deployTokenMaxGasCost                           = 1400000
-	AxelarGatewayCommandBurnToken                   = "burnToken"
-	burnExternalTokenMaxGasCost                     = 400000
-	burnInternalTokenMaxGasCost                     = 120000
-	AxelarGatewayCommandTransferOperatorship        = "transferOperatorship"
-	transferOperatorshipMaxGasCost                  = 120000
-	AxelarGatewayCommandApproveContractCallWithMint = "approveContractCallWithMint"
-	approveContractCallWithMintMaxGasCost           = 100000
-	AxelarGatewayCommandApproveContractCall         = "approveContractCall"
-	approveContractCallMaxGasCost                   = 100000
-	axelarGatewayFuncExecute                        = "execute"
+
+	axelarGatewayFuncExecute = "execute"
 )
 
 // IsEVMChain returns true if a chain is an EVM chain
@@ -183,24 +170,24 @@ func (t *ERC20Token) CreateDeployCommand(keyID multisig.KeyID, dailyMintLimit sd
 	}
 
 	if t.IsExternal() {
-		return CreateDeployTokenCommand(
+		return NewDeployTokenCommand(
 			t.metadata.ChainID,
 			keyID,
 			t.GetAsset(),
 			t.metadata.Details,
 			t.GetAddress(),
 			dailyMintLimit,
-		)
+		), nil
 	}
 
-	return CreateDeployTokenCommand(
+	return NewDeployTokenCommand(
 		t.metadata.ChainID,
 		keyID,
 		t.GetAsset(),
 		t.metadata.Details,
 		ZeroAddress,
 		dailyMintLimit,
-	)
+	), nil
 }
 
 // CreateMintCommand returns a mint deployment command for the token
@@ -213,7 +200,7 @@ func (t *ERC20Token) CreateMintCommand(keyID multisig.KeyID, transfer nexus.Cros
 		return Command{}, err
 	}
 
-	return CreateMintTokenCommand(keyID, transferIDtoCommandID(transfer.ID), t.metadata.Details.Symbol, common.HexToAddress(transfer.Recipient.Address), transfer.Asset.Amount.BigInt())
+	return NewMintTokenCommand(keyID, transferIDtoCommandID(transfer.ID), t.metadata.Details.Symbol, common.HexToAddress(transfer.Recipient.Address), transfer.Asset.Amount.BigInt()), nil
 }
 
 // transferIDtoCommandID converts a transferID to a commandID
@@ -437,14 +424,6 @@ func ToSignature(sig btcec.Signature, hash common.Hash, pk ecdsa.PublicKey) (Sig
 	return s, nil
 }
 
-// CommandParams describe the parameters used to send a pre-signed command to the given contract,
-// with the sender signing the transaction on the node
-type CommandParams struct {
-	Chain     string
-	CommandID CommandID
-	Sender    string
-}
-
 // KeysToAddresses converts a slice of ECDSA public keys to evm addresses
 func KeysToAddresses(keys ...ecdsa.PublicKey) []common.Address {
 	addresses := make([]common.Address, len(keys))
@@ -490,349 +469,6 @@ func GetSignHash(commandData []byte) common.Hash {
 	msg := fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(hash), hash)
 
 	return crypto.Keccak256Hash([]byte(msg))
-}
-
-// CreateApproveContractCallCommand creates a command to approve contract call
-func CreateApproveContractCallCommand(
-	chainID sdk.Int,
-	keyID multisig.KeyID,
-	sourceChain nexus.ChainName,
-	sourceTxID Hash,
-	sourceEventIndex uint64,
-	event EventContractCall,
-) (Command, error) {
-	params, err := createApproveContractCallParams(sourceChain, sourceTxID, sourceEventIndex, event)
-	if err != nil {
-		return Command{}, err
-	}
-
-	sourceEventIndexBz := make([]byte, 8)
-	binary.LittleEndian.PutUint64(sourceEventIndexBz, sourceEventIndex)
-
-	return Command{
-		ID:         NewCommandID(append(sourceTxID.Bytes(), sourceEventIndexBz...), chainID),
-		Command:    AxelarGatewayCommandApproveContractCall,
-		Params:     params,
-		KeyID:      keyID,
-		MaxGasCost: uint32(approveContractCallMaxGasCost),
-	}, nil
-}
-
-// CreateApproveContractCallWithMintCommand creates a command to approve contract call with token being minted
-func CreateApproveContractCallWithMintCommand(
-	chainID sdk.Int,
-	keyID multisig.KeyID,
-	sourceChain nexus.ChainName,
-	sourceTxID Hash,
-	sourceEventIndex uint64,
-	event EventContractCallWithToken,
-	amount sdk.Uint,
-	symbol string,
-) (Command, error) {
-	params, err := createApproveContractCallWithMintParams(sourceChain, sourceTxID, sourceEventIndex, event, amount, symbol)
-	if err != nil {
-		return Command{}, err
-	}
-
-	sourceEventIndexBz := make([]byte, 8)
-	binary.LittleEndian.PutUint64(sourceEventIndexBz, sourceEventIndex)
-
-	return Command{
-		ID:         NewCommandID(append(sourceTxID.Bytes(), sourceEventIndexBz...), chainID),
-		Command:    AxelarGatewayCommandApproveContractCallWithMint,
-		Params:     params,
-		KeyID:      keyID,
-		MaxGasCost: uint32(approveContractCallWithMintMaxGasCost),
-	}, nil
-}
-
-// decodeApproveContractCallWithMintParams unpacks the parameters of a approve contract call with mint command
-func decodeApproveContractCallWithMintParams(bz []byte) (string, string, common.Address, common.Hash, string, *big.Int, common.Hash, *big.Int, error) {
-	stringType, err := abi.NewType("string", "string", nil)
-	if err != nil {
-		return "", "", common.Address{}, common.Hash{}, "", nil, common.Hash{}, nil, err
-	}
-
-	addressType, err := abi.NewType("address", "address", nil)
-	if err != nil {
-		return "", "", common.Address{}, common.Hash{}, "", nil, common.Hash{}, nil, err
-	}
-
-	bytes32Type, err := abi.NewType("bytes32", "bytes32", nil)
-	if err != nil {
-		return "", "", common.Address{}, common.Hash{}, "", nil, common.Hash{}, nil, err
-	}
-
-	uint256Type, err := abi.NewType("uint256", "uint256", nil)
-	if err != nil {
-		return "", "", common.Address{}, common.Hash{}, "", nil, common.Hash{}, nil, err
-	}
-
-	arguments := abi.Arguments{
-		{Type: stringType},
-		{Type: stringType},
-		{Type: addressType},
-		{Type: bytes32Type},
-		{Type: stringType},
-		{Type: uint256Type},
-		{Type: bytes32Type},
-		{Type: uint256Type},
-	}
-	params, err := StrictDecode(arguments, bz)
-	if err != nil {
-		return "", "", common.Address{}, common.Hash{}, "", nil, common.Hash{}, nil, err
-	}
-
-	payloadHash := params[3].([common.HashLength]byte)
-	sourceTxID := params[6].([common.HashLength]byte)
-
-	return params[0].(string),
-		params[1].(string),
-		params[2].(common.Address),
-		common.BytesToHash(payloadHash[:]),
-		params[4].(string),
-		params[5].(*big.Int),
-		common.BytesToHash(sourceTxID[:]),
-		params[7].(*big.Int),
-		nil
-}
-
-// decodeApproveContractCallParams unpacks the parameters of a approve contract call command
-func decodeApproveContractCallParams(bz []byte) (string, string, common.Address, common.Hash, common.Hash, *big.Int, error) {
-	stringType, err := abi.NewType("string", "string", nil)
-	if err != nil {
-		return "", "", common.Address{}, common.Hash{}, common.Hash{}, nil, err
-	}
-
-	addressType, err := abi.NewType("address", "address", nil)
-	if err != nil {
-		return "", "", common.Address{}, common.Hash{}, common.Hash{}, nil, err
-	}
-
-	bytes32Type, err := abi.NewType("bytes32", "bytes32", nil)
-	if err != nil {
-		return "", "", common.Address{}, common.Hash{}, common.Hash{}, nil, err
-	}
-
-	uint256Type, err := abi.NewType("uint256", "uint256", nil)
-	if err != nil {
-		return "", "", common.Address{}, common.Hash{}, common.Hash{}, nil, err
-	}
-
-	arguments := abi.Arguments{
-		{Type: stringType},
-		{Type: stringType},
-		{Type: addressType},
-		{Type: bytes32Type},
-		{Type: bytes32Type},
-		{Type: uint256Type},
-	}
-	params, err := StrictDecode(arguments, bz)
-	if err != nil {
-		return "", "", common.Address{}, common.Hash{}, common.Hash{}, nil, err
-	}
-
-	payloadHash := params[3].([common.HashLength]byte)
-	sourceTxID := params[4].([common.HashLength]byte)
-
-	return params[0].(string),
-		params[1].(string),
-		params[2].(common.Address),
-		common.BytesToHash(payloadHash[:]),
-		common.BytesToHash(sourceTxID[:]),
-		params[5].(*big.Int),
-		nil
-}
-
-func createApproveContractCallParams(
-	sourceChain nexus.ChainName,
-	sourceTxID Hash,
-	sourceEventIndex uint64,
-	event EventContractCall) ([]byte, error) {
-	stringType, err := abi.NewType("string", "string", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	addressType, err := abi.NewType("address", "address", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	bytes32Type, err := abi.NewType("bytes32", "bytes32", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	uint256Type, err := abi.NewType("uint256", "uint256", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	arguments := abi.Arguments{
-		{Type: stringType},
-		{Type: stringType},
-		{Type: addressType},
-		{Type: bytes32Type},
-		{Type: bytes32Type},
-		{Type: uint256Type},
-	}
-
-	result, err := arguments.Pack(
-		sourceChain,
-		event.Sender.Hex(),
-		common.HexToAddress(event.ContractAddress),
-		common.Hash(event.PayloadHash),
-		common.Hash(sourceTxID),
-		new(big.Int).SetUint64(sourceEventIndex),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
-}
-
-func createApproveContractCallWithMintParams(
-	sourceChain nexus.ChainName,
-	sourceTxID Hash,
-	sourceEventIndex uint64,
-	event EventContractCallWithToken,
-	amount sdk.Uint,
-	symbol string) ([]byte, error) {
-	stringType, err := abi.NewType("string", "string", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	addressType, err := abi.NewType("address", "address", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	bytes32Type, err := abi.NewType("bytes32", "bytes32", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	uint256Type, err := abi.NewType("uint256", "uint256", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	arguments := abi.Arguments{
-		{Type: stringType},
-		{Type: stringType},
-		{Type: addressType},
-		{Type: bytes32Type},
-		{Type: stringType},
-		{Type: uint256Type},
-		{Type: bytes32Type},
-		{Type: uint256Type},
-	}
-	result, err := arguments.Pack(
-		sourceChain,
-		event.Sender.Hex(),
-		common.HexToAddress(event.ContractAddress),
-		common.Hash(event.PayloadHash),
-		symbol,
-		amount.BigInt(),
-		common.Hash(sourceTxID),
-		new(big.Int).SetUint64(sourceEventIndex),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
-}
-
-// CreateBurnTokenCommand creates a command to burn tokens with the given burner's information
-func CreateBurnTokenCommand(chainID sdk.Int, keyID multisig.KeyID, height int64, burnerInfo BurnerInfo, isTokenExternal bool) (Command, error) {
-	params, err := createBurnTokenParams(burnerInfo.Symbol, common.Hash(burnerInfo.Salt))
-	if err != nil {
-		return Command{}, err
-	}
-
-	heightBytes := make([]byte, 8)
-	binary.LittleEndian.PutUint64(heightBytes, uint64(height))
-
-	burnTokenMaxGasCost := burnInternalTokenMaxGasCost
-	if isTokenExternal {
-		burnTokenMaxGasCost = burnExternalTokenMaxGasCost
-	}
-
-	return Command{
-		ID:         NewCommandID(append(burnerInfo.Salt.Bytes(), heightBytes...), chainID),
-		Command:    AxelarGatewayCommandBurnToken,
-		Params:     params,
-		KeyID:      keyID,
-		MaxGasCost: uint32(burnTokenMaxGasCost),
-	}, nil
-}
-
-// CreateDeployTokenCommand creates a command to deploy a token
-func CreateDeployTokenCommand(chainID sdk.Int, keyID multisig.KeyID, asset string, tokenDetails TokenDetails, address Address, dailyMintLimit sdk.Uint) (Command, error) {
-	params, err := createDeployTokenParams(tokenDetails.TokenName, tokenDetails.Symbol, tokenDetails.Decimals, tokenDetails.Capacity, address, dailyMintLimit)
-	if err != nil {
-		return Command{}, err
-	}
-
-	return Command{
-		ID:         NewCommandID([]byte(fmt.Sprintf("%s_%s", asset, tokenDetails.Symbol)), chainID),
-		Command:    AxelarGatewayCommandDeployToken,
-		Params:     params,
-		KeyID:      keyID,
-		MaxGasCost: deployTokenMaxGasCost,
-	}, nil
-}
-
-// CreateMintTokenCommand creates a command to mint token to the given address
-func CreateMintTokenCommand(keyID multisig.KeyID, id CommandID, symbol string, address common.Address, amount *big.Int) (Command, error) {
-	params, err := createMintTokenParams(symbol, address, amount)
-	if err != nil {
-		return Command{}, err
-	}
-
-	return Command{
-		ID:         id,
-		Command:    AxelarGatewayCommandMintToken,
-		Params:     params,
-		KeyID:      keyID,
-		MaxGasCost: mintTokenMaxGasCost,
-	}, nil
-}
-
-// CreateMultisigTransferCommand creates a command to transfer operator of the multisig contract
-func CreateMultisigTransferCommand(chainID sdk.Int, keyID multisig.KeyID, nextKey multisig.Key) Command {
-	addresses, weights, threshold := GetMultisigAddressesAndWeights(nextKey)
-	params := createTransferMultisigParams(addresses, slices.Map(weights, sdk.Uint.BigInt), threshold.BigInt())
-
-	var concat []byte
-	for _, addr := range addresses {
-		concat = append(concat, addr.Bytes()...)
-	}
-
-	return Command{
-		ID:         NewCommandID(concat, chainID),
-		Command:    AxelarGatewayCommandTransferOperatorship,
-		Params:     params,
-		KeyID:      keyID,
-		MaxGasCost: transferOperatorshipMaxGasCost,
-	}
-}
-
-// Clone returns an exacy copy of Command
-func (c Command) Clone() Command {
-	var clone Command
-
-	clone.Command = c.Command
-	clone.ID = c.ID
-	clone.KeyID = c.KeyID
-	clone.Params = make([]byte, len(c.Params))
-	copy(clone.Params, c.Params)
-
-	return clone
 }
 
 // CommandBatch represents a batch of commands
@@ -1161,209 +797,6 @@ func packArguments(chainID sdk.Int, commandIDs []CommandID, commands []string, c
 	return result, nil
 }
 
-func createMintTokenParams(symbol string, address common.Address, amount *big.Int) ([]byte, error) {
-	stringType, err := abi.NewType("string", "string", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	addressType, err := abi.NewType("address", "address", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	uint256Type, err := abi.NewType("uint256", "uint256", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	arguments := abi.Arguments{{Type: stringType}, {Type: addressType}, {Type: uint256Type}}
-	result, err := arguments.Pack(symbol, address, amount)
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
-}
-
-// decodeMintTokenParams unpacks the parameters of a mint token command
-func decodeMintTokenParams(bz []byte) (string, common.Address, *big.Int, error) {
-	stringType, err := abi.NewType("string", "string", nil)
-	if err != nil {
-		return "", common.Address{}, nil, err
-	}
-
-	addressType, err := abi.NewType("address", "address", nil)
-	if err != nil {
-		return "", common.Address{}, nil, err
-	}
-
-	uint256Type, err := abi.NewType("uint256", "uint256", nil)
-	if err != nil {
-		return "", common.Address{}, nil, err
-	}
-
-	arguments := abi.Arguments{{Type: stringType}, {Type: addressType}, {Type: uint256Type}}
-	params, err := StrictDecode(arguments, bz)
-	if err != nil {
-		return "", common.Address{}, nil, err
-	}
-
-	return params[0].(string), params[1].(common.Address), params[2].(*big.Int), nil
-}
-
-func createDeployTokenParams(tokenName string, symbol string, decimals uint8, capacity sdk.Int, address Address, dailyMintLimit sdk.Uint) ([]byte, error) {
-	stringType, err := abi.NewType("string", "string", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	uint8Type, err := abi.NewType("uint8", "uint8", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	uint256Type, err := abi.NewType("uint256", "uint256", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	addressType, err := abi.NewType("address", "address", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	arguments := abi.Arguments{{Type: stringType}, {Type: stringType}, {Type: uint8Type}, {Type: uint256Type}, {Type: addressType}, {Type: uint256Type}}
-	result, err := arguments.Pack(
-		tokenName,
-		symbol,
-		decimals,
-		capacity.BigInt(),
-		address,
-		dailyMintLimit.BigInt(),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
-}
-
-// decodeDeployTokenParams unpacks the parameters of a deploy token command
-func decodeDeployTokenParams(bz []byte) (string, string, uint8, *big.Int, common.Address, sdk.Uint, error) {
-	stringType, err := abi.NewType("string", "string", nil)
-	if err != nil {
-		return "", "", 0, nil, common.Address{}, sdk.OneUint(), err
-	}
-
-	uint8Type, err := abi.NewType("uint8", "uint8", nil)
-	if err != nil {
-		return "", "", 0, nil, common.Address{}, sdk.OneUint(), err
-	}
-
-	uint256Type, err := abi.NewType("uint256", "uint256", nil)
-	if err != nil {
-		return "", "", 0, nil, common.Address{}, sdk.OneUint(), err
-	}
-
-	addressType, err := abi.NewType("address", "address", nil)
-	if err != nil {
-		return "", "", 0, nil, common.Address{}, sdk.OneUint(), err
-	}
-
-	arguments := abi.Arguments{{Type: stringType}, {Type: stringType}, {Type: uint8Type}, {Type: uint256Type}, {Type: addressType}, {Type: uint256Type}}
-	params, err := StrictDecode(arguments, bz)
-	if err != nil {
-		return "", "", 0, nil, common.Address{}, sdk.OneUint(), err
-	}
-
-	dailyMintLimit := sdk.NewUintFromBigInt(params[5].(*big.Int))
-
-	return params[0].(string), params[1].(string), params[2].(uint8), params[3].(*big.Int), params[4].(common.Address), dailyMintLimit, nil
-}
-
-func createBurnTokenParams(symbol string, salt common.Hash) ([]byte, error) {
-	stringType, err := abi.NewType("string", "string", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	bytes32Type, err := abi.NewType("bytes32", "bytes32", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	arguments := abi.Arguments{{Type: stringType}, {Type: bytes32Type}}
-	result, err := arguments.Pack(symbol, salt)
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
-}
-
-// decodeBurnTokenParams unpacks the parameters of a burn token command
-func decodeBurnTokenParams(bz []byte) (string, common.Hash, error) {
-	stringType, err := abi.NewType("string", "string", nil)
-	if err != nil {
-		return "", common.Hash{}, err
-	}
-
-	bytes32Type, err := abi.NewType("bytes32", "bytes32", nil)
-	if err != nil {
-		return "", common.Hash{}, err
-	}
-
-	arguments := abi.Arguments{{Type: stringType}, {Type: bytes32Type}}
-	params, err := StrictDecode(arguments, bz)
-	if err != nil {
-		return "", common.Hash{}, err
-	}
-
-	return params[0].(string), params[1].([common.HashLength]byte), nil
-}
-
-// decodeTransferSinglesigParams unpacks the parameters of a single sig transfer command
-func decodeTransferSinglesigParams(bz []byte) (common.Address, error) {
-	addressType, err := abi.NewType("address", "address", nil)
-	if err != nil {
-		return common.Address{}, err
-	}
-
-	arguments := abi.Arguments{{Type: addressType}}
-	params, err := StrictDecode(arguments, bz)
-	if err != nil {
-		return common.Address{}, err
-	}
-
-	return params[0].(common.Address), nil
-}
-
-func createTransferMultisigParams(addresses []common.Address, weights []*big.Int, threshold *big.Int) []byte {
-	addressesType := funcs.Must(abi.NewType("address[]", "address[]", nil))
-	uint256ArrayType := funcs.Must(abi.NewType("uint256[]", "uint256[]", nil))
-	uint256Type := funcs.Must(abi.NewType("uint256", "uint256", nil))
-
-	arguments := abi.Arguments{{Type: addressesType}, {Type: uint256ArrayType}, {Type: uint256Type}}
-
-	return funcs.Must(arguments.Pack(addresses, weights, threshold))
-}
-
-// decodeTransferMultisigParams unpacks the parameters of a multi sig transfer command
-func decodeTransferMultisigParams(bz []byte) ([]common.Address, []*big.Int, *big.Int, error) {
-	addressesType := funcs.Must(abi.NewType("address[]", "address[]", nil))
-	uint256ArrayType := funcs.Must(abi.NewType("uint256[]", "uint256[]", nil))
-	uint256Type := funcs.Must(abi.NewType("uint256", "uint256", nil))
-
-	arguments := abi.Arguments{{Type: addressesType}, {Type: uint256ArrayType}, {Type: uint256Type}}
-	params, err := StrictDecode(arguments, bz)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	return params[0].([]common.Address), params[1].([]*big.Int), params[2].(*big.Int), nil
-}
-
 // ValidateBasic does stateless validation of the object
 func (m *BurnerInfo) ValidateBasic() error {
 	if err := m.DestinationChain.Validate(); err != nil {
@@ -1625,87 +1058,6 @@ func (m EventMultisigOperatorshipTransferred) ValidateBasic() error {
 	}
 
 	return nil
-}
-
-// DecodeParams returns the decoded parameters in the given command
-func (c Command) DecodeParams() (map[string]string, error) {
-	params := make(map[string]string)
-
-	switch c.Command {
-	case AxelarGatewayCommandApproveContractCallWithMint:
-		sourceChain, sourceAddress, contractAddress, payloadHash, symbol, amount, sourceTxID, sourceEventIndex, err := decodeApproveContractCallWithMintParams(c.Params)
-		if err != nil {
-			return nil, err
-		}
-
-		params["sourceChain"] = sourceChain
-		params["sourceAddress"] = sourceAddress
-		params["contractAddress"] = contractAddress.Hex()
-		params["payloadHash"] = payloadHash.Hex()
-		params["symbol"] = symbol
-		params["amount"] = amount.String()
-		params["sourceTxHash"] = sourceTxID.Hex()
-		params["sourceEventIndex"] = sourceEventIndex.String()
-	case AxelarGatewayCommandApproveContractCall:
-		sourceChain, sourceAddress, contractAddress, payloadHash, sourceTxID, sourceEventIndex, err := decodeApproveContractCallParams(c.Params)
-		if err != nil {
-			return nil, err
-		}
-
-		params["sourceChain"] = sourceChain
-		params["sourceAddress"] = sourceAddress
-		params["contractAddress"] = contractAddress.Hex()
-		params["payloadHash"] = payloadHash.Hex()
-		params["sourceTxHash"] = sourceTxID.Hex()
-		params["sourceEventIndex"] = sourceEventIndex.String()
-	case AxelarGatewayCommandDeployToken:
-		name, symbol, decs, cap, tokenAddress, dailyMintLimit, err := decodeDeployTokenParams(c.Params)
-		if err != nil {
-			return nil, err
-		}
-
-		params["name"] = name
-		params["symbol"] = symbol
-		params["decimals"] = strconv.FormatUint(uint64(decs), 10)
-		params["cap"] = cap.String()
-		params["tokenAddress"] = tokenAddress.Hex()
-		params["dailyMintLimit"] = dailyMintLimit.String()
-	case AxelarGatewayCommandMintToken:
-		symbol, addr, amount, err := decodeMintTokenParams(c.Params)
-		if err != nil {
-			return nil, err
-		}
-
-		params["symbol"] = symbol
-		params["account"] = addr.Hex()
-		params["amount"] = amount.String()
-	case AxelarGatewayCommandBurnToken:
-		symbol, salt, err := decodeBurnTokenParams(c.Params)
-		if err != nil {
-			return nil, err
-		}
-
-		params["symbol"] = symbol
-		params["salt"] = salt.Hex()
-	case AxelarGatewayCommandTransferOperatorship:
-		address, decodeSinglesigErr := decodeTransferSinglesigParams(c.Params)
-		addresses, weights, threshold, decodeMultisigErr := decodeTransferMultisigParams(c.Params)
-
-		switch {
-		case decodeSinglesigErr == nil:
-			params["newOperator"] = address.Hex()
-		case decodeMultisigErr == nil:
-			params["newOperators"] = strings.Join(slices.Map(addresses, common.Address.Hex), ";")
-			params["newWeights"] = strings.Join(slices.Map(weights, func(w *big.Int) string { return w.String() }), ";")
-			params["newThreshold"] = threshold.String()
-		default:
-			return nil, fmt.Errorf("unsupported type of transfer key")
-		}
-	default:
-		return nil, fmt.Errorf("unknown command type '%s'", c.Command)
-	}
-
-	return params, nil
 }
 
 // StrictDecode performs strict decode on evm encoded data, e.g. no byte can be left after the decoding
