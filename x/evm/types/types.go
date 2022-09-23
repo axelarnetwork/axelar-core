@@ -960,9 +960,23 @@ func NewCommandBatchMetadata(blockHeight int64, chainID sdk.Int, keyID multisig.
 	}, nil
 }
 
+// ValidateBasic returns an error if the CommandBatchMetadata is not valid
 func (m CommandBatchMetadata) ValidateBasic() error {
-	if m.Status == BatchNonExistent {
+	switch m.Status {
+	case BatchNonExistent:
 		return errors.New("batch does not exist")
+	case BatchSigning, BatchAborted:
+		if m.Signature != nil {
+			return errors.New("unsigned batch must not have a signature")
+		}
+	case BatchSigned:
+		if m.Signature == nil {
+			return errors.New("signed batch must have a valid signature")
+		}
+
+		if err := m.Signature.GetCachedValue().(utils.ValidatedProtoMarshaler).ValidateBasic(); err != nil {
+			return err
+		}
 	}
 
 	if len(m.ID) != 32 {
@@ -983,20 +997,6 @@ func (m CommandBatchMetadata) ValidateBasic() error {
 
 	if err := m.KeyID.ValidateBasic(); err != nil {
 		return err
-	}
-
-	if (m.Status == BatchSigning || m.Status == BatchAborted) && m.Signature != nil {
-		return errors.New("unsigned batch must not have a signature")
-	}
-
-	if m.Status == BatchSigned {
-		if m.Signature == nil {
-			return errors.New("signed batch must have a valid signature")
-		}
-
-		if err := m.Signature.GetCachedValue().(utils.ValidatedProtoMarshaler).ValidateBasic(); err != nil {
-			return err
-		}
 	}
 
 	if len(m.PrevBatchedCommandsID) != 0 && len(m.PrevBatchedCommandsID) != 32 {
@@ -1854,6 +1854,7 @@ type Operator struct {
 	Weight    sdk.Uint
 }
 
+// ValidateBasic returns an error if the Gateway address is invalid
 func (m Gateway) ValidateBasic() error {
 	if m.Address.IsZeroAddress() {
 		return errors.New("address must not be empty")
