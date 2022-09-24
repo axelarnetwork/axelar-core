@@ -17,10 +17,11 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/types/mock"
 	multisigtypes "github.com/axelarnetwork/axelar-core/x/multisig/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/utils/funcs"
 	. "github.com/axelarnetwork/utils/test"
 )
 
-func setup() (sdk.Context, BaseKeeper) {
+func setup() (sdk.Context, *BaseKeeper) {
 	encCfg := params.MakeEncodingConfig()
 
 	encCfg.InterfaceRegistry.RegisterImplementations((*codec.ProtoMarshaler)(nil),
@@ -32,7 +33,7 @@ func setup() (sdk.Context, BaseKeeper) {
 	keeper := NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("evm"), paramsK)
 
 	for _, params := range types.DefaultParams() {
-		keeper.ForChain(params.Chain).SetParams(ctx, params)
+		funcs.MustNoErr(keeper.CreateChain(ctx, params))
 	}
 
 	return ctx, keeper
@@ -41,7 +42,7 @@ func setup() (sdk.Context, BaseKeeper) {
 func TestGetMigrationHandler(t *testing.T) {
 	var (
 		ctx     sdk.Context
-		keeper  BaseKeeper
+		keeper  *BaseKeeper
 		handler func(ctx sdk.Context) error
 	)
 
@@ -60,14 +61,14 @@ func TestGetMigrationHandler(t *testing.T) {
 	givenMigrationHandler.
 		When("TransferLimit param is not set", func() {
 			for _, chain := range evmChains {
-				ck := keeper.ForChain(chain.Name).(chainKeeper)
-				subspace, _ := ck.getSubspace(ctx)
+				ck := funcs.Must(keeper.ForChain(ctx, chain.Name)).(chainKeeper)
+				subspace := ck.getSubspace(ctx, ck.chain)
 				subspace.Set(ctx, types.KeyTransferLimit, int64(0))
 			}
 		}).
 		Then("should set TransferLimit param", func(t *testing.T) {
 			for _, chain := range evmChains {
-				ck := keeper.ForChain(chain.Name).(chainKeeper)
+				ck := funcs.Must(keeper.ForChain(ctx, chain.Name)).(chainKeeper)
 				assert.Zero(t, ck.GetParams(ctx).TransferLimit)
 			}
 
@@ -75,7 +76,7 @@ func TestGetMigrationHandler(t *testing.T) {
 			assert.NoError(t, err)
 
 			for _, chain := range evmChains {
-				ck := keeper.ForChain(chain.Name).(chainKeeper)
+				ck := funcs.Must(keeper.ForChain(ctx, chain.Name)).(chainKeeper)
 				assert.Equal(t, types.DefaultParams()[0].TransferLimit, ck.GetParams(ctx).TransferLimit)
 			}
 		})

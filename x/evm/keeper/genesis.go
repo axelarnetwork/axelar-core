@@ -6,14 +6,14 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/utils/funcs"
 )
 
 // InitGenesis initializes the state from a genesis file
 func (k BaseKeeper) InitGenesis(ctx sdk.Context, state types.GenesisState) {
 	for _, chain := range state.Chains {
-		ck := k.ForChain(chain.Params.Chain).(chainKeeper)
-
-		ck.SetParams(ctx, chain.Params)
+		funcs.MustNoErr(k.CreateChain(ctx, chain.Params))
+		ck := funcs.Must(k.ForChain(ctx, chain.Params.Chain)).(chainKeeper)
 
 		for _, burner := range chain.BurnerInfos {
 			ck.SetBurnerInfo(ctx, burner)
@@ -71,7 +71,7 @@ func (k BaseKeeper) getChains(ctx sdk.Context) []types.GenesisState_Chain {
 
 	var chains []types.GenesisState_Chain
 	for ; iter.Valid(); iter.Next() {
-		ck := k.ForChain(nexus.ChainName(iter.Value())).(chainKeeper)
+		ck := funcs.Must(k.ForChain(ctx, nexus.ChainName(iter.Value()))).(chainKeeper)
 
 		chain := types.GenesisState_Chain{
 			Params:              ck.GetParams(ctx),

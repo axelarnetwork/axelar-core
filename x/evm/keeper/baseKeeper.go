@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/tendermint/tendermint/libs/log"
@@ -21,26 +20,23 @@ var (
 	subspacePrefix = "subspace"
 )
 
-var _ types.BaseKeeper = BaseKeeper{}
+var _ types.BaseKeeper = &BaseKeeper{}
 
 // BaseKeeper implements the base Keeper
 type BaseKeeper struct {
 	storeKey sdk.StoreKey
 	cdc      codec.BinaryCodec
 
-	// It is not safe to access subspaces directly (subspaces cannot be deleted so a subspace might exist for a chain that was deleted).
-	// Use getSubspace to access a subspace.
 	paramsKeeper types.ParamsKeeper
-	subspaces    map[string]params.Subspace
+	initialized  bool
 }
 
 // NewKeeper returns a new EVM base keeper
-func NewKeeper(cdc codec.BinaryCodec, storeKey sdk.StoreKey, paramsKeeper types.ParamsKeeper) BaseKeeper {
-	return BaseKeeper{
+func NewKeeper(cdc codec.BinaryCodec, storeKey sdk.StoreKey, paramsKeeper types.ParamsKeeper) *BaseKeeper {
+	return &BaseKeeper{
 		cdc:          cdc,
 		storeKey:     storeKey,
 		paramsKeeper: paramsKeeper,
-		subspaces:    make(map[string]params.Subspace),
 	}
 }
 
@@ -49,24 +45,67 @@ func (k BaseKeeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
-// ForChain returns the keeper associated to the given chain
-func (k BaseKeeper) ForChain(chain nexus.ChainName) types.ChainKeeper {
-	return chainKeeper{
-		BaseKeeper:    k,
-		chainLowerKey: strings.ToLower(chain.String()),
+// InitChains initializes all existing EVM chains and their respective param subspaces
+func (k *BaseKeeper) InitChains(ctx sdk.Context) {
+	if k.initialized {
+		panic("chains are already initialized")
 	}
+
+	iter := k.getBaseStore(ctx).IteratorNew(key.FromStr(subspacePrefix))
+	defer utils.CloseLogError(iter, k.Logger(ctx))
+
+	for ; iter.Valid(); iter.Next() {
+		_ = k.getSubspace(ctx, nexus.ChainName(iter.Key()))
+	}
+
+	k.initialized = true
+}
+
+// CreateChain creates the subspace for a new EVM chain. Returns an error if the chain already exists
+func (k BaseKeeper) CreateChain(ctx sdk.Context, params types.Params) error {
+	if !k.initialized {
+		panic("InitChain must be called before chain keepers can be used")
+	}
+
+	chainKey := key.FromStr(subspacePrefix).Append(key.FromStr(params.Chain.String()))
+	if k.getBaseStore(ctx).HasNew(chainKey) {
+		return fmt.Errorf("chain %s already exists", params.Chain)
+	}
+
+	k.getBaseStore(ctx).SetRawNew(chainKey, []byte(params.Chain))
+
+	subspace := k.getSubspace(ctx, params.Chain)
+	subspace.SetParamSet(ctx, &params)
+	return nil
+}
+
+// ForChain returns the keeper associated to the given chain
+func (k BaseKeeper) ForChain(ctx sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) {
+	if !k.initialized {
+		panic("InitChain must be called before chain keepers can be used")
+	}
+
+	chainKey := key.FromStr(subspacePrefix).Append(key.FromStr(chain.String()))
+	if !k.getBaseStore(ctx).HasNew(chainKey) {
+		return chainKeeper{}, fmt.Errorf("unknown chain %s", chain)
+	}
+
+	return chainKeeper{
+		BaseKeeper: k,
+		chain:      chain,
+	}, nil
 }
 
 func (k BaseKeeper) getBaseStore(ctx sdk.Context) utils.KVStore {
 	return utils.NewNormalizedStore(ctx.KVStore(k.storeKey), k.cdc)
 }
 
-func (k BaseKeeper) getStore(ctx sdk.Context, chain string) utils.KVStore {
-	pre := string(chainPrefix.Append(utils.LowerCaseKey(chain)).AsKey()) + "_"
-	return utils.NewNormalizedStore(prefix.NewStore(ctx.KVStore(k.storeKey), []byte(pre)), k.cdc)
-}
+func (k BaseKeeper) getSubspace(ctx sdk.Context, chain nexus.ChainName) params.Subspace {
+	chainKey := types.ModuleName + "_" + strings.ToLower(chain.String())
+	if subspace, ok := k.paramsKeeper.GetSubspace(chainKey); ok {
+		return subspace
+	}
 
-// HasChain returns true if the chain has been set up
-func (k BaseKeeper) HasChain(ctx sdk.Context, chain nexus.ChainName) bool {
-	return k.getBaseStore(ctx).HasNew(key.FromStr(subspacePrefix).Append(key.From(chain)))
+	k.Logger(ctx).Debug(fmt.Sprintf("initialized evm subspace %s", chain))
+	return k.paramsKeeper.Subspace(chainKey).WithKeyTable(types.KeyTable())
 }

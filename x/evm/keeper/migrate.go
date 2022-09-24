@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"encoding/hex"
-	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -11,36 +10,28 @@ import (
 )
 
 // Migrate5To6 returns the handler that performs in-place store migrations
-func Migrate5To6(k BaseKeeper, n types.Nexus) func(ctx sdk.Context) error {
+func Migrate5To6(k *BaseKeeper, n types.Nexus) func(ctx sdk.Context) error {
 	return func(ctx sdk.Context) error {
 		return nil
 	}
 }
 
 // AlwaysMigrateBytecode migrates contracts bytecode for all evm chains (CRUCIAL, DO NOT DELETE AND ALWAYS REGISTER)
-func AlwaysMigrateBytecode(k BaseKeeper, n types.Nexus, otherMigrations func(ctx sdk.Context) error) func(ctx sdk.Context) error {
+func AlwaysMigrateBytecode(k *BaseKeeper, n types.Nexus, otherMigrations func(ctx sdk.Context) error) func(ctx sdk.Context) error {
 	return func(ctx sdk.Context) error {
 		// migrate contracts bytecode (CRUCIAL AND DO NOT DELETE) for all evm chains
 		for _, chain := range slices.Filter(n.GetChains(ctx), types.IsEVMChain) {
-			ck := k.ForChain(chain.Name).(chainKeeper)
-			if err := migrateContractsBytecode(ctx, ck); err != nil {
+			ck, err := k.ForChain(ctx, chain.Name)
+			if err != nil {
+				return err
+			}
+			if err := migrateContractsBytecode(ctx, ck.(chainKeeper)); err != nil {
 				return err
 			}
 		}
 
 		return otherMigrations(ctx)
 	}
-}
-
-func addTransferLimitParam(ctx sdk.Context, ck chainKeeper) error {
-	subspace, ok := ck.getSubspace(ctx)
-	if !ok {
-		return fmt.Errorf("param subspace for chain %s should exist", ck.GetName())
-	}
-
-	subspace.Set(ctx, types.KeyTransferLimit, types.DefaultParams()[0].TransferLimit)
-
-	return nil
 }
 
 // this function migrates the contracts bytecode to the latest for every existing
@@ -57,11 +48,7 @@ func migrateContractsBytecode(ctx sdk.Context, ck chainKeeper) error {
 		return err
 	}
 
-	subspace, ok := ck.getSubspace(ctx)
-	if !ok {
-		return fmt.Errorf("param subspace for chain %s should exist", ck.GetName())
-	}
-
+	subspace := ck.getSubspace(ctx, ck.chain)
 	subspace.Set(ctx, types.KeyToken, bzToken)
 	subspace.Set(ctx, types.KeyBurnable, bzBurnable)
 
