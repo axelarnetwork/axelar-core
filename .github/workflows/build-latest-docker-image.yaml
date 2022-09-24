@@ -24,17 +24,6 @@ jobs:
 
       - uses: nelonoel/branch-name@v1.0.1
 
-      - id: set-tag
-        name: Set image tag
-        run: |
-          TAG="latest"
-
-          if [[ "$BRANCH_NAME" != "main" ]]; then
-            TAG=$(echo $BRANCH_NAME | tr "/" "-")
-          fi
-
-          echo '::set-output name=TAG::'$TAG
-
       - name: fetch tags
         run: |
           git fetch --unshallow
@@ -50,7 +39,7 @@ jobs:
           secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           region: us-east-2
           local-image: axelar/core
-          image: axelar-core:${{ steps.set-tag.outputs.TAG }}, axelar-core:${{ github.sha }}
+          image: axelar-core:${{ github.sha }}
 
       - name: Build docker image (debug)
         if: github.event.inputs.buildDebug != 'false'
@@ -65,4 +54,4 @@ jobs:
           secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           region: us-east-2
           local-image: axelar/core-debug
-          image: axelar-core:${{ steps.set-tag.outputs.TAG }}-debug
+          image: axelar-core:${{ github.sha }}-debug
