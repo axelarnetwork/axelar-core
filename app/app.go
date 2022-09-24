@@ -380,7 +380,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	)
 	// we need to ensure that all chain subspaces are loaded at start-up to prevent unexpected consensus failures
 	// when the params keeper is used outside the evm module's context
-	evmK.InitChains(sdk.NewContext(store2.NewCommitMultiStore(db),tmproto.Header{}, false, logger))
+	evmK.InitChains(sdk.NewContext(store2.NewCommitMultiStore(db), tmproto.Header{}, false, logger))
 
 	rewardK := rewardKeeper.NewKeeper(
 		appCodec, keys[rewardTypes.StoreKey], app.getSubspace(rewardTypes.ModuleName), bankK, distrK, stakingK,
