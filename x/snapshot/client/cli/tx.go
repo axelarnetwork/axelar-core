@@ -94,25 +94,32 @@ func GetCmdSendTokens() *cobra.Command {
 			outputs := make([]banktypes.Output, 0)
 
 			for _, arg := range args {
-
-				a := strings.Split(arg, "=")
-				if len(a) != 2 {
+				sendInfo := strings.Split(arg, "=")
+				if len(sendInfo) != 2 {
 					return fmt.Errorf("argument format is not [address]=[amount]")
 				}
 
-				to, err := sdk.AccAddressFromBech32(a[0])
+				to, err := sdk.AccAddressFromBech32(sendInfo[0])
 				if err != nil {
 					return err
 				}
 
-				coins, err := sdk.ParseCoinsNormalized(a[1])
+				decCoins, err := sdk.ParseDecCoins(sendInfo[1])
 				if err != nil {
 					return err
+				}
+
+				if decCoins.Len() != 1 {
+					return fmt.Errorf("only a single amount is permitted")
+				}
+
+				coins, decimals := decCoins.TruncateDecimal()
+				if !decimals.IsZero() {
+					return fmt.Errorf("amount must be an integer value")
 				}
 
 				inputs = append(inputs, banktypes.NewInput(clientCtx.FromAddress, coins))
 				outputs = append(outputs, banktypes.NewOutput(to, coins))
-
 			}
 
 			msg := banktypes.NewMsgMultiSend(inputs, outputs)
