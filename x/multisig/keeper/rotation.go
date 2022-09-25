@@ -33,8 +33,9 @@ func (k Keeper) GetCurrentKeyID(ctx sdk.Context, chainName nexus.ChainName) (exp
 	return keyEpoch.KeyID, true
 }
 
-func (k Keeper) GetKeyEpoch(ctx sdk.Context, chainName nexus.ChainName, epoch uint64) (types.KeyEpoch, bool) {
-	keyEpoch, ok := k.getKeyEpoch(ctx, chainName, epoch)
+// GetCurrentKeyEpoch returns the current key epoch of the given chain
+func (k Keeper) GetCurrentKeyEpoch(ctx sdk.Context, chainName nexus.ChainName) (types.KeyEpoch, bool) {
+	keyEpoch, ok := k.getKeyEpoch(ctx, chainName, k.getKeyRotationCount(ctx, chainName))
 	if !ok {
 		return types.KeyEpoch{}, false
 	}
@@ -42,8 +43,9 @@ func (k Keeper) GetKeyEpoch(ctx sdk.Context, chainName nexus.ChainName, epoch ui
 	return keyEpoch, true
 }
 
-func (k Keeper) GetCurrentKeyEpoch(ctx sdk.Context, chainName nexus.ChainName) (types.KeyEpoch, bool) {
-	keyEpoch, ok := k.getKeyEpoch(ctx, chainName, k.getKeyRotationCount(ctx, chainName))
+// GetKeyEpoch returns a specific key epoch of the given chain
+func (k Keeper) GetKeyEpoch(ctx sdk.Context, chainName nexus.ChainName, epoch uint64) (types.KeyEpoch, bool) {
+	keyEpoch, ok := k.getKeyEpoch(ctx, chainName, epoch)
 	if !ok {
 		return types.KeyEpoch{}, false
 	}

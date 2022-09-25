@@ -27,6 +27,8 @@ type Keeper interface {
 	GetSigningSessionsByExpiry(ctx sdk.Context, expiry int64) []SigningSession
 	DeleteSigningSession(ctx sdk.Context, id uint64)
 	GetSigRouter() SigRouter
+	GetCurrentKeyEpoch(ctx sdk.Context, chainName nexus.ChainName) (KeyEpoch, bool)
+	GetKeyEpoch(ctx sdk.Context, chainName nexus.ChainName, epoch uint64) (KeyEpoch, bool)
 }
 
 // Snapshotter provides snapshot keeper functionality

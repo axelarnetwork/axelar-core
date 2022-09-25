@@ -148,3 +148,27 @@ func (q Querier) KeygenSession(c context.Context, req *types.KeygenSessionReques
 		Participants:           getKeygenParticipants(key),
 	}, nil
 }
+
+// KeyEpoch returns either the current epoch or a specified epoch for the given chain
+func (q Querier) KeyEpoch(c context.Context, req *types.KeyEpochRequest) (*types.KeyEpochResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	var (
+		epoch types.KeyEpoch
+		ok    bool
+	)
+
+	if req.Current {
+		epoch, ok = q.keeper.GetCurrentKeyEpoch(ctx, nexus.ChainName(req.Chain))
+	} else {
+		epoch, ok = q.keeper.GetKeyEpoch(ctx, nexus.ChainName(req.Chain), req.Epoch)
+	}
+
+	if !ok {
+		return nil, status.Errorf(codes.NotFound, "epoch not found for chain %s", req.Chain)
+	}
+
+	return &types.KeyEpochResponse{
+		KeyEpoch: &epoch,
+	}, nil
+}
