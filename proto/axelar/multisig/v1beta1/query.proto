@@ -34,6 +34,18 @@ message NextKeyIDResponse {
   ];
 }
 
+message KeyEpochRequest {
+  string chain = 1;
+  uint64 epoch = 2;
+  bool current = 3;
+}
+
+message KeyEpochResponse {
+  KeyEpoch key_epoch = 1 [
+    (gogoproto.customname) = "KeyEpoch"
+  ];
+}
+
 message KeyRequest {
   string key_id = 1 [
     (gogoproto.customname) = "KeyID",
