@@ -18,7 +18,7 @@ import (
 	"github.com/tendermint/tendermint/config"
 	"github.com/tendermint/tendermint/libs/log"
 
-	utils2 "github.com/axelarnetwork/axelar-core/utils"
+	errors2 "github.com/axelarnetwork/axelar-core/utils/errors"
 	"github.com/axelarnetwork/axelar-core/x/reward/types"
 	"github.com/axelarnetwork/utils"
 )
@@ -286,7 +286,7 @@ func (b *pipelinedBroadcaster) Broadcast(ctx context.Context, msgs ...sdk.Msg) (
 				return true
 			}
 
-			if !utils2.IsABCIError(err) {
+			if !errors2.Is[*sdkerrors.Error](err) {
 				return true
 			}
 
@@ -450,7 +450,7 @@ func SuppressExecutionErrs(broadcaster Broadcaster, logger log.Logger) Broadcast
 // Broadcast implements the Broadcaster interface
 func (s suppressorBroadcaster) Broadcast(ctx context.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error) {
 	res, err := s.b.Broadcast(ctx, msgs...)
-	if utils2.IsABCIError(err) {
+	if errors2.Is[*sdkerrors.Error](err) {
 		s.logger.Info(fmt.Sprintf("tx response with error: %s", err))
 		return nil, nil
 	}

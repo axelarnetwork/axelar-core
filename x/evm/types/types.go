@@ -21,6 +21,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/pkg/errors"
 	"golang.org/x/exp/maps"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -890,12 +891,12 @@ func (b CommandBatch) GetCommandIDs() []CommandID {
 }
 
 // GetSignature returns the batch's signature
-func (b CommandBatch) GetSignature() codec.ProtoMarshaler {
+func (b CommandBatch) GetSignature() utils.ValidatedProtoMarshaler {
 	if b.metadata.Signature == nil {
 		return nil
 	}
 
-	return b.metadata.Signature.GetCachedValue().(codec.ProtoMarshaler)
+	return b.metadata.Signature.GetCachedValue().(utils.ValidatedProtoMarshaler)
 }
 
 // Is returns true if batched commands is in the given status; false otherwise
@@ -915,7 +916,7 @@ func (b *CommandBatch) SetStatus(status BatchedCommandsStatus) bool {
 }
 
 // SetSigned sets the signature and signed status for the batch
-func (b *CommandBatch) SetSigned(signature codec.ProtoMarshaler) error {
+func (b *CommandBatch) SetSigned(signature utils.ValidatedProtoMarshaler) error {
 	if b.metadata.Status != BatchSigning {
 		return fmt.Errorf("command batch %s is not being signed", hex.EncodeToString(b.GetID()))
 	}
@@ -957,6 +958,52 @@ func NewCommandBatchMetadata(blockHeight int64, chainID sdk.Int, keyID multisig.
 		Status:     BatchSigning,
 		KeyID:      keyID,
 	}, nil
+}
+
+// ValidateBasic returns an error if the CommandBatchMetadata is not valid
+func (m CommandBatchMetadata) ValidateBasic() error {
+	switch m.Status {
+	case BatchNonExistent:
+		return errors.New("batch does not exist")
+	case BatchSigning, BatchAborted:
+		if m.Signature != nil {
+			return errors.New("unsigned batch must not have a signature")
+		}
+	case BatchSigned:
+		if m.Signature == nil {
+			return errors.New("signed batch must have a valid signature")
+		}
+
+		if err := m.Signature.GetCachedValue().(utils.ValidatedProtoMarshaler).ValidateBasic(); err != nil {
+			return err
+		}
+	}
+
+	if len(m.ID) != 32 {
+		return errors.New("batch ID must be of length 32")
+	}
+
+	if len(m.CommandIDs) == 0 {
+		return errors.New("command IDs must not be empty")
+	}
+
+	if len(m.Data) == 0 {
+		return errors.New("batch data must not be empty")
+	}
+
+	if m.SigHash.IsZero() {
+		return errors.New("batch data hash must not be empty")
+	}
+
+	if err := m.KeyID.ValidateBasic(); err != nil {
+		return err
+	}
+
+	if len(m.PrevBatchedCommandsID) != 0 && len(m.PrevBatchedCommandsID) != 32 {
+		return errors.New("previous batch ID must either be nil or of length 32")
+	}
+
+	return nil
 }
 
 // UnpackInterfaces implements UnpackInterfacesMessage
@@ -1683,6 +1730,25 @@ func NewVoteEvents(chain nexus.ChainName, events ...Event) *VoteEvents {
 	}
 }
 
+// ValidateBasic does stateless validation of the object
+func (m VoteEvents) ValidateBasic() error {
+	if err := m.Chain.Validate(); err != nil {
+		return err
+	}
+
+	for _, event := range m.Events {
+		if err := event.ValidateBasic(); err != nil {
+			return err
+		}
+
+		if event.Chain != m.Chain {
+			return fmt.Errorf("events are not from the same source chain")
+		}
+	}
+
+	return nil
+}
+
 // GetMultisigAddressesAndWeights coverts a multisig key to sorted addresses, weights and threshold
 func GetMultisigAddressesAndWeights(key multisig.Key) ([]common.Address, []sdk.Uint, sdk.Uint) {
 	addressWeights, threshold := ParseMultisigKey(key)
@@ -1805,4 +1871,13 @@ type Operator struct {
 	Address   common.Address
 	Signature []byte
 	Weight    sdk.Uint
+}
+
+// ValidateBasic returns an error if the Gateway address is invalid
+func (m Gateway) ValidateBasic() error {
+	if m.Address.IsZeroAddress() {
+		return errors.New("address must not be empty")
+	}
+
+	return nil
 }
