@@ -185,6 +185,7 @@ message TokenInfoRequest {
   oneof find_by {
     string asset = 2;
     string symbol = 3;
+    string address = 4;
   }
 }
 

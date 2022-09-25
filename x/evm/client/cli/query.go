@@ -513,12 +513,13 @@ func getCmdERC20Tokens(queryRoute string) *cobra.Command {
 func getCmdTokenInfo(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "token-info [chain]",
-		Short: fmt.Sprintf("Returns the info of token by either %s or %s", keeper.BySymbol, keeper.ByAsset),
+		Short: fmt.Sprintf("Returns the info of token by either %s, %s, or %s", keeper.BySymbol, keeper.ByAsset, keeper.ByAddress),
 		Args:  cobra.ExactArgs(1),
 	}
 
 	symbol := cmd.Flags().String(keeper.BySymbol, "", "lookup token by symbol")
 	asset := cmd.Flags().String(keeper.ByAsset, "", "lookup token by asset name")
+	address := cmd.Flags().String(keeper.ByAddress, "", "lookup token by address")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		clientCtx, err := client.GetClientQueryContext(cmd)
@@ -528,18 +529,24 @@ func getCmdTokenInfo(queryRoute string) *cobra.Command {
 
 		var req types.TokenInfoRequest
 		switch {
-		case *symbol == "" && *asset != "":
+		case *symbol == "" && *asset != "" && *address == "":
 			req = types.TokenInfoRequest{
 				Chain:  args[0],
 				FindBy: &types.TokenInfoRequest_Asset{Asset: *asset},
 			}
-		case *symbol != "" && *asset == "":
+		case *symbol != "" && *asset == "" && *address == "":
 			req = types.TokenInfoRequest{
 				Chain:  args[0],
 				FindBy: &types.TokenInfoRequest_Symbol{Symbol: *symbol},
 			}
+		case *symbol == "" && *asset == "" && *address != "":
+			req = types.TokenInfoRequest{
+				Chain:  args[0],
+				FindBy: &types.TokenInfoRequest_Address{Address: *address},
+			}
+
 		default:
-			return fmt.Errorf("lookup must be either by asset name or symbol")
+			return fmt.Errorf("lookup must be either by asset name, symbol, or address")
 		}
 
 		queryClient := types.NewQueryServiceClient(clientCtx)
