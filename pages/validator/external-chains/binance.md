@@ -9,12 +9,12 @@ sudo apt update && sudo apt upgrade -y
 ```
 sudo apt install make clang pkg-config libssl-dev libclang-dev build-essential git curl ntp jq llvm tmux htop screen unzip -y
 ```
-Install Go 1.19
+Install Go 1.19.1
 ```
-wget https://golang.org/dl/go1.19.linux-amd64.tar.gz
+wget https://golang.org/dl/go1.19.1.linux-amd64.tar.gz
 ```
 ```
-sudo tar -C /usr/local -xzf go1.19.linux-amd64.tar.gz
+sudo tar -C /usr/local -xzf go1.19.1.linux-amd64.tar.gz
 ```
 ```
 cat <<EOF >> ~/.profile
@@ -37,16 +37,16 @@ make geth
 
 You can download the pre-build binaries from [release page](https://github.com/bnb-chain/bsc/releases/latest) or follow the instructions bellow
 ```
-wget https://github.com/bnb-chain/bsc/releases/download/v1.1.12/geth_linux
+wget https://github.com/bnb-chain/bsc/releases/download/v1.1.13/geth_linux
 ```
  # Testnet
 ```
-wget https://github.com/bnb-chain/bsc/releases/download/v1.1.12/testnet.zip
+wget https://github.com/bnb-chain/bsc/releases/download/v1.1.13/testnet.zip
 unzip testnet.zip
 ```
  # Mainnet
 ```
-wget https://github.com/bnb-chain/bsc/releases/download/v1.1.12/mainnet.zip
+wget https://github.com/bnb-chain/bsc/releases/download/v1.1.13/mainnet.zip
 unzip mainnet.zip
 ```
 ```
@@ -120,3 +120,27 @@ Example: ``http://5.168.135.185:8575``
 #for Mainnet
 
 Example: ``http://5.168.135.185:8545``
+
+## 9. If a new update is out
+If a new update has been released, then you can update with the following commands.
+```
+systemctl stop bscd
+mkdir temp
+cd temp
+```
+Check the latest [release page](https://github.com/bnb-chain/bsc/releases/latest). In this example the latest release is `v1.1.13`
+```
+wget https://github.com/bnb-chain/bsc/releases/download/v1.1.13/geth_linux
+```
+```
+mv geth_linux /usr/bin/geth
+chmod +x /usr/bin/geth
+```
+```
+cd ~
+systemctl start bscd
+```
+Check that your BSC node work correctly
+```
+journalctl -u bscd -f -n 100
+```
