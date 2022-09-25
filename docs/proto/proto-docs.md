@@ -295,6 +295,8 @@
     - [GenesisState](#axelar.multisig.v1beta1.GenesisState)
   
 - [axelar/multisig/v1beta1/query.proto](#axelar/multisig/v1beta1/query.proto)
+    - [KeyEpochRequest](#axelar.multisig.v1beta1.KeyEpochRequest)
+    - [KeyEpochResponse](#axelar.multisig.v1beta1.KeyEpochResponse)
     - [KeyIDRequest](#axelar.multisig.v1beta1.KeyIDRequest)
     - [KeyIDResponse](#axelar.multisig.v1beta1.KeyIDResponse)
     - [KeyRequest](#axelar.multisig.v1beta1.KeyRequest)
@@ -4633,6 +4635,38 @@ GenesisState represents the genesis state
 <p align="right"><a href="#top">Top</a></p>
 
 ## axelar/multisig/v1beta1/query.proto
+
+
+
+<a name="axelar.multisig.v1beta1.KeyEpochRequest"></a>
+
+### KeyEpochRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `epoch` | [uint64](#uint64) |  |  |
+| `current` | [bool](#bool) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.KeyEpochResponse"></a>
+
+### KeyEpochResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key_epoch` | [KeyEpoch](#axelar.multisig.v1beta1.KeyEpoch) |  |  |
+
+
+
 
 
 

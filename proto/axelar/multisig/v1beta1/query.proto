@@ -41,9 +41,7 @@ message KeyEpochRequest {
 }
 
 message KeyEpochResponse {
-  KeyEpoch key_epoch = 1 [
-    (gogoproto.customname) = "KeyEpoch"
-  ];
+  KeyEpoch key_epoch = 1 [ (gogoproto.customname) = "KeyEpoch" ];
 }
 
 message KeyRequest {
