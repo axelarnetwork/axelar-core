@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -80,35 +81,31 @@ func GetCmdDeregisterProxy() *cobra.Command {
 // GetCmdSendTokens returns the command to send stake to a number of addresses
 func GetCmdSendTokens() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "send-tokens [amount] [address 1] ... [address n]",
+		Use:   "send-tokens [address 1]=[amount] ... [address n]=[amount]",
 		Short: "Sends the specified amount of tokens to the designated addresses",
-		Args:  cobra.MinimumNArgs(2),
+		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
 				return err
 			}
 
-			decCoins, err := sdk.ParseDecCoins(args[0])
-			if err != nil {
-				return err
-			}
-
-			if decCoins.Len() != 1 {
-				return fmt.Errorf("only a single amount is permitted")
-			}
-
-			coins, decimals := decCoins.TruncateDecimal()
-			if !decimals.IsZero() {
-				return fmt.Errorf("amount must be an integer value")
-			}
-
 			inputs := make([]banktypes.Input, 0)
 			outputs := make([]banktypes.Output, 0)
 
-			for _, addr := range args[1:] {
+			for _, arg := range args {
 
-				to, err := sdk.AccAddressFromBech32(addr)
+				a := strings.Split(arg, "=")
+				if len(a) != 2 {
+					return fmt.Errorf("argument format is not [address]=[amount]")
+				}
+
+				to, err := sdk.AccAddressFromBech32(a[0])
+				if err != nil {
+					return err
+				}
+
+				coins, err := sdk.ParseCoinsNormalized(a[1])
 				if err != nil {
 					return err
 				}
