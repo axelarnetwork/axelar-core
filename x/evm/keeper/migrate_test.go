@@ -62,8 +62,7 @@ func TestGetMigrationHandler(t *testing.T) {
 		When("TransferLimit param is not set", func() {
 			for _, chain := range evmChains {
 				ck := funcs.Must(keeper.ForChain(ctx, chain.Name)).(chainKeeper)
-				subspace := ck.getSubspace(ctx, ck.chain)
-				subspace.Set(ctx, types.KeyTransferLimit, int64(0))
+				ck.getSubspace().Set(ctx, types.KeyTransferLimit, int64(0))
 			}
 		}).
 		Then("should set TransferLimit param", func(t *testing.T) {

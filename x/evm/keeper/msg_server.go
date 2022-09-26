@@ -107,9 +107,6 @@ func (s msgServer) ConfirmGatewayTx(c context.Context, req *types.ConfirmGateway
 	}
 
 	height := keeper.GetRequiredConfirmationHeight(ctx)
-	if !ok {
-		return nil, fmt.Errorf("required confirmation height not found")
-	}
 
 	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.ConfirmGatewayTxStarted{
 		TxID:               req.TxID,
@@ -265,8 +262,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 	}
 	token := keeper.GetERC20TokenByAsset(ctx, req.Asset.Name)
 
-	err = token.RecordDeployment(req.TxID)
-	if err != nil {
+	if err := token.RecordDeployment(req.TxID); err != nil {
 		return nil, err
 	}
 

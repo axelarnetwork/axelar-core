@@ -2,6 +2,7 @@ package keeper_test
 
 import (
 	"encoding/hex"
+	"strings"
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -324,4 +325,8 @@ func TestGetConfirmedDepositsPaginated(t *testing.T) {
 			assert.Len(t, confirmedDeposits, 0)
 		}).
 		Run(t, repeats)
+}
+
+func TestName(t *testing.T) {
+	strings.ToLower(exported.Ethereum.Name.String())
 }

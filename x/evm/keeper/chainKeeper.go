@@ -9,6 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
+	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	evmTypes "github.com/ethereum/go-ethereum/core/types"
@@ -42,7 +43,7 @@ var (
 var _ types.ChainKeeper = chainKeeper{}
 
 type chainKeeper struct {
-	BaseKeeper
+	internalKeeper
 	chain nexus.ChainName
 }
 
@@ -52,19 +53,14 @@ func (k chainKeeper) GetName() nexus.ChainName {
 
 // GetParams gets the evm module's parameters
 func (k chainKeeper) GetParams(ctx sdk.Context) types.Params {
-	subspace := k.getSubspace(ctx, k.chain)
 	var p types.Params
-	subspace.GetParamSet(ctx, &p)
+	k.getSubspace().GetParamSet(ctx, &p)
 	return p
 }
 
 // returns the EVM network's gas limist for batched commands
 func (k chainKeeper) getCommandsGasLimit(ctx sdk.Context) uint32 {
-	var commandsGasLimit uint32
-	subspace := k.getSubspace(ctx, k.chain)
-	subspace.Get(ctx, types.KeyCommandsGasLimit, &commandsGasLimit)
-
-	return commandsGasLimit
+	return getParam[uint32](k, ctx, types.KeyCommandsGasLimit)
 }
 
 func (k chainKeeper) GetChainID(ctx sdk.Context) (sdk.Int, bool) {
@@ -74,46 +70,27 @@ func (k chainKeeper) GetChainID(ctx sdk.Context) (sdk.Int, bool) {
 
 // GetNetwork returns the EVM network Axelar-Core is expected to connect to
 func (k chainKeeper) GetNetwork(ctx sdk.Context) string {
-	var network string
-	subspace := k.getSubspace(ctx, k.chain)
-	subspace.Get(ctx, types.KeyNetwork, &network)
-	return network
+	return getParam[string](k, ctx, types.KeyNetwork)
 }
 
 // GetRequiredConfirmationHeight returns the required block confirmation height
 func (k chainKeeper) GetRequiredConfirmationHeight(ctx sdk.Context) uint64 {
-	var h uint64
-
-	subspace := k.getSubspace(ctx, k.chain)
-	subspace.Get(ctx, types.KeyConfirmationHeight, &h)
-	return h
+	return getParam[uint64](k, ctx, types.KeyConfirmationHeight)
 }
 
 // GetRevoteLockingPeriod returns the lock period for revoting
 func (k chainKeeper) GetRevoteLockingPeriod(ctx sdk.Context) int64 {
-	var result int64
-
-	subspace := k.getSubspace(ctx, k.chain)
-	subspace.Get(ctx, types.KeyRevoteLockingPeriod, &result)
-	return result
+	return getParam[int64](k, ctx, types.KeyRevoteLockingPeriod)
 }
 
 // GetVotingThreshold returns voting threshold
 func (k chainKeeper) GetVotingThreshold(ctx sdk.Context) utils.Threshold {
-	var threshold utils.Threshold
-
-	subspace := k.getSubspace(ctx, k.chain)
-	subspace.Get(ctx, types.KeyVotingThreshold, &threshold)
-	return threshold
+	return getParam[utils.Threshold](k, ctx, types.KeyVotingThreshold)
 }
 
 // GetMinVoterCount returns minimum voter count for voting
 func (k chainKeeper) GetMinVoterCount(ctx sdk.Context) int64 {
-	var minVoterCount int64
-
-	subspace := k.getSubspace(ctx, k.chain)
-	subspace.Get(ctx, types.KeyMinVoterCount, &minVoterCount)
-	return minVoterCount
+	return getParam[int64](k, ctx, types.KeyMinVoterCount)
 }
 
 // SetBurnerInfo saves the burner info for a given address
@@ -232,18 +209,12 @@ func (k chainKeeper) GetBurnerAddress(ctx sdk.Context, token types.ERC20Token, s
 
 // GetBurnerByteCode returns the bytecode for the burner contract
 func (k chainKeeper) GetBurnerByteCode(ctx sdk.Context) []byte {
-	var b []byte
-	subspace := k.getSubspace(ctx, k.chain)
-	subspace.Get(ctx, types.KeyBurnable, &b)
-	return b
+	return getParam[[]byte](k, ctx, types.KeyBurnable)
 }
 
 // GetTokenByteCode returns the bytecodes for the token contract
 func (k chainKeeper) GetTokenByteCode(ctx sdk.Context) []byte {
-	var b []byte
-	subspace := k.getSubspace(ctx, k.chain)
-	subspace.Get(ctx, types.KeyToken, &b)
-	return b
+	return getParam[[]byte](k, ctx, types.KeyToken)
 }
 
 func (k chainKeeper) CreateERC20Token(ctx sdk.Context, asset string, details types.TokenDetails, address types.Address) (types.ERC20Token, error) {
@@ -399,14 +370,12 @@ func (k chainKeeper) getBurnedDeposits(ctx sdk.Context) []types.ERC20Deposit {
 }
 
 func (k chainKeeper) getSigner(ctx sdk.Context) evmTypes.EIP155Signer {
-	// both chain, subspace, and network must be valid if the chain keeper was instantiated,
-	// so a nil value here must be a catastrophic failure
 
-	var network string
-	subspace := k.getSubspace(ctx, k.chain)
-	subspace.Get(ctx, types.KeyNetwork, &network)
+	network := getParam[string](k, ctx, types.KeyNetwork)
 	chainID, found := k.GetChainIDByNetwork(ctx, network)
 
+	// both chain, subspace, and network must be valid if the chain keeper was instantiated,
+	// so a nil value here must be a catastrophic failure
 	if !found {
 		panic(fmt.Sprintf("could not find chain ID for network '%s'", network))
 	}
@@ -439,10 +408,7 @@ func (k chainKeeper) DeleteDeposit(ctx sdk.Context, deposit types.ERC20Deposit) 
 
 // GetNetworkByID returns the network name for a given chain and network ID
 func (k chainKeeper) GetNetworkByID(ctx sdk.Context, id sdk.Int) (string, bool) {
-	subspace := k.getSubspace(ctx, k.chain)
-
-	var p types.Params
-	subspace.GetParamSet(ctx, &p)
+	p := k.GetParams(ctx)
 	for _, n := range p.Networks {
 		if n.Id == id {
 			return n.Name, true
@@ -457,10 +423,7 @@ func (k chainKeeper) GetChainIDByNetwork(ctx sdk.Context, network string) (sdk.I
 	if network == "" {
 		return sdk.Int{}, false
 	}
-	subspace := k.getSubspace(ctx, k.chain)
-
-	var p types.Params
-	subspace.GetParamSet(ctx, &p)
+	p := k.GetParams(ctx)
 	for _, n := range p.Networks {
 		if n.Name == network {
 			return n.Id, true
@@ -913,4 +876,19 @@ func (k chainKeeper) validateConfirmedEventQueueState(state utils.QueueState, qu
 func (k chainKeeper) getStore(ctx sdk.Context) utils.KVStore {
 	pre := string(chainPrefix.Append(utils.LowerCaseKey(k.chain.String())).AsKey()) + "_"
 	return utils.NewNormalizedStore(prefix.NewStore(ctx.KVStore(k.storeKey), []byte(pre)), k.cdc)
+}
+
+func (k chainKeeper) getSubspace() params.Subspace {
+	chainKey := key.FromStr(types.ModuleName).Append(key.From(k.chain))
+	subspace, ok := k.paramsKeeper.GetSubspace(chainKey.String())
+	if !ok {
+		panic(fmt.Sprintf("subspace for chain %s does not exist", k.chain))
+	}
+	return subspace
+}
+
+func getParam[T any](k chainKeeper, ctx sdk.Context, paramKey []byte) T {
+	var value T
+	k.getSubspace().Get(ctx, paramKey, &value)
+	return value
 }

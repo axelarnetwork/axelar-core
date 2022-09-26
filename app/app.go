@@ -19,7 +19,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/server/api"
 	"github.com/cosmos/cosmos-sdk/server/config"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
-	store2 "github.com/cosmos/cosmos-sdk/store"
 	store "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
@@ -378,9 +377,6 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	evmK := evmKeeper.NewKeeper(
 		appCodec, keys[evmTypes.StoreKey], app.paramsKeeper,
 	)
-	// we need to ensure that all chain subspaces are loaded at start-up to prevent unexpected consensus failures
-	// when the params keeper is used outside the evm module's context
-	evmK.InitChains(sdk.NewContext(store2.NewCommitMultiStore(db), tmproto.Header{}, false, logger))
 
 	rewardK := rewardKeeper.NewKeeper(
 		appCodec, keys[rewardTypes.StoreKey], app.getSubspace(rewardTypes.ModuleName), bankK, distrK, stakingK,
@@ -679,11 +675,19 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	)
 	app.SetAnteHandler(anteHandler)
 
+	ms := app.CommitMultiStore() // need to get the store before versions are loaded, otherwise app will panic because it's sealed
+
 	if loadLatest {
 		if err := app.LoadLatestVersion(); err != nil {
 			tmos.Exit(err.Error())
 		}
 	}
+
+	/* ==== at this point all stores are fully loaded ==== */
+
+	// we need to ensure that all chain subspaces are loaded at start-up to prevent unexpected consensus failures
+	// when the params keeper is used outside the evm module's context
+	evmK.InitChains(sdk.NewContext(ms, tmproto.Header{}, true, logger))
 
 	return app
 }

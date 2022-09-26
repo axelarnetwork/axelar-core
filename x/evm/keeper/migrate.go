@@ -48,7 +48,7 @@ func migrateContractsBytecode(ctx sdk.Context, ck chainKeeper) error {
 		return err
 	}
 
-	subspace := ck.getSubspace(ctx, ck.chain)
+	subspace := ck.getSubspace()
 	subspace.Set(ctx, types.KeyToken, bzToken)
 	subspace.Set(ctx, types.KeyBurnable, bzBurnable)
 
