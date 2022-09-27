@@ -59,7 +59,7 @@ func TestQueryPendingCommands(t *testing.T) {
 		cmds = append(cmds, cmdDeploy, cmdMint, cmdBurn)
 
 		chainKeeper = &mock.ChainKeeperMock{
-			GetNameFunc: func() nexus.ChainName { return evmChain},
+			GetNameFunc: func() nexus.ChainName { return evmChain },
 			GetPendingCommandsFunc: func(sdk.Context) []types.Command {
 				return cmds
 			},
