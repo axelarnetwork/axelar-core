@@ -46,7 +46,8 @@
   <tr>
     <td>RPC endpoints</td>
     <td>
-      https://axelar-rpc.quickapi.com/ <br/>
+      https://rpc-axelar.imperator.co:443 <br/>
+      https://axelar-rpc.quickapi.com:443 <br/>
       https://axelar-rpc.pops.one/ <br/>
       https://axelar-rpc.chainode.tech/ <br/>
       https://services.staketab.com/axelar-rpc <br/>
@@ -73,6 +74,7 @@
   <tr>
     <td>LCD endpoints</td>
     <td>
+      https://lcd-axelar.imperator.co <br/>
       https://axelar-lcd.quickapi.com/ <br/>
       https://axelar-lcd.qubelabs.io/ <br/>
       https://services.staketab.com/axelar-api <br/>

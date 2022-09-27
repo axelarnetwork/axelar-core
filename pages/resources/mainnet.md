@@ -69,7 +69,7 @@ axelard q nexus transfer-fee avalanche osmosis 1000000000uusdc
 The per-chain gas relayer fee info can be queried via
 
 ```bash
-axelard q nexus fee avalanche uusdc
+axelard q nexus fee-info avalanche uusdc
 ```
 
 If the total amount of a token sent to a deposit address A is NOT greater than the gas relayer fee

@@ -14,7 +14,7 @@
       "symbol": "AXL",
       "image": "/images/assets/axl.svg",
       "decimals": 6,
-      "transfer_fee": 0.5
+      "transfer_fee": 0.25
     },
     {
       "id": "weth-wei",
@@ -28,7 +28,7 @@
       "id": "dai-wei",
       "name": "DAI - Dai Stablecoin",
       "symbol": "DAI",
-      "image": "/images/assets/wdai.svg",
+      "image": "/images/assets/dai.svg",
       "decimals": 18,
       "transfer_fee": 0.5
     },
@@ -246,7 +246,7 @@
       "id": "wdev-wei",
       "name": "WDEV - Wrapped DEV",
       "symbol": "WDEV",
-      "image": "/images/assets/wdev.png",
+      "image": "/images/assets/wdev.svg",
       "decimals": 18,
       "transfer_fee": 0.02
     },
