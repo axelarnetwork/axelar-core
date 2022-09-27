@@ -4,7 +4,7 @@
       "id": "uusdc",
       "name": "USDC - USD Coin",
       "symbol": "USDC",
-      "image": "/images/assets/usdc.png",
+      "image": "/images/assets/usdc.svg",
       "contracts": [
         {
           "chain": "moonbeam",
@@ -54,7 +54,7 @@
       "id": "uaxl",
       "name": "AXL - Axelar",
       "symbol": "AXL",
-      "image": "/images/assets/axl.png",
+      "image": "/images/assets/axl.svg",
       "contracts": [
         {
           "chain": "moonbeam",
@@ -104,7 +104,7 @@
       "id": "weth-wei",
       "name": "WETH - Wrapped Ether",
       "symbol": "WETH",
-      "image": "/images/assets/weth.png",
+      "image": "/images/assets/weth.svg",
       "contracts": [
         {
           "chain": "ethereum",
@@ -119,7 +119,7 @@
       "id": "dai-wei",
       "name": "DAI - Dai Stablecoin",
       "symbol": "DAI",
-      "image": "/images/assets/dai.png",
+      "image": "/images/assets/wdai.svg",
       "contracts": [
         {
           "chain": "moonbeam",
@@ -140,6 +140,7 @@
           "address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
           "symbol": "DAI",
           "decimals": 18,
+          "image": "/images/assets/dai.png",
           "transfer_fee": 10.0
         },
         {
@@ -162,7 +163,7 @@
       "id": "uusdt",
       "name": "USDT - Tether USD",
       "symbol": "USDT",
-      "image": "/images/assets/usdt.png",
+      "image": "/images/assets/usdt.svg",
       "contracts": [
         {
           "chain": "moonbeam",
@@ -205,7 +206,7 @@
       "id": "dot-planck",
       "name": "DOT - xcDOT",
       "symbol": "DOT",
-      "image": "/images/assets/dot.png",
+      "image": "/images/assets/dot.svg",
       "contracts": [
         {
           "chain": "moonbeam",
@@ -220,7 +221,7 @@
       "id": "wavax-wei",
       "name": "WAVAX - Wrapped AVAX",
       "symbol": "WAVAX",
-      "image": "/images/assets/wavax.png",
+      "image": "/images/assets/wavax.svg",
       "contracts": [
         {
           "chain": "avalanche",
@@ -235,7 +236,7 @@
       "id": "wglmr-wei",
       "name": "WGLMR - Wrapped GLMR",
       "symbol": "WGLMR",
-      "image": "/images/assets/wglmr.png",
+      "image": "/images/assets/wglmr.svg",
       "contracts": [
         {
           "chain": "moonbeam",
@@ -250,7 +251,7 @@
       "id": "wmatic-wei",
       "name": "WMATIC - Wrapped Matic",
       "symbol": "WMATIC",
-      "image": "/images/assets/wmatic.png",
+      "image": "/images/assets/wmatic.svg",
       "contracts": [
         {
           "chain": "polygon",
@@ -265,7 +266,7 @@
       "id": "wbtc-satoshi",
       "name": "WBTC - Wrapped BTC",
       "symbol": "WBTC",
-      "image": "/images/assets/wbtc.png",
+      "image": "/images/assets/wbtc.svg",
       "contracts": [
         {
           "chain": "ethereum",
@@ -280,7 +281,7 @@
       "id": "wbnb-wei",
       "name": "WBNB - Wrapped BNB",
       "symbol": "WBNB",
-      "image": "/images/assets/wbnb.png",
+      "image": "/images/assets/wbnb.svg",
       "contracts": [
         {
           "chain": "binance",
@@ -295,7 +296,7 @@
       "id": "wftm-wei",
       "name": "WFTM - Wrapped Fantom",
       "symbol": "WFTM",
-      "image": "/images/assets/wftm.png",
+      "image": "/images/assets/wftm.svg",
       "contracts": [
         {
           "chain": "fantom",
@@ -310,7 +311,7 @@
       "id": "uatom",
       "name": "ATOM - Cosmoshub staking ATOM",
       "symbol": "ATOM",
-      "image": "/images/assets/atom.png",
+      "image": "/images/assets/atom.svg",
       "contracts": [
         {
           "chain": "moonbeam",
@@ -353,7 +354,7 @@
       "id": "ungm",
       "name": "NGM - e-Money NGM staking token",
       "symbol": "NGM",
-      "image": "/images/assets/ngm.png",
+      "image": "/images/assets/ngm.svg",
       "contracts": [
         {
           "chain": "moonbeam",
@@ -396,7 +397,7 @@
       "id": "eeur",
       "name": "EEUR - e-Money EUR stablecoin",
       "symbol": "EEUR",
-      "image": "/images/assets/eeur.png",
+      "image": "/images/assets/eeur.svg",
       "contracts": [
         {
           "chain": "moonbeam",
@@ -439,7 +440,7 @@
       "id": "rai-wei",
       "name": "RAI - Rai Reflex Index",
       "symbol": "RAI",
-      "image": "/images/assets/rai.png",
+      "image": "/images/assets/rai.svg",
       "contracts": [
         {
           "chain": "ethereum",
@@ -454,7 +455,7 @@
       "id": "link-wei",
       "name": "LINK - ChainLink Token",
       "symbol": "LINK",
-      "image": "/images/assets/link.png",
+      "image": "/images/assets/link.svg",
       "contracts": [
         {
           "chain": "ethereum",
@@ -469,7 +470,7 @@
       "id": "aave-wei",
       "name": "AAVE - Aave Token",
       "symbol": "AAVE",
-      "image": "/images/assets/aave.png",
+      "image": "/images/assets/aave.svg",
       "contracts": [
         {
           "chain": "ethereum",
@@ -484,7 +485,7 @@
       "id": "frax-wei",
       "name": "FRAX - Frax",
       "symbol": "FRAX",
-      "image": "/images/assets/frax.png",
+      "image": "/images/assets/frax.svg",
       "contracts": [
         {
           "chain": "moonbeam",
@@ -527,7 +528,7 @@
       "id": "ape-wei",
       "name": "APE - ApeCoin",
       "symbol": "APE",
-      "image": "/images/assets/ape.png",
+      "image": "/images/assets/ape.svg",
       "contracts": [
         {
           "chain": "ethereum",
@@ -542,7 +543,7 @@
       "id": "uni-wei",
       "name": "UNI - Uniswap",
       "symbol": "UNI",
-      "image": "/images/assets/uni.png",
+      "image": "/images/assets/uni.svg",
       "contracts": [
         {
           "chain": "ethereum",
@@ -557,7 +558,7 @@
       "id": "shib-wei",
       "name": "SHIB - SHIBA INU",
       "symbol": "SHIB",
-      "image": "/images/assets/shib.png",
+      "image": "/images/assets/shib.svg",
       "contracts": [
         {
           "chain": "ethereum",
@@ -572,7 +573,7 @@
       "id": "axs-wei",
       "name": "AXS - Axie Infinity Shard",
       "symbol": "AXS",
-      "image": "/images/assets/axs.png",
+      "image": "/images/assets/axs.svg",
       "contracts": [
         {
           "chain": "ethereum",
@@ -587,7 +588,7 @@
       "id": "xcn-wei",
       "name": "XCN - Chain",
       "symbol": "XCN",
-      "image": "/images/assets/xcn.png",
+      "image": "/images/assets/xcn.svg",
       "contracts": [
         {
           "chain": "ethereum",
@@ -602,7 +603,7 @@
       "id": "mkr-wei",
       "name": "MKR - Maker",
       "symbol": "MKR",
-      "image": "/images/assets/mkr.png",
+      "image": "/images/assets/mkr.svg",
       "contracts": [
         {
           "chain": "ethereum",
@@ -619,7 +620,7 @@
       "id": "uaxl",
       "name": "AXL - Axelar",
       "symbol": "AXL",
-      "image": "/images/assets/axl.png",
+      "image": "/images/assets/axl.svg",
       "contracts": [
         {
           "chain": "moonbeam",
@@ -676,7 +677,7 @@
       "id": "wmatic-wei",
       "name": "WMATIC - Wrapped Matic",
       "symbol": "WMATIC",
-      "image": "/images/assets/wmatic.png",
+      "image": "/images/assets/wmatic.svg",
       "contracts": [
         {
           "chain": "moonbeam",
@@ -733,7 +734,7 @@
       "id": "wftm-wei",
       "name": "WFTM - Wrapped FTM",
       "symbol": "WFTM",
-      "image": "/images/assets/wftm.png",
+      "image": "/images/assets/wftm.svg",
       "contracts": [
         {
           "chain": "moonbeam",
@@ -790,7 +791,7 @@
       "id": "weth-wei",
       "name": "WETH - Wrapped Ether",
       "symbol": "WETH",
-      "image": "/images/assets/weth.png",
+      "image": "/images/assets/weth.svg",
       "contracts": [
         {
           "chain": "moonbeam",
@@ -847,7 +848,7 @@
       "id": "wavax-wei",
       "name": "WAVAX - Wrapped AVAX",
       "symbol": "WAVAX",
-      "image": "/images/assets/wavax.png",
+      "image": "/images/assets/wavax.svg",
       "contracts": [
         {
           "chain": "moonbeam",
@@ -961,7 +962,7 @@
       "id": "uausdc",
       "name": "aUSDC - USD coin",
       "symbol": "aUSDC",
-      "image": "/images/assets/ausdc.png",
+      "image": "/images/assets/ausdc.svg",
       "contracts": [
         {
           "chain": "moonbeam",
@@ -1018,7 +1019,7 @@
       "id": "wbtc-satoshi",
       "name": "WBTC - Wrapped BTC",
       "symbol": "WBTC",
-      "image": "/images/assets/wbtc.png",
+      "image": "/images/assets/wbtc.svg",
       "contracts": [
         {
           "chain": "ethereum",
@@ -1033,7 +1034,7 @@
       "id": "wbnb-wei",
       "name": "WBNB - Wrapped BNB",
       "symbol": "WBNB",
-      "image": "/images/assets/wbnb.png",
+      "image": "/images/assets/wbnb.svg",
       "contracts": [
         {
           "chain": "moonbeam",

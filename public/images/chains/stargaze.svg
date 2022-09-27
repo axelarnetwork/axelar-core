@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   id="e20I8j3mY6X1"
+   viewBox="0 0 480 480"
+   shape-rendering="geometricPrecision"
+   text-rendering="geometricPrecision"
+   version="1.1"
+   sodipodi:docname="STARS.svg"
+   inkscape:version="0.92.5 (2060ec1f9f, 2020-04-08)">
+  <metadata
+     id="metadata922">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="3784"
+     inkscape:window-height="2089"
+     id="namedview920"
+     showgrid="false"
+     inkscape:zoom="3.9583333"
+     inkscape:cx="240"
+     inkscape:cy="240"
+     inkscape:window-x="56"
+     inkscape:window-y="34"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="e20I8j3mY6X1" />
+  <defs
+     id="defs911">
+    <linearGradient
+       id="e20I8j3mY6X3-fill"
+       x1="-142.01814"
+       y1="-151.30692"
+       x2="146.67101"
+       y2="152.23885"
+       spreadMethod="pad"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="scale(1.0254083,0.97522127)">
+      <stop
+         id="e20I8j3mY6X3-fill-0"
+         offset="0%"
+         stop-color="#ffe451" />
+      <stop
+         id="e20I8j3mY6X3-fill-1"
+         offset="23%"
+         stop-color="#e7a246" />
+      <stop
+         id="e20I8j3mY6X3-fill-2"
+         offset="48%"
+         stop-color="#6bd77e" />
+      <stop
+         id="e20I8j3mY6X3-fill-3"
+         offset="78%"
+         stop-color="#0740b4" />
+    </linearGradient>
+    <linearGradient
+       id="e20I8j3mY6X4-stroke"
+       x1="0"
+       y1="0"
+       x2="1"
+       y2="1"
+       spreadMethod="pad"
+       gradientUnits="objectBoundingBox"
+       gradientTransform="translate(0 0)">
+      <stop
+         id="e20I8j3mY6X4-stroke-0"
+         offset="0%"
+         stop-color="#b11c93" />
+      <stop
+         id="e20I8j3mY6X4-stroke-1"
+         offset="31%"
+         stop-color="#c9aa62" />
+      <stop
+         id="e20I8j3mY6X4-stroke-2"
+         offset="90%"
+         stop-color="#3041b8" />
+    </linearGradient>
+  </defs>
+  <g
+     transform="matrix(1.56351 0 0 1.56351-260.3232-135.2424)"
+     id="g917">
+    <polygon
+       points="40.295827,-47.462447 130.40003,-42.369539 55.200017,21.18477 80.591653,110.92489 0,68.555355 -80.591653,110.92489 -55.200017,21.18477 -130.40003,-42.369539 -40.295827,-47.462447 0,-137.11071 "
+       transform="rotate(20,-523.61942,1014.8527)"
+       stroke-miterlimit="14"
+       id="polygon913"
+       style="fill:url(#e20I8j3mY6X3-fill);stroke-width:0;stroke-linecap:round;stroke-miterlimit:14" />
+    <ellipse
+       rx="148.012117"
+       ry="148.012117"
+       transform="translate(320 240)"
+       fill="none"
+       stroke="url(#e20I8j3mY6X4-stroke)"
+       stroke-width="10"
+       id="ellipse915" />
+  </g>
+</svg>
