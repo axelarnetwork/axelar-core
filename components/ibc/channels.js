@@ -11,18 +11,25 @@ export default ({ environment = "mainnet" }) => {
   const _cosmos_chains = cosmos_chains?.[environment] || [];
   const _ibc_channels = ibc_channels?.[environment] || [];
 
-  const pairs = Object.entries(_.groupBy(_ibc_channels.map(c => {
-    return {
-      ...c,
-      other_chain: _.head([c?.from, c?.to].filter(cid => cid && cid !== MAIN_CHAIN)),
-    };
-  }), "other_chain")).map(([other_chain, channels]) => {
-    return {
-      chain_data: _cosmos_chains.find(c => c?.id === MAIN_CHAIN),
-      other_chain_data: _cosmos_chains.find(c => c?.id === other_chain),
-      channels,
-    };
-  });
+  const pairs =
+    Object.entries(
+      _.groupBy(
+        _ibc_channels.map(c => {
+          return {
+            ...c,
+            other_chain: _.head([c?.from, c?.to].filter(cid => cid && cid !== MAIN_CHAIN)),
+          };
+        }),
+        "other_chain",
+      )
+    )
+    .map(([other_chain, channels]) => {
+      return {
+        chain_data: _cosmos_chains.find(c => c?.id === MAIN_CHAIN),
+        other_chain_data: _cosmos_chains.find(c => c?.id === other_chain),
+        channels,
+      };
+    });
 
   return (
     <div className="grid grid-flow-row grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -32,10 +39,11 @@ export default ({ environment = "mainnet" }) => {
           other_chain_data,
           channels,
         } = { ...p };
+
         return (
           <div
             key={i}
-            className="border dark:border-gray-700 rounded-xl flex items-center justify-between space-x-2 p-3"
+            className="border dark:border-gray-700 rounded-xl grid grid-cols-3 gap-4 p-3"
           >
             <div className="flex flex-col items-center space-y-1">
               {chain_data?.image && (
@@ -47,16 +55,16 @@ export default ({ environment = "mainnet" }) => {
                   className="rounded-full"
                 />
               )}
-              <span className="font-semibold">
+              <span className="text-xs font-semibold">
                 {chain_data?.name}
               </span>
             </div>
             <div className="flex flex-col items-center">
-              <span className="text-gray-600 dark:text-gray-400 text-sm">
+              <span className="whitespace-nowrap text-gray-600 dark:text-gray-400 text-xs">
                 {channels.find(c => c?.from === chain_data?.id)?.channel_id}
               </span>
               <BiTransfer size={20} />
-              <span className="text-gray-600 dark:text-gray-400 text-sm">
+              <span className="whitespace-nowrap text-gray-600 dark:text-gray-400 text-xs">
                 {channels.find(c => c?.from === other_chain_data?.id)?.channel_id}
               </span>
             </div>
@@ -67,10 +75,10 @@ export default ({ environment = "mainnet" }) => {
                   alt=""
                   width={32}
                   height={32}
-                  className="rounded-full"
+                  className={`${['fetch'].includes(other_chain_data.id) ?'bg-black rounded-full' : ''}`}
                 />
               )}
-              <span className="font-semibold">
+              <span className="text-xs font-semibold">
                 {other_chain_data?.name}
               </span>
             </div>
