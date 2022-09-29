@@ -323,5 +323,4 @@ func TestERC20TokenMetadata_ValidateBasic(t *testing.T) {
 		assert.Error(t, external.ValidateBasic())
 	})
 
-
 }
