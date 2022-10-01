@@ -1,48 +1,66 @@
-import { useState, useEffect } from "react";
-import { CopyToClipboard } from "react-copy-to-clipboard";
-import { HiCheckCircle } from "react-icons/hi";
-import { BiCopy } from "react-icons/bi";
+import { useState, useEffect } from "react"
+import { CopyToClipboard } from "react-copy-to-clipboard"
+import { HiCheckCircle } from "react-icons/hi"
+import { IoMdCopy } from "react-icons/io"
 
 export default ({
+  size = 18,
   value,
   title,
-  size = 16,
   onCopy,
   className = "",
 }) => {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    const timeout = copied ? setTimeout(() => setCopied(false), 1 * 1000) : null;
+    const timeout = copied ?
+      setTimeout(() =>
+        setCopied(false),
+        1 * 1000,
+      ) :
+      undefined;
+
     return () => clearTimeout(timeout);
-  }, [copied, setCopied]);
+  }, [copied])
 
   return copied ?
     <div className={`${title ? "min-w-max" : ""} flex items-center space-x-1`}>
       {title && (
-        <span className="font-medium">
+        <span>
           {title}
         </span>
       )}
-      <HiCheckCircle size={size} className={className || "text-green-300 dark:text-green-500"} />
-    </div>
-    :
+      <HiCheckCircle
+        size={size}
+        className={
+          className ||
+          "text-green-400 dark:text-green-300"
+        }
+      />
+    </div> :
     <CopyToClipboard
       text={value}
       onCopy={() => {
-        setCopied(true);
+        setCopied(true)
+
         if (onCopy) {
-          onCopy();
+          onCopy()
         }
       }}
     >
       <div className={`${title ? "min-w-max" : ""} flex items-center space-x-1`}>
         {title && (
-          <span className="font-medium">
+          <span>
             {title}
           </span>
         )}
-        <BiCopy size={size} className={className || "cursor-pointer text-gray-300 hover:text-gray-400 dark:text-gray-700 dark:hover:text-gray-600"} />
+        <IoMdCopy
+          size={size}
+          className={
+            className ||
+            "cursor-pointer text-slate-300 hover:text-slate-400 dark:text-slate-700 dark:hover:text-slate-600"
+          }
+        />
       </div>
     </CopyToClipboard>
 };

@@ -1,126 +1,38 @@
 # Resources
 
- <table>
-  <tr>
-    <th></th>
-    <th>Mainnet</th>
-    <th>Testnet</th>
-    <th>Testnet-2</th>
-  </tr>
-  <tr>
-    <td>Block explorers</td>
-    <td>
-      [Axelarscan](https://axelarscan.io/) <br/>
-      [Mintscan](https://www.mintscan.io/axelar) <br/>
-      [Big Dipper](https://axelar-mainnet.chainode.tech/) <br/>
-      [Metrika](https://app.metrika.co/dashboard/axelar)
-    </td>
-    <td>
-      [Axelarscan](https://testnet.axelarscan.io/) <br/>
-      [Mintscan](https://testnet.mintscan.io/axelar-testnet) <br/>
-      [Big Dipper](https://axelar-testnet.chainode.tech/)
-    </td>
-    <td></td>
-  </tr>
-  <tr>
-    <td>Wallets</td>
-    <td>
-      [Keplr](https://wallet.keplr.app/) <br/>
-      [Cosmostation](https://www.cosmostation.io/)
-    </td>
-    <td></td>
-    <td></td>
-  </tr>
-  <tr>
-    <td>Faucet</td>
-    <td></td>
-    <td>
-      [Axelar testnet faucet](https://faucet.testnet.axelar.dev/) <br/>
-      <a href="https://www.allthatnode.com/faucet/axelar.dsrv"> Lisbon faucet by All That Node</a>
-    </td>
-    <td>
-      [Axelar testnet-2 faucet](https://faucet-casablanca.testnet.axelar.dev/) <br/>
-      <a href="https://www.allthatnode.com/faucet/axelar.dsrv"> Casablanca faucet by All That Node</a>
-    </td>
-  </tr>
-  <tr>
-    <td>RPC endpoints</td>
-    <td>
-      https://rpc-axelar.imperator.co:443 <br/>
-      https://axelar-rpc.quickapi.com:443 <br/>
-      https://axelar-rpc.pops.one/ <br/>
-      https://axelar-rpc.chainode.tech/ <br/>
-      https://services.staketab.com/axelar-rpc <br/>
-      https://axelar.rpc.stake2.me/ <br/>
-      https://axelar-rpc.qubelabs.io/ <br/>
-      https://axelar-mainnet-rpc.allthatnode.com:1317 (REST API) <br/>
-      https://axelar-mainnet-rpc.allthatnode.com:26657 (Tendermint RPC) <br/>
-      https://axelar-rpc.quantnode.tech/ <br/>
-      https://axelar-rpc.polkachu.com/
-    </td>
-    <td>
-      https://axelartest-rpc.quickapi.com/ <br/>
-      https://services.staketab.com/axelar-testnet-1-rpc <br/>
-      https://axelar-testnet-rpc.qubelabs.io/ <br/>
-      https://axelar-lisbon-rpc.allthatnode.com:1317 (REST API) <br/>
-      https://axelar-lisbon-rpc.allthatnode.com:26657 (Tendermint RPC) <br/>
-      https://axelartest-rpc.quantnode.tech/
-    </td>
-    <td>
-      https://services.staketab.com/axelar-testnet-2-rpc <br/>
-      https://axelar-casablanca-rpc.allthatnode.com:1317 (REST API) <br/>
-      https://axelar-casablanca-rpc.allthatnode.com:26657 (Tendermint RPC)
-    </td>
-  </tr>
-  <tr>
-    <td>LCD endpoints</td>
-    <td>
-      https://lcd-axelar.imperator.co <br/>
-      https://axelar-lcd.quickapi.com/ <br/>
-      https://axelar-lcd.qubelabs.io/ <br/>
-      https://services.staketab.com/axelar-api <br/>
-      https://axelar-rest.chainode.tech/ <br/>
-      https://axelar-lcd.quantnode.tech/ <br/>
-      https://axelar-api.polkachu.com/
-    </td>
-    <td>
-      https://axelartest-lcd.quickapi.com/ <br/>
-      https://axelar-testnet-lcd.qubelabs.io/ <br/>
-      https://services.staketab.com/axelar-testnet-1-api <br/>
-      https://axelartest-lcd.quantnode.tech/
-    </td>
-    <td>
-      https://services.staketab.com/axelar-testnet-2-api
-    </td>
-  </tr>
-  <tr>
-    <td>GRPC endpoints</td>
-    <td>
-      services.staketab.com:9080 <br/>
-      axelar-grpc.qubelabs.io:9092 <br/>
-      axelar-grpc.chainode.tech <br/>
-      axelar-grpcweb.chainode.tech <br/>
-      axelar-grpc.quantnode.tech:9090 <br/>
-      axelar-grpcweb.quantnode.tech:9091 <br/>
-      https://axelar-grpcweb.quantnode.tech/ <br/>
-      axelar-grpc.polkachu.com:15190
-    </td>
-    <td>
-      services.staketab.com:9090 <br/>
-      axelar-testnet-grpc.qubelabs.io:9090 <br/>
-      axelartest-grpc.quantnode.tech:9090 <br/>
-      axelartest-grpcweb.quantnode.tech:9091 <br/>
-      https://axelartest-grpcweb.quantnode.tech/
-    </td>
-    <td></td>
-  </tr>
-  <tr>
-    <td>Contract addresses, releases</td>
-    <td>[Mainnet](resources/mainnet)</td>
-    <td>[Testnet](resources/testnet)</td>
-    <td>[Testnet-2](resources/testnet-2)</td>
-  </tr>
-</table>
+import Tabs from '../components/tabs'
+import Resources from '../components/resources'
+
+<div className="-mt-4">
+  <Tabs
+    tabs={[
+      {
+        title: "Mainnet",
+        content: (
+          <Resources
+            environment="mainnet"
+          />
+        )
+      },
+      {
+        title: "Testnet",
+        content: (
+          <Resources
+            environment="testnet"
+          />
+        )
+      },
+      {
+        title: "Testnet-2",
+        content: (
+          <Resources
+            environment="testnet-2"
+          />
+        )
+      }
+    ]}
+  />
+</div>
 
 ## Looking for help?
 
