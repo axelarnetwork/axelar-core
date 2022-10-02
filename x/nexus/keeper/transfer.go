@@ -104,7 +104,7 @@ func (k Keeper) EnqueueTransfer(ctx sdk.Context, senderChain exported.Chain, rec
 		return 0, fmt.Errorf("sender's chain %s does not support foreign assets", senderChain.Name)
 	}
 
-	if !recipient.Chain.SupportsForeignAssets && !(isNativeAsset && senderChain.Name == chain.Name) {
+	if !recipient.Chain.SupportsForeignAssets && !(isNativeAsset && recipient.Chain.Name == chain.Name) {
 		return 0, fmt.Errorf("recipient's chain %s does not support foreign assets", recipient.Chain.Name)
 	}
 
