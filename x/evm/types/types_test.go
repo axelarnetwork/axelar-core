@@ -14,6 +14,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	multisigTestutils "github.com/axelarnetwork/axelar-core/x/multisig/exported/testutils"
+	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 )
 
