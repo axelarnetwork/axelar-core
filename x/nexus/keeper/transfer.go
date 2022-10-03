@@ -99,13 +99,12 @@ func (k Keeper) ComputeTransferFee(ctx sdk.Context, sourceChain exported.Chain, 
 
 // EnqueueTransfer enqueues an asset transfer to the given recipient address
 func (k Keeper) EnqueueTransfer(ctx sdk.Context, senderChain exported.Chain, recipient exported.CrossChainAddress, asset sdk.Coin) (exported.TransferID, error) {
-	chain, isNativeAsset := k.GetChainByNativeAsset(ctx, asset.Denom)
-	if !senderChain.SupportsForeignAssets && !(isNativeAsset && senderChain.Name == chain.Name) {
-		return 0, fmt.Errorf("sender's chain %s does not support foreign assets", senderChain.Name)
+	if err := k.validateTransferAsset(ctx, senderChain, asset.Denom); err != nil {
+		return 0, err
 	}
 
-	if !recipient.Chain.SupportsForeignAssets && !(isNativeAsset && recipient.Chain.Name == chain.Name) {
-		return 0, fmt.Errorf("recipient's chain %s does not support foreign assets", recipient.Chain.Name)
+	if err := k.validateTransferAsset(ctx, recipient.Chain, asset.Denom); err != nil {
+		return 0, err
 	}
 
 	if validator := k.GetRouter().GetAddressValidator(recipient.Chain.Module); validator == nil {
@@ -169,6 +168,19 @@ func (k Keeper) EnqueueTransfer(ctx sdk.Context, senderChain exported.Chain, rec
 	}))
 
 	return transferID, nil
+}
+
+func (k Keeper) validateTransferAsset(ctx sdk.Context, chain exported.Chain, asset string) error {
+	if chain.SupportsForeignAssets {
+		return nil
+	}
+
+	nativeChain, hasNativeChain := k.GetChainByNativeAsset(ctx, asset)
+	if !hasNativeChain || nativeChain.Name != chain.Name {
+		return fmt.Errorf("chain %s does not support foreign asset %s", chain.Name, asset)
+	}
+
+	return nil
 }
 
 // EnqueueForTransfer enqueues an asset transfer for the given deposit address

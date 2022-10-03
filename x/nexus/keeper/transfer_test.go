@@ -178,7 +178,7 @@ func TestTransfer(t *testing.T) {
 			Then("enqueue transfer should return error",
 				func(t *testing.T) {
 					_, err := k.EnqueueTransfer(ctx, sender.Chain, recipient, makeRandAmount(axelarnet.NativeAsset))
-					assert.ErrorContains(t, err, "does not support foreign assets")
+					assert.ErrorContains(t, err, "does not support foreign asset")
 				},
 			),
 		When("recipient chain doesn't support foreign assets",
@@ -189,7 +189,7 @@ func TestTransfer(t *testing.T) {
 			Then("enqueue transfer should return error",
 				func(t *testing.T) {
 					_, err := k.EnqueueTransfer(ctx, sender.Chain, recipient, makeRandAmount(axelarnet.NativeAsset))
-					assert.ErrorContains(t, err, "does not support foreign assets")
+					assert.ErrorContains(t, err, "does not support foreign asset")
 				},
 			),
 	).
