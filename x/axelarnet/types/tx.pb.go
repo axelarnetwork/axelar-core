@@ -340,11 +340,12 @@ var xxx_messageInfo_RegisterIBCPathResponse proto.InternalMessageInfo
 // MsgAddCosmosBasedChain represents a message to register a cosmos based chain
 // to nexus
 type AddCosmosBasedChainRequest struct {
-	Sender       github_com_cosmos_cosmos_sdk_types.AccAddress                   `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
-	Chain        exported.Chain                                                  `protobuf:"bytes,2,opt,name=chain,proto3" json:"chain"` // Deprecated: Do not use.
-	AddrPrefix   string                                                          `protobuf:"bytes,3,opt,name=addr_prefix,json=addrPrefix,proto3" json:"addr_prefix,omitempty"`
-	NativeAssets []exported.Asset                                                `protobuf:"bytes,5,rep,name=native_assets,json=nativeAssets,proto3" json:"native_assets"`
-	CosmosChain  github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,6,opt,name=cosmos_chain,json=cosmosChain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"cosmos_chain,omitempty"`
+	Sender       github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
+	Chain        exported.Chain                                `protobuf:"bytes,2,opt,name=chain,proto3" json:"chain"` // Deprecated: Do not use.
+	AddrPrefix   string                                        `protobuf:"bytes,3,opt,name=addr_prefix,json=addrPrefix,proto3" json:"addr_prefix,omitempty"`
+	NativeAssets []exported.Asset                              `protobuf:"bytes,5,rep,name=native_assets,json=nativeAssets,proto3" json:"native_assets"`
+	// TODO: Rename this to `chain` after v1beta1 -> v1 version bump
+	CosmosChain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,6,opt,name=cosmos_chain,json=cosmosChain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"cosmos_chain,omitempty"`
 }
 
 func (m *AddCosmosBasedChainRequest) Reset()         { *m = AddCosmosBasedChainRequest{} }

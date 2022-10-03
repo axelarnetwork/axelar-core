@@ -1677,7 +1677,7 @@ to nexus
 | `chain` | [axelar.nexus.exported.v1beta1.Chain](#axelar.nexus.exported.v1beta1.Chain) |  | **Deprecated.** chain was deprecated in v0.27 |
 | `addr_prefix` | [string](#string) |  |  |
 | `native_assets` | [axelar.nexus.exported.v1beta1.Asset](#axelar.nexus.exported.v1beta1.Asset) | repeated |  |
-| `cosmos_chain` | [string](#string) |  |  |
+| `cosmos_chain` | [string](#string) |  | TODO: Rename this to `chain` after v1beta1 -> v1 version bump |
 
 
 
