@@ -832,8 +832,15 @@ func (m *ERC20TokenMetadata) ValidateBasic() error {
 		return err
 	}
 
-	if err := validateBurnerCode(m.BurnerCode); err != nil {
-		return err
+	switch m.IsExternal {
+	case true:
+		if m.BurnerCode != nil {
+			return fmt.Errorf("burner code for external tokens must be nil")
+		}
+	case false:
+		if err := validateBurnerCode(m.BurnerCode); err != nil {
+			return err
+		}
 	}
 
 	return nil
