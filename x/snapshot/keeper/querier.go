@@ -11,7 +11,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
 )
 
-//Query labels
+// Query labels
 const (
 	QProxy    = "proxy"
 	QOperator = "operator"

@@ -276,3 +276,51 @@ func TestCreateExecuteDataMultisig(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, expected, common.Bytes2Hex(actual))
 }
+
+func TestERC20TokenMetadata_ValidateBasic(t *testing.T) {
+	t.Run("burner code for internal token is validated", func(t *testing.T) {
+		internal := ERC20TokenMetadata{
+			Asset:   "asset",
+			ChainID: sdk.NewInt(rand.PosI64()),
+			Details: TokenDetails{
+				TokenName: "token",
+				Symbol:    "axl",
+				Decimals:  18,
+				Capacity:  sdk.NewInt(rand.PosI64()),
+			},
+			TokenAddress: Address{},
+			TxHash:       Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
+			Status:       Initialized,
+			IsExternal:   false,
+			BurnerCode:   funcs.Must(hex.DecodeString(Burnable)),
+		}
+		assert.NoError(t, internal.ValidateBasic())
+
+		internal.BurnerCode = rand.Bytes(123)
+		assert.Error(t, internal.ValidateBasic())
+	})
+
+	t.Run("burner code for external token must be nil", func(t *testing.T) {
+		external := ERC20TokenMetadata{
+			Asset:   "asset",
+			ChainID: sdk.NewInt(rand.PosI64()),
+			Details: TokenDetails{
+				TokenName: "token",
+				Symbol:    "axl",
+				Decimals:  18,
+				Capacity:  sdk.NewInt(rand.PosI64()),
+			},
+			TokenAddress: Address{},
+			TxHash:       Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
+			Status:       Initialized,
+			IsExternal:   true,
+			BurnerCode:   nil,
+		}
+
+		assert.NoError(t, external.ValidateBasic())
+
+		external.BurnerCode = funcs.Must(hex.DecodeString(Burnable))
+		assert.Error(t, external.ValidateBasic())
+	})
+
+}
