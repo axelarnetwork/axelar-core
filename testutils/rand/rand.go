@@ -213,7 +213,7 @@ type StringGen struct {
 
 // Strings returns a random string generator that produces strings from the default alphabet of random length in the given limits (upper limit exclusive)
 func Strings(minLength int, shorterThan int) StringGen {
-	alphabet := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.:")
+	alphabet := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-.:")
 	return StringGen{
 		lengthGen:  I64GenBetween(int64(minLength), int64(shorterThan)),
 		alphabet:   alphabet,

@@ -245,6 +245,8 @@ paths:
                     is_native_asset:
                       type: boolean
                       format: boolean
+              cosmos_chain:
+                type: string
             title: >-
               MsgAddCosmosBasedChain represents a message to register a cosmos
               based chain
@@ -39668,6 +39670,8 @@ definitions:
             is_native_asset:
               type: boolean
               format: boolean
+      cosmos_chain:
+        type: string
     title: >-
       MsgAddCosmosBasedChain represents a message to register a cosmos based
       chain
