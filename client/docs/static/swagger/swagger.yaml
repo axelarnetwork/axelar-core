@@ -245,6 +245,9 @@ paths:
                     is_native_asset:
                       type: boolean
                       format: boolean
+              cosmos_chain:
+                type: string
+                title: 'TODO: Rename this to `chain` after v1beta1 -> v1 version bump'
             title: >-
               MsgAddCosmosBasedChain represents a message to register a cosmos
               based chain
@@ -39668,6 +39671,9 @@ definitions:
             is_native_asset:
               type: boolean
               format: boolean
+      cosmos_chain:
+        type: string
+        title: 'TODO: Rename this to `chain` after v1beta1 -> v1 version bump'
     title: >-
       MsgAddCosmosBasedChain represents a message to register a cosmos based
       chain
