@@ -493,7 +493,7 @@ func (s msgServer) CreateBurnTokens(c context.Context, req *types.CreateBurnToke
 			return nil, fmt.Errorf("token %s is not confirmed on %s", token.GetAsset(), chain.Name)
 		}
 
-		cmd, err := types.CreateBurnTokenCommand(chainID, multisig.KeyID(keyID), ctx.BlockHeight(), *burnerInfo, token.IsExternal())
+		cmd := types.NewBurnTokenCommand(chainID, multisig.KeyID(keyID), ctx.BlockHeight(), *burnerInfo, token.IsExternal())
 		if err != nil {
 			return nil, sdkerrors.Wrapf(err, "failed to create burn-token command to burn token at address %s for chain %s", burnerAddressHex, chain.Name)
 		}
@@ -645,7 +645,7 @@ func (s msgServer) createTransferKeyCommand(ctx sdk.Context, keeper types.ChainK
 		return types.Command{}, fmt.Errorf("could not find threshold key '%s'", nextKeyID)
 	}
 
-	return types.CreateMultisigTransferCommand(chainID, keyID, nextKey), nil
+	return types.NewMultisigTransferCommand(chainID, keyID, nextKey), nil
 }
 
 func getCommandBatchToSign(ctx sdk.Context, keeper types.ChainKeeper) (types.CommandBatch, error) {
