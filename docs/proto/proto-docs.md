@@ -160,7 +160,6 @@
     - [BatchedCommandsStatus](#axelar.evm.v1beta1.BatchedCommandsStatus)
     - [DepositStatus](#axelar.evm.v1beta1.DepositStatus)
     - [Event.Status](#axelar.evm.v1beta1.Event.Status)
-    - [Gateway.Status](#axelar.evm.v1beta1.Gateway.Status)
     - [SigType](#axelar.evm.v1beta1.SigType)
     - [Status](#axelar.evm.v1beta1.Status)
   
@@ -2451,7 +2450,6 @@ ERC20TokenMetadata describes information about an ERC20 token
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `address` | [bytes](#bytes) |  |  |
-| `status` | [Gateway.Status](#axelar.evm.v1beta1.Gateway.Status) |  | **Deprecated.**  |
 
 
 
@@ -2615,19 +2613,6 @@ TransferKey contains information for a transfer operatorship
 | STATUS_CONFIRMED | 1 |  |
 | STATUS_COMPLETED | 2 |  |
 | STATUS_FAILED | 3 |  |
-
-
-
-<a name="axelar.evm.v1beta1.Gateway.Status"></a>
-
-### Gateway.Status
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| STATUS_UNSPECIFIED | 0 |  |
-| STATUS_PENDING | 1 |  |
-| STATUS_CONFIRMED | 2 |  |
 
 
 
