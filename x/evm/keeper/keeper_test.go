@@ -62,10 +62,9 @@ func TestCommands(t *testing.T) {
 
 		for i := 0; i < numCmds; i++ {
 			tokenDetails := createDetails(rand.NormalizedStr(10), rand.NormalizedStr(10))
-			cmd, err := types.CreateDeployTokenCommand(chainID, multisigTestUtils.KeyID(), rand.Str(5), tokenDetails, types.ZeroAddress, sdk.NewUint(uint64(rand.PosI64())))
-			assert.NoError(t, err)
+			cmd := types.NewDeployTokenCommand(chainID, multisigTestUtils.KeyID(), rand.Str(5), tokenDetails, types.ZeroAddress, sdk.NewUint(uint64(rand.PosI64())))
 
-			err = chainKeeper.EnqueueCommand(ctx, cmd)
+			err := chainKeeper.EnqueueCommand(ctx, cmd)
 			assert.NoError(t, err)
 
 			commands = append(commands, cmd)

@@ -6,13 +6,13 @@ import (
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/query"
 	ibctransfertypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
 
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/utils/funcs"
 )
 
@@ -106,73 +106,17 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, fmt.Errorf("recipient chain '%s' is not activated", recipient.Chain.Name)
 	}
 
-	// deposit can be either of ICS 20 token from cosmos based chains, Axelarnet native asset, and wrapped asset from supported chain
-	switch {
-	// check if the format of token denomination is 'ibc/{hash}'
-	case isIBCDenom(req.Denom):
-		// get base denomination and tracing path
-		denomTrace, err := s.ibcK.ParseIBCDenom(ctx, req.Denom)
-		if err != nil {
-			return nil, err
-		}
-
-		// check if the asset registered with a path
-		chain, ok := s.nexus.GetChainByNativeAsset(ctx, denomTrace.GetBaseDenom())
-		if !ok {
-			return nil, fmt.Errorf("asset %s is not linked to a cosmos chain", denomTrace.GetBaseDenom())
-		}
-		path, ok := s.GetIBCPath(ctx, chain.Name)
-		if !ok {
-			return nil, fmt.Errorf("path not found for chain %s", chain.Name)
-		}
-		if path != denomTrace.Path {
-			return nil, fmt.Errorf("path %s does not match registered path %s for asset %s", denomTrace.GetPath(), path, denomTrace.GetBaseDenom())
-		}
-
-		// lock tokens in escrow address
-		escrowAddress := types.GetEscrowAddress(req.Denom)
-		if err := s.bank.SendCoins(
-			ctx, req.DepositAddress, escrowAddress, sdk.NewCoins(amount),
-		); err != nil {
-			return nil, err
-		}
-
-		// convert denomination from 'ibc/{hash}' to native asset that recognized by nexus module
-		amount = sdk.NewCoin(denomTrace.GetBaseDenom(), amount.Amount)
-
-	case isNativeAssetOnAxelarnet(ctx, s.nexus, req.Denom):
-		// lock tokens in escrow address
-		escrowAddress := types.GetEscrowAddress(req.Denom)
-		if err := s.bank.SendCoins(
-			ctx, req.DepositAddress, escrowAddress, sdk.NewCoins(amount),
-		); err != nil {
-			return nil, err
-		}
-
-	case s.nexus.IsAssetRegistered(ctx, exported.Axelarnet, req.Denom):
-		// transfer coins from linked address to module account and burn them
-		if err := s.bank.SendCoinsFromAccountToModule(
-			ctx, req.DepositAddress, types.ModuleName, sdk.NewCoins(amount),
-		); err != nil {
-			return nil, err
-		}
-
-		if err := s.bank.BurnCoins(
-			ctx, types.ModuleName, sdk.NewCoins(amount),
-		); err != nil {
-			// NOTE: should not happen as the module account was
-			// retrieved on the step above and it has enough balance
-			// to burn.
-			panic(fmt.Sprintf("cannot burn coins after a successful send to a module account: %v", err))
-		}
-
-	default:
-		return nil, sdkerrors.Wrap(types.ErrAxelarnet,
-			fmt.Sprintf("unrecognized %s token", req.Denom))
-
+	coin, err := NewCoin(ctx, s.ibcK, s.nexus, amount)
+	if err != nil {
+		return nil, err
 	}
 
-	transferID, err := s.nexus.EnqueueForTransfer(ctx, depositAddr, amount)
+	err = coin.Lock(s.bank, req.DepositAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	transferID, err := s.nexus.EnqueueForTransfer(ctx, depositAddr, coin.Coin)
 	if err != nil {
 		return nil, err
 	}
@@ -288,14 +232,21 @@ func (s msgServer) RegisterIBCPath(c context.Context, req *types.RegisterIBCPath
 func (s msgServer) AddCosmosBasedChain(c context.Context, req *types.AddCosmosBasedChainRequest) (*types.AddCosmosBasedChainResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	if _, found := s.nexus.GetChain(ctx, req.Chain.Name); found {
-		return &types.AddCosmosBasedChainResponse{}, fmt.Errorf("chain '%s' is already registered", req.Chain.Name)
+	if _, found := s.nexus.GetChain(ctx, req.CosmosChain); found {
+		return &types.AddCosmosBasedChainResponse{}, fmt.Errorf("chain '%s' is already registered", req.CosmosChain)
 	}
-	s.nexus.SetChain(ctx, req.Chain)
+
+	chain := nexus.Chain{
+		Name:                  req.CosmosChain,
+		KeyType:               tss.None,
+		SupportsForeignAssets: true,
+		Module:                types.ModuleName,
+	}
+	s.nexus.SetChain(ctx, chain)
 
 	// register asset in chain state
 	for _, asset := range req.NativeAssets {
-		if err := s.nexus.RegisterAsset(ctx, req.Chain, asset); err != nil {
+		if err := s.nexus.RegisterAsset(ctx, chain, asset); err != nil {
 			return nil, err
 		}
 
@@ -306,7 +257,7 @@ func (s msgServer) AddCosmosBasedChain(c context.Context, req *types.AddCosmosBa
 	}
 
 	s.SetCosmosChain(ctx, types.CosmosChain{
-		Name:       req.Chain.Name,
+		Name:       chain.Name,
 		AddrPrefix: req.AddrPrefix,
 	})
 
@@ -453,28 +404,6 @@ func (s msgServer) RetryIBCTransfer(c context.Context, req *types.RetryIBCTransf
 		}))
 
 	return &types.RetryIBCTransferResponse{}, nil
-}
-
-// isIBCDenom validates that the given denomination is a valid ICS token representation (ibc/{hash})
-func isIBCDenom(denom string) bool {
-	if err := sdk.ValidateDenom(denom); err != nil {
-		return false
-	}
-
-	denomSplit := strings.SplitN(denom, "/", 2)
-	if len(denomSplit) != 2 || denomSplit[0] != ibctransfertypes.DenomPrefix {
-		return false
-	}
-	if _, err := ibctransfertypes.ParseHexHash(denomSplit[1]); err != nil {
-		return false
-	}
-
-	return true
-}
-
-func isNativeAssetOnAxelarnet(ctx sdk.Context, n types.Nexus, denom string) bool {
-	chain, ok := n.GetChainByNativeAsset(ctx, denom)
-	return ok && chain.Name == exported.Axelarnet.Name
 }
 
 // toICS20 converts a cross chain transfer to ICS20 token

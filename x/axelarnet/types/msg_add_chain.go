@@ -7,23 +7,16 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/utils"
-	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 // NewAddCosmosBasedChainRequest is the constructor for NewAddCosmosBasedChainRequest
 func NewAddCosmosBasedChainRequest(sender sdk.AccAddress, name, addrPrefix string, assets []nexus.Asset) *AddCosmosBasedChainRequest {
 	return &AddCosmosBasedChainRequest{
-		Sender: sender,
-		Chain: nexus.Chain{
-			Name:                  nexus.ChainName(utils.NormalizeString(name)),
-			SupportsForeignAssets: true,
-			KeyType:               tss.None,
-			Module:                exported.Axelarnet.Module,
-		},
+		Sender:       sender,
 		AddrPrefix:   utils.NormalizeString(addrPrefix),
 		NativeAssets: assets,
+		CosmosChain:  nexus.ChainName(utils.NormalizeString(name)),
 	}
 }
 
@@ -43,18 +36,11 @@ func (m AddCosmosBasedChainRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
-	if err := m.Chain.Validate(); err != nil {
-		return fmt.Errorf("invalid chain spec: %v", err)
-	}
-
-	if m.Chain.KeyType != tss.None {
-		return fmt.Errorf("invalid key type: %s", m.Chain.KeyType.String())
-	}
-
 	if err := utils.ValidateString(m.AddrPrefix); err != nil {
 		return sdkerrors.Wrap(err, "invalid address prefix")
 	}
 
+	seen := make(map[string]bool)
 	for _, asset := range m.NativeAssets {
 		if err := asset.Validate(); err != nil {
 			return sdkerrors.Wrap(err, "invalid asset")
@@ -63,6 +49,16 @@ func (m AddCosmosBasedChainRequest) ValidateBasic() error {
 		if !asset.IsNativeAsset {
 			return fmt.Errorf("%s is not specified as a native asset", asset.Denom)
 		}
+
+		if seen[asset.Denom] {
+			return fmt.Errorf("duplicate asset %s", asset.Denom)
+		}
+
+		seen[asset.Denom] = true
+	}
+
+	if err := m.CosmosChain.Validate(); err != nil {
+		return sdkerrors.Wrap(err, "invalid cosmos chain name")
 	}
 
 	return nil

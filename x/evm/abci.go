@@ -117,7 +117,7 @@ func handleContractCall(ctx sdk.Context, event types.Event, bk types.BaseKeeper,
 		panic(fmt.Errorf("no key for chain %s found", destinationChain.Name))
 	}
 
-	cmd, err := types.CreateApproveContractCallCommand(
+	cmd := types.NewApproveContractCallCommand(
 		destinationChainID,
 		keyID,
 		sourceChain.Name,
@@ -125,9 +125,6 @@ func handleContractCall(ctx sdk.Context, event types.Event, bk types.BaseKeeper,
 		event.Index,
 		*e,
 	)
-	if err != nil {
-		panic(err)
-	}
 
 	if err := destinationCk.EnqueueCommand(ctx, cmd); err != nil {
 		panic(err)
@@ -204,7 +201,7 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 		panic(fmt.Errorf("no key for chain %s found", destinationChain.Name))
 	}
 
-	cmd, err := types.CreateApproveContractCallWithMintCommand(
+	cmd := types.NewApproveContractCallWithMintCommand(
 		destinationChainID,
 		keyID,
 		sourceChain.Name,
@@ -214,9 +211,6 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 		e.Amount,
 		destinationToken.GetDetails().Symbol,
 	)
-	if err != nil {
-		panic(err)
-	}
 
 	if err := destinationCk.EnqueueCommand(ctx, cmd); err != nil {
 		panic(err)

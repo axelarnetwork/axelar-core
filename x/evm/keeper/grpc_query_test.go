@@ -48,9 +48,9 @@ func TestQueryPendingCommands(t *testing.T) {
 		chainID = sdk.NewInt(1)
 		keyID = multisigTestutils.KeyID()
 		dailyMintLimit := sdk.NewUint(uint64(rand.PosI64()))
-		cmdDeploy, _ := types.CreateDeployTokenCommand(chainID, keyID, asset, createDetails(asset, symbol), types.ZeroAddress, dailyMintLimit)
-		cmdMint, _ := types.CreateMintTokenCommand(keyID, types.NewCommandID(rand.Bytes(10), chainID), symbol, common.BytesToAddress(rand.Bytes(common.AddressLength)), big.NewInt(rand.I64Between(1000, 100000)))
-		cmdBurn, _ := types.CreateBurnTokenCommand(chainID, keyID, ctx.BlockHeight(), types.BurnerInfo{
+		cmdDeploy := types.NewDeployTokenCommand(chainID, keyID, asset, createDetails(asset, symbol), types.ZeroAddress, dailyMintLimit)
+		cmdMint := types.NewMintTokenCommand(keyID, types.NewCommandID(rand.Bytes(10), chainID), symbol, common.BytesToAddress(rand.Bytes(common.AddressLength)), big.NewInt(rand.I64Between(1000, 100000)))
+		cmdBurn := types.NewBurnTokenCommand(chainID, keyID, ctx.BlockHeight(), types.BurnerInfo{
 			BurnerAddress: types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
 			TokenAddress:  types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
 			Symbol:        symbol,

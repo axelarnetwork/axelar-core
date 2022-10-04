@@ -48,10 +48,6 @@ func RandomChain(cdc codec.Codec) types.GenesisState_Chain {
 		ConfirmedEventQueue: getConfirmedEventQueue(cdc, events),
 	}
 
-	if chain.Gateway.Status != types.GatewayStatusConfirmed {
-		return chain
-	}
-
 	chain.Tokens = RandomTokens()
 
 	confirmedTokens := getConfirmedTokens(chain.Tokens)
@@ -261,7 +257,7 @@ func RandomToken() types.ERC20TokenMetadata {
 		panic(err)
 	}
 
-	return types.ERC20TokenMetadata{
+	md := types.ERC20TokenMetadata{
 		Asset:        rand.Denom(5, 20),
 		ChainID:      sdk.NewInt(rand.PosI64()),
 		Details:      RandomTokenDetails(),
@@ -271,6 +267,11 @@ func RandomToken() types.ERC20TokenMetadata {
 		IsExternal:   rand.Bools(0.5).Next(),
 		BurnerCode:   bzBurnable,
 	}
+
+	if md.IsExternal {
+		md.BurnerCode = nil
+	}
+	return md
 }
 
 // RandomTokenDetails returns a random (valid) token details instance for testing
@@ -287,7 +288,6 @@ func RandomTokenDetails() types.TokenDetails {
 func RandomGateway() types.Gateway {
 	return types.Gateway{
 		Address: RandomAddress(),
-		Status:  types.Gateway_Status(rand.I64Between(1, int64(len(types.Gateway_Status_name)))),
 	}
 }
 
