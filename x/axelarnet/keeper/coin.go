@@ -45,7 +45,7 @@ func (c Coin) Lock(bankK types.BankKeeper, depositAddr sdk.AccAddress) error {
 	switch c.coinType {
 	case types.ICS20:
 		// convert to IBC denom
-		ics20, err := c.toICS20(c.GetDenom())
+		ics20, err := c.toICS20()
 		if err != nil {
 			return err
 		}
@@ -108,15 +108,15 @@ func (c *Coin) normalizeDenom() error {
 }
 
 // toICS20 creates an ICS20 token from base denom, returns error if the asset is not registered on Axelarnet
-func (c Coin) toICS20(denom string) (sdk.Coin, error) {
+func (c Coin) toICS20() (sdk.Coin, error) {
 	if c.coinType != types.ICS20 {
 		return sdk.Coin{}, fmt.Errorf("%s is not ICS20 token", c.GetDenom())
 	}
 
 	// check if the asset registered with a path
-	chain, ok := c.nexusK.GetChainByNativeAsset(c.ctx, denom)
+	chain, ok := c.nexusK.GetChainByNativeAsset(c.ctx, c.GetDenom())
 	if !ok {
-		return sdk.Coin{}, fmt.Errorf("asset %s is not linked to a cosmos chain", denom)
+		return sdk.Coin{}, fmt.Errorf("asset %s is not linked to a cosmos chain", c.GetDenom())
 	}
 
 	path, ok := c.ibcK.GetIBCPath(c.ctx, chain.Name)
@@ -126,7 +126,7 @@ func (c Coin) toICS20(denom string) (sdk.Coin, error) {
 
 	trace := ibctypes.DenomTrace{
 		Path:      path,
-		BaseDenom: denom,
+		BaseDenom: c.GetDenom(),
 	}
 
 	return sdk.NewCoin(trace.IBCDenom(), c.Amount), nil
@@ -156,6 +156,7 @@ func isIBCDenom(denom string) bool {
 	if len(denomSplit) != 2 || denomSplit[0] != ibctypes.DenomPrefix {
 		return false
 	}
+
 	if _, err := ibctypes.ParseHexHash(denomSplit[1]); err != nil {
 		return false
 	}
