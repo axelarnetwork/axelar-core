@@ -118,6 +118,11 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 	)
 
 	ibcPath := randomIBCPath()
+	denomTrace := ibctypes.DenomTrace{
+		Path:      ibcPath,
+		BaseDenom: rand.Denom(5, 10),
+	}
+
 	chain := nexustestutils.Chain()
 	givenMsgServer := Given("an axelarnet msg server", func() {
 		ctx, k, _ = setup()
@@ -138,10 +143,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		bankK = &mock.BankKeeperMock{}
 		transferK = &mock.IBCTransferKeeperMock{
 			GetDenomTraceFunc: func(ctx sdk.Context, denomTraceHash tmbytes.HexBytes) (ibctypes.DenomTrace, bool) {
-				return ibctypes.DenomTrace{
-					Path:      ibcPath,
-					BaseDenom: rand.Denom(5, 10),
-				}, true
+				return denomTrace, true
 			},
 		}
 		ibcK := keeper.NewIBCKeeper(k, transferK, &mock.ChannelKeeperMock{})
@@ -156,7 +158,8 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 
 	whenDepositAddressHasBalance := When("deposit address has balance", func() {
 		bankK.GetBalanceFunc = func(_ sdk.Context, _ sdk.AccAddress, denom string) sdk.Coin {
-			return sdk.NewCoin(denom, sdk.NewInt(rand.I64Between(1, 1e18)))
+			// need to compare the balance so cannot make it random
+			return sdk.NewCoin(denom, sdk.NewInt(1e18))
 		}
 	})
 
@@ -193,7 +196,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 
 	confirmExternalICS20TokenRequest := When("a confirm external ICS20 token deposit request is made", func() {
 		req = randomMsgConfirmDeposit()
-		req.Denom = fmt.Sprintf("ibc/%s", rand.HexStr(64))
+		req.Denom = denomTrace.IBCDenom()
 	})
 
 	confirmNativeAXLRequest := When("a confirm native AXL token deposit request is made", func() {
@@ -261,6 +264,11 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 						funcs.MustNoErr(k.SetIBCPath(ctx, chain.Name, randomIBCPath()))
 					}).
 					When2(confirmExternalICS20TokenRequest).
+					When("", func() {
+						bankK.GetBalanceFunc = func(sdk.Context, sdk.AccAddress, string) sdk.Coin {
+							return sdk.NewCoin(req.Denom, sdk.NewInt(1e18))
+						}
+					}).
 					Then2(confirmDepositFails),
 
 				whenDepositAddressHasBalance.
