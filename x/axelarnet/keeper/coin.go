@@ -55,7 +55,7 @@ func (c Coin) Lock(bankK types.BankKeeper, depositAddr sdk.AccAddress) error {
 		}
 
 		// lock tokens in escrow address
-		escrowAddress := types.GetEscrowAddress(c.Denom)
+		escrowAddress := types.GetEscrowAddress(ics20.GetDenom())
 		if err := bankK.SendCoins(
 			c.ctx, depositAddr, escrowAddress, sdk.NewCoins(ics20),
 		); err != nil {
