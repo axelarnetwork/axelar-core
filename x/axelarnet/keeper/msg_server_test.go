@@ -42,7 +42,7 @@ func TestHandleMsgLink(t *testing.T) {
 		k.InitGenesis(ctx, types.DefaultGenesisState())
 		nexusK = &mock.NexusMock{}
 		ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{}, &mock.ChannelKeeperMock{})
-		server = keeper.NewMsgServerImpl(k, nexusK, &mock.BankKeeperMock{}, &mock.IBCTransferKeeperMock{}, &mock.AccountKeeperMock{}, ibcK)
+		server = keeper.NewMsgServerImpl(k, nexusK, &mock.BankKeeperMock{}, &mock.AccountKeeperMock{}, ibcK)
 	})
 
 	whenChainIsRegistered := When("chain is registered", func() {
@@ -145,7 +145,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			},
 		}
 		ibcK := keeper.NewIBCKeeper(k, transferK, &mock.ChannelKeeperMock{})
-		server = keeper.NewMsgServerImpl(k, nexusK, bankK, transferK, &mock.AccountKeeperMock{}, ibcK)
+		server = keeper.NewMsgServerImpl(k, nexusK, bankK, &mock.AccountKeeperMock{}, ibcK)
 	})
 
 	recipientIsFound := When("recipient is found", func() {
@@ -401,7 +401,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 			},
 		}
 		ibcK := keeper.NewIBCKeeper(k, transferK, &mock.ChannelKeeperMock{})
-		server = keeper.NewMsgServerImpl(k, nexusK, bankK, transferK, accountK, ibcK)
+		server = keeper.NewMsgServerImpl(k, nexusK, bankK, accountK, ibcK)
 	})
 
 	whenAssetOriginsFromExternalCosmosChain := When("asset is from external cosmos chain", func() {
@@ -577,7 +577,7 @@ func TestHandleMsgRegisterIBCPath(t *testing.T) {
 		ctx, k, _ = setup()
 		k.InitGenesis(ctx, types.DefaultGenesisState())
 		ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{}, &mock.ChannelKeeperMock{})
-		server = keeper.NewMsgServerImpl(k, &mock.NexusMock{}, &mock.BankKeeperMock{}, &mock.IBCTransferKeeperMock{}, &mock.AccountKeeperMock{}, ibcK)
+		server = keeper.NewMsgServerImpl(k, &mock.NexusMock{}, &mock.BankKeeperMock{}, &mock.AccountKeeperMock{}, ibcK)
 	})
 
 	whenChainIsACosmosChain := When("chain is a cosmos chain", func() {
@@ -668,7 +668,7 @@ func TestHandleMsgRouteIBCTransfers(t *testing.T) {
 			},
 		}
 		ibcK := keeper.NewIBCKeeper(k, transferK, &mock.ChannelKeeperMock{})
-		server = keeper.NewMsgServerImpl(k, nexusK, bankK, transferK, accountK, ibcK)
+		server = keeper.NewMsgServerImpl(k, nexusK, bankK, accountK, ibcK)
 	})
 
 	whenAssetOriginsFromExternalCosmosChain := When("asset is from external cosmos chain", func() {
@@ -834,7 +834,7 @@ func TestRetryIBCTransfer(t *testing.T) {
 			return "07-tendermint-0", axelartestutils.ClientState(), nil
 		}
 		ibcK := keeper.NewIBCKeeper(k, i, channelK)
-		server = keeper.NewMsgServerImpl(k, n, b, i, a, ibcK)
+		server = keeper.NewMsgServerImpl(k, n, b, a, ibcK)
 	})
 
 	requestIsMade := When("a retry failed transfer request is made", func() {
@@ -896,6 +896,138 @@ func TestRetryIBCTransfer(t *testing.T) {
 				}),
 		).Run(t)
 
+}
+
+func TestAddCosmosBasedChain(t *testing.T) {
+	var (
+		server types.MsgServiceServer
+		k      keeper.Keeper
+		nexusK *mock.NexusMock
+		ctx    sdk.Context
+		req    *types.AddCosmosBasedChainRequest
+	)
+	repeats := 20
+
+	givenMsgServer := Given("an axelarnet msg server", func() {
+		ctx, k, _ = setup()
+		k.InitGenesis(ctx, types.DefaultGenesisState())
+		nexusK = &mock.NexusMock{
+			GetChainFunc:              func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) { return nexus.Chain{}, false },
+			GetChainByNativeAssetFunc: func(ctx sdk.Context, asset string) (nexus.Chain, bool) { return nexus.Chain{}, false },
+			SetChainFunc:              func(ctx sdk.Context, chain nexus.Chain) {},
+			RegisterAssetFunc:         func(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset) error { return nil },
+		}
+		ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{}, &mock.ChannelKeeperMock{})
+		server = keeper.NewMsgServerImpl(k, nexusK, &mock.BankKeeperMock{}, &mock.AccountKeeperMock{}, ibcK)
+	})
+
+	addChainRequest := When("an add cosmos based chain request is created", func() {
+		req = types.NewAddCosmosBasedChainRequest(
+			rand.AccAddr(),
+			rand.StrBetween(1, 20),
+			rand.StrBetween(1, 10),
+			slices.Expand(func(idx int) nexus.Asset { return nexus.NewAsset(rand.Denom(3, 10), true) }, int(rand.I64Between(0, 5))),
+		)
+	})
+
+	requestFails := func(msg string) ThenStatement {
+		return Then("add cosmos chain request fails", func(t *testing.T) {
+			_, err := server.AddCosmosBasedChain(sdk.WrapSDKContext(ctx), req)
+			assert.ErrorContains(t, err, msg)
+		})
+	}
+
+	validationFails := func(msg string) ThenStatement {
+		return Then("add cosmos chain validation fails", func(t *testing.T) {
+			err := req.ValidateBasic()
+			assert.ErrorContains(t, err, msg)
+		})
+	}
+
+	givenMsgServer.
+		When2(addChainRequest).
+		Branch(
+			When("chain name is invalid", func() {
+				req.CosmosChain = "invalid_name"
+			}).
+				Then2(validationFails("invalid cosmos chain name")),
+
+			When("invalid addr prefix", func() {
+				req.AddrPrefix = "invalid_prefix"
+			}).
+				Then2(validationFails("invalid address prefix")),
+
+			When("invalid asset", func() {
+				req.NativeAssets = []nexus.Asset{{Denom: "invalid_asset", IsNativeAsset: true}}
+			}).
+				Then2(validationFails("invalid denomination")),
+
+			When("invalid asset denom", func() {
+				req.NativeAssets = []nexus.Asset{{Denom: "invalid@denom", IsNativeAsset: true}}
+			}).
+				Then2(validationFails("invalid denomination")),
+
+			When("duplicate assets", func() {
+				asset := nexus.Asset{Denom: rand.Denom(3, 10), IsNativeAsset: true}
+				req.NativeAssets = []nexus.Asset{asset, asset}
+			}).
+				Then2(validationFails("duplicate asset")),
+
+			When("non native asset", func() {
+				req.NativeAssets = []nexus.Asset{{Denom: rand.Denom(3, 10), IsNativeAsset: false}}
+			}).
+				Then2(validationFails("is not specified as a native asset")),
+		).
+		Run(t, repeats)
+
+	givenMsgServer.
+		When2(addChainRequest).
+		Branch(
+			When("chain is already registered", func() {
+				nexusK.GetChainFunc = func(_ sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
+					return nexus.Chain{
+						Name:                  chain,
+						SupportsForeignAssets: true,
+						Module:                rand.Str(10),
+					}, true
+				}
+			}).
+				Then2(requestFails("already registered")),
+
+			When("asset is already registered", func() {
+				req.NativeAssets = []nexus.Asset{{Denom: rand.Denom(3, 10), IsNativeAsset: true}}
+				nexusK.RegisterAssetFunc = func(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset) error {
+					return fmt.Errorf("asset already registered")
+				}
+			}).
+				Then2(requestFails("asset already registered")),
+
+			When("asset is already registered on axelarnet", func() {
+				req.NativeAssets = []nexus.Asset{{Denom: rand.Denom(3, 10), IsNativeAsset: true}}
+				nexusK.RegisterAssetFunc = func(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset) error {
+					if chain.Name == exported.Axelarnet.Name {
+						return fmt.Errorf("asset already registered")
+					} else {
+						return nil
+					}
+				}
+			}).
+				Then2(requestFails("asset already registered")),
+		).
+		Run(t, repeats)
+
+	givenMsgServer.
+		When2(addChainRequest).
+		Then("chain is added", func(t *testing.T) {
+			_, err := server.AddCosmosBasedChain(sdk.WrapSDKContext(ctx), req)
+			assert.NoError(t, err)
+
+			chain, ok := k.GetCosmosChainByName(ctx, req.CosmosChain)
+			assert.True(t, ok)
+			assert.Equal(t, req.CosmosChain, chain.Name)
+			assert.Equal(t, req.AddrPrefix, chain.AddrPrefix)
+		}).
+		Run(t, repeats)
 }
 
 func randomMsgConfirmDeposit() *types.ConfirmDepositRequest {

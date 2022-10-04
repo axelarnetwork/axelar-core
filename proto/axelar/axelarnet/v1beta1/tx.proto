@@ -77,11 +77,18 @@ message AddCosmosBasedChainRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  nexus.exported.v1beta1.Chain chain = 2 [ (gogoproto.nullable) = false ];
+  nexus.exported.v1beta1.Chain chain = 2 [
+    deprecated = true,
+    (gogoproto.nullable) = false
+  ]; // chain was deprecated in v0.27
   string addr_prefix = 3;
   reserved 4; // min_amount was removed in v0.15
   repeated nexus.exported.v1beta1.Asset native_assets = 5
       [ (gogoproto.nullable) = false ];
+  // TODO: Rename this to `chain` after v1beta1 -> v1 version bump
+  string cosmos_chain = 6
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
 }
 
 message AddCosmosBasedChainResponse {}

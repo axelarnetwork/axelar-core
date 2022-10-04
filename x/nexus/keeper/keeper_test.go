@@ -259,7 +259,6 @@ func makeRandomDenom() string {
 }
 
 func makeRandAmount(denom string) sdk.Coin {
-
 	return sdk.NewCoin(denom, sdk.NewInt(rand.I64Between(1, maxAmount)))
 }
 

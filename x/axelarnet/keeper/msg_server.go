@@ -9,12 +9,11 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/query"
 	ibctransfertypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/utils/funcs"
 )
 
@@ -22,22 +21,20 @@ var _ types.MsgServiceServer = msgServer{}
 
 type msgServer struct {
 	Keeper
-	nexus       types.Nexus
-	bank        types.BankKeeper
-	ibcTransfer types.IBCTransferKeeper
-	account     types.AccountKeeper
-	ibcK        IBCKeeper
+	nexus   types.Nexus
+	bank    types.BankKeeper
+	account types.AccountKeeper
+	ibcK    IBCKeeper
 }
 
 // NewMsgServerImpl returns an implementation of the axelarnet MsgServiceServer interface for the provided Keeper.
-func NewMsgServerImpl(k Keeper, n types.Nexus, b types.BankKeeper, t types.IBCTransferKeeper, a types.AccountKeeper, ibcK IBCKeeper) types.MsgServiceServer {
+func NewMsgServerImpl(k Keeper, n types.Nexus, b types.BankKeeper, a types.AccountKeeper, ibcK IBCKeeper) types.MsgServiceServer {
 	return msgServer{
-		Keeper:      k,
-		nexus:       n,
-		bank:        b,
-		ibcTransfer: t,
-		account:     a,
-		ibcK:        ibcK,
+		Keeper:  k,
+		nexus:   n,
+		bank:    b,
+		account: a,
+		ibcK:    ibcK,
 	}
 }
 
@@ -115,7 +112,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 	// check if the format of token denomination is 'ibc/{hash}'
 	case isIBCDenom(req.Denom):
 		// get base denomination and tracing path
-		denomTrace, err := s.parseIBCDenom(ctx, req.Denom)
+		denomTrace, err := s.ibcK.ParseIBCDenom(ctx, req.Denom)
 		if err != nil {
 			return nil, err
 		}
@@ -292,14 +289,21 @@ func (s msgServer) RegisterIBCPath(c context.Context, req *types.RegisterIBCPath
 func (s msgServer) AddCosmosBasedChain(c context.Context, req *types.AddCosmosBasedChainRequest) (*types.AddCosmosBasedChainResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	if _, found := s.nexus.GetChain(ctx, req.Chain.Name); found {
-		return &types.AddCosmosBasedChainResponse{}, fmt.Errorf("chain '%s' is already registered", req.Chain.Name)
+	if _, found := s.nexus.GetChain(ctx, req.CosmosChain); found {
+		return &types.AddCosmosBasedChainResponse{}, fmt.Errorf("chain '%s' is already registered", req.CosmosChain)
 	}
-	s.nexus.SetChain(ctx, req.Chain)
+
+	chain := nexus.Chain{
+		Name:                  req.CosmosChain,
+		KeyType:               tss.None,
+		SupportsForeignAssets: true,
+		Module:                types.ModuleName,
+	}
+	s.nexus.SetChain(ctx, chain)
 
 	// register asset in chain state
 	for _, asset := range req.NativeAssets {
-		if err := s.nexus.RegisterAsset(ctx, req.Chain, asset); err != nil {
+		if err := s.nexus.RegisterAsset(ctx, chain, asset); err != nil {
 			return nil, err
 		}
 
@@ -310,7 +314,7 @@ func (s msgServer) AddCosmosBasedChain(c context.Context, req *types.AddCosmosBa
 	}
 
 	s.SetCosmosChain(ctx, types.CosmosChain{
-		Name:       req.Chain.Name,
+		Name:       chain.Name,
 		AddrPrefix: req.AddrPrefix,
 	})
 
@@ -479,24 +483,6 @@ func isIBCDenom(denom string) bool {
 func isNativeAssetOnAxelarnet(ctx sdk.Context, n types.Nexus, denom string) bool {
 	chain, ok := n.GetChainByNativeAsset(ctx, denom)
 	return ok && chain.Name == exported.Axelarnet.Name
-}
-
-// parseIBCDenom retrieves the full identifiers trace and base denomination from the IBC transfer keeper store
-func (s msgServer) parseIBCDenom(ctx sdk.Context, ibcDenom string) (ibctransfertypes.DenomTrace, error) {
-	denomSplit := strings.Split(ibcDenom, "/")
-
-	hash, err := ibctransfertypes.ParseHexHash(denomSplit[1])
-	if err != nil {
-		return ibctransfertypes.DenomTrace{}, status.Error(codes.InvalidArgument, fmt.Sprintf("invalid denom trace hash %s, %s", hash, err))
-	}
-	denomTrace, found := s.ibcTransfer.GetDenomTrace(ctx, hash)
-	if !found {
-		return ibctransfertypes.DenomTrace{}, status.Error(
-			codes.NotFound,
-			sdkerrors.Wrap(ibctransfertypes.ErrTraceNotFound, denomSplit[1]).Error(),
-		)
-	}
-	return denomTrace, nil
 }
 
 // toICS20 converts a cross chain transfer to ICS20 token

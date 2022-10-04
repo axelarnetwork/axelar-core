@@ -10,11 +10,15 @@ import (
 	"github.com/axelarnetwork/utils/slices"
 )
 
-// GetMigrationHandler returns the handler that performs in-place store migrations from v0.24 to v0.25
-// The migration includes:
-// - migrate contracts bytecode (CRUCIAL AND DO NOT DELETE) for all evm chains
-// - set TransferLimit parameter
-func GetMigrationHandler(k BaseKeeper, n types.Nexus, m types.MultisigKeeper) func(ctx sdk.Context) error {
+// Migrate5To6 returns the handler that performs in-place store migrations
+func Migrate5To6(k BaseKeeper, n types.Nexus) func(ctx sdk.Context) error {
+	return func(ctx sdk.Context) error {
+		return nil
+	}
+}
+
+// AlwaysMigrateBytecode migrates contracts bytecode for all evm chains (CRUCIAL, DO NOT DELETE AND ALWAYS REGISTER)
+func AlwaysMigrateBytecode(k BaseKeeper, n types.Nexus, otherMigrations func(ctx sdk.Context) error) func(ctx sdk.Context) error {
 	return func(ctx sdk.Context) error {
 		// migrate contracts bytecode (CRUCIAL AND DO NOT DELETE) for all evm chains
 		for _, chain := range slices.Filter(n.GetChains(ctx), types.IsEVMChain) {
@@ -24,15 +28,7 @@ func GetMigrationHandler(k BaseKeeper, n types.Nexus, m types.MultisigKeeper) fu
 			}
 		}
 
-		// set TransferLimit param
-		for _, chain := range slices.Filter(n.GetChains(ctx), types.IsEVMChain) {
-			ck := k.ForChain(chain.Name).(chainKeeper)
-			if err := addTransferLimitParam(ctx, ck); err != nil {
-				return err
-			}
-		}
-
-		return nil
+		return otherMigrations(ctx)
 	}
 }
 
@@ -48,7 +44,7 @@ func addTransferLimitParam(ctx sdk.Context, ck chainKeeper) error {
 }
 
 // this function migrates the contracts bytecode to the latest for every existing
-// EVM chain. It's crucial whenever contracts are changed between versions and
+// EVM chain. It's crucial whenever contracts are changed between versions.
 // DO NOT DELETE
 func migrateContractsBytecode(ctx sdk.Context, ck chainKeeper) error {
 	bzToken, err := hex.DecodeString(types.Token)

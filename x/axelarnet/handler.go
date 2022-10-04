@@ -11,8 +11,8 @@ import (
 )
 
 // NewHandler returns the handler of the Cosmos module
-func NewHandler(k keeper.Keeper, n types.Nexus, b types.BankKeeper, t types.IBCTransferKeeper, a types.AccountKeeper, ibcK keeper.IBCKeeper) sdk.Handler {
-	server := keeper.NewMsgServerImpl(k, n, b, t, a, ibcK)
+func NewHandler(k keeper.Keeper, n types.Nexus, b types.BankKeeper, a types.AccountKeeper, ibcK keeper.IBCKeeper) sdk.Handler {
+	server := keeper.NewMsgServerImpl(k, n, b, a, ibcK)
 	h := func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
@@ -48,7 +48,7 @@ func NewHandler(k keeper.Keeper, n types.Nexus, b types.BankKeeper, t types.IBCT
 			res, err := server.AddCosmosBasedChain(sdk.WrapSDKContext(ctx), msg)
 			result, err := sdk.WrapServiceResult(ctx, res, err)
 			if err == nil {
-				result.Log = fmt.Sprintf("successfully added chain %s", msg.Chain.Name)
+				result.Log = fmt.Sprintf("successfully added chain %s", msg.CosmosChain)
 			}
 			return result, err
 		case *types.RegisterAssetRequest:

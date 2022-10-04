@@ -286,7 +286,6 @@ message SigMetadata {
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
   bytes command_batch_id = 3 [ (gogoproto.customname) = "CommandBatchID" ];
-  ;
 }
 
 enum SigType {
@@ -343,21 +342,10 @@ message TokenDetails {
 }
 
 message Gateway {
-  enum Status {
-    option (gogoproto.goproto_enum_prefix) = false;
-    option (gogoproto.goproto_enum_stringer) = true;
-
-    STATUS_UNSPECIFIED = 0
-        [ (gogoproto.enumvalue_customname) = "GatewayStatusNone" ];
-    STATUS_PENDING = 1
-        [ (gogoproto.enumvalue_customname) = "GatewayStatusPending" ];
-    STATUS_CONFIRMED = 2
-        [ (gogoproto.enumvalue_customname) = "GatewayStatusConfirmed" ];
-  }
+  reserved 2; // status was removed in v0.27
 
   bytes address = 1
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
-  Status status = 2 [ deprecated = true ];
 }
 
 message PollMetadata {
