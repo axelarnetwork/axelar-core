@@ -12,6 +12,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/utils/funcs"
 )
 
@@ -231,14 +232,21 @@ func (s msgServer) RegisterIBCPath(c context.Context, req *types.RegisterIBCPath
 func (s msgServer) AddCosmosBasedChain(c context.Context, req *types.AddCosmosBasedChainRequest) (*types.AddCosmosBasedChainResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	if _, found := s.nexus.GetChain(ctx, req.Chain.Name); found {
-		return &types.AddCosmosBasedChainResponse{}, fmt.Errorf("chain '%s' is already registered", req.Chain.Name)
+	if _, found := s.nexus.GetChain(ctx, req.CosmosChain); found {
+		return &types.AddCosmosBasedChainResponse{}, fmt.Errorf("chain '%s' is already registered", req.CosmosChain)
 	}
-	s.nexus.SetChain(ctx, req.Chain)
+
+	chain := nexus.Chain{
+		Name:                  req.CosmosChain,
+		KeyType:               tss.None,
+		SupportsForeignAssets: true,
+		Module:                types.ModuleName,
+	}
+	s.nexus.SetChain(ctx, chain)
 
 	// register asset in chain state
 	for _, asset := range req.NativeAssets {
-		if err := s.nexus.RegisterAsset(ctx, req.Chain, asset); err != nil {
+		if err := s.nexus.RegisterAsset(ctx, chain, asset); err != nil {
 			return nil, err
 		}
 
@@ -249,7 +257,7 @@ func (s msgServer) AddCosmosBasedChain(c context.Context, req *types.AddCosmosBa
 	}
 
 	s.SetCosmosChain(ctx, types.CosmosChain{
-		Name:       req.Chain.Name,
+		Name:       chain.Name,
 		AddrPrefix: req.AddrPrefix,
 	})
 

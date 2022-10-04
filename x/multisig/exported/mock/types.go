@@ -4,8 +4,10 @@
 package mock
 
 import (
+	"github.com/axelarnetwork/axelar-core/utils"
 	multisigexported "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	snapshotexported "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	"github.com/btcsuite/btcd/btcec"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"sync"
@@ -22,7 +24,7 @@ var _ multisigexported.SigHandler = &SigHandlerMock{}
 //
 // 		// make and configure a mocked multisigexported.SigHandler
 // 		mockedSigHandler := &SigHandlerMock{
-// 			HandleCompletedFunc: func(ctx sdk.Context, sig codec.ProtoMarshaler, moduleMetadata codec.ProtoMarshaler) error {
+// 			HandleCompletedFunc: func(ctx sdk.Context, sig utils.ValidatedProtoMarshaler, moduleMetadata codec.ProtoMarshaler) error {
 // 				panic("mock out the HandleCompleted method")
 // 			},
 // 			HandleFailedFunc: func(ctx sdk.Context, moduleMetadata codec.ProtoMarshaler) error {
@@ -36,7 +38,7 @@ var _ multisigexported.SigHandler = &SigHandlerMock{}
 // 	}
 type SigHandlerMock struct {
 	// HandleCompletedFunc mocks the HandleCompleted method.
-	HandleCompletedFunc func(ctx sdk.Context, sig codec.ProtoMarshaler, moduleMetadata codec.ProtoMarshaler) error
+	HandleCompletedFunc func(ctx sdk.Context, sig utils.ValidatedProtoMarshaler, moduleMetadata codec.ProtoMarshaler) error
 
 	// HandleFailedFunc mocks the HandleFailed method.
 	HandleFailedFunc func(ctx sdk.Context, moduleMetadata codec.ProtoMarshaler) error
@@ -48,7 +50,7 @@ type SigHandlerMock struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Sig is the sig argument value.
-			Sig codec.ProtoMarshaler
+			Sig utils.ValidatedProtoMarshaler
 			// ModuleMetadata is the moduleMetadata argument value.
 			ModuleMetadata codec.ProtoMarshaler
 		}
@@ -65,13 +67,13 @@ type SigHandlerMock struct {
 }
 
 // HandleCompleted calls HandleCompletedFunc.
-func (mock *SigHandlerMock) HandleCompleted(ctx sdk.Context, sig codec.ProtoMarshaler, moduleMetadata codec.ProtoMarshaler) error {
+func (mock *SigHandlerMock) HandleCompleted(ctx sdk.Context, sig utils.ValidatedProtoMarshaler, moduleMetadata codec.ProtoMarshaler) error {
 	if mock.HandleCompletedFunc == nil {
 		panic("SigHandlerMock.HandleCompletedFunc: method is nil but SigHandler.HandleCompleted was just called")
 	}
 	callInfo := struct {
 		Ctx            sdk.Context
-		Sig            codec.ProtoMarshaler
+		Sig            utils.ValidatedProtoMarshaler
 		ModuleMetadata codec.ProtoMarshaler
 	}{
 		Ctx:            ctx,
@@ -89,12 +91,12 @@ func (mock *SigHandlerMock) HandleCompleted(ctx sdk.Context, sig codec.ProtoMars
 //     len(mockedSigHandler.HandleCompletedCalls())
 func (mock *SigHandlerMock) HandleCompletedCalls() []struct {
 	Ctx            sdk.Context
-	Sig            codec.ProtoMarshaler
+	Sig            utils.ValidatedProtoMarshaler
 	ModuleMetadata codec.ProtoMarshaler
 } {
 	var calls []struct {
 		Ctx            sdk.Context
-		Sig            codec.ProtoMarshaler
+		Sig            utils.ValidatedProtoMarshaler
 		ModuleMetadata codec.ProtoMarshaler
 	}
 	mock.lockHandleCompleted.RLock()
@@ -495,5 +497,178 @@ func (mock *KeyMock) GetWeightCalls() []struct {
 	mock.lockGetWeight.RLock()
 	calls = mock.calls.GetWeight
 	mock.lockGetWeight.RUnlock()
+	return calls
+}
+
+// Ensure, that MultiSigMock does implement multisigexported.MultiSig.
+// If this is not the case, regenerate this file with moq.
+var _ multisigexported.MultiSig = &MultiSigMock{}
+
+// MultiSigMock is a mock implementation of multisigexported.MultiSig.
+//
+// 	func TestSomethingThatUsesMultiSig(t *testing.T) {
+//
+// 		// make and configure a mocked multisigexported.MultiSig
+// 		mockedMultiSig := &MultiSigMock{
+// 			GetKeyIDFunc: func() multisigexported.KeyID {
+// 				panic("mock out the GetKeyID method")
+// 			},
+// 			GetPayloadHashFunc: func() multisigexported.Hash {
+// 				panic("mock out the GetPayloadHash method")
+// 			},
+// 			GetSignatureFunc: func(p sdk.ValAddress) (btcec.Signature, bool) {
+// 				panic("mock out the GetSignature method")
+// 			},
+// 			ValidateBasicFunc: func() error {
+// 				panic("mock out the ValidateBasic method")
+// 			},
+// 		}
+//
+// 		// use mockedMultiSig in code that requires multisigexported.MultiSig
+// 		// and then make assertions.
+//
+// 	}
+type MultiSigMock struct {
+	// GetKeyIDFunc mocks the GetKeyID method.
+	GetKeyIDFunc func() multisigexported.KeyID
+
+	// GetPayloadHashFunc mocks the GetPayloadHash method.
+	GetPayloadHashFunc func() multisigexported.Hash
+
+	// GetSignatureFunc mocks the GetSignature method.
+	GetSignatureFunc func(p sdk.ValAddress) (btcec.Signature, bool)
+
+	// ValidateBasicFunc mocks the ValidateBasic method.
+	ValidateBasicFunc func() error
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// GetKeyID holds details about calls to the GetKeyID method.
+		GetKeyID []struct {
+		}
+		// GetPayloadHash holds details about calls to the GetPayloadHash method.
+		GetPayloadHash []struct {
+		}
+		// GetSignature holds details about calls to the GetSignature method.
+		GetSignature []struct {
+			// P is the p argument value.
+			P sdk.ValAddress
+		}
+		// ValidateBasic holds details about calls to the ValidateBasic method.
+		ValidateBasic []struct {
+		}
+	}
+	lockGetKeyID       sync.RWMutex
+	lockGetPayloadHash sync.RWMutex
+	lockGetSignature   sync.RWMutex
+	lockValidateBasic  sync.RWMutex
+}
+
+// GetKeyID calls GetKeyIDFunc.
+func (mock *MultiSigMock) GetKeyID() multisigexported.KeyID {
+	if mock.GetKeyIDFunc == nil {
+		panic("MultiSigMock.GetKeyIDFunc: method is nil but MultiSig.GetKeyID was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockGetKeyID.Lock()
+	mock.calls.GetKeyID = append(mock.calls.GetKeyID, callInfo)
+	mock.lockGetKeyID.Unlock()
+	return mock.GetKeyIDFunc()
+}
+
+// GetKeyIDCalls gets all the calls that were made to GetKeyID.
+// Check the length with:
+//     len(mockedMultiSig.GetKeyIDCalls())
+func (mock *MultiSigMock) GetKeyIDCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockGetKeyID.RLock()
+	calls = mock.calls.GetKeyID
+	mock.lockGetKeyID.RUnlock()
+	return calls
+}
+
+// GetPayloadHash calls GetPayloadHashFunc.
+func (mock *MultiSigMock) GetPayloadHash() multisigexported.Hash {
+	if mock.GetPayloadHashFunc == nil {
+		panic("MultiSigMock.GetPayloadHashFunc: method is nil but MultiSig.GetPayloadHash was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockGetPayloadHash.Lock()
+	mock.calls.GetPayloadHash = append(mock.calls.GetPayloadHash, callInfo)
+	mock.lockGetPayloadHash.Unlock()
+	return mock.GetPayloadHashFunc()
+}
+
+// GetPayloadHashCalls gets all the calls that were made to GetPayloadHash.
+// Check the length with:
+//     len(mockedMultiSig.GetPayloadHashCalls())
+func (mock *MultiSigMock) GetPayloadHashCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockGetPayloadHash.RLock()
+	calls = mock.calls.GetPayloadHash
+	mock.lockGetPayloadHash.RUnlock()
+	return calls
+}
+
+// GetSignature calls GetSignatureFunc.
+func (mock *MultiSigMock) GetSignature(p sdk.ValAddress) (btcec.Signature, bool) {
+	if mock.GetSignatureFunc == nil {
+		panic("MultiSigMock.GetSignatureFunc: method is nil but MultiSig.GetSignature was just called")
+	}
+	callInfo := struct {
+		P sdk.ValAddress
+	}{
+		P: p,
+	}
+	mock.lockGetSignature.Lock()
+	mock.calls.GetSignature = append(mock.calls.GetSignature, callInfo)
+	mock.lockGetSignature.Unlock()
+	return mock.GetSignatureFunc(p)
+}
+
+// GetSignatureCalls gets all the calls that were made to GetSignature.
+// Check the length with:
+//     len(mockedMultiSig.GetSignatureCalls())
+func (mock *MultiSigMock) GetSignatureCalls() []struct {
+	P sdk.ValAddress
+} {
+	var calls []struct {
+		P sdk.ValAddress
+	}
+	mock.lockGetSignature.RLock()
+	calls = mock.calls.GetSignature
+	mock.lockGetSignature.RUnlock()
+	return calls
+}
+
+// ValidateBasic calls ValidateBasicFunc.
+func (mock *MultiSigMock) ValidateBasic() error {
+	if mock.ValidateBasicFunc == nil {
+		panic("MultiSigMock.ValidateBasicFunc: method is nil but MultiSig.ValidateBasic was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockValidateBasic.Lock()
+	mock.calls.ValidateBasic = append(mock.calls.ValidateBasic, callInfo)
+	mock.lockValidateBasic.Unlock()
+	return mock.ValidateBasicFunc()
+}
+
+// ValidateBasicCalls gets all the calls that were made to ValidateBasic.
+// Check the length with:
+//     len(mockedMultiSig.ValidateBasicCalls())
+func (mock *MultiSigMock) ValidateBasicCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockValidateBasic.RLock()
+	calls = mock.calls.ValidateBasic
+	mock.lockValidateBasic.RUnlock()
 	return calls
 }
