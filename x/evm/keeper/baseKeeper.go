@@ -69,18 +69,3 @@ func (k BaseKeeper) getStore(ctx sdk.Context, chain string) utils.KVStore {
 func (k BaseKeeper) HasChain(ctx sdk.Context, chain nexus.ChainName) bool {
 	return k.getBaseStore(ctx).Has(subspacePrefix.AppendStr(strings.ToLower(chain.String())))
 }
-
-// InitChains initializes all existing EVM chains and their respective param subspaces
-func (k BaseKeeper) InitChains(ctx sdk.Context) {
-	iter := k.getBaseStore(ctx).Iterator(subspacePrefix)
-	defer utils.CloseLogError(iter, k.Logger(ctx))
-
-	for ; iter.Valid(); iter.Next() {
-		_, ok := k.ForChain(nexus.ChainName(iter.Key())).(chainKeeper).getSubspace(ctx)
-		if !ok {
-			panic(fmt.Sprintf("subspace for EVM chain %s should exist", string(iter.Key())))
-		}
-
-		k.Logger(ctx).Debug(fmt.Sprintf("loaded evm subspace %s", string(iter.Key())))
-	}
-}
