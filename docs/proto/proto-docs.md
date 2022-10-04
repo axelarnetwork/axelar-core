@@ -160,7 +160,6 @@
     - [BatchedCommandsStatus](#axelar.evm.v1beta1.BatchedCommandsStatus)
     - [DepositStatus](#axelar.evm.v1beta1.DepositStatus)
     - [Event.Status](#axelar.evm.v1beta1.Event.Status)
-    - [Gateway.Status](#axelar.evm.v1beta1.Gateway.Status)
     - [SigType](#axelar.evm.v1beta1.SigType)
     - [Status](#axelar.evm.v1beta1.Status)
   
@@ -1674,9 +1673,10 @@ to nexus
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
-| `chain` | [axelar.nexus.exported.v1beta1.Chain](#axelar.nexus.exported.v1beta1.Chain) |  |  |
+| `chain` | [axelar.nexus.exported.v1beta1.Chain](#axelar.nexus.exported.v1beta1.Chain) |  | **Deprecated.** chain was deprecated in v0.27 |
 | `addr_prefix` | [string](#string) |  |  |
 | `native_assets` | [axelar.nexus.exported.v1beta1.Asset](#axelar.nexus.exported.v1beta1.Asset) | repeated |  |
+| `cosmos_chain` | [string](#string) |  | TODO: Rename this to `chain` after v1beta1 -> v1 version bump |
 
 
 
@@ -2450,7 +2450,6 @@ ERC20TokenMetadata describes information about an ERC20 token
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `address` | [bytes](#bytes) |  |  |
-| `status` | [Gateway.Status](#axelar.evm.v1beta1.Gateway.Status) |  | **Deprecated.**  |
 
 
 
@@ -2614,19 +2613,6 @@ TransferKey contains information for a transfer operatorship
 | STATUS_CONFIRMED | 1 |  |
 | STATUS_COMPLETED | 2 |  |
 | STATUS_FAILED | 3 |  |
-
-
-
-<a name="axelar.evm.v1beta1.Gateway.Status"></a>
-
-### Gateway.Status
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| STATUS_UNSPECIFIED | 0 |  |
-| STATUS_PENDING | 1 |  |
-| STATUS_CONFIRMED | 2 |  |
 
 
 

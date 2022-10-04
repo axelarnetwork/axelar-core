@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"testing"
 
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
 	paramsKeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
@@ -23,6 +24,8 @@ import (
 	evmKeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	multisigTestUtils "github.com/axelarnetwork/axelar-core/x/multisig/exported/testutils"
+	types2 "github.com/axelarnetwork/axelar-core/x/multisig/types"
+	testutils2 "github.com/axelarnetwork/axelar-core/x/multisig/types/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	. "github.com/axelarnetwork/utils/test"
 )
@@ -36,6 +39,7 @@ func TestCommands(t *testing.T) {
 
 	setup := func() {
 		encCfg := params.MakeEncodingConfig()
+		encCfg.InterfaceRegistry.RegisterImplementations((*codec.ProtoMarshaler)(nil), &types2.MultiSig{})
 		paramsK := paramsKeeper.NewKeeper(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("params"), sdk.NewKVStoreKey("tparams"))
 		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 		keeper = evmKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("evm"), paramsK)
@@ -56,10 +60,9 @@ func TestCommands(t *testing.T) {
 
 		for i := 0; i < numCmds; i++ {
 			tokenDetails := createDetails(rand.NormalizedStr(10), rand.NormalizedStr(10))
-			cmd, err := types.CreateDeployTokenCommand(chainID, multisigTestUtils.KeyID(), rand.Str(5), tokenDetails, types.ZeroAddress, sdk.NewUint(uint64(rand.PosI64())))
-			assert.NoError(t, err)
+			cmd := types.NewDeployTokenCommand(chainID, multisigTestUtils.KeyID(), rand.Str(5), tokenDetails, types.ZeroAddress, sdk.NewUint(uint64(rand.PosI64())))
 
-			err = chainKeeper.EnqueueCommand(ctx, cmd)
+			err := chainKeeper.EnqueueCommand(ctx, cmd)
 			assert.NoError(t, err)
 
 			commands = append(commands, cmd)
@@ -80,7 +83,8 @@ func TestCommands(t *testing.T) {
 			assert.Less(t, len(remainingCmds), lastLength)
 			lastLength = len(remainingCmds)
 			batch := chainKeeper.GetLatestCommandBatch(ctx)
-			batch.SetStatus(types.BatchSigned)
+			sig := testutils2.MultiSig()
+			assert.NoError(t, batch.SetSigned(&sig))
 			if lastLength == 0 {
 				break
 			}
@@ -107,10 +111,12 @@ func TestSetBurnerInfoGetBurnerInfo(t *testing.T) {
 		setup()
 
 		burnerInfo := types.BurnerInfo{
-			BurnerAddress: types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
-			TokenAddress:  types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
-			Symbol:        rand.StrBetween(2, 5),
-			Salt:          types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
+			BurnerAddress:    types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
+			TokenAddress:     types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
+			Symbol:           "assetsymbol",
+			Salt:             types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
+			DestinationChain: nexus.ChainName("destination"),
+			Asset:            "assetdenom",
 		}
 
 		keeper.ForChain(chain).SetBurnerInfo(ctx, burnerInfo)
@@ -280,7 +286,7 @@ func TestGetConfirmedDepositsPaginated(t *testing.T) {
 			deposit := types.ERC20Deposit{
 				TxID:             types.Hash(common.HexToHash(rand.HexStr(common.HashLength))),
 				Amount:           sdk.NewUint(uint64(rand.I64Between(1000, 1000000))),
-				Asset:            rand.Str(5),
+				Asset:            "asset",
 				DestinationChain: axelarnet.Axelarnet.Name,
 				BurnerAddress:    types.Address(common.HexToAddress(rand.HexStr(common.AddressLength))),
 			}
