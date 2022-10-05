@@ -15,6 +15,11 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 )
 
+const (
+	activated   = "activated"
+	deactivated = "deactivated"
+)
+
 // GetQueryCmd returns the cli query commands for this module
 func GetQueryCmd(queryRoute string) *cobra.Command {
 	queryCmd := &cobra.Command{
@@ -224,7 +229,7 @@ func getCmdChains() *cobra.Command {
 		Args:  cobra.ExactArgs(0),
 	}
 
-	status := cmd.Flags().String("status", "", "the chain status [all|activated|deactivated]")
+	status := cmd.Flags().String("status", "", fmt.Sprintf("the chain status [%s|%s]", activated, deactivated))
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		clientCtx, err := client.GetClientQueryContext(cmd)
@@ -236,11 +241,11 @@ func getCmdChains() *cobra.Command {
 
 		var chainStatus types.ChainStatus
 		switch *status {
-		case "", "all":
+		case "":
 			chainStatus = types.Unspecified
-		case "activated":
+		case activated:
 			chainStatus = types.Activated
-		case "deactivated":
+		case deactivated:
 			chainStatus = types.Deactivated
 		default:
 			return fmt.Errorf("unrecognized chain status %s", *status)
