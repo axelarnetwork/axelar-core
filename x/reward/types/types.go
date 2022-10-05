@@ -54,7 +54,7 @@ func (m Refund) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "payer").Error())
 	}
 
-	if err:= m.Fees.Validate(); err!= nil{
+	if err := m.Fees.Validate(); err != nil {
 		return err
 	}
 
