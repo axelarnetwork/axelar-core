@@ -437,8 +437,8 @@ func TestLink_UnknownChain(t *testing.T) {
 	k := keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("testKey"), paramsK)
 	k.InitChains(ctx)
 	funcs.MustNoErr(k.CreateChain(ctx, types.Params{
-		Chain:               exported.Ethereum.Name,
-		Network:             network,
+		Chain:   exported.Ethereum.Name,
+		Network: network,
 		Networks: []types.NetworkInfo{{
 			Name: network,
 			Id:   sdk.NewInt(rand.PosI64()),
@@ -479,8 +479,8 @@ func TestLink_NoGateway(t *testing.T) {
 	k := keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("testKey"), paramsK)
 	k.InitChains(ctx)
 	funcs.MustNoErr(k.CreateChain(ctx, types.Params{
-		Chain:               exported.Ethereum.Name,
-		Network:             network,
+		Chain:   exported.Ethereum.Name,
+		Network: network,
 		Networks: []types.NetworkInfo{{
 			Name: network,
 			Id:   sdk.NewInt(rand.PosI64()),
