@@ -222,21 +222,38 @@ func getCmdChains() *cobra.Command {
 		Use:   "chains",
 		Short: "Returns the registered chain names",
 		Args:  cobra.ExactArgs(0),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			clientCtx, err := client.GetClientQueryContext(cmd)
-			if err != nil {
-				return err
-			}
+	}
 
-			queryClient := types.NewQueryServiceClient(clientCtx)
+	status := cmd.Flags().String("status", "", "the chain status [all|activated|deactivated]")
 
-			res, err := queryClient.Chains(cmd.Context(), &types.ChainsRequest{})
-			if err != nil {
-				return err
-			}
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		clientCtx, err := client.GetClientQueryContext(cmd)
+		if err != nil {
+			return err
+		}
 
-			return clientCtx.PrintProto(res)
-		},
+		queryClient := types.NewQueryServiceClient(clientCtx)
+
+		var chainStatus types.ChainStatus
+		switch *status {
+		case "", "all":
+			chainStatus = types.Unspecified
+		case "activated":
+			chainStatus = types.Activated
+		case "deactivated":
+			chainStatus = types.Deactivated
+		default:
+			return fmt.Errorf("unrecognized chain status %s", *status)
+		}
+
+		res, err := queryClient.Chains(cmd.Context(), &types.ChainsRequest{
+			Status: chainStatus,
+		})
+		if err != nil {
+			return err
+		}
+
+		return clientCtx.PrintProto(res)
 	}
 
 	flags.AddQueryFlagsToCmd(cmd)
