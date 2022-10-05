@@ -66,7 +66,7 @@ func (k BaseKeeper) ExportGenesis(ctx sdk.Context) types.GenesisState {
 }
 
 func (k BaseKeeper) getChains(ctx sdk.Context) []types.GenesisState_Chain {
-	iter := k.getBaseStore(ctx).Iterator(subspacePrefix)
+	iter := k.getBaseStore(ctx).Iterator(utils.KeyFromStr(subspacePrefix))
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
 	var chains []types.GenesisState_Chain

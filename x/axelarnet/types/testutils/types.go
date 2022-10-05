@@ -46,3 +46,15 @@ func ClientState() *ibctmtypes.ClientState {
 		false,
 	)
 }
+
+// RandomIBCDenom creates an ICS20 token denom ibc/{hash}
+func RandomIBCDenom() string {
+	return fmt.Sprintf("ibc/%s", rand.HexStr(64))
+}
+
+// RandomIBCPath creates an IBC path
+func RandomIBCPath() string {
+	port := ibctransfertypes.PortID
+	identifier := fmt.Sprintf("%s%d", "channel-", rand.I64Between(0, 9999))
+	return fmt.Sprintf("%s/%s", port, identifier)
+}

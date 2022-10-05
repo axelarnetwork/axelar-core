@@ -77,18 +77,16 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 // AppModule implements module.AppModule
 type AppModule struct {
 	AppModuleBasic
-	keeper         keeper.Keeper
-	nexus          types.Nexus
-	minter         types.Minter
-	staker         types.Staker
-	slasher        types.Slasher
-	multiSig       types.MultiSig
-	snapshotter    types.Snapshotter
-	msgSvcRouter   *baseapp.MsgServiceRouter
-	router         sdk.Router
-	bank           types.Banker
-	paramStoreKey  sdk.StoreKey
-	paramTStoreKey sdk.StoreKey
+	keeper       keeper.Keeper
+	nexus        types.Nexus
+	minter       types.Minter
+	staker       types.Staker
+	slasher      types.Slasher
+	multiSig     types.MultiSig
+	snapshotter  types.Snapshotter
+	msgSvcRouter *baseapp.MsgServiceRouter
+	router       sdk.Router
+	bank         types.Banker
 }
 
 // NewAppModule creates a new AppModule object
@@ -103,8 +101,6 @@ func NewAppModule(
 	bank types.Banker,
 	msgSvcRouter *baseapp.MsgServiceRouter,
 	router sdk.Router,
-	paramStoreKey sdk.StoreKey,
-	paramTStoreKey sdk.StoreKey,
 ) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
@@ -118,8 +114,6 @@ func NewAppModule(
 		msgSvcRouter:   msgSvcRouter,
 		router:         router,
 		bank:           bank,
-		paramStoreKey:  paramStoreKey,
-		paramTStoreKey: paramTStoreKey,
 	}
 }
 
@@ -160,7 +154,7 @@ func (am AppModule) LegacyQuerierHandler(*codec.LegacyAmino) sdk.Querier {
 // RegisterServices registers a GRPC query service to respond to the
 // module-specific GRPC queries.
 func (am AppModule) RegisterServices(cfg module.Configurator) {
-	err := cfg.RegisterMigration(types.ModuleName, 1, keeper.GetMigrationHandler(am.keeper, am.paramStoreKey, am.paramTStoreKey))
+	err := cfg.RegisterMigration(types.ModuleName, 1, keeper.GetMigrationHandler(am.keeper))
 	if err != nil {
 		panic(err)
 	}

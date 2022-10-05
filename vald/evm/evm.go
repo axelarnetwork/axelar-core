@@ -19,6 +19,7 @@ import (
 	tmLog "github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/sdk-utils/broadcast"
+	"github.com/axelarnetwork/axelar-core/utils/errors"
 	"github.com/axelarnetwork/axelar-core/vald/evm/rpc"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -449,19 +450,22 @@ func getLatestFinalizedBlockNumber(client rpc.Client, confHeight uint64) (*big.I
 
 		return header.Number.ToInt(), nil
 	case rpc.Eth2Client:
-		// TODO: check error after the merge is settled on ethereum mainnet
-		finalizedHeader, _ := client.FinalizedHeader(context.Background())
-		if finalizedHeader != nil {
-			return finalizedHeader.Number, nil
+		finalizedHeader, err := client.FinalizedHeader(context.Background())
+		if err != nil {
+			return nil, err
 		}
-	}
 
-	blockNumber, err := client.BlockNumber(context.Background())
-	if err != nil {
-		return nil, err
-	}
+		return finalizedHeader.Number, nil
+	case rpc.Client:
+		blockNumber, err := client.BlockNumber(context.Background())
+		if err != nil {
+			return nil, err
+		}
 
-	return big.NewInt(int64(blockNumber - confHeight + 1)), nil
+		return big.NewInt(int64(blockNumber - confHeight + 1)), nil
+	default:
+		panic(fmt.Errorf("unsupported type of rpc client %T", client))
+	}
 }
 
 func (mgr Mgr) getTxReceiptIfFinalized(chain nexus.ChainName, txID common.Hash, confHeight uint64) (*geth.Receipt, error) {
@@ -471,32 +475,34 @@ func (mgr Mgr) getTxReceiptIfFinalized(chain nexus.ChainName, txID common.Hash, 
 	}
 
 	txReceipt, err := client.TransactionReceipt(context.Background(), txID)
+	keyvals := []interface{}{"chain", chain.String(), "tx_id", txID.Hex()}
+	logger := mgr.logger.With(keyvals...)
 	if err == ethereum.NotFound {
-		mgr.logger.Debug(fmt.Sprintf("transaction receipt %s not found", txID.Hex()))
+		logger.Debug(fmt.Sprintf("transaction receipt %s not found", txID.Hex()))
 		return nil, nil
 	}
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, "failed getting transaction receipt")
+		return nil, sdkerrors.Wrap(errors.With(err, keyvals...), "failed getting transaction receipt")
 	}
 
 	latestFinalizedBlockNumber, err := getLatestFinalizedBlockNumber(client, confHeight)
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, "failed getting latest finalized block number")
+		return nil, sdkerrors.Wrap(errors.With(err, keyvals...), "failed getting latest finalized block number")
 	}
 
 	if latestFinalizedBlockNumber.Cmp(txReceipt.BlockNumber) < 0 {
-		mgr.logger.Debug(fmt.Sprintf("transaction %s in block %s not finalized", txID.Hex(), txReceipt.BlockNumber.String()))
+		logger.Debug(fmt.Sprintf("transaction %s in block %s not finalized", txID.Hex(), txReceipt.BlockNumber.String()))
 		return nil, nil
 	}
 
 	block, err := client.BlockByNumber(context.Background(), txReceipt.BlockNumber)
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, "failed getting block")
+		return nil, sdkerrors.Wrapf(errors.With(err, keyvals...), "failed getting block %d", txReceipt.BlockNumber)
 	}
 
 	txFound := slices.Any(block.Body().Transactions, func(tx *geth.Transaction) bool { return bytes.Equal(tx.Hash().Bytes(), txReceipt.TxHash.Bytes()) })
 	if !txFound {
-		mgr.logger.Debug(fmt.Sprintf("transaction %s not found in block %s", txID.Hex(), txReceipt.BlockNumber.String()))
+		logger.Debug(fmt.Sprintf("transaction %s not found in block %s", txID.Hex(), txReceipt.BlockNumber.String()))
 		return nil, nil
 	}
 

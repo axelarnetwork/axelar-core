@@ -6,6 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/axelarnetwork/utils/funcs"
 )
@@ -52,9 +53,13 @@ func (m VoteRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "vote request contains no vote")
 	}
 
-	_, ok := vote.(codec.ProtoMarshaler)
+	v, ok := vote.(utils.ValidatedProtoMarshaler)
 	if !ok {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "vote request contains invalid vote")
+	}
+
+	if err := v.ValidateBasic(); err != nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, err.Error())
 	}
 
 	return nil

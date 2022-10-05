@@ -218,15 +218,12 @@ func TestMgr_getTxReceiptIfFinalized(t *testing.T) {
 				Status:      1,
 			}
 
-			mgr.rpcs[chain.String()] = &mock.Eth2ClientMock{
+			mgr.rpcs[chain.String()] = &mock.ClientMock{
 				TransactionReceiptFunc: func(_ context.Context, txHash common.Hash) (*geth.Receipt, error) {
 					if bytes.Equal(txHash.Bytes(), tx.Hash().Bytes()) {
 						return receipt, nil
 					}
 
-					return nil, fmt.Errorf("not found")
-				},
-				FinalizedHeaderFunc: func(ctx context.Context) (*geth.Header, error) {
 					return nil, fmt.Errorf("not found")
 				},
 				BlockNumberFunc: func(ctx context.Context) (uint64, error) {

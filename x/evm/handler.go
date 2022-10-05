@@ -7,7 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/utils/errors"
 	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 )
@@ -97,7 +97,7 @@ func NewHandler(k types.BaseKeeper, v types.Voter, n types.Nexus, snapshotter ty
 		res, err := h(ctx, msg)
 		if err != nil {
 			// if the error is not already a registered error the error message would be obscured, so wrap it in a general registered error
-			if !utils.IsABCIError(err) {
+			if !errors.Is[*sdkerrors.Error](err) {
 				err = sdkerrors.Wrap(types.ErrEVM, err.Error())
 			}
 			k.Logger(ctx).Debug(err.Error())

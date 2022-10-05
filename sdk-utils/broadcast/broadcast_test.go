@@ -31,7 +31,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/sdk-utils/broadcast"
 	mock2 "github.com/axelarnetwork/axelar-core/sdk-utils/broadcast/mock"
-	"github.com/axelarnetwork/axelar-core/utils"
+	errors2 "github.com/axelarnetwork/axelar-core/utils/errors"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/reward/types"
 	"github.com/axelarnetwork/utils/slices"
@@ -172,7 +172,7 @@ func TestStatefulBroadcaster(t *testing.T) {
 	returnErrorWithCode := Then("return an error code", func(t *testing.T) {
 		_, err := broadcaster.Broadcast(context.Background(), randomMsgs(msgCount)...)
 		assert.Error(t, err)
-		assert.True(t, utils.IsABCIError(err))
+		assert.True(t, errors2.Is[*sdkerrors.Error](err))
 	})
 
 	returnError := Then("return an error", func(t *testing.T) {
