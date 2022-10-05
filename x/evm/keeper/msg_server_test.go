@@ -439,6 +439,10 @@ func TestLink_UnknownChain(t *testing.T) {
 	funcs.MustNoErr(k.CreateChain(ctx, types.Params{
 		Chain:               exported.Ethereum.Name,
 		Network:             network,
+		Networks: []types.NetworkInfo{{
+			Name: network,
+			Id:   sdk.NewInt(rand.PosI64()),
+		}},
 		ConfirmationHeight:  uint64(minConfHeight),
 		TokenCode:           tokenBC,
 		Burnable:            burnerBC,
@@ -477,6 +481,10 @@ func TestLink_NoGateway(t *testing.T) {
 	funcs.MustNoErr(k.CreateChain(ctx, types.Params{
 		Chain:               exported.Ethereum.Name,
 		Network:             network,
+		Networks: []types.NetworkInfo{{
+			Name: network,
+			Id:   sdk.NewInt(rand.PosI64()),
+		}},
 		ConfirmationHeight:  uint64(minConfHeight),
 		TokenCode:           tokenBC,
 		Burnable:            burnerBC,

@@ -2,13 +2,13 @@ package keeper_test
 
 import (
 	"encoding/hex"
-	"strings"
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
 	paramsKeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
+	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
@@ -27,6 +27,7 @@ import (
 	types2 "github.com/axelarnetwork/axelar-core/x/multisig/types"
 	testutils2 "github.com/axelarnetwork/axelar-core/x/multisig/types/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	nexustestutils "github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
 	"github.com/axelarnetwork/utils/funcs"
 	. "github.com/axelarnetwork/utils/test"
 )
@@ -326,6 +327,124 @@ func TestGetConfirmedDepositsPaginated(t *testing.T) {
 		Run(t, repeats)
 }
 
-func TestName(t *testing.T) {
-	strings.ToLower(exported.Ethereum.Name.String())
+func TestBaseKeeper(t *testing.T) {
+	var (
+		evmStoreKey       *sdk.KVStoreKey
+		keeper            *evmKeeper.BaseKeeper
+		ctx               sdk.Context
+		expectedChainName nexus.ChainName
+		paramstoreKey     = sdk.NewKVStoreKey(paramstypes.StoreKey)
+		paramTStoreKey    = sdk.NewKVStoreKey(paramstypes.TStoreKey)
+	)
+	givenBaseKeeper := Given("a base keeper", func() {
+		encodingConfig := app.MakeEncodingConfig()
+		pKeeper := paramsKeeper.NewKeeper(encodingConfig.Codec, encodingConfig.Amino, paramstoreKey, paramTStoreKey)
+		evmStoreKey = sdk.NewKVStoreKey(types.StoreKey)
+		keeper = evmKeeper.NewKeeper(encodingConfig.Codec, evmStoreKey, pKeeper)
+	})
+
+	givenCtx := Given("a context", func() {
+		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+	})
+
+	givenNoChainsExist := Given("no chains exist", func() {})
+
+	givenChainsExistInStore := Given("a chain exists in the store", func() {
+		// use local keeper to simulate shut down after chain is created
+		encodingConfig := app.MakeEncodingConfig()
+		pKeeper := paramsKeeper.NewKeeper(encodingConfig.Codec, encodingConfig.Amino, paramstoreKey, paramTStoreKey)
+		localKeeper := evmKeeper.NewKeeper(encodingConfig.Codec, evmStoreKey, pKeeper)
+		localKeeper.InitChains(ctx)
+
+		ps := types.DefaultParams()[0]
+		expectedChainName = nexustestutils.RandomChainName()
+		ps.Chain = expectedChainName
+		funcs.MustNoErr(localKeeper.CreateChain(ctx, ps))
+	})
+
+	whenInitChains := When("initializing chains", func() {
+		keeper.InitChains(ctx)
+	})
+
+	whenNotInitialized := When("the keeper is not initialized", func() {})
+
+	thenChainKeeperPanics := Then("the chain keeper functions panic", func(t *testing.T) {
+		assert.Panics(t, func() { funcs.MustNoErr(keeper.CreateChain(ctx, types.DefaultParams()[0])) })
+		assert.Panics(t, func() { _ = funcs.Must(keeper.ForChain(ctx, types.DefaultParams()[0].Chain)) })
+	})
+
+	thenNewChainCanBeCreated := Then("a new chain can be created", func(t *testing.T) {
+		ps := types.DefaultParams()[0]
+		expectedChainName = nexustestutils.RandomChainName()
+		ps.Chain = expectedChainName
+		assert.NoError(t, keeper.CreateChain(ctx, ps))
+	})
+
+	thenCreateExistingChainFails := Then("creating a new chain colliding with an existing chain fails", func(t *testing.T) {
+		ps := types.DefaultParams()[0]
+		ps.Chain = expectedChainName
+		assert.Error(t, keeper.CreateChain(ctx, ps))
+	})
+
+	thenGetChainKeeperForExistingChain := Then("the chain keeper for an existing chain is accessible", func(t *testing.T) {
+		ck, err := keeper.ForChain(ctx, expectedChainName)
+		assert.NoError(t, err)
+		assert.NotPanics(t, func() {
+			_ = ck.GetParams(ctx)
+		})
+	})
+
+	thenGetChainKeeperForUnkownChainFails := Then("getting the chain keeper for an unknown chain fails", func(t *testing.T) {
+		_, err := keeper.ForChain(ctx, nexustestutils.RandomChainName())
+		assert.Error(t, err)
+	})
+
+	thenSecondInitChainsPanics := Then("a second chain initialization panics", func(t *testing.T) {
+		assert.Panics(t, func() {
+			keeper.InitChains(ctx)
+		})
+	})
+
+	thenNewChainWithWrongParamsFails := Then("creating a new chain colliding with invalid parameters fails", func(t *testing.T) {
+		ps := types.DefaultParams()[0]
+		ps.Network = rand.Str(5)
+		assert.Error(t, ps.Validate())
+		assert.Error(t, keeper.CreateChain(ctx, ps))
+	})
+
+	givenBaseKeeper.
+		Given2(givenCtx).
+		When2(whenNotInitialized).
+		Then2(thenChainKeeperPanics).Run(t)
+
+	givenBaseKeeper.
+		Given2(givenCtx).
+		Given2(givenNoChainsExist).
+		When2(whenInitChains).
+		Then2(thenNewChainCanBeCreated).
+		Then2(thenGetChainKeeperForExistingChain).Run(t)
+
+	givenBaseKeeper.
+		Given2(givenCtx).
+		Given2(givenChainsExistInStore).
+		When2(whenInitChains).
+		Then2(thenCreateExistingChainFails).
+		Then2(thenGetChainKeeperForExistingChain).Run(t)
+
+	givenBaseKeeper.
+		Given2(givenCtx).
+		When2(whenInitChains).
+		Then2(thenSecondInitChainsPanics).Run(t)
+
+	givenBaseKeeper.
+		Given2(givenCtx).
+		Given2(givenChainsExistInStore).
+		When2(whenInitChains).
+		Then2(thenGetChainKeeperForUnkownChainFails).Run(t)
+
+	givenBaseKeeper.
+		Given2(givenCtx).
+		Given2(givenNoChainsExist).
+		When2(whenInitChains).
+		Then2(thenNewChainWithWrongParamsFails).Run(t)
 }

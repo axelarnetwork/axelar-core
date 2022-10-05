@@ -5,6 +5,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/tendermint/tendermint/libs/log"
 
@@ -61,11 +62,18 @@ func (k *BaseKeeper) InitChains(ctx sdk.Context) {
 }
 
 // CreateChain creates the subspace for a new EVM chain. Returns an error if the chain already exists
-func (k BaseKeeper) CreateChain(ctx sdk.Context, params types.Params) error {
+func (k BaseKeeper) CreateChain(ctx sdk.Context, params types.Params) (err error) {
+	defer func() {
+		err = sdkerrors.Wrap(err, "cannot create new EVM chain")
+	}()
+
 	if !k.initialized {
 		panic("InitChain must be called before chain keepers can be used")
 	}
 
+	if err := params.Validate(); err != nil {
+		return err
+	}
 	chainKey := key.FromStr(subspacePrefix).Append(key.FromStr(params.Chain.String()))
 	if k.getBaseStore(ctx).HasNew(chainKey) {
 		return fmt.Errorf("chain %s already exists", params.Chain)

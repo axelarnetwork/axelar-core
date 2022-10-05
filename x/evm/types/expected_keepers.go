@@ -9,7 +9,6 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
-	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
