@@ -5,6 +5,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/utils/events"
 	"github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
 	"github.com/axelarnetwork/utils/funcs"
@@ -32,7 +33,7 @@ func handleKeygens(ctx sdk.Context, k types.Keeper, rewarder types.Rewarder) {
 		slices.ForEach(keygen.GetMissingParticipants(), pool.ClearRewards)
 
 		if keygen.State != exported.Completed {
-			funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewKeygenExpired(keygen.GetKeyID())))
+			events.Emit(ctx, types.NewKeygenExpired(keygen.GetKeyID()))
 			k.Logger(ctx).Info("keygen session expired",
 				"key_id", keygen.GetKeyID(),
 			)
@@ -59,7 +60,7 @@ func handleSignings(ctx sdk.Context, k types.Keeper, rewarder types.Rewarder) {
 			slices.ForEach(signing.GetMissingParticipants(), pool.ClearRewards)
 
 			if signing.State != exported.Completed {
-				funcs.MustNoErr(cachedCtx.EventManager().EmitTypedEvent(types.NewSigningExpired(signing.GetID())))
+				events.Emit(cachedCtx, types.NewSigningExpired(signing.GetID()))
 				k.Logger(cachedCtx).Info("signing session expired",
 					"sig_id", signing.GetID(),
 				)
@@ -73,7 +74,7 @@ func handleSignings(ctx sdk.Context, k types.Keeper, rewarder types.Rewarder) {
 			slices.ForEach(sig.GetParticipants(), func(p sdk.ValAddress) { funcs.MustNoErr(pool.ReleaseRewards(p)) })
 			funcs.MustNoErr(k.GetSigRouter().GetHandler(module).HandleCompleted(cachedCtx, &sig, signing.GetMetadata()))
 
-			funcs.MustNoErr(cachedCtx.EventManager().EmitTypedEvent(types.NewSigningCompleted(signing.GetID())))
+			events.Emit(cachedCtx, types.NewSigningCompleted(signing.GetID()))
 			k.Logger(cachedCtx).Info("signing session completed",
 				"sig_id", signing.GetID(),
 				"key_id", sig.GetKeyID(),
