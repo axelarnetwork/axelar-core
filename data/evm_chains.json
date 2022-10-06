@@ -172,7 +172,7 @@
   ],
   "testnet": [
     {
-      "id": "ethereum-2",
+      "id": "ethereum",
       "name": "Ethereum Goerli",
       "chain_id": 5,
       "provider_params": [

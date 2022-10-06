@@ -227,14 +227,6 @@
       "transfer_fee": 0.04
     },
     {
-      "id": "weth-wei",
-      "name": "WETH - Wrapped Ether",
-      "symbol": "WETH",
-      "image": "/images/assets/weth.svg",
-      "decimals": 18,
-      "transfer_fee": 2e-05
-    },
-    {
       "id": "wavax-wei",
       "name": "WAVAX - Wrapped AVAX",
       "symbol": "WAVAX",
@@ -257,14 +249,6 @@
       "image": "/images/assets/ausdc.svg",
       "decimals": 6,
       "transfer_fee": 0.05
-    },
-    {
-      "id": "wbtc-satoshi",
-      "name": "WBTC - Wrapped BTC",
-      "symbol": "WBTC",
-      "image": "/images/assets/wbtc.svg",
-      "decimals": 8,
-      "transfer_fee": 2e-06
     },
     {
       "id": "wbnb-wei",

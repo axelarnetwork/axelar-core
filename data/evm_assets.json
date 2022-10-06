@@ -644,7 +644,7 @@
         },
         {
           "chain": "ethereum",
-          "address": "0x08006a6C38AA63F22Da7694FDA6A8272f89c4c6b",
+          "address": "0x23ee2343B892b1BB63503a4FAbc840E0e2C6810f",
           "symbol": "wAXL",
           "decimals": 6,
           "transfer_fee": 0.1
@@ -701,7 +701,7 @@
         },
         {
           "chain": "ethereum",
-          "address": "0xEAE61FD42A56F435a913d1570fF301a532d027b2",
+          "address": "0x21ba4f6aEdA155DD77Cc33Fb93646910543F0380",
           "symbol": "WMATIC",
           "decimals": 18,
           "transfer_fee": 0.07
@@ -758,7 +758,7 @@
         },
         {
           "chain": "ethereum",
-          "address": "0xd9774230A31Bf49c3D9372Eeb55Aa10Df1807238",
+          "address": "0x594D8b81eC765410536ab59E98091700b99508D8",
           "symbol": "WFTM",
           "decimals": 18,
           "transfer_fee": 0.08
@@ -783,63 +783,6 @@
           "symbol": "WFTM",
           "decimals": 18,
           "transfer_fee": 0.08
-        }
-      ]
-    },
-    {
-      "id": "weth-wei",
-      "name": "WETH - Wrapped Ether",
-      "symbol": "WETH",
-      "image": "/images/assets/weth.svg",
-      "contracts": [
-        {
-          "chain": "aurora",
-          "address": "0xcfF68Bea15e24aec8ECfdb82862ff776C3e972d1",
-          "symbol": "WETH",
-          "decimals": 18,
-          "transfer_fee": 4e-05
-        },
-        {
-          "chain": "avalanche",
-          "address": "0x3613C187b3eF813619A25322595bA5E297E4C08a",
-          "symbol": "WETH",
-          "decimals": 18,
-          "transfer_fee": 4e-05
-        },
-        {
-          "chain": "binance",
-          "address": "0x03Dc012b7851b7D65592Aebc40a6aF9A171E9315",
-          "symbol": "WETH",
-          "decimals": 18,
-          "transfer_fee": 4e-05
-        },
-        {
-          "chain": "ethereum",
-          "address": "0xc778417E063141139Fce010982780140Aa0cD5Ab",
-          "symbol": "WETH",
-          "decimals": 18,
-          "transfer_fee": 4e-05
-        },
-        {
-          "chain": "fantom",
-          "address": "0x930640ef299Bf772f786Cf7E88DA951D76E33168",
-          "symbol": "WETH",
-          "decimals": 18,
-          "transfer_fee": 4e-05
-        },
-        {
-          "chain": "moonbeam",
-          "address": "0xc40Fdaa2cB43C85eAA6D43856df42E7A80669fca",
-          "symbol": "WETH",
-          "decimals": 18,
-          "transfer_fee": 4e-05
-        },
-        {
-          "chain": "polygon",
-          "address": "0xfba15fFF35558fE2A469B96A90AeD7727FE38fAE",
-          "symbol": "WETH",
-          "decimals": 18,
-          "transfer_fee": 4e-05
         }
       ]
     },
@@ -872,7 +815,7 @@
         },
         {
           "chain": "ethereum",
-          "address": "0x72af7e1e7E0D38bCF033C541598F5a0301D051A5",
+          "address": "0x2a87806561C550ba2dA9677c5323413E6e539740",
           "symbol": "WAVAX",
           "decimals": 18,
           "transfer_fee": 0.001
@@ -929,7 +872,7 @@
         },
         {
           "chain": "ethereum",
-          "address": "0xDc6B192eFa7eBab24063e20c962E74C88A012D3c",
+          "address": "0x4B13D583F45Aa01fb2bE18a7AAfE14DE183B1Ac9",
           "symbol": "WDEV",
           "decimals": 18,
           "transfer_fee": 0.04
@@ -986,7 +929,7 @@
         },
         {
           "chain": "ethereum",
-          "address": "0x526f0A95EDC3DF4CBDB7bb37d4F7Ed451dB8e369",
+          "address": "0x254d06f33bDc5b8ee05b2ea472107E300226659A",
           "symbol": "aUSDC",
           "decimals": 6,
           "transfer_fee": 0.1
@@ -1011,21 +954,6 @@
           "symbol": "aUSDC",
           "decimals": 6,
           "transfer_fee": 0.1
-        }
-      ]
-    },
-    {
-      "id": "wbtc-satoshi",
-      "name": "WBTC - Wrapped BTC",
-      "symbol": "WBTC",
-      "image": "/images/assets/wbtc.svg",
-      "contracts": [
-        {
-          "chain": "ethereum",
-          "address": "0x5db5f7d211FA88266Fb316948da0D45798e5a22f",
-          "symbol": "WBTC",
-          "decimals": 8,
-          "transfer_fee": 3e-06
         }
       ]
     },
@@ -1058,7 +986,7 @@
         },
         {
           "chain": "ethereum",
-          "address": "0x653044Df3e853e8FF96c8D9a7Ab7A90E34c4d484",
+          "address": "0xA9A2D8F279ABC436a18DBB1df3FB233039935D0A",
           "symbol": "WBNB",
           "decimals": 18,
           "transfer_fee": 0.0003
