@@ -112,7 +112,7 @@ prereqs:
 	@which moq &>/dev/null			||	go install github.com/matryer/moq
 	@which statik &>/dev/null       ||	go install github.com/rakyll/statik
 	@which mdformat &>/dev/null 	||	pip3 install mdformat
-	@which protoc &>/dev/null 		||	echo "Please install protoc for grpc (https://grpc.io/docs/languages/go/quickstart/)"
+	@which protoc &>/dev/null 		|| 	echo "Please install protoc for grpc (https://grpc.io/docs/languages/go/quickstart/)"
 
 # Run all the code generators in the project
 .PHONY: generate
