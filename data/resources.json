@@ -66,6 +66,9 @@
         },
         {
           "value": "https://axelar-rpc.polkachu.com"
+        },
+        {
+          "value": "https://axelar-rpc.4sv.io"
         }
       ]
     },
@@ -95,6 +98,9 @@
         },
         {
           "value": "https://axelar-api.polkachu.com"
+        },
+        {
+          "value": "https://axelar-lcd.4sv.io"
         }
       ]
     },
@@ -124,6 +130,9 @@
         },
         {
           "value": "axelar-grpc.polkachu.com:15190"
+        },
+        {
+          "value": "https://axelar-grpc.4sv.io"
         }
       ]
     },
