@@ -10,13 +10,15 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/utils/key"
 	"github.com/axelarnetwork/axelar-core/x/reward/exported"
 	"github.com/axelarnetwork/axelar-core/x/reward/types"
+	"github.com/axelarnetwork/utils/funcs"
 )
 
 var (
-	poolNamePrefix      = utils.KeyFromStr("pool")
-	pendingRefundPrefix = utils.KeyFromStr("refund")
+	poolNamePrefix      = "pool"
+	pendingRefundPrefix = "refund"
 )
 
 var _ types.Rewarder = Keeper{}
@@ -63,8 +65,7 @@ func (k Keeper) SetParams(ctx sdk.Context, params types.Params) {
 // GetPool returns the reward pool of the given name, or returns an empty reward pool if not found
 func (k Keeper) GetPool(ctx sdk.Context, name string) exported.RewardPool {
 	var pool types.Pool
-	key := poolNamePrefix.Append(utils.LowerCaseKey(name))
-	ok := k.getStore(ctx).Get(key, &pool)
+	ok := k.getStore(ctx).GetNew(key.FromStr(poolNamePrefix).Append(key.FromStr(name)), &pool)
 	if !ok {
 		return newPool(ctx, k, k.banker, k.distributor, k.staker, types.NewPool(name))
 	}
@@ -76,7 +77,7 @@ func (k Keeper) getPools(ctx sdk.Context) []types.Pool {
 	var pools []types.Pool
 
 	store := k.getStore(ctx)
-	iter := store.Iterator(poolNamePrefix)
+	iter := store.Iterator(utils.LowerCaseKey(poolNamePrefix))
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
 	for ; iter.Valid(); iter.Next() {
@@ -90,8 +91,7 @@ func (k Keeper) getPools(ctx sdk.Context) []types.Pool {
 }
 
 func (k Keeper) setPool(ctx sdk.Context, pool types.Pool) {
-	key := poolNamePrefix.Append(utils.LowerCaseKey(pool.Name))
-	k.getStore(ctx).Set(key, &pool)
+	funcs.MustNoErr(k.getStore(ctx).SetNewValidated(key.FromStr(poolNamePrefix).Append(key.FromStr(pool.Name)), &pool))
 }
 
 func (k Keeper) getStore(ctx sdk.Context) utils.KVStore {
@@ -101,15 +101,14 @@ func (k Keeper) getStore(ctx sdk.Context) utils.KVStore {
 // SetPendingRefund saves pending refundable message
 func (k Keeper) SetPendingRefund(ctx sdk.Context, req types.RefundMsgRequest, refund types.Refund) error {
 	hash := sha256.Sum256(k.cdc.MustMarshalLengthPrefixed(&req))
-	k.getStore(ctx).Set(pendingRefundPrefix.Append(utils.KeyFromBz(hash[:])), &refund)
-	return nil
+	return k.getStore(ctx).SetNewValidated(key.FromStr(pendingRefundPrefix).Append(key.FromBz(hash[:])), &refund)
 }
 
 // GetPendingRefund retrieves a pending refundable message
 func (k Keeper) GetPendingRefund(ctx sdk.Context, req types.RefundMsgRequest) (types.Refund, bool) {
 	var refund types.Refund
 	hash := sha256.Sum256(k.cdc.MustMarshalLengthPrefixed(&req))
-	ok := k.getStore(ctx).Get(pendingRefundPrefix.Append(utils.KeyFromBz(hash[:])), &refund)
+	ok := k.getStore(ctx).GetNew(key.FromStr(pendingRefundPrefix).Append(key.FromBz(hash[:])), &refund)
 
 	return refund, ok
 }
@@ -117,5 +116,5 @@ func (k Keeper) GetPendingRefund(ctx sdk.Context, req types.RefundMsgRequest) (t
 // DeletePendingRefund retrieves a pending refundable message
 func (k Keeper) DeletePendingRefund(ctx sdk.Context, req types.RefundMsgRequest) {
 	hash := sha256.Sum256(k.cdc.MustMarshalLengthPrefixed(&req))
-	k.getStore(ctx).Delete(pendingRefundPrefix.Append(utils.KeyFromBz(hash[:])))
+	k.getStore(ctx).DeleteNew(key.FromStr(pendingRefundPrefix).Append(key.FromBz(hash[:])))
 }
