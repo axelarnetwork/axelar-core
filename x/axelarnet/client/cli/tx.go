@@ -34,7 +34,6 @@ func GetTxCmd() *cobra.Command {
 		GetCmdLink(),
 		GetCmdConfirmDeposit(),
 		GetCmdExecutePendingTransfersTx(),
-		GetCmdRegisterIBCPathTx(),
 		GetCmdAddCosmosBasedChain(),
 		GetCmdRegisterAsset(),
 		GetCmdRouteIBCTransfersTx(),
@@ -122,36 +121,12 @@ func GetCmdExecutePendingTransfersTx() *cobra.Command {
 	return cmd
 }
 
-// GetCmdRegisterIBCPathTx returns the cli command to register an IBC tracing path for a cosmos chain
-func GetCmdRegisterIBCPathTx() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "register-path [chain] [path]",
-		Short: "Register an ibc path for a cosmos chain",
-		Args:  cobra.ExactArgs(2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx, err := client.GetClientTxContext(cmd)
-			if err != nil {
-				return err
-			}
-
-			msg := types.NewRegisterIBCPathRequest(cliCtx.GetFromAddress(), args[0], args[1])
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
-
-			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
-		},
-	}
-	flags.AddTxFlagsToCmd(cmd)
-	return cmd
-}
-
 // GetCmdAddCosmosBasedChain returns the cli command to register a new cosmos based chain in nexus
 func GetCmdAddCosmosBasedChain() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "add-cosmos-based-chain [name] [address prefix] [native asset]...",
+		Use:   "add-cosmos-based-chain [name] [address prefix] [ibc path] [native asset]...",
 		Short: "Add a new cosmos based chain",
-		Args:  cobra.MinimumNArgs(2),
+		Args:  cobra.MinimumNArgs(3),
 	}
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
@@ -161,15 +136,16 @@ func GetCmdAddCosmosBasedChain() *cobra.Command {
 		}
 
 		// native assets are optional
-		assets := make([]nexus.Asset, len(args[2:]))
-		for i, asset := range args[2:] {
+		assets := make([]nexus.Asset, len(args[3:]))
+		for i, asset := range args[3:] {
 			assets[i] = nexus.NewAsset(asset, true)
 		}
 
 		name := args[0]
 		addrPrefix := args[1]
+		path := args[2]
 
-		msg := types.NewAddCosmosBasedChainRequest(cliCtx.GetFromAddress(), name, addrPrefix, assets)
+		msg := types.NewAddCosmosBasedChainRequest(cliCtx.GetFromAddress(), name, addrPrefix, assets, path)
 		if err := msg.ValidateBasic(); err != nil {
 			return err
 		}
