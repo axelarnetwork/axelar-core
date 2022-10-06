@@ -150,7 +150,6 @@ proto-lint:
 	@echo "Linting Protobuf files"
 	@$(DOCKER_BUF) lint
 
-# this will only work when the repo is made public
 proto-check-breaking:
 	@$(DOCKER_BUF) breaking --against $(HTTPS_GIT)#branch=main
 
