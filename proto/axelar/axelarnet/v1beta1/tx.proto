@@ -57,6 +57,20 @@ message ExecutePendingTransfersRequest {
 
 message ExecutePendingTransfersResponse {}
 
+// MSgRegisterIBCPath represents a message to register an IBC tracing path for
+// a cosmos chain
+message RegisterIBCPathRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string path = 3;
+}
+
+message RegisterIBCPathResponse {}
+
 // MsgAddCosmosBasedChain represents a message to register a cosmos based chain
 // to nexus
 message AddCosmosBasedChainRequest {
@@ -75,7 +89,6 @@ message AddCosmosBasedChainRequest {
   string cosmos_chain = 6
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
-  string ibc_path = 7 [ (gogoproto.customname) = "IBCPath" ];
 }
 
 message AddCosmosBasedChainResponse {}

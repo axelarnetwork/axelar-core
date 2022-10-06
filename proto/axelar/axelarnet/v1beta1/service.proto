@@ -34,6 +34,14 @@ service MsgService {
     };
   }
 
+  rpc RegisterIBCPath(RegisterIBCPathRequest)
+      returns (RegisterIBCPathResponse) {
+    option (google.api.http) = {
+      post : "/axelar/axelarnet/register_ibc_path"
+      body : "*"
+    };
+  }
+
   rpc AddCosmosBasedChain(AddCosmosBasedChainRequest)
       returns (AddCosmosBasedChainResponse) {
     option (google.api.http) = {
