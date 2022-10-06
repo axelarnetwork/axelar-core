@@ -2,6 +2,7 @@ package multisig
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -72,7 +73,9 @@ func handleSignings(ctx sdk.Context, k types.Keeper, rewarder types.Rewarder) {
 			sig := funcs.Must(signing.Result())
 
 			slices.ForEach(sig.GetParticipants(), func(p sdk.ValAddress) { funcs.MustNoErr(pool.ReleaseRewards(p)) })
-			funcs.MustNoErr(k.GetSigRouter().GetHandler(module).HandleCompleted(cachedCtx, &sig, signing.GetMetadata()))
+			if err := k.GetSigRouter().GetHandler(module).HandleCompleted(cachedCtx, &sig, signing.GetMetadata()); err != nil {
+				return nil, sdkerrors.Wrap(err, "failed to handle completed signature")
+			}
 
 			events.Emit(cachedCtx, types.NewSigningCompleted(signing.GetID()))
 			k.Logger(cachedCtx).Info("signing session completed",
