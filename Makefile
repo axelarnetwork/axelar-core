@@ -142,8 +142,6 @@ proto-gen:
 
 proto-format:
 	@echo "Formatting Protobuf files"
-	@sudo mkdir -p /sys/fs/cgroup/systemd
-	@sudo mount -t cgroup -o none,name=systemd cgroup /sys/fs/cgroup/systemd || true
 	@$(DOCKER) run --rm -v $(CURDIR):/workspace \
 	--workdir /workspace tendermintdev/docker-build-proto \
 	find ./ -not -path "./third_party/*" -name "*.proto" -exec clang-format -i {} \;
