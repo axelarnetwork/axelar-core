@@ -172,16 +172,16 @@
   ],
   "testnet": [
     {
-      "id": "ethereum",
-      "name": "Ethereum Ropsten",
-      "chain_id": 3,
+      "id": "ethereum-2",
+      "name": "Ethereum Goerli",
+      "chain_id": 5,
       "provider_params": [
         {
-          "chainId": "0x3",
-          "chainName": "Ethereum Ropsten",
+          "chainId": "0x5",
+          "chainName": "Ethereum Goerli",
           "rpcUrls": [
-            "https://rpc.ankr.com/eth_ropsten",
-            "https://ropsten.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161"
+            "https://rpc.ankr.com/eth_goerli",
+            "https://goerli.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161"
           ],
           "nativeCurrency": {
             "name": "Ethereum",
@@ -189,7 +189,7 @@
             "decimals": 18
           },
           "blockExplorerUrls": [
-            "https://ropsten.etherscan.io"
+            "https://goerli.etherscan.io"
           ]
         }
       ],
