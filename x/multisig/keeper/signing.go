@@ -9,9 +9,9 @@ import (
 	gogoprototypes "github.com/gogo/protobuf/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/utils/events"
 	"github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
-	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/math"
 	"github.com/axelarnetwork/utils/slices"
 )
@@ -87,7 +87,7 @@ func (k Keeper) Sign(ctx sdk.Context, keyID exported.KeyID, payloadHash exported
 
 	k.setSigningSession(ctx, signingSession)
 
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewSigningStarted(signingSession.GetID(), key, payloadHash[:], module)))
+	events.Emit(ctx, types.NewSigningStarted(signingSession.GetID(), key, payloadHash[:], module))
 	k.Logger(ctx).Info("signing session started",
 		"sig_id", signingSession.GetID(),
 		"key_id", key.GetID(),

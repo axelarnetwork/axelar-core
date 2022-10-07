@@ -11,6 +11,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/query"
 
+	"github.com/axelarnetwork/axelar-core/utils/events"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -107,13 +108,13 @@ func (s msgServer) ConfirmGatewayTx(c context.Context, req *types.ConfirmGateway
 		return nil, fmt.Errorf("required confirmation height not found")
 	}
 
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.ConfirmGatewayTxStarted{
+	events.Emit(ctx, &types.ConfirmGatewayTxStarted{
 		TxID:               req.TxID,
 		Chain:              chain.Name,
 		GatewayAddress:     gatewayAddress,
 		ConfirmationHeight: height,
 		PollParticipants:   pollParticipants,
-	}))
+	})
 
 	return &types.ConfirmGatewayTxResponse{}, nil
 }
@@ -262,7 +263,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, err
 	}
 
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.ConfirmTokenStarted{
+	events.Emit(ctx, &types.ConfirmTokenStarted{
 		TxID:               req.TxID,
 		Chain:              chain.Name,
 		GatewayAddress:     funcs.MustOk(keeper.GetGatewayAddress(ctx)),
@@ -270,7 +271,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		TokenDetails:       token.GetDetails(),
 		ConfirmationHeight: funcs.MustOk(keeper.GetRequiredConfirmationHeight(ctx)),
 		PollParticipants:   pollParticipants,
-	}))
+	})
 
 	return &types.ConfirmTokenResponse{}, nil
 }
@@ -318,7 +319,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 	}
 
 	height, _ := keeper.GetRequiredConfirmationHeight(ctx)
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.ConfirmDepositStarted{
+	events.Emit(ctx, &types.ConfirmDepositStarted{
 		TxID:               req.TxID,
 		Chain:              chain.Name,
 		DepositAddress:     req.BurnerAddress,
@@ -326,7 +327,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		ConfirmationHeight: height,
 		PollParticipants:   pollParticipants,
 		Asset:              burnerInfo.Asset,
-	}))
+	})
 
 	return &types.ConfirmDepositResponse{}, nil
 }
@@ -360,7 +361,7 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 	}
 
 	params := keeper.GetParams(ctx)
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewConfirmKeyTransferStarted(chain.Name, req.TxID, gatewayAddr, params.ConfirmationHeight, pollParticipants)))
+	events.Emit(ctx, types.NewConfirmKeyTransferStarted(chain.Name, req.TxID, gatewayAddr, params.ConfirmationHeight, pollParticipants))
 
 	return &types.ConfirmTransferKeyResponse{}, nil
 }
@@ -502,13 +503,13 @@ func (s msgServer) CreateBurnTokens(c context.Context, req *types.CreateBurnToke
 			return nil, err
 		}
 
-		funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.BurnCommand{
+		events.Emit(ctx, &types.BurnCommand{
 			Chain:            chain.Name,
 			CommandID:        cmd.ID,
 			DestinationChain: deposit.DestinationChain,
 			DepositAddress:   deposit.BurnerAddress.Hex(),
 			Asset:            token.GetAsset(),
-		}))
+		})
 
 		seen[burnerAddressHex] = true
 	}
@@ -577,14 +578,14 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 			return nil, err
 		}
 
-		funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.MintCommand{
+		events.Emit(ctx, &types.MintCommand{
 			Chain:              chain.Name,
 			TransferID:         transfer.ID,
 			CommandID:          cmd.ID,
 			DestinationChain:   transfer.Recipient.Chain.Name,
 			DestinationAddress: transfer.Recipient.Address,
 			Asset:              transfer.Asset,
-		}))
+		})
 
 		s.nexus.ArchivePendingTransfer(ctx, transfer)
 	}
@@ -742,7 +743,7 @@ func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*typ
 	s.nexus.SetChain(ctx, chain)
 	s.ForChain(chain.Name).SetParams(ctx, req.Params)
 
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.ChainAdded{Chain: req.Name}))
+	events.Emit(ctx, &types.ChainAdded{Chain: req.Name})
 
 	return &types.AddChainResponse{}, nil
 }
@@ -779,11 +780,11 @@ func (s msgServer) RetryFailedEvent(c context.Context, req *types.RetryFailedEve
 		"eventID", event.GetID(),
 	)
 
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.EVMEventRetryFailed{
+	events.Emit(ctx, &types.EVMEventRetryFailed{
 		Chain:   event.Chain,
 		EventID: event.GetID(),
 		Type:    event.GetEventType(),
-	}))
+	})
 
 	return &types.RetryFailedEventResponse{}, nil
 }
