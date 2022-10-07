@@ -114,4 +114,11 @@ service QueryService {
     option (google.api.http).get = "/axelar/nexus/v1beta1/recipient_address/"
                                    "{deposit_chain}/{deposit_addr}";
   }
+
+  // ChainMaintainers queries the chain maintainers for a given chain
+  rpc ChainMaintainers(ChainMaintainersRequest)
+      returns (ChainMaintainersResponse) {
+    option (google.api.http).get =
+        "/axelar/nexus/v1beta1/chain_maintainers/{chain}";
+  }
 }

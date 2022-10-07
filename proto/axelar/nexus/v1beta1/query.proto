@@ -11,7 +11,11 @@ import "cosmos/base/v1beta1/coin.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
-message QueryChainMaintainersResponse {
+// ChainMaintainersRequest represents a message that queries
+// the chain maintainers for the specified chain
+message ChainMaintainersRequest { string chain = 1; }
+
+message ChainMaintainersResponse {
   repeated bytes maintainers = 1
       [ (gogoproto.casttype) =
             "github.com/cosmos/cosmos-sdk/types.ValAddress" ];

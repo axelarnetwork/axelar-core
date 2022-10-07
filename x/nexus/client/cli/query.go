@@ -11,7 +11,6 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	"github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 )
 
@@ -21,7 +20,7 @@ const (
 )
 
 // GetQueryCmd returns the cli query commands for this module
-func GetQueryCmd(queryRoute string) *cobra.Command {
+func GetQueryCmd() *cobra.Command {
 	queryCmd := &cobra.Command{
 		Use:                        types.ModuleName,
 		Short:                      fmt.Sprintf("Querying commands for the %s module", types.ModuleName),
@@ -31,7 +30,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 	}
 
 	queryCmd.AddCommand(
-		getCmdChainMaintainers(queryRoute),
+		getCmdChainMaintainers(),
 		getCmdLatestDepositAddress(),
 		getCmdTransfersForChain(),
 		getCmdFee(),
@@ -46,7 +45,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 	return queryCmd
 }
 
-func getCmdChainMaintainers(queryRoute string) *cobra.Command {
+func getCmdChainMaintainers() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "chain-maintainers [chain]",
 		Short: "Returns the chain maintainers for the given chain",
@@ -57,19 +56,27 @@ func getCmdChainMaintainers(queryRoute string) *cobra.Command {
 				return err
 			}
 
-			bz, _, err := clientCtx.Query(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QueryChainMaintainers, args[0]))
-			if err != nil {
-				return sdkerrors.Wrap(err, "couldn't resolve chain maintainers")
+			queryClient := types.NewQueryServiceClient(clientCtx)
+
+			if err := utils.ValidateString(args[0]); err != nil {
+				return sdkerrors.Wrap(err, "invalid chain")
 			}
 
-			var res types.QueryChainMaintainersResponse
-			types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
+			res, err := queryClient.ChainMaintainers(cmd.Context(),
+				&types.ChainMaintainersRequest{
+					Chain: args[0],
+				},
+			)
+			if err != nil {
+				return err
+			}
 
-			return clientCtx.PrintProto(&res)
+			return clientCtx.PrintProto(res)
 		},
 	}
 
 	flags.AddQueryFlagsToCmd(cmd)
+
 	return cmd
 }
 
