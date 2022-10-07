@@ -2,6 +2,7 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useSelector, useDispatch, shallowEqual } from "react-redux";
 import Web3 from "web3";
+import { Tooltip } from "@material-tailwind/react";
 
 import { equals_ignore_case } from "../../utils";
 import evm_chains from "../../data/evm_chains.json";
@@ -103,11 +104,14 @@ export default ({
     }
   };
 
-  return (
+  const chain_data = _evm_chains.find(c => equals_ignore_case(c.id, chain));
+
+  const at_chain = chain_data?.chain_id === chain_id;
+
+  const metamaskButton = (
     <button
       onClick={() => {
         if (chain) {
-          const chain_data = _evm_chains.find(c => equals_ignore_case(c.id, chain));
           if (symbol && address && decimals) {
             addToken(
               chain_data?.chain_id,
@@ -124,7 +128,7 @@ export default ({
           }
         }
       }}
-      className="min-w-max bg-gray-100 hover:bg-gray-200 dark:bg-gray-900 dark:hover:bg-gray-800 rounded-lg cursor-pointer flex items-center py-1.5 px-2"
+      className={`min-w-max bg-gray-100 dark:bg-gray-900 ${at_chain ? '' : 'hover:bg-gray-200 dark:hover:bg-gray-800 cursor-pointer'} rounded-lg flex items-center py-1.5 px-2`}
     >
       <Image
         src="/images/wallets/metamask.png"
@@ -133,5 +137,17 @@ export default ({
         height={16}
       />
     </button>
+  );
+
+  return (
+    at_chain ?
+      <Tooltip
+        placement="top"
+        content="No action needed. Your MetaMask wallet is currently on this chain."
+        className="z-50"
+      >
+        {metamaskButton}
+      </Tooltip> :
+      metamaskButton
   );
 };

@@ -13,6 +13,7 @@
   "license": "MIT",
   "dependencies": {
     "@headlessui/react": "^1.7.2",
+    "@material-tailwind/react": "^1.2.4",
     "@reach/skip-nav": "^0.17.0",
     "@redux-devtools/extension": "^3.2.3",
     "@typeform/embed-react": "^1.21.0",
