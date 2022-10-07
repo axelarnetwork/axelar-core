@@ -165,6 +165,7 @@ func (k Keeper) EnqueueTransfer(ctx sdk.Context, senderChain exported.Chain, rec
 		TransferID:       transferID,
 		RecipientChain:   recipient.Chain.Name,
 		RecipientAddress: recipient.Address,
+		Amount:           asset,
 		Fee:              fee,
 	}))
 
