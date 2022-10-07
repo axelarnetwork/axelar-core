@@ -11,12 +11,16 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	"github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 )
 
+const (
+	activated   = "activated"
+	deactivated = "deactivated"
+)
+
 // GetQueryCmd returns the cli query commands for this module
-func GetQueryCmd(queryRoute string) *cobra.Command {
+func GetQueryCmd() *cobra.Command {
 	queryCmd := &cobra.Command{
 		Use:                        types.ModuleName,
 		Short:                      fmt.Sprintf("Querying commands for the %s module", types.ModuleName),
@@ -26,7 +30,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 	}
 
 	queryCmd.AddCommand(
-		getCmdChainMaintainers(queryRoute),
+		getCmdChainMaintainers(),
 		getCmdLatestDepositAddress(),
 		getCmdTransfersForChain(),
 		getCmdFee(),
@@ -41,7 +45,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 	return queryCmd
 }
 
-func getCmdChainMaintainers(queryRoute string) *cobra.Command {
+func getCmdChainMaintainers() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "chain-maintainers [chain]",
 		Short: "Returns the chain maintainers for the given chain",
@@ -52,19 +56,27 @@ func getCmdChainMaintainers(queryRoute string) *cobra.Command {
 				return err
 			}
 
-			bz, _, err := clientCtx.Query(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QueryChainMaintainers, args[0]))
-			if err != nil {
-				return sdkerrors.Wrap(err, "couldn't resolve chain maintainers")
+			queryClient := types.NewQueryServiceClient(clientCtx)
+
+			if err := utils.ValidateString(args[0]); err != nil {
+				return sdkerrors.Wrap(err, "invalid chain")
 			}
 
-			var res types.QueryChainMaintainersResponse
-			types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
+			res, err := queryClient.ChainMaintainers(cmd.Context(),
+				&types.ChainMaintainersRequest{
+					Chain: args[0],
+				},
+			)
+			if err != nil {
+				return err
+			}
 
-			return clientCtx.PrintProto(&res)
+			return clientCtx.PrintProto(res)
 		},
 	}
 
 	flags.AddQueryFlagsToCmd(cmd)
+
 	return cmd
 }
 
@@ -222,21 +234,38 @@ func getCmdChains() *cobra.Command {
 		Use:   "chains",
 		Short: "Returns the registered chain names",
 		Args:  cobra.ExactArgs(0),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			clientCtx, err := client.GetClientQueryContext(cmd)
-			if err != nil {
-				return err
-			}
+	}
 
-			queryClient := types.NewQueryServiceClient(clientCtx)
+	status := cmd.Flags().String("status", "", fmt.Sprintf("the chain status [%s|%s]", activated, deactivated))
 
-			res, err := queryClient.Chains(cmd.Context(), &types.ChainsRequest{})
-			if err != nil {
-				return err
-			}
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		clientCtx, err := client.GetClientQueryContext(cmd)
+		if err != nil {
+			return err
+		}
 
-			return clientCtx.PrintProto(res)
-		},
+		queryClient := types.NewQueryServiceClient(clientCtx)
+
+		var chainStatus types.ChainStatus
+		switch *status {
+		case "":
+			chainStatus = types.Unspecified
+		case activated:
+			chainStatus = types.Activated
+		case deactivated:
+			chainStatus = types.Deactivated
+		default:
+			return fmt.Errorf("unrecognized chain status %s", *status)
+		}
+
+		res, err := queryClient.Chains(cmd.Context(), &types.ChainsRequest{
+			Status: chainStatus,
+		})
+		if err != nil {
+			return err
+		}
+
+		return clientCtx.PrintProto(res)
 	}
 
 	flags.AddQueryFlagsToCmd(cmd)
