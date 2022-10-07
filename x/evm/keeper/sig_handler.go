@@ -8,6 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/utils/events"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	"github.com/axelarnetwork/utils/funcs"
@@ -35,7 +36,7 @@ func (s sigHandler) HandleCompleted(ctx sdk.Context, sig utils.ValidatedProtoMar
 
 	funcs.MustNoErr(commandBatch.SetSigned(sig))
 
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewCommandBatchSigned(sigMetadata.Chain, sigMetadata.CommandBatchID)))
+	events.Emit(ctx, types.NewCommandBatchSigned(sigMetadata.Chain, sigMetadata.CommandBatchID))
 
 	return nil
 }
@@ -52,7 +53,7 @@ func (s sigHandler) HandleFailed(ctx sdk.Context, moduleMetadata codec.ProtoMars
 		panic(fmt.Errorf("failed to abort command batch %s", hex.EncodeToString(commandBatch.GetID())))
 	}
 
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewCommandBatchAborted(sigMetadata.Chain, sigMetadata.CommandBatchID)))
+	events.Emit(ctx, types.NewCommandBatchAborted(sigMetadata.Chain, sigMetadata.CommandBatchID))
 
 	return nil
 }

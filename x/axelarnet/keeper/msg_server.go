@@ -9,6 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/query"
 	ibctransfertypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
 
+	"github.com/axelarnetwork/axelar-core/utils/events"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -187,12 +188,12 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, _ *types.ExecutePe
 			continue
 		}
 
-		funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(
+		events.Emit(ctx,
 			&types.AxelarTransferCompleted{
 				ID:         pendingTransfer.ID,
 				Receipient: pendingTransfer.Recipient.Address,
 				Asset:      pendingTransfer.Asset,
-			}))
+			})
 
 		s.nexus.ArchivePendingTransfer(ctx, pendingTransfer)
 	}
@@ -205,11 +206,11 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, _ *types.ExecutePe
 				continue
 			}
 
-			funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(
+			events.Emit(ctx,
 				&types.FeeCollected{
 					Collector: collector,
 					Fee:       fee,
-				}))
+				})
 
 			s.nexus.SubTransferFee(ctx, fee)
 		}
@@ -393,7 +394,7 @@ func (s msgServer) RetryIBCTransfer(c context.Context, req *types.RetryIBCTransf
 
 	funcs.MustNoErr(s.SetTransferPending(ctx, t.ID))
 
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(
+	events.Emit(ctx,
 		&types.IBCTransferRetried{
 			ID:         t.ID,
 			Receipient: t.Receiver,
@@ -401,7 +402,7 @@ func (s msgServer) RetryIBCTransfer(c context.Context, req *types.RetryIBCTransf
 			Sequence:   t.Sequence,
 			PortID:     t.PortID,
 			ChannelID:  t.ChannelID,
-		}))
+		})
 
 	return &types.RetryIBCTransferResponse{}, nil
 }

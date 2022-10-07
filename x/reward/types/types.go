@@ -17,8 +17,8 @@ func NewPool(name string) Pool {
 	}
 }
 
-// Validate returns an error if the pool is not valid; nil otherwise
-func (m Pool) Validate() error {
+// ValidateBasic returns an error if the Pool is not valid; nil otherwise
+func (m Pool) ValidateBasic() error {
 	if err := utils.ValidateString(m.Name); err != nil {
 		return sdkerrors.Wrap(err, "invalid name")
 	}
@@ -43,6 +43,19 @@ func (m Pool) Validate() error {
 		}
 
 		validatorSeen[validatorAddr] = true
+	}
+
+	return nil
+}
+
+// ValidateBasic returns an error if the Refund is not valid; nil otherwise
+func (m Refund) ValidateBasic() error {
+	if err := sdk.VerifyAddressFormat(m.Payer); err != nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "payer").Error())
+	}
+
+	if err := m.Fees.Validate(); err != nil {
+		return err
 	}
 
 	return nil
