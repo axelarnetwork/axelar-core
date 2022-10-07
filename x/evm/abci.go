@@ -250,7 +250,8 @@ func handleConfirmDeposit(ctx sdk.Context, event types.Event, ck types.ChainKeep
 		return false
 	}
 
-	if _, _, ok := ck.GetDeposit(ctx, event.TxID, burnerInfo.BurnerAddress); ok {
+	// this check is only needed for historical reason.
+	if _, _, ok := ck.GetDepositByTxIDBurnAddr(ctx, event.TxID, burnerInfo.BurnerAddress); ok {
 		ck.Logger(ctx).Info(fmt.Sprintf("%s deposit %s-%s already exists", chain.Name.String(), event.TxID.Hex(), burnerInfo.BurnerAddress.Hex()))
 		return false
 	}
@@ -265,12 +266,15 @@ func handleConfirmDeposit(ctx sdk.Context, event types.Event, ck types.ChainKeep
 	// set confirmed deposit
 	erc20Deposit := types.ERC20Deposit{
 		TxID:             event.TxID,
+		LogIndex:         event.Index,
 		Amount:           e.Amount,
 		Asset:            burnerInfo.Asset,
 		DestinationChain: burnerInfo.DestinationChain,
 		BurnerAddress:    burnerInfo.BurnerAddress,
 	}
-
+	if _, _, ok := ck.GetDeposit(ctx, erc20Deposit.TxID, erc20Deposit.LogIndex); ok {
+		panic(fmt.Errorf("%s deposit %s-%d already exists", chain.Name.String(), erc20Deposit.TxID.Hex(), erc20Deposit.LogIndex))
+	}
 	ck.SetDeposit(ctx, erc20Deposit, types.DepositStatus_Confirmed)
 
 	ck.Logger(ctx).Info(fmt.Sprintf("deposit confirmation result to %s %s", e.To.Hex(), e.Amount),

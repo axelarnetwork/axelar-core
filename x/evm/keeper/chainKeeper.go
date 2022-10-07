@@ -396,14 +396,29 @@ func (k chainKeeper) GetPendingCommands(ctx sdk.Context) []types.Command {
 	return commands
 }
 
-// GetDeposit retrieves a confirmed/burned deposit
-func (k chainKeeper) GetDeposit(ctx sdk.Context, txID types.Hash, burnAddr types.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
+// GetDepositByTxIDBurnAddr retrieves a confirmed/burned deposit by tx id and burner address
+// Deprecated: Use GetDeposit instead
+func (k chainKeeper) GetDepositByTxIDBurnAddr(ctx sdk.Context, txID types.Hash, burnAddr types.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
 	var deposit types.ERC20Deposit
 
 	if k.getStore(ctx, k.chainLowerKey).GetNew(key.FromStr(confirmedDepositPrefix).Append(key.FromStr(txID.Hex())).Append(key.FromStr(burnAddr.Hex())), &deposit) {
 		return deposit, types.DepositStatus_Confirmed, true
 	}
 	if k.getStore(ctx, k.chainLowerKey).GetNew(key.FromStr(burnedDepositPrefix).Append(key.FromStr(txID.Hex())).Append(key.FromStr(burnAddr.Hex())), &deposit) {
+		return deposit, types.DepositStatus_Burned, true
+	}
+
+	return types.ERC20Deposit{}, 0, false
+}
+
+// GetDeposit retrieves a confirmed/burned deposit
+func (k chainKeeper) GetDeposit(ctx sdk.Context, txID types.Hash, logIndex uint64) (types.ERC20Deposit, types.DepositStatus, bool) {
+	var deposit types.ERC20Deposit
+
+	if k.getStore(ctx, k.chainLowerKey).GetNew(key.FromStr(confirmedDepositPrefix).Append(key.FromStr(txID.Hex())).Append(key.FromUInt(logIndex)), &deposit) {
+		return deposit, types.DepositStatus_Confirmed, true
+	}
+	if k.getStore(ctx, k.chainLowerKey).GetNew(key.FromStr(burnedDepositPrefix).Append(key.FromStr(txID.Hex())).Append(key.FromUInt(logIndex)), &deposit) {
 		return deposit, types.DepositStatus_Burned, true
 	}
 
@@ -482,11 +497,11 @@ func (k chainKeeper) SetDeposit(ctx sdk.Context, deposit types.ERC20Deposit, sta
 	case types.DepositStatus_Confirmed:
 		funcs.MustNoErr(
 			k.getStore(ctx, k.chainLowerKey).SetNewValidated(
-				key.FromStr(confirmedDepositPrefix).Append(key.FromStr(deposit.TxID.Hex())).Append(key.FromStr(deposit.BurnerAddress.Hex())), &deposit))
+				key.FromStr(confirmedDepositPrefix).Append(key.FromStr(deposit.TxID.Hex())).Append(key.FromUInt(deposit.LogIndex)), &deposit))
 	case types.DepositStatus_Burned:
 		funcs.MustNoErr(
 			k.getStore(ctx, k.chainLowerKey).SetNewValidated(
-				key.FromStr(burnedDepositPrefix).Append(key.FromStr(deposit.TxID.Hex())).Append(key.FromStr(deposit.BurnerAddress.Hex())), &deposit))
+				key.FromStr(burnedDepositPrefix).Append(key.FromStr(deposit.TxID.Hex())).Append(key.FromUInt(deposit.LogIndex)), &deposit))
 	default:
 		panic("invalid deposit state")
 	}
@@ -495,9 +510,9 @@ func (k chainKeeper) SetDeposit(ctx sdk.Context, deposit types.ERC20Deposit, sta
 // DeleteDeposit deletes the given deposit
 func (k chainKeeper) DeleteDeposit(ctx sdk.Context, deposit types.ERC20Deposit) {
 	k.getStore(ctx, k.chainLowerKey).DeleteNew(
-		key.FromStr(confirmedDepositPrefix).Append(key.FromStr(deposit.TxID.Hex())).Append(key.FromStr(deposit.BurnerAddress.Hex())))
+		key.FromStr(confirmedDepositPrefix).Append(key.FromStr(deposit.TxID.Hex())).Append(key.FromUInt(deposit.LogIndex)))
 	k.getStore(ctx, k.chainLowerKey).DeleteNew(
-		key.FromStr(burnedDepositPrefix).Append(key.FromStr(deposit.TxID.Hex())).Append(key.FromStr(deposit.BurnerAddress.Hex())))
+		key.FromStr(burnedDepositPrefix).Append(key.FromStr(deposit.TxID.Hex())).Append(key.FromUInt(deposit.LogIndex)))
 }
 
 // GetNetworkByID returns the network name for a given chain and network ID
