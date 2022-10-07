@@ -7,6 +7,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -233,6 +235,20 @@ func (q Querier) RecipientAddress(c context.Context, req *types.RecipientAddress
 		RecipientAddr:  linkedAddresses.RecipientAddress.Address,
 		RecipientChain: linkedAddresses.RecipientAddress.Chain.Name.String(),
 	}, nil
+}
+
+// ChainMaintainers returns the chain maintainers for a given chain
+func (q Querier) ChainMaintainers(c context.Context, req *types.ChainMaintainersRequest) (*types.ChainMaintainersResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	chain, ok := q.keeper.GetChain(ctx, nexus.ChainName(req.Chain))
+	if !ok {
+		return nil, status.Errorf(codes.NotFound, "invalid chain %s", req.Chain)
+	}
+
+	maintainers := q.keeper.GetChainMaintainers(ctx, chain)
+
+	return &types.ChainMaintainersResponse{Maintainers: maintainers}, nil
 }
 
 // TransferRateLimit queries the transfer rate limit for a given chain and asset
