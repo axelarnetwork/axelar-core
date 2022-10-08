@@ -129,20 +129,15 @@ You should see something like:
 ## Register as a maintainer of external chains
 
 For each external chain C you selected earlier you must inform the Axelar network of your intent to maintain C. This is accomplished via the `register-chain-maintainer` command.
+Since `vald` uses the broadcaster account,
+it is recommended to be shut down when submitting this command to avoid
+running into sequence mismatch errors due to concurrent signing.
 
-Example: multiple EVM chains in one command:
+Example:
 
 ```bash
-axelard tx nexus register-chain-maintainer avalanche ethereum fantom moonbeam polygon --from broadcaster --chain-id $AXELARD_CHAIN_ID --home $AXELARD_HOME
+axelard tx nexus register-chain-maintainer avalanche ethereum fantom moonbeam polygon --from broadcaster --chain-id $AXELARD_CHAIN_ID --home $AXELARD_HOME --gas auto --gas-adjustment 1.4
 ```
-
-<Callout emoji="ℹ️">
-  Validator voting for maintained chains
-
-If you have added an RPC endpoint to your configuration for chain C then your validator will _always_ post vote messages for chain C on the Axelar network, regardless of whether you are registered as a maintainer for chain C. (Why? Because the `vald` process that posts vote messages is stateless; it doesn't know whether your validator is registered as a maintainer for chain C.)
-
-The Axelar consensus protocol simply ignores all votes for chain C events from those validators who are not registered as a maintainer for C.
-</Callout>
 
 <Callout type="warning" emoji="⚠️">
   Automatic deregistration

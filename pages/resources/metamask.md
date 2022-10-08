@@ -27,7 +27,7 @@ Open Metamask. In the "Networks" dropdown list choose "Add Network". Enter the d
 
 | EVM chain | Chain Name       | Chain ID | Native Token | RPC URL                                                              | Explorer URL                          | Add Chain                                             |
 | --------- | ---------------- | -------- | -------------| -------------------------------------------------------------------- | ------------------------------------- | ----------------------------------------------------- |
-| Ethereum  | Ethereum Ropsten | 3        | ETH          | [URL](https://ropsten.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161) | [URL](https://ropsten.etherscan.io)   | <AddToWeb3 environment="testnet" chain="ethereum" />  |
+| Ethereum  | Ethereum Goerli | 5        | ETH          | [URL](https://goerli.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161) | [URL](https://goerli.etherscan.io)   | <AddToWeb3 environment="testnet" chain="ethereum" />  |
 | Avalanche | Avalanche Fuji   | 43113    | AVAX         | [URL](https://api.avax-test.network/ext/bc/C/rpc)                    | [URL](https://testnet.snowtrace.io)   | <AddToWeb3 environment="testnet" chain="avalanche" /> |
 | Fantom    | Fantom Testnet   | 4002     | FTM          | [URL](https://rpc.testnet.fantom.network)                            | [URL](https://testnet.ftmscan.com/)   | <AddToWeb3 environment="testnet" chain="fantom" />    |
 | Polygon   | Polygon Mumbai   | 80001    | MATIC        | [URL](https://matic-mumbai.chainstacklabs.com)                             | [URL](https://mumbai.polygonscan.com) | <AddToWeb3 environment="testnet" chain="polygon" />   |
@@ -39,7 +39,7 @@ You need native tokens for each `[chain]` in order to pay transaction fees (gas)
 
 You can get native tokens from a faucet. Search the internet for "`[chain]` testnet faucet" or use the links below.
 
-- [Ethereum](https://faucet.dimensions.network/)
+- [Ethereum](https://goerli-faucet.pk910.de/)
 - [Avalanche](https://faucet.avax-test.network/)
 - [Fantom](https://faucet.fantom.network/)
 - [Moonbeam](https://docs.moonbeam.network/builders/get-started/moonbase/#get-tokens) -- No known web faucet; need to join the [Moonbeam discord](https://discord.gg/PfpUATX).

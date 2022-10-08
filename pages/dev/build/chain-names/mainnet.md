@@ -1,11 +1,10 @@
 
 # Chain names: Mainnet
 
-## EVM Networks
+## EVM Chains
 
 The following values are legal arguments for token transfers and General Message Passing calls such as `callContract` and `callContractWithToken`.
-The contract call approval at the Axelar gateway and IAxelarExecutable contracts will receive
-precisely these values for the source chain.
+The contract call approval at the Axelar gateway and contracts implementing `IAxelarExecutable` will receive precisely these values for the source chain.
 
 - `aurora`
 - `Avalanche`
@@ -15,7 +14,7 @@ precisely these values for the source chain.
 - `Moonbeam`
 - `Polygon`
 
-## Non-EVM Networks
+## Cosmos Chains
 
 The following values are legal arguments for token transfers:
 
@@ -28,3 +27,9 @@ The following values are legal arguments for token transfers:
 - `osmosis`
 - `secret`
 - `terra-2`
+- `regen`
+- `assetmantle`
+- `evmos`
+- `stargaze`
+- `ki`
+- `comdex`

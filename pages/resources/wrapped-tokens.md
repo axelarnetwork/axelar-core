@@ -23,7 +23,7 @@ Visit the wrapped ERC-20 token contract on the appropriate block explorer:
 Testnets:
 
 - [Avalanche Fuji testnet](https://testnet.snowtrace.io/token/0xd00ae08403B9bbb9124bB305C09058E32C39A48c#writeContract)
-- [Ethereum Ropsten testnet](https://ropsten.etherscan.io/address/0xc778417e063141139fce010982780140aa0cd5ab#writeContract)
+- [Ethereum Goerli testnet](https://goerli.etherscan.io/address/0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6#writeContract)
 - [Fantom testnet](https://testnet.ftmscan.com/token/0x812666209b90344Ec8e528375298ab9045c2Bd08#writeContract)
 - [Moonbase Alpha testnet](https://moonbase.moonscan.io/address/0x1436aE0dF0A8663F18c0Ec51d7e2E46591730715#writeContract)
 - [Polygon Mumbai testnet](https://mumbai.polygonscan.com/address/0x9c3c9283d3e44854697cd22d3faa240cfb032889#writeContract)

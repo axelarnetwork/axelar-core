@@ -73,7 +73,7 @@ The following method, once invoked, will:
 ```ts
 const sourceTxHash = "0x..";
 const provider = new ethers.providers.JsonRpcProvider(
-  "https://ropsten.infura.io/v3/projectId"
+  "https://goerli.infura.io/v3/projectId"
 );
 
 // Optional
@@ -111,7 +111,7 @@ When invoking this method, you will manually execute (and pay for) the executabl
 ```ts
 const sourceTxHash = "0x..";
 const provider = new ethers.providers.JsonRpcProvider(
-  "https://ropsten.infura.io/v3/projectId"
+  "https://goerli.infura.io/v3/projectId"
 );
 
 // Optional
