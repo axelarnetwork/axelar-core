@@ -7,9 +7,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/axelarnetwork/axelar-core/utils/events"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/types"
-	"github.com/axelarnetwork/utils/funcs"
 )
 
 type msgServer struct {
@@ -43,14 +43,14 @@ func (s msgServer) Vote(c context.Context, req *types.VoteRequest) (*types.VoteR
 	}
 
 	if voteResult != vote.NoVote {
-		funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(
+		events.Emit(ctx,
 			&types.Voted{
 				Module: types.ModuleName,
 				Action: types.AttributeValueVote,
 				Poll:   req.PollID.String(),
 				Voter:  req.Sender.String(),
 				State:  poll.GetState().String(),
-			}))
+			})
 	}
 
 	switch poll.GetState() {

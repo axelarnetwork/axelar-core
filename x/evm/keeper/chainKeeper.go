@@ -16,6 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/utils/events"
 	"github.com/axelarnetwork/axelar-core/utils/key"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/utils/funcs"
@@ -906,11 +907,11 @@ func (k chainKeeper) SetConfirmedEvent(ctx sdk.Context, event types.Event) error
 		return fmt.Errorf("unsupported event type %T", event)
 	}
 
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.EVMEventConfirmed{
+	events.Emit(ctx, &types.EVMEventConfirmed{
 		Chain:   event.Chain,
 		EventID: event.GetID(),
 		Type:    event.GetEventType(),
-	}))
+	})
 
 	return nil
 }
@@ -925,13 +926,12 @@ func (k chainKeeper) SetEventCompleted(ctx sdk.Context, eventID types.EventID) e
 	event.Status = types.EventCompleted
 	k.setEvent(ctx, event)
 
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(
+	events.Emit(ctx,
 		&types.EVMEventCompleted{
 			Chain:   event.Chain,
 			EventID: event.GetID(),
 			Type:    event.GetEventType(),
-		}),
-	)
+		})
 
 	return nil
 }
@@ -951,13 +951,12 @@ func (k chainKeeper) SetEventFailed(ctx sdk.Context, eventID types.EventID) erro
 		"eventID", event.GetID(),
 	)
 
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(
+	events.Emit(ctx,
 		&types.EVMEventFailed{
 			Chain:   event.Chain,
 			EventID: event.GetID(),
 			Type:    event.GetEventType(),
-		}),
-	)
+		})
 
 	return nil
 }
