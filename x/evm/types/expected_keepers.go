@@ -26,6 +26,8 @@ type BaseKeeper interface {
 
 	InitGenesis(ctx sdk.Context, state GenesisState)
 	ExportGenesis(ctx sdk.Context) GenesisState
+
+	GetEventQueue(ctx sdk.Context) utils.KVQueue
 }
 
 // ChainKeeper is implemented by this module's chain keeper

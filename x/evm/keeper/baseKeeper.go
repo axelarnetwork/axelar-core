@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"encoding/binary"
 	"fmt"
 	"strings"
 
@@ -19,6 +20,8 @@ import (
 var (
 	chainPrefix    = utils.KeyFromStr("chain")
 	subspacePrefix = "subspace"
+
+	eventQueueName = "event_queue"
 )
 
 var _ types.BaseKeeper = BaseKeeper{}
@@ -69,4 +72,26 @@ func (k BaseKeeper) getStore(ctx sdk.Context, chain string) utils.KVStore {
 // HasChain returns true if the chain has been set up
 func (k BaseKeeper) HasChain(ctx sdk.Context, chain nexus.ChainName) bool {
 	return k.getBaseStore(ctx).HasNew(key.FromStr(subspacePrefix).Append(key.From(chain)))
+}
+
+// GetEventQueue returns a queue of all the confirmed events
+func (k BaseKeeper) GetEventQueue(ctx sdk.Context) utils.KVQueue {
+	blockHeightBz := make([]byte, 8)
+	binary.BigEndian.PutUint64(blockHeightBz, uint64(ctx.BlockHeight()))
+
+	return utils.NewGeneralKVQueue(
+		eventQueueName,
+		k.getBaseStore(ctx),
+		k.Logger(ctx),
+		func(value codec.ProtoMarshaler) utils.Key {
+			event := value.(*types.Event)
+
+			indexBz := make([]byte, 8)
+			binary.BigEndian.PutUint64(indexBz, event.Index)
+
+			return utils.KeyFromBz(blockHeightBz).
+				Append(utils.KeyFromBz(event.TxID.Bytes())).
+				Append(utils.KeyFromBz(indexBz))
+		},
+	)
 }

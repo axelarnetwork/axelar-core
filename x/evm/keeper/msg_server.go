@@ -760,9 +760,7 @@ func (s msgServer) RetryFailedEvent(c context.Context, req *types.RetryFailedEve
 		return nil, err
 	}
 
-	keeper := s.ForChain(chain.Name)
-
-	event, ok := keeper.GetEvent(ctx, req.EventID)
+	event, ok := s.ForChain(chain.Name).GetEvent(ctx, req.EventID)
 	if !ok {
 		return nil, fmt.Errorf("event %s not found for chain %s", req.EventID, req.Chain)
 	}
@@ -772,7 +770,7 @@ func (s msgServer) RetryFailedEvent(c context.Context, req *types.RetryFailedEve
 	}
 
 	event.Status = types.EventConfirmed
-	keeper.GetConfirmedEventQueue(ctx).Enqueue(getEventKey(req.EventID), &event)
+	s.GetEventQueue(ctx).Enqueue(getEventKey(req.EventID), &event)
 
 	s.Logger(ctx).Info(
 		"re-queued failed event",

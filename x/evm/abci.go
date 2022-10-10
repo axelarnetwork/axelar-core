@@ -424,128 +424,123 @@ func handleMultisigTransferKey(ctx sdk.Context, event types.Event, ck types.Chai
 	return true
 }
 
-func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, multisig types.MultisigKeeper) error {
-	shouldHandleEvent := func(e codec.ProtoMarshaler) bool {
-		event := e.(*types.Event)
+func canHandleEvent(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, e codec.ProtoMarshaler) bool {
+	event := e.(*types.Event)
 
-		var destinationChainName nexus.ChainName
-		switch event := event.GetEvent().(type) {
-		case *types.Event_ContractCall:
-			destinationChainName = event.ContractCall.DestinationChain
-		case *types.Event_ContractCallWithToken:
-			destinationChainName = event.ContractCallWithToken.DestinationChain
-		case *types.Event_TokenSent:
-			destinationChainName = event.TokenSent.DestinationChain
-		case *types.Event_Transfer, *types.Event_TokenDeployed,
-			*types.Event_MultisigOperatorshipTransferred:
-			// skip checks for non-gateway tx event
-			return true
-		default:
-			panic(fmt.Errorf("unsupported event type %T", event))
-		}
+	var destinationChainName nexus.ChainName
+	switch event := event.GetEvent().(type) {
+	case *types.Event_ContractCall:
+		destinationChainName = event.ContractCall.DestinationChain
+	case *types.Event_ContractCallWithToken:
+		destinationChainName = event.ContractCallWithToken.DestinationChain
+	case *types.Event_TokenSent:
+		destinationChainName = event.TokenSent.DestinationChain
+	case *types.Event_Transfer, *types.Event_TokenDeployed,
+		*types.Event_MultisigOperatorshipTransferred:
+		// skip checks for non-gateway tx event
+		return true
+	default:
+		panic(fmt.Errorf("unsupported event type %T", event))
+	}
 
-		// skip if destination chain is not registered
-		destinationChain, ok := n.GetChain(ctx, destinationChainName)
-		if !ok {
-			bk.Logger(ctx).Debug(fmt.Sprintf("skipping confirmed event %s due to destination chain is not registered", event.GetID()),
-				"chain", event.Chain.String(),
-				"destination_chain", destinationChainName.String(),
-				"eventID", event.GetID(),
-			)
+	// skip if destination chain is not registered
+	destinationChain, ok := n.GetChain(ctx, destinationChainName)
+	if !ok {
+		bk.Logger(ctx).Debug(fmt.Sprintf("skipping confirmed event %s due to destination chain is not registered", event.GetID()),
+			"chain", event.Chain.String(),
+			"destination_chain", destinationChainName.String(),
+			"eventID", event.GetID(),
+		)
 
-			return false
-		}
+		return false
+	}
 
-		// skip if destination chain is not activated
-		if !n.IsChainActivated(ctx, destinationChain) {
-			bk.Logger(ctx).Debug(fmt.Sprintf("skipping confirmed event %s due to destination chain being inactive", event.GetID()),
-				"chain", event.Chain.String(),
-				"destination_chain", destinationChainName.String(),
-				"eventID", event.GetID(),
-			)
+	// skip if destination chain is not activated
+	if !n.IsChainActivated(ctx, destinationChain) {
+		bk.Logger(ctx).Debug(fmt.Sprintf("skipping confirmed event %s due to destination chain being inactive", event.GetID()),
+			"chain", event.Chain.String(),
+			"destination_chain", destinationChainName.String(),
+			"eventID", event.GetID(),
+		)
 
-			return false
-		}
+		return false
+	}
 
-		// skip further checks and handle event if destination is not an evm chain
-		if !bk.HasChain(ctx, destinationChainName) {
-			return true
-		}
-
-		// skip if destination chain has not got gateway set yet
-		if _, ok := bk.ForChain(destinationChainName).GetGatewayAddress(ctx); !ok {
-			bk.Logger(ctx).Debug(fmt.Sprintf("skipping confirmed event %s due to destination chain not having gateway set", event.GetID()),
-				"chain", event.Chain.String(),
-				"destination_chain", destinationChainName.String(),
-				"eventID", event.GetID(),
-			)
-
-			return false
-		}
-
+	// skip further checks and handle event if destination is not an evm chain
+	if !bk.HasChain(ctx, destinationChainName) {
 		return true
 	}
 
-	for _, chain := range n.GetChains(ctx) {
-		ck := bk.ForChain(chain.Name)
-		queue := ck.GetConfirmedEventQueue(ctx)
-		// skip if confirmed event queue is empty
-		if queue.IsEmpty() {
+	// skip if destination chain has not got gateway set yet
+	if _, ok := bk.ForChain(destinationChainName).GetGatewayAddress(ctx); !ok {
+		bk.Logger(ctx).Debug(fmt.Sprintf("skipping confirmed event %s due to destination chain not having gateway set", event.GetID()),
+			"chain", event.Chain.String(),
+			"destination_chain", destinationChainName.String(),
+			"eventID", event.GetID(),
+		)
+
+		return false
+	}
+
+	return true
+}
+
+func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, multisig types.MultisigKeeper) error {
+	queue := bk.GetEventQueue(ctx)
+
+	endBlockerLimit := int64(100)
+	handledEvents := int64(0)
+	var event types.Event
+	for handledEvents < endBlockerLimit && queue.Dequeue(&event) {
+		handledEvents++
+		ck := bk.ForChain(event.Chain)
+		chain := funcs.MustOk(n.GetChain(ctx, event.Chain))
+
+		if !canHandleEvent(ctx, bk, n, &event) {
+			funcs.MustNoErr(ck.SetEventFailed(ctx, event.GetID()))
 			continue
 		}
 
-		endBlockerLimit := ck.GetParams(ctx).EndBlockerLimit
-		handledEvents := int64(0)
-		var event types.Event
-		for handledEvents < endBlockerLimit && queue.Dequeue(&event) {
-			handledEvents++
-			if !shouldHandleEvent(&event) {
-				funcs.MustNoErr(ck.SetEventFailed(ctx, event.GetID()))
-				continue
-			}
+		bk.Logger(ctx).Debug("handling confirmed event",
+			"chain", chain.Name.String(),
+			"eventID", event.GetID(),
+		)
 
-			bk.Logger(ctx).Debug("handling confirmed event",
+		var ok bool
+		switch event.GetEvent().(type) {
+		case *types.Event_ContractCall:
+			ok = handleContractCall(ctx, event, bk, n, multisig)
+		case *types.Event_ContractCallWithToken:
+			ok = handleContractCallWithToken(ctx, event, bk, n, multisig)
+		case *types.Event_TokenSent:
+			ok = handleTokenSent(ctx, event, bk, n)
+		case *types.Event_Transfer:
+			ok = handleConfirmDeposit(ctx, event, ck, n, chain)
+		case *types.Event_TokenDeployed:
+			ok = handleTokenDeployed(ctx, event, ck, chain)
+		case *types.Event_MultisigOperatorshipTransferred:
+			ok = handleMultisigTransferKey(ctx, event, ck, multisig, chain)
+		default:
+			bk.Logger(ctx).Debug("unsupported event type %T", event,
 				"chain", chain.Name.String(),
 				"eventID", event.GetID(),
 			)
 
-			var ok bool
+			ok = false
+		}
 
-			switch event.GetEvent().(type) {
-			case *types.Event_ContractCall:
-				ok = handleContractCall(ctx, event, bk, n, multisig)
-			case *types.Event_ContractCallWithToken:
-				ok = handleContractCallWithToken(ctx, event, bk, n, multisig)
-			case *types.Event_TokenSent:
-				ok = handleTokenSent(ctx, event, bk, n)
-			case *types.Event_Transfer:
-				ok = handleConfirmDeposit(ctx, event, ck, n, chain)
-			case *types.Event_TokenDeployed:
-				ok = handleTokenDeployed(ctx, event, ck, chain)
-			case *types.Event_MultisigOperatorshipTransferred:
-				ok = handleMultisigTransferKey(ctx, event, ck, multisig, chain)
-			default:
-				bk.Logger(ctx).Debug("unsupported event type %T", event,
-					"chain", chain.Name.String(),
-					"eventID", event.GetID(),
-				)
+		if !ok {
+			funcs.MustNoErr(ck.SetEventFailed(ctx, event.GetID()))
+			continue
+		}
 
-				ok = false
-			}
+		bk.Logger(ctx).Debug("completed handling event",
+			"chain", chain.Name.String(),
+			"eventID", event.GetID(),
+		)
 
-			if !ok {
-				funcs.MustNoErr(ck.SetEventFailed(ctx, event.GetID()))
-				continue
-			}
-
-			bk.Logger(ctx).Debug("completed handling event",
-				"chain", chain.Name.String(),
-				"eventID", event.GetID(),
-			)
-
-			if err := ck.SetEventCompleted(ctx, event.GetID()); err != nil {
-				return err
-			}
+		if err := ck.SetEventCompleted(ctx, event.GetID()); err != nil {
+			return err
 		}
 	}
 

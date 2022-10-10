@@ -342,6 +342,7 @@ func (k chainKeeper) GetERC20TokenBySymbol(ctx sdk.Context, symbol string) types
 }
 
 // GetConfirmedEventQueue returns a queue of all the confirmed events
+// Deprecated: use BaseKeeper.GetEventQueue instead
 func (k chainKeeper) GetConfirmedEventQueue(ctx sdk.Context) utils.KVQueue {
 	blockHeightBz := make([]byte, 8)
 	binary.BigEndian.PutUint64(blockHeightBz, uint64(ctx.BlockHeight()))
