@@ -73,6 +73,14 @@ import (
 	upgradeclient "github.com/cosmos/cosmos-sdk/x/upgrade/client"
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
+	ica "github.com/cosmos/ibc-go/v3/modules/apps/27-interchain-accounts"
+	icacontroller "github.com/cosmos/ibc-go/v3/modules/apps/27-interchain-accounts/controller"
+	icacontrollerkeeper "github.com/cosmos/ibc-go/v3/modules/apps/27-interchain-accounts/controller/keeper"
+	icacontrollertypes "github.com/cosmos/ibc-go/v3/modules/apps/27-interchain-accounts/controller/types"
+	icahost "github.com/cosmos/ibc-go/v3/modules/apps/27-interchain-accounts/host"
+	icahostkeeper "github.com/cosmos/ibc-go/v3/modules/apps/27-interchain-accounts/host/keeper"
+	icahosttypes "github.com/cosmos/ibc-go/v3/modules/apps/27-interchain-accounts/host/types"
+	icatypes "github.com/cosmos/ibc-go/v3/modules/apps/27-interchain-accounts/types"
 	"github.com/cosmos/ibc-go/v3/modules/apps/transfer"
 	ibctransferkeeper "github.com/cosmos/ibc-go/v3/modules/apps/transfer/keeper"
 	ibctransfertypes "github.com/cosmos/ibc-go/v3/modules/apps/transfer/types"
@@ -84,6 +92,9 @@ import (
 	ibchost "github.com/cosmos/ibc-go/v3/modules/core/24-host"
 	ibcante "github.com/cosmos/ibc-go/v3/modules/core/ante"
 	ibckeeper "github.com/cosmos/ibc-go/v3/modules/core/keeper"
+	intertx "github.com/cosmos/interchain-accounts/x/inter-tx"
+	intertxkeeper "github.com/cosmos/interchain-accounts/x/inter-tx/keeper"
+	intertxtypes "github.com/cosmos/interchain-accounts/x/inter-tx/types"
 	"github.com/gorilla/mux"
 	"github.com/rakyll/statik/fs"
 	"github.com/spf13/cast"
@@ -173,6 +184,8 @@ var (
 		axelarnet.AppModuleBasic{},
 		reward.AppModuleBasic{},
 		permission.AppModuleBasic{},
+		ica.AppModuleBasic{},
+		intertx.AppModuleBasic{},
 	)
 
 	// module account permissions
@@ -186,6 +199,7 @@ var (
 		ibctransfertypes.ModuleName:    {authtypes.Minter, authtypes.Burner},
 		axelarnetTypes.ModuleName:      {authtypes.Minter, authtypes.Burner},
 		rewardTypes.ModuleName:         {authtypes.Minter},
+		icatypes.ModuleName:            nil,
 	}
 )
 
@@ -213,14 +227,23 @@ type AxelarApp struct {
 	invCheckPeriod uint
 
 	// necessery keepers for export
-	stakingKeeper    stakingkeeper.Keeper
-	crisisKeeper     crisiskeeper.Keeper
-	distrKeeper      distrkeeper.Keeper
-	slashingKeeper   slashingkeeper.Keeper
-	ibcKeeper        *ibckeeper.Keeper
-	evidenceKeeper   evidencekeeper.Keeper
-	transferKeeper   ibctransferkeeper.Keeper
-	capabilityKeeper *capabilitykeeper.Keeper
+	stakingKeeper       stakingkeeper.Keeper
+	crisisKeeper        crisiskeeper.Keeper
+	distrKeeper         distrkeeper.Keeper
+	slashingKeeper      slashingkeeper.Keeper
+	ibcKeeper           *ibckeeper.Keeper
+	evidenceKeeper      evidencekeeper.Keeper
+	transferKeeper      ibctransferkeeper.Keeper
+	capabilityKeeper    *capabilitykeeper.Keeper
+	ICAControllerKeeper icacontrollerkeeper.Keeper
+	ICAHostKeeper       icahostkeeper.Keeper
+	InterTxKeeper       intertxkeeper.Keeper
+
+	ScopedIBCKeeper           capabilitykeeper.ScopedKeeper
+	ScopedTransferKeeper      capabilitykeeper.ScopedKeeper
+	ScopedICAControllerKeeper capabilitykeeper.ScopedKeeper
+	ScopedICAHostKeeper       capabilitykeeper.ScopedKeeper
+	ScopedInterTxKeeper       capabilitykeeper.ScopedKeeper
 
 	// keys to access the substores
 	keys    map[string]*sdk.KVStoreKey
@@ -262,7 +285,10 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		evidencetypes.StoreKey,
 		ibchost.StoreKey,
 		ibctransfertypes.StoreKey,
+		icacontrollertypes.StoreKey,
+		icahosttypes.StoreKey,
 		capabilitytypes.StoreKey,
+		intertxtypes.StoreKey,
 		feegrant.StoreKey,
 
 		voteTypes.StoreKey,
@@ -294,6 +320,19 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	app.paramsKeeper = paramsK
 	// set the BaseApp's parameter store
 	bApp.SetParamStore(app.getSubspace(bam.Paramspace))
+
+	// add capability keeper and ScopeToModule for ibc module
+	app.capabilityKeeper = capabilitykeeper.NewKeeper(appCodec, keys[capabilitytypes.StoreKey], memKeys[capabilitytypes.MemStoreKey])
+
+	// grant capabilities for the ibc and ibc-transfer modules
+	scopedIBCKeeper := app.capabilityKeeper.ScopeToModule(ibchost.ModuleName)
+	scopedTransferKeeper := app.capabilityKeeper.ScopeToModule(ibctransfertypes.ModuleName)
+	scopedInterTxKeeper := app.capabilityKeeper.ScopeToModule(intertxtypes.ModuleName)
+	scopedICAControllerKeeper := app.capabilityKeeper.ScopeToModule(icacontrollertypes.SubModuleName)
+	scopedICAHostKeeper := app.capabilityKeeper.ScopeToModule(icahosttypes.SubModuleName)
+
+	// seal capability keeper after scoping modules
+	app.capabilityKeeper.Seal()
 
 	// add keepers
 	accountK := authkeeper.NewAccountKeeper(
@@ -339,26 +378,39 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	)
 	app.stakingKeeper = stakingK
 
-	// add capability keeper and ScopeToModule for ibc module
-	app.capabilityKeeper = capabilitykeeper.NewKeeper(appCodec, keys[capabilitytypes.StoreKey], memKeys[capabilitytypes.MemStoreKey])
-
-	// grant capabilities for the ibc and ibc-transfer modules
-	scopedIBCK := app.capabilityKeeper.ScopeToModule(ibchost.ModuleName)
-	scopedTransferK := app.capabilityKeeper.ScopeToModule(ibctransfertypes.ModuleName)
-
 	// Create IBC Keeper
 	app.ibcKeeper = ibckeeper.NewKeeper(
-		appCodec, keys[ibchost.StoreKey], app.getSubspace(ibchost.ModuleName), app.stakingKeeper, upgradeK, scopedIBCK,
+		appCodec, keys[ibchost.StoreKey], app.getSubspace(ibchost.ModuleName), app.stakingKeeper, upgradeK, scopedIBCKeeper,
 	)
 
 	// Create Transfer Keepers
 	app.transferKeeper = ibctransferkeeper.NewKeeper(
 		appCodec, keys[ibctransfertypes.StoreKey], app.getSubspace(ibctransfertypes.ModuleName),
 		app.ibcKeeper.ChannelKeeper, app.ibcKeeper.ChannelKeeper, &app.ibcKeeper.PortKeeper,
-		accountK, bankK, scopedTransferK,
+		accountK, bankK, scopedTransferKeeper,
 	)
 	transferModule := transfer.NewAppModule(app.transferKeeper)
 	transferIBCModule := transfer.NewIBCModule(app.transferKeeper)
+
+	app.ICAControllerKeeper = icacontrollerkeeper.NewKeeper(
+		appCodec, keys[icacontrollertypes.StoreKey], app.getSubspace(icacontrollertypes.SubModuleName),
+		app.ibcKeeper.ChannelKeeper, // may be replaced with middleware such as ics29 fee
+		app.ibcKeeper.ChannelKeeper, &app.ibcKeeper.PortKeeper,
+		scopedICAControllerKeeper, app.MsgServiceRouter(),
+	)
+	app.ICAHostKeeper = icahostkeeper.NewKeeper(
+		appCodec, keys[icahosttypes.StoreKey], app.getSubspace(icahosttypes.SubModuleName),
+		app.ibcKeeper.ChannelKeeper, &app.ibcKeeper.PortKeeper,
+		accountK, scopedICAHostKeeper, app.MsgServiceRouter(),
+	)
+	icaModule := ica.NewAppModule(&app.ICAControllerKeeper, &app.ICAHostKeeper)
+
+	app.InterTxKeeper = intertxkeeper.NewKeeper(appCodec, keys[intertxtypes.StoreKey], app.ICAControllerKeeper, scopedInterTxKeeper)
+	interTxModule := intertx.NewAppModule(appCodec, app.InterTxKeeper)
+	interTxIBCModule := intertx.NewIBCModule(app.InterTxKeeper)
+
+	icaControllerIBCModule := icacontroller.NewIBCModule(app.ICAControllerKeeper, interTxIBCModule)
+	icaHostIBCModule := icahost.NewIBCModule(app.ICAHostKeeper)
 
 	// register the proposal types
 	govRouter := govtypes.NewRouter()
@@ -450,10 +502,10 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 
 	// Create static IBC router, add transfer route, then set and seal it
 	ibcRouter := porttypes.NewRouter()
-	ibcRouter.AddRoute(ibctransfertypes.ModuleName, axelarnetModule)
-
-	// Setting Router will finalize all routes by sealing router
-	// No more routes can be added
+	ibcRouter.AddRoute(icacontrollertypes.SubModuleName, icaControllerIBCModule).
+		AddRoute(icahosttypes.SubModuleName, icaHostIBCModule).
+		AddRoute(ibctransfertypes.ModuleName, axelarnetModule).
+		AddRoute(intertxtypes.ModuleName, icaControllerIBCModule)
 	app.ibcKeeper.SetRouter(ibcRouter)
 
 	voteRouter := voteTypes.NewRouter()
@@ -487,6 +539,8 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		ibc.NewAppModule(app.ibcKeeper),
 		transferModule,
 		feegrantmodule.NewAppModule(appCodec, accountK, bankK, feegrantK, app.interfaceRegistry),
+		icaModule,
+		interTxModule,
 
 		snapshot.NewAppModule(snapK),
 		multisig.NewAppModule(multisigK, stakingK, slashingK, snapK, rewardK, nexusK),
@@ -519,6 +573,8 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		feegrant.ModuleName,
 		paramstypes.ModuleName,
 		vestingtypes.ModuleName,
+		icatypes.ModuleName,
+		intertxtypes.ModuleName,
 		// axelar modules
 		multisigTypes.ModuleName,
 		tssTypes.ModuleName,
@@ -553,6 +609,8 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		feegrant.ModuleName,
 		paramstypes.ModuleName,
 		vestingtypes.ModuleName,
+		icatypes.ModuleName,
+		intertxtypes.ModuleName,
 
 		// axelar custom modules
 		rewardTypes.ModuleName,
@@ -583,6 +641,8 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		paramstypes.ModuleName,
 		upgradetypes.ModuleName,
 		vestingtypes.ModuleName,
+		icatypes.ModuleName,
+		intertxtypes.ModuleName,
 
 		// axelar custom modules
 		multisigTypes.ModuleName,
@@ -618,6 +678,8 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		paramstypes.ModuleName,
 		upgradetypes.ModuleName,
 		vestingtypes.ModuleName,
+		icatypes.ModuleName,
+		intertxtypes.ModuleName,
 
 		snapTypes.ModuleName,
 		multisigTypes.ModuleName,
@@ -680,6 +742,12 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		}
 	}
 
+	app.ScopedIBCKeeper = scopedIBCKeeper
+	app.ScopedTransferKeeper = scopedTransferKeeper
+	app.ScopedICAControllerKeeper = scopedICAControllerKeeper
+	app.ScopedICAHostKeeper = scopedICAHostKeeper
+	app.ScopedInterTxKeeper = scopedInterTxKeeper
+
 	return app
 }
 
@@ -698,6 +766,8 @@ func initParamsKeeper(appCodec codec.Codec, legacyAmino *codec.LegacyAmino, key,
 	paramsKeeper.Subspace(crisistypes.ModuleName)
 	paramsKeeper.Subspace(ibctransfertypes.ModuleName)
 	paramsKeeper.Subspace(ibchost.ModuleName)
+	paramsKeeper.Subspace(icacontrollertypes.SubModuleName)
+	paramsKeeper.Subspace(icahosttypes.SubModuleName)
 
 	paramsKeeper.Subspace(snapTypes.ModuleName)
 	paramsKeeper.Subspace(multisigTypes.ModuleName)
