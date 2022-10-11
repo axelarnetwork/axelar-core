@@ -7,11 +7,11 @@ import (
 	capabilitykeeper "github.com/cosmos/cosmos-sdk/x/capability/keeper"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
-	ibctransfer "github.com/cosmos/ibc-go/v2/modules/apps/transfer"
-	ibctransferkeeper "github.com/cosmos/ibc-go/v2/modules/apps/transfer/keeper"
-	ibctransfertypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
-	clienttypes "github.com/cosmos/ibc-go/v2/modules/core/02-client/types"
-	channeltypes "github.com/cosmos/ibc-go/v2/modules/core/04-channel/types"
+	ibctransfer "github.com/cosmos/ibc-go/v3/modules/apps/transfer"
+	ibctransferkeeper "github.com/cosmos/ibc-go/v3/modules/apps/transfer/keeper"
+	ibctransfertypes "github.com/cosmos/ibc-go/v3/modules/apps/transfer/types"
+	clienttypes "github.com/cosmos/ibc-go/v3/modules/core/02-client/types"
+	channeltypes "github.com/cosmos/ibc-go/v3/modules/core/04-channel/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
@@ -75,8 +75,8 @@ func TestGetMigrationHandler(t *testing.T) {
 			},
 		}
 
-		transferK := ibctransferkeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("transfer"), transferSubspace, &mock.ChannelKeeperMock{}, &mock.PortKeeperMock{}, accountK, bankK, scopedTransferK)
-		appModule = axelarnet.NewAppModule(k, &mock.NexusMock{}, bankK, accountK, ibcK, ibctransfer.NewAppModule(transferK), log.TestingLogger())
+		transferK := ibctransferkeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("transfer"), transferSubspace, &mock.ChannelKeeperMock{}, &mock.ChannelKeeperMock{}, &mock.PortKeeperMock{}, accountK, bankK, scopedTransferK)
+		appModule = axelarnet.NewAppModule(k, &mock.NexusMock{}, bankK, accountK, ibcK, ibctransfer.NewIBCModule(transferK), log.TestingLogger())
 	})
 
 	fungibleTokenPacket := ibctransfertypes.NewFungibleTokenPacketData(rand.Denom(5, 10), "1", rand.AccAddr().String(), rand.AccAddr().String())

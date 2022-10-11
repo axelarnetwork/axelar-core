@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	ibctypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
+	ibctypes "github.com/cosmos/ibc-go/v3/modules/apps/transfer/types"
 
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"

@@ -6,7 +6,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	host "github.com/cosmos/ibc-go/v2/modules/core/24-host"
+	host "github.com/cosmos/ibc-go/v3/modules/core/24-host"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"

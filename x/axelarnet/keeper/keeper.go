@@ -7,7 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
-	channeltypes "github.com/cosmos/ibc-go/v2/modules/core/04-channel/types"
+	channeltypes "github.com/cosmos/ibc-go/v3/modules/core/04-channel/types"
 	gogoprototypes "github.com/gogo/protobuf/types"
 	"github.com/tendermint/tendermint/libs/log"
 
