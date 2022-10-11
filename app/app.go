@@ -675,8 +675,6 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	)
 	app.SetAnteHandler(anteHandler)
 
-	ms := app.CommitMultiStore() // need to get the store before versions are loaded, otherwise app will panic because it's sealed
-
 	if loadLatest {
 		if err := app.LoadLatestVersion(); err != nil {
 			tmos.Exit(err.Error())
@@ -687,7 +685,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 
 	// we need to ensure that all chain subspaces are loaded at start-up to prevent unexpected consensus failures
 	// when the params keeper is used outside the evm module's context
-	evmK.InitChains(sdk.NewContext(ms, tmproto.Header{}, true, logger))
+	evmK.InitChains(app.NewContext(true, tmproto.Header{}))
 
 	return app
 }
