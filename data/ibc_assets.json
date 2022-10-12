@@ -227,6 +227,14 @@
       "transfer_fee": 0.04
     },
     {
+      "id": "eth-wei",
+      "name": "WETH - Wrapped Ether",
+      "symbol": "WETH",
+      "image": "/images/assets/weth.svg",
+      "decimals": 18,
+      "transfer_fee": 3e-05
+    },
+    {
       "id": "wavax-wei",
       "name": "WAVAX - Wrapped AVAX",
       "symbol": "WAVAX",

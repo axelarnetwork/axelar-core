@@ -787,6 +787,56 @@
       ]
     },
     {
+      "id": "eth-wei",
+      "name": "WETH - Wrapped Ether",
+      "symbol": "WETH",
+      "image": "/images/assets/weth.svg",
+      "contracts": [
+        {
+          "chain": "avalanche",
+          "address": "0xe840BE8D9aB1ACD5AfC7168b05EC350B7FD18709",
+          "symbol": "axlWETH",
+          "decimals": 18,
+          "transfer_fee": 7e-05
+        },
+        {
+          "chain": "binance",
+          "address": "0x409A57A5Ee1F37FB58b3A3eB9717398F328da1eD",
+          "symbol": "axlWETH",
+          "decimals": 18,
+          "transfer_fee": 7e-05
+        },
+        {
+          "chain": "ethereum",
+          "address": "0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6",
+          "symbol": "WETH",
+          "decimals": 18,
+          "transfer_fee": 7e-05
+        },
+        {
+          "chain": "fantom",
+          "address": "0xB17053aE763aCfD65A58e265aa9A4a59b25A7a87",
+          "symbol": "axlWETH",
+          "decimals": 18,
+          "transfer_fee": 7e-05
+        },
+        {
+          "chain": "moonbeam",
+          "address": "0x4faB8Ad67eF3173501c512B9367f0B0f62287fE7",
+          "symbol": "axlWETH",
+          "decimals": 18,
+          "transfer_fee": 7e-05
+        },
+        {
+          "chain": "polygon",
+          "address": "0x786D82A436EA836A8669919D605FfeaEFa51744e",
+          "symbol": "axlWETH",
+          "decimals": 18,
+          "transfer_fee": 7e-05
+        }
+      ]
+    },
+    {
       "id": "wavax-wei",
       "name": "WAVAX - Wrapped AVAX",
       "symbol": "WAVAX",
