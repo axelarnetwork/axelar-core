@@ -47,11 +47,11 @@ func TestStateStore_GetState(t *testing.T) {
 		assert.Error(t, err)
 	}).Repeat(repeats))
 
-	t.Run("wrong data format", testutils.Func(func(t *testing.T) {
-		rw.ReadAllFunc = func() ([]byte, error) { return rand.BytesBetween(1, 100), nil }
+	t.Run("wrong data format", func(t *testing.T) {
+		rw.ReadAllFunc = func() ([]byte, error) { return []byte("wrong format"), nil }
 		_, err := store.GetState()
 		assert.Error(t, err)
-	}).Repeat(repeats))
+	})
 
 	t.Run("empty reader", testutils.Func(func(t *testing.T) {
 		rw.ReadAllFunc = func() ([]byte, error) { return []byte{}, nil }
