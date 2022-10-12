@@ -130,7 +130,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		k.SetCosmosChain(ctx, types.CosmosChain{
 			Name:       chain.Name,
 			AddrPrefix: rand.StrBetween(1, 10),
-			IBCPath: randomIBCPath(),
+			IBCPath:    randomIBCPath(),
 		})
 
 		nexusK = &mock.NexusMock{
@@ -734,7 +734,7 @@ func TestRetryIBCTransfer(t *testing.T) {
 		k.InitGenesis(ctx, types.DefaultGenesisState())
 		chain = nexustestutils.RandomChain()
 		path = randomIBCPath()
-		k.SetCosmosChain(ctx, types.CosmosChain{Name: chain.Name,IBCPath: path})
+		k.SetCosmosChain(ctx, types.CosmosChain{Name: chain.Name, IBCPath: path})
 
 		b = &mock.BankKeeperMock{}
 		a = &mock.AccountKeeperMock{}
@@ -900,9 +900,9 @@ func TestAddCosmosBasedChain(t *testing.T) {
 			}).
 				Then2(validationFails("duplicate asset")),
 
-				When("invalid ibc path", func() {
-					req.IBCPath = "invalid path"
-				}).Then2(validationFails("invalid IBC path")),
+			When("invalid ibc path", func() {
+				req.IBCPath = "invalid path"
+			}).Then2(validationFails("invalid IBC path")),
 
 			When("non native asset", func() {
 				req.NativeAssets = []nexus.Asset{{Denom: rand.Denom(3, 10), IsNativeAsset: false}}

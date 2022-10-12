@@ -54,11 +54,11 @@ type ReqRegisterIBCPath struct {
 
 // ReqAddCosmosBasedChain represents a request to add a cosmos based chain to nexus
 type ReqAddCosmosBasedChain struct {
-	BaseReq      rest.BaseReq  	`json:"base_req" yaml:"base_req"`
-	Name         string        	`json:"name" yaml:"name"`
-	AddrPrefix   string        	`json:"addr_prefix" yaml:"addr_prefix"`
-	NativeAssets []nexus.Asset 	`json:"native_assets" yaml:"native_assets"`
-	IBCPath string 				`json:"ibc_path" yaml:"ibc_path"`
+	BaseReq      rest.BaseReq  `json:"base_req" yaml:"base_req"`
+	Name         string        `json:"name" yaml:"name"`
+	AddrPrefix   string        `json:"addr_prefix" yaml:"addr_prefix"`
+	NativeAssets []nexus.Asset `json:"native_assets" yaml:"native_assets"`
+	IBCPath      string        `json:"ibc_path" yaml:"ibc_path"`
 }
 
 // ReqRegisterAsset represents a request to register an asset to a cosmos based chain

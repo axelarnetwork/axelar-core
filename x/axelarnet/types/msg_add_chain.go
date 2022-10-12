@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	host "github.com/cosmos/ibc-go/v2/modules/core/24-host"
