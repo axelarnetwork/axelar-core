@@ -1,13 +1,15 @@
 package app_test
 
 import (
-	"github.com/axelarnetwork/axelar-core/app"
+	"testing"
+
 	"github.com/cosmos/cosmos-sdk/simapp"
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
-	"testing"
+
+	"github.com/axelarnetwork/axelar-core/app"
 )
 
 func TestNewAxelarApp(t *testing.T) {
