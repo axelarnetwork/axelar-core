@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	abci "github.com/tendermint/tendermint/abci/types"
 
+	"github.com/axelarnetwork/axelar-core/utils/events"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/utils/funcs"
@@ -76,7 +77,7 @@ func handleTokenSent(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n 
 		"transferID", transferID.String(),
 	)
 
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.TokenSent{
+	events.Emit(ctx, &types.TokenSent{
 		Chain:              event.Chain,
 		EventID:            event.GetID(),
 		TransferID:         transferID,
@@ -84,7 +85,7 @@ func handleTokenSent(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n 
 		DestinationChain:   e.DestinationChain,
 		DestinationAddress: e.DestinationAddress,
 		Asset:              amount,
-	}))
+	})
 
 	return true
 }
@@ -136,7 +137,7 @@ func handleContractCall(ctx sdk.Context, event types.Event, bk types.BaseKeeper,
 		"commandID", cmd.ID.Hex(),
 	)
 
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.ContractCallApproved{
+	events.Emit(ctx, &types.ContractCallApproved{
 		Chain:            event.Chain,
 		EventID:          event.GetID(),
 		CommandID:        cmd.ID,
@@ -144,7 +145,7 @@ func handleContractCall(ctx sdk.Context, event types.Event, bk types.BaseKeeper,
 		DestinationChain: e.DestinationChain,
 		ContractAddress:  e.ContractAddress,
 		PayloadHash:      e.PayloadHash,
-	}))
+	})
 
 	return true
 }
@@ -222,7 +223,7 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 		"commandID", cmd.ID.Hex(),
 	)
 
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.ContractCallWithMintApproved{
+	events.Emit(ctx, &types.ContractCallWithMintApproved{
 		Chain:            event.Chain,
 		EventID:          event.GetID(),
 		CommandID:        cmd.ID,
@@ -231,7 +232,7 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 		ContractAddress:  e.ContractAddress,
 		PayloadHash:      e.PayloadHash,
 		Asset:            sdk.NewCoin(asset, sdk.Int(e.Amount)),
-	}))
+	})
 
 	return true
 }

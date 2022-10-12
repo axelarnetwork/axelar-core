@@ -7,8 +7,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
+	"github.com/axelarnetwork/axelar-core/utils/events"
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
-	"github.com/axelarnetwork/utils/funcs"
 )
 
 var _ types.MsgServiceServer = msgServer{}
@@ -76,7 +76,7 @@ func (s msgServer) SubmitPubKey(c context.Context, req *types.SubmitPubKeyReques
 		"expires_at", keygenSession.ExpiresAt,
 	)
 
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewPubKeySubmitted(req.KeyID, participant, req.PubKey)))
+	events.Emit(ctx, types.NewPubKeySubmitted(req.KeyID, participant, req.PubKey))
 
 	return &types.SubmitPubKeyResponse{}, nil
 }
@@ -109,7 +109,7 @@ func (s msgServer) SubmitSignature(c context.Context, req *types.SubmitSignature
 		"expires_at", signingSession.ExpiresAt,
 	)
 
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewSignatureSubmitted(req.SigID, participant, req.Signature)))
+	events.Emit(ctx, types.NewSignatureSubmitted(req.SigID, participant, req.Signature))
 
 	return &types.SubmitSignatureResponse{}, nil
 }

@@ -1,4 +1,4 @@
-package checks_test
+package events_test
 
 import (
 	"encoding/json"

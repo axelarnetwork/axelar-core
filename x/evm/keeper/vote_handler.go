@@ -6,6 +6,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/axelarnetwork/axelar-core/utils/events"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -33,11 +34,11 @@ func NewVoteHandler(cdc codec.Codec, keeper types.BaseKeeper, nexus types.Nexus,
 
 func (v voteHandler) HandleFailedPoll(ctx sdk.Context, poll vote.Poll) error {
 	md := mustGetMetadata(poll)
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.PollFailed{
+	events.Emit(ctx, &types.PollFailed{
 		TxID:   md.TxID,
 		Chain:  md.Chain,
 		PollID: poll.GetID(),
-	}))
+	})
 
 	return nil
 }
@@ -80,11 +81,11 @@ func (v voteHandler) HandleExpiredPoll(ctx sdk.Context, poll vote.Poll) error {
 		}
 	}
 
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.PollExpired{
+	events.Emit(ctx, &types.PollExpired{
 		TxID:   md.TxID,
 		Chain:  md.Chain,
 		PollID: poll.GetID(),
-	}))
+	})
 
 	return nil
 }
@@ -142,18 +143,18 @@ func (v voteHandler) HandleCompletedPoll(ctx sdk.Context, poll vote.Poll) error 
 
 	md := mustGetMetadata(poll)
 	if v.IsFalsyResult(voteEvents) {
-		funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.NoEventsConfirmed{
+		events.Emit(ctx, &types.NoEventsConfirmed{
 			TxID:   md.TxID,
 			Chain:  md.Chain,
 			PollID: poll.GetID(),
-		}))
+		})
 	}
 
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.PollCompleted{
+	events.Emit(ctx, &types.PollCompleted{
 		TxID:   md.TxID,
 		Chain:  md.Chain,
 		PollID: poll.GetID(),
-	}))
+	})
 
 	return nil
 }

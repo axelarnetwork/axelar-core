@@ -7,10 +7,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/utils/events"
 	"github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
-	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/math"
 	"github.com/axelarnetwork/utils/slices"
 )
@@ -57,7 +57,7 @@ func (k Keeper) SetKey(ctx sdk.Context, key types.Key) {
 	k.setKey(ctx, key)
 
 	participants := key.GetParticipants()
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewKeygenCompleted(key.ID)))
+	events.Emit(ctx, types.NewKeygenCompleted(key.ID))
 	k.Logger(ctx).Info("setting key",
 		"key_id", key.ID,
 		"participant_count", len(participants),
@@ -99,7 +99,7 @@ func (k Keeper) createKeygenSession(ctx sdk.Context, id exported.KeyID, snapshot
 	k.setKeygenSession(ctx, keygenSession)
 
 	participants := snapshot.GetParticipantAddresses()
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewKeygenStarted(id, participants)))
+	events.Emit(ctx, types.NewKeygenStarted(id, participants))
 
 	k.Logger(ctx).Info("keygen session started",
 		"key_id", id,

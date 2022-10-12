@@ -11,9 +11,9 @@ import (
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
+	"github.com/axelarnetwork/axelar-core/utils/events"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported/mock"
-	"github.com/axelarnetwork/utils/funcs"
 	testutils "github.com/axelarnetwork/utils/test"
 )
 
@@ -44,28 +44,28 @@ func TestVoteRouter(t *testing.T) {
 		handler.HandleResultFunc = func(ctx sdk.Context, _ codec.ProtoMarshaler) error {
 			ctx.KVStore(storeKey).Set([]byte("key1"), []byte("value"))
 
-			funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&Voted{}))
+			events.Emit(ctx, &Voted{})
 			return nil
 		}
 
 		handler.HandleFailedPollFunc = func(ctx sdk.Context, _ exported.Poll) error {
 			ctx.KVStore(storeKey).Set([]byte("key2"), []byte("value"))
 
-			funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&Voted{}))
+			events.Emit(ctx, &Voted{})
 			return nil
 		}
 
 		handler.HandleExpiredPollFunc = func(ctx sdk.Context, _ exported.Poll) error {
 			ctx.KVStore(storeKey).Set([]byte("key3"), []byte("value"))
 
-			funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&Voted{}))
+			events.Emit(ctx, &Voted{})
 			return nil
 		}
 
 		handler.HandleCompletedPollFunc = func(ctx sdk.Context, _ exported.Poll) error {
 			ctx.KVStore(storeKey).Set([]byte("key4"), []byte("value"))
 
-			funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&Voted{}))
+			events.Emit(ctx, &Voted{})
 			return nil
 		}
 	}).
@@ -86,28 +86,28 @@ func TestVoteRouter(t *testing.T) {
 		handler.HandleResultFunc = func(ctx sdk.Context, _ codec.ProtoMarshaler) error {
 			ctx.KVStore(storeKey).Set([]byte("key1"), []byte("value"))
 
-			funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&Voted{}))
+			events.Emit(ctx, &Voted{})
 			return fmt.Errorf("some error")
 		}
 
 		handler.HandleFailedPollFunc = func(ctx sdk.Context, _ exported.Poll) error {
 			ctx.KVStore(storeKey).Set([]byte("key2"), []byte("value"))
 
-			funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&Voted{}))
+			events.Emit(ctx, &Voted{})
 			return fmt.Errorf("some error")
 		}
 
 		handler.HandleExpiredPollFunc = func(ctx sdk.Context, _ exported.Poll) error {
 			ctx.KVStore(storeKey).Set([]byte("key3"), []byte("value"))
 
-			funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&Voted{}))
+			events.Emit(ctx, &Voted{})
 			return fmt.Errorf("some error")
 		}
 
 		handler.HandleCompletedPollFunc = func(ctx sdk.Context, _ exported.Poll) error {
 			ctx.KVStore(storeKey).Set([]byte("key4"), []byte("value"))
 
-			funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&Voted{}))
+			events.Emit(ctx, &Voted{})
 			return fmt.Errorf("some error")
 		}
 	}).

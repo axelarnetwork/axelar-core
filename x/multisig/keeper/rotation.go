@@ -7,6 +7,7 @@ import (
 	gogoprototypes "github.com/gogo/protobuf/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/utils/events"
 	"github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -62,7 +63,7 @@ func (k Keeper) AssignKey(ctx sdk.Context, chainName nexus.ChainName, keyID expo
 	k.setKey(ctx, key)
 	k.setKeyEpoch(ctx, types.NewKeyEpoch(nextRotationCount, chainName, keyID))
 
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewKeyAssigned(chainName, keyID)))
+	events.Emit(ctx, types.NewKeyAssigned(chainName, keyID))
 	k.Logger(ctx).Info("new key assigned",
 		"chain", chainName,
 		"keyID", keyID,
@@ -93,7 +94,7 @@ func (k Keeper) RotateKey(ctx sdk.Context, chainName nexus.ChainName) error {
 		k.deactivateKeyAtEpoch(ctx, chainName, keyEpoch.Epoch-params.ActiveEpochCount)
 	}
 
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewKeyRotated(chainName, keyEpoch.GetKeyID())))
+	events.Emit(ctx, types.NewKeyRotated(chainName, keyEpoch.GetKeyID()))
 	k.Logger(ctx).Info("new key rotated",
 		"chain", chainName,
 		"keyID", keyEpoch.GetKeyID(),
