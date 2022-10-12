@@ -112,8 +112,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, err
 	}
 
-	err = coin.Lock(s.bank, req.DepositAddress)
-	if err != nil {
+	if err := coin.Lock(s.bank, req.DepositAddress); err != nil {
 		return nil, err
 	}
 
@@ -219,16 +218,6 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, _ *types.ExecutePe
 	return &types.ExecutePendingTransfersResponse{}, nil
 }
 
-// RegisterIBCPath handles register an IBC path for a chain
-func (s msgServer) RegisterIBCPath(c context.Context, req *types.RegisterIBCPathRequest) (*types.RegisterIBCPathResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-	if err := s.SetIBCPath(ctx, req.Chain, req.Path); err != nil {
-		return nil, err
-	}
-
-	return &types.RegisterIBCPathResponse{}, nil
-}
-
 // AddCosmosBasedChain handles register a cosmos based chain to nexus
 func (s msgServer) AddCosmosBasedChain(c context.Context, req *types.AddCosmosBasedChainRequest) (*types.AddCosmosBasedChainResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
@@ -259,6 +248,7 @@ func (s msgServer) AddCosmosBasedChain(c context.Context, req *types.AddCosmosBa
 
 	s.SetCosmosChain(ctx, types.CosmosChain{
 		Name:       chain.Name,
+		IBCPath:    req.IBCPath,
 		AddrPrefix: req.AddrPrefix,
 	})
 
