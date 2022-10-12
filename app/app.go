@@ -91,6 +91,7 @@ import (
 	tmjson "github.com/tendermint/tendermint/libs/json"
 	"github.com/tendermint/tendermint/libs/log"
 	tmos "github.com/tendermint/tendermint/libs/os"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 	"golang.org/x/mod/semver"
 
@@ -376,6 +377,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	evmK := evmKeeper.NewKeeper(
 		appCodec, keys[evmTypes.StoreKey], app.paramsKeeper,
 	)
+
 	rewardK := rewardKeeper.NewKeeper(
 		appCodec, keys[rewardTypes.StoreKey], app.getSubspace(rewardTypes.ModuleName), bankK, distrK, stakingK,
 	)
@@ -491,7 +493,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		multisig.NewAppModule(multisigK, stakingK, slashingK, snapK, rewardK, nexusK),
 		tss.NewAppModule(tssK, snapK, nexusK, stakingK, multisigK),
 		vote.NewAppModule(votingK),
-		nexus.NewAppModule(nexusK, snapK, slashingK, stakingK, axelarnetK, evmK, rewardK),
+		nexus.NewAppModule(nexusK, snapK, slashingK, stakingK, axelarnetK, rewardK),
 		evm.NewAppModule(evmK, votingK, nexusK, snapK, stakingK, slashingK, multisigK, logger),
 		axelarnetModule,
 		reward.NewAppModule(rewardK, nexusK, mintK, stakingK, slashingK, tssK, snapK, bankK, bApp.MsgServiceRouter(), bApp.Router()),
@@ -678,6 +680,12 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 			tmos.Exit(err.Error())
 		}
 	}
+
+	/* ==== at this point all stores are fully loaded ==== */
+
+	// we need to ensure that all chain subspaces are loaded at start-up to prevent unexpected consensus failures
+	// when the params keeper is used outside the evm module's context
+	evmK.InitChains(app.NewContext(true, tmproto.Header{}))
 
 	return app
 }

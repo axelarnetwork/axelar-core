@@ -123,7 +123,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		BaseDenom: rand.Denom(5, 10),
 	}
 
-	chain := nexustestutils.Chain()
+	chain := nexustestutils.RandomChain()
 	givenMsgServer := Given("an axelarnet msg server", func() {
 		ctx, k, _ = setup()
 		k.InitGenesis(ctx, types.DefaultGenesisState())
@@ -391,7 +391,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 	})
 
 	whenAssetOriginsFromExternalCosmosChain := When("asset is from external cosmos chain", func() {
-		chain := nexustestutils.Chain()
+		chain := nexustestutils.RandomChain()
 		k.SetCosmosChain(ctx, types.CosmosChain{
 			Name:       chain.Name,
 			AddrPrefix: rand.StrBetween(1, 10),
@@ -496,7 +496,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 						return true
 					}
 					nexusK.GetChainByNativeAssetFunc = func(sdk.Context, string) (nexus.Chain, bool) {
-						return nexustestutils.Chain(), true
+						return nexustestutils.RandomChain(), true
 					}
 				}).
 					When2(hasPendingTransfers).
@@ -520,7 +520,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 						return true
 					}
 					nexusK.GetChainByNativeAssetFunc = func(sdk.Context, string) (nexus.Chain, bool) {
-						return nexustestutils.Chain(), true
+						return nexustestutils.RandomChain(), true
 					}
 				}).
 					When("has many pending transfers", func() {
@@ -583,7 +583,7 @@ func TestHandleMsgRouteIBCTransfers(t *testing.T) {
 				return nexus.Chain{Name: chain}, true
 			},
 			GetChainByNativeAssetFunc: func(sdk.Context, string) (nexus.Chain, bool) {
-				return nexustestutils.Chain(), true
+				return nexustestutils.RandomChain(), true
 			},
 			ArchivePendingTransferFunc: func(sdk.Context, nexus.CrossChainTransfer) {},
 		}
@@ -732,7 +732,7 @@ func TestRetryIBCTransfer(t *testing.T) {
 	givenMessageServer := Given("a message server", func() {
 		ctx, k, channelK = setup()
 		k.InitGenesis(ctx, types.DefaultGenesisState())
-		chain = nexustestutils.Chain()
+		chain = nexustestutils.RandomChain()
 		path = randomIBCPath()
 		k.SetCosmosChain(ctx, types.CosmosChain{Name: chain.Name,IBCPath: path})
 

@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -33,9 +34,8 @@ func setup2() (sdk.Context, *mock.BaseKeeperMock, *mock.ChainKeeperMock, multisi
 		LoggerFunc: func(ctx sdk.Context) log.Logger { return log.TestingLogger() },
 	}
 	basek := &mock.BaseKeeperMock{
-		ForChainFunc: func(chain nexus.ChainName) types.ChainKeeper { return chaink },
+		ForChainFunc: func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) { return chaink, nil },
 		LoggerFunc:   func(ctx sdk.Context) log.Logger { return log.TestingLogger() },
-		HasChainFunc: func(ctx sdk.Context, chain nexus.ChainName) bool { return true },
 	}
 
 	encCfg := params.MakeEncodingConfig()
@@ -79,7 +79,9 @@ func TestHandleCompleted(t *testing.T) {
 
 	givenSigsAndModuleMetadata.
 		When("chain not found", func() {
-			basek.HasChainFunc = func(ctx sdk.Context, chain nexus.ChainName) bool { return false }
+			basek.ForChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) {
+				return nil, errors.New("unknown chain")
+			}
 		}).
 		Then("should return error", func(t *testing.T) {
 			assert.Error(t, handler.HandleCompleted(ctx, sig, moduleMetadata))

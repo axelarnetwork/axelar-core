@@ -52,7 +52,7 @@ func TestInitExportGenesis(t *testing.T) {
 		k = keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey(types.StoreKey), subspace)
 
 		multisigRounter := types.NewSigRouter()
-		multisigRounter.AddHandler(chain.Module, evmKeeper.NewSigHandler(encCfg.Codec, evmKeeper.BaseKeeper{}))
+		multisigRounter.AddHandler(chain.Module, evmKeeper.NewSigHandler(encCfg.Codec, &evmKeeper.BaseKeeper{}))
 		k.SetSigRouter(multisigRounter)
 
 		ctx = rand.Context(fake.NewMultiStore())

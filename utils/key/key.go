@@ -17,6 +17,7 @@ const DefaultDelimiter = "_"
 type Key interface {
 	Append(Key) Key
 	Bytes(delimiter ...string) []byte
+	String() string
 }
 
 type basicKey struct {
@@ -44,6 +45,10 @@ func (k basicKey) Bytes(delimiter ...string) []byte {
 	return bytes.Join(k.particles, []byte(del))
 }
 
+func (k basicKey) String() string {
+	return string(k.Bytes())
+}
+
 // FromBz creates a new Key from bytes
 func FromBz(key []byte) Key {
 	return &basicKey{particles: [][]byte{key}}
@@ -56,7 +61,7 @@ func FromStr(key string) Key {
 
 // From creates a new Key from a fmt.Stringer interface
 func From(key fmt.Stringer) Key {
-	return FromBz([]byte(strings.ToLower(key.String())))
+	return FromStr(key.String())
 }
 
 // FromUInt creates a new Key from any unsigned integer type

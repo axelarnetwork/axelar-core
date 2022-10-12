@@ -11,7 +11,7 @@ import (
 
 func TestMaintainerState(t *testing.T) {
 	t.Run("MarkIncorrectVote and CountIncorrectVotes", func(t *testing.T) {
-		ms := NewMaintainerState(testutils.Chain().Name, rand.ValAddr())
+		ms := NewMaintainerState(testutils.RandomChain().Name, rand.ValAddr())
 
 		ms.MarkIncorrectVote(true)
 		ms.MarkIncorrectVote(true)
@@ -22,7 +22,7 @@ func TestMaintainerState(t *testing.T) {
 	})
 
 	t.Run("MarkMissingVote and CountMissingVotes", func(t *testing.T) {
-		ms := NewMaintainerState(testutils.Chain().Name, rand.ValAddr())
+		ms := NewMaintainerState(testutils.RandomChain().Name, rand.ValAddr())
 
 		ms.MarkMissingVote(true)
 		ms.MarkMissingVote(false)

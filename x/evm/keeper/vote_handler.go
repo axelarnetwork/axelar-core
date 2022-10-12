@@ -171,11 +171,11 @@ func (v voteHandler) HandleResult(ctx sdk.Context, result codec.ProtoMarshaler) 
 		return fmt.Errorf("%s is not a registered chain", voteEvents.Chain)
 	}
 
-	if !v.keeper.HasChain(ctx, voteEvents.Chain) {
+	ck, err := v.keeper.ForChain(ctx, chain.Name)
+	if err != nil {
 		return fmt.Errorf("%s is not an evm chain", voteEvents.Chain)
 	}
 
-	ck := v.keeper.ForChain(chain.Name)
 	for _, event := range voteEvents.Events {
 		if err := handleEvent(ctx, ck, event, chain); err != nil {
 			return err
