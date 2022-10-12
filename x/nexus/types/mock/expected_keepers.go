@@ -5,7 +5,6 @@ package mock
 
 import (
 	utils "github.com/axelarnetwork/axelar-core/utils"
-	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
 	github_com_axelarnetwork_axelar_core_x_nexus_exported "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
@@ -1186,71 +1185,6 @@ func (mock *AxelarnetKeeperMock) IsCosmosChainCalls() []struct {
 	mock.lockIsCosmosChain.RLock()
 	calls = mock.calls.IsCosmosChain
 	mock.lockIsCosmosChain.RUnlock()
-	return calls
-}
-
-// Ensure, that EVMBaseKeeperMock does implement types.EVMBaseKeeper.
-// If this is not the case, regenerate this file with moq.
-var _ types.EVMBaseKeeper = &EVMBaseKeeperMock{}
-
-// EVMBaseKeeperMock is a mock implementation of types.EVMBaseKeeper.
-//
-// 	func TestSomethingThatUsesEVMBaseKeeper(t *testing.T) {
-//
-// 		// make and configure a mocked types.EVMBaseKeeper
-// 		mockedEVMBaseKeeper := &EVMBaseKeeperMock{
-// 			ForChainFunc: func(chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) evm.ChainKeeper {
-// 				panic("mock out the ForChain method")
-// 			},
-// 		}
-//
-// 		// use mockedEVMBaseKeeper in code that requires types.EVMBaseKeeper
-// 		// and then make assertions.
-//
-// 	}
-type EVMBaseKeeperMock struct {
-	// ForChainFunc mocks the ForChain method.
-	ForChainFunc func(chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) evm.ChainKeeper
-
-	// calls tracks calls to the methods.
-	calls struct {
-		// ForChain holds details about calls to the ForChain method.
-		ForChain []struct {
-			// Chain is the chain argument value.
-			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
-		}
-	}
-	lockForChain sync.RWMutex
-}
-
-// ForChain calls ForChainFunc.
-func (mock *EVMBaseKeeperMock) ForChain(chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) evm.ChainKeeper {
-	if mock.ForChainFunc == nil {
-		panic("EVMBaseKeeperMock.ForChainFunc: method is nil but EVMBaseKeeper.ForChain was just called")
-	}
-	callInfo := struct {
-		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
-	}{
-		Chain: chain,
-	}
-	mock.lockForChain.Lock()
-	mock.calls.ForChain = append(mock.calls.ForChain, callInfo)
-	mock.lockForChain.Unlock()
-	return mock.ForChainFunc(chain)
-}
-
-// ForChainCalls gets all the calls that were made to ForChain.
-// Check the length with:
-//     len(mockedEVMBaseKeeper.ForChainCalls())
-func (mock *EVMBaseKeeperMock) ForChainCalls() []struct {
-	Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
-} {
-	var calls []struct {
-		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
-	}
-	mock.lockForChain.RLock()
-	calls = mock.calls.ForChain
-	mock.lockForChain.RUnlock()
 	return calls
 }
 

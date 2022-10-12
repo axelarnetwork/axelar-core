@@ -2,6 +2,7 @@ package keeper_test
 
 import (
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"math/big"
 	"testing"
@@ -58,7 +59,7 @@ func TestQueryPendingCommands(t *testing.T) {
 		cmds = append(cmds, cmdDeploy, cmdMint, cmdBurn)
 
 		chainKeeper = &mock.ChainKeeperMock{
-			GetNameFunc: func() string { return evmChain.String() },
+			GetNameFunc: func() nexus.ChainName { return evmChain },
 			GetPendingCommandsFunc: func(sdk.Context) []types.Command {
 				return cmds
 			},
@@ -78,8 +79,8 @@ func TestQueryPendingCommands(t *testing.T) {
 		}
 
 		baseKeeper = &mock.BaseKeeperMock{
-			ForChainFunc: func(chain nexus.ChainName) types.ChainKeeper {
-				return chainKeeper
+			ForChainFunc: func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) {
+				return chainKeeper, nil
 			},
 		}
 	}
@@ -131,7 +132,7 @@ func TestQueryDepositState(t *testing.T) {
 		}
 
 		chainKeeper = &mock.ChainKeeperMock{
-			GetNameFunc: func() string { return evmChain.String() },
+			GetNameFunc: func() nexus.ChainName { return evmChain },
 			GetDepositFunc: func(_ sdk.Context, txID types.Hash, burnerAddr types.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
 				return types.ERC20Deposit{}, 0, false
 			},
@@ -149,8 +150,8 @@ func TestQueryDepositState(t *testing.T) {
 			},
 		}
 		baseKeeper = &mock.BaseKeeperMock{
-			ForChainFunc: func(chain nexus.ChainName) types.ChainKeeper {
-				return chainKeeper
+			ForChainFunc: func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) {
+				return chainKeeper, nil
 			},
 		}
 
@@ -351,11 +352,12 @@ func TestGateway(t *testing.T) {
 
 		existingChain = "existing"
 		baseKeeper = &mock.BaseKeeperMock{
-			HasChainFunc: func(ctx sdk.Context, chain nexus.ChainName) bool {
-				return chain == existingChain
-			},
-			ForChainFunc: func(chain nexus.ChainName) types.ChainKeeper {
-				return chainKeeper
+			ForChainFunc: func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) {
+				if chain != existingChain {
+					return nil, errors.New("not found")
+				}
+
+				return chainKeeper, nil
 			},
 		}
 
@@ -413,16 +415,15 @@ func TestGateway(t *testing.T) {
 
 func TestBytecode(t *testing.T) {
 	var (
-		baseKeeper     *mock.BaseKeeperMock
-		multisig       *mock.MultisigKeeperMock
-		nexusKeeper    *mock.NexusMock
-		chainKeeper    *mock.ChainKeeperMock
-		ctx            sdk.Context
-		expectedRes    types.BytecodeResponse
-		grpcQuerier    *evmKeeper.Querier
-		existingChain  nexus.ChainName
-		contracts      []string
-		bytecodesExist bool
+		baseKeeper    *mock.BaseKeeperMock
+		multisig      *mock.MultisigKeeperMock
+		nexusKeeper   *mock.NexusMock
+		chainKeeper   *mock.ChainKeeperMock
+		ctx           sdk.Context
+		expectedRes   types.BytecodeResponse
+		grpcQuerier   *evmKeeper.Querier
+		existingChain nexus.ChainName
+		contracts     []string
 	)
 
 	setup := func() {
@@ -446,23 +447,17 @@ func TestBytecode(t *testing.T) {
 		}
 
 		chainKeeper = &mock.ChainKeeperMock{
-			GetTokenByteCodeFunc: func(ctx sdk.Context) ([]byte, bool) {
-				if bytecodesExist {
-					return []byte(contracts[0]), true
-				}
-				return nil, false
+			GetTokenByteCodeFunc: func(ctx sdk.Context) []byte {
+				return []byte(contracts[0])
 			},
-			GetBurnerByteCodeFunc: func(ctx sdk.Context) ([]byte, bool) {
-				if bytecodesExist {
-					return []byte(contracts[1]), true
-				}
-				return nil, false
+			GetBurnerByteCodeFunc: func(ctx sdk.Context) []byte {
+				return []byte(contracts[1])
 			},
 		}
 
 		baseKeeper = &mock.BaseKeeperMock{
-			ForChainFunc: func(chain nexus.ChainName) types.ChainKeeper {
-				return chainKeeper
+			ForChainFunc: func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) {
+				return chainKeeper, nil
 			},
 		}
 
@@ -472,15 +467,13 @@ func TestBytecode(t *testing.T) {
 
 	repeatCount := 1
 
-	t.Run("bytecode exists", testutils.Func(func(t *testing.T) {
+	t.Run("chain exists", testutils.Func(func(t *testing.T) {
 		setup()
 		for _, bytecode := range contracts {
 			hexBytecode := fmt.Sprintf("0x" + common.Bytes2Hex([]byte(bytecode)))
 			expectedRes = types.BytecodeResponse{
 				Bytecode: hexBytecode,
 			}
-
-			bytecodesExist = true
 
 			res, err := grpcQuerier.Bytecode(sdk.WrapSDKContext(ctx), &types.BytecodeRequest{
 				Chain:    existingChain.String(),
@@ -537,11 +530,12 @@ func TestEvent(t *testing.T) {
 		}
 
 		baseKeeper = &mock.BaseKeeperMock{
-			HasChainFunc: func(_ sdk.Context, chain nexus.ChainName) bool {
-				return chain == existingChain
-			},
-			ForChainFunc: func(chain nexus.ChainName) types.ChainKeeper {
-				return chainKeeper
+			ForChainFunc: func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) {
+				if chain != existingChain {
+					return nil, errors.New("not found")
+				}
+
+				return chainKeeper, nil
 			},
 		}
 
@@ -643,8 +637,8 @@ func TestERC20Tokens(t *testing.T) {
 			},
 		}
 		baseKeeper = &mock.BaseKeeperMock{
-			ForChainFunc: func(chain nexus.ChainName) types.ChainKeeper {
-				return chainKeeper
+			ForChainFunc: func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) {
+				return chainKeeper, nil
 			},
 		}
 
@@ -775,8 +769,8 @@ func TestTokenInfo(t *testing.T) {
 			},
 		}
 		baseKeeper = &mock.BaseKeeperMock{
-			ForChainFunc: func(chain nexus.ChainName) types.ChainKeeper {
-				return chainKeeper
+			ForChainFunc: func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) {
+				return chainKeeper, nil
 			},
 		}
 

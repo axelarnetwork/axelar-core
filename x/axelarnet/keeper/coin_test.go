@@ -61,7 +61,7 @@ func TestCoin(t *testing.T) {
 
 	whenCoinIsExternal := When("coin is external", func() {
 		nexusK.GetChainByNativeAssetFunc = func(sdk.Context, string) (nexus.Chain, bool) {
-			return nexustestutils.Chain(), true
+			return nexustestutils.RandomChain(), true
 		}
 		nexusK.IsAssetRegisteredFunc = func(sdk.Context, nexus.Chain, string) bool {
 			return true
@@ -72,7 +72,7 @@ func TestCoin(t *testing.T) {
 	whenCoinIsICS20 := When("coin is from ICS20", func() {
 		// setup
 		path := testutils.RandomIBCPath()
-		chain = nexustestutils.Chain()
+		chain = nexustestutils.RandomChain()
 		trace := ibctypes.DenomTrace{
 			Path:      path,
 			BaseDenom: rand.Denom(5, 10),

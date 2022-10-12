@@ -31,22 +31,25 @@ func TestGenesis(t *testing.T) {
 	var (
 		initialState  types.GenesisState
 		exportedState types.GenesisState
+		k             *keeper.BaseKeeper
 	)
 
 	cfg := params.MakeEncodingConfig()
 
 	paramsK := paramskeeper.NewKeeper(cfg.Codec, cfg.Amino, sdk.NewKVStoreKey(paramstypes.StoreKey), sdk.NewKVStoreKey(paramstypes.TStoreKey))
-	k := keeper.NewKeeper(cfg.Codec, sdk.NewKVStoreKey(types.StoreKey), paramsK)
+	Given("a keeper", func() {
+		k = keeper.NewKeeper(cfg.Codec, sdk.NewKVStoreKey(types.StoreKey), paramsK)
+	}).
+		Given("a genesis state", func() {
+			cfg.InterfaceRegistry.RegisterImplementations((*codec.ProtoMarshaler)(nil), &multisig.MultiSig{})
+			initialState = types.NewGenesisState(testutils.RandomChains(cfg.Codec))
 
-	Given("a genesis state", func() {
-		cfg.InterfaceRegistry.RegisterImplementations((*codec.ProtoMarshaler)(nil), &multisig.MultiSig{})
-		initialState = types.NewGenesisState(testutils.RandomChains(cfg.Codec))
-
-	}).When("it is valid", func() {
+		}).When("it is valid", func() {
 		assert.NoError(t, initialState.Validate())
 	}).
 		When("importing and exporting the state", func() {
 			ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+			k.InitChains(ctx)
 			k.InitGenesis(ctx, initialState)
 			exportedState = k.ExportGenesis(ctx)
 		}).

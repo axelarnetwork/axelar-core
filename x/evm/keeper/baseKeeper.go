@@ -2,11 +2,10 @@ package keeper
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/tendermint/tendermint/libs/log"
 
@@ -21,52 +20,99 @@ var (
 	subspacePrefix = "subspace"
 )
 
-var _ types.BaseKeeper = BaseKeeper{}
+var _ types.BaseKeeper = &BaseKeeper{}
 
 // BaseKeeper implements the base Keeper
 type BaseKeeper struct {
-	storeKey sdk.StoreKey
-	cdc      codec.BinaryCodec
+	initialized bool
+	internalKeeper
+}
 
-	// It is not safe to access subspaces directly (subspaces cannot be deleted so a subspace might exist for a chain that was deleted).
-	// Use getSubspace to access a subspace.
+type internalKeeper struct {
+	cdc          codec.BinaryCodec
+	storeKey     sdk.StoreKey
 	paramsKeeper types.ParamsKeeper
-	subspaces    map[string]params.Subspace
 }
 
 // NewKeeper returns a new EVM base keeper
-func NewKeeper(cdc codec.BinaryCodec, storeKey sdk.StoreKey, paramsKeeper types.ParamsKeeper) BaseKeeper {
-	return BaseKeeper{
-		cdc:          cdc,
-		storeKey:     storeKey,
-		paramsKeeper: paramsKeeper,
-		subspaces:    make(map[string]params.Subspace),
+func NewKeeper(cdc codec.BinaryCodec, storeKey sdk.StoreKey, paramsKeeper types.ParamsKeeper) *BaseKeeper {
+	return &BaseKeeper{
+		internalKeeper: internalKeeper{
+			cdc:          cdc,
+			storeKey:     storeKey,
+			paramsKeeper: paramsKeeper,
+		},
 	}
 }
 
-// Logger returns a module-specific logger.
-func (k BaseKeeper) Logger(ctx sdk.Context) log.Logger {
-	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
+// InitChains initializes all existing EVM chains and their respective param subspaces
+func (k *BaseKeeper) InitChains(ctx sdk.Context) {
+	if k.initialized {
+		panic("chains are already initialized")
+	}
+
+	iter := k.getBaseStore(ctx).IteratorNew(key.FromStr(subspacePrefix))
+	defer utils.CloseLogError(iter, k.Logger(ctx))
+
+	for ; iter.Valid(); iter.Next() {
+		_ = k.createSubspace(ctx, nexus.ChainName(iter.Value()))
+	}
+
+	k.initialized = true
+}
+
+// CreateChain creates the subspace for a new EVM chain. Returns an error if the chain already exists
+func (k BaseKeeper) CreateChain(ctx sdk.Context, params types.Params) (err error) {
+	defer func() {
+		err = sdkerrors.Wrap(err, "cannot create new EVM chain")
+	}()
+
+	if !k.initialized {
+		panic("InitChain must be called before chain keepers can be used")
+	}
+
+	if err := params.Validate(); err != nil {
+		return err
+	}
+	chainKey := key.FromStr(subspacePrefix).Append(key.FromStr(params.Chain.String()))
+	if k.getBaseStore(ctx).HasNew(chainKey) {
+		return fmt.Errorf("chain %s already exists", params.Chain)
+	}
+
+	k.getBaseStore(ctx).SetRawNew(chainKey, []byte(params.Chain))
+
+	k.createSubspace(ctx, params.Chain).SetParamSet(ctx, &params)
+	return nil
 }
 
 // ForChain returns the keeper associated to the given chain
-func (k BaseKeeper) ForChain(chain nexus.ChainName) types.ChainKeeper {
-	return chainKeeper{
-		BaseKeeper:    k,
-		chainLowerKey: strings.ToLower(chain.String()),
+func (k BaseKeeper) ForChain(ctx sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) {
+	if !k.initialized {
+		panic("InitChain must be called before chain keepers can be used")
 	}
+
+	chainKey := key.FromStr(subspacePrefix).Append(key.From(chain))
+	if !k.getBaseStore(ctx).HasNew(chainKey) {
+		return chainKeeper{}, fmt.Errorf("unknown chain %s", chain)
+	}
+
+	return chainKeeper{
+		internalKeeper: k.internalKeeper,
+		chain:          chain,
+	}, nil
 }
 
-func (k BaseKeeper) getBaseStore(ctx sdk.Context) utils.KVStore {
+func (k BaseKeeper) createSubspace(ctx sdk.Context, chain nexus.ChainName) params.Subspace {
+	chainKey := key.FromStr(types.ModuleName).Append(key.From(chain))
+	k.Logger(ctx).Debug(fmt.Sprintf("initialized evm subspace %s", chain))
+	return k.paramsKeeper.Subspace(chainKey.String()).WithKeyTable(types.KeyTable())
+}
+
+// Logger returns a module-specific logger.
+func (k internalKeeper) Logger(ctx sdk.Context) log.Logger {
+	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
+}
+
+func (k internalKeeper) getBaseStore(ctx sdk.Context) utils.KVStore {
 	return utils.NewNormalizedStore(ctx.KVStore(k.storeKey), k.cdc)
-}
-
-func (k BaseKeeper) getStore(ctx sdk.Context, chain string) utils.KVStore {
-	pre := string(chainPrefix.Append(utils.LowerCaseKey(chain)).AsKey()) + "_"
-	return utils.NewNormalizedStore(prefix.NewStore(ctx.KVStore(k.storeKey), []byte(pre)), k.cdc)
-}
-
-// HasChain returns true if the chain has been set up
-func (k BaseKeeper) HasChain(ctx sdk.Context, chain nexus.ChainName) bool {
-	return k.getBaseStore(ctx).HasNew(key.FromStr(subspacePrefix).Append(key.From(chain)))
 }
