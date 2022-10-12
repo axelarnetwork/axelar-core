@@ -66,6 +66,7 @@ func (m AddCosmosBasedChainRequest) ValidateBasic() error {
 	if err := utils.ValidateString(m.IBCPath); err != nil {
 		return sdkerrors.Wrap(err, "invalid path")
 	}
+
 	validator := host.NewPathValidator(func(path string) error { return nil })
 	if err := validator(m.IBCPath); err != nil {
 		return sdkerrors.Wrap(err, "invalid IBC path")
