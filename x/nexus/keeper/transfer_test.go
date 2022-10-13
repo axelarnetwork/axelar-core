@@ -161,7 +161,7 @@ func TestTransfer(t *testing.T) {
 	givenKeeper := Given("a keeper", func() {
 		k, ctx = setup(cfg)
 
-		source, dest = testutils.Chain(), testutils.Chain()
+		source, dest = testutils.RandomChain(), testutils.RandomChain()
 		source.Module = evmtypes.ModuleName
 		dest.Module = axelarnettypes.ModuleName
 
