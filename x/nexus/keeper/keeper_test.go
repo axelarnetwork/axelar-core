@@ -26,6 +26,7 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
+	"github.com/axelarnetwork/utils/funcs"
 )
 
 const maxAmount int64 = 100000000000
@@ -37,13 +38,11 @@ func addressValidator() types.Router {
 	axelarnetK := &axelarnetmock.BaseKeeperMock{
 		GetCosmosChainByNameFunc: func(ctx sdk.Context, chain exported.ChainName) (axelarnetTypes.CosmosChain, bool) {
 			var prefix string
-			switch chain.String() {
-			case "Axelarnet":
+			switch chain {
+			case axelarnet.Axelarnet.Name:
 				prefix = "axelar"
-			case "terra":
-				prefix = "terra"
 			default:
-				panic("unknown chain")
+				prefix = strings.ToLower(chain.String())
 			}
 			return axelarnetTypes.CosmosChain{Name: chain, AddrPrefix: prefix}, true
 		},
@@ -83,6 +82,7 @@ func TestLinkAddress(t *testing.T) {
 		for _, chain := range []exported.Chain{evm.Ethereum, axelarnet.Axelarnet, terra} {
 			keeper.SetChain(ctx, chain)
 			keeper.ActivateChain(ctx, chain)
+			funcs.MustNoErr(keeper.RegisterAsset(ctx, chain, exported.NewAsset(axelarnet.NativeAsset, false)))
 		}
 
 		bankK.BlockedAddrFunc = func(addr sdk.AccAddress) bool { return false }

@@ -171,8 +171,11 @@ func (k Keeper) EnqueueTransfer(ctx sdk.Context, senderChain exported.Chain, rec
 	return transferID, nil
 }
 
+// validateTransferAsset validates asset if
+// - chain supports foreign assets, and the asset is registered on the chain
+// - or asset is the native asset on the chain
 func (k Keeper) validateTransferAsset(ctx sdk.Context, chain exported.Chain, asset string) error {
-	if chain.SupportsForeignAssets {
+	if chain.SupportsForeignAssets && k.IsAssetRegistered(ctx, chain, asset) {
 		return nil
 	}
 
