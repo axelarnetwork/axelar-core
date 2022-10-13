@@ -185,13 +185,12 @@
     - [version](axelard_tendermint_version.md)	 - Print tendermint libraries' version
   - [tx](axelard_tx.md)	 - Transactions subcommands
     - [axelarnet](axelard_tx_axelarnet.md)	 - axelarnet transactions subcommands
-      - [add-cosmos-based-chain \[name\] \[address prefix\] \[native asset\]...](axelard_tx_axelarnet_add-cosmos-based-chain.md)	 - Add a new cosmos based chain
+      - [add-cosmos-based-chain \[name\] \[address prefix\] \[ibc path\] \[native asset\]...](axelard_tx_axelarnet_add-cosmos-based-chain.md)	 - Add a new cosmos based chain
       - [confirm-deposit \[denom\] \[burnerAddr\]](axelard_tx_axelarnet_confirm-deposit.md)	 - Confirm a deposit to Axelar chain that sent given the asset denomination and the burner address
       - [execute-pending-transfers](axelard_tx_axelarnet_execute-pending-transfers.md)	 - Send all pending transfers to Axelar chain
       - [link \[recipient chain\] \[recipient address\] \[asset\]](axelard_tx_axelarnet_link.md)	 - Link a cross chain address to an Axelar address
       - [register-asset \[chain\] \[denom\]](axelard_tx_axelarnet_register-asset.md)	 - Register a new asset to a cosmos based chain
       - [register-fee-collector \[fee collector\]](axelard_tx_axelarnet_register-fee-collector.md)	 - Register axelarnet fee collector account
-      - [register-path \[chain\] \[path\]](axelard_tx_axelarnet_register-path.md)	 - Register an ibc path for a cosmos chain
       - [retry-ibc-transfer \[chain\] \[transfer ID\]](axelard_tx_axelarnet_retry-ibc-transfer.md)	 - Retry a failed IBC transfer
       - [route-ibc-transfers](axelard_tx_axelarnet_route-ibc-transfers.md)	 - Routes pending transfers to cosmos chains
     - [bank](axelard_tx_bank.md)	 - Bank transaction subcommands

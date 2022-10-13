@@ -47,30 +47,12 @@ func TestKeeper_GetIBCPath(t *testing.T) {
 
 	t.Run("should return the registered IBC path when the given asset is registered", testutils.Func(func(t *testing.T) {
 		ctx, k, _ = setup()
-		path := randomIBCPath()
 		chain := randomChain()
-		chain.IBCPath = ""
 		k.SetCosmosChain(ctx, chain)
-		err := k.SetIBCPath(ctx, chain.Name, path)
-		assert.NoError(t, err)
 		result, ok := k.GetIBCPath(ctx, chain.Name)
-		assert.Equal(t, path, result)
+		assert.Equal(t, chain.IBCPath, result)
 		assert.True(t, ok)
 	}).Repeat(repeats))
-
-	t.Run("should return error when registered the same asset twice", testutils.Func(func(t *testing.T) {
-		ctx, k, _ = setup()
-		path := randomIBCPath()
-		chain := randomChain()
-		chain.IBCPath = ""
-		k.SetCosmosChain(ctx, chain)
-		err := k.SetIBCPath(ctx, chain.Name, path)
-		assert.NoError(t, err)
-		path2 := randomIBCPath()
-		err2 := k.SetIBCPath(ctx, chain.Name, path2)
-		assert.Error(t, err2)
-	}).Repeat(repeats))
-
 }
 
 func TestKeeper_RegisterCosmosChain(t *testing.T) {
