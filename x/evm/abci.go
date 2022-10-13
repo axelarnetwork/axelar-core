@@ -40,7 +40,11 @@ func handleTokenSent(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n 
 		return false
 	}
 
-	sourceCk := bk.ForChain(sourceChain.Name)
+	sourceCk, err := bk.ForChain(ctx, sourceChain.Name)
+	if err != nil {
+		bk.Logger(ctx).Info(err.Error())
+		return false
+	}
 
 	token := sourceCk.GetERC20TokenBySymbol(ctx, e.Symbol)
 	if !token.Is(types.Confirmed) {
@@ -51,9 +55,8 @@ func handleTokenSent(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n 
 	asset := token.GetAsset()
 
 	// check erc20 token status if destination is an evm chain
-	if bk.HasChain(ctx, destinationChain.Name) {
-		destinationCk := bk.ForChain(destinationChain.Name)
-
+	destinationCk, err := bk.ForChain(ctx, destinationChain.Name)
+	if err == nil {
 		if token := destinationCk.GetERC20TokenByAsset(ctx, asset); !token.Is(types.Confirmed) {
 			bk.Logger(ctx).Info(fmt.Sprintf("%s token with asset %s is not confirmed yet", e.DestinationChain, asset))
 			return false
@@ -99,12 +102,11 @@ func handleContractCall(ctx sdk.Context, event types.Event, bk types.BaseKeeper,
 		return false
 	}
 
-	if !bk.HasChain(ctx, destinationChain.Name) {
+	destinationCk, err := bk.ForChain(ctx, destinationChain.Name)
+	if err != nil {
 		bk.Logger(ctx).Info(fmt.Sprintf("destination chain %s is not an evm chain", destinationChain.Name))
 		return false
 	}
-
-	destinationCk := bk.ForChain(destinationChain.Name)
 
 	destinationChainID, ok := destinationCk.GetChainID(ctx)
 	if !ok {
@@ -160,13 +162,17 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 		return false
 	}
 
-	if !bk.HasChain(ctx, destinationChain.Name) {
-		bk.Logger(ctx).Info(fmt.Sprintf("destination chain %s is not an evm chain", destinationChain.Name))
+	sourceCk, err := bk.ForChain(ctx, sourceChain.Name)
+	if err != nil {
+		bk.Logger(ctx).Info(fmt.Sprintf("source chain %s is not an evm chain", destinationChain.Name))
 		return false
 	}
 
-	sourceCk := bk.ForChain(sourceChain.Name)
-	destinationCk := bk.ForChain(destinationChain.Name)
+	destinationCk, err := bk.ForChain(ctx, destinationChain.Name)
+	if err != nil {
+		bk.Logger(ctx).Info(fmt.Sprintf("destination chain %s is not an evm chain", destinationChain.Name))
+		return false
+	}
 
 	token := sourceCk.GetERC20TokenBySymbol(ctx, e.Symbol)
 	if !token.Is(types.Confirmed) {
@@ -472,12 +478,13 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 		}
 
 		// skip further checks and handle event if destination is not an evm chain
-		if !bk.HasChain(ctx, destinationChainName) {
+		chainKeeper, err := bk.ForChain(ctx, destinationChainName)
+		if err != nil {
 			return true
 		}
 
 		// skip if destination chain has not got gateway set yet
-		if _, ok := bk.ForChain(destinationChainName).GetGatewayAddress(ctx); !ok {
+		if _, ok := chainKeeper.GetGatewayAddress(ctx); !ok {
 			bk.Logger(ctx).Debug(fmt.Sprintf("skipping confirmed event %s due to destination chain not having gateway set", event.GetID()),
 				"chain", event.Chain.String(),
 				"destination_chain", destinationChainName.String(),
@@ -491,7 +498,11 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 	}
 
 	for _, chain := range n.GetChains(ctx) {
-		ck := bk.ForChain(chain.Name)
+		ck, err := bk.ForChain(ctx, chain.Name)
+		if err != nil {
+			continue
+		}
+
 		queue := ck.GetConfirmedEventQueue(ctx)
 		// skip if confirmed event queue is empty
 		if queue.IsEmpty() {

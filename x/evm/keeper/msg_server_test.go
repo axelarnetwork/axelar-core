@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"errors"
 	"fmt"
 	"math/big"
 	mathRand "math/rand"
@@ -71,7 +72,7 @@ func setup() (sdk.Context, types.MsgServiceServer, *mock.BaseKeeperMock, *mock.N
 func TestSetGateway(t *testing.T) {
 	req := types.NewSetGatewayRequest(rand.AccAddr(), rand.Str(5), evmTestUtils.RandomAddress())
 
-	t.Run("should fail if current key is not set", testutils.Func(func(t *testing.T) {
+	t.Run("should fail if current key is not set", func(t *testing.T) {
 		ctx, msgServer, _, nexusKeeper, _, _, multisigKeeper := setup()
 
 		nexusKeeper.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
@@ -89,9 +90,9 @@ func TestSetGateway(t *testing.T) {
 		_, err := msgServer.SetGateway(sdk.WrapSDKContext(ctx), req)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "current key not set for chain")
-	}))
+	})
 
-	t.Run("should fail if gateway is already set", testutils.Func(func(t *testing.T) {
+	t.Run("should fail if gateway is already set", func(t *testing.T) {
 		ctx, msgServer, baseKeeper, nexusKeeper, _, _, multisigKeeper := setup()
 		chainKeeper := &mock.ChainKeeperMock{}
 
@@ -106,7 +107,7 @@ func TestSetGateway(t *testing.T) {
 		multisigKeeper.GetCurrentKeyIDFunc = func(ctx sdk.Context, chain nexus.ChainName) (multisig.KeyID, bool) {
 			return multisigTestUtils.KeyID(), true
 		}
-		baseKeeper.ForChainFunc = func(chain nexus.ChainName) types.ChainKeeper { return chainKeeper }
+		baseKeeper.ForChainFunc = func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) { return chainKeeper, nil }
 		chainKeeper.GetGatewayAddressFunc = func(ctx sdk.Context) (types.Address, bool) {
 			return evmTestUtils.RandomAddress(), true
 		}
@@ -114,9 +115,9 @@ func TestSetGateway(t *testing.T) {
 		_, err := msgServer.SetGateway(sdk.WrapSDKContext(ctx), req)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "gateway already set")
-	}))
+	})
 
-	t.Run("should set gateway", testutils.Func(func(t *testing.T) {
+	t.Run("should set gateway", func(t *testing.T) {
 		ctx, msgServer, baseKeeper, nexusKeeper, _, _, multisigKeeper := setup()
 		chainKeeper := &mock.ChainKeeperMock{}
 
@@ -131,7 +132,7 @@ func TestSetGateway(t *testing.T) {
 		multisigKeeper.GetCurrentKeyIDFunc = func(ctx sdk.Context, chain nexus.ChainName) (multisig.KeyID, bool) {
 			return multisigTestUtils.KeyID(), true
 		}
-		baseKeeper.ForChainFunc = func(chain nexus.ChainName) types.ChainKeeper { return chainKeeper }
+		baseKeeper.ForChainFunc = func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) { return chainKeeper, nil }
 		chainKeeper.GetGatewayAddressFunc = func(ctx sdk.Context) (types.Address, bool) {
 			return types.Address{}, false
 		}
@@ -141,7 +142,7 @@ func TestSetGateway(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, chainKeeper.SetGatewayCalls(), 1)
 		assert.Equal(t, req.Address, chainKeeper.SetGatewayCalls()[0].Address)
-	}))
+	})
 }
 
 func TestSignCommands(t *testing.T) {
@@ -164,7 +165,7 @@ func TestSignCommands(t *testing.T) {
 		return ctx, msgServer, evmBaseKeeper, multisigKeeper
 	}
 
-	t.Run("should create a new command batch to sign if the latest is not being signed or aborted", testutils.Func(func(t *testing.T) {
+	t.Run("should create a new command batch to sign if the latest is not being signed or aborted", func(t *testing.T) {
 		ctx, msgServer, evmBaseKeeper, multisigKeeper := setup()
 
 		expectedCommandIDs := make([]types.CommandID, rand.I64Between(1, 100))
@@ -180,7 +181,7 @@ func TestSignCommands(t *testing.T) {
 
 		chainKeeper := &mock.ChainKeeperMock{}
 		evmBaseKeeper.LoggerFunc = func(ctx sdk.Context) log.Logger { return ctx.Logger() }
-		evmBaseKeeper.ForChainFunc = func(chain nexus.ChainName) types.ChainKeeper { return chainKeeper }
+		evmBaseKeeper.ForChainFunc = func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) { return chainKeeper, nil }
 		chainKeeper.GetChainIDFunc = func(ctx sdk.Context) (sdk.Int, bool) { return sdk.NewInt(0), true }
 		chainKeeper.GetLatestCommandBatchFunc = func(ctx sdk.Context) types.CommandBatch {
 			return types.NonExistentCommand
@@ -200,9 +201,9 @@ func TestSignCommands(t *testing.T) {
 
 		assert.Len(t, chainKeeper.CreateNewBatchToSignCalls(), 1)
 		assert.Len(t, multisigKeeper.SignCalls(), 1)
-	}))
+	})
 
-	t.Run("should get the latest if it is aborted", testutils.Func(func(t *testing.T) {
+	t.Run("should get the latest if it is aborted", func(t *testing.T) {
 		ctx, msgServer, evmBaseKeeper, signerKeeper := setup()
 
 		expectedCommandIDs := make([]types.CommandID, rand.I64Between(1, 100))
@@ -218,7 +219,7 @@ func TestSignCommands(t *testing.T) {
 
 		chainKeeper := &mock.ChainKeeperMock{}
 		evmBaseKeeper.LoggerFunc = func(ctx sdk.Context) log.Logger { return ctx.Logger() }
-		evmBaseKeeper.ForChainFunc = func(chain nexus.ChainName) types.ChainKeeper { return chainKeeper }
+		evmBaseKeeper.ForChainFunc = func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) { return chainKeeper, nil }
 		chainKeeper.GetChainIDFunc = func(ctx sdk.Context) (sdk.Int, bool) { return sdk.NewInt(0), true }
 		chainKeeper.GetLatestCommandBatchFunc = func(ctx sdk.Context) types.CommandBatch {
 			return types.NewCommandBatch(commandBatch, func(batch types.CommandBatchMetadata) {
@@ -237,7 +238,7 @@ func TestSignCommands(t *testing.T) {
 
 		assert.Len(t, chainKeeper.CreateNewBatchToSignCalls(), 0)
 		assert.Len(t, signerKeeper.SignCalls(), 1)
-	}))
+	})
 }
 
 func TestCreateBurnTokens(t *testing.T) {
@@ -282,9 +283,7 @@ func TestCreateBurnTokens(t *testing.T) {
 			},
 		}
 		evmBaseKeeper = &mock.BaseKeeperMock{
-			ForChainFunc: func(nexus.ChainName) types.ChainKeeper {
-				return evmChainKeeper
-			},
+			ForChainFunc: func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) { return evmChainKeeper, nil },
 		}
 		nexusKeeper = &mock.NexusMock{
 			IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool { return true },
@@ -436,9 +435,14 @@ func TestLink_UnknownChain(t *testing.T) {
 
 	paramsK := paramsKeeper.NewKeeper(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"))
 	k := keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("testKey"), paramsK)
-	k.ForChain(exported.Ethereum.Name).SetParams(ctx, types.Params{
-		Chain:               exported.Ethereum.Name,
-		Network:             network,
+	k.InitChains(ctx)
+	funcs.MustNoErr(k.CreateChain(ctx, types.Params{
+		Chain:   exported.Ethereum.Name,
+		Network: network,
+		Networks: []types.NetworkInfo{{
+			Name: network,
+			Id:   sdk.NewInt(rand.PosI64()),
+		}},
 		ConfirmationHeight:  uint64(minConfHeight),
 		TokenCode:           tokenBC,
 		Burnable:            burnerBC,
@@ -448,7 +452,7 @@ func TestLink_UnknownChain(t *testing.T) {
 		CommandsGasLimit:    5000000,
 		EndBlockerLimit:     50,
 		TransferLimit:       50,
-	})
+	}))
 
 	recipient := nexus.CrossChainAddress{Address: rand.ValAddr().String(), Chain: axelarnet.Axelarnet}
 	asset := rand.Str(3)
@@ -473,9 +477,14 @@ func TestLink_NoGateway(t *testing.T) {
 
 	paramsK := paramsKeeper.NewKeeper(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"))
 	k := keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("testKey"), paramsK)
-	k.ForChain(exported.Ethereum.Name).SetParams(ctx, types.Params{
-		Chain:               exported.Ethereum.Name,
-		Network:             network,
+	k.InitChains(ctx)
+	funcs.MustNoErr(k.CreateChain(ctx, types.Params{
+		Chain:   exported.Ethereum.Name,
+		Network: network,
+		Networks: []types.NetworkInfo{{
+			Name: network,
+			Id:   sdk.NewInt(rand.PosI64()),
+		}},
 		ConfirmationHeight:  uint64(minConfHeight),
 		TokenCode:           tokenBC,
 		Burnable:            burnerBC,
@@ -485,7 +494,7 @@ func TestLink_NoGateway(t *testing.T) {
 		CommandsGasLimit:    5000000,
 		EndBlockerLimit:     50,
 		TransferLimit:       50,
-	})
+	}))
 
 	recipient := nexus.CrossChainAddress{Address: rand.ValAddr().String(), Chain: axelarnet.Axelarnet}
 	asset := rand.Str(3)
@@ -583,9 +592,10 @@ func TestLink_Success(t *testing.T) {
 	tokenDetails := createDetails(randomNormalizedStr(10), randomNormalizedStr(3))
 	msg := createMsgSignDeploy(tokenDetails)
 
-	k.ForChain(chain).SetGateway(ctx, types.Address(common.HexToAddress(gateway)))
+	chainKeeper := funcs.Must(k.ForChain(ctx, chain))
+	chainKeeper.SetGateway(ctx, types.Address(common.HexToAddress(gateway)))
 
-	token, err := k.ForChain(chain).CreateERC20Token(ctx, axelarnet.NativeAsset, tokenDetails, types.ZeroAddress)
+	token, err := chainKeeper.CreateERC20Token(ctx, axelarnet.NativeAsset, tokenDetails, types.ZeroAddress)
 	if err != nil {
 		panic(err)
 	}
@@ -600,8 +610,8 @@ func TestLink_Success(t *testing.T) {
 	}
 
 	recipient := nexus.CrossChainAddress{Address: rand.ValAddr().String(), Chain: axelarnet.Axelarnet}
-	salt := k.ForChain(chain).GenerateSalt(ctx, recipient.Address)
-	burnAddr, err := k.ForChain(chain).GetBurnerAddress(ctx, token, salt, types.Address(common.HexToAddress(gateway)))
+	salt := chainKeeper.GenerateSalt(ctx, recipient.Address)
+	burnAddr, err := chainKeeper.GetBurnerAddress(ctx, token, salt, types.Address(common.HexToAddress(gateway)))
 	if err != nil {
 		panic(err)
 	}
@@ -632,9 +642,9 @@ func TestLink_Success(t *testing.T) {
 	assert.Equal(t, sender, n.LinkAddressesCalls()[0].Sender)
 	assert.Equal(t, recipient, n.LinkAddressesCalls()[0].Recipient)
 
-	expected := types.BurnerInfo{BurnerAddress: types.Address(burnAddr), TokenAddress: token.GetAddress(), DestinationChain: recipient.Chain.Name, Symbol: msg.TokenDetails.Symbol, Asset: axelarnet.NativeAsset, Salt: types.Hash(salt)}
-	actual := *k.ForChain(chain).GetBurnerInfo(ctx, types.Address(burnAddr))
-	assert.Equal(t, expected, actual)
+	expected := &types.BurnerInfo{BurnerAddress: burnAddr, TokenAddress: token.GetAddress(), DestinationChain: recipient.Chain.Name, Symbol: msg.TokenDetails.Symbol, Asset: axelarnet.NativeAsset, Salt: salt}
+	actual := chainKeeper.GetBurnerInfo(ctx, burnAddr)
+	assert.EqualValues(t, expected, actual)
 }
 
 func TestDeployTx_DifferentValue_DifferentHash(t *testing.T) {
@@ -748,23 +758,23 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
 
 		basek = &mock.BaseKeeperMock{
-			ForChainFunc: func(chain nexus.ChainName) types.ChainKeeper {
+			ForChainFunc: func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) {
 				if chain.Equals(evmChain) {
-					return chaink
+					return chaink, nil
 				}
-				return nil
+				return nil, errors.New("unknown chain")
 			},
 		}
 		chaink = &mock.ChainKeeperMock{
-			GetVotingThresholdFunc: func(sdk.Context) (utils.Threshold, bool) {
-				return utils.Threshold{Numerator: 15, Denominator: 100}, true
+			GetVotingThresholdFunc: func(sdk.Context) utils.Threshold {
+				return utils.Threshold{Numerator: 15, Denominator: 100}
 			},
-			GetMinVoterCountFunc: func(sdk.Context) (int64, bool) { return 15, true },
+			GetMinVoterCountFunc: func(sdk.Context) int64 { return 15 },
 			GetGatewayAddressFunc: func(sdk.Context) (types.Address, bool) {
 				return types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))), true
 			},
-			GetRevoteLockingPeriodFunc:        func(sdk.Context) (int64, bool) { return rand.PosI64(), true },
-			GetRequiredConfirmationHeightFunc: func(sdk.Context) (uint64, bool) { return mathRand.Uint64(), true },
+			GetRevoteLockingPeriodFunc:        func(sdk.Context) int64 { return rand.PosI64() },
+			GetRequiredConfirmationHeightFunc: func(sdk.Context) uint64 { return mathRand.Uint64() },
 			GetERC20TokenByAssetFunc: func(ctx sdk.Context, asset string) types.ERC20Token {
 				if asset == msg.Asset.Name {
 					return token
@@ -888,16 +898,15 @@ func TestAddChain(t *testing.T) {
 			axelarnet.Axelarnet.Name: axelarnet.Axelarnet,
 		}
 		basek = &mock.BaseKeeperMock{
-			ForChainFunc: func(n nexus.ChainName) types.ChainKeeper {
+			CreateChainFunc: func(_ sdk.Context, params types.Params) error { return nil },
+			ForChainFunc: func(_ sdk.Context, n nexus.ChainName) (types.ChainKeeper, error) {
 				if n == name {
-					return chaink
+					return chaink, nil
 				}
-				return nil
+				return nil, errors.New("unknown chain")
 			},
 		}
-		chaink = &mock.ChainKeeperMock{
-			SetParamsFunc: func(sdk.Context, types.Params) {},
-		}
+		chaink = &mock.ChainKeeperMock{}
 
 		n = &mock.NexusMock{
 			IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool { return true },
@@ -926,14 +935,12 @@ func TestAddChain(t *testing.T) {
 		setup()
 
 		_, err := server.AddChain(sdk.WrapSDKContext(ctx), msg)
-
 		assert.NoError(t, err)
-		assert.Equal(t, 1, len(basek.ForChainCalls()))
-		assert.Equal(t, 1, len(chaink.SetParamsCalls()))
 		assert.Equal(t, 1, len(n.SetChainCalls()))
-		assert.Equal(t, name, basek.ForChainCalls()[0].Chain)
-		assert.Equal(t, params, chaink.SetParamsCalls()[0].P)
 		assert.Equal(t, name, n.SetChainCalls()[0].Chain.Name)
+
+		_, err = basek.ForChain(ctx, name)
+		assert.NoError(t, err)
 
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == proto.MessageName(&types.ChainAdded{}) }), 1)
 
@@ -966,18 +973,18 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
 
 		basek = &mock.BaseKeeperMock{
-			ForChainFunc: func(chain nexus.ChainName) types.ChainKeeper {
-				if chain.Equals(evmChain) {
-					return chaink
+			ForChainFunc: func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) {
+				if chain == evmChain {
+					return chaink, nil
 				}
-				return nil
+				return nil, errors.New("unknown chain")
 			},
 		}
 
 		token := types.CreateERC20Token(func(m types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{
 			Asset:        rand.StrBetween(5, 10),
 			BurnerCode:   burnerBC,
-			IsExternal:   rand.Bools(float64(0.5)).Next(),
+			IsExternal:   rand.Bools(0.5).Next(),
 			TokenAddress: types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
 			Status:       types.Confirmed,
 		})
@@ -994,8 +1001,8 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 				}
 				return burnerAddress, nil
 			},
-			GetBurnerByteCodeFunc: func(ctx sdk.Context) ([]byte, bool) {
-				return burnerBC, true
+			GetBurnerByteCodeFunc: func(ctx sdk.Context) []byte {
+				return burnerBC
 			},
 			GetBurnerInfoFunc: func(ctx sdk.Context, address types.Address) *types.BurnerInfo {
 				if burnerAddress != address {
@@ -1018,12 +1025,12 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			GetGatewayAddressFunc: func(sdk.Context) (types.Address, bool) {
 				return gatewayAddr, true
 			},
-			GetRevoteLockingPeriodFunc:        func(sdk.Context) (int64, bool) { return rand.PosI64(), true },
-			GetRequiredConfirmationHeightFunc: func(sdk.Context) (uint64, bool) { return mathRand.Uint64(), true },
-			GetVotingThresholdFunc: func(sdk.Context) (utils.Threshold, bool) {
-				return utils.Threshold{Numerator: 15, Denominator: 100}, true
+			GetRevoteLockingPeriodFunc:        func(sdk.Context) int64 { return rand.PosI64() },
+			GetRequiredConfirmationHeightFunc: func(sdk.Context) uint64 { return mathRand.Uint64() },
+			GetVotingThresholdFunc: func(sdk.Context) utils.Threshold {
+				return utils.Threshold{Numerator: 15, Denominator: 100}
 			},
-			GetMinVoterCountFunc: func(sdk.Context) (int64, bool) { return 15, true },
+			GetMinVoterCountFunc: func(sdk.Context) int64 { return 15 },
 			GetParamsFunc:        func(ctx sdk.Context) types.Params { return types.DefaultParams()[0] },
 		}
 		v = &mock.VoterMock{
@@ -1142,11 +1149,11 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 		msg = createMsgSignDeploy(createDetails(randomNormalizedStr(10), randomNormalizedStr(3)))
 
 		basek = &mock.BaseKeeperMock{
-			ForChainFunc: func(chain nexus.ChainName) types.ChainKeeper {
-				if chain.Equals(evmChain) {
-					return chaink
+			ForChainFunc: func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) {
+				if chain == evmChain {
+					return chaink, nil
 				}
-				return nil
+				return nil, errors.New("unknown chain")
 			},
 		}
 		chaink = &mock.ChainKeeperMock{
@@ -1273,9 +1280,7 @@ func TestRetryFailedEvent(t *testing.T) {
 			return contractCallQueue
 		},
 	}
-	bk.ForChainFunc = func(chain nexus.ChainName) types.ChainKeeper {
-		return ck
-	}
+	bk.ForChainFunc = func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) { return ck, nil }
 	bk.LoggerFunc = func(ctx sdk.Context) log.Logger { return ctx.Logger() }
 
 	req := types.NewRetryFailedEventRequest(rand.AccAddr(), rand.Str(5), rand.Str(5))
@@ -1398,7 +1403,8 @@ func newKeeper(ctx sdk.Context, chain nexus.ChainName, confHeight int64) types.B
 	encCfg := app.MakeEncodingConfig()
 	paramsK := paramsKeeper.NewKeeper(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"))
 	k := keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("testKey"), paramsK)
-	k.ForChain(exported.Ethereum.Name).SetParams(ctx, types.Params{
+	k.InitChains(ctx)
+	funcs.MustNoErr(k.CreateChain(ctx, types.Params{
 		Chain:               exported.Ethereum.Name,
 		Network:             network,
 		ConfirmationHeight:  uint64(confHeight),
@@ -1414,8 +1420,8 @@ func newKeeper(ctx sdk.Context, chain nexus.ChainName, confHeight int64) types.B
 		}},
 		EndBlockerLimit: 50,
 		TransferLimit:   50,
-	})
-	k.ForChain(chain).SetGateway(ctx, types.Address(common.HexToAddress(gateway)))
+	}))
+	funcs.Must(k.ForChain(ctx, chain)).SetGateway(ctx, types.Address(common.HexToAddress(gateway)))
 
 	return k
 }

@@ -5,11 +5,16 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
-// Chain returns a random nexus chain
-func Chain() exported.Chain {
+// RandomChain returns a random nexus chain
+func RandomChain() exported.Chain {
 	return exported.Chain{
-		Name:                  exported.ChainName(rand.NormalizedStrBetween(5, 20)),
+		Name:                  RandomChainName(),
 		Module:                rand.NormalizedStrBetween(5, 20),
 		SupportsForeignAssets: true,
 	}
+}
+
+// RandomChainName generates a random chain name
+func RandomChainName() exported.ChainName {
+	return exported.ChainName(rand.NormalizedStrBetween(5, 20))
 }

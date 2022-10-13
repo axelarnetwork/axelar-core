@@ -1201,17 +1201,11 @@ var _ types.BaseKeeper = &BaseKeeperMock{}
 //
 // 		// make and configure a mocked types.BaseKeeper
 // 		mockedBaseKeeper := &BaseKeeperMock{
-// 			ExportGenesisFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) types.GenesisState {
-// 				panic("mock out the ExportGenesis method")
+// 			CreateChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, params types.Params) error {
+// 				panic("mock out the CreateChain method")
 // 			},
-// 			ForChainFunc: func(chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) types.ChainKeeper {
+// 			ForChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (types.ChainKeeper, error) {
 // 				panic("mock out the ForChain method")
-// 			},
-// 			HasChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) bool {
-// 				panic("mock out the HasChain method")
-// 			},
-// 			InitGenesisFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, state types.GenesisState)  {
-// 				panic("mock out the InitGenesis method")
 // 			},
 // 			LoggerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger {
 // 				panic("mock out the Logger method")
@@ -1223,46 +1217,30 @@ var _ types.BaseKeeper = &BaseKeeperMock{}
 //
 // 	}
 type BaseKeeperMock struct {
-	// ExportGenesisFunc mocks the ExportGenesis method.
-	ExportGenesisFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) types.GenesisState
+	// CreateChainFunc mocks the CreateChain method.
+	CreateChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, params types.Params) error
 
 	// ForChainFunc mocks the ForChain method.
-	ForChainFunc func(chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) types.ChainKeeper
-
-	// HasChainFunc mocks the HasChain method.
-	HasChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) bool
-
-	// InitGenesisFunc mocks the InitGenesis method.
-	InitGenesisFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, state types.GenesisState)
+	ForChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (types.ChainKeeper, error)
 
 	// LoggerFunc mocks the Logger method.
 	LoggerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger
 
 	// calls tracks calls to the methods.
 	calls struct {
-		// ExportGenesis holds details about calls to the ExportGenesis method.
-		ExportGenesis []struct {
+		// CreateChain holds details about calls to the CreateChain method.
+		CreateChain []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Params is the params argument value.
+			Params types.Params
 		}
 		// ForChain holds details about calls to the ForChain method.
 		ForChain []struct {
-			// Chain is the chain argument value.
-			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
-		}
-		// HasChain holds details about calls to the HasChain method.
-		HasChain []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Chain is the chain argument value.
 			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
-		}
-		// InitGenesis holds details about calls to the InitGenesis method.
-		InitGenesis []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// State is the state argument value.
-			State types.GenesisState
 		}
 		// Logger holds details about calls to the Logger method.
 		Logger []struct {
@@ -1270,142 +1248,78 @@ type BaseKeeperMock struct {
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
 	}
-	lockExportGenesis sync.RWMutex
-	lockForChain      sync.RWMutex
-	lockHasChain      sync.RWMutex
-	lockInitGenesis   sync.RWMutex
-	lockLogger        sync.RWMutex
+	lockCreateChain sync.RWMutex
+	lockForChain    sync.RWMutex
+	lockLogger      sync.RWMutex
 }
 
-// ExportGenesis calls ExportGenesisFunc.
-func (mock *BaseKeeperMock) ExportGenesis(ctx github_com_cosmos_cosmos_sdk_types.Context) types.GenesisState {
-	if mock.ExportGenesisFunc == nil {
-		panic("BaseKeeperMock.ExportGenesisFunc: method is nil but BaseKeeper.ExportGenesis was just called")
+// CreateChain calls CreateChainFunc.
+func (mock *BaseKeeperMock) CreateChain(ctx github_com_cosmos_cosmos_sdk_types.Context, params types.Params) error {
+	if mock.CreateChainFunc == nil {
+		panic("BaseKeeperMock.CreateChainFunc: method is nil but BaseKeeper.CreateChain was just called")
 	}
 	callInfo := struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
+		Ctx    github_com_cosmos_cosmos_sdk_types.Context
+		Params types.Params
 	}{
-		Ctx: ctx,
+		Ctx:    ctx,
+		Params: params,
 	}
-	mock.lockExportGenesis.Lock()
-	mock.calls.ExportGenesis = append(mock.calls.ExportGenesis, callInfo)
-	mock.lockExportGenesis.Unlock()
-	return mock.ExportGenesisFunc(ctx)
+	mock.lockCreateChain.Lock()
+	mock.calls.CreateChain = append(mock.calls.CreateChain, callInfo)
+	mock.lockCreateChain.Unlock()
+	return mock.CreateChainFunc(ctx, params)
 }
 
-// ExportGenesisCalls gets all the calls that were made to ExportGenesis.
+// CreateChainCalls gets all the calls that were made to CreateChain.
 // Check the length with:
-//     len(mockedBaseKeeper.ExportGenesisCalls())
-func (mock *BaseKeeperMock) ExportGenesisCalls() []struct {
-	Ctx github_com_cosmos_cosmos_sdk_types.Context
+//     len(mockedBaseKeeper.CreateChainCalls())
+func (mock *BaseKeeperMock) CreateChainCalls() []struct {
+	Ctx    github_com_cosmos_cosmos_sdk_types.Context
+	Params types.Params
 } {
 	var calls []struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
+		Ctx    github_com_cosmos_cosmos_sdk_types.Context
+		Params types.Params
 	}
-	mock.lockExportGenesis.RLock()
-	calls = mock.calls.ExportGenesis
-	mock.lockExportGenesis.RUnlock()
+	mock.lockCreateChain.RLock()
+	calls = mock.calls.CreateChain
+	mock.lockCreateChain.RUnlock()
 	return calls
 }
 
 // ForChain calls ForChainFunc.
-func (mock *BaseKeeperMock) ForChain(chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) types.ChainKeeper {
+func (mock *BaseKeeperMock) ForChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (types.ChainKeeper, error) {
 	if mock.ForChainFunc == nil {
 		panic("BaseKeeperMock.ForChainFunc: method is nil but BaseKeeper.ForChain was just called")
 	}
 	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
 		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
 	}{
+		Ctx:   ctx,
 		Chain: chain,
 	}
 	mock.lockForChain.Lock()
 	mock.calls.ForChain = append(mock.calls.ForChain, callInfo)
 	mock.lockForChain.Unlock()
-	return mock.ForChainFunc(chain)
+	return mock.ForChainFunc(ctx, chain)
 }
 
 // ForChainCalls gets all the calls that were made to ForChain.
 // Check the length with:
 //     len(mockedBaseKeeper.ForChainCalls())
 func (mock *BaseKeeperMock) ForChainCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
 	Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
 } {
 	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
 		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
 	}
 	mock.lockForChain.RLock()
 	calls = mock.calls.ForChain
 	mock.lockForChain.RUnlock()
-	return calls
-}
-
-// HasChain calls HasChainFunc.
-func (mock *BaseKeeperMock) HasChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) bool {
-	if mock.HasChainFunc == nil {
-		panic("BaseKeeperMock.HasChainFunc: method is nil but BaseKeeper.HasChain was just called")
-	}
-	callInfo := struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
-	}{
-		Ctx:   ctx,
-		Chain: chain,
-	}
-	mock.lockHasChain.Lock()
-	mock.calls.HasChain = append(mock.calls.HasChain, callInfo)
-	mock.lockHasChain.Unlock()
-	return mock.HasChainFunc(ctx, chain)
-}
-
-// HasChainCalls gets all the calls that were made to HasChain.
-// Check the length with:
-//     len(mockedBaseKeeper.HasChainCalls())
-func (mock *BaseKeeperMock) HasChainCalls() []struct {
-	Ctx   github_com_cosmos_cosmos_sdk_types.Context
-	Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
-} {
-	var calls []struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
-	}
-	mock.lockHasChain.RLock()
-	calls = mock.calls.HasChain
-	mock.lockHasChain.RUnlock()
-	return calls
-}
-
-// InitGenesis calls InitGenesisFunc.
-func (mock *BaseKeeperMock) InitGenesis(ctx github_com_cosmos_cosmos_sdk_types.Context, state types.GenesisState) {
-	if mock.InitGenesisFunc == nil {
-		panic("BaseKeeperMock.InitGenesisFunc: method is nil but BaseKeeper.InitGenesis was just called")
-	}
-	callInfo := struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		State types.GenesisState
-	}{
-		Ctx:   ctx,
-		State: state,
-	}
-	mock.lockInitGenesis.Lock()
-	mock.calls.InitGenesis = append(mock.calls.InitGenesis, callInfo)
-	mock.lockInitGenesis.Unlock()
-	mock.InitGenesisFunc(ctx, state)
-}
-
-// InitGenesisCalls gets all the calls that were made to InitGenesis.
-// Check the length with:
-//     len(mockedBaseKeeper.InitGenesisCalls())
-func (mock *BaseKeeperMock) InitGenesisCalls() []struct {
-	Ctx   github_com_cosmos_cosmos_sdk_types.Context
-	State types.GenesisState
-} {
-	var calls []struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		State types.GenesisState
-	}
-	mock.lockInitGenesis.RLock()
-	calls = mock.calls.InitGenesis
-	mock.lockInitGenesis.RUnlock()
 	return calls
 }
 
@@ -1474,7 +1388,7 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			GetBurnerAddressFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, token types.ERC20Token, salt types.Hash, gatewayAddr types.Address) (types.Address, error) {
 // 				panic("mock out the GetBurnerAddress method")
 // 			},
-// 			GetBurnerByteCodeFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, bool) {
+// 			GetBurnerByteCodeFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []byte {
 // 				panic("mock out the GetBurnerByteCode method")
 // 			},
 // 			GetBurnerInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, address types.Address) *types.BurnerInfo {
@@ -1516,13 +1430,13 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			GetLatestCommandBatchFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) types.CommandBatch {
 // 				panic("mock out the GetLatestCommandBatch method")
 // 			},
-// 			GetMinVoterCountFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (int64, bool) {
+// 			GetMinVoterCountFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64 {
 // 				panic("mock out the GetMinVoterCount method")
 // 			},
-// 			GetNameFunc: func() string {
+// 			GetNameFunc: func() github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName {
 // 				panic("mock out the GetName method")
 // 			},
-// 			GetNetworkFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (string, bool) {
+// 			GetNetworkFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) string {
 // 				panic("mock out the GetNetwork method")
 // 			},
 // 			GetNetworkByIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, id github_com_cosmos_cosmos_sdk_types.Int) (string, bool) {
@@ -1534,19 +1448,19 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			GetPendingCommandsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.Command {
 // 				panic("mock out the GetPendingCommands method")
 // 			},
-// 			GetRequiredConfirmationHeightFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (uint64, bool) {
+// 			GetRequiredConfirmationHeightFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) uint64 {
 // 				panic("mock out the GetRequiredConfirmationHeight method")
 // 			},
-// 			GetRevoteLockingPeriodFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (int64, bool) {
+// 			GetRevoteLockingPeriodFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64 {
 // 				panic("mock out the GetRevoteLockingPeriod method")
 // 			},
-// 			GetTokenByteCodeFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, bool) {
+// 			GetTokenByteCodeFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []byte {
 // 				panic("mock out the GetTokenByteCode method")
 // 			},
 // 			GetTokensFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.ERC20Token {
 // 				panic("mock out the GetTokens method")
 // 			},
-// 			GetVotingThresholdFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (utils.Threshold, bool) {
+// 			GetVotingThresholdFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.Threshold {
 // 				panic("mock out the GetVotingThreshold method")
 // 			},
 // 			LoggerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger {
@@ -1572,9 +1486,6 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			},
 // 			SetLatestSignedCommandBatchIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, id []byte)  {
 // 				panic("mock out the SetLatestSignedCommandBatchID method")
-// 			},
-// 			SetParamsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, p types.Params)  {
-// 				panic("mock out the SetParams method")
 // 			},
 // 		}
 //
@@ -1608,7 +1519,7 @@ type ChainKeeperMock struct {
 	GetBurnerAddressFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, token types.ERC20Token, salt types.Hash, gatewayAddr types.Address) (types.Address, error)
 
 	// GetBurnerByteCodeFunc mocks the GetBurnerByteCode method.
-	GetBurnerByteCodeFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, bool)
+	GetBurnerByteCodeFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) []byte
 
 	// GetBurnerInfoFunc mocks the GetBurnerInfo method.
 	GetBurnerInfoFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, address types.Address) *types.BurnerInfo
@@ -1650,13 +1561,13 @@ type ChainKeeperMock struct {
 	GetLatestCommandBatchFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) types.CommandBatch
 
 	// GetMinVoterCountFunc mocks the GetMinVoterCount method.
-	GetMinVoterCountFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (int64, bool)
+	GetMinVoterCountFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64
 
 	// GetNameFunc mocks the GetName method.
-	GetNameFunc func() string
+	GetNameFunc func() github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
 
 	// GetNetworkFunc mocks the GetNetwork method.
-	GetNetworkFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (string, bool)
+	GetNetworkFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) string
 
 	// GetNetworkByIDFunc mocks the GetNetworkByID method.
 	GetNetworkByIDFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, id github_com_cosmos_cosmos_sdk_types.Int) (string, bool)
@@ -1668,19 +1579,19 @@ type ChainKeeperMock struct {
 	GetPendingCommandsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.Command
 
 	// GetRequiredConfirmationHeightFunc mocks the GetRequiredConfirmationHeight method.
-	GetRequiredConfirmationHeightFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (uint64, bool)
+	GetRequiredConfirmationHeightFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) uint64
 
 	// GetRevoteLockingPeriodFunc mocks the GetRevoteLockingPeriod method.
-	GetRevoteLockingPeriodFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (int64, bool)
+	GetRevoteLockingPeriodFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64
 
 	// GetTokenByteCodeFunc mocks the GetTokenByteCode method.
-	GetTokenByteCodeFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, bool)
+	GetTokenByteCodeFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) []byte
 
 	// GetTokensFunc mocks the GetTokens method.
 	GetTokensFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.ERC20Token
 
 	// GetVotingThresholdFunc mocks the GetVotingThreshold method.
-	GetVotingThresholdFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (utils.Threshold, bool)
+	GetVotingThresholdFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.Threshold
 
 	// LoggerFunc mocks the Logger method.
 	LoggerFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger
@@ -1705,9 +1616,6 @@ type ChainKeeperMock struct {
 
 	// SetLatestSignedCommandBatchIDFunc mocks the SetLatestSignedCommandBatchID method.
 	SetLatestSignedCommandBatchIDFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, id []byte)
-
-	// SetParamsFunc mocks the SetParams method.
-	SetParamsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, p types.Params)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -1974,13 +1882,6 @@ type ChainKeeperMock struct {
 			// ID is the id argument value.
 			ID []byte
 		}
-		// SetParams holds details about calls to the SetParams method.
-		SetParams []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// P is the p argument value.
-			P types.Params
-		}
 	}
 	lockCreateERC20Token              sync.RWMutex
 	lockCreateNewBatchToSign          sync.RWMutex
@@ -2023,7 +1924,6 @@ type ChainKeeperMock struct {
 	lockSetEventFailed                sync.RWMutex
 	lockSetGateway                    sync.RWMutex
 	lockSetLatestSignedCommandBatchID sync.RWMutex
-	lockSetParams                     sync.RWMutex
 }
 
 // CreateERC20Token calls CreateERC20TokenFunc.
@@ -2315,7 +2215,7 @@ func (mock *ChainKeeperMock) GetBurnerAddressCalls() []struct {
 }
 
 // GetBurnerByteCode calls GetBurnerByteCodeFunc.
-func (mock *ChainKeeperMock) GetBurnerByteCode(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, bool) {
+func (mock *ChainKeeperMock) GetBurnerByteCode(ctx github_com_cosmos_cosmos_sdk_types.Context) []byte {
 	if mock.GetBurnerByteCodeFunc == nil {
 		panic("ChainKeeperMock.GetBurnerByteCodeFunc: method is nil but ChainKeeper.GetBurnerByteCode was just called")
 	}
@@ -2793,7 +2693,7 @@ func (mock *ChainKeeperMock) GetLatestCommandBatchCalls() []struct {
 }
 
 // GetMinVoterCount calls GetMinVoterCountFunc.
-func (mock *ChainKeeperMock) GetMinVoterCount(ctx github_com_cosmos_cosmos_sdk_types.Context) (int64, bool) {
+func (mock *ChainKeeperMock) GetMinVoterCount(ctx github_com_cosmos_cosmos_sdk_types.Context) int64 {
 	if mock.GetMinVoterCountFunc == nil {
 		panic("ChainKeeperMock.GetMinVoterCountFunc: method is nil but ChainKeeper.GetMinVoterCount was just called")
 	}
@@ -2824,7 +2724,7 @@ func (mock *ChainKeeperMock) GetMinVoterCountCalls() []struct {
 }
 
 // GetName calls GetNameFunc.
-func (mock *ChainKeeperMock) GetName() string {
+func (mock *ChainKeeperMock) GetName() github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName {
 	if mock.GetNameFunc == nil {
 		panic("ChainKeeperMock.GetNameFunc: method is nil but ChainKeeper.GetName was just called")
 	}
@@ -2850,7 +2750,7 @@ func (mock *ChainKeeperMock) GetNameCalls() []struct {
 }
 
 // GetNetwork calls GetNetworkFunc.
-func (mock *ChainKeeperMock) GetNetwork(ctx github_com_cosmos_cosmos_sdk_types.Context) (string, bool) {
+func (mock *ChainKeeperMock) GetNetwork(ctx github_com_cosmos_cosmos_sdk_types.Context) string {
 	if mock.GetNetworkFunc == nil {
 		panic("ChainKeeperMock.GetNetworkFunc: method is nil but ChainKeeper.GetNetwork was just called")
 	}
@@ -2978,7 +2878,7 @@ func (mock *ChainKeeperMock) GetPendingCommandsCalls() []struct {
 }
 
 // GetRequiredConfirmationHeight calls GetRequiredConfirmationHeightFunc.
-func (mock *ChainKeeperMock) GetRequiredConfirmationHeight(ctx github_com_cosmos_cosmos_sdk_types.Context) (uint64, bool) {
+func (mock *ChainKeeperMock) GetRequiredConfirmationHeight(ctx github_com_cosmos_cosmos_sdk_types.Context) uint64 {
 	if mock.GetRequiredConfirmationHeightFunc == nil {
 		panic("ChainKeeperMock.GetRequiredConfirmationHeightFunc: method is nil but ChainKeeper.GetRequiredConfirmationHeight was just called")
 	}
@@ -3009,7 +2909,7 @@ func (mock *ChainKeeperMock) GetRequiredConfirmationHeightCalls() []struct {
 }
 
 // GetRevoteLockingPeriod calls GetRevoteLockingPeriodFunc.
-func (mock *ChainKeeperMock) GetRevoteLockingPeriod(ctx github_com_cosmos_cosmos_sdk_types.Context) (int64, bool) {
+func (mock *ChainKeeperMock) GetRevoteLockingPeriod(ctx github_com_cosmos_cosmos_sdk_types.Context) int64 {
 	if mock.GetRevoteLockingPeriodFunc == nil {
 		panic("ChainKeeperMock.GetRevoteLockingPeriodFunc: method is nil but ChainKeeper.GetRevoteLockingPeriod was just called")
 	}
@@ -3040,7 +2940,7 @@ func (mock *ChainKeeperMock) GetRevoteLockingPeriodCalls() []struct {
 }
 
 // GetTokenByteCode calls GetTokenByteCodeFunc.
-func (mock *ChainKeeperMock) GetTokenByteCode(ctx github_com_cosmos_cosmos_sdk_types.Context) ([]byte, bool) {
+func (mock *ChainKeeperMock) GetTokenByteCode(ctx github_com_cosmos_cosmos_sdk_types.Context) []byte {
 	if mock.GetTokenByteCodeFunc == nil {
 		panic("ChainKeeperMock.GetTokenByteCodeFunc: method is nil but ChainKeeper.GetTokenByteCode was just called")
 	}
@@ -3102,7 +3002,7 @@ func (mock *ChainKeeperMock) GetTokensCalls() []struct {
 }
 
 // GetVotingThreshold calls GetVotingThresholdFunc.
-func (mock *ChainKeeperMock) GetVotingThreshold(ctx github_com_cosmos_cosmos_sdk_types.Context) (utils.Threshold, bool) {
+func (mock *ChainKeeperMock) GetVotingThreshold(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.Threshold {
 	if mock.GetVotingThresholdFunc == nil {
 		panic("ChainKeeperMock.GetVotingThresholdFunc: method is nil but ChainKeeper.GetVotingThreshold was just called")
 	}
@@ -3409,41 +3309,6 @@ func (mock *ChainKeeperMock) SetLatestSignedCommandBatchIDCalls() []struct {
 	mock.lockSetLatestSignedCommandBatchID.RLock()
 	calls = mock.calls.SetLatestSignedCommandBatchID
 	mock.lockSetLatestSignedCommandBatchID.RUnlock()
-	return calls
-}
-
-// SetParams calls SetParamsFunc.
-func (mock *ChainKeeperMock) SetParams(ctx github_com_cosmos_cosmos_sdk_types.Context, p types.Params) {
-	if mock.SetParamsFunc == nil {
-		panic("ChainKeeperMock.SetParamsFunc: method is nil but ChainKeeper.SetParams was just called")
-	}
-	callInfo := struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
-		P   types.Params
-	}{
-		Ctx: ctx,
-		P:   p,
-	}
-	mock.lockSetParams.Lock()
-	mock.calls.SetParams = append(mock.calls.SetParams, callInfo)
-	mock.lockSetParams.Unlock()
-	mock.SetParamsFunc(ctx, p)
-}
-
-// SetParamsCalls gets all the calls that were made to SetParams.
-// Check the length with:
-//     len(mockedChainKeeper.SetParamsCalls())
-func (mock *ChainKeeperMock) SetParamsCalls() []struct {
-	Ctx github_com_cosmos_cosmos_sdk_types.Context
-	P   types.Params
-} {
-	var calls []struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
-		P   types.Params
-	}
-	mock.lockSetParams.RLock()
-	calls = mock.calls.SetParams
-	mock.lockSetParams.RUnlock()
 	return calls
 }
 

@@ -92,7 +92,11 @@ func (s msgServer) ConfirmGatewayTx(c context.Context, req *types.ConfirmGateway
 		return nil, err
 	}
 
-	keeper := s.ForChain(chain.Name)
+	keeper, err := s.ForChain(ctx, chain.Name)
+	if err != nil {
+		return nil, err
+	}
+
 	gatewayAddress, ok := keeper.GetGatewayAddress(ctx)
 	if !ok {
 		return nil, fmt.Errorf("axelar gateway address not set")
@@ -103,10 +107,7 @@ func (s msgServer) ConfirmGatewayTx(c context.Context, req *types.ConfirmGateway
 		return nil, err
 	}
 
-	height, ok := keeper.GetRequiredConfirmationHeight(ctx)
-	if !ok {
-		return nil, fmt.Errorf("required confirmation height not found")
-	}
+	height := keeper.GetRequiredConfirmationHeight(ctx)
 
 	events.Emit(ctx, &types.ConfirmGatewayTxStarted{
 		TxID:               req.TxID,
@@ -135,7 +136,10 @@ func (s msgServer) SetGateway(c context.Context, req *types.SetGatewayRequest) (
 		return nil, fmt.Errorf("current key not set for chain %s", chain.Name)
 	}
 
-	keeper := s.ForChain(chain.Name)
+	keeper, err := s.ForChain(ctx, chain.Name)
+	if err != nil {
+		return nil, err
+	}
 	if _, ok := keeper.GetGatewayAddress(ctx); ok {
 		return nil, fmt.Errorf("%s gateway already set", req.Chain)
 	}
@@ -166,7 +170,10 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		return nil, err
 	}
 
-	keeper := s.ForChain(senderChain.Name)
+	keeper, err := s.ForChain(ctx, senderChain.Name)
+	if err != nil {
+		return nil, err
+	}
 	gatewayAddr, ok := keeper.GetGatewayAddress(ctx)
 	if !ok {
 		return nil, fmt.Errorf("axelar gateway address not set")
@@ -250,11 +257,13 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, fmt.Errorf("%s is not a registered chain", req.Asset.Chain)
 	}
 
-	keeper := s.ForChain(chain.Name)
+	keeper, err := s.ForChain(ctx, chain.Name)
+	if err != nil {
+		return nil, err
+	}
 	token := keeper.GetERC20TokenByAsset(ctx, req.Asset.Name)
 
-	err := token.RecordDeployment(req.TxID)
-	if err != nil {
+	if err := token.RecordDeployment(req.TxID); err != nil {
 		return nil, err
 	}
 
@@ -269,7 +278,7 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		GatewayAddress:     funcs.MustOk(keeper.GetGatewayAddress(ctx)),
 		TokenAddress:       token.GetAddress(),
 		TokenDetails:       token.GetDetails(),
-		ConfirmationHeight: funcs.MustOk(keeper.GetRequiredConfirmationHeight(ctx)),
+		ConfirmationHeight: keeper.GetRequiredConfirmationHeight(ctx),
 		PollParticipants:   pollParticipants,
 	})
 
@@ -288,7 +297,10 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, err
 	}
 
-	keeper := s.ForChain(chain.Name)
+	keeper, err := s.ForChain(ctx, chain.Name)
+	if err != nil {
+		return nil, err
+	}
 	gatewayAddr, ok := keeper.GetGatewayAddress(ctx)
 	if !ok {
 		return nil, fmt.Errorf("gateway address not set for chain %s", chain.Name)
@@ -318,7 +330,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, err
 	}
 
-	height, _ := keeper.GetRequiredConfirmationHeight(ctx)
+	height := keeper.GetRequiredConfirmationHeight(ctx)
 	events.Emit(ctx, &types.ConfirmDepositStarted{
 		TxID:               req.TxID,
 		Chain:              chain.Name,
@@ -348,7 +360,10 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 		return nil, fmt.Errorf("next key for chain %s not set yet", chain.Name)
 	}
 
-	keeper := s.ForChain(chain.Name)
+	keeper, err := s.ForChain(ctx, chain.Name)
+	if err != nil {
+		return nil, err
+	}
 
 	gatewayAddr, ok := keeper.GetGatewayAddress(ctx)
 	if !ok {
@@ -382,7 +397,10 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 		return nil, err
 	}
 
-	keeper := s.ForChain(chain.Name)
+	keeper, err := s.ForChain(ctx, chain.Name)
+	if err != nil {
+		return nil, err
+	}
 
 	switch req.Address.IsZeroAddress() {
 	case true:
@@ -446,7 +464,10 @@ func (s msgServer) CreateBurnTokens(c context.Context, req *types.CreateBurnToke
 		return nil, err
 	}
 
-	keeper := s.ForChain(chain.Name)
+	keeper, err := s.ForChain(ctx, chain.Name)
+	if err != nil {
+		return nil, err
+	}
 	transferLimit := keeper.GetParams(ctx).TransferLimit
 	pageRequest := &query.PageRequest{
 		Key:        nil,
@@ -529,7 +550,10 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 		return nil, err
 	}
 
-	keeper := s.ForChain(chain.Name)
+	keeper, err := s.ForChain(ctx, chain.Name)
+	if err != nil {
+		return nil, err
+	}
 	transferLimit := keeper.GetParams(ctx).TransferLimit
 	pageRequest := &query.PageRequest{
 		Key:        nil,
@@ -595,7 +619,10 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 
 func (s msgServer) CreateTransferOperatorship(c context.Context, req *types.CreateTransferOperatorshipRequest) (*types.CreateTransferOperatorshipResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
-	keeper := s.ForChain(req.Chain)
+	keeper, err := s.ForChain(ctx, req.Chain)
+	if err != nil {
+		return nil, err
+	}
 
 	if _, ok := keeper.GetGatewayAddress(ctx); !ok {
 		return nil, fmt.Errorf("axelar gateway address not set")
@@ -673,7 +700,10 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		return nil, err
 	}
 
-	keeper := s.ForChain(chain.Name)
+	keeper, err := s.ForChain(ctx, chain.Name)
+	if err != nil {
+		return nil, err
+	}
 
 	if _, ok := keeper.GetChainID(ctx); !ok {
 		return nil, fmt.Errorf("could not find chain ID for '%s'", chain.Name)
@@ -741,8 +771,10 @@ func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*typ
 
 	chain := nexus.Chain{Name: req.Name, SupportsForeignAssets: true, KeyType: tss.Multisig, Module: types.ModuleName}
 	s.nexus.SetChain(ctx, chain)
-	s.ForChain(chain.Name).SetParams(ctx, req.Params)
 
+	if err := s.CreateChain(ctx, req.Params); err != nil {
+		return nil, err
+	}
 	events.Emit(ctx, &types.ChainAdded{Chain: req.Name})
 
 	return &types.AddChainResponse{}, nil
@@ -760,7 +792,10 @@ func (s msgServer) RetryFailedEvent(c context.Context, req *types.RetryFailedEve
 		return nil, err
 	}
 
-	keeper := s.ForChain(chain.Name)
+	keeper, err := s.ForChain(ctx, chain.Name)
+	if err != nil {
+		return nil, err
+	}
 
 	event, ok := keeper.GetEvent(ctx, req.EventID)
 	if !ok {
@@ -790,7 +825,10 @@ func (s msgServer) RetryFailedEvent(c context.Context, req *types.RetryFailedEve
 }
 
 func (s msgServer) initializePoll(ctx sdk.Context, chain nexus.Chain, txID types.Hash) (vote.PollParticipants, error) {
-	keeper := s.ForChain(chain.Name)
+	keeper, err := s.ForChain(ctx, chain.Name)
+	if err != nil {
+		return vote.PollParticipants{}, err
+	}
 	params := keeper.GetParams(ctx)
 	snap, err := s.snapshotter.CreateSnapshot(
 		ctx,

@@ -87,12 +87,11 @@ type AppModule struct {
 	slashing    types.SlashingKeeper
 	staking     types.StakingKeeper
 	axelarnet   types.AxelarnetKeeper
-	evm         types.EVMBaseKeeper
 	reward      types.RewardKeeper
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(k keeper.Keeper, snapshotter types.Snapshotter, slashing types.SlashingKeeper, staking types.StakingKeeper, axelarnet types.AxelarnetKeeper, evm types.EVMBaseKeeper, reward types.RewardKeeper) AppModule {
+func NewAppModule(k keeper.Keeper, snapshotter types.Snapshotter, slashing types.SlashingKeeper, staking types.StakingKeeper, axelarnet types.AxelarnetKeeper, reward types.RewardKeeper) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
@@ -100,7 +99,6 @@ func NewAppModule(k keeper.Keeper, snapshotter types.Snapshotter, slashing types
 		slashing:       slashing,
 		staking:        staking,
 		axelarnet:      axelarnet,
-		evm:            evm,
 		reward:         reward,
 	}
 }

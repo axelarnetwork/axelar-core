@@ -6,13 +6,12 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
-	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 )
 
-//go:generate moq -out ./mock/expected_keepers.go -pkg mock . Nexus Snapshotter AxelarnetKeeper EVMBaseKeeper RewardKeeper SlashingKeeper
+//go:generate moq -out ./mock/expected_keepers.go -pkg mock . Nexus Snapshotter AxelarnetKeeper RewardKeeper SlashingKeeper
 
 // Nexus provides functionality to manage cross-chain transfers
 type Nexus interface {
@@ -56,11 +55,6 @@ type StakingKeeper interface {
 // AxelarnetKeeper provides functionality to the axelarnet module
 type AxelarnetKeeper interface {
 	IsCosmosChain(ctx sdk.Context, chain exported.ChainName) bool
-}
-
-// EVMBaseKeeper provides functionality to get evm chain keeper
-type EVMBaseKeeper interface {
-	ForChain(chain exported.ChainName) evm.ChainKeeper
 }
 
 // RewardKeeper provides functionality to get reward keeper
