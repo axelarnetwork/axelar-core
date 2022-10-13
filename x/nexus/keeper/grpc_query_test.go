@@ -22,6 +22,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
+	"github.com/axelarnetwork/utils/funcs"
 	. "github.com/axelarnetwork/utils/test"
 )
 
@@ -52,6 +53,8 @@ func TestKeeper_TransfersForChain(t *testing.T) {
 			k.ActivateChain(ctx, evm.Ethereum)
 			k.SetChain(ctx, axelarnet.Axelarnet)
 			k.ActivateChain(ctx, axelarnet.Axelarnet)
+			funcs.MustNoErr(k.RegisterAsset(ctx, evm.Ethereum, exported.NewAsset(axelarnet.NativeAsset, false)))
+			funcs.MustNoErr(k.RegisterAsset(ctx, axelarnet.Axelarnet, exported.NewAsset(axelarnet.NativeAsset, true)))
 
 			nexusRouter := types.NewRouter().
 				AddAddressValidator("evm", func(sdk.Context, exported.CrossChainAddress) error {
