@@ -21,28 +21,24 @@ import (
 type BaseKeeper interface {
 	Logger(ctx sdk.Context) log.Logger
 
-	HasChain(ctx sdk.Context, chain nexus.ChainName) bool
-	ForChain(chain nexus.ChainName) ChainKeeper
-
-	InitGenesis(ctx sdk.Context, state GenesisState)
-	ExportGenesis(ctx sdk.Context) GenesisState
+	CreateChain(ctx sdk.Context, params Params) error
+	ForChain(ctx sdk.Context, chain nexus.ChainName) (ChainKeeper, error)
 }
 
 // ChainKeeper is implemented by this module's chain keeper
 type ChainKeeper interface {
 	Logger(ctx sdk.Context) log.Logger
 
-	GetName() string
+	GetName() nexus.ChainName
 
-	SetParams(ctx sdk.Context, p Params)
 	GetParams(ctx sdk.Context) Params
 
-	GetNetwork(ctx sdk.Context) (string, bool)
+	GetNetwork(ctx sdk.Context) string
 	GetChainID(ctx sdk.Context) (sdk.Int, bool)
-	GetRequiredConfirmationHeight(ctx sdk.Context) (uint64, bool)
-	GetRevoteLockingPeriod(ctx sdk.Context) (int64, bool)
-	GetBurnerByteCode(ctx sdk.Context) ([]byte, bool)
-	GetTokenByteCode(ctx sdk.Context) ([]byte, bool)
+	GetRequiredConfirmationHeight(ctx sdk.Context) uint64
+	GetRevoteLockingPeriod(ctx sdk.Context) int64
+	GetBurnerByteCode(ctx sdk.Context) []byte
+	GetTokenByteCode(ctx sdk.Context) []byte
 	SetGateway(ctx sdk.Context, address Address)
 	GetGatewayAddress(ctx sdk.Context) (Address, bool)
 	GetDeposit(ctx sdk.Context, txID Hash, burnerAddr Address) (ERC20Deposit, DepositStatus, bool)
@@ -55,8 +51,8 @@ type ChainKeeper interface {
 	GetConfirmedDepositsPaginated(ctx sdk.Context, pageRequest *query.PageRequest) ([]ERC20Deposit, *query.PageResponse, error)
 	GetNetworkByID(ctx sdk.Context, id sdk.Int) (string, bool)
 	GetChainIDByNetwork(ctx sdk.Context, network string) (sdk.Int, bool)
-	GetVotingThreshold(ctx sdk.Context) (utils.Threshold, bool)
-	GetMinVoterCount(ctx sdk.Context) (int64, bool)
+	GetVotingThreshold(ctx sdk.Context) utils.Threshold
+	GetMinVoterCount(ctx sdk.Context) int64
 
 	CreateERC20Token(ctx sdk.Context, asset string, details TokenDetails, address Address) (ERC20Token, error)
 	GetERC20TokenByAsset(ctx sdk.Context, asset string) ERC20Token

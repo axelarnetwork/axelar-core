@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"errors"
 	mathRand "math/rand"
 	"testing"
 
@@ -178,14 +179,13 @@ func TestHandleResult(t *testing.T) {
 		ctx = sdk.NewContext(&fakeMock.MultiStoreMock{}, tmproto.Header{}, false, log.TestingLogger())
 
 		basek = &mock.BaseKeeperMock{
-			ForChainFunc: func(chain nexus.ChainName) types.ChainKeeper {
+			ForChainFunc: func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) {
 				if chain.Equals(evmChain) {
-					return chaink
+					return chaink, nil
 				}
-				return nil
+				return nil, errors.New("unknown chain")
 			},
-			LoggerFunc:   func(ctx sdk.Context) log.Logger { return log.TestingLogger() },
-			HasChainFunc: func(ctx sdk.Context, chain nexus.ChainName) bool { return true },
+			LoggerFunc: func(ctx sdk.Context) log.Logger { return log.TestingLogger() },
 		}
 		chaink = &mock.ChainKeeperMock{
 			GetEventFunc: func(sdk.Context, types.EventID) (types.Event, bool) {

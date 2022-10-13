@@ -59,11 +59,11 @@ func (s sigHandler) HandleFailed(ctx sdk.Context, moduleMetadata codec.ProtoMars
 }
 
 func (s sigHandler) getCommandBatch(ctx sdk.Context, sigMetadata *types.SigMetadata) (types.CommandBatch, error) {
-	if !s.keeper.HasChain(ctx, sigMetadata.Chain) {
+	ck, err := s.keeper.ForChain(ctx, sigMetadata.Chain)
+	if err != nil {
 		return types.CommandBatch{}, fmt.Errorf("chain %s does not exist as an EVM chain", sigMetadata.Chain)
 	}
 
-	ck := s.keeper.ForChain(sigMetadata.Chain)
 	commandBatch := ck.GetBatchByID(ctx, sigMetadata.CommandBatchID)
 	if !commandBatch.Is(types.BatchSigning) {
 		return types.CommandBatch{}, fmt.Errorf("the command batch %s of chain %s is not being signed", hex.EncodeToString(sigMetadata.CommandBatchID), sigMetadata.Chain)

@@ -84,23 +84,6 @@ func (k Keeper) GetEndBlockerLimit(ctx sdk.Context) uint64 {
 	return result
 }
 
-// SetIBCPath set an IBC path for a cosmos chain. Path can only be set once.
-func (k Keeper) SetIBCPath(ctx sdk.Context, chain nexus.ChainName, path string) error {
-	cosmosChain, ok := k.getCosmosChain(ctx, chain)
-	if !ok {
-		return fmt.Errorf("unknown cosmos chain %s", chain)
-	}
-
-	if _, ok := k.GetIBCPath(ctx, chain); ok {
-		return fmt.Errorf("path %s already registered for cosmos chain %s", path, chain)
-	}
-
-	cosmosChain.IBCPath = path
-	k.SetCosmosChain(ctx, cosmosChain)
-
-	return nil
-}
-
 // GetIBCPath retrieves the IBC path associated to the specified chain
 func (k Keeper) GetIBCPath(ctx sdk.Context, chain nexus.ChainName) (string, bool) {
 	cosmosChain, ok := k.getCosmosChain(ctx, chain)
