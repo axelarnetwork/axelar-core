@@ -145,4 +145,3 @@ func TestSetTransferStatus(t *testing.T) {
 	assert.NoError(t, k.SetTransferPending(ctx, pending2.ID))
 	assert.True(t, ok)
 }
-

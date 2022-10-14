@@ -2,7 +2,6 @@ package testutils
 
 import (
 	"fmt"
-	nexustestutils "github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -15,6 +14,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	nexustestutils "github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
 )
 
 // RandomIBCTransfer creates a new IBC transfer
