@@ -18,7 +18,7 @@ func (k Keeper) InitGenesis(ctx sdk.Context, genState *types.GenesisState) {
 	}
 
 	for _, chain := range genState.Chains {
-		k.SetCosmosChain(ctx, chain)
+		funcs.MustNoErr(k.SetCosmosChain(ctx, chain))
 	}
 
 	if err := k.validateIBCTransferQueueState(genState.TransferQueue, ibcTransferQueueName); err != nil {

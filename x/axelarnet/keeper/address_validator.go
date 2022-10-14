@@ -29,7 +29,7 @@ func NewAddressValidator(keeper types.BaseKeeper, bank types.BankKeeper) nexus.A
 			return err
 		}
 
-		if address.Chain.Name.Equals(exported.Axelarnet.Name) && bank.BlockedAddr(sdk.AccAddress(bz)) {
+		if address.Chain.Name.Equals(exported.Axelarnet.Name) && bank.BlockedAddr(bz) {
 			return sdkerrors.Wrapf(sdkerrors.ErrUnauthorized, "%s is not allowed to receive funds", address.Address)
 		}
 

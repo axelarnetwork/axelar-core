@@ -2,6 +2,7 @@ package testutils
 
 import (
 	"fmt"
+	nexustestutils "github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -57,4 +58,13 @@ func RandomIBCPath() string {
 	port := ibctransfertypes.PortID
 	identifier := fmt.Sprintf("%s%d", "channel-", rand.I64Between(0, 9999))
 	return fmt.Sprintf("%s/%s", port, identifier)
+}
+
+func RandomCosmosChain() types.CosmosChain {
+	return types.CosmosChain{
+		Name:       nexustestutils.RandomChainName(),
+		IBCPath:    RandomIBCPath(),
+		Assets:     nil,
+		AddrPrefix: rand.StrBetween(1, 10),
+	}
 }

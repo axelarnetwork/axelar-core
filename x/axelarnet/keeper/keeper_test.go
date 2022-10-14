@@ -1,14 +1,12 @@
 package keeper_test
 
 import (
-	"fmt"
 	"sort"
 	"strings"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
-	ibctransfertypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
@@ -48,7 +46,7 @@ func TestKeeper_GetIBCPath(t *testing.T) {
 	t.Run("should return the registered IBC path when the given asset is registered", testutils.Func(func(t *testing.T) {
 		ctx, k, _ = setup()
 		chain := randomChain()
-		k.SetCosmosChain(ctx, chain)
+		funcs.MustNoErr(k.SetCosmosChain(ctx, chain))
 		result, ok := k.GetIBCPath(ctx, chain.Name)
 		assert.Equal(t, chain.IBCPath, result)
 		assert.True(t, ok)
@@ -71,10 +69,9 @@ func TestKeeper_RegisterCosmosChain(t *testing.T) {
 
 		for i := 0; i < int(count); i++ {
 			chains[i] = strings.ToLower(rand.NormalizedStr(10))
-			k.SetCosmosChain(ctx, types.CosmosChain{
-				Name:       nexus.ChainName(chains[i]),
-				AddrPrefix: rand.NormalizedStr(5),
-			})
+			chain := randomChain()
+			chain.Name = nexus.ChainName(chains[i])
+			assert.NoError(t, k.SetCosmosChain(ctx, chain))
 		}
 		sort.Strings(chains)
 		assert.Equal(t, chains,
@@ -149,8 +146,3 @@ func TestSetTransferStatus(t *testing.T) {
 	assert.True(t, ok)
 }
 
-func randomIBCPath() string {
-	port := ibctransfertypes.PortID
-	identifier := fmt.Sprintf("%s%d", "channel-", rand.I64Between(0, 9999))
-	return fmt.Sprintf("%s/%s", port, identifier)
-}
