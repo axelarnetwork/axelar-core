@@ -60,6 +60,7 @@ func RandomIBCPath() string {
 	return fmt.Sprintf("%s/%s", port, identifier)
 }
 
+// RandomCosmosChain creates a types.CosmosChain
 func RandomCosmosChain() types.CosmosChain {
 	return types.CosmosChain{
 		Name:       nexustestutils.RandomChainName(),
