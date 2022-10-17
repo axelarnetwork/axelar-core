@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"hash"
 	"math/big"
 	"strings"
 	"testing"
@@ -14,11 +13,9 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	geth "github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
-	"golang.org/x/crypto/sha3"
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/app/params"
@@ -35,30 +32,6 @@ import (
 	"github.com/axelarnetwork/utils/funcs"
 	. "github.com/axelarnetwork/utils/test"
 )
-
-// testHasher is the helper tool for transaction/receipt list hashing.
-// The original hasher is trie, in order to get rid of import cycle,
-// use the testing hasher instead.
-type testHasher struct {
-	hasher hash.Hash
-}
-
-func newHasher() *testHasher {
-	return &testHasher{hasher: sha3.NewLegacyKeccak256()}
-}
-
-func (h *testHasher) Reset() {
-	h.hasher.Reset()
-}
-
-func (h *testHasher) Update(key, val []byte) {
-	h.hasher.Write(key)
-	h.hasher.Write(val)
-}
-
-func (h *testHasher) Hash() common.Hash {
-	return common.BytesToHash(h.hasher.Sum(nil))
-}
 
 func TestDecodeEventTokenSent(t *testing.T) {
 	log := &geth.Log{
@@ -210,7 +183,7 @@ func TestMgr_getTxReceiptIfFinalized(t *testing.T) {
 	})
 
 	givenMgr.
-		When("chain is eth1", func() {
+		When("rpc client", func() {
 			latestFinalizedBlockNumber := rand.I64Between(1000, 10000)
 			receipt := &geth.Receipt{
 				BlockNumber: big.NewInt(latestFinalizedBlockNumber - rand.I64Between(1, 100)),
@@ -226,97 +199,15 @@ func TestMgr_getTxReceiptIfFinalized(t *testing.T) {
 
 					return nil, fmt.Errorf("not found")
 				},
-				BlockNumberFunc: func(ctx context.Context) (uint64, error) {
-					return uint64(latestFinalizedBlockNumber) + confHeight - 1, nil
-				},
-				BlockByNumberFunc: func(ctx context.Context, number *big.Int) (*geth.Block, error) {
+				HeaderByNumberFunc: func(ctx context.Context, number *big.Int) (*evmRpc.Header, error) {
 					if number.Cmp(receipt.BlockNumber) == 0 {
-						return geth.NewBlock(&geth.Header{}, []*geth.Transaction{tx}, []*geth.Header{}, []*geth.Receipt{receipt}, newHasher()), nil
+						return &evmRpc.Header{Transactions: []common.Hash{receipt.TxHash}}, nil
 					}
 
 					return nil, fmt.Errorf("not found")
 				},
-			}
-		}).
-		Then("it should work", func(t *testing.T) {
-			txReceipt, err := mgr.getTxReceiptIfFinalized(chain, tx.Hash(), confHeight)
-
-			assert.NoError(t, err)
-			assert.NotNil(t, txReceipt)
-		}).
-		Run(t, 5)
-
-	givenMgr.
-		When("chain is eth2", func() {
-			latestFinalizedBlockNumber := rand.I64Between(1000, 10000)
-			receipt := &geth.Receipt{
-				BlockNumber: big.NewInt(latestFinalizedBlockNumber - rand.I64Between(1, 100)),
-				TxHash:      tx.Hash(),
-				Status:      1,
-			}
-
-			mgr.rpcs[chain.String()] = &mock.Eth2ClientMock{
-				TransactionReceiptFunc: func(_ context.Context, txHash common.Hash) (*geth.Receipt, error) {
-					if bytes.Equal(txHash.Bytes(), tx.Hash().Bytes()) {
-						return receipt, nil
-					}
-
-					return nil, fmt.Errorf("not found")
-				},
-				FinalizedHeaderFunc: func(ctx context.Context) (*geth.Header, error) {
-					return &geth.Header{Number: big.NewInt(latestFinalizedBlockNumber)}, nil
-				},
-				BlockByNumberFunc: func(ctx context.Context, number *big.Int) (*geth.Block, error) {
-					if number.Cmp(receipt.BlockNumber) == 0 {
-						return geth.NewBlock(&geth.Header{}, []*geth.Transaction{tx}, []*geth.Header{}, []*geth.Receipt{receipt}, newHasher()), nil
-					}
-
-					return nil, fmt.Errorf("not found")
-				},
-			}
-		}).
-		Then("it should work", func(t *testing.T) {
-			txReceipt, err := mgr.getTxReceiptIfFinalized(chain, tx.Hash(), confHeight)
-
-			assert.NoError(t, err)
-			assert.NotNil(t, txReceipt)
-		}).
-		Run(t, 5)
-
-	givenMgr.
-		When("chain is moonbeam", func() {
-			latestFinalizedBlockHash := common.BytesToHash(rand.Bytes(common.HashLength))
-			latestFinalizedBlockNumber := rand.I64Between(1000, 10000)
-			receipt := &geth.Receipt{
-				BlockNumber: big.NewInt(latestFinalizedBlockNumber - rand.I64Between(1, 100)),
-				TxHash:      tx.Hash(),
-				Status:      1,
-			}
-
-			mgr.rpcs[chain.String()] = &mock.MoonbeamClientMock{
-				TransactionReceiptFunc: func(_ context.Context, txHash common.Hash) (*geth.Receipt, error) {
-					if bytes.Equal(txHash.Bytes(), tx.Hash().Bytes()) {
-						return receipt, nil
-					}
-
-					return nil, fmt.Errorf("not found")
-				},
-				ChainGetFinalizedHeadFunc: func(_ context.Context) (common.Hash, error) { return latestFinalizedBlockHash, nil },
-				ChainGetHeaderFunc: func(ctx context.Context, hash common.Hash) (*evmRpc.MoonbeamHeader, error) {
-					if bytes.Equal(hash.Bytes(), latestFinalizedBlockHash.Bytes()) {
-						blockNumber := hexutil.Big(*big.NewInt(latestFinalizedBlockNumber))
-
-						return &evmRpc.MoonbeamHeader{Number: &blockNumber}, nil
-					}
-
-					return nil, fmt.Errorf("not found")
-				},
-				BlockByNumberFunc: func(ctx context.Context, number *big.Int) (*geth.Block, error) {
-					if number.Cmp(receipt.BlockNumber) == 0 {
-						return geth.NewBlock(&geth.Header{}, []*geth.Transaction{tx}, []*geth.Header{}, []*geth.Receipt{receipt}, newHasher()), nil
-					}
-
-					return nil, fmt.Errorf("not found")
+				LatestFinalizedBlockNumberFunc: func(ctx context.Context, conf uint64) (*big.Int, error) {
+					return big.NewInt(latestFinalizedBlockNumber), nil
 				},
 			}
 		}).
@@ -419,17 +310,14 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 			Status: 1,
 		}
 		rpc = &mock.ClientMock{
-			BlockByNumberFunc: func(ctx context.Context, number *big.Int) (*geth.Block, error) {
-				return geth.NewBlock(&geth.Header{}, []*geth.Transaction{tx}, []*geth.Header{}, []*geth.Receipt{receipt}, newHasher()), nil
-			},
-			BlockNumberFunc: func(context.Context) (uint64, error) {
-				return uint64(blockNumber), nil
-			},
-			TransactionByHashFunc: func(ctx context.Context, hash common.Hash) (*geth.Transaction, bool, error) {
-				return &geth.Transaction{}, false, nil
+			HeaderByNumberFunc: func(ctx context.Context, number *big.Int) (*evmRpc.Header, error) {
+				return &evmRpc.Header{Transactions: []common.Hash{receipt.TxHash}}, nil
 			},
 			TransactionReceiptFunc: func(context.Context, common.Hash) (*geth.Receipt, error) {
 				return receipt, nil
+			},
+			LatestFinalizedBlockNumberFunc: func(ctx context.Context, conf uint64) (*big.Int, error) {
+				return big.NewInt(blockNumber), nil
 			},
 		}
 		broadcaster = &mock2.BroadcasterMock{
@@ -467,18 +355,6 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 		actualVoteEvents := msg.(*voteTypes.VoteRequest).Vote.GetCachedValue().(*types.VoteEvents)
 		assert.Equal(t, nexus.ChainName("Ethereum"), actualVoteEvents.Chain)
 		assert.Len(t, actualVoteEvents.Events, 0)
-	}).Repeat(repeats))
-
-	t.Run("no block number", testutils.Func(func(t *testing.T) {
-		setup()
-		rpc.BlockNumberFunc = func(context.Context) (uint64, error) {
-			return 0, fmt.Errorf("error")
-		}
-
-		err := mgr.ProcessDepositConfirmation(event)
-
-		assert.Error(t, err)
-		assert.Len(t, broadcaster.BroadcastCalls(), 0)
 	}).Repeat(repeats))
 }
 
@@ -531,17 +407,14 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 			Status: 1,
 		}
 		rpc = &mock.ClientMock{
-			BlockByNumberFunc: func(ctx context.Context, number *big.Int) (*geth.Block, error) {
-				return geth.NewBlock(&geth.Header{}, []*geth.Transaction{tx}, []*geth.Header{}, []*geth.Receipt{receipt}, newHasher()), nil
-			},
-			BlockNumberFunc: func(context.Context) (uint64, error) {
-				return uint64(blockNumber), nil
-			},
-			TransactionByHashFunc: func(ctx context.Context, hash common.Hash) (*geth.Transaction, bool, error) {
-				return &geth.Transaction{}, false, nil
+			HeaderByNumberFunc: func(ctx context.Context, number *big.Int) (*evmRpc.Header, error) {
+				return &evmRpc.Header{Transactions: []common.Hash{receipt.TxHash}}, nil
 			},
 			TransactionReceiptFunc: func(context.Context, common.Hash) (*geth.Receipt, error) {
 				return receipt, nil
+			},
+			LatestFinalizedBlockNumberFunc: func(ctx context.Context, conf uint64) (*big.Int, error) {
+				return big.NewInt(blockNumber), nil
 			},
 		}
 		broadcaster = &mock2.BroadcasterMock{
@@ -580,18 +453,6 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		actualVoteEvents := msg.(*voteTypes.VoteRequest).Vote.GetCachedValue().(*types.VoteEvents)
 		assert.Equal(t, nexus.ChainName("Ethereum"), actualVoteEvents.Chain)
 		assert.Len(t, actualVoteEvents.Events, 0)
-	}).Repeat(repeats))
-
-	t.Run("no block number", testutils.Func(func(t *testing.T) {
-		setup()
-		rpc.BlockNumberFunc = func(context.Context) (uint64, error) {
-			return 0, fmt.Errorf("error")
-		}
-
-		err := mgr.ProcessTokenConfirmation(event)
-
-		assert.Error(t, err)
-		assert.Len(t, broadcaster.BroadcastCalls(), 0)
 	}).Repeat(repeats))
 
 	t.Run("no deploy event", testutils.Func(func(t *testing.T) {
@@ -678,11 +539,7 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 			Logs:        []*geth.Log{},
 			Status:      1,
 		}
-		block := *geth.NewBlock(&geth.Header{Number: big.NewInt(int64(blockNumber))}, []*geth.Transaction{tx}, []*geth.Header{}, []*geth.Receipt{txReceipt}, newHasher())
 
-		rpc.TransactionByHashFunc = func(_ context.Context, hash common.Hash) (*geth.Transaction, bool, error) {
-			return &geth.Transaction{}, false, nil
-		}
 		rpc.TransactionReceiptFunc = func(ctx context.Context, txHash common.Hash) (*geth.Receipt, error) {
 			if txHash == common.Hash(txID) {
 				return txReceipt, nil
@@ -690,13 +547,15 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 
 			return nil, fmt.Errorf("not found")
 		}
-		rpc.BlockNumberFunc = func(ctx context.Context) (uint64, error) { return blockNumber, nil }
-		rpc.BlockByNumberFunc = func(ctx context.Context, number *big.Int) (*geth.Block, error) {
+		rpc.HeaderByNumberFunc = func(ctx context.Context, number *big.Int) (*evmRpc.Header, error) {
 			if number.Cmp(txReceipt.BlockNumber) == 0 {
-				return &block, nil
+				return &evmRpc.Header{Header: geth.Header{Number: big.NewInt(int64(blockNumber))}, Transactions: []common.Hash{txReceipt.TxHash}}, nil
 			}
 
 			return nil, fmt.Errorf("not found")
+		}
+		rpc.LatestFinalizedBlockNumberFunc = func(ctx context.Context, conf uint64) (*big.Int, error) {
+			return txReceipt.BlockNumber, nil
 		}
 	})
 
