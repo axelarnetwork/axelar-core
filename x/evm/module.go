@@ -158,6 +158,7 @@ func (am AppModule) LegacyQuerierHandler(*codec.LegacyAmino) sdk.Querier {
 // RegisterServices registers a GRPC query service to respond to the
 // module-specific GRPC queries.
 func (am AppModule) RegisterServices(cfg module.Configurator) {
+	types.RegisterMsgServiceServer(cfg.MsgServer(), keeper.NewMsgServerImpl(am.keeper, am.nexus, am.voter, am.snapshotter, am.staking, am.slashing, am.multisig))
 	types.RegisterQueryServiceServer(cfg.QueryServer(), keeper.NewGRPCQuerier(am.keeper, am.nexus, am.multisig))
 
 	err := cfg.RegisterMigration(types.ModuleName, 5, keeper.AlwaysMigrateBytecode(am.keeper, am.nexus, keeper.Migrate5To6(am.keeper, am.nexus)))
