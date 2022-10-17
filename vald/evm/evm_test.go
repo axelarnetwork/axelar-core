@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	geth "github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
@@ -549,7 +550,8 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 		}
 		rpc.HeaderByNumberFunc = func(ctx context.Context, number *big.Int) (*evmRpc.Header, error) {
 			if number.Cmp(txReceipt.BlockNumber) == 0 {
-				return &evmRpc.Header{Header: geth.Header{Number: big.NewInt(int64(blockNumber))}, Transactions: []common.Hash{txReceipt.TxHash}}, nil
+				number := hexutil.Big(*big.NewInt(int64(blockNumber)))
+				return &evmRpc.Header{Number: &number, Transactions: []common.Hash{txReceipt.TxHash}}, nil
 			}
 
 			return nil, fmt.Errorf("not found")
