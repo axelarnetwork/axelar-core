@@ -38,7 +38,7 @@ func newEthereumClient(url string) (*ethereumClient, error) {
 	return client, nil
 }
 
-func (c ethereumClient) HeaderByNumber(ctx context.Context, number *big.Int) (*Header, error) {
+func (c *ethereumClient) HeaderByNumber(ctx context.Context, number *big.Int) (*Header, error) {
 	var head *Header
 	err := c.rpc.CallContext(ctx, &head, "eth_getBlockByNumber", toBlockNumArg(number), false)
 	if err == nil && head == nil {
@@ -48,7 +48,7 @@ func (c ethereumClient) HeaderByNumber(ctx context.Context, number *big.Int) (*H
 	return head, err
 }
 
-func (c ethereumClient) LatestFinalizedBlockNumber(ctx context.Context, conf uint64) (*big.Int, error) {
+func (c *ethereumClient) LatestFinalizedBlockNumber(ctx context.Context, conf uint64) (*big.Int, error) {
 	blockNumber, err := c.BlockNumber(ctx)
 	if err != nil {
 		return nil, err

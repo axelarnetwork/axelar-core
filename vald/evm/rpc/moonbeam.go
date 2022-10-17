@@ -20,7 +20,7 @@ func newMoonbeamClient(ethereumClient *ethereumClient) (*moonbeamClient, error) 
 	return client, nil
 }
 
-func (c moonbeamClient) LatestFinalizedBlockNumber(ctx context.Context, _ uint64) (*big.Int, error) {
+func (c *moonbeamClient) LatestFinalizedBlockNumber(ctx context.Context, _ uint64) (*big.Int, error) {
 	var blockHash common.Hash
 	if err := c.rpc.CallContext(ctx, &blockHash, "chain_getFinalizedHead"); err != nil {
 		return nil, err

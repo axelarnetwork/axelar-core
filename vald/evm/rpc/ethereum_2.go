@@ -20,7 +20,7 @@ func newEthereum2Client(ethereumClient *ethereumClient) (*ethereum2Client, error
 	return client, nil
 }
 
-func (c ethereum2Client) LatestFinalizedBlockNumber(ctx context.Context, _ uint64) (*big.Int, error) {
+func (c *ethereum2Client) LatestFinalizedBlockNumber(ctx context.Context, _ uint64) (*big.Int, error) {
 	var head *types.Header
 	if err := c.rpc.CallContext(ctx, &head, "eth_getBlockByNumber", "finalized", false); err != nil {
 		return nil, err
