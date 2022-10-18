@@ -994,9 +994,6 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		burnerAddress := types.Address(crypto.CreateAddress2(common.Address(gatewayAddr), salt, funcs.MustOk(token.GetBurnerCodeHash()).Bytes()))
 
 		chaink = &mock.ChainKeeperMock{
-			GetDepositFunc: func(sdk.Context, types.Hash, types.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
-				return types.ERC20Deposit{}, 0, false
-			},
 			GetBurnerAddressFunc: func(ctx sdk.Context, token types.ERC20Token, salt types.Hash, gatewayAddr types.Address) (types.Address, error) {
 				_, ok := token.GetBurnerCodeHash()
 				if !ok {
