@@ -246,11 +246,13 @@ func (s msgServer) AddCosmosBasedChain(c context.Context, req *types.AddCosmosBa
 		}
 	}
 
-	s.SetCosmosChain(ctx, types.CosmosChain{
+	if err := s.SetCosmosChain(ctx, types.CosmosChain{
 		Name:       chain.Name,
 		IBCPath:    req.IBCPath,
 		AddrPrefix: req.AddrPrefix,
-	})
+	}); err != nil {
+		return nil, err
+	}
 
 	return &types.AddCosmosBasedChainResponse{}, nil
 }

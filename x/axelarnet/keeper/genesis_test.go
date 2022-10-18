@@ -100,7 +100,7 @@ func randomChains() []types.CosmosChain {
 func randomChain() types.CosmosChain {
 	return types.CosmosChain{
 		Name:       nexus.ChainName(randomNormalizedStr(5, 20)),
-		IBCPath:    randomIBCPath(),
+		IBCPath:    testutils.RandomIBCPath(),
 		AddrPrefix: randomNormalizedStr(5, 20),
 	}
 }
