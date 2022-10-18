@@ -14,6 +14,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	nexustestutils "github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
 )
 
 // RandomIBCTransfer creates a new IBC transfer
@@ -57,4 +58,14 @@ func RandomIBCPath() string {
 	port := ibctransfertypes.PortID
 	identifier := fmt.Sprintf("%s%d", "channel-", rand.I64Between(0, 9999))
 	return fmt.Sprintf("%s/%s", port, identifier)
+}
+
+// RandomCosmosChain creates a types.CosmosChain
+func RandomCosmosChain() types.CosmosChain {
+	return types.CosmosChain{
+		Name:       nexustestutils.RandomChainName(),
+		IBCPath:    RandomIBCPath(),
+		Assets:     nil,
+		AddrPrefix: rand.StrBetween(1, 10),
+	}
 }

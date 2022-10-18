@@ -741,6 +741,9 @@ func TestHandleConfirmDeposit(t *testing.T) {
 		}
 
 		sourceCk.SetDepositFunc = func(sdk.Context, types.ERC20Deposit, types.DepositStatus) {}
+		sourceCk.GetDepositFunc = func(ctx sdk.Context, txID types.Hash, logIndex uint64) (types.ERC20Deposit, types.DepositStatus, bool) {
+			return types.ERC20Deposit{}, types.DepositStatus_None, false
+		}
 	})
 
 	burnerInfoFound := func(found bool) func() {
@@ -780,7 +783,7 @@ func TestHandleConfirmDeposit(t *testing.T) {
 
 	depositFound := func(found bool) func() {
 		return func() {
-			sourceCk.GetDepositFunc = func(ctx sdk.Context, txID types.Hash, burnerAddr types.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
+			sourceCk.GetDepositByTxIDBurnAddrFunc = func(ctx sdk.Context, txID types.Hash, burnerAddr types.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
 				return types.ERC20Deposit{}, types.DepositStatus_Confirmed, found
 			}
 		}
