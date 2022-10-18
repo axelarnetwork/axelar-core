@@ -10,6 +10,9 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/keeper"
 	"github.com/axelarnetwork/axelar-core/x/vote/types"
+
+	"github.com/armon/go-metrics"
+	"github.com/cosmos/cosmos-sdk/telemetry"
 )
 
 // BeginBlocker check for infraction evidence or downtime of validators
@@ -36,16 +39,19 @@ func handlePollsAtExpiry(ctx sdk.Context, k types.Voter) error {
 
 		logger := k.Logger(ctx).With("poll", pollID.String())
 
+		state := ""
 		voteHandler := k.GetVoteRouter().GetHandler(poll.GetModule())
 		switch poll.GetState() {
 		case exported.Pending:
 			logger.Debug("poll expired")
+			state = "expired"
 			if err := voteHandler.HandleExpiredPoll(ctx, poll); err != nil {
 				return err
 			}
 
 		case exported.Failed:
 			logger.Debug("poll failed")
+			state = "failed"
 			if err := voteHandler.HandleFailedPoll(ctx, poll); err != nil {
 				return err
 			}
@@ -53,8 +59,10 @@ func handlePollsAtExpiry(ctx sdk.Context, k types.Voter) error {
 		case exported.Completed:
 			if voteHandler.IsFalsyResult(poll.GetResult()) {
 				logger.Debug("poll completed with falsy result")
+				state = "completed_falsy"
 			} else {
 				logger.Debug("poll completed with final result")
+				state = "completed_final"
 			}
 			if err := voteHandler.HandleCompletedPoll(ctx, poll); err != nil {
 				return err
@@ -62,6 +70,13 @@ func handlePollsAtExpiry(ctx sdk.Context, k types.Voter) error {
 		default:
 			panic(fmt.Errorf("unexpected poll state %s", poll.GetState().String()))
 		}
+
+		telemetry.IncrCounterWithLabels([]string{types.ModuleName, "poll"},
+			1,
+			[]metrics.Label{
+				telemetry.NewLabel("state", state),
+				telemetry.NewLabel("module", poll.GetModule()),
+			})
 
 		k.DeletePoll(ctx, pollID)
 	}

@@ -11,6 +11,9 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
+
+	"github.com/armon/go-metrics"
+	"github.com/cosmos/cosmos-sdk/telemetry"
 )
 
 // BeginBlocker is called at the beginning of every block
@@ -32,6 +35,18 @@ func handleKeygens(ctx sdk.Context, k types.Keeper, rewarder types.Rewarder) {
 
 		pool := rewarder.GetPool(ctx, types.ModuleName)
 		slices.ForEach(keygen.GetMissingParticipants(), pool.ClearRewards)
+
+		telemetry.IncrCounterWithLabels([]string{types.ModuleName, "keygen", "session"},
+			1,
+			[]metrics.Label{
+				telemetry.NewLabel("state", keygen.State.String()),
+			})
+
+		telemetry.SetGauge(
+			float32(len(keygen.GetMissingParticipants())), types.ModuleName, "keygen", "participants")
+
+		telemetry.SetGauge(
+			float32(len(keygen.GetKey().GetParticipants())), types.ModuleName, "keygen", "missing_participants")
 
 		if keygen.State != exported.Completed {
 			events.Emit(ctx, types.NewKeygenExpired(keygen.GetKeyID()))
@@ -59,6 +74,25 @@ func handleSignings(ctx sdk.Context, k types.Keeper, rewarder types.Rewarder) {
 
 			pool := rewarder.GetPool(cachedCtx, types.ModuleName)
 			slices.ForEach(signing.GetMissingParticipants(), pool.ClearRewards)
+
+			telemetry.IncrCounterWithLabels([]string{types.ModuleName, "sign", "signing"},
+				1,
+				[]metrics.Label{
+					telemetry.NewLabel("state", signing.State.String()),
+					telemetry.NewLabel("module", signing.GetModule()),
+				})
+
+			telemetry.SetGaugeWithLabels([]string{types.ModuleName, "sign", "missing_participants"},
+				float32(len(signing.GetMissingParticipants())),
+				[]metrics.Label{
+					telemetry.NewLabel("module", signing.GetModule()),
+				})
+
+			telemetry.SetGaugeWithLabels([]string{types.ModuleName, "sign", "participants"},
+				float32(len(signing.GetKey().GetParticipants())),
+				[]metrics.Label{
+					telemetry.NewLabel("module", signing.GetModule()),
+				})
 
 			if signing.State != exported.Completed {
 				events.Emit(cachedCtx, types.NewSigningExpired(signing.GetID()))
