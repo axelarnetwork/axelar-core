@@ -25,5 +25,6 @@ axelard query axelarnet [flags]
 
 ### SEE ALSO
 
-- [axelard query](axelard_query.md)	 - Querying subcommands
-- [axelard query axelarnet ibc-transfer-count](axelard_query_axelarnet_ibc-transfer-count.md)	 - returns the number of pending IBC transfers per chain
+* [axelard query](axelard_query.md)	 - Querying subcommands
+* [axelard query axelarnet ibc-transfer-count](axelard_query_axelarnet_ibc-transfer-count.md)	 - returns the number of pending IBC transfers per chain
+

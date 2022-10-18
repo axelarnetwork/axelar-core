@@ -25,4 +25,5 @@ axelard tendermint unsafe-reset-all [flags]
 
 ### SEE ALSO
 
-- [axelard tendermint](axelard_tendermint.md)	 - Tendermint subcommands
+* [axelard tendermint](axelard_tendermint.md)	 - Tendermint subcommands
+

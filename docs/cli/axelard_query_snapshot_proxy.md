@@ -1,6 +1,6 @@
 ## axelard query snapshot proxy
 
-Fetch the proxy address associated with \[operator address\] and status (active/inactive)
+Fetch the proxy address associated with [operator address] and status (active/inactive)
 
 ```
 axelard query snapshot proxy [operator address] [flags]
@@ -27,4 +27,5 @@ axelard query snapshot proxy [operator address] [flags]
 
 ### SEE ALSO
 
-- [axelard query snapshot](axelard_query_snapshot.md)	 - Querying commands for the snapshot module
+* [axelard query snapshot](axelard_query_snapshot.md)	 - Querying commands for the snapshot module
+

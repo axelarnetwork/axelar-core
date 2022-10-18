@@ -46,4 +46,5 @@ axelard tx multisig start-keygen [flags]
 
 ### SEE ALSO
 
-- [axelard tx multisig](axelard_tx_multisig.md)	 - multisig transactions subcommands
+* [axelard tx multisig](axelard_tx_multisig.md)	 - multisig transactions subcommands
+

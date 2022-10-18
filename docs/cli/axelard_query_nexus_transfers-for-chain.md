@@ -33,4 +33,5 @@ axelard query nexus transfers-for-chain [chain] [state (pending|archived|insuffi
 
 ### SEE ALSO
 
-- [axelard query nexus](axelard_query_nexus.md)	 - Querying commands for the nexus module
+* [axelard query nexus](axelard_query_nexus.md)	 - Querying commands for the nexus module
+

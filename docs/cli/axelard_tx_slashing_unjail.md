@@ -8,6 +8,7 @@ unjail a jailed validator:
 
 $ <appd> tx slashing unjail --from mykey
 
+
 ```
 axelard tx slashing unjail [flags]
 ```
@@ -51,4 +52,5 @@ axelard tx slashing unjail [flags]
 
 ### SEE ALSO
 
-- [axelard tx slashing](axelard_tx_slashing.md)	 - Slashing transaction subcommands
+* [axelard tx slashing](axelard_tx_slashing.md)	 - Slashing transaction subcommands
+

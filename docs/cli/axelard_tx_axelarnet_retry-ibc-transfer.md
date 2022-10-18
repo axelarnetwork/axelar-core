@@ -45,4 +45,5 @@ axelard tx axelarnet retry-ibc-transfer [chain] [transfer ID] [flags]
 
 ### SEE ALSO
 
-- [axelard tx axelarnet](axelard_tx_axelarnet.md)	 - axelarnet transactions subcommands
+* [axelard tx axelarnet](axelard_tx_axelarnet.md)	 - axelarnet transactions subcommands
+

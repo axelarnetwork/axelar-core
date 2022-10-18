@@ -27,4 +27,5 @@ axelard query evm burner-info [deposit address] [flags]
 
 ### SEE ALSO
 
-- [axelard query evm](axelard_query_evm.md)	 - Querying commands for the evm module
+* [axelard query evm](axelard_query_evm.md)	 - Querying commands for the evm module
+

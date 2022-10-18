@@ -32,4 +32,5 @@ axelard query upgrade applied [upgrade-name] [flags]
 
 ### SEE ALSO
 
-- [axelard query upgrade](axelard_query_upgrade.md)	 - Querying commands for the upgrade module
+* [axelard query upgrade](axelard_query_upgrade.md)	 - Querying commands for the upgrade module
+

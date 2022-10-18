@@ -21,9 +21,8 @@ and the minimum number of signatures required through --multisig-threshold. The 
 sorted by address, unless the flag --nosort is set.
 Example:
 
-```
-keys add mymultisig --multisig "keyname1,keyname2,keyname3" --multisig-threshold 2
-```
+    keys add mymultisig --multisig "keyname1,keyname2,keyname3" --multisig-threshold 2
+
 
 ```
 axelard keys add <name> [flags]
@@ -63,4 +62,5 @@ axelard keys add <name> [flags]
 
 ### SEE ALSO
 
-- [axelard keys](axelard_keys.md)	 - Manage your application's keys
+* [axelard keys](axelard_keys.md)	 - Manage your application's keys
+

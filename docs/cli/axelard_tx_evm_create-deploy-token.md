@@ -46,4 +46,5 @@ axelard tx evm create-deploy-token [evm chain] [origin chain] [origin asset] [to
 
 ### SEE ALSO
 
-- [axelard tx evm](axelard_tx_evm.md)	 - evm transactions subcommands
+* [axelard tx evm](axelard_tx_evm.md)	 - evm transactions subcommands
+

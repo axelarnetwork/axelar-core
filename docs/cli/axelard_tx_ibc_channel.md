@@ -25,4 +25,5 @@ axelard tx ibc channel [flags]
 
 ### SEE ALSO
 
-- [axelard tx ibc](axelard_tx_ibc.md)	 - IBC transaction subcommands
+* [axelard tx ibc](axelard_tx_ibc.md)	 - IBC transaction subcommands
+

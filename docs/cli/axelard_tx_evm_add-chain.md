@@ -49,4 +49,5 @@ axelard tx evm add-chain [name] [chain config] [flags]
 
 ### SEE ALSO
 
-- [axelard tx evm](axelard_tx_evm.md)	 - evm transactions subcommands
+* [axelard tx evm](axelard_tx_evm.md)	 - evm transactions subcommands
+

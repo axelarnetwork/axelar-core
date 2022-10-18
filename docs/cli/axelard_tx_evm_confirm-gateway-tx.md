@@ -45,4 +45,5 @@ axelard tx evm confirm-gateway-tx [chain] [txID] [flags]
 
 ### SEE ALSO
 
-- [axelard tx evm](axelard_tx_evm.md)	 - evm transactions subcommands
+* [axelard tx evm](axelard_tx_evm.md)	 - evm transactions subcommands
+

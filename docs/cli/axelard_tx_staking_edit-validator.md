@@ -52,4 +52,5 @@ axelard tx staking edit-validator [flags]
 
 ### SEE ALSO
 
-- [axelard tx staking](axelard_tx_staking.md)	 - Staking transaction subcommands
+* [axelard tx staking](axelard_tx_staking.md)	 - Staking transaction subcommands
+
