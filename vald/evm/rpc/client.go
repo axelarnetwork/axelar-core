@@ -16,13 +16,13 @@ type Client interface {
 	TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error)
 	// HeaderByNumber returns the block header for the given block number
 	HeaderByNumber(ctx context.Context, number *big.Int) (*Header, error)
-	// LatestFinalizedBlockNumber returns the latest finalized block number with the given number of confirmations if no true finality is supported by the chain
-	LatestFinalizedBlockNumber(ctx context.Context, conf uint64) (*big.Int, error)
+	// IsFinalized determines whether or not the given transaction receipt is finalized on the chain
+	IsFinalized(ctx context.Context, conf uint64, txReceipt *types.Receipt) (bool, error)
 	// Close closes the client connection
 	Close()
 }
 
-// NewClient returns an EVM rpc client
+// NewClient returns an EVM JSON-RPC client
 func NewClient(url string) (Client, error) {
 	ethereumClient, err := newEthereumClient(url)
 	if err != nil {
@@ -38,4 +38,14 @@ func NewClient(url string) (Client, error) {
 	}
 
 	return ethereumClient, nil
+}
+
+// NewL2Client returns a L2 EVM JSON-RPC client
+func NewL2Client(url string, l1Client Client) (Client, error) {
+	ethereumClient, err := newEthereumClient(url)
+	if err != nil {
+		return nil, err
+	}
+
+	return newArbitrumClient(ethereumClient, l1Client)
 }

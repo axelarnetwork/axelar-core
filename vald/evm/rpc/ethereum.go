@@ -4,8 +4,10 @@ import (
 	"context"
 	"math/big"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 )
@@ -48,13 +50,13 @@ func (c *ethereumClient) HeaderByNumber(ctx context.Context, number *big.Int) (*
 	return head, err
 }
 
-func (c *ethereumClient) LatestFinalizedBlockNumber(ctx context.Context, conf uint64) (*big.Int, error) {
+func (c *ethereumClient) IsFinalized(ctx context.Context, conf uint64, txReceipt *types.Receipt) (bool, error) {
 	blockNumber, err := c.BlockNumber(ctx)
 	if err != nil {
-		return nil, err
+		return false, err
 	}
 
-	return big.NewInt(int64(blockNumber - conf + 1)), nil
+	return sdk.NewIntFromUint64(blockNumber).SubRaw(int64(conf)).AddRaw(1).BigInt().Cmp(txReceipt.BlockNumber) >= 0, nil
 }
 
 // copied from https://github.com/ethereum/go-ethereum/blob/69568c554880b3567bace64f8848ff1be27d084d/ethclient/ethclient.go#L565

@@ -5,6 +5,7 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 )
 
 type moonbeamClient struct {
@@ -13,14 +14,23 @@ type moonbeamClient struct {
 
 func newMoonbeamClient(ethereumClient *ethereumClient) (*moonbeamClient, error) {
 	client := &moonbeamClient{ethereumClient: ethereumClient}
-	if _, err := client.LatestFinalizedBlockNumber(context.Background(), 0); err != nil {
+	if _, err := client.latestFinalizedBlockNumber(context.Background()); err != nil {
 		return nil, err
 	}
 
 	return client, nil
 }
 
-func (c *moonbeamClient) LatestFinalizedBlockNumber(ctx context.Context, _ uint64) (*big.Int, error) {
+func (c *moonbeamClient) IsFinalized(ctx context.Context, _ uint64, txReceipt *types.Receipt) (bool, error) {
+	latestFinalizedBlockNumber, err := c.latestFinalizedBlockNumber(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	return latestFinalizedBlockNumber.Cmp(txReceipt.BlockNumber) >= 0, nil
+}
+
+func (c *moonbeamClient) latestFinalizedBlockNumber(ctx context.Context) (*big.Int, error) {
 	var blockHash common.Hash
 	if err := c.rpc.CallContext(ctx, &blockHash, "chain_getFinalizedHead"); err != nil {
 		return nil, err

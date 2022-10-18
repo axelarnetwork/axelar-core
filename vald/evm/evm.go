@@ -452,12 +452,11 @@ func (mgr Mgr) getTxReceiptIfFinalized(chain nexus.ChainName, txID common.Hash, 
 		return nil, sdkerrors.Wrap(errors.With(err, keyvals...), "failed getting transaction receipt")
 	}
 
-	latestFinalizedBlockNumber, err := client.LatestFinalizedBlockNumber(context.Background(), confHeight)
+	isFinalized, err := client.IsFinalized(context.Background(), confHeight, txReceipt)
 	if err != nil {
-		return nil, sdkerrors.Wrap(errors.With(err, keyvals...), "failed getting latest finalized block number")
+		return nil, sdkerrors.Wrapf(errors.With(err, keyvals...), "cannot determine if the transaction %s is finalized", txID.Hex())
 	}
-
-	if latestFinalizedBlockNumber.Cmp(txReceipt.BlockNumber) < 0 {
+	if !isFinalized {
 		logger.Debug(fmt.Sprintf("transaction %s in block %s not finalized", txID.Hex(), txReceipt.BlockNumber.String()))
 		return nil, nil
 	}
