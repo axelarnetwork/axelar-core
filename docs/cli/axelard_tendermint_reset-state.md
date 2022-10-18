@@ -24,5 +24,4 @@ axelard tendermint reset-state [flags]
 
 ### SEE ALSO
 
-* [axelard tendermint](axelard_tendermint.md)	 - Tendermint subcommands
-
+- [axelard tendermint](axelard_tendermint.md)	 - Tendermint subcommands

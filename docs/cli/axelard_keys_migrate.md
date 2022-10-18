@@ -13,7 +13,6 @@ is correct. Otherwise, the command will exit and migration must be repeated.
 
 It is recommended to run in 'dry-run' mode first to verify all key migration material.
 
-
 ```
 axelard keys migrate <old_home_dir> [flags]
 ```
@@ -39,5 +38,4 @@ axelard keys migrate <old_home_dir> [flags]
 
 ### SEE ALSO
 
-* [axelard keys](axelard_keys.md)	 - Manage your application's keys
-
+- [axelard keys](axelard_keys.md)	 - Manage your application's keys

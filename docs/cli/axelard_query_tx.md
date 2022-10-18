@@ -7,7 +7,7 @@ Query for a transaction by hash, "<addr>/<seq>" combination or comma-separated s
 Example:
 $ <appd> query tx <hash>
 $ <appd> query tx --type=acc_seq <addr>/<sequence>
-$ <appd> query tx --type=signature <sig1_base64>,<sig2_base64...>
+$ <appd> query tx --type=signature \<sig1_base64>,\<sig2_base64...>
 
 ```
 axelard query tx --type=[hash|acc_seq|signature] [hash|acc_seq|signature] [flags]
@@ -35,5 +35,4 @@ axelard query tx --type=[hash|acc_seq|signature] [hash|acc_seq|signature] [flags
 
 ### SEE ALSO
 
-* [axelard query](axelard_query.md)	 - Querying subcommands
-
+- [axelard query](axelard_query.md)	 - Querying subcommands

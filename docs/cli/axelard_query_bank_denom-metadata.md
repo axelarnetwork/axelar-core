@@ -7,11 +7,11 @@ Query the client metadata for coin denominations
 Query the client metadata for all the registered coin denominations
 
 Example:
-  To query for the client metadata of all coin denominations use:
-  $ <appd> query bank denom-metadata
+To query for the client metadata of all coin denominations use:
+$ <appd> query bank denom-metadata
 
 To query for the client metadata of a specific coin denomination use:
-  $ <appd> query bank denom-metadata --denom=[denom]
+$ <appd> query bank denom-metadata --denom=\[denom\]
 
 ```
 axelard query bank denom-metadata [flags]
@@ -39,5 +39,4 @@ axelard query bank denom-metadata [flags]
 
 ### SEE ALSO
 
-* [axelard query bank](axelard_query_bank.md)	 - Querying commands for the bank module
-
+- [axelard query bank](axelard_query_bank.md)	 - Querying commands for the bank module

@@ -8,24 +8,24 @@ Generate a genesis transaction that creates a validator with a self-delegation,
 that is signed by the key in the Keyring referenced by a given name. A node ID and Bech32 consensus
 pubkey may optionally be provided. If they are omitted, they will be retrieved from the priv_validator.json
 file. The following default parameters are included:
-    
-	delegation amount:           100000000stake
-	commission rate:             0.1
-	commission max rate:         0.2
-	commission max change rate:  0.01
-	minimum self delegation:     1
 
+```
+delegation amount:           100000000stake
+commission rate:             0.1
+commission max rate:         0.2
+commission max change rate:  0.01
+minimum self delegation:     1
+```
 
 Example:
 $ <appd> gentx my-key-name 1000000stake --home=/path/to/home/dir --keyring-backend=os --chain-id=test-chain-1 \
-    --moniker="myvalidator" \
-    --commission-max-change-rate=0.01 \
-    --commission-max-rate=1.0 \
-    --commission-rate=0.07 \
-    --details="..." \
-    --security-contact="..." \
-    --website="..."
-
+--moniker="myvalidator" \
+--commission-max-change-rate=0.01 \
+--commission-max-rate=1.0 \
+--commission-rate=0.07 \
+--details="..." \
+--security-contact="..." \
+--website="..."
 
 ```
 axelard gentx [key_name] [amount] [flags]
@@ -84,5 +84,4 @@ axelard gentx [key_name] [amount] [flags]
 
 ### SEE ALSO
 
-* [axelard](axelard.md)	 - Axelar App
-
+- [axelard](axelard.md)	 - Axelar App

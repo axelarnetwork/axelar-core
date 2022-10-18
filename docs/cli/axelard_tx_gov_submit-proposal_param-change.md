@@ -17,21 +17,21 @@ Proper vetting of a parameter change proposal should prevent this from happening
 regardless.
 
 Example:
-$ <appd> tx gov submit-proposal param-change <path/to/proposal.json> --from=<key_or_address>
+$ <appd> tx gov submit-proposal param-change \<path/to/proposal.json> --from=\<key_or_address>
 
 Where proposal.json contains:
 
 {
-  "title": "Staking Param Change",
-  "description": "Update max validators",
-  "changes": [
-    {
-      "subspace": "staking",
-      "key": "MaxValidators",
-      "value": 105
-    }
-  ],
-  "deposit": "1000stake"
+"title": "Staking Param Change",
+"description": "Update max validators",
+"changes": \[
+{
+"subspace": "staking",
+"key": "MaxValidators",
+"value": 105
+}
+\],
+"deposit": "1000stake"
 }
 
 ```
@@ -77,5 +77,4 @@ axelard tx gov submit-proposal param-change [proposal-file] [flags]
 
 ### SEE ALSO
 
-* [axelard tx gov submit-proposal](axelard_tx_gov_submit-proposal.md)	 - Submit a proposal along with an initial deposit
-
+- [axelard tx gov submit-proposal](axelard_tx_gov_submit-proposal.md)	 - Submit a proposal along with an initial deposit
