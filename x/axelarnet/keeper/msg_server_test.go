@@ -117,7 +117,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		req       *types.ConfirmDepositRequest
 	)
 
-	ibcPath := randomIBCPath()
+	ibcPath := axelartestutils.RandomIBCPath()
 	denomTrace := ibctypes.DenomTrace{
 		Path:      ibcPath,
 		BaseDenom: rand.Denom(5, 10),
@@ -127,11 +127,11 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 	givenMsgServer := Given("an axelarnet msg server", func() {
 		ctx, k, _ = setup()
 		k.InitGenesis(ctx, types.DefaultGenesisState())
-		k.SetCosmosChain(ctx, types.CosmosChain{
+		funcs.MustNoErr(k.SetCosmosChain(ctx, types.CosmosChain{
 			Name:       chain.Name,
 			AddrPrefix: rand.StrBetween(1, 10),
-			IBCPath:    randomIBCPath(),
-		})
+			IBCPath:    axelartestutils.RandomIBCPath(),
+		}))
 
 		nexusK = &mock.NexusMock{
 			GetChainFunc: func(sdk.Context, nexus.ChainName) (nexus.Chain, bool) {
@@ -392,11 +392,11 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 
 	whenAssetOriginsFromExternalCosmosChain := When("asset is from external cosmos chain", func() {
 		chain := nexustestutils.RandomChain()
-		k.SetCosmosChain(ctx, types.CosmosChain{
+		funcs.MustNoErr(k.SetCosmosChain(ctx, types.CosmosChain{
 			Name:       chain.Name,
 			AddrPrefix: rand.StrBetween(1, 10),
-			IBCPath:    randomIBCPath(),
-		})
+			IBCPath:    axelartestutils.RandomIBCPath(),
+		}))
 		nexusK.GetChainByNativeAssetFunc = func(sdk.Context, string) (nexus.Chain, bool) {
 			return chain, true
 		}
@@ -575,7 +575,7 @@ func TestHandleMsgRouteIBCTransfers(t *testing.T) {
 		}, 5)
 
 		slices.ForEach(cosmosChains, func(c types.CosmosChain) {
-			k.SetCosmosChain(ctx, c)
+			funcs.MustNoErr(k.SetCosmosChain(ctx, c))
 		})
 
 		nexusK = &mock.NexusMock{
@@ -733,8 +733,10 @@ func TestRetryIBCTransfer(t *testing.T) {
 		ctx, k, channelK = setup()
 		k.InitGenesis(ctx, types.DefaultGenesisState())
 		chain = nexustestutils.RandomChain()
-		path = randomIBCPath()
-		k.SetCosmosChain(ctx, types.CosmosChain{Name: chain.Name, IBCPath: path})
+		cosmosChain := axelartestutils.RandomCosmosChain()
+		cosmosChain.Name = chain.Name
+		path = cosmosChain.IBCPath
+		funcs.MustNoErr(k.SetCosmosChain(ctx, cosmosChain))
 
 		b = &mock.BankKeeperMock{}
 		a = &mock.AccountKeeperMock{}
@@ -853,7 +855,7 @@ func TestAddCosmosBasedChain(t *testing.T) {
 			rand.StrBetween(1, 20),
 			rand.StrBetween(1, 10),
 			slices.Expand(func(idx int) nexus.Asset { return nexus.NewAsset(rand.Denom(3, 10), true) }, int(rand.I64Between(0, 5))),
-			randomIBCPath(),
+			axelartestutils.RandomIBCPath(),
 		)
 	})
 

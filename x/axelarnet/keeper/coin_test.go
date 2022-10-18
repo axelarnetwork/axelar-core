@@ -81,11 +81,11 @@ func TestCoin(t *testing.T) {
 			return trace, true
 		}
 
-		ibcK.SetCosmosChain(ctx, types.CosmosChain{
+		funcs.MustNoErr(ibcK.SetCosmosChain(ctx, types.CosmosChain{
 			Name:       chain.Name,
 			AddrPrefix: rand.StrBetween(1, 10),
 			IBCPath:    path,
-		})
+		}))
 
 		coin = funcs.Must(keeper.NewCoin(ctx, ibcK, nexusK, sdk.NewCoin(trace.IBCDenom(), sdk.NewInt(rand.PosI64()))))
 
