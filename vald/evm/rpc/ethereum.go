@@ -63,10 +63,5 @@ func toBlockNumArg(number *big.Int) string {
 		return "latest"
 	}
 
-	pending := big.NewInt(-1)
-	if number.Cmp(pending) == 0 {
-		return "pending"
-	}
-
 	return hexutil.EncodeBig(number)
 }
