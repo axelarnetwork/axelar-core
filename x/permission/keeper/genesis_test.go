@@ -14,6 +14,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
+	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/permission/exported"
 	"github.com/axelarnetwork/axelar-core/x/permission/keeper"
 	"github.com/axelarnetwork/axelar-core/x/permission/types"
@@ -77,7 +78,7 @@ func randomGovAccounts() []types.GovAccount {
 
 func randomGovAccount() types.GovAccount {
 	return types.GovAccount{
-		Address: rand.AccAddr(),
+		Address: rand2.AccAddr(),
 		Role:    exported.ROLE_CHAIN_MANAGEMENT,
 	}
 }

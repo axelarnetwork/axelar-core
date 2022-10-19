@@ -31,7 +31,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/sdk-utils/broadcast"
 	mock2 "github.com/axelarnetwork/axelar-core/sdk-utils/broadcast/mock"
-	"github.com/axelarnetwork/axelar-core/utils"
+	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/reward/types"
 	"github.com/axelarnetwork/utils/slices"
@@ -419,7 +419,7 @@ func unsafePack(value sdk.Msg) *codectypes.Any {
 
 func randomMsgs(count int) []sdk.Msg {
 	var msgs []sdk.Msg
-	sender := rand.AccAddr()
+	sender := rand2.AccAddr()
 	for i := 0; i < count; i++ {
 		msg := evm.NewLinkRequest(
 			sender,
