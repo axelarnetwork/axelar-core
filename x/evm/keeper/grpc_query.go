@@ -276,42 +276,6 @@ func (q Querier) Event(c context.Context, req *types.EventRequest) (*types.Event
 	return &types.EventResponse{Event: &event}, nil
 }
 
-func queryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, params *types.QueryDepositStateParams) (types.DepositStatus, string, codes.Code) {
-	if _, ok := n.GetChain(ctx, k.GetName()); !ok {
-		return -1, fmt.Sprintf("%s is not a registered chain", k.GetName()), codes.NotFound
-	}
-
-	_, state, ok := k.GetDeposit(ctx, params.TxID, params.BurnerAddress)
-	if !ok {
-		return types.DepositStatus_None, "deposit transaction is not confirmed", codes.OK
-	}
-
-	switch state {
-	case types.DepositStatus_Confirmed:
-		return types.DepositStatus_Confirmed, "deposit transaction is confirmed", codes.OK
-	case types.DepositStatus_Burned:
-		return types.DepositStatus_Burned, "deposit has been transferred to the destination chain", codes.OK
-	default:
-		return -1, "deposit is in an unexpected state", codes.Internal
-	}
-}
-
-// DepositState fetches the state of a deposit confirmation using a grpc query
-func (q Querier) DepositState(c context.Context, req *types.DepositStateRequest) (*types.DepositStateResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-	ck, err := q.keeper.ForChain(ctx, req.Chain)
-	if err != nil {
-		return nil, status.Error(codes.NotFound, err.Error())
-	}
-
-	s, log, code := queryDepositState(ctx, ck, q.nexus, req.Params)
-	if code != codes.OK {
-		return nil, status.Error(code, log)
-	}
-
-	return &types.DepositStateResponse{Status: s}, nil
-}
-
 // PendingCommands returns the pending commands from a gateway
 func (q Querier) PendingCommands(c context.Context, req *types.PendingCommandsRequest) (*types.PendingCommandsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)

@@ -48,10 +48,10 @@ func TestAddressValidator(t *testing.T) {
 	addr := nexus.CrossChainAddress{Chain: exported.Axelarnet, Address: axelarAddr}
 	assert.NoError(t, validator(ctx, addr))
 
-	addr = nexus.CrossChainAddress{Chain: nexus.Chain{Name: nexus.ChainName("terra"), Module: types.ModuleName}, Address: "terra18zhnqjv70v0d2f8v0s5lape0gr5ua94eqkk8ex"}
+	addr = nexus.CrossChainAddress{Chain: nexus.Chain{Name: "terra", Module: types.ModuleName}, Address: "terra18zhnqjv70v0d2f8v0s5lape0gr5ua94eqkk8ex"}
 	assert.NoError(t, validator(ctx, addr))
 
-	addr = nexus.CrossChainAddress{Chain: nexus.Chain{Name: nexus.ChainName("osmosis"), Module: types.ModuleName}, Address: "osmo18zhnqjv70v0d2f8v0s5lape0gr5ua94ewflhd5"}
+	addr = nexus.CrossChainAddress{Chain: nexus.Chain{Name: "osmosis", Module: types.ModuleName}, Address: "osmo18zhnqjv70v0d2f8v0s5lape0gr5ua94ewflhd5"}
 	assert.NoError(t, validator(ctx, addr))
 
 	longAddr := sdk.AccAddress(rand.Bytes(255))
@@ -74,15 +74,15 @@ func TestAddressValidator(t *testing.T) {
 	addr = nexus.CrossChainAddress{Chain: exported.Axelarnet, Address: "osmo18zhnqjv70v0d2f8v0s5lape0gr5ua94ewflhd5"}
 	assert.ErrorContains(t, validator(ctx, addr), "invalid Bech32 prefix")
 
-	shortAddr = sdk.AccAddress(rand.Bytes(0))
+	shortAddr = rand.Bytes(0)
 	addr = nexus.CrossChainAddress{Chain: exported.Axelarnet, Address: shortAddr.String()}
 	assert.ErrorContains(t, validator(ctx, addr), "non empty address")
 
-	longAddr = sdk.AccAddress(rand.Bytes(256))
+	longAddr = rand.Bytes(256)
 	addr = nexus.CrossChainAddress{Chain: exported.Axelarnet, Address: longAddr.String()}
 	assert.ErrorContains(t, validator(ctx, addr), "max length")
 
-	addr = nexus.CrossChainAddress{Chain: nexus.Chain{Name: nexus.ChainName("secret"), Module: types.ModuleName}, Address: "secret18zhnqjv70v0d2f8v0s5lape0gr5ua94eyhcwx6"}
+	addr = nexus.CrossChainAddress{Chain: nexus.Chain{Name: "secret", Module: types.ModuleName}, Address: "secret18zhnqjv70v0d2f8v0s5lape0gr5ua94eyhcwx6"}
 	assert.ErrorContains(t, validator(ctx, addr), "no known prefix")
 
 	addr = nexus.CrossChainAddress{Chain: evm.Ethereum, Address: "0x68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8"}
@@ -97,6 +97,6 @@ func TestAddressValidator(t *testing.T) {
 	assert.NoError(t, validator(ctx, addr))
 
 	bankK.BlockedAddrFunc = func(addr sdk.AccAddress) bool { return true }
-	addr = nexus.CrossChainAddress{Chain: nexus.Chain{Name: nexus.ChainName("osmosis"), Module: types.ModuleName}, Address: "osmo18zhnqjv70v0d2f8v0s5lape0gr5ua94ewflhd5"}
+	addr = nexus.CrossChainAddress{Chain: nexus.Chain{Name: "osmosis", Module: types.ModuleName}, Address: "osmo18zhnqjv70v0d2f8v0s5lape0gr5ua94ewflhd5"}
 	assert.NoError(t, validator(ctx, addr))
 }

@@ -33,7 +33,6 @@ axelard query evm [flags]
 - [axelard query evm chains](axelard_query_evm_chains.md)	 - Get EVM chains
 - [axelard query evm command](axelard_query_evm_command.md)	 - Get information about an EVM gateway command given a chain and the command ID
 - [axelard query evm confirmation-height](axelard_query_evm_confirmation-height.md)	 - Returns the minimum confirmation height for the given chain
-- [axelard query evm deposit-state](axelard_query_evm_deposit-state.md)	 - Query the state of a deposit transaction
 - [axelard query evm erc20-tokens](axelard_query_evm_erc20-tokens.md)	 - Returns the ERC20 tokens for the given chain
 - [axelard query evm event](axelard_query_evm_event.md)	 - Returns an event for the given chain
 - [axelard query evm gateway-address](axelard_query_evm_gateway-address.md)	 - Query the Axelar Gateway contract address

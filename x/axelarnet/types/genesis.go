@@ -48,7 +48,7 @@ func (m GenesisState) Validate() error {
 	}
 
 	for i, chain := range m.Chains {
-		if err := chain.Validate(); err != nil {
+		if err := chain.ValidateBasic(); err != nil {
 			return getValidateError(sdkerrors.Wrap(err, fmt.Sprintf("faulty chain entry %d", i)))
 		}
 	}

@@ -1409,8 +1409,11 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			GetConfirmedEventQueueFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.KVQueue {
 // 				panic("mock out the GetConfirmedEventQueue method")
 // 			},
-// 			GetDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID types.Hash, burnerAddr types.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
+// 			GetDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID types.Hash, logIndex uint64) (types.ERC20Deposit, types.DepositStatus, bool) {
 // 				panic("mock out the GetDeposit method")
+// 			},
+// 			GetDepositByTxIDBurnAddrFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID types.Hash, burnerAddr types.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
+// 				panic("mock out the GetDepositByTxIDBurnAddr method")
 // 			},
 // 			GetERC20TokenByAssetFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string) types.ERC20Token {
 // 				panic("mock out the GetERC20TokenByAsset method")
@@ -1537,7 +1540,10 @@ type ChainKeeperMock struct {
 	GetConfirmedEventQueueFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.KVQueue
 
 	// GetDepositFunc mocks the GetDeposit method.
-	GetDepositFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID types.Hash, burnerAddr types.Address) (types.ERC20Deposit, types.DepositStatus, bool)
+	GetDepositFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID types.Hash, logIndex uint64) (types.ERC20Deposit, types.DepositStatus, bool)
+
+	// GetDepositByTxIDBurnAddrFunc mocks the GetDepositByTxIDBurnAddr method.
+	GetDepositByTxIDBurnAddrFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID types.Hash, burnerAddr types.Address) (types.ERC20Deposit, types.DepositStatus, bool)
 
 	// GetERC20TokenByAssetFunc mocks the GetERC20TokenByAsset method.
 	GetERC20TokenByAssetFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string) types.ERC20Token
@@ -1722,6 +1728,15 @@ type ChainKeeperMock struct {
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// TxID is the txID argument value.
 			TxID types.Hash
+			// LogIndex is the logIndex argument value.
+			LogIndex uint64
+		}
+		// GetDepositByTxIDBurnAddr holds details about calls to the GetDepositByTxIDBurnAddr method.
+		GetDepositByTxIDBurnAddr []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// TxID is the txID argument value.
+			TxID types.Hash
 			// BurnerAddr is the burnerAddr argument value.
 			BurnerAddr types.Address
 		}
@@ -1884,6 +1899,7 @@ type ChainKeeperMock struct {
 	lockGetConfirmedDepositsPaginated sync.RWMutex
 	lockGetConfirmedEventQueue        sync.RWMutex
 	lockGetDeposit                    sync.RWMutex
+	lockGetDepositByTxIDBurnAddr      sync.RWMutex
 	lockGetERC20TokenByAsset          sync.RWMutex
 	lockGetERC20TokenBySymbol         sync.RWMutex
 	lockGetEvent                      sync.RWMutex
@@ -2432,9 +2448,48 @@ func (mock *ChainKeeperMock) GetConfirmedEventQueueCalls() []struct {
 }
 
 // GetDeposit calls GetDepositFunc.
-func (mock *ChainKeeperMock) GetDeposit(ctx github_com_cosmos_cosmos_sdk_types.Context, txID types.Hash, burnerAddr types.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
+func (mock *ChainKeeperMock) GetDeposit(ctx github_com_cosmos_cosmos_sdk_types.Context, txID types.Hash, logIndex uint64) (types.ERC20Deposit, types.DepositStatus, bool) {
 	if mock.GetDepositFunc == nil {
 		panic("ChainKeeperMock.GetDepositFunc: method is nil but ChainKeeper.GetDeposit was just called")
+	}
+	callInfo := struct {
+		Ctx      github_com_cosmos_cosmos_sdk_types.Context
+		TxID     types.Hash
+		LogIndex uint64
+	}{
+		Ctx:      ctx,
+		TxID:     txID,
+		LogIndex: logIndex,
+	}
+	mock.lockGetDeposit.Lock()
+	mock.calls.GetDeposit = append(mock.calls.GetDeposit, callInfo)
+	mock.lockGetDeposit.Unlock()
+	return mock.GetDepositFunc(ctx, txID, logIndex)
+}
+
+// GetDepositCalls gets all the calls that were made to GetDeposit.
+// Check the length with:
+//     len(mockedChainKeeper.GetDepositCalls())
+func (mock *ChainKeeperMock) GetDepositCalls() []struct {
+	Ctx      github_com_cosmos_cosmos_sdk_types.Context
+	TxID     types.Hash
+	LogIndex uint64
+} {
+	var calls []struct {
+		Ctx      github_com_cosmos_cosmos_sdk_types.Context
+		TxID     types.Hash
+		LogIndex uint64
+	}
+	mock.lockGetDeposit.RLock()
+	calls = mock.calls.GetDeposit
+	mock.lockGetDeposit.RUnlock()
+	return calls
+}
+
+// GetDepositByTxIDBurnAddr calls GetDepositByTxIDBurnAddrFunc.
+func (mock *ChainKeeperMock) GetDepositByTxIDBurnAddr(ctx github_com_cosmos_cosmos_sdk_types.Context, txID types.Hash, burnerAddr types.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
+	if mock.GetDepositByTxIDBurnAddrFunc == nil {
+		panic("ChainKeeperMock.GetDepositByTxIDBurnAddrFunc: method is nil but ChainKeeper.GetDepositByTxIDBurnAddr was just called")
 	}
 	callInfo := struct {
 		Ctx        github_com_cosmos_cosmos_sdk_types.Context
@@ -2445,16 +2500,16 @@ func (mock *ChainKeeperMock) GetDeposit(ctx github_com_cosmos_cosmos_sdk_types.C
 		TxID:       txID,
 		BurnerAddr: burnerAddr,
 	}
-	mock.lockGetDeposit.Lock()
-	mock.calls.GetDeposit = append(mock.calls.GetDeposit, callInfo)
-	mock.lockGetDeposit.Unlock()
-	return mock.GetDepositFunc(ctx, txID, burnerAddr)
+	mock.lockGetDepositByTxIDBurnAddr.Lock()
+	mock.calls.GetDepositByTxIDBurnAddr = append(mock.calls.GetDepositByTxIDBurnAddr, callInfo)
+	mock.lockGetDepositByTxIDBurnAddr.Unlock()
+	return mock.GetDepositByTxIDBurnAddrFunc(ctx, txID, burnerAddr)
 }
 
-// GetDepositCalls gets all the calls that were made to GetDeposit.
+// GetDepositByTxIDBurnAddrCalls gets all the calls that were made to GetDepositByTxIDBurnAddr.
 // Check the length with:
-//     len(mockedChainKeeper.GetDepositCalls())
-func (mock *ChainKeeperMock) GetDepositCalls() []struct {
+//     len(mockedChainKeeper.GetDepositByTxIDBurnAddrCalls())
+func (mock *ChainKeeperMock) GetDepositByTxIDBurnAddrCalls() []struct {
 	Ctx        github_com_cosmos_cosmos_sdk_types.Context
 	TxID       types.Hash
 	BurnerAddr types.Address
@@ -2464,9 +2519,9 @@ func (mock *ChainKeeperMock) GetDepositCalls() []struct {
 		TxID       types.Hash
 		BurnerAddr types.Address
 	}
-	mock.lockGetDeposit.RLock()
-	calls = mock.calls.GetDeposit
-	mock.lockGetDeposit.RUnlock()
+	mock.lockGetDepositByTxIDBurnAddr.RLock()
+	calls = mock.calls.GetDepositByTxIDBurnAddr
+	mock.lockGetDepositByTxIDBurnAddr.RUnlock()
 	return calls
 }
 
