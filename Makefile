@@ -8,13 +8,13 @@ DOCKER := $(shell which docker)
 DOCKER_BUF := $(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace bufbuild/buf
 HTTPS_GIT := https://github.com/axelarnetwork/axelar-core.git
 PUSH_DOCKER_IMAGE=true
-ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=axelar \
+ldflags = -s -w -X github.com/cosmos/cosmos-sdk/version.Name=axelar \
 	-X github.com/cosmos/cosmos-sdk/version.AppName=axelard \
 	-X github.com/cosmos/cosmos-sdk/version.Version=$(VERSION) \
 	-X "github.com/cosmos/cosmos-sdk/version.BuildTags=$(BUILD_TAGS)" \
 	-X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT)
 
-BUILD_FLAGS := -tags "$(BUILD_TAGS)" -ldflags '$(ldflags)'
+BUILD_FLAGS := -tags "$(BUILD_TAGS)" -ldflags '$(ldflags)' -trimpath
 USER_ID := $(shell id -u)
 GROUP_ID := $(shell id -g)
 OS := $(shell echo $$OS_TYPE | sed -e 's/ubuntu-18.04/linux/; s/macos-latest/darwin/')
@@ -63,7 +63,7 @@ build-binaries-in-docker:  guard-SEMVER
 	DOCKER_BUILDKIT=1 docker build \
 		--build-arg SEMVER=${SEMVER} \
 		-t axelar/core:binaries \
-		-f Dockerfile.binaries .
+		--target build-binaries .
 	./scripts/copy-binaries-from-image.sh
 
 # Build the project with debug flags
@@ -94,7 +94,8 @@ build-push-docker-images:  guard-SEMVER
 
 .PHONY: build-push-docker-image-rosetta
 build-push-docker-images-rosetta: populate-bytecode guard-SEMVER
-	@DOCKER_BUILDKIT=1 docker buildx build -f Dockerfile.rosetta \
+	@DOCKER_BUILDKIT=1 docker buildx build \
+		--target=rosetta \
 		--platform linux/amd64 \
 		--output "type=image,push=${PUSH_DOCKER_IMAGE}" \
 		-t axelarnet/axelar-core:${SEMVER}-rosetta .
@@ -103,7 +104,9 @@ build-push-docker-images-rosetta: populate-bytecode guard-SEMVER
 # Build a docker image that is able to run dlv and a debugger can be hooked up to
 .PHONY: docker-image-debug
 docker-image-debug:
-	@DOCKER_BUILDKIT=1 docker build -t axelar/core-debug -f ./Dockerfile.debug .
+	@DOCKER_BUILDKIT=1 docker build \
+		-t axelar/core-debug \
+		--target=debug .
 
 # Install all generate prerequisites
 .Phony: prereqs

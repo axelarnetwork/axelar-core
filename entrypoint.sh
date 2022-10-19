@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-trap stop_gracefully TERM INT
+trap stop_gracefully SIGTERM SIGINT
 
 stop_gracefully(){
   echo "stopping all processes"
@@ -21,19 +21,45 @@ addPeers() {
   mv "$D_HOME_DIR/config/config.toml.tmp" "$D_HOME_DIR/config/config.toml"
 }
 
+cont(){
+  if [ "$1" = true ]; then
+    "--continue"
+  else
+    ""
+  fi
+}
+
 startValdProc() {
   DURATION=${SLEEP_TIME:-"10s"}
   sleep $DURATION
+
+  if [ "$VALD_CONTINUE" != true ]; then
+    unset VALD_CONTINUE
+  fi
+
   if [ -n "$RECOVERY_FILE" ] & [ -f "$RECOVERY_FILE" ]; then
     RECOVERY="--tofnd-recovery=$RECOVERY_FILE"
   fi
 
-  axelard vald-start ${TOFND_HOST:+--tofnd-host "$TOFND_HOST"} ${VALIDATOR_HOST:+--node "$VALIDATOR_HOST"} \
-    --validator-addr "${VALIDATOR_ADDR:-$(axelard keys show validator -a --bech val)}" "$RECOVERY"
+  if [ "$DEBUG_MODE" == true ]; then
+    dlv --listen=:2346 --headless=true ${VALD_CONTINUE:+--continue} --api-version=2 --accept-multiclient exec \
+      /usr/local/bin/axelard -- vald-start ${TOFND_HOST:+--tofnd-host "$TOFND_HOST"} ${VALIDATOR_HOST:+--node "$VALIDATOR_HOST"} --validator-addr "${VALIDATOR_ADDR:-$(axelard keys show validator -a --bech val)}"
+  else
+    axelard vald-start ${TOFND_HOST:+--tofnd-host "$TOFND_HOST"} ${VALIDATOR_HOST:+--node "$VALIDATOR_HOST"} \
+      --validator-addr "${VALIDATOR_ADDR:-$(axelard keys show validator -a --bech val)}" "$RECOVERY"
+  fi
 }
 
 startNodeProc() {
-  axelard start
+  if [ "$CORE_CONTINUE" != true ] && [ "$DEBUG_MODE" == true ]; then
+    unset CORE_CONTINUE
+  fi
+  if [ "$DEBUG_MODE" == true ]; then
+    dlv --listen=:2346 --headless=true ${VALD_CONTINUE:+--continue} --api-version=2 --accept-multiclient exec \
+      /usr/local/bin/axelard -- vald-start ${TOFND_HOST:+--tofnd-host "$TOFND_HOST"} ${VALIDATOR_HOST:+--node "$VALIDATOR_HOST"} --validator-addr "${VALIDATOR_ADDR:-$(axelard keys show validator -a --bech val)}"
+  else
+    axelard start
+  fi
 }
 
 D_HOME_DIR="$HOME_DIR/.axelar"
@@ -58,6 +84,10 @@ fi
 if [ -n "$PEERS_FILE" ]; then
   PEERS=$(cat "$PEERS_FILE")
   addPeers "$PEERS"
+fi
+
+if [ "$REST_CONTINUE" != true ] && [ "$DEBUG_MODE" == true ]; then
+  unset REST_CONTINUE
 fi
 
 if [ -z "$1" ]; then
