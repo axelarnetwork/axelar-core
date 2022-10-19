@@ -31,7 +31,7 @@ import (
 
 func TestMsgServer(t *testing.T) {
 	encCfg := app.MakeEncodingConfig()
-	validators := slices.Expand(func(int) snapshot.Participant { return snapshot.NewParticipant(rand.ValAddr(), sdk.OneUint()) }, 10)
+	validators := slices.Expand(func(int) snapshot.Participant { return snapshot.NewParticipant(rand2.ValAddr(), sdk.OneUint()) }, 10)
 
 	var (
 		msgServer   types.MsgServiceServer
@@ -65,7 +65,7 @@ func TestMsgServer(t *testing.T) {
 	})
 	keySessionExists := When("a key session exists", func() {
 		keyID = exported.KeyID(rand.HexStr(5))
-		_, err := msgServer.StartKeygen(sdk.WrapSDKContext(ctx), types.NewStartKeygenRequest(rand.AccAddr(), keyID))
+		_, err := msgServer.StartKeygen(sdk.WrapSDKContext(ctx), types.NewStartKeygenRequest(rand2.AccAddr(), keyID))
 		expiresAt = ctx.BlockHeight() + types.DefaultParams().KeygenTimeout
 
 		assert.NoError(t, err)
@@ -74,7 +74,7 @@ func TestMsgServer(t *testing.T) {
 	})
 	requestIsMade := When("a request is made", func() {
 		sk := funcs.Must(btcec.NewPrivateKey())
-		req = types.NewSubmitPubKeyRequest(rand.AccAddr(), keyID, sk.PubKey().SerializeCompressed(), ecdsa.Sign(sk, []byte(keyID)).Serialize())
+		req = types.NewSubmitPubKeyRequest(rand2.AccAddr(), keyID, sk.PubKey().SerializeCompressed(), ecdsa.Sign(sk, []byte(keyID)).Serialize())
 	})
 	pubKeyFails := Then("submit pubkey fails", func(t *testing.T) {
 		_, err := msgServer.SubmitPubKey(sdk.WrapSDKContext(ctx), req)
@@ -113,7 +113,7 @@ func TestMsgServer(t *testing.T) {
 						}
 					}).
 					Then("keygen fails", func(t *testing.T) {
-						req := types.NewStartKeygenRequest(rand.AccAddr(), exported.KeyID(rand.HexStr(5)))
+						req := types.NewStartKeygenRequest(rand2.AccAddr(), exported.KeyID(rand.HexStr(5)))
 						_, err := msgServer.StartKeygen(sdk.WrapSDKContext(ctx), req)
 						assert.Error(t, err)
 					}),
@@ -121,7 +121,7 @@ func TestMsgServer(t *testing.T) {
 				whenSenderIsProxy.
 					When2(keySessionExists).
 					Then("keygen with same KeyID fails", func(t *testing.T) {
-						req := types.NewStartKeygenRequest(rand.AccAddr(), keyID)
+						req := types.NewStartKeygenRequest(rand2.AccAddr(), keyID)
 						_, err := msgServer.StartKeygen(sdk.WrapSDKContext(ctx), req)
 						assert.Error(t, err)
 					}),
@@ -135,7 +135,7 @@ func TestMsgServer(t *testing.T) {
 						})
 					}).
 					Then("keygen with same KeyID fails", func(t *testing.T) {
-						req := types.NewStartKeygenRequest(rand.AccAddr(), keyID)
+						req := types.NewStartKeygenRequest(rand2.AccAddr(), keyID)
 						_, err := msgServer.StartKeygen(sdk.WrapSDKContext(ctx), req)
 						assert.Error(t, err)
 					}),
@@ -146,7 +146,7 @@ func TestMsgServer(t *testing.T) {
 							snapshotter.GetOperatorFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return v.Address }
 
 							sk := funcs.Must(btcec.NewPrivateKey())
-							req = types.NewSubmitPubKeyRequest(rand.AccAddr(), keyID, sk.PubKey().SerializeCompressed(), ecdsa.Sign(sk, []byte(keyID)).Serialize())
+							req = types.NewSubmitPubKeyRequest(rand2.AccAddr(), keyID, sk.PubKey().SerializeCompressed(), ecdsa.Sign(sk, []byte(keyID)).Serialize())
 
 							_, err := msgServer.SubmitPubKey(sdk.WrapSDKContext(ctx), req)
 							assert.NoError(t, err)
@@ -166,7 +166,7 @@ func TestMsgServer(t *testing.T) {
 							snapshotter.GetOperatorFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return v.Address }
 
 							sk := funcs.Must(btcec.NewPrivateKey())
-							req = types.NewSubmitPubKeyRequest(rand.AccAddr(), keyID, sk.PubKey().SerializeCompressed(), ecdsa.Sign(sk, []byte(keyID)).Serialize())
+							req = types.NewSubmitPubKeyRequest(rand2.AccAddr(), keyID, sk.PubKey().SerializeCompressed(), ecdsa.Sign(sk, []byte(keyID)).Serialize())
 
 							_, err := msgServer.SubmitPubKey(sdk.WrapSDKContext(ctx), req)
 							assert.NoError(t, err)
@@ -187,8 +187,8 @@ func TestMsgServer(t *testing.T) {
 		)
 
 		participantCount := 3
-		validators := slices.Expand(func(int) sdk.ValAddress { return rand.ValAddr() }, participantCount)
-		proxies := slices.Expand(func(int) sdk.AccAddress { return rand.AccAddr() }, participantCount)
+		validators := slices.Expand(func(int) sdk.ValAddress { return rand2.ValAddr() }, participantCount)
+		proxies := slices.Expand(func(int) sdk.AccAddress { return rand2.AccAddr() }, participantCount)
 		participants := slices.Map(validators, func(v sdk.ValAddress) snapshot.Participant { return snapshot.NewParticipant(v, sdk.OneUint()) })
 		keyID := exported.KeyID(rand.HexStr(5))
 		privateKeys := slices.Expand(func(int) *btcec.PrivateKey { return funcs.Must(btcec.NewPrivateKey()) }, participantCount)
@@ -293,7 +293,7 @@ func TestMsgServer(t *testing.T) {
 
 							Then("should fail if proxy is not registered", func(t *testing.T) {
 								signature := ecdsa.Sign(privateKeys[rand.I64Between(1, participantCount)], payloadHash).Serialize()
-								_, err := msgServer.SubmitSignature(sdk.WrapSDKContext(ctx), types.NewSubmitSignatureRequest(rand.AccAddr(), sigID, signature))
+								_, err := msgServer.SubmitSignature(sdk.WrapSDKContext(ctx), types.NewSubmitSignatureRequest(rand2.AccAddr(), sigID, signature))
 
 								assert.Error(t, err)
 							}),
@@ -345,7 +345,7 @@ func TestMsgServer(t *testing.T) {
 					nexusK.GetChainFunc = func(sdk.Context, nexus.ChainName) (nexus.Chain, bool) { return nexus.Chain{}, false }
 				}).
 					Then("should fail", func(t *testing.T) {
-						_, err := msgServer.RotateKey(sdk.WrapSDKContext(ctx), types.NewRotateKeyRequest(rand.AccAddr(), nexus.ChainName(rand.AlphaStrBetween(1, 5)), keyID))
+						_, err := msgServer.RotateKey(sdk.WrapSDKContext(ctx), types.NewRotateKeyRequest(rand2.AccAddr(), nexus.ChainName(rand.AlphaStrBetween(1, 5)), keyID))
 						assert.Error(t, err)
 					}),
 
@@ -356,10 +356,10 @@ func TestMsgServer(t *testing.T) {
 					}
 				}).
 					Then("should succeed but only once", func(t *testing.T) {
-						_, err := msgServer.RotateKey(sdk.WrapSDKContext(ctx), types.NewRotateKeyRequest(rand.AccAddr(), chain, keyID))
+						_, err := msgServer.RotateKey(sdk.WrapSDKContext(ctx), types.NewRotateKeyRequest(rand2.AccAddr(), chain, keyID))
 						assert.NoError(t, err)
 
-						_, err = msgServer.RotateKey(sdk.WrapSDKContext(ctx), types.NewRotateKeyRequest(rand.AccAddr(), chain, keyID))
+						_, err = msgServer.RotateKey(sdk.WrapSDKContext(ctx), types.NewRotateKeyRequest(rand2.AccAddr(), chain, keyID))
 						assert.Error(t, err)
 					}),
 			).
