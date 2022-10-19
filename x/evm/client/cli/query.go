@@ -14,6 +14,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
 // GetQueryCmd returns the cli query commands for this module
@@ -30,6 +31,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		getCmdAddress(queryRoute),
 		getCmdAxelarGatewayAddress(queryRoute),
 		getCmdTokenAddress(queryRoute),
+		getCmdDepositState(queryRoute),
 		getCmdBytecode(queryRoute),
 		getCmdQueryBatchedCommands(queryRoute),
 		getCmdLatestBatchedCommands(queryRoute),
@@ -116,6 +118,44 @@ func getCmdTokenAddress(queryRoute string) *cobra.Command {
 		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
 
 		return cliCtx.PrintProto(&res)
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// getCmdDepositState returns the query for an ERC20 deposit transaction state
+func getCmdDepositState(queryRoute string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:        "deposit-state [chain] [txID] [burner address]",
+		Short:      "Query the state of a deposit transaction",
+		Deprecated: "will be removed in the future release",
+		Args:       cobra.ExactArgs(3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			chain := args[0]
+			txID := common.HexToHash(args[1])
+			burnerAddress := common.HexToAddress(args[2])
+
+			queryClient := types.NewQueryServiceClient(cliCtx)
+
+			res, err := queryClient.DepositState(cmd.Context(), &types.DepositStateRequest{
+				Chain: nexus.ChainName(chain),
+				Params: &types.QueryDepositStateParams{
+					TxID:          types.Hash(txID),
+					BurnerAddress: types.Address(burnerAddress),
+				},
+			})
+			if err != nil {
+				return err
+			}
+
+			return cliCtx.PrintProto(res)
+		},
 	}
 
 	flags.AddQueryFlagsToCmd(cmd)

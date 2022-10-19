@@ -1415,6 +1415,9 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			GetDepositByTxIDBurnAddrFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID types.Hash, burnerAddr types.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
 // 				panic("mock out the GetDepositByTxIDBurnAddr method")
 // 			},
+// 			GetDepositsByTxIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID types.Hash, status types.DepositStatus) ([]types.ERC20Deposit, error) {
+// 				panic("mock out the GetDepositsByTxID method")
+// 			},
 // 			GetERC20TokenByAssetFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string) types.ERC20Token {
 // 				panic("mock out the GetERC20TokenByAsset method")
 // 			},
@@ -1544,6 +1547,9 @@ type ChainKeeperMock struct {
 
 	// GetDepositByTxIDBurnAddrFunc mocks the GetDepositByTxIDBurnAddr method.
 	GetDepositByTxIDBurnAddrFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID types.Hash, burnerAddr types.Address) (types.ERC20Deposit, types.DepositStatus, bool)
+
+	// GetDepositsByTxIDFunc mocks the GetDepositsByTxID method.
+	GetDepositsByTxIDFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID types.Hash, status types.DepositStatus) ([]types.ERC20Deposit, error)
 
 	// GetERC20TokenByAssetFunc mocks the GetERC20TokenByAsset method.
 	GetERC20TokenByAssetFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string) types.ERC20Token
@@ -1740,6 +1746,15 @@ type ChainKeeperMock struct {
 			// BurnerAddr is the burnerAddr argument value.
 			BurnerAddr types.Address
 		}
+		// GetDepositsByTxID holds details about calls to the GetDepositsByTxID method.
+		GetDepositsByTxID []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// TxID is the txID argument value.
+			TxID types.Hash
+			// Status is the status argument value.
+			Status types.DepositStatus
+		}
 		// GetERC20TokenByAsset holds details about calls to the GetERC20TokenByAsset method.
 		GetERC20TokenByAsset []struct {
 			// Ctx is the ctx argument value.
@@ -1900,6 +1915,7 @@ type ChainKeeperMock struct {
 	lockGetConfirmedEventQueue        sync.RWMutex
 	lockGetDeposit                    sync.RWMutex
 	lockGetDepositByTxIDBurnAddr      sync.RWMutex
+	lockGetDepositsByTxID             sync.RWMutex
 	lockGetERC20TokenByAsset          sync.RWMutex
 	lockGetERC20TokenBySymbol         sync.RWMutex
 	lockGetEvent                      sync.RWMutex
@@ -2522,6 +2538,45 @@ func (mock *ChainKeeperMock) GetDepositByTxIDBurnAddrCalls() []struct {
 	mock.lockGetDepositByTxIDBurnAddr.RLock()
 	calls = mock.calls.GetDepositByTxIDBurnAddr
 	mock.lockGetDepositByTxIDBurnAddr.RUnlock()
+	return calls
+}
+
+// GetDepositsByTxID calls GetDepositsByTxIDFunc.
+func (mock *ChainKeeperMock) GetDepositsByTxID(ctx github_com_cosmos_cosmos_sdk_types.Context, txID types.Hash, status types.DepositStatus) ([]types.ERC20Deposit, error) {
+	if mock.GetDepositsByTxIDFunc == nil {
+		panic("ChainKeeperMock.GetDepositsByTxIDFunc: method is nil but ChainKeeper.GetDepositsByTxID was just called")
+	}
+	callInfo := struct {
+		Ctx    github_com_cosmos_cosmos_sdk_types.Context
+		TxID   types.Hash
+		Status types.DepositStatus
+	}{
+		Ctx:    ctx,
+		TxID:   txID,
+		Status: status,
+	}
+	mock.lockGetDepositsByTxID.Lock()
+	mock.calls.GetDepositsByTxID = append(mock.calls.GetDepositsByTxID, callInfo)
+	mock.lockGetDepositsByTxID.Unlock()
+	return mock.GetDepositsByTxIDFunc(ctx, txID, status)
+}
+
+// GetDepositsByTxIDCalls gets all the calls that were made to GetDepositsByTxID.
+// Check the length with:
+//     len(mockedChainKeeper.GetDepositsByTxIDCalls())
+func (mock *ChainKeeperMock) GetDepositsByTxIDCalls() []struct {
+	Ctx    github_com_cosmos_cosmos_sdk_types.Context
+	TxID   types.Hash
+	Status types.DepositStatus
+} {
+	var calls []struct {
+		Ctx    github_com_cosmos_cosmos_sdk_types.Context
+		TxID   types.Hash
+		Status types.DepositStatus
+	}
+	mock.lockGetDepositsByTxID.RLock()
+	calls = mock.calls.GetDepositsByTxID
+	mock.lockGetDepositsByTxID.RUnlock()
 	return calls
 }
 

@@ -276,6 +276,34 @@ func (q Querier) Event(c context.Context, req *types.EventRequest) (*types.Event
 	return &types.EventResponse{Event: &event}, nil
 }
 
+// DepositState fetches the state of a deposit confirmation using a grpc query
+// Deprecated
+func (q Querier) DepositState(c context.Context, req *types.DepositStateRequest) (*types.DepositStateResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+	ck, err := q.keeper.ForChain(ctx, req.Chain)
+	if err != nil {
+		return nil, status.Error(codes.NotFound, err.Error())
+	}
+
+	if _, status, ok := ck.GetDepositByTxIDBurnAddr(ctx, req.Params.TxID, req.Params.BurnerAddress); ok {
+		return &types.DepositStateResponse{Status: status}, nil
+	}
+
+	hasSameBurnerAddress := func(deposit types.ERC20Deposit) bool {
+		return deposit.BurnerAddress == req.Params.BurnerAddress
+	}
+
+	// we can only return the first matching deposit at this point despite the fact that there might be many
+	if slices.Any(funcs.Must(ck.GetDepositsByTxID(ctx, req.Params.TxID, types.DepositStatus_Confirmed)), hasSameBurnerAddress) {
+		return &types.DepositStateResponse{Status: types.DepositStatus_Confirmed}, nil
+	}
+	if slices.Any(funcs.Must(ck.GetDepositsByTxID(ctx, req.Params.TxID, types.DepositStatus_Burned)), hasSameBurnerAddress) {
+		return &types.DepositStateResponse{Status: types.DepositStatus_Burned}, nil
+	}
+
+	return &types.DepositStateResponse{Status: types.DepositStatus_None}, nil
+}
+
 // PendingCommands returns the pending commands from a gateway
 func (q Querier) PendingCommands(c context.Context, req *types.PendingCommandsRequest) (*types.PendingCommandsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)

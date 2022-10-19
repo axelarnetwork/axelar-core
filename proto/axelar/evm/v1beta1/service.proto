@@ -135,6 +135,12 @@ service QueryService {
         "/axelar/evm/v1beta1/confirmation_height/{chain}";
   }
 
+  // DepositState queries the state of the specified deposit
+  rpc DepositState(DepositStateRequest) returns (DepositStateResponse) {
+    option deprecated = true;
+    option (google.api.http).get = "/axelar/evm/v1beta1/deposit_state";
+  }
+
   // PendingCommands queries the pending commands for the specified chain
   rpc PendingCommands(PendingCommandsRequest)
       returns (PendingCommandsResponse) {
