@@ -434,39 +434,6 @@ func decodeEventContractCallWithToken(log *geth.Log) (types.EventContractCallWit
 	}, nil
 }
 
-func getLatestFinalizedBlockNumber(client rpc.Client, confHeight uint64) (*big.Int, error) {
-	switch client := client.(type) {
-	case rpc.MoonbeamClient:
-		finalizedBlockHash, err := client.ChainGetFinalizedHead(context.Background())
-		if err != nil {
-			return nil, err
-		}
-
-		header, err := client.ChainGetHeader(context.Background(), finalizedBlockHash)
-		if err != nil {
-			return nil, err
-		}
-
-		return header.Number.ToInt(), nil
-	case rpc.Eth2Client:
-		finalizedHeader, err := client.FinalizedHeader(context.Background())
-		if err != nil {
-			return nil, err
-		}
-
-		return finalizedHeader.Number, nil
-	case rpc.Client:
-		blockNumber, err := client.BlockNumber(context.Background())
-		if err != nil {
-			return nil, err
-		}
-
-		return big.NewInt(int64(blockNumber - confHeight + 1)), nil
-	default:
-		panic(fmt.Errorf("unsupported type of rpc client %T", client))
-	}
-}
-
 func (mgr Mgr) getTxReceiptIfFinalized(chain nexus.ChainName, txID common.Hash, confHeight uint64) (*geth.Receipt, error) {
 	client, ok := mgr.rpcs[strings.ToLower(chain.String())]
 	if !ok {
@@ -482,7 +449,7 @@ func (mgr Mgr) getTxReceiptIfFinalized(chain nexus.ChainName, txID common.Hash, 
 		return nil, sdkerrors.Wrap(err, "failed getting transaction receipt")
 	}
 
-	latestFinalizedBlockNumber, err := getLatestFinalizedBlockNumber(client, confHeight)
+	latestFinalizedBlockNumber, err := client.LatestFinalizedBlockNumber(context.Background(), confHeight)
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "failed getting latest finalized block number")
 	}
@@ -492,12 +459,12 @@ func (mgr Mgr) getTxReceiptIfFinalized(chain nexus.ChainName, txID common.Hash, 
 		return nil, nil
 	}
 
-	block, err := client.BlockByNumber(context.Background(), txReceipt.BlockNumber)
+	header, err := client.HeaderByNumber(context.Background(), txReceipt.BlockNumber)
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "failed getting block")
 	}
 
-	txFound := slices.Any(block.Body().Transactions, func(tx *geth.Transaction) bool { return bytes.Equal(tx.Hash().Bytes(), txReceipt.TxHash.Bytes()) })
+	txFound := slices.Any(header.Transactions, func(txHash common.Hash) bool { return bytes.Equal(txHash.Bytes(), txReceipt.TxHash.Bytes()) })
 	if !txFound {
 		mgr.logger.Debug(fmt.Sprintf("transaction %s not found in block %s", txID.Hex(), txReceipt.BlockNumber.String()))
 		return nil, nil
