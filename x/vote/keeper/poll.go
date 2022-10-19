@@ -8,10 +8,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/tendermint/libs/log"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/types"
 	"github.com/axelarnetwork/utils/monads/cached"
-	"github.com/axelarnetwork/utils/proto"
 	"github.com/axelarnetwork/utils/slices"
 )
 
@@ -47,7 +47,7 @@ func (p poll) Logger() log.Logger {
 func (p poll) tallyLogger(voter sdk.ValAddress, talliedVote types.TalliedVote) log.Logger {
 	return p.Logger().With(
 		"voter", voter.String(),
-		"data_hash", hex.EncodeToString(proto.Hash(talliedVote.Data.GetCachedValue().(codec.ProtoMarshaler))),
+		"data_hash", hex.EncodeToString(utils.Hash(talliedVote.Data.GetCachedValue().(codec.ProtoMarshaler))),
 		"tally_weight", talliedVote.Tally.String(),
 		"tally_voter_count", len(talliedVote.IsVoterLate),
 	)
@@ -144,7 +144,7 @@ func (p poll) GetMetaData() (codec.ProtoMarshaler, bool) {
 }
 
 func (p poll) voteLate(voter sdk.ValAddress, data codec.ProtoMarshaler) {
-	talliedVote, ok := p.k.getTalliedVote(p.ctx, p.ID, proto.Hash(data))
+	talliedVote, ok := p.k.getTalliedVote(p.ctx, p.ID, utils.Hash(data))
 	if !ok {
 		talliedVote = types.NewTalliedVote(p.ID, data)
 	}
@@ -156,7 +156,7 @@ func (p poll) voteLate(voter sdk.ValAddress, data codec.ProtoMarshaler) {
 }
 
 func (p *poll) voteBeforeCompletion(voter sdk.ValAddress, blockHeight int64, data codec.ProtoMarshaler) {
-	hash := proto.Hash(data)
+	hash := utils.Hash(data)
 
 	talliedVote, ok := p.k.getTalliedVote(p.ctx, p.ID, hash)
 	if !ok {
