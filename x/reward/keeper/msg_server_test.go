@@ -11,6 +11,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
+	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	"github.com/axelarnetwork/axelar-core/x/reward/keeper"
 	"github.com/axelarnetwork/axelar-core/x/reward/types"
@@ -35,7 +36,7 @@ func TestHandleMsgRefundRequest(t *testing.T) {
 		refundKeeper = &mock.RefunderMock{
 			LoggerFunc: func(ctx sdk.Context) log.Logger { return log.TestingLogger() },
 			GetPendingRefundFunc: func(sdk.Context, types.RefundMsgRequest) (types.Refund, bool) {
-				return types.Refund{Payer: rand.AccAddr(), Fees: sdk.NewCoins(sdk.Coin{Denom: "uaxl", Amount: sdk.NewInt(1000)})}, true
+				return types.Refund{Payer: rand2.AccAddr(), Fees: sdk.NewCoins(sdk.Coin{Denom: "uaxl", Amount: sdk.NewInt(1000)})}, true
 			},
 			DeletePendingRefundFunc: func(sdk.Context, types.RefundMsgRequest) {},
 		}
@@ -64,7 +65,7 @@ func TestHandleMsgRefundRequest(t *testing.T) {
 			Value:   rand.Bytes(int(rand.I64Between(100, 1000))),
 		}
 		msg = &types.RefundMsgRequest{
-			Sender:       rand.AccAddr(),
+			Sender:       rand2.AccAddr(),
 			InnerMessage: &any,
 		}
 
@@ -75,7 +76,7 @@ func TestHandleMsgRefundRequest(t *testing.T) {
 	t.Run("should return error when failed to route inner message", testutils.Func(func(t *testing.T) {
 		setup()
 
-		msg = types.NewRefundMsgRequest(rand.AccAddr(), randomMsgLink())
+		msg = types.NewRefundMsgRequest(rand2.AccAddr(), randomMsgLink())
 
 		_, err := server.RefundMsg(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
@@ -89,11 +90,11 @@ func TestHandleMsgRefundRequest(t *testing.T) {
 		}
 		router.AddRoute(sdk.NewRoute("evm", evmHandler))
 		voteReq := &votetypes.VoteRequest{
-			Sender: rand.AccAddr(),
+			Sender: rand2.AccAddr(),
 			PollID: vote.PollID(rand.I64Between(5, 100)),
 			Vote:   nil,
 		}
-		msg = types.NewRefundMsgRequest(rand.AccAddr(), voteReq)
+		msg = types.NewRefundMsgRequest(rand2.AccAddr(), voteReq)
 
 		_, err := server.RefundMsg(sdk.WrapSDKContext(ctx), msg)
 		assert.Error(t, err)
@@ -103,7 +104,7 @@ func TestHandleMsgRefundRequest(t *testing.T) {
 		setup()
 		refundKeeper.GetPendingRefundFunc = func(sdk.Context, types.RefundMsgRequest) (types.Refund, bool) { return types.Refund{}, false }
 
-		msg = types.NewRefundMsgRequest(rand.AccAddr(), &tsstypes.HeartBeatRequest{})
+		msg = types.NewRefundMsgRequest(rand2.AccAddr(), &tsstypes.HeartBeatRequest{})
 
 		_, err := server.RefundMsg(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
@@ -112,7 +113,7 @@ func TestHandleMsgRefundRequest(t *testing.T) {
 	t.Run("should refund transaction fee when executed inner message successfully", testutils.Func(func(t *testing.T) {
 		setup()
 
-		msg = types.NewRefundMsgRequest(rand.AccAddr(), &tsstypes.HeartBeatRequest{})
+		msg = types.NewRefundMsgRequest(rand2.AccAddr(), &tsstypes.HeartBeatRequest{})
 
 		_, err := server.RefundMsg(sdk.WrapSDKContext(ctx), msg)
 		assert.NoError(t, err)
@@ -123,7 +124,7 @@ func TestHandleMsgRefundRequest(t *testing.T) {
 
 func randomMsgLink() *axelarnet.LinkRequest {
 	return axelarnet.NewLinkRequest(
-		rand.AccAddr(),
+		rand2.AccAddr(),
 		rand.StrBetween(5, 100),
 		rand.StrBetween(5, 100),
 		rand.StrBetween(5, 100))
