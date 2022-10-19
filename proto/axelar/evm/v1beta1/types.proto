@@ -188,6 +188,7 @@ message ERC20Deposit {
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
   bytes burner_address = 5
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+  uint64 log_index = 6;
 }
 
 // ERC20TokenMetadata describes information about an ERC20 token
