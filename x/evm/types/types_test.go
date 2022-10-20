@@ -164,3 +164,11 @@ func TestERC20TokenMetadata_ValidateBasic(t *testing.T) {
 	})
 
 }
+
+func TestCommandID_ValidateBasic(t *testing.T) {
+	assert.NoError(t, NewCommandID(rand.Bytes(100), sdk.NewIntFromUint64(uint64(rand.PosI64()))).ValidateBasic())
+	var data [100]byte
+	assert.NoError(t, NewCommandID(data[:], sdk.NewIntFromUint64(0)).ValidateBasic())
+	var id CommandID
+	assert.Error(t, id.ValidateBasic())
+}

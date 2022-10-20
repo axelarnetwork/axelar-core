@@ -233,7 +233,7 @@ message Command {
     (gogoproto.customname) = "ID",
     (gogoproto.customtype) = "CommandID"
   ];
-  string command = 2;
+  string command = 2 [ (gogoproto.casttype) = "CommandType" ];
   bytes params = 3;
   string key_id = 4 [
     (gogoproto.customname) = "KeyID",

@@ -3,6 +3,7 @@ package testutils
 import (
 	"encoding/hex"
 	"fmt"
+	"golang.org/x/exp/maps"
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -174,7 +175,7 @@ func RandomDeposit() types.ERC20Deposit {
 func RandomCommand() types.Command {
 	return types.Command{
 		ID:         RandomCommandID(),
-		Command:    randomNormalizedStr(5, 20),
+		Command:    rand.Of(maps.Keys(types.CommandTypes)...),
 		Params:     rand.Bytes(int(rand.I64Between(1, 100))),
 		KeyID:      multisigTestutils.KeyID(),
 		MaxGasCost: uint32(rand.I64Between(0, 100000)),

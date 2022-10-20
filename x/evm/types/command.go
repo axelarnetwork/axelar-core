@@ -2,7 +2,7 @@ package types
 
 import (
 	"encoding/binary"
-	fmt "fmt"
+	"fmt"
 	"math/big"
 	"strconv"
 	"strings"
@@ -18,20 +18,38 @@ import (
 )
 
 const (
-	axelarGatewayCommandMintToken                   = "mintToken"
-	mintTokenMaxGasCost                             = 100000
-	axelarGatewayCommandDeployToken                 = "deployToken"
-	deployTokenMaxGasCost                           = 1400000
-	axelarGatewayCommandBurnToken                   = "burnToken"
-	burnExternalTokenMaxGasCost                     = 400000
-	burnInternalTokenMaxGasCost                     = 120000
-	axelarGatewayCommandTransferOperatorship        = "transferOperatorship"
-	transferOperatorshipMaxGasCost                  = 120000
-	axelarGatewayCommandApproveContractCallWithMint = "approveContractCallWithMint"
-	approveContractCallWithMintMaxGasCost           = 100000
-	axelarGatewayCommandApproveContractCall         = "approveContractCall"
-	approveContractCallMaxGasCost                   = 100000
+	axelarGatewayCommandMintToken                   CommandType = "mintToken"
+	axelarGatewayCommandDeployToken                 CommandType = "deployToken"
+	axelarGatewayCommandBurnToken                   CommandType = "burnToken"
+	axelarGatewayCommandTransferOperatorship        CommandType = "transferOperatorship"
+	axelarGatewayCommandApproveContractCallWithMint CommandType = "approveContractCallWithMint"
+	axelarGatewayCommandApproveContractCall         CommandType = "approveContractCall"
+	mintTokenMaxGasCost                                         = 100000
+	deployTokenMaxGasCost                                       = 1400000
+	burnExternalTokenMaxGasCost                                 = 400000
+	burnInternalTokenMaxGasCost                                 = 120000
+	transferOperatorshipMaxGasCost                              = 120000
+	approveContractCallWithMintMaxGasCost                       = 100000
+	approveContractCallMaxGasCost                               = 100000
 )
+
+var CommandTypes = map[CommandType]struct{}{
+	axelarGatewayCommandMintToken:                   {},
+	axelarGatewayCommandDeployToken:                 {},
+	axelarGatewayCommandBurnToken:                   {},
+	axelarGatewayCommandTransferOperatorship:        {},
+	axelarGatewayCommandApproveContractCallWithMint: {},
+	axelarGatewayCommandApproveContractCall:         {},
+}
+
+type CommandType string
+
+func (c CommandType) ValidateBasic() error {
+	if _, ok := CommandTypes[c]; !ok {
+		return fmt.Errorf("%s is not a valid command type", c)
+	}
+	return nil
+}
 
 var (
 	stringType       = funcs.Must(abi.NewType("string", "string", nil))
