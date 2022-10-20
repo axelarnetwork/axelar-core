@@ -10,6 +10,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/gogo/protobuf/proto"
+	"github.com/stoewer/go-strcase"
 
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -18,35 +20,22 @@ import (
 )
 
 const (
-	axelarGatewayCommandMintToken                   CommandType = "mintToken"
-	axelarGatewayCommandDeployToken                 CommandType = "deployToken"
-	axelarGatewayCommandBurnToken                   CommandType = "burnToken"
-	axelarGatewayCommandTransferOperatorship        CommandType = "transferOperatorship"
-	axelarGatewayCommandApproveContractCallWithMint CommandType = "approveContractCallWithMint"
-	axelarGatewayCommandApproveContractCall         CommandType = "approveContractCall"
-	mintTokenMaxGasCost                                         = 100000
-	deployTokenMaxGasCost                                       = 1400000
-	burnExternalTokenMaxGasCost                                 = 400000
-	burnInternalTokenMaxGasCost                                 = 120000
-	transferOperatorshipMaxGasCost                              = 120000
-	approveContractCallWithMintMaxGasCost                       = 100000
-	approveContractCallMaxGasCost                               = 100000
+	mintTokenMaxGasCost                   = 100000
+	deployTokenMaxGasCost                 = 1400000
+	burnExternalTokenMaxGasCost           = 400000
+	burnInternalTokenMaxGasCost           = 120000
+	transferOperatorshipMaxGasCost        = 120000
+	approveContractCallWithMintMaxGasCost = 100000
+	approveContractCallMaxGasCost         = 100000
 )
 
-var CommandTypes = map[CommandType]struct{}{
-	axelarGatewayCommandMintToken:                   {},
-	axelarGatewayCommandDeployToken:                 {},
-	axelarGatewayCommandBurnToken:                   {},
-	axelarGatewayCommandTransferOperatorship:        {},
-	axelarGatewayCommandApproveContractCallWithMint: {},
-	axelarGatewayCommandApproveContractCall:         {},
+func (c CommandType) String() string {
+	return strcase.LowerCamelCase(strings.TrimPrefix(proto.EnumName(CommandType_name, int32(c)), "COMMAND_TYPE_"))
 }
 
-type CommandType string
-
 func (c CommandType) ValidateBasic() error {
-	if _, ok := CommandTypes[c]; !ok {
-		return fmt.Errorf("%s is not a valid command type", c)
+	if _, ok := CommandType_name[int32(c)]; !ok || c == COMMAND_TYPE_UNSPECIFIED {
+		return fmt.Errorf("%s is not a valid command type", c.String())
 	}
 	return nil
 }
@@ -80,7 +69,7 @@ func NewBurnTokenCommand(chainID sdk.Int, keyID multisig.KeyID, height int64, bu
 
 	return Command{
 		ID:         NewCommandID(append(burnerInfo.Salt.Bytes(), heightBytes...), chainID),
-		Command:    axelarGatewayCommandBurnToken,
+		Command:    COMMAND_TYPE_BURN_TOKEN,
 		Params:     createBurnTokenParams(burnerInfo.Symbol, common.Hash(burnerInfo.Salt)),
 		KeyID:      keyID,
 		MaxGasCost: uint32(burnTokenMaxGasCost),
@@ -91,7 +80,7 @@ func NewBurnTokenCommand(chainID sdk.Int, keyID multisig.KeyID, height int64, bu
 func NewDeployTokenCommand(chainID sdk.Int, keyID multisig.KeyID, asset string, tokenDetails TokenDetails, address Address, dailyMintLimit sdk.Uint) Command {
 	return Command{
 		ID:         NewCommandID([]byte(fmt.Sprintf("%s_%s", asset, tokenDetails.Symbol)), chainID),
-		Command:    axelarGatewayCommandDeployToken,
+		Command:    COMMAND_TYPE_DEPLOY_TOKEN,
 		Params:     createDeployTokenParams(tokenDetails.TokenName, tokenDetails.Symbol, tokenDetails.Decimals, tokenDetails.Capacity, address, dailyMintLimit),
 		KeyID:      keyID,
 		MaxGasCost: deployTokenMaxGasCost,
@@ -102,7 +91,7 @@ func NewDeployTokenCommand(chainID sdk.Int, keyID multisig.KeyID, asset string, 
 func NewMintTokenCommand(keyID multisig.KeyID, id CommandID, symbol string, address common.Address, amount *big.Int) Command {
 	return Command{
 		ID:         id,
-		Command:    axelarGatewayCommandMintToken,
+		Command:    COMMAND_TYPE_MINT_TOKEN,
 		Params:     createMintTokenParams(symbol, address, amount),
 		KeyID:      keyID,
 		MaxGasCost: mintTokenMaxGasCost,
@@ -120,7 +109,7 @@ func NewMultisigTransferCommand(chainID sdk.Int, keyID multisig.KeyID, nextKey m
 
 	return Command{
 		ID:         NewCommandID(concat, chainID),
-		Command:    axelarGatewayCommandTransferOperatorship,
+		Command:    COMMAND_TYPE_TRANSFER_OPERATORSHIP,
 		Params:     createTransferMultisigParams(addresses, slices.Map(weights, sdk.Uint.BigInt), threshold.BigInt()),
 		KeyID:      keyID,
 		MaxGasCost: transferOperatorshipMaxGasCost,
@@ -141,7 +130,7 @@ func NewApproveContractCallCommand(
 
 	return Command{
 		ID:         NewCommandID(append(sourceTxID.Bytes(), sourceEventIndexBz...), chainID),
-		Command:    axelarGatewayCommandApproveContractCall,
+		Command:    COMMAND_TYPE_APPROVE_CONTRACT_CALL,
 		Params:     createApproveContractCallParams(sourceChain, sourceTxID, sourceEventIndex, event),
 		KeyID:      keyID,
 		MaxGasCost: uint32(approveContractCallMaxGasCost),
@@ -164,7 +153,7 @@ func NewApproveContractCallWithMintCommand(
 
 	return Command{
 		ID:         NewCommandID(append(sourceTxID.Bytes(), sourceEventIndexBz...), chainID),
-		Command:    axelarGatewayCommandApproveContractCallWithMint,
+		Command:    COMMAND_TYPE_APPROVE_CONTRACT_CALL_WITH_MINT,
 		Params:     createApproveContractCallWithMintParams(sourceChain, sourceTxID, sourceEventIndex, event, amount, symbol),
 		KeyID:      keyID,
 		MaxGasCost: uint32(approveContractCallWithMintMaxGasCost),
@@ -176,7 +165,7 @@ func (c Command) DecodeParams() (map[string]string, error) {
 	params := make(map[string]string)
 
 	switch c.Command {
-	case axelarGatewayCommandApproveContractCallWithMint:
+	case COMMAND_TYPE_APPROVE_CONTRACT_CALL_WITH_MINT:
 		sourceChain, sourceAddress, contractAddress, payloadHash, symbol, amount, sourceTxID, sourceEventIndex := decodeApproveContractCallWithMintParams(c.Params)
 
 		params["sourceChain"] = sourceChain
@@ -187,7 +176,7 @@ func (c Command) DecodeParams() (map[string]string, error) {
 		params["amount"] = amount.String()
 		params["sourceTxHash"] = sourceTxID.Hex()
 		params["sourceEventIndex"] = sourceEventIndex.String()
-	case axelarGatewayCommandApproveContractCall:
+	case COMMAND_TYPE_APPROVE_CONTRACT_CALL:
 		sourceChain, sourceAddress, contractAddress, payloadHash, sourceTxID, sourceEventIndex := decodeApproveContractCallParams(c.Params)
 
 		params["sourceChain"] = sourceChain
@@ -196,7 +185,7 @@ func (c Command) DecodeParams() (map[string]string, error) {
 		params["payloadHash"] = payloadHash.Hex()
 		params["sourceTxHash"] = sourceTxID.Hex()
 		params["sourceEventIndex"] = sourceEventIndex.String()
-	case axelarGatewayCommandDeployToken:
+	case COMMAND_TYPE_DEPLOY_TOKEN:
 		name, symbol, decs, cap, tokenAddress, dailyMintLimit := decodeDeployTokenParams(c.Params)
 
 		params["name"] = name
@@ -205,18 +194,18 @@ func (c Command) DecodeParams() (map[string]string, error) {
 		params["cap"] = cap.String()
 		params["tokenAddress"] = tokenAddress.Hex()
 		params["dailyMintLimit"] = dailyMintLimit.String()
-	case axelarGatewayCommandMintToken:
+	case COMMAND_TYPE_MINT_TOKEN:
 		symbol, addr, amount := decodeMintTokenParams(c.Params)
 
 		params["symbol"] = symbol
 		params["account"] = addr.Hex()
 		params["amount"] = amount.String()
-	case axelarGatewayCommandBurnToken:
+	case COMMAND_TYPE_BURN_TOKEN:
 		symbol, salt := decodeBurnTokenParams(c.Params)
 
 		params["symbol"] = symbol
 		params["salt"] = salt.Hex()
-	case axelarGatewayCommandTransferOperatorship:
+	case COMMAND_TYPE_TRANSFER_OPERATORSHIP:
 		addresses, weights, threshold := decodeTransferMultisigParams(c.Params)
 
 		params["newOperators"] = strings.Join(slices.Map(addresses, common.Address.Hex), ";")

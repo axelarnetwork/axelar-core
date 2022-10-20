@@ -661,7 +661,7 @@ func NewCommandID(data []byte, chainID sdk.Int) CommandID {
 	var commandID CommandID
 	copy(commandID[:], crypto.Keccak256(append(data, chainID.BigInt().Bytes()...))[:commandIDSize])
 
-	if bytes.Equal(commandID[:], zeroID[:]){
+	if bytes.Equal(commandID[:], zeroID[:]) {
 		copy(commandID[:], crypto.Keccak256(commandID[:])[:commandIDSize])
 	}
 
@@ -801,7 +801,7 @@ func packArguments(chainID sdk.Int, commandIDs []CommandID, commands []CommandTy
 	result, err := arguments.Pack(
 		chainID.BigInt(),
 		commandIDs,
-		slices.TryCast[CommandType, string](commands),
+		slices.Map(commands, CommandType.String),
 		commandParams,
 	)
 	if err != nil {

@@ -158,6 +158,7 @@
     - [VoteEvents](#axelar.evm.v1beta1.VoteEvents)
   
     - [BatchedCommandsStatus](#axelar.evm.v1beta1.BatchedCommandsStatus)
+    - [CommandType](#axelar.evm.v1beta1.CommandType)
     - [DepositStatus](#axelar.evm.v1beta1.DepositStatus)
     - [Event.Status](#axelar.evm.v1beta1.Event.Status)
     - [SigType](#axelar.evm.v1beta1.SigType)
@@ -2216,7 +2217,7 @@ that is deposited by an user
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `id` | [bytes](#bytes) |  |  |
-| `command` | [string](#string) |  |  |
+| `command` | [CommandType](#axelar.evm.v1beta1.CommandType) |  |  |
 | `params` | [bytes](#bytes) |  |  |
 | `key_id` | [string](#string) |  |  |
 | `max_gas_cost` | [uint32](#uint32) |  |  |
@@ -2583,6 +2584,23 @@ TransferKey contains information for a transfer operatorship
 | BATCHED_COMMANDS_STATUS_SIGNING | 1 |  |
 | BATCHED_COMMANDS_STATUS_ABORTED | 2 |  |
 | BATCHED_COMMANDS_STATUS_SIGNED | 3 |  |
+
+
+
+<a name="axelar.evm.v1beta1.CommandType"></a>
+
+### CommandType
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| COMMAND_TYPE_UNSPECIFIED | 0 |  |
+| COMMAND_TYPE_MINT_TOKEN | 1 |  |
+| COMMAND_TYPE_DEPLOY_TOKEN | 2 |  |
+| COMMAND_TYPE_BURN_TOKEN | 3 |  |
+| COMMAND_TYPE_TRANSFER_OPERATORSHIP | 4 |  |
+| COMMAND_TYPE_APPROVE_CONTRACT_CALL_WITH_MINT | 5 |  |
+| COMMAND_TYPE_APPROVE_CONTRACT_CALL | 6 |  |
 
 
 

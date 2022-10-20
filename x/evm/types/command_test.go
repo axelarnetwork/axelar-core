@@ -167,3 +167,7 @@ func TestNewMultisigTransferCommand(t *testing.T) {
 	assert.Len(t, decodedWeights, len(participants))
 	assert.EqualValues(t, 30, decodedThreshold.Uint64())
 }
+
+func TestCommandType_String(t *testing.T) {
+	assert.Equal(t, "approveContractCallWithMint", COMMAND_TYPE_APPROVE_CONTRACT_CALL_WITH_MINT.String())
+}
