@@ -326,3 +326,19 @@ func (k Keeper) getIBCTransfers(ctx sdk.Context) (transfers []types.IBCTransfer)
 
 	return transfers
 }
+
+func (k Keeper) getSeqIDMappings(ctx sdk.Context) map[string]uint64 {
+	mapping := make(map[string]uint64)
+
+	iter := k.getStore(ctx).IteratorNew(seqIDMappingPrefix)
+	defer utils.CloseLogError(iter, k.Logger(ctx))
+
+	for ; iter.Valid(); iter.Next() {
+		var val gogoprototypes.UInt64Value
+		iter.UnmarshalValue(&val)
+
+		mapping[string(iter.Key())] = val.Value
+	}
+
+	return mapping
+}
