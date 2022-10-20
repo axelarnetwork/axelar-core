@@ -9,8 +9,9 @@ import evm_chains from "../../data/evm_chains.json";
 import evm_assets from "../../data/evm_assets.json";
 
 const COLUMNS = [
-  { id: "asset", title: "Asset" },
+  { id: "asset", title: "Symbol" },
   { id: "chain", title: "Chain" },
+  { id: "denom", title: "Denom" },
   { id: "contract_address", title: "Contract address" },
   { id: "add_token", title: "", headerClassName: "text-right", className: "text-right" },
 ];
@@ -74,11 +75,13 @@ export default ({ environment = "mainnet" }) => {
         <tbody>
           {assets.map((a, i) => {
             const {
+              id,
               address,
               symbol,
               image,
               chain,
             } = { ...a };
+
             const chain_data = _evm_chains.find(c => c?.id === chain);
             const explorer_url = chain_data?.provider_params?.[0]?.blockExplorerUrls?.[0];
 
@@ -94,7 +97,7 @@ export default ({ environment = "mainnet" }) => {
                     className={`${i % 2 === 0 ? "bg-transparent" : "bg-gray-50 dark:bg-black"} ${i === assets.length - 1 ? j === 0 ? "rounded-bl-lg" : j === COLUMNS.length - 1 ? "rounded-br-lg" : "" : ""} border-none whitespace-nowrap py-3 px-4 ${c.className || ""}`}
                   >
                     {c.id === "asset" ?
-                      <div className="min-w-max flex items-center space-x-3">
+                      <div className="min-w-max flex items-center space-x-2">
                         {image && (
                           <Image
                             src={image}
@@ -120,42 +123,53 @@ export default ({ environment = "mainnet" }) => {
                               className="rounded-full"
                             />
                           )}
-                          <span className="whitespace-nowrap text-sm font-semibold">
-                            {chain_data?.name || chain}
-                          </span>
+                          <div className="flex flex-col">
+                            <span className="whitespace-nowrap text-sm font-semibold">
+                              {chain_data?.name || chain}
+                            </span>
+                            <span className="whitespace-nowrap text-gray-400 dark:text-gray-500 text-xs font-medium">
+                              ID: {chain_data.network_id}
+                            </span>
+                          </div>
                         </div>
                         :
-                        c.id === "contract_address" ?
+                        c.id === "denom" ?
                           <div className="flex items-center text-base space-x-1.5">
-                            {address ?
-                              <a
-                                href={`${explorer_url}/address/${address}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="no-underline text-blue-500 dark:text-white font-medium"
-                              >
-                                {ellipse(address, 24)}
-                              </a>
-                              :
-                              <span className="text-gray-400 dark:text-gray-600">
-                                -
-                              </span>
-                            }
-                            {address && (
-                              <Copy
-                                value={address}
-                                size={20}
-                              />
-                            )}
-                          </div>
-                          :
-                          c.id === "add_token" ?
-                            <AddToken
-                              environment={environment}
-                              { ...a }
-                            />
+                            <span className="whitespace-nowrap text-base font-semibold">
+                              {id}
+                            </span>
+                          </div> :
+                          c.id === "contract_address" ?
+                            <div className="flex items-center text-base space-x-1.5">
+                              {address ?
+                                <a
+                                  href={`${explorer_url}/address/${address}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="no-underline text-blue-500 dark:text-white font-medium"
+                                >
+                                  {ellipse(address, 16)}
+                                </a>
+                                :
+                                <span className="text-gray-400 dark:text-gray-600">
+                                  -
+                                </span>
+                              }
+                              {address && (
+                                <Copy
+                                  value={address}
+                                  size={20}
+                                />
+                              )}
+                            </div>
                             :
-                            null
+                            c.id === "add_token" ?
+                              <AddToken
+                                environment={environment}
+                                { ...a }
+                              />
+                              :
+                              null
                     }
                   </th>
                 ))}

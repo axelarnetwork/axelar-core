@@ -55,11 +55,18 @@ export default ({ environment = "mainnet" }) => {
                   className="rounded-full"
                 />
               )}
-              <span className="text-xs font-semibold">
-                {chain_data?.name}
-              </span>
+              <div className="flex flex-col items-center">
+                <span className="whitespace-nowrap text-xs font-semibold">
+                  {chain_data?.name}
+                </span>
+                {chain_data?.network_id && (
+                  <span className="whitespace-nowrap text-gray-400 dark:text-gray-500 text-xs font-medium">
+                    {chain_data.network_id}
+                  </span>
+                )}
+              </div>
             </div>
-            <div className="flex flex-col items-center">
+            <div className="flex flex-col items-center justify-center">
               <span className="whitespace-nowrap text-gray-600 dark:text-gray-400 text-xs">
                 {channels.find(c => c?.from === chain_data?.id)?.channel_id}
               </span>
@@ -78,9 +85,16 @@ export default ({ environment = "mainnet" }) => {
                   className={`${['fetch'].includes(other_chain_data.id) ?'bg-black rounded-full' : ''}`}
                 />
               )}
-              <span className="text-xs font-semibold">
-                {other_chain_data?.name}
-              </span>
+              <div className="flex flex-col items-center">
+                <span className="whitespace-nowrap text-xs font-semibold">
+                  {other_chain_data?.name}
+                </span>
+                {other_chain_data?.network_id && (
+                  <span className="whitespace-nowrap text-gray-400 dark:text-gray-500 text-xs font-medium">
+                    {other_chain_data.network_id}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         );
