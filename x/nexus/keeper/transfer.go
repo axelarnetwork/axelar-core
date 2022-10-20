@@ -8,9 +8,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/query"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/utils/events"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
-	"github.com/axelarnetwork/utils/funcs"
 )
 
 func getTransferPrefix(chain exported.ChainName, state exported.TransferState) utils.Key {
@@ -132,13 +132,13 @@ func (k Keeper) EnqueueTransfer(ctx sdk.Context, senderChain exported.Chain, rec
 
 		transferID := k.setNewTransfer(ctx, recipient, asset, exported.InsufficientAmount)
 
-		funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.InsufficientFee{
+		events.Emit(ctx, &types.InsufficientFee{
 			TransferID:       transferID,
 			RecipientChain:   recipient.Chain.Name,
 			RecipientAddress: recipient.Address,
 			Amount:           asset,
 			Fee:              fee,
-		}))
+		})
 
 		return transferID, nil
 	}
@@ -160,18 +160,22 @@ func (k Keeper) EnqueueTransfer(ctx sdk.Context, senderChain exported.Chain, rec
 
 	transferID := k.setNewTransfer(ctx, recipient, asset, exported.Pending)
 
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.FeeDeducted{
+	events.Emit(ctx, &types.FeeDeducted{
 		TransferID:       transferID,
 		RecipientChain:   recipient.Chain.Name,
 		RecipientAddress: recipient.Address,
+		Amount:           asset,
 		Fee:              fee,
-	}))
+	})
 
 	return transferID, nil
 }
 
+// validateTransferAsset validates asset if
+// - chain supports foreign assets, and the asset is registered on the chain
+// - or asset is the native asset on the chain
 func (k Keeper) validateTransferAsset(ctx sdk.Context, chain exported.Chain, asset string) error {
-	if chain.SupportsForeignAssets {
+	if chain.SupportsForeignAssets && k.IsAssetRegistered(ctx, chain, asset) {
 		return nil
 	}
 

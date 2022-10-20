@@ -206,8 +206,6 @@
     - [ConfirmationHeightRequest](#axelar.evm.v1beta1.ConfirmationHeightRequest)
     - [ConfirmationHeightResponse](#axelar.evm.v1beta1.ConfirmationHeightResponse)
     - [DepositQueryParams](#axelar.evm.v1beta1.DepositQueryParams)
-    - [DepositStateRequest](#axelar.evm.v1beta1.DepositStateRequest)
-    - [DepositStateResponse](#axelar.evm.v1beta1.DepositStateResponse)
     - [ERC20TokensRequest](#axelar.evm.v1beta1.ERC20TokensRequest)
     - [ERC20TokensResponse](#axelar.evm.v1beta1.ERC20TokensResponse)
     - [ERC20TokensResponse.Token](#axelar.evm.v1beta1.ERC20TokensResponse.Token)
@@ -224,7 +222,6 @@
     - [QueryBurnerAddressResponse](#axelar.evm.v1beta1.QueryBurnerAddressResponse)
     - [QueryCommandResponse](#axelar.evm.v1beta1.QueryCommandResponse)
     - [QueryCommandResponse.ParamsEntry](#axelar.evm.v1beta1.QueryCommandResponse.ParamsEntry)
-    - [QueryDepositStateParams](#axelar.evm.v1beta1.QueryDepositStateParams)
     - [QueryTokenAddressResponse](#axelar.evm.v1beta1.QueryTokenAddressResponse)
     - [TokenInfoRequest](#axelar.evm.v1beta1.TokenInfoRequest)
     - [TokenInfoResponse](#axelar.evm.v1beta1.TokenInfoResponse)
@@ -1695,6 +1692,7 @@ to nexus
 | `addr_prefix` | [string](#string) |  |  |
 | `native_assets` | [axelar.nexus.exported.v1beta1.Asset](#axelar.nexus.exported.v1beta1.Asset) | repeated |  |
 | `cosmos_chain` | [string](#string) |  | TODO: Rename this to `chain` after v1beta1 -> v1 version bump |
+| `ibc_path` | [string](#string) |  |  |
 
 
 
@@ -1966,7 +1964,6 @@ Msg defines the axelarnet Msg service.
 | `Link` | [LinkRequest](#axelar.axelarnet.v1beta1.LinkRequest) | [LinkResponse](#axelar.axelarnet.v1beta1.LinkResponse) |  | POST|/axelar/axelarnet/link|
 | `ConfirmDeposit` | [ConfirmDepositRequest](#axelar.axelarnet.v1beta1.ConfirmDepositRequest) | [ConfirmDepositResponse](#axelar.axelarnet.v1beta1.ConfirmDepositResponse) |  | POST|/axelar/axelarnet/confirm_deposit|
 | `ExecutePendingTransfers` | [ExecutePendingTransfersRequest](#axelar.axelarnet.v1beta1.ExecutePendingTransfersRequest) | [ExecutePendingTransfersResponse](#axelar.axelarnet.v1beta1.ExecutePendingTransfersResponse) |  | POST|/axelar/axelarnet/execute_pending_transfers|
-| `RegisterIBCPath` | [RegisterIBCPathRequest](#axelar.axelarnet.v1beta1.RegisterIBCPathRequest) | [RegisterIBCPathResponse](#axelar.axelarnet.v1beta1.RegisterIBCPathResponse) |  | POST|/axelar/axelarnet/register_ibc_path|
 | `AddCosmosBasedChain` | [AddCosmosBasedChainRequest](#axelar.axelarnet.v1beta1.AddCosmosBasedChainRequest) | [AddCosmosBasedChainResponse](#axelar.axelarnet.v1beta1.AddCosmosBasedChainResponse) |  | POST|/axelar/axelarnet/add_cosmos_based_chain|
 | `RegisterAsset` | [RegisterAssetRequest](#axelar.axelarnet.v1beta1.RegisterAssetRequest) | [RegisterAssetResponse](#axelar.axelarnet.v1beta1.RegisterAssetResponse) |  | POST|/axelar/axelarnet/register_asset|
 | `RouteIBCTransfers` | [RouteIBCTransfersRequest](#axelar.axelarnet.v1beta1.RouteIBCTransfersRequest) | [RouteIBCTransfersResponse](#axelar.axelarnet.v1beta1.RouteIBCTransfersResponse) |  | POST|/axelar/axelarnet/route_ibc_transfers|
@@ -2282,6 +2279,7 @@ ERC20Deposit contains information for an ERC20 deposit
 | `asset` | [string](#string) |  |  |
 | `destination_chain` | [string](#string) |  |  |
 | `burner_address` | [bytes](#bytes) |  |  |
+| `log_index` | [uint64](#uint64) |  |  |
 
 
 
@@ -3344,37 +3342,6 @@ deposit address
 
 
 
-<a name="axelar.evm.v1beta1.DepositStateRequest"></a>
-
-### DepositStateRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `chain` | [string](#string) |  |  |
-| `params` | [QueryDepositStateParams](#axelar.evm.v1beta1.QueryDepositStateParams) |  |  |
-
-
-
-
-
-
-<a name="axelar.evm.v1beta1.DepositStateResponse"></a>
-
-### DepositStateResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `status` | [DepositStatus](#axelar.evm.v1beta1.DepositStatus) |  |  |
-
-
-
-
-
-
 <a name="axelar.evm.v1beta1.ERC20TokensRequest"></a>
 
 ### ERC20TokensRequest
@@ -3626,22 +3593,6 @@ ERC20 tokens requested for a chain
 | ----- | ---- | ----- | ----------- |
 | `key` | [string](#string) |  |  |
 | `value` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="axelar.evm.v1beta1.QueryDepositStateParams"></a>
-
-### QueryDepositStateParams
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `tx_id` | [bytes](#bytes) |  |  |
-| `burner_address` | [bytes](#bytes) |  |  |
 
 
 
@@ -4183,7 +4134,6 @@ QueryService defines the gRPC querier service.
 | `BatchedCommands` | [BatchedCommandsRequest](#axelar.evm.v1beta1.BatchedCommandsRequest) | [BatchedCommandsResponse](#axelar.evm.v1beta1.BatchedCommandsResponse) | BatchedCommands queries the batched commands for a specified chain and BatchedCommandsID if no BatchedCommandsID is specified, then it returns the latest batched commands | GET|/axelar/evm/v1beta1/batched_commands/{chain}/{id}|
 | `BurnerInfo` | [BurnerInfoRequest](#axelar.evm.v1beta1.BurnerInfoRequest) | [BurnerInfoResponse](#axelar.evm.v1beta1.BurnerInfoResponse) | BurnerInfo queries the burner info for the specified address | GET|/axelar/evm/v1beta1/burner_info|
 | `ConfirmationHeight` | [ConfirmationHeightRequest](#axelar.evm.v1beta1.ConfirmationHeightRequest) | [ConfirmationHeightResponse](#axelar.evm.v1beta1.ConfirmationHeightResponse) | ConfirmationHeight queries the confirmation height for the specified chain | GET|/axelar/evm/v1beta1/confirmation_height/{chain}|
-| `DepositState` | [DepositStateRequest](#axelar.evm.v1beta1.DepositStateRequest) | [DepositStateResponse](#axelar.evm.v1beta1.DepositStateResponse) | DepositState queries the state of the specified deposit | GET|/axelar/evm/v1beta1/deposit_state|
 | `PendingCommands` | [PendingCommandsRequest](#axelar.evm.v1beta1.PendingCommandsRequest) | [PendingCommandsResponse](#axelar.evm.v1beta1.PendingCommandsResponse) | PendingCommands queries the pending commands for the specified chain | GET|/axelar/evm/v1beta1/pending_commands/{chain}|
 | `Chains` | [ChainsRequest](#axelar.evm.v1beta1.ChainsRequest) | [ChainsResponse](#axelar.evm.v1beta1.ChainsResponse) | Chains queries the available evm chains | GET|/axelar/evm/v1beta1/chains|
 | `KeyAddress` | [KeyAddressRequest](#axelar.evm.v1beta1.KeyAddressRequest) | [KeyAddressResponse](#axelar.evm.v1beta1.KeyAddressResponse) | KeyAddress queries the address of key of a chain | GET|/axelar/evm/v1beta1/key_address/{chain}|

@@ -91,8 +91,8 @@ func SortTransfers(transfers []IBCTransfer) {
 	sort.Stable(sortedTransfers(transfers))
 }
 
-// Validate checks the stateless validity of the cosmos chain
-func (m CosmosChain) Validate() error {
+// ValidateBasic checks the stateless validity of the cosmos chain
+func (m CosmosChain) ValidateBasic() error {
 	if m.Name.Equals(exported.Axelarnet.Name) {
 		if m.IBCPath != "" {
 			return fmt.Errorf("IBC path should be empty for %s", exported.Axelarnet.Name)

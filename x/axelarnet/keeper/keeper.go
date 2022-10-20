@@ -20,13 +20,14 @@ import (
 )
 
 var (
-	cosmosChainPrefix = utils.KeyFromStr("cosmos_chain")
-	feeCollector      = utils.KeyFromStr("fee_collector")
+	cosmosChainPrefix = key.FromStr("cosmos_chain")
+	feeCollector      = key.FromStr("fee_collector")
 
-	transferPrefix       = utils.KeyFromStr("ibc_transfer")
+	transferPrefix       = key.FromStr("ibc_transfer")
 	ibcTransferQueueName = "route_transfer_queue"
 	// nonceKey is deprecated in v0.23
-	nonceKey = key.FromUInt[uint64](1)
+	// nonceKey = key.FromUInt[uint64](1) <-- keeping this here so the number doesn't get reused
+
 	// failedTransferPrefix is deprecated in v0.23
 	failedTransferPrefix = key.FromUInt[uint64](2)
 	seqIDMappingPrefix   = key.FromUInt[uint64](3)
@@ -84,23 +85,6 @@ func (k Keeper) GetEndBlockerLimit(ctx sdk.Context) uint64 {
 	return result
 }
 
-// SetIBCPath set an IBC path for a cosmos chain. Path can only be set once.
-func (k Keeper) SetIBCPath(ctx sdk.Context, chain nexus.ChainName, path string) error {
-	cosmosChain, ok := k.getCosmosChain(ctx, chain)
-	if !ok {
-		return fmt.Errorf("unknown cosmos chain %s", chain)
-	}
-
-	if _, ok := k.GetIBCPath(ctx, chain); ok {
-		return fmt.Errorf("path %s already registered for cosmos chain %s", path, chain)
-	}
-
-	cosmosChain.IBCPath = path
-	k.SetCosmosChain(ctx, cosmosChain)
-
-	return nil
-}
-
 // GetIBCPath retrieves the IBC path associated to the specified chain
 func (k Keeper) GetIBCPath(ctx sdk.Context, chain nexus.ChainName) (string, bool) {
 	cosmosChain, ok := k.getCosmosChain(ctx, chain)
@@ -119,9 +103,9 @@ func (k Keeper) IsCosmosChain(ctx sdk.Context, chain nexus.ChainName) bool {
 
 // GetCosmosChainByName gets the address prefix of the given cosmos chain
 func (k Keeper) GetCosmosChainByName(ctx sdk.Context, chain nexus.ChainName) (types.CosmosChain, bool) {
-	key := cosmosChainPrefix.Append(utils.LowerCaseKey(chain.String()))
+	chainKey := cosmosChainPrefix.Append(key.From(chain))
 	var value types.CosmosChain
-	ok := k.getStore(ctx).Get(key, &value)
+	ok := k.getStore(ctx).GetNew(chainKey, &value)
 	if !ok {
 		return types.CosmosChain{}, false
 	}
@@ -135,7 +119,7 @@ func (k Keeper) GetCosmosChains(ctx sdk.Context) []nexus.ChainName {
 }
 
 func (k Keeper) getCosmosChains(ctx sdk.Context) (cosmosChains []types.CosmosChain) {
-	iter := k.getStore(ctx).Iterator(cosmosChainPrefix)
+	iter := k.getStore(ctx).IteratorNew(cosmosChainPrefix)
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
 	for ; iter.Valid(); iter.Next() {
@@ -149,13 +133,13 @@ func (k Keeper) getCosmosChains(ctx sdk.Context) (cosmosChains []types.CosmosCha
 }
 
 func (k Keeper) getCosmosChain(ctx sdk.Context, chain nexus.ChainName) (cosmosChain types.CosmosChain, ok bool) {
-	return cosmosChain, k.getStore(ctx).Get(cosmosChainPrefix.Append(utils.LowerCaseKey(chain.String())), &cosmosChain)
+	return cosmosChain, k.getStore(ctx).GetNew(cosmosChainPrefix.Append(key.From(chain)), &cosmosChain)
 }
 
 // SetCosmosChain sets the address prefix for the given cosmos chain
-func (k Keeper) SetCosmosChain(ctx sdk.Context, chain types.CosmosChain) {
+func (k Keeper) SetCosmosChain(ctx sdk.Context, chain types.CosmosChain) error {
 	// register a cosmos chain to axelarnet
-	k.getStore(ctx).Set(cosmosChainPrefix.Append(utils.LowerCaseKey(chain.Name.String())), &chain)
+	return k.getStore(ctx).SetNewValidated(cosmosChainPrefix.Append(key.From(chain.Name)), &chain)
 }
 
 // SetFeeCollector sets axelarnet fee collector
@@ -164,13 +148,13 @@ func (k Keeper) SetFeeCollector(ctx sdk.Context, address sdk.AccAddress) error {
 		return err
 	}
 
-	k.getStore(ctx).SetRaw(feeCollector, address)
+	k.getStore(ctx).SetRawNew(feeCollector, address)
 	return nil
 }
 
 // GetFeeCollector gets axelarnet fee collector
 func (k Keeper) GetFeeCollector(ctx sdk.Context) (sdk.AccAddress, bool) {
-	bz := k.getStore(ctx).GetRaw(feeCollector)
+	bz := k.getStore(ctx).GetRawNew(feeCollector)
 	if bz == nil {
 		return sdk.AccAddress{}, false
 	}
@@ -195,18 +179,18 @@ func (k Keeper) GetIBCTransferQueue(ctx sdk.Context) utils.KVQueue {
 	)
 }
 
-func getTransferKey(id nexus.TransferID) utils.Key {
-	return transferPrefix.AppendStr(id.String())
+func getTransferKey(id nexus.TransferID) key.Key {
+	return transferPrefix.Append(key.From(id))
 }
 
 // EnqueueIBCTransfer stores the pending ibc transfer in the queue
 func (k Keeper) EnqueueIBCTransfer(ctx sdk.Context, transfer types.IBCTransfer) error {
-	key := getTransferKey(transfer.ID)
-	if k.getStore(ctx).Has(key) {
+	transferKey := getTransferKey(transfer.ID)
+	if k.getStore(ctx).HasNew(transferKey) {
 		return fmt.Errorf("transfer %s already exists", transfer.ID.String())
 	}
 
-	k.GetIBCTransferQueue(ctx).Enqueue(key, &transfer)
+	k.GetIBCTransferQueue(ctx).Enqueue(utils.KeyFromBz(transferKey.Bytes()), &transfer)
 	return nil
 }
 
@@ -241,12 +225,12 @@ func (k Keeper) GetFailedTransfer(ctx sdk.Context, id nexus.TransferID) (transfe
 
 // GetTransfer returns the ibc transfer for the given transfer ID
 func (k Keeper) GetTransfer(ctx sdk.Context, id nexus.TransferID) (transfer types.IBCTransfer, ok bool) {
-	k.getStore(ctx).Get(getTransferKey(id), &transfer)
+	k.getStore(ctx).GetNew(getTransferKey(id), &transfer)
 	return transfer, transfer.Status != types.TransferNonExistent
 }
 
-func (k Keeper) setTransfer(ctx sdk.Context, transfer types.IBCTransfer) {
-	k.getStore(ctx).Set(getTransferKey(transfer.ID), &transfer)
+func (k Keeper) setTransfer(ctx sdk.Context, transfer types.IBCTransfer) error {
+	return k.getStore(ctx).SetNewValidated(getTransferKey(transfer.ID), &transfer)
 }
 
 func (k Keeper) getFailedTransfers(ctx sdk.Context) (failedTransfers []types.IBCTransfer) {
@@ -274,8 +258,7 @@ func (k Keeper) setTransferStatus(ctx sdk.Context, transferID nexus.TransferID, 
 		return err
 	}
 
-	k.setTransfer(ctx, t)
-	return nil
+	return k.setTransfer(ctx, t)
 }
 
 // SetTransferCompleted sets the transfer as completed
@@ -331,7 +314,7 @@ func (k Keeper) DeleteSeqIDMapping(ctx sdk.Context, portID, channelID string, se
 }
 
 func (k Keeper) getIBCTransfers(ctx sdk.Context) (transfers []types.IBCTransfer) {
-	iter := k.getStore(ctx).Iterator(transferPrefix)
+	iter := k.getStore(ctx).IteratorNew(transferPrefix)
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
 	for ; iter.Valid(); iter.Next() {
