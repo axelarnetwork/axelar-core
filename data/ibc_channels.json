@@ -231,6 +231,16 @@
       "from": "axelarnet",
       "to": "sei",
       "channel_id": "channel-35"
+    },
+    {
+      "from": "terra",
+      "to": "axelarnet",
+      "channel_id": "channel-22"
+    },
+    {
+      "from": "axelarnet",
+      "to": "terra",
+      "channel_id": "channel-84"
     }
   ]
 }

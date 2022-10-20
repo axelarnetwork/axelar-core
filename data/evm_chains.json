@@ -4,6 +4,7 @@
       "id": "ethereum",
       "name": "Ethereum",
       "chain_id": 1,
+      "network_id": "Ethereum",
       "provider_params": [
         {
           "chainId": "0x1",
@@ -28,6 +29,7 @@
       "id": "binance",
       "name": "BNB Chain",
       "chain_id": 56,
+      "network_id": "binance",
       "provider_params": [
         {
           "chainId": "0x38",
@@ -52,6 +54,7 @@
       "id": "polygon",
       "name": "Polygon",
       "chain_id": 137,
+      "network_id": "Polygon",
       "provider_params": [
         {
           "chainId": "0x89",
@@ -77,6 +80,7 @@
       "id": "avalanche",
       "name": "Avalanche",
       "chain_id": 43114,
+      "network_id": "Avalanche",
       "provider_params": [
         {
           "chainId": "0xa86a",
@@ -101,6 +105,7 @@
       "id": "fantom",
       "name": "Fantom",
       "chain_id": 250,
+      "network_id": "Fantom",
       "provider_params": [
         {
           "chainId": "0xfa",
@@ -126,6 +131,7 @@
       "id": "moonbeam",
       "name": "Moonbeam",
       "chain_id": 1284,
+      "network_id": "Moonbeam",
       "provider_params": [
         {
           "chainId": "0x504",
@@ -150,6 +156,7 @@
       "id": "aurora",
       "name": "Aurora",
       "chain_id": 1313161554,
+      "network_id": "aurora",
       "provider_params": [
         {
           "chainId": "0x4e454152",
@@ -175,6 +182,7 @@
       "id": "ethereum",
       "name": "Ethereum Goerli",
       "chain_id": 5,
+      "network_id": "ethereum-2",
       "provider_params": [
         {
           "chainId": "0x5",
@@ -199,6 +207,7 @@
       "id": "binance",
       "name": "BNB Chain",
       "chain_id": 97,
+      "network_id": "binance",
       "provider_params": [
         {
           "chainId": "0x61",
@@ -224,6 +233,7 @@
       "id": "polygon",
       "name": "Polygon",
       "chain_id": 80001,
+      "network_id": "Polygon",
       "provider_params": [
         {
           "chainId": "0x13881",
@@ -249,6 +259,7 @@
       "id": "avalanche",
       "name": "Avalanche",
       "chain_id": 43113,
+      "network_id": "Avalanche",
       "provider_params": [
         {
           "chainId": "0xa869",
@@ -273,6 +284,7 @@
       "id": "fantom",
       "name": "Fantom",
       "chain_id": 4002,
+      "network_id": "Fantom",
       "provider_params": [
         {
           "chainId": "0xfa2",
@@ -297,6 +309,7 @@
       "id": "moonbeam",
       "name": "Moonbase",
       "chain_id": 1287,
+      "network_id": "Moonbeam",
       "provider_params": [
         {
           "chainId": "0x507",
@@ -322,6 +335,7 @@
       "id": "aurora",
       "name": "Aurora",
       "chain_id": 1313161555,
+      "network_id": "aurora",
       "provider_params": [
         {
           "chainId": "0x4e454153",
@@ -347,6 +361,7 @@
       "id": "ethereum",
       "name": "Ethereum Ropsten",
       "chain_id": 3,
+      "network_id": "Ethereum",
       "provider_params": [
         {
           "chainId": "0x3",
@@ -370,6 +385,7 @@
       "id": "avalanche",
       "name": "Avalanche",
       "chain_id": 43113,
+      "network_id": "Avalanche",
       "provider_params": [
         {
           "chainId": "0xa869",
