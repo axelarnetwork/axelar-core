@@ -83,7 +83,7 @@ func GetCommandResponse(cmd types.Command) (types.QueryCommandResponse, error) {
 
 	return types.QueryCommandResponse{
 		ID:         cmd.ID.Hex(),
-		Type:       string(cmd.Command),
+		Type:       cmd.Command.String(),
 		KeyID:      string(cmd.KeyID),
 		MaxGasCost: cmd.MaxGasCost,
 		Params:     params,
