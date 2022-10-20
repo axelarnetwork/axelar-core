@@ -716,6 +716,7 @@ func (c *CommandID) Unmarshal(data []byte) error {
 	return c.ValidateBasic()
 }
 
+// ValidateBasic returns an error if the given command ID is invalid
 func (c CommandID) ValidateBasic() error {
 	if bytes.Equal(c[:], zeroID[:]) {
 		return errors.New("ID is zero")
@@ -1255,6 +1256,7 @@ func (m Gateway) ValidateBasic() error {
 	return nil
 }
 
+// ValidateBasic returns an error if the given command is invalid
 func (c Command) ValidateBasic() error {
 	if err := c.ID.ValidateBasic(); err != nil {
 		return err

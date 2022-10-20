@@ -33,6 +33,7 @@ func (c CommandType) String() string {
 	return strcase.LowerCamelCase(strings.TrimPrefix(proto.EnumName(CommandType_name, int32(c)), "COMMAND_TYPE_"))
 }
 
+// ValidateBasic returns an error if the given command type is invalid
 func (c CommandType) ValidateBasic() error {
 	if _, ok := CommandType_name[int32(c)]; !ok || c == COMMAND_TYPE_UNSPECIFIED {
 		return fmt.Errorf("%s is not a valid command type", c.String())
