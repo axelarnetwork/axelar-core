@@ -524,8 +524,9 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `id` | [uint64](#uint64) |  |  |
-| `receipient` | [string](#string) |  |  |
+| `receipient` | [string](#string) |  | **Deprecated.**  |
 | `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+| `recipient` | [string](#string) |  |  |
 
 
 
@@ -593,11 +594,12 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `id` | [uint64](#uint64) |  |  |
-| `receipient` | [string](#string) |  |  |
+| `receipient` | [string](#string) |  | **Deprecated.**  |
 | `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 | `sequence` | [uint64](#uint64) |  |  |
 | `port_id` | [string](#string) |  |  |
 | `channel_id` | [string](#string) |  |  |
+| `recipient` | [string](#string) |  |  |
 
 
 
@@ -613,11 +615,12 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `id` | [uint64](#uint64) |  |  |
-| `receipient` | [string](#string) |  |  |
+| `receipient` | [string](#string) |  | **Deprecated.**  |
 | `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 | `sequence` | [uint64](#uint64) |  |  |
 | `port_id` | [string](#string) |  |  |
 | `channel_id` | [string](#string) |  |  |
+| `recipient` | [string](#string) |  |  |
 
 
 
