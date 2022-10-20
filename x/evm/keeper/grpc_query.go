@@ -276,7 +276,7 @@ func (q Querier) Event(c context.Context, req *types.EventRequest) (*types.Event
 	return &types.EventResponse{Event: &event}, nil
 }
 
-// DepositState fetches the state of a deposit confirmation using a grpc query
+// DepositState returns the status of the deposit matching the given chain, tx ID and burner address
 // Deprecated
 func (q Querier) DepositState(c context.Context, req *types.DepositStateRequest) (*types.DepositStateResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
