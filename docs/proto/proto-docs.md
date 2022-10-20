@@ -242,6 +242,7 @@
     - [TokenInfoRequest](#axelar.evm.v1beta1.TokenInfoRequest)
     - [TokenInfoResponse](#axelar.evm.v1beta1.TokenInfoResponse)
   
+    - [ChainStatus](#axelar.evm.v1beta1.ChainStatus)
     - [TokenType](#axelar.evm.v1beta1.TokenType)
   
 - [axelar/evm/v1beta1/tx.proto](#axelar/evm/v1beta1/tx.proto)
@@ -3520,6 +3521,11 @@ GenesisState represents the genesis state
 
 
 
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `status` | [ChainStatus](#axelar.evm.v1beta1.ChainStatus) |  |  |
+
+
 
 
 
@@ -3944,6 +3950,19 @@ ERC20 tokens requested for a chain
 
 
  <!-- end messages -->
+
+
+<a name="axelar.evm.v1beta1.ChainStatus"></a>
+
+### ChainStatus
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| CHAIN_STATUS_UNSPECIFIED | 0 |  |
+| CHAIN_STATUS_ACTIVATED | 1 |  |
+| CHAIN_STATUS_DEACTIVATED | 2 |  |
+
 
 
 <a name="axelar.evm.v1beta1.TokenType"></a>
