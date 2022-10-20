@@ -49,7 +49,7 @@
       - [batched-commands \[chain\] \[batchedCommandsID\]](axelard_query_evm_batched-commands.md)	 - Get the signed batched commands that can be wrapped in an EVM transaction to be executed in Axelar Gateway
       - [burner-info \[deposit address\]](axelard_query_evm_burner-info.md)	 - Get information about a burner address
       - [bytecode \[chain\] \[contract\]](axelard_query_evm_bytecode.md)	 - Fetch the bytecode of an EVM contract \[contract\] for chain \[chain\]
-      - [chains](axelard_query_evm_chains.md)	 - Return the registered EVM chains
+      - [chains](axelard_query_evm_chains.md)	 - Return the supported EVM chains by status
       - [command \[chain\] \[id\]](axelard_query_evm_command.md)	 - Get information about an EVM gateway command given a chain and the command ID
       - [confirmation-height \[chain\]](axelard_query_evm_confirmation-height.md)	 - Returns the minimum confirmation height for the given chain
       - [deposit-state \[chain\] \[txID\] \[burner address\]](axelard_query_evm_deposit-state.md)	 - Query the state of a deposit transaction

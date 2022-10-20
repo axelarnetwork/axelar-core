@@ -382,7 +382,7 @@ func getCmdBurnerInfo() *cobra.Command {
 func getCmdChains() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "chains",
-		Short: "Return the registered EVM chains",
+		Short: "Return the supported EVM chains by status",
 		Args:  cobra.ExactArgs(0),
 	}
 

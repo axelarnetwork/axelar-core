@@ -1,6 +1,6 @@
 ## axelard query evm chains
 
-Return the registered EVM chains
+Return the supported EVM chains by status
 
 ```
 axelard query evm chains [flags]
