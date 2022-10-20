@@ -1,11 +1,16 @@
 package keeper
 
 import (
+	"strings"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	gogoprototypes "github.com/gogo/protobuf/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/utils/key"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	"github.com/axelarnetwork/utils/funcs"
+	"github.com/axelarnetwork/utils/slices"
 )
 
 // InitGenesis initializes the axelarnet module's state from a given genesis state.
@@ -17,18 +22,21 @@ func (k Keeper) InitGenesis(ctx sdk.Context, genState *types.GenesisState) {
 		}
 	}
 
-	for _, chain := range genState.Chains {
-		funcs.MustNoErr(k.SetCosmosChain(ctx, chain))
-	}
+	slices.ForEach(genState.Chains, func(c types.CosmosChain) { funcs.MustNoErr(k.SetCosmosChain(ctx, c)) })
 
-	if err := k.validateIBCTransferQueueState(genState.TransferQueue, ibcTransferQueueName); err != nil {
-		panic(err)
-	}
+	funcs.MustNoErr(k.validateIBCTransferQueueState(genState.TransferQueue, ibcTransferQueueName))
+
 	k.GetIBCTransferQueue(ctx).(utils.GeneralKVQueue).ImportState(genState.TransferQueue)
 
-	for _, t := range genState.FailedTransfers {
-		funcs.MustNoErr(k.getStore(ctx).SetNewValidated(getFailedTransferKey(t.ID), &t))
-	}
+	slices.ForEach(genState.IBCTransfers, func(t types.IBCTransfer) { funcs.MustNoErr(k.setTransfer(ctx, t)) })
+
+	sortedKeys := types.SortedMapKeys(genState.SeqIDMapping, strings.Compare)
+	slices.ForEach(sortedKeys, func(seqKey string) {
+		funcs.MustNoErr(k.getStore(ctx).SetNewValidated(
+			key.FromBz([]byte(seqKey)),
+			utils.NoValidation(&gogoprototypes.UInt64Value{Value: genState.SeqIDMapping[seqKey]}),
+		))
+	})
 }
 
 // ExportGenesis returns the reward module's genesis state.
@@ -40,6 +48,7 @@ func (k Keeper) ExportGenesis(ctx sdk.Context) *types.GenesisState {
 		collector,
 		k.getCosmosChains(ctx),
 		k.GetIBCTransferQueue(ctx).(utils.GeneralKVQueue).ExportState(),
-		k.getFailedTransfers(ctx),
+		k.getIBCTransfers(ctx),
+		k.getSeqIDMappings(ctx),
 	)
 }

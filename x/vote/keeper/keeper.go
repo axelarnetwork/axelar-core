@@ -19,7 +19,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/axelarnetwork/axelar-core/x/vote/types"
 	"github.com/axelarnetwork/utils/funcs"
-	"github.com/axelarnetwork/utils/proto"
 )
 
 var (
@@ -220,7 +219,7 @@ func (k Keeper) setTalliedVote(ctx sdk.Context, talliedVote types.TalliedVote) {
 		k.getKVStore(ctx).SetNewValidated(
 			key.FromStr(votesPrefix).
 				Append(key.FromStr(talliedVote.PollID.String())).
-				Append(key.FromBz(proto.Hash(talliedVote.Data.GetCachedValue().(codec.ProtoMarshaler)))),
+				Append(key.FromBz(utils.Hash(talliedVote.Data.GetCachedValue().(codec.ProtoMarshaler)))),
 			&talliedVote,
 		))
 }
