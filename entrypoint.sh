@@ -56,7 +56,7 @@ startNodeProc() {
   fi
   if [ "$DEBUG_MODE" == true ]; then
     dlv --listen=:2346 --headless=true ${VALD_CONTINUE:+--continue} --api-version=2 --accept-multiclient exec \
-      /usr/local/bin/axelard -- vald-start ${TOFND_HOST:+--tofnd-host "$TOFND_HOST"} ${VALIDATOR_HOST:+--node "$VALIDATOR_HOST"} --validator-addr "${VALIDATOR_ADDR:-$(axelard keys show validator -a --bech val)}"
+      axelard start
   else
     axelard start
   fi
