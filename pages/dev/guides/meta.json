@@ -1,6 +1,7 @@
 {
     "video-guides": "Video guides",
     "example-nft-linker": "Example: NFT linker",
-    "example-airdrop": "Example: Airdrop"
+    "example-airdrop": "Example: Airdrop",
+    "example-usdc": "Example: Cross-chain USDC + payload"
   }
   
