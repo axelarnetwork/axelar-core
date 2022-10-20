@@ -251,6 +251,9 @@ func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, ax
 		logger.Info("event listener stopped")
 		logger.Info("stopping subscribers...")
 		<-mgr.Done()
+		if err := <-mgr.Errs(); err != nil {
+			logger.Error(err.Error())
+		}
 		logger.Info("subscriptions stopped")
 	})
 
