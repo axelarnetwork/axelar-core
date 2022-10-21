@@ -1,5 +1,5 @@
 
-# Example: Cross-chain USDC + payload
+# Example: Composable USDC
 
 Circle has announced a [plan to support cross-chain transactions in native USDC](https://www.circle.com/en/pressroom/circle-enables-usdc-interoperability-for-developers-with-the-launch-of-cross-chain-transfer-protocol). Currently, it’s available on the Ethereum Goerli and Avalanche Fuji testnets. In this tutorial, we’ll learn how to build a cross-chain USDC dApp using Circle’s Cross-Chain Transfer Protocol (CCTP) and Axelar’s General Message Passing (GMP). 
 
