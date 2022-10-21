@@ -118,6 +118,11 @@ module.exports = withNextra({
         destination: "/dev/gmp-overview",
         statusCode: 301,
       },
+      {
+        source: "/dev/guides/example-usdc",
+        destination: "/dev/guides/example-composable-usdc",
+        statusCode: 301,
+      },
     ];
   },
 });
