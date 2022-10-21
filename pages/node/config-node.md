@@ -34,6 +34,24 @@ Some additional flags:
 - `-d` : Home directory path.
 - `--help` : Print a complete list of flags.
 
+### Verifying Binaries
+
+By default, the binary signatures are downloaded and the binary is verified using the [axelardev](https://keybase.io/axelardev) PGP key. To verify the binary manually, you can download the PGP signature and verify using the following commands:
+
+```bash
+curl https://keybase.io/axelardev/key.asc | gpg --import
+gpg --verify [axelard_binary_signature_path] [axelard_binary_path]
+```
+
+On github the signatures are attached to the releases. To download the signatures from the axelar-releases AWS Bucket, you can add `.asc` to the end of the binary URL. For example, if the path of the binary is:
+```bash
+https://axelar-releases.s3.us-east-2.amazonaws.com/axelard/v0.26.0/axelard-darwin-arm64-v0.26.0
+```
+The path for the signature will be:
+```bash
+https://axelar-releases.s3.us-east-2.amazonaws.com/axelard/v0.26.0/axelard-darwin-arm64-v0.26.0.asc
+```
+
 ## Home directory
 
 By default the `setup-node.sh` script sets the home directory for your node as follows:
