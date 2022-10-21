@@ -40,6 +40,20 @@ service MsgService {
       body : "*"
     };
   }
+
+  rpc KeygenOptOut(KeygenOptOutRequest) returns (KeygenOptOutResponse) {
+    option (google.api.http) = {
+      post : "/axelar/multisig/v1beta1/keygen_optout"
+      body : "*"
+    };
+  }
+
+  rpc KeygenOptIn(KeygenOptInRequest) returns (KeygenOptInResponse) {
+    option (google.api.http) = {
+      post : "/axelar/multisig/v1beta1/keygen_optout"
+      body : "*"
+    };
+  }
 }
 
 // Query defines the gRPC querier service.

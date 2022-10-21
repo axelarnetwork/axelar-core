@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"fmt"
+	"github.com/axelarnetwork/axelar-core/utils/key"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -20,6 +21,7 @@ var (
 	expirySigningPrefix    = utils.KeyFromInt(5)
 	keyEpochPrefix         = utils.KeyFromInt(6)
 	keyRotationCountPrefix = utils.KeyFromInt(7)
+	keygenOptOutPrefix     = key.FromUInt(uint64(8))
 
 	signingSessionCountKey = utils.KeyFromInt(100)
 )

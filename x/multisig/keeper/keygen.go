@@ -2,6 +2,9 @@ package keeper
 
 import (
 	"fmt"
+	"github.com/axelarnetwork/axelar-core/utils/key"
+	"github.com/axelarnetwork/utils/funcs"
+	gogoprototypes "github.com/gogo/protobuf/types"
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -77,6 +80,20 @@ func (k Keeper) DeleteKeygenSession(ctx sdk.Context, id exported.KeyID) {
 
 	k.getStore(ctx).Delete(getKeygenSessionExpiryKey(keygen))
 	k.getStore(ctx).Delete(getKeygenSessionKey(id))
+}
+
+func (k Keeper) KeygenOptOut(ctx sdk.Context, participant sdk.AccAddress) {
+	funcs.MustNoErr(
+		k.getStore(ctx).SetNewValidated(keygenOptOutPrefix.Append(key.FromBz(participant)), utils.NoValidation(&gogoprototypes.BytesValue{})),
+	)
+}
+
+func (k Keeper) KeygenOptIn(ctx sdk.Context, participant sdk.AccAddress) {
+	k.getStore(ctx).DeleteNew(keygenOptOutPrefix.Append(key.FromBz(participant)))
+}
+
+func (k Keeper) IsOptOut(ctx sdk.Context, participant sdk.AccAddress) bool {
+	return k.getStore(ctx).HasNew(keygenOptOutPrefix.Append(key.FromBz(participant)))
 }
 
 func (k Keeper) createKeygenSession(ctx sdk.Context, id exported.KeyID, snapshot snapshot.Snapshot) error {

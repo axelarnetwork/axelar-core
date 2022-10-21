@@ -135,3 +135,18 @@ func (s msgServer) RotateKey(c context.Context, req *types.RotateKeyRequest) (*t
 
 	return &types.RotateKeyResponse{}, nil
 }
+
+func (s msgServer) KeygenOptOut(c context.Context, req *types.KeygenOptOutRequest) (*types.KeygenOptOutResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	s.Keeper.KeygenOptOut(ctx, req.Sender)
+	return &types.KeygenOptOutResponse{}, nil
+}
+
+func (s msgServer) KeygenOptIn(c context.Context, req *types.KeygenOptInRequest) (*types.KeygenOptInResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	s.Keeper.KeygenOptIn(ctx, req.Sender)
+
+	return &types.KeygenOptInResponse{}, nil
+}
