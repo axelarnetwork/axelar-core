@@ -75,6 +75,33 @@ message QueryTokenAddressResponse {
   bool confirmed = 2;
 }
 
+message QueryDepositStateParams {
+  option deprecated = true;
+
+  bytes tx_id = 1 [
+    (gogoproto.nullable) = false,
+    (gogoproto.customtype) = "Hash",
+    (gogoproto.customname) = "TxID"
+  ];
+  bytes burner_address = 2
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+}
+
+message DepositStateRequest {
+  option deprecated = true;
+
+  string chain = 1
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  QueryDepositStateParams params = 2;
+}
+
+message DepositStateResponse {
+  option deprecated = true;
+
+  DepositStatus status = 2;
+}
+
 message EventRequest {
   string chain = 1;
   string event_id = 2;

@@ -321,7 +321,33 @@ func (k chainKeeper) GetDepositByTxIDBurnAddr(ctx sdk.Context, txID types.Hash, 
 		return deposit, types.DepositStatus_Burned, true
 	}
 
-	return types.ERC20Deposit{}, 0, false
+	return types.ERC20Deposit{}, types.DepositStatus_None, false
+}
+
+// GetDepositsByTxID returns all deposits for the given tx ID and status
+func (k chainKeeper) GetDepositsByTxID(ctx sdk.Context, txID types.Hash, status types.DepositStatus) ([]types.ERC20Deposit, error) {
+	var prefix key.Key
+	switch status {
+	case types.DepositStatus_Confirmed:
+		prefix = key.FromStr(confirmedDepositPrefix)
+	case types.DepositStatus_Burned:
+		prefix = key.FromStr(burnedDepositPrefix)
+	default:
+		return nil, fmt.Errorf("unsupported deposit status %s", status.String())
+	}
+
+	iter := k.getStore(ctx).IteratorNew(prefix.Append(key.FromStr(txID.Hex())))
+	defer utils.CloseLogError(iter, k.Logger(ctx))
+
+	var deposits []types.ERC20Deposit
+	for ; iter.Valid(); iter.Next() {
+		var deposit types.ERC20Deposit
+		iter.UnmarshalValue(&deposit)
+
+		deposits = append(deposits, deposit)
+	}
+
+	return deposits, nil
 }
 
 // GetDeposit retrieves a confirmed/burned deposit

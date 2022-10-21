@@ -131,7 +131,7 @@ func handleContractCall(ctx sdk.Context, event types.Event, bk types.BaseKeeper,
 		panic(err)
 	}
 
-	bk.Logger(ctx).Debug(fmt.Sprintf("created %s command for event", cmd.Command),
+	bk.Logger(ctx).Debug(fmt.Sprintf("created %s command for event", cmd.Type),
 		"chain", destinationChain.Name,
 		"eventID", event.GetID(),
 		"commandID", cmd.ID.Hex(),
@@ -217,7 +217,7 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 		panic(err)
 	}
 
-	bk.Logger(ctx).Debug(fmt.Sprintf("created %s command for event", cmd.Command),
+	bk.Logger(ctx).Debug(fmt.Sprintf("created %s command for event", cmd.Type),
 		"chain", destinationChain.Name,
 		"eventID", event.GetID(),
 		"commandID", cmd.ID.Hex(),
