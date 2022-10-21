@@ -11,6 +11,10 @@
     "title": "Registering external chains for validators",
     "type": "doc"
   },
+  "security": {
+    "title": "Axelar Security Overview",
+    "type": "doc"
+  },
   "cli": {
     "title": "CLI",
     "type": "doc"
