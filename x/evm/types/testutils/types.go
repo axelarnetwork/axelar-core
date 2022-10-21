@@ -216,6 +216,7 @@ func RandomCommand() types.Command {
 	}
 }
 
+// RandomEventContractCallWithToken returns a random (valid) types.EventContractCallWithToken
 func RandomEventContractCallWithToken() types.EventContractCallWithToken {
 	return types.EventContractCallWithToken{
 		Sender:           RandomAddress(),
@@ -227,6 +228,7 @@ func RandomEventContractCallWithToken() types.EventContractCallWithToken {
 	}
 }
 
+// RandomEventContractCall returns a random (valid) types.EventContractCall
 func RandomEventContractCall() types.EventContractCall {
 	return types.EventContractCall{
 		Sender:           RandomAddress(),
