@@ -16,6 +16,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 	evmKeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/evm/types/mock"
@@ -23,6 +24,7 @@ import (
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	multisigTestutils "github.com/axelarnetwork/axelar-core/x/multisig/exported/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	. "github.com/axelarnetwork/utils/test"
 )
 
 func TestQueryPendingCommands(t *testing.T) {
@@ -564,6 +566,99 @@ func TestERC20Tokens(t *testing.T) {
 		assert.Error(err)
 		assert.Nil(res)
 	}).Repeat(repeatCount))
+}
+
+func TestDepositState(t *testing.T) {
+	var (
+		baseKeeper  *mock.BaseKeeperMock
+		chainKeeper *mock.ChainKeeperMock
+		ctx         sdk.Context
+		grpcQuerier evmKeeper.Querier
+		req         types.DepositStateRequest
+		expected    types.DepositStatus
+	)
+
+	givenQuerier := Given("querier", func() {
+		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+		chainKeeper = &mock.ChainKeeperMock{}
+		baseKeeper = &mock.BaseKeeperMock{
+			ForChainFunc: func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) {
+				return chainKeeper, nil
+			},
+		}
+		grpcQuerier = evmKeeper.NewGRPCQuerier(baseKeeper, &mock.NexusMock{}, &mock.MultisigKeeperMock{})
+	})
+	whenReqIsCreated := When("req is created", func() {
+		req = types.DepositStateRequest{
+			Chain: exported.Ethereum.Name,
+			Params: &types.QueryDepositStateParams{
+				TxID:          types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
+				BurnerAddress: types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
+			},
+		}
+	})
+	whenStatusIsExpected := When("status is expected", func() {
+		expected = rand.Of(types.DepositStatus_Confirmed, types.DepositStatus_Burned)
+	})
+
+	givenQuerier.
+		When2(whenReqIsCreated).
+		When2(whenStatusIsExpected).
+		When("some deposit stored in the legacy way exists", func() {
+			chainKeeper.GetDepositByTxIDBurnAddrFunc = func(ctx sdk.Context, txID types.Hash, burnerAddr types.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
+				return types.ERC20Deposit{}, expected, txID == req.Params.TxID && burnerAddr == req.Params.BurnerAddress
+			}
+		}).
+		Then("should get the expected status", func(t *testing.T) {
+			actual, err := grpcQuerier.DepositState(sdk.WrapSDKContext(ctx), &req)
+
+			assert.NoError(t, err)
+			assert.Equal(t, expected, actual.Status)
+		}).
+		Run(t, 5)
+
+	givenQuerier.
+		When2(whenReqIsCreated).
+		When2(whenStatusIsExpected).
+		When("some deposit stored in the legacy way does not exist", func() {
+			chainKeeper.GetDepositByTxIDBurnAddrFunc = func(ctx sdk.Context, txID types.Hash, burnerAddr types.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
+				return types.ERC20Deposit{}, types.DepositStatus_None, false
+			}
+		}).
+		When("some deposit with matching tx ID and burner address exists", func() {
+			chainKeeper.GetDepositsByTxIDFunc = func(ctx sdk.Context, txID types.Hash, status types.DepositStatus) ([]types.ERC20Deposit, error) {
+				if status == expected {
+					return []types.ERC20Deposit{{}, {}, {BurnerAddress: req.Params.BurnerAddress}, {}}, nil
+				}
+
+				return []types.ERC20Deposit{}, nil
+			}
+		}).
+		Then("should get the expected status", func(t *testing.T) {
+			actual, err := grpcQuerier.DepositState(sdk.WrapSDKContext(ctx), &req)
+
+			assert.NoError(t, err)
+			assert.Equal(t, expected, actual.Status)
+		}).
+		Run(t, 5)
+
+	givenQuerier.
+		When2(whenReqIsCreated).
+		When("no deposit with matching tx ID and burner address exists", func() {
+			chainKeeper.GetDepositByTxIDBurnAddrFunc = func(ctx sdk.Context, txID types.Hash, burnerAddr types.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
+				return types.ERC20Deposit{}, types.DepositStatus_None, false
+			}
+			chainKeeper.GetDepositsByTxIDFunc = func(ctx sdk.Context, txID types.Hash, status types.DepositStatus) ([]types.ERC20Deposit, error) {
+				return []types.ERC20Deposit{}, nil
+			}
+		}).
+		Then("should get status none", func(t *testing.T) {
+			actual, err := grpcQuerier.DepositState(sdk.WrapSDKContext(ctx), &req)
+
+			assert.NoError(t, err)
+			assert.Equal(t, types.DepositStatus_None, actual.Status)
+		}).
+		Run(t, 5)
 }
 
 func TestTokenInfo(t *testing.T) {
