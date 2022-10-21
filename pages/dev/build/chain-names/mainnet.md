@@ -33,3 +33,5 @@ The following values are legal arguments for token transfers:
 - `stargaze`
 - `ki`
 - `comdex`
+- `agoric`
+- `umee`

@@ -1,6 +1,16 @@
 {
   "mainnet": [
     {
+      "from": "agoric",
+      "to": "axelarnet",
+      "channel_id": "channel-9"
+    },
+    {
+      "from": "axelarnet",
+      "to": "agoric",
+      "channel_id": "channel-41"
+    },
+    {
       "from": "assetmantle",
       "to": "axelarnet",
       "channel_id": "channel-10"
@@ -149,6 +159,16 @@
       "from": "axelarnet",
       "to": "terra",
       "channel_id": "channel-11"
+    },
+    {
+      "from": "umee",
+      "to": "axelarnet",
+      "channel_id": "channel-33"
+    },
+    {
+      "from": "axelarnet",
+      "to": "umee",
+      "channel_id": "channel-36"
     },
     {
       "from": "emoney",

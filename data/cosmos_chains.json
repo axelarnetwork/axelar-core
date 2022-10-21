@@ -1,6 +1,12 @@
 {
   "mainnet": [
     {
+      "id": "agoric",
+      "name": "Agoric",
+      "network_id": "agoric",
+      "image": "/images/chains/agoric.svg"
+    },
+    {
       "id": "assetmantle",
       "name": "AssetMantle",
       "network_id": "assetmantle",
@@ -95,6 +101,12 @@
       "name": "Terra",
       "network_id": "terra-2",
       "image": "/images/chains/terra.svg"
+    },
+    {
+      "id": "umee",
+      "name": "Umee",
+      "network_id": "umee",
+      "image": "/images/chains/umee.svg"
     },
     {
       "id": "emoney",
