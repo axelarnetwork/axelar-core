@@ -1,9 +1,8 @@
-
 # Example: Composable USDC
 
-Circle has announced a [plan to support cross-chain transactions in native USDC](https://www.circle.com/en/pressroom/circle-enables-usdc-interoperability-for-developers-with-the-launch-of-cross-chain-transfer-protocol). Currently, it’s available on the Ethereum Goerli and Avalanche Fuji testnets. In this tutorial, we’ll learn how to build a cross-chain USDC dApp using Circle’s Cross-Chain Transfer Protocol (CCTP) and Axelar’s General Message Passing (GMP). 
+Circle has announced a [plan to support cross-chain transactions in native USDC](https://www.circle.com/en/pressroom/circle-enables-usdc-interoperability-for-developers-with-the-launch-of-cross-chain-transfer-protocol). Currently, it’s available on the Ethereum Goerli and Avalanche Fuji testnets. In this tutorial, we’ll learn how to build a cross-chain USDC dApp using Circle’s Cross-Chain Transfer Protocol (CCTP) and Axelar’s General Message Passing (GMP).
 
-What that means is, users will be able to issue a single transaction with a GMP payload. On the backend, the application takes care of USDC bridging, plus any other action that the user wishes — as indicated in the payload. Axelar services, also working on the backend, can handle conversion and payment for destination-chain gas fees, so the user only has to transact once, using one gas token. 
+What that means is, users will be able to issue a single transaction with a GMP payload. On the backend, the application takes care of USDC bridging, plus any other action that the user wishes — as indicated in the payload. Axelar services, also working on the backend, can handle conversion and payment for destination-chain gas fees, so the user only has to transact once, using one gas token.
 
 In this example, we will build a cross-chain swap dApp. It converts a native token from one chain to another chain, using native USDC as a routing asset. For example: send ETH to a contract on Ethereum Goerli testnet and receive AVAX on Avalanche Fuji testnet, or vice versa.
 
@@ -11,7 +10,6 @@ There are two parts we have to learn to achieve this:
 
 1. Sending a native USDC token cross-chain.
 2. Sending a swap payload cross-chain.
-
 
 ## Part 1: Sending a native USDC token cross-chain
 
@@ -107,7 +105,7 @@ interface ICircleBridge {
 
 That's it for the contract. We'll continue to add our business logic to it later in Part 2.
 
-2. When the USDC is burned,  the `CircleBridge` contract will emit a `MessageSent` event. An interface of the `MessageSent` event looks like this:
+2. When the USDC is burned, the `CircleBridge` contract will emit a `MessageSent` event. An interface of the `MessageSent` event looks like this:
 
 ```solidity
 event MessageSent(bytes message)
@@ -187,14 +185,14 @@ async function fetchAttestation(messageHash: string, maxAttempt = 10) {
   let attempt = 0;
   while (attempt < maxAttempt) {
     const _response = await fetch(
-      `https://iris-api-sandbox.circle.com/api/attestations?messageHash=${messageHash}`
+      `https://iris-api-sandbox.circle.com/attestations/${messageHash}`
     ).then((resp) => resp.json());
 
     if (_response?.status === "complete") {
       return _response?.attestation;
     }
 
-    sleep(5000);
+    await sleep(5000);
     attempt++;
   }
 }
@@ -234,8 +232,6 @@ async function retrieveUSDC(
 ```
 
 That's all about sending the USDC cross-chain. Next, let's try to integrate this with Axelar network to complete our cross-chain swap dApp.
-
-
 
 ## Part 2: Sending a swap payload cross-chain
 
@@ -413,7 +409,7 @@ There’s a lot of new code added here. Let’s try to understand it, step by st
 
 - Swap native token to USDC with low-level contract call.
 - Burn the USDC with the function that we implemented in Part 1.
-- Construct the swap payload to send to the **AxelarGateway** contract. The payload will be relayed by Axelar Relayer service to the destination contract.  The destination contract address is defined by `addSibling` function as mentioned in **Step 2**.
+- Construct the swap payload to send to the **AxelarGateway** contract. The payload will be relayed by Axelar Relayer service to the destination contract. The destination contract address is defined by `addSibling` function as mentioned in **Step 2**.
 - Pay gas to the **AxelarGasService** contract with the native token. The required amount will be calculated off-chain by using [AxelarJS-SDK](https://docs.axelar.dev/dev/axelarjs-sdk/intro) on the client side. See more information about it [here](https://docs.axelar.dev/dev/axelarjs-sdk/axelar-query-api#estimategasfee).
 - Send `destinationChain`, `destinationContractAddress`and `payload` to the **AxelarGateway** contract.
 
@@ -511,13 +507,18 @@ This upgrade mainly implements the `_execute` function to perform a final swap a
 
 **Step 3**: Approve USDC to the router contract and call the swap function, and refund if it fails.
 
-**Step 4**: Finally, emit `SwapSuccess` event if the swap is successful. 
-
+**Step 4**: Finally, emit `SwapSuccess` event if the swap is successful.
 
 And we’re done! Here is the [demo](https://www.youtube.com/watch?v=RyQkEcM1nKE) that communicates with the completed contract.
+<br />
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/RyQkEcM1nKE" title="YouTube video player" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>
 
+### Resources
+
+- CrosschainNativeSwap contract: [link](https://github.com/axelarnetwork/crosschain-usdc-demo/blob/live/hardhat/contracts/CrosschainNativeSwap.sol)
+- Running Crosschain USDC Example with Hardhat: [link](https://github.com/axelarnetwork/crosschain-usdc-demo/tree/live/hardhat)
+- Axelar Cross-chain USDC Demo: [link](https://circle-crosschain-usdc.vercel.app/)
 
 ### About Circle
 
