@@ -3,21 +3,28 @@ package testutils
 import (
 	"encoding/hex"
 	"fmt"
+	"math/big"
 	"strings"
 
+	"github.com/btcsuite/btcd/btcec"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"golang.org/x/exp/maps"
 
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	"github.com/axelarnetwork/axelar-core/x/multisig/exported"
+	"github.com/axelarnetwork/axelar-core/x/multisig/exported/mock"
 	multisigTestutils "github.com/axelarnetwork/axelar-core/x/multisig/exported/testutils"
 	"github.com/axelarnetwork/axelar-core/x/multisig/types/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	testutils2 "github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
 	"github.com/axelarnetwork/utils/funcs"
+	"github.com/axelarnetwork/utils/slices"
 )
 
 // RandomChains returns a random (valid) slice of chains for testing
@@ -172,12 +179,62 @@ func RandomDeposit() types.ERC20Deposit {
 
 // RandomCommand returns a random (valid) command for testing
 func RandomCommand() types.Command {
-	return types.Command{
-		ID:         RandomCommandID(),
-		Command:    randomNormalizedStr(5, 20),
-		Params:     rand.Bytes(int(rand.I64Between(1, 100))),
-		KeyID:      multisigTestutils.KeyID(),
-		MaxGasCost: uint32(rand.I64Between(0, 100000)),
+	commandType := rand.Of(
+		slices.Filter(
+			slices.TryCast[int32, types.CommandType](
+				maps.Keys(types.CommandType_name)),
+			func(t types.CommandType) bool { return t != types.COMMAND_TYPE_UNSPECIFIED })...)
+	chainID := sdk.NewIntFromUint64(uint64(rand.PosI64()))
+	asset := rand.Denom(5, 10)
+	amount := big.NewInt(rand.PosI64())
+
+	switch commandType {
+	case types.COMMAND_TYPE_APPROVE_CONTRACT_CALL:
+		return types.NewApproveContractCallCommand(chainID, multisigTestutils.KeyID(), testutils2.RandomChainName(), RandomHash(), uint64(rand.PosI64()), RandomEventContractCall())
+	case types.COMMAND_TYPE_APPROVE_CONTRACT_CALL_WITH_MINT:
+		return types.NewApproveContractCallWithMintCommand(chainID, multisigTestutils.KeyID(), testutils2.RandomChainName(), RandomHash(), uint64(rand.PosI64()), RandomEventContractCallWithToken(), sdk.NewUint(uint64(rand.PosI64())), asset)
+	case types.COMMAND_TYPE_DEPLOY_TOKEN:
+		return types.NewDeployTokenCommand(chainID, multisigTestutils.KeyID(), asset, RandomTokenDetails(), RandomAddress(), sdk.NewUint(uint64(rand.PosI64())))
+	case types.COMMAND_TYPE_BURN_TOKEN:
+		return types.NewBurnTokenCommand(chainID, multisigTestutils.KeyID(), rand.PosI64(), RandomBurnerInfo(), false)
+	case types.COMMAND_TYPE_MINT_TOKEN:
+		return types.NewMintTokenCommand(multisigTestutils.KeyID(), RandomCommandID(), asset, common.Address(RandomAddress()), amount)
+	case types.COMMAND_TYPE_TRANSFER_OPERATORSHIP:
+		key := &mock.KeyMock{
+			GetPubKeyFunc: func(valAddress sdk.ValAddress) (exported.PublicKey, bool) {
+				return funcs.Must(btcec.NewPrivateKey(btcec.S256())).PubKey().SerializeCompressed(), true
+			},
+			GetParticipantsFunc: func() []sdk.ValAddress {
+				return slices.Expand2(rand.ValAddr, int(rand.I64Between(1, 10)))
+			},
+			GetWeightFunc:           func(sdk.ValAddress) sdk.Uint { return sdk.NewUint(uint64(rand.PosI64())) },
+			GetMinPassingWeightFunc: func() sdk.Uint { return sdk.NewUint(uint64(rand.PosI64())) },
+		}
+		return types.NewMultisigTransferCommand(chainID, multisigTestutils.KeyID(), key)
+	default:
+		panic(fmt.Sprintf("unknown command type %s", commandType.String()))
+	}
+}
+
+// RandomEventContractCallWithToken returns a random (valid) types.EventContractCallWithToken
+func RandomEventContractCallWithToken() types.EventContractCallWithToken {
+	return types.EventContractCallWithToken{
+		Sender:           RandomAddress(),
+		DestinationChain: testutils2.RandomChainName(),
+		ContractAddress:  RandomAddress().Hex(),
+		PayloadHash:      RandomHash(),
+		Symbol:           rand.Denom(3, 5),
+		Amount:           sdk.NewUint(uint64(rand.PosI64())),
+	}
+}
+
+// RandomEventContractCall returns a random (valid) types.EventContractCall
+func RandomEventContractCall() types.EventContractCall {
+	return types.EventContractCall{
+		Sender:           RandomAddress(),
+		DestinationChain: testutils2.RandomChainName(),
+		ContractAddress:  RandomAddress().Hex(),
+		PayloadHash:      RandomHash(),
 	}
 }
 
