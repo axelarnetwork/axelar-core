@@ -222,11 +222,11 @@ func (c Command) DecodeParams() (map[string]string, error) {
 // Clone returns an exacy copy of Command
 func (c Command) Clone() Command {
 	clone := Command{
-		ID:    c.ID,
-		Type:  c.Type,
-		KeyID: c.KeyID,
+		ID:         c.ID,
+		Type:       c.Type,
+		KeyID:      c.KeyID,
 		MaxGasCost: c.MaxGasCost,
-		Params: make([]byte, len(c.Params)),
+		Params:     make([]byte, len(c.Params)),
 	}
 	copy(clone.Params, c.Params)
 

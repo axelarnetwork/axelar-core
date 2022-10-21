@@ -1,31 +1,31 @@
 package keeper_test
 
 import (
-	"github.com/axelarnetwork/axelar-core/x/evm/exported"
-	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
-	"github.com/axelarnetwork/axelar-core/x/evm/types/mock"
-	"github.com/axelarnetwork/axelar-core/x/evm/types/testutils"
-	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	"github.com/axelarnetwork/utils/funcs"
-	"github.com/stretchr/testify/assert"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramsKeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
+	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/app/params"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
+	"github.com/axelarnetwork/axelar-core/x/evm/exported"
+	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	"github.com/axelarnetwork/axelar-core/x/evm/types/mock"
+	"github.com/axelarnetwork/axelar-core/x/evm/types/testutils"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/utils/funcs"
 	. "github.com/axelarnetwork/utils/test"
 )
 
 func TestGetMigrationHandler(t *testing.T) {
 	var (
-		ctx     sdk.Context
-		k       *keeper.BaseKeeper
-		handler func(ctx sdk.Context) error
+		ctx         sdk.Context
+		k           *keeper.BaseKeeper
+		handler     func(ctx sdk.Context) error
 		err         error
 		expectedIDs []types.CommandID
 	)

@@ -3,14 +3,10 @@ package testutils
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/axelarnetwork/axelar-core/x/multisig/exported"
-	"github.com/axelarnetwork/axelar-core/x/multisig/exported/mock"
-	testutils2 "github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
-	"github.com/axelarnetwork/utils/slices"
-	"github.com/btcsuite/btcd/btcec"
 	"math/big"
 	"strings"
 
+	"github.com/btcsuite/btcd/btcec"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -21,10 +17,14 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	"github.com/axelarnetwork/axelar-core/x/multisig/exported"
+	"github.com/axelarnetwork/axelar-core/x/multisig/exported/mock"
 	multisigTestutils "github.com/axelarnetwork/axelar-core/x/multisig/exported/testutils"
 	"github.com/axelarnetwork/axelar-core/x/multisig/types/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	testutils2 "github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
 	"github.com/axelarnetwork/utils/funcs"
+	"github.com/axelarnetwork/utils/slices"
 )
 
 // RandomChains returns a random (valid) slice of chains for testing

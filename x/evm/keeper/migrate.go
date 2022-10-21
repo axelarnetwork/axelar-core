@@ -3,12 +3,13 @@ package keeper
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/axelarnetwork/axelar-core/utils/key"
-	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stoewer/go-strcase"
 
+	"github.com/axelarnetwork/axelar-core/utils/key"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/utils/slices"
 )
 
