@@ -49,13 +49,9 @@ type arbitrumClient struct {
 	l1Client *ethereum2Client
 }
 
-func newArbitrumClient(ethereumClient *ethereumClient, l1Client Client) (*arbitrumClient, error) {
+func newArbitrumClient(ethereumClient *ethereumClient, l1Client *ethereum2Client) (*arbitrumClient, error) {
 	// TODO: verify that the given l1 client corresponds to the Arbitrum chain, but how?
-	eth2Client, ok := l1Client.(*ethereum2Client)
-	if !ok {
-		return nil, fmt.Errorf("l1 client has to be ethereum 2.0 for arbitrum")
-	}
-	client := &arbitrumClient{ethereumClient: ethereumClient, l1Client: eth2Client}
+	client := &arbitrumClient{ethereumClient: ethereumClient, l1Client: l1Client}
 
 	header, err := client.HeaderByNumber(context.Background(), nil)
 	if err != nil {
@@ -87,7 +83,9 @@ func (c *arbitrumClient) IsFinalized(ctx context.Context, _ uint64, txReceipt *t
 		return false, err
 	}
 
-	return sdk.NewIntFromUint64(l1LatestBlockNumber).Sub(sdk.NewIntFromBigInt(l1LatestFinalizedBlockNumber)).AddRaw(1).BigInt().Cmp(l1Confirmations) <= 0, nil
+	finalizedConfirmations := sdk.NewIntFromUint64(l1LatestBlockNumber).Sub(sdk.NewIntFromBigInt(l1LatestFinalizedBlockNumber)).AddRaw(1).BigInt()
+
+	return finalizedConfirmations.Cmp(l1Confirmations) <= 0, nil
 }
 
 func (c *arbitrumClient) getL1Confirmations(ctx context.Context, blockHash common.Hash) (*big.Int, error) {
@@ -97,6 +95,9 @@ func (c *arbitrumClient) getL1Confirmations(ctx context.Context, blockHash commo
 		Data: data,
 	}
 	bz, err := c.CallContract(ctx, callMsg, nil)
+	if len(bz) != 32 {
+		return nil, fmt.Errorf("expected 32 bytes to be received, actual %d", len(bz))
+	}
 	if err != nil {
 		return nil, err
 	}

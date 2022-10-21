@@ -56,7 +56,9 @@ func (c *ethereumClient) IsFinalized(ctx context.Context, conf uint64, txReceipt
 		return false, err
 	}
 
-	return sdk.NewIntFromUint64(blockNumber).SubRaw(int64(conf)).AddRaw(1).BigInt().Cmp(txReceipt.BlockNumber) >= 0, nil
+	latestFinalizedBlockNumber := sdk.NewIntFromUint64(blockNumber).SubRaw(int64(conf)).AddRaw(1).BigInt()
+
+	return latestFinalizedBlockNumber.Cmp(txReceipt.BlockNumber) >= 0, nil
 }
 
 // copied from https://github.com/ethereum/go-ethereum/blob/69568c554880b3567bace64f8848ff1be27d084d/ethclient/ethclient.go#L565

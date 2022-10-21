@@ -429,17 +429,19 @@ func createTSSMgr(broadcaster broadcast.Broadcaster, cliCtx client.Context, axel
 	return mgr
 }
 
-func createRPCClient(config evmTypes.EVMConfig, clients map[string]evmRPC.Client) (evmRPC.Client, error) {
-	if config.L1ChainName != nil {
+func createL2ClientWith(clients map[string]evmRPC.Client) func(evmTypes.EVMConfig) (evmRPC.Client, error) {
+	return func(config evmTypes.EVMConfig) (evmRPC.Client, error) {
 		l1ChainName := strings.ToLower(*config.L1ChainName)
 		l1Client, ok := clients[l1ChainName]
 		if !ok {
 			return nil, fmt.Errorf("RPC client for L1 evm chain %s not found", l1ChainName)
 		}
 
-		return evmRPC.NewL2Client(config.RPCAddr, l1Client)
+		return evmRPC.NewL2Client(config.Name, config.RPCAddr, l1Client)
 	}
+}
 
+func createL1Client(config evmTypes.EVMConfig) (evmRPC.Client, error) {
 	return evmRPC.NewClient(config.RPCAddr)
 }
 
@@ -461,7 +463,14 @@ func createEVMMgr(axelarCfg config.ValdConfig, cliCtx sdkClient.Context, b broad
 			panic(err)
 		}
 
-		client, err := createRPCClient(config, rpcs)
+		var createClientFunc func(config evmTypes.EVMConfig) (evmRPC.Client, error)
+		if config.L1ChainName == nil {
+			createClientFunc = createL1Client
+		} else {
+			createClientFunc = createL2ClientWith(rpcs)
+		}
+
+		client, err := createClientFunc(config)
 		if err != nil {
 			err = sdkerrors.Wrap(err, fmt.Sprintf("failed to create an RPC connection for EVM chain %s. Verify your RPC config.", config.Name))
 			logger.Error(err.Error())
