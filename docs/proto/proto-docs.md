@@ -2235,10 +2235,11 @@ that is deposited by an user
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `id` | [bytes](#bytes) |  |  |
-| `command` | [CommandType](#axelar.evm.v1beta1.CommandType) |  |  |
+| `command` | [string](#string) |  | **Deprecated.**  |
 | `params` | [bytes](#bytes) |  |  |
 | `key_id` | [string](#string) |  |  |
 | `max_gas_cost` | [uint32](#uint32) |  |  |
+| `type` | [CommandType](#axelar.evm.v1beta1.CommandType) |  |  |
 
 
 

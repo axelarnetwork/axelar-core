@@ -246,7 +246,7 @@ message Command {
     (gogoproto.customname) = "ID",
     (gogoproto.customtype) = "CommandID"
   ];
-  CommandType command = 2;
+  string command = 2 [ deprecated = true ];
   bytes params = 3;
   string key_id = 4 [
     (gogoproto.customname) = "KeyID",
@@ -254,6 +254,7 @@ message Command {
         "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
   ];
   uint32 max_gas_cost = 5;
+  CommandType type = 6;
 }
 
 enum BatchedCommandsStatus {

@@ -91,6 +91,10 @@ func (k BaseKeeper) ForChain(ctx sdk.Context, chain nexus.ChainName) (types.Chai
 		panic("InitChain must be called before chain keepers can be used")
 	}
 
+	return k.forChain(ctx, chain)
+}
+
+func (k BaseKeeper) forChain(ctx sdk.Context, chain nexus.ChainName) (chainKeeper, error) {
 	chainKey := key.FromStr(subspacePrefix).Append(key.From(chain))
 	if !k.getBaseStore(ctx).HasNew(chainKey) {
 		return chainKeeper{}, fmt.Errorf("unknown chain %s", chain)

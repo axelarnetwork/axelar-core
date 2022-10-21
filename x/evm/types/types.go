@@ -200,7 +200,13 @@ func (t *ERC20Token) CreateMintCommand(keyID multisig.KeyID, transfer nexus.Cros
 		return Command{}, err
 	}
 
-	return NewMintTokenCommand(keyID, transferIDtoCommandID(transfer.ID), t.metadata.Details.Symbol, common.HexToAddress(transfer.Recipient.Address), transfer.Asset.Amount.BigInt()), nil
+	return NewMintTokenCommand(
+		keyID,
+		transferIDtoCommandID(transfer.ID),
+		t.metadata.Details.Symbol,
+		common.HexToAddress(transfer.Recipient.Address),
+		transfer.Asset.Amount.BigInt(),
+	), nil
 }
 
 // transferIDtoCommandID converts a transferID to a commandID
@@ -574,7 +580,7 @@ func NewCommandBatchMetadata(blockHeight int64, chainID sdk.Int, keyID multisig.
 
 	for _, cmd := range cmds {
 		commandIDs = append(commandIDs, cmd.ID)
-		commands = append(commands, cmd.Command)
+		commands = append(commands, cmd.Type)
 		commandParams = append(commandParams, cmd.Params)
 	}
 
@@ -1262,7 +1268,7 @@ func (c Command) ValidateBasic() error {
 		return err
 	}
 
-	if err := c.Command.ValidateBasic(); err != nil {
+	if err := c.Type.ValidateBasic(); err != nil {
 		return err
 	}
 

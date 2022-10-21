@@ -2,18 +2,47 @@ package keeper
 
 import (
 	"encoding/hex"
-
+	"fmt"
+	"github.com/axelarnetwork/axelar-core/utils/key"
+	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/stoewer/go-strcase"
 
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/utils/slices"
 )
 
-// Migrate5To6 returns the handler that performs in-place store migrations
-func Migrate5To6(k *BaseKeeper, n types.Nexus) func(ctx sdk.Context) error {
+// Migrate6To7 returns the handler that performs in-place store migrations
+func Migrate6To7(k *BaseKeeper, n types.Nexus) func(ctx sdk.Context) error {
 	return func(ctx sdk.Context) error {
+		chains := slices.Filter(n.GetChains(ctx), func(chain exported.Chain) bool { return chain.Module == types.ModuleName })
+		for _, chain := range chains {
+			ck, err := k.forChain(ctx, chain.Name)
+			if err != nil {
+				return err
+			}
+			iterCmd := ck.getStore(ctx).IteratorNew(key.FromStr(commandPrefix))
+
+			for ; iterCmd.Valid(); iterCmd.Next() {
+				var cmd types.Command
+				iterCmd.UnmarshalValue(&cmd)
+				if err := migrateCmdType(ctx, ck, key.FromBz(iterCmd.Key()), cmd); err != nil {
+					return err
+				}
+			}
+		}
 		return nil
 	}
+}
+
+func migrateCmdType(ctx sdk.Context, ck chainKeeper, key key.Key, cmd types.Command) error {
+	cmdType := strcase.UpperSnakeCase(fmt.Sprintf("COMMAND_TYPE_%s", cmd.Command))
+	typeEnum, ok := types.CommandType_value[cmdType]
+	if !ok {
+		return fmt.Errorf("command type %s is invalid at key %s", cmdType, key.String())
+	}
+	cmd.Type = types.CommandType(typeEnum)
+	return ck.getStore(ctx).SetNewValidated(key, &cmd)
 }
 
 // AlwaysMigrateBytecode migrates contracts bytecode for all evm chains (CRUCIAL, DO NOT DELETE AND ALWAYS REGISTER)

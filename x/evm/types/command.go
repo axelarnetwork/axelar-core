@@ -70,7 +70,7 @@ func NewBurnTokenCommand(chainID sdk.Int, keyID multisig.KeyID, height int64, bu
 
 	return Command{
 		ID:         NewCommandID(append(burnerInfo.Salt.Bytes(), heightBytes...), chainID),
-		Command:    COMMAND_TYPE_BURN_TOKEN,
+		Type:       COMMAND_TYPE_BURN_TOKEN,
 		Params:     createBurnTokenParams(burnerInfo.Symbol, common.Hash(burnerInfo.Salt)),
 		KeyID:      keyID,
 		MaxGasCost: uint32(burnTokenMaxGasCost),
@@ -81,7 +81,7 @@ func NewBurnTokenCommand(chainID sdk.Int, keyID multisig.KeyID, height int64, bu
 func NewDeployTokenCommand(chainID sdk.Int, keyID multisig.KeyID, asset string, tokenDetails TokenDetails, address Address, dailyMintLimit sdk.Uint) Command {
 	return Command{
 		ID:         NewCommandID([]byte(fmt.Sprintf("%s_%s", asset, tokenDetails.Symbol)), chainID),
-		Command:    COMMAND_TYPE_DEPLOY_TOKEN,
+		Type:       COMMAND_TYPE_DEPLOY_TOKEN,
 		Params:     createDeployTokenParams(tokenDetails.TokenName, tokenDetails.Symbol, tokenDetails.Decimals, tokenDetails.Capacity, address, dailyMintLimit),
 		KeyID:      keyID,
 		MaxGasCost: deployTokenMaxGasCost,
@@ -92,7 +92,7 @@ func NewDeployTokenCommand(chainID sdk.Int, keyID multisig.KeyID, asset string, 
 func NewMintTokenCommand(keyID multisig.KeyID, id CommandID, symbol string, address common.Address, amount *big.Int) Command {
 	return Command{
 		ID:         id,
-		Command:    COMMAND_TYPE_MINT_TOKEN,
+		Type:       COMMAND_TYPE_MINT_TOKEN,
 		Params:     createMintTokenParams(symbol, address, amount),
 		KeyID:      keyID,
 		MaxGasCost: mintTokenMaxGasCost,
@@ -110,7 +110,7 @@ func NewMultisigTransferCommand(chainID sdk.Int, keyID multisig.KeyID, nextKey m
 
 	return Command{
 		ID:         NewCommandID(concat, chainID),
-		Command:    COMMAND_TYPE_TRANSFER_OPERATORSHIP,
+		Type:       COMMAND_TYPE_TRANSFER_OPERATORSHIP,
 		Params:     createTransferMultisigParams(addresses, slices.Map(weights, sdk.Uint.BigInt), threshold.BigInt()),
 		KeyID:      keyID,
 		MaxGasCost: transferOperatorshipMaxGasCost,
@@ -131,7 +131,7 @@ func NewApproveContractCallCommand(
 
 	return Command{
 		ID:         NewCommandID(append(sourceTxID.Bytes(), sourceEventIndexBz...), chainID),
-		Command:    COMMAND_TYPE_APPROVE_CONTRACT_CALL,
+		Type:       COMMAND_TYPE_APPROVE_CONTRACT_CALL,
 		Params:     createApproveContractCallParams(sourceChain, sourceTxID, sourceEventIndex, event),
 		KeyID:      keyID,
 		MaxGasCost: uint32(approveContractCallMaxGasCost),
@@ -154,7 +154,7 @@ func NewApproveContractCallWithMintCommand(
 
 	return Command{
 		ID:         NewCommandID(append(sourceTxID.Bytes(), sourceEventIndexBz...), chainID),
-		Command:    COMMAND_TYPE_APPROVE_CONTRACT_CALL_WITH_MINT,
+		Type:       COMMAND_TYPE_APPROVE_CONTRACT_CALL_WITH_MINT,
 		Params:     createApproveContractCallWithMintParams(sourceChain, sourceTxID, sourceEventIndex, event, amount, symbol),
 		KeyID:      keyID,
 		MaxGasCost: uint32(approveContractCallWithMintMaxGasCost),
@@ -165,7 +165,7 @@ func NewApproveContractCallWithMintCommand(
 func (c Command) DecodeParams() (map[string]string, error) {
 	params := make(map[string]string)
 
-	switch c.Command {
+	switch c.Type {
 	case COMMAND_TYPE_APPROVE_CONTRACT_CALL_WITH_MINT:
 		sourceChain, sourceAddress, contractAddress, payloadHash, symbol, amount, sourceTxID, sourceEventIndex := decodeApproveContractCallWithMintParams(c.Params)
 
@@ -213,7 +213,7 @@ func (c Command) DecodeParams() (map[string]string, error) {
 		params["newWeights"] = strings.Join(slices.Map(weights, func(w *big.Int) string { return w.String() }), ";")
 		params["newThreshold"] = threshold.String()
 	default:
-		return nil, fmt.Errorf("unknown command type '%s'", c.Command)
+		return nil, fmt.Errorf("unknown command type '%s'", c.Type)
 	}
 
 	return params, nil
@@ -221,12 +221,13 @@ func (c Command) DecodeParams() (map[string]string, error) {
 
 // Clone returns an exacy copy of Command
 func (c Command) Clone() Command {
-	var clone Command
-
-	clone.Command = c.Command
-	clone.ID = c.ID
-	clone.KeyID = c.KeyID
-	clone.Params = make([]byte, len(c.Params))
+	clone := Command{
+		ID:    c.ID,
+		Type:  c.Type,
+		KeyID: c.KeyID,
+		MaxGasCost: c.MaxGasCost,
+		Params: make([]byte, len(c.Params)),
+	}
 	copy(clone.Params, c.Params)
 
 	return clone
