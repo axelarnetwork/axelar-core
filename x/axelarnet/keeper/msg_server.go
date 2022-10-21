@@ -192,6 +192,7 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, _ *types.ExecutePe
 				ID:         pendingTransfer.ID,
 				Receipient: pendingTransfer.Recipient.Address,
 				Asset:      pendingTransfer.Asset,
+				Recipient:  pendingTransfer.Recipient.Address,
 			})
 
 		s.nexus.ArchivePendingTransfer(ctx, pendingTransfer)
@@ -394,6 +395,7 @@ func (s msgServer) RetryIBCTransfer(c context.Context, req *types.RetryIBCTransf
 			Sequence:   t.Sequence,
 			PortID:     t.PortID,
 			ChannelID:  t.ChannelID,
+			Recipient:  t.Receiver,
 		})
 
 	return &types.RetryIBCTransferResponse{}, nil
