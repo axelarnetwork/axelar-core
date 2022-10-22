@@ -201,20 +201,13 @@ func (t *ERC20Token) CreateMintCommand(keyID multisig.KeyID, transfer nexus.Cros
 	}
 
 	return NewMintTokenCommand(
+		t.metadata.ChainID,
 		keyID,
-		transferIDtoCommandID(transfer.ID),
+		transfer.ID,
 		t.metadata.Details.Symbol,
 		common.HexToAddress(transfer.Recipient.Address),
 		transfer.Asset.Amount.BigInt(),
 	), nil
-}
-
-// transferIDtoCommandID converts a transferID to a commandID
-func transferIDtoCommandID(transferID nexus.TransferID) CommandID {
-	var commandID CommandID
-	copy(commandID[:], common.LeftPadBytes(transferID.Bytes(), 32)[:32])
-
-	return commandID
 }
 
 // GetAddress returns the token's address
@@ -667,14 +660,19 @@ func NewCommandID(data []byte, chainID sdk.Int) CommandID {
 	var commandID CommandID
 	copy(commandID[:], crypto.Keccak256(append(data, chainID.BigInt().Bytes()...))[:commandIDSize])
 
-	if bytes.Equal(commandID[:], zeroID[:]) {
+	if commandID.IsZero() {
 		copy(commandID[:], crypto.Keccak256(commandID[:])[:commandIDSize])
 	}
 
 	return commandID
 }
 
-// HexToCommandID decodes an hex representation of a CommandID
+// IsZero returns true if the command ID consists only of zeros
+func (c CommandID) IsZero() bool {
+	return bytes.Equal(c[:], zeroID[:])
+}
+
+// HexToCommandID decodes a hex representation of a CommandID
 func HexToCommandID(id string) (CommandID, error) {
 	bz, err := hex.DecodeString(id)
 	if err != nil {
@@ -724,7 +722,7 @@ func (c *CommandID) Unmarshal(data []byte) error {
 
 // ValidateBasic returns an error if the given command ID is invalid
 func (c CommandID) ValidateBasic() error {
-	if bytes.Equal(c[:], zeroID[:]) {
+	if c.IsZero() {
 		return errors.New("ID is zero")
 	}
 

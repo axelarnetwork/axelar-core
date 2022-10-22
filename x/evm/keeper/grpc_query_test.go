@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	nexustestutils "github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
 	"math/big"
 	"testing"
 
@@ -51,7 +52,7 @@ func TestQueryPendingCommands(t *testing.T) {
 		keyID = multisigTestutils.KeyID()
 		dailyMintLimit := sdk.NewUint(uint64(rand.PosI64()))
 		cmdDeploy := types.NewDeployTokenCommand(chainID, keyID, asset, createDetails(asset, symbol), types.ZeroAddress, dailyMintLimit)
-		cmdMint := types.NewMintTokenCommand(keyID, types.NewCommandID(rand.Bytes(10), chainID), symbol, common.BytesToAddress(rand.Bytes(common.AddressLength)), big.NewInt(rand.I64Between(1000, 100000)))
+		cmdMint := types.NewMintTokenCommand(chainID, keyID, nexustestutils.RandomTransferID(), symbol, common.BytesToAddress(rand.Bytes(common.AddressLength)), big.NewInt(rand.I64Between(1000, 100000)))
 		cmdBurn := types.NewBurnTokenCommand(chainID, keyID, ctx.BlockHeight(), types.BurnerInfo{
 			BurnerAddress: types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
 			TokenAddress:  types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),

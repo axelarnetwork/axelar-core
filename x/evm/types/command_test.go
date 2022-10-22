@@ -1,4 +1,4 @@
-package types
+package types_test
 
 import (
 	"encoding/binary"
@@ -12,11 +12,15 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/axelarnetwork/axelar-core/app/params"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	"github.com/axelarnetwork/axelar-core/x/evm/types/testutils"
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	multisigMock "github.com/axelarnetwork/axelar-core/x/multisig/exported/mock"
 	multisigTestutils "github.com/axelarnetwork/axelar-core/x/multisig/exported/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	nexustestutils "github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 )
@@ -25,22 +29,22 @@ func TestNewApproveContractCallWithMintCommand(t *testing.T) {
 	chainID := sdk.NewInt(1)
 	keyID := multisigTestutils.KeyID()
 	sourceChain := nexus.ChainName("polygon")
-	txID := Hash(common.HexToHash("0x5bb45dc24ddd6b90fa37f26eecfcf203328427c3226db29d1c01051b965ca93b"))
+	txID := types.Hash(common.HexToHash("0x5bb45dc24ddd6b90fa37f26eecfcf203328427c3226db29d1c01051b965ca93b"))
 	index := uint64(99)
 	sourceAddress := "0x68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8"
 	contractAddress := common.HexToAddress("0x956dA338C1518a7FB213042b70c60c021aeBd554")
 	payloadHash := common.HexToHash("0x7c6498469c4e2d466b6fc9af3c910587f6c0bdade714a16ab279a08a759a5c14")
 	symbol := "testA"
 	amount := sdk.NewUint(20000)
-	event := EventContractCallWithToken{
-		Sender:          Address(common.HexToAddress(sourceAddress)),
+	event := types.EventContractCallWithToken{
+		Sender:          types.Address(common.HexToAddress(sourceAddress)),
 		ContractAddress: contractAddress.Hex(),
-		PayloadHash:     Hash(payloadHash),
+		PayloadHash:     types.Hash(payloadHash),
 		Symbol:          rand.NormalizedStrBetween(1, 5),
 	}
 
 	expectedParams := "00000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000140000000000000000000000000956da338c1518a7fb213042b70c60c021aebd5547c6498469c4e2d466b6fc9af3c910587f6c0bdade714a16ab279a08a759a5c1400000000000000000000000000000000000000000000000000000000000001a00000000000000000000000000000000000000000000000000000000000004e205bb45dc24ddd6b90fa37f26eecfcf203328427c3226db29d1c01051b965ca93b00000000000000000000000000000000000000000000000000000000000000630000000000000000000000000000000000000000000000000000000000000007706f6c79676f6e00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002a3078363842393330343566653744383739346137634146333237653766383535434436436430334242380000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000057465737441000000000000000000000000000000000000000000000000000000"
-	actual := NewApproveContractCallWithMintCommand(
+	actual := types.NewApproveContractCallWithMintCommand(
 		chainID,
 		keyID,
 		sourceChain,
@@ -53,21 +57,21 @@ func TestNewApproveContractCallWithMintCommand(t *testing.T) {
 
 	assert.Equal(t, expectedParams, hex.EncodeToString(actual.Params))
 
-	actualSourceChain, actualSourceAddress, actualContractAddress, actualPayloadHash, actualSymbol, actualAmount, actualSourceTxID, actualSourceEventIndex := decodeApproveContractCallWithMintParams(actual.Params)
+	actualSourceChain, actualSourceAddress, actualContractAddress, actualPayloadHash, actualSymbol, actualAmount, actualSourceTxID, actualSourceEventIndex := types.DecodeApproveContractCallWithMintParams(actual.Params)
 	assert.Equal(t, sourceChain.String(), actualSourceChain)
 	assert.Equal(t, sourceAddress, actualSourceAddress)
 	assert.Equal(t, contractAddress, actualContractAddress)
 	assert.Equal(t, payloadHash, actualPayloadHash)
 	assert.Equal(t, symbol, actualSymbol)
 	assert.Equal(t, amount.BigInt(), actualAmount)
-	assert.Equal(t, txID, Hash(actualSourceTxID))
+	assert.Equal(t, txID, types.Hash(actualSourceTxID))
 	assert.Equal(t, index, actualSourceEventIndex.Uint64())
 }
 
 func TestNewMintTokenCommand(t *testing.T) {
 	chainID := sdk.NewInt(1)
 	keyID := multisigTestutils.KeyID()
-	commandID := NewCommandID(rand.Bytes(32), chainID)
+	transferID := nexustestutils.RandomTransferID()
 	symbol := rand.Str(3)
 	address := common.BytesToAddress(rand.Bytes(common.AddressLength))
 	amount := big.NewInt(rand.I64Between(100, 100000))
@@ -81,14 +85,18 @@ func TestNewMintTokenCommand(t *testing.T) {
 		strings.Repeat("0", 64-len(amountHex))+amountHex,
 		hex.EncodeToString([]byte(symbol)),
 	)
-	actual := NewMintTokenCommand(keyID, commandID, symbol, address, amount)
+	actual := types.NewMintTokenCommand(chainID, keyID, transferID, symbol, address, amount)
 
 	assert.Equal(t, expectedParams, hex.EncodeToString(actual.Params))
 
-	decodedSymbol, decodedAddr, decodedAmount := decodeMintTokenParams(actual.Params)
+	decodedSymbol, decodedAddr, decodedAmount := types.DecodeMintTokenParams(actual.Params)
 	assert.Equal(t, symbol, decodedSymbol)
 	assert.Equal(t, address, decodedAddr)
 	assert.Equal(t, amount, decodedAmount)
+
+	cmdWithZeroTransferID := types.NewMintTokenCommand(sdk.NewInt(0), keyID, 0, symbol, address, amount)
+
+	assert.False(t, cmdWithZeroTransferID.ID.IsZero())
 }
 
 func TestNewBurnTokenCommand(t *testing.T) {
@@ -102,17 +110,17 @@ func TestNewBurnTokenCommand(t *testing.T) {
 		hex.EncodeToString(salt.Bytes()),
 		hex.EncodeToString([]byte(symbol)),
 	)
-	actual := NewBurnTokenCommand(
+	actual := types.NewBurnTokenCommand(
 		chainID,
 		keyID,
 		height,
-		BurnerInfo{Symbol: symbol, Salt: Hash(salt)},
+		types.BurnerInfo{Symbol: symbol, Salt: types.Hash(salt)},
 		false,
 	)
 
 	assert.Equal(t, expectedParams, hex.EncodeToString(actual.Params))
 
-	decodedSymbol, decodedSalt := decodeBurnTokenParams(actual.Params)
+	decodedSymbol, decodedSalt := types.DecodeBurnTokenParams(actual.Params)
 	assert.Equal(t, symbol, decodedSymbol)
 	assert.Equal(t, salt, decodedSalt)
 }
@@ -156,18 +164,28 @@ func TestNewMultisigTransferCommand(t *testing.T) {
 
 	chainID := sdk.NewInt(1)
 	keyID := multisigTestutils.KeyID()
-	actual := NewMultisigTransferCommand(chainID, keyID, key)
+	actual := types.NewMultisigTransferCommand(chainID, keyID, key)
 	expectedParams := "00000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000180000000000000000000000000000000000000000000000000000000000000001e000000000000000000000000000000000000000000000000000000000000000800000000000000000000000019cc2044857d23129a29f763d0338da837ce35f60000000000000000000000002ab6fa7de5e9e9423125a4246e4de1b9c755607400000000000000000000000037cc4b7e8f9f505ca8126db8a9d070566ed5dae70000000000000000000000003e56f0d4497ac44993d9ea272d4707f8be6b42a6000000000000000000000000462b96f617d5d92f63f9949c6f4626623ea73fa400000000000000000000000068b93045fe7d8794a7caf327e7f855cd6cd03bb80000000000000000000000009e77c30badbbc412a0c20c6ce43b671c6f103434000000000000000000000000c1c0c8d2131cc866834c6382096eadfef1af2f52000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000070000000000000000000000000000000000000000000000000000000000000005"
 
 	assert.Equal(t, expectedParams, hex.EncodeToString(actual.Params))
 	assert.Equal(t, keyID, actual.KeyID)
 
-	decodedAddresses, decodedWeights, decodedThreshold := decodeTransferMultisigParams(actual.Params)
+	decodedAddresses, decodedWeights, decodedThreshold := types.DecodeTransferMultisigParams(actual.Params)
 	assert.Len(t, decodedAddresses, len(participants))
 	assert.Len(t, decodedWeights, len(participants))
 	assert.EqualValues(t, 30, decodedThreshold.Uint64())
 }
 
 func TestCommandType_String(t *testing.T) {
-	assert.Equal(t, "approveContractCallWithMint", COMMAND_TYPE_APPROVE_CONTRACT_CALL_WITH_MINT.String())
+	assert.Equal(t, "approveContractCallWithMint", types.COMMAND_TYPE_APPROVE_CONTRACT_CALL_WITH_MINT.String())
+}
+
+func TestCommand_Marshal(t *testing.T) {
+	cdc := params.MakeEncodingConfig().Codec
+	cmd := testutils.RandomCommand()
+	bz := cdc.MustMarshalLengthPrefixed(&cmd)
+
+	var unmarshaled types.Command
+	assert.NoError(t, cdc.UnmarshalLengthPrefixed(bz, &unmarshaled))
+	assert.NoError(t, unmarshaled.ValidateBasic())
 }

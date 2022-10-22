@@ -22,7 +22,7 @@ import (
 	multisigTestutils "github.com/axelarnetwork/axelar-core/x/multisig/exported/testutils"
 	"github.com/axelarnetwork/axelar-core/x/multisig/types/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	testutils2 "github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
+	nexustestutils "github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 )
@@ -190,15 +190,15 @@ func RandomCommand() types.Command {
 
 	switch commandType {
 	case types.COMMAND_TYPE_APPROVE_CONTRACT_CALL:
-		return types.NewApproveContractCallCommand(chainID, multisigTestutils.KeyID(), testutils2.RandomChainName(), RandomHash(), uint64(rand.PosI64()), RandomEventContractCall())
+		return types.NewApproveContractCallCommand(chainID, multisigTestutils.KeyID(), nexustestutils.RandomChainName(), RandomHash(), uint64(rand.PosI64()), RandomEventContractCall())
 	case types.COMMAND_TYPE_APPROVE_CONTRACT_CALL_WITH_MINT:
-		return types.NewApproveContractCallWithMintCommand(chainID, multisigTestutils.KeyID(), testutils2.RandomChainName(), RandomHash(), uint64(rand.PosI64()), RandomEventContractCallWithToken(), sdk.NewUint(uint64(rand.PosI64())), asset)
+		return types.NewApproveContractCallWithMintCommand(chainID, multisigTestutils.KeyID(), nexustestutils.RandomChainName(), RandomHash(), uint64(rand.PosI64()), RandomEventContractCallWithToken(), sdk.NewUint(uint64(rand.PosI64())), asset)
 	case types.COMMAND_TYPE_DEPLOY_TOKEN:
 		return types.NewDeployTokenCommand(chainID, multisigTestutils.KeyID(), asset, RandomTokenDetails(), RandomAddress(), sdk.NewUint(uint64(rand.PosI64())))
 	case types.COMMAND_TYPE_BURN_TOKEN:
 		return types.NewBurnTokenCommand(chainID, multisigTestutils.KeyID(), rand.PosI64(), RandomBurnerInfo(), false)
 	case types.COMMAND_TYPE_MINT_TOKEN:
-		return types.NewMintTokenCommand(multisigTestutils.KeyID(), RandomCommandID(), asset, common.Address(RandomAddress()), amount)
+		return types.NewMintTokenCommand(chainID, multisigTestutils.KeyID(), nexustestutils.RandomTransferID(), asset, common.Address(RandomAddress()), amount)
 	case types.COMMAND_TYPE_TRANSFER_OPERATORSHIP:
 		key := &mock.KeyMock{
 			GetPubKeyFunc: func(valAddress sdk.ValAddress) (exported.PublicKey, bool) {
@@ -220,7 +220,7 @@ func RandomCommand() types.Command {
 func RandomEventContractCallWithToken() types.EventContractCallWithToken {
 	return types.EventContractCallWithToken{
 		Sender:           RandomAddress(),
-		DestinationChain: testutils2.RandomChainName(),
+		DestinationChain: nexustestutils.RandomChainName(),
 		ContractAddress:  RandomAddress().Hex(),
 		PayloadHash:      RandomHash(),
 		Symbol:           rand.Denom(3, 5),
@@ -232,7 +232,7 @@ func RandomEventContractCallWithToken() types.EventContractCallWithToken {
 func RandomEventContractCall() types.EventContractCall {
 	return types.EventContractCall{
 		Sender:           RandomAddress(),
-		DestinationChain: testutils2.RandomChainName(),
+		DestinationChain: nexustestutils.RandomChainName(),
 		ContractAddress:  RandomAddress().Hex(),
 		PayloadHash:      RandomHash(),
 	}
