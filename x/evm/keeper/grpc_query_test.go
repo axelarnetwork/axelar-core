@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	nexustestutils "github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
 	"math/big"
 	"testing"
 
@@ -25,6 +24,7 @@ import (
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	multisigTestutils "github.com/axelarnetwork/axelar-core/x/multisig/exported/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	nexustestutils "github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
 	. "github.com/axelarnetwork/utils/test"
 )
 
