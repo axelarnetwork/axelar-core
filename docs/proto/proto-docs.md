@@ -72,6 +72,8 @@
 - [axelar/nexus/v1beta1/query.proto](#axelar/nexus/v1beta1/query.proto)
     - [AssetsRequest](#axelar.nexus.v1beta1.AssetsRequest)
     - [AssetsResponse](#axelar.nexus.v1beta1.AssetsResponse)
+    - [ChainMaintainersRequest](#axelar.nexus.v1beta1.ChainMaintainersRequest)
+    - [ChainMaintainersResponse](#axelar.nexus.v1beta1.ChainMaintainersResponse)
     - [ChainStateRequest](#axelar.nexus.v1beta1.ChainStateRequest)
     - [ChainStateResponse](#axelar.nexus.v1beta1.ChainStateResponse)
     - [ChainsByAssetRequest](#axelar.nexus.v1beta1.ChainsByAssetRequest)
@@ -82,7 +84,6 @@
     - [FeeInfoResponse](#axelar.nexus.v1beta1.FeeInfoResponse)
     - [LatestDepositAddressRequest](#axelar.nexus.v1beta1.LatestDepositAddressRequest)
     - [LatestDepositAddressResponse](#axelar.nexus.v1beta1.LatestDepositAddressResponse)
-    - [QueryChainMaintainersResponse](#axelar.nexus.v1beta1.QueryChainMaintainersResponse)
     - [RecipientAddressRequest](#axelar.nexus.v1beta1.RecipientAddressRequest)
     - [RecipientAddressResponse](#axelar.nexus.v1beta1.RecipientAddressResponse)
     - [TransferFeeRequest](#axelar.nexus.v1beta1.TransferFeeRequest)
@@ -330,6 +331,10 @@
 - [axelar/multisig/v1beta1/service.proto](#axelar/multisig/v1beta1/service.proto)
     - [MsgService](#axelar.multisig.v1beta1.MsgService)
     - [QueryService](#axelar.multisig.v1beta1.QueryService)
+  
+- [axelar/nexus/v1beta1/events.proto](#axelar/nexus/v1beta1/events.proto)
+    - [FeeDeducted](#axelar.nexus.v1beta1.FeeDeducted)
+    - [InsufficientFee](#axelar.nexus.v1beta1.InsufficientFee)
   
 - [axelar/nexus/v1beta1/params.proto](#axelar/nexus/v1beta1/params.proto)
     - [Params](#axelar.nexus.v1beta1.Params)
@@ -1455,6 +1460,37 @@ chain
 
 
 
+<a name="axelar.nexus.v1beta1.ChainMaintainersRequest"></a>
+
+### ChainMaintainersRequest
+ChainMaintainersRequest represents a message that queries
+the chain maintainers for the specified chain
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.nexus.v1beta1.ChainMaintainersResponse"></a>
+
+### ChainMaintainersResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `maintainers` | [bytes](#bytes) | repeated |  |
+
+
+
+
+
+
 <a name="axelar.nexus.v1beta1.ChainStateRequest"></a>
 
 ### ChainStateRequest
@@ -1607,21 +1643,6 @@ address by recipient address
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `deposit_addr` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="axelar.nexus.v1beta1.QueryChainMaintainersResponse"></a>
-
-### QueryChainMaintainersResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `maintainers` | [bytes](#bytes) | repeated |  |
 
 
 
@@ -5190,6 +5211,60 @@ Query defines the gRPC querier service.
 
 
 
+<a name="axelar/nexus/v1beta1/events.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/nexus/v1beta1/events.proto
+
+
+
+<a name="axelar.nexus.v1beta1.FeeDeducted"></a>
+
+### FeeDeducted
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `transfer_id` | [uint64](#uint64) |  |  |
+| `recipient_chain` | [string](#string) |  |  |
+| `recipient_address` | [string](#string) |  |  |
+| `amount` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+| `fee` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+
+
+
+
+
+
+<a name="axelar.nexus.v1beta1.InsufficientFee"></a>
+
+### InsufficientFee
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `transfer_id` | [uint64](#uint64) |  |  |
+| `recipient_chain` | [string](#string) |  |  |
+| `recipient_address` | [string](#string) |  |  |
+| `amount` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+| `fee` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
 <a name="axelar/nexus/v1beta1/params.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -5452,6 +5527,7 @@ QueryService defines the gRPC querier service.
 | `ChainState` | [ChainStateRequest](#axelar.nexus.v1beta1.ChainStateRequest) | [ChainStateResponse](#axelar.nexus.v1beta1.ChainStateResponse) | ChainState queries the state of a registered chain on the network | GET|/axelar/nexus/v1beta1/chain_state/{chain}|
 | `ChainsByAsset` | [ChainsByAssetRequest](#axelar.nexus.v1beta1.ChainsByAssetRequest) | [ChainsByAssetResponse](#axelar.nexus.v1beta1.ChainsByAssetResponse) | ChainsByAsset queries the chains that support an asset on the network | GET|/axelar/nexus/v1beta1/chains_by_asset/{asset}|
 | `RecipientAddress` | [RecipientAddressRequest](#axelar.nexus.v1beta1.RecipientAddressRequest) | [RecipientAddressResponse](#axelar.nexus.v1beta1.RecipientAddressResponse) | RecipientAddress queries the recipient address for a given deposit address | GET|/axelar/nexus/v1beta1/recipient_address/{deposit_chain}/{deposit_addr}|
+| `ChainMaintainers` | [ChainMaintainersRequest](#axelar.nexus.v1beta1.ChainMaintainersRequest) | [ChainMaintainersResponse](#axelar.nexus.v1beta1.ChainMaintainersResponse) | ChainMaintainers queries the chain maintainers for a given chain | GET|/axelar/nexus/v1beta1/chain_maintainers/{chain}|
 
  <!-- end services -->
 
