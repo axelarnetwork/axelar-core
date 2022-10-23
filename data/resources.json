@@ -1,6 +1,15 @@
 {
   "mainnet": [
     {
+      "name": "Contracts",
+      "value": [
+        {
+          "title": "Releases",
+          "value": "/resources/mainnet"
+        }
+      ]
+    },
+    {
       "name": "Block explorers",
       "value": [
         {
@@ -18,6 +27,14 @@
         {
           "title": "Metrika",
           "value": "https://app.metrika.co/dashboard/axelar"
+        },
+        {
+          "title": "Atomscan",
+          "value": "https://atomscan.com/axelar"
+        },
+        {
+          "title": "Ping.Pub",
+          "value": "https://ping.pub/axelar"
         }
       ]
     },
@@ -38,16 +55,16 @@
       "name": "RPC endpoints",
       "value": [
         {
-          "value": "https://rpc-axelar.imperator.co"
+          "value": "https://rpc-axelar.imperator.co:443"
         },
         {
-          "value": "https://axelar-rpc.quickapi.com"
+          "value": "https://axelar-rpc.quickapi.com:443"
         },
         {
-          "value": "https://axelar-rpc.pops.one"
+          "value": "https://axelar-rpc.pops.one:443"
         },
         {
-          "value": "https://axelar-rpc.chainode.tech"
+          "value": "https://axelar-rpc.chainode.tech:443"
         },
         {
           "value": "https://services.staketab.com/axelar-rpc"
@@ -108,16 +125,19 @@
       "name": "gRPC endpoints",
       "value": [
         {
-          "value": "services.staketab.com:9080"
+          "value": "axelar-grpc.chainode.tech"
+        },
+        {
+          "value": "axelar-grpcweb.chainode.tech"
+        },
+        {
+          "value": "axelar-grpc.polkachu.com:15190"
         },
         {
           "value": "axelar-grpc.qubelabs.io:9092"
         },
         {
-          "value": "axelar-grpc.chainode.tech"
-        },
-        {
-          "value": "axelar-grpcweb.chainode.tech"
+          "value": "services.staketab.com:9080"
         },
         {
           "value": "axelar-grpc.quantnode.tech:9090"
@@ -129,24 +149,38 @@
           "value": "https://axelar-grpcweb.quantnode.tech"
         },
         {
-          "value": "axelar-grpc.polkachu.com:15190"
-        },
-        {
           "value": "https://axelar-grpc.4sv.io"
         }
       ]
     },
     {
-      "name": "Contracts / Releases",
+      "name": "Archival endpoints",
       "value": [
         {
-          "title": "Mainnet",
-          "value": "/resources/mainnet"
+          "value": "https://axelar-archrpc.chainode.tech"
+        },
+        {
+          "value": "https://axelar-archrest.chainode.tech"
+        },
+        {
+          "value": "https://axelar-archgrpc.chainode.tech"
+        },
+        {
+          "value": "https://axelar-archgrpcweb.chainode.tech"
         }
       ]
     }
   ],
   "testnet": [
+    {
+      "name": "Contracts",
+      "value": [
+        {
+          "title": "Releases",
+          "value": "/resources/testnet"
+        }
+      ]
+    },
     {
       "name": "Block explorers",
       "value": [
@@ -168,11 +202,15 @@
       "name": "Faucets",
       "value": [
         {
-          "title": "Axelar testnet faucet",
+          "title": "Discord faucet bot",
+          "value": "https://discord.com/channels/770814806105128977/1002423218772136056"
+        },
+        {
+          "title": "Axelar faucet",
           "value": "https://faucet.testnet.axelar.dev"
         },
         {
-          "title": "Lisbon faucet by All That Node",
+          "title": "Faucet by All That Node",
           "value": "https://www.allthatnode.com/faucet/axelar.dsrv"
         }
       ]
@@ -236,18 +274,18 @@
           "value": "https://axelartest-grpcweb.quantnode.tech"
         }
       ]
-    },
-    {
-      "name": "Contracts / Releases",
-      "value": [
-        {
-          "title": "Testnet",
-          "value": "/resources/testnet"
-        }
-      ]
     }
   ],
   "testnet-2": [
+    {
+      "name": "Contracts",
+      "value": [
+        {
+          "title": "Releases",
+          "value": "/resources/testnet-2"
+        }
+      ]
+    },
     {
       "name": "Block explorers",
       "value": [
@@ -261,11 +299,11 @@
       "name": "Faucets",
       "value": [
         {
-          "title": "Axelar testnet-2 faucet",
+          "title": "Axelar faucet",
           "value": "https://faucet-casablanca.testnet.axelar.dev"
         },
         {
-          "title": "Casablanca faucet by All That Node",
+          "title": "Faucet by All That Node",
           "value": "https://www.allthatnode.com/faucet/axelar.dsrv"
         }
       ]
@@ -289,15 +327,6 @@
         },
         {
           "value": "https://axelar-casablanca-rpc.allthatnode.com:1317"
-        }
-      ]
-    },
-    {
-      "name": "Contracts / Releases",
-      "value": [
-        {
-          "title": "Testnet-2",
-          "value": "/resources/testnet-2"
         }
       ]
     }
