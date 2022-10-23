@@ -32,6 +32,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/sdk-utils/broadcast"
 	mock2 "github.com/axelarnetwork/axelar-core/sdk-utils/broadcast/mock"
 	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
+	"github.com/axelarnetwork/axelar-core/utils"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/reward/types"
 	"github.com/axelarnetwork/utils/slices"
