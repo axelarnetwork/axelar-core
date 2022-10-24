@@ -1,9 +1,8 @@
-package keeper
+package keeper_test
 
 import (
 	"testing"
 
-	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramsKeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 	"github.com/stretchr/testify/assert"
@@ -13,70 +12,88 @@ import (
 	"github.com/axelarnetwork/axelar-core/app/params"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/x/evm/exported"
+	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/evm/types/mock"
-	multisigtypes "github.com/axelarnetwork/axelar-core/x/multisig/types"
+	"github.com/axelarnetwork/axelar-core/x/evm/types/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/utils/funcs"
 	. "github.com/axelarnetwork/utils/test"
 )
 
-func setup() (sdk.Context, BaseKeeper) {
-	encCfg := params.MakeEncodingConfig()
-
-	encCfg.InterfaceRegistry.RegisterImplementations((*codec.ProtoMarshaler)(nil),
-		&multisigtypes.MultiSig{},
-	)
-
-	paramsK := paramsKeeper.NewKeeper(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("params"), sdk.NewKVStoreKey("tparams"))
-	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
-	keeper := NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("evm"), paramsK)
-
-	for _, params := range types.DefaultParams() {
-		keeper.ForChain(params.Chain).SetParams(ctx, params)
-	}
-
-	return ctx, keeper
-}
-
 func TestGetMigrationHandler(t *testing.T) {
 	var (
-		ctx     sdk.Context
-		keeper  BaseKeeper
-		handler func(ctx sdk.Context) error
+		ctx         sdk.Context
+		k           *keeper.BaseKeeper
+		handler     func(ctx sdk.Context) error
+		err         error
+		expectedIDs []types.CommandID
 	)
 
-	evmChains := []nexus.Chain{exported.Ethereum}
-	givenMigrationHandler := Given("the migration handler", func() {
-		ctx, keeper = setup()
-		nexus := mock.NexusMock{
-			GetChainsFunc: func(_ sdk.Context) []nexus.Chain {
-				return evmChains
-			},
-		}
+	cmdTypes := map[types.CommandType]string{
+		types.COMMAND_TYPE_MINT_TOKEN:                      "mintToken",
+		types.COMMAND_TYPE_DEPLOY_TOKEN:                    "deployToken",
+		types.COMMAND_TYPE_BURN_TOKEN:                      "burnToken",
+		types.COMMAND_TYPE_TRANSFER_OPERATORSHIP:           "transferOperatorship",
+		types.COMMAND_TYPE_APPROVE_CONTRACT_CALL_WITH_MINT: "approveContractCallWithMint",
+		types.COMMAND_TYPE_APPROVE_CONTRACT_CALL:           "approveContractCall",
+	}
 
-		handler = Migrate5To6(keeper, &nexus)
-	})
+	Given("a context", func() {
+		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+	}).
+		Given("a keeper", func() {
+			encCfg := params.MakeEncodingConfig()
+			pk := paramsKeeper.NewKeeper(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("params"), sdk.NewKVStoreKey("tparams"))
+			k = keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey(types.StoreKey), pk)
+			k.InitChains(ctx)
+			funcs.MustNoErr(k.CreateChain(ctx, types.DefaultParams()[0]))
+		}).
+		Given("a migration handler", func() {
+			n := &mock.NexusMock{
+				GetChainsFunc: func(sdk.Context) []nexus.Chain { return []nexus.Chain{exported.Ethereum} },
+			}
+			handler = keeper.Migrate6To7(k, n)
+		}).
+		Given("there are old commands", func() {
+			ck := funcs.Must(k.ForChain(ctx, exported.Ethereum.Name))
 
-	givenMigrationHandler.
-		When("TransferLimit param is not set", func() {
-			for _, chain := range evmChains {
-				ck := keeper.ForChain(chain.Name).(chainKeeper)
-				subspace, _ := ck.getSubspace(ctx)
-				subspace.Set(ctx, types.KeyTransferLimit, int64(0))
+			expectedIDs = []types.CommandID{}
+			for i := 0; i < 3; i++ {
+				cmd := testutils.RandomCommand()
+				cmd.Command = cmdTypes[cmd.Type]
+				cmd.Type = types.COMMAND_TYPE_UNSPECIFIED
+				expectedIDs = append(expectedIDs, cmd.ID)
+				funcs.MustNoErr(ck.EnqueueCommand(ctx, cmd))
+			}
+
+			_ = funcs.Must(ck.CreateNewBatchToSign(ctx))
+		}).
+		Given("there are commands in the queue", func() {
+			ck := funcs.Must(k.ForChain(ctx, exported.Ethereum.Name))
+
+			for i := 0; i < 2; i++ {
+				cmd := testutils.RandomCommand()
+				cmd.Command = cmdTypes[cmd.Type]
+				cmd.Type = types.COMMAND_TYPE_UNSPECIFIED
+				expectedIDs = append(expectedIDs, cmd.ID)
+				funcs.MustNoErr(ck.EnqueueCommand(ctx, cmd))
 			}
 		}).
-		Then("should set TransferLimit param", func(t *testing.T) {
-			for _, chain := range evmChains {
-				ck := keeper.ForChain(chain.Name).(chainKeeper)
-				assert.Zero(t, ck.GetParams(ctx).TransferLimit)
-			}
-
-			err := handler(ctx)
+		When("calling migration", func() {
+			err = handler(ctx)
+		}).
+		Then("it succeeds", func(t *testing.T) {
 			assert.NoError(t, err)
+		}).
+		Then("all commands have been migrated", func(t *testing.T) {
+			ck := funcs.Must(k.ForChain(ctx, exported.Ethereum.Name))
 
-			for _, chain := range evmChains {
-				ck := keeper.ForChain(chain.Name).(chainKeeper)
-				assert.Equal(t, types.DefaultParams()[0].TransferLimit, ck.GetParams(ctx).TransferLimit)
+			for _, id := range expectedIDs {
+				cmd, ok := ck.GetCommand(ctx, id)
+				assert.True(t, ok)
+
+				assert.NotEqual(t, types.COMMAND_TYPE_UNSPECIFIED, cmd.Type)
 			}
-		})
+		}).Run(t, 20)
 }

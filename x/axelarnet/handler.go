@@ -37,18 +37,11 @@ func NewHandler(k keeper.Keeper, n types.Nexus, b types.BankKeeper, a types.Acco
 				result.Log = "successfully executed pending transfers"
 			}
 			return result, err
-		case *types.RegisterIBCPathRequest:
-			res, err := server.RegisterIBCPath(sdk.WrapSDKContext(ctx), msg)
-			result, err := sdk.WrapServiceResult(ctx, res, err)
-			if err == nil {
-				result.Log = fmt.Sprintf("successfully registered chain %s with path %s", msg.Chain, msg.Path)
-			}
-			return result, err
 		case *types.AddCosmosBasedChainRequest:
 			res, err := server.AddCosmosBasedChain(sdk.WrapSDKContext(ctx), msg)
 			result, err := sdk.WrapServiceResult(ctx, res, err)
 			if err == nil {
-				result.Log = fmt.Sprintf("successfully added chain %s", msg.Chain.Name)
+				result.Log = fmt.Sprintf("successfully added chain %s", msg.CosmosChain)
 			}
 			return result, err
 		case *types.RegisterAssetRequest:

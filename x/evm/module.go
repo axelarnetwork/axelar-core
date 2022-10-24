@@ -88,7 +88,7 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 type AppModule struct {
 	AppModuleBasic
 	logger      log.Logger
-	keeper      keeper.BaseKeeper
+	keeper      *keeper.BaseKeeper
 	voter       types.Voter
 	nexus       types.Nexus
 	snapshotter types.Snapshotter
@@ -99,7 +99,7 @@ type AppModule struct {
 
 // NewAppModule creates a new AppModule object
 func NewAppModule(
-	k keeper.BaseKeeper,
+	k *keeper.BaseKeeper,
 	voter types.Voter,
 	nexus types.Nexus,
 	snapshotter types.Snapshotter,
@@ -160,7 +160,7 @@ func (am AppModule) LegacyQuerierHandler(*codec.LegacyAmino) sdk.Querier {
 func (am AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterQueryServiceServer(cfg.QueryServer(), keeper.NewGRPCQuerier(am.keeper, am.nexus, am.multisig))
 
-	err := cfg.RegisterMigration(types.ModuleName, 5, keeper.AlwaysMigrateBytecode(am.keeper, am.nexus, keeper.Migrate5To6(am.keeper, am.nexus)))
+	err := cfg.RegisterMigration(types.ModuleName, 6, keeper.AlwaysMigrateBytecode(am.keeper, am.nexus, keeper.Migrate6To7(am.keeper, am.nexus)))
 	if err != nil {
 		panic(err)
 	}
@@ -179,4 +179,4 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 }
 
 // ConsensusVersion implements AppModule/ConsensusVersion.
-func (AppModule) ConsensusVersion() uint64 { return 6 }
+func (AppModule) ConsensusVersion() uint64 { return 7 }

@@ -75,8 +75,8 @@ func (m GenesisState) Validate() error {
 			return getValidateError(j, sdkerrors.Wrapf(err, "invalid params"))
 		}
 
-		if chain.Gateway.Status != GatewayStatusConfirmed {
-			errStr := "gateway is not confirmed"
+		if chain.Gateway.Address.IsZeroAddress() {
+			errStr := "gateway is not set"
 
 			if len(chain.Tokens) > 0 {
 				return getValidateError(j, sdkerrors.Wrap(fmt.Errorf("cannot initialize tokens"), errStr))

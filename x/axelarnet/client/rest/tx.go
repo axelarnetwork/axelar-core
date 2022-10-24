@@ -19,7 +19,6 @@ const (
 	TxLink                    = "link"
 	TxConfirmDeposit          = "confirm-deposit"
 	TxExecutePendingTransfers = "execute-pending"
-	TxRegisterIBCPath         = "register-path"
 	TxAddCosmosBasedChain     = "add-cosmos-based-chain"
 	TxRegisterAsset           = "register-asset"
 	TxRegisterFeeCollector    = "register-fee-collector"
@@ -59,6 +58,7 @@ type ReqAddCosmosBasedChain struct {
 	Name         string        `json:"name" yaml:"name"`
 	AddrPrefix   string        `json:"addr_prefix" yaml:"addr_prefix"`
 	NativeAssets []nexus.Asset `json:"native_assets" yaml:"native_assets"`
+	IBCPath      string        `json:"ibc_path" yaml:"ibc_path"`
 }
 
 // ReqRegisterAsset represents a request to register an asset to a cosmos based chain
@@ -86,7 +86,6 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerTx(TxHandlerLink(cliCtx), TxLink, clientUtils.PathVarChain)
 	registerTx(TxHandlerConfirmDeposit(cliCtx), TxConfirmDeposit)
 	registerTx(TxHandlerExecutePendingTransfers(cliCtx), TxExecutePendingTransfers)
-	registerTx(TxHandlerRegisterIBCPath(cliCtx), TxRegisterIBCPath)
 	registerTx(TxHandlerAddCosmosBasedChain(cliCtx), TxAddCosmosBasedChain)
 	registerTx(TxHandlerRegisterAsset(cliCtx), TxRegisterAsset)
 	registerTx(TxHandlerRegisterFeeCollector(cliCtx), TxRegisterFeeCollector)
@@ -178,33 +177,6 @@ func TxHandlerExecutePendingTransfers(cliCtx client.Context) http.HandlerFunc {
 	}
 }
 
-// TxHandlerRegisterIBCPath returns the handler to register an IBC tracing path for a cosmos chain
-func TxHandlerRegisterIBCPath(cliCtx client.Context) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var req ReqRegisterIBCPath
-		if !rest.ReadRESTReq(w, r, cliCtx.LegacyAmino, &req) {
-			return
-		}
-		req.BaseReq = req.BaseReq.Sanitize()
-		if !req.BaseReq.ValidateBasic(w) {
-			return
-		}
-
-		fromAddr, ok := clientUtils.ExtractReqSender(w, req.BaseReq)
-		if !ok {
-			return
-		}
-
-		msg := types.NewRegisterIBCPathRequest(fromAddr, req.Chain, req.Path)
-		if err := msg.ValidateBasic(); err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
-		}
-
-		tx.WriteGeneratedTxResponse(cliCtx, w, req.BaseReq, msg)
-	}
-}
-
 // TxHandlerAddCosmosBasedChain returns the handler to add a cosmos based chain to nexus
 func TxHandlerAddCosmosBasedChain(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -222,7 +194,7 @@ func TxHandlerAddCosmosBasedChain(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewAddCosmosBasedChainRequest(fromAddr, req.Name, req.AddrPrefix, req.NativeAssets)
+		msg := types.NewAddCosmosBasedChainRequest(fromAddr, req.Name, req.AddrPrefix, req.NativeAssets, req.IBCPath)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

@@ -11,6 +11,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/query"
 
+	"github.com/axelarnetwork/axelar-core/utils/events"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -91,7 +92,11 @@ func (s msgServer) ConfirmGatewayTx(c context.Context, req *types.ConfirmGateway
 		return nil, err
 	}
 
-	keeper := s.ForChain(chain.Name)
+	keeper, err := s.ForChain(ctx, chain.Name)
+	if err != nil {
+		return nil, err
+	}
+
 	gatewayAddress, ok := keeper.GetGatewayAddress(ctx)
 	if !ok {
 		return nil, fmt.Errorf("axelar gateway address not set")
@@ -102,18 +107,15 @@ func (s msgServer) ConfirmGatewayTx(c context.Context, req *types.ConfirmGateway
 		return nil, err
 	}
 
-	height, ok := keeper.GetRequiredConfirmationHeight(ctx)
-	if !ok {
-		return nil, fmt.Errorf("required confirmation height not found")
-	}
+	height := keeper.GetRequiredConfirmationHeight(ctx)
 
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.ConfirmGatewayTxStarted{
+	events.Emit(ctx, &types.ConfirmGatewayTxStarted{
 		TxID:               req.TxID,
 		Chain:              chain.Name,
 		GatewayAddress:     gatewayAddress,
 		ConfirmationHeight: height,
 		PollParticipants:   pollParticipants,
-	}))
+	})
 
 	return &types.ConfirmGatewayTxResponse{}, nil
 }
@@ -134,7 +136,10 @@ func (s msgServer) SetGateway(c context.Context, req *types.SetGatewayRequest) (
 		return nil, fmt.Errorf("current key not set for chain %s", chain.Name)
 	}
 
-	keeper := s.ForChain(chain.Name)
+	keeper, err := s.ForChain(ctx, chain.Name)
+	if err != nil {
+		return nil, err
+	}
 	if _, ok := keeper.GetGatewayAddress(ctx); ok {
 		return nil, fmt.Errorf("%s gateway already set", req.Chain)
 	}
@@ -165,7 +170,10 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 		return nil, err
 	}
 
-	keeper := s.ForChain(senderChain.Name)
+	keeper, err := s.ForChain(ctx, senderChain.Name)
+	if err != nil {
+		return nil, err
+	}
 	gatewayAddr, ok := keeper.GetGatewayAddress(ctx)
 	if !ok {
 		return nil, fmt.Errorf("axelar gateway address not set")
@@ -249,11 +257,13 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, fmt.Errorf("%s is not a registered chain", req.Asset.Chain)
 	}
 
-	keeper := s.ForChain(chain.Name)
+	keeper, err := s.ForChain(ctx, chain.Name)
+	if err != nil {
+		return nil, err
+	}
 	token := keeper.GetERC20TokenByAsset(ctx, req.Asset.Name)
 
-	err := token.RecordDeployment(req.TxID)
-	if err != nil {
+	if err := token.RecordDeployment(req.TxID); err != nil {
 		return nil, err
 	}
 
@@ -262,15 +272,15 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 		return nil, err
 	}
 
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.ConfirmTokenStarted{
+	events.Emit(ctx, &types.ConfirmTokenStarted{
 		TxID:               req.TxID,
 		Chain:              chain.Name,
 		GatewayAddress:     funcs.MustOk(keeper.GetGatewayAddress(ctx)),
 		TokenAddress:       token.GetAddress(),
 		TokenDetails:       token.GetDetails(),
-		ConfirmationHeight: funcs.MustOk(keeper.GetRequiredConfirmationHeight(ctx)),
+		ConfirmationHeight: keeper.GetRequiredConfirmationHeight(ctx),
 		PollParticipants:   pollParticipants,
-	}))
+	})
 
 	return &types.ConfirmTokenResponse{}, nil
 }
@@ -287,7 +297,10 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, err
 	}
 
-	keeper := s.ForChain(chain.Name)
+	keeper, err := s.ForChain(ctx, chain.Name)
+	if err != nil {
+		return nil, err
+	}
 	gatewayAddr, ok := keeper.GetGatewayAddress(ctx)
 	if !ok {
 		return nil, fmt.Errorf("gateway address not set for chain %s", chain.Name)
@@ -317,8 +330,8 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, err
 	}
 
-	height, _ := keeper.GetRequiredConfirmationHeight(ctx)
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.ConfirmDepositStarted{
+	height := keeper.GetRequiredConfirmationHeight(ctx)
+	events.Emit(ctx, &types.ConfirmDepositStarted{
 		TxID:               req.TxID,
 		Chain:              chain.Name,
 		DepositAddress:     req.BurnerAddress,
@@ -326,7 +339,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		ConfirmationHeight: height,
 		PollParticipants:   pollParticipants,
 		Asset:              burnerInfo.Asset,
-	}))
+	})
 
 	return &types.ConfirmDepositResponse{}, nil
 }
@@ -347,7 +360,10 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 		return nil, fmt.Errorf("next key for chain %s not set yet", chain.Name)
 	}
 
-	keeper := s.ForChain(chain.Name)
+	keeper, err := s.ForChain(ctx, chain.Name)
+	if err != nil {
+		return nil, err
+	}
 
 	gatewayAddr, ok := keeper.GetGatewayAddress(ctx)
 	if !ok {
@@ -360,7 +376,7 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 	}
 
 	params := keeper.GetParams(ctx)
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(types.NewConfirmKeyTransferStarted(chain.Name, req.TxID, gatewayAddr, params.ConfirmationHeight, pollParticipants)))
+	events.Emit(ctx, types.NewConfirmKeyTransferStarted(chain.Name, req.TxID, gatewayAddr, params.ConfirmationHeight, pollParticipants))
 
 	return &types.ConfirmTransferKeyResponse{}, nil
 }
@@ -381,7 +397,10 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 		return nil, err
 	}
 
-	keeper := s.ForChain(chain.Name)
+	keeper, err := s.ForChain(ctx, chain.Name)
+	if err != nil {
+		return nil, err
+	}
 
 	switch req.Address.IsZeroAddress() {
 	case true:
@@ -445,7 +464,10 @@ func (s msgServer) CreateBurnTokens(c context.Context, req *types.CreateBurnToke
 		return nil, err
 	}
 
-	keeper := s.ForChain(chain.Name)
+	keeper, err := s.ForChain(ctx, chain.Name)
+	if err != nil {
+		return nil, err
+	}
 	transferLimit := keeper.GetParams(ctx).TransferLimit
 	pageRequest := &query.PageRequest{
 		Key:        nil,
@@ -493,7 +515,7 @@ func (s msgServer) CreateBurnTokens(c context.Context, req *types.CreateBurnToke
 			return nil, fmt.Errorf("token %s is not confirmed on %s", token.GetAsset(), chain.Name)
 		}
 
-		cmd, err := types.CreateBurnTokenCommand(chainID, multisig.KeyID(keyID), ctx.BlockHeight(), *burnerInfo, token.IsExternal())
+		cmd := types.NewBurnTokenCommand(chainID, multisig.KeyID(keyID), ctx.BlockHeight(), *burnerInfo, token.IsExternal())
 		if err != nil {
 			return nil, sdkerrors.Wrapf(err, "failed to create burn-token command to burn token at address %s for chain %s", burnerAddressHex, chain.Name)
 		}
@@ -502,13 +524,13 @@ func (s msgServer) CreateBurnTokens(c context.Context, req *types.CreateBurnToke
 			return nil, err
 		}
 
-		funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.BurnCommand{
+		events.Emit(ctx, &types.BurnCommand{
 			Chain:            chain.Name,
 			CommandID:        cmd.ID,
 			DestinationChain: deposit.DestinationChain,
 			DepositAddress:   deposit.BurnerAddress.Hex(),
 			Asset:            token.GetAsset(),
-		}))
+		})
 
 		seen[burnerAddressHex] = true
 	}
@@ -528,7 +550,10 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 		return nil, err
 	}
 
-	keeper := s.ForChain(chain.Name)
+	keeper, err := s.ForChain(ctx, chain.Name)
+	if err != nil {
+		return nil, err
+	}
 	transferLimit := keeper.GetParams(ctx).TransferLimit
 	pageRequest := &query.PageRequest{
 		Key:        nil,
@@ -577,14 +602,14 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 			return nil, err
 		}
 
-		funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.MintCommand{
+		events.Emit(ctx, &types.MintCommand{
 			Chain:              chain.Name,
 			TransferID:         transfer.ID,
 			CommandID:          cmd.ID,
 			DestinationChain:   transfer.Recipient.Chain.Name,
 			DestinationAddress: transfer.Recipient.Address,
 			Asset:              transfer.Asset,
-		}))
+		})
 
 		s.nexus.ArchivePendingTransfer(ctx, transfer)
 	}
@@ -594,7 +619,10 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 
 func (s msgServer) CreateTransferOperatorship(c context.Context, req *types.CreateTransferOperatorshipRequest) (*types.CreateTransferOperatorshipResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
-	keeper := s.ForChain(req.Chain)
+	keeper, err := s.ForChain(ctx, req.Chain)
+	if err != nil {
+		return nil, err
+	}
 
 	if _, ok := keeper.GetGatewayAddress(ctx); !ok {
 		return nil, fmt.Errorf("axelar gateway address not set")
@@ -645,7 +673,7 @@ func (s msgServer) createTransferKeyCommand(ctx sdk.Context, keeper types.ChainK
 		return types.Command{}, fmt.Errorf("could not find threshold key '%s'", nextKeyID)
 	}
 
-	return types.CreateMultisigTransferCommand(chainID, keyID, nextKey), nil
+	return types.NewMultisigTransferCommand(chainID, keyID, nextKey), nil
 }
 
 func getCommandBatchToSign(ctx sdk.Context, keeper types.ChainKeeper) (types.CommandBatch, error) {
@@ -672,7 +700,10 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 		return nil, err
 	}
 
-	keeper := s.ForChain(chain.Name)
+	keeper, err := s.ForChain(ctx, chain.Name)
+	if err != nil {
+		return nil, err
+	}
 
 	if _, ok := keeper.GetChainID(ctx); !ok {
 		return nil, fmt.Errorf("could not find chain ID for '%s'", chain.Name)
@@ -740,9 +771,11 @@ func (s msgServer) AddChain(c context.Context, req *types.AddChainRequest) (*typ
 
 	chain := nexus.Chain{Name: req.Name, SupportsForeignAssets: true, KeyType: tss.Multisig, Module: types.ModuleName}
 	s.nexus.SetChain(ctx, chain)
-	s.ForChain(chain.Name).SetParams(ctx, req.Params)
 
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.ChainAdded{Chain: req.Name}))
+	if err := s.CreateChain(ctx, req.Params); err != nil {
+		return nil, err
+	}
+	events.Emit(ctx, &types.ChainAdded{Chain: req.Name})
 
 	return &types.AddChainResponse{}, nil
 }
@@ -759,7 +792,10 @@ func (s msgServer) RetryFailedEvent(c context.Context, req *types.RetryFailedEve
 		return nil, err
 	}
 
-	keeper := s.ForChain(chain.Name)
+	keeper, err := s.ForChain(ctx, chain.Name)
+	if err != nil {
+		return nil, err
+	}
 
 	event, ok := keeper.GetEvent(ctx, req.EventID)
 	if !ok {
@@ -779,17 +815,20 @@ func (s msgServer) RetryFailedEvent(c context.Context, req *types.RetryFailedEve
 		"eventID", event.GetID(),
 	)
 
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.EVMEventRetryFailed{
+	events.Emit(ctx, &types.EVMEventRetryFailed{
 		Chain:   event.Chain,
 		EventID: event.GetID(),
 		Type:    event.GetEventType(),
-	}))
+	})
 
 	return &types.RetryFailedEventResponse{}, nil
 }
 
 func (s msgServer) initializePoll(ctx sdk.Context, chain nexus.Chain, txID types.Hash) (vote.PollParticipants, error) {
-	keeper := s.ForChain(chain.Name)
+	keeper, err := s.ForChain(ctx, chain.Name)
+	if err != nil {
+		return vote.PollParticipants{}, err
+	}
 	params := keeper.GetParams(ctx)
 	snap, err := s.snapshotter.CreateSnapshot(
 		ctx,

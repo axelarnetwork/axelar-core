@@ -91,8 +91,8 @@ func SortTransfers(transfers []IBCTransfer) {
 	sort.Stable(sortedTransfers(transfers))
 }
 
-// Validate checks the stateless validity of the cosmos chain
-func (m CosmosChain) Validate() error {
+// ValidateBasic checks the stateless validity of the cosmos chain
+func (m CosmosChain) ValidateBasic() error {
 	if m.Name.Equals(exported.Axelarnet.Name) {
 		if m.IBCPath != "" {
 			return fmt.Errorf("IBC path should be empty for %s", exported.Axelarnet.Name)
@@ -172,3 +172,17 @@ func (m IBCTransfer) ValidateBasic() error {
 
 	return nil
 }
+
+// CoinType on can be ICS20 token, native asset, or wrapped asset from external chains
+type CoinType int
+
+const (
+	// Unrecognized means coin type is unrecognized
+	Unrecognized = iota
+	// Native means native token on Axelarnet
+	Native = 1
+	// ICS20 means coin from IBC chains
+	ICS20 = 2
+	// External means from external chains, such as EVM chains
+	External = 3
+)

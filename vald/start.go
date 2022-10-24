@@ -45,6 +45,7 @@ import (
 	"github.com/axelarnetwork/tm-events/tendermint"
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/jobs"
+	"github.com/axelarnetwork/utils/slices"
 )
 
 // RW grants -rw------- file permissions
@@ -252,6 +253,9 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 		logger.Info("event listener stopped")
 		logger.Info("stopping subscribers...")
 		<-mgr.Done()
+		if err := <-mgr.Errs(); err != nil {
+			logger.Error(err.Error())
+		}
 		logger.Info("subscriptions stopped")
 	})
 
@@ -425,41 +429,66 @@ func createTSSMgr(broadcaster broadcast.Broadcaster, cliCtx client.Context, axel
 	return mgr
 }
 
+func createL2ClientWith(clients map[string]evmRPC.Client) func(evmTypes.EVMConfig) (evmRPC.Client, error) {
+	return func(config evmTypes.EVMConfig) (evmRPC.Client, error) {
+		l1ChainName := strings.ToLower(*config.L1ChainName)
+		l1Client, ok := clients[l1ChainName]
+		if !ok {
+			return nil, fmt.Errorf("RPC client for L1 evm chain %s not found", l1ChainName)
+		}
+
+		return evmRPC.NewL2Client(config.Name, config.RPCAddr, l1Client)
+	}
+}
+
+func createL1Client(config evmTypes.EVMConfig) (evmRPC.Client, error) {
+	return evmRPC.NewClient(config.RPCAddr)
+}
+
 func createEVMMgr(axelarCfg config.ValdConfig, cliCtx sdkClient.Context, b broadcast.Broadcaster, logger log.Logger, cdc *codec.LegacyAmino, valAddr sdk.ValAddress) *evm.Mgr {
 	rpcs := make(map[string]evmRPC.Client)
 
-	for _, evmChainConf := range axelarCfg.EVMConfig {
-		if !evmChainConf.WithBridge {
-			logger.Debug(fmt.Sprintf("RPC connection is disabled for EVM chain %s. Skipping...", evmChainConf.Name))
-			continue
-		}
+	l1ChainConfigs := slices.Filter(axelarCfg.EVMConfig, func(config evmTypes.EVMConfig) bool {
+		return config.WithBridge && config.L1ChainName == nil
+	})
+	l2ChainConfigs := slices.Filter(axelarCfg.EVMConfig, func(config evmTypes.EVMConfig) bool {
+		return config.WithBridge && config.L1ChainName != nil
+	})
 
-		if _, found := rpcs[strings.ToLower(evmChainConf.Name)]; found {
-			msg := fmt.Errorf("duplicate bridge configuration found for EVM chain %s", evmChainConf.Name)
-			logger.Error(msg.Error())
-			panic(msg)
-		}
-
-		rpc, err := evmRPC.NewClient(evmChainConf.RPCAddr)
-		if err != nil {
-			err = sdkerrors.Wrap(err, fmt.Sprintf("Failed to create an RPC connection for EVM chain %s. Verify your RPC config.", evmChainConf.Name))
+	slices.ForEach(append(l1ChainConfigs, l2ChainConfigs...), func(config evmTypes.EVMConfig) {
+		chainName := strings.ToLower(config.Name)
+		if _, ok := rpcs[chainName]; ok {
+			err := fmt.Errorf("duplicate bridge configuration found for EVM chain %s", config.Name)
 			logger.Error(err.Error())
 			panic(err)
 		}
-		logger.Debug(fmt.Sprintf("created JSON-RPC client of type %T", rpc),
-			"chain", evmChainConf.Name,
-			"url", evmChainConf.RPCAddr,
+
+		var createClientFunc func(config evmTypes.EVMConfig) (evmRPC.Client, error)
+		if config.L1ChainName == nil {
+			createClientFunc = createL1Client
+		} else {
+			createClientFunc = createL2ClientWith(rpcs)
+		}
+
+		client, err := createClientFunc(config)
+		if err != nil {
+			err = sdkerrors.Wrap(err, fmt.Sprintf("failed to create an RPC connection for EVM chain %s. Verify your RPC config.", config.Name))
+			logger.Error(err.Error())
+			panic(err)
+		}
+		logger.Debug(fmt.Sprintf("created JSON-RPC client of type %T", client),
+			"chain", config.Name,
+			"url", config.RPCAddr,
 		)
 
 		// clean up evmRPC connection on process shutdown
-		cleanupCommands = append(cleanupCommands, rpc.Close)
+		cleanupCommands = append(cleanupCommands, client.Close)
 
-		rpcs[strings.ToLower(evmChainConf.Name)] = rpc
-		logger.Info(fmt.Sprintf("Successfully connected to EVM bridge for chain %s", evmChainConf.Name))
-	}
+		rpcs[chainName] = client
+		logger.Info(fmt.Sprintf("successfully connected to EVM bridge for chain %s", chainName))
+	})
 
-	evmMgr := evm.NewMgr(rpcs, cliCtx, b, logger, cdc, valAddr)
-	return evmMgr
+	return evm.NewMgr(rpcs, cliCtx, b, logger, cdc, valAddr)
 }
 
 // RWFile implements the ReadWriter interface for an underlying file

@@ -63,7 +63,11 @@ func (q Querier) BurnerInfo(c context.Context, req *types.BurnerInfoRequest) (*t
 	chains := queryChains(ctx, q.nexus)
 
 	for _, chain := range chains {
-		ck := q.keeper.ForChain(chain)
+		ck, err := q.keeper.ForChain(ctx, chain)
+		if err != nil {
+			continue
+		}
+
 		burnerInfo := ck.GetBurnerInfo(ctx, req.Address)
 		if burnerInfo != nil {
 			return &types.BurnerInfoResponse{Chain: ck.GetParams(ctx).Chain, BurnerInfo: burnerInfo}, nil
@@ -205,10 +209,10 @@ func getCommandBatchSig(pair tss.SigKeyPair, batchedCommands types.Hash) (types.
 func (q Querier) BatchedCommands(c context.Context, req *types.BatchedCommandsRequest) (*types.BatchedCommandsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	if !q.keeper.HasChain(ctx, nexustypes.ChainName(req.Chain)) {
+	ck, err := q.keeper.ForChain(ctx, nexustypes.ChainName(req.Chain))
+	if err != nil {
 		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", req.Chain)).Error())
 	}
-	ck := q.keeper.ForChain(nexustypes.ChainName(req.Chain))
 
 	var commandBatch types.CommandBatch
 	switch req.Id {
@@ -247,23 +251,24 @@ func (q Querier) ConfirmationHeight(c context.Context, req *types.ConfirmationHe
 
 	}
 
-	ck := q.keeper.ForChain(nexustypes.ChainName(req.Chain))
-	height, ok := ck.GetRequiredConfirmationHeight(ctx)
-	if !ok {
-		return nil, status.Error(codes.NotFound, "could not get confirmation height")
+	ck, err := q.keeper.ForChain(ctx, nexustypes.ChainName(req.Chain))
+	if err != nil {
+		return nil, status.Error(codes.NotFound, err.Error())
 	}
 
+	height := ck.GetRequiredConfirmationHeight(ctx)
 	return &types.ConfirmationHeightResponse{Height: height}, nil
 }
 
 // Event implements the query for an event at a chain based on the event's ID
 func (q Querier) Event(c context.Context, req *types.EventRequest) (*types.EventResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
-	if !q.keeper.HasChain(ctx, nexustypes.ChainName(req.Chain)) {
+	ck, err := q.keeper.ForChain(ctx, nexustypes.ChainName(req.Chain))
+	if err != nil {
 		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("[%s] is not a registered chain", req.Chain)).Error())
 	}
 
-	event, ok := q.keeper.ForChain(nexustypes.ChainName(req.Chain)).GetEvent(ctx, types.EventID(req.EventId))
+	event, ok := ck.GetEvent(ctx, types.EventID(req.EventId))
 	if !ok {
 		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("no event with ID [%s] was found", req.EventId)).Error())
 	}
@@ -271,49 +276,42 @@ func (q Querier) Event(c context.Context, req *types.EventRequest) (*types.Event
 	return &types.EventResponse{Event: &event}, nil
 }
 
-func queryDepositState(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, params *types.QueryDepositStateParams) (types.DepositStatus, string, codes.Code) {
-	if _, ok := n.GetChain(ctx, nexustypes.ChainName(k.GetName())); !ok {
-		return -1, fmt.Sprintf("%s is not a registered chain", k.GetName()), codes.NotFound
-	}
-
-	_, state, ok := k.GetDeposit(ctx, params.TxID, params.BurnerAddress)
-	if !ok {
-		return types.DepositStatus_None, "deposit transaction is not confirmed", codes.OK
-	}
-
-	switch state {
-	case types.DepositStatus_Confirmed:
-		return types.DepositStatus_Confirmed, "deposit transaction is confirmed", codes.OK
-	case types.DepositStatus_Burned:
-		return types.DepositStatus_Burned, "deposit has been transferred to the destination chain", codes.OK
-	default:
-		return -1, "deposit is in an unexpected state", codes.Internal
-	}
-}
-
-// DepositState fetches the state of a deposit confirmation using a grpc query
+// DepositState returns the status of the deposit matching the given chain, tx ID and burner address
+// Deprecated
 func (q Querier) DepositState(c context.Context, req *types.DepositStateRequest) (*types.DepositStateResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
-	ck := q.keeper.ForChain(req.Chain)
-
-	s, log, code := queryDepositState(ctx, ck, q.nexus, req.Params)
-	if code != codes.OK {
-		return nil, status.Error(code, log)
+	ck, err := q.keeper.ForChain(ctx, req.Chain)
+	if err != nil {
+		return nil, status.Error(codes.NotFound, err.Error())
 	}
 
-	return &types.DepositStateResponse{Status: s}, nil
+	if _, status, ok := ck.GetDepositByTxIDBurnAddr(ctx, req.Params.TxID, req.Params.BurnerAddress); ok {
+		return &types.DepositStateResponse{Status: status}, nil
+	}
+
+	hasSameBurnerAddress := func(deposit types.ERC20Deposit) bool {
+		return deposit.BurnerAddress == req.Params.BurnerAddress
+	}
+
+	// we can only return the first matching deposit at this point despite the fact that there might be many
+	if slices.Any(funcs.Must(ck.GetDepositsByTxID(ctx, req.Params.TxID, types.DepositStatus_Confirmed)), hasSameBurnerAddress) {
+		return &types.DepositStateResponse{Status: types.DepositStatus_Confirmed}, nil
+	}
+	if slices.Any(funcs.Must(ck.GetDepositsByTxID(ctx, req.Params.TxID, types.DepositStatus_Burned)), hasSameBurnerAddress) {
+		return &types.DepositStateResponse{Status: types.DepositStatus_Burned}, nil
+	}
+
+	return &types.DepositStateResponse{Status: types.DepositStatus_None}, nil
 }
 
 // PendingCommands returns the pending commands from a gateway
 func (q Querier) PendingCommands(c context.Context, req *types.PendingCommandsRequest) (*types.PendingCommandsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	_, ok := q.nexus.GetChain(ctx, nexustypes.ChainName(req.Chain))
-	if !ok {
+	ck, err := q.keeper.ForChain(ctx, nexustypes.ChainName(req.Chain))
+	if err != nil {
 		return nil, status.Error(codes.NotFound, fmt.Sprintf("chain %s not found", req.Chain))
 	}
-
-	ck := q.keeper.ForChain(nexustypes.ChainName(req.Chain))
 
 	var commands []types.QueryCommandResponse
 	for _, cmd := range ck.GetPendingCommands(ctx) {
@@ -378,11 +376,10 @@ func (q Querier) KeyAddress(c context.Context, req *types.KeyAddressRequest) (*t
 func (q Querier) GatewayAddress(c context.Context, req *types.GatewayAddressRequest) (*types.GatewayAddressResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	if !q.keeper.HasChain(ctx, nexustypes.ChainName(req.Chain)) {
+	ck, err := q.keeper.ForChain(ctx, nexustypes.ChainName(req.Chain))
+	if err != nil {
 		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", req.Chain)).Error())
 	}
-
-	ck := q.keeper.ForChain(nexustypes.ChainName(req.Chain))
 
 	address, ok := ck.GetGatewayAddress(ctx)
 	if !ok {
@@ -396,18 +393,17 @@ func (q Querier) GatewayAddress(c context.Context, req *types.GatewayAddressRequ
 func (q Querier) Bytecode(c context.Context, req *types.BytecodeRequest) (*types.BytecodeResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	if _, ok := q.nexus.GetChain(ctx, nexustypes.ChainName(req.Chain)); !ok {
+	ck, err := q.keeper.ForChain(ctx, nexustypes.ChainName(req.Chain))
+	if err != nil {
 		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", req.Chain)).Error())
 	}
-
-	ck := q.keeper.ForChain(nexustypes.ChainName(req.Chain))
 
 	var bytecode []byte
 	switch strings.ToLower(req.Contract) {
 	case BCToken:
-		bytecode, _ = ck.GetTokenByteCode(ctx)
+		bytecode = ck.GetTokenByteCode(ctx)
 	case BCBurner:
-		bytecode, _ = ck.GetBurnerByteCode(ctx)
+		bytecode = ck.GetBurnerByteCode(ctx)
 	default:
 		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not retrieve bytecode for chain %s", req.Chain)).Error())
 	}
@@ -424,11 +420,10 @@ func (q Querier) ERC20Tokens(c context.Context, req *types.ERC20TokensRequest) (
 		return nil, fmt.Errorf("chain %s not found", req.Chain)
 	}
 
-	if !types.IsEVMChain(chain) {
+	ck, err := q.keeper.ForChain(ctx, chain.Name)
+	if err != nil {
 		return nil, fmt.Errorf("%s not an EVM chain", chain.Name)
 	}
-
-	ck := q.keeper.ForChain(chain.Name)
 
 	tokens := ck.GetTokens(ctx)
 	switch req.Type {
@@ -456,28 +451,22 @@ func (q Querier) ERC20Tokens(c context.Context, req *types.ERC20TokensRequest) (
 func (q Querier) TokenInfo(c context.Context, req *types.TokenInfoRequest) (*types.TokenInfoResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	chain, ok := q.nexus.GetChain(ctx, nexustypes.ChainName(req.Chain))
-	if !ok {
+	ck, err := q.keeper.ForChain(ctx, nexustypes.ChainName(req.Chain))
+	if err != nil {
 		return nil, fmt.Errorf("chain %s not found", req.Chain)
 	}
-
-	if !types.IsEVMChain(chain) {
-		return nil, fmt.Errorf("%s is not an EVM chain", chain.Name)
-	}
-
-	ck := q.keeper.ForChain(nexustypes.ChainName(req.Chain))
 
 	var token types.ERC20Token
 	switch findBy := req.GetFindBy().(type) {
 	case *types.TokenInfoRequest_Asset:
 		token = ck.GetERC20TokenByAsset(ctx, findBy.Asset)
 		if token.Is(types.NonExistent) {
-			return nil, fmt.Errorf("%s is not a registered asset for chain %s", req.GetAsset(), chain.Name)
+			return nil, fmt.Errorf("%s is not a registered asset for chain %s", req.GetAsset(), req.Chain)
 		}
 	case *types.TokenInfoRequest_Symbol:
 		token = ck.GetERC20TokenBySymbol(ctx, findBy.Symbol)
 		if token.Is(types.NonExistent) {
-			return nil, fmt.Errorf("%s is not a registered symbol for chain %s", req.GetSymbol(), chain.Name)
+			return nil, fmt.Errorf("%s is not a registered symbol for chain %s", req.GetSymbol(), req.Chain)
 		}
 
 	case *types.TokenInfoRequest_Address:

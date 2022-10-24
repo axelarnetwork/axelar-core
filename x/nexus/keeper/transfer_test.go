@@ -22,8 +22,10 @@ import (
 	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	testutils "github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
 	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
+	"github.com/axelarnetwork/utils/funcs"
 	. "github.com/axelarnetwork/utils/test"
 )
 
@@ -151,12 +153,22 @@ func TestTransfer(t *testing.T) {
 		// track total transfers, amounts and fees per chain
 		expectedTransfers map[nexus.ChainName]transferCounter
 		asset             string
+
+		source nexus.Chain
+		dest   nexus.Chain
 	)
 
-	Given("a keeper",
-		func() {
-			k, ctx = setup(cfg)
-		}).
+	givenKeeper := Given("a keeper", func() {
+		k, ctx = setup(cfg)
+
+		source, dest = testutils.RandomChain(), testutils.RandomChain()
+		source.Module = evmtypes.ModuleName
+		dest.Module = axelarnettypes.ModuleName
+
+		asset = rand.Denom(5, 10)
+	})
+
+	givenKeeper.
 		When("no recipient linked to sender",
 			func() {
 				sender, _ = makeRandAddresses(k, ctx)
@@ -168,6 +180,39 @@ func TestTransfer(t *testing.T) {
 			},
 		).Run(t, repeated)
 
+	whenAssetIsRegisteredOnSource := When("asset is registered on source chain", func() {
+		funcs.MustNoErr(k.RegisterAsset(ctx, source, nexus.Asset{Denom: asset, IsNativeAsset: true}))
+	})
+
+	validateTransferAssetFails := Then("validate transfer asset fails",
+		func(t *testing.T) {
+			sender, recipient = makeRandAddressesForChain(source, dest)
+			_, err := k.EnqueueTransfer(ctx, sender.Chain, recipient, makeRandAmount(asset))
+			assert.ErrorContains(t, err, "does not support foreign asset")
+		},
+	)
+
+	givenKeeper.Branch(
+		When("source chain doesn't support foreign assets", func() {
+			source.SupportsForeignAssets = false
+		}).
+			Then2(validateTransferAssetFails),
+
+		When("asset is not registered on source chain", func() {}).
+			Then2(validateTransferAssetFails),
+
+		whenAssetIsRegisteredOnSource.
+			When("dest chain doesn't support foreign assets",
+				func() {
+					dest.SupportsForeignAssets = false
+				}).
+			Then2(validateTransferAssetFails),
+
+		whenAssetIsRegisteredOnSource.
+			When("asset is not registered on des chain", func() {}).
+			Then2(validateTransferAssetFails),
+	).Run(t, repeated)
+
 	addressError := Then("enqueue transfer should return error",
 		func(t *testing.T) {
 			_, err := k.EnqueueTransfer(ctx, sender.Chain, recipient, makeRandAmount(randAsset()))
@@ -175,10 +220,7 @@ func TestTransfer(t *testing.T) {
 		},
 	)
 
-	Given("a keeper",
-		func() {
-			k, ctx = setup(cfg)
-		}).
+	givenKeeper.
 		Branch(
 			When("link invalid axelarnet address", func() {
 				sender, _ = makeRandAddresses(k, ctx)
@@ -313,10 +355,7 @@ func TestTransfer(t *testing.T) {
 				}),
 	).Run(t, repeated)
 
-	Given("a keeper with registered assets",
-		func() {
-			k, ctx = setup(cfg)
-		}).
+	givenKeeper.
 		When("enqueue transfer first time",
 			func() {
 				sender, recipient = makeRandAddresses(k, ctx)
@@ -457,5 +496,5 @@ func randFee(chain nexus.ChainName, asset string) nexus.FeeInfo {
 }
 
 func randInt(min int64, max int64) sdk.Int {
-	return sdk.NewInt(rand.I64Between(int64(min), int64(max)))
+	return sdk.NewInt(rand.I64Between(min, max))
 }

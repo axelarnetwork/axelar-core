@@ -5,42 +5,63 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/stoewer/go-strcase"
 
+	"github.com/axelarnetwork/axelar-core/utils/key"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/utils/slices"
 )
 
-// Migrate5To6 returns the handler that performs in-place store migrations
-func Migrate5To6(k BaseKeeper, n types.Nexus) func(ctx sdk.Context) error {
+// Migrate6To7 returns the handler that performs in-place store migrations
+func Migrate6To7(k *BaseKeeper, n types.Nexus) func(ctx sdk.Context) error {
 	return func(ctx sdk.Context) error {
+		chains := slices.Filter(n.GetChains(ctx), func(chain exported.Chain) bool { return chain.Module == types.ModuleName })
+		for _, chain := range chains {
+			ck, err := k.forChain(ctx, chain.Name)
+			if err != nil {
+				return err
+			}
+			iterCmd := ck.getStore(ctx).IteratorNew(key.FromStr(commandPrefix))
+
+			for ; iterCmd.Valid(); iterCmd.Next() {
+				var cmd types.Command
+				iterCmd.UnmarshalValue(&cmd)
+				if err := migrateCmdType(ctx, ck, key.FromBz(iterCmd.Key()), cmd); err != nil {
+					return err
+				}
+			}
+		}
 		return nil
 	}
 }
 
+func migrateCmdType(ctx sdk.Context, ck chainKeeper, key key.Key, cmd types.Command) error {
+	cmdType := strcase.UpperSnakeCase(fmt.Sprintf("COMMAND_TYPE_%s", cmd.Command))
+	typeEnum, ok := types.CommandType_value[cmdType]
+	if !ok {
+		return fmt.Errorf("command type %s is invalid at key %s", cmdType, key.String())
+	}
+	cmd.Type = types.CommandType(typeEnum)
+	return ck.getStore(ctx).SetNewValidated(key, &cmd)
+}
+
 // AlwaysMigrateBytecode migrates contracts bytecode for all evm chains (CRUCIAL, DO NOT DELETE AND ALWAYS REGISTER)
-func AlwaysMigrateBytecode(k BaseKeeper, n types.Nexus, otherMigrations func(ctx sdk.Context) error) func(ctx sdk.Context) error {
+func AlwaysMigrateBytecode(k *BaseKeeper, n types.Nexus, otherMigrations func(ctx sdk.Context) error) func(ctx sdk.Context) error {
 	return func(ctx sdk.Context) error {
 		// migrate contracts bytecode (CRUCIAL AND DO NOT DELETE) for all evm chains
 		for _, chain := range slices.Filter(n.GetChains(ctx), types.IsEVMChain) {
-			ck := k.ForChain(chain.Name).(chainKeeper)
-			if err := migrateContractsBytecode(ctx, ck); err != nil {
+			ck, err := k.ForChain(ctx, chain.Name)
+			if err != nil {
+				return err
+			}
+			if err := migrateContractsBytecode(ctx, ck.(chainKeeper)); err != nil {
 				return err
 			}
 		}
 
 		return otherMigrations(ctx)
 	}
-}
-
-func addTransferLimitParam(ctx sdk.Context, ck chainKeeper) error {
-	subspace, ok := ck.getSubspace(ctx)
-	if !ok {
-		return fmt.Errorf("param subspace for chain %s should exist", ck.GetName())
-	}
-
-	subspace.Set(ctx, types.KeyTransferLimit, types.DefaultParams()[0].TransferLimit)
-
-	return nil
 }
 
 // this function migrates the contracts bytecode to the latest for every existing
@@ -57,11 +78,7 @@ func migrateContractsBytecode(ctx sdk.Context, ck chainKeeper) error {
 		return err
 	}
 
-	subspace, ok := ck.getSubspace(ctx)
-	if !ok {
-		return fmt.Errorf("param subspace for chain %s should exist", ck.GetName())
-	}
-
+	subspace := ck.getSubspace()
 	subspace.Set(ctx, types.KeyToken, bzToken)
 	subspace.Set(ctx, types.KeyBurnable, bzBurnable)
 

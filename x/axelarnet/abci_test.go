@@ -129,7 +129,8 @@ func TestEndBlocker(t *testing.T) {
 			queueSize = 0
 		}).
 		Then("should do nothing", func(t *testing.T) {
-			EndBlocker(ctx, abci.RequestEndBlock{Height: ctx.BlockHeight()}, bk, ibcK)
+			_, err := EndBlocker(ctx, abci.RequestEndBlock{Height: ctx.BlockHeight()}, bk, ibcK)
+			assert.NoError(t, err)
 			assert.Equal(t, len(transferQueue.DequeueCalls()), 0)
 			assert.Equal(t, len(transferK.SendTransferCalls()), 0)
 		}).
@@ -140,7 +141,8 @@ func TestEndBlocker(t *testing.T) {
 			queueSize = int(rand.I64Between(50, 200))
 		}).
 		Then("should init ibc transfers", func(t *testing.T) {
-			EndBlocker(ctx, abci.RequestEndBlock{Height: ctx.BlockHeight()}, bk, ibcK)
+			_, err := EndBlocker(ctx, abci.RequestEndBlock{Height: ctx.BlockHeight()}, bk, ibcK)
+			assert.NoError(t, err)
 			assert.Equal(t, queueSize, len(transferQueue.DequeueCalls()))
 			assert.Equal(t, queueSize, len(transferK.SendTransferCalls()))
 			assert.Equal(t, queueSize, slices.Reduce(ctx.EventManager().Events().ToABCIEvents(), 0, func(c int, e abci.Event) int {
@@ -162,7 +164,8 @@ func TestEndBlocker(t *testing.T) {
 		}).
 		Then("should init ibc transfers", func(t *testing.T) {
 			numTransfers := math.Min(queueSize, transferLimit)
-			EndBlocker(ctx, abci.RequestEndBlock{Height: ctx.BlockHeight()}, bk, ibcK)
+			_, err := EndBlocker(ctx, abci.RequestEndBlock{Height: ctx.BlockHeight()}, bk, ibcK)
+			assert.NoError(t, err)
 			assert.Equal(t, numTransfers, len(transferQueue.DequeueCalls()))
 			assert.Equal(t, numTransfers, len(transferK.SendTransferCalls()))
 			assert.Equal(t, numTransfers, slices.Reduce(ctx.EventManager().Events().ToABCIEvents(), 0, func(c int, e abci.Event) int {

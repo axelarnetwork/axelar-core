@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	abci "github.com/tendermint/tendermint/abci/types"
 
+	"github.com/axelarnetwork/axelar-core/utils/events"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/utils/funcs"
@@ -39,7 +40,11 @@ func handleTokenSent(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n 
 		return false
 	}
 
-	sourceCk := bk.ForChain(sourceChain.Name)
+	sourceCk, err := bk.ForChain(ctx, sourceChain.Name)
+	if err != nil {
+		bk.Logger(ctx).Info(err.Error())
+		return false
+	}
 
 	token := sourceCk.GetERC20TokenBySymbol(ctx, e.Symbol)
 	if !token.Is(types.Confirmed) {
@@ -50,9 +55,8 @@ func handleTokenSent(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n 
 	asset := token.GetAsset()
 
 	// check erc20 token status if destination is an evm chain
-	if bk.HasChain(ctx, destinationChain.Name) {
-		destinationCk := bk.ForChain(destinationChain.Name)
-
+	destinationCk, err := bk.ForChain(ctx, destinationChain.Name)
+	if err == nil {
 		if token := destinationCk.GetERC20TokenByAsset(ctx, asset); !token.Is(types.Confirmed) {
 			bk.Logger(ctx).Info(fmt.Sprintf("%s token with asset %s is not confirmed yet", e.DestinationChain, asset))
 			return false
@@ -73,7 +77,7 @@ func handleTokenSent(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n 
 		"transferID", transferID.String(),
 	)
 
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.TokenSent{
+	events.Emit(ctx, &types.TokenSent{
 		Chain:              event.Chain,
 		EventID:            event.GetID(),
 		TransferID:         transferID,
@@ -81,7 +85,7 @@ func handleTokenSent(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n 
 		DestinationChain:   e.DestinationChain,
 		DestinationAddress: e.DestinationAddress,
 		Asset:              amount,
-	}))
+	})
 
 	return true
 }
@@ -98,12 +102,11 @@ func handleContractCall(ctx sdk.Context, event types.Event, bk types.BaseKeeper,
 		return false
 	}
 
-	if !bk.HasChain(ctx, destinationChain.Name) {
+	destinationCk, err := bk.ForChain(ctx, destinationChain.Name)
+	if err != nil {
 		bk.Logger(ctx).Info(fmt.Sprintf("destination chain %s is not an evm chain", destinationChain.Name))
 		return false
 	}
-
-	destinationCk := bk.ForChain(destinationChain.Name)
 
 	destinationChainID, ok := destinationCk.GetChainID(ctx)
 	if !ok {
@@ -115,7 +118,7 @@ func handleContractCall(ctx sdk.Context, event types.Event, bk types.BaseKeeper,
 		panic(fmt.Errorf("no key for chain %s found", destinationChain.Name))
 	}
 
-	cmd, err := types.CreateApproveContractCallCommand(
+	cmd := types.NewApproveContractCallCommand(
 		destinationChainID,
 		keyID,
 		sourceChain.Name,
@@ -123,21 +126,18 @@ func handleContractCall(ctx sdk.Context, event types.Event, bk types.BaseKeeper,
 		event.Index,
 		*e,
 	)
-	if err != nil {
-		panic(err)
-	}
 
 	if err := destinationCk.EnqueueCommand(ctx, cmd); err != nil {
 		panic(err)
 	}
 
-	bk.Logger(ctx).Debug(fmt.Sprintf("created %s command for event", cmd.Command),
+	bk.Logger(ctx).Debug(fmt.Sprintf("created %s command for event", cmd.Type),
 		"chain", destinationChain.Name,
 		"eventID", event.GetID(),
 		"commandID", cmd.ID.Hex(),
 	)
 
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.ContractCallApproved{
+	events.Emit(ctx, &types.ContractCallApproved{
 		Chain:            event.Chain,
 		EventID:          event.GetID(),
 		CommandID:        cmd.ID,
@@ -145,7 +145,7 @@ func handleContractCall(ctx sdk.Context, event types.Event, bk types.BaseKeeper,
 		DestinationChain: e.DestinationChain,
 		ContractAddress:  e.ContractAddress,
 		PayloadHash:      e.PayloadHash,
-	}))
+	})
 
 	return true
 }
@@ -162,13 +162,17 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 		return false
 	}
 
-	if !bk.HasChain(ctx, destinationChain.Name) {
-		bk.Logger(ctx).Info(fmt.Sprintf("destination chain %s is not an evm chain", destinationChain.Name))
+	sourceCk, err := bk.ForChain(ctx, sourceChain.Name)
+	if err != nil {
+		bk.Logger(ctx).Info(fmt.Sprintf("source chain %s is not an evm chain", destinationChain.Name))
 		return false
 	}
 
-	sourceCk := bk.ForChain(sourceChain.Name)
-	destinationCk := bk.ForChain(destinationChain.Name)
+	destinationCk, err := bk.ForChain(ctx, destinationChain.Name)
+	if err != nil {
+		bk.Logger(ctx).Info(fmt.Sprintf("destination chain %s is not an evm chain", destinationChain.Name))
+		return false
+	}
 
 	token := sourceCk.GetERC20TokenBySymbol(ctx, e.Symbol)
 	if !token.Is(types.Confirmed) {
@@ -198,7 +202,7 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 		panic(fmt.Errorf("no key for chain %s found", destinationChain.Name))
 	}
 
-	cmd, err := types.CreateApproveContractCallWithMintCommand(
+	cmd := types.NewApproveContractCallWithMintCommand(
 		destinationChainID,
 		keyID,
 		sourceChain.Name,
@@ -208,21 +212,18 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 		e.Amount,
 		destinationToken.GetDetails().Symbol,
 	)
-	if err != nil {
-		panic(err)
-	}
 
 	if err := destinationCk.EnqueueCommand(ctx, cmd); err != nil {
 		panic(err)
 	}
 
-	bk.Logger(ctx).Debug(fmt.Sprintf("created %s command for event", cmd.Command),
+	bk.Logger(ctx).Debug(fmt.Sprintf("created %s command for event", cmd.Type),
 		"chain", destinationChain.Name,
 		"eventID", event.GetID(),
 		"commandID", cmd.ID.Hex(),
 	)
 
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.ContractCallWithMintApproved{
+	events.Emit(ctx, &types.ContractCallWithMintApproved{
 		Chain:            event.Chain,
 		EventID:          event.GetID(),
 		CommandID:        cmd.ID,
@@ -231,7 +232,7 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 		ContractAddress:  e.ContractAddress,
 		PayloadHash:      e.PayloadHash,
 		Asset:            sdk.NewCoin(asset, sdk.Int(e.Amount)),
-	}))
+	})
 
 	return true
 }
@@ -256,7 +257,8 @@ func handleConfirmDeposit(ctx sdk.Context, event types.Event, ck types.ChainKeep
 		return false
 	}
 
-	if _, _, ok := ck.GetDeposit(ctx, event.TxID, burnerInfo.BurnerAddress); ok {
+	// this check is only needed for historical reason.
+	if _, _, ok := ck.GetDepositByTxIDBurnAddr(ctx, event.TxID, burnerInfo.BurnerAddress); ok {
 		ck.Logger(ctx).Info(fmt.Sprintf("%s deposit %s-%s already exists", chain.Name.String(), event.TxID.Hex(), burnerInfo.BurnerAddress.Hex()))
 		return false
 	}
@@ -271,12 +273,15 @@ func handleConfirmDeposit(ctx sdk.Context, event types.Event, ck types.ChainKeep
 	// set confirmed deposit
 	erc20Deposit := types.ERC20Deposit{
 		TxID:             event.TxID,
+		LogIndex:         event.Index,
 		Amount:           e.Amount,
 		Asset:            burnerInfo.Asset,
 		DestinationChain: burnerInfo.DestinationChain,
 		BurnerAddress:    burnerInfo.BurnerAddress,
 	}
-
+	if _, _, ok := ck.GetDeposit(ctx, erc20Deposit.TxID, erc20Deposit.LogIndex); ok {
+		panic(fmt.Errorf("%s deposit %s-%d already exists", chain.Name.String(), erc20Deposit.TxID.Hex(), erc20Deposit.LogIndex))
+	}
 	ck.SetDeposit(ctx, erc20Deposit, types.DepositStatus_Confirmed)
 
 	ck.Logger(ctx).Info(fmt.Sprintf("deposit confirmation result to %s %s", e.To.Hex(), e.Amount),
@@ -473,12 +478,13 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 		}
 
 		// skip further checks and handle event if destination is not an evm chain
-		if !bk.HasChain(ctx, destinationChainName) {
+		chainKeeper, err := bk.ForChain(ctx, destinationChainName)
+		if err != nil {
 			return true
 		}
 
 		// skip if destination chain has not got gateway set yet
-		if _, ok := bk.ForChain(destinationChainName).GetGatewayAddress(ctx); !ok {
+		if _, ok := chainKeeper.GetGatewayAddress(ctx); !ok {
 			bk.Logger(ctx).Debug(fmt.Sprintf("skipping confirmed event %s due to destination chain not having gateway set", event.GetID()),
 				"chain", event.Chain.String(),
 				"destination_chain", destinationChainName.String(),
@@ -492,7 +498,11 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 	}
 
 	for _, chain := range n.GetChains(ctx) {
-		ck := bk.ForChain(chain.Name)
+		ck, err := bk.ForChain(ctx, chain.Name)
+		if err != nil {
+			continue
+		}
+
 		queue := ck.GetConfirmedEventQueue(ctx)
 		// skip if confirmed event queue is empty
 		if queue.IsEmpty() {

@@ -127,9 +127,10 @@ func getCmdTokenAddress(queryRoute string) *cobra.Command {
 // getCmdDepositState returns the query for an ERC20 deposit transaction state
 func getCmdDepositState(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "deposit-state [chain] [txID] [burner address]",
-		Short: "Query the state of a deposit transaction",
-		Args:  cobra.ExactArgs(3),
+		Use:        "deposit-state [chain] [txID] [burner address]",
+		Short:      "Query the state of a deposit transaction",
+		Deprecated: "will be removed in the future release",
+		Args:       cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {

@@ -188,6 +188,7 @@ message ERC20Deposit {
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
   bytes burner_address = 5
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+  uint64 log_index = 6;
 }
 
 // ERC20TokenMetadata describes information about an ERC20 token
@@ -226,13 +227,26 @@ message TransactionMetadata {
   bytes pub_key = 2;
 }
 
+enum CommandType {
+  option (gogoproto.goproto_enum_prefix) = false;
+  option (gogoproto.goproto_enum_stringer) = false;
+
+  COMMAND_TYPE_UNSPECIFIED = 0;
+  COMMAND_TYPE_MINT_TOKEN = 1;
+  COMMAND_TYPE_DEPLOY_TOKEN = 2;
+  COMMAND_TYPE_BURN_TOKEN = 3;
+  COMMAND_TYPE_TRANSFER_OPERATORSHIP = 4;
+  COMMAND_TYPE_APPROVE_CONTRACT_CALL_WITH_MINT = 5;
+  COMMAND_TYPE_APPROVE_CONTRACT_CALL = 6;
+}
+
 message Command {
   bytes id = 1 [
     (gogoproto.nullable) = false,
     (gogoproto.customname) = "ID",
     (gogoproto.customtype) = "CommandID"
   ];
-  string command = 2;
+  string command = 2 [ deprecated = true ];
   bytes params = 3;
   string key_id = 4 [
     (gogoproto.customname) = "KeyID",
@@ -240,6 +254,7 @@ message Command {
         "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
   ];
   uint32 max_gas_cost = 5;
+  CommandType type = 6;
 }
 
 enum BatchedCommandsStatus {
@@ -342,21 +357,10 @@ message TokenDetails {
 }
 
 message Gateway {
-  enum Status {
-    option (gogoproto.goproto_enum_prefix) = false;
-    option (gogoproto.goproto_enum_stringer) = true;
-
-    STATUS_UNSPECIFIED = 0
-        [ (gogoproto.enumvalue_customname) = "GatewayStatusNone" ];
-    STATUS_PENDING = 1
-        [ (gogoproto.enumvalue_customname) = "GatewayStatusPending" ];
-    STATUS_CONFIRMED = 2
-        [ (gogoproto.enumvalue_customname) = "GatewayStatusConfirmed" ];
-  }
+  reserved 2; // status was removed in v0.27
 
   bytes address = 1
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
-  Status status = 2 [ deprecated = true ];
 }
 
 message PollMetadata {

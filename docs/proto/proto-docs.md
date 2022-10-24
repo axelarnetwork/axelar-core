@@ -29,6 +29,7 @@
   
 - [axelar/axelarnet/v1beta1/genesis.proto](#axelar/axelarnet/v1beta1/genesis.proto)
     - [GenesisState](#axelar.axelarnet.v1beta1.GenesisState)
+    - [GenesisState.SeqIdMappingEntry](#axelar.axelarnet.v1beta1.GenesisState.SeqIdMappingEntry)
   
 - [axelar/utils/v1beta1/threshold.proto](#axelar/utils/v1beta1/threshold.proto)
     - [Threshold](#axelar.utils.v1beta1.Threshold)
@@ -158,9 +159,9 @@
     - [VoteEvents](#axelar.evm.v1beta1.VoteEvents)
   
     - [BatchedCommandsStatus](#axelar.evm.v1beta1.BatchedCommandsStatus)
+    - [CommandType](#axelar.evm.v1beta1.CommandType)
     - [DepositStatus](#axelar.evm.v1beta1.DepositStatus)
     - [Event.Status](#axelar.evm.v1beta1.Event.Status)
-    - [Gateway.Status](#axelar.evm.v1beta1.Gateway.Status)
     - [SigType](#axelar.evm.v1beta1.SigType)
     - [Status](#axelar.evm.v1beta1.Status)
   
@@ -524,8 +525,9 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `id` | [uint64](#uint64) |  |  |
-| `receipient` | [string](#string) |  |  |
+| `receipient` | [string](#string) |  | **Deprecated.**  |
 | `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+| `recipient` | [string](#string) |  |  |
 
 
 
@@ -593,11 +595,12 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `id` | [uint64](#uint64) |  |  |
-| `receipient` | [string](#string) |  |  |
+| `receipient` | [string](#string) |  | **Deprecated.**  |
 | `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 | `sequence` | [uint64](#uint64) |  |  |
 | `port_id` | [string](#string) |  |  |
 | `channel_id` | [string](#string) |  |  |
+| `recipient` | [string](#string) |  |  |
 
 
 
@@ -613,11 +616,12 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `id` | [uint64](#uint64) |  |  |
-| `receipient` | [string](#string) |  |  |
+| `receipient` | [string](#string) |  | **Deprecated.**  |
 | `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 | `sequence` | [uint64](#uint64) |  |  |
 | `port_id` | [string](#string) |  |  |
 | `channel_id` | [string](#string) |  |  |
+| `recipient` | [string](#string) |  |  |
 
 
 
@@ -834,7 +838,24 @@ Params represent the genesis parameters for the module
 | `collector_address` | [bytes](#bytes) |  |  |
 | `chains` | [CosmosChain](#axelar.axelarnet.v1beta1.CosmosChain) | repeated |  |
 | `transfer_queue` | [axelar.utils.v1beta1.QueueState](#axelar.utils.v1beta1.QueueState) |  |  |
-| `failed_transfers` | [IBCTransfer](#axelar.axelarnet.v1beta1.IBCTransfer) | repeated |  |
+| `ibc_transfers` | [IBCTransfer](#axelar.axelarnet.v1beta1.IBCTransfer) | repeated |  |
+| `seq_id_mapping` | [GenesisState.SeqIdMappingEntry](#axelar.axelarnet.v1beta1.GenesisState.SeqIdMappingEntry) | repeated |  |
+
+
+
+
+
+
+<a name="axelar.axelarnet.v1beta1.GenesisState.SeqIdMappingEntry"></a>
+
+### GenesisState.SeqIdMappingEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key` | [string](#string) |  |  |
+| `value` | [uint64](#uint64) |  |  |
 
 
 
@@ -1674,9 +1695,11 @@ to nexus
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
-| `chain` | [axelar.nexus.exported.v1beta1.Chain](#axelar.nexus.exported.v1beta1.Chain) |  |  |
+| `chain` | [axelar.nexus.exported.v1beta1.Chain](#axelar.nexus.exported.v1beta1.Chain) |  | **Deprecated.** chain was deprecated in v0.27 |
 | `addr_prefix` | [string](#string) |  |  |
 | `native_assets` | [axelar.nexus.exported.v1beta1.Asset](#axelar.nexus.exported.v1beta1.Asset) | repeated |  |
+| `cosmos_chain` | [string](#string) |  | TODO: Rename this to `chain` after v1beta1 -> v1 version bump |
+| `ibc_path` | [string](#string) |  |  |
 
 
 
@@ -1948,7 +1971,6 @@ Msg defines the axelarnet Msg service.
 | `Link` | [LinkRequest](#axelar.axelarnet.v1beta1.LinkRequest) | [LinkResponse](#axelar.axelarnet.v1beta1.LinkResponse) |  | POST|/axelar/axelarnet/link|
 | `ConfirmDeposit` | [ConfirmDepositRequest](#axelar.axelarnet.v1beta1.ConfirmDepositRequest) | [ConfirmDepositResponse](#axelar.axelarnet.v1beta1.ConfirmDepositResponse) |  | POST|/axelar/axelarnet/confirm_deposit|
 | `ExecutePendingTransfers` | [ExecutePendingTransfersRequest](#axelar.axelarnet.v1beta1.ExecutePendingTransfersRequest) | [ExecutePendingTransfersResponse](#axelar.axelarnet.v1beta1.ExecutePendingTransfersResponse) |  | POST|/axelar/axelarnet/execute_pending_transfers|
-| `RegisterIBCPath` | [RegisterIBCPathRequest](#axelar.axelarnet.v1beta1.RegisterIBCPathRequest) | [RegisterIBCPathResponse](#axelar.axelarnet.v1beta1.RegisterIBCPathResponse) |  | POST|/axelar/axelarnet/register_ibc_path|
 | `AddCosmosBasedChain` | [AddCosmosBasedChainRequest](#axelar.axelarnet.v1beta1.AddCosmosBasedChainRequest) | [AddCosmosBasedChainResponse](#axelar.axelarnet.v1beta1.AddCosmosBasedChainResponse) |  | POST|/axelar/axelarnet/add_cosmos_based_chain|
 | `RegisterAsset` | [RegisterAssetRequest](#axelar.axelarnet.v1beta1.RegisterAssetRequest) | [RegisterAssetResponse](#axelar.axelarnet.v1beta1.RegisterAssetResponse) |  | POST|/axelar/axelarnet/register_asset|
 | `RouteIBCTransfers` | [RouteIBCTransfersRequest](#axelar.axelarnet.v1beta1.RouteIBCTransfersRequest) | [RouteIBCTransfersResponse](#axelar.axelarnet.v1beta1.RouteIBCTransfersResponse) |  | POST|/axelar/axelarnet/route_ibc_transfers|
@@ -2219,10 +2241,11 @@ that is deposited by an user
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `id` | [bytes](#bytes) |  |  |
-| `command` | [string](#string) |  |  |
+| `command` | [string](#string) |  | **Deprecated.**  |
 | `params` | [bytes](#bytes) |  |  |
 | `key_id` | [string](#string) |  |  |
 | `max_gas_cost` | [uint32](#uint32) |  |  |
+| `type` | [CommandType](#axelar.evm.v1beta1.CommandType) |  |  |
 
 
 
@@ -2264,6 +2287,7 @@ ERC20Deposit contains information for an ERC20 deposit
 | `asset` | [string](#string) |  |  |
 | `destination_chain` | [string](#string) |  |  |
 | `burner_address` | [bytes](#bytes) |  |  |
+| `log_index` | [uint64](#uint64) |  |  |
 
 
 
@@ -2450,7 +2474,6 @@ ERC20TokenMetadata describes information about an ERC20 token
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `address` | [bytes](#bytes) |  |  |
-| `status` | [Gateway.Status](#axelar.evm.v1beta1.Gateway.Status) |  | **Deprecated.**  |
 
 
 
@@ -2589,6 +2612,23 @@ TransferKey contains information for a transfer operatorship
 
 
 
+<a name="axelar.evm.v1beta1.CommandType"></a>
+
+### CommandType
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| COMMAND_TYPE_UNSPECIFIED | 0 |  |
+| COMMAND_TYPE_MINT_TOKEN | 1 |  |
+| COMMAND_TYPE_DEPLOY_TOKEN | 2 |  |
+| COMMAND_TYPE_BURN_TOKEN | 3 |  |
+| COMMAND_TYPE_TRANSFER_OPERATORSHIP | 4 |  |
+| COMMAND_TYPE_APPROVE_CONTRACT_CALL_WITH_MINT | 5 |  |
+| COMMAND_TYPE_APPROVE_CONTRACT_CALL | 6 |  |
+
+
+
 <a name="axelar.evm.v1beta1.DepositStatus"></a>
 
 ### DepositStatus
@@ -2614,19 +2654,6 @@ TransferKey contains information for a transfer operatorship
 | STATUS_CONFIRMED | 1 |  |
 | STATUS_COMPLETED | 2 |  |
 | STATUS_FAILED | 3 |  |
-
-
-
-<a name="axelar.evm.v1beta1.Gateway.Status"></a>
-
-### Gateway.Status
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| STATUS_UNSPECIFIED | 0 |  |
-| STATUS_PENDING | 1 |  |
-| STATUS_CONFIRMED | 2 |  |
 
 
 
