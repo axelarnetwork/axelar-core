@@ -82,16 +82,19 @@ func (k Keeper) DeleteKeygenSession(ctx sdk.Context, id exported.KeyID) {
 	k.getStore(ctx).Delete(getKeygenSessionKey(id))
 }
 
+// KeygenOptOut opts out the given participant of future keygens
 func (k Keeper) KeygenOptOut(ctx sdk.Context, participant sdk.AccAddress) {
 	funcs.MustNoErr(
 		k.getStore(ctx).SetNewValidated(keygenOptOutPrefix.Append(key.FromBz(participant)), utils.NoValidation(&gogoprototypes.BytesValue{})),
 	)
 }
 
+// KeygenOptIn opts in the given participant to future keygens
 func (k Keeper) KeygenOptIn(ctx sdk.Context, participant sdk.AccAddress) {
 	k.getStore(ctx).DeleteNew(keygenOptOutPrefix.Append(key.FromBz(participant)))
 }
 
+// IsOptOut returns true if the given participant is opted out of future keygens
 func (k Keeper) IsOptOut(ctx sdk.Context, participant sdk.AccAddress) bool {
 	return k.getStore(ctx).HasNew(keygenOptOutPrefix.Append(key.FromBz(participant)))
 }
