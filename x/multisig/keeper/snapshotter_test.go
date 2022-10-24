@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"github.com/axelarnetwork/axelar-core/utils/testutils"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -10,7 +11,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
-	"github.com/axelarnetwork/axelar-core/utils/testutils"
 	"github.com/axelarnetwork/axelar-core/x/multisig/keeper"
 	"github.com/axelarnetwork/axelar-core/x/multisig/types/mock"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
@@ -68,10 +68,14 @@ func TestSnapshotCreator_CreateSnapshot(t *testing.T) {
 				return consAddr.Equals(tombstonedAddr)
 			}}
 
+		keygen = &mock.KeygenParticipatorMock{IsOptOutFunc: func(sdk.Context, sdk.AccAddress) bool {
+			return false
+		}}
+
 		expectedThreshold = testutils.RandThreshold()
 	)
 
-	creator := keeper.NewSnapshotCreator(snapshotter, staker, slasher)
+	creator := keeper.NewSnapshotCreator(keygen, snapshotter, staker, slasher)
 
 	snapshotter.CreateSnapshotFunc =
 		func(
