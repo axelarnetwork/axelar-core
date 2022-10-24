@@ -9,7 +9,7 @@ require (
 	github.com/btcsuite/btcd v0.22.1
 	github.com/btcsuite/btcd/btcec/v2 v2.2.0
 	github.com/cosmos/cosmos-sdk v0.45.9
-	github.com/cosmos/ibc-go/v2 v2.2.0
+	github.com/cosmos/ibc-go/v3 v3.3.0
 	github.com/ethereum/go-ethereum v1.10.25
 	github.com/go-errors/errors v1.4.2
 	github.com/gogo/protobuf v1.3.3
