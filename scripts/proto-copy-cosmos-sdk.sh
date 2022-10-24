@@ -14,3 +14,6 @@ find "$ibc_protos" -maxdepth 1 -mindepth 1 \
 cp -r "$ibc_protos" ./third_party
 
 chmod -R +w ./third_party/proto
+
+# Remove ICA protos
+rm -r ./third_party/proto/ibc/applications/interchain_accounts
