@@ -25,3 +25,4 @@ The following values are legal arguments for token transfers:
 - `aura`
 - `evmos`
 - `comdex`
+- `terra-3`
