@@ -652,8 +652,6 @@ const commandIDSize = 32
 // CommandID represents the unique command identifier
 type CommandID [commandIDSize]byte
 
-var zeroID = CommandID{}
-
 // NewCommandID is the constructor for CommandID
 func NewCommandID(data []byte, chainID sdk.Int) CommandID {
 	var commandID CommandID
@@ -662,6 +660,7 @@ func NewCommandID(data []byte, chainID sdk.Int) CommandID {
 	return commandID
 }
 
+// CommandIDFromTransferID converts a TransferID into a CommandID
 func CommandIDFromTransferID(id nexus.TransferID) CommandID {
 	var commandID CommandID
 	idBz := id.Bytes()
