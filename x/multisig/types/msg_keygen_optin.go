@@ -7,7 +7,6 @@ import (
 
 var _ sdk.Msg = &KeygenOptInRequest{}
 
-
 func (m *KeygenOptInRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())

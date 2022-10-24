@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"fmt"
-	"github.com/axelarnetwork/axelar-core/utils/key"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -10,6 +9,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/utils/key"
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
 )
 

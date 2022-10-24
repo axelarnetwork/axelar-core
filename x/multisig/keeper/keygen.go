@@ -2,18 +2,18 @@ package keeper
 
 import (
 	"fmt"
-	"github.com/axelarnetwork/axelar-core/utils/key"
-	"github.com/axelarnetwork/utils/funcs"
-	gogoprototypes "github.com/gogo/protobuf/types"
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	gogoprototypes "github.com/gogo/protobuf/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/events"
+	"github.com/axelarnetwork/axelar-core/utils/key"
 	"github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/math"
 	"github.com/axelarnetwork/utils/slices"
 )
