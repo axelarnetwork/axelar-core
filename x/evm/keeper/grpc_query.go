@@ -472,7 +472,7 @@ func (q Querier) TokenInfo(c context.Context, req *types.TokenInfoRequest) (*typ
 	case *types.TokenInfoRequest_Address:
 		token = ck.GetERC20TokenByAddress(ctx, types.Address(common.HexToAddress(req.GetAddress())))
 		if token.Is(types.NonExistent) {
-			return nil, fmt.Errorf("%s is not a token address for chain %s", req.GetAddress(), chain.Name)
+			return nil, fmt.Errorf("%s is not a token address for chain %s", req.GetAddress(), req.Chain)
 		}
 	}
 
