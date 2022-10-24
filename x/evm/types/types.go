@@ -201,7 +201,6 @@ func (t *ERC20Token) CreateMintCommand(keyID multisig.KeyID, transfer nexus.Cros
 	}
 
 	return NewMintTokenCommand(
-		t.metadata.ChainID,
 		keyID,
 		transfer.ID,
 		t.metadata.Details.Symbol,
@@ -660,16 +659,16 @@ func NewCommandID(data []byte, chainID sdk.Int) CommandID {
 	var commandID CommandID
 	copy(commandID[:], crypto.Keccak256(append(data, chainID.BigInt().Bytes()...))[:commandIDSize])
 
-	if commandID.IsZero() {
-		copy(commandID[:], crypto.Keccak256(commandID[:])[:commandIDSize])
-	}
-
 	return commandID
 }
 
-// IsZero returns true if the command ID consists only of zeros
-func (c CommandID) IsZero() bool {
-	return bytes.Equal(c[:], zeroID[:])
+func CommandIDFromTransferID(id nexus.TransferID) CommandID {
+	var commandID CommandID
+	idBz := id.Bytes()
+
+	copy(commandID[:], common.LeftPadBytes(idBz[:], commandIDSize))
+
+	return commandID
 }
 
 // HexToCommandID decodes a hex representation of a CommandID
@@ -722,10 +721,6 @@ func (c *CommandID) Unmarshal(data []byte) error {
 
 // ValidateBasic returns an error if the given command ID is invalid
 func (c CommandID) ValidateBasic() error {
-	if c.IsZero() {
-		return errors.New("ID is zero")
-	}
-
 	return nil
 }
 
@@ -1261,24 +1256,24 @@ func (m Gateway) ValidateBasic() error {
 }
 
 // ValidateBasic returns an error if the given command is invalid
-func (c Command) ValidateBasic() error {
-	if err := c.ID.ValidateBasic(); err != nil {
+func (m Command) ValidateBasic() error {
+	if err := m.ID.ValidateBasic(); err != nil {
 		return err
 	}
 
-	if err := c.Type.ValidateBasic(); err != nil {
+	if err := m.Type.ValidateBasic(); err != nil {
 		return err
 	}
 
-	if err := c.KeyID.ValidateBasic(); err != nil {
+	if err := m.KeyID.ValidateBasic(); err != nil {
 		return err
 	}
 
-	if c.MaxGasCost == 0 {
+	if m.MaxGasCost == 0 {
 		return errors.New("max gas cost must be >0")
 	}
 
-	if _, err := c.DecodeParams(); err != nil {
+	if _, err := m.DecodeParams(); err != nil {
 		return err
 	}
 	return nil

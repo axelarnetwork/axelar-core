@@ -69,7 +69,6 @@ func TestNewApproveContractCallWithMintCommand(t *testing.T) {
 }
 
 func TestNewMintTokenCommand(t *testing.T) {
-	chainID := sdk.NewInt(1)
 	keyID := multisigTestutils.KeyID()
 	transferID := nexustestutils.RandomTransferID()
 	symbol := rand.Str(3)
@@ -85,7 +84,7 @@ func TestNewMintTokenCommand(t *testing.T) {
 		strings.Repeat("0", 64-len(amountHex))+amountHex,
 		hex.EncodeToString([]byte(symbol)),
 	)
-	actual := types.NewMintTokenCommand(chainID, keyID, transferID, symbol, address, amount)
+	actual := types.NewMintTokenCommand(keyID, transferID, symbol, address, amount)
 
 	assert.Equal(t, expectedParams, hex.EncodeToString(actual.Params))
 
@@ -93,10 +92,6 @@ func TestNewMintTokenCommand(t *testing.T) {
 	assert.Equal(t, symbol, decodedSymbol)
 	assert.Equal(t, address, decodedAddr)
 	assert.Equal(t, amount, decodedAmount)
-
-	cmdWithZeroTransferID := types.NewMintTokenCommand(sdk.NewInt(0), keyID, 0, symbol, address, amount)
-
-	assert.False(t, cmdWithZeroTransferID.ID.IsZero())
 }
 
 func TestNewBurnTokenCommand(t *testing.T) {

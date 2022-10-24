@@ -198,7 +198,7 @@ func RandomCommand() types.Command {
 	case types.COMMAND_TYPE_BURN_TOKEN:
 		return types.NewBurnTokenCommand(chainID, multisigTestutils.KeyID(), rand.PosI64(), RandomBurnerInfo(), false)
 	case types.COMMAND_TYPE_MINT_TOKEN:
-		return types.NewMintTokenCommand(chainID, multisigTestutils.KeyID(), nexustestutils.RandomTransferID(), asset, common.Address(RandomAddress()), amount)
+		return types.NewMintTokenCommand(multisigTestutils.KeyID(), nexustestutils.RandomTransferID(), asset, common.Address(RandomAddress()), amount)
 	case types.COMMAND_TYPE_TRANSFER_OPERATORSHIP:
 		key := &mock.KeyMock{
 			GetPubKeyFunc: func(valAddress sdk.ValAddress) (exported.PublicKey, bool) {

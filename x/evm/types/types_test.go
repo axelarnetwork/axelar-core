@@ -174,5 +174,5 @@ func TestCommandID_ValidateBasic(t *testing.T) {
 	assert.NoError(t, idForZeroData.ValidateBasic())
 
 	var emptyID CommandID
-	assert.Error(t, emptyID.ValidateBasic())
+	assert.NoError(t, emptyID.ValidateBasic())
 }
