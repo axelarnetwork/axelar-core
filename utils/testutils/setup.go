@@ -10,10 +10,12 @@ import (
 	abci "github.com/tendermint/tendermint/proto/tendermint/types"
 )
 
+// NewSubspace returns a new subspace with a random name
 func NewSubspace(cfg params.EncodingConfig) paramstypes.Subspace {
 	return paramstypes.NewSubspace(cfg.Codec, cfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), rand.Str(10))
 }
 
+// NewContext returns a basic context with a fake store and a test logger
 func NewContext() sdk.Context {
 	return sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 }
