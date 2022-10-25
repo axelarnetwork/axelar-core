@@ -48,14 +48,14 @@ func NewQuerier(k types.BaseKeeper, n types.Nexus) sdk.Querier {
 		case QTokenAddressBySymbol:
 			return QueryTokenAddressBySymbol(ctx, chainKeeper, n, path[2])
 		case QCommand:
-			return queryCommand(ctx, chainKeeper, n, path[2])
+			return queryCommand(ctx, chainKeeper, path[2])
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown evm-bridge query endpoint: %s", path[0]))
 		}
 	}
 }
 
-func queryCommand(ctx sdk.Context, keeper types.ChainKeeper, n types.Nexus, id string) ([]byte, error) {
+func queryCommand(ctx sdk.Context, keeper types.ChainKeeper, id string) ([]byte, error) {
 	cmdID, err := types.HexToCommandID(id)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
@@ -63,7 +63,7 @@ func queryCommand(ctx sdk.Context, keeper types.ChainKeeper, n types.Nexus, id s
 
 	cmd, ok := keeper.GetCommand(ctx, cmdID)
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find command '%s'", cmd.ID.Hex()))
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find command '%s'", id))
 	}
 
 	resp, err := GetCommandResponse(cmd)
