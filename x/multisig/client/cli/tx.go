@@ -72,6 +72,7 @@ func getCmdRotateKey() *cobra.Command {
 func getCmdKeygen() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:                        "keygen",
+		Short:                      "sub-commands for keygen",
 		DisableFlagParsing:         true,
 		SuggestionsMinimumDistance: 2,
 		TraverseChildren:           true,
