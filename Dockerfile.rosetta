@@ -5,14 +5,11 @@ RUN apt update && apt install ca-certificates git make -y
 
 WORKDIR axelar
 
-COPY ./rosetta/go.mod .
-COPY ./rosetta/go.sum .
+COPY ./go.mod .
+COPY ./go.sum .
 RUN go mod download
 
 COPY . .
-# overwrite the copied go mod and go sum files again
-COPY rosetta/go.mod .
-COPY rosetta/go.sum .
 ENV CGO_ENABLED=0
 RUN make build
 
@@ -24,7 +21,7 @@ COPY --from=build /go/axelar/bin/* /usr/local/bin/
 RUN useradd --uid ${USER_ID} axelard && groupmod --gid ${GROUP_ID} axelard && usermod -aG axelard axelard
 RUN chown axelard /home
 USER axelard
-COPY ./rosetta/entrypoint.sh /entrypoint.sh
+COPY ./entrypoint.sh /entrypoint.sh
 
 # The home directory of axelar-core where configuration/genesis/data are stored
 ENV HOME_DIR /home/axelard

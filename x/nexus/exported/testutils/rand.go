@@ -18,3 +18,8 @@ func RandomChain() exported.Chain {
 func RandomChainName() exported.ChainName {
 	return exported.ChainName(rand.NormalizedStrBetween(5, 20))
 }
+
+// RandomTransferID generates a random transfer ID
+func RandomTransferID() exported.TransferID {
+	return exported.TransferID(rand.PosI64())
+}
