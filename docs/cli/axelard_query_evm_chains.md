@@ -1,6 +1,6 @@
 ## axelard query evm chains
 
-Get EVM chains
+Return the supported EVM chains by status
 
 ```
 axelard query evm chains [flags]
@@ -9,9 +9,10 @@ axelard query evm chains [flags]
 ### Options
 
 ```
-      --height int    Use a specific height to query state at (this can error if the node is pruning state)
-  -h, --help          help for chains
-      --node string   <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
+      --height int      Use a specific height to query state at (this can error if the node is pruning state)
+  -h, --help            help for chains
+      --node string     <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
+      --status string   the chain status [activated|deactivated]
 ```
 
 ### Options inherited from parent commands

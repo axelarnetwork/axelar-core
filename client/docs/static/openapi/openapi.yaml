@@ -5274,6 +5274,17 @@ paths:
                               "@type": "type.googleapis.com/google.protobuf.Duration",
                               "value": "1.212s"
                             }
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - CHAIN_STATUS_UNSPECIFIED
+              - CHAIN_STATUS_ACTIVATED
+              - CHAIN_STATUS_DEACTIVATED
+            default: CHAIN_STATUS_UNSPECIFIED
       tags:
         - QueryService
   "/axelar/evm/v1beta1/confirmation_height/{chain}":
@@ -36572,6 +36583,13 @@ components:
       properties:
         bytecode:
           type: string
+    axelar.evm.v1beta1.ChainStatus:
+      type: string
+      enum:
+        - CHAIN_STATUS_UNSPECIFIED
+        - CHAIN_STATUS_ACTIVATED
+        - CHAIN_STATUS_DEACTIVATED
+      default: CHAIN_STATUS_UNSPECIFIED
     axelar.evm.v1beta1.ChainsResponse:
       type: object
       properties:
