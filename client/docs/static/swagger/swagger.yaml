@@ -7736,6 +7736,10 @@ paths:
           in: query
           required: false
           type: string
+        - name: address
+          in: query
+          required: false
+          type: string
       tags:
         - QueryService
   /axelar/nexus/activate_chain:

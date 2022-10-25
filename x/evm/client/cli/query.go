@@ -15,6 +15,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/utils/slices"
 )
 
 const (
@@ -537,12 +538,13 @@ func getCmdERC20Tokens() *cobra.Command {
 func getCmdTokenInfo() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "token-info [chain]",
-		Short: fmt.Sprintf("Returns the info of token by either %s or %s", keeper.BySymbol, keeper.ByAsset),
+		Short: fmt.Sprintf("Returns the info of token by either %s, %s, or %s", keeper.BySymbol, keeper.ByAsset, keeper.ByAddress),
 		Args:  cobra.ExactArgs(1),
 	}
 
 	symbol := cmd.Flags().String(keeper.BySymbol, "", "lookup token by symbol")
 	asset := cmd.Flags().String(keeper.ByAsset, "", "lookup token by asset name")
+	address := cmd.Flags().String(keeper.ByAddress, "", "lookup token by address")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		clientCtx, err := client.GetClientQueryContext(cmd)
@@ -550,20 +552,27 @@ func getCmdTokenInfo() *cobra.Command {
 			return err
 		}
 
+		if !exactlyOneIsFilled(*symbol, *asset, *address) {
+			return fmt.Errorf("lookup must be either by asset name, symbol, or address")
+		}
+
 		var req types.TokenInfoRequest
 		switch {
-		case *symbol == "" && *asset != "":
+		case *asset != "":
 			req = types.TokenInfoRequest{
 				Chain:  args[0],
 				FindBy: &types.TokenInfoRequest_Asset{Asset: *asset},
 			}
-		case *symbol != "" && *asset == "":
+		case *symbol != "":
 			req = types.TokenInfoRequest{
 				Chain:  args[0],
 				FindBy: &types.TokenInfoRequest_Symbol{Symbol: *symbol},
 			}
-		default:
-			return fmt.Errorf("lookup must be either by asset name or symbol")
+		case *address != "":
+			req = types.TokenInfoRequest{
+				Chain:  args[0],
+				FindBy: &types.TokenInfoRequest_Address{Address: *address},
+			}
 		}
 
 		queryClient := types.NewQueryServiceClient(clientCtx)
@@ -577,4 +586,14 @@ func getCmdTokenInfo() *cobra.Command {
 
 	flags.AddQueryFlagsToCmd(cmd)
 	return cmd
+}
+
+func exactlyOneIsFilled(flags ...string) bool {
+	nonEmptyFlags := slices.Reduce(flags, 0, func(count int, f string) int {
+		if f != "" {
+			return count + 1
+		}
+		return count
+	})
+	return nonEmptyFlags == 1
 }
