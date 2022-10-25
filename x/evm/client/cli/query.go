@@ -2,7 +2,6 @@ package cli
 
 import (
 	"fmt"
-	"github.com/axelarnetwork/utils/slices"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -16,6 +15,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/utils/slices"
 )
 
 // GetQueryCmd returns the cli query commands for this module
