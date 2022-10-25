@@ -227,13 +227,26 @@ message TransactionMetadata {
   bytes pub_key = 2;
 }
 
+enum CommandType {
+  option (gogoproto.goproto_enum_prefix) = false;
+  option (gogoproto.goproto_enum_stringer) = false;
+
+  COMMAND_TYPE_UNSPECIFIED = 0;
+  COMMAND_TYPE_MINT_TOKEN = 1;
+  COMMAND_TYPE_DEPLOY_TOKEN = 2;
+  COMMAND_TYPE_BURN_TOKEN = 3;
+  COMMAND_TYPE_TRANSFER_OPERATORSHIP = 4;
+  COMMAND_TYPE_APPROVE_CONTRACT_CALL_WITH_MINT = 5;
+  COMMAND_TYPE_APPROVE_CONTRACT_CALL = 6;
+}
+
 message Command {
   bytes id = 1 [
     (gogoproto.nullable) = false,
     (gogoproto.customname) = "ID",
     (gogoproto.customtype) = "CommandID"
   ];
-  string command = 2;
+  string command = 2 [ deprecated = true ];
   bytes params = 3;
   string key_id = 4 [
     (gogoproto.customname) = "KeyID",
@@ -241,6 +254,7 @@ message Command {
         "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
   ];
   uint32 max_gas_cost = 5;
+  CommandType type = 6;
 }
 
 enum BatchedCommandsStatus {

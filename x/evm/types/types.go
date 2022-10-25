@@ -200,7 +200,13 @@ func (t *ERC20Token) CreateMintCommand(keyID multisig.KeyID, transfer nexus.Cros
 		return Command{}, err
 	}
 
-	return NewMintTokenCommand(keyID, transferIDtoCommandID(transfer.ID), t.metadata.Details.Symbol, common.HexToAddress(transfer.Recipient.Address), transfer.Asset.Amount.BigInt()), nil
+	return NewMintTokenCommand(
+		keyID,
+		transferIDtoCommandID(transfer.ID),
+		t.metadata.Details.Symbol,
+		common.HexToAddress(transfer.Recipient.Address),
+		transfer.Asset.Amount.BigInt(),
+	), nil
 }
 
 // transferIDtoCommandID converts a transferID to a commandID
@@ -569,12 +575,12 @@ func (b *CommandBatch) SetSigned(signature utils.ValidatedProtoMarshaler) error 
 // NewCommandBatchMetadata assembles a CommandBatchMetadata struct from the provided arguments
 func NewCommandBatchMetadata(blockHeight int64, chainID sdk.Int, keyID multisig.KeyID, cmds []Command) (CommandBatchMetadata, error) {
 	var commandIDs []CommandID
-	var commands []string
+	var commands []CommandType
 	var commandParams [][]byte
 
 	for _, cmd := range cmds {
 		commandIDs = append(commandIDs, cmd.ID)
-		commands = append(commands, cmd.Command)
+		commands = append(commands, cmd.Type)
 		commandParams = append(commandParams, cmd.Params)
 	}
 
@@ -654,10 +660,16 @@ const commandIDSize = 32
 // CommandID represents the unique command identifier
 type CommandID [commandIDSize]byte
 
+var zeroID = CommandID{}
+
 // NewCommandID is the constructor for CommandID
 func NewCommandID(data []byte, chainID sdk.Int) CommandID {
 	var commandID CommandID
 	copy(commandID[:], crypto.Keccak256(append(data, chainID.BigInt().Bytes()...))[:commandIDSize])
+
+	if bytes.Equal(commandID[:], zeroID[:]) {
+		copy(commandID[:], crypto.Keccak256(commandID[:])[:commandIDSize])
+	}
 
 	return commandID
 }
@@ -672,7 +684,7 @@ func HexToCommandID(id string) (CommandID, error) {
 	var commandID CommandID
 	copy(commandID[:], bz)
 
-	return commandID, nil
+	return commandID, commandID.ValidateBasic()
 }
 
 // Hex returns the hex representation of command ID
@@ -705,6 +717,15 @@ func (c *CommandID) Unmarshal(data []byte) error {
 	bytesCopied := copy(c[:], data)
 	if bytesCopied != commandIDSize {
 		return fmt.Errorf("expected data size to be %d, actual %d", commandIDSize, len(data))
+	}
+
+	return c.ValidateBasic()
+}
+
+// ValidateBasic returns an error if the given command ID is invalid
+func (c CommandID) ValidateBasic() error {
+	if bytes.Equal(c[:], zeroID[:]) {
+		return errors.New("ID is zero")
 	}
 
 	return nil
@@ -758,7 +779,7 @@ func (m TokenDetails) Validate() error {
 	return nil
 }
 
-func packArguments(chainID sdk.Int, commandIDs []CommandID, commands []string, commandParams [][]byte) ([]byte, error) {
+func packArguments(chainID sdk.Int, commandIDs []CommandID, commands []CommandType, commandParams [][]byte) ([]byte, error) {
 	if len(commandIDs) != len(commands) || len(commandIDs) != len(commandParams) {
 		return nil, fmt.Errorf("length mismatch for command arguments")
 	}
@@ -787,7 +808,7 @@ func packArguments(chainID sdk.Int, commandIDs []CommandID, commands []string, c
 	result, err := arguments.Pack(
 		chainID.BigInt(),
 		commandIDs,
-		commands,
+		slices.Map(commands, CommandType.String),
 		commandParams,
 	)
 	if err != nil {
@@ -1238,5 +1259,29 @@ func (m Gateway) ValidateBasic() error {
 		return errors.New("address must not be empty")
 	}
 
+	return nil
+}
+
+// ValidateBasic returns an error if the given command is invalid
+func (c Command) ValidateBasic() error {
+	if err := c.ID.ValidateBasic(); err != nil {
+		return err
+	}
+
+	if err := c.Type.ValidateBasic(); err != nil {
+		return err
+	}
+
+	if err := c.KeyID.ValidateBasic(); err != nil {
+		return err
+	}
+
+	if c.MaxGasCost == 0 {
+		return errors.New("max gas cost must be >0")
+	}
+
+	if _, err := c.DecodeParams(); err != nil {
+		return err
+	}
 	return nil
 }

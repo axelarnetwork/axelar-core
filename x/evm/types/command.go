@@ -2,7 +2,7 @@ package types
 
 import (
 	"encoding/binary"
-	fmt "fmt"
+	"fmt"
 	"math/big"
 	"strconv"
 	"strings"
@@ -10,6 +10,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/gogo/protobuf/proto"
+	"github.com/stoewer/go-strcase"
 
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -18,20 +20,26 @@ import (
 )
 
 const (
-	axelarGatewayCommandMintToken                   = "mintToken"
-	mintTokenMaxGasCost                             = 100000
-	axelarGatewayCommandDeployToken                 = "deployToken"
-	deployTokenMaxGasCost                           = 1400000
-	axelarGatewayCommandBurnToken                   = "burnToken"
-	burnExternalTokenMaxGasCost                     = 400000
-	burnInternalTokenMaxGasCost                     = 120000
-	axelarGatewayCommandTransferOperatorship        = "transferOperatorship"
-	transferOperatorshipMaxGasCost                  = 120000
-	axelarGatewayCommandApproveContractCallWithMint = "approveContractCallWithMint"
-	approveContractCallWithMintMaxGasCost           = 100000
-	axelarGatewayCommandApproveContractCall         = "approveContractCall"
-	approveContractCallMaxGasCost                   = 100000
+	mintTokenMaxGasCost                   = 100000
+	deployTokenMaxGasCost                 = 1400000
+	burnExternalTokenMaxGasCost           = 400000
+	burnInternalTokenMaxGasCost           = 120000
+	transferOperatorshipMaxGasCost        = 120000
+	approveContractCallWithMintMaxGasCost = 100000
+	approveContractCallMaxGasCost         = 100000
 )
+
+func (c CommandType) String() string {
+	return strcase.LowerCamelCase(strings.TrimPrefix(proto.EnumName(CommandType_name, int32(c)), "COMMAND_TYPE_"))
+}
+
+// ValidateBasic returns an error if the given command type is invalid
+func (c CommandType) ValidateBasic() error {
+	if _, ok := CommandType_name[int32(c)]; !ok || c == COMMAND_TYPE_UNSPECIFIED {
+		return fmt.Errorf("%s is not a valid command type", c.String())
+	}
+	return nil
+}
 
 var (
 	stringType       = funcs.Must(abi.NewType("string", "string", nil))
@@ -62,7 +70,7 @@ func NewBurnTokenCommand(chainID sdk.Int, keyID multisig.KeyID, height int64, bu
 
 	return Command{
 		ID:         NewCommandID(append(burnerInfo.Salt.Bytes(), heightBytes...), chainID),
-		Command:    axelarGatewayCommandBurnToken,
+		Type:       COMMAND_TYPE_BURN_TOKEN,
 		Params:     createBurnTokenParams(burnerInfo.Symbol, common.Hash(burnerInfo.Salt)),
 		KeyID:      keyID,
 		MaxGasCost: uint32(burnTokenMaxGasCost),
@@ -73,7 +81,7 @@ func NewBurnTokenCommand(chainID sdk.Int, keyID multisig.KeyID, height int64, bu
 func NewDeployTokenCommand(chainID sdk.Int, keyID multisig.KeyID, asset string, tokenDetails TokenDetails, address Address, dailyMintLimit sdk.Uint) Command {
 	return Command{
 		ID:         NewCommandID([]byte(fmt.Sprintf("%s_%s", asset, tokenDetails.Symbol)), chainID),
-		Command:    axelarGatewayCommandDeployToken,
+		Type:       COMMAND_TYPE_DEPLOY_TOKEN,
 		Params:     createDeployTokenParams(tokenDetails.TokenName, tokenDetails.Symbol, tokenDetails.Decimals, tokenDetails.Capacity, address, dailyMintLimit),
 		KeyID:      keyID,
 		MaxGasCost: deployTokenMaxGasCost,
@@ -84,7 +92,7 @@ func NewDeployTokenCommand(chainID sdk.Int, keyID multisig.KeyID, asset string, 
 func NewMintTokenCommand(keyID multisig.KeyID, id CommandID, symbol string, address common.Address, amount *big.Int) Command {
 	return Command{
 		ID:         id,
-		Command:    axelarGatewayCommandMintToken,
+		Type:       COMMAND_TYPE_MINT_TOKEN,
 		Params:     createMintTokenParams(symbol, address, amount),
 		KeyID:      keyID,
 		MaxGasCost: mintTokenMaxGasCost,
@@ -102,7 +110,7 @@ func NewMultisigTransferCommand(chainID sdk.Int, keyID multisig.KeyID, nextKey m
 
 	return Command{
 		ID:         NewCommandID(concat, chainID),
-		Command:    axelarGatewayCommandTransferOperatorship,
+		Type:       COMMAND_TYPE_TRANSFER_OPERATORSHIP,
 		Params:     createTransferMultisigParams(addresses, slices.Map(weights, sdk.Uint.BigInt), threshold.BigInt()),
 		KeyID:      keyID,
 		MaxGasCost: transferOperatorshipMaxGasCost,
@@ -123,7 +131,7 @@ func NewApproveContractCallCommand(
 
 	return Command{
 		ID:         NewCommandID(append(sourceTxID.Bytes(), sourceEventIndexBz...), chainID),
-		Command:    axelarGatewayCommandApproveContractCall,
+		Type:       COMMAND_TYPE_APPROVE_CONTRACT_CALL,
 		Params:     createApproveContractCallParams(sourceChain, sourceTxID, sourceEventIndex, event),
 		KeyID:      keyID,
 		MaxGasCost: uint32(approveContractCallMaxGasCost),
@@ -146,7 +154,7 @@ func NewApproveContractCallWithMintCommand(
 
 	return Command{
 		ID:         NewCommandID(append(sourceTxID.Bytes(), sourceEventIndexBz...), chainID),
-		Command:    axelarGatewayCommandApproveContractCallWithMint,
+		Type:       COMMAND_TYPE_APPROVE_CONTRACT_CALL_WITH_MINT,
 		Params:     createApproveContractCallWithMintParams(sourceChain, sourceTxID, sourceEventIndex, event, amount, symbol),
 		KeyID:      keyID,
 		MaxGasCost: uint32(approveContractCallWithMintMaxGasCost),
@@ -157,8 +165,8 @@ func NewApproveContractCallWithMintCommand(
 func (c Command) DecodeParams() (map[string]string, error) {
 	params := make(map[string]string)
 
-	switch c.Command {
-	case axelarGatewayCommandApproveContractCallWithMint:
+	switch c.Type {
+	case COMMAND_TYPE_APPROVE_CONTRACT_CALL_WITH_MINT:
 		sourceChain, sourceAddress, contractAddress, payloadHash, symbol, amount, sourceTxID, sourceEventIndex := decodeApproveContractCallWithMintParams(c.Params)
 
 		params["sourceChain"] = sourceChain
@@ -169,7 +177,7 @@ func (c Command) DecodeParams() (map[string]string, error) {
 		params["amount"] = amount.String()
 		params["sourceTxHash"] = sourceTxID.Hex()
 		params["sourceEventIndex"] = sourceEventIndex.String()
-	case axelarGatewayCommandApproveContractCall:
+	case COMMAND_TYPE_APPROVE_CONTRACT_CALL:
 		sourceChain, sourceAddress, contractAddress, payloadHash, sourceTxID, sourceEventIndex := decodeApproveContractCallParams(c.Params)
 
 		params["sourceChain"] = sourceChain
@@ -178,7 +186,7 @@ func (c Command) DecodeParams() (map[string]string, error) {
 		params["payloadHash"] = payloadHash.Hex()
 		params["sourceTxHash"] = sourceTxID.Hex()
 		params["sourceEventIndex"] = sourceEventIndex.String()
-	case axelarGatewayCommandDeployToken:
+	case COMMAND_TYPE_DEPLOY_TOKEN:
 		name, symbol, decs, cap, tokenAddress, dailyMintLimit := decodeDeployTokenParams(c.Params)
 
 		params["name"] = name
@@ -187,25 +195,25 @@ func (c Command) DecodeParams() (map[string]string, error) {
 		params["cap"] = cap.String()
 		params["tokenAddress"] = tokenAddress.Hex()
 		params["dailyMintLimit"] = dailyMintLimit.String()
-	case axelarGatewayCommandMintToken:
+	case COMMAND_TYPE_MINT_TOKEN:
 		symbol, addr, amount := decodeMintTokenParams(c.Params)
 
 		params["symbol"] = symbol
 		params["account"] = addr.Hex()
 		params["amount"] = amount.String()
-	case axelarGatewayCommandBurnToken:
+	case COMMAND_TYPE_BURN_TOKEN:
 		symbol, salt := decodeBurnTokenParams(c.Params)
 
 		params["symbol"] = symbol
 		params["salt"] = salt.Hex()
-	case axelarGatewayCommandTransferOperatorship:
+	case COMMAND_TYPE_TRANSFER_OPERATORSHIP:
 		addresses, weights, threshold := decodeTransferMultisigParams(c.Params)
 
 		params["newOperators"] = strings.Join(slices.Map(addresses, common.Address.Hex), ";")
 		params["newWeights"] = strings.Join(slices.Map(weights, func(w *big.Int) string { return w.String() }), ";")
 		params["newThreshold"] = threshold.String()
 	default:
-		return nil, fmt.Errorf("unknown command type '%s'", c.Command)
+		return nil, fmt.Errorf("unknown command type '%s'", c.Type)
 	}
 
 	return params, nil
@@ -213,12 +221,13 @@ func (c Command) DecodeParams() (map[string]string, error) {
 
 // Clone returns an exacy copy of Command
 func (c Command) Clone() Command {
-	var clone Command
-
-	clone.Command = c.Command
-	clone.ID = c.ID
-	clone.KeyID = c.KeyID
-	clone.Params = make([]byte, len(c.Params))
+	clone := Command{
+		ID:         c.ID,
+		Type:       c.Type,
+		KeyID:      c.KeyID,
+		MaxGasCost: c.MaxGasCost,
+		Params:     make([]byte, len(c.Params)),
+	}
 	copy(clone.Params, c.Params)
 
 	return clone

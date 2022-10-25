@@ -7,11 +7,12 @@ import (
 
 // Header represents a block header in any EVM blockchain
 type Header struct {
-	ParentHash   common.Hash    `json:"parentHash"       gencodec:"required"`
-	Number       *hexutil.Big   `json:"number"           gencodec:"required"`
-	Time         hexutil.Uint64 `json:"timestamp"        gencodec:"required"`
-	Hash         common.Hash    `json:"hash"`
-	Transactions []common.Hash  `json:"transactions"     gencodec:"required"`
+	ParentHash    common.Hash    `json:"parentHash"       gencodec:"required"`
+	Number        *hexutil.Big   `json:"number"           gencodec:"required"`
+	Time          hexutil.Uint64 `json:"timestamp"        gencodec:"required"`
+	Hash          common.Hash    `json:"hash"`
+	Transactions  []common.Hash  `json:"transactions"     gencodec:"required"`
+	L1BlockNumber *hexutil.Big   `json:"l1BlockNumber"`
 }
 
 // MoonbeamHeader represents a block header in the Moonbeam blockchain

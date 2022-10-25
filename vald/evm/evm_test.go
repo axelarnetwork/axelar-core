@@ -207,8 +207,8 @@ func TestMgr_getTxReceiptIfFinalized(t *testing.T) {
 
 					return nil, fmt.Errorf("not found")
 				},
-				LatestFinalizedBlockNumberFunc: func(ctx context.Context, conf uint64) (*big.Int, error) {
-					return big.NewInt(latestFinalizedBlockNumber), nil
+				IsFinalizedFunc: func(ctx context.Context, conf uint64, txReceipt *geth.Receipt) (bool, error) {
+					return true, nil
 				},
 			}
 		}).
@@ -317,8 +317,8 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 			TransactionReceiptFunc: func(context.Context, common.Hash) (*geth.Receipt, error) {
 				return receipt, nil
 			},
-			LatestFinalizedBlockNumberFunc: func(ctx context.Context, conf uint64) (*big.Int, error) {
-				return big.NewInt(blockNumber), nil
+			IsFinalizedFunc: func(ctx context.Context, conf uint64, txReceipt *geth.Receipt) (bool, error) {
+				return true, nil
 			},
 		}
 		broadcaster = &mock2.BroadcasterMock{
@@ -414,8 +414,8 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 			TransactionReceiptFunc: func(context.Context, common.Hash) (*geth.Receipt, error) {
 				return receipt, nil
 			},
-			LatestFinalizedBlockNumberFunc: func(ctx context.Context, conf uint64) (*big.Int, error) {
-				return big.NewInt(blockNumber), nil
+			IsFinalizedFunc: func(ctx context.Context, conf uint64, txReceipt *geth.Receipt) (bool, error) {
+				return true, nil
 			},
 		}
 		broadcaster = &mock2.BroadcasterMock{
@@ -556,8 +556,8 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 
 			return nil, fmt.Errorf("not found")
 		}
-		rpc.LatestFinalizedBlockNumberFunc = func(ctx context.Context, conf uint64) (*big.Int, error) {
-			return txReceipt.BlockNumber, nil
+		rpc.IsFinalizedFunc = func(ctx context.Context, conf uint64, txReceipt *geth.Receipt) (bool, error) {
+			return true, nil
 		}
 	})
 
