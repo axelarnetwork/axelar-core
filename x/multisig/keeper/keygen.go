@@ -5,12 +5,15 @@ import (
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	gogoprototypes "github.com/gogo/protobuf/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/events"
+	"github.com/axelarnetwork/axelar-core/utils/key"
 	"github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/math"
 	"github.com/axelarnetwork/utils/slices"
 )
@@ -77,6 +80,23 @@ func (k Keeper) DeleteKeygenSession(ctx sdk.Context, id exported.KeyID) {
 
 	k.getStore(ctx).Delete(getKeygenSessionExpiryKey(keygen))
 	k.getStore(ctx).Delete(getKeygenSessionKey(id))
+}
+
+// KeygenOptOut opts out the given participant of future keygens
+func (k Keeper) KeygenOptOut(ctx sdk.Context, participant sdk.AccAddress) {
+	funcs.MustNoErr(
+		k.getStore(ctx).SetNewValidated(keygenOptOutPrefix.Append(key.FromBz(participant)), utils.NoValidation(&gogoprototypes.BytesValue{})),
+	)
+}
+
+// KeygenOptIn opts in the given participant to future keygens
+func (k Keeper) KeygenOptIn(ctx sdk.Context, participant sdk.AccAddress) {
+	k.getStore(ctx).DeleteNew(keygenOptOutPrefix.Append(key.FromBz(participant)))
+}
+
+// IsOptOut returns true if the given participant is opted out of future keygens
+func (k Keeper) IsOptOut(ctx sdk.Context, participant sdk.AccAddress) bool {
+	return k.getStore(ctx).HasNew(keygenOptOutPrefix.Append(key.FromBz(participant)))
 }
 
 func (k Keeper) createKeygenSession(ctx sdk.Context, id exported.KeyID, snapshot snapshot.Snapshot) error {

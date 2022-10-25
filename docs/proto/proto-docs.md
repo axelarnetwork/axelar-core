@@ -272,6 +272,8 @@
     - [KeyRotated](#axelar.multisig.v1beta1.KeyRotated)
     - [KeygenCompleted](#axelar.multisig.v1beta1.KeygenCompleted)
     - [KeygenExpired](#axelar.multisig.v1beta1.KeygenExpired)
+    - [KeygenOptIn](#axelar.multisig.v1beta1.KeygenOptIn)
+    - [KeygenOptOut](#axelar.multisig.v1beta1.KeygenOptOut)
     - [KeygenStarted](#axelar.multisig.v1beta1.KeygenStarted)
     - [PubKeySubmitted](#axelar.multisig.v1beta1.PubKeySubmitted)
     - [SignatureSubmitted](#axelar.multisig.v1beta1.SignatureSubmitted)
@@ -308,6 +310,10 @@
     - [NextKeyIDResponse](#axelar.multisig.v1beta1.NextKeyIDResponse)
   
 - [axelar/multisig/v1beta1/tx.proto](#axelar/multisig/v1beta1/tx.proto)
+    - [KeygenOptInRequest](#axelar.multisig.v1beta1.KeygenOptInRequest)
+    - [KeygenOptInResponse](#axelar.multisig.v1beta1.KeygenOptInResponse)
+    - [KeygenOptOutRequest](#axelar.multisig.v1beta1.KeygenOptOutRequest)
+    - [KeygenOptOutResponse](#axelar.multisig.v1beta1.KeygenOptOutResponse)
     - [RotateKeyRequest](#axelar.multisig.v1beta1.RotateKeyRequest)
     - [RotateKeyResponse](#axelar.multisig.v1beta1.RotateKeyResponse)
     - [StartKeygenRequest](#axelar.multisig.v1beta1.StartKeygenRequest)
@@ -4313,6 +4319,36 @@ QueryService defines the gRPC querier service.
 
 
 
+<a name="axelar.multisig.v1beta1.KeygenOptIn"></a>
+
+### KeygenOptIn
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `participant` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.KeygenOptOut"></a>
+
+### KeygenOptOut
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `participant` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
 <a name="axelar.multisig.v1beta1.KeygenStarted"></a>
 
 ### KeygenStarted
@@ -4852,6 +4888,56 @@ chain
 
 
 
+<a name="axelar.multisig.v1beta1.KeygenOptInRequest"></a>
+
+### KeygenOptInRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.KeygenOptInResponse"></a>
+
+### KeygenOptInResponse
+
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.KeygenOptOutRequest"></a>
+
+### KeygenOptOutRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.KeygenOptOutResponse"></a>
+
+### KeygenOptOutResponse
+
+
+
+
+
+
+
 <a name="axelar.multisig.v1beta1.RotateKeyRequest"></a>
 
 ### RotateKeyRequest
@@ -4993,6 +5079,8 @@ Msg defines the multisig Msg service.
 | `SubmitPubKey` | [SubmitPubKeyRequest](#axelar.multisig.v1beta1.SubmitPubKeyRequest) | [SubmitPubKeyResponse](#axelar.multisig.v1beta1.SubmitPubKeyResponse) |  | POST|/axelar/multisig/submit_pub_key|
 | `SubmitSignature` | [SubmitSignatureRequest](#axelar.multisig.v1beta1.SubmitSignatureRequest) | [SubmitSignatureResponse](#axelar.multisig.v1beta1.SubmitSignatureResponse) |  | POST|/axelar/multisig/submit_signature|
 | `RotateKey` | [RotateKeyRequest](#axelar.multisig.v1beta1.RotateKeyRequest) | [RotateKeyResponse](#axelar.multisig.v1beta1.RotateKeyResponse) |  | POST|/axelar/multisig/rotate_key|
+| `KeygenOptOut` | [KeygenOptOutRequest](#axelar.multisig.v1beta1.KeygenOptOutRequest) | [KeygenOptOutResponse](#axelar.multisig.v1beta1.KeygenOptOutResponse) |  | POST|/axelar/multisig/v1beta1/keygen_opt_out|
+| `KeygenOptIn` | [KeygenOptInRequest](#axelar.multisig.v1beta1.KeygenOptInRequest) | [KeygenOptInResponse](#axelar.multisig.v1beta1.KeygenOptInResponse) |  | POST|/axelar/multisig/v1beta1/keygen_opt_in|
 
 
 <a name="axelar.multisig.v1beta1.QueryService"></a>

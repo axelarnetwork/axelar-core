@@ -98,7 +98,7 @@ func NewAppModule(k keeper.Keeper, staker types.Staker, slasher types.Slasher, s
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
 		staker:         staker,
-		snapshotter:    keeper.NewSnapshotCreator(snapshotter, staker, slasher),
+		snapshotter:    keeper.NewSnapshotCreator(k, snapshotter, staker, slasher),
 		rewarder:       rewarder,
 		nexus:          nexus,
 	}

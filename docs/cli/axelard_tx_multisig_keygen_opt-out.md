@@ -1,9 +1,9 @@
-## axelard tx multisig start-keygen
+## axelard tx multisig keygen opt-out
 
-Initiate key generation protocol
+Opt the sender out of future keygens. Sender should be a proxy address for a validator
 
 ```
-axelard tx multisig start-keygen [flags]
+axelard tx multisig keygen opt-out [flags]
 ```
 
 ### Options
@@ -19,8 +19,7 @@ axelard tx multisig start-keygen [flags]
       --gas-adjustment float     adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default 1)
       --gas-prices string        Gas prices in decimal format to determine the transaction fee (e.g. 0.1uatom) (default "0.007uaxl")
       --generate-only            Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)
-  -h, --help                     help for start-keygen
-      --id string                unique ID for new key (required)
+  -h, --help                     help for opt-out
       --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "file")
       --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
       --ledger                   Use a connected Ledger device
@@ -46,4 +45,4 @@ axelard tx multisig start-keygen [flags]
 
 ### SEE ALSO
 
-- [axelard tx multisig](axelard_tx_multisig.md)	 - multisig transactions subcommands
+- [axelard tx multisig keygen](axelard_tx_multisig_keygen.md)	 - sub-commands for keygen
