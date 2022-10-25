@@ -89,9 +89,9 @@ func NewDeployTokenCommand(chainID sdk.Int, keyID multisig.KeyID, asset string, 
 }
 
 // NewMintTokenCommand creates a command to mint token to the given address
-func NewMintTokenCommand(keyID multisig.KeyID, id CommandID, symbol string, address common.Address, amount *big.Int) Command {
+func NewMintTokenCommand(keyID multisig.KeyID, id nexus.TransferID, symbol string, address common.Address, amount *big.Int) Command {
 	return Command{
-		ID:         id,
+		ID:         CommandIDFromTransferID(id),
 		Type:       COMMAND_TYPE_MINT_TOKEN,
 		Params:     createMintTokenParams(symbol, address, amount),
 		KeyID:      keyID,
@@ -162,12 +162,12 @@ func NewApproveContractCallWithMintCommand(
 }
 
 // DecodeParams returns the decoded parameters in the given command
-func (c Command) DecodeParams() (map[string]string, error) {
+func (m Command) DecodeParams() (map[string]string, error) {
 	params := make(map[string]string)
 
-	switch c.Type {
+	switch m.Type {
 	case COMMAND_TYPE_APPROVE_CONTRACT_CALL_WITH_MINT:
-		sourceChain, sourceAddress, contractAddress, payloadHash, symbol, amount, sourceTxID, sourceEventIndex := decodeApproveContractCallWithMintParams(c.Params)
+		sourceChain, sourceAddress, contractAddress, payloadHash, symbol, amount, sourceTxID, sourceEventIndex := DecodeApproveContractCallWithMintParams(m.Params)
 
 		params["sourceChain"] = sourceChain
 		params["sourceAddress"] = sourceAddress
@@ -178,7 +178,7 @@ func (c Command) DecodeParams() (map[string]string, error) {
 		params["sourceTxHash"] = sourceTxID.Hex()
 		params["sourceEventIndex"] = sourceEventIndex.String()
 	case COMMAND_TYPE_APPROVE_CONTRACT_CALL:
-		sourceChain, sourceAddress, contractAddress, payloadHash, sourceTxID, sourceEventIndex := decodeApproveContractCallParams(c.Params)
+		sourceChain, sourceAddress, contractAddress, payloadHash, sourceTxID, sourceEventIndex := DecodeApproveContractCallParams(m.Params)
 
 		params["sourceChain"] = sourceChain
 		params["sourceAddress"] = sourceAddress
@@ -187,7 +187,7 @@ func (c Command) DecodeParams() (map[string]string, error) {
 		params["sourceTxHash"] = sourceTxID.Hex()
 		params["sourceEventIndex"] = sourceEventIndex.String()
 	case COMMAND_TYPE_DEPLOY_TOKEN:
-		name, symbol, decs, cap, tokenAddress, dailyMintLimit := decodeDeployTokenParams(c.Params)
+		name, symbol, decs, cap, tokenAddress, dailyMintLimit := DecodeDeployTokenParams(m.Params)
 
 		params["name"] = name
 		params["symbol"] = symbol
@@ -196,39 +196,39 @@ func (c Command) DecodeParams() (map[string]string, error) {
 		params["tokenAddress"] = tokenAddress.Hex()
 		params["dailyMintLimit"] = dailyMintLimit.String()
 	case COMMAND_TYPE_MINT_TOKEN:
-		symbol, addr, amount := decodeMintTokenParams(c.Params)
+		symbol, addr, amount := DecodeMintTokenParams(m.Params)
 
 		params["symbol"] = symbol
 		params["account"] = addr.Hex()
 		params["amount"] = amount.String()
 	case COMMAND_TYPE_BURN_TOKEN:
-		symbol, salt := decodeBurnTokenParams(c.Params)
+		symbol, salt := DecodeBurnTokenParams(m.Params)
 
 		params["symbol"] = symbol
 		params["salt"] = salt.Hex()
 	case COMMAND_TYPE_TRANSFER_OPERATORSHIP:
-		addresses, weights, threshold := decodeTransferMultisigParams(c.Params)
+		addresses, weights, threshold := DecodeTransferMultisigParams(m.Params)
 
 		params["newOperators"] = strings.Join(slices.Map(addresses, common.Address.Hex), ";")
 		params["newWeights"] = strings.Join(slices.Map(weights, func(w *big.Int) string { return w.String() }), ";")
 		params["newThreshold"] = threshold.String()
 	default:
-		return nil, fmt.Errorf("unknown command type '%s'", c.Type)
+		return nil, fmt.Errorf("unknown command type '%s'", m.Type)
 	}
 
 	return params, nil
 }
 
 // Clone returns an exacy copy of Command
-func (c Command) Clone() Command {
+func (m Command) Clone() Command {
 	clone := Command{
-		ID:         c.ID,
-		Type:       c.Type,
-		KeyID:      c.KeyID,
-		MaxGasCost: c.MaxGasCost,
-		Params:     make([]byte, len(c.Params)),
+		ID:         m.ID,
+		Type:       m.Type,
+		KeyID:      m.KeyID,
+		MaxGasCost: m.MaxGasCost,
+		Params:     make([]byte, len(m.Params)),
 	}
-	copy(clone.Params, c.Params)
+	copy(clone.Params, m.Params)
 
 	return clone
 }
@@ -290,7 +290,8 @@ func createApproveContractCallWithMintParams(
 	))
 }
 
-func decodeApproveContractCallWithMintParams(bz []byte) (string, string, common.Address, common.Hash, string, *big.Int, common.Hash, *big.Int) {
+// DecodeApproveContractCallWithMintParams decodes the call arguments from the given contract call
+func DecodeApproveContractCallWithMintParams(bz []byte) (string, string, common.Address, common.Hash, string, *big.Int, common.Hash, *big.Int) {
 	params := funcs.Must(StrictDecode(approveContractCallWithMintArguments, bz))
 
 	payloadHash := params[3].([common.HashLength]byte)
@@ -306,7 +307,8 @@ func decodeApproveContractCallWithMintParams(bz []byte) (string, string, common.
 		params[7].(*big.Int)
 }
 
-func decodeApproveContractCallParams(bz []byte) (string, string, common.Address, common.Hash, common.Hash, *big.Int) {
+// DecodeApproveContractCallParams decodes the call arguments from the given contract call
+func DecodeApproveContractCallParams(bz []byte) (string, string, common.Address, common.Hash, common.Hash, *big.Int) {
 	params := funcs.Must(StrictDecode(approveContractCallArguments, bz))
 
 	payloadHash := params[3].([common.HashLength]byte)
@@ -320,25 +322,29 @@ func decodeApproveContractCallParams(bz []byte) (string, string, common.Address,
 		params[5].(*big.Int)
 }
 
-func decodeMintTokenParams(bz []byte) (string, common.Address, *big.Int) {
+// DecodeMintTokenParams decodes the call arguments from the given contract call
+func DecodeMintTokenParams(bz []byte) (string, common.Address, *big.Int) {
 	params := funcs.Must(StrictDecode(mintTokenArguments, bz))
 
 	return params[0].(string), params[1].(common.Address), params[2].(*big.Int)
 }
 
-func decodeDeployTokenParams(bz []byte) (string, string, uint8, *big.Int, common.Address, sdk.Uint) {
+// DecodeDeployTokenParams decodes the call arguments from the given contract call
+func DecodeDeployTokenParams(bz []byte) (string, string, uint8, *big.Int, common.Address, sdk.Uint) {
 	params := funcs.Must(StrictDecode(deployTokenArguments, bz))
 
 	return params[0].(string), params[1].(string), params[2].(uint8), params[3].(*big.Int), params[4].(common.Address), sdk.NewUintFromBigInt(params[5].(*big.Int))
 }
 
-func decodeBurnTokenParams(bz []byte) (string, common.Hash) {
+// DecodeBurnTokenParams decodes the call arguments from the given contract call
+func DecodeBurnTokenParams(bz []byte) (string, common.Hash) {
 	params := funcs.Must(StrictDecode(burnTokenArguments, bz))
 
 	return params[0].(string), params[1].([common.HashLength]byte)
 }
 
-func decodeTransferMultisigParams(bz []byte) ([]common.Address, []*big.Int, *big.Int) {
+// DecodeTransferMultisigParams decodes the call arguments from the given contract call
+func DecodeTransferMultisigParams(bz []byte) ([]common.Address, []*big.Int, *big.Int) {
 	params := funcs.Must(StrictDecode(transferMultisigArguments, bz))
 
 	return params[0].([]common.Address), params[1].([]*big.Int), params[2].(*big.Int)
