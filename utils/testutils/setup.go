@@ -1,13 +1,14 @@
 package testutils
 
 import (
-	"github.com/axelarnetwork/axelar-core/app/params"
-	"github.com/axelarnetwork/axelar-core/testutils/fake"
-	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/tendermint/tendermint/libs/log"
 	abci "github.com/tendermint/tendermint/proto/tendermint/types"
+
+	"github.com/axelarnetwork/axelar-core/app/params"
+	"github.com/axelarnetwork/axelar-core/testutils/fake"
+	"github.com/axelarnetwork/axelar-core/testutils/rand"
 )
 
 // NewSubspace returns a new subspace with a random name
