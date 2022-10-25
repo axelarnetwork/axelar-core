@@ -170,5 +170,4 @@ func TestKeeper_Chains(t *testing.T) {
 				assert.Equal(t, response.Chains, []exported.ChainName{testChain.Name})
 			}),
 		).Run(t)
-
 }

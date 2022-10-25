@@ -111,7 +111,17 @@ message EventResponse { Event event = 1; }
 
 message QueryBurnerAddressResponse { string address = 1; }
 
-message ChainsRequest {}
+enum ChainStatus {
+  option (gogoproto.goproto_enum_prefix) = false;
+
+  CHAIN_STATUS_UNSPECIFIED = 0
+      [ (gogoproto.enumvalue_customname) = "StatusUnspecified" ];
+  CHAIN_STATUS_ACTIVATED = 1 [ (gogoproto.enumvalue_customname) = "Activated" ];
+  CHAIN_STATUS_DEACTIVATED = 2
+      [ (gogoproto.enumvalue_customname) = "Deactivated" ];
+}
+
+message ChainsRequest { ChainStatus status = 1; }
 
 message ChainsResponse {
   repeated string chains = 1
