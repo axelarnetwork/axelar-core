@@ -39,4 +39,4 @@ axelard query evm [flags]
 - [axelard query evm latest-batched-commands](axelard_query_evm_latest-batched-commands.md)	 - Get the latest batched commands that can be wrapped in an EVM transaction to be executed in Axelar Gateway
 - [axelard query evm pending-commands](axelard_query_evm_pending-commands.md)	 - Get the list of commands not yet added to a batch
 - [axelard query evm token-address](axelard_query_evm_token-address.md)	 - Query a token address by by either symbol or asset
-- [axelard query evm token-info](axelard_query_evm_token-info.md)	 - Returns the info of token by either symbol or asset
+- [axelard query evm token-info](axelard_query_evm_token-info.md)	 - Returns the info of token by either symbol, asset, or address

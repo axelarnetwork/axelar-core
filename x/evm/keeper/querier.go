@@ -27,8 +27,9 @@ const (
 
 // Token address labels
 const (
-	BySymbol = "symbol"
-	ByAsset  = "asset"
+	BySymbol  = "symbol"
+	ByAsset   = "asset"
+	ByAddress = "address"
 )
 
 // NewQuerier returns a new querier for the evm module

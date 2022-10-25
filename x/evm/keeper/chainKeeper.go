@@ -657,6 +657,19 @@ func (k chainKeeper) getTokenMetadataBySymbol(ctx sdk.Context, symbol string) (t
 	return result, found
 }
 
+// GetTokenByAddress finds a token's information by its address
+func (k chainKeeper) GetERC20TokenByAddress(ctx sdk.Context, address types.Address) types.ERC20Token {
+	for _, tokenMetadata := range k.getTokensMetadata(ctx) {
+		if tokenMetadata.TokenAddress == address {
+			return types.CreateERC20Token(func(m types.ERC20TokenMetadata) {
+				k.setTokenMetadata(ctx, m)
+			}, tokenMetadata)
+		}
+	}
+
+	return types.ERC20Token{}
+}
+
 func (k chainKeeper) GetTokens(ctx sdk.Context) []types.ERC20Token {
 	tokensMetadata := k.getTokensMetadata(ctx)
 	tokens := make([]types.ERC20Token, len(tokensMetadata))
