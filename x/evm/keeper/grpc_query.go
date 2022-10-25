@@ -41,36 +41,43 @@ func NewGRPCQuerier(k types.BaseKeeper, n types.Nexus, multisig types.MultisigKe
 	}
 }
 
-func queryChains(ctx sdk.Context, n types.Nexus) []nexustypes.ChainName {
-	chains := slices.Filter(n.GetChains(ctx), types.IsEVMChain)
-
-	return slices.Map(chains, nexustypes.Chain.GetName)
+func getEVMChains(ctx sdk.Context, n types.Nexus) []nexustypes.Chain {
+	return slices.Filter(n.GetChains(ctx), types.IsEVMChain)
 }
 
 // Chains returns the available evm chains
 func (q Querier) Chains(c context.Context, req *types.ChainsRequest) (*types.ChainsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	chains := queryChains(ctx, q.nexus)
+	chains := getEVMChains(ctx, q.nexus)
 
-	return &types.ChainsResponse{Chains: chains}, nil
+	switch req.Status {
+	case types.Activated:
+		chains = slices.Filter(chains, func(chain nexustypes.Chain) bool { return q.nexus.IsChainActivated(ctx, chain) })
+	case types.Deactivated:
+		chains = slices.Filter(chains, func(chain nexustypes.Chain) bool { return !q.nexus.IsChainActivated(ctx, chain) })
+	}
+
+	chainNames := slices.Map(chains, nexustypes.Chain.GetName)
+
+	return &types.ChainsResponse{Chains: chainNames}, nil
 }
 
 // BurnerInfo implements the burner info grpc query
 func (q Querier) BurnerInfo(c context.Context, req *types.BurnerInfoRequest) (*types.BurnerInfoResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	chains := queryChains(ctx, q.nexus)
+	chains := getEVMChains(ctx, q.nexus)
 
 	for _, chain := range chains {
-		ck, err := q.keeper.ForChain(ctx, chain)
+		ck, err := q.keeper.ForChain(ctx, chain.Name)
 		if err != nil {
 			continue
 		}
 
 		burnerInfo := ck.GetBurnerInfo(ctx, req.Address)
 		if burnerInfo != nil {
-			return &types.BurnerInfoResponse{Chain: ck.GetParams(ctx).Chain, BurnerInfo: burnerInfo}, nil
+			return &types.BurnerInfoResponse{Chain: chain.Name, BurnerInfo: burnerInfo}, nil
 		}
 	}
 
