@@ -3924,6 +3924,7 @@ ERC20 tokens requested for a chain
 | `chain` | [string](#string) |  |  |
 | `asset` | [string](#string) |  |  |
 | `symbol` | [string](#string) |  |  |
+| `address` | [string](#string) |  |  |
 
 
 
