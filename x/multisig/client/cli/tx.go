@@ -27,14 +27,68 @@ func GetTxCmd() *cobra.Command {
 	txCmd.AddCommand(
 		getCmdStartKeygen(),
 		getCmdRotateKey(),
+		getCmdKeygen(),
 	)
 
 	return txCmd
 }
 
 func getCmdStartKeygen() *cobra.Command {
+	cmd := getCmdStart()
+	cmd.Use = "start-keygen"
+	cmd.Deprecated = "use \"keygen start\" instead"
+
+	return cmd
+}
+
+func getCmdRotateKey() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "start-keygen",
+		Use:   "rotate [chain] [keyID]",
+		Short: "Rotate the given chain to the given key",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			chain := nexus.ChainName(args[0])
+			keyID := exported.KeyID(args[1])
+
+			msg := types.NewRotateKeyRequest(clientCtx.FromAddress, chain, keyID)
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
+		},
+	}
+
+	flags.AddTxFlagsToCmd(cmd)
+
+	return cmd
+}
+
+func getCmdKeygen() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:                        "keygen",
+		DisableFlagParsing:         true,
+		SuggestionsMinimumDistance: 2,
+		TraverseChildren:           true,
+		RunE:                       client.ValidateCmd,
+	}
+	cmd.AddCommand(
+		getCmdStart(),
+		getCmdOptOut(),
+		getCmdOptIn(),
+	)
+
+	return cmd
+}
+
+func getCmdStart() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "start",
 		Short: "Initiate key generation protocol",
 		Args:  cobra.NoArgs,
 	}
@@ -63,21 +117,43 @@ func getCmdStartKeygen() *cobra.Command {
 	return cmd
 }
 
-func getCmdRotateKey() *cobra.Command {
+func getCmdOptOut() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "rotate [chain] [keyID]",
-		Short: "Rotate the given chain to the given key",
-		Args:  cobra.ExactArgs(2),
+		Use:   "opt-out",
+		Short: "Opt the sender out of future keygens. Sender should be a proxy address for a validator",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
 				return err
 			}
 
-			chain := nexus.ChainName(args[0])
-			keyID := exported.KeyID(args[1])
+			msg := &types.KeygenOptOutRequest{Sender: clientCtx.FromAddress}
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
 
-			msg := types.NewRotateKeyRequest(clientCtx.FromAddress, chain, keyID)
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
+		},
+	}
+
+	flags.AddTxFlagsToCmd(cmd)
+
+	return cmd
+}
+
+func getCmdOptIn() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "opt-in",
+		Short: "Opt the sender into future keygens. Sender should be a proxy address for a validator",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			msg := &types.KeygenOptInRequest{Sender: clientCtx.FromAddress}
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

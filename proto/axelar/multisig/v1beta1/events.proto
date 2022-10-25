@@ -112,6 +112,8 @@ message KeyRotated {
   ];
 }
 
-message KeygenOptOut { bytes participant = 1; }
+message KeygenOptOut { bytes participant = 1[ (gogoproto.casttype) =
+    "github.com/cosmos/cosmos-sdk/types.AccAddress" ]; }
 
-message KeygenOptIn { bytes participant = 1; }
+message KeygenOptIn { bytes participant = 1[ (gogoproto.casttype) =
+    "github.com/cosmos/cosmos-sdk/types.AccAddress" ]; }

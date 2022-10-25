@@ -43,14 +43,14 @@ service MsgService {
 
   rpc KeygenOptOut(KeygenOptOutRequest) returns (KeygenOptOutResponse) {
     option (google.api.http) = {
-      post : "/axelar/multisig/v1beta1/keygen_optout"
+      post : "/axelar/multisig/v1beta1/keygen_opt_out"
       body : "*"
     };
   }
 
   rpc KeygenOptIn(KeygenOptInRequest) returns (KeygenOptInResponse) {
     option (google.api.http) = {
-      post : "/axelar/multisig/v1beta1/keygen_optout"
+      post : "/axelar/multisig/v1beta1/keygen_opt_in"
       body : "*"
     };
   }
