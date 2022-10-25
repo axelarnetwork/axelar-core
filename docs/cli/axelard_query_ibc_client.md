@@ -27,6 +27,7 @@ axelard query ibc client [flags]
 
 - [axelard query ibc](axelard_query_ibc.md)	 - Querying commands for the IBC module
 - [axelard query ibc client consensus-state](axelard_query_ibc_client_consensus-state.md)	 - Query the consensus state of a client at a given height
+- [axelard query ibc client consensus-state-heights](axelard_query_ibc_client_consensus-state-heights.md)	 - Query the heights of all consensus states of a client.
 - [axelard query ibc client consensus-states](axelard_query_ibc_client_consensus-states.md)	 - Query all the consensus states of a client.
 - [axelard query ibc client header](axelard_query_ibc_client_header.md)	 - Query the latest header of the running chain
 - [axelard query ibc client params](axelard_query_ibc_client_params.md)	 - Query the current ibc client parameters

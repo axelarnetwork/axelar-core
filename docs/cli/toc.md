@@ -89,6 +89,7 @@
         - [unreceived-packets \[port-id\] \[channel-id\]](axelard_query_ibc_channel_unreceived-packets.md)	 - Query all the unreceived packets associated with a channel
       - [client](axelard_query_ibc_client.md)	 - IBC client query subcommands
         - [consensus-state \[client-id\] \[height\]](axelard_query_ibc_client_consensus-state.md)	 - Query the consensus state of a client at a given height
+        - [consensus-state-heights \[client-id\]](axelard_query_ibc_client_consensus-state-heights.md)	 - Query the heights of all consensus states of a client.
         - [consensus-states \[client-id\]](axelard_query_ibc_client_consensus-states.md)	 - Query all the consensus states of a client.
         - [header](axelard_query_ibc_client_header.md)	 - Query the latest header of the running chain
         - [params](axelard_query_ibc_client_params.md)	 - Query the current ibc client parameters
@@ -102,7 +103,7 @@
         - [path \[client-id\]](axelard_query_ibc_connection_path.md)	 - Query stored client connection paths
     - [ibc-transfer](axelard_query_ibc-transfer.md)	 - IBC fungible token transfer query subcommands
       - [denom-hash \[trace\]](axelard_query_ibc-transfer_denom-hash.md)	 - Query the denom hash info from a given denom trace
-      - [denom-trace \[hash\]](axelard_query_ibc-transfer_denom-trace.md)	 - Query the denom trace info from a given trace hash
+      - [denom-trace \[hash/denom\]](axelard_query_ibc-transfer_denom-trace.md)	 - Query the denom trace info from a given trace hash or ibc denom
       - [denom-traces](axelard_query_ibc-transfer_denom-traces.md)	 - Query the trace info for all token denominations
       - [escrow-address](axelard_query_ibc-transfer_escrow-address.md)	 - Get the escrow address for a channel
       - [params](axelard_query_ibc-transfer_params.md)	 - Query the current ibc-transfer parameters

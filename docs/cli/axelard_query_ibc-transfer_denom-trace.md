@@ -1,19 +1,19 @@
 ## axelard query ibc-transfer denom-trace
 
-Query the denom trace info from a given trace hash
+Query the denom trace info from a given trace hash or ibc denom
 
 ### Synopsis
 
-Query the denom trace info from a given trace hash
+Query the denom trace info from a given trace hash or ibc denom
 
 ```
-axelard query ibc-transfer denom-trace [hash] [flags]
+axelard query ibc-transfer denom-trace [hash/denom] [flags]
 ```
 
 ### Examples
 
 ```
-<appd> query ibc-transfer denom-trace [hash]
+<appd> query ibc-transfer denom-trace 27A6394C3F9FF9C9DCF5DFFADF9BB5FE9A37C7E92B006199894CF1824DF9AC7C
 ```
 
 ### Options
