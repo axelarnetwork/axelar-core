@@ -803,9 +803,9 @@ var (
 
 	pattern_MsgService_RotateKey_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"axelar", "multisig", "rotate_key"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_MsgService_KeygenOptOut_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"axelar", "multisig", "v1beta1", "keygen_optout"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_MsgService_KeygenOptOut_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"axelar", "multisig", "v1beta1", "keygen_opt_out"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_MsgService_KeygenOptIn_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"axelar", "multisig", "v1beta1", "keygen_optout"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_MsgService_KeygenOptIn_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"axelar", "multisig", "v1beta1", "keygen_opt_in"}, "", runtime.AssumeColonVerbOpt(true)))
 )
 
 var (
