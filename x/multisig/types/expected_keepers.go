@@ -29,6 +29,7 @@ type Keeper interface {
 	GetSigRouter() SigRouter
 }
 
+// KeygenParticipator can check if a participant opted out of future keygens
 type KeygenParticipator interface {
 	IsOptOut(ctx sdk.Context, participant sdk.AccAddress) bool
 }
