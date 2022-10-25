@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"github.com/axelarnetwork/utils/slices"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -528,26 +529,27 @@ func getCmdTokenInfo(queryRoute string) *cobra.Command {
 			return err
 		}
 
+		if !exactlyOneIsFilled(*symbol, *asset, *address) {
+			return fmt.Errorf("lookup must be either by asset name, symbol, or address")
+		}
+
 		var req types.TokenInfoRequest
 		switch {
-		case *symbol == "" && *asset != "" && *address == "":
+		case *asset != "":
 			req = types.TokenInfoRequest{
 				Chain:  args[0],
 				FindBy: &types.TokenInfoRequest_Asset{Asset: *asset},
 			}
-		case *symbol != "" && *asset == "" && *address == "":
+		case *symbol != "":
 			req = types.TokenInfoRequest{
 				Chain:  args[0],
 				FindBy: &types.TokenInfoRequest_Symbol{Symbol: *symbol},
 			}
-		case *symbol == "" && *asset == "" && *address != "":
+		case *address != "":
 			req = types.TokenInfoRequest{
 				Chain:  args[0],
 				FindBy: &types.TokenInfoRequest_Address{Address: *address},
 			}
-
-		default:
-			return fmt.Errorf("lookup must be either by asset name, symbol, or address")
 		}
 
 		queryClient := types.NewQueryServiceClient(clientCtx)
@@ -561,4 +563,14 @@ func getCmdTokenInfo(queryRoute string) *cobra.Command {
 
 	flags.AddQueryFlagsToCmd(cmd)
 	return cmd
+}
+
+func exactlyOneIsFilled(flags ...string) bool {
+	nonEmptyFlags := slices.Reduce(flags, 0, func(count int, f string) int {
+		if f != "" {
+			return count + 1
+		}
+		return count
+	})
+	return nonEmptyFlags == 1
 }
