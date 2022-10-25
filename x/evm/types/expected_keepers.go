@@ -64,6 +64,7 @@ type ChainKeeper interface {
 	CreateERC20Token(ctx sdk.Context, asset string, details TokenDetails, address Address) (ERC20Token, error)
 	GetERC20TokenByAsset(ctx sdk.Context, asset string) ERC20Token
 	GetERC20TokenBySymbol(ctx sdk.Context, symbol string) ERC20Token
+	GetERC20TokenByAddress(ctx sdk.Context, address Address) ERC20Token
 	GetTokens(ctx sdk.Context) []ERC20Token
 
 	EnqueueCommand(ctx sdk.Context, cmd Command) error
