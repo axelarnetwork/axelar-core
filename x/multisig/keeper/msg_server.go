@@ -140,6 +140,8 @@ func (s msgServer) KeygenOptOut(c context.Context, req *types.KeygenOptOutReques
 	ctx := sdk.UnwrapSDKContext(c)
 
 	s.Keeper.KeygenOptOut(ctx, req.Sender)
+
+	events.Emit(ctx, &types.KeygenOptOut{Participant: req.Sender})
 	return &types.KeygenOptOutResponse{}, nil
 }
 
@@ -148,5 +150,6 @@ func (s msgServer) KeygenOptIn(c context.Context, req *types.KeygenOptInRequest)
 
 	s.Keeper.KeygenOptIn(ctx, req.Sender)
 
+	events.Emit(ctx, &types.KeygenOptIn{Participant: req.Sender})
 	return &types.KeygenOptInResponse{}, nil
 }

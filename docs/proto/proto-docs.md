@@ -271,6 +271,8 @@
     - [KeyRotated](#axelar.multisig.v1beta1.KeyRotated)
     - [KeygenCompleted](#axelar.multisig.v1beta1.KeygenCompleted)
     - [KeygenExpired](#axelar.multisig.v1beta1.KeygenExpired)
+    - [KeygenOptIn](#axelar.multisig.v1beta1.KeygenOptIn)
+    - [KeygenOptOut](#axelar.multisig.v1beta1.KeygenOptOut)
     - [KeygenStarted](#axelar.multisig.v1beta1.KeygenStarted)
     - [PubKeySubmitted](#axelar.multisig.v1beta1.PubKeySubmitted)
     - [SignatureSubmitted](#axelar.multisig.v1beta1.SignatureSubmitted)
@@ -4291,6 +4293,36 @@ QueryService defines the gRPC querier service.
 | ----- | ---- | ----- | ----------- |
 | `module` | [string](#string) |  |  |
 | `key_id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.KeygenOptIn"></a>
+
+### KeygenOptIn
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `participant` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.KeygenOptOut"></a>
+
+### KeygenOptOut
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `participant` | [bytes](#bytes) |  |  |
 
 
 
