@@ -174,5 +174,5 @@ replace github.com/btcsuite/btcd/btcec/v2 => github.com/btcsuite/btcd/btcec/v2 v
 // Fix Dragonberry vulnerability: https://forum.cosmos.network/t/ibc-security-advisory-dragonberry/7702
 replace github.com/confio/ics23/go => github.com/cosmos/cosmos-sdk/ics23/go v0.8.0
 
-// Temporary repalcement for rosetta support
+// Temporary replacement for rosetta support
 replace github.com/cosmos/cosmos-sdk => github.com/axelarnetwork/cosmos-sdk v0.45.10-0.20221018183542-f33f0aa566e4
