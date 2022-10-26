@@ -49,7 +49,7 @@
       - [batched-commands \[chain\] \[batchedCommandsID\]](axelard_query_evm_batched-commands.md)	 - Get the signed batched commands that can be wrapped in an EVM transaction to be executed in Axelar Gateway
       - [burner-info \[deposit address\]](axelard_query_evm_burner-info.md)	 - Get information about a burner address
       - [bytecode \[chain\] \[contract\]](axelard_query_evm_bytecode.md)	 - Fetch the bytecode of an EVM contract \[contract\] for chain \[chain\]
-      - [chains](axelard_query_evm_chains.md)	 - Get EVM chains
+      - [chains](axelard_query_evm_chains.md)	 - Return the supported EVM chains by status
       - [command \[chain\] \[id\]](axelard_query_evm_command.md)	 - Get information about an EVM gateway command given a chain and the command ID
       - [confirmation-height \[chain\]](axelard_query_evm_confirmation-height.md)	 - Returns the minimum confirmation height for the given chain
       - [erc20-tokens \[chain\]](axelard_query_evm_erc20-tokens.md)	 - Returns the ERC20 tokens for the given chain
@@ -58,7 +58,7 @@
       - [latest-batched-commands \[chain\]](axelard_query_evm_latest-batched-commands.md)	 - Get the latest batched commands that can be wrapped in an EVM transaction to be executed in Axelar Gateway
       - [pending-commands \[chain\]](axelard_query_evm_pending-commands.md)	 - Get the list of commands not yet added to a batch
       - [token-address \[chain\]](axelard_query_evm_token-address.md)	 - Query a token address by by either symbol or asset
-      - [token-info \[chain\]](axelard_query_evm_token-info.md)	 - Returns the info of token by either symbol or asset
+      - [token-info \[chain\]](axelard_query_evm_token-info.md)	 - Returns the info of token by either symbol, asset, or address
     - [feegrant](axelard_query_feegrant.md)	 - Querying commands for the feegrant module
       - [grant \[granter\] \[grantee\]](axelard_query_feegrant_grant.md)	 - Query details of a single grant
       - [grants-by-grantee \[grantee\]](axelard_query_feegrant_grants-by-grantee.md)	 - Query all grants of a grantee
@@ -245,8 +245,11 @@
     - [ibc-transfer](axelard_tx_ibc-transfer.md)	 - IBC fungible token transfer transaction subcommands
       - [transfer \[src-port\] \[src-channel\] \[receiver\] \[amount\]](axelard_tx_ibc-transfer_transfer.md)	 - Transfer a fungible token through IBC
     - [multisig](axelard_tx_multisig.md)	 - multisig transactions subcommands
+      - [keygen](axelard_tx_multisig_keygen.md)	 - sub-commands for keygen
+        - [opt-in](axelard_tx_multisig_keygen_opt-in.md)	 - Opt the sender into future keygens. Sender should be a proxy address for a validator
+        - [opt-out](axelard_tx_multisig_keygen_opt-out.md)	 - Opt the sender out of future keygens. Sender should be a proxy address for a validator
+        - [start](axelard_tx_multisig_keygen_start.md)	 - Initiate key generation protocol
       - [rotate \[chain\] \[keyID\]](axelard_tx_multisig_rotate.md)	 - Rotate the given chain to the given key
-      - [start-keygen](axelard_tx_multisig_start-keygen.md)	 - Initiate key generation protocol
     - [multisign \[file\] \[name\] \[\[signature\]...\]](axelard_tx_multisign.md)	 - Generate multisig signatures for transactions generated offline
     - [multisign-batch \[file\] \[name\] \[\[signature-file\]...\]](axelard_tx_multisign-batch.md)	 - Assemble multisig transactions in batch from batch signatures
     - [nexus](axelard_tx_nexus.md)	 - nexus transactions subcommands

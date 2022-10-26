@@ -16,6 +16,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 	evmKeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
@@ -24,6 +25,7 @@ import (
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	multisigTestutils "github.com/axelarnetwork/axelar-core/x/multisig/exported/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	nexustestutils "github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
 	. "github.com/axelarnetwork/utils/test"
 )
 
@@ -51,7 +53,7 @@ func TestQueryPendingCommands(t *testing.T) {
 		keyID = multisigTestutils.KeyID()
 		dailyMintLimit := sdk.NewUint(uint64(rand.PosI64()))
 		cmdDeploy := types.NewDeployTokenCommand(chainID, keyID, asset, createDetails(asset, symbol), types.ZeroAddress, dailyMintLimit)
-		cmdMint := types.NewMintTokenCommand(keyID, types.NewCommandID(rand.Bytes(10), chainID), symbol, common.BytesToAddress(rand.Bytes(common.AddressLength)), big.NewInt(rand.I64Between(1000, 100000)))
+		cmdMint := types.NewMintTokenCommand(keyID, nexustestutils.RandomTransferID(), symbol, common.BytesToAddress(rand.Bytes(common.AddressLength)), big.NewInt(rand.I64Between(1000, 100000)))
 		cmdBurn := types.NewBurnTokenCommand(chainID, keyID, ctx.BlockHeight(), types.BurnerInfo{
 			BurnerAddress: types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
 			TokenAddress:  types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
@@ -115,74 +117,47 @@ func TestChains(t *testing.T) {
 		multisig    *mock.MultisigKeeperMock
 		nexusKeeper *mock.NexusMock
 		ctx         sdk.Context
-		evmChain    nexus.ChainName
-		nonEvmChain nexus.ChainName
-		expectedRes types.ChainsResponse
-		grpcQuerier *evmKeeper.Querier
+		response    *types.ChainsResponse
+		q           evmKeeper.Querier
+		err         error
 	)
 
-	setup := func() {
-		evmChain = "evm-chain"
-		nonEvmChain = "non-evm-chain"
-		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
-	}
+	avalanche := nexus.Chain{Name: nexus.ChainName("avalanche"), Module: types.ModuleName}
 
-	repeatCount := 1
-
-	t.Run("evm chain exists", testutils.Func(func(t *testing.T) {
-		setup()
-
-		expectedRes = types.ChainsResponse{Chains: []nexus.ChainName{evmChain}}
+	Given("an evm querier", func() {
 		nexusKeeper = &mock.NexusMock{
 			GetChainsFunc: func(ctx sdk.Context) []nexus.Chain {
-				return []nexus.Chain{
-					{
-						Name:                  evmChain,
-						SupportsForeignAssets: true,
-						Module:                types.ModuleName,
-					},
-					{
-						Name:                  nonEvmChain,
-						SupportsForeignAssets: true,
-						Module:                "non-evm",
-					}}
+				return []nexus.Chain{exported.Ethereum, axelarnet.Axelarnet, avalanche}
 			},
+			IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool { return !chain.Name.Equals(avalanche.Name) },
 		}
 
-		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, multisig)
-		grpcQuerier = &q
-		res, err := grpcQuerier.Chains(sdk.WrapSDKContext(ctx), &types.ChainsRequest{})
-
-		assert := assert.New(t)
-		assert.NoError(err)
-
-		assert.Equal(expectedRes, *res)
-	}).Repeat(repeatCount))
-
-	t.Run("evm chain doesn't exist", testutils.Func(func(t *testing.T) {
-		setup()
-
-		expectedRes = types.ChainsResponse{Chains: []nexus.ChainName{}}
-		nexusKeeper = &mock.NexusMock{
-			GetChainsFunc: func(ctx sdk.Context) []nexus.Chain {
-				return []nexus.Chain{
-					{
-						Name:                  nonEvmChain,
-						SupportsForeignAssets: true,
-						Module:                "non-evm",
-					}}
-			},
-		}
-
-		q := evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, multisig)
-		grpcQuerier = &q
-		res, err := grpcQuerier.Chains(sdk.WrapSDKContext(ctx), &types.ChainsRequest{})
-
-		assert := assert.New(t)
-		assert.NoError(err)
-
-		assert.Equal(expectedRes, *res)
-	}).Repeat(repeatCount))
+		q = evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, multisig)
+	}).
+		When("a correct context", func() {
+			ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+		}).
+		Branch(
+			Then("query all chains", func(t *testing.T) {
+				response, err = q.Chains(sdk.WrapSDKContext(ctx), &types.ChainsRequest{})
+				assert.NoError(t, err)
+				assert.Equal(t, []nexus.ChainName{exported.Ethereum.Name, avalanche.Name}, response.Chains)
+			}),
+			Then("query only activated chains", func(t *testing.T) {
+				response, err = q.Chains(sdk.WrapSDKContext(ctx), &types.ChainsRequest{
+					Status: types.Activated,
+				})
+				assert.NoError(t, err)
+				assert.Equal(t, []nexus.ChainName{exported.Ethereum.Name}, response.Chains)
+			}),
+			Then("query only deactivated chains", func(t *testing.T) {
+				response, err = q.Chains(sdk.WrapSDKContext(ctx), &types.ChainsRequest{
+					Status: types.Deactivated,
+				})
+				assert.NoError(t, err)
+				assert.Equal(t, []nexus.ChainName{avalanche.Name}, response.Chains)
+			}),
+		).Run(t)
 }
 
 func TestGateway(t *testing.T) {

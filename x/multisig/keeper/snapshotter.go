@@ -23,14 +23,16 @@ var _ Snapshotter = SnapshotCreator{}
 
 // SnapshotCreator is an implementation of Snapshotter
 type SnapshotCreator struct {
+	keygen      types.KeygenParticipator
 	snapshotter types.Snapshotter
 	staker      types.Staker
 	slasher     types.Slasher
 }
 
 // NewSnapshotCreator is the constructor for snapshot creator
-func NewSnapshotCreator(snapshotter types.Snapshotter, staker types.Staker, slasher types.Slasher) SnapshotCreator {
+func NewSnapshotCreator(keygen types.KeygenParticipator, snapshotter types.Snapshotter, staker types.Staker, slasher types.Slasher) SnapshotCreator {
 	return SnapshotCreator{
+		keygen:      keygen,
 		snapshotter: snapshotter,
 		staker:      staker,
 		slasher:     slasher,
@@ -54,9 +56,9 @@ func (sc SnapshotCreator) CreateSnapshot(ctx sdk.Context, threshold utils.Thresh
 	}
 
 	isProxyActive := func(v snapshot.ValidatorI) bool {
-		_, isActive := sc.snapshotter.GetProxy(ctx, v.GetOperator())
+		proxy, isActive := sc.snapshotter.GetProxy(ctx, v.GetOperator())
 
-		return isActive
+		return isActive && !sc.keygen.IsOptOut(ctx, proxy)
 	}
 
 	filter := funcs.And(

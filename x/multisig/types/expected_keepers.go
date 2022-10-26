@@ -12,7 +12,7 @@ import (
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 )
 
-//go:generate moq -pkg mock -out ./mock/expected_keepers.go . Keeper Snapshotter Staker Slasher Rewarder Nexus
+//go:generate moq -pkg mock -out ./mock/expected_keepers.go . Keeper Snapshotter Staker Slasher Rewarder Nexus KeygenParticipator
 
 // Keeper provides keeper functionality of this module
 type Keeper interface {
@@ -27,6 +27,11 @@ type Keeper interface {
 	GetSigningSessionsByExpiry(ctx sdk.Context, expiry int64) []SigningSession
 	DeleteSigningSession(ctx sdk.Context, id uint64)
 	GetSigRouter() SigRouter
+}
+
+// KeygenParticipator can check if a participant opted out of future keygens
+type KeygenParticipator interface {
+	IsOptOut(ctx sdk.Context, participant sdk.AccAddress) bool
 }
 
 // Snapshotter provides snapshot keeper functionality

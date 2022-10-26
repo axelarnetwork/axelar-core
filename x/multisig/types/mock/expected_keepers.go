@@ -1065,3 +1065,74 @@ func (mock *NexusMock) GetChainsCalls() []struct {
 	mock.lockGetChains.RUnlock()
 	return calls
 }
+
+// Ensure, that KeygenParticipatorMock does implement types.KeygenParticipator.
+// If this is not the case, regenerate this file with moq.
+var _ types.KeygenParticipator = &KeygenParticipatorMock{}
+
+// KeygenParticipatorMock is a mock implementation of types.KeygenParticipator.
+//
+// 	func TestSomethingThatUsesKeygenParticipator(t *testing.T) {
+//
+// 		// make and configure a mocked types.KeygenParticipator
+// 		mockedKeygenParticipator := &KeygenParticipatorMock{
+// 			IsOptOutFunc: func(ctx sdk.Context, participant sdk.AccAddress) bool {
+// 				panic("mock out the IsOptOut method")
+// 			},
+// 		}
+//
+// 		// use mockedKeygenParticipator in code that requires types.KeygenParticipator
+// 		// and then make assertions.
+//
+// 	}
+type KeygenParticipatorMock struct {
+	// IsOptOutFunc mocks the IsOptOut method.
+	IsOptOutFunc func(ctx sdk.Context, participant sdk.AccAddress) bool
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// IsOptOut holds details about calls to the IsOptOut method.
+		IsOptOut []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Participant is the participant argument value.
+			Participant sdk.AccAddress
+		}
+	}
+	lockIsOptOut sync.RWMutex
+}
+
+// IsOptOut calls IsOptOutFunc.
+func (mock *KeygenParticipatorMock) IsOptOut(ctx sdk.Context, participant sdk.AccAddress) bool {
+	if mock.IsOptOutFunc == nil {
+		panic("KeygenParticipatorMock.IsOptOutFunc: method is nil but KeygenParticipator.IsOptOut was just called")
+	}
+	callInfo := struct {
+		Ctx         sdk.Context
+		Participant sdk.AccAddress
+	}{
+		Ctx:         ctx,
+		Participant: participant,
+	}
+	mock.lockIsOptOut.Lock()
+	mock.calls.IsOptOut = append(mock.calls.IsOptOut, callInfo)
+	mock.lockIsOptOut.Unlock()
+	return mock.IsOptOutFunc(ctx, participant)
+}
+
+// IsOptOutCalls gets all the calls that were made to IsOptOut.
+// Check the length with:
+//     len(mockedKeygenParticipator.IsOptOutCalls())
+func (mock *KeygenParticipatorMock) IsOptOutCalls() []struct {
+	Ctx         sdk.Context
+	Participant sdk.AccAddress
+} {
+	var calls []struct {
+		Ctx         sdk.Context
+		Participant sdk.AccAddress
+	}
+	mock.lockIsOptOut.RLock()
+	calls = mock.calls.IsOptOut
+	mock.lockIsOptOut.RUnlock()
+	return calls
+}

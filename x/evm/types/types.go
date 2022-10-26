@@ -202,19 +202,11 @@ func (t *ERC20Token) CreateMintCommand(keyID multisig.KeyID, transfer nexus.Cros
 
 	return NewMintTokenCommand(
 		keyID,
-		transferIDtoCommandID(transfer.ID),
+		transfer.ID,
 		t.metadata.Details.Symbol,
 		common.HexToAddress(transfer.Recipient.Address),
 		transfer.Asset.Amount.BigInt(),
 	), nil
-}
-
-// transferIDtoCommandID converts a transferID to a commandID
-func transferIDtoCommandID(transferID nexus.TransferID) CommandID {
-	var commandID CommandID
-	copy(commandID[:], common.LeftPadBytes(transferID.Bytes(), 32)[:32])
-
-	return commandID
 }
 
 // GetAddress returns the token's address
@@ -660,21 +652,25 @@ const commandIDSize = 32
 // CommandID represents the unique command identifier
 type CommandID [commandIDSize]byte
 
-var zeroID = CommandID{}
-
 // NewCommandID is the constructor for CommandID
 func NewCommandID(data []byte, chainID sdk.Int) CommandID {
 	var commandID CommandID
 	copy(commandID[:], crypto.Keccak256(append(data, chainID.BigInt().Bytes()...))[:commandIDSize])
 
-	if bytes.Equal(commandID[:], zeroID[:]) {
-		copy(commandID[:], crypto.Keccak256(commandID[:])[:commandIDSize])
-	}
+	return commandID
+}
+
+// CommandIDFromTransferID converts a TransferID into a CommandID
+func CommandIDFromTransferID(id nexus.TransferID) CommandID {
+	var commandID CommandID
+	idBz := id.Bytes()
+
+	copy(commandID[:], common.LeftPadBytes(idBz[:], commandIDSize))
 
 	return commandID
 }
 
-// HexToCommandID decodes an hex representation of a CommandID
+// HexToCommandID decodes a hex representation of a CommandID
 func HexToCommandID(id string) (CommandID, error) {
 	bz, err := hex.DecodeString(id)
 	if err != nil {
@@ -724,10 +720,6 @@ func (c *CommandID) Unmarshal(data []byte) error {
 
 // ValidateBasic returns an error if the given command ID is invalid
 func (c CommandID) ValidateBasic() error {
-	if bytes.Equal(c[:], zeroID[:]) {
-		return errors.New("ID is zero")
-	}
-
 	return nil
 }
 
@@ -1263,24 +1255,24 @@ func (m Gateway) ValidateBasic() error {
 }
 
 // ValidateBasic returns an error if the given command is invalid
-func (c Command) ValidateBasic() error {
-	if err := c.ID.ValidateBasic(); err != nil {
+func (m Command) ValidateBasic() error {
+	if err := m.ID.ValidateBasic(); err != nil {
 		return err
 	}
 
-	if err := c.Type.ValidateBasic(); err != nil {
+	if err := m.Type.ValidateBasic(); err != nil {
 		return err
 	}
 
-	if err := c.KeyID.ValidateBasic(); err != nil {
+	if err := m.KeyID.ValidateBasic(); err != nil {
 		return err
 	}
 
-	if c.MaxGasCost == 0 {
+	if m.MaxGasCost == 0 {
 		return errors.New("max gas cost must be >0")
 	}
 
-	if _, err := c.DecodeParams(); err != nil {
+	if _, err := m.DecodeParams(); err != nil {
 		return err
 	}
 	return nil

@@ -68,10 +68,14 @@ func TestSnapshotCreator_CreateSnapshot(t *testing.T) {
 				return consAddr.Equals(tombstonedAddr)
 			}}
 
+		keygen = &mock.KeygenParticipatorMock{IsOptOutFunc: func(sdk.Context, sdk.AccAddress) bool {
+			return false
+		}}
+
 		expectedThreshold = testutils.RandThreshold()
 	)
 
-	creator := keeper.NewSnapshotCreator(snapshotter, staker, slasher)
+	creator := keeper.NewSnapshotCreator(keygen, snapshotter, staker, slasher)
 
 	snapshotter.CreateSnapshotFunc =
 		func(

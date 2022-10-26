@@ -15,6 +15,12 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/utils/slices"
+)
+
+const (
+	activated   = "activated"
+	deactivated = "deactivated"
 )
 
 // GetQueryCmd returns the cli query commands for this module
@@ -28,21 +34,21 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 	}
 
 	evmQueryCmd.AddCommand(
-		getCmdAddress(queryRoute),
-		getCmdAxelarGatewayAddress(queryRoute),
+		getCmdAddress(),
+		getCmdAxelarGatewayAddress(),
 		getCmdTokenAddress(queryRoute),
-		getCmdDepositState(queryRoute),
-		getCmdBytecode(queryRoute),
-		getCmdQueryBatchedCommands(queryRoute),
-		getCmdLatestBatchedCommands(queryRoute),
-		getCmdPendingCommands(queryRoute),
-		getCmdCommand(queryRoute),
-		getCmdBurnerInfo(queryRoute),
-		getCmdChains(queryRoute),
-		getCmdConfirmationHeight(queryRoute),
-		getCmdERC20Tokens(queryRoute),
-		getCmdTokenInfo(queryRoute),
-		getCmdEvent(queryRoute),
+		getCmdDepositState(),
+		getCmdBytecode(),
+		getCmdQueryBatchedCommands(),
+		getCmdLatestBatchedCommands(),
+		getCmdPendingCommands(),
+		getCmdCommand(),
+		getCmdBurnerInfo(),
+		getCmdChains(),
+		getCmdConfirmationHeight(),
+		getCmdERC20Tokens(),
+		getCmdTokenInfo(),
+		getCmdEvent(),
 	)
 
 	return evmQueryCmd
@@ -50,7 +56,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 }
 
 // getCmdAddress returns the query for an EVM chain address
-func getCmdAddress(queryRoute string) *cobra.Command {
+func getCmdAddress() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "address [chain]",
 		Short: "Returns the EVM address",
@@ -125,7 +131,7 @@ func getCmdTokenAddress(queryRoute string) *cobra.Command {
 }
 
 // getCmdDepositState returns the query for an ERC20 deposit transaction state
-func getCmdDepositState(queryRoute string) *cobra.Command {
+func getCmdDepositState() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:        "deposit-state [chain] [txID] [burner address]",
 		Short:      "Query the state of a deposit transaction",
@@ -163,7 +169,7 @@ func getCmdDepositState(queryRoute string) *cobra.Command {
 }
 
 // getCmdAxelarGatewayAddress returns the query for the AxelarGateway contract address
-func getCmdAxelarGatewayAddress(queryRoute string) *cobra.Command {
+func getCmdAxelarGatewayAddress() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "gateway-address [chain]",
 		Short: "Query the Axelar Gateway contract address",
@@ -195,7 +201,7 @@ func getCmdAxelarGatewayAddress(queryRoute string) *cobra.Command {
 }
 
 // getCmdBytecode fetches the bytecodes of an EVM contract
-func getCmdBytecode(queryRoute string) *cobra.Command {
+func getCmdBytecode() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "bytecode [chain] [contract]",
 		Short: "Fetch the bytecode of an EVM contract [contract] for chain [chain]",
@@ -229,7 +235,7 @@ func getCmdBytecode(queryRoute string) *cobra.Command {
 }
 
 // getCmdQueryBatchedCommands returns the query to get the batched commands
-func getCmdQueryBatchedCommands(queryRoute string) *cobra.Command {
+func getCmdQueryBatchedCommands() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "batched-commands [chain] [batchedCommandsID]",
 		Short: "Get the signed batched commands that can be wrapped in an EVM transaction to be executed in Axelar Gateway",
@@ -262,7 +268,7 @@ func getCmdQueryBatchedCommands(queryRoute string) *cobra.Command {
 }
 
 // getCmdLatestBatchedCommands returns the query to get the latest batched commands
-func getCmdLatestBatchedCommands(queryRoute string) *cobra.Command {
+func getCmdLatestBatchedCommands() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "latest-batched-commands [chain]",
 		Short: "Get the latest batched commands that can be wrapped in an EVM transaction to be executed in Axelar Gateway",
@@ -293,7 +299,7 @@ func getCmdLatestBatchedCommands(queryRoute string) *cobra.Command {
 }
 
 // getCmdPendingCommands returns the query to get the list of commands not yet added to a batch
-func getCmdPendingCommands(queryRoute string) *cobra.Command {
+func getCmdPendingCommands() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "pending-commands [chain]",
 		Short: "Get the list of commands not yet added to a batch",
@@ -322,7 +328,7 @@ func getCmdPendingCommands(queryRoute string) *cobra.Command {
 }
 
 // getCmdCommand returns the query to get the command with the given ID on the specified chain
-func getCmdCommand(queryRoute string) *cobra.Command {
+func getCmdCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "command [chain] [id]",
 		Short: "Get information about an EVM gateway command given a chain and the command ID",
@@ -346,7 +352,7 @@ func getCmdCommand(queryRoute string) *cobra.Command {
 }
 
 // getCmdBurnerInfo returns the query to get the burner info for the specified address
-func getCmdBurnerInfo(queryRoute string) *cobra.Command {
+func getCmdBurnerInfo() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "burner-info [deposit address]",
 		Short: "Get information about a burner address",
@@ -375,34 +381,52 @@ func getCmdBurnerInfo(queryRoute string) *cobra.Command {
 }
 
 // getCmdChains returns the query to get all EVM chains
-func getCmdChains(queryRoute string) *cobra.Command {
+func getCmdChains() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "chains",
-		Short: "Get EVM chains",
+		Short: "Return the supported EVM chains by status",
 		Args:  cobra.ExactArgs(0),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			clientCtx, err := client.GetClientQueryContext(cmd)
-			if err != nil {
-				return err
-			}
-
-			queryClient := types.NewQueryServiceClient(clientCtx)
-
-			res, err := queryClient.Chains(cmd.Context(),
-				&types.ChainsRequest{},
-			)
-			if err != nil {
-				return err
-			}
-			return clientCtx.PrintProto(res)
-		},
 	}
+
+	status := cmd.Flags().String("status", "", fmt.Sprintf("the chain status [%s|%s]", activated, deactivated))
+
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		clientCtx, err := client.GetClientQueryContext(cmd)
+		if err != nil {
+			return err
+		}
+
+		queryClient := types.NewQueryServiceClient(clientCtx)
+
+		var chainStatus types.ChainStatus
+		switch *status {
+		case "":
+			chainStatus = types.StatusUnspecified
+		case activated:
+			chainStatus = types.Activated
+		case deactivated:
+			chainStatus = types.Deactivated
+		default:
+			return fmt.Errorf("unrecognized chain status %s", *status)
+		}
+
+		res, err := queryClient.Chains(cmd.Context(), &types.ChainsRequest{
+			Status: chainStatus,
+		})
+		if err != nil {
+			return err
+		}
+
+		return clientCtx.PrintProto(res)
+	}
+
 	flags.AddQueryFlagsToCmd(cmd)
+
 	return cmd
 }
 
 // getCmdConfirmationHeight returns the query to get the minimum confirmation height for the given chain
-func getCmdConfirmationHeight(queryRoute string) *cobra.Command {
+func getCmdConfirmationHeight() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "confirmation-height [chain]",
 		Short: "Returns the minimum confirmation height for the given chain",
@@ -433,7 +457,7 @@ func getCmdConfirmationHeight(queryRoute string) *cobra.Command {
 }
 
 // getCmdEvent returns the query to an event for a chain based on the event's txID
-func getCmdEvent(queryRoute string) *cobra.Command {
+func getCmdEvent() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "event [chain] [event-id]",
 		Short: "Returns an event for the given chain",
@@ -468,7 +492,7 @@ func getCmdEvent(queryRoute string) *cobra.Command {
 }
 
 // getCmdERC20Tokens returns the query to get the ERC20 tokens for a given chain
-func getCmdERC20Tokens(queryRoute string) *cobra.Command {
+func getCmdERC20Tokens() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "erc20-tokens [chain]",
 		Short: "Returns the ERC20 tokens for the given chain",
@@ -511,15 +535,16 @@ func getCmdERC20Tokens(queryRoute string) *cobra.Command {
 }
 
 // getCmdTokenInfo returns the query to get the details for an ERC20 token
-func getCmdTokenInfo(queryRoute string) *cobra.Command {
+func getCmdTokenInfo() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "token-info [chain]",
-		Short: fmt.Sprintf("Returns the info of token by either %s or %s", keeper.BySymbol, keeper.ByAsset),
+		Short: fmt.Sprintf("Returns the info of token by either %s, %s, or %s", keeper.BySymbol, keeper.ByAsset, keeper.ByAddress),
 		Args:  cobra.ExactArgs(1),
 	}
 
 	symbol := cmd.Flags().String(keeper.BySymbol, "", "lookup token by symbol")
 	asset := cmd.Flags().String(keeper.ByAsset, "", "lookup token by asset name")
+	address := cmd.Flags().String(keeper.ByAddress, "", "lookup token by address")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		clientCtx, err := client.GetClientQueryContext(cmd)
@@ -527,20 +552,27 @@ func getCmdTokenInfo(queryRoute string) *cobra.Command {
 			return err
 		}
 
+		if !exactlyOneIsFilled(*symbol, *asset, *address) {
+			return fmt.Errorf("lookup must be either by asset name, symbol, or address")
+		}
+
 		var req types.TokenInfoRequest
 		switch {
-		case *symbol == "" && *asset != "":
+		case *asset != "":
 			req = types.TokenInfoRequest{
 				Chain:  args[0],
 				FindBy: &types.TokenInfoRequest_Asset{Asset: *asset},
 			}
-		case *symbol != "" && *asset == "":
+		case *symbol != "":
 			req = types.TokenInfoRequest{
 				Chain:  args[0],
 				FindBy: &types.TokenInfoRequest_Symbol{Symbol: *symbol},
 			}
-		default:
-			return fmt.Errorf("lookup must be either by asset name or symbol")
+		case *address != "":
+			req = types.TokenInfoRequest{
+				Chain:  args[0],
+				FindBy: &types.TokenInfoRequest_Address{Address: *address},
+			}
 		}
 
 		queryClient := types.NewQueryServiceClient(clientCtx)
@@ -554,4 +586,14 @@ func getCmdTokenInfo(queryRoute string) *cobra.Command {
 
 	flags.AddQueryFlagsToCmd(cmd)
 	return cmd
+}
+
+func exactlyOneIsFilled(flags ...string) bool {
+	nonEmptyFlags := slices.Reduce(flags, 0, func(count int, f string) int {
+		if f != "" {
+			return count + 1
+		}
+		return count
+	})
+	return nonEmptyFlags == 1
 }
