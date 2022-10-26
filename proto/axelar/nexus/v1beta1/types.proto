@@ -45,16 +45,20 @@ message LinkedAddresses {
 }
 
 message RateLimit {
-  string chain = 1 [ (gogoproto.casttype) = 
-        "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string chain = 1
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
   cosmos.base.v1beta1.Coin limit = 2 [ (gogoproto.nullable) = false ];
-  google.protobuf.Duration window = 3 [(gogoproto.stdduration) = true, (gogoproto.nullable) = false];
+  google.protobuf.Duration window = 3
+      [ (gogoproto.stdduration) = true, (gogoproto.nullable) = false ];
 }
 
 message TransferAmount {
-  string chain = 1 [ (gogoproto.casttype) = 
-        "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string chain = 1
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
   cosmos.base.v1beta1.Coin amount = 2 [ (gogoproto.nullable) = false ];
   uint64 epoch = 3;
-  bool outgoing = 4; // indicates whether the tracking is for transfers outgoing to that chain or incoming from it
+  bool outgoing = 4; // indicates whether the tracking is for transfers outgoing
+                     // to that chain or incoming from it
 }

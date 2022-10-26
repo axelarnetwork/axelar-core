@@ -36,8 +36,10 @@ message InsufficientFee {
 }
 
 message RateLimitUpdated {
-  string chain = 1 [ (gogoproto.casttype) = 
-        "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string chain = 1
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
   cosmos.base.v1beta1.Coin limit = 2 [ (gogoproto.nullable) = false ];
-  google.protobuf.Duration window = 3 [(gogoproto.stdduration) = true, (gogoproto.nullable) = false];
+  google.protobuf.Duration window = 3
+      [ (gogoproto.stdduration) = true, (gogoproto.nullable) = false ];
 }

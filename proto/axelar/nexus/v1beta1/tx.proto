@@ -79,7 +79,8 @@ message SetRateLimitRequest {
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
   cosmos.base.v1beta1.Coin limit = 3 [ (gogoproto.nullable) = false ];
-  google.protobuf.Duration window = 4 [(gogoproto.stdduration) = true, (gogoproto.nullable) = false];
+  google.protobuf.Duration window = 4
+      [ (gogoproto.stdduration) = true, (gogoproto.nullable) = false ];
 }
 
 message SetRateLimitResponse {}

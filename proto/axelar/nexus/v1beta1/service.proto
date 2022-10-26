@@ -51,8 +51,7 @@ service MsgService {
     };
   }
 
-  rpc SetRateLimit(SetRateLimitRequest)
-      returns (SetRateLimitResponse) {
+  rpc SetRateLimit(SetRateLimitRequest) returns (SetRateLimitResponse) {
     option (google.api.http) = {
       post : "/axelar/nexus/set_rate_limit"
       body : "*"
