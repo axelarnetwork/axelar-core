@@ -97,10 +97,14 @@
     - [File-level Extensions](#axelar/permission/exported/v1beta1/types.proto-extensions)
   
 - [axelar/axelarnet/v1beta1/tx.proto](#axelar/axelarnet/v1beta1/tx.proto)
+    - [ActivateIBCRequest](#axelar.axelarnet.v1beta1.ActivateIBCRequest)
+    - [ActivateIBCResponse](#axelar.axelarnet.v1beta1.ActivateIBCResponse)
     - [AddCosmosBasedChainRequest](#axelar.axelarnet.v1beta1.AddCosmosBasedChainRequest)
     - [AddCosmosBasedChainResponse](#axelar.axelarnet.v1beta1.AddCosmosBasedChainResponse)
     - [ConfirmDepositRequest](#axelar.axelarnet.v1beta1.ConfirmDepositRequest)
     - [ConfirmDepositResponse](#axelar.axelarnet.v1beta1.ConfirmDepositResponse)
+    - [DeactivateIBCRequest](#axelar.axelarnet.v1beta1.DeactivateIBCRequest)
+    - [DeactivateIBCResponse](#axelar.axelarnet.v1beta1.DeactivateIBCResponse)
     - [ExecutePendingTransfersRequest](#axelar.axelarnet.v1beta1.ExecutePendingTransfersRequest)
     - [ExecutePendingTransfersResponse](#axelar.axelarnet.v1beta1.ExecutePendingTransfersResponse)
     - [LinkRequest](#axelar.axelarnet.v1beta1.LinkRequest)
@@ -1725,6 +1729,31 @@ transfers for the specified chain
 
 
 
+<a name="axelar.axelarnet.v1beta1.ActivateIBCRequest"></a>
+
+### ActivateIBCRequest
+ActivateIBCRequest represents a message to re-activate IBC
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="axelar.axelarnet.v1beta1.ActivateIBCResponse"></a>
+
+### ActivateIBCResponse
+
+
+
+
+
+
+
 <a name="axelar.axelarnet.v1beta1.AddCosmosBasedChainRequest"></a>
 
 ### AddCosmosBasedChainRequest
@@ -1776,6 +1805,31 @@ MsgConfirmDeposit represents a deposit confirmation message
 <a name="axelar.axelarnet.v1beta1.ConfirmDepositResponse"></a>
 
 ### ConfirmDepositResponse
+
+
+
+
+
+
+
+<a name="axelar.axelarnet.v1beta1.DeactivateIBCRequest"></a>
+
+### DeactivateIBCRequest
+DeactivateIBCRequest represents a message to Deactivate IBC during emergencies
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="axelar.axelarnet.v1beta1.DeactivateIBCResponse"></a>
+
+### DeactivateIBCResponse
 
 
 
@@ -2016,6 +2070,8 @@ Msg defines the axelarnet Msg service.
 | `RouteIBCTransfers` | [RouteIBCTransfersRequest](#axelar.axelarnet.v1beta1.RouteIBCTransfersRequest) | [RouteIBCTransfersResponse](#axelar.axelarnet.v1beta1.RouteIBCTransfersResponse) |  | POST|/axelar/axelarnet/route_ibc_transfers|
 | `RegisterFeeCollector` | [RegisterFeeCollectorRequest](#axelar.axelarnet.v1beta1.RegisterFeeCollectorRequest) | [RegisterFeeCollectorResponse](#axelar.axelarnet.v1beta1.RegisterFeeCollectorResponse) |  | POST|/axelar/axelarnet/register_fee_collector|
 | `RetryIBCTransfer` | [RetryIBCTransferRequest](#axelar.axelarnet.v1beta1.RetryIBCTransferRequest) | [RetryIBCTransferResponse](#axelar.axelarnet.v1beta1.RetryIBCTransferResponse) |  | POST|/axelar/axelarnet/retry_ibc_transfer|
+| `DeactivateIBC` | [DeactivateIBCRequest](#axelar.axelarnet.v1beta1.DeactivateIBCRequest) | [DeactivateIBCResponse](#axelar.axelarnet.v1beta1.DeactivateIBCResponse) |  | POST|/axelar/axelarnet/deactivate_ibc|
+| `ActivateIBC` | [ActivateIBCRequest](#axelar.axelarnet.v1beta1.ActivateIBCRequest) | [ActivateIBCResponse](#axelar.axelarnet.v1beta1.ActivateIBCResponse) |  | POST|/axelar/axelarnet/activate_ibc|
 
 
 <a name="axelar.axelarnet.v1beta1.QueryService"></a>

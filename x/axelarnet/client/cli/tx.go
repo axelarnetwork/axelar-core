@@ -277,7 +277,7 @@ func getRetryIBCTransfer() *cobra.Command {
 func getCmdDeactivateIBC() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "deactivate-ibc",
-		Short: "Deactivate IBC apps",
+		Short: "Deactivate IBC transfers",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
@@ -300,7 +300,7 @@ func getCmdDeactivateIBC() *cobra.Command {
 func getCmdActivateIBC() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "activate-ibc",
-		Short: "Activate IBC apps",
+		Short: "Activate IBC transfers",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
