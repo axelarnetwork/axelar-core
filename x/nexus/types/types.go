@@ -145,6 +145,7 @@ func (m MaintainerState) CountIncorrectVotes(window int) uint64 {
 // GetAddress returns the address of the maintainer
 func (m MaintainerState) GetAddress() sdk.ValAddress { return m.Address }
 
+// ValidateBasic returns an error if the type is invalid
 func (m RateLimit) ValidateBasic() error {
 	if err := m.Chain.Validate(); err != nil {
 		return err
@@ -161,6 +162,7 @@ func (m RateLimit) ValidateBasic() error {
 	return nil
 }
 
+// ValidateBasic returns an error if the type is invalid
 func (m TransferAmount) ValidateBasic() error {
 	if err := m.Chain.Validate(); err != nil {
 		return err

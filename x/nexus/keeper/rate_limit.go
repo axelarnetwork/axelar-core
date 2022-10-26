@@ -23,6 +23,7 @@ func (k Keeper) getRateLimit(ctx sdk.Context, chain exported.ChainName, asset st
 	return rateLimit, k.getStore(ctx).GetNew(getRateLimitKey(chain, asset), &rateLimit)
 }
 
+// SetRateLimitStore sets a rate limit for the given chain and asset
 func (k Keeper) SetRateLimitStore(ctx sdk.Context, chain exported.ChainName, limit sdk.Coin, window time.Duration) {
 	funcs.MustNoErr(k.getStore(ctx).SetNewValidated(getRateLimitKey(chain, limit.Denom), &types.RateLimit{
 		Chain:  chain,
@@ -79,6 +80,7 @@ func computeEpoch(ctx sdk.Context, window time.Duration) uint64 {
 	return uint64(ctx.BlockTime().UnixNano() / window.Nanoseconds())
 }
 
+// RateLimitTransfer applies a rate limit to transfers, and returns an error if the rate limit is exceeded
 func (k Keeper) RateLimitTransfer(ctx sdk.Context, chain exported.ChainName, asset sdk.Coin, outgoing bool) error {
 	rateLimit, found := k.getRateLimit(ctx, chain, asset.Denom)
 	if !found {
