@@ -381,8 +381,8 @@ func getStartBlock(cfg config.ValdConfig, stateStore StateStore, nodeHeight int6
 }
 
 func createEventBus(client *tendermint.RobustClient, startBlock int64, logger log.Logger) *tmEvents.Bus {
-	notifier := tmEvents.NewBlockNotifier(client, logger).StartingAt(startBlock)
-	return tmEvents.NewEventBus(tmEvents.NewBlockSource(client, notifier, logger), pubsub.NewBus[tmEvents.ABCIEventWithHeight](), logger)
+	notifier := tmEvents.NewBlockNotifier(client, logger, tmEvents.Retries(10), tmEvents.BackOff(1*time.Second)).StartingAt(startBlock)
+	return tmEvents.NewEventBus(tmEvents.NewBlockSource(client, notifier, logger, tmEvents.Retries(10), tmEvents.BackOff(1*time.Second)), pubsub.NewBus[tmEvents.ABCIEventWithHeight](), logger)
 }
 
 func createRefundableBroadcaster(txf tx.Factory, ctx sdkClient.Context, axelarCfg config.ValdConfig, logger log.Logger) broadcast.Broadcaster {
