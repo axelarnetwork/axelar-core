@@ -125,7 +125,7 @@ func TestSigningSession(t *testing.T) {
 			SigningThreshold: utils.NewThreshold(2, 3),
 		}
 		payloadHash := rand.Bytes(exported.HashLength)
-		expiresAt := rand.I64Between(1, 100)
+		expiresAt := rand.I64Between(2, 100) // starts from 2 so CompletedAt can be 1
 		gracePeriod := int64(3)
 		module := rand.NormalizedStr(5)
 
