@@ -12,10 +12,10 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
-	"github.com/cosmos/ibc-go/v2/modules/apps/transfer"
-	ibctransfertypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
-	channeltypes "github.com/cosmos/ibc-go/v2/modules/core/04-channel/types"
-	ibcexported "github.com/cosmos/ibc-go/v2/modules/core/exported"
+	"github.com/cosmos/ibc-go/v3/modules/apps/transfer"
+	ibctransfertypes "github.com/cosmos/ibc-go/v3/modules/apps/transfer/types"
+	channeltypes "github.com/cosmos/ibc-go/v3/modules/core/04-channel/types"
+	ibcexported "github.com/cosmos/ibc-go/v3/modules/core/exported"
 	"github.com/gorilla/mux"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
@@ -103,7 +103,7 @@ type AppModule struct {
 	account types.AccountKeeper
 	ibcK    keeper.IBCKeeper
 
-	transferModule transfer.AppModule
+	transferModule transfer.IBCModule
 }
 
 // NewAppModule creates a new AppModule object
@@ -113,7 +113,7 @@ func NewAppModule(
 	bank types.BankKeeper,
 	account types.AccountKeeper,
 	ibcK keeper.IBCKeeper,
-	transferModule transfer.AppModule,
+	transferModule transfer.IBCModule,
 	logger log.Logger) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
@@ -213,10 +213,9 @@ func (am AppModule) OnChanOpenTry(
 	channelID string,
 	chanCap *capabilitytypes.Capability,
 	counterparty channeltypes.Counterparty,
-	version,
 	counterpartyVersion string,
-) error {
-	return am.transferModule.OnChanOpenTry(ctx, order, connectionHops, portID, channelID, chanCap, counterparty, version, counterpartyVersion)
+) (string, error) {
+	return am.transferModule.OnChanOpenTry(ctx, order, connectionHops, portID, channelID, chanCap, counterparty, counterpartyVersion)
 }
 
 // OnChanOpenAck implements the IBCModule interface
@@ -224,9 +223,10 @@ func (am AppModule) OnChanOpenAck(
 	ctx sdk.Context,
 	portID,
 	channelID string,
+	counterpartyChannelID string,
 	counterpartyVersion string,
 ) error {
-	return am.transferModule.OnChanOpenAck(ctx, portID, channelID, counterpartyVersion)
+	return am.transferModule.OnChanOpenAck(ctx, portID, channelID, counterpartyChannelID, counterpartyVersion)
 }
 
 // OnChanOpenConfirm implements the IBCModule interface
@@ -303,11 +303,6 @@ func (am AppModule) OnTimeoutPacket(
 	}
 
 	return setTransferFailed(ctx, am.keeper, packet.SourcePort, packet.SourceChannel, packet.Sequence)
-}
-
-// NegotiateAppVersion implements the IBCModule interface
-func (am AppModule) NegotiateAppVersion(ctx sdk.Context, order channeltypes.Order, connectionID string, portID string, counterparty channeltypes.Counterparty, proposedVersion string) (version string, err error) {
-	return am.transferModule.NegotiateAppVersion(ctx, order, connectionID, portID, counterparty, proposedVersion)
 }
 
 // returns true if mapping exits

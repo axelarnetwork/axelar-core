@@ -8,9 +8,12 @@ find "$cosmos_protos" -maxdepth 1 -mindepth 1 \
   -exec sh -c 'file=$1; basename $1  | xargs -I % -n1 rm -rf "./third_party/proto/%"' _ {} \;
 cp -r "$cosmos_protos" ./third_party
 
-ibc_protos="$(go list -f '{{ .Dir }}' -m github.com/cosmos/ibc-go/v2)/proto"
+ibc_protos="$(go list -f '{{ .Dir }}' -m github.com/cosmos/ibc-go/v3)/proto"
 find "$ibc_protos" -maxdepth 1 -mindepth 1 \
   -exec sh -c 'file=$1; basename $1  | xargs -I % -n1 rm -rf "./third_party/proto/%"' _ {} \;
 cp -r "$ibc_protos" ./third_party
 
 chmod -R +w ./third_party/proto
+
+# Remove ICA protos
+rm -r ./third_party/proto/ibc/applications/interchain_accounts

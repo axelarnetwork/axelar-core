@@ -5,11 +5,11 @@ go 1.18
 require (
 	github.com/armon/go-metrics v0.4.0
 	github.com/axelarnetwork/tm-events v0.0.0-20221019195821-9a3f03bc6ca6
-	github.com/axelarnetwork/utils v0.0.0-20221021015151-10826419b513
+	github.com/axelarnetwork/utils v0.0.0-20221024200610-1c12aa5cb6e4
 	github.com/btcsuite/btcd v0.22.1
 	github.com/btcsuite/btcd/btcec/v2 v2.2.0
 	github.com/cosmos/cosmos-sdk v0.45.9
-	github.com/cosmos/ibc-go/v2 v2.2.0
+	github.com/cosmos/ibc-go/v3 v3.3.0
 	github.com/ethereum/go-ethereum v1.10.25
 	github.com/go-errors/errors v1.4.2
 	github.com/gogo/protobuf v1.3.3
