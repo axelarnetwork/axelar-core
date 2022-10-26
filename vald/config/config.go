@@ -33,7 +33,7 @@ func DefaultValdConfig() ValdConfig {
 		MaxBlocksBehindLatest:        10, // Max voting/sign/heartbeats periods are under 10 blocks
 		MaxLatestBlockAge:            15 * time.Second,
 		EVMConfig:                    evm.DefaultConfig(),
-		EventNotificationsMaxRetries: 10,
+		EventNotificationsMaxRetries: 3,
 		EventNotificationsBackOff:    1 * time.Second,
 	}
 }
