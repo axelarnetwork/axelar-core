@@ -72,6 +72,22 @@ service MsgService {
       body : "*"
     };
   }
+
+  rpc DeactivateIBC(DeactivateIBCRequest)
+      returns (DeactivateIBCResponse) {
+    option (google.api.http) = {
+      post : "/axelar/axelarnet/deactivate_ibc"
+      body : "*"
+    };
+  }
+
+  rpc ActivateIBC(ActivateIBCRequest)
+      returns (ActivateIBCResponse) {
+    option (google.api.http) = {
+      post : "/axelar/axelarnet/activate_ibc"
+      body : "*"
+    };
+  }
 }
 
 // QueryService defines the gRPC querier service.

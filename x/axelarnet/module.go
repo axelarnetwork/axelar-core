@@ -347,3 +347,22 @@ func setTransferCompleted(ctx sdk.Context, k keeper.Keeper, portID, channelID st
 	k.Logger(ctx).Info(fmt.Sprintf("set IBC transfer %d completed", transferID))
 	return k.SetTransferCompleted(ctx, transferID)
 }
+
+// SendPacket implements the ICS4 Wrapper interface
+func (am AppModule) SendPacket(
+	ctx sdk.Context,
+	chanCap *capabilitytypes.Capability,
+	packet ibcexported.PacketI,
+) error {
+	panic("SendPacket not supported for ICA controller module. Please use SendTx")
+}
+
+// WriteAcknowledgement implements the ICS4 Wrapper interface
+func (am AppModule) WriteAcknowledgement(
+	ctx sdk.Context,
+	chanCap *capabilitytypes.Capability,
+	packet ibcexported.PacketI,
+	ack ibcexported.Acknowledgement,
+) error {
+	panic("WriteAcknowledgement not supported for ICA controller module")
+}

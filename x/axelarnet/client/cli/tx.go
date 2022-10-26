@@ -39,6 +39,8 @@ func GetTxCmd() *cobra.Command {
 		GetCmdRouteIBCTransfersTx(),
 		GetCmdRegisterFeeCollector(),
 		getRetryIBCTransfer(),
+		getCmdDeactivateIBC(),
+		getCmdActivateIBC(),
 	)
 
 	return axelarTxCmd
@@ -261,6 +263,52 @@ func getRetryIBCTransfer() *cobra.Command {
 			}
 
 			msg := types.NewRetryIBCTransferRequest(cliCtx.GetFromAddress(), nexus.ChainName(chain), nexus.TransferID(transferID))
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
+		},
+	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+func getCmdDeactivateIBC() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "deactivate-ibc",
+		Short: "Deactivate IBC apps",
+		Args:  cobra.ExactArgs(0),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewDeactivateIBCRequest(cliCtx.GetFromAddress())
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
+		},
+	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+func getCmdActivateIBC() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "activate-ibc",
+		Short: "Activate IBC apps",
+		Args:  cobra.ExactArgs(0),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewActivateIBCRequest(cliCtx.GetFromAddress())
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

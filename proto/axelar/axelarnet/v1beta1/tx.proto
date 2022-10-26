@@ -148,3 +148,23 @@ message RetryIBCTransferRequest {
 }
 
 message RetryIBCTransferResponse {}
+
+// DeactivateIBCRequest represents a message to Deactivate IBC during emergencies
+message DeactivateIBCRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
+
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+}
+
+message DeactivateIBCResponse {}
+
+// ActivateIBCRequest represents a message to re-activate IBC
+message ActivateIBCRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
+
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+}
+
+message ActivateIBCResponse {}

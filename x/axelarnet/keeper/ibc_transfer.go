@@ -60,3 +60,21 @@ func (i IBCKeeper) ParseIBCDenom(ctx sdk.Context, ibcDenom string) (ibctypes.Den
 	}
 	return denomTrace, nil
 }
+
+func (i IBCKeeper) FreezeTransfers(ctx sdk.Context) {
+	params := i.ibcTransferK.GetParams(ctx)
+
+	params.SendEnabled = false
+	params.ReceiveEnabled = false
+
+	i.ibcTransferK.SetParams(ctx, params)
+}
+
+func (i IBCKeeper) UnfreezeTransfers(ctx sdk.Context) {
+	params := i.ibcTransferK.GetParams(ctx)
+
+	params.SendEnabled = true
+	params.ReceiveEnabled = true
+
+	i.ibcTransferK.SetParams(ctx, params)
+}

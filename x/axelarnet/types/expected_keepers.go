@@ -65,6 +65,8 @@ type BankKeeper interface {
 
 // IBCTransferKeeper provides functionality to manage IBC transfers
 type IBCTransferKeeper interface {
+	GetParams(ctx sdk.Context) ibctypes.Params
+	SetParams(ctx sdk.Context, params ibctypes.Params)
 	GetDenomTrace(ctx sdk.Context, denomTraceHash tmbytes.HexBytes) (ibctypes.DenomTrace, bool)
 	SendTransfer(ctx sdk.Context, sourcePort, sourceChannel string, token sdk.Coin, sender sdk.AccAddress, receiver string, timeoutHeight clienttypes.Height, timeoutTimestamp uint64) error
 }

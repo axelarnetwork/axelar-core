@@ -469,3 +469,21 @@ func prepareTransfer(ctx sdk.Context, k Keeper, n types.Nexus, b types.BankKeepe
 
 	return coin, sender, nil
 }
+
+// DeactivateIBC handles emergency IBC deactivate functionality
+func (s msgServer) DeactivateIBC(c context.Context, req *types.DeactivateIBCRequest) (*types.DeactivateIBCResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	s.ibcK.FreezeTransfers(ctx)
+
+	return &types.DeactivateIBCResponse{}, nil
+}
+
+// ActivateIBC handles emergency IBC activate functionality
+func (s msgServer) ActivateIBC(c context.Context, req *types.ActivateIBCRequest) (*types.ActivateIBCResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	s.ibcK.FreezeTransfers(ctx)
+
+	return &types.ActivateIBCResponse{}, nil
+}

@@ -1660,8 +1660,14 @@ var _ axelarnettypes.IBCTransferKeeper = &IBCTransferKeeperMock{}
 // 			GetDenomTraceFunc: func(ctx cosmossdktypes.Context, denomTraceHash tmbytes.HexBytes) (ibctypes.DenomTrace, bool) {
 // 				panic("mock out the GetDenomTrace method")
 // 			},
+// 			GetParamsFunc: func(ctx cosmossdktypes.Context) ibctypes.Params {
+// 				panic("mock out the GetParams method")
+// 			},
 // 			SendTransferFunc: func(ctx cosmossdktypes.Context, sourcePort string, sourceChannel string, token cosmossdktypes.Coin, sender cosmossdktypes.AccAddress, receiver string, timeoutHeight clienttypes.Height, timeoutTimestamp uint64) error {
 // 				panic("mock out the SendTransfer method")
+// 			},
+// 			SetParamsFunc: func(ctx cosmossdktypes.Context, params ibctypes.Params)  {
+// 				panic("mock out the SetParams method")
 // 			},
 // 		}
 //
@@ -1673,8 +1679,14 @@ type IBCTransferKeeperMock struct {
 	// GetDenomTraceFunc mocks the GetDenomTrace method.
 	GetDenomTraceFunc func(ctx cosmossdktypes.Context, denomTraceHash tmbytes.HexBytes) (ibctypes.DenomTrace, bool)
 
+	// GetParamsFunc mocks the GetParams method.
+	GetParamsFunc func(ctx cosmossdktypes.Context) ibctypes.Params
+
 	// SendTransferFunc mocks the SendTransfer method.
 	SendTransferFunc func(ctx cosmossdktypes.Context, sourcePort string, sourceChannel string, token cosmossdktypes.Coin, sender cosmossdktypes.AccAddress, receiver string, timeoutHeight clienttypes.Height, timeoutTimestamp uint64) error
+
+	// SetParamsFunc mocks the SetParams method.
+	SetParamsFunc func(ctx cosmossdktypes.Context, params ibctypes.Params)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -1684,6 +1696,11 @@ type IBCTransferKeeperMock struct {
 			Ctx cosmossdktypes.Context
 			// DenomTraceHash is the denomTraceHash argument value.
 			DenomTraceHash tmbytes.HexBytes
+		}
+		// GetParams holds details about calls to the GetParams method.
+		GetParams []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
 		}
 		// SendTransfer holds details about calls to the SendTransfer method.
 		SendTransfer []struct {
@@ -1704,9 +1721,18 @@ type IBCTransferKeeperMock struct {
 			// TimeoutTimestamp is the timeoutTimestamp argument value.
 			TimeoutTimestamp uint64
 		}
+		// SetParams holds details about calls to the SetParams method.
+		SetParams []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// Params is the params argument value.
+			Params ibctypes.Params
+		}
 	}
 	lockGetDenomTrace sync.RWMutex
+	lockGetParams     sync.RWMutex
 	lockSendTransfer  sync.RWMutex
+	lockSetParams     sync.RWMutex
 }
 
 // GetDenomTrace calls GetDenomTraceFunc.
@@ -1741,6 +1767,37 @@ func (mock *IBCTransferKeeperMock) GetDenomTraceCalls() []struct {
 	mock.lockGetDenomTrace.RLock()
 	calls = mock.calls.GetDenomTrace
 	mock.lockGetDenomTrace.RUnlock()
+	return calls
+}
+
+// GetParams calls GetParamsFunc.
+func (mock *IBCTransferKeeperMock) GetParams(ctx cosmossdktypes.Context) ibctypes.Params {
+	if mock.GetParamsFunc == nil {
+		panic("IBCTransferKeeperMock.GetParamsFunc: method is nil but IBCTransferKeeper.GetParams was just called")
+	}
+	callInfo := struct {
+		Ctx cosmossdktypes.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetParams.Lock()
+	mock.calls.GetParams = append(mock.calls.GetParams, callInfo)
+	mock.lockGetParams.Unlock()
+	return mock.GetParamsFunc(ctx)
+}
+
+// GetParamsCalls gets all the calls that were made to GetParams.
+// Check the length with:
+//     len(mockedIBCTransferKeeper.GetParamsCalls())
+func (mock *IBCTransferKeeperMock) GetParamsCalls() []struct {
+	Ctx cosmossdktypes.Context
+} {
+	var calls []struct {
+		Ctx cosmossdktypes.Context
+	}
+	mock.lockGetParams.RLock()
+	calls = mock.calls.GetParams
+	mock.lockGetParams.RUnlock()
 	return calls
 }
 
@@ -1800,6 +1857,41 @@ func (mock *IBCTransferKeeperMock) SendTransferCalls() []struct {
 	mock.lockSendTransfer.RLock()
 	calls = mock.calls.SendTransfer
 	mock.lockSendTransfer.RUnlock()
+	return calls
+}
+
+// SetParams calls SetParamsFunc.
+func (mock *IBCTransferKeeperMock) SetParams(ctx cosmossdktypes.Context, params ibctypes.Params) {
+	if mock.SetParamsFunc == nil {
+		panic("IBCTransferKeeperMock.SetParamsFunc: method is nil but IBCTransferKeeper.SetParams was just called")
+	}
+	callInfo := struct {
+		Ctx    cosmossdktypes.Context
+		Params ibctypes.Params
+	}{
+		Ctx:    ctx,
+		Params: params,
+	}
+	mock.lockSetParams.Lock()
+	mock.calls.SetParams = append(mock.calls.SetParams, callInfo)
+	mock.lockSetParams.Unlock()
+	mock.SetParamsFunc(ctx, params)
+}
+
+// SetParamsCalls gets all the calls that were made to SetParams.
+// Check the length with:
+//     len(mockedIBCTransferKeeper.SetParamsCalls())
+func (mock *IBCTransferKeeperMock) SetParamsCalls() []struct {
+	Ctx    cosmossdktypes.Context
+	Params ibctypes.Params
+} {
+	var calls []struct {
+		Ctx    cosmossdktypes.Context
+		Params ibctypes.Params
+	}
+	mock.lockSetParams.RLock()
+	calls = mock.calls.SetParams
+	mock.lockSetParams.RUnlock()
 	return calls
 }
 
