@@ -45,7 +45,7 @@ func TestBitmap(t *testing.T) {
 			Run(t)
 
 		total := int(rand.I64Between(1, 10000))
-		trueCount = int(rand.I64Between(1, int64(total)))
+		trueCount = int(rand.I64Between(0, int64(total)))
 		falseCount = total - trueCount
 		givenNewBitmap.
 			When(fmt.Sprintf("pushed with pushed with %d true's and %d false's", trueCount, falseCount), func() {
