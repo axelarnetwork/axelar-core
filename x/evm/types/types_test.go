@@ -74,7 +74,7 @@ func TestDeployToken(t *testing.T) {
 	assert.Equal(t, expectedParams, hex.EncodeToString(actual.Params))
 	assert.Equal(t, expectedCommandID, actual.ID)
 
-	decodedName, decodedSymbol, decodedDecs, decodedCap, tokenAddress, decodedDailyMintLimit := decodeDeployTokenParams(actual.Params)
+	decodedName, decodedSymbol, decodedDecs, decodedCap, tokenAddress, decodedDailyMintLimit := DecodeDeployTokenParams(actual.Params)
 	assert.Equal(t, details.TokenName, decodedName)
 	assert.Equal(t, details.Symbol, decodedSymbol)
 	assert.Equal(t, details.Decimals, decodedDecs)
@@ -174,5 +174,5 @@ func TestCommandID_ValidateBasic(t *testing.T) {
 	assert.NoError(t, idForZeroData.ValidateBasic())
 
 	var emptyID CommandID
-	assert.Error(t, emptyID.ValidateBasic())
+	assert.NoError(t, emptyID.ValidateBasic())
 }
