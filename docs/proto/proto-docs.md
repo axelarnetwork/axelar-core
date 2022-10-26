@@ -60,6 +60,8 @@
     - [ChainState](#axelar.nexus.v1beta1.ChainState)
     - [LinkedAddresses](#axelar.nexus.v1beta1.LinkedAddresses)
     - [MaintainerState](#axelar.nexus.v1beta1.MaintainerState)
+    - [RateLimit](#axelar.nexus.v1beta1.RateLimit)
+    - [TransferAmount](#axelar.nexus.v1beta1.TransferAmount)
   
 - [axelar/nexus/v1beta1/query.proto](#axelar/nexus/v1beta1/query.proto)
     - [AssetsRequest](#axelar.nexus.v1beta1.AssetsRequest)
@@ -323,6 +325,7 @@
 - [axelar/nexus/v1beta1/events.proto](#axelar/nexus/v1beta1/events.proto)
     - [FeeDeducted](#axelar.nexus.v1beta1.FeeDeducted)
     - [InsufficientFee](#axelar.nexus.v1beta1.InsufficientFee)
+    - [RateLimitUpdated](#axelar.nexus.v1beta1.RateLimitUpdated)
   
 - [axelar/nexus/v1beta1/params.proto](#axelar/nexus/v1beta1/params.proto)
     - [Params](#axelar.nexus.v1beta1.Params)
@@ -341,6 +344,8 @@
     - [RegisterAssetFeeResponse](#axelar.nexus.v1beta1.RegisterAssetFeeResponse)
     - [RegisterChainMaintainerRequest](#axelar.nexus.v1beta1.RegisterChainMaintainerRequest)
     - [RegisterChainMaintainerResponse](#axelar.nexus.v1beta1.RegisterChainMaintainerResponse)
+    - [SetRateLimitRequest](#axelar.nexus.v1beta1.SetRateLimitRequest)
+    - [SetRateLimitResponse](#axelar.nexus.v1beta1.SetRateLimitResponse)
   
 - [axelar/nexus/v1beta1/service.proto](#axelar/nexus/v1beta1/service.proto)
     - [MsgService](#axelar.nexus.v1beta1.MsgService)
@@ -1235,6 +1240,41 @@ ChainState represents the state of a registered blockchain
 | `missing_votes` | [axelar.utils.v1beta1.Bitmap](#axelar.utils.v1beta1.Bitmap) |  |  |
 | `incorrect_votes` | [axelar.utils.v1beta1.Bitmap](#axelar.utils.v1beta1.Bitmap) |  |  |
 | `chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.nexus.v1beta1.RateLimit"></a>
+
+### RateLimit
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `limit` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+| `window` | [google.protobuf.Duration](#google.protobuf.Duration) |  |  |
+
+
+
+
+
+
+<a name="axelar.nexus.v1beta1.TransferAmount"></a>
+
+### TransferAmount
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `amount` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+| `epoch` | [uint64](#uint64) |  |  |
+| `outgoing` | [bool](#bool) |  | indicates whether the tracking is for transfers outgoing to that chain or incoming from it |
 
 
 
@@ -5035,6 +5075,23 @@ Query defines the gRPC querier service.
 
 
 
+
+<a name="axelar.nexus.v1beta1.RateLimitUpdated"></a>
+
+### RateLimitUpdated
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `limit` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+| `window` | [google.protobuf.Duration](#google.protobuf.Duration) |  |  |
+
+
+
+
+
  <!-- end messages -->
 
  <!-- end enums -->
@@ -5254,6 +5311,34 @@ info associated to an asset on a chain
 
 
 
+
+<a name="axelar.nexus.v1beta1.SetRateLimitRequest"></a>
+
+### SetRateLimitRequest
+SetRateLimitRequest represents a message to set rate limits on transfers
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
+| `limit` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+| `window` | [google.protobuf.Duration](#google.protobuf.Duration) |  |  |
+
+
+
+
+
+
+<a name="axelar.nexus.v1beta1.SetRateLimitResponse"></a>
+
+### SetRateLimitResponse
+
+
+
+
+
+
  <!-- end messages -->
 
  <!-- end enums -->
@@ -5289,6 +5374,7 @@ Msg defines the nexus Msg service.
 | `ActivateChain` | [ActivateChainRequest](#axelar.nexus.v1beta1.ActivateChainRequest) | [ActivateChainResponse](#axelar.nexus.v1beta1.ActivateChainResponse) |  | POST|/axelar/nexus/activate_chain|
 | `DeactivateChain` | [DeactivateChainRequest](#axelar.nexus.v1beta1.DeactivateChainRequest) | [DeactivateChainResponse](#axelar.nexus.v1beta1.DeactivateChainResponse) |  | POST|/axelar/nexus/deactivate_chain|
 | `RegisterAssetFee` | [RegisterAssetFeeRequest](#axelar.nexus.v1beta1.RegisterAssetFeeRequest) | [RegisterAssetFeeResponse](#axelar.nexus.v1beta1.RegisterAssetFeeResponse) |  | POST|/axelar/nexus/register_asset_fee|
+| `SetRateLimit` | [SetRateLimitRequest](#axelar.nexus.v1beta1.SetRateLimitRequest) | [SetRateLimitResponse](#axelar.nexus.v1beta1.SetRateLimitResponse) |  | POST|/axelar/nexus/set_rate_limit|
 
 
 <a name="axelar.nexus.v1beta1.QueryService"></a>

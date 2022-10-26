@@ -68,3 +68,15 @@ func From(key fmt.Stringer) Key {
 func FromUInt[T constraints.Unsigned](key T) Key {
 	return FromBz(convert.IntToBytes(key))
 }
+
+// FromBool creates a new Key from a bool
+func FromBool(key bool) Key {
+	var x uint
+	if key {
+		x = 1
+	} else {
+		x = 0
+	}
+
+	return FromBz(convert.IntToBytes(x))
+}

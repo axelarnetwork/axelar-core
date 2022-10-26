@@ -3,6 +3,7 @@ package axelar.nexus.v1beta1;
 
 option go_package = "github.com/axelarnetwork/axelar-core/x/nexus/types";
 
+import "google/protobuf/duration.proto";
 import "gogoproto/gogo.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "axelar/nexus/exported/v1beta1/types.proto";
@@ -41,4 +42,19 @@ message LinkedAddresses {
       [ (gogoproto.nullable) = false ];
   axelar.nexus.exported.v1beta1.CrossChainAddress recipient_address = 2
       [ (gogoproto.nullable) = false ];
+}
+
+message RateLimit {
+  string chain = 1 [ (gogoproto.casttype) = 
+        "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  cosmos.base.v1beta1.Coin limit = 2 [ (gogoproto.nullable) = false ];
+  google.protobuf.Duration window = 3 [(gogoproto.stdduration) = true, (gogoproto.nullable) = false];
+}
+
+message TransferAmount {
+  string chain = 1 [ (gogoproto.casttype) = 
+        "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  cosmos.base.v1beta1.Coin amount = 2 [ (gogoproto.nullable) = false ];
+  uint64 epoch = 3;
+  bool outgoing = 4; // indicates whether the tracking is for transfers outgoing to that chain or incoming from it
 }

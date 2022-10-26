@@ -31,6 +31,9 @@ func NewHandler(k types.Nexus, snapshotter types.Snapshotter, slashing types.Sla
 		case *types.RegisterAssetFeeRequest:
 			res, err := server.RegisterAssetFee(sdk.WrapSDKContext(ctx), msg)
 			return sdk.WrapServiceResult(ctx, res, err)
+		case *types.SetRateLimitRequest:
+			res, err := server.SetRateLimit(sdk.WrapSDKContext(ctx), msg)
+			return sdk.WrapServiceResult(ctx, res, err)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))
@@ -40,7 +43,7 @@ func NewHandler(k types.Nexus, snapshotter types.Snapshotter, slashing types.Sla
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		res, err := h(ctx, msg)
 		if err != nil {
-			k.Logger(ctx).Debug(err.Error())
+			k.Logger(ctx).Error(err.Error())
 			return nil, sdkerrors.Wrap(types.ErrNexus, err.Error())
 		}
 

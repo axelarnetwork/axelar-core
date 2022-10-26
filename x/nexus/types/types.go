@@ -144,3 +144,35 @@ func (m MaintainerState) CountIncorrectVotes(window int) uint64 {
 
 // GetAddress returns the address of the maintainer
 func (m MaintainerState) GetAddress() sdk.ValAddress { return m.Address }
+
+func (m RateLimit) ValidateBasic() error {
+	if err := m.Chain.Validate(); err != nil {
+		return err
+	}
+
+	if err := m.Limit.Validate(); err != nil {
+		return err
+	}
+
+	if m.Window.Nanoseconds() <= 0 {
+		return fmt.Errorf("rate limit window must be positive")
+	}
+
+	return nil
+}
+
+func (m TransferAmount) ValidateBasic() error {
+	if err := m.Chain.Validate(); err != nil {
+		return err
+	}
+
+	if err := m.Amount.Validate(); err != nil {
+		return err
+	}
+
+	if m.Epoch <= 0 {
+		return fmt.Errorf("transfer amount epoch must be positive")
+	}
+
+	return nil
+}

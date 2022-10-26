@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -30,6 +31,7 @@ func GetTxCmd() *cobra.Command {
 		GetCmdActivateChain(),
 		GetCmdDeactivateChain(),
 		GetCmdRegisterAssetFee(),
+		GetCmdSetRateLimit(),
 	)
 
 	return txCmd
@@ -167,6 +169,41 @@ func GetCmdRegisterAssetFee() *cobra.Command {
 
 			msg := types.NewRegisterAssetFeeRequest(cliCtx.GetFromAddress(), feeInfo)
 
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
+		},
+	}
+
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdSetRateLimit returns the cli command to register asset transfer rate limit for a chain
+func GetCmdSetRateLimit() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "set-rate-limit [chain] [limit] [window]",
+		Short: "set transfer rate limit for an asset on a chain",
+		Args:  cobra.ExactArgs(3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			limit, err := sdk.ParseCoinNormalized(args[1])
+			if err != nil {
+				return err
+			}
+
+			window, err := time.ParseDuration(args[2])
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewSetRateLimitRequest(cliCtx.GetFromAddress(), exported.ChainName(args[0]), limit, window)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

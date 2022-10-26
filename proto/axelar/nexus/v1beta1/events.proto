@@ -3,6 +3,7 @@ package axelar.nexus.v1beta1;
 
 option go_package = "github.com/axelarnetwork/axelar-core/x/nexus/types";
 
+import "google/protobuf/duration.proto";
 import "gogoproto/gogo.proto";
 import "cosmos/base/v1beta1/coin.proto";
 
@@ -32,4 +33,11 @@ message InsufficientFee {
   string recipient_address = 3;
   cosmos.base.v1beta1.Coin amount = 4 [ (gogoproto.nullable) = false ];
   cosmos.base.v1beta1.Coin fee = 5 [ (gogoproto.nullable) = false ];
+}
+
+message RateLimitUpdated {
+  string chain = 1 [ (gogoproto.casttype) = 
+        "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  cosmos.base.v1beta1.Coin limit = 2 [ (gogoproto.nullable) = false ];
+  google.protobuf.Duration window = 3 [(gogoproto.stdduration) = true, (gogoproto.nullable) = false];
 }

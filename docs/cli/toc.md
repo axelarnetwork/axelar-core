@@ -255,6 +255,7 @@
       - [deregister-chain-maintainer \[chain\]...](axelard_tx_nexus_deregister-chain-maintainer.md)	 - deregister a validator as a chain maintainer for the given chains
       - [register-asset-fee \[chain\] \[asset\] \[fee-rate\] \[min-fee\] \[max-fee\]](axelard_tx_nexus_register-asset-fee.md)	 - register fees for an asset on a chain
       - [register-chain-maintainer \[chain\]...](axelard_tx_nexus_register-chain-maintainer.md)	 - register a validator as a chain maintainer for the given chains
+      - [set-rate-limit \[chain\] \[limit\] \[window\]](axelard_tx_nexus_set-rate-limit.md)	 - set transfer rate limit for an asset on a chain
     - [permission](axelard_tx_permission.md)	 - permission transactions subcommands
       - [deregister-controller \[controller\]](axelard_tx_permission_deregister-controller.md)	 - Deregister controller account
       - [register-controller \[controller\]](axelard_tx_permission_register-controller.md)	 - Register controller account

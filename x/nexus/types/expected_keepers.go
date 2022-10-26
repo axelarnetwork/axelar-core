@@ -1,6 +1,8 @@
 package types
 
 import (
+	"time"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/tendermint/tendermint/libs/log"
@@ -36,6 +38,7 @@ type Nexus interface {
 	DeactivateChain(ctx sdk.Context, chain exported.Chain)
 	RegisterFee(ctx sdk.Context, chain exported.Chain, feeInfo exported.FeeInfo) error
 	GetFeeInfo(ctx sdk.Context, chain exported.Chain, asset string) (feeInfo exported.FeeInfo, found bool)
+	SetRateLimitStore(ctx sdk.Context, chain exported.ChainName, limit sdk.Coin, window time.Duration)
 }
 
 // Snapshotter provides functionality to the snapshot module
