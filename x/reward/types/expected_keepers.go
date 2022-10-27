@@ -67,6 +67,7 @@ type Banker interface {
 
 // MultiSig provides mutlisig functionality
 type MultiSig interface {
+	IsOptOut(ctx sdk.Context, participant sdk.AccAddress) bool
 }
 
 // Snapshotter provides snapshot functionality

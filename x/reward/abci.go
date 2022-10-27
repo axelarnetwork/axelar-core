@@ -45,7 +45,7 @@ func addRewardsByConsensusPower(ctx sdk.Context, s types.Staker, rewardPool expo
 	})
 }
 
-func excludeJailedOrTombstoned(ctx sdk.Context, slasher types.Slasher, snapshotter types.Snapshotter, v snapshot.ValidatorI) bool {
+func excludeJailedOrTombstoned(ctx sdk.Context, slasher types.Slasher, v snapshot.ValidatorI) bool {
 	isTombstoned := func(v snapshot.ValidatorI) bool {
 		consAdd, err := v.GetConsAddr()
 		if err != nil {
@@ -55,16 +55,9 @@ func excludeJailedOrTombstoned(ctx sdk.Context, slasher types.Slasher, snapshott
 		return slasher.IsTombstoned(ctx, consAdd)
 	}
 
-	isProxyActive := func(v snapshot.ValidatorI) bool {
-		_, isActive := snapshotter.GetProxy(ctx, v.GetOperator())
-
-		return isActive
-	}
-
 	filter := funcs.Or(
 		snapshot.ValidatorI.IsJailed,
 		isTombstoned,
-		funcs.Not(isProxyActive),
 	)
 
 	return filter(v)
@@ -76,10 +69,16 @@ func handleKeyMgmtInflation(ctx sdk.Context, k types.Rewarder, m types.Minter, s
 	mintParams := m.GetParams(ctx)
 	totalAmount := minter.BlockProvision(mintParams).Amount.ToDec().Mul(k.GetParams(ctx).KeyMgmtRelativeInflationRate)
 
+	isProxyActive := func(v snapshot.ValidatorI) bool {
+		proxy, isActive := ss.GetProxy(ctx, v.GetOperator())
+
+		return isActive && !mSig.IsOptOut(ctx, proxy)
+	}
+
 	var validators []snapshot.ValidatorI
 
 	validatorIterFn := func(_ int64, validator stakingtypes.ValidatorI) bool {
-		if excludeJailedOrTombstoned(ctx, slasher, ss, validator) {
+		if excludeJailedOrTombstoned(ctx, slasher, validator) || !isProxyActive(validator) {
 			return false
 		}
 
@@ -118,7 +117,8 @@ func handleExternalChainVotingInflation(ctx sdk.Context, k types.Rewarder, n typ
 				continue
 			}
 
-			if !v.IsBonded() || excludeJailedOrTombstoned(ctx, slasher, ss, v) {
+			_, isProxyActive := ss.GetProxy(ctx, v.GetOperator())
+			if !v.IsBonded() || excludeJailedOrTombstoned(ctx, slasher, v) && !isProxyActive {
 				continue
 			}
 
