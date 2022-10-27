@@ -7,7 +7,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/axelarnetwork/axelar-core/utils/events"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
@@ -264,23 +263,13 @@ func (s msgServer) RegisterAssetFee(c context.Context, req *types.RegisterAssetF
 	return &types.RegisterAssetFeeResponse{}, nil
 }
 
-// SetRateLimit handles setting the rate limits
-func (s msgServer) SetRateLimit(c context.Context, req *types.SetRateLimitRequest) (*types.SetRateLimitResponse, error) {
+// SetTransferRateLimit handles setting the transfer rate limit for an asset on a chain
+func (s msgServer) SetTransferRateLimit(c context.Context, req *types.SetTransferRateLimitRequest) (*types.SetTransferRateLimitResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	chain, ok := s.GetChain(ctx, req.Chain)
-	if !ok {
-		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
+	if err := s.SetRateLimit(ctx, req.Chain, req.Limit, req.Window); err != nil {
+		return nil, err
 	}
 
-	// TODO: check asset is registered to the chain? There might be benefit of allowing
-	s.SetRateLimitStore(ctx, chain.Name, req.Limit, req.Window)
-
-	events.Emit(ctx, &types.RateLimitUpdated{
-		Chain:  chain.Name,
-		Limit:  req.Limit,
-		Window: req.Window,
-	})
-
-	return &types.SetRateLimitResponse{}, nil
+	return &types.SetTransferRateLimitResponse{}, nil
 }

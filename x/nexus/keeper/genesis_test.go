@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"testing"
+	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
@@ -22,6 +23,7 @@ import (
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
+	"github.com/axelarnetwork/utils/funcs"
 )
 
 func setup() (sdk.Context, Keeper) {
@@ -55,6 +57,10 @@ func getRandomEthereumAddress() exported.CrossChainAddress {
 	}
 }
 
+func randRateLimit(chain exported.ChainName, asset string) types.RateLimit {
+	return types.RateLimit{Chain: chain, Limit: sdk.NewCoin(asset, randInt(100000000, 200000000)), Window: time.Hour}
+}
+
 func randFee(chain exported.ChainName, asset string) exported.FeeInfo {
 	rate := sdk.NewDecWithPrec(sdk.Int(randInt(0, 100)).Int64(), 3)
 	min := randInt(0, 10)
@@ -75,6 +81,9 @@ func assertChainStatesEqual(t *testing.T, expected, actual *types.GenesisState) 
 	assert.ElementsMatch(t, expected.Transfers, actual.Transfers)
 	assert.Equal(t, expected.Fee, actual.Fee)
 	assert.ElementsMatch(t, expected.FeeInfos, actual.FeeInfos)
+	assert.ElementsMatch(t, expected.RateLimits, actual.RateLimits)
+	// TODO: Track this with some random transfers
+	// assert.ElementsMatch(t, expected.TransferRates, actual.TransferRates)
 }
 
 func TestExportGenesisInitGenesis(t *testing.T) {
@@ -109,6 +118,10 @@ func TestExportGenesisInitGenesis(t *testing.T) {
 	if err := keeper.RegisterFee(ctx, evm.Ethereum, randFee(evm.Ethereum.Name, axelarnet.NativeAsset)); err != nil {
 		panic(err)
 	}
+
+	rateLimit := randRateLimit(axelarnet.Axelarnet.Name, axelarnet.NativeAsset)
+	funcs.MustNoErr(keeper.SetRateLimit(ctx, rateLimit.Chain, rateLimit.Limit, rateLimit.Window))
+	expected.RateLimits = keeper.getRateLimits(ctx)
 
 	for _, chain := range expected.Chains {
 		keeper.ActivateChain(ctx, chain)

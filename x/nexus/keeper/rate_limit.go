@@ -7,6 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/utils/events"
 	"github.com/axelarnetwork/axelar-core/utils/key"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
@@ -23,13 +24,32 @@ func (k Keeper) getRateLimit(ctx sdk.Context, chain exported.ChainName, asset st
 	return rateLimit, k.getStore(ctx).GetNew(getRateLimitKey(chain, asset), &rateLimit)
 }
 
-// SetRateLimitStore sets a rate limit for the given chain and asset
-func (k Keeper) SetRateLimitStore(ctx sdk.Context, chain exported.ChainName, limit sdk.Coin, window time.Duration) {
-	funcs.MustNoErr(k.getStore(ctx).SetNewValidated(getRateLimitKey(chain, limit.Denom), &types.RateLimit{
-		Chain:  chain,
+// SetRateLimit sets a rate limit for the given chain and asset
+func (k Keeper) SetRateLimit(ctx sdk.Context, chainName exported.ChainName, limit sdk.Coin, window time.Duration) error {
+	chain, ok := k.GetChain(ctx, chainName)
+	if !ok {
+		return fmt.Errorf("%s is not a registered chain", chainName)
+	}
+
+	// NOTE: We could potentially skip the Asset registered check.
+	// There can be benefit of rate limiting denoms that are not registered as cross-chain assets, due to IBC
+	if !k.IsAssetRegistered(ctx, chain, limit.Denom) {
+		return fmt.Errorf("%s is not a registered for chain %s", limit.Denom, chain.Name)
+	}
+
+	funcs.MustNoErr(k.getStore(ctx).SetNewValidated(getRateLimitKey(chain.Name, limit.Denom), &types.RateLimit{
+		Chain:  chain.Name,
 		Limit:  limit,
 		Window: window,
 	}))
+
+	events.Emit(ctx, &types.RateLimitUpdated{
+		Chain:  chain.Name,
+		Limit:  limit,
+		Window: window,
+	})
+
+	return nil
 }
 
 func (k Keeper) getRateLimits(ctx sdk.Context) (rateLimits []types.RateLimit) {
@@ -46,33 +66,33 @@ func (k Keeper) getRateLimits(ctx sdk.Context) (rateLimits []types.RateLimit) {
 	return rateLimits
 }
 
-func getTransferAmountKey(chain exported.ChainName, asset string, outgoing bool) key.Key {
-	return transferAmountPrefix.
+func getTransferRateKey(chain exported.ChainName, asset string, outgoing bool) key.Key {
+	return transferRatePrefix.
 		Append(key.From(chain)).
 		Append(key.FromStr(asset)).
 		Append(key.FromBool(outgoing))
 }
 
-func (k Keeper) getTransferAmount(ctx sdk.Context, chain exported.ChainName, asset string, outgoing bool) (transferAmount types.TransferAmount, found bool) {
-	return transferAmount, k.getStore(ctx).GetNew(getTransferAmountKey(chain, asset, outgoing), &transferAmount)
+func (k Keeper) getTransferRate(ctx sdk.Context, chain exported.ChainName, asset string, outgoing bool) (transferRate types.TransferRate, found bool) {
+	return transferRate, k.getStore(ctx).GetNew(getTransferRateKey(chain, asset, outgoing), &transferRate)
 }
 
-func (k Keeper) setTransferAmount(ctx sdk.Context, transferAmount types.TransferAmount) {
-	funcs.MustNoErr(k.getStore(ctx).SetNewValidated(getTransferAmountKey(transferAmount.Chain, transferAmount.Amount.Denom, transferAmount.Outgoing), &transferAmount))
+func (k Keeper) setTransferRate(ctx sdk.Context, transferRate types.TransferRate) {
+	funcs.MustNoErr(k.getStore(ctx).SetNewValidated(getTransferRateKey(transferRate.Chain, transferRate.Amount.Denom, transferRate.Outgoing), &transferRate))
 }
 
-func (k Keeper) getTransferAmounts(ctx sdk.Context) (transferAmounts []types.TransferAmount) {
-	iter := k.getStore(ctx).IteratorNew(transferAmountPrefix)
+func (k Keeper) getTransferRates(ctx sdk.Context) (transferRates []types.TransferRate) {
+	iter := k.getStore(ctx).IteratorNew(transferRatePrefix)
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
 	for ; iter.Valid(); iter.Next() {
-		var transferAmount types.TransferAmount
-		iter.UnmarshalValue(&transferAmount)
+		var transferRate types.TransferRate
+		iter.UnmarshalValue(&transferRate)
 
-		transferAmounts = append(transferAmounts, transferAmount)
+		transferRates = append(transferRates, transferRate)
 	}
 
-	return transferAmounts
+	return transferRates
 }
 
 // Get the epoch for the transfer
@@ -89,9 +109,9 @@ func (k Keeper) RateLimitTransfer(ctx sdk.Context, chain exported.ChainName, ass
 
 	epoch := computeEpoch(ctx, rateLimit.Window)
 
-	transferAmount, found := k.getTransferAmount(ctx, chain, asset.Denom, outgoing)
-	if !found || transferAmount.Epoch != epoch {
-		transferAmount = types.TransferAmount{
+	transferRate, found := k.getTransferRate(ctx, chain, asset.Denom, outgoing)
+	if !found || transferRate.Epoch != epoch {
+		transferRate = types.TransferRate{
 			Chain:    chain,
 			Amount:   sdk.NewCoin(asset.Denom, sdk.ZeroInt()),
 			Epoch:    epoch,
@@ -99,15 +119,15 @@ func (k Keeper) RateLimitTransfer(ctx sdk.Context, chain exported.ChainName, ass
 		}
 	}
 
-	transferAmount.Amount = transferAmount.Amount.Add(asset)
+	transferRate.Amount = transferRate.Amount.Add(asset)
 
-	if transferAmount.Amount.Amount.GT(rateLimit.Limit.Amount) {
-		err := fmt.Errorf("transfer %s for chain %s (outgoing: %v) exceeded rate limit %s", transferAmount.Amount, transferAmount.Chain, transferAmount.Outgoing, rateLimit.Limit)
+	if transferRate.Amount.Amount.GT(rateLimit.Limit.Amount) {
+		err := fmt.Errorf("transfer %s for chain %s (outgoing: %v) exceeded rate limit %s", transferRate.Amount, transferRate.Chain, transferRate.Outgoing, rateLimit.Limit)
 		k.Logger(ctx).Error(err.Error())
 		return err
 	}
 
-	k.setTransferAmount(ctx, transferAmount)
+	k.setTransferRate(ctx, transferRate)
 
 	return nil
 }

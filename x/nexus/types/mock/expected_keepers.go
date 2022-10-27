@@ -79,8 +79,8 @@ var _ nexustypes.Nexus = &NexusMock{}
 // 			SetParamsFunc: func(ctx cosmossdktypes.Context, p nexustypes.Params)  {
 // 				panic("mock out the SetParams method")
 // 			},
-// 			SetRateLimitStoreFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, limit cosmossdktypes.Coin, window time.Duration)  {
-// 				panic("mock out the SetRateLimitStore method")
+// 			SetRateLimitFunc: func(ctx cosmossdktypes.Context, chainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, limit cosmossdktypes.Coin, window time.Duration) error {
+// 				panic("mock out the SetRateLimit method")
 // 			},
 // 		}
 //
@@ -143,8 +143,8 @@ type NexusMock struct {
 	// SetParamsFunc mocks the SetParams method.
 	SetParamsFunc func(ctx cosmossdktypes.Context, p nexustypes.Params)
 
-	// SetRateLimitStoreFunc mocks the SetRateLimitStore method.
-	SetRateLimitStoreFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, limit cosmossdktypes.Coin, window time.Duration)
+	// SetRateLimitFunc mocks the SetRateLimit method.
+	SetRateLimitFunc func(ctx cosmossdktypes.Context, chainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, limit cosmossdktypes.Coin, window time.Duration) error
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -278,12 +278,12 @@ type NexusMock struct {
 			// P is the p argument value.
 			P nexustypes.Params
 		}
-		// SetRateLimitStore holds details about calls to the SetRateLimitStore method.
-		SetRateLimitStore []struct {
+		// SetRateLimit holds details about calls to the SetRateLimit method.
+		SetRateLimit []struct {
 			// Ctx is the ctx argument value.
 			Ctx cosmossdktypes.Context
-			// Chain is the chain argument value.
-			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+			// ChainName is the chainName argument value.
+			ChainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
 			// Limit is the limit argument value.
 			Limit cosmossdktypes.Coin
 			// Window is the window argument value.
@@ -308,7 +308,7 @@ type NexusMock struct {
 	lockRegisterFee              sync.RWMutex
 	lockRemoveChainMaintainer    sync.RWMutex
 	lockSetParams                sync.RWMutex
-	lockSetRateLimitStore        sync.RWMutex
+	lockSetRateLimit             sync.RWMutex
 }
 
 // ActivateChain calls ActivateChainFunc.
@@ -949,46 +949,46 @@ func (mock *NexusMock) SetParamsCalls() []struct {
 	return calls
 }
 
-// SetRateLimitStore calls SetRateLimitStoreFunc.
-func (mock *NexusMock) SetRateLimitStore(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, limit cosmossdktypes.Coin, window time.Duration) {
-	if mock.SetRateLimitStoreFunc == nil {
-		panic("NexusMock.SetRateLimitStoreFunc: method is nil but Nexus.SetRateLimitStore was just called")
+// SetRateLimit calls SetRateLimitFunc.
+func (mock *NexusMock) SetRateLimit(ctx cosmossdktypes.Context, chainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, limit cosmossdktypes.Coin, window time.Duration) error {
+	if mock.SetRateLimitFunc == nil {
+		panic("NexusMock.SetRateLimitFunc: method is nil but Nexus.SetRateLimit was just called")
 	}
 	callInfo := struct {
-		Ctx    cosmossdktypes.Context
-		Chain  github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
-		Limit  cosmossdktypes.Coin
-		Window time.Duration
+		Ctx       cosmossdktypes.Context
+		ChainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+		Limit     cosmossdktypes.Coin
+		Window    time.Duration
 	}{
-		Ctx:    ctx,
-		Chain:  chain,
-		Limit:  limit,
-		Window: window,
+		Ctx:       ctx,
+		ChainName: chainName,
+		Limit:     limit,
+		Window:    window,
 	}
-	mock.lockSetRateLimitStore.Lock()
-	mock.calls.SetRateLimitStore = append(mock.calls.SetRateLimitStore, callInfo)
-	mock.lockSetRateLimitStore.Unlock()
-	mock.SetRateLimitStoreFunc(ctx, chain, limit, window)
+	mock.lockSetRateLimit.Lock()
+	mock.calls.SetRateLimit = append(mock.calls.SetRateLimit, callInfo)
+	mock.lockSetRateLimit.Unlock()
+	return mock.SetRateLimitFunc(ctx, chainName, limit, window)
 }
 
-// SetRateLimitStoreCalls gets all the calls that were made to SetRateLimitStore.
+// SetRateLimitCalls gets all the calls that were made to SetRateLimit.
 // Check the length with:
-//     len(mockedNexus.SetRateLimitStoreCalls())
-func (mock *NexusMock) SetRateLimitStoreCalls() []struct {
-	Ctx    cosmossdktypes.Context
-	Chain  github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
-	Limit  cosmossdktypes.Coin
-	Window time.Duration
+//     len(mockedNexus.SetRateLimitCalls())
+func (mock *NexusMock) SetRateLimitCalls() []struct {
+	Ctx       cosmossdktypes.Context
+	ChainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+	Limit     cosmossdktypes.Coin
+	Window    time.Duration
 } {
 	var calls []struct {
-		Ctx    cosmossdktypes.Context
-		Chain  github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
-		Limit  cosmossdktypes.Coin
-		Window time.Duration
+		Ctx       cosmossdktypes.Context
+		ChainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+		Limit     cosmossdktypes.Coin
+		Window    time.Duration
 	}
-	mock.lockSetRateLimitStore.RLock()
-	calls = mock.calls.SetRateLimitStore
-	mock.lockSetRateLimitStore.RUnlock()
+	mock.lockSetRateLimit.RLock()
+	calls = mock.calls.SetRateLimit
+	mock.lockSetRateLimit.RUnlock()
 	return calls
 }
 

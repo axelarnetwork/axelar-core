@@ -61,7 +61,7 @@
     - [LinkedAddresses](#axelar.nexus.v1beta1.LinkedAddresses)
     - [MaintainerState](#axelar.nexus.v1beta1.MaintainerState)
     - [RateLimit](#axelar.nexus.v1beta1.RateLimit)
-    - [TransferAmount](#axelar.nexus.v1beta1.TransferAmount)
+    - [TransferRate](#axelar.nexus.v1beta1.TransferRate)
   
 - [axelar/nexus/v1beta1/query.proto](#axelar/nexus/v1beta1/query.proto)
     - [AssetsRequest](#axelar.nexus.v1beta1.AssetsRequest)
@@ -351,8 +351,8 @@
     - [RegisterAssetFeeResponse](#axelar.nexus.v1beta1.RegisterAssetFeeResponse)
     - [RegisterChainMaintainerRequest](#axelar.nexus.v1beta1.RegisterChainMaintainerRequest)
     - [RegisterChainMaintainerResponse](#axelar.nexus.v1beta1.RegisterChainMaintainerResponse)
-    - [SetRateLimitRequest](#axelar.nexus.v1beta1.SetRateLimitRequest)
-    - [SetRateLimitResponse](#axelar.nexus.v1beta1.SetRateLimitResponse)
+    - [SetTransferRateLimitRequest](#axelar.nexus.v1beta1.SetTransferRateLimitRequest)
+    - [SetTransferRateLimitResponse](#axelar.nexus.v1beta1.SetTransferRateLimitResponse)
   
 - [axelar/nexus/v1beta1/service.proto](#axelar/nexus/v1beta1/service.proto)
     - [MsgService](#axelar.nexus.v1beta1.MsgService)
@@ -1270,9 +1270,9 @@ ChainState represents the state of a registered blockchain
 
 
 
-<a name="axelar.nexus.v1beta1.TransferAmount"></a>
+<a name="axelar.nexus.v1beta1.TransferRate"></a>
 
-### TransferAmount
+### TransferRate
 
 
 
@@ -5267,6 +5267,8 @@ GenesisState represents the genesis state
 | `transfers` | [axelar.nexus.exported.v1beta1.CrossChainTransfer](#axelar.nexus.exported.v1beta1.CrossChainTransfer) | repeated |  |
 | `fee` | [axelar.nexus.exported.v1beta1.TransferFee](#axelar.nexus.exported.v1beta1.TransferFee) |  |  |
 | `fee_infos` | [axelar.nexus.exported.v1beta1.FeeInfo](#axelar.nexus.exported.v1beta1.FeeInfo) | repeated |  |
+| `rate_limits` | [RateLimit](#axelar.nexus.v1beta1.RateLimit) | repeated |  |
+| `transfer_rates` | [TransferRate](#axelar.nexus.v1beta1.TransferRate) | repeated |  |
 
 
 
@@ -5420,10 +5422,10 @@ info associated to an asset on a chain
 
 
 
-<a name="axelar.nexus.v1beta1.SetRateLimitRequest"></a>
+<a name="axelar.nexus.v1beta1.SetTransferRateLimitRequest"></a>
 
-### SetRateLimitRequest
-SetRateLimitRequest represents a message to set rate limits on transfers
+### SetTransferRateLimitRequest
+SetTransferRateLimitRequest represents a message to set rate limits on transfers
 
 
 | Field | Type | Label | Description |
@@ -5438,9 +5440,9 @@ SetRateLimitRequest represents a message to set rate limits on transfers
 
 
 
-<a name="axelar.nexus.v1beta1.SetRateLimitResponse"></a>
+<a name="axelar.nexus.v1beta1.SetTransferRateLimitResponse"></a>
 
-### SetRateLimitResponse
+### SetTransferRateLimitResponse
 
 
 
@@ -5482,7 +5484,7 @@ Msg defines the nexus Msg service.
 | `ActivateChain` | [ActivateChainRequest](#axelar.nexus.v1beta1.ActivateChainRequest) | [ActivateChainResponse](#axelar.nexus.v1beta1.ActivateChainResponse) |  | POST|/axelar/nexus/activate_chain|
 | `DeactivateChain` | [DeactivateChainRequest](#axelar.nexus.v1beta1.DeactivateChainRequest) | [DeactivateChainResponse](#axelar.nexus.v1beta1.DeactivateChainResponse) |  | POST|/axelar/nexus/deactivate_chain|
 | `RegisterAssetFee` | [RegisterAssetFeeRequest](#axelar.nexus.v1beta1.RegisterAssetFeeRequest) | [RegisterAssetFeeResponse](#axelar.nexus.v1beta1.RegisterAssetFeeResponse) |  | POST|/axelar/nexus/register_asset_fee|
-| `SetRateLimit` | [SetRateLimitRequest](#axelar.nexus.v1beta1.SetRateLimitRequest) | [SetRateLimitResponse](#axelar.nexus.v1beta1.SetRateLimitResponse) |  | POST|/axelar/nexus/set_rate_limit|
+| `SetTransferRateLimit` | [SetTransferRateLimitRequest](#axelar.nexus.v1beta1.SetTransferRateLimitRequest) | [SetTransferRateLimitResponse](#axelar.nexus.v1beta1.SetTransferRateLimitResponse) |  | POST|/axelar/nexus/set_transfer_rate_limit|
 
 
 <a name="axelar.nexus.v1beta1.QueryService"></a>

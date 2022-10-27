@@ -24,4 +24,6 @@ message GenesisState {
   nexus.exported.v1beta1.TransferFee fee = 7 [ (gogoproto.nullable) = false ];
   repeated nexus.exported.v1beta1.FeeInfo fee_infos = 8
       [ (gogoproto.nullable) = false ];
+  repeated RateLimit rate_limits = 9 [ (gogoproto.nullable) = false ];
+  repeated TransferRate transfer_rates = 10 [ (gogoproto.nullable) = false ];
 }

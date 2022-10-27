@@ -8841,9 +8841,9 @@ paths:
                   type: string
       tags:
         - MsgService
-  /axelar/nexus/set_rate_limit:
+  /axelar/nexus/set_transfer_rate_limit:
     post:
-      operationId: SetRateLimit
+      operationId: SetTransferRateLimit
       responses:
         '200':
           description: A successful response.
@@ -9071,8 +9071,8 @@ paths:
               window:
                 type: string
             title: >-
-              SetRateLimitRequest represents a message to set rate limits on
-              transfers
+              SetTransferRateLimitRequest represents a message to set rate
+              limits on transfers
       tags:
         - MsgService
   /axelar/nexus/v1beta1/assets/{chain}:
@@ -41595,7 +41595,7 @@ definitions:
           type: string
   axelar.nexus.v1beta1.RegisterChainMaintainerResponse:
     type: object
-  axelar.nexus.v1beta1.SetRateLimitRequest:
+  axelar.nexus.v1beta1.SetTransferRateLimitRequest:
     type: object
     properties:
       sender:
@@ -41617,8 +41617,10 @@ definitions:
           signatures required by gogoproto.
       window:
         type: string
-    title: SetRateLimitRequest represents a message to set rate limits on transfers
-  axelar.nexus.v1beta1.SetRateLimitResponse:
+    title: >-
+      SetTransferRateLimitRequest represents a message to set rate limits on
+      transfers
+  axelar.nexus.v1beta1.SetTransferRateLimitResponse:
     type: object
   axelar.nexus.v1beta1.TransferFeeResponse:
     type: object

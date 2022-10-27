@@ -10,9 +10,9 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
-// NewSetRateLimitRequest creates a message of type SetRateLimitRequest
-func NewSetRateLimitRequest(sender sdk.AccAddress, chain exported.ChainName, limit sdk.Coin, window time.Duration) *SetRateLimitRequest {
-	return &SetRateLimitRequest{
+// NewSetTransferRateLimitRequest creates a message of type SetTransferRateLimitRequest
+func NewSetTransferRateLimitRequest(sender sdk.AccAddress, chain exported.ChainName, limit sdk.Coin, window time.Duration) *SetTransferRateLimitRequest {
+	return &SetTransferRateLimitRequest{
 		Sender: sender,
 		Chain:  chain,
 		Limit:  limit,
@@ -21,17 +21,17 @@ func NewSetRateLimitRequest(sender sdk.AccAddress, chain exported.ChainName, lim
 }
 
 // Route implements sdk.Msg
-func (m SetRateLimitRequest) Route() string {
+func (m SetTransferRateLimitRequest) Route() string {
 	return RouterKey
 }
 
 // Type implements sdk.Msg
-func (m SetRateLimitRequest) Type() string {
-	return "SetRateLimit"
+func (m SetTransferRateLimitRequest) Type() string {
+	return "SetTransferRateLimit"
 }
 
 // ValidateBasic implements sdk.Msg
-func (m SetRateLimitRequest) ValidateBasic() error {
+func (m SetTransferRateLimitRequest) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
@@ -52,12 +52,12 @@ func (m SetRateLimitRequest) ValidateBasic() error {
 }
 
 // GetSignBytes implements sdk.Msg
-func (m SetRateLimitRequest) GetSignBytes() []byte {
+func (m SetTransferRateLimitRequest) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(&m)
 	return sdk.MustSortJSON(bz)
 }
 
 // GetSigners implements sdk.Msg
-func (m SetRateLimitRequest) GetSigners() []sdk.AccAddress {
+func (m SetTransferRateLimitRequest) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{m.Sender}
 }

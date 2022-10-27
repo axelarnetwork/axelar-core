@@ -31,7 +31,7 @@ func GetTxCmd() *cobra.Command {
 		GetCmdActivateChain(),
 		GetCmdDeactivateChain(),
 		GetCmdRegisterAssetFee(),
-		GetCmdSetRateLimit(),
+		GetCmdSetTransferRateLimit(),
 	)
 
 	return txCmd
@@ -181,10 +181,10 @@ func GetCmdRegisterAssetFee() *cobra.Command {
 	return cmd
 }
 
-// GetCmdSetRateLimit returns the cli command to register asset transfer rate limit for a chain
-func GetCmdSetRateLimit() *cobra.Command {
+// GetCmdSetTransferRateLimit returns the cli command to register asset transfer rate limit for a chain
+func GetCmdSetTransferRateLimit() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "set-rate-limit [chain] [limit] [window]",
+		Use:   "set-transfer-rate-limit [chain] [limit] [window]",
 		Short: "set transfer rate limit for an asset on a chain",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -203,7 +203,7 @@ func GetCmdSetRateLimit() *cobra.Command {
 				return err
 			}
 
-			msg := types.NewSetRateLimitRequest(cliCtx.GetFromAddress(), exported.ChainName(args[0]), limit, window)
+			msg := types.NewSetTransferRateLimitRequest(cliCtx.GetFromAddress(), exported.ChainName(args[0]), limit, window)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

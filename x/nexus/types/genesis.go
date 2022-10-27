@@ -21,6 +21,8 @@ func NewGenesisState(
 	transfers []exported.CrossChainTransfer,
 	fee exported.TransferFee,
 	feeInfos []exported.FeeInfo,
+	rateLimits []RateLimit,
+	transferRates []TransferRate,
 ) *GenesisState {
 	return &GenesisState{
 		Params:          params,
@@ -31,6 +33,8 @@ func NewGenesisState(
 		Transfers:       transfers,
 		Fee:             fee,
 		FeeInfos:        feeInfos,
+		RateLimits:      rateLimits,
+		TransferRates:   transferRates,
 	}
 }
 
@@ -48,6 +52,8 @@ func DefaultGenesisState() *GenesisState {
 		[]exported.CrossChainTransfer{},
 		exported.TransferFee{},
 		[]exported.FeeInfo{},
+		[]RateLimit{},
+		[]TransferRate{},
 	)
 }
 
@@ -87,6 +93,18 @@ func (m GenesisState) Validate() error {
 
 	for _, feeInfo := range m.FeeInfos {
 		if err := feeInfo.Validate(); err != nil {
+			return getValidateError(err)
+		}
+	}
+
+	for _, rateLimit := range m.RateLimits {
+		if err := rateLimit.ValidateBasic(); err != nil {
+			return getValidateError(err)
+		}
+	}
+
+	for _, transferRate := range m.TransferRates {
+		if err := transferRate.ValidateBasic(); err != nil {
 			return getValidateError(err)
 		}
 	}

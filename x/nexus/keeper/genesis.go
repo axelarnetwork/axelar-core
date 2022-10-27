@@ -7,6 +7,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
+	"github.com/axelarnetwork/utils/funcs"
 )
 
 // InitGenesis initializes the reward module's state from a given genesis state.
@@ -69,6 +70,18 @@ func (k Keeper) InitGenesis(ctx sdk.Context, genState *types.GenesisState) {
 			panic(err)
 		}
 	}
+
+	for _, rateLimit := range genState.RateLimits {
+		funcs.MustNoErr(k.SetRateLimit(ctx, rateLimit.Chain, rateLimit.Limit, rateLimit.Window))
+	}
+
+	for _, transferRate := range genState.TransferRates {
+		if _, ok := k.GetChain(ctx, transferRate.Chain); !ok {
+			panic(fmt.Errorf("chain %s not found", transferRate.Chain))
+		}
+
+		k.setTransferRate(ctx, transferRate)
+	}
 }
 
 // ExportGenesis returns the reward module's genesis state.
@@ -82,5 +95,7 @@ func (k Keeper) ExportGenesis(ctx sdk.Context) *types.GenesisState {
 		k.getTransfers(ctx),
 		k.getTransferFee(ctx),
 		k.getFeeInfos(ctx),
+		k.getRateLimits(ctx),
+		k.getTransferRates(ctx),
 	)
 }

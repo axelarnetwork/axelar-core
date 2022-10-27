@@ -1,9 +1,9 @@
-## axelard tx nexus set-rate-limit
+## axelard tx nexus set-transfer-rate-limit
 
 set transfer rate limit for an asset on a chain
 
 ```
-axelard tx nexus set-rate-limit [chain] [limit] [window] [flags]
+axelard tx nexus set-transfer-rate-limit [chain] [limit] [window] [flags]
 ```
 
 ### Options
@@ -19,7 +19,7 @@ axelard tx nexus set-rate-limit [chain] [limit] [window] [flags]
       --gas-adjustment float     adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default 1)
       --gas-prices string        Gas prices in decimal format to determine the transaction fee (e.g. 0.1uatom) (default "0.007uaxl")
       --generate-only            Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)
-  -h, --help                     help for set-rate-limit
+  -h, --help                     help for set-transfer-rate-limit
       --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "file")
       --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
       --ledger                   Use a connected Ledger device
