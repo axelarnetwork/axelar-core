@@ -58,7 +58,7 @@ func (sc SnapshotCreator) CreateSnapshot(ctx sdk.Context, threshold utils.Thresh
 	isProxyActive := func(v snapshot.ValidatorI) bool {
 		proxy, isActive := sc.snapshotter.GetProxy(ctx, v.GetOperator())
 
-		return isActive && !sc.keygen.IsOptOut(ctx, proxy)
+		return isActive && !sc.keygen.HasOptedOut(ctx, proxy)
 	}
 
 	filter := funcs.And(
