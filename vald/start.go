@@ -211,7 +211,7 @@ func listen(ctx context.Context, clientCtx sdkClient.Context, txf tx.Factory, ax
 		panic(err)
 	}
 
-	eventBus := createEventBus(robustClient, startBlock, logger)
+	eventBus := createEventBus(robustClient, startBlock, axelarCfg.EventNotificationsMaxRetries, axelarCfg.EventNotificationsBackOff, logger)
 	subscribe := func(eventType, module, action string) <-chan tmEvents.ABCIEventWithHeight {
 		return eventBus.Subscribe(func(e tmEvents.ABCIEventWithHeight) bool {
 			event := tmEvents.Map(e)
@@ -378,9 +378,9 @@ func getStartBlock(cfg config.ValdConfig, stateStore StateStore, nodeHeight int6
 	return startBlock, nil
 }
 
-func createEventBus(client *tendermint.RobustClient, startBlock int64, logger log.Logger) *tmEvents.Bus {
-	notifier := tmEvents.NewBlockNotifier(client, logger).StartingAt(startBlock)
-	return tmEvents.NewEventBus(tmEvents.NewBlockSource(client, notifier, logger), pubsub.NewBus[tmEvents.ABCIEventWithHeight](), logger)
+func createEventBus(client *tendermint.RobustClient, startBlock int64, retries int, backOff time.Duration, logger log.Logger) *tmEvents.Bus {
+	notifier := tmEvents.NewBlockNotifier(client, logger, tmEvents.Retries(retries), tmEvents.BackOff(backOff)).StartingAt(startBlock)
+	return tmEvents.NewEventBus(tmEvents.NewBlockSource(client, notifier, logger, tmEvents.Retries(retries), tmEvents.BackOff(backOff)), pubsub.NewBus[tmEvents.ABCIEventWithHeight](), logger)
 }
 
 func createRefundableBroadcaster(txf tx.Factory, ctx sdkClient.Context, axelarCfg config.ValdConfig, logger log.Logger) broadcast.Broadcaster {
