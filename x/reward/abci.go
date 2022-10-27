@@ -72,7 +72,7 @@ func handleKeyMgmtInflation(ctx sdk.Context, k types.Rewarder, m types.Minter, s
 	isProxyActive := func(v snapshot.ValidatorI) bool {
 		proxy, isActive := ss.GetProxy(ctx, v.GetOperator())
 
-		return isActive && !mSig.IsOptOut(ctx, proxy)
+		return isActive && !mSig.HasOptedOut(ctx, proxy)
 	}
 
 	var validators []snapshot.ValidatorI
