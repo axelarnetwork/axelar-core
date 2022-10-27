@@ -9072,7 +9072,9 @@ paths:
                 type: string
             title: >-
               SetTransferRateLimitRequest represents a message to set rate
-              limits on transfers
+              limits on
+
+              transfers
       tags:
         - MsgService
   /axelar/nexus/v1beta1/assets/{chain}:
@@ -41617,7 +41619,7 @@ definitions:
           signatures required by gogoproto.
       window:
         type: string
-    title: >-
+    title: |-
       SetTransferRateLimitRequest represents a message to set rate limits on
       transfers
   axelar.nexus.v1beta1.SetTransferRateLimitResponse:

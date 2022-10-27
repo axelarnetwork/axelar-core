@@ -5425,7 +5425,8 @@ info associated to an asset on a chain
 <a name="axelar.nexus.v1beta1.SetTransferRateLimitRequest"></a>
 
 ### SetTransferRateLimitRequest
-SetTransferRateLimitRequest represents a message to set rate limits on transfers
+SetTransferRateLimitRequest represents a message to set rate limits on
+transfers
 
 
 | Field | Type | Label | Description |

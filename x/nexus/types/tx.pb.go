@@ -407,7 +407,8 @@ func (m *RegisterAssetFeeResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_RegisterAssetFeeResponse proto.InternalMessageInfo
 
-// SetTransferRateLimitRequest represents a message to set rate limits on transfers
+// SetTransferRateLimitRequest represents a message to set rate limits on
+// transfers
 type SetTransferRateLimitRequest struct {
 	Sender github_com_cosmos_cosmos_sdk_types.AccAddress                   `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
 	Chain  github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`

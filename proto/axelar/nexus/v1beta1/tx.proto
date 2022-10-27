@@ -69,7 +69,8 @@ message RegisterAssetFeeRequest {
 
 message RegisterAssetFeeResponse {}
 
-// SetTransferRateLimitRequest represents a message to set rate limits on transfers
+// SetTransferRateLimitRequest represents a message to set rate limits on
+// transfers
 message SetTransferRateLimitRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
 

@@ -8236,7 +8236,10 @@ paths:
                     signatures required by gogoproto.
                 window:
                   type: string
-              title: SetTransferRateLimitRequest represents a message to set rate limits on
+              title: >-
+                SetTransferRateLimitRequest represents a message to set rate
+                limits on
+
                 transfers
         required: true
       tags:
@@ -38407,7 +38410,8 @@ components:
             signatures required by gogoproto.
         window:
           type: string
-      title: SetTransferRateLimitRequest represents a message to set rate limits on
+      title: |-
+        SetTransferRateLimitRequest represents a message to set rate limits on
         transfers
     axelar.nexus.v1beta1.SetTransferRateLimitResponse:
       type: object
