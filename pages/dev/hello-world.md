@@ -2,7 +2,8 @@
 
 What better way to start than to lead by example? And a simple one we're all familiar with: "Hello World!"
 
-## Prerequisites
+## One-time setup
+
 Install [nodejs](https://nodejs.org/en/download/). Run `node -v` to check your installation.
 
 Version 16 is required. If needed, you can switch your node version via
@@ -11,7 +12,7 @@ Version 16 is required. If needed, you can switch your node version via
 sudo npm i -g n
 sudo n v16.15.0
 ```
-## One-time setup
+
 Clone this repo:
 
 ```bash
@@ -21,16 +22,25 @@ git clone https://github.com/axelarnetwork/axelar-local-gmp-examples.git
 Build contracts and tests:
 
 ```bash
-npm update && npm install
+npm ci
 npm run build
 ```
+
+## Set up deployer key
+
+```bash
+cp .env.example .env
+```
+
+Then update to your own private key.
+
+## Deploy and run "Hello World"
+
 In order to run the examples against the local emulator, cd to the root directory (`axelar-local-gmp-examples`) in a separate terminal window and run:
 ```bash
 node scripts/createLocal
 ```
 Leave this terminal open for the duration of the example.
-
-## Deploy and run "Hello World"
 
 Run the "Call Contract" example. The application sends a message - "Hello World" - from a source to a destination chain using the `callContract` function.
 
