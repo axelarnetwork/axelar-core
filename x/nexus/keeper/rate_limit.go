@@ -43,6 +43,8 @@ func (k Keeper) SetRateLimit(ctx sdk.Context, chainName exported.ChainName, limi
 		Window: window,
 	}))
 
+	k.Logger(ctx).Info(fmt.Sprintf("transfer rate limit %s set for chain %s with window %s", chain.Name, limit, window))
+
 	events.Emit(ctx, &types.RateLimitUpdated{
 		Chain:  chain.Name,
 		Limit:  limit,
