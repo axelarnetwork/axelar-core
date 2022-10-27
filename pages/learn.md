@@ -61,7 +61,7 @@ Learn how to add a new [EVM chain](https://www.youtube.com/watch?v=iZgqneh7s88&t
 
 ## AxelarJS SDK
 
-Learn how to build apps with Axelar using the [AxelarJS SDK](./learn/sdk).
+Learn how to build apps with Axelar using the [AxelarJS SDK](./dev/axelarjs-sdk/intro) 
 
 ## CLI
 
