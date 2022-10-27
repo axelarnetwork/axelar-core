@@ -69,7 +69,7 @@ func handleKeyMgmtInflation(ctx sdk.Context, k types.Rewarder, m types.Minter, s
 	mintParams := m.GetParams(ctx)
 	totalAmount := minter.BlockProvision(mintParams).Amount.ToDec().Mul(k.GetParams(ctx).KeyMgmtRelativeInflationRate)
 
-	isProxyActive := func(v snapshot.ValidatorI) bool {
+	isKeygenParticipant := func(v snapshot.ValidatorI) bool {
 		proxy, isActive := ss.GetProxy(ctx, v.GetOperator())
 
 		return isActive && !mSig.HasOptedOut(ctx, proxy)
@@ -78,7 +78,11 @@ func handleKeyMgmtInflation(ctx sdk.Context, k types.Rewarder, m types.Minter, s
 	var validators []snapshot.ValidatorI
 
 	validatorIterFn := func(_ int64, validator stakingtypes.ValidatorI) bool {
-		if excludeJailedOrTombstoned(ctx, slasher, validator) || !isProxyActive(validator) {
+		if excludeJailedOrTombstoned(ctx, slasher, validator) {
+			return false
+		}
+
+		if !isKeygenParticipant(validator) {
 			return false
 		}
 
@@ -117,8 +121,15 @@ func handleExternalChainVotingInflation(ctx sdk.Context, k types.Rewarder, n typ
 				continue
 			}
 
-			_, isProxyActive := ss.GetProxy(ctx, v.GetOperator())
-			if !v.IsBonded() || excludeJailedOrTombstoned(ctx, slasher, v) && !isProxyActive {
+			if !v.IsBonded() {
+				continue
+			}
+
+			if excludeJailedOrTombstoned(ctx, slasher, v) {
+				continue
+			}
+
+			if _, isProxyActive := ss.GetProxy(ctx, v.GetOperator()); !isProxyActive {
 				continue
 			}
 
