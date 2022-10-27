@@ -21,7 +21,7 @@ func (k Keeper) RateLimitTransfer(ctx sdk.Context, chain exported.ChainName, ass
 		return nil
 	}
 
-	epoch := computeEpoch(ctx, rateLimit.Window)
+	epoch := uint64(ctx.BlockTime().UnixNano() / rateLimit.Window.Nanoseconds())
 
 	transferRate, found := k.getTransferRate(ctx, chain, asset.Denom, outgoing)
 	if !found || transferRate.Epoch != epoch {
@@ -127,9 +127,4 @@ func (k Keeper) getTransferRates(ctx sdk.Context) (transferRates []types.Transfe
 	}
 
 	return transferRates
-}
-
-// Get the epoch for the transfer
-func computeEpoch(ctx sdk.Context, window time.Duration) uint64 {
-	return uint64(ctx.BlockTime().UnixNano() / window.Nanoseconds())
 }
