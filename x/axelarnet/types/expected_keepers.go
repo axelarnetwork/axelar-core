@@ -41,7 +41,7 @@ type Nexus interface {
 	GetChain(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool)
 	LinkAddresses(ctx sdk.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress) error
 	IsAssetRegistered(ctx sdk.Context, chain nexus.Chain, denom string) bool
-	RegisterAsset(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset) error
+	RegisterAsset(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset, limit sdk.Int) error
 	GetRecipient(ctx sdk.Context, sender nexus.CrossChainAddress) (nexus.CrossChainAddress, bool)
 	SetChain(ctx sdk.Context, chain nexus.Chain)
 	GetTransferFees(ctx sdk.Context) sdk.Coins

@@ -237,12 +237,12 @@ func (s msgServer) AddCosmosBasedChain(c context.Context, req *types.AddCosmosBa
 
 	// register asset in chain state
 	for _, asset := range req.NativeAssets {
-		if err := s.nexus.RegisterAsset(ctx, chain, asset); err != nil {
+		if err := s.nexus.RegisterAsset(ctx, chain, asset, sdk.ZeroInt()); err != nil {
 			return nil, err
 		}
 
 		// also register on axelarnet, it routes assets from cosmos chains to evm chains
-		if err := s.nexus.RegisterAsset(ctx, exported.Axelarnet, nexus.NewAsset(asset.Denom, false)); err != nil {
+		if err := s.nexus.RegisterAsset(ctx, exported.Axelarnet, nexus.NewAsset(asset.Denom, false), sdk.ZeroInt()); err != nil {
 			return nil, err
 		}
 	}
@@ -272,14 +272,14 @@ func (s msgServer) RegisterAsset(c context.Context, req *types.RegisterAssetRequ
 	}
 
 	// register asset in chain state
-	err := s.nexus.RegisterAsset(ctx, chain, req.Asset)
+	err := s.nexus.RegisterAsset(ctx, chain, req.Asset, sdk.ZeroInt())
 	if err != nil {
 		return nil, err
 	}
 
 	// also register on axelarnet, it routes assets from cosmos chains to evm chains
 	// ignore the error in case above chain is axelarnet, or if the asset is already registered
-	_ = s.nexus.RegisterAsset(ctx, exported.Axelarnet, nexus.NewAsset(req.Asset.Denom, false))
+	_ = s.nexus.RegisterAsset(ctx, exported.Axelarnet, nexus.NewAsset(req.Asset.Denom, false), sdk.ZeroInt())
 
 	return &types.RegisterAssetResponse{}, nil
 }
