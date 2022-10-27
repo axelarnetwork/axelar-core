@@ -11,12 +11,14 @@ import (
 
 // ValdConfig contains all necessary vald configurations
 type ValdConfig struct {
-	tss.TssConfig         `mapstructure:"tss"`
-	BroadcastConfig       `mapstructure:"broadcast"`
-	BatchSizeLimit        int           `mapstructure:"max_batch_size"`
-	BatchThreshold        int           `mapstructure:"batch_threshold"`
-	MaxBlocksBehindLatest int64         `mapstructure:"max_blocks_behind_latest"` // The max amount of blocks behind the latest until which the cached height is considered valid.
-	MaxLatestBlockAge     time.Duration `mapstructure:"max_latest_block_age"`     // If a block is older than this, vald does not consider it to be the latest block. This is supposed to be sufficiently larger than the block production time.
+	tss.TssConfig                `mapstructure:"tss"`
+	BroadcastConfig              `mapstructure:"broadcast"`
+	BatchSizeLimit               int           `mapstructure:"max_batch_size"`
+	BatchThreshold               int           `mapstructure:"batch_threshold"`
+	MaxBlocksBehindLatest        int64         `mapstructure:"max_blocks_behind_latest"` // The max amount of blocks behind the latest until which the cached height is considered valid.
+	EventNotificationsMaxRetries int           `mapstructure:"event_notifications_max_retries"`
+	EventNotificationsBackOff    time.Duration `mapstructure:"event_notifications_back_off"`
+	MaxLatestBlockAge            time.Duration `mapstructure:"max_latest_block_age"` // If a block is older than this, vald does not consider it to be the latest block. This is supposed to be sufficiently larger than the block production time.
 
 	EVMConfig []evm.EVMConfig `mapstructure:"axelar_bridge_evm"`
 }
@@ -24,13 +26,15 @@ type ValdConfig struct {
 // DefaultValdConfig returns a configurations populated with default values
 func DefaultValdConfig() ValdConfig {
 	return ValdConfig{
-		TssConfig:             tss.DefaultConfig(),
-		BroadcastConfig:       DefaultBroadcastConfig(),
-		BatchSizeLimit:        250,
-		BatchThreshold:        3,
-		MaxBlocksBehindLatest: 10, // Max voting/sign/heartbeats periods are under 10 blocks
-		MaxLatestBlockAge:     15 * time.Second,
-		EVMConfig:             evm.DefaultConfig(),
+		TssConfig:                    tss.DefaultConfig(),
+		BroadcastConfig:              DefaultBroadcastConfig(),
+		BatchSizeLimit:               250,
+		BatchThreshold:               3,
+		MaxBlocksBehindLatest:        10, // Max voting/sign/heartbeats periods are under 10 blocks
+		MaxLatestBlockAge:            15 * time.Second,
+		EVMConfig:                    evm.DefaultConfig(),
+		EventNotificationsMaxRetries: 3,
+		EventNotificationsBackOff:    1 * time.Second,
 	}
 }
 
