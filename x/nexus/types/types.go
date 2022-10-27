@@ -172,9 +172,5 @@ func (m TransferRate) ValidateBasic() error {
 		return err
 	}
 
-	if m.Epoch <= 0 {
-		return fmt.Errorf("transfer amount epoch must be positive")
-	}
-
 	return nil
 }

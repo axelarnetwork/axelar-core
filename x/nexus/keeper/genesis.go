@@ -72,12 +72,20 @@ func (k Keeper) InitGenesis(ctx sdk.Context, genState *types.GenesisState) {
 	}
 
 	for _, rateLimit := range genState.RateLimits {
+		if _, found := k.getRateLimit(ctx, rateLimit.Chain, rateLimit.Limit.Denom); found {
+			panic(fmt.Errorf("rate limit for chain %s and asset %s already registered", rateLimit.Chain, rateLimit.Limit.Denom))
+		}
+
 		funcs.MustNoErr(k.SetRateLimit(ctx, rateLimit.Chain, rateLimit.Limit, rateLimit.Window))
 	}
 
 	for _, transferRate := range genState.TransferRates {
 		if _, ok := k.GetChain(ctx, transferRate.Chain); !ok {
 			panic(fmt.Errorf("chain %s not found", transferRate.Chain))
+		}
+
+		if _, found := k.getTransferRate(ctx, transferRate.Chain, transferRate.Amount.Denom, transferRate.Outgoing); found {
+			panic(fmt.Errorf("transfer rate for chain %s (outgoing: %t) and asset %s already registered", transferRate.Chain, transferRate.Outgoing, transferRate.Amount.Denom))
 		}
 
 		k.setTransferRate(ctx, transferRate)

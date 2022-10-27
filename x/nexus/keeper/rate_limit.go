@@ -14,14 +14,36 @@ import (
 	"github.com/axelarnetwork/utils/funcs"
 )
 
-func getRateLimitKey(chain exported.ChainName, asset string) key.Key {
-	return rateLimitPrefix.
-		Append(key.From(chain)).
-		Append(key.FromStr(asset))
-}
+// RateLimitTransfer applies a rate limit to transfers, and returns an error if the rate limit is exceeded
+func (k Keeper) RateLimitTransfer(ctx sdk.Context, chain exported.ChainName, asset sdk.Coin, outgoing bool) error {
+	rateLimit, found := k.getRateLimit(ctx, chain, asset.Denom)
+	if !found {
+		return nil
+	}
 
-func (k Keeper) getRateLimit(ctx sdk.Context, chain exported.ChainName, asset string) (rateLimit types.RateLimit, found bool) {
-	return rateLimit, k.getStore(ctx).GetNew(getRateLimitKey(chain, asset), &rateLimit)
+	epoch := computeEpoch(ctx, rateLimit.Window)
+
+	transferRate, found := k.getTransferRate(ctx, chain, asset.Denom, outgoing)
+	if !found || transferRate.Epoch != epoch {
+		transferRate = types.TransferRate{
+			Chain:    chain,
+			Amount:   sdk.NewCoin(asset.Denom, sdk.ZeroInt()),
+			Epoch:    epoch,
+			Outgoing: outgoing,
+		}
+	}
+
+	transferRate.Amount = transferRate.Amount.Add(asset)
+
+	if transferRate.Amount.Amount.GT(rateLimit.Limit.Amount) {
+		err := fmt.Errorf("transfer %s for chain %s (outgoing: %t) exceeded rate limit %s", transferRate.Amount, transferRate.Chain, transferRate.Outgoing, rateLimit.Limit)
+		k.Logger(ctx).Error(err.Error())
+		return err
+	}
+
+	k.setTransferRate(ctx, transferRate)
+
+	return nil
 }
 
 // SetRateLimit sets a rate limit for the given chain and asset
@@ -52,6 +74,16 @@ func (k Keeper) SetRateLimit(ctx sdk.Context, chainName exported.ChainName, limi
 	})
 
 	return nil
+}
+
+func getRateLimitKey(chain exported.ChainName, asset string) key.Key {
+	return rateLimitPrefix.
+		Append(key.From(chain)).
+		Append(key.FromStr(asset))
+}
+
+func (k Keeper) getRateLimit(ctx sdk.Context, chain exported.ChainName, asset string) (rateLimit types.RateLimit, found bool) {
+	return rateLimit, k.getStore(ctx).GetNew(getRateLimitKey(chain, asset), &rateLimit)
 }
 
 func (k Keeper) getRateLimits(ctx sdk.Context) (rateLimits []types.RateLimit) {
@@ -100,36 +132,4 @@ func (k Keeper) getTransferRates(ctx sdk.Context) (transferRates []types.Transfe
 // Get the epoch for the transfer
 func computeEpoch(ctx sdk.Context, window time.Duration) uint64 {
 	return uint64(ctx.BlockTime().UnixNano() / window.Nanoseconds())
-}
-
-// RateLimitTransfer applies a rate limit to transfers, and returns an error if the rate limit is exceeded
-func (k Keeper) RateLimitTransfer(ctx sdk.Context, chain exported.ChainName, asset sdk.Coin, outgoing bool) error {
-	rateLimit, found := k.getRateLimit(ctx, chain, asset.Denom)
-	if !found {
-		return nil
-	}
-
-	epoch := computeEpoch(ctx, rateLimit.Window)
-
-	transferRate, found := k.getTransferRate(ctx, chain, asset.Denom, outgoing)
-	if !found || transferRate.Epoch != epoch {
-		transferRate = types.TransferRate{
-			Chain:    chain,
-			Amount:   sdk.NewCoin(asset.Denom, sdk.ZeroInt()),
-			Epoch:    epoch,
-			Outgoing: outgoing,
-		}
-	}
-
-	transferRate.Amount = transferRate.Amount.Add(asset)
-
-	if transferRate.Amount.Amount.GT(rateLimit.Limit.Amount) {
-		err := fmt.Errorf("transfer %s for chain %s (outgoing: %v) exceeded rate limit %s", transferRate.Amount, transferRate.Chain, transferRate.Outgoing, rateLimit.Limit)
-		k.Logger(ctx).Error(err.Error())
-		return err
-	}
-
-	k.setTransferRate(ctx, transferRate)
-
-	return nil
 }
