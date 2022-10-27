@@ -27,7 +27,7 @@ Go to the Axelar testnet faucet and send some free AXL testnet tokens to both `{
 ## Register your broadcaster account
 
 ```bash
-$AXELARD_HOME/bin/axelard tx snapshot register-proxy {BROADCASTER_ADDR} --from validator --home $AXELARD_HOME
+$AXELARD_HOME/bin/axelard tx snapshot register-proxy {BROADCASTER_ADDR} --from validator --chain-id $AXELARD_CHAIN_ID --home $AXELARD_HOME --gas auto --gas-adjustment 1.4
 ```
 
 ## Optional: check your broadcaster registration

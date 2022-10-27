@@ -26,7 +26,9 @@ See below for details. Read this entire article before you begin supporting exte
 ## External chains you can support on Axelar
 
 - EVM-compatible chains
+  - [Aurora](./aurora)
   - [Avalanche](./avalanche)
+  - [Binance](./binance)
   - [Ethereum](./ethereum)
   - [Fantom](./fantom)
   - [Moonbeam](./moonbeam)
@@ -72,6 +74,16 @@ start-with-bridge = false
 
 [[axelar_bridge_evm]]
 name = "Polygon"
+rpc_addr = ""
+start-with-bridge = false
+
+[[axelar_bridge_evm]]
+name = "binance"
+rpc_addr = ""
+start-with-bridge = false
+
+[[axelar_bridge_evm]]
+name = "aurora"
 rpc_addr = ""
 start-with-bridge = false
 ```
@@ -123,7 +135,9 @@ You should see something like:
 2021-11-25T01:25:54Z INF Successfully connected to EVM bridge for chain Avalanche module=vald
 2021-11-25T01:25:54Z INF Successfully connected to EVM bridge for chain Fantom module=vald
 2021-11-25T01:25:54Z INF Successfully connected to EVM bridge for chain Moonbeam module=vald
-2021-11-25T01:25:54Z INF Successfully connected to EVM bridge for chain Polygon module=vald`}
+2021-11-25T01:25:54Z INF Successfully connected to EVM bridge for chain Polygon module=vald
+2021-11-25T01:25:54Z INF Successfully connected to EVM bridge for chain Binance module=vald
+2021-11-25T01:25:54Z INF Successfully connected to EVM bridge for chain Aurora module=vald`}
 </CodeBlock>
 
 ## Register as a maintainer of external chains
@@ -136,7 +150,7 @@ running into sequence mismatch errors due to concurrent signing.
 Example:
 
 ```bash
-axelard tx nexus register-chain-maintainer avalanche ethereum fantom moonbeam polygon --from broadcaster --chain-id $AXELARD_CHAIN_ID --home $AXELARD_HOME --gas auto --gas-adjustment 1.4
+axelard tx nexus register-chain-maintainer avalanche ethereum fantom moonbeam polygon binance aurora --from broadcaster --chain-id $AXELARD_CHAIN_ID --home $AXELARD_HOME --gas auto --gas-adjustment 1.4
 ```
 
 <Callout type="warning" emoji="⚠️">
@@ -153,7 +167,7 @@ This is accomplished via the `deregister-chain-maintainer` command.
 Example: Deregister the Avalanche chain:
 
 ```bash
-axelard tx nexus deregister-chain-maintainer avalanche --from broadcaster --chain-id $AXELARD_CHAIN_ID --home $AXELARD_HOME
+axelard tx nexus deregister-chain-maintainer avalanche --from broadcaster --chain-id $AXELARD_CHAIN_ID --home $AXELARD_HOME --gas auto --gas-adjustment 1.4
 ```
 
 <Callout type="warning" emoji="⚠️">
