@@ -55,7 +55,7 @@ func (k Keeper) RegisterAsset(ctx sdk.Context, chain exported.Chain, asset expor
 	k.setChainState(ctx, chainState)
 
 	if !limit.IsZero() {
-		if err := k.SetRateLimit(ctx, chain.Name, sdk.NewCoin(asset.Denom, sdk.Int(limit)), defaultRateLimitWindow); err != nil {
+		if err := k.SetRateLimit(ctx, chain.Name, sdk.NewCoin(asset.Denom, sdk.NewIntFromBigInt(limit.BigInt())), defaultRateLimitWindow); err != nil {
 			return err
 		}
 	}
