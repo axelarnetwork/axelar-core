@@ -82,7 +82,7 @@ func TestLinkAddress(t *testing.T) {
 		for _, chain := range []exported.Chain{evm.Ethereum, axelarnet.Axelarnet, terra} {
 			keeper.SetChain(ctx, chain)
 			keeper.ActivateChain(ctx, chain)
-			funcs.MustNoErr(keeper.RegisterAsset(ctx, chain, exported.NewAsset(axelarnet.NativeAsset, false), sdk.ZeroInt()))
+			funcs.MustNoErr(keeper.RegisterAsset(ctx, chain, exported.NewAsset(axelarnet.NativeAsset, false), sdk.ZeroUint()))
 		}
 
 		bankK.BlockedAddrFunc = func(addr sdk.AccAddress) bool { return false }

@@ -1196,7 +1196,7 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 				return c, ok
 			},
 			IsAssetRegisteredFunc: func(sdk.Context, nexus.Chain, string) bool { return true },
-			RegisterAssetFunc:     func(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset, limit sdk.Int) error { return nil },
+			RegisterAssetFunc:     func(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset, limit sdk.Uint) error { return nil },
 		}
 		multisigKeeper = &mock.MultisigKeeperMock{
 			GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.ChainName) (multisig.KeyID, bool) {

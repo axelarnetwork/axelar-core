@@ -181,7 +181,7 @@ func TestTransfer(t *testing.T) {
 		).Run(t, repeated)
 
 	whenAssetIsRegisteredOnSource := When("asset is registered on source chain", func() {
-		funcs.MustNoErr(k.RegisterAsset(ctx, source, nexus.Asset{Denom: asset, IsNativeAsset: true}, sdk.ZeroInt()))
+		funcs.MustNoErr(k.RegisterAsset(ctx, source, nexus.Asset{Denom: asset, IsNativeAsset: true}, sdk.ZeroUint()))
 	})
 
 	validateTransferAssetFails := Then("validate transfer asset fails",
@@ -460,7 +460,7 @@ func setup(cfg params.EncodingConfig) (nexusKeeper.Keeper, sdk.Context) {
 				isNative = true
 			}
 
-			if err := k.RegisterAsset(ctx, chain, nexus.NewAsset(asset, isNative), sdk.ZeroInt()); err != nil {
+			if err := k.RegisterAsset(ctx, chain, nexus.NewAsset(asset, isNative), sdk.ZeroUint()); err != nil {
 				panic(err)
 			}
 

@@ -53,8 +53,8 @@ func TestKeeper_TransfersForChain(t *testing.T) {
 			k.ActivateChain(ctx, evm.Ethereum)
 			k.SetChain(ctx, axelarnet.Axelarnet)
 			k.ActivateChain(ctx, axelarnet.Axelarnet)
-			funcs.MustNoErr(k.RegisterAsset(ctx, evm.Ethereum, exported.NewAsset(axelarnet.NativeAsset, false), sdk.ZeroInt()))
-			funcs.MustNoErr(k.RegisterAsset(ctx, axelarnet.Axelarnet, exported.NewAsset(axelarnet.NativeAsset, true), sdk.ZeroInt()))
+			funcs.MustNoErr(k.RegisterAsset(ctx, evm.Ethereum, exported.NewAsset(axelarnet.NativeAsset, false), sdk.ZeroUint()))
+			funcs.MustNoErr(k.RegisterAsset(ctx, axelarnet.Axelarnet, exported.NewAsset(axelarnet.NativeAsset, true), sdk.ZeroUint()))
 
 			nexusRouter := types.NewRouter().
 				AddAddressValidator("evm", func(sdk.Context, exported.CrossChainAddress) error {

@@ -112,7 +112,7 @@ func TestExportGenesisInitGenesis(t *testing.T) {
 		panic(err)
 	}
 
-	if err := keeper.RegisterAsset(ctx, evm.Ethereum, exported.NewAsset(axelarnet.NativeAsset, false), sdk.ZeroInt()); err != nil {
+	if err := keeper.RegisterAsset(ctx, evm.Ethereum, exported.NewAsset(axelarnet.NativeAsset, false), sdk.ZeroUint()); err != nil {
 		panic(err)
 	}
 	if err := keeper.RegisterFee(ctx, evm.Ethereum, randFee(evm.Ethereum.Name, axelarnet.NativeAsset)); err != nil {

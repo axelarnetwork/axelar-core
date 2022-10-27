@@ -144,7 +144,7 @@ var _ types.Nexus = &NexusMock{}
 // 			LinkAddressesFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress) error {
 // 				panic("mock out the LinkAddresses method")
 // 			},
-// 			RegisterAssetFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset, limit github_com_cosmos_cosmos_sdk_types.Int) error {
+// 			RegisterAssetFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset, limit github_com_cosmos_cosmos_sdk_types.Uint) error {
 // 				panic("mock out the RegisterAsset method")
 // 			},
 // 			SetChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain)  {
@@ -206,7 +206,7 @@ type NexusMock struct {
 	LinkAddressesFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress) error
 
 	// RegisterAssetFunc mocks the RegisterAsset method.
-	RegisterAssetFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset, limit github_com_cosmos_cosmos_sdk_types.Int) error
+	RegisterAssetFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset, limit github_com_cosmos_cosmos_sdk_types.Uint) error
 
 	// SetChainFunc mocks the SetChain method.
 	SetChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain)
@@ -348,7 +348,7 @@ type NexusMock struct {
 			// Asset is the asset argument value.
 			Asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset
 			// Limit is the limit argument value.
-			Limit github_com_cosmos_cosmos_sdk_types.Int
+			Limit github_com_cosmos_cosmos_sdk_types.Uint
 		}
 		// SetChain holds details about calls to the SetChain method.
 		SetChain []struct {
@@ -947,7 +947,7 @@ func (mock *NexusMock) LinkAddressesCalls() []struct {
 }
 
 // RegisterAsset calls RegisterAssetFunc.
-func (mock *NexusMock) RegisterAsset(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset, limit github_com_cosmos_cosmos_sdk_types.Int) error {
+func (mock *NexusMock) RegisterAsset(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset, limit github_com_cosmos_cosmos_sdk_types.Uint) error {
 	if mock.RegisterAssetFunc == nil {
 		panic("NexusMock.RegisterAssetFunc: method is nil but Nexus.RegisterAsset was just called")
 	}
@@ -955,7 +955,7 @@ func (mock *NexusMock) RegisterAsset(ctx github_com_cosmos_cosmos_sdk_types.Cont
 		Ctx   github_com_cosmos_cosmos_sdk_types.Context
 		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 		Asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset
-		Limit github_com_cosmos_cosmos_sdk_types.Int
+		Limit github_com_cosmos_cosmos_sdk_types.Uint
 	}{
 		Ctx:   ctx,
 		Chain: chain,
@@ -975,13 +975,13 @@ func (mock *NexusMock) RegisterAssetCalls() []struct {
 	Ctx   github_com_cosmos_cosmos_sdk_types.Context
 	Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 	Asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset
-	Limit github_com_cosmos_cosmos_sdk_types.Int
+	Limit github_com_cosmos_cosmos_sdk_types.Uint
 } {
 	var calls []struct {
 		Ctx   github_com_cosmos_cosmos_sdk_types.Context
 		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 		Asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset
-		Limit github_com_cosmos_cosmos_sdk_types.Int
+		Limit github_com_cosmos_cosmos_sdk_types.Uint
 	}
 	mock.lockRegisterAsset.RLock()
 	calls = mock.calls.RegisterAsset

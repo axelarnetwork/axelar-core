@@ -37,7 +37,7 @@ func (k Keeper) getChainState(ctx sdk.Context, chain exported.Chain) (chainState
 }
 
 // RegisterAsset indicates that the specified asset is supported by the given chain
-func (k Keeper) RegisterAsset(ctx sdk.Context, chain exported.Chain, asset exported.Asset, limit sdk.Int) error {
+func (k Keeper) RegisterAsset(ctx sdk.Context, chain exported.Chain, asset exported.Asset, limit sdk.Uint) error {
 	chainState, _ := k.getChainState(ctx, chain)
 	chainState.Chain = chain
 
@@ -54,12 +54,8 @@ func (k Keeper) RegisterAsset(ctx sdk.Context, chain exported.Chain, asset expor
 
 	k.setChainState(ctx, chainState)
 
-	if limit.IsNegative() {
-		return fmt.Errorf("transfer rate limit %s must not be negative", limit)
-	}
-
 	if !limit.IsZero() {
-		if err := k.SetRateLimit(ctx, chain.Name, sdk.NewCoin(asset.Denom, limit), defaultRateLimitWindow); err != nil {
+		if err := k.SetRateLimit(ctx, chain.Name, sdk.NewCoin(asset.Denom, sdk.Int(limit)), defaultRateLimitWindow); err != nil {
 			return err
 		}
 	}
