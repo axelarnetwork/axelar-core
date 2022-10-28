@@ -63,6 +63,8 @@
     - [RateLimit](#axelar.nexus.v1beta1.RateLimit)
     - [TransferRate](#axelar.nexus.v1beta1.TransferRate)
   
+    - [TransferFlow](#axelar.nexus.v1beta1.TransferFlow)
+  
 - [axelar/nexus/v1beta1/query.proto](#axelar/nexus/v1beta1/query.proto)
     - [AssetsRequest](#axelar.nexus.v1beta1.AssetsRequest)
     - [AssetsResponse](#axelar.nexus.v1beta1.AssetsResponse)
@@ -1281,13 +1283,26 @@ ChainState represents the state of a registered blockchain
 | `chain` | [string](#string) |  |  |
 | `amount` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 | `epoch` | [uint64](#uint64) |  |  |
-| `outgoing` | [bool](#bool) |  | indicates whether the tracking is for transfers outgoing |
+| `flow` | [TransferFlow](#axelar.nexus.v1beta1.TransferFlow) |  | indicates whether the tracking is for transfers outgoing |
 
 
 
 
 
  <!-- end messages -->
+
+
+<a name="axelar.nexus.v1beta1.TransferFlow"></a>
+
+### TransferFlow
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| TRANSFER_FLOW_UNSPECIFIED | 0 |  |
+| TRANSFER_FLOW_INCOMING | 1 |  |
+| TRANSFER_FLOW_OUTGOING | 2 |  |
+
 
  <!-- end enums -->
 

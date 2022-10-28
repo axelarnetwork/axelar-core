@@ -113,7 +113,7 @@ func (k Keeper) EnqueueTransfer(ctx sdk.Context, senderChain exported.Chain, rec
 		return 0, err
 	}
 
-	if err := k.RateLimitTransfer(ctx, senderChain.Name, asset, false); err != nil {
+	if err := k.RateLimitTransfer(ctx, senderChain.Name, asset, types.Incoming); err != nil {
 		return 0, err
 	}
 
@@ -152,7 +152,7 @@ func (k Keeper) EnqueueTransfer(ctx sdk.Context, senderChain exported.Chain, rec
 		asset = asset.Sub(fee)
 	}
 
-	if err := k.RateLimitTransfer(ctx, recipient.Chain.Name, asset, true); err != nil {
+	if err := k.RateLimitTransfer(ctx, recipient.Chain.Name, asset, types.Outgoing); err != nil {
 		return 0, err
 	}
 

@@ -15,7 +15,7 @@ import (
 )
 
 // RateLimitTransfer applies a rate limit to transfers, and returns an error if the rate limit is exceeded
-func (k Keeper) RateLimitTransfer(ctx sdk.Context, chain exported.ChainName, asset sdk.Coin, outgoing bool) error {
+func (k Keeper) RateLimitTransfer(ctx sdk.Context, chain exported.ChainName, asset sdk.Coin, flow types.TransferFlow) error {
 	rateLimit, found := k.getRateLimit(ctx, chain, asset.Denom)
 	if !found {
 		return nil
@@ -23,20 +23,20 @@ func (k Keeper) RateLimitTransfer(ctx sdk.Context, chain exported.ChainName, ass
 
 	epoch := uint64(ctx.BlockTime().UnixNano() / rateLimit.Window.Nanoseconds())
 
-	transferRate, found := k.getTransferRate(ctx, chain, asset.Denom, outgoing)
+	transferRate, found := k.getTransferRate(ctx, chain, asset.Denom, flow)
 	if !found || transferRate.Epoch != epoch {
 		transferRate = types.TransferRate{
-			Chain:    chain,
-			Amount:   sdk.NewCoin(asset.Denom, sdk.ZeroInt()),
-			Epoch:    epoch,
-			Outgoing: outgoing,
+			Chain:  chain,
+			Amount: sdk.NewCoin(asset.Denom, sdk.ZeroInt()),
+			Epoch:  epoch,
+			Flow:   flow,
 		}
 	}
 
 	transferRate.Amount = transferRate.Amount.Add(asset)
 
 	if transferRate.Amount.Amount.GT(rateLimit.Limit.Amount) {
-		err := fmt.Errorf("transfer %s for chain %s (outgoing: %t) exceeded rate limit %s", transferRate.Amount, transferRate.Chain, transferRate.Outgoing, rateLimit.Limit)
+		err := fmt.Errorf("transfer %s for chain %s (outgoing: %t) exceeded rate limit %s", transferRate.Amount, transferRate.Chain, transferRate.Flow, rateLimit.Limit)
 		k.Logger(ctx).Error(err.Error())
 		return err
 	}
@@ -100,19 +100,19 @@ func (k Keeper) getRateLimits(ctx sdk.Context) (rateLimits []types.RateLimit) {
 	return rateLimits
 }
 
-func getTransferRateKey(chain exported.ChainName, asset string, outgoing bool) key.Key {
+func getTransferRateKey(chain exported.ChainName, asset string, flow types.TransferFlow) key.Key {
 	return transferRatePrefix.
 		Append(key.From(chain)).
 		Append(key.FromStr(asset)).
-		Append(key.FromBool(outgoing))
+		Append(key.From(flow))
 }
 
-func (k Keeper) getTransferRate(ctx sdk.Context, chain exported.ChainName, asset string, outgoing bool) (transferRate types.TransferRate, found bool) {
-	return transferRate, k.getStore(ctx).GetNew(getTransferRateKey(chain, asset, outgoing), &transferRate)
+func (k Keeper) getTransferRate(ctx sdk.Context, chain exported.ChainName, asset string, flow types.TransferFlow) (transferRate types.TransferRate, found bool) {
+	return transferRate, k.getStore(ctx).GetNew(getTransferRateKey(chain, asset, flow), &transferRate)
 }
 
 func (k Keeper) setTransferRate(ctx sdk.Context, transferRate types.TransferRate) {
-	funcs.MustNoErr(k.getStore(ctx).SetNewValidated(getTransferRateKey(transferRate.Chain, transferRate.Amount.Denom, transferRate.Outgoing), &transferRate))
+	funcs.MustNoErr(k.getStore(ctx).SetNewValidated(getTransferRateKey(transferRate.Chain, transferRate.Amount.Denom, transferRate.Flow), &transferRate))
 }
 
 func (k Keeper) getTransferRates(ctx sdk.Context) (transferRates []types.TransferRate) {
