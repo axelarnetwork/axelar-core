@@ -31,7 +31,7 @@ type Keeper interface {
 
 // KeygenParticipator can check if a participant opted out of future keygens
 type KeygenParticipator interface {
-	IsOptOut(ctx sdk.Context, participant sdk.AccAddress) bool
+	HasOptedOut(ctx sdk.Context, participant sdk.AccAddress) bool
 }
 
 // Snapshotter provides snapshot keeper functionality
