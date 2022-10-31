@@ -53,22 +53,13 @@ message RateLimit {
       [ (gogoproto.stdduration) = true, (gogoproto.nullable) = false ];
 }
 
-enum TransferFlow {
-  option (gogoproto.goproto_enum_prefix) = false;
-
-  TRANSFER_FLOW_UNSPECIFIED = 0
-      [ (gogoproto.enumvalue_customname) = "UnspecifiedFlow" ];
-  TRANSFER_FLOW_INCOMING = 1 [ (gogoproto.enumvalue_customname) = "Incoming" ];
-  TRANSFER_FLOW_OUTGOING = 2
-      [ (gogoproto.enumvalue_customname) = "Outgoing" ];
-}
-
 message TransferRate {
   string chain = 1
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
   cosmos.base.v1beta1.Coin amount = 2 [ (gogoproto.nullable) = false ];
   uint64 epoch = 3;
-  TransferFlow flow = 4; // indicates whether the tracking is for transfers outgoing
-                         // to that chain or incoming from it
+  axelar.nexus.exported.v1beta1.TransferFlow flow =
+      4; // indicates whether the tracking is for transfers outgoing
+         // to that chain or incoming from it
 }

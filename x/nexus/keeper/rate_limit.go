@@ -16,7 +16,7 @@ import (
 )
 
 // RateLimitTransfer applies a rate limit to transfers, and returns an error if the rate limit is exceeded
-func (k Keeper) RateLimitTransfer(ctx sdk.Context, chain exported.ChainName, asset sdk.Coin, flow types.TransferFlow) error {
+func (k Keeper) RateLimitTransfer(ctx sdk.Context, chain exported.ChainName, asset sdk.Coin, flow exported.TransferFlow) error {
 	rateLimit, found := k.getRateLimit(ctx, chain, asset.Denom)
 	if !found {
 		return nil
@@ -60,8 +60,8 @@ func (k Keeper) SetRateLimit(ctx sdk.Context, chainName exported.ChainName, limi
 		return fmt.Errorf("%s is not a registered for chain %s", limit.Denom, chain.Name)
 	}
 
-	k.deleteTransferRate(ctx, chain.Name, limit.Denom, types.Incoming)
-	k.deleteTransferRate(ctx, chain.Name, limit.Denom, types.Outgoing)
+	k.deleteTransferRate(ctx, chain.Name, limit.Denom, exported.Incoming)
+	k.deleteTransferRate(ctx, chain.Name, limit.Denom, exported.Outgoing)
 
 	funcs.MustNoErr(k.getStore(ctx).SetNewValidated(getRateLimitKey(chain.Name, limit.Denom), &types.RateLimit{
 		Chain:  chain.Name,
@@ -104,14 +104,14 @@ func (k Keeper) getRateLimits(ctx sdk.Context) (rateLimits []types.RateLimit) {
 	return rateLimits
 }
 
-func getTransferRateKey(chain exported.ChainName, asset string, flow types.TransferFlow) key.Key {
+func getTransferRateKey(chain exported.ChainName, asset string, flow exported.TransferFlow) key.Key {
 	return transferRatePrefix.
 		Append(key.From(chain)).
 		Append(key.FromStr(asset)).
 		Append(key.FromUInt(uint(flow)))
 }
 
-func (k Keeper) getTransferRate(ctx sdk.Context, chain exported.ChainName, asset string, flow types.TransferFlow) (transferRate types.TransferRate, found bool) {
+func (k Keeper) getTransferRate(ctx sdk.Context, chain exported.ChainName, asset string, flow exported.TransferFlow) (transferRate types.TransferRate, found bool) {
 	return transferRate, k.getStore(ctx).GetNew(getTransferRateKey(chain, asset, flow), &transferRate)
 }
 
@@ -119,7 +119,7 @@ func (k Keeper) setTransferRate(ctx sdk.Context, transferRate types.TransferRate
 	funcs.MustNoErr(k.getStore(ctx).SetNewValidated(getTransferRateKey(transferRate.Chain, transferRate.Amount.Denom, transferRate.Flow), &transferRate))
 }
 
-func (k Keeper) deleteTransferRate(ctx sdk.Context, chain exported.ChainName, asset string, flow types.TransferFlow) {
+func (k Keeper) deleteTransferRate(ctx sdk.Context, chain exported.ChainName, asset string, flow exported.TransferFlow) {
 	k.getStore(ctx).DeleteNew(getTransferRateKey(exported.ChainName(chain), asset, flow))
 }
 

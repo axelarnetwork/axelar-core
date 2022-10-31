@@ -7,7 +7,6 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/utils"
-	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
@@ -173,8 +172,8 @@ func (m TransferRate) ValidateBasic() error {
 		return err
 	}
 
-	if m.Flow == TransferFlow(types.Unspecified) {
-		return fmt.Errorf("transfer flow unspecified")
+	if err := m.Flow.ValidateBasic(); err != nil {
+		return err
 	}
 
 	return nil
