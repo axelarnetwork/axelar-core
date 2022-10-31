@@ -20,11 +20,11 @@ func TestKeygenOptOut(t *testing.T) {
 	participant := rand.AccAddr()
 
 	ctx := testutils.NewContext()
-	assert.False(t, k.IsOptOut(ctx, participant))
+	assert.False(t, k.HasOptedOut(ctx, participant))
 	k.KeygenOptOut(ctx, participant)
-	assert.True(t, k.IsOptOut(ctx, participant))
+	assert.True(t, k.HasOptedOut(ctx, participant))
 	k.KeygenOptIn(ctx, participant)
-	assert.False(t, k.IsOptOut(ctx, participant))
+	assert.False(t, k.HasOptedOut(ctx, participant))
 	k.KeygenOptOut(ctx, participant)
-	assert.True(t, k.IsOptOut(ctx, participant))
+	assert.True(t, k.HasOptedOut(ctx, participant))
 }

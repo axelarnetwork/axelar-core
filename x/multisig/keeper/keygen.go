@@ -94,8 +94,8 @@ func (k Keeper) KeygenOptIn(ctx sdk.Context, participant sdk.AccAddress) {
 	k.getStore(ctx).DeleteNew(keygenOptOutPrefix.Append(key.FromBz(participant)))
 }
 
-// IsOptOut returns true if the given participant is opted out of future keygens
-func (k Keeper) IsOptOut(ctx sdk.Context, participant sdk.AccAddress) bool {
+// HasOptedOut returns true if the given participant is opted out of future keygens
+func (k Keeper) HasOptedOut(ctx sdk.Context, participant sdk.AccAddress) bool {
 	return k.getStore(ctx).HasNew(keygenOptOutPrefix.Append(key.FromBz(participant)))
 }
 

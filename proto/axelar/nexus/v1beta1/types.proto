@@ -59,6 +59,7 @@ message TransferRate {
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
   cosmos.base.v1beta1.Coin amount = 2 [ (gogoproto.nullable) = false ];
   uint64 epoch = 3;
-  bool outgoing = 4; // indicates whether the tracking is for transfers outgoing
-                     // to that chain or incoming from it
+  axelar.nexus.exported.v1beta1.TransferFlow flow =
+      4; // indicates whether the tracking is for transfers outgoing
+         // to that chain or incoming from it
 }

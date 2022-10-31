@@ -68,7 +68,7 @@ func TestSnapshotCreator_CreateSnapshot(t *testing.T) {
 				return consAddr.Equals(tombstonedAddr)
 			}}
 
-		keygen = &mock.KeygenParticipatorMock{IsOptOutFunc: func(sdk.Context, sdk.AccAddress) bool {
+		keygen = &mock.KeygenParticipatorMock{HasOptedOutFunc: func(sdk.Context, sdk.AccAddress) bool {
 			return false
 		}}
 
