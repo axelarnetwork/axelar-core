@@ -488,6 +488,12 @@ func (q Querier) TokenInfo(c context.Context, req *types.TokenInfoRequest) (*typ
 		if token.Is(types.NonExistent) {
 			return nil, fmt.Errorf("%s is not a registered symbol for chain %s", req.GetSymbol(), chain.Name)
 		}
+
+	case *types.TokenInfoRequest_Address:
+		token = ck.GetERC20TokenByAddress(ctx, types.Address(common.HexToAddress(req.GetAddress())))
+		if token.Is(types.NonExistent) {
+			return nil, fmt.Errorf("%s is not a token address for chain %s", req.GetAddress(), req.Chain)
+		}
 	}
 
 	var burnerCodeHashHex string
