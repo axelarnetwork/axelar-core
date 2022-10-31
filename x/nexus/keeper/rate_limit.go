@@ -5,6 +5,7 @@ import (
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/events"
@@ -36,9 +37,9 @@ func (k Keeper) RateLimitTransfer(ctx sdk.Context, chain exported.ChainName, ass
 	transferRate.Amount = transferRate.Amount.Add(asset)
 
 	if transferRate.Amount.Amount.GT(rateLimit.Limit.Amount) {
-		err := fmt.Errorf("transfer %s for chain %s (outgoing: %t) exceeded rate limit %s", transferRate.Amount, transferRate.Chain, transferRate.Flow, rateLimit.Limit)
-		k.Logger(ctx).Error(err.Error())
-		return err
+		err := fmt.Errorf("transfer %s for chain %s (%s) exceeded rate limit %s with transfer rate %s", asset, transferRate.Chain, transferRate.Flow, rateLimit.Limit, transferRate.Amount)
+		k.Logger(ctx).Error(err.Error(), types.AttributeKeyChain, transferRate.Chain, types.AttributeKeyAsset, asset, types.AttributeKeyLimit, rateLimit.Limit, types.AttributeKeyTransferRate, transferRate.Amount)
+		return sdkerrors.Wrap(types.ErrRateLimitExceeded, err.Error())
 	}
 
 	k.setTransferRate(ctx, transferRate)
@@ -58,6 +59,9 @@ func (k Keeper) SetRateLimit(ctx sdk.Context, chainName exported.ChainName, limi
 	if !k.IsAssetRegistered(ctx, chain, limit.Denom) {
 		return fmt.Errorf("%s is not a registered for chain %s", limit.Denom, chain.Name)
 	}
+
+	k.deleteTransferRate(ctx, chain.Name, limit.Denom, types.Incoming)
+	k.deleteTransferRate(ctx, chain.Name, limit.Denom, types.Outgoing)
 
 	funcs.MustNoErr(k.getStore(ctx).SetNewValidated(getRateLimitKey(chain.Name, limit.Denom), &types.RateLimit{
 		Chain:  chain.Name,
@@ -104,7 +108,7 @@ func getTransferRateKey(chain exported.ChainName, asset string, flow types.Trans
 	return transferRatePrefix.
 		Append(key.From(chain)).
 		Append(key.FromStr(asset)).
-		Append(key.From(flow))
+		Append(key.FromUInt(uint(flow)))
 }
 
 func (k Keeper) getTransferRate(ctx sdk.Context, chain exported.ChainName, asset string, flow types.TransferFlow) (transferRate types.TransferRate, found bool) {
@@ -113,6 +117,10 @@ func (k Keeper) getTransferRate(ctx sdk.Context, chain exported.ChainName, asset
 
 func (k Keeper) setTransferRate(ctx sdk.Context, transferRate types.TransferRate) {
 	funcs.MustNoErr(k.getStore(ctx).SetNewValidated(getTransferRateKey(transferRate.Chain, transferRate.Amount.Denom, transferRate.Flow), &transferRate))
+}
+
+func (k Keeper) deleteTransferRate(ctx sdk.Context, chain exported.ChainName, asset string, flow types.TransferFlow) {
+	k.getStore(ctx).DeleteNew(getTransferRateKey(exported.ChainName(chain), asset, flow))
 }
 
 func (k Keeper) getTransferRates(ctx sdk.Context) (transferRates []types.TransferRate) {
