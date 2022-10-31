@@ -1,6 +1,6 @@
 ## axelard query evm token-info
 
-Returns the info of token by either symbol or asset
+Returns the info of token by either symbol, asset, or address
 
 ```
 axelard query evm token-info [chain] [flags]
@@ -9,11 +9,12 @@ axelard query evm token-info [chain] [flags]
 ### Options
 
 ```
-      --asset string    lookup token by asset name
-      --height int      Use a specific height to query state at (this can error if the node is pruning state)
-  -h, --help            help for token-info
-      --node string     <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
-      --symbol string   lookup token by symbol
+      --address string   lookup token by address
+      --asset string     lookup token by asset name
+      --height int       Use a specific height to query state at (this can error if the node is pruning state)
+  -h, --help             help for token-info
+      --node string      <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
+      --symbol string    lookup token by symbol
 ```
 
 ### Options inherited from parent commands
