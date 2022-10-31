@@ -3,3 +3,16 @@ timeout_broadcast_tx_commit = "99h"
 
 [broadcast]
 min_sleep_before_retry = "1ns"
+
+[[axelar_bridge_evm]]
+
+l1_chain_name = "evm-2"
+name = "evm-1"
+rpc_addr = "https://localhost:7475"
+start-with-bridge = true
+
+[[axelar_bridge_evm]]
+
+name = "evm-2"
+rpc_addr = "https://localhost:7476"
+start-with-bridge = true
