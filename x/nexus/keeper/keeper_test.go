@@ -41,7 +41,7 @@ func addressValidator() types.Router {
 			switch chain {
 			case axelarnet.Axelarnet.Name:
 				prefix = "axelar"
-			case "terra-2":
+			case "terra", "terra-2":
 				prefix = "terra"
 			default:
 				prefix = strings.ToLower(chain.String())
