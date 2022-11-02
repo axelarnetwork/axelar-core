@@ -383,7 +383,8 @@ func (k chainKeeper) getConfirmedDeposits(ctx sdk.Context) []types.ERC20Deposit 
 func (k chainKeeper) GetConfirmedDepositsPaginated(ctx sdk.Context, pageRequest *query.PageRequest) ([]types.ERC20Deposit, *query.PageResponse, error) {
 	var deposits []types.ERC20Deposit
 
-	resp, err := query.Paginate(prefix.NewStore(k.getStore(ctx).KVStore, utils.KeyFromStr(confirmedDepositPrefix).AsKey()), pageRequest, func(key []byte, value []byte) error {
+	// TODO: refactor iteration over values using a prefix to avoid collisions
+	resp, err := query.Paginate(prefix.NewStore(k.getStore(ctx).KVStore, append(utils.KeyFromStr(confirmedDepositPrefix).AsKey(), []byte(key.DefaultDelimiter)...)), pageRequest, func(key []byte, value []byte) error {
 		var deposit types.ERC20Deposit
 		k.cdc.MustUnmarshalLengthPrefixed(value, &deposit)
 		deposits = append(deposits, deposit)
