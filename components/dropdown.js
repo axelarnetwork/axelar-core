@@ -38,30 +38,43 @@ export default ({
     let _options;
     switch (dataName) {
       case "evm_chains":
-        _options = data[dataName]?.[environment].filter(c => !c?.is_staging);
+        _options = data[dataName]?.[environment].filter((c) => !c?.is_staging);
         break;
       case "evm_assets":
-        _options = data[dataName]?.[environment]?.flatMap(o => {
-          const contracts = o?.contracts?.filter(c => !chain || equals_ignore_case(c?.chain, chain))
-            .filter((c, i) => chain || i < 1) || [];
-          return contracts.map(c => {
+        _options = data[dataName]?.[environment]
+          ?.flatMap((o) => {
+            const contracts =
+              o?.contracts
+                ?.filter((c) => !chain || equals_ignore_case(c?.chain, chain))
+                .filter((c, i) => chain || i < 1) || [];
+            return contracts.map((c) => {
+              return {
+                ...o,
+                ...c,
+              };
+            });
+          })
+          .map((o) => {
             return {
               ...o,
-              ...c,
+              name: o?.symbol,
             };
           });
-        }).map(o => {
-          return {
-            ...o,
-            name: o?.symbol,
-          };
-        });
         break;
       case "chains":
-        _options = _.concat(data.evm_chains?.[environment].filter(c => !c?.is_staging) || [], data.cosmos_chains?.[environment] || []);
+        _options = _.concat(
+          data.evm_chains?.[environment].filter((c) => !c?.is_staging) || [],
+          data.cosmos_chains?.[environment] || []
+        );
         break;
       case "assets":
-        _options = _.uniqBy(_.concat(data.evm_assets?.[environment] || [], data.ibc_assets?.[environment] || []), 'id');
+        _options = _.uniqBy(
+          _.concat(
+            data.evm_assets?.[environment] || [],
+            data.ibc_assets?.[environment] || []
+          ),
+          "id"
+        );
         break;
       default:
         _options = data[dataName];
@@ -74,18 +87,16 @@ export default ({
     setSelectedKey(defaultSelectedKey);
   }, [defaultSelectedKey]);
 
-  const selectedData = options?.find(o => o?.id === selectedKey) || selectedKey;
+  const selectedData =
+    options?.find((o) => o?.id === selectedKey) || selectedKey;
 
   return (
-    <Menu
-      as="div"
-      className={`relative inline-block text-left ${className}`}
-    >
+    <Menu as="div" className={`relative inline-block text-left ${className}`}>
       {({ open }) => (
         <>
           <div>
-            <Menu.Button className="bg-white dark:bg-dark hover:bg-gray-50 dark:hover:bg-gray-900 w-full rounded-md border border-gray-300 dark:border-gray-700 shadow-sm focus:outline-none inline-flex justify-center text-sm font-medium text-gray-900 dark:text-gray-100 py-2 px-4">
-              {selectedData ?
+            <Menu.Button className="inline-flex justify-center w-full px-4 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-md shadow-sm dark:bg-dark hover:bg-gray-50 dark:hover:bg-gray-900 dark:border-gray-700 focus:outline-none dark:text-gray-100">
+              {selectedData ? (
                 <div className="flex items-center space-x-2">
                   {selectedData.image && (
                     <Image
@@ -96,22 +107,24 @@ export default ({
                       className="rounded-full"
                     />
                   )}
-                  <span className="font-bold">
-                    {selectedData.name}
-                  </span>
+                  <span className="font-bold">{selectedData.name}</span>
                 </div>
-                :
-                selectedData === "" ?
-                  <span className="font-bold">
-                    {allOptionsName}
-                  </span>
-                  :
-                  placeholder || "Select Options"
-              }
-              {open ?
-                <BiChevronUp size={selectedData?.image ? 24 : 20} className="text-gray-800 dark:text-gray-200 ml-1.5 -mr-1.5" /> :
-                <BiChevronDown size={selectedData?.image ? 24 : 20} className="text-gray-800 dark:text-gray-200 ml-1.5 -mr-1.5" />
-              }
+              ) : selectedData === "" ? (
+                <span className="font-bold">{allOptionsName}</span>
+              ) : (
+                placeholder || "Select Options"
+              )}
+              {open ? (
+                <BiChevronUp
+                  size={selectedData?.image ? 24 : 20}
+                  className="text-gray-800 dark:text-gray-200 ml-1.5 -mr-1.5"
+                />
+              ) : (
+                <BiChevronDown
+                  size={selectedData?.image ? 24 : 20}
+                  className="text-gray-800 dark:text-gray-200 ml-1.5 -mr-1.5"
+                />
+              )}
             </Menu.Button>
           </div>
           <Transition
@@ -123,7 +136,10 @@ export default ({
             leaveFrom="transform opacity-100 scale-100"
             leaveTo="transform opacity-0 scale-95"
           >
-            <Menu.Items className={`bg-white w-48 min-w-max dark:bg-dark absolute z-10 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none origin-top-${align} ${align}-0 mt-2`}>
+            <Menu.Items
+              style={{ maxHeight: "50vh" }}
+              className={`bg-white w-48 overflow-y-auto min-w-max dark:bg-dark absolute z-10 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none origin-top-${align} ${align}-0 mt-2`}
+            >
               <div className="py-1">
                 {hasAllOptions && (
                   <Menu.Item key={-1}>
@@ -135,11 +151,19 @@ export default ({
                             onSelect("");
                           }
                         }}
-                        className={`${active ? "bg-gray-100 dark:bg-gray-900 text-dark dark:text-white" : "text-gray-800 dark:text-gray-200"} ${selectedKey === "" ? "font-bold" : active ? "font-semibold" : "font-medium"} cursor-pointer flex items-center text-sm space-x-2 py-2 px-4`}
+                        className={`${
+                          active
+                            ? "bg-gray-100 dark:bg-gray-900 text-dark dark:text-white"
+                            : "text-gray-800 dark:text-gray-200"
+                        } ${
+                          selectedKey === ""
+                            ? "font-bold"
+                            : active
+                            ? "font-semibold"
+                            : "font-medium"
+                        } cursor-pointer flex items-center text-sm space-x-2 py-2 px-4`}
                       >
-                        <span>
-                          {allOptionsName}
-                        </span>
+                        <span>{allOptionsName}</span>
                       </div>
                     )}
                   </Menu.Item>
@@ -151,10 +175,20 @@ export default ({
                         onClick={() => {
                           setSelectedKey(o.id);
                           if (onSelect) {
-                            onSelect(options?.find(_o => _o?.id === o.id));
+                            onSelect(options?.find((_o) => _o?.id === o.id));
                           }
                         }}
-                        className={`${active ? "bg-gray-100 dark:bg-gray-900 text-dark dark:text-white" : "text-gray-800 dark:text-gray-200"} ${selectedKey === o.id ? "font-bold" : active ? "font-semibold" : "font-medium"} cursor-pointer flex items-center text-sm space-x-2 py-2 px-4`}
+                        className={`${
+                          active
+                            ? "bg-gray-100 dark:bg-gray-900 text-dark dark:text-white"
+                            : "text-gray-800 dark:text-gray-200"
+                        } ${
+                          selectedKey === o.id
+                            ? "font-bold"
+                            : active
+                            ? "font-semibold"
+                            : "font-medium"
+                        } cursor-pointer flex items-center text-sm space-x-2 py-2 px-4`}
                       >
                         {o.image && (
                           <Image
@@ -165,9 +199,7 @@ export default ({
                             className="rounded-full"
                           />
                         )}
-                        <span>
-                          {o.name}
-                        </span>
+                        <span>{o.name}</span>
                       </div>
                     )}
                   </Menu.Item>
