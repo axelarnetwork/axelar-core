@@ -41,6 +41,8 @@ func addressValidator() types.Router {
 			switch chain {
 			case axelarnet.Axelarnet.Name:
 				prefix = "axelar"
+			case "terra", "terra-2":
+				prefix = "terra"
 			default:
 				prefix = strings.ToLower(chain.String())
 			}
@@ -308,7 +310,7 @@ func genCosmosAddr(chain string) string {
 	switch strings.ToLower(chain) {
 	case "axelarnet":
 		prefix = "axelar"
-	case "terra":
+	case "terra", "terra-2":
 		prefix = "terra"
 	default:
 		prefix = ""
