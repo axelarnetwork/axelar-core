@@ -40,7 +40,12 @@ func (k Keeper) RateLimitTransfer(ctx sdk.Context, chain exported.ChainName, ass
 
 	if transferEpoch.Amount.Amount.GT(rateLimit.Limit.Amount) {
 		err := fmt.Errorf("transfer %s for chain %s (%s) exceeded rate limit %s with transfer rate %s", asset, transferEpoch.Chain, transferEpoch.Direction, rateLimit.Limit, transferEpoch.Amount)
-		k.Logger(ctx).Error(err.Error(), types.AttributeKeyChain, transferEpoch.Chain, types.AttributeKeyAsset, asset, types.AttributeKeyLimit, rateLimit.Limit, types.AttributeKeyTransferEpoch, transferEpoch.Amount)
+		k.Logger(ctx).Error(err.Error(),
+			types.AttributeKeyChain, transferEpoch.Chain,
+			types.AttributeKeyAsset, asset,
+			types.AttributeKeyLimit, rateLimit.Limit,
+			types.AttributeKeyTransferEpoch, transferEpoch.Amount,
+		)
 		return sdkerrors.Wrap(types.ErrRateLimitExceeded, err.Error())
 	}
 
@@ -59,17 +64,19 @@ func (k Keeper) SetRateLimit(ctx sdk.Context, chainName exported.ChainName, limi
 	// NOTE: We could potentially skip the Asset registered check.
 	// There can be benefit of rate limiting denoms that are not registered as cross-chain assets, due to IBC
 	if !k.IsAssetRegistered(ctx, chain, limit.Denom) {
-		return fmt.Errorf("%s is not a registered for chain %s", limit.Denom, chain.Name)
+		return fmt.Errorf("%s is not a registered asset for chain %s", limit.Denom, chain.Name)
 	}
 
 	k.deleteTransferEpoch(ctx, chain.Name, limit.Denom, exported.Incoming)
 	k.deleteTransferEpoch(ctx, chain.Name, limit.Denom, exported.Outgoing)
 
-	funcs.MustNoErr(k.getStore(ctx).SetNewValidated(getRateLimitKey(chain.Name, limit.Denom), &types.RateLimit{
+	if err := k.getStore(ctx).SetNewValidated(getRateLimitKey(chain.Name, limit.Denom), &types.RateLimit{
 		Chain:  chain.Name,
 		Limit:  limit,
 		Window: window,
-	}))
+	}); err != nil {
+		return err
+	}
 
 	k.Logger(ctx).Info(fmt.Sprintf("transfer rate limit %s set for chain %s with window %s", chain.Name, limit, window))
 
@@ -122,7 +129,7 @@ func (k Keeper) setTransferEpoch(ctx sdk.Context, transferEpoch types.TransferEp
 }
 
 func (k Keeper) deleteTransferEpoch(ctx sdk.Context, chain exported.ChainName, asset string, direction exported.TransferDirection) {
-	k.getStore(ctx).DeleteNew(getTransferEpochKey(exported.ChainName(chain), asset, direction))
+	k.getStore(ctx).DeleteNew(getTransferEpochKey(chain, asset, direction))
 }
 
 func (k Keeper) getTransferEpochs(ctx sdk.Context) (transferEpochs []types.TransferEpoch) {
