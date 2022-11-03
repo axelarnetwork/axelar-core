@@ -53,7 +53,7 @@ message RateLimit {
       [ (gogoproto.stdduration) = true, (gogoproto.nullable) = false ];
 }
 
-message TransferRate {
+message TransferEpoch {
   string chain = 1
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];

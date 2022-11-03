@@ -25,7 +25,7 @@ var (
 	assetFeePrefix             = utils.KeyFromStr("asset_fee")
 	chainMaintainerStatePrefix = key.FromUInt[uint64](1)
 	rateLimitPrefix            = key.FromUInt[uint64](2)
-	transferRatePrefix         = key.FromUInt[uint64](3)
+	transferEpochPrefix        = key.FromUInt[uint64](3)
 
 	// temporary
 	latestDepositAddressPrefix = utils.KeyFromStr("latest_deposit_address")

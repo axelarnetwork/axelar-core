@@ -163,7 +163,7 @@ func (m RateLimit) ValidateBasic() error {
 }
 
 // ValidateBasic returns an error if the type is invalid
-func (m TransferRate) ValidateBasic() error {
+func (m TransferEpoch) ValidateBasic() error {
 	if err := m.Chain.Validate(); err != nil {
 		return err
 	}
