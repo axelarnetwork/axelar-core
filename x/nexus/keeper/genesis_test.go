@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"testing"
-	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
@@ -23,6 +22,7 @@ import (
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
+	testutils "github.com/axelarnetwork/axelar-core/x/nexus/types/testutils"
 	"github.com/axelarnetwork/utils/funcs"
 )
 
@@ -55,21 +55,6 @@ func getRandomEthereumAddress() exported.CrossChainAddress {
 		Chain:   evm.Ethereum,
 		Address: common.BytesToAddress(rand.Bytes(common.AddressLength)).Hex(),
 	}
-}
-
-func randRateLimit(chain exported.ChainName, asset string) types.RateLimit {
-	return types.RateLimit{Chain: chain, Limit: sdk.NewCoin(asset, randInt(100000000, 200000000)), Window: time.Hour}
-}
-
-func randFee(chain exported.ChainName, asset string) exported.FeeInfo {
-	rate := sdk.NewDecWithPrec(sdk.Int(randInt(0, 100)).Int64(), 3)
-	min := randInt(0, 10)
-	max := randInt(min.Int64()+1, 100)
-	return exported.NewFeeInfo(chain, asset, rate, min, max)
-}
-
-func randInt(min int64, max int64) sdk.Int {
-	return sdk.NewInt(rand.I64Between(int64(min), int64(max)))
 }
 
 func assertChainStatesEqual(t *testing.T, expected, actual *types.GenesisState) {
@@ -108,18 +93,18 @@ func TestExportGenesisInitGenesis(t *testing.T) {
 
 	expected := types.DefaultGenesisState()
 
-	if err := keeper.RegisterFee(ctx, axelarnet.Axelarnet, randFee(axelarnet.Axelarnet.Name, axelarnet.NativeAsset)); err != nil {
+	if err := keeper.RegisterFee(ctx, axelarnet.Axelarnet, testutils.RandFee(axelarnet.Axelarnet.Name, axelarnet.NativeAsset)); err != nil {
 		panic(err)
 	}
 
 	if err := keeper.RegisterAsset(ctx, evm.Ethereum, exported.NewAsset(axelarnet.NativeAsset, false)); err != nil {
 		panic(err)
 	}
-	if err := keeper.RegisterFee(ctx, evm.Ethereum, randFee(evm.Ethereum.Name, axelarnet.NativeAsset)); err != nil {
+	if err := keeper.RegisterFee(ctx, evm.Ethereum, testutils.RandFee(evm.Ethereum.Name, axelarnet.NativeAsset)); err != nil {
 		panic(err)
 	}
 
-	rateLimit := randRateLimit(axelarnet.Axelarnet.Name, axelarnet.NativeAsset)
+	rateLimit := testutils.RandRateLimit(axelarnet.Axelarnet.Name, axelarnet.NativeAsset)
 	funcs.MustNoErr(keeper.SetRateLimit(ctx, rateLimit.Chain, rateLimit.Limit, rateLimit.Window))
 	expected.RateLimits = keeper.getRateLimits(ctx)
 
@@ -148,7 +133,7 @@ func TestExportGenesisInitGenesis(t *testing.T) {
 		_, minFee, maxFee, err := keeper.getCrossChainFees(ctx, depositAddress.Chain, recipientAddress.Chain, axelarnet.NativeAsset)
 		assert.Nil(t, err)
 
-		asset := sdk.NewCoin(axelarnet.NativeAsset, randInt(minFee.Int64()/2, maxFee.Int64()*2))
+		asset := sdk.NewCoin(axelarnet.NativeAsset, testutils.RandInt(minFee.Int64()/2, maxFee.Int64()*2))
 		fees, err := keeper.ComputeTransferFee(ctx, depositAddress.Chain, recipientAddress.Chain, asset)
 		assert.Nil(t, err)
 
