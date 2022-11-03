@@ -43,7 +43,7 @@ func NewHandler(k types.Nexus, snapshotter types.Snapshotter, slashing types.Sla
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		res, err := h(ctx, msg)
 		if err != nil {
-			k.Logger(ctx).Error(err.Error())
+			k.Logger(ctx).Debug(err.Error())
 			return nil, sdkerrors.Wrap(types.ErrNexus, err.Error())
 		}
 
