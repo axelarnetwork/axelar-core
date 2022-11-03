@@ -84,8 +84,8 @@ func (k Keeper) InitGenesis(ctx sdk.Context, genState *types.GenesisState) {
 			panic(fmt.Errorf("chain %s not found", transferRate.Chain))
 		}
 
-		if _, found := k.getTransferRate(ctx, transferRate.Chain, transferRate.Amount.Denom, transferRate.Flow); found {
-			panic(fmt.Errorf("transfer rate for chain %s (%s) and asset %s already registered", transferRate.Chain, transferRate.Flow, transferRate.Amount.Denom))
+		if _, found := k.getTransferRate(ctx, transferRate.Chain, transferRate.Amount.Denom, transferRate.Direction); found {
+			panic(fmt.Errorf("transfer rate for chain %s (%s) and asset %s already registered", transferRate.Chain, transferRate.Direction, transferRate.Amount.Denom))
 		}
 
 		k.setTransferRate(ctx, transferRate)

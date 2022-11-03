@@ -70,7 +70,7 @@ var _ nexustypes.Nexus = &NexusMock{}
 // 			LoggerFunc: func(ctx cosmossdktypes.Context) log.Logger {
 // 				panic("mock out the Logger method")
 // 			},
-// 			RateLimitTransferFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, asset cosmossdktypes.Coin, flow github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferFlow) error {
+// 			RateLimitTransferFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, asset cosmossdktypes.Coin, direction github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferDirection) error {
 // 				panic("mock out the RateLimitTransfer method")
 // 			},
 // 			RegisterFeeFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, feeInfo github_com_axelarnetwork_axelar_core_x_nexus_exported.FeeInfo) error {
@@ -138,7 +138,7 @@ type NexusMock struct {
 	LoggerFunc func(ctx cosmossdktypes.Context) log.Logger
 
 	// RateLimitTransferFunc mocks the RateLimitTransfer method.
-	RateLimitTransferFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, asset cosmossdktypes.Coin, flow github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferFlow) error
+	RateLimitTransferFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, asset cosmossdktypes.Coin, direction github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferDirection) error
 
 	// RegisterFeeFunc mocks the RegisterFee method.
 	RegisterFeeFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, feeInfo github_com_axelarnetwork_axelar_core_x_nexus_exported.FeeInfo) error
@@ -267,8 +267,8 @@ type NexusMock struct {
 			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
 			// Asset is the asset argument value.
 			Asset cosmossdktypes.Coin
-			// Flow is the flow argument value.
-			Flow github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferFlow
+			// Direction is the direction argument value.
+			Direction github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferDirection
 		}
 		// RegisterFee holds details about calls to the RegisterFee method.
 		RegisterFee []struct {
@@ -855,41 +855,41 @@ func (mock *NexusMock) LoggerCalls() []struct {
 }
 
 // RateLimitTransfer calls RateLimitTransferFunc.
-func (mock *NexusMock) RateLimitTransfer(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, asset cosmossdktypes.Coin, flow github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferFlow) error {
+func (mock *NexusMock) RateLimitTransfer(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, asset cosmossdktypes.Coin, direction github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferDirection) error {
 	if mock.RateLimitTransferFunc == nil {
 		panic("NexusMock.RateLimitTransferFunc: method is nil but Nexus.RateLimitTransfer was just called")
 	}
 	callInfo := struct {
-		Ctx   cosmossdktypes.Context
-		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
-		Asset cosmossdktypes.Coin
-		Flow  github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferFlow
+		Ctx       cosmossdktypes.Context
+		Chain     github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+		Asset     cosmossdktypes.Coin
+		Direction github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferDirection
 	}{
-		Ctx:   ctx,
-		Chain: chain,
-		Asset: asset,
-		Flow:  flow,
+		Ctx:       ctx,
+		Chain:     chain,
+		Asset:     asset,
+		Direction: direction,
 	}
 	mock.lockRateLimitTransfer.Lock()
 	mock.calls.RateLimitTransfer = append(mock.calls.RateLimitTransfer, callInfo)
 	mock.lockRateLimitTransfer.Unlock()
-	return mock.RateLimitTransferFunc(ctx, chain, asset, flow)
+	return mock.RateLimitTransferFunc(ctx, chain, asset, direction)
 }
 
 // RateLimitTransferCalls gets all the calls that were made to RateLimitTransfer.
 // Check the length with:
 //     len(mockedNexus.RateLimitTransferCalls())
 func (mock *NexusMock) RateLimitTransferCalls() []struct {
-	Ctx   cosmossdktypes.Context
-	Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
-	Asset cosmossdktypes.Coin
-	Flow  github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferFlow
+	Ctx       cosmossdktypes.Context
+	Chain     github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+	Asset     cosmossdktypes.Coin
+	Direction github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferDirection
 } {
 	var calls []struct {
-		Ctx   cosmossdktypes.Context
-		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
-		Asset cosmossdktypes.Coin
-		Flow  github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferFlow
+		Ctx       cosmossdktypes.Context
+		Chain     github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+		Asset     cosmossdktypes.Coin
+		Direction github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferDirection
 	}
 	mock.lockRateLimitTransfer.RLock()
 	calls = mock.calls.RateLimitTransfer

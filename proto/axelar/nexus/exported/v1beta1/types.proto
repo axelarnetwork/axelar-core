@@ -77,11 +77,13 @@ message Asset {
   bool is_native_asset = 3;
 }
 
-enum TransferFlow {
+enum TransferDirection {
   option (gogoproto.goproto_enum_prefix) = false;
 
-  TRANSFER_FLOW_UNSPECIFIED = 0
+  TRANSFER_DIRECTION_UNSPECIFIED = 0
       [ (gogoproto.enumvalue_customname) = "Unspecified" ];
-  TRANSFER_FLOW_INCOMING = 1 [ (gogoproto.enumvalue_customname) = "Incoming" ];
-  TRANSFER_FLOW_OUTGOING = 2 [ (gogoproto.enumvalue_customname) = "Outgoing" ];
+  TRANSFER_DIRECTION_INCOMING = 1
+      [ (gogoproto.enumvalue_customname) = "Incoming" ];
+  TRANSFER_DIRECTION_OUTGOING = 2
+      [ (gogoproto.enumvalue_customname) = "Outgoing" ];
 }

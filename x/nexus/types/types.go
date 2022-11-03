@@ -172,7 +172,7 @@ func (m TransferRate) ValidateBasic() error {
 		return err
 	}
 
-	if err := m.Flow.ValidateBasic(); err != nil {
+	if err := m.Direction.ValidateBasic(); err != nil {
 		return err
 	}
 
