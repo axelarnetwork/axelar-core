@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/query"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/stretchr/testify/assert"
@@ -32,9 +33,10 @@ import (
 var (
 	linkedAddr  = 50
 	terra       = nexus.Chain{Name: "terra", Module: axelarnettypes.ModuleName, SupportsForeignAssets: true}
+	terra2      = nexus.Chain{Name: "terra-2", Module: axelarnettypes.ModuleName, SupportsForeignAssets: true}
 	terraAssets = []string{"uluna", "uusd"}
 	avalanche   = nexus.Chain{Name: "avalanche", Module: evmtypes.ModuleName, SupportsForeignAssets: true}
-	chains      = []nexus.Chain{evm.Ethereum, axelarnet.Axelarnet, terra, avalanche}
+	chains      = []nexus.Chain{evm.Ethereum, axelarnet.Axelarnet, terra, terra2, avalanche}
 	assets      = append([]string{axelarnet.NativeAsset, "external-erc-20"}, terraAssets...)
 	minAmount   = maxAmount / 2
 )
@@ -388,6 +390,35 @@ func TestTransfer(t *testing.T) {
 
 				actualTransfers := k.GetTransfersForChain(ctx, recipient.Chain, nexus.Pending)
 				assert.Len(t, actualTransfers, 1)
+			},
+		).Run(t, repeated)
+
+	givenKeeper.
+		When("enqueue transfer",
+			func() {
+				sender, _ = makeRandAddresses(k, ctx)
+				recipient := nexus.CrossChainAddress{Chain: terra2, Address: genCosmosAddr(terra2.Name.String())}
+				err := k.LinkAddresses(ctx, sender, recipient)
+				assert.NoError(t, err)
+
+				asset = randAsset()
+				firstAmount := makeAmountAboveMin(asset)
+				_, err = k.EnqueueForTransfer(ctx, sender, firstAmount)
+				assert.NoError(t, err)
+
+				actualRecipient, ok := k.GetRecipient(ctx, sender)
+				assert.True(t, ok)
+				assert.Equal(t, recipient, actualRecipient)
+
+				actualTransfers, _, err := k.GetTransfersForChainPaginated(ctx, recipient.Chain, nexus.Pending, &query.PageRequest{Limit: 100})
+				assert.NoError(t, err)
+				assert.Len(t, actualTransfers, 1)
+			}).
+		Then("should not return transfers for another chain",
+			func(t *testing.T) {
+				actualTransfers, _, err := k.GetTransfersForChainPaginated(ctx, terra, nexus.Pending, &query.PageRequest{Limit: 100})
+				assert.NoError(t, err)
+				assert.Len(t, actualTransfers, 0)
 			},
 		).Run(t, repeated)
 

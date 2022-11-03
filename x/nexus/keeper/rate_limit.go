@@ -16,33 +16,40 @@ import (
 )
 
 // RateLimitTransfer applies a rate limit to transfers, and returns an error if the rate limit is exceeded
-func (k Keeper) RateLimitTransfer(ctx sdk.Context, chain exported.ChainName, asset sdk.Coin, flow exported.TransferFlow) error {
+func (k Keeper) RateLimitTransfer(ctx sdk.Context, chain exported.ChainName, asset sdk.Coin, direction exported.TransferDirection) error {
 	rateLimit, found := k.getRateLimit(ctx, chain, asset.Denom)
+	// If rate limit is not set, it is treated as unbounded
 	if !found {
 		return nil
 	}
 
 	epoch := uint64(ctx.BlockTime().UnixNano() / rateLimit.Window.Nanoseconds())
 
-	transferRate, found := k.getTransferRate(ctx, chain, asset.Denom, flow)
-	if !found || transferRate.Epoch != epoch {
-		transferRate = types.TransferRate{
-			Chain:  chain,
-			Amount: sdk.NewCoin(asset.Denom, sdk.ZeroInt()),
-			Epoch:  epoch,
-			Flow:   flow,
+	transferEpoch, found := k.getTransferEpoch(ctx, chain, asset.Denom, direction)
+	// use a new transfer epoch if there was none or if the epoch is outdated
+	if !found || transferEpoch.Epoch != epoch {
+		transferEpoch = types.TransferEpoch{
+			Chain:     chain,
+			Amount:    sdk.NewCoin(asset.Denom, sdk.ZeroInt()),
+			Epoch:     epoch,
+			Direction: direction,
 		}
 	}
 
-	transferRate.Amount = transferRate.Amount.Add(asset)
+	transferEpoch.Amount = transferEpoch.Amount.Add(asset)
 
-	if transferRate.Amount.Amount.GT(rateLimit.Limit.Amount) {
-		err := fmt.Errorf("transfer %s for chain %s (%s) exceeded rate limit %s with transfer rate %s", asset, transferRate.Chain, transferRate.Flow, rateLimit.Limit, transferRate.Amount)
-		k.Logger(ctx).Error(err.Error(), types.AttributeKeyChain, transferRate.Chain, types.AttributeKeyAsset, asset, types.AttributeKeyLimit, rateLimit.Limit, types.AttributeKeyTransferRate, transferRate.Amount)
+	if transferEpoch.Amount.Amount.GT(rateLimit.Limit.Amount) {
+		err := fmt.Errorf("transfer %s for chain %s (%s) exceeded rate limit %s with transfer rate %s", asset, transferEpoch.Chain, transferEpoch.Direction, rateLimit.Limit, transferEpoch.Amount)
+		k.Logger(ctx).Error(err.Error(),
+			types.AttributeKeyChain, transferEpoch.Chain,
+			types.AttributeKeyAsset, asset,
+			types.AttributeKeyLimit, rateLimit.Limit,
+			types.AttributeKeyTransferEpoch, transferEpoch.Amount,
+		)
 		return sdkerrors.Wrap(types.ErrRateLimitExceeded, err.Error())
 	}
 
-	k.setTransferRate(ctx, transferRate)
+	k.setTransferEpoch(ctx, transferEpoch)
 
 	return nil
 }
@@ -57,17 +64,19 @@ func (k Keeper) SetRateLimit(ctx sdk.Context, chainName exported.ChainName, limi
 	// NOTE: We could potentially skip the Asset registered check.
 	// There can be benefit of rate limiting denoms that are not registered as cross-chain assets, due to IBC
 	if !k.IsAssetRegistered(ctx, chain, limit.Denom) {
-		return fmt.Errorf("%s is not a registered for chain %s", limit.Denom, chain.Name)
+		return fmt.Errorf("%s is not a registered asset for chain %s", limit.Denom, chain.Name)
 	}
 
-	k.deleteTransferRate(ctx, chain.Name, limit.Denom, exported.Incoming)
-	k.deleteTransferRate(ctx, chain.Name, limit.Denom, exported.Outgoing)
+	k.deleteTransferEpoch(ctx, chain.Name, limit.Denom, exported.Incoming)
+	k.deleteTransferEpoch(ctx, chain.Name, limit.Denom, exported.Outgoing)
 
-	funcs.MustNoErr(k.getStore(ctx).SetNewValidated(getRateLimitKey(chain.Name, limit.Denom), &types.RateLimit{
+	if err := k.getStore(ctx).SetNewValidated(getRateLimitKey(chain.Name, limit.Denom), &types.RateLimit{
 		Chain:  chain.Name,
 		Limit:  limit,
 		Window: window,
-	}))
+	}); err != nil {
+		return err
+	}
 
 	k.Logger(ctx).Info(fmt.Sprintf("transfer rate limit %s set for chain %s with window %s", chain.Name, limit, window))
 
@@ -104,35 +113,35 @@ func (k Keeper) getRateLimits(ctx sdk.Context) (rateLimits []types.RateLimit) {
 	return rateLimits
 }
 
-func getTransferRateKey(chain exported.ChainName, asset string, flow exported.TransferFlow) key.Key {
-	return transferRatePrefix.
+func getTransferEpochKey(chain exported.ChainName, asset string, direction exported.TransferDirection) key.Key {
+	return transferEpochPrefix.
 		Append(key.From(chain)).
 		Append(key.FromStr(asset)).
-		Append(key.FromUInt(uint(flow)))
+		Append(key.FromUInt(uint(direction)))
 }
 
-func (k Keeper) getTransferRate(ctx sdk.Context, chain exported.ChainName, asset string, flow exported.TransferFlow) (transferRate types.TransferRate, found bool) {
-	return transferRate, k.getStore(ctx).GetNew(getTransferRateKey(chain, asset, flow), &transferRate)
+func (k Keeper) getTransferEpoch(ctx sdk.Context, chain exported.ChainName, asset string, direction exported.TransferDirection) (transferEpoch types.TransferEpoch, found bool) {
+	return transferEpoch, k.getStore(ctx).GetNew(getTransferEpochKey(chain, asset, direction), &transferEpoch)
 }
 
-func (k Keeper) setTransferRate(ctx sdk.Context, transferRate types.TransferRate) {
-	funcs.MustNoErr(k.getStore(ctx).SetNewValidated(getTransferRateKey(transferRate.Chain, transferRate.Amount.Denom, transferRate.Flow), &transferRate))
+func (k Keeper) setTransferEpoch(ctx sdk.Context, transferEpoch types.TransferEpoch) {
+	funcs.MustNoErr(k.getStore(ctx).SetNewValidated(getTransferEpochKey(transferEpoch.Chain, transferEpoch.Amount.Denom, transferEpoch.Direction), &transferEpoch))
 }
 
-func (k Keeper) deleteTransferRate(ctx sdk.Context, chain exported.ChainName, asset string, flow exported.TransferFlow) {
-	k.getStore(ctx).DeleteNew(getTransferRateKey(exported.ChainName(chain), asset, flow))
+func (k Keeper) deleteTransferEpoch(ctx sdk.Context, chain exported.ChainName, asset string, direction exported.TransferDirection) {
+	k.getStore(ctx).DeleteNew(getTransferEpochKey(chain, asset, direction))
 }
 
-func (k Keeper) getTransferRates(ctx sdk.Context) (transferRates []types.TransferRate) {
-	iter := k.getStore(ctx).IteratorNew(transferRatePrefix)
+func (k Keeper) getTransferEpochs(ctx sdk.Context) (transferEpochs []types.TransferEpoch) {
+	iter := k.getStore(ctx).IteratorNew(transferEpochPrefix)
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
 	for ; iter.Valid(); iter.Next() {
-		var transferRate types.TransferRate
-		iter.UnmarshalValue(&transferRate)
+		var transferEpoch types.TransferEpoch
+		iter.UnmarshalValue(&transferEpoch)
 
-		transferRates = append(transferRates, transferRate)
+		transferEpochs = append(transferEpochs, transferEpoch)
 	}
 
-	return transferRates
+	return transferEpochs
 }

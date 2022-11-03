@@ -31,8 +31,8 @@ func NewHandler(k types.Nexus, snapshotter types.Snapshotter, slashing types.Sla
 		case *types.RegisterAssetFeeRequest:
 			res, err := server.RegisterAssetFee(sdk.WrapSDKContext(ctx), msg)
 			return sdk.WrapServiceResult(ctx, res, err)
-		case *types.SetTransferRateLimitRequest:
-			res, err := server.SetTransferRateLimit(sdk.WrapSDKContext(ctx), msg)
+		case *types.SetTransferEpochLimitRequest:
+			res, err := server.SetTransferEpochLimit(sdk.WrapSDKContext(ctx), msg)
 			return sdk.WrapServiceResult(ctx, res, err)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
@@ -43,7 +43,7 @@ func NewHandler(k types.Nexus, snapshotter types.Snapshotter, slashing types.Sla
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		res, err := h(ctx, msg)
 		if err != nil {
-			k.Logger(ctx).Error(err.Error())
+			k.Logger(ctx).Debug(err.Error())
 			return nil, sdkerrors.Wrap(types.ErrNexus, err.Error())
 		}
 

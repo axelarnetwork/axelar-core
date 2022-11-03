@@ -83,7 +83,7 @@ func assertChainStatesEqual(t *testing.T, expected, actual *types.GenesisState) 
 	assert.ElementsMatch(t, expected.FeeInfos, actual.FeeInfos)
 	assert.ElementsMatch(t, expected.RateLimits, actual.RateLimits)
 	// TODO: Track this with some random transfers
-	// assert.ElementsMatch(t, expected.TransferRates, actual.TransferRates)
+	// assert.ElementsMatch(t, expected.TransferEpochs, actual.TransferEpochs)
 }
 
 func TestExportGenesisInitGenesis(t *testing.T) {

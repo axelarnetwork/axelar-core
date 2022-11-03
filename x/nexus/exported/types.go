@@ -223,12 +223,12 @@ type MaintainerState interface {
 	GetAddress() sdk.ValAddress
 }
 
-// ValidateBasic validates the transfer flow
-func (m TransferFlow) ValidateBasic() error {
+// ValidateBasic validates the transfer direction
+func (m TransferDirection) ValidateBasic() error {
 	switch m {
 	case Incoming, Outgoing:
 		return nil
 	default:
-		return fmt.Errorf("invalid transfer flow %s", m)
+		return fmt.Errorf("invalid transfer direction %s", m)
 	}
 }

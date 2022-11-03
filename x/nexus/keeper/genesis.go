@@ -79,16 +79,16 @@ func (k Keeper) InitGenesis(ctx sdk.Context, genState *types.GenesisState) {
 		funcs.MustNoErr(k.SetRateLimit(ctx, rateLimit.Chain, rateLimit.Limit, rateLimit.Window))
 	}
 
-	for _, transferRate := range genState.TransferRates {
-		if _, ok := k.GetChain(ctx, transferRate.Chain); !ok {
-			panic(fmt.Errorf("chain %s not found", transferRate.Chain))
+	for _, transferEpoch := range genState.TransferEpochs {
+		if _, ok := k.GetChain(ctx, transferEpoch.Chain); !ok {
+			panic(fmt.Errorf("chain %s not found", transferEpoch.Chain))
 		}
 
-		if _, found := k.getTransferRate(ctx, transferRate.Chain, transferRate.Amount.Denom, transferRate.Flow); found {
-			panic(fmt.Errorf("transfer rate for chain %s (%s) and asset %s already registered", transferRate.Chain, transferRate.Flow, transferRate.Amount.Denom))
+		if _, found := k.getTransferEpoch(ctx, transferEpoch.Chain, transferEpoch.Amount.Denom, transferEpoch.Direction); found {
+			panic(fmt.Errorf("transfer rate for chain %s (%s) and asset %s already registered", transferEpoch.Chain, transferEpoch.Direction, transferEpoch.Amount.Denom))
 		}
 
-		k.setTransferRate(ctx, transferRate)
+		k.setTransferEpoch(ctx, transferEpoch)
 	}
 }
 
@@ -104,6 +104,6 @@ func (k Keeper) ExportGenesis(ctx sdk.Context) *types.GenesisState {
 		k.getTransferFee(ctx),
 		k.getFeeInfos(ctx),
 		k.getRateLimits(ctx),
-		k.getTransferRates(ctx),
+		k.getTransferEpochs(ctx),
 	)
 }

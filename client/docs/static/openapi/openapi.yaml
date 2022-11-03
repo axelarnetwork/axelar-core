@@ -8031,7 +8031,7 @@ paths:
         - MsgService
   /axelar/nexus/set_transfer_rate_limit:
     post:
-      operationId: SetTransferRateLimit
+      operationId: SetTransferEpochLimit
       responses:
         "200":
           description: A successful response.
@@ -8237,7 +8237,7 @@ paths:
                 window:
                   type: string
               title: >-
-                SetTransferRateLimitRequest represents a message to set rate
+                SetTransferEpochLimitRequest represents a message to set rate
                 limits on
 
                 transfers
@@ -38388,7 +38388,7 @@ components:
             type: string
     axelar.nexus.v1beta1.RegisterChainMaintainerResponse:
       type: object
-    axelar.nexus.v1beta1.SetTransferRateLimitRequest:
+    axelar.nexus.v1beta1.SetTransferEpochLimitRequest:
       type: object
       properties:
         sender:
@@ -38411,9 +38411,9 @@ components:
         window:
           type: string
       title: |-
-        SetTransferRateLimitRequest represents a message to set rate limits on
+        SetTransferEpochLimitRequest represents a message to set rate limits on
         transfers
-    axelar.nexus.v1beta1.SetTransferRateLimitResponse:
+    axelar.nexus.v1beta1.SetTransferEpochLimitResponse:
       type: object
     axelar.nexus.v1beta1.TransferFeeResponse:
       type: object

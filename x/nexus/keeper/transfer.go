@@ -9,6 +9,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/events"
+	"github.com/axelarnetwork/axelar-core/utils/key"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 )
@@ -255,7 +256,8 @@ func (k Keeper) GetTransfersForChainPaginated(ctx sdk.Context, chain exported.Ch
 		return transfers, &query.PageResponse{}, nil
 	}
 
-	resp, err := query.Paginate(prefix.NewStore(k.getStore(ctx).KVStore, getTransferPrefix(chain.Name, state).AsKey()), pageRequest, func(key []byte, value []byte) error {
+	// TODO: refactor iteration over values using a prefix to avoid collisions
+	resp, err := query.Paginate(prefix.NewStore(k.getStore(ctx).KVStore, append(getTransferPrefix(chain.Name, state).AsKey(), []byte(key.DefaultDelimiter)...)), pageRequest, func(key []byte, value []byte) error {
 		var transfer exported.CrossChainTransfer
 		k.cdc.MustUnmarshalLengthPrefixed(value, &transfer)
 
