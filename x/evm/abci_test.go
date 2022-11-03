@@ -19,7 +19,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
 	utilsMock "github.com/axelarnetwork/axelar-core/utils/mock"
-	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/evm/types/mock"
 	evmTestUtils "github.com/axelarnetwork/axelar-core/x/evm/types/testutils"
@@ -94,7 +93,7 @@ func TestHandleContractCall(t *testing.T) {
 	})
 
 	whenChainsAreRegistered := givenContractCallEvent.
-		When("the source chain is registered", func() {
+		When("the source and destination chains are registered", func() {
 			n.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 				switch chain {
 				case sourceChainName, destinationChainName:
@@ -150,45 +149,30 @@ func TestHandleContractCall(t *testing.T) {
 	}
 
 	givenContractCallEvent.
-		When("the source chain is not registered", func() {
-			n.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
-				return nexus.Chain{}, chain != sourceChainName
-			}
-		}).
-		Then("should panic", panicWith(fmt.Sprintf("%s is not a registered chain", sourceChainName))).
-		Run(t)
-
-	givenContractCallEvent.
 		When("the destination chain is not registered", func() {
 			n.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 				return nexus.Chain{}, chain != destinationChainName
 			}
 		}).
-		Then("should return false", func(t *testing.T) {
-			ok := handleContractCall(ctx, event, bk, n, multisigKeeper)
-			assert.False(t, ok)
-		}).
+		Then("should panic", panicWith("result is not found")).
 		Run(t)
 
 	whenChainsAreRegistered.
 		When("destination chain is not an evm chain", isDestinationChainEvm(false)).
-		Then("should return false", func(t *testing.T) {
-			ok := handleContractCall(ctx, event, bk, n, multisigKeeper)
-			assert.False(t, ok)
-		}).
+		Then("should panic", panicWith("call should not have failed: not an EVM chain")).
 		Run(t)
 
 	whenChainsAreRegistered.
 		When("destination chain is an evm chain", isDestinationChainEvm(true)).
 		When("destination chain ID is not set", isDestinationChainIDSet(false)).
-		Then("should panic", panicWith(fmt.Sprintf("could not find chain ID for '%s'", destinationChainName))).
+		Then("should panic", panicWith("result is not found")).
 		Run(t)
 
 	whenChainsAreRegistered.
 		When("destination chain is an evm chain", isDestinationChainEvm(true)).
 		When("destination chain ID is set", isDestinationChainIDSet(true)).
 		When("current key is not set", isCurrentKeySet(false)).
-		Then("should panic", panicWith(fmt.Sprintf("no key for chain %s found", destinationChainName))).
+		Then("should panic", panicWith("result is not found")).
 		Run(t)
 
 	whenChainsAreRegistered.
@@ -196,7 +180,7 @@ func TestHandleContractCall(t *testing.T) {
 		When("destination chain ID is set", isDestinationChainIDSet(true)).
 		When("current key is set", isCurrentKeySet(true)).
 		When("enqueue command fails", enqueueCommandSucceed(false)).
-		Then("should panic", panicWith("enqueue error")).
+		Then("should panic", panicWith("call should not have failed: enqueue error")).
 		Run(t)
 
 	whenChainsAreRegistered.
@@ -204,9 +188,9 @@ func TestHandleContractCall(t *testing.T) {
 		When("destination chain ID is set", isDestinationChainIDSet(true)).
 		When("current key is set", isCurrentKeySet(true)).
 		When("enqueue command succeeds", enqueueCommandSucceed(true)).
-		Then("should return true", func(t *testing.T) {
-			ok := handleContractCall(ctx, event, bk, n, multisigKeeper)
-			assert.True(t, ok)
+		Then("should succeed", func(t *testing.T) {
+			err := handleContractCall(ctx, event, bk, n, multisigKeeper)
+			assert.NoError(t, err)
 			assert.Len(t, destinationCk.EnqueueCommandCalls(), 1)
 		}).
 		Run(t)
@@ -245,7 +229,7 @@ func TestHandleTokenSent(t *testing.T) {
 	})
 
 	whenChainsAreRegistered := givenTokenSentEvent.
-		When("the source chain is registered", func() {
+		When("the source and destination chains are registered", func() {
 			bk.ForChainFunc = func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) {
 				switch chain {
 				case sourceChainName:
@@ -277,9 +261,9 @@ func TestHandleTokenSent(t *testing.T) {
 		}
 	}
 
-	assertFalse := func(t *testing.T) {
-		ok := handleTokenSent(ctx, event, bk, n)
-		assert.False(t, ok)
+	assertFail := func(t *testing.T) {
+		err := handleTokenSent(ctx, event, bk, n)
+		assert.Error(t, err)
 	}
 
 	tokenRegisteredOnChain := func(chain **mock.ChainKeeperMock, confirmed bool) func() {
@@ -333,7 +317,7 @@ func TestHandleTokenSent(t *testing.T) {
 				return nexus.Chain{}, chain != sourceChainName
 			}
 		}).
-		Then("should panic", panicWith(fmt.Sprintf("%s is not a registered chain", sourceChainName))).
+		Then("should panic", panicWith("result is not found")).
 		Run(t)
 
 	givenTokenSentEvent.
@@ -342,18 +326,18 @@ func TestHandleTokenSent(t *testing.T) {
 				return nexus.Chain{}, chain != destinationChainName
 			}
 		}).
-		Then("should return false", assertFalse).
+		Then("should panic", panicWith("result is not found")).
 		Run(t)
 
 	whenChainsAreRegistered.
 		When("token is not confirmed on the source chain", tokenRegisteredOnChain(&sourceCk, false)).
-		Then("should return false", assertFalse).
+		Then("should fail", assertFail).
 		Run(t)
 
 	whenChainsAreRegistered.
 		When("token is confirmed on the source chain", tokenRegisteredOnChain(&sourceCk, true)).
 		When("token is not confirmed on the destination chain", tokenRegisteredOnChain(&destinationCk, false)).
-		Then("should return false", assertFalse).
+		Then("should fail", assertFail).
 		Run(t)
 
 	whenTokensAreConfirmed.
@@ -362,7 +346,7 @@ func TestHandleTokenSent(t *testing.T) {
 				return 0, fmt.Errorf("err")
 			}
 		}).
-		Then("should return false", assertFalse).
+		Then("should fail", assertFail).
 		Run(t)
 
 	whenTokensAreConfirmed.
@@ -371,9 +355,9 @@ func TestHandleTokenSent(t *testing.T) {
 				return 0, nil
 			}
 		}).
-		Then("should return true", func(t *testing.T) {
-			ok := handleTokenSent(ctx, event, bk, n)
-			assert.True(t, ok)
+		Then("should succeed", func(t *testing.T) {
+			err := handleTokenSent(ctx, event, bk, n)
+			assert.NoError(t, err)
 			assert.Len(t, n.EnqueueTransferCalls(), 1)
 		}).
 		Run(t)
@@ -386,9 +370,9 @@ func TestHandleTokenSent(t *testing.T) {
 				return 0, nil
 			}
 		}).
-		Then("should return true", func(t *testing.T) {
-			ok := handleTokenSent(ctx, event, bk, n)
-			assert.True(t, ok)
+		Then("should succeed", func(t *testing.T) {
+			err := handleTokenSent(ctx, event, bk, n)
+			assert.NoError(t, err)
 			assert.Len(t, n.EnqueueTransferCalls(), 1)
 		}).
 		Run(t)
@@ -431,7 +415,7 @@ func TestHandleContractCallWithToken(t *testing.T) {
 			return nexus.Chain{}, chain != sourceChainName
 		}
 
-		assert.PanicsWithError(t, fmt.Sprintf("%s is not a registered chain", sourceChainName), func() {
+		assert.PanicsWithError(t, "result is not found", func() {
 			handleContractCallWithToken(ctx, event, bk, n, s)
 		})
 	}))
@@ -453,11 +437,12 @@ func TestHandleContractCallWithToken(t *testing.T) {
 			return nexus.Chain{}, chain != destinationChainName
 		}
 
-		ok := handleContractCallWithToken(ctx, event, bk, n, s)
-		assert.False(t, ok)
+		assert.PanicsWithError(t, "result is not found", func() {
+			handleContractCallWithToken(ctx, event, bk, n, s)
+		})
 	}))
 
-	t.Run("should return false if the token is not confirmed on the source chain", testutils.Func(func(t *testing.T) {
+	t.Run("should fail if the token is not confirmed on the source chain", testutils.Func(func(t *testing.T) {
 		ctx, bk, n, s, sourceCk, destinationCk := setup()
 
 		bk.ForChainFunc = func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) {
@@ -484,11 +469,11 @@ func TestHandleContractCallWithToken(t *testing.T) {
 			return types.NilToken
 		}
 
-		ok := handleContractCallWithToken(ctx, event, bk, n, s)
-		assert.False(t, ok)
+		err := handleContractCallWithToken(ctx, event, bk, n, s)
+		assert.Error(t, err)
 	}))
 
-	t.Run("should return false if the token is not confirmed on the destination chain", testutils.Func(func(t *testing.T) {
+	t.Run("should fail if the token is not confirmed on the destination chain", testutils.Func(func(t *testing.T) {
 		ctx, bk, n, s, sourceCk, destinationCk := setup()
 
 		bk.ForChainFunc = func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) {
@@ -521,11 +506,11 @@ func TestHandleContractCallWithToken(t *testing.T) {
 			return types.NilToken
 		}
 
-		ok := handleContractCallWithToken(ctx, event, bk, n, s)
-		assert.False(t, ok)
+		err := handleContractCallWithToken(ctx, event, bk, n, s)
+		assert.Error(t, err)
 	}))
 
-	t.Run("should return false if the contract address is invalid", testutils.Func(func(t *testing.T) {
+	t.Run("should fail if the contract address is invalid", testutils.Func(func(t *testing.T) {
 		ctx, bk, n, s, sourceCk, destinationCk := setup()
 
 		bk.ForChainFunc = func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) {
@@ -563,9 +548,9 @@ func TestHandleContractCallWithToken(t *testing.T) {
 		contractAddress := event.GetContractCallWithToken().ContractAddress
 		event.GetContractCallWithToken().ContractAddress = rand.Str(42)
 
-		ok := handleContractCallWithToken(ctx, event, bk, n, s)
+		err := handleContractCallWithToken(ctx, event, bk, n, s)
 		event.GetContractCallWithToken().ContractAddress = contractAddress
-		assert.False(t, ok)
+		assert.Error(t, err)
 	}))
 
 	t.Run("should panic if the destination chain ID is not found", testutils.Func(func(t *testing.T) {
@@ -609,7 +594,7 @@ func TestHandleContractCallWithToken(t *testing.T) {
 		}
 		destinationCk.GetChainIDFunc = func(ctx sdk.Context) (sdk.Int, bool) { return sdk.ZeroInt(), false }
 
-		assert.PanicsWithError(t, fmt.Sprintf("could not find chain ID for '%s'", destinationChainName), func() {
+		assert.PanicsWithError(t, "result is not found", func() {
 			handleContractCallWithToken(ctx, event, bk, n, s)
 		})
 	}))
@@ -658,12 +643,12 @@ func TestHandleContractCallWithToken(t *testing.T) {
 			return multisigTestUtils.KeyID(), false
 		}
 
-		assert.PanicsWithError(t, fmt.Sprintf("no key for chain %s found", destinationChainName), func() {
+		assert.PanicsWithError(t, "result is not found", func() {
 			handleContractCallWithToken(ctx, event, bk, n, multisigKeeper)
 		})
 	}))
 
-	t.Run("should return true if successfully created the command", testutils.Func(func(t *testing.T) {
+	t.Run("should succeed if successfully created the command", testutils.Func(func(t *testing.T) {
 		ctx, bk, n, multisigKeeper, sourceCk, destinationCk := setup()
 
 		bk.ForChainFunc = func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) {
@@ -704,8 +689,8 @@ func TestHandleContractCallWithToken(t *testing.T) {
 		}
 		destinationCk.EnqueueCommandFunc = func(ctx sdk.Context, cmd types.Command) error { return nil }
 
-		ok := handleContractCallWithToken(ctx, event, bk, n, multisigKeeper)
-		assert.True(t, ok)
+		err := handleContractCallWithToken(ctx, event, bk, n, multisigKeeper)
+		assert.NoError(t, err)
 		assert.Len(t, destinationCk.EnqueueCommandCalls(), 1)
 	}))
 }
@@ -738,6 +723,10 @@ func TestHandleConfirmDeposit(t *testing.T) {
 
 		bk.ForChainFunc = func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) {
 			return sourceCk, nil
+		}
+
+		n.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
+			return nexus.Chain{Name: sourceChainName}, true
 		}
 
 		sourceCk.SetDepositFunc = func(sdk.Context, types.ERC20Deposit, types.DepositStatus) {}
@@ -791,9 +780,9 @@ func TestHandleConfirmDeposit(t *testing.T) {
 
 	givenTransferEvent.
 		When("burner info not found", burnerInfoFound(false)).
-		Then("should return false", func(t *testing.T) {
-			ok := handleConfirmDeposit(ctx, event, sourceCk, n, exported.Ethereum)
-			assert.False(t, ok)
+		Then("should fail", func(t *testing.T) {
+			err := handleConfirmDeposit(ctx, event, bk, n)
+			assert.Error(t, err)
 			assert.Len(t, n.EnqueueForTransferCalls(), 0)
 			assert.Len(t, sourceCk.SetDepositCalls(), 0)
 		}).
@@ -802,9 +791,9 @@ func TestHandleConfirmDeposit(t *testing.T) {
 	givenTransferEvent.
 		When("burner info found", burnerInfoFound(true)).
 		When("recipient not found", recipientFound(false)).
-		Then("should return false", func(t *testing.T) {
-			ok := handleConfirmDeposit(ctx, event, sourceCk, n, exported.Ethereum)
-			assert.False(t, ok)
+		Then("should fail", func(t *testing.T) {
+			err := handleConfirmDeposit(ctx, event, bk, n)
+			assert.Error(t, err)
 			assert.Len(t, n.EnqueueForTransferCalls(), 0)
 			assert.Len(t, sourceCk.SetDepositCalls(), 0)
 		}).
@@ -814,9 +803,9 @@ func TestHandleConfirmDeposit(t *testing.T) {
 		When("burner info found", burnerInfoFound(true)).
 		When("recipient found", recipientFound(true)).
 		When("deposit exists", depositFound(true)).
-		Then("should return false", func(t *testing.T) {
-			ok := handleConfirmDeposit(ctx, event, sourceCk, n, exported.Ethereum)
-			assert.False(t, ok)
+		Then("should fail", func(t *testing.T) {
+			err := handleConfirmDeposit(ctx, event, bk, n)
+			assert.Error(t, err)
 			assert.Len(t, n.EnqueueForTransferCalls(), 0)
 			assert.Len(t, sourceCk.SetDepositCalls(), 0)
 		}).
@@ -827,9 +816,9 @@ func TestHandleConfirmDeposit(t *testing.T) {
 		When("recipient found", recipientFound(true)).
 		When("deposit does not exist", depositFound(false)).
 		When("failed to enqueue the transfer", enqueueTransferSucceed(false)).
-		Then("should return false", func(t *testing.T) {
-			ok := handleConfirmDeposit(ctx, event, sourceCk, n, exported.Ethereum)
-			assert.False(t, ok)
+		Then("should fail", func(t *testing.T) {
+			err := handleConfirmDeposit(ctx, event, bk, n)
+			assert.Error(t, err)
 			assert.Len(t, n.EnqueueForTransferCalls(), 1)
 			assert.Len(t, sourceCk.SetDepositCalls(), 0)
 		}).
@@ -840,9 +829,9 @@ func TestHandleConfirmDeposit(t *testing.T) {
 		When("recipient found", recipientFound(true)).
 		When("deposit does not exist", depositFound(false)).
 		When("enqueue the transfer", enqueueTransferSucceed(true)).
-		Then("should return true", func(t *testing.T) {
-			ok := handleConfirmDeposit(ctx, event, sourceCk, n, exported.Ethereum)
-			assert.True(t, ok)
+		Then("should succeed", func(t *testing.T) {
+			err := handleConfirmDeposit(ctx, event, bk, n)
+			assert.NoError(t, err)
 			assert.Len(t, n.EnqueueForTransferCalls(), 1)
 			assert.Len(t, sourceCk.SetDepositCalls(), 1)
 		}).
@@ -856,6 +845,7 @@ func TestHandleConfirmToken(t *testing.T) {
 		ctx      sdk.Context
 		bk       *mock.BaseKeeperMock
 		sourceCk *mock.ChainKeeperMock
+		n        *mock.NexusMock
 	)
 
 	sourceChainName := nexus.ChainName(rand.Str(5))
@@ -872,12 +862,15 @@ func TestHandleConfirmToken(t *testing.T) {
 				},
 			},
 		}
-		ctx, bk, _, _, sourceCk, _ = setup()
+		ctx, bk, n, _, sourceCk, _ = setup()
 
 		bk.ForChainFunc = func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) {
 			return sourceCk, nil
 		}
 
+		n.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
+			return nexus.Chain{Name: sourceChainName}, true
+		}
 	})
 
 	canGetERC20TokenBySymbol := func(found bool) func() {
@@ -896,9 +889,9 @@ func TestHandleConfirmToken(t *testing.T) {
 
 	givenTokenDeployedEvent.
 		When("can not find token by symbol", canGetERC20TokenBySymbol(false)).
-		Then("should return false", func(t *testing.T) {
-			ok := handleTokenDeployed(ctx, event, sourceCk, exported.Ethereum)
-			assert.False(t, ok)
+		Then("should fail", func(t *testing.T) {
+			err := handleTokenDeployed(ctx, event, bk, n)
+			assert.Error(t, err)
 		}).
 		Run(t)
 
@@ -911,17 +904,17 @@ func TestHandleConfirmToken(t *testing.T) {
 				})
 			}
 		}).
-		Then("should return false", func(t *testing.T) {
-			ok := handleTokenDeployed(ctx, event, sourceCk, exported.Ethereum)
-			assert.False(t, ok)
+		Then("should fail", func(t *testing.T) {
+			err := handleTokenDeployed(ctx, event, bk, n)
+			assert.Error(t, err)
 		}).
 		Run(t)
 
 	givenTokenDeployedEvent.
 		When("token address in event matches expected address", canGetERC20TokenBySymbol(true)).
-		Then("should return true", func(t *testing.T) {
-			ok := handleTokenDeployed(ctx, event, sourceCk, exported.Ethereum)
-			assert.True(t, ok)
+		Then("should succeed", func(t *testing.T) {
+			err := handleTokenDeployed(ctx, event, bk, n)
+			assert.NoError(t, err)
 		}).
 		Run(t)
 }
@@ -934,18 +927,22 @@ func TestHandleTransferKey(t *testing.T) {
 		bk             *mock.BaseKeeperMock
 		multisigKeeper *mock.MultisigKeeperMock
 		sourceCk       *mock.ChainKeeperMock
+		n              *mock.NexusMock
 	)
 
 	sourceChainName := nexus.ChainName(rand.Str(5))
 
 	givenMultisigTransferKeyEvent := Given("a MultisigTransferKey event", func() {
 		event = randTransferKeyEvent(sourceChainName)
-		ctx, bk, _, multisigKeeper, sourceCk, _ = setup()
+		ctx, bk, n, multisigKeeper, sourceCk, _ = setup()
 
 		bk.ForChainFunc = func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) {
 			return sourceCk, nil
 		}
 
+		n.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
+			return nexus.Chain{Name: sourceChainName}, true
+		}
 	})
 
 	isCurrentKeySet := func(isSet bool) func() {
@@ -998,36 +995,36 @@ func TestHandleTransferKey(t *testing.T) {
 
 	givenMultisigTransferKeyEvent.
 		When("next key id not set", isCurrentKeySet(false)).
-		Then("should return false", func(t *testing.T) {
-			ok := handleMultisigTransferKey(ctx, event, sourceCk, multisigKeeper, exported.Ethereum)
-			assert.False(t, ok)
+		Then("should fail", func(t *testing.T) {
+			err := handleMultisigTransferKey(ctx, event, bk, n, multisigKeeper)
+			assert.Error(t, err)
 		}).
 		Run(t)
 
 	givenMultisigTransferKeyEvent.
 		When("next key id is set", isCurrentKeySet(true)).
 		When("next key not found", KeyFound(false)).
-		Then("should return false", func(t *testing.T) {
-			ok := handleMultisigTransferKey(ctx, event, sourceCk, multisigKeeper, exported.Ethereum)
-			assert.False(t, ok)
+		Then("should fail", func(t *testing.T) {
+			err := handleMultisigTransferKey(ctx, event, bk, n, multisigKeeper)
+			assert.Error(t, err)
 		}).
 		Run(t)
 
 	givenMultisigTransferKeyEvent.
 		When("next key id is set", isCurrentKeySet(true)).
 		When("next key is found, but does not match expected", KeyFound(true)).
-		Then("should return false", func(t *testing.T) {
-			ok := handleMultisigTransferKey(ctx, event, sourceCk, multisigKeeper, exported.Ethereum)
-			assert.False(t, ok)
+		Then("should fail", func(t *testing.T) {
+			err := handleMultisigTransferKey(ctx, event, bk, n, multisigKeeper)
+			assert.Error(t, err)
 		}).
 		Run(t)
 
 	givenMultisigTransferKeyEvent.
 		When("next key id is set", isCurrentKeySet(true)).
 		When("next key is found, matches expected key", keyMatches).
-		Then("should return true", func(t *testing.T) {
-			ok := handleMultisigTransferKey(ctx, event, sourceCk, multisigKeeper, exported.Ethereum)
-			assert.True(t, ok)
+		Then("should succeed", func(t *testing.T) {
+			err := handleMultisigTransferKey(ctx, event, bk, n, multisigKeeper)
+			assert.NoError(t, err)
 			assert.Len(t, multisigKeeper.RotateKeyCalls(), 1)
 
 		}).
@@ -1074,7 +1071,7 @@ func TestHandleConfirmedEvent(t *testing.T) {
 		}
 		n.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return true }
 		n.GetChainsFunc = func(_ sdk.Context) []nexus.Chain {
-			return []nexus.Chain{{Name: sourceChainName}}
+			return []nexus.Chain{{Name: sourceChainName, Module: types.ModuleName}}
 		}
 
 		destinationCk.GetChainIDFunc = func(ctx sdk.Context) (sdk.Int, bool) { return sdk.ZeroInt(), true }
@@ -1106,7 +1103,6 @@ func TestHandleConfirmedEvent(t *testing.T) {
 			}
 		}).
 		When("events in queue exceeds limit", func() {
-			confirmedEventQueue.IsEmptyFunc = func() bool { return false }
 			event := types.Event{
 				Chain: sourceChainName,
 				TxID:  evmTestUtils.RandomHash(),
@@ -1130,8 +1126,7 @@ func TestHandleConfirmedEvent(t *testing.T) {
 			}
 		}).
 		Then("should handle limited number of events", func(t *testing.T) {
-			err := handleConfirmedEvents(ctx, bk, n, multisigKeeper)
-			assert.NoError(t, err)
+			handleConfirmedEvents(ctx, bk, n, multisigKeeper)
 			assert.Len(t, sourceCk.SetEventCompletedCalls(), int(sourceCk.GetParams(ctx).EndBlockerLimit))
 			assert.Len(t, destinationCk.EnqueueCommandCalls(), int(sourceCk.GetParams(ctx).EndBlockerLimit))
 		}).
@@ -1140,7 +1135,6 @@ func TestHandleConfirmedEvent(t *testing.T) {
 	withEvents := func(num int) WhenStatement {
 		return When(fmt.Sprintf("having %d events", num), func() {
 			count := 0
-			confirmedEventQueue.IsEmptyFunc = func() bool { return false }
 			confirmedEventQueue.DequeueFunc = func(value codec.ProtoMarshaler) bool {
 				if count >= num {
 					return false
@@ -1174,8 +1168,7 @@ func TestHandleConfirmedEvent(t *testing.T) {
 
 	eventNums := int(rand.I64Between(1, 10))
 	shouldSetEventFailed := Then("should set event failed", func(t *testing.T) {
-		err := handleConfirmedEvents(ctx, bk, n, multisigKeeper)
-		assert.NoError(t, err)
+		handleConfirmedEvents(ctx, bk, n, multisigKeeper)
 		assert.Len(t, sourceCk.SetEventFailedCalls(), eventNums)
 	})
 

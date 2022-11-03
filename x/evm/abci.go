@@ -3,63 +3,39 @@ package evm
 import (
 	"fmt"
 
-	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
 	abci "github.com/tendermint/tendermint/abci/types"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/events"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/utils/funcs"
+	"github.com/axelarnetwork/utils/slices"
 )
 
-func validateChains(ctx sdk.Context, sourceChainName nexus.ChainName, destinationChainName nexus.ChainName, n types.Nexus) (nexus.Chain, nexus.Chain, error) {
-	sourceChain, ok := n.GetChain(ctx, sourceChainName)
-	if !ok {
-		panic(fmt.Errorf("%s is not a registered chain", sourceChainName))
-	}
-
-	destinationChain, ok := n.GetChain(ctx, destinationChainName)
-	if !ok {
-		return nexus.Chain{}, nexus.Chain{}, fmt.Errorf("%s is not a registered chain", destinationChainName)
-	}
-
-	return sourceChain, destinationChain, nil
-}
-
-func handleTokenSent(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus) bool {
+func handleTokenSent(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus) error {
 	e := event.GetEvent().(*types.Event_TokenSent).TokenSent
 	if e == nil {
 		panic(fmt.Errorf("event is nil"))
 	}
 
-	sourceChain, destinationChain, err := validateChains(ctx, event.Chain, e.DestinationChain, n)
-	if err != nil {
-		bk.Logger(ctx).Info(err.Error())
-		return false
-	}
-
-	sourceCk, err := bk.ForChain(ctx, sourceChain.Name)
-	if err != nil {
-		bk.Logger(ctx).Info(err.Error())
-		return false
-	}
+	sourceChain := funcs.MustOk(n.GetChain(ctx, event.Chain))
+	destinationChain := funcs.MustOk(n.GetChain(ctx, e.DestinationChain))
+	sourceCk := funcs.Must(bk.ForChain(ctx, sourceChain.Name))
 
 	token := sourceCk.GetERC20TokenBySymbol(ctx, e.Symbol)
 	if !token.Is(types.Confirmed) {
-		bk.Logger(ctx).Info(fmt.Sprintf("%s token %s is not confirmed yet", event.Chain, e.Symbol))
-		return false
+		return fmt.Errorf("token with symbol %s not confirmed on source chain", e.Symbol)
 	}
-
 	asset := token.GetAsset()
 
 	// check erc20 token status if destination is an evm chain
-	destinationCk, err := bk.ForChain(ctx, destinationChain.Name)
-	if err == nil {
+	if destinationCk, err := bk.ForChain(ctx, destinationChain.Name); err == nil {
 		if token := destinationCk.GetERC20TokenByAsset(ctx, asset); !token.Is(types.Confirmed) {
-			bk.Logger(ctx).Info(fmt.Sprintf("%s token with asset %s is not confirmed yet", e.DestinationChain, asset))
-			return false
+			return fmt.Errorf("token with asset %s not confirmed on destination chain", e.Symbol)
 		}
 	}
 
@@ -67,10 +43,8 @@ func handleTokenSent(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n 
 	amount := sdk.NewCoin(asset, sdk.Int(e.Amount))
 	transferID, err := n.EnqueueTransfer(ctx, sourceChain, recipient, amount)
 	if err != nil {
-		bk.Logger(ctx).Info(fmt.Sprintf("failed enqueuing transfer for event %s due to error %s", event.GetID(), err.Error()))
-		return false
+		return sdkerrors.Wrap(err, "failed enqueuing transfer for event")
 	}
-
 	bk.Logger(ctx).Debug(fmt.Sprintf("enqueued transfer for event from chain %s", sourceChain.Name),
 		"chain", destinationChain.Name,
 		"eventID", event.GetID(),
@@ -87,50 +61,27 @@ func handleTokenSent(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n 
 		Asset:              amount,
 	})
 
-	return true
+	return nil
 }
 
-func handleContractCall(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus, multisig types.MultisigKeeper) bool {
+func handleContractCall(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus, multisig types.MultisigKeeper) error {
 	e := event.GetEvent().(*types.Event_ContractCall).ContractCall
 	if e == nil {
 		panic(fmt.Errorf("event is nil"))
 	}
 
-	sourceChain, destinationChain, err := validateChains(ctx, event.Chain, e.DestinationChain, n)
-	if err != nil {
-		bk.Logger(ctx).Info(err.Error())
-		return false
-	}
-
-	destinationCk, err := bk.ForChain(ctx, destinationChain.Name)
-	if err != nil {
-		bk.Logger(ctx).Info(fmt.Sprintf("destination chain %s is not an evm chain", destinationChain.Name))
-		return false
-	}
-
-	destinationChainID, ok := destinationCk.GetChainID(ctx)
-	if !ok {
-		panic(fmt.Errorf("could not find chain ID for '%s'", destinationChain.Name))
-	}
-
-	keyID, ok := multisig.GetCurrentKeyID(ctx, destinationChain.Name)
-	if !ok {
-		panic(fmt.Errorf("no key for chain %s found", destinationChain.Name))
-	}
+	destinationChain := funcs.MustOk(n.GetChain(ctx, e.DestinationChain))
+	destinationCk := funcs.Must(bk.ForChain(ctx, destinationChain.Name))
 
 	cmd := types.NewApproveContractCallCommand(
-		destinationChainID,
-		keyID,
-		sourceChain.Name,
+		funcs.MustOk(destinationCk.GetChainID(ctx)),
+		funcs.MustOk(multisig.GetCurrentKeyID(ctx, destinationChain.Name)),
+		funcs.MustOk(n.GetChain(ctx, event.Chain)).Name,
 		event.TxID,
 		event.Index,
 		*e,
 	)
-
-	if err := destinationCk.EnqueueCommand(ctx, cmd); err != nil {
-		panic(err)
-	}
-
+	funcs.MustNoErr(destinationCk.EnqueueCommand(ctx, cmd))
 	bk.Logger(ctx).Debug(fmt.Sprintf("created %s command for event", cmd.Type),
 		"chain", destinationChain.Name,
 		"eventID", event.GetID(),
@@ -147,64 +98,38 @@ func handleContractCall(ctx sdk.Context, event types.Event, bk types.BaseKeeper,
 		PayloadHash:      e.PayloadHash,
 	})
 
-	return true
+	return nil
 }
 
-func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus, multisig types.MultisigKeeper) bool {
+func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus, multisig types.MultisigKeeper) error {
 	e := event.GetEvent().(*types.Event_ContractCallWithToken).ContractCallWithToken
 	if e == nil {
 		panic(fmt.Errorf("event is nil"))
 	}
 
-	sourceChain, destinationChain, err := validateChains(ctx, event.Chain, e.DestinationChain, n)
-	if err != nil {
-		bk.Logger(ctx).Info(err.Error())
-		return false
-	}
-
-	sourceCk, err := bk.ForChain(ctx, sourceChain.Name)
-	if err != nil {
-		bk.Logger(ctx).Info(fmt.Sprintf("source chain %s is not an evm chain", destinationChain.Name))
-		return false
-	}
-
-	destinationCk, err := bk.ForChain(ctx, destinationChain.Name)
-	if err != nil {
-		bk.Logger(ctx).Info(fmt.Sprintf("destination chain %s is not an evm chain", destinationChain.Name))
-		return false
-	}
+	sourceChain := funcs.MustOk(n.GetChain(ctx, event.Chain))
+	destinationChain := funcs.MustOk(n.GetChain(ctx, e.DestinationChain))
+	sourceCk := funcs.Must(bk.ForChain(ctx, sourceChain.Name))
+	destinationCk := funcs.Must(bk.ForChain(ctx, destinationChain.Name))
 
 	token := sourceCk.GetERC20TokenBySymbol(ctx, e.Symbol)
 	if !token.Is(types.Confirmed) {
-		bk.Logger(ctx).Info(fmt.Sprintf("%s token %s is not confirmed yet", event.Chain, e.Symbol))
-		return false
+		return fmt.Errorf("token with symbol %s not confirmed on source chain", e.Symbol)
 	}
 
 	asset := token.GetAsset()
 	destinationToken := destinationCk.GetERC20TokenByAsset(ctx, asset)
 	if !destinationToken.Is(types.Confirmed) {
-		bk.Logger(ctx).Info(fmt.Sprintf("%s token with asset %s is not confirmed yet", e.DestinationChain, asset))
-		return false
+		return fmt.Errorf("token with asset %s not confirmed on destination chain", e.Symbol)
 	}
 
 	if !common.IsHexAddress(e.ContractAddress) {
-		bk.Logger(ctx).Info(fmt.Sprintf("invalid contract address %s for chain %s", e.ContractAddress, e.DestinationChain))
-		return false
-	}
-
-	destinationChainID, ok := destinationCk.GetChainID(ctx)
-	if !ok {
-		panic(fmt.Errorf("could not find chain ID for '%s'", destinationChain.Name))
-	}
-
-	keyID, ok := multisig.GetCurrentKeyID(ctx, destinationChain.Name)
-	if !ok {
-		panic(fmt.Errorf("no key for chain %s found", destinationChain.Name))
+		return fmt.Errorf("invalid contract address %s", e.ContractAddress)
 	}
 
 	cmd := types.NewApproveContractCallWithMintCommand(
-		destinationChainID,
-		keyID,
+		funcs.MustOk(destinationCk.GetChainID(ctx)),
+		funcs.MustOk(multisig.GetCurrentKeyID(ctx, destinationChain.Name)),
 		sourceChain.Name,
 		event.TxID,
 		event.Index,
@@ -212,11 +137,7 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 		e.Amount,
 		destinationToken.GetDetails().Symbol,
 	)
-
-	if err := destinationCk.EnqueueCommand(ctx, cmd); err != nil {
-		panic(err)
-	}
-
+	funcs.MustNoErr(destinationCk.EnqueueCommand(ctx, cmd))
 	bk.Logger(ctx).Debug(fmt.Sprintf("created %s command for event", cmd.Type),
 		"chain", destinationChain.Name,
 		"eventID", event.GetID(),
@@ -234,40 +155,39 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 		Asset:            sdk.NewCoin(asset, sdk.Int(e.Amount)),
 	})
 
-	return true
+	return nil
 }
 
-func handleConfirmDeposit(ctx sdk.Context, event types.Event, ck types.ChainKeeper, n types.Nexus, chain nexus.Chain) bool {
+func handleConfirmDeposit(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus) error {
 	e := event.GetEvent().(*types.Event_Transfer).Transfer
 	if e == nil {
 		panic(fmt.Errorf("event is nil"))
 	}
 
+	chain := funcs.MustOk(n.GetChain(ctx, event.Chain))
+	ck := funcs.Must(bk.ForChain(ctx, event.Chain))
+
 	// get deposit address
 	burnerInfo := ck.GetBurnerInfo(ctx, e.To)
 	if burnerInfo == nil {
-		ck.Logger(ctx).Info(fmt.Sprintf("no burner info found for address %s", e.To.Hex()))
-		return false
+		return fmt.Errorf("no burner info found for address %s", e.To.Hex())
 	}
 
 	depositAddr := nexus.CrossChainAddress{Chain: chain, Address: e.To.Hex()}
 	recipient, ok := n.GetRecipient(ctx, depositAddr)
 	if !ok {
-		ck.Logger(ctx).Info(fmt.Sprintf("cross-chain sender has no recipient %s", e.To.Hex()))
-		return false
+		return fmt.Errorf("cross-chain sender has no recipient %s", e.To.Hex())
 	}
 
 	// this check is only needed for historical reason.
 	if _, _, ok := ck.GetDepositByTxIDBurnAddr(ctx, event.TxID, burnerInfo.BurnerAddress); ok {
-		ck.Logger(ctx).Info(fmt.Sprintf("%s deposit %s-%s already exists", chain.Name.String(), event.TxID.Hex(), burnerInfo.BurnerAddress.Hex()))
-		return false
+		return fmt.Errorf("%s deposit %s-%s already exists", chain.Name.String(), event.TxID.Hex(), burnerInfo.BurnerAddress.Hex())
 	}
 
 	amount := sdk.NewCoin(burnerInfo.Asset, sdk.NewIntFromBigInt(e.Amount.BigInt()))
 	transferID, err := n.EnqueueForTransfer(ctx, depositAddr, amount)
 	if err != nil {
-		ck.Logger(ctx).Error(err.Error())
-		return false
+		return err
 	}
 
 	// set confirmed deposit
@@ -283,8 +203,7 @@ func handleConfirmDeposit(ctx sdk.Context, event types.Event, ck types.ChainKeep
 		panic(fmt.Errorf("%s deposit %s-%d already exists", chain.Name.String(), erc20Deposit.TxID.Hex(), erc20Deposit.LogIndex))
 	}
 	ck.SetDeposit(ctx, erc20Deposit, types.DepositStatus_Confirmed)
-
-	ck.Logger(ctx).Info(fmt.Sprintf("deposit confirmation result to %s %s", e.To.Hex(), e.Amount),
+	ck.Logger(ctx).Info(fmt.Sprintf("confirmed deposit to %s with amount %s", e.To.Hex(), e.Amount),
 		"chain", chain.Name,
 		"depositAddress", depositAddr.Address,
 		"eventID", event.GetID(),
@@ -308,29 +227,29 @@ func handleConfirmDeposit(ctx sdk.Context, event types.Event, ck types.ChainKeep
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm),
 		))
 
-	return true
+	return nil
 }
 
-func handleTokenDeployed(ctx sdk.Context, event types.Event, ck types.ChainKeeper, chain nexus.Chain) bool {
+func handleTokenDeployed(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus) error {
 	e := event.GetEvent().(*types.Event_TokenDeployed).TokenDeployed
 	if e == nil {
 		panic(fmt.Errorf("event is nil"))
 	}
 
+	chain := funcs.MustOk(n.GetChain(ctx, event.Chain))
+	ck := funcs.Must(bk.ForChain(ctx, event.Chain))
+
 	token := ck.GetERC20TokenBySymbol(ctx, e.Symbol)
 	if token.Is(types.NonExistent) {
-		ck.Logger(ctx).Info(fmt.Sprintf("token %s does not exist", e.Symbol))
-		return false
+		return fmt.Errorf("token %s does not exist", e.Symbol)
 	}
 
 	if token.GetAddress() != e.TokenAddress {
-		ck.Logger(ctx).Info(fmt.Sprintf("token address %s does not match expected %s", e.TokenAddress.Hex(), token.GetAddress().Hex()))
-		return false
+		return fmt.Errorf("token address %s does not match expected %s", e.TokenAddress.Hex(), token.GetAddress().Hex())
 	}
 
 	if err := token.ConfirmDeployment(); err != nil {
-		ck.Logger(ctx).Info(err.Error())
-		return false
+		return err
 	}
 
 	ck.Logger(ctx).Info(fmt.Sprintf("token %s deployment confirmed on chain %s", e.Symbol, chain.Name),
@@ -352,67 +271,61 @@ func handleTokenDeployed(ctx sdk.Context, event types.Event, ck types.ChainKeepe
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm),
 		))
 
-	return true
+	return nil
 }
 
-func handleMultisigTransferKey(ctx sdk.Context, event types.Event, ck types.ChainKeeper, multisig types.MultisigKeeper, chain nexus.Chain) bool {
+func handleMultisigTransferKey(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus, multisig types.MultisigKeeper) error {
 	e := event.GetEvent().(*types.Event_MultisigOperatorshipTransferred).MultisigOperatorshipTransferred
 	if e == nil {
 		panic(fmt.Errorf("event is nil"))
 	}
 
+	chain := funcs.MustOk(n.GetChain(ctx, event.Chain))
+	ck := funcs.Must(bk.ForChain(ctx, event.Chain))
 	newAddresses := e.NewOperators
 	newWeights := e.NewWeights
 	newThreshold := e.NewThreshold
 
 	nextKeyID, ok := multisig.GetNextKeyID(ctx, chain.Name)
 	if !ok {
-		ck.Logger(ctx).Info(fmt.Sprintf("next key for chain %s not found", chain.Name))
-		return false
+		return fmt.Errorf("next key for chain %s not found", chain.Name)
 	}
 
-	nextKey, found := multisig.GetKey(ctx, nextKeyID)
-	if !found {
-		ck.Logger(ctx).Info(fmt.Sprintf("key %s not found", nextKeyID))
-		return false
+	nextKey, ok := multisig.GetKey(ctx, nextKeyID)
+	if !ok {
+		return fmt.Errorf("key %s not found", nextKeyID)
 	}
 
 	expectedAddressWeights, expectedThreshold := types.ParseMultisigKey(nextKey)
 
 	if len(newAddresses) != len(expectedAddressWeights) {
-		ck.Logger(ctx).Info(fmt.Sprintf("new addresses length does not match, expected %d got %d", len(expectedAddressWeights), len(newAddresses)))
-		return false
+		return fmt.Errorf("new addresses length does not match, expected %d got %d", len(expectedAddressWeights), len(newAddresses))
 	}
 
 	addressSeen := make(map[string]bool)
 	for i, newAddress := range newAddresses {
 		newAddressHex := newAddress.Hex()
 		if addressSeen[newAddressHex] {
-			ck.Logger(ctx).Info("duplicate address in new addresses")
-			return false
+			return fmt.Errorf("duplicate address in new addresses")
 		}
 		addressSeen[newAddressHex] = true
 
 		expectedWeight, ok := expectedAddressWeights[newAddressHex]
 		if !ok {
-			ck.Logger(ctx).Info("new addresses do not match")
-			return false
+			return fmt.Errorf("new addresses do not match")
 		}
 
 		if !expectedWeight.Equal(newWeights[i]) {
-			ck.Logger(ctx).Info("new weights do not match")
-			return false
+			return fmt.Errorf("new weights do not match")
 		}
 	}
 
 	if !newThreshold.Equal(expectedThreshold) {
-		ck.Logger(ctx).Info(fmt.Sprintf("new threshold does not match, expected %s got %s", expectedThreshold.String(), newThreshold.String()))
-		return false
+		return fmt.Errorf("new threshold does not match, expected %s got %s", expectedThreshold.String(), newThreshold.String())
 	}
 
 	if err := multisig.RotateKey(ctx, chain.Name); err != nil {
-		ck.Logger(ctx).Info(err.Error())
-		return false
+		return err
 	}
 
 	ck.Logger(ctx).Info(fmt.Sprintf("successfully confirmed key transfer for chain %s", chain.Name),
@@ -431,140 +344,121 @@ func handleMultisigTransferKey(ctx sdk.Context, event types.Event, ck types.Chai
 		sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm),
 	))
 
-	return true
+	return nil
 }
 
-func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, multisig types.MultisigKeeper) error {
-	shouldHandleEvent := func(e codec.ProtoMarshaler) bool {
-		event := e.(*types.Event)
-
-		var destinationChainName nexus.ChainName
-		switch event := event.GetEvent().(type) {
-		case *types.Event_ContractCall:
-			destinationChainName = event.ContractCall.DestinationChain
-		case *types.Event_ContractCallWithToken:
-			destinationChainName = event.ContractCallWithToken.DestinationChain
-		case *types.Event_TokenSent:
-			destinationChainName = event.TokenSent.DestinationChain
-		case *types.Event_Transfer, *types.Event_TokenDeployed,
-			*types.Event_MultisigOperatorshipTransferred:
-			// skip checks for non-gateway tx event
-			return true
-		default:
-			panic(fmt.Errorf("unsupported event type %T", event))
-		}
-
-		// skip if destination chain is not registered
-		destinationChain, ok := n.GetChain(ctx, destinationChainName)
-		if !ok {
-			bk.Logger(ctx).Debug(fmt.Sprintf("skipping confirmed event %s due to destination chain is not registered", event.GetID()),
-				"chain", event.Chain.String(),
-				"destination_chain", destinationChainName.String(),
-				"eventID", event.GetID(),
-			)
-
-			return false
-		}
-
-		// skip if destination chain is not activated
-		if !n.IsChainActivated(ctx, destinationChain) {
-			bk.Logger(ctx).Debug(fmt.Sprintf("skipping confirmed event %s due to destination chain being inactive", event.GetID()),
-				"chain", event.Chain.String(),
-				"destination_chain", destinationChainName.String(),
-				"eventID", event.GetID(),
-			)
-
-			return false
-		}
-
-		// skip further checks and handle event if destination is not an evm chain
-		chainKeeper, err := bk.ForChain(ctx, destinationChainName)
-		if err != nil {
-			return true
-		}
-
-		// skip if destination chain has not got gateway set yet
-		if _, ok := chainKeeper.GetGatewayAddress(ctx); !ok {
-			bk.Logger(ctx).Debug(fmt.Sprintf("skipping confirmed event %s due to destination chain not having gateway set", event.GetID()),
-				"chain", event.Chain.String(),
-				"destination_chain", destinationChainName.String(),
-				"eventID", event.GetID(),
-			)
-
-			return false
-		}
-
-		return true
+func validateEvent(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus) error {
+	var destinationChainName nexus.ChainName
+	switch event := event.GetEvent().(type) {
+	case *types.Event_ContractCall:
+		destinationChainName = event.ContractCall.DestinationChain
+	case *types.Event_ContractCallWithToken:
+		destinationChainName = event.ContractCallWithToken.DestinationChain
+	case *types.Event_TokenSent:
+		destinationChainName = event.TokenSent.DestinationChain
+	case *types.Event_Transfer, *types.Event_TokenDeployed,
+		*types.Event_MultisigOperatorshipTransferred:
+		// skip checks for non-gateway tx event
+		return nil
+	default:
+		panic(fmt.Errorf("unsupported event type %T", event))
 	}
 
-	for _, chain := range n.GetChains(ctx) {
-		ck, err := bk.ForChain(ctx, chain.Name)
-		if err != nil {
-			continue
-		}
+	// skip if destination chain is not registered
+	destinationChain, ok := n.GetChain(ctx, destinationChainName)
+	if !ok {
+		return fmt.Errorf("destination chain not found")
+	}
 
-		queue := ck.GetConfirmedEventQueue(ctx)
-		// skip if confirmed event queue is empty
-		if queue.IsEmpty() {
-			continue
-		}
+	// skip if destination chain is not activated
+	if !n.IsChainActivated(ctx, destinationChain) {
+		return fmt.Errorf("destination chain de-activated")
+	}
 
-		endBlockerLimit := ck.GetParams(ctx).EndBlockerLimit
-		handledEvents := int64(0)
-		var event types.Event
-		for handledEvents < endBlockerLimit && queue.Dequeue(&event) {
-			handledEvents++
-			if !shouldHandleEvent(&event) {
-				funcs.MustNoErr(ck.SetEventFailed(ctx, event.GetID()))
-				continue
-			}
+	if event.GetTokenSent() != nil && !types.IsEVMChain(destinationChain) {
+		return nil
+	}
 
-			bk.Logger(ctx).Debug("handling confirmed event",
-				"chain", chain.Name.String(),
-				"eventID", event.GetID(),
-			)
+	// skip further checks and handle event if destination is not an evm chain
+	destinationCk, err := bk.ForChain(ctx, destinationChainName)
+	if err != nil {
+		return fmt.Errorf("destination chain not EVM-compatible")
+	}
 
-			var ok bool
+	// skip if destination chain has not got gateway set yet
+	if _, ok := destinationCk.GetGatewayAddress(ctx); !ok {
+		return fmt.Errorf("destination chain gateway not deployed yet")
+	}
 
-			switch event.GetEvent().(type) {
-			case *types.Event_ContractCall:
-				ok = handleContractCall(ctx, event, bk, n, multisig)
-			case *types.Event_ContractCallWithToken:
-				ok = handleContractCallWithToken(ctx, event, bk, n, multisig)
-			case *types.Event_TokenSent:
-				ok = handleTokenSent(ctx, event, bk, n)
-			case *types.Event_Transfer:
-				ok = handleConfirmDeposit(ctx, event, ck, n, chain)
-			case *types.Event_TokenDeployed:
-				ok = handleTokenDeployed(ctx, event, ck, chain)
-			case *types.Event_MultisigOperatorshipTransferred:
-				ok = handleMultisigTransferKey(ctx, event, ck, multisig, chain)
-			default:
-				bk.Logger(ctx).Debug("unsupported event type %T", event,
+	return nil
+}
+
+func handleConfirmedEvent(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus, m types.MultisigKeeper) error {
+	if err := validateEvent(ctx, event, bk, n); err != nil {
+		return err
+	}
+
+	switch event.GetEvent().(type) {
+	case *types.Event_ContractCall:
+		return handleContractCall(ctx, event, bk, n, m)
+	case *types.Event_ContractCallWithToken:
+		return handleContractCallWithToken(ctx, event, bk, n, m)
+	case *types.Event_TokenSent:
+		return handleTokenSent(ctx, event, bk, n)
+	case *types.Event_Transfer:
+		return handleConfirmDeposit(ctx, event, bk, n)
+	case *types.Event_TokenDeployed:
+		return handleTokenDeployed(ctx, event, bk, n)
+	case *types.Event_MultisigOperatorshipTransferred:
+		return handleMultisigTransferKey(ctx, event, bk, n, m)
+	default:
+		panic(fmt.Errorf("unsupported event type %T", event))
+	}
+}
+
+func handleConfirmedEventsForChain(ctx sdk.Context, chain nexus.Chain, bk types.BaseKeeper, n types.Nexus, m types.MultisigKeeper) {
+	ck := funcs.Must(bk.ForChain(ctx, chain.Name))
+	queue := ck.GetConfirmedEventQueue(ctx)
+	endBlockerLimit := ck.GetParams(ctx).EndBlockerLimit
+
+	var events []types.Event
+	var event types.Event
+	for int64(len(events)) < endBlockerLimit && queue.Dequeue(&event) {
+		events = append(events, event)
+	}
+
+	for _, event := range events {
+		success := utils.RunCached(ctx, bk, func(ctx sdk.Context) (bool, error) {
+			if err := handleConfirmedEvent(ctx, event, bk, n, m); err != nil {
+				ck.Logger(ctx).Debug(fmt.Sprintf("failed handling event: %s", err.Error()),
 					"chain", chain.Name.String(),
 					"eventID", event.GetID(),
 				)
 
-				ok = false
+				return false, err
 			}
 
-			if !ok {
-				funcs.MustNoErr(ck.SetEventFailed(ctx, event.GetID()))
-				continue
-			}
-
-			bk.Logger(ctx).Debug("completed handling event",
+			ck.Logger(ctx).Debug("completed handling event",
 				"chain", chain.Name.String(),
 				"eventID", event.GetID(),
 			)
 
-			if err := ck.SetEventCompleted(ctx, event.GetID()); err != nil {
-				return err
-			}
-		}
-	}
+			return true, nil
+		})
 
-	return nil
+		if !success {
+			funcs.MustNoErr(ck.SetEventFailed(ctx, event.GetID()))
+			continue
+		}
+
+		funcs.MustNoErr(ck.SetEventCompleted(ctx, event.GetID()))
+	}
+}
+
+func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, m types.MultisigKeeper) {
+	for _, chain := range slices.Filter(n.GetChains(ctx), types.IsEVMChain) {
+		handleConfirmedEventsForChain(ctx, chain, bk, n, m)
+	}
 }
 
 // BeginBlocker check for infraction evidence or downtime of validators
@@ -572,10 +466,8 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 func BeginBlocker(sdk.Context, abci.RequestBeginBlock, types.BaseKeeper) {}
 
 // EndBlocker called every block, process inflation, update validator set.
-func EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock, bk types.BaseKeeper, n types.Nexus, multisig types.MultisigKeeper) ([]abci.ValidatorUpdate, error) {
-	if err := handleConfirmedEvents(ctx, bk, n, multisig); err != nil {
-		return nil, err
-	}
+func EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock, bk types.BaseKeeper, n types.Nexus, m types.MultisigKeeper) ([]abci.ValidatorUpdate, error) {
+	handleConfirmedEvents(ctx, bk, n, m)
 
 	return nil, nil
 }
