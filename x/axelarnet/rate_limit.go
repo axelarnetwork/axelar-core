@@ -3,24 +3,27 @@ package axelarnet
 import (
 	"fmt"
 
-	"github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
-	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
-	nexustypes "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	"github.com/axelarnetwork/utils/funcs"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
 	ibctransfertypes "github.com/cosmos/ibc-go/v3/modules/apps/transfer/types"
 	porttypes "github.com/cosmos/ibc-go/v3/modules/core/05-port/types"
 	ibcexported "github.com/cosmos/ibc-go/v3/modules/core/exported"
+
+	"github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
+	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
+	nexustypes "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/utils/funcs"
 )
 
+// RateLimiter implements an ICS4Wrapper middleware to rate limit IBC transfers
 type RateLimiter struct {
 	keeper  keeper.Keeper
 	channel porttypes.ICS4Wrapper
 	nexus   types.Nexus
 }
 
+// NewRateLimiter returns a new RateLimiter
 func NewRateLimiter(keeper keeper.Keeper, channel porttypes.ICS4Wrapper, nexus types.Nexus) RateLimiter {
 	return RateLimiter{
 		keeper:  keeper,

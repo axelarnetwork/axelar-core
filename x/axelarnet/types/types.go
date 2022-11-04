@@ -188,6 +188,7 @@ const (
 	External = 3
 )
 
+// ValidateIBCPath validates direct IBC paths
 func ValidateIBCPath(path string) error {
 	if err := utils.ValidateString(path); err != nil {
 		return sdkerrors.Wrap(err, "invalid IBC path")
