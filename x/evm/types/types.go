@@ -57,6 +57,7 @@ const (
 )
 
 const (
+	// DefaultRateLimitWindow is the default rate limit window, also used by the gateway
 	DefaultRateLimitWindow = 6 * time.Hour
 )
 
