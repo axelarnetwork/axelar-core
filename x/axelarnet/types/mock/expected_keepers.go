@@ -18,6 +18,7 @@ import (
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 	"github.com/tendermint/tendermint/libs/log"
 	"sync"
+	"time"
 )
 
 // Ensure, that BaseKeeperMock does implement axelarnettypes.BaseKeeper.
@@ -539,7 +540,7 @@ var _ axelarnettypes.Nexus = &NexusMock{}
 // 			LinkAddressesFunc: func(ctx cosmossdktypes.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress) error {
 // 				panic("mock out the LinkAddresses method")
 // 			},
-// 			RegisterAssetFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset, limit cosmossdktypes.Uint) error {
+// 			RegisterAssetFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset, limit cosmossdktypes.Uint, window time.Duration) error {
 // 				panic("mock out the RegisterAsset method")
 // 			},
 // 			SetChainFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain)  {
@@ -589,7 +590,7 @@ type NexusMock struct {
 	LinkAddressesFunc func(ctx cosmossdktypes.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress) error
 
 	// RegisterAssetFunc mocks the RegisterAsset method.
-	RegisterAssetFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset, limit cosmossdktypes.Uint) error
+	RegisterAssetFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset, limit cosmossdktypes.Uint, window time.Duration) error
 
 	// SetChainFunc mocks the SetChain method.
 	SetChainFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain)
@@ -694,6 +695,8 @@ type NexusMock struct {
 			Asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset
 			// Limit is the limit argument value.
 			Limit cosmossdktypes.Uint
+			// Window is the window argument value.
+			Window time.Duration
 		}
 		// SetChain holds details about calls to the SetChain method.
 		SetChain []struct {
@@ -1128,41 +1131,45 @@ func (mock *NexusMock) LinkAddressesCalls() []struct {
 }
 
 // RegisterAsset calls RegisterAssetFunc.
-func (mock *NexusMock) RegisterAsset(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset, limit cosmossdktypes.Uint) error {
+func (mock *NexusMock) RegisterAsset(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset, limit cosmossdktypes.Uint, window time.Duration) error {
 	if mock.RegisterAssetFunc == nil {
 		panic("NexusMock.RegisterAssetFunc: method is nil but Nexus.RegisterAsset was just called")
 	}
 	callInfo := struct {
-		Ctx   cosmossdktypes.Context
-		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-		Asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset
-		Limit cosmossdktypes.Uint
+		Ctx    cosmossdktypes.Context
+		Chain  github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
+		Asset  github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset
+		Limit  cosmossdktypes.Uint
+		Window time.Duration
 	}{
-		Ctx:   ctx,
-		Chain: chain,
-		Asset: asset,
-		Limit: limit,
+		Ctx:    ctx,
+		Chain:  chain,
+		Asset:  asset,
+		Limit:  limit,
+		Window: window,
 	}
 	mock.lockRegisterAsset.Lock()
 	mock.calls.RegisterAsset = append(mock.calls.RegisterAsset, callInfo)
 	mock.lockRegisterAsset.Unlock()
-	return mock.RegisterAssetFunc(ctx, chain, asset, limit)
+	return mock.RegisterAssetFunc(ctx, chain, asset, limit, window)
 }
 
 // RegisterAssetCalls gets all the calls that were made to RegisterAsset.
 // Check the length with:
 //     len(mockedNexus.RegisterAssetCalls())
 func (mock *NexusMock) RegisterAssetCalls() []struct {
-	Ctx   cosmossdktypes.Context
-	Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-	Asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset
-	Limit cosmossdktypes.Uint
+	Ctx    cosmossdktypes.Context
+	Chain  github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
+	Asset  github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset
+	Limit  cosmossdktypes.Uint
+	Window time.Duration
 } {
 	var calls []struct {
-		Ctx   cosmossdktypes.Context
-		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-		Asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset
-		Limit cosmossdktypes.Uint
+		Ctx    cosmossdktypes.Context
+		Chain  github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
+		Asset  github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset
+		Limit  cosmossdktypes.Uint
+		Window time.Duration
 	}
 	mock.lockRegisterAsset.RLock()
 	calls = mock.calls.RegisterAsset

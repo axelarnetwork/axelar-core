@@ -3,6 +3,7 @@ package keeper_test
 import (
 	"strings"
 	"testing"
+	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
@@ -15,6 +16,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	"github.com/axelarnetwork/axelar-core/utils"
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	axelarnetkeeper "github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	axelarnetTypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
@@ -84,7 +86,7 @@ func TestLinkAddress(t *testing.T) {
 		for _, chain := range []exported.Chain{evm.Ethereum, axelarnet.Axelarnet, terra} {
 			keeper.SetChain(ctx, chain)
 			keeper.ActivateChain(ctx, chain)
-			funcs.MustNoErr(keeper.RegisterAsset(ctx, chain, exported.NewAsset(axelarnet.NativeAsset, false), sdk.ZeroUint()))
+			funcs.MustNoErr(keeper.RegisterAsset(ctx, chain, exported.NewAsset(axelarnet.NativeAsset, false), utils.MaxUint, time.Hour))
 		}
 
 		bankK.BlockedAddrFunc = func(addr sdk.AccAddress) bool { return false }

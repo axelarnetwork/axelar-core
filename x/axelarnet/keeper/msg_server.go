@@ -4,11 +4,13 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
 	ibctransfertypes "github.com/cosmos/ibc-go/v3/modules/apps/transfer/types"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/events"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
@@ -18,6 +20,10 @@ import (
 )
 
 var _ types.MsgServiceServer = msgServer{}
+
+const (
+	defaultRateLimitWindow = 6 * time.Hour
+)
 
 type msgServer struct {
 	Keeper
@@ -237,12 +243,12 @@ func (s msgServer) AddCosmosBasedChain(c context.Context, req *types.AddCosmosBa
 
 	// register asset in chain state
 	for _, asset := range req.NativeAssets {
-		if err := s.nexus.RegisterAsset(ctx, chain, asset, sdk.ZeroUint()); err != nil {
+		if err := s.nexus.RegisterAsset(ctx, chain, asset, utils.MaxUint, defaultRateLimitWindow); err != nil {
 			return nil, err
 		}
 
 		// also register on axelarnet, it routes assets from cosmos chains to evm chains
-		if err := s.nexus.RegisterAsset(ctx, exported.Axelarnet, nexus.NewAsset(asset.Denom, false), sdk.ZeroUint()); err != nil {
+		if err := s.nexus.RegisterAsset(ctx, exported.Axelarnet, nexus.NewAsset(asset.Denom, false), utils.MaxUint, defaultRateLimitWindow); err != nil {
 			return nil, err
 		}
 	}
@@ -272,14 +278,14 @@ func (s msgServer) RegisterAsset(c context.Context, req *types.RegisterAssetRequ
 	}
 
 	// register asset in chain state
-	err := s.nexus.RegisterAsset(ctx, chain, req.Asset, sdk.ZeroUint())
+	err := s.nexus.RegisterAsset(ctx, chain, req.Asset, utils.MaxUint, defaultRateLimitWindow)
 	if err != nil {
 		return nil, err
 	}
 
 	// also register on axelarnet, it routes assets from cosmos chains to evm chains
 	// ignore the error in case above chain is axelarnet, or if the asset is already registered
-	_ = s.nexus.RegisterAsset(ctx, exported.Axelarnet, nexus.NewAsset(req.Asset.Denom, false), sdk.ZeroUint())
+	_ = s.nexus.RegisterAsset(ctx, exported.Axelarnet, nexus.NewAsset(req.Asset.Denom, false), utils.MaxUint, defaultRateLimitWindow)
 
 	return &types.RegisterAssetResponse{}, nil
 }

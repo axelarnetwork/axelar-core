@@ -14,10 +14,6 @@ import (
 	"github.com/axelarnetwork/utils/slices"
 )
 
-const (
-	defaultRateLimitWindow = 6 * time.Hour
-)
-
 func (k Keeper) getChainStates(ctx sdk.Context) (chainStates []types.ChainState) {
 	iter := k.getStore(ctx).Iterator(chainStatePrefix)
 	defer utils.CloseLogError(iter, k.Logger(ctx))
@@ -37,7 +33,7 @@ func (k Keeper) getChainState(ctx sdk.Context, chain exported.Chain) (chainState
 }
 
 // RegisterAsset indicates that the specified asset is supported by the given chain
-func (k Keeper) RegisterAsset(ctx sdk.Context, chain exported.Chain, asset exported.Asset, limit sdk.Uint) error {
+func (k Keeper) RegisterAsset(ctx sdk.Context, chain exported.Chain, asset exported.Asset, limit sdk.Uint, window time.Duration) error {
 	chainState, _ := k.getChainState(ctx, chain)
 	chainState.Chain = chain
 
@@ -54,10 +50,8 @@ func (k Keeper) RegisterAsset(ctx sdk.Context, chain exported.Chain, asset expor
 
 	k.setChainState(ctx, chainState)
 
-	if !limit.IsZero() {
-		if err := k.SetRateLimit(ctx, chain.Name, sdk.NewCoin(asset.Denom, sdk.NewIntFromBigInt(limit.BigInt())), defaultRateLimitWindow); err != nil {
-			return err
-		}
+	if err := k.SetRateLimit(ctx, chain.Name, sdk.NewCoin(asset.Denom, sdk.NewIntFromBigInt(limit.BigInt())), window); err != nil {
+		return err
 	}
 
 	return nil
