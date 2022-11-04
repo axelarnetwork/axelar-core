@@ -592,6 +592,9 @@ func TestHandleContractCallWithToken(t *testing.T) {
 		n.ComputeTransferFeeFunc = func(ctx sdk.Context, sourceChain, destinationChain nexus.Chain, asset sdk.Coin) (sdk.Coin, error) {
 			return fee, nil
 		}
+		n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error {
+			return nil
+		}
 		destinationCk.GetChainIDFunc = func(ctx sdk.Context) (sdk.Int, bool) { return sdk.ZeroInt(), false }
 
 		assert.PanicsWithError(t, "result is not found", func() {
@@ -638,6 +641,9 @@ func TestHandleContractCallWithToken(t *testing.T) {
 		n.ComputeTransferFeeFunc = func(ctx sdk.Context, sourceChain, destinationChain nexus.Chain, asset sdk.Coin) (sdk.Coin, error) {
 			return fee, nil
 		}
+		n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error {
+			return nil
+		}
 		destinationCk.GetChainIDFunc = func(ctx sdk.Context) (sdk.Int, bool) { return sdk.NewInt(1), true }
 		multisigKeeper.GetCurrentKeyIDFunc = func(ctx sdk.Context, chainName nexus.ChainName) (multisig.KeyID, bool) {
 			return multisigTestUtils.KeyID(), false
@@ -646,6 +652,53 @@ func TestHandleContractCallWithToken(t *testing.T) {
 		assert.PanicsWithError(t, "result is not found", func() {
 			handleContractCallWithToken(ctx, event, bk, n, multisigKeeper)
 		})
+	}))
+
+	t.Run("should fail if rate limit is exceeded", testutils.Func(func(t *testing.T) {
+		ctx, bk, n, multisigKeeper, sourceCk, destinationCk := setup()
+		fee := sdk.NewCoin(event.GetContractCallWithToken().Symbol, sdk.NewInt(rand.I64Between(1, event.GetContractCallWithToken().Amount.BigInt().Int64())))
+
+		bk.ForChainFunc = func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) {
+			switch chain {
+			case sourceChainName:
+				return sourceCk, nil
+			case destinationChainName:
+				return destinationCk, nil
+			default:
+				return nil, errors.New("not found")
+			}
+		}
+		n.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
+			switch chain {
+			case sourceChainName, destinationChainName:
+				return nexus.Chain{Name: chain}, true
+			default:
+				return nexus.Chain{}, false
+			}
+		}
+
+		n.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return true }
+		sourceCk.GetERC20TokenBySymbolFunc = func(ctx sdk.Context, symbol string) types.ERC20Token {
+			if symbol == event.GetContractCallWithToken().Symbol {
+				return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed, Asset: symbol})
+			}
+			return types.NilToken
+		}
+		destinationCk.GetERC20TokenByAssetFunc = func(ctx sdk.Context, asset string) types.ERC20Token {
+			if asset == event.GetContractCallWithToken().Symbol {
+				return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed, Asset: asset})
+			}
+			return types.NilToken
+		}
+		n.ComputeTransferFeeFunc = func(ctx sdk.Context, sourceChain, destinationChain nexus.Chain, asset sdk.Coin) (sdk.Coin, error) {
+			return fee, nil
+		}
+		n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error {
+			return fmt.Errorf("rate limit exceeded")
+		}
+
+		err := handleContractCallWithToken(ctx, event, bk, n, multisigKeeper)
+		assert.ErrorContains(t, err, "rate limit exceeded")
 	}))
 
 	t.Run("should succeed if successfully created the command", testutils.Func(func(t *testing.T) {
@@ -683,10 +736,14 @@ func TestHandleContractCallWithToken(t *testing.T) {
 			}
 			return types.NilToken
 		}
+		n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error {
+			return nil
+		}
 		destinationCk.GetChainIDFunc = func(ctx sdk.Context) (sdk.Int, bool) { return sdk.NewInt(1), true }
 		multisigKeeper.GetCurrentKeyIDFunc = func(sdk.Context, nexus.ChainName) (multisig.KeyID, bool) {
 			return multisigTestUtils.KeyID(), true
 		}
+
 		destinationCk.EnqueueCommandFunc = func(ctx sdk.Context, cmd types.Command) error { return nil }
 
 		err := handleContractCallWithToken(ctx, event, bk, n, multisigKeeper)
