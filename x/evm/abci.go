@@ -127,6 +127,14 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 		return fmt.Errorf("invalid contract address %s", e.ContractAddress)
 	}
 
+	if err := n.RateLimitTransfer(ctx, sourceChain.Name, sdk.NewCoin(asset, sdk.Int(e.Amount)), nexus.Incoming); err != nil {
+		return err
+	}
+
+	if err := n.RateLimitTransfer(ctx, destinationChain.Name, sdk.NewCoin(asset, sdk.Int(e.Amount)), nexus.Outgoing); err != nil {
+		return err
+	}
+
 	cmd := types.NewApproveContractCallWithMintCommand(
 		funcs.MustOk(destinationCk.GetChainID(ctx)),
 		funcs.MustOk(multisig.GetCurrentKeyID(ctx, destinationChain.Name)),
