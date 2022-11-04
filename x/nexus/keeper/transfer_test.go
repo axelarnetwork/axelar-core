@@ -3,6 +3,7 @@ package keeper_test
 import (
 	mathrand "math/rand"
 	"testing"
+	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
@@ -183,7 +184,8 @@ func TestTransfer(t *testing.T) {
 		).Run(t, repeated)
 
 	whenAssetIsRegisteredOnSource := When("asset is registered on source chain", func() {
-		funcs.MustNoErr(k.RegisterAsset(ctx, source, nexus.Asset{Denom: asset, IsNativeAsset: true}))
+		k.SetChain(ctx, source)
+		funcs.MustNoErr(k.RegisterAsset(ctx, source, nexus.Asset{Denom: asset, IsNativeAsset: true}, utils.MaxUint, time.Hour))
 	})
 
 	validateTransferAssetFails := Then("validate transfer asset fails",
@@ -211,7 +213,7 @@ func TestTransfer(t *testing.T) {
 			Then2(validateTransferAssetFails),
 
 		whenAssetIsRegisteredOnSource.
-			When("asset is not registered on des chain", func() {}).
+			When("asset is not registered on dest chain", func() {}).
 			Then2(validateTransferAssetFails),
 	).Run(t, repeated)
 
@@ -491,7 +493,7 @@ func setup(cfg params.EncodingConfig) (nexusKeeper.Keeper, sdk.Context) {
 				isNative = true
 			}
 
-			if err := k.RegisterAsset(ctx, chain, nexus.NewAsset(asset, isNative)); err != nil {
+			if err := k.RegisterAsset(ctx, chain, nexus.NewAsset(asset, isNative), utils.MaxUint, time.Hour); err != nil {
 				panic(err)
 			}
 

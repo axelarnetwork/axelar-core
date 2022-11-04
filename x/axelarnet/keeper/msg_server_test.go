@@ -6,6 +6,7 @@ import (
 	mathRand "math/rand"
 	"strings"
 	"testing"
+	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
@@ -843,7 +844,9 @@ func TestAddCosmosBasedChain(t *testing.T) {
 			GetChainFunc:              func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) { return nexus.Chain{}, false },
 			GetChainByNativeAssetFunc: func(ctx sdk.Context, asset string) (nexus.Chain, bool) { return nexus.Chain{}, false },
 			SetChainFunc:              func(ctx sdk.Context, chain nexus.Chain) {},
-			RegisterAssetFunc:         func(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset) error { return nil },
+			RegisterAssetFunc: func(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset, limit sdk.Uint, window time.Duration) error {
+				return nil
+			},
 		}
 		ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{}, &mock.ChannelKeeperMock{})
 		server = keeper.NewMsgServerImpl(k, nexusK, &mock.BankKeeperMock{}, &mock.AccountKeeperMock{}, ibcK)
@@ -929,7 +932,7 @@ func TestAddCosmosBasedChain(t *testing.T) {
 
 			When("asset is already registered", func() {
 				req.NativeAssets = []nexus.Asset{{Denom: rand.Denom(3, 10), IsNativeAsset: true}}
-				nexusK.RegisterAssetFunc = func(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset) error {
+				nexusK.RegisterAssetFunc = func(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset, limit sdk.Uint, window time.Duration) error {
 					return fmt.Errorf("asset already registered")
 				}
 			}).
@@ -937,7 +940,7 @@ func TestAddCosmosBasedChain(t *testing.T) {
 
 			When("asset is already registered on axelarnet", func() {
 				req.NativeAssets = []nexus.Asset{{Denom: rand.Denom(3, 10), IsNativeAsset: true}}
-				nexusK.RegisterAssetFunc = func(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset) error {
+				nexusK.RegisterAssetFunc = func(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset, limit sdk.Uint, window time.Duration) error {
 					if chain.Name == exported.Axelarnet.Name {
 						return fmt.Errorf("asset already registered")
 					} else {
