@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"math"
 	mathrand "math/rand"
 	"testing"
 	"time"
@@ -10,9 +11,10 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	testutils "github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
+	nexustestutils "github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
 	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	"github.com/axelarnetwork/utils/funcs"
 	. "github.com/axelarnetwork/utils/test"
@@ -20,7 +22,7 @@ import (
 
 func TestSetRateLimit(t *testing.T) {
 	cfg := app.MakeEncodingConfig()
-	repeated := 10
+	repeated := 1
 
 	var (
 		k      nexusKeeper.Keeper
@@ -37,7 +39,7 @@ func TestSetRateLimit(t *testing.T) {
 
 	whenAssetIsRegistered := When("asset is registered", func() {
 		nexusChain := funcs.MustOk(k.GetChain(ctx, chain))
-		err := k.RegisterAsset(ctx, nexusChain, nexus.NewAsset(asset, false))
+		err := k.RegisterAsset(ctx, nexusChain, nexus.NewAsset(asset, false), utils.MaxUint, time.Hour)
 		assert.NoError(t, err)
 	})
 
@@ -69,17 +71,6 @@ func TestSetRateLimit(t *testing.T) {
 		Run(t, repeated)
 
 	givenKeeper.
-		When("using an invalid denom", func() {
-			chain = randChain(k, ctx).Name
-			asset = "1" + rand.StrBetween(2, 20)
-			limit = sdk.Coin{Denom: asset, Amount: sdk.NewInt(mathrand.Int63())}
-			window = rand.Duration()
-		}).
-		When2(whenAssetIsRegistered).
-		Then2(setRateLimitFails("invalid denom")).
-		Run(t, repeated)
-
-	givenKeeper.
 		When("using an invalid rate limit", func() {
 			chain = randChain(k, ctx).Name
 			asset = rand.Denom(3, 20)
@@ -87,7 +78,7 @@ func TestSetRateLimit(t *testing.T) {
 			window = rand.Duration()
 		}).
 		When2(whenAssetIsRegistered).
-		Then2(setRateLimitFails("")).
+		Then2(setRateLimitFails("negative coin amount")).
 		Run(t, repeated)
 
 	givenKeeper.
@@ -112,7 +103,13 @@ func TestSetRateLimit(t *testing.T) {
 		Then("set rate limit succeeds", func(t *testing.T) {
 			err := k.SetRateLimit(ctx, chain, limit, window)
 			assert.NoError(t, err)
-			assert.Equal(t, 1, len(ctx.EventManager().Events()))
+		}).
+		Then("set rate limit overwrite succeeds", func(t *testing.T) {
+			limit = sdk.NewInt64Coin(asset, mathrand.Int63())
+			window = rand.Duration()
+
+			err := k.SetRateLimit(ctx, chain, limit, window)
+			assert.NoError(t, err)
 		}).
 		Run(t, repeated)
 }
@@ -140,15 +137,15 @@ func TestRateLimitTransfer(t *testing.T) {
 		chain = randChain(k, ctx).Name
 		denom = rand.Denom(3, 20)
 		nexusChain := funcs.MustOk(k.GetChain(ctx, chain))
-		err := k.RegisterAsset(ctx, nexusChain, nexus.NewAsset(denom, false))
+		err := k.RegisterAsset(ctx, nexusChain, nexus.NewAsset(denom, false), utils.MaxUint, time.Hour)
 		assert.NoError(t, err)
 	})
 
 	givenKeeper.
 		When("no rate limit is set", func() {
-			chain = testutils.RandomChainName()
+			chain = nexustestutils.RandomChainName()
 			asset = rand.Coin()
-			direction = testutils.RandomDirection()
+			direction = nexustestutils.RandomDirection()
 		}).
 		Then("rate limit transfer succeeds", func(t *testing.T) {
 			err := k.RateLimitTransfer(ctx, chain, asset, direction)
@@ -161,7 +158,7 @@ func TestRateLimitTransfer(t *testing.T) {
 		When("a rate limit is set", func() {
 			limit = sdk.NewInt64Coin(denom, mathrand.Int63())
 			window = rand.Duration()
-			direction = testutils.RandomDirection()
+			direction = nexustestutils.RandomDirection()
 
 			err := k.SetRateLimit(ctx, chain, limit, window)
 			assert.NoError(t, err)
@@ -202,6 +199,31 @@ func TestRateLimitTransfer(t *testing.T) {
 
 			err = k.RateLimitTransfer(ctx, chain, asset, exported.Outgoing)
 			assert.ErrorContains(t, err, "exceeded rate limit")
+		}).
+		Run(t)
+
+	givenKeeper.
+		When2(whenAssetIsRegistered).
+		When("a rate limit is set", func() {
+			limit = sdk.NewInt64Coin(denom, mathrand.Int63())
+			window = rand.Duration()
+			direction = nexustestutils.RandomDirection()
+
+			err := k.SetRateLimit(ctx, chain, limit, window)
+			assert.NoError(t, err)
+		}).
+		When("transfer amount is above the rate limit", func() {
+			asset = limit
+			asset.Amount = rand.IntBetween(limit.Amount.AddRaw(1), limit.Amount.AddRaw(math.MaxInt64))
+		}).
+		Then("rate limit transfer fails", func(t *testing.T) {
+			err := k.RateLimitTransfer(ctx, chain, asset, direction)
+			assert.ErrorContains(t, err, "exceeded rate limit")
+		}).
+		Then("rate limit transfer succeeds on a small transfer", func(t *testing.T) {
+			asset.Amount = rand.IntBetween(sdk.ZeroInt(), limit.Amount)
+			err := k.RateLimitTransfer(ctx, chain, asset, direction)
+			assert.NoError(t, err)
 		}).
 		Run(t)
 }
