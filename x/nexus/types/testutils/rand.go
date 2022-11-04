@@ -3,10 +3,11 @@ package testutils
 import (
 	"time"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // RandRateLimit returns a random rate limit for a given chain and asset
