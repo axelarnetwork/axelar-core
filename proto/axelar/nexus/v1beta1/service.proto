@@ -50,6 +50,14 @@ service MsgService {
       body : "*"
     };
   }
+
+  rpc SetTransferEpochLimit(SetTransferEpochLimitRequest)
+      returns (SetTransferEpochLimitResponse) {
+    option (google.api.http) = {
+      post : "/axelar/nexus/set_transfer_rate_limit"
+      body : "*"
+    };
+  }
 }
 
 // QueryService defines the gRPC querier service.

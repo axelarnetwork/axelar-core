@@ -3,8 +3,10 @@ package axelar.nexus.v1beta1;
 
 option go_package = "github.com/axelarnetwork/axelar-core/x/nexus/types";
 
-import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
+import "google/protobuf/duration.proto";
+import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
 import "axelar/nexus/exported/v1beta1/types.proto";
 import "axelar/permission/exported/v1beta1/types.proto";
 
@@ -66,3 +68,20 @@ message RegisterAssetFeeRequest {
 }
 
 message RegisterAssetFeeResponse {}
+
+// SetTransferEpochLimitRequest represents a message to set rate limits on
+// transfers
+message SetTransferEpochLimitRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
+
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  cosmos.base.v1beta1.Coin limit = 3 [ (gogoproto.nullable) = false ];
+  google.protobuf.Duration window = 4
+      [ (gogoproto.stdduration) = true, (gogoproto.nullable) = false ];
+}
+
+message SetTransferEpochLimitResponse {}

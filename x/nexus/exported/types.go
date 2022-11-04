@@ -222,3 +222,13 @@ type MaintainerState interface {
 	CountIncorrectVotes(window int) uint64
 	GetAddress() sdk.ValAddress
 }
+
+// ValidateBasic validates the transfer direction
+func (m TransferDirection) ValidateBasic() error {
+	switch m {
+	case Incoming, Outgoing:
+		return nil
+	default:
+		return fmt.Errorf("invalid transfer direction %s", m)
+	}
+}

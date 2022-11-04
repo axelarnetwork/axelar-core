@@ -11,6 +11,8 @@ const (
 	AttributeKeyChain                  = "chain"
 	AttributeKeyChainMaintainerAddress = "chainMaintainerAddress"
 	AttributeKeyAsset                  = "asset"
+	AttributeKeyLimit                  = "limit"
+	AttributeKeyTransferEpoch          = "transferEpoch"
 )
 
 // Event attribute values

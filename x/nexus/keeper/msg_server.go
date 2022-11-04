@@ -262,3 +262,14 @@ func (s msgServer) RegisterAssetFee(c context.Context, req *types.RegisterAssetF
 
 	return &types.RegisterAssetFeeResponse{}, nil
 }
+
+// SetTransferEpochLimit handles setting the transfer rate limit for an asset on a chain
+func (s msgServer) SetTransferEpochLimit(c context.Context, req *types.SetTransferEpochLimitRequest) (*types.SetTransferEpochLimitResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	if err := s.SetRateLimit(ctx, req.Chain, req.Limit, req.Window); err != nil {
+		return nil, err
+	}
+
+	return &types.SetTransferEpochLimitResponse{}, nil
+}

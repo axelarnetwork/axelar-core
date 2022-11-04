@@ -23,3 +23,8 @@ func RandomChainName() exported.ChainName {
 func RandomTransferID() exported.TransferID {
 	return exported.TransferID(rand.PosI64())
 }
+
+// RandomDirection generates a random transfer direction
+func RandomDirection() exported.TransferDirection {
+	return exported.TransferDirection(rand.I64Between(1, int64(len(exported.TransferDirection_name))))
+}

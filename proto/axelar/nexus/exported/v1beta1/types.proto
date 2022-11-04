@@ -76,3 +76,14 @@ message Asset {
   reserved 2; // min_amount was removed in v0.15
   bool is_native_asset = 3;
 }
+
+enum TransferDirection {
+  option (gogoproto.goproto_enum_prefix) = false;
+
+  TRANSFER_DIRECTION_UNSPECIFIED = 0
+      [ (gogoproto.enumvalue_customname) = "Unspecified" ];
+  TRANSFER_DIRECTION_INCOMING = 1
+      [ (gogoproto.enumvalue_customname) = "Incoming" ];
+  TRANSFER_DIRECTION_OUTGOING = 2
+      [ (gogoproto.enumvalue_customname) = "Outgoing" ];
+}

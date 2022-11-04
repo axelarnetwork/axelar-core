@@ -404,7 +404,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 
 	hasPendingTransfers := When("has pending transfers", func() {
 		nexusK.GetTransfersForChainPaginatedFunc = func(ctx sdk.Context, chain nexus.Chain, state nexus.TransferState, pageRequest *query.PageRequest) ([]nexus.CrossChainTransfer, *query.PageResponse, error) {
-			return []nexus.CrossChainTransfer{randomTransfer(rand.Denom(2, 10), nexus.ChainName(rand.StrBetween(2, 10)))}, nil, nil
+			return []nexus.CrossChainTransfer{randomTransfer(rand.Denom(3, 10), nexus.ChainName(rand.StrBetween(2, 10)))}, nil, nil
 		}
 	})
 
@@ -526,7 +526,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 					When("has many pending transfers", func() {
 						nexusK.GetTransfersForChainPaginatedFunc = func(ctx sdk.Context, chain nexus.Chain, state nexus.TransferState, pageRequest *query.PageRequest) ([]nexus.CrossChainTransfer, *query.PageResponse, error) {
 							return slices.Expand(func(int) nexus.CrossChainTransfer {
-								return randomTransfer(rand.Denom(2, 10), nexus.ChainName(rand.StrBetween(2, 10)))
+								return randomTransfer(rand.Denom(3, 10), nexus.ChainName(rand.StrBetween(2, 10)))
 							}, int(pageRequest.Limit)), nil, nil
 						}
 					}).
@@ -610,7 +610,7 @@ func TestHandleMsgRouteIBCTransfers(t *testing.T) {
 			var transfers []nexus.CrossChainTransfer
 			for i := int64(0); i < rand.I64Between(1, 5); i++ {
 				chainName := chain.Name
-				transfers = append(transfers, randomTransfer(rand.Denom(2, 10), chainName))
+				transfers = append(transfers, randomTransfer(rand.Denom(3, 10), chainName))
 			}
 			transfersNum += len(transfers)
 			return transfers, nil, nil
