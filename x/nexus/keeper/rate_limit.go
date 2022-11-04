@@ -18,7 +18,7 @@ import (
 // RateLimitTransfer applies a rate limit to transfers, and returns an error if the rate limit is exceeded
 func (k Keeper) RateLimitTransfer(ctx sdk.Context, chain exported.ChainName, asset sdk.Coin, direction exported.TransferDirection) error {
 	rateLimit, found := k.getRateLimit(ctx, chain, asset.Denom)
-	// If rate limit is not set, it is treated as unbounded
+	// If a rate limit is not set, it is treated as unbounded
 	if !found {
 		return nil
 	}

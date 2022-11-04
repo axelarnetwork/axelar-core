@@ -33,8 +33,19 @@ func PosI64() int64 {
 	return x
 }
 
+// Duration returns a positive pseudo-random time.Duration
+func Duration() time.Duration {
+	return time.Duration(PosI64())
+}
+
+// IntBetween returns a random integer between lower (inclusive) and upper (exclusive).
+// It panics if upper <= lower or if (upper - lower) doesn't fit int64.
+func IntBetween(lower sdk.Int, upper sdk.Int) sdk.Int {
+	return sdk.NewInt(rand.Int63n(upper.Sub(lower).BigInt().Int64())).Add(lower)
+}
+
 // UintBetween returns a random integer between lower (inclusive) and upper (exclusive).
-// It panics if upper <= lower.
+// It panics if upper <= loweror or if (upper - lower) doesn't fit int64.
 func UintBetween(lower sdk.Uint, upper sdk.Uint) sdk.Uint {
 	return sdk.NewUint(uint64(rand.Int63n(upper.Sub(lower).BigInt().Int64()))).Add(lower)
 }
@@ -224,7 +235,18 @@ func Strings(minLength int, shorterThan int) StringGen {
 // Denom returns a random denom string (max exclusive)
 func Denom(min, max int) string {
 	// first letter must be an ascii alphabet
-	return Strings(1, 2).WithAlphabet([]rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")).Next() + Strings(min, max).WithAlphabet([]rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-/")).Next()
+	denom := Strings(1, 2).WithAlphabet([]rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")).Next()
+
+	if min > 0 {
+		denom = denom + Strings(min-1, max-1).WithAlphabet([]rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-/")).Next()
+	}
+
+	return denom
+}
+
+// Coin returns a random sdk.Coin
+func Coin() sdk.Coin {
+	return sdk.NewCoin(Denom(3, 20), sdk.NewInt(rand.Int63()))
 }
 
 // HexStrings returns a random hex string generator that produces hex strings with given length
