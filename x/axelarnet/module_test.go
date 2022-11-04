@@ -24,6 +24,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types/mock"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types/testutils"
+	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 	. "github.com/axelarnetwork/utils/test"
@@ -34,6 +35,7 @@ func TestGetMigrationHandler(t *testing.T) {
 		ctx       sdk.Context
 		appModule axelarnet.AppModule
 		k         keeper.Keeper
+		n         *mock.NexusMock
 
 		ack       channeltypes.Acknowledgement
 		transfer  types.IBCTransfer
@@ -76,7 +78,8 @@ func TestGetMigrationHandler(t *testing.T) {
 		}
 
 		transferK := ibctransferkeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("transfer"), transferSubspace, &mock.ChannelKeeperMock{}, &mock.ChannelKeeperMock{}, &mock.PortKeeperMock{}, accountK, bankK, scopedTransferK)
-		appModule = axelarnet.NewAppModule(k, &mock.NexusMock{}, bankK, accountK, ibcK, ibctransfer.NewIBCModule(transferK), log.TestingLogger())
+		n = &mock.NexusMock{}
+		appModule = axelarnet.NewAppModule(k, n, bankK, accountK, ibcK, ibctransfer.NewIBCModule(transferK), axelarnet.NewRateLimiter(k, channelK, n), log.TestingLogger())
 	})
 
 	fungibleTokenPacket := ibctransfertypes.NewFungibleTokenPacketData(rand.Denom(5, 10), "1", rand.AccAddr().String(), rand.AccAddr().String())
@@ -123,6 +126,14 @@ func TestGetMigrationHandler(t *testing.T) {
 		}))
 	})
 
+	whenChainIsActivated := When("chain is activated", func() {
+		n.GetChainFunc = func(ctx sdk.Context, chain exported.ChainName) (exported.Chain, bool) { return exported.Chain{}, true }
+		n.IsChainActivatedFunc = func(ctx sdk.Context, chain exported.Chain) bool { return true }
+		n.RateLimitTransferFunc = func(ctx sdk.Context, chain exported.ChainName, asset sdk.Coin, direction exported.TransferDirection) error {
+			return nil
+		}
+	})
+
 	givenAnAppModule.
 		Branch(
 			whenGetValidAckResult.
@@ -134,6 +145,7 @@ func TestGetMigrationHandler(t *testing.T) {
 				}),
 
 			whenGetValidAckError.
+				When2(whenChainIsActivated).
 				When2(seqMapsToID).
 				When2(whenOnAck).
 				Then("should set transfer to failed", func(t *testing.T) {
@@ -155,6 +167,7 @@ func TestGetMigrationHandler(t *testing.T) {
 				Then2(shouldNotChangeTransferState),
 
 			seqMapsToID.
+				When2(whenChainIsActivated).
 				When2(whenOnTimeout).
 				Then("should set transfer to failed", func(t *testing.T) {
 					transfer := funcs.MustOk(k.GetTransfer(ctx, transfer.ID))
@@ -163,6 +176,7 @@ func TestGetMigrationHandler(t *testing.T) {
 
 			whenPendingTransfersExist.
 				When("seq is not mapped to id", func() {}).
+				When2(whenChainIsActivated).
 				When2(whenOnTimeout).
 				Then2(shouldNotChangeTransferState),
 		).Run(t)

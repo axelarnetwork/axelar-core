@@ -31,6 +31,7 @@ var (
 	// failedTransferPrefix is deprecated in v0.23
 	failedTransferPrefix = key.FromUInt[uint64](2)
 	seqIDMappingPrefix   = key.FromUInt[uint64](3)
+	ibcPathPrefix        = key.FromUInt[uint64](4)
 )
 
 // Keeper provides access to all state changes regarding the Axelarnet module
@@ -111,6 +112,34 @@ func (k Keeper) GetCosmosChainByName(ctx sdk.Context, chain nexus.ChainName) (ty
 	}
 
 	return value, true
+}
+
+// setChainByIBCPath sets the chain name for the given ibc path
+func (k Keeper) setChainByIBCPath(ctx sdk.Context, ibcPath string, chain nexus.ChainName) error {
+	// register a cosmos chain to axelarnet
+	return k.getStore(ctx).SetNewValidated(ibcPathPrefix.Append(key.FromStr(ibcPath)),
+		utils.WithValidation(&gogoprototypes.StringValue{Value: chain.String()},
+			func() error { return chain.Validate() }))
+}
+
+func (k Keeper) getChainsByIBCPath(ctx sdk.Context) (chains []nexus.ChainName) {
+	iter := k.getStore(ctx).IteratorNew(ibcPathPrefix)
+	defer utils.CloseLogError(iter, k.Logger(ctx))
+
+	for ; iter.Valid(); iter.Next() {
+		var chain gogoprototypes.StringValue
+		iter.UnmarshalValue(&chain)
+
+		chains = append(chains, nexus.ChainName(chain.GetValue()))
+	}
+
+	return chains
+}
+
+// GetChainNameByIBCPath returns the chain name for the given ibc path
+func (k Keeper) GetChainNameByIBCPath(ctx sdk.Context, ibcPath string) (nexus.ChainName, bool) {
+	var chain gogoprototypes.StringValue
+	return nexus.ChainName(chain.GetValue()), k.getStore(ctx).GetNew(ibcPathPrefix.Append(key.FromStr(ibcPath)), &chain)
 }
 
 // GetCosmosChains retrieves all registered cosmos chain names

@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"sort"
+	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/address"
@@ -98,8 +99,8 @@ func (m CosmosChain) ValidateBasic() error {
 			return fmt.Errorf("IBC path should be empty for %s", exported.Axelarnet.Name)
 		}
 	} else {
-		if err := utils.ValidateString(m.IBCPath); err != nil {
-			return sdkerrors.Wrap(err, "invalid IBC path")
+		if err := ValidateIBCPath(m.IBCPath); err != nil {
+			return err
 		}
 	}
 
@@ -186,3 +187,24 @@ const (
 	// External means from external chains, such as EVM chains
 	External = 3
 )
+
+func ValidateIBCPath(path string) error {
+	if err := utils.ValidateString(path); err != nil {
+		return sdkerrors.Wrap(err, "invalid IBC path")
+	}
+
+	f := host.NewPathValidator(func(path string) error {
+		return nil
+	})
+	if err := f(path); err != nil {
+		return sdkerrors.Wrap(err, "invalid IBC path")
+	}
+
+	// we only support direct IBC connections
+	pathSplit := strings.Split(path, "/")
+	if len(pathSplit) != 2 {
+		return fmt.Errorf(fmt.Sprintf("invalid IBC path %s", path))
+	}
+
+	return nil
+}

@@ -1,12 +1,8 @@
 package types
 
 import (
-	"fmt"
-	"strings"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	host "github.com/cosmos/ibc-go/v3/modules/core/24-host"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -41,20 +37,8 @@ func (m RegisterIBCPathRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(err, "invalid chain")
 	}
 
-	if err := utils.ValidateString(m.Path); err != nil {
-		return sdkerrors.Wrap(err, "invalid path")
-	}
-	f := host.NewPathValidator(func(path string) error {
-		return nil
-	})
-	if err := f(m.Path); err != nil {
-		return sdkerrors.Wrap(err, "invalid path")
-	}
-
-	// we only support direct IBC connections
-	pathSplit := strings.Split(m.Path, "/")
-	if len(pathSplit) != 2 {
-		return fmt.Errorf(fmt.Sprintf("invalid IBC path %s", m.Path))
+	if err := ValidateIBCPath(m.Path); err != nil {
+		return err
 	}
 
 	return nil

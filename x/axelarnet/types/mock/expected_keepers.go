@@ -540,6 +540,9 @@ var _ axelarnettypes.Nexus = &NexusMock{}
 // 			LinkAddressesFunc: func(ctx cosmossdktypes.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress) error {
 // 				panic("mock out the LinkAddresses method")
 // 			},
+// 			RateLimitTransferFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, asset cosmossdktypes.Coin, direction github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferDirection) error {
+// 				panic("mock out the RateLimitTransfer method")
+// 			},
 // 			RegisterAssetFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset, limit cosmossdktypes.Uint, window time.Duration) error {
 // 				panic("mock out the RegisterAsset method")
 // 			},
@@ -588,6 +591,9 @@ type NexusMock struct {
 
 	// LinkAddressesFunc mocks the LinkAddresses method.
 	LinkAddressesFunc func(ctx cosmossdktypes.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress) error
+
+	// RateLimitTransferFunc mocks the RateLimitTransfer method.
+	RateLimitTransferFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, asset cosmossdktypes.Coin, direction github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferDirection) error
 
 	// RegisterAssetFunc mocks the RegisterAsset method.
 	RegisterAssetFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset, limit cosmossdktypes.Uint, window time.Duration) error
@@ -685,6 +691,17 @@ type NexusMock struct {
 			// Recipient is the recipient argument value.
 			Recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
 		}
+		// RateLimitTransfer holds details about calls to the RateLimitTransfer method.
+		RateLimitTransfer []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// Chain is the chain argument value.
+			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+			// Asset is the asset argument value.
+			Asset cosmossdktypes.Coin
+			// Direction is the direction argument value.
+			Direction github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferDirection
+		}
 		// RegisterAsset holds details about calls to the RegisterAsset method.
 		RegisterAsset []struct {
 			// Ctx is the ctx argument value.
@@ -724,6 +741,7 @@ type NexusMock struct {
 	lockIsAssetRegistered             sync.RWMutex
 	lockIsChainActivated              sync.RWMutex
 	lockLinkAddresses                 sync.RWMutex
+	lockRateLimitTransfer             sync.RWMutex
 	lockRegisterAsset                 sync.RWMutex
 	lockSetChain                      sync.RWMutex
 	lockSubTransferFee                sync.RWMutex
@@ -1127,6 +1145,49 @@ func (mock *NexusMock) LinkAddressesCalls() []struct {
 	mock.lockLinkAddresses.RLock()
 	calls = mock.calls.LinkAddresses
 	mock.lockLinkAddresses.RUnlock()
+	return calls
+}
+
+// RateLimitTransfer calls RateLimitTransferFunc.
+func (mock *NexusMock) RateLimitTransfer(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, asset cosmossdktypes.Coin, direction github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferDirection) error {
+	if mock.RateLimitTransferFunc == nil {
+		panic("NexusMock.RateLimitTransferFunc: method is nil but Nexus.RateLimitTransfer was just called")
+	}
+	callInfo := struct {
+		Ctx       cosmossdktypes.Context
+		Chain     github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+		Asset     cosmossdktypes.Coin
+		Direction github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferDirection
+	}{
+		Ctx:       ctx,
+		Chain:     chain,
+		Asset:     asset,
+		Direction: direction,
+	}
+	mock.lockRateLimitTransfer.Lock()
+	mock.calls.RateLimitTransfer = append(mock.calls.RateLimitTransfer, callInfo)
+	mock.lockRateLimitTransfer.Unlock()
+	return mock.RateLimitTransferFunc(ctx, chain, asset, direction)
+}
+
+// RateLimitTransferCalls gets all the calls that were made to RateLimitTransfer.
+// Check the length with:
+//     len(mockedNexus.RateLimitTransferCalls())
+func (mock *NexusMock) RateLimitTransferCalls() []struct {
+	Ctx       cosmossdktypes.Context
+	Chain     github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+	Asset     cosmossdktypes.Coin
+	Direction github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferDirection
+} {
+	var calls []struct {
+		Ctx       cosmossdktypes.Context
+		Chain     github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+		Asset     cosmossdktypes.Coin
+		Direction github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferDirection
+	}
+	mock.lockRateLimitTransfer.RLock()
+	calls = mock.calls.RateLimitTransfer
+	mock.lockRateLimitTransfer.RUnlock()
 	return calls
 }
 
@@ -1838,6 +1899,9 @@ var _ axelarnettypes.ChannelKeeper = &ChannelKeeperMock{}
 // 			SendPacketFunc: func(ctx cosmossdktypes.Context, channelCap *capabilitytypes.Capability, packet ibcexported.PacketI) error {
 // 				panic("mock out the SendPacket method")
 // 			},
+// 			WriteAcknowledgementFunc: func(ctx cosmossdktypes.Context, chanCap *capabilitytypes.Capability, packet ibcexported.PacketI, ack ibcexported.Acknowledgement) error {
+// 				panic("mock out the WriteAcknowledgement method")
+// 			},
 // 		}
 //
 // 		// use mockedChannelKeeper in code that requires axelarnettypes.ChannelKeeper
@@ -1856,6 +1920,9 @@ type ChannelKeeperMock struct {
 
 	// SendPacketFunc mocks the SendPacket method.
 	SendPacketFunc func(ctx cosmossdktypes.Context, channelCap *capabilitytypes.Capability, packet ibcexported.PacketI) error
+
+	// WriteAcknowledgementFunc mocks the WriteAcknowledgement method.
+	WriteAcknowledgementFunc func(ctx cosmossdktypes.Context, chanCap *capabilitytypes.Capability, packet ibcexported.PacketI, ack ibcexported.Acknowledgement) error
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -1895,11 +1962,23 @@ type ChannelKeeperMock struct {
 			// Packet is the packet argument value.
 			Packet ibcexported.PacketI
 		}
+		// WriteAcknowledgement holds details about calls to the WriteAcknowledgement method.
+		WriteAcknowledgement []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// ChanCap is the chanCap argument value.
+			ChanCap *capabilitytypes.Capability
+			// Packet is the packet argument value.
+			Packet ibcexported.PacketI
+			// Ack is the ack argument value.
+			Ack ibcexported.Acknowledgement
+		}
 	}
 	lockGetChannel            sync.RWMutex
 	lockGetChannelClientState sync.RWMutex
 	lockGetNextSequenceSend   sync.RWMutex
 	lockSendPacket            sync.RWMutex
+	lockWriteAcknowledgement  sync.RWMutex
 }
 
 // GetChannel calls GetChannelFunc.
@@ -2055,6 +2134,49 @@ func (mock *ChannelKeeperMock) SendPacketCalls() []struct {
 	mock.lockSendPacket.RLock()
 	calls = mock.calls.SendPacket
 	mock.lockSendPacket.RUnlock()
+	return calls
+}
+
+// WriteAcknowledgement calls WriteAcknowledgementFunc.
+func (mock *ChannelKeeperMock) WriteAcknowledgement(ctx cosmossdktypes.Context, chanCap *capabilitytypes.Capability, packet ibcexported.PacketI, ack ibcexported.Acknowledgement) error {
+	if mock.WriteAcknowledgementFunc == nil {
+		panic("ChannelKeeperMock.WriteAcknowledgementFunc: method is nil but ChannelKeeper.WriteAcknowledgement was just called")
+	}
+	callInfo := struct {
+		Ctx     cosmossdktypes.Context
+		ChanCap *capabilitytypes.Capability
+		Packet  ibcexported.PacketI
+		Ack     ibcexported.Acknowledgement
+	}{
+		Ctx:     ctx,
+		ChanCap: chanCap,
+		Packet:  packet,
+		Ack:     ack,
+	}
+	mock.lockWriteAcknowledgement.Lock()
+	mock.calls.WriteAcknowledgement = append(mock.calls.WriteAcknowledgement, callInfo)
+	mock.lockWriteAcknowledgement.Unlock()
+	return mock.WriteAcknowledgementFunc(ctx, chanCap, packet, ack)
+}
+
+// WriteAcknowledgementCalls gets all the calls that were made to WriteAcknowledgement.
+// Check the length with:
+//     len(mockedChannelKeeper.WriteAcknowledgementCalls())
+func (mock *ChannelKeeperMock) WriteAcknowledgementCalls() []struct {
+	Ctx     cosmossdktypes.Context
+	ChanCap *capabilitytypes.Capability
+	Packet  ibcexported.PacketI
+	Ack     ibcexported.Acknowledgement
+} {
+	var calls []struct {
+		Ctx     cosmossdktypes.Context
+		ChanCap *capabilitytypes.Capability
+		Packet  ibcexported.PacketI
+		Ack     ibcexported.Acknowledgement
+	}
+	mock.lockWriteAcknowledgement.RLock()
+	calls = mock.calls.WriteAcknowledgement
+	mock.lockWriteAcknowledgement.RUnlock()
 	return calls
 }
 
