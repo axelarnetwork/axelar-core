@@ -508,9 +508,17 @@ func setup(cfg params.EncodingConfig) (nexusKeeper.Keeper, sdk.Context) {
 	return k, ctx
 }
 
-func makeRandAddresses(k nexusKeeper.Keeper, ctx sdk.Context) (nexus.CrossChainAddress, nexus.CrossChainAddress) {
+func randChain(k nexusKeeper.Keeper, ctx sdk.Context) nexus.Chain {
 	chains := k.GetChains(ctx)
-	return makeRandAddressesForChain(chains[mathrand.Intn(len(chains))], chains[mathrand.Intn(len(chains))])
+	if len(chains) == 0 {
+		panic("no registered chains")
+	}
+
+	return chains[mathrand.Intn(len(chains))]
+}
+
+func makeRandAddresses(k nexusKeeper.Keeper, ctx sdk.Context) (nexus.CrossChainAddress, nexus.CrossChainAddress) {
+	return makeRandAddressesForChain(randChain(k, ctx), randChain(k, ctx))
 }
 
 func randAsset() string {
