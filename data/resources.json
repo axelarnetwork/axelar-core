@@ -150,6 +150,9 @@
         },
         {
           "value": "https://axelar-grpc.4sv.io"
+        },
+        {
+          "value": "https://axelar-grpc.quickapi.com"
         }
       ]
     },
@@ -167,6 +170,15 @@
         },
         {
           "value": "https://axelar-archgrpcweb.chainode.tech"
+        },
+        {
+          "value": "https://axelararchive-rpc.quickapi.com"
+        },
+        {
+          "value": "https://axelararchive-lcd.quickapi.com"
+        },
+        {
+          "value": "https://axelararchive-grpc.quickapi.com"
         }
       ]
     }
