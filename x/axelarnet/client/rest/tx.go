@@ -9,6 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/gorilla/mux"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	clientUtils "github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -67,6 +68,8 @@ type ReqRegisterAsset struct {
 	Chain         string       `json:"chain" yaml:"chain"`
 	Denom         string       `json:"denom" yaml:"denom"`
 	IsNativeAsset bool         `json:"is_native_asset" yaml:"is_native_asset"`
+	Limit         string       `json:"limit" yaml:"limit"`
+	Window        string       `json:"window" yaml:"window"`
 }
 
 // ReqRegisterFeeCollector represents a request to register axelarnet fee collector account
@@ -221,7 +224,11 @@ func TxHandlerRegisterAsset(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewRegisterAssetRequest(fromAddr, req.Chain, nexus.NewAsset(req.Denom, req.IsNativeAsset))
+		// TODO: Parse args
+		limit := utils.MaxUint
+		window := types.DefaultRateLimitWindow
+
+		msg := types.NewRegisterAssetRequest(fromAddr, req.Chain, nexus.NewAsset(req.Denom, req.IsNativeAsset), limit, window)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

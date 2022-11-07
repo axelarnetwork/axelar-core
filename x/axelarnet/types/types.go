@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/address"
@@ -18,8 +19,9 @@ import (
 
 // Log attribute keys
 const (
-	AttributeChain   = "chain"
-	AttributeIBCPath = "ibcPath"
+	AttributeChain         = "chain"
+	AttributeIBCPath       = "ibcPath"
+	DefaultRateLimitWindow = 6 * time.Hour
 )
 
 // NewLinkedAddress creates a new address to make a deposit which can be transferred to another blockchain

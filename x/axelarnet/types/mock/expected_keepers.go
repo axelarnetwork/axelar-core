@@ -18,7 +18,7 @@ import (
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 	"github.com/tendermint/tendermint/libs/log"
 	"sync"
-	"time"
+	time "time"
 )
 
 // Ensure, that BaseKeeperMock does implement axelarnettypes.BaseKeeper.

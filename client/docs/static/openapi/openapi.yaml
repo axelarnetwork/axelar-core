@@ -1037,6 +1037,11 @@ paths:
                     is_native_asset:
                       type: boolean
                       format: boolean
+                limit:
+                  type: string
+                  format: byte
+                window:
+                  type: string
               title: >-
                 RegisterAssetRequest represents a message to register an asset
                 to a cosmos
@@ -36966,6 +36971,11 @@ components:
             is_native_asset:
               type: boolean
               format: boolean
+        limit:
+          type: string
+          format: byte
+        window:
+          type: string
       title: >-
         RegisterAssetRequest represents a message to register an asset to a
         cosmos

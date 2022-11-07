@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
@@ -20,10 +19,6 @@ import (
 )
 
 var _ types.MsgServiceServer = msgServer{}
-
-const (
-	defaultRateLimitWindow = 6 * time.Hour
-)
 
 type msgServer struct {
 	Keeper
@@ -247,12 +242,12 @@ func (s msgServer) AddCosmosBasedChain(c context.Context, req *types.AddCosmosBa
 
 	// register asset in chain state
 	for _, asset := range req.NativeAssets {
-		if err := s.nexus.RegisterAsset(ctx, chain, asset, utils.MaxUint, defaultRateLimitWindow); err != nil {
+		if err := s.nexus.RegisterAsset(ctx, chain, asset, utils.MaxUint, types.DefaultRateLimitWindow); err != nil {
 			return nil, err
 		}
 
 		// also register on axelarnet, it routes assets from cosmos chains to evm chains
-		if err := s.nexus.RegisterAsset(ctx, exported.Axelarnet, nexus.NewAsset(asset.Denom, false), utils.MaxUint, defaultRateLimitWindow); err != nil {
+		if err := s.nexus.RegisterAsset(ctx, exported.Axelarnet, nexus.NewAsset(asset.Denom, false), utils.MaxUint, types.DefaultRateLimitWindow); err != nil {
 			return nil, err
 		}
 	}
@@ -286,14 +281,14 @@ func (s msgServer) RegisterAsset(c context.Context, req *types.RegisterAssetRequ
 	}
 
 	// register asset in chain state
-	err := s.nexus.RegisterAsset(ctx, chain, req.Asset, utils.MaxUint, defaultRateLimitWindow)
+	err := s.nexus.RegisterAsset(ctx, chain, req.Asset, req.Limit, req.Window)
 	if err != nil {
 		return nil, err
 	}
 
 	// also register on axelarnet, it routes assets from cosmos chains to evm chains
 	// ignore the error in case above chain is axelarnet, or if the asset is already registered
-	_ = s.nexus.RegisterAsset(ctx, exported.Axelarnet, nexus.NewAsset(req.Asset.Denom, false), utils.MaxUint, defaultRateLimitWindow)
+	_ = s.nexus.RegisterAsset(ctx, exported.Axelarnet, nexus.NewAsset(req.Asset.Denom, false), req.Limit, req.Window)
 
 	return &types.RegisterAssetResponse{}, nil
 }

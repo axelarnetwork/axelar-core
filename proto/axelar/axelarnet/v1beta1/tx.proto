@@ -4,6 +4,7 @@ package axelar.axelarnet.v1beta1;
 option go_package = "github.com/axelarnetwork/axelar-core/x/axelarnet/types";
 
 import "google/protobuf/any.proto";
+import "google/protobuf/duration.proto";
 import "gogoproto/gogo.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "cosmos_proto/cosmos.proto";
@@ -85,8 +86,10 @@ message AddCosmosBasedChainRequest {
   ]; // chain was deprecated in v0.27
   string addr_prefix = 3;
   reserved 4; // min_amount was removed in v0.15
-  repeated nexus.exported.v1beta1.Asset native_assets = 5
-      [ (gogoproto.nullable) = false ];
+  repeated nexus.exported.v1beta1.Asset native_assets = 5 [
+    deprecated = true,
+    (gogoproto.nullable) = false
+  ]; // native_assets was deprecated in v0.27
   // TODO: Rename this to `chain` after v1beta1 -> v1 version bump
   string cosmos_chain = 6
       [ (gogoproto.casttype) =
@@ -106,6 +109,12 @@ message RegisterAssetRequest {
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
   nexus.exported.v1beta1.Asset asset = 3 [ (gogoproto.nullable) = false ];
+  bytes limit = 4 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.nullable) = false
+  ];
+  google.protobuf.Duration window = 5
+      [ (gogoproto.stdduration) = true, (gogoproto.nullable) = false ];
 }
 
 message RegisterAssetResponse {}
