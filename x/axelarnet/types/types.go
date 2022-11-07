@@ -19,8 +19,12 @@ import (
 
 // Log attribute keys
 const (
-	AttributeChain         = "chain"
-	AttributeIBCPath       = "ibcPath"
+	AttributeChain   = "chain"
+	AttributeIBCPath = "ibcPath"
+)
+
+const (
+	// DefaultRateLimitWindow is the default window for rate limits of assets on cosmos chains
 	DefaultRateLimitWindow = 6 * time.Hour
 )
 
