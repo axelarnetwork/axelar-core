@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"fmt"
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -22,7 +23,17 @@ func (k Keeper) InitGenesis(ctx sdk.Context, genState *types.GenesisState) {
 		}
 	}
 
-	slices.ForEach(genState.Chains, func(c types.CosmosChain) { funcs.MustNoErr(k.SetCosmosChain(ctx, c)) })
+	slices.ForEach(genState.Chains, func(c types.CosmosChain) {
+		if _, ok := k.GetCosmosChainByName(ctx, c.Name); ok {
+			panic(fmt.Sprintf("cosmos chain %s already registered", c.Name))
+		}
+
+		if _, ok := k.GetChainNameByIBCPath(ctx, c.IBCPath); ok {
+			panic(fmt.Sprintf("ibc path %s already registered", c.IBCPath))
+		}
+
+		funcs.MustNoErr(k.SetCosmosChain(ctx, c))
+	})
 
 	funcs.MustNoErr(k.validateIBCTransferQueueState(genState.TransferQueue, ibcTransferQueueName))
 

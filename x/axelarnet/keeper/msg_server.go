@@ -233,6 +233,10 @@ func (s msgServer) AddCosmosBasedChain(c context.Context, req *types.AddCosmosBa
 		return &types.AddCosmosBasedChainResponse{}, fmt.Errorf("chain '%s' is already registered", req.CosmosChain)
 	}
 
+	if chain, found := s.GetChainNameByIBCPath(ctx, req.IBCPath); found {
+		return &types.AddCosmosBasedChainResponse{}, fmt.Errorf("ibc path %s is already registered for chain %s", req.IBCPath, chain)
+	}
+
 	chain := nexus.Chain{
 		Name:                  req.CosmosChain,
 		KeyType:               tss.None,

@@ -56,7 +56,7 @@ func RandomIBCDenom() string {
 // RandomIBCPath creates an IBC path
 func RandomIBCPath() string {
 	port := ibctransfertypes.PortID
-	identifier := fmt.Sprintf("%s%d", "channel-", rand.I64Between(0, 9999))
+	identifier := fmt.Sprintf("%s%d", "channel-", rand.PosI64())
 	return fmt.Sprintf("%s/%s", port, identifier)
 }
 

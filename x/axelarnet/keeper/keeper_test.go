@@ -45,7 +45,7 @@ func TestKeeper_GetIBCPath(t *testing.T) {
 
 	t.Run("should return the registered IBC path when the given asset is registered", testutils.Func(func(t *testing.T) {
 		ctx, k, _ = setup()
-		chain := randomChain()
+		chain := axelartestutils.RandomCosmosChain()
 		funcs.MustNoErr(k.SetCosmosChain(ctx, chain))
 		result, ok := k.GetIBCPath(ctx, chain.Name)
 		assert.Equal(t, chain.IBCPath, result)
@@ -69,7 +69,7 @@ func TestKeeper_RegisterCosmosChain(t *testing.T) {
 
 		for i := 0; i < int(count); i++ {
 			chains[i] = strings.ToLower(rand.NormalizedStr(10))
-			chain := randomChain()
+			chain := axelartestutils.RandomCosmosChain()
 			chain.Name = nexus.ChainName(chains[i])
 			assert.NoError(t, k.SetCosmosChain(ctx, chain))
 		}

@@ -88,7 +88,7 @@ func (k Keeper) GetEndBlockerLimit(ctx sdk.Context) uint64 {
 
 // GetIBCPath retrieves the IBC path associated to the specified chain
 func (k Keeper) GetIBCPath(ctx sdk.Context, chain nexus.ChainName) (string, bool) {
-	cosmosChain, ok := k.getCosmosChain(ctx, chain)
+	cosmosChain, ok := k.GetCosmosChainByName(ctx, chain)
 	if !ok || cosmosChain.IBCPath == "" {
 		return "", false
 	}
@@ -98,20 +98,13 @@ func (k Keeper) GetIBCPath(ctx sdk.Context, chain nexus.ChainName) (string, bool
 
 // IsCosmosChain returns true if the given chain name is for a cosmos chain
 func (k Keeper) IsCosmosChain(ctx sdk.Context, chain nexus.ChainName) bool {
-	_, ok := k.getCosmosChain(ctx, chain)
+	_, ok := k.GetCosmosChainByName(ctx, chain)
 	return ok
 }
 
 // GetCosmosChainByName gets the address prefix of the given cosmos chain
-func (k Keeper) GetCosmosChainByName(ctx sdk.Context, chain nexus.ChainName) (types.CosmosChain, bool) {
-	chainKey := cosmosChainPrefix.Append(key.From(chain))
-	var value types.CosmosChain
-	ok := k.getStore(ctx).GetNew(chainKey, &value)
-	if !ok {
-		return types.CosmosChain{}, false
-	}
-
-	return value, true
+func (k Keeper) GetCosmosChainByName(ctx sdk.Context, chain nexus.ChainName) (cosmosChain types.CosmosChain, found bool) {
+	return cosmosChain, k.getStore(ctx).GetNew(cosmosChainPrefix.Append(key.From(chain)), &cosmosChain)
 }
 
 // setChainByIBCPath sets the chain name for the given ibc path
@@ -161,14 +154,14 @@ func (k Keeper) getCosmosChains(ctx sdk.Context) (cosmosChains []types.CosmosCha
 	return cosmosChains
 }
 
-func (k Keeper) getCosmosChain(ctx sdk.Context, chain nexus.ChainName) (cosmosChain types.CosmosChain, ok bool) {
-	return cosmosChain, k.getStore(ctx).GetNew(cosmosChainPrefix.Append(key.From(chain)), &cosmosChain)
-}
-
 // SetCosmosChain sets the address prefix for the given cosmos chain
 func (k Keeper) SetCosmosChain(ctx sdk.Context, chain types.CosmosChain) error {
 	// register a cosmos chain to axelarnet
-	return k.getStore(ctx).SetNewValidated(cosmosChainPrefix.Append(key.From(chain.Name)), &chain)
+	if err := k.getStore(ctx).SetNewValidated(cosmosChainPrefix.Append(key.From(chain.Name)), &chain); err != nil {
+		return err
+	}
+
+	return k.setChainByIBCPath(ctx, chain.IBCPath, chain.Name)
 }
 
 // SetFeeCollector sets axelarnet fee collector
