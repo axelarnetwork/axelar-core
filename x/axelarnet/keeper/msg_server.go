@@ -230,11 +230,11 @@ func (s msgServer) AddCosmosBasedChain(c context.Context, req *types.AddCosmosBa
 	ctx := sdk.UnwrapSDKContext(c)
 
 	if _, found := s.nexus.GetChain(ctx, req.CosmosChain); found {
-		return &types.AddCosmosBasedChainResponse{}, fmt.Errorf("chain '%s' is already registered", req.CosmosChain)
+		return nil, fmt.Errorf("chain '%s' is already registered", req.CosmosChain)
 	}
 
 	if chain, found := s.GetChainNameByIBCPath(ctx, req.IBCPath); found {
-		return &types.AddCosmosBasedChainResponse{}, fmt.Errorf("ibc path %s is already registered for chain %s", req.IBCPath, chain)
+		return nil, fmt.Errorf("ibc path %s is already registered for chain %s", req.IBCPath, chain)
 	}
 
 	chain := nexus.Chain{
@@ -265,6 +265,10 @@ func (s msgServer) AddCosmosBasedChain(c context.Context, req *types.AddCosmosBa
 		return nil, err
 	}
 
+	if err := s.SetChainByIBCPath(ctx, req.IBCPath, chain.Name); err != nil {
+		return nil, err
+	}
+
 	return &types.AddCosmosBasedChainResponse{}, nil
 }
 
@@ -274,11 +278,11 @@ func (s msgServer) RegisterAsset(c context.Context, req *types.RegisterAssetRequ
 
 	chain, found := s.nexus.GetChain(ctx, req.Chain)
 	if !found {
-		return &types.RegisterAssetResponse{}, fmt.Errorf("chain '%s' not found", req.Chain)
+		return nil, fmt.Errorf("chain '%s' not found", req.Chain)
 	}
 
 	if _, found := s.GetCosmosChainByName(ctx, req.Chain); !found {
-		return &types.RegisterAssetResponse{}, fmt.Errorf("chain '%s' is not a cosmos chain", req.Chain)
+		return nil, fmt.Errorf("chain '%s' is not a cosmos chain", req.Chain)
 	}
 
 	// register asset in chain state

@@ -16,6 +16,12 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
+// Log attribute keys
+const (
+	AttributeChain   = "chain"
+	AttributeIBCPath = "ibcPath"
+)
+
 // NewLinkedAddress creates a new address to make a deposit which can be transferred to another blockchain
 func NewLinkedAddress(ctx sdk.Context, chain nexus.ChainName, symbol, recipientAddr string) sdk.AccAddress {
 	nonce := utils.GetNonce(ctx.HeaderHash(), ctx.BlockGasMeter())

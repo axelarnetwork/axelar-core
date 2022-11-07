@@ -107,32 +107,22 @@ func (k Keeper) GetCosmosChainByName(ctx sdk.Context, chain nexus.ChainName) (co
 	return cosmosChain, k.getStore(ctx).GetNew(cosmosChainPrefix.Append(key.From(chain)), &cosmosChain)
 }
 
-// setChainByIBCPath sets the chain name for the given ibc path
-func (k Keeper) setChainByIBCPath(ctx sdk.Context, ibcPath string, chain nexus.ChainName) error {
-	// register a cosmos chain to axelarnet
+// SetChainByIBCPath sets the chain name for the given ibc path
+func (k Keeper) SetChainByIBCPath(ctx sdk.Context, ibcPath string, chain nexus.ChainName) error {
+	if err := types.ValidateIBCPath(ibcPath); err != nil {
+		return err
+	}
+
 	return k.getStore(ctx).SetNewValidated(ibcPathPrefix.Append(key.FromStr(ibcPath)),
 		utils.WithValidation(&gogoprototypes.StringValue{Value: chain.String()},
 			func() error { return chain.Validate() }))
 }
 
-func (k Keeper) getChainsByIBCPath(ctx sdk.Context) (chains []nexus.ChainName) {
-	iter := k.getStore(ctx).IteratorNew(ibcPathPrefix)
-	defer utils.CloseLogError(iter, k.Logger(ctx))
-
-	for ; iter.Valid(); iter.Next() {
-		var chain gogoprototypes.StringValue
-		iter.UnmarshalValue(&chain)
-
-		chains = append(chains, nexus.ChainName(chain.GetValue()))
-	}
-
-	return chains
-}
-
 // GetChainNameByIBCPath returns the chain name for the given ibc path
 func (k Keeper) GetChainNameByIBCPath(ctx sdk.Context, ibcPath string) (nexus.ChainName, bool) {
 	var chain gogoprototypes.StringValue
-	return nexus.ChainName(chain.GetValue()), k.getStore(ctx).GetNew(ibcPathPrefix.Append(key.FromStr(ibcPath)), &chain)
+	found := k.getStore(ctx).GetNew(ibcPathPrefix.Append(key.FromStr(ibcPath)), &chain)
+	return nexus.ChainName(chain.GetValue()), found
 }
 
 // GetCosmosChains retrieves all registered cosmos chain names
@@ -157,11 +147,7 @@ func (k Keeper) getCosmosChains(ctx sdk.Context) (cosmosChains []types.CosmosCha
 // SetCosmosChain sets the address prefix for the given cosmos chain
 func (k Keeper) SetCosmosChain(ctx sdk.Context, chain types.CosmosChain) error {
 	// register a cosmos chain to axelarnet
-	if err := k.getStore(ctx).SetNewValidated(cosmosChainPrefix.Append(key.From(chain.Name)), &chain); err != nil {
-		return err
-	}
-
-	return k.setChainByIBCPath(ctx, chain.IBCPath, chain.Name)
+	return k.getStore(ctx).SetNewValidated(cosmosChainPrefix.Append(key.From(chain.Name)), &chain)
 }
 
 // SetFeeCollector sets axelarnet fee collector

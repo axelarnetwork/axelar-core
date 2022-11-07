@@ -20,6 +20,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types/mock"
 	axelartestutils "github.com/axelarnetwork/axelar-core/x/axelarnet/types/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	nexustestutils "github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 )
@@ -144,4 +145,35 @@ func TestSetTransferStatus(t *testing.T) {
 	assert.NoError(t, k.SetTransferFailed(ctx, pending2.ID))
 	assert.NoError(t, k.SetTransferPending(ctx, pending2.ID))
 	assert.True(t, ok)
+}
+
+func TestSetChainByIBCPath(t *testing.T) {
+	ctx, k, _ := setup()
+	ibcPaths := []string{
+		"",
+		"transfer",
+		"transfer//channel-1",
+		"/channel-1",
+		"transfer/",
+		"transfer/channel-1/transfer/channel-2",
+		"a/b/c",
+	}
+
+	for _, ibcPath := range ibcPaths {
+		chain := nexustestutils.RandomChainName()
+		err := k.SetChainByIBCPath(ctx, ibcPath, chain)
+		assert.ErrorContains(t, err, "invalid IBC path")
+
+		_, found := k.GetChainNameByIBCPath(ctx, ibcPath)
+		assert.False(t, found)
+	}
+
+	chain := nexustestutils.RandomChainName()
+	ibcPath := axelartestutils.RandomIBCPath()
+	err := k.SetChainByIBCPath(ctx, ibcPath, chain)
+	assert.NoError(t, err)
+
+	chainName, found := k.GetChainNameByIBCPath(ctx, ibcPath)
+	assert.True(t, found)
+	assert.Equal(t, chain, chainName)
 }

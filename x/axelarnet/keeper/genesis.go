@@ -9,6 +9,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/key"
+	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
@@ -33,6 +34,11 @@ func (k Keeper) InitGenesis(ctx sdk.Context, genState *types.GenesisState) {
 		}
 
 		funcs.MustNoErr(k.SetCosmosChain(ctx, c))
+
+		// axelarnet does not have an ibc path
+		if !c.Name.Equals(exported.Axelarnet.Name) {
+			funcs.MustNoErr(k.SetChainByIBCPath(ctx, c.IBCPath, c.Name))
+		}
 	})
 
 	funcs.MustNoErr(k.validateIBCTransferQueueState(genState.TransferQueue, ibcTransferQueueName))
