@@ -2,6 +2,7 @@ package rest
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/tx"
@@ -224,9 +225,27 @@ func TxHandlerRegisterAsset(cliCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		// TODO: Parse args
 		limit := utils.MaxUint
 		window := types.DefaultRateLimitWindow
+		var err error
+
+		if req.Limit != "" {
+			l, ok := sdk.NewIntFromString(req.Limit)
+			if !ok || l.IsNegative() {
+				rest.WriteErrorResponse(w, http.StatusBadRequest, "limit must be a sdk.Uint")
+				return
+			}
+
+			limit = sdk.NewUintFromBigInt(l.BigInt())
+		}
+
+		if req.Window != "" {
+			window, err = time.ParseDuration(req.Window)
+			if err != nil {
+				rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+				return
+			}
+		}
 
 		msg := types.NewRegisterAssetRequest(fromAddr, req.Chain, nexus.NewAsset(req.Denom, req.IsNativeAsset), limit, window)
 		if err := msg.ValidateBasic(); err != nil {
