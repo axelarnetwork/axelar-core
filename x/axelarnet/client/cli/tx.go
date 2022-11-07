@@ -175,8 +175,6 @@ func GetCmdRegisterAsset() *cobra.Command {
 		}
 		chain := args[0]
 		denom := args[1]
-		limit := utils.MaxUint
-		window := types.DefaultRateLimitWindow
 
 		isNativeAsset, err := cmd.Flags().GetBool(flagIsNativeAsset)
 		if err != nil {
@@ -187,21 +185,18 @@ func GetCmdRegisterAsset() *cobra.Command {
 		if err != nil {
 			return err
 		}
-		if limitArg != "" {
-			if limit, err = sdk.ParseUint(limitArg); err != nil {
-				return err
-			}
+		limit, err := sdk.ParseUint(limitArg)
+		if err != nil {
+			return err
 		}
 
 		windowArg, err := cmd.Flags().GetString(flagWindow)
 		if err != nil {
 			return err
 		}
-		if windowArg != "" {
-			window, err = time.ParseDuration(windowArg)
-			if err != nil {
-				return err
-			}
+		window, err := time.ParseDuration(windowArg)
+		if err != nil {
+			return err
 		}
 
 		msg := types.NewRegisterAssetRequest(cliCtx.GetFromAddress(), chain, nexus.NewAsset(denom, isNativeAsset), limit, window)
@@ -213,8 +208,8 @@ func GetCmdRegisterAsset() *cobra.Command {
 	}
 
 	cmd.Flags().Bool(flagIsNativeAsset, false, "is it a native asset from cosmos chain")
-	cmd.Flags().String(flagLimit, "", "rate limit for the asset")
-	cmd.Flags().String(flagWindow, "", "rate limit window for the asset")
+	cmd.Flags().String(flagLimit, utils.MaxUint.String(), "rate limit for the asset")
+	cmd.Flags().String(flagWindow, types.DefaultRateLimitWindow.String(), "rate limit window for the asset")
 
 	flags.AddTxFlagsToCmd(cmd)
 	return cmd
