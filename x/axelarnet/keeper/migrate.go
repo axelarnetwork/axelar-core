@@ -3,9 +3,10 @@ package keeper
 import (
 	"fmt"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // Migrate4To5 returns the handler that performs in-place store migrations
