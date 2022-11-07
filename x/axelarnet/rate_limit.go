@@ -37,10 +37,10 @@ func NewRateLimiter(keeper keeper.Keeper, channel porttypes.ICS4Wrapper, nexus t
 // - If the packet is an ICS-20 coin transfer, apply rate limiting on (chain, base denom) pair.
 // - If the rate limit is exceeded, an error is returned.
 func (r RateLimiter) RateLimitPacket(ctx sdk.Context, packet ibcexported.PacketI, direction nexustypes.TransferDirection) error {
-	ibcPath := fmt.Sprintf("%s/%s", packet.GetSourcePort(), packet.GetSourceChannel())
+	ibcPath := types.NewIBCPath(packet.GetSourcePort(), packet.GetSourceChannel())
 	chainName, ok := r.keeper.GetChainNameByIBCPath(ctx, ibcPath)
 	if !ok {
-		// TODO: if IBC channel is not registered, use axelarnet for activation/deactivation state
+		// If the IBC channel is not registered as a chain, skip rate limiting
 		return nil
 	}
 	chain := funcs.MustOk(r.nexus.GetChain(ctx, chainName))

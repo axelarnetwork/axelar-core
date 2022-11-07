@@ -230,13 +230,10 @@ func TxHandlerRegisterAsset(cliCtx client.Context) http.HandlerFunc {
 		var err error
 
 		if req.Limit != "" {
-			l, ok := sdk.NewIntFromString(req.Limit)
-			if !ok || l.IsNegative() {
-				rest.WriteErrorResponse(w, http.StatusBadRequest, "limit must be a sdk.Uint")
+			if limit, err = sdk.ParseUint(req.Limit); err != nil {
+				rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 				return
 			}
-
-			limit = sdk.NewUintFromBigInt(l.BigInt())
 		}
 
 		if req.Window != "" {

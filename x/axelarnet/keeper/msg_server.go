@@ -386,7 +386,7 @@ func (s msgServer) RetryIBCTransfer(c context.Context, req *types.RetryIBCTransf
 		return nil, fmt.Errorf("IBC transfer %s does not have failed status", req.ID.String())
 	}
 
-	if path != fmt.Sprintf("%s/%s", t.PortID, t.ChannelID) {
+	if path != types.NewIBCPath(t.PortID, t.ChannelID) {
 		return nil, fmt.Errorf("chain %s IBC path doesn't match %s IBC transfer path", chain.Name, path)
 	}
 	err := s.ibcK.SendIBCTransfer(ctx, t)
@@ -416,7 +416,7 @@ func toICS20(ctx sdk.Context, k Keeper, n types.Nexus, coin sdk.Coin) sdk.Coin {
 	chain, _ := n.GetChainByNativeAsset(ctx, coin.GetDenom())
 	path, _ := k.GetIBCPath(ctx, chain.Name)
 
-	prefixedDenom := fmt.Sprintf("%s/%s", path, coin.Denom)
+	prefixedDenom := types.NewIBCPath(path, coin.Denom)
 	// construct the denomination trace from the full raw denomination
 	denomTrace := ibctransfertypes.ParseDenomTrace(prefixedDenom)
 	return sdk.NewCoin(denomTrace.IBCDenom(), coin.Amount)

@@ -206,10 +206,10 @@ func ValidateIBCPath(path string) error {
 		return sdkerrors.Wrap(err, "invalid IBC path")
 	}
 
-	f := host.NewPathValidator(func(path string) error {
+	pathValidator := host.NewPathValidator(func(path string) error {
 		return nil
 	})
-	if err := f(path); err != nil {
+	if err := pathValidator(path); err != nil {
 		return sdkerrors.Wrap(err, "invalid IBC path")
 	}
 
@@ -220,4 +220,9 @@ func ValidateIBCPath(path string) error {
 	}
 
 	return nil
+}
+
+// NewIBCPath returns an IBC path for a given port and IBC channel
+func NewIBCPath(port string, channel string) string {
+	return fmt.Sprintf("%s/%s", port, channel)
 }

@@ -61,7 +61,7 @@ func TestRateLimitPacket(t *testing.T) {
 	})
 
 	whenIBCPathIsRegistered := When("ibc path is registered", func() {
-		ibcPath := fmt.Sprintf("%s/%s", packet.GetSourcePort(), packet.GetSourceChannel())
+		ibcPath := types.NewIBCPath(packet.GetSourcePort(), packet.GetSourceChannel())
 		err = k.SetChainByIBCPath(ctx, ibcPath, chain)
 		assert.NoError(t, err)
 	})
@@ -261,7 +261,7 @@ func TestSendPacket(t *testing.T) {
 			chain = nexustestutils.RandomChainName()
 		}).
 		When("rate limit packet fails", func() {
-			err := k.SetChainByIBCPath(ctx, fmt.Sprintf("%s/%s", packet.GetSourcePort(), packet.GetSourceChannel()), chain)
+			err := k.SetChainByIBCPath(ctx, types.NewIBCPath(packet.GetSourcePort(), packet.GetSourceChannel()), chain)
 			assert.NoError(t, err)
 
 			n.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {

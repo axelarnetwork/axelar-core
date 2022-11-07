@@ -188,12 +188,9 @@ func GetCmdRegisterAsset() *cobra.Command {
 			return err
 		}
 		if limitArg != "" {
-			l, ok := sdk.NewIntFromString(limitArg)
-			if !ok || l.IsNegative() {
-				return fmt.Errorf("limit must be a sdk.Uint")
+			if limit, err = sdk.ParseUint(limitArg); err != nil {
+				return err
 			}
-
-			limit = sdk.NewUintFromBigInt(l.BigInt())
 		}
 
 		windowArg, err := cmd.Flags().GetString(flagWindow)
