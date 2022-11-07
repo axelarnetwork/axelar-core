@@ -49,9 +49,10 @@ func (r RateLimiter) RateLimitPacket(ctx sdk.Context, packet ibcexported.PacketI
 		return fmt.Errorf("chain %s registered for IBC path %s is deactivated", chain.Name, ibcPath)
 	}
 
+	// Only ICS-20 packets are expected in the middleware
 	var data ibctransfertypes.FungibleTokenPacketData
 	if err := ibctransfertypes.ModuleCdc.UnmarshalJSON(packet.GetData(), &data); err != nil {
-		return sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "cannot unmarshal ICS-20 transfer packet data: %s", err.Error())
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidType, "cannot unmarshal ICS-20 transfer packet data: %s", err.Error())
 	}
 
 	// parse the denomination from the full denom path
@@ -62,7 +63,7 @@ func (r RateLimiter) RateLimitPacket(ctx sdk.Context, packet ibcexported.PacketI
 	if !ok {
 		return sdkerrors.Wrapf(ibctransfertypes.ErrInvalidAmount, "unable to parse transfer amount (%s) into sdk.Int", data.Amount)
 	}
-	token := sdk.NewCoin(trace.GetBaseDenom(), transferAmount)
+	token := sdk.Coin{Denom: trace.GetBaseDenom(), Amount: transferAmount}
 	if err := token.Validate(); err != nil {
 		return err
 	}

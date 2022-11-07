@@ -7,6 +7,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	ibctransfertypes "github.com/cosmos/ibc-go/v3/modules/apps/transfer/types"
 	clienttypes "github.com/cosmos/ibc-go/v3/modules/core/02-client/types"
+	ibcclienttypes "github.com/cosmos/ibc-go/v3/modules/core/02-client/types"
+	ibcchanneltypes "github.com/cosmos/ibc-go/v3/modules/core/04-channel/types"
 	commitmenttypes "github.com/cosmos/ibc-go/v3/modules/core/23-commitment/types"
 	ibctmtypes "github.com/cosmos/ibc-go/v3/modules/light-clients/07-tendermint/types"
 	ibctesting "github.com/cosmos/ibc-go/v3/testing"
@@ -68,4 +70,26 @@ func RandomCosmosChain() types.CosmosChain {
 		Assets:     nil,
 		AddrPrefix: rand.StrBetween(1, 10),
 	}
+}
+
+// RandomPacket creates a random ICS-20 packet
+func RandomPacket(data ibctransfertypes.FungibleTokenPacketData) ibcchanneltypes.Packet {
+	return ibcchanneltypes.NewPacket(
+		ibctransfertypes.ModuleCdc.MustMarshalJSON(&data),
+		uint64(rand.PosI64()),
+		rand.StrBetween(1, 20), rand.StrBetween(1, 20),
+		rand.StrBetween(1, 20), rand.StrBetween(1, 20),
+		ibcclienttypes.NewHeight(uint64(rand.PosI64()), uint64(rand.PosI64())),
+		uint64(rand.PosI64()),
+	)
+}
+
+// RandomFullDenom creates a fully qualified IBC denom
+func RandomFullDenom() string {
+	hops := int(rand.I64Between(0, 1))
+	denom := rand.Denom(3, 20)
+	for i := 0; i < hops; i++ {
+		denom = fmt.Sprintf("%s/%s/%s", rand.StrBetween(1, 10), rand.StrBetween(1, 10), denom)
+	}
+	return denom
 }
