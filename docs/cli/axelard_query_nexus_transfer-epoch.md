@@ -3,7 +3,7 @@
 Returns the transfer epoch, i.e amount of transfers within the rate limit window, for a given chain, asset, and transfer direction
 
 ```
-axelard query nexus transfer-epoch [chain] [asset] [direction] [flags]
+axelard query nexus transfer-epoch [chain] [asset] [direction (incoming|outgoing)] [flags]
 ```
 
 ### Options

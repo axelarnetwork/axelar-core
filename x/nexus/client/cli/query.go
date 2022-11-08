@@ -439,7 +439,7 @@ func getCmdTransferRateLimit() *cobra.Command {
 
 func getCmdTransferEpoch() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "transfer-epoch [chain] [asset] [direction]",
+		Use:   "transfer-epoch [chain] [asset] [direction (incoming|outgoing)]",
 		Short: "Returns the transfer epoch, i.e amount of transfers within the rate limit window, for a given chain, asset, and transfer direction",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
