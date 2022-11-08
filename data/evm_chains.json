@@ -299,6 +299,46 @@
         }
       ],
       "image": "/images/chains/aurora.svg"
+    },
+    {
+      "id": "celo",
+      "name": "Celo",
+      "chain_id": 44787,
+      "network_id": "celo",
+      "provider_params": [
+        {
+          "chainId": "0xAEF3",
+          "chainName": "Celo Alfajores Testnet",
+          "rpcUrls": ["https://alfajores-forno.celo-testnet.org"],
+          "nativeCurrency": {
+            "name": "Celo",
+            "symbol": "CELO",
+            "decimals": 18
+          },
+          "blockExplorerUrls": ["https://alfajores.celoscan.io/"]
+        }
+      ],
+      "image": "/images/chains/celo.svg"
+    },
+    {
+      "id": "arbitrum",
+      "name": "Arbitrum",
+      "chain_id": 421613,
+      "network_id": "arbitrum",
+      "provider_params": [
+        {
+          "chainId": "0x66EED",
+          "chainName": "Arbitrum Goerli Testnet",
+          "rpcUrls": ["https://goerli-rollup.arbitrum.io/rpc"],
+          "nativeCurrency": {
+            "name": "Ethereum",
+            "symbol": "ETH",
+            "decimals": 18
+          },
+          "blockExplorerUrls": ["https://goerli.arbiscan.io/"]
+        }
+      ],
+      "image": "/images/chains/arbitrum.svg"
     }
   ],
   "testnet-2": [

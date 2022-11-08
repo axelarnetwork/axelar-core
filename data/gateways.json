@@ -61,6 +61,14 @@
     {
       "id": "aurora",
       "address": "0x304acf330bbE08d1e512eefaa92F6a57871fD895"
+    },
+    {
+      "id": "arbitrum",
+      "address": "0xe432150cce91c13a887f7D836923d5597adD8E31"
+    },
+    {
+      "id": "celo",
+      "address": "0xe432150cce91c13a887f7D836923d5597adD8E31"
     }
   ],
   "testnet-2": [

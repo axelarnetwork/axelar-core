@@ -622,6 +622,13 @@
       "image": "/images/assets/axl.svg",
       "contracts": [
         {
+          "chain": "arbitrum",
+          "address": "0x23ee2343B892b1BB63503a4FAbc840E0e2C6810f",
+          "symbol": "wAXL",
+          "decimals": 6,
+          "transfer_fee": 0.1
+        },
+        {
           "chain": "aurora",
           "address": "0x1AA14c03783e3C31b14615a83a58E1eAF98Bf596",
           "symbol": "wAXL",
@@ -638,6 +645,13 @@
         {
           "chain": "binance",
           "address": "0xfC3B4feb754d8082F745940347600D373f03dcaC",
+          "symbol": "wAXL",
+          "decimals": 6,
+          "transfer_fee": 0.1
+        },
+        {
+          "chain": "celo",
+          "address": "0x23ee2343B892b1BB63503a4FAbc840E0e2C6810f",
           "symbol": "wAXL",
           "decimals": 6,
           "transfer_fee": 0.1
@@ -679,6 +693,13 @@
       "image": "/images/assets/wmatic.svg",
       "contracts": [
         {
+          "chain": "arbitrum",
+          "address": "0x21ba4f6aEdA155DD77Cc33Fb93646910543F0380",
+          "symbol": "WMATIC",
+          "decimals": 18,
+          "transfer_fee": 0.07
+        },
+        {
           "chain": "aurora",
           "address": "0x56F1a7a69e5Aa09C1A6ee1AC9989e931cA906EB1",
           "symbol": "WMATIC",
@@ -695,6 +716,13 @@
         {
           "chain": "binance",
           "address": "0x920fA0DbB65cE928C29103AeC7B5c188bbea2f24",
+          "symbol": "WMATIC",
+          "decimals": 18,
+          "transfer_fee": 0.07
+        },
+        {
+          "chain": "celo",
+          "address": "0x21ba4f6aEdA155DD77Cc33Fb93646910543F0380",
           "symbol": "WMATIC",
           "decimals": 18,
           "transfer_fee": 0.07
@@ -736,6 +764,13 @@
       "image": "/images/assets/wftm.svg",
       "contracts": [
         {
+          "chain": "arbitrum",
+          "address": "0x594D8b81eC765410536ab59E98091700b99508D8",
+          "symbol": "WFTM",
+          "decimals": 18,
+          "transfer_fee": 0.08
+        },
+        {
           "chain": "aurora",
           "address": "0x0660F60B6cC54a3E1e526113a1D25d516273AF3E",
           "symbol": "WFTM",
@@ -752,6 +787,13 @@
         {
           "chain": "binance",
           "address": "0x90dEcD89a744a0CFbB3cc8DE08A5f3B14875B6C4",
+          "symbol": "WFTM",
+          "decimals": 18,
+          "transfer_fee": 0.08
+        },
+        {
+          "chain": "celo",
+          "address": "0x594D8b81eC765410536ab59E98091700b99508D8",
           "symbol": "WFTM",
           "decimals": 18,
           "transfer_fee": 0.08
@@ -807,6 +849,13 @@
           "transfer_fee": 7e-05
         },
         {
+          "chain": "celo",
+          "address": "0xeA700DCe55e72C4C08b97AcFc7dF214EC30F4a64",
+          "symbol": "axlWETH",
+          "decimals": 18,
+          "transfer_fee": 7e-05
+        },
+        {
           "chain": "ethereum",
           "address": "0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6",
           "symbol": "WETH",
@@ -843,6 +892,13 @@
       "image": "/images/assets/wavax.svg",
       "contracts": [
         {
+          "chain": "arbitrum",
+          "address": "0x2a87806561C550ba2dA9677c5323413E6e539740",
+          "symbol": "WAVAX",
+          "decimals": 18,
+          "transfer_fee": 0.001
+        },
+        {
           "chain": "aurora",
           "address": "0xb47BAb33cAE8FCa71FA28516ADCE3AF0B3e040e3",
           "symbol": "WAVAX",
@@ -859,6 +915,13 @@
         {
           "chain": "binance",
           "address": "0x1B29EC62efC689c462b4E0512457175793cEc9e6",
+          "symbol": "WAVAX",
+          "decimals": 18,
+          "transfer_fee": 0.001
+        },
+        {
+          "chain": "celo",
+          "address": "0x2a87806561C550ba2dA9677c5323413E6e539740",
           "symbol": "WAVAX",
           "decimals": 18,
           "transfer_fee": 0.001
@@ -900,6 +963,13 @@
       "image": "/images/assets/wdev.svg",
       "contracts": [
         {
+          "chain": "arbitrum",
+          "address": "0x4B13D583F45Aa01fb2bE18a7AAfE14DE183B1Ac9",
+          "symbol": "WDEV",
+          "decimals": 18,
+          "transfer_fee": 0.04
+        },
+        {
           "chain": "aurora",
           "address": "0xC43178D657171A831d826f01ECa657c9439457c6",
           "symbol": "WDEV",
@@ -916,6 +986,13 @@
         {
           "chain": "binance",
           "address": "0xa893Fd868c3159B294f6416F512203be53315fd8",
+          "symbol": "WDEV",
+          "decimals": 18,
+          "transfer_fee": 0.04
+        },
+        {
+          "chain": "celo",
+          "address": "0x4B13D583F45Aa01fb2bE18a7AAfE14DE183B1Ac9",
           "symbol": "WDEV",
           "decimals": 18,
           "transfer_fee": 0.04
@@ -957,6 +1034,13 @@
       "image": "/images/assets/ausdc.svg",
       "contracts": [
         {
+          "chain": "arbitrum",
+          "address": "0x254d06f33bDc5b8ee05b2ea472107E300226659A",
+          "symbol": "aUSDC",
+          "decimals": 6,
+          "transfer_fee": 0.1
+        },
+        {
           "chain": "aurora",
           "address": "0xFfB4749710EC6286b3A0dC2F24165DA622dA2ff5",
           "symbol": "aUSDC",
@@ -973,6 +1057,13 @@
         {
           "chain": "binance",
           "address": "0xc2fA98faB811B785b81c64Ac875b31CC9E40F9D2",
+          "symbol": "aUSDC",
+          "decimals": 6,
+          "transfer_fee": 0.1
+        },
+        {
+          "chain": "celo",
+          "address": "0x254d06f33bDc5b8ee05b2ea472107E300226659A",
           "symbol": "aUSDC",
           "decimals": 6,
           "transfer_fee": 0.1
@@ -1014,6 +1105,13 @@
       "image": "/images/assets/wbnb.svg",
       "contracts": [
         {
+          "chain": "arbitrum",
+          "address": "0xA9A2D8F279ABC436a18DBB1df3FB233039935D0A",
+          "symbol": "WBNB",
+          "decimals": 18,
+          "transfer_fee": 0.0003
+        },
+        {
           "chain": "aurora",
           "address": "0x57A2d26A9079AF0CdB7aEf83d6978a78192f94Ab",
           "symbol": "WBNB",
@@ -1030,6 +1128,13 @@
         {
           "chain": "binance",
           "address": "0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd",
+          "symbol": "WBNB",
+          "decimals": 18,
+          "transfer_fee": 0.0003
+        },
+        {
+          "chain": "celo",
+          "address": "0xA9A2D8F279ABC436a18DBB1df3FB233039935D0A",
           "symbol": "WBNB",
           "decimals": 18,
           "transfer_fee": 0.0003
