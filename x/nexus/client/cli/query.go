@@ -18,6 +18,8 @@ import (
 const (
 	activated   = "activated"
 	deactivated = "deactivated"
+	incoming    = "incoming"
+	outgoing    = "outgoing"
 )
 
 // GetQueryCmd returns the cli query commands for this module
@@ -439,7 +441,7 @@ func getCmdTransferRateLimit() *cobra.Command {
 
 func getCmdTransferEpoch() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "transfer-epoch [chain] [asset] [direction (incoming|outgoing)]",
+		Use:   fmt.Sprintf("transfer-epoch [chain] [asset] [direction (%s|%s)]", incoming, outgoing),
 		Short: "Returns the transfer epoch, i.e amount of transfers within the rate limit window, for a given chain, asset, and transfer direction",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -452,9 +454,9 @@ func getCmdTransferEpoch() *cobra.Command {
 
 			var direction nexus.TransferDirection
 			switch args[2] {
-			case "incoming":
+			case incoming:
 				direction = nexus.Incoming
-			case "outgoing":
+			case outgoing:
 				direction = nexus.Outgoing
 			default:
 				return fmt.Errorf("invalid transfer direction %s", args[2])
