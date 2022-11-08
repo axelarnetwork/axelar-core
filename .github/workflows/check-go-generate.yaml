@@ -34,14 +34,18 @@ jobs:
         id: bytecode_version
         run: echo ::set-output name=VERSION::$(cat contract-version.json | jq -r '.gateway')
 
-      - name: Download Bytecode
-        uses: dawidd6/action-download-artifact@v2
-        with:
-          repo: axelarnetwork/solidity-cgp-gateway
-          workflow: publish-bytecode.yaml
-          name: Bytecode-${{ steps.bytecode_version.outputs.VERSION }}
-          path: contract-artifacts
-          search_artifacts: true
+      - name: Download Gateway Bytecode
+        run : |
+          wget "https://github.com/axelarnetwork/axelar-cgp-solidity/releases/download/${{ steps.bytecode_version.outputs.VERSION }}/Bytecode-${{ steps.bytecode_version.outputs.VERSION }}.zip"
+
+      - name: Create folder contract-artifacts
+        run : |
+          [ ! -d contract-artifacts ] && mkdir contract-artifacts
+
+      - name: Unzip Bytecode
+        run : |
+          unzip Bytecode-${{ steps.bytecode_version.outputs.VERSION }}.zip  -d ./contract-artifacts
+          rm Bytecode-${{ steps.bytecode_version.outputs.VERSION }}.zip
 
       - name: Install prereqs
         run: |
