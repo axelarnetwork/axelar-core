@@ -86,6 +86,9 @@
         },
         {
           "value": "https://axelar-rpc.4sv.io"
+        },
+        {
+          "value": "https://axelar-rpc.validatrium.club"
         }
       ]
     },
@@ -118,6 +121,9 @@
         },
         {
           "value": "https://axelar-lcd.4sv.io"
+        },
+        {
+          "value": "https://axelar-api.validatrium.club"
         }
       ]
     },
