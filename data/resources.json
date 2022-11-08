@@ -67,7 +67,7 @@
           "value": "https://axelar-rpc.chainode.tech:443"
         },
         {
-          "value": "https://services.staketab.com/axelar-rpc"
+          "value": "https://axelar-rpc.staketab.org:443"
         },
         {
           "value": "https://axelar.rpc.stake2.me"
@@ -102,7 +102,7 @@
           "value": "https://axelar-rest.chainode.tech"
         },
         {
-          "value": "https://services.staketab.com/axelar-api"
+          "value": "https://axelar-rest.staketab.org"
         },
         {
           "value": "https://axelar-lcd.qubelabs.io"
@@ -234,7 +234,7 @@
           "value": "https://axelartest-rpc.quickapi.com"
         },
         {
-          "value": "https://services.staketab.com/axelar-testnet-1-rpc"
+          "value": "https://axelar-rpc-1.staketab.org:443"
         },
         {
           "value": "https://axelar-testnet-rpc.qubelabs.io"
@@ -254,7 +254,7 @@
           "value": "https://axelartest-lcd.quickapi.com"
         },
         {
-          "value": "https://services.staketab.com/axelar-testnet-1-api"
+          "value": "https://axelar-rest-1.staketab.org"
         },
         {
           "value": "https://axelar-testnet-lcd.qubelabs.io"
@@ -324,7 +324,7 @@
       "name": "RPC endpoints",
       "value": [
         {
-          "value": "https://services.staketab.com/axelar-testnet-2-rpc"
+          "value": "https://axelar-rpc-2.staketab.org:443"
         },
         {
           "value": "https://axelar-casablanca-rpc.allthatnode.com:26657"
@@ -335,7 +335,7 @@
       "name": "LCD endpoints",
       "value": [
         {
-          "value": "https://services.staketab.com/axelar-testnet-2-api"
+          "value": "https://axelar-rest-2.staketab.org"
         },
         {
           "value": "https://axelar-casablanca-rpc.allthatnode.com:1317"
