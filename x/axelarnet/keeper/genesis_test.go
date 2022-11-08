@@ -36,21 +36,49 @@ func TestGenesis(t *testing.T) {
 		initialGenesis *types.GenesisState
 	)
 
-	Given("a keeper",
+	givenKeeper := Given("a keeper",
 		func() {
 			subspace := paramstypes.NewSubspace(cfg.Codec, cfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "axelarnet")
 			k = keeper.NewKeeper(cfg.Codec, sdk.NewKVStoreKey(types.StoreKey), subspace, &mock.ChannelKeeperMock{})
 
-		}).
-		When("the state is initialized from a genesis state",
-			func() {
-				ordered := randomTransfers()
-				initialGenesis = types.NewGenesisState(types.DefaultParams(), rand.AccAddr(), randomChains(), randomTransferQueue(cfg.Codec, ordered), ordered, randomSeqIDMapping())
-				assert.NoError(t, initialGenesis.Validate())
+		})
 
-				ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
-				k.InitGenesis(ctx, initialGenesis)
-			}).
+	givenGenesisState := Given("a genesis state",
+		func() {
+			ordered := randomTransfers()
+			initialGenesis = types.NewGenesisState(types.DefaultParams(), rand.AccAddr(), randomChains(), randomTransferQueue(cfg.Codec, ordered), ordered, randomSeqIDMapping())
+			assert.NoError(t, initialGenesis.Validate())
+
+			ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+		})
+
+	givenKeeper.
+		Given2(givenGenesisState).
+		When("duplicate chains are provided", func() {
+			chain := testutils.RandomCosmosChain()
+			initialGenesis.Chains = append(initialGenesis.Chains, chain, chain)
+		}).
+		Then("init genesis should panic", func(t *testing.T) {
+			assert.Panics(t, func() { k.InitGenesis(ctx, initialGenesis) })
+		})
+
+	givenKeeper.
+		Given2(givenGenesisState).
+		When("duplicate ibc paths are provided", func() {
+			chain := testutils.RandomCosmosChain()
+			chain2 := testutils.RandomCosmosChain()
+			chain2.IBCPath = chain.IBCPath
+			initialGenesis.Chains = append(initialGenesis.Chains, chain, chain2)
+		}).
+		Then("init genesis should panic", func(t *testing.T) {
+			assert.Panics(t, func() { k.InitGenesis(ctx, initialGenesis) })
+		})
+
+	givenKeeper.
+		Given2(givenGenesisState).
+		When("genesis state is initialized", func() {
+			k.InitGenesis(ctx, initialGenesis)
+		}).
 		Then("export the identical state",
 			func(t *testing.T) {
 				exportedGenesis := k.ExportGenesis(ctx)
@@ -97,18 +125,18 @@ func randomTransfers() []types.IBCTransfer {
 func randomChains() []types.CosmosChain {
 	chainCount := rand.I64Between(0, 100)
 	var chains []types.CosmosChain
-	for i := int64(0); i < chainCount; i++ {
-		chains = append(chains, randomChain())
+	seen := make(map[nexus.ChainName]bool)
+	for i := int64(0); i < chainCount; {
+		chain := testutils.RandomCosmosChain()
+		if seen[chain.Name] {
+			continue
+		}
+
+		chains = append(chains, chain)
+		seen[chain.Name] = true
+		i++
 	}
 	return chains
-}
-
-func randomChain() types.CosmosChain {
-	return types.CosmosChain{
-		Name:       nexus.ChainName(randomNormalizedStr(5, 20)),
-		IBCPath:    testutils.RandomIBCPath(),
-		AddrPrefix: randomNormalizedStr(5, 20),
-	}
 }
 
 func randomNormalizedStr(min, max int) string {

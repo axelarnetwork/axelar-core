@@ -24,12 +24,14 @@ axelard tx axelarnet register-asset [chain] [denom] [flags]
       --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "file")
       --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
       --ledger                   Use a connected Ledger device
+      --limit string             rate limit for the asset (default "115792089237316195423570985008687907853269984665640564039457584007913129639935")
       --node string              <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
       --note string              Note to add a description to the transaction (previously --memo)
       --offline                  Offline mode (does not allow any online functionality
   -s, --sequence uint            The sequence number of the signing account (offline mode only)
       --sign-mode string         Choose sign mode (direct|amino-json), this is an advanced feature
       --timeout-height uint      Set a block timeout height to prevent the tx from being committed past a certain height
+      --window string            rate limit window for the asset (default "6h0m0s")
   -y, --yes                      Skip tx broadcasting prompt confirmation (default true)
 ```
 

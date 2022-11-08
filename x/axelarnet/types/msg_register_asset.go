@@ -1,6 +1,9 @@
 package types
 
 import (
+	fmt "fmt"
+	"time"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -9,11 +12,13 @@ import (
 )
 
 // NewRegisterAssetRequest is the constructor for RegisterAssetRequest
-func NewRegisterAssetRequest(sender sdk.AccAddress, chain string, asset nexus.Asset) *RegisterAssetRequest {
+func NewRegisterAssetRequest(sender sdk.AccAddress, chain string, asset nexus.Asset, limit sdk.Uint, window time.Duration) *RegisterAssetRequest {
 	return &RegisterAssetRequest{
 		Sender: sender,
 		Chain:  nexus.ChainName(utils.NormalizeString(chain)),
 		Asset:  asset,
+		Limit:  limit,
+		Window: window,
 	}
 }
 
@@ -39,6 +44,12 @@ func (m RegisterAssetRequest) ValidateBasic() error {
 
 	if err := m.Asset.Validate(); err != nil {
 		return err
+	}
+
+	// any m.Limit value is valid
+
+	if m.Window.Nanoseconds() <= 0 {
+		return fmt.Errorf("rate limit window must be positive")
 	}
 
 	return nil

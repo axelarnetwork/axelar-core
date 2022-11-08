@@ -95,13 +95,14 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 // AppModule implements module.AppModule
 type AppModule struct {
 	AppModuleBasic
-	logger  log.Logger
-	keeper  keeper.Keeper
-	nexus   types.Nexus
-	bank    types.BankKeeper
-	channel types.ChannelKeeper
-	account types.AccountKeeper
-	ibcK    keeper.IBCKeeper
+	logger      log.Logger
+	keeper      keeper.Keeper
+	nexus       types.Nexus
+	bank        types.BankKeeper
+	channel     types.ChannelKeeper
+	account     types.AccountKeeper
+	ibcK        keeper.IBCKeeper
+	rateLimiter RateLimiter
 
 	transferModule transfer.IBCModule
 }
@@ -114,6 +115,7 @@ func NewAppModule(
 	account types.AccountKeeper,
 	ibcK keeper.IBCKeeper,
 	transferModule transfer.IBCModule,
+	rateLimiter RateLimiter,
 	logger log.Logger) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
@@ -124,6 +126,7 @@ func NewAppModule(
 		account:        account,
 		ibcK:           ibcK,
 		transferModule: transferModule,
+		rateLimiter:    rateLimiter,
 	}
 }
 
@@ -169,7 +172,7 @@ func (am AppModule) LegacyQuerierHandler(*codec.LegacyAmino) sdk.Querier {
 func (am AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterQueryServiceServer(cfg.QueryServer(), keeper.NewGRPCQuerier(am.keeper, am.nexus))
 
-	err := cfg.RegisterMigration(types.ModuleName, 3, keeper.GetMigrationHandler(am.keeper))
+	err := cfg.RegisterMigration(types.ModuleName, 4, keeper.Migrate4To5(am.keeper))
 	if err != nil {
 		panic(err)
 	}
@@ -188,7 +191,7 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 }
 
 // ConsensusVersion implements AppModule/ConsensusVersion.
-func (AppModule) ConsensusVersion() uint64 { return 4 }
+func (AppModule) ConsensusVersion() uint64 { return 5 }
 
 // OnChanOpenInit implements the IBCModule interface
 func (am AppModule) OnChanOpenInit(
@@ -264,7 +267,15 @@ func (am AppModule) OnRecvPacket(
 	packet channeltypes.Packet,
 	relayer sdk.AccAddress,
 ) ibcexported.Acknowledgement {
-	return am.transferModule.OnRecvPacket(ctx, packet, relayer)
+	if err := am.transferModule.OnRecvPacket(ctx, packet, relayer); err != nil {
+		return err
+	}
+
+	if err := am.rateLimiter.RateLimitPacket(ctx, packet, nexus.Incoming); err != nil {
+		return ibctransfertypes.NewErrorAcknowledgement(err)
+	}
+
+	return nil
 }
 
 // OnAcknowledgementPacket implements the IBCModule interface
@@ -283,10 +294,15 @@ func (am AppModule) OnAcknowledgementPacket(
 	if err := ibctransfertypes.ModuleCdc.UnmarshalJSON(acknowledgement, &ack); err != nil {
 		return sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "cannot unmarshal ICS-20 transfer packet acknowledgement: %v", err)
 	}
+
 	switch ack.Response.(type) {
 	case *channeltypes.Acknowledgement_Result:
 		return setTransferCompleted(ctx, am.keeper, packet.SourcePort, packet.SourceChannel, packet.Sequence)
 	default:
+		if err := am.rateLimiter.RateLimitPacket(ctx, packet, nexus.Incoming); err != nil {
+			return err
+		}
+
 		return setTransferFailed(ctx, am.keeper, packet.SourcePort, packet.SourceChannel, packet.Sequence)
 	}
 }
@@ -299,6 +315,10 @@ func (am AppModule) OnTimeoutPacket(
 ) error {
 	err := am.transferModule.OnTimeoutPacket(ctx, packet, relayer)
 	if err != nil {
+		return err
+	}
+
+	if err := am.rateLimiter.RateLimitPacket(ctx, packet, nexus.Incoming); err != nil {
 		return err
 	}
 

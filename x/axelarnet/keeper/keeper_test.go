@@ -20,6 +20,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types/mock"
 	axelartestutils "github.com/axelarnetwork/axelar-core/x/axelarnet/types/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	nexustestutils "github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 )
@@ -45,7 +46,7 @@ func TestKeeper_GetIBCPath(t *testing.T) {
 
 	t.Run("should return the registered IBC path when the given asset is registered", testutils.Func(func(t *testing.T) {
 		ctx, k, _ = setup()
-		chain := randomChain()
+		chain := axelartestutils.RandomCosmosChain()
 		funcs.MustNoErr(k.SetCosmosChain(ctx, chain))
 		result, ok := k.GetIBCPath(ctx, chain.Name)
 		assert.Equal(t, chain.IBCPath, result)
@@ -69,7 +70,7 @@ func TestKeeper_RegisterCosmosChain(t *testing.T) {
 
 		for i := 0; i < int(count); i++ {
 			chains[i] = strings.ToLower(rand.NormalizedStr(10))
-			chain := randomChain()
+			chain := axelartestutils.RandomCosmosChain()
 			chain.Name = nexus.ChainName(chains[i])
 			assert.NoError(t, k.SetCosmosChain(ctx, chain))
 		}
@@ -144,4 +145,35 @@ func TestSetTransferStatus(t *testing.T) {
 	assert.NoError(t, k.SetTransferFailed(ctx, pending2.ID))
 	assert.NoError(t, k.SetTransferPending(ctx, pending2.ID))
 	assert.True(t, ok)
+}
+
+func TestSetChainByIBCPath(t *testing.T) {
+	ctx, k, _ := setup()
+	ibcPaths := []string{
+		"",
+		"transfer",
+		"transfer//channel-1",
+		"/channel-1",
+		"transfer/",
+		"transfer/channel-1/transfer/channel-2",
+		"a/b/c",
+	}
+
+	for _, ibcPath := range ibcPaths {
+		chain := nexustestutils.RandomChainName()
+		err := k.SetChainByIBCPath(ctx, ibcPath, chain)
+		assert.ErrorContains(t, err, "invalid IBC path")
+
+		_, found := k.GetChainNameByIBCPath(ctx, ibcPath)
+		assert.False(t, found)
+	}
+
+	chain := nexustestutils.RandomChainName()
+	ibcPath := axelartestutils.RandomIBCPath()
+	err := k.SetChainByIBCPath(ctx, ibcPath, chain)
+	assert.NoError(t, err)
+
+	chainName, found := k.GetChainNameByIBCPath(ctx, ibcPath)
+	assert.True(t, found)
+	assert.Equal(t, chain, chainName)
 }

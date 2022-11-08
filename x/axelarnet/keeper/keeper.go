@@ -31,6 +31,7 @@ var (
 	// failedTransferPrefix is deprecated in v0.23
 	failedTransferPrefix = key.FromUInt[uint64](2)
 	seqIDMappingPrefix   = key.FromUInt[uint64](3)
+	ibcPathPrefix        = key.FromUInt[uint64](4)
 )
 
 // Keeper provides access to all state changes regarding the Axelarnet module
@@ -87,7 +88,7 @@ func (k Keeper) GetEndBlockerLimit(ctx sdk.Context) uint64 {
 
 // GetIBCPath retrieves the IBC path associated to the specified chain
 func (k Keeper) GetIBCPath(ctx sdk.Context, chain nexus.ChainName) (string, bool) {
-	cosmosChain, ok := k.getCosmosChain(ctx, chain)
+	cosmosChain, ok := k.GetCosmosChainByName(ctx, chain)
 	if !ok || cosmosChain.IBCPath == "" {
 		return "", false
 	}
@@ -97,20 +98,31 @@ func (k Keeper) GetIBCPath(ctx sdk.Context, chain nexus.ChainName) (string, bool
 
 // IsCosmosChain returns true if the given chain name is for a cosmos chain
 func (k Keeper) IsCosmosChain(ctx sdk.Context, chain nexus.ChainName) bool {
-	_, ok := k.getCosmosChain(ctx, chain)
+	_, ok := k.GetCosmosChainByName(ctx, chain)
 	return ok
 }
 
 // GetCosmosChainByName gets the address prefix of the given cosmos chain
-func (k Keeper) GetCosmosChainByName(ctx sdk.Context, chain nexus.ChainName) (types.CosmosChain, bool) {
-	chainKey := cosmosChainPrefix.Append(key.From(chain))
-	var value types.CosmosChain
-	ok := k.getStore(ctx).GetNew(chainKey, &value)
-	if !ok {
-		return types.CosmosChain{}, false
+func (k Keeper) GetCosmosChainByName(ctx sdk.Context, chain nexus.ChainName) (cosmosChain types.CosmosChain, found bool) {
+	return cosmosChain, k.getStore(ctx).GetNew(cosmosChainPrefix.Append(key.From(chain)), &cosmosChain)
+}
+
+// SetChainByIBCPath sets the chain name for the given ibc path
+func (k Keeper) SetChainByIBCPath(ctx sdk.Context, ibcPath string, chain nexus.ChainName) error {
+	if err := types.ValidateIBCPath(ibcPath); err != nil {
+		return err
 	}
 
-	return value, true
+	return k.getStore(ctx).SetNewValidated(ibcPathPrefix.Append(key.FromStr(ibcPath)),
+		utils.WithValidation(&gogoprototypes.StringValue{Value: chain.String()},
+			func() error { return chain.Validate() }))
+}
+
+// GetChainNameByIBCPath returns the chain name for the given ibc path
+func (k Keeper) GetChainNameByIBCPath(ctx sdk.Context, ibcPath string) (nexus.ChainName, bool) {
+	var chain gogoprototypes.StringValue
+	found := k.getStore(ctx).GetNew(ibcPathPrefix.Append(key.FromStr(ibcPath)), &chain)
+	return nexus.ChainName(chain.GetValue()), found
 }
 
 // GetCosmosChains retrieves all registered cosmos chain names
@@ -130,10 +142,6 @@ func (k Keeper) getCosmosChains(ctx sdk.Context) (cosmosChains []types.CosmosCha
 	}
 
 	return cosmosChains
-}
-
-func (k Keeper) getCosmosChain(ctx sdk.Context, chain nexus.ChainName) (cosmosChain types.CosmosChain, ok bool) {
-	return cosmosChain, k.getStore(ctx).GetNew(cosmosChainPrefix.Append(key.From(chain)), &cosmosChain)
 }
 
 // SetCosmosChain sets the address prefix for the given cosmos chain
