@@ -44,7 +44,7 @@ jobs:
 
       - name: Unzip Bytecode
         run : |
-          unzip Bytecode-${{ steps.bytecode_version.outputs.VERSION }}.zip  -d ./contract-artifacts'
+          unzip Bytecode-${{ steps.bytecode_version.outputs.VERSION }}.zip  -d ./contract-artifacts
           rm Bytecode-${{ steps.bytecode_version.outputs.VERSION }}.zip
 
       - name: Install prereqs
