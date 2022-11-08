@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"fmt"
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/key"
+	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
@@ -22,7 +24,22 @@ func (k Keeper) InitGenesis(ctx sdk.Context, genState *types.GenesisState) {
 		}
 	}
 
-	slices.ForEach(genState.Chains, func(c types.CosmosChain) { funcs.MustNoErr(k.SetCosmosChain(ctx, c)) })
+	slices.ForEach(genState.Chains, func(c types.CosmosChain) {
+		if _, ok := k.GetCosmosChainByName(ctx, c.Name); ok {
+			panic(fmt.Sprintf("cosmos chain %s already registered", c.Name))
+		}
+
+		if _, ok := k.GetChainNameByIBCPath(ctx, c.IBCPath); ok {
+			panic(fmt.Sprintf("ibc path %s already registered", c.IBCPath))
+		}
+
+		funcs.MustNoErr(k.SetCosmosChain(ctx, c))
+
+		// axelarnet does not have an ibc path
+		if !c.Name.Equals(exported.Axelarnet.Name) {
+			funcs.MustNoErr(k.SetChainByIBCPath(ctx, c.IBCPath, c.Name))
+		}
+	})
 
 	funcs.MustNoErr(k.validateIBCTransferQueueState(genState.TransferQueue, ibcTransferQueueName))
 

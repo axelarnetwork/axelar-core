@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -17,6 +18,8 @@ import (
 
 const (
 	flagIsNativeAsset = "is-native-asset"
+	flagLimit         = "limit"
+	flagWindow        = "window"
 )
 
 // GetTxCmd returns the transaction commands for this module
@@ -178,7 +181,25 @@ func GetCmdRegisterAsset() *cobra.Command {
 			return err
 		}
 
-		msg := types.NewRegisterAssetRequest(cliCtx.GetFromAddress(), chain, nexus.NewAsset(denom, isNativeAsset))
+		limitArg, err := cmd.Flags().GetString(flagLimit)
+		if err != nil {
+			return err
+		}
+		limit, err := sdk.ParseUint(limitArg)
+		if err != nil {
+			return err
+		}
+
+		windowArg, err := cmd.Flags().GetString(flagWindow)
+		if err != nil {
+			return err
+		}
+		window, err := time.ParseDuration(windowArg)
+		if err != nil {
+			return err
+		}
+
+		msg := types.NewRegisterAssetRequest(cliCtx.GetFromAddress(), chain, nexus.NewAsset(denom, isNativeAsset), limit, window)
 		if err := msg.ValidateBasic(); err != nil {
 			return err
 		}
@@ -187,6 +208,9 @@ func GetCmdRegisterAsset() *cobra.Command {
 	}
 
 	cmd.Flags().Bool(flagIsNativeAsset, false, "is it a native asset from cosmos chain")
+	cmd.Flags().String(flagLimit, utils.MaxUint.String(), "rate limit for the asset")
+	cmd.Flags().String(flagWindow, types.DefaultRateLimitWindow.String(), "rate limit window for the asset")
+
 	flags.AddTxFlagsToCmd(cmd)
 	return cmd
 }

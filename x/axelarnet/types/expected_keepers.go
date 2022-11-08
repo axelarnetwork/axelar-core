@@ -51,6 +51,7 @@ type Nexus interface {
 	ActivateChain(ctx sdk.Context, chain nexus.Chain)
 	GetChainByNativeAsset(ctx sdk.Context, asset string) (nexus.Chain, bool)
 	IsChainActivated(ctx sdk.Context, chain nexus.Chain) bool
+	RateLimitTransfer(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error
 }
 
 // BankKeeper defines the expected interface contract the vesting module requires
@@ -78,6 +79,12 @@ type ChannelKeeper interface {
 
 	GetChannel(ctx sdk.Context, srcPort string, srcChan string) (channel channeltypes.Channel, found bool) // used in module_test
 	SendPacket(ctx sdk.Context, channelCap *capabilitytypes.Capability, packet ibcexported.PacketI) error  // used in module_test
+	WriteAcknowledgement(
+		ctx sdk.Context,
+		chanCap *capabilitytypes.Capability,
+		packet ibcexported.PacketI,
+		ack ibcexported.Acknowledgement,
+	) error
 }
 
 // AccountKeeper defines the account contract that must be fulfilled when

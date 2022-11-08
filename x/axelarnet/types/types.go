@@ -4,6 +4,8 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"sort"
+	"strings"
+	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/address"
@@ -13,6 +15,17 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+)
+
+// Log attribute keys
+const (
+	AttributeChain   = "chain"
+	AttributeIBCPath = "ibcPath"
+)
+
+const (
+	// DefaultRateLimitWindow is the default window for rate limits of assets on cosmos chains
+	DefaultRateLimitWindow = 6 * time.Hour
 )
 
 // NewLinkedAddress creates a new address to make a deposit which can be transferred to another blockchain
@@ -98,8 +111,8 @@ func (m CosmosChain) ValidateBasic() error {
 			return fmt.Errorf("IBC path should be empty for %s", exported.Axelarnet.Name)
 		}
 	} else {
-		if err := utils.ValidateString(m.IBCPath); err != nil {
-			return sdkerrors.Wrap(err, "invalid IBC path")
+		if err := ValidateIBCPath(m.IBCPath); err != nil {
+			return err
 		}
 	}
 
@@ -186,3 +199,30 @@ const (
 	// External means from external chains, such as EVM chains
 	External = 3
 )
+
+// ValidateIBCPath validates direct IBC paths
+func ValidateIBCPath(path string) error {
+	if err := utils.ValidateString(path); err != nil {
+		return sdkerrors.Wrap(err, "invalid IBC path")
+	}
+
+	pathValidator := host.NewPathValidator(func(path string) error {
+		return nil
+	})
+	if err := pathValidator(path); err != nil {
+		return sdkerrors.Wrap(err, "invalid IBC path")
+	}
+
+	// we only support direct IBC connections
+	pathSplit := strings.Split(path, "/")
+	if len(pathSplit) != 2 {
+		return fmt.Errorf(fmt.Sprintf("invalid IBC path %s", path))
+	}
+
+	return nil
+}
+
+// NewIBCPath returns an IBC path for a given port and IBC channel
+func NewIBCPath(port string, channel string) string {
+	return fmt.Sprintf("%s/%s", port, channel)
+}

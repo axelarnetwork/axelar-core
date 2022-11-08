@@ -1827,7 +1827,7 @@ to nexus
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [axelar.nexus.exported.v1beta1.Chain](#axelar.nexus.exported.v1beta1.Chain) |  | **Deprecated.** chain was deprecated in v0.27 |
 | `addr_prefix` | [string](#string) |  |  |
-| `native_assets` | [axelar.nexus.exported.v1beta1.Asset](#axelar.nexus.exported.v1beta1.Asset) | repeated |  |
+| `native_assets` | [axelar.nexus.exported.v1beta1.Asset](#axelar.nexus.exported.v1beta1.Asset) | repeated | **Deprecated.** native_assets was deprecated in v0.27 |
 | `cosmos_chain` | [string](#string) |  | TODO: Rename this to `chain` after v1beta1 -> v1 version bump |
 | `ibc_path` | [string](#string) |  |  |
 
@@ -1945,6 +1945,8 @@ based chain
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
 | `asset` | [axelar.nexus.exported.v1beta1.Asset](#axelar.nexus.exported.v1beta1.Asset) |  |  |
+| `limit` | [bytes](#bytes) |  |  |
+| `window` | [google.protobuf.Duration](#google.protobuf.Duration) |  |  |
 
 
 

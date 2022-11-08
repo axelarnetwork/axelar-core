@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
@@ -20,10 +19,6 @@ import (
 )
 
 var _ types.MsgServiceServer = msgServer{}
-
-const (
-	defaultRateLimitWindow = 6 * time.Hour
-)
 
 type msgServer struct {
 	Keeper
@@ -230,7 +225,11 @@ func (s msgServer) AddCosmosBasedChain(c context.Context, req *types.AddCosmosBa
 	ctx := sdk.UnwrapSDKContext(c)
 
 	if _, found := s.nexus.GetChain(ctx, req.CosmosChain); found {
-		return &types.AddCosmosBasedChainResponse{}, fmt.Errorf("chain '%s' is already registered", req.CosmosChain)
+		return nil, fmt.Errorf("chain '%s' is already registered", req.CosmosChain)
+	}
+
+	if chain, found := s.GetChainNameByIBCPath(ctx, req.IBCPath); found {
+		return nil, fmt.Errorf("ibc path %s is already registered for chain %s", req.IBCPath, chain)
 	}
 
 	chain := nexus.Chain{
@@ -243,12 +242,12 @@ func (s msgServer) AddCosmosBasedChain(c context.Context, req *types.AddCosmosBa
 
 	// register asset in chain state
 	for _, asset := range req.NativeAssets {
-		if err := s.nexus.RegisterAsset(ctx, chain, asset, utils.MaxUint, defaultRateLimitWindow); err != nil {
+		if err := s.nexus.RegisterAsset(ctx, chain, asset, utils.MaxUint, types.DefaultRateLimitWindow); err != nil {
 			return nil, err
 		}
 
 		// also register on axelarnet, it routes assets from cosmos chains to evm chains
-		if err := s.nexus.RegisterAsset(ctx, exported.Axelarnet, nexus.NewAsset(asset.Denom, false), utils.MaxUint, defaultRateLimitWindow); err != nil {
+		if err := s.nexus.RegisterAsset(ctx, exported.Axelarnet, nexus.NewAsset(asset.Denom, false), utils.MaxUint, types.DefaultRateLimitWindow); err != nil {
 			return nil, err
 		}
 	}
@@ -261,6 +260,10 @@ func (s msgServer) AddCosmosBasedChain(c context.Context, req *types.AddCosmosBa
 		return nil, err
 	}
 
+	if err := s.SetChainByIBCPath(ctx, req.IBCPath, chain.Name); err != nil {
+		return nil, err
+	}
+
 	return &types.AddCosmosBasedChainResponse{}, nil
 }
 
@@ -270,22 +273,22 @@ func (s msgServer) RegisterAsset(c context.Context, req *types.RegisterAssetRequ
 
 	chain, found := s.nexus.GetChain(ctx, req.Chain)
 	if !found {
-		return &types.RegisterAssetResponse{}, fmt.Errorf("chain '%s' not found", req.Chain)
+		return nil, fmt.Errorf("chain '%s' not found", req.Chain)
 	}
 
 	if _, found := s.GetCosmosChainByName(ctx, req.Chain); !found {
-		return &types.RegisterAssetResponse{}, fmt.Errorf("chain '%s' is not a cosmos chain", req.Chain)
+		return nil, fmt.Errorf("chain '%s' is not a cosmos chain", req.Chain)
 	}
 
 	// register asset in chain state
-	err := s.nexus.RegisterAsset(ctx, chain, req.Asset, utils.MaxUint, defaultRateLimitWindow)
+	err := s.nexus.RegisterAsset(ctx, chain, req.Asset, req.Limit, req.Window)
 	if err != nil {
 		return nil, err
 	}
 
 	// also register on axelarnet, it routes assets from cosmos chains to evm chains
 	// ignore the error in case above chain is axelarnet, or if the asset is already registered
-	_ = s.nexus.RegisterAsset(ctx, exported.Axelarnet, nexus.NewAsset(req.Asset.Denom, false), utils.MaxUint, defaultRateLimitWindow)
+	_ = s.nexus.RegisterAsset(ctx, exported.Axelarnet, nexus.NewAsset(req.Asset.Denom, false), req.Limit, req.Window)
 
 	return &types.RegisterAssetResponse{}, nil
 }
@@ -383,7 +386,7 @@ func (s msgServer) RetryIBCTransfer(c context.Context, req *types.RetryIBCTransf
 		return nil, fmt.Errorf("IBC transfer %s does not have failed status", req.ID.String())
 	}
 
-	if path != fmt.Sprintf("%s/%s", t.PortID, t.ChannelID) {
+	if path != types.NewIBCPath(t.PortID, t.ChannelID) {
 		return nil, fmt.Errorf("chain %s IBC path doesn't match %s IBC transfer path", chain.Name, path)
 	}
 	err := s.ibcK.SendIBCTransfer(ctx, t)
@@ -413,7 +416,7 @@ func toICS20(ctx sdk.Context, k Keeper, n types.Nexus, coin sdk.Coin) sdk.Coin {
 	chain, _ := n.GetChainByNativeAsset(ctx, coin.GetDenom())
 	path, _ := k.GetIBCPath(ctx, chain.Name)
 
-	prefixedDenom := fmt.Sprintf("%s/%s", path, coin.Denom)
+	prefixedDenom := types.NewIBCPath(path, coin.Denom)
 	// construct the denomination trace from the full raw denomination
 	denomTrace := ibctransfertypes.ParseDenomTrace(prefixedDenom)
 	return sdk.NewCoin(denomTrace.IBCDenom(), coin.Amount)
