@@ -80,8 +80,12 @@
     - [QueryChainMaintainersResponse](#axelar.nexus.v1beta1.QueryChainMaintainersResponse)
     - [RecipientAddressRequest](#axelar.nexus.v1beta1.RecipientAddressRequest)
     - [RecipientAddressResponse](#axelar.nexus.v1beta1.RecipientAddressResponse)
+    - [TransferEpochRequest](#axelar.nexus.v1beta1.TransferEpochRequest)
+    - [TransferEpochResponse](#axelar.nexus.v1beta1.TransferEpochResponse)
     - [TransferFeeRequest](#axelar.nexus.v1beta1.TransferFeeRequest)
     - [TransferFeeResponse](#axelar.nexus.v1beta1.TransferFeeResponse)
+    - [TransferRateLimitRequest](#axelar.nexus.v1beta1.TransferRateLimitRequest)
+    - [TransferRateLimitResponse](#axelar.nexus.v1beta1.TransferRateLimitResponse)
     - [TransfersForChainRequest](#axelar.nexus.v1beta1.TransfersForChainRequest)
     - [TransfersForChainResponse](#axelar.nexus.v1beta1.TransfersForChainResponse)
   
@@ -1555,6 +1559,39 @@ recipient address for a given deposit address
 
 
 
+<a name="axelar.nexus.v1beta1.TransferEpochRequest"></a>
+
+### TransferEpochRequest
+TransferEpochRequest represents a message that queries the
+transfer epoch for a given chain, asset, and transfer direction
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `asset` | [string](#string) |  |  |
+| `direction` | [axelar.nexus.exported.v1beta1.TransferDirection](#axelar.nexus.exported.v1beta1.TransferDirection) |  |  |
+
+
+
+
+
+
+<a name="axelar.nexus.v1beta1.TransferEpochResponse"></a>
+
+### TransferEpochResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `transfer_epoch` | [TransferEpoch](#axelar.nexus.v1beta1.TransferEpoch) |  |  |
+
+
+
+
+
+
 <a name="axelar.nexus.v1beta1.TransferFeeRequest"></a>
 
 ### TransferFeeRequest
@@ -1582,6 +1619,38 @@ the network for a cross-chain transfer
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `fee` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+
+
+
+
+
+
+<a name="axelar.nexus.v1beta1.TransferRateLimitRequest"></a>
+
+### TransferRateLimitRequest
+TransferRateLimitRequest represents a message that queries the registered
+transfer rate limit for a given chain and asset
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `asset` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.nexus.v1beta1.TransferRateLimitResponse"></a>
+
+### TransferRateLimitResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `rate_limit` | [RateLimit](#axelar.nexus.v1beta1.RateLimit) |  |  |
 
 
 
@@ -5518,6 +5587,8 @@ QueryService defines the gRPC querier service.
 | `ChainState` | [ChainStateRequest](#axelar.nexus.v1beta1.ChainStateRequest) | [ChainStateResponse](#axelar.nexus.v1beta1.ChainStateResponse) | ChainState queries the state of a registered chain on the network | GET|/axelar/nexus/v1beta1/chain_state/{chain}|
 | `ChainsByAsset` | [ChainsByAssetRequest](#axelar.nexus.v1beta1.ChainsByAssetRequest) | [ChainsByAssetResponse](#axelar.nexus.v1beta1.ChainsByAssetResponse) | ChainsByAsset queries the chains that support an asset on the network | GET|/axelar/nexus/v1beta1/chains_by_asset/{asset}|
 | `RecipientAddress` | [RecipientAddressRequest](#axelar.nexus.v1beta1.RecipientAddressRequest) | [RecipientAddressResponse](#axelar.nexus.v1beta1.RecipientAddressResponse) | RecipientAddress queries the recipient address for a given deposit address | GET|/axelar/nexus/v1beta1/recipient_address/{deposit_chain}/{deposit_addr}|
+| `TransferRateLimit` | [TransferRateLimitRequest](#axelar.nexus.v1beta1.TransferRateLimitRequest) | [TransferRateLimitResponse](#axelar.nexus.v1beta1.TransferRateLimitResponse) | TransferRateLimit queries the transfer rate limit for a given chain and asset | GET|/axelar/nexus/v1beta1/transfer_rate_limit/{chain}/{asset}|
+| `TransferEpoch` | [TransferEpochRequest](#axelar.nexus.v1beta1.TransferEpochRequest) | [TransferEpochResponse](#axelar.nexus.v1beta1.TransferEpochResponse) | TransferEpoch queries the transfer epoch for a given chain, asset, and transfer direction | GET|/axelar/nexus/v1beta1/transfer_epoch/{chain}/{asset}/{direction}|
 
  <!-- end services -->
 

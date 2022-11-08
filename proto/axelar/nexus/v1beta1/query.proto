@@ -117,3 +117,26 @@ message RecipientAddressResponse {
   string recipient_addr = 1;
   string recipient_chain = 2;
 };
+
+// TransferRateLimitRequest represents a message that queries the registered
+// transfer rate limit for a given chain and asset
+message TransferRateLimitRequest {
+  string chain = 1;
+  string asset = 2;
+}
+
+message TransferRateLimitResponse {
+  RateLimit rate_limit = 1 [ (gogoproto.nullable) = false ];
+};
+
+// TransferEpochRequest represents a message that queries the
+// transfer epoch for a given chain, asset, and transfer direction
+message TransferEpochRequest {
+  string chain = 1;
+  string asset = 2;
+  axelar.nexus.exported.v1beta1.TransferDirection direction = 3;
+}
+
+message TransferEpochResponse {
+  TransferEpoch transfer_epoch = 1 [ (gogoproto.nullable) = false ];
+};

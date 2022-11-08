@@ -233,3 +233,41 @@ func (q Querier) RecipientAddress(c context.Context, req *types.RecipientAddress
 		RecipientChain: linkedAddresses.RecipientAddress.Chain.Name.String(),
 	}, nil
 }
+
+// TransferRateLimit queries the transfer rate limit for a given chain and asset
+func (q Querier) TransferRateLimit(c context.Context, req *types.TransferRateLimitRequest) (*types.TransferRateLimitResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	chain, ok := q.keeper.GetChain(ctx, nexus.ChainName(req.Chain))
+	if !ok {
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrNotFound, fmt.Errorf("chain %s not found", req.Chain).Error())
+	}
+
+	rateLimit, found := q.keeper.getRateLimit(ctx, chain.Name, req.Asset)
+	if !found {
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrNotFound, fmt.Errorf("rate limit not found for chain %s and asset %s", chain.Name, req.Asset).Error())
+	}
+
+	return &types.TransferRateLimitResponse{
+		RateLimit: rateLimit,
+	}, nil
+}
+
+// TransferEpoch queries the transfer epoch for a given chain, asset, and transfer direction
+func (q Querier) TransferEpoch(c context.Context, req *types.TransferEpochRequest) (*types.TransferEpochResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	chain, ok := q.keeper.GetChain(ctx, nexus.ChainName(req.Chain))
+	if !ok {
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrNotFound, fmt.Errorf("chain %s not found", req.Chain).Error())
+	}
+
+	transferEpoch, found := q.keeper.getTransferEpoch(ctx, chain.Name, req.Asset, req.Direction)
+	if !found {
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrNotFound, fmt.Errorf("transfer epoch not found for chain %s, asset %s, and direction %s", chain.Name, req.Asset, req.Direction).Error())
+	}
+
+	return &types.TransferEpochResponse{
+		TransferEpoch: transferEpoch,
+	}, nil
+}

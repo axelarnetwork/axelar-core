@@ -41,6 +41,8 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		getCmdChainState(),
 		getCmdChainsByAsset(),
 		getCmdRecipientAddress(),
+		getCmdTransferRateLimit(),
+		getCmdTransferEpoch(),
 	)
 
 	return queryCmd
@@ -401,5 +403,78 @@ func getCmdRecipientAddress() *cobra.Command {
 	}
 
 	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+func getCmdTransferRateLimit() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "transfer-rate-limit [chain] [asset]",
+		Short: "Returns the transfer rate limit for a given chain and asset",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			queryClient := types.NewQueryServiceClient(clientCtx)
+
+			res, err := queryClient.TransferRateLimit(cmd.Context(),
+				&types.TransferRateLimitRequest{
+					Chain: args[0],
+					Asset: args[1],
+				})
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+
+	return cmd
+}
+
+func getCmdTransferEpoch() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "transfer-epoch [chain] [asset] [direction]",
+		Short: "Returns the transfer epoch, i.e amount of transfers within the rate limit window, for a given chain, asset, and transfer direction",
+		Args:  cobra.ExactArgs(3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			queryClient := types.NewQueryServiceClient(clientCtx)
+
+			var direction nexus.TransferDirection
+			switch args[2] {
+			case "incoming":
+				direction = nexus.Incoming
+			case "outgoing":
+				direction = nexus.Outgoing
+			default:
+				return fmt.Errorf("invalid transfer direction %s", args[2])
+			}
+
+			res, err := queryClient.TransferEpoch(cmd.Context(),
+				&types.TransferEpochRequest{
+					Chain:     args[0],
+					Asset:     args[1],
+					Direction: direction,
+				})
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+
 	return cmd
 }
