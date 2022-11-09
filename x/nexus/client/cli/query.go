@@ -7,6 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	gogoprototypes "github.com/gogo/protobuf/types"
 	"github.com/spf13/cobra"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -18,8 +19,6 @@ import (
 const (
 	activated   = "activated"
 	deactivated = "deactivated"
-	incoming    = "incoming"
-	outgoing    = "outgoing"
 )
 
 // GetQueryCmd returns the cli query commands for this module
@@ -44,7 +43,6 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		getCmdChainsByAsset(),
 		getCmdRecipientAddress(),
 		getCmdTransferRateLimit(),
-		getCmdTransferEpoch(),
 	)
 
 	return queryCmd
@@ -430,46 +428,8 @@ func getCmdTransferRateLimit() *cobra.Command {
 				return err
 			}
 
-			return clientCtx.PrintProto(res)
-		},
-	}
-
-	flags.AddQueryFlagsToCmd(cmd)
-
-	return cmd
-}
-
-func getCmdTransferEpoch() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   fmt.Sprintf("transfer-epoch [chain] [asset] [direction (%s|%s)]", incoming, outgoing),
-		Short: "Returns the transfer epoch, i.e amount of transfers within the rate limit window, for a given chain, asset, and transfer direction",
-		Args:  cobra.ExactArgs(3),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			clientCtx, err := client.GetClientQueryContext(cmd)
-			if err != nil {
-				return err
-			}
-
-			queryClient := types.NewQueryServiceClient(clientCtx)
-
-			var direction nexus.TransferDirection
-			switch args[2] {
-			case incoming:
-				direction = nexus.Incoming
-			case outgoing:
-				direction = nexus.Outgoing
-			default:
-				return fmt.Errorf("invalid transfer direction %s", args[2])
-			}
-
-			res, err := queryClient.TransferEpoch(cmd.Context(),
-				&types.TransferEpochRequest{
-					Chain:     args[0],
-					Asset:     args[1],
-					Direction: direction,
-				})
-			if err != nil {
-				return err
+			if res == nil {
+				return clientCtx.PrintProto(&gogoprototypes.StringValue{Value: fmt.Sprintf("transfer rate limit is not set for chain %s and asset %s", args[0], args[1])})
 			}
 
 			return clientCtx.PrintProto(res)

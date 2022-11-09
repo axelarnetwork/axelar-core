@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"fmt"
+	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -245,29 +246,20 @@ func (q Querier) TransferRateLimit(c context.Context, req *types.TransferRateLim
 
 	rateLimit, found := q.keeper.getRateLimit(ctx, chain.Name, req.Asset)
 	if !found {
-		return nil, sdkerrors.Wrapf(sdkerrors.ErrNotFound, fmt.Errorf("rate limit not found for chain %s and asset %s", chain.Name, req.Asset).Error())
+		return nil, nil
 	}
+
+	incomingEpoch := q.keeper.getCurrentTransferEpoch(ctx, chain.Name, req.Asset, nexus.Incoming, rateLimit.Window)
+	outgoingEpoch := q.keeper.getCurrentTransferEpoch(ctx, chain.Name, req.Asset, nexus.Outgoing, rateLimit.Window)
+
+	// time left = (epoch + 1) * window - current time
+	timeLeft := time.Duration(int64(incomingEpoch.Epoch+1)*int64(rateLimit.Window) - ctx.BlockTime().UnixNano())
 
 	return &types.TransferRateLimitResponse{
-		RateLimit: rateLimit,
-	}, nil
-}
-
-// TransferEpoch queries the transfer epoch for a given chain, asset, and transfer direction
-func (q Querier) TransferEpoch(c context.Context, req *types.TransferEpochRequest) (*types.TransferEpochResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-
-	chain, ok := q.keeper.GetChain(ctx, nexus.ChainName(req.Chain))
-	if !ok {
-		return nil, sdkerrors.Wrapf(sdkerrors.ErrNotFound, fmt.Errorf("chain %s not found", req.Chain).Error())
-	}
-
-	transferEpoch, found := q.keeper.getTransferEpoch(ctx, chain.Name, req.Asset, req.Direction)
-	if !found {
-		return nil, sdkerrors.Wrapf(sdkerrors.ErrNotFound, fmt.Errorf("transfer epoch not found for chain %s, asset %s, and direction %s", chain.Name, req.Asset, req.Direction).Error())
-	}
-
-	return &types.TransferEpochResponse{
-		TransferEpoch: transferEpoch,
+		Limit:    rateLimit.Limit.Amount,
+		Window:   rateLimit.Window,
+		Incoming: incomingEpoch.Amount.Amount,
+		Outgoing: outgoingEpoch.Amount.Amount,
+		TimeLeft: timeLeft,
 	}, nil
 }

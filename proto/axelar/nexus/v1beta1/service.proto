@@ -124,17 +124,10 @@ service QueryService {
   }
 
   // TransferRateLimit queries the transfer rate limit for a given chain and
-  // asset
+  // asset. If a rate limit is not set, nil is returned.
   rpc TransferRateLimit(TransferRateLimitRequest)
       returns (TransferRateLimitResponse) {
     option (google.api.http).get = "/axelar/nexus/v1beta1/transfer_rate_limit/"
                                    "{chain}/{asset}";
-  }
-
-  // TransferEpoch queries the transfer epoch for a given chain, asset, and
-  // transfer direction
-  rpc TransferEpoch(TransferEpochRequest) returns (TransferEpochResponse) {
-    option (google.api.http).get = "/axelar/nexus/v1beta1/transfer_epoch/"
-                                   "{chain}/{asset}/{direction}";
   }
 }

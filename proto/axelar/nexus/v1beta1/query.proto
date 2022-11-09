@@ -3,6 +3,7 @@ package axelar.nexus.v1beta1;
 
 option go_package = "github.com/axelarnetwork/axelar-core/x/nexus/types";
 
+import "google/protobuf/duration.proto";
 import "gogoproto/gogo.proto";
 import "axelar/nexus/exported/v1beta1/types.proto";
 import "axelar/nexus/v1beta1/types.proto";
@@ -119,24 +120,28 @@ message RecipientAddressResponse {
 };
 
 // TransferRateLimitRequest represents a message that queries the registered
-// transfer rate limit for a given chain and asset
+// transfer rate limit and current transfer amounts for a given chain and asset
 message TransferRateLimitRequest {
   string chain = 1;
   string asset = 2;
 }
 
 message TransferRateLimitResponse {
-  RateLimit rate_limit = 1 [ (gogoproto.nullable) = false ];
-};
-
-// TransferEpochRequest represents a message that queries the
-// transfer epoch for a given chain, asset, and transfer direction
-message TransferEpochRequest {
-  string chain = 1;
-  string asset = 2;
-  axelar.nexus.exported.v1beta1.TransferDirection direction = 3;
-}
-
-message TransferEpochResponse {
-  TransferEpoch transfer_epoch = 1 [ (gogoproto.nullable) = false ];
+  bytes limit = 1 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.nullable) = false
+  ];
+  google.protobuf.Duration window = 2
+      [ (gogoproto.stdduration) = true, (gogoproto.nullable) = false ];
+  // time_left indicates the time left in the rate limit window
+  bytes incoming = 3 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.nullable) = false
+  ];
+  bytes outgoing = 4 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.nullable) = false
+  ];
+  google.protobuf.Duration time_left = 5
+      [ (gogoproto.stdduration) = true, (gogoproto.nullable) = false ];
 };

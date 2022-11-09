@@ -125,7 +125,6 @@
       - [fee-info \[chain\] \[asset\]](axelard_query_nexus_fee-info.md)	 - Returns the per-chain fee for a registered asset
       - [latest-deposit-address \[deposit chain\] \[recipient chain\] \[recipient address\]](axelard_query_nexus_latest-deposit-address.md)	 - Query for account by address
       - [recipient-address \[chain\] \[address\]](axelard_query_nexus_recipient-address.md)	 - Returns the recipient address corresponding to the given deposit address
-      - [transfer-epoch \[chain\] \[asset\] \[direction (incoming|outgoing)\]](axelard_query_nexus_transfer-epoch.md)	 - Returns the transfer epoch, i.e amount of transfers within the rate limit window, for a given chain, asset, and transfer direction
       - [transfer-fee \[source-chain\] \[destination-chain\] \[amount\]](axelard_query_nexus_transfer-fee.md)	 - Returns the fee incurred on a cross-chain transfer
       - [transfer-rate-limit \[chain\] \[asset\]](axelard_query_nexus_transfer-rate-limit.md)	 - Returns the transfer rate limit for a given chain and asset
       - [transfers-for-chain \[chain\] \[state (pending|archived|insufficient_amount)\]](axelard_query_nexus_transfers-for-chain.md)	 - Query for account by address
