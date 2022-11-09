@@ -14,7 +14,7 @@
       "symbol": "AXL",
       "image": "/images/assets/axl.svg",
       "decimals": 6,
-      "transfer_fee": 0.25
+      "transfer_fee": 0.5
     },
     {
       "id": "weth-wei",
@@ -22,7 +22,7 @@
       "symbol": "WETH",
       "image": "/images/assets/weth.svg",
       "decimals": 18,
-      "transfer_fee": 0.0003
+      "transfer_fee": 0.0004
     },
     {
       "id": "dai-wei",
@@ -54,7 +54,7 @@
       "symbol": "WAVAX",
       "image": "/images/assets/wavax.svg",
       "decimals": 18,
-      "transfer_fee": 0.02
+      "transfer_fee": 0.03
     },
     {
       "id": "wglmr-wei",
@@ -78,7 +78,7 @@
       "symbol": "WBTC",
       "image": "/images/assets/wbtc.svg",
       "decimals": 8,
-      "transfer_fee": 2e-05
+      "transfer_fee": 3e-05
     },
     {
       "id": "wbnb-wei",
