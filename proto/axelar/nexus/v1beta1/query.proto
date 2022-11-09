@@ -126,7 +126,9 @@ message TransferRateLimitRequest {
   string asset = 2;
 }
 
-message TransferRateLimitResponse {
+message TransferRateLimitResponse { TransferRateLimit transfer_rate_limit = 1; }
+
+message TransferRateLimit {
   bytes limit = 1 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
     (gogoproto.nullable) = false

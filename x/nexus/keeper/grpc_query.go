@@ -246,7 +246,7 @@ func (q Querier) TransferRateLimit(c context.Context, req *types.TransferRateLim
 
 	rateLimit, found := q.keeper.getRateLimit(ctx, chain.Name, req.Asset)
 	if !found {
-		return nil, nil
+		return &types.TransferRateLimitResponse{}, nil
 	}
 
 	incomingEpoch := q.keeper.getCurrentTransferEpoch(ctx, chain.Name, req.Asset, nexus.Incoming, rateLimit.Window)
@@ -256,10 +256,12 @@ func (q Querier) TransferRateLimit(c context.Context, req *types.TransferRateLim
 	timeLeft := time.Duration(int64(incomingEpoch.Epoch+1)*int64(rateLimit.Window) - ctx.BlockTime().UnixNano())
 
 	return &types.TransferRateLimitResponse{
-		Limit:    rateLimit.Limit.Amount,
-		Window:   rateLimit.Window,
-		Incoming: incomingEpoch.Amount.Amount,
-		Outgoing: outgoingEpoch.Amount.Amount,
-		TimeLeft: timeLeft,
+		TransferRateLimit: &types.TransferRateLimit{
+			Limit:    rateLimit.Limit.Amount,
+			Window:   rateLimit.Window,
+			Incoming: incomingEpoch.Amount.Amount,
+			Outgoing: outgoingEpoch.Amount.Amount,
+			TimeLeft: timeLeft,
+		},
 	}, nil
 }

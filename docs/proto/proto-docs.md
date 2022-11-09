@@ -82,6 +82,7 @@
     - [RecipientAddressResponse](#axelar.nexus.v1beta1.RecipientAddressResponse)
     - [TransferFeeRequest](#axelar.nexus.v1beta1.TransferFeeRequest)
     - [TransferFeeResponse](#axelar.nexus.v1beta1.TransferFeeResponse)
+    - [TransferRateLimit](#axelar.nexus.v1beta1.TransferRateLimit)
     - [TransferRateLimitRequest](#axelar.nexus.v1beta1.TransferRateLimitRequest)
     - [TransferRateLimitResponse](#axelar.nexus.v1beta1.TransferRateLimitResponse)
     - [TransfersForChainRequest](#axelar.nexus.v1beta1.TransfersForChainRequest)
@@ -1590,6 +1591,25 @@ the network for a cross-chain transfer
 
 
 
+<a name="axelar.nexus.v1beta1.TransferRateLimit"></a>
+
+### TransferRateLimit
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `limit` | [bytes](#bytes) |  |  |
+| `window` | [google.protobuf.Duration](#google.protobuf.Duration) |  |  |
+| `incoming` | [bytes](#bytes) |  | time_left indicates the time left in the rate limit window |
+| `outgoing` | [bytes](#bytes) |  |  |
+| `time_left` | [google.protobuf.Duration](#google.protobuf.Duration) |  |  |
+
+
+
+
+
+
 <a name="axelar.nexus.v1beta1.TransferRateLimitRequest"></a>
 
 ### TransferRateLimitRequest
@@ -1615,11 +1635,7 @@ transfer rate limit and current transfer amounts for a given chain and asset
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `limit` | [bytes](#bytes) |  |  |
-| `window` | [google.protobuf.Duration](#google.protobuf.Duration) |  |  |
-| `incoming` | [bytes](#bytes) |  | time_left indicates the time left in the rate limit window |
-| `outgoing` | [bytes](#bytes) |  |  |
-| `time_left` | [google.protobuf.Duration](#google.protobuf.Duration) |  |  |
+| `transfer_rate_limit` | [TransferRateLimit](#axelar.nexus.v1beta1.TransferRateLimit) |  |  |
 
 
 

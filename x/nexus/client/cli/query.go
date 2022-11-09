@@ -7,7 +7,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	gogoprototypes "github.com/gogo/protobuf/types"
 	"github.com/spf13/cobra"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -426,10 +425,6 @@ func getCmdTransferRateLimit() *cobra.Command {
 				})
 			if err != nil {
 				return err
-			}
-
-			if res == nil {
-				return clientCtx.PrintProto(&gogoprototypes.StringValue{Value: fmt.Sprintf("transfer rate limit is not set for chain %s and asset %s", args[0], args[1])})
 			}
 
 			return clientCtx.PrintProto(res)

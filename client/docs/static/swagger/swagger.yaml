@@ -11391,20 +11391,23 @@ paths:
           schema:
             type: object
             properties:
-              limit:
-                type: string
-                format: byte
-              window:
-                type: string
-              incoming:
-                type: string
-                format: byte
-                title: time_left indicates the time left in the rate limit window
-              outgoing:
-                type: string
-                format: byte
-              time_left:
-                type: string
+              transfer_rate_limit:
+                type: object
+                properties:
+                  limit:
+                    type: string
+                    format: byte
+                  window:
+                    type: string
+                  incoming:
+                    type: string
+                    format: byte
+                    title: time_left indicates the time left in the rate limit window
+                  outgoing:
+                    type: string
+                    format: byte
+                  time_left:
+                    type: string
         default:
           description: An unexpected error response
           schema:
@@ -41878,7 +41881,7 @@ definitions:
 
           NOTE: The amount field is an Int which implements the custom method
           signatures required by gogoproto.
-  axelar.nexus.v1beta1.TransferRateLimitResponse:
+  axelar.nexus.v1beta1.TransferRateLimit:
     type: object
     properties:
       limit:
@@ -41895,6 +41898,26 @@ definitions:
         format: byte
       time_left:
         type: string
+  axelar.nexus.v1beta1.TransferRateLimitResponse:
+    type: object
+    properties:
+      transfer_rate_limit:
+        type: object
+        properties:
+          limit:
+            type: string
+            format: byte
+          window:
+            type: string
+          incoming:
+            type: string
+            format: byte
+            title: time_left indicates the time left in the rate limit window
+          outgoing:
+            type: string
+            format: byte
+          time_left:
+            type: string
   axelar.nexus.v1beta1.TransfersForChainResponse:
     type: object
     properties:
