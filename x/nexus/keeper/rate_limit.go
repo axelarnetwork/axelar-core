@@ -114,7 +114,7 @@ func (k Keeper) getTransferEpoch(ctx sdk.Context, chain exported.ChainName, asse
 	return transferEpoch, k.getStore(ctx).GetNew(getTransferEpochKey(chain, asset, direction), &transferEpoch)
 }
 
-func (k Keeper) getCurrentTransferEpoch(ctx sdk.Context, chain exported.ChainName, asset string, direction exported.TransferDirection, window time.Duration) (transferEpoch types.TransferEpoch) {
+func (k Keeper) getCurrentTransferEpoch(ctx sdk.Context, chain exported.ChainName, asset string, direction exported.TransferDirection, window time.Duration) (types.TransferEpoch) {
 	transferEpoch := funcs.MustOk(k.getTransferEpoch(ctx, chain, asset, direction))
 
 	// use a new transfer epoch if there was none or if the epoch is outdated
