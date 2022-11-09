@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"fmt"
+	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -231,5 +232,36 @@ func (q Querier) RecipientAddress(c context.Context, req *types.RecipientAddress
 	return &types.RecipientAddressResponse{
 		RecipientAddr:  linkedAddresses.RecipientAddress.Address,
 		RecipientChain: linkedAddresses.RecipientAddress.Chain.Name.String(),
+	}, nil
+}
+
+// TransferRateLimit queries the transfer rate limit for a given chain and asset
+func (q Querier) TransferRateLimit(c context.Context, req *types.TransferRateLimitRequest) (*types.TransferRateLimitResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	chain, ok := q.keeper.GetChain(ctx, nexus.ChainName(req.Chain))
+	if !ok {
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrNotFound, fmt.Errorf("chain %s not found", req.Chain).Error())
+	}
+
+	rateLimit, found := q.keeper.getRateLimit(ctx, chain.Name, req.Asset)
+	if !found {
+		return &types.TransferRateLimitResponse{}, nil
+	}
+
+	incomingEpoch := q.keeper.getCurrentTransferEpoch(ctx, chain.Name, req.Asset, nexus.Incoming, rateLimit.Window)
+	outgoingEpoch := q.keeper.getCurrentTransferEpoch(ctx, chain.Name, req.Asset, nexus.Outgoing, rateLimit.Window)
+
+	// time left = (epoch + 1) * window - current time
+	timeLeft := time.Duration(int64(incomingEpoch.Epoch+1)*int64(rateLimit.Window) - ctx.BlockTime().UnixNano())
+
+	return &types.TransferRateLimitResponse{
+		TransferRateLimit: &types.TransferRateLimit{
+			Limit:    rateLimit.Limit.Amount,
+			Window:   rateLimit.Window,
+			Incoming: incomingEpoch.Amount.Amount,
+			Outgoing: outgoingEpoch.Amount.Amount,
+			TimeLeft: timeLeft,
+		},
 	}, nil
 }

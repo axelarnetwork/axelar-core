@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"fmt"
 	"math"
 	mathrand "math/rand"
 	"testing"
@@ -44,7 +45,7 @@ func TestSetRateLimit(t *testing.T) {
 	})
 
 	setRateLimitFails := func(msg string) ThenStatement {
-		return Then("set rate limit will fail", func(t *testing.T) {
+		return Then(fmt.Sprintf("set rate limit will fail due to: %s", msg), func(t *testing.T) {
 			err := k.SetRateLimit(ctx, chain, limit, window)
 			assert.ErrorContains(t, err, msg)
 		})

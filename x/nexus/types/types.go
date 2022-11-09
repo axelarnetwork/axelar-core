@@ -178,3 +178,13 @@ func (m TransferEpoch) ValidateBasic() error {
 
 	return nil
 }
+
+// NewTransferEpoch returns a new transfer epoch
+func NewTransferEpoch(chain exported.ChainName, asset string, epoch uint64, direction exported.TransferDirection) TransferEpoch {
+	return TransferEpoch{
+		Chain:     chain,
+		Amount:    sdk.NewCoin(asset, sdk.ZeroInt()),
+		Epoch:     epoch,
+		Direction: direction,
+	}
+}

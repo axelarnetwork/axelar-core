@@ -35,4 +35,5 @@ axelard query nexus [flags]
 - [axelard query nexus latest-deposit-address](axelard_query_nexus_latest-deposit-address.md)	 - Query for account by address
 - [axelard query nexus recipient-address](axelard_query_nexus_recipient-address.md)	 - Returns the recipient address corresponding to the given deposit address
 - [axelard query nexus transfer-fee](axelard_query_nexus_transfer-fee.md)	 - Returns the fee incurred on a cross-chain transfer
+- [axelard query nexus transfer-rate-limit](axelard_query_nexus_transfer-rate-limit.md)	 - Returns the transfer rate limit for a given chain and asset
 - [axelard query nexus transfers-for-chain](axelard_query_nexus_transfers-for-chain.md)	 - Query for account by address

@@ -82,6 +82,9 @@
     - [RecipientAddressResponse](#axelar.nexus.v1beta1.RecipientAddressResponse)
     - [TransferFeeRequest](#axelar.nexus.v1beta1.TransferFeeRequest)
     - [TransferFeeResponse](#axelar.nexus.v1beta1.TransferFeeResponse)
+    - [TransferRateLimit](#axelar.nexus.v1beta1.TransferRateLimit)
+    - [TransferRateLimitRequest](#axelar.nexus.v1beta1.TransferRateLimitRequest)
+    - [TransferRateLimitResponse](#axelar.nexus.v1beta1.TransferRateLimitResponse)
     - [TransfersForChainRequest](#axelar.nexus.v1beta1.TransfersForChainRequest)
     - [TransfersForChainResponse](#axelar.nexus.v1beta1.TransfersForChainResponse)
   
@@ -1582,6 +1585,57 @@ the network for a cross-chain transfer
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `fee` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+
+
+
+
+
+
+<a name="axelar.nexus.v1beta1.TransferRateLimit"></a>
+
+### TransferRateLimit
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `limit` | [bytes](#bytes) |  |  |
+| `window` | [google.protobuf.Duration](#google.protobuf.Duration) |  |  |
+| `incoming` | [bytes](#bytes) |  |  |
+| `outgoing` | [bytes](#bytes) |  |  |
+| `time_left` | [google.protobuf.Duration](#google.protobuf.Duration) |  | time_left indicates the time left in the rate limit window |
+
+
+
+
+
+
+<a name="axelar.nexus.v1beta1.TransferRateLimitRequest"></a>
+
+### TransferRateLimitRequest
+TransferRateLimitRequest represents a message that queries the registered
+transfer rate limit and current transfer amounts for a given chain and asset
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `asset` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.nexus.v1beta1.TransferRateLimitResponse"></a>
+
+### TransferRateLimitResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `transfer_rate_limit` | [TransferRateLimit](#axelar.nexus.v1beta1.TransferRateLimit) |  |  |
 
 
 
@@ -5520,6 +5574,7 @@ QueryService defines the gRPC querier service.
 | `ChainState` | [ChainStateRequest](#axelar.nexus.v1beta1.ChainStateRequest) | [ChainStateResponse](#axelar.nexus.v1beta1.ChainStateResponse) | ChainState queries the state of a registered chain on the network | GET|/axelar/nexus/v1beta1/chain_state/{chain}|
 | `ChainsByAsset` | [ChainsByAssetRequest](#axelar.nexus.v1beta1.ChainsByAssetRequest) | [ChainsByAssetResponse](#axelar.nexus.v1beta1.ChainsByAssetResponse) | ChainsByAsset queries the chains that support an asset on the network | GET|/axelar/nexus/v1beta1/chains_by_asset/{asset}|
 | `RecipientAddress` | [RecipientAddressRequest](#axelar.nexus.v1beta1.RecipientAddressRequest) | [RecipientAddressResponse](#axelar.nexus.v1beta1.RecipientAddressResponse) | RecipientAddress queries the recipient address for a given deposit address | GET|/axelar/nexus/v1beta1/recipient_address/{deposit_chain}/{deposit_addr}|
+| `TransferRateLimit` | [TransferRateLimitRequest](#axelar.nexus.v1beta1.TransferRateLimitRequest) | [TransferRateLimitResponse](#axelar.nexus.v1beta1.TransferRateLimitResponse) | TransferRateLimit queries the transfer rate limit for a given chain and asset. If a rate limit is not set, nil is returned. | GET|/axelar/nexus/v1beta1/transfer_rate_limit/{chain}/{asset}|
 
  <!-- end services -->
 

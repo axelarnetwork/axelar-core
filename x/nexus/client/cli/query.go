@@ -41,6 +41,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		getCmdChainState(),
 		getCmdChainsByAsset(),
 		getCmdRecipientAddress(),
+		getCmdTransferRateLimit(),
 	)
 
 	return queryCmd
@@ -401,5 +402,36 @@ func getCmdRecipientAddress() *cobra.Command {
 	}
 
 	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+func getCmdTransferRateLimit() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "transfer-rate-limit [chain] [asset]",
+		Short: "Returns the transfer rate limit for a given chain and asset",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			queryClient := types.NewQueryServiceClient(clientCtx)
+
+			res, err := queryClient.TransferRateLimit(cmd.Context(),
+				&types.TransferRateLimitRequest{
+					Chain: args[0],
+					Asset: args[1],
+				})
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+
 	return cmd
 }

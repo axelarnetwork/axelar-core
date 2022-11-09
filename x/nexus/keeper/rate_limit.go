@@ -23,19 +23,7 @@ func (k Keeper) RateLimitTransfer(ctx sdk.Context, chain exported.ChainName, ass
 		return nil
 	}
 
-	epoch := uint64(ctx.BlockTime().UnixNano() / rateLimit.Window.Nanoseconds())
-
-	transferEpoch, found := k.getTransferEpoch(ctx, chain, asset.Denom, direction)
-	// use a new transfer epoch if there was none or if the epoch is outdated
-	if !found || transferEpoch.Epoch != epoch {
-		transferEpoch = types.TransferEpoch{
-			Chain:     chain,
-			Amount:    sdk.NewCoin(asset.Denom, sdk.ZeroInt()),
-			Epoch:     epoch,
-			Direction: direction,
-		}
-	}
-
+	transferEpoch := k.getCurrentTransferEpoch(ctx, chain, asset.Denom, direction, rateLimit.Window)
 	transferEpoch.Amount = transferEpoch.Amount.Add(asset)
 
 	if transferEpoch.Amount.Amount.GT(rateLimit.Limit.Amount) {
@@ -67,9 +55,6 @@ func (k Keeper) SetRateLimit(ctx sdk.Context, chainName exported.ChainName, limi
 		return fmt.Errorf("%s is not a registered asset for chain %s", limit.Denom, chain.Name)
 	}
 
-	k.deleteTransferEpoch(ctx, chain.Name, limit.Denom, exported.Incoming)
-	k.deleteTransferEpoch(ctx, chain.Name, limit.Denom, exported.Outgoing)
-
 	if err := k.getStore(ctx).SetNewValidated(getRateLimitKey(chain.Name, limit.Denom), &types.RateLimit{
 		Chain:  chain.Name,
 		Limit:  limit,
@@ -77,6 +62,11 @@ func (k Keeper) SetRateLimit(ctx sdk.Context, chainName exported.ChainName, limi
 	}); err != nil {
 		return err
 	}
+
+	epoch := computeEpoch(ctx, window)
+
+	k.setTransferEpoch(ctx, types.NewTransferEpoch(chain.Name, limit.Denom, epoch, exported.Incoming))
+	k.setTransferEpoch(ctx, types.NewTransferEpoch(chain.Name, limit.Denom, epoch, exported.Outgoing))
 
 	k.Logger(ctx).Info(fmt.Sprintf("transfer rate limit %s set for chain %s with window %s", chain.Name, limit, window))
 
@@ -122,6 +112,20 @@ func getTransferEpochKey(chain exported.ChainName, asset string, direction expor
 
 func (k Keeper) getTransferEpoch(ctx sdk.Context, chain exported.ChainName, asset string, direction exported.TransferDirection) (transferEpoch types.TransferEpoch, found bool) {
 	return transferEpoch, k.getStore(ctx).GetNew(getTransferEpochKey(chain, asset, direction), &transferEpoch)
+}
+
+func (k Keeper) getCurrentTransferEpoch(ctx sdk.Context, chain exported.ChainName, asset string, direction exported.TransferDirection, window time.Duration) types.TransferEpoch {
+	// use a new transfer epoch if there was none or if the epoch is outdated
+	epoch := computeEpoch(ctx, window)
+	if transferEpoch, found := k.getTransferEpoch(ctx, chain, asset, direction); found && transferEpoch.Epoch == epoch {
+		return transferEpoch
+	}
+
+	return types.NewTransferEpoch(chain, asset, epoch, direction)
+}
+
+func computeEpoch(ctx sdk.Context, window time.Duration) uint64 {
+	return uint64(ctx.BlockTime().UnixNano() / window.Nanoseconds())
 }
 
 func (k Keeper) setTransferEpoch(ctx sdk.Context, transferEpoch types.TransferEpoch) {

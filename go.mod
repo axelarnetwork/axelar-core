@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/armon/go-metrics v0.4.0
 	github.com/axelarnetwork/tm-events v0.0.0-20221019195821-9a3f03bc6ca6
-	github.com/axelarnetwork/utils v0.0.0-20221024200610-1c12aa5cb6e4
+	github.com/axelarnetwork/utils v0.0.0-20221109010026-d918beb2a4d1
 	github.com/btcsuite/btcd v0.22.1
 	github.com/btcsuite/btcd/btcec/v2 v2.2.0
 	github.com/cosmos/cosmos-sdk v0.45.9
@@ -31,7 +31,7 @@ require (
 	github.com/tendermint/tendermint v0.34.21
 	github.com/tendermint/tm-db v0.6.7
 	golang.org/x/exp v0.0.0-20221018221608-02f3b879a704
-	golang.org/x/mod v0.6.0
+	golang.org/x/mod v0.7.0
 	golang.org/x/text v0.4.0
 	golang.org/x/tools v0.2.0
 	golang.org/x/xerrors v0.0.0-20220517211312-f3a8303e98df
