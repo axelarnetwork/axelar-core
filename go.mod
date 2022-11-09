@@ -31,7 +31,7 @@ require (
 	github.com/tendermint/tendermint v0.34.21
 	github.com/tendermint/tm-db v0.6.7
 	golang.org/x/exp v0.0.0-20221018221608-02f3b879a704
-	golang.org/x/mod v0.6.0
+	golang.org/x/mod v0.7.0
 	golang.org/x/text v0.4.0
 	golang.org/x/tools v0.2.0
 	golang.org/x/xerrors v0.0.0-20220517211312-f3a8303e98df
