@@ -112,6 +112,11 @@ func TestSetRateLimit(t *testing.T) {
 			err := k.SetRateLimit(ctx, chain, limit, window)
 			assert.NoError(t, err)
 		}).
+		Then("remove rate limit", func(t *testing.T) {
+			limit.Amount = sdk.Int(utils.MaxUint)
+			err := k.SetRateLimit(ctx, chain, limit, window)
+			assert.NoError(t, err)
+		}).
 		Run(t, repeated)
 }
 
@@ -200,6 +205,14 @@ func TestRateLimitTransfer(t *testing.T) {
 
 			err = k.RateLimitTransfer(ctx, chain, asset, exported.Outgoing)
 			assert.ErrorContains(t, err, "exceeded rate limit")
+		}).
+		Then("reset rate limit and rate limit transfer succeeds", func(t *testing.T) {
+			limit.Amount = sdk.Int(utils.MaxUint)
+			err := k.SetRateLimit(ctx, chain, limit, window)
+			assert.NoError(t, err)
+
+			err = k.RateLimitTransfer(ctx, chain, asset, direction)
+			assert.NoError(t, err)
 		}).
 		Run(t)
 

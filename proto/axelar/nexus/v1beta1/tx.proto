@@ -69,9 +69,9 @@ message RegisterAssetFeeRequest {
 
 message RegisterAssetFeeResponse {}
 
-// SetTransferEpochLimitRequest represents a message to set rate limits on
+// SetTransferRateLimitRequest represents a message to set rate limits on
 // transfers
-message SetTransferEpochLimitRequest {
+message SetTransferRateLimitRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
 
   bytes sender = 1 [ (gogoproto.casttype) =
@@ -84,4 +84,4 @@ message SetTransferEpochLimitRequest {
       [ (gogoproto.stdduration) = true, (gogoproto.nullable) = false ];
 }
 
-message SetTransferEpochLimitResponse {}
+message SetTransferRateLimitResponse {}

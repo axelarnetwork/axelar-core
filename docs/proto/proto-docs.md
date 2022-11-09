@@ -355,8 +355,8 @@
     - [RegisterAssetFeeResponse](#axelar.nexus.v1beta1.RegisterAssetFeeResponse)
     - [RegisterChainMaintainerRequest](#axelar.nexus.v1beta1.RegisterChainMaintainerRequest)
     - [RegisterChainMaintainerResponse](#axelar.nexus.v1beta1.RegisterChainMaintainerResponse)
-    - [SetTransferEpochLimitRequest](#axelar.nexus.v1beta1.SetTransferEpochLimitRequest)
-    - [SetTransferEpochLimitResponse](#axelar.nexus.v1beta1.SetTransferEpochLimitResponse)
+    - [SetTransferRateLimitRequest](#axelar.nexus.v1beta1.SetTransferRateLimitRequest)
+    - [SetTransferRateLimitResponse](#axelar.nexus.v1beta1.SetTransferRateLimitResponse)
   
 - [axelar/nexus/v1beta1/service.proto](#axelar/nexus/v1beta1/service.proto)
     - [MsgService](#axelar.nexus.v1beta1.MsgService)
@@ -5492,10 +5492,10 @@ info associated to an asset on a chain
 
 
 
-<a name="axelar.nexus.v1beta1.SetTransferEpochLimitRequest"></a>
+<a name="axelar.nexus.v1beta1.SetTransferRateLimitRequest"></a>
 
-### SetTransferEpochLimitRequest
-SetTransferEpochLimitRequest represents a message to set rate limits on
+### SetTransferRateLimitRequest
+SetTransferRateLimitRequest represents a message to set rate limits on
 transfers
 
 
@@ -5511,9 +5511,9 @@ transfers
 
 
 
-<a name="axelar.nexus.v1beta1.SetTransferEpochLimitResponse"></a>
+<a name="axelar.nexus.v1beta1.SetTransferRateLimitResponse"></a>
 
-### SetTransferEpochLimitResponse
+### SetTransferRateLimitResponse
 
 
 
@@ -5555,7 +5555,7 @@ Msg defines the nexus Msg service.
 | `ActivateChain` | [ActivateChainRequest](#axelar.nexus.v1beta1.ActivateChainRequest) | [ActivateChainResponse](#axelar.nexus.v1beta1.ActivateChainResponse) |  | POST|/axelar/nexus/activate_chain|
 | `DeactivateChain` | [DeactivateChainRequest](#axelar.nexus.v1beta1.DeactivateChainRequest) | [DeactivateChainResponse](#axelar.nexus.v1beta1.DeactivateChainResponse) |  | POST|/axelar/nexus/deactivate_chain|
 | `RegisterAssetFee` | [RegisterAssetFeeRequest](#axelar.nexus.v1beta1.RegisterAssetFeeRequest) | [RegisterAssetFeeResponse](#axelar.nexus.v1beta1.RegisterAssetFeeResponse) |  | POST|/axelar/nexus/register_asset_fee|
-| `SetTransferEpochLimit` | [SetTransferEpochLimitRequest](#axelar.nexus.v1beta1.SetTransferEpochLimitRequest) | [SetTransferEpochLimitResponse](#axelar.nexus.v1beta1.SetTransferEpochLimitResponse) |  | POST|/axelar/nexus/set_transfer_rate_limit|
+| `SetTransferRateLimit` | [SetTransferRateLimitRequest](#axelar.nexus.v1beta1.SetTransferRateLimitRequest) | [SetTransferRateLimitResponse](#axelar.nexus.v1beta1.SetTransferRateLimitResponse) |  | POST|/axelar/nexus/set_transfer_rate_limit|
 
 
 <a name="axelar.nexus.v1beta1.QueryService"></a>

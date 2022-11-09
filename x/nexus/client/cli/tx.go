@@ -31,7 +31,7 @@ func GetTxCmd() *cobra.Command {
 		GetCmdActivateChain(),
 		GetCmdDeactivateChain(),
 		GetCmdRegisterAssetFee(),
-		GetCmdSetTransferEpochLimit(),
+		GetCmdSetTransferRateLimit(),
 	)
 
 	return txCmd
@@ -181,8 +181,8 @@ func GetCmdRegisterAssetFee() *cobra.Command {
 	return cmd
 }
 
-// GetCmdSetTransferEpochLimit returns the cli command to register asset transfer rate limit for a chain
-func GetCmdSetTransferEpochLimit() *cobra.Command {
+// GetCmdSetTransferRateLimit returns the cli command to register asset transfer rate limit for a chain
+func GetCmdSetTransferRateLimit() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "set-transfer-rate-limit [chain] [limit] [window]",
 		Short: "set transfer rate limit for an asset on a chain",
@@ -203,7 +203,7 @@ func GetCmdSetTransferEpochLimit() *cobra.Command {
 				return err
 			}
 
-			msg := types.NewSetTransferEpochLimitRequest(cliCtx.GetFromAddress(), exported.ChainName(args[0]), limit, window)
+			msg := types.NewSetTransferRateLimitRequest(cliCtx.GetFromAddress(), exported.ChainName(args[0]), limit, window)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
