@@ -42,7 +42,8 @@ func (k Keeper) RateLimitTransfer(ctx sdk.Context, chain exported.ChainName, ass
 	return nil
 }
 
-// SetRateLimit sets a rate limit for the given chain and asset
+// SetRateLimit sets a rate limit for the given chain and asset.
+// If max uint256 is provided as a limit, it's treated as a rate limit being infinite/not being set.
 func (k Keeper) SetRateLimit(ctx sdk.Context, chainName exported.ChainName, limit sdk.Coin, window time.Duration) error {
 	chain, ok := k.GetChain(ctx, chainName)
 	if !ok {
@@ -53,6 +54,20 @@ func (k Keeper) SetRateLimit(ctx sdk.Context, chainName exported.ChainName, limi
 	// There can be benefit of rate limiting denoms that are not registered as cross-chain assets, due to IBC
 	if !k.IsAssetRegistered(ctx, chain, limit.Denom) {
 		return fmt.Errorf("%s is not a registered asset for chain %s", limit.Denom, chain.Name)
+	}
+
+	events.Emit(ctx, &types.RateLimitUpdated{
+		Chain:  chain.Name,
+		Limit:  limit,
+		Window: window,
+	})
+
+	// delete any rate limit info if provided limit is max uint256
+	if limit.Amount.Equal(sdk.NewIntFromBigInt(utils.MaxUint.BigInt())) {
+		k.getStore(ctx).DeleteNew(getRateLimitKey(chain.Name, limit.Denom))
+		k.deleteTransferEpoch(ctx, chain.Name, limit.Denom, exported.Incoming)
+		k.deleteTransferEpoch(ctx, chain.Name, limit.Denom, exported.Outgoing)
+		return nil
 	}
 
 	if err := k.getStore(ctx).SetNewValidated(getRateLimitKey(chain.Name, limit.Denom), &types.RateLimit{
@@ -69,12 +84,6 @@ func (k Keeper) SetRateLimit(ctx sdk.Context, chainName exported.ChainName, limi
 	k.setTransferEpoch(ctx, types.NewTransferEpoch(chain.Name, limit.Denom, epoch, exported.Outgoing))
 
 	k.Logger(ctx).Info(fmt.Sprintf("transfer rate limit %s set for chain %s with window %s", chain.Name, limit, window))
-
-	events.Emit(ctx, &types.RateLimitUpdated{
-		Chain:  chain.Name,
-		Limit:  limit,
-		Window: window,
-	})
 
 	return nil
 }
