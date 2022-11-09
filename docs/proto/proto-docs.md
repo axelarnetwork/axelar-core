@@ -1601,9 +1601,9 @@ the network for a cross-chain transfer
 | ----- | ---- | ----- | ----------- |
 | `limit` | [bytes](#bytes) |  |  |
 | `window` | [google.protobuf.Duration](#google.protobuf.Duration) |  |  |
-| `incoming` | [bytes](#bytes) |  | time_left indicates the time left in the rate limit window |
+| `incoming` | [bytes](#bytes) |  |  |
 | `outgoing` | [bytes](#bytes) |  |  |
-| `time_left` | [google.protobuf.Duration](#google.protobuf.Duration) |  |  |
+| `time_left` | [google.protobuf.Duration](#google.protobuf.Duration) |  | time_left indicates the time left in the rate limit window |
 
 
 

@@ -135,7 +135,6 @@ message TransferRateLimit {
   ];
   google.protobuf.Duration window = 2
       [ (gogoproto.stdduration) = true, (gogoproto.nullable) = false ];
-  // time_left indicates the time left in the rate limit window
   bytes incoming = 3 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
     (gogoproto.nullable) = false
@@ -144,6 +143,7 @@ message TransferRateLimit {
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
     (gogoproto.nullable) = false
   ];
+  // time_left indicates the time left in the rate limit window
   google.protobuf.Duration time_left = 5
       [ (gogoproto.stdduration) = true, (gogoproto.nullable) = false ];
 };

@@ -11402,12 +11402,12 @@ paths:
                   incoming:
                     type: string
                     format: byte
-                    title: time_left indicates the time left in the rate limit window
                   outgoing:
                     type: string
                     format: byte
                   time_left:
                     type: string
+                    title: time_left indicates the time left in the rate limit window
         default:
           description: An unexpected error response
           schema:
@@ -41892,12 +41892,12 @@ definitions:
       incoming:
         type: string
         format: byte
-        title: time_left indicates the time left in the rate limit window
       outgoing:
         type: string
         format: byte
       time_left:
         type: string
+        title: time_left indicates the time left in the rate limit window
   axelar.nexus.v1beta1.TransferRateLimitResponse:
     type: object
     properties:
@@ -41912,12 +41912,12 @@ definitions:
           incoming:
             type: string
             format: byte
-            title: time_left indicates the time left in the rate limit window
           outgoing:
             type: string
             format: byte
           time_left:
             type: string
+            title: time_left indicates the time left in the rate limit window
   axelar.nexus.v1beta1.TransfersForChainResponse:
     type: object
     properties:

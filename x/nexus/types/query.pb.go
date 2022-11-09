@@ -869,12 +869,12 @@ func (m *TransferRateLimitResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_TransferRateLimitResponse proto.InternalMessageInfo
 
 type TransferRateLimit struct {
-	Limit  github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,1,opt,name=limit,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"limit"`
-	Window time.Duration                          `protobuf:"bytes,2,opt,name=window,proto3,stdduration" json:"window"`
-	// time_left indicates the time left in the rate limit window
+	Limit    github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,1,opt,name=limit,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"limit"`
+	Window   time.Duration                          `protobuf:"bytes,2,opt,name=window,proto3,stdduration" json:"window"`
 	Incoming github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,3,opt,name=incoming,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"incoming"`
 	Outgoing github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,4,opt,name=outgoing,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"outgoing"`
-	TimeLeft time.Duration                          `protobuf:"bytes,5,opt,name=time_left,json=timeLeft,proto3,stdduration" json:"time_left"`
+	// time_left indicates the time left in the rate limit window
+	TimeLeft time.Duration `protobuf:"bytes,5,opt,name=time_left,json=timeLeft,proto3,stdduration" json:"time_left"`
 }
 
 func (m *TransferRateLimit) Reset()         { *m = TransferRateLimit{} }

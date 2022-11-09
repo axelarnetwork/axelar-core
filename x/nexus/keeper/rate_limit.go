@@ -124,15 +124,13 @@ func (k Keeper) getTransferEpoch(ctx sdk.Context, chain exported.ChainName, asse
 }
 
 func (k Keeper) getCurrentTransferEpoch(ctx sdk.Context, chain exported.ChainName, asset string, direction exported.TransferDirection, window time.Duration) types.TransferEpoch {
-	transferEpoch := funcs.MustOk(k.getTransferEpoch(ctx, chain, asset, direction))
-
 	// use a new transfer epoch if there was none or if the epoch is outdated
 	epoch := computeEpoch(ctx, window)
-	if transferEpoch.Epoch != epoch {
-		return types.NewTransferEpoch(chain, asset, epoch, direction)
+	if transferEpoch, found := k.getTransferEpoch(ctx, chain, asset, direction); found && transferEpoch.Epoch == epoch {
+		return transferEpoch
 	}
 
-	return transferEpoch
+	return types.NewTransferEpoch(chain, asset, epoch, direction)
 }
 
 func computeEpoch(ctx sdk.Context, window time.Duration) uint64 {
