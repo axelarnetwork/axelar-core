@@ -79,6 +79,12 @@
       "image": "/images/chains/osmosis.svg"
     },
     {
+      "id": "persistence",
+      "name": "Persistence",
+      "network_id": "persistence",
+      "image": "/images/chains/persistence.svg"
+    },
+    {
       "id": "regen",
       "name": "Regen",
       "network_id": "regen",
