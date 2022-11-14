@@ -5,8 +5,10 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/pkg/errors"
 	"github.com/stoewer/go-strcase"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/key"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -43,7 +45,27 @@ func migrateCmdType(ctx sdk.Context, ck chainKeeper, key key.Key, cmd types.Comm
 		return fmt.Errorf("command type %s is invalid at key %s", cmdType, key.String())
 	}
 	cmd.Type = types.CommandType(typeEnum)
-	return ck.getStore(ctx).SetNewValidated(key, &cmd)
+
+	// exclude param decoding from validation because legacy commands break. Need to clean up those commands in a future release
+	return ck.getStore(ctx).SetNewValidated(key, utils.WithValidation(&cmd, func() error {
+		if err := cmd.ID.ValidateBasic(); err != nil {
+			return err
+		}
+
+		if err := cmd.Type.ValidateBasic(); err != nil {
+			return err
+		}
+
+		if err := cmd.KeyID.ValidateBasic(); err != nil {
+			return err
+		}
+
+		if cmd.MaxGasCost == 0 {
+			return errors.New("max gas cost must be >0")
+		}
+
+		return nil
+	}))
 }
 
 // AlwaysMigrateBytecode migrates contracts bytecode for all evm chains (CRUCIAL, DO NOT DELETE AND ALWAYS REGISTER)
