@@ -2,16 +2,17 @@ package keeper
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/pkg/errors"
 	"github.com/stoewer/go-strcase"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/key"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 )
 
@@ -26,13 +27,21 @@ func Migrate6To7(k *BaseKeeper, n types.Nexus) func(ctx sdk.Context) error {
 			}
 			iterCmd := ck.getStore(ctx).IteratorNew(key.FromStr(commandPrefix))
 
+			totalCmds := 0
+			invalidCmds := 0
 			for ; iterCmd.Valid(); iterCmd.Next() {
+				totalCmds++
 				var cmd types.Command
 				iterCmd.UnmarshalValue(&cmd)
 				if err := migrateCmdType(ctx, ck, key.FromBz(iterCmd.Key()), cmd); err != nil {
-					return err
+					invalidCmds++
+					ck.Logger(ctx).Debug(fmt.Sprintf("failed to migrate command type for command %s", funcs.Must(json.Marshal(cmd))))
+					continue
 				}
 			}
+
+			ck.Logger(ctx).Info(fmt.Sprintf("command type migration complete. Total migrated: %d, failed: %d", totalCmds, invalidCmds))
+
 		}
 		return nil
 	}
@@ -46,26 +55,8 @@ func migrateCmdType(ctx sdk.Context, ck chainKeeper, key key.Key, cmd types.Comm
 	}
 	cmd.Type = types.CommandType(typeEnum)
 
-	// exclude param decoding from validation because legacy commands break. Need to clean up those commands in a future release
-	return ck.getStore(ctx).SetNewValidated(key, utils.WithValidation(&cmd, func() error {
-		if err := cmd.ID.ValidateBasic(); err != nil {
-			return err
-		}
-
-		if err := cmd.Type.ValidateBasic(); err != nil {
-			return err
-		}
-
-		if err := cmd.KeyID.ValidateBasic(); err != nil {
-			return err
-		}
-
-		if cmd.MaxGasCost == 0 {
-			return errors.New("max gas cost must be >0")
-		}
-
-		return nil
-	}))
+	// keep data as is, in a future release need to clean up command state
+	return ck.getStore(ctx).SetNewValidated(key, utils.NoValidation(&cmd))
 }
 
 // AlwaysMigrateBytecode migrates contracts bytecode for all evm chains (CRUCIAL, DO NOT DELETE AND ALWAYS REGISTER)
