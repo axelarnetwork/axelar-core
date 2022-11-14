@@ -35,7 +35,7 @@ func Migrate6To7(k *BaseKeeper, n types.Nexus) func(ctx sdk.Context) error {
 				iterCmd.UnmarshalValue(&cmd)
 				if err := migrateCmdType(ctx, ck, key.FromBz(iterCmd.Key()), cmd); err != nil {
 					invalidCmds++
-					ck.Logger(ctx).Debug(fmt.Sprintf("failed to migrate command type for command %s", funcs.Must(json.Marshal(cmd))))
+					ck.Logger(ctx).Debug(fmt.Sprintf("chain %s: failed to migrate command type for command %s", chain.String(), funcs.Must(json.Marshal(cmd))))
 					continue
 				}
 			}
