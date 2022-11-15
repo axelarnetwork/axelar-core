@@ -23,6 +23,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/multisig/types/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexustestutils "github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
+	votetestutils "github.com/axelarnetwork/axelar-core/x/vote/exported/testutils"
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 )
@@ -467,4 +468,16 @@ func RandomEvent(statuses ...types.Event_Status) types.Event {
 			},
 		},
 	)
+}
+
+// RandomConfirmDepositStarted generates a random ConfirmDepositStarted event struct
+func RandomConfirmDepositStarted() types.ConfirmDepositStarted {
+	return types.ConfirmDepositStarted{
+		TxID:               RandomHash(),
+		Chain:              nexustestutils.RandomChainName(),
+		DepositAddress:     RandomAddress(),
+		TokenAddress:       RandomAddress(),
+		ConfirmationHeight: uint64(rand.PosI64()),
+		PollParticipants:   votetestutils.RandomPollParticipants(),
+	}
 }

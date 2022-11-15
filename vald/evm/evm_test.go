@@ -8,7 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -18,8 +17,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 
-	"github.com/axelarnetwork/axelar-core/app"
-	"github.com/axelarnetwork/axelar-core/app/params"
 	mock2 "github.com/axelarnetwork/axelar-core/sdk-utils/broadcast/mock"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
@@ -27,6 +24,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/vald/evm/rpc/mock"
 	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	evmtestutils "github.com/axelarnetwork/axelar-core/x/evm/types/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
@@ -223,140 +221,282 @@ func TestMgr_getTxReceiptIfFinalized(t *testing.T) {
 
 func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 	var (
-		mgr            *Mgr
-		event          *types.ConfirmDepositStarted
-		rpc            *mock.ClientMock
-		broadcaster    *mock2.BroadcasterMock
-		encodingConfig params.EncodingConfig
-		valAddr        sdk.ValAddress
+		mgr         *Mgr
+		receipt     *geth.Receipt
+		tokenAddr   types.Address
+		depositAddr types.Address
+		amount      sdk.Uint
+		evmMap      map[string]evmRpc.Client
+		rpc         *mock.ClientMock
+		valAddr     sdk.ValAddress
+
+		votes []*types.VoteEvents
+		err   error
 	)
-	setup := func() {
-		encodingConfig = app.MakeEncodingConfig()
-		cdc := encodingConfig.Amino
-		pollID := vote.PollID(rand.I64Between(10, 100))
 
-		burnAddrBytes := rand.Bytes(common.AddressLength)
-		tokenAddrBytes := rand.Bytes(common.AddressLength)
-		blockNumber := rand.PInt64Gen().Where(func(i int64) bool { return i != 0 }).Next() // restrict to int64 so the block number in the receipt doesn't overflow
-		confHeight := rand.I64Between(0, blockNumber-1)
-		amount := rand.PosI64() // restrict to int64 so the amount in the receipt doesn't overflow
+	givenDeposit := Given("a deposit has been made", func() {
+		amount = sdk.NewUint(uint64(rand.PosI64()))
+		tokenAddr = evmtestutils.RandomAddress()
+		depositAddr = evmtestutils.RandomAddress()
+		randomTokenDeposit := &geth.Log{
+			Address: common.Address(evmtestutils.RandomAddress()),
+			Topics: []common.Hash{
+				ERC20TransferSig,
+				padToHash(evmtestutils.RandomAddress()),
+				padToHash(depositAddr),
+			},
+			Data: padToHash(big.NewInt(rand.PosI64())).Bytes(),
+		}
+		randomEvent := &geth.Log{
+			Address: common.Address(tokenAddr),
+			Topics: []common.Hash{
+				common.Hash(evmtestutils.RandomHash()),
+				padToHash(evmtestutils.RandomAddress()),
+				padToHash(depositAddr),
+			},
+			Data: padToHash(big.NewInt(rand.PosI64())).Bytes(),
+		}
+
+		invalidDeposit := &geth.Log{
+			Address: common.Address(tokenAddr),
+			Topics: []common.Hash{
+				ERC20TransferSig,
+				padToHash(evmtestutils.RandomAddress()),
+			},
+			Data: padToHash(big.NewInt(rand.PosI64())).Bytes(),
+		}
+
+		zeroAmountDeposit := &geth.Log{
+			Address: common.Address(tokenAddr),
+			Topics: []common.Hash{
+				ERC20TransferSig,
+				padToHash(evmtestutils.RandomAddress()),
+				padToHash(depositAddr),
+			},
+			Data: padToHash(big.NewInt(0)).Bytes(),
+		}
+
+		validDeposit := &geth.Log{
+			Address: common.Address(tokenAddr),
+			Topics: []common.Hash{
+				ERC20TransferSig,
+				padToHash(evmtestutils.RandomAddress()),
+				padToHash(depositAddr),
+			},
+			Data: padToHash(amount.BigInt()).Bytes(),
+		}
+
+		receipt = &geth.Receipt{
+			TxHash:      common.Hash(evmtestutils.RandomHash()),
+			BlockNumber: big.NewInt(rand.PosI64()),
+			Logs:        []*geth.Log{randomTokenDeposit, validDeposit, randomEvent, invalidDeposit, zeroAmountDeposit},
+			Status:      1,
+		}
+	})
+
+	confirmingDeposit := When("confirming the existing deposit", func() {
+		event := evmtestutils.RandomConfirmDepositStarted()
+		event.TxID = types.Hash(receipt.TxHash)
+		evmMap[strings.ToLower(event.Chain.String())] = rpc
+		event.DepositAddress = depositAddr
+		event.TokenAddress = tokenAddr
+		event.Participants = append(event.Participants, valAddr)
+
+		err = mgr.ProcessDepositConfirmation(&event)
+	})
+
+	reject := Then("reject the confirmation", func(t *testing.T) {
+		assert.Len(t, votes, 1)
+		assert.Len(t, votes[0].Events, 0)
+	})
+
+	noError := Then("return no error", func(t *testing.T) {
+		assert.NoError(t, err)
+	})
+
+	Given("an evm manager", func() {
+		votes = []*types.VoteEvents{}
+		evmMap = make(map[string]evmRpc.Client, 1)
+
+		broadcaster := &mock2.BroadcasterMock{
+			BroadcastFunc: func(_ context.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error) {
+				for _, msg := range msgs {
+					votes = append(votes, msg.(*voteTypes.VoteRequest).Vote.GetCachedValue().(*types.VoteEvents))
+				}
+				return nil, nil
+			},
+		}
+
 		valAddr = rand.ValAddr()
-		event = &types.ConfirmDepositStarted{
-			TxID:               types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
-			Chain:              "Ethereum",
-			DepositAddress:     types.Address(common.BytesToAddress(burnAddrBytes)),
-			TokenAddress:       types.Address(common.BytesToAddress(tokenAddrBytes)),
-			ConfirmationHeight: uint64(confHeight),
-			PollParticipants: vote.PollParticipants{
-				PollID:       pollID,
-				Participants: []sdk.ValAddress{valAddr},
-			},
-		}
-
-		tx := geth.NewTransaction(0, common.BytesToAddress(rand.Bytes(common.HashLength)), big.NewInt(0), 21000, big.NewInt(1), []byte{})
-		receipt := &geth.Receipt{
-			TxHash:      tx.Hash(),
-			BlockNumber: big.NewInt(rand.I64Between(0, blockNumber-confHeight)),
-			Logs: []*geth.Log{
-				/* ERC20 transfer to burner address of a random token */
-				{
-					Address: common.BytesToAddress(rand.Bytes(common.AddressLength)),
-					Topics: []common.Hash{
-						ERC20TransferSig,
-						common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
-						common.BytesToHash(common.LeftPadBytes(burnAddrBytes, common.HashLength)),
-					},
-					Data: common.LeftPadBytes(big.NewInt(rand.PosI64()).Bytes(), common.HashLength),
+		mgr = NewMgr(evmMap, broadcaster, log.TestingLogger(), valAddr, rand.AccAddr())
+	}).
+		Given("an evm rpc client", func() {
+			rpc = &mock.ClientMock{
+				HeaderByNumberFunc: func(context.Context, *big.Int) (*evmRpc.Header, error) {
+					return &evmRpc.Header{Transactions: []common.Hash{receipt.TxHash}}, nil
 				},
-				/* not a ERC20 transfer */
-				{
-					Address: common.BytesToAddress(tokenAddrBytes),
-					Topics: []common.Hash{
-						common.BytesToHash(rand.Bytes(common.HashLength)),
-						common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
-						common.BytesToHash(common.LeftPadBytes(burnAddrBytes, common.HashLength)),
-					},
-					Data: common.LeftPadBytes(big.NewInt(rand.PosI64()).Bytes(), common.HashLength),
+				TransactionReceiptFunc: func(_ context.Context, txID common.Hash) (*geth.Receipt, error) {
+					if txID != receipt.TxHash {
+						return nil, ethereum.NotFound
+					}
+					return receipt, nil
 				},
-				/* an invalid ERC20 transfer */
-				{
-					Address: common.BytesToAddress(tokenAddrBytes),
-					Topics: []common.Hash{
-						ERC20TransferSig,
-						common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
-					},
-					Data: common.LeftPadBytes(big.NewInt(rand.PosI64()).Bytes(), common.HashLength),
+				IsFinalizedFunc: func(ctx context.Context, conf uint64, txReceipt *geth.Receipt) (bool, error) {
+					return true, nil
 				},
-				/* an ERC20 transfer with 0 amount */
-				{
-					Address: common.BytesToAddress(tokenAddrBytes),
-					Topics: []common.Hash{
-						ERC20TransferSig,
-						common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
-						common.BytesToHash(common.LeftPadBytes(burnAddrBytes, common.HashLength)),
-					},
-					Data: common.LeftPadBytes(big.NewInt(0).Bytes(), common.HashLength),
-				},
-				/* an ERC20 transfer of our concern */
-				{
-					Address: common.BytesToAddress(tokenAddrBytes),
-					Topics: []common.Hash{
-						ERC20TransferSig,
-						common.BytesToHash(common.LeftPadBytes(rand.Bytes(common.AddressLength), common.HashLength)),
-						common.BytesToHash(common.LeftPadBytes(burnAddrBytes, common.HashLength)),
-					},
-					Data: common.LeftPadBytes(big.NewInt(amount).Bytes(), common.HashLength),
-				},
-			},
-			Status: 1,
-		}
-		rpc = &mock.ClientMock{
-			HeaderByNumberFunc: func(ctx context.Context, number *big.Int) (*evmRpc.Header, error) {
-				return &evmRpc.Header{Transactions: []common.Hash{receipt.TxHash}}, nil
-			},
-			TransactionReceiptFunc: func(context.Context, common.Hash) (*geth.Receipt, error) {
-				return receipt, nil
-			},
-			IsFinalizedFunc: func(ctx context.Context, conf uint64, txReceipt *geth.Receipt) (bool, error) {
-				return true, nil
-			},
-		}
-		broadcaster = &mock2.BroadcasterMock{
-			BroadcastFunc: func(context.Context, ...sdk.Msg) (*sdk.TxResponse, error) { return nil, nil },
-		}
-		evmMap := make(map[string]evmRpc.Client)
-		evmMap["ethereum"] = rpc
-		mgr = NewMgr(evmMap, client.Context{}, broadcaster, log.TestingLogger(), cdc, valAddr)
-	}
-	repeats := 20
-	t.Run("happy path", testutils.Func(func(t *testing.T) {
-		setup()
+			}
+		}).
+		Branch(
+			Given("no deposit has been made", func() {
+				rpc.TransactionReceiptFunc = func(context.Context, common.Hash) (*geth.Receipt, error) {
+					return nil, ethereum.NotFound
+				}
+			}).
+				When("confirming a random deposit on the correct chain", func() {
+					event := evmtestutils.RandomConfirmDepositStarted()
+					event.Participants = append(event.Participants, valAddr)
 
-		err := mgr.ProcessDepositConfirmation(event)
+					evmMap[strings.ToLower(event.Chain.String())] = rpc
+					err = mgr.ProcessDepositConfirmation(&event)
+				}).
+				Then2(noError).
+				Then2(reject),
 
-		assert.NoError(t, err)
-		assert.Len(t, broadcaster.BroadcastCalls(), 1)
+			givenDeposit.
+				When("confirming the deposit on unsupported chain", func() {
+					event := evmtestutils.RandomConfirmDepositStarted()
+					event.TxID = types.Hash(receipt.TxHash)
+					event.DepositAddress = depositAddr
+					event.TokenAddress = tokenAddr
+					event.Participants = append(event.Participants, valAddr)
 
-		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		actualVoteEvents := msg.(*voteTypes.VoteRequest).Vote.GetCachedValue().(*types.VoteEvents)
-		assert.Equal(t, nexus.ChainName("Ethereum"), actualVoteEvents.Chain)
-		assert.Len(t, actualVoteEvents.Events, 1)
-	}).Repeat(repeats))
+					err = mgr.ProcessDepositConfirmation(&event)
 
-	t.Run("no tx receipt", testutils.Func(func(t *testing.T) {
-		setup()
-		rpc.TransactionReceiptFunc = func(context.Context, common.Hash) (*geth.Receipt, error) { return nil, ethereum.NotFound }
+				}).
+				Then("return error", func(t *testing.T) {
+					assert.Error(t, err)
+				}),
 
-		err := mgr.ProcessDepositConfirmation(event)
+			givenDeposit.
+				Given("confirmation height is not reached yet", func() {
+					rpc.IsFinalizedFunc = func(context.Context, uint64, *geth.Receipt) (bool, error) {
+						return false, nil
+					}
+				}).
+				When2(confirmingDeposit).
+				Then2(noError).
+				Then2(reject),
 
-		assert.NoError(t, err)
-		assert.Len(t, broadcaster.BroadcastCalls(), 1)
+			givenDeposit.
+				When2(confirmingDeposit).
+				Then2(noError).
+				Then("accept the confirmation", func(t *testing.T) {
+					assert.Len(t, votes, 1)
+					assert.Len(t, votes[0].Events, 1)
+					transferEvent, ok := votes[0].Events[0].Event.(*types.Event_Transfer)
+					assert.True(t, ok)
 
-		msg := broadcaster.BroadcastCalls()[0].Msgs[0]
-		actualVoteEvents := msg.(*voteTypes.VoteRequest).Vote.GetCachedValue().(*types.VoteEvents)
-		assert.Equal(t, nexus.ChainName("Ethereum"), actualVoteEvents.Chain)
-		assert.Len(t, actualVoteEvents.Events, 0)
-	}).Repeat(repeats))
+					assert.Equal(t, depositAddr, transferEvent.Transfer.To)
+					assert.True(t, transferEvent.Transfer.Amount.Equal(amount))
+				}),
+
+			givenDeposit.
+				When("confirming event with wrong tx ID", func() {
+					event := evmtestutils.RandomConfirmDepositStarted()
+					evmMap[strings.ToLower(event.Chain.String())] = rpc
+					event.DepositAddress = depositAddr
+					event.TokenAddress = tokenAddr
+					event.Participants = append(event.Participants, valAddr)
+
+					err = mgr.ProcessDepositConfirmation(&event)
+				}).
+				Then2(noError).
+				Then2(reject),
+
+			givenDeposit.
+				When("confirming event with wrong token address", func() {
+					event := evmtestutils.RandomConfirmDepositStarted()
+					event.TxID = types.Hash(receipt.TxHash)
+					evmMap[strings.ToLower(event.Chain.String())] = rpc
+					event.DepositAddress = depositAddr
+					event.Participants = append(event.Participants, valAddr)
+
+					err = mgr.ProcessDepositConfirmation(&event)
+				}).
+				Then2(noError).
+				Then2(reject),
+
+			givenDeposit.
+				When("confirming event with wrong deposit address", func() {
+					event := evmtestutils.RandomConfirmDepositStarted()
+					event.TxID = types.Hash(receipt.TxHash)
+					evmMap[strings.ToLower(event.Chain.String())] = rpc
+					event.TokenAddress = tokenAddr
+					event.Participants = append(event.Participants, valAddr)
+
+					err = mgr.ProcessDepositConfirmation(&event)
+				}).
+				Then2(noError).
+				Then2(reject),
+
+			givenDeposit.
+				When("confirming a deposit without being a participant", func() {
+					event := evmtestutils.RandomConfirmDepositStarted()
+					event.TxID = types.Hash(receipt.TxHash)
+					evmMap[strings.ToLower(event.Chain.String())] = rpc
+					event.DepositAddress = depositAddr
+					event.TokenAddress = tokenAddr
+
+					err = mgr.ProcessDepositConfirmation(&event)
+				}).
+				Then2(noError).
+				Then("do nothing", func(t *testing.T) {
+					assert.Len(t, votes, 0)
+				}),
+
+			givenDeposit.
+				Given("multiple deposits in a single tx", func() {
+					additionalAmount := sdk.NewUint(uint64(rand.PosI64()))
+					amount = amount.Add(additionalAmount)
+					additionalDeposit := &geth.Log{
+						Address: common.Address(tokenAddr),
+						Topics: []common.Hash{
+							ERC20TransferSig,
+							padToHash(evmtestutils.RandomAddress()),
+							padToHash(depositAddr),
+						},
+						Data: padToHash(additionalAmount.BigInt()).Bytes(),
+					}
+					receipt.Logs = append(receipt.Logs, additionalDeposit)
+				}).
+				When("confirming the deposits", func() {
+					event := evmtestutils.RandomConfirmDepositStarted()
+					event.TxID = types.Hash(receipt.TxHash)
+					evmMap[strings.ToLower(event.Chain.String())] = rpc
+					event.DepositAddress = depositAddr
+					event.TokenAddress = tokenAddr
+					event.Participants = append(event.Participants, valAddr)
+
+					err = mgr.ProcessDepositConfirmation(&event)
+				}).
+				Then2(noError).
+				Then("vote for all deposits in the same tx", func(t *testing.T) {
+					assert.Len(t, votes, 1)
+					assert.Len(t, votes[0].Events, 2)
+
+					actualAmount := sdk.ZeroUint()
+					for _, event := range votes[0].Events {
+						transferEvent, ok := event.Event.(*types.Event_Transfer)
+						assert.True(t, ok)
+						assert.Equal(t, depositAddr, transferEvent.Transfer.To)
+
+						actualAmount = actualAmount.Add(transferEvent.Transfer.Amount)
+					}
+
+					assert.True(t, actualAmount.Equal(amount))
+				}),
+		).Run(t, 20)
+
 }
 
 func TestMgr_ProccessTokenConfirmation(t *testing.T) {
@@ -366,12 +506,9 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		rpc              *mock.ClientMock
 		broadcaster      *mock2.BroadcasterMock
 		gatewayAddrBytes []byte
-		encodingConfig   params.EncodingConfig
 		valAddr          sdk.ValAddress
 	)
 	setup := func() {
-		encodingConfig = app.MakeEncodingConfig()
-		cdc := encodingConfig.Amino
 		pollID := vote.PollID(rand.I64Between(10, 100))
 
 		gatewayAddrBytes = rand.Bytes(common.AddressLength)
@@ -423,7 +560,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		}
 		evmMap := make(map[string]evmRpc.Client)
 		evmMap["ethereum"] = rpc
-		mgr = NewMgr(evmMap, client.Context{}, broadcaster, log.TestingLogger(), cdc, valAddr)
+		mgr = NewMgr(evmMap, broadcaster, log.TestingLogger(), valAddr, rand.AccAddr())
 	}
 
 	repeats := 20
@@ -526,7 +663,7 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 		evmMap := make(map[string]evmRpc.Client)
 		evmMap["ethereum"] = rpc
 		valAddr = rand.ValAddr()
-		mgr = NewMgr(evmMap, client.Context{}, broadcaster, log.TestingLogger(), app.MakeEncodingConfig().Amino, valAddr)
+		mgr = NewMgr(evmMap, broadcaster, log.TestingLogger(), valAddr, rand.AccAddr())
 	})
 
 	givenTxReceiptAndBlockAreFound := Given("tx receipt and block can be found", func() {
@@ -694,4 +831,12 @@ func createTokenLogs(denom string, gateway, tokenAddr common.Address, deploySig 
 	}
 
 	return logs
+}
+
+type byter interface {
+	Bytes() []byte
+}
+
+func padToHash[T byter](x T) common.Hash {
+	return common.BytesToHash(common.LeftPadBytes(x.Bytes(), common.HashLength))
 }
