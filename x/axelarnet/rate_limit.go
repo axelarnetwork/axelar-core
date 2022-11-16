@@ -12,7 +12,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
-	nexustypes "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/utils/funcs"
 )
 
@@ -36,8 +36,17 @@ func NewRateLimiter(keeper keeper.Keeper, channel porttypes.ICS4Wrapper, nexus t
 // - If the IBC channel that the packet is sent on is a registered chain, check the activation status.
 // - If the packet is an ICS-20 coin transfer, apply rate limiting on (chain, base denom) pair.
 // - If the rate limit is exceeded, an error is returned.
-func (r RateLimiter) RateLimitPacket(ctx sdk.Context, packet ibcexported.PacketI, direction nexustypes.TransferDirection) error {
-	ibcPath := types.NewIBCPath(packet.GetSourcePort(), packet.GetSourceChannel())
+func (r RateLimiter) RateLimitPacket(ctx sdk.Context, packet ibcexported.PacketI, direction nexus.TransferDirection) error {
+	var ibcPath string
+	switch direction {
+	case nexus.Incoming:
+		ibcPath = types.NewIBCPath(packet.GetDestPort(), packet.GetDestChannel())
+	case nexus.Outgoing:
+		ibcPath = types.NewIBCPath(packet.GetSourcePort(), packet.GetSourceChannel())
+	default:
+		panic(fmt.Errorf("unknown direction %s", direction))
+	}
+
 	chainName, ok := r.keeper.GetChainNameByIBCPath(ctx, ibcPath)
 	if !ok {
 		// If the IBC channel is not registered as a chain, skip rate limiting
@@ -86,7 +95,7 @@ func (r RateLimiter) SendPacket(ctx sdk.Context, chanCap *capabilitytypes.Capabi
 		return nil
 	}
 
-	return r.RateLimitPacket(ctx, packet, nexustypes.Outgoing)
+	return r.RateLimitPacket(ctx, packet, nexus.Outgoing)
 }
 
 // WriteAcknowledgement implements the ICS4 Wrapper interface
