@@ -10,15 +10,15 @@ Set up your CELO Mainnet or Alfajores Testnet RPC node
 
 - [Setup your Axelar validator](/validator/setup)
 - [Minimum hardware requirements](https://docs.celo.org/validator/run/mainnet#hardware-requirements):
-   - Memory: 8 GB RAM
-   - CPU: Quad core 3GHz (64-bit)
-   - Disk: 256 GB of SSD storage, plus a secondary HDD desirable
-   - Network: At least 1 GB input/output Ethernet with a fiber Internet connection, ideally redundant connections and HA switches
+  - Memory: 8 GB RAM
+  - CPU: Quad core 3GHz (64-bit)
+  - Disk: 256 GB of SSD storage, plus a secondary HDD desirable
+  - Network: At least 1 GB input/output Ethernet with a fiber Internet connection, ideally redundant connections and HA switches
 - MacOS or Ubuntu 18.04+
 - [Official Documentation](https://docs.celo.org/network/node/run-mainnet)
 
-
 ## Steps
+
 1. Setup Preferences
 2. Celo Networks
 3. Pull the Celo Docker image
@@ -29,15 +29,16 @@ Set up your CELO Mainnet or Alfajores Testnet RPC node
 8. Configure vald
 9. Upgrade Celo
 
-
 ### Setup Preferences
 
 Update and upgrade the packages by running the following command in the terminal:
+
 ```bash
 sudo apt-get update && sudo apt-get upgrade
 ```
 
 Install Required Packages:
+
 ```bash
 sudo apt-get install docker.io
 ```
@@ -64,6 +65,7 @@ content: <CodeBlock language="bash">
 We're going to use a Docker image containing the Celo node software in this tutorial.
 
 If you are re-running these instructions, the Celo Docker image may have been updated, and it's important to get the latest version.
+
 ```bash
 docker pull $CELO_IMAGE
 ```
@@ -71,6 +73,7 @@ docker pull $CELO_IMAGE
 ### Set up a data directory
 
 First, create the directory that will store your node's configuration and its copy of the blockchain. This directory can be named anything you'd like, but here's a default you can use. The commands below create a directory and then navigate into it. The rest of the steps assume you are running the commands from inside this directory.
+
 ```bash
 mkdir -r ~/celo-data-dir
 cd ~/celo-data-dir
@@ -78,14 +81,17 @@ export CELO_DIR=~/celo-data-dir
 ```
 
 ### Create an account and get its address
+
 In this step, you'll create an account on the network. If you've already done this and have an account address, you can skip this and move on to configuring your node.
 
 Run the command to create a new account:
+
 ```bash
 docker run -v $CELO_DIR:/root/.celo --rm -it $CELO_IMAGE account new
 ```
 
 Example Result:
+
 ```bash
 INFO [10-28|11:23:37.486] Maximum peer count                       ETH=175 LES=0 total=175
 Your new account is locked with a password. Please give a password. Do not forget this password.
@@ -104,12 +110,14 @@ Path of the secret key file: /root/.celo/keystore/UTC--2022-10-28T11-23-45.86378
 ```
 
 Save this address to an environment variables, so that you can reference it below (don't include the braces):
+
 ```bash
 export CELO_ACCOUNT_ADDRESS=<YOUR-ACCOUNT-ADDRESS>
 ```
 
 This environment variable will only persist while you have this terminal window open.
 Add it to `~/.bash_profile` for future use.
+
 ```bash
 echo "export CELO_IMAGE=$CELO_IMAGE" >> ~/.bash_profile
 echo "export CELO_ACCOUNT_ADDRESS=$CELO_ACCOUNT_ADDRESS" >> ~/.bash_profile
@@ -136,6 +144,7 @@ content: <CodeBlock language="bash">
 ]} />
 
 You'll start seeing some output. After a few minutes, you should see lines that look like this. This means your node has started syncing with the network and is receiving blocks.
+
 ```bash
 INFO [11-03|07:09:49.666] Imported new chain segment               blocks=1  txs=25  mgas=3.463  elapsed=48.153ms    mgasps=71.914  number=15,958,278 hash=edfe6c..2bb604 dirty=156.40MiB
 INFO [11-03|07:09:54.584] Imported new chain segment               blocks=1  txs=23  mgas=2.541  elapsed=40.803ms    mgasps=62.268  number=15,958,279 hash=0b359e..9d77ab dirty=156.34MiB
@@ -154,6 +163,7 @@ Security: The command line above includes the parameter --http.addr 0.0.0.0 whic
 ### Check Synced
 
 Once your node is fully synced, the output from above will say `false`. To test your Celo RPC node, you can send an RPC request using `cURL`
+
 ```bash
 curl https://localhost:8545 \
 --request POST \
@@ -180,11 +190,13 @@ start-with-bridge = true
 - [You can view the latest releases here.](https://github.com/celo-org/celo-blockchain/releases)
 
 #### Pull the latest Docker image
+
 ```bash
 docker pull $CELO_IMAGE
 ```
 
 #### Stop and remove the existing node
+
 ```bash
 docker stop -t 300 celo-fullnode
 docker rm celo-fullnode
