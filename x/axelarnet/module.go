@@ -267,15 +267,11 @@ func (am AppModule) OnRecvPacket(
 	packet channeltypes.Packet,
 	relayer sdk.AccAddress,
 ) ibcexported.Acknowledgement {
-	if err := am.transferModule.OnRecvPacket(ctx, packet, relayer); err != nil {
-		return err
-	}
-
 	if err := am.rateLimiter.RateLimitPacket(ctx, packet, nexus.Incoming); err != nil {
 		return ibctransfertypes.NewErrorAcknowledgement(err)
 	}
 
-	return nil
+	return am.transferModule.OnRecvPacket(ctx, packet, relayer)
 }
 
 // OnAcknowledgementPacket implements the IBCModule interface
