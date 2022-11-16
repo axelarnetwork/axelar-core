@@ -36,5 +36,9 @@
     "title": "Terms of Use",
     "type": "page",
     "hidden": true
+  },
+  "cli-docs": {
+    "title": "CLI DOCS",
+    "type": "doc"
   }
 }
