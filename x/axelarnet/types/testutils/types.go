@@ -73,12 +73,14 @@ func RandomCosmosChain() types.CosmosChain {
 }
 
 // RandomPacket creates a random ICS-20 packet
-func RandomPacket(data ibctransfertypes.FungibleTokenPacketData) ibcchanneltypes.Packet {
+func RandomPacket(data ibctransfertypes.FungibleTokenPacketData, sourcePort, sourceChannel, destinationPort, destinationChannel string) ibcchanneltypes.Packet {
 	return ibcchanneltypes.NewPacket(
 		ibctransfertypes.ModuleCdc.MustMarshalJSON(&data),
 		uint64(rand.PosI64()),
-		rand.StrBetween(1, 20), rand.StrBetween(1, 20),
-		rand.StrBetween(1, 20), rand.StrBetween(1, 20),
+		sourcePort,
+		sourceChannel,
+		destinationPort,
+		destinationChannel,
 		ibcclienttypes.NewHeight(uint64(rand.PosI64()), uint64(rand.PosI64())),
 		uint64(rand.PosI64()),
 	)
