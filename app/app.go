@@ -124,6 +124,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/vote"
 	voteKeeper "github.com/axelarnetwork/axelar-core/x/vote/keeper"
 	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
+	"github.com/axelarnetwork/utils/maps"
 
 	// Override with generated statik docs
 	_ "github.com/axelarnetwork/axelar-core/client/docs/statik"
@@ -301,7 +302,14 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		appCodec, keys[authtypes.StoreKey], app.getSubspace(authtypes.ModuleName), authtypes.ProtoBaseAccount, maccPerms,
 	)
 	bankK := bankkeeper.NewBaseKeeper(
-		appCodec, keys[banktypes.StoreKey], accountK, app.getSubspace(banktypes.ModuleName), app.ModuleAccountAddrs(),
+		appCodec, keys[banktypes.StoreKey], accountK, app.getSubspace(banktypes.ModuleName),
+		maps.Filter(app.ModuleAccountAddrs(), func(addr string, _ bool) bool {
+			// we do not rely on internal balance tracking for invariance checks in the axelarnet module
+			// (https://github.com/cosmos/cosmos-sdk/issues/12825 for more details on the purpose of the blocked list),
+			// but the module address must be able to use ibc transfers,
+			// so we exclude this address from the blocked list
+			return addr != authtypes.NewModuleAddress(axelarnetTypes.ModuleName).String()
+		}),
 	)
 	stakingK := stakingkeeper.NewKeeper(
 		appCodec, keys[stakingtypes.StoreKey], accountK, bankK, app.getSubspace(stakingtypes.ModuleName),
