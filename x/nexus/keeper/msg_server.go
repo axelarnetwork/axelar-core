@@ -56,12 +56,12 @@ func (s msgServer) RegisterChainMaintainer(c context.Context, req *types.Registe
 	for _, chainStr := range req.Chains {
 		chain, ok := s.GetChain(ctx, chainStr)
 		if !ok {
-			s.Logger(ctx).Error(fmt.Sprintf("%s is not a registered chain", chainStr))
+			s.Logger(ctx).Debug(fmt.Sprintf("%s is not a registered chain", chainStr))
 			continue
 		}
 
 		if s.axelarnet.IsCosmosChain(ctx, chain.Name) {
-			s.Logger(ctx).Error(fmt.Sprintf("'%s' is a cosmos chain, skipping maintainer registration", chain.Name))
+			s.Logger(ctx).Debug(fmt.Sprintf("'%s' is a cosmos chain, skipping maintainer registration", chain.Name))
 			continue
 		}
 		if s.IsChainMaintainer(ctx, chain, validator) {
