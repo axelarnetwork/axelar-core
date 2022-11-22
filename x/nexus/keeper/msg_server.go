@@ -56,7 +56,7 @@ func (s msgServer) RegisterChainMaintainer(c context.Context, req *types.Registe
 	for _, chainStr := range req.Chains {
 		chain, ok := s.GetChain(ctx, chainStr)
 		if !ok {
-			s.Logger(ctx).Debug(fmt.Sprintf("%s is not a registered chain", chainStr))
+			s.Logger(ctx).Debug(fmt.Sprintf("'%s' is not a registered chain, skipping maintainer registration", chainStr))
 			continue
 		}
 
