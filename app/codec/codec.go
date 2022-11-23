@@ -31,6 +31,7 @@ func RegisterLegacyMsgInterfaces(registry cdctypes.InterfaceRegistry) {
 	}
 
 	r.RegisterCustomTypeURL((*sdk.Msg)(nil), "/axelar.evm.v1beta1.CreateTransferOwnershipRequest", &evmtypes.CreateTransferOwnershipRequest{})
+	r.RegisterCustomTypeURL((*sdk.Msg)(nil), "/axelar.axelarnet.v1beta1.RegisterIBCPathRequest", &axelarnettypes.RegisterIBCPathRequest{})
 
 	r.RegisterCustomTypeURL((*sdk.Msg)(nil), "/axelarnet.v1beta1.LinkRequest", &axelarnettypes.LinkRequest{})
 	r.RegisterCustomTypeURL((*sdk.Msg)(nil), "/axelarnet.v1beta1.ConfirmDepositRequest", &axelarnettypes.ConfirmDepositRequest{})
