@@ -67,6 +67,8 @@
 - [axelar/nexus/v1beta1/query.proto](#axelar/nexus/v1beta1/query.proto)
     - [AssetsRequest](#axelar.nexus.v1beta1.AssetsRequest)
     - [AssetsResponse](#axelar.nexus.v1beta1.AssetsResponse)
+    - [ChainMaintainersRequest](#axelar.nexus.v1beta1.ChainMaintainersRequest)
+    - [ChainMaintainersResponse](#axelar.nexus.v1beta1.ChainMaintainersResponse)
     - [ChainStateRequest](#axelar.nexus.v1beta1.ChainStateRequest)
     - [ChainStateResponse](#axelar.nexus.v1beta1.ChainStateResponse)
     - [ChainsByAssetRequest](#axelar.nexus.v1beta1.ChainsByAssetRequest)
@@ -77,7 +79,6 @@
     - [FeeInfoResponse](#axelar.nexus.v1beta1.FeeInfoResponse)
     - [LatestDepositAddressRequest](#axelar.nexus.v1beta1.LatestDepositAddressRequest)
     - [LatestDepositAddressResponse](#axelar.nexus.v1beta1.LatestDepositAddressResponse)
-    - [QueryChainMaintainersResponse](#axelar.nexus.v1beta1.QueryChainMaintainersResponse)
     - [RecipientAddressRequest](#axelar.nexus.v1beta1.RecipientAddressRequest)
     - [RecipientAddressResponse](#axelar.nexus.v1beta1.RecipientAddressResponse)
     - [TransferFeeRequest](#axelar.nexus.v1beta1.TransferFeeRequest)
@@ -1352,6 +1353,37 @@ chain
 
 
 
+<a name="axelar.nexus.v1beta1.ChainMaintainersRequest"></a>
+
+### ChainMaintainersRequest
+ChainMaintainersRequest represents a message that queries
+the chain maintainers for the specified chain
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.nexus.v1beta1.ChainMaintainersResponse"></a>
+
+### ChainMaintainersResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `maintainers` | [bytes](#bytes) | repeated |  |
+
+
+
+
+
+
 <a name="axelar.nexus.v1beta1.ChainStateRequest"></a>
 
 ### ChainStateRequest
@@ -1504,21 +1536,6 @@ address by recipient address
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `deposit_addr` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="axelar.nexus.v1beta1.QueryChainMaintainersResponse"></a>
-
-### QueryChainMaintainersResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `maintainers` | [bytes](#bytes) | repeated |  |
 
 
 
@@ -5574,6 +5591,7 @@ QueryService defines the gRPC querier service.
 | `ChainState` | [ChainStateRequest](#axelar.nexus.v1beta1.ChainStateRequest) | [ChainStateResponse](#axelar.nexus.v1beta1.ChainStateResponse) | ChainState queries the state of a registered chain on the network | GET|/axelar/nexus/v1beta1/chain_state/{chain}|
 | `ChainsByAsset` | [ChainsByAssetRequest](#axelar.nexus.v1beta1.ChainsByAssetRequest) | [ChainsByAssetResponse](#axelar.nexus.v1beta1.ChainsByAssetResponse) | ChainsByAsset queries the chains that support an asset on the network | GET|/axelar/nexus/v1beta1/chains_by_asset/{asset}|
 | `RecipientAddress` | [RecipientAddressRequest](#axelar.nexus.v1beta1.RecipientAddressRequest) | [RecipientAddressResponse](#axelar.nexus.v1beta1.RecipientAddressResponse) | RecipientAddress queries the recipient address for a given deposit address | GET|/axelar/nexus/v1beta1/recipient_address/{deposit_chain}/{deposit_addr}|
+| `ChainMaintainers` | [ChainMaintainersRequest](#axelar.nexus.v1beta1.ChainMaintainersRequest) | [ChainMaintainersResponse](#axelar.nexus.v1beta1.ChainMaintainersResponse) | ChainMaintainers queries the chain maintainers for a given chain | GET|/axelar/nexus/v1beta1/chain_maintainers/{chain}|
 | `TransferRateLimit` | [TransferRateLimitRequest](#axelar.nexus.v1beta1.TransferRateLimitRequest) | [TransferRateLimitResponse](#axelar.nexus.v1beta1.TransferRateLimitResponse) | TransferRateLimit queries the transfer rate limit for a given chain and asset. If a rate limit is not set, nil is returned. | GET|/axelar/nexus/v1beta1/transfer_rate_limit/{chain}/{asset}|
 
  <!-- end services -->

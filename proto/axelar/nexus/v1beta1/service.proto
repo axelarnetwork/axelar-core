@@ -123,6 +123,13 @@ service QueryService {
                                    "{deposit_chain}/{deposit_addr}";
   }
 
+  // ChainMaintainers queries the chain maintainers for a given chain
+  rpc ChainMaintainers(ChainMaintainersRequest)
+      returns (ChainMaintainersResponse) {
+    option (google.api.http).get =
+        "/axelar/nexus/v1beta1/chain_maintainers/{chain}";
+  }
+
   // TransferRateLimit queries the transfer rate limit for a given chain and
   // asset. If a rate limit is not set, nil is returned.
   rpc TransferRateLimit(TransferRateLimitRequest)
