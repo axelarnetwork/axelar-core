@@ -35,12 +35,12 @@ func Migrate6To7(k *BaseKeeper, n types.Nexus) func(ctx sdk.Context) error {
 				iterCmd.UnmarshalValue(&cmd)
 				if err := migrateCmdType(ctx, ck, key.FromBz(iterCmd.Key()), cmd); err != nil {
 					invalidCmds++
-					ck.Logger(ctx).Debug(fmt.Sprintf("chain %s: failed to migrate command type for command %s", chain.String(), funcs.Must(json.Marshal(cmd))))
+					ck.Logger(ctx).Debug(fmt.Sprintf("chain %s: found legacy command %s", chain.String(), funcs.Must(json.Marshal(cmd))))
 					continue
 				}
 			}
 
-			ck.Logger(ctx).Info(fmt.Sprintf("command type migration complete. Total migrated: %d, failed: %d", totalCmds, invalidCmds))
+			ck.Logger(ctx).Info(fmt.Sprintf("command type migration complete for chain %s. Total migrated: %d, legacy: %d", chain.String(), totalCmds, invalidCmds))
 
 		}
 		return nil
