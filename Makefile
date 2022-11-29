@@ -85,11 +85,11 @@ docker-image-local-user:  guard-VERSION guard-GROUP_ID guard-USER_ID
 		-t axelarnet/axelar-core:${VERSION}-local .
 
 .PHONY: build-push-docker-image
-build-push-docker-images:  guard-SEMVER
+build-push-docker-images:
 	@DOCKER_BUILDKIT=1 docker buildx build \
-		--platform ${PLATFORM} \
+		--platform linux/amd64 \
 		--output "type=image,push=${PUSH_DOCKER_IMAGE}" \
-		-t axelarnet/axelar-core-${SUFFIX}:${SEMVER} .
+		-t 499786161782.dkr.ecr.us-east-2.amazonaws.com/axelar-core:08d51ffee840403e0d2602a9f1d7ff4d99ccb155 .
 
 
 .PHONY: build-push-docker-image-rosetta
