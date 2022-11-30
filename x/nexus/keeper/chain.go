@@ -85,13 +85,18 @@ func (k Keeper) setFeeInfo(ctx sdk.Context, chain exported.Chain, asset string, 
 	k.getStore(ctx).Set(assetFeePrefix.Append(utils.LowerCaseKey(chain.Name.String())).Append(utils.KeyFromStr(asset)), &feeInfo)
 }
 
+func (k Keeper) getFeeInfo(ctx sdk.Context, chain exported.Chain, asset string) (feeInfo exported.FeeInfo, found bool) {
+	return feeInfo, k.getStore(ctx).Get(assetFeePrefix.Append(utils.LowerCaseKey(chain.Name.String())).Append(utils.KeyFromStr(asset)), &feeInfo)
+}
+
 // GetFeeInfo retrieves the fee info for an asset on a chain, and returns zero fees if it doesn't exist
-func (k Keeper) GetFeeInfo(ctx sdk.Context, chain exported.Chain, asset string) (feeInfo exported.FeeInfo, found bool) {
-	found = k.getStore(ctx).Get(assetFeePrefix.Append(utils.LowerCaseKey(chain.Name.String())).Append(utils.KeyFromStr(asset)), &feeInfo)
+func (k Keeper) GetFeeInfo(ctx sdk.Context, chain exported.Chain, asset string) exported.FeeInfo {
+	feeInfo, found := k.getFeeInfo(ctx, chain, asset)
 	if !found {
 		feeInfo = exported.ZeroFeeInfo(chain.Name, asset)
 	}
-	return feeInfo, found
+
+	return feeInfo
 }
 
 // RegisterFee registers the fee info for an asset on a chain

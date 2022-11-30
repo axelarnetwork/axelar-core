@@ -37,7 +37,7 @@ type Nexus interface {
 	LinkAddresses(ctx sdk.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) error
 	DeactivateChain(ctx sdk.Context, chain exported.Chain)
 	RegisterFee(ctx sdk.Context, chain exported.Chain, feeInfo exported.FeeInfo) error
-	GetFeeInfo(ctx sdk.Context, chain exported.Chain, asset string) (feeInfo exported.FeeInfo, found bool)
+	GetFeeInfo(ctx sdk.Context, chain exported.Chain, asset string) exported.FeeInfo
 	SetRateLimit(ctx sdk.Context, chainName exported.ChainName, limit sdk.Coin, window time.Duration) error
 	RateLimitTransfer(ctx sdk.Context, chain exported.ChainName, asset sdk.Coin, direction exported.TransferDirection) error
 }

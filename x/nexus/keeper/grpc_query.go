@@ -85,10 +85,7 @@ func (q Querier) FeeInfo(c context.Context, req *types.FeeInfoRequest) (*types.F
 		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered asset on chain %s", req.Asset, chain.Name)
 	}
 
-	feeInfo, ok := q.keeper.GetFeeInfo(ctx, chain, req.Asset)
-	if !ok {
-		return nil, sdkerrors.Wrapf(types.ErrNexus, "no fee info registered for asset %s on chain %s", req.Asset, chain.Name)
-	}
+	feeInfo := q.keeper.GetFeeInfo(ctx, chain, req.Asset)
 
 	return &types.FeeInfoResponse{FeeInfo: &feeInfo}, nil
 }
