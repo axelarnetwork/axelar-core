@@ -95,7 +95,6 @@ func (k Keeper) GetFeeInfo(ctx sdk.Context, chain exported.Chain, asset string) 
 	if !found {
 		feeInfo = exported.ZeroFeeInfo(chain.Name, asset)
 	}
-
 	return feeInfo
 }
 
