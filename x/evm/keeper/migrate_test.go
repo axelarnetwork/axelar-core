@@ -79,8 +79,8 @@ func TestGetMigrationHandler(t *testing.T) {
 		Then("all burner infos have been migrated", func(t *testing.T) {
 			ck := funcs.Must(k.ForChain(ctx, exported.Ethereum.Name))
 
-			for _, info := range burnerInfos {
-				assert.NotNil(t, ck.GetBurnerInfo(ctx, info.BurnerAddress))
+			for i, info := range burnerInfos {
+				assert.Equal(t, &burnerInfos[i], ck.GetBurnerInfo(ctx, info.BurnerAddress))
 			}
 		}).Run(t, 20)
 }
