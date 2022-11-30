@@ -62,6 +62,8 @@ func migrateBurnerInfoForChain(ctx sdk.Context, k *BaseKeeper, chain exported.Ch
 			ck.getStore(ctx).DeleteRaw(burnerKey)
 		}
 
+		keysToDelete = keysToDelete[:0]
+
 		ck.Logger(ctx).Debug(fmt.Sprintf("migrated %d burner info keys for chain %s", len(keysToDelete), chain.String()))
 	}
 	return nil
