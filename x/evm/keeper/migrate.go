@@ -45,7 +45,7 @@ func migrateBurnerInfoForChain(ctx sdk.Context, k *BaseKeeper, chain exported.Ch
 		iterBurnerAddr := ck.getStore(ctx).Iterator(utils.KeyFromStr(oldKey))
 
 		if !iterBurnerAddr.Valid() {
-			break
+			return iterBurnerAddr.Close()
 		}
 		var burnerInfo types.BurnerInfo
 		for ; iterBurnerAddr.Valid() && len(keysToDelete) < 1000; iterBurnerAddr.Next() {
@@ -62,11 +62,9 @@ func migrateBurnerInfoForChain(ctx sdk.Context, k *BaseKeeper, chain exported.Ch
 			ck.getStore(ctx).DeleteRaw(burnerKey)
 		}
 
+		ck.Logger(ctx).Debug(fmt.Sprintf("migrated %d burner info keys for chain %s", len(keysToDelete), chain.Name))
 		keysToDelete = keysToDelete[:0]
-
-		ck.Logger(ctx).Debug(fmt.Sprintf("migrated %d burner info keys for chain %s", len(keysToDelete), chain.String()))
 	}
-	return nil
 }
 
 // AlwaysMigrateBytecode migrates contracts bytecode for all evm chains (CRUCIAL, DO NOT DELETE AND ALWAYS REGISTER)
