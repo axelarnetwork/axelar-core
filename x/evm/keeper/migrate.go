@@ -39,7 +39,7 @@ func migrateBurnerInfoForChain(ctx sdk.Context, k *BaseKeeper, chain exported.Ch
 		return err
 	}
 
-	// migrate in batches so emery pressure doesn't become too large
+	// migrate in batches so memory pressure doesn't become too large
 	for {
 		iterBurnerAddr := ck.getStore(ctx).Iterator(utils.KeyFromStr(oldKey))
 
