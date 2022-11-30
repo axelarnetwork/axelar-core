@@ -47,7 +47,7 @@ func migrateBurnerInfoForChain(ctx sdk.Context, k *BaseKeeper, chain exported.Ch
 			break
 		}
 		var burnerInfo types.BurnerInfo
-		var keysToDelete [][]byte
+		keysToDelete := make([][]byte, 0, 1000)
 		for ; iterBurnerAddr.Valid() && len(keysToDelete) < 1000; iterBurnerAddr.Next() {
 			iterBurnerAddr.UnmarshalValue(&burnerInfo)
 			ck.SetBurnerInfo(ctx, burnerInfo)
