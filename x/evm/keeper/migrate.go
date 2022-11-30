@@ -2,61 +2,69 @@ package keeper
 
 import (
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
+	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/stoewer/go-strcase"
 
 	"github.com/axelarnetwork/axelar-core/utils"
-	"github.com/axelarnetwork/axelar-core/utils/key"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 )
 
-// Migrate6To7 returns the handler that performs in-place store migrations
-func Migrate6To7(k *BaseKeeper, n types.Nexus) func(ctx sdk.Context) error {
+// Migrate7To8 returns the handler that performs in-place store migrations
+func Migrate7To8(k *BaseKeeper, n types.Nexus) func(ctx sdk.Context) error {
 	return func(ctx sdk.Context) error {
 		chains := slices.Filter(n.GetChains(ctx), func(chain exported.Chain) bool { return chain.Module == types.ModuleName })
 		for _, chain := range chains {
-			ck, err := k.forChain(ctx, chain.Name)
-			if err != nil {
+			if err := migrateBurnerInfoForChain(ctx, k, chain, burnerAddrPrefixDeprecated); err != nil {
 				return err
 			}
-			iterCmd := ck.getStore(ctx).IteratorNew(key.FromStr(commandPrefix))
-
-			totalCmds := 0
-			invalidCmds := 0
-			for ; iterCmd.Valid(); iterCmd.Next() {
-				totalCmds++
-				var cmd types.Command
-				iterCmd.UnmarshalValue(&cmd)
-				if err := migrateCmdType(ctx, ck, key.FromBz(iterCmd.Key()), cmd); err != nil {
-					invalidCmds++
-					ck.Logger(ctx).Debug(fmt.Sprintf("chain %s: found legacy command %s", chain.String(), funcs.Must(json.Marshal(cmd))))
-					continue
-				}
+			if err := migrateBurnerInfoForChain(ctx, k, chain, strings.ToLower(burnerAddrPrefixDeprecated)); err != nil {
+				return err
 			}
 
-			ck.Logger(ctx).Info(fmt.Sprintf("command type migration complete for chain %s. Total migrated: %d, legacy: %d", chain.String(), totalCmds, invalidCmds))
+			k.Logger(ctx).Info(fmt.Sprintf("migrated all burner info keys for chain %s", chain.String()))
 
 		}
+		k.Logger(ctx).Info("burner info keys migration complete")
 		return nil
 	}
 }
 
-func migrateCmdType(ctx sdk.Context, ck chainKeeper, key key.Key, cmd types.Command) error {
-	cmdType := strcase.UpperSnakeCase(fmt.Sprintf("COMMAND_TYPE_%s", cmd.Command))
-	typeEnum, ok := types.CommandType_value[cmdType]
-	if !ok {
-		return fmt.Errorf("command type %s is invalid at key %s", cmdType, key.String())
+func migrateBurnerInfoForChain(ctx sdk.Context, k *BaseKeeper, chain exported.Chain, oldKey string) error {
+	ck, err := k.forChain(ctx, chain.Name)
+	if err != nil {
+		return err
 	}
-	cmd.Type = types.CommandType(typeEnum)
 
-	// keep data as is, in a future release need to clean up command state
-	return ck.getStore(ctx).SetNewValidated(key, utils.NoValidation(&cmd))
+	// migrate in batches so emery pressure doesn't become too large
+	for {
+		iterBurnerAddr := ck.getStore(ctx).Iterator(utils.KeyFromStr(oldKey))
+
+		if !iterBurnerAddr.Valid() {
+			break
+		}
+		var burnerInfo types.BurnerInfo
+		var keysToDelete [][]byte
+		for ; iterBurnerAddr.Valid() && len(keysToDelete) < 1000; iterBurnerAddr.Next() {
+			iterBurnerAddr.UnmarshalValue(&burnerInfo)
+			ck.SetBurnerInfo(ctx, burnerInfo)
+			keysToDelete = append(keysToDelete, iterBurnerAddr.Key())
+		}
+
+		if err := iterBurnerAddr.Close(); err != nil {
+			return err
+		}
+
+		for _, burnerKey := range keysToDelete {
+			ck.getStore(ctx).DeleteRaw(burnerKey)
+		}
+
+		ck.Logger(ctx).Debug(fmt.Sprintf("migrated %d burner info keys for chain %s", len(keysToDelete), chain.String()))
+	}
+	return nil
 }
 
 // AlwaysMigrateBytecode migrates contracts bytecode for all evm chains (CRUCIAL, DO NOT DELETE AND ALWAYS REGISTER)
