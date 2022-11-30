@@ -25,7 +25,7 @@ func Migrate7To8(k *BaseKeeper, n types.Nexus) func(ctx sdk.Context) error {
 				return err
 			}
 
-			k.Logger(ctx).Info(fmt.Sprintf("migrated all burner info keys for chain %s", chain.String()))
+			k.Logger(ctx).Info(fmt.Sprintf("migrated all burner info keys for chain %s", chain.Name))
 
 		}
 		k.Logger(ctx).Info("burner info keys migration complete")
