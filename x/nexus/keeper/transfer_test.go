@@ -100,11 +100,8 @@ func TestComputeTransferFee(t *testing.T) {
 				for _, sourceChain := range chains {
 					for _, destinationChain := range chains {
 						for _, asset := range assets {
-							sourceChainFee, found := k.GetFeeInfo(ctx, sourceChain, asset)
-							assert.True(t, found)
-
-							destinationChainFee, found := k.GetFeeInfo(ctx, destinationChain, asset)
-							assert.True(t, found)
+							sourceChainFee := k.GetFeeInfo(ctx, sourceChain, asset)
+							destinationChainFee := k.GetFeeInfo(ctx, destinationChain, asset)
 
 							assetFee := assetFees[sourceChain.Name.String()+"_"+asset]
 							assert.Equal(t, sourceChainFee, assetFee)
@@ -274,8 +271,8 @@ func TestTransfer(t *testing.T) {
 		When("transfer amounts are smaller than min fee", func() {
 			for _, r := range recipients {
 				asset := randAsset()
-				feeInfo, ok := k.GetFeeInfo(ctx, r.Chain, asset)
-				assert.True(t, ok)
+				feeInfo := k.GetFeeInfo(ctx, r.Chain, asset)
+				assert.NotEqual(t, feeInfo.MinFee, sdk.ZeroInt())
 				randAmt := sdk.NewCoin(randAsset(), sdk.NewInt(rand.I64Between(1, feeInfo.MinFee.BigInt().Int64()*2)))
 				transfers = append(transfers, randAmt)
 			}
