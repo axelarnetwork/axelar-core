@@ -4,6 +4,7 @@ import (
 	"context"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
@@ -25,6 +26,10 @@ func (c *moonbeamClient) IsFinalized(ctx context.Context, _ uint64, txReceipt *t
 	latestFinalizedBlockNumber, err := c.latestFinalizedBlockNumber(ctx)
 	if err != nil {
 		return false, err
+	}
+
+	if latestFinalizedBlockNumber == nil {
+		return false, ethereum.NotFound
 	}
 
 	return latestFinalizedBlockNumber.Cmp(txReceipt.BlockNumber) >= 0, nil
