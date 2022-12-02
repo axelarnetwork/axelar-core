@@ -294,7 +294,7 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 	case <-mgr.Done():
 		return
 	case <-blockTimeout.Done():
-		panic("no new blocks discovered, is the chain halted?")
+		panic("no new blocks received from the node")
 	}
 }
 
