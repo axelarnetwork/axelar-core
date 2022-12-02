@@ -19,7 +19,7 @@ type ValdConfig struct {
 	EventNotificationsMaxRetries int           `mapstructure:"event_notifications_max_retries"`
 	EventNotificationsBackOff    time.Duration `mapstructure:"event_notifications_back_off"`
 	MaxLatestBlockAge            time.Duration `mapstructure:"max_latest_block_age"`  // If a block is older than this, vald does not consider it to be the latest block. This is supposed to be sufficiently larger than the block production time.
-	NoNewBlocksPanicTimeout      time.Duration `mapstructure:"no_new_blocks_timeout"` // At times vald stalls completely. Until the bug is found it is better to panic and allow users to restart the process instead of doing nothing. Once at least one block has been seen vald will panic if it does not see another before the timout expires.
+	NoNewBlockPanicTimeout       time.Duration `mapstructure:"no_new_blocks_timeout"` // At times vald stalls completely. Until the bug is found it is better to panic and allow users to restart the process instead of doing nothing. Once at least one block has been seen vald will panic if it does not see another before the timout expires.
 
 	EVMConfig []evm.EVMConfig `mapstructure:"axelar_bridge_evm"`
 }
@@ -36,7 +36,7 @@ func DefaultValdConfig() ValdConfig {
 		EVMConfig:                    evm.DefaultConfig(),
 		EventNotificationsMaxRetries: 3,
 		EventNotificationsBackOff:    1 * time.Second,
-		NoNewBlocksPanicTimeout:      5 * time.Minute,
+		NoNewBlockPanicTimeout:       2 * time.Minute,
 	}
 }
 
