@@ -271,9 +271,7 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 	blockTimeout, timeoutCancel := context.WithCancel(context.Background())
 	processBlockHeader := func(event tmEvents.Event) error {
 		timer.Stop()
-		timer = time.AfterFunc(axelarCfg.NoNewBlocksPanicTimeout, func() {
-			timeoutCancel()
-		})
+		timer = time.AfterFunc(axelarCfg.NoNewBlocksPanicTimeout, timeoutCancel)
 
 		return stateStore.SetState(event.Height)
 	}
