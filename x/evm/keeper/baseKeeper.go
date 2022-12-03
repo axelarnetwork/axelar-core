@@ -16,8 +16,11 @@ import (
 )
 
 var (
-	chainPrefix    = utils.KeyFromStr("chain")
-	subspacePrefix = "subspace"
+	chainPrefix    = utils.KeyFromStr("chain") // Deprecated: migrate to chainPrefixNew
+	subspacePrefix = "subspace"                // Deprecated: migrate to subspacePrefixNew
+
+	chainPrefixNew    = key.RegisterStaticKey(types.ModuleName, 2)
+	subspacePrefixNew = key.RegisterStaticKey(types.ModuleName, 3)
 )
 
 var _ types.BaseKeeper = &BaseKeeper{}

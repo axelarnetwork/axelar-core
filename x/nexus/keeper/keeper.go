@@ -16,18 +16,28 @@ import (
 var (
 	nonceKey = utils.KeyFromStr("nonce")
 
-	chainPrefix                = utils.KeyFromStr("chain")
-	chainStatePrefix           = utils.KeyFromStr("state")
-	chainByNativeAssetPrefix   = utils.KeyFromStr("native_asset_chain")
-	linkedAddressesPrefix      = utils.KeyFromStr("linked_addresses")
-	transferPrefix             = utils.KeyFromStr("transfer")
-	transferFee                = utils.KeyFromStr("fee")
-	assetFeePrefix             = utils.KeyFromStr("asset_fee")
-	chainMaintainerStatePrefix = key.FromUInt[uint64](1)
-	rateLimitPrefix            = key.FromUInt[uint64](2)
-	transferEpochPrefix        = key.FromUInt[uint64](3)
+	chainPrefix              = utils.KeyFromStr("chain")              // Deprecated: migrate to chainPrefixNew
+	chainStatePrefix         = utils.KeyFromStr("state")              // Deprecated: migrate to chainStatePrefixNew
+	chainByNativeAssetPrefix = utils.KeyFromStr("native_asset_chain") // Deprecated: migrate to chainByNativeAssetPrefixNew
+	linkedAddressesPrefix    = utils.KeyFromStr("linked_addresses")   // Deprecated: migrate to linkedAddressesPrefixNew
+	transferPrefix           = utils.KeyFromStr("transfer")           // Deprecated: migrate to transferPrefixNew
+	transferFee              = utils.KeyFromStr("fee")                // Deprecated: migrate to transferFeeNew
+	assetFeePrefix           = utils.KeyFromStr("asset_fee")          // Deprecated: migrate to assetFeePrefixNew
+
+	chainMaintainerStatePrefix = key.RegisterStaticKey(types.ModuleName, 1)
+	rateLimitPrefix            = key.RegisterStaticKey(types.ModuleName, 2)
+	transferEpochPrefix        = key.RegisterStaticKey(types.ModuleName, 3)
+
+	chainPrefixNew              = key.RegisterStaticKey(types.ModuleName, 4)
+	chainStatePrefixNew         = key.RegisterStaticKey(types.ModuleName, 5)
+	chainByNativeAssetPrefixNew = key.RegisterStaticKey(types.ModuleName, 6)
+	linkedAddressesPrefixNew    = key.RegisterStaticKey(types.ModuleName, 7)
+	transferPrefixNew           = key.RegisterStaticKey(types.ModuleName, 8)
+	transferFeeNew              = key.RegisterStaticKey(types.ModuleName, 9)
+	assetFeePrefixNew           = key.RegisterStaticKey(types.ModuleName, 10)
 
 	// temporary
+	// TODO: add description about what temporary means
 	latestDepositAddressPrefix = utils.KeyFromStr("latest_deposit_address")
 )
 

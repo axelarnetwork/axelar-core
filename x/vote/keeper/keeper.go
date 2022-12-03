@@ -22,14 +22,15 @@ import (
 )
 
 var (
-	pollPrefix  = "poll"
-	votesPrefix = "votes"
-	countKey    = "count"
+	pollPrefix    = "poll"               // Deprecated: migrate to pollPrefixNew
+	votesPrefix   = "votes"              // Deprecated: migrate to votesPrefixNew
+	countKey      = "count"              // Deprecated: migrate to countKeyNew
+	pollQueueName = "pending_poll_queue" // Deprecated: migrate to pollQueueNameNew
 
-	pollQueueName = "pending_poll_queue"
-
-	// Deprecated
-	voterPrefix = utils.KeyFromStr("voter")
+	pollPrefixNew    = key.RegisterStaticKey(types.ModuleName, 1)
+	votesPrefixNew   = key.RegisterStaticKey(types.ModuleName, 2)
+	countKeyNew      = key.RegisterStaticKey(types.ModuleName, 3)
+	pollQueueNameNew = key.RegisterStaticKey(types.ModuleName, 4)
 )
 
 const (
