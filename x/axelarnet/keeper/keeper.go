@@ -20,18 +20,26 @@ import (
 )
 
 var (
-	cosmosChainPrefix = key.FromStr("cosmos_chain")
-	feeCollector      = key.FromStr("fee_collector")
+	cosmosChainPrefix = key.FromStr("cosmos_chain")  // Deprecated: migrate to cosmosChainPrefixNew
+	feeCollector      = key.FromStr("fee_collector") // Deprecated: migrate to feeCollectorNew
 
-	transferPrefix       = key.FromStr("ibc_transfer")
-	ibcTransferQueueName = "route_transfer_queue"
-	// nonceKey is deprecated in v0.23
-	// nonceKey = key.FromUInt[uint64](1) <-- keeping this here so the number doesn't get reused
+	transferPrefix       = key.FromStr("ibc_transfer") // Deprecated: migrate to transferPrefixNew
+	ibcTransferQueueName = "route_transfer_queue"      // Deprecated: migrate to ibcTransferQueueNameNew
 
 	// failedTransferPrefix is deprecated in v0.23
-	failedTransferPrefix = key.FromUInt[uint64](2)
-	seqIDMappingPrefix   = key.FromUInt[uint64](3)
-	ibcPathPrefix        = key.FromUInt[uint64](4)
+	//TODO: what do we do with this?
+	failedTransferPrefix = key.RegisterStaticKey(types.ModuleName, 2)
+
+	seqIDMappingPrefix      = key.RegisterStaticKey(types.ModuleName, 3)
+	ibcPathPrefix           = key.RegisterStaticKey(types.ModuleName, 4)
+	cosmosChainPrefixNew    = key.RegisterStaticKey(types.ModuleName, 5)
+	feeCollectorNew         = key.RegisterStaticKey(types.ModuleName, 6)
+	transferPrefixNew       = key.RegisterStaticKey(types.ModuleName, 7)
+	ibcTransferQueueNameNew = key.RegisterStaticKey(types.ModuleName, 8)
+
+	// reserved values
+	// nonceKey is deprecated in v0.23
+	_ = key.RegisterStaticKey(types.ModuleName, 1)
 )
 
 // Keeper provides access to all state changes regarding the Axelarnet module

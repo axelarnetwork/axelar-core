@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	lastHeartbeatAtPrefix = key.FromUInt[uint64](1)
+	lastHeartbeatAtPrefix = key.RegisterStaticKey(types.ModuleName, 1)
 )
 
 // Keeper allows access to the broadcast state
