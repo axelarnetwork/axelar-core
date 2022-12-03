@@ -24,7 +24,7 @@ func migrateKeyPrefixes(k Keeper, ctx sdk.Context) error {
 
 	iter:= store.IteratorNew(key.FromStr(pendingRefundPrefixOld))
 	if iter.Valid(){
-		return errors.New("there should not be any refundable messages in the store")
+		return errors.New("there should be no refundable messages in the store")
 	}
 
 	return nil
