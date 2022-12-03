@@ -59,7 +59,7 @@ func (AppModuleBasic) ValidateGenesis(cdc codec.JSONCodec, _ client.TxEncodingCo
 }
 
 // RegisterRESTRoutes registers the REST routes for this module
-func (AppModuleBasic) RegisterRESTRoutes(clientCtx client.Context, rtr *mux.Router) {}
+func (AppModuleBasic) RegisterRESTRoutes(client.Context, *mux.Router) {}
 
 // RegisterGRPCGatewayRoutes registers the gRPC Gateway routes for the module.
 func (AppModuleBasic) RegisterGRPCGatewayRoutes(client.Context, *runtime.ServeMux) {}
@@ -154,7 +154,7 @@ func (am AppModule) LegacyQuerierHandler(*codec.LegacyAmino) sdk.Querier {
 // RegisterServices registers a GRPC query service to respond to the
 // module-specific GRPC queries.
 func (am AppModule) RegisterServices(cfg module.Configurator) {
-	err := cfg.RegisterMigration(types.ModuleName, 1, keeper.GetMigrationHandler(am.keeper))
+	err := cfg.RegisterMigration(types.ModuleName, 2, keeper.Migrate2To3(am.keeper))
 	if err != nil {
 		panic(err)
 	}
@@ -171,4 +171,4 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 }
 
 // ConsensusVersion implements AppModule/ConsensusVersion.
-func (AppModule) ConsensusVersion() uint64 { return 2 }
+func (AppModule) ConsensusVersion() uint64 { return 3 }

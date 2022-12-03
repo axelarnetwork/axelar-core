@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"crypto/sha256"
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -17,11 +16,11 @@ import (
 )
 
 var (
-	poolNamePrefix      = "pool"   // Deprecated: migrate to poolNamePrefixNew
-	pendingRefundPrefix = "refund" // Deprecated: migrate to pendingRefundPrefixNew
+	poolNamePrefixOld      = "pool"   // Deprecated: migrate to poolNamePrefix
+	pendingRefundPrefixOld = "refund" // Deprecated: migrate to pendingRefundPrefix
 
-	poolNamePrefixNew      = key.RegisterStaticKey(types.ModuleName, 1)
-	pendingRefundPrefixNew = key.RegisterStaticKey(types.ModuleName, 2)
+	poolNamePrefix      = key.RegisterStaticKey(types.ModuleName, 1)
+	pendingRefundPrefix = key.RegisterStaticKey(types.ModuleName, 2)
 )
 
 var _ types.Rewarder = Keeper{}
@@ -68,7 +67,7 @@ func (k Keeper) SetParams(ctx sdk.Context, params types.Params) {
 // GetPool returns the reward pool of the given name, or returns an empty reward pool if not found
 func (k Keeper) GetPool(ctx sdk.Context, name string) exported.RewardPool {
 	var pool types.Pool
-	ok := k.getStore(ctx).GetNew(key.FromStr(poolNamePrefix).Append(key.FromStr(name)), &pool)
+	ok := k.getStore(ctx).GetNew(poolNamePrefix.Append(key.FromStrHashed(name)), &pool)
 	if !ok {
 		return newPool(ctx, k, k.banker, k.distributor, k.staker, types.NewPool(name))
 	}
@@ -80,7 +79,7 @@ func (k Keeper) getPools(ctx sdk.Context) []types.Pool {
 	var pools []types.Pool
 
 	store := k.getStore(ctx)
-	iter := store.Iterator(utils.LowerCaseKey(poolNamePrefix))
+	iter := store.IteratorNew(poolNamePrefix)
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
 	for ; iter.Valid(); iter.Next() {
@@ -94,7 +93,7 @@ func (k Keeper) getPools(ctx sdk.Context) []types.Pool {
 }
 
 func (k Keeper) setPool(ctx sdk.Context, pool types.Pool) {
-	funcs.MustNoErr(k.getStore(ctx).SetNewValidated(key.FromStr(poolNamePrefix).Append(key.FromStr(pool.Name)), &pool))
+	funcs.MustNoErr(k.getStore(ctx).SetNewValidated(poolNamePrefix.Append(key.FromStrHashed(pool.Name)), &pool))
 }
 
 func (k Keeper) getStore(ctx sdk.Context) utils.KVStore {
@@ -103,21 +102,18 @@ func (k Keeper) getStore(ctx sdk.Context) utils.KVStore {
 
 // SetPendingRefund saves pending refundable message
 func (k Keeper) SetPendingRefund(ctx sdk.Context, req types.RefundMsgRequest, refund types.Refund) error {
-	hash := sha256.Sum256(k.cdc.MustMarshalLengthPrefixed(&req))
-	return k.getStore(ctx).SetNewValidated(key.FromStr(pendingRefundPrefix).Append(key.FromBz(hash[:])), &refund)
+	return k.getStore(ctx).SetNewValidated(pendingRefundPrefix.Append(key.FromBzHashed(k.cdc.MustMarshalLengthPrefixed(&req))), &refund)
 }
 
 // GetPendingRefund retrieves a pending refundable message
 func (k Keeper) GetPendingRefund(ctx sdk.Context, req types.RefundMsgRequest) (types.Refund, bool) {
 	var refund types.Refund
-	hash := sha256.Sum256(k.cdc.MustMarshalLengthPrefixed(&req))
-	ok := k.getStore(ctx).GetNew(key.FromStr(pendingRefundPrefix).Append(key.FromBz(hash[:])), &refund)
+	ok := k.getStore(ctx).GetNew(pendingRefundPrefix.Append(key.FromBzHashed(k.cdc.MustMarshalLengthPrefixed(&req))), &refund)
 
 	return refund, ok
 }
 
 // DeletePendingRefund retrieves a pending refundable message
 func (k Keeper) DeletePendingRefund(ctx sdk.Context, req types.RefundMsgRequest) {
-	hash := sha256.Sum256(k.cdc.MustMarshalLengthPrefixed(&req))
-	k.getStore(ctx).DeleteNew(key.FromStr(pendingRefundPrefix).Append(key.FromBz(hash[:])))
+	k.getStore(ctx).DeleteNew(pendingRefundPrefix.Append(key.FromBzHashed(k.cdc.MustMarshalLengthPrefixed(&req))))
 }
