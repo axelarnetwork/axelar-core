@@ -2,8 +2,8 @@ package key
 
 import (
 	"bytes"
-	"crypto/sha256"
 	"fmt"
+	"golang.org/x/crypto/sha3"
 	"strings"
 
 	"golang.org/x/exp/constraints"
@@ -94,7 +94,7 @@ func FromUInt[T constraints.Unsigned](key T) Key {
 
 // FromBzHashed creates a new Key from bytes
 func FromBzHashed(key []byte) Key {
-	hash := sha256.Sum256(key)
+	hash := sha3.Sum256(key)
 	return basicKey{particles: [][]byte{hash[:]}}
 }
 
