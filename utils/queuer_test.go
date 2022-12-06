@@ -206,8 +206,31 @@ func TestQueue(t *testing.T) {
 			})))
 			assert.NoError(t, queue.Enqueue(utils.NoValidation(&gogoprototypes.UInt64Value{Value: 5})))
 		}).
-		Then("dequeue in the order they where enqueued", func(t *testing.T) {
+		Then("we can iterate over the queue", func(t *testing.T) {
+			iter := queue.List()
+			defer func() { _ = iter.Close() }()
 
+			value := &gogoprototypes.UInt64Value{}
+			validatedValue := utils.NoValidation(value)
+
+			assert.True(t, iter.Valid())
+			iter.Value(validatedValue)
+			assert.EqualValues(t, 9, value.Value)
+			iter.Next()
+
+			assert.True(t, iter.Valid())
+			iter.Value(validatedValue)
+			assert.EqualValues(t, 8, value.Value)
+			iter.Next()
+
+			assert.True(t, iter.Valid())
+			iter.Value(validatedValue)
+			assert.EqualValues(t, 5, value.Value)
+			iter.Next()
+
+			assert.False(t, iter.Valid())
+		}).
+		Then("dequeue in the order they where enqueued", func(t *testing.T) {
 			value := &gogoprototypes.UInt64Value{}
 			validatedValue := utils.NoValidation(value)
 			assert.True(t, queue.Peek(validatedValue))
@@ -227,6 +250,12 @@ func TestQueue(t *testing.T) {
 
 			assert.False(t, queue.Peek(validatedValue))
 			assert.False(t, queue.Dequeue(validatedValue))
+		}).
+		Then("iterator is empty after dequeue", func(t *testing.T) {
+			iter := queue.List()
+			defer func() { _ = iter.Close() }()
+
+			assert.False(t, iter.Valid())
 		}).Run(t)
 
 	Given("a queue with prioritization", func() {
@@ -252,6 +281,8 @@ func TestQueue(t *testing.T) {
 
 			var value gogoprototypes.UInt64Value
 			validatedValue := utils.NoValidation(&value)
+			assert.True(t, queue.Peek())
+
 			assert.True(t, queue.Peek(validatedValue))
 			assert.EqualValues(t, 5, value.Value)
 			assert.True(t, queue.Dequeue(validatedValue))
@@ -259,14 +290,14 @@ func TestQueue(t *testing.T) {
 
 			assert.True(t, queue.Peek(validatedValue))
 			assert.EqualValues(t, 8, value.Value)
-			assert.True(t, queue.Dequeue(validatedValue))
-			assert.EqualValues(t, 8, value.Value)
+			assert.True(t, queue.Dequeue())
 
 			assert.True(t, queue.Peek(validatedValue))
 			assert.EqualValues(t, 9, value.Value)
 			assert.True(t, queue.Dequeue(validatedValue))
 			assert.EqualValues(t, 9, value.Value)
 
+			assert.False(t, queue.Peek())
 			assert.False(t, queue.Peek(validatedValue))
 			assert.False(t, queue.Dequeue(validatedValue))
 		}).Run(t)
