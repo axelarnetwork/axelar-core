@@ -251,7 +251,7 @@ func (q Queue[T]) Enqueue(value T) error {
 	return q.setCurrIdx(idx + 1)
 }
 
-func (q Queue[T]) Dequeue(value T) bool {
+func (q Queue[T]) Dequeue(value ...T) bool {
 	iter := q.store.IteratorNew(q.name.Append(queue))
 
 	if !iter.Valid() {
@@ -262,12 +262,15 @@ func (q Queue[T]) Dequeue(value T) bool {
 	iKey := iter.GetKeyNew()
 	funcs.MustNoErr(iter.Close())
 
-	iter.UnmarshalValue(value)
+	for _, v := range value {
+		iter.UnmarshalValue(v)
+	}
+
 	q.store.DeleteNew(iKey)
 	return true
 }
 
-func (q Queue[T]) Peek(value T) bool {
+func (q Queue[T]) Peek(value ...T) bool {
 	iter := q.store.IteratorNew(q.name.Append(queue))
 	defer funcs.MustNoErr(iter.Close())
 
@@ -275,12 +278,14 @@ func (q Queue[T]) Peek(value T) bool {
 		return false
 	}
 
-	iter.UnmarshalValue(value)
+	for _, v := range value {
+		iter.UnmarshalValue(v)
+	}
 	return true
 }
 
-func (q Queue[T]) List() Iterator {
-	return q.store.IteratorNew(q.name.Append(queue))
+func (q Queue[T]) List() QueueIterator[T] {
+	return QueueIterator[T]{iter: q.store.IteratorNew(q.name.Append(queue))}
 }
 
 func (q Queue[T]) getCurrIdx() uint64 {
@@ -294,4 +299,30 @@ func (q Queue[T]) getCurrIdx() uint64 {
 
 func (q Queue[T]) setCurrIdx(idx uint64) error {
 	return q.store.SetNewValidated(q.name.Append(currIdx), NoValidation(&gogoprototypes.UInt64Value{Value: idx}))
+}
+
+type QueueIterator[T ValidatedProtoMarshaler] struct {
+	iter Iterator
+}
+
+// Valid returns whether the current iterator is valid. Once invalid, the Iterator remains
+// invalid forever.
+func (i QueueIterator[T]) Valid() bool {
+	return i.iter.Valid()
+}
+
+// Next moves the iterator to the next key in the database, as defined by order of iteration.
+// If Valid returns false, this method will panic.
+func (i QueueIterator[T]) Next() {
+	i.iter.Next()
+}
+
+// Value returns the value at the current position. Panics if the iterator is invalid.
+// CONTRACT: value readonly []byte
+func (i QueueIterator[T]) Value(value T) {
+	i.iter.UnmarshalValue(value)
+}
+
+func (i QueueIterator[T]) Close() error {
+	return i.iter.Close()
 }
