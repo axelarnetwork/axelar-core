@@ -3,6 +3,8 @@ package utils
 import (
 	"encoding/binary"
 	"fmt"
+	"github.com/axelarnetwork/axelar-core/utils/key"
+	"github.com/axelarnetwork/utils/funcs"
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -10,6 +12,11 @@ import (
 	gogoprototypes "github.com/gogo/protobuf/types"
 	"github.com/tendermint/tendermint/libs/log"
 	db "github.com/tendermint/tm-db"
+)
+
+var (
+	currIdx = key.FromUInt[uint](1)
+	queue   = key.FromUInt[uint](2)
 )
 
 //go:generate moq -out ./mock/queuer.go -pkg mock . KVQueue
@@ -42,7 +49,7 @@ type GeneralKVQueue struct {
 	prioritizer func(value codec.ProtoMarshaler) Key
 }
 
-// NewGeneralKVQueue is the contructor for GeneralKVQueue
+// NewGeneralKVQueue is the constructor for GeneralKVQueue
 func NewGeneralKVQueue(name string, store KVStore, logger log.Logger, prioritizer func(value codec.ProtoMarshaler) Key) GeneralKVQueue {
 	return GeneralKVQueue{
 		name:        KeyFromStr(name),
@@ -218,112 +225,69 @@ func NewBlockHeightKVQueue(name string, store KVStore, blockHeight int64, logger
 	}
 }
 
-// SequenceKVQueue is a queue that orders items with the sequence number at which the items are enqueued;
-type SequenceKVQueue struct {
-	store   KVStore
-	maxSize uint64
-	seqNo   uint64
-	size    uint64
-	logger  log.Logger
+type Queue[T ValidatedProtoMarshaler] struct {
+	name        key.Key
+	store       KVStore
+	prioritizer func(value T) key.Key
 }
 
-var (
-	sizeKey     = KeyFromStr("size")
-	sequenceKey = KeyFromStr("sequence")
-	queueKey    = KeyFromStr("queue")
-)
-
-// NewSequenceKVQueue is the constructor of SequenceKVQueue. The prefixStore should isolate the namespace of the queue
-func NewSequenceKVQueue(prefixStore KVStore, maxSize uint64, logger log.Logger) SequenceKVQueue {
-	var seqNo uint64
-	bz := prefixStore.GetRaw(sequenceKey)
-	if bz != nil {
-		seqNo = binary.BigEndian.Uint64(bz)
+func NewQueue[T ValidatedProtoMarshaler](name key.Key, store KVStore, prioritizer func(value T) key.Key) Queue[T] {
+	return Queue[T]{
+		name:        name,
+		store:       store,
+		prioritizer: prioritizer,
 	}
-
-	var size uint64
-	bz = prefixStore.GetRaw(sizeKey)
-	if bz != nil {
-		size = binary.BigEndian.Uint64(bz)
-	}
-
-	return SequenceKVQueue{store: prefixStore, maxSize: maxSize, seqNo: seqNo, size: size, logger: logger}
 }
 
-// Enqueue pushes the given value onto the top of the queue and stores the value at given key. Returns queue position and status
-func (q *SequenceKVQueue) Enqueue(value codec.ProtoMarshaler) error {
-	if q.size >= q.maxSize {
-		return fmt.Errorf("queue is full")
+func (q Queue[T]) Enqueue(value T) error {
+	idx := q.getCurrIdx()
+	if err := q.store.SetNewValidated(q.name.
+		Append(queue).
+		Append(q.prioritizer(value)).
+		Append(key.FromUInt(idx)), value); err != nil {
+		return err
 	}
 
-	bz := make([]byte, 8)
-	binary.BigEndian.PutUint64(bz, q.seqNo)
-
-	q.store.Set(queueKey.Append(KeyFromBz(bz)), value)
-	q.incrSize()
-	q.incrSeqNo()
-
-	return nil
+	return q.setCurrIdx(idx + 1)
 }
 
-// Dequeue pops the nth value off and unmarshals it into the given object, returns false if n is out of range
-// n is 0-based
-func (q *SequenceKVQueue) Dequeue(n uint64, value codec.ProtoMarshaler) bool {
-	key, ok := q.peek(n, value)
-	if ok {
-		q.store.Delete(key)
-		q.decrSize()
-	}
-	return ok
-}
+func (q Queue[T]) Dequeue(value T) bool {
+	iter := q.store.IteratorNew(q.name.Append(queue))
 
-// Size returns the given current size of the queue
-func (q SequenceKVQueue) Size() uint64 {
-	return q.size
-}
-
-// Peek unmarshals the value into the given object at the given index and returns its sequence number, returns false if n is out of range
-// n is 0-based
-func (q SequenceKVQueue) Peek(n uint64, value codec.ProtoMarshaler) bool {
-	_, ok := q.peek(n, value)
-	return ok
-}
-
-func (q SequenceKVQueue) peek(n uint64, value codec.ProtoMarshaler) (Key, bool) {
-	if n >= q.size {
-		return nil, false
+	if !iter.Valid() {
+		funcs.MustNoErr(iter.Close())
+		return false
 	}
 
-	var i uint64
-	iter := q.store.Iterator(queueKey)
-	defer CloseLogError(iter, q.logger)
+	iKey := iter.GetKeyNew()
+	funcs.MustNoErr(iter.Close())
 
-	for ; iter.Valid() && i < n; iter.Next() {
-		i++
-	}
 	iter.UnmarshalValue(value)
-	return iter.GetKey(), true
+	q.store.DeleteNew(iKey)
+	return true
 }
 
-func (q *SequenceKVQueue) incrSize() {
-	q.size++
-	bz := make([]byte, 8)
-	binary.BigEndian.PutUint64(bz, q.size)
-	q.store.SetRaw(sizeKey, bz)
-}
+func (q Queue[T]) Peek(value T) bool {
+	iter := q.store.IteratorNew(q.name.Append(queue))
+	defer funcs.MustNoErr(iter.Close())
 
-func (q *SequenceKVQueue) decrSize() {
-	if q.size > 0 {
-		q.size--
-		bz := make([]byte, 8)
-		binary.BigEndian.PutUint64(bz, q.size)
-		q.store.SetRaw(sizeKey, bz)
+	if !iter.Valid() {
+		return false
 	}
+
+	iter.UnmarshalValue(value)
+	return true
 }
 
-func (q *SequenceKVQueue) incrSeqNo() {
-	q.seqNo++
-	bz := make([]byte, 8)
-	binary.BigEndian.PutUint64(bz, q.seqNo)
-	q.store.SetRaw(sequenceKey, bz)
+func (q Queue[T]) getCurrIdx() uint64 {
+	idx := gogoprototypes.UInt64Value{}
+	if !q.store.GetNew(q.name.Append(currIdx), &idx) {
+		return 0
+	}
+
+	return idx.Value
+}
+
+func (q Queue[T]) setCurrIdx(idx uint64) error {
+	return q.store.SetNewValidated(q.name.Append(currIdx), NoValidation(&gogoprototypes.UInt64Value{Value: idx}))
 }
