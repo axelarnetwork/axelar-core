@@ -18,44 +18,14 @@ func Migrate2To3(k Keeper) func(ctx sdk.Context) error {
 func migrateKeyPrefixes(k Keeper, ctx sdk.Context) error {
 	store := k.getStore(ctx)
 
-	if err := migrateKeys(store, key.FromStr(poolNamePrefixOld), func(pool *types.Pool) { k.setPool(ctx, *pool) }); err != nil {
+	if err := utils.MigrateKeys(store, key.FromStr(poolNamePrefixOld),&types.Pool{}, func(pool *types.Pool) error { k.setPool(ctx, *pool); return nil }); err != nil {
 		return err
 	}
 
-	iter:= store.IteratorNew(key.FromStr(pendingRefundPrefixOld))
-	if iter.Valid(){
+	iter := store.IteratorNew(key.FromStr(pendingRefundPrefixOld))
+	if iter.Valid() {
 		return errors.New("there should be no refundable messages in the store")
 	}
 
 	return nil
-}
-
-func migrateKeys[T utils.ValidatedProtoMarshaler](store utils.KVStore, originalKey key.Key, migrateValue func(T)) error {
-	// migrate in batches so memory pressure doesn't become too large
-	keysToDelete := make([][]byte, 0, 1000)
-	for {
-		iter := store.IteratorNew(originalKey)
-
-		if !iter.Valid() {
-			return iter.Close()
-		}
-
-		var value T
-		for ; iter.Valid() && len(keysToDelete) < 1000; iter.Next() {
-			iter.UnmarshalValue(value)
-			migrateValue(value)
-
-			keysToDelete = append(keysToDelete, iter.Key())
-		}
-
-		if err := iter.Close(); err != nil {
-			return err
-		}
-
-		for _, poolKey := range keysToDelete {
-			store.DeleteRaw(poolKey)
-		}
-
-		keysToDelete = keysToDelete[:0]
-	}
 }
