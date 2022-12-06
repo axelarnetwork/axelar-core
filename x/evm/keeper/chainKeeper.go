@@ -34,14 +34,13 @@ var (
 	burnedDepositPrefix         = "burned_deposit"                          // Deprecated: migrate to burnedDepositPrefixNew
 	commandBatchPrefix          = "batched_commands"                        // Deprecated: migrate to commandBatchPrefixNew
 	commandPrefix               = "command"                                 // Deprecated: migrate to commandPrefixNew
-	burnerAddrPrefixDeprecated = "burnerAddr" // Deprecated
+	burnerAddrPrefixDeprecated  = "burnerAddr"                              // Deprecated
 	eventPrefix                 = utils.KeyFromStr("event")                 // Deprecated: migrate to eventPrefixNew
 
-	commandQueueName        = "cmd_queue" // Deprecated: migrate to commandQueueNameNew
+	commandQueueName        = "cmd_queue"             // Deprecated: migrate to commandQueueNameNew
 	confirmedEventQueueName = "confirmed_event_queue" // Deprecated: migrate to confirmedEventQueueNameNew
 
-
-	burnerAddrPrefix           = key.RegisterStaticKey(types.ModuleName, 1)
+	burnerAddrPrefix          = key.RegisterStaticKey(types.ModuleName, 1)
 	gatewayKeyNew             = key.RegisterStaticKey(types.ModuleName, 4)
 	unsignedBatchIDKeyNew     = key.RegisterStaticKey(types.ModuleName, 5)
 	latestSignedBatchIDKeyNew = key.RegisterStaticKey(types.ModuleName, 6)
