@@ -37,7 +37,7 @@ func migrateDeposits(ctx sdk.Context, ck chainKeeper, status types.DepositStatus
 	case types.DepositStatus_Confirmed:
 		prefix = key.FromStr(confirmedDepositPrefixDeprecated)
 	case types.DepositStatus_Burned:
-		prefix = key.FromStr(confirmedDepositPrefixDeprecated)
+		prefix = key.FromStr(burnedDepositPrefixDeprecated)
 	}
 
 	iter := ck.getStore(ctx).IteratorNew(prefix)
