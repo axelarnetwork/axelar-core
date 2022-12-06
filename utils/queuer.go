@@ -279,6 +279,10 @@ func (q Queue[T]) Peek(value T) bool {
 	return true
 }
 
+func (q Queue[T]) List() Iterator {
+	return q.store.IteratorNew(q.name.Append(queue))
+}
+
 func (q Queue[T]) getCurrIdx() uint64 {
 	idx := gogoprototypes.UInt64Value{}
 	if !q.store.GetNew(q.name.Append(currIdx), &idx) {
