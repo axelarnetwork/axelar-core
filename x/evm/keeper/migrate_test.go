@@ -52,7 +52,7 @@ func TestGetMigrationHandler(t *testing.T) {
 			n := &mock.NexusMock{
 				GetChainsFunc: func(sdk.Context) []nexus.Chain { return []nexus.Chain{exported.Ethereum} },
 			}
-			handler = keeper.Migrate7To8(k, n)
+			handler = keeper.Migrate8to9(k, n)
 		}).
 		Given("there are only old burner infos", func() {
 			burnerInfos = slices.Expand2(testutils.RandomBurnerInfo, 20)

@@ -829,7 +829,7 @@ func TestHandleConfirmDeposit(t *testing.T) {
 
 	depositFound := func(found bool) func() {
 		return func() {
-			sourceCk.GetDepositByTxIDBurnAddrFunc = func(ctx sdk.Context, txID types.Hash, burnerAddr types.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
+			sourceCk.GetLegacyDepositFunc = func(ctx sdk.Context, txID types.Hash, burnerAddr types.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
 				return types.ERC20Deposit{}, types.DepositStatus_Confirmed, found
 			}
 		}
