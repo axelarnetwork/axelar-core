@@ -65,8 +65,8 @@ func (k Keeper) getTransferFee(ctx sdk.Context) (fee exported.TransferFee) {
 
 // getCrossChainFees computes the fee info for a cross-chain transfer.
 func (k Keeper) getCrossChainFees(ctx sdk.Context, sourceChain exported.Chain, destinationChain exported.Chain, asset string) (feeRate sdk.Dec, minFee sdk.Int, maxFee sdk.Int, err error) {
-	sourceChainFeeInfo, _ := k.GetFeeInfo(ctx, sourceChain, asset)
-	destinationChainFeeInfo, _ := k.GetFeeInfo(ctx, destinationChain, asset)
+	sourceChainFeeInfo := k.GetFeeInfo(ctx, sourceChain, asset)
+	destinationChainFeeInfo := k.GetFeeInfo(ctx, destinationChain, asset)
 
 	feeRate = sourceChainFeeInfo.FeeRate.Add(destinationChainFeeInfo.FeeRate)
 	if feeRate.GT(sdk.OneDec()) {

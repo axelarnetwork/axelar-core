@@ -49,7 +49,7 @@ var _ nexustypes.Nexus = &NexusMock{}
 // 			GetChainsFunc: func(ctx cosmossdktypes.Context) []github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain {
 // 				panic("mock out the GetChains method")
 // 			},
-// 			GetFeeInfoFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset string) (github_com_axelarnetwork_axelar_core_x_nexus_exported.FeeInfo, bool) {
+// 			GetFeeInfoFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset string) github_com_axelarnetwork_axelar_core_x_nexus_exported.FeeInfo {
 // 				panic("mock out the GetFeeInfo method")
 // 			},
 // 			GetParamsFunc: func(ctx cosmossdktypes.Context) nexustypes.Params {
@@ -117,7 +117,7 @@ type NexusMock struct {
 	GetChainsFunc func(ctx cosmossdktypes.Context) []github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 
 	// GetFeeInfoFunc mocks the GetFeeInfo method.
-	GetFeeInfoFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset string) (github_com_axelarnetwork_axelar_core_x_nexus_exported.FeeInfo, bool)
+	GetFeeInfoFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset string) github_com_axelarnetwork_axelar_core_x_nexus_exported.FeeInfo
 
 	// GetParamsFunc mocks the GetParams method.
 	GetParamsFunc func(ctx cosmossdktypes.Context) nexustypes.Params
@@ -606,7 +606,7 @@ func (mock *NexusMock) GetChainsCalls() []struct {
 }
 
 // GetFeeInfo calls GetFeeInfoFunc.
-func (mock *NexusMock) GetFeeInfo(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset string) (github_com_axelarnetwork_axelar_core_x_nexus_exported.FeeInfo, bool) {
+func (mock *NexusMock) GetFeeInfo(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset string) github_com_axelarnetwork_axelar_core_x_nexus_exported.FeeInfo {
 	if mock.GetFeeInfoFunc == nil {
 		panic("NexusMock.GetFeeInfoFunc: method is nil but Nexus.GetFeeInfo was just called")
 	}

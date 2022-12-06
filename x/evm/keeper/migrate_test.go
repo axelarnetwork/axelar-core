@@ -1,8 +1,11 @@
 package keeper_test
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramsKeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 	"github.com/stretchr/testify/assert"
@@ -18,34 +21,30 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/types/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/utils/funcs"
+	"github.com/axelarnetwork/utils/slices"
 	. "github.com/axelarnetwork/utils/test"
 )
 
 func TestGetMigrationHandler(t *testing.T) {
 	var (
 		ctx         sdk.Context
+		cdc         codec.Codec
+		storekey    = sdk.NewKVStoreKey(types.StoreKey)
 		k           *keeper.BaseKeeper
 		handler     func(ctx sdk.Context) error
 		err         error
-		expectedIDs []types.CommandID
+		burnerInfos []types.BurnerInfo
 	)
-
-	cmdTypes := map[types.CommandType]string{
-		types.COMMAND_TYPE_MINT_TOKEN:                      "mintToken",
-		types.COMMAND_TYPE_DEPLOY_TOKEN:                    "deployToken",
-		types.COMMAND_TYPE_BURN_TOKEN:                      "burnToken",
-		types.COMMAND_TYPE_TRANSFER_OPERATORSHIP:           "transferOperatorship",
-		types.COMMAND_TYPE_APPROVE_CONTRACT_CALL_WITH_MINT: "approveContractCallWithMint",
-		types.COMMAND_TYPE_APPROVE_CONTRACT_CALL:           "approveContractCall",
-	}
 
 	Given("a context", func() {
 		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	}).
 		Given("a keeper", func() {
 			encCfg := params.MakeEncodingConfig()
-			pk := paramsKeeper.NewKeeper(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("params"), sdk.NewKVStoreKey("tparams"))
-			k = keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey(types.StoreKey), pk)
+			cdc = encCfg.Codec
+			pk := paramsKeeper.NewKeeper(cdc, encCfg.Amino, sdk.NewKVStoreKey("params"), sdk.NewKVStoreKey("tparams"))
+
+			k = keeper.NewKeeper(cdc, storekey, pk)
 			k.InitChains(ctx)
 			funcs.MustNoErr(k.CreateChain(ctx, types.DefaultParams()[0]))
 		}).
@@ -53,31 +52,22 @@ func TestGetMigrationHandler(t *testing.T) {
 			n := &mock.NexusMock{
 				GetChainsFunc: func(sdk.Context) []nexus.Chain { return []nexus.Chain{exported.Ethereum} },
 			}
-			handler = keeper.Migrate6To7(k, n)
+			handler = keeper.Migrate7To8(k, n)
 		}).
-		Given("there are old commands", func() {
-			ck := funcs.Must(k.ForChain(ctx, exported.Ethereum.Name))
+		Given("there are only old burner infos", func() {
+			burnerInfos = slices.Expand2(testutils.RandomBurnerInfo, 20)
 
-			expectedIDs = []types.CommandID{}
-			for i := 0; i < 3; i++ {
-				cmd := testutils.RandomCommand()
-				cmd.Command = cmdTypes[cmd.Type]
-				cmd.Type = types.COMMAND_TYPE_UNSPECIFIED
-				expectedIDs = append(expectedIDs, cmd.ID)
-				funcs.MustNoErr(ck.EnqueueCommand(ctx, cmd))
+			for i := 0; i < 10; i++ {
+				info := burnerInfos[i]
+				ctx.KVStore(storekey).Set(
+					[]byte(fmt.Sprintf("chain_%s_burnerAddr_%s", strings.ToLower(exported.Ethereum.Name.String()), info.BurnerAddress.Hex())),
+					cdc.MustMarshalLengthPrefixed(&info))
 			}
-
-			_ = funcs.Must(ck.CreateNewBatchToSign(ctx))
-		}).
-		Given("there are commands in the queue", func() {
-			ck := funcs.Must(k.ForChain(ctx, exported.Ethereum.Name))
-
-			for i := 0; i < 2; i++ {
-				cmd := testutils.RandomCommand()
-				cmd.Command = cmdTypes[cmd.Type]
-				cmd.Type = types.COMMAND_TYPE_UNSPECIFIED
-				expectedIDs = append(expectedIDs, cmd.ID)
-				funcs.MustNoErr(ck.EnqueueCommand(ctx, cmd))
+			for i := 10; i < 20; i++ {
+				info := burnerInfos[i]
+				ctx.KVStore(storekey).Set(
+					[]byte(fmt.Sprintf("chain_%s_burneraddr_%s", strings.ToLower(exported.Ethereum.Name.String()), info.BurnerAddress.Hex())),
+					cdc.MustMarshalLengthPrefixed(&info))
 			}
 		}).
 		When("calling migration", func() {
@@ -86,14 +76,11 @@ func TestGetMigrationHandler(t *testing.T) {
 		Then("it succeeds", func(t *testing.T) {
 			assert.NoError(t, err)
 		}).
-		Then("all commands have been migrated", func(t *testing.T) {
+		Then("all burner infos have been migrated", func(t *testing.T) {
 			ck := funcs.Must(k.ForChain(ctx, exported.Ethereum.Name))
 
-			for _, id := range expectedIDs {
-				cmd, ok := ck.GetCommand(ctx, id)
-				assert.True(t, ok)
-
-				assert.NotEqual(t, types.COMMAND_TYPE_UNSPECIFIED, cmd.Type)
+			for i, info := range burnerInfos {
+				assert.Equal(t, &burnerInfos[i], ck.GetBurnerInfo(ctx, info.BurnerAddress))
 			}
 		}).Run(t, 20)
 }

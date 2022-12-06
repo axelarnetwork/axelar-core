@@ -180,7 +180,7 @@ func TestExportGenesisInitGenesis(t *testing.T) {
 
 	for _, chainState := range expected.ChainStates {
 		for _, asset := range chainState.Assets {
-			feeInfo, found := keeper.GetFeeInfo(ctx, chainState.Chain, asset.Denom)
+			feeInfo, found := keeper.getFeeInfo(ctx, chainState.Chain, asset.Denom)
 			if found {
 				expected.FeeInfos = append(expected.FeeInfos, feeInfo)
 			}

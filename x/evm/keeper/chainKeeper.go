@@ -34,8 +34,10 @@ var (
 	burnedDepositPrefix         = "burned_deposit"
 	commandBatchPrefix          = "batched_commands"
 	commandPrefix               = "command"
-	burnerAddrPrefix            = "burnerAddr"
-	eventPrefix                 = utils.KeyFromStr("event")
+
+	burnerAddrPrefixDeprecated = "burnerAddr" // Deprecated
+	burnerAddrPrefix           = key.FromUInt[uint](1)
+	eventPrefix                = utils.KeyFromStr("event")
 
 	commandQueueName        = "cmd_queue"
 	confirmedEventQueueName = "confirmed_event_queue"
@@ -97,14 +99,13 @@ func (k chainKeeper) GetMinVoterCount(ctx sdk.Context) int64 {
 // SetBurnerInfo saves the burner info for a given address
 func (k chainKeeper) SetBurnerInfo(ctx sdk.Context, burnerInfo types.BurnerInfo) {
 	funcs.MustNoErr(
-		k.getStore(ctx).SetNewValidated(
-			key.FromStr(burnerAddrPrefix).Append(key.FromStr(burnerInfo.BurnerAddress.Hex())), &burnerInfo))
+		k.getStore(ctx).SetNewValidated(burnerAddrPrefix.Append(key.FromStr(burnerInfo.BurnerAddress.Hex())), &burnerInfo))
 }
 
 // GetBurnerInfo retrieves the burner info for a given address
 func (k chainKeeper) GetBurnerInfo(ctx sdk.Context, burnerAddr types.Address) *types.BurnerInfo {
 	var result types.BurnerInfo
-	if !k.getStore(ctx).GetNew(key.FromStr(burnerAddrPrefix).Append(key.FromStr(burnerAddr.Hex())), &result) {
+	if !k.getStore(ctx).GetNew(burnerAddrPrefix.Append(key.FromStr(burnerAddr.Hex())), &result) {
 		return nil
 	}
 
@@ -112,7 +113,7 @@ func (k chainKeeper) GetBurnerInfo(ctx sdk.Context, burnerAddr types.Address) *t
 }
 
 func (k chainKeeper) getBurnerInfos(ctx sdk.Context) []types.BurnerInfo {
-	iter := k.getStore(ctx).Iterator(utils.LowerCaseKey(burnerAddrPrefix))
+	iter := k.getStore(ctx).IteratorNew(burnerAddrPrefix)
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
 	var burners []types.BurnerInfo
