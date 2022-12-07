@@ -28,6 +28,8 @@ func Migrate8to9(bk *BaseKeeper, n types.Nexus) func(ctx sdk.Context) error {
 }
 
 func migrateDeposits(ctx sdk.Context, ck chainKeeper, status types.DepositStatus) {
+	var iteratedDepositCount, ignoredDepositCount uint64
+
 	var prefix key.Key
 	switch status {
 	case types.DepositStatus_Confirmed:
@@ -40,13 +42,16 @@ func migrateDeposits(ctx sdk.Context, ck chainKeeper, status types.DepositStatus
 	defer utils.CloseLogError(iter, ck.Logger(ctx))
 
 	for ; iter.Valid(); iter.Next() {
+		iteratedDepositCount++
+
 		var deposit types.ERC20Deposit
 		iter.UnmarshalValue(&deposit)
 
 		transferEvents := getTransferEventsByTxIDAndAddress(ctx, ck, deposit.TxID, deposit.BurnerAddress)
 		if len(transferEvents) == 0 {
-			// Deposits from the time when we have not started doing event processing.
-			// Their log indexes are no way to be retrieved anymore and therefore ignore.
+			// Deposits from the time when we had not started doing event processing.
+			// Their log indexes cannot be retrieved anymore and are therefore ignored.
+			ignoredDepositCount++
 			continue
 		}
 
@@ -54,6 +59,19 @@ func migrateDeposits(ctx sdk.Context, ck chainKeeper, status types.DepositStatus
 		defer ck.getStore(ctx).DeleteRaw(rawKey)
 
 		for _, event := range transferEvents {
+			_, existingDepositStatus, ok := ck.GetDeposit(ctx, event.TxID, event.Index)
+			if ok && existingDepositStatus == status {
+				continue
+			}
+
+			if existingDepositStatus != status {
+				ck.Logger(ctx).Debug(fmt.Sprintf("deposit status changes from %s to %s", existingDepositStatus.String(), status.String()),
+					"chain", ck.GetName(),
+					"tx_id", event.TxID.Hex(),
+					"log_index", event.Index,
+				)
+			}
+
 			newDeposit := types.ERC20Deposit{
 				TxID:             event.TxID,
 				LogIndex:         event.Index,
@@ -62,11 +80,16 @@ func migrateDeposits(ctx sdk.Context, ck chainKeeper, status types.DepositStatus
 				DestinationChain: deposit.DestinationChain,
 				BurnerAddress:    deposit.BurnerAddress,
 			}
-
 			ck.DeleteDeposit(ctx, newDeposit)
 			ck.SetDeposit(ctx, newDeposit, status)
 		}
 	}
+
+	ck.Logger(ctx).Debug(fmt.Sprintf("migrated %s deposits", status.String()),
+		"chain", ck.GetName(),
+		"iterated_deposit_count", iteratedDepositCount,
+		"ignored_deposit_count", ignoredDepositCount,
+	)
 }
 
 func getTransferEventsByTxIDAndAddress(ctx sdk.Context, ck chainKeeper, txID types.Hash, address types.Address) (events []types.Event) {

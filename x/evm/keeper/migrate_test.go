@@ -143,7 +143,20 @@ func TestGetMigrationHandler(t *testing.T) {
 					setDeposit(ctx.KVStore(storeKey), cdc, chain, deposit, types.DepositStatus_Burned)
 
 					event := randomTransferEvent(chain, deposit.TxID, deposit.BurnerAddress)
-					event.TxID = txID
+					event.Index = uint64(i)
+					setEvent(ctx, bk, event)
+				}
+
+				txID = testutils.RandomHash()
+				address := testutils.RandomAddress()
+				for i := 0; i < 5; i++ {
+					deposit := testutils.RandomDeposit()
+					deposit.TxID = txID
+					deposit.LogIndex = uint64(i)
+					deposit.BurnerAddress = address
+					setDeposit(ctx.KVStore(storeKey), cdc, chain, deposit, types.DepositStatus_Burned)
+
+					event := randomTransferEvent(chain, deposit.TxID, deposit.BurnerAddress)
 					event.Index = uint64(i)
 					setEvent(ctx, bk, event)
 				}
@@ -153,7 +166,7 @@ func TestGetMigrationHandler(t *testing.T) {
 
 					actual := getChainState(ctx, bk, chain)
 					assert.Len(t, actual.ConfirmedDeposits, 10)
-					assert.Len(t, actual.BurnedDeposits, 20)
+					assert.Len(t, actual.BurnedDeposits, 25)
 				}),
 
 			When("deposits with multiple matching transfer events exist and are 'burnt/confirmed' at the same time", func() {
