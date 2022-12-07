@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"encoding/hex"
+	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -18,20 +19,15 @@ func Migrate8to9(bk *BaseKeeper, n types.Nexus) func(ctx sdk.Context) error {
 		for _, chain := range slices.Filter(n.GetChains(ctx), types.IsEVMChain) {
 			ck := funcs.Must(bk.ForChain(ctx, chain.Name)).(chainKeeper)
 
-			if err := migrateDeposits(ctx, ck, types.DepositStatus_Confirmed); err != nil {
-				return err
-			}
-
-			if err := migrateDeposits(ctx, ck, types.DepositStatus_Burned); err != nil {
-				return err
-			}
+			migrateDeposits(ctx, ck, types.DepositStatus_Confirmed)
+			migrateDeposits(ctx, ck, types.DepositStatus_Burned)
 		}
 
 		return nil
 	}
 }
 
-func migrateDeposits(ctx sdk.Context, ck chainKeeper, status types.DepositStatus) error {
+func migrateDeposits(ctx sdk.Context, ck chainKeeper, status types.DepositStatus) {
 	var prefix key.Key
 	switch status {
 	case types.DepositStatus_Confirmed:
@@ -71,12 +67,10 @@ func migrateDeposits(ctx sdk.Context, ck chainKeeper, status types.DepositStatus
 			ck.SetDeposit(ctx, newDeposit, status)
 		}
 	}
-
-	return nil
 }
 
 func getTransferEventsByTxIDAndAddress(ctx sdk.Context, ck chainKeeper, txID types.Hash, address types.Address) (events []types.Event) {
-	iter := sdk.KVStorePrefixIterator(ck.getStore(ctx).KVStore, eventPrefix.Append(utils.LowerCaseKey(txID.Hex())).AsKey())
+	iter := sdk.KVStorePrefixIterator(ck.getStore(ctx).KVStore, eventPrefix.Append(utils.LowerCaseKey(fmt.Sprintf("%s-", txID))).AsKey())
 	defer iter.Close()
 
 	for ; iter.Valid(); iter.Next() {

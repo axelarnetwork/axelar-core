@@ -1198,7 +1198,7 @@ func TestHandleConfirmedEvent(t *testing.T) {
 				}
 				count++
 
-				event := evmTestUtils.RandomEvent(types.EventConfirmed)
+				event := evmTestUtils.RandomGatewayEvent(types.EventConfirmed)
 				switch event.GetEvent().(type) {
 				case *types.Event_ContractCall:
 					e := event.GetEvent().(*types.Event_ContractCall)
