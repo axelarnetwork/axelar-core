@@ -894,7 +894,7 @@ func CommandIDsToStrings(commandIDs []CommandID) []string {
 
 // GetID returns an unique ID for the event
 func (m Event) GetID() EventID {
-	return EventID(fmt.Sprintf("%s-%d", m.TxID, m.Index))
+	return EventID(fmt.Sprintf("%s-%d", m.TxID.Hex(), m.Index))
 }
 
 // ValidateBasic returns an error if the event is invalid

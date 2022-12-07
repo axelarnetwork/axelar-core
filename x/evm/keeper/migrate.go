@@ -70,7 +70,7 @@ func migrateDeposits(ctx sdk.Context, ck chainKeeper, status types.DepositStatus
 }
 
 func getTransferEventsByTxIDAndAddress(ctx sdk.Context, ck chainKeeper, txID types.Hash, address types.Address) (events []types.Event) {
-	iter := sdk.KVStorePrefixIterator(ck.getStore(ctx).KVStore, eventPrefix.Append(utils.LowerCaseKey(fmt.Sprintf("%s-", txID))).AsKey())
+	iter := sdk.KVStorePrefixIterator(ck.getStore(ctx).KVStore, eventPrefix.Append(utils.LowerCaseKey(fmt.Sprintf("%s-", txID.Hex()))).AsKey())
 	defer iter.Close()
 
 	for ; iter.Valid(); iter.Next() {
