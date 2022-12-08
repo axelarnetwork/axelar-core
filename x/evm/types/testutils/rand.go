@@ -63,13 +63,17 @@ func RandomChain(cdc codec.Codec) types.GenesisState_Chain {
 		return chain
 	}
 
+	chain.LegacyConfirmedDeposits = RandomDeposits()
+	chain.LegacyBurnedDeposits = RandomDeposits()
 	chain.ConfirmedDeposits = RandomDeposits()
 	chain.BurnedDeposits = RandomDeposits()
 
-	chain.BurnerInfos = RandomBurnerInfos(len(chain.ConfirmedDeposits) + len(chain.BurnedDeposits))
+	chain.BurnerInfos = RandomBurnerInfos(len(chain.LegacyConfirmedDeposits) + len(chain.LegacyBurnedDeposits) + len(chain.ConfirmedDeposits) + len(chain.BurnedDeposits))
 
-	correctDepositsAndBurnerInfos(confirmedTokens, chain.ConfirmedDeposits, chain.BurnerInfos)
-	correctDepositsAndBurnerInfos(confirmedTokens, chain.BurnedDeposits, chain.BurnerInfos[len(chain.ConfirmedDeposits):])
+	correctDepositsAndBurnerInfos(confirmedTokens, chain.LegacyConfirmedDeposits, chain.BurnerInfos)
+	correctDepositsAndBurnerInfos(confirmedTokens, chain.LegacyBurnedDeposits, chain.BurnerInfos[len(chain.LegacyConfirmedDeposits):])
+	correctDepositsAndBurnerInfos(confirmedTokens, chain.ConfirmedDeposits, chain.BurnerInfos[len(chain.LegacyConfirmedDeposits)+len(chain.LegacyBurnedDeposits):])
+	correctDepositsAndBurnerInfos(confirmedTokens, chain.BurnedDeposits, chain.BurnerInfos[len(chain.LegacyConfirmedDeposits)+len(chain.LegacyBurnedDeposits)+len(chain.ConfirmedDeposits):])
 
 	return chain
 }

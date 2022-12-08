@@ -44,16 +44,18 @@ func DefaultChains() []GenesisState_Chain {
 	var chains []GenesisState_Chain
 	for _, params := range DefaultParams() {
 		chain := GenesisState_Chain{
-			Params:              params,
-			BurnerInfos:         nil,
-			CommandQueue:        utils.QueueState{},
-			ConfirmedDeposits:   nil,
-			BurnedDeposits:      nil,
-			CommandBatches:      nil,
-			Gateway:             Gateway{},
-			Tokens:              nil,
-			Events:              nil,
-			ConfirmedEventQueue: utils.QueueState{},
+			Params:                  params,
+			BurnerInfos:             nil,
+			CommandQueue:            utils.QueueState{},
+			LegacyConfirmedDeposits: nil,
+			LegacyBurnedDeposits:    nil,
+			ConfirmedDeposits:       nil,
+			BurnedDeposits:          nil,
+			CommandBatches:          nil,
+			Gateway:                 Gateway{},
+			Tokens:                  nil,
+			Events:                  nil,
+			ConfirmedEventQueue:     utils.QueueState{},
 		}
 		chains = append(chains, chain)
 	}
@@ -111,7 +113,7 @@ func (m GenesisState) Validate() error {
 			}
 		}
 
-		for i, deposit := range chain.ConfirmedDeposits {
+		for i, deposit := range append(chain.ConfirmedDeposits, chain.LegacyConfirmedDeposits...) {
 			if err := deposit.ValidateBasic(); err != nil {
 				return getValidateError(j, sdkerrors.Wrapf(err, "invalid confirmed deposit %d", i))
 			}
@@ -121,7 +123,7 @@ func (m GenesisState) Validate() error {
 			}
 		}
 
-		for i, deposit := range chain.BurnedDeposits {
+		for i, deposit := range append(chain.BurnedDeposits, chain.LegacyBurnedDeposits...) {
 			if err := deposit.ValidateBasic(); err != nil {
 				return getValidateError(j, sdkerrors.Wrapf(err, "invalid burned deposit %d", i))
 			}

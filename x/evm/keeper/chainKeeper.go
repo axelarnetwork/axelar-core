@@ -311,6 +311,47 @@ func (k chainKeeper) GetPendingCommands(ctx sdk.Context) []types.Command {
 	return commands
 }
 
+// Deprecated: Use SetDeposit instead
+func (k chainKeeper) setLegacyDeposit(ctx sdk.Context, deposit types.ERC20Deposit, state types.DepositStatus) {
+	switch state {
+	case types.DepositStatus_Confirmed:
+		funcs.MustNoErr(
+			k.getStore(ctx).SetNewValidated(
+				key.FromStr(confirmedDepositPrefixDeprecated).Append(key.FromStr(deposit.TxID.Hex())).Append(key.FromStr(deposit.BurnerAddress.Hex())), &deposit))
+	case types.DepositStatus_Burned:
+		funcs.MustNoErr(
+			k.getStore(ctx).SetNewValidated(
+				key.FromStr(burnedDepositPrefixDeprecated).Append(key.FromStr(deposit.TxID.Hex())).Append(key.FromStr(deposit.BurnerAddress.Hex())), &deposit))
+	default:
+		panic("invalid deposit state")
+	}
+}
+
+// Deprecated: Use getConfirmedDeposits and getBurnedDeposits instead
+func (k chainKeeper) getLegacyDeposits(ctx sdk.Context, state types.DepositStatus) (deposits []types.ERC20Deposit) {
+	var prefix key.Key
+	switch state {
+	case types.DepositStatus_Confirmed:
+		prefix = key.FromStr(confirmedDepositPrefixDeprecated)
+	case types.DepositStatus_Burned:
+		prefix = key.FromStr(burnedDepositPrefixDeprecated)
+	default:
+		panic("invalid deposit state")
+	}
+
+	iter := k.getStore(ctx).IteratorNew(prefix)
+	defer utils.CloseLogError(iter, k.Logger(ctx))
+
+	for ; iter.Valid(); iter.Next() {
+		var deposit types.ERC20Deposit
+		iter.UnmarshalValue(&deposit)
+
+		deposits = append(deposits, deposit)
+	}
+
+	return deposits
+}
+
 // GetLegacyDeposit retrieves a confirmed/burned deposit by tx id and burner address
 // Deprecated: Use GetDeposit instead
 func (k chainKeeper) GetLegacyDeposit(ctx sdk.Context, txID types.Hash, burnAddr types.Address) (types.ERC20Deposit, types.DepositStatus, bool) {

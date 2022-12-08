@@ -98,6 +98,8 @@ func TestGetMigrationHandler(t *testing.T) {
 					assert.NoError(t, handler(ctx))
 
 					actual := getChainState(ctx, bk, chain)
+					assert.Len(t, actual.LegacyConfirmedDeposits, 6)
+					assert.Len(t, actual.LegacyBurnedDeposits, 6)
 					assert.Zero(t, len(actual.ConfirmedDeposits)+len(actual.BurnedDeposits))
 				}),
 
@@ -122,6 +124,8 @@ func TestGetMigrationHandler(t *testing.T) {
 					assert.NoError(t, handler(ctx))
 
 					actual := getChainState(ctx, bk, chain)
+					assert.Len(t, actual.LegacyConfirmedDeposits, 0)
+					assert.Len(t, actual.LegacyBurnedDeposits, 0)
 					assert.Len(t, actual.ConfirmedDeposits, 2)
 					assert.Len(t, actual.BurnedDeposits, 2)
 				}),
@@ -165,6 +169,8 @@ func TestGetMigrationHandler(t *testing.T) {
 					assert.NoError(t, handler(ctx))
 
 					actual := getChainState(ctx, bk, chain)
+					assert.Len(t, actual.LegacyConfirmedDeposits, 0)
+					assert.Len(t, actual.LegacyBurnedDeposits, 0)
 					assert.Len(t, actual.ConfirmedDeposits, 10)
 					assert.Len(t, actual.BurnedDeposits, 25)
 				}),
@@ -184,6 +190,8 @@ func TestGetMigrationHandler(t *testing.T) {
 					assert.NoError(t, handler(ctx))
 
 					actual := getChainState(ctx, bk, chain)
+					assert.Len(t, actual.LegacyConfirmedDeposits, 0)
+					assert.Len(t, actual.LegacyBurnedDeposits, 0)
 					assert.Len(t, actual.ConfirmedDeposits, 0)
 					assert.Len(t, actual.BurnedDeposits, 2)
 				}),
