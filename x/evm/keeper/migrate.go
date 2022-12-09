@@ -29,6 +29,8 @@ func Migrate8to9(bk *BaseKeeper, n types.Nexus) func(ctx sdk.Context) error {
 
 func migrateDeposits(ctx sdk.Context, ck chainKeeper, status types.DepositStatus) {
 	var iteratedDepositCount, ignoredDepositCount uint64
+	store := ck.getStore(ctx)
+	var toDelete [][]byte
 
 	var prefix key.Key
 	switch status {
@@ -38,7 +40,7 @@ func migrateDeposits(ctx sdk.Context, ck chainKeeper, status types.DepositStatus
 		prefix = key.FromStr(burnedDepositPrefixDeprecated)
 	}
 
-	iter := ck.getStore(ctx).IteratorNew(prefix)
+	iter := store.IteratorNew(prefix)
 	defer utils.CloseLogError(iter, ck.Logger(ctx))
 
 	for ; iter.Valid(); iter.Next() {
@@ -54,22 +56,12 @@ func migrateDeposits(ctx sdk.Context, ck chainKeeper, status types.DepositStatus
 			ignoredDepositCount++
 			continue
 		}
-
-		rawKey := iter.Key()
-		defer ck.getStore(ctx).DeleteRaw(rawKey)
+		toDelete = append(toDelete, iter.Key())
 
 		for _, event := range transferEvents {
-			_, existingDepositStatus, ok := ck.GetDeposit(ctx, event.TxID, event.Index)
+			existingDeposit, existingDepositStatus, ok := ck.GetDeposit(ctx, event.TxID, event.Index)
 			if ok && existingDepositStatus == status {
 				continue
-			}
-
-			if existingDepositStatus != status {
-				ck.Logger(ctx).Debug(fmt.Sprintf("deposit status changes from %s to %s", existingDepositStatus.String(), status.String()),
-					"chain", ck.GetName(),
-					"tx_id", event.TxID.Hex(),
-					"log_index", event.Index,
-				)
 			}
 
 			newDeposit := types.ERC20Deposit{
@@ -80,10 +72,22 @@ func migrateDeposits(ctx sdk.Context, ck chainKeeper, status types.DepositStatus
 				DestinationChain: deposit.DestinationChain,
 				BurnerAddress:    deposit.BurnerAddress,
 			}
-			ck.DeleteDeposit(ctx, newDeposit)
+
+			if ok && existingDepositStatus != status {
+				ck.Logger(ctx).Debug(fmt.Sprintf("deposit status changes from %s to %s", existingDepositStatus.String(), status.String()),
+					"chain", ck.GetName(),
+					"tx_id", event.TxID.Hex(),
+					"log_index", event.Index,
+					"burner_address", existingDeposit.BurnerAddress.Hex(),
+				)
+				ck.DeleteDeposit(ctx, newDeposit)
+			}
+
 			ck.SetDeposit(ctx, newDeposit, status)
 		}
 	}
+
+	slices.ForEach(toDelete, store.DeleteRaw)
 
 	ck.Logger(ctx).Debug(fmt.Sprintf("migrated %s deposits", status.String()),
 		"chain", ck.GetName(),
