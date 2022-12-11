@@ -292,7 +292,7 @@ func (q Querier) DepositState(c context.Context, req *types.DepositStateRequest)
 		return nil, status.Error(codes.NotFound, err.Error())
 	}
 
-	if _, status, ok := ck.GetDepositByTxIDBurnAddr(ctx, req.Params.TxID, req.Params.BurnerAddress); ok {
+	if _, status, ok := ck.GetLegacyDeposit(ctx, req.Params.TxID, req.Params.BurnerAddress); ok {
 		return &types.DepositStateResponse{Status: status}, nil
 	}
 
