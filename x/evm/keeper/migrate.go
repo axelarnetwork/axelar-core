@@ -3,68 +3,119 @@ package keeper
 import (
 	"encoding/hex"
 	"fmt"
-	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/utils/key"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
-	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 )
 
-// Migrate7To8 returns the handler that performs in-place store migrations
-func Migrate7To8(k *BaseKeeper, n types.Nexus) func(ctx sdk.Context) error {
+// Migrate8to9 returns the handler that performs in-place store migrations
+func Migrate8to9(bk *BaseKeeper, n types.Nexus) func(ctx sdk.Context) error {
 	return func(ctx sdk.Context) error {
-		chains := slices.Filter(n.GetChains(ctx), func(chain exported.Chain) bool { return chain.Module == types.ModuleName })
-		for _, chain := range chains {
-			if err := migrateBurnerInfoForChain(ctx, k, chain, burnerAddrPrefixDeprecated); err != nil {
-				return err
-			}
-			if err := migrateBurnerInfoForChain(ctx, k, chain, strings.ToLower(burnerAddrPrefixDeprecated)); err != nil {
-				return err
-			}
+		for _, chain := range slices.Filter(n.GetChains(ctx), types.IsEVMChain) {
+			ck := funcs.Must(bk.ForChain(ctx, chain.Name)).(chainKeeper)
 
-			k.Logger(ctx).Info(fmt.Sprintf("migrated all burner info keys for chain %s", chain.Name))
-
+			migrateDeposits(ctx, ck, types.DepositStatus_Confirmed)
+			migrateDeposits(ctx, ck, types.DepositStatus_Burned)
 		}
-		k.Logger(ctx).Info("burner info keys migration complete")
+
 		return nil
 	}
 }
 
-func migrateBurnerInfoForChain(ctx sdk.Context, k *BaseKeeper, chain exported.Chain, oldKey string) error {
-	ck, err := k.forChain(ctx, chain.Name)
-	if err != nil {
-		return err
+func migrateDeposits(ctx sdk.Context, ck chainKeeper, status types.DepositStatus) {
+	var iteratedDepositCount, ignoredDepositCount uint64
+	store := ck.getStore(ctx)
+	var toDelete [][]byte
+
+	var prefix key.Key
+	switch status {
+	case types.DepositStatus_Confirmed:
+		prefix = key.FromStr(confirmedDepositPrefixDeprecated)
+	case types.DepositStatus_Burned:
+		prefix = key.FromStr(burnedDepositPrefixDeprecated)
 	}
 
-	// migrate in batches so memory pressure doesn't become too large
-	keysToDelete := make([][]byte, 0, 1000)
-	for {
-		iterBurnerAddr := ck.getStore(ctx).Iterator(utils.KeyFromStr(oldKey))
+	iter := store.IteratorNew(prefix)
+	defer utils.CloseLogError(iter, ck.Logger(ctx))
 
-		if !iterBurnerAddr.Valid() {
-			return iterBurnerAddr.Close()
-		}
-		var burnerInfo types.BurnerInfo
-		for ; iterBurnerAddr.Valid() && len(keysToDelete) < 1000; iterBurnerAddr.Next() {
-			iterBurnerAddr.UnmarshalValue(&burnerInfo)
-			ck.SetBurnerInfo(ctx, burnerInfo)
-			keysToDelete = append(keysToDelete, iterBurnerAddr.Key())
-		}
+	for ; iter.Valid(); iter.Next() {
+		iteratedDepositCount++
 
-		if err := iterBurnerAddr.Close(); err != nil {
-			return err
-		}
+		var deposit types.ERC20Deposit
+		iter.UnmarshalValue(&deposit)
 
-		for _, burnerKey := range keysToDelete {
-			ck.getStore(ctx).DeleteRaw(burnerKey)
+		transferEvents := getTransferEventsByTxIDAndAddress(ctx, ck, deposit.TxID, deposit.BurnerAddress)
+		if len(transferEvents) == 0 {
+			// Deposits from the time when we had not started doing event processing.
+			// Their log indexes cannot be retrieved anymore and are therefore ignored.
+			ignoredDepositCount++
+			continue
 		}
+		toDelete = append(toDelete, iter.Key())
 
-		ck.Logger(ctx).Debug(fmt.Sprintf("migrated %d burner info keys for chain %s", len(keysToDelete), chain.Name))
-		keysToDelete = keysToDelete[:0]
+		for _, event := range transferEvents {
+			existingDeposit, existingDepositStatus, ok := ck.GetDeposit(ctx, event.TxID, event.Index)
+			if ok && existingDepositStatus == status {
+				continue
+			}
+
+			newDeposit := types.ERC20Deposit{
+				TxID:             event.TxID,
+				LogIndex:         event.Index,
+				Amount:           event.GetTransfer().Amount,
+				Asset:            deposit.Asset,
+				DestinationChain: deposit.DestinationChain,
+				BurnerAddress:    deposit.BurnerAddress,
+			}
+
+			if ok && existingDepositStatus != status {
+				ck.Logger(ctx).Debug(fmt.Sprintf("deposit status changes from %s to %s", existingDepositStatus.String(), status.String()),
+					"chain", ck.GetName(),
+					"tx_id", event.TxID.Hex(),
+					"log_index", event.Index,
+					"burner_address", existingDeposit.BurnerAddress.Hex(),
+				)
+				ck.DeleteDeposit(ctx, newDeposit)
+			}
+
+			ck.SetDeposit(ctx, newDeposit, status)
+		}
 	}
+
+	slices.ForEach(toDelete, store.DeleteRaw)
+
+	ck.Logger(ctx).Debug(fmt.Sprintf("migrated %s deposits", status.String()),
+		"chain", ck.GetName(),
+		"iterated_deposit_count", iteratedDepositCount,
+		"ignored_deposit_count", ignoredDepositCount,
+	)
+}
+
+func getTransferEventsByTxIDAndAddress(ctx sdk.Context, ck chainKeeper, txID types.Hash, address types.Address) (events []types.Event) {
+	iter := sdk.KVStorePrefixIterator(ck.getStore(ctx).KVStore, eventPrefix.Append(utils.LowerCaseKey(fmt.Sprintf("%s-", txID.Hex()))).AsKey())
+	defer iter.Close()
+
+	for ; iter.Valid(); iter.Next() {
+		var event types.Event
+		ck.cdc.MustUnmarshalLengthPrefixed(iter.Value(), &event)
+
+		if event.GetTransfer() == nil {
+			continue
+		}
+
+		if event.GetTransfer().To != address {
+			continue
+		}
+
+		events = append(events, event)
+	}
+
+	return events
 }
 
 // AlwaysMigrateBytecode migrates contracts bytecode for all evm chains (CRUCIAL, DO NOT DELETE AND ALWAYS REGISTER)

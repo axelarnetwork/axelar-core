@@ -829,7 +829,7 @@ func TestHandleConfirmDeposit(t *testing.T) {
 
 	depositFound := func(found bool) func() {
 		return func() {
-			sourceCk.GetDepositByTxIDBurnAddrFunc = func(ctx sdk.Context, txID types.Hash, burnerAddr types.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
+			sourceCk.GetLegacyDepositFunc = func(ctx sdk.Context, txID types.Hash, burnerAddr types.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
 				return types.ERC20Deposit{}, types.DepositStatus_Confirmed, found
 			}
 		}
@@ -1198,7 +1198,7 @@ func TestHandleConfirmedEvent(t *testing.T) {
 				}
 				count++
 
-				event := evmTestUtils.RandomEvent(types.EventConfirmed)
+				event := evmTestUtils.RandomGatewayEvent(types.EventConfirmed)
 				switch event.GetEvent().(type) {
 				case *types.Event_ContractCall:
 					e := event.GetEvent().(*types.Event_ContractCall)

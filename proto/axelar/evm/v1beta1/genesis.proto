@@ -29,6 +29,10 @@ message GenesisState {
     repeated Event events = 11 [ (gogoproto.nullable) = false ];
     utils.v1beta1.QueueState confirmed_event_queue = 12
         [ (gogoproto.nullable) = false ];
+    repeated ERC20Deposit legacy_confirmed_deposits = 13
+        [ (gogoproto.nullable) = false ];
+    repeated ERC20Deposit legacy_burned_deposits = 14
+        [ (gogoproto.nullable) = false ];
   }
 
   repeated Chain chains = 3 [ (gogoproto.nullable) = false ];

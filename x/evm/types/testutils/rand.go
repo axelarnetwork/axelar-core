@@ -44,7 +44,7 @@ func RandomChain(cdc codec.Codec) types.GenesisState_Chain {
 	eventCount := rand.I64Between(1, 100)
 	events := make([]types.Event, eventCount)
 	for i := 0; i < int(eventCount); i++ {
-		events[i] = RandomEvent(types.EventConfirmed, types.EventCompleted, types.EventFailed)
+		events[i] = RandomGatewayEvent(types.EventConfirmed, types.EventCompleted, types.EventFailed)
 	}
 
 	chain := types.GenesisState_Chain{
@@ -63,13 +63,17 @@ func RandomChain(cdc codec.Codec) types.GenesisState_Chain {
 		return chain
 	}
 
+	chain.LegacyConfirmedDeposits = RandomDeposits()
+	chain.LegacyBurnedDeposits = RandomDeposits()
 	chain.ConfirmedDeposits = RandomDeposits()
 	chain.BurnedDeposits = RandomDeposits()
 
-	chain.BurnerInfos = RandomBurnerInfos(len(chain.ConfirmedDeposits) + len(chain.BurnedDeposits))
+	chain.BurnerInfos = RandomBurnerInfos(len(chain.LegacyConfirmedDeposits) + len(chain.LegacyBurnedDeposits) + len(chain.ConfirmedDeposits) + len(chain.BurnedDeposits))
 
-	correctDepositsAndBurnerInfos(confirmedTokens, chain.ConfirmedDeposits, chain.BurnerInfos)
-	correctDepositsAndBurnerInfos(confirmedTokens, chain.BurnedDeposits, chain.BurnerInfos[len(chain.ConfirmedDeposits):])
+	correctDepositsAndBurnerInfos(confirmedTokens, chain.LegacyConfirmedDeposits, chain.BurnerInfos)
+	correctDepositsAndBurnerInfos(confirmedTokens, chain.LegacyBurnedDeposits, chain.BurnerInfos[len(chain.LegacyConfirmedDeposits):])
+	correctDepositsAndBurnerInfos(confirmedTokens, chain.ConfirmedDeposits, chain.BurnerInfos[len(chain.LegacyConfirmedDeposits)+len(chain.LegacyBurnedDeposits):])
+	correctDepositsAndBurnerInfos(confirmedTokens, chain.BurnedDeposits, chain.BurnerInfos[len(chain.LegacyConfirmedDeposits)+len(chain.LegacyBurnedDeposits)+len(chain.ConfirmedDeposits):])
 
 	return chain
 }
@@ -171,6 +175,7 @@ func RandomDeposits() []types.ERC20Deposit {
 func RandomDeposit() types.ERC20Deposit {
 	return types.ERC20Deposit{
 		TxID:             RandomHash(),
+		LogIndex:         uint64(rand.I64Between(0, 100)),
 		Amount:           sdk.NewUint(uint64(rand.PosI64())),
 		Asset:            rand.Denom(5, 10),
 		DestinationChain: nexus.ChainName(randomNormalizedStr(5, 20)),
@@ -214,6 +219,14 @@ func RandomCommand() types.Command {
 		return types.NewMultisigTransferCommand(chainID, multisigTestutils.KeyID(), key)
 	default:
 		panic(fmt.Sprintf("unknown command type %s", commandType.String()))
+	}
+}
+
+// RandomEventTransfer returns a random (valid) types.EventTransfer
+func RandomEventTransfer() types.EventTransfer {
+	return types.EventTransfer{
+		To:     RandomAddress(),
+		Amount: rand.UintBetween(sdk.OneUint(), sdk.NewUint(100000)),
 	}
 }
 
@@ -417,8 +430,12 @@ func randomNormalizedStr(min, max int) string {
 	return strings.ReplaceAll(utils.NormalizeString(rand.StrBetween(min, max)), utils.DefaultDelimiter, "-")
 }
 
-// RandomEvent returns a random event for testing
-func RandomEvent(statuses ...types.Event_Status) types.Event {
+// RandomGatewayEvent returns a random event for testing
+func RandomGatewayEvent(statuses ...types.Event_Status) types.Event {
+	if len(statuses) == 0 {
+		statuses = []types.Event_Status{types.EventConfirmed, types.EventCompleted, types.EventFailed}
+	}
+
 	payload := rand.Bytes(int(rand.I64Between(1, 100)))
 
 	return rand.Of(
