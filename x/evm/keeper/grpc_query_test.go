@@ -580,7 +580,7 @@ func TestDepositState(t *testing.T) {
 		When2(whenReqIsCreated).
 		When2(whenStatusIsExpected).
 		When("some deposit stored in the legacy way exists", func() {
-			chainKeeper.GetDepositByTxIDBurnAddrFunc = func(ctx sdk.Context, txID types.Hash, burnerAddr types.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
+			chainKeeper.GetLegacyDepositFunc = func(ctx sdk.Context, txID types.Hash, burnerAddr types.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
 				return types.ERC20Deposit{}, expected, txID == req.Params.TxID && burnerAddr == req.Params.BurnerAddress
 			}
 		}).
@@ -596,7 +596,7 @@ func TestDepositState(t *testing.T) {
 		When2(whenReqIsCreated).
 		When2(whenStatusIsExpected).
 		When("some deposit stored in the legacy way does not exist", func() {
-			chainKeeper.GetDepositByTxIDBurnAddrFunc = func(ctx sdk.Context, txID types.Hash, burnerAddr types.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
+			chainKeeper.GetLegacyDepositFunc = func(ctx sdk.Context, txID types.Hash, burnerAddr types.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
 				return types.ERC20Deposit{}, types.DepositStatus_None, false
 			}
 		}).
@@ -620,7 +620,7 @@ func TestDepositState(t *testing.T) {
 	givenQuerier.
 		When2(whenReqIsCreated).
 		When("no deposit with matching tx ID and burner address exists", func() {
-			chainKeeper.GetDepositByTxIDBurnAddrFunc = func(ctx sdk.Context, txID types.Hash, burnerAddr types.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
+			chainKeeper.GetLegacyDepositFunc = func(ctx sdk.Context, txID types.Hash, burnerAddr types.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
 				return types.ERC20Deposit{}, types.DepositStatus_None, false
 			}
 			chainKeeper.GetDepositsByTxIDFunc = func(ctx sdk.Context, txID types.Hash, status types.DepositStatus) ([]types.ERC20Deposit, error) {

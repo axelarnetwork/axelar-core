@@ -160,7 +160,7 @@ func (am AppModule) LegacyQuerierHandler(*codec.LegacyAmino) sdk.Querier {
 func (am AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterQueryServiceServer(cfg.QueryServer(), keeper.NewGRPCQuerier(am.keeper, am.nexus, am.multisig))
 
-	err := cfg.RegisterMigration(types.ModuleName, 7, keeper.AlwaysMigrateBytecode(am.keeper, am.nexus, keeper.Migrate7To8(am.keeper, am.nexus)))
+	err := cfg.RegisterMigration(types.ModuleName, 8, keeper.AlwaysMigrateBytecode(am.keeper, am.nexus, keeper.Migrate8to9(am.keeper, am.nexus)))
 	if err != nil {
 		panic(err)
 	}
@@ -179,4 +179,4 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 }
 
 // ConsensusVersion implements AppModule/ConsensusVersion.
-func (AppModule) ConsensusVersion() uint64 { return 8 }
+func (AppModule) ConsensusVersion() uint64 { return 9 }

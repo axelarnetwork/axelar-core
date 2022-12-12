@@ -3306,6 +3306,8 @@ GenesisState represents the genesis state
 | `tokens` | [ERC20TokenMetadata](#axelar.evm.v1beta1.ERC20TokenMetadata) | repeated |  |
 | `events` | [Event](#axelar.evm.v1beta1.Event) | repeated |  |
 | `confirmed_event_queue` | [axelar.utils.v1beta1.QueueState](#axelar.utils.v1beta1.QueueState) |  |  |
+| `legacy_confirmed_deposits` | [ERC20Deposit](#axelar.evm.v1beta1.ERC20Deposit) | repeated |  |
+| `legacy_burned_deposits` | [ERC20Deposit](#axelar.evm.v1beta1.ERC20Deposit) | repeated |  |
 
 
 

@@ -188,7 +188,7 @@ func handleConfirmDeposit(ctx sdk.Context, event types.Event, bk types.BaseKeepe
 	}
 
 	// this check is only needed for historical reason.
-	if _, _, ok := ck.GetDepositByTxIDBurnAddr(ctx, event.TxID, burnerInfo.BurnerAddress); ok {
+	if _, _, ok := ck.GetLegacyDeposit(ctx, event.TxID, burnerInfo.BurnerAddress); ok {
 		return fmt.Errorf("%s deposit %s-%s already exists", chain.Name.String(), event.TxID.Hex(), burnerInfo.BurnerAddress.Hex())
 	}
 
