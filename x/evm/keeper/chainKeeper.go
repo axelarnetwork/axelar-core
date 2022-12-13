@@ -24,40 +24,36 @@ import (
 )
 
 var (
-	gatewayKey             = key.FromStr("gateway")                        // Deprecated: migrate to gatewayKeyNew
-	unsignedBatchIDKey     = key.FromStr("unsigned_command_batch_id")      // Deprecated: migrate to unsignedBatchIDKeyNew
-	latestSignedBatchIDKey = key.FromStr("latest_signed_command_batch_id") // Deprecated: migrate to latestSignedBatchIDKeyNew
+	gatewayKey                       = key.FromStr("gateway")                        // Deprecated: migrate to gatewayKeyNew
+	unsignedBatchIDKey               = key.FromStr("unsigned_command_batch_id")      // Deprecated: migrate to unsignedBatchIDKeyNew
+	latestSignedBatchIDKey           = key.FromStr("latest_signed_command_batch_id") // Deprecated: migrate to latestSignedBatchIDKeyNew
+	tokenMetadataByAssetPrefix       = "token_deployment_by_asset"                   // Deprecated: migrate to tokenMetadataByAssetPrefixNew
+	tokenMetadataBySymbolPrefix      = key.FromStr("token_deployment_by_symbol")     // Deprecated: migrate to tokenMetadataBySymbolPrefixNew
+	confirmedDepositPrefixDeprecated = "confirmed_deposit"                           // Deprecated
+	burnedDepositPrefixDeprecated    = "burned_deposit"                              // Deprecated
+	commandBatchPrefix               = "batched_commands"                            // Deprecated: migrate to commandBatchPrefixNew
+	commandPrefix                    = "command"                                     // Deprecated: migrate to commandPrefixNew
+	eventPrefix                      = utils.KeyFromStr("event")                     // Deprecated: migrate to eventPrefixNew
+	confirmedEventQueueName          = "confirmed_event_queue"                       // Deprecated: migrate to confirmedEventQueueNameNew
+	commandQueueName                 = "cmd_queue"                                   // Deprecated: migrate to commandQueueNameNew
 
-	tokenMetadataByAssetPrefix  = "token_deployment_by_asset"               // Deprecated: migrate to tokenMetadataByAssetPrefixNew
-	tokenMetadataBySymbolPrefix = key.FromStr("token_deployment_by_symbol") // Deprecated: migrate to tokenMetadataBySymbolPrefixNew
-	confirmedDepositPrefixDeprecated = "confirmed_deposit" // Deprecated
-	burnedDepositPrefixDeprecated    = "burned_deposit"    // Deprecated
-	commandBatchPrefix          = "batched_commands"                        // Deprecated: migrate to commandBatchPrefixNew
-	commandPrefix               = "command"                                 // Deprecated: migrate to commandPrefixNew
-	eventPrefix                 = utils.KeyFromStr("event")                 // Deprecated: migrate to eventPrefixNew
+	burnerAddrPrefix       = key.RegisterStaticKey(types.ModuleName+types.ChainNamespace, 1)
+	confirmedDepositPrefix = key.RegisterStaticKey(types.ModuleName+types.ChainNamespace, 2)
+	burnedDepositPrefix    = key.RegisterStaticKey(types.ModuleName+types.ChainNamespace, 3)
 
-	burnerAddrPrefix       = key.FromUInt[uint](1)
-	confirmedDepositPrefix = key.FromUInt[uint](2)
-	burnedDepositPrefix    = key.FromUInt[uint](3)
-
-	commandQueueName        = "cmd_queue" // Deprecated: migrate to commandQueueNameNew
-	confirmedEventQueueName = "confirmed_event_queue" // Deprecated: migrate to confirmedEventQueueNameNew
-
-	gatewayKeyNew             = key.RegisterStaticKey(types.ModuleName, 4)
-	unsignedBatchIDKeyNew     = key.RegisterStaticKey(types.ModuleName, 5)
-	latestSignedBatchIDKeyNew = key.RegisterStaticKey(types.ModuleName, 6)
-
-	tokenMetadataByAssetPrefixNew  = key.RegisterStaticKey(types.ModuleName, 7)
-	tokenMetadataBySymbolPrefixNew = key.RegisterStaticKey(types.ModuleName, 8)
-	confirmedDepositPrefixNew      = key.RegisterStaticKey(types.ModuleName, 9)
-	burnedDepositPrefixNew         = key.RegisterStaticKey(types.ModuleName, 10)
-	commandBatchPrefixNew          = key.RegisterStaticKey(types.ModuleName, 11)
-	commandPrefixNew               = key.RegisterStaticKey(types.ModuleName, 12)
-	burnerAddrPrefixNew            = key.RegisterStaticKey(types.ModuleName, 13)
-	eventPrefixNew                 = key.RegisterStaticKey(types.ModuleName, 14)
-
-	commandQueueNameNew        = key.RegisterStaticKey(types.ModuleName, 15)
-	confirmedEventQueueNameNew = key.RegisterStaticKey(types.ModuleName, 16)
+	gatewayKeyNew                  = key.RegisterStaticKey(types.ModuleName+types.ChainNamespace, 4)
+	unsignedBatchIDKeyNew          = key.RegisterStaticKey(types.ModuleName+types.ChainNamespace, 5)
+	latestSignedBatchIDKeyNew      = key.RegisterStaticKey(types.ModuleName+types.ChainNamespace, 6)
+	tokenMetadataByAssetPrefixNew  = key.RegisterStaticKey(types.ModuleName+types.ChainNamespace, 7)
+	tokenMetadataBySymbolPrefixNew = key.RegisterStaticKey(types.ModuleName+types.ChainNamespace, 8)
+	confirmedDepositPrefixNew      = key.RegisterStaticKey(types.ModuleName+types.ChainNamespace, 9)
+	burnedDepositPrefixNew         = key.RegisterStaticKey(types.ModuleName+types.ChainNamespace, 10)
+	commandBatchPrefixNew          = key.RegisterStaticKey(types.ModuleName+types.ChainNamespace, 11)
+	commandPrefixNew               = key.RegisterStaticKey(types.ModuleName+types.ChainNamespace, 12)
+	burnerAddrPrefixNew            = key.RegisterStaticKey(types.ModuleName+types.ChainNamespace, 13)
+	eventPrefixNew                 = key.RegisterStaticKey(types.ModuleName+types.ChainNamespace, 14)
+	commandQueueNameNew            = key.RegisterStaticKey(types.ModuleName+types.ChainNamespace, 15)
+	confirmedEventQueueNameNew     = key.RegisterStaticKey(types.ModuleName+types.ChainNamespace, 16)
 )
 
 var _ types.ChainKeeper = chainKeeper{}
