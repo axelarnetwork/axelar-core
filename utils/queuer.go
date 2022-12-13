@@ -3,6 +3,8 @@ package utils
 import (
 	"encoding/binary"
 	"fmt"
+	"github.com/axelarnetwork/axelar-core/utils/key"
+	"github.com/axelarnetwork/utils/funcs"
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/codec"
