@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/codec"
+	prfx "github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/tendermint/tendermint/libs/log"
@@ -48,6 +49,10 @@ func NewNormalizedStore(store sdk.KVStore, cdc codec.BinaryCodec) KVStore {
 		KVStore: store,
 		cdc:     cdc,
 	}
+}
+
+func NewPrefixStore(store KVStore, prefix key.Key) KVStore {
+	return NewNormalizedStore(prfx.NewStore(store.KVStore, prefix.Bytes()), store.cdc)
 }
 
 // Set marshals the value and stores it under the given key

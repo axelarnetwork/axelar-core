@@ -128,7 +128,7 @@ func (k Keeper) GetVoteRouter() types.VoteRouter {
 }
 
 // GetPollQueue returns the poll queue
-func (k Keeper) GetPollQueue(ctx sdk.Context) utils.KVQueue {
+func (k Keeper) GetPollQueue(ctx sdk.Context) utils.GeneralKVQueue {
 	return utils.NewGeneralKVQueue(
 		pollQueueName,
 		k.getKVStore(ctx),

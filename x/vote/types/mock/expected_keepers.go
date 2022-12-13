@@ -33,7 +33,7 @@ var _ types.Voter = &VoterMock{}
 // 			GetPollFunc: func(ctx sdk.Context, id github_com_axelarnetwork_axelar_core_x_vote_exported.PollID) (github_com_axelarnetwork_axelar_core_x_vote_exported.Poll, bool) {
 // 				panic("mock out the GetPoll method")
 // 			},
-// 			GetPollQueueFunc: func(ctx sdk.Context) utils.KVQueue {
+// 			GetPollQueueFunc: func(ctx sdk.Context) utils.GeneralKVQueue {
 // 				panic("mock out the GetPollQueue method")
 // 			},
 // 			GetVoteRouterFunc: func() types.VoteRouter {
@@ -59,7 +59,7 @@ type VoterMock struct {
 	GetPollFunc func(ctx sdk.Context, id github_com_axelarnetwork_axelar_core_x_vote_exported.PollID) (github_com_axelarnetwork_axelar_core_x_vote_exported.Poll, bool)
 
 	// GetPollQueueFunc mocks the GetPollQueue method.
-	GetPollQueueFunc func(ctx sdk.Context) utils.KVQueue
+	GetPollQueueFunc func(ctx sdk.Context) utils.GeneralKVQueue
 
 	// GetVoteRouterFunc mocks the GetVoteRouter method.
 	GetVoteRouterFunc func() types.VoteRouter
@@ -212,7 +212,7 @@ func (mock *VoterMock) GetPollCalls() []struct {
 }
 
 // GetPollQueue calls GetPollQueueFunc.
-func (mock *VoterMock) GetPollQueue(ctx sdk.Context) utils.KVQueue {
+func (mock *VoterMock) GetPollQueue(ctx sdk.Context) utils.GeneralKVQueue {
 	if mock.GetPollQueueFunc == nil {
 		panic("VoterMock.GetPollQueueFunc: method is nil but Voter.GetPollQueue was just called")
 	}

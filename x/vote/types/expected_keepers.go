@@ -17,7 +17,7 @@ type Voter interface {
 	Logger(ctx sdk.Context) log.Logger
 	GetVoteRouter() VoteRouter
 	GetPoll(ctx sdk.Context, id exported.PollID) (exported.Poll, bool)
-	GetPollQueue(ctx sdk.Context) utils.KVQueue
+	GetPollQueue(ctx sdk.Context) utils.GeneralKVQueue
 	DeletePoll(ctx sdk.Context, pollID exported.PollID)
 	GetParams(ctx sdk.Context) (params Params)
 }

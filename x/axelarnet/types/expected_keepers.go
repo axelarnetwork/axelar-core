@@ -30,7 +30,7 @@ type BaseKeeper interface {
 	GetCosmosChains(ctx sdk.Context) []nexus.ChainName
 	GetCosmosChainByName(ctx sdk.Context, chain nexus.ChainName) (CosmosChain, bool)
 	EnqueueIBCTransfer(ctx sdk.Context, transfer IBCTransfer) error
-	GetIBCTransferQueue(ctx sdk.Context) utils.KVQueue
+	GetIBCTransferQueue(ctx sdk.Context) utils.GeneralKVQueue
 	SetSeqIDMapping(ctx sdk.Context, t IBCTransfer) error
 	SetTransferFailed(ctx sdk.Context, transferID nexus.TransferID) error
 }

@@ -43,7 +43,7 @@ var _ axelarnettypes.BaseKeeper = &BaseKeeperMock{}
 // 			GetEndBlockerLimitFunc: func(ctx cosmossdktypes.Context) uint64 {
 // 				panic("mock out the GetEndBlockerLimit method")
 // 			},
-// 			GetIBCTransferQueueFunc: func(ctx cosmossdktypes.Context) utils.KVQueue {
+// 			GetIBCTransferQueueFunc: func(ctx cosmossdktypes.Context) utils.GeneralKVQueue {
 // 				panic("mock out the GetIBCTransferQueue method")
 // 			},
 // 			GetRouteTimeoutWindowFunc: func(ctx cosmossdktypes.Context) uint64 {
@@ -81,7 +81,7 @@ type BaseKeeperMock struct {
 	GetEndBlockerLimitFunc func(ctx cosmossdktypes.Context) uint64
 
 	// GetIBCTransferQueueFunc mocks the GetIBCTransferQueue method.
-	GetIBCTransferQueueFunc func(ctx cosmossdktypes.Context) utils.KVQueue
+	GetIBCTransferQueueFunc func(ctx cosmossdktypes.Context) utils.GeneralKVQueue
 
 	// GetRouteTimeoutWindowFunc mocks the GetRouteTimeoutWindow method.
 	GetRouteTimeoutWindowFunc func(ctx cosmossdktypes.Context) uint64
@@ -304,7 +304,7 @@ func (mock *BaseKeeperMock) GetEndBlockerLimitCalls() []struct {
 }
 
 // GetIBCTransferQueue calls GetIBCTransferQueueFunc.
-func (mock *BaseKeeperMock) GetIBCTransferQueue(ctx cosmossdktypes.Context) utils.KVQueue {
+func (mock *BaseKeeperMock) GetIBCTransferQueue(ctx cosmossdktypes.Context) utils.GeneralKVQueue {
 	if mock.GetIBCTransferQueueFunc == nil {
 		panic("BaseKeeperMock.GetIBCTransferQueueFunc: method is nil but BaseKeeper.GetIBCTransferQueue was just called")
 	}

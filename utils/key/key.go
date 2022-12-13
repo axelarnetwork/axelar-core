@@ -3,9 +3,9 @@ package key
 import (
 	"bytes"
 	"fmt"
-	"golang.org/x/crypto/sha3"
 	"strings"
 
+	"golang.org/x/crypto/sha3"
 	"golang.org/x/exp/constraints"
 
 	"github.com/axelarnetwork/utils/convert"
@@ -106,4 +106,22 @@ func FromStrHashed(key string) Key {
 // FromHashed creates a new Key from a fmt.Stringer interface
 func FromHashed(key fmt.Stringer) Key {
 	return FromStrHashed(key.String())
+}
+
+func FromRaw(key []byte) Key {
+	return &basicKey{particles: [][]byte{key}}
+}
+
+func FromAny(key any) Key {
+	switch key := key.(type) {
+	case []byte:
+		return FromBzHashed(key)
+	case string:
+		return FromStrHashed(key)
+	case fmt.Stringer:
+		return FromHashed(key)
+	default:
+		s := fmt.Sprintf("%v", key)
+		return FromStrHashed(s)
+	}
 }

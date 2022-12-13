@@ -56,7 +56,7 @@ func (k BaseKeeper) InitGenesis(ctx sdk.Context, state types.GenesisState) {
 		if err := ck.validateConfirmedEventQueueState(chain.ConfirmedEventQueue, confirmedEventQueueName); err != nil {
 			panic(err)
 		}
-		ck.GetConfirmedEventQueue(ctx).(utils.GeneralKVQueue).ImportState(chain.ConfirmedEventQueue)
+		ck.GetConfirmedEventQueue(ctx).ImportState(chain.ConfirmedEventQueue)
 	}
 }
 
@@ -83,7 +83,7 @@ func (k BaseKeeper) getChains(ctx sdk.Context) []types.GenesisState_Chain {
 			Gateway:             ck.getGateway(ctx),
 			Tokens:              ck.getTokensMetadata(ctx),
 			Events:              ck.getEvents(ctx),
-			ConfirmedEventQueue: ck.GetConfirmedEventQueue(ctx).(utils.GeneralKVQueue).ExportState(),
+			ConfirmedEventQueue: ck.GetConfirmedEventQueue(ctx).ExportState(),
 		}
 		chains = append(chains, chain)
 	}

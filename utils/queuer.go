@@ -3,8 +3,6 @@ package utils
 import (
 	"encoding/binary"
 	"fmt"
-	"github.com/axelarnetwork/axelar-core/utils/key"
-	"github.com/axelarnetwork/utils/funcs"
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -12,36 +10,19 @@ import (
 	gogoprototypes "github.com/gogo/protobuf/types"
 	"github.com/tendermint/tendermint/libs/log"
 	db "github.com/tendermint/tm-db"
+
+	"github.com/axelarnetwork/axelar-core/utils/key"
+	"github.com/axelarnetwork/utils/funcs"
 )
 
 var (
 	currIdx = key.FromUInt[uint](1)
 	queue   = key.FromUInt[uint](2)
+	index   = key.FromUInt[uint](3)
 )
 
-//go:generate moq -out ./mock/queuer.go -pkg mock . KVQueue
-
-// KVQueue represents a queue built with the KVStore
-type KVQueue interface {
-	// Enqueue pushes the given value into the queue with the given key
-	Enqueue(key Key, value codec.ProtoMarshaler)
-	// Dequeue pops the first item in queue and stores it in the given value
-	Dequeue(value codec.ProtoMarshaler) bool
-	// DequeueIf pops the first item in queue iff it matches the given filter and stores it in the given value
-	DequeueIf(value codec.ProtoMarshaler, filter func(value codec.ProtoMarshaler) bool) bool
-	// DequeueUntil pops the first item in queue that matches the given filter and stores it in the given value
-	DequeueUntil(value codec.ProtoMarshaler, filter func(value codec.ProtoMarshaler) bool) bool
-	// IsEmpty returns true if the queue is empty; false otherwise
-	IsEmpty() bool
-
-	//TODO: convert to iterator
-	Keys() []Key
-}
-
-var _ KVQueue = GeneralKVQueue{}
-var _ KVQueue = BlockHeightKVQueue{}
-
 // GeneralKVQueue is a queue that orders items based on the given prioritizer function
+// Deprecated
 type GeneralKVQueue struct {
 	name        StringKey
 	store       KVStore
@@ -179,17 +160,18 @@ func (q GeneralKVQueue) ImportState(state QueueState) {
 // ValidateBasic returns an error if the given queue state is invalid
 func (m QueueState) ValidateBasic(queueName ...string) error {
 	itemKeySeen := make(map[string]bool)
-	for key, item := range m.Items {
+	for itemKey, item := range m.Items {
 		if itemKeySeen[string(item.Key)] {
 			return fmt.Errorf("duplicate item key")
 		}
 
-		if len(key) == 0 {
+		if len(itemKey) == 0 {
 			return fmt.Errorf("queue key cannot be empty")
 		}
 
-		if len(queueName) > 0 && !strings.HasPrefix(key, fmt.Sprintf("%s%s", queueName[0], DefaultDelimiter)) {
-			return fmt.Errorf("queue key %s is invalid for queue %s", key, queueName[0])
+		// TODO: migrate for new queue
+		if len(queueName) > 0 && !strings.HasPrefix(itemKey, fmt.Sprintf("%s%s", queueName[0], DefaultDelimiter)) {
+			return fmt.Errorf("queue key %s is invalid for queue %s", itemKey, queueName[0])
 		}
 
 		if len(item.Key) == 0 {
@@ -225,72 +207,109 @@ func NewBlockHeightKVQueue(name string, store KVStore, blockHeight int64, logger
 	}
 }
 
+// Queue is a generic persistent queue which is able to add priority to enqueued items
 type Queue[T ValidatedProtoMarshaler] struct {
-	name        key.Key
 	store       KVStore
 	prioritizer func(value T) key.Key
 }
 
-func NewQueue[T ValidatedProtoMarshaler](name key.Key, store KVStore, prioritizer func(value T) key.Key) Queue[T] {
+// NewQueue creates a new queue persisting items to the given name namespace. Use the prioritizer function to add a prefix to the item to adjust its queue ranking
+func NewQueue[T ValidatedProtoMarshaler](store KVStore, name key.Key, prioritizer func(value T) key.Key) Queue[T] {
 	return Queue[T]{
-		name:        name,
-		store:       store,
+		store:       NewPrefixStore(store, name),
 		prioritizer: prioritizer,
 	}
 }
 
+// Enqueue adds an item to the queue with a ranking based on the prioritizer. Items with the same priority queue get sorted in FIFO order.
+// Returns an error if the item's ValidateBasic() function returns an error
 func (q Queue[T]) Enqueue(value T) error {
-	idx := q.getCurrIdx()
-	if err := q.store.SetNewValidated(q.name.
-		Append(queue).
-		Append(q.prioritizer(value)).
-		Append(key.FromUInt(idx)), value); err != nil {
-		return err
-	}
-
-	return q.setCurrIdx(idx + 1)
+	_, err := q.enqueue(value)
+	return err
 }
 
-func (q Queue[T]) Dequeue(value ...T) bool {
-	iter := q.store.IteratorNew(q.name.Append(queue))
-
-	if !iter.Valid() {
-		funcs.MustNoErr(iter.Close())
+// Dequeue pops an item from the front of the queue and unmarshals it into the given value. Returns true if the queue is not empty
+func (q Queue[T]) Dequeue(value T) bool {
+	qKey, ok := q.peek(value)
+	if !ok {
 		return false
 	}
 
-	iKey := iter.GetKeyNew()
-	funcs.MustNoErr(iter.Close())
-
-	for _, v := range value {
-		iter.UnmarshalValue(v)
-	}
-
-	q.store.DeleteNew(iKey)
+	q.store.DeleteNew(qKey)
 	return true
 }
 
-func (q Queue[T]) Peek(value ...T) bool {
-	iter := q.store.IteratorNew(q.name.Append(queue))
+// Discard pops an item from the front of the queue and discards it. Returns true if the queue is not empty
+func (q Queue[T]) Discard() bool {
+	qKey, ok := q.any()
+	if !ok {
+		return false
+	}
+
+	q.store.DeleteNew(qKey)
+	return true
+}
+
+// Peek looks up the item at the front of the queue and unmarshals it into the given value, but leaves the queue as is.
+// Returns true if the queue is not empty
+func (q Queue[T]) Peek(value T) bool {
+	_, ok := q.peek(value)
+	return ok
+}
+
+// Any returns true if the queue is not empty
+func (q Queue[T]) Any() bool {
+	_, ok := q.any()
+
+	return ok
+}
+
+// Iter returns an iterator over all elements of the queue according to the queue ranking. This is intended to be a read-only operation.
+// CONTRACT: Close the iterator befor modifying the underlying data, e.g. enqueueing/dequeueing items
+func (q Queue[T]) Iter() QueueIterator[T] {
+	return QueueIterator[T]{iter: q.store.IteratorNew(queue)}
+}
+
+func (q Queue[T]) enqueue(value T) (key.Key, error) {
+	idx := q.getCurrIdx()
+	qKey := queue.
+		Append(q.prioritizer(value)).
+		Append(key.FromUInt(idx))
+	if err := q.store.SetNewValidated(qKey, value); err != nil {
+		return nil, err
+	}
+
+	return qKey, q.setCurrIdx(idx + 1)
+}
+
+func (q Queue[T]) any() (key.Key, bool) {
+	iter := q.Iter().iter
 	defer funcs.MustNoErr(iter.Close())
 
 	if !iter.Valid() {
-		return false
+		return nil, false
 	}
 
-	for _, v := range value {
-		iter.UnmarshalValue(v)
-	}
-	return true
+	return iter.GetKeyNew(), true
 }
 
-func (q Queue[T]) List() QueueIterator[T] {
-	return QueueIterator[T]{iter: q.store.IteratorNew(q.name.Append(queue))}
+func (q Queue[T]) peek(value codec.ProtoMarshaler) (key.Key, bool) {
+	iter := q.Iter().iter
+	defer funcs.MustNoErr(iter.Close())
+
+	if !iter.Valid() {
+		return nil, false
+	}
+
+	iter.UnmarshalValue(value)
+	iKey := iter.GetKeyNew()
+
+	return iKey, true
 }
 
 func (q Queue[T]) getCurrIdx() uint64 {
 	idx := gogoprototypes.UInt64Value{}
-	if !q.store.GetNew(q.name.Append(currIdx), &idx) {
+	if !q.store.GetNew(currIdx, &idx) {
 		return 0
 	}
 
@@ -298,9 +317,10 @@ func (q Queue[T]) getCurrIdx() uint64 {
 }
 
 func (q Queue[T]) setCurrIdx(idx uint64) error {
-	return q.store.SetNewValidated(q.name.Append(currIdx), NoValidation(&gogoprototypes.UInt64Value{Value: idx}))
+	return q.store.SetNewValidated(currIdx, NoValidation(&gogoprototypes.UInt64Value{Value: idx}))
 }
 
+// QueueIterator is an iterator over elements of a queue
 type QueueIterator[T ValidatedProtoMarshaler] struct {
 	iter Iterator
 }
@@ -317,12 +337,75 @@ func (i QueueIterator[T]) Next() {
 	i.iter.Next()
 }
 
-// Value returns the value at the current position. Panics if the iterator is invalid.
-// CONTRACT: value readonly []byte
+// Value unamrshals the element at the current position into the value. Panics if the iterator is invalid.
 func (i QueueIterator[T]) Value(value T) {
 	i.iter.UnmarshalValue(value)
 }
 
+// Close cleans up the iterator, potentially releasing locks on the underlying datastore
 func (i QueueIterator[T]) Close() error {
 	return i.iter.Close()
+}
+
+// IndexedQueue is a queue that also maintains a lookup index for elements in the queue
+type IndexedQueue[T ValidatedProtoMarshaler, S any] struct {
+	q       Queue[T]
+	indexer func(value T) S
+}
+
+// NewIndexedQueue returns a new queue with index according to the indexer function
+// Example:
+//
+//	type element struct{
+//	    ID int
+//	}
+//
+// NewIndexedQueue(queue, func(e element) int { return e.ID }
+func NewIndexedQueue[T ValidatedProtoMarshaler, S any](q Queue[T], indexer func(value T) S) IndexedQueue[T, S] {
+	return IndexedQueue[T, S]{
+		q:       q,
+		indexer: indexer,
+	}
+}
+
+// Enqueue adds an item to the end of the queue and indexes it
+func (iq IndexedQueue[T, S]) Enqueue(value T) error {
+	qKey, err := iq.q.enqueue(value)
+	if err != nil {
+		return err
+	}
+	return iq.index(value, qKey)
+}
+
+// Dequeue pops an item from the front of the queue and deletes its index
+func (iq IndexedQueue[T, S]) Dequeue(value T) bool {
+	iq.q.Dequeue(value)
+	iq.deleteIndex(value)
+
+	return true
+}
+
+// Has returns true if there is an element in the queue that is indexed by the given lookup value
+func (iq IndexedQueue[T, S]) Has(lookup S) bool {
+	return iq.q.store.HasNew(index.Append(key.FromAny(lookup)))
+}
+
+// Get returns true if there is an element in the queue that is indexed by the given lookup object and unmarshals the item into the value object
+func (iq IndexedQueue[T, S]) Get(lookup S, value T) bool {
+	var qKey gogoprototypes.BytesValue
+	ok := iq.q.store.GetNew(index.Append(key.FromAny(lookup)), &qKey)
+
+	if ok {
+		iq.q.store.GetNew(key.FromRaw(qKey.Value), value)
+	}
+
+	return ok
+}
+
+func (iq IndexedQueue[T, S]) index(value T, qKey key.Key) error {
+	return iq.q.store.SetNewValidated(index.Append(key.FromAny(iq.indexer(value))), NoValidation(&gogoprototypes.BytesValue{Value: qKey.Bytes()}))
+}
+
+func (iq IndexedQueue[T, S]) deleteIndex(value T) {
+	iq.q.store.DeleteNew(index.Append(key.FromAny(iq.indexer(value))))
 }

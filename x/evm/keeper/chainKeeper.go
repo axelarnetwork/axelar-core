@@ -266,11 +266,12 @@ func (k chainKeeper) GetERC20TokenBySymbol(ctx sdk.Context, symbol string) types
 
 	return types.CreateERC20Token(func(m types.ERC20TokenMetadata) {
 		k.setTokenMetadata(ctx, m)
+
 	}, metadata)
 }
 
 // GetConfirmedEventQueue returns a queue of all the confirmed events
-func (k chainKeeper) GetConfirmedEventQueue(ctx sdk.Context) utils.KVQueue {
+func (k chainKeeper) GetConfirmedEventQueue(ctx sdk.Context) utils.GeneralKVQueue {
 	blockHeightBz := make([]byte, 8)
 	binary.BigEndian.PutUint64(blockHeightBz, uint64(ctx.BlockHeight()))
 

@@ -43,7 +43,7 @@ func (k Keeper) InitGenesis(ctx sdk.Context, genState *types.GenesisState) {
 
 	funcs.MustNoErr(k.validateIBCTransferQueueState(genState.TransferQueue, ibcTransferQueueName))
 
-	k.GetIBCTransferQueue(ctx).(utils.GeneralKVQueue).ImportState(genState.TransferQueue)
+	k.GetIBCTransferQueue(ctx).ImportState(genState.TransferQueue)
 
 	slices.ForEach(genState.IBCTransfers, func(t types.IBCTransfer) { funcs.MustNoErr(k.setTransfer(ctx, t)) })
 
@@ -64,7 +64,7 @@ func (k Keeper) ExportGenesis(ctx sdk.Context) *types.GenesisState {
 		k.getParams(ctx),
 		collector,
 		k.getCosmosChains(ctx),
-		k.GetIBCTransferQueue(ctx).(utils.GeneralKVQueue).ExportState(),
+		k.GetIBCTransferQueue(ctx).ExportState(),
 		k.getIBCTransfers(ctx),
 		k.getSeqIDMappings(ctx),
 	)

@@ -1480,7 +1480,7 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 // 			GetConfirmedDepositsPaginatedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, pageRequest *query.PageRequest) ([]types.ERC20Deposit, *query.PageResponse, error) {
 // 				panic("mock out the GetConfirmedDepositsPaginated method")
 // 			},
-// 			GetConfirmedEventQueueFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.KVQueue {
+// 			GetConfirmedEventQueueFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.GeneralKVQueue {
 // 				panic("mock out the GetConfirmedEventQueue method")
 // 			},
 // 			GetDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID types.Hash, logIndex uint64) (types.ERC20Deposit, types.DepositStatus, bool) {
@@ -1617,7 +1617,7 @@ type ChainKeeperMock struct {
 	GetConfirmedDepositsPaginatedFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, pageRequest *query.PageRequest) ([]types.ERC20Deposit, *query.PageResponse, error)
 
 	// GetConfirmedEventQueueFunc mocks the GetConfirmedEventQueue method.
-	GetConfirmedEventQueueFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.KVQueue
+	GetConfirmedEventQueueFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.GeneralKVQueue
 
 	// GetDepositFunc mocks the GetDeposit method.
 	GetDepositFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID types.Hash, logIndex uint64) (types.ERC20Deposit, types.DepositStatus, bool)
@@ -2521,7 +2521,7 @@ func (mock *ChainKeeperMock) GetConfirmedDepositsPaginatedCalls() []struct {
 }
 
 // GetConfirmedEventQueue calls GetConfirmedEventQueueFunc.
-func (mock *ChainKeeperMock) GetConfirmedEventQueue(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.KVQueue {
+func (mock *ChainKeeperMock) GetConfirmedEventQueue(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.GeneralKVQueue {
 	if mock.GetConfirmedEventQueueFunc == nil {
 		panic("ChainKeeperMock.GetConfirmedEventQueueFunc: method is nil but ChainKeeper.GetConfirmedEventQueue was just called")
 	}

@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/armon/go-metrics v0.4.0
 	github.com/axelarnetwork/tm-events v0.0.0-20221019195821-9a3f03bc6ca6
-	github.com/axelarnetwork/utils v0.0.0-20221116153024-b614f3c8f700
+	github.com/axelarnetwork/utils v0.0.0-20221213003031-66c703710da3
 	github.com/btcsuite/btcd v0.22.1
 	github.com/btcsuite/btcd/btcec/v2 v2.2.0
 	github.com/cosmos/cosmos-sdk v0.45.9
@@ -16,7 +16,7 @@ require (
 	github.com/golang/protobuf v1.5.2
 	github.com/gorilla/mux v1.8.0
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
-	github.com/matryer/moq v0.2.7
+	github.com/matryer/moq v0.3.0
 	github.com/miguelmota/go-ethereum-hdwallet v0.1.1
 	github.com/pkg/errors v0.9.1
 	github.com/rakyll/statik v0.1.7
@@ -32,8 +32,8 @@ require (
 	github.com/tendermint/tm-db v0.6.7
 	golang.org/x/exp v0.0.0-20221018221608-02f3b879a704
 	golang.org/x/mod v0.7.0
-	golang.org/x/text v0.4.0
-	golang.org/x/tools v0.3.0
+	golang.org/x/text v0.5.0
+	golang.org/x/tools v0.4.0
 	golang.org/x/xerrors v0.0.0-20220517211312-f3a8303e98df
 	google.golang.org/genproto v0.0.0-20220725144611-272f38e5d71b
 	google.golang.org/grpc v1.48.0
@@ -140,10 +140,10 @@ require (
 	github.com/zondax/hid v0.9.0 // indirect
 	go.etcd.io/bbolt v1.3.6 // indirect
 	golang.org/x/crypto v0.1.0 // indirect
-	golang.org/x/net v0.2.0 // indirect
+	golang.org/x/net v0.3.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
-	golang.org/x/sys v0.2.0 // indirect
-	golang.org/x/term v0.2.0 // indirect
+	golang.org/x/sys v0.3.0 // indirect
+	golang.org/x/term v0.3.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

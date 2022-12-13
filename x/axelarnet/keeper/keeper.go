@@ -183,7 +183,7 @@ func (k Keeper) getStore(ctx sdk.Context) utils.KVStore {
 }
 
 // GetIBCTransferQueue returns the queue of IBC transfers
-func (k Keeper) GetIBCTransferQueue(ctx sdk.Context) utils.KVQueue {
+func (k Keeper) GetIBCTransferQueue(ctx sdk.Context) utils.GeneralKVQueue {
 	return utils.NewGeneralKVQueue(
 		ibcTransferQueueName,
 		k.getStore(ctx),
