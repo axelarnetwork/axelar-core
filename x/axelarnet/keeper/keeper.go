@@ -26,9 +26,7 @@ var (
 	transferPrefix       = key.FromStr("ibc_transfer") // Deprecated: migrate to transferPrefixNew
 	ibcTransferQueueName = "route_transfer_queue"      // Deprecated: migrate to ibcTransferQueueNameNew
 
-	// failedTransferPrefix is deprecated in v0.23
-	//TODO: what do we do with this?
-	failedTransferPrefix = key.RegisterStaticKey(types.ModuleName, 2)
+	_ = key.RegisterStaticKey(types.ModuleName, 2) // failedTransferPrefix is deprecated in v0.23
 
 	seqIDMappingPrefix      = key.RegisterStaticKey(types.ModuleName, 3)
 	ibcPathPrefix           = key.RegisterStaticKey(types.ModuleName, 4)
@@ -230,15 +228,6 @@ func (k Keeper) validateIBCTransferQueueState(state utils.QueueState, queueName 
 	return nil
 }
 
-func getFailedTransferKey(id nexus.TransferID) key.Key {
-	return failedTransferPrefix.Append(key.FromBz(id.Bytes()))
-}
-
-// GetFailedTransfer returns the failed transfer for the given transfer ID
-func (k Keeper) GetFailedTransfer(ctx sdk.Context, id nexus.TransferID) (transfer types.IBCTransfer, ok bool) {
-	return transfer, k.getStore(ctx).GetNew(getFailedTransferKey(id), &transfer)
-}
-
 // GetTransfer returns the ibc transfer for the given transfer ID
 func (k Keeper) GetTransfer(ctx sdk.Context, id nexus.TransferID) (transfer types.IBCTransfer, ok bool) {
 	k.getStore(ctx).GetNew(getTransferKey(id), &transfer)
@@ -247,20 +236,6 @@ func (k Keeper) GetTransfer(ctx sdk.Context, id nexus.TransferID) (transfer type
 
 func (k Keeper) setTransfer(ctx sdk.Context, transfer types.IBCTransfer) error {
 	return k.getStore(ctx).SetNewValidated(getTransferKey(transfer.ID), &transfer)
-}
-
-func (k Keeper) getFailedTransfers(ctx sdk.Context) (failedTransfers []types.IBCTransfer) {
-	iter := k.getStore(ctx).IteratorNew(failedTransferPrefix)
-	defer utils.CloseLogError(iter, k.Logger(ctx))
-
-	for ; iter.Valid(); iter.Next() {
-		var t types.IBCTransfer
-		iter.UnmarshalValue(&t)
-
-		failedTransfers = append(failedTransfers, t)
-	}
-
-	return failedTransfers
 }
 
 func (k Keeper) setTransferStatus(ctx sdk.Context, transferID nexus.TransferID, status types.IBCTransfer_Status) error {
