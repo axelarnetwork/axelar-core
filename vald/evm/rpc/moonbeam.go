@@ -41,7 +41,7 @@ func (c *moonbeamClient) latestFinalizedBlockNumber(ctx context.Context) (*big.I
 		return nil, err
 	}
 
-	var moonbeamHeader MoonbeamHeader
+	var moonbeamHeader moonbeamHeader
 	if err := c.rpc.CallContext(ctx, &moonbeamHeader, "chain_getHeader", blockHash); err != nil {
 		return nil, err
 	}
