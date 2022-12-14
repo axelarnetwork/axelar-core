@@ -3,6 +3,7 @@ package vald
 import (
 	"context"
 	"fmt"
+	"golang.org/x/sync/errgroup"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -240,7 +241,7 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 	multisigSigning := eventBus.Subscribe(tmEvents.Filter[*multisigTypes.SigningStarted]())
 
 	eventCtx, cancelEventCtx := context.WithCancel(context.Background())
-	mgr := jobs.NewMgr(eventCtx)
+	eGroup, eventCtx := errgroup.WithContext(eventCtx)
 
 	// stop the jobs if process gets interrupted/terminated
 	cleanupCommands = append(cleanupCommands, func() {
@@ -249,8 +250,7 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 		<-eventBus.Done()
 		logger.Info("event listener stopped")
 		logger.Info("stopping subscribers...")
-		<-mgr.Done()
-		if err := <-mgr.Errs(); err != nil {
+		if err := eGroup.Wait(); err != nil {
 			logger.Error(err.Error())
 		}
 		logger.Info("subscriptions stopped")
@@ -276,9 +276,19 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 		return stateStore.SetState(event.Height)
 	}
 
+	failOnTimeout := func(ctx context.Context) error {
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-blockTimeout.Done():
+			return errors.New("no new blocks received from the node")
+		}
+	}
+
 	js := []jobs.Job{
-		fetchEvents,
 		createJob(blockHeaderSub, processBlockHeader, cancelEventCtx, logger),
+		fetchEvents,
+		failOnTimeout,
 		createJob(heartbeat, tssMgr.ProcessHeartBeatEvent, cancelEventCtx, logger),
 		createJobTyped(evmNewChain, evmMgr.ProcessNewChain, cancelEventCtx, logger),
 		createJobTyped(evmDepConf, evmMgr.ProcessDepositConfirmation, cancelEventCtx, logger),
@@ -289,12 +299,12 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 		createJobTyped(multisigSigning, multisigMgr.ProcessSigningStarted, cancelEventCtx, logger),
 	}
 
-	mgr.AddJobs(js...)
-	select {
-	case <-mgr.Done():
-		return
-	case <-blockTimeout.Done():
-		panic("no new blocks received from the node")
+	for _, job := range js {
+		eGroup.Go(func() error { return job(eventCtx) })
+	}
+
+	if err := eGroup.Wait(); err != nil {
+		logger.Error(err.Error())
 	}
 }
 
