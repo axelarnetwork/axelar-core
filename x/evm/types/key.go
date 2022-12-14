@@ -5,7 +5,7 @@ const (
 	ModuleName = "evm"
 
 	// ChainNamespace differentiated the key space for chains from the default evm namespace
-	ChainNamespace
+	ChainNamespace = "chain"
 
 	// StoreKey to be used when creating the KVStore
 	StoreKey = ModuleName

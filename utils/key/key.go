@@ -14,19 +14,19 @@ import (
 var usedPrefixes = map[prefixID]struct{}{}
 
 type prefixID struct {
-	module string
-	prefix uint
+	namespace string
+	prefix    uint
 }
 
-// RegisterStaticKey registers a static key particle for the data store to ensure uniqueness per module.
-// Panics if two prefixes with the same value for the same module are registered.
-func RegisterStaticKey(moduleName string, prefix uint) Key {
+// RegisterStaticKey registers a static key particle for the data store to ensure uniqueness per namespace.
+// Panics if two prefixes with the same value for the same namespace are registered.
+func RegisterStaticKey(namespace string, prefix uint) Key {
 	id := prefixID{
-		module: moduleName,
-		prefix: prefix,
+		namespace: namespace,
+		prefix:    prefix,
 	}
 	if _, ok := usedPrefixes[id]; ok {
-		panic(fmt.Sprintf("prefix key %d for module %s already registered", prefix, moduleName))
+		panic(fmt.Sprintf("prefix key %d for namespace %s already registered", prefix, namespace))
 	}
 
 	usedPrefixes[id] = struct{}{}
