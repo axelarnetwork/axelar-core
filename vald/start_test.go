@@ -27,10 +27,10 @@ func TestPanic(t *testing.T) {
 		}
 
 		go func() {
-			for i := 0; i < 1000; i++ {
+			for i := 0; i < 100; i++ {
 				newBlock()
 			}
-			time.Sleep(2 * time.Millisecond)
+			time.Sleep(5 * time.Millisecond)
 			newBlock()
 		}()
 
@@ -38,7 +38,7 @@ func TestPanic(t *testing.T) {
 		case <-testTimeout.Done():
 			return
 		case <-blockTimeout.Done():
-			assert.Equal(t, 1000, blocksSeen)
+			assert.Equal(t, 100, blocksSeen)
 			panic("no new blocks discovered, is the chain halted?")
 		}
 	})
