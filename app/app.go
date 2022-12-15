@@ -403,9 +403,9 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		appCodec, keys[multisigTypes.StoreKey], app.getSubspace(multisigTypes.ModuleName),
 	)
 
-	multisigRounter := multisigTypes.NewSigRouter()
-	multisigRounter.AddHandler(evmTypes.ModuleName, evmKeeper.NewSigHandler(appCodec, evmK))
-	multisigK.SetSigRouter(multisigRounter)
+	multisigRouter := multisigTypes.NewSigRouter()
+	multisigRouter.AddHandler(evmTypes.ModuleName, evmKeeper.NewSigHandler(appCodec, evmK))
+	multisigK.SetSigRouter(multisigRouter)
 
 	tssK := tssKeeper.NewKeeper(
 		appCodec, keys[tssTypes.StoreKey], app.getSubspace(tssTypes.ModuleName),
