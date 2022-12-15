@@ -106,7 +106,7 @@ func GetValdCommand() *cobra.Command {
 
 	// Only set default, not actual value, so it can be overwritten by env variable
 	utils.OverwriteFlagDefaults(cmd, map[string]string{
-		flags.FlagBroadcastMode:  flags.BroadcastBlock,
+		flags.FlagBroadcastMode:  flags.BroadcastSync,
 		flags.FlagChainID:        app.Name,
 		flags.FlagGasPrices:      "0.007uaxl",
 		flags.FlagKeyringBackend: "file",
