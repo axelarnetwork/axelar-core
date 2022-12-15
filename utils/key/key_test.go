@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/axelarnetwork/axelar-core/utils/key"
+	"github.com/axelarnetwork/utils/slices"
 )
 
 func TestFromBz(t *testing.T) {
@@ -45,5 +46,21 @@ func TestAppend(t *testing.T) {
 	k3 := key.FromBz([]byte("suffix"))
 
 	assert.Equal(t, []byte("prefix_nucleus_suffix"), k1.Append(k2).Append(k3).Bytes())
-	assert.Equal(t, []byte("prefix%%nucleus%%suffix"), k1.Append(k2).Append(k3).Bytes("%%"))
+}
+
+func TestRegisterPrefix(t *testing.T) {
+	var keys []key.Key
+
+	assert.NotPanics(t, func() { keys = append(keys, key.RegisterStaticKey("test_module", 1)) })
+	assert.NotPanics(t, func() { keys = append(keys, key.RegisterStaticKey("test_module", 2)) })
+	assert.NotPanics(t, func() { keys = append(keys, key.RegisterStaticKey("test_module", 5)) })
+
+	assert.EqualValues(t, slices.Map(keys, key.Key.String), slices.Distinct(slices.Map(keys, key.Key.String)))
+
+	var otherKey key.Key
+	assert.NotPanics(t, func() { otherKey = key.RegisterStaticKey("other_module", 2) })
+	assert.Equal(t, keys[1], otherKey)
+
+	assert.Panics(t, func() { key.RegisterStaticKey("test_module", 2) })
+
 }

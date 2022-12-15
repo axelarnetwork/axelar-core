@@ -14,16 +14,24 @@ import (
 )
 
 var (
-	keygenPrefix           = utils.KeyFromInt(1)
-	signingPrefix          = utils.KeyFromInt(2)
-	keyPrefix              = utils.KeyFromInt(3)
-	expiryKeygenPrefix     = utils.KeyFromInt(4)
-	expirySigningPrefix    = utils.KeyFromInt(5)
-	keyEpochPrefix         = utils.KeyFromInt(6)
-	keyRotationCountPrefix = utils.KeyFromInt(7)
-	keygenOptOutPrefix     = key.FromUInt(uint64(8))
+	keygenPrefix           = utils.KeyFromInt(1)   // Deprecated: migrate to keygenPrefixNew
+	signingPrefix          = utils.KeyFromInt(2)   // Deprecated: migrate to signingPrefixNew
+	keyPrefix              = utils.KeyFromInt(3)   // Deprecated: migrate to keyPrefixNew
+	expiryKeygenPrefix     = utils.KeyFromInt(4)   // Deprecated: migrate to expiryKeygenPrefixNew
+	expirySigningPrefix    = utils.KeyFromInt(5)   // Deprecated: migrate to expirySigningPrefixNew
+	keyEpochPrefix         = utils.KeyFromInt(6)   // Deprecated: migrate to keyEpochPrefixNew
+	keyRotationCountPrefix = utils.KeyFromInt(7)   // Deprecated: migrate to keyRotationCountPrefixNew
+	signingSessionCountKey = utils.KeyFromInt(100) // Deprecated: migrate to signingSessionCountKeyNew
 
-	signingSessionCountKey = utils.KeyFromInt(100)
+	keygenPrefixNew           = key.RegisterStaticKey(types.ModuleName, 1)
+	signingPrefixNew          = key.RegisterStaticKey(types.ModuleName, 2)
+	keyPrefixNew              = key.RegisterStaticKey(types.ModuleName, 3)
+	expiryKeygenPrefixNew     = key.RegisterStaticKey(types.ModuleName, 4)
+	expirySigningPrefixNew    = key.RegisterStaticKey(types.ModuleName, 5)
+	keyEpochPrefixNew         = key.RegisterStaticKey(types.ModuleName, 6)
+	keyRotationCountPrefixNew = key.RegisterStaticKey(types.ModuleName, 7)
+	keygenOptOutPrefix        = key.RegisterStaticKey(types.ModuleName, 8)
+	signingSessionCountKeyNew = key.RegisterStaticKey(types.ModuleName, 100)
 )
 
 var _ types.Keeper = &Keeper{}
