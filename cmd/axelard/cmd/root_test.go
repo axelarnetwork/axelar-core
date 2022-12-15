@@ -13,7 +13,7 @@ func TestNewRootCmd(t *testing.T) {
 	root, _ := NewRootCmd()
 	t.Run("broadcast flag correctly set", func(t *testing.T) {
 		cmd := root
-		assert.True(t, testCmd(t, cmd, flags.BroadcastBlock), "no command with usage 'vald-start' found")
+		assert.True(t, testCmd(t, cmd, flags.BroadcastSync), "no command with usage 'vald-start' found")
 	})
 
 	t.Run("keyring default set to file", func(t *testing.T) {
