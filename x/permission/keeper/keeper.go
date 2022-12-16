@@ -10,17 +10,13 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
-	"github.com/axelarnetwork/axelar-core/utils/key"
 	"github.com/axelarnetwork/axelar-core/x/permission/exported"
 	"github.com/axelarnetwork/axelar-core/x/permission/types"
 )
 
 var (
-	governanceKey = utils.KeyFromStr("governance") // Deprecated: migrate to governanceKeyNew
-	accountPrefix = utils.KeyFromStr("account")    // Deprecated: migrate to accountPrefixNew
-
-	governanceKeyNew = key.RegisterStaticKey(types.ModuleName, 1)
-	accountPrefixNew = key.RegisterStaticKey(types.ModuleName, 2)
+	governanceKey = utils.KeyFromStr("governance")
+	accountPrefix = utils.KeyFromStr("account")
 )
 
 // Keeper provides access to all state changes regarding the gov module

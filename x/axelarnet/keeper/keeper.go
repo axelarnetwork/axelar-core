@@ -20,20 +20,16 @@ import (
 )
 
 var (
-	cosmosChainPrefix = key.FromStr("cosmos_chain")  // Deprecated: migrate to cosmosChainPrefixNew
-	feeCollector      = key.FromStr("fee_collector") // Deprecated: migrate to feeCollectorNew
+	cosmosChainPrefix = key.FromStr("cosmos_chain")
+	feeCollector      = key.FromStr("fee_collector")
 
-	transferPrefix       = key.FromStr("ibc_transfer") // Deprecated: migrate to transferPrefixNew
-	ibcTransferQueueName = "route_transfer_queue"      // Deprecated: migrate to ibcTransferQueueNameNew
+	transferPrefix       = key.FromStr("ibc_transfer") 
+	ibcTransferQueueName = "route_transfer_queue"
 
 	_ = key.RegisterStaticKey(types.ModuleName, 2) // failedTransferPrefix is deprecated in v0.23
 
 	seqIDMappingPrefix      = key.RegisterStaticKey(types.ModuleName, 3)
 	ibcPathPrefix           = key.RegisterStaticKey(types.ModuleName, 4)
-	cosmosChainPrefixNew    = key.RegisterStaticKey(types.ModuleName, 5)
-	feeCollectorNew         = key.RegisterStaticKey(types.ModuleName, 6)
-	transferPrefixNew       = key.RegisterStaticKey(types.ModuleName, 7)
-	ibcTransferQueueNameNew = key.RegisterStaticKey(types.ModuleName, 8)
 
 	// reserved values
 	// nonceKey is deprecated in v0.23
