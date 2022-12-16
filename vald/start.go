@@ -299,9 +299,9 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 		createJobTyped(multisigSigning, multisigMgr.ProcessSigningStarted, cancelEventCtx, logger),
 	}
 
-	for _, job := range js {
+	slices.ForEach(js, func(job jobs.Job) {
 		eGroup.Go(func() error { return job(eventCtx) })
-	}
+	})
 
 	if err := eGroup.Wait(); err != nil {
 		logger.Error(err.Error())
