@@ -23,13 +23,13 @@ var (
 	cosmosChainPrefix = key.FromStr("cosmos_chain")
 	feeCollector      = key.FromStr("fee_collector")
 
-	transferPrefix       = key.FromStr("ibc_transfer") 
+	transferPrefix       = key.FromStr("ibc_transfer")
 	ibcTransferQueueName = "route_transfer_queue"
 
 	_ = key.RegisterStaticKey(types.ModuleName, 2) // failedTransferPrefix is deprecated in v0.23
 
-	seqIDMappingPrefix      = key.RegisterStaticKey(types.ModuleName, 3)
-	ibcPathPrefix           = key.RegisterStaticKey(types.ModuleName, 4)
+	seqIDMappingPrefix = key.RegisterStaticKey(types.ModuleName, 3)
+	ibcPathPrefix      = key.RegisterStaticKey(types.ModuleName, 4)
 
 	// reserved values
 	// nonceKey is deprecated in v0.23

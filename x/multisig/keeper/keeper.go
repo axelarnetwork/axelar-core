@@ -23,7 +23,7 @@ var (
 	keyRotationCountPrefix = utils.KeyFromInt(7)
 	signingSessionCountKey = utils.KeyFromInt(100)
 
-	keygenOptOutPrefix        = key.RegisterStaticKey(types.ModuleName, 8)
+	keygenOptOutPrefix = key.RegisterStaticKey(types.ModuleName, 8)
 )
 
 var _ types.Keeper = &Keeper{}
