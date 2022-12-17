@@ -11,19 +11,13 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
-	"github.com/axelarnetwork/axelar-core/utils/key"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
 )
 
 const (
-	operatorPrefix = "operator_" // Deprecated: migrate to operatorPrefixNew
-	proxyPrefix    = "proxy_"    // Deprecated: migrate to proxyPrefixNew
-)
-
-var (
-	operatorPrefixNew = key.RegisterStaticKey(types.ModuleName, 1)
-	proxyPrefixNew    = key.RegisterStaticKey(types.ModuleName, 2)
+	operatorPrefix = "operator_"
+	proxyPrefix    = "proxy_"
 )
 
 // Keeper represents the snapshot keeper

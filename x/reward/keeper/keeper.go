@@ -17,11 +17,8 @@ import (
 )
 
 var (
-	poolNamePrefix      = "pool"   // Deprecated: migrate to poolNamePrefixNew
-	pendingRefundPrefix = "refund" // Deprecated: migrate to pendingRefundPrefixNew
-
-	poolNamePrefixNew      = key.RegisterStaticKey(types.ModuleName, 1)
-	pendingRefundPrefixNew = key.RegisterStaticKey(types.ModuleName, 2)
+	poolNamePrefix      = "pool"
+	pendingRefundPrefix = "refund"
 )
 
 var _ types.Rewarder = Keeper{}
