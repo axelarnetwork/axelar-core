@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"strings"
 
+	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
@@ -43,13 +44,13 @@ func NewClient(url string) (Client, error) {
 }
 
 // NewL2Client returns a L2 EVM JSON-RPC client
-func NewL2Client(chain string, url string, l1Client Client) (Client, error) {
-	ethereumClient, err := newEthereumClient(url)
+func NewL2Client(config evmTypes.EVMConfig, l1Client Client) (Client, error) {
+	ethereumClient, err := newEthereumClient(config.RPCAddr)
 	if err != nil {
 		return nil, err
 	}
 
-	switch strings.ToLower(chain) {
+	switch strings.ToLower(config.Name) {
 	case "arbitrum":
 		eth2Client, ok := l1Client.(*ethereum2Client)
 		if !ok {
@@ -57,7 +58,22 @@ func NewL2Client(chain string, url string, l1Client Client) (Client, error) {
 		}
 
 		return newArbitrumClient(ethereumClient, eth2Client)
+	case "optimism":
+		eth2Client, ok := l1Client.(*ethereum2Client)
+		if !ok {
+			return nil, fmt.Errorf("l1 client has to be ethereum 2.0 for optimism")
+		}
+
+		if config.StateCommitmentChain == nil {
+			return nil, fmt.Errorf("state commitment chain is required for optimism")
+		}
+
+		if !common.IsHexAddress(*config.StateCommitmentChain) {
+			return nil, fmt.Errorf("state commitment chain is not a valid evm address")
+		}
+
+		return newOptimismClient(ethereumClient, eth2Client, common.HexToAddress(*config.StateCommitmentChain))
 	default:
-		return nil, fmt.Errorf("unsupported L2 chain %s", chain)
+		return nil, fmt.Errorf("unsupported L2 chain %s", config.Name)
 	}
 }

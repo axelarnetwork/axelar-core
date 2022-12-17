@@ -27,7 +27,7 @@ func TestConfigAlias(t *testing.T) {
 
 	assert.Equal(t, 99*time.Hour, conf.MaxTimeout)
 	assert.Equal(t, 1*time.Nanosecond, conf.MinSleepBeforeRetry)
-	assert.Len(t, conf.EVMConfig, 2)
+	assert.Len(t, conf.EVMConfig, 3)
 }
 
 func buildTestdataFilePath() (string, error) {
