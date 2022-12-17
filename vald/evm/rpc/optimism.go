@@ -44,6 +44,20 @@ var (
 	getTotalBatchesMethod = funcs.Must(stateCommitmentChainABI.MethodById(common.Hex2Bytes("e561dddc")))
 )
 
+type rollup struct {
+	txHash     common.Hash
+	minTxIndex sdk.Uint
+	maxTxIndex sdk.Uint
+}
+
+func (r rollup) isAfter(txIndex sdk.Uint) bool {
+	return r.minTxIndex.GT(txIndex)
+}
+
+func (r rollup) isBefore(txIndex sdk.Uint) bool {
+	return r.maxTxIndex.LT(txIndex)
+}
+
 type optimismClient struct {
 	*ethereumClient
 	l1Client                     *ethereum2Client
@@ -60,10 +74,10 @@ func newOptimismClient(ethereumClient *ethereumClient, l1Client *ethereum2Client
 }
 
 func (c *optimismClient) IsFinalized(ctx context.Context, _ uint64, txReceipt *types.Receipt) (bool, error) {
-	// Every block has exactly one transaction in it. Since there's a genesis block, the
+	// Every block has exactly one transaction in it. Since there's a genesis block without transaction, the
 	// transaction index will always be one less than the block number.
 	// https://github.com/ethereum-optimism/optimism/blob/400d81fb9932677becc8744663938570c198555a/packages/sdk/src/cross-chain-messenger.ts#L1103
-	event, err := c.getStateBatchAppendedEventByTxIndex(ctx, sdk.NewUintFromBigInt(txReceipt.BlockNumber).SubUint64(1))
+	txHash, err := c.getRollupTxHashByTxIndex(ctx, sdk.NewUintFromBigInt(txReceipt.BlockNumber).SubUint64(1))
 	if err == ethereum.NotFound {
 		return false, nil
 	}
@@ -71,7 +85,7 @@ func (c *optimismClient) IsFinalized(ctx context.Context, _ uint64, txReceipt *t
 		return false, err
 	}
 
-	l1TxReceipt, err := c.l1Client.TransactionReceipt(ctx, event.TxHash)
+	l1TxReceipt, err := c.l1Client.TransactionReceipt(ctx, txHash)
 	if err != nil {
 		return false, err
 	}
@@ -80,73 +94,52 @@ func (c *optimismClient) IsFinalized(ctx context.Context, _ uint64, txReceipt *t
 }
 
 // equivalent implementation of https://github.com/ethereum-optimism/optimism/blob/400d81fb9932677becc8744663938570c198555a/packages/sdk/src/cross-chain-messenger.ts#L1169
-func (c *optimismClient) getStateBatchAppendedEventByTxIndex(ctx context.Context, txIndex sdk.Uint) (types.Log, error) {
-	totalBatches, err := c.getTotalBatches(ctx)
+func (c *optimismClient) getRollupTxHashByTxIndex(ctx context.Context, txIndex sdk.Uint) (common.Hash, error) {
+	totalBatches, err := c.getRollupCount(ctx)
 	if err != nil {
-		return types.Log{}, err
+		return common.Hash{}, err
 	}
 
 	lowerBound := sdk.ZeroUint()
 	upperBound := sdk.NewUintFromBigInt(totalBatches).SubUint64(1)
 
-	event, err := c.getStateBatchAppendedEventByBatchIndex(ctx, upperBound)
+	latestRollup, err := c.getRollup(ctx, upperBound)
 	if err != nil {
-		return types.Log{}, err
+		return common.Hash{}, err
 	}
 
-	if isEventLow(event, txIndex) {
-		return types.Log{}, ethereum.NotFound
+	if latestRollup.isBefore(txIndex) {
+		return common.Hash{}, ethereum.NotFound
 	}
 
-	if !isEventHigh(event, txIndex) {
-		return event, nil
+	if !latestRollup.isAfter(txIndex) {
+		return latestRollup.txHash, nil
 	}
 
 	upperBound = upperBound.SubUint64(1)
 	for batchIndex := lowerBound.Add(upperBound).QuoUint64(2); lowerBound.LTE(upperBound); batchIndex = lowerBound.Add(upperBound).QuoUint64(2) {
-		event, err := c.getStateBatchAppendedEventByBatchIndex(ctx, batchIndex)
+		rollup, err := c.getRollup(ctx, batchIndex)
 		if err != nil {
-			return types.Log{}, err
+			return common.Hash{}, err
 		}
 
-		if isEventLow(event, txIndex) {
+		if rollup.isBefore(txIndex) {
 			lowerBound = batchIndex.AddUint64(1)
 			continue
 		}
 
-		if isEventHigh(event, txIndex) {
+		if rollup.isAfter(txIndex) {
 			upperBound = batchIndex.SubUint64(1)
 			continue
 		}
 
-		return event, nil
+		return rollup.txHash, nil
 	}
 
-	return types.Log{}, ethereum.NotFound
+	return common.Hash{}, ethereum.NotFound
 }
 
-func isEventLow(event types.Log, txIndex sdk.Uint) bool {
-	batchSize, prevTotalElements := decodeStateBatchAppendedEvent(event)
-
-	return txIndex.GTE(prevTotalElements.Add(batchSize))
-}
-
-func isEventHigh(event types.Log, txIndex sdk.Uint) bool {
-	_, prevTotalElements := decodeStateBatchAppendedEvent(event)
-
-	return txIndex.LT(prevTotalElements)
-}
-
-func decodeStateBatchAppendedEvent(event types.Log) (sdk.Uint, sdk.Uint) {
-	args := funcs.Must(evmtypes.StrictDecode(stateBatchAppendedEventArguments, event.Data))
-
-	batchSize := sdk.NewUintFromBigInt(args[1].(*big.Int))
-	prevTotalElements := sdk.NewUintFromBigInt(args[2].(*big.Int))
-
-	return batchSize, prevTotalElements
-}
-
-func (c *optimismClient) getStateBatchAppendedEventByBatchIndex(ctx context.Context, batchIndex sdk.Uint) (types.Log, error) {
+func (c *optimismClient) getRollup(ctx context.Context, batchIndex sdk.Uint) (*rollup, error) {
 	filterQuery := ethereum.FilterQuery{
 		Addresses: []common.Address{c.contractStateCommitmentChain},
 		Topics: [][]common.Hash{
@@ -157,17 +150,26 @@ func (c *optimismClient) getStateBatchAppendedEventByBatchIndex(ctx context.Cont
 
 	logs, err := c.l1Client.FilterLogs(ctx, filterQuery)
 	if err != nil {
-		return types.Log{}, err
+		return nil, err
 	}
 
 	if len(logs) == 0 {
-		return types.Log{}, ethereum.NotFound
+		return nil, ethereum.NotFound
 	}
 
-	return logs[0], nil
+	args := funcs.Must(evmtypes.StrictDecode(stateBatchAppendedEventArguments, logs[0].Data))
+
+	batchSize := sdk.NewUintFromBigInt(args[1].(*big.Int))
+	prevTotalElements := sdk.NewUintFromBigInt(args[2].(*big.Int))
+
+	return &rollup{
+		txHash:     logs[0].TxHash,
+		minTxIndex: prevTotalElements,
+		maxTxIndex: prevTotalElements.Add(batchSize).SubUint64(1),
+	}, nil
 }
 
-func (c *optimismClient) getTotalBatches(ctx context.Context) (*big.Int, error) {
+func (c *optimismClient) getRollupCount(ctx context.Context) (*big.Int, error) {
 	callMsg := ethereum.CallMsg{
 		To:   &c.contractStateCommitmentChain,
 		Data: getTotalBatchesMethod.ID,
