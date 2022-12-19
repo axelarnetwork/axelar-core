@@ -43,15 +43,16 @@ var (
 	getL1ConfirmationsMethod = funcs.Must(nodeInterfaceABI.MethodById(common.Hex2Bytes("e5ca238c")))
 )
 
-// arbitrumClient implements ArbitrumClient
-type arbitrumClient struct {
-	*ethereumClient
-	l1Client *ethereum2Client
+// ArbitrumClient is a JSON-RPC client of Arbitrum
+type ArbitrumClient struct {
+	*EthereumClient
+	l1Client *Ethereum2Client
 }
 
-func newArbitrumClient(ethereumClient *ethereumClient, l1Client *ethereum2Client) (*arbitrumClient, error) {
+// NewArbitrumClient is the constructor
+func NewArbitrumClient(ethereumClient *EthereumClient, l1Client *Ethereum2Client) (*ArbitrumClient, error) {
 	// TODO: verify that the given l1 client corresponds to the Arbitrum chain, but how?
-	client := &arbitrumClient{ethereumClient: ethereumClient, l1Client: l1Client}
+	client := &ArbitrumClient{EthereumClient: ethereumClient, l1Client: l1Client}
 
 	header, err := client.HeaderByNumber(context.Background(), nil)
 	if err != nil {
@@ -64,7 +65,8 @@ func newArbitrumClient(ethereumClient *ethereumClient, l1Client *ethereum2Client
 	return client, nil
 }
 
-func (c *arbitrumClient) IsFinalized(ctx context.Context, _ uint64, txReceipt *types.Receipt) (bool, error) {
+// IsFinalized determines whether or not the given transaction receipt is finalized on the chain
+func (c *ArbitrumClient) IsFinalized(ctx context.Context, _ uint64, txReceipt *types.Receipt) (bool, error) {
 	l1Confirmations, err := c.getL1Confirmations(ctx, txReceipt.BlockHash)
 	if err != nil {
 		return false, err
@@ -88,7 +90,7 @@ func (c *arbitrumClient) IsFinalized(ctx context.Context, _ uint64, txReceipt *t
 	return finalizedConfirmations.Cmp(l1Confirmations) <= 0, nil
 }
 
-func (c *arbitrumClient) getL1Confirmations(ctx context.Context, blockHash common.Hash) (*big.Int, error) {
+func (c *ArbitrumClient) getL1Confirmations(ctx context.Context, blockHash common.Hash) (*big.Int, error) {
 	data := append(getL1ConfirmationsMethod.ID, funcs.Must(getL1ConfirmationsMethod.Inputs.Pack(blockHash))...)
 	callMsg := ethereum.CallMsg{
 		To:   &nodeInterfaceAddress,

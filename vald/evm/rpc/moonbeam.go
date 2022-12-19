@@ -9,12 +9,14 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-type moonbeamClient struct {
-	*ethereumClient
+// MoonbeamClient is a JSON-RPC client of Moonbeam
+type MoonbeamClient struct {
+	*EthereumClient
 }
 
-func newMoonbeamClient(ethereumClient *ethereumClient) (*moonbeamClient, error) {
-	client := &moonbeamClient{ethereumClient: ethereumClient}
+// NewMoonbeamClient is the constructor
+func NewMoonbeamClient(ethereumClient *EthereumClient) (*MoonbeamClient, error) {
+	client := &MoonbeamClient{EthereumClient: ethereumClient}
 	if _, err := client.latestFinalizedBlockNumber(context.Background()); err != nil {
 		return nil, err
 	}
@@ -22,7 +24,8 @@ func newMoonbeamClient(ethereumClient *ethereumClient) (*moonbeamClient, error) 
 	return client, nil
 }
 
-func (c *moonbeamClient) IsFinalized(ctx context.Context, _ uint64, txReceipt *types.Receipt) (bool, error) {
+// IsFinalized determines whether or not the given transaction receipt is finalized on the chain
+func (c *MoonbeamClient) IsFinalized(ctx context.Context, _ uint64, txReceipt *types.Receipt) (bool, error) {
 	latestFinalizedBlockNumber, err := c.latestFinalizedBlockNumber(ctx)
 	if err != nil {
 		return false, err
@@ -35,7 +38,7 @@ func (c *moonbeamClient) IsFinalized(ctx context.Context, _ uint64, txReceipt *t
 	return latestFinalizedBlockNumber.Cmp(txReceipt.BlockNumber) >= 0, nil
 }
 
-func (c *moonbeamClient) latestFinalizedBlockNumber(ctx context.Context) (*big.Int, error) {
+func (c *MoonbeamClient) latestFinalizedBlockNumber(ctx context.Context) (*big.Int, error) {
 	var blockHash common.Hash
 	if err := c.rpc.CallContext(ctx, &blockHash, "chain_getFinalizedHead"); err != nil {
 		return nil, err

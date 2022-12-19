@@ -8,12 +8,14 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-type ethereum2Client struct {
-	*ethereumClient
+// Ethereum2Client is a JSON-RPC client of Ethereum 2.0
+type Ethereum2Client struct {
+	*EthereumClient
 }
 
-func newEthereum2Client(ethereumClient *ethereumClient) (*ethereum2Client, error) {
-	client := &ethereum2Client{ethereumClient: ethereumClient}
+// NewEthereum2Client is the constructor
+func NewEthereum2Client(ethereumClient *EthereumClient) (*Ethereum2Client, error) {
+	client := &Ethereum2Client{EthereumClient: ethereumClient}
 	if _, err := client.latestFinalizedBlockNumber(context.Background()); err != nil {
 		return nil, err
 	}
@@ -21,7 +23,8 @@ func newEthereum2Client(ethereumClient *ethereumClient) (*ethereum2Client, error
 	return client, nil
 }
 
-func (c *ethereum2Client) IsFinalized(ctx context.Context, _ uint64, txReceipt *types.Receipt) (bool, error) {
+// IsFinalized determines whether or not the given transaction receipt is finalized on the chain
+func (c *Ethereum2Client) IsFinalized(ctx context.Context, _ uint64, txReceipt *types.Receipt) (bool, error) {
 	latestFinalizedBlockNumber, err := c.latestFinalizedBlockNumber(ctx)
 	if err != nil {
 		return false, err
@@ -30,7 +33,7 @@ func (c *ethereum2Client) IsFinalized(ctx context.Context, _ uint64, txReceipt *
 	return latestFinalizedBlockNumber.Cmp(txReceipt.BlockNumber) >= 0, nil
 }
 
-func (c *ethereum2Client) latestFinalizedBlockNumber(ctx context.Context) (*big.Int, error) {
+func (c *Ethereum2Client) latestFinalizedBlockNumber(ctx context.Context) (*big.Int, error) {
 	var head *types.Header
 	err := c.rpc.CallContext(ctx, &head, "eth_getBlockByNumber", "finalized", false)
 	if err != nil {

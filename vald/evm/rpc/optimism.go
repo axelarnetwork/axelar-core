@@ -58,14 +58,16 @@ func (r rollup) isBefore(txIndex sdk.Uint) bool {
 	return r.maxTxIndex.LT(txIndex)
 }
 
-type optimismClient struct {
-	*ethereumClient
-	l1Client                     *ethereum2Client
+// OptimismClient is a JSON-RPC client of Optimism
+type OptimismClient struct {
+	*EthereumClient
+	l1Client                     *Ethereum2Client
 	contractStateCommitmentChain common.Address
 }
 
-func newOptimismClient(ethereumClient *ethereumClient, l1Client *ethereum2Client, contractStateCommitmentChain common.Address) (*optimismClient, error) {
-	client := &optimismClient{ethereumClient: ethereumClient, l1Client: l1Client, contractStateCommitmentChain: contractStateCommitmentChain}
+// NewOptimismClient is the constructor
+func NewOptimismClient(ethereumClient *EthereumClient, l1Client *Ethereum2Client, contractStateCommitmentChain common.Address) (*OptimismClient, error) {
+	client := &OptimismClient{EthereumClient: ethereumClient, l1Client: l1Client, contractStateCommitmentChain: contractStateCommitmentChain}
 	if _, err := client.getRollupGasPrices(context.Background()); err != nil {
 		return nil, err
 	}
@@ -73,7 +75,8 @@ func newOptimismClient(ethereumClient *ethereumClient, l1Client *ethereum2Client
 	return client, nil
 }
 
-func (c *optimismClient) IsFinalized(ctx context.Context, _ uint64, txReceipt *types.Receipt) (bool, error) {
+// IsFinalized determines whether or not the given transaction receipt is finalized on the chain
+func (c *OptimismClient) IsFinalized(ctx context.Context, _ uint64, txReceipt *types.Receipt) (bool, error) {
 	// Every block has exactly one transaction in it. Since there's a genesis block without transaction, the
 	// transaction index will always be one less than the block number.
 	// https://github.com/ethereum-optimism/optimism/blob/400d81fb9932677becc8744663938570c198555a/packages/sdk/src/cross-chain-messenger.ts#L1103
@@ -94,7 +97,7 @@ func (c *optimismClient) IsFinalized(ctx context.Context, _ uint64, txReceipt *t
 }
 
 // equivalent implementation of https://github.com/ethereum-optimism/optimism/blob/400d81fb9932677becc8744663938570c198555a/packages/sdk/src/cross-chain-messenger.ts#L1169
-func (c *optimismClient) getRollupTxHashByTxIndex(ctx context.Context, txIndex sdk.Uint) (common.Hash, error) {
+func (c *OptimismClient) getRollupTxHashByTxIndex(ctx context.Context, txIndex sdk.Uint) (common.Hash, error) {
 	totalBatches, err := c.getRollupCount(ctx)
 	if err != nil {
 		return common.Hash{}, err
@@ -117,19 +120,19 @@ func (c *optimismClient) getRollupTxHashByTxIndex(ctx context.Context, txIndex s
 	}
 
 	upperBound = upperBound.SubUint64(1)
-	for batchIndex := lowerBound.Add(upperBound).QuoUint64(2); lowerBound.LTE(upperBound); batchIndex = lowerBound.Add(upperBound).QuoUint64(2) {
-		rollup, err := c.getRollup(ctx, batchIndex)
+	for mid := lowerBound.Add(upperBound).QuoUint64(2); lowerBound.LTE(upperBound); mid = lowerBound.Add(upperBound).QuoUint64(2) {
+		rollup, err := c.getRollup(ctx, mid)
 		if err != nil {
 			return common.Hash{}, err
 		}
 
 		if rollup.isBefore(txIndex) {
-			lowerBound = batchIndex.AddUint64(1)
+			lowerBound = mid.AddUint64(1)
 			continue
 		}
 
 		if rollup.isAfter(txIndex) {
-			upperBound = batchIndex.SubUint64(1)
+			upperBound = mid.SubUint64(1)
 			continue
 		}
 
@@ -139,12 +142,12 @@ func (c *optimismClient) getRollupTxHashByTxIndex(ctx context.Context, txIndex s
 	return common.Hash{}, ethereum.NotFound
 }
 
-func (c *optimismClient) getRollup(ctx context.Context, batchIndex sdk.Uint) (*rollup, error) {
+func (c *OptimismClient) getRollup(ctx context.Context, index sdk.Uint) (*rollup, error) {
 	filterQuery := ethereum.FilterQuery{
 		Addresses: []common.Address{c.contractStateCommitmentChain},
 		Topics: [][]common.Hash{
 			{stateBatchAppendedEventSig},
-			{common.BytesToHash(batchIndex.BigInt().Bytes())},
+			{common.BytesToHash(index.BigInt().Bytes())},
 		},
 	}
 
@@ -169,7 +172,7 @@ func (c *optimismClient) getRollup(ctx context.Context, batchIndex sdk.Uint) (*r
 	}, nil
 }
 
-func (c *optimismClient) getRollupCount(ctx context.Context) (*big.Int, error) {
+func (c *OptimismClient) getRollupCount(ctx context.Context) (*big.Int, error) {
 	callMsg := ethereum.CallMsg{
 		To:   &c.contractStateCommitmentChain,
 		Data: getTotalBatchesMethod.ID,
@@ -185,7 +188,7 @@ func (c *optimismClient) getRollupCount(ctx context.Context) (*big.Int, error) {
 	return new(big.Int).SetBytes(bz), nil
 }
 
-func (c *optimismClient) getRollupGasPrices(ctx context.Context) (*optimismRollupGasPrices, error) {
+func (c *OptimismClient) getRollupGasPrices(ctx context.Context) (*optimismRollupGasPrices, error) {
 	var gasPrices optimismRollupGasPrices
 	if err := c.rpc.CallContext(ctx, &gasPrices, "rollup_gasPrices"); err != nil {
 		return nil, err
