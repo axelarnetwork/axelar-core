@@ -25,6 +25,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/tendermint/tendermint/libs/log"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/utils"
@@ -105,7 +106,7 @@ func GetValdCommand() *cobra.Command {
 
 	// Only set default, not actual value, so it can be overwritten by env variable
 	utils.OverwriteFlagDefaults(cmd, map[string]string{
-		flags.FlagBroadcastMode:  flags.BroadcastBlock,
+		flags.FlagBroadcastMode:  flags.BroadcastSync,
 		flags.FlagChainID:        app.Name,
 		flags.FlagGasPrices:      "0.007uaxl",
 		flags.FlagKeyringBackend: "file",
@@ -202,7 +203,7 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 	evmMgr := createEVMMgr(axelarCfg, clientCtx, bc, logger, cdc, valAddr)
 	multisigMgr := createMultisigMgr(bc, clientCtx, axelarCfg, logger, valAddr)
 
-	nodeHeight, err := waitTillNetworkSync(axelarCfg, robustClient, logger)
+	nodeHeight, err := waitUntilNetworkSync(axelarCfg, robustClient, logger)
 	if err != nil {
 		panic(err)
 	}
@@ -214,14 +215,6 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 	}
 
 	eventBus := createEventBus(robustClient, startBlock, axelarCfg.EventNotificationsMaxRetries, axelarCfg.EventNotificationsBackOff, logger)
-	subscribe := func(eventType, module, action string) <-chan tmEvents.ABCIEventWithHeight {
-		return eventBus.Subscribe(func(e tmEvents.ABCIEventWithHeight) bool {
-			event := tmEvents.Map(e)
-
-			return event.Type == eventType && event.Attributes[sdk.AttributeKeyModule] == module && event.Attributes[sdk.AttributeKeyAction] == action
-		})
-	}
-
 	var blockHeight int64
 	blockHeaderSub := eventBus.Subscribe(func(event tmEvents.ABCIEventWithHeight) bool {
 		if event.Height != blockHeight {
@@ -231,7 +224,12 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 		return false
 	})
 
-	heartbeat := subscribe(tssTypes.EventTypeHeartBeat, tssTypes.ModuleName, tssTypes.AttributeValueSend)
+	heartbeat := eventBus.Subscribe(func(e tmEvents.ABCIEventWithHeight) bool {
+		event := tmEvents.Map(e)
+		return event.Type == tssTypes.EventTypeHeartBeat &&
+			event.Attributes[sdk.AttributeKeyModule] == tssTypes.ModuleName &&
+			event.Attributes[sdk.AttributeKeyAction] == tssTypes.AttributeValueSend
+	})
 
 	evmNewChain := eventBus.Subscribe(tmEvents.Filter[*evmTypes.ChainAdded]())
 	evmDepConf := eventBus.Subscribe(tmEvents.Filter[*evmTypes.ConfirmDepositStarted]())
@@ -243,7 +241,7 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 	multisigSigning := eventBus.Subscribe(tmEvents.Filter[*multisigTypes.SigningStarted]())
 
 	eventCtx, cancelEventCtx := context.WithCancel(context.Background())
-	mgr := jobs.NewMgr(eventCtx)
+	eGroup, eventCtx := errgroup.WithContext(eventCtx)
 
 	// stop the jobs if process gets interrupted/terminated
 	cleanupCommands = append(cleanupCommands, func() {
@@ -252,8 +250,7 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 		<-eventBus.Done()
 		logger.Info("event listener stopped")
 		logger.Info("stopping subscribers...")
-		<-mgr.Done()
-		if err := <-mgr.Errs(); err != nil {
+		if err := eGroup.Wait(); err != nil {
 			logger.Error(err.Error())
 		}
 		logger.Info("subscriptions stopped")
@@ -269,13 +266,29 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 		}
 	}
 
+	timer := time.AfterFunc(0, func() {})
+	defer timer.Stop()
+	blockTimeout, timeoutCancel := context.WithCancel(context.Background())
 	processBlockHeader := func(event tmEvents.Event) error {
+		timer.Stop()
+		timer = time.AfterFunc(axelarCfg.NoNewBlockPanicTimeout, timeoutCancel)
+
 		return stateStore.SetState(event.Height)
 	}
 
+	failOnTimeout := func(ctx context.Context) error {
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-blockTimeout.Done():
+			return errors.New("no new blocks received from the node")
+		}
+	}
+
 	js := []jobs.Job{
-		fetchEvents,
 		createJob(blockHeaderSub, processBlockHeader, cancelEventCtx, logger),
+		fetchEvents,
+		failOnTimeout,
 		createJob(heartbeat, tssMgr.ProcessHeartBeatEvent, cancelEventCtx, logger),
 		createJobTyped(evmNewChain, evmMgr.ProcessNewChain, cancelEventCtx, logger),
 		createJobTyped(evmDepConf, evmMgr.ProcessDepositConfirmation, cancelEventCtx, logger),
@@ -286,8 +299,13 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 		createJobTyped(multisigSigning, multisigMgr.ProcessSigningStarted, cancelEventCtx, logger),
 	}
 
-	mgr.AddJobs(js...)
-	<-mgr.Done()
+	slices.ForEach(js, func(job jobs.Job) {
+		eGroup.Go(func() error { return job(eventCtx) })
+	})
+
+	if err := eGroup.Wait(); err != nil {
+		logger.Error(err.Error())
+	}
 }
 
 func createJob(sub <-chan tmEvents.ABCIEventWithHeight, processor func(event tmEvents.Event) error, cancel context.CancelFunc, logger log.Logger) jobs.Job {
@@ -330,7 +348,7 @@ func createJobTyped[T proto.Message](sub <-chan tmEvents.ABCIEventWithHeight, pr
 }
 
 // Wait until the node has synced with the network and return the node height
-func waitTillNetworkSync(cfg config.ValdConfig, tmClient tmEvents.SyncInfoClient, logger log.Logger) (int64, error) {
+func waitUntilNetworkSync(cfg config.ValdConfig, tmClient tmEvents.SyncInfoClient, logger log.Logger) (int64, error) {
 	for {
 		rpcCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		syncInfo, err := tmClient.LatestSyncInfo(rpcCtx)
