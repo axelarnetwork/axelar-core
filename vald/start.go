@@ -455,7 +455,7 @@ func createL2ClientWith(clients map[string]evmRPC.Client) func(evmTypes.EVMConfi
 			return nil, fmt.Errorf("RPC client for L1 evm chain %s not found", l1ChainName)
 		}
 
-		return evmRPC.NewL2Client(config.Name, config.RPCAddr, l1Client)
+		return evmRPC.NewL2Client(config, l1Client)
 	}
 }
 

@@ -16,3 +16,11 @@ start-with-bridge = true
 name = "evm-2"
 rpc_addr = "https://localhost:7476"
 start-with-bridge = true
+
+[[axelar_bridge_evm]]
+
+l1_chain_name = "evm-2"
+name = "optimism"
+rpc_addr = "https://localhost:7477"
+start-with-bridge = true
+state_commitment_chain = "0xbe5dab4a2e9cd0f27300db4ab94bee3a233aeb19"
