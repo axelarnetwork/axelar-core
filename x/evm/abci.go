@@ -71,6 +71,22 @@ func handleContractCall(ctx sdk.Context, event types.Event, bk types.BaseKeeper,
 	}
 
 	destinationChain := funcs.MustOk(n.GetChain(ctx, e.DestinationChain))
+
+	if !destinationChain.IsFrom(types.ModuleName) {
+		message := nexus.NewGeneralMessage(
+			string(event.GetID()),
+			event.Chain,
+			e.Sender.Hex(),
+			e.DestinationChain,
+			e.ContractAddress,
+			e.PayloadHash.Bytes(),
+			nexus.Approved,
+			nexus.NewPureMessage(),
+		)
+
+		return n.SetNewGeneralMessage(ctx, message)
+	}
+
 	destinationCk := funcs.Must(bk.ForChain(ctx, destinationChain.Name))
 
 	cmd := types.NewApproveContractCallCommand(
@@ -109,23 +125,13 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 
 	sourceChain := funcs.MustOk(n.GetChain(ctx, event.Chain))
 	destinationChain := funcs.MustOk(n.GetChain(ctx, e.DestinationChain))
-	sourceCk := funcs.Must(bk.ForChain(ctx, sourceChain.Name))
-	destinationCk := funcs.Must(bk.ForChain(ctx, destinationChain.Name))
 
+	sourceCk := funcs.Must(bk.ForChain(ctx, sourceChain.Name))
 	token := sourceCk.GetERC20TokenBySymbol(ctx, e.Symbol)
 	if !token.Is(types.Confirmed) {
 		return fmt.Errorf("token with symbol %s not confirmed on source chain", e.Symbol)
 	}
-
 	asset := token.GetAsset()
-	destinationToken := destinationCk.GetERC20TokenByAsset(ctx, asset)
-	if !destinationToken.Is(types.Confirmed) {
-		return fmt.Errorf("token with asset %s not confirmed on destination chain", e.Symbol)
-	}
-
-	if !common.IsHexAddress(e.ContractAddress) {
-		return fmt.Errorf("invalid contract address %s", e.ContractAddress)
-	}
 
 	if err := n.RateLimitTransfer(ctx, sourceChain.Name, sdk.NewCoin(asset, sdk.Int(e.Amount)), nexus.Incoming); err != nil {
 		return err
@@ -133,6 +139,32 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 
 	if err := n.RateLimitTransfer(ctx, destinationChain.Name, sdk.NewCoin(asset, sdk.Int(e.Amount)), nexus.Outgoing); err != nil {
 		return err
+	}
+
+	if !destinationChain.IsFrom(types.ModuleName) {
+		message := nexus.NewGeneralMessage(
+			string(event.GetID()),
+			sourceChain.Name,
+			e.Sender.Hex(),
+			e.DestinationChain,
+			e.ContractAddress,
+			e.PayloadHash.Bytes(),
+			nexus.Approved,
+			nexus.NewMessageWithToken(sdk.NewCoin(asset, sdk.Int(e.Amount))),
+		)
+
+		return n.SetNewGeneralMessage(ctx, message)
+	}
+
+	destinationCk := funcs.Must(bk.ForChain(ctx, destinationChain.Name))
+
+	destinationToken := destinationCk.GetERC20TokenByAsset(ctx, asset)
+	if !destinationToken.Is(types.Confirmed) {
+		return fmt.Errorf("token with asset %s not confirmed on destination chain", e.Symbol)
+	}
+
+	if !common.IsHexAddress(e.ContractAddress) {
+		return fmt.Errorf("invalid contract address %s", e.ContractAddress)
 	}
 
 	cmd := types.NewApproveContractCallWithMintCommand(
@@ -383,11 +415,11 @@ func validateEvent(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n ty
 		return fmt.Errorf("destination chain de-activated")
 	}
 
-	if event.GetTokenSent() != nil && !types.IsEVMChain(destinationChain) {
+	// skip further destination chain keeper checks if it is not an evm chain
+	if !destinationChain.IsFrom(types.ModuleName) {
 		return nil
 	}
 
-	// skip further checks and handle event if destination is not an evm chain
 	destinationCk, err := bk.ForChain(ctx, destinationChainName)
 	if err != nil {
 		return fmt.Errorf("destination chain not EVM-compatible")

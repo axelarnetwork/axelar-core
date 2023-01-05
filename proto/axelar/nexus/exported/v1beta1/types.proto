@@ -87,3 +87,30 @@ enum TransferDirection {
   TRANSFER_DIRECTION_OUTGOING = 2
       [ (gogoproto.enumvalue_customname) = "Outgoing" ];
 }
+
+message GeneralMessage {
+  enum Status {
+    option (gogoproto.goproto_enum_prefix) = false;
+    option (gogoproto.goproto_enum_stringer) = true;
+
+    STATUS_UNSPECIFIED = 0 [ (gogoproto.enumvalue_customname) = "NonExistent" ];
+    STATUS_APPROVED = 1 [ (gogoproto.enumvalue_customname) = "Approved" ];
+    STATUS_EXECUTED = 2 [ (gogoproto.enumvalue_customname) = "Executed" ];
+  }
+
+  string id = 1 [ (gogoproto.customname) = "ID" ];
+  string source_chain = 2 [ (gogoproto.casttype) = "ChainName" ];
+  string sender = 3;
+  string destination_chain = 4 [ (gogoproto.casttype) = "ChainName" ];
+  string receiver = 5;
+  bytes payload_hash = 6;
+  Status status = 7;
+  oneof message {
+    PureMessage pure_message = 8;
+    MessageWithToken message_with_token = 9;
+  }
+}
+message PureMessage {}
+message MessageWithToken {
+  cosmos.base.v1beta1.Coin asset = 1 [ (gogoproto.nullable) = false ];
+}
