@@ -14,43 +14,43 @@ var _ utils.ValidatedProtoMarshaler = &ValidatedProtoMarshalerMock{}
 
 // ValidatedProtoMarshalerMock is a mock implementation of utils.ValidatedProtoMarshaler.
 //
-// 	func TestSomethingThatUsesValidatedProtoMarshaler(t *testing.T) {
+//	func TestSomethingThatUsesValidatedProtoMarshaler(t *testing.T) {
 //
-// 		// make and configure a mocked utils.ValidatedProtoMarshaler
-// 		mockedValidatedProtoMarshaler := &ValidatedProtoMarshalerMock{
-// 			MarshalFunc: func() ([]byte, error) {
-// 				panic("mock out the Marshal method")
-// 			},
-// 			MarshalToFunc: func(data []byte) (int, error) {
-// 				panic("mock out the MarshalTo method")
-// 			},
-// 			MarshalToSizedBufferFunc: func(dAtA []byte) (int, error) {
-// 				panic("mock out the MarshalToSizedBuffer method")
-// 			},
-// 			ProtoMessageFunc: func()  {
-// 				panic("mock out the ProtoMessage method")
-// 			},
-// 			ResetFunc: func()  {
-// 				panic("mock out the Reset method")
-// 			},
-// 			SizeFunc: func() int {
-// 				panic("mock out the Size method")
-// 			},
-// 			StringFunc: func() string {
-// 				panic("mock out the String method")
-// 			},
-// 			UnmarshalFunc: func(data []byte) error {
-// 				panic("mock out the Unmarshal method")
-// 			},
-// 			ValidateBasicFunc: func() error {
-// 				panic("mock out the ValidateBasic method")
-// 			},
-// 		}
+//		// make and configure a mocked utils.ValidatedProtoMarshaler
+//		mockedValidatedProtoMarshaler := &ValidatedProtoMarshalerMock{
+//			MarshalFunc: func() ([]byte, error) {
+//				panic("mock out the Marshal method")
+//			},
+//			MarshalToFunc: func(data []byte) (int, error) {
+//				panic("mock out the MarshalTo method")
+//			},
+//			MarshalToSizedBufferFunc: func(dAtA []byte) (int, error) {
+//				panic("mock out the MarshalToSizedBuffer method")
+//			},
+//			ProtoMessageFunc: func()  {
+//				panic("mock out the ProtoMessage method")
+//			},
+//			ResetFunc: func()  {
+//				panic("mock out the Reset method")
+//			},
+//			SizeFunc: func() int {
+//				panic("mock out the Size method")
+//			},
+//			StringFunc: func() string {
+//				panic("mock out the String method")
+//			},
+//			UnmarshalFunc: func(data []byte) error {
+//				panic("mock out the Unmarshal method")
+//			},
+//			ValidateBasicFunc: func() error {
+//				panic("mock out the ValidateBasic method")
+//			},
+//		}
 //
-// 		// use mockedValidatedProtoMarshaler in code that requires utils.ValidatedProtoMarshaler
-// 		// and then make assertions.
+//		// use mockedValidatedProtoMarshaler in code that requires utils.ValidatedProtoMarshaler
+//		// and then make assertions.
 //
-// 	}
+//	}
 type ValidatedProtoMarshalerMock struct {
 	// MarshalFunc mocks the Marshal method.
 	MarshalFunc func() ([]byte, error)
@@ -141,7 +141,8 @@ func (mock *ValidatedProtoMarshalerMock) Marshal() ([]byte, error) {
 
 // MarshalCalls gets all the calls that were made to Marshal.
 // Check the length with:
-//     len(mockedValidatedProtoMarshaler.MarshalCalls())
+//
+//	len(mockedValidatedProtoMarshaler.MarshalCalls())
 func (mock *ValidatedProtoMarshalerMock) MarshalCalls() []struct {
 } {
 	var calls []struct {
@@ -170,7 +171,8 @@ func (mock *ValidatedProtoMarshalerMock) MarshalTo(data []byte) (int, error) {
 
 // MarshalToCalls gets all the calls that were made to MarshalTo.
 // Check the length with:
-//     len(mockedValidatedProtoMarshaler.MarshalToCalls())
+//
+//	len(mockedValidatedProtoMarshaler.MarshalToCalls())
 func (mock *ValidatedProtoMarshalerMock) MarshalToCalls() []struct {
 	Data []byte
 } {
@@ -201,7 +203,8 @@ func (mock *ValidatedProtoMarshalerMock) MarshalToSizedBuffer(dAtA []byte) (int,
 
 // MarshalToSizedBufferCalls gets all the calls that were made to MarshalToSizedBuffer.
 // Check the length with:
-//     len(mockedValidatedProtoMarshaler.MarshalToSizedBufferCalls())
+//
+//	len(mockedValidatedProtoMarshaler.MarshalToSizedBufferCalls())
 func (mock *ValidatedProtoMarshalerMock) MarshalToSizedBufferCalls() []struct {
 	DAtA []byte
 } {
@@ -229,7 +232,8 @@ func (mock *ValidatedProtoMarshalerMock) ProtoMessage() {
 
 // ProtoMessageCalls gets all the calls that were made to ProtoMessage.
 // Check the length with:
-//     len(mockedValidatedProtoMarshaler.ProtoMessageCalls())
+//
+//	len(mockedValidatedProtoMarshaler.ProtoMessageCalls())
 func (mock *ValidatedProtoMarshalerMock) ProtoMessageCalls() []struct {
 } {
 	var calls []struct {
@@ -255,7 +259,8 @@ func (mock *ValidatedProtoMarshalerMock) Reset() {
 
 // ResetCalls gets all the calls that were made to Reset.
 // Check the length with:
-//     len(mockedValidatedProtoMarshaler.ResetCalls())
+//
+//	len(mockedValidatedProtoMarshaler.ResetCalls())
 func (mock *ValidatedProtoMarshalerMock) ResetCalls() []struct {
 } {
 	var calls []struct {
@@ -281,7 +286,8 @@ func (mock *ValidatedProtoMarshalerMock) Size() int {
 
 // SizeCalls gets all the calls that were made to Size.
 // Check the length with:
-//     len(mockedValidatedProtoMarshaler.SizeCalls())
+//
+//	len(mockedValidatedProtoMarshaler.SizeCalls())
 func (mock *ValidatedProtoMarshalerMock) SizeCalls() []struct {
 } {
 	var calls []struct {
@@ -307,7 +313,8 @@ func (mock *ValidatedProtoMarshalerMock) String() string {
 
 // StringCalls gets all the calls that were made to String.
 // Check the length with:
-//     len(mockedValidatedProtoMarshaler.StringCalls())
+//
+//	len(mockedValidatedProtoMarshaler.StringCalls())
 func (mock *ValidatedProtoMarshalerMock) StringCalls() []struct {
 } {
 	var calls []struct {
@@ -336,7 +343,8 @@ func (mock *ValidatedProtoMarshalerMock) Unmarshal(data []byte) error {
 
 // UnmarshalCalls gets all the calls that were made to Unmarshal.
 // Check the length with:
-//     len(mockedValidatedProtoMarshaler.UnmarshalCalls())
+//
+//	len(mockedValidatedProtoMarshaler.UnmarshalCalls())
 func (mock *ValidatedProtoMarshalerMock) UnmarshalCalls() []struct {
 	Data []byte
 } {
@@ -364,7 +372,8 @@ func (mock *ValidatedProtoMarshalerMock) ValidateBasic() error {
 
 // ValidateBasicCalls gets all the calls that were made to ValidateBasic.
 // Check the length with:
-//     len(mockedValidatedProtoMarshaler.ValidateBasicCalls())
+//
+//	len(mockedValidatedProtoMarshaler.ValidateBasicCalls())
 func (mock *ValidatedProtoMarshalerMock) ValidateBasicCalls() []struct {
 } {
 	var calls []struct {

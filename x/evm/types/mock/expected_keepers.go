@@ -25,19 +25,19 @@ var _ types.Voter = &VoterMock{}
 
 // VoterMock is a mock implementation of types.Voter.
 //
-// 	func TestSomethingThatUsesVoter(t *testing.T) {
+//	func TestSomethingThatUsesVoter(t *testing.T) {
 //
-// 		// make and configure a mocked types.Voter
-// 		mockedVoter := &VoterMock{
-// 			InitializePollFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, pollBuilder vote.PollBuilder) (vote.PollID, error) {
-// 				panic("mock out the InitializePoll method")
-// 			},
-// 		}
+//		// make and configure a mocked types.Voter
+//		mockedVoter := &VoterMock{
+//			InitializePollFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, pollBuilder vote.PollBuilder) (vote.PollID, error) {
+//				panic("mock out the InitializePoll method")
+//			},
+//		}
 //
-// 		// use mockedVoter in code that requires types.Voter
-// 		// and then make assertions.
+//		// use mockedVoter in code that requires types.Voter
+//		// and then make assertions.
 //
-// 	}
+//	}
 type VoterMock struct {
 	// InitializePollFunc mocks the InitializePoll method.
 	InitializePollFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, pollBuilder vote.PollBuilder) (vote.PollID, error)
@@ -75,7 +75,8 @@ func (mock *VoterMock) InitializePoll(ctx github_com_cosmos_cosmos_sdk_types.Con
 
 // InitializePollCalls gets all the calls that were made to InitializePoll.
 // Check the length with:
-//     len(mockedVoter.InitializePollCalls())
+//
+//	len(mockedVoter.InitializePollCalls())
 func (mock *VoterMock) InitializePollCalls() []struct {
 	Ctx         github_com_cosmos_cosmos_sdk_types.Context
 	PollBuilder vote.PollBuilder
@@ -96,73 +97,73 @@ var _ types.Nexus = &NexusMock{}
 
 // NexusMock is a mock implementation of types.Nexus.
 //
-// 	func TestSomethingThatUsesNexus(t *testing.T) {
+//	func TestSomethingThatUsesNexus(t *testing.T) {
 //
-// 		// make and configure a mocked types.Nexus
-// 		mockedNexus := &NexusMock{
-// 			AddTransferFeeFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, coin github_com_cosmos_cosmos_sdk_types.Coin)  {
-// 				panic("mock out the AddTransferFee method")
-// 			},
-// 			ArchivePendingTransferFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, transfer github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainTransfer)  {
-// 				panic("mock out the ArchivePendingTransfer method")
-// 			},
-// 			ComputeTransferFeeFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sourceChain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, destinationChain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_cosmos_cosmos_sdk_types.Coin) (github_com_cosmos_cosmos_sdk_types.Coin, error) {
-// 				panic("mock out the ComputeTransferFee method")
-// 			},
-// 			EnqueueForTransferFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, amount github_com_cosmos_cosmos_sdk_types.Coin) (github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferID, error) {
-// 				panic("mock out the EnqueueForTransfer method")
-// 			},
-// 			EnqueueTransferFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, senderChain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, asset github_com_cosmos_cosmos_sdk_types.Coin) (github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferID, error) {
-// 				panic("mock out the EnqueueTransfer method")
-// 			},
-// 			GetChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, bool) {
-// 				panic("mock out the GetChain method")
-// 			},
-// 			GetChainByNativeAssetFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string) (github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, bool) {
-// 				panic("mock out the GetChainByNativeAsset method")
-// 			},
-// 			GetChainMaintainerStateFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, address github_com_cosmos_cosmos_sdk_types.ValAddress) (github_com_axelarnetwork_axelar_core_x_nexus_exported.MaintainerState, bool) {
-// 				panic("mock out the GetChainMaintainerState method")
-// 			},
-// 			GetChainMaintainersFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain) []github_com_cosmos_cosmos_sdk_types.ValAddress {
-// 				panic("mock out the GetChainMaintainers method")
-// 			},
-// 			GetChainsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain {
-// 				panic("mock out the GetChains method")
-// 			},
-// 			GetRecipientFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress) (github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, bool) {
-// 				panic("mock out the GetRecipient method")
-// 			},
-// 			GetTransfersForChainPaginatedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, state github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferState, pageRequest *query.PageRequest) ([]github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainTransfer, *query.PageResponse, error) {
-// 				panic("mock out the GetTransfersForChainPaginated method")
-// 			},
-// 			IsAssetRegisteredFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, denom string) bool {
-// 				panic("mock out the IsAssetRegistered method")
-// 			},
-// 			IsChainActivatedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain) bool {
-// 				panic("mock out the IsChainActivated method")
-// 			},
-// 			LinkAddressesFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress) error {
-// 				panic("mock out the LinkAddresses method")
-// 			},
-// 			RateLimitTransferFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, asset github_com_cosmos_cosmos_sdk_types.Coin, direction github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferDirection) error {
-// 				panic("mock out the RateLimitTransfer method")
-// 			},
-// 			RegisterAssetFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset, limit github_com_cosmos_cosmos_sdk_types.Uint, window time.Duration) error {
-// 				panic("mock out the RegisterAsset method")
-// 			},
-// 			SetChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain)  {
-// 				panic("mock out the SetChain method")
-// 			},
-// 			SetChainMaintainerStateFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, maintainerState github_com_axelarnetwork_axelar_core_x_nexus_exported.MaintainerState) error {
-// 				panic("mock out the SetChainMaintainerState method")
-// 			},
-// 		}
+//		// make and configure a mocked types.Nexus
+//		mockedNexus := &NexusMock{
+//			AddTransferFeeFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, coin github_com_cosmos_cosmos_sdk_types.Coin)  {
+//				panic("mock out the AddTransferFee method")
+//			},
+//			ArchivePendingTransferFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, transfer github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainTransfer)  {
+//				panic("mock out the ArchivePendingTransfer method")
+//			},
+//			ComputeTransferFeeFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sourceChain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, destinationChain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_cosmos_cosmos_sdk_types.Coin) (github_com_cosmos_cosmos_sdk_types.Coin, error) {
+//				panic("mock out the ComputeTransferFee method")
+//			},
+//			EnqueueForTransferFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, amount github_com_cosmos_cosmos_sdk_types.Coin) (github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferID, error) {
+//				panic("mock out the EnqueueForTransfer method")
+//			},
+//			EnqueueTransferFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, senderChain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, asset github_com_cosmos_cosmos_sdk_types.Coin) (github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferID, error) {
+//				panic("mock out the EnqueueTransfer method")
+//			},
+//			GetChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, bool) {
+//				panic("mock out the GetChain method")
+//			},
+//			GetChainByNativeAssetFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string) (github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, bool) {
+//				panic("mock out the GetChainByNativeAsset method")
+//			},
+//			GetChainMaintainerStateFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, address github_com_cosmos_cosmos_sdk_types.ValAddress) (github_com_axelarnetwork_axelar_core_x_nexus_exported.MaintainerState, bool) {
+//				panic("mock out the GetChainMaintainerState method")
+//			},
+//			GetChainMaintainersFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain) []github_com_cosmos_cosmos_sdk_types.ValAddress {
+//				panic("mock out the GetChainMaintainers method")
+//			},
+//			GetChainsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain {
+//				panic("mock out the GetChains method")
+//			},
+//			GetRecipientFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress) (github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, bool) {
+//				panic("mock out the GetRecipient method")
+//			},
+//			GetTransfersForChainPaginatedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, state github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferState, pageRequest *query.PageRequest) ([]github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainTransfer, *query.PageResponse, error) {
+//				panic("mock out the GetTransfersForChainPaginated method")
+//			},
+//			IsAssetRegisteredFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, denom string) bool {
+//				panic("mock out the IsAssetRegistered method")
+//			},
+//			IsChainActivatedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain) bool {
+//				panic("mock out the IsChainActivated method")
+//			},
+//			LinkAddressesFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress) error {
+//				panic("mock out the LinkAddresses method")
+//			},
+//			RateLimitTransferFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, asset github_com_cosmos_cosmos_sdk_types.Coin, direction github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferDirection) error {
+//				panic("mock out the RateLimitTransfer method")
+//			},
+//			RegisterAssetFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset, limit github_com_cosmos_cosmos_sdk_types.Uint, window time.Duration) error {
+//				panic("mock out the RegisterAsset method")
+//			},
+//			SetChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain)  {
+//				panic("mock out the SetChain method")
+//			},
+//			SetChainMaintainerStateFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, maintainerState github_com_axelarnetwork_axelar_core_x_nexus_exported.MaintainerState) error {
+//				panic("mock out the SetChainMaintainerState method")
+//			},
+//		}
 //
-// 		// use mockedNexus in code that requires types.Nexus
-// 		// and then make assertions.
+//		// use mockedNexus in code that requires types.Nexus
+//		// and then make assertions.
 //
-// 	}
+//	}
 type NexusMock struct {
 	// AddTransferFeeFunc mocks the AddTransferFee method.
 	AddTransferFeeFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, coin github_com_cosmos_cosmos_sdk_types.Coin)
@@ -426,7 +427,8 @@ func (mock *NexusMock) AddTransferFee(ctx github_com_cosmos_cosmos_sdk_types.Con
 
 // AddTransferFeeCalls gets all the calls that were made to AddTransferFee.
 // Check the length with:
-//     len(mockedNexus.AddTransferFeeCalls())
+//
+//	len(mockedNexus.AddTransferFeeCalls())
 func (mock *NexusMock) AddTransferFeeCalls() []struct {
 	Ctx  github_com_cosmos_cosmos_sdk_types.Context
 	Coin github_com_cosmos_cosmos_sdk_types.Coin
@@ -461,7 +463,8 @@ func (mock *NexusMock) ArchivePendingTransfer(ctx github_com_cosmos_cosmos_sdk_t
 
 // ArchivePendingTransferCalls gets all the calls that were made to ArchivePendingTransfer.
 // Check the length with:
-//     len(mockedNexus.ArchivePendingTransferCalls())
+//
+//	len(mockedNexus.ArchivePendingTransferCalls())
 func (mock *NexusMock) ArchivePendingTransferCalls() []struct {
 	Ctx      github_com_cosmos_cosmos_sdk_types.Context
 	Transfer github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainTransfer
@@ -500,7 +503,8 @@ func (mock *NexusMock) ComputeTransferFee(ctx github_com_cosmos_cosmos_sdk_types
 
 // ComputeTransferFeeCalls gets all the calls that were made to ComputeTransferFee.
 // Check the length with:
-//     len(mockedNexus.ComputeTransferFeeCalls())
+//
+//	len(mockedNexus.ComputeTransferFeeCalls())
 func (mock *NexusMock) ComputeTransferFeeCalls() []struct {
 	Ctx              github_com_cosmos_cosmos_sdk_types.Context
 	SourceChain      github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
@@ -541,7 +545,8 @@ func (mock *NexusMock) EnqueueForTransfer(ctx github_com_cosmos_cosmos_sdk_types
 
 // EnqueueForTransferCalls gets all the calls that were made to EnqueueForTransfer.
 // Check the length with:
-//     len(mockedNexus.EnqueueForTransferCalls())
+//
+//	len(mockedNexus.EnqueueForTransferCalls())
 func (mock *NexusMock) EnqueueForTransferCalls() []struct {
 	Ctx    github_com_cosmos_cosmos_sdk_types.Context
 	Sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
@@ -582,7 +587,8 @@ func (mock *NexusMock) EnqueueTransfer(ctx github_com_cosmos_cosmos_sdk_types.Co
 
 // EnqueueTransferCalls gets all the calls that were made to EnqueueTransfer.
 // Check the length with:
-//     len(mockedNexus.EnqueueTransferCalls())
+//
+//	len(mockedNexus.EnqueueTransferCalls())
 func (mock *NexusMock) EnqueueTransferCalls() []struct {
 	Ctx         github_com_cosmos_cosmos_sdk_types.Context
 	SenderChain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
@@ -621,7 +627,8 @@ func (mock *NexusMock) GetChain(ctx github_com_cosmos_cosmos_sdk_types.Context, 
 
 // GetChainCalls gets all the calls that were made to GetChain.
 // Check the length with:
-//     len(mockedNexus.GetChainCalls())
+//
+//	len(mockedNexus.GetChainCalls())
 func (mock *NexusMock) GetChainCalls() []struct {
 	Ctx   github_com_cosmos_cosmos_sdk_types.Context
 	Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
@@ -656,7 +663,8 @@ func (mock *NexusMock) GetChainByNativeAsset(ctx github_com_cosmos_cosmos_sdk_ty
 
 // GetChainByNativeAssetCalls gets all the calls that were made to GetChainByNativeAsset.
 // Check the length with:
-//     len(mockedNexus.GetChainByNativeAssetCalls())
+//
+//	len(mockedNexus.GetChainByNativeAssetCalls())
 func (mock *NexusMock) GetChainByNativeAssetCalls() []struct {
 	Ctx   github_com_cosmos_cosmos_sdk_types.Context
 	Asset string
@@ -693,7 +701,8 @@ func (mock *NexusMock) GetChainMaintainerState(ctx github_com_cosmos_cosmos_sdk_
 
 // GetChainMaintainerStateCalls gets all the calls that were made to GetChainMaintainerState.
 // Check the length with:
-//     len(mockedNexus.GetChainMaintainerStateCalls())
+//
+//	len(mockedNexus.GetChainMaintainerStateCalls())
 func (mock *NexusMock) GetChainMaintainerStateCalls() []struct {
 	Ctx     github_com_cosmos_cosmos_sdk_types.Context
 	Chain   github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
@@ -730,7 +739,8 @@ func (mock *NexusMock) GetChainMaintainers(ctx github_com_cosmos_cosmos_sdk_type
 
 // GetChainMaintainersCalls gets all the calls that were made to GetChainMaintainers.
 // Check the length with:
-//     len(mockedNexus.GetChainMaintainersCalls())
+//
+//	len(mockedNexus.GetChainMaintainersCalls())
 func (mock *NexusMock) GetChainMaintainersCalls() []struct {
 	Ctx   github_com_cosmos_cosmos_sdk_types.Context
 	Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
@@ -763,7 +773,8 @@ func (mock *NexusMock) GetChains(ctx github_com_cosmos_cosmos_sdk_types.Context)
 
 // GetChainsCalls gets all the calls that were made to GetChains.
 // Check the length with:
-//     len(mockedNexus.GetChainsCalls())
+//
+//	len(mockedNexus.GetChainsCalls())
 func (mock *NexusMock) GetChainsCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 } {
@@ -796,7 +807,8 @@ func (mock *NexusMock) GetRecipient(ctx github_com_cosmos_cosmos_sdk_types.Conte
 
 // GetRecipientCalls gets all the calls that were made to GetRecipient.
 // Check the length with:
-//     len(mockedNexus.GetRecipientCalls())
+//
+//	len(mockedNexus.GetRecipientCalls())
 func (mock *NexusMock) GetRecipientCalls() []struct {
 	Ctx    github_com_cosmos_cosmos_sdk_types.Context
 	Sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
@@ -835,7 +847,8 @@ func (mock *NexusMock) GetTransfersForChainPaginated(ctx github_com_cosmos_cosmo
 
 // GetTransfersForChainPaginatedCalls gets all the calls that were made to GetTransfersForChainPaginated.
 // Check the length with:
-//     len(mockedNexus.GetTransfersForChainPaginatedCalls())
+//
+//	len(mockedNexus.GetTransfersForChainPaginatedCalls())
 func (mock *NexusMock) GetTransfersForChainPaginatedCalls() []struct {
 	Ctx         github_com_cosmos_cosmos_sdk_types.Context
 	Chain       github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
@@ -876,7 +889,8 @@ func (mock *NexusMock) IsAssetRegistered(ctx github_com_cosmos_cosmos_sdk_types.
 
 // IsAssetRegisteredCalls gets all the calls that were made to IsAssetRegistered.
 // Check the length with:
-//     len(mockedNexus.IsAssetRegisteredCalls())
+//
+//	len(mockedNexus.IsAssetRegisteredCalls())
 func (mock *NexusMock) IsAssetRegisteredCalls() []struct {
 	Ctx   github_com_cosmos_cosmos_sdk_types.Context
 	Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
@@ -913,7 +927,8 @@ func (mock *NexusMock) IsChainActivated(ctx github_com_cosmos_cosmos_sdk_types.C
 
 // IsChainActivatedCalls gets all the calls that were made to IsChainActivated.
 // Check the length with:
-//     len(mockedNexus.IsChainActivatedCalls())
+//
+//	len(mockedNexus.IsChainActivatedCalls())
 func (mock *NexusMock) IsChainActivatedCalls() []struct {
 	Ctx   github_com_cosmos_cosmos_sdk_types.Context
 	Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
@@ -950,7 +965,8 @@ func (mock *NexusMock) LinkAddresses(ctx github_com_cosmos_cosmos_sdk_types.Cont
 
 // LinkAddressesCalls gets all the calls that were made to LinkAddresses.
 // Check the length with:
-//     len(mockedNexus.LinkAddressesCalls())
+//
+//	len(mockedNexus.LinkAddressesCalls())
 func (mock *NexusMock) LinkAddressesCalls() []struct {
 	Ctx       github_com_cosmos_cosmos_sdk_types.Context
 	Sender    github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
@@ -991,7 +1007,8 @@ func (mock *NexusMock) RateLimitTransfer(ctx github_com_cosmos_cosmos_sdk_types.
 
 // RateLimitTransferCalls gets all the calls that were made to RateLimitTransfer.
 // Check the length with:
-//     len(mockedNexus.RateLimitTransferCalls())
+//
+//	len(mockedNexus.RateLimitTransferCalls())
 func (mock *NexusMock) RateLimitTransferCalls() []struct {
 	Ctx       github_com_cosmos_cosmos_sdk_types.Context
 	Chain     github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
@@ -1036,7 +1053,8 @@ func (mock *NexusMock) RegisterAsset(ctx github_com_cosmos_cosmos_sdk_types.Cont
 
 // RegisterAssetCalls gets all the calls that were made to RegisterAsset.
 // Check the length with:
-//     len(mockedNexus.RegisterAssetCalls())
+//
+//	len(mockedNexus.RegisterAssetCalls())
 func (mock *NexusMock) RegisterAssetCalls() []struct {
 	Ctx    github_com_cosmos_cosmos_sdk_types.Context
 	Chain  github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
@@ -1077,7 +1095,8 @@ func (mock *NexusMock) SetChain(ctx github_com_cosmos_cosmos_sdk_types.Context, 
 
 // SetChainCalls gets all the calls that were made to SetChain.
 // Check the length with:
-//     len(mockedNexus.SetChainCalls())
+//
+//	len(mockedNexus.SetChainCalls())
 func (mock *NexusMock) SetChainCalls() []struct {
 	Ctx   github_com_cosmos_cosmos_sdk_types.Context
 	Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
@@ -1112,7 +1131,8 @@ func (mock *NexusMock) SetChainMaintainerState(ctx github_com_cosmos_cosmos_sdk_
 
 // SetChainMaintainerStateCalls gets all the calls that were made to SetChainMaintainerState.
 // Check the length with:
-//     len(mockedNexus.SetChainMaintainerStateCalls())
+//
+//	len(mockedNexus.SetChainMaintainerStateCalls())
 func (mock *NexusMock) SetChainMaintainerStateCalls() []struct {
 	Ctx             github_com_cosmos_cosmos_sdk_types.Context
 	MaintainerState github_com_axelarnetwork_axelar_core_x_nexus_exported.MaintainerState
@@ -1133,22 +1153,22 @@ var _ types.Snapshotter = &SnapshotterMock{}
 
 // SnapshotterMock is a mock implementation of types.Snapshotter.
 //
-// 	func TestSomethingThatUsesSnapshotter(t *testing.T) {
+//	func TestSomethingThatUsesSnapshotter(t *testing.T) {
 //
-// 		// make and configure a mocked types.Snapshotter
-// 		mockedSnapshotter := &SnapshotterMock{
-// 			CreateSnapshotFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, candidates []github_com_cosmos_cosmos_sdk_types.ValAddress, filterFunc func(snapshot.ValidatorI) bool, weightFunc func(consensusPower github_com_cosmos_cosmos_sdk_types.Uint) github_com_cosmos_cosmos_sdk_types.Uint, threshold utils.Threshold) (snapshot.Snapshot, error) {
-// 				panic("mock out the CreateSnapshot method")
-// 			},
-// 			GetProxyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, principal github_com_cosmos_cosmos_sdk_types.ValAddress) (github_com_cosmos_cosmos_sdk_types.AccAddress, bool) {
-// 				panic("mock out the GetProxy method")
-// 			},
-// 		}
+//		// make and configure a mocked types.Snapshotter
+//		mockedSnapshotter := &SnapshotterMock{
+//			CreateSnapshotFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, candidates []github_com_cosmos_cosmos_sdk_types.ValAddress, filterFunc func(snapshot.ValidatorI) bool, weightFunc func(consensusPower github_com_cosmos_cosmos_sdk_types.Uint) github_com_cosmos_cosmos_sdk_types.Uint, threshold utils.Threshold) (snapshot.Snapshot, error) {
+//				panic("mock out the CreateSnapshot method")
+//			},
+//			GetProxyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, principal github_com_cosmos_cosmos_sdk_types.ValAddress) (github_com_cosmos_cosmos_sdk_types.AccAddress, bool) {
+//				panic("mock out the GetProxy method")
+//			},
+//		}
 //
-// 		// use mockedSnapshotter in code that requires types.Snapshotter
-// 		// and then make assertions.
+//		// use mockedSnapshotter in code that requires types.Snapshotter
+//		// and then make assertions.
 //
-// 	}
+//	}
 type SnapshotterMock struct {
 	// CreateSnapshotFunc mocks the CreateSnapshot method.
 	CreateSnapshotFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, candidates []github_com_cosmos_cosmos_sdk_types.ValAddress, filterFunc func(snapshot.ValidatorI) bool, weightFunc func(consensusPower github_com_cosmos_cosmos_sdk_types.Uint) github_com_cosmos_cosmos_sdk_types.Uint, threshold utils.Threshold) (snapshot.Snapshot, error)
@@ -1209,7 +1229,8 @@ func (mock *SnapshotterMock) CreateSnapshot(ctx github_com_cosmos_cosmos_sdk_typ
 
 // CreateSnapshotCalls gets all the calls that were made to CreateSnapshot.
 // Check the length with:
-//     len(mockedSnapshotter.CreateSnapshotCalls())
+//
+//	len(mockedSnapshotter.CreateSnapshotCalls())
 func (mock *SnapshotterMock) CreateSnapshotCalls() []struct {
 	Ctx        github_com_cosmos_cosmos_sdk_types.Context
 	Candidates []github_com_cosmos_cosmos_sdk_types.ValAddress
@@ -1250,7 +1271,8 @@ func (mock *SnapshotterMock) GetProxy(ctx github_com_cosmos_cosmos_sdk_types.Con
 
 // GetProxyCalls gets all the calls that were made to GetProxy.
 // Check the length with:
-//     len(mockedSnapshotter.GetProxyCalls())
+//
+//	len(mockedSnapshotter.GetProxyCalls())
 func (mock *SnapshotterMock) GetProxyCalls() []struct {
 	Ctx       github_com_cosmos_cosmos_sdk_types.Context
 	Principal github_com_cosmos_cosmos_sdk_types.ValAddress
@@ -1271,25 +1293,25 @@ var _ types.BaseKeeper = &BaseKeeperMock{}
 
 // BaseKeeperMock is a mock implementation of types.BaseKeeper.
 //
-// 	func TestSomethingThatUsesBaseKeeper(t *testing.T) {
+//	func TestSomethingThatUsesBaseKeeper(t *testing.T) {
 //
-// 		// make and configure a mocked types.BaseKeeper
-// 		mockedBaseKeeper := &BaseKeeperMock{
-// 			CreateChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, params types.Params) error {
-// 				panic("mock out the CreateChain method")
-// 			},
-// 			ForChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (types.ChainKeeper, error) {
-// 				panic("mock out the ForChain method")
-// 			},
-// 			LoggerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger {
-// 				panic("mock out the Logger method")
-// 			},
-// 		}
+//		// make and configure a mocked types.BaseKeeper
+//		mockedBaseKeeper := &BaseKeeperMock{
+//			CreateChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, params types.Params) error {
+//				panic("mock out the CreateChain method")
+//			},
+//			ForChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (types.ChainKeeper, error) {
+//				panic("mock out the ForChain method")
+//			},
+//			LoggerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger {
+//				panic("mock out the Logger method")
+//			},
+//		}
 //
-// 		// use mockedBaseKeeper in code that requires types.BaseKeeper
-// 		// and then make assertions.
+//		// use mockedBaseKeeper in code that requires types.BaseKeeper
+//		// and then make assertions.
 //
-// 	}
+//	}
 type BaseKeeperMock struct {
 	// CreateChainFunc mocks the CreateChain method.
 	CreateChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, params types.Params) error
@@ -1347,7 +1369,8 @@ func (mock *BaseKeeperMock) CreateChain(ctx github_com_cosmos_cosmos_sdk_types.C
 
 // CreateChainCalls gets all the calls that were made to CreateChain.
 // Check the length with:
-//     len(mockedBaseKeeper.CreateChainCalls())
+//
+//	len(mockedBaseKeeper.CreateChainCalls())
 func (mock *BaseKeeperMock) CreateChainCalls() []struct {
 	Ctx    github_com_cosmos_cosmos_sdk_types.Context
 	Params types.Params
@@ -1382,7 +1405,8 @@ func (mock *BaseKeeperMock) ForChain(ctx github_com_cosmos_cosmos_sdk_types.Cont
 
 // ForChainCalls gets all the calls that were made to ForChain.
 // Check the length with:
-//     len(mockedBaseKeeper.ForChainCalls())
+//
+//	len(mockedBaseKeeper.ForChainCalls())
 func (mock *BaseKeeperMock) ForChainCalls() []struct {
 	Ctx   github_com_cosmos_cosmos_sdk_types.Context
 	Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
@@ -1415,7 +1439,8 @@ func (mock *BaseKeeperMock) Logger(ctx github_com_cosmos_cosmos_sdk_types.Contex
 
 // LoggerCalls gets all the calls that were made to Logger.
 // Check the length with:
-//     len(mockedBaseKeeper.LoggerCalls())
+//
+//	len(mockedBaseKeeper.LoggerCalls())
 func (mock *BaseKeeperMock) LoggerCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 } {
@@ -1434,145 +1459,145 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 
 // ChainKeeperMock is a mock implementation of types.ChainKeeper.
 //
-// 	func TestSomethingThatUsesChainKeeper(t *testing.T) {
+//	func TestSomethingThatUsesChainKeeper(t *testing.T) {
 //
-// 		// make and configure a mocked types.ChainKeeper
-// 		mockedChainKeeper := &ChainKeeperMock{
-// 			CreateERC20TokenFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string, details types.TokenDetails, address types.Address) (types.ERC20Token, error) {
-// 				panic("mock out the CreateERC20Token method")
-// 			},
-// 			CreateNewBatchToSignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (types.CommandBatch, error) {
-// 				panic("mock out the CreateNewBatchToSign method")
-// 			},
-// 			DeleteDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, deposit types.ERC20Deposit)  {
-// 				panic("mock out the DeleteDeposit method")
-// 			},
-// 			DeleteUnsignedCommandBatchIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context)  {
-// 				panic("mock out the DeleteUnsignedCommandBatchID method")
-// 			},
-// 			EnqueueCommandFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, cmd types.Command) error {
-// 				panic("mock out the EnqueueCommand method")
-// 			},
-// 			GenerateSaltFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, recipient string) types.Hash {
-// 				panic("mock out the GenerateSalt method")
-// 			},
-// 			GetBatchByIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, id []byte) types.CommandBatch {
-// 				panic("mock out the GetBatchByID method")
-// 			},
-// 			GetBurnerAddressFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, token types.ERC20Token, salt types.Hash, gatewayAddr types.Address) (types.Address, error) {
-// 				panic("mock out the GetBurnerAddress method")
-// 			},
-// 			GetBurnerByteCodeFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []byte {
-// 				panic("mock out the GetBurnerByteCode method")
-// 			},
-// 			GetBurnerInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, address types.Address) *types.BurnerInfo {
-// 				panic("mock out the GetBurnerInfo method")
-// 			},
-// 			GetChainIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (github_com_cosmos_cosmos_sdk_types.Int, bool) {
-// 				panic("mock out the GetChainID method")
-// 			},
-// 			GetChainIDByNetworkFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, network string) (github_com_cosmos_cosmos_sdk_types.Int, bool) {
-// 				panic("mock out the GetChainIDByNetwork method")
-// 			},
-// 			GetCommandFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, id types.CommandID) (types.Command, bool) {
-// 				panic("mock out the GetCommand method")
-// 			},
-// 			GetConfirmedDepositsPaginatedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, pageRequest *query.PageRequest) ([]types.ERC20Deposit, *query.PageResponse, error) {
-// 				panic("mock out the GetConfirmedDepositsPaginated method")
-// 			},
-// 			GetConfirmedEventQueueFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.KVQueue {
-// 				panic("mock out the GetConfirmedEventQueue method")
-// 			},
-// 			GetDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID types.Hash, logIndex uint64) (types.ERC20Deposit, types.DepositStatus, bool) {
-// 				panic("mock out the GetDeposit method")
-// 			},
-// 			GetDepositsByTxIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID types.Hash, status types.DepositStatus) ([]types.ERC20Deposit, error) {
-// 				panic("mock out the GetDepositsByTxID method")
-// 			},
-// 			GetERC20TokenByAddressFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, address types.Address) types.ERC20Token {
-// 				panic("mock out the GetERC20TokenByAddress method")
-// 			},
-// 			GetERC20TokenByAssetFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string) types.ERC20Token {
-// 				panic("mock out the GetERC20TokenByAsset method")
-// 			},
-// 			GetERC20TokenBySymbolFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, symbol string) types.ERC20Token {
-// 				panic("mock out the GetERC20TokenBySymbol method")
-// 			},
-// 			GetEventFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, eventID types.EventID) (types.Event, bool) {
-// 				panic("mock out the GetEvent method")
-// 			},
-// 			GetGatewayAddressFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (types.Address, bool) {
-// 				panic("mock out the GetGatewayAddress method")
-// 			},
-// 			GetLatestCommandBatchFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) types.CommandBatch {
-// 				panic("mock out the GetLatestCommandBatch method")
-// 			},
-// 			GetLegacyDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID types.Hash, burnerAddr types.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
-// 				panic("mock out the GetLegacyDeposit method")
-// 			},
-// 			GetMinVoterCountFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64 {
-// 				panic("mock out the GetMinVoterCount method")
-// 			},
-// 			GetNameFunc: func() github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName {
-// 				panic("mock out the GetName method")
-// 			},
-// 			GetNetworkFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) string {
-// 				panic("mock out the GetNetwork method")
-// 			},
-// 			GetNetworkByIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, id github_com_cosmos_cosmos_sdk_types.Int) (string, bool) {
-// 				panic("mock out the GetNetworkByID method")
-// 			},
-// 			GetParamsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) types.Params {
-// 				panic("mock out the GetParams method")
-// 			},
-// 			GetPendingCommandsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.Command {
-// 				panic("mock out the GetPendingCommands method")
-// 			},
-// 			GetRequiredConfirmationHeightFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) uint64 {
-// 				panic("mock out the GetRequiredConfirmationHeight method")
-// 			},
-// 			GetRevoteLockingPeriodFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64 {
-// 				panic("mock out the GetRevoteLockingPeriod method")
-// 			},
-// 			GetTokenByteCodeFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []byte {
-// 				panic("mock out the GetTokenByteCode method")
-// 			},
-// 			GetTokensFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.ERC20Token {
-// 				panic("mock out the GetTokens method")
-// 			},
-// 			GetVotingThresholdFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.Threshold {
-// 				panic("mock out the GetVotingThreshold method")
-// 			},
-// 			LoggerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger {
-// 				panic("mock out the Logger method")
-// 			},
-// 			SetBurnerInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, burnerInfo types.BurnerInfo)  {
-// 				panic("mock out the SetBurnerInfo method")
-// 			},
-// 			SetConfirmedEventFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, event types.Event) error {
-// 				panic("mock out the SetConfirmedEvent method")
-// 			},
-// 			SetDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, deposit types.ERC20Deposit, state types.DepositStatus)  {
-// 				panic("mock out the SetDeposit method")
-// 			},
-// 			SetEventCompletedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, eventID types.EventID) error {
-// 				panic("mock out the SetEventCompleted method")
-// 			},
-// 			SetEventFailedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, eventID types.EventID) error {
-// 				panic("mock out the SetEventFailed method")
-// 			},
-// 			SetGatewayFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, address types.Address)  {
-// 				panic("mock out the SetGateway method")
-// 			},
-// 			SetLatestSignedCommandBatchIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, id []byte)  {
-// 				panic("mock out the SetLatestSignedCommandBatchID method")
-// 			},
-// 		}
+//		// make and configure a mocked types.ChainKeeper
+//		mockedChainKeeper := &ChainKeeperMock{
+//			CreateERC20TokenFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string, details types.TokenDetails, address types.Address) (types.ERC20Token, error) {
+//				panic("mock out the CreateERC20Token method")
+//			},
+//			CreateNewBatchToSignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (types.CommandBatch, error) {
+//				panic("mock out the CreateNewBatchToSign method")
+//			},
+//			DeleteDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, deposit types.ERC20Deposit)  {
+//				panic("mock out the DeleteDeposit method")
+//			},
+//			DeleteUnsignedCommandBatchIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context)  {
+//				panic("mock out the DeleteUnsignedCommandBatchID method")
+//			},
+//			EnqueueCommandFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, cmd types.Command) error {
+//				panic("mock out the EnqueueCommand method")
+//			},
+//			GenerateSaltFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, recipient string) types.Hash {
+//				panic("mock out the GenerateSalt method")
+//			},
+//			GetBatchByIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, id []byte) types.CommandBatch {
+//				panic("mock out the GetBatchByID method")
+//			},
+//			GetBurnerAddressFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, token types.ERC20Token, salt types.Hash, gatewayAddr types.Address) (types.Address, error) {
+//				panic("mock out the GetBurnerAddress method")
+//			},
+//			GetBurnerByteCodeFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []byte {
+//				panic("mock out the GetBurnerByteCode method")
+//			},
+//			GetBurnerInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, address types.Address) *types.BurnerInfo {
+//				panic("mock out the GetBurnerInfo method")
+//			},
+//			GetChainIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (github_com_cosmos_cosmos_sdk_types.Int, bool) {
+//				panic("mock out the GetChainID method")
+//			},
+//			GetChainIDByNetworkFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, network string) (github_com_cosmos_cosmos_sdk_types.Int, bool) {
+//				panic("mock out the GetChainIDByNetwork method")
+//			},
+//			GetCommandFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, id types.CommandID) (types.Command, bool) {
+//				panic("mock out the GetCommand method")
+//			},
+//			GetConfirmedDepositsPaginatedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, pageRequest *query.PageRequest) ([]types.ERC20Deposit, *query.PageResponse, error) {
+//				panic("mock out the GetConfirmedDepositsPaginated method")
+//			},
+//			GetConfirmedEventQueueFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.KVQueue {
+//				panic("mock out the GetConfirmedEventQueue method")
+//			},
+//			GetDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID types.Hash, logIndex uint64) (types.ERC20Deposit, types.DepositStatus, bool) {
+//				panic("mock out the GetDeposit method")
+//			},
+//			GetDepositsByTxIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID types.Hash, status types.DepositStatus) ([]types.ERC20Deposit, error) {
+//				panic("mock out the GetDepositsByTxID method")
+//			},
+//			GetERC20TokenByAddressFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, address types.Address) types.ERC20Token {
+//				panic("mock out the GetERC20TokenByAddress method")
+//			},
+//			GetERC20TokenByAssetFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string) types.ERC20Token {
+//				panic("mock out the GetERC20TokenByAsset method")
+//			},
+//			GetERC20TokenBySymbolFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, symbol string) types.ERC20Token {
+//				panic("mock out the GetERC20TokenBySymbol method")
+//			},
+//			GetEventFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, eventID types.EventID) (types.Event, bool) {
+//				panic("mock out the GetEvent method")
+//			},
+//			GetGatewayAddressFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (types.Address, bool) {
+//				panic("mock out the GetGatewayAddress method")
+//			},
+//			GetLatestCommandBatchFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) types.CommandBatch {
+//				panic("mock out the GetLatestCommandBatch method")
+//			},
+//			GetLegacyDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, txID types.Hash, burnerAddr types.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
+//				panic("mock out the GetLegacyDeposit method")
+//			},
+//			GetMinVoterCountFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64 {
+//				panic("mock out the GetMinVoterCount method")
+//			},
+//			GetNameFunc: func() github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName {
+//				panic("mock out the GetName method")
+//			},
+//			GetNetworkFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) string {
+//				panic("mock out the GetNetwork method")
+//			},
+//			GetNetworkByIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, id github_com_cosmos_cosmos_sdk_types.Int) (string, bool) {
+//				panic("mock out the GetNetworkByID method")
+//			},
+//			GetParamsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) types.Params {
+//				panic("mock out the GetParams method")
+//			},
+//			GetPendingCommandsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.Command {
+//				panic("mock out the GetPendingCommands method")
+//			},
+//			GetRequiredConfirmationHeightFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) uint64 {
+//				panic("mock out the GetRequiredConfirmationHeight method")
+//			},
+//			GetRevoteLockingPeriodFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64 {
+//				panic("mock out the GetRevoteLockingPeriod method")
+//			},
+//			GetTokenByteCodeFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []byte {
+//				panic("mock out the GetTokenByteCode method")
+//			},
+//			GetTokensFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []types.ERC20Token {
+//				panic("mock out the GetTokens method")
+//			},
+//			GetVotingThresholdFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) utils.Threshold {
+//				panic("mock out the GetVotingThreshold method")
+//			},
+//			LoggerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) log.Logger {
+//				panic("mock out the Logger method")
+//			},
+//			SetBurnerInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, burnerInfo types.BurnerInfo)  {
+//				panic("mock out the SetBurnerInfo method")
+//			},
+//			SetConfirmedEventFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, event types.Event) error {
+//				panic("mock out the SetConfirmedEvent method")
+//			},
+//			SetDepositFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, deposit types.ERC20Deposit, state types.DepositStatus)  {
+//				panic("mock out the SetDeposit method")
+//			},
+//			SetEventCompletedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, eventID types.EventID) error {
+//				panic("mock out the SetEventCompleted method")
+//			},
+//			SetEventFailedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, eventID types.EventID) error {
+//				panic("mock out the SetEventFailed method")
+//			},
+//			SetGatewayFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, address types.Address)  {
+//				panic("mock out the SetGateway method")
+//			},
+//			SetLatestSignedCommandBatchIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, id []byte)  {
+//				panic("mock out the SetLatestSignedCommandBatchID method")
+//			},
+//		}
 //
-// 		// use mockedChainKeeper in code that requires types.ChainKeeper
-// 		// and then make assertions.
+//		// use mockedChainKeeper in code that requires types.ChainKeeper
+//		// and then make assertions.
 //
-// 	}
+//	}
 type ChainKeeperMock struct {
 	// CreateERC20TokenFunc mocks the CreateERC20Token method.
 	CreateERC20TokenFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, asset string, details types.TokenDetails, address types.Address) (types.ERC20Token, error)
@@ -2054,7 +2079,8 @@ func (mock *ChainKeeperMock) CreateERC20Token(ctx github_com_cosmos_cosmos_sdk_t
 
 // CreateERC20TokenCalls gets all the calls that were made to CreateERC20Token.
 // Check the length with:
-//     len(mockedChainKeeper.CreateERC20TokenCalls())
+//
+//	len(mockedChainKeeper.CreateERC20TokenCalls())
 func (mock *ChainKeeperMock) CreateERC20TokenCalls() []struct {
 	Ctx     github_com_cosmos_cosmos_sdk_types.Context
 	Asset   string
@@ -2091,7 +2117,8 @@ func (mock *ChainKeeperMock) CreateNewBatchToSign(ctx github_com_cosmos_cosmos_s
 
 // CreateNewBatchToSignCalls gets all the calls that were made to CreateNewBatchToSign.
 // Check the length with:
-//     len(mockedChainKeeper.CreateNewBatchToSignCalls())
+//
+//	len(mockedChainKeeper.CreateNewBatchToSignCalls())
 func (mock *ChainKeeperMock) CreateNewBatchToSignCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 } {
@@ -2124,7 +2151,8 @@ func (mock *ChainKeeperMock) DeleteDeposit(ctx github_com_cosmos_cosmos_sdk_type
 
 // DeleteDepositCalls gets all the calls that were made to DeleteDeposit.
 // Check the length with:
-//     len(mockedChainKeeper.DeleteDepositCalls())
+//
+//	len(mockedChainKeeper.DeleteDepositCalls())
 func (mock *ChainKeeperMock) DeleteDepositCalls() []struct {
 	Ctx     github_com_cosmos_cosmos_sdk_types.Context
 	Deposit types.ERC20Deposit
@@ -2157,7 +2185,8 @@ func (mock *ChainKeeperMock) DeleteUnsignedCommandBatchID(ctx github_com_cosmos_
 
 // DeleteUnsignedCommandBatchIDCalls gets all the calls that were made to DeleteUnsignedCommandBatchID.
 // Check the length with:
-//     len(mockedChainKeeper.DeleteUnsignedCommandBatchIDCalls())
+//
+//	len(mockedChainKeeper.DeleteUnsignedCommandBatchIDCalls())
 func (mock *ChainKeeperMock) DeleteUnsignedCommandBatchIDCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 } {
@@ -2190,7 +2219,8 @@ func (mock *ChainKeeperMock) EnqueueCommand(ctx github_com_cosmos_cosmos_sdk_typ
 
 // EnqueueCommandCalls gets all the calls that were made to EnqueueCommand.
 // Check the length with:
-//     len(mockedChainKeeper.EnqueueCommandCalls())
+//
+//	len(mockedChainKeeper.EnqueueCommandCalls())
 func (mock *ChainKeeperMock) EnqueueCommandCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 	Cmd types.Command
@@ -2225,7 +2255,8 @@ func (mock *ChainKeeperMock) GenerateSalt(ctx github_com_cosmos_cosmos_sdk_types
 
 // GenerateSaltCalls gets all the calls that were made to GenerateSalt.
 // Check the length with:
-//     len(mockedChainKeeper.GenerateSaltCalls())
+//
+//	len(mockedChainKeeper.GenerateSaltCalls())
 func (mock *ChainKeeperMock) GenerateSaltCalls() []struct {
 	Ctx       github_com_cosmos_cosmos_sdk_types.Context
 	Recipient string
@@ -2260,7 +2291,8 @@ func (mock *ChainKeeperMock) GetBatchByID(ctx github_com_cosmos_cosmos_sdk_types
 
 // GetBatchByIDCalls gets all the calls that were made to GetBatchByID.
 // Check the length with:
-//     len(mockedChainKeeper.GetBatchByIDCalls())
+//
+//	len(mockedChainKeeper.GetBatchByIDCalls())
 func (mock *ChainKeeperMock) GetBatchByIDCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 	ID  []byte
@@ -2299,7 +2331,8 @@ func (mock *ChainKeeperMock) GetBurnerAddress(ctx github_com_cosmos_cosmos_sdk_t
 
 // GetBurnerAddressCalls gets all the calls that were made to GetBurnerAddress.
 // Check the length with:
-//     len(mockedChainKeeper.GetBurnerAddressCalls())
+//
+//	len(mockedChainKeeper.GetBurnerAddressCalls())
 func (mock *ChainKeeperMock) GetBurnerAddressCalls() []struct {
 	Ctx         github_com_cosmos_cosmos_sdk_types.Context
 	Token       types.ERC20Token
@@ -2336,7 +2369,8 @@ func (mock *ChainKeeperMock) GetBurnerByteCode(ctx github_com_cosmos_cosmos_sdk_
 
 // GetBurnerByteCodeCalls gets all the calls that were made to GetBurnerByteCode.
 // Check the length with:
-//     len(mockedChainKeeper.GetBurnerByteCodeCalls())
+//
+//	len(mockedChainKeeper.GetBurnerByteCodeCalls())
 func (mock *ChainKeeperMock) GetBurnerByteCodeCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 } {
@@ -2369,7 +2403,8 @@ func (mock *ChainKeeperMock) GetBurnerInfo(ctx github_com_cosmos_cosmos_sdk_type
 
 // GetBurnerInfoCalls gets all the calls that were made to GetBurnerInfo.
 // Check the length with:
-//     len(mockedChainKeeper.GetBurnerInfoCalls())
+//
+//	len(mockedChainKeeper.GetBurnerInfoCalls())
 func (mock *ChainKeeperMock) GetBurnerInfoCalls() []struct {
 	Ctx     github_com_cosmos_cosmos_sdk_types.Context
 	Address types.Address
@@ -2402,7 +2437,8 @@ func (mock *ChainKeeperMock) GetChainID(ctx github_com_cosmos_cosmos_sdk_types.C
 
 // GetChainIDCalls gets all the calls that were made to GetChainID.
 // Check the length with:
-//     len(mockedChainKeeper.GetChainIDCalls())
+//
+//	len(mockedChainKeeper.GetChainIDCalls())
 func (mock *ChainKeeperMock) GetChainIDCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 } {
@@ -2435,7 +2471,8 @@ func (mock *ChainKeeperMock) GetChainIDByNetwork(ctx github_com_cosmos_cosmos_sd
 
 // GetChainIDByNetworkCalls gets all the calls that were made to GetChainIDByNetwork.
 // Check the length with:
-//     len(mockedChainKeeper.GetChainIDByNetworkCalls())
+//
+//	len(mockedChainKeeper.GetChainIDByNetworkCalls())
 func (mock *ChainKeeperMock) GetChainIDByNetworkCalls() []struct {
 	Ctx     github_com_cosmos_cosmos_sdk_types.Context
 	Network string
@@ -2470,7 +2507,8 @@ func (mock *ChainKeeperMock) GetCommand(ctx github_com_cosmos_cosmos_sdk_types.C
 
 // GetCommandCalls gets all the calls that were made to GetCommand.
 // Check the length with:
-//     len(mockedChainKeeper.GetCommandCalls())
+//
+//	len(mockedChainKeeper.GetCommandCalls())
 func (mock *ChainKeeperMock) GetCommandCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 	ID  types.CommandID
@@ -2505,7 +2543,8 @@ func (mock *ChainKeeperMock) GetConfirmedDepositsPaginated(ctx github_com_cosmos
 
 // GetConfirmedDepositsPaginatedCalls gets all the calls that were made to GetConfirmedDepositsPaginated.
 // Check the length with:
-//     len(mockedChainKeeper.GetConfirmedDepositsPaginatedCalls())
+//
+//	len(mockedChainKeeper.GetConfirmedDepositsPaginatedCalls())
 func (mock *ChainKeeperMock) GetConfirmedDepositsPaginatedCalls() []struct {
 	Ctx         github_com_cosmos_cosmos_sdk_types.Context
 	PageRequest *query.PageRequest
@@ -2538,7 +2577,8 @@ func (mock *ChainKeeperMock) GetConfirmedEventQueue(ctx github_com_cosmos_cosmos
 
 // GetConfirmedEventQueueCalls gets all the calls that were made to GetConfirmedEventQueue.
 // Check the length with:
-//     len(mockedChainKeeper.GetConfirmedEventQueueCalls())
+//
+//	len(mockedChainKeeper.GetConfirmedEventQueueCalls())
 func (mock *ChainKeeperMock) GetConfirmedEventQueueCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 } {
@@ -2573,7 +2613,8 @@ func (mock *ChainKeeperMock) GetDeposit(ctx github_com_cosmos_cosmos_sdk_types.C
 
 // GetDepositCalls gets all the calls that were made to GetDeposit.
 // Check the length with:
-//     len(mockedChainKeeper.GetDepositCalls())
+//
+//	len(mockedChainKeeper.GetDepositCalls())
 func (mock *ChainKeeperMock) GetDepositCalls() []struct {
 	Ctx      github_com_cosmos_cosmos_sdk_types.Context
 	TxID     types.Hash
@@ -2612,7 +2653,8 @@ func (mock *ChainKeeperMock) GetDepositsByTxID(ctx github_com_cosmos_cosmos_sdk_
 
 // GetDepositsByTxIDCalls gets all the calls that were made to GetDepositsByTxID.
 // Check the length with:
-//     len(mockedChainKeeper.GetDepositsByTxIDCalls())
+//
+//	len(mockedChainKeeper.GetDepositsByTxIDCalls())
 func (mock *ChainKeeperMock) GetDepositsByTxIDCalls() []struct {
 	Ctx    github_com_cosmos_cosmos_sdk_types.Context
 	TxID   types.Hash
@@ -2649,7 +2691,8 @@ func (mock *ChainKeeperMock) GetERC20TokenByAddress(ctx github_com_cosmos_cosmos
 
 // GetERC20TokenByAddressCalls gets all the calls that were made to GetERC20TokenByAddress.
 // Check the length with:
-//     len(mockedChainKeeper.GetERC20TokenByAddressCalls())
+//
+//	len(mockedChainKeeper.GetERC20TokenByAddressCalls())
 func (mock *ChainKeeperMock) GetERC20TokenByAddressCalls() []struct {
 	Ctx     github_com_cosmos_cosmos_sdk_types.Context
 	Address types.Address
@@ -2684,7 +2727,8 @@ func (mock *ChainKeeperMock) GetERC20TokenByAsset(ctx github_com_cosmos_cosmos_s
 
 // GetERC20TokenByAssetCalls gets all the calls that were made to GetERC20TokenByAsset.
 // Check the length with:
-//     len(mockedChainKeeper.GetERC20TokenByAssetCalls())
+//
+//	len(mockedChainKeeper.GetERC20TokenByAssetCalls())
 func (mock *ChainKeeperMock) GetERC20TokenByAssetCalls() []struct {
 	Ctx   github_com_cosmos_cosmos_sdk_types.Context
 	Asset string
@@ -2719,7 +2763,8 @@ func (mock *ChainKeeperMock) GetERC20TokenBySymbol(ctx github_com_cosmos_cosmos_
 
 // GetERC20TokenBySymbolCalls gets all the calls that were made to GetERC20TokenBySymbol.
 // Check the length with:
-//     len(mockedChainKeeper.GetERC20TokenBySymbolCalls())
+//
+//	len(mockedChainKeeper.GetERC20TokenBySymbolCalls())
 func (mock *ChainKeeperMock) GetERC20TokenBySymbolCalls() []struct {
 	Ctx    github_com_cosmos_cosmos_sdk_types.Context
 	Symbol string
@@ -2754,7 +2799,8 @@ func (mock *ChainKeeperMock) GetEvent(ctx github_com_cosmos_cosmos_sdk_types.Con
 
 // GetEventCalls gets all the calls that were made to GetEvent.
 // Check the length with:
-//     len(mockedChainKeeper.GetEventCalls())
+//
+//	len(mockedChainKeeper.GetEventCalls())
 func (mock *ChainKeeperMock) GetEventCalls() []struct {
 	Ctx     github_com_cosmos_cosmos_sdk_types.Context
 	EventID types.EventID
@@ -2787,7 +2833,8 @@ func (mock *ChainKeeperMock) GetGatewayAddress(ctx github_com_cosmos_cosmos_sdk_
 
 // GetGatewayAddressCalls gets all the calls that were made to GetGatewayAddress.
 // Check the length with:
-//     len(mockedChainKeeper.GetGatewayAddressCalls())
+//
+//	len(mockedChainKeeper.GetGatewayAddressCalls())
 func (mock *ChainKeeperMock) GetGatewayAddressCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 } {
@@ -2818,7 +2865,8 @@ func (mock *ChainKeeperMock) GetLatestCommandBatch(ctx github_com_cosmos_cosmos_
 
 // GetLatestCommandBatchCalls gets all the calls that were made to GetLatestCommandBatch.
 // Check the length with:
-//     len(mockedChainKeeper.GetLatestCommandBatchCalls())
+//
+//	len(mockedChainKeeper.GetLatestCommandBatchCalls())
 func (mock *ChainKeeperMock) GetLatestCommandBatchCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 } {
@@ -2853,7 +2901,8 @@ func (mock *ChainKeeperMock) GetLegacyDeposit(ctx github_com_cosmos_cosmos_sdk_t
 
 // GetLegacyDepositCalls gets all the calls that were made to GetLegacyDeposit.
 // Check the length with:
-//     len(mockedChainKeeper.GetLegacyDepositCalls())
+//
+//	len(mockedChainKeeper.GetLegacyDepositCalls())
 func (mock *ChainKeeperMock) GetLegacyDepositCalls() []struct {
 	Ctx        github_com_cosmos_cosmos_sdk_types.Context
 	TxID       types.Hash
@@ -2888,7 +2937,8 @@ func (mock *ChainKeeperMock) GetMinVoterCount(ctx github_com_cosmos_cosmos_sdk_t
 
 // GetMinVoterCountCalls gets all the calls that were made to GetMinVoterCount.
 // Check the length with:
-//     len(mockedChainKeeper.GetMinVoterCountCalls())
+//
+//	len(mockedChainKeeper.GetMinVoterCountCalls())
 func (mock *ChainKeeperMock) GetMinVoterCountCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 } {
@@ -2916,7 +2966,8 @@ func (mock *ChainKeeperMock) GetName() github_com_axelarnetwork_axelar_core_x_ne
 
 // GetNameCalls gets all the calls that were made to GetName.
 // Check the length with:
-//     len(mockedChainKeeper.GetNameCalls())
+//
+//	len(mockedChainKeeper.GetNameCalls())
 func (mock *ChainKeeperMock) GetNameCalls() []struct {
 } {
 	var calls []struct {
@@ -2945,7 +2996,8 @@ func (mock *ChainKeeperMock) GetNetwork(ctx github_com_cosmos_cosmos_sdk_types.C
 
 // GetNetworkCalls gets all the calls that were made to GetNetwork.
 // Check the length with:
-//     len(mockedChainKeeper.GetNetworkCalls())
+//
+//	len(mockedChainKeeper.GetNetworkCalls())
 func (mock *ChainKeeperMock) GetNetworkCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 } {
@@ -2978,7 +3030,8 @@ func (mock *ChainKeeperMock) GetNetworkByID(ctx github_com_cosmos_cosmos_sdk_typ
 
 // GetNetworkByIDCalls gets all the calls that were made to GetNetworkByID.
 // Check the length with:
-//     len(mockedChainKeeper.GetNetworkByIDCalls())
+//
+//	len(mockedChainKeeper.GetNetworkByIDCalls())
 func (mock *ChainKeeperMock) GetNetworkByIDCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 	ID  github_com_cosmos_cosmos_sdk_types.Int
@@ -3011,7 +3064,8 @@ func (mock *ChainKeeperMock) GetParams(ctx github_com_cosmos_cosmos_sdk_types.Co
 
 // GetParamsCalls gets all the calls that were made to GetParams.
 // Check the length with:
-//     len(mockedChainKeeper.GetParamsCalls())
+//
+//	len(mockedChainKeeper.GetParamsCalls())
 func (mock *ChainKeeperMock) GetParamsCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 } {
@@ -3042,7 +3096,8 @@ func (mock *ChainKeeperMock) GetPendingCommands(ctx github_com_cosmos_cosmos_sdk
 
 // GetPendingCommandsCalls gets all the calls that were made to GetPendingCommands.
 // Check the length with:
-//     len(mockedChainKeeper.GetPendingCommandsCalls())
+//
+//	len(mockedChainKeeper.GetPendingCommandsCalls())
 func (mock *ChainKeeperMock) GetPendingCommandsCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 } {
@@ -3073,7 +3128,8 @@ func (mock *ChainKeeperMock) GetRequiredConfirmationHeight(ctx github_com_cosmos
 
 // GetRequiredConfirmationHeightCalls gets all the calls that were made to GetRequiredConfirmationHeight.
 // Check the length with:
-//     len(mockedChainKeeper.GetRequiredConfirmationHeightCalls())
+//
+//	len(mockedChainKeeper.GetRequiredConfirmationHeightCalls())
 func (mock *ChainKeeperMock) GetRequiredConfirmationHeightCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 } {
@@ -3104,7 +3160,8 @@ func (mock *ChainKeeperMock) GetRevoteLockingPeriod(ctx github_com_cosmos_cosmos
 
 // GetRevoteLockingPeriodCalls gets all the calls that were made to GetRevoteLockingPeriod.
 // Check the length with:
-//     len(mockedChainKeeper.GetRevoteLockingPeriodCalls())
+//
+//	len(mockedChainKeeper.GetRevoteLockingPeriodCalls())
 func (mock *ChainKeeperMock) GetRevoteLockingPeriodCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 } {
@@ -3135,7 +3192,8 @@ func (mock *ChainKeeperMock) GetTokenByteCode(ctx github_com_cosmos_cosmos_sdk_t
 
 // GetTokenByteCodeCalls gets all the calls that were made to GetTokenByteCode.
 // Check the length with:
-//     len(mockedChainKeeper.GetTokenByteCodeCalls())
+//
+//	len(mockedChainKeeper.GetTokenByteCodeCalls())
 func (mock *ChainKeeperMock) GetTokenByteCodeCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 } {
@@ -3166,7 +3224,8 @@ func (mock *ChainKeeperMock) GetTokens(ctx github_com_cosmos_cosmos_sdk_types.Co
 
 // GetTokensCalls gets all the calls that were made to GetTokens.
 // Check the length with:
-//     len(mockedChainKeeper.GetTokensCalls())
+//
+//	len(mockedChainKeeper.GetTokensCalls())
 func (mock *ChainKeeperMock) GetTokensCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 } {
@@ -3197,7 +3256,8 @@ func (mock *ChainKeeperMock) GetVotingThreshold(ctx github_com_cosmos_cosmos_sdk
 
 // GetVotingThresholdCalls gets all the calls that were made to GetVotingThreshold.
 // Check the length with:
-//     len(mockedChainKeeper.GetVotingThresholdCalls())
+//
+//	len(mockedChainKeeper.GetVotingThresholdCalls())
 func (mock *ChainKeeperMock) GetVotingThresholdCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 } {
@@ -3228,7 +3288,8 @@ func (mock *ChainKeeperMock) Logger(ctx github_com_cosmos_cosmos_sdk_types.Conte
 
 // LoggerCalls gets all the calls that were made to Logger.
 // Check the length with:
-//     len(mockedChainKeeper.LoggerCalls())
+//
+//	len(mockedChainKeeper.LoggerCalls())
 func (mock *ChainKeeperMock) LoggerCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 } {
@@ -3261,7 +3322,8 @@ func (mock *ChainKeeperMock) SetBurnerInfo(ctx github_com_cosmos_cosmos_sdk_type
 
 // SetBurnerInfoCalls gets all the calls that were made to SetBurnerInfo.
 // Check the length with:
-//     len(mockedChainKeeper.SetBurnerInfoCalls())
+//
+//	len(mockedChainKeeper.SetBurnerInfoCalls())
 func (mock *ChainKeeperMock) SetBurnerInfoCalls() []struct {
 	Ctx        github_com_cosmos_cosmos_sdk_types.Context
 	BurnerInfo types.BurnerInfo
@@ -3296,7 +3358,8 @@ func (mock *ChainKeeperMock) SetConfirmedEvent(ctx github_com_cosmos_cosmos_sdk_
 
 // SetConfirmedEventCalls gets all the calls that were made to SetConfirmedEvent.
 // Check the length with:
-//     len(mockedChainKeeper.SetConfirmedEventCalls())
+//
+//	len(mockedChainKeeper.SetConfirmedEventCalls())
 func (mock *ChainKeeperMock) SetConfirmedEventCalls() []struct {
 	Ctx   github_com_cosmos_cosmos_sdk_types.Context
 	Event types.Event
@@ -3333,7 +3396,8 @@ func (mock *ChainKeeperMock) SetDeposit(ctx github_com_cosmos_cosmos_sdk_types.C
 
 // SetDepositCalls gets all the calls that were made to SetDeposit.
 // Check the length with:
-//     len(mockedChainKeeper.SetDepositCalls())
+//
+//	len(mockedChainKeeper.SetDepositCalls())
 func (mock *ChainKeeperMock) SetDepositCalls() []struct {
 	Ctx     github_com_cosmos_cosmos_sdk_types.Context
 	Deposit types.ERC20Deposit
@@ -3370,7 +3434,8 @@ func (mock *ChainKeeperMock) SetEventCompleted(ctx github_com_cosmos_cosmos_sdk_
 
 // SetEventCompletedCalls gets all the calls that were made to SetEventCompleted.
 // Check the length with:
-//     len(mockedChainKeeper.SetEventCompletedCalls())
+//
+//	len(mockedChainKeeper.SetEventCompletedCalls())
 func (mock *ChainKeeperMock) SetEventCompletedCalls() []struct {
 	Ctx     github_com_cosmos_cosmos_sdk_types.Context
 	EventID types.EventID
@@ -3405,7 +3470,8 @@ func (mock *ChainKeeperMock) SetEventFailed(ctx github_com_cosmos_cosmos_sdk_typ
 
 // SetEventFailedCalls gets all the calls that were made to SetEventFailed.
 // Check the length with:
-//     len(mockedChainKeeper.SetEventFailedCalls())
+//
+//	len(mockedChainKeeper.SetEventFailedCalls())
 func (mock *ChainKeeperMock) SetEventFailedCalls() []struct {
 	Ctx     github_com_cosmos_cosmos_sdk_types.Context
 	EventID types.EventID
@@ -3440,7 +3506,8 @@ func (mock *ChainKeeperMock) SetGateway(ctx github_com_cosmos_cosmos_sdk_types.C
 
 // SetGatewayCalls gets all the calls that were made to SetGateway.
 // Check the length with:
-//     len(mockedChainKeeper.SetGatewayCalls())
+//
+//	len(mockedChainKeeper.SetGatewayCalls())
 func (mock *ChainKeeperMock) SetGatewayCalls() []struct {
 	Ctx     github_com_cosmos_cosmos_sdk_types.Context
 	Address types.Address
@@ -3475,7 +3542,8 @@ func (mock *ChainKeeperMock) SetLatestSignedCommandBatchID(ctx github_com_cosmos
 
 // SetLatestSignedCommandBatchIDCalls gets all the calls that were made to SetLatestSignedCommandBatchID.
 // Check the length with:
-//     len(mockedChainKeeper.SetLatestSignedCommandBatchIDCalls())
+//
+//	len(mockedChainKeeper.SetLatestSignedCommandBatchIDCalls())
 func (mock *ChainKeeperMock) SetLatestSignedCommandBatchIDCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 	ID  []byte
@@ -3496,19 +3564,19 @@ var _ types.Rewarder = &RewarderMock{}
 
 // RewarderMock is a mock implementation of types.Rewarder.
 //
-// 	func TestSomethingThatUsesRewarder(t *testing.T) {
+//	func TestSomethingThatUsesRewarder(t *testing.T) {
 //
-// 		// make and configure a mocked types.Rewarder
-// 		mockedRewarder := &RewarderMock{
-// 			GetPoolFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, name string) reward.RewardPool {
-// 				panic("mock out the GetPool method")
-// 			},
-// 		}
+//		// make and configure a mocked types.Rewarder
+//		mockedRewarder := &RewarderMock{
+//			GetPoolFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, name string) reward.RewardPool {
+//				panic("mock out the GetPool method")
+//			},
+//		}
 //
-// 		// use mockedRewarder in code that requires types.Rewarder
-// 		// and then make assertions.
+//		// use mockedRewarder in code that requires types.Rewarder
+//		// and then make assertions.
 //
-// 	}
+//	}
 type RewarderMock struct {
 	// GetPoolFunc mocks the GetPool method.
 	GetPoolFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, name string) reward.RewardPool
@@ -3546,7 +3614,8 @@ func (mock *RewarderMock) GetPool(ctx github_com_cosmos_cosmos_sdk_types.Context
 
 // GetPoolCalls gets all the calls that were made to GetPool.
 // Check the length with:
-//     len(mockedRewarder.GetPoolCalls())
+//
+//	len(mockedRewarder.GetPoolCalls())
 func (mock *RewarderMock) GetPoolCalls() []struct {
 	Ctx  github_com_cosmos_cosmos_sdk_types.Context
 	Name string
@@ -3567,19 +3636,19 @@ var _ types.StakingKeeper = &StakingKeeperMock{}
 
 // StakingKeeperMock is a mock implementation of types.StakingKeeper.
 //
-// 	func TestSomethingThatUsesStakingKeeper(t *testing.T) {
+//	func TestSomethingThatUsesStakingKeeper(t *testing.T) {
 //
-// 		// make and configure a mocked types.StakingKeeper
-// 		mockedStakingKeeper := &StakingKeeperMock{
-// 			PowerReductionFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) github_com_cosmos_cosmos_sdk_types.Int {
-// 				panic("mock out the PowerReduction method")
-// 			},
-// 		}
+//		// make and configure a mocked types.StakingKeeper
+//		mockedStakingKeeper := &StakingKeeperMock{
+//			PowerReductionFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) github_com_cosmos_cosmos_sdk_types.Int {
+//				panic("mock out the PowerReduction method")
+//			},
+//		}
 //
-// 		// use mockedStakingKeeper in code that requires types.StakingKeeper
-// 		// and then make assertions.
+//		// use mockedStakingKeeper in code that requires types.StakingKeeper
+//		// and then make assertions.
 //
-// 	}
+//	}
 type StakingKeeperMock struct {
 	// PowerReductionFunc mocks the PowerReduction method.
 	PowerReductionFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) github_com_cosmos_cosmos_sdk_types.Int
@@ -3613,7 +3682,8 @@ func (mock *StakingKeeperMock) PowerReduction(ctx github_com_cosmos_cosmos_sdk_t
 
 // PowerReductionCalls gets all the calls that were made to PowerReduction.
 // Check the length with:
-//     len(mockedStakingKeeper.PowerReductionCalls())
+//
+//	len(mockedStakingKeeper.PowerReductionCalls())
 func (mock *StakingKeeperMock) PowerReductionCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 } {
@@ -3632,19 +3702,19 @@ var _ types.SlashingKeeper = &SlashingKeeperMock{}
 
 // SlashingKeeperMock is a mock implementation of types.SlashingKeeper.
 //
-// 	func TestSomethingThatUsesSlashingKeeper(t *testing.T) {
+//	func TestSomethingThatUsesSlashingKeeper(t *testing.T) {
 //
-// 		// make and configure a mocked types.SlashingKeeper
-// 		mockedSlashingKeeper := &SlashingKeeperMock{
-// 			IsTombstonedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, consAddr github_com_cosmos_cosmos_sdk_types.ConsAddress) bool {
-// 				panic("mock out the IsTombstoned method")
-// 			},
-// 		}
+//		// make and configure a mocked types.SlashingKeeper
+//		mockedSlashingKeeper := &SlashingKeeperMock{
+//			IsTombstonedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, consAddr github_com_cosmos_cosmos_sdk_types.ConsAddress) bool {
+//				panic("mock out the IsTombstoned method")
+//			},
+//		}
 //
-// 		// use mockedSlashingKeeper in code that requires types.SlashingKeeper
-// 		// and then make assertions.
+//		// use mockedSlashingKeeper in code that requires types.SlashingKeeper
+//		// and then make assertions.
 //
-// 	}
+//	}
 type SlashingKeeperMock struct {
 	// IsTombstonedFunc mocks the IsTombstoned method.
 	IsTombstonedFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, consAddr github_com_cosmos_cosmos_sdk_types.ConsAddress) bool
@@ -3682,7 +3752,8 @@ func (mock *SlashingKeeperMock) IsTombstoned(ctx github_com_cosmos_cosmos_sdk_ty
 
 // IsTombstonedCalls gets all the calls that were made to IsTombstoned.
 // Check the length with:
-//     len(mockedSlashingKeeper.IsTombstonedCalls())
+//
+//	len(mockedSlashingKeeper.IsTombstonedCalls())
 func (mock *SlashingKeeperMock) IsTombstonedCalls() []struct {
 	Ctx      github_com_cosmos_cosmos_sdk_types.Context
 	ConsAddr github_com_cosmos_cosmos_sdk_types.ConsAddress
@@ -3703,34 +3774,34 @@ var _ types.MultisigKeeper = &MultisigKeeperMock{}
 
 // MultisigKeeperMock is a mock implementation of types.MultisigKeeper.
 //
-// 	func TestSomethingThatUsesMultisigKeeper(t *testing.T) {
+//	func TestSomethingThatUsesMultisigKeeper(t *testing.T) {
 //
-// 		// make and configure a mocked types.MultisigKeeper
-// 		mockedMultisigKeeper := &MultisigKeeperMock{
-// 			AssignKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, keyID github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID) error {
-// 				panic("mock out the AssignKey method")
-// 			},
-// 			GetCurrentKeyIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID, bool) {
-// 				panic("mock out the GetCurrentKeyID method")
-// 			},
-// 			GetKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID) (github_com_axelarnetwork_axelar_core_x_multisig_exported.Key, bool) {
-// 				panic("mock out the GetKey method")
-// 			},
-// 			GetNextKeyIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID, bool) {
-// 				panic("mock out the GetNextKeyID method")
-// 			},
-// 			RotateKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) error {
-// 				panic("mock out the RotateKey method")
-// 			},
-// 			SignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID, payloadHash github_com_axelarnetwork_axelar_core_x_multisig_exported.Hash, module string, moduleMetadata ...codec.ProtoMarshaler) error {
-// 				panic("mock out the Sign method")
-// 			},
-// 		}
+//		// make and configure a mocked types.MultisigKeeper
+//		mockedMultisigKeeper := &MultisigKeeperMock{
+//			AssignKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, keyID github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID) error {
+//				panic("mock out the AssignKey method")
+//			},
+//			GetCurrentKeyIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID, bool) {
+//				panic("mock out the GetCurrentKeyID method")
+//			},
+//			GetKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID) (github_com_axelarnetwork_axelar_core_x_multisig_exported.Key, bool) {
+//				panic("mock out the GetKey method")
+//			},
+//			GetNextKeyIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID, bool) {
+//				panic("mock out the GetNextKeyID method")
+//			},
+//			RotateKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) error {
+//				panic("mock out the RotateKey method")
+//			},
+//			SignFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID, payloadHash github_com_axelarnetwork_axelar_core_x_multisig_exported.Hash, module string, moduleMetadata ...codec.ProtoMarshaler) error {
+//				panic("mock out the Sign method")
+//			},
+//		}
 //
-// 		// use mockedMultisigKeeper in code that requires types.MultisigKeeper
-// 		// and then make assertions.
+//		// use mockedMultisigKeeper in code that requires types.MultisigKeeper
+//		// and then make assertions.
 //
-// 	}
+//	}
 type MultisigKeeperMock struct {
 	// AssignKeyFunc mocks the AssignKey method.
 	AssignKeyFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, keyID github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID) error
@@ -3833,7 +3904,8 @@ func (mock *MultisigKeeperMock) AssignKey(ctx github_com_cosmos_cosmos_sdk_types
 
 // AssignKeyCalls gets all the calls that were made to AssignKey.
 // Check the length with:
-//     len(mockedMultisigKeeper.AssignKeyCalls())
+//
+//	len(mockedMultisigKeeper.AssignKeyCalls())
 func (mock *MultisigKeeperMock) AssignKeyCalls() []struct {
 	Ctx       github_com_cosmos_cosmos_sdk_types.Context
 	ChainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
@@ -3870,7 +3942,8 @@ func (mock *MultisigKeeperMock) GetCurrentKeyID(ctx github_com_cosmos_cosmos_sdk
 
 // GetCurrentKeyIDCalls gets all the calls that were made to GetCurrentKeyID.
 // Check the length with:
-//     len(mockedMultisigKeeper.GetCurrentKeyIDCalls())
+//
+//	len(mockedMultisigKeeper.GetCurrentKeyIDCalls())
 func (mock *MultisigKeeperMock) GetCurrentKeyIDCalls() []struct {
 	Ctx       github_com_cosmos_cosmos_sdk_types.Context
 	ChainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
@@ -3905,7 +3978,8 @@ func (mock *MultisigKeeperMock) GetKey(ctx github_com_cosmos_cosmos_sdk_types.Co
 
 // GetKeyCalls gets all the calls that were made to GetKey.
 // Check the length with:
-//     len(mockedMultisigKeeper.GetKeyCalls())
+//
+//	len(mockedMultisigKeeper.GetKeyCalls())
 func (mock *MultisigKeeperMock) GetKeyCalls() []struct {
 	Ctx   github_com_cosmos_cosmos_sdk_types.Context
 	KeyID github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID
@@ -3940,7 +4014,8 @@ func (mock *MultisigKeeperMock) GetNextKeyID(ctx github_com_cosmos_cosmos_sdk_ty
 
 // GetNextKeyIDCalls gets all the calls that were made to GetNextKeyID.
 // Check the length with:
-//     len(mockedMultisigKeeper.GetNextKeyIDCalls())
+//
+//	len(mockedMultisigKeeper.GetNextKeyIDCalls())
 func (mock *MultisigKeeperMock) GetNextKeyIDCalls() []struct {
 	Ctx       github_com_cosmos_cosmos_sdk_types.Context
 	ChainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
@@ -3975,7 +4050,8 @@ func (mock *MultisigKeeperMock) RotateKey(ctx github_com_cosmos_cosmos_sdk_types
 
 // RotateKeyCalls gets all the calls that were made to RotateKey.
 // Check the length with:
-//     len(mockedMultisigKeeper.RotateKeyCalls())
+//
+//	len(mockedMultisigKeeper.RotateKeyCalls())
 func (mock *MultisigKeeperMock) RotateKeyCalls() []struct {
 	Ctx       github_com_cosmos_cosmos_sdk_types.Context
 	ChainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
@@ -4016,7 +4092,8 @@ func (mock *MultisigKeeperMock) Sign(ctx github_com_cosmos_cosmos_sdk_types.Cont
 
 // SignCalls gets all the calls that were made to Sign.
 // Check the length with:
-//     len(mockedMultisigKeeper.SignCalls())
+//
+//	len(mockedMultisigKeeper.SignCalls())
 func (mock *MultisigKeeperMock) SignCalls() []struct {
 	Ctx            github_com_cosmos_cosmos_sdk_types.Context
 	KeyID          github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID
