@@ -14,22 +14,22 @@ var _ Tx = &TxMock{}
 
 // TxMock is a mock implementation of Tx.
 //
-// 	func TestSomethingThatUsesTx(t *testing.T) {
+//	func TestSomethingThatUsesTx(t *testing.T) {
 //
-// 		// make and configure a mocked Tx
-// 		mockedTx := &TxMock{
-// 			GetMsgsFunc: func() []sdk.Msg {
-// 				panic("mock out the GetMsgs method")
-// 			},
-// 			ValidateBasicFunc: func() error {
-// 				panic("mock out the ValidateBasic method")
-// 			},
-// 		}
+//		// make and configure a mocked Tx
+//		mockedTx := &TxMock{
+//			GetMsgsFunc: func() []sdk.Msg {
+//				panic("mock out the GetMsgs method")
+//			},
+//			ValidateBasicFunc: func() error {
+//				panic("mock out the ValidateBasic method")
+//			},
+//		}
 //
-// 		// use mockedTx in code that requires Tx
-// 		// and then make assertions.
+//		// use mockedTx in code that requires Tx
+//		// and then make assertions.
 //
-// 	}
+//	}
 type TxMock struct {
 	// GetMsgsFunc mocks the GetMsgs method.
 	GetMsgsFunc func() []sdk.Msg
@@ -65,7 +65,8 @@ func (mock *TxMock) GetMsgs() []sdk.Msg {
 
 // GetMsgsCalls gets all the calls that were made to GetMsgs.
 // Check the length with:
-//     len(mockedTx.GetMsgsCalls())
+//
+//	len(mockedTx.GetMsgsCalls())
 func (mock *TxMock) GetMsgsCalls() []struct {
 } {
 	var calls []struct {
@@ -91,7 +92,8 @@ func (mock *TxMock) ValidateBasic() error {
 
 // ValidateBasicCalls gets all the calls that were made to ValidateBasic.
 // Check the length with:
-//     len(mockedTx.ValidateBasicCalls())
+//
+//	len(mockedTx.ValidateBasicCalls())
 func (mock *TxMock) ValidateBasicCalls() []struct {
 } {
 	var calls []struct {
@@ -108,34 +110,34 @@ var _ Msg = &MsgMock{}
 
 // MsgMock is a mock implementation of Msg.
 //
-// 	func TestSomethingThatUsesMsg(t *testing.T) {
+//	func TestSomethingThatUsesMsg(t *testing.T) {
 //
-// 		// make and configure a mocked Msg
-// 		mockedMsg := &MsgMock{
-// 			DescriptorFunc: func() ([]byte, []int) {
-// 				panic("mock out the Descriptor method")
-// 			},
-// 			GetSignersFunc: func() []sdk.AccAddress {
-// 				panic("mock out the GetSigners method")
-// 			},
-// 			ProtoMessageFunc: func()  {
-// 				panic("mock out the ProtoMessage method")
-// 			},
-// 			ResetFunc: func()  {
-// 				panic("mock out the Reset method")
-// 			},
-// 			StringFunc: func() string {
-// 				panic("mock out the String method")
-// 			},
-// 			ValidateBasicFunc: func() error {
-// 				panic("mock out the ValidateBasic method")
-// 			},
-// 		}
+//		// make and configure a mocked Msg
+//		mockedMsg := &MsgMock{
+//			DescriptorFunc: func() ([]byte, []int) {
+//				panic("mock out the Descriptor method")
+//			},
+//			GetSignersFunc: func() []sdk.AccAddress {
+//				panic("mock out the GetSigners method")
+//			},
+//			ProtoMessageFunc: func()  {
+//				panic("mock out the ProtoMessage method")
+//			},
+//			ResetFunc: func()  {
+//				panic("mock out the Reset method")
+//			},
+//			StringFunc: func() string {
+//				panic("mock out the String method")
+//			},
+//			ValidateBasicFunc: func() error {
+//				panic("mock out the ValidateBasic method")
+//			},
+//		}
 //
-// 		// use mockedMsg in code that requires Msg
-// 		// and then make assertions.
+//		// use mockedMsg in code that requires Msg
+//		// and then make assertions.
 //
-// 	}
+//	}
 type MsgMock struct {
 	// DescriptorFunc mocks the Descriptor method.
 	DescriptorFunc func() ([]byte, []int)
@@ -199,7 +201,8 @@ func (mock *MsgMock) Descriptor() ([]byte, []int) {
 
 // DescriptorCalls gets all the calls that were made to Descriptor.
 // Check the length with:
-//     len(mockedMsg.DescriptorCalls())
+//
+//	len(mockedMsg.DescriptorCalls())
 func (mock *MsgMock) DescriptorCalls() []struct {
 } {
 	var calls []struct {
@@ -225,7 +228,8 @@ func (mock *MsgMock) GetSigners() []sdk.AccAddress {
 
 // GetSignersCalls gets all the calls that were made to GetSigners.
 // Check the length with:
-//     len(mockedMsg.GetSignersCalls())
+//
+//	len(mockedMsg.GetSignersCalls())
 func (mock *MsgMock) GetSignersCalls() []struct {
 } {
 	var calls []struct {
@@ -251,7 +255,8 @@ func (mock *MsgMock) ProtoMessage() {
 
 // ProtoMessageCalls gets all the calls that were made to ProtoMessage.
 // Check the length with:
-//     len(mockedMsg.ProtoMessageCalls())
+//
+//	len(mockedMsg.ProtoMessageCalls())
 func (mock *MsgMock) ProtoMessageCalls() []struct {
 } {
 	var calls []struct {
@@ -277,7 +282,8 @@ func (mock *MsgMock) Reset() {
 
 // ResetCalls gets all the calls that were made to Reset.
 // Check the length with:
-//     len(mockedMsg.ResetCalls())
+//
+//	len(mockedMsg.ResetCalls())
 func (mock *MsgMock) ResetCalls() []struct {
 } {
 	var calls []struct {
@@ -303,7 +309,8 @@ func (mock *MsgMock) String() string {
 
 // StringCalls gets all the calls that were made to String.
 // Check the length with:
-//     len(mockedMsg.StringCalls())
+//
+//	len(mockedMsg.StringCalls())
 func (mock *MsgMock) StringCalls() []struct {
 } {
 	var calls []struct {
@@ -329,7 +336,8 @@ func (mock *MsgMock) ValidateBasic() error {
 
 // ValidateBasicCalls gets all the calls that were made to ValidateBasic.
 // Check the length with:
-//     len(mockedMsg.ValidateBasicCalls())
+//
+//	len(mockedMsg.ValidateBasicCalls())
 func (mock *MsgMock) ValidateBasicCalls() []struct {
 } {
 	var calls []struct {

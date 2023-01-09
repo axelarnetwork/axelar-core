@@ -18,28 +18,28 @@ var _ rpc.Client = &ClientMock{}
 
 // ClientMock is a mock implementation of rpc.Client.
 //
-// 	func TestSomethingThatUsesClient(t *testing.T) {
+//	func TestSomethingThatUsesClient(t *testing.T) {
 //
-// 		// make and configure a mocked rpc.Client
-// 		mockedClient := &ClientMock{
-// 			CloseFunc: func()  {
-// 				panic("mock out the Close method")
-// 			},
-// 			HeaderByNumberFunc: func(ctx context.Context, number *big.Int) (*rpc.Header, error) {
-// 				panic("mock out the HeaderByNumber method")
-// 			},
-// 			IsFinalizedFunc: func(ctx context.Context, conf uint64, txReceipt *types.Receipt) (bool, error) {
-// 				panic("mock out the IsFinalized method")
-// 			},
-// 			TransactionReceiptFunc: func(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {
-// 				panic("mock out the TransactionReceipt method")
-// 			},
-// 		}
+//		// make and configure a mocked rpc.Client
+//		mockedClient := &ClientMock{
+//			CloseFunc: func()  {
+//				panic("mock out the Close method")
+//			},
+//			HeaderByNumberFunc: func(ctx context.Context, number *big.Int) (*rpc.Header, error) {
+//				panic("mock out the HeaderByNumber method")
+//			},
+//			IsFinalizedFunc: func(ctx context.Context, conf uint64, txReceipt *types.Receipt) (bool, error) {
+//				panic("mock out the IsFinalized method")
+//			},
+//			TransactionReceiptFunc: func(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {
+//				panic("mock out the TransactionReceipt method")
+//			},
+//		}
 //
-// 		// use mockedClient in code that requires rpc.Client
-// 		// and then make assertions.
+//		// use mockedClient in code that requires rpc.Client
+//		// and then make assertions.
 //
-// 	}
+//	}
 type ClientMock struct {
 	// CloseFunc mocks the Close method.
 	CloseFunc func()
@@ -103,7 +103,8 @@ func (mock *ClientMock) Close() {
 
 // CloseCalls gets all the calls that were made to Close.
 // Check the length with:
-//     len(mockedClient.CloseCalls())
+//
+//	len(mockedClient.CloseCalls())
 func (mock *ClientMock) CloseCalls() []struct {
 } {
 	var calls []struct {
@@ -134,7 +135,8 @@ func (mock *ClientMock) HeaderByNumber(ctx context.Context, number *big.Int) (*r
 
 // HeaderByNumberCalls gets all the calls that were made to HeaderByNumber.
 // Check the length with:
-//     len(mockedClient.HeaderByNumberCalls())
+//
+//	len(mockedClient.HeaderByNumberCalls())
 func (mock *ClientMock) HeaderByNumberCalls() []struct {
 	Ctx    context.Context
 	Number *big.Int
@@ -171,7 +173,8 @@ func (mock *ClientMock) IsFinalized(ctx context.Context, conf uint64, txReceipt 
 
 // IsFinalizedCalls gets all the calls that were made to IsFinalized.
 // Check the length with:
-//     len(mockedClient.IsFinalizedCalls())
+//
+//	len(mockedClient.IsFinalizedCalls())
 func (mock *ClientMock) IsFinalizedCalls() []struct {
 	Ctx       context.Context
 	Conf      uint64
@@ -208,7 +211,8 @@ func (mock *ClientMock) TransactionReceipt(ctx context.Context, txHash common.Ha
 
 // TransactionReceiptCalls gets all the calls that were made to TransactionReceipt.
 // Check the length with:
-//     len(mockedClient.TransactionReceiptCalls())
+//
+//	len(mockedClient.TransactionReceiptCalls())
 func (mock *ClientMock) TransactionReceiptCalls() []struct {
 	Ctx    context.Context
 	TxHash common.Hash

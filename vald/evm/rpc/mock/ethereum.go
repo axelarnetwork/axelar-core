@@ -19,31 +19,31 @@ var _ rpc.EthereumJSONRPCClient = &EthereumJSONRPCClientMock{}
 
 // EthereumJSONRPCClientMock is a mock implementation of rpc.EthereumJSONRPCClient.
 //
-// 	func TestSomethingThatUsesEthereumJSONRPCClient(t *testing.T) {
+//	func TestSomethingThatUsesEthereumJSONRPCClient(t *testing.T) {
 //
-// 		// make and configure a mocked rpc.EthereumJSONRPCClient
-// 		mockedEthereumJSONRPCClient := &EthereumJSONRPCClientMock{
-// 			BlockNumberFunc: func(ctx context.Context) (uint64, error) {
-// 				panic("mock out the BlockNumber method")
-// 			},
-// 			CallContractFunc: func(ctx context.Context, msg ethereum.CallMsg, blockNumber *big.Int) ([]byte, error) {
-// 				panic("mock out the CallContract method")
-// 			},
-// 			CloseFunc: func()  {
-// 				panic("mock out the Close method")
-// 			},
-// 			FilterLogsFunc: func(ctx context.Context, q ethereum.FilterQuery) ([]types.Log, error) {
-// 				panic("mock out the FilterLogs method")
-// 			},
-// 			TransactionReceiptFunc: func(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {
-// 				panic("mock out the TransactionReceipt method")
-// 			},
-// 		}
+//		// make and configure a mocked rpc.EthereumJSONRPCClient
+//		mockedEthereumJSONRPCClient := &EthereumJSONRPCClientMock{
+//			BlockNumberFunc: func(ctx context.Context) (uint64, error) {
+//				panic("mock out the BlockNumber method")
+//			},
+//			CallContractFunc: func(ctx context.Context, msg ethereum.CallMsg, blockNumber *big.Int) ([]byte, error) {
+//				panic("mock out the CallContract method")
+//			},
+//			CloseFunc: func()  {
+//				panic("mock out the Close method")
+//			},
+//			FilterLogsFunc: func(ctx context.Context, q ethereum.FilterQuery) ([]types.Log, error) {
+//				panic("mock out the FilterLogs method")
+//			},
+//			TransactionReceiptFunc: func(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {
+//				panic("mock out the TransactionReceipt method")
+//			},
+//		}
 //
-// 		// use mockedEthereumJSONRPCClient in code that requires rpc.EthereumJSONRPCClient
-// 		// and then make assertions.
+//		// use mockedEthereumJSONRPCClient in code that requires rpc.EthereumJSONRPCClient
+//		// and then make assertions.
 //
-// 	}
+//	}
 type EthereumJSONRPCClientMock struct {
 	// BlockNumberFunc mocks the BlockNumber method.
 	BlockNumberFunc func(ctx context.Context) (uint64, error)
@@ -119,7 +119,8 @@ func (mock *EthereumJSONRPCClientMock) BlockNumber(ctx context.Context) (uint64,
 
 // BlockNumberCalls gets all the calls that were made to BlockNumber.
 // Check the length with:
-//     len(mockedEthereumJSONRPCClient.BlockNumberCalls())
+//
+//	len(mockedEthereumJSONRPCClient.BlockNumberCalls())
 func (mock *EthereumJSONRPCClientMock) BlockNumberCalls() []struct {
 	Ctx context.Context
 } {
@@ -154,7 +155,8 @@ func (mock *EthereumJSONRPCClientMock) CallContract(ctx context.Context, msg eth
 
 // CallContractCalls gets all the calls that were made to CallContract.
 // Check the length with:
-//     len(mockedEthereumJSONRPCClient.CallContractCalls())
+//
+//	len(mockedEthereumJSONRPCClient.CallContractCalls())
 func (mock *EthereumJSONRPCClientMock) CallContractCalls() []struct {
 	Ctx         context.Context
 	Msg         ethereum.CallMsg
@@ -186,7 +188,8 @@ func (mock *EthereumJSONRPCClientMock) Close() {
 
 // CloseCalls gets all the calls that were made to Close.
 // Check the length with:
-//     len(mockedEthereumJSONRPCClient.CloseCalls())
+//
+//	len(mockedEthereumJSONRPCClient.CloseCalls())
 func (mock *EthereumJSONRPCClientMock) CloseCalls() []struct {
 } {
 	var calls []struct {
@@ -217,7 +220,8 @@ func (mock *EthereumJSONRPCClientMock) FilterLogs(ctx context.Context, q ethereu
 
 // FilterLogsCalls gets all the calls that were made to FilterLogs.
 // Check the length with:
-//     len(mockedEthereumJSONRPCClient.FilterLogsCalls())
+//
+//	len(mockedEthereumJSONRPCClient.FilterLogsCalls())
 func (mock *EthereumJSONRPCClientMock) FilterLogsCalls() []struct {
 	Ctx context.Context
 	Q   ethereum.FilterQuery
@@ -252,7 +256,8 @@ func (mock *EthereumJSONRPCClientMock) TransactionReceipt(ctx context.Context, t
 
 // TransactionReceiptCalls gets all the calls that were made to TransactionReceipt.
 // Check the length with:
-//     len(mockedEthereumJSONRPCClient.TransactionReceiptCalls())
+//
+//	len(mockedEthereumJSONRPCClient.TransactionReceiptCalls())
 func (mock *EthereumJSONRPCClientMock) TransactionReceiptCalls() []struct {
 	Ctx    context.Context
 	TxHash common.Hash
@@ -273,19 +278,19 @@ var _ rpc.JSONRPCClient = &JSONRPCClientMock{}
 
 // JSONRPCClientMock is a mock implementation of rpc.JSONRPCClient.
 //
-// 	func TestSomethingThatUsesJSONRPCClient(t *testing.T) {
+//	func TestSomethingThatUsesJSONRPCClient(t *testing.T) {
 //
-// 		// make and configure a mocked rpc.JSONRPCClient
-// 		mockedJSONRPCClient := &JSONRPCClientMock{
-// 			CallContextFunc: func(ctx context.Context, result interface{}, method string, args ...interface{}) error {
-// 				panic("mock out the CallContext method")
-// 			},
-// 		}
+//		// make and configure a mocked rpc.JSONRPCClient
+//		mockedJSONRPCClient := &JSONRPCClientMock{
+//			CallContextFunc: func(ctx context.Context, result interface{}, method string, args ...interface{}) error {
+//				panic("mock out the CallContext method")
+//			},
+//		}
 //
-// 		// use mockedJSONRPCClient in code that requires rpc.JSONRPCClient
-// 		// and then make assertions.
+//		// use mockedJSONRPCClient in code that requires rpc.JSONRPCClient
+//		// and then make assertions.
 //
-// 	}
+//	}
 type JSONRPCClientMock struct {
 	// CallContextFunc mocks the CallContext method.
 	CallContextFunc func(ctx context.Context, result interface{}, method string, args ...interface{}) error
@@ -331,7 +336,8 @@ func (mock *JSONRPCClientMock) CallContext(ctx context.Context, result interface
 
 // CallContextCalls gets all the calls that were made to CallContext.
 // Check the length with:
-//     len(mockedJSONRPCClient.CallContextCalls())
+//
+//	len(mockedJSONRPCClient.CallContextCalls())
 func (mock *JSONRPCClientMock) CallContextCalls() []struct {
 	Ctx    context.Context
 	Result interface{}

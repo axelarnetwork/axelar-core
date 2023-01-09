@@ -15,34 +15,34 @@ var _ utils.KVQueue = &KVQueueMock{}
 
 // KVQueueMock is a mock implementation of utils.KVQueue.
 //
-// 	func TestSomethingThatUsesKVQueue(t *testing.T) {
+//	func TestSomethingThatUsesKVQueue(t *testing.T) {
 //
-// 		// make and configure a mocked utils.KVQueue
-// 		mockedKVQueue := &KVQueueMock{
-// 			DequeueFunc: func(value codec.ProtoMarshaler) bool {
-// 				panic("mock out the Dequeue method")
-// 			},
-// 			DequeueIfFunc: func(value codec.ProtoMarshaler, filter func(value codec.ProtoMarshaler) bool) bool {
-// 				panic("mock out the DequeueIf method")
-// 			},
-// 			DequeueUntilFunc: func(value codec.ProtoMarshaler, filter func(value codec.ProtoMarshaler) bool) bool {
-// 				panic("mock out the DequeueUntil method")
-// 			},
-// 			EnqueueFunc: func(key utils.Key, value codec.ProtoMarshaler)  {
-// 				panic("mock out the Enqueue method")
-// 			},
-// 			IsEmptyFunc: func() bool {
-// 				panic("mock out the IsEmpty method")
-// 			},
-// 			KeysFunc: func() []utils.Key {
-// 				panic("mock out the Keys method")
-// 			},
-// 		}
+//		// make and configure a mocked utils.KVQueue
+//		mockedKVQueue := &KVQueueMock{
+//			DequeueFunc: func(value codec.ProtoMarshaler) bool {
+//				panic("mock out the Dequeue method")
+//			},
+//			DequeueIfFunc: func(value codec.ProtoMarshaler, filter func(value codec.ProtoMarshaler) bool) bool {
+//				panic("mock out the DequeueIf method")
+//			},
+//			DequeueUntilFunc: func(value codec.ProtoMarshaler, filter func(value codec.ProtoMarshaler) bool) bool {
+//				panic("mock out the DequeueUntil method")
+//			},
+//			EnqueueFunc: func(key utils.Key, value codec.ProtoMarshaler)  {
+//				panic("mock out the Enqueue method")
+//			},
+//			IsEmptyFunc: func() bool {
+//				panic("mock out the IsEmpty method")
+//			},
+//			KeysFunc: func() []utils.Key {
+//				panic("mock out the Keys method")
+//			},
+//		}
 //
-// 		// use mockedKVQueue in code that requires utils.KVQueue
-// 		// and then make assertions.
+//		// use mockedKVQueue in code that requires utils.KVQueue
+//		// and then make assertions.
 //
-// 	}
+//	}
 type KVQueueMock struct {
 	// DequeueFunc mocks the Dequeue method.
 	DequeueFunc func(value codec.ProtoMarshaler) bool
@@ -123,7 +123,8 @@ func (mock *KVQueueMock) Dequeue(value codec.ProtoMarshaler) bool {
 
 // DequeueCalls gets all the calls that were made to Dequeue.
 // Check the length with:
-//     len(mockedKVQueue.DequeueCalls())
+//
+//	len(mockedKVQueue.DequeueCalls())
 func (mock *KVQueueMock) DequeueCalls() []struct {
 	Value codec.ProtoMarshaler
 } {
@@ -156,7 +157,8 @@ func (mock *KVQueueMock) DequeueIf(value codec.ProtoMarshaler, filter func(value
 
 // DequeueIfCalls gets all the calls that were made to DequeueIf.
 // Check the length with:
-//     len(mockedKVQueue.DequeueIfCalls())
+//
+//	len(mockedKVQueue.DequeueIfCalls())
 func (mock *KVQueueMock) DequeueIfCalls() []struct {
 	Value  codec.ProtoMarshaler
 	Filter func(value codec.ProtoMarshaler) bool
@@ -191,7 +193,8 @@ func (mock *KVQueueMock) DequeueUntil(value codec.ProtoMarshaler, filter func(va
 
 // DequeueUntilCalls gets all the calls that were made to DequeueUntil.
 // Check the length with:
-//     len(mockedKVQueue.DequeueUntilCalls())
+//
+//	len(mockedKVQueue.DequeueUntilCalls())
 func (mock *KVQueueMock) DequeueUntilCalls() []struct {
 	Value  codec.ProtoMarshaler
 	Filter func(value codec.ProtoMarshaler) bool
@@ -226,7 +229,8 @@ func (mock *KVQueueMock) Enqueue(key utils.Key, value codec.ProtoMarshaler) {
 
 // EnqueueCalls gets all the calls that were made to Enqueue.
 // Check the length with:
-//     len(mockedKVQueue.EnqueueCalls())
+//
+//	len(mockedKVQueue.EnqueueCalls())
 func (mock *KVQueueMock) EnqueueCalls() []struct {
 	Key   utils.Key
 	Value codec.ProtoMarshaler
@@ -256,7 +260,8 @@ func (mock *KVQueueMock) IsEmpty() bool {
 
 // IsEmptyCalls gets all the calls that were made to IsEmpty.
 // Check the length with:
-//     len(mockedKVQueue.IsEmptyCalls())
+//
+//	len(mockedKVQueue.IsEmptyCalls())
 func (mock *KVQueueMock) IsEmptyCalls() []struct {
 } {
 	var calls []struct {
@@ -282,7 +287,8 @@ func (mock *KVQueueMock) Keys() []utils.Key {
 
 // KeysCalls gets all the calls that were made to Keys.
 // Check the length with:
-//     len(mockedKVQueue.KeysCalls())
+//
+//	len(mockedKVQueue.KeysCalls())
 func (mock *KVQueueMock) KeysCalls() []struct {
 } {
 	var calls []struct {
