@@ -81,7 +81,7 @@ func handleContractCall(ctx sdk.Context, event types.Event, bk types.BaseKeeper,
 			e.ContractAddress,
 			e.PayloadHash.Bytes(),
 			nexus.Approved,
-			nexus.NewPureMessage(),
+			nil,
 		)
 
 		return n.SetNewGeneralMessage(ctx, message)
@@ -142,6 +142,8 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 	}
 
 	if !destinationChain.IsFrom(types.ModuleName) {
+		asset := sdk.NewCoin(asset, sdk.Int(e.Amount))
+
 		message := nexus.NewGeneralMessage(
 			string(event.GetID()),
 			sourceChain.Name,
@@ -150,7 +152,7 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 			e.ContractAddress,
 			e.PayloadHash.Bytes(),
 			nexus.Approved,
-			nexus.NewMessageWithToken(sdk.NewCoin(asset, sdk.Int(e.Amount))),
+			&asset,
 		)
 
 		return n.SetNewGeneralMessage(ctx, message)

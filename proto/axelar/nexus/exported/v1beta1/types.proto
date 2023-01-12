@@ -105,12 +105,5 @@ message GeneralMessage {
   string receiver = 5;
   bytes payload_hash = 6;
   Status status = 7;
-  oneof message {
-    PureMessage pure_message = 8;
-    MessageWithToken message_with_token = 9;
-  }
-}
-message PureMessage {}
-message MessageWithToken {
-  cosmos.base.v1beta1.Coin asset = 1 [ (gogoproto.nullable) = false ];
+  cosmos.base.v1beta1.Coin asset = 8;
 }

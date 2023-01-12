@@ -38,17 +38,12 @@ func (k Keeper) SetNewGeneralMessage(ctx sdk.Context, m exported.GeneralMessage)
 		return err
 	}
 
-	switch m.GetMessage().(type) {
-	case *exported.GeneralMessage_MessageWithToken:
-		messageWithToken := m.GetMessageWithToken()
-		if messageWithToken == nil {
-			panic(fmt.Errorf("general message with token is nil"))
-		}
-		if err := k.validateTransferAsset(ctx, sourceChain, messageWithToken.Asset.Denom); err != nil {
+	if m.Asset != nil {
+		if err := k.validateTransferAsset(ctx, sourceChain, m.Asset.Denom); err != nil {
 			return err
 		}
 
-		if err := k.validateTransferAsset(ctx, destChain, messageWithToken.Asset.Denom); err != nil {
+		if err := k.validateTransferAsset(ctx, destChain, m.Asset.Denom); err != nil {
 			return err
 		}
 	}

@@ -239,7 +239,7 @@ func (m TransferDirection) ValidateBasic() error {
 }
 
 // NewGeneralMessage returns a GeneralMessage struct
-func NewGeneralMessage(id string, sourceChain ChainName, sender string, destChain ChainName, receiver string, payloadHash []byte, status GeneralMessage_Status, m isGeneralMessage_Message) GeneralMessage {
+func NewGeneralMessage(id string, sourceChain ChainName, sender string, destChain ChainName, receiver string, payloadHash []byte, status GeneralMessage_Status, asset *sdk.Coin) GeneralMessage {
 	return GeneralMessage{
 		ID:               id,
 		SourceChain:      sourceChain,
@@ -248,7 +248,7 @@ func NewGeneralMessage(id string, sourceChain ChainName, sender string, destChai
 		Receiver:         receiver,
 		PayloadHash:      payloadHash,
 		Status:           status,
-		Message:          m,
+		Asset:            asset,
 	}
 }
 
@@ -274,50 +274,9 @@ func (m GeneralMessage) ValidateBasic() error {
 		return sdkerrors.Wrap(err, "invalid receiver")
 	}
 
-	switch msg := m.GetMessage().(type) {
-	case *GeneralMessage_PureMessage:
-		if msg.PureMessage == nil {
-			return fmt.Errorf("missing general message")
-		}
-
-	case *GeneralMessage_MessageWithToken:
-		if msg.MessageWithToken == nil {
-			return fmt.Errorf("missing general message with token")
-		}
-
-		if err := msg.MessageWithToken.ValidateBasic(); err != nil {
-			return sdkerrors.Wrap(err, "invalid GeneralMessageWithToken")
-		}
-
-	default:
-		return fmt.Errorf("unknown type of event")
+	if m.Asset != nil {
+		return m.Asset.Validate()
 	}
 
 	return nil
-}
-
-// NewPureMessage returns a PureMessage struct
-func NewPureMessage() *GeneralMessage_PureMessage {
-	return &GeneralMessage_PureMessage{
-		PureMessage: &PureMessage{},
-	}
-}
-
-// ValidateBasic validates the pure message
-func (m PureMessage) ValidateBasic() error {
-	return nil
-}
-
-// NewMessageWithToken returns a MessageWithToken struct
-func NewMessageWithToken(coin sdk.Coin) *GeneralMessage_MessageWithToken {
-	return &GeneralMessage_MessageWithToken{
-		MessageWithToken: &MessageWithToken{
-			Asset: coin,
-		},
-	}
-}
-
-// ValidateBasic validates the message with token
-func (m MessageWithToken) ValidateBasic() error {
-	return m.Asset.Validate()
 }

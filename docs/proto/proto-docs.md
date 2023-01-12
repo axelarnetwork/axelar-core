@@ -49,8 +49,6 @@
     - [CrossChainTransfer](#axelar.nexus.exported.v1beta1.CrossChainTransfer)
     - [FeeInfo](#axelar.nexus.exported.v1beta1.FeeInfo)
     - [GeneralMessage](#axelar.nexus.exported.v1beta1.GeneralMessage)
-    - [MessageWithToken](#axelar.nexus.exported.v1beta1.MessageWithToken)
-    - [PureMessage](#axelar.nexus.exported.v1beta1.PureMessage)
     - [TransferFee](#axelar.nexus.exported.v1beta1.TransferFee)
   
     - [GeneralMessage.Status](#axelar.nexus.exported.v1beta1.GeneralMessage.Status)
@@ -1132,33 +1130,7 @@ registered blockchain
 | `receiver` | [string](#string) |  |  |
 | `payload_hash` | [bytes](#bytes) |  |  |
 | `status` | [GeneralMessage.Status](#axelar.nexus.exported.v1beta1.GeneralMessage.Status) |  |  |
-| `pure_message` | [PureMessage](#axelar.nexus.exported.v1beta1.PureMessage) |  |  |
-| `message_with_token` | [MessageWithToken](#axelar.nexus.exported.v1beta1.MessageWithToken) |  |  |
-
-
-
-
-
-
-<a name="axelar.nexus.exported.v1beta1.MessageWithToken"></a>
-
-### MessageWithToken
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
 | `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
-
-
-
-
-
-
-<a name="axelar.nexus.exported.v1beta1.PureMessage"></a>
-
-### PureMessage
-
 
 
 

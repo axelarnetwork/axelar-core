@@ -40,11 +40,7 @@ func TestSetNewGeneralMessage(t *testing.T) {
 			Receiver:         genCosmosAddr(destinationChainName.String()),
 			Status:           exported.Approved,
 			PayloadHash:      crypto.Keccak256Hash(rand.Bytes(int(rand.I64Between(1, 100)))).Bytes(),
-			Message: &exported.GeneralMessage_MessageWithToken{
-				MessageWithToken: &exported.MessageWithToken{
-					Asset: asset,
-				},
-			},
+			Asset:            &asset,
 		}
 
 		k, ctx = setup(cfg)
