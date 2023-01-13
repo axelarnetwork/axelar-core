@@ -44,6 +44,7 @@ func GetTxCmd() *cobra.Command {
 		GetCmdRegisterFeeCollector(),
 		getRetryIBCTransfer(),
 		getGeneralMessage(),
+		GetCmdCallContract(),
 	)
 
 	return axelarTxCmd
@@ -322,6 +323,37 @@ func getGeneralMessage() *cobra.Command {
 			}
 
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
+		},
+	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdCallContract calls a specified smart contract on a specified EVM chain
+func GetCmdCallContract() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "call-contract [recipient chain] [contract address] [abi encoded payload]",
+		Short: "Call a smart contract on an EVM chain",
+		Args:  cobra.ExactArgs(3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+			payloadHex := args[2]
+			if len(payloadHex) >= 2 && payloadHex[:2] == "0x" {
+				payloadHex = payloadHex[2:]
+			}
+
+			payload, err := hex.DecodeString(payloadHex)
+			if err != nil {
+				return err
+			}
+			msg := types.NewCallContractRequest(clientCtx.GetFromAddress(), args[0], args[1], payload)
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
 	flags.AddTxFlagsToCmd(cmd)

@@ -70,6 +70,13 @@ func NewHandler(k keeper.Keeper, n types.Nexus, b types.BankKeeper, a types.Acco
 			res, err := server.ExecuteMessage(sdk.WrapSDKContext(ctx), msg)
 			result, err := sdk.WrapServiceResult(ctx, res, err)
 			return result, err
+		case *types.CallContractRequest:
+			res, err := server.CallContract(sdk.WrapSDKContext(ctx), msg)
+			result, err := sdk.WrapServiceResult(ctx, res, err)
+			if err == nil {
+				result.Log = fmt.Sprintf("successfully enqueued contract call for contract %s on chain %s", msg.ContractAddress, msg.Chain)
+			}
+			return result, err
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest,
 				fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg))

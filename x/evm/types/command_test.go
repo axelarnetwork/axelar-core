@@ -10,6 +10,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/axelarnetwork/axelar-core/app/params"
@@ -24,6 +25,41 @@ import (
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 )
+
+func TestNewApproveContractCallCommandFromGeneralMessage(t *testing.T) {
+	chainID := sdk.NewInt(1)
+	keyID := multisigTestutils.KeyID()
+	payload := rand.BytesBetween(64, 1000)
+	contractAddress := common.HexToAddress(testutils.RandomAddress().Hex())
+	txHash := common.BytesToHash(rand.Bytes(32))
+	payloadHash := crypto.Keccak256(payload)
+	sender := rand.AccAddr()
+	sourceChain := rand.StrBetween(16, 32)
+	destChain := rand.StrBetween(8, 64)
+	genMsg := nexus.NewGeneralMessage(txHash.Hex(), nexus.ChainName(sourceChain), sender.String(), nexus.ChainName(destChain), contractAddress.Hex(), payloadHash, nexus.Approved, nil)
+
+	actual := types.NewApproveContractCallCommandFromGeneralMessage(chainID, keyID, genMsg)
+	// abi encoding pads strings to lengths divisible by 32
+	sourceChainPadded := []byte(sourceChain)
+	for len(sourceChainPadded)%32 != 0 {
+		sourceChainPadded = append(sourceChainPadded, 0)
+	}
+
+	dummyTxId := common.BytesToHash(make([]byte, common.HashLength))
+	expected := strings.ToLower(fmt.Sprintf("00000000000000000000000000000000000000000000000000000000000000c00000000000000000000000000000000000000000000000000000000000000100000000000000000000000000%s%s%s000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000%x%s00000000000000000000000000000000000000000000000000000000000000%x%s00000000000000000000000000000000000000000000000000000000000000",
+		contractAddress.Hex()[2:], hex.EncodeToString(payloadHash), dummyTxId.Hex()[2:], len(sourceChain), hex.EncodeToString([]byte(sourceChainPadded)), len(sender.String()), hex.EncodeToString([]byte(sender.String()))))
+
+	assert.Equal(t, expected, hex.EncodeToString(actual.Params))
+
+	actualSourceChain, actualSourceAddress, actualContractAddress, actualPayloadHash, actualSourceTxID, actualSourceEventIndex := types.DecodeApproveContractCallParams(actual.Params)
+	assert.Equal(t, sourceChain, actualSourceChain)
+	assert.Equal(t, sender.String(), actualSourceAddress)
+	assert.Equal(t, contractAddress, actualContractAddress)
+	assert.Equal(t, common.BytesToHash(payloadHash), actualPayloadHash)
+	assert.Equal(t, dummyTxId, actualSourceTxID)
+	assert.Equal(t, uint64(0), actualSourceEventIndex.Uint64())
+
+}
 
 func TestNewApproveContractCallWithMintCommand(t *testing.T) {
 	chainID := sdk.NewInt(1)

@@ -4,18 +4,23 @@ package types
 const (
 	EventTypeDepositConfirmation = "depositConfirmation"
 	EventTypeLink                = "link"
+	EventTypeCallContract        = "callContract"
 )
 
 // Event attribute keys
 const (
-	AttributeKeyChain              = "chain"
-	AttributeKeySourceChain        = "sourceChain"
-	AttributeKeyTxID               = "txID"
-	AttributeKeyAsset              = "asset"
-	AttributeKeyDepositAddress     = "depositAddress"
-	AttributeKeyDestinationAddress = "destinationAddress"
-	AttributeKeyDestinationChain   = "destinationChain"
-	AttributeKeyTransferID         = "transferID"
+	AttributeKeyChain               = "chain"
+	AttributeKeySourceChain         = "sourceChain"
+	AttributeKeySourceAddress       = "sourceAddress"
+	AttributeKeyTxID                = "txID"
+	AttributeKeyAsset               = "asset"
+	AttributeKeyDepositAddress      = "depositAddress"
+	AttributeKeyDestinationAddress  = "destinationAddress"
+	AttributeKeyDestinationChain    = "destinationChain"
+	AttributeKeyTransferID          = "transferID"
+	AttributeKeyContractPayload     = "contractPayload"
+	AttributeKeyContractPayloadHash = "contractPayloadHash"
+	AttributeKeyCommandID           = "commandID"
 )
 
 // Event attribute values

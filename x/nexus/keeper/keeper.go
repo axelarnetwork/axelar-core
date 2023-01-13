@@ -14,7 +14,8 @@ import (
 )
 
 var (
-	nonceKey = utils.KeyFromStr("nonce")
+	nonceKey               = utils.KeyFromStr("nonce")
+	generalMessageNonceKey = key.FromStrHashed("gen_msg_nonce")
 
 	chainPrefix              = utils.KeyFromStr("chain")
 	chainStatePrefix         = utils.KeyFromStr("state")

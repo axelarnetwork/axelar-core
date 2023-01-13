@@ -2,13 +2,17 @@ package keeper
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"strings"
 
+	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/query"
 	ibctransfertypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
+	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/events"
@@ -39,6 +43,44 @@ func NewMsgServerImpl(k Keeper, n types.Nexus, b types.BankKeeper, a types.Accou
 		account: a,
 		ibcK:    ibcK,
 	}
+}
+
+func (s msgServer) CallContract(c context.Context, req *types.CallContractRequest) (*types.CallContractResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	chain, ok := s.nexus.GetChain(ctx, req.Chain)
+	if !ok {
+		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
+	}
+
+	if !s.nexus.IsChainActivated(ctx, chain) {
+		return nil, fmt.Errorf("chain %s is not activated yet", chain.Name)
+	}
+
+	txHash := sha256.Sum256(ctx.TxBytes())
+	payloadHash := crypto.Keccak256(req.Payload)
+	genMsg := nexus.NewGeneralMessage(s.nexus.GetGeneralMessageID(ctx, hex.EncodeToString(txHash[:]), exported.Axelarnet.Name), exported.Axelarnet.Name, req.Sender.String(), req.Chain, req.ContractAddress, payloadHash, nexus.Approved, nil)
+	err := s.nexus.SetNewMessage(ctx, genMsg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to add general message %v", err)
+	}
+
+	ctx.GasMeter().ConsumeGas(storetypes.Gas(1500000000), "call-contract")
+	events.Emit(ctx, &types.ContractCallSubmitted{
+		Sender:           genMsg.Sender,
+		DestinationChain: genMsg.ID.Chain,
+		ContractAddress:  genMsg.Receiver,
+		PayloadHash:      hex.EncodeToString(genMsg.PayloadHash),
+		Payload:          hex.EncodeToString(req.Payload),
+		MsgId:            genMsg.ID.ID,
+	})
+
+	s.Logger(ctx).Debug(fmt.Sprintf("successfully enqueued contract call for contract address %s on chain %s with payload hash %s", req.ContractAddress, req.Chain.String(), hex.EncodeToString(payloadHash)),
+		types.AttributeKeyDestinationChain, req.Chain.String(),
+		types.AttributeKeyDestinationAddress, req.ContractAddress,
+		types.AttributeKeyContractPayloadHash, hex.EncodeToString(payloadHash),
+	)
+	return &types.CallContractResponse{}, nil
 }
 
 // Link handles address linking
@@ -425,7 +467,7 @@ func (s msgServer) ExecuteMessage(c context.Context, req *types.ExecuteMessageRe
 		return nil, fmt.Errorf("chain %s is not activated", chain.Name)
 	}
 
-	msg, ok := s.nexus.GetMessage(ctx, req.ID)
+	msg, ok := s.nexus.GetMessageWithStatus(ctx, req.ID, []nexus.GeneralMessage_Status{nexus.Approved, nexus.Failed})
 	if !ok {
 		return nil, fmt.Errorf("message %s not found", req.ID)
 	}

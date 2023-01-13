@@ -542,6 +542,50 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 	}
 }
 
+func handleGeneralMessage(ctx sdk.Context, ck types.ChainKeeper, n types.Nexus, m types.MultisigKeeper, chain nexus.Chain, generalMessage nexus.GeneralMessage) error {
+	chainID := funcs.MustOk(ck.GetChainID(ctx))
+	keyID, ok := m.GetCurrentKeyID(ctx, chain.Name)
+	if !ok {
+		funcs.MustNoErr(n.SetMessageFailed(ctx, generalMessage.ID))
+		events.Emit(ctx, &types.ContractCallFailed{
+			Chain:     chain.Name,
+			MessageID: generalMessage.ID.ID,
+			Reason:    "no current key",
+		})
+		ck.Logger(ctx).Debug("Failed to enqueue general message", "DestinationChain", generalMessage.ID.Chain, "MessageID", generalMessage.ID)
+		return fmt.Errorf("current key not set")
+	}
+
+	cmd := types.NewApproveContractCallCommandFromGeneralMessage(chainID, keyID, generalMessage)
+	funcs.MustNoErr(ck.EnqueueCommand(ctx, cmd))
+
+	events.Emit(ctx, &types.ContractCallApproved{
+		Chain:            generalMessage.SourceChain,
+		EventID:          types.EventID(generalMessage.ID.ID),
+		CommandID:        cmd.ID,
+		Sender:           generalMessage.Sender,
+		DestinationChain: generalMessage.ID.Chain,
+		ContractAddress:  generalMessage.Receiver,
+		PayloadHash:      types.Hash(common.BytesToHash(generalMessage.PayloadHash)),
+	})
+
+	ck.Logger(ctx).Debug("Enqueued general message", "DestinationChain", generalMessage.ID.Chain, "CommandID", cmd.ID, "MessageID", generalMessage.ID)
+	return nil
+}
+
+func handleGeneralMessages(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, m types.MultisigKeeper) {
+
+	for _, chain := range slices.Filter(n.GetChains(ctx), types.IsEVMChain) {
+		ck := funcs.Must(bk.ForChain(ctx, chain.Name))
+		endBlockerLimit := ck.GetParams(ctx).EndBlockerLimit // TODO is this ok? This is the same limit used for evm to evm, so could end up processing 2x the limit
+		msgs := n.ConsumeApprovedMessages(ctx, chain.Name, endBlockerLimit)
+		bk.Logger(ctx).Debug("handling general messages", "chain", chain.Name, "number of messages", len(msgs))
+		for _, msg := range msgs {
+			handleGeneralMessage(ctx, ck, n, m, chain, msg)
+		}
+	}
+}
+
 // BeginBlocker check for infraction evidence or downtime of validators
 // on every begin block
 func BeginBlocker(sdk.Context, abci.RequestBeginBlock, types.BaseKeeper) {}
@@ -549,6 +593,7 @@ func BeginBlocker(sdk.Context, abci.RequestBeginBlock, types.BaseKeeper) {}
 // EndBlocker called every block, process inflation, update validator set.
 func EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock, bk types.BaseKeeper, n types.Nexus, m types.MultisigKeeper) ([]abci.ValidatorUpdate, error) {
 	handleConfirmedEvents(ctx, bk, n, m)
+	handleGeneralMessages(ctx, bk, n, m)
 
 	return nil, nil
 }

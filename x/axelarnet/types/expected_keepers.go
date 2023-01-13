@@ -1,5 +1,6 @@
 package types
 
+//TODO fix evm import to use exported
 import (
 	"context"
 	"time"
@@ -53,10 +54,12 @@ type Nexus interface {
 	GetChainByNativeAsset(ctx sdk.Context, asset string) (nexus.Chain, bool)
 	IsChainActivated(ctx sdk.Context, chain nexus.Chain) bool
 	RateLimitTransfer(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error
-	GetMessage(ctx sdk.Context, messageID nexus.MessageID) (m nexus.GeneralMessage, found bool)
+	GetMessageWithStatus(ctx sdk.Context, messageID nexus.MessageID, statuses []nexus.GeneralMessage_Status) (m nexus.GeneralMessage, found bool)
 	SetMessageSent(ctx sdk.Context, messageID nexus.MessageID) error
 	SetMessageExecuted(ctx sdk.Context, messageID nexus.MessageID) error
 	SetMessageFailed(ctx sdk.Context, messageID nexus.MessageID) error
+	SetNewMessage(ctx sdk.Context, m nexus.GeneralMessage) error
+	GetGeneralMessageID(ctx sdk.Context, sourceTxID string, sourceChain nexus.ChainName) string
 }
 
 // BankKeeper defines the expected interface contract the vesting module requires

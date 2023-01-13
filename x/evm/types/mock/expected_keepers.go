@@ -110,6 +110,9 @@ var _ types.Nexus = &NexusMock{}
 //			ComputeTransferFeeFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sourceChain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, destinationChain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_cosmos_cosmos_sdk_types.Coin) (github_com_cosmos_cosmos_sdk_types.Coin, error) {
 //				panic("mock out the ComputeTransferFee method")
 //			},
+//			ConsumeApprovedMessagesFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, limit int64) []github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage {
+//				panic("mock out the ConsumeApprovedMessages method")
+//			},
 //			EnqueueForTransferFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, amount github_com_cosmos_cosmos_sdk_types.Coin) (github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferID, error) {
 //				panic("mock out the EnqueueForTransfer method")
 //			},
@@ -158,6 +161,9 @@ var _ types.Nexus = &NexusMock{}
 //			SetChainMaintainerStateFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, maintainerState github_com_axelarnetwork_axelar_core_x_nexus_exported.MaintainerState) error {
 //				panic("mock out the SetChainMaintainerState method")
 //			},
+//			SetMessageFailedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, messageID github_com_axelarnetwork_axelar_core_x_nexus_exported.MessageID) error {
+//				panic("mock out the SetMessageFailed method")
+//			},
 //			SetNewMessageFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, m github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage) error {
 //				panic("mock out the SetNewMessage method")
 //			},
@@ -176,6 +182,9 @@ type NexusMock struct {
 
 	// ComputeTransferFeeFunc mocks the ComputeTransferFee method.
 	ComputeTransferFeeFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sourceChain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, destinationChain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_cosmos_cosmos_sdk_types.Coin) (github_com_cosmos_cosmos_sdk_types.Coin, error)
+
+	// ConsumeApprovedMessagesFunc mocks the ConsumeApprovedMessages method.
+	ConsumeApprovedMessagesFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, limit int64) []github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage
 
 	// EnqueueForTransferFunc mocks the EnqueueForTransfer method.
 	EnqueueForTransferFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, amount github_com_cosmos_cosmos_sdk_types.Coin) (github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferID, error)
@@ -225,6 +234,9 @@ type NexusMock struct {
 	// SetChainMaintainerStateFunc mocks the SetChainMaintainerState method.
 	SetChainMaintainerStateFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, maintainerState github_com_axelarnetwork_axelar_core_x_nexus_exported.MaintainerState) error
 
+	// SetMessageFailedFunc mocks the SetMessageFailed method.
+	SetMessageFailedFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, messageID github_com_axelarnetwork_axelar_core_x_nexus_exported.MessageID) error
+
 	// SetNewMessageFunc mocks the SetNewMessage method.
 	SetNewMessageFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, m github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage) error
 
@@ -254,6 +266,15 @@ type NexusMock struct {
 			DestinationChain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 			// Asset is the asset argument value.
 			Asset github_com_cosmos_cosmos_sdk_types.Coin
+		}
+		// ConsumeApprovedMessages holds details about calls to the ConsumeApprovedMessages method.
+		ConsumeApprovedMessages []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Chain is the chain argument value.
+			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+			// Limit is the limit argument value.
+			Limit int64
 		}
 		// EnqueueForTransfer holds details about calls to the EnqueueForTransfer method.
 		EnqueueForTransfer []struct {
@@ -391,6 +412,13 @@ type NexusMock struct {
 			// MaintainerState is the maintainerState argument value.
 			MaintainerState github_com_axelarnetwork_axelar_core_x_nexus_exported.MaintainerState
 		}
+		// SetMessageFailed holds details about calls to the SetMessageFailed method.
+		SetMessageFailed []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// MessageID is the messageID argument value.
+			MessageID github_com_axelarnetwork_axelar_core_x_nexus_exported.MessageID
+		}
 		// SetNewMessage holds details about calls to the SetNewMessage method.
 		SetNewMessage []struct {
 			// Ctx is the ctx argument value.
@@ -402,6 +430,7 @@ type NexusMock struct {
 	lockAddTransferFee                sync.RWMutex
 	lockArchivePendingTransfer        sync.RWMutex
 	lockComputeTransferFee            sync.RWMutex
+	lockConsumeApprovedMessages       sync.RWMutex
 	lockEnqueueForTransfer            sync.RWMutex
 	lockEnqueueTransfer               sync.RWMutex
 	lockGetChain                      sync.RWMutex
@@ -418,6 +447,7 @@ type NexusMock struct {
 	lockRegisterAsset                 sync.RWMutex
 	lockSetChain                      sync.RWMutex
 	lockSetChainMaintainerState       sync.RWMutex
+	lockSetMessageFailed              sync.RWMutex
 	lockSetNewMessage                 sync.RWMutex
 }
 
@@ -534,6 +564,46 @@ func (mock *NexusMock) ComputeTransferFeeCalls() []struct {
 	mock.lockComputeTransferFee.RLock()
 	calls = mock.calls.ComputeTransferFee
 	mock.lockComputeTransferFee.RUnlock()
+	return calls
+}
+
+// ConsumeApprovedMessages calls ConsumeApprovedMessagesFunc.
+func (mock *NexusMock) ConsumeApprovedMessages(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, limit int64) []github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage {
+	if mock.ConsumeApprovedMessagesFunc == nil {
+		panic("NexusMock.ConsumeApprovedMessagesFunc: method is nil but Nexus.ConsumeApprovedMessages was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+		Limit int64
+	}{
+		Ctx:   ctx,
+		Chain: chain,
+		Limit: limit,
+	}
+	mock.lockConsumeApprovedMessages.Lock()
+	mock.calls.ConsumeApprovedMessages = append(mock.calls.ConsumeApprovedMessages, callInfo)
+	mock.lockConsumeApprovedMessages.Unlock()
+	return mock.ConsumeApprovedMessagesFunc(ctx, chain, limit)
+}
+
+// ConsumeApprovedMessagesCalls gets all the calls that were made to ConsumeApprovedMessages.
+// Check the length with:
+//
+//	len(mockedNexus.ConsumeApprovedMessagesCalls())
+func (mock *NexusMock) ConsumeApprovedMessagesCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+	Limit int64
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+		Limit int64
+	}
+	mock.lockConsumeApprovedMessages.RLock()
+	calls = mock.calls.ConsumeApprovedMessages
+	mock.lockConsumeApprovedMessages.RUnlock()
 	return calls
 }
 
@@ -1158,6 +1228,42 @@ func (mock *NexusMock) SetChainMaintainerStateCalls() []struct {
 	mock.lockSetChainMaintainerState.RLock()
 	calls = mock.calls.SetChainMaintainerState
 	mock.lockSetChainMaintainerState.RUnlock()
+	return calls
+}
+
+// SetMessageFailed calls SetMessageFailedFunc.
+func (mock *NexusMock) SetMessageFailed(ctx github_com_cosmos_cosmos_sdk_types.Context, messageID github_com_axelarnetwork_axelar_core_x_nexus_exported.MessageID) error {
+	if mock.SetMessageFailedFunc == nil {
+		panic("NexusMock.SetMessageFailedFunc: method is nil but Nexus.SetMessageFailed was just called")
+	}
+	callInfo := struct {
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
+		MessageID github_com_axelarnetwork_axelar_core_x_nexus_exported.MessageID
+	}{
+		Ctx:       ctx,
+		MessageID: messageID,
+	}
+	mock.lockSetMessageFailed.Lock()
+	mock.calls.SetMessageFailed = append(mock.calls.SetMessageFailed, callInfo)
+	mock.lockSetMessageFailed.Unlock()
+	return mock.SetMessageFailedFunc(ctx, messageID)
+}
+
+// SetMessageFailedCalls gets all the calls that were made to SetMessageFailed.
+// Check the length with:
+//
+//	len(mockedNexus.SetMessageFailedCalls())
+func (mock *NexusMock) SetMessageFailedCalls() []struct {
+	Ctx       github_com_cosmos_cosmos_sdk_types.Context
+	MessageID github_com_axelarnetwork_axelar_core_x_nexus_exported.MessageID
+} {
+	var calls []struct {
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
+		MessageID github_com_axelarnetwork_axelar_core_x_nexus_exported.MessageID
+	}
+	mock.lockSetMessageFailed.RLock()
+	calls = mock.calls.SetMessageFailed
+	mock.lockSetMessageFailed.RUnlock()
 	return calls
 }
 
