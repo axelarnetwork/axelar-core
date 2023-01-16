@@ -63,6 +63,35 @@ func (q Querier) Chains(c context.Context, req *types.ChainsRequest) (*types.Cha
 	return &types.ChainsResponse{Chains: chainNames}, nil
 }
 
+// Command returns the command provided an id and a chain
+func (q Querier) Command(c context.Context, req *types.CommandRequest) (*types.CommandResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	ck, err := q.keeper.ForChain(ctx, nexustypes.ChainName(req.Chain))
+	if err != nil {
+		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", req.Chain)).Error())
+	}
+
+	cmdID, err := types.HexToCommandID(req.CommandId)
+	if err != nil {
+		return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
+	}
+
+	cmd, ok := ck.GetCommand(ctx, cmdID)
+	if !ok {
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find command '%s'", req.CommandId))
+	}
+
+	resp, err := GetCommandResponse(cmd)
+	if err != nil {
+		return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
+	}
+
+	return &types.CommandResponse{
+		Command: &resp,
+	}, nil
+}
+
 // BurnerInfo implements the burner info grpc query
 func (q Querier) BurnerInfo(c context.Context, req *types.BurnerInfoRequest) (*types.BurnerInfoResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)

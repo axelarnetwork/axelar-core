@@ -129,6 +129,13 @@ message ChainsResponse {
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
 }
 
+message CommandRequest {
+  string chain = 1;
+  string command_id = 2;
+}
+
+message CommandResponse { QueryCommandResponse command = 1; }
+
 message PendingCommandsRequest { string chain = 1; }
 
 message PendingCommandsResponse {
