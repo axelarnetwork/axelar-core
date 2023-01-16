@@ -36,17 +36,7 @@ func NewRateLimiter(keeper keeper.Keeper, channel porttypes.ICS4Wrapper, nexus t
 // - If the IBC channel that the packet is sent on is a registered chain, check the activation status.
 // - If the packet is an ICS-20 coin transfer, apply rate limiting on (chain, base denom) pair.
 // - If the rate limit is exceeded, an error is returned.
-func (r RateLimiter) RateLimitPacket(ctx sdk.Context, packet ibcexported.PacketI, direction nexus.TransferDirection) error {
-	var ibcPath string
-	switch direction {
-	case nexus.Incoming:
-		ibcPath = types.NewIBCPath(packet.GetDestPort(), packet.GetDestChannel())
-	case nexus.Outgoing:
-		ibcPath = types.NewIBCPath(packet.GetSourcePort(), packet.GetSourceChannel())
-	default:
-		panic(fmt.Errorf("unknown direction %s", direction))
-	}
-
+func (r RateLimiter) RateLimitPacket(ctx sdk.Context, packet ibcexported.PacketI, direction nexus.TransferDirection, ibcPath string) error {
 	chainName, ok := r.keeper.GetChainNameByIBCPath(ctx, ibcPath)
 	if !ok {
 		// If the IBC channel is not registered as a chain, skip rate limiting
@@ -58,22 +48,8 @@ func (r RateLimiter) RateLimitPacket(ctx sdk.Context, packet ibcexported.PacketI
 		return fmt.Errorf("chain %s registered for IBC path %s is deactivated", chain.Name, ibcPath)
 	}
 
-	// Only ICS-20 packets are expected in the middleware
-	var data ibctransfertypes.FungibleTokenPacketData
-	if err := ibctransfertypes.ModuleCdc.UnmarshalJSON(packet.GetData(), &data); err != nil {
-		return sdkerrors.Wrapf(sdkerrors.ErrInvalidType, "cannot unmarshal ICS-20 transfer packet data: %s", err.Error())
-	}
-
-	// parse the denomination from the full denom path
-	trace := ibctransfertypes.ParseDenomTrace(data.Denom)
-
-	// parse the transfer amount
-	transferAmount, ok := sdk.NewIntFromString(data.Amount)
-	if !ok {
-		return sdkerrors.Wrapf(ibctransfertypes.ErrInvalidAmount, "unable to parse transfer amount (%s) into sdk.Int", data.Amount)
-	}
-	token := sdk.Coin{Denom: trace.GetBaseDenom(), Amount: transferAmount}
-	if err := token.Validate(); err != nil {
+	token, err := parseTokenFromPacket(packet)
+	if err != nil {
 		return err
 	}
 
@@ -95,10 +71,41 @@ func (r RateLimiter) SendPacket(ctx sdk.Context, chanCap *capabilitytypes.Capabi
 		return nil
 	}
 
-	return r.RateLimitPacket(ctx, packet, nexus.Outgoing)
+	return r.RateLimitPacket(ctx, packet, nexus.Outgoing, types.NewIBCPath(packet.GetSourcePort(), packet.GetSourceChannel()))
 }
 
 // WriteAcknowledgement implements the ICS4 Wrapper interface
 func (r RateLimiter) WriteAcknowledgement(ctx sdk.Context, chanCap *capabilitytypes.Capability, packet ibcexported.PacketI, ack ibcexported.Acknowledgement) error {
 	return r.channel.WriteAcknowledgement(ctx, chanCap, packet, ack)
+}
+
+func parseTokenFromPacket(packet ibcexported.PacketI) (sdk.Coin, error) {
+	// Only ICS-20 packets are expected in the middleware
+	var data ibctransfertypes.FungibleTokenPacketData
+	if err := ibctransfertypes.ModuleCdc.UnmarshalJSON(packet.GetData(), &data); err != nil {
+		return sdk.Coin{}, sdkerrors.Wrapf(sdkerrors.ErrInvalidType, "cannot unmarshal ICS-20 transfer packet data: %s", err.Error())
+	}
+
+	asset := data.Denom
+	// If the asset being transferred is an IBC denom originating on the destination chain,
+	// then the full denom in the IBC transfer contains the IBC channel to the destination chain as a prefix, `transfer/channel-x/asset`.
+	// e.g. For IBC channel Axelar channel-0 <-> channel-1 Cosmoshub,
+	// for an asset `uusdc` originating on Axelar, the full denom when sending it from Cosmoshub -> Axelar will be `transfer/channel-1/uusdc`
+	// for an asset `uatom` originating on Cosmoshub, the full denom when sending it from Axelar -> Cosmoshub will be `transfer/channel-0/uatom`
+	if ibctransfertypes.ReceiverChainIsSource(packet.GetSourcePort(), packet.GetSourceChannel(), data.Denom) {
+		ibcTransferPrefix := ibctransfertypes.GetDenomPrefix(packet.GetSourcePort(), packet.GetSourceChannel())
+		asset = data.Denom[len(ibcTransferPrefix):]
+	}
+
+	// parse the transfer amount
+	transferAmount, ok := sdk.NewIntFromString(data.Amount)
+	if !ok {
+		return sdk.Coin{}, sdkerrors.Wrapf(ibctransfertypes.ErrInvalidAmount, "unable to parse transfer amount (%s) into sdk.Int", data.Amount)
+	}
+	token := sdk.Coin{Denom: asset, Amount: transferAmount}
+	if err := token.Validate(); err != nil {
+		return sdk.Coin{}, err
+	}
+
+	return token, nil
 }

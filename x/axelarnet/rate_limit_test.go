@@ -41,10 +41,12 @@ func TestRateLimitPacket(t *testing.T) {
 		err         error
 		chain       nexus.ChainName
 		direction   nexus.TransferDirection
+		ibcPath     string
 	)
 	repeats := 10
 	port := rand.StrBetween(1, 20)
 	channel := rand.StrBetween(1, 20)
+	ibcPath = types.NewIBCPath(port, channel)
 
 	givenKeeper := Given("a keeper", func() {
 		ctx, k, channelK = setup()
@@ -88,7 +90,7 @@ func TestRateLimitPacket(t *testing.T) {
 		Given2(givenPacket).
 		When("ibc path is not registered", func() {}).
 		Then("rate limit packet succeeds", func(t *testing.T) {
-			err = rateLimiter.RateLimitPacket(ctx, packet, direction)
+			err = rateLimiter.RateLimitPacket(ctx, packet, direction, ibcPath)
 			assert.NoError(t, err)
 		}).
 		Run(t, repeats)
@@ -105,7 +107,7 @@ func TestRateLimitPacket(t *testing.T) {
 			}
 		}).
 		Then("rate limit packet fails", func(t *testing.T) {
-			err = rateLimiter.RateLimitPacket(ctx, packet, direction)
+			err = rateLimiter.RateLimitPacket(ctx, packet, direction, ibcPath)
 			assert.ErrorContains(t, err, "deactivated")
 		}).
 		Run(t, repeats)
@@ -118,7 +120,7 @@ func TestRateLimitPacket(t *testing.T) {
 			packet.Data = nil
 		}).
 		Then("rate limit packet fails", func(t *testing.T) {
-			err = rateLimiter.RateLimitPacket(ctx, packet, direction)
+			err = rateLimiter.RateLimitPacket(ctx, packet, direction, ibcPath)
 			assert.ErrorContains(t, err, "cannot unmarshal")
 		}).
 		Run(t, repeats)
@@ -132,7 +134,7 @@ func TestRateLimitPacket(t *testing.T) {
 		When2(whenIBCPathIsRegistered).
 		When2(whenChainIsRegistered).
 		Then("rate limit packet fails", func(t *testing.T) {
-			err = rateLimiter.RateLimitPacket(ctx, packet, direction)
+			err = rateLimiter.RateLimitPacket(ctx, packet, direction, ibcPath)
 			assert.ErrorContains(t, err, "unable to parse transfer amount")
 		}).
 		Run(t, repeats)
@@ -146,7 +148,7 @@ func TestRateLimitPacket(t *testing.T) {
 		When2(whenIBCPathIsRegistered).
 		When2(whenChainIsRegistered).
 		Then("rate limit packet fails", func(t *testing.T) {
-			err = rateLimiter.RateLimitPacket(ctx, packet, direction)
+			err = rateLimiter.RateLimitPacket(ctx, packet, direction, ibcPath)
 			assert.ErrorContains(t, err, "negative coin amount")
 		}).
 		Run(t, repeats)
@@ -161,7 +163,7 @@ func TestRateLimitPacket(t *testing.T) {
 			}
 		}).
 		Then("rate limit packet fails", func(t *testing.T) {
-			err = rateLimiter.RateLimitPacket(ctx, packet, direction)
+			err = rateLimiter.RateLimitPacket(ctx, packet, direction, ibcPath)
 			assert.ErrorContains(t, err, "rate limit exceeded")
 		}).
 		Run(t, repeats)
@@ -176,7 +178,7 @@ func TestRateLimitPacket(t *testing.T) {
 			}
 		}).
 		Then("rate limit packet succeeds", func(t *testing.T) {
-			err = rateLimiter.RateLimitPacket(ctx, packet, direction)
+			err = rateLimiter.RateLimitPacket(ctx, packet, direction, ibcPath)
 			assert.NoError(t, err)
 		}).
 		Run(t, repeats)
