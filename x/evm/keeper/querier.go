@@ -15,7 +15,6 @@ import (
 const (
 	QTokenAddressBySymbol = "token-address-symbol"
 	QTokenAddressByAsset  = "token-address-asset"
-	QPendingCommands      = "pending-commands"
 )
 
 // Bytecode labels

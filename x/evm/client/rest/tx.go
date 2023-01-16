@@ -13,7 +13,6 @@ import (
 	"github.com/gorilla/mux"
 
 	clientUtils "github.com/axelarnetwork/axelar-core/utils"
-	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
@@ -31,9 +30,8 @@ const (
 	TxSignCommands                = "sign-commands"
 	TxAddChain                    = "add-chain"
 
-	QueryAddress         = "query-address"
-	QueryTokenAddress    = "token-address"
-	QueryPendingCommands = keeper.QPendingCommands
+	QueryAddress      = "query-address"
+	QueryTokenAddress = "token-address"
 )
 
 // RegisterRoutes registers this module's REST routes with the given router
