@@ -92,7 +92,7 @@ func parseTokenFromPacket(packet ibcexported.PacketI) (sdk.Coin, error) {
 	// e.g. For IBC channel Axelar channel-0 <-> channel-1 Cosmoshub,
 	// For an asset `uusdc` originating on Axelar, the full denom when sending it from Cosmoshub -> Axelar will be `transfer/channel-1/uusdc`
 	// Similarly, for an asset `uatom` originating on Cosmoshub, the full denom when sending it from Axelar -> Cosmoshub will be `transfer/channel-0/uatom`
-	// So, if the source channel of the packet is a prefix of the denom being transferred, we remove it to check if the remaining denom is a registered asset.
+	// So, if the source channel of the packet is a prefix of the denom being transferred, we remove it to use the remaining denom as the asset for the rate limit.
 	if ibctransfertypes.ReceiverChainIsSource(packet.GetSourcePort(), packet.GetSourceChannel(), data.Denom) {
 		ibcTransferPrefix := ibctransfertypes.GetDenomPrefix(packet.GetSourcePort(), packet.GetSourceChannel())
 		asset = data.Denom[len(ibcTransferPrefix):]

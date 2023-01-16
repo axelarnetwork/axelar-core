@@ -66,6 +66,7 @@ func TestRateLimitPacket(t *testing.T) {
 		receiverPort := counterpartyPort
 		receiverChannel := counterpartyChannel
 
+		// packet can originate from either native or counterparty chain
 		switch rand.Bools(0.5).Next() {
 		case false:
 			sourcePort, sourceChannel, receiverPort, receiverChannel = receiverPort, receiverChannel, sourcePort, sourceChannel
@@ -186,6 +187,37 @@ func TestRateLimitPacket(t *testing.T) {
 		Then("rate limit packet fails", func(t *testing.T) {
 			err = rateLimiter.RateLimitPacket(ctx, packet, direction, ibcPath)
 			assert.ErrorContains(t, err, "rate limit exceeded")
+		}).
+		Run(t, repeats)
+
+	givenKeeper.
+		Given("a packet with opposite channel id", func() {
+			port = rand.StrBetween(10, 20)
+			channel = rand.StrBetween(10, 20)
+			receiverPort := rand.StrBetween(1, 20)
+			receiverChannel := rand.StrBetween(1, 20)
+			// use the receiver port/channel id. since this is not the source,
+			// the prefix shouldn't be removed and rate limit shouldn't be triggered
+			denom = fmt.Sprintf("%s/%s/%s", receiverPort, receiverChannel, rand.Denom(3, 20))
+			transfer = ibctransfertypes.NewFungibleTokenPacketData(
+				denom, strconv.FormatInt(rand.PosI64(), 10), rand.AccAddr().String(), rand.AccAddr().String(),
+			)
+			packet = axelartestutils.RandomPacket(transfer, port, channel, receiverPort, receiverChannel)
+		}).
+		When2(whenIBCPathIsRegistered).
+		When2(whenChainIsRegistered).
+		When("rate limit transfer is called for an unknown asset", func() {
+			n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error {
+				if asset.Denom != denom {
+					return fmt.Errorf("rate limit exceeded")
+				} else {
+					return nil
+				}
+			}
+		}).
+		Then("rate limit is skipped", func(t *testing.T) {
+			err = rateLimiter.RateLimitPacket(ctx, packet, direction, ibcPath)
+			assert.Nil(t, err)
 		}).
 		Run(t, repeats)
 
