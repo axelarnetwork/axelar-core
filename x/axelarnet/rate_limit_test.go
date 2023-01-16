@@ -35,6 +35,7 @@ func TestRateLimitPacket(t *testing.T) {
 		packet      ibcchanneltypes.Packet
 		transfer    ibctransfertypes.FungibleTokenPacketData
 		denom       string
+		baseDenom   string
 		rateLimiter axelarnet.RateLimiter
 		n           *mock.NexusMock
 		channelK    *mock.ChannelKeeperMock
@@ -55,21 +56,37 @@ func TestRateLimitPacket(t *testing.T) {
 	})
 
 	givenPacket := Given("a random ICS-20 packet", func() {
-		denom = axelartestutils.RandomFullDenom()
+		counterpartyPort := rand.StrBetween(1, 20)
+		counterpartyChannel := rand.StrBetween(1, 20)
+		baseDenom = rand.Denom(3, 20)
+		denom = baseDenom
+
+		sourcePort := port
+		sourceChannel := channel
+		receiverPort := counterpartyPort
+		receiverChannel := counterpartyChannel
+
+		switch rand.Bools(0.5).Next() {
+		case false:
+			sourcePort, sourceChannel, receiverPort, receiverChannel = receiverPort, receiverChannel, sourcePort, sourceChannel
+
+			if rand.Bools(0.5).Next() {
+				// make packet originate from counterparty chain for a native denom
+				denom = fmt.Sprintf("%s/%s/%s", counterpartyPort, counterpartyChannel, denom)
+			}
+		case true:
+			if rand.Bools(0.5).Next() {
+				// make packet originate on native chain for a counterparty asset
+				denom = fmt.Sprintf("%s/%s/%s", port, channel, denom)
+			}
+		}
+
 		transfer = ibctransfertypes.NewFungibleTokenPacketData(
 			denom, strconv.FormatInt(rand.PosI64(), 10), rand.AccAddr().String(), rand.AccAddr().String(),
 		)
+		packet = axelartestutils.RandomPacket(transfer, sourcePort, sourceChannel, receiverPort, receiverChannel)
 		chain = nexustestutils.RandomChainName()
 		direction = nexustestutils.RandomDirection()
-
-		switch direction {
-		case nexus.Incoming:
-			packet = axelartestutils.RandomPacket(transfer, rand.StrBetween(1, 20), rand.StrBetween(1, 20), port, channel)
-		case nexus.Outgoing:
-			packet = axelartestutils.RandomPacket(transfer, port, channel, rand.StrBetween(1, 20), rand.StrBetween(1, 20))
-		default:
-			panic(fmt.Errorf("unknown direction %s", direction))
-		}
 	})
 
 	whenIBCPathIsRegistered := When("ibc path is registered", func() {
@@ -159,7 +176,11 @@ func TestRateLimitPacket(t *testing.T) {
 		When2(whenChainIsRegistered).
 		When("rate limit transfer exceeded", func() {
 			n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error {
-				return fmt.Errorf("rate limit exceeded")
+				if asset.Denom == baseDenom {
+					return fmt.Errorf("rate limit exceeded")
+				} else {
+					return nil
+				}
 			}
 		}).
 		Then("rate limit packet fails", func(t *testing.T) {
@@ -174,7 +195,11 @@ func TestRateLimitPacket(t *testing.T) {
 		When2(whenChainIsRegistered).
 		When("rate limit transfer succeeds", func() {
 			n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error {
-				return nil
+				if asset.Denom != baseDenom {
+					return fmt.Errorf("unknown asset")
+				} else {
+					return nil
+				}
 			}
 		}).
 		Then("rate limit packet succeeds", func(t *testing.T) {

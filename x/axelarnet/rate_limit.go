@@ -90,8 +90,9 @@ func parseTokenFromPacket(packet ibcexported.PacketI) (sdk.Coin, error) {
 	// If the asset being transferred is an IBC denom originating on the destination chain,
 	// then the full denom in the IBC transfer contains the IBC channel to the destination chain as a prefix, `transfer/channel-x/asset`.
 	// e.g. For IBC channel Axelar channel-0 <-> channel-1 Cosmoshub,
-	// for an asset `uusdc` originating on Axelar, the full denom when sending it from Cosmoshub -> Axelar will be `transfer/channel-1/uusdc`
-	// for an asset `uatom` originating on Cosmoshub, the full denom when sending it from Axelar -> Cosmoshub will be `transfer/channel-0/uatom`
+	// For an asset `uusdc` originating on Axelar, the full denom when sending it from Cosmoshub -> Axelar will be `transfer/channel-1/uusdc`
+	// Similarly, for an asset `uatom` originating on Cosmoshub, the full denom when sending it from Axelar -> Cosmoshub will be `transfer/channel-0/uatom`
+	// So, if the source channel of the packet is a prefix of the denom being transferred, we remove it to check if the remaining denom is a registered asset.
 	if ibctransfertypes.ReceiverChainIsSource(packet.GetSourcePort(), packet.GetSourceChannel(), data.Denom) {
 		ibcTransferPrefix := ibctransfertypes.GetDenomPrefix(packet.GetSourcePort(), packet.GetSourceChannel())
 		asset = data.Denom[len(ibcTransferPrefix):]
