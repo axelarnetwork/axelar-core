@@ -65,33 +65,32 @@ func handleTokenSent(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n 
 }
 
 func handleContractCall(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus, multisig types.MultisigKeeper) error {
-	e := event.GetEvent().(*types.Event_ContractCall).ContractCall
+	e := event.GetContractCall()
 	if e == nil {
 		panic(fmt.Errorf("event is nil"))
 	}
 
 	destinationChain := funcs.MustOk(n.GetChain(ctx, e.DestinationChain))
+	switch destinationChain.Module {
+	case types.ModuleName:
+		handleContractCallToEVM(ctx, bk, multisig, n, destinationChain.Name, event)
+		return nil
+	default:
+		// set as general message in nexus, so the dest module can handle the message
+		return setGeneralMessageToNexus(ctx, n, event)
+	}
+}
 
-	if !destinationChain.IsFrom(types.ModuleName) {
-		message := nexus.NewGeneralMessage(
-			string(event.GetID()),
-			event.Chain,
-			e.Sender.Hex(),
-			e.DestinationChain,
-			e.ContractAddress,
-			e.PayloadHash.Bytes(),
-			nexus.Approved,
-			nil,
-		)
-
-		return n.SetNewGeneralMessage(ctx, message)
+func handleContractCallToEVM(ctx sdk.Context, bk types.BaseKeeper, multisig types.MultisigKeeper, n types.Nexus, destinationChain nexus.ChainName, event types.Event) {
+	e := event.GetContractCall()
+	if e == nil {
+		panic(fmt.Errorf("event is nil"))
 	}
 
-	destinationCk := funcs.Must(bk.ForChain(ctx, destinationChain.Name))
-
+	destinationCk := funcs.Must(bk.ForChain(ctx, destinationChain))
 	cmd := types.NewApproveContractCallCommand(
 		funcs.MustOk(destinationCk.GetChainID(ctx)),
-		funcs.MustOk(multisig.GetCurrentKeyID(ctx, destinationChain.Name)),
+		funcs.MustOk(multisig.GetCurrentKeyID(ctx, destinationChain)),
 		funcs.MustOk(n.GetChain(ctx, event.Chain)).Name,
 		event.TxID,
 		event.Index,
@@ -99,7 +98,7 @@ func handleContractCall(ctx sdk.Context, event types.Event, bk types.BaseKeeper,
 	)
 	funcs.MustNoErr(destinationCk.EnqueueCommand(ctx, cmd))
 	bk.Logger(ctx).Debug(fmt.Sprintf("created %s command for event", cmd.Type),
-		"chain", destinationChain.Name,
+		"chain", destinationChain,
 		"eventID", event.GetID(),
 		"commandID", cmd.ID.Hex(),
 	)
@@ -113,12 +112,10 @@ func handleContractCall(ctx sdk.Context, event types.Event, bk types.BaseKeeper,
 		ContractAddress:  e.ContractAddress,
 		PayloadHash:      e.PayloadHash,
 	})
-
-	return nil
 }
 
 func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus, multisig types.MultisigKeeper) error {
-	e := event.GetEvent().(*types.Event_ContractCallWithToken).ContractCallWithToken
+	e := event.GetContractCallWithToken()
 	if e == nil {
 		panic(fmt.Errorf("event is nil"))
 	}
@@ -141,24 +138,22 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 		return err
 	}
 
-	if !destinationChain.IsFrom(types.ModuleName) {
-		asset := sdk.NewCoin(asset, sdk.Int(e.Amount))
+	switch destinationChain.Module {
+	case types.ModuleName:
+		return handleContractCallWithTokenToEVM(ctx, event, bk, multisig, sourceChain.Name, destinationChain.Name, asset)
+	default:
+		// set as general message in nexus, so the dest module can handle the message
+		return setGeneralMessageToNexus(ctx, n, event)
+	}
+}
 
-		message := nexus.NewGeneralMessage(
-			string(event.GetID()),
-			sourceChain.Name,
-			e.Sender.Hex(),
-			e.DestinationChain,
-			e.ContractAddress,
-			e.PayloadHash.Bytes(),
-			nexus.Approved,
-			&asset,
-		)
-
-		return n.SetNewGeneralMessage(ctx, message)
+func handleContractCallWithTokenToEVM(ctx sdk.Context, event types.Event, bk types.BaseKeeper, multisig types.MultisigKeeper, sourceChain, destinationChain nexus.ChainName, asset string) error {
+	e := event.GetContractCallWithToken()
+	if e == nil {
+		panic(fmt.Errorf("event is nil"))
 	}
 
-	destinationCk := funcs.Must(bk.ForChain(ctx, destinationChain.Name))
+	destinationCk := funcs.Must(bk.ForChain(ctx, destinationChain))
 
 	destinationToken := destinationCk.GetERC20TokenByAsset(ctx, asset)
 	if !destinationToken.Is(types.Confirmed) {
@@ -171,8 +166,8 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 
 	cmd := types.NewApproveContractCallWithMintCommand(
 		funcs.MustOk(destinationCk.GetChainID(ctx)),
-		funcs.MustOk(multisig.GetCurrentKeyID(ctx, destinationChain.Name)),
-		sourceChain.Name,
+		funcs.MustOk(multisig.GetCurrentKeyID(ctx, destinationChain)),
+		sourceChain,
 		event.TxID,
 		event.Index,
 		*e,
@@ -181,7 +176,7 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 	)
 	funcs.MustNoErr(destinationCk.EnqueueCommand(ctx, cmd))
 	bk.Logger(ctx).Debug(fmt.Sprintf("created %s command for event", cmd.Type),
-		"chain", destinationChain.Name,
+		"chain", destinationChain,
 		"eventID", event.GetID(),
 		"commandID", cmd.ID.Hex(),
 	)
@@ -198,6 +193,25 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 	})
 
 	return nil
+}
+
+func setGeneralMessageToNexus(ctx sdk.Context, n types.Nexus, event types.Event) error {
+	e := event.GetContractCall()
+	if e == nil {
+		panic(fmt.Errorf("event is nil"))
+	}
+
+	message := nexus.NewGeneralMessage(
+		string(event.GetID()),
+		event.Chain,
+		e.Sender.Hex(),
+		e.DestinationChain,
+		e.ContractAddress,
+		e.PayloadHash.Bytes(),
+		nexus.Approved,
+		nil,
+	)
+	return n.SetNewGeneralMessage(ctx, message)
 }
 
 func handleConfirmDeposit(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus) error {
