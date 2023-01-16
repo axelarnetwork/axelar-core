@@ -92,11 +92,6 @@ func TestSetNewGeneralMessage(t *testing.T) {
 		Run(t)
 
 	whenChainsAreRegistered.
-		When("unknown destination chain module", isCosmosChain(false)).
-		Then("should return error", errorWith(fmt.Sprintf("destination chain %s is not a cosmos chain", destinationChainName))).
-		Run(t)
-
-	whenChainsAreRegistered.
 		When("address validator for destination chain is set", isCosmosChain(true)).
 		When("destination address is invalid", func() {
 			generalMessage.Receiver = rand.Str(20)

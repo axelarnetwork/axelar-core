@@ -7,7 +7,6 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/key"
-	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
@@ -27,10 +26,6 @@ func (k Keeper) SetNewGeneralMessage(ctx sdk.Context, m exported.GeneralMessage)
 	destChain, ok := k.GetChain(ctx, m.DestinationChain)
 	if !ok {
 		return fmt.Errorf("destination chain %s is not a registered chain", m.DestinationChain)
-	}
-
-	if !destChain.IsFrom(axelarnet.ModuleName) {
-		return fmt.Errorf("destination chain %s is not a cosmos chain", m.DestinationChain)
 	}
 
 	validator := k.GetRouter().GetAddressValidator(destChain.Module)
