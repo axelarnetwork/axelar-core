@@ -1,7 +1,7 @@
 package types_test
 
 import (
-	"math/big"
+	"fmt"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -52,19 +52,17 @@ func TestNewInterpreter(t *testing.T) {
 	)
 	assert.NoError(t, err)
 
-	schema := abi.Arguments{{Type: stringType}, {Type: uint256Type}, {Type: stringType}, {Type: bytesType}}
+	schema := abi.Arguments{{Type: stringType}, {Type: stringArrayType}, {Type: bytesType}}
 
 	payload, err := schema.Pack(
 		"swap_and_forward",
-		big.NewInt(7),
-		"string,uint128,string,string,uint8,string,bytes",
+		[]string{"string", "uint128", "string", "string", "uint8", "string", "bytes"},
 		argumentBz,
 	)
 	assert.NoError(t, err)
 
-	interpreter, err := types.NewInterpreter(payload)
+	msg, err := types.ConstructWasmMessage(rand.AccAddr().String(), payload)
 	assert.NoError(t, err)
 
-	_, err = interpreter.ToWasmMsg(rand.AccAddr().String())
-	assert.NoError(t, err)
+	fmt.Println(string(msg))
 }
