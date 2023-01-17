@@ -71,21 +71,6 @@ func NewL2Client(config evmTypes.EVMConfig, l1Client Client) (Client, error) {
 		}
 
 		return NewArbitrumClient(ethereumClient, eth2Client)
-	case "optimism":
-		eth2Client, ok := l1Client.(*Ethereum2Client)
-		if !ok {
-			return nil, fmt.Errorf("l1 client has to be ethereum 2.0 for optimism")
-		}
-
-		if config.StateCommitmentChain == nil {
-			return nil, fmt.Errorf("state commitment chain is required for optimism")
-		}
-
-		if !common.IsHexAddress(*config.StateCommitmentChain) {
-			return nil, fmt.Errorf("state commitment chain is not a valid evm address")
-		}
-
-		return NewOptimismClient(ethereumClient, eth2Client, common.HexToAddress(*config.StateCommitmentChain))
 	default:
 		return nil, fmt.Errorf("unsupported L2 chain %s", config.Name)
 	}

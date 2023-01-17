@@ -22,8 +22,3 @@ type moonbeamHeader struct {
 	StateRoot      common.Hash  `json:"stateRoot"        gencodec:"required"`
 	Number         *hexutil.Big `json:"number"           gencodec:"required"`
 }
-
-type optimismRollupGasPrices struct {
-	L1GasPrice *hexutil.Big `json:"l1GasPrice"           gencodec:"required"`
-	L2GasPrice *hexutil.Big `json:"l2GasPrice"           gencodec:"required"`
-}
