@@ -19,7 +19,12 @@ func NewAddressValidator(keeper types.BaseKeeper, bank types.BankKeeper) nexus.A
 			return fmt.Errorf("no known prefix for chain %s", address.Chain.String())
 		}
 
-		bz, err := sdk.GetFromBech32(address.Address, chain.AddrPrefix)
+		cosmosAddr, err := types.ToCosmosAddress(address.Address)
+		if err != nil {
+			return err
+		}
+
+		bz, err := sdk.GetFromBech32(cosmosAddr.String(), chain.AddrPrefix)
 		if err != nil {
 			return err
 		}

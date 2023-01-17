@@ -226,3 +226,54 @@ func ValidateIBCPath(path string) error {
 func NewIBCPath(port string, channel string) string {
 	return fmt.Sprintf("%s/%s", port, channel)
 }
+
+// AddressType on can be native or wasm
+type AddressType int
+
+const (
+	// Unknown means message is unrecognized
+	Unknown = iota
+	// AccountAddress means a regular address
+	AccountAddress = 1
+	// ContractAddress means a cosmwasm contract address
+	ContractAddress = 2
+)
+
+// CosmosAddress is a bech32 address string with address type
+type CosmosAddress struct {
+	address     string
+	addressType AddressType
+}
+
+// ToCosmosAddress takes in a string returns a CosmosAddress
+// the string is valid if an account string, or an account string with `wasm/` prefix
+func ToCosmosAddress(addr string) (CosmosAddress, error) {
+	addrSplit := strings.Split(addr, "/")
+
+	switch len(addrSplit) {
+	case 1:
+		return CosmosAddress{address: addr, addressType: AccountAddress}, nil
+	case 2:
+		if addrSplit[0] != "wasm" {
+			return CosmosAddress{}, fmt.Errorf("invalid cosmos address %s", addr)
+		}
+		return CosmosAddress{address: addrSplit[1], addressType: ContractAddress}, nil
+	default:
+		return CosmosAddress{}, fmt.Errorf("invalid cosmos address %s", addr)
+	}
+}
+
+// String returns the bech32 account string
+func (c CosmosAddress) String() string {
+	return c.address
+}
+
+// Type returns the address type
+func (c CosmosAddress) Type() AddressType {
+	return c.addressType
+}
+
+// AccAddress returns the sdk AccAddress
+func (c CosmosAddress) AccAddress() (sdk.AccAddress, error) {
+	return sdk.AccAddressFromBech32(c.address)
+}

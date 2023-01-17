@@ -176,7 +176,7 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, _ *types.ExecutePe
 	}
 
 	for _, pendingTransfer := range pendingTransfers {
-		recipient, err := sdk.AccAddressFromBech32(pendingTransfer.Recipient.Address)
+		recipient, err := funcs.Must(types.ToCosmosAddress(pendingTransfer.Recipient.Address)).AccAddress()
 		if err != nil {
 			s.Logger(ctx).Error(fmt.Sprintf("discard invalid recipient %s and continue", pendingTransfer.Recipient.Address))
 			s.nexus.ArchivePendingTransfer(ctx, pendingTransfer)
@@ -341,7 +341,8 @@ func (s msgServer) RouteIBCTransfers(c context.Context, _ *types.RouteIBCTransfe
 				continue
 			}
 
-			funcs.MustNoErr(s.EnqueueIBCTransfer(ctx, types.NewIBCTransfer(sender, p.Recipient.Address, token, portID, channelID, p.ID)))
+			cosmosAddr := funcs.Must(types.ToCosmosAddress(p.Recipient.Address)).String()
+			funcs.MustNoErr(s.EnqueueIBCTransfer(ctx, types.NewIBCTransfer(sender, cosmosAddr, token, portID, channelID, p.ID)))
 			s.nexus.ArchivePendingTransfer(ctx, p)
 		}
 	}
