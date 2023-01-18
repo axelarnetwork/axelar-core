@@ -36,6 +36,8 @@ func NewRateLimiter(keeper keeper.Keeper, channel porttypes.ICS4Wrapper, nexus t
 // - If the IBC channel that the packet is sent on is a registered chain, check the activation status.
 // - If the packet is an ICS-20 coin transfer, apply rate limiting on (chain, base denom) pair.
 // - If the rate limit is exceeded, an error is returned.
+// Incoming direction is used for tokens incoming to Axelar (unlocked from IBC escrow/minted as an IBC denom).
+// Outgoing direction is used for tokens going out from Axelar (locked in the IBC escrow/burned as an IBC denom).
 func (r RateLimiter) RateLimitPacket(ctx sdk.Context, packet ibcexported.PacketI, direction nexus.TransferDirection, ibcPath string) error {
 	chainName, ok := r.keeper.GetChainNameByIBCPath(ctx, ibcPath)
 	if !ok {

@@ -267,6 +267,7 @@ func (am AppModule) OnRecvPacket(
 	packet channeltypes.Packet,
 	relayer sdk.AccAddress,
 ) ibcexported.Acknowledgement {
+	// IBC receives are rate limited on the Incoming direction (tokens coming in to Axelar hub).
 	if err := am.rateLimiter.RateLimitPacket(ctx, packet, nexus.Incoming, types.NewIBCPath(packet.GetDestPort(), packet.GetDestChannel())); err != nil {
 		return ibctransfertypes.NewErrorAcknowledgement(err)
 	}
@@ -295,6 +296,8 @@ func (am AppModule) OnAcknowledgementPacket(
 	case *channeltypes.Acknowledgement_Result:
 		return setTransferCompleted(ctx, am.keeper, packet.SourcePort, packet.SourceChannel, packet.Sequence)
 	default:
+		// AckError causes a refund of the token (i.e unlock from the escrow address/mint of token depending on whether it's native to chain).
+		// Hence, it's rate limited on the Incoming direction (tokens coming in to Axelar hub).
 		if err := am.rateLimiter.RateLimitPacket(ctx, packet, nexus.Incoming, types.NewIBCPath(packet.GetSourcePort(), packet.GetSourceChannel())); err != nil {
 			return err
 		}
@@ -314,6 +317,8 @@ func (am AppModule) OnTimeoutPacket(
 		return err
 	}
 
+	// Timeout causes a refund of the token (i.e unlock from the escrow address/mint of token depending on whether it's native to chain).
+	// Hence, it's rate limited on the Incoming direction (tokens coming in to Axelar hub).
 	if err := am.rateLimiter.RateLimitPacket(ctx, packet, nexus.Incoming, types.NewIBCPath(packet.GetSourcePort(), packet.GetSourceChannel())); err != nil {
 		return err
 	}
