@@ -28,7 +28,7 @@ func RunCached[T any](c sdk.Context, l Logger, f func(sdk.Context) (T, error)) T
 
 	result, err := f(ctx)
 	if err != nil {
-		l.Logger(ctx).Error(fmt.Sprintf("recovered from error in cached context: %s", err.Error()))
+		l.Logger(ctx).Debug(fmt.Sprintf("recovered from error in cached context: %s", err.Error()))
 		return *new(T)
 	}
 
