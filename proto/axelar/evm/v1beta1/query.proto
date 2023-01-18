@@ -134,7 +134,13 @@ message CommandRequest {
   string id = 2;
 }
 
-message CommandResponse { QueryCommandResponse command = 1; }
+message CommandResponse {
+  string id = 1 [ (gogoproto.customname) = "ID" ];
+  string type = 2;
+  map<string, string> params = 3 [ (gogoproto.nullable) = false ];
+  string key_id = 4 [ (gogoproto.customname) = "KeyID" ];
+  uint32 max_gas_cost = 5;
+}
 
 message PendingCommandsRequest { string chain = 1; }
 

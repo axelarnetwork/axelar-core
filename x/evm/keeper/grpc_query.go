@@ -88,7 +88,11 @@ func (q Querier) Command(c context.Context, req *types.CommandRequest) (*types.C
 	}
 
 	return &types.CommandResponse{
-		Command: &resp,
+		ID:         resp.ID,
+		Type:       resp.Type,
+		Params:     resp.Params,
+		KeyID:      resp.KeyID,
+		MaxGasCost: resp.MaxGasCost,
 	}, nil
 }
 

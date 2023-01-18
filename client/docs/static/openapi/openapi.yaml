@@ -5304,22 +5304,19 @@ paths:
               schema:
                 type: object
                 properties:
-                  command:
+                  id:
+                    type: string
+                  type:
+                    type: string
+                  params:
                     type: object
-                    properties:
-                      id:
-                        type: string
-                      type:
-                        type: string
-                      params:
-                        type: object
-                        additionalProperties:
-                          type: string
-                      key_id:
-                        type: string
-                      max_gas_cost:
-                        type: integer
-                        format: int64
+                    additionalProperties:
+                      type: string
+                  key_id:
+                    type: string
+                  max_gas_cost:
+                    type: integer
+                    format: int64
         default:
           description: An unexpected error response
           content:
@@ -37831,22 +37828,19 @@ components:
     axelar.evm.v1beta1.CommandResponse:
       type: object
       properties:
-        command:
+        id:
+          type: string
+        type:
+          type: string
+        params:
           type: object
-          properties:
-            id:
-              type: string
-            type:
-              type: string
-            params:
-              type: object
-              additionalProperties:
-                type: string
-            key_id:
-              type: string
-            max_gas_cost:
-              type: integer
-              format: int64
+          additionalProperties:
+            type: string
+        key_id:
+          type: string
+        max_gas_cost:
+          type: integer
+          format: int64
     axelar.evm.v1beta1.ConfirmDepositRequest:
       type: object
       properties:

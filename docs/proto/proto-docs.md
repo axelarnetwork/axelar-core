@@ -213,6 +213,7 @@
     - [ChainsResponse](#axelar.evm.v1beta1.ChainsResponse)
     - [CommandRequest](#axelar.evm.v1beta1.CommandRequest)
     - [CommandResponse](#axelar.evm.v1beta1.CommandResponse)
+    - [CommandResponse.ParamsEntry](#axelar.evm.v1beta1.CommandResponse.ParamsEntry)
     - [ConfirmationHeightRequest](#axelar.evm.v1beta1.ConfirmationHeightRequest)
     - [ConfirmationHeightResponse](#axelar.evm.v1beta1.ConfirmationHeightResponse)
     - [DepositQueryParams](#axelar.evm.v1beta1.DepositQueryParams)
@@ -3486,7 +3487,27 @@ GenesisState represents the genesis state
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `command` | [QueryCommandResponse](#axelar.evm.v1beta1.QueryCommandResponse) |  |  |
+| `id` | [string](#string) |  |  |
+| `type` | [string](#string) |  |  |
+| `params` | [CommandResponse.ParamsEntry](#axelar.evm.v1beta1.CommandResponse.ParamsEntry) | repeated |  |
+| `key_id` | [string](#string) |  |  |
+| `max_gas_cost` | [uint32](#uint32) |  |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.CommandResponse.ParamsEntry"></a>
+
+### CommandResponse.ParamsEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key` | [string](#string) |  |  |
+| `value` | [string](#string) |  |  |
 
 
 
