@@ -15,8 +15,8 @@ var (
 	bytesType       = funcs.Must(abi.NewType("bytes", "bytes", nil))
 
 	// abi encoded bytes, with the following format:
-	// wasm method name, argument type list, encoded bytes contain actual argument names and values
-	payloadArguments = abi.Arguments{{Type: stringType}, {Type: stringArrayType}, {Type: bytesType}}
+	// wasm method name, argument name list, argument type list, argument value list
+	payloadArguments = abi.Arguments{{Type: stringType}, {Type: stringArrayType}, {Type: stringArrayType}, {Type: bytesType}}
 )
 
 type contract struct {
@@ -26,7 +26,7 @@ type contract struct {
 	Msg map[string]interface{} `json:"msg"`
 }
 
-// wasm is the json get passed to the IBC memo field
+// wasm is the json that gets passed to the IBC memo field
 type wasm struct {
 	Wasm contract `json:"wasm"`
 }
@@ -38,27 +38,26 @@ func ConstructWasmMessage(contractAddr string, payload []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	abiArguments, err := buildArguments(args[1].([]string))
+	methodName := args[0].(string)
+	argNames := args[1].([]string)
+	argTypes := args[2].([]string)
+
+	abiArguments, err := buildArguments(argTypes)
 	if err != nil {
 		return nil, err
 	}
 
-	// unpack argument bytes to list of arg name and arg value
-	arguments, err := abiArguments.Unpack(args[2].([]byte))
+	// unpack to actual argument values
+	argValues, err := abiArguments.Unpack(args[3].([]byte))
 	if err != nil {
 		return nil, err
 	}
 
 	// convert to execute msg payload
 	executeMsg := make(map[string]interface{})
-	for idx := 0; idx < len(arguments); idx += 2 {
-		argName := arguments[idx].(string)
-		argValue := arguments[idx+1]
-
-		executeMsg[argName] = argValue
+	for i := 0; i < len(argNames); i++ {
+		executeMsg[argNames[i]] = argValues[i]
 	}
-
-	methodName := args[0].(string)
 
 	msg := wasm{
 		Wasm: contract{
@@ -72,7 +71,7 @@ func ConstructWasmMessage(contractAddr string, payload []byte) ([]byte, error) {
 	return json.Marshal(msg)
 }
 
-// build abi arguments based on argument types to decode the payload
+// build abi arguments based on argument types to decode the actual wasm contract arguments
 func buildArguments(argTypes []string) (abi.Arguments, error) {
 	var arguments abi.Arguments
 	for _, typeStr := range argTypes {
@@ -81,9 +80,7 @@ func buildArguments(argTypes []string) (abi.Arguments, error) {
 			return nil, fmt.Errorf("invalid argument type %s", typeStr)
 		}
 
-		// arguments hold argument name and type pairs
-		// the first argument is always string, and the second argument is the actual type
-		arguments = append(arguments, abi.Argument{Type: stringType}, abi.Argument{Type: argType})
+		arguments = append(arguments, abi.Argument{Type: argType})
 	}
 
 	return arguments, nil
