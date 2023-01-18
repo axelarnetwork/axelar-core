@@ -77,7 +77,7 @@ func handleContractCall(ctx sdk.Context, event types.Event, bk types.BaseKeeper,
 		return nil
 	default:
 		// set as general message in nexus, so the dest module can handle the message
-		return setGeneralMessageToNexus(ctx, n, event)
+		return setMessageToNexus(ctx, n, event, nil)
 	}
 }
 
@@ -142,8 +142,9 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 	case types.ModuleName:
 		return handleContractCallWithTokenToEVM(ctx, event, bk, multisig, sourceChain.Name, destinationChain.Name, asset)
 	default:
+		coin := sdk.NewCoin(asset, sdk.Int(e.Amount))
 		// set as general message in nexus, so the dest module can handle the message
-		return setGeneralMessageToNexus(ctx, n, event)
+		return setMessageToNexus(ctx, n, event, &coin)
 	}
 }
 
@@ -195,7 +196,7 @@ func handleContractCallWithTokenToEVM(ctx sdk.Context, event types.Event, bk typ
 	return nil
 }
 
-func setGeneralMessageToNexus(ctx sdk.Context, n types.Nexus, event types.Event) error {
+func setMessageToNexus(ctx sdk.Context, n types.Nexus, event types.Event, asset *sdk.Coin) error {
 	var message nexus.GeneralMessage
 	switch e := event.GetEvent().(type) {
 	case *types.Event_ContractCall:
@@ -211,6 +212,9 @@ func setGeneralMessageToNexus(ctx sdk.Context, n types.Nexus, event types.Event)
 		)
 
 	case *types.Event_ContractCallWithToken:
+		if asset == nil {
+			return fmt.Errorf("expect asset for ContractCallWithToken")
+		}
 		message = nexus.NewGeneralMessage(
 			string(event.GetID()),
 			event.Chain,
@@ -219,13 +223,13 @@ func setGeneralMessageToNexus(ctx sdk.Context, n types.Nexus, event types.Event)
 			e.ContractCallWithToken.ContractAddress,
 			e.ContractCallWithToken.PayloadHash.Bytes(),
 			nexus.Approved,
-			nil,
+			asset,
 		)
 	default:
 		return fmt.Errorf("unsupported event type %T", event)
 	}
 
-	return n.SetNewGeneralMessage(ctx, message)
+	return n.SetNewMessage(ctx, message)
 }
 
 func handleConfirmDeposit(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus) error {

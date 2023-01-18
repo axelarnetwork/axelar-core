@@ -158,8 +158,8 @@ var _ types.Nexus = &NexusMock{}
 //			SetChainMaintainerStateFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, maintainerState github_com_axelarnetwork_axelar_core_x_nexus_exported.MaintainerState) error {
 //				panic("mock out the SetChainMaintainerState method")
 //			},
-//			SetNewGeneralMessageFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, m github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage) error {
-//				panic("mock out the SetNewGeneralMessage method")
+//			SetNewMessageFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, m github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage) error {
+//				panic("mock out the SetNewMessage method")
 //			},
 //		}
 //
@@ -225,8 +225,8 @@ type NexusMock struct {
 	// SetChainMaintainerStateFunc mocks the SetChainMaintainerState method.
 	SetChainMaintainerStateFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, maintainerState github_com_axelarnetwork_axelar_core_x_nexus_exported.MaintainerState) error
 
-	// SetNewGeneralMessageFunc mocks the SetNewGeneralMessage method.
-	SetNewGeneralMessageFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, m github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage) error
+	// SetNewMessageFunc mocks the SetNewMessage method.
+	SetNewMessageFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, m github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage) error
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -391,8 +391,8 @@ type NexusMock struct {
 			// MaintainerState is the maintainerState argument value.
 			MaintainerState github_com_axelarnetwork_axelar_core_x_nexus_exported.MaintainerState
 		}
-		// SetNewGeneralMessage holds details about calls to the SetNewGeneralMessage method.
-		SetNewGeneralMessage []struct {
+		// SetNewMessage holds details about calls to the SetNewMessage method.
+		SetNewMessage []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// M is the m argument value.
@@ -418,7 +418,7 @@ type NexusMock struct {
 	lockRegisterAsset                 sync.RWMutex
 	lockSetChain                      sync.RWMutex
 	lockSetChainMaintainerState       sync.RWMutex
-	lockSetNewGeneralMessage          sync.RWMutex
+	lockSetNewMessage                 sync.RWMutex
 }
 
 // AddTransferFee calls AddTransferFeeFunc.
@@ -1161,10 +1161,10 @@ func (mock *NexusMock) SetChainMaintainerStateCalls() []struct {
 	return calls
 }
 
-// SetNewGeneralMessage calls SetNewGeneralMessageFunc.
-func (mock *NexusMock) SetNewGeneralMessage(ctx github_com_cosmos_cosmos_sdk_types.Context, m github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage) error {
-	if mock.SetNewGeneralMessageFunc == nil {
-		panic("NexusMock.SetNewGeneralMessageFunc: method is nil but Nexus.SetNewGeneralMessage was just called")
+// SetNewMessage calls SetNewMessageFunc.
+func (mock *NexusMock) SetNewMessage(ctx github_com_cosmos_cosmos_sdk_types.Context, m github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage) error {
+	if mock.SetNewMessageFunc == nil {
+		panic("NexusMock.SetNewMessageFunc: method is nil but Nexus.SetNewMessage was just called")
 	}
 	callInfo := struct {
 		Ctx github_com_cosmos_cosmos_sdk_types.Context
@@ -1173,17 +1173,17 @@ func (mock *NexusMock) SetNewGeneralMessage(ctx github_com_cosmos_cosmos_sdk_typ
 		Ctx: ctx,
 		M:   m,
 	}
-	mock.lockSetNewGeneralMessage.Lock()
-	mock.calls.SetNewGeneralMessage = append(mock.calls.SetNewGeneralMessage, callInfo)
-	mock.lockSetNewGeneralMessage.Unlock()
-	return mock.SetNewGeneralMessageFunc(ctx, m)
+	mock.lockSetNewMessage.Lock()
+	mock.calls.SetNewMessage = append(mock.calls.SetNewMessage, callInfo)
+	mock.lockSetNewMessage.Unlock()
+	return mock.SetNewMessageFunc(ctx, m)
 }
 
-// SetNewGeneralMessageCalls gets all the calls that were made to SetNewGeneralMessage.
+// SetNewMessageCalls gets all the calls that were made to SetNewMessage.
 // Check the length with:
 //
-//	len(mockedNexus.SetNewGeneralMessageCalls())
-func (mock *NexusMock) SetNewGeneralMessageCalls() []struct {
+//	len(mockedNexus.SetNewMessageCalls())
+func (mock *NexusMock) SetNewMessageCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 	M   github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage
 } {
@@ -1191,9 +1191,9 @@ func (mock *NexusMock) SetNewGeneralMessageCalls() []struct {
 		Ctx github_com_cosmos_cosmos_sdk_types.Context
 		M   github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage
 	}
-	mock.lockSetNewGeneralMessage.RLock()
-	calls = mock.calls.SetNewGeneralMessage
-	mock.lockSetNewGeneralMessage.RUnlock()
+	mock.lockSetNewMessage.RLock()
+	calls = mock.calls.SetNewMessage
+	mock.lockSetNewMessage.RUnlock()
 	return calls
 }
 

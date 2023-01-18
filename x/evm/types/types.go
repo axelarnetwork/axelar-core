@@ -965,6 +965,8 @@ func (m Event) GetEventType() string {
 	return getType(m.GetEvent())
 }
 
+const maxReceiverLength = 128
+
 // ValidateBasic returns an error if the event token sent is invalid
 func (m EventTokenSent) ValidateBasic() error {
 	if m.Sender.IsZeroAddress() {
@@ -979,6 +981,10 @@ func (m EventTokenSent) ValidateBasic() error {
 		return sdkerrors.Wrap(err, "invalid destination address")
 	}
 
+	if len(m.DestinationAddress) > maxReceiverLength {
+		return fmt.Errorf("receiver length %d is greater than %d", len(m.DestinationAddress), maxReceiverLength)
+	}
+
 	if err := utils.ValidateString(m.Symbol); err != nil {
 		return sdkerrors.Wrap(err, "invalid symbol")
 	}
@@ -989,8 +995,6 @@ func (m EventTokenSent) ValidateBasic() error {
 
 	return nil
 }
-
-const maxReceiverLength = 128
 
 // ValidateBasic returns an error if the event contract call is invalid
 func (m EventContractCall) ValidateBasic() error {
@@ -1029,6 +1033,10 @@ func (m EventContractCallWithToken) ValidateBasic() error {
 
 	if err := utils.ValidateString(m.ContractAddress); err != nil {
 		return sdkerrors.Wrap(err, "invalid destination address")
+	}
+
+	if len(m.ContractAddress) > maxReceiverLength {
+		return fmt.Errorf("receiver length %d is greater than %d", len(m.ContractAddress), maxReceiverLength)
 	}
 
 	if m.PayloadHash.IsZero() {

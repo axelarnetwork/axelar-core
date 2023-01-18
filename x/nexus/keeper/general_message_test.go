@@ -54,7 +54,7 @@ func TestSetNewGeneralMessage(t *testing.T) {
 
 	errorWith := func(msg string) func(t *testing.T) {
 		return func(t *testing.T) {
-			assert.ErrorContains(t, k.SetNewGeneralMessage(ctx, generalMessage), msg)
+			assert.ErrorContains(t, k.SetNewMessage(ctx, generalMessage), msg)
 		}
 	}
 
@@ -109,7 +109,7 @@ func TestSetNewGeneralMessage(t *testing.T) {
 		When("address validator for destination chain is set", isCosmosChain(true)).
 		When("asset is registered", isAssetRegistered(true)).
 		Then("should succeed", func(t *testing.T) {
-			assert.NoError(t, k.SetNewGeneralMessage(ctx, generalMessage))
+			assert.NoError(t, k.SetNewMessage(ctx, generalMessage))
 		}).
 		Run(t)
 }
