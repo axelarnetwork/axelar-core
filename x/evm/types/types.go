@@ -990,6 +990,8 @@ func (m EventTokenSent) ValidateBasic() error {
 	return nil
 }
 
+const maxReceiverLength = 128
+
 // ValidateBasic returns an error if the event contract call is invalid
 func (m EventContractCall) ValidateBasic() error {
 	if m.Sender.IsZeroAddress() {
@@ -1002,6 +1004,10 @@ func (m EventContractCall) ValidateBasic() error {
 
 	if err := utils.ValidateString(m.ContractAddress); err != nil {
 		return sdkerrors.Wrap(err, "invalid destination address")
+	}
+
+	if len(m.ContractAddress) > maxReceiverLength {
+		return fmt.Errorf("receiver length %d is greater than %d", len(m.ContractAddress), maxReceiverLength)
 	}
 
 	if m.PayloadHash.IsZero() {

@@ -196,21 +196,35 @@ func handleContractCallWithTokenToEVM(ctx sdk.Context, event types.Event, bk typ
 }
 
 func setGeneralMessageToNexus(ctx sdk.Context, n types.Nexus, event types.Event) error {
-	e := event.GetContractCall()
-	if e == nil {
-		panic(fmt.Errorf("event is nil"))
+	var message nexus.GeneralMessage
+	switch e := event.GetEvent().(type) {
+	case *types.Event_ContractCall:
+		message = nexus.NewGeneralMessage(
+			string(event.GetID()),
+			event.Chain,
+			e.ContractCall.Sender.Hex(),
+			e.ContractCall.DestinationChain,
+			e.ContractCall.ContractAddress,
+			e.ContractCall.PayloadHash.Bytes(),
+			nexus.Approved,
+			nil,
+		)
+
+	case *types.Event_ContractCallWithToken:
+		message = nexus.NewGeneralMessage(
+			string(event.GetID()),
+			event.Chain,
+			e.ContractCallWithToken.Sender.Hex(),
+			e.ContractCallWithToken.DestinationChain,
+			e.ContractCallWithToken.ContractAddress,
+			e.ContractCallWithToken.PayloadHash.Bytes(),
+			nexus.Approved,
+			nil,
+		)
+	default:
+		return fmt.Errorf("unsupported event type %T", event)
 	}
 
-	message := nexus.NewGeneralMessage(
-		string(event.GetID()),
-		event.Chain,
-		e.Sender.Hex(),
-		e.DestinationChain,
-		e.ContractAddress,
-		e.PayloadHash.Bytes(),
-		nexus.Approved,
-		nil,
-	)
 	return n.SetNewGeneralMessage(ctx, message)
 }
 
@@ -405,11 +419,14 @@ func handleMultisigTransferKey(ctx sdk.Context, event types.Event, bk types.Base
 
 func validateEvent(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus) error {
 	var destinationChainName nexus.ChainName
+	var contractAddress string
 	switch event := event.GetEvent().(type) {
 	case *types.Event_ContractCall:
 		destinationChainName = event.ContractCall.DestinationChain
+		contractAddress = event.ContractCall.ContractAddress
 	case *types.Event_ContractCallWithToken:
 		destinationChainName = event.ContractCallWithToken.DestinationChain
+		contractAddress = event.ContractCallWithToken.ContractAddress
 	case *types.Event_TokenSent:
 		destinationChainName = event.TokenSent.DestinationChain
 	case *types.Event_Transfer, *types.Event_TokenDeployed,
@@ -434,6 +451,10 @@ func validateEvent(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n ty
 	// skip further destination chain keeper checks if it is not an evm chain
 	if !destinationChain.IsFrom(types.ModuleName) {
 		return nil
+	}
+
+	if len(contractAddress) != 0 && !common.IsHexAddress(contractAddress) {
+		return fmt.Errorf("invalid contract address")
 	}
 
 	destinationCk, err := bk.ForChain(ctx, destinationChainName)
