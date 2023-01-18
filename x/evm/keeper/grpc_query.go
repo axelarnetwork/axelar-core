@@ -340,6 +340,22 @@ func (q Querier) DepositState(c context.Context, req *types.DepositStateRequest)
 	return &types.DepositStateResponse{Status: types.DepositStatus_None}, nil
 }
 
+// GetCommandResponse converts a Command into a CommandResponse type
+func GetCommandResponse(cmd types.Command) (types.QueryCommandResponse, error) {
+	params, err := cmd.DecodeParams()
+	if err != nil {
+		return types.QueryCommandResponse{}, err
+	}
+
+	return types.QueryCommandResponse{
+		ID:         cmd.ID.Hex(),
+		Type:       cmd.Type.String(),
+		KeyID:      string(cmd.KeyID),
+		MaxGasCost: cmd.MaxGasCost,
+		Params:     params,
+	}, nil
+}
+
 // PendingCommands returns the pending commands from a gateway
 func (q Querier) PendingCommands(c context.Context, req *types.PendingCommandsRequest) (*types.PendingCommandsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)

@@ -52,22 +52,6 @@ func NewQuerier(k types.BaseKeeper, n types.Nexus) sdk.Querier {
 	}
 }
 
-// GetCommandResponse converts a Command into a CommandResponse type
-func GetCommandResponse(cmd types.Command) (types.QueryCommandResponse, error) {
-	params, err := cmd.DecodeParams()
-	if err != nil {
-		return types.QueryCommandResponse{}, err
-	}
-
-	return types.QueryCommandResponse{
-		ID:         cmd.ID.Hex(),
-		Type:       cmd.Type.String(),
-		KeyID:      string(cmd.KeyID),
-		MaxGasCost: cmd.MaxGasCost,
-		Params:     params,
-	}, nil
-}
-
 // QueryTokenAddressByAsset returns the address of the token contract by asset
 // Deprecated: Use token-info query instead
 func QueryTokenAddressByAsset(ctx sdk.Context, k types.ChainKeeper, n types.Nexus, asset string) ([]byte, error) {
