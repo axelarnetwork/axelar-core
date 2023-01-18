@@ -292,17 +292,21 @@ func (am AppModule) OnAcknowledgementPacket(
 		return sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "cannot unmarshal ICS-20 transfer packet acknowledgement: %v", err)
 	}
 
+	// IBC ack packets, by convention, use the source port/channel to represent native chain -> counterparty chain channel id
+	// https://github.com/cosmos/ibc/tree/main/spec/core/ics-004-channel-and-packet-semantics#definitions
+	port, channel, sequence := packet.GetSourcePort(), packet.GetSourceChannel(), packet.GetSequence()
+
 	switch ack.Response.(type) {
 	case *channeltypes.Acknowledgement_Result:
-		return setTransferCompleted(ctx, am.keeper, packet.SourcePort, packet.SourceChannel, packet.Sequence)
+		return setTransferCompleted(ctx, am.keeper, port, channel, sequence)
 	default:
 		// AckError causes a refund of the token (i.e unlock from the escrow address/mint of token depending on whether it's native to chain).
 		// Hence, it's rate limited on the Incoming direction (tokens coming in to Axelar hub).
-		if err := am.rateLimiter.RateLimitPacket(ctx, packet, nexus.Incoming, types.NewIBCPath(packet.GetSourcePort(), packet.GetSourceChannel())); err != nil {
+		if err := am.rateLimiter.RateLimitPacket(ctx, packet, nexus.Incoming, types.NewIBCPath(port, channel)); err != nil {
 			return err
 		}
 
-		return setTransferFailed(ctx, am.keeper, packet.SourcePort, packet.SourceChannel, packet.Sequence)
+		return setTransferFailed(ctx, am.keeper, port, channel, sequence)
 	}
 }
 
@@ -317,13 +321,17 @@ func (am AppModule) OnTimeoutPacket(
 		return err
 	}
 
+	// IBC timeout packets, by convention, use the source port/channel to represent native chain -> counterparty chain channel id
+	// https://github.com/cosmos/ibc/tree/main/spec/core/ics-004-channel-and-packet-semantics#definitions
+	port, channel, sequence := packet.GetSourcePort(), packet.GetSourceChannel(), packet.GetSequence()
+
 	// Timeout causes a refund of the token (i.e unlock from the escrow address/mint of token depending on whether it's native to chain).
 	// Hence, it's rate limited on the Incoming direction (tokens coming in to Axelar hub).
-	if err := am.rateLimiter.RateLimitPacket(ctx, packet, nexus.Incoming, types.NewIBCPath(packet.GetSourcePort(), packet.GetSourceChannel())); err != nil {
+	if err := am.rateLimiter.RateLimitPacket(ctx, packet, nexus.Incoming, types.NewIBCPath(port, channel)); err != nil {
 		return err
 	}
 
-	return setTransferFailed(ctx, am.keeper, packet.SourcePort, packet.SourceChannel, packet.Sequence)
+	return setTransferFailed(ctx, am.keeper, port, channel, sequence)
 }
 
 // returns true if mapping exits
