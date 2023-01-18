@@ -5292,7 +5292,7 @@ paths:
             default: CHAIN_STATUS_UNSPECIFIED
       tags:
         - QueryService
-  "/axelar/evm/v1beta1/command/{chain}/{command_id}":
+  "/axelar/evm/v1beta1/command/{chain}/{id}":
     get:
       summary: Command queries the command of a chain provided the command id
       operationId: Command
@@ -5496,7 +5496,7 @@ paths:
           required: true
           schema:
             type: string
-        - name: command_id
+        - name: id
           in: path
           required: true
           schema:

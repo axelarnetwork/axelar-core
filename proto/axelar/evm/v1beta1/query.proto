@@ -131,7 +131,7 @@ message ChainsResponse {
 
 message CommandRequest {
   string chain = 1;
-  string command_id = 2;
+  string id = 2;
 }
 
 message CommandResponse { QueryCommandResponse command = 1; }

@@ -342,8 +342,8 @@ func getCmdCommand() *cobra.Command {
 
 			res, err := queryClient.Command(cmd.Context(),
 				&types.CommandRequest{
-					Chain:     args[0],
-					CommandId: args[1],
+					Chain: args[0],
+					Id:    args[1],
 				},
 			)
 			if err != nil {

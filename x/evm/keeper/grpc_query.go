@@ -72,14 +72,14 @@ func (q Querier) Command(c context.Context, req *types.CommandRequest) (*types.C
 		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", req.Chain)).Error())
 	}
 
-	cmdID, err := types.HexToCommandID(req.CommandId)
+	cmdID, err := types.HexToCommandID(req.Id)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
 	}
 
 	cmd, ok := ck.GetCommand(ctx, cmdID)
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find command '%s'", req.CommandId))
+		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find command '%s'", req.Id))
 	}
 
 	resp, err := GetCommandResponse(cmd)

@@ -155,8 +155,7 @@ service QueryService {
 
   // Command queries the command of a chain provided the command id
   rpc Command(CommandRequest) returns (CommandResponse) {
-    option (google.api.http).get =
-        "/axelar/evm/v1beta1/command/{chain}/{command_id}";
+    option (google.api.http).get = "/axelar/evm/v1beta1/command/{chain}/{id}";
   }
 
   // KeyAddress queries the address of key of a chain
