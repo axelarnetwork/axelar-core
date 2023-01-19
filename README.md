@@ -1,5 +1,3 @@
-⚠️⚠️⚠️ **THIS IS A WORK IN PROGRESS** ⚠️⚠️⚠️
-
 # axelar-core
 
 The axelar-core app based on the Cosmos SDK is the main application of the axelar network. This repository is used to
