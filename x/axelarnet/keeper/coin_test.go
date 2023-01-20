@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	ibctypes "github.com/cosmos/ibc-go/v3/modules/apps/transfer/types"
+	ibctypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
 	"github.com/stretchr/testify/assert"
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 
