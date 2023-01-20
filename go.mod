@@ -8,8 +8,8 @@ require (
 	github.com/axelarnetwork/utils v0.0.0-20221213003031-66c703710da3
 	github.com/btcsuite/btcd v0.22.1
 	github.com/btcsuite/btcd/btcec/v2 v2.2.0
-	github.com/cosmos/cosmos-sdk v0.45.9
-	github.com/cosmos/ibc-go/v3 v3.3.0
+	github.com/cosmos/cosmos-sdk v0.45.10
+	github.com/cosmos/ibc-go/v4 v4.2.0
 	github.com/ethereum/go-ethereum v1.10.25
 	github.com/go-errors/errors v1.4.2
 	github.com/gogo/protobuf v1.3.3
@@ -28,7 +28,7 @@ require (
 	github.com/spf13/viper v1.13.0
 	github.com/stoewer/go-strcase v1.2.0
 	github.com/stretchr/testify v1.8.0
-	github.com/tendermint/tendermint v0.34.21
+	github.com/tendermint/tendermint v0.34.22
 	github.com/tendermint/tm-db v0.6.7
 	golang.org/x/crypto v0.1.0
 	golang.org/x/exp v0.0.0-20221018221608-02f3b879a704
@@ -38,8 +38,8 @@ require (
 	golang.org/x/tools v0.5.0
 	golang.org/x/xerrors v0.0.0-20220517211312-f3a8303e98df
 	google.golang.org/genproto v0.0.0-20220725144611-272f38e5d71b
-	google.golang.org/grpc v1.48.0
-	google.golang.org/protobuf v1.28.0
+	google.golang.org/grpc v1.50.0
+	google.golang.org/protobuf v1.28.1
 )
 
 require (
@@ -106,10 +106,10 @@ require (
 	github.com/lib/pq v1.10.6 // indirect
 	github.com/libp2p/go-buffer-pool v0.1.0 // indirect
 	github.com/magiconair/properties v1.8.6 // indirect
-	github.com/mattn/go-colorable v0.1.12 // indirect
-	github.com/mattn/go-isatty v0.0.14 // indirect
+	github.com/mattn/go-colorable v0.1.13 // indirect
+	github.com/mattn/go-isatty v0.0.16 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
-	github.com/mimoo/StrobeGo v0.0.0-20181016162300-f8f6d4d2b643 // indirect
+	github.com/mimoo/StrobeGo v0.0.0-20210601165009-122bf33a46e0 // indirect
 	github.com/minio/highwayhash v1.0.2 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
@@ -126,7 +126,7 @@ require (
 	github.com/rjeczalik/notify v0.9.1 // indirect
 	github.com/rs/cors v1.8.2 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
-	github.com/sasha-s/go-deadlock v0.2.1-0.20190427202633-1595213edefa // indirect
+	github.com/sasha-s/go-deadlock v0.3.1 // indirect
 	github.com/shirou/gopsutil v3.21.4-0.20210419000835-c7a38de76ee5+incompatible // indirect
 	github.com/smallnest/chanx v1.0.1-0.20211205150931-349643806662 // indirect
 	github.com/spf13/afero v1.8.2 // indirect

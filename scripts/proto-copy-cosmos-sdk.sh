@@ -15,5 +15,6 @@ cp -r "$ibc_protos" ./third_party
 
 chmod -R +w ./third_party/proto
 
-# Remove ICA protos
+# Remove ICA and fee IBC app protos
 rm -r ./third_party/proto/ibc/applications/interchain_accounts
+rm -r ./third_party/proto/ibc/applications/fee
