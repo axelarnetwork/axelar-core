@@ -1352,6 +1352,9 @@ var _ axelarnettypes.BankKeeper = &BankKeeperMock{}
 //			GetBalanceFunc: func(ctx cosmossdktypes.Context, addr cosmossdktypes.AccAddress, denom string) cosmossdktypes.Coin {
 //				panic("mock out the GetBalance method")
 //			},
+//			IsSendEnabledCoinFunc: func(ctx cosmossdktypes.Context, coin cosmossdktypes.Coin) bool {
+//				panic("mock out the IsSendEnabledCoin method")
+//			},
 //			IsSendEnabledCoinsFunc: func(ctx cosmossdktypes.Context, coins ...cosmossdktypes.Coin) error {
 //				panic("mock out the IsSendEnabledCoins method")
 //			},
@@ -1382,6 +1385,9 @@ type BankKeeperMock struct {
 
 	// GetBalanceFunc mocks the GetBalance method.
 	GetBalanceFunc func(ctx cosmossdktypes.Context, addr cosmossdktypes.AccAddress, denom string) cosmossdktypes.Coin
+
+	// IsSendEnabledCoinFunc mocks the IsSendEnabledCoin method.
+	IsSendEnabledCoinFunc func(ctx cosmossdktypes.Context, coin cosmossdktypes.Coin) bool
 
 	// IsSendEnabledCoinsFunc mocks the IsSendEnabledCoins method.
 	IsSendEnabledCoinsFunc func(ctx cosmossdktypes.Context, coins ...cosmossdktypes.Coin) error
@@ -1422,6 +1428,13 @@ type BankKeeperMock struct {
 			Addr cosmossdktypes.AccAddress
 			// Denom is the denom argument value.
 			Denom string
+		}
+		// IsSendEnabledCoin holds details about calls to the IsSendEnabledCoin method.
+		IsSendEnabledCoin []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// Coin is the coin argument value.
+			Coin cosmossdktypes.Coin
 		}
 		// IsSendEnabledCoins holds details about calls to the IsSendEnabledCoins method.
 		IsSendEnabledCoins []struct {
@@ -1476,6 +1489,7 @@ type BankKeeperMock struct {
 	lockBlockedAddr                  sync.RWMutex
 	lockBurnCoins                    sync.RWMutex
 	lockGetBalance                   sync.RWMutex
+	lockIsSendEnabledCoin            sync.RWMutex
 	lockIsSendEnabledCoins           sync.RWMutex
 	lockMintCoins                    sync.RWMutex
 	lockSendCoins                    sync.RWMutex
@@ -1592,6 +1606,42 @@ func (mock *BankKeeperMock) GetBalanceCalls() []struct {
 	mock.lockGetBalance.RLock()
 	calls = mock.calls.GetBalance
 	mock.lockGetBalance.RUnlock()
+	return calls
+}
+
+// IsSendEnabledCoin calls IsSendEnabledCoinFunc.
+func (mock *BankKeeperMock) IsSendEnabledCoin(ctx cosmossdktypes.Context, coin cosmossdktypes.Coin) bool {
+	if mock.IsSendEnabledCoinFunc == nil {
+		panic("BankKeeperMock.IsSendEnabledCoinFunc: method is nil but BankKeeper.IsSendEnabledCoin was just called")
+	}
+	callInfo := struct {
+		Ctx  cosmossdktypes.Context
+		Coin cosmossdktypes.Coin
+	}{
+		Ctx:  ctx,
+		Coin: coin,
+	}
+	mock.lockIsSendEnabledCoin.Lock()
+	mock.calls.IsSendEnabledCoin = append(mock.calls.IsSendEnabledCoin, callInfo)
+	mock.lockIsSendEnabledCoin.Unlock()
+	return mock.IsSendEnabledCoinFunc(ctx, coin)
+}
+
+// IsSendEnabledCoinCalls gets all the calls that were made to IsSendEnabledCoin.
+// Check the length with:
+//
+//	len(mockedBankKeeper.IsSendEnabledCoinCalls())
+func (mock *BankKeeperMock) IsSendEnabledCoinCalls() []struct {
+	Ctx  cosmossdktypes.Context
+	Coin cosmossdktypes.Coin
+} {
+	var calls []struct {
+		Ctx  cosmossdktypes.Context
+		Coin cosmossdktypes.Coin
+	}
+	mock.lockIsSendEnabledCoin.RLock()
+	calls = mock.calls.IsSendEnabledCoin
+	mock.lockIsSendEnabledCoin.RUnlock()
 	return calls
 }
 
