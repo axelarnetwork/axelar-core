@@ -64,6 +64,7 @@ type BankKeeper interface {
 	SendCoinsFromAccountToModule(ctx sdk.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error
 	GetBalance(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin
 	BlockedAddr(addr sdk.AccAddress) bool
+	IsSendEnabledCoins(ctx sdk.Context, coins ...sdk.Coin) error
 }
 
 // IBCTransferKeeper provides functionality to manage IBC transfers
@@ -85,6 +86,7 @@ type ChannelKeeper interface {
 		packet ibcexported.PacketI,
 		ack ibcexported.Acknowledgement,
 	) error
+	GetAppVersion(ctx sdk.Context, portID string, channelID string) (string, bool) // used in module_test
 }
 
 // AccountKeeper defines the account contract that must be fulfilled when

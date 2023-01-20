@@ -1,6 +1,7 @@
 package axelarnet_test
 
 import (
+	"fmt"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -91,7 +92,7 @@ func TestGetMigrationHandler(t *testing.T) {
 	})
 
 	whenGetValidAckError := When("get valid acknowledgement error", func() {
-		ack = channeltypes.NewErrorAcknowledgement("error")
+		ack = channeltypes.NewErrorAcknowledgement(fmt.Errorf("error"))
 	})
 
 	whenPendingTransfersExist := When("pending transfers exist", func() {

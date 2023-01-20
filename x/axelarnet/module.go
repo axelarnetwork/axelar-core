@@ -203,7 +203,7 @@ func (am AppModule) OnChanOpenInit(
 	chanCap *capabilitytypes.Capability,
 	counterparty channeltypes.Counterparty,
 	version string,
-) error {
+) (string, error) {
 	return am.transferModule.OnChanOpenInit(ctx, order, connectionHops, portID, channelID, chanCap, counterparty, version)
 }
 
@@ -269,7 +269,7 @@ func (am AppModule) OnRecvPacket(
 ) ibcexported.Acknowledgement {
 	// IBC receives are rate limited on the Incoming direction (tokens coming in to Axelar hub).
 	if err := am.rateLimiter.RateLimitPacket(ctx, packet, nexus.Incoming, types.NewIBCPath(packet.GetDestPort(), packet.GetDestChannel())); err != nil {
-		return ibctransfertypes.NewErrorAcknowledgement(err)
+		return channeltypes.NewErrorAcknowledgement(err)
 	}
 
 	return am.transferModule.OnRecvPacket(ctx, packet, relayer)
@@ -332,6 +332,11 @@ func (am AppModule) OnTimeoutPacket(
 	}
 
 	return setTransferFailed(ctx, am.keeper, port, channel, sequence)
+}
+
+// GetAppVersion implements the ChannelKeeper interface
+func (am AppModule) GetAppVersion(ctx sdk.Context, portID string, channelID string) (string, bool) {
+	return am.channel.GetAppVersion(ctx, portID, channelID)
 }
 
 // returns true if mapping exits

@@ -39,6 +39,7 @@ axelard tx ibc-transfer transfer [src-port] [src-channel] [receiver] [amount] [f
       --keyring-backend string          Select keyring's backend (os|file|kwallet|pass|test|memory) (default "file")
       --keyring-dir string              The client Keyring directory; if omitted, the default 'home' directory will be used
       --ledger                          Use a connected Ledger device
+      --memo string                     Memo to be sent along with the packet.
       --node string                     <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
       --note string                     Note to add a description to the transaction (previously --memo)
       --offline                         Offline mode (does not allow any online functionality

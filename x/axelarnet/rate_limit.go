@@ -81,6 +81,11 @@ func (r RateLimiter) WriteAcknowledgement(ctx sdk.Context, chanCap *capabilityty
 	return r.channel.WriteAcknowledgement(ctx, chanCap, packet, ack)
 }
 
+// GetAppVersion implements the ICS4 Wrapper interface
+func (r RateLimiter) GetAppVersion(ctx sdk.Context, portID string, channelID string) (string, bool) {
+	return r.channel.GetAppVersion(ctx, portID, channelID)
+}
+
 func parseTokenFromPacket(packet ibcexported.PacketI) (sdk.Coin, error) {
 	// Only ICS-20 packets are expected in the middleware
 	var data ibctransfertypes.FungibleTokenPacketData
