@@ -36,6 +36,7 @@ axelard tx staking create-validator [flags]
       --node-id string                      The node's ID
       --note string                         Note to add a description to the transaction (previously --memo)
       --offline                             Offline mode (does not allow any online functionality
+  -o, --output string                       Output format (text|json) (default "json")
       --pubkey string                       The validator's Protobuf JSON encoded public key
       --security-contact string             The validator's (optional) security contact email
   -s, --sequence uint                       The sequence number of the signing account (offline mode only)
@@ -52,7 +53,6 @@ axelard tx staking create-validator [flags]
       --home string         directory for config and data (default "$HOME/.axelar")
       --log_format string   The logging format (json|plain) (default "plain")
       --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
-      --output string       Output format (text|json) (default "text")
       --trace               print out full stack trace on errors
 ```
 

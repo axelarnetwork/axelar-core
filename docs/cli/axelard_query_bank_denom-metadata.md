@@ -20,10 +20,11 @@ axelard query bank denom-metadata [flags]
 ### Options
 
 ```
-      --denom string   The specific denomination to query client metadata for
-      --height int     Use a specific height to query state at (this can error if the node is pruning state)
-  -h, --help           help for denom-metadata
-      --node string    <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
+      --denom string    The specific denomination to query client metadata for
+      --height int      Use a specific height to query state at (this can error if the node is pruning state)
+  -h, --help            help for denom-metadata
+      --node string     <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
+  -o, --output string   Output format (text|json) (default "text")
 ```
 
 ### Options inherited from parent commands
@@ -33,7 +34,6 @@ axelard query bank denom-metadata [flags]
       --home string         directory for config and data (default "$HOME/.axelar")
       --log_format string   The logging format (json|plain) (default "plain")
       --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
-      --output string       Output format (text|json) (default "text")
       --trace               print out full stack trace on errors
 ```
 

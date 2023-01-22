@@ -15,6 +15,7 @@ axelard query nexus transfers-for-chain [chain] [state (pending|archived|insuffi
       --limit uint        pagination limit of transfers-for-chain to query for (default 100)
       --node string       <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
       --offset uint       pagination offset of transfers-for-chain to query for
+  -o, --output string     Output format (text|json) (default "text")
       --page uint         pagination page of transfers-for-chain to query for. This sets offset to a multiple of limit (default 1)
       --page-key string   pagination page-key of transfers-for-chain to query for
       --reverse           results are sorted in descending order
@@ -27,7 +28,6 @@ axelard query nexus transfers-for-chain [chain] [state (pending|archived|insuffi
       --home string         directory for config and data (default "$HOME/.axelar")
       --log_format string   The logging format (json|plain) (default "plain")
       --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
-      --output string       Output format (text|json) (default "text")
       --trace               print out full stack trace on errors
 ```
 
