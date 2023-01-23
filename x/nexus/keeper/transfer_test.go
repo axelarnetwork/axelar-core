@@ -471,6 +471,7 @@ func TestTransfer(t *testing.T) {
 }
 
 func setup(cfg params.EncodingConfig) (nexusKeeper.Keeper, sdk.Context) {
+	sdk.GetConfig().SetBech32PrefixForAccount("axelar", "axelar")
 	subspace := paramstypes.NewSubspace(cfg.Codec, cfg.Amino, sdk.NewKVStoreKey("nexusKey"), sdk.NewKVStoreKey("tNexusKey"), "nexus")
 	k := nexusKeeper.NewKeeper(cfg.Codec, sdk.NewKVStoreKey(types.StoreKey), subspace)
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
