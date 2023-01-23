@@ -126,11 +126,6 @@ func (m Chain) GetName() ChainName {
 	return m.Name
 }
 
-// IsFrom returns true if the chain registered under the module
-func (m Chain) IsFrom(module string) bool {
-	return m.Module == module
-}
-
 // NewAsset returns an asset struct
 func NewAsset(denom string, isNative bool) Asset {
 	return Asset{Denom: utils.NormalizeString(denom), IsNativeAsset: isNative}
@@ -236,47 +231,4 @@ func (m TransferDirection) ValidateBasic() error {
 	default:
 		return fmt.Errorf("invalid transfer direction %s", m)
 	}
-}
-
-// NewGeneralMessage returns a GeneralMessage struct
-func NewGeneralMessage(id string, sourceChain ChainName, sender string, destChain ChainName, receiver string, payloadHash []byte, status GeneralMessage_Status, asset *sdk.Coin) GeneralMessage {
-	return GeneralMessage{
-		ID:               id,
-		SourceChain:      sourceChain,
-		Sender:           sender,
-		DestinationChain: destChain,
-		Receiver:         receiver,
-		PayloadHash:      payloadHash,
-		Status:           status,
-		Asset:            asset,
-	}
-}
-
-// ValidateBasic validates the general message
-func (m GeneralMessage) ValidateBasic() error {
-	if err := utils.ValidateString(m.ID); err != nil {
-		return sdkerrors.Wrap(err, "invalid id")
-	}
-
-	if err := m.SourceChain.Validate(); err != nil {
-		return sdkerrors.Wrap(err, "invalid source chain")
-	}
-
-	if err := utils.ValidateString(m.Sender); err != nil {
-		return sdkerrors.Wrap(err, "invalid sender")
-	}
-
-	if err := m.DestinationChain.Validate(); err != nil {
-		return sdkerrors.Wrap(err, "invalid destination chain")
-	}
-
-	if err := utils.ValidateString(m.Receiver); err != nil {
-		return sdkerrors.Wrap(err, "invalid receiver")
-	}
-
-	if m.Asset != nil {
-		return m.Asset.Validate()
-	}
-
-	return nil
 }

@@ -27,7 +27,6 @@ var (
 	chainMaintainerStatePrefix = key.RegisterStaticKey(types.ModuleName, 1)
 	rateLimitPrefix            = key.RegisterStaticKey(types.ModuleName, 2)
 	transferEpochPrefix        = key.RegisterStaticKey(types.ModuleName, 3)
-	generalMessagePrefix       = key.RegisterStaticKey(types.ModuleName, 4)
 
 	// temporary
 	// TODO: add description about what temporary means

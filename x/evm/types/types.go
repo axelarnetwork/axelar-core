@@ -965,8 +965,6 @@ func (m Event) GetEventType() string {
 	return getType(m.GetEvent())
 }
 
-const maxReceiverLength = 128
-
 // ValidateBasic returns an error if the event token sent is invalid
 func (m EventTokenSent) ValidateBasic() error {
 	if m.Sender.IsZeroAddress() {
@@ -979,10 +977,6 @@ func (m EventTokenSent) ValidateBasic() error {
 
 	if err := utils.ValidateString(m.DestinationAddress); err != nil {
 		return sdkerrors.Wrap(err, "invalid destination address")
-	}
-
-	if len(m.DestinationAddress) > maxReceiverLength {
-		return fmt.Errorf("receiver length %d is greater than %d", len(m.DestinationAddress), maxReceiverLength)
 	}
 
 	if err := utils.ValidateString(m.Symbol); err != nil {
@@ -1006,12 +1000,8 @@ func (m EventContractCall) ValidateBasic() error {
 		return sdkerrors.Wrap(err, "invalid destination chain")
 	}
 
-	if err := utils.ValidateString(m.ContractAddress); err != nil {
-		return sdkerrors.Wrap(err, "invalid destination address")
-	}
-
-	if len(m.ContractAddress) > maxReceiverLength {
-		return fmt.Errorf("receiver length %d is greater than %d", len(m.ContractAddress), maxReceiverLength)
+	if !common.IsHexAddress(m.ContractAddress) {
+		return fmt.Errorf("invalid contract address")
 	}
 
 	if m.PayloadHash.IsZero() {
@@ -1031,12 +1021,8 @@ func (m EventContractCallWithToken) ValidateBasic() error {
 		return sdkerrors.Wrap(err, "invalid destination chain")
 	}
 
-	if err := utils.ValidateString(m.ContractAddress); err != nil {
-		return sdkerrors.Wrap(err, "invalid destination address")
-	}
-
-	if len(m.ContractAddress) > maxReceiverLength {
-		return fmt.Errorf("receiver length %d is greater than %d", len(m.ContractAddress), maxReceiverLength)
+	if !common.IsHexAddress(m.ContractAddress) {
+		return fmt.Errorf("invalid contract address")
 	}
 
 	if m.PayloadHash.IsZero() {

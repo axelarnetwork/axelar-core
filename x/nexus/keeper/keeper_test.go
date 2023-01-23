@@ -3,6 +3,7 @@ package keeper_test
 import (
 	"strings"
 	"testing"
+	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
@@ -15,6 +16,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	"github.com/axelarnetwork/axelar-core/utils"
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	axelarnetkeeper "github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	axelarnetTypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
@@ -26,6 +28,7 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
+	"github.com/axelarnetwork/utils/funcs"
 )
 
 const maxAmount int64 = 100000000000
@@ -71,14 +74,26 @@ func TestLinkAddress(t *testing.T) {
 	repeats := 20
 
 	var ctx sdk.Context
-	cfg := app.MakeEncodingConfig()
-	keeper, ctx = setup(cfg)
-
 	terra := nexus.Chain{Name: nexus.ChainName("terra"), Module: axelarnetTypes.ModuleName, SupportsForeignAssets: true}
 	evmAddr := exported.CrossChainAddress{Chain: evm.Ethereum, Address: "0x68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8"}
 	axelarAddr := exported.CrossChainAddress{Chain: axelarnet.Axelarnet, Address: "axelar1t66w8cazua870wu7t2hsffndmy2qy2v556ymndnczs83qpz2h45sq6lq9w"}
 
+	setup := func() {
+		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+		keeper.SetParams(ctx, types.DefaultParams())
+
+		// set chain
+		for _, chain := range []exported.Chain{evm.Ethereum, axelarnet.Axelarnet, terra} {
+			keeper.SetChain(ctx, chain)
+			keeper.ActivateChain(ctx, chain)
+			funcs.MustNoErr(keeper.RegisterAsset(ctx, chain, exported.NewAsset(axelarnet.NativeAsset, false), utils.MaxUint, time.Hour))
+		}
+
+		bankK.BlockedAddrFunc = func(addr sdk.AccAddress) bool { return false }
+	}
+
 	t.Run("should pass address validation", testutils.Func(func(t *testing.T) {
+		setup()
 		err := keeper.LinkAddresses(ctx,
 			evmAddr,
 			exported.CrossChainAddress{Chain: axelarnet.Axelarnet, Address: "axelar1t66w8cazua870wu7t2hsffndmy2qy2v556ymndnczs83qpz2h45sq6lq9w"},
@@ -99,6 +114,8 @@ func TestLinkAddress(t *testing.T) {
 	}))
 
 	t.Run("should return error when linking invalid addresses", testutils.Func(func(t *testing.T) {
+		setup()
+
 		err := keeper.LinkAddresses(ctx,
 			exported.CrossChainAddress{Chain: evm.Ethereum, Address: "0xZ8B93045fe7D8794a7cAF327e7f855CD6Cd03BB8"},
 			axelarAddr,
@@ -113,6 +130,7 @@ func TestLinkAddress(t *testing.T) {
 	}))
 
 	t.Run("should return error for blocked addresses", testutils.Func(func(t *testing.T) {
+		setup()
 		blockedAddr := rand.AccAddr()
 		bankK.BlockedAddrFunc = func(addr sdk.AccAddress) bool { return addr.Equals(blockedAddr) }
 
@@ -142,6 +160,7 @@ func TestLinkAddress(t *testing.T) {
 	}))
 
 	t.Run("should return error when link chain does not support foreign asset", testutils.Func(func(t *testing.T) {
+		setup()
 		fromChain := nexus.Chain{
 			Name:                  nexus.ChainName(rand.Str(5)),
 			SupportsForeignAssets: false,
@@ -157,6 +176,7 @@ func TestLinkAddress(t *testing.T) {
 	}).Repeat(repeats))
 
 	t.Run("successfully link", testutils.Func(func(t *testing.T) {
+		setup()
 		sender, recipient := makeRandAddressesForChain(axelarnet.Axelarnet, evm.Ethereum)
 		err := keeper.LinkAddresses(ctx, sender, recipient)
 		assert.NoError(t, err)
@@ -288,8 +308,6 @@ func genEvmAddr() string {
 }
 
 func genCosmosAddr(chain string) string {
-	defer sdk.GetConfig().SetBech32PrefixForAccount("axelar", "axelar")
-
 	prefix := ""
 	switch strings.ToLower(chain) {
 	case "axelarnet":
@@ -297,7 +315,7 @@ func genCosmosAddr(chain string) string {
 	case "terra", "terra-2":
 		prefix = "terra"
 	default:
-		prefix = chain
+		prefix = ""
 	}
 
 	sdk.GetConfig().SetBech32PrefixForAccount(prefix, prefix)

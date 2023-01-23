@@ -65,32 +65,17 @@ func handleTokenSent(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n 
 }
 
 func handleContractCall(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus, multisig types.MultisigKeeper) error {
-	e := event.GetContractCall()
+	e := event.GetEvent().(*types.Event_ContractCall).ContractCall
 	if e == nil {
 		panic(fmt.Errorf("event is nil"))
 	}
 
 	destinationChain := funcs.MustOk(n.GetChain(ctx, e.DestinationChain))
-	switch destinationChain.Module {
-	case types.ModuleName:
-		handleContractCallToEVM(ctx, bk, multisig, n, destinationChain.Name, event)
-		return nil
-	default:
-		// set as general message in nexus, so the dest module can handle the message
-		return setMessageToNexus(ctx, n, event, nil)
-	}
-}
+	destinationCk := funcs.Must(bk.ForChain(ctx, destinationChain.Name))
 
-func handleContractCallToEVM(ctx sdk.Context, bk types.BaseKeeper, multisig types.MultisigKeeper, n types.Nexus, destinationChain nexus.ChainName, event types.Event) {
-	e := event.GetContractCall()
-	if e == nil {
-		panic(fmt.Errorf("event is nil"))
-	}
-
-	destinationCk := funcs.Must(bk.ForChain(ctx, destinationChain))
 	cmd := types.NewApproveContractCallCommand(
 		funcs.MustOk(destinationCk.GetChainID(ctx)),
-		funcs.MustOk(multisig.GetCurrentKeyID(ctx, destinationChain)),
+		funcs.MustOk(multisig.GetCurrentKeyID(ctx, destinationChain.Name)),
 		funcs.MustOk(n.GetChain(ctx, event.Chain)).Name,
 		event.TxID,
 		event.Index,
@@ -98,7 +83,7 @@ func handleContractCallToEVM(ctx sdk.Context, bk types.BaseKeeper, multisig type
 	)
 	funcs.MustNoErr(destinationCk.EnqueueCommand(ctx, cmd))
 	bk.Logger(ctx).Debug(fmt.Sprintf("created %s command for event", cmd.Type),
-		"chain", destinationChain,
+		"chain", destinationChain.Name,
 		"eventID", event.GetID(),
 		"commandID", cmd.ID.Hex(),
 	)
@@ -112,50 +97,27 @@ func handleContractCallToEVM(ctx sdk.Context, bk types.BaseKeeper, multisig type
 		ContractAddress:  e.ContractAddress,
 		PayloadHash:      e.PayloadHash,
 	})
+
+	return nil
 }
 
 func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus, multisig types.MultisigKeeper) error {
-	e := event.GetContractCallWithToken()
+	e := event.GetEvent().(*types.Event_ContractCallWithToken).ContractCallWithToken
 	if e == nil {
 		panic(fmt.Errorf("event is nil"))
 	}
 
 	sourceChain := funcs.MustOk(n.GetChain(ctx, event.Chain))
 	destinationChain := funcs.MustOk(n.GetChain(ctx, e.DestinationChain))
-
 	sourceCk := funcs.Must(bk.ForChain(ctx, sourceChain.Name))
+	destinationCk := funcs.Must(bk.ForChain(ctx, destinationChain.Name))
+
 	token := sourceCk.GetERC20TokenBySymbol(ctx, e.Symbol)
 	if !token.Is(types.Confirmed) {
 		return fmt.Errorf("token with symbol %s not confirmed on source chain", e.Symbol)
 	}
+
 	asset := token.GetAsset()
-
-	if err := n.RateLimitTransfer(ctx, sourceChain.Name, sdk.NewCoin(asset, sdk.Int(e.Amount)), nexus.Incoming); err != nil {
-		return err
-	}
-
-	if err := n.RateLimitTransfer(ctx, destinationChain.Name, sdk.NewCoin(asset, sdk.Int(e.Amount)), nexus.Outgoing); err != nil {
-		return err
-	}
-
-	switch destinationChain.Module {
-	case types.ModuleName:
-		return handleContractCallWithTokenToEVM(ctx, event, bk, multisig, sourceChain.Name, destinationChain.Name, asset)
-	default:
-		coin := sdk.NewCoin(asset, sdk.Int(e.Amount))
-		// set as general message in nexus, so the dest module can handle the message
-		return setMessageToNexus(ctx, n, event, &coin)
-	}
-}
-
-func handleContractCallWithTokenToEVM(ctx sdk.Context, event types.Event, bk types.BaseKeeper, multisig types.MultisigKeeper, sourceChain, destinationChain nexus.ChainName, asset string) error {
-	e := event.GetContractCallWithToken()
-	if e == nil {
-		panic(fmt.Errorf("event is nil"))
-	}
-
-	destinationCk := funcs.Must(bk.ForChain(ctx, destinationChain))
-
 	destinationToken := destinationCk.GetERC20TokenByAsset(ctx, asset)
 	if !destinationToken.Is(types.Confirmed) {
 		return fmt.Errorf("token with asset %s not confirmed on destination chain", e.Symbol)
@@ -165,10 +127,18 @@ func handleContractCallWithTokenToEVM(ctx sdk.Context, event types.Event, bk typ
 		return fmt.Errorf("invalid contract address %s", e.ContractAddress)
 	}
 
+	if err := n.RateLimitTransfer(ctx, sourceChain.Name, sdk.NewCoin(asset, sdk.Int(e.Amount)), nexus.Incoming); err != nil {
+		return err
+	}
+
+	if err := n.RateLimitTransfer(ctx, destinationChain.Name, sdk.NewCoin(asset, sdk.Int(e.Amount)), nexus.Outgoing); err != nil {
+		return err
+	}
+
 	cmd := types.NewApproveContractCallWithMintCommand(
 		funcs.MustOk(destinationCk.GetChainID(ctx)),
-		funcs.MustOk(multisig.GetCurrentKeyID(ctx, destinationChain)),
-		sourceChain,
+		funcs.MustOk(multisig.GetCurrentKeyID(ctx, destinationChain.Name)),
+		sourceChain.Name,
 		event.TxID,
 		event.Index,
 		*e,
@@ -177,7 +147,7 @@ func handleContractCallWithTokenToEVM(ctx sdk.Context, event types.Event, bk typ
 	)
 	funcs.MustNoErr(destinationCk.EnqueueCommand(ctx, cmd))
 	bk.Logger(ctx).Debug(fmt.Sprintf("created %s command for event", cmd.Type),
-		"chain", destinationChain,
+		"chain", destinationChain.Name,
 		"eventID", event.GetID(),
 		"commandID", cmd.ID.Hex(),
 	)
@@ -194,42 +164,6 @@ func handleContractCallWithTokenToEVM(ctx sdk.Context, event types.Event, bk typ
 	})
 
 	return nil
-}
-
-func setMessageToNexus(ctx sdk.Context, n types.Nexus, event types.Event, asset *sdk.Coin) error {
-	var message nexus.GeneralMessage
-	switch e := event.GetEvent().(type) {
-	case *types.Event_ContractCall:
-		message = nexus.NewGeneralMessage(
-			string(event.GetID()),
-			event.Chain,
-			e.ContractCall.Sender.Hex(),
-			e.ContractCall.DestinationChain,
-			e.ContractCall.ContractAddress,
-			e.ContractCall.PayloadHash.Bytes(),
-			nexus.Approved,
-			nil,
-		)
-
-	case *types.Event_ContractCallWithToken:
-		if asset == nil {
-			return fmt.Errorf("expect asset for ContractCallWithToken")
-		}
-		message = nexus.NewGeneralMessage(
-			string(event.GetID()),
-			event.Chain,
-			e.ContractCallWithToken.Sender.Hex(),
-			e.ContractCallWithToken.DestinationChain,
-			e.ContractCallWithToken.ContractAddress,
-			e.ContractCallWithToken.PayloadHash.Bytes(),
-			nexus.Approved,
-			asset,
-		)
-	default:
-		return fmt.Errorf("unsupported event type %T", event)
-	}
-
-	return n.SetNewMessage(ctx, message)
 }
 
 func handleConfirmDeposit(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus) error {
@@ -423,14 +357,11 @@ func handleMultisigTransferKey(ctx sdk.Context, event types.Event, bk types.Base
 
 func validateEvent(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus) error {
 	var destinationChainName nexus.ChainName
-	var contractAddress string
 	switch event := event.GetEvent().(type) {
 	case *types.Event_ContractCall:
 		destinationChainName = event.ContractCall.DestinationChain
-		contractAddress = event.ContractCall.ContractAddress
 	case *types.Event_ContractCallWithToken:
 		destinationChainName = event.ContractCallWithToken.DestinationChain
-		contractAddress = event.ContractCallWithToken.ContractAddress
 	case *types.Event_TokenSent:
 		destinationChainName = event.TokenSent.DestinationChain
 	case *types.Event_Transfer, *types.Event_TokenDeployed,
@@ -452,15 +383,11 @@ func validateEvent(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n ty
 		return fmt.Errorf("destination chain de-activated")
 	}
 
-	// skip further destination chain keeper checks if it is not an evm chain
-	if !destinationChain.IsFrom(types.ModuleName) {
+	if event.GetTokenSent() != nil && !types.IsEVMChain(destinationChain) {
 		return nil
 	}
 
-	if len(contractAddress) != 0 && !common.IsHexAddress(contractAddress) {
-		return fmt.Errorf("invalid contract address")
-	}
-
+	// skip further checks and handle event if destination is not an evm chain
 	destinationCk, err := bk.ForChain(ctx, destinationChainName)
 	if err != nil {
 		return fmt.Errorf("destination chain not EVM-compatible")
