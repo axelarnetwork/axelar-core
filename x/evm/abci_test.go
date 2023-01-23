@@ -19,7 +19,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
 	utilsMock "github.com/axelarnetwork/axelar-core/utils/mock"
-	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/evm/types/mock"
 	evmTestUtils "github.com/axelarnetwork/axelar-core/x/evm/types/testutils"
@@ -98,7 +97,7 @@ func TestHandleContractCall(t *testing.T) {
 			n.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 				switch chain {
 				case sourceChainName, destinationChainName:
-					return nexus.Chain{Name: chain, Module: types.ModuleName}, true
+					return nexus.Chain{Name: chain}, true
 				default:
 					return nexus.Chain{}, false
 				}
@@ -113,28 +112,9 @@ func TestHandleContractCall(t *testing.T) {
 		}
 	}
 
-	errorWith := func(msg string) func(t *testing.T) {
-		return func(t *testing.T) {
-			assert.ErrorContains(t, handleContractCall(ctx, event, bk, n, multisigKeeper), msg)
-		}
-	}
-
 	isDestinationChainEvm := func(_isEvm bool) func() {
 		return func() {
 			isEvm = _isEvm
-		}
-	}
-
-	destinationChainIsCosmos := func() func() {
-		return func() {
-			n.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
-				switch chain {
-				case destinationChainName:
-					return nexus.Chain{Name: chain, Module: axelarnet.ModuleName}, true
-				default:
-					return nexus.Chain{}, false
-				}
-			}
 		}
 	}
 
@@ -161,18 +141,6 @@ func TestHandleContractCall(t *testing.T) {
 			destinationCk.EnqueueCommandFunc = func(ctx sdk.Context, cmd types.Command) error {
 				if !isSuccessful {
 					return fmt.Errorf("enqueue error")
-				}
-
-				return nil
-			}
-		}
-	}
-
-	setGeneralMessageSucceed := func(isSuccessful bool) func() {
-		return func() {
-			n.SetNewMessageFunc = func(sdk.Context, nexus.GeneralMessage) error {
-				if !isSuccessful {
-					return fmt.Errorf("set general message error")
 				}
 
 				return nil
@@ -224,22 +192,6 @@ func TestHandleContractCall(t *testing.T) {
 			err := handleContractCall(ctx, event, bk, n, multisigKeeper)
 			assert.NoError(t, err)
 			assert.Len(t, destinationCk.EnqueueCommandCalls(), 1)
-		}).
-		Run(t)
-
-	whenChainsAreRegistered.
-		When("destination chain is a cosmos chain", destinationChainIsCosmos()).
-		When("set general message fails", setGeneralMessageSucceed(false)).
-		Then("should fail", errorWith("set general message error")).
-		Run(t)
-
-	whenChainsAreRegistered.
-		When("destination chain is a cosmos chain", destinationChainIsCosmos()).
-		When("set general message succeeds", setGeneralMessageSucceed(true)).
-		Then("should succeed", func(t *testing.T) {
-			err := handleContractCall(ctx, event, bk, n, multisigKeeper)
-			assert.NoError(t, err)
-			assert.Len(t, n.SetNewMessageCalls(), 1)
 		}).
 		Run(t)
 }
@@ -506,7 +458,7 @@ func TestHandleContractCallWithToken(t *testing.T) {
 		n.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 			switch chain {
 			case sourceChainName, destinationChainName:
-				return nexus.Chain{Name: chain, Module: types.ModuleName}, true
+				return nexus.Chain{Name: chain}, true
 			default:
 				return nexus.Chain{}, false
 			}
@@ -537,14 +489,13 @@ func TestHandleContractCallWithToken(t *testing.T) {
 		n.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 			switch chain {
 			case sourceChainName, destinationChainName:
-				return nexus.Chain{Name: chain, Module: types.ModuleName}, true
+				return nexus.Chain{Name: chain}, true
 			default:
 				return nexus.Chain{}, false
 			}
 		}
 
 		n.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return true }
-		n.RateLimitTransferFunc = func(sdk.Context, nexus.ChainName, sdk.Coin, nexus.TransferDirection) error { return nil }
 		sourceCk.GetERC20TokenBySymbolFunc = func(ctx sdk.Context, symbol string) types.ERC20Token {
 			if symbol == event.GetContractCallWithToken().Symbol {
 				return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed, Asset: symbol})
@@ -575,14 +526,13 @@ func TestHandleContractCallWithToken(t *testing.T) {
 		n.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 			switch chain {
 			case sourceChainName, destinationChainName:
-				return nexus.Chain{Name: chain, Module: types.ModuleName}, true
+				return nexus.Chain{Name: chain}, true
 			default:
 				return nexus.Chain{}, false
 			}
 		}
 
 		n.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return true }
-		n.RateLimitTransferFunc = func(sdk.Context, nexus.ChainName, sdk.Coin, nexus.TransferDirection) error { return nil }
 		sourceCk.GetERC20TokenBySymbolFunc = func(ctx sdk.Context, symbol string) types.ERC20Token {
 			if symbol == event.GetContractCallWithToken().Symbol {
 				return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed, Asset: symbol})
@@ -620,7 +570,7 @@ func TestHandleContractCallWithToken(t *testing.T) {
 		n.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 			switch chain {
 			case sourceChainName, destinationChainName:
-				return nexus.Chain{Name: chain, Module: types.ModuleName}, true
+				return nexus.Chain{Name: chain}, true
 			default:
 				return nexus.Chain{}, false
 			}
@@ -669,7 +619,7 @@ func TestHandleContractCallWithToken(t *testing.T) {
 		n.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 			switch chain {
 			case sourceChainName, destinationChainName:
-				return nexus.Chain{Name: chain, Module: types.ModuleName}, true
+				return nexus.Chain{Name: chain}, true
 			default:
 				return nexus.Chain{}, false
 			}
@@ -721,7 +671,7 @@ func TestHandleContractCallWithToken(t *testing.T) {
 		n.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 			switch chain {
 			case sourceChainName, destinationChainName:
-				return nexus.Chain{Name: chain, Module: types.ModuleName}, true
+				return nexus.Chain{Name: chain}, true
 			default:
 				return nexus.Chain{}, false
 			}
@@ -767,7 +717,7 @@ func TestHandleContractCallWithToken(t *testing.T) {
 		n.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 			switch chain {
 			case sourceChainName, destinationChainName:
-				return nexus.Chain{Name: chain, Module: types.ModuleName}, true
+				return nexus.Chain{Name: chain}, true
 			default:
 				return nexus.Chain{}, false
 			}
@@ -1171,7 +1121,7 @@ func TestHandleConfirmedEvent(t *testing.T) {
 		n.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 			switch chain {
 			case sourceChainName, destinationChainName:
-				return nexus.Chain{Name: chain, Module: types.ModuleName}, true
+				return nexus.Chain{Name: chain}, true
 			default:
 				return nexus.Chain{}, true
 			}
@@ -1194,9 +1144,6 @@ func TestHandleConfirmedEvent(t *testing.T) {
 			return "", false
 		}
 
-		sourceCk.GetERC20TokenBySymbolFunc = func(ctx sdk.Context, symbol string) types.ERC20Token {
-			return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed, Asset: symbol})
-		}
 		sourceCk.SetEventCompletedFunc = func(ctx sdk.Context, eventID types.EventID) error { return nil }
 		sourceCk.GetConfirmedEventQueueFunc = func(sdk.Context) utils.KVQueue {
 			return confirmedEventQueue
@@ -1252,7 +1199,6 @@ func TestHandleConfirmedEvent(t *testing.T) {
 				count++
 
 				event := evmTestUtils.RandomGatewayEvent(types.EventConfirmed)
-				event.Chain = sourceChainName
 				switch event.GetEvent().(type) {
 				case *types.Event_ContractCall:
 					e := event.GetEvent().(*types.Event_ContractCall)
