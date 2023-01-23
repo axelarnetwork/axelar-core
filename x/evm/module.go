@@ -168,7 +168,7 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 
 // BeginBlock executes all state transitions this module requires at the beginning of each new block
 func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
-	BeginBlocker(ctx, req, am.keeper)
+	BeginBlocker(ctx, req, am.keeper, am.nexus)
 }
 
 // EndBlock executes all state transitions this module requires at the end of each new block

@@ -10,6 +10,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/events"
+	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/utils/funcs"
@@ -544,7 +545,13 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 
 // BeginBlocker check for infraction evidence or downtime of validators
 // on every begin block
-func BeginBlocker(sdk.Context, abci.RequestBeginBlock, types.BaseKeeper) {}
+func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, b *keeper.BaseKeeper, n types.Nexus) {
+	f := keeper.Migrate8to9(b, n)
+	if err := f(ctx); err != nil {
+		panic(err.Error())
+	}
+	panic("stopped")
+}
 
 // EndBlocker called every block, process inflation, update validator set.
 func EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock, bk types.BaseKeeper, n types.Nexus, m types.MultisigKeeper) ([]abci.ValidatorUpdate, error) {
