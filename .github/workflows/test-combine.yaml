@@ -1,12 +1,67 @@
-name: Test combine
+name: Build Docker Image
 
 on:
-  push:
-    branches:
-      - "feat/test-combine"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Github tag to release binaries for (reusing an existing tag will make the pipeline fail)
+        required: true
+        default: latest
 
 jobs:
+  
+  release-docker:
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-18.04]
+        platform: [linux/arm64,linux/amd64,linux/arm/v7,linux/arm/v6]
+
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+
+    steps:
+
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: '0'
+          ref: ${{ github.event.inputs.tag }}
+          submodules: recursive
+
+      - name: Set up ssh agent
+        uses: webfactory/ssh-agent@v0.5.2
+        with:
+          ssh-private-key: ${{ secrets.CICD_RSA_KEY }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          config: .github/buildkit-config.toml
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+      - name: Build and push docker images
+        run: |
+          make build-push-docker-images
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          SEMVER: ${{ github.event.inputs.tag }}
+
   combine-sign:
+
+    needs: release-docker
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -19,12 +74,14 @@ jobs:
 
     steps:
 
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@main
+
       - name: Login to DockerHub
         uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
-
 
       - name: Create multiarch manifest
         run: |
@@ -34,4 +91,16 @@ jobs:
           axelarnet/axelar-core-linux-armv6:${SEMVER} \
           axelarnet/axelar-core-linux-armv7:${SEMVER}
         env:
-          SEMVER: v0.31.1
+          SEMVER: ${{ github.event.inputs.tag }}
+
+      - name: push manifest
+        run: |
+          docker manifest push axelarnet/axelar-core:${SEMVER}
+        env:
+          SEMVER: ${{ github.event.inputs.tag }}
+
+      - name: Sign the images with GitHub OIDC
+        run: cosign sign --oidc-issuer https://token.actions.githubusercontent.com ${TAGS}
+        env:
+          TAGS: axelarnet/axelar-core:${{ github.event.inputs.tag }}
+          COSIGN_EXPERIMENTAL: 1
