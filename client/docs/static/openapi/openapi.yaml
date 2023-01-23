@@ -4897,7 +4897,8 @@ paths:
         - QueryService
   "/axelar/evm/v1beta1/bytecode/{chain}/{contract}":
     get:
-      summary: Bytecode queries the bytecode of a specified gateway at the specified
+      summary: |-
+        Bytecode queries the bytecode of a specified gateway at the specified
         chain
       operationId: Bytecode
       responses:
@@ -5292,7 +5293,7 @@ paths:
             default: CHAIN_STATUS_UNSPECIFIED
       tags:
         - QueryService
-  "/axelar/evm/v1beta1/command/{chain}/{id}":
+  /axelar/evm/v1beta1/command_request:
     get:
       summary: Command queries the command of a chain provided the command id
       operationId: Command
@@ -5489,13 +5490,13 @@ paths:
                             }
       parameters:
         - name: chain
-          in: path
-          required: true
+          in: query
+          required: false
           schema:
             type: string
         - name: id
-          in: path
-          required: true
+          in: query
+          required: false
           schema:
             type: string
       tags:
@@ -6430,7 +6431,8 @@ paths:
         - QueryService
   "/axelar/evm/v1beta1/gateway_address/{chain}":
     get:
-      summary: GatewayAddress queries the address of axelar gateway at the specified
+      summary: |-
+        GatewayAddress queries the address of axelar gateway at the specified
         chain
       operationId: GatewayAddress
       responses:
@@ -6846,7 +6848,7 @@ paths:
                     items:
                       type: object
                       properties:
-                        id:
+                        command_id:
                           type: string
                         type:
                           type: string
@@ -38438,7 +38440,7 @@ components:
           items:
             type: object
             properties:
-              id:
+              command_id:
                 type: string
               type:
                 type: string
@@ -38471,7 +38473,7 @@ components:
     axelar.evm.v1beta1.QueryCommandResponse:
       type: object
       properties:
-        id:
+        command_id:
           type: string
         type:
           type: string
