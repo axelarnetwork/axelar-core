@@ -7,8 +7,6 @@ on:
 
 jobs:
   combine-sign:
-
-    needs: release-docker
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
