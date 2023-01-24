@@ -22,7 +22,8 @@ var (
 
 type contractCall struct {
 	SourceChain string `json:"source_chain"`
-	Sender      string `json:"sender"`
+	// The sender address on the source chain
+	Sender string `json:"sender"`
 	// Contract is the address of the wasm contract
 	Contract string `json:"contract"`
 	// Msg is a json struct {"methodName": {"arg1": "val1", "arg2": "val2"}}
@@ -49,6 +50,10 @@ func ConstructWasmMessage(gm nexus.GeneralMessage, payload []byte) ([]byte, erro
 	methodName := args[0].(string)
 	argNames := args[1].([]string)
 	argTypes := args[2].([]string)
+
+	if len(argNames) != len(argTypes) {
+		return nil, fmt.Errorf("payload argument name and type length mismatch")
+	}
 
 	abiArguments, err := buildArguments(argTypes)
 	if err != nil {
