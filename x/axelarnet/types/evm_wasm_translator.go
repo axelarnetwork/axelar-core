@@ -6,6 +6,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/utils/funcs"
 )
 
@@ -39,7 +40,7 @@ type wasm struct {
 // - argument names ([]string)
 // - argument types ([]string)
 // - argument values (bytes)
-func ConstructWasmMessage(contractAddr, sourceChain, sender string, payload []byte) ([]byte, error) {
+func ConstructWasmMessage(gm nexus.GeneralMessage, payload []byte) ([]byte, error) {
 	args, err := payloadArguments.Unpack(payload)
 	if err != nil {
 		return nil, err
@@ -68,9 +69,9 @@ func ConstructWasmMessage(contractAddr, sourceChain, sender string, payload []by
 
 	msg := wasm{
 		Wasm: contractCall{
-			Contract:    contractAddr,
-			SourceChain: sourceChain,
-			Sender:      sender,
+			Contract:    gm.Receiver,
+			SourceChain: gm.SourceChain.String(),
+			Sender:      gm.Sender,
 			Msg: map[string]interface{}{
 				methodName: executeMsg,
 			},

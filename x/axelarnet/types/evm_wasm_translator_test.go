@@ -16,6 +16,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	evmtestutils "github.com/axelarnetwork/axelar-core/x/evm/types/testutils"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexustestutils "github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
@@ -90,10 +91,12 @@ func TestNewInterpreter(t *testing.T) {
 	)
 	assert.NoError(t, err)
 
-	contractAddr := rand.AccAddr().String()
-	sourceChain := nexustestutils.RandomChainName().String()
-	sender := evmtestutils.RandomAddress().Hex()
-	msg, err := types.ConstructWasmMessage(contractAddr, sourceChain, sender, payload)
+	gm := nexus.GeneralMessage{
+		SourceChain: nexustestutils.RandomChainName(),
+		Sender:      evmtestutils.RandomAddress().Hex(),
+		Receiver:    rand.AccAddr().String(),
+	}
+	msg, err := types.ConstructWasmMessage(gm, payload)
 	assert.NoError(t, err)
 
 	jsonObject := make(map[string]interface{})
@@ -110,15 +113,15 @@ func TestNewInterpreter(t *testing.T) {
 
 	actualSourceChain, ok := wasm["source_chain"].(string)
 	assert.True(t, ok)
-	assert.Equal(t, sourceChain, actualSourceChain)
+	assert.Equal(t, gm.SourceChain.String(), actualSourceChain)
 
 	actualSender, ok := wasm["sender"].(string)
 	assert.True(t, ok)
-	assert.Equal(t, sender, actualSender)
+	assert.Equal(t, gm.Sender, actualSender)
 
 	actualContractAddr, ok := wasm["contract"].(string)
 	assert.True(t, ok)
-	assert.Equal(t, contractAddr, actualContractAddr)
+	assert.Equal(t, gm.Receiver, actualContractAddr)
 
 	// make sure execute message can be serialized
 	_, err = json.Marshal(wasmRaw)
