@@ -5,7 +5,6 @@ import (
 	b64 "encoding/base64"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"math"
 	"strconv"
 	"testing"
@@ -16,6 +15,8 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
+	evmtestutils "github.com/axelarnetwork/axelar-core/x/evm/types/testutils"
+	nexustestutils "github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 )
@@ -90,9 +91,10 @@ func TestNewInterpreter(t *testing.T) {
 	assert.NoError(t, err)
 
 	contractAddr := rand.AccAddr().String()
-	msg, err := types.ConstructWasmMessage(contractAddr, payload)
+	sourceChain := nexustestutils.RandomChainName().String()
+	sender := evmtestutils.RandomAddress().Hex()
+	msg, err := types.ConstructWasmMessage(contractAddr, sourceChain, sender, payload)
 	assert.NoError(t, err)
-	fmt.Println(string(msg))
 
 	jsonObject := make(map[string]interface{})
 	decoder := json.NewDecoder(bytes.NewBuffer(msg))
@@ -105,6 +107,14 @@ func TestNewInterpreter(t *testing.T) {
 
 	wasm, ok := wasmRaw.(map[string]interface{})
 	assert.True(t, ok)
+
+	actualSourceChain, ok := wasm["source_chain"].(string)
+	assert.True(t, ok)
+	assert.Equal(t, sourceChain, actualSourceChain)
+
+	actualSender, ok := wasm["sender"].(string)
+	assert.True(t, ok)
+	assert.Equal(t, sender, actualSender)
 
 	actualContractAddr, ok := wasm["contract"].(string)
 	assert.True(t, ok)

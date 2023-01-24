@@ -19,7 +19,9 @@ var (
 	payloadArguments = abi.Arguments{{Type: stringType}, {Type: stringArrayType}, {Type: stringArrayType}, {Type: bytesType}}
 )
 
-type contract struct {
+type contractCall struct {
+	SourceChain string `json:"source_chain"`
+	Sender      string `json:"sender"`
 	// Contract is the address of the wasm contract
 	Contract string `json:"contract"`
 	// Msg is a json struct {"methodName": {"arg1": "val1", "arg2": "val2"}}
@@ -28,7 +30,7 @@ type contract struct {
 
 // wasm is the json that gets passed to the IBC memo field
 type wasm struct {
-	Wasm contract `json:"wasm"`
+	Wasm contractCall `json:"wasm"`
 }
 
 // ConstructWasmMessage creates a json serialized wasm message from Axelar defined abi encoded payload
@@ -37,7 +39,7 @@ type wasm struct {
 // - argument names ([]string)
 // - argument types ([]string)
 // - argument values (bytes)
-func ConstructWasmMessage(contractAddr string, payload []byte) ([]byte, error) {
+func ConstructWasmMessage(contractAddr, sourceChain, sender string, payload []byte) ([]byte, error) {
 	args, err := payloadArguments.Unpack(payload)
 	if err != nil {
 		return nil, err
@@ -65,8 +67,10 @@ func ConstructWasmMessage(contractAddr string, payload []byte) ([]byte, error) {
 	}
 
 	msg := wasm{
-		Wasm: contract{
-			Contract: contractAddr,
+		Wasm: contractCall{
+			Contract:    contractAddr,
+			SourceChain: sourceChain,
+			Sender:      sender,
 			Msg: map[string]interface{}{
 				methodName: executeMsg,
 			},
