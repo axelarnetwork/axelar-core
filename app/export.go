@@ -47,7 +47,8 @@ func (app *AxelarApp) ExportAppStateAndValidators(forZeroHeight bool, jailAllowe
 
 // prepare for fresh start at zero height
 // NOTE zero height genesis is a temporary feature which will be deprecated
-//      in favour of export at a block height
+//
+//	in favour of export at a block height
 func (app *AxelarApp) prepForZeroHeightGenesis(ctx sdk.Context, jailAllowedAddrs []string) {
 	applyWhiteList := false
 
