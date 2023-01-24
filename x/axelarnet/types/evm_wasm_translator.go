@@ -32,6 +32,11 @@ type wasm struct {
 }
 
 // ConstructWasmMessage creates a json serialized wasm message from Axelar defined abi encoded payload
+// The abi encoded payload must contain the following information in order
+// - method name (string)
+// - argument names ([]string)
+// - argument types ([]string)
+// - argument values (bytes)
 func ConstructWasmMessage(contractAddr string, payload []byte) ([]byte, error) {
 	args, err := payloadArguments.Unpack(payload)
 	if err != nil {
