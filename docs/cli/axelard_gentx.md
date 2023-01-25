@@ -51,6 +51,7 @@ axelard gentx [key_name] [amount] [flags]
       --gas-prices string                   Gas prices in decimal format to determine the transaction fee (e.g. 0.1uatom) (default "0.007uaxl")
       --generate-only                       Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)
   -h, --help                                help for gentx
+      --home string                         The application home directory (default "$HOME/.axelar")
       --identity string                     The (optional) identity signature (ex. UPort or Keybase)
       --ip string                           The node's public IP (default "127.0.0.1")
       --keyring-backend string              Select keyring's backend (os|file|kwallet|pass|test|memory) (default "file")
@@ -62,6 +63,7 @@ axelard gentx [key_name] [amount] [flags]
       --node-id string                      The node's NodeID
       --note string                         Note to add a description to the transaction (previously --memo)
       --offline                             Offline mode (does not allow any online functionality
+  -o, --output string                       Output format (text|json) (default "json")
       --output-document string              Write the genesis transaction JSON document to the given file instead of the default location
       --pubkey string                       The validator's Protobuf JSON encoded public key
       --security-contact string             The validator's (optional) security contact email
@@ -75,10 +77,8 @@ axelard gentx [key_name] [amount] [flags]
 ### Options inherited from parent commands
 
 ```
-      --home string         directory for config and data (default "$HOME/.axelar")
       --log_format string   The logging format (json|plain) (default "plain")
       --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
-      --output string       Output format (text|json) (default "text")
       --trace               print out full stack trace on errors
 ```
 

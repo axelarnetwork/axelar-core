@@ -11,6 +11,7 @@ axelard health-check [flags]
   -h, --help                   help for health-check
       --node string            <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
       --operator-addr string   operator address
+  -o, --output string          Output format (text|json) (default "text")
       --skip-broadcaster       skip broadcaster check
       --skip-operator          skip operator check
       --skip-tofnd             skip tofnd check
@@ -24,7 +25,6 @@ axelard health-check [flags]
       --home string         directory for config and data (default "$HOME/.axelar")
       --log_format string   The logging format (json|plain) (default "plain")
       --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
-      --output string       Output format (text|json) (default "text")
       --trace               print out full stack trace on errors
 ```
 

@@ -28,6 +28,7 @@ axelard tx sign [file] [flags]
   -a, --account-number uint      The account number of the signing account (offline mode only)
       --amino                    Generate Amino encoded JSON suitable for submiting to the txs REST endpoint
   -b, --broadcast-mode string    Transaction broadcasting mode (sync|async|block) (default "block")
+      --chain-id string          The network chain ID (default "axelar")
       --dry-run                  ignore the --gas flag and perform a simulation of a transaction, but don't broadcast it
       --fee-account string       Fee account pays fees for the transaction instead of deducting from the signer
       --fees string              Fees to pay along with transaction; eg: 10uatom
@@ -44,6 +45,7 @@ axelard tx sign [file] [flags]
       --node string              <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
       --note string              Note to add a description to the transaction (previously --memo)
       --offline                  Offline mode (does not allow any online functionality
+  -o, --output string            Output format (text|json) (default "json")
       --output-document string   The document will be written to the given file instead of STDOUT
       --overwrite                Overwrite existing signatures with a new one. If disabled, new signature will be appended
   -s, --sequence uint            The sequence number of the signing account (offline mode only)
@@ -56,11 +58,9 @@ axelard tx sign [file] [flags]
 ### Options inherited from parent commands
 
 ```
-      --chain-id string     The network chain ID (default "axelar")
       --home string         directory for config and data (default "$HOME/.axelar")
       --log_format string   The logging format (json|plain) (default "plain")
       --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
-      --output string       Output format (text|json) (default "text")
       --trace               print out full stack trace on errors
 ```
 

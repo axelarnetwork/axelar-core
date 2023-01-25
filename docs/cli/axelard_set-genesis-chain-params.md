@@ -17,6 +17,7 @@ axelard set-genesis-chain-params evm [chain] [flags]
       --evm-chain-id string         Integer representing the chain ID (EVM only).
       --evm-network-name string     Network name (EVM only).
   -h, --help                        help for set-genesis-chain-params
+      --home string                 node's home directory (default "$HOME/.axelar")
       --network string              Name of the network to set for the given chain.
       --revote-locking-period int   Revote locking period to set for the given chain.
 ```
@@ -24,7 +25,6 @@ axelard set-genesis-chain-params evm [chain] [flags]
 ### Options inherited from parent commands
 
 ```
-      --home string         directory for config and data (default "$HOME/.axelar")
       --log_format string   The logging format (json|plain) (default "plain")
       --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
       --output string       Output format (text|json) (default "text")

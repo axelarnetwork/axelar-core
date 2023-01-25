@@ -7,11 +7,11 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/query"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
-	ibctypes "github.com/cosmos/ibc-go/v3/modules/apps/transfer/types"
-	clienttypes "github.com/cosmos/ibc-go/v3/modules/core/02-client/types"
-	channeltypes "github.com/cosmos/ibc-go/v3/modules/core/04-channel/types"
-	ibcclient "github.com/cosmos/ibc-go/v3/modules/core/exported"
-	ibcexported "github.com/cosmos/ibc-go/v3/modules/core/exported"
+	ibctypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
+	clienttypes "github.com/cosmos/ibc-go/v4/modules/core/02-client/types"
+	channeltypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
+	ibcclient "github.com/cosmos/ibc-go/v4/modules/core/exported"
+	ibcexported "github.com/cosmos/ibc-go/v4/modules/core/exported"
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 	"github.com/tendermint/tendermint/libs/log"
 
@@ -64,6 +64,8 @@ type BankKeeper interface {
 	SendCoinsFromAccountToModule(ctx sdk.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error
 	GetBalance(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin
 	BlockedAddr(addr sdk.AccAddress) bool
+	IsSendEnabledCoin(ctx sdk.Context, coin sdk.Coin) bool
+	IsSendEnabledCoins(ctx sdk.Context, coins ...sdk.Coin) error
 }
 
 // IBCTransferKeeper provides functionality to manage IBC transfers
@@ -85,6 +87,7 @@ type ChannelKeeper interface {
 		packet ibcexported.PacketI,
 		ack ibcexported.Acknowledgement,
 	) error
+	GetAppVersion(ctx sdk.Context, portID string, channelID string) (string, bool) // used in module_test
 }
 
 // AccountKeeper defines the account contract that must be fulfilled when

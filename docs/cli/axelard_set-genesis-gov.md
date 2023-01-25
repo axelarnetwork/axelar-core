@@ -10,6 +10,7 @@ axelard set-genesis-gov [flags]
 
 ```
   -h, --help                        help for set-genesis-gov
+      --home string                 node's home directory (default "$HOME/.axelar")
       --max-deposit-period string   Maximum period for AXL holders to deposit on a proposal (time ns)
       --minimum-deposit string      Minimum deposit for a proposal to enter voting period
       --voting-period string        Length of the voting period (time ns)
@@ -18,7 +19,6 @@ axelard set-genesis-gov [flags]
 ### Options inherited from parent commands
 
 ```
-      --home string         directory for config and data (default "$HOME/.axelar")
       --log_format string   The logging format (json|plain) (default "plain")
       --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
       --output string       Output format (text|json) (default "text")
