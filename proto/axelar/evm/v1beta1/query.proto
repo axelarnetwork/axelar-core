@@ -149,7 +149,7 @@ message PendingCommandsResponse {
 }
 
 message QueryCommandResponse {
-  string command_id = 1 [ (gogoproto.customname) = "ID" ];
+  string id = 1 [ (gogoproto.customname) = "ID" ];
   string type = 2;
   map<string, string> params = 3 [ (gogoproto.nullable) = false ];
   string key_id = 4 [ (gogoproto.customname) = "KeyID" ];

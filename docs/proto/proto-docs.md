@@ -3860,7 +3860,7 @@ ERC20 tokens requested for a chain
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `command_id` | [string](#string) |  |  |
+| `id` | [string](#string) |  |  |
 | `type` | [string](#string) |  |  |
 | `params` | [QueryCommandResponse.ParamsEntry](#axelar.evm.v1beta1.QueryCommandResponse.ParamsEntry) | repeated |  |
 | `key_id` | [string](#string) |  |  |
