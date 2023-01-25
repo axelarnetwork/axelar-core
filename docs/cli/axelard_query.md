@@ -50,3 +50,4 @@ axelard query [flags]
 - [axelard query tx](axelard_query_tx.md)	 - Query for a transaction by hash, "<addr>/<seq>" combination or comma-separated signatures in a committed block
 - [axelard query txs](axelard_query_txs.md)	 - Query for paginated transactions that match a set of events
 - [axelard query upgrade](axelard_query_upgrade.md)	 - Querying commands for the upgrade module
+- [axelard query wasm](axelard_query_wasm.md)	 - Querying commands for the wasm module

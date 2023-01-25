@@ -161,6 +161,22 @@
       - [applied \[upgrade-name\]](axelard_query_upgrade_applied.md)	 - block header for height at which a completed upgrade was applied
       - [module_versions \[optional module_name\]](axelard_query_upgrade_module_versions.md)	 - get the list of module versions
       - [plan](axelard_query_upgrade_plan.md)	 - get upgrade plan (if one exists)
+    - [wasm](axelard_query_wasm.md)	 - Querying commands for the wasm module
+      - [build-address \[code-hash\] \[creator-address\] \[salt-hex-encoded\] \[json_encoded_init_args (required when set as fixed)\]](axelard_query_wasm_build-address.md)	 - build contract address
+      - [code \[code_id\] \[output filename\]](axelard_query_wasm_code.md)	 - Downloads wasm bytecode for given code id
+      - [code-info \[code_id\]](axelard_query_wasm_code-info.md)	 - Prints out metadata of a code id
+      - [contract \[bech32_address\]](axelard_query_wasm_contract.md)	 - Prints out metadata of a contract given its address
+      - [contract-history \[bech32_address\]](axelard_query_wasm_contract-history.md)	 - Prints out the code history for a contract given its address
+      - [contract-state](axelard_query_wasm_contract-state.md)	 - Querying commands for the wasm module
+        - [all \[bech32_address\]](axelard_query_wasm_contract-state_all.md)	 - Prints out all internal state of a contract given its address
+        - [raw \[bech32_address\] \[key\]](axelard_query_wasm_contract-state_raw.md)	 - Prints out internal state for key of a contract given its address
+        - [smart \[bech32_address\] \[query\]](axelard_query_wasm_contract-state_smart.md)	 - Calls contract with given address with query data and prints the returned result
+      - [libwasmvm-version](axelard_query_wasm_libwasmvm-version.md)	 - Get libwasmvm version
+      - [list-code](axelard_query_wasm_list-code.md)	 - List all wasm bytecode on the chain
+      - [list-contract-by-code \[code_id\]](axelard_query_wasm_list-contract-by-code.md)	 - List wasm all bytecode on the chain for given code id
+      - [list-contracts-by-creator \[creator\]](axelard_query_wasm_list-contracts-by-creator.md)	 - List all contracts by creator
+      - [params](axelard_query_wasm_params.md)	 - Query the current wasm parameters
+      - [pinned](axelard_query_wasm_pinned.md)	 - List all pinned code ids
   - [rollback](axelard_rollback.md)	 - rollback cosmos-sdk and tendermint state by one height
   - [rosetta](axelard_rosetta.md)	 - spin up a rosetta server
   - [set-genesis-auth](axelard_set-genesis-auth.md)	 - Set the genesis parameters for the auth module
@@ -283,6 +299,15 @@
       - [create-vesting-account \[to_address\] \[amount\] \[end_time\]](axelard_tx_vesting_create-vesting-account.md)	 - Create a new vesting account funded with an allocation of tokens.
     - [vesting](axelard_tx_vesting.md)	 - Vesting transaction subcommands
       - [create-vesting-account \[to_address\] \[amount\] \[end_time\]](axelard_tx_vesting_create-vesting-account.md)	 - Create a new vesting account funded with an allocation of tokens.
+    - [wasm](axelard_tx_wasm.md)	 - Wasm transaction subcommands
+      - [clear-contract-admin \[contract_addr_bech32\]](axelard_tx_wasm_clear-contract-admin.md)	 - Clears admin for a contract to prevent further migrations
+      - [execute \[contract_addr_bech32\] \[json_encoded_send_args\] --amount \[coins,optional\]](axelard_tx_wasm_execute.md)	 - Execute a command on a wasm contract
+      - [grant \[grantee\] \[message_type="execution"|"migration"\] \[contract_addr_bech32\] --allow-raw-msgs \[msg1,msg2,...\] --allow-msg-keys \[key1,key2,...\] --allow-all-messages](axelard_tx_wasm_grant.md)	 - Grant authorization to an address
+      - [instantiate \[code_id_int64\] \[json_encoded_init_args\] --label \[text\] --admin \[address,optional\] --amount \[coins,optional\] ](axelard_tx_wasm_instantiate.md)	 - Instantiate a wasm contract
+      - [instantiate2 \[code_id_int64\] \[json_encoded_init_args\] \[salt\] --label \[text\] --admin \[address,optional\] --amount \[coins,optional\] --fix-msg \[bool,optional\]](axelard_tx_wasm_instantiate2.md)	 - Instantiate a wasm contract with predictable address
+      - [migrate \[contract_addr_bech32\] \[new_code_id_int64\] \[json_encoded_migration_args\]](axelard_tx_wasm_migrate.md)	 - Migrate a wasm contract to a new code version
+      - [set-contract-admin \[contract_addr_bech32\] \[new_admin_addr_bech32\]](axelard_tx_wasm_set-contract-admin.md)	 - Set new admin for a contract
+      - [store \[wasm file\]](axelard_tx_wasm_store.md)	 - Upload a wasm binary
   - [vald-start](axelard_vald-start.md)	 -
   - [validate-genesis \[file\]](axelard_validate-genesis.md)	 - validates the genesis file at the default location or at the location passed as an arg
   - [version](axelard_version.md)	 - Print the application binary version information
