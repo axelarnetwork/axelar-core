@@ -11,10 +11,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/query"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
-	ibctypes "github.com/cosmos/ibc-go/v3/modules/apps/transfer/types"
-	clienttypes "github.com/cosmos/ibc-go/v3/modules/core/02-client/types"
-	channeltypes "github.com/cosmos/ibc-go/v3/modules/core/04-channel/types"
-	ibcexported "github.com/cosmos/ibc-go/v3/modules/core/exported"
+	ibctypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
+	clienttypes "github.com/cosmos/ibc-go/v4/modules/core/02-client/types"
+	channeltypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
+	ibcexported "github.com/cosmos/ibc-go/v4/modules/core/exported"
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 	"github.com/tendermint/tendermint/libs/log"
 	"sync"
@@ -1352,6 +1352,12 @@ var _ axelarnettypes.BankKeeper = &BankKeeperMock{}
 //			GetBalanceFunc: func(ctx cosmossdktypes.Context, addr cosmossdktypes.AccAddress, denom string) cosmossdktypes.Coin {
 //				panic("mock out the GetBalance method")
 //			},
+//			IsSendEnabledCoinFunc: func(ctx cosmossdktypes.Context, coin cosmossdktypes.Coin) bool {
+//				panic("mock out the IsSendEnabledCoin method")
+//			},
+//			IsSendEnabledCoinsFunc: func(ctx cosmossdktypes.Context, coins ...cosmossdktypes.Coin) error {
+//				panic("mock out the IsSendEnabledCoins method")
+//			},
 //			MintCoinsFunc: func(ctx cosmossdktypes.Context, moduleName string, amt cosmossdktypes.Coins) error {
 //				panic("mock out the MintCoins method")
 //			},
@@ -1379,6 +1385,12 @@ type BankKeeperMock struct {
 
 	// GetBalanceFunc mocks the GetBalance method.
 	GetBalanceFunc func(ctx cosmossdktypes.Context, addr cosmossdktypes.AccAddress, denom string) cosmossdktypes.Coin
+
+	// IsSendEnabledCoinFunc mocks the IsSendEnabledCoin method.
+	IsSendEnabledCoinFunc func(ctx cosmossdktypes.Context, coin cosmossdktypes.Coin) bool
+
+	// IsSendEnabledCoinsFunc mocks the IsSendEnabledCoins method.
+	IsSendEnabledCoinsFunc func(ctx cosmossdktypes.Context, coins ...cosmossdktypes.Coin) error
 
 	// MintCoinsFunc mocks the MintCoins method.
 	MintCoinsFunc func(ctx cosmossdktypes.Context, moduleName string, amt cosmossdktypes.Coins) error
@@ -1416,6 +1428,20 @@ type BankKeeperMock struct {
 			Addr cosmossdktypes.AccAddress
 			// Denom is the denom argument value.
 			Denom string
+		}
+		// IsSendEnabledCoin holds details about calls to the IsSendEnabledCoin method.
+		IsSendEnabledCoin []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// Coin is the coin argument value.
+			Coin cosmossdktypes.Coin
+		}
+		// IsSendEnabledCoins holds details about calls to the IsSendEnabledCoins method.
+		IsSendEnabledCoins []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// Coins is the coins argument value.
+			Coins []cosmossdktypes.Coin
 		}
 		// MintCoins holds details about calls to the MintCoins method.
 		MintCoins []struct {
@@ -1463,6 +1489,8 @@ type BankKeeperMock struct {
 	lockBlockedAddr                  sync.RWMutex
 	lockBurnCoins                    sync.RWMutex
 	lockGetBalance                   sync.RWMutex
+	lockIsSendEnabledCoin            sync.RWMutex
+	lockIsSendEnabledCoins           sync.RWMutex
 	lockMintCoins                    sync.RWMutex
 	lockSendCoins                    sync.RWMutex
 	lockSendCoinsFromAccountToModule sync.RWMutex
@@ -1578,6 +1606,78 @@ func (mock *BankKeeperMock) GetBalanceCalls() []struct {
 	mock.lockGetBalance.RLock()
 	calls = mock.calls.GetBalance
 	mock.lockGetBalance.RUnlock()
+	return calls
+}
+
+// IsSendEnabledCoin calls IsSendEnabledCoinFunc.
+func (mock *BankKeeperMock) IsSendEnabledCoin(ctx cosmossdktypes.Context, coin cosmossdktypes.Coin) bool {
+	if mock.IsSendEnabledCoinFunc == nil {
+		panic("BankKeeperMock.IsSendEnabledCoinFunc: method is nil but BankKeeper.IsSendEnabledCoin was just called")
+	}
+	callInfo := struct {
+		Ctx  cosmossdktypes.Context
+		Coin cosmossdktypes.Coin
+	}{
+		Ctx:  ctx,
+		Coin: coin,
+	}
+	mock.lockIsSendEnabledCoin.Lock()
+	mock.calls.IsSendEnabledCoin = append(mock.calls.IsSendEnabledCoin, callInfo)
+	mock.lockIsSendEnabledCoin.Unlock()
+	return mock.IsSendEnabledCoinFunc(ctx, coin)
+}
+
+// IsSendEnabledCoinCalls gets all the calls that were made to IsSendEnabledCoin.
+// Check the length with:
+//
+//	len(mockedBankKeeper.IsSendEnabledCoinCalls())
+func (mock *BankKeeperMock) IsSendEnabledCoinCalls() []struct {
+	Ctx  cosmossdktypes.Context
+	Coin cosmossdktypes.Coin
+} {
+	var calls []struct {
+		Ctx  cosmossdktypes.Context
+		Coin cosmossdktypes.Coin
+	}
+	mock.lockIsSendEnabledCoin.RLock()
+	calls = mock.calls.IsSendEnabledCoin
+	mock.lockIsSendEnabledCoin.RUnlock()
+	return calls
+}
+
+// IsSendEnabledCoins calls IsSendEnabledCoinsFunc.
+func (mock *BankKeeperMock) IsSendEnabledCoins(ctx cosmossdktypes.Context, coins ...cosmossdktypes.Coin) error {
+	if mock.IsSendEnabledCoinsFunc == nil {
+		panic("BankKeeperMock.IsSendEnabledCoinsFunc: method is nil but BankKeeper.IsSendEnabledCoins was just called")
+	}
+	callInfo := struct {
+		Ctx   cosmossdktypes.Context
+		Coins []cosmossdktypes.Coin
+	}{
+		Ctx:   ctx,
+		Coins: coins,
+	}
+	mock.lockIsSendEnabledCoins.Lock()
+	mock.calls.IsSendEnabledCoins = append(mock.calls.IsSendEnabledCoins, callInfo)
+	mock.lockIsSendEnabledCoins.Unlock()
+	return mock.IsSendEnabledCoinsFunc(ctx, coins...)
+}
+
+// IsSendEnabledCoinsCalls gets all the calls that were made to IsSendEnabledCoins.
+// Check the length with:
+//
+//	len(mockedBankKeeper.IsSendEnabledCoinsCalls())
+func (mock *BankKeeperMock) IsSendEnabledCoinsCalls() []struct {
+	Ctx   cosmossdktypes.Context
+	Coins []cosmossdktypes.Coin
+} {
+	var calls []struct {
+		Ctx   cosmossdktypes.Context
+		Coins []cosmossdktypes.Coin
+	}
+	mock.lockIsSendEnabledCoins.RLock()
+	calls = mock.calls.IsSendEnabledCoins
+	mock.lockIsSendEnabledCoins.RUnlock()
 	return calls
 }
 
@@ -1921,6 +2021,9 @@ var _ axelarnettypes.ChannelKeeper = &ChannelKeeperMock{}
 //
 //		// make and configure a mocked axelarnettypes.ChannelKeeper
 //		mockedChannelKeeper := &ChannelKeeperMock{
+//			GetAppVersionFunc: func(ctx cosmossdktypes.Context, portID string, channelID string) (string, bool) {
+//				panic("mock out the GetAppVersion method")
+//			},
 //			GetChannelFunc: func(ctx cosmossdktypes.Context, srcPort string, srcChan string) (channeltypes.Channel, bool) {
 //				panic("mock out the GetChannel method")
 //			},
@@ -1943,6 +2046,9 @@ var _ axelarnettypes.ChannelKeeper = &ChannelKeeperMock{}
 //
 //	}
 type ChannelKeeperMock struct {
+	// GetAppVersionFunc mocks the GetAppVersion method.
+	GetAppVersionFunc func(ctx cosmossdktypes.Context, portID string, channelID string) (string, bool)
+
 	// GetChannelFunc mocks the GetChannel method.
 	GetChannelFunc func(ctx cosmossdktypes.Context, srcPort string, srcChan string) (channeltypes.Channel, bool)
 
@@ -1960,6 +2066,15 @@ type ChannelKeeperMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// GetAppVersion holds details about calls to the GetAppVersion method.
+		GetAppVersion []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// PortID is the portID argument value.
+			PortID string
+			// ChannelID is the channelID argument value.
+			ChannelID string
+		}
 		// GetChannel holds details about calls to the GetChannel method.
 		GetChannel []struct {
 			// Ctx is the ctx argument value.
@@ -2008,11 +2123,52 @@ type ChannelKeeperMock struct {
 			Ack ibcexported.Acknowledgement
 		}
 	}
+	lockGetAppVersion         sync.RWMutex
 	lockGetChannel            sync.RWMutex
 	lockGetChannelClientState sync.RWMutex
 	lockGetNextSequenceSend   sync.RWMutex
 	lockSendPacket            sync.RWMutex
 	lockWriteAcknowledgement  sync.RWMutex
+}
+
+// GetAppVersion calls GetAppVersionFunc.
+func (mock *ChannelKeeperMock) GetAppVersion(ctx cosmossdktypes.Context, portID string, channelID string) (string, bool) {
+	if mock.GetAppVersionFunc == nil {
+		panic("ChannelKeeperMock.GetAppVersionFunc: method is nil but ChannelKeeper.GetAppVersion was just called")
+	}
+	callInfo := struct {
+		Ctx       cosmossdktypes.Context
+		PortID    string
+		ChannelID string
+	}{
+		Ctx:       ctx,
+		PortID:    portID,
+		ChannelID: channelID,
+	}
+	mock.lockGetAppVersion.Lock()
+	mock.calls.GetAppVersion = append(mock.calls.GetAppVersion, callInfo)
+	mock.lockGetAppVersion.Unlock()
+	return mock.GetAppVersionFunc(ctx, portID, channelID)
+}
+
+// GetAppVersionCalls gets all the calls that were made to GetAppVersion.
+// Check the length with:
+//
+//	len(mockedChannelKeeper.GetAppVersionCalls())
+func (mock *ChannelKeeperMock) GetAppVersionCalls() []struct {
+	Ctx       cosmossdktypes.Context
+	PortID    string
+	ChannelID string
+} {
+	var calls []struct {
+		Ctx       cosmossdktypes.Context
+		PortID    string
+		ChannelID string
+	}
+	mock.lockGetAppVersion.RLock()
+	calls = mock.calls.GetAppVersion
+	mock.lockGetAppVersion.RUnlock()
+	return calls
 }
 
 // GetChannel calls GetChannelFunc.

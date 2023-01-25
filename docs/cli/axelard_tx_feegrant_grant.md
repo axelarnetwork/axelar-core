@@ -39,6 +39,7 @@ axelard tx feegrant grant [granter_key_or_address] [grantee] [flags]
       --node string                <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
       --note string                Note to add a description to the transaction (previously --memo)
       --offline                    Offline mode (does not allow any online functionality
+  -o, --output string              Output format (text|json) (default "json")
       --period int                 period specifies the time duration in which period_spend_limit coins can be spent before that allowance is reset
       --period-limit string        period limit specifies the maximum number of coins that can be spent in the period
   -s, --sequence uint              The sequence number of the signing account (offline mode only)
@@ -55,7 +56,6 @@ axelard tx feegrant grant [granter_key_or_address] [grantee] [flags]
       --home string         directory for config and data (default "$HOME/.axelar")
       --log_format string   The logging format (json|plain) (default "plain")
       --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
-      --output string       Output format (text|json) (default "text")
       --trace               print out full stack trace on errors
 ```
 

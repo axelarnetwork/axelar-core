@@ -24,6 +24,7 @@ axelard query ibc client consensus-state [client-id] [height] [flags]
   -h, --help            help for consensus-state
       --latest-height   return latest stored consensus state
       --node string     <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
+  -o, --output string   Output format (text|json) (default "text")
       --prove           show proofs for the query results (default true)
 ```
 
@@ -34,7 +35,6 @@ axelard query ibc client consensus-state [client-id] [height] [flags]
       --home string         directory for config and data (default "$HOME/.axelar")
       --log_format string   The logging format (json|plain) (default "plain")
       --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
-      --output string       Output format (text|json) (default "text")
       --trace               print out full stack trace on errors
 ```
 

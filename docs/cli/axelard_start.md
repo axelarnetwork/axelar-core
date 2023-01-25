@@ -56,6 +56,7 @@ axelard start [flags]
       --halt-height uint                                Block height at which to gracefully halt the chain and shutdown the node
       --halt-time uint                                  Minimum block time (in Unix seconds) at which to gracefully halt the chain and shutdown the node
   -h, --help                                            help for start
+      --home string                                     The application home directory (default "$HOME/.axelar")
       --iavl-disable-fastnode                           Enable fast node for IAVL tree (default true)
       --inter-block-cache                               Enable inter-block caching (default true)
       --inv-check-period uint                           Assert registered invariants every N blocks
@@ -83,6 +84,7 @@ axelard start [flags]
       --rpc.unsafe                                      enabled unsafe rpc methods
       --state-sync.snapshot-interval uint               State sync snapshot interval
       --state-sync.snapshot-keep-recent uint32          State sync snapshot to keep (default 2)
+      --trace                                           Provide full stack traces for errors in ABCI Log
       --trace-store string                              Enable KVStore tracing to an output file
       --transport string                                Transport protocol: socket, grpc (default "socket")
       --unsafe-skip-upgrades ints                       Skip a set of upgrade heights to continue the old binary
@@ -93,11 +95,9 @@ axelard start [flags]
 ### Options inherited from parent commands
 
 ```
-      --home string         directory for config and data (default "$HOME/.axelar")
       --log_format string   The logging format (json|plain) (default "plain")
       --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
       --output string       Output format (text|json) (default "text")
-      --trace               print out full stack trace on errors
 ```
 
 ### SEE ALSO
