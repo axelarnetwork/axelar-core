@@ -89,7 +89,7 @@ build-push-docker-images:  guard-SEMVER
 	@DOCKER_BUILDKIT=1 docker buildx build \
 		--platform ${PLATFORM} \
 		--output "type=image,push=${PUSH_DOCKER_IMAGE}" \
-		-t axelarnet/axelar-core-${SUFFIX}:${SEMVER} .
+		-t axelarnet/axelar-core-${SUFFIX}:${SEMVER} --provenance=false .
 
 
 .PHONY: build-push-docker-image-rosetta
