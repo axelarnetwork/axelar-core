@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/CosmWasm/wasmd/x/wasm"
+	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/grpc/tmservice"
@@ -163,6 +165,7 @@ var (
 		upgrade.AppModuleBasic{},
 		evidence.AppModuleBasic{},
 		vesting.AppModuleBasic{},
+		wasm.AppModuleBasic{},
 		ibc.AppModuleBasic{},
 		transfer.AppModuleBasic{},
 
@@ -189,6 +192,8 @@ var (
 		axelarnetTypes.ModuleName:      {authtypes.Minter, authtypes.Burner},
 		rewardTypes.ModuleName:         {authtypes.Minter},
 	}
+
+	WasmEnabled = ""
 )
 
 var (
@@ -277,6 +282,11 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		rewardTypes.StoreKey,
 		permissionTypes.StoreKey,
 	)
+
+	if isWasmEnabled() {
+		maccPerms[wasm.ModuleName] = []string{authtypes.Burner} // TODO
+		keys[wasm.StoreKey] = sdk.NewKVStoreKey(wasm.StoreKey)
+	}
 
 	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
 	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
@@ -421,6 +431,47 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		appCodec, keys[permissionTypes.StoreKey], app.getSubspace(permissionTypes.ModuleName),
 	)
 
+	var wasmK wasm.Keeper
+	var wasmAnteDecorators []sdk.AnteDecorator
+
+	if isWasmEnabled() {
+		wasmDir := filepath.Join(homePath, "wasm")
+		wasmConfig, err := wasm.ReadWasmConfig(appOpts)
+		if err != nil {
+			panic(fmt.Sprintf("error while reading wasm config: %s", err))
+		}
+		// TODO: enable wasm in swagger
+
+		scopedWasmK := app.capabilityKeeper.ScopeToModule(wasm.ModuleName)
+		// The last arguments can contain custom message handlers, and custom query handlers,
+		// if we want to allow any custom callbacks
+		availableCapabilities := "iterator,staking,stargate,cosmwasm_1_1"
+		wasmK = wasm.NewKeeper(
+			appCodec,
+			keys[wasm.StoreKey],
+			app.getSubspace(wasm.ModuleName),
+			accountK,
+			bankK,
+			stakingK,
+			distrK,
+			app.ibcKeeper.ChannelKeeper,
+			&app.ibcKeeper.PortKeeper,
+			scopedWasmK,
+			app.transferKeeper,
+			app.MsgServiceRouter(),
+			app.GRPCQueryRouter(),
+			wasmDir,
+			wasmConfig,
+			availableCapabilities,
+			// wasmOpts..., TODO
+		)
+
+		wasmAnteDecorators = []sdk.AnteDecorator{
+			wasmkeeper.NewLimitSimulationGasDecorator(wasmConfig.SimulationGasLimit),
+			wasmkeeper.NewCountTXDecorator(app.keys[wasm.StoreKey]),
+		}
+	}
+
 	semverVersion := app.Version()
 	if !strings.HasPrefix(semverVersion, "v") {
 		semverVersion = fmt.Sprintf("v%s", semverVersion)
@@ -445,7 +496,9 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	}
 
 	if upgradeInfo.Name == upgradeName && !upgradeK.IsSkipHeight(upgradeInfo.Height) {
-		storeUpgrades := store.StoreUpgrades{}
+		storeUpgrades := store.StoreUpgrades{
+			Added: []string{wasm.ModuleName},
+		}
 
 		// configure store loader that checks if version == upgradeHeight and applies store upgrades
 		app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
@@ -479,9 +532,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	// we prefer to be more strict in what arguments the modules expect.
 	var skipGenesisInvariants = cast.ToBool(appOpts.Get(crisis.FlagSkipGenesisInvariants))
 
-	// NOTE: Any module instantiated in the module manager that is later modified
-	// must be passed by reference here.
-	app.mm = module.NewManager(
+	appModules := []module.AppModule{
 		genutil.NewAppModule(accountK, stakingK, app.BaseApp.DeliverTx, encodingConfig.TxConfig),
 		auth.NewAppModule(appCodec, accountK, nil),
 		vesting.NewAppModule(accountK, bankK),
@@ -496,6 +547,13 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		evidence.NewAppModule(*evidenceK),
 		params.NewAppModule(paramsK),
 		capability.NewAppModule(appCodec, *app.capabilityKeeper),
+	}
+
+	if isWasmEnabled() {
+		appModules = append(appModules, wasm.NewAppModule(appCodec, &wasmK, stakingK, accountK, bankK))
+	}
+
+	appModules = append(appModules, []module.AppModule{
 		evidence.NewAppModule(app.evidenceKeeper),
 		ibc.NewAppModule(app.ibcKeeper),
 		transferModule,
@@ -510,9 +568,13 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		axelarnetModule,
 		reward.NewAppModule(rewardK, nexusK, mintK, stakingK, slashingK, multisigK, snapK, bankK, bApp.MsgServiceRouter(), bApp.Router()),
 		permission.NewAppModule(permissionK),
+	}...)
+
+	app.mm = module.NewManager(
+		appModules...,
 	)
 
-	app.mm.SetOrderMigrations(
+	migrationOrder := []string{
 		// auth module needs to go first
 		authtypes.ModuleName,
 		// sdk modules
@@ -532,7 +594,14 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		feegrant.ModuleName,
 		paramstypes.ModuleName,
 		vestingtypes.ModuleName,
-		// axelar modules
+	}
+
+	if isWasmEnabled() {
+		migrationOrder = append(migrationOrder, wasm.ModuleName)
+	}
+
+	// axelar modules
+	migrationOrder = append(migrationOrder,
 		multisigTypes.ModuleName,
 		tssTypes.ModuleName,
 		rewardTypes.ModuleName,
@@ -543,11 +612,14 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		snapTypes.ModuleName,
 		axelarnetTypes.ModuleName,
 	)
+
+	app.mm.SetOrderMigrations(migrationOrder...)
+
 	// During begin block slashing happens after distr.BeginBlocker so that
 	// there is nothing left over in the validator fee pool, so as to keep the
 	// CanWithdrawInvariant invariant.
 	// NOTE: staking module is required if HistoricalEntries param > 0
-	app.mm.SetOrderBeginBlockers(
+	beginBlockerOrder := []string{
 		// upgrades should be run first
 		upgradetypes.ModuleName,
 		capabilitytypes.ModuleName,
@@ -566,8 +638,14 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		feegrant.ModuleName,
 		paramstypes.ModuleName,
 		vestingtypes.ModuleName,
+	}
 
-		// axelar custom modules
+	if isWasmEnabled() {
+		beginBlockerOrder = append(beginBlockerOrder, wasm.ModuleName)
+	}
+
+	// axelar custom modules
+	beginBlockerOrder = append(beginBlockerOrder,
 		rewardTypes.ModuleName,
 		nexusTypes.ModuleName,
 		permissionTypes.ModuleName,
@@ -578,7 +656,10 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		axelarnetTypes.ModuleName,
 		voteTypes.ModuleName,
 	)
-	app.mm.SetOrderEndBlockers(
+
+	app.mm.SetOrderBeginBlockers(beginBlockerOrder...)
+
+	endBlockerOrder := []string{
 		crisistypes.ModuleName,
 		govtypes.ModuleName,
 		stakingtypes.ModuleName,
@@ -596,8 +677,14 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		paramstypes.ModuleName,
 		upgradetypes.ModuleName,
 		vestingtypes.ModuleName,
+	}
 
-		// axelar custom modules
+	if isWasmEnabled() {
+		endBlockerOrder = append(endBlockerOrder, wasm.ModuleName)
+	}
+
+	// axelar custom modules
+	endBlockerOrder = append(endBlockerOrder,
 		multisigTypes.ModuleName,
 		tssTypes.ModuleName,
 		evmTypes.ModuleName,
@@ -608,11 +695,13 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		permissionTypes.ModuleName,
 		voteTypes.ModuleName,
 	)
+
+	app.mm.SetOrderEndBlockers(endBlockerOrder...)
 
 	// Sets the order of Genesis - Order matters, genutil is to always come last
 	// NOTE: The genutils module must occur after staking so that pools are
 	// properly initialized with tokens from genesis accounts.
-	app.mm.SetOrderInitGenesis(
+	genesisOrder := []string{
 		capabilitytypes.ModuleName,
 		authtypes.ModuleName,
 		banktypes.ModuleName,
@@ -631,7 +720,13 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		paramstypes.ModuleName,
 		upgradetypes.ModuleName,
 		vestingtypes.ModuleName,
+	}
 
+	if isWasmEnabled() {
+		genesisOrder = append(genesisOrder, wasm.ModuleName)
+	}
+
+	genesisOrder = append(genesisOrder,
 		snapTypes.ModuleName,
 		multisigTypes.ModuleName,
 		tssTypes.ModuleName,
@@ -642,6 +737,8 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		rewardTypes.ModuleName,
 		permissionTypes.ModuleName,
 	)
+
+	app.mm.SetOrderInitGenesis(genesisOrder...)
 
 	app.mm.RegisterInvariants(&crisisK)
 
@@ -675,7 +772,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		panic(err)
 	}
 
-	anteHandler := sdk.ChainAnteDecorators(
+	anteDecorators := []sdk.AnteDecorator{
 		ante.NewAnteHandlerDecorator(baseAnteHandler),
 		ante.NewLogMsgDecorator(appCodec),
 		ante.NewCheckCommissionRate(stakingK),
@@ -684,12 +781,29 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		ante.NewCheckProxy(snapK),
 		ante.NewRestrictedTx(permissionK),
 		ibcante.NewAnteDecorator(app.ibcKeeper),
+	}
+
+	if isWasmEnabled() {
+		anteDecorators = append(anteDecorators, wasmAnteDecorators...) // TODO: correct ordering?
+	}
+
+	anteHandler := sdk.ChainAnteDecorators(
+		anteDecorators...,
 	)
 	app.SetAnteHandler(anteHandler)
 
 	if loadLatest {
 		if err := app.LoadLatestVersion(); err != nil {
 			tmos.Exit(err.Error())
+		}
+
+		if isWasmEnabled() {
+			ctx := app.BaseApp.NewUncachedContext(true, tmproto.Header{})
+
+			// Initialize pinned codes in wasmvm as they are not persisted there
+			if err := wasmK.InitializePinnedCodes(ctx); err != nil {
+				tmos.Exit(fmt.Sprintf("failed initialize pinned codes %s", err))
+			}
 		}
 	}
 
@@ -833,4 +947,8 @@ func (app *AxelarApp) RegisterTendermintService(clientCtx client.Context) {
 func (app *AxelarApp) getSubspace(moduleName string) paramstypes.Subspace {
 	subspace, _ := app.paramsKeeper.GetSubspace(moduleName)
 	return subspace
+}
+
+func isWasmEnabled() bool {
+	return WasmEnabled != ""
 }
