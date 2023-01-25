@@ -49,6 +49,7 @@ axelard tx gov submit-proposal [flags]
       --node string              <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
       --note string              Note to add a description to the transaction (previously --memo)
       --offline                  Offline mode (does not allow any online functionality
+  -o, --output string            Output format (text|json) (default "json")
       --proposal string          Proposal file path (if this path is given, other proposal flags are ignored)
   -s, --sequence uint            The sequence number of the signing account (offline mode only)
       --sign-mode string         Choose sign mode (direct|amino-json), this is an advanced feature
@@ -65,7 +66,6 @@ axelard tx gov submit-proposal [flags]
       --home string         directory for config and data (default "$HOME/.axelar")
       --log_format string   The logging format (json|plain) (default "plain")
       --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
-      --output string       Output format (text|json) (default "text")
       --trace               print out full stack trace on errors
 ```
 

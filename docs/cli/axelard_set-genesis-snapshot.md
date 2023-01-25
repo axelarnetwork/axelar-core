@@ -10,13 +10,13 @@ axelard set-genesis-snapshot [flags]
 
 ```
   -h, --help                    help for set-genesis-snapshot
+      --home string             node's home directory (default "$HOME/.axelar")
       --min-proxy-balance int   minimum balance required for a proxy address to be registered (default 5000000)
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --home string         directory for config and data (default "$HOME/.axelar")
       --log_format string   The logging format (json|plain) (default "plain")
       --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
       --output string       Output format (text|json) (default "text")

@@ -11,6 +11,7 @@ axelard set-genesis-slashing [flags]
 ```
       --downtime-jail-duration string       Jail duration due to downtime (e.g., "600s").
   -h, --help                                help for set-genesis-slashing
+      --home string                         node's home directory (default "$HOME/.axelar")
       --min-signed-per-window string        Minimum amount of signed blocks per window (e.g., "0.50").
       --signed-blocks-window uint           Block height window to measure liveness of each validator (e.g., 10000).
       --slash-fraction-double-sign string   Slashing fraction due to double signing (e.g., "0.01").
@@ -20,7 +21,6 @@ axelard set-genesis-slashing [flags]
 ### Options inherited from parent commands
 
 ```
-      --home string         directory for config and data (default "$HOME/.axelar")
       --log_format string   The logging format (json|plain) (default "plain")
       --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
       --output string       Output format (text|json) (default "text")
