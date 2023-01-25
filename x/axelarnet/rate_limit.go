@@ -6,9 +6,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
-	ibctransfertypes "github.com/cosmos/ibc-go/v3/modules/apps/transfer/types"
-	porttypes "github.com/cosmos/ibc-go/v3/modules/core/05-port/types"
-	ibcexported "github.com/cosmos/ibc-go/v3/modules/core/exported"
+	ibctransfertypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
+	porttypes "github.com/cosmos/ibc-go/v4/modules/core/05-port/types"
+	ibcexported "github.com/cosmos/ibc-go/v4/modules/core/exported"
 
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
@@ -79,6 +79,11 @@ func (r RateLimiter) SendPacket(ctx sdk.Context, chanCap *capabilitytypes.Capabi
 // WriteAcknowledgement implements the ICS4 Wrapper interface
 func (r RateLimiter) WriteAcknowledgement(ctx sdk.Context, chanCap *capabilitytypes.Capability, packet ibcexported.PacketI, ack ibcexported.Acknowledgement) error {
 	return r.channel.WriteAcknowledgement(ctx, chanCap, packet, ack)
+}
+
+// GetAppVersion implements the ICS4 Wrapper interface
+func (r RateLimiter) GetAppVersion(ctx sdk.Context, portID string, channelID string) (string, bool) {
+	return r.channel.GetAppVersion(ctx, portID, channelID)
 }
 
 func parseTokenFromPacket(packet ibcexported.PacketI) (sdk.Coin, error) {

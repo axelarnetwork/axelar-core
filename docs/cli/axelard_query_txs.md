@@ -24,6 +24,7 @@ axelard query txs [flags]
   -h, --help            help for txs
       --limit int       Query number of transactions results per page returned (default 30)
       --node string     <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
+  -o, --output string   Output format (text|json) (default "text")
       --page int        Query a specific page of paginated results (default 1)
 ```
 
@@ -34,7 +35,6 @@ axelard query txs [flags]
       --home string         directory for config and data (default "$HOME/.axelar")
       --log_format string   The logging format (json|plain) (default "plain")
       --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
-      --output string       Output format (text|json) (default "text")
       --trace               print out full stack trace on errors
 ```
 

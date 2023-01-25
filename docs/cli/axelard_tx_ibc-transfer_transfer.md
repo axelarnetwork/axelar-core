@@ -39,9 +39,11 @@ axelard tx ibc-transfer transfer [src-port] [src-channel] [receiver] [amount] [f
       --keyring-backend string          Select keyring's backend (os|file|kwallet|pass|test|memory) (default "file")
       --keyring-dir string              The client Keyring directory; if omitted, the default 'home' directory will be used
       --ledger                          Use a connected Ledger device
+      --memo string                     Memo to be sent along with the packet.
       --node string                     <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
       --note string                     Note to add a description to the transaction (previously --memo)
       --offline                         Offline mode (does not allow any online functionality
+  -o, --output string                   Output format (text|json) (default "json")
       --packet-timeout-height string    Packet timeout block height. The timeout is disabled when set to 0-0. (default "0-1000")
       --packet-timeout-timestamp uint   Packet timeout timestamp in nanoseconds from now. Default is 10 minutes. The timeout is disabled when set to 0. (default 600000000000)
   -s, --sequence uint                   The sequence number of the signing account (offline mode only)
@@ -57,7 +59,6 @@ axelard tx ibc-transfer transfer [src-port] [src-channel] [receiver] [amount] [f
       --home string         directory for config and data (default "$HOME/.axelar")
       --log_format string   The logging format (json|plain) (default "plain")
       --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
-      --output string       Output format (text|json) (default "text")
       --trace               print out full stack trace on errors
 ```
 

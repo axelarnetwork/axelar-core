@@ -18,13 +18,13 @@ axelard rollback [flags]
 ### Options
 
 ```
-  -h, --help   help for rollback
+  -h, --help          help for rollback
+      --home string   The application home directory (default "$HOME/.axelar")
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --home string         directory for config and data (default "$HOME/.axelar")
       --log_format string   The logging format (json|plain) (default "plain")
       --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
       --output string       Output format (text|json) (default "text")

@@ -11,12 +11,12 @@ axelard set-genesis-crisis [flags]
 ```
       --constant-fee string   Transaction fee to initiate a broken invariant check.
   -h, --help                  help for set-genesis-crisis
+      --home string           node's home directory (default "$HOME/.axelar")
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --home string         directory for config and data (default "$HOME/.axelar")
       --log_format string   The logging format (json|plain) (default "plain")
       --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
       --output string       Output format (text|json) (default "text")
