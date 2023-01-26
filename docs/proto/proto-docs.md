@@ -49,6 +49,7 @@
     - [CrossChainTransfer](#axelar.nexus.exported.v1beta1.CrossChainTransfer)
     - [FeeInfo](#axelar.nexus.exported.v1beta1.FeeInfo)
     - [GeneralMessage](#axelar.nexus.exported.v1beta1.GeneralMessage)
+    - [MessageID](#axelar.nexus.exported.v1beta1.MessageID)
     - [TransferFee](#axelar.nexus.exported.v1beta1.TransferFee)
   
     - [GeneralMessage.Status](#axelar.nexus.exported.v1beta1.GeneralMessage.Status)
@@ -108,6 +109,8 @@
     - [AddCosmosBasedChainResponse](#axelar.axelarnet.v1beta1.AddCosmosBasedChainResponse)
     - [ConfirmDepositRequest](#axelar.axelarnet.v1beta1.ConfirmDepositRequest)
     - [ConfirmDepositResponse](#axelar.axelarnet.v1beta1.ConfirmDepositResponse)
+    - [ExecuteMessageRequest](#axelar.axelarnet.v1beta1.ExecuteMessageRequest)
+    - [ExecuteMessageResponse](#axelar.axelarnet.v1beta1.ExecuteMessageResponse)
     - [ExecutePendingTransfersRequest](#axelar.axelarnet.v1beta1.ExecutePendingTransfersRequest)
     - [ExecutePendingTransfersResponse](#axelar.axelarnet.v1beta1.ExecutePendingTransfersResponse)
     - [LinkRequest](#axelar.axelarnet.v1beta1.LinkRequest)
@@ -1126,14 +1129,29 @@ registered blockchain
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `id` | [string](#string) |  |  |
+| `id` | [MessageID](#axelar.nexus.exported.v1beta1.MessageID) |  |  |
 | `source_chain` | [string](#string) |  |  |
 | `sender` | [string](#string) |  |  |
-| `destination_chain` | [string](#string) |  |  |
 | `receiver` | [string](#string) |  |  |
 | `payload_hash` | [bytes](#bytes) |  |  |
 | `status` | [GeneralMessage.Status](#axelar.nexus.exported.v1beta1.GeneralMessage.Status) |  |  |
 | `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+
+
+
+
+
+
+<a name="axelar.nexus.exported.v1beta1.MessageID"></a>
+
+### MessageID
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `id` | [string](#string) |  |  |
 
 
 
@@ -1915,6 +1933,34 @@ MsgConfirmDeposit represents a deposit confirmation message
 
 
 
+<a name="axelar.axelarnet.v1beta1.ExecuteMessageRequest"></a>
+
+### ExecuteMessageRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
+| `id` | [string](#string) |  |  |
+| `payload` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="axelar.axelarnet.v1beta1.ExecuteMessageResponse"></a>
+
+### ExecuteMessageResponse
+
+
+
+
+
+
+
 <a name="axelar.axelarnet.v1beta1.ExecutePendingTransfersRequest"></a>
 
 ### ExecutePendingTransfersRequest
@@ -2150,6 +2196,7 @@ Msg defines the axelarnet Msg service.
 | `RouteIBCTransfers` | [RouteIBCTransfersRequest](#axelar.axelarnet.v1beta1.RouteIBCTransfersRequest) | [RouteIBCTransfersResponse](#axelar.axelarnet.v1beta1.RouteIBCTransfersResponse) |  | POST|/axelar/axelarnet/route_ibc_transfers|
 | `RegisterFeeCollector` | [RegisterFeeCollectorRequest](#axelar.axelarnet.v1beta1.RegisterFeeCollectorRequest) | [RegisterFeeCollectorResponse](#axelar.axelarnet.v1beta1.RegisterFeeCollectorResponse) |  | POST|/axelar/axelarnet/register_fee_collector|
 | `RetryIBCTransfer` | [RetryIBCTransferRequest](#axelar.axelarnet.v1beta1.RetryIBCTransferRequest) | [RetryIBCTransferResponse](#axelar.axelarnet.v1beta1.RetryIBCTransferResponse) |  | POST|/axelar/axelarnet/retry_ibc_transfer|
+| `ExecuteMessage` | [ExecuteMessageRequest](#axelar.axelarnet.v1beta1.ExecuteMessageRequest) | [ExecuteMessageResponse](#axelar.axelarnet.v1beta1.ExecuteMessageResponse) |  | POST|/axelar/axelarnet/execute_message|
 
 
 <a name="axelar.axelarnet.v1beta1.QueryService"></a>

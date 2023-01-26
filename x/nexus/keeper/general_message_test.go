@@ -33,14 +33,16 @@ func TestSetNewGeneralMessage(t *testing.T) {
 
 	givenContractCallEvent := Given("a general message with token", func() {
 		generalMessage = exported.GeneralMessage{
-			ID:               fmt.Sprintf("%s-%d", evmtestutils.RandomHash().Hex(), rand.PosI64()),
-			SourceChain:      sourceChainName,
-			Sender:           evmtestutils.RandomAddress().Hex(),
-			DestinationChain: destinationChainName,
-			Receiver:         genCosmosAddr(destinationChainName.String()),
-			Status:           exported.Approved,
-			PayloadHash:      crypto.Keccak256Hash(rand.Bytes(int(rand.I64Between(1, 100)))).Bytes(),
-			Asset:            &asset,
+			ID: exported.MessageID{
+				ID:    fmt.Sprintf("%s-%d", evmtestutils.RandomHash().Hex(), rand.PosI64()),
+				Chain: destinationChainName,
+			},
+			SourceChain: sourceChainName,
+			Sender:      evmtestutils.RandomAddress().Hex(),
+			Receiver:    genCosmosAddr(destinationChainName.String()),
+			Status:      exported.Approved,
+			PayloadHash: crypto.Keccak256Hash(rand.Bytes(int(rand.I64Between(1, 100)))).Bytes(),
+			Asset:       &asset,
 		}
 
 		k, ctx = setup(cfg)

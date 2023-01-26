@@ -1,6 +1,7 @@
 package types
 
 import (
+	"context"
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -52,6 +53,10 @@ type Nexus interface {
 	GetChainByNativeAsset(ctx sdk.Context, asset string) (nexus.Chain, bool)
 	IsChainActivated(ctx sdk.Context, chain nexus.Chain) bool
 	RateLimitTransfer(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error
+	GetMessage(ctx sdk.Context, messageID nexus.MessageID) (m nexus.GeneralMessage, found bool)
+	SetMessageExecuted(ctx sdk.Context, messageID nexus.MessageID) error
+	SetMessageApproved(ctx sdk.Context, messageID nexus.MessageID) error
+	DeleteMessage(ctx sdk.Context, messageID nexus.MessageID)
 }
 
 // BankKeeper defines the expected interface contract the vesting module requires
@@ -72,6 +77,7 @@ type BankKeeper interface {
 type IBCTransferKeeper interface {
 	GetDenomTrace(ctx sdk.Context, denomTraceHash tmbytes.HexBytes) (ibctypes.DenomTrace, bool)
 	SendTransfer(ctx sdk.Context, sourcePort, sourceChannel string, token sdk.Coin, sender sdk.AccAddress, receiver string, timeoutHeight clienttypes.Height, timeoutTimestamp uint64) error
+	Transfer(goCtx context.Context, msg *ibctypes.MsgTransfer) (*ibctypes.MsgTransferResponse, error)
 }
 
 // ChannelKeeper defines the expected IBC channel keeper

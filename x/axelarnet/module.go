@@ -298,7 +298,7 @@ func (am AppModule) OnAcknowledgementPacket(
 
 	switch ack.Response.(type) {
 	case *channeltypes.Acknowledgement_Result:
-		return setTransferCompleted(ctx, am.keeper, port, channel, sequence)
+		return setRoutedPacketCompleted(ctx, am.keeper, am.nexus, port, channel, sequence)
 	default:
 		// AckError causes a refund of the token (i.e unlock from the escrow address/mint of token depending on whether it's native to chain).
 		// Hence, it's rate limited on the Incoming direction (tokens coming in to Axelar hub).
@@ -306,7 +306,7 @@ func (am AppModule) OnAcknowledgementPacket(
 			return err
 		}
 
-		return setTransferFailed(ctx, am.keeper, port, channel, sequence)
+		return setRoutedPacketFailed(ctx, am.keeper, am.nexus, port, channel, sequence)
 	}
 }
 
@@ -331,7 +331,7 @@ func (am AppModule) OnTimeoutPacket(
 		return err
 	}
 
-	return setTransferFailed(ctx, am.keeper, port, channel, sequence)
+	return setRoutedPacketFailed(ctx, am.keeper, am.nexus, port, channel, sequence)
 }
 
 // GetAppVersion implements the ChannelKeeper interface
@@ -339,45 +339,68 @@ func (am AppModule) GetAppVersion(ctx sdk.Context, portID string, channelID stri
 	return am.channel.GetAppVersion(ctx, portID, channelID)
 }
 
-// returns true if mapping exits
+// returns the transfer id and delete the existing mapping
 func getSeqIDMapping(ctx sdk.Context, k keeper.Keeper, portID, channelID string, seq uint64) (nexus.TransferID, bool) {
 	defer k.DeleteSeqIDMapping(ctx, portID, channelID, seq)
 
 	return k.GetSeqIDMapping(ctx, portID, channelID, seq)
 }
 
-func setTransferFailed(ctx sdk.Context, k keeper.Keeper, portID, channelID string, seq uint64) error {
-	transferID, ok := getSeqIDMapping(ctx, k, portID, channelID, seq)
-	if !ok {
-		return nil
-	}
+// returns the general message id and delete the existing mapping
+func getSeqMessageIDMapping(ctx sdk.Context, k keeper.Keeper, portID, channelID string, seq uint64) (nexus.MessageID, bool) {
+	defer k.DeleteSeqMessageIDMapping(ctx, portID, channelID, seq)
 
-	events.Emit(ctx,
-		&types.IBCTransferFailed{
-			ID:        transferID,
-			Sequence:  seq,
-			PortID:    portID,
-			ChannelID: channelID,
-		})
-
-	k.Logger(ctx).Info(fmt.Sprintf("set IBC transfer %d failed", transferID))
-	return k.SetTransferFailed(ctx, transferID)
+	return k.GetSeqMessageIDMapping(ctx, portID, channelID, seq)
 }
 
-func setTransferCompleted(ctx sdk.Context, k keeper.Keeper, portID, channelID string, seq uint64) error {
+func setRoutedPacketCompleted(ctx sdk.Context, k keeper.Keeper, n types.Nexus, portID, channelID string, seq uint64) error {
+	// check if the packet is Axelar routed cross chain transfer
 	transferID, ok := getSeqIDMapping(ctx, k, portID, channelID, seq)
-	if !ok {
-		return nil
+	if ok {
+		events.Emit(ctx,
+			&types.IBCTransferFailed{
+				ID:        transferID,
+				Sequence:  seq,
+				PortID:    portID,
+				ChannelID: channelID,
+			})
+		k.Logger(ctx).Info(fmt.Sprintf("set IBC transfer %d completed", transferID))
+
+		return k.SetTransferCompleted(ctx, transferID)
 	}
 
-	events.Emit(ctx,
-		&types.IBCTransferCompleted{
-			ID:        transferID,
-			Sequence:  seq,
-			PortID:    portID,
-			ChannelID: channelID,
-		})
+	// check if the packet is Axelar routed general message
+	messageID, ok := getSeqMessageIDMapping(ctx, k, portID, channelID, seq)
+	if ok {
+		n.DeleteMessage(ctx, messageID)
+	}
 
-	k.Logger(ctx).Info(fmt.Sprintf("set IBC transfer %d completed", transferID))
-	return k.SetTransferCompleted(ctx, transferID)
+	return nil
+}
+
+func setRoutedPacketFailed(ctx sdk.Context, k keeper.Keeper, n types.Nexus, portID, channelID string, seq uint64) error {
+	// check if the packet is Axelar routed cross chain transfer
+	transferID, ok := getSeqIDMapping(ctx, k, portID, channelID, seq)
+	if ok {
+		events.Emit(ctx,
+			&types.IBCTransferFailed{
+				ID:        transferID,
+				Sequence:  seq,
+				PortID:    portID,
+				ChannelID: channelID,
+			})
+		k.Logger(ctx).Info(fmt.Sprintf("set IBC transfer %d failed", transferID))
+
+		return k.SetTransferFailed(ctx, transferID)
+	}
+
+	// check if the packet is Axelar routed general message
+	messageID, ok := getSeqMessageIDMapping(ctx, k, portID, channelID, seq)
+	if ok {
+		k.Logger(ctx).Info(fmt.Sprintf("set general message %s back to approval for retry", messageID))
+
+		return n.SetMessageApproved(ctx, messageID)
+	}
+
+	return nil
 }

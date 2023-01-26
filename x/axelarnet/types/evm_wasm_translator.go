@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 
 	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
@@ -15,6 +16,12 @@ var (
 	stringType      = funcs.Must(abi.NewType("string", "string", nil))
 	stringArrayType = funcs.Must(abi.NewType("string[]", "string[]", nil))
 	bytesType       = funcs.Must(abi.NewType("bytes", "bytes", nil))
+	bytes32Type     = funcs.Must(abi.NewType("bytes32", "bytes32", nil))
+
+	// payloadWithVersion is a payload with message version number
+	// - 0x0000000000000000000000000000000000000000000000000000000000000000 to native
+	// - 0x0000000000000000000000000000000000000000000000000000000000000001 to cosmwasm contract
+	payloadWithVersion = abi.Arguments{{Type: bytes32Type}, {Type: bytesType}}
 
 	// abi encoded bytes, with the following format:
 	// wasm method name, argument name list, argument type list, argument value list
@@ -34,6 +41,23 @@ type contractCall struct {
 // wasm is the json that gets passed to the IBC memo field
 type wasm struct {
 	Wasm contractCall `json:"wasm"`
+}
+
+type message struct {
+	SourceChain string `json:"source_chain"`
+	Sender      string `json:"sender"`
+	Payload     []byte `json:"payload"`
+	Type        string `json:"type"`
+}
+
+// UnpackPayload returns message
+func UnpackPayload(payload []byte) ([32]byte, []byte, error) {
+	params, err := evm.StrictDecode(payloadWithVersion, payload)
+	if err != nil {
+		return [32]byte{}, nil, sdkerrors.Wrap(err, "failed to unpack payload")
+	}
+
+	return params[0].([32]byte), params[1].([]byte), nil
 }
 
 // ConstructWasmMessage creates a json serialized wasm message from Axelar defined abi encoded payload
@@ -85,6 +109,16 @@ func ConstructWasmMessage(gm nexus.GeneralMessage, payload []byte) ([]byte, erro
 	}
 
 	return json.Marshal(msg)
+}
+
+// ConstructNativeMessage creates a json serialized cross chain message
+func ConstructNativeMessage(gm nexus.GeneralMessage, payload []byte) ([]byte, error) {
+	return json.Marshal(message{
+		SourceChain: gm.SourceChain.String(),
+		Sender:      gm.Sender,
+		Payload:     payload,
+		Type:        gm.Type(),
+	})
 }
 
 // build abi arguments based on argument types to decode the actual wasm contract arguments

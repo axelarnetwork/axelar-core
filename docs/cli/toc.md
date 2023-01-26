@@ -188,6 +188,7 @@
     - [axelarnet](axelard_tx_axelarnet.md)	 - axelarnet transactions subcommands
       - [add-cosmos-based-chain \[name\] \[address prefix\] \[ibc path\] \[native asset\]...](axelard_tx_axelarnet_add-cosmos-based-chain.md)	 - Add a new cosmos based chain
       - [confirm-deposit \[denom\] \[burnerAddr\]](axelard_tx_axelarnet_confirm-deposit.md)	 - Confirm a deposit to Axelar chain that sent given the asset denomination and the burner address
+      - [execute-message \[chain\] \[message ID\] \[payload\]](axelard_tx_axelarnet_execute-message.md)	 - Execute an approved general message to the destination chain
       - [execute-pending-transfers](axelard_tx_axelarnet_execute-pending-transfers.md)	 - Send all pending transfers to Axelar chain
       - [link \[recipient chain\] \[recipient address\] \[asset\]](axelard_tx_axelarnet_link.md)	 - Link a cross chain address to an Axelar address
       - [register-asset \[chain\] \[denom\]](axelard_tx_axelarnet_register-asset.md)	 - Register a new asset to a cosmos based chain

@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"encoding/hex"
 	"fmt"
 	"strconv"
 	"time"
@@ -42,6 +43,7 @@ func GetTxCmd() *cobra.Command {
 		GetCmdRouteIBCTransfersTx(),
 		GetCmdRegisterFeeCollector(),
 		getRetryIBCTransfer(),
+		getGeneralMessage(),
 	)
 
 	return axelarTxCmd
@@ -285,6 +287,36 @@ func getRetryIBCTransfer() *cobra.Command {
 			}
 
 			msg := types.NewRetryIBCTransferRequest(cliCtx.GetFromAddress(), nexus.ChainName(chain), nexus.TransferID(transferID))
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
+		},
+	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+func getGeneralMessage() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "execute-message [chain] [message ID] [payload]",
+		Short: "Execute an approved general message to the destination chain",
+		Args:  cobra.ExactArgs(3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			chain := utils.NormalizeString(args[0])
+			messageID := utils.NormalizeString(args[1])
+			payload, err := hex.DecodeString(args[2])
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewExecuteMessage(cliCtx.GetFromAddress(), nexus.ChainName(chain), messageID, payload)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
