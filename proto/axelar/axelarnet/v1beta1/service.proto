@@ -72,6 +72,13 @@ service MsgService {
       body : "*"
     };
   }
+
+  rpc ExecuteMessage(ExecuteMessageRequest) returns (ExecuteMessageResponse) {
+    option (google.api.http) = {
+      post : "/axelar/axelarnet/execute_message"
+      body : "*"
+    };
+  }
 }
 
 // QueryService defines the gRPC querier service.

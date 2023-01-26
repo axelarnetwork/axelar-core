@@ -6,8 +6,10 @@ import (
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/query"
 	ibctransfertypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
+	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/events"
@@ -410,6 +412,76 @@ func (s msgServer) RetryIBCTransfer(c context.Context, req *types.RetryIBCTransf
 	return &types.RetryIBCTransferResponse{}, nil
 }
 
+func (s msgServer) ExecuteMessage(c context.Context, req *types.ExecuteMessageRequest) (*types.ExecuteMessageResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	chain, ok := s.nexus.GetChain(ctx, req.Chain)
+	if !ok {
+		return nil, fmt.Errorf("invalid chain %s", req.Chain)
+	}
+
+	if !s.nexus.IsChainActivated(ctx, chain) {
+		return nil, fmt.Errorf("chain %s is not activated", chain.Name)
+	}
+
+	generalMessage, ok := s.nexus.GetMessage(ctx, nexus.MessageID{ID: req.ID, DestinationChain: req.Chain})
+	if !ok {
+		return nil, fmt.Errorf("message %s not found", req.ID)
+	}
+
+	if !generalMessage.Match(req.Payload) {
+		return nil, fmt.Errorf("payload hash does not match")
+	}
+
+	if !generalMessage.Is(nexus.Approved) {
+		return nil, fmt.Errorf("general message %s executed", req.ID)
+	}
+
+	version, payload, err := types.UnpackPayload(req.Payload)
+	if err != nil {
+		return nil, err
+	}
+
+	memo, err := constructMessage(generalMessage, version, payload)
+	if err != nil {
+		return nil, err
+	}
+
+	var asset sdk.Coin
+	var acc sdk.AccAddress
+	if generalMessage.Asset == nil {
+		// pure general message, take dust amount from msg sender to satisfy ibc transfer requirements
+		asset = sdk.NewCoin(exported.NativeAsset, sdk.NewInt(1))
+		acc = req.Sender
+	} else {
+		// general message with token, get token from corresponding account
+		asset, acc, err = prepareTransfer(ctx, s.Keeper, s.nexus, s.bank, s.account, *generalMessage.Asset)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// use GeneralMessageSender account as the canonical general message sender
+	err = s.bank.SendCoins(ctx, acc, types.GeneralMessageSender, sdk.NewCoins(asset))
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.ibcK.SendGeneralMessage(c, chain.Name, generalMessage.Receiver, asset, memo, generalMessage.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.nexus.SetMessageExecuted(ctx, generalMessage.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	s.Logger(ctx).Debug(fmt.Sprintf("set general message %s executed", generalMessage.ID.String()))
+
+	return &types.ExecuteMessageResponse{}, nil
+}
+
 // toICS20 converts a cross chain transfer to ICS20 token
 func toICS20(ctx sdk.Context, k Keeper, n types.Nexus, coin sdk.Coin) sdk.Coin {
 	// if chain or path not found, it will create coin with base denom
@@ -477,4 +549,27 @@ func prepareTransfer(ctx sdk.Context, k Keeper, n types.Nexus, b types.BankKeepe
 	}
 
 	return coin, sender, nil
+}
+
+func constructMessage(gm nexus.GeneralMessage, version [32]byte, payload []byte) (string, error) {
+	var memo string
+
+	switch common.Bytes2Hex(version[:]) {
+	case types.NativeV1:
+		bz, err := types.ConstructNativeMessage(gm, payload)
+		if err != nil {
+			return "", sdkerrors.Wrap(err, "failed to construct native payload")
+		}
+		memo = string(bz)
+	case types.CosmwasmV1:
+		bz, err := types.ConstructWasmMessage(gm, payload)
+		if err != nil {
+			return "", sdkerrors.Wrap(err, "failed to construct wasm payload")
+		}
+		memo = string(bz)
+	default:
+		return "", fmt.Errorf("unknown payload version")
+	}
+
+	return memo, nil
 }

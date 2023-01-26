@@ -10,10 +10,10 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
-func getMessageKey(chain exported.ChainName, id string) key.Key {
+func getMessageKey(msgID exported.MessageID) key.Key {
 	return generalMessagePrefix.
-		Append(key.From(chain)).
-		Append(key.FromStr(id))
+		Append(key.From(msgID.DestinationChain)).
+		Append(key.FromStr(msgID.ID))
 }
 
 // SetNewMessage sets the given general message
@@ -23,9 +23,9 @@ func (k Keeper) SetNewMessage(ctx sdk.Context, m exported.GeneralMessage) error 
 		return fmt.Errorf("source chain %s is not a registered chain", m.SourceChain)
 	}
 
-	destChain, ok := k.GetChain(ctx, m.DestinationChain)
+	destChain, ok := k.GetChain(ctx, m.ID.DestinationChain)
 	if !ok {
-		return fmt.Errorf("destination chain %s is not a registered chain", m.DestinationChain)
+		return fmt.Errorf("destination chain %s is not a registered chain", m.ID.DestinationChain)
 	}
 
 	validator := k.GetRouter().GetAddressValidator(destChain.Module)
@@ -43,19 +43,52 @@ func (k Keeper) SetNewMessage(ctx sdk.Context, m exported.GeneralMessage) error 
 		}
 	}
 
-	if _, found := k.getMessage(ctx, m.DestinationChain, m.ID); found {
-		return fmt.Errorf("general message %s for chain %s already exists", m.ID, m.DestinationChain.String())
+	if _, found := k.GetMessage(ctx, m.ID); found {
+		return fmt.Errorf("general message %s already exists", m.ID)
 	}
 
 	return k.setMessage(ctx, m)
 }
 
-func (k Keeper) getMessage(ctx sdk.Context, chain exported.ChainName, id string) (m exported.GeneralMessage, found bool) {
-	return m, k.getStore(ctx).GetNew(getMessageKey(chain, id), &m)
+// SetMessageExecuted sets the general message as executed
+func (k Keeper) SetMessageExecuted(ctx sdk.Context, messageID exported.MessageID) error {
+	m, found := k.GetMessage(ctx, messageID)
+	if !found {
+		return fmt.Errorf("general message %s already exists", messageID.String())
+	}
+
+	if !m.Is(exported.Approved) {
+		return fmt.Errorf("general message is not approved")
+	}
+
+	m.Status = exported.Executed
+
+	return k.setMessage(ctx, m)
+}
+
+// SetMessageApproved sets the general message as approved
+func (k Keeper) SetMessageApproved(ctx sdk.Context, messageID exported.MessageID) error {
+	m, found := k.GetMessage(ctx, messageID)
+	if !found {
+		return fmt.Errorf("general message %s not found", messageID.String())
+	}
+
+	if !m.Is(exported.Executed) {
+		return fmt.Errorf("general message is not executed")
+	}
+
+	m.Status = exported.Approved
+
+	return k.setMessage(ctx, m)
+}
+
+// GetMessage returns the general message by ID
+func (k Keeper) GetMessage(ctx sdk.Context, messageID exported.MessageID) (m exported.GeneralMessage, found bool) {
+	return m, k.getStore(ctx).GetNew(getMessageKey(messageID), &m)
 }
 
 func (k Keeper) setMessage(ctx sdk.Context, m exported.GeneralMessage) error {
-	return k.getStore(ctx).SetNewValidated(getMessageKey(m.DestinationChain, m.ID), &m)
+	return k.getStore(ctx).SetNewValidated(getMessageKey(m.ID), &m)
 }
 
 func (k Keeper) getMessages(ctx sdk.Context) (generalMessages []exported.GeneralMessage) {
