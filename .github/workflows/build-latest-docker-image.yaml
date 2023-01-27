@@ -10,6 +10,10 @@ on:
         description: Whether or build the debug image ("true"/"false")
         required: true
         default: "false"
+      enable_wasm:
+        description: Whether to enable wasm ("true"/"false")
+        required: true
+        default: "false"
 
 jobs:
   build-and-push-latest-docker-image:
@@ -29,8 +33,10 @@ jobs:
           git fetch --unshallow
 
       - name: Build docker image (normal)
+        env:
+          ENABLE_WASM: ${{ github.event.inputs.enable_wasm }}
         run: |
-          make docker-image
+          make ENABLE_WASM="${ENABLE_WASM}" docker-image
 
       - name: Push to ECR (normal)
         uses: jwalton/gh-ecr-push@v1
