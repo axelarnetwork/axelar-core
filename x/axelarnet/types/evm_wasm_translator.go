@@ -6,6 +6,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 
+	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/utils/funcs"
 )
@@ -42,7 +43,7 @@ type wasm struct {
 // - argument types ([]string)
 // - argument values (bytes)
 func ConstructWasmMessage(gm nexus.GeneralMessage, payload []byte) ([]byte, error) {
-	args, err := payloadArguments.Unpack(payload)
+	args, err := evm.StrictDecode(payloadArguments, payload)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +62,7 @@ func ConstructWasmMessage(gm nexus.GeneralMessage, payload []byte) ([]byte, erro
 	}
 
 	// unpack to actual argument values
-	argValues, err := abiArguments.Unpack(args[3].([]byte))
+	argValues, err := evm.StrictDecode(abiArguments, args[3].([]byte))
 	if err != nil {
 		return nil, err
 	}
