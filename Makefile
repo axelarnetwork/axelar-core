@@ -3,7 +3,7 @@ PACKAGES=$(shell go list ./... | grep -v '/simulation')
 VERSION := $(shell echo $(shell git describe --tags) | sed 's/^v//')
 COMMIT := $(shell git log -1 --format='%H')
 
-BUILD_TAGS := ledger
+# BUILD_TAGS := ledger
 DOCKER := $(shell which docker)
 DOCKER_BUF := $(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace bufbuild/buf
 HTTPS_GIT := https://github.com/axelarnetwork/axelar-core.git
@@ -15,14 +15,28 @@ else
 WASM_ENABLED=""
 endif
 
-ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=axelar \
+ifeq ($(USE_MUSLC), true)
+STATIC_LINK_FLAGS=-linkmode=external -extldflags '-Wl,-z,muldefs -static'
+BUILD_TAGS := muslc
+else
+STATIC_LINK_FLAGS=""
+BUILD_TAGS := ledger
+endif
+
+ARCH := x86_64
+ifeq ($(shell uname -m), arm64)
+ARCH = aarch64
+endif
+
+ldflags = "-X github.com/cosmos/cosmos-sdk/version.Name=axelar \
 	-X github.com/cosmos/cosmos-sdk/version.AppName=axelard \
 	-X github.com/cosmos/cosmos-sdk/version.Version=$(VERSION) \
 	-X "github.com/cosmos/cosmos-sdk/version.BuildTags=$(BUILD_TAGS)" \
 	-X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT) \
-	-X github.com/axelarnetwork/axelar-core/app.WasmEnabled=$(WASM_ENABLED)
+	-X github.com/axelarnetwork/axelar-core/app.WasmEnabled=$(WASM_ENABLED) \
+	-w -s ${STATIC_LINK_FLAGS}"
 
-BUILD_FLAGS := -tags "$(BUILD_TAGS)" -ldflags '$(ldflags)'
+BUILD_FLAGS := -tags $(BUILD_TAGS) -ldflags $(ldflags) -trimpath
 USER_ID := $(shell id -u)
 GROUP_ID := $(shell id -g)
 OS := $(shell echo $$OS_TYPE | sed -e 's/ubuntu-18.04/linux/; s/macos-latest/darwin/')
@@ -82,7 +96,7 @@ debug:  go.sum
 # Build a release image
 .PHONY: docker-image
 docker-image:
-	@DOCKER_BUILDKIT=1 docker build -t axelar/core .
+	@DOCKER_BUILDKIT=1 docker build --build-arg ENABLE_WASM="${ENABLE_WASM}" --build-arg ARCH="${ARCH}" -t axelar/core .
 
 # Build a release image
 .PHONY: docker-image-local-user

@@ -831,6 +831,7 @@ func initParamsKeeper(appCodec codec.Codec, legacyAmino *codec.LegacyAmino, key,
 	paramsKeeper.Subspace(crisistypes.ModuleName)
 	paramsKeeper.Subspace(ibctransfertypes.ModuleName)
 	paramsKeeper.Subspace(ibchost.ModuleName)
+	paramsKeeper.Subspace(wasm.ModuleName)
 
 	paramsKeeper.Subspace(snapTypes.ModuleName)
 	paramsKeeper.Subspace(multisigTypes.ModuleName)
