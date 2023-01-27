@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:experimental
 
-FROM golang:1.18 as debug
+FROM golang:1.19 as debug
 RUN groupadd -r -g 1001 axelard && useradd -m -r -u 1000 -g axelard axelard
 
 WORKDIR /axelar
