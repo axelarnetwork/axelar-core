@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/CosmWasm/wasmd/x/wasm"
+	wasmclient "github.com/CosmWasm/wasmd/x/wasm/client"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
@@ -151,12 +152,15 @@ var (
 		mint.AppModuleBasic{},
 		distr.AppModuleBasic{},
 		gov.NewAppModuleBasic(
-			paramsclient.ProposalHandler,
-			distrclient.ProposalHandler,
-			upgradeclient.ProposalHandler,
-			upgradeclient.CancelProposalHandler,
-			ibcclientclient.UpdateClientProposalHandler,
-			ibcclientclient.UpgradeProposalHandler,
+			append(
+				wasmclient.ProposalHandlers,
+				paramsclient.ProposalHandler,
+				distrclient.ProposalHandler,
+				upgradeclient.ProposalHandler,
+				upgradeclient.CancelProposalHandler,
+				ibcclientclient.UpdateClientProposalHandler,
+				ibcclientclient.UpgradeProposalHandler,
+			)...,
 		),
 		params.AppModuleBasic{},
 		crisis.AppModuleBasic{},
@@ -259,7 +263,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	bApp.SetVersion(version.Version)
 	bApp.SetInterfaceRegistry(interfaceRegistry)
 
-	keys := sdk.NewKVStoreKeys(
+	storeKeys := []string{
 		authtypes.StoreKey,
 		banktypes.StoreKey,
 		stakingtypes.StoreKey,
@@ -274,7 +278,13 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		ibctransfertypes.StoreKey,
 		capabilitytypes.StoreKey,
 		feegrant.StoreKey,
+	}
 
+	if isWasmEnabled() {
+		storeKeys = append(storeKeys, wasm.StoreKey)
+	}
+
+	storeKeys = append(storeKeys, []string{
 		voteTypes.StoreKey,
 		evmTypes.StoreKey,
 		snapTypes.StoreKey,
@@ -284,11 +294,12 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		axelarnetTypes.StoreKey,
 		rewardTypes.StoreKey,
 		permissionTypes.StoreKey,
-	)
+	}...)
+
+	keys := sdk.NewKVStoreKeys(storeKeys...)
 
 	if isWasmEnabled() {
 		maccPerms[wasm.ModuleName] = []string{authtypes.Burner} // TODO
-		keys[wasm.StoreKey] = sdk.NewKVStoreKey(wasm.StoreKey)
 	}
 
 	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
@@ -499,8 +510,9 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	}
 
 	if upgradeInfo.Name == upgradeName && !upgradeK.IsSkipHeight(upgradeInfo.Height) {
-		storeUpgrades := store.StoreUpgrades{
-			Added: []string{wasm.ModuleName},
+		storeUpgrades := store.StoreUpgrades{}
+		if isWasmEnabled() {
+			storeUpgrades.Added = append(storeUpgrades.Added, wasm.ModuleName)
 		}
 
 		// configure store loader that checks if version == upgradeHeight and applies store upgrades

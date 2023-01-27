@@ -96,7 +96,10 @@ debug:  go.sum
 # Build a release image
 .PHONY: docker-image
 docker-image:
-	@DOCKER_BUILDKIT=1 docker build --build-arg ENABLE_WASM="${ENABLE_WASM}" --build-arg ARCH="${ARCH}" -t axelar/core .
+	@DOCKER_BUILDKIT=1 docker build \
+		--build-arg ENABLE_WASM="${ENABLE_WASM}" \
+		--build-arg ARCH="${ARCH}" \
+		-t axelar/core .
 
 # Build a release image
 .PHONY: docker-image-local-user
@@ -104,6 +107,8 @@ docker-image-local-user:  guard-VERSION guard-GROUP_ID guard-USER_ID
 	@DOCKER_BUILDKIT=1 docker build \
 		--build-arg USER_ID=${USER_ID} \
 		--build-arg GROUP_ID=${GROUP_ID} \
+		--build-arg ENABLE_WASM="${ENABLE_WASM}" \
+		--build-arg ARCH="${ARCH}" \
 		-t axelarnet/axelar-core:${VERSION}-local .
 
 .PHONY: build-push-docker-image
@@ -111,6 +116,8 @@ build-push-docker-images:  guard-SEMVER
 	@DOCKER_BUILDKIT=1 docker buildx build \
 		--platform ${PLATFORM} \
 		--output "type=image,push=${PUSH_DOCKER_IMAGE}" \
+		--build-arg ENABLE_WASM="${ENABLE_WASM}" \
+		--build-arg ARCH="${ARCH}" \
 		-t axelarnet/axelar-core-${SUFFIX}:${SEMVER} --provenance=false .
 
 
