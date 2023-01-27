@@ -193,6 +193,9 @@ var (
 		rewardTypes.ModuleName:         {authtypes.Minter},
 	}
 
+	// WasmEnabled indicates whether wasm module is added to the app.
+	// "true" setting means it will be, otherwise it won't.
+	// This is configured during the build.
 	WasmEnabled = ""
 )
 
