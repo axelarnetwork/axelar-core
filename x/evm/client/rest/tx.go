@@ -13,7 +13,6 @@ import (
 	"github.com/gorilla/mux"
 
 	clientUtils "github.com/axelarnetwork/axelar-core/utils"
-	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
@@ -31,10 +30,8 @@ const (
 	TxSignCommands                = "sign-commands"
 	TxAddChain                    = "add-chain"
 
-	QueryAddress         = "query-address"
-	QueryTokenAddress    = "token-address"
-	QueryPendingCommands = keeper.QPendingCommands
-	QueryCommand         = keeper.QCommand
+	QueryAddress      = "query-address"
+	QueryTokenAddress = "token-address"
 )
 
 // RegisterRoutes registers this module's REST routes with the given router
@@ -52,7 +49,6 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerTx(GetHandlerAddChain(cliCtx), TxAddChain)
 
 	registerQuery := clientUtils.RegisterQueryHandlerFn(r, types.RestRoute)
-	registerQuery(GetHandlerQueryCommand(cliCtx), QueryCommand, clientUtils.PathVarChain, clientUtils.PathVarCommandID)
 	registerQuery(GetHandlerQueryTokenAddress(cliCtx), QueryTokenAddress, clientUtils.PathVarChain)
 }
 
