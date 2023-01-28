@@ -153,18 +153,25 @@ service QueryService {
     option (google.api.http).get = "/axelar/evm/v1beta1/chains";
   }
 
+  // Command queries the command of a chain provided the command id
+  rpc Command(CommandRequest) returns (CommandResponse) {
+    option (google.api.http).get = "/axelar/evm/v1beta1/command_request";
+  }
+
   // KeyAddress queries the address of key of a chain
   rpc KeyAddress(KeyAddressRequest) returns (KeyAddressResponse) {
     option (google.api.http).get = "/axelar/evm/v1beta1/key_address/{chain}";
   }
 
-  // GatewayAddress queries the address of axelar gateway at the specified chain
+  // GatewayAddress queries the address of axelar gateway at the specified
+  // chain
   rpc GatewayAddress(GatewayAddressRequest) returns (GatewayAddressResponse) {
     option (google.api.http).get =
         "/axelar/evm/v1beta1/gateway_address/{chain}";
   }
 
-  // Bytecode queries the bytecode of a specified gateway at the specified chain
+  // Bytecode queries the bytecode of a specified gateway at the specified
+  // chain
   rpc Bytecode(BytecodeRequest) returns (BytecodeResponse) {
     option (google.api.http).get =
         "/axelar/evm/v1beta1/bytecode/{chain}/{contract}";

@@ -129,6 +129,19 @@ message ChainsResponse {
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
 }
 
+message CommandRequest {
+  string chain = 1;
+  string id = 2 [ (gogoproto.customname) = "ID" ];
+}
+
+message CommandResponse {
+  string id = 1 [ (gogoproto.customname) = "ID" ];
+  string type = 2;
+  map<string, string> params = 3 [ (gogoproto.nullable) = false ];
+  string key_id = 4 [ (gogoproto.customname) = "KeyID" ];
+  uint32 max_gas_cost = 5;
+}
+
 message PendingCommandsRequest { string chain = 1; }
 
 message PendingCommandsResponse {
