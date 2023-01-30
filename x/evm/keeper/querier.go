@@ -15,8 +15,6 @@ import (
 const (
 	QTokenAddressBySymbol = "token-address-symbol"
 	QTokenAddressByAsset  = "token-address-asset"
-	QPendingCommands      = "pending-commands"
-	QCommand              = "command"
 )
 
 // Bytecode labels
@@ -48,47 +46,10 @@ func NewQuerier(k types.BaseKeeper, n types.Nexus) sdk.Querier {
 			return QueryTokenAddressByAsset(ctx, chainKeeper, n, path[2])
 		case QTokenAddressBySymbol:
 			return QueryTokenAddressBySymbol(ctx, chainKeeper, n, path[2])
-		case QCommand:
-			return queryCommand(ctx, chainKeeper, path[2])
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, fmt.Sprintf("unknown evm-bridge query endpoint: %s", path[0]))
 		}
 	}
-}
-
-func queryCommand(ctx sdk.Context, keeper types.ChainKeeper, id string) ([]byte, error) {
-	cmdID, err := types.HexToCommandID(id)
-	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
-	}
-
-	cmd, ok := keeper.GetCommand(ctx, cmdID)
-	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find command '%s'", id))
-	}
-
-	resp, err := GetCommandResponse(cmd)
-	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
-	}
-
-	return resp.Marshal()
-}
-
-// GetCommandResponse converts a Command into a CommandResponse type
-func GetCommandResponse(cmd types.Command) (types.QueryCommandResponse, error) {
-	params, err := cmd.DecodeParams()
-	if err != nil {
-		return types.QueryCommandResponse{}, err
-	}
-
-	return types.QueryCommandResponse{
-		ID:         cmd.ID.Hex(),
-		Type:       cmd.Type.String(),
-		KeyID:      string(cmd.KeyID),
-		MaxGasCost: cmd.MaxGasCost,
-		Params:     params,
-	}, nil
 }
 
 // QueryTokenAddressByAsset returns the address of the token contract by asset

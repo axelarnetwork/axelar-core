@@ -10,7 +10,6 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/axelarnetwork/axelar-core/utils"
-	evmclient "github.com/axelarnetwork/axelar-core/x/evm/client"
 	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 )
@@ -22,28 +21,6 @@ const (
 	QueryParamSymbol  = keeper.BySymbol
 	QueryParamAsset   = keeper.ByAsset
 )
-
-// GetHandlerQueryCommand returns a handler to get the command with the given ID on the specified chain
-func GetHandlerQueryCommand(cliCtx client.Context) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
-		if !ok {
-			return
-		}
-
-		chain := mux.Vars(r)[utils.PathVarChain]
-		id := mux.Vars(r)[utils.PathVarCommandID]
-
-		res, err := evmclient.QueryCommand(cliCtx, chain, id)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
-		}
-
-		rest.PostProcessResponse(w, cliCtx, res)
-	}
-}
 
 // GetHandlerQueryTokenAddress returns a handler to query an EVM chain address
 func GetHandlerQueryTokenAddress(cliCtx client.Context) http.HandlerFunc {
