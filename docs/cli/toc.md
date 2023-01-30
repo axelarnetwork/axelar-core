@@ -245,11 +245,22 @@
       - [deposit \[proposal-id\] \[deposit\]](axelard_tx_gov_deposit.md)	 - Deposit tokens for an active proposal
       - [submit-proposal](axelard_tx_gov_submit-proposal.md)	 - Submit a proposal along with an initial deposit
         - [cancel-software-upgrade \[flags\]](axelard_tx_gov_submit-proposal_cancel-software-upgrade.md)	 - Cancel the current software upgrade proposal
+        - [clear-contract-admin \[contract_addr_bech32\]](axelard_tx_gov_submit-proposal_clear-contract-admin.md)	 - Submit a clear admin for a contract to prevent further migrations proposal
         - [community-pool-spend \[proposal-file\]](axelard_tx_gov_submit-proposal_community-pool-spend.md)	 - Submit a community pool spend proposal
+        - [execute-contract \[contract_addr_bech32\] \[json_encoded_migration_args\]](axelard_tx_gov_submit-proposal_execute-contract.md)	 - Submit a execute wasm contract proposal (run by any address)
         - [ibc-upgrade \[name\] \[height\] \[path/to/upgraded_client_state.json\] \[flags\]](axelard_tx_gov_submit-proposal_ibc-upgrade.md)	 - Submit an IBC upgrade proposal
+        - [instantiate-contract \[code_id_int64\] \[json_encoded_init_args\] --label \[text\] --title \[text\] --description \[text\] --run-as \[address\] --admin \[address,optional\] --amount \[coins,optional\]](axelard_tx_gov_submit-proposal_instantiate-contract.md)	 - Submit an instantiate wasm contract proposal
+        - [migrate-contract \[contract_addr_bech32\] \[new_code_id_int64\] \[json_encoded_migration_args\]](axelard_tx_gov_submit-proposal_migrate-contract.md)	 - Submit a migrate wasm contract to a new code version proposal
         - [param-change \[proposal-file\]](axelard_tx_gov_submit-proposal_param-change.md)	 - Submit a parameter change proposal
+        - [pin-codes \[code-ids\]](axelard_tx_gov_submit-proposal_pin-codes.md)	 - Submit a pin code proposal for pinning a code to cache
+        - [set-contract-admin \[contract_addr_bech32\] \[new_admin_addr_bech32\]](axelard_tx_gov_submit-proposal_set-contract-admin.md)	 - Submit a new admin for a contract proposal
         - [software-upgrade \[name\] (--upgrade-height \[height\]) (--upgrade-info \[info\]) \[flags\]](axelard_tx_gov_submit-proposal_software-upgrade.md)	 - Submit a software upgrade proposal
+        - [store-instantiate \[wasm file\] \[json_encoded_init_args\] --label \[text\] --title \[text\] --description \[text\] --run-as \[address\]--unpin-code \[unpin_code,optional\] --source \[source,optional\] --builder \[builder,optional\] --code-hash \[code_hash,optional\] --admin \[address,optional\] --amount \[coins,optional\]](axelard_tx_gov_submit-proposal_store-instantiate.md)	 - Submit and instantiate a wasm contract proposal
+        - [sudo-contract \[contract_addr_bech32\] \[json_encoded_migration_args\]](axelard_tx_gov_submit-proposal_sudo-contract.md)	 - Submit a sudo wasm contract proposal (to call privileged commands)
+        - [unpin-codes \[code-ids\]](axelard_tx_gov_submit-proposal_unpin-codes.md)	 - Submit a unpin code proposal for unpinning a code to cache
         - [update-client \[subject-client-id\] \[substitute-client-id\]](axelard_tx_gov_submit-proposal_update-client.md)	 - Submit an update IBC client proposal
+        - [update-instantiate-config \[code-id:permission\]...](axelard_tx_gov_submit-proposal_update-instantiate-config.md)	 - Submit an update instantiate config proposal.
+        - [wasm-store \[wasm file\] --title \[text\] --description \[text\] --run-as \[address\] --unpin-code \[unpin_code\] --source \[source\] --builder \[builder\] --code-hash \[code_hash\]](axelard_tx_gov_submit-proposal_wasm-store.md)	 - Submit a wasm binary proposal
       - [vote \[proposal-id\] \[option\]](axelard_tx_gov_vote.md)	 - Vote for an active proposal, options: yes/no/no_with_veto/abstain
       - [weighted-vote \[proposal-id\] \[weighted-options\]](axelard_tx_gov_weighted-vote.md)	 - Vote for an active proposal, options: yes/no/no_with_veto/abstain
     - [ibc](axelard_tx_ibc.md)	 - IBC transaction subcommands
