@@ -47,7 +47,7 @@ type message struct {
 	SourceChain string `json:"source_chain"`
 	Sender      string `json:"sender"`
 	Payload     []byte `json:"payload"`
-	Type        string `json:"type"`
+	Type        int    `json:"type"`
 }
 
 // UnpackPayload returns message
@@ -117,7 +117,7 @@ func ConstructNativeMessage(gm nexus.GeneralMessage, payload []byte) ([]byte, er
 		SourceChain: gm.SourceChain.String(),
 		Sender:      gm.Sender,
 		Payload:     payload,
-		Type:        gm.Type(),
+		Type:        int(gm.Type()),
 	})
 }
 

@@ -415,29 +415,29 @@ func (s msgServer) RetryIBCTransfer(c context.Context, req *types.RetryIBCTransf
 func (s msgServer) ExecuteMessage(c context.Context, req *types.ExecuteMessageRequest) (*types.ExecuteMessageResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	chain, ok := s.nexus.GetChain(ctx, req.Chain)
+	chain, ok := s.nexus.GetChain(ctx, req.ID.Chain)
 	if !ok {
-		return nil, fmt.Errorf("invalid chain %s", req.Chain)
+		return nil, fmt.Errorf("invalid chain %s", req.ID.Chain)
 	}
 
 	if !s.nexus.IsChainActivated(ctx, chain) {
 		return nil, fmt.Errorf("chain %s is not activated", chain.Name)
 	}
 
-	generalMessage, ok := s.nexus.GetMessage(ctx, nexus.MessageID{ID: req.ID, Chain: req.Chain})
+	msg, ok := s.nexus.GetMessage(ctx, req.ID)
 	if !ok {
 		return nil, fmt.Errorf("message %s not found", req.ID)
 	}
 
-	if !s.nexus.IsAssetRegistered(ctx, chain, generalMessage.Asset.GetDenom()) {
-		return nil, fmt.Errorf("asset %s is not registered on chain %s", generalMessage.Asset.GetDenom(), req.Chain)
+	if msg.Type() == nexus.TypeGeneralMessageWithToken {
+		funcs.MustTrue(s.nexus.IsAssetRegistered(ctx, chain, msg.Asset.GetDenom()))
 	}
 
-	if !generalMessage.Match(req.Payload) {
+	if !msg.Match(req.Payload) {
 		return nil, fmt.Errorf("payload hash does not match")
 	}
 
-	if !generalMessage.Is(nexus.Approved) {
+	if !msg.Is(nexus.Approved) {
 		return nil, fmt.Errorf("general message %s already executed", req.ID)
 	}
 
@@ -446,43 +446,27 @@ func (s msgServer) ExecuteMessage(c context.Context, req *types.ExecuteMessageRe
 		return nil, sdkerrors.Wrap(err, "invalid payload with version")
 	}
 
-	memo, err := constructMessage(generalMessage, version, payload)
+	bz, err := constructMessage(msg, version, payload)
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "invalid payload")
 	}
 
-	var asset sdk.Coin
-	var acc sdk.AccAddress
-	switch generalMessage.Type() {
-	case nexus.TypeGeneralMessage:
-		// pure general message, take dust amount from msg sender to satisfy ibc transfer requirements
-		asset = sdk.NewCoin(exported.NativeAsset, sdk.NewInt(1))
-		acc = req.Sender
-	case nexus.TypeGeneralMessageWithToken:
-		// general message with token, get token from corresponding account
-		asset, acc, err = prepareTransfer(ctx, s.Keeper, s.nexus, s.bank, s.account, *generalMessage.Asset)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	// use GeneralMessageSender account as the canonical general message sender
-	err = s.bank.SendCoins(ctx, acc, types.GeneralMessageSender, sdk.NewCoins(asset))
+	asset, err := s.parkAssetToAxelarMsgSender(ctx, req.Sender, msg)
 	if err != nil {
 		return nil, err
 	}
 
-	err = s.ibcK.SendGeneralMessage(c, chain.Name, generalMessage.Receiver, asset, memo, generalMessage.ID)
+	err = s.ibcK.SendGeneralMessage(c, msg.Receiver, asset, string(bz), msg.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	err = s.nexus.SetMessageExecuted(ctx, generalMessage.ID)
+	err = s.nexus.SetMessageSent(ctx, msg.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	s.Logger(ctx).Debug(fmt.Sprintf("set general message %s executed", generalMessage.ID.String()))
+	s.Logger(ctx).Debug("set general message status to sent", "messageID", msg.ID.String())
 
 	return &types.ExecuteMessageResponse{}, nil
 }
@@ -556,25 +540,53 @@ func prepareTransfer(ctx sdk.Context, k Keeper, n types.Nexus, b types.BankKeepe
 	return coin, sender, nil
 }
 
-func constructMessage(gm nexus.GeneralMessage, version [32]byte, payload []byte) (string, error) {
-	var memo string
+func constructMessage(gm nexus.GeneralMessage, version [32]byte, payload []byte) ([]byte, error) {
+	var bz []byte
+	var err error
 
 	switch hexutil.Encode(version[:]) {
 	case types.NativeV1:
-		bz, err := types.ConstructNativeMessage(gm, payload)
+		bz, err = types.ConstructNativeMessage(gm, payload)
 		if err != nil {
-			return "", sdkerrors.Wrap(err, "failed to construct native payload")
+			return nil, sdkerrors.Wrap(err, "failed to construct native payload")
 		}
-		memo = string(bz)
 	case types.CosmwasmV1:
-		bz, err := types.ConstructWasmMessage(gm, payload)
+		bz, err = types.ConstructWasmMessage(gm, payload)
 		if err != nil {
-			return "", sdkerrors.Wrap(err, "failed to construct wasm payload")
+			return nil, sdkerrors.Wrap(err, "failed to construct wasm payload")
 		}
-		memo = string(bz)
 	default:
-		return "", fmt.Errorf("unknown payload version")
+		return nil, fmt.Errorf("unknown payload version")
 	}
 
-	return memo, nil
+	return bz, nil
+}
+
+// all general messages are sent from the Axelar general message sender, so receiver can use the packet sender to authenticate the message
+// parkAssetToAxelarMsgSender sends the asset to general msg sender account
+func (s msgServer) parkAssetToAxelarMsgSender(ctx sdk.Context, reqSender sdk.AccAddress, msg nexus.GeneralMessage) (sdk.Coin, error) {
+	var asset sdk.Coin
+	var acc sdk.AccAddress
+	var err error
+
+	switch msg.Type() {
+	case nexus.TypeGeneralMessage:
+		// pure general message, take dust amount from request sender to satisfy ibc transfer requirements
+		asset = sdk.NewCoin(exported.NativeAsset, sdk.NewInt(1))
+		acc = reqSender
+	case nexus.TypeGeneralMessageWithToken:
+		// general message with token, get token from corresponding account
+		asset, acc, err = prepareTransfer(ctx, s.Keeper, s.nexus, s.bank, s.account, *msg.Asset)
+		if err != nil {
+			return sdk.Coin{}, err
+		}
+	}
+
+	// use GeneralMessageSender account as the canonical general message sender
+	err = s.bank.SendCoins(ctx, acc, types.MessageSender, sdk.NewCoins(asset))
+	if err != nil {
+		return sdk.Coin{}, err
+	}
+
+	return asset, nil
 }

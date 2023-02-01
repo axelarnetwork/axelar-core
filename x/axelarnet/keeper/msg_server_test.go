@@ -999,7 +999,7 @@ func TestExecuteMessage(t *testing.T) {
 			GetChainByNativeAssetFunc: func(sdk.Context, string) (nexus.Chain, bool) {
 				return chain, true
 			},
-			SetMessageExecutedFunc: func(sdk.Context, nexus.MessageID) error {
+			SetMessageSentFunc: func(sdk.Context, nexus.MessageID) error {
 				return nil
 			},
 		}
@@ -1064,8 +1064,7 @@ func TestExecuteMessage(t *testing.T) {
 	requestIsMade := When("an execute message request is made", func() {
 		req = types.NewExecuteMessage(
 			rand.AccAddr(),
-			chain.Name,
-			id,
+			nexus.MessageID{Chain: chain.Name, ID: id},
 			payload,
 		)
 	})
@@ -1106,8 +1105,7 @@ func TestExecuteMessage(t *testing.T) {
 					When("payload does not match", func() {
 						req = types.NewExecuteMessage(
 							rand.AccAddr(),
-							chain.Name,
-							id,
+							nexus.MessageID{Chain: chain.Name, ID: id},
 							rand.BytesBetween(100, 500),
 						)
 					}).

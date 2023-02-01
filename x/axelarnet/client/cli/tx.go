@@ -310,13 +310,13 @@ func getGeneralMessage() *cobra.Command {
 			}
 
 			chain := utils.NormalizeString(args[0])
-			messageID := utils.NormalizeString(args[1])
+			id := utils.NormalizeString(args[1])
 			payload, err := hex.DecodeString(args[2])
 			if err != nil {
 				return err
 			}
 
-			msg := types.NewExecuteMessage(cliCtx.GetFromAddress(), nexus.ChainName(chain), messageID, payload)
+			msg := types.NewExecuteMessage(cliCtx.GetFromAddress(), nexus.MessageID{Chain: nexus.ChainName(chain), ID: id}, payload)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

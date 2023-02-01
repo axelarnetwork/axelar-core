@@ -291,15 +291,20 @@ func (m GeneralMessage) Match(payload []byte) bool {
 	return common.BytesToHash(m.PayloadHash) == crypto.Keccak256Hash(payload)
 }
 
+// MessageType on can be TypeGeneralMessage or TypeGeneralMessageWithToken
+type MessageType int
+
 const (
-	// TypeGeneralMessage is a general message
-	TypeGeneralMessage = "generalMessage"
+	// TypeUnrecognized means coin type is unrecognized
+	TypeUnrecognized = iota
+	// TypeGeneralMessage is a pure message
+	TypeGeneralMessage = 1
 	// TypeGeneralMessageWithToken is a general message with token
-	TypeGeneralMessageWithToken = "generalMessageWithToken"
+	TypeGeneralMessageWithToken = 2
 )
 
 // Type returns the type of the message
-func (m GeneralMessage) Type() string {
+func (m GeneralMessage) Type() MessageType {
 	if m.Asset == nil {
 		return TypeGeneralMessage
 	}

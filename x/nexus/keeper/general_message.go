@@ -10,10 +10,10 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
-func getMessageKey(msgID exported.MessageID) key.Key {
+func getMessageKey(id exported.MessageID) key.Key {
 	return generalMessagePrefix.
-		Append(key.From(msgID.Chain)).
-		Append(key.FromStr(msgID.ID))
+		Append(key.From(id.Chain)).
+		Append(key.FromStr(id.ID))
 }
 
 // SetNewMessage sets the given general message
@@ -50,8 +50,8 @@ func (k Keeper) SetNewMessage(ctx sdk.Context, m exported.GeneralMessage) error 
 	return k.setMessage(ctx, m)
 }
 
-// SetMessageExecuted sets the general message as executed
-func (k Keeper) SetMessageExecuted(ctx sdk.Context, messageID exported.MessageID) error {
+// SetMessageSent sets the general message as sent
+func (k Keeper) SetMessageSent(ctx sdk.Context, messageID exported.MessageID) error {
 	m, found := k.GetMessage(ctx, messageID)
 	if !found {
 		return fmt.Errorf("general message %s already exists", messageID.String())
@@ -61,23 +61,39 @@ func (k Keeper) SetMessageExecuted(ctx sdk.Context, messageID exported.MessageID
 		return fmt.Errorf("general message is not approved")
 	}
 
+	m.Status = exported.Sent
+
+	return k.setMessage(ctx, m)
+}
+
+// SetMessageExecuted sets the general message as executed
+func (k Keeper) SetMessageExecuted(ctx sdk.Context, messageID exported.MessageID) error {
+	m, found := k.GetMessage(ctx, messageID)
+	if !found {
+		return fmt.Errorf("general message %s already exists", messageID.String())
+	}
+
+	if !m.Is(exported.Sent) {
+		return fmt.Errorf("general message is not sent")
+	}
+
 	m.Status = exported.Executed
 
 	return k.setMessage(ctx, m)
 }
 
-// SetMessageApproved sets the general message as approved
-func (k Keeper) SetMessageApproved(ctx sdk.Context, messageID exported.MessageID) error {
+// SetMessageFailed sets the general message as failed
+func (k Keeper) SetMessageFailed(ctx sdk.Context, messageID exported.MessageID) error {
 	m, found := k.GetMessage(ctx, messageID)
 	if !found {
 		return fmt.Errorf("general message %s not found", messageID.String())
 	}
 
-	if !m.Is(exported.Executed) {
-		return fmt.Errorf("general message is not executed")
+	if !m.Is(exported.Sent) {
+		return fmt.Errorf("general message is not sent")
 	}
 
-	m.Status = exported.Approved
+	m.Status = exported.Failed
 
 	return k.setMessage(ctx, m)
 }

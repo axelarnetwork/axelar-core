@@ -358,7 +358,7 @@ func setRoutedPacketCompleted(ctx sdk.Context, k keeper.Keeper, n types.Nexus, p
 	transferID, ok := getSeqIDMapping(ctx, k, portID, channelID, seq)
 	if ok {
 		events.Emit(ctx,
-			&types.IBCTransferFailed{
+			&types.IBCTransferCompleted{
 				ID:        transferID,
 				Sequence:  seq,
 				PortID:    portID,
@@ -372,7 +372,7 @@ func setRoutedPacketCompleted(ctx sdk.Context, k keeper.Keeper, n types.Nexus, p
 	// check if the packet is Axelar routed general message
 	messageID, ok := getSeqMessageIDMapping(ctx, k, portID, channelID, seq)
 	if ok {
-		n.DeleteMessage(ctx, messageID)
+		return n.SetMessageExecuted(ctx, messageID)
 	}
 
 	return nil
@@ -399,7 +399,7 @@ func setRoutedPacketFailed(ctx sdk.Context, k keeper.Keeper, n types.Nexus, port
 	if ok {
 		k.Logger(ctx).Info(fmt.Sprintf("set general message %s back to approval for retry", messageID))
 
-		return n.SetMessageApproved(ctx, messageID)
+		return n.SetMessageFailed(ctx, messageID)
 	}
 
 	return nil
