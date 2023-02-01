@@ -8,6 +8,7 @@ import (
 	utils "github.com/axelarnetwork/axelar-core/utils"
 	axelarnettypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	github_com_axelarnetwork_axelar_core_x_nexus_exported "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	nexustypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
 	cosmossdktypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -527,6 +528,9 @@ var _ axelarnettypes.Nexus = &NexusMock{}
 //			EnqueueForTransferFunc: func(ctx cosmossdktypes.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, amount cosmossdktypes.Coin) (github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferID, error) {
 //				panic("mock out the EnqueueForTransfer method")
 //			},
+//			EnqueueTransferFunc: func(ctx cosmossdktypes.Context, senderChain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, asset cosmossdktypes.Coin) (github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferID, error) {
+//				panic("mock out the EnqueueTransfer method")
+//			},
 //			GetChainFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, bool) {
 //				panic("mock out the GetChain method")
 //			},
@@ -538,6 +542,9 @@ var _ axelarnettypes.Nexus = &NexusMock{}
 //			},
 //			GetRecipientFunc: func(ctx cosmossdktypes.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress) (github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, bool) {
 //				panic("mock out the GetRecipient method")
+//			},
+//			GetRouterFunc: func() nexustypes.Router {
+//				panic("mock out the GetRouter method")
 //			},
 //			GetTransferFeesFunc: func(ctx cosmossdktypes.Context) cosmossdktypes.Coins {
 //				panic("mock out the GetTransferFees method")
@@ -572,6 +579,9 @@ var _ axelarnettypes.Nexus = &NexusMock{}
 //			SetMessageSentFunc: func(ctx cosmossdktypes.Context, messageID github_com_axelarnetwork_axelar_core_x_nexus_exported.MessageID) error {
 //				panic("mock out the SetMessageSent method")
 //			},
+//			SetNewMessageFunc: func(ctx cosmossdktypes.Context, m github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage) error {
+//				panic("mock out the SetNewMessage method")
+//			},
 //			SubTransferFeeFunc: func(ctx cosmossdktypes.Context, coin cosmossdktypes.Coin)  {
 //				panic("mock out the SubTransferFee method")
 //			},
@@ -591,6 +601,9 @@ type NexusMock struct {
 	// EnqueueForTransferFunc mocks the EnqueueForTransfer method.
 	EnqueueForTransferFunc func(ctx cosmossdktypes.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, amount cosmossdktypes.Coin) (github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferID, error)
 
+	// EnqueueTransferFunc mocks the EnqueueTransfer method.
+	EnqueueTransferFunc func(ctx cosmossdktypes.Context, senderChain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, asset cosmossdktypes.Coin) (github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferID, error)
+
 	// GetChainFunc mocks the GetChain method.
 	GetChainFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, bool)
 
@@ -602,6 +615,9 @@ type NexusMock struct {
 
 	// GetRecipientFunc mocks the GetRecipient method.
 	GetRecipientFunc func(ctx cosmossdktypes.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress) (github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, bool)
+
+	// GetRouterFunc mocks the GetRouter method.
+	GetRouterFunc func() nexustypes.Router
 
 	// GetTransferFeesFunc mocks the GetTransferFees method.
 	GetTransferFeesFunc func(ctx cosmossdktypes.Context) cosmossdktypes.Coins
@@ -636,6 +652,9 @@ type NexusMock struct {
 	// SetMessageSentFunc mocks the SetMessageSent method.
 	SetMessageSentFunc func(ctx cosmossdktypes.Context, messageID github_com_axelarnetwork_axelar_core_x_nexus_exported.MessageID) error
 
+	// SetNewMessageFunc mocks the SetNewMessage method.
+	SetNewMessageFunc func(ctx cosmossdktypes.Context, m github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage) error
+
 	// SubTransferFeeFunc mocks the SubTransferFee method.
 	SubTransferFeeFunc func(ctx cosmossdktypes.Context, coin cosmossdktypes.Coin)
 
@@ -664,6 +683,17 @@ type NexusMock struct {
 			// Amount is the amount argument value.
 			Amount cosmossdktypes.Coin
 		}
+		// EnqueueTransfer holds details about calls to the EnqueueTransfer method.
+		EnqueueTransfer []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// SenderChain is the senderChain argument value.
+			SenderChain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
+			// Recipient is the recipient argument value.
+			Recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
+			// Asset is the asset argument value.
+			Asset cosmossdktypes.Coin
+		}
 		// GetChain holds details about calls to the GetChain method.
 		GetChain []struct {
 			// Ctx is the ctx argument value.
@@ -691,6 +721,9 @@ type NexusMock struct {
 			Ctx cosmossdktypes.Context
 			// Sender is the sender argument value.
 			Sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
+		}
+		// GetRouter holds details about calls to the GetRouter method.
+		GetRouter []struct {
 		}
 		// GetTransferFees holds details about calls to the GetTransferFees method.
 		GetTransferFees []struct {
@@ -785,6 +818,13 @@ type NexusMock struct {
 			// MessageID is the messageID argument value.
 			MessageID github_com_axelarnetwork_axelar_core_x_nexus_exported.MessageID
 		}
+		// SetNewMessage holds details about calls to the SetNewMessage method.
+		SetNewMessage []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// M is the m argument value.
+			M github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage
+		}
 		// SubTransferFee holds details about calls to the SubTransferFee method.
 		SubTransferFee []struct {
 			// Ctx is the ctx argument value.
@@ -796,10 +836,12 @@ type NexusMock struct {
 	lockActivateChain                 sync.RWMutex
 	lockArchivePendingTransfer        sync.RWMutex
 	lockEnqueueForTransfer            sync.RWMutex
+	lockEnqueueTransfer               sync.RWMutex
 	lockGetChain                      sync.RWMutex
 	lockGetChainByNativeAsset         sync.RWMutex
 	lockGetMessage                    sync.RWMutex
 	lockGetRecipient                  sync.RWMutex
+	lockGetRouter                     sync.RWMutex
 	lockGetTransferFees               sync.RWMutex
 	lockGetTransfersForChainPaginated sync.RWMutex
 	lockIsAssetRegistered             sync.RWMutex
@@ -811,6 +853,7 @@ type NexusMock struct {
 	lockSetMessageExecuted            sync.RWMutex
 	lockSetMessageFailed              sync.RWMutex
 	lockSetMessageSent                sync.RWMutex
+	lockSetNewMessage                 sync.RWMutex
 	lockSubTransferFee                sync.RWMutex
 }
 
@@ -923,6 +966,50 @@ func (mock *NexusMock) EnqueueForTransferCalls() []struct {
 	mock.lockEnqueueForTransfer.RLock()
 	calls = mock.calls.EnqueueForTransfer
 	mock.lockEnqueueForTransfer.RUnlock()
+	return calls
+}
+
+// EnqueueTransfer calls EnqueueTransferFunc.
+func (mock *NexusMock) EnqueueTransfer(ctx cosmossdktypes.Context, senderChain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, asset cosmossdktypes.Coin) (github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferID, error) {
+	if mock.EnqueueTransferFunc == nil {
+		panic("NexusMock.EnqueueTransferFunc: method is nil but Nexus.EnqueueTransfer was just called")
+	}
+	callInfo := struct {
+		Ctx         cosmossdktypes.Context
+		SenderChain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
+		Recipient   github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
+		Asset       cosmossdktypes.Coin
+	}{
+		Ctx:         ctx,
+		SenderChain: senderChain,
+		Recipient:   recipient,
+		Asset:       asset,
+	}
+	mock.lockEnqueueTransfer.Lock()
+	mock.calls.EnqueueTransfer = append(mock.calls.EnqueueTransfer, callInfo)
+	mock.lockEnqueueTransfer.Unlock()
+	return mock.EnqueueTransferFunc(ctx, senderChain, recipient, asset)
+}
+
+// EnqueueTransferCalls gets all the calls that were made to EnqueueTransfer.
+// Check the length with:
+//
+//	len(mockedNexus.EnqueueTransferCalls())
+func (mock *NexusMock) EnqueueTransferCalls() []struct {
+	Ctx         cosmossdktypes.Context
+	SenderChain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
+	Recipient   github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
+	Asset       cosmossdktypes.Coin
+} {
+	var calls []struct {
+		Ctx         cosmossdktypes.Context
+		SenderChain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
+		Recipient   github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
+		Asset       cosmossdktypes.Coin
+	}
+	mock.lockEnqueueTransfer.RLock()
+	calls = mock.calls.EnqueueTransfer
+	mock.lockEnqueueTransfer.RUnlock()
 	return calls
 }
 
@@ -1067,6 +1154,33 @@ func (mock *NexusMock) GetRecipientCalls() []struct {
 	mock.lockGetRecipient.RLock()
 	calls = mock.calls.GetRecipient
 	mock.lockGetRecipient.RUnlock()
+	return calls
+}
+
+// GetRouter calls GetRouterFunc.
+func (mock *NexusMock) GetRouter() nexustypes.Router {
+	if mock.GetRouterFunc == nil {
+		panic("NexusMock.GetRouterFunc: method is nil but Nexus.GetRouter was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockGetRouter.Lock()
+	mock.calls.GetRouter = append(mock.calls.GetRouter, callInfo)
+	mock.lockGetRouter.Unlock()
+	return mock.GetRouterFunc()
+}
+
+// GetRouterCalls gets all the calls that were made to GetRouter.
+// Check the length with:
+//
+//	len(mockedNexus.GetRouterCalls())
+func (mock *NexusMock) GetRouterCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockGetRouter.RLock()
+	calls = mock.calls.GetRouter
+	mock.lockGetRouter.RUnlock()
 	return calls
 }
 
@@ -1495,6 +1609,42 @@ func (mock *NexusMock) SetMessageSentCalls() []struct {
 	mock.lockSetMessageSent.RLock()
 	calls = mock.calls.SetMessageSent
 	mock.lockSetMessageSent.RUnlock()
+	return calls
+}
+
+// SetNewMessage calls SetNewMessageFunc.
+func (mock *NexusMock) SetNewMessage(ctx cosmossdktypes.Context, m github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage) error {
+	if mock.SetNewMessageFunc == nil {
+		panic("NexusMock.SetNewMessageFunc: method is nil but Nexus.SetNewMessage was just called")
+	}
+	callInfo := struct {
+		Ctx cosmossdktypes.Context
+		M   github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage
+	}{
+		Ctx: ctx,
+		M:   m,
+	}
+	mock.lockSetNewMessage.Lock()
+	mock.calls.SetNewMessage = append(mock.calls.SetNewMessage, callInfo)
+	mock.lockSetNewMessage.Unlock()
+	return mock.SetNewMessageFunc(ctx, m)
+}
+
+// SetNewMessageCalls gets all the calls that were made to SetNewMessage.
+// Check the length with:
+//
+//	len(mockedNexus.SetNewMessageCalls())
+func (mock *NexusMock) SetNewMessageCalls() []struct {
+	Ctx cosmossdktypes.Context
+	M   github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage
+} {
+	var calls []struct {
+		Ctx cosmossdktypes.Context
+		M   github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage
+	}
+	mock.lockSetNewMessage.RLock()
+	calls = mock.calls.SetNewMessage
+	mock.lockSetNewMessage.RUnlock()
 	return calls
 }
 

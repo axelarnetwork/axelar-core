@@ -18,6 +18,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	nexustypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
 )
 
 //go:generate moq -out ./mock/expected_keepers.go -pkg mock . BaseKeeper Nexus BankKeeper IBCTransferKeeper ChannelKeeper AccountKeeper PortKeeper
@@ -39,6 +40,7 @@ type BaseKeeper interface {
 // Nexus provides functionality to manage cross-chain transfers
 type Nexus interface {
 	EnqueueForTransfer(ctx sdk.Context, sender nexus.CrossChainAddress, amount sdk.Coin) (nexus.TransferID, error)
+	EnqueueTransfer(ctx sdk.Context, senderChain nexus.Chain, recipient nexus.CrossChainAddress, asset sdk.Coin) (nexus.TransferID, error)
 	GetTransfersForChainPaginated(ctx sdk.Context, chain nexus.Chain, state nexus.TransferState, pageRequest *query.PageRequest) ([]nexus.CrossChainTransfer, *query.PageResponse, error)
 	ArchivePendingTransfer(ctx sdk.Context, transfer nexus.CrossChainTransfer)
 	GetChain(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool)
@@ -54,9 +56,11 @@ type Nexus interface {
 	IsChainActivated(ctx sdk.Context, chain nexus.Chain) bool
 	RateLimitTransfer(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error
 	GetMessage(ctx sdk.Context, messageID nexus.MessageID) (m nexus.GeneralMessage, found bool)
+	SetNewMessage(ctx sdk.Context, m nexus.GeneralMessage) error
 	SetMessageSent(ctx sdk.Context, messageID nexus.MessageID) error
 	SetMessageExecuted(ctx sdk.Context, messageID nexus.MessageID) error
 	SetMessageFailed(ctx sdk.Context, messageID nexus.MessageID) error
+	GetRouter() nexustypes.Router
 }
 
 // BankKeeper defines the expected interface contract the vesting module requires

@@ -301,6 +301,8 @@ const (
 	TypeGeneralMessage = 1
 	// TypeGeneralMessageWithToken is a general message with token
 	TypeGeneralMessageWithToken = 2
+	// TypeSendToken is a direct token transfer without link from a cosmos chain
+	TypeSendToken = 3
 )
 
 // Type returns the type of the message
