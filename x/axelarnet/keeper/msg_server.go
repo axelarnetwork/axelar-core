@@ -9,12 +9,12 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/query"
 	ibctransfertypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/events"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
+	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/utils/funcs"
@@ -412,6 +412,7 @@ func (s msgServer) RetryIBCTransfer(c context.Context, req *types.RetryIBCTransf
 	return &types.RetryIBCTransferResponse{}, nil
 }
 
+// ExecuteMessage translates an abi encoded payload and sends to a cosmos chain
 func (s msgServer) ExecuteMessage(c context.Context, req *types.ExecuteMessageRequest) (*types.ExecuteMessageResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
@@ -429,6 +430,11 @@ func (s msgServer) ExecuteMessage(c context.Context, req *types.ExecuteMessageRe
 		return nil, fmt.Errorf("message %s not found", req.ID)
 	}
 
+	sourceChain := funcs.MustOk(s.nexus.GetChain(ctx, msg.SourceChain))
+	if !sourceChain.IsFrom(evmtypes.ModuleName) {
+		return nil, fmt.Errorf("message is not from an EVM chain")
+	}
+
 	if msg.Type() == nexus.TypeGeneralMessageWithToken {
 		funcs.MustTrue(s.nexus.IsAssetRegistered(ctx, chain, msg.Asset.GetDenom()))
 	}
@@ -437,26 +443,21 @@ func (s msgServer) ExecuteMessage(c context.Context, req *types.ExecuteMessageRe
 		return nil, fmt.Errorf("payload hash does not match")
 	}
 
-	if !msg.Is(nexus.Approved) {
+	if !(msg.Is(nexus.Approved) || msg.Is(nexus.Failed)) {
 		return nil, fmt.Errorf("general message %s already executed", req.ID)
 	}
 
-	version, payload, err := types.UnpackPayload(req.Payload)
-	if err != nil {
-		return nil, sdkerrors.Wrap(err, "invalid payload with version")
-	}
-
-	bz, err := constructMessage(msg, version, payload)
+	bz, err := types.TranslateMessage(msg, req.Payload)
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "invalid payload")
 	}
 
-	asset, err := s.parkAssetToAxelarMsgSender(ctx, req.Sender, msg)
+	asset, err := s.escrowAssetToMessageSender(ctx, req.Sender, msg)
 	if err != nil {
 		return nil, err
 	}
 
-	err = s.ibcK.SendGeneralMessage(c, msg.Receiver, asset, string(bz), msg.ID)
+	err = s.ibcK.SendMessage(c, msg.Receiver, asset, string(bz), msg.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -540,31 +541,9 @@ func prepareTransfer(ctx sdk.Context, k Keeper, n types.Nexus, b types.BankKeepe
 	return coin, sender, nil
 }
 
-func constructMessage(gm nexus.GeneralMessage, version [32]byte, payload []byte) ([]byte, error) {
-	var bz []byte
-	var err error
-
-	switch hexutil.Encode(version[:]) {
-	case types.NativeV1:
-		bz, err = types.ConstructNativeMessage(gm, payload)
-		if err != nil {
-			return nil, sdkerrors.Wrap(err, "failed to construct native payload")
-		}
-	case types.CosmwasmV1:
-		bz, err = types.ConstructWasmMessage(gm, payload)
-		if err != nil {
-			return nil, sdkerrors.Wrap(err, "failed to construct wasm payload")
-		}
-	default:
-		return nil, fmt.Errorf("unknown payload version")
-	}
-
-	return bz, nil
-}
-
 // all general messages are sent from the Axelar general message sender, so receiver can use the packet sender to authenticate the message
-// parkAssetToAxelarMsgSender sends the asset to general msg sender account
-func (s msgServer) parkAssetToAxelarMsgSender(ctx sdk.Context, reqSender sdk.AccAddress, msg nexus.GeneralMessage) (sdk.Coin, error) {
+// escrowAssetToMessageSender sends the asset to general msg sender account
+func (s msgServer) escrowAssetToMessageSender(ctx sdk.Context, reqSender sdk.AccAddress, msg nexus.GeneralMessage) (sdk.Coin, error) {
 	var asset sdk.Coin
 	var acc sdk.AccAddress
 	var err error
@@ -580,6 +559,8 @@ func (s msgServer) parkAssetToAxelarMsgSender(ctx sdk.Context, reqSender sdk.Acc
 		if err != nil {
 			return sdk.Coin{}, err
 		}
+	default:
+		return sdk.Coin{}, fmt.Errorf("unrecognized message type")
 	}
 
 	// use GeneralMessageSender account as the canonical general message sender

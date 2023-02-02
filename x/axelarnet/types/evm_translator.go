@@ -6,6 +6,7 @@ import (
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -19,8 +20,8 @@ var (
 	bytes32Type     = funcs.Must(abi.NewType("bytes32", "bytes32", nil))
 
 	// payloadWithVersion is a payload with message version number
-	// - 0x0000000000000000000000000000000000000000000000000000000000000000 to native
-	// - 0x0000000000000000000000000000000000000000000000000000000000000001 to cosmwasm contract
+	// - bytes32(0) To Native
+	// - bytes32(1) To Cosmwasm Contract
 	payloadWithVersion = abi.Arguments{{Type: bytes32Type}, {Type: bytesType}}
 
 	// abi encoded bytes, with the following format:
@@ -50,14 +51,47 @@ type message struct {
 	Type        int    `json:"type"`
 }
 
-// UnpackPayload returns message
-func UnpackPayload(payload []byte) ([32]byte, []byte, error) {
+// TranslateMessage constructs the message gets passed to a cosmos chain from abi encoded payload
+func TranslateMessage(msg nexus.GeneralMessage, payload []byte) ([]byte, error) {
+	version, payload, err := unpackPayload(payload)
+	if err != nil {
+		return nil, sdkerrors.Wrap(err, "invalid payload with version")
+	}
+
+	return constructMessage(msg, version, payload)
+}
+
+// unpackPayload returns the version and actual payload
+func unpackPayload(payload []byte) ([32]byte, []byte, error) {
 	params, err := evm.StrictDecode(payloadWithVersion, payload)
 	if err != nil {
 		return [32]byte{}, nil, sdkerrors.Wrap(err, "failed to unpack payload")
 	}
 
 	return params[0].([32]byte), params[1].([]byte), nil
+}
+
+// constructMessage constructs message based on the payload version
+func constructMessage(gm nexus.GeneralMessage, version [32]byte, payload []byte) ([]byte, error) {
+	var bz []byte
+	var err error
+
+	switch hexutil.Encode(version[:]) {
+	case NativeV1:
+		bz, err = ConstructNativeMessage(gm, payload)
+		if err != nil {
+			return nil, sdkerrors.Wrap(err, "failed to construct native payload")
+		}
+	case CosmwasmV1:
+		bz, err = ConstructWasmMessage(gm, payload)
+		if err != nil {
+			return nil, sdkerrors.Wrap(err, "failed to construct wasm payload")
+		}
+	default:
+		return nil, fmt.Errorf("unknown payload version")
+	}
+
+	return bz, nil
 }
 
 // ConstructWasmMessage creates a json serialized wasm message from Axelar defined abi encoded payload

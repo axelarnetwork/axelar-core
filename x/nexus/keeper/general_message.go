@@ -54,11 +54,11 @@ func (k Keeper) SetNewMessage(ctx sdk.Context, m exported.GeneralMessage) error 
 func (k Keeper) SetMessageSent(ctx sdk.Context, messageID exported.MessageID) error {
 	m, found := k.GetMessage(ctx, messageID)
 	if !found {
-		return fmt.Errorf("general message %s already exists", messageID.String())
+		return fmt.Errorf("general message %s not found", messageID.String())
 	}
 
-	if !m.Is(exported.Approved) {
-		return fmt.Errorf("general message is not approved")
+	if !(m.Is(exported.Approved) || m.Is(exported.Failed)) {
+		return fmt.Errorf("general message is not approved or failed")
 	}
 
 	m.Status = exported.Sent
@@ -70,7 +70,7 @@ func (k Keeper) SetMessageSent(ctx sdk.Context, messageID exported.MessageID) er
 func (k Keeper) SetMessageExecuted(ctx sdk.Context, messageID exported.MessageID) error {
 	m, found := k.GetMessage(ctx, messageID)
 	if !found {
-		return fmt.Errorf("general message %s already exists", messageID.String())
+		return fmt.Errorf("general message %s not found", messageID.String())
 	}
 
 	if !m.Is(exported.Sent) {

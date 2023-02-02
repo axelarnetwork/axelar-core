@@ -62,11 +62,11 @@ func (i IBCKeeper) ParseIBCDenom(ctx sdk.Context, ibcDenom string) (ibctypes.Den
 	return denomTrace, nil
 }
 
-// SendGeneralMessage sends general message via ICS20 packet memo
-func (i IBCKeeper) SendGeneralMessage(c context.Context, destAddr string, asset sdk.Coin, memo string, id nexus.MessageID) error {
+// SendMessage sends general message via ICS20 packet memo
+func (i IBCKeeper) SendMessage(c context.Context, destinationAddress string, asset sdk.Coin, payload string, id nexus.MessageID) error {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	portID, channelID, err := i.getPortAndChanel(ctx, id.Chain)
+	portID, channelID, err := i.getPortAndChannel(ctx, id.Chain)
 	if err != nil {
 		return err
 	}
@@ -76,8 +76,8 @@ func (i IBCKeeper) SendGeneralMessage(c context.Context, destAddr string, asset 
 		return err
 	}
 
-	msg := ibctypes.NewMsgTransfer(portID, channelID, asset, types.MessageSender.String(), destAddr, height, 0)
-	msg.Memo = memo
+	msg := ibctypes.NewMsgTransfer(portID, channelID, asset, types.MessageSender.String(), destinationAddress, height, 0)
+	msg.Memo = payload
 
 	res, err := i.ibcTransferK.Transfer(c, msg)
 	if err != nil {
@@ -96,7 +96,7 @@ func (i IBCKeeper) getPacketTimeoutHeight(ctx sdk.Context, portID, channelID str
 	return clienttypes.NewHeight(state.GetLatestHeight().GetRevisionNumber(), state.GetLatestHeight().GetRevisionHeight()+i.GetRouteTimeoutWindow(ctx)), nil
 }
 
-func (i IBCKeeper) getPortAndChanel(ctx sdk.Context, chain nexus.ChainName) (string, string, error) {
+func (i IBCKeeper) getPortAndChannel(ctx sdk.Context, chain nexus.ChainName) (string, string, error) {
 	path, ok := i.GetIBCPath(ctx, chain)
 	if !ok {
 		return "", "", fmt.Errorf("%s does not have a valid IBC path", chain.String())

@@ -372,6 +372,7 @@ func setRoutedPacketCompleted(ctx sdk.Context, k keeper.Keeper, n types.Nexus, p
 	// check if the packet is Axelar routed general message
 	messageID, ok := getSeqMessageIDMapping(ctx, k, portID, channelID, seq)
 	if ok {
+		k.Logger(ctx).Debug("set general message status to executed", "messageID", messageID.String())
 		return n.SetMessageExecuted(ctx, messageID)
 	}
 
@@ -397,8 +398,7 @@ func setRoutedPacketFailed(ctx sdk.Context, k keeper.Keeper, n types.Nexus, port
 	// check if the packet is Axelar routed general message
 	messageID, ok := getSeqMessageIDMapping(ctx, k, portID, channelID, seq)
 	if ok {
-		k.Logger(ctx).Info(fmt.Sprintf("set general message %s back to approval for retry", messageID))
-
+		k.Logger(ctx).Debug("set general message status to failed", "messageID", messageID.String())
 		return n.SetMessageFailed(ctx, messageID)
 	}
 

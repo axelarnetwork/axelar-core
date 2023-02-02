@@ -26,6 +26,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types/mock"
 	axelartestutils "github.com/axelarnetwork/axelar-core/x/axelarnet/types/testutils"
+	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	evmtestutils "github.com/axelarnetwork/axelar-core/x/evm/types/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexustestutils "github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
@@ -981,8 +982,8 @@ func TestExecuteMessage(t *testing.T) {
 		req    *types.ExecuteMessageRequest
 	)
 
-	//chain := nexustestutils.RandomChainName()
 	chain := nexustestutils.RandomChain()
+	chain.Module = evmtypes.ModuleName
 	id := rand.StrBetween(5, 100)
 	payload := randPayload()
 	coin := rand.Coin()
@@ -1132,7 +1133,7 @@ func TestExecuteMessage(t *testing.T) {
 					When("chain is activated", isChainActivated(true)).
 					When("asset is registered", isAssetRegistered(true)).
 					When("general message is found", isMessageFound(true, nexus.Approved)).
-					When("payload with is invalid", func() {
+					When("payload is invalid", func() {
 						bytesType := funcs.Must(abi.NewType("bytes", "bytes", nil))
 						bytes32Type := funcs.Must(abi.NewType("bytes32", "bytes32", nil))
 
