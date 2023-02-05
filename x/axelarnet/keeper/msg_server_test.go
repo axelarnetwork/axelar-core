@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"context"
 	"crypto/sha256"
 	"fmt"
 	mathRand "math/rand"
@@ -13,6 +14,9 @@ import (
 	ibctypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
 	clienttypes "github.com/cosmos/ibc-go/v4/modules/core/02-client/types"
 	ibcclient "github.com/cosmos/ibc-go/v4/modules/core/exported"
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/assert"
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 
@@ -22,11 +26,14 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types/mock"
 	axelartestutils "github.com/axelarnetwork/axelar-core/x/axelarnet/types/testutils"
+	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
+	evmtestutils "github.com/axelarnetwork/axelar-core/x/evm/types/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexustestutils "github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 	. "github.com/axelarnetwork/utils/test"
+	rand2 "github.com/axelarnetwork/utils/test/rand"
 )
 
 func TestHandleMsgLink(t *testing.T) {
@@ -966,6 +973,197 @@ func TestAddCosmosBasedChain(t *testing.T) {
 		Run(t, repeats)
 }
 
+func TestExecuteMessage(t *testing.T) {
+	var (
+		server types.MsgServiceServer
+		k      keeper.Keeper
+		nexusK *mock.NexusMock
+		ctx    sdk.Context
+		req    *types.ExecuteMessageRequest
+	)
+
+	chain := nexustestutils.RandomChain()
+	chain.Module = evmtypes.ModuleName
+	id := rand.StrBetween(5, 100)
+	payload := randPayload()
+	coin := rand.Coin()
+
+	givenMsgServer := Given("an axelarnet msg server", func() {
+		ctx, k, _ = setup()
+		k.InitGenesis(ctx, types.DefaultGenesisState())
+		funcs.MustNoErr(k.SetCosmosChain(ctx, types.CosmosChain{
+			Name:       chain.Name,
+			AddrPrefix: rand.StrBetween(1, 10),
+			IBCPath:    axelartestutils.RandomIBCPath(),
+		}))
+		nexusK = &mock.NexusMock{
+			GetChainByNativeAssetFunc: func(sdk.Context, string) (nexus.Chain, bool) {
+				return chain, true
+			},
+			SetMessageSentFunc: func(sdk.Context, nexus.MessageID) error {
+				return nil
+			},
+		}
+		ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{
+			TransferFunc: func(context.Context, *ibctypes.MsgTransfer) (*ibctypes.MsgTransferResponse, error) {
+				return &ibctypes.MsgTransferResponse{Sequence: uint64(rand2.I64Between(1, 100000))}, nil
+			},
+		}, &mock.ChannelKeeperMock{
+			GetChannelClientStateFunc: func(sdk.Context, string, string) (string, ibcclient.ClientState, error) {
+				return "07-tendermint-0", axelartestutils.ClientState(), nil
+			},
+		})
+		bankK := &mock.BankKeeperMock{
+			MintCoinsFunc: func(sdk.Context, string, sdk.Coins) error { return nil },
+			SendCoinsFunc: func(sdk.Context, sdk.AccAddress, sdk.AccAddress, sdk.Coins) error { return nil },
+		}
+		accountK := &mock.AccountKeeperMock{
+			GetModuleAddressFunc: func(moduleName string) sdk.AccAddress {
+				return rand.AccAddr()
+			},
+		}
+		server = keeper.NewMsgServerImpl(k, nexusK, bankK, accountK, ibcK)
+	})
+
+	whenChainIsRegistered := When("chain is registered", func() {
+		nexusK.GetChainFunc = func(sdk.Context, nexus.ChainName) (nexus.Chain, bool) { return chain, true }
+	})
+
+	isChainActivated := func(isActivated bool) func() {
+		return func() {
+			nexusK.IsChainActivatedFunc = func(_ sdk.Context, chain nexus.Chain) bool { return isActivated }
+		}
+	}
+
+	isAssetRegistered := func(isRegistered bool) func() {
+		return func() {
+			nexusK.IsAssetRegisteredFunc = func(sdk.Context, nexus.Chain, string) bool { return isRegistered }
+		}
+	}
+
+	isMessageFound := func(isFound bool, status nexus.GeneralMessage_Status) func() {
+		return func() {
+			nexusK.GetMessageFunc = func(ctx sdk.Context, messageID nexus.MessageID) (nexus.GeneralMessage, bool) {
+				if !isFound {
+					return nexus.GeneralMessage{}, false
+				}
+
+				return nexus.GeneralMessage{
+					ID:          nexus.MessageID{ID: id, Chain: chain.Name},
+					SourceChain: nexustestutils.RandomChainName(),
+					Sender:      evmtestutils.RandomAddress().Hex(),
+					Receiver:    rand.AccAddr().String(),
+					PayloadHash: crypto.Keccak256Hash(payload).Bytes(),
+					Status:      status,
+					Asset:       &coin,
+				}, true
+
+			}
+		}
+	}
+
+	requestIsMade := When("an execute message request is made", func() {
+		req = types.NewExecuteMessage(
+			rand.AccAddr(),
+			nexus.MessageID{Chain: chain.Name, ID: id},
+			payload,
+		)
+	})
+
+	executeFailsWithError := func(msg string) func(t *testing.T) {
+		return func(t *testing.T) {
+			_, err := server.ExecuteMessage(sdk.WrapSDKContext(ctx), req)
+			assert.ErrorContains(t, err, msg)
+		}
+	}
+
+	t.Run("execute message", func(t *testing.T) {
+		givenMsgServer.
+			Branch(
+				When("chain is not registered", func() {
+					nexusK.GetChainFunc = func(_ sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
+						return nexus.Chain{}, false
+					}
+				}).
+					When2(requestIsMade).
+					Then("should fail", executeFailsWithError("invalid chain")),
+
+				whenChainIsRegistered.
+					When("chain is not activated", isChainActivated(false)).
+					When2(requestIsMade).
+					Then("should fail", executeFailsWithError("not activated")),
+
+				whenChainIsRegistered.
+					When("chain is activated", isChainActivated(true)).
+					When("general message is not found", isMessageFound(false, nexus.NonExistent)).
+					When2(requestIsMade).
+					Then("should fail", executeFailsWithError("not found")),
+
+				whenChainIsRegistered.
+					When("chain is activated", isChainActivated(true)).
+					When("general message is found", isMessageFound(true, nexus.Approved)).
+					When("asset is registered", isAssetRegistered(true)).
+					When("payload does not match", func() {
+						req = types.NewExecuteMessage(
+							rand.AccAddr(),
+							nexus.MessageID{Chain: chain.Name, ID: id},
+							rand.BytesBetween(100, 500),
+						)
+					}).
+					Then("should fail", executeFailsWithError("payload hash does not match")),
+
+				whenChainIsRegistered.
+					When("chain is activated", isChainActivated(true)).
+					When("asset is registered", isAssetRegistered(true)).
+					When("general message already executed", isMessageFound(true, nexus.Executed)).
+					When2(requestIsMade).
+					Then("should fail", executeFailsWithError("already executed")),
+
+				whenChainIsRegistered.
+					When("chain is activated", isChainActivated(true)).
+					When("asset is registered", isAssetRegistered(true)).
+					When("general message is found", isMessageFound(true, nexus.Approved)).
+					When("payload with version is invalid", func() {
+						payload = rand.BytesBetween(100, 500)
+					}).
+					When2(requestIsMade).
+					Then("should fail", executeFailsWithError("invalid payload with version")),
+
+				whenChainIsRegistered.
+					When("chain is activated", isChainActivated(true)).
+					When("asset is registered", isAssetRegistered(true)).
+					When("general message is found", isMessageFound(true, nexus.Approved)).
+					When("payload is invalid", func() {
+						bytesType := funcs.Must(abi.NewType("bytes", "bytes", nil))
+						bytes32Type := funcs.Must(abi.NewType("bytes32", "bytes32", nil))
+
+						versionBz, _ := hexutil.Decode(types.CosmwasmV1)
+						var bz32 [32]byte
+						copy(bz32[:], versionBz)
+
+						payload = funcs.Must(abi.Arguments{{Type: bytes32Type}, {Type: bytesType}}.Pack(
+							bz32,
+							rand.BytesBetween(100, 500),
+						))
+					}).
+					When2(requestIsMade).
+					Then("should fail", executeFailsWithError("invalid payload")),
+
+				whenChainIsRegistered.
+					When("chain is activated", isChainActivated(true)).
+					When("asset is registered", isAssetRegistered(true)).
+					When("general message is found", isMessageFound(true, nexus.Approved)).
+					When("payload with is invalid", func() { payload = randPayload() }).
+					When2(requestIsMade).
+					Then("should success", func(t *testing.T) {
+						_, err := server.ExecuteMessage(sdk.WrapSDKContext(ctx), req)
+						fmt.Println(err)
+						assert.NoError(t, err)
+					}),
+			).Run(t)
+	})
+}
+
 func randomMsgConfirmDeposit() *types.ConfirmDepositRequest {
 	return types.NewConfirmDepositRequest(
 		rand.AccAddr(),
@@ -989,4 +1187,37 @@ func randomTransfer(asset string, chain nexus.ChainName) nexus.CrossChainTransfe
 		},
 		sdk.NewInt64Coin(asset, rand.I64Between(1, 10000000000)),
 	)
+}
+
+func randPayload() []byte {
+	bytesType := funcs.Must(abi.NewType("bytes", "bytes", nil))
+	bytes32Type := funcs.Must(abi.NewType("bytes32", "bytes32", nil))
+	stringType := funcs.Must(abi.NewType("string", "string", nil))
+	stringArrayType := funcs.Must(abi.NewType("string[]", "string[]", nil))
+
+	argNum := int(rand2.I64Between(1, 10))
+
+	var args abi.Arguments
+	for i := 0; i < argNum; i += 1 {
+		args = append(args, abi.Argument{Type: stringType})
+	}
+
+	schema := abi.Arguments{{Type: stringType}, {Type: stringArrayType}, {Type: stringArrayType}, {Type: bytesType}}
+	payload := funcs.Must(
+		schema.Pack(
+			rand.StrBetween(5, 10),
+			slices.Expand2(func() string { return rand.Str(5) }, argNum),
+			slices.Expand2(func() string { return "string" }, argNum),
+			funcs.Must(args.Pack(slices.Expand2(func() interface{} { return "string" }, argNum)...)),
+		),
+	)
+
+	versionBz, _ := hexutil.Decode(types.CosmwasmV1)
+	var bz32 [32]byte
+	copy(bz32[:], versionBz)
+
+	return funcs.Must(abi.Arguments{{Type: bytes32Type}, {Type: bytesType}}.Pack(
+		bz32,
+		payload,
+	))
 }

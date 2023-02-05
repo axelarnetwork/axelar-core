@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -12,6 +13,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
 // IBCKeeper provides function to send IBC transfer
@@ -34,12 +36,11 @@ func (i IBCKeeper) SendIBCTransfer(ctx sdk.Context, transfer types.IBCTransfer) 
 		return err
 	}
 
-	_, state, err := i.channelK.GetChannelClientState(ctx, transfer.PortID, transfer.ChannelID)
+	height, err := i.getPacketTimeoutHeight(ctx, transfer.PortID, transfer.ChannelID)
 	if err != nil {
 		return err
 	}
 
-	height := clienttypes.NewHeight(state.GetLatestHeight().GetRevisionNumber(), state.GetLatestHeight().GetRevisionHeight()+i.GetRouteTimeoutWindow(ctx))
 	return i.ibcTransferK.SendTransfer(ctx, transfer.PortID, transfer.ChannelID, transfer.Token, transfer.Sender, transfer.Receiver, height, 0)
 }
 
@@ -59,4 +60,53 @@ func (i IBCKeeper) ParseIBCDenom(ctx sdk.Context, ibcDenom string) (ibctypes.Den
 		)
 	}
 	return denomTrace, nil
+}
+
+// SendMessage sends general message via ICS20 packet memo
+func (i IBCKeeper) SendMessage(c context.Context, destinationAddress string, asset sdk.Coin, payload string, id nexus.MessageID) error {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	portID, channelID, err := i.getPortAndChannel(ctx, id.Chain)
+	if err != nil {
+		return err
+	}
+
+	height, err := i.getPacketTimeoutHeight(ctx, portID, channelID)
+	if err != nil {
+		return err
+	}
+
+	msg := ibctypes.NewMsgTransfer(portID, channelID, asset, types.MessageSender.String(), destinationAddress, height, 0)
+	msg.Memo = payload
+
+	res, err := i.ibcTransferK.Transfer(c, msg)
+	if err != nil {
+		return err
+	}
+
+	return i.SetSeqMessageIDMapping(ctx, portID, channelID, res.Sequence, id)
+}
+
+func (i IBCKeeper) getPacketTimeoutHeight(ctx sdk.Context, portID, channelID string) (clienttypes.Height, error) {
+	_, state, err := i.channelK.GetChannelClientState(ctx, portID, channelID)
+	if err != nil {
+		return clienttypes.Height{}, err
+	}
+
+	return clienttypes.NewHeight(state.GetLatestHeight().GetRevisionNumber(), state.GetLatestHeight().GetRevisionHeight()+i.GetRouteTimeoutWindow(ctx)), nil
+}
+
+func (i IBCKeeper) getPortAndChannel(ctx sdk.Context, chain nexus.ChainName) (string, string, error) {
+	path, ok := i.GetIBCPath(ctx, chain)
+	if !ok {
+		return "", "", fmt.Errorf("%s does not have a valid IBC path", chain.String())
+	}
+
+	pathSplit := strings.SplitN(path, "/", 2)
+	if len(pathSplit) != 2 {
+		return "", "", fmt.Errorf("invalid path %s for chain %s", path, chain.String())
+	}
+
+	return pathSplit[0], pathSplit[1], nil
+
 }

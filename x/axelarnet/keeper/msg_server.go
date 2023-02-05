@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/query"
 	ibctransfertypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils/events"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
+	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/utils/funcs"
@@ -410,6 +412,66 @@ func (s msgServer) RetryIBCTransfer(c context.Context, req *types.RetryIBCTransf
 	return &types.RetryIBCTransferResponse{}, nil
 }
 
+// ExecuteMessage translates an abi encoded payload and sends to a cosmos chain
+func (s msgServer) ExecuteMessage(c context.Context, req *types.ExecuteMessageRequest) (*types.ExecuteMessageResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	chain, ok := s.nexus.GetChain(ctx, req.ID.Chain)
+	if !ok {
+		return nil, fmt.Errorf("invalid chain %s", req.ID.Chain)
+	}
+
+	if !s.nexus.IsChainActivated(ctx, chain) {
+		return nil, fmt.Errorf("chain %s is not activated", chain.Name)
+	}
+
+	msg, ok := s.nexus.GetMessage(ctx, req.ID)
+	if !ok {
+		return nil, fmt.Errorf("message %s not found", req.ID)
+	}
+
+	sourceChain := funcs.MustOk(s.nexus.GetChain(ctx, msg.SourceChain))
+	if !sourceChain.IsFrom(evmtypes.ModuleName) {
+		return nil, fmt.Errorf("message is not from an EVM chain")
+	}
+
+	if msg.Type() == nexus.TypeGeneralMessageWithToken {
+		funcs.MustTrue(s.nexus.IsAssetRegistered(ctx, chain, msg.Asset.GetDenom()))
+	}
+
+	if !msg.Match(req.Payload) {
+		return nil, fmt.Errorf("payload hash does not match")
+	}
+
+	if !(msg.Is(nexus.Approved) || msg.Is(nexus.Failed)) {
+		return nil, fmt.Errorf("general message %s already executed", req.ID)
+	}
+
+	bz, err := types.TranslateMessage(msg, req.Payload)
+	if err != nil {
+		return nil, sdkerrors.Wrap(err, "invalid payload")
+	}
+
+	asset, err := s.escrowAssetToMessageSender(ctx, req.Sender, msg)
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.ibcK.SendMessage(c, msg.Receiver, asset, string(bz), msg.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.nexus.SetMessageSent(ctx, msg.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	s.Logger(ctx).Debug("set general message status to sent", "messageID", msg.ID.String())
+
+	return &types.ExecuteMessageResponse{}, nil
+}
+
 // toICS20 converts a cross chain transfer to ICS20 token
 func toICS20(ctx sdk.Context, k Keeper, n types.Nexus, coin sdk.Coin) sdk.Coin {
 	// if chain or path not found, it will create coin with base denom
@@ -477,4 +539,35 @@ func prepareTransfer(ctx sdk.Context, k Keeper, n types.Nexus, b types.BankKeepe
 	}
 
 	return coin, sender, nil
+}
+
+// all general messages are sent from the Axelar general message sender, so receiver can use the packet sender to authenticate the message
+// escrowAssetToMessageSender sends the asset to general msg sender account
+func (s msgServer) escrowAssetToMessageSender(ctx sdk.Context, reqSender sdk.AccAddress, msg nexus.GeneralMessage) (sdk.Coin, error) {
+	var asset sdk.Coin
+	var acc sdk.AccAddress
+	var err error
+
+	switch msg.Type() {
+	case nexus.TypeGeneralMessage:
+		// pure general message, take dust amount from request sender to satisfy ibc transfer requirements
+		asset = sdk.NewCoin(exported.NativeAsset, sdk.NewInt(1))
+		acc = reqSender
+	case nexus.TypeGeneralMessageWithToken:
+		// general message with token, get token from corresponding account
+		asset, acc, err = prepareTransfer(ctx, s.Keeper, s.nexus, s.bank, s.account, *msg.Asset)
+		if err != nil {
+			return sdk.Coin{}, err
+		}
+	default:
+		return sdk.Coin{}, fmt.Errorf("unrecognized message type")
+	}
+
+	// use GeneralMessageSender account as the canonical general message sender
+	err = s.bank.SendCoins(ctx, acc, types.MessageSender, sdk.NewCoins(asset))
+	if err != nil {
+		return sdk.Coin{}, err
+	}
+
+	return asset, nil
 }

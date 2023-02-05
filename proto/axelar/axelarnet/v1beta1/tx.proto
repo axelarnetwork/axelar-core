@@ -157,3 +157,14 @@ message RetryIBCTransferRequest {
 }
 
 message RetryIBCTransferResponse {}
+
+message ExecuteMessageRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  nexus.exported.v1beta1.MessageID id = 2
+      [ (gogoproto.customname) = "ID", (gogoproto.nullable) = false ];
+  bytes payload = 3;
+}
+
+message ExecuteMessageResponse {}

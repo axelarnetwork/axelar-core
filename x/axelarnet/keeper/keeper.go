@@ -28,8 +28,9 @@ var (
 
 	_ = key.RegisterStaticKey(types.ModuleName, 2) // failedTransferPrefix is deprecated in v0.23
 
-	seqIDMappingPrefix = key.RegisterStaticKey(types.ModuleName, 3)
-	ibcPathPrefix      = key.RegisterStaticKey(types.ModuleName, 4)
+	seqIDMappingPrefix           = key.RegisterStaticKey(types.ModuleName, 3)
+	ibcPathPrefix                = key.RegisterStaticKey(types.ModuleName, 4)
+	seqGeneralMsgIDMappingPrefix = key.RegisterStaticKey(types.ModuleName, 5)
 
 	// reserved values
 	// nonceKey is deprecated in v0.23
@@ -328,4 +329,38 @@ func (k Keeper) getSeqIDMappings(ctx sdk.Context) map[string]uint64 {
 	}
 
 	return mapping
+}
+
+func getSeqMessageIDMappingKey(portID, channelID string, seq uint64) key.Key {
+	return seqGeneralMsgIDMappingPrefix.
+		Append(key.FromStr(portID)).
+		Append(key.FromStr(channelID)).
+		Append(key.FromUInt(seq))
+}
+
+// SetSeqMessageIDMapping sets general message ID by port, channel and packet seq
+func (k Keeper) SetSeqMessageIDMapping(ctx sdk.Context, portID, channelID string, seq uint64, id nexus.MessageID) error {
+	if _, found := k.GetSeqMessageIDMapping(ctx, portID, channelID, seq); found {
+		return fmt.Errorf("message ID already set for %s/%s %d", channelID, portID, seq)
+	}
+
+	funcs.MustNoErr(
+		k.getStore(ctx).SetNewValidated(
+			getSeqMessageIDMappingKey(portID, channelID, seq),
+			&id,
+		),
+	)
+
+	return nil
+}
+
+// GetSeqMessageIDMapping gets general message ID by port, channel and packet seq
+func (k Keeper) GetSeqMessageIDMapping(ctx sdk.Context, portID, channelID string, seq uint64) (nexus.MessageID, bool) {
+	var val nexus.MessageID
+	return val, k.getStore(ctx).GetNew(getSeqMessageIDMappingKey(portID, channelID, seq), &val)
+}
+
+// DeleteSeqMessageIDMapping deletes (port, channel, packet seq) -> general message ID mapping
+func (k Keeper) DeleteSeqMessageIDMapping(ctx sdk.Context, portID, channelID string, seq uint64) {
+	k.getStore(ctx).DeleteRaw(getSeqMessageIDMappingKey(portID, channelID, seq).Bytes())
 }
