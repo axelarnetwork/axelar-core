@@ -28,3 +28,21 @@ func RandomTransferID() exported.TransferID {
 func RandomDirection() exported.TransferDirection {
 	return exported.TransferDirection(rand.I64Between(1, int64(len(exported.TransferDirection_name))))
 }
+
+// RandMessage generates a random  message
+func RandMessage(statuses ...exported.GeneralMessage_Status) exported.GeneralMessage {
+	if len(statuses) == 0 {
+		statuses = []exported.GeneralMessage_Status{exported.Approved, exported.Sent, exported.Executed, exported.Failed}
+	}
+	coin := rand.Coin()
+	return exported.NewGeneralMessage(
+		rand.StrBetween(10, 20),
+		RandomChainName(),
+		rand.AccAddr().String(),
+		RandomChainName(),
+		rand.AccAddr().String(),
+		rand.Bytes(32),
+		rand.Of(statuses...),
+		&coin,
+	)
+}

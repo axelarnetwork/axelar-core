@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
@@ -26,6 +27,7 @@ var (
 	boolType              = funcs.Must(abi.NewType("bool", "bool", nil))
 	stringType            = funcs.Must(abi.NewType("string", "string", nil))
 	bytesType             = funcs.Must(abi.NewType("bytes", "bytes", nil))
+	bytes32Type           = funcs.Must(abi.NewType("bytes32", "bytes32", nil))
 	uint8Type             = funcs.Must(abi.NewType("uint8", "uint8", nil))
 	uint64Type            = funcs.Must(abi.NewType("uint64", "uint64", nil))
 	uint64ArrayType       = funcs.Must(abi.NewType("uint64[]", "uint64[]", nil))
@@ -34,7 +36,7 @@ var (
 	stringArrayNestedType = funcs.Must(abi.NewType("string[][]", "string[][]", nil))
 )
 
-func TestNewInterpreter(t *testing.T) {
+func TestTranslator(t *testing.T) {
 	methodName := "swap_and_forward"
 	str := "ibc/D189335C6E4A68B513C10AB227BF1C1D38C746766278BA3EEB4FB14124F1D858"
 	maxUint256Str := utils.MaxUint.String()
@@ -96,7 +98,11 @@ func TestNewInterpreter(t *testing.T) {
 		Sender:      evmtestutils.RandomAddress().Hex(),
 		Receiver:    rand.AccAddr().String(),
 	}
-	msg, err := types.ConstructWasmMessage(gm, payload)
+
+	var v [32]byte
+	copy(v[:], funcs.Must(hexutil.Decode(types.CosmwasmV1)))
+
+	msg, err := types.ConstructWasmMessageV1(gm, payload)
 	assert.NoError(t, err)
 
 	jsonObject := make(map[string]interface{})
@@ -184,4 +190,129 @@ func TestNewInterpreter(t *testing.T) {
 	actualHexString, ok := executeMsg["hex_string"].(string)
 	assert.True(t, ok)
 	assert.Equal(t, hexBzStr, actualHexString)
+}
+
+func TestConstructWasmMessageV2(t *testing.T) {
+	args := abi.Arguments{{Type: bytes32Type}, {Type: bytesType}}
+	var ver [32]byte
+	copy(ver[:], funcs.Must(hexutil.Decode(types.CosmwasmV2)))
+
+	t.Run("should return error if invalid message payload", func(t *testing.T) {
+		wasmMsg := []byte(`
+			{
+				"contract_name": {"source_chain": "ethereum", "source_address": [3, 12, 143]},
+				"contract_name2": {"source_chain": "ethereum", "source_address": [3, 12, 143]}
+			}
+		`)
+
+		msg := nexustestutils.RandMessage()
+		msg.SourceChain = "ethereum"
+		payload := funcs.Must(args.Pack(ver, wasmMsg))
+		_, err := types.TranslateMessage(msg, payload)
+		assert.ErrorContains(t, err, "invalid payload")
+	})
+
+	t.Run("should return error if invalid message payload", func(t *testing.T) {
+		wasmMsg := []byte(`{"contract_name": [1,2,3,4,5]}`)
+
+		msg := nexustestutils.RandMessage()
+		msg.SourceChain = "ethereum"
+		payload := funcs.Must(args.Pack(ver, wasmMsg))
+		_, err := types.TranslateMessage(msg, payload)
+		assert.ErrorContains(t, err, "invalid arguments")
+	})
+
+	t.Run("should return error if incorrect payload contains incorrect source chain", func(t *testing.T) {
+		wasmMsg := []byte(`{"contract_name": {"source_chain": 1.1, "source_address": [3, 12, 143]}}`)
+
+		msg := nexustestutils.RandMessage()
+		payload := funcs.Must(args.Pack(ver, wasmMsg))
+		_, err := types.TranslateMessage(msg, payload)
+		assert.ErrorContains(t, err, "source chain does not match expected")
+	})
+
+	t.Run("should return error if incorrect payload contains incorrect source address", func(t *testing.T) {
+		wasmMsg := []byte(`
+			{
+				"contract_name": {"source_chain": "ethereum", "source_address": [3, 12, 143]}
+			}
+		`)
+
+		msg := nexustestutils.RandMessage()
+		msg.SourceChain = "ethereum"
+		payload := funcs.Must(args.Pack(ver, wasmMsg))
+		_, err := types.TranslateMessage(msg, payload)
+		assert.ErrorContains(t, err, "source address does not match expected")
+	})
+
+	t.Run("should return error if incorrect payload contains incorrect source address", func(t *testing.T) {
+
+		wasmMsg := []byte(`
+			{
+				"contract_name": {"source_chain": "ethereum", "source_address": [3, 12, 143]}
+			}
+		`)
+
+		msg := nexustestutils.RandMessage()
+		msg.SourceChain = "ethereum"
+		payload := funcs.Must(args.Pack(ver, wasmMsg))
+		_, err := types.TranslateMessage(msg, payload)
+		assert.ErrorContains(t, err, "source address does not match expected")
+	})
+
+	t.Run("should construct wasm message", func(t *testing.T) {
+		bz := []byte(`
+			{
+				"contract_name": {
+					"source_chain": "Ethereum",
+					"source_address": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
+					"nested": {
+						"denom": "ibc/D189335C6E4A68B513C10AB227BF1C1D38C746766278BA3EEB4FB14124F1D858", 
+						"amount": "1000000000000000000000"
+					}
+				}
+			}
+		`)
+
+		msg := nexustestutils.RandMessage()
+		msg.SourceChain = "ethereum"
+		msg.Sender = "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955"
+		payload := funcs.Must(args.Pack(ver, bz))
+
+		translatedBz, err := types.TranslateMessage(msg, payload)
+		assert.NoError(t, err)
+
+		jsonObject := make(map[string]interface{})
+		err = json.Unmarshal(translatedBz, &jsonObject)
+		assert.NoError(t, err)
+
+		wasmRaw, ok := jsonObject["wasm"]
+		assert.True(t, ok)
+
+		wasm, ok := wasmRaw.(map[string]interface{})
+		assert.True(t, ok)
+
+		// make sure execute message can be serialized
+		_, err = json.Marshal(wasmRaw)
+		assert.NoError(t, err)
+
+		wasmMsg, ok := wasm["msg"].(map[string]interface{})
+		assert.True(t, ok)
+
+		executeMsg, ok := wasmMsg["contract_name"].(map[string]interface{})
+		assert.True(t, ok)
+
+		actualSourceChain, ok := executeMsg["source_chain"].(string)
+		assert.True(t, ok)
+		assert.Equal(t, "Ethereum", actualSourceChain)
+
+		actualSourceAddress, ok := executeMsg["source_address"].(string)
+		assert.True(t, ok)
+		assert.Equal(t, "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955", actualSourceAddress)
+
+		actualNested, ok := executeMsg["nested"].(map[string]interface{})
+		assert.True(t, ok)
+		assert.Equal(t, "ibc/D189335C6E4A68B513C10AB227BF1C1D38C746766278BA3EEB4FB14124F1D858", actualNested["denom"])
+		assert.Equal(t, "1000000000000000000000", actualNested["amount"])
+	})
 }
