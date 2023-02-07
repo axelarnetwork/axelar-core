@@ -1043,7 +1043,7 @@ func TestExecuteMessage(t *testing.T) {
 
 	isMessageFound := func(isFound bool, status nexus.GeneralMessage_Status) func() {
 		return func() {
-			nexusK.GetMessageWithStatusFunc = func(ctx sdk.Context, messageID nexus.MessageID, statuses []nexus.GeneralMessage_Status) (nexus.GeneralMessage, bool) {
+			nexusK.GetMessageFunc = func(ctx sdk.Context, messageID nexus.MessageID) (nexus.GeneralMessage, bool) {
 				if !isFound {
 					return nexus.GeneralMessage{}, false
 				}
@@ -1163,6 +1163,7 @@ func TestExecuteMessage(t *testing.T) {
 			).Run(t)
 	})
 }
+
 func TestHandleCallContract(t *testing.T) {
 	var (
 		server types.MsgServiceServer
@@ -1179,9 +1180,9 @@ func TestHandleCallContract(t *testing.T) {
 		ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{}, &mock.ChannelKeeperMock{})
 		server = keeper.NewMsgServerImpl(k, nexusK, &mock.BankKeeperMock{}, &mock.AccountKeeperMock{}, ibcK)
 		count := 0
-		nexusK.GetGeneralMessageIDFunc = func(_ sdk.Context, sourceTxHash string, sourceChainName nexus.ChainName) string {
+		nexusK.GetGeneralMessageIDFunc = func(_ sdk.Context, sourceTxHash string) string {
 			count++
-			return fmt.Sprintf("%s-%s-%x", sourceTxHash, sourceChainName, count)
+			return fmt.Sprintf("%s-%x", sourceTxHash, count)
 		}
 	})
 
@@ -1198,6 +1199,12 @@ func TestHandleCallContract(t *testing.T) {
 	whenChainIsActivated := When("chain is activated", func() {
 		nexusK.IsChainActivatedFunc = func(_ sdk.Context, chain nexus.Chain) bool {
 			return true
+		}
+	})
+
+	whenAddressIsValid := When("address is valid", func() {
+		nexusK.ValidateAddressFunc = func(_ sdk.Context, address nexus.CrossChainAddress) error {
+			return nil
 		}
 	})
 
@@ -1226,6 +1233,7 @@ func TestHandleCallContract(t *testing.T) {
 			Branch(
 				whenChainIsRegistered.
 					When2(whenChainIsActivated).
+					When2(whenAddressIsValid).
 					When2(whenSetNewMessageSucceeds).
 					When2(requestIsMade).
 					Then("call contract succeeds", func(t *testing.T) {
@@ -1234,9 +1242,18 @@ func TestHandleCallContract(t *testing.T) {
 					}),
 				whenChainIsRegistered.
 					When2(whenChainIsActivated).
+					When2(whenAddressIsValid).
 					When("set new message fails", func() {
 						nexusK.SetNewMessageFunc = func(_ sdk.Context, m nexus.GeneralMessage) error {
 							return fmt.Errorf("failed to set message")
+						}
+					}).
+					Then2(callFails),
+				whenChainIsRegistered.
+					When2(whenChainIsActivated).
+					When("address is not valid", func() {
+						nexusK.ValidateAddressFunc = func(_ sdk.Context, address nexus.CrossChainAddress) error {
+							return fmt.Errorf("address is invalid")
 						}
 					}).
 					Then2(callFails),

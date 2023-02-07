@@ -138,20 +138,22 @@ func NewApproveContractCallCommand(
 	}
 }
 
-// NewApproveContractCallCommandFromGeneralMessage creates a command to approve contract call
-func NewApproveContractCallCommandFromGeneralMessage(
+// NewApproveContractCallCommandGeneric creates a command to approve contract call
+func NewApproveContractCallCommandGeneric(
 	chainID sdk.Int,
 	keyID multisig.KeyID,
-	msg nexus.GeneralMessage,
+	contractAddress common.Address,
+	payloadHash common.Hash,
+	sourceTxID common.Hash,
+	sourceChain nexus.ChainName,
+	sender string,
+	ID string,
 ) Command {
-	contractAddress := common.HexToAddress(msg.Receiver)
-	dummyTxID := common.BytesToHash(make([]byte, common.HashLength))
-	payloadHash := common.BytesToHash(msg.PayloadHash)
-	commandID := NewCommandID([]byte(fmt.Sprintf("%s_%s_%s", contractAddress, payloadHash, msg.ID)), chainID)
+	commandID := NewCommandID([]byte(ID), chainID)
 	return Command{
 		ID:         commandID,
 		Type:       COMMAND_TYPE_APPROVE_CONTRACT_CALL,
-		Params:     createApproveContractCallParamsFromGeneralMesssage(contractAddress, payloadHash, dummyTxID, string(msg.SourceChain), msg.Sender),
+		Params:     createApproveContractCallParamsFromGeneralMesssage(contractAddress, payloadHash, sourceTxID, string(sourceChain), sender),
 		KeyID:      keyID,
 		MaxGasCost: approveContractCallMaxGasCost,
 	}

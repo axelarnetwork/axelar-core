@@ -79,7 +79,7 @@ message ContractCallSubmitted {
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
   string contract_address = 3;
-  string payload = 4;
-  string payload_hash = 5;
-  string msg_id = 6;
+  bytes payload = 4;
+  bytes payload_hash = 5;
+  string msg_id = 6 [ (gogoproto.customname) = "MsgID" ];
 }

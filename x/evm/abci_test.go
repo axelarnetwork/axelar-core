@@ -84,6 +84,11 @@ func TestHandleGeneralMessage(t *testing.T) {
 			destinationCk.GetChainIDFunc = func(ctx sdk.Context) (sdk.Int, bool) { return sdk.ZeroInt(), isSet }
 		}
 	}
+	isChainActivated := func(isActivated bool) func() {
+		return func() {
+			n.IsChainActivatedFunc = func(_ sdk.Context, _ nexus.Chain) bool { return isActivated }
+		}
+	}
 
 	isCurrentKeySet := func(isSet bool) func() {
 		return func() {
@@ -93,6 +98,17 @@ func TestHandleGeneralMessage(t *testing.T) {
 				}
 
 				return multisigTestUtils.KeyID(), true
+			}
+		}
+	}
+
+	isGatewayAddressSet := func(isSet bool) func() {
+		return func() {
+			destinationCk.GetGatewayAddressFunc = func(ctx sdk.Context) (types.Address, bool) {
+				if !isSet {
+					return types.ZeroAddress, false
+				}
+				return evmTestUtils.RandomAddress(), true
 			}
 		}
 	}
@@ -118,7 +134,7 @@ func TestHandleGeneralMessage(t *testing.T) {
 		When("destination chain id is set", isDestinationChainIDSet(true)).
 		When("current key not set", isCurrentKeySet(false)).
 		Then("should error", func(t *testing.T) {
-			err := handleGeneralMessage(ctx, destinationCk, n, multisigKeeper, destinationChain, genMsg)
+			_, err := handleGeneralMessage(ctx, destinationCk, n, multisigKeeper, destinationChain, genMsg)
 			assert.EqualError(t, err, "current key not set")
 		}).
 		Run(t)
@@ -126,6 +142,31 @@ func TestHandleGeneralMessage(t *testing.T) {
 	givenGeneralMessageEnqueued.
 		When("destination chain id is set", isDestinationChainIDSet(true)).
 		When("current key is set", isCurrentKeySet(true)).
+		When("chain is activated", isChainActivated((true))).
+		When("gateway not set", isGatewayAddressSet(false)).
+		Then("should error", func(t *testing.T) {
+			_, err := handleGeneralMessage(ctx, destinationCk, n, multisigKeeper, destinationChain, genMsg)
+			assert.EqualError(t, err, "destination chain gateway not deployed yet")
+		}).
+		Run(t)
+	givenGeneralMessageEnqueued.
+		When("destination chain id is set", isDestinationChainIDSet(true)).
+		When("current key is set", isCurrentKeySet(true)).
+		When("chain is activated", isChainActivated((true))).
+		When("gateway is set", isGatewayAddressSet(true)).
+		Then("should error", func(t *testing.T) {
+			badMsg := genMsg
+			badMsg.Receiver = "0xFF"
+			_, err := handleGeneralMessage(ctx, destinationCk, n, multisigKeeper, destinationChain, badMsg)
+			assert.EqualError(t, err, "invalid contract address")
+		}).
+		Run(t)
+
+	givenGeneralMessageEnqueued.
+		When("destination chain id is set", isDestinationChainIDSet(true)).
+		When("current key is set", isCurrentKeySet(true)).
+		When("chain is activated", isChainActivated((true))).
+		When("gateway is set", isGatewayAddressSet(true)).
 		When("enqueue command fails", enqueueCommandSucceed(false)).
 		Then("should panic", panicWith("call should not have failed: enqueue error")).
 		Run(t)
@@ -133,9 +174,12 @@ func TestHandleGeneralMessage(t *testing.T) {
 	givenGeneralMessageEnqueued.
 		When("destination chain id is set", isDestinationChainIDSet(true)).
 		When("current key is set", isCurrentKeySet(true)).
+		When("chain is activated", isChainActivated((true))).
+		When("gateway is set", isGatewayAddressSet(true)).
 		When("enqueue command succeeds", enqueueCommandSucceed(true)).
 		Then("should succeed", func(t *testing.T) {
-			handleGeneralMessage(ctx, destinationCk, n, multisigKeeper, destinationChain, genMsg)
+			_, err := handleGeneralMessage(ctx, destinationCk, n, multisigKeeper, destinationChain, genMsg)
+			assert.NoError(t, err)
 			assert.Len(t, destinationCk.EnqueueCommandCalls(), 1)
 		}).
 		Run(t)
@@ -175,10 +219,14 @@ func TestHandleGeneralMessages(t *testing.T) {
 		ck1.EnqueueCommandFunc = func(ctx sdk.Context, cmd types.Command) error { return nil }
 		ck2.GetChainIDFunc = func(ctx sdk.Context) (sdk.Int, bool) { return sdk.ZeroInt(), true }
 		ck2.EnqueueCommandFunc = func(ctx sdk.Context, cmd types.Command) error { return nil }
+		ck1.GetGatewayAddressFunc = func(ctx sdk.Context) (types.Address, bool) { return evmTestUtils.RandomAddress(), true }
+		ck2.GetGatewayAddressFunc = func(ctx sdk.Context) (types.Address, bool) { return evmTestUtils.RandomAddress(), true }
+		n.SetMessageApprovedFunc = func(ctx sdk.Context, messageID nexus.MessageID) error { return nil }
+		n.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return true }
 	})
 	withGeneralMessages := func(numPerChain map[nexus.ChainName]int) WhenStatement {
 		return When("having general messages", func() {
-			n.ConsumeApprovedMessagesFunc = func(_ sdk.Context, chain nexus.ChainName, limit int64) []nexus.GeneralMessage {
+			n.GetApprovedMessagesFunc = func(_ sdk.Context, chain nexus.ChainName, limit int64) []nexus.GeneralMessage {
 
 				msgs := []nexus.GeneralMessage{}
 				for i := 0; i < int(limit) && i < numPerChain[chain]; i++ {

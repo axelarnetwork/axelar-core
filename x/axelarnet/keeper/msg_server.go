@@ -57,28 +57,35 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 		return nil, fmt.Errorf("chain %s is not activated yet", chain.Name)
 	}
 
-	txHash := sha256.Sum256(ctx.TxBytes())
-	payloadHash := crypto.Keccak256(req.Payload)
-	genMsg := nexus.NewGeneralMessage(s.nexus.GetGeneralMessageID(ctx, hex.EncodeToString(txHash[:]), exported.Axelarnet.Name), exported.Axelarnet.Name, req.Sender.String(), req.Chain, req.ContractAddress, payloadHash, nexus.Approved, nil)
-	err := s.nexus.SetNewMessage(ctx, genMsg)
-	if err != nil {
-		return nil, fmt.Errorf("failed to add general message %v", err)
+	recipient := nexus.CrossChainAddress{Chain: chain, Address: req.ContractAddress}
+	if err := s.nexus.ValidateAddress(ctx, recipient); err != nil {
+		return nil, err
 	}
 
-	ctx.GasMeter().ConsumeGas(storetypes.Gas(1500000000), "call-contract")
+	txHash := sha256.Sum256(ctx.TxBytes())
+	payloadHash := crypto.Keccak256(req.Payload)
+	msg := nexus.NewGeneralMessage(s.nexus.GetGeneralMessageID(ctx, hex.EncodeToString(txHash[:])), exported.Axelarnet.Name, req.Sender.String(), req.Chain, req.ContractAddress, payloadHash, nexus.Approved, nil)
+	err := s.nexus.SetNewMessage(ctx, msg)
+	if err != nil {
+		return nil, sdkerrors.Wrap(err, "failed to add general message")
+	}
+
+	ctx.GasMeter().ConsumeGas(storetypes.Gas(2000000), "call-contract")
 	events.Emit(ctx, &types.ContractCallSubmitted{
-		Sender:           genMsg.Sender,
-		DestinationChain: genMsg.ID.Chain,
-		ContractAddress:  genMsg.Receiver,
-		PayloadHash:      hex.EncodeToString(genMsg.PayloadHash),
-		Payload:          hex.EncodeToString(req.Payload),
-		MsgId:            genMsg.ID.ID,
+		Sender:           msg.Sender,
+		DestinationChain: msg.ID.Chain,
+		ContractAddress:  msg.Receiver,
+		PayloadHash:      msg.PayloadHash,
+		Payload:          req.Payload,
+		MsgID:            msg.ID.ID,
 	})
 
-	s.Logger(ctx).Debug(fmt.Sprintf("successfully enqueued contract call for contract address %s on chain %s with payload hash %s", req.ContractAddress, req.Chain.String(), hex.EncodeToString(payloadHash)),
+	s.Logger(ctx).Debug(fmt.Sprintf("successfully enqueued contract call for contract address %s on chain %s from sender %s with message id %s", req.ContractAddress, req.Chain.String(), req.Sender, msg.ID),
 		types.AttributeKeyDestinationChain, req.Chain.String(),
 		types.AttributeKeyDestinationAddress, req.ContractAddress,
-		types.AttributeKeyContractPayloadHash, hex.EncodeToString(payloadHash),
+		types.AttributeKeySourceAddress, req.Sender,
+		types.AttributeKeyMessageID, msg.ID,
+		types.AttributeKeyPayloadHash, hex.EncodeToString(payloadHash),
 	)
 	return &types.CallContractResponse{}, nil
 }
@@ -467,7 +474,7 @@ func (s msgServer) ExecuteMessage(c context.Context, req *types.ExecuteMessageRe
 		return nil, fmt.Errorf("chain %s is not activated", chain.Name)
 	}
 
-	msg, ok := s.nexus.GetMessageWithStatus(ctx, req.ID, []nexus.GeneralMessage_Status{nexus.Approved, nexus.Failed})
+	msg, ok := s.nexus.GetMessage(ctx, req.ID)
 	if !ok {
 		return nil, fmt.Errorf("message %s not found", req.ID)
 	}

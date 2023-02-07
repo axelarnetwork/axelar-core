@@ -11,6 +11,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/events"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
@@ -542,46 +543,91 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 	}
 }
 
-func handleGeneralMessage(ctx sdk.Context, ck types.ChainKeeper, n types.Nexus, m types.MultisigKeeper, chain nexus.Chain, generalMessage nexus.GeneralMessage) error {
+func validateGeneralMessage(ctx sdk.Context, ck types.ChainKeeper, n types.Nexus, m types.MultisigKeeper, chain nexus.Chain, msg nexus.GeneralMessage) (sdk.Int, multisig.KeyID, error) {
 	chainID := funcs.MustOk(ck.GetChainID(ctx))
+
 	keyID, ok := m.GetCurrentKeyID(ctx, chain.Name)
 	if !ok {
-		funcs.MustNoErr(n.SetMessageFailed(ctx, generalMessage.ID))
-		events.Emit(ctx, &types.ContractCallFailed{
-			Chain:     chain.Name,
-			MessageID: generalMessage.ID.ID,
-			Reason:    "no current key",
-		})
-		ck.Logger(ctx).Debug("Failed to enqueue general message", "DestinationChain", generalMessage.ID.Chain, "MessageID", generalMessage.ID)
-		return fmt.Errorf("current key not set")
+		return chainID, keyID, fmt.Errorf("current key not set")
 	}
 
-	cmd := types.NewApproveContractCallCommandFromGeneralMessage(chainID, keyID, generalMessage)
+	if !n.IsChainActivated(ctx, chain) {
+		return chainID, keyID, fmt.Errorf("destination chain de-activated")
+	}
+
+	if len(msg.Receiver) != 0 && !common.IsHexAddress(msg.Receiver) {
+		return chainID, keyID, fmt.Errorf("invalid contract address")
+	}
+
+	if _, ok := ck.GetGatewayAddress(ctx); !ok {
+		return chainID, keyID, fmt.Errorf("destination chain gateway not deployed yet")
+	}
+	return chainID, keyID, nil
+}
+
+func handleGeneralMessage(ctx sdk.Context, ck types.ChainKeeper, n types.Nexus, m types.MultisigKeeper, chain nexus.Chain, msg nexus.GeneralMessage) (types.CommandID, error) {
+	chainID, keyID, err := validateGeneralMessage(ctx, ck, n, m, chain, msg)
+	if err != nil {
+		return types.CommandID{}, err
+	}
+
+	dummyTxID := common.BytesToHash(make([]byte, common.HashLength))
+	cmd := types.NewApproveContractCallCommandGeneric(chainID, keyID, common.HexToAddress(msg.Receiver), common.BytesToHash(msg.PayloadHash), dummyTxID, msg.SourceChain, msg.Sender, msg.ID.ID)
 	funcs.MustNoErr(ck.EnqueueCommand(ctx, cmd))
 
-	events.Emit(ctx, &types.ContractCallApproved{
-		Chain:            generalMessage.SourceChain,
-		EventID:          types.EventID(generalMessage.ID.ID),
-		CommandID:        cmd.ID,
-		Sender:           generalMessage.Sender,
-		DestinationChain: generalMessage.ID.Chain,
-		ContractAddress:  generalMessage.Receiver,
-		PayloadHash:      types.Hash(common.BytesToHash(generalMessage.PayloadHash)),
-	})
-
-	ck.Logger(ctx).Debug("Enqueued general message", "DestinationChain", generalMessage.ID.Chain, "CommandID", cmd.ID, "MessageID", generalMessage.ID)
-	return nil
+	return cmd.ID, nil
 }
 
 func handleGeneralMessages(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, m types.MultisigKeeper) {
 
 	for _, chain := range slices.Filter(n.GetChains(ctx), types.IsEVMChain) {
 		ck := funcs.Must(bk.ForChain(ctx, chain.Name))
-		endBlockerLimit := ck.GetParams(ctx).EndBlockerLimit // TODO is this ok? This is the same limit used for evm to evm, so could end up processing 2x the limit
-		msgs := n.ConsumeApprovedMessages(ctx, chain.Name, endBlockerLimit)
-		bk.Logger(ctx).Debug("handling general messages", "chain", chain.Name, "number of messages", len(msgs))
+		endBlockerLimit := ck.GetParams(ctx).EndBlockerLimit
+		msgs := n.GetApprovedMessages(ctx, chain.Name, endBlockerLimit)
+		bk.Logger(ctx).Debug(fmt.Sprintf("handling %x general messages", len(msgs)), types.AttributeKeyChain, chain.Name)
+
 		for _, msg := range msgs {
-			handleGeneralMessage(ctx, ck, n, m, chain, msg)
+			success := utils.RunCached(ctx, bk, func(ctx sdk.Context) (bool, error) {
+				cmdID, err := handleGeneralMessage(ctx, ck, n, m, chain, msg)
+				if err != nil {
+					ck.Logger(ctx).Debug(fmt.Sprintf("failed handling general message: %s", err.Error()),
+						types.AttributeKeyChain, chain.Name.String(),
+						types.AttributeKeyMessageID, msg.ID.ID,
+					)
+					events.Emit(ctx, &types.ContractCallFailed{
+						Chain:     chain.Name,
+						MessageID: msg.ID.ID,
+						Reason:    err.Error(),
+					})
+
+					return false, err
+				}
+
+				events.Emit(ctx, &types.ContractCallApproved{
+					Chain:            msg.SourceChain,
+					EventID:          types.EventID(msg.ID.ID),
+					CommandID:        cmdID,
+					Sender:           msg.Sender,
+					DestinationChain: msg.ID.Chain,
+					ContractAddress:  msg.Receiver,
+					PayloadHash:      types.Hash(common.BytesToHash(msg.PayloadHash)),
+				})
+
+				ck.Logger(ctx).Debug("completed handling general message",
+					types.AttributeKeyChain, chain.Name.String(),
+					types.AttributeKeyMessageID, msg.ID.ID,
+					types.AttributeKeyCommandsID, cmdID,
+				)
+
+				return true, nil
+
+			})
+
+			if !success {
+				funcs.MustNoErr(n.SetMessageFailed(ctx, msg.ID))
+			} else {
+				funcs.MustNoErr(n.SetMessageApproved(ctx, msg.ID))
+			}
 		}
 	}
 }

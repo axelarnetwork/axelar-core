@@ -574,8 +574,8 @@
 | `sender` | [string](#string) |  |  |
 | `destination_chain` | [string](#string) |  |  |
 | `contract_address` | [string](#string) |  |  |
-| `payload` | [string](#string) |  |  |
-| `payload_hash` | [string](#string) |  |  |
+| `payload` | [bytes](#bytes) |  |  |
+| `payload_hash` | [bytes](#bytes) |  |  |
 | `msg_id` | [string](#string) |  |  |
 
 

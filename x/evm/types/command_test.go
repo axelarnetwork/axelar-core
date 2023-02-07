@@ -38,7 +38,8 @@ func TestNewApproveContractCallCommandFromGeneralMessage(t *testing.T) {
 	destChain := rand.StrBetween(8, 64)
 	genMsg := nexus.NewGeneralMessage(txHash.Hex(), nexus.ChainName(sourceChain), sender.String(), nexus.ChainName(destChain), contractAddress.Hex(), payloadHash, nexus.Approved, nil)
 
-	actual := types.NewApproveContractCallCommandFromGeneralMessage(chainID, keyID, genMsg)
+	actual := types.NewApproveContractCallCommandGeneric(chainID, keyID,
+		common.HexToAddress(genMsg.Receiver), common.BytesToHash(genMsg.PayloadHash), common.BytesToHash(make([]byte, common.HashLength)), genMsg.SourceChain, genMsg.Sender, genMsg.ID.ID)
 	// abi encoding pads strings to lengths divisible by 32
 	sourceChainPadded := []byte(sourceChain)
 	for len(sourceChainPadded)%32 != 0 {

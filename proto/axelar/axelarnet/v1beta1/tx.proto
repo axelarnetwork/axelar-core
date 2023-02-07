@@ -177,9 +177,7 @@ message CallContractRequest {
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
-
   string contract_address = 3;
-
   bytes payload = 4;
 }
 

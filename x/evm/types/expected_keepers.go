@@ -115,8 +115,9 @@ type Nexus interface {
 	SetChainMaintainerState(ctx sdk.Context, maintainerState nexus.MaintainerState) error
 	RateLimitTransfer(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error
 	SetNewMessage(ctx sdk.Context, m nexus.GeneralMessage) error
-	ConsumeApprovedMessages(ctx sdk.Context, chain nexus.ChainName, limit int64) []nexus.GeneralMessage
+	GetApprovedMessages(ctx sdk.Context, chain nexus.ChainName, limit int64) []nexus.GeneralMessage
 	SetMessageFailed(ctx sdk.Context, messageID nexus.MessageID) error
+	SetMessageApproved(ctx sdk.Context, messageID nexus.MessageID) error
 }
 
 // InitPoller is a minimal interface to start a poll. This must be a type alias instead of a type definition,

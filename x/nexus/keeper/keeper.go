@@ -14,8 +14,7 @@ import (
 )
 
 var (
-	nonceKey               = utils.KeyFromStr("nonce")
-	generalMessageNonceKey = key.FromStrHashed("gen_msg_nonce")
+	nonceKey = utils.KeyFromStr("nonce")
 
 	chainPrefix              = utils.KeyFromStr("chain")
 	chainStatePrefix         = utils.KeyFromStr("state")
@@ -25,11 +24,12 @@ var (
 	transferFee              = utils.KeyFromStr("fee")
 	assetFeePrefix           = utils.KeyFromStr("asset_fee")
 
-	chainMaintainerStatePrefix = key.RegisterStaticKey(types.ModuleName, 1)
-	rateLimitPrefix            = key.RegisterStaticKey(types.ModuleName, 2)
-	transferEpochPrefix        = key.RegisterStaticKey(types.ModuleName, 3)
-	generalMessagePrefix       = key.RegisterStaticKey(types.ModuleName, 4)
-
+	chainMaintainerStatePrefix   = key.RegisterStaticKey(types.ModuleName, 1)
+	rateLimitPrefix              = key.RegisterStaticKey(types.ModuleName, 2)
+	transferEpochPrefix          = key.RegisterStaticKey(types.ModuleName, 3)
+	generalMessagePrefix         = key.RegisterStaticKey(types.ModuleName, 4)
+	approvedGeneralMessagePrefix = key.RegisterStaticKey(types.ModuleName, 5)
+	generalMessageNonceKey       = key.RegisterStaticKey(types.ModuleName, 6)
 	// temporary
 	// TODO: add description about what temporary means
 	latestDepositAddressPrefix = utils.KeyFromStr("latest_deposit_address")

@@ -37,7 +37,11 @@ func (m CallContractRequest) ValidateBasic() error {
 	}
 
 	if err := m.Chain.Validate(); err != nil {
-		return fmt.Errorf("invalid chain %s: %s", m.Chain, err)
+		return sdkerrors.Wrap(err, "invalid chain")
+	}
+
+	if len(m.ContractAddress) == 0 {
+		return fmt.Errorf("contract address empty")
 	}
 
 	return nil

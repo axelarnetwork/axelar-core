@@ -121,10 +121,9 @@ func TestGetGeneralMessageID(t *testing.T) {
 	k, ctx := setup(cfg)
 
 	hash := evmtestutils.RandomHash().Hex()
-	chain := exported.ChainName(rand.Str(5))
 	// use the same hash and source chain, still shouldn't collide
-	id := k.GetGeneralMessageID(ctx, hash, chain)
-	id2 := k.GetGeneralMessageID(ctx, hash, chain)
+	id := k.GetGeneralMessageID(ctx, hash)
+	id2 := k.GetGeneralMessageID(ctx, hash)
 	assert.NotEqual(t, id, id2)
 }
 
@@ -134,7 +133,7 @@ func TestSetMessageFailed(t *testing.T) {
 	k, ctx := setup(cfg)
 	srcChain := rand.Str(5)
 	msg := exported.GeneralMessage{
-		ID:          exported.MessageID{ID: k.GetGeneralMessageID(ctx, evmtestutils.RandomHash().Hex(), exported.ChainName(srcChain)), Chain: exported.ChainName(rand.Str(5))},
+		ID:          exported.MessageID{ID: k.GetGeneralMessageID(ctx, evmtestutils.RandomHash().Hex()), Chain: exported.ChainName(rand.Str(5))},
 		SourceChain: exported.ChainName(srcChain),
 		Sender:      genCosmosAddr(srcChain),
 		Receiver:    evmtestutils.RandomAddress().Hex(),
@@ -163,7 +162,7 @@ func TestGetMessage(t *testing.T) {
 
 	srcChain := rand.Str(5)
 	msg := exported.GeneralMessage{
-		ID:          exported.MessageID{ID: k.GetGeneralMessageID(ctx, evmtestutils.RandomHash().Hex(), exported.ChainName(srcChain)), Chain: exported.ChainName(rand.Str(5))},
+		ID:          exported.MessageID{ID: k.GetGeneralMessageID(ctx, evmtestutils.RandomHash().Hex()), Chain: exported.ChainName(rand.Str(5))},
 		SourceChain: exported.ChainName(srcChain),
 		Sender:      genCosmosAddr(srcChain),
 		Receiver:    evmtestutils.RandomAddress().Hex(),
@@ -177,31 +176,12 @@ func TestGetMessage(t *testing.T) {
 	err := k.SetNewMessage(ctx, msg)
 	assert.NoError(t, err)
 
-	exp, found := k.GetMessageWithStatus(ctx, msg.ID, []exported.GeneralMessage_Status{exported.Approved})
-	assert.True(t, found)
-	assert.Equal(t, exp, msg)
-
-	exp, found = k.GetMessageWithStatus(ctx, msg.ID, []exported.GeneralMessage_Status{exported.Failed, exported.Approved})
-	assert.True(t, found)
-	assert.Equal(t, exp, msg)
-
-	exp, found = k.GetMessageWithStatus(ctx, msg.ID, []exported.GeneralMessage_Status{exported.Approved, exported.Failed})
-	assert.True(t, found)
-	assert.Equal(t, exp, msg)
-
-	_, found = k.GetMessageWithStatus(ctx, msg.ID, []exported.GeneralMessage_Status{exported.Failed})
-	assert.False(t, found)
-	_, found = k.GetMessageWithStatus(ctx, msg.ID, []exported.GeneralMessage_Status{exported.Sent})
-	assert.False(t, found)
-	_, found = k.GetMessageWithStatus(ctx, msg.ID, []exported.GeneralMessage_Status{exported.Executed})
-	assert.False(t, found)
-
-	exp, found = k.GetMessageAnyStatus(ctx, msg.ID)
+	exp, found := k.GetMessage(ctx, msg.ID)
 	assert.True(t, found)
 	assert.Equal(t, exp, msg)
 }
 
-func TestConsumeMessages(t *testing.T) {
+func TestGetApprovedMessages(t *testing.T) {
 
 	cfg := app.MakeEncodingConfig()
 	k, ctx := setup(cfg)
@@ -226,7 +206,7 @@ func TestConsumeMessages(t *testing.T) {
 		for i := 0; i < numMsgs; i++ {
 
 			msg := exported.GeneralMessage{
-				ID:          exported.MessageID{ID: k.GetGeneralMessageID(ctx, evmtestutils.RandomHash().Hex(), sourceChainName), Chain: destChain},
+				ID:          exported.MessageID{ID: k.GetGeneralMessageID(ctx, evmtestutils.RandomHash().Hex()), Chain: destChain},
 				SourceChain: sourceChainName,
 				Sender:      genCosmosAddr(destinationChainName.String()),
 				Receiver:    evmtestutils.RandomAddress().Hex(),
@@ -255,52 +235,63 @@ func TestConsumeMessages(t *testing.T) {
 	}
 	checkForExistence := func(msgs map[string]exported.GeneralMessage) {
 		for _, msg := range msgs {
-			retMsg, found := k.GetMessageAnyStatus(ctx, msg.ID)
+			retMsg, found := k.GetMessage(ctx, msg.ID)
 			assert.True(t, found)
 			assert.Equal(t, retMsg, msg)
 		}
+	}
+	consumeApproved := func(dest exported.ChainName, limit int64) []exported.GeneralMessage {
+		approved := k.GetApprovedMessages(ctx, dest, limit)
+		for _, msg := range approved {
+			err := k.SetMessageExecuted(ctx, msg.ID)
+			assert.NoError(t, err)
+		}
+		return approved
 	}
 	msgs := makeMessages(10, destinationChainName)
 	enqueueMsgs(msgs)
 	// check msgs can be fetched directly
 	checkForExistence(msgs)
 
-	consumed := k.ConsumeApprovedMessages(ctx, destinationChainName, 100)
-	retMsgs := toMap(consumed)
+	approved := consumeApproved(destinationChainName, 100)
+	retMsgs := toMap(approved)
 	assert.Equal(t, msgs, retMsgs)
 
-	// check msgs are deleted
-	consumed = k.ConsumeApprovedMessages(ctx, destinationChainName, 100)
-	assert.Empty(t, consumed)
+	// make sure executed messages are not returned
+	approved = k.GetApprovedMessages(ctx, destinationChainName, 100)
+	assert.Empty(t, approved)
 	for _, msg := range msgs {
-		_, found := k.GetMessageAnyStatus(ctx, msg.ID)
-		assert.False(t, found)
+		m, found := k.GetMessage(ctx, msg.ID)
+		assert.True(t, found)
+		msg.Status = exported.Executed
+		assert.Equal(t, m, msg)
 	}
 
 	// make sure limit works
 	msgs = makeMessages(100, destinationChainName)
 	enqueueMsgs(msgs)
-	consumed = k.ConsumeApprovedMessages(ctx, destinationChainName, 50)
-	assert.Equal(t, len(consumed), 50)
-	consumed = append(consumed, k.ConsumeApprovedMessages(ctx, destinationChainName, 50)...)
-	retMsgs = toMap(consumed)
+	approved = consumeApproved(destinationChainName, 50)
+	assert.Equal(t, len(approved), 50)
+	approved = append(approved, consumeApproved(destinationChainName, 50)...)
+	retMsgs = toMap(approved)
 	assert.Equal(t, msgs, retMsgs)
-	consumed = k.ConsumeApprovedMessages(ctx, destinationChainName, 10)
-	assert.Empty(t, consumed)
+	approved = consumeApproved(destinationChainName, 10)
+	assert.Empty(t, approved)
 
-	// make sure SetFailed does not enqueue
+	// make sure failed messages are not returned
 	msgs = makeMessages(1, destinationChainName)
-	for id, m := range msgs {
-		m.Status = exported.Sent
-		msgs[id] = m
-		err := k.SetNewMessage(ctx, m)
-		assert.NoError(t, err)
-		err = k.SetMessageFailed(ctx, m.ID)
-		assert.NoError(t, err)
-	}
+	enqueueMsgs(msgs)
+	approved = k.GetApprovedMessages(ctx, destinationChainName, 1)
+	assert.Equal(t, len(msgs), len(approved))
+	err := k.SetMessageFailed(ctx, approved[0].ID)
+	assert.NoError(t, err)
+	msg := msgs[approved[0].ID.ID]
+	msg.Status = exported.Failed
+	msgs[msg.ID.ID] = msg
 	checkForExistence(msgs)
-	assert.Empty(t, k.ConsumeApprovedMessages(ctx, destinationChainName, 100))
+	assert.Empty(t, consumeApproved(destinationChainName, 100))
 	checkForExistence(msgs)
+
 	// add multiple destinations, make sure routing works
 	dest2 := exported.ChainName(rand.Str(5))
 	k.SetChain(ctx, exported.Chain{
@@ -334,8 +325,8 @@ func TestConsumeMessages(t *testing.T) {
 	checkForExistence(dest2Msgs)
 	checkForExistence(dest3Msgs)
 	checkForExistence(dest4Msgs)
-	assert.Equal(t, dest2Msgs, toMap(k.ConsumeApprovedMessages(ctx, dest2, 100)))
-	assert.Equal(t, dest3Msgs, toMap(k.ConsumeApprovedMessages(ctx, dest3, 100)))
-	assert.Equal(t, dest4Msgs, toMap(k.ConsumeApprovedMessages(ctx, dest4, 100)))
+	assert.Equal(t, dest2Msgs, toMap(consumeApproved(dest2, 100)))
+	assert.Equal(t, dest3Msgs, toMap(consumeApproved(dest3, 100)))
+	assert.Equal(t, dest4Msgs, toMap(consumeApproved(dest4, 100)))
 
 }

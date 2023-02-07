@@ -10,23 +10,25 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
-func getMessageKey(id exported.MessageID, status exported.GeneralMessage_Status) key.Key {
+func getMessageKey(id exported.MessageID) key.Key {
 	return generalMessagePrefix.
-		Append(key.From(id.Chain)).
-		Append(key.From(status)).
 		Append(key.FromStr(id.ID))
 }
 
+func getApprovedMessageKey(id exported.MessageID) key.Key {
+	return approvedGeneralMessagePrefix.Append(key.From(id.Chain)).Append(key.FromStr(id.ID))
+}
+
 // GetGeneralMessageID generates a unique general message ID
-func (k Keeper) GetGeneralMessageID(ctx sdk.Context, sourceTxID string, sourceChain exported.ChainName) string {
+func (k Keeper) GetGeneralMessageID(ctx sdk.Context, sourceTxID string) string {
 	counter := utils.NewCounter[uint](generalMessageNonceKey, k.getStore(ctx))
 	nonce := counter.Incr(ctx)
 
-	id := fmt.Sprintf("%s-%s-%x", sourceTxID, sourceChain, nonce)
+	id := fmt.Sprintf("%s-%x", sourceTxID, nonce)
 	return id
 }
 
-// SetNewMessage sets the given general message and enqueues the message for the destination chain
+// SetNewMessage sets the given general message. If the messages is approved, adds the message ID to approved messages store
 func (k Keeper) SetNewMessage(ctx sdk.Context, m exported.GeneralMessage) error {
 	sourceChain, ok := k.GetChain(ctx, m.SourceChain)
 	if !ok {
@@ -53,21 +55,44 @@ func (k Keeper) SetNewMessage(ctx sdk.Context, m exported.GeneralMessage) error 
 		}
 	}
 
-	if _, found := k.GetMessageAnyStatus(ctx, m.ID); found {
+	if _, found := k.GetMessage(ctx, m.ID); found {
 		return fmt.Errorf("general message %s already exists", m.ID)
+	}
+	if m.Is(exported.Approved) {
+		if err := k.setApprovedMessage(ctx, m); err != nil {
+			return err
+		}
 	}
 	return k.setMessage(ctx, m)
 }
 
+// SetMessageApproved sets the message as approved, and adds the message ID to the approved messages store
+func (k Keeper) SetMessageApproved(ctx sdk.Context, messageID exported.MessageID) error {
+
+	m, found := k.GetMessage(ctx, messageID)
+	if !found {
+		return fmt.Errorf("general message %s not found", messageID.String())
+	}
+
+	m.Status = exported.Approved
+	if err := k.setMessage(ctx, m); err != nil {
+		return err
+	}
+	return k.setApprovedMessage(ctx, m)
+}
+
 // SetMessageSent sets the general message as sent
 func (k Keeper) SetMessageSent(ctx sdk.Context, messageID exported.MessageID) error {
-	m, found := k.GetMessageAnyStatus(ctx, messageID)
+	m, found := k.GetMessage(ctx, messageID)
 	if !found {
 		return fmt.Errorf("general message %s not found", messageID.String())
 	}
 
 	if !(m.Is(exported.Approved) || m.Is(exported.Failed)) {
 		return fmt.Errorf("general message is not approved or failed")
+	}
+	if m.Is(exported.Approved) {
+		k.deleteApprovedMessage(ctx, m)
 	}
 
 	m.Status = exported.Sent
@@ -77,13 +102,16 @@ func (k Keeper) SetMessageSent(ctx sdk.Context, messageID exported.MessageID) er
 
 // SetMessageExecuted sets the general message as executed
 func (k Keeper) SetMessageExecuted(ctx sdk.Context, messageID exported.MessageID) error {
-	m, found := k.GetMessageAnyStatus(ctx, messageID)
+	m, found := k.GetMessage(ctx, messageID)
 	if !found {
 		return fmt.Errorf("general message %s not found", messageID.String())
 	}
 
-	if !m.Is(exported.Sent) {
-		return fmt.Errorf("general message is not sent")
+	if !(m.Is(exported.Sent) || m.Is(exported.Approved)) {
+		return fmt.Errorf("general message is not sent or approved")
+	}
+	if m.Is(exported.Approved) {
+		k.deleteApprovedMessage(ctx, m)
 	}
 
 	m.Status = exported.Executed
@@ -93,7 +121,7 @@ func (k Keeper) SetMessageExecuted(ctx sdk.Context, messageID exported.MessageID
 
 // SetMessageFailed sets the general message as failed
 func (k Keeper) SetMessageFailed(ctx sdk.Context, messageID exported.MessageID) error {
-	m, found := k.GetMessageAnyStatus(ctx, messageID)
+	m, found := k.GetMessage(ctx, messageID)
 	if !found {
 		return fmt.Errorf("general message %s not found", messageID.String())
 	}
@@ -101,40 +129,36 @@ func (k Keeper) SetMessageFailed(ctx sdk.Context, messageID exported.MessageID) 
 	if !(m.Is(exported.Sent) || m.Is(exported.Approved)) {
 		return fmt.Errorf("general message is not sent or approved")
 	}
+	if m.Is(exported.Approved) {
+		k.deleteApprovedMessage(ctx, m)
+	}
 
 	m.Status = exported.Failed
 
 	return k.setMessage(ctx, m)
 }
 
-// GetMessageAnyStatus returns the general message matching the given ID
-func (k Keeper) GetMessageAnyStatus(ctx sdk.Context, messageID exported.MessageID) (m exported.GeneralMessage, found bool) {
-	return k.GetMessageWithStatus(ctx, messageID, []exported.GeneralMessage_Status{})
-}
-
-// GetMessageWithStatus returns the general message matching the given ID and one of the passed in statuses
-func (k Keeper) GetMessageWithStatus(ctx sdk.Context, messageID exported.MessageID, statuses []exported.GeneralMessage_Status) (m exported.GeneralMessage, found bool) {
-	if len(statuses) == 0 {
-		statuses = []exported.GeneralMessage_Status{exported.Sent, exported.Approved, exported.Executed, exported.Failed}
-	}
-	for _, s := range statuses {
-		if found := k.getStore(ctx).GetNew(getMessageKey(messageID, s), &m); found {
-			return m, found
-		}
-	}
-	return m, false
-}
-
-// DeleteMessage returns the general message by ID
+// DeleteMessage deletes the general message with associated ID, and also deletes the message ID from the approved messages store
 func (k Keeper) DeleteMessage(ctx sdk.Context, messageID exported.MessageID) {
-	statuses := []exported.GeneralMessage_Status{exported.Sent, exported.Approved, exported.Executed, exported.Failed}
-	for _, s := range statuses {
-		k.getStore(ctx).DeleteNew(getMessageKey(messageID, s))
-	}
+	k.getStore(ctx).DeleteNew(getApprovedMessageKey(messageID))
+	k.getStore(ctx).DeleteNew(getMessageKey(messageID))
+}
+
+// GetMessage returns the general message by ID
+func (k Keeper) GetMessage(ctx sdk.Context, messageID exported.MessageID) (m exported.GeneralMessage, found bool) {
+	return m, k.getStore(ctx).GetNew(getMessageKey(messageID), &m)
 }
 
 func (k Keeper) setMessage(ctx sdk.Context, m exported.GeneralMessage) error {
-	return k.getStore(ctx).SetNewValidated(getMessageKey(m.ID, m.Status), &m)
+	return k.getStore(ctx).SetNewValidated(getMessageKey(m.ID), &m)
+}
+
+func (k Keeper) setApprovedMessage(ctx sdk.Context, m exported.GeneralMessage) error {
+	return k.getStore(ctx).SetNewValidated(getApprovedMessageKey(m.ID), &m.ID)
+}
+
+func (k Keeper) deleteApprovedMessage(ctx sdk.Context, m exported.GeneralMessage) {
+	k.getStore(ctx).DeleteNew(getApprovedMessageKey(m.ID))
 }
 
 func (k Keeper) getMessages(ctx sdk.Context) (generalMessages []exported.GeneralMessage) {
@@ -151,17 +175,21 @@ func (k Keeper) getMessages(ctx sdk.Context) (generalMessages []exported.General
 	return generalMessages
 }
 
-// ConsumeApprovedMessages returns up to limit messages where chain is the destination chain, and deletes the messages from the store
-func (k Keeper) ConsumeApprovedMessages(ctx sdk.Context, chain exported.ChainName, limit int64) []exported.GeneralMessage {
+// GetApprovedMessages returns up to limit approved messages where chain is the destination chain
+func (k Keeper) GetApprovedMessages(ctx sdk.Context, chain exported.ChainName, limit int64) []exported.GeneralMessage {
 	msgs := []exported.GeneralMessage{}
-	iter := k.getStore(ctx).IteratorNew(generalMessagePrefix.Append(key.From(chain)).Append(key.From(exported.Approved)))
+	ids := []exported.MessageID{}
+	iter := k.getStore(ctx).IteratorNew(approvedGeneralMessagePrefix.Append(key.From(chain)))
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 	for i := 0; iter.Valid() && i < int(limit); iter.Next() {
-		var msg exported.GeneralMessage
-		iter.UnmarshalValue(&msg)
-		msgs = append(msgs, msg)
+		var id exported.MessageID
+		iter.UnmarshalValue(&id)
+		ids = append(ids, id)
 		i++
-		k.getStore(ctx).DeleteRaw(iter.Key())
+	}
+	for _, id := range ids {
+		msg, _ := k.GetMessage(ctx, id)
+		msgs = append(msgs, msg)
 	}
 	return msgs
 }
