@@ -62,8 +62,10 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 		return nil, err
 	}
 
+	// Need to use two different hash functions below. Tendermint uses sha256 to generate tx hashes, but axelar gateway expects keccak256 hashes for payloads
 	txHash := sha256.Sum256(ctx.TxBytes())
 	payloadHash := crypto.Keccak256(req.Payload)
+
 	msg := nexus.NewGeneralMessage(s.nexus.GetGeneralMessageID(ctx, hex.EncodeToString(txHash[:])), exported.Axelarnet.Name, req.Sender.String(), req.Chain, req.ContractAddress, payloadHash, nexus.Approved, nil)
 	err := s.nexus.SetNewMessage(ctx, msg)
 	if err != nil {
@@ -72,7 +74,8 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 
 	ctx.GasMeter().ConsumeGas(storetypes.Gas(2000000), "call-contract")
 	events.Emit(ctx, &types.ContractCallSubmitted{
-		Sender:           msg.Sender,
+		Sender:           req.Sender,
+		SourceChain:      nexus.ChainName(exported.ModuleName),
 		DestinationChain: msg.ID.Chain,
 		ContractAddress:  msg.Receiver,
 		PayloadHash:      msg.PayloadHash,

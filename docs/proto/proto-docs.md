@@ -571,7 +571,8 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `sender` | [string](#string) |  |  |
+| `sender` | [bytes](#bytes) |  |  |
+| `source_chain` | [string](#string) |  |  |
 | `destination_chain` | [string](#string) |  |  |
 | `contract_address` | [string](#string) |  |  |
 | `payload` | [bytes](#bytes) |  |  |

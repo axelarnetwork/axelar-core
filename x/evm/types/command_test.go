@@ -36,10 +36,11 @@ func TestNewApproveContractCallCommandFromGeneralMessage(t *testing.T) {
 	sender := rand.AccAddr()
 	sourceChain := rand.StrBetween(16, 32)
 	destChain := rand.StrBetween(8, 64)
+	eventIndex := 0
 	genMsg := nexus.NewGeneralMessage(txHash.Hex(), nexus.ChainName(sourceChain), sender.String(), nexus.ChainName(destChain), contractAddress.Hex(), payloadHash, nexus.Approved, nil)
 
 	actual := types.NewApproveContractCallCommandGeneric(chainID, keyID,
-		common.HexToAddress(genMsg.Receiver), common.BytesToHash(genMsg.PayloadHash), common.BytesToHash(make([]byte, common.HashLength)), genMsg.SourceChain, genMsg.Sender, genMsg.ID.ID)
+		common.HexToAddress(genMsg.Receiver), common.BytesToHash(genMsg.PayloadHash), common.BytesToHash(make([]byte, common.HashLength)), genMsg.SourceChain, genMsg.Sender, uint64(eventIndex), genMsg.ID.ID)
 	// abi encoding pads strings to lengths divisible by 32
 	sourceChainPadded := []byte(sourceChain)
 	for len(sourceChainPadded)%32 != 0 {
@@ -58,7 +59,7 @@ func TestNewApproveContractCallCommandFromGeneralMessage(t *testing.T) {
 	assert.Equal(t, contractAddress, actualContractAddress)
 	assert.Equal(t, common.BytesToHash(payloadHash), actualPayloadHash)
 	assert.Equal(t, dummyTxId, actualSourceTxID)
-	assert.Equal(t, uint64(0), actualSourceEventIndex.Uint64())
+	assert.Equal(t, uint64(eventIndex), actualSourceEventIndex.Uint64())
 
 }
 

@@ -572,7 +572,7 @@ func handleGeneralMessage(ctx sdk.Context, ck types.ChainKeeper, n types.Nexus, 
 	}
 
 	dummyTxID := common.BytesToHash(make([]byte, common.HashLength))
-	cmd := types.NewApproveContractCallCommandGeneric(chainID, keyID, common.HexToAddress(msg.Receiver), common.BytesToHash(msg.PayloadHash), dummyTxID, msg.SourceChain, msg.Sender, msg.ID.ID)
+	cmd := types.NewApproveContractCallCommandGeneric(chainID, keyID, common.HexToAddress(msg.Receiver), common.BytesToHash(msg.PayloadHash), dummyTxID, msg.SourceChain, msg.Sender, 0, msg.ID.ID)
 	funcs.MustNoErr(ck.EnqueueCommand(ctx, cmd))
 
 	return cmd.ID, nil
@@ -625,8 +625,12 @@ func handleGeneralMessages(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 
 			if !success {
 				funcs.MustNoErr(n.SetMessageFailed(ctx, msg.ID))
+				ck.Logger(ctx).Debug("setting general message as failed",
+					types.AttributeKeyChain, chain.Name.String(),
+					types.AttributeKeyMessageID, msg.ID.ID,
+				)
 			} else {
-				funcs.MustNoErr(n.SetMessageApproved(ctx, msg.ID))
+				funcs.MustNoErr(n.SetMessageExecuted(ctx, msg.ID))
 			}
 		}
 	}

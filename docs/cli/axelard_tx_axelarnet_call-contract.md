@@ -1,9 +1,9 @@
 ## axelard tx axelarnet call-contract
 
-Call a smart contract on an EVM chain
+Call a contract on another chain
 
 ```
-axelard tx axelarnet call-contract [recipient chain] [contract address] [abi encoded payload] [flags]
+axelard tx axelarnet call-contract [destination chain] [contract address] [hex encoded payload] [flags]
 ```
 
 ### Options

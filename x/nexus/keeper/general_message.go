@@ -21,7 +21,7 @@ func getApprovedMessageKey(id exported.MessageID) key.Key {
 
 // GetGeneralMessageID generates a unique general message ID
 func (k Keeper) GetGeneralMessageID(ctx sdk.Context, sourceTxID string) string {
-	counter := utils.NewCounter[uint](generalMessageNonceKey, k.getStore(ctx))
+	counter := utils.NewCounter[uint](messageNonceKey, k.getStore(ctx))
 	nonce := counter.Incr(ctx)
 
 	id := fmt.Sprintf("%s-%x", sourceTxID, nonce)

@@ -221,7 +221,7 @@ func TestHandleGeneralMessages(t *testing.T) {
 		ck2.EnqueueCommandFunc = func(ctx sdk.Context, cmd types.Command) error { return nil }
 		ck1.GetGatewayAddressFunc = func(ctx sdk.Context) (types.Address, bool) { return evmTestUtils.RandomAddress(), true }
 		ck2.GetGatewayAddressFunc = func(ctx sdk.Context) (types.Address, bool) { return evmTestUtils.RandomAddress(), true }
-		n.SetMessageApprovedFunc = func(ctx sdk.Context, messageID nexus.MessageID) error { return nil }
+		n.SetMessageExecutedFunc = func(ctx sdk.Context, messageID nexus.MessageID) error { return nil }
 		n.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return true }
 	})
 	withGeneralMessages := func(numPerChain map[nexus.ChainName]int) WhenStatement {

@@ -333,7 +333,7 @@ func getGeneralMessage() *cobra.Command {
 func getCmdCallContract() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "call-contract [destination chain] [contract address] [hex encoded payload]",
-		Short: "Call a smart contract on another chain",
+		Short: "Call a contract on another chain",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientTxContext(cmd)

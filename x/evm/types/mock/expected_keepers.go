@@ -161,8 +161,8 @@ var _ types.Nexus = &NexusMock{}
 //			SetChainMaintainerStateFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, maintainerState github_com_axelarnetwork_axelar_core_x_nexus_exported.MaintainerState) error {
 //				panic("mock out the SetChainMaintainerState method")
 //			},
-//			SetMessageApprovedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, messageID github_com_axelarnetwork_axelar_core_x_nexus_exported.MessageID) error {
-//				panic("mock out the SetMessageApproved method")
+//			SetMessageExecutedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, messageID github_com_axelarnetwork_axelar_core_x_nexus_exported.MessageID) error {
+//				panic("mock out the SetMessageExecuted method")
 //			},
 //			SetMessageFailedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, messageID github_com_axelarnetwork_axelar_core_x_nexus_exported.MessageID) error {
 //				panic("mock out the SetMessageFailed method")
@@ -237,8 +237,8 @@ type NexusMock struct {
 	// SetChainMaintainerStateFunc mocks the SetChainMaintainerState method.
 	SetChainMaintainerStateFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, maintainerState github_com_axelarnetwork_axelar_core_x_nexus_exported.MaintainerState) error
 
-	// SetMessageApprovedFunc mocks the SetMessageApproved method.
-	SetMessageApprovedFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, messageID github_com_axelarnetwork_axelar_core_x_nexus_exported.MessageID) error
+	// SetMessageExecutedFunc mocks the SetMessageExecuted method.
+	SetMessageExecutedFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, messageID github_com_axelarnetwork_axelar_core_x_nexus_exported.MessageID) error
 
 	// SetMessageFailedFunc mocks the SetMessageFailed method.
 	SetMessageFailedFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, messageID github_com_axelarnetwork_axelar_core_x_nexus_exported.MessageID) error
@@ -418,8 +418,8 @@ type NexusMock struct {
 			// MaintainerState is the maintainerState argument value.
 			MaintainerState github_com_axelarnetwork_axelar_core_x_nexus_exported.MaintainerState
 		}
-		// SetMessageApproved holds details about calls to the SetMessageApproved method.
-		SetMessageApproved []struct {
+		// SetMessageExecuted holds details about calls to the SetMessageExecuted method.
+		SetMessageExecuted []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// MessageID is the messageID argument value.
@@ -460,7 +460,7 @@ type NexusMock struct {
 	lockRegisterAsset                 sync.RWMutex
 	lockSetChain                      sync.RWMutex
 	lockSetChainMaintainerState       sync.RWMutex
-	lockSetMessageApproved            sync.RWMutex
+	lockSetMessageExecuted            sync.RWMutex
 	lockSetMessageFailed              sync.RWMutex
 	lockSetNewMessage                 sync.RWMutex
 }
@@ -1245,10 +1245,10 @@ func (mock *NexusMock) SetChainMaintainerStateCalls() []struct {
 	return calls
 }
 
-// SetMessageApproved calls SetMessageApprovedFunc.
-func (mock *NexusMock) SetMessageApproved(ctx github_com_cosmos_cosmos_sdk_types.Context, messageID github_com_axelarnetwork_axelar_core_x_nexus_exported.MessageID) error {
-	if mock.SetMessageApprovedFunc == nil {
-		panic("NexusMock.SetMessageApprovedFunc: method is nil but Nexus.SetMessageApproved was just called")
+// SetMessageExecuted calls SetMessageExecutedFunc.
+func (mock *NexusMock) SetMessageExecuted(ctx github_com_cosmos_cosmos_sdk_types.Context, messageID github_com_axelarnetwork_axelar_core_x_nexus_exported.MessageID) error {
+	if mock.SetMessageExecutedFunc == nil {
+		panic("NexusMock.SetMessageExecutedFunc: method is nil but Nexus.SetMessageExecuted was just called")
 	}
 	callInfo := struct {
 		Ctx       github_com_cosmos_cosmos_sdk_types.Context
@@ -1257,17 +1257,17 @@ func (mock *NexusMock) SetMessageApproved(ctx github_com_cosmos_cosmos_sdk_types
 		Ctx:       ctx,
 		MessageID: messageID,
 	}
-	mock.lockSetMessageApproved.Lock()
-	mock.calls.SetMessageApproved = append(mock.calls.SetMessageApproved, callInfo)
-	mock.lockSetMessageApproved.Unlock()
-	return mock.SetMessageApprovedFunc(ctx, messageID)
+	mock.lockSetMessageExecuted.Lock()
+	mock.calls.SetMessageExecuted = append(mock.calls.SetMessageExecuted, callInfo)
+	mock.lockSetMessageExecuted.Unlock()
+	return mock.SetMessageExecutedFunc(ctx, messageID)
 }
 
-// SetMessageApprovedCalls gets all the calls that were made to SetMessageApproved.
+// SetMessageExecutedCalls gets all the calls that were made to SetMessageExecuted.
 // Check the length with:
 //
-//	len(mockedNexus.SetMessageApprovedCalls())
-func (mock *NexusMock) SetMessageApprovedCalls() []struct {
+//	len(mockedNexus.SetMessageExecutedCalls())
+func (mock *NexusMock) SetMessageExecutedCalls() []struct {
 	Ctx       github_com_cosmos_cosmos_sdk_types.Context
 	MessageID github_com_axelarnetwork_axelar_core_x_nexus_exported.MessageID
 } {
@@ -1275,9 +1275,9 @@ func (mock *NexusMock) SetMessageApprovedCalls() []struct {
 		Ctx       github_com_cosmos_cosmos_sdk_types.Context
 		MessageID github_com_axelarnetwork_axelar_core_x_nexus_exported.MessageID
 	}
-	mock.lockSetMessageApproved.RLock()
-	calls = mock.calls.SetMessageApproved
-	mock.lockSetMessageApproved.RUnlock()
+	mock.lockSetMessageExecuted.RLock()
+	calls = mock.calls.SetMessageExecuted
+	mock.lockSetMessageExecuted.RUnlock()
 	return calls
 }
 

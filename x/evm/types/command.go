@@ -147,13 +147,14 @@ func NewApproveContractCallCommandGeneric(
 	sourceTxID common.Hash,
 	sourceChain nexus.ChainName,
 	sender string,
+	sourceEventIndex uint64,
 	ID string,
 ) Command {
 	commandID := NewCommandID([]byte(ID), chainID)
 	return Command{
 		ID:         commandID,
 		Type:       COMMAND_TYPE_APPROVE_CONTRACT_CALL,
-		Params:     createApproveContractCallParamsFromGeneralMesssage(contractAddress, payloadHash, sourceTxID, string(sourceChain), sender),
+		Params:     createApproveContractCallParamsGeneric(contractAddress, payloadHash, sourceTxID, string(sourceChain), sender, sourceEventIndex),
 		KeyID:      keyID,
 		MaxGasCost: approveContractCallMaxGasCost,
 	}
@@ -292,12 +293,13 @@ func createApproveContractCallParams(
 	))
 }
 
-func createApproveContractCallParamsFromGeneralMesssage(
+func createApproveContractCallParamsGeneric(
 	contractAddress common.Address,
 	payloadHash common.Hash,
 	txID common.Hash,
 	sourceChain string,
-	sender string) []byte {
+	sender string,
+	sourceEventIndex uint64) []byte {
 
 	return funcs.Must(approveContractCallArguments.Pack(
 		sourceChain,
@@ -305,7 +307,7 @@ func createApproveContractCallParamsFromGeneralMesssage(
 		contractAddress,
 		payloadHash,
 		txID,
-		new(big.Int).SetUint64(0),
+		new(big.Int).SetUint64(sourceEventIndex),
 	))
 }
 
