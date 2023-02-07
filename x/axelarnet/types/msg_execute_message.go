@@ -6,11 +6,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/axelar-core/utils"
 )
 
 // NewExecuteMessage creates a message of type ExecuteMessageRequest
-func NewExecuteMessage(sender sdk.AccAddress, id nexus.MessageID, payload []byte) *ExecuteMessageRequest {
+func NewExecuteMessage(sender sdk.AccAddress, id string, payload []byte) *ExecuteMessageRequest {
 	return &ExecuteMessageRequest{
 		Sender:  sender,
 		ID:      id,
@@ -34,8 +34,8 @@ func (m ExecuteMessageRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
-	if err := m.ID.ValidateBasic(); err != nil {
-		return err
+	if err := utils.ValidateString(m.ID); err != nil {
+		return sdkerrors.Wrap(err, "invalid general message id")
 	}
 
 	if len(m.Payload) == 0 {

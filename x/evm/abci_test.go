@@ -129,6 +129,8 @@ func TestHandleContractCall(t *testing.T) {
 		return func() {
 			n.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 				switch chain {
+				case sourceChainName:
+					return nexus.Chain{Name: chain, Module: types.ModuleName}, true
 				case destinationChainName:
 					return nexus.Chain{Name: chain, Module: axelarnet.ModuleName}, true
 				default:

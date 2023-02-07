@@ -339,7 +339,7 @@ func getSeqMessageIDMappingKey(portID, channelID string, seq uint64) key.Key {
 }
 
 // SetSeqMessageIDMapping sets general message ID by port, channel and packet seq
-func (k Keeper) SetSeqMessageIDMapping(ctx sdk.Context, portID, channelID string, seq uint64, id nexus.MessageID) error {
+func (k Keeper) SetSeqMessageIDMapping(ctx sdk.Context, portID, channelID string, seq uint64, id string) error {
 	if _, found := k.GetSeqMessageIDMapping(ctx, portID, channelID, seq); found {
 		return fmt.Errorf("message ID already set for %s/%s %d", channelID, portID, seq)
 	}
@@ -347,7 +347,7 @@ func (k Keeper) SetSeqMessageIDMapping(ctx sdk.Context, portID, channelID string
 	funcs.MustNoErr(
 		k.getStore(ctx).SetNewValidated(
 			getSeqMessageIDMappingKey(portID, channelID, seq),
-			&id,
+			utils.NoValidation(&gogoprototypes.StringValue{Value: id}),
 		),
 	)
 
@@ -355,9 +355,9 @@ func (k Keeper) SetSeqMessageIDMapping(ctx sdk.Context, portID, channelID string
 }
 
 // GetSeqMessageIDMapping gets general message ID by port, channel and packet seq
-func (k Keeper) GetSeqMessageIDMapping(ctx sdk.Context, portID, channelID string, seq uint64) (nexus.MessageID, bool) {
-	var val nexus.MessageID
-	return val, k.getStore(ctx).GetNew(getSeqMessageIDMappingKey(portID, channelID, seq), &val)
+func (k Keeper) GetSeqMessageIDMapping(ctx sdk.Context, portID, channelID string, seq uint64) (string, bool) {
+	var val gogoprototypes.StringValue
+	return val.Value, k.getStore(ctx).GetNew(getSeqMessageIDMappingKey(portID, channelID, seq), &val)
 }
 
 // DeleteSeqMessageIDMapping deletes (port, channel, packet seq) -> general message ID mapping

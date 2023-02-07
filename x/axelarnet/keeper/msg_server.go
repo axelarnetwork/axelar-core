@@ -416,27 +416,25 @@ func (s msgServer) RetryIBCTransfer(c context.Context, req *types.RetryIBCTransf
 func (s msgServer) ExecuteMessage(c context.Context, req *types.ExecuteMessageRequest) (*types.ExecuteMessageResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	chain, ok := s.nexus.GetChain(ctx, req.ID.Chain)
-	if !ok {
-		return nil, fmt.Errorf("invalid chain %s", req.ID.Chain)
-	}
-
-	if !s.nexus.IsChainActivated(ctx, chain) {
-		return nil, fmt.Errorf("chain %s is not activated", chain.Name)
-	}
-
 	msg, ok := s.nexus.GetMessage(ctx, req.ID)
 	if !ok {
 		return nil, fmt.Errorf("message %s not found", req.ID)
 	}
 
-	sourceChain := funcs.MustOk(s.nexus.GetChain(ctx, msg.SourceChain))
-	if !sourceChain.IsFrom(evmtypes.ModuleName) {
+	if !msg.Sender.Chain.IsFrom(evmtypes.ModuleName) {
 		return nil, fmt.Errorf("message is not from an EVM chain")
 	}
 
+	if !s.nexus.IsChainActivated(ctx, msg.Sender.Chain) {
+		return nil, fmt.Errorf("chain %s is not activated", msg.GetSourceChain())
+	}
+
+	if !s.nexus.IsChainActivated(ctx, msg.Recipient.Chain) {
+		return nil, fmt.Errorf("chain %s is not activated", msg.GetDestinationChain())
+	}
+
 	if msg.Type() == nexus.TypeGeneralMessageWithToken {
-		funcs.MustTrue(s.nexus.IsAssetRegistered(ctx, chain, msg.Asset.GetDenom()))
+		funcs.MustTrue(s.nexus.IsAssetRegistered(ctx, msg.Recipient.Chain, msg.Asset.GetDenom()))
 	}
 
 	if !msg.Match(req.Payload) {
@@ -457,7 +455,7 @@ func (s msgServer) ExecuteMessage(c context.Context, req *types.ExecuteMessageRe
 		return nil, err
 	}
 
-	err = s.ibcK.SendMessage(c, msg.Receiver, asset, string(bz), msg.ID)
+	err = s.ibcK.SendMessage(c, msg.Recipient, asset, string(bz), msg.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -467,7 +465,7 @@ func (s msgServer) ExecuteMessage(c context.Context, req *types.ExecuteMessageRe
 		return nil, err
 	}
 
-	s.Logger(ctx).Debug("set general message status to sent", "messageID", msg.ID.String())
+	s.Logger(ctx).Debug("set general message status to sent", "messageID", msg.ID)
 
 	return &types.ExecuteMessageResponse{}, nil
 }
