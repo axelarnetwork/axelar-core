@@ -3,7 +3,7 @@
 Execute an approved general message to the destination chain
 
 ```
-axelard tx axelarnet execute-message [chain] [message ID] [payload] [flags]
+axelard tx axelarnet execute-message [message ID] [payload] [flags]
 ```
 
 ### Options

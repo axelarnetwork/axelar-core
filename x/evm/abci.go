@@ -197,15 +197,25 @@ func handleContractCallWithTokenToEVM(ctx sdk.Context, event types.Event, bk typ
 }
 
 func setMessageToNexus(ctx sdk.Context, n types.Nexus, event types.Event, asset *sdk.Coin) error {
+	sourceChain := funcs.MustOk(n.GetChain(ctx, event.Chain))
+
 	var message nexus.GeneralMessage
 	switch e := event.GetEvent().(type) {
 	case *types.Event_ContractCall:
+		sender := nexus.CrossChainAddress{
+			Chain:   sourceChain,
+			Address: e.ContractCall.Sender.Hex(),
+		}
+
+		recipient := nexus.CrossChainAddress{
+			Chain:   funcs.MustOk(n.GetChain(ctx, e.ContractCall.DestinationChain)),
+			Address: e.ContractCall.Sender.Hex(),
+		}
+
 		message = nexus.NewGeneralMessage(
 			string(event.GetID()),
-			event.Chain,
-			e.ContractCall.Sender.Hex(),
-			e.ContractCall.DestinationChain,
-			e.ContractCall.ContractAddress,
+			sender,
+			recipient,
 			e.ContractCall.PayloadHash.Bytes(),
 			nexus.Approved,
 			nil,
@@ -215,12 +225,21 @@ func setMessageToNexus(ctx sdk.Context, n types.Nexus, event types.Event, asset 
 		if asset == nil {
 			return fmt.Errorf("expect asset for ContractCallWithToken")
 		}
+
+		sender := nexus.CrossChainAddress{
+			Chain:   sourceChain,
+			Address: e.ContractCallWithToken.Sender.Hex(),
+		}
+
+		recipient := nexus.CrossChainAddress{
+			Chain:   funcs.MustOk(n.GetChain(ctx, e.ContractCallWithToken.DestinationChain)),
+			Address: e.ContractCallWithToken.Sender.Hex(),
+		}
+
 		message = nexus.NewGeneralMessage(
 			string(event.GetID()),
-			event.Chain,
-			e.ContractCallWithToken.Sender.Hex(),
-			e.ContractCallWithToken.DestinationChain,
-			e.ContractCallWithToken.ContractAddress,
+			sender,
+			recipient,
 			e.ContractCallWithToken.PayloadHash.Bytes(),
 			nexus.Approved,
 			asset,

@@ -241,15 +241,11 @@ func (m TransferDirection) ValidateBasic() error {
 }
 
 // NewGeneralMessage returns a GeneralMessage struct
-func NewGeneralMessage(id string, sourceChain ChainName, sender string, destChain ChainName, receiver string, payloadHash []byte, status GeneralMessage_Status, asset *sdk.Coin) GeneralMessage {
+func NewGeneralMessage(id string, sender CrossChainAddress, recipient CrossChainAddress, payloadHash []byte, status GeneralMessage_Status, asset *sdk.Coin) GeneralMessage {
 	return GeneralMessage{
-		ID: MessageID{
-			Chain: destChain,
-			ID:    id,
-		},
-		SourceChain: sourceChain,
+		ID:          id,
 		Sender:      sender,
-		Receiver:    receiver,
+		Recipient:   recipient,
 		PayloadHash: payloadHash,
 		Status:      status,
 		Asset:       asset,
@@ -258,20 +254,16 @@ func NewGeneralMessage(id string, sourceChain ChainName, sender string, destChai
 
 // ValidateBasic validates the general message
 func (m GeneralMessage) ValidateBasic() error {
-	if err := m.ID.ValidateBasic(); err != nil {
-		return sdkerrors.Wrap(err, "invalid id")
+	if err := utils.ValidateString(m.ID); err != nil {
+		return sdkerrors.Wrap(err, "invalid general message id")
 	}
 
-	if err := m.SourceChain.Validate(); err != nil {
+	if err := m.Sender.Validate(); err != nil {
 		return sdkerrors.Wrap(err, "invalid source chain")
 	}
 
-	if err := utils.ValidateString(m.Sender); err != nil {
-		return sdkerrors.Wrap(err, "invalid sender")
-	}
-
-	if err := utils.ValidateString(m.Receiver); err != nil {
-		return sdkerrors.Wrap(err, "invalid receiver")
+	if err := m.Recipient.Validate(); err != nil {
+		return sdkerrors.Wrap(err, "invalid destination chain")
 	}
 
 	if m.Asset != nil {
@@ -289,6 +281,26 @@ func (m GeneralMessage) Is(status GeneralMessage_Status) bool {
 // Match returns true if hash of payload matches the expected
 func (m GeneralMessage) Match(payload []byte) bool {
 	return common.BytesToHash(m.PayloadHash) == crypto.Keccak256Hash(payload)
+}
+
+// GetSourceChain returns the source chain name
+func (m GeneralMessage) GetSourceChain() ChainName {
+	return m.Sender.Chain.Name
+}
+
+// GetSourceAddress returns the source address
+func (m GeneralMessage) GetSourceAddress() string {
+	return m.Sender.Address
+}
+
+// GetDestinationChain returns the destination chain name
+func (m GeneralMessage) GetDestinationChain() ChainName {
+	return m.Recipient.Chain.Name
+}
+
+// GetDestinationAddress returns the destination address
+func (m GeneralMessage) GetDestinationAddress() string {
+	return m.Recipient.Address
 }
 
 // MessageType on can be TypeGeneralMessage or TypeGeneralMessageWithToken
@@ -310,21 +322,4 @@ func (m GeneralMessage) Type() MessageType {
 	}
 
 	return TypeGeneralMessageWithToken
-}
-
-// ValidateBasic returns an error if the given general message ID is invalid; nil otherwise
-func (m MessageID) ValidateBasic() error {
-	if err := m.Chain.Validate(); err != nil {
-		return err
-	}
-
-	if err := utils.ValidateString(m.ID); err != nil {
-		return sdkerrors.Wrap(err, "invalid general message id")
-	}
-
-	return nil
-}
-
-func (m MessageID) String() string {
-	return fmt.Sprintf("%s-%s", m.Chain, m.ID)
 }

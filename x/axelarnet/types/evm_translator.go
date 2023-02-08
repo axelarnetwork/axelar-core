@@ -149,9 +149,9 @@ func ConstructWasmMessageV1(gm nexus.GeneralMessage, payload []byte) ([]byte, er
 
 	msg := wasm{
 		Wasm: contractCall{
-			Contract:      gm.Receiver,
-			SourceChain:   gm.SourceChain.String(),
-			SourceAddress: gm.Sender,
+			Contract:      gm.GetDestinationAddress(),
+			SourceChain:   gm.GetSourceChain().String(),
+			SourceAddress: gm.GetSourceAddress(),
 			Msg: map[string]interface{}{
 				methodName: executeMsg,
 			},
@@ -201,8 +201,8 @@ func ConstructWasmMessageV2(gm nexus.GeneralMessage, payload []byte) ([]byte, er
 // ConstructNativeMessage creates a json serialized cross chain message
 func ConstructNativeMessage(gm nexus.GeneralMessage, payload []byte) ([]byte, error) {
 	return json.Marshal(message{
-		SourceChain: gm.SourceChain.String(),
-		Sender:      gm.Sender,
+		SourceChain: gm.GetSourceChain().String(),
+		Sender:      gm.GetSourceAddress(),
 		Payload:     payload,
 		Type:        int(gm.Type()),
 	})
