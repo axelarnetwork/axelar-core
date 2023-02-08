@@ -21,12 +21,17 @@ func (k Keeper) SetNewMessage(ctx sdk.Context, m exported.GeneralMessage) error 
 		return fmt.Errorf("source chain %s is not a registered chain", m.GetSourceChain())
 	}
 
+	validator := k.GetRouter().GetAddressValidator(sourceChain.Module)
+	if err := validator(ctx, m.Sender); err != nil {
+		return err
+	}
+
 	destChain, ok := k.GetChain(ctx, m.GetDestinationChain())
 	if !ok {
 		return fmt.Errorf("destination chain %s is not a registered chain", m.GetDestinationChain())
 	}
 
-	validator := k.GetRouter().GetAddressValidator(destChain.Module)
+	validator = k.GetRouter().GetAddressValidator(destChain.Module)
 	if err := validator(ctx, m.Recipient); err != nil {
 		return err
 	}

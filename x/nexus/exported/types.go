@@ -263,7 +263,7 @@ func (m GeneralMessage) ValidateBasic() error {
 	}
 
 	if err := m.Recipient.Validate(); err != nil {
-		return sdkerrors.Wrap(err, "invalid source chain")
+		return sdkerrors.Wrap(err, "invalid destination chain")
 	}
 
 	if m.Asset != nil {

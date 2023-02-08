@@ -13,6 +13,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
+	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	evmtestutils "github.com/axelarnetwork/axelar-core/x/evm/types/testutils"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexustestutils "github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
@@ -29,6 +30,7 @@ func TestSetNewGeneralMessage(t *testing.T) {
 	)
 	cfg := app.MakeEncodingConfig()
 	sourceChain := nexustestutils.RandomChain()
+	sourceChain.Module = evmtypes.ModuleName
 	destinationChain := nexustestutils.RandomChain()
 	asset := rand.Coin()
 

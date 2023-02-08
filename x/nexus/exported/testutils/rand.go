@@ -7,15 +7,12 @@ import (
 )
 
 // RandomChain returns a random nexus chain
-func RandomChain(keyTypes ...tss.KeyType) exported.Chain {
-	if len(keyTypes) == 0 {
-		keyTypes = []tss.KeyType{tss.None, tss.Multisig}
-	}
+func RandomChain() exported.Chain {
 	return exported.Chain{
 		Name:                  RandomChainName(),
 		Module:                rand.NormalizedStrBetween(5, 20),
 		SupportsForeignAssets: true,
-		KeyType:               rand.Of(keyTypes...),
+		KeyType:               tss.None,
 	}
 }
 
