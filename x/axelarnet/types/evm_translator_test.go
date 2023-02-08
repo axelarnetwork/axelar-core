@@ -211,8 +211,8 @@ func TestConstructWasmMessageV2(t *testing.T) {
 			}
 		`)
 
-		msg := nexustestutils.RandMessage()
-		msg.SourceChain = "ethereum"
+		msg := nexustestutils.RandomMessage()
+		msg.Sender.Chain.Name = "ethereum"
 		payload := funcs.Must(args.Pack(ver, wasmMsg))
 		_, err := types.TranslateMessage(msg, payload)
 		assert.ErrorContains(t, err, "invalid payload")
@@ -221,8 +221,8 @@ func TestConstructWasmMessageV2(t *testing.T) {
 	t.Run("should return error if invalid message payload", func(t *testing.T) {
 		wasmMsg := []byte(`{"contract_name": [1,2,3,4,5]}`)
 
-		msg := nexustestutils.RandMessage()
-		msg.SourceChain = "ethereum"
+		msg := nexustestutils.RandomMessage()
+		msg.Sender.Chain.Name = "ethereum"
 		payload := funcs.Must(args.Pack(ver, wasmMsg))
 		_, err := types.TranslateMessage(msg, payload)
 		assert.ErrorContains(t, err, "invalid arguments")
@@ -231,7 +231,7 @@ func TestConstructWasmMessageV2(t *testing.T) {
 	t.Run("should return error if incorrect payload contains incorrect source chain", func(t *testing.T) {
 		wasmMsg := []byte(`{"contract_name": {"source_chain": 1.1, "source_address": [3, 12, 143]}}`)
 
-		msg := nexustestutils.RandMessage()
+		msg := nexustestutils.RandomMessage()
 		payload := funcs.Must(args.Pack(ver, wasmMsg))
 		_, err := types.TranslateMessage(msg, payload)
 		assert.ErrorContains(t, err, "source chain does not match expected")
@@ -244,8 +244,8 @@ func TestConstructWasmMessageV2(t *testing.T) {
 			}
 		`)
 
-		msg := nexustestutils.RandMessage()
-		msg.SourceChain = "ethereum"
+		msg := nexustestutils.RandomMessage()
+		msg.Sender.Chain.Name = "ethereum"
 		payload := funcs.Must(args.Pack(ver, wasmMsg))
 		_, err := types.TranslateMessage(msg, payload)
 		assert.ErrorContains(t, err, "source address does not match expected")
@@ -259,8 +259,8 @@ func TestConstructWasmMessageV2(t *testing.T) {
 			}
 		`)
 
-		msg := nexustestutils.RandMessage()
-		msg.SourceChain = "ethereum"
+		msg := nexustestutils.RandomMessage()
+		msg.Sender.Chain.Name = "ethereum"
 		payload := funcs.Must(args.Pack(ver, wasmMsg))
 		_, err := types.TranslateMessage(msg, payload)
 		assert.ErrorContains(t, err, "source address does not match expected")
@@ -280,9 +280,9 @@ func TestConstructWasmMessageV2(t *testing.T) {
 			}
 		`)
 
-		msg := nexustestutils.RandMessage()
-		msg.SourceChain = "ethereum"
-		msg.Sender = "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955"
+		msg := nexustestutils.RandomMessage()
+		msg.Sender.Chain.Name = "ethereum"
+		msg.Sender.Address = "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955"
 		payload := funcs.Must(args.Pack(ver, bz))
 
 		translatedBz, err := types.TranslateMessage(msg, payload)

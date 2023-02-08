@@ -6,6 +6,7 @@ import (
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
@@ -142,7 +143,7 @@ func ConstructWasmMessageV1(gm nexus.GeneralMessage, payload []byte) ([]byte, er
 		executeMsg[argNames[i]] = argValues[i]
 	}
 
-	err = checkSourceInfo(gm.SourceChain, gm.Sender, executeMsg)
+	err = checkSourceInfo(gm.Sender, executeMsg)
 	if err != nil {
 		return nil, err
 	}
@@ -180,7 +181,7 @@ func ConstructWasmMessageV2(gm nexus.GeneralMessage, payload []byte) ([]byte, er
 			return nil, fmt.Errorf("invalid arguments")
 		}
 
-		err = checkSourceInfo(gm.SourceChain, gm.Sender, args)
+		err = checkSourceInfo(gm.Sender, args)
 		if err != nil {
 			return nil, err
 		}
@@ -188,9 +189,9 @@ func ConstructWasmMessageV2(gm nexus.GeneralMessage, payload []byte) ([]byte, er
 
 	msg := wasm{
 		Wasm: contractCall{
-			Contract:      gm.Receiver,
-			SourceChain:   gm.SourceChain.String(),
-			SourceAddress: gm.Sender,
+			Contract:      gm.GetDestinationAddress(),
+			SourceChain:   gm.GetSourceChain().String(),
+			SourceAddress: gm.GetSourceAddress(),
 			Msg:           executeMsg,
 		},
 	}
@@ -223,14 +224,14 @@ func buildArguments(argTypes []string) (abi.Arguments, error) {
 	return arguments, nil
 }
 
-func checkSourceInfo(srcChain nexus.ChainName, srcAddr string, msg map[string]interface{}) error {
+func checkSourceInfo(sender nexus.CrossChainAddress, msg map[string]interface{}) error {
 	chain, ok := msg[sourceChain]
-	if ok && !srcChain.Equals(nexus.ChainName(fmt.Sprint(chain))) {
+	if ok && !sender.Chain.Name.Equals(nexus.ChainName(fmt.Sprint(chain))) {
 		return fmt.Errorf("source chain does not match expected")
 	}
 
 	addr, ok := msg[sourceAddress]
-	if ok && srcAddr != addr {
+	if ok && sender.Address != common.HexToAddress(fmt.Sprint(addr)).Hex() {
 		return fmt.Errorf("source address does not match expected")
 	}
 

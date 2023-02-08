@@ -31,18 +31,24 @@ func RandomDirection() exported.TransferDirection {
 	return exported.TransferDirection(rand.I64Between(1, int64(len(exported.TransferDirection_name))))
 }
 
-// RandMessage generates a random  message
-func RandMessage(statuses ...exported.GeneralMessage_Status) exported.GeneralMessage {
+// RandomCrossChainAddress generates a random cross chain address
+func RandomCrossChainAddress() exported.CrossChainAddress {
+	return exported.CrossChainAddress{
+		Chain:   RandomChain(),
+		Address: rand.AccAddr().String(),
+	}
+}
+
+// RandomMessage generates a random message
+func RandomMessage(statuses ...exported.GeneralMessage_Status) exported.GeneralMessage {
 	if len(statuses) == 0 {
 		statuses = []exported.GeneralMessage_Status{exported.Approved, exported.Sent, exported.Executed, exported.Failed}
 	}
 	coin := rand.Coin()
 	return exported.NewGeneralMessage(
 		rand.StrBetween(10, 20),
-		RandomChainName(),
-		rand.AccAddr().String(),
-		RandomChainName(),
-		rand.AccAddr().String(),
+		RandomCrossChainAddress(),
+		RandomCrossChainAddress(),
 		rand.Bytes(32),
 		rand.Of(statuses...),
 		&coin,
