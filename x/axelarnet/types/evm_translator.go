@@ -38,7 +38,7 @@ const (
 type contractCall struct {
 	SourceChain string `json:"source_chain"`
 	// The sender address on the source chain
-	Sender string `json:"sender"`
+	SourceAddress string `json:"sender"`
 	// Contract is the address of the wasm contract
 	Contract string `json:"contract"`
 	// Msg is a json struct {"methodName": {"arg1": "val1", "arg2": "val2"}}
@@ -149,9 +149,9 @@ func ConstructWasmMessageV1(gm nexus.GeneralMessage, payload []byte) ([]byte, er
 
 	msg := wasm{
 		Wasm: contractCall{
-			Contract:    gm.Receiver,
-			SourceChain: gm.SourceChain.String(),
-			Sender:      gm.Sender,
+			Contract:      gm.Receiver,
+			SourceChain:   gm.SourceChain.String(),
+			SourceAddress: gm.Sender,
 			Msg: map[string]interface{}{
 				methodName: executeMsg,
 			},
@@ -184,15 +184,14 @@ func ConstructWasmMessageV2(gm nexus.GeneralMessage, payload []byte) ([]byte, er
 		if err != nil {
 			return nil, err
 		}
-
 	}
 
 	msg := wasm{
 		Wasm: contractCall{
-			Contract:    gm.Receiver,
-			SourceChain: gm.SourceChain.String(),
-			Sender:      gm.Sender,
-			Msg:         executeMsg,
+			Contract:      gm.Receiver,
+			SourceChain:   gm.SourceChain.String(),
+			SourceAddress: gm.Sender,
+			Msg:           executeMsg,
 		},
 	}
 
@@ -225,20 +224,14 @@ func buildArguments(argTypes []string) (abi.Arguments, error) {
 }
 
 func checkSourceInfo(srcChain nexus.ChainName, srcAddr string, msg map[string]interface{}) error {
-	chainI, ok := msg[sourceChain]
-	if ok {
-		chain := fmt.Sprintf("%v", chainI)
-		if !srcChain.Equals(nexus.ChainName(chain)) {
-			return fmt.Errorf("source chain does not match expected")
-		}
+	chain, ok := msg[sourceChain]
+	if ok && !srcChain.Equals(nexus.ChainName(fmt.Sprint(chain))) {
+		return fmt.Errorf("source chain does not match expected")
 	}
 
-	addrI, ok := msg[sourceAddress]
-	if ok {
-		addr := fmt.Sprintf("%v", addrI)
-		if srcAddr != addr {
-			return fmt.Errorf("source address does not match expected")
-		}
+	addr, ok := msg[sourceAddress]
+	if ok && srcAddr != addr {
+		return fmt.Errorf("source address does not match expected")
 	}
 
 	return nil
