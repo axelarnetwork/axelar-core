@@ -63,10 +63,10 @@ func (i IBCKeeper) ParseIBCDenom(ctx sdk.Context, ibcDenom string) (ibctypes.Den
 }
 
 // SendMessage sends general message via ICS20 packet memo
-func (i IBCKeeper) SendMessage(c context.Context, destinationAddress string, asset sdk.Coin, payload string, id nexus.MessageID) error {
+func (i IBCKeeper) SendMessage(c context.Context, recipient nexus.CrossChainAddress, asset sdk.Coin, payload string, id string) error {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	portID, channelID, err := i.getPortAndChannel(ctx, id.Chain)
+	portID, channelID, err := i.getPortAndChannel(ctx, recipient.Chain.Name)
 	if err != nil {
 		return err
 	}
@@ -76,7 +76,7 @@ func (i IBCKeeper) SendMessage(c context.Context, destinationAddress string, ass
 		return err
 	}
 
-	msg := ibctypes.NewMsgTransfer(portID, channelID, asset, types.MessageSender.String(), destinationAddress, height, 0)
+	msg := ibctypes.NewMsgTransfer(portID, channelID, asset, types.MessageSender.String(), recipient.Address, height, 0)
 	msg.Memo = payload
 
 	res, err := i.ibcTransferK.Transfer(c, msg)

@@ -27,6 +27,7 @@ import (
 	multisigTestUtils "github.com/axelarnetwork/axelar-core/x/multisig/exported/testutils"
 	multisigTypesTestuilts "github.com/axelarnetwork/axelar-core/x/multisig/types/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	nexustestutils "github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
 	"github.com/axelarnetwork/utils/slices"
 	. "github.com/axelarnetwork/utils/test"
 )
@@ -58,12 +59,15 @@ func TestHandleGeneralMessage(t *testing.T) {
 	sourceChainName := nexus.ChainName(rand.Str(5))
 	destinationChainName := nexus.ChainName(rand.Str(5))
 	destinationChain := nexus.Chain{Name: destinationChainName, Module: types.ModuleName}
+	sourceChain := nexus.Chain{Name: sourceChainName, Module: types.ModuleName}
+	sender := nexus.CrossChainAddress{Chain: sourceChain, Address: evmTestUtils.RandomAddress().Hex()}
+	receiver := nexus.CrossChainAddress{Chain: destinationChain, Address: evmTestUtils.RandomAddress().Hex()}
 	payload := rand.Bytes(100)
-	genMsg := nexus.NewGeneralMessage(evmTestUtils.RandomHash().Hex(), sourceChainName, evmTestUtils.RandomAddress().Hex(), destinationChainName, evmTestUtils.RandomAddress().Hex(), evmCrypto.Keccak256(payload), nexus.Approved, nil)
+	genMsg := nexus.NewGeneralMessage(evmTestUtils.RandomHash().Hex(), sender, receiver, evmCrypto.Keccak256(payload), nexus.Approved, nil)
 	givenGeneralMessageEnqueued := Given("GeneralMessage enqueued", func() {
 
 		ctx, _, n, multisigKeeper, _, destinationCk = setup()
-		n.SetMessageFailedFunc = func(ctx sdk.Context, id nexus.MessageID) error {
+		n.SetMessageFailedFunc = func(ctx sdk.Context, id string) error {
 			return nil
 		}
 
@@ -154,7 +158,7 @@ func TestHandleGeneralMessage(t *testing.T) {
 		When("gateway is set", isGatewayAddressSet(true)).
 		Then("should error", func(t *testing.T) {
 			badMsg := genMsg
-			badMsg.Receiver = "0xFF"
+			badMsg.Recipient.Address = "0xFF"
 			_, err := handleMessage(ctx, destinationCk, n, multisigKeeper, destinationChain, badMsg)
 			assert.EqualError(t, err, "invalid contract address")
 		}).
@@ -219,7 +223,7 @@ func TestHandleGeneralMessages(t *testing.T) {
 		ck2.EnqueueCommandFunc = func(ctx sdk.Context, cmd types.Command) error { return nil }
 		ck1.GetGatewayAddressFunc = func(ctx sdk.Context) (types.Address, bool) { return evmTestUtils.RandomAddress(), true }
 		ck2.GetGatewayAddressFunc = func(ctx sdk.Context) (types.Address, bool) { return evmTestUtils.RandomAddress(), true }
-		n.SetMessageExecutedFunc = func(ctx sdk.Context, messageID nexus.MessageID) error { return nil }
+		n.SetMessageExecutedFunc = func(ctx sdk.Context, id string) error { return nil }
 		n.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return true }
 	})
 	withGeneralMessages := func(numPerChain map[nexus.ChainName]int) WhenStatement {
@@ -228,8 +232,14 @@ func TestHandleGeneralMessages(t *testing.T) {
 
 				msgs := []nexus.GeneralMessage{}
 				for i := 0; i < int(limit) && i < numPerChain[chain]; i++ {
+					srcChain := nexustestutils.RandomChain()
+					srcChain.Module = types.ModuleName
+					destChain := nexustestutils.RandomChain()
+					destChain.Module = types.ModuleName
+					sender := nexus.CrossChainAddress{Chain: srcChain, Address: evmTestUtils.RandomAddress().Hex()}
+					receiver := nexus.CrossChainAddress{Chain: destChain, Address: evmTestUtils.RandomAddress().Hex()}
 
-					msg := nexus.NewGeneralMessage(evmTestUtils.RandomHash().Hex(), nexus.ChainName(rand.Str(5)), evmTestUtils.RandomAddress().Hex(), chain, evmTestUtils.RandomAddress().Hex(), evmTestUtils.RandomHash().Bytes(), nexus.Sent, nil)
+					msg := nexus.NewGeneralMessage(evmTestUtils.RandomHash().Hex(), sender, receiver, evmTestUtils.RandomHash().Bytes(), nexus.Sent, nil)
 					msgs = append(msgs, msg)
 				}
 				return msgs
@@ -390,6 +400,8 @@ func TestHandleContractCall(t *testing.T) {
 		return func() {
 			n.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 				switch chain {
+				case sourceChainName:
+					return nexus.Chain{Name: chain, Module: types.ModuleName}, true
 				case destinationChainName:
 					return nexus.Chain{Name: chain, Module: axelarnet.ModuleName}, true
 				default:

@@ -198,15 +198,25 @@ func handleContractCallWithTokenToEVM(ctx sdk.Context, event types.Event, bk typ
 }
 
 func setMessageToNexus(ctx sdk.Context, n types.Nexus, event types.Event, asset *sdk.Coin) error {
+	sourceChain := funcs.MustOk(n.GetChain(ctx, event.Chain))
+
 	var message nexus.GeneralMessage
 	switch e := event.GetEvent().(type) {
 	case *types.Event_ContractCall:
+		sender := nexus.CrossChainAddress{
+			Chain:   sourceChain,
+			Address: e.ContractCall.Sender.Hex(),
+		}
+
+		recipient := nexus.CrossChainAddress{
+			Chain:   funcs.MustOk(n.GetChain(ctx, e.ContractCall.DestinationChain)),
+			Address: e.ContractCall.Sender.Hex(),
+		}
+
 		message = nexus.NewGeneralMessage(
 			string(event.GetID()),
-			event.Chain,
-			e.ContractCall.Sender.Hex(),
-			e.ContractCall.DestinationChain,
-			e.ContractCall.ContractAddress,
+			sender,
+			recipient,
 			e.ContractCall.PayloadHash.Bytes(),
 			nexus.Approved,
 			nil,
@@ -216,12 +226,21 @@ func setMessageToNexus(ctx sdk.Context, n types.Nexus, event types.Event, asset 
 		if asset == nil {
 			return fmt.Errorf("expect asset for ContractCallWithToken")
 		}
+
+		sender := nexus.CrossChainAddress{
+			Chain:   sourceChain,
+			Address: e.ContractCallWithToken.Sender.Hex(),
+		}
+
+		recipient := nexus.CrossChainAddress{
+			Chain:   funcs.MustOk(n.GetChain(ctx, e.ContractCallWithToken.DestinationChain)),
+			Address: e.ContractCallWithToken.Sender.Hex(),
+		}
+
 		message = nexus.NewGeneralMessage(
 			string(event.GetID()),
-			event.Chain,
-			e.ContractCallWithToken.Sender.Hex(),
-			e.ContractCallWithToken.DestinationChain,
-			e.ContractCallWithToken.ContractAddress,
+			sender,
+			recipient,
 			e.ContractCallWithToken.PayloadHash.Bytes(),
 			nexus.Approved,
 			asset,
@@ -555,7 +574,7 @@ func validateMessage(ctx sdk.Context, ck types.ChainKeeper, n types.Nexus, m typ
 		return chainID, keyID, fmt.Errorf("destination chain de-activated")
 	}
 
-	if !common.IsHexAddress(msg.Receiver) {
+	if !common.IsHexAddress(msg.GetDestinationAddress()) {
 		return chainID, keyID, fmt.Errorf("invalid contract address")
 	}
 
@@ -572,7 +591,7 @@ func handleMessage(ctx sdk.Context, ck types.ChainKeeper, n types.Nexus, m types
 	}
 
 	dummyTxID := common.BytesToHash(make([]byte, common.HashLength))
-	cmd := types.NewApproveContractCallCommandGeneric(chainID, keyID, common.HexToAddress(msg.Receiver), common.BytesToHash(msg.PayloadHash), dummyTxID, msg.SourceChain, msg.Sender, 0, msg.ID.ID)
+	cmd := types.NewApproveContractCallCommandGeneric(chainID, keyID, common.HexToAddress(msg.GetDestinationAddress()), common.BytesToHash(msg.PayloadHash), dummyTxID, msg.GetSourceChain(), msg.GetSourceAddress(), 0, msg.ID)
 	funcs.MustNoErr(ck.EnqueueCommand(ctx, cmd))
 
 	return cmd.ID, nil
@@ -599,18 +618,18 @@ func handleMessages(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, m types
 				}
 
 				events.Emit(ctx, &types.ContractCallApproved{
-					Chain:            msg.SourceChain,
-					EventID:          types.EventID(msg.ID.ID),
+					Chain:            msg.GetSourceChain(),
+					EventID:          types.EventID(msg.ID),
 					CommandID:        cmdID,
-					Sender:           msg.Sender,
-					DestinationChain: msg.ID.Chain,
-					ContractAddress:  msg.Receiver,
+					Sender:           msg.GetSourceAddress(),
+					DestinationChain: msg.GetDestinationChain(),
+					ContractAddress:  msg.GetDestinationAddress(),
 					PayloadHash:      types.Hash(common.BytesToHash(msg.PayloadHash)),
 				})
 
 				ck.Logger(ctx).Debug("completed handling general message",
 					types.AttributeKeyChain, chain.Name.String(),
-					types.AttributeKeyMessageID, msg.ID.ID,
+					types.AttributeKeyMessageID, msg.ID,
 					types.AttributeKeyCommandsID, cmdID,
 				)
 
@@ -622,12 +641,12 @@ func handleMessages(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, m types
 			if !success {
 				ck.Logger(ctx).Debug(fmt.Sprintf("failed handling general message: %s", capturedErr.Error()),
 					types.AttributeKeyChain, chain.Name.String(),
-					types.AttributeKeyMessageID, msg.ID.ID,
+					types.AttributeKeyMessageID, msg.ID,
 				)
 
 				events.Emit(ctx, &types.ContractCallFailed{
 					Chain:     chain.Name,
-					MessageID: msg.ID.ID,
+					MessageID: msg.ID,
 					Reason:    capturedErr.Error(),
 				})
 

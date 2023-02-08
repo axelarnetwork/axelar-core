@@ -905,12 +905,7 @@ paths:
                 type: string
                 format: byte
               id:
-                type: object
-                properties:
-                  chain:
-                    type: string
-                  id:
-                    type: string
+                type: string
               payload:
                 type: string
                 format: byte
@@ -41268,12 +41263,7 @@ definitions:
         type: string
         format: byte
       id:
-        type: object
-        properties:
-          chain:
-            type: string
-          id:
-            type: string
+        type: string
       payload:
         type: string
         format: byte
@@ -41411,13 +41401,6 @@ definitions:
       module:
         type: string
     title: Chain represents the properties of a registered blockchain
-  axelar.nexus.exported.v1beta1.MessageID:
-    type: object
-    properties:
-      chain:
-        type: string
-      id:
-        type: string
   axelar.tss.exported.v1beta1.KeyType:
     type: string
     enum:

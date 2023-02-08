@@ -50,7 +50,6 @@
     - [CrossChainTransfer](#axelar.nexus.exported.v1beta1.CrossChainTransfer)
     - [FeeInfo](#axelar.nexus.exported.v1beta1.FeeInfo)
     - [GeneralMessage](#axelar.nexus.exported.v1beta1.GeneralMessage)
-    - [MessageID](#axelar.nexus.exported.v1beta1.MessageID)
     - [TransferFee](#axelar.nexus.exported.v1beta1.TransferFee)
   
     - [GeneralMessage.Status](#axelar.nexus.exported.v1beta1.GeneralMessage.Status)
@@ -1154,29 +1153,12 @@ registered blockchain
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `id` | [MessageID](#axelar.nexus.exported.v1beta1.MessageID) |  |  |
-| `source_chain` | [string](#string) |  |  |
-| `sender` | [string](#string) |  |  |
-| `receiver` | [string](#string) |  |  |
+| `id` | [string](#string) |  |  |
+| `sender` | [CrossChainAddress](#axelar.nexus.exported.v1beta1.CrossChainAddress) |  |  |
+| `recipient` | [CrossChainAddress](#axelar.nexus.exported.v1beta1.CrossChainAddress) |  |  |
 | `payload_hash` | [bytes](#bytes) |  |  |
 | `status` | [GeneralMessage.Status](#axelar.nexus.exported.v1beta1.GeneralMessage.Status) |  |  |
 | `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
-
-
-
-
-
-
-<a name="axelar.nexus.exported.v1beta1.MessageID"></a>
-
-### MessageID
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `chain` | [string](#string) |  |  |
-| `id` | [string](#string) |  |  |
 
 
 
@@ -1997,7 +1979,7 @@ MsgConfirmDeposit represents a deposit confirmation message
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
-| `id` | [axelar.nexus.exported.v1beta1.MessageID](#axelar.nexus.exported.v1beta1.MessageID) |  |  |
+| `id` | [string](#string) |  |  |
 | `payload` | [bytes](#bytes) |  |  |
 
 

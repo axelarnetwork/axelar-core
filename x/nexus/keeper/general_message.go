@@ -12,13 +12,12 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
-func getMessageKey(id exported.MessageID) key.Key {
-	return generalMessagePrefix.
-		Append(key.FromStr(id.ID))
+func getMessageKey(id string) key.Key {
+	return generalMessagePrefix.Append(key.FromStr(id))
 }
 
-func getSentMessageKey(id exported.MessageID) key.Key {
-	return sentMessagePrefix.Append(key.From(id.Chain)).Append(key.FromStr(id.ID))
+func getSentMessageKey(destinationChain exported.ChainName, id string) key.Key {
+	return sentMessagePrefix.Append(key.From(destinationChain)).Append(key.FromStr(id))
 }
 
 // GenerateMessageID generates a unique general message ID
@@ -32,18 +31,23 @@ func (k Keeper) GenerateMessageID(ctx sdk.Context, sourceTxID string) string {
 
 // SetNewMessage sets the given general message. If the messages is approved, adds the message ID to approved messages store
 func (k Keeper) SetNewMessage(ctx sdk.Context, m exported.GeneralMessage) error {
-	sourceChain, ok := k.GetChain(ctx, m.SourceChain)
+	sourceChain, ok := k.GetChain(ctx, m.GetSourceChain())
 	if !ok {
-		return fmt.Errorf("source chain %s is not a registered chain", m.SourceChain)
+		return fmt.Errorf("source chain %s is not a registered chain", m.GetSourceChain())
 	}
 
-	destChain, ok := k.GetChain(ctx, m.ID.Chain)
-	if !ok {
-		return fmt.Errorf("destination chain %s is not a registered chain", m.ID.Chain)
+	validator := k.GetRouter().GetAddressValidator(sourceChain.Module)
+	if err := validator(ctx, m.Sender); err != nil {
+		return err
 	}
 
-	validator := k.GetRouter().GetAddressValidator(destChain.Module)
-	if err := validator(ctx, exported.CrossChainAddress{Chain: destChain, Address: m.Receiver}); err != nil {
+	destChain, ok := k.GetChain(ctx, m.GetDestinationChain())
+	if !ok {
+		return fmt.Errorf("destination chain %s is not a registered chain", m.GetDestinationChain())
+	}
+
+	validator = k.GetRouter().GetAddressValidator(destChain.Module)
+	if err := validator(ctx, m.Recipient); err != nil {
 		return err
 	}
 
@@ -79,10 +83,10 @@ func (k Keeper) SetNewMessage(ctx sdk.Context, m exported.GeneralMessage) error 
  */
 
 // SetMessageSent sets the general message as sent
-func (k Keeper) SetMessageSent(ctx sdk.Context, messageID exported.MessageID) error {
-	m, found := k.GetMessage(ctx, messageID)
+func (k Keeper) SetMessageSent(ctx sdk.Context, id string) error {
+	m, found := k.GetMessage(ctx, id)
 	if !found {
-		return fmt.Errorf("general message %s not found", messageID.String())
+		return fmt.Errorf("general message %s not found", id)
 	}
 
 	if !(m.Is(exported.Approved) || m.Is(exported.Failed)) {
@@ -99,10 +103,10 @@ func (k Keeper) SetMessageSent(ctx sdk.Context, messageID exported.MessageID) er
 }
 
 // SetMessageExecuted sets the general message as executed
-func (k Keeper) SetMessageExecuted(ctx sdk.Context, messageID exported.MessageID) error {
-	m, found := k.GetMessage(ctx, messageID)
+func (k Keeper) SetMessageExecuted(ctx sdk.Context, id string) error {
+	m, found := k.GetMessage(ctx, id)
 	if !found {
-		return fmt.Errorf("general message %s not found", messageID.String())
+		return fmt.Errorf("general message %s not found", id)
 	}
 
 	if !(m.Is(exported.Sent)) {
@@ -119,10 +123,10 @@ func (k Keeper) SetMessageExecuted(ctx sdk.Context, messageID exported.MessageID
 }
 
 // SetMessageFailed sets the general message as failed
-func (k Keeper) SetMessageFailed(ctx sdk.Context, messageID exported.MessageID) error {
-	m, found := k.GetMessage(ctx, messageID)
+func (k Keeper) SetMessageFailed(ctx sdk.Context, id string) error {
+	m, found := k.GetMessage(ctx, id)
 	if !found {
-		return fmt.Errorf("general message %s not found", messageID.String())
+		return fmt.Errorf("general message %s not found", id)
 	}
 
 	if !(m.Is(exported.Sent)) {
@@ -139,14 +143,17 @@ func (k Keeper) SetMessageFailed(ctx sdk.Context, messageID exported.MessageID) 
 }
 
 // DeleteMessage deletes the general message with associated ID, and also deletes the message ID from the approved messages store
-func (k Keeper) DeleteMessage(ctx sdk.Context, messageID exported.MessageID) {
-	k.getStore(ctx).DeleteNew(getSentMessageKey(messageID))
-	k.getStore(ctx).DeleteNew(getMessageKey(messageID))
+func (k Keeper) DeleteMessage(ctx sdk.Context, id string) {
+	m, found := k.GetMessage(ctx, id)
+	if found {
+		k.deleteSentMessage(ctx, m)
+		k.getStore(ctx).DeleteNew(getMessageKey(id))
+	}
 }
 
 // GetMessage returns the general message by ID
-func (k Keeper) GetMessage(ctx sdk.Context, messageID exported.MessageID) (m exported.GeneralMessage, found bool) {
-	return m, k.getStore(ctx).GetNew(getMessageKey(messageID), &m)
+func (k Keeper) GetMessage(ctx sdk.Context, id string) (m exported.GeneralMessage, found bool) {
+	return m, k.getStore(ctx).GetNew(getMessageKey(id), &m)
 }
 
 func (k Keeper) setMessage(ctx sdk.Context, m exported.GeneralMessage) error {
@@ -158,11 +165,12 @@ func (k Keeper) setSentMessage(ctx sdk.Context, m exported.GeneralMessage) error
 		return fmt.Errorf("general message is not sent")
 	}
 
-	return k.getStore(ctx).SetNewValidated(getSentMessageKey(m.ID), &m.ID)
+	k.getStore(ctx).SetRawNew(getSentMessageKey(m.GetDestinationChain(), m.ID), []byte(m.ID))
+	return nil
 }
 
 func (k Keeper) deleteSentMessage(ctx sdk.Context, m exported.GeneralMessage) {
-	k.getStore(ctx).DeleteNew(getSentMessageKey(m.ID))
+	k.getStore(ctx).DeleteNew(getSentMessageKey(m.GetDestinationChain(), m.ID))
 }
 
 func (k Keeper) getMessages(ctx sdk.Context) (generalMessages []exported.GeneralMessage) {
@@ -182,7 +190,7 @@ func (k Keeper) getMessages(ctx sdk.Context) (generalMessages []exported.General
 // GetSentMessages returns up to limit sent messages where chain is the destination chain
 func (k Keeper) GetSentMessages(ctx sdk.Context, chain exported.ChainName, limit int64) []exported.GeneralMessage {
 	msgs := []exported.GeneralMessage{}
-	ids := []exported.MessageID{}
+	ids := []string{}
 
 	pageRequest := &query.PageRequest{
 		Key:        nil,
@@ -193,10 +201,7 @@ func (k Keeper) GetSentMessages(ctx sdk.Context, chain exported.ChainName, limit
 	}
 
 	query.Paginate(prefix.NewStore(k.getStore(ctx).KVStore, append(sentMessagePrefix.Append(key.From(chain)).Bytes(), []byte(key.DefaultDelimiter)...)), pageRequest, func(key []byte, value []byte) error {
-		var id exported.MessageID
-		k.cdc.MustUnmarshalLengthPrefixed(value, &id)
-
-		ids = append(ids, id)
+		ids = append(ids, string(value))
 		return nil
 	})
 

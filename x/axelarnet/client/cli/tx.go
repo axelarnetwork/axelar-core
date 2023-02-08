@@ -302,7 +302,7 @@ func getRetryIBCTransfer() *cobra.Command {
 
 func getGeneralMessage() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "execute-message [chain] [message ID] [payload]",
+		Use:   "execute-message [message ID] [payload]",
 		Short: "Execute an approved general message to the destination chain",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -311,14 +311,13 @@ func getGeneralMessage() *cobra.Command {
 				return err
 			}
 
-			chain := utils.NormalizeString(args[0])
-			id := utils.NormalizeString(args[1])
-			payload, err := hex.DecodeString(args[2])
+			id := utils.NormalizeString(args[0])
+			payload, err := hex.DecodeString(args[1])
 			if err != nil {
 				return err
 			}
 
-			msg := types.NewExecuteMessage(cliCtx.GetFromAddress(), nexus.MessageID{Chain: nexus.ChainName(chain), ID: id}, payload)
+			msg := types.NewExecuteMessage(cliCtx.GetFromAddress(), id, payload)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

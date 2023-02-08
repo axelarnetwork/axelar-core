@@ -161,10 +161,10 @@ var _ types.Nexus = &NexusMock{}
 //			SetChainMaintainerStateFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, maintainerState github_com_axelarnetwork_axelar_core_x_nexus_exported.MaintainerState) error {
 //				panic("mock out the SetChainMaintainerState method")
 //			},
-//			SetMessageExecutedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, messageID github_com_axelarnetwork_axelar_core_x_nexus_exported.MessageID) error {
+//			SetMessageExecutedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, id string) error {
 //				panic("mock out the SetMessageExecuted method")
 //			},
-//			SetMessageFailedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, messageID github_com_axelarnetwork_axelar_core_x_nexus_exported.MessageID) error {
+//			SetMessageFailedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, id string) error {
 //				panic("mock out the SetMessageFailed method")
 //			},
 //			SetNewMessageFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, m github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage) error {
@@ -238,10 +238,10 @@ type NexusMock struct {
 	SetChainMaintainerStateFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, maintainerState github_com_axelarnetwork_axelar_core_x_nexus_exported.MaintainerState) error
 
 	// SetMessageExecutedFunc mocks the SetMessageExecuted method.
-	SetMessageExecutedFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, messageID github_com_axelarnetwork_axelar_core_x_nexus_exported.MessageID) error
+	SetMessageExecutedFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, id string) error
 
 	// SetMessageFailedFunc mocks the SetMessageFailed method.
-	SetMessageFailedFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, messageID github_com_axelarnetwork_axelar_core_x_nexus_exported.MessageID) error
+	SetMessageFailedFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, id string) error
 
 	// SetNewMessageFunc mocks the SetNewMessage method.
 	SetNewMessageFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, m github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage) error
@@ -422,15 +422,15 @@ type NexusMock struct {
 		SetMessageExecuted []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// MessageID is the messageID argument value.
-			MessageID github_com_axelarnetwork_axelar_core_x_nexus_exported.MessageID
+			// ID is the id argument value.
+			ID string
 		}
 		// SetMessageFailed holds details about calls to the SetMessageFailed method.
 		SetMessageFailed []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// MessageID is the messageID argument value.
-			MessageID github_com_axelarnetwork_axelar_core_x_nexus_exported.MessageID
+			// ID is the id argument value.
+			ID string
 		}
 		// SetNewMessage holds details about calls to the SetNewMessage method.
 		SetNewMessage []struct {
@@ -1246,21 +1246,21 @@ func (mock *NexusMock) SetChainMaintainerStateCalls() []struct {
 }
 
 // SetMessageExecuted calls SetMessageExecutedFunc.
-func (mock *NexusMock) SetMessageExecuted(ctx github_com_cosmos_cosmos_sdk_types.Context, messageID github_com_axelarnetwork_axelar_core_x_nexus_exported.MessageID) error {
+func (mock *NexusMock) SetMessageExecuted(ctx github_com_cosmos_cosmos_sdk_types.Context, id string) error {
 	if mock.SetMessageExecutedFunc == nil {
 		panic("NexusMock.SetMessageExecutedFunc: method is nil but Nexus.SetMessageExecuted was just called")
 	}
 	callInfo := struct {
-		Ctx       github_com_cosmos_cosmos_sdk_types.Context
-		MessageID github_com_axelarnetwork_axelar_core_x_nexus_exported.MessageID
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+		ID  string
 	}{
-		Ctx:       ctx,
-		MessageID: messageID,
+		Ctx: ctx,
+		ID:  id,
 	}
 	mock.lockSetMessageExecuted.Lock()
 	mock.calls.SetMessageExecuted = append(mock.calls.SetMessageExecuted, callInfo)
 	mock.lockSetMessageExecuted.Unlock()
-	return mock.SetMessageExecutedFunc(ctx, messageID)
+	return mock.SetMessageExecutedFunc(ctx, id)
 }
 
 // SetMessageExecutedCalls gets all the calls that were made to SetMessageExecuted.
@@ -1268,12 +1268,12 @@ func (mock *NexusMock) SetMessageExecuted(ctx github_com_cosmos_cosmos_sdk_types
 //
 //	len(mockedNexus.SetMessageExecutedCalls())
 func (mock *NexusMock) SetMessageExecutedCalls() []struct {
-	Ctx       github_com_cosmos_cosmos_sdk_types.Context
-	MessageID github_com_axelarnetwork_axelar_core_x_nexus_exported.MessageID
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+	ID  string
 } {
 	var calls []struct {
-		Ctx       github_com_cosmos_cosmos_sdk_types.Context
-		MessageID github_com_axelarnetwork_axelar_core_x_nexus_exported.MessageID
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+		ID  string
 	}
 	mock.lockSetMessageExecuted.RLock()
 	calls = mock.calls.SetMessageExecuted
@@ -1282,21 +1282,21 @@ func (mock *NexusMock) SetMessageExecutedCalls() []struct {
 }
 
 // SetMessageFailed calls SetMessageFailedFunc.
-func (mock *NexusMock) SetMessageFailed(ctx github_com_cosmos_cosmos_sdk_types.Context, messageID github_com_axelarnetwork_axelar_core_x_nexus_exported.MessageID) error {
+func (mock *NexusMock) SetMessageFailed(ctx github_com_cosmos_cosmos_sdk_types.Context, id string) error {
 	if mock.SetMessageFailedFunc == nil {
 		panic("NexusMock.SetMessageFailedFunc: method is nil but Nexus.SetMessageFailed was just called")
 	}
 	callInfo := struct {
-		Ctx       github_com_cosmos_cosmos_sdk_types.Context
-		MessageID github_com_axelarnetwork_axelar_core_x_nexus_exported.MessageID
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+		ID  string
 	}{
-		Ctx:       ctx,
-		MessageID: messageID,
+		Ctx: ctx,
+		ID:  id,
 	}
 	mock.lockSetMessageFailed.Lock()
 	mock.calls.SetMessageFailed = append(mock.calls.SetMessageFailed, callInfo)
 	mock.lockSetMessageFailed.Unlock()
-	return mock.SetMessageFailedFunc(ctx, messageID)
+	return mock.SetMessageFailedFunc(ctx, id)
 }
 
 // SetMessageFailedCalls gets all the calls that were made to SetMessageFailed.
@@ -1304,12 +1304,12 @@ func (mock *NexusMock) SetMessageFailed(ctx github_com_cosmos_cosmos_sdk_types.C
 //
 //	len(mockedNexus.SetMessageFailedCalls())
 func (mock *NexusMock) SetMessageFailedCalls() []struct {
-	Ctx       github_com_cosmos_cosmos_sdk_types.Context
-	MessageID github_com_axelarnetwork_axelar_core_x_nexus_exported.MessageID
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+	ID  string
 } {
 	var calls []struct {
-		Ctx       github_com_cosmos_cosmos_sdk_types.Context
-		MessageID github_com_axelarnetwork_axelar_core_x_nexus_exported.MessageID
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+		ID  string
 	}
 	mock.lockSetMessageFailed.RLock()
 	calls = mock.calls.SetMessageFailed
