@@ -13,8 +13,10 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
+	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	evmtestutils "github.com/axelarnetwork/axelar-core/x/evm/types/testutils"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	nexustestutils "github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	"github.com/axelarnetwork/utils/funcs"
 	. "github.com/axelarnetwork/utils/test"
@@ -27,19 +29,23 @@ func TestSetNewGeneralMessage(t *testing.T) {
 		k              nexus.Keeper
 	)
 	cfg := app.MakeEncodingConfig()
-	sourceChainName := exported.ChainName(rand.Str(5))
-	destinationChainName := exported.ChainName(rand.Str(5))
+	sourceChain := nexustestutils.RandomChain()
+	sourceChain.Module = evmtypes.ModuleName
+	destinationChain := nexustestutils.RandomChain()
 	asset := rand.Coin()
 
 	givenContractCallEvent := Given("a general message with token", func() {
 		generalMessage = exported.GeneralMessage{
-			ID: exported.MessageID{
-				ID:    fmt.Sprintf("%s-%d", evmtestutils.RandomHash().Hex(), rand.PosI64()),
-				Chain: destinationChainName,
+			ID: fmt.Sprintf("%s-%d", evmtestutils.RandomHash().Hex(), rand.PosI64()),
+
+			Sender: exported.CrossChainAddress{
+				Chain:   sourceChain,
+				Address: evmtestutils.RandomAddress().Hex(),
 			},
-			SourceChain: sourceChainName,
-			Sender:      evmtestutils.RandomAddress().Hex(),
-			Receiver:    genCosmosAddr(destinationChainName.String()),
+			Recipient: exported.CrossChainAddress{
+				Chain:   destinationChain,
+				Address: genCosmosAddr(destinationChain.Name.String()),
+			},
 			Status:      exported.Approved,
 			PayloadHash: crypto.Keccak256Hash(rand.Bytes(int(rand.I64Between(1, 100)))).Bytes(),
 			Asset:       &asset,
@@ -50,8 +56,8 @@ func TestSetNewGeneralMessage(t *testing.T) {
 
 	whenChainsAreRegistered := givenContractCallEvent.
 		When("the source and destination chains are registered", func() {
-			k.SetChain(ctx, exported.Chain{Name: sourceChainName, SupportsForeignAssets: true})
-			k.SetChain(ctx, exported.Chain{Name: destinationChainName, SupportsForeignAssets: true})
+			k.SetChain(ctx, sourceChain)
+			k.SetChain(ctx, destinationChain)
 		})
 
 	errorWith := func(msg string) func(t *testing.T) {
@@ -63,7 +69,7 @@ func TestSetNewGeneralMessage(t *testing.T) {
 	isCosmosChain := func(isCosmosChain bool) func() {
 		return func() {
 			if isCosmosChain {
-				destChain := funcs.MustOk(k.GetChain(ctx, destinationChainName))
+				destChain := funcs.MustOk(k.GetChain(ctx, destinationChain.Name))
 				destChain.Module = axelarnet.ModuleName
 				k.SetChain(ctx, destChain)
 			}
@@ -73,30 +79,28 @@ func TestSetNewGeneralMessage(t *testing.T) {
 	isAssetRegistered := func(isRegistered bool) func() {
 		return func() {
 			if isRegistered {
-				srcChain := funcs.MustOk(k.GetChain(ctx, sourceChainName))
-				destChain := funcs.MustOk(k.GetChain(ctx, destinationChainName))
-				funcs.MustNoErr(k.RegisterAsset(ctx, srcChain, exported.Asset{Denom: asset.Denom, IsNativeAsset: false}, utils.MaxUint, time.Hour))
-				funcs.MustNoErr(k.RegisterAsset(ctx, destChain, exported.Asset{Denom: asset.Denom, IsNativeAsset: false}, utils.MaxUint, time.Hour))
+				funcs.MustNoErr(k.RegisterAsset(ctx, sourceChain, exported.Asset{Denom: asset.Denom, IsNativeAsset: false}, utils.MaxUint, time.Hour))
+				funcs.MustNoErr(k.RegisterAsset(ctx, destinationChain, exported.Asset{Denom: asset.Denom, IsNativeAsset: false}, utils.MaxUint, time.Hour))
 			}
 		}
 	}
 
 	givenContractCallEvent.
 		When("the source chain is not registered", func() {}).
-		Then("should return error", errorWith(fmt.Sprintf("source chain %s is not a registered chain", sourceChainName))).
+		Then("should return error", errorWith(fmt.Sprintf("source chain %s is not a registered chain", sourceChain.Name))).
 		Run(t)
 
 	givenContractCallEvent.
 		When("the destination chain is not registered", func() {
-			k.SetChain(ctx, exported.Chain{Name: sourceChainName})
+			k.SetChain(ctx, sourceChain)
 		}).
-		Then("should return error", errorWith(fmt.Sprintf("destination chain %s is not a registered chain", destinationChainName))).
+		Then("should return error", errorWith(fmt.Sprintf("destination chain %s is not a registered chain", destinationChain.Name))).
 		Run(t)
 
 	whenChainsAreRegistered.
 		When("address validator for destination chain is set", isCosmosChain(true)).
 		When("destination address is invalid", func() {
-			generalMessage.Receiver = rand.Str(20)
+			generalMessage.Recipient.Address = rand.Str(20)
 		}).
 		Then("should return error", errorWith("decoding bech32 failed")).
 		Run(t)

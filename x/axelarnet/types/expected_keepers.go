@@ -53,10 +53,10 @@ type Nexus interface {
 	GetChainByNativeAsset(ctx sdk.Context, asset string) (nexus.Chain, bool)
 	IsChainActivated(ctx sdk.Context, chain nexus.Chain) bool
 	RateLimitTransfer(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error
-	GetMessage(ctx sdk.Context, messageID nexus.MessageID) (m nexus.GeneralMessage, found bool)
-	SetMessageSent(ctx sdk.Context, messageID nexus.MessageID) error
-	SetMessageExecuted(ctx sdk.Context, messageID nexus.MessageID) error
-	SetMessageFailed(ctx sdk.Context, messageID nexus.MessageID) error
+	GetMessage(ctx sdk.Context, id string) (m nexus.GeneralMessage, found bool)
+	SetMessageSent(ctx sdk.Context, id string) error
+	SetMessageExecuted(ctx sdk.Context, id string) error
+	SetMessageFailed(ctx sdk.Context, id string) error
 }
 
 // BankKeeper defines the expected interface contract the vesting module requires

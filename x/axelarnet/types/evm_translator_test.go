@@ -92,9 +92,15 @@ func TestNewInterpreter(t *testing.T) {
 	assert.NoError(t, err)
 
 	gm := nexus.GeneralMessage{
-		SourceChain: nexustestutils.RandomChainName(),
-		Sender:      evmtestutils.RandomAddress().Hex(),
-		Receiver:    rand.AccAddr().String(),
+
+		Sender: nexus.CrossChainAddress{
+			Chain:   nexustestutils.RandomChain(),
+			Address: evmtestutils.RandomAddress().Hex(),
+		},
+		Recipient: nexus.CrossChainAddress{
+			Chain:   nexustestutils.RandomChain(),
+			Address: rand.AccAddr().String(),
+		},
 	}
 	msg, err := types.ConstructWasmMessage(gm, payload)
 	assert.NoError(t, err)
@@ -113,15 +119,15 @@ func TestNewInterpreter(t *testing.T) {
 
 	actualSourceChain, ok := wasm["source_chain"].(string)
 	assert.True(t, ok)
-	assert.Equal(t, gm.SourceChain.String(), actualSourceChain)
+	assert.Equal(t, gm.GetSourceChain().String(), actualSourceChain)
 
 	actualSender, ok := wasm["sender"].(string)
 	assert.True(t, ok)
-	assert.Equal(t, gm.Sender, actualSender)
+	assert.Equal(t, gm.GetSourceAddress(), actualSender)
 
 	actualContractAddr, ok := wasm["contract"].(string)
 	assert.True(t, ok)
-	assert.Equal(t, gm.Receiver, actualContractAddr)
+	assert.Equal(t, gm.GetDestinationAddress(), actualContractAddr)
 
 	// make sure execute message can be serialized
 	_, err = json.Marshal(wasmRaw)

@@ -3,6 +3,7 @@ package testutils
 import (
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 // RandomChain returns a random nexus chain
@@ -11,6 +12,7 @@ func RandomChain() exported.Chain {
 		Name:                  RandomChainName(),
 		Module:                rand.NormalizedStrBetween(5, 20),
 		SupportsForeignAssets: true,
+		KeyType:               tss.None,
 	}
 }
 

@@ -88,12 +88,6 @@ enum TransferDirection {
       [ (gogoproto.enumvalue_customname) = "Outgoing" ];
 }
 
-message MessageID {
-  option (gogoproto.goproto_stringer) = false;
-  string chain = 1 [ (gogoproto.casttype) = "ChainName" ];
-  string id = 2 [ (gogoproto.customname) = "ID" ];
-}
-
 message GeneralMessage {
   enum Status {
     option (gogoproto.goproto_enum_prefix) = false;
@@ -105,12 +99,11 @@ message GeneralMessage {
     STATUS_EXECUTED = 3 [ (gogoproto.enumvalue_customname) = "Executed" ];
     STATUS_FAILED = 4 [ (gogoproto.enumvalue_customname) = "Failed" ];
   }
-  MessageID id = 1
-      [ (gogoproto.customname) = "ID", (gogoproto.nullable) = false ];
-  string source_chain = 2 [ (gogoproto.casttype) = "ChainName" ];
-  string sender = 3;
-  string receiver = 4;
-  bytes payload_hash = 5;
-  Status status = 6;
-  cosmos.base.v1beta1.Coin asset = 7;
+
+  string id = 1 [ (gogoproto.customname) = "ID" ];
+  CrossChainAddress sender = 2 [ (gogoproto.nullable) = false ];
+  CrossChainAddress recipient = 3 [ (gogoproto.nullable) = false ];
+  bytes payload_hash = 4;
+  Status status = 5;
+  cosmos.base.v1beta1.Coin asset = 6;
 }
