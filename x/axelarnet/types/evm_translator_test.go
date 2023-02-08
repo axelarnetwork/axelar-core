@@ -127,7 +127,7 @@ func TestTranslator(t *testing.T) {
 	assert.True(t, ok)
 	assert.Equal(t, gm.GetSourceChain().String(), actualSourceChain)
 
-	actualSender, ok := wasm["sender"].(string)
+	actualSender, ok := wasm["source_address"].(string)
 	assert.True(t, ok)
 	assert.Equal(t, gm.GetSourceAddress(), actualSender)
 

@@ -39,7 +39,7 @@ const (
 type contractCall struct {
 	SourceChain string `json:"source_chain"`
 	// The sender address on the source chain
-	SourceAddress string `json:"sender"`
+	SourceAddress string `json:"source_address"`
 	// Contract is the address of the wasm contract
 	Contract string `json:"contract"`
 	// Msg is a json struct {"methodName": {"arg1": "val1", "arg2": "val2"}}
@@ -163,17 +163,20 @@ func ConstructWasmMessageV1(gm nexus.GeneralMessage, payload []byte) ([]byte, er
 }
 
 // ConstructWasmMessageV2 creates a json serialized wasm message from json encoded payload
+// The payload must contain only a single key, the method name, and an arg name val map as value
 func ConstructWasmMessageV2(gm nexus.GeneralMessage, payload []byte) ([]byte, error) {
 	executeMsg := make(map[string]interface{})
 	err := json.Unmarshal(payload, &executeMsg)
 	if err != nil {
 		return nil, err
 	}
+
 	// json payload must have single key, the method name
 	if len(executeMsg) != 1 {
 		return nil, fmt.Errorf("invalid payload")
 	}
 
+	// iterating over the map, as the key (method name) is dynamic
 	for _, msg := range executeMsg {
 		// value must be a map
 		args, ok := msg.(map[string]interface{})
