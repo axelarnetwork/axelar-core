@@ -1,6 +1,5 @@
 package types
 
-//TODO fix evm import to use exported
 import (
 	"context"
 	"time"
@@ -59,7 +58,7 @@ type Nexus interface {
 	SetMessageExecuted(ctx sdk.Context, messageID nexus.MessageID) error
 	SetMessageFailed(ctx sdk.Context, messageID nexus.MessageID) error
 	SetNewMessage(ctx sdk.Context, m nexus.GeneralMessage) error
-	GetGeneralMessageID(ctx sdk.Context, sourceTxID string) string
+	GenerateMessageID(ctx sdk.Context, sourceTxID string) string
 	ValidateAddress(ctx sdk.Context, address nexus.CrossChainAddress) error
 }
 

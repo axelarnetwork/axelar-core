@@ -3,7 +3,9 @@ package keeper
 import (
 	"fmt"
 
+	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/query"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/key"
@@ -19,12 +21,12 @@ func getApprovedMessageKey(id exported.MessageID) key.Key {
 	return approvedGeneralMessagePrefix.Append(key.From(id.Chain)).Append(key.FromStr(id.ID))
 }
 
-// GetGeneralMessageID generates a unique general message ID
-func (k Keeper) GetGeneralMessageID(ctx sdk.Context, sourceTxID string) string {
+// GenerateMessageID generates a unique general message ID
+func (k Keeper) GenerateMessageID(ctx sdk.Context, sourceTxID string) string {
 	counter := utils.NewCounter[uint](messageNonceKey, k.getStore(ctx))
 	nonce := counter.Incr(ctx)
 
-	id := fmt.Sprintf("%s-%x", sourceTxID, nonce)
+	id := fmt.Sprintf("%s-%d", sourceTxID, nonce)
 	return id
 }
 
@@ -58,26 +60,29 @@ func (k Keeper) SetNewMessage(ctx sdk.Context, m exported.GeneralMessage) error 
 	if _, found := k.GetMessage(ctx, m.ID); found {
 		return fmt.Errorf("general message %s already exists", m.ID)
 	}
+
 	if m.Is(exported.Approved) {
 		if err := k.setApprovedMessage(ctx, m); err != nil {
 			return err
 		}
 	}
+
 	return k.setMessage(ctx, m)
 }
 
 // SetMessageApproved sets the message as approved, and adds the message ID to the approved messages store
 func (k Keeper) SetMessageApproved(ctx sdk.Context, messageID exported.MessageID) error {
-
 	m, found := k.GetMessage(ctx, messageID)
 	if !found {
 		return fmt.Errorf("general message %s not found", messageID.String())
 	}
 
 	m.Status = exported.Approved
+
 	if err := k.setMessage(ctx, m); err != nil {
 		return err
 	}
+
 	return k.setApprovedMessage(ctx, m)
 }
 
@@ -91,6 +96,7 @@ func (k Keeper) SetMessageSent(ctx sdk.Context, messageID exported.MessageID) er
 	if !(m.Is(exported.Approved) || m.Is(exported.Failed)) {
 		return fmt.Errorf("general message is not approved or failed")
 	}
+
 	if m.Is(exported.Approved) {
 		k.deleteApprovedMessage(ctx, m)
 	}
@@ -110,6 +116,7 @@ func (k Keeper) SetMessageExecuted(ctx sdk.Context, messageID exported.MessageID
 	if !(m.Is(exported.Sent) || m.Is(exported.Approved)) {
 		return fmt.Errorf("general message is not sent or approved")
 	}
+
 	if m.Is(exported.Approved) {
 		k.deleteApprovedMessage(ctx, m)
 	}
@@ -129,6 +136,7 @@ func (k Keeper) SetMessageFailed(ctx sdk.Context, messageID exported.MessageID) 
 	if !(m.Is(exported.Sent) || m.Is(exported.Approved)) {
 		return fmt.Errorf("general message is not sent or approved")
 	}
+
 	if m.Is(exported.Approved) {
 		k.deleteApprovedMessage(ctx, m)
 	}
@@ -179,17 +187,27 @@ func (k Keeper) getMessages(ctx sdk.Context) (generalMessages []exported.General
 func (k Keeper) GetApprovedMessages(ctx sdk.Context, chain exported.ChainName, limit int64) []exported.GeneralMessage {
 	msgs := []exported.GeneralMessage{}
 	ids := []exported.MessageID{}
-	iter := k.getStore(ctx).IteratorNew(approvedGeneralMessagePrefix.Append(key.From(chain)))
-	defer utils.CloseLogError(iter, k.Logger(ctx))
-	for i := 0; iter.Valid() && i < int(limit); iter.Next() {
-		var id exported.MessageID
-		iter.UnmarshalValue(&id)
-		ids = append(ids, id)
-		i++
+
+	pageRequest := &query.PageRequest{
+		Key:        nil,
+		Offset:     0,
+		Limit:      uint64(limit),
+		CountTotal: false,
+		Reverse:    false,
 	}
+
+	query.Paginate(prefix.NewStore(k.getStore(ctx).KVStore, append(approvedGeneralMessagePrefix.Append(key.From(chain)).Bytes(), []byte(key.DefaultDelimiter)...)), pageRequest, func(key []byte, value []byte) error {
+		var id exported.MessageID
+		k.cdc.MustUnmarshalLengthPrefixed(value, &id)
+
+		ids = append(ids, id)
+		return nil
+	})
+
 	for _, id := range ids {
 		msg, _ := k.GetMessage(ctx, id)
 		msgs = append(msgs, msg)
 	}
+
 	return msgs
 }

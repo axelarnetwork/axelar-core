@@ -30,6 +30,7 @@ var (
 	generalMessagePrefix         = key.RegisterStaticKey(types.ModuleName, 4)
 	approvedGeneralMessagePrefix = key.RegisterStaticKey(types.ModuleName, 5)
 	messageNonceKey              = key.RegisterStaticKey(types.ModuleName, 6)
+
 	// temporary
 	// TODO: add description about what temporary means
 	latestDepositAddressPrefix = utils.KeyFromStr("latest_deposit_address")

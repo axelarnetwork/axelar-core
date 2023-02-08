@@ -48,13 +48,11 @@ func setup() (sdk.Context, *mock.BaseKeeperMock, *mock.NexusMock, *mock.Multisig
 
 func TestHandleGeneralMessage(t *testing.T) {
 
-	// just ensure it panics when it should, and doesn't when it shouldn't
 	var (
 		ctx            sdk.Context
 		n              *mock.NexusMock
 		multisigKeeper *mock.MultisigKeeperMock
-		//sourceCk       *mock.ChainKeeperMock
-		destinationCk *mock.ChainKeeperMock
+		destinationCk  *mock.ChainKeeperMock
 	)
 
 	sourceChainName := nexus.ChainName(rand.Str(5))
@@ -74,7 +72,7 @@ func TestHandleGeneralMessage(t *testing.T) {
 	panicWith := func(msg string) func(t *testing.T) {
 		return func(t *testing.T) {
 			assert.PanicsWithError(t, msg, func() {
-				handleGeneralMessage(ctx, destinationCk, n, multisigKeeper, destinationChain, genMsg)
+				handleMessage(ctx, destinationCk, n, multisigKeeper, destinationChain, genMsg)
 			})
 		}
 	}
@@ -134,7 +132,7 @@ func TestHandleGeneralMessage(t *testing.T) {
 		When("destination chain id is set", isDestinationChainIDSet(true)).
 		When("current key not set", isCurrentKeySet(false)).
 		Then("should error", func(t *testing.T) {
-			_, err := handleGeneralMessage(ctx, destinationCk, n, multisigKeeper, destinationChain, genMsg)
+			_, err := handleMessage(ctx, destinationCk, n, multisigKeeper, destinationChain, genMsg)
 			assert.EqualError(t, err, "current key not set")
 		}).
 		Run(t)
@@ -145,7 +143,7 @@ func TestHandleGeneralMessage(t *testing.T) {
 		When("chain is activated", isChainActivated((true))).
 		When("gateway not set", isGatewayAddressSet(false)).
 		Then("should error", func(t *testing.T) {
-			_, err := handleGeneralMessage(ctx, destinationCk, n, multisigKeeper, destinationChain, genMsg)
+			_, err := handleMessage(ctx, destinationCk, n, multisigKeeper, destinationChain, genMsg)
 			assert.EqualError(t, err, "destination chain gateway not deployed yet")
 		}).
 		Run(t)
@@ -157,7 +155,7 @@ func TestHandleGeneralMessage(t *testing.T) {
 		Then("should error", func(t *testing.T) {
 			badMsg := genMsg
 			badMsg.Receiver = "0xFF"
-			_, err := handleGeneralMessage(ctx, destinationCk, n, multisigKeeper, destinationChain, badMsg)
+			_, err := handleMessage(ctx, destinationCk, n, multisigKeeper, destinationChain, badMsg)
 			assert.EqualError(t, err, "invalid contract address")
 		}).
 		Run(t)
@@ -178,7 +176,7 @@ func TestHandleGeneralMessage(t *testing.T) {
 		When("gateway is set", isGatewayAddressSet(true)).
 		When("enqueue command succeeds", enqueueCommandSucceed(true)).
 		Then("should succeed", func(t *testing.T) {
-			_, err := handleGeneralMessage(ctx, destinationCk, n, multisigKeeper, destinationChain, genMsg)
+			_, err := handleMessage(ctx, destinationCk, n, multisigKeeper, destinationChain, genMsg)
 			assert.NoError(t, err)
 			assert.Len(t, destinationCk.EnqueueCommandCalls(), 1)
 		}).
@@ -241,7 +239,7 @@ func TestHandleGeneralMessages(t *testing.T) {
 	panicWith := func(msg string) func(t *testing.T) {
 		return func(t *testing.T) {
 			assert.PanicsWithError(t, msg, func() {
-				handleGeneralMessages(ctx, bk, n, multisigKeeper)
+				handleMessages(ctx, bk, n, multisigKeeper)
 			})
 		}
 	}
@@ -263,7 +261,7 @@ func TestHandleGeneralMessages(t *testing.T) {
 			return types.Params{EndBlockerLimit: 50}
 		}
 	}).Then("should handle", func(t *testing.T) {
-		handleGeneralMessages(ctx, bk, n, multisigKeeper)
+		handleMessages(ctx, bk, n, multisigKeeper)
 		assert.Len(t, ck1.EnqueueCommandCalls(), 0)
 		assert.Len(t, ck2.EnqueueCommandCalls(), 0)
 	}).Run(t)
@@ -276,7 +274,7 @@ func TestHandleGeneralMessages(t *testing.T) {
 			return types.Params{EndBlockerLimit: 50}
 		}
 	}).Then("should handle", func(t *testing.T) {
-		handleGeneralMessages(ctx, bk, n, multisigKeeper)
+		handleMessages(ctx, bk, n, multisigKeeper)
 		assert.Len(t, ck1.EnqueueCommandCalls(), 10)
 		assert.Len(t, ck2.EnqueueCommandCalls(), 0)
 	}).Run(t)
@@ -289,7 +287,7 @@ func TestHandleGeneralMessages(t *testing.T) {
 			return types.Params{EndBlockerLimit: 50}
 		}
 	}).Then("should handle", func(t *testing.T) {
-		handleGeneralMessages(ctx, bk, n, multisigKeeper)
+		handleMessages(ctx, bk, n, multisigKeeper)
 		fmt.Println(len(ck1.EnqueueCommandCalls()))
 		assert.Len(t, ck1.EnqueueCommandCalls(), 0)
 		assert.Len(t, ck2.EnqueueCommandCalls(), int(ck2.GetParams(ctx).EndBlockerLimit))
@@ -303,7 +301,7 @@ func TestHandleGeneralMessages(t *testing.T) {
 			return types.Params{EndBlockerLimit: 40}
 		}
 	}).Then("should handle", func(t *testing.T) {
-		handleGeneralMessages(ctx, bk, n, multisigKeeper)
+		handleMessages(ctx, bk, n, multisigKeeper)
 		fmt.Println(len(ck1.EnqueueCommandCalls()))
 		assert.Len(t, ck1.EnqueueCommandCalls(), int(ck1.GetParams(ctx).EndBlockerLimit))
 		assert.Len(t, ck2.EnqueueCommandCalls(), int(ck2.GetParams(ctx).EndBlockerLimit))

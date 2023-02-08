@@ -543,7 +543,7 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 	}
 }
 
-func validateGeneralMessage(ctx sdk.Context, ck types.ChainKeeper, n types.Nexus, m types.MultisigKeeper, chain nexus.Chain, msg nexus.GeneralMessage) (sdk.Int, multisig.KeyID, error) {
+func validateMessage(ctx sdk.Context, ck types.ChainKeeper, n types.Nexus, m types.MultisigKeeper, chain nexus.Chain, msg nexus.GeneralMessage) (sdk.Int, multisig.KeyID, error) {
 	chainID := funcs.MustOk(ck.GetChainID(ctx))
 
 	keyID, ok := m.GetCurrentKeyID(ctx, chain.Name)
@@ -555,7 +555,7 @@ func validateGeneralMessage(ctx sdk.Context, ck types.ChainKeeper, n types.Nexus
 		return chainID, keyID, fmt.Errorf("destination chain de-activated")
 	}
 
-	if len(msg.Receiver) != 0 && !common.IsHexAddress(msg.Receiver) {
+	if !common.IsHexAddress(msg.Receiver) {
 		return chainID, keyID, fmt.Errorf("invalid contract address")
 	}
 
@@ -565,8 +565,8 @@ func validateGeneralMessage(ctx sdk.Context, ck types.ChainKeeper, n types.Nexus
 	return chainID, keyID, nil
 }
 
-func handleGeneralMessage(ctx sdk.Context, ck types.ChainKeeper, n types.Nexus, m types.MultisigKeeper, chain nexus.Chain, msg nexus.GeneralMessage) (types.CommandID, error) {
-	chainID, keyID, err := validateGeneralMessage(ctx, ck, n, m, chain, msg)
+func handleMessage(ctx sdk.Context, ck types.ChainKeeper, n types.Nexus, m types.MultisigKeeper, chain nexus.Chain, msg nexus.GeneralMessage) (types.CommandID, error) {
+	chainID, keyID, err := validateMessage(ctx, ck, n, m, chain, msg)
 	if err != nil {
 		return types.CommandID{}, err
 	}
@@ -578,28 +578,23 @@ func handleGeneralMessage(ctx sdk.Context, ck types.ChainKeeper, n types.Nexus, 
 	return cmd.ID, nil
 }
 
-func handleGeneralMessages(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, m types.MultisigKeeper) {
+func handleMessages(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, m types.MultisigKeeper) {
 
 	for _, chain := range slices.Filter(n.GetChains(ctx), types.IsEVMChain) {
 		ck := funcs.Must(bk.ForChain(ctx, chain.Name))
 		endBlockerLimit := ck.GetParams(ctx).EndBlockerLimit
 		msgs := n.GetApprovedMessages(ctx, chain.Name, endBlockerLimit)
-		bk.Logger(ctx).Debug(fmt.Sprintf("handling %x general messages", len(msgs)), types.AttributeKeyChain, chain.Name)
+
+		bk.Logger(ctx).Debug(fmt.Sprintf("handling %d general messages", len(msgs)), types.AttributeKeyChain, chain.Name)
 
 		for _, msg := range msgs {
-			success := utils.RunCached(ctx, bk, func(ctx sdk.Context) (bool, error) {
-				cmdID, err := handleGeneralMessage(ctx, ck, n, m, chain, msg)
+			success := false
+			capturedErr := fmt.Errorf("unknown")
+			_ = utils.RunCached(ctx, bk, func(ctx sdk.Context) (bool, error) {
+				cmdID, err := handleMessage(ctx, ck, n, m, chain, msg)
 				if err != nil {
-					ck.Logger(ctx).Debug(fmt.Sprintf("failed handling general message: %s", err.Error()),
-						types.AttributeKeyChain, chain.Name.String(),
-						types.AttributeKeyMessageID, msg.ID.ID,
-					)
-					events.Emit(ctx, &types.ContractCallFailed{
-						Chain:     chain.Name,
-						MessageID: msg.ID.ID,
-						Reason:    err.Error(),
-					})
-
+					capturedErr = err
+					success = false
 					return false, err
 				}
 
@@ -619,19 +614,29 @@ func handleGeneralMessages(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 					types.AttributeKeyCommandsID, cmdID,
 				)
 
+				success = true
 				return true, nil
 
 			})
 
 			if !success {
-				funcs.MustNoErr(n.SetMessageFailed(ctx, msg.ID))
-				ck.Logger(ctx).Debug("setting general message as failed",
+				ck.Logger(ctx).Debug(fmt.Sprintf("failed handling general message: %s", capturedErr.Error()),
 					types.AttributeKeyChain, chain.Name.String(),
 					types.AttributeKeyMessageID, msg.ID.ID,
 				)
-			} else {
-				funcs.MustNoErr(n.SetMessageExecuted(ctx, msg.ID))
+
+				events.Emit(ctx, &types.ContractCallFailed{
+					Chain:     chain.Name,
+					MessageID: msg.ID.ID,
+					Reason:    capturedErr.Error(),
+				})
+
+				funcs.MustNoErr(n.SetMessageFailed(ctx, msg.ID))
+
+				continue
 			}
+
+			funcs.MustNoErr(n.SetMessageExecuted(ctx, msg.ID))
 		}
 	}
 }
@@ -643,7 +648,7 @@ func BeginBlocker(sdk.Context, abci.RequestBeginBlock, types.BaseKeeper) {}
 // EndBlocker called every block, process inflation, update validator set.
 func EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock, bk types.BaseKeeper, n types.Nexus, m types.MultisigKeeper) ([]abci.ValidatorUpdate, error) {
 	handleConfirmedEvents(ctx, bk, n, m)
-	handleGeneralMessages(ctx, bk, n, m)
+	handleMessages(ctx, bk, n, m)
 
 	return nil, nil
 }

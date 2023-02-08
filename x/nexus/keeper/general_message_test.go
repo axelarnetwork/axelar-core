@@ -116,14 +116,14 @@ func TestSetNewGeneralMessage(t *testing.T) {
 		Run(t)
 }
 
-func TestGetGeneralMessageID(t *testing.T) {
+func TestGenerateMessageID(t *testing.T) {
 	cfg := app.MakeEncodingConfig()
 	k, ctx := setup(cfg)
 
 	hash := evmtestutils.RandomHash().Hex()
 	// use the same hash and source chain, still shouldn't collide
-	id := k.GetGeneralMessageID(ctx, hash)
-	id2 := k.GetGeneralMessageID(ctx, hash)
+	id := k.GenerateMessageID(ctx, hash)
+	id2 := k.GenerateMessageID(ctx, hash)
 	assert.NotEqual(t, id, id2)
 }
 
@@ -133,7 +133,7 @@ func TestSetMessageFailed(t *testing.T) {
 	k, ctx := setup(cfg)
 	srcChain := rand.Str(5)
 	msg := exported.GeneralMessage{
-		ID:          exported.MessageID{ID: k.GetGeneralMessageID(ctx, evmtestutils.RandomHash().Hex()), Chain: exported.ChainName(rand.Str(5))},
+		ID:          exported.MessageID{ID: k.GenerateMessageID(ctx, evmtestutils.RandomHash().Hex()), Chain: exported.ChainName(rand.Str(5))},
 		SourceChain: exported.ChainName(srcChain),
 		Sender:      genCosmosAddr(srcChain),
 		Receiver:    evmtestutils.RandomAddress().Hex(),
@@ -162,7 +162,7 @@ func TestGetMessage(t *testing.T) {
 
 	srcChain := rand.Str(5)
 	msg := exported.GeneralMessage{
-		ID:          exported.MessageID{ID: k.GetGeneralMessageID(ctx, evmtestutils.RandomHash().Hex()), Chain: exported.ChainName(rand.Str(5))},
+		ID:          exported.MessageID{ID: k.GenerateMessageID(ctx, evmtestutils.RandomHash().Hex()), Chain: exported.ChainName(rand.Str(5))},
 		SourceChain: exported.ChainName(srcChain),
 		Sender:      genCosmosAddr(srcChain),
 		Receiver:    evmtestutils.RandomAddress().Hex(),
@@ -206,7 +206,7 @@ func TestGetApprovedMessages(t *testing.T) {
 		for i := 0; i < numMsgs; i++ {
 
 			msg := exported.GeneralMessage{
-				ID:          exported.MessageID{ID: k.GetGeneralMessageID(ctx, evmtestutils.RandomHash().Hex()), Chain: destChain},
+				ID:          exported.MessageID{ID: k.GenerateMessageID(ctx, evmtestutils.RandomHash().Hex()), Chain: destChain},
 				SourceChain: sourceChainName,
 				Sender:      genCosmosAddr(destinationChainName.String()),
 				Receiver:    evmtestutils.RandomAddress().Hex(),

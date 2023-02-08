@@ -1180,7 +1180,7 @@ func TestHandleCallContract(t *testing.T) {
 		ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{}, &mock.ChannelKeeperMock{})
 		server = keeper.NewMsgServerImpl(k, nexusK, &mock.BankKeeperMock{}, &mock.AccountKeeperMock{}, ibcK)
 		count := 0
-		nexusK.GetGeneralMessageIDFunc = func(_ sdk.Context, sourceTxHash string) string {
+		nexusK.GenerateMessageIDFunc = func(_ sdk.Context, sourceTxHash string) string {
 			count++
 			return fmt.Sprintf("%s-%x", sourceTxHash, count)
 		}
