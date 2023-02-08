@@ -1171,6 +1171,7 @@ func TestHandleCallContract(t *testing.T) {
 		nexusK *mock.NexusMock
 		ctx    sdk.Context
 		req    *types.CallContractRequest
+		msg    nexus.GeneralMessage
 	)
 
 	givenMsgServer := Given("an axelarnet msg server", func() {
@@ -1210,6 +1211,7 @@ func TestHandleCallContract(t *testing.T) {
 
 	whenSetNewMessageSucceeds := When("set new message succeeds", func() {
 		nexusK.SetNewMessageFunc = func(_ sdk.Context, m nexus.GeneralMessage) error {
+			msg = m
 			return m.ValidateBasic()
 		}
 	})
@@ -1239,6 +1241,14 @@ func TestHandleCallContract(t *testing.T) {
 					Then("call contract succeeds", func(t *testing.T) {
 						_, err := server.CallContract(sdk.WrapSDKContext(ctx), req)
 						assert.NoError(t, err)
+						assert.Equal(t, msg.Status, nexus.Sent)
+						assert.Equal(t, msg.SourceChain, nexus.ChainName(exported.Axelarnet.Name))
+						assert.Equal(t, msg.Sender, req.Sender.String())
+						assert.Equal(t, msg.Receiver, req.ContractAddress)
+						assert.Equal(t, msg.ID.Chain, req.Chain)
+
+						payloadHash := crypto.Keccak256(req.Payload)
+						assert.Equal(t, msg.PayloadHash, payloadHash)
 					}),
 				whenChainIsRegistered.
 					When2(whenChainIsActivated).

@@ -74,8 +74,7 @@ message FeeCollected {
 }
 
 message ContractCallSubmitted {
-  bytes sender = 1 [ (gogoproto.casttype) =
-                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string sender = 1;
   string source_chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];

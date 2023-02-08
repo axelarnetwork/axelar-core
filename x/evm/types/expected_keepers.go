@@ -115,7 +115,7 @@ type Nexus interface {
 	SetChainMaintainerState(ctx sdk.Context, maintainerState nexus.MaintainerState) error
 	RateLimitTransfer(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error
 	SetNewMessage(ctx sdk.Context, m nexus.GeneralMessage) error
-	GetApprovedMessages(ctx sdk.Context, chain nexus.ChainName, limit int64) []nexus.GeneralMessage
+	GetSentMessages(ctx sdk.Context, chain nexus.ChainName, limit int64) []nexus.GeneralMessage
 	SetMessageFailed(ctx sdk.Context, messageID nexus.MessageID) error
 	SetMessageExecuted(ctx sdk.Context, messageID nexus.MessageID) error
 }

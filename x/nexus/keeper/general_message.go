@@ -17,8 +17,8 @@ func getMessageKey(id exported.MessageID) key.Key {
 		Append(key.FromStr(id.ID))
 }
 
-func getApprovedMessageKey(id exported.MessageID) key.Key {
-	return approvedGeneralMessagePrefix.Append(key.From(id.Chain)).Append(key.FromStr(id.ID))
+func getSentMessageKey(id exported.MessageID) key.Key {
+	return sentMessagePrefix.Append(key.From(id.Chain)).Append(key.FromStr(id.ID))
 }
 
 // GenerateMessageID generates a unique general message ID
@@ -61,8 +61,8 @@ func (k Keeper) SetNewMessage(ctx sdk.Context, m exported.GeneralMessage) error 
 		return fmt.Errorf("general message %s already exists", m.ID)
 	}
 
-	if m.Is(exported.Approved) {
-		if err := k.setApprovedMessage(ctx, m); err != nil {
+	if m.Is(exported.Sent) {
+		if err := k.setSentMessage(ctx, m); err != nil {
 			return err
 		}
 	}
@@ -70,21 +70,13 @@ func (k Keeper) SetNewMessage(ctx sdk.Context, m exported.GeneralMessage) error 
 	return k.setMessage(ctx, m)
 }
 
-// SetMessageApproved sets the message as approved, and adds the message ID to the approved messages store
-func (k Keeper) SetMessageApproved(ctx sdk.Context, messageID exported.MessageID) error {
-	m, found := k.GetMessage(ctx, messageID)
-	if !found {
-		return fmt.Errorf("general message %s not found", messageID.String())
-	}
-
-	m.Status = exported.Approved
-
-	if err := k.setMessage(ctx, m); err != nil {
-		return err
-	}
-
-	return k.setApprovedMessage(ctx, m)
-}
+/*
+ * Below are the valid message status transitions:
+ * Approved -> Sent
+ * Sent -> Executed
+ * Sent -> Failed
+ * Failed -> Sent
+ */
 
 // SetMessageSent sets the general message as sent
 func (k Keeper) SetMessageSent(ctx sdk.Context, messageID exported.MessageID) error {
@@ -97,13 +89,13 @@ func (k Keeper) SetMessageSent(ctx sdk.Context, messageID exported.MessageID) er
 		return fmt.Errorf("general message is not approved or failed")
 	}
 
-	if m.Is(exported.Approved) {
-		k.deleteApprovedMessage(ctx, m)
-	}
-
 	m.Status = exported.Sent
 
-	return k.setMessage(ctx, m)
+	if err := k.setMessage(ctx, m); err != nil {
+		return err
+	}
+
+	return k.setSentMessage(ctx, m)
 }
 
 // SetMessageExecuted sets the general message as executed
@@ -113,12 +105,12 @@ func (k Keeper) SetMessageExecuted(ctx sdk.Context, messageID exported.MessageID
 		return fmt.Errorf("general message %s not found", messageID.String())
 	}
 
-	if !(m.Is(exported.Sent) || m.Is(exported.Approved)) {
+	if !(m.Is(exported.Sent)) {
 		return fmt.Errorf("general message is not sent or approved")
 	}
 
-	if m.Is(exported.Approved) {
-		k.deleteApprovedMessage(ctx, m)
+	if m.Is(exported.Sent) {
+		k.deleteSentMessage(ctx, m)
 	}
 
 	m.Status = exported.Executed
@@ -133,12 +125,12 @@ func (k Keeper) SetMessageFailed(ctx sdk.Context, messageID exported.MessageID) 
 		return fmt.Errorf("general message %s not found", messageID.String())
 	}
 
-	if !(m.Is(exported.Sent) || m.Is(exported.Approved)) {
-		return fmt.Errorf("general message is not sent or approved")
+	if !(m.Is(exported.Sent)) {
+		return fmt.Errorf("general message is not sent")
 	}
 
-	if m.Is(exported.Approved) {
-		k.deleteApprovedMessage(ctx, m)
+	if m.Is(exported.Sent) {
+		k.deleteSentMessage(ctx, m)
 	}
 
 	m.Status = exported.Failed
@@ -148,7 +140,7 @@ func (k Keeper) SetMessageFailed(ctx sdk.Context, messageID exported.MessageID) 
 
 // DeleteMessage deletes the general message with associated ID, and also deletes the message ID from the approved messages store
 func (k Keeper) DeleteMessage(ctx sdk.Context, messageID exported.MessageID) {
-	k.getStore(ctx).DeleteNew(getApprovedMessageKey(messageID))
+	k.getStore(ctx).DeleteNew(getSentMessageKey(messageID))
 	k.getStore(ctx).DeleteNew(getMessageKey(messageID))
 }
 
@@ -161,12 +153,16 @@ func (k Keeper) setMessage(ctx sdk.Context, m exported.GeneralMessage) error {
 	return k.getStore(ctx).SetNewValidated(getMessageKey(m.ID), &m)
 }
 
-func (k Keeper) setApprovedMessage(ctx sdk.Context, m exported.GeneralMessage) error {
-	return k.getStore(ctx).SetNewValidated(getApprovedMessageKey(m.ID), &m.ID)
+func (k Keeper) setSentMessage(ctx sdk.Context, m exported.GeneralMessage) error {
+	if !m.Is(exported.Sent) {
+		return fmt.Errorf("general message is not sent")
+	}
+
+	return k.getStore(ctx).SetNewValidated(getSentMessageKey(m.ID), &m.ID)
 }
 
-func (k Keeper) deleteApprovedMessage(ctx sdk.Context, m exported.GeneralMessage) {
-	k.getStore(ctx).DeleteNew(getApprovedMessageKey(m.ID))
+func (k Keeper) deleteSentMessage(ctx sdk.Context, m exported.GeneralMessage) {
+	k.getStore(ctx).DeleteNew(getSentMessageKey(m.ID))
 }
 
 func (k Keeper) getMessages(ctx sdk.Context) (generalMessages []exported.GeneralMessage) {
@@ -183,8 +179,8 @@ func (k Keeper) getMessages(ctx sdk.Context) (generalMessages []exported.General
 	return generalMessages
 }
 
-// GetApprovedMessages returns up to limit approved messages where chain is the destination chain
-func (k Keeper) GetApprovedMessages(ctx sdk.Context, chain exported.ChainName, limit int64) []exported.GeneralMessage {
+// GetSentMessages returns up to limit sent messages where chain is the destination chain
+func (k Keeper) GetSentMessages(ctx sdk.Context, chain exported.ChainName, limit int64) []exported.GeneralMessage {
 	msgs := []exported.GeneralMessage{}
 	ids := []exported.MessageID{}
 
@@ -196,7 +192,7 @@ func (k Keeper) GetApprovedMessages(ctx sdk.Context, chain exported.ChainName, l
 		Reverse:    false,
 	}
 
-	query.Paginate(prefix.NewStore(k.getStore(ctx).KVStore, append(approvedGeneralMessagePrefix.Append(key.From(chain)).Bytes(), []byte(key.DefaultDelimiter)...)), pageRequest, func(key []byte, value []byte) error {
+	query.Paginate(prefix.NewStore(k.getStore(ctx).KVStore, append(sentMessagePrefix.Append(key.From(chain)).Bytes(), []byte(key.DefaultDelimiter)...)), pageRequest, func(key []byte, value []byte) error {
 		var id exported.MessageID
 		k.cdc.MustUnmarshalLengthPrefixed(value, &id)
 

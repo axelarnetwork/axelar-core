@@ -70,7 +70,7 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 	txHash := sha256.Sum256(ctx.TxBytes())
 	payloadHash := crypto.Keccak256(req.Payload)
 
-	msg := nexus.NewGeneralMessage(s.nexus.GenerateMessageID(ctx, hex.EncodeToString(txHash[:])), exported.Axelarnet.Name, req.Sender.String(), req.Chain, req.ContractAddress, payloadHash, nexus.Approved, nil)
+	msg := nexus.NewGeneralMessage(s.nexus.GenerateMessageID(ctx, hex.EncodeToString(txHash[:])), exported.Axelarnet.Name, req.Sender.String(), req.Chain, req.ContractAddress, payloadHash, nexus.Sent, nil)
 	if err := s.nexus.SetNewMessage(ctx, msg); err != nil {
 		return nil, sdkerrors.Wrap(err, "failed to add general message")
 	}
@@ -78,7 +78,7 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 	ctx.GasMeter().ConsumeGas(callContractGasCost, "call-contract")
 
 	events.Emit(ctx, &types.ContractCallSubmitted{
-		Sender:           req.Sender,
+		Sender:           req.Sender.String(),
 		SourceChain:      nexus.ChainName(exported.ModuleName),
 		DestinationChain: msg.ID.Chain,
 		ContractAddress:  msg.Receiver,

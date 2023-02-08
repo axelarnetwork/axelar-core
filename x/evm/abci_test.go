@@ -224,12 +224,12 @@ func TestHandleGeneralMessages(t *testing.T) {
 	})
 	withGeneralMessages := func(numPerChain map[nexus.ChainName]int) WhenStatement {
 		return When("having general messages", func() {
-			n.GetApprovedMessagesFunc = func(_ sdk.Context, chain nexus.ChainName, limit int64) []nexus.GeneralMessage {
+			n.GetSentMessagesFunc = func(_ sdk.Context, chain nexus.ChainName, limit int64) []nexus.GeneralMessage {
 
 				msgs := []nexus.GeneralMessage{}
 				for i := 0; i < int(limit) && i < numPerChain[chain]; i++ {
 
-					msg := nexus.NewGeneralMessage(evmTestUtils.RandomHash().Hex(), nexus.ChainName(rand.Str(5)), evmTestUtils.RandomAddress().Hex(), chain, evmTestUtils.RandomAddress().Hex(), evmTestUtils.RandomHash().Bytes(), nexus.Approved, nil)
+					msg := nexus.NewGeneralMessage(evmTestUtils.RandomHash().Hex(), nexus.ChainName(rand.Str(5)), evmTestUtils.RandomAddress().Hex(), chain, evmTestUtils.RandomAddress().Hex(), evmTestUtils.RandomHash().Bytes(), nexus.Sent, nil)
 					msgs = append(msgs, msg)
 				}
 				return msgs
@@ -288,7 +288,6 @@ func TestHandleGeneralMessages(t *testing.T) {
 		}
 	}).Then("should handle", func(t *testing.T) {
 		handleMessages(ctx, bk, n, multisigKeeper)
-		fmt.Println(len(ck1.EnqueueCommandCalls()))
 		assert.Len(t, ck1.EnqueueCommandCalls(), 0)
 		assert.Len(t, ck2.EnqueueCommandCalls(), int(ck2.GetParams(ctx).EndBlockerLimit))
 	}).Run(t)
@@ -302,7 +301,6 @@ func TestHandleGeneralMessages(t *testing.T) {
 		}
 	}).Then("should handle", func(t *testing.T) {
 		handleMessages(ctx, bk, n, multisigKeeper)
-		fmt.Println(len(ck1.EnqueueCommandCalls()))
 		assert.Len(t, ck1.EnqueueCommandCalls(), int(ck1.GetParams(ctx).EndBlockerLimit))
 		assert.Len(t, ck2.EnqueueCommandCalls(), int(ck2.GetParams(ctx).EndBlockerLimit))
 	}).Run(t)
