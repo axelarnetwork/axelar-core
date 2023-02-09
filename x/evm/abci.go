@@ -636,7 +636,7 @@ func handleMessages(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, m types
 			})
 
 			if !success {
-				ck.Logger(ctx).Debug("failed handling general message",
+				ck.Logger(ctx).Error("failed handling general message",
 					types.AttributeKeyChain, chain.Name.String(),
 					types.AttributeKeyMessageID, msg.ID,
 				)

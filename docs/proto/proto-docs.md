@@ -3133,7 +3133,6 @@ TransferKey contains information for a transfer operatorship
 | ----- | ---- | ----- | ----------- |
 | `chain` | [string](#string) |  |  |
 | `msg_id` | [string](#string) |  |  |
-| `reason` | [string](#string) |  |  |
 
 
 

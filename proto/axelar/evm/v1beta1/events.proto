@@ -227,7 +227,6 @@ message ContractCallFailed {
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
   string msg_id = 2 [ (gogoproto.customname) = "MessageID" ];
-  string reason = 3;
 }
 
 message ContractCallWithMintApproved {
