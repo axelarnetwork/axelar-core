@@ -10,6 +10,8 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/key"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/utils/funcs"
+	"github.com/axelarnetwork/utils/slices"
 )
 
 func getMessageKey(id string) key.Key {
@@ -109,13 +111,11 @@ func (k Keeper) SetMessageExecuted(ctx sdk.Context, id string) error {
 		return fmt.Errorf("general message %s not found", id)
 	}
 
-	if !(m.Is(exported.Sent)) {
+	if !m.Is(exported.Sent) {
 		return fmt.Errorf("general message is not sent or approved")
 	}
 
-	if m.Is(exported.Sent) {
-		k.deleteSentMessage(ctx, m)
-	}
+	k.deleteSentMessage(ctx, m)
 
 	m.Status = exported.Executed
 
@@ -129,13 +129,11 @@ func (k Keeper) SetMessageFailed(ctx sdk.Context, id string) error {
 		return fmt.Errorf("general message %s not found", id)
 	}
 
-	if !(m.Is(exported.Sent)) {
+	if !m.Is(exported.Sent) {
 		return fmt.Errorf("general message is not sent")
 	}
 
-	if m.Is(exported.Sent) {
-		k.deleteSentMessage(ctx, m)
-	}
+	k.deleteSentMessage(ctx, m)
 
 	m.Status = exported.Failed
 
@@ -189,7 +187,6 @@ func (k Keeper) getMessages(ctx sdk.Context) (generalMessages []exported.General
 
 // GetSentMessages returns up to limit sent messages where chain is the destination chain
 func (k Keeper) GetSentMessages(ctx sdk.Context, chain exported.ChainName, limit int64) []exported.GeneralMessage {
-	msgs := []exported.GeneralMessage{}
 	ids := []string{}
 
 	pageRequest := &query.PageRequest{
@@ -205,10 +202,7 @@ func (k Keeper) GetSentMessages(ctx sdk.Context, chain exported.ChainName, limit
 		return nil
 	})
 
-	for _, id := range ids {
-		msg, _ := k.GetMessage(ctx, id)
-		msgs = append(msgs, msg)
-	}
-
-	return msgs
+	return slices.Map(ids, func(id string) exported.GeneralMessage {
+		return funcs.MustOk(k.GetMessage(ctx, id))
+	})
 }

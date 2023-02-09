@@ -608,12 +608,9 @@ func handleMessages(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, m types
 
 		for _, msg := range msgs {
 			success := false
-			capturedErr := fmt.Errorf("unknown")
 			_ = utils.RunCached(ctx, bk, func(ctx sdk.Context) (bool, error) {
 				cmdID, err := handleMessage(ctx, ck, n, m, chain, msg)
 				if err != nil {
-					capturedErr = err
-					success = false
 					return false, err
 				}
 
@@ -639,7 +636,7 @@ func handleMessages(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, m types
 			})
 
 			if !success {
-				ck.Logger(ctx).Debug(fmt.Sprintf("failed handling general message: %s", capturedErr.Error()),
+				ck.Logger(ctx).Debug("failed handling general message",
 					types.AttributeKeyChain, chain.Name.String(),
 					types.AttributeKeyMessageID, msg.ID,
 				)
@@ -647,7 +644,6 @@ func handleMessages(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, m types
 				events.Emit(ctx, &types.ContractCallFailed{
 					Chain:     chain.Name,
 					MessageID: msg.ID,
-					Reason:    capturedErr.Error(),
 				})
 
 				funcs.MustNoErr(n.SetMessageFailed(ctx, msg.ID))
