@@ -11,6 +11,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/events"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
@@ -561,6 +562,101 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 	}
 }
 
+func validateMessage(ctx sdk.Context, ck types.ChainKeeper, n types.Nexus, m types.MultisigKeeper, chain nexus.Chain, msg nexus.GeneralMessage) (sdk.Int, multisig.KeyID, error) {
+	chainID := funcs.MustOk(ck.GetChainID(ctx))
+
+	// TODO refactor to do these checks earlier so we don't fail in the end blocker
+	keyID, ok := m.GetCurrentKeyID(ctx, chain.Name)
+	if !ok {
+		return chainID, keyID, fmt.Errorf("current key not set")
+	}
+
+	if !n.IsChainActivated(ctx, chain) {
+		return chainID, keyID, fmt.Errorf("destination chain de-activated")
+	}
+
+	if !common.IsHexAddress(msg.GetDestinationAddress()) {
+		return chainID, keyID, fmt.Errorf("invalid contract address")
+	}
+
+	if _, ok := ck.GetGatewayAddress(ctx); !ok {
+		return chainID, keyID, fmt.Errorf("destination chain gateway not deployed yet")
+	}
+	return chainID, keyID, nil
+}
+
+func handleMessage(ctx sdk.Context, ck types.ChainKeeper, n types.Nexus, m types.MultisigKeeper, chain nexus.Chain, msg nexus.GeneralMessage) (types.CommandID, error) {
+	chainID, keyID, err := validateMessage(ctx, ck, n, m, chain, msg)
+	if err != nil {
+		return types.CommandID{}, err
+	}
+
+	dummyTxID := common.BytesToHash(make([]byte, common.HashLength))
+	cmd := types.NewApproveContractCallCommandGeneric(chainID, keyID, common.HexToAddress(msg.GetDestinationAddress()), common.BytesToHash(msg.PayloadHash), dummyTxID, msg.GetSourceChain(), msg.GetSourceAddress(), 0, msg.ID)
+	funcs.MustNoErr(ck.EnqueueCommand(ctx, cmd))
+
+	return cmd.ID, nil
+}
+
+func handleMessages(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, m types.MultisigKeeper) {
+
+	for _, chain := range slices.Filter(n.GetChains(ctx), types.IsEVMChain) {
+		ck := funcs.Must(bk.ForChain(ctx, chain.Name))
+		endBlockerLimit := ck.GetParams(ctx).EndBlockerLimit
+		msgs := n.GetSentMessages(ctx, chain.Name, endBlockerLimit)
+
+		bk.Logger(ctx).Debug(fmt.Sprintf("handling %d general messages", len(msgs)), types.AttributeKeyChain, chain.Name)
+
+		for _, msg := range msgs {
+			success := false
+			_ = utils.RunCached(ctx, bk, func(ctx sdk.Context) (bool, error) {
+				cmdID, err := handleMessage(ctx, ck, n, m, chain, msg)
+				if err != nil {
+					return false, err
+				}
+
+				events.Emit(ctx, &types.ContractCallApproved{
+					Chain:            msg.GetSourceChain(),
+					EventID:          types.EventID(msg.ID),
+					CommandID:        cmdID,
+					Sender:           msg.GetSourceAddress(),
+					DestinationChain: msg.GetDestinationChain(),
+					ContractAddress:  msg.GetDestinationAddress(),
+					PayloadHash:      types.Hash(common.BytesToHash(msg.PayloadHash)),
+				})
+
+				ck.Logger(ctx).Debug("completed handling general message",
+					types.AttributeKeyChain, chain.Name.String(),
+					types.AttributeKeyMessageID, msg.ID,
+					types.AttributeKeyCommandsID, cmdID,
+				)
+
+				success = true
+				return true, nil
+
+			})
+
+			if !success {
+				ck.Logger(ctx).Error("failed handling general message",
+					types.AttributeKeyChain, chain.Name.String(),
+					types.AttributeKeyMessageID, msg.ID,
+				)
+
+				events.Emit(ctx, &types.ContractCallFailed{
+					Chain:     chain.Name,
+					MessageID: msg.ID,
+				})
+
+				funcs.MustNoErr(n.SetMessageFailed(ctx, msg.ID))
+
+				continue
+			}
+
+			funcs.MustNoErr(n.SetMessageExecuted(ctx, msg.ID))
+		}
+	}
+}
+
 // BeginBlocker check for infraction evidence or downtime of validators
 // on every begin block
 func BeginBlocker(sdk.Context, abci.RequestBeginBlock, types.BaseKeeper) {}
@@ -568,6 +664,7 @@ func BeginBlocker(sdk.Context, abci.RequestBeginBlock, types.BaseKeeper) {}
 // EndBlocker called every block, process inflation, update validator set.
 func EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock, bk types.BaseKeeper, n types.Nexus, m types.MultisigKeeper) ([]abci.ValidatorUpdate, error) {
 	handleConfirmedEvents(ctx, bk, n, m)
+	handleMessages(ctx, bk, n, m)
 
 	return nil, nil
 }

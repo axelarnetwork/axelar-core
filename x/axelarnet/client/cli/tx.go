@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -44,6 +45,7 @@ func GetTxCmd() *cobra.Command {
 		GetCmdRegisterFeeCollector(),
 		getRetryIBCTransfer(),
 		getGeneralMessage(),
+		getCmdCallContract(),
 	)
 
 	return axelarTxCmd
@@ -321,6 +323,34 @@ func getGeneralMessage() *cobra.Command {
 			}
 
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
+		},
+	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+func getCmdCallContract() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "call-contract [destination chain] [contract address] [hex encoded payload]",
+		Short: "Call a contract on another chain",
+		Args:  cobra.ExactArgs(3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			payload, err := hex.DecodeString(strings.TrimPrefix(args[2], "0x"))
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewCallContractRequest(clientCtx.GetFromAddress(), args[0], args[1], payload)
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
 	flags.AddTxFlagsToCmd(cmd)

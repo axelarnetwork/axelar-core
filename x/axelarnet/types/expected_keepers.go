@@ -57,6 +57,9 @@ type Nexus interface {
 	SetMessageSent(ctx sdk.Context, id string) error
 	SetMessageExecuted(ctx sdk.Context, id string) error
 	SetMessageFailed(ctx sdk.Context, id string) error
+	SetNewMessage(ctx sdk.Context, m nexus.GeneralMessage) error
+	GenerateMessageID(ctx sdk.Context, sourceTxID string) string
+	ValidateAddress(ctx sdk.Context, address nexus.CrossChainAddress) error
 }
 
 // BankKeeper defines the expected interface contract the vesting module requires

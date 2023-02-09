@@ -30,6 +30,7 @@ import (
 	evmtestutils "github.com/axelarnetwork/axelar-core/x/evm/types/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexustestutils "github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 	. "github.com/axelarnetwork/utils/test"
@@ -1161,6 +1162,125 @@ func TestExecuteMessage(t *testing.T) {
 						fmt.Println(err)
 						assert.NoError(t, err)
 					}),
+			).Run(t)
+	})
+}
+
+func TestHandleCallContract(t *testing.T) {
+	var (
+		server types.MsgServiceServer
+		k      keeper.Keeper
+		nexusK *mock.NexusMock
+		ctx    sdk.Context
+		req    *types.CallContractRequest
+		msg    nexus.GeneralMessage
+	)
+
+	givenMsgServer := Given("an axelarnet msg server", func() {
+		ctx, k, _ = setup()
+		k.InitGenesis(ctx, types.DefaultGenesisState())
+		nexusK = &mock.NexusMock{}
+		ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{}, &mock.ChannelKeeperMock{})
+		server = keeper.NewMsgServerImpl(k, nexusK, &mock.BankKeeperMock{}, &mock.AccountKeeperMock{}, ibcK)
+		count := 0
+		nexusK.GenerateMessageIDFunc = func(_ sdk.Context, sourceTxHash string) string {
+			count++
+			return fmt.Sprintf("%s-%x", sourceTxHash, count)
+		}
+	})
+
+	whenChainIsRegistered := When("chain is registered", func() {
+		nexusK.GetChainFunc = func(_ sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
+			return nexus.Chain{
+				Name:                  chain,
+				SupportsForeignAssets: true,
+				Module:                rand.Str(10),
+				KeyType:               tss.Multisig,
+			}, true
+		}
+	})
+
+	whenChainIsActivated := When("chain is activated", func() {
+		nexusK.IsChainActivatedFunc = func(_ sdk.Context, chain nexus.Chain) bool {
+			return true
+		}
+	})
+
+	whenAddressIsValid := When("address is valid", func() {
+		nexusK.ValidateAddressFunc = func(_ sdk.Context, address nexus.CrossChainAddress) error {
+			return nil
+		}
+	})
+
+	whenSetNewMessageSucceeds := When("set new message succeeds", func() {
+		nexusK.SetNewMessageFunc = func(_ sdk.Context, m nexus.GeneralMessage) error {
+			msg = m
+			return m.ValidateBasic()
+		}
+	})
+
+	requestIsMade := When("a call contract request is made", func() {
+		req = types.NewCallContractRequest(
+			rand.AccAddr(),
+			nexustestutils.RandomChain().Name.String(),
+			evmtestutils.RandomAddress().Hex(),
+			rand.BytesBetween(5, 1000))
+
+	})
+
+	callFails := Then("call contract request fails", func(t *testing.T) {
+		_, err := server.CallContract(sdk.WrapSDKContext(ctx), req)
+		assert.Error(t, err)
+	})
+
+	t.Run("call contract", func(t *testing.T) {
+		givenMsgServer.
+			Branch(
+				whenChainIsRegistered.
+					When2(whenChainIsActivated).
+					When2(whenAddressIsValid).
+					When2(whenSetNewMessageSucceeds).
+					When2(requestIsMade).
+					Then("call contract succeeds", func(t *testing.T) {
+						_, err := server.CallContract(sdk.WrapSDKContext(ctx), req)
+						assert.NoError(t, err)
+						assert.Equal(t, msg.Status, nexus.Sent)
+						assert.Equal(t, msg.GetSourceChain(), nexus.ChainName(exported.Axelarnet.Name))
+						assert.Equal(t, msg.GetSourceAddress(), req.Sender.String())
+						assert.Equal(t, msg.GetDestinationAddress(), req.ContractAddress)
+						assert.Equal(t, msg.GetDestinationChain(), req.Chain)
+
+						payloadHash := crypto.Keccak256(req.Payload)
+						assert.Equal(t, msg.PayloadHash, payloadHash)
+					}),
+				whenChainIsRegistered.
+					When2(whenChainIsActivated).
+					When2(whenAddressIsValid).
+					When("set new message fails", func() {
+						nexusK.SetNewMessageFunc = func(_ sdk.Context, m nexus.GeneralMessage) error {
+							return fmt.Errorf("failed to set message")
+						}
+					}).
+					Then2(callFails),
+				whenChainIsRegistered.
+					When2(whenChainIsActivated).
+					When("address is not valid", func() {
+						nexusK.ValidateAddressFunc = func(_ sdk.Context, address nexus.CrossChainAddress) error {
+							return fmt.Errorf("address is invalid")
+						}
+					}).
+					Then2(callFails),
+				whenChainIsRegistered.
+					When("chain is not activated", func() {
+						nexusK.IsChainActivatedFunc = func(_ sdk.Context, chain nexus.Chain) bool { return false }
+					}).
+					Then2(callFails),
+				When("chain is not registered", func() {
+					nexusK.GetChainFunc = func(_ sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
+						return nexus.Chain{}, false
+					}
+				}).
+					Then2(callFails),
 			).Run(t)
 	})
 }
