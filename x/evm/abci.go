@@ -209,7 +209,7 @@ func setMessageToNexus(ctx sdk.Context, n types.Nexus, event types.Event, asset 
 
 		recipient := nexus.CrossChainAddress{
 			Chain:   funcs.MustOk(n.GetChain(ctx, e.ContractCall.DestinationChain)),
-			Address: e.ContractCall.Sender.Hex(),
+			Address: e.ContractCall.ContractAddress,
 		}
 
 		message = nexus.NewGeneralMessage(
@@ -233,7 +233,7 @@ func setMessageToNexus(ctx sdk.Context, n types.Nexus, event types.Event, asset 
 
 		recipient := nexus.CrossChainAddress{
 			Chain:   funcs.MustOk(n.GetChain(ctx, e.ContractCallWithToken.DestinationChain)),
-			Address: e.ContractCallWithToken.Sender.Hex(),
+			Address: e.ContractCallWithToken.ContractAddress,
 		}
 
 		message = nexus.NewGeneralMessage(
