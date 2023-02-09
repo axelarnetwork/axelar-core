@@ -565,6 +565,7 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 func validateMessage(ctx sdk.Context, ck types.ChainKeeper, n types.Nexus, m types.MultisigKeeper, chain nexus.Chain, msg nexus.GeneralMessage) (sdk.Int, multisig.KeyID, error) {
 	chainID := funcs.MustOk(ck.GetChainID(ctx))
 
+	// TODO refactor to do these checks earlier so we don't fail in the end blocker
 	keyID, ok := m.GetCurrentKeyID(ctx, chain.Name)
 	if !ok {
 		return chainID, keyID, fmt.Errorf("current key not set")
