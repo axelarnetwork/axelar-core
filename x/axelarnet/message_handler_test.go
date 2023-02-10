@@ -87,7 +87,14 @@ func TestHandleMessage(t *testing.T) {
 				return fmt.Sprintf("%s-%d", hex.EncodeToString(hash[:]), 0)
 			},
 		}
-		ibcK = keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{}, &mock.ChannelKeeperMock{})
+		ibcK = keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{
+			GetDenomTraceFunc: func(ctx sdk.Context, denomTraceHash tmbytes.HexBytes) (ibctransfertypes.DenomTrace, bool) {
+				return ibctransfertypes.DenomTrace{
+					Path:      fmt.Sprintf("%s/%s", ibctransfertypes.PortID, receiverChannel),
+					BaseDenom: rand.Denom(5, 10),
+				}, true
+			},
+		}, &mock.ChannelKeeperMock{})
 	})
 
 	ackError := func() func(t *testing.T) {
