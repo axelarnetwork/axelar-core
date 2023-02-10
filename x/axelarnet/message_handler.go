@@ -59,7 +59,7 @@ func validateMessage(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.Nexus, ibcP
 	// only allow sends message to EVM chains
 	if (msg.Type == nexus.TypeGeneralMessage || msg.Type == nexus.TypeGeneralMessageWithToken) &&
 		!destChain.IsFrom(evmtypes.ModuleName) {
-		return fmt.Errorf("destination chain s not an EVM chain")
+		return fmt.Errorf("destination chain is not an EVM chain")
 	}
 
 	switch msg.Type {
@@ -81,6 +81,8 @@ func validateMessage(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.Nexus, ibcP
 
 // OnRecvMessage handles general message from a cosmos chain
 func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n types.Nexus, b types.BankKeeper, packet ibcexported.PacketI) ibcexported.Acknowledgement {
+	// the acknowledgement is considered successful if it is a ResultAcknowledgement,
+	// follow ibc transfer convention, put byte(1) in ResultAcknowledgement to indicate success.
 	ack := channeltypes.NewResultAcknowledgement([]byte{byte(1)})
 
 	data, err := toICS20Packet(packet)
@@ -95,8 +97,7 @@ func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n ty
 
 	var msg Message
 	if err := json.Unmarshal([]byte(data.GetMemo()), &msg); err != nil {
-		ackErr := sdkerrors.Wrapf(types.ErrGeneralMessage, "cannot unmarshal memo")
-		return channeltypes.NewErrorAcknowledgement(ackErr)
+		return channeltypes.NewErrorAcknowledgement(sdkerrors.Wrapf(types.ErrGeneralMessage, "cannot unmarshal memo"))
 	}
 
 	// extract token from packet
@@ -105,6 +106,11 @@ func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n ty
 	path := types.NewIBCPath(packet.GetDestPort(), packet.GetDestChannel())
 
 	if err := validateMessage(ctx, ibcK, n, path, msg, token); err != nil {
+		ibcK.Logger(ctx).Debug(fmt.Sprintf("failed validating message: %s", err.Error()),
+			"src_channel", packet.GetSourceChannel(),
+			"dest_channel", packet.GetDestChannel(),
+			"sequence", packet.GetSequence(),
+		)
 		return channeltypes.NewErrorAcknowledgement(err)
 	}
 
@@ -128,6 +134,9 @@ func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n ty
 	if err != nil {
 		ibcK.Logger(ctx).Debug(fmt.Sprintf("failed handling message: %s", err.Error()),
 			"chain", sourceChain.String(),
+			"src_channel", packet.GetSourceChannel(),
+			"dest_channel", packet.GetDestChannel(),
+			"sequence", packet.GetSequence(),
 		)
 		return channeltypes.NewErrorAcknowledgement(err)
 	}
@@ -140,7 +149,7 @@ func handleMessage(ctx sdk.Context, n types.Nexus, sourceAddress nexus.CrossChai
 
 	recipient := nexus.CrossChainAddress{Chain: destChain, Address: msg.DestinationAddress}
 	m := nexus.NewGeneralMessage(
-		n.GenerateMessageID(ctx, ctx.TxBytes()),
+		n.GenerateMessageID(ctx),
 		sourceAddress,
 		recipient,
 		crypto.Keccak256Hash(msg.Payload).Bytes(),
@@ -150,10 +159,10 @@ func handleMessage(ctx sdk.Context, n types.Nexus, sourceAddress nexus.CrossChai
 
 	events.Emit(ctx, &types.ContractCallSubmitted{
 		MessageID:        m.ID,
-		Sender:           m.Sender.Address,
-		SourceChain:      m.Sender.Chain.Name,
-		DestinationChain: m.Recipient.Chain.Name,
-		ContractAddress:  m.Recipient.Address,
+		Sender:           m.GetSourceAddress(),
+		SourceChain:      m.GetSourceChain(),
+		DestinationChain: m.GetDestinationChain(),
+		ContractAddress:  m.GetDestinationAddress(),
 		PayloadHash:      m.PayloadHash,
 		Payload:          msg.Payload,
 	})
@@ -170,7 +179,7 @@ func handleMessageWithToken(ctx sdk.Context, n types.Nexus, b types.BankKeeper, 
 
 	recipient := nexus.CrossChainAddress{Chain: destChain, Address: msg.DestinationAddress}
 	m := nexus.NewGeneralMessage(
-		n.GenerateMessageID(ctx, ctx.TxBytes()),
+		n.GenerateMessageID(ctx),
 		sourceAddress,
 		recipient,
 		crypto.Keccak256Hash(msg.Payload).Bytes(),
@@ -180,10 +189,10 @@ func handleMessageWithToken(ctx sdk.Context, n types.Nexus, b types.BankKeeper, 
 
 	events.Emit(ctx, &types.ContractCallWithTokenSubmitted{
 		MessageID:        m.ID,
-		Sender:           m.Sender.Address,
-		SourceChain:      m.Sender.Chain.Name,
-		DestinationChain: m.Recipient.Chain.Name,
-		ContractAddress:  m.Recipient.Address,
+		Sender:           m.GetSourceAddress(),
+		SourceChain:      m.GetSourceChain(),
+		DestinationChain: m.GetDestinationChain(),
+		ContractAddress:  m.GetDestinationAddress(),
 		PayloadHash:      m.PayloadHash,
 		Payload:          msg.Payload,
 		Asset:            asset.Coin,
@@ -207,10 +216,10 @@ func handleTokenSent(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceA
 
 	events.Emit(ctx, &types.TokenSent{
 		TransferID:         transferID,
-		SourceChain:        sourceAddress.Chain.Name,
 		Sender:             sourceAddress.Address,
-		DestinationChain:   nexus.ChainName(msg.DestinationChain),
-		DestinationAddress: msg.DestinationAddress,
+		SourceChain:        sourceAddress.Chain.Name,
+		DestinationAddress: crossChainAddr.Address,
+		DestinationChain:   crossChainAddr.Chain.Name,
 		Asset:              asset.Coin,
 	})
 
@@ -245,8 +254,8 @@ func extractTokenFromPacketData(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.
 		// sender chain is not the source, un-escrow token
 
 		// remove prefix added by sender chain
-		voucherPrefix := ibctransfertypes.GetDenomPrefix(packet.GetSourcePort(), packet.GetSourceChannel())
-		unprefixedDenom := data.Denom[len(voucherPrefix):]
+		icsPrefix := ibctransfertypes.GetDenomPrefix(packet.GetSourcePort(), packet.GetSourceChannel())
+		unprefixedDenom := data.Denom[len(icsPrefix):]
 
 		// coin denomination used in sending from the escrow address
 		denom = unprefixedDenom

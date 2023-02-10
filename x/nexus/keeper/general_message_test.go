@@ -124,10 +124,9 @@ func TestGenerateMessageID(t *testing.T) {
 	cfg := app.MakeEncodingConfig()
 	k, ctx := setup(cfg)
 
-	bz := evmtestutils.RandomHash().Bytes()
 	// use the same hash and source chain, still shouldn't collide
-	id := k.GenerateMessageID(ctx, bz)
-	id2 := k.GenerateMessageID(ctx, bz)
+	id := k.GenerateMessageID(ctx)
+	id2 := k.GenerateMessageID(ctx)
 	assert.NotEqual(t, id, id2)
 }
 
@@ -140,7 +139,7 @@ func TestStatusTransitions(t *testing.T) {
 	destinationChain := nexustestutils.RandomChain()
 	destinationChain.Module = evmtypes.ModuleName
 	msg := exported.GeneralMessage{
-		ID:          k.GenerateMessageID(ctx, evmtestutils.RandomHash().Bytes()),
+		ID:          k.GenerateMessageID(ctx),
 		Sender:      exported.CrossChainAddress{Chain: sourceChain, Address: genCosmosAddr(sourceChain.Name.String())},
 		Recipient:   exported.CrossChainAddress{Chain: destinationChain, Address: evmtestutils.RandomAddress().Hex()},
 		Status:      exported.Approved,
@@ -204,7 +203,7 @@ func TestGetMessage(t *testing.T) {
 	destinationChain := nexustestutils.RandomChain()
 	destinationChain.Module = evmtypes.ModuleName
 	msg := exported.GeneralMessage{
-		ID:          k.GenerateMessageID(ctx, evmtestutils.RandomHash().Bytes()),
+		ID:          k.GenerateMessageID(ctx),
 		Sender:      exported.CrossChainAddress{Chain: sourceChain, Address: genCosmosAddr(sourceChain.Name.String())},
 		Recipient:   exported.CrossChainAddress{Chain: destinationChain, Address: evmtestutils.RandomAddress().Hex()},
 		Status:      exported.Approved,
@@ -241,7 +240,7 @@ func TestGetSentMessages(t *testing.T) {
 			destChain := destinationChain
 			destChain.Name = destChainName
 			msg := exported.GeneralMessage{
-				ID:          k.GenerateMessageID(ctx, evmtestutils.RandomHash().Bytes()),
+				ID:          k.GenerateMessageID(ctx),
 				Sender:      exported.CrossChainAddress{Chain: sourceChain, Address: genCosmosAddr(sourceChain.Name.String())},
 				Recipient:   exported.CrossChainAddress{Chain: destChain, Address: evmtestutils.RandomAddress().Hex()},
 				Status:      exported.Sent,

@@ -310,11 +310,11 @@ const (
 	// TypeUnrecognized means coin type is unrecognized
 	TypeUnrecognized = iota
 	// TypeGeneralMessage is a pure message
-	TypeGeneralMessage = 1
+	TypeGeneralMessage
 	// TypeGeneralMessageWithToken is a general message with token
-	TypeGeneralMessageWithToken = 2
+	TypeGeneralMessageWithToken
 	// TypeSendToken is a direct token transfer without link from a cosmos chain
-	TypeSendToken = 3
+	TypeSendToken
 )
 
 // Type returns the type of the message

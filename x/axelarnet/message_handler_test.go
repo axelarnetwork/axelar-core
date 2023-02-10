@@ -82,8 +82,8 @@ func TestHandleMessage(t *testing.T) {
 					return fmt.Errorf("module not found")
 				}
 			},
-			GenerateMessageIDFunc: func(_ sdk.Context, bz []byte) string {
-				hash := sha256.Sum256(bz)
+			GenerateMessageIDFunc: func(ctx sdk.Context) string {
+				hash := sha256.Sum256(ctx.TxBytes())
 				return fmt.Sprintf("%s-%d", hex.EncodeToString(hash[:]), 0)
 			},
 		}
@@ -311,8 +311,8 @@ func TestHandleMessageWithToken(t *testing.T) {
 			GetChainByNativeAssetFunc: func(ctx sdk.Context, asset string) (nexus.Chain, bool) {
 				return srcChain, true
 			},
-			GenerateMessageIDFunc: func(_ sdk.Context, bz []byte) string {
-				hash := sha256.Sum256(bz)
+			GenerateMessageIDFunc: func(ctx sdk.Context) string {
+				hash := sha256.Sum256(ctx.TxBytes())
 				return fmt.Sprintf("%s-%d", hex.EncodeToString(hash[:]), 0)
 			},
 		}
@@ -460,8 +460,8 @@ func TestHandleSendToken(t *testing.T) {
 			EnqueueTransferFunc: func(ctx sdk.Context, senderChain nexus.Chain, recipient nexus.CrossChainAddress, asset sdk.Coin) (nexus.TransferID, error) {
 				return nexustestutils.RandomTransferID(), nil
 			},
-			GenerateMessageIDFunc: func(_ sdk.Context, bz []byte) string {
-				hash := sha256.Sum256(bz)
+			GenerateMessageIDFunc: func(ctx sdk.Context) string {
+				hash := sha256.Sum256(ctx.TxBytes())
 				return fmt.Sprintf("%s-%d", hex.EncodeToString(hash[:]), 0)
 			},
 		}

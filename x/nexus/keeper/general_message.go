@@ -25,11 +25,11 @@ func getSentMessageKey(destinationChain exported.ChainName, id string) key.Key {
 }
 
 // GenerateMessageID generates a unique general message ID
-func (k Keeper) GenerateMessageID(ctx sdk.Context, bz []byte) string {
+func (k Keeper) GenerateMessageID(ctx sdk.Context) string {
 	counter := utils.NewCounter[uint](messageNonceKey, k.getStore(ctx))
 	nonce := counter.Incr(ctx)
 
-	hash := sha256.Sum256(bz)
+	hash := sha256.Sum256(ctx.TxBytes())
 	return fmt.Sprintf("%s-%d", hex.EncodeToString(hash[:]), nonce)
 }
 
