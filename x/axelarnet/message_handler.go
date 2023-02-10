@@ -26,8 +26,8 @@ type Message struct {
 	Type               int    `json:"type"`
 }
 
-func validateMessage(ctx sdk.Context, k keeper.Keeper, n types.Nexus, ibcPath string, msg Message, token sdk.Coin) error {
-	chainName, ok := k.GetChainNameByIBCPath(ctx, ibcPath)
+func validateMessage(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.Nexus, ibcPath string, msg Message, token sdk.Coin) error {
+	chainName, ok := ibcK.GetChainNameByIBCPath(ctx, ibcPath)
 	if !ok {
 		return fmt.Errorf("unrecognized IBC path %s", ibcPath)
 	}
@@ -59,11 +59,17 @@ func validateMessage(ctx sdk.Context, k keeper.Keeper, n types.Nexus, ibcPath st
 	case nexus.TypeGeneralMessage:
 		return nil
 	case nexus.TypeGeneralMessageWithToken, nexus.TypeSendToken:
-		if !n.IsAssetRegistered(ctx, chain, token.GetDenom()) {
+		// convert ibc/hash denom to base denom if asset is originating from a cosmos chain
+		coin, err := keeper.NewCoin(ctx, ibcK, n, token)
+		if err != nil {
+			return err
+		}
+
+		if !n.IsAssetRegistered(ctx, chain, coin.GetDenom()) {
 			return fmt.Errorf("asset %s is not registered on chain %s", token.GetDenom(), destChain.Name)
 		}
 
-		if !n.IsAssetRegistered(ctx, destChain, token.GetDenom()) {
+		if !n.IsAssetRegistered(ctx, destChain, coin.GetDenom()) {
 			return fmt.Errorf("asset %s is not registered on chain %s", token.GetDenom(), destChain.Name)
 		}
 		return nil
@@ -97,7 +103,7 @@ func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n ty
 
 	path := types.NewIBCPath(packet.GetDestPort(), packet.GetDestChannel())
 
-	if err := validateMessage(ctx, k, n, path, msg, token); err != nil {
+	if err := validateMessage(ctx, ibcK, n, path, msg, token); err != nil {
 		return channeltypes.NewErrorAcknowledgement(err)
 	}
 
@@ -154,12 +160,9 @@ func handleMessage(ctx sdk.Context, n types.Nexus, sourceAddress nexus.CrossChai
 func handleMessageWithToken(ctx sdk.Context, n types.Nexus, b types.BankKeeper, ibcK keeper.IBCKeeper, sourceAddress nexus.CrossChainAddress, msg Message, token sdk.Coin) error {
 	destChain := funcs.MustOk(n.GetChain(ctx, nexus.ChainName(msg.DestinationChain)))
 
-	coin, err := keeper.NewCoin(ctx, ibcK, n, token)
-	if err != nil {
-		return err
-	}
+	coin := funcs.Must(keeper.NewCoin(ctx, ibcK, n, token))
 
-	if err = coin.Lock(b, types.MessageSender); err != nil {
+	if err := coin.Lock(b, types.MessageSender); err != nil {
 		return err
 	}
 
