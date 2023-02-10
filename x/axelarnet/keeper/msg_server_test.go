@@ -3,6 +3,7 @@ package keeper_test
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	mathRand "math/rand"
 	"strings"
@@ -1183,9 +1184,10 @@ func TestHandleCallContract(t *testing.T) {
 		ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{}, &mock.ChannelKeeperMock{})
 		server = keeper.NewMsgServerImpl(k, nexusK, &mock.BankKeeperMock{}, &mock.AccountKeeperMock{}, ibcK)
 		count := 0
-		nexusK.GenerateMessageIDFunc = func(_ sdk.Context, sourceTxHash string) string {
+		nexusK.GenerateMessageIDFunc = func(_ sdk.Context, bz []byte) string {
 			count++
-			return fmt.Sprintf("%s-%x", sourceTxHash, count)
+			hash := sha256.Sum256(bz)
+			return fmt.Sprintf("%s-%x", hex.EncodeToString(hash[:]), count)
 		}
 	})
 

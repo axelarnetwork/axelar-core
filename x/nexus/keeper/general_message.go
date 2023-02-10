@@ -1,6 +1,8 @@
 package keeper
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/store/prefix"
@@ -23,12 +25,12 @@ func getSentMessageKey(destinationChain exported.ChainName, id string) key.Key {
 }
 
 // GenerateMessageID generates a unique general message ID
-func (k Keeper) GenerateMessageID(ctx sdk.Context, sourceTxID string) string {
+func (k Keeper) GenerateMessageID(ctx sdk.Context, bz []byte) string {
 	counter := utils.NewCounter[uint](messageNonceKey, k.getStore(ctx))
 	nonce := counter.Incr(ctx)
 
-	id := fmt.Sprintf("%s-%d", sourceTxID, nonce)
-	return id
+	hash := sha256.Sum256(bz)
+	return fmt.Sprintf("%s-%d", hex.EncodeToString(hash[:]), nonce)
 }
 
 // SetNewMessage sets the given general message. If the messages is approved, adds the message ID to approved messages store
@@ -68,7 +70,7 @@ func (k Keeper) SetNewMessage(ctx sdk.Context, m exported.GeneralMessage) error 
 	}
 
 	if m.Is(exported.Sent) {
-		if err := k.setSentMessage(ctx, m); err != nil {
+		if err := k.setSentMessageID(ctx, m); err != nil {
 			return err
 		}
 	}
@@ -101,7 +103,7 @@ func (k Keeper) SetMessageSent(ctx sdk.Context, id string) error {
 		return err
 	}
 
-	return k.setSentMessage(ctx, m)
+	return k.setSentMessageID(ctx, m)
 }
 
 // SetMessageExecuted sets the general message as executed
@@ -115,7 +117,7 @@ func (k Keeper) SetMessageExecuted(ctx sdk.Context, id string) error {
 		return fmt.Errorf("general message is not sent or approved")
 	}
 
-	k.deleteSentMessage(ctx, m)
+	k.deleteSentMessageID(ctx, m)
 
 	m.Status = exported.Executed
 
@@ -133,7 +135,7 @@ func (k Keeper) SetMessageFailed(ctx sdk.Context, id string) error {
 		return fmt.Errorf("general message is not sent")
 	}
 
-	k.deleteSentMessage(ctx, m)
+	k.deleteSentMessageID(ctx, m)
 
 	m.Status = exported.Failed
 
@@ -144,7 +146,7 @@ func (k Keeper) SetMessageFailed(ctx sdk.Context, id string) error {
 func (k Keeper) DeleteMessage(ctx sdk.Context, id string) {
 	m, found := k.GetMessage(ctx, id)
 	if found {
-		k.deleteSentMessage(ctx, m)
+		k.deleteSentMessageID(ctx, m)
 		k.getStore(ctx).DeleteNew(getMessageKey(id))
 	}
 }
@@ -158,7 +160,7 @@ func (k Keeper) setMessage(ctx sdk.Context, m exported.GeneralMessage) error {
 	return k.getStore(ctx).SetNewValidated(getMessageKey(m.ID), &m)
 }
 
-func (k Keeper) setSentMessage(ctx sdk.Context, m exported.GeneralMessage) error {
+func (k Keeper) setSentMessageID(ctx sdk.Context, m exported.GeneralMessage) error {
 	if !m.Is(exported.Sent) {
 		return fmt.Errorf("general message is not sent")
 	}
@@ -167,7 +169,7 @@ func (k Keeper) setSentMessage(ctx sdk.Context, m exported.GeneralMessage) error
 	return nil
 }
 
-func (k Keeper) deleteSentMessage(ctx sdk.Context, m exported.GeneralMessage) {
+func (k Keeper) deleteSentMessageID(ctx sdk.Context, m exported.GeneralMessage) {
 	k.getStore(ctx).DeleteNew(getSentMessageKey(m.GetDestinationChain(), m.ID))
 }
 

@@ -7,13 +7,12 @@
 - [axelar/axelarnet/v1beta1/events.proto](#axelar/axelarnet/v1beta1/events.proto)
     - [AxelarTransferCompleted](#axelar.axelarnet.v1beta1.AxelarTransferCompleted)
     - [ContractCallSubmitted](#axelar.axelarnet.v1beta1.ContractCallSubmitted)
+    - [ContractCallWithTokenSubmitted](#axelar.axelarnet.v1beta1.ContractCallWithTokenSubmitted)
     - [FeeCollected](#axelar.axelarnet.v1beta1.FeeCollected)
     - [IBCTransferCompleted](#axelar.axelarnet.v1beta1.IBCTransferCompleted)
     - [IBCTransferFailed](#axelar.axelarnet.v1beta1.IBCTransferFailed)
     - [IBCTransferRetried](#axelar.axelarnet.v1beta1.IBCTransferRetried)
     - [IBCTransferSent](#axelar.axelarnet.v1beta1.IBCTransferSent)
-    - [MessageApproved](#axelar.axelarnet.v1beta1.MessageApproved)
-    - [MessageWithTokenApproved](#axelar.axelarnet.v1beta1.MessageWithTokenApproved)
     - [TokenSent](#axelar.axelarnet.v1beta1.TokenSent)
   
 - [axelar/axelarnet/v1beta1/params.proto](#axelar/axelarnet/v1beta1/params.proto)
@@ -573,13 +572,35 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| `message_id` | [string](#string) |  |  |
 | `sender` | [string](#string) |  |  |
 | `source_chain` | [string](#string) |  |  |
 | `destination_chain` | [string](#string) |  |  |
 | `contract_address` | [string](#string) |  |  |
 | `payload` | [bytes](#bytes) |  |  |
 | `payload_hash` | [bytes](#bytes) |  |  |
-| `msg_id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.axelarnet.v1beta1.ContractCallWithTokenSubmitted"></a>
+
+### ContractCallWithTokenSubmitted
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `message_id` | [string](#string) |  |  |
+| `sender` | [string](#string) |  |  |
+| `source_chain` | [string](#string) |  |  |
+| `destination_chain` | [string](#string) |  |  |
+| `contract_address` | [string](#string) |  |  |
+| `payload` | [bytes](#bytes) |  |  |
+| `payload_hash` | [bytes](#bytes) |  |  |
+| `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 
 
 
@@ -680,47 +701,6 @@
 
 
 
-<a name="axelar.axelarnet.v1beta1.MessageApproved"></a>
-
-### MessageApproved
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `chain` | [string](#string) |  |  |
-| `message_id` | [string](#string) |  |  |
-| `sender` | [string](#string) |  |  |
-| `destination_chain` | [string](#string) |  |  |
-| `destination_address` | [string](#string) |  |  |
-| `payload_hash` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="axelar.axelarnet.v1beta1.MessageWithTokenApproved"></a>
-
-### MessageWithTokenApproved
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `chain` | [string](#string) |  |  |
-| `message_id` | [string](#string) |  |  |
-| `sender` | [string](#string) |  |  |
-| `destination_chain` | [string](#string) |  |  |
-| `destination_address` | [string](#string) |  |  |
-| `payload_hash` | [bytes](#bytes) |  |  |
-| `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
-
-
-
-
-
-
 <a name="axelar.axelarnet.v1beta1.TokenSent"></a>
 
 ### TokenSent
@@ -729,9 +709,9 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `chain` | [string](#string) |  |  |
 | `transfer_id` | [uint64](#uint64) |  |  |
 | `sender` | [string](#string) |  |  |
+| `source_chain` | [string](#string) |  |  |
 | `destination_chain` | [string](#string) |  |  |
 | `destination_address` | [string](#string) |  |  |
 | `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |

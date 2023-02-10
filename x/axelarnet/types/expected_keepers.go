@@ -18,7 +18,6 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	nexustypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
 )
 
 //go:generate moq -out ./mock/expected_keepers.go -pkg mock . BaseKeeper Nexus BankKeeper IBCTransferKeeper ChannelKeeper AccountKeeper PortKeeper
@@ -60,9 +59,8 @@ type Nexus interface {
 	SetMessageSent(ctx sdk.Context, id string) error
 	SetMessageExecuted(ctx sdk.Context, id string) error
 	SetMessageFailed(ctx sdk.Context, id string) error
-	GenerateMessageID(ctx sdk.Context, sourceTxID string) string
+	GenerateMessageID(ctx sdk.Context, bz []byte) string
 	ValidateAddress(ctx sdk.Context, address nexus.CrossChainAddress) error
-	GetRouter() nexustypes.Router
 }
 
 // BankKeeper defines the expected interface contract the vesting module requires

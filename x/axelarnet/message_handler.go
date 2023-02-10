@@ -3,6 +3,7 @@ package axelarnet
 import (
 	"encoding/json"
 	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	ibctransfertypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
@@ -49,14 +50,10 @@ func validateMessage(ctx sdk.Context, k keeper.Keeper, n types.Nexus, ibcPath st
 		return fmt.Errorf("chain %s is deactivated", destChain.Name)
 	}
 
-	addrValidator := n.GetRouter().GetAddressValidator(destChain.Module)
-	if addrValidator == nil {
-		// checked dest chain must be an EVM chain before
-		panic("address validator not set for evm module")
-	}
-	if err := addrValidator(ctx, nexus.CrossChainAddress{Chain: destChain, Address: msg.DestinationAddress}); err != nil {
+	if err := n.ValidateAddress(ctx, nexus.CrossChainAddress{Chain: destChain, Address: msg.DestinationAddress}); err != nil {
 		return err
 	}
+
 	switch msg.Type {
 	case nexus.TypeGeneralMessage:
 		return nil
@@ -129,24 +126,24 @@ func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n ty
 func handleMessage(ctx sdk.Context, n types.Nexus, sourceAddress nexus.CrossChainAddress, msg Message) error {
 	destChain := funcs.MustOk(n.GetChain(ctx, nexus.ChainName(msg.DestinationChain)))
 
+	recipient := nexus.CrossChainAddress{Chain: destChain, Address: msg.DestinationAddress}
 	m := nexus.NewGeneralMessage(
-		"", // TODO: gen msg id after call contract pr
-		sourceAddress.Chain.Name,
-		sourceAddress.Address,
-		destChain.Name,
-		msg.DestinationAddress,
+		n.GenerateMessageID(ctx, ctx.TxBytes()),
+		sourceAddress,
+		recipient,
 		crypto.Keccak256Hash(msg.Payload).Bytes(),
 		nexus.Approved,
 		nil,
 	)
 
-	events.Emit(ctx, &types.MessageApproved{
-		Chain:              m.SourceChain,
-		MessageID:          m.ID.ID,
-		Sender:             m.Sender,
-		DestinationChain:   m.ID.Chain,
-		DestinationAddress: m.Receiver,
-		PayloadHash:        m.PayloadHash,
+	events.Emit(ctx, &types.ContractCallSubmitted{
+		MessageID:        m.ID,
+		Sender:           m.Sender.Address,
+		SourceChain:      m.Sender.Chain.Name,
+		DestinationChain: m.Recipient.Chain.Name,
+		ContractAddress:  m.Recipient.Address,
+		PayloadHash:      m.PayloadHash,
+		Payload:          msg.Payload,
 	})
 
 	return n.SetNewMessage(ctx, m)
@@ -164,25 +161,25 @@ func handleMessageWithToken(ctx sdk.Context, n types.Nexus, b types.BankKeeper, 
 		return err
 	}
 
+	recipient := nexus.CrossChainAddress{Chain: destChain, Address: msg.DestinationAddress}
 	m := nexus.NewGeneralMessage(
-		"", // TODO: gen msg id after call contract pr
-		sourceAddress.Chain.Name,
-		sourceAddress.Address,
-		destChain.Name,
-		msg.DestinationAddress,
+		n.GenerateMessageID(ctx, ctx.TxBytes()),
+		sourceAddress,
+		recipient,
 		crypto.Keccak256Hash(msg.Payload).Bytes(),
 		nexus.Approved,
 		&token,
 	)
 
-	events.Emit(ctx, &types.MessageWithTokenApproved{
-		Chain:              m.SourceChain,
-		MessageID:          m.ID.ID,
-		Sender:             m.Sender,
-		DestinationChain:   m.ID.Chain,
-		DestinationAddress: m.Receiver,
-		PayloadHash:        m.PayloadHash,
-		Asset:              token,
+	events.Emit(ctx, &types.ContractCallWithTokenSubmitted{
+		MessageID:        m.ID,
+		Sender:           m.Sender.Address,
+		SourceChain:      m.Sender.Chain.Name,
+		DestinationChain: m.Recipient.Chain.Name,
+		ContractAddress:  m.Recipient.Address,
+		PayloadHash:      m.PayloadHash,
+		Payload:          msg.Payload,
+		Asset:            token,
 	})
 
 	return n.SetNewMessage(ctx, m)
@@ -212,8 +209,8 @@ func handleTokenSent(ctx sdk.Context, n types.Nexus, b types.BankKeeper, ibcK ke
 	)
 
 	events.Emit(ctx, &types.TokenSent{
-		Chain:              sourceAddress.Chain.Name,
 		TransferID:         transferID,
+		SourceChain:        sourceAddress.Chain.Name,
 		Sender:             sourceAddress.Address,
 		DestinationChain:   nexus.ChainName(msg.DestinationChain),
 		DestinationAddress: msg.DestinationAddress,

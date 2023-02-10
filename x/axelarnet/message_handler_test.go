@@ -1,6 +1,8 @@
 package axelarnet_test
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -25,7 +27,6 @@ import (
 	evmtestutils "github.com/axelarnetwork/axelar-core/x/evm/types/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexustestutils "github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
-	nexusTypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
 	"github.com/axelarnetwork/utils/funcs"
 	. "github.com/axelarnetwork/utils/test"
 )
@@ -57,7 +58,7 @@ func TestHandleMessage(t *testing.T) {
 			DestinationChain:   destChain.Name.String(),
 			DestinationAddress: destAddress,
 			Payload:            payload,
-			Type:               0,
+			Type:               nexus.TypeGeneralMessage,
 		}
 
 		ctx, k, channelK = setup()
@@ -73,10 +74,17 @@ func TestHandleMessage(t *testing.T) {
 
 				}
 			},
-			GetRouterFunc: func() nexusTypes.Router {
-				nexusRouter := nexusTypes.NewRouter()
-				nexusRouter.AddAddressValidator(evmtypes.ModuleName, evmKeeper.NewAddressValidator())
-				return nexusRouter
+			ValidateAddressFunc: func(ctx sdk.Context, address nexus.CrossChainAddress) error {
+				switch address.Chain.Module {
+				case evmtypes.ModuleName:
+					return evmKeeper.NewAddressValidator()(ctx, address)
+				default:
+					return fmt.Errorf("module not found")
+				}
+			},
+			GenerateMessageIDFunc: func(_ sdk.Context, bz []byte) string {
+				hash := sha256.Sum256(bz)
+				return fmt.Sprintf("%s-%d", hex.EncodeToString(hash[:]), 0)
 			},
 		}
 		ibcK = keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{}, &mock.ChannelKeeperMock{})
@@ -182,14 +190,6 @@ func TestHandleMessage(t *testing.T) {
 		Run(t)
 
 	whenSourceChainIsValid.
-		When("dest chain is not evm", func() {
-			destChain.Module = rand.StrBetween(5, 10)
-		}).
-		When("dest chain is found", isChainFound(destChain, true)).
-		Then("should return ack error", ackError()).
-		Run(t)
-
-	whenSourceChainIsValid.
 		When("dest chain is found", isChainFound(destChain, true)).
 		When("dest chain is evm", func() { destChain.Module = evmtypes.ModuleName }).
 		When("dest chain is not activated", isChainActivated(destChain, false)).
@@ -255,7 +255,7 @@ func TestHandleMessageWithToken(t *testing.T) {
 			DestinationChain:   destChain.Name.String(),
 			DestinationAddress: destAddress,
 			Payload:            payload,
-			Type:               1,
+			Type:               nexus.TypeGeneralMessageWithToken,
 		}
 
 		// packet send to axelar gmp account
@@ -292,14 +292,21 @@ func TestHandleMessageWithToken(t *testing.T) {
 
 				}
 			},
-			GetRouterFunc: func() nexusTypes.Router {
-				nexusRouter := nexusTypes.NewRouter()
-				nexusRouter.AddAddressValidator(evmtypes.ModuleName, evmKeeper.NewAddressValidator())
-				return nexusRouter
+			ValidateAddressFunc: func(ctx sdk.Context, address nexus.CrossChainAddress) error {
+				switch address.Chain.Module {
+				case evmtypes.ModuleName:
+					return evmKeeper.NewAddressValidator()(ctx, address)
+				default:
+					panic("module not found")
+				}
 			},
 			IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool { return true },
 			GetChainByNativeAssetFunc: func(ctx sdk.Context, asset string) (nexus.Chain, bool) {
 				return srcChain, true
+			},
+			GenerateMessageIDFunc: func(_ sdk.Context, bz []byte) string {
+				hash := sha256.Sum256(bz)
+				return fmt.Sprintf("%s-%d", hex.EncodeToString(hash[:]), 0)
 			},
 		}
 		ibcK = keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{
@@ -394,7 +401,7 @@ func TestHandleSendToken(t *testing.T) {
 			DestinationChain:   destChain.Name.String(),
 			DestinationAddress: destAddress,
 			Payload:            nil,
-			Type:               2,
+			Type:               nexus.TypeSendToken,
 		}
 
 		// packet send to axelar gmp account
@@ -431,10 +438,13 @@ func TestHandleSendToken(t *testing.T) {
 
 				}
 			},
-			GetRouterFunc: func() nexusTypes.Router {
-				nexusRouter := nexusTypes.NewRouter()
-				nexusRouter.AddAddressValidator(evmtypes.ModuleName, evmKeeper.NewAddressValidator())
-				return nexusRouter
+			ValidateAddressFunc: func(ctx sdk.Context, address nexus.CrossChainAddress) error {
+				switch address.Chain.Module {
+				case evmtypes.ModuleName:
+					return evmKeeper.NewAddressValidator()(ctx, address)
+				default:
+					panic("module not found")
+				}
 			},
 			IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool { return true },
 			GetChainByNativeAssetFunc: func(ctx sdk.Context, asset string) (nexus.Chain, bool) {
@@ -442,6 +452,10 @@ func TestHandleSendToken(t *testing.T) {
 			},
 			EnqueueTransferFunc: func(ctx sdk.Context, senderChain nexus.Chain, recipient nexus.CrossChainAddress, asset sdk.Coin) (nexus.TransferID, error) {
 				return nexustestutils.RandomTransferID(), nil
+			},
+			GenerateMessageIDFunc: func(_ sdk.Context, bz []byte) string {
+				hash := sha256.Sum256(bz)
+				return fmt.Sprintf("%s-%d", hex.EncodeToString(hash[:]), 0)
 			},
 		}
 		ibcK = keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{
