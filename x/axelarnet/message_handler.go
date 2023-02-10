@@ -18,6 +18,7 @@ import (
 	"github.com/axelarnetwork/utils/funcs"
 )
 
+// Message is attached in ICS20 packet memo field
 type Message struct {
 	DestinationChain   string `json:"destination_chain"`
 	DestinationAddress string `json:"destination_address"`
@@ -71,6 +72,7 @@ func validateMessage(ctx sdk.Context, k keeper.Keeper, n types.Nexus, ibcPath st
 	}
 }
 
+// OnRecvMessage handles general message from a cosmos chain
 func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n types.Nexus, b types.BankKeeper, packet ibcexported.PacketI) ibcexported.Acknowledgement {
 	ack := channeltypes.NewResultAcknowledgement([]byte{byte(1)})
 
@@ -132,7 +134,7 @@ func handleMessage(ctx sdk.Context, n types.Nexus, sourceAddress nexus.CrossChai
 		sourceAddress,
 		recipient,
 		crypto.Keccak256Hash(msg.Payload).Bytes(),
-		nexus.Approved,
+		nexus.Sent,
 		nil,
 	)
 
@@ -167,7 +169,7 @@ func handleMessageWithToken(ctx sdk.Context, n types.Nexus, b types.BankKeeper, 
 		sourceAddress,
 		recipient,
 		crypto.Keccak256Hash(msg.Payload).Bytes(),
-		nexus.Approved,
+		nexus.Sent,
 		&token,
 	)
 

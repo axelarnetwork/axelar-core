@@ -95,6 +95,7 @@ func RandomFullDenom() string {
 	return denom
 }
 
+// RandomChannel creates an IBC channel
 func RandomChannel() string {
 	return fmt.Sprintf("%s%d", "channel-", rand.PosI64())
 }
