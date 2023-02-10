@@ -73,48 +73,16 @@ message FeeCollected {
   cosmos.base.v1beta1.Coin fee = 2 [ (gogoproto.nullable) = false ];
 }
 
-message MessageApproved {
-  string chain = 1
+message ContractCallSubmitted {
+  string sender = 1;
+  string source_chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
-  string message_id = 2 [ (gogoproto.customname) = "MessageID" ];
-  string sender = 3;
-  string destination_chain = 4
+  string destination_chain = 3
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
-  string destination_address = 5;
-  bytes payload_hash = 6
-      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Hash" ];
-}
-
-message MessageWithTokenApproved {
-  string chain = 1
-      [ (gogoproto.casttype) =
-            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
-  string message_id = 2 [ (gogoproto.customname) = "MessageID" ];
-  string sender = 3;
-  string destination_chain = 4
-      [ (gogoproto.casttype) =
-            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
-  string destination_address = 5;
-  bytes payload_hash = 6
-      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Hash" ];
-  cosmos.base.v1beta1.Coin asset = 7 [ (gogoproto.nullable) = false ];
-}
-
-message TokenSent {
-  string chain = 1
-      [ (gogoproto.casttype) =
-            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
-  uint64 transfer_id = 2 [
-    (gogoproto.customname) = "TransferID",
-    (gogoproto.casttype) =
-        "github.com/axelarnetwork/axelar-core/x/nexus/exported.TransferID"
-  ];
-  string sender = 3;
-  string destination_chain = 4
-      [ (gogoproto.casttype) =
-            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
-  string destination_address = 5;
-  cosmos.base.v1beta1.Coin asset = 6 [ (gogoproto.nullable) = false ];
+  string contract_address = 4;
+  bytes payload = 5;
+  bytes payload_hash = 6;
+  string msg_id = 7 [ (gogoproto.customname) = "MsgID" ];
 }

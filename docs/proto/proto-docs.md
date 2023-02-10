@@ -6,6 +6,7 @@
 
 - [axelar/axelarnet/v1beta1/events.proto](#axelar/axelarnet/v1beta1/events.proto)
     - [AxelarTransferCompleted](#axelar.axelarnet.v1beta1.AxelarTransferCompleted)
+    - [ContractCallSubmitted](#axelar.axelarnet.v1beta1.ContractCallSubmitted)
     - [FeeCollected](#axelar.axelarnet.v1beta1.FeeCollected)
     - [IBCTransferCompleted](#axelar.axelarnet.v1beta1.IBCTransferCompleted)
     - [IBCTransferFailed](#axelar.axelarnet.v1beta1.IBCTransferFailed)
@@ -52,7 +53,6 @@
     - [CrossChainTransfer](#axelar.nexus.exported.v1beta1.CrossChainTransfer)
     - [FeeInfo](#axelar.nexus.exported.v1beta1.FeeInfo)
     - [GeneralMessage](#axelar.nexus.exported.v1beta1.GeneralMessage)
-    - [MessageID](#axelar.nexus.exported.v1beta1.MessageID)
     - [TransferFee](#axelar.nexus.exported.v1beta1.TransferFee)
   
     - [GeneralMessage.Status](#axelar.nexus.exported.v1beta1.GeneralMessage.Status)
@@ -110,6 +110,8 @@
 - [axelar/axelarnet/v1beta1/tx.proto](#axelar/axelarnet/v1beta1/tx.proto)
     - [AddCosmosBasedChainRequest](#axelar.axelarnet.v1beta1.AddCosmosBasedChainRequest)
     - [AddCosmosBasedChainResponse](#axelar.axelarnet.v1beta1.AddCosmosBasedChainResponse)
+    - [CallContractRequest](#axelar.axelarnet.v1beta1.CallContractRequest)
+    - [CallContractResponse](#axelar.axelarnet.v1beta1.CallContractResponse)
     - [ConfirmDepositRequest](#axelar.axelarnet.v1beta1.ConfirmDepositRequest)
     - [ConfirmDepositResponse](#axelar.axelarnet.v1beta1.ConfirmDepositResponse)
     - [ExecuteMessageRequest](#axelar.axelarnet.v1beta1.ExecuteMessageRequest)
@@ -190,6 +192,7 @@
     - [ConfirmKeyTransferStarted](#axelar.evm.v1beta1.ConfirmKeyTransferStarted)
     - [ConfirmTokenStarted](#axelar.evm.v1beta1.ConfirmTokenStarted)
     - [ContractCallApproved](#axelar.evm.v1beta1.ContractCallApproved)
+    - [ContractCallFailed](#axelar.evm.v1beta1.ContractCallFailed)
     - [ContractCallWithMintApproved](#axelar.evm.v1beta1.ContractCallWithMintApproved)
     - [EVMEventCompleted](#axelar.evm.v1beta1.EVMEventCompleted)
     - [EVMEventConfirmed](#axelar.evm.v1beta1.EVMEventConfirmed)
@@ -556,6 +559,27 @@
 | `receipient` | [string](#string) |  | **Deprecated.**  |
 | `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 | `recipient` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.axelarnet.v1beta1.ContractCallSubmitted"></a>
+
+### ContractCallSubmitted
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [string](#string) |  |  |
+| `source_chain` | [string](#string) |  |  |
+| `destination_chain` | [string](#string) |  |  |
+| `contract_address` | [string](#string) |  |  |
+| `payload` | [bytes](#bytes) |  |  |
+| `payload_hash` | [bytes](#bytes) |  |  |
+| `msg_id` | [string](#string) |  |  |
 
 
 
@@ -1193,29 +1217,12 @@ registered blockchain
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `id` | [MessageID](#axelar.nexus.exported.v1beta1.MessageID) |  |  |
-| `source_chain` | [string](#string) |  |  |
-| `sender` | [string](#string) |  |  |
-| `receiver` | [string](#string) |  |  |
+| `id` | [string](#string) |  |  |
+| `sender` | [CrossChainAddress](#axelar.nexus.exported.v1beta1.CrossChainAddress) |  |  |
+| `recipient` | [CrossChainAddress](#axelar.nexus.exported.v1beta1.CrossChainAddress) |  |  |
 | `payload_hash` | [bytes](#bytes) |  |  |
 | `status` | [GeneralMessage.Status](#axelar.nexus.exported.v1beta1.GeneralMessage.Status) |  |  |
 | `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
-
-
-
-
-
-
-<a name="axelar.nexus.exported.v1beta1.MessageID"></a>
-
-### MessageID
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `chain` | [string](#string) |  |  |
-| `id` | [string](#string) |  |  |
 
 
 
@@ -1972,6 +1979,34 @@ to nexus
 
 
 
+<a name="axelar.axelarnet.v1beta1.CallContractRequest"></a>
+
+### CallContractRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
+| `contract_address` | [string](#string) |  |  |
+| `payload` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="axelar.axelarnet.v1beta1.CallContractResponse"></a>
+
+### CallContractResponse
+
+
+
+
+
+
+
 <a name="axelar.axelarnet.v1beta1.ConfirmDepositRequest"></a>
 
 ### ConfirmDepositRequest
@@ -2008,7 +2043,7 @@ MsgConfirmDeposit represents a deposit confirmation message
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
-| `id` | [axelar.nexus.exported.v1beta1.MessageID](#axelar.nexus.exported.v1beta1.MessageID) |  |  |
+| `id` | [string](#string) |  |  |
 | `payload` | [bytes](#bytes) |  |  |
 
 
@@ -2262,6 +2297,7 @@ Msg defines the axelarnet Msg service.
 | `RegisterFeeCollector` | [RegisterFeeCollectorRequest](#axelar.axelarnet.v1beta1.RegisterFeeCollectorRequest) | [RegisterFeeCollectorResponse](#axelar.axelarnet.v1beta1.RegisterFeeCollectorResponse) |  | POST|/axelar/axelarnet/register_fee_collector|
 | `RetryIBCTransfer` | [RetryIBCTransferRequest](#axelar.axelarnet.v1beta1.RetryIBCTransferRequest) | [RetryIBCTransferResponse](#axelar.axelarnet.v1beta1.RetryIBCTransferResponse) |  | POST|/axelar/axelarnet/retry_ibc_transfer|
 | `ExecuteMessage` | [ExecuteMessageRequest](#axelar.axelarnet.v1beta1.ExecuteMessageRequest) | [ExecuteMessageResponse](#axelar.axelarnet.v1beta1.ExecuteMessageResponse) |  | POST|/axelar/axelarnet/execute_message|
+| `CallContract` | [CallContractRequest](#axelar.axelarnet.v1beta1.CallContractRequest) | [CallContractResponse](#axelar.axelarnet.v1beta1.CallContractResponse) |  | POST|/axelar/axelarnet/call_contract|
 
 
 <a name="axelar.axelarnet.v1beta1.QueryService"></a>
@@ -3145,6 +3181,22 @@ TransferKey contains information for a transfer operatorship
 | `destination_chain` | [string](#string) |  |  |
 | `contract_address` | [string](#string) |  |  |
 | `payload_hash` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.ContractCallFailed"></a>
+
+### ContractCallFailed
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `msg_id` | [string](#string) |  |  |
 
 
 

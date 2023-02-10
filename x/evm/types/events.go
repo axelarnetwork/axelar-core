@@ -40,6 +40,7 @@ const (
 	AttributeKeyEventType          = "eventType"
 	AttributeKeyEventID            = "eventID"
 	AttributeKeyKeyID              = "keyID"
+	AttributeKeyMessageID          = "messageID"
 )
 
 // Event attribute values

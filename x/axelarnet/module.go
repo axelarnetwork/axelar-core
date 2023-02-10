@@ -354,7 +354,7 @@ func getSeqIDMapping(ctx sdk.Context, k keeper.Keeper, portID, channelID string,
 }
 
 // returns the general message id and delete the existing mapping
-func getSeqMessageIDMapping(ctx sdk.Context, k keeper.Keeper, portID, channelID string, seq uint64) (nexus.MessageID, bool) {
+func getSeqMessageIDMapping(ctx sdk.Context, k keeper.Keeper, portID, channelID string, seq uint64) (string, bool) {
 	defer k.DeleteSeqMessageIDMapping(ctx, portID, channelID, seq)
 
 	return k.GetSeqMessageIDMapping(ctx, portID, channelID, seq)
@@ -379,7 +379,7 @@ func setRoutedPacketCompleted(ctx sdk.Context, k keeper.Keeper, n types.Nexus, p
 	// check if the packet is Axelar routed general message
 	messageID, ok := getSeqMessageIDMapping(ctx, k, portID, channelID, seq)
 	if ok {
-		k.Logger(ctx).Debug("set general message status to executed", "messageID", messageID.String())
+		k.Logger(ctx).Debug("set general message status to executed", "messageID", messageID)
 		return n.SetMessageExecuted(ctx, messageID)
 	}
 
@@ -405,7 +405,7 @@ func setRoutedPacketFailed(ctx sdk.Context, k keeper.Keeper, n types.Nexus, port
 	// check if the packet is Axelar routed general message
 	messageID, ok := getSeqMessageIDMapping(ctx, k, portID, channelID, seq)
 	if ok {
-		k.Logger(ctx).Debug("set general message status to failed", "messageID", messageID.String())
+		k.Logger(ctx).Debug("set general message status to failed", "messageID", messageID)
 		return n.SetMessageFailed(ctx, messageID)
 	}
 

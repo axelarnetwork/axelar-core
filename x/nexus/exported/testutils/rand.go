@@ -3,6 +3,7 @@ package testutils
 import (
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 // RandomChain returns a random nexus chain
@@ -11,6 +12,7 @@ func RandomChain() exported.Chain {
 		Name:                  RandomChainName(),
 		Module:                rand.NormalizedStrBetween(5, 20),
 		SupportsForeignAssets: true,
+		KeyType:               tss.None,
 	}
 }
 
@@ -27,4 +29,28 @@ func RandomTransferID() exported.TransferID {
 // RandomDirection generates a random transfer direction
 func RandomDirection() exported.TransferDirection {
 	return exported.TransferDirection(rand.I64Between(1, int64(len(exported.TransferDirection_name))))
+}
+
+// RandomCrossChainAddress generates a random cross chain address
+func RandomCrossChainAddress() exported.CrossChainAddress {
+	return exported.CrossChainAddress{
+		Chain:   RandomChain(),
+		Address: rand.AccAddr().String(),
+	}
+}
+
+// RandomMessage generates a random message
+func RandomMessage(statuses ...exported.GeneralMessage_Status) exported.GeneralMessage {
+	if len(statuses) == 0 {
+		statuses = []exported.GeneralMessage_Status{exported.Approved, exported.Sent, exported.Executed, exported.Failed}
+	}
+	coin := rand.Coin()
+	return exported.NewGeneralMessage(
+		rand.StrBetween(10, 20),
+		RandomCrossChainAddress(),
+		RandomCrossChainAddress(),
+		rand.Bytes(32),
+		rand.Of(statuses...),
+		&coin,
+	)
 }

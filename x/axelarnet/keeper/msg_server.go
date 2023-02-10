@@ -2,13 +2,17 @@ package keeper
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"strings"
 
+	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/query"
 	ibctransfertypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
+	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/events"
@@ -21,6 +25,10 @@ import (
 )
 
 var _ types.MsgServiceServer = msgServer{}
+
+const (
+	callContractGasCost = storetypes.Gas(2000000)
+)
 
 type msgServer struct {
 	Keeper
@@ -39,6 +47,57 @@ func NewMsgServerImpl(k Keeper, n types.Nexus, b types.BankKeeper, a types.Accou
 		account: a,
 		ibcK:    ibcK,
 	}
+}
+
+func (s msgServer) CallContract(c context.Context, req *types.CallContractRequest) (*types.CallContractResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	chain, ok := s.nexus.GetChain(ctx, req.Chain)
+	if !ok {
+		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
+	}
+
+	if !s.nexus.IsChainActivated(ctx, chain) {
+		return nil, fmt.Errorf("chain %s is not activated yet", chain.Name)
+	}
+
+	recipient := nexus.CrossChainAddress{Chain: chain, Address: req.ContractAddress}
+	if err := s.nexus.ValidateAddress(ctx, recipient); err != nil {
+		return nil, err
+	}
+
+	sender := nexus.CrossChainAddress{Chain: exported.Axelarnet, Address: req.Sender.String()}
+
+	// Need to use two different hash functions below. Tendermint uses sha256 to generate tx hashes, but axelar gateway expects keccak256 hashes for payloads
+	txHash := sha256.Sum256(ctx.TxBytes())
+	payloadHash := crypto.Keccak256(req.Payload)
+
+	msg := nexus.NewGeneralMessage(s.nexus.GenerateMessageID(ctx, hex.EncodeToString(txHash[:])), sender, recipient, payloadHash, nexus.Sent, nil)
+	if err := s.nexus.SetNewMessage(ctx, msg); err != nil {
+		return nil, sdkerrors.Wrap(err, "failed to add general message")
+	}
+
+	ctx.GasMeter().ConsumeGas(callContractGasCost, "call-contract")
+
+	events.Emit(ctx, &types.ContractCallSubmitted{
+		Sender:           msg.GetSourceAddress(),
+		SourceChain:      msg.GetSourceChain(),
+		DestinationChain: msg.GetDestinationChain(),
+		ContractAddress:  msg.GetDestinationAddress(),
+		PayloadHash:      msg.PayloadHash,
+		Payload:          req.Payload,
+		MsgID:            msg.ID,
+	})
+
+	s.Logger(ctx).Debug(fmt.Sprintf("successfully enqueued contract call for contract address %s on chain %s from sender %s with message id %s", req.ContractAddress, req.Chain.String(), req.Sender, msg.ID),
+		types.AttributeKeyDestinationChain, req.Chain.String(),
+		types.AttributeKeyDestinationAddress, req.ContractAddress,
+		types.AttributeKeySourceAddress, req.Sender,
+		types.AttributeKeyMessageID, msg.ID,
+		types.AttributeKeyPayloadHash, hex.EncodeToString(payloadHash),
+	)
+
+	return &types.CallContractResponse{}, nil
 }
 
 // Link handles address linking
@@ -416,27 +475,25 @@ func (s msgServer) RetryIBCTransfer(c context.Context, req *types.RetryIBCTransf
 func (s msgServer) ExecuteMessage(c context.Context, req *types.ExecuteMessageRequest) (*types.ExecuteMessageResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	chain, ok := s.nexus.GetChain(ctx, req.ID.Chain)
-	if !ok {
-		return nil, fmt.Errorf("invalid chain %s", req.ID.Chain)
-	}
-
-	if !s.nexus.IsChainActivated(ctx, chain) {
-		return nil, fmt.Errorf("chain %s is not activated", chain.Name)
-	}
-
 	msg, ok := s.nexus.GetMessage(ctx, req.ID)
 	if !ok {
 		return nil, fmt.Errorf("message %s not found", req.ID)
 	}
 
-	sourceChain := funcs.MustOk(s.nexus.GetChain(ctx, msg.SourceChain))
-	if !sourceChain.IsFrom(evmtypes.ModuleName) {
+	if !msg.Sender.Chain.IsFrom(evmtypes.ModuleName) {
 		return nil, fmt.Errorf("message is not from an EVM chain")
 	}
 
+	if !s.nexus.IsChainActivated(ctx, msg.Sender.Chain) {
+		return nil, fmt.Errorf("chain %s is not activated", msg.GetSourceChain())
+	}
+
+	if !s.nexus.IsChainActivated(ctx, msg.Recipient.Chain) {
+		return nil, fmt.Errorf("chain %s is not activated", msg.GetDestinationChain())
+	}
+
 	if msg.Type() == nexus.TypeGeneralMessageWithToken {
-		funcs.MustTrue(s.nexus.IsAssetRegistered(ctx, chain, msg.Asset.GetDenom()))
+		funcs.MustTrue(s.nexus.IsAssetRegistered(ctx, msg.Recipient.Chain, msg.Asset.GetDenom()))
 	}
 
 	if !msg.Match(req.Payload) {
@@ -457,7 +514,7 @@ func (s msgServer) ExecuteMessage(c context.Context, req *types.ExecuteMessageRe
 		return nil, err
 	}
 
-	err = s.ibcK.SendMessage(c, msg.Receiver, asset, string(bz), msg.ID)
+	err = s.ibcK.SendMessage(c, msg.Recipient, asset, string(bz), msg.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -467,7 +524,7 @@ func (s msgServer) ExecuteMessage(c context.Context, req *types.ExecuteMessageRe
 		return nil, err
 	}
 
-	s.Logger(ctx).Debug("set general message status to sent", "messageID", msg.ID.String())
+	s.Logger(ctx).Debug("set general message status to sent", "messageID", msg.ID)
 
 	return &types.ExecuteMessageResponse{}, nil
 }

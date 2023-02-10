@@ -222,6 +222,13 @@ message ContractCallApproved {
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Hash" ];
 }
 
+message ContractCallFailed {
+  string chain = 1
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string msg_id = 2 [ (gogoproto.customname) = "MessageID" ];
+}
+
 message ContractCallWithMintApproved {
   string chain = 1
       [ (gogoproto.casttype) =

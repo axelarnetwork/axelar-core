@@ -138,6 +138,28 @@ func NewApproveContractCallCommand(
 	}
 }
 
+// NewApproveContractCallCommandGeneric creates a command to approve contract call
+func NewApproveContractCallCommandGeneric(
+	chainID sdk.Int,
+	keyID multisig.KeyID,
+	contractAddress common.Address,
+	payloadHash common.Hash,
+	sourceTxID common.Hash,
+	sourceChain nexus.ChainName,
+	sender string,
+	sourceEventIndex uint64,
+	ID string,
+) Command {
+	commandID := NewCommandID([]byte(ID), chainID)
+	return Command{
+		ID:         commandID,
+		Type:       COMMAND_TYPE_APPROVE_CONTRACT_CALL,
+		Params:     createApproveContractCallParamsGeneric(contractAddress, payloadHash, sourceTxID, string(sourceChain), sender, sourceEventIndex),
+		KeyID:      keyID,
+		MaxGasCost: approveContractCallMaxGasCost,
+	}
+}
+
 // NewApproveContractCallWithMintCommand creates a command to approve contract call with token being minted
 func NewApproveContractCallWithMintCommand(
 	chainID sdk.Int,
@@ -267,6 +289,24 @@ func createApproveContractCallParams(
 		common.HexToAddress(event.ContractAddress),
 		common.Hash(event.PayloadHash),
 		common.Hash(sourceTxID),
+		new(big.Int).SetUint64(sourceEventIndex),
+	))
+}
+
+func createApproveContractCallParamsGeneric(
+	contractAddress common.Address,
+	payloadHash common.Hash,
+	txID common.Hash,
+	sourceChain string,
+	sender string,
+	sourceEventIndex uint64) []byte {
+
+	return funcs.Must(approveContractCallArguments.Pack(
+		sourceChain,
+		sender,
+		contractAddress,
+		payloadHash,
+		txID,
 		new(big.Int).SetUint64(sourceEventIndex),
 	))
 }

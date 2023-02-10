@@ -6,6 +6,7 @@ import (
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
@@ -22,6 +23,7 @@ var (
 	// payloadWithVersion is a payload with message version number
 	// - bytes32(0) To Native
 	// - bytes32(1) To Cosmwasm Contract
+	// - bytes32(2) To Cosmwasm Contract with json encoded payload
 	payloadWithVersion = abi.Arguments{{Type: bytes32Type}, {Type: bytesType}}
 
 	// abi encoded bytes, with the following format:
@@ -29,10 +31,15 @@ var (
 	payloadArguments = abi.Arguments{{Type: stringType}, {Type: stringArrayType}, {Type: stringArrayType}, {Type: bytesType}}
 )
 
+const (
+	sourceChain   = "source_chain"
+	sourceAddress = "source_address"
+)
+
 type contractCall struct {
 	SourceChain string `json:"source_chain"`
 	// The sender address on the source chain
-	Sender string `json:"sender"`
+	SourceAddress string `json:"source_address"`
 	// Contract is the address of the wasm contract
 	Contract string `json:"contract"`
 	// Msg is a json struct {"methodName": {"arg1": "val1", "arg2": "val2"}}
@@ -83,7 +90,12 @@ func constructMessage(gm nexus.GeneralMessage, version [32]byte, payload []byte)
 			return nil, sdkerrors.Wrap(err, "failed to construct native payload")
 		}
 	case CosmwasmV1:
-		bz, err = ConstructWasmMessage(gm, payload)
+		bz, err = ConstructWasmMessageV1(gm, payload)
+		if err != nil {
+			return nil, sdkerrors.Wrap(err, "failed to construct wasm payload")
+		}
+	case CosmwasmV2:
+		bz, err = ConstructWasmMessageV2(gm, payload)
 		if err != nil {
 			return nil, sdkerrors.Wrap(err, "failed to construct wasm payload")
 		}
@@ -94,13 +106,13 @@ func constructMessage(gm nexus.GeneralMessage, version [32]byte, payload []byte)
 	return bz, nil
 }
 
-// ConstructWasmMessage creates a json serialized wasm message from Axelar defined abi encoded payload
+// ConstructWasmMessageV1 creates a json serialized wasm message from Axelar defined abi encoded payload
 // The abi encoded payload must contain the following information in order
 // - method name (string)
 // - argument names ([]string)
 // - argument types ([]string)
 // - argument values (bytes)
-func ConstructWasmMessage(gm nexus.GeneralMessage, payload []byte) ([]byte, error) {
+func ConstructWasmMessageV1(gm nexus.GeneralMessage, payload []byte) ([]byte, error) {
 	args, err := evm.StrictDecode(payloadArguments, payload)
 	if err != nil {
 		return nil, err
@@ -131,11 +143,16 @@ func ConstructWasmMessage(gm nexus.GeneralMessage, payload []byte) ([]byte, erro
 		executeMsg[argNames[i]] = argValues[i]
 	}
 
+	err = checkSourceInfo(gm.Sender, executeMsg)
+	if err != nil {
+		return nil, err
+	}
+
 	msg := wasm{
 		Wasm: contractCall{
-			Contract:    gm.Receiver,
-			SourceChain: gm.SourceChain.String(),
-			Sender:      gm.Sender,
+			Contract:      gm.GetDestinationAddress(),
+			SourceChain:   gm.GetSourceChain().String(),
+			SourceAddress: gm.GetSourceAddress(),
 			Msg: map[string]interface{}{
 				methodName: executeMsg,
 			},
@@ -145,11 +162,51 @@ func ConstructWasmMessage(gm nexus.GeneralMessage, payload []byte) ([]byte, erro
 	return json.Marshal(msg)
 }
 
+// ConstructWasmMessageV2 creates a json serialized wasm message from json encoded payload
+// The payload must contain only a single key, the method name, and an arg name val map as value
+func ConstructWasmMessageV2(gm nexus.GeneralMessage, payload []byte) ([]byte, error) {
+	executeMsg := make(map[string]interface{})
+	err := json.Unmarshal(payload, &executeMsg)
+	if err != nil {
+		return nil, err
+	}
+
+	// json payload must have single key, the method name
+	if len(executeMsg) != 1 {
+		return nil, fmt.Errorf("invalid payload")
+	}
+
+	// iterating over the map, as the key (method name) is dynamic
+	for _, msg := range executeMsg {
+		// value must be a map
+		args, ok := msg.(map[string]interface{})
+		if !ok {
+			return nil, fmt.Errorf("invalid arguments")
+		}
+
+		err = checkSourceInfo(gm.Sender, args)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	msg := wasm{
+		Wasm: contractCall{
+			Contract:      gm.GetDestinationAddress(),
+			SourceChain:   gm.GetSourceChain().String(),
+			SourceAddress: gm.GetSourceAddress(),
+			Msg:           executeMsg,
+		},
+	}
+
+	return json.Marshal(msg)
+}
+
 // ConstructNativeMessage creates a json serialized cross chain message
 func ConstructNativeMessage(gm nexus.GeneralMessage, payload []byte) ([]byte, error) {
 	return json.Marshal(message{
-		SourceChain: gm.SourceChain.String(),
-		Sender:      gm.Sender,
+		SourceChain: gm.GetSourceChain().String(),
+		Sender:      gm.GetSourceAddress(),
 		Payload:     payload,
 		Type:        int(gm.Type()),
 	})
@@ -168,4 +225,18 @@ func buildArguments(argTypes []string) (abi.Arguments, error) {
 	}
 
 	return arguments, nil
+}
+
+func checkSourceInfo(sender nexus.CrossChainAddress, msg map[string]interface{}) error {
+	chain, ok := msg[sourceChain]
+	if ok && !sender.Chain.Name.Equals(nexus.ChainName(fmt.Sprint(chain))) {
+		return fmt.Errorf("source chain does not match expected")
+	}
+
+	addr, ok := msg[sourceAddress]
+	if ok && sender.Address != common.HexToAddress(fmt.Sprint(addr)).Hex() {
+		return fmt.Errorf("source address does not match expected")
+	}
+
+	return nil
 }
