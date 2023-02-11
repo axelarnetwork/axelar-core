@@ -1,8 +1,10 @@
 package cli
 
 import (
+	"encoding/hex"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -42,6 +44,8 @@ func GetTxCmd() *cobra.Command {
 		GetCmdRouteIBCTransfersTx(),
 		GetCmdRegisterFeeCollector(),
 		getRetryIBCTransfer(),
+		getGeneralMessage(),
+		getCmdCallContract(),
 	)
 
 	return axelarTxCmd
@@ -290,6 +294,63 @@ func getRetryIBCTransfer() *cobra.Command {
 			}
 
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
+		},
+	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+func getGeneralMessage() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "execute-message [message ID] [payload]",
+		Short: "Execute an approved general message to the destination chain",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			id := utils.NormalizeString(args[0])
+			payload, err := hex.DecodeString(args[1])
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewExecuteMessage(cliCtx.GetFromAddress(), id, payload)
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
+		},
+	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+func getCmdCallContract() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "call-contract [destination chain] [contract address] [hex encoded payload]",
+		Short: "Call a contract on another chain",
+		Args:  cobra.ExactArgs(3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			payload, err := hex.DecodeString(strings.TrimPrefix(args[2], "0x"))
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewCallContractRequest(clientCtx.GetFromAddress(), args[0], args[1], payload)
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
 	flags.AddTxFlagsToCmd(cmd)

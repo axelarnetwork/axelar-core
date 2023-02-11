@@ -2,23 +2,33 @@ package keeper
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"strings"
 
+	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/query"
 	ibctransfertypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
+	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/events"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
+	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/utils/funcs"
 )
 
 var _ types.MsgServiceServer = msgServer{}
+
+const (
+	callContractGasCost = storetypes.Gas(2000000)
+)
 
 type msgServer struct {
 	Keeper
@@ -37,6 +47,57 @@ func NewMsgServerImpl(k Keeper, n types.Nexus, b types.BankKeeper, a types.Accou
 		account: a,
 		ibcK:    ibcK,
 	}
+}
+
+func (s msgServer) CallContract(c context.Context, req *types.CallContractRequest) (*types.CallContractResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	chain, ok := s.nexus.GetChain(ctx, req.Chain)
+	if !ok {
+		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
+	}
+
+	if !s.nexus.IsChainActivated(ctx, chain) {
+		return nil, fmt.Errorf("chain %s is not activated yet", chain.Name)
+	}
+
+	recipient := nexus.CrossChainAddress{Chain: chain, Address: req.ContractAddress}
+	if err := s.nexus.ValidateAddress(ctx, recipient); err != nil {
+		return nil, err
+	}
+
+	sender := nexus.CrossChainAddress{Chain: exported.Axelarnet, Address: req.Sender.String()}
+
+	// Need to use two different hash functions below. Tendermint uses sha256 to generate tx hashes, but axelar gateway expects keccak256 hashes for payloads
+	txHash := sha256.Sum256(ctx.TxBytes())
+	payloadHash := crypto.Keccak256(req.Payload)
+
+	msg := nexus.NewGeneralMessage(s.nexus.GenerateMessageID(ctx, hex.EncodeToString(txHash[:])), sender, recipient, payloadHash, nexus.Sent, nil)
+	if err := s.nexus.SetNewMessage(ctx, msg); err != nil {
+		return nil, sdkerrors.Wrap(err, "failed to add general message")
+	}
+
+	ctx.GasMeter().ConsumeGas(callContractGasCost, "call-contract")
+
+	events.Emit(ctx, &types.ContractCallSubmitted{
+		Sender:           msg.GetSourceAddress(),
+		SourceChain:      msg.GetSourceChain(),
+		DestinationChain: msg.GetDestinationChain(),
+		ContractAddress:  msg.GetDestinationAddress(),
+		PayloadHash:      msg.PayloadHash,
+		Payload:          req.Payload,
+		MsgID:            msg.ID,
+	})
+
+	s.Logger(ctx).Debug(fmt.Sprintf("successfully enqueued contract call for contract address %s on chain %s from sender %s with message id %s", req.ContractAddress, req.Chain.String(), req.Sender, msg.ID),
+		types.AttributeKeyDestinationChain, req.Chain.String(),
+		types.AttributeKeyDestinationAddress, req.ContractAddress,
+		types.AttributeKeySourceAddress, req.Sender,
+		types.AttributeKeyMessageID, msg.ID,
+		types.AttributeKeyPayloadHash, hex.EncodeToString(payloadHash),
+	)
+
+	return &types.CallContractResponse{}, nil
 }
 
 // Link handles address linking
@@ -410,6 +471,64 @@ func (s msgServer) RetryIBCTransfer(c context.Context, req *types.RetryIBCTransf
 	return &types.RetryIBCTransferResponse{}, nil
 }
 
+// ExecuteMessage translates an abi encoded payload and sends to a cosmos chain
+func (s msgServer) ExecuteMessage(c context.Context, req *types.ExecuteMessageRequest) (*types.ExecuteMessageResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	msg, ok := s.nexus.GetMessage(ctx, req.ID)
+	if !ok {
+		return nil, fmt.Errorf("message %s not found", req.ID)
+	}
+
+	if !msg.Sender.Chain.IsFrom(evmtypes.ModuleName) {
+		return nil, fmt.Errorf("message is not from an EVM chain")
+	}
+
+	if !s.nexus.IsChainActivated(ctx, msg.Sender.Chain) {
+		return nil, fmt.Errorf("chain %s is not activated", msg.GetSourceChain())
+	}
+
+	if !s.nexus.IsChainActivated(ctx, msg.Recipient.Chain) {
+		return nil, fmt.Errorf("chain %s is not activated", msg.GetDestinationChain())
+	}
+
+	if msg.Type() == nexus.TypeGeneralMessageWithToken {
+		funcs.MustTrue(s.nexus.IsAssetRegistered(ctx, msg.Recipient.Chain, msg.Asset.GetDenom()))
+	}
+
+	if !msg.Match(req.Payload) {
+		return nil, fmt.Errorf("payload hash does not match")
+	}
+
+	if !(msg.Is(nexus.Approved) || msg.Is(nexus.Failed)) {
+		return nil, fmt.Errorf("general message %s already executed", req.ID)
+	}
+
+	bz, err := types.TranslateMessage(msg, req.Payload)
+	if err != nil {
+		return nil, sdkerrors.Wrap(err, "invalid payload")
+	}
+
+	asset, err := s.escrowAssetToMessageSender(ctx, req.Sender, msg)
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.ibcK.SendMessage(c, msg.Recipient, asset, string(bz), msg.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.nexus.SetMessageSent(ctx, msg.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	s.Logger(ctx).Debug("set general message status to sent", "messageID", msg.ID)
+
+	return &types.ExecuteMessageResponse{}, nil
+}
+
 // toICS20 converts a cross chain transfer to ICS20 token
 func toICS20(ctx sdk.Context, k Keeper, n types.Nexus, coin sdk.Coin) sdk.Coin {
 	// if chain or path not found, it will create coin with base denom
@@ -477,4 +596,35 @@ func prepareTransfer(ctx sdk.Context, k Keeper, n types.Nexus, b types.BankKeepe
 	}
 
 	return coin, sender, nil
+}
+
+// all general messages are sent from the Axelar general message sender, so receiver can use the packet sender to authenticate the message
+// escrowAssetToMessageSender sends the asset to general msg sender account
+func (s msgServer) escrowAssetToMessageSender(ctx sdk.Context, reqSender sdk.AccAddress, msg nexus.GeneralMessage) (sdk.Coin, error) {
+	var asset sdk.Coin
+	var acc sdk.AccAddress
+	var err error
+
+	switch msg.Type() {
+	case nexus.TypeGeneralMessage:
+		// pure general message, take dust amount from request sender to satisfy ibc transfer requirements
+		asset = sdk.NewCoin(exported.NativeAsset, sdk.NewInt(1))
+		acc = reqSender
+	case nexus.TypeGeneralMessageWithToken:
+		// general message with token, get token from corresponding account
+		asset, acc, err = prepareTransfer(ctx, s.Keeper, s.nexus, s.bank, s.account, *msg.Asset)
+		if err != nil {
+			return sdk.Coin{}, err
+		}
+	default:
+		return sdk.Coin{}, fmt.Errorf("unrecognized message type")
+	}
+
+	// use GeneralMessageSender account as the canonical general message sender
+	err = s.bank.SendCoins(ctx, acc, types.MessageSender, sdk.NewCoins(asset))
+	if err != nil {
+		return sdk.Coin{}, err
+	}
+
+	return asset, nil
 }

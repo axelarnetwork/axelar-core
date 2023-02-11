@@ -28,6 +28,8 @@ var (
 	rateLimitPrefix            = key.RegisterStaticKey(types.ModuleName, 2)
 	transferEpochPrefix        = key.RegisterStaticKey(types.ModuleName, 3)
 	generalMessagePrefix       = key.RegisterStaticKey(types.ModuleName, 4)
+	sentMessagePrefix          = key.RegisterStaticKey(types.ModuleName, 5)
+	messageNonceKey            = key.RegisterStaticKey(types.ModuleName, 6)
 
 	// temporary
 	// TODO: add description about what temporary means

@@ -157,3 +157,27 @@ message RetryIBCTransferRequest {
 }
 
 message RetryIBCTransferResponse {}
+
+message ExecuteMessageRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string id = 2 [ (gogoproto.customname) = "ID" ];
+  bytes payload = 3;
+}
+
+message ExecuteMessageResponse {}
+
+message CallContractRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
+
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string contract_address = 3;
+  bytes payload = 4;
+}
+
+message CallContractResponse {}

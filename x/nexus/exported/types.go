@@ -9,6 +9,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 )
@@ -239,39 +241,29 @@ func (m TransferDirection) ValidateBasic() error {
 }
 
 // NewGeneralMessage returns a GeneralMessage struct
-func NewGeneralMessage(id string, sourceChain ChainName, sender string, destChain ChainName, receiver string, payloadHash []byte, status GeneralMessage_Status, asset *sdk.Coin) GeneralMessage {
+func NewGeneralMessage(id string, sender CrossChainAddress, recipient CrossChainAddress, payloadHash []byte, status GeneralMessage_Status, asset *sdk.Coin) GeneralMessage {
 	return GeneralMessage{
-		ID:               id,
-		SourceChain:      sourceChain,
-		Sender:           sender,
-		DestinationChain: destChain,
-		Receiver:         receiver,
-		PayloadHash:      payloadHash,
-		Status:           status,
-		Asset:            asset,
+		ID:          id,
+		Sender:      sender,
+		Recipient:   recipient,
+		PayloadHash: payloadHash,
+		Status:      status,
+		Asset:       asset,
 	}
 }
 
 // ValidateBasic validates the general message
 func (m GeneralMessage) ValidateBasic() error {
 	if err := utils.ValidateString(m.ID); err != nil {
-		return sdkerrors.Wrap(err, "invalid id")
+		return sdkerrors.Wrap(err, "invalid general message id")
 	}
 
-	if err := m.SourceChain.Validate(); err != nil {
+	if err := m.Sender.Validate(); err != nil {
 		return sdkerrors.Wrap(err, "invalid source chain")
 	}
 
-	if err := utils.ValidateString(m.Sender); err != nil {
-		return sdkerrors.Wrap(err, "invalid sender")
-	}
-
-	if err := m.DestinationChain.Validate(); err != nil {
+	if err := m.Recipient.Validate(); err != nil {
 		return sdkerrors.Wrap(err, "invalid destination chain")
-	}
-
-	if err := utils.ValidateString(m.Receiver); err != nil {
-		return sdkerrors.Wrap(err, "invalid receiver")
 	}
 
 	if m.Asset != nil {
@@ -279,4 +271,55 @@ func (m GeneralMessage) ValidateBasic() error {
 	}
 
 	return nil
+}
+
+// Is returns true if status matches
+func (m GeneralMessage) Is(status GeneralMessage_Status) bool {
+	return m.Status == status
+}
+
+// Match returns true if hash of payload matches the expected
+func (m GeneralMessage) Match(payload []byte) bool {
+	return common.BytesToHash(m.PayloadHash) == crypto.Keccak256Hash(payload)
+}
+
+// GetSourceChain returns the source chain name
+func (m GeneralMessage) GetSourceChain() ChainName {
+	return m.Sender.Chain.Name
+}
+
+// GetSourceAddress returns the source address
+func (m GeneralMessage) GetSourceAddress() string {
+	return m.Sender.Address
+}
+
+// GetDestinationChain returns the destination chain name
+func (m GeneralMessage) GetDestinationChain() ChainName {
+	return m.Recipient.Chain.Name
+}
+
+// GetDestinationAddress returns the destination address
+func (m GeneralMessage) GetDestinationAddress() string {
+	return m.Recipient.Address
+}
+
+// MessageType on can be TypeGeneralMessage or TypeGeneralMessageWithToken
+type MessageType int
+
+const (
+	// TypeUnrecognized means coin type is unrecognized
+	TypeUnrecognized = iota
+	// TypeGeneralMessage is a pure message
+	TypeGeneralMessage = 1
+	// TypeGeneralMessageWithToken is a general message with token
+	TypeGeneralMessageWithToken = 2
+)
+
+// Type returns the type of the message
+func (m GeneralMessage) Type() MessageType {
+	if m.Asset == nil {
+		return TypeGeneralMessage
+	}
+
+	return TypeGeneralMessageWithToken
 }

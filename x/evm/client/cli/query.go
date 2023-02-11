@@ -10,7 +10,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/axelarnetwork/axelar-core/utils"
-	evmclient "github.com/axelarnetwork/axelar-core/x/evm/client"
 	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
@@ -339,12 +338,19 @@ func getCmdCommand() *cobra.Command {
 				return err
 			}
 
-			res, err := evmclient.QueryCommand(clientCtx, args[0], args[1])
+			queryClient := types.NewQueryServiceClient(clientCtx)
+
+			res, err := queryClient.Command(cmd.Context(),
+				&types.CommandRequest{
+					Chain: args[0],
+					ID:    args[1],
+				},
+			)
 			if err != nil {
 				return err
 			}
 
-			return clientCtx.PrintProto(&res)
+			return clientCtx.PrintProto(res)
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)

@@ -226,3 +226,17 @@ func ValidateIBCPath(path string) error {
 func NewIBCPath(port string, channel string) string {
 	return fmt.Sprintf("%s/%s", port, channel)
 }
+
+const (
+	// NativeV1 is the payload version hex indicates send general message to native chain
+	NativeV1 = "0x0000000000000000000000000000000000000000000000000000000000000000"
+	// CosmwasmV1 is the payload version hex indicates send general message to cosmwasm contract
+	CosmwasmV1 = "0x0000000000000000000000000000000000000000000000000000000000000001"
+	// CosmwasmV2 indicates the payload is json encoded
+	CosmwasmV2 = "0x0000000000000000000000000000000000000000000000000000000000000002"
+)
+
+var (
+	// MessageSender account is the canonical general message sender
+	MessageSender = GetEscrowAddress(fmt.Sprintf("%s_%s", ModuleName, "gmp"))
+)

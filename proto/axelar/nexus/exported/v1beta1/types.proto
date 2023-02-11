@@ -95,15 +95,15 @@ message GeneralMessage {
 
     STATUS_UNSPECIFIED = 0 [ (gogoproto.enumvalue_customname) = "NonExistent" ];
     STATUS_APPROVED = 1 [ (gogoproto.enumvalue_customname) = "Approved" ];
-    STATUS_EXECUTED = 2 [ (gogoproto.enumvalue_customname) = "Executed" ];
+    STATUS_SENT = 2 [ (gogoproto.enumvalue_customname) = "Sent" ];
+    STATUS_EXECUTED = 3 [ (gogoproto.enumvalue_customname) = "Executed" ];
+    STATUS_FAILED = 4 [ (gogoproto.enumvalue_customname) = "Failed" ];
   }
 
   string id = 1 [ (gogoproto.customname) = "ID" ];
-  string source_chain = 2 [ (gogoproto.casttype) = "ChainName" ];
-  string sender = 3;
-  string destination_chain = 4 [ (gogoproto.casttype) = "ChainName" ];
-  string receiver = 5;
-  bytes payload_hash = 6;
-  Status status = 7;
-  cosmos.base.v1beta1.Coin asset = 8;
+  CrossChainAddress sender = 2 [ (gogoproto.nullable) = false ];
+  CrossChainAddress recipient = 3 [ (gogoproto.nullable) = false ];
+  bytes payload_hash = 4;
+  Status status = 5;
+  cosmos.base.v1beta1.Coin asset = 6;
 }
