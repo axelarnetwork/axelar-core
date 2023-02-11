@@ -56,6 +56,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 	"github.com/cosmos/cosmos-sdk/x/gov"
+	govclient "github.com/cosmos/cosmos-sdk/x/gov/client"
 	govkeeper "github.com/cosmos/cosmos-sdk/x/gov/keeper"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/cosmos/cosmos-sdk/x/mint"
@@ -142,47 +143,8 @@ var (
 
 	// ModuleBasics defines the module BasicManager is in charge of setting up basic,
 	// non-dependant module elements, such as codec registration
-	// and genesis verification.
-	ModuleBasics = module.NewBasicManager(
-		auth.AppModuleBasic{},
-		genutil.AppModuleBasic{},
-		bank.AppModuleBasic{},
-		capability.AppModuleBasic{},
-		staking.AppModuleBasic{},
-		mint.AppModuleBasic{},
-		distr.AppModuleBasic{},
-		gov.NewAppModuleBasic(
-			append(
-				wasmclient.ProposalHandlers,
-				paramsclient.ProposalHandler,
-				distrclient.ProposalHandler,
-				upgradeclient.ProposalHandler,
-				upgradeclient.CancelProposalHandler,
-				ibcclientclient.UpdateClientProposalHandler,
-				ibcclientclient.UpgradeProposalHandler,
-			)...,
-		),
-		params.AppModuleBasic{},
-		crisis.AppModuleBasic{},
-		slashing.AppModuleBasic{},
-		feegrantmodule.AppModuleBasic{},
-		upgrade.AppModuleBasic{},
-		evidence.AppModuleBasic{},
-		vesting.AppModuleBasic{},
-		wasm.AppModuleBasic{},
-		ibc.AppModuleBasic{},
-		transfer.AppModuleBasic{},
-
-		multisig.AppModuleBasic{},
-		tss.AppModuleBasic{},
-		vote.AppModuleBasic{},
-		evm.AppModuleBasic{},
-		snapshot.AppModuleBasic{},
-		nexus.AppModuleBasic{},
-		axelarnet.AppModuleBasic{},
-		reward.AppModuleBasic{},
-		permission.AppModuleBasic{},
-	)
+	// and genesis verification. It is dynamically initialized by GetModuleBasics method.
+	ModuleBasics module.BasicManager
 
 	// module account permissions
 	maccPerms = map[string][]string{
@@ -930,8 +892,8 @@ func (app *AxelarApp) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.API
 	tmservice.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 
 	// Register legacy and grpc-gateway routes for all modules.
-	ModuleBasics.RegisterRESTRoutes(clientCtx, apiSvr.Router)
-	ModuleBasics.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
+	GetModuleBasics().RegisterRESTRoutes(clientCtx, apiSvr.Router)
+	GetModuleBasics().RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 
 	// register swagger API from root so that other applications can override easily
 	if apiConfig.Swagger {
@@ -958,6 +920,71 @@ func (app *AxelarApp) RegisterTxService(clientCtx client.Context) {
 // RegisterTendermintService implements the Application.RegisterTendermintService method.
 func (app *AxelarApp) RegisterTendermintService(clientCtx client.Context) {
 	tmservice.RegisterTendermintService(app.BaseApp.GRPCQueryRouter(), clientCtx, app.interfaceRegistry)
+}
+
+// GetModuleBasics initializes the module BasicManager is in charge of setting up basic,
+// non-dependant module elements, such as codec registration and genesis verification.
+// Initialization is dependent on whether wasm is enabled.
+func GetModuleBasics() module.BasicManager {
+	if ModuleBasics != nil {
+		return ModuleBasics
+	}
+
+	wasmProposals := []govclient.ProposalHandler{}
+	if isWasmEnabled() {
+		wasmProposals = wasmclient.ProposalHandlers
+	}
+
+	managers := []module.AppModuleBasic{
+		auth.AppModuleBasic{},
+		genutil.AppModuleBasic{},
+		bank.AppModuleBasic{},
+		capability.AppModuleBasic{},
+		staking.AppModuleBasic{},
+		mint.AppModuleBasic{},
+		distr.AppModuleBasic{},
+		gov.NewAppModuleBasic(
+			append(
+				wasmProposals,
+				paramsclient.ProposalHandler,
+				distrclient.ProposalHandler,
+				upgradeclient.ProposalHandler,
+				upgradeclient.CancelProposalHandler,
+				ibcclientclient.UpdateClientProposalHandler,
+				ibcclientclient.UpgradeProposalHandler,
+			)...,
+		),
+		params.AppModuleBasic{},
+		crisis.AppModuleBasic{},
+		slashing.AppModuleBasic{},
+		feegrantmodule.AppModuleBasic{},
+		upgrade.AppModuleBasic{},
+		evidence.AppModuleBasic{},
+		vesting.AppModuleBasic{},
+	}
+
+	if isWasmEnabled() {
+		managers = append(managers, wasm.AppModuleBasic{})
+	}
+
+	managers = append(managers,
+		ibc.AppModuleBasic{},
+		transfer.AppModuleBasic{},
+
+		multisig.AppModuleBasic{},
+		tss.AppModuleBasic{},
+		vote.AppModuleBasic{},
+		evm.AppModuleBasic{},
+		snapshot.AppModuleBasic{},
+		nexus.AppModuleBasic{},
+		axelarnet.AppModuleBasic{},
+		reward.AppModuleBasic{},
+		permission.AppModuleBasic{},
+	)
+
+	ModuleBasics = module.NewBasicManager(managers...)
+
+	return ModuleBasics
 }
 
 func (app *AxelarApp) getSubspace(moduleName string) paramstypes.Subspace {
