@@ -73,19 +73,8 @@ axelard tx gov submit-proposal [flags]
 
 - [axelard tx gov](axelard_tx_gov.md)	 - Governance transactions subcommands
 - [axelard tx gov submit-proposal cancel-software-upgrade](axelard_tx_gov_submit-proposal_cancel-software-upgrade.md)	 - Cancel the current software upgrade proposal
-- [axelard tx gov submit-proposal clear-contract-admin](axelard_tx_gov_submit-proposal_clear-contract-admin.md)	 - Submit a clear admin for a contract to prevent further migrations proposal
 - [axelard tx gov submit-proposal community-pool-spend](axelard_tx_gov_submit-proposal_community-pool-spend.md)	 - Submit a community pool spend proposal
-- [axelard tx gov submit-proposal execute-contract](axelard_tx_gov_submit-proposal_execute-contract.md)	 - Submit a execute wasm contract proposal (run by any address)
 - [axelard tx gov submit-proposal ibc-upgrade](axelard_tx_gov_submit-proposal_ibc-upgrade.md)	 - Submit an IBC upgrade proposal
-- [axelard tx gov submit-proposal instantiate-contract](axelard_tx_gov_submit-proposal_instantiate-contract.md)	 - Submit an instantiate wasm contract proposal
-- [axelard tx gov submit-proposal migrate-contract](axelard_tx_gov_submit-proposal_migrate-contract.md)	 - Submit a migrate wasm contract to a new code version proposal
 - [axelard tx gov submit-proposal param-change](axelard_tx_gov_submit-proposal_param-change.md)	 - Submit a parameter change proposal
-- [axelard tx gov submit-proposal pin-codes](axelard_tx_gov_submit-proposal_pin-codes.md)	 - Submit a pin code proposal for pinning a code to cache
-- [axelard tx gov submit-proposal set-contract-admin](axelard_tx_gov_submit-proposal_set-contract-admin.md)	 - Submit a new admin for a contract proposal
 - [axelard tx gov submit-proposal software-upgrade](axelard_tx_gov_submit-proposal_software-upgrade.md)	 - Submit a software upgrade proposal
-- [axelard tx gov submit-proposal store-instantiate](axelard_tx_gov_submit-proposal_store-instantiate.md)	 - Submit and instantiate a wasm contract proposal
-- [axelard tx gov submit-proposal sudo-contract](axelard_tx_gov_submit-proposal_sudo-contract.md)	 - Submit a sudo wasm contract proposal (to call privileged commands)
-- [axelard tx gov submit-proposal unpin-codes](axelard_tx_gov_submit-proposal_unpin-codes.md)	 - Submit a unpin code proposal for unpinning a code to cache
 - [axelard tx gov submit-proposal update-client](axelard_tx_gov_submit-proposal_update-client.md)	 - Submit an update IBC client proposal
-- [axelard tx gov submit-proposal update-instantiate-config](axelard_tx_gov_submit-proposal_update-instantiate-config.md)	 - Submit an update instantiate config proposal.
-- [axelard tx gov submit-proposal wasm-store](axelard_tx_gov_submit-proposal_wasm-store.md)	 - Submit a wasm binary proposal
