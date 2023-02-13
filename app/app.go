@@ -163,6 +163,10 @@ var (
 	// "true" setting means it will be, otherwise it won't.
 	// This is configured during the build.
 	WasmEnabled = ""
+
+	// wasmCapabilities specifies the capabilities of the wasm vm
+	// capabilities are detailed here: https://github.com/CosmWasm/cosmwasm/blob/main/docs/CAPABILITIES-BUILT-IN.md
+	wasmCapabilities = "iterator,staking,stargate,cosmwasm_1_1"
 )
 
 var (
@@ -213,7 +217,7 @@ type AxelarApp struct {
 // NewAxelarApp is a constructor function for axelar
 func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest bool, skipUpgradeHeights map[int64]bool,
 	homePath string, invCheckPeriod uint, encodingConfig axelarParams.EncodingConfig,
-	appOpts servertypes.AppOptions, baseAppOptions ...func(*bam.BaseApp)) *AxelarApp {
+	appOpts servertypes.AppOptions, wasmOpts []wasm.Option, baseAppOptions ...func(*bam.BaseApp)) *AxelarApp {
 
 	appCodec := encodingConfig.Codec
 	legacyAmino := encodingConfig.Amino
@@ -242,7 +246,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		feegrant.StoreKey,
 	}
 
-	if isWasmEnabled() {
+	if IsWasmEnabled() {
 		storeKeys = append(storeKeys, wasm.StoreKey)
 	}
 
@@ -260,7 +264,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 
 	keys := sdk.NewKVStoreKeys(storeKeys...)
 
-	if isWasmEnabled() {
+	if IsWasmEnabled() {
 		maccPerms[wasm.ModuleName] = []string{authtypes.Burner} // TODO
 	}
 
@@ -371,11 +375,6 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		AddRoute(upgradetypes.RouterKey, upgrade.NewSoftwareUpgradeProposalHandler(upgradeK)).
 		AddRoute(ibcclienttypes.RouterKey, ibcclient.NewClientProposalHandler(app.ibcKeeper.ClientKeeper))
 
-	govK := govkeeper.NewKeeper(
-		appCodec, keys[govtypes.StoreKey], app.getSubspace(govtypes.ModuleName), accountK, bankK,
-		&stakingK, govRouter,
-	)
-
 	// axelar custom keepers
 	// axelarnet / nexus keepers created above
 	evmK := evmKeeper.NewKeeper(
@@ -410,18 +409,16 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	var wasmK wasm.Keeper
 	var wasmAnteDecorators []sdk.AnteDecorator
 
-	if isWasmEnabled() {
+	if IsWasmEnabled() {
 		wasmDir := filepath.Join(homePath, "wasm")
 		wasmConfig, err := wasm.ReadWasmConfig(appOpts)
 		if err != nil {
 			panic(fmt.Sprintf("error while reading wasm config: %s", err))
 		}
-		// TODO: enable wasm in swagger
 
 		scopedWasmK := app.capabilityKeeper.ScopeToModule(wasm.ModuleName)
 		// The last arguments can contain custom message handlers, and custom query handlers,
 		// if we want to allow any custom callbacks
-		availableCapabilities := "iterator,staking,stargate,cosmwasm_1_1"
 		wasmK = wasm.NewKeeper(
 			appCodec,
 			keys[wasm.StoreKey],
@@ -438,15 +435,22 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 			app.GRPCQueryRouter(),
 			wasmDir,
 			wasmConfig,
-			availableCapabilities,
-			// wasmOpts..., TODO
+			wasmCapabilities,
+			wasmOpts...,
 		)
 
 		wasmAnteDecorators = []sdk.AnteDecorator{
 			wasmkeeper.NewLimitSimulationGasDecorator(wasmConfig.SimulationGasLimit),
 			wasmkeeper.NewCountTXDecorator(app.keys[wasm.StoreKey]),
 		}
+
+		govRouter.AddRoute(wasm.RouterKey, wasm.NewWasmProposalHandler(wasmK, wasm.EnableAllProposals))
 	}
+
+	govK := govkeeper.NewKeeper(
+		appCodec, keys[govtypes.StoreKey], app.getSubspace(govtypes.ModuleName), accountK, bankK,
+		&stakingK, govRouter,
+	)
 
 	semverVersion := app.Version()
 	if !strings.HasPrefix(semverVersion, "v") {
@@ -473,7 +477,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 
 	if upgradeInfo.Name == upgradeName && !upgradeK.IsSkipHeight(upgradeInfo.Height) {
 		storeUpgrades := store.StoreUpgrades{}
-		if isWasmEnabled() {
+		if IsWasmEnabled() {
 			storeUpgrades.Added = append(storeUpgrades.Added, wasm.ModuleName)
 		}
 
@@ -526,7 +530,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		capability.NewAppModule(appCodec, *app.capabilityKeeper),
 	}
 
-	if isWasmEnabled() {
+	if IsWasmEnabled() {
 		appModules = append(appModules, wasm.NewAppModule(appCodec, &wasmK, stakingK, accountK, bankK))
 	}
 
@@ -573,7 +577,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		vestingtypes.ModuleName,
 	}
 
-	if isWasmEnabled() {
+	if IsWasmEnabled() {
 		migrationOrder = append(migrationOrder, wasm.ModuleName)
 	}
 
@@ -617,7 +621,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		vestingtypes.ModuleName,
 	}
 
-	if isWasmEnabled() {
+	if IsWasmEnabled() {
 		beginBlockerOrder = append(beginBlockerOrder, wasm.ModuleName)
 	}
 
@@ -656,7 +660,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		vestingtypes.ModuleName,
 	}
 
-	if isWasmEnabled() {
+	if IsWasmEnabled() {
 		endBlockerOrder = append(endBlockerOrder, wasm.ModuleName)
 	}
 
@@ -699,7 +703,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		vestingtypes.ModuleName,
 	}
 
-	if isWasmEnabled() {
+	if IsWasmEnabled() {
 		genesisOrder = append(genesisOrder, wasm.ModuleName)
 	}
 
@@ -760,7 +764,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		ibcante.NewAnteDecorator(app.ibcKeeper),
 	}
 
-	if isWasmEnabled() {
+	if IsWasmEnabled() {
 		anteDecorators = append(anteDecorators, wasmAnteDecorators...) // TODO: correct ordering?
 	}
 
@@ -774,7 +778,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 			tmos.Exit(err.Error())
 		}
 
-		if isWasmEnabled() {
+		if IsWasmEnabled() {
 			ctx := app.BaseApp.NewUncachedContext(true, tmproto.Header{})
 
 			// Initialize pinned codes in wasmvm as they are not persisted there
@@ -931,7 +935,7 @@ func GetModuleBasics() module.BasicManager {
 	}
 
 	wasmProposals := []govclient.ProposalHandler{}
-	if isWasmEnabled() {
+	if IsWasmEnabled() {
 		wasmProposals = wasmclient.ProposalHandlers
 	}
 
@@ -963,7 +967,7 @@ func GetModuleBasics() module.BasicManager {
 		vesting.AppModuleBasic{},
 	}
 
-	if isWasmEnabled() {
+	if IsWasmEnabled() {
 		managers = append(managers, wasm.AppModuleBasic{})
 	}
 
@@ -992,6 +996,7 @@ func (app *AxelarApp) getSubspace(moduleName string) paramstypes.Subspace {
 	return subspace
 }
 
-func isWasmEnabled() bool {
+// IsWasmEnabled returns whether wasm is enabled
+func IsWasmEnabled() bool {
 	return WasmEnabled != ""
 }
