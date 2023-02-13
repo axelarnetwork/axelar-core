@@ -233,11 +233,11 @@ func NewIBCPath(port string, channel string) string {
 func ToICS20Packet(packet ibcexported.PacketI) (ibctransfertypes.FungibleTokenPacketData, error) {
 	var data ibctransfertypes.FungibleTokenPacketData
 	if err := ibctransfertypes.ModuleCdc.UnmarshalJSON(packet.GetData(), &data); err != nil {
-		return data, sdkerrors.Wrapf(sdkerrors.ErrInvalidType, "cannot unmarshal ICS-20 transfer packet data")
+		return ibctransfertypes.FungibleTokenPacketData{}, sdkerrors.Wrapf(sdkerrors.ErrInvalidType, "cannot unmarshal ICS-20 transfer packet data")
 	}
 
 	if err := data.ValidateBasic(); err != nil {
-		return data, err
+		return ibctransfertypes.FungibleTokenPacketData{}, err
 	}
 
 	return data, nil
