@@ -85,7 +85,7 @@ func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n ty
 	// follow ibc transfer convention, put byte(1) in ResultAcknowledgement to indicate success.
 	ack := channeltypes.NewResultAcknowledgement([]byte{byte(1)})
 
-	data, err := toICS20Packet(packet)
+	data, err := types.ToICS20Packet(packet)
 	if err != nil {
 		return channeltypes.NewErrorAcknowledgement(err)
 	}
@@ -227,24 +227,10 @@ func handleTokenSent(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceA
 
 }
 
-// toICS20Packet unmarchal packet to ICS20 token packet
-func toICS20Packet(packet ibcexported.PacketI) (ibctransfertypes.FungibleTokenPacketData, error) {
-	var data ibctransfertypes.FungibleTokenPacketData
-	if err := types.ModuleCdc.UnmarshalJSON(packet.GetData(), &data); err != nil {
-		return data, sdkerrors.Wrapf(sdkerrors.ErrInvalidType, "cannot unmarshal ICS-20 transfer packet data")
-	}
-
-	if err := data.ValidateBasic(); err != nil {
-		return data, err
-	}
-
-	return data, nil
-}
-
 // extractTokenFromPacketData get normalized token from ICS20 packet
 // panic if unable to unmarshal packet data
 func extractTokenFromPacketData(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.Nexus, packet ibcexported.PacketI) (keeper.Coin, error) {
-	data := funcs.Must(toICS20Packet(packet))
+	data := funcs.Must(types.ToICS20Packet(packet))
 
 	// parse the transfer amount
 	amount := funcs.MustOk(sdk.NewIntFromString(data.Amount))

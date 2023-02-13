@@ -238,7 +238,7 @@ func Denom(min, max int) string {
 	denom := Strings(1, 2).WithAlphabet([]rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")).Next()
 
 	if min > 0 {
-		denom = denom + Strings(min-1, max-1).WithAlphabet([]rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-/")).Next()
+		denom = denom + Strings(min-1, max-1).WithAlphabet([]rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-")).Next()
 	}
 
 	return denom
