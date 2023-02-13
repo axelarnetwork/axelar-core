@@ -10,7 +10,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/address"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	ibctransfertypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
 	host "github.com/cosmos/ibc-go/v4/modules/core/24-host"
+	ibcexported "github.com/cosmos/ibc-go/v4/modules/core/exported"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
@@ -225,6 +227,20 @@ func ValidateIBCPath(path string) error {
 // NewIBCPath returns an IBC path for a given port and IBC channel
 func NewIBCPath(port string, channel string) string {
 	return fmt.Sprintf("%s/%s", port, channel)
+}
+
+// ToICS20Packet unmarshals IBC packet as ICS20 token packet
+func ToICS20Packet(packet ibcexported.PacketI) (ibctransfertypes.FungibleTokenPacketData, error) {
+	var data ibctransfertypes.FungibleTokenPacketData
+	if err := ibctransfertypes.ModuleCdc.UnmarshalJSON(packet.GetData(), &data); err != nil {
+		return data, sdkerrors.Wrapf(sdkerrors.ErrInvalidType, "cannot unmarshal ICS-20 transfer packet data")
+	}
+
+	if err := data.ValidateBasic(); err != nil {
+		return data, err
+	}
+
+	return data, nil
 }
 
 const (

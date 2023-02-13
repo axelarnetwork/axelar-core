@@ -299,6 +299,10 @@ func (am AppModule) OnAcknowledgementPacket(
 		return sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "cannot unmarshal ICS-20 transfer packet acknowledgement: %v", err)
 	}
 
+	if err := ack.ValidateBasic(); err != nil {
+		return err
+	}
+
 	// IBC ack packets, by convention, use the source port/channel to represent native chain -> counterparty chain channel id
 	// https://github.com/cosmos/ibc/tree/main/spec/core/ics-004-channel-and-packet-semantics#definitions
 	port, channel, sequence := packet.GetSourcePort(), packet.GetSourceChannel(), packet.GetSequence()

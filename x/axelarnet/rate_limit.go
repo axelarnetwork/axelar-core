@@ -88,12 +88,8 @@ func (r RateLimiter) GetAppVersion(ctx sdk.Context, portID string, channelID str
 
 func parseTokenFromPacket(packet ibcexported.PacketI) (sdk.Coin, error) {
 	// Only ICS-20 packets are expected in the middleware
-	var data ibctransfertypes.FungibleTokenPacketData
-	if err := ibctransfertypes.ModuleCdc.UnmarshalJSON(packet.GetData(), &data); err != nil {
-		return sdk.Coin{}, sdkerrors.Wrapf(sdkerrors.ErrInvalidType, "cannot unmarshal ICS-20 transfer packet data: %s", err.Error())
-	}
-
-	if err := data.ValidateBasic(); err != nil {
+	data, err := types.ToICS20Packet(packet)
+	if err != nil {
 		return sdk.Coin{}, err
 	}
 
