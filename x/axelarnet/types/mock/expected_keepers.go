@@ -12,7 +12,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/query"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
-	ibctypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
+	ibctransfertypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
 	clienttypes "github.com/cosmos/ibc-go/v4/modules/core/02-client/types"
 	channeltypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
 	ibcexported "github.com/cosmos/ibc-go/v4/modules/core/exported"
@@ -2270,13 +2270,13 @@ var _ axelarnettypes.IBCTransferKeeper = &IBCTransferKeeperMock{}
 //
 //		// make and configure a mocked axelarnettypes.IBCTransferKeeper
 //		mockedIBCTransferKeeper := &IBCTransferKeeperMock{
-//			GetDenomTraceFunc: func(ctx cosmossdktypes.Context, denomTraceHash tmbytes.HexBytes) (ibctypes.DenomTrace, bool) {
+//			GetDenomTraceFunc: func(ctx cosmossdktypes.Context, denomTraceHash tmbytes.HexBytes) (ibctransfertypes.DenomTrace, bool) {
 //				panic("mock out the GetDenomTrace method")
 //			},
 //			SendTransferFunc: func(ctx cosmossdktypes.Context, sourcePort string, sourceChannel string, token cosmossdktypes.Coin, sender cosmossdktypes.AccAddress, receiver string, timeoutHeight clienttypes.Height, timeoutTimestamp uint64) error {
 //				panic("mock out the SendTransfer method")
 //			},
-//			TransferFunc: func(goCtx context.Context, msg *ibctypes.MsgTransfer) (*ibctypes.MsgTransferResponse, error) {
+//			TransferFunc: func(goCtx context.Context, msg *ibctransfertypes.MsgTransfer) (*ibctransfertypes.MsgTransferResponse, error) {
 //				panic("mock out the Transfer method")
 //			},
 //		}
@@ -2287,13 +2287,13 @@ var _ axelarnettypes.IBCTransferKeeper = &IBCTransferKeeperMock{}
 //	}
 type IBCTransferKeeperMock struct {
 	// GetDenomTraceFunc mocks the GetDenomTrace method.
-	GetDenomTraceFunc func(ctx cosmossdktypes.Context, denomTraceHash tmbytes.HexBytes) (ibctypes.DenomTrace, bool)
+	GetDenomTraceFunc func(ctx cosmossdktypes.Context, denomTraceHash tmbytes.HexBytes) (ibctransfertypes.DenomTrace, bool)
 
 	// SendTransferFunc mocks the SendTransfer method.
 	SendTransferFunc func(ctx cosmossdktypes.Context, sourcePort string, sourceChannel string, token cosmossdktypes.Coin, sender cosmossdktypes.AccAddress, receiver string, timeoutHeight clienttypes.Height, timeoutTimestamp uint64) error
 
 	// TransferFunc mocks the Transfer method.
-	TransferFunc func(goCtx context.Context, msg *ibctypes.MsgTransfer) (*ibctypes.MsgTransferResponse, error)
+	TransferFunc func(goCtx context.Context, msg *ibctransfertypes.MsgTransfer) (*ibctransfertypes.MsgTransferResponse, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -2328,7 +2328,7 @@ type IBCTransferKeeperMock struct {
 			// GoCtx is the goCtx argument value.
 			GoCtx context.Context
 			// Msg is the msg argument value.
-			Msg *ibctypes.MsgTransfer
+			Msg *ibctransfertypes.MsgTransfer
 		}
 	}
 	lockGetDenomTrace sync.RWMutex
@@ -2337,7 +2337,7 @@ type IBCTransferKeeperMock struct {
 }
 
 // GetDenomTrace calls GetDenomTraceFunc.
-func (mock *IBCTransferKeeperMock) GetDenomTrace(ctx cosmossdktypes.Context, denomTraceHash tmbytes.HexBytes) (ibctypes.DenomTrace, bool) {
+func (mock *IBCTransferKeeperMock) GetDenomTrace(ctx cosmossdktypes.Context, denomTraceHash tmbytes.HexBytes) (ibctransfertypes.DenomTrace, bool) {
 	if mock.GetDenomTraceFunc == nil {
 		panic("IBCTransferKeeperMock.GetDenomTraceFunc: method is nil but IBCTransferKeeper.GetDenomTrace was just called")
 	}
@@ -2433,13 +2433,13 @@ func (mock *IBCTransferKeeperMock) SendTransferCalls() []struct {
 }
 
 // Transfer calls TransferFunc.
-func (mock *IBCTransferKeeperMock) Transfer(goCtx context.Context, msg *ibctypes.MsgTransfer) (*ibctypes.MsgTransferResponse, error) {
+func (mock *IBCTransferKeeperMock) Transfer(goCtx context.Context, msg *ibctransfertypes.MsgTransfer) (*ibctransfertypes.MsgTransferResponse, error) {
 	if mock.TransferFunc == nil {
 		panic("IBCTransferKeeperMock.TransferFunc: method is nil but IBCTransferKeeper.Transfer was just called")
 	}
 	callInfo := struct {
 		GoCtx context.Context
-		Msg   *ibctypes.MsgTransfer
+		Msg   *ibctransfertypes.MsgTransfer
 	}{
 		GoCtx: goCtx,
 		Msg:   msg,
@@ -2456,11 +2456,11 @@ func (mock *IBCTransferKeeperMock) Transfer(goCtx context.Context, msg *ibctypes
 //	len(mockedIBCTransferKeeper.TransferCalls())
 func (mock *IBCTransferKeeperMock) TransferCalls() []struct {
 	GoCtx context.Context
-	Msg   *ibctypes.MsgTransfer
+	Msg   *ibctransfertypes.MsgTransfer
 } {
 	var calls []struct {
 		GoCtx context.Context
-		Msg   *ibctypes.MsgTransfer
+		Msg   *ibctransfertypes.MsgTransfer
 	}
 	mock.lockTransfer.RLock()
 	calls = mock.calls.Transfer
