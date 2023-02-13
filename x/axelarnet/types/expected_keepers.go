@@ -39,6 +39,7 @@ type BaseKeeper interface {
 // Nexus provides functionality to manage cross-chain transfers
 type Nexus interface {
 	EnqueueForTransfer(ctx sdk.Context, sender nexus.CrossChainAddress, amount sdk.Coin) (nexus.TransferID, error)
+	EnqueueTransfer(ctx sdk.Context, senderChain nexus.Chain, recipient nexus.CrossChainAddress, asset sdk.Coin) (nexus.TransferID, error)
 	GetTransfersForChainPaginated(ctx sdk.Context, chain nexus.Chain, state nexus.TransferState, pageRequest *query.PageRequest) ([]nexus.CrossChainTransfer, *query.PageResponse, error)
 	ArchivePendingTransfer(ctx sdk.Context, transfer nexus.CrossChainTransfer)
 	GetChain(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool)
@@ -54,11 +55,11 @@ type Nexus interface {
 	IsChainActivated(ctx sdk.Context, chain nexus.Chain) bool
 	RateLimitTransfer(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error
 	GetMessage(ctx sdk.Context, id string) (m nexus.GeneralMessage, found bool)
+	SetNewMessage(ctx sdk.Context, m nexus.GeneralMessage) error
 	SetMessageSent(ctx sdk.Context, id string) error
 	SetMessageExecuted(ctx sdk.Context, id string) error
 	SetMessageFailed(ctx sdk.Context, id string) error
-	SetNewMessage(ctx sdk.Context, m nexus.GeneralMessage) error
-	GenerateMessageID(ctx sdk.Context, sourceTxID string) string
+	GenerateMessageID(ctx sdk.Context) string
 	ValidateAddress(ctx sdk.Context, address nexus.CrossChainAddress) error
 }
 

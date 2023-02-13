@@ -95,7 +95,7 @@ func TestRateLimitPacket(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
-	whenChainIsRegistered := When("chain is deactivated", func() {
+	whenChainIsRegistered := When("chain is registered", func() {
 		n.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 			return nexus.Chain{Name: chain}, true
 		}
@@ -167,7 +167,7 @@ func TestRateLimitPacket(t *testing.T) {
 		When2(whenChainIsRegistered).
 		Then("rate limit packet fails", func(t *testing.T) {
 			err = rateLimiter.RateLimitPacket(ctx, packet, direction, ibcPath)
-			assert.ErrorContains(t, err, "negative coin amount")
+			assert.ErrorContains(t, err, "amount must be strictly positive")
 		}).
 		Run(t, repeats)
 

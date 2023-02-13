@@ -93,6 +93,10 @@ func parseTokenFromPacket(packet ibcexported.PacketI) (sdk.Coin, error) {
 		return sdk.Coin{}, sdkerrors.Wrapf(sdkerrors.ErrInvalidType, "cannot unmarshal ICS-20 transfer packet data: %s", err.Error())
 	}
 
+	if err := data.ValidateBasic(); err != nil {
+		return sdk.Coin{}, err
+	}
+
 	asset := data.Denom
 	// If the asset being transferred is an IBC denom originating on the destination chain,
 	// then the full denom in the IBC transfer contains the IBC channel to the destination chain as a prefix, `transfer/channel-x/asset`.
