@@ -603,6 +603,7 @@ func handleMessages(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, m types
 	for _, chain := range slices.Filter(n.GetChains(ctx), types.IsEVMChain) {
 		ck := funcs.Must(bk.ForChain(ctx, chain.Name))
 		endBlockerLimit := ck.GetParams(ctx).EndBlockerLimit
+		// it's unexpected to get a retrieval/iterator error from IAVL db
 		msgs := funcs.Must(n.GetSentMessages(ctx, chain.Name, endBlockerLimit))
 
 		bk.Logger(ctx).Debug(fmt.Sprintf("handling %d general messages", len(msgs)), types.AttributeKeyChain, chain.Name)

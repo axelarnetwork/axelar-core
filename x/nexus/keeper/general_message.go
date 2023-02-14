@@ -173,6 +173,7 @@ func (k Keeper) deleteSentMessageID(ctx sdk.Context, m exported.GeneralMessage) 
 	k.getStore(ctx).DeleteNew(getSentMessageKey(m.GetDestinationChain(), m.ID))
 }
 
+//nolint:unused // TODO: add genesis import/export
 func (k Keeper) getMessages(ctx sdk.Context) (generalMessages []exported.GeneralMessage) {
 	iter := k.getStore(ctx).IteratorNew(generalMessagePrefix)
 	defer utils.CloseLogError(iter, k.Logger(ctx))
