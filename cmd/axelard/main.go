@@ -65,7 +65,10 @@ func main() {
 		os.Exit(0)
 	}
 
-	setupMetrics()
+	if _, err := setupMetrics(); err != nil {
+		fmt.Printf("Failed to setup metrics: %s, exiting...\n", err)
+		os.Exit(1)
+	}
 
 	if err := svrcmd.Execute(rootCmd, app.DefaultNodeHome); err != nil {
 		switch e := err.(type) {
@@ -122,8 +125,8 @@ func deleteLineBreakCmds(cmd *cobra.Command) {
 	}
 }
 
-func setupMetrics() {
-	telemetry.New(telemetry.Config{
+func setupMetrics() (*telemetry.Metrics, error) {
+	return telemetry.New(telemetry.Config{
 		Enabled:        true,
 		EnableHostname: false,
 		ServiceName:    "axelar",

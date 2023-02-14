@@ -25,7 +25,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Golint
-        run: golint -set_exit_status ./...
+        run: make lint
 
       - name: Proto-lint
         run: make proto-lint
