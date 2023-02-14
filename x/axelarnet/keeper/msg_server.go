@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"context"
-	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"strings"
@@ -68,11 +67,10 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 
 	sender := nexus.CrossChainAddress{Chain: exported.Axelarnet, Address: req.Sender.String()}
 
-	// Need to use two different hash functions below. Tendermint uses sha256 to generate tx hashes, but axelar gateway expects keccak256 hashes for payloads
-	txHash := sha256.Sum256(ctx.TxBytes())
+	// axelar gateway expects keccak256 hashes for payloads
 	payloadHash := crypto.Keccak256(req.Payload)
 
-	msg := nexus.NewGeneralMessage(s.nexus.GenerateMessageID(ctx, hex.EncodeToString(txHash[:])), sender, recipient, payloadHash, nexus.Sent, nil)
+	msg := nexus.NewGeneralMessage(s.nexus.GenerateMessageID(ctx), sender, recipient, payloadHash, nexus.Sent, nil)
 	if err := s.nexus.SetNewMessage(ctx, msg); err != nil {
 		return nil, sdkerrors.Wrap(err, "failed to add general message")
 	}
@@ -80,13 +78,13 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 	ctx.GasMeter().ConsumeGas(callContractGasCost, "call-contract")
 
 	events.Emit(ctx, &types.ContractCallSubmitted{
+		MessageID:        msg.ID,
 		Sender:           msg.GetSourceAddress(),
 		SourceChain:      msg.GetSourceChain(),
 		DestinationChain: msg.GetDestinationChain(),
 		ContractAddress:  msg.GetDestinationAddress(),
 		PayloadHash:      msg.PayloadHash,
 		Payload:          req.Payload,
-		MsgID:            msg.ID,
 	})
 
 	s.Logger(ctx).Debug(fmt.Sprintf("successfully enqueued contract call for contract address %s on chain %s from sender %s with message id %s", req.ContractAddress, req.Chain.String(), req.Sender, msg.ID),

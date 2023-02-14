@@ -55,7 +55,7 @@ type message struct {
 	SourceChain string `json:"source_chain"`
 	Sender      string `json:"sender"`
 	Payload     []byte `json:"payload"`
-	Type        int    `json:"type"`
+	Type        int64  `json:"type"`
 }
 
 // TranslateMessage constructs the message gets passed to a cosmos chain from abi encoded payload
@@ -208,7 +208,7 @@ func ConstructNativeMessage(gm nexus.GeneralMessage, payload []byte) ([]byte, er
 		SourceChain: gm.GetSourceChain().String(),
 		Sender:      gm.GetSourceAddress(),
 		Payload:     payload,
-		Type:        int(gm.Type()),
+		Type:        int64(gm.Type()),
 	})
 }
 

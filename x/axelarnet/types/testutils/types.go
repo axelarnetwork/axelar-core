@@ -58,8 +58,7 @@ func RandomIBCDenom() string {
 // RandomIBCPath creates an IBC path
 func RandomIBCPath() string {
 	port := ibctransfertypes.PortID
-	identifier := fmt.Sprintf("%s%d", "channel-", rand.PosI64())
-	return types.NewIBCPath(port, identifier)
+	return types.NewIBCPath(port, RandomChannel())
 }
 
 // RandomCosmosChain creates a types.CosmosChain
@@ -94,4 +93,9 @@ func RandomFullDenom() string {
 		denom = fmt.Sprintf("%s/%s/%s", rand.StrBetween(1, 10), rand.StrBetween(1, 10), denom)
 	}
 	return denom
+}
+
+// RandomChannel creates an IBC channel
+func RandomChannel() string {
+	return fmt.Sprintf("%s%d", "channel-", rand.PosI64())
 }
