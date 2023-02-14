@@ -26,7 +26,8 @@ import (
 var _ types.MsgServiceServer = msgServer{}
 
 const (
-	callContractGasCost = storetypes.Gas(2000000)
+	callContractGasCost   = storetypes.Gas(10000000)
+	executeMessageGasCost = storetypes.Gas(1000000)
 )
 
 type msgServer struct {
@@ -521,6 +522,8 @@ func (s msgServer) ExecuteMessage(c context.Context, req *types.ExecuteMessageRe
 	if err != nil {
 		return nil, err
 	}
+
+	ctx.GasMeter().ConsumeGas(executeMessageGasCost, "execute-message")
 
 	s.Logger(ctx).Debug("set general message status to sent", "messageID", msg.ID)
 
