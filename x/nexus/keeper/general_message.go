@@ -188,7 +188,7 @@ func (k Keeper) getMessages(ctx sdk.Context) (generalMessages []exported.General
 }
 
 // GetSentMessages returns up to limit sent messages where chain is the destination chain
-func (k Keeper) GetSentMessages(ctx sdk.Context, chain exported.ChainName, limit int64) []exported.GeneralMessage {
+func (k Keeper) GetSentMessages(ctx sdk.Context, chain exported.ChainName, limit int64) ([]exported.GeneralMessage, error) {
 	ids := []string{}
 
 	pageRequest := &query.PageRequest{
@@ -198,13 +198,16 @@ func (k Keeper) GetSentMessages(ctx sdk.Context, chain exported.ChainName, limit
 		CountTotal: false,
 		Reverse:    false,
 	}
+	keyPrefix := append(sentMessagePrefix.Append(key.From(chain)).Bytes(), []byte(key.DefaultDelimiter)...)
 
-	query.Paginate(prefix.NewStore(k.getStore(ctx).KVStore, append(sentMessagePrefix.Append(key.From(chain)).Bytes(), []byte(key.DefaultDelimiter)...)), pageRequest, func(key []byte, value []byte) error {
+	if _, err := query.Paginate(prefix.NewStore(k.getStore(ctx).KVStore, keyPrefix), pageRequest, func(key []byte, value []byte) error {
 		ids = append(ids, string(value))
 		return nil
-	})
+	}); err != nil {
+		return nil, err
+	}
 
 	return slices.Map(ids, func(id string) exported.GeneralMessage {
 		return funcs.MustOk(k.GetMessage(ctx, id))
-	})
+	}), nil
 }

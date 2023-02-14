@@ -228,7 +228,7 @@ func TestHandleGeneralMessages(t *testing.T) {
 	})
 	withGeneralMessages := func(numPerChain map[nexus.ChainName]int) WhenStatement {
 		return When("having general messages", func() {
-			n.GetSentMessagesFunc = func(_ sdk.Context, chain nexus.ChainName, limit int64) []nexus.GeneralMessage {
+			n.GetSentMessagesFunc = func(_ sdk.Context, chain nexus.ChainName, limit int64) ([]nexus.GeneralMessage, error) {
 
 				msgs := []nexus.GeneralMessage{}
 				for i := 0; i < int(limit) && i < numPerChain[chain]; i++ {
@@ -242,7 +242,7 @@ func TestHandleGeneralMessages(t *testing.T) {
 					msg := nexus.NewGeneralMessage(evmTestUtils.RandomHash().Hex(), sender, receiver, evmTestUtils.RandomHash().Bytes(), nexus.Sent, nil)
 					msgs = append(msgs, msg)
 				}
-				return msgs
+				return msgs, nil
 			}
 		})
 	}
