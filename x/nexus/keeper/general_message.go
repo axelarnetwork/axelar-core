@@ -76,9 +76,11 @@ func (k Keeper) SetNewMessage(ctx sdk.Context, m exported.GeneralMessage) error 
 		}
 	}
 
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.NewGeneralMessage{
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.MessageReceived{
 		ID:          m.ID,
 		PayloadHash: m.PayloadHash,
+		Sender:      m.Sender,
+		Recipient:   m.Recipient,
 	}))
 
 	return k.setMessage(ctx, m)

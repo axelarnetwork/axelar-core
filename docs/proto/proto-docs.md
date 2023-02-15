@@ -350,7 +350,7 @@
 - [axelar/nexus/v1beta1/events.proto](#axelar/nexus/v1beta1/events.proto)
     - [FeeDeducted](#axelar.nexus.v1beta1.FeeDeducted)
     - [InsufficientFee](#axelar.nexus.v1beta1.InsufficientFee)
-    - [NewGeneralMessage](#axelar.nexus.v1beta1.NewGeneralMessage)
+    - [MessageReceived](#axelar.nexus.v1beta1.MessageReceived)
     - [RateLimitUpdated](#axelar.nexus.v1beta1.RateLimitUpdated)
   
 - [axelar/nexus/v1beta1/params.proto](#axelar/nexus/v1beta1/params.proto)
@@ -5510,9 +5510,9 @@ Query defines the gRPC querier service.
 
 
 
-<a name="axelar.nexus.v1beta1.NewGeneralMessage"></a>
+<a name="axelar.nexus.v1beta1.MessageReceived"></a>
 
-### NewGeneralMessage
+### MessageReceived
 
 
 
@@ -5520,6 +5520,8 @@ Query defines the gRPC querier service.
 | ----- | ---- | ----- | ----------- |
 | `id` | [string](#string) |  |  |
 | `payload_hash` | [bytes](#bytes) |  |  |
+| `sender` | [axelar.nexus.exported.v1beta1.CrossChainAddress](#axelar.nexus.exported.v1beta1.CrossChainAddress) |  |  |
+| `recipient` | [axelar.nexus.exported.v1beta1.CrossChainAddress](#axelar.nexus.exported.v1beta1.CrossChainAddress) |  |  |
 
 
 
