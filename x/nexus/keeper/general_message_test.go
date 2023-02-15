@@ -275,7 +275,7 @@ func TestGetSentMessages(t *testing.T) {
 		}
 	}
 	consumeSent := func(dest exported.ChainName, limit int64) []exported.GeneralMessage {
-		sent := funcs.Must(k.GetSentMessages(ctx, dest, limit))
+		sent := k.GetSentMessages(ctx, dest, limit)
 		for _, msg := range sent {
 			err := k.SetMessageExecuted(ctx, msg.ID)
 			assert.NoError(t, err)
@@ -293,7 +293,7 @@ func TestGetSentMessages(t *testing.T) {
 	assert.Equal(t, msgs, retMsgs)
 
 	// make sure executed messages are not returned
-	sent = funcs.Must(k.GetSentMessages(ctx, destinationChainName, 100))
+	sent = k.GetSentMessages(ctx, destinationChainName, 100)
 	assert.Empty(t, sent)
 	for _, msg := range msgs {
 		m, found := k.GetMessage(ctx, msg.ID)
@@ -316,7 +316,7 @@ func TestGetSentMessages(t *testing.T) {
 	// make sure failed messages are not returned
 	msgs = makeSentMessages(1, destinationChainName)
 	enqueueMsgs(msgs)
-	sent = funcs.Must(k.GetSentMessages(ctx, destinationChainName, 1))
+	sent = k.GetSentMessages(ctx, destinationChainName, 1)
 	assert.Equal(t, len(msgs), len(sent))
 	err := k.SetMessageFailed(ctx, sent[0].ID)
 	assert.NoError(t, err)
