@@ -18,14 +18,14 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
 
-      - name: Install golint
-        run: go install golang.org/x/lint/golint@latest
+      - name: Install golangci-lint
+        run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Golint
-        run: golint -set_exit_status ./...
+      - name: Go Lint
+        run: make lint
 
-      - name: Proto-lint
+      - name: Proto lint
         run: make proto-lint

@@ -61,8 +61,8 @@ func (k Keeper) GetLastHeartbeatAt(ctx sdk.Context, participant sdk.ValAddress) 
 }
 
 // SetLastHeartbeatAt sets the block height at where the last heartbeat from the given participant was received
-func (k Keeper) SetLastHeartbeatAt(ctx sdk.Context, participant sdk.ValAddress) {
-	k.getStore(ctx).SetNewValidated(lastHeartbeatAtPrefix.Append(key.FromBz(participant.Bytes())), utils.NoValidation(&gogoprototypes.Int64Value{Value: ctx.BlockHeight()}))
+func (k Keeper) SetLastHeartbeatAt(ctx sdk.Context, participant sdk.ValAddress) error {
+	return k.getStore(ctx).SetNewValidated(lastHeartbeatAtPrefix.Append(key.FromBz(participant.Bytes())), utils.NoValidation(&gogoprototypes.Int64Value{Value: ctx.BlockHeight()}))
 }
 
 func (k Keeper) getStore(ctx sdk.Context) utils.KVStore {

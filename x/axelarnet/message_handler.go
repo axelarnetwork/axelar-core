@@ -56,7 +56,7 @@ func validateMessage(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.Nexus, ibcP
 		return err
 	}
 
-	// only allow sends message to EVM chains
+	// only allow sending messages to EVM chains
 	if (msg.Type == nexus.TypeGeneralMessage || msg.Type == nexus.TypeGeneralMessageWithToken) &&
 		!destChain.IsFrom(evmtypes.ModuleName) {
 		return fmt.Errorf("destination chain is not an EVM chain")
@@ -108,6 +108,9 @@ func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n ty
 
 	// extract token from packet
 	token, err := extractTokenFromPacketData(ctx, ibcK, n, packet)
+	if err != nil {
+		return channeltypes.NewErrorAcknowledgement(err)
+	}
 
 	path := types.NewIBCPath(packet.GetDestPort(), packet.GetDestChannel())
 

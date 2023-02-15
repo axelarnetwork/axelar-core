@@ -108,11 +108,12 @@ docker-image-debug:
 # Install all generate prerequisites
 .Phony: prereqs
 prereqs:
-	@which goimports &>/dev/null	||	go install golang.org/x/tools/cmd/goimports
-	@which moq &>/dev/null			||	go install github.com/matryer/moq
-	@which statik &>/dev/null       ||	go install github.com/rakyll/statik
-	@which mdformat &>/dev/null 	||	pip3 install mdformat
-	@which protoc &>/dev/null 		|| 	echo "Please install protoc for grpc (https://grpc.io/docs/languages/go/quickstart/)"
+	@which goimports &>/dev/null	 ||	go install golang.org/x/tools/cmd/goimports
+	@which moq &>/dev/null			 ||	go install github.com/matryer/moq
+	@which statik &>/dev/null        ||	go install github.com/rakyll/statik
+	@which mdformat &>/dev/null 	 ||	pip3 install mdformat
+	@which protoc &>/dev/null 		 || 	echo "Please install protoc for grpc (https://grpc.io/docs/languages/go/quickstart/)"
+	@which golangci-lint &>/dev/null ||  go install github.com/golangci/golangci-lint/cmd/golangci-lint
 
 # Run all the code generators in the project
 .PHONY: generate

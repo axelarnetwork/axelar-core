@@ -57,6 +57,14 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
 	}
 
+	if !chain.IsFrom(evmtypes.ModuleName) {
+		return nil, fmt.Errorf("non EVM chains are not supported")
+	}
+
+	if !s.nexus.IsChainActivated(ctx, exported.Axelarnet) {
+		return nil, fmt.Errorf("chain %s is not activated yet", exported.Axelarnet.Name)
+	}
+
 	if !s.nexus.IsChainActivated(ctx, chain) {
 		return nil, fmt.Errorf("chain %s is not activated yet", chain.Name)
 	}

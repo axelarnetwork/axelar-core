@@ -247,8 +247,6 @@ func WithPollingInterval(interval time.Duration) BroadcasterOption {
 type pipelinedBroadcaster struct {
 	logger        log.Logger
 	retryPipeline *retryPipeline
-	txFactory     tx.Factory
-	clientCtx     sdkClient.Context
 	broadcaster   Broadcaster
 }
 

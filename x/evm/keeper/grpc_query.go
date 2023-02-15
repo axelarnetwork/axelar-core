@@ -18,7 +18,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	nexustypes "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 )
@@ -223,24 +222,6 @@ func commandBatchToResp(ctx sdk.Context, commandBatch types.CommandBatch, multis
 			Proof:                 nil,
 		}, nil
 	}
-}
-
-func getCommandBatchSig(pair tss.SigKeyPair, batchedCommands types.Hash) (types.Signature, error) {
-	pk, err := pair.GetKey()
-	if err != nil {
-		return types.Signature{}, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not parse pub key: %v", err))
-	}
-
-	sig, err := pair.GetSig()
-	if err != nil {
-		return types.Signature{}, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not parse signature: %v", err))
-	}
-
-	batchedCommandsSig, err := types.ToSignature(sig, common.Hash(batchedCommands), pk)
-	if err != nil {
-		return types.Signature{}, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not create recoverable signature: %v", err))
-	}
-	return batchedCommandsSig, nil
 }
 
 // BatchedCommands implements the batched commands query
