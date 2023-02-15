@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -74,6 +75,11 @@ func (k Keeper) SetNewMessage(ctx sdk.Context, m exported.GeneralMessage) error 
 			return err
 		}
 	}
+
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.NewGeneralMessage{
+		ID:          m.ID,
+		PayloadHash: m.PayloadHash,
+	}))
 
 	return k.setMessage(ctx, m)
 }
