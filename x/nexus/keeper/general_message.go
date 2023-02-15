@@ -12,6 +12,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/key"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 )
@@ -74,6 +75,13 @@ func (k Keeper) SetNewMessage(ctx sdk.Context, m exported.GeneralMessage) error 
 			return err
 		}
 	}
+
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.MessageReceived{
+		ID:          m.ID,
+		PayloadHash: m.PayloadHash,
+		Sender:      m.Sender,
+		Recipient:   m.Recipient,
+	}))
 
 	return k.setMessage(ctx, m)
 }
