@@ -45,6 +45,6 @@ message RateLimitUpdated {
 }
 
 message NewGeneralMessage {
-  string id =1 [(gogoproto.customname) = "ID"];
+  string id = 1 [ (gogoproto.customname) = "ID" ];
   bytes payload_hash = 2;
 }
