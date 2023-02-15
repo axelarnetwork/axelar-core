@@ -43,3 +43,8 @@ message RateLimitUpdated {
   google.protobuf.Duration window = 3
       [ (gogoproto.stdduration) = true, (gogoproto.nullable) = false ];
 }
+
+message NewGeneralMessage {
+  string id =1 [(gogoproto.customname) = "ID"];
+  bytes payload_hash = 2;
+}
