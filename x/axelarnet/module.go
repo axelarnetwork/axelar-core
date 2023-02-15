@@ -267,7 +267,7 @@ func (am AppModule) OnRecvPacket(
 	packet channeltypes.Packet,
 	relayer sdk.AccAddress,
 ) ibcexported.Acknowledgement {
-	// TODO: split rate limit, axelar routed packets and gmp into separated middleware?
+	// TODO: split axelar routed packets and gmp into separated middleware?
 
 	ack := am.transferModule.OnRecvPacket(ctx, packet, relayer)
 	if !ack.Success() {
