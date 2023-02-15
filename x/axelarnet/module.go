@@ -267,19 +267,14 @@ func (am AppModule) OnRecvPacket(
 	packet channeltypes.Packet,
 	relayer sdk.AccAddress,
 ) ibcexported.Acknowledgement {
-	//TODO: split rate limit, axelar routed packets and gmp into separated middleware?
-
-	// IBC receives are rate limited on the Incoming direction (tokens coming in to Axelar hub).
-	if err := am.rateLimiter.RateLimitPacket(ctx, packet, nexus.Incoming, types.NewIBCPath(packet.GetDestPort(), packet.GetDestChannel())); err != nil {
-		return channeltypes.NewErrorAcknowledgement(err)
-	}
+	// TODO: split axelar routed packets and gmp into separated middleware?
 
 	ack := am.transferModule.OnRecvPacket(ctx, packet, relayer)
 	if !ack.Success() {
 		return ack
 	}
 
-	return OnRecvMessage(ctx, am.keeper, am.ibcK, am.nexus, am.bank, packet)
+	return OnRecvMessage(ctx, am.keeper, am.ibcK, am.nexus, am.bank, am.rateLimiter, packet)
 }
 
 // OnAcknowledgementPacket implements the IBCModule interface
