@@ -6,6 +6,7 @@ option go_package = "github.com/axelarnetwork/axelar-core/x/nexus/types";
 import "google/protobuf/duration.proto";
 import "gogoproto/gogo.proto";
 import "cosmos/base/v1beta1/coin.proto";
+import "axelar/nexus/exported/v1beta1/types.proto";
 
 message FeeDeducted {
   uint64 transfer_id = 1 [
@@ -42,4 +43,13 @@ message RateLimitUpdated {
   cosmos.base.v1beta1.Coin limit = 2 [ (gogoproto.nullable) = false ];
   google.protobuf.Duration window = 3
       [ (gogoproto.stdduration) = true, (gogoproto.nullable) = false ];
+}
+
+message MessageReceived {
+  string id = 1 [ (gogoproto.customname) = "ID" ];
+  bytes payload_hash = 2;
+  exported.v1beta1.CrossChainAddress sender = 3
+      [ (gogoproto.nullable) = false ];
+  exported.v1beta1.CrossChainAddress recipient = 4
+      [ (gogoproto.nullable) = false ];
 }
