@@ -65,7 +65,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	if _, err := setupMetrics(); err != nil {
+	if err := setupMetrics(); err != nil {
 		fmt.Printf("Failed to setup metrics: %s, exiting...\n", err)
 		os.Exit(1)
 	}
@@ -125,8 +125,8 @@ func deleteLineBreakCmds(cmd *cobra.Command) {
 	}
 }
 
-func setupMetrics() (*telemetry.Metrics, error) {
-	return telemetry.New(telemetry.Config{
+func setupMetrics() error {
+	_, err := telemetry.New(telemetry.Config{
 		Enabled:        true,
 		EnableHostname: false,
 		ServiceName:    "axelar",
@@ -135,4 +135,6 @@ func setupMetrics() (*telemetry.Metrics, error) {
 		PrometheusRetentionTime: 4611686018427387904,
 		EnableHostnameLabel:     false,
 	})
+
+	return err
 }
