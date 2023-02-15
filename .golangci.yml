@@ -1,0 +1,9 @@
+run:
+  tests: false
+  timeout: 5m
+
+linters-settings:
+  staticcheck:
+    checks:
+      - all
+      - '-SA1019' # deprecated check
