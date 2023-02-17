@@ -109,7 +109,7 @@ func GetValdCommand() *cobra.Command {
 		flags.FlagBroadcastMode:  flags.BroadcastSync,
 		flags.FlagChainID:        app.Name,
 		flags.FlagGasPrices:      "0.007uaxl",
-		flags.FlagKeyringBackend: "file",
+		flags.FlagKeyringBackend: "test", // TODO: switch back
 	}, false)
 
 	return cmd

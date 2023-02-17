@@ -218,7 +218,7 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 		flags.FlagBroadcastMode:    flags.BroadcastBlock,
 		flags.FlagChainID:          app.Name,
 		flags.FlagGasPrices:        minGasPrice,
-		flags.FlagKeyringBackend:   "file",
+		flags.FlagKeyringBackend:   "test", // TODO: switch back
 		flags.FlagSkipConfirmation: "true",
 	}, false)
 
