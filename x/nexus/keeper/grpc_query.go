@@ -278,3 +278,18 @@ func (q Querier) TransferRateLimit(c context.Context, req *types.TransferRateLim
 		},
 	}, nil
 }
+
+// Message queries the general message for a given message ID
+func (q Querier) Message(c context.Context, req *types.MessageRequest) (*types.MessageResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	id := req.ID
+
+	if msg, found := q.keeper.GetMessage(ctx, id); found {
+
+		return &types.MessageResponse{
+			Message: &msg,
+		}, nil
+	}
+	return nil, status.Errorf(codes.NotFound, "message not found: %s", id)
+}

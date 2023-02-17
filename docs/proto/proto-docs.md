@@ -84,6 +84,8 @@
     - [FeeInfoResponse](#axelar.nexus.v1beta1.FeeInfoResponse)
     - [LatestDepositAddressRequest](#axelar.nexus.v1beta1.LatestDepositAddressRequest)
     - [LatestDepositAddressResponse](#axelar.nexus.v1beta1.LatestDepositAddressResponse)
+    - [MessageRequest](#axelar.nexus.v1beta1.MessageRequest)
+    - [MessageResponse](#axelar.nexus.v1beta1.MessageResponse)
     - [RecipientAddressRequest](#axelar.nexus.v1beta1.RecipientAddressRequest)
     - [RecipientAddressResponse](#axelar.nexus.v1beta1.RecipientAddressResponse)
     - [TransferFeeRequest](#axelar.nexus.v1beta1.TransferFeeRequest)
@@ -1648,6 +1650,36 @@ address by recipient address
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `deposit_addr` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.nexus.v1beta1.MessageRequest"></a>
+
+### MessageRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `ID` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.nexus.v1beta1.MessageResponse"></a>
+
+### MessageResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `message` | [axelar.nexus.exported.v1beta1.GeneralMessage](#axelar.nexus.exported.v1beta1.GeneralMessage) |  |  |
 
 
 
@@ -5850,6 +5882,7 @@ QueryService defines the gRPC querier service.
 | `RecipientAddress` | [RecipientAddressRequest](#axelar.nexus.v1beta1.RecipientAddressRequest) | [RecipientAddressResponse](#axelar.nexus.v1beta1.RecipientAddressResponse) | RecipientAddress queries the recipient address for a given deposit address | GET|/axelar/nexus/v1beta1/recipient_address/{deposit_chain}/{deposit_addr}|
 | `ChainMaintainers` | [ChainMaintainersRequest](#axelar.nexus.v1beta1.ChainMaintainersRequest) | [ChainMaintainersResponse](#axelar.nexus.v1beta1.ChainMaintainersResponse) | ChainMaintainers queries the chain maintainers for a given chain | GET|/axelar/nexus/v1beta1/chain_maintainers/{chain}|
 | `TransferRateLimit` | [TransferRateLimitRequest](#axelar.nexus.v1beta1.TransferRateLimitRequest) | [TransferRateLimitResponse](#axelar.nexus.v1beta1.TransferRateLimitResponse) | TransferRateLimit queries the transfer rate limit for a given chain and asset. If a rate limit is not set, nil is returned. | GET|/axelar/nexus/v1beta1/transfer_rate_limit/{chain}/{asset}|
+| `Message` | [MessageRequest](#axelar.nexus.v1beta1.MessageRequest) | [MessageResponse](#axelar.nexus.v1beta1.MessageResponse) |  | GET|/axelar/nexus/v1beta1/message/{ID}|
 
  <!-- end services -->
 
