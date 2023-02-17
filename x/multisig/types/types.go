@@ -6,7 +6,8 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
+	ec "github.com/btcsuite/btcd/btcec/v2/ecdsa"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/axelarnetwork/axelar-core/x/multisig/exported"
@@ -19,7 +20,7 @@ type Signature []byte
 
 // ValidateBasic returns an error if the signature is not a valid S256 elliptic curve signature
 func (sig Signature) ValidateBasic() error {
-	_, err := btcec.ParseDERSignature(sig, btcec.S256())
+	_, err := ec.ParseDERSignature(sig)
 	if err != nil {
 		return err
 	}
@@ -29,12 +30,12 @@ func (sig Signature) ValidateBasic() error {
 
 // Verify checks if the signature matches the payload and public key
 func (sig Signature) Verify(payloadHash exported.Hash, pk exported.PublicKey) bool {
-	s, err := btcec.ParseDERSignature(sig, btcec.S256())
+	s, err := ec.ParseDERSignature(sig)
 	if err != nil {
 		return false
 	}
 
-	parsedKey, err := btcec.ParsePubKey(pk, btcec.S256())
+	parsedKey, err := btcec.ParsePubKey(pk)
 	if err != nil {
 		return false
 	}
@@ -47,8 +48,8 @@ func (sig Signature) String() string {
 	return hex.EncodeToString(sig)
 }
 
-func (sig Signature) toECDSASignature() btcec.Signature {
-	return *funcs.Must(btcec.ParseDERSignature(sig, btcec.S256()))
+func (sig Signature) toECDSASignature() ec.Signature {
+	return *funcs.Must(ec.ParseDERSignature(sig))
 }
 
 func sortAddresses[T sdk.Address](addrs []T) []T {

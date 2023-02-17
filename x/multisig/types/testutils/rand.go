@@ -3,7 +3,8 @@ package testutils
 import (
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
+	ec "github.com/btcsuite/btcd/btcec/v2/ecdsa"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
@@ -20,7 +21,7 @@ import (
 
 // PublicKey returns a random public key
 func PublicKey() exported.PublicKey {
-	privKey, _ := btcec.NewPrivateKey(btcec.S256())
+	privKey, _ := btcec.NewPrivateKey()
 
 	return privKey.PubKey().SerializeCompressed()
 }
@@ -105,8 +106,8 @@ func MultiSig() types.MultiSig {
 	sigs := make(map[string]types.Signature, len(participants))
 
 	for _, p := range participants {
-		sk := funcs.Must(btcec.NewPrivateKey(btcec.S256()))
-		sigs[p.String()] = funcs.Must(sk.Sign(payloadHash)).Serialize()
+		sk := funcs.Must(btcec.NewPrivateKey())
+		sigs[p.String()] = ec.Sign(sk, payloadHash).Serialize()
 	}
 
 	return types.MultiSig{

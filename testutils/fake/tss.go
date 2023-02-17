@@ -5,7 +5,9 @@ import (
 	"crypto/rand"
 	"sync"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/axelarnetwork/utils/funcs"
+	"github.com/btcsuite/btcd/btcec/v2"
+	ec "github.com/btcsuite/btcd/btcec/v2/ecdsa"
 )
 
 // Tofnd is a thread-safe fake that emulates the external tofnd process
@@ -41,7 +43,10 @@ func (t *Tofnd) KeyGen(keyID string) []byte {
 		t.keys[keyID] = sk
 	}
 
-	pk := btcec.PublicKey(sk.PublicKey)
+	var x, y btcec.FieldVal
+	x.SetByteSlice(sk.PublicKey.X.Bytes())
+	y.SetByteSlice(sk.PublicKey.Y.Bytes())
+	pk := btcec.NewPublicKey(&x, &y)
 	return pk.SerializeCompressed()
 }
 
@@ -76,11 +81,10 @@ func (t *Tofnd) getPrivateKey(keyID string) *ecdsa.PrivateKey {
 }
 
 func createSignature(key *ecdsa.PrivateKey, msg []byte) []byte {
-	r, s, err := ecdsa.Sign(rand.Reader, key, msg)
+	encodedSig, err := ecdsa.SignASN1(rand.Reader, key, msg)
 	if err != nil {
 		panic(err)
 	}
-	btcecSig := btcec.Signature{R: r, S: s}
-	sig := btcecSig.Serialize()
+	sig := funcs.Must(ec.ParseDERSignature(encodedSig)).Serialize()
 	return sig
 }

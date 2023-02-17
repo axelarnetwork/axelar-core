@@ -6,7 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
+	ec "github.com/btcsuite/btcd/btcec/v2/ecdsa"
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
@@ -66,14 +67,14 @@ func TestMgr_ProcessSigningStarted(t *testing.T) {
 	givenMgr.
 		When("is part of the listed participants", func() {
 			key := typestestutils.Key()
-			privateKey = funcs.Must(btcec.NewPrivateKey(btcec.S256()))
+			privateKey = funcs.Must(btcec.NewPrivateKey())
 			key.PubKeys[participant.String()] = privateKey.PubKey().SerializeCompressed()
 
 			event = types.NewSigningStarted(uint64(rand.PosI64()), key, rand.Bytes(exported.HashLength), rand.NormalizedStr(3))
 		}).
 		Then("should handle", func(t *testing.T) {
 			client.SignFunc = func(_ context.Context, in *tofnd.SignRequest, _ ...grpc.CallOption) (*tofnd.SignResponse, error) {
-				return &tofnd.SignResponse{SignResponse: &tofnd.SignResponse_Signature{Signature: funcs.Must(privateKey.Sign(in.MsgToSign)).Serialize()}}, nil
+				return &tofnd.SignResponse{SignResponse: &tofnd.SignResponse_Signature{Signature: ec.Sign(privateKey, in.MsgToSign).Serialize()}}, nil
 			}
 			broadcaster.BroadcastFunc = func(ctx context.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error) {
 				for _, msg := range msgs {

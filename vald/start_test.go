@@ -30,7 +30,7 @@ func TestPanic(t *testing.T) {
 			for i := 0; i < 100; i++ {
 				newBlock()
 			}
-			time.Sleep(5 * time.Millisecond)
+			time.Sleep(10 * time.Millisecond)
 			newBlock()
 		}()
 

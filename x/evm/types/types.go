@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
+	ec "github.com/btcsuite/btcd/btcec/v2/ecdsa"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -408,10 +408,35 @@ func (s Signature) ToHomesteadSig() []byte {
 }
 
 // ToSignature transforms an Axelar generated signature into a recoverable signature
-func ToSignature(sig btcec.Signature, hash common.Hash, pk ecdsa.PublicKey) (Signature, error) {
+func ToSignature(sig ec.Signature, hash common.Hash, pk ecdsa.PublicKey) (Signature, error) {
 	s := Signature{}
-	copy(s[:32], common.LeftPadBytes(sig.R.Bytes(), 32))
-	copy(s[32:], common.LeftPadBytes(sig.S.Bytes(), 32))
+	encSig := sig.Serialize()
+
+	// read R length
+	encSig = encSig[3:]
+	rLen := int(encSig[0])
+	encSig = encSig[1:]
+
+	// extract R
+	encR := encSig[:rLen]
+	if encR[0] == 0 {
+		encR = encR[1:]
+	}
+	copy(s[:32], common.LeftPadBytes(encR, 32))
+	encSig = encSig[rLen:]
+
+	// read S length
+	encSig = encSig[1:]
+	sLen := int(encSig[0])
+	encSig = encSig[1:]
+
+	// extract S
+	encS := encSig[:sLen]
+	if encS[0] == 0 {
+		encS = encS[1:]
+	}
+	copy(s[32:], common.LeftPadBytes(encS, 32))
+
 	// s[64] = 0 implicit
 
 	derivedPK, err := crypto.SigToPub(hash.Bytes(), s[:])

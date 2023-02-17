@@ -3,7 +3,8 @@ package types_test
 import (
 	"testing"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
+	ec "github.com/btcsuite/btcd/btcec/v2/ecdsa"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 
@@ -329,22 +330,22 @@ func TestSignature_Verify(t *testing.T) {
 		sig     types.Signature
 	)
 	Given("a private key", func() {
-		sk = funcs.Must(btcec.NewPrivateKey(btcec.S256()))
+		sk = funcs.Must(btcec.NewPrivateKey())
 	}).
 		Given("a payload", func() {
 			payload = rand.Bytes(30)
 		}).
 		Branch(
 			When("a signature is created", func() {
-				s := funcs.Must(sk.Sign(payload))
+				s := ec.Sign(sk, payload)
 				sig = s.Serialize()
 			}).
 				Then("signature verification succeeds", func(t *testing.T) {
 					assert.True(t, sig.Verify(payload, sk.PubKey().SerializeCompressed()))
 				}),
 			When("a an invalid signature is created", func() {
-				wrongKey := funcs.Must(btcec.NewPrivateKey(btcec.S256()))
-				s := funcs.Must(wrongKey.Sign(payload))
+				wrongKey := funcs.Must(btcec.NewPrivateKey())
+				s := ec.Sign(wrongKey, payload)
 				sig = s.Serialize()
 			}).
 				Then("signature verification fails", func(t *testing.T) {
