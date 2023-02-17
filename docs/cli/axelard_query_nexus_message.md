@@ -1,9 +1,9 @@
 ## axelard query nexus message
 
-Returns the general message with the given ID
+Returns the cross-chain message with the given ID
 
 ```
-axelard query nexus message [ID] [flags]
+axelard query nexus message [id] [flags]
 ```
 
 ### Options

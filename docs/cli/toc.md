@@ -124,7 +124,7 @@
       - [chains](axelard_query_nexus_chains.md)	 - Returns the registered chain names
       - [fee-info \[chain\] \[asset\]](axelard_query_nexus_fee-info.md)	 - Returns the per-chain fee for a registered asset
       - [latest-deposit-address \[deposit chain\] \[recipient chain\] \[recipient address\]](axelard_query_nexus_latest-deposit-address.md)	 - Query for account by address
-      - [message \[ID\]](axelard_query_nexus_message.md)	 - Returns the general message with the given ID
+      - [message \[id\]](axelard_query_nexus_message.md)	 - Returns the cross-chain message with the given ID
       - [recipient-address \[chain\] \[address\]](axelard_query_nexus_recipient-address.md)	 - Returns the recipient address corresponding to the given deposit address
       - [transfer-fee \[source-chain\] \[destination-chain\] \[amount\]](axelard_query_nexus_transfer-fee.md)	 - Returns the fee incurred on a cross-chain transfer
       - [transfer-rate-limit \[chain\] \[asset\]](axelard_query_nexus_transfer-rate-limit.md)	 - Returns the transfer rate limit for a given chain and asset
