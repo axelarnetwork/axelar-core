@@ -446,8 +446,8 @@ func getCmdTransferRateLimit() *cobra.Command {
 
 func getCmdMessage() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "message [ID]",
-		Short: "Returns the general message with the given ID",
+		Use:   "message [id]",
+		Short: "Returns the cross-chain message with the given ID",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)

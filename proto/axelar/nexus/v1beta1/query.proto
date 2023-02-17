@@ -152,6 +152,8 @@ message TransferRateLimit {
       [ (gogoproto.stdduration) = true, (gogoproto.nullable) = false ];
 }
 
-message MessageRequest { string ID = 1; }
+message MessageRequest { string id = 1 [ (gogoproto.customname) = "ID" ]; }
 
-message MessageResponse { exported.v1beta1.GeneralMessage message = 1; }
+message MessageResponse {
+  exported.v1beta1.GeneralMessage message = 1 [ (gogoproto.nullable) = false ];
+}

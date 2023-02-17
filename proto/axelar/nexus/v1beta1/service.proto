@@ -139,7 +139,6 @@ service QueryService {
   }
 
   rpc Message(MessageRequest) returns (MessageResponse) {
-    option (google.api.http).get = "/axelar/nexus/v1beta1/message/"
-                                   "{ID}";
+    option (google.api.http).get = "/axelar/nexus/v1beta1/message";
   }
 }

@@ -285,11 +285,12 @@ func (q Querier) Message(c context.Context, req *types.MessageRequest) (*types.M
 
 	id := req.ID
 
-	if msg, found := q.keeper.GetMessage(ctx, id); found {
-
-		return &types.MessageResponse{
-			Message: &msg,
-		}, nil
+	msg, found := q.keeper.GetMessage(ctx, id)
+	if !found {
+		return nil, status.Errorf(codes.NotFound, "message not found: %s", id)
 	}
-	return nil, status.Errorf(codes.NotFound, "message not found: %s", id)
+
+	return &types.MessageResponse{
+		Message: msg,
+	}, nil
 }

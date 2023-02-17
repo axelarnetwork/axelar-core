@@ -10531,7 +10531,7 @@ paths:
             type: string
       tags:
         - QueryService
-  "/axelar/nexus/v1beta1/message/{ID}":
+  /axelar/nexus/v1beta1/message:
     get:
       operationId: Message
       responses:
@@ -10797,9 +10797,9 @@ paths:
                               "value": "1.212s"
                             }
       parameters:
-        - name: ID
-          in: path
-          required: true
+        - name: id
+          in: query
+          required: false
           schema:
             type: string
       tags:
