@@ -137,4 +137,8 @@ service QueryService {
     option (google.api.http).get = "/axelar/nexus/v1beta1/transfer_rate_limit/"
                                    "{chain}/{asset}";
   }
+
+  rpc Message(MessageRequest) returns (MessageResponse) {
+    option (google.api.http).get = "/axelar/nexus/v1beta1/message";
+  }
 }
