@@ -60,7 +60,7 @@ require (
 	github.com/cosmos/btcutil v1.0.4 // indirect
 	github.com/cosmos/go-bip39 v1.0.0 // indirect
 	github.com/cosmos/gorocksdb v1.2.0 // indirect
-	github.com/cosmos/iavl v0.19.3 // indirect
+	github.com/cosmos/iavl v0.19.4 // indirect
 	github.com/cosmos/ledger-cosmos-go v0.11.1 // indirect
 	github.com/cosmos/ledger-go v0.9.2 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
@@ -174,4 +174,4 @@ replace github.com/btcsuite/btcd/btcec/v2 => github.com/btcsuite/btcd/btcec/v2 v
 replace github.com/confio/ics23/go => github.com/cosmos/cosmos-sdk/ics23/go v0.8.0
 
 // Temporary replacement for rosetta support
-replace github.com/cosmos/cosmos-sdk => github.com/axelarnetwork/cosmos-sdk v0.45.10-0.20221026063150-7d9818dc359a
+replace github.com/cosmos/cosmos-sdk => github.com/axelarnetwork/cosmos-sdk v0.45.12-0.20230217215310-6a0c8cbf9b5d

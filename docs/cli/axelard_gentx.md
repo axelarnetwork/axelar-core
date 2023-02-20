@@ -42,7 +42,7 @@ axelard gentx [key_name] [amount] [flags]
       --commission-max-rate string          The maximum commission rate percentage
       --commission-rate string              The initial commission rate percentage
       --details string                      The validator's (optional) details
-      --dry-run                             ignore the --gas flag and perform a simulation of a transaction, but don't broadcast it
+      --dry-run                             ignore the --gas flag and perform a simulation of a transaction, but don't broadcast it (when enabled, the local Keybase is not accessible)
       --fee-account string                  Fee account pays fees for the transaction instead of deducting from the signer
       --fees string                         Fees to pay along with transaction; eg: 10uatom
       --from string                         Name or address of private key with which to sign
