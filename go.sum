@@ -122,8 +122,8 @@ github.com/aws/aws-sdk-go-v2/service/route53 v1.1.1/go.mod h1:rLiOUrPLW/Er5kRcQ7
 github.com/aws/aws-sdk-go-v2/service/sso v1.1.1/go.mod h1:SuZJxklHxLAXgLTc1iFXbEWkXs7QRTQpCLGaKIprQW0=
 github.com/aws/aws-sdk-go-v2/service/sts v1.1.1/go.mod h1:Wi0EBZwiz/K44YliU0EKxqTCJGUfYTWXrrBwkq736bM=
 github.com/aws/smithy-go v1.1.0/go.mod h1:EzMw8dbp/YJL4A5/sbhGddag+NPT7q084agLbB9LgIw=
-github.com/axelarnetwork/cosmos-sdk v0.45.10-0.20221026063150-7d9818dc359a h1:URWy/3sbSgZAMyyVVfeJNe0llIoWV+pbBkdMHS169o0=
-github.com/axelarnetwork/cosmos-sdk v0.45.10-0.20221026063150-7d9818dc359a/go.mod h1:Z5M4TX7PsHNHlF/1XanI2DIpORQ+Q/st7oaeufEjnvU=
+github.com/axelarnetwork/cosmos-sdk v0.45.12-0.20230217215310-6a0c8cbf9b5d h1:0LFAoLYOEdn54PKTkUTLo7EoJin29X4SoXvcRpnDwKk=
+github.com/axelarnetwork/cosmos-sdk v0.45.12-0.20230217215310-6a0c8cbf9b5d/go.mod h1:45z8Q1Ah4iypFycu2Kl4kBPIsQKUiND8G2CUX+HTtPM=
 github.com/axelarnetwork/tm-events v0.0.0-20221019195821-9a3f03bc6ca6 h1:bNjORqBmAgv3hEwfm4M9nqjGE9XhbvX9n+5ha2QXZYw=
 github.com/axelarnetwork/tm-events v0.0.0-20221019195821-9a3f03bc6ca6/go.mod h1:nRFBzknkN/o4e8FmOrfF8HREzSmSWrAwTrSyJ48N4B8=
 github.com/axelarnetwork/utils v0.0.0-20221213003031-66c703710da3 h1:1K8+r1kLCg5IXjpqRMhKoD/3LTu7QpzNETYECg5Ybjo=
@@ -204,8 +204,8 @@ github.com/cosmos/go-bip39 v1.0.0 h1:pcomnQdrdH22njcAatO0yWojsUnCO3y2tNoV1cb6hHY
 github.com/cosmos/go-bip39 v1.0.0/go.mod h1:RNJv0H/pOIVgxw6KS7QeX2a0Uo0aKUlfhZ4xuwvCdJw=
 github.com/cosmos/gorocksdb v1.2.0 h1:d0l3jJG8M4hBouIZq0mDUHZ+zjOx044J3nGRskwTb4Y=
 github.com/cosmos/gorocksdb v1.2.0/go.mod h1:aaKvKItm514hKfNJpUJXnnOWeBnk2GL4+Qw9NHizILw=
-github.com/cosmos/iavl v0.19.3 h1:cESO0OwTTxQm5rmyESKW+zESheDUYI7CcZDWWDwnuxg=
-github.com/cosmos/iavl v0.19.3/go.mod h1:X9PKD3J0iFxdmgNLa7b2LYWdsGd90ToV5cAONApkEPw=
+github.com/cosmos/iavl v0.19.4 h1:t82sN+Y0WeqxDLJRSpNd8YFX5URIrT+p8n6oJbJ2Dok=
+github.com/cosmos/iavl v0.19.4/go.mod h1:X9PKD3J0iFxdmgNLa7b2LYWdsGd90ToV5cAONApkEPw=
 github.com/cosmos/ibc-go/v4 v4.2.0 h1:Fx/kKq/uvawrAxk6ZrQ6sEIgffLRU5Cs/AUnvpPBrHI=
 github.com/cosmos/ibc-go/v4 v4.2.0/go.mod h1:57qWScDtfCx3FOMLYmBIKPbOLE6xiVhrgxHAQmbWYXM=
 github.com/cosmos/ledger-cosmos-go v0.11.1 h1:9JIYsGnXP613pb2vPjFeMMjBI5lEDsEaF6oYorTy6J4=

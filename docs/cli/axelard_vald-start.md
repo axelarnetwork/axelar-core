@@ -10,7 +10,7 @@ axelard vald-start [flags]
   -a, --account-number uint         The account number of the signing account (offline mode only)
   -b, --broadcast-mode string       Transaction broadcasting mode (sync|async|block) (default "sync")
       --chain-id string             The network chain ID (default "axelar")
-      --dry-run                     ignore the --gas flag and perform a simulation of a transaction, but don't broadcast it
+      --dry-run                     ignore the --gas flag and perform a simulation of a transaction, but don't broadcast it (when enabled, the local Keybase is not accessible)
       --fee-account string          Fee account pays fees for the transaction instead of deducting from the signer
       --fees string                 Fees to pay along with transaction; eg: 10uatom
       --from string                 Name or address of private key with which to sign
