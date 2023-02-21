@@ -10,7 +10,7 @@ jobs:
         go-version:
           - 1.19
         os:
-          - ubuntu-18.04
+          - ubuntu-20.04
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout code
