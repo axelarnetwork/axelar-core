@@ -23,6 +23,7 @@ func NewGenesisState(
 	feeInfos []exported.FeeInfo,
 	rateLimits []RateLimit,
 	transferEpochs []TransferEpoch,
+	messages []exported.GeneralMessage,
 ) *GenesisState {
 	return &GenesisState{
 		Params:          params,
@@ -35,6 +36,7 @@ func NewGenesisState(
 		FeeInfos:        feeInfos,
 		RateLimits:      rateLimits,
 		TransferEpochs:  transferEpochs,
+		Messages:        messages,
 	}
 }
 
@@ -54,6 +56,7 @@ func DefaultGenesisState() *GenesisState {
 		[]exported.FeeInfo{},
 		[]RateLimit{},
 		[]TransferEpoch{},
+		[]exported.GeneralMessage{},
 	)
 }
 
@@ -105,6 +108,12 @@ func (m GenesisState) Validate() error {
 
 	for _, transferEpoch := range m.TransferEpochs {
 		if err := transferEpoch.ValidateBasic(); err != nil {
+			return getValidateError(err)
+		}
+	}
+
+	for _, m := range m.Messages {
+		if err := m.ValidateBasic(); err != nil {
 			return getValidateError(err)
 		}
 	}

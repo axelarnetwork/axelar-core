@@ -90,6 +90,10 @@ func (k Keeper) InitGenesis(ctx sdk.Context, genState *types.GenesisState) {
 
 		k.setTransferEpoch(ctx, transferEpoch)
 	}
+
+	for _, msg := range genState.Messages {
+		funcs.MustNoErr(k.SetNewMessage(ctx, msg))
+	}
 }
 
 // ExportGenesis returns the reward module's genesis state.
@@ -105,5 +109,6 @@ func (k Keeper) ExportGenesis(ctx sdk.Context) *types.GenesisState {
 		k.getFeeInfos(ctx),
 		k.getRateLimits(ctx),
 		k.getTransferEpochs(ctx),
+		k.getMessages(ctx),
 	)
 }

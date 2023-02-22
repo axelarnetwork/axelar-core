@@ -1,12 +1,14 @@
 package keeper
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
@@ -41,6 +43,21 @@ func setup() (sdk.Context, Keeper) {
 		subspace,
 	)
 
+	axelarnetK := &mock.BaseKeeperMock{
+		GetCosmosChainByNameFunc: func(ctx sdk.Context, chain exported.ChainName) (axelarnetTypes.CosmosChain, bool) {
+			return axelarnetTypes.CosmosChain{Name: axelarnet.Axelarnet.Name, AddrPrefix: "axelar"}, true
+		},
+	}
+
+	bankK := &mock.BankKeeperMock{
+		BlockedAddrFunc: func(addr sdk.AccAddress) bool { return false },
+	}
+
+	router := types.NewRouter()
+	router.AddAddressValidator(evmTypes.ModuleName, evmkeeper.NewAddressValidator()).
+		AddAddressValidator(axelarnetTypes.ModuleName, axelarnetkeeper.NewAddressValidator(axelarnetK, bankK))
+	keeper.SetRouter(router)
+
 	return ctx, keeper
 }
 
@@ -59,6 +76,20 @@ func getRandomEthereumAddress() exported.CrossChainAddress {
 	}
 }
 
+func getRandomMessage() exported.GeneralMessage {
+
+	return exported.GeneralMessage{
+		ID: fmt.Sprintf("%s-%d", common.BytesToHash(rand.Bytes(32)), rand.PosI64()),
+
+		Sender:      getRandomAxelarnetAddress(),
+		Recipient:   getRandomEthereumAddress(),
+		Status:      exported.Sent,
+		PayloadHash: crypto.Keccak256Hash(rand.Bytes(int(rand.I64Between(1, 100)))).Bytes(),
+		Asset:       nil,
+	}
+
+}
+
 func assertChainStatesEqual(t *testing.T, expected, actual *types.GenesisState) {
 	assert.Equal(t, expected.Params, actual.Params)
 	assert.Equal(t, expected.Nonce, actual.Nonce)
@@ -69,6 +100,7 @@ func assertChainStatesEqual(t *testing.T, expected, actual *types.GenesisState) 
 	assert.Equal(t, expected.Fee, actual.Fee)
 	assert.ElementsMatch(t, expected.FeeInfos, actual.FeeInfos)
 	assert.ElementsMatch(t, expected.RateLimits, actual.RateLimits)
+	assert.ElementsMatch(t, expected.Messages, actual.Messages)
 	// TODO: Track this with some random transfers
 	// assert.ElementsMatch(t, expected.TransferEpochs, actual.TransferEpochs)
 }
@@ -77,21 +109,6 @@ func TestExportGenesisInitGenesis(t *testing.T) {
 	ctx, keeper := setup()
 
 	keeper.InitGenesis(ctx, types.DefaultGenesisState())
-
-	axelarnetK := &mock.BaseKeeperMock{
-		GetCosmosChainByNameFunc: func(ctx sdk.Context, chain exported.ChainName) (axelarnetTypes.CosmosChain, bool) {
-			return axelarnetTypes.CosmosChain{Name: axelarnet.Axelarnet.Name, AddrPrefix: "axelar"}, true
-		},
-	}
-
-	bankK := &mock.BankKeeperMock{
-		BlockedAddrFunc: func(addr sdk.AccAddress) bool { return false },
-	}
-
-	router := types.NewRouter()
-	router.AddAddressValidator(evmTypes.ModuleName, evmkeeper.NewAddressValidator()).
-		AddAddressValidator(axelarnetTypes.ModuleName, axelarnetkeeper.NewAddressValidator(axelarnetK, bankK))
-	keeper.SetRouter(router)
 
 	expected := types.DefaultGenesisState()
 
@@ -185,6 +202,13 @@ func TestExportGenesisInitGenesis(t *testing.T) {
 				expected.FeeInfos = append(expected.FeeInfos, feeInfo)
 			}
 		}
+	}
+
+	messageCount := rand.I64Between(100, 256)
+	for i := 0; i < int(messageCount); i++ {
+		msg := getRandomMessage()
+		expected.Messages = append(expected.Messages, msg)
+		funcs.MustNoErr(keeper.SetNewMessage(ctx, msg))
 	}
 
 	actual := keeper.ExportGenesis(ctx)
