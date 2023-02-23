@@ -5646,6 +5646,7 @@ GenesisState represents the genesis state
 | `rate_limits` | [RateLimit](#axelar.nexus.v1beta1.RateLimit) | repeated |  |
 | `transfer_epochs` | [TransferEpoch](#axelar.nexus.v1beta1.TransferEpoch) | repeated |  |
 | `messages` | [axelar.nexus.exported.v1beta1.GeneralMessage](#axelar.nexus.exported.v1beta1.GeneralMessage) | repeated |  |
+| `message_nonce` | [uint64](#uint64) |  |  |
 
 
 

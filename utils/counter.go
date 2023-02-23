@@ -32,6 +32,11 @@ func (c Counter[T]) Incr(ctx sdk.Context) T {
 	return curr
 }
 
+// Set sets the counter to an arbitrary value. Should only be used when importing a genesis state
+func (c Counter[T]) Set(ctx sdk.Context, v T) {
+	c.store.SetRawNew(c.key, convert.IntToBytes(v))
+}
+
 // Curr returns the current value of the counter
 func (c Counter[T]) Curr(ctx sdk.Context) T {
 	bz := c.store.GetRawNew(c.key)

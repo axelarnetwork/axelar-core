@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -76,11 +75,10 @@ func getRandomEthereumAddress() exported.CrossChainAddress {
 	}
 }
 
-func getRandomMessage() exported.GeneralMessage {
+func getRandomMessage(id string) exported.GeneralMessage {
 
 	return exported.GeneralMessage{
-		ID: fmt.Sprintf("%s-%d", common.BytesToHash(rand.Bytes(32)), rand.PosI64()),
-
+		ID:          id,
 		Sender:      getRandomAxelarnetAddress(),
 		Recipient:   getRandomEthereumAddress(),
 		Status:      exported.Sent,
@@ -101,6 +99,7 @@ func assertChainStatesEqual(t *testing.T, expected, actual *types.GenesisState) 
 	assert.ElementsMatch(t, expected.FeeInfos, actual.FeeInfos)
 	assert.ElementsMatch(t, expected.RateLimits, actual.RateLimits)
 	assert.ElementsMatch(t, expected.Messages, actual.Messages)
+	assert.Equal(t, expected.MessageNonce, actual.MessageNonce)
 	// TODO: Track this with some random transfers
 	// assert.ElementsMatch(t, expected.TransferEpochs, actual.TransferEpochs)
 }
@@ -206,10 +205,11 @@ func TestExportGenesisInitGenesis(t *testing.T) {
 
 	messageCount := rand.I64Between(100, 256)
 	for i := 0; i < int(messageCount); i++ {
-		msg := getRandomMessage()
+		msg := getRandomMessage(keeper.GenerateMessageID(ctx))
 		expected.Messages = append(expected.Messages, msg)
 		funcs.MustNoErr(keeper.SetNewMessage(ctx, msg))
 	}
+	expected.MessageNonce = uint64(messageCount)
 
 	actual := keeper.ExportGenesis(ctx)
 

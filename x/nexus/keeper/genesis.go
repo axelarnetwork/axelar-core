@@ -5,6 +5,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 	"github.com/axelarnetwork/utils/funcs"
@@ -94,6 +95,8 @@ func (k Keeper) InitGenesis(ctx sdk.Context, genState *types.GenesisState) {
 	for _, msg := range genState.Messages {
 		funcs.MustNoErr(k.SetNewMessage(ctx, msg))
 	}
+
+	utils.NewCounter[uint64](messageNonceKey, k.getStore(ctx)).Set(ctx, genState.MessageNonce)
 }
 
 // ExportGenesis returns the reward module's genesis state.
@@ -110,5 +113,6 @@ func (k Keeper) ExportGenesis(ctx sdk.Context) *types.GenesisState {
 		k.getRateLimits(ctx),
 		k.getTransferEpochs(ctx),
 		k.getMessages(ctx),
+		utils.NewCounter[uint64](messageNonceKey, k.getStore(ctx)).Curr(ctx),
 	)
 }

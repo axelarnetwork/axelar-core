@@ -24,6 +24,7 @@ func NewGenesisState(
 	rateLimits []RateLimit,
 	transferEpochs []TransferEpoch,
 	messages []exported.GeneralMessage,
+	messageNonce uint64,
 ) *GenesisState {
 	return &GenesisState{
 		Params:          params,
@@ -37,6 +38,7 @@ func NewGenesisState(
 		RateLimits:      rateLimits,
 		TransferEpochs:  transferEpochs,
 		Messages:        messages,
+		MessageNonce:    messageNonce,
 	}
 }
 
@@ -57,6 +59,7 @@ func DefaultGenesisState() *GenesisState {
 		[]RateLimit{},
 		[]TransferEpoch{},
 		[]exported.GeneralMessage{},
+		0,
 	)
 }
 
