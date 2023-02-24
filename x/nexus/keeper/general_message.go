@@ -12,6 +12,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/key"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 )
@@ -74,6 +75,13 @@ func (k Keeper) SetNewMessage(ctx sdk.Context, m exported.GeneralMessage) error 
 			return err
 		}
 	}
+
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.MessageReceived{
+		ID:          m.ID,
+		PayloadHash: m.PayloadHash,
+		Sender:      m.Sender,
+		Recipient:   m.Recipient,
+	}))
 
 	return k.setMessage(ctx, m)
 }
@@ -173,6 +181,7 @@ func (k Keeper) deleteSentMessageID(ctx sdk.Context, m exported.GeneralMessage) 
 	k.getStore(ctx).DeleteNew(getSentMessageKey(m.GetDestinationChain(), m.ID))
 }
 
+//nolint:unused // TODO: add genesis import/export
 func (k Keeper) getMessages(ctx sdk.Context) (generalMessages []exported.GeneralMessage) {
 	iter := k.getStore(ctx).IteratorNew(generalMessagePrefix)
 	defer utils.CloseLogError(iter, k.Logger(ctx))
@@ -198,11 +207,13 @@ func (k Keeper) GetSentMessages(ctx sdk.Context, chain exported.ChainName, limit
 		CountTotal: false,
 		Reverse:    false,
 	}
+	keyPrefix := append(sentMessagePrefix.Append(key.From(chain)).Bytes(), []byte(key.DefaultDelimiter)...)
 
-	query.Paginate(prefix.NewStore(k.getStore(ctx).KVStore, append(sentMessagePrefix.Append(key.From(chain)).Bytes(), []byte(key.DefaultDelimiter)...)), pageRequest, func(key []byte, value []byte) error {
+	// it's unexpected to get a retrieval/iterator error from IAVL db
+	funcs.Must(query.Paginate(prefix.NewStore(k.getStore(ctx).KVStore, keyPrefix), pageRequest, func(key []byte, value []byte) error {
 		ids = append(ids, string(value))
 		return nil
-	})
+	}))
 
 	return slices.Map(ids, func(id string) exported.GeneralMessage {
 		return funcs.MustOk(k.GetMessage(ctx, id))

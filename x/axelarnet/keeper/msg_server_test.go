@@ -1196,7 +1196,7 @@ func TestHandleCallContract(t *testing.T) {
 			return nexus.Chain{
 				Name:                  chain,
 				SupportsForeignAssets: true,
-				Module:                rand.Str(10),
+				Module:                evmtypes.ModuleName,
 				KeyType:               tss.Multisig,
 			}, true
 		}

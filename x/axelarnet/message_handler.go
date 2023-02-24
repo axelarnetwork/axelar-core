@@ -56,7 +56,7 @@ func validateMessage(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.Nexus, ibcP
 		return err
 	}
 
-	// only allow sends message to EVM chains
+	// only allow sending messages to EVM chains
 	if (msg.Type == nexus.TypeGeneralMessage || msg.Type == nexus.TypeGeneralMessageWithToken) &&
 		!destChain.IsFrom(evmtypes.ModuleName) {
 		return fmt.Errorf("destination chain is not an EVM chain")
@@ -80,7 +80,7 @@ func validateMessage(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.Nexus, ibcP
 }
 
 // OnRecvMessage handles general message from a cosmos chain
-func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n types.Nexus, b types.BankKeeper, packet ibcexported.PacketI) ibcexported.Acknowledgement {
+func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n types.Nexus, b types.BankKeeper, r RateLimiter, packet ibcexported.PacketI) ibcexported.Acknowledgement {
 	// the acknowledgement is considered successful if it is a ResultAcknowledgement,
 	// follow ibc transfer convention, put byte(1) in ResultAcknowledgement to indicate success.
 	ack := channeltypes.NewResultAcknowledgement([]byte{byte(1)})
@@ -92,6 +92,12 @@ func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n ty
 
 	// skip if packet not sent to Axelar message sender account
 	if data.GetReceiver() != types.MessageSender.String() {
+		// Rate limit non-GMP IBC transfers
+		// IBC receives are rate limited on the Incoming direction (tokens coming in to Axelar hub).
+		if err := r.RateLimitPacket(ctx, packet, nexus.Incoming, types.NewIBCPath(packet.GetDestPort(), packet.GetDestChannel())); err != nil {
+			return channeltypes.NewErrorAcknowledgement(err)
+		}
+
 		return ack
 	}
 
@@ -102,6 +108,9 @@ func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n ty
 
 	// extract token from packet
 	token, err := extractTokenFromPacketData(ctx, ibcK, n, packet)
+	if err != nil {
+		return channeltypes.NewErrorAcknowledgement(err)
+	}
 
 	path := types.NewIBCPath(packet.GetDestPort(), packet.GetDestChannel())
 
@@ -120,12 +129,16 @@ func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n ty
 		Address: data.GetSender(),
 	}
 
+	rateLimitPacket := true
+
 	switch msg.Type {
 	case nexus.TypeGeneralMessage:
 		err = handleMessage(ctx, n, sourceAddress, msg)
 	case nexus.TypeGeneralMessageWithToken:
 		err = handleMessageWithToken(ctx, n, b, sourceAddress, msg, token)
 	case nexus.TypeSendToken:
+		// Send token is already rate limited in nexus.EnqueueTransfer
+		rateLimitPacket = false
 		err = handleTokenSent(ctx, n, b, sourceAddress, msg, token)
 	default:
 		err = sdkerrors.Wrapf(types.ErrGeneralMessage, "unrecognized Message type")
@@ -139,6 +152,13 @@ func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n ty
 			"sequence", packet.GetSequence(),
 		)
 		return channeltypes.NewErrorAcknowledgement(err)
+	}
+
+	if rateLimitPacket {
+		// IBC receives are rate limited on the Incoming direction (tokens coming in to Axelar hub).
+		if err := r.RateLimitPacket(ctx, packet, nexus.Incoming, types.NewIBCPath(packet.GetDestPort(), packet.GetDestChannel())); err != nil {
+			return channeltypes.NewErrorAcknowledgement(err)
+		}
 	}
 
 	return ack

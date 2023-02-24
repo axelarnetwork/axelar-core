@@ -178,4 +178,4 @@ replace github.com/btcsuite/btcd/btcec/v2 => github.com/btcsuite/btcd/btcec/v2 v
 replace github.com/confio/ics23/go => github.com/cosmos/cosmos-sdk/ics23/go v0.8.0
 
 // Temporary replacement for rosetta support
-replace github.com/cosmos/cosmos-sdk => github.com/axelarnetwork/cosmos-sdk v0.45.10-0.20221026063150-7d9818dc359a
+replace github.com/cosmos/cosmos-sdk => github.com/axelarnetwork/cosmos-sdk v0.45.12-0.20230221153500-10143b5bd119

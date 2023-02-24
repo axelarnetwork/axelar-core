@@ -57,7 +57,7 @@ axelard start [flags]
       --halt-time uint                                  Minimum block time (in Unix seconds) at which to gracefully halt the chain and shutdown the node
   -h, --help                                            help for start
       --home string                                     The application home directory (default "$HOME/.axelar")
-      --iavl-disable-fastnode                           Enable fast node for IAVL tree (default true)
+      --iavl-disable-fastnode                           Disable fast node for IAVL tree (default true)
       --inter-block-cache                               Enable inter-block caching (default true)
       --inv-check-period uint                           Assert registered invariants every N blocks
       --min-retain-blocks uint                          Minimum block height offset during ABCI commit to prune Tendermint blocks

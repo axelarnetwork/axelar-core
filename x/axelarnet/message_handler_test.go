@@ -40,6 +40,7 @@ func TestHandleMessage(t *testing.T) {
 		n        *mock.NexusMock
 		channelK *mock.ChannelKeeperMock
 		ibcK     keeper.IBCKeeper
+		r        axelarnet.RateLimiter
 
 		ics20Packet ibctransfertypes.FungibleTokenPacketData
 		message     axelarnet.Message
@@ -86,6 +87,9 @@ func TestHandleMessage(t *testing.T) {
 				hash := sha256.Sum256(ctx.TxBytes())
 				return fmt.Sprintf("%s-%d", hex.EncodeToString(hash[:]), 0)
 			},
+			RateLimitTransferFunc: func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error {
+				return nil
+			},
 		}
 		ibcK = keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{
 			GetDenomTraceFunc: func(ctx sdk.Context, denomTraceHash tmbytes.HexBytes) (ibctransfertypes.DenomTrace, bool) {
@@ -95,28 +99,49 @@ func TestHandleMessage(t *testing.T) {
 				}, true
 			},
 		}, &mock.ChannelKeeperMock{})
+
+		r = axelarnet.NewRateLimiter(k, channelK, n)
 	})
+
+	whenRateLimitIsSet := func(randDenom bool) func() {
+		return func() {
+			token := sdk.NewCoin(ics20Packet.GetDenom(), funcs.MustOk(sdk.NewIntFromString(ics20Packet.Amount)))
+			if randDenom {
+				token.Denom = rand.Denom(10, 20)
+			}
+
+			n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error {
+				if direction == nexus.Incoming && asset.Equal(token) {
+					return fmt.Errorf("rate limit exceeded")
+				}
+
+				return nil
+			}
+		}
+	}
 
 	ackError := func() func(t *testing.T) {
 		return func(t *testing.T) {
-			acknowledgement := axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, packet)
+			acknowledgement := axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, r, packet)
 			var ack ibcchanneltypes.Acknowledgement
 			funcs.MustNoErr(ibctransfertypes.ModuleCdc.UnmarshalJSON(acknowledgement.Acknowledgement(), &ack))
 			assert.False(t, ack.Success())
 		}
 	}
 
-	givenPacketWithMessage.
-		When("packet receiver is not Axelar gmp account", func() {
-			ics20Packet = ibctransfertypes.NewFungibleTokenPacketData(
-				rand.Denom(5, 10), strconv.FormatInt(rand.PosI64(), 10), rand.AccAddr().String(), rand.AccAddr().String(),
-			)
+	nonGMPPacket := func() {
+		ics20Packet = ibctransfertypes.NewFungibleTokenPacketData(
+			rand.Denom(5, 10), strconv.FormatInt(rand.PosI64(), 10), rand.AccAddr().String(), rand.AccAddr().String(),
+		)
 
-			ics20Packet.Memo = string(rand.BytesBetween(100, 500))
-			packet = axelartestutils.RandomPacket(ics20Packet, ibctransfertypes.PortID, sourceChannel, ibctransfertypes.PortID, receiverChannel)
-		}).
+		ics20Packet.Memo = string(rand.BytesBetween(100, 500))
+		packet = axelartestutils.RandomPacket(ics20Packet, ibctransfertypes.PortID, sourceChannel, ibctransfertypes.PortID, receiverChannel)
+	}
+
+	givenPacketWithMessage.
+		When("packet receiver is not Axelar gmp account", nonGMPPacket).
 		Then("should not handle message", func(t *testing.T) {
-			acknowledgement := axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, packet)
+			acknowledgement := axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, r, packet)
 			assert.True(t, acknowledgement.Success())
 		}).
 		Run(t)
@@ -185,6 +210,29 @@ func TestHandleMessage(t *testing.T) {
 		}
 	}
 
+	givenPacketWithMessage.
+		When("packet receiver is not Axelar gmp account", nonGMPPacket).
+		When("source chain is valid", func() {
+			isIBCPathRegistered(true)()
+			isChainActivated(srcChain, true)()
+		}).
+		When("rate limit is set", whenRateLimitIsSet(false)).
+		Then("should fail due to ibc transfer rate limit", ackError()).
+		Run(t)
+
+	givenPacketWithMessage.
+		When("packet receiver is not Axelar gmp account", nonGMPPacket).
+		When("source chain is valid", func() {
+			isIBCPathRegistered(true)()
+			isChainActivated(srcChain, true)()
+		}).
+		When("rate limit is set on another asset", whenRateLimitIsSet(true)).
+		Then("should not handle message", func(t *testing.T) {
+			acknowledgement := axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, r, packet)
+			assert.True(t, acknowledgement.Success())
+		}).
+		Run(t)
+
 	whenSourceChainIsValid := whenPacketReceiverIsGMPAccount.
 		When("source chain is valid", func() {
 			isIBCPathRegistered(true)()
@@ -226,8 +274,14 @@ func TestHandleMessage(t *testing.T) {
 		})
 
 	whenMessageIsValid.
+		When("rate limit is set", whenRateLimitIsSet(false)).
+		Then("should return ack error", ackError()).
+		Run(t)
+
+	whenMessageIsValid.
+		When("rate limit on another asset is set", whenRateLimitIsSet(true)).
 		Then("should return ack success", func(t *testing.T) {
-			assert.True(t, axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, packet).Success())
+			assert.True(t, axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, r, packet).Success())
 		}).
 		Run(t)
 }
@@ -241,6 +295,7 @@ func TestHandleMessageWithToken(t *testing.T) {
 		n        *mock.NexusMock
 		channelK *mock.ChannelKeeperMock
 		ibcK     keeper.IBCKeeper
+		r        axelarnet.RateLimiter
 
 		denom       string
 		amount      string
@@ -315,6 +370,9 @@ func TestHandleMessageWithToken(t *testing.T) {
 				hash := sha256.Sum256(ctx.TxBytes())
 				return fmt.Sprintf("%s-%d", hex.EncodeToString(hash[:]), 0)
 			},
+			RateLimitTransferFunc: func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error {
+				return nil
+			},
 		}
 		ibcK = keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{
 			GetDenomTraceFunc: func(ctx sdk.Context, denomTraceHash tmbytes.HexBytes) (ibctransfertypes.DenomTrace, bool) {
@@ -335,11 +393,12 @@ func TestHandleMessageWithToken(t *testing.T) {
 				return nil
 			},
 		}
+		r = axelarnet.NewRateLimiter(k, channelK, n)
 	})
 
 	ackError := func() func(t *testing.T) {
 		return func(t *testing.T) {
-			acknowledgement := axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, packet)
+			acknowledgement := axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, r, packet)
 			var ack ibcchanneltypes.Acknowledgement
 			funcs.MustNoErr(ibctransfertypes.ModuleCdc.UnmarshalJSON(acknowledgement.Acknowledgement(), &ack))
 			assert.False(t, ack.Success())
@@ -359,6 +418,23 @@ func TestHandleMessageWithToken(t *testing.T) {
 		}
 	}
 
+	whenRateLimitIsSet := func(randDenom bool) func() {
+		return func() {
+			token := sdk.NewCoin(denom, funcs.MustOk(sdk.NewIntFromString(amount)))
+			if randDenom {
+				token.Denom = rand.Denom(10, 20)
+			}
+
+			n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error {
+				if direction == nexus.Incoming && asset.Equal(token) {
+					return fmt.Errorf("rate limit exceeded")
+				}
+
+				return nil
+			}
+		}
+	}
+
 	givenPacketWithMessageWithToken.
 		When("asset is not registered on source chain", isAssetRegistered(srcChain, false)).
 		Then("should return ack error", ackError()).
@@ -373,8 +449,16 @@ func TestHandleMessageWithToken(t *testing.T) {
 	givenPacketWithMessageWithToken.
 		When("asset is registered on source chain", isAssetRegistered(srcChain, true)).
 		When("asset is registered on dest chain", isAssetRegistered(destChain, true)).
+		When("rate limit is set", whenRateLimitIsSet(false)).
+		Then("should return ack error", ackError()).
+		Run(t)
+
+	givenPacketWithMessageWithToken.
+		When("asset is registered on source chain", isAssetRegistered(srcChain, true)).
+		When("asset is registered on dest chain", isAssetRegistered(destChain, true)).
+		When("rate limit on another asset is set", whenRateLimitIsSet(true)).
 		Then("should return ack success", func(t *testing.T) {
-			assert.True(t, axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, packet).Success())
+			assert.True(t, axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, r, packet).Success())
 		}).
 		Run(t)
 }
@@ -388,6 +472,7 @@ func TestHandleSendToken(t *testing.T) {
 		n        *mock.NexusMock
 		channelK *mock.ChannelKeeperMock
 		ibcK     keeper.IBCKeeper
+		r        axelarnet.RateLimiter
 
 		denom       string
 		amount      string
@@ -464,6 +549,9 @@ func TestHandleSendToken(t *testing.T) {
 				hash := sha256.Sum256(ctx.TxBytes())
 				return fmt.Sprintf("%s-%d", hex.EncodeToString(hash[:]), 0)
 			},
+			RateLimitTransferFunc: func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error {
+				return nil
+			},
 		}
 		ibcK = keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{
 			GetDenomTraceFunc: func(ctx sdk.Context, denomTraceHash tmbytes.HexBytes) (ibctransfertypes.DenomTrace, bool) {
@@ -484,11 +572,12 @@ func TestHandleSendToken(t *testing.T) {
 				return nil
 			},
 		}
+		r = axelarnet.NewRateLimiter(k, channelK, n)
 	})
 
 	ackError := func() func(t *testing.T) {
 		return func(t *testing.T) {
-			acknowledgement := axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, packet)
+			acknowledgement := axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, r, packet)
 			var ack ibcchanneltypes.Acknowledgement
 			funcs.MustNoErr(ibctransfertypes.ModuleCdc.UnmarshalJSON(acknowledgement.Acknowledgement(), &ack))
 			assert.False(t, ack.Success())
@@ -508,6 +597,12 @@ func TestHandleSendToken(t *testing.T) {
 		}
 	}
 
+	whenEnqueueTransferFailed := func() {
+		n.EnqueueTransferFunc = func(ctx sdk.Context, senderChain nexus.Chain, recipient nexus.CrossChainAddress, asset sdk.Coin) (nexus.TransferID, error) {
+			return 0, fmt.Errorf("enqueue transfer failed")
+		}
+	}
+
 	givenPacketWithSendToken.
 		When("asset is not registered on source chain", isAssetRegistered(srcChain, false)).
 		Then("should return ack error", ackError()).
@@ -522,8 +617,15 @@ func TestHandleSendToken(t *testing.T) {
 	givenPacketWithSendToken.
 		When("asset is registered on source chain", isAssetRegistered(srcChain, true)).
 		When("asset is registered on dest chain", isAssetRegistered(destChain, true)).
+		When("enqueue transfer failed", whenEnqueueTransferFailed).
+		Then("should return ack error", ackError()).
+		Run(t)
+
+	givenPacketWithSendToken.
+		When("asset is registered on source chain", isAssetRegistered(srcChain, true)).
+		When("asset is registered on dest chain", isAssetRegistered(destChain, true)).
 		Then("should return ack success", func(t *testing.T) {
-			assert.True(t, axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, packet).Success())
+			assert.True(t, axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, r, packet).Success())
 		}).
 		Run(t)
 }

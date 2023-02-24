@@ -28,6 +28,7 @@
     - [auth](axelard_query_auth.md)	 - Querying commands for the auth module
       - [account \[address\]](axelard_query_auth_account.md)	 - Query for account by address
       - [accounts](axelard_query_auth_accounts.md)	 - Query all the accounts
+      - [module-account \[module-name\]](axelard_query_auth_module-account.md)	 - Query module account info by module name
       - [params](axelard_query_auth_params.md)	 - Query the current auth parameters
     - [axelarnet](axelard_query_axelarnet.md)	 - Querying commands for the axelarnet module
       - [ibc-transfer-count](axelard_query_axelarnet_ibc-transfer-count.md)	 - returns the number of pending IBC transfers per chain
@@ -124,6 +125,7 @@
       - [chains](axelard_query_nexus_chains.md)	 - Returns the registered chain names
       - [fee-info \[chain\] \[asset\]](axelard_query_nexus_fee-info.md)	 - Returns the per-chain fee for a registered asset
       - [latest-deposit-address \[deposit chain\] \[recipient chain\] \[recipient address\]](axelard_query_nexus_latest-deposit-address.md)	 - Query for account by address
+      - [message \[id\]](axelard_query_nexus_message.md)	 - Returns the cross-chain message with the given ID
       - [recipient-address \[chain\] \[address\]](axelard_query_nexus_recipient-address.md)	 - Returns the recipient address corresponding to the given deposit address
       - [transfer-fee \[source-chain\] \[destination-chain\] \[amount\]](axelard_query_nexus_transfer-fee.md)	 - Returns the fee incurred on a cross-chain transfer
       - [transfer-rate-limit \[chain\] \[asset\]](axelard_query_nexus_transfer-rate-limit.md)	 - Returns the transfer rate limit for a given chain and asset
@@ -197,8 +199,9 @@
       - [retry-ibc-transfer \[chain\] \[transfer ID\]](axelard_tx_axelarnet_retry-ibc-transfer.md)	 - Retry a failed IBC transfer
       - [route-ibc-transfers](axelard_tx_axelarnet_route-ibc-transfers.md)	 - Routes pending transfers to cosmos chains
     - [bank](axelard_tx_bank.md)	 - Bank transaction subcommands
-      - [send \[from_key_or_address\] \[to_address\] \[amount\]](axelard_tx_bank_send.md)	 - Send funds from one account to another. Note, the'--from' flag is
-        ignored as it is implied from \[from_key_or_address\].
+      - [send \[from_key_or_address\] \[to_address\] \[amount\]](axelard_tx_bank_send.md)	 - Send funds from one account to another.
+        Note, the'--from' flag is ignored as it is implied from \[from_key_or_address\].
+        When using '--dry-run' a key name cannot be used, only a bech32 address.
     - [broadcast \[file_path\]](axelard_tx_broadcast.md)	 - Broadcast transactions generated offline
     - [crisis](axelard_tx_crisis.md)	 - Crisis transactions subcommands
       - [invariant-broken \[module-name\] \[invariant-route\]](axelard_tx_crisis_invariant-broken.md)	 - Submit proof that an invariant broken to halt the chain

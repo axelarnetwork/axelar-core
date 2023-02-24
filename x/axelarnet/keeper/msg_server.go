@@ -26,7 +26,8 @@ import (
 var _ types.MsgServiceServer = msgServer{}
 
 const (
-	callContractGasCost = storetypes.Gas(2000000)
+	callContractGasCost   = storetypes.Gas(10000000)
+	executeMessageGasCost = storetypes.Gas(1000000)
 )
 
 type msgServer struct {
@@ -54,6 +55,14 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 	chain, ok := s.nexus.GetChain(ctx, req.Chain)
 	if !ok {
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
+	}
+
+	if !chain.IsFrom(evmtypes.ModuleName) {
+		return nil, fmt.Errorf("non EVM chains are not supported")
+	}
+
+	if !s.nexus.IsChainActivated(ctx, exported.Axelarnet) {
+		return nil, fmt.Errorf("chain %s is not activated yet", exported.Axelarnet.Name)
 	}
 
 	if !s.nexus.IsChainActivated(ctx, chain) {
@@ -521,6 +530,8 @@ func (s msgServer) ExecuteMessage(c context.Context, req *types.ExecuteMessageRe
 	if err != nil {
 		return nil, err
 	}
+
+	ctx.GasMeter().ConsumeGas(executeMessageGasCost, "execute-message")
 
 	s.Logger(ctx).Debug("set general message status to sent", "messageID", msg.ID)
 

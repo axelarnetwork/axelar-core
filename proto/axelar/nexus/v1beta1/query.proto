@@ -150,4 +150,10 @@ message TransferRateLimit {
   // time_left indicates the time left in the rate limit window
   google.protobuf.Duration time_left = 5
       [ (gogoproto.stdduration) = true, (gogoproto.nullable) = false ];
-};
+}
+
+message MessageRequest { string id = 1 [ (gogoproto.customname) = "ID" ]; }
+
+message MessageResponse {
+  exported.v1beta1.GeneralMessage message = 1 [ (gogoproto.nullable) = false ];
+}

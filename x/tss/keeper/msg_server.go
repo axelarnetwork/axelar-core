@@ -46,7 +46,10 @@ func (s msgServer) HeartBeat(c context.Context, req *types.HeartBeatRequest) (*t
 	if ctx.BlockHeight()-s.GetLastHeartbeatAt(ctx, participant) < s.GetParams(ctx).HeartbeatPeriodInBlocks/2 {
 		return nil, fmt.Errorf("too many heartbeats received from operator %s", participant.String())
 	}
-	s.SetLastHeartbeatAt(ctx, participant)
+
+	if err := s.SetLastHeartbeatAt(ctx, participant); err != nil {
+		return nil, err
+	}
 
 	for _, keyID := range req.KeyIDs {
 		_, ok := s.multisig.GetKey(ctx, multisig.KeyID(keyID))

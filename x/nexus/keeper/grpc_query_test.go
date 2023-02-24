@@ -10,6 +10,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
@@ -21,7 +22,10 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
+	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
+	evmtestutils "github.com/axelarnetwork/axelar-core/x/evm/types/testutils"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	nexustestutils "github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
 	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 	"github.com/axelarnetwork/utils/funcs"
@@ -172,4 +176,53 @@ func TestKeeper_Chains(t *testing.T) {
 				assert.Equal(t, response.Chains, []exported.ChainName{testChain.Name})
 			}),
 		).Run(t)
+}
+
+func TestKeeper_Message(t *testing.T) {
+	var (
+		ctx sdk.Context
+		k   nexusKeeper.Keeper
+		q   nexusKeeper.Querier
+		id  string
+		msg exported.GeneralMessage
+	)
+
+	Given("keeper and context", func() {
+
+		cfg := app.MakeEncodingConfig()
+		k, ctx = setup(cfg)
+		q = nexusKeeper.NewGRPCQuerier(k, nil)
+	}).Branch(
+		When("message exists", func() {
+			sourceChain := nexustestutils.RandomChain()
+			sourceChain.Module = axelarnet.ModuleName
+			destinationChain := nexustestutils.RandomChain()
+			destinationChain.Module = evmtypes.ModuleName
+			k.SetChain(ctx, sourceChain)
+			k.SetChain(ctx, destinationChain)
+			id = k.GenerateMessageID(ctx)
+			msg := exported.GeneralMessage{
+				ID:          id,
+				Sender:      exported.CrossChainAddress{Chain: sourceChain, Address: genCosmosAddr(sourceChain.Name.String())},
+				Recipient:   exported.CrossChainAddress{Chain: destinationChain, Address: evmtestutils.RandomAddress().Hex()},
+				Status:      exported.Sent,
+				PayloadHash: crypto.Keccak256Hash(rand.Bytes(int(rand.I64Between(1, 100)))).Bytes(),
+				Asset:       nil,
+			}
+			err := k.SetNewMessage(ctx, msg)
+			assert.NoError(t, err)
+		}).Then("should succeed", func(t *testing.T) {
+			response, err := q.Message(sdk.WrapSDKContext(ctx), &types.MessageRequest{ID: id})
+			assert.NoError(t, err)
+			assert.Equal(t, msg, response.Message)
+		}),
+		When("message doesn't exist", func() {
+
+		}).Then("should fail", func(t *testing.T) {
+			response, err := q.Message(sdk.WrapSDKContext(ctx), &types.MessageRequest{ID: id})
+			assert.Error(t, err)
+			assert.Nil(t, response)
+		}),
+	)
+
 }
