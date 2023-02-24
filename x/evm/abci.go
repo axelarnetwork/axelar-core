@@ -567,44 +567,89 @@ func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, 
 	}
 }
 
-func validateMessage(ctx sdk.Context, ck types.ChainKeeper, n types.Nexus, m types.MultisigKeeper, chain nexus.Chain, msg nexus.GeneralMessage) (sdk.Int, multisig.KeyID, error) {
-	chainID := funcs.MustOk(ck.GetChainID(ctx))
-
+func validateMessage(ctx sdk.Context, ck types.ChainKeeper, n types.Nexus, m types.MultisigKeeper, chain nexus.Chain, msg nexus.GeneralMessage) error {
 	// TODO refactor to do these checks earlier so we don't fail in the end blocker
-	keyID, ok := m.GetCurrentKeyID(ctx, chain.Name)
+	_, ok := m.GetCurrentKeyID(ctx, chain.Name)
 	if !ok {
-		return chainID, keyID, fmt.Errorf("current key not set")
+		return fmt.Errorf("current key not set")
 	}
 
 	if !n.IsChainActivated(ctx, chain) {
-		return chainID, keyID, fmt.Errorf("destination chain de-activated")
-	}
-
-	if !common.IsHexAddress(msg.GetDestinationAddress()) {
-		return chainID, keyID, fmt.Errorf("invalid contract address")
+		return fmt.Errorf("destination chain de-activated")
 	}
 
 	if _, ok := ck.GetGatewayAddress(ctx); !ok {
-		return chainID, keyID, fmt.Errorf("destination chain gateway not deployed yet")
+		return fmt.Errorf("destination chain gateway not deployed yet")
 	}
-	return chainID, keyID, nil
+
+	if !common.IsHexAddress(msg.GetDestinationAddress()) {
+		return fmt.Errorf("invalid contract address")
+	}
+
+	switch msg.Type() {
+	case nexus.TypeGeneralMessage:
+		return nil
+	case nexus.TypeGeneralMessageWithToken:
+		token := ck.GetERC20TokenByAsset(ctx, msg.Asset.GetDenom())
+		if !token.Is(types.Confirmed) {
+			return fmt.Errorf("asset %s not confirmed on destination chain", msg.Asset.GetDenom())
+		}
+		return nil
+	default:
+		return fmt.Errorf("unrecognized message type %d", msg.Type())
+	}
 }
 
-func handleMessage(ctx sdk.Context, ck types.ChainKeeper, n types.Nexus, m types.MultisigKeeper, chain nexus.Chain, msg nexus.GeneralMessage) (types.CommandID, error) {
-	chainID, keyID, err := validateMessage(ctx, ck, n, m, chain, msg)
-	if err != nil {
-		return types.CommandID{}, err
-	}
+func handleMessage(ctx sdk.Context, ck types.ChainKeeper, chainID sdk.Int, keyID multisig.KeyID, msg nexus.GeneralMessage) {
 
 	dummyTxID := common.BytesToHash(make([]byte, common.HashLength))
+
 	cmd := types.NewApproveContractCallCommandGeneric(chainID, keyID, common.HexToAddress(msg.GetDestinationAddress()), common.BytesToHash(msg.PayloadHash), dummyTxID, msg.GetSourceChain(), msg.GetSourceAddress(), 0, msg.ID)
 	funcs.MustNoErr(ck.EnqueueCommand(ctx, cmd))
 
-	return cmd.ID, nil
+	events.Emit(ctx, &types.ContractCallApproved{
+		Chain:            msg.GetSourceChain(),
+		EventID:          types.EventID(msg.ID),
+		CommandID:        cmd.ID,
+		Sender:           msg.GetSourceAddress(),
+		DestinationChain: msg.GetDestinationChain(),
+		ContractAddress:  msg.GetDestinationAddress(),
+		PayloadHash:      types.Hash(common.BytesToHash(msg.PayloadHash)),
+	})
+
+	ck.Logger(ctx).Debug("completed handling general message",
+		types.AttributeKeyChain, msg.GetDestinationChain(),
+		types.AttributeKeyMessageID, msg.ID,
+		types.AttributeKeyCommandsID, cmd.ID,
+	)
+}
+
+func handleMessageWithToken(ctx sdk.Context, ck types.ChainKeeper, chainID sdk.Int, keyID multisig.KeyID, msg nexus.GeneralMessage) {
+	dummyTxID := common.BytesToHash(make([]byte, common.HashLength))
+	token := ck.GetERC20TokenByAsset(ctx, msg.Asset.GetDenom())
+
+	cmd := types.NewApproveContractCallWithMintCommandFromMessage(chainID, keyID, dummyTxID, msg, token.GetDetails().Symbol)
+	funcs.MustNoErr(ck.EnqueueCommand(ctx, cmd))
+
+	events.Emit(ctx, &types.ContractCallWithMintApproved{
+		Chain:            msg.GetSourceChain(),
+		EventID:          types.EventID(msg.ID),
+		CommandID:        cmd.ID,
+		Sender:           msg.GetSourceAddress(),
+		DestinationChain: msg.GetDestinationChain(),
+		ContractAddress:  msg.GetDestinationAddress(),
+		PayloadHash:      types.Hash(common.BytesToHash(msg.PayloadHash)),
+		Asset:            *msg.Asset,
+	})
+
+	ck.Logger(ctx).Debug("completed handling general message with token",
+		types.AttributeKeyChain, msg.GetDestinationChain(),
+		types.AttributeKeyMessageID, msg.ID,
+		types.AttributeKeyCommandsID, cmd.ID,
+	)
 }
 
 func handleMessages(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, m types.MultisigKeeper) {
-
 	for _, chain := range slices.Filter(n.GetChains(ctx), types.IsEVMChain) {
 		ck := funcs.Must(bk.ForChain(ctx, chain.Name))
 		endBlockerLimit := ck.GetParams(ctx).EndBlockerLimit
@@ -615,26 +660,21 @@ func handleMessages(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, m types
 		for _, msg := range msgs {
 			success := false
 			_ = utils.RunCached(ctx, bk, func(ctx sdk.Context) (bool, error) {
-				cmdID, err := handleMessage(ctx, ck, n, m, chain, msg)
-				if err != nil {
+				if err := validateMessage(ctx, ck, n, m, chain, msg); err != nil {
 					return false, err
 				}
 
-				events.Emit(ctx, &types.ContractCallApproved{
-					Chain:            msg.GetSourceChain(),
-					EventID:          types.EventID(msg.ID),
-					CommandID:        cmdID,
-					Sender:           msg.GetSourceAddress(),
-					DestinationChain: msg.GetDestinationChain(),
-					ContractAddress:  msg.GetDestinationAddress(),
-					PayloadHash:      types.Hash(common.BytesToHash(msg.PayloadHash)),
-				})
+				chainID := funcs.MustOk(ck.GetChainID(ctx))
+				keyID := funcs.MustOk(m.GetCurrentKeyID(ctx, chain.Name))
 
-				ck.Logger(ctx).Debug("completed handling general message",
-					types.AttributeKeyChain, chain.Name.String(),
-					types.AttributeKeyMessageID, msg.ID,
-					types.AttributeKeyCommandsID, cmdID,
-				)
+				switch msg.Type() {
+				case nexus.TypeGeneralMessage:
+					handleMessage(ctx, ck, chainID, keyID, msg)
+				case nexus.TypeGeneralMessageWithToken:
+					handleMessageWithToken(ctx, ck, chainID, keyID, msg)
+				default:
+					panic(fmt.Sprintf("unrecognized message type %d", msg.Type()))
+				}
 
 				success = true
 				return true, nil
