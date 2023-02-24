@@ -89,6 +89,9 @@ import (
 	ibcante "github.com/cosmos/ibc-go/v4/modules/core/ante"
 	ibckeeper "github.com/cosmos/ibc-go/v4/modules/core/keeper"
 	"github.com/gorilla/mux"
+	ibchooks "github.com/osmosis-labs/osmosis/x/ibc-hooks"
+	ibchookskeeper "github.com/osmosis-labs/osmosis/x/ibc-hooks/keeper"
+	ibchookstypes "github.com/osmosis-labs/osmosis/x/ibc-hooks/types"
 	"github.com/rakyll/statik/fs"
 	"github.com/spf13/cast"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -247,7 +250,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	}
 
 	if IsWasmEnabled() {
-		storeKeys = append(storeKeys, wasm.StoreKey)
+		storeKeys = append(storeKeys, wasm.StoreKey, ibchookstypes.StoreKey)
 	}
 
 	storeKeys = append(storeKeys, []string{
@@ -350,6 +353,17 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		appCodec, keys[ibchost.StoreKey], app.getSubspace(ibchost.ModuleName), app.stakingKeeper, upgradeK, scopedIBCK,
 	)
 
+	// Configure the hooks keeper
+	hooksKeeper := ibchookskeeper.NewKeeper(
+		keys[ibchookstypes.StoreKey],
+	)
+	accPrefix := sdk.GetConfig().GetBech32AccountAddrPrefix()
+	wasmHooks := ibchooks.NewWasmHooks(&hooksKeeper, nil, accPrefix) // The contract keeper needs to be set later
+	ibcHooksICS4Wrapper := ibchooks.NewICS4Middleware(
+		app.ibcKeeper.ChannelKeeper,
+		&wasmHooks,
+	)
+
 	axelarnetK := axelarnetKeeper.NewKeeper(
 		appCodec, keys[axelarnetTypes.StoreKey], app.getSubspace(axelarnetTypes.ModuleName), app.ibcKeeper.ChannelKeeper,
 	)
@@ -362,7 +376,9 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	// Create Transfer Keepers
 	app.transferKeeper = ibctransferkeeper.NewKeeper(
 		appCodec, keys[ibctransfertypes.StoreKey], app.getSubspace(ibctransfertypes.ModuleName),
-		rateLimiter, app.ibcKeeper.ChannelKeeper, &app.ibcKeeper.PortKeeper,
+		// The ICS4Wrapper is replaced by the HooksICS4Wrapper instead of the channel so that sending can be overridden by the middleware
+		ibcHooksICS4Wrapper, // TODO: refactor hooks to be easily composable
+		app.ibcKeeper.ChannelKeeper, &app.ibcKeeper.PortKeeper,
 		accountK, bankK, scopedTransferK,
 	)
 	transferModule := transfer.NewAppModule(app.transferKeeper)
@@ -478,7 +494,8 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	if upgradeInfo.Name == upgradeName && !upgradeK.IsSkipHeight(upgradeInfo.Height) {
 		storeUpgrades := store.StoreUpgrades{}
 		if IsWasmEnabled() {
-			storeUpgrades.Added = append(storeUpgrades.Added, wasm.ModuleName)
+			storeUpgrades.Added = append(storeUpgrades.Added, ibchookstypes.StoreKey)
+			// storeUpgrades.Added = append(storeUpgrades.Added, wasm.ModuleName)  // TODO: Add this in for main branch
 		}
 
 		// configure store loader that checks if version == upgradeHeight and applies store upgrades
@@ -492,12 +509,31 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		AddAddressValidator(axelarnetTypes.ModuleName, axelarnetKeeper.NewAddressValidator(axelarnetK, bankK))
 	nexusK.SetRouter(nexusRouter)
 
+	var transferStack porttypes.IBCModule
+	transferStack = transfer.NewIBCModule(app.transferKeeper)
+	// transferStack = ibcfee.NewIBCMiddleware(transferStack, appKeepers.IBCFeeKeeper)
+	// transferStack = axelarnet.NewRateLimiter(axelarnetK, transferStack, nexusK)
+	// TODO: missing rate limiter hooks
+	if IsWasmEnabled() {
+		transferStack = ibchooks.NewIBCMiddleware(transferStack, &ibcHooksICS4Wrapper)
+	}
+
 	ibcK := axelarnetKeeper.NewIBCKeeper(axelarnetK, app.transferKeeper, app.ibcKeeper.ChannelKeeper)
-	axelarnetModule := axelarnet.NewAppModule(axelarnetK, nexusK, bankK, accountK, ibcK, transfer.NewIBCModule(app.transferKeeper), rateLimiter, logger)
+	axelarnetModule := axelarnet.NewAppModule(axelarnetK, nexusK, bankK, accountK, ibcK, transferStack, rateLimiter, logger)
 
 	// Create static IBC router, add transfer route, then set and seal it
 	ibcRouter := porttypes.NewRouter()
 	ibcRouter.AddRoute(ibctransfertypes.ModuleName, axelarnetModule)
+
+	if IsWasmEnabled() {
+		// Create fee enabled wasm ibc Stack
+		var wasmStack porttypes.IBCModule
+		wasmStack = wasm.NewIBCHandler(wasmK, app.ibcKeeper.ChannelKeeper, app.ibcKeeper.ChannelKeeper)
+		ibcRouter.AddRoute(wasm.ModuleName, wasmStack)
+
+		// set the contract keeper for the Ics20WasmHooks
+		wasmHooks.ContractKeeper = wasmkeeper.NewDefaultPermissionKeeper(wasmK)
+	}
 
 	// Setting Router will finalize all routes by sealing router
 	// No more routes can be added
@@ -531,7 +567,11 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	}
 
 	if IsWasmEnabled() {
-		appModules = append(appModules, wasm.NewAppModule(appCodec, &wasmK, stakingK, accountK, bankK))
+		appModules = append(
+			appModules,
+			wasm.NewAppModule(appCodec, &wasmK, stakingK, accountK, bankK),
+			ibchooks.NewAppModule(accountK),
+		)
 	}
 
 	appModules = append(appModules, []module.AppModule{
@@ -578,7 +618,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	}
 
 	if IsWasmEnabled() {
-		migrationOrder = append(migrationOrder, wasm.ModuleName)
+		migrationOrder = append(migrationOrder, wasm.ModuleName, ibchookstypes.ModuleName)
 	}
 
 	// axelar modules
@@ -622,7 +662,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	}
 
 	if IsWasmEnabled() {
-		beginBlockerOrder = append(beginBlockerOrder, wasm.ModuleName)
+		beginBlockerOrder = append(beginBlockerOrder, wasm.ModuleName, ibchookstypes.ModuleName)
 	}
 
 	// axelar custom modules
@@ -661,7 +701,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	}
 
 	if IsWasmEnabled() {
-		endBlockerOrder = append(endBlockerOrder, wasm.ModuleName)
+		endBlockerOrder = append(endBlockerOrder, wasm.ModuleName, ibchookstypes.ModuleName)
 	}
 
 	// axelar custom modules
@@ -704,7 +744,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	}
 
 	if IsWasmEnabled() {
-		genesisOrder = append(genesisOrder, wasm.ModuleName)
+		genesisOrder = append(genesisOrder, wasm.ModuleName, ibchookstypes.ModuleName)
 	}
 
 	genesisOrder = append(genesisOrder,
@@ -968,7 +1008,7 @@ func GetModuleBasics() module.BasicManager {
 	}
 
 	if IsWasmEnabled() {
-		managers = append(managers, wasm.AppModuleBasic{})
+		managers = append(managers, wasm.AppModuleBasic{}, ibchooks.AppModuleBasic{})
 	}
 
 	managers = append(managers,
