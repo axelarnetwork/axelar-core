@@ -1,9 +1,8 @@
 PACKAGES=$(shell go list ./... | grep -v '/simulation')
 
-VERSION := $(shell echo $(shell git describe --tags) | sed 's/^v//')
+VERSION := 0.33.0 # $(shell echo $(shell git describe --tags) | sed 's/^v//')
 COMMIT := $(shell git log -1 --format='%H')
 
-# BUILD_TAGS := ledger
 DOCKER := $(shell which docker)
 DOCKER_BUF := $(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace bufbuild/buf
 HTTPS_GIT := https://github.com/axelarnetwork/axelar-core.git
