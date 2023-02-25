@@ -353,17 +353,6 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		appCodec, keys[ibchost.StoreKey], app.getSubspace(ibchost.ModuleName), app.stakingKeeper, upgradeK, scopedIBCK,
 	)
 
-	// Configure the hooks keeper
-	hooksKeeper := ibchookskeeper.NewKeeper(
-		keys[ibchookstypes.StoreKey],
-	)
-	accPrefix := sdk.GetConfig().GetBech32AccountAddrPrefix()
-	wasmHooks := ibchooks.NewWasmHooks(&hooksKeeper, nil, accPrefix) // The contract keeper needs to be set later
-	ibcHooksICS4Wrapper := ibchooks.NewICS4Middleware(
-		app.ibcKeeper.ChannelKeeper,
-		&wasmHooks,
-	)
-
 	axelarnetK := axelarnetKeeper.NewKeeper(
 		appCodec, keys[axelarnetTypes.StoreKey], app.getSubspace(axelarnetTypes.ModuleName), app.ibcKeeper.ChannelKeeper,
 	)
@@ -372,6 +361,17 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	)
 	// Create IBC rate limiter
 	rateLimiter := axelarnet.NewRateLimiter(axelarnetK, app.ibcKeeper.ChannelKeeper, nexusK)
+
+	// Configure the hooks keeper
+	hooksKeeper := ibchookskeeper.NewKeeper(
+		keys[ibchookstypes.StoreKey],
+	)
+	accPrefix := sdk.GetConfig().GetBech32AccountAddrPrefix()
+	wasmHooks := ibchooks.NewWasmHooks(&hooksKeeper, nil, accPrefix) // The contract keeper needs to be set later
+	ibcHooksICS4Wrapper := ibchooks.NewICS4Middleware(
+		rateLimiter,
+		&wasmHooks,
+	)
 
 	// Create Transfer Keepers
 	app.transferKeeper = ibctransferkeeper.NewKeeper(
