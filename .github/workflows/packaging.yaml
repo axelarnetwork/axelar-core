@@ -39,6 +39,7 @@ jobs:
       - name: Install prerequisites
         run: |
           sudo apt-get install -y gcc dpkg-dev gpg
+
       - name: Create folder structures for Linux
         env:
           SEMVER: ${{ github.event.inputs.tag }}
@@ -112,11 +113,12 @@ jobs:
           dpkg-deb --contents ~/linux/axelard_$VER-1_arm.deb
           
       - name: Copy binaries in apt repo
-        run: | 
+        run: |
           mkdir -p ~/axelar/apt-repo/pool/main/
           cp ~/linux/*.deb ~/axelar/apt-repo/pool/main/.
+
       - name: Generate Packages files
-        run: | 
+        run: |
           mkdir -p ~/axelar/apt-repo/dists/stable/main/binary-amd64
           mkdir -p ~/axelar/apt-repo/dists/stable/main/binary-arm64
           mkdir -p ~/axelar/apt-repo/dists/stable/main/binary-arm
@@ -168,6 +170,7 @@ jobs:
           cd ~/axelar/apt-repo/dists/stable
           ~/axelar/generate-release.sh > Release
           cat ~/axelar/apt-repo/dists/stable/Release
+
       - name: Install axelard
         run: |
           cd ~/axelar
@@ -179,3 +182,4 @@ jobs:
       - name: Test axelard
         run: |
           axelard version
+          which axelard
