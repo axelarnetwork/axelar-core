@@ -8,7 +8,6 @@ on:
         required: true
         default: latest
 
-
 jobs:
   package-binaries:
     runs-on: ${{ matrix.os }}
@@ -23,6 +22,9 @@ jobs:
       id-token: write
 
     steps:
+
+
+
 
       - name: Validate tag
         env:
@@ -183,3 +185,7 @@ jobs:
         run: |
           axelard version
           which axelard
+
+      - name: Upload repo to S3
+        run: |
+          aws s3 cp ~/axelar https://5a9e361928ccaec0d10d46407a636407.r2.cloudflarestorage.com/static-axelar-network --recursive
