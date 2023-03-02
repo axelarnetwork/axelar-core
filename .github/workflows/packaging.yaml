@@ -183,6 +183,11 @@ jobs:
           aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static  --key axelard/apt-repo/pool/main/axelard_0.31.3-1_amd64.deb --body axelard/apt-repo/pool/main/axelard_0.31.3-1_amd64.deb
           aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static  --key axelard/apt-repo/pool/main/axelard_0.31.3-1_arm64.deb --body axelard/apt-repo/pool/main/axelard_0.31.3-1_arm64.deb
           aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static  --key axelard/apt-repo/pool/main/axelard_0.31.3-1_arm.deb --body axelard/apt-repo/pool/main/axelard_0.31.3-1_arm.deb
+
+      - name: Get GPG public key
+        continue-on-error: true
+        run: |
+          curl https://keybase.io/axelardev/pgp_keys.asc | gpg --import
  
       - name: Install axelard from remote apt repo
         continue-on-error: true
