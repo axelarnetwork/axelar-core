@@ -164,13 +164,13 @@ jobs:
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
 
       - name: GPG sign apt repo
+        continue-on-error: true
         run: |
-          continue-on-error: true
           cat ~/axelard/apt-repo/dists/stable/Release | gpg --default-key example -abs > ~/example/apt-repo/dists/stable/Release.gpg
 
       - name: Upload to S3
+        continue-on-error: true
         run: |
-          continue-on-error: true
           cd ~/
           aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static --key axelard/apt-repo/dists/stable/main/binary-amd64/Packages.gz --body axelard/apt-repo/dists/stable/main/binary-amd64/Packages.gz
           aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static  --key axelard/apt-repo/dists/stable/main/binary-arm64/Packages.gz --body axelard/apt-repo/dists/stable/main/binary-arm64/Packages.gz
