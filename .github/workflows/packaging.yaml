@@ -188,6 +188,7 @@ jobs:
         continue-on-error: true
         run: |
           curl https://keybase.io/axelardev/pgp_keys.asc | gpg --import
+          curl https://keybase.io/axelardev/pgp_keys.asc | sudo apt-key add -
  
       - name: Install axelard from remote apt repo
         continue-on-error: true
