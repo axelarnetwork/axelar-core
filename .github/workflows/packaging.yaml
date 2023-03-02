@@ -8,6 +8,7 @@ on:
         required: true
         default: latest
 
+
 jobs:
   package-binaries:
     runs-on: ${{ matrix.os }}
@@ -23,9 +24,19 @@ jobs:
 
     steps:
 
-
-
-
+      - name: Configure AWS credentials
+        run: |
+          cd $HOME; mkdir ~/.aws; touch ~/.aws/credentials; touch ~/.aws/config
+          echo "[default]
+          aws_access_key_id = ${{ secrets.AWS_ACCESS_KEY_ID_CF }}
+          aws_secret_access_key = ${{ secrets.AWS_SECRET_ACCESS_KEY_CF }}" > ~/.aws/credentials
+          echo "[default]
+          region=auto
+          output=json"  > ~/.aws/config
+          
+      - name: List buckets
+        run: |
+          aws s3api list-buckets --endpoint-url https://5a9e361928ccaec0d10d46407a636407.r2.cloudflarestorage.com
       - name: Validate tag
         env:
           SEMVER: ${{ github.event.inputs.tag }}
@@ -41,7 +52,6 @@ jobs:
       - name: Install prerequisites
         run: |
           sudo apt-get install -y gcc dpkg-dev gpg
-
       - name: Create folder structures for Linux
         env:
           SEMVER: ${{ github.event.inputs.tag }}
@@ -115,19 +125,19 @@ jobs:
           dpkg-deb --contents ~/linux/axelard_$VER-1_arm.deb
           
       - name: Copy binaries in apt repo
-        run: |
-          mkdir -p ~/axelar/apt-repo/pool/main/
-          cp ~/linux/*.deb ~/axelar/apt-repo/pool/main/.
-
+        run: | 
+          mkdir -p ~/axelard/apt-repo/pool/main/
+          cp ~/linux/*.deb ~/axelard/apt-repo/pool/main/.
+          
       - name: Generate Packages files
-        run: |
-          mkdir -p ~/axelar/apt-repo/dists/stable/main/binary-amd64
-          mkdir -p ~/axelar/apt-repo/dists/stable/main/binary-arm64
-          mkdir -p ~/axelar/apt-repo/dists/stable/main/binary-arm
-          cd ~/axelar/apt-repo
-          dpkg-scanpackages --arch amd64 pool/ > dists/stable/main/binary-amd64/Packages
-          dpkg-scanpackages --arch arm64 pool/ > dists/stable/main/binary-arm64/Packages
-          dpkg-scanpackages --arch arm pool/ > dists/stable/main/binary-arm/Packages
+        run: | 
+          mkdir -p ~/axelard/apt-repo/dists/stable/main/binary-amd64
+          mkdir -p ~/axelard/apt-repo/dists/stable/main/binary-arm64
+          mkdir -p ~/axelard/apt-repo/dists/stable/main/binary-arm
+          cd ~/axelard/apt-repo
+          dpkg-scanpackages -m --arch amd64 pool/ > dists/stable/main/binary-amd64/Packages
+          dpkg-scanpackages -m --arch arm64 pool/ > dists/stable/main/binary-arm64/Packages
+          dpkg-scanpackages -m --arch arm pool/ > dists/stable/main/binary-arm/Packages
           cat dists/stable/main/binary-amd64/Packages 
           cat dists/stable/main/binary-arm64/Packages 
           cat dists/stable/main/binary-arm/Packages 
@@ -167,25 +177,36 @@ jobs:
           EOF
           do_hash "MD5Sum" "md5sum"
           do_hash "SHA1" "sha1sum"
-          do_hash "SHA256" "sha256sum"' > ~/axelar/generate-release.sh && chmod +x ~/axelar/generate-release.sh
-          sed -i "s/VERSION/$VER/g" ~/axelar/generate-release.sh
-          cd ~/axelar/apt-repo/dists/stable
-          ~/axelar/generate-release.sh > Release
-          cat ~/axelar/apt-repo/dists/stable/Release
-
-      - name: Install axelard
+          do_hash "SHA256" "sha256sum"' > ~/axelard/generate-release.sh && chmod +x ~/axelard/generate-release.sh
+          sed -i "s/VERSION/$VER/g" ~/axelard/generate-release.sh
+          cd ~/axelard/apt-repo/dists/stable
+          ~/axelard/generate-release.sh > Release
+          cat ~/axelard/apt-repo/dists/stable/Release
+          
+      - name: Upload to S3
+        env:
+          SEMVER: ${{ github.event.inputs.tag }}
         run: |
-          cd ~/axelar
-          python3 -m http.server & 
-          echo "deb [arch=amd64] http://127.0.0.1:8000/apt-repo stable main" | sudo tee /etc/apt/sources.list.d/axelar.list
+          VER=$(echo $SEMVER | tr -d 'v')
+          cd ~/
+          aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static --key axelard/apt-repo/dists/stable/main/binary-amd64/Packages.gz --body axelard/apt-repo/dists/stable/main/binary-amd64/Packages.gz
+          aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static  --key axelard/apt-repo/dists/stable/main/binary-arm64/Packages.gz --body axelard/apt-repo/dists/stable/main/binary-arm64/Packages.gz
+          aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static  --key axelard/apt-repo/dists/stable/main/binary-arm/Packages.gz --body axelard/apt-repo/dists/stable/main/binary-arm/Packages.gz
+          aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static --key axelard/apt-repo/dists/stable/main/binary-amd64/Packages --body axelard/apt-repo/dists/stable/main/binary-amd64/Packages
+          aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static  --key axelard/apt-repo/dists/stable/main/binary-arm64/Packages --body axelard/apt-repo/dists/stable/main/binary-arm64/Packages
+          aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static  --key axelard/apt-repo/dists/stable/main/binary-arm/Packages --body axelard/apt-repo/dists/stable/main/binary-arm/Packages
+          aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static  --key axelard/apt-repo/dists/stable/Release --body axelard/apt-repo/dists/stable/Release
+          aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static  --key axelard/apt-repo/pool/main/axelard_$VER-1_amd64.deb --body axelard/apt-repo/pool/main/axelard_$VER-1_amd64.deb
+          aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static  --key axelard/apt-repo/pool/main/axelard_$VER-1_arm64.deb --body axelard/apt-repo/pool/main/axelard_$VER-1_arm64.deb
+          aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static  --key axelard/apt-repo/pool/main/axelard_$VER-1_arm.deb --body axelard/apt-repo/pool/main/axelard_$VER-1_arm.deb
+ 
+      - name: Install axelard from remote apt repo
+        run: |
+          echo "deb [arch=amd64] http://static.axelar.network/axelard/apt-repo stable main" | sudo tee /etc/apt/sources.list.d/axelar.list
+          sudo apt-get clean
           sudo apt-get update --allow-insecure-repositories
           sudo apt-get install axelard --allow-unauthenticated
-          
+ 
       - name: Test axelard
         run: |
           axelard version
-          which axelard
-
-      - name: Upload repo to S3
-        run: |
-          aws s3 cp ~/axelar https://remote-S3 --recursive
