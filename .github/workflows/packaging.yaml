@@ -179,7 +179,18 @@ jobs:
           cd ~/axelard/apt-repo/dists/stable
           ~/axelard/generate-release.sh > Release
           cat ~/axelard/apt-repo/dists/stable/Release
-          
+
+      - name: Import GPG key
+        id: import_gpg
+        uses: crazy-max/ghaction-import-gpg@v4
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+
+      - name: GPG sign apt repo
+        run: |
+          cat ~/axelard/apt-repo/dists/stable/Release | gpg --default-key example -abs > ~/example/apt-repo/dists/stable/Release.gpg
+
       - name: Upload to S3
         env:
           SEMVER: ${{ github.event.inputs.tag }}
@@ -193,6 +204,7 @@ jobs:
           aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static  --key axelard/apt-repo/dists/stable/main/binary-arm64/Packages --body axelard/apt-repo/dists/stable/main/binary-arm64/Packages
           aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static  --key axelard/apt-repo/dists/stable/main/binary-arm/Packages --body axelard/apt-repo/dists/stable/main/binary-arm/Packages
           aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static  --key axelard/apt-repo/dists/stable/Release --body axelard/apt-repo/dists/stable/Release
+          aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static  --key axelard/apt-repo/dists/stable/Release.gpg --body axelard/apt-repo/dists/stable/Release.gpg
           aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static  --key axelard/apt-repo/pool/main/axelard_$VER-1_amd64.deb --body axelard/apt-repo/pool/main/axelard_$VER-1_amd64.deb
           aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static  --key axelard/apt-repo/pool/main/axelard_$VER-1_arm64.deb --body axelard/apt-repo/pool/main/axelard_$VER-1_arm64.deb
           aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static  --key axelard/apt-repo/pool/main/axelard_$VER-1_arm.deb --body axelard/apt-repo/pool/main/axelard_$VER-1_arm.deb
