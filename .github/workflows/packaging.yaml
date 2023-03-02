@@ -166,7 +166,7 @@ jobs:
       - name: GPG sign apt repo
         continue-on-error: true
         run: |
-          cat ~/axelard/apt-repo/dists/stable/Release | gpg --default-key axelard -abs > ~/axelard/apt-repo/dists/stable/Release.gpg
+          cat ~/axelard/apt-repo/dists/stable/Release | gpg -abs > ~/axelard/apt-repo/dists/stable/Release.gpg
 
       - name: Upload to S3
         continue-on-error: true
