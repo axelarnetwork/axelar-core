@@ -1,5 +1,8 @@
 name: Package linux binaries
 
+env:
+  MY_LIST: "0.10.7,0.13.6,0.14.1,0.16.1,0.17.3,0.18.3,0.19.4,0.21.1,0.24.0,0.26.5,0.28.0,0.29.1,0.31.2"
+
 on:
   push:
     branches:
@@ -41,75 +44,83 @@ jobs:
           sudo apt-get install -y gcc dpkg-dev gpg
       - name: Create folder structures for Linux
         run: |
-          mkdir -p ~/linux/axelard_0.31.3-1_amd64/usr/bin/
-          mkdir -p ~/linux/axelard_0.31.3-1_amd64/DEBIAN/
-          mkdir -p ~/linux/axelard_0.31.3-1_arm64/usr/bin/
-          mkdir -p ~/linux/axelard_0.31.3-1_arm64/DEBIAN/
-          mkdir -p ~/linux/axelard_0.31.3-1_arm/usr/bin/
-          mkdir -p ~/linux/axelard_0.31.3-1_arm/DEBIAN/    
+          for version in $(echo $MY_LIST | tr "," "\n"); do
+          mkdir -p ~/linux/axelard_$version-1_amd64/usr/bin/
+          mkdir -p ~/linux/axelard_$version-1_amd64/DEBIAN/
+          mkdir -p ~/linux/axelard_$version-1_arm64/usr/bin/
+          mkdir -p ~/linux/axelard_$version-1_arm64/DEBIAN/
+          mkdir -p ~/linux/axelard_$version-1_arm/usr/bin/
+          mkdir -p ~/linux/axelard_$version-1_arm/DEBIAN/   
+          done 
           
       - name: Get binaries
         run: |
-          wget -O ~/linux/axelard_0.31.3-1_amd64/usr/bin/axelard --no-check-certificate https://github.com/axelarnetwork/axelar-core/releases/download/v0.31.3/axelard-linux-amd64-v0.31.3
-          chmod 755 ~/linux/axelard_0.31.3-1_amd64/usr/bin/axelard
-          wget -O ~/linux/axelard_0.31.3-1_arm64/usr/bin/axelard --no-check-certificate https://github.com/axelarnetwork/axelar-core/releases/download/v0.31.3/axelard-linux-arm64-v0.31.3
-          chmod 755 ~/linux/axelard_0.31.3-1_arm64/usr/bin/axelard
-          wget -O ~/linux/axelard_0.31.3-1_arm/usr/bin/axelard --no-check-certificate https://github.com/axelarnetwork/axelar-core/releases/download/v0.31.3/axelard-linux-arm-v0.31.3
-          chmod 755 ~/linux/axelard_0.31.3-1_arm/usr/bin/axelard  
+          for version in $(echo $MY_LIST | tr "," "\n"); do
+          wget -O ~/linux/axelard_$version-1_amd64/usr/bin/axelard --no-check-certificate https://github.com/axelarnetwork/axelar-core/releases/download/v$version/axelard-linux-amd64-v$version
+          chmod 755 ~/linux/axelard_$version-1_amd64/usr/bin/axelard
+          wget -O ~/linux/axelard_$version-1_arm64/usr/bin/axelard --no-check-certificate https://github.com/axelarnetwork/axelar-core/releases/download/v$version/axelard-linux-arm64-v$version
+          chmod 755 ~/linux/axelard_$version-1_arm64/usr/bin/axelard
+          wget -O ~/linux/axelard_$version-1_arm/usr/bin/axelard --no-check-certificate https://github.com/axelarnetwork/axelar-core/releases/download/v$version/axelard-linux-arm-v$version
+          chmod 755 ~/linux/axelard_$version-1_arm/usr/bin/axelard
+          done
           
       - name: Create control files
         run: |
+          for version in $(echo $MY_LIST | tr "," "\n"); do
           echo "Package: axelard
-          Version: 0.31.3
+          Version: $version
           Maintainer: axelar <devops@axelar.network>
           Architecture: amd64
           Homepage: https://axelar.network
           Description: axelard binary for Linux amd64" \
-          > ~/linux/axelard_0.31.3-1_amd64/DEBIAN/control
+          > ~/linux/axelard_$version-1_amd64/DEBIAN/control
           echo "Package: axelard
-          Version: 0.31.3
+          Version: $version
           Maintainer: axelar <devops@axelar.network>
           Architecture: arm64
           Homepage: https://axelar.network
           Description: axelard binary for Linux arm64" \
-          > ~/linux/axelard_0.31.3-1_arm64/DEBIAN/control
+          > ~/linux/axelard_$version-1_arm64/DEBIAN/control
           echo "Package: axelard
-          Version: 0.31.3
+          Version: $version
           Maintainer: axelar <devops@axelar.network>
           Architecture: arm
           Homepage: https://axelar.network
           Description: axelard binary for Linux arm" \
-          > ~/linux/axelard_0.31.3-1_arm/DEBIAN/control
+          > ~/linux/axelard_$version-1_arm/DEBIAN/control
+          done
           
       - name: Build the packages
-        env:
-          SEMVER: ${{ github.event.inputs.tag }}
         run: |
-          VER=$(echo $SEMVER | tr -d 'v')
-          dpkg --build ~/linux/axelard_0.31.3-1_amd64
-          dpkg --build ~/linux/axelard_0.31.3-1_arm64
-          dpkg --build ~/linux/axelard_0.31.3-1_arm
+          for version in $(echo $MY_LIST | tr "," "\n"); do
+          dpkg --build ~/linux/axelard_$version-1_amd64
+          dpkg --build ~/linux/axelard_$version-1_arm64
+          dpkg --build ~/linux/axelard_$version-1_arm
+          done
           
       - name: Check the packages
         run: |
-          dpkg-deb --info ~/linux/axelard_0.31.3-1_amd64.deb
-          dpkg-deb --contents ~/linux/axelard_0.31.3-1_amd64.deb
-          dpkg-deb --info ~/linux/axelard_0.31.3-1_arm64.deb
-          dpkg-deb --contents ~/linux/axelard_0.31.3-1_arm64.deb
-          dpkg-deb --info ~/linux/axelard_0.31.3-1_arm.deb
-          dpkg-deb --contents ~/linux/axelard_0.31.3-1_arm.deb
+          for version in $(echo $MY_LIST | tr "," "\n"); do
+          dpkg-deb --info ~/linux/axelard_$version-1_amd64.deb
+          dpkg-deb --contents ~/linux/axelard_$version-1_amd64.deb
+          dpkg-deb --info ~/linux/axelard_$version-1_arm64.deb
+          dpkg-deb --contents ~/linux/axelard_$version-1_arm64.deb
+          dpkg-deb --info ~/linux/axelard_$version-1_arm.deb
+          dpkg-deb --contents ~/linux/axelard_$version-1_arm.deb
+          done
           
       - name: Copy binaries in apt repo
-        run: | 
+        run: |
           mkdir -p ~/axelard/apt-repo/pool/main/
           cp ~/linux/*.deb ~/axelard/apt-repo/pool/main/.
           
       - name: Generate Packages files
-        run: | 
+        run: |
           mkdir -p ~/axelard/apt-repo/dists/stable/main/binary-amd64
           mkdir -p ~/axelard/apt-repo/dists/stable/main/binary-arm64
           mkdir -p ~/axelard/apt-repo/dists/stable/main/binary-arm
           cd ~/axelard/apt-repo
+          for version in $(echo $MY_LIST | tr "," "\n"); do
           dpkg-scanpackages -m --arch amd64 pool/ > dists/stable/main/binary-amd64/Packages
           dpkg-scanpackages -m --arch arm64 pool/ > dists/stable/main/binary-arm64/Packages
           dpkg-scanpackages -m --arch arm pool/ > dists/stable/main/binary-arm/Packages
@@ -119,7 +130,8 @@ jobs:
           cat dists/stable/main/binary-amd64/Packages | gzip -9 > dists/stable/main/binary-amd64/Packages.gz
           cat dists/stable/main/binary-arm64/Packages | gzip -9 > dists/stable/main/binary-arm64/Packages.gz
           cat dists/stable/main/binary-arm/Packages | gzip -9 > dists/stable/main/binary-arm/Packages.gz
-          
+          done 
+
       - name: Generate Release file
         run: |
           echo '#!/bin/sh
@@ -150,7 +162,7 @@ jobs:
           do_hash "MD5Sum" "md5sum"
           do_hash "SHA1" "sha1sum"
           do_hash "SHA256" "sha256sum"' > ~/axelard/generate-release.sh && chmod +x ~/axelard/generate-release.sh
-          sed -i "s/VERSION/0.31.3/g" ~/axelard/generate-release.sh
+          sed -i "s/VERSION/$version/g" ~/axelard/generate-release.sh
           cd ~/axelard/apt-repo/dists/stable
           ~/axelard/generate-release.sh > Release
           cat ~/axelard/apt-repo/dists/stable/Release
@@ -179,10 +191,12 @@ jobs:
           aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static  --key axelard/apt-repo/dists/stable/main/binary-arm/Packages --body axelard/apt-repo/dists/stable/main/binary-arm/Packages
           aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static  --key axelard/apt-repo/dists/stable/Release --body axelard/apt-repo/dists/stable/Release
           aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static  --key axelard/apt-repo/dists/stable/Release.gpg --body axelard/apt-repo/dists/stable/Release.gpg
-          aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static  --key axelard/apt-repo/pool/main/axelard_0.31.3-1_amd64.deb --body axelard/apt-repo/pool/main/axelard_0.31.3-1_amd64.deb
-          aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static  --key axelard/apt-repo/pool/main/axelard_0.31.3-1_arm64.deb --body axelard/apt-repo/pool/main/axelard_0.31.3-1_arm64.deb
-          aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static  --key axelard/apt-repo/pool/main/axelard_0.31.3-1_arm.deb --body axelard/apt-repo/pool/main/axelard_0.31.3-1_arm.deb
-
+          for version in $(echo $MY_LIST | tr "," "\n"); do
+          aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static  --key axelard/apt-repo/pool/main/axelard_$version-1_amd64.deb --body axelard/apt-repo/pool/main/axelard_$version-1_amd64.deb
+          aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static  --key axelard/apt-repo/pool/main/axelard_$version-1_arm64.deb --body axelard/apt-repo/pool/main/axelard_$version-1_arm64.deb
+          aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static  --key axelard/apt-repo/pool/main/axelard_$version-1_arm.deb --body axelard/apt-repo/pool/main/axelard_$version-1_arm.deb
+          done 
+          
       - name: Get GPG public key
         continue-on-error: true
         run: |
