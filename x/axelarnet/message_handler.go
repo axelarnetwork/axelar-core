@@ -173,7 +173,7 @@ func handleMessage(ctx sdk.Context, n types.Nexus, sourceAddress nexus.CrossChai
 		sourceAddress,
 		recipient,
 		crypto.Keccak256Hash(msg.Payload).Bytes(),
-		nexus.Sent,
+		nexus.Approved,
 		nil,
 	)
 
@@ -203,7 +203,7 @@ func handleMessageWithToken(ctx sdk.Context, n types.Nexus, b types.BankKeeper, 
 		sourceAddress,
 		recipient,
 		crypto.Keccak256Hash(msg.Payload).Bytes(),
-		nexus.Sent,
+		nexus.Approved,
 		&asset.Coin,
 	)
 

@@ -57,10 +57,6 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
 	}
 
-	if !chain.IsFrom(evmtypes.ModuleName) {
-		return nil, fmt.Errorf("non EVM chains are not supported")
-	}
-
 	if !s.nexus.IsChainActivated(ctx, exported.Axelarnet) {
 		return nil, fmt.Errorf("chain %s is not activated yet", exported.Axelarnet.Name)
 	}
@@ -79,7 +75,12 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 	// axelar gateway expects keccak256 hashes for payloads
 	payloadHash := crypto.Keccak256(req.Payload)
 
-	msg := nexus.NewGeneralMessage(s.nexus.GenerateMessageID(ctx), sender, recipient, payloadHash, nexus.Sent, nil)
+	status := nexus.Sent
+	// if destination is cosmos, set status to approved. Message will be sent via ExecuteMessage
+	if recipient.Chain.Module == exported.ModuleName {
+		status = nexus.Approved
+	}
+	msg := nexus.NewGeneralMessage(s.nexus.GenerateMessageID(ctx), sender, recipient, payloadHash, status, nil)
 	if err := s.nexus.SetNewMessage(ctx, msg); err != nil {
 		return nil, sdkerrors.Wrap(err, "failed to add general message")
 	}
@@ -478,17 +479,13 @@ func (s msgServer) RetryIBCTransfer(c context.Context, req *types.RetryIBCTransf
 	return &types.RetryIBCTransferResponse{}, nil
 }
 
-// ExecuteMessage translates an abi encoded payload and sends to a cosmos chain
+// ExecuteMessage triggers the actual sending of a previously submitted message
 func (s msgServer) ExecuteMessage(c context.Context, req *types.ExecuteMessageRequest) (*types.ExecuteMessageResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
 	msg, ok := s.nexus.GetMessage(ctx, req.ID)
 	if !ok {
 		return nil, fmt.Errorf("message %s not found", req.ID)
-	}
-
-	if !msg.Sender.Chain.IsFrom(evmtypes.ModuleName) {
-		return nil, fmt.Errorf("message is not from an EVM chain")
 	}
 
 	if !s.nexus.IsChainActivated(ctx, msg.Sender.Chain) {
@@ -511,22 +508,36 @@ func (s msgServer) ExecuteMessage(c context.Context, req *types.ExecuteMessageRe
 		return nil, fmt.Errorf("general message %s already executed", req.ID)
 	}
 
-	bz, err := types.TranslateMessage(msg, req.Payload)
-	if err != nil {
-		return nil, sdkerrors.Wrap(err, "invalid payload")
+	// send ibc message if destination is cosmos
+	if msg.Recipient.Chain.Module == exported.ModuleName {
+		var payload []byte
+		// translate message from ABI if from evm
+		if msg.Sender.Chain.Module == evmtypes.ModuleName {
+			bz, err := types.TranslateMessage(msg, req.Payload)
+			if err != nil {
+				return nil, sdkerrors.Wrap(err, "invalid payload")
+			}
+			payload = bz
+		} else if msg.Sender.Chain.Module == exported.ModuleName { // wrap message if from cosmos
+			bz, err := types.ConstructWasmMessageV2(msg, req.Payload)
+			if err != nil {
+				return nil, sdkerrors.Wrap(err, "invalid payload")
+			}
+			payload = bz
+		}
+
+		asset, err := s.escrowAssetToMessageSender(ctx, req.Sender, msg)
+		if err != nil {
+			return nil, err
+		}
+
+		err = s.ibcK.SendMessage(c, msg.Recipient, asset, string(payload), msg.ID)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	asset, err := s.escrowAssetToMessageSender(ctx, req.Sender, msg)
-	if err != nil {
-		return nil, err
-	}
-
-	err = s.ibcK.SendMessage(c, msg.Recipient, asset, string(bz), msg.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	err = s.nexus.SetMessageSent(ctx, msg.ID)
+	err := s.nexus.SetMessageSent(ctx, msg.ID)
 	if err != nil {
 		return nil, err
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	mathRand "math/rand"
 	"strings"
@@ -1071,6 +1072,17 @@ func TestExecuteMessage(t *testing.T) {
 		msg.Sender.Chain.Module = evmtypes.ModuleName
 		isChainActivated(true)()
 	})
+	whenMessageIsFromCosmos := When("message is from cosmos", func() {
+		isMessageFound(true, nexus.Approved)()
+		msg.Sender.Chain.Module = exported.ModuleName
+		isChainActivated(true)()
+	})
+	whenMessageIsToEVM := When("message is to evm", func() {
+		msg.Recipient.Chain.Module = evmtypes.ModuleName
+	})
+	whenMessageIsToCosmos := When("message is to cosmos", func() {
+		msg.Recipient.Chain.Module = exported.ModuleName
+	})
 
 	requestIsMade := When("an execute message request is made", func() {
 		req = types.NewExecuteMessage(
@@ -1095,17 +1107,13 @@ func TestExecuteMessage(t *testing.T) {
 					Then("should fail", executeFailsWithError("not found")),
 
 				When("general message is found", isMessageFound(true, nexus.Approved)).
-					When("source chain is not an EVM chain", func() {}).
-					When2(requestIsMade).
-					Then("should fail", executeFailsWithError("message is not from an EVM chain")),
-
-				When("general message is found", isMessageFound(true, nexus.Approved)).
 					When("source chain is an EVM chain", func() { msg.Sender.Chain.Module = evmtypes.ModuleName }).
 					When("chain is not activated", isChainActivated(false)).
 					When2(requestIsMade).
 					Then("should fail", executeFailsWithError("not activated")),
 
 				whenMessageIsFromEVM.
+					When2(whenMessageIsToCosmos).
 					When("asset is registered", isAssetRegistered(true)).
 					When("payload does not match", func() {
 						req = types.NewExecuteMessage(
@@ -1117,12 +1125,14 @@ func TestExecuteMessage(t *testing.T) {
 					Then("should fail", executeFailsWithError("payload hash does not match")),
 
 				whenMessageIsFromEVM.
+					When2(whenMessageIsToCosmos).
 					When("asset is registered", isAssetRegistered(true)).
 					When("general message already executed", isMessageFound(true, nexus.Executed)).
 					When2(requestIsMade).
 					Then("should fail", executeFailsWithError("already executed")),
 
 				whenMessageIsFromEVM.
+					When2(whenMessageIsToCosmos).
 					When("asset is registered", isAssetRegistered(true)).
 					When("payload with version is invalid", func() {
 						payload = rand.BytesBetween(100, 500)
@@ -1132,6 +1142,7 @@ func TestExecuteMessage(t *testing.T) {
 					Then("should fail", executeFailsWithError("invalid payload with version")),
 
 				whenMessageIsFromEVM.
+					When2(whenMessageIsToCosmos).
 					When("asset is registered", isAssetRegistered(true)).
 					When("payload is invalid", func() {
 						bytesType := funcs.Must(abi.NewType("bytes", "bytes", nil))
@@ -1151,10 +1162,57 @@ func TestExecuteMessage(t *testing.T) {
 					When2(requestIsMade).
 					Then("should fail", executeFailsWithError("invalid payload")),
 
+				whenMessageIsFromCosmos.
+					When2(whenMessageIsToCosmos).
+					When("asset is registered", isAssetRegistered(true)).
+					When("payload is invalid", func() {
+						payload = rand.BytesBetween(100, 500)
+						msg.PayloadHash = crypto.Keccak256Hash(payload).Bytes()
+					}).
+					When2(requestIsMade).
+					Then("should fail", executeFailsWithError("invalid payload")),
+
+				whenMessageIsFromCosmos.
+					When2(whenMessageIsToCosmos).
+					When("asset is registered", isAssetRegistered(true)).
+					When("payload is invalid", func() {
+						payload = randPayload()
+						msg.PayloadHash = crypto.Keccak256Hash(payload).Bytes()
+					}).
+					When2(requestIsMade).
+					Then("should fail", executeFailsWithError("invalid payload")),
+
 				whenMessageIsFromEVM.
+					When2(whenMessageIsToCosmos).
 					When("asset is registered", isAssetRegistered(true)).
 					When("payload is valid", func() {
 						payload = randPayload()
+						msg.PayloadHash = crypto.Keccak256Hash(payload).Bytes()
+					}).
+					When2(requestIsMade).
+					Then("should success", func(t *testing.T) {
+						_, err := server.ExecuteMessage(sdk.WrapSDKContext(ctx), req)
+						fmt.Println(err)
+						assert.NoError(t, err)
+					}),
+				whenMessageIsFromCosmos.
+					When2(whenMessageIsToEVM).
+					When("asset is registered", isAssetRegistered(true)).
+					When("payload is valid", func() {
+						payload = rand.BytesBetween(100, 500)
+						msg.PayloadHash = crypto.Keccak256Hash(payload).Bytes()
+					}).
+					When2(requestIsMade).
+					Then("should success", func(t *testing.T) {
+						_, err := server.ExecuteMessage(sdk.WrapSDKContext(ctx), req)
+						fmt.Println(err)
+						assert.NoError(t, err)
+					}),
+				whenMessageIsFromCosmos.
+					When2(whenMessageIsToCosmos).
+					When("asset is registered", isAssetRegistered(true)).
+					When("payload is valid", func() {
+						payload = randWasmPayload()
 						msg.PayloadHash = crypto.Keccak256Hash(payload).Bytes()
 					}).
 					When2(requestIsMade).
@@ -1197,6 +1255,17 @@ func TestHandleCallContract(t *testing.T) {
 				Name:                  chain,
 				SupportsForeignAssets: true,
 				Module:                evmtypes.ModuleName,
+				KeyType:               tss.Multisig,
+			}, true
+		}
+	})
+
+	whenCosmosChainIsRegistered := When("cosmos chain is registered", func() {
+		nexusK.GetChainFunc = func(_ sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
+			return nexus.Chain{
+				Name:                  chain,
+				SupportsForeignAssets: true,
+				Module:                exported.ModuleName,
 				KeyType:               tss.Multisig,
 			}, true
 		}
@@ -1247,6 +1316,23 @@ func TestHandleCallContract(t *testing.T) {
 						_, err := server.CallContract(sdk.WrapSDKContext(ctx), req)
 						assert.NoError(t, err)
 						assert.Equal(t, msg.Status, nexus.Sent)
+						assert.Equal(t, msg.GetSourceChain(), nexus.ChainName(exported.Axelarnet.Name))
+						assert.Equal(t, msg.GetSourceAddress(), req.Sender.String())
+						assert.Equal(t, msg.GetDestinationAddress(), req.ContractAddress)
+						assert.Equal(t, msg.GetDestinationChain(), req.Chain)
+
+						payloadHash := crypto.Keccak256(req.Payload)
+						assert.Equal(t, msg.PayloadHash, payloadHash)
+					}),
+				whenCosmosChainIsRegistered.
+					When2(whenChainIsActivated).
+					When2(whenAddressIsValid).
+					When2(whenSetNewMessageSucceeds).
+					When2(requestIsMade).
+					Then("call contract succeeds", func(t *testing.T) {
+						_, err := server.CallContract(sdk.WrapSDKContext(ctx), req)
+						assert.NoError(t, err)
+						assert.Equal(t, msg.Status, nexus.Approved)
 						assert.Equal(t, msg.GetSourceChain(), nexus.ChainName(exported.Axelarnet.Name))
 						assert.Equal(t, msg.GetSourceAddress(), req.Sender.String())
 						assert.Equal(t, msg.GetDestinationAddress(), req.ContractAddress)
@@ -1343,4 +1429,19 @@ func randPayload() []byte {
 		bz32,
 		payload,
 	))
+}
+
+func randWasmPayload() []byte {
+	args := make(map[string]string)
+
+	randStr := func() string { return rand.Str(int(rand.I64Between(1, 32))) }
+
+	argNum := int(rand2.I64Between(1, 10))
+
+	for i := 0; i < argNum; i += 1 {
+		args[randStr()] = randStr()
+	}
+	msg := make(map[string]map[string]string)
+	msg[randStr()] = args
+	return funcs.Must(json.Marshal(msg))
 }
