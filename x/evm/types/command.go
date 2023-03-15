@@ -183,6 +183,27 @@ func NewApproveContractCallWithMintCommand(
 	}
 }
 
+// NewApproveContractCallWithMintGeneric creates a command to approve contract call with mint
+func NewApproveContractCallWithMintGeneric(
+	chainID sdk.Int,
+	keyID multisig.KeyID,
+	sourceTxID common.Hash,
+	message nexus.GeneralMessage,
+	symbol string,
+) Command {
+	commandID := NewCommandID([]byte(message.ID), chainID)
+	contractAddress := common.HexToAddress(message.GetDestinationAddress())
+	payloadHash := common.BytesToHash(message.PayloadHash)
+
+	return Command{
+		ID:         commandID,
+		Type:       COMMAND_TYPE_APPROVE_CONTRACT_CALL_WITH_MINT,
+		Params:     createApproveContractCallWithMintParamsGeneric(contractAddress, payloadHash, sourceTxID, message.Sender, 0, message.Asset.Amount.BigInt(), symbol),
+		KeyID:      keyID,
+		MaxGasCost: approveContractCallWithMintMaxGasCost,
+	}
+}
+
 // DecodeParams returns the decoded parameters in the given command
 func (m Command) DecodeParams() (map[string]string, error) {
 	params := make(map[string]string)
@@ -326,6 +347,27 @@ func createApproveContractCallWithMintParams(
 		symbol,
 		amount.BigInt(),
 		common.Hash(sourceTxID),
+		new(big.Int).SetUint64(sourceEventIndex),
+	))
+}
+
+func createApproveContractCallWithMintParamsGeneric(
+	contractAddress common.Address,
+	payloadHash common.Hash,
+	txID common.Hash,
+	sender nexus.CrossChainAddress,
+	sourceEventIndex uint64,
+	amount *big.Int,
+	symbol string) []byte {
+
+	return funcs.Must(approveContractCallWithMintArguments.Pack(
+		sender.Chain.Name,
+		sender.Address,
+		contractAddress,
+		payloadHash,
+		symbol,
+		amount,
+		txID,
 		new(big.Int).SetUint64(sourceEventIndex),
 	))
 }
