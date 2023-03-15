@@ -17,6 +17,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils/events"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
+	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/utils/funcs"
@@ -56,6 +57,10 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
 	}
 
+	if !chain.IsFrom(evmtypes.ModuleName) {
+		return nil, fmt.Errorf("non EVM chains are not supported")
+	}
+
 	if !s.nexus.IsChainActivated(ctx, exported.Axelarnet) {
 		return nil, fmt.Errorf("chain %s is not activated yet", exported.Axelarnet.Name)
 	}
@@ -74,12 +79,7 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 	// axelar gateway expects keccak256 hashes for payloads
 	payloadHash := crypto.Keccak256(req.Payload)
 
-	status := nexus.Sent
-	// if destination is cosmos, set status to approved. Message will be sent via ExecuteMessage
-	if recipient.Chain.Module == exported.ModuleName {
-		status = nexus.Approved
-	}
-	msg := nexus.NewGeneralMessage(s.nexus.GenerateMessageID(ctx), sender, recipient, payloadHash, status, nil)
+	msg := nexus.NewGeneralMessage(s.nexus.GenerateMessageID(ctx), sender, recipient, payloadHash, nexus.Sent, nil)
 	if err := s.nexus.SetNewMessage(ctx, msg); err != nil {
 		return nil, sdkerrors.Wrap(err, "failed to add general message")
 	}
