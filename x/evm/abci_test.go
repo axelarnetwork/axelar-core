@@ -54,17 +54,19 @@ func TestHandleGeneralMessage(t *testing.T) {
 		n              *mock.NexusMock
 		multisigKeeper *mock.MultisigKeeperMock
 		destinationCk  *mock.ChainKeeperMock
+
+		msg nexus.GeneralMessage
 	)
 
-	sourceChainName := nexus.ChainName(rand.Str(5))
-	destinationChainName := nexus.ChainName(rand.Str(5))
-	destinationChain := nexus.Chain{Name: destinationChainName, Module: types.ModuleName}
-	sourceChain := nexus.Chain{Name: sourceChainName, Module: types.ModuleName}
+	destinationChain := nexus.Chain{Name: nexustestutils.RandomChainName(), Module: types.ModuleName}
+	sourceChain := nexus.Chain{Name: nexustestutils.RandomChainName(), Module: types.ModuleName}
 	sender := nexus.CrossChainAddress{Chain: sourceChain, Address: evmTestUtils.RandomAddress().Hex()}
 	receiver := nexus.CrossChainAddress{Chain: destinationChain, Address: evmTestUtils.RandomAddress().Hex()}
 	payload := rand.Bytes(100)
-	genMsg := nexus.NewGeneralMessage(evmTestUtils.RandomHash().Hex(), sender, receiver, evmCrypto.Keccak256(payload), nexus.Approved, nil)
-	givenGeneralMessageEnqueued := Given("GeneralMessage enqueued", func() {
+	asset := rand.Coin()
+
+	givenMessage := Given("a message", func() {
+		msg = nexus.NewGeneralMessage(evmTestUtils.RandomHash().Hex(), sender, receiver, evmCrypto.Keccak256(payload), nexus.Approved, nil)
 
 		ctx, _, n, multisigKeeper, _, destinationCk = setup()
 		n.SetMessageFailedFunc = func(ctx sdk.Context, id string) error {
@@ -73,19 +75,31 @@ func TestHandleGeneralMessage(t *testing.T) {
 
 	})
 
-	panicWith := func(msg string) func(t *testing.T) {
+	withToken := Given("with token", func() {
+		msg.Asset = &asset
+
+		destinationCk.GetERC20TokenByAssetFunc = func(ctx sdk.Context, asset string) types.ERC20Token {
+			if asset == msg.Asset.Denom {
+				return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed})
+			}
+			return types.NilToken
+		}
+	})
+
+	panicWith := func(errMsg string) func(t *testing.T) {
 		return func(t *testing.T) {
-			assert.PanicsWithError(t, msg, func() {
-				handleMessage(ctx, destinationCk, n, multisigKeeper, destinationChain, genMsg)
+			assert.PanicsWithError(t, errMsg, func() {
+				handleMessage(ctx, destinationCk, rand.IntBetween(sdk.ZeroInt(), sdk.NewInt(10000)), multisigTestUtils.KeyID(), msg)
 			})
 		}
 	}
 
-	isDestinationChainIDSet := func(isSet bool) func() {
-		return func() {
-			destinationCk.GetChainIDFunc = func(ctx sdk.Context) (sdk.Int, bool) { return sdk.ZeroInt(), isSet }
+	validationFailedWith := func(errMsg string) func(t *testing.T) {
+		return func(t *testing.T) {
+			assert.ErrorContains(t, validateMessage(ctx, destinationCk, n, multisigKeeper, destinationChain, msg), errMsg)
 		}
 	}
+
 	isChainActivated := func(isActivated bool) func() {
 		return func() {
 			n.IsChainActivatedFunc = func(_ sdk.Context, _ nexus.Chain) bool { return isActivated }
@@ -127,65 +141,94 @@ func TestHandleGeneralMessage(t *testing.T) {
 		}
 	}
 
-	givenGeneralMessageEnqueued.
-		When("destination chain id is not set", isDestinationChainIDSet(false)).
-		Then("should panic", panicWith("result is not found")).
-		Run(t)
-
-	givenGeneralMessageEnqueued.
-		When("destination chain id is set", isDestinationChainIDSet(true)).
+	givenMessage.
 		When("current key not set", isCurrentKeySet(false)).
-		Then("should error", func(t *testing.T) {
-			_, err := handleMessage(ctx, destinationCk, n, multisigKeeper, destinationChain, genMsg)
-			assert.EqualError(t, err, "current key not set")
-		}).
+		Then("should fail validation", validationFailedWith("current key not set")).
 		Run(t)
 
-	givenGeneralMessageEnqueued.
-		When("destination chain id is set", isDestinationChainIDSet(true)).
+	givenMessage.
 		When("current key is set", isCurrentKeySet(true)).
-		When("chain is activated", isChainActivated((true))).
+		When("chain is not activated", isChainActivated(false)).
+		Then("should fail validation", validationFailedWith("destination chain de-activated")).
+		Run(t)
+
+	givenMessage.
+		When("current key is set", isCurrentKeySet(true)).
+		When("chain is activated", isChainActivated(true)).
 		When("gateway not set", isGatewayAddressSet(false)).
-		Then("should error", func(t *testing.T) {
-			_, err := handleMessage(ctx, destinationCk, n, multisigKeeper, destinationChain, genMsg)
-			assert.EqualError(t, err, "destination chain gateway not deployed yet")
-		}).
+		Then("should fail validation", validationFailedWith("destination chain gateway not deployed yet")).
 		Run(t)
-	givenGeneralMessageEnqueued.
-		When("destination chain id is set", isDestinationChainIDSet(true)).
+
+	givenMessage.
 		When("current key is set", isCurrentKeySet(true)).
-		When("chain is activated", isChainActivated((true))).
+		When("chain is activated", isChainActivated(true)).
 		When("gateway is set", isGatewayAddressSet(true)).
-		Then("should error", func(t *testing.T) {
-			badMsg := genMsg
-			badMsg.Recipient.Address = "0xFF"
-			_, err := handleMessage(ctx, destinationCk, n, multisigKeeper, destinationChain, badMsg)
-			assert.EqualError(t, err, "invalid contract address")
+		When("recipient address is invalid", func() {
+			msg.Recipient.Address = "0xFF"
+		}).
+		Then("should fail validation", validationFailedWith("invalid contract address")).
+		Run(t)
+
+	givenMessage.
+		Given2(withToken).
+		When("current key is set", isCurrentKeySet(true)).
+		When("chain is activated", isChainActivated(true)).
+		When("gateway is set", isGatewayAddressSet(true)).
+		When("token not confirmed on destination chain", func() {
+			destinationCk.GetERC20TokenByAssetFunc = func(sdk.Context, string) types.ERC20Token {
+				return types.NilToken
+			}
+		}).
+		Then("should fail validation", validationFailedWith(
+			fmt.Sprintf("asset %s not confirmed on destination chain", asset.GetDenom())),
+		).
+		Run(t)
+
+	givenMessage.
+		Given2(withToken).
+		When("current key is set", isCurrentKeySet(true)).
+		When("chain is activated", isChainActivated(true)).
+		When("gateway is set", isGatewayAddressSet(true)).
+		When("token not confirmed on destination chain", func() {
+			destinationCk.GetERC20TokenByAssetFunc = func(sdk.Context, string) types.ERC20Token {
+				return types.NilToken
+			}
+		}).
+		Then("should fail validation", validationFailedWith(
+			fmt.Sprintf("asset %s not confirmed on destination chain", asset.GetDenom())),
+		).
+		Run(t)
+
+	givenValidMessage := givenMessage.Given("message is valid", func() {
+		isCurrentKeySet(true)()
+		isChainActivated(true)()
+		isGatewayAddressSet(true)()
+	})
+
+	var err error
+	givenValidMessage.
+		Given2(withToken).
+		When("validate message", func() {
+			err = validateMessage(ctx, destinationCk, n, multisigKeeper, destinationChain, msg)
+		}).
+		Then("should pass validation", func(t *testing.T) {
+			assert.NoError(t, err)
 		}).
 		Run(t)
 
-	givenGeneralMessageEnqueued.
-		When("destination chain id is set", isDestinationChainIDSet(true)).
-		When("current key is set", isCurrentKeySet(true)).
-		When("chain is activated", isChainActivated((true))).
-		When("gateway is set", isGatewayAddressSet(true)).
+	givenValidMessage.
 		When("enqueue command fails", enqueueCommandSucceed(false)).
 		Then("should panic", panicWith("call should not have failed: enqueue error")).
 		Run(t)
 
-	givenGeneralMessageEnqueued.
-		When("destination chain id is set", isDestinationChainIDSet(true)).
-		When("current key is set", isCurrentKeySet(true)).
-		When("chain is activated", isChainActivated((true))).
-		When("gateway is set", isGatewayAddressSet(true)).
+	givenValidMessage.
+		Given2(withToken).
 		When("enqueue command succeeds", enqueueCommandSucceed(true)).
 		Then("should succeed", func(t *testing.T) {
-			_, err := handleMessage(ctx, destinationCk, n, multisigKeeper, destinationChain, genMsg)
-			assert.NoError(t, err)
+			handleMessage(ctx, destinationCk, rand.IntBetween(sdk.ZeroInt(), sdk.NewInt(10000)), multisigTestUtils.KeyID(), msg)
 			assert.Len(t, destinationCk.EnqueueCommandCalls(), 1)
 		}).
 		Run(t)
-
 }
 
 func TestHandleGeneralMessages(t *testing.T) {
@@ -237,7 +280,6 @@ func TestHandleGeneralMessages(t *testing.T) {
 					destChain.Module = types.ModuleName
 					sender := nexus.CrossChainAddress{Chain: srcChain, Address: evmTestUtils.RandomAddress().Hex()}
 					receiver := nexus.CrossChainAddress{Chain: destChain, Address: evmTestUtils.RandomAddress().Hex()}
-
 					msg := nexus.NewGeneralMessage(evmTestUtils.RandomHash().Hex(), sender, receiver, evmTestUtils.RandomHash().Bytes(), nexus.Sent, nil)
 					msgs = append(msgs, msg)
 				}
