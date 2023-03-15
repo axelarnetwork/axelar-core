@@ -183,8 +183,8 @@ func NewApproveContractCallWithMintCommand(
 	}
 }
 
-// NewApproveContractCallWithMintCommandFromMessage creates a command to approve contract call with mint
-func NewApproveContractCallWithMintCommandFromMessage(
+// NewApproveContractCallWithMintGeneric creates a command to approve contract call with mint
+func NewApproveContractCallWithMintGeneric(
 	chainID sdk.Int,
 	keyID multisig.KeyID,
 	sourceTxID common.Hash,

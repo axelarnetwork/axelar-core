@@ -628,7 +628,7 @@ func handleMessageWithToken(ctx sdk.Context, ck types.ChainKeeper, chainID sdk.I
 	dummyTxID := common.BytesToHash(make([]byte, common.HashLength))
 	token := ck.GetERC20TokenByAsset(ctx, msg.Asset.GetDenom())
 
-	cmd := types.NewApproveContractCallWithMintCommandFromMessage(chainID, keyID, dummyTxID, msg, token.GetDetails().Symbol)
+	cmd := types.NewApproveContractCallWithMintGeneric(chainID, keyID, dummyTxID, msg, token.GetDetails().Symbol)
 	funcs.MustNoErr(ck.EnqueueCommand(ctx, cmd))
 
 	events.Emit(ctx, &types.ContractCallWithMintApproved{
@@ -661,6 +661,10 @@ func handleMessages(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, m types
 			success := false
 			_ = utils.RunCached(ctx, bk, func(ctx sdk.Context) (bool, error) {
 				if err := validateMessage(ctx, ck, n, m, chain, msg); err != nil {
+					bk.Logger(ctx).Info(fmt.Sprintf("failed validating message: %s", err.Error()),
+						types.AttributeKeyChain, msg.GetDestinationChain(),
+						types.AttributeKeyMessageID, msg.ID,
+					)
 					return false, err
 				}
 
