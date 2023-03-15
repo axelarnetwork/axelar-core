@@ -1172,16 +1172,6 @@ func TestExecuteMessage(t *testing.T) {
 					When2(requestIsMade).
 					Then("should fail", executeFailsWithError("invalid payload")),
 
-				whenMessageIsFromCosmos.
-					When2(whenMessageIsToCosmos).
-					When("asset is registered", isAssetRegistered(true)).
-					When("payload is invalid", func() {
-						payload = randPayload()
-						msg.PayloadHash = crypto.Keccak256Hash(payload).Bytes()
-					}).
-					When2(requestIsMade).
-					Then("should fail", executeFailsWithError("invalid payload")),
-
 				whenMessageIsFromEVM.
 					When2(whenMessageIsToCosmos).
 					When("asset is registered", isAssetRegistered(true)).
@@ -1200,6 +1190,19 @@ func TestExecuteMessage(t *testing.T) {
 					When("asset is registered", isAssetRegistered(true)).
 					When("payload is valid", func() {
 						payload = rand.BytesBetween(100, 500)
+						msg.PayloadHash = crypto.Keccak256Hash(payload).Bytes()
+					}).
+					When2(requestIsMade).
+					Then("should success", func(t *testing.T) {
+						_, err := server.ExecuteMessage(sdk.WrapSDKContext(ctx), req)
+						fmt.Println(err)
+						assert.NoError(t, err)
+					}),
+				whenMessageIsFromCosmos.
+					When2(whenMessageIsToCosmos).
+					When("asset is registered", isAssetRegistered(true)).
+					When("payload is valid", func() {
+						payload = randPayload()
 						msg.PayloadHash = crypto.Keccak256Hash(payload).Bytes()
 					}).
 					When2(requestIsMade).
@@ -1432,6 +1435,8 @@ func randPayload() []byte {
 }
 
 func randWasmPayload() []byte {
+	bytesType := funcs.Must(abi.NewType("bytes", "bytes", nil))
+	bytes32Type := funcs.Must(abi.NewType("bytes32", "bytes32", nil))
 	args := make(map[string]string)
 
 	randStr := func() string { return rand.Str(int(rand.I64Between(1, 32))) }
@@ -1443,5 +1448,14 @@ func randWasmPayload() []byte {
 	}
 	msg := make(map[string]map[string]string)
 	msg[randStr()] = args
-	return funcs.Must(json.Marshal(msg))
+	payload := funcs.Must(json.Marshal(msg))
+
+	versionBz, _ := hexutil.Decode(types.CosmwasmV2)
+	var bz32 [32]byte
+	copy(bz32[:], versionBz)
+
+	return funcs.Must(abi.Arguments{{Type: bytes32Type}, {Type: bytesType}}.Pack(
+		bz32,
+		payload,
+	))
 }

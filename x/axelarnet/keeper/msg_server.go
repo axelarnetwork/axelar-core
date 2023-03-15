@@ -17,7 +17,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils/events"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
-	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/utils/funcs"
@@ -510,20 +509,9 @@ func (s msgServer) ExecuteMessage(c context.Context, req *types.ExecuteMessageRe
 
 	// send ibc message if destination is cosmos
 	if msg.Recipient.Chain.Module == exported.ModuleName {
-		var payload []byte
-		// translate message from ABI if from evm
-		if msg.Sender.Chain.Module == evmtypes.ModuleName {
-			bz, err := types.TranslateMessage(msg, req.Payload)
-			if err != nil {
-				return nil, sdkerrors.Wrap(err, "invalid payload")
-			}
-			payload = bz
-		} else if msg.Sender.Chain.Module == exported.ModuleName { // wrap message if from cosmos
-			bz, err := types.ConstructWasmMessageV2(msg, req.Payload)
-			if err != nil {
-				return nil, sdkerrors.Wrap(err, "invalid payload")
-			}
-			payload = bz
+		bz, err := types.TranslateMessage(msg, req.Payload)
+		if err != nil {
+			return nil, sdkerrors.Wrap(err, "invalid payload")
 		}
 
 		asset, err := s.escrowAssetToMessageSender(ctx, req.Sender, msg)
@@ -531,7 +519,7 @@ func (s msgServer) ExecuteMessage(c context.Context, req *types.ExecuteMessageRe
 			return nil, err
 		}
 
-		err = s.ibcK.SendMessage(c, msg.Recipient, asset, string(payload), msg.ID)
+		err = s.ibcK.SendMessage(c, msg.Recipient, asset, string(bz), msg.ID)
 		if err != nil {
 			return nil, err
 		}
