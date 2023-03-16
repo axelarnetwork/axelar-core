@@ -26,8 +26,8 @@ import (
 var _ types.MsgServiceServer = msgServer{}
 
 const (
-	callContractGasCost   = storetypes.Gas(10000000)
-	executeMessageGasCost = storetypes.Gas(1000000)
+	evmCallContractGasCost    = storetypes.Gas(10000000)
+	cosmosCallContractGasCost = storetypes.Gas(1000000)
 )
 
 type msgServer struct {
@@ -84,7 +84,7 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 		return nil, sdkerrors.Wrap(err, "failed to add general message")
 	}
 
-	ctx.GasMeter().ConsumeGas(callContractGasCost, "call-contract")
+	ctx.GasMeter().ConsumeGas(evmCallContractGasCost, "call-contract")
 
 	events.Emit(ctx, &types.ContractCallSubmitted{
 		MessageID:        msg.ID,
@@ -508,7 +508,7 @@ func (s msgServer) ExecuteMessage(c context.Context, req *types.ExecuteMessageRe
 	}
 
 	// send ibc message if destination is cosmos
-	if msg.Recipient.Chain.Module == exported.ModuleName {
+	if msg.Recipient.Chain.IsFrom(exported.ModuleName) {
 		// TODO: refactor this so cosmos senders don't need to encode payload as ABI
 		bz, err := types.TranslateMessage(msg, req.Payload)
 		if err != nil {
@@ -531,7 +531,11 @@ func (s msgServer) ExecuteMessage(c context.Context, req *types.ExecuteMessageRe
 		return nil, err
 	}
 
-	ctx.GasMeter().ConsumeGas(executeMessageGasCost, "execute-message")
+	if msg.Recipient.Chain.IsFrom(evmtypes.ModuleName) {
+		ctx.GasMeter().ConsumeGas(evmCallContractGasCost, "execute-message")
+	} else {
+		ctx.GasMeter().ConsumeGas(cosmosCallContractGasCost, "execute-message")
+	}
 
 	s.Logger(ctx).Debug("set general message status to sent", "messageID", msg.ID)
 
