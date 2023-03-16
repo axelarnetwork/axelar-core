@@ -9,6 +9,7 @@
     - [ContractCallSubmitted](#axelar.axelarnet.v1beta1.ContractCallSubmitted)
     - [ContractCallWithTokenSubmitted](#axelar.axelarnet.v1beta1.ContractCallWithTokenSubmitted)
     - [FeeCollected](#axelar.axelarnet.v1beta1.FeeCollected)
+    - [FeePaid](#axelar.axelarnet.v1beta1.FeePaid)
     - [IBCTransferCompleted](#axelar.axelarnet.v1beta1.IBCTransferCompleted)
     - [IBCTransferFailed](#axelar.axelarnet.v1beta1.IBCTransferFailed)
     - [IBCTransferRetried](#axelar.axelarnet.v1beta1.IBCTransferRetried)
@@ -619,6 +620,23 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `collector` | [bytes](#bytes) |  |  |
+| `fee` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+
+
+
+
+
+
+<a name="axelar.axelarnet.v1beta1.FeePaid"></a>
+
+### FeePaid
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `message_id` | [string](#string) |  |  |
+| `recipient` | [bytes](#bytes) |  |  |
 | `fee` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 
 

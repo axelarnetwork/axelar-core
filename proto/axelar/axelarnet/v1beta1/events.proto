@@ -73,6 +73,13 @@ message FeeCollected {
   cosmos.base.v1beta1.Coin fee = 2 [ (gogoproto.nullable) = false ];
 }
 
+message FeePaid {
+  string message_id = 1 [ (gogoproto.customname) = "MessageID" ];
+  bytes recipient = 2 [ (gogoproto.casttype) =
+                            "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  cosmos.base.v1beta1.Coin fee = 3 [ (gogoproto.nullable) = false ];
+}
+
 message ContractCallSubmitted {
   string message_id = 1 [ (gogoproto.customname) = "MessageID" ];
   string sender = 2;

@@ -12,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/axelarnetwork/axelar-core/utils/events"
+	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
@@ -19,15 +20,66 @@ import (
 	"github.com/axelarnetwork/utils/funcs"
 )
 
+// Fee is used to fee
+type Fee struct {
+	Amount    string `json:"amount"`
+	Recipient string `json:"recipient"`
+}
+
 // Message is attached in ICS20 packet memo field
 type Message struct {
 	DestinationChain   string `json:"destination_chain"`
 	DestinationAddress string `json:"destination_address"`
 	Payload            []byte `json:"payload"`
 	Type               int64  `json:"type"`
+	Fee                *Fee   `json:"fee"` //optional
 }
 
-func validateMessage(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.Nexus, ibcPath string, msg Message, token keeper.Coin) error {
+func (f Fee) validate(ctx sdk.Context, n types.Nexus, b types.BankKeeper, token sdk.Coin, msgType nexus.MessageType) error {
+	amt, ok := sdk.NewIntFromString(f.Amount)
+	if !ok || amt.LTE(sdk.ZeroInt()) {
+		return fmt.Errorf("invalid fee amount")
+	}
+
+	afterFee := token.Amount.Sub(amt)
+	switch msgType {
+	case nexus.TypeGeneralMessage:
+		if afterFee.LT(sdk.ZeroInt()) {
+			return fmt.Errorf("fee amount is greater than transfer value")
+		}
+	case nexus.TypeGeneralMessageWithToken:
+		if afterFee.LTE(sdk.ZeroInt()) {
+			return fmt.Errorf("fee amount is greater or equal to transfer value")
+		}
+	default:
+		return fmt.Errorf("unexpected message type for fee")
+	}
+
+	axelar := funcs.MustOk(n.GetChain(ctx, axelarnet.Axelarnet.GetName()))
+	if !n.IsAssetRegistered(ctx, axelar, token.GetDenom()) {
+		return fmt.Errorf("unregistered fee denom %s", token.GetDenom())
+	}
+
+	addr, err := sdk.AccAddressFromBech32(f.Recipient)
+	if err != nil {
+		return err
+	}
+
+	if b.BlockedAddr(addr) {
+		return fmt.Errorf("fee recipient is a blocked address")
+	}
+
+	return nil
+}
+
+func (f Fee) pay(ctx sdk.Context, b types.BankKeeper, denom string) error {
+	coin := sdk.NewCoin(denom, funcs.MustOk(sdk.NewIntFromString(f.Amount)))
+	recipient := funcs.Must(sdk.AccAddressFromBech32(f.Recipient))
+
+	return b.SendCoins(ctx, types.MessageSender, recipient, sdk.NewCoins(coin))
+}
+
+func validateMessage(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.Nexus, b types.BankKeeper, ibcPath string, msg Message, token keeper.Coin) error {
 	chainName, ok := ibcK.GetChainNameByIBCPath(ctx, ibcPath)
 	if !ok {
 		return fmt.Errorf("unrecognized IBC path %s", ibcPath)
@@ -60,6 +112,13 @@ func validateMessage(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.Nexus, ibcP
 	if (msg.Type == nexus.TypeGeneralMessage || msg.Type == nexus.TypeGeneralMessageWithToken) &&
 		!destChain.IsFrom(evmtypes.ModuleName) {
 		return fmt.Errorf("destination chain is not an EVM chain")
+	}
+
+	if msg.Fee != nil {
+		err := msg.Fee.validate(ctx, n, b, token.Coin, nexus.MessageType(msg.Type))
+		if err != nil {
+			return err
+		}
 	}
 
 	switch msg.Type {
@@ -106,15 +165,17 @@ func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n ty
 		return channeltypes.NewErrorAcknowledgement(sdkerrors.Wrapf(types.ErrGeneralMessage, "cannot unmarshal memo"))
 	}
 
-	// extract token from packet
-	token, err := extractTokenFromPacketData(ctx, ibcK, n, packet)
+	// extract sdk coin from packet
+	coin := extractTokenFromPacketData(packet)
+	// wrap sdk coin with nexusK and ibcK
+	crossChainCoin, err := keeper.NewCoin(ctx, ibcK, n, coin)
 	if err != nil {
 		return channeltypes.NewErrorAcknowledgement(err)
 	}
 
 	path := types.NewIBCPath(packet.GetDestPort(), packet.GetDestChannel())
 
-	if err := validateMessage(ctx, ibcK, n, path, msg, token); err != nil {
+	if err := validateMessage(ctx, ibcK, n, b, path, msg, crossChainCoin); err != nil {
 		ibcK.Logger(ctx).Debug(fmt.Sprintf("failed validating message: %s", err.Error()),
 			"src_channel", packet.GetSourceChannel(),
 			"dest_channel", packet.GetDestChannel(),
@@ -129,17 +190,38 @@ func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n ty
 		Address: data.GetSender(),
 	}
 
+	// generate message id in advance to link fee payment and message
+	msgID := n.GenerateMessageID(ctx)
+
+	// deduct fee payment from packet if applicable
+	if msg.Fee != nil {
+		if err = msg.Fee.pay(ctx, b, coin.GetDenom()); err != nil {
+			return channeltypes.NewErrorAcknowledgement(err)
+		}
+
+		amount := funcs.MustOk(sdk.NewIntFromString(msg.Fee.Amount))
+
+		events.Emit(ctx, &types.FeePaid{
+			MessageID: msgID,
+			Recipient: funcs.Must(sdk.AccAddressFromBech32(msg.Fee.Recipient)),
+			Fee:       sdk.NewCoin(coin.GetDenom(), amount),
+		})
+
+		// subtract fee from transfer value
+		crossChainCoin.Amount = crossChainCoin.Amount.Sub(amount)
+	}
+
 	rateLimitPacket := true
 
 	switch msg.Type {
 	case nexus.TypeGeneralMessage:
-		err = handleMessage(ctx, n, sourceAddress, msg)
+		err = handleMessage(ctx, n, sourceAddress, msg, msgID)
 	case nexus.TypeGeneralMessageWithToken:
-		err = handleMessageWithToken(ctx, n, b, sourceAddress, msg, token)
+		err = handleMessageWithToken(ctx, n, b, sourceAddress, msg, crossChainCoin, msgID)
 	case nexus.TypeSendToken:
 		// Send token is already rate limited in nexus.EnqueueTransfer
 		rateLimitPacket = false
-		err = handleTokenSent(ctx, n, b, sourceAddress, msg, token)
+		err = handleTokenSent(ctx, n, b, sourceAddress, msg, crossChainCoin)
 	default:
 		err = sdkerrors.Wrapf(types.ErrGeneralMessage, "unrecognized Message type")
 	}
@@ -164,12 +246,12 @@ func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n ty
 	return ack
 }
 
-func handleMessage(ctx sdk.Context, n types.Nexus, sourceAddress nexus.CrossChainAddress, msg Message) error {
+func handleMessage(ctx sdk.Context, n types.Nexus, sourceAddress nexus.CrossChainAddress, msg Message, id string) error {
 	destChain := funcs.MustOk(n.GetChain(ctx, nexus.ChainName(msg.DestinationChain)))
 
 	recipient := nexus.CrossChainAddress{Chain: destChain, Address: msg.DestinationAddress}
 	m := nexus.NewGeneralMessage(
-		n.GenerateMessageID(ctx),
+		id,
 		sourceAddress,
 		recipient,
 		crypto.Keccak256Hash(msg.Payload).Bytes(),
@@ -190,7 +272,7 @@ func handleMessage(ctx sdk.Context, n types.Nexus, sourceAddress nexus.CrossChai
 	return n.SetNewMessage(ctx, m)
 }
 
-func handleMessageWithToken(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceAddress nexus.CrossChainAddress, msg Message, asset keeper.Coin) error {
+func handleMessageWithToken(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceAddress nexus.CrossChainAddress, msg Message, asset keeper.Coin, id string) error {
 	destChain := funcs.MustOk(n.GetChain(ctx, nexus.ChainName(msg.DestinationChain)))
 
 	if err := asset.Lock(b, types.MessageSender); err != nil {
@@ -199,7 +281,7 @@ func handleMessageWithToken(ctx sdk.Context, n types.Nexus, b types.BankKeeper, 
 
 	recipient := nexus.CrossChainAddress{Chain: destChain, Address: msg.DestinationAddress}
 	m := nexus.NewGeneralMessage(
-		n.GenerateMessageID(ctx),
+		id,
 		sourceAddress,
 		recipient,
 		crypto.Keccak256Hash(msg.Payload).Bytes(),
@@ -247,9 +329,9 @@ func handleTokenSent(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceA
 
 }
 
-// extractTokenFromPacketData get normalized token from ICS20 packet
+// extractTokenFromPacketData gets sdk coin from ICS20 packet
 // panic if unable to unmarshal packet data
-func extractTokenFromPacketData(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.Nexus, packet ibcexported.PacketI) (keeper.Coin, error) {
+func extractTokenFromPacketData(packet ibcexported.PacketI) sdk.Coin {
 	data := funcs.Must(types.ToICS20Packet(packet))
 
 	// parse the transfer amount
@@ -286,6 +368,5 @@ func extractTokenFromPacketData(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.
 
 		denom = denomTrace.IBCDenom()
 	}
-
-	return keeper.NewCoin(ctx, ibcK, n, sdk.NewCoin(denom, amount))
+	return sdk.NewCoin(denom, amount)
 }
