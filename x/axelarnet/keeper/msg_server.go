@@ -26,8 +26,8 @@ import (
 var _ types.MsgServiceServer = msgServer{}
 
 const (
-	callContractGasCost   = storetypes.Gas(10000000)
-	executeMessageGasCost = storetypes.Gas(1000000)
+	evmCallContractGasCost    = storetypes.Gas(10000000)
+	cosmosCallContractGasCost = storetypes.Gas(1000000)
 )
 
 type msgServer struct {
@@ -84,7 +84,7 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 		return nil, sdkerrors.Wrap(err, "failed to add general message")
 	}
 
-	ctx.GasMeter().ConsumeGas(callContractGasCost, "call-contract")
+	ctx.GasMeter().ConsumeGas(evmCallContractGasCost, "call-contract")
 
 	events.Emit(ctx, &types.ContractCallSubmitted{
 		MessageID:        msg.ID,
@@ -478,17 +478,13 @@ func (s msgServer) RetryIBCTransfer(c context.Context, req *types.RetryIBCTransf
 	return &types.RetryIBCTransferResponse{}, nil
 }
 
-// ExecuteMessage translates an abi encoded payload and sends to a cosmos chain
+// ExecuteMessage triggers the actual sending of a previously submitted message
 func (s msgServer) ExecuteMessage(c context.Context, req *types.ExecuteMessageRequest) (*types.ExecuteMessageResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
 	msg, ok := s.nexus.GetMessage(ctx, req.ID)
 	if !ok {
 		return nil, fmt.Errorf("message %s not found", req.ID)
-	}
-
-	if !msg.Sender.Chain.IsFrom(evmtypes.ModuleName) {
-		return nil, fmt.Errorf("message is not from an EVM chain")
 	}
 
 	if !s.nexus.IsChainActivated(ctx, msg.Sender.Chain) {
@@ -511,27 +507,35 @@ func (s msgServer) ExecuteMessage(c context.Context, req *types.ExecuteMessageRe
 		return nil, fmt.Errorf("general message %s already executed", req.ID)
 	}
 
-	bz, err := types.TranslateMessage(msg, req.Payload)
-	if err != nil {
-		return nil, sdkerrors.Wrap(err, "invalid payload")
+	// send ibc message if destination is cosmos
+	if msg.Recipient.Chain.IsFrom(exported.ModuleName) {
+		// TODO: refactor this so cosmos senders don't need to encode payload as ABI
+		bz, err := types.TranslateMessage(msg, req.Payload)
+		if err != nil {
+			return nil, sdkerrors.Wrap(err, "invalid payload")
+		}
+
+		asset, err := s.escrowAssetToMessageSender(ctx, req.Sender, msg)
+		if err != nil {
+			return nil, err
+		}
+
+		err = s.ibcK.SendMessage(c, msg.Recipient, asset, string(bz), msg.ID)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	asset, err := s.escrowAssetToMessageSender(ctx, req.Sender, msg)
+	err := s.nexus.SetMessageSent(ctx, msg.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	err = s.ibcK.SendMessage(c, msg.Recipient, asset, string(bz), msg.ID)
-	if err != nil {
-		return nil, err
+	if msg.Recipient.Chain.IsFrom(evmtypes.ModuleName) {
+		ctx.GasMeter().ConsumeGas(evmCallContractGasCost, "execute-message")
+	} else {
+		ctx.GasMeter().ConsumeGas(cosmosCallContractGasCost, "execute-message")
 	}
-
-	err = s.nexus.SetMessageSent(ctx, msg.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	ctx.GasMeter().ConsumeGas(executeMessageGasCost, "execute-message")
 
 	s.Logger(ctx).Debug("set general message status to sent", "messageID", msg.ID)
 

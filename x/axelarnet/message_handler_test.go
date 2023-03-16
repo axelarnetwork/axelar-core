@@ -44,6 +44,7 @@ func TestHandleMessage(t *testing.T) {
 
 		ics20Packet ibctransfertypes.FungibleTokenPacketData
 		message     axelarnet.Message
+		genMsg      nexus.GeneralMessage
 	)
 
 	sourceChannel := axelartestutils.RandomChannel()
@@ -65,7 +66,10 @@ func TestHandleMessage(t *testing.T) {
 		ctx, k, channelK = setup()
 		channelK.SendPacketFunc = func(sdk.Context, *captypes.Capability, ibcexported.PacketI) error { return nil }
 		n = &mock.NexusMock{
-			SetNewMessageFunc: func(sdk.Context, nexus.GeneralMessage) error { return nil },
+			SetNewMessageFunc: func(ctx sdk.Context, msg nexus.GeneralMessage) error {
+				genMsg = msg
+				return nil
+			},
 			GetChainFunc: func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 				switch chain {
 				case srcChain.Name:
@@ -194,7 +198,6 @@ func TestHandleMessage(t *testing.T) {
 		When("source chain is not activated", isChainActivated(srcChain, false)).
 		Then("should return ack error", ackError()).
 		Run(t)
-
 	isChainFound := func(c nexus.Chain, isFound bool) func() {
 		return func() {
 			n.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
@@ -282,6 +285,7 @@ func TestHandleMessage(t *testing.T) {
 		When("rate limit on another asset is set", whenRateLimitIsSet(true)).
 		Then("should return ack success", func(t *testing.T) {
 			assert.True(t, axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, r, packet).Success())
+			assert.Equal(t, genMsg.Status, nexus.Approved)
 		}).
 		Run(t)
 }
@@ -301,6 +305,7 @@ func TestHandleMessageWithToken(t *testing.T) {
 		amount      string
 		ics20Packet ibctransfertypes.FungibleTokenPacketData
 		message     axelarnet.Message
+		genMsg      nexus.GeneralMessage
 	)
 
 	sourceChannel := axelartestutils.RandomChannel()
@@ -342,7 +347,10 @@ func TestHandleMessageWithToken(t *testing.T) {
 
 		channelK.SendPacketFunc = func(sdk.Context, *captypes.Capability, ibcexported.PacketI) error { return nil }
 		n = &mock.NexusMock{
-			SetNewMessageFunc: func(sdk.Context, nexus.GeneralMessage) error { return nil },
+			SetNewMessageFunc: func(ctx sdk.Context, msg nexus.GeneralMessage) error {
+				genMsg = msg
+				return nil
+			},
 			GetChainFunc: func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 				switch chain {
 				case srcChain.Name:
@@ -459,6 +467,7 @@ func TestHandleMessageWithToken(t *testing.T) {
 		When("rate limit on another asset is set", whenRateLimitIsSet(true)).
 		Then("should return ack success", func(t *testing.T) {
 			assert.True(t, axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, r, packet).Success())
+			assert.Equal(t, genMsg.Status, nexus.Approved)
 		}).
 		Run(t)
 }
