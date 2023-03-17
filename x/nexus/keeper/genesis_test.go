@@ -205,7 +205,7 @@ func TestExportGenesisInitGenesis(t *testing.T) {
 
 	messageCount := rand.I64Between(100, 256)
 	for i := 0; i < int(messageCount); i++ {
-		msg := getRandomMessage(keeper.GenerateMessageID(ctx))
+		msg := getRandomMessage(keeper.GenerateMessageID(ctx, rand.Bytes(32)))
 		expected.Messages = append(expected.Messages, msg)
 		funcs.MustNoErr(keeper.SetNewMessage(ctx, msg))
 	}

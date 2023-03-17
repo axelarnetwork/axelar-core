@@ -1245,10 +1245,9 @@ func TestHandleCallContract(t *testing.T) {
 		ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{}, &mock.ChannelKeeperMock{})
 		server = keeper.NewMsgServerImpl(k, nexusK, &mock.BankKeeperMock{}, &mock.AccountKeeperMock{}, ibcK)
 		count := 0
-		nexusK.GenerateMessageIDFunc = func(ctx sdk.Context) string {
+		nexusK.GenerateMessageIDFunc = func(ctx sdk.Context, txHash []byte) string {
 			count++
-			hash := sha256.Sum256(ctx.TxBytes())
-			return fmt.Sprintf("%s-%x", hex.EncodeToString(hash[:]), count)
+			return fmt.Sprintf("%s-%x", hex.EncodeToString(txHash), count)
 		}
 	})
 

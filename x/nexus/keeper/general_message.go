@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 
@@ -26,12 +25,11 @@ func getSentMessageKey(destinationChain exported.ChainName, id string) key.Key {
 }
 
 // GenerateMessageID generates a unique general message ID
-func (k Keeper) GenerateMessageID(ctx sdk.Context) string {
+func (k Keeper) GenerateMessageID(ctx sdk.Context, txHash []byte) string {
 	counter := utils.NewCounter[uint64](messageNonceKey, k.getStore(ctx))
 	nonce := counter.Incr(ctx)
 
-	hash := sha256.Sum256(ctx.TxBytes())
-	return fmt.Sprintf("%s-%d", hex.EncodeToString(hash[:]), nonce)
+	return fmt.Sprintf("%s-%d", hex.EncodeToString(txHash), nonce)
 }
 
 // SetNewMessage sets the given general message. If the messages is approved, adds the message ID to approved messages store

@@ -200,7 +200,7 @@ func TestKeeper_Message(t *testing.T) {
 			destinationChain.Module = evmtypes.ModuleName
 			k.SetChain(ctx, sourceChain)
 			k.SetChain(ctx, destinationChain)
-			id = k.GenerateMessageID(ctx)
+			id = k.GenerateMessageID(ctx, rand.Bytes(32))
 			msg := exported.GeneralMessage{
 				ID:          id,
 				Sender:      exported.CrossChainAddress{Chain: sourceChain, Address: genCosmosAddr(sourceChain.Name.String())},

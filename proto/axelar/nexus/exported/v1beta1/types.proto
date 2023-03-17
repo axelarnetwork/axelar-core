@@ -106,4 +106,5 @@ message GeneralMessage {
   bytes payload_hash = 4;
   Status status = 5;
   cosmos.base.v1beta1.Coin asset = 6;
+  bytes source_tx_hash = 7;
 }

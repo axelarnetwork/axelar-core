@@ -1,6 +1,7 @@
 package axelarnet
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 
@@ -168,13 +169,15 @@ func handleMessage(ctx sdk.Context, n types.Nexus, sourceAddress nexus.CrossChai
 	destChain := funcs.MustOk(n.GetChain(ctx, nexus.ChainName(msg.DestinationChain)))
 
 	recipient := nexus.CrossChainAddress{Chain: destChain, Address: msg.DestinationAddress}
+	txHash := sha256.Sum256(ctx.TxBytes())
 	m := nexus.NewGeneralMessage(
-		n.GenerateMessageID(ctx),
+		n.GenerateMessageID(ctx, txHash[:]),
 		sourceAddress,
 		recipient,
 		crypto.Keccak256Hash(msg.Payload).Bytes(),
 		nexus.Approved,
 		nil,
+		txHash[:],
 	)
 
 	events.Emit(ctx, &types.ContractCallSubmitted{
@@ -198,13 +201,15 @@ func handleMessageWithToken(ctx sdk.Context, n types.Nexus, b types.BankKeeper, 
 	}
 
 	recipient := nexus.CrossChainAddress{Chain: destChain, Address: msg.DestinationAddress}
+	txHash := sha256.Sum256(ctx.TxBytes())
 	m := nexus.NewGeneralMessage(
-		n.GenerateMessageID(ctx),
+		n.GenerateMessageID(ctx, txHash[:]),
 		sourceAddress,
 		recipient,
 		crypto.Keccak256Hash(msg.Payload).Bytes(),
 		nexus.Approved,
 		&asset.Coin,
+		txHash[:],
 	)
 
 	events.Emit(ctx, &types.ContractCallWithTokenSubmitted{
