@@ -221,6 +221,7 @@ func setMessageToNexus(ctx sdk.Context, n types.Nexus, event types.Event, asset 
 			e.ContractCall.PayloadHash.Bytes(),
 			nexus.Approved,
 			nil,
+			event.TxID.Bytes(),
 		)
 
 	case *types.Event_ContractCallWithToken:
@@ -245,6 +246,7 @@ func setMessageToNexus(ctx sdk.Context, n types.Nexus, event types.Event, asset 
 			e.ContractCallWithToken.PayloadHash.Bytes(),
 			nexus.Approved,
 			asset,
+			event.TxID.Bytes(),
 		)
 	default:
 		return fmt.Errorf("unsupported event type %T", event)
@@ -602,9 +604,7 @@ func validateMessage(ctx sdk.Context, ck types.ChainKeeper, n types.Nexus, m typ
 
 func handleMessage(ctx sdk.Context, ck types.ChainKeeper, chainID sdk.Int, keyID multisig.KeyID, msg nexus.GeneralMessage) {
 
-	dummyTxID := common.BytesToHash(make([]byte, common.HashLength))
-
-	cmd := types.NewApproveContractCallCommandGeneric(chainID, keyID, common.HexToAddress(msg.GetDestinationAddress()), common.BytesToHash(msg.PayloadHash), dummyTxID, msg.GetSourceChain(), msg.GetSourceAddress(), 0, msg.ID)
+	cmd := types.NewApproveContractCallCommandGeneric(chainID, keyID, common.HexToAddress(msg.GetDestinationAddress()), common.BytesToHash(msg.PayloadHash), common.BytesToHash(msg.SourceTxHash), msg.GetSourceChain(), msg.GetSourceAddress(), 0, msg.ID)
 	funcs.MustNoErr(ck.EnqueueCommand(ctx, cmd))
 
 	events.Emit(ctx, &types.ContractCallApproved{
@@ -625,10 +625,9 @@ func handleMessage(ctx sdk.Context, ck types.ChainKeeper, chainID sdk.Int, keyID
 }
 
 func handleMessageWithToken(ctx sdk.Context, ck types.ChainKeeper, chainID sdk.Int, keyID multisig.KeyID, msg nexus.GeneralMessage) {
-	dummyTxID := common.BytesToHash(make([]byte, common.HashLength))
 	token := ck.GetERC20TokenByAsset(ctx, msg.Asset.GetDenom())
 
-	cmd := types.NewApproveContractCallWithMintGeneric(chainID, keyID, dummyTxID, msg, token.GetDetails().Symbol)
+	cmd := types.NewApproveContractCallWithMintGeneric(chainID, keyID, common.BytesToHash(msg.SourceTxHash), msg, token.GetDetails().Symbol)
 	funcs.MustNoErr(ck.EnqueueCommand(ctx, cmd))
 
 	events.Emit(ctx, &types.ContractCallWithMintApproved{

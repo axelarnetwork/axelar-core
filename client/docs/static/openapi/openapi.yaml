@@ -10626,6 +10626,9 @@ paths:
                           NOTE: The amount field is an Int which implements the custom method
 
                           signatures required by gogoproto.
+                      source_tx_hash:
+                        type: string
+                        format: byte
         default:
           description: An unexpected error response
           content:
@@ -39460,6 +39463,9 @@ components:
 
             NOTE: The amount field is an Int which implements the custom method
             signatures required by gogoproto.
+        source_tx_hash:
+          type: string
+          format: byte
     axelar.nexus.exported.v1beta1.GeneralMessage.Status:
       type: string
       enum:
@@ -39866,6 +39872,9 @@ components:
                 NOTE: The amount field is an Int which implements the custom method
 
                 signatures required by gogoproto.
+            source_tx_hash:
+              type: string
+              format: byte
     axelar.nexus.v1beta1.RecipientAddressResponse:
       type: object
       properties:
