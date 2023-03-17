@@ -12,10 +12,10 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/axelarnetwork/axelar-core/utils/events"
+	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
-	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/utils/funcs"
 )
@@ -186,10 +186,9 @@ func validateMessage(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.Nexus, b ty
 		return err
 	}
 
-	// only allow sending messages to EVM chains
 	if (msg.Type == nexus.TypeGeneralMessage || msg.Type == nexus.TypeGeneralMessageWithToken) &&
-		!destChain.IsFrom(evmtypes.ModuleName) {
-		return fmt.Errorf("destination chain is not an EVM chain")
+		destChain == exported.Axelarnet {
+		return fmt.Errorf("destination chain is Axelarnet")
 	}
 
 	if msg.Fee != nil {
