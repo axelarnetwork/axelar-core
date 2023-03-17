@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math/big"
-	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -53,25 +52,5 @@ func NewClient(url string) (Client, error) {
 
 // NewL2Client returns a L2 EVM JSON-RPC client
 func NewL2Client(config evmTypes.EVMConfig, l1Client Client) (Client, error) {
-	rpc, err := rpc.DialContext(context.Background(), config.RPCAddr)
-	if err != nil {
-		return nil, err
-	}
-
-	ethereumClient, err := NewEthereumClient(ethclient.NewClient(rpc), rpc)
-	if err != nil {
-		return nil, err
-	}
-
-	switch strings.ToLower(config.Name) {
-	case "arbitrum":
-		eth2Client, ok := l1Client.(*Ethereum2Client)
-		if !ok {
-			return nil, fmt.Errorf("l1 client has to be ethereum 2.0 for arbitrum")
-		}
-
-		return NewArbitrumClient(ethereumClient, eth2Client)
-	default:
-		return nil, fmt.Errorf("unsupported L2 chain %s", config.Name)
-	}
+	return nil, fmt.Errorf("chain '%s' is not supported as an L2, remove l1_chain_name from it's config", config.Name)
 }
