@@ -2,15 +2,12 @@ package rpc
 
 import (
 	"context"
-	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
-
-	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 )
 
 //go:generate moq -out ./mock/client.go -pkg mock . Client
@@ -48,9 +45,4 @@ func NewClient(url string) (Client, error) {
 	}
 
 	return ethereumClient, nil
-}
-
-// NewL2Client returns a L2 EVM JSON-RPC client
-func NewL2Client(config evmTypes.EVMConfig, l1Client Client) (Client, error) {
-	return nil, fmt.Errorf("chain '%s' is not supported as an L2, remove l1_chain_name from it's config", config.Name)
 }
