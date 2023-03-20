@@ -322,3 +322,34 @@ func TestConstructWasmMessageV2(t *testing.T) {
 		assert.Equal(t, "1000000000000000000000", actualNested["amount"])
 	})
 }
+
+func TestConstructNativeV1Message(t *testing.T) {
+	args := abi.Arguments{{Type: bytes32Type}, {Type: bytesType}}
+	var ver [32]byte
+	copy(ver[:], funcs.Must(hexutil.Decode(types.NativeV1)))
+
+	t.Run("should translate native payload", func(t *testing.T) {
+		payloadMsg := rand.Bytes(int(rand.I64Between(1, 50)))
+
+		msg := nexustestutils.RandomMessage()
+		payload := funcs.Must(args.Pack(ver, payloadMsg))
+
+		translatedBz, err := types.TranslateMessage(msg, payload)
+		assert.NoError(t, err)
+
+		var decodedMsg struct {
+			SourceChain   string `json:"source_chain"`
+			SourceAddress string `json:"source_address"`
+			Payload       []byte `json:"payload"`
+			Type          int64  `json:"type"`
+		}
+
+		err = json.Unmarshal(translatedBz, &decodedMsg)
+		assert.NoError(t, err)
+
+		assert.Equal(t, decodedMsg.SourceChain, msg.Sender.Chain.Name.String())
+		assert.Equal(t, decodedMsg.SourceAddress, msg.Sender.Address)
+		assert.Equal(t, decodedMsg.Type, int64(msg.Type()))
+		assert.Equal(t, decodedMsg.Payload, payloadMsg)
+	})
+}

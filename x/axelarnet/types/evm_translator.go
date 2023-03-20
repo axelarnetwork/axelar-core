@@ -52,10 +52,10 @@ type wasm struct {
 }
 
 type message struct {
-	SourceChain string `json:"source_chain"`
-	Sender      string `json:"sender"`
-	Payload     []byte `json:"payload"`
-	Type        int64  `json:"type"`
+	SourceChain   string `json:"source_chain"`
+	SourceAddress string `json:"source_address"`
+	Payload       []byte `json:"payload"`
+	Type          int64  `json:"type"`
 }
 
 // TranslateMessage constructs the message gets passed to a cosmos chain from abi encoded payload
@@ -205,10 +205,10 @@ func ConstructWasmMessageV2(gm nexus.GeneralMessage, payload []byte) ([]byte, er
 // ConstructNativeMessage creates a json serialized cross chain message
 func ConstructNativeMessage(gm nexus.GeneralMessage, payload []byte) ([]byte, error) {
 	return json.Marshal(message{
-		SourceChain: gm.GetSourceChain().String(),
-		Sender:      gm.GetSourceAddress(),
-		Payload:     payload,
-		Type:        int64(gm.Type()),
+		SourceChain:   gm.GetSourceChain().String(),
+		SourceAddress: gm.GetSourceAddress(),
+		Payload:       payload,
+		Type:          int64(gm.Type()),
 	})
 }
 
