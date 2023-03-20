@@ -3,10 +3,10 @@ package types
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
@@ -228,14 +228,28 @@ func buildArguments(argTypes []string) (abi.Arguments, error) {
 }
 
 func checkSourceInfo(sender nexus.CrossChainAddress, msg map[string]interface{}) error {
-	chain, ok := msg[sourceChain]
-	if ok && !sender.Chain.Name.Equals(nexus.ChainName(fmt.Sprint(chain))) {
-		return fmt.Errorf("source chain does not match expected")
+	chainI, ok := msg[sourceChain]
+	if ok {
+		chain, ok := chainI.(string)
+		if !ok {
+			return fmt.Errorf("source chain must have type string")
+		}
+
+		if !sender.Chain.Name.Equals(nexus.ChainName(chain)) {
+			return fmt.Errorf("source chain does not match expected")
+		}
 	}
 
-	addr, ok := msg[sourceAddress]
-	if ok && sender.Address != common.HexToAddress(fmt.Sprint(addr)).Hex() {
-		return fmt.Errorf("source address does not match expected")
+	addrI, ok := msg[sourceAddress]
+	if ok {
+		addr, ok := addrI.(string)
+		if !ok {
+			return fmt.Errorf("source address must have type string")
+		}
+
+		if !strings.EqualFold(sender.Address, addr) {
+			return fmt.Errorf("source address does not match expected")
+		}
 	}
 
 	return nil
