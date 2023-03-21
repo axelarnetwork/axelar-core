@@ -2,16 +2,12 @@ package rpc
 
 import (
 	"context"
-	"fmt"
 	"math/big"
-	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
-
-	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 )
 
 //go:generate moq -out ./mock/client.go -pkg mock . Client
@@ -49,29 +45,4 @@ func NewClient(url string) (Client, error) {
 	}
 
 	return ethereumClient, nil
-}
-
-// NewL2Client returns a L2 EVM JSON-RPC client
-func NewL2Client(config evmTypes.EVMConfig, l1Client Client) (Client, error) {
-	rpc, err := rpc.DialContext(context.Background(), config.RPCAddr)
-	if err != nil {
-		return nil, err
-	}
-
-	ethereumClient, err := NewEthereumClient(ethclient.NewClient(rpc), rpc)
-	if err != nil {
-		return nil, err
-	}
-
-	switch strings.ToLower(config.Name) {
-	case "arbitrum":
-		eth2Client, ok := l1Client.(*Ethereum2Client)
-		if !ok {
-			return nil, fmt.Errorf("l1 client has to be ethereum 2.0 for arbitrum")
-		}
-
-		return NewArbitrumClient(ethereumClient, eth2Client)
-	default:
-		return nil, fmt.Errorf("unsupported L2 chain %s", config.Name)
-	}
 }
