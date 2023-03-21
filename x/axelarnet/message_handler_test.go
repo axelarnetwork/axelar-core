@@ -5,8 +5,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
-	"github.com/ethereum/go-ethereum/common/math"
 	"strconv"
 	"testing"
 
@@ -15,11 +13,13 @@ import (
 	ibctransfertypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
 	ibcchanneltypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
 	ibcexported "github.com/cosmos/ibc-go/v4/modules/core/exported"
+	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/stretchr/testify/assert"
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet"
+	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types/mock"

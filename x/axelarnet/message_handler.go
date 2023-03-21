@@ -72,24 +72,21 @@ func (f Fee) validate(ctx sdk.Context, n types.Nexus, b types.BankKeeper, token 
 	return nil
 }
 
-// deductFee deducts fee from packet amount, and transfers to the recipient
-func deductFee(ctx sdk.Context, b types.BankKeeper, message Message, asset *keeper.Coin, msgID string) error {
-	if message.Fee == nil {
-		return nil
+// deductFee transfers fee to the recipient, and returns fee amount
+func deductFee(ctx sdk.Context, b types.BankKeeper, fee *Fee, denom string, msgID string) (sdk.Int, error) {
+	if fee == nil {
+		return sdk.ZeroInt(), nil
 	}
 
-	amount := funcs.MustOk(sdk.NewIntFromString(message.Fee.Amount))
-
+	coin := sdk.NewCoin(denom, funcs.MustOk(sdk.NewIntFromString(fee.Amount)))
+	recipient := funcs.Must(sdk.AccAddressFromBech32(fee.Recipient))
 	events.Emit(ctx, &types.FeePaid{
 		MessageID: msgID,
-		Recipient: funcs.Must(sdk.AccAddressFromBech32(message.Fee.Recipient)),
-		Fee:       sdk.NewCoin(asset.GetDenom(), amount),
+		Recipient: recipient,
+		Fee:       coin,
 	})
 
-	// subtract fee from transfer value
-	asset.Amount = asset.Amount.Sub(amount)
-
-	return asset.Transfer(b, types.MessageSender, funcs.Must(sdk.AccAddressFromBech32(message.Fee.Recipient)))
+	return coin.Amount, b.SendCoins(ctx, types.MessageSender, recipient, sdk.NewCoins(coin))
 }
 
 func validateMessage(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.Nexus, b types.BankKeeper, ibcPath string, msg Message, token keeper.Coin) error {
@@ -239,12 +236,14 @@ func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n ty
 func handleMessage(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceAddress nexus.CrossChainAddress, msg Message, asset keeper.Coin) error {
 	id := n.GenerateMessageID(ctx)
 
-	if err := deductFee(ctx, b, msg, &asset, id); err != nil {
+	fee, err := deductFee(ctx, b, msg.Fee, funcs.Must(asset.GetOriginalDenom()), id)
+	if err != nil {
 		return err
 	}
+	// subtract fee from transfer value
+	asset.Amount = asset.Amount.Sub(fee)
 
 	destChain := funcs.MustOk(n.GetChain(ctx, nexus.ChainName(msg.DestinationChain)))
-
 	recipient := nexus.CrossChainAddress{Chain: destChain, Address: msg.DestinationAddress}
 	m := nexus.NewGeneralMessage(
 		id,
@@ -271,16 +270,17 @@ func handleMessage(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceAdd
 func handleMessageWithToken(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceAddress nexus.CrossChainAddress, msg Message, asset keeper.Coin) error {
 	id := n.GenerateMessageID(ctx)
 
-	if err := deductFee(ctx, b, msg, &asset, id); err != nil {
+	fee, err := deductFee(ctx, b, msg.Fee, funcs.Must(asset.GetOriginalDenom()), id)
+	if err != nil {
 		return err
 	}
-
-	destChain := funcs.MustOk(n.GetChain(ctx, nexus.ChainName(msg.DestinationChain)))
-
+	// subtract fee from transfer value
+	asset.Amount = asset.Amount.Sub(fee)
 	if err := asset.Lock(b, types.MessageSender); err != nil {
 		return err
 	}
 
+	destChain := funcs.MustOk(n.GetChain(ctx, nexus.ChainName(msg.DestinationChain)))
 	recipient := nexus.CrossChainAddress{Chain: destChain, Address: msg.DestinationAddress}
 	m := nexus.NewGeneralMessage(
 		id,
