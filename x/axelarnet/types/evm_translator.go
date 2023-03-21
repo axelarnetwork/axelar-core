@@ -252,6 +252,7 @@ func checkSourceInfo(sender nexus.CrossChainAddress, msg map[string]interface{})
 	addrI, ok := msg[sourceAddress]
 	if ok {
 		// Convert interface to string to support the scenario where addrI uses abi.Address type
+		// Note: Avoid using common.HexToAddress without checking if it's a valid address first since it doesn't handle invalid inputs well.
 		addr := fmt.Sprint(addrI)
 		if !strings.EqualFold(sender.Address, addr) {
 			return fmt.Errorf("source address does not match expected")
