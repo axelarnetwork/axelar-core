@@ -447,33 +447,18 @@ func createTSSMgr(broadcaster broadcast.Broadcaster, cliCtx client.Context, axel
 	return mgr
 }
 
-func createL2ClientWith(clients map[string]evmRPC.Client) func(evmTypes.EVMConfig) (evmRPC.Client, error) {
-	return func(config evmTypes.EVMConfig) (evmRPC.Client, error) {
-		l1ChainName := strings.ToLower(*config.L1ChainName)
-		l1Client, ok := clients[l1ChainName]
-		if !ok {
-			return nil, fmt.Errorf("RPC client for L1 evm chain %s not found", l1ChainName)
-		}
-
-		return evmRPC.NewL2Client(config, l1Client)
-	}
-}
-
-func createL1Client(config evmTypes.EVMConfig) (evmRPC.Client, error) {
+func createEVMClient(config evmTypes.EVMConfig) (evmRPC.Client, error) {
 	return evmRPC.NewClient(config.RPCAddr)
 }
 
 func createEVMMgr(axelarCfg config.ValdConfig, cliCtx sdkClient.Context, b broadcast.Broadcaster, logger log.Logger, cdc *codec.LegacyAmino, valAddr sdk.ValAddress) *evm.Mgr {
 	rpcs := make(map[string]evmRPC.Client)
 
-	l1ChainConfigs := slices.Filter(axelarCfg.EVMConfig, func(config evmTypes.EVMConfig) bool {
-		return config.WithBridge && config.L1ChainName == nil
-	})
-	l2ChainConfigs := slices.Filter(axelarCfg.EVMConfig, func(config evmTypes.EVMConfig) bool {
-		return config.WithBridge && config.L1ChainName != nil
+	chainConfigs := slices.Filter(axelarCfg.EVMConfig, func(config evmTypes.EVMConfig) bool {
+		return config.WithBridge
 	})
 
-	slices.ForEach(append(l1ChainConfigs, l2ChainConfigs...), func(config evmTypes.EVMConfig) {
+	slices.ForEach(chainConfigs, func(config evmTypes.EVMConfig) {
 		chainName := strings.ToLower(config.Name)
 		if _, ok := rpcs[chainName]; ok {
 			err := fmt.Errorf("duplicate bridge configuration found for EVM chain %s", config.Name)
@@ -481,19 +466,17 @@ func createEVMMgr(axelarCfg config.ValdConfig, cliCtx sdkClient.Context, b broad
 			panic(err)
 		}
 
-		var createClientFunc func(config evmTypes.EVMConfig) (evmRPC.Client, error)
-		if config.L1ChainName == nil {
-			createClientFunc = createL1Client
-		} else {
-			createClientFunc = createL2ClientWith(rpcs)
+		if config.L1ChainName != nil {
+			logger.Info(fmt.Sprintf("`l1_chain_name` config is deprecated for EVM chain '%s'. Please remove it from your RPC config", config.Name))
 		}
 
-		client, err := createClientFunc(config)
+		client, err := createEVMClient(config)
 		if err != nil {
 			err = sdkerrors.Wrap(err, fmt.Sprintf("failed to create an RPC connection for EVM chain %s. Verify your RPC config.", config.Name))
 			logger.Error(err.Error())
 			panic(err)
 		}
+
 		logger.Debug(fmt.Sprintf("created JSON-RPC client of type %T", client),
 			"chain", config.Name,
 			"url", config.RPCAddr,
