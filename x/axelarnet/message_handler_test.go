@@ -166,7 +166,7 @@ func TestHandleMessage(t *testing.T) {
 	whenPacketReceiverIsGMPAccount := givenPacketWithMessage.
 		When("receiver is gmp account", func() {
 			ics20Packet = ibctransfertypes.NewFungibleTokenPacketData(
-				rand.Denom(5, 10), strconv.FormatInt(rand.PosI64(), 10), rand.AccAddr().String(), types.MessageSender.String(),
+				rand.Denom(5, 10), strconv.FormatInt(rand.PosI64(), 10), rand.AccAddr().String(), types.AxelarGMPAccount.String(),
 			)
 			ics20Packet.Memo = string(funcs.Must(json.Marshal(message)))
 			packet = axelartestutils.RandomPacket(ics20Packet, ibctransfertypes.PortID, sourceChannel, ibctransfertypes.PortID, receiverChannel)
@@ -440,7 +440,7 @@ func TestHandleMessageWithToken(t *testing.T) {
 		denom = rand.Denom(5, 10)
 		amount = strconv.FormatInt(rand.PosI64(), 10)
 		ics20Packet = ibctransfertypes.NewFungibleTokenPacketData(
-			denom, amount, rand.AccAddr().String(), types.MessageSender.String(),
+			denom, amount, rand.AccAddr().String(), types.AxelarGMPAccount.String(),
 		)
 		ics20Packet.Memo = string(funcs.Must(json.Marshal(message)))
 		packet = axelartestutils.RandomPacket(ics20Packet, ibctransfertypes.PortID, sourceChannel, ibctransfertypes.PortID, receiverChannel)
@@ -505,7 +505,7 @@ func TestHandleMessageWithToken(t *testing.T) {
 		}, &mock.ChannelKeeperMock{})
 		b = &mock.BankKeeperMock{
 			GetBalanceFunc: func(ctx sdk.Context, addr sdk.AccAddress, d string) sdk.Coin {
-				if addr.Equals(types.MessageSender) {
+				if addr.Equals(types.AxelarGMPAccount) {
 					return sdk.NewCoin(d, funcs.MustOk(sdk.NewIntFromString(amount)).Sub(feeAmount))
 				}
 				return sdk.NewCoin(d, sdk.ZeroInt())
@@ -657,7 +657,7 @@ func TestHandleSendToken(t *testing.T) {
 		denom = rand.Denom(5, 10)
 		amount = strconv.FormatInt(rand.PosI64(), 10)
 		ics20Packet = ibctransfertypes.NewFungibleTokenPacketData(
-			denom, amount, rand.AccAddr().String(), types.MessageSender.String(),
+			denom, amount, rand.AccAddr().String(), types.AxelarGMPAccount.String(),
 		)
 		ics20Packet.Memo = string(funcs.Must(json.Marshal(message)))
 		packet = axelartestutils.RandomPacket(ics20Packet, ibctransfertypes.PortID, sourceChannel, ibctransfertypes.PortID, receiverChannel)
@@ -720,7 +720,7 @@ func TestHandleSendToken(t *testing.T) {
 		}, &mock.ChannelKeeperMock{})
 		b = &mock.BankKeeperMock{
 			GetBalanceFunc: func(ctx sdk.Context, addr sdk.AccAddress, d string) sdk.Coin {
-				if addr.Equals(types.MessageSender) {
+				if addr.Equals(types.AxelarGMPAccount) {
 					return sdk.NewCoin(d, funcs.MustOk(sdk.NewIntFromString(amount)))
 				}
 				return sdk.NewCoin(d, sdk.ZeroInt())

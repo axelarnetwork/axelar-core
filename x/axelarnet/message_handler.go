@@ -26,15 +26,6 @@ type Fee struct {
 	Recipient string `json:"recipient"`
 }
 
-// Message is attached in ICS20 packet memo field
-type Message struct {
-	DestinationChain   string `json:"destination_chain"`
-	DestinationAddress string `json:"destination_address"`
-	Payload            []byte `json:"payload"`
-	Type               int64  `json:"type"`
-	Fee                *Fee   `json:"fee"` // Optional
-}
-
 func (f Fee) validate(ctx sdk.Context, n types.Nexus, b types.BankKeeper, token sdk.Coin, msgType nexus.MessageType) error {
 	amt, ok := sdk.NewIntFromString(f.Amount)
 	if !ok || amt.LTE(sdk.ZeroInt()) {
@@ -72,80 +63,13 @@ func (f Fee) validate(ctx sdk.Context, n types.Nexus, b types.BankKeeper, token 
 	return nil
 }
 
-// deductFee transfers fee to the recipient, and returns fee amount
-func deductFee(ctx sdk.Context, b types.BankKeeper, fee *Fee, denom string, msgID string) (sdk.Int, error) {
-	if fee == nil {
-		return sdk.ZeroInt(), nil
-	}
-
-	coin := sdk.NewCoin(denom, funcs.MustOk(sdk.NewIntFromString(fee.Amount)))
-	recipient := funcs.Must(sdk.AccAddressFromBech32(fee.Recipient))
-	events.Emit(ctx, &types.FeePaid{
-		MessageID: msgID,
-		Recipient: recipient,
-		Fee:       coin,
-	})
-
-	return coin.Amount, b.SendCoins(ctx, types.MessageSender, recipient, sdk.NewCoins(coin))
-}
-
-func validateMessage(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.Nexus, b types.BankKeeper, ibcPath string, msg Message, token keeper.Coin) error {
-	chainName, ok := ibcK.GetChainNameByIBCPath(ctx, ibcPath)
-	if !ok {
-		return fmt.Errorf("unrecognized IBC path %s", ibcPath)
-	}
-	chain := funcs.MustOk(n.GetChain(ctx, chainName))
-
-	if !n.IsChainActivated(ctx, chain) {
-		return fmt.Errorf("chain %s registered for IBC path %s is deactivated", chain.Name, ibcPath)
-	}
-
-	destChainName := nexus.ChainName(msg.DestinationChain)
-	if err := destChainName.Validate(); err != nil {
-		return err
-	}
-
-	destChain, ok := n.GetChain(ctx, destChainName)
-	if !ok {
-		return fmt.Errorf("unrecognized destination chain %s", destChain.Name)
-	}
-
-	if !n.IsChainActivated(ctx, destChain) {
-		return fmt.Errorf("chain %s is deactivated", destChain.Name)
-	}
-
-	if err := n.ValidateAddress(ctx, nexus.CrossChainAddress{Chain: destChain, Address: msg.DestinationAddress}); err != nil {
-		return err
-	}
-
-	// only allow sending messages to EVM chains
-	if (msg.Type == nexus.TypeGeneralMessage || msg.Type == nexus.TypeGeneralMessageWithToken) &&
-		!destChain.IsFrom(evmtypes.ModuleName) {
-		return fmt.Errorf("destination chain is not an EVM chain")
-	}
-
-	if msg.Fee != nil {
-		err := msg.Fee.validate(ctx, n, b, token.Coin, nexus.MessageType(msg.Type))
-		if err != nil {
-			return err
-		}
-	}
-
-	switch msg.Type {
-	case nexus.TypeGeneralMessage:
-		return nil
-	case nexus.TypeGeneralMessageWithToken, nexus.TypeSendToken:
-		if !n.IsAssetRegistered(ctx, chain, token.GetDenom()) {
-			return fmt.Errorf("asset %s is not registered on chain %s", token.GetDenom(), chain.Name)
-		}
-
-		if !n.IsAssetRegistered(ctx, destChain, token.GetDenom()) {
-			return fmt.Errorf("asset %s is not registered on chain %s", token.GetDenom(), destChain.Name)
-		}
-		return nil
-	default:
-		return fmt.Errorf("unrecognized message type")
-	}
+// Message is attached in ICS20 packet memo field
+type Message struct {
+	DestinationChain   string `json:"destination_chain"`
+	DestinationAddress string `json:"destination_address"`
+	Payload            []byte `json:"payload"`
+	Type               int64  `json:"type"`
+	Fee                *Fee   `json:"fee"` // Optional
 }
 
 // OnRecvMessage handles general message from a cosmos chain
@@ -160,7 +84,7 @@ func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n ty
 	}
 
 	// skip if packet not sent to Axelar message sender account
-	if data.GetReceiver() != types.MessageSender.String() {
+	if data.GetReceiver() != types.AxelarGMPAccount.String() {
 		// Rate limit non-GMP IBC transfers
 		// IBC receives are rate limited on the Incoming direction (tokens coming in to Axelar hub).
 		if err := r.RateLimitPacket(ctx, packet, nexus.Incoming, types.NewIBCPath(packet.GetDestPort(), packet.GetDestChannel())); err != nil {
@@ -233,15 +157,74 @@ func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n ty
 	return ack
 }
 
-func handleMessage(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceAddress nexus.CrossChainAddress, msg Message, asset keeper.Coin) error {
+func validateMessage(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.Nexus, b types.BankKeeper, ibcPath string, msg Message, token keeper.Coin) error {
+	chainName, ok := ibcK.GetChainNameByIBCPath(ctx, ibcPath)
+	if !ok {
+		return fmt.Errorf("unrecognized IBC path %s", ibcPath)
+	}
+	chain := funcs.MustOk(n.GetChain(ctx, chainName))
+
+	if !n.IsChainActivated(ctx, chain) {
+		return fmt.Errorf("chain %s registered for IBC path %s is deactivated", chain.Name, ibcPath)
+	}
+
+	destChainName := nexus.ChainName(msg.DestinationChain)
+	if err := destChainName.Validate(); err != nil {
+		return err
+	}
+
+	destChain, ok := n.GetChain(ctx, destChainName)
+	if !ok {
+		return fmt.Errorf("unrecognized destination chain %s", destChain.Name)
+	}
+
+	if !n.IsChainActivated(ctx, destChain) {
+		return fmt.Errorf("chain %s is deactivated", destChain.Name)
+	}
+
+	if err := n.ValidateAddress(ctx, nexus.CrossChainAddress{Chain: destChain, Address: msg.DestinationAddress}); err != nil {
+		return err
+	}
+
+	// only allow sending messages to EVM chains
+	if (msg.Type == nexus.TypeGeneralMessage || msg.Type == nexus.TypeGeneralMessageWithToken) &&
+		!destChain.IsFrom(evmtypes.ModuleName) {
+		return fmt.Errorf("destination chain is not an EVM chain")
+	}
+
+	if msg.Fee != nil {
+		err := msg.Fee.validate(ctx, n, b, token.Coin, nexus.MessageType(msg.Type))
+		if err != nil {
+			return err
+		}
+	}
+
+	switch msg.Type {
+	case nexus.TypeGeneralMessage:
+		return nil
+	case nexus.TypeGeneralMessageWithToken, nexus.TypeSendToken:
+		if !n.IsAssetRegistered(ctx, chain, token.GetDenom()) {
+			return fmt.Errorf("asset %s is not registered on chain %s", token.GetDenom(), chain.Name)
+		}
+
+		if !n.IsAssetRegistered(ctx, destChain, token.GetDenom()) {
+			return fmt.Errorf("asset %s is not registered on chain %s", token.GetDenom(), destChain.Name)
+		}
+		return nil
+	default:
+		return fmt.Errorf("unrecognized message type")
+	}
+}
+
+func handleMessage(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceAddress nexus.CrossChainAddress, msg Message, token keeper.Coin) error {
 	id := n.GenerateMessageID(ctx)
 
-	fee, err := deductFee(ctx, b, msg.Fee, funcs.Must(asset.GetOriginalDenom()), id)
+	fee, err := chargeFee(ctx, b, msg.Fee, funcs.Must(token.GetOriginalDenom()), id)
 	if err != nil {
 		return err
 	}
 	// subtract fee from transfer value
-	asset.Amount = asset.Amount.Sub(fee)
+	token.Amount = token.Amount.Sub(fee)
 
 	destChain := funcs.MustOk(n.GetChain(ctx, nexus.ChainName(msg.DestinationChain)))
 	recipient := nexus.CrossChainAddress{Chain: destChain, Address: msg.DestinationAddress}
@@ -267,16 +250,16 @@ func handleMessage(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceAdd
 	return n.SetNewMessage(ctx, m)
 }
 
-func handleMessageWithToken(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceAddress nexus.CrossChainAddress, msg Message, asset keeper.Coin) error {
+func handleMessageWithToken(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceAddress nexus.CrossChainAddress, msg Message, token keeper.Coin) error {
 	id := n.GenerateMessageID(ctx)
 
-	fee, err := deductFee(ctx, b, msg.Fee, funcs.Must(asset.GetOriginalDenom()), id)
+	fee, err := chargeFee(ctx, b, msg.Fee, funcs.Must(token.GetOriginalDenom()), id)
 	if err != nil {
 		return err
 	}
 	// subtract fee from transfer value
-	asset.Amount = asset.Amount.Sub(fee)
-	if err := asset.Lock(b, types.MessageSender); err != nil {
+	token.Amount = token.Amount.Sub(fee)
+	if err := token.Lock(b, types.AxelarGMPAccount); err != nil {
 		return err
 	}
 
@@ -288,7 +271,7 @@ func handleMessageWithToken(ctx sdk.Context, n types.Nexus, b types.BankKeeper, 
 		recipient,
 		crypto.Keccak256Hash(msg.Payload).Bytes(),
 		nexus.Approved,
-		&asset.Coin,
+		&token.Coin,
 	)
 
 	events.Emit(ctx, &types.ContractCallWithTokenSubmitted{
@@ -299,21 +282,21 @@ func handleMessageWithToken(ctx sdk.Context, n types.Nexus, b types.BankKeeper, 
 		ContractAddress:  m.GetDestinationAddress(),
 		PayloadHash:      m.PayloadHash,
 		Payload:          msg.Payload,
-		Asset:            asset.Coin,
+		Asset:            token.Coin,
 	})
 
 	return n.SetNewMessage(ctx, m)
 }
 
-func handleTokenSent(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceAddress nexus.CrossChainAddress, msg Message, asset keeper.Coin) error {
+func handleTokenSent(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceAddress nexus.CrossChainAddress, msg Message, token keeper.Coin) error {
 	destChain := funcs.MustOk(n.GetChain(ctx, nexus.ChainName(msg.DestinationChain)))
 	crossChainAddr := nexus.CrossChainAddress{Chain: destChain, Address: msg.DestinationAddress}
 
-	if err := asset.Lock(b, types.MessageSender); err != nil {
+	if err := token.Lock(b, types.AxelarGMPAccount); err != nil {
 		return err
 	}
 
-	transferID, err := n.EnqueueTransfer(ctx, sourceAddress.Chain, crossChainAddr, asset.Coin)
+	transferID, err := n.EnqueueTransfer(ctx, sourceAddress.Chain, crossChainAddr, token.Coin)
 	if err != nil {
 		return err
 	}
@@ -324,7 +307,7 @@ func handleTokenSent(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceA
 		SourceChain:        sourceAddress.Chain.Name,
 		DestinationAddress: crossChainAddr.Address,
 		DestinationChain:   crossChainAddr.Chain.Name,
-		Asset:              asset.Coin,
+		Asset:              token.Coin,
 	})
 
 	return nil
@@ -372,4 +355,21 @@ func extractTokenFromPacketData(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.
 	}
 
 	return keeper.NewCoin(ctx, ibcK, n, sdk.NewCoin(denom, amount))
+}
+
+// chargeFee transfers fee to the recipient, and returns fee amount
+func chargeFee(ctx sdk.Context, b types.BankKeeper, fee *Fee, denom string, msgID string) (sdk.Int, error) {
+	if fee == nil {
+		return sdk.ZeroInt(), nil
+	}
+
+	coin := sdk.NewCoin(denom, funcs.MustOk(sdk.NewIntFromString(fee.Amount)))
+	recipient := funcs.Must(sdk.AccAddressFromBech32(fee.Recipient))
+	events.Emit(ctx, &types.FeePaid{
+		MessageID: msgID,
+		Recipient: recipient,
+		Fee:       coin,
+	})
+
+	return coin.Amount, b.SendCoins(ctx, types.AxelarGMPAccount, recipient, sdk.NewCoins(coin))
 }

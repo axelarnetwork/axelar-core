@@ -634,7 +634,7 @@ func (s msgServer) escrowAssetToMessageSender(ctx sdk.Context, reqSender sdk.Acc
 	}
 
 	// use GeneralMessageSender account as the canonical general message sender
-	err = s.bank.SendCoins(ctx, acc, types.MessageSender, sdk.NewCoins(asset))
+	err = s.bank.SendCoins(ctx, acc, types.AxelarGMPAccount, sdk.NewCoins(asset))
 	if err != nil {
 		return sdk.Coin{}, err
 	}
