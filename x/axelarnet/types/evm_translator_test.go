@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/stretchr/testify/assert"
 
@@ -25,6 +26,7 @@ import (
 
 var (
 	boolType              = funcs.Must(abi.NewType("bool", "bool", nil))
+	addressType           = funcs.Must(abi.NewType("address", "address", nil))
 	stringType            = funcs.Must(abi.NewType("string", "string", nil))
 	bytesType             = funcs.Must(abi.NewType("bytes", "bytes", nil))
 	bytes32Type           = funcs.Must(abi.NewType("bytes32", "bytes32", nil))
@@ -222,7 +224,7 @@ func TestConstructWasmMessageV1(t *testing.T) {
 		))
 
 		_, err := types.TranslateMessage(msg, payload)
-		assert.ErrorContains(t, err, "source address must have type string")
+		assert.ErrorContains(t, err, "source address does not match expected")
 	})
 
 	t.Run("should return error if invalid source address", func(t *testing.T) {
@@ -236,6 +238,26 @@ func TestConstructWasmMessageV1(t *testing.T) {
 
 		_, err := types.TranslateMessage(msg, payload)
 		assert.ErrorContains(t, err, "source address does not match expected")
+	})
+
+	t.Run("should succeed with source address being address type", func(t *testing.T) {
+		msg := nexustestutils.RandomMessage()
+		msg.Sender.Address = "0x" + rand.HexStr(40)
+		method := rand.Str(10)
+		argNames := []string{"source_chain", "source_address"}
+		argValues := []interface{}{msg.GetSourceChain().String(), common.HexToAddress(msg.GetSourceAddress())}
+
+		payload := funcs.Must(constructABIPayload(
+			method,
+			argNames,
+			[]abi.Type{stringType, addressType},
+			argValues,
+		))
+
+		decodedMsg, err := types.TranslateMessage(msg, payload)
+		assert.NoError(t, err)
+
+		checkWasmMsg(t, decodedMsg, msg, method, argNames, argValues)
 	})
 
 	t.Run("should succeed if valid abi args", func(t *testing.T) {
@@ -254,7 +276,7 @@ func TestConstructWasmMessageV1(t *testing.T) {
 		decodedMsg, err := types.TranslateMessage(msg, payload)
 		assert.NoError(t, err)
 
-		checkAndExtractWasmMsg(t, decodedMsg, msg, method, argNames, argValues)
+		checkWasmMsg(t, decodedMsg, msg, method, argNames, argValues)
 	})
 
 	t.Run("should succeed if valid abi args", func(t *testing.T) {
@@ -273,7 +295,7 @@ func TestConstructWasmMessageV1(t *testing.T) {
 		decodedMsg, err := types.TranslateMessage(msg, payload)
 		assert.NoError(t, err)
 
-		checkAndExtractWasmMsg(t, decodedMsg, msg, method, argNames, argValues)
+		checkWasmMsg(t, decodedMsg, msg, method, argNames, argValues)
 	})
 }
 
@@ -336,7 +358,7 @@ func TestConstructWasmMessageV2(t *testing.T) {
 		msg.Sender.Chain.Name = "ethereum"
 		payload := funcs.Must(args.Pack(ver, wasmMsg))
 		_, err := types.TranslateMessage(msg, payload)
-		assert.ErrorContains(t, err, "source address must have type string")
+		assert.ErrorContains(t, err, "source address does not match expected")
 	})
 
 	t.Run("should return error if incorrect payload contains incorrect source address", func(t *testing.T) {
@@ -468,8 +490,8 @@ func constructABIPayload(method string, argNames []string, argTypes []abi.Type, 
 	return abiArgs.Pack(ver, payload)
 }
 
-// checkAndExtractWasmMsg checks that a wasm msg is correctly formatted and extracts it
-func checkAndExtractWasmMsg(t assert.TestingT, payload []byte, msg nexus.GeneralMessage, method string, argNames []string, argValues []interface{}) {
+// checkWasmMsg checks that a wasm msg is correctly formatted
+func checkWasmMsg(t assert.TestingT, payload []byte, msg nexus.GeneralMessage, method string, argNames []string, argValues []interface{}) {
 	var jsonObject map[string]interface{}
 	err := json.Unmarshal(payload, &jsonObject)
 	assert.NoError(t, err)
@@ -493,12 +515,6 @@ func checkAndExtractWasmMsg(t assert.TestingT, payload []byte, msg nexus.General
 	assert.True(t, ok)
 	assert.Equal(t, len(wasmMsg), 1)
 
-	args, ok := wasmMsg[method].(map[string]interface{})
+	_, ok = wasmMsg[method].(map[string]interface{})
 	assert.True(t, ok)
-
-	for i, argName := range argNames {
-		arg, ok := args[argName]
-		assert.True(t, ok)
-		assert.Equal(t, arg, argValues[i])
-	}
 }

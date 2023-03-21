@@ -190,16 +190,25 @@ func ConstructWasmMessageV2(gm nexus.GeneralMessage, payload []byte) ([]byte, er
 		}
 	}
 
-	msg := wasm{
+	// To avoid unintended transformations of the payload due to decoding to a map[string]interface{}
+	// persisting to the outgoing payload (such as number to float conversion), we wrap the metadata over it
+	wasmMsg := wasm{
 		Wasm: contractCall{
 			Contract:      gm.GetDestinationAddress(),
 			SourceChain:   gm.GetSourceChain().String(),
 			SourceAddress: gm.GetSourceAddress(),
-			Msg:           executeMsg,
+			Msg:           nil,
 		},
 	}
 
-	return json.Marshal(msg)
+	msg, err := json.Marshal(wasmMsg)
+	if err != nil {
+		return nil, err
+	}
+
+	msg = []byte(strings.Replace(string(msg), `"msg":null`, `"msg":`+string(payload), 1))
+
+	return msg, err
 }
 
 // ConstructNativeMessage creates a json serialized cross chain message
@@ -242,11 +251,8 @@ func checkSourceInfo(sender nexus.CrossChainAddress, msg map[string]interface{})
 
 	addrI, ok := msg[sourceAddress]
 	if ok {
-		addr, ok := addrI.(string)
-		if !ok {
-			return fmt.Errorf("source address must have type string")
-		}
-
+		// Convert interface to string to support the scenario where addrI uses abi.Address type
+		addr := fmt.Sprint(addrI)
 		if !strings.EqualFold(sender.Address, addr) {
 			return fmt.Errorf("source address does not match expected")
 		}
