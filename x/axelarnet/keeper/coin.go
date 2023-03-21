@@ -88,6 +88,21 @@ func (c Coin) Lock(bankK types.BankKeeper, depositAddr sdk.AccAddress) error {
 	return nil
 }
 
+func (c Coin) Transfer(bankK types.BankKeeper, from, to sdk.AccAddress) error {
+	coin := c.Coin
+	var err error
+
+	if c.coinType == types.ICS20 {
+		// convert to IBC denom
+		coin, err = c.toICS20()
+		if err != nil {
+			return err
+		}
+	}
+
+	return bankK.SendCoins(c.ctx, from, to, sdk.NewCoins(coin))
+}
+
 // normalizeDenom converts from 'ibc/{hash}' to native asset that recognized by nexus module,
 // returns error if trace is not found in IBC transfer store
 func (c *Coin) normalizeDenom() error {

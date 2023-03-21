@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
+	"github.com/ethereum/go-ethereum/common/math"
 	"strconv"
 	"testing"
 
@@ -65,6 +66,11 @@ func TestHandleMessage(t *testing.T) {
 		}
 
 		ctx, k, channelK = setup()
+		funcs.MustNoErr(k.SetCosmosChain(ctx, types.CosmosChain{
+			Name:       srcChain.Name,
+			IBCPath:    axelartestutils.RandomIBCPath(),
+			AddrPrefix: "cosmos",
+		}))
 		channelK.SendPacketFunc = func(sdk.Context, *captypes.Capability, ibcexported.PacketI) error { return nil }
 		n = &mock.NexusMock{
 			SetNewMessageFunc: func(ctx sdk.Context, msg nexus.GeneralMessage) error {
@@ -94,6 +100,9 @@ func TestHandleMessage(t *testing.T) {
 			},
 			RateLimitTransferFunc: func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error {
 				return nil
+			},
+			GetChainByNativeAssetFunc: func(ctx sdk.Context, asset string) (nexus.Chain, bool) {
+				return srcChain, true
 			},
 		}
 		ibcK = keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{
@@ -324,6 +333,20 @@ func TestHandleMessage(t *testing.T) {
 		When("fee is greater than transfer amount", func() {
 			feeAmount := funcs.MustOk(sdk.NewIntFromString(ics20Packet.Amount)).Add(sdk.OneInt())
 			setFee(feeAmount, rand.AccAddr())
+		}).
+		Then("should return ack error", ackError()).
+		Run(t)
+
+	whenMessageIsValid.
+		When("fee overflows", func() {
+			fee := axelarnet.Fee{
+				Amount:    math.BigPow(2, 256).String(),
+				Recipient: rand.AccAddr().String(),
+			}
+			message.Fee = &fee
+			ics20Packet.Memo = string(funcs.Must(json.Marshal(message)))
+			packet = axelartestutils.RandomPacket(ics20Packet, ibctransfertypes.PortID, sourceChannel, ibctransfertypes.PortID, receiverChannel)
+
 		}).
 		Then("should return ack error", ackError()).
 		Run(t)
