@@ -188,7 +188,7 @@ func TestTranslator(t *testing.T) {
 }
 
 func TestConstructWasmMessageV1(t *testing.T) {
-	t.Run("should return error if invalid source chain", func(t *testing.T) {
+	t.Run("should return error if invalid source chain type", func(t *testing.T) {
 		msg := nexustestutils.RandomMessage()
 		payload := funcs.Must(constructABIPayload(
 			"method",
@@ -201,7 +201,7 @@ func TestConstructWasmMessageV1(t *testing.T) {
 		assert.ErrorContains(t, err, "source chain must have type string")
 	})
 
-	t.Run("should return error if invalid source chain", func(t *testing.T) {
+	t.Run("should return error if invalid source chain value", func(t *testing.T) {
 		msg := nexustestutils.RandomMessage()
 		payload := funcs.Must(constructABIPayload(
 			"method",
@@ -214,7 +214,7 @@ func TestConstructWasmMessageV1(t *testing.T) {
 		assert.ErrorContains(t, err, "source chain does not match expected")
 	})
 
-	t.Run("should return error if invalid source address", func(t *testing.T) {
+	t.Run("should return error if invalid source address type", func(t *testing.T) {
 		msg := nexustestutils.RandomMessage()
 		payload := funcs.Must(constructABIPayload(
 			"method",
@@ -227,7 +227,7 @@ func TestConstructWasmMessageV1(t *testing.T) {
 		assert.ErrorContains(t, err, "source address does not match expected")
 	})
 
-	t.Run("should return error if invalid source address", func(t *testing.T) {
+	t.Run("should return error if invalid source address value", func(t *testing.T) {
 		msg := nexustestutils.RandomMessage()
 		payload := funcs.Must(constructABIPayload(
 			"method",
@@ -260,7 +260,7 @@ func TestConstructWasmMessageV1(t *testing.T) {
 		checkWasmMsg(t, decodedMsg, msg, method, argNames, argValues)
 	})
 
-	t.Run("should succeed if valid abi args", func(t *testing.T) {
+	t.Run("should succeed if valid source chain and address", func(t *testing.T) {
 		msg := nexustestutils.RandomMessage()
 		method := rand.Str(10)
 		argNames := []string{"source_chain", "source_address"}
@@ -279,7 +279,7 @@ func TestConstructWasmMessageV1(t *testing.T) {
 		checkWasmMsg(t, decodedMsg, msg, method, argNames, argValues)
 	})
 
-	t.Run("should succeed if valid abi args", func(t *testing.T) {
+	t.Run("should succeed if valid args and source chain", func(t *testing.T) {
 		msg := nexustestutils.RandomMessage()
 		method := rand.Str(10)
 		argNames := []string{"x", "source_chain", "y"}
@@ -304,7 +304,7 @@ func TestConstructWasmMessageV2(t *testing.T) {
 	var ver [32]byte
 	copy(ver[:], funcs.Must(hexutil.Decode(types.CosmwasmV2)))
 
-	t.Run("should return error if invalid message payload", func(t *testing.T) {
+	t.Run("should return error if wasm call has multiple methods", func(t *testing.T) {
 		wasmMsg := []byte(`
 			{
 				"contract_name": {"source_chain": "ethereum", "source_address": [3, 12, 143]},
@@ -338,7 +338,7 @@ func TestConstructWasmMessageV2(t *testing.T) {
 		assert.ErrorContains(t, err, "source chain must have type string")
 	})
 
-	t.Run("should return error if incorrect payload contains incorrect source chain", func(t *testing.T) {
+	t.Run("should return error if incorrect payload contains incorrect source chain value", func(t *testing.T) {
 		wasmMsg := []byte(`{"contract_name": {"source_chain": "unknown", "source_address": [3, 12, 143]}}`)
 
 		msg := nexustestutils.RandomMessage()
@@ -347,7 +347,7 @@ func TestConstructWasmMessageV2(t *testing.T) {
 		assert.ErrorContains(t, err, "source chain does not match expected")
 	})
 
-	t.Run("should return error if incorrect payload contains incorrect source address", func(t *testing.T) {
+	t.Run("should return error if incorrect payload contains incorrect source address type", func(t *testing.T) {
 		wasmMsg := []byte(`
 			{
 				"contract_name": {"source_chain": "ethereum", "source_address": [3, 12, 143]}
@@ -361,7 +361,7 @@ func TestConstructWasmMessageV2(t *testing.T) {
 		assert.ErrorContains(t, err, "source address does not match expected")
 	})
 
-	t.Run("should return error if incorrect payload contains incorrect source address", func(t *testing.T) {
+	t.Run("should return error if incorrect payload contains incorrect source address value", func(t *testing.T) {
 		wasmMsg := []byte(`
 			{
 				"contract_name": {"source_chain": "ethereum", "source_address": "axelar123"}

@@ -190,8 +190,11 @@ func ConstructWasmMessageV2(gm nexus.GeneralMessage, payload []byte) ([]byte, er
 		}
 	}
 
-	// To avoid unintended transformations of the payload due to decoding to a map[string]interface{}
-	// persisting to the outgoing payload (such as number to float conversion), we wrap the metadata over it
+	// When JSON unmarshalling the user payload to a map[string]interface{} type,
+	// numbers will get converted to floats. When this is marshalled again, the floats aren't converted back,
+	// leading to loss of precision, and potential non-determinism.
+	// So we leave the payload blank before the marshalling the following,
+	// and then inject the original payload into the json string instead.
 	wasmMsg := wasm{
 		Wasm: contractCall{
 			Contract:      gm.GetDestinationAddress(),
@@ -237,9 +240,9 @@ func buildArguments(argTypes []string) (abi.Arguments, error) {
 }
 
 func checkSourceInfo(sender nexus.CrossChainAddress, msg map[string]interface{}) error {
-	chainI, ok := msg[sourceChain]
+	chain, ok := msg[sourceChain]
 	if ok {
-		chain, ok := chainI.(string)
+		chain, ok := chain.(string)
 		if !ok {
 			return fmt.Errorf("source chain must have type string")
 		}
@@ -249,11 +252,11 @@ func checkSourceInfo(sender nexus.CrossChainAddress, msg map[string]interface{})
 		}
 	}
 
-	addrI, ok := msg[sourceAddress]
+	addr, ok := msg[sourceAddress]
 	if ok {
 		// Convert interface to string to support the scenario where addrI uses abi.Address type
 		// Note: Avoid using common.HexToAddress without checking if it's a valid address first since it doesn't handle invalid inputs well.
-		addr := fmt.Sprint(addrI)
+		addr := fmt.Sprint(addr)
 		if !strings.EqualFold(sender.Address, addr) {
 			return fmt.Errorf("source address does not match expected")
 		}
