@@ -40,7 +40,7 @@ func (f Fee) validate(ctx sdk.Context, n types.Nexus, b types.BankKeeper, token 
 		}
 	case nexus.TypeGeneralMessageWithToken:
 		if afterFee.LTE(sdk.ZeroInt()) {
-			return fmt.Errorf("fee amount is greater or equal to transfer value")
+			return fmt.Errorf("transfer amount must be non-zero after fees are deducted")
 		}
 	default:
 		return fmt.Errorf("unexpected message type for fee")
@@ -219,12 +219,11 @@ func validateMessage(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.Nexus, b ty
 func handleMessage(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceAddress nexus.CrossChainAddress, msg Message, token keeper.Coin) error {
 	id := n.GenerateMessageID(ctx)
 
-	fee, err := chargeFee(ctx, b, msg.Fee, funcs.Must(token.GetOriginalDenom()), id)
+	// ignore token for call contract
+	_, err := deductFee(ctx, b, msg.Fee, token, id)
 	if err != nil {
 		return err
 	}
-	// subtract fee from transfer value
-	token.Amount = token.Amount.Sub(fee)
 
 	destChain := funcs.MustOk(n.GetChain(ctx, nexus.ChainName(msg.DestinationChain)))
 	recipient := nexus.CrossChainAddress{Chain: destChain, Address: msg.DestinationAddress}
@@ -253,13 +252,12 @@ func handleMessage(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceAdd
 func handleMessageWithToken(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceAddress nexus.CrossChainAddress, msg Message, token keeper.Coin) error {
 	id := n.GenerateMessageID(ctx)
 
-	fee, err := chargeFee(ctx, b, msg.Fee, funcs.Must(token.GetOriginalDenom()), id)
+	token, err := deductFee(ctx, b, msg.Fee, token, id)
 	if err != nil {
 		return err
 	}
-	// subtract fee from transfer value
-	token.Amount = token.Amount.Sub(fee)
-	if err := token.Lock(b, types.AxelarGMPAccount); err != nil {
+
+	if err = token.Lock(b, types.AxelarGMPAccount); err != nil {
 		return err
 	}
 
@@ -357,19 +355,24 @@ func extractTokenFromPacketData(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.
 	return keeper.NewCoin(ctx, ibcK, n, sdk.NewCoin(denom, amount))
 }
 
-// chargeFee transfers fee to the recipient, and returns fee amount
-func chargeFee(ctx sdk.Context, b types.BankKeeper, fee *Fee, denom string, msgID string) (sdk.Int, error) {
+// deductFee pays the fee and returns the updated transfer amount with the fee deducted
+func deductFee(ctx sdk.Context, b types.BankKeeper, fee *Fee, token keeper.Coin, msgID string) (keeper.Coin, error) {
 	if fee == nil {
-		return sdk.ZeroInt(), nil
+		return token, nil
 	}
 
-	coin := sdk.NewCoin(denom, funcs.MustOk(sdk.NewIntFromString(fee.Amount)))
+	feeAmount := funcs.MustOk(sdk.NewIntFromString(fee.Amount))
+	coin := sdk.NewCoin(funcs.Must(token.GetOriginalDenom()), feeAmount)
 	recipient := funcs.Must(sdk.AccAddressFromBech32(fee.Recipient))
+
 	events.Emit(ctx, &types.FeePaid{
 		MessageID: msgID,
 		Recipient: recipient,
 		Fee:       coin,
 	})
 
-	return coin.Amount, b.SendCoins(ctx, types.AxelarGMPAccount, recipient, sdk.NewCoins(coin))
+	// subtract fee from transfer value
+	token.Amount = token.Amount.Sub(feeAmount)
+
+	return token, b.SendCoins(ctx, types.AxelarGMPAccount, recipient, sdk.NewCoins(coin))
 }
