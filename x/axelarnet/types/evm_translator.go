@@ -209,7 +209,9 @@ func ConstructWasmMessageV2(gm nexus.GeneralMessage, payload []byte) ([]byte, er
 		return nil, err
 	}
 
-	msg = []byte(strings.Replace(string(msg), `"msg":null`, `"msg":`+string(payload), 1))
+	originalField := `"msg":null`
+	replacementField := fmt.Sprintf("\"msg\":%s", string(payload))
+	msg = []byte(strings.Replace(string(msg), originalField, replacementField, 1))
 
 	return msg, err
 }
