@@ -3,10 +3,10 @@ package types
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
@@ -52,10 +52,10 @@ type wasm struct {
 }
 
 type message struct {
-	SourceChain string `json:"source_chain"`
-	Sender      string `json:"sender"`
-	Payload     []byte `json:"payload"`
-	Type        int64  `json:"type"`
+	SourceChain   string `json:"source_chain"`
+	SourceAddress string `json:"source_address"`
+	Payload       []byte `json:"payload"`
+	Type          int64  `json:"type"`
 }
 
 // TranslateMessage constructs the message gets passed to a cosmos chain from abi encoded payload
@@ -190,25 +190,39 @@ func ConstructWasmMessageV2(gm nexus.GeneralMessage, payload []byte) ([]byte, er
 		}
 	}
 
-	msg := wasm{
+	// When JSON unmarshalling the user payload to a map[string]interface{} type,
+	// numbers will get converted to floats. When this is marshalled again, the floats aren't converted back,
+	// leading to loss of precision, and potential non-determinism.
+	// So we leave the payload blank before the marshalling the following,
+	// and then inject the original payload into the json string instead.
+	wasmMsg := wasm{
 		Wasm: contractCall{
 			Contract:      gm.GetDestinationAddress(),
 			SourceChain:   gm.GetSourceChain().String(),
 			SourceAddress: gm.GetSourceAddress(),
-			Msg:           executeMsg,
+			Msg:           nil,
 		},
 	}
 
-	return json.Marshal(msg)
+	msg, err := json.Marshal(wasmMsg)
+	if err != nil {
+		return nil, err
+	}
+
+	originalField := `"msg":null`
+	replacementField := fmt.Sprintf("\"msg\":%s", string(payload))
+	msg = []byte(strings.Replace(string(msg), originalField, replacementField, 1))
+
+	return msg, err
 }
 
 // ConstructNativeMessage creates a json serialized cross chain message
 func ConstructNativeMessage(gm nexus.GeneralMessage, payload []byte) ([]byte, error) {
 	return json.Marshal(message{
-		SourceChain: gm.GetSourceChain().String(),
-		Sender:      gm.GetSourceAddress(),
-		Payload:     payload,
-		Type:        int64(gm.Type()),
+		SourceChain:   gm.GetSourceChain().String(),
+		SourceAddress: gm.GetSourceAddress(),
+		Payload:       payload,
+		Type:          int64(gm.Type()),
 	})
 }
 
@@ -229,13 +243,25 @@ func buildArguments(argTypes []string) (abi.Arguments, error) {
 
 func checkSourceInfo(sender nexus.CrossChainAddress, msg map[string]interface{}) error {
 	chain, ok := msg[sourceChain]
-	if ok && !sender.Chain.Name.Equals(nexus.ChainName(fmt.Sprint(chain))) {
-		return fmt.Errorf("source chain does not match expected")
+	if ok {
+		chain, ok := chain.(string)
+		if !ok {
+			return fmt.Errorf("source chain must have type string")
+		}
+
+		if !sender.Chain.Name.Equals(nexus.ChainName(chain)) {
+			return fmt.Errorf("source chain does not match expected")
+		}
 	}
 
 	addr, ok := msg[sourceAddress]
-	if ok && sender.Address != common.HexToAddress(fmt.Sprint(addr)).Hex() {
-		return fmt.Errorf("source address does not match expected")
+	if ok {
+		// Convert interface to string to support the scenario where addrI uses abi.Address type
+		// Note: Avoid using common.HexToAddress without checking if it's a valid address first since it doesn't handle invalid inputs well.
+		addr := fmt.Sprint(addr)
+		if !strings.EqualFold(sender.Address, addr) {
+			return fmt.Errorf("source address does not match expected")
+		}
 	}
 
 	return nil
