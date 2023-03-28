@@ -253,6 +253,6 @@ const (
 )
 
 var (
-	// MessageSender account is the canonical general message sender
-	MessageSender = GetEscrowAddress(fmt.Sprintf("%s_%s", ModuleName, "gmp"))
+	// AxelarGMPAccount account is the canonical general message sender
+	AxelarGMPAccount = GetEscrowAddress(fmt.Sprintf("%s_%s", ModuleName, "gmp"))
 )

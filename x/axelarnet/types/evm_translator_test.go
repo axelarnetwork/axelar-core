@@ -5,11 +5,15 @@ import (
 	b64 "encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	fmt "fmt"
 	"math"
 	"strconv"
+	"strings"
 	"testing"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/stretchr/testify/assert"
 
@@ -25,6 +29,7 @@ import (
 
 var (
 	boolType              = funcs.Must(abi.NewType("bool", "bool", nil))
+	addressType           = funcs.Must(abi.NewType("address", "address", nil))
 	stringType            = funcs.Must(abi.NewType("string", "string", nil))
 	bytesType             = funcs.Must(abi.NewType("bytes", "bytes", nil))
 	bytes32Type           = funcs.Must(abi.NewType("bytes32", "bytes32", nil))
@@ -36,7 +41,30 @@ var (
 	stringArrayNestedType = funcs.Must(abi.NewType("string[][]", "string[][]", nil))
 )
 
-func TestTranslator(t *testing.T) {
+func TestTranslateMessage(t *testing.T) {
+	t.Run("should return error if version encoding is invalid", func(t *testing.T) {
+		msg := nexustestutils.RandomMessage()
+		abiVersion := abi.Arguments{{Type: uint64Type}}
+		payload := funcs.Must(abiVersion.Pack(uint64(0)))
+
+		_, err := types.TranslateMessage(msg, payload)
+		assert.ErrorContains(t, err, "failed to unpack payload")
+	})
+
+	t.Run("should return error if invalid version", func(t *testing.T) {
+		msg := nexustestutils.RandomMessage()
+		abiVersion := abi.Arguments{{Type: bytes32Type}, {Type: bytesType}}
+		var version [32]byte
+		copy(version[:], rand.Bytes(32))
+
+		payload := funcs.Must(abiVersion.Pack(version, rand.Bytes(64)))
+
+		_, err := types.TranslateMessage(msg, payload)
+		assert.ErrorContains(t, err, "unknown payload version")
+	})
+}
+
+func TestConstructWasmMessageV1Large(t *testing.T) {
 	methodName := "swap_and_forward"
 	str := "ibc/D189335C6E4A68B513C10AB227BF1C1D38C746766278BA3EEB4FB14124F1D858"
 	maxUint256Str := utils.MaxUint.String()
@@ -52,46 +80,36 @@ func TestTranslator(t *testing.T) {
 	hexBzStr := hex.EncodeToString(bz)
 
 	argumentNames := []string{"str", "max_uint256_str", "max_uint8", "max_uint64", "bool_true", "string_array", "uint64_array", "uint64_array_nested", "string_array_nested", "bytes", "hex_string"}
-	argumentTypes := []string{"string", "string", "uint8", "uint64", "bool", "string[]", "uint64[]", "uint64[][]", "string[][]", "bytes", "string"}
 
-	methodArguments := abi.Arguments{
-		{Type: stringType},
-		{Type: stringType},
-		{Type: uint8Type},
-		{Type: uint64Type},
-		{Type: boolType},
-		{Type: stringArrayType},
-		{Type: uint64ArrayType},
-		{Type: uint64ArrayNestedType},
-		{Type: stringArrayNestedType},
-		{Type: bytesType},
-		{Type: stringType},
-	}
-
-	argumentValues, err := methodArguments.Pack(
-		str,
-		maxUint256Str,
-		maxUint8,
-		maxUint64,
-		boolTrue,
-		stringArray,
-		uint64Array,
-		uint64NestedArray,
-		stringNestedArray,
-		bz,
-		hexBzStr,
-	)
-	assert.NoError(t, err)
-
-	schema := abi.Arguments{{Type: stringType}, {Type: stringArrayType}, {Type: stringArrayType}, {Type: bytesType}}
-
-	payload, err := schema.Pack(
+	payload := funcs.Must(constructABIPayload(
 		methodName,
 		argumentNames,
-		argumentTypes,
-		argumentValues,
-	)
-	assert.NoError(t, err)
+		[]abi.Type{
+			stringType,
+			stringType,
+			uint8Type,
+			uint64Type,
+			boolType,
+			stringArrayType,
+			uint64ArrayType,
+			uint64ArrayNestedType,
+			stringArrayNestedType,
+			bytesType,
+			stringType},
+		[]interface{}{
+			str,
+			maxUint256Str,
+			maxUint8,
+			maxUint64,
+			boolTrue,
+			stringArray,
+			uint64Array,
+			uint64NestedArray,
+			stringNestedArray,
+			bz,
+			hexBzStr,
+		},
+	))
 
 	gm := nexus.GeneralMessage{
 
@@ -105,10 +123,7 @@ func TestTranslator(t *testing.T) {
 		},
 	}
 
-	var v [32]byte
-	copy(v[:], funcs.Must(hexutil.Decode(types.CosmwasmV1)))
-
-	msg, err := types.ConstructWasmMessageV1(gm, payload)
+	msg, err := types.TranslateMessage(gm, payload)
 	assert.NoError(t, err)
 
 	jsonObject := make(map[string]interface{})
@@ -198,12 +213,264 @@ func TestTranslator(t *testing.T) {
 	assert.Equal(t, hexBzStr, actualHexString)
 }
 
-func TestConstructWasmMessageV2(t *testing.T) {
-	args := abi.Arguments{{Type: bytes32Type}, {Type: bytesType}}
-	var ver [32]byte
-	copy(ver[:], funcs.Must(hexutil.Decode(types.CosmwasmV2)))
+func TestConstructWasmMessageV1(t *testing.T) {
+	abiArgs := abi.Arguments{{Type: bytes32Type}, {Type: bytesType}}
+	var version [32]byte
+	copy(version[:], funcs.Must(hexutil.Decode(types.CosmwasmV1)))
 
-	t.Run("should return error if invalid message payload", func(t *testing.T) {
+	t.Run("should return error if invalid abi encoding", func(t *testing.T) {
+		msg := nexustestutils.RandomMessage()
+		payload, err := abiArgs.Pack(version, rand.Bytes(10))
+		assert.NoError(t, err)
+
+		_, err = types.TranslateMessage(msg, payload)
+		assert.ErrorContains(t, err, "abi:")
+	})
+
+	t.Run("should return error if abi encoding has trailing data", func(t *testing.T) {
+		msg := nexustestutils.RandomMessage()
+		methodArguments := abi.Arguments([]abi.Argument{{Type: stringType}})
+		schema := abi.Arguments{{Type: stringType}, {Type: stringArrayType}, {Type: stringArrayType}, {Type: bytesType}, {Type: uint64Type}}
+
+		bz, err := schema.Pack(
+			"method",
+			[]string{"x"},
+			[]string{"string"},
+			funcs.Must(methodArguments.Pack("hello, world!")),
+			uint64(0),
+		)
+		assert.NoError(t, err)
+
+		payload, err := abiArgs.Pack(version, bz)
+		assert.NoError(t, err)
+
+		_, err = types.TranslateMessage(msg, payload)
+		assert.ErrorContains(t, err, "wrong data")
+	})
+
+	t.Run("should return error if mismatching arg names", func(t *testing.T) {
+		msg := nexustestutils.RandomMessage()
+		methodArguments := abi.Arguments([]abi.Argument{{Type: stringType}})
+		argValues, err := methodArguments.Pack("hello world")
+		assert.NoError(t, err)
+
+		schema := abi.Arguments{{Type: stringType}, {Type: stringArrayType}, {Type: stringArrayType}, {Type: bytesType}}
+
+		bz, err := schema.Pack(
+			"method",
+			[]string{"x", "y"},
+			[]string{"string"},
+			argValues,
+		)
+		assert.NoError(t, err)
+
+		payload, err := abiArgs.Pack(version, bz)
+		assert.NoError(t, err)
+
+		_, err = types.TranslateMessage(msg, payload)
+		assert.ErrorContains(t, err, "payload argument name and type length mismatch")
+	})
+
+	t.Run("should return error if invalid arg types", func(t *testing.T) {
+		msg := nexustestutils.RandomMessage()
+		methodArguments := abi.Arguments([]abi.Argument{{Type: stringType}})
+		argValues, err := methodArguments.Pack("hello world")
+		assert.NoError(t, err)
+
+		schema := abi.Arguments{{Type: stringType}, {Type: stringArrayType}, {Type: stringArrayType}, {Type: bytesType}}
+
+		bz, err := schema.Pack(
+			"method",
+			[]string{"x"},
+			[]string{"unknown"},
+			argValues,
+		)
+		assert.NoError(t, err)
+
+		payload, err := abiArgs.Pack(version, bz)
+		assert.NoError(t, err)
+
+		_, err = types.TranslateMessage(msg, payload)
+		assert.ErrorContains(t, err, "invalid argument type")
+	})
+
+	t.Run("should return error if mismatching arg length", func(t *testing.T) {
+		msg := nexustestutils.RandomMessage()
+		methodArguments := abi.Arguments([]abi.Argument{
+			{Type: stringType}, {Type: stringType},
+		})
+		argValues, err := methodArguments.Pack("hello", "world")
+		assert.NoError(t, err)
+
+		schema := abi.Arguments{{Type: stringType}, {Type: stringArrayType}, {Type: stringArrayType}, {Type: bytesType}}
+
+		bz, err := schema.Pack(
+			"method",
+			[]string{"x"},
+			[]string{"string"},
+			argValues,
+		)
+		assert.NoError(t, err)
+
+		payload, err := abiArgs.Pack(version, bz)
+		assert.NoError(t, err)
+
+		_, err = types.TranslateMessage(msg, payload)
+		assert.ErrorContains(t, err, "wrong data")
+	})
+
+	t.Run("should return error if invalid source chain type", func(t *testing.T) {
+		msg := nexustestutils.RandomMessage()
+		payload := funcs.Must(constructABIPayload(
+			"method",
+			[]string{"source_chain", "source_address"},
+			[]abi.Type{boolType, stringType},
+			[]interface{}{true, msg.GetSourceAddress()},
+		))
+
+		_, err := types.TranslateMessage(msg, payload)
+		assert.ErrorContains(t, err, "source chain must have type string")
+	})
+
+	t.Run("should return error if invalid source chain value", func(t *testing.T) {
+		msg := nexustestutils.RandomMessage()
+		payload := funcs.Must(constructABIPayload(
+			"method",
+			[]string{"source_chain", "source_address"},
+			[]abi.Type{stringType, stringType},
+			[]interface{}{rand.Str(10), msg.GetSourceAddress()},
+		))
+
+		_, err := types.TranslateMessage(msg, payload)
+		assert.ErrorContains(t, err, "source chain does not match expected")
+	})
+
+	t.Run("should return error if invalid source address type", func(t *testing.T) {
+		msg := nexustestutils.RandomMessage()
+		payload := funcs.Must(constructABIPayload(
+			"method",
+			[]string{"source_chain", "source_address"},
+			[]abi.Type{stringType, uint64Type},
+			[]interface{}{msg.GetSourceChain().String(), uint64(1)},
+		))
+
+		_, err := types.TranslateMessage(msg, payload)
+		assert.ErrorContains(t, err, "source address does not match expected")
+	})
+
+	t.Run("should return error if invalid source address value", func(t *testing.T) {
+		msg := nexustestutils.RandomMessage()
+		payload := funcs.Must(constructABIPayload(
+			"method",
+			[]string{"source_chain", "source_address"},
+			[]abi.Type{stringType, stringType},
+			[]interface{}{msg.GetSourceChain().String(), "invalid"},
+		))
+
+		_, err := types.TranslateMessage(msg, payload)
+		assert.ErrorContains(t, err, "source address does not match expected")
+	})
+
+	t.Run("should succeed with source address being address type", func(t *testing.T) {
+		msg := nexustestutils.RandomMessage()
+		method := rand.StrBetween(0, 10)
+		msg.Sender.Address = "0x" + rand.HexStr(40)
+		args := struct {
+			SourceChain   string `json:"source_chain"`
+			SourceAddress string `json:"source_address"`
+		}{
+			SourceChain:   msg.GetSourceChain().String(),
+			SourceAddress: msg.GetSourceAddress(),
+		}
+
+		payload := funcs.Must(constructABIPayload(
+			method,
+			[]string{"source_chain", "source_address"},
+			[]abi.Type{stringType, addressType},
+			[]interface{}{args.SourceChain, common.HexToAddress(args.SourceAddress)},
+		))
+
+		translatedMsg, err := types.TranslateMessage(msg, payload)
+		assert.NoError(t, err)
+
+		checkWasmMsg(t, translatedMsg, msg, method, args)
+	})
+
+	t.Run("should succeed if valid source chain and address", func(t *testing.T) {
+		msg := nexustestutils.RandomMessage()
+		method := rand.Str(10)
+		args := struct {
+			SourceChain   string `json:"source_chain"`
+			SourceAddress string `json:"source_address"`
+		}{
+			SourceChain:   msg.GetSourceChain().String(),
+			SourceAddress: msg.GetSourceAddress(),
+		}
+
+		payload := funcs.Must(constructABIPayload(
+			method,
+			[]string{"source_chain", "source_address"},
+			[]abi.Type{stringType, stringType},
+			[]interface{}{args.SourceChain, args.SourceAddress},
+		))
+
+		translatedMsg, err := types.TranslateMessage(msg, payload)
+		assert.NoError(t, err)
+
+		checkWasmMsg(t, translatedMsg, msg, method, args)
+	})
+
+	t.Run("should succeed if valid args and source chain", func(t *testing.T) {
+		msg := nexustestutils.RandomMessage()
+		method := rand.Str(10)
+		args := struct {
+			X           bool
+			Y           uint64
+			SourceChain string `json:"source_chain"`
+		}{
+			X:           rand.Bools(0.5).Next(),
+			Y:           uint64(rand.I64Between(0, 1000)),
+			SourceChain: msg.GetSourceChain().String(),
+		}
+
+		payload := funcs.Must(constructABIPayload(
+			method,
+			[]string{"x", "y", "source_chain"},
+			[]abi.Type{boolType, uint64Type, stringType},
+			[]interface{}{args.X, args.Y, args.SourceChain},
+		))
+
+		translatedMsg, err := types.TranslateMessage(msg, payload)
+		assert.NoError(t, err)
+
+		checkWasmMsg(t, translatedMsg, msg, method, args)
+	})
+}
+
+func TestConstructWasmMessageV2(t *testing.T) {
+	abiVersion := abi.Arguments{{Type: bytes32Type}, {Type: bytesType}}
+	var version [32]byte
+	copy(version[:], funcs.Must(hexutil.Decode(types.CosmwasmV2)))
+
+	t.Run("should return error if payload is not a json object", func(t *testing.T) {
+		msg := nexustestutils.RandomMessage()
+		wasmMsg := []byte(`"a json string"`)
+		payload := funcs.Must(abiVersion.Pack(version, wasmMsg))
+
+		_, err := types.TranslateMessage(msg, payload)
+		assert.ErrorContains(t, err, "cannot unmarshal string into Go value of type map[string]interface {}")
+	})
+
+	t.Run("should return error if payload is not a valid json object", func(t *testing.T) {
+		msg := nexustestutils.RandomMessage()
+		wasmMsg := []byte(`{"key": "invalid json with open bracket"`)
+		payload := funcs.Must(abiVersion.Pack(version, wasmMsg))
+
+		_, err := types.TranslateMessage(msg, payload)
+		assert.ErrorContains(t, err, "unexpected end of JSON input")
+	})
+
+	t.Run("should return error if wasm call has multiple methods", func(t *testing.T) {
 		wasmMsg := []byte(`
 			{
 				"contract_name": {"source_chain": "ethereum", "source_address": [3, 12, 143]},
@@ -213,31 +480,40 @@ func TestConstructWasmMessageV2(t *testing.T) {
 
 		msg := nexustestutils.RandomMessage()
 		msg.Sender.Chain.Name = "ethereum"
-		payload := funcs.Must(args.Pack(ver, wasmMsg))
+		payload := funcs.Must(abiVersion.Pack(version, wasmMsg))
 		_, err := types.TranslateMessage(msg, payload)
 		assert.ErrorContains(t, err, "invalid payload")
 	})
 
-	t.Run("should return error if invalid message payload", func(t *testing.T) {
+	t.Run("should return error if wasm call has no args", func(t *testing.T) {
 		wasmMsg := []byte(`{"contract_name": [1,2,3,4,5]}`)
 
 		msg := nexustestutils.RandomMessage()
 		msg.Sender.Chain.Name = "ethereum"
-		payload := funcs.Must(args.Pack(ver, wasmMsg))
+		payload := funcs.Must(abiVersion.Pack(version, wasmMsg))
 		_, err := types.TranslateMessage(msg, payload)
 		assert.ErrorContains(t, err, "invalid arguments")
 	})
 
-	t.Run("should return error if incorrect payload contains incorrect source chain", func(t *testing.T) {
+	t.Run("should return error if incorrect payload contains incorrect source chain type", func(t *testing.T) {
 		wasmMsg := []byte(`{"contract_name": {"source_chain": 1.1, "source_address": [3, 12, 143]}}`)
 
 		msg := nexustestutils.RandomMessage()
-		payload := funcs.Must(args.Pack(ver, wasmMsg))
+		payload := funcs.Must(abiVersion.Pack(version, wasmMsg))
+		_, err := types.TranslateMessage(msg, payload)
+		assert.ErrorContains(t, err, "source chain must have type string")
+	})
+
+	t.Run("should return error if incorrect payload contains incorrect source chain value", func(t *testing.T) {
+		wasmMsg := []byte(`{"contract_name": {"source_chain": "unknown", "source_address": [3, 12, 143]}}`)
+
+		msg := nexustestutils.RandomMessage()
+		payload := funcs.Must(abiVersion.Pack(version, wasmMsg))
 		_, err := types.TranslateMessage(msg, payload)
 		assert.ErrorContains(t, err, "source chain does not match expected")
 	})
 
-	t.Run("should return error if incorrect payload contains incorrect source address", func(t *testing.T) {
+	t.Run("should return error if incorrect payload contains incorrect source address type", func(t *testing.T) {
 		wasmMsg := []byte(`
 			{
 				"contract_name": {"source_chain": "ethereum", "source_address": [3, 12, 143]}
@@ -246,50 +522,76 @@ func TestConstructWasmMessageV2(t *testing.T) {
 
 		msg := nexustestutils.RandomMessage()
 		msg.Sender.Chain.Name = "ethereum"
-		payload := funcs.Must(args.Pack(ver, wasmMsg))
+		payload := funcs.Must(abiVersion.Pack(version, wasmMsg))
 		_, err := types.TranslateMessage(msg, payload)
 		assert.ErrorContains(t, err, "source address does not match expected")
 	})
 
-	t.Run("should return error if incorrect payload contains incorrect source address", func(t *testing.T) {
-
+	t.Run("should return error if incorrect payload contains incorrect source address value", func(t *testing.T) {
 		wasmMsg := []byte(`
 			{
-				"contract_name": {"source_chain": "ethereum", "source_address": [3, 12, 143]}
+				"contract_name": {"source_chain": "ethereum", "source_address": "axelar123"}
 			}
 		`)
 
 		msg := nexustestutils.RandomMessage()
 		msg.Sender.Chain.Name = "ethereum"
-		payload := funcs.Must(args.Pack(ver, wasmMsg))
+		payload := funcs.Must(abiVersion.Pack(version, wasmMsg))
 		_, err := types.TranslateMessage(msg, payload)
 		assert.ErrorContains(t, err, "source address does not match expected")
 	})
 
-	t.Run("should construct wasm message", func(t *testing.T) {
-		bz := []byte(`
+	t.Run("should construct wasm message without modifying payload", func(t *testing.T) {
+		msg := nexustestutils.RandomMessage()
+		method := "contract_name"
+		wasmArgs := []byte(`
 			{
-				"contract_name": {
-					"source_chain": "Ethereum",
-					"source_address": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
-					"nested": {
-						"denom": "ibc/D189335C6E4A68B513C10AB227BF1C1D38C746766278BA3EEB4FB14124F1D858", 
-						"amount": "1000000000000000000000"
-					}
+				"float": 4.51930,
+				"nested": {
+					"array": [1, 2, 3, 4],
+					"amount": 100000000000000000000000000000001
+				},
+				"array": [0, -32323, 84739338387784623428752342, -43785623.2342532],
+				"nil": null
+			}
+		`)
+		bz := []byte(fmt.Sprintf("\t\t\n\n\t{\"%s\":%s}\n\t\n\t", method, wasmArgs))
+
+		payload := funcs.Must(abiVersion.Pack(version, bz))
+		translatedMsg, err := types.TranslateMessage(msg, payload)
+		assert.NoError(t, err)
+
+		// whitespace is trimmed since checkWasmMsg only compares the arg json object
+		checkWasmMsg[json.RawMessage](t, translatedMsg, msg, method, []byte(strings.TrimSpace(string(wasmArgs))))
+	})
+
+	t.Run("should construct wasm message from plain json", func(t *testing.T) {
+		msg := nexustestutils.RandomMessage()
+		msg.Sender.Chain.Name = "Ethereum"
+		msg.Sender.Address = "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955"
+		method := rand.Str(10)
+		wasmArgs := []byte(`
+			{
+				"source_chain": "Ethereum",
+				"source_address": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
+				"nested": {
+					"denom": "ibc/D189335C6E4A68B513C10AB227BF1C1D38C746766278BA3EEB4FB14124F1D858",
+					"amount": "1000000000000000000000"
 				}
 			}
 		`)
+		bz := []byte(fmt.Sprintf("{\"%s\": %s}", method, wasmArgs))
 
-		msg := nexustestutils.RandomMessage()
-		msg.Sender.Chain.Name = "ethereum"
-		msg.Sender.Address = "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955"
-		payload := funcs.Must(args.Pack(ver, bz))
+		payload := funcs.Must(abiVersion.Pack(version, bz))
 
-		translatedBz, err := types.TranslateMessage(msg, payload)
+		translatedMsg, err := types.TranslateMessage(msg, payload)
 		assert.NoError(t, err)
 
+		// whitespace is trimmed since checkWasmMsg only compares the arg json object
+		checkWasmMsg[json.RawMessage](t, translatedMsg, msg, method, []byte(strings.TrimSpace(string(wasmArgs))))
+
 		jsonObject := make(map[string]interface{})
-		err = json.Unmarshal(translatedBz, &jsonObject)
+		err = json.Unmarshal(translatedMsg, &jsonObject)
 		assert.NoError(t, err)
 
 		wasmRaw, ok := jsonObject["wasm"]
@@ -305,20 +607,164 @@ func TestConstructWasmMessageV2(t *testing.T) {
 		wasmMsg, ok := wasm["msg"].(map[string]interface{})
 		assert.True(t, ok)
 
-		executeMsg, ok := wasmMsg["contract_name"].(map[string]interface{})
+		executeMsg, ok := wasmMsg[method].(map[string]interface{})
 		assert.True(t, ok)
 
 		actualSourceChain, ok := executeMsg["source_chain"].(string)
 		assert.True(t, ok)
-		assert.Equal(t, "Ethereum", actualSourceChain)
+		assert.Equal(t, msg.GetSourceChain().String(), actualSourceChain)
 
 		actualSourceAddress, ok := executeMsg["source_address"].(string)
 		assert.True(t, ok)
-		assert.Equal(t, "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955", actualSourceAddress)
+		assert.Equal(t, msg.GetSourceAddress(), actualSourceAddress)
 
 		actualNested, ok := executeMsg["nested"].(map[string]interface{})
 		assert.True(t, ok)
 		assert.Equal(t, "ibc/D189335C6E4A68B513C10AB227BF1C1D38C746766278BA3EEB4FB14124F1D858", actualNested["denom"])
 		assert.Equal(t, "1000000000000000000000", actualNested["amount"])
 	})
+
+	t.Run("should construct wasm message from constructed json", func(t *testing.T) {
+		msg := nexustestutils.RandomMessage()
+		msg.Sender.Address = "0x" + rand.HexStr(40)
+
+		wasmArgs := struct {
+			SourceChain   string `json:"source_chain"`
+			SourceAddress string `json:"source_address"`
+			Asset         sdk.Coin
+			Ints          []int64
+			Floats        []float64
+			Nil           []byte
+			Map           map[int]string
+		}{
+			SourceChain:   msg.GetSourceChain().String(),
+			SourceAddress: strings.ToUpper(msg.GetSourceAddress()),
+			Asset: sdk.NewCoin(
+				rand.Denom(3, 20),
+				rand.IntBetween(sdk.ZeroInt(), sdk.NewIntFromUint64(10000000)),
+			),
+			Ints:   []int64{0, math.MaxInt64, math.MinInt64, rand.I64Between(math.MinInt64/2, math.MaxInt64/2)},
+			Floats: []float64{math.Pi, math.MaxFloat64, math.SmallestNonzeroFloat64},
+			Nil:    nil,
+			Map: map[int]string{
+				0:           "zero",
+				-10:         rand.Str(10),
+				math.MaxInt: "max int",
+			},
+		}
+		method := rand.StrBetween(0, 10)
+		bz := []byte(fmt.Sprintf("{\"%s\": %s}", method, funcs.Must(json.MarshalIndent(wasmArgs, "", "    "))))
+		payload := funcs.Must(abiVersion.Pack(version, bz))
+
+		translatedBz, err := types.TranslateMessage(msg, payload)
+		assert.NoError(t, err)
+
+		checkWasmMsg(t, translatedBz, msg, method, wasmArgs)
+	})
+}
+
+func TestConstructNativeV1Message(t *testing.T) {
+	args := abi.Arguments{{Type: bytes32Type}, {Type: bytesType}}
+	var version [32]byte
+	copy(version[:], funcs.Must(hexutil.Decode(types.NativeV1)))
+
+	t.Run("should translate native payload", func(t *testing.T) {
+		payloadMsg := rand.Bytes(int(rand.I64Between(1, 50)))
+
+		msg := nexustestutils.RandomMessage()
+		payload := funcs.Must(args.Pack(version, payloadMsg))
+
+		translatedBz, err := types.TranslateMessage(msg, payload)
+		assert.NoError(t, err)
+
+		var decodedMsg struct {
+			SourceChain   string `json:"source_chain"`
+			SourceAddress string `json:"source_address"`
+			Payload       []byte `json:"payload"`
+			Type          int64  `json:"type"`
+		}
+
+		err = json.Unmarshal(translatedBz, &decodedMsg)
+		assert.NoError(t, err)
+
+		assert.Equal(t, decodedMsg.SourceChain, msg.Sender.Chain.Name.String())
+		assert.Equal(t, decodedMsg.SourceAddress, msg.Sender.Address)
+		assert.Equal(t, decodedMsg.Type, int64(msg.Type()))
+		assert.Equal(t, decodedMsg.Payload, payloadMsg)
+	})
+}
+
+func constructABIPayload(method string, argNames []string, argTypes []abi.Type, args []interface{}) ([]byte, error) {
+	methodArguments := abi.Arguments(slices.Map(argTypes, func(argType abi.Type) abi.Argument { return abi.Argument{Type: argType} }))
+
+	argValues, err := methodArguments.Pack(args...)
+	if err != nil {
+		return nil, err
+	}
+
+	schema := abi.Arguments{{Type: stringType}, {Type: stringArrayType}, {Type: stringArrayType}, {Type: bytesType}}
+
+	payload, err := schema.Pack(
+		method,
+		argNames,
+		slices.Map(argTypes, abi.Type.String),
+		argValues,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	abiArgs := abi.Arguments{{Type: bytes32Type}, {Type: bytesType}}
+	var version [32]byte
+	copy(version[:], funcs.Must(hexutil.Decode(types.CosmwasmV1)))
+
+	return abiArgs.Pack(version, payload)
+}
+
+// checkWasmMsg checks that a wasm msg is correctly formatted
+func checkWasmMsg[T any](t assert.TestingT, payload []byte, msg nexus.GeneralMessage, method string, args T) {
+	// json unmarshalling behaviour differs when unmarshalling to map[string]interface{} vs a struct, so cover both cases
+	var jsonObject map[string]interface{}
+	err := json.Unmarshal(payload, &jsonObject)
+	assert.NoError(t, err)
+
+	wasm, ok := jsonObject["wasm"].(map[string]interface{})
+	assert.True(t, ok)
+
+	sourceChain, ok := wasm["source_chain"]
+	assert.True(t, ok)
+	assert.Equal(t, sourceChain, msg.GetSourceChain().String())
+
+	sourceAddress, ok := wasm["source_address"]
+	assert.True(t, ok)
+	assert.Equal(t, sourceAddress, msg.GetSourceAddress())
+
+	contract, ok := wasm["contract"]
+	assert.True(t, ok)
+	assert.Equal(t, contract, msg.GetDestinationAddress())
+
+	wasmMsg, ok := wasm["msg"].(map[string]interface{})
+	assert.True(t, ok)
+	assert.Equal(t, len(wasmMsg), 1)
+
+	_, ok = wasmMsg[method].(map[string]interface{})
+	assert.True(t, ok)
+
+	// now structurally decode the JSON to retrieve the typed wasm arguments
+	var typedMsg struct {
+		Wasm struct {
+			SourceChain   string       `json:"source_chain"`
+			SourceAddress string       `json:"source_address"`
+			Contract      string       `json:"contract"`
+			Msg           map[string]T `json:"msg"`
+		} `json:"wasm"`
+	}
+
+	err = json.Unmarshal(payload, &typedMsg)
+	assert.NoError(t, err)
+
+	wasmArgs, ok := typedMsg.Wasm.Msg[method]
+	assert.True(t, ok)
+
+	assert.Equal(t, args, wasmArgs)
 }

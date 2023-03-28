@@ -358,7 +358,7 @@ func (s msgServer) RegisterAsset(c context.Context, req *types.RegisterAssetRequ
 
 	// also register on axelarnet, it routes assets from cosmos chains to evm chains
 	// ignore the error in case above chain is axelarnet, or if the asset is already registered
-	_ = s.nexus.RegisterAsset(ctx, exported.Axelarnet, nexus.NewAsset(req.Asset.Denom, false), req.Limit, req.Window)
+	_ = s.nexus.RegisterAsset(ctx, exported.Axelarnet, nexus.NewAsset(req.Asset.Denom, false), utils.MaxUint, types.DefaultRateLimitWindow)
 
 	return &types.RegisterAssetResponse{}, nil
 }
@@ -636,7 +636,7 @@ func (s msgServer) escrowAssetToMessageSender(ctx sdk.Context, reqSender sdk.Acc
 	}
 
 	// use GeneralMessageSender account as the canonical general message sender
-	err = s.bank.SendCoins(ctx, acc, types.MessageSender, sdk.NewCoins(asset))
+	err = s.bank.SendCoins(ctx, acc, types.AxelarGMPAccount, sdk.NewCoins(asset))
 	if err != nil {
 		return sdk.Coin{}, err
 	}
