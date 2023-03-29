@@ -188,6 +188,7 @@ func NewApproveContractCallWithMintGeneric(
 	chainID sdk.Int,
 	keyID multisig.KeyID,
 	sourceTxID common.Hash,
+	sourceEventIndex uint64,
 	message nexus.GeneralMessage,
 	symbol string,
 ) Command {
@@ -198,7 +199,7 @@ func NewApproveContractCallWithMintGeneric(
 	return Command{
 		ID:         commandID,
 		Type:       COMMAND_TYPE_APPROVE_CONTRACT_CALL_WITH_MINT,
-		Params:     createApproveContractCallWithMintParamsGeneric(contractAddress, payloadHash, sourceTxID, message.Sender, 0, message.Asset.Amount.BigInt(), symbol),
+		Params:     createApproveContractCallWithMintParamsGeneric(contractAddress, payloadHash, sourceTxID, message.Sender, sourceEventIndex, message.Asset.Amount.BigInt(), symbol),
 		KeyID:      keyID,
 		MaxGasCost: approveContractCallWithMintMaxGasCost,
 	}
