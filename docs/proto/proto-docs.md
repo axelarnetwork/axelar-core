@@ -1224,6 +1224,8 @@ registered blockchain
 | `payload_hash` | [bytes](#bytes) |  |  |
 | `status` | [GeneralMessage.Status](#axelar.nexus.exported.v1beta1.GeneralMessage.Status) |  |  |
 | `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+| `source_tx_id` | [bytes](#bytes) |  |  |
+| `source_tx_index` | [uint64](#uint64) |  |  |
 
 
 

@@ -125,9 +125,10 @@ func TestGenerateMessageID(t *testing.T) {
 	k, ctx := setup(cfg)
 
 	// use the same hash and source chain, still shouldn't collide
-	id := k.GenerateMessageID(ctx)
-	id2 := k.GenerateMessageID(ctx)
+	id, _, nonce := k.GenerateMessageID(ctx)
+	id2, _, nonce2 := k.GenerateMessageID(ctx)
 	assert.NotEqual(t, id, id2)
+	assert.NotEqual(t, nonce, nonce2)
 }
 
 func TestStatusTransitions(t *testing.T) {
@@ -138,13 +139,16 @@ func TestStatusTransitions(t *testing.T) {
 	sourceChain.Module = axelarnet.ModuleName
 	destinationChain := nexustestutils.RandomChain()
 	destinationChain.Module = evmtypes.ModuleName
+	id, txID, nonce := k.GenerateMessageID(ctx)
 	msg := exported.GeneralMessage{
-		ID:          k.GenerateMessageID(ctx),
-		Sender:      exported.CrossChainAddress{Chain: sourceChain, Address: genCosmosAddr(sourceChain.Name.String())},
-		Recipient:   exported.CrossChainAddress{Chain: destinationChain, Address: evmtestutils.RandomAddress().Hex()},
-		Status:      exported.Approved,
-		PayloadHash: crypto.Keccak256Hash(rand.Bytes(int(rand.I64Between(1, 100)))).Bytes(),
-		Asset:       nil,
+		ID:            id,
+		Sender:        exported.CrossChainAddress{Chain: sourceChain, Address: genCosmosAddr(sourceChain.Name.String())},
+		Recipient:     exported.CrossChainAddress{Chain: destinationChain, Address: evmtestutils.RandomAddress().Hex()},
+		Status:        exported.Approved,
+		PayloadHash:   crypto.Keccak256Hash(rand.Bytes(int(rand.I64Between(1, 100)))).Bytes(),
+		Asset:         nil,
+		SourceTxID:    txID,
+		SourceTxIndex: nonce,
 	}
 	k.SetChain(ctx, sourceChain)
 	k.SetChain(ctx, destinationChain)
@@ -202,13 +206,16 @@ func TestGetMessage(t *testing.T) {
 	sourceChain.Module = axelarnet.ModuleName
 	destinationChain := nexustestutils.RandomChain()
 	destinationChain.Module = evmtypes.ModuleName
+	id, txID, nonce := k.GenerateMessageID(ctx)
 	msg := exported.GeneralMessage{
-		ID:          k.GenerateMessageID(ctx),
-		Sender:      exported.CrossChainAddress{Chain: sourceChain, Address: genCosmosAddr(sourceChain.Name.String())},
-		Recipient:   exported.CrossChainAddress{Chain: destinationChain, Address: evmtestutils.RandomAddress().Hex()},
-		Status:      exported.Approved,
-		PayloadHash: crypto.Keccak256Hash(rand.Bytes(int(rand.I64Between(1, 100)))).Bytes(),
-		Asset:       nil,
+		ID:            id,
+		Sender:        exported.CrossChainAddress{Chain: sourceChain, Address: genCosmosAddr(sourceChain.Name.String())},
+		Recipient:     exported.CrossChainAddress{Chain: destinationChain, Address: evmtestutils.RandomAddress().Hex()},
+		Status:        exported.Approved,
+		PayloadHash:   crypto.Keccak256Hash(rand.Bytes(int(rand.I64Between(1, 100)))).Bytes(),
+		Asset:         nil,
+		SourceTxID:    txID,
+		SourceTxIndex: nonce,
 	}
 	k.SetChain(ctx, sourceChain)
 	k.SetChain(ctx, destinationChain)
@@ -239,13 +246,16 @@ func TestGetSentMessages(t *testing.T) {
 		for i := 0; i < numMsgs; i++ {
 			destChain := destinationChain
 			destChain.Name = destChainName
+			id, txID, nonce := k.GenerateMessageID(ctx)
 			msg := exported.GeneralMessage{
-				ID:          k.GenerateMessageID(ctx),
-				Sender:      exported.CrossChainAddress{Chain: sourceChain, Address: genCosmosAddr(sourceChain.Name.String())},
-				Recipient:   exported.CrossChainAddress{Chain: destChain, Address: evmtestutils.RandomAddress().Hex()},
-				Status:      exported.Sent,
-				PayloadHash: crypto.Keccak256Hash(rand.Bytes(int(rand.I64Between(1, 100)))).Bytes(),
-				Asset:       nil,
+				ID:            id,
+				Sender:        exported.CrossChainAddress{Chain: sourceChain, Address: genCosmosAddr(sourceChain.Name.String())},
+				Recipient:     exported.CrossChainAddress{Chain: destChain, Address: evmtestutils.RandomAddress().Hex()},
+				Status:        exported.Sent,
+				PayloadHash:   crypto.Keccak256Hash(rand.Bytes(int(rand.I64Between(1, 100)))).Bytes(),
+				Asset:         nil,
+				SourceTxID:    txID,
+				SourceTxIndex: nonce,
 			}
 
 			msgs[msg.ID] = msg

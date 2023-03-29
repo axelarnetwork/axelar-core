@@ -128,6 +128,8 @@ github.com/axelarnetwork/tm-events v0.0.0-20221019195821-9a3f03bc6ca6 h1:bNjORqB
 github.com/axelarnetwork/tm-events v0.0.0-20221019195821-9a3f03bc6ca6/go.mod h1:nRFBzknkN/o4e8FmOrfF8HREzSmSWrAwTrSyJ48N4B8=
 github.com/axelarnetwork/utils v0.0.0-20221213003031-66c703710da3 h1:1K8+r1kLCg5IXjpqRMhKoD/3LTu7QpzNETYECg5Ybjo=
 github.com/axelarnetwork/utils v0.0.0-20221213003031-66c703710da3/go.mod h1:e7N5Z43ISOSPEDoGNenQdlFYbbh4r1RV1dzRcGN0QzM=
+github.com/axelarnetwork/utils v0.0.0-20230323010430-23cd3a751b04 h1:Ld38B981qxpNlkLzvjlA+9aabliyIbWqATaMl5DGQgs=
+github.com/axelarnetwork/utils v0.0.0-20230323010430-23cd3a751b04/go.mod h1:PEBjDNDQc7q8qiIw0oaJWwZGrCnjHE1f4Q5gausVej4=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
 github.com/beorn7/perks v1.0.0/go.mod h1:KWe93zE9D1o94FZ5RNwFwVgaQK1VOXiVxmqh+CedLV8=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
