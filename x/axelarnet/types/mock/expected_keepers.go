@@ -530,7 +530,7 @@ var _ axelarnettypes.Nexus = &NexusMock{}
 //			EnqueueTransferFunc: func(ctx cosmossdktypes.Context, senderChain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, asset cosmossdktypes.Coin) (github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferID, error) {
 //				panic("mock out the EnqueueTransfer method")
 //			},
-//			GenerateMessageIDFunc: func(ctx cosmossdktypes.Context) string {
+//			GenerateMessageIDFunc: func(ctx cosmossdktypes.Context) (string, uint64) {
 //				panic("mock out the GenerateMessageID method")
 //			},
 //			GetChainFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, bool) {
@@ -607,7 +607,7 @@ type NexusMock struct {
 	EnqueueTransferFunc func(ctx cosmossdktypes.Context, senderChain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, asset cosmossdktypes.Coin) (github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferID, error)
 
 	// GenerateMessageIDFunc mocks the GenerateMessageID method.
-	GenerateMessageIDFunc func(ctx cosmossdktypes.Context) string
+	GenerateMessageIDFunc func(ctx cosmossdktypes.Context) (string, uint64)
 
 	// GetChainFunc mocks the GetChain method.
 	GetChainFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, bool)
@@ -1029,7 +1029,7 @@ func (mock *NexusMock) EnqueueTransferCalls() []struct {
 }
 
 // GenerateMessageID calls GenerateMessageIDFunc.
-func (mock *NexusMock) GenerateMessageID(ctx cosmossdktypes.Context) string {
+func (mock *NexusMock) GenerateMessageID(ctx cosmossdktypes.Context) (string, uint64) {
 	if mock.GenerateMessageIDFunc == nil {
 		panic("NexusMock.GenerateMessageIDFunc: method is nil but Nexus.GenerateMessageID was just called")
 	}

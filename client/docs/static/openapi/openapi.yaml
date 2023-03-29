@@ -10629,6 +10629,9 @@ paths:
                       source_tx_id:
                         type: string
                         format: byte
+                      source_tx_index:
+                        type: string
+                        format: uint64
         default:
           description: An unexpected error response
           content:
@@ -39466,6 +39469,9 @@ components:
         source_tx_id:
           type: string
           format: byte
+        source_tx_index:
+          type: string
+          format: uint64
     axelar.nexus.exported.v1beta1.GeneralMessage.Status:
       type: string
       enum:
@@ -39875,6 +39881,9 @@ components:
             source_tx_id:
               type: string
               format: byte
+            source_tx_index:
+              type: string
+              format: uint64
     axelar.nexus.v1beta1.RecipientAddressResponse:
       type: object
       properties:

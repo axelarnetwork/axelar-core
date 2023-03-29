@@ -107,4 +107,5 @@ message GeneralMessage {
   Status status = 5;
   cosmos.base.v1beta1.Coin asset = 6;
   bytes source_tx_id = 7 [ (gogoproto.customname) = "SourceTxID" ];
+  uint64 source_tx_index = 8;
 }

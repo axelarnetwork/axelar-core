@@ -219,7 +219,7 @@ func validateMessage(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.Nexus, b ty
 
 func handleMessage(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceAddress nexus.CrossChainAddress, msg Message, token keeper.Coin) error {
 	txID := sha256.Sum256(ctx.TxBytes())
-	id := n.GenerateMessageID(ctx)
+	id, nonce := n.GenerateMessageID(ctx)
 
 	// ignore token for call contract
 	_, err := deductFee(ctx, b, msg.Fee, token, id)
@@ -236,6 +236,7 @@ func handleMessage(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceAdd
 		crypto.Keccak256Hash(msg.Payload).Bytes(),
 		nexus.Approved,
 		txID[:],
+		nonce,
 		nil,
 	)
 
@@ -254,7 +255,7 @@ func handleMessage(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceAdd
 
 func handleMessageWithToken(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceAddress nexus.CrossChainAddress, msg Message, token keeper.Coin) error {
 	txID := sha256.Sum256(ctx.TxBytes())
-	id := n.GenerateMessageID(ctx)
+	id, nonce := n.GenerateMessageID(ctx)
 
 	token, err := deductFee(ctx, b, msg.Fee, token, id)
 	if err != nil {
@@ -274,6 +275,7 @@ func handleMessageWithToken(ctx sdk.Context, n types.Nexus, b types.BankKeeper, 
 		crypto.Keccak256Hash(msg.Payload).Bytes(),
 		nexus.Approved,
 		txID[:],
+		nonce,
 		&token.Coin,
 	)
 

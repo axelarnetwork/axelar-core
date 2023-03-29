@@ -52,6 +52,7 @@ func RandomMessage(statuses ...exported.GeneralMessage_Status) exported.GeneralM
 		rand.Bytes(32),
 		rand.Of(statuses...),
 		rand.Bytes(32),
+		uint64(rand.I64Between(0, 10000)),
 		&coin,
 	)
 }

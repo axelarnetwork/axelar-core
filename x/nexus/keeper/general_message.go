@@ -25,13 +25,14 @@ func getSentMessageKey(destinationChain exported.ChainName, id string) key.Key {
 	return sentMessagePrefix.Append(key.From(destinationChain)).Append(key.FromStr(id))
 }
 
-// GenerateMessageID generates a unique general message ID
-func (k Keeper) GenerateMessageID(ctx sdk.Context) string {
+// GenerateMessageID generates a unique general message ID, and returns the ID as well as a unique integer nonce
+// The nonce is used in place of source transaction index for cosmos GMP calls
+func (k Keeper) GenerateMessageID(ctx sdk.Context) (string, uint64) {
 	counter := utils.NewCounter[uint64](messageNonceKey, k.getStore(ctx))
 	nonce := counter.Incr(ctx)
 
 	hash := sha256.Sum256(ctx.TxBytes())
-	return fmt.Sprintf("%s-%d", hex.EncodeToString(hash[:]), nonce)
+	return fmt.Sprintf("%s-%d", hex.EncodeToString(hash[:]), nonce), nonce
 }
 
 // SetNewMessage sets the given general message. If the messages is approved, adds the message ID to approved messages store
