@@ -66,7 +66,28 @@ func TranslateMessage(msg nexus.GeneralMessage, versionedPayload []byte) ([]byte
 		return nil, sdkerrors.Wrap(err, "invalid versioned payload")
 	}
 
-	return constructMessage(msg, version, payload)
+	var bz []byte
+	switch hexutil.Encode(version[:]) {
+	case NativeV1:
+		bz, err = ConstructNativeMessage(msg, payload)
+		if err != nil {
+			return nil, sdkerrors.Wrap(err, "failed to construct native payload")
+		}
+	case CosmWasmV1:
+		bz, err = ConstructWasmMessageV1(msg, payload)
+		if err != nil {
+			return nil, sdkerrors.Wrap(err, "failed to construct wasm payload")
+		}
+	case CosmWasmV2:
+		bz, err = ConstructWasmMessageV2(msg, payload)
+		if err != nil {
+			return nil, sdkerrors.Wrap(err, "failed to construct wasm payload")
+		}
+	default:
+		return nil, fmt.Errorf("unknown payload version")
+	}
+
+	return bz, nil
 }
 
 // unpackVersionedPayload returns the version and actual payload
@@ -80,34 +101,6 @@ func unpackVersionedPayload(versionedPayload []byte) (version, []byte, error) {
 	copy(v[:], versionedPayload[:versionSize])
 
 	return v, versionedPayload[versionSize:], nil
-}
-
-// constructMessage constructs message based on the payload version
-func constructMessage(gm nexus.GeneralMessage, v version, payload []byte) ([]byte, error) {
-	var bz []byte
-	var err error
-
-	switch hexutil.Encode(v[:]) {
-	case NativeV1:
-		bz, err = ConstructNativeMessage(gm, payload)
-		if err != nil {
-			return nil, sdkerrors.Wrap(err, "failed to construct native payload")
-		}
-	case CosmWasmV1:
-		bz, err = ConstructWasmMessageV1(gm, payload)
-		if err != nil {
-			return nil, sdkerrors.Wrap(err, "failed to construct wasm payload")
-		}
-	case CosmWasmV2:
-		bz, err = ConstructWasmMessageV2(gm, payload)
-		if err != nil {
-			return nil, sdkerrors.Wrap(err, "failed to construct wasm payload")
-		}
-	default:
-		return nil, fmt.Errorf("unknown payload version")
-	}
-
-	return bz, nil
 }
 
 // ConstructWasmMessageV1 creates a json serialized wasm message from Axelar defined abi encoded payload
