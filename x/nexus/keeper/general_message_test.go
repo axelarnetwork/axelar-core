@@ -1,6 +1,8 @@
 package keeper_test
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"testing"
 	"time"
@@ -121,14 +123,30 @@ func TestSetNewGeneralMessage(t *testing.T) {
 }
 
 func TestGenerateMessageID(t *testing.T) {
-	cfg := app.MakeEncodingConfig()
-	k, ctx := setup(cfg)
+	var (
+		ctx    sdk.Context
+		k      nexus.Keeper
+		txhash [32]byte
+	)
 
-	// use the same hash and source chain, still shouldn't collide
-	id, _, nonce := k.GenerateMessageID(ctx)
-	id2, _, nonce2 := k.GenerateMessageID(ctx)
-	assert.NotEqual(t, id, id2)
-	assert.NotEqual(t, nonce, nonce2)
+	Given("a keeper", func() {
+		cfg := app.MakeEncodingConfig()
+		k, ctx = setup(cfg)
+	}).
+		When("tx bytes are set", func() {
+			tx := rand.Bytes(int(rand.I64Between(1, 100)))
+			txhash = sha256.Sum256(tx)
+			ctx = ctx.WithTxBytes(tx)
+		}).
+		Then("should return message id with counter 0", func(t *testing.T) {
+			for i := range [10]int{} {
+				id, txId, txIndex := k.GenerateMessageID(ctx)
+				assert.Equal(t, txhash[:], txId)
+				assert.Equal(t, uint64(i), txIndex)
+				assert.Equal(t, fmt.Sprintf("0x%s-%d", hex.EncodeToString(txhash[:]), i), id)
+			}
+		}).
+		Run(t)
 }
 
 func TestStatusTransitions(t *testing.T) {

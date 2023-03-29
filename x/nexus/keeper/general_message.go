@@ -30,9 +30,9 @@ func getSentMessageKey(destinationChain exported.ChainName, id string) key.Key {
 func (k Keeper) GenerateMessageID(ctx sdk.Context) (string, []byte, uint64) {
 	counter := utils.NewCounter[uint64](messageNonceKey, k.getStore(ctx))
 	nonce := counter.Incr(ctx)
-
 	hash := sha256.Sum256(ctx.TxBytes())
-	return fmt.Sprintf("%s-%d", hex.EncodeToString(hash[:]), nonce), hash[:], nonce
+
+	return fmt.Sprintf("0x%s-%d", hex.EncodeToString(hash[:]), nonce), hash[:], nonce
 }
 
 // SetNewMessage sets the given general message. If the messages is approved, adds the message ID to approved messages store
