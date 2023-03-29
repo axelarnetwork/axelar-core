@@ -83,6 +83,7 @@ func getRandomMessage(id string) exported.GeneralMessage {
 		Recipient:   getRandomEthereumAddress(),
 		Status:      exported.Sent,
 		PayloadHash: crypto.Keccak256Hash(rand.Bytes(int(rand.I64Between(1, 100)))).Bytes(),
+		SourceTxID:  rand.Bytes(32),
 		Asset:       nil,
 	}
 
@@ -205,7 +206,7 @@ func TestExportGenesisInitGenesis(t *testing.T) {
 
 	messageCount := rand.I64Between(100, 256)
 	for i := 0; i < int(messageCount); i++ {
-		msg := getRandomMessage(keeper.GenerateMessageID(ctx, rand.Bytes(32)))
+		msg := getRandomMessage(keeper.GenerateMessageID(ctx))
 		expected.Messages = append(expected.Messages, msg)
 		funcs.MustNoErr(keeper.SetNewMessage(ctx, msg))
 	}

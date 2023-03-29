@@ -123,11 +123,10 @@ func TestSetNewGeneralMessage(t *testing.T) {
 func TestGenerateMessageID(t *testing.T) {
 	cfg := app.MakeEncodingConfig()
 	k, ctx := setup(cfg)
-	txHash := rand.Bytes(32)
 
 	// use the same hash and source chain, still shouldn't collide
-	id := k.GenerateMessageID(ctx, txHash)
-	id2 := k.GenerateMessageID(ctx, txHash)
+	id := k.GenerateMessageID(ctx)
+	id2 := k.GenerateMessageID(ctx)
 	assert.NotEqual(t, id, id2)
 }
 
@@ -140,12 +139,13 @@ func TestStatusTransitions(t *testing.T) {
 	destinationChain := nexustestutils.RandomChain()
 	destinationChain.Module = evmtypes.ModuleName
 	msg := exported.GeneralMessage{
-		ID:          k.GenerateMessageID(ctx, rand.Bytes(32)),
+		ID:          k.GenerateMessageID(ctx),
 		Sender:      exported.CrossChainAddress{Chain: sourceChain, Address: genCosmosAddr(sourceChain.Name.String())},
 		Recipient:   exported.CrossChainAddress{Chain: destinationChain, Address: evmtestutils.RandomAddress().Hex()},
 		Status:      exported.Approved,
 		PayloadHash: crypto.Keccak256Hash(rand.Bytes(int(rand.I64Between(1, 100)))).Bytes(),
 		Asset:       nil,
+		SourceTxID:  rand.Bytes(32),
 	}
 	k.SetChain(ctx, sourceChain)
 	k.SetChain(ctx, destinationChain)
@@ -204,12 +204,13 @@ func TestGetMessage(t *testing.T) {
 	destinationChain := nexustestutils.RandomChain()
 	destinationChain.Module = evmtypes.ModuleName
 	msg := exported.GeneralMessage{
-		ID:          k.GenerateMessageID(ctx, rand.Bytes(32)),
+		ID:          k.GenerateMessageID(ctx),
 		Sender:      exported.CrossChainAddress{Chain: sourceChain, Address: genCosmosAddr(sourceChain.Name.String())},
 		Recipient:   exported.CrossChainAddress{Chain: destinationChain, Address: evmtestutils.RandomAddress().Hex()},
 		Status:      exported.Approved,
 		PayloadHash: crypto.Keccak256Hash(rand.Bytes(int(rand.I64Between(1, 100)))).Bytes(),
 		Asset:       nil,
+		SourceTxID:  rand.Bytes(32),
 	}
 	k.SetChain(ctx, sourceChain)
 	k.SetChain(ctx, destinationChain)
@@ -241,12 +242,13 @@ func TestGetSentMessages(t *testing.T) {
 			destChain := destinationChain
 			destChain.Name = destChainName
 			msg := exported.GeneralMessage{
-				ID:          k.GenerateMessageID(ctx, rand.Bytes(32)),
+				ID:          k.GenerateMessageID(ctx),
 				Sender:      exported.CrossChainAddress{Chain: sourceChain, Address: genCosmosAddr(sourceChain.Name.String())},
 				Recipient:   exported.CrossChainAddress{Chain: destChain, Address: evmtestutils.RandomAddress().Hex()},
 				Status:      exported.Sent,
 				PayloadHash: crypto.Keccak256Hash(rand.Bytes(int(rand.I64Between(1, 100)))).Bytes(),
 				Asset:       nil,
+				SourceTxID:  rand.Bytes(32),
 			}
 
 			msgs[msg.ID] = msg

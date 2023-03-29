@@ -604,7 +604,7 @@ func validateMessage(ctx sdk.Context, ck types.ChainKeeper, n types.Nexus, m typ
 
 func handleMessage(ctx sdk.Context, ck types.ChainKeeper, chainID sdk.Int, keyID multisig.KeyID, msg nexus.GeneralMessage) {
 
-	cmd := types.NewApproveContractCallCommandGeneric(chainID, keyID, common.HexToAddress(msg.GetDestinationAddress()), common.BytesToHash(msg.PayloadHash), common.BytesToHash(msg.SourceTxHash), msg.GetSourceChain(), msg.GetSourceAddress(), 0, msg.ID)
+	cmd := types.NewApproveContractCallCommandGeneric(chainID, keyID, common.HexToAddress(msg.GetDestinationAddress()), common.BytesToHash(msg.PayloadHash), common.BytesToHash(msg.SourceTxID), msg.GetSourceChain(), msg.GetSourceAddress(), 0, msg.ID)
 	funcs.MustNoErr(ck.EnqueueCommand(ctx, cmd))
 
 	events.Emit(ctx, &types.ContractCallApproved{
@@ -627,7 +627,7 @@ func handleMessage(ctx sdk.Context, ck types.ChainKeeper, chainID sdk.Int, keyID
 func handleMessageWithToken(ctx sdk.Context, ck types.ChainKeeper, chainID sdk.Int, keyID multisig.KeyID, msg nexus.GeneralMessage) {
 	token := ck.GetERC20TokenByAsset(ctx, msg.Asset.GetDenom())
 
-	cmd := types.NewApproveContractCallWithMintGeneric(chainID, keyID, common.BytesToHash(msg.SourceTxHash), msg, token.GetDetails().Symbol)
+	cmd := types.NewApproveContractCallWithMintGeneric(chainID, keyID, common.BytesToHash(msg.SourceTxID), msg, token.GetDetails().Symbol)
 	funcs.MustNoErr(ck.EnqueueCommand(ctx, cmd))
 
 	events.Emit(ctx, &types.ContractCallWithMintApproved{

@@ -11667,7 +11667,7 @@ paths:
                       custom method
 
                       signatures required by gogoproto.
-                  source_tx_hash:
+                  source_tx_id:
                     type: string
                     format: byte
         default:
@@ -42794,7 +42794,7 @@ definitions:
 
           NOTE: The amount field is an Int which implements the custom method
           signatures required by gogoproto.
-      source_tx_hash:
+      source_tx_id:
         type: string
         format: byte
   axelar.nexus.exported.v1beta1.GeneralMessage.Status:
@@ -43206,7 +43206,7 @@ definitions:
               method
 
               signatures required by gogoproto.
-          source_tx_hash:
+          source_tx_id:
             type: string
             format: byte
   axelar.nexus.v1beta1.RecipientAddressResponse:

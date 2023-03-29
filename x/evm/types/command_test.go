@@ -30,14 +30,14 @@ func TestNewApproveContractCallCommandFromGeneralMessage(t *testing.T) {
 	chainID := sdk.NewInt(1)
 	keyID := multisigTestutils.KeyID()
 	payload := rand.BytesBetween(64, 1000)
-	txHash := common.BytesToHash(rand.Bytes(32))
+	txID := common.BytesToHash(rand.Bytes(32))
 	payloadHash := crypto.Keccak256(payload)
 	eventIndex := 0
 	srcChain := nexus.Chain{Name: nexus.ChainName(rand.StrBetween(16, 32)), Module: types.ModuleName}
 	destChain := nexus.Chain{Name: nexus.ChainName(rand.StrBetween(8, 64)), Module: types.ModuleName}
 	sender := nexus.CrossChainAddress{Chain: srcChain, Address: rand.AccAddr().String()}
 	receiver := nexus.CrossChainAddress{Chain: destChain, Address: testutils.RandomAddress().Hex()}
-	msg := nexus.NewGeneralMessage(txHash.Hex(), sender, receiver, payloadHash, nexus.Approved, nil, txHash[:])
+	msg := nexus.NewGeneralMessage(txID.Hex(), sender, receiver, payloadHash, nexus.Approved, nil, txID[:])
 
 	actual := types.NewApproveContractCallCommandGeneric(chainID, keyID,
 		common.HexToAddress(msg.GetDestinationAddress()), common.BytesToHash(msg.PayloadHash), common.BytesToHash(make([]byte, common.HashLength)), msg.GetSourceChain(), msg.GetSourceAddress(), uint64(eventIndex), msg.ID)

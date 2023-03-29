@@ -1,6 +1,7 @@
 package axelarnet_test
 
 import (
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -93,8 +94,9 @@ func TestHandleMessage(t *testing.T) {
 					return fmt.Errorf("module not found")
 				}
 			},
-			GenerateMessageIDFunc: func(ctx sdk.Context, txHash []byte) string {
-				return fmt.Sprintf("%s-%d", hex.EncodeToString(txHash), 0)
+			GenerateMessageIDFunc: func(ctx sdk.Context) string {
+				hash := sha256.Sum256(ctx.TxBytes())
+				return fmt.Sprintf("%s-%d", hex.EncodeToString(hash[:]), 0)
 			},
 			RateLimitTransferFunc: func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error {
 				return nil
@@ -485,8 +487,9 @@ func TestHandleMessageWithToken(t *testing.T) {
 			GetChainByNativeAssetFunc: func(ctx sdk.Context, asset string) (nexus.Chain, bool) {
 				return srcChain, true
 			},
-			GenerateMessageIDFunc: func(ctx sdk.Context, txHash []byte) string {
-				return fmt.Sprintf("%s-%d", hex.EncodeToString(txHash), 0)
+			GenerateMessageIDFunc: func(ctx sdk.Context) string {
+				hash := sha256.Sum256(ctx.TxBytes())
+				return fmt.Sprintf("%s-%d", hex.EncodeToString(hash[:]), 0)
 			},
 			RateLimitTransferFunc: func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error {
 				return nil
@@ -699,8 +702,9 @@ func TestHandleSendToken(t *testing.T) {
 			EnqueueTransferFunc: func(ctx sdk.Context, senderChain nexus.Chain, recipient nexus.CrossChainAddress, asset sdk.Coin) (nexus.TransferID, error) {
 				return nexustestutils.RandomTransferID(), nil
 			},
-			GenerateMessageIDFunc: func(ctx sdk.Context, txHash []byte) string {
-				return fmt.Sprintf("%s-%d", hex.EncodeToString(txHash), 0)
+			GenerateMessageIDFunc: func(ctx sdk.Context) string {
+				hash := sha256.Sum256(ctx.TxBytes())
+				return fmt.Sprintf("%s-%d", hex.EncodeToString(hash[:]), 0)
 			},
 			RateLimitTransferFunc: func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error {
 				return nil
