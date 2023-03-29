@@ -30,26 +30,25 @@ func TestNewApproveContractCallCommandFromGeneralMessage(t *testing.T) {
 	chainID := sdk.NewInt(1)
 	keyID := multisigTestutils.KeyID()
 	payload := rand.BytesBetween(64, 1000)
-	txHash := common.BytesToHash(rand.Bytes(32))
+	txID := common.BytesToHash(rand.Bytes(32))
 	payloadHash := crypto.Keccak256(payload)
-	eventIndex := 0
+	eventIndex := uint64(rand.I64Between(33, 256))
 	srcChain := nexus.Chain{Name: nexus.ChainName(rand.StrBetween(16, 32)), Module: types.ModuleName}
 	destChain := nexus.Chain{Name: nexus.ChainName(rand.StrBetween(8, 64)), Module: types.ModuleName}
 	sender := nexus.CrossChainAddress{Chain: srcChain, Address: rand.AccAddr().String()}
 	receiver := nexus.CrossChainAddress{Chain: destChain, Address: testutils.RandomAddress().Hex()}
-	msg := nexus.NewGeneralMessage(txHash.Hex(), sender, receiver, payloadHash, nexus.Approved, nil)
+	msg := nexus.NewGeneralMessage(txID.Hex(), sender, receiver, payloadHash, nexus.Approved, txID[:], eventIndex, nil)
 
 	actual := types.NewApproveContractCallCommandGeneric(chainID, keyID,
-		common.HexToAddress(msg.GetDestinationAddress()), common.BytesToHash(msg.PayloadHash), common.BytesToHash(make([]byte, common.HashLength)), msg.GetSourceChain(), msg.GetSourceAddress(), uint64(eventIndex), msg.ID)
+		common.HexToAddress(msg.GetDestinationAddress()), common.BytesToHash(msg.PayloadHash), common.BytesToHash(msg.SourceTxID), msg.GetSourceChain(), msg.GetSourceAddress(), msg.SourceTxIndex, msg.ID)
 	// abi encoding pads strings to lengths divisible by 32
 	sourceChainPadded := []byte(msg.GetSourceChain().String())
 	for len(sourceChainPadded)%32 != 0 {
 		sourceChainPadded = append(sourceChainPadded, 0)
 	}
 
-	dummyTxId := common.BytesToHash(make([]byte, common.HashLength))
-	expected := strings.ToLower(fmt.Sprintf("00000000000000000000000000000000000000000000000000000000000000c00000000000000000000000000000000000000000000000000000000000000100000000000000000000000000%s%s%s000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000%x%s00000000000000000000000000000000000000000000000000000000000000%x%s00000000000000000000000000000000000000000000000000000000000000",
-		msg.GetDestinationAddress()[2:], hex.EncodeToString(payloadHash), dummyTxId.Hex()[2:], len(msg.GetSourceChain()), hex.EncodeToString([]byte(sourceChainPadded)), len(msg.GetSourceAddress()), hex.EncodeToString([]byte(msg.GetSourceAddress()))))
+	expected := strings.ToLower(fmt.Sprintf("00000000000000000000000000000000000000000000000000000000000000c00000000000000000000000000000000000000000000000000000000000000100000000000000000000000000%s%s%s00000000000000000000000000000000000000000000000000000000000000%x00000000000000000000000000000000000000000000000000000000000000%x%s00000000000000000000000000000000000000000000000000000000000000%x%s00000000000000000000000000000000000000000000000000000000000000",
+		msg.GetDestinationAddress()[2:], hex.EncodeToString(payloadHash), common.BytesToHash(msg.SourceTxID).Hex()[2:], msg.SourceTxIndex, len(msg.GetSourceChain()), hex.EncodeToString([]byte(sourceChainPadded)), len(msg.GetSourceAddress()), hex.EncodeToString([]byte(msg.GetSourceAddress()))))
 
 	assert.Equal(t, expected, hex.EncodeToString(actual.Params))
 
@@ -58,7 +57,7 @@ func TestNewApproveContractCallCommandFromGeneralMessage(t *testing.T) {
 	assert.Equal(t, msg.GetSourceAddress(), actualSourceAddress)
 	assert.Equal(t, msg.GetDestinationAddress(), actualContractAddress.Hex())
 	assert.Equal(t, common.BytesToHash(payloadHash), actualPayloadHash)
-	assert.Equal(t, dummyTxId, actualSourceTxID)
+	assert.Equal(t, common.BytesToHash(msg.SourceTxID), actualSourceTxID)
 	assert.Equal(t, uint64(eventIndex), actualSourceEventIndex.Uint64())
 
 }

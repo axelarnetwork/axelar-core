@@ -241,14 +241,16 @@ func (m TransferDirection) ValidateBasic() error {
 }
 
 // NewGeneralMessage returns a GeneralMessage struct
-func NewGeneralMessage(id string, sender CrossChainAddress, recipient CrossChainAddress, payloadHash []byte, status GeneralMessage_Status, asset *sdk.Coin) GeneralMessage {
+func NewGeneralMessage(id string, sender CrossChainAddress, recipient CrossChainAddress, payloadHash []byte, status GeneralMessage_Status, sourceTxID []byte, sourceTxIndex uint64, asset *sdk.Coin) GeneralMessage {
 	return GeneralMessage{
-		ID:          id,
-		Sender:      sender,
-		Recipient:   recipient,
-		PayloadHash: payloadHash,
-		Status:      status,
-		Asset:       asset,
+		ID:            id,
+		Sender:        sender,
+		Recipient:     recipient,
+		PayloadHash:   payloadHash,
+		Status:        status,
+		Asset:         asset,
+		SourceTxID:    sourceTxID,
+		SourceTxIndex: sourceTxIndex,
 	}
 }
 

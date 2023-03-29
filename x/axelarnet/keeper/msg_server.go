@@ -79,7 +79,8 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 	// axelar gateway expects keccak256 hashes for payloads
 	payloadHash := crypto.Keccak256(req.Payload)
 
-	msg := nexus.NewGeneralMessage(s.nexus.GenerateMessageID(ctx), sender, recipient, payloadHash, nexus.Sent, nil)
+	msgID, txID, nonce := s.nexus.GenerateMessageID(ctx)
+	msg := nexus.NewGeneralMessage(msgID, sender, recipient, payloadHash, nexus.Sent, txID, nonce, nil)
 	if err := s.nexus.SetNewMessage(ctx, msg); err != nil {
 		return nil, sdkerrors.Wrap(err, "failed to add general message")
 	}
