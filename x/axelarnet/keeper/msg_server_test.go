@@ -1135,7 +1135,7 @@ func TestExecuteMessage(t *testing.T) {
 					When2(whenMessageIsToCosmos).
 					When("asset is registered", isAssetRegistered(true)).
 					When("payload with version is invalid", func() {
-						payload = rand.BytesBetween(100, 500)
+						payload = rand.Bytes(4)
 						msg.PayloadHash = crypto.Keccak256Hash(payload).Bytes()
 					}).
 					When2(requestIsMade).
@@ -1145,18 +1145,7 @@ func TestExecuteMessage(t *testing.T) {
 					When2(whenMessageIsToCosmos).
 					When("asset is registered", isAssetRegistered(true)).
 					When("payload is invalid", func() {
-						bytesType := funcs.Must(abi.NewType("bytes", "bytes", nil))
-						bytes32Type := funcs.Must(abi.NewType("bytes32", "bytes32", nil))
-
-						versionBz, _ := hexutil.Decode(types.CosmwasmV1)
-						var bz32 [32]byte
-						copy(bz32[:], versionBz)
-
-						payload = funcs.Must(abi.Arguments{{Type: bytes32Type}, {Type: bytesType}}.Pack(
-							bz32,
-							rand.BytesBetween(100, 500),
-						))
-
+						payload = axelartestutils.PackPayloadWithVersion(types.CosmWasmV1, rand.BytesBetween(100, 500))
 						msg.PayloadHash = crypto.Keccak256Hash(payload).Bytes()
 					}).
 					When2(requestIsMade).
@@ -1375,7 +1364,6 @@ func randomTransfer(asset string, chain nexus.ChainName) nexus.CrossChainTransfe
 
 func randPayload() []byte {
 	bytesType := funcs.Must(abi.NewType("bytes", "bytes", nil))
-	bytes32Type := funcs.Must(abi.NewType("bytes32", "bytes32", nil))
 	stringType := funcs.Must(abi.NewType("string", "string", nil))
 	stringArrayType := funcs.Must(abi.NewType("string[]", "string[]", nil))
 
@@ -1396,19 +1384,10 @@ func randPayload() []byte {
 		),
 	)
 
-	versionBz, _ := hexutil.Decode(types.CosmwasmV1)
-	var bz32 [32]byte
-	copy(bz32[:], versionBz)
-
-	return funcs.Must(abi.Arguments{{Type: bytes32Type}, {Type: bytesType}}.Pack(
-		bz32,
-		payload,
-	))
+	return append(funcs.Must(hexutil.Decode(types.CosmWasmV1)), payload...)
 }
 
 func randWasmPayload() []byte {
-	bytesType := funcs.Must(abi.NewType("bytes", "bytes", nil))
-	bytes32Type := funcs.Must(abi.NewType("bytes32", "bytes32", nil))
 	args := make(map[string]string)
 
 	randStr := func() string { return rand.Str(int(rand.I64Between(1, 32))) }
@@ -1422,12 +1401,5 @@ func randWasmPayload() []byte {
 	msg[randStr()] = args
 	payload := funcs.Must(json.Marshal(msg))
 
-	versionBz, _ := hexutil.Decode(types.CosmwasmV2)
-	var bz32 [32]byte
-	copy(bz32[:], versionBz)
-
-	return funcs.Must(abi.Arguments{{Type: bytes32Type}, {Type: bytesType}}.Pack(
-		bz32,
-		payload,
-	))
+	return axelartestutils.PackPayloadWithVersion(types.CosmWasmV2, payload)
 }
