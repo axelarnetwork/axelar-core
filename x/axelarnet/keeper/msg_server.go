@@ -81,7 +81,7 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 	payloadHash := crypto.Keccak256(req.Payload)
 
 	txID := sha256.Sum256(ctx.TxBytes())
-	msg := nexus.NewGeneralMessage(s.nexus.GenerateMessageID(ctx), sender, recipient, payloadHash, nexus.Sent, nil, txID[:])
+	msg := nexus.NewGeneralMessage(s.nexus.GenerateMessageID(ctx), sender, recipient, payloadHash, nexus.Sent, txID[:], nil)
 	if err := s.nexus.SetNewMessage(ctx, msg); err != nil {
 		return nil, sdkerrors.Wrap(err, "failed to add general message")
 	}

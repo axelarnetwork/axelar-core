@@ -220,8 +220,8 @@ func setMessageToNexus(ctx sdk.Context, n types.Nexus, event types.Event, asset 
 			recipient,
 			e.ContractCall.PayloadHash.Bytes(),
 			nexus.Approved,
-			nil,
 			event.TxID.Bytes(),
+			nil,
 		)
 
 	case *types.Event_ContractCallWithToken:
@@ -245,8 +245,8 @@ func setMessageToNexus(ctx sdk.Context, n types.Nexus, event types.Event, asset 
 			recipient,
 			e.ContractCallWithToken.PayloadHash.Bytes(),
 			nexus.Approved,
-			asset,
 			event.TxID.Bytes(),
+			asset,
 		)
 	default:
 		return fmt.Errorf("unsupported event type %T", event)

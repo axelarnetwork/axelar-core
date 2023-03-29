@@ -235,8 +235,8 @@ func handleMessage(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceAdd
 		recipient,
 		crypto.Keccak256Hash(msg.Payload).Bytes(),
 		nexus.Approved,
-		nil,
 		txID[:],
+		nil,
 	)
 
 	events.Emit(ctx, &types.ContractCallSubmitted{
@@ -273,8 +273,8 @@ func handleMessageWithToken(ctx sdk.Context, n types.Nexus, b types.BankKeeper, 
 		recipient,
 		crypto.Keccak256Hash(msg.Payload).Bytes(),
 		nexus.Approved,
-		&token.Coin,
 		txID[:],
+		&token.Coin,
 	)
 
 	events.Emit(ctx, &types.ContractCallWithTokenSubmitted{
