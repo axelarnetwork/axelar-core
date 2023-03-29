@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"context"
-	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"strings"
@@ -80,9 +79,8 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 	// axelar gateway expects keccak256 hashes for payloads
 	payloadHash := crypto.Keccak256(req.Payload)
 
-	txID := sha256.Sum256(ctx.TxBytes())
-	msgID, nonce := s.nexus.GenerateMessageID(ctx)
-	msg := nexus.NewGeneralMessage(msgID, sender, recipient, payloadHash, nexus.Sent, txID[:], nonce, nil)
+	msgID, txID, nonce := s.nexus.GenerateMessageID(ctx)
+	msg := nexus.NewGeneralMessage(msgID, sender, recipient, payloadHash, nexus.Sent, txID, nonce, nil)
 	if err := s.nexus.SetNewMessage(ctx, msg); err != nil {
 		return nil, sdkerrors.Wrap(err, "failed to add general message")
 	}
