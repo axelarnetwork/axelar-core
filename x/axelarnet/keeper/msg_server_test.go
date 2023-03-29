@@ -1139,7 +1139,7 @@ func TestExecuteMessage(t *testing.T) {
 						msg.PayloadHash = crypto.Keccak256Hash(payload).Bytes()
 					}).
 					When2(requestIsMade).
-					Then("should fail", executeFailsWithError("invalid payload with version")),
+					Then("should fail", executeFailsWithError("invalid versioned payload")),
 
 				whenMessageIsFromEVM.
 					When2(whenMessageIsToCosmos).

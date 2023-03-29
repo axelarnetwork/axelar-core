@@ -59,26 +59,27 @@ type message struct {
 	Type          int64  `json:"type"`
 }
 
-// TranslateMessage constructs the message gets passed to a cosmos chain from abi encoded payload
-func TranslateMessage(msg nexus.GeneralMessage, payload []byte) ([]byte, error) {
-	version, payload, err := unpackPayload(payload)
+// TranslateMessage constructs the message gets passed to a cosmos chain from a versioned payload
+func TranslateMessage(msg nexus.GeneralMessage, versionedPayload []byte) ([]byte, error) {
+	version, payload, err := unpackVersionedPayload(versionedPayload)
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, "invalid payload with version")
+		return nil, sdkerrors.Wrap(err, "invalid versioned payload")
 	}
 
 	return constructMessage(msg, version, payload)
 }
 
-// unpackPayload returns the version and actual payload
-func unpackPayload(payload []byte) (version, []byte, error) {
-	if len(payload) <= versionSize {
-		return version{}, nil, fmt.Errorf("invalid payload length")
+// unpackVersionedPayload returns the version and actual payload
+func unpackVersionedPayload(versionedPayload []byte) (version, []byte, error) {
+	if len(versionedPayload) <= versionSize {
+		return version{}, nil, fmt.Errorf("invalid versionedPayload length")
 	}
 
+	// first 4 bytes is the version
 	var v version
-	copy(v[:], payload[:versionSize])
+	copy(v[:], versionedPayload[:versionSize])
 
-	return v, payload[versionSize:], nil
+	return v, versionedPayload[versionSize:], nil
 }
 
 // constructMessage constructs message based on the payload version

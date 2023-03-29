@@ -45,7 +45,7 @@ func TestTranslateMessage(t *testing.T) {
 	t.Run("should return error if version encoding is invalid", func(t *testing.T) {
 		msg := nexustestutils.RandomMessage()
 		_, err := types.TranslateMessage(msg, []byte{0x01})
-		assert.ErrorContains(t, err, "invalid payload with version")
+		assert.ErrorContains(t, err, "invalid versioned payload")
 	})
 
 	t.Run("should return error if invalid version", func(t *testing.T) {
