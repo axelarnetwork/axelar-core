@@ -131,11 +131,11 @@ var _ types.Nexus = &NexusMock{}
 //			GetChainsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain {
 //				panic("mock out the GetChains method")
 //			},
+//			GetProcessingMessagesFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, limit int64) []github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage {
+//				panic("mock out the GetProcessingMessages method")
+//			},
 //			GetRecipientFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress) (github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, bool) {
 //				panic("mock out the GetRecipient method")
-//			},
-//			GetSentMessagesFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, limit int64) []github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage {
-//				panic("mock out the GetSentMessages method")
 //			},
 //			GetTransfersForChainPaginatedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, state github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferState, pageRequest *query.PageRequest) ([]github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainTransfer, *query.PageResponse, error) {
 //				panic("mock out the GetTransfersForChainPaginated method")
@@ -207,11 +207,11 @@ type NexusMock struct {
 	// GetChainsFunc mocks the GetChains method.
 	GetChainsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) []github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 
+	// GetProcessingMessagesFunc mocks the GetProcessingMessages method.
+	GetProcessingMessagesFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, limit int64) []github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage
+
 	// GetRecipientFunc mocks the GetRecipient method.
 	GetRecipientFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress) (github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, bool)
-
-	// GetSentMessagesFunc mocks the GetSentMessages method.
-	GetSentMessagesFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, limit int64) []github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage
 
 	// GetTransfersForChainPaginatedFunc mocks the GetTransfersForChainPaginated method.
 	GetTransfersForChainPaginatedFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, state github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferState, pageRequest *query.PageRequest) ([]github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainTransfer, *query.PageResponse, error)
@@ -328,21 +328,21 @@ type NexusMock struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
-		// GetRecipient holds details about calls to the GetRecipient method.
-		GetRecipient []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Sender is the sender argument value.
-			Sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
-		}
-		// GetSentMessages holds details about calls to the GetSentMessages method.
-		GetSentMessages []struct {
+		// GetProcessingMessages holds details about calls to the GetProcessingMessages method.
+		GetProcessingMessages []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Chain is the chain argument value.
 			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
 			// Limit is the limit argument value.
 			Limit int64
+		}
+		// GetRecipient holds details about calls to the GetRecipient method.
+		GetRecipient []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Sender is the sender argument value.
+			Sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
 		}
 		// GetTransfersForChainPaginated holds details about calls to the GetTransfersForChainPaginated method.
 		GetTransfersForChainPaginated []struct {
@@ -450,8 +450,8 @@ type NexusMock struct {
 	lockGetChainMaintainerState       sync.RWMutex
 	lockGetChainMaintainers           sync.RWMutex
 	lockGetChains                     sync.RWMutex
+	lockGetProcessingMessages         sync.RWMutex
 	lockGetRecipient                  sync.RWMutex
-	lockGetSentMessages               sync.RWMutex
 	lockGetTransfersForChainPaginated sync.RWMutex
 	lockIsAssetRegistered             sync.RWMutex
 	lockIsChainActivated              sync.RWMutex
@@ -845,6 +845,46 @@ func (mock *NexusMock) GetChainsCalls() []struct {
 	return calls
 }
 
+// GetProcessingMessages calls GetProcessingMessagesFunc.
+func (mock *NexusMock) GetProcessingMessages(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, limit int64) []github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage {
+	if mock.GetProcessingMessagesFunc == nil {
+		panic("NexusMock.GetProcessingMessagesFunc: method is nil but Nexus.GetProcessingMessages was just called")
+	}
+	callInfo := struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+		Limit int64
+	}{
+		Ctx:   ctx,
+		Chain: chain,
+		Limit: limit,
+	}
+	mock.lockGetProcessingMessages.Lock()
+	mock.calls.GetProcessingMessages = append(mock.calls.GetProcessingMessages, callInfo)
+	mock.lockGetProcessingMessages.Unlock()
+	return mock.GetProcessingMessagesFunc(ctx, chain, limit)
+}
+
+// GetProcessingMessagesCalls gets all the calls that were made to GetProcessingMessages.
+// Check the length with:
+//
+//	len(mockedNexus.GetProcessingMessagesCalls())
+func (mock *NexusMock) GetProcessingMessagesCalls() []struct {
+	Ctx   github_com_cosmos_cosmos_sdk_types.Context
+	Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+	Limit int64
+} {
+	var calls []struct {
+		Ctx   github_com_cosmos_cosmos_sdk_types.Context
+		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+		Limit int64
+	}
+	mock.lockGetProcessingMessages.RLock()
+	calls = mock.calls.GetProcessingMessages
+	mock.lockGetProcessingMessages.RUnlock()
+	return calls
+}
+
 // GetRecipient calls GetRecipientFunc.
 func (mock *NexusMock) GetRecipient(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress) (github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, bool) {
 	if mock.GetRecipientFunc == nil {
@@ -878,46 +918,6 @@ func (mock *NexusMock) GetRecipientCalls() []struct {
 	mock.lockGetRecipient.RLock()
 	calls = mock.calls.GetRecipient
 	mock.lockGetRecipient.RUnlock()
-	return calls
-}
-
-// GetSentMessages calls GetSentMessagesFunc.
-func (mock *NexusMock) GetSentMessages(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, limit int64) []github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage {
-	if mock.GetSentMessagesFunc == nil {
-		panic("NexusMock.GetSentMessagesFunc: method is nil but Nexus.GetSentMessages was just called")
-	}
-	callInfo := struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
-		Limit int64
-	}{
-		Ctx:   ctx,
-		Chain: chain,
-		Limit: limit,
-	}
-	mock.lockGetSentMessages.Lock()
-	mock.calls.GetSentMessages = append(mock.calls.GetSentMessages, callInfo)
-	mock.lockGetSentMessages.Unlock()
-	return mock.GetSentMessagesFunc(ctx, chain, limit)
-}
-
-// GetSentMessagesCalls gets all the calls that were made to GetSentMessages.
-// Check the length with:
-//
-//	len(mockedNexus.GetSentMessagesCalls())
-func (mock *NexusMock) GetSentMessagesCalls() []struct {
-	Ctx   github_com_cosmos_cosmos_sdk_types.Context
-	Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
-	Limit int64
-} {
-	var calls []struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
-		Limit int64
-	}
-	mock.lockGetSentMessages.RLock()
-	calls = mock.calls.GetSentMessages
-	mock.lockGetSentMessages.RUnlock()
 	return calls
 }
 

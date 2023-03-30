@@ -317,7 +317,7 @@ func getGeneralMessage() *cobra.Command {
 				return err
 			}
 
-			msg := types.NewExecuteMessage(cliCtx.GetFromAddress(), id, payload)
+			msg := types.NewRouteMessage(cliCtx.GetFromAddress(), id, payload)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

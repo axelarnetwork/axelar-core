@@ -42,7 +42,7 @@ func RandomCrossChainAddress() exported.CrossChainAddress {
 // RandomMessage generates a random message
 func RandomMessage(statuses ...exported.GeneralMessage_Status) exported.GeneralMessage {
 	if len(statuses) == 0 {
-		statuses = []exported.GeneralMessage_Status{exported.Approved, exported.Sent, exported.Executed, exported.Failed}
+		statuses = []exported.GeneralMessage_Status{exported.Approved, exported.Processing, exported.Executed, exported.Failed}
 	}
 	coin := rand.Coin()
 	return exported.NewGeneralMessage(

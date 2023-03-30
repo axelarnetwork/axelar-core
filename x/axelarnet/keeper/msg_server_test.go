@@ -982,7 +982,7 @@ func TestExecuteMessage(t *testing.T) {
 		k      keeper.Keeper
 		nexusK *mock.NexusMock
 		ctx    sdk.Context
-		req    *types.ExecuteMessageRequest
+		req    *types.RouteMessageRequest
 		msg    nexus.GeneralMessage
 	)
 
@@ -1017,7 +1017,7 @@ func TestExecuteMessage(t *testing.T) {
 			GetChainByNativeAssetFunc: func(sdk.Context, string) (nexus.Chain, bool) {
 				return chain, true
 			},
-			SetMessageSentFunc: func(sdk.Context, string) error {
+			SetMessageProcessingFunc: func(sdk.Context, string) error {
 				return nil
 			},
 		}
@@ -1085,7 +1085,7 @@ func TestExecuteMessage(t *testing.T) {
 	})
 
 	requestIsMade := When("an execute message request is made", func() {
-		req = types.NewExecuteMessage(
+		req = types.NewRouteMessage(
 			rand.AccAddr(),
 			id,
 			payload,
@@ -1094,7 +1094,7 @@ func TestExecuteMessage(t *testing.T) {
 
 	executeFailsWithError := func(msg string) func(t *testing.T) {
 		return func(t *testing.T) {
-			_, err := server.ExecuteMessage(sdk.WrapSDKContext(ctx), req)
+			_, err := server.RouteMessage(sdk.WrapSDKContext(ctx), req)
 			assert.ErrorContains(t, err, msg)
 		}
 	}
@@ -1116,7 +1116,7 @@ func TestExecuteMessage(t *testing.T) {
 					When2(whenMessageIsToCosmos).
 					When("asset is registered", isAssetRegistered(true)).
 					When("payload does not match", func() {
-						req = types.NewExecuteMessage(
+						req = types.NewRouteMessage(
 							rand.AccAddr(),
 							id,
 							rand.BytesBetween(100, 500),
@@ -1181,7 +1181,7 @@ func TestExecuteMessage(t *testing.T) {
 					}).
 					When2(requestIsMade).
 					Then("should success", func(t *testing.T) {
-						_, err := server.ExecuteMessage(sdk.WrapSDKContext(ctx), req)
+						_, err := server.RouteMessage(sdk.WrapSDKContext(ctx), req)
 						fmt.Println(err)
 						assert.NoError(t, err)
 					}),
@@ -1194,7 +1194,7 @@ func TestExecuteMessage(t *testing.T) {
 					}).
 					When2(requestIsMade).
 					Then("should success", func(t *testing.T) {
-						_, err := server.ExecuteMessage(sdk.WrapSDKContext(ctx), req)
+						_, err := server.RouteMessage(sdk.WrapSDKContext(ctx), req)
 						fmt.Println(err)
 						assert.NoError(t, err)
 					}),
@@ -1207,7 +1207,7 @@ func TestExecuteMessage(t *testing.T) {
 					}).
 					When2(requestIsMade).
 					Then("should success", func(t *testing.T) {
-						_, err := server.ExecuteMessage(sdk.WrapSDKContext(ctx), req)
+						_, err := server.RouteMessage(sdk.WrapSDKContext(ctx), req)
 						fmt.Println(err)
 						assert.NoError(t, err)
 					}),
@@ -1220,7 +1220,7 @@ func TestExecuteMessage(t *testing.T) {
 					}).
 					When2(requestIsMade).
 					Then("should success", func(t *testing.T) {
-						_, err := server.ExecuteMessage(sdk.WrapSDKContext(ctx), req)
+						_, err := server.RouteMessage(sdk.WrapSDKContext(ctx), req)
 						fmt.Println(err)
 						assert.NoError(t, err)
 					}),
@@ -1307,7 +1307,7 @@ func TestHandleCallContract(t *testing.T) {
 					Then("call contract succeeds", func(t *testing.T) {
 						_, err := server.CallContract(sdk.WrapSDKContext(ctx), req)
 						assert.NoError(t, err)
-						assert.Equal(t, msg.Status, nexus.Sent)
+						assert.Equal(t, msg.Status, nexus.Processing)
 						assert.Equal(t, msg.GetSourceChain(), nexus.ChainName(exported.Axelarnet.Name))
 						assert.Equal(t, msg.GetSourceAddress(), req.Sender.String())
 						assert.Equal(t, msg.GetDestinationAddress(), req.ContractAddress)

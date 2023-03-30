@@ -81,7 +81,7 @@ func getRandomMessage(id string) exported.GeneralMessage {
 		ID:          id,
 		Sender:      getRandomAxelarnetAddress(),
 		Recipient:   getRandomEthereumAddress(),
-		Status:      exported.Sent,
+		Status:      exported.Processing,
 		PayloadHash: crypto.Keccak256Hash(rand.Bytes(int(rand.I64Between(1, 100)))).Bytes(),
 		Asset:       nil,
 	}

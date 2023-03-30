@@ -153,7 +153,7 @@ func TestStatusTransitions(t *testing.T) {
 	err := k.SetMessageFailed(ctx, msg.ID)
 	assert.Error(t, err, fmt.Sprintf("general message %s not found", msg.ID))
 
-	err = k.SetMessageSent(ctx, msg.ID)
+	err = k.SetMessageProcessing(ctx, msg.ID)
 	assert.Error(t, err, fmt.Sprintf("general message %s not found", msg.ID))
 
 	err = k.SetMessageExecuted(ctx, msg.ID)
@@ -164,33 +164,33 @@ func TestStatusTransitions(t *testing.T) {
 	assert.NoError(t, err)
 
 	err = k.SetMessageFailed(ctx, msg.ID)
-	assert.Error(t, err, "general message is not sent")
+	assert.Error(t, err, "general message is not processed")
 
 	err = k.SetMessageExecuted(ctx, msg.ID)
-	assert.Error(t, err, "general message is not sent")
+	assert.Error(t, err, "general message is not processed")
 
-	err = k.SetMessageSent(ctx, msg.ID)
+	err = k.SetMessageProcessing(ctx, msg.ID)
 	assert.NoError(t, err)
 
-	err = k.SetMessageSent(ctx, msg.ID)
+	err = k.SetMessageProcessing(ctx, msg.ID)
 	assert.Error(t, err, "general message is not approved or failed")
 
 	err = k.SetMessageFailed(ctx, msg.ID)
 	assert.NoError(t, err)
 
 	err = k.SetMessageExecuted(ctx, msg.ID)
-	assert.Error(t, err, "general message is not sent")
+	assert.Error(t, err, "general message is not processed")
 
-	err = k.SetMessageSent(ctx, msg.ID)
+	err = k.SetMessageProcessing(ctx, msg.ID)
 	assert.NoError(t, err)
 
 	err = k.SetMessageExecuted(ctx, msg.ID)
 	assert.NoError(t, err)
 
 	err = k.SetMessageFailed(ctx, msg.ID)
-	assert.Error(t, err, "general message is not sent")
+	assert.Error(t, err, "general message is not processed")
 
-	err = k.SetMessageSent(ctx, msg.ID)
+	err = k.SetMessageProcessing(ctx, msg.ID)
 	assert.Error(t, err, "general message is not approved or failed")
 
 }
@@ -243,7 +243,7 @@ func TestGetSentMessages(t *testing.T) {
 				ID:          k.GenerateMessageID(ctx),
 				Sender:      exported.CrossChainAddress{Chain: sourceChain, Address: genCosmosAddr(sourceChain.Name.String())},
 				Recipient:   exported.CrossChainAddress{Chain: destChain, Address: evmtestutils.RandomAddress().Hex()},
-				Status:      exported.Sent,
+				Status:      exported.Processing,
 				PayloadHash: crypto.Keccak256Hash(rand.Bytes(int(rand.I64Between(1, 100)))).Bytes(),
 				Asset:       nil,
 			}
@@ -275,7 +275,7 @@ func TestGetSentMessages(t *testing.T) {
 		}
 	}
 	consumeSent := func(dest exported.ChainName, limit int64) []exported.GeneralMessage {
-		sent := k.GetSentMessages(ctx, dest, limit)
+		sent := k.GetProcessingMessages(ctx, dest, limit)
 		for _, msg := range sent {
 			err := k.SetMessageExecuted(ctx, msg.ID)
 			assert.NoError(t, err)
@@ -293,7 +293,7 @@ func TestGetSentMessages(t *testing.T) {
 	assert.Equal(t, msgs, retMsgs)
 
 	// make sure executed messages are not returned
-	sent = k.GetSentMessages(ctx, destinationChainName, 100)
+	sent = k.GetProcessingMessages(ctx, destinationChainName, 100)
 	assert.Empty(t, sent)
 	for _, msg := range msgs {
 		m, found := k.GetMessage(ctx, msg.ID)
@@ -316,7 +316,7 @@ func TestGetSentMessages(t *testing.T) {
 	// make sure failed messages are not returned
 	msgs = makeSentMessages(1, destinationChainName)
 	enqueueMsgs(msgs)
-	sent = k.GetSentMessages(ctx, destinationChainName, 1)
+	sent = k.GetProcessingMessages(ctx, destinationChainName, 1)
 	assert.Equal(t, len(msgs), len(sent))
 	err := k.SetMessageFailed(ctx, sent[0].ID)
 	assert.NoError(t, err)
@@ -328,7 +328,7 @@ func TestGetSentMessages(t *testing.T) {
 	checkForExistence(msgs)
 
 	//resend the failed message
-	err = k.SetMessageSent(ctx, msg.ID)
+	err = k.SetMessageProcessing(ctx, msg.ID)
 	assert.NoError(t, err)
 	sent = consumeSent(destinationChainName, 1)
 	assert.Equal(t, len(sent), 1)
