@@ -510,7 +510,6 @@ func (s msgServer) ExecuteMessage(c context.Context, req *types.ExecuteMessageRe
 
 	// send ibc message if destination is cosmos
 	if msg.Recipient.Chain.IsFrom(exported.ModuleName) {
-		// TODO: refactor this so cosmos senders don't need to encode payload as ABI
 		bz, err := types.TranslateMessage(msg, req.Payload)
 		if err != nil {
 			return nil, sdkerrors.Wrap(err, "invalid payload")
