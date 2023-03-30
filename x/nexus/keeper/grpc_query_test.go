@@ -205,7 +205,7 @@ func TestKeeper_Message(t *testing.T) {
 				ID:            id,
 				Sender:        exported.CrossChainAddress{Chain: sourceChain, Address: genCosmosAddr(sourceChain.Name.String())},
 				Recipient:     exported.CrossChainAddress{Chain: destinationChain, Address: evmtestutils.RandomAddress().Hex()},
-				Status:        exported.Sent,
+				Status:        exported.Processing,
 				PayloadHash:   crypto.Keccak256Hash(rand.Bytes(int(rand.I64Between(1, 100)))).Bytes(),
 				Asset:         nil,
 				SourceTxID:    txID,

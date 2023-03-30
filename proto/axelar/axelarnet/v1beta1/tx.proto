@@ -158,7 +158,7 @@ message RetryIBCTransferRequest {
 
 message RetryIBCTransferResponse {}
 
-message ExecuteMessageRequest {
+message RouteMessageRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
@@ -166,7 +166,7 @@ message ExecuteMessageRequest {
   bytes payload = 3;
 }
 
-message ExecuteMessageResponse {}
+message RouteMessageResponse {}
 
 message CallContractRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;

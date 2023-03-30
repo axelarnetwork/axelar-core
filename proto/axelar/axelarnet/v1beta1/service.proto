@@ -73,9 +73,9 @@ service MsgService {
     };
   }
 
-  rpc ExecuteMessage(ExecuteMessageRequest) returns (ExecuteMessageResponse) {
+  rpc RouteMessage(RouteMessageRequest) returns (RouteMessageResponse) {
     option (google.api.http) = {
-      post : "/axelar/axelarnet/execute_message"
+      post : "/axelar/axelarnet/route_message"
       body : "*"
     };
   }

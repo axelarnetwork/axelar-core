@@ -575,8 +575,8 @@ var _ axelarnettypes.Nexus = &NexusMock{}
 //			SetMessageFailedFunc: func(ctx cosmossdktypes.Context, id string) error {
 //				panic("mock out the SetMessageFailed method")
 //			},
-//			SetMessageSentFunc: func(ctx cosmossdktypes.Context, id string) error {
-//				panic("mock out the SetMessageSent method")
+//			SetMessageProcessingFunc: func(ctx cosmossdktypes.Context, id string) error {
+//				panic("mock out the SetMessageProcessing method")
 //			},
 //			SetNewMessageFunc: func(ctx cosmossdktypes.Context, m github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage) error {
 //				panic("mock out the SetNewMessage method")
@@ -651,8 +651,8 @@ type NexusMock struct {
 	// SetMessageFailedFunc mocks the SetMessageFailed method.
 	SetMessageFailedFunc func(ctx cosmossdktypes.Context, id string) error
 
-	// SetMessageSentFunc mocks the SetMessageSent method.
-	SetMessageSentFunc func(ctx cosmossdktypes.Context, id string) error
+	// SetMessageProcessingFunc mocks the SetMessageProcessing method.
+	SetMessageProcessingFunc func(ctx cosmossdktypes.Context, id string) error
 
 	// SetNewMessageFunc mocks the SetNewMessage method.
 	SetNewMessageFunc func(ctx cosmossdktypes.Context, m github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage) error
@@ -818,8 +818,8 @@ type NexusMock struct {
 			// ID is the id argument value.
 			ID string
 		}
-		// SetMessageSent holds details about calls to the SetMessageSent method.
-		SetMessageSent []struct {
+		// SetMessageProcessing holds details about calls to the SetMessageProcessing method.
+		SetMessageProcessing []struct {
 			// Ctx is the ctx argument value.
 			Ctx cosmossdktypes.Context
 			// ID is the id argument value.
@@ -866,7 +866,7 @@ type NexusMock struct {
 	lockSetChain                      sync.RWMutex
 	lockSetMessageExecuted            sync.RWMutex
 	lockSetMessageFailed              sync.RWMutex
-	lockSetMessageSent                sync.RWMutex
+	lockSetMessageProcessing          sync.RWMutex
 	lockSetNewMessage                 sync.RWMutex
 	lockSubTransferFee                sync.RWMutex
 	lockValidateAddress               sync.RWMutex
@@ -1596,10 +1596,10 @@ func (mock *NexusMock) SetMessageFailedCalls() []struct {
 	return calls
 }
 
-// SetMessageSent calls SetMessageSentFunc.
-func (mock *NexusMock) SetMessageSent(ctx cosmossdktypes.Context, id string) error {
-	if mock.SetMessageSentFunc == nil {
-		panic("NexusMock.SetMessageSentFunc: method is nil but Nexus.SetMessageSent was just called")
+// SetMessageProcessing calls SetMessageProcessingFunc.
+func (mock *NexusMock) SetMessageProcessing(ctx cosmossdktypes.Context, id string) error {
+	if mock.SetMessageProcessingFunc == nil {
+		panic("NexusMock.SetMessageProcessingFunc: method is nil but Nexus.SetMessageProcessing was just called")
 	}
 	callInfo := struct {
 		Ctx cosmossdktypes.Context
@@ -1608,17 +1608,17 @@ func (mock *NexusMock) SetMessageSent(ctx cosmossdktypes.Context, id string) err
 		Ctx: ctx,
 		ID:  id,
 	}
-	mock.lockSetMessageSent.Lock()
-	mock.calls.SetMessageSent = append(mock.calls.SetMessageSent, callInfo)
-	mock.lockSetMessageSent.Unlock()
-	return mock.SetMessageSentFunc(ctx, id)
+	mock.lockSetMessageProcessing.Lock()
+	mock.calls.SetMessageProcessing = append(mock.calls.SetMessageProcessing, callInfo)
+	mock.lockSetMessageProcessing.Unlock()
+	return mock.SetMessageProcessingFunc(ctx, id)
 }
 
-// SetMessageSentCalls gets all the calls that were made to SetMessageSent.
+// SetMessageProcessingCalls gets all the calls that were made to SetMessageProcessing.
 // Check the length with:
 //
-//	len(mockedNexus.SetMessageSentCalls())
-func (mock *NexusMock) SetMessageSentCalls() []struct {
+//	len(mockedNexus.SetMessageProcessingCalls())
+func (mock *NexusMock) SetMessageProcessingCalls() []struct {
 	Ctx cosmossdktypes.Context
 	ID  string
 } {
@@ -1626,9 +1626,9 @@ func (mock *NexusMock) SetMessageSentCalls() []struct {
 		Ctx cosmossdktypes.Context
 		ID  string
 	}
-	mock.lockSetMessageSent.RLock()
-	calls = mock.calls.SetMessageSent
-	mock.lockSetMessageSent.RUnlock()
+	mock.lockSetMessageProcessing.RLock()
+	calls = mock.calls.SetMessageProcessing
+	mock.lockSetMessageProcessing.RUnlock()
 	return calls
 }
 

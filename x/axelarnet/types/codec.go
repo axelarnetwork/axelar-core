@@ -1,10 +1,13 @@
 package types
 
 import (
+	"fmt"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/gogo/protobuf/proto"
 
 	"github.com/axelarnetwork/axelar-core/x/reward/exported"
 )
@@ -19,8 +22,12 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&RouteIBCTransfersRequest{}, "axelarnet/RouteIBCTransfers", nil)
 	cdc.RegisterConcrete(&RegisterFeeCollectorRequest{}, "axelarnet/RegisterFeeCollector", nil)
 	cdc.RegisterConcrete(&RetryIBCTransferRequest{}, "axelarnet/RetryIBCTransfer", nil)
-	cdc.RegisterConcrete(&ExecuteMessageRequest{}, "axelarnet/ExecuteMessage", nil)
+	cdc.RegisterConcrete(&RouteMessageRequest{}, "axelarnet/RouteMessage", nil)
 	cdc.RegisterConcrete(&CallContractRequest{}, "axelarnet/CallContract", nil)
+}
+
+type customRegistry interface {
+	RegisterCustomTypeURL(iface interface{}, typeURL string, impl proto.Message)
 }
 
 // RegisterInterfaces registers types and interfaces with the given registry
@@ -34,11 +41,19 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		&RouteIBCTransfersRequest{},
 		&RegisterFeeCollectorRequest{},
 		&RetryIBCTransferRequest{},
-		&ExecuteMessageRequest{},
+		&RouteMessageRequest{},
 		&CallContractRequest{},
 	)
 	registry.RegisterInterface("reward.v1beta1.Refundable",
 		(*exported.Refundable)(nil))
+
+	// register renamed messages for old routes
+	r, ok := registry.(customRegistry)
+	if !ok {
+		panic(fmt.Errorf("failed to convert registry type %T", registry))
+	}
+
+	r.RegisterCustomTypeURL((*sdk.Msg)(nil), "/axelar.axelarnet.v1beta1.ExecuteMessageRequest", &RouteMessageRequest{})
 }
 
 var amino = codec.NewLegacyAmino()

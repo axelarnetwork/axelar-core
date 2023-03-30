@@ -80,7 +80,7 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 	payloadHash := crypto.Keccak256(req.Payload)
 
 	msgID, txID, nonce := s.nexus.GenerateMessageID(ctx)
-	msg := nexus.NewGeneralMessage(msgID, sender, recipient, payloadHash, nexus.Sent, txID, nonce, nil)
+	msg := nexus.NewGeneralMessage(msgID, sender, recipient, payloadHash, nexus.Processing, txID, nonce, nil)
 	if err := s.nexus.SetNewMessage(ctx, msg); err != nil {
 		return nil, sdkerrors.Wrap(err, "failed to add general message")
 	}
@@ -479,8 +479,8 @@ func (s msgServer) RetryIBCTransfer(c context.Context, req *types.RetryIBCTransf
 	return &types.RetryIBCTransferResponse{}, nil
 }
 
-// ExecuteMessage triggers the actual sending of a previously submitted message
-func (s msgServer) ExecuteMessage(c context.Context, req *types.ExecuteMessageRequest) (*types.ExecuteMessageResponse, error) {
+// RouteMessage calls IBC for cosmos messages or updates the state if the message in the nexus module for any other kind
+func (s msgServer) RouteMessage(c context.Context, req *types.RouteMessageRequest) (*types.RouteMessageResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
 	msg, ok := s.nexus.GetMessage(ctx, req.ID)
@@ -526,7 +526,7 @@ func (s msgServer) ExecuteMessage(c context.Context, req *types.ExecuteMessageRe
 		}
 	}
 
-	err := s.nexus.SetMessageSent(ctx, msg.ID)
+	err := s.nexus.SetMessageProcessing(ctx, msg.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -537,9 +537,9 @@ func (s msgServer) ExecuteMessage(c context.Context, req *types.ExecuteMessageRe
 		ctx.GasMeter().ConsumeGas(cosmosCallContractGasCost, "execute-message")
 	}
 
-	s.Logger(ctx).Debug("set general message status to sent", "messageID", msg.ID)
+	s.Logger(ctx).Debug("set general message status to processing", "messageID", msg.ID)
 
-	return &types.ExecuteMessageResponse{}, nil
+	return &types.RouteMessageResponse{}, nil
 }
 
 // toICS20 converts a cross chain transfer to ICS20 token

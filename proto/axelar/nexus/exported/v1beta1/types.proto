@@ -95,7 +95,7 @@ message GeneralMessage {
 
     STATUS_UNSPECIFIED = 0 [ (gogoproto.enumvalue_customname) = "NonExistent" ];
     STATUS_APPROVED = 1 [ (gogoproto.enumvalue_customname) = "Approved" ];
-    STATUS_SENT = 2 [ (gogoproto.enumvalue_customname) = "Sent" ];
+    STATUS_PROCESSING = 2 [ (gogoproto.enumvalue_customname) = "Processing" ];
     STATUS_EXECUTED = 3 [ (gogoproto.enumvalue_customname) = "Executed" ];
     STATUS_FAILED = 4 [ (gogoproto.enumvalue_customname) = "Failed" ];
   }
