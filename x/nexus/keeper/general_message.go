@@ -25,13 +25,14 @@ func getProcessingMessageKey(destinationChain exported.ChainName, id string) key
 	return processingMessagePrefix.Append(key.From(destinationChain)).Append(key.FromStr(id))
 }
 
-// GenerateMessageID generates a unique general message ID
-func (k Keeper) GenerateMessageID(ctx sdk.Context) string {
+// GenerateMessageID generates a unique general message ID, and returns the message ID, current transacation ID and a unique integer nonce
+// The message ID is just a concatenation of the transaction ID and the nonce
+func (k Keeper) GenerateMessageID(ctx sdk.Context) (string, []byte, uint64) {
 	counter := utils.NewCounter[uint64](messageNonceKey, k.getStore(ctx))
 	nonce := counter.Incr(ctx)
-
 	hash := sha256.Sum256(ctx.TxBytes())
-	return fmt.Sprintf("%s-%d", hex.EncodeToString(hash[:]), nonce)
+
+	return fmt.Sprintf("0x%s-%d", hex.EncodeToString(hash[:]), nonce), hash[:], nonce
 }
 
 // SetNewMessage sets the given general message. If the messages is approved, adds the message ID to approved messages store

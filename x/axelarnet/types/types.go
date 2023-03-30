@@ -245,11 +245,11 @@ func ToICS20Packet(packet ibcexported.PacketI) (ibctransfertypes.FungibleTokenPa
 
 const (
 	// NativeV1 is the payload version hex indicates send general message to native chain
-	NativeV1 = "0x0000000000000000000000000000000000000000000000000000000000000000"
-	// CosmwasmV1 is the payload version hex indicates send general message to cosmwasm contract
-	CosmwasmV1 = "0x0000000000000000000000000000000000000000000000000000000000000001"
-	// CosmwasmV2 indicates the payload is json encoded
-	CosmwasmV2 = "0x0000000000000000000000000000000000000000000000000000000000000002"
+	NativeV1 = "0x00000000"
+	// CosmWasmV1 is the payload version hex indicates send general message to CosmWasm contract
+	CosmWasmV1 = "0x00000001"
+	// CosmWasmV2 indicates the payload is json encoded
+	CosmWasmV2 = "0x00000002"
 )
 
 var (

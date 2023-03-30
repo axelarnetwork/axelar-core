@@ -59,7 +59,7 @@ type Nexus interface {
 	SetMessageProcessing(ctx sdk.Context, id string) error
 	SetMessageExecuted(ctx sdk.Context, id string) error
 	SetMessageFailed(ctx sdk.Context, id string) error
-	GenerateMessageID(ctx sdk.Context) string
+	GenerateMessageID(ctx sdk.Context) (string, []byte, uint64)
 	ValidateAddress(ctx sdk.Context, address nexus.CrossChainAddress) error
 }
 

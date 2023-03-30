@@ -18,13 +18,6 @@ var (
 	stringType      = funcs.Must(abi.NewType("string", "string", nil))
 	stringArrayType = funcs.Must(abi.NewType("string[]", "string[]", nil))
 	bytesType       = funcs.Must(abi.NewType("bytes", "bytes", nil))
-	bytes32Type     = funcs.Must(abi.NewType("bytes32", "bytes32", nil))
-
-	// payloadWithVersion is a payload with message version number
-	// - bytes32(0) To Native
-	// - bytes32(1) To Cosmwasm Contract
-	// - bytes32(2) To Cosmwasm Contract with json encoded payload
-	payloadWithVersion = abi.Arguments{{Type: bytes32Type}, {Type: bytesType}}
 
 	// abi encoded bytes, with the following format:
 	// wasm method name, argument name list, argument type list, argument value list
@@ -32,9 +25,17 @@ var (
 )
 
 const (
+	// versionSize is the size of the version in the payload
+	// - bytes4(0) To Native
+	// - bytes4(1) To CosmWasm Contract
+	// - bytes4(2) To CosmWasm Contract with json encoded payload
+	versionSize = 4
+
 	sourceChain   = "source_chain"
 	sourceAddress = "source_address"
 )
+
+type version [versionSize]byte
 
 type contractCall struct {
 	SourceChain string `json:"source_chain"`
@@ -58,44 +59,27 @@ type message struct {
 	Type          int64  `json:"type"`
 }
 
-// TranslateMessage constructs the message gets passed to a cosmos chain from abi encoded payload
-func TranslateMessage(msg nexus.GeneralMessage, payload []byte) ([]byte, error) {
-	version, payload, err := unpackPayload(payload)
+// TranslateMessage constructs the message gets passed to a cosmos chain from a versioned payload
+func TranslateMessage(msg nexus.GeneralMessage, versionedPayload []byte) ([]byte, error) {
+	version, payload, err := unpackVersionedPayload(versionedPayload)
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, "invalid payload with version")
+		return nil, sdkerrors.Wrap(err, "invalid versioned payload")
 	}
 
-	return constructMessage(msg, version, payload)
-}
-
-// unpackPayload returns the version and actual payload
-func unpackPayload(payload []byte) ([32]byte, []byte, error) {
-	params, err := evm.StrictDecode(payloadWithVersion, payload)
-	if err != nil {
-		return [32]byte{}, nil, sdkerrors.Wrap(err, "failed to unpack payload")
-	}
-
-	return params[0].([32]byte), params[1].([]byte), nil
-}
-
-// constructMessage constructs message based on the payload version
-func constructMessage(gm nexus.GeneralMessage, version [32]byte, payload []byte) ([]byte, error) {
 	var bz []byte
-	var err error
-
 	switch hexutil.Encode(version[:]) {
 	case NativeV1:
-		bz, err = ConstructNativeMessage(gm, payload)
+		bz, err = ConstructNativeMessage(msg, payload)
 		if err != nil {
 			return nil, sdkerrors.Wrap(err, "failed to construct native payload")
 		}
-	case CosmwasmV1:
-		bz, err = ConstructWasmMessageV1(gm, payload)
+	case CosmWasmV1:
+		bz, err = ConstructWasmMessageV1(msg, payload)
 		if err != nil {
 			return nil, sdkerrors.Wrap(err, "failed to construct wasm payload")
 		}
-	case CosmwasmV2:
-		bz, err = ConstructWasmMessageV2(gm, payload)
+	case CosmWasmV2:
+		bz, err = ConstructWasmMessageV2(msg, payload)
 		if err != nil {
 			return nil, sdkerrors.Wrap(err, "failed to construct wasm payload")
 		}
@@ -104,6 +88,19 @@ func constructMessage(gm nexus.GeneralMessage, version [32]byte, payload []byte)
 	}
 
 	return bz, nil
+}
+
+// unpackVersionedPayload returns the version and actual payload
+func unpackVersionedPayload(versionedPayload []byte) (version, []byte, error) {
+	if len(versionedPayload) <= versionSize {
+		return version{}, nil, fmt.Errorf("invalid versionedPayload length")
+	}
+
+	// first 4 bytes is the version
+	var v version
+	copy(v[:], versionedPayload[:versionSize])
+
+	return v, versionedPayload[versionSize:], nil
 }
 
 // ConstructWasmMessageV1 creates a json serialized wasm message from Axelar defined abi encoded payload

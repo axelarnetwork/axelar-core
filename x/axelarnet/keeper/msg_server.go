@@ -79,7 +79,8 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 	// axelar gateway expects keccak256 hashes for payloads
 	payloadHash := crypto.Keccak256(req.Payload)
 
-	msg := nexus.NewGeneralMessage(s.nexus.GenerateMessageID(ctx), sender, recipient, payloadHash, nexus.Processing, nil)
+	msgID, txID, nonce := s.nexus.GenerateMessageID(ctx)
+	msg := nexus.NewGeneralMessage(msgID, sender, recipient, payloadHash, nexus.Processing, txID, nonce, nil)
 	if err := s.nexus.SetNewMessage(ctx, msg); err != nil {
 		return nil, sdkerrors.Wrap(err, "failed to add general message")
 	}
@@ -509,7 +510,6 @@ func (s msgServer) RouteMessage(c context.Context, req *types.RouteMessageReques
 
 	// send ibc message if destination is cosmos
 	if msg.Recipient.Chain.IsFrom(exported.ModuleName) {
-		// TODO: refactor this so cosmos senders don't need to encode payload as ABI
 		bz, err := types.TranslateMessage(msg, req.Payload)
 		if err != nil {
 			return nil, sdkerrors.Wrap(err, "invalid payload")
