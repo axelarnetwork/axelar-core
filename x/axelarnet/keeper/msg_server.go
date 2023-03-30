@@ -537,7 +537,7 @@ func (s msgServer) RouteMessage(c context.Context, req *types.RouteMessageReques
 		ctx.GasMeter().ConsumeGas(cosmosCallContractGasCost, "execute-message")
 	}
 
-	s.Logger(ctx).Debug("set general message status to processed.", "messageID", msg.ID)
+	s.Logger(ctx).Debug("set general message status to processing", "messageID", msg.ID)
 
 	return &types.RouteMessageResponse{}, nil
 }
