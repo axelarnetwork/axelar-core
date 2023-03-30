@@ -397,6 +397,20 @@ func TestHandleMessage(t *testing.T) {
 		}).
 		Run(t)
 
+	whenMessageIsValid.
+		When("dest chain is cosmos", func() {
+			destChain.Module = exported.ModuleName
+		}).
+		When("fee denom is registered", isAssetRegistered(true)).
+		When("fee recipient is not blocked", isAddressBloked(false)).
+		When("message with fee", func() {
+			setFee(funcs.MustOk(sdk.NewIntFromString(ics20Packet.Amount)), rand.AccAddr())
+		}).
+		Then("should return ack success", func(t *testing.T) {
+			assert.True(t, axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, r, packet).Success())
+			assert.Equal(t, genMsg.Status, nexus.Approved)
+		}).
+		Run(t)
 }
 
 func TestHandleMessageWithToken(t *testing.T) {
