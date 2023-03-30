@@ -14,12 +14,12 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
+	axelartestutils "github.com/axelarnetwork/axelar-core/x/axelarnet/types/testutils"
 	evmtestutils "github.com/axelarnetwork/axelar-core/x/evm/types/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexustestutils "github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
@@ -44,20 +44,13 @@ var (
 func TestTranslateMessage(t *testing.T) {
 	t.Run("should return error if version encoding is invalid", func(t *testing.T) {
 		msg := nexustestutils.RandomMessage()
-		abiVersion := abi.Arguments{{Type: uint64Type}}
-		payload := funcs.Must(abiVersion.Pack(uint64(0)))
-
-		_, err := types.TranslateMessage(msg, payload)
-		assert.ErrorContains(t, err, "failed to unpack payload")
+		_, err := types.TranslateMessage(msg, []byte{0x01})
+		assert.ErrorContains(t, err, "invalid versioned payload")
 	})
 
 	t.Run("should return error if invalid version", func(t *testing.T) {
 		msg := nexustestutils.RandomMessage()
-		abiVersion := abi.Arguments{{Type: bytes32Type}, {Type: bytesType}}
-		var version [32]byte
-		copy(version[:], rand.Bytes(32))
-
-		payload := funcs.Must(abiVersion.Pack(version, rand.Bytes(64)))
+		payload := axelartestutils.PackPayloadWithVersion("0x99999999", rand.Bytes(64))
 
 		_, err := types.TranslateMessage(msg, payload)
 		assert.ErrorContains(t, err, "unknown payload version")
@@ -214,16 +207,13 @@ func TestConstructWasmMessageV1Large(t *testing.T) {
 }
 
 func TestConstructWasmMessageV1(t *testing.T) {
-	abiArgs := abi.Arguments{{Type: bytes32Type}, {Type: bytesType}}
-	var version [32]byte
-	copy(version[:], funcs.Must(hexutil.Decode(types.CosmwasmV1)))
+	version := types.CosmWasmV1
 
 	t.Run("should return error if invalid abi encoding", func(t *testing.T) {
 		msg := nexustestutils.RandomMessage()
-		payload, err := abiArgs.Pack(version, rand.Bytes(10))
-		assert.NoError(t, err)
+		payload := axelartestutils.PackPayloadWithVersion(version, rand.Bytes(10))
 
-		_, err = types.TranslateMessage(msg, payload)
+		_, err := types.TranslateMessage(msg, payload)
 		assert.ErrorContains(t, err, "abi:")
 	})
 
@@ -241,9 +231,7 @@ func TestConstructWasmMessageV1(t *testing.T) {
 		)
 		assert.NoError(t, err)
 
-		payload, err := abiArgs.Pack(version, bz)
-		assert.NoError(t, err)
-
+		payload := axelartestutils.PackPayloadWithVersion(version, bz)
 		_, err = types.TranslateMessage(msg, payload)
 		assert.ErrorContains(t, err, "wrong data")
 	})
@@ -264,9 +252,7 @@ func TestConstructWasmMessageV1(t *testing.T) {
 		)
 		assert.NoError(t, err)
 
-		payload, err := abiArgs.Pack(version, bz)
-		assert.NoError(t, err)
-
+		payload := axelartestutils.PackPayloadWithVersion(version, bz)
 		_, err = types.TranslateMessage(msg, payload)
 		assert.ErrorContains(t, err, "payload argument name and type length mismatch")
 	})
@@ -287,9 +273,7 @@ func TestConstructWasmMessageV1(t *testing.T) {
 		)
 		assert.NoError(t, err)
 
-		payload, err := abiArgs.Pack(version, bz)
-		assert.NoError(t, err)
-
+		payload := axelartestutils.PackPayloadWithVersion(version, bz)
 		_, err = types.TranslateMessage(msg, payload)
 		assert.ErrorContains(t, err, "invalid argument type")
 	})
@@ -312,9 +296,7 @@ func TestConstructWasmMessageV1(t *testing.T) {
 		)
 		assert.NoError(t, err)
 
-		payload, err := abiArgs.Pack(version, bz)
-		assert.NoError(t, err)
-
+		payload := axelartestutils.PackPayloadWithVersion(version, bz)
 		_, err = types.TranslateMessage(msg, payload)
 		assert.ErrorContains(t, err, "wrong data")
 	})
@@ -448,14 +430,12 @@ func TestConstructWasmMessageV1(t *testing.T) {
 }
 
 func TestConstructWasmMessageV2(t *testing.T) {
-	abiVersion := abi.Arguments{{Type: bytes32Type}, {Type: bytesType}}
-	var version [32]byte
-	copy(version[:], funcs.Must(hexutil.Decode(types.CosmwasmV2)))
+	version := types.CosmWasmV2
 
 	t.Run("should return error if payload is not a json object", func(t *testing.T) {
 		msg := nexustestutils.RandomMessage()
 		wasmMsg := []byte(`"a json string"`)
-		payload := funcs.Must(abiVersion.Pack(version, wasmMsg))
+		payload := axelartestutils.PackPayloadWithVersion(version, wasmMsg)
 
 		_, err := types.TranslateMessage(msg, payload)
 		assert.ErrorContains(t, err, "cannot unmarshal string into Go value of type map[string]interface {}")
@@ -464,7 +444,7 @@ func TestConstructWasmMessageV2(t *testing.T) {
 	t.Run("should return error if payload is not a valid json object", func(t *testing.T) {
 		msg := nexustestutils.RandomMessage()
 		wasmMsg := []byte(`{"key": "invalid json with open bracket"`)
-		payload := funcs.Must(abiVersion.Pack(version, wasmMsg))
+		payload := axelartestutils.PackPayloadWithVersion(version, wasmMsg)
 
 		_, err := types.TranslateMessage(msg, payload)
 		assert.ErrorContains(t, err, "unexpected end of JSON input")
@@ -480,7 +460,7 @@ func TestConstructWasmMessageV2(t *testing.T) {
 
 		msg := nexustestutils.RandomMessage()
 		msg.Sender.Chain.Name = "ethereum"
-		payload := funcs.Must(abiVersion.Pack(version, wasmMsg))
+		payload := axelartestutils.PackPayloadWithVersion(version, wasmMsg)
 		_, err := types.TranslateMessage(msg, payload)
 		assert.ErrorContains(t, err, "invalid payload")
 	})
@@ -490,7 +470,7 @@ func TestConstructWasmMessageV2(t *testing.T) {
 
 		msg := nexustestutils.RandomMessage()
 		msg.Sender.Chain.Name = "ethereum"
-		payload := funcs.Must(abiVersion.Pack(version, wasmMsg))
+		payload := axelartestutils.PackPayloadWithVersion(version, wasmMsg)
 		_, err := types.TranslateMessage(msg, payload)
 		assert.ErrorContains(t, err, "invalid arguments")
 	})
@@ -499,7 +479,7 @@ func TestConstructWasmMessageV2(t *testing.T) {
 		wasmMsg := []byte(`{"contract_name": {"source_chain": 1.1, "source_address": [3, 12, 143]}}`)
 
 		msg := nexustestutils.RandomMessage()
-		payload := funcs.Must(abiVersion.Pack(version, wasmMsg))
+		payload := axelartestutils.PackPayloadWithVersion(version, wasmMsg)
 		_, err := types.TranslateMessage(msg, payload)
 		assert.ErrorContains(t, err, "source chain must have type string")
 	})
@@ -508,7 +488,7 @@ func TestConstructWasmMessageV2(t *testing.T) {
 		wasmMsg := []byte(`{"contract_name": {"source_chain": "unknown", "source_address": [3, 12, 143]}}`)
 
 		msg := nexustestutils.RandomMessage()
-		payload := funcs.Must(abiVersion.Pack(version, wasmMsg))
+		payload := axelartestutils.PackPayloadWithVersion(version, wasmMsg)
 		_, err := types.TranslateMessage(msg, payload)
 		assert.ErrorContains(t, err, "source chain does not match expected")
 	})
@@ -522,7 +502,7 @@ func TestConstructWasmMessageV2(t *testing.T) {
 
 		msg := nexustestutils.RandomMessage()
 		msg.Sender.Chain.Name = "ethereum"
-		payload := funcs.Must(abiVersion.Pack(version, wasmMsg))
+		payload := axelartestutils.PackPayloadWithVersion(version, wasmMsg)
 		_, err := types.TranslateMessage(msg, payload)
 		assert.ErrorContains(t, err, "source address does not match expected")
 	})
@@ -536,7 +516,7 @@ func TestConstructWasmMessageV2(t *testing.T) {
 
 		msg := nexustestutils.RandomMessage()
 		msg.Sender.Chain.Name = "ethereum"
-		payload := funcs.Must(abiVersion.Pack(version, wasmMsg))
+		payload := axelartestutils.PackPayloadWithVersion(version, wasmMsg)
 		_, err := types.TranslateMessage(msg, payload)
 		assert.ErrorContains(t, err, "source address does not match expected")
 	})
@@ -557,7 +537,7 @@ func TestConstructWasmMessageV2(t *testing.T) {
 		`)
 		bz := []byte(fmt.Sprintf("\t\t\n\n\t{\"%s\":%s}\n\t\n\t", method, wasmArgs))
 
-		payload := funcs.Must(abiVersion.Pack(version, bz))
+		payload := axelartestutils.PackPayloadWithVersion(version, bz)
 		translatedMsg, err := types.TranslateMessage(msg, payload)
 		assert.NoError(t, err)
 
@@ -582,7 +562,7 @@ func TestConstructWasmMessageV2(t *testing.T) {
 		`)
 		bz := []byte(fmt.Sprintf("{\"%s\": %s}", method, wasmArgs))
 
-		payload := funcs.Must(abiVersion.Pack(version, bz))
+		payload := axelartestutils.PackPayloadWithVersion(version, bz)
 
 		translatedMsg, err := types.TranslateMessage(msg, payload)
 		assert.NoError(t, err)
@@ -654,7 +634,7 @@ func TestConstructWasmMessageV2(t *testing.T) {
 		}
 		method := rand.StrBetween(0, 10)
 		bz := []byte(fmt.Sprintf("{\"%s\": %s}", method, funcs.Must(json.MarshalIndent(wasmArgs, "", "    "))))
-		payload := funcs.Must(abiVersion.Pack(version, bz))
+		payload := axelartestutils.PackPayloadWithVersion(version, bz)
 
 		translatedBz, err := types.TranslateMessage(msg, payload)
 		assert.NoError(t, err)
@@ -664,15 +644,11 @@ func TestConstructWasmMessageV2(t *testing.T) {
 }
 
 func TestConstructNativeV1Message(t *testing.T) {
-	args := abi.Arguments{{Type: bytes32Type}, {Type: bytesType}}
-	var version [32]byte
-	copy(version[:], funcs.Must(hexutil.Decode(types.NativeV1)))
-
 	t.Run("should translate native payload", func(t *testing.T) {
 		payloadMsg := rand.Bytes(int(rand.I64Between(1, 50)))
 
 		msg := nexustestutils.RandomMessage()
-		payload := funcs.Must(args.Pack(version, payloadMsg))
+		payload := axelartestutils.PackPayloadWithVersion(types.NativeV1, payloadMsg)
 
 		translatedBz, err := types.TranslateMessage(msg, payload)
 		assert.NoError(t, err)
@@ -714,11 +690,7 @@ func constructABIPayload(method string, argNames []string, argTypes []abi.Type, 
 		return nil, err
 	}
 
-	abiArgs := abi.Arguments{{Type: bytes32Type}, {Type: bytesType}}
-	var version [32]byte
-	copy(version[:], funcs.Must(hexutil.Decode(types.CosmwasmV1)))
-
-	return abiArgs.Pack(version, payload)
+	return axelartestutils.PackPayloadWithVersion(types.CosmWasmV1, payload), nil
 }
 
 // checkWasmMsg checks that a wasm msg is correctly formatted
