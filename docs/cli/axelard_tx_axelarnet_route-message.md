@@ -1,9 +1,9 @@
-## axelard tx axelarnet execute-message
+## axelard tx axelarnet route-message
 
-Execute an approved general message to the destination chain
+Route an approved general message to the destination chain
 
 ```
-axelard tx axelarnet execute-message [message ID] [payload] [flags]
+axelard tx axelarnet route-message [message ID] [payload] [flags]
 ```
 
 ### Options
@@ -19,7 +19,7 @@ axelard tx axelarnet execute-message [message ID] [payload] [flags]
       --gas-adjustment float     adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default 1)
       --gas-prices string        Gas prices in decimal format to determine the transaction fee (e.g. 0.1uatom) (default "0.007uaxl")
       --generate-only            Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)
-  -h, --help                     help for execute-message
+  -h, --help                     help for route-message
       --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "file")
       --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
       --ledger                   Use a connected Ledger device
