@@ -80,9 +80,22 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 	payloadHash := crypto.Keccak256(req.Payload)
 
 	msgID, txID, nonce := s.nexus.GenerateMessageID(ctx)
-	msg := nexus.NewGeneralMessage(msgID, sender, recipient, payloadHash, nexus.Processing, txID, nonce, nil)
+	msg := nexus.NewGeneralMessage(msgID, sender, recipient, payloadHash, nexus.Approved, txID, nonce, nil)
 	if err := s.nexus.SetNewMessage(ctx, msg); err != nil {
 		return nil, sdkerrors.Wrap(err, "failed to add general message")
+	}
+
+	if req.Fee != nil {
+		events.Emit(ctx, &types.FeePaid{
+			MessageID: msgID,
+			Recipient: req.Fee.Recipient,
+			Fee:       req.Fee.Amount,
+		})
+
+		err := s.bank.SendCoins(ctx, req.Sender, req.Fee.Recipient, sdk.NewCoins(req.Fee.Amount))
+		if err != nil {
+			return nil, sdkerrors.Wrap(err, "failed to transfer fee")
+		}
 	}
 
 	ctx.GasMeter().ConsumeGas(evmCallContractGasCost, "call-contract")

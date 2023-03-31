@@ -11,12 +11,13 @@ import (
 )
 
 // NewCallContractRequest is the constructor for NewCallContractRequest
-func NewCallContractRequest(sender sdk.AccAddress, chain string, contractAddress string, payload []byte) *CallContractRequest {
+func NewCallContractRequest(sender sdk.AccAddress, chain string, contractAddress string, payload []byte, fee *Fee) *CallContractRequest {
 	return &CallContractRequest{
 		Sender:          sender,
 		Chain:           nexus.ChainName(utils.NormalizeString(chain)),
 		ContractAddress: contractAddress,
 		Payload:         payload,
+		Fee:             fee,
 	}
 }
 

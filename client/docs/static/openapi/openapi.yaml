@@ -433,6 +433,26 @@ paths:
                 payload:
                   type: string
                   format: byte
+                fee:
+                  type: object
+                  properties:
+                    amount:
+                      type: object
+                      properties:
+                        denom:
+                          type: string
+                        amount:
+                          type: string
+                      description: >-
+                        Coin defines a token with a denomination and an amount.
+
+
+                        NOTE: The amount field is an Int which implements the custom method
+
+                        signatures required by gogoproto.
+                    recipient:
+                      type: string
+                      format: byte
         required: true
       tags:
         - MsgService
@@ -38555,6 +38575,26 @@ components:
         payload:
           type: string
           format: byte
+        fee:
+          type: object
+          properties:
+            amount:
+              type: object
+              properties:
+                denom:
+                  type: string
+                amount:
+                  type: string
+              description: >-
+                Coin defines a token with a denomination and an amount.
+
+
+                NOTE: The amount field is an Int which implements the custom method
+
+                signatures required by gogoproto.
+            recipient:
+              type: string
+              format: byte
     axelar.axelarnet.v1beta1.CallContractResponse:
       type: object
     axelar.axelarnet.v1beta1.ConfirmDepositRequest:
@@ -38582,6 +38622,24 @@ components:
         pending transfers
     axelar.axelarnet.v1beta1.ExecutePendingTransfersResponse:
       type: object
+    axelar.axelarnet.v1beta1.Fee:
+      type: object
+      properties:
+        amount:
+          type: object
+          properties:
+            denom:
+              type: string
+            amount:
+              type: string
+          description: |-
+            Coin defines a token with a denomination and an amount.
+
+            NOTE: The amount field is an Int which implements the custom method
+            signatures required by gogoproto.
+        recipient:
+          type: string
+          format: byte
     axelar.axelarnet.v1beta1.LinkRequest:
       type: object
       properties:
@@ -38728,6 +38786,18 @@ components:
         - KEY_TYPE_THRESHOLD
         - KEY_TYPE_MULTISIG
       default: KEY_TYPE_UNSPECIFIED
+    cosmos.base.v1beta1.Coin:
+      type: object
+      properties:
+        denom:
+          type: string
+        amount:
+          type: string
+      description: |-
+        Coin defines a token with a denomination and an amount.
+
+        NOTE: The amount field is an Int which implements the custom method
+        signatures required by gogoproto.
     axelar.evm.v1beta1.AddChainRequest:
       type: object
       properties:
@@ -40558,18 +40628,6 @@ components:
                  repeated Bar results = 1;
                  PageResponse page = 2;
          }
-    cosmos.base.v1beta1.Coin:
-      type: object
-      properties:
-        denom:
-          type: string
-        amount:
-          type: string
-      description: |-
-        Coin defines a token with a denomination and an amount.
-
-        NOTE: The amount field is an Int which implements the custom method
-        signatures required by gogoproto.
     axelar.snapshot.v1beta1.DeactivateProxyRequest:
       type: object
       properties:

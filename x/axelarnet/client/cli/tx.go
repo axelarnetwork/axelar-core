@@ -331,9 +331,9 @@ func getGeneralMessage() *cobra.Command {
 
 func getCmdCallContract() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "call-contract [destination chain] [contract address] [hex encoded payload]",
+		Use:   "call-contract [destination chain] [contract address] [hex encoded payload] [fee amount] [fee recipient]",
 		Short: "Call a contract on another chain",
-		Args:  cobra.ExactArgs(3),
+		Args:  cobra.ExactArgs(5),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
@@ -345,7 +345,26 @@ func getCmdCallContract() *cobra.Command {
 				return err
 			}
 
-			msg := types.NewCallContractRequest(clientCtx.GetFromAddress(), args[0], args[1], payload)
+			var fee *types.Fee = nil
+			if args[3] != "" && args[4] != "" {
+
+				amount, err := sdk.ParseCoinNormalized(args[3])
+				if err != nil {
+					return err
+				}
+
+				recipient, err := sdk.AccAddressFromBech32(args[4])
+				if err != nil {
+					return err
+				}
+
+				fee = &types.Fee{
+					Amount:    amount,
+					Recipient: recipient,
+				}
+			}
+
+			msg := types.NewCallContractRequest(clientCtx.GetFromAddress(), args[0], args[1], payload, fee)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
