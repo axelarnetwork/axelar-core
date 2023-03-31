@@ -1,6 +1,6 @@
 PACKAGES=$(shell go list ./... | grep -v '/simulation')
 
-VERSION := $(shell echo $(shell git describe --tags) | sed 's/^v//')
+VERSION := 0.33.0
 COMMIT := $(shell git log -1 --format='%H')
 
 BUILD_TAGS := ledger
