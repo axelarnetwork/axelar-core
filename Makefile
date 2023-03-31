@@ -184,9 +184,6 @@ proto-update-deps:
 	@curl -sSL $(GOOGLE_API_URL)/annotations.proto > $(GOOGLE_API_TYPES)/annotations.proto
 	@curl -sSL $(GOOGLE_API_URL)/http.proto > $(GOOGLE_API_TYPES)/http.proto
 
-	@mkdir -p $(GOOGLE_PROTOBUF_TYPES)
-	@curl -sSL $(GOOGLE_PROTOBUF_URL)/descriptor.proto > $(GOOGLE_PROTOBUF_TYPES)/descriptor.proto
-
 	@mkdir -p $(COSMOS_PROTO_TYPES)
 	@curl -sSL $(COSMOS_PROTO_URL)/cosmos.proto > $(COSMOS_PROTO_TYPES)/cosmos.proto
 
