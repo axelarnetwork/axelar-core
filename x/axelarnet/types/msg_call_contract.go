@@ -51,9 +51,10 @@ func (m CallContractRequest) ValidateBasic() error {
 			return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "fee recipient").Error())
 		}
 
-		if !m.Fee.Amount.IsValid() {
+		if !m.Fee.Amount.IsValid() || !m.Fee.Amount.IsPositive() {
 			return fmt.Errorf("invalid fee amount")
 		}
+
 	}
 
 	return nil

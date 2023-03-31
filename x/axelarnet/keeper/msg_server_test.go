@@ -1290,6 +1290,11 @@ func TestHandleCallContract(t *testing.T) {
 		assert.Error(t, err)
 	})
 
+	validationFails := Then("call contract validation fails", func(t *testing.T) {
+		err := req.ValidateBasic()
+		assert.Error(t, err)
+	})
+
 	t.Run("call contract", func(t *testing.T) {
 		givenMsgServer.
 			Branch(
@@ -1299,7 +1304,9 @@ func TestHandleCallContract(t *testing.T) {
 					When2(whenSetNewMessageSucceeds).
 					When2(requestIsMade).
 					Then("call contract succeeds", func(t *testing.T) {
-						_, err := server.CallContract(sdk.WrapSDKContext(ctx), req)
+						err := req.ValidateBasic()
+						assert.NoError(t, err)
+						_, err = server.CallContract(sdk.WrapSDKContext(ctx), req)
 						assert.NoError(t, err)
 						assert.Equal(t, msg.Status, nexus.Approved)
 						assert.Equal(t, msg.GetSourceChain(), nexus.ChainName(exported.Axelarnet.Name))
@@ -1327,7 +1334,9 @@ func TestHandleCallContract(t *testing.T) {
 						}
 					}).
 					Then("call contract succeeds", func(t *testing.T) {
-						_, err := server.CallContract(sdk.WrapSDKContext(ctx), req)
+						err := req.ValidateBasic()
+						assert.NoError(t, err)
+						_, err = server.CallContract(sdk.WrapSDKContext(ctx), req)
 						assert.NoError(t, err)
 						assert.Equal(t, msg.Status, nexus.Approved)
 						assert.Equal(t, msg.GetSourceChain(), nexus.ChainName(exported.Axelarnet.Name))
@@ -1347,7 +1356,9 @@ func TestHandleCallContract(t *testing.T) {
 						req.Fee = nil
 					}).
 					Then("call contract succeeds", func(t *testing.T) {
-						_, err := server.CallContract(sdk.WrapSDKContext(ctx), req)
+						err := req.ValidateBasic()
+						assert.NoError(t, err)
+						_, err = server.CallContract(sdk.WrapSDKContext(ctx), req)
 						assert.NoError(t, err)
 						assert.Equal(t, msg.Status, nexus.Approved)
 						assert.Equal(t, msg.GetSourceChain(), nexus.ChainName(exported.Axelarnet.Name))
@@ -1358,6 +1369,14 @@ func TestHandleCallContract(t *testing.T) {
 						payloadHash := crypto.Keccak256(req.Payload)
 						assert.Equal(t, msg.PayloadHash, payloadHash)
 					}),
+				whenChainIsRegistered.
+					When2(whenChainIsActivated).
+					When2(whenAddressIsValid).
+					When2(requestIsMade).
+					When("fee is zero", func() {
+						req.Fee.Amount.Amount = sdk.NewInt(0)
+					}).
+					Then2(validationFails),
 				whenChainIsRegistered.
 					When2(whenChainIsActivated).
 					When2(whenAddressIsValid).
