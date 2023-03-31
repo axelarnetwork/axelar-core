@@ -191,13 +191,13 @@
       - [add-cosmos-based-chain \[name\] \[address prefix\] \[ibc path\] \[native asset\]...](axelard_tx_axelarnet_add-cosmos-based-chain.md)	 - Add a new cosmos based chain
       - [call-contract \[destination chain\] \[contract address\] \[hex encoded payload\]](axelard_tx_axelarnet_call-contract.md)	 - Call a contract on another chain
       - [confirm-deposit \[denom\] \[burnerAddr\]](axelard_tx_axelarnet_confirm-deposit.md)	 - Confirm a deposit to Axelar chain that sent given the asset denomination and the burner address
-      - [execute-message \[message ID\] \[payload\]](axelard_tx_axelarnet_execute-message.md)	 - Execute an approved general message to the destination chain
       - [execute-pending-transfers](axelard_tx_axelarnet_execute-pending-transfers.md)	 - Send all pending transfers to Axelar chain
       - [link \[recipient chain\] \[recipient address\] \[asset\]](axelard_tx_axelarnet_link.md)	 - Link a cross chain address to an Axelar address
       - [register-asset \[chain\] \[denom\]](axelard_tx_axelarnet_register-asset.md)	 - Register a new asset to a cosmos based chain
       - [register-fee-collector \[fee collector\]](axelard_tx_axelarnet_register-fee-collector.md)	 - Register axelarnet fee collector account
       - [retry-ibc-transfer \[chain\] \[transfer ID\]](axelard_tx_axelarnet_retry-ibc-transfer.md)	 - Retry a failed IBC transfer
       - [route-ibc-transfers](axelard_tx_axelarnet_route-ibc-transfers.md)	 - Routes pending transfers to cosmos chains
+      - [route-message \[message ID\] \[payload\]](axelard_tx_axelarnet_route-message.md)	 - Route an approved general message to the destination chain
     - [bank](axelard_tx_bank.md)	 - Bank transaction subcommands
       - [send \[from_key_or_address\] \[to_address\] \[amount\]](axelard_tx_bank_send.md)	 - Send funds from one account to another.
         Note, the'--from' flag is ignored as it is implied from \[from_key_or_address\].

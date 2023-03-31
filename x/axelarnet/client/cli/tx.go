@@ -302,8 +302,8 @@ func getRetryIBCTransfer() *cobra.Command {
 
 func getGeneralMessage() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "execute-message [message ID] [payload]",
-		Short: "Execute an approved general message to the destination chain",
+		Use:   "route-message [message ID] [payload]",
+		Short: "Route an approved general message to the destination chain",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
