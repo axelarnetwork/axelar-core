@@ -54,7 +54,6 @@ message Asset {
 
 message Fee {
   cosmos.base.v1beta1.Coin amount = 1 [ (gogoproto.nullable) = false ];
-  bytes recipient = 2 [
-    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress"
-  ];
+  bytes recipient = 2 [ (gogoproto.casttype) =
+                            "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
 }

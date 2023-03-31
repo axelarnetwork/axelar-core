@@ -13,6 +13,8 @@ axelard tx axelarnet call-contract [destination chain] [contract address] [hex e
   -b, --broadcast-mode string    Transaction broadcasting mode (sync|async|block) (default "block")
       --dry-run                  ignore the --gas flag and perform a simulation of a transaction, but don't broadcast it (when enabled, the local Keybase is not accessible)
       --fee-account string       Fee account pays fees for the transaction instead of deducting from the signer
+      --fee-amount string        fee to pay for the contract call
+      --fee-recipient string     recipient of the fee
       --fees string              Fees to pay along with transaction; eg: 10uatom
       --from string              Name or address of private key with which to sign
       --gas string               gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically (default 200000)

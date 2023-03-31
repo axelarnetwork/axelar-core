@@ -45,6 +45,17 @@ func (m CallContractRequest) ValidateBasic() error {
 		return fmt.Errorf("contract address empty")
 	}
 
+	if m.Fee != nil {
+
+		if err := sdk.VerifyAddressFormat(m.Fee.Recipient); err != nil {
+			return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "fee recipient").Error())
+		}
+
+		if !m.Fee.Amount.IsValid() {
+			return fmt.Errorf("invalid fee amount")
+		}
+	}
+
 	return nil
 }
 

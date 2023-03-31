@@ -22,6 +22,8 @@ const (
 	flagIsNativeAsset = "is-native-asset"
 	flagLimit         = "limit"
 	flagWindow        = "window"
+	flagFeeAmount     = "fee-amount"
+	flagFeeRecipient  = "fee-recipient"
 )
 
 // GetTxCmd returns the transaction commands for this module
@@ -331,9 +333,9 @@ func getGeneralMessage() *cobra.Command {
 
 func getCmdCallContract() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "call-contract [destination chain] [contract address] [hex encoded payload] [fee amount] [fee recipient]",
+		Use:   "call-contract [destination chain] [contract address] [hex encoded payload]",
 		Short: "Call a contract on another chain",
-		Args:  cobra.ExactArgs(5),
+		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
@@ -345,15 +347,25 @@ func getCmdCallContract() *cobra.Command {
 				return err
 			}
 
-			var fee *types.Fee = nil
-			if args[3] != "" && args[4] != "" {
+			feeAmount, err := cmd.Flags().GetString(flagFeeAmount)
+			if err != nil {
+				return err
+			}
 
-				amount, err := sdk.ParseCoinNormalized(args[3])
+			feeRecipient, err := cmd.Flags().GetString(flagFeeRecipient)
+			if err != nil {
+				return err
+			}
+
+			var fee *types.Fee = nil
+			if feeAmount != "" && feeRecipient != "" {
+
+				amount, err := sdk.ParseCoinNormalized(feeAmount)
 				if err != nil {
 					return err
 				}
 
-				recipient, err := sdk.AccAddressFromBech32(args[4])
+				recipient, err := sdk.AccAddressFromBech32(feeRecipient)
 				if err != nil {
 					return err
 				}
@@ -362,6 +374,8 @@ func getCmdCallContract() *cobra.Command {
 					Amount:    amount,
 					Recipient: recipient,
 				}
+			} else if feeAmount != "" || feeRecipient != "" {
+				return fmt.Errorf("need both %s and %s", flagFeeAmount, flagFeeRecipient)
 			}
 
 			msg := types.NewCallContractRequest(clientCtx.GetFromAddress(), args[0], args[1], payload, fee)
@@ -372,6 +386,8 @@ func getCmdCallContract() *cobra.Command {
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
+	cmd.Flags().String(flagFeeAmount, "", "fee to pay for the contract call")
+	cmd.Flags().String(flagFeeRecipient, "", "recipient of the fee")
 	flags.AddTxFlagsToCmd(cmd)
 	return cmd
 }
