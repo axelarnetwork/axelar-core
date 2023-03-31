@@ -89,11 +89,6 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 	})
 
 	if req.Fee != nil {
-		events.Emit(ctx, &types.FeePaid{
-			MessageID: msgID,
-			Recipient: req.Fee.Recipient,
-			Fee:       req.Fee.Amount,
-		})
 
 		if s.bank.BlockedAddr(req.Fee.Recipient) {
 			return nil, fmt.Errorf("fee recipient is a blocked address")
@@ -103,6 +98,11 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 		if err != nil {
 			return nil, sdkerrors.Wrap(err, "failed to transfer fee")
 		}
+		events.Emit(ctx, &types.FeePaid{
+			MessageID: msgID,
+			Recipient: req.Fee.Recipient,
+			Fee:       req.Fee.Amount,
+		})
 	}
 
 	if err := s.nexus.SetNewMessage(ctx, msg); err != nil {
