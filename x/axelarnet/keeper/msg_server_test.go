@@ -1222,6 +1222,7 @@ func TestHandleCallContract(t *testing.T) {
 		server types.MsgServiceServer
 		k      keeper.Keeper
 		nexusK *mock.NexusMock
+		b      *mock.BankKeeperMock
 		ctx    sdk.Context
 		req    *types.CallContractRequest
 		msg    nexus.GeneralMessage
@@ -1232,13 +1233,16 @@ func TestHandleCallContract(t *testing.T) {
 		k.InitGenesis(ctx, types.DefaultGenesisState())
 		nexusK = &mock.NexusMock{}
 		ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{}, &mock.ChannelKeeperMock{})
-		server = keeper.NewMsgServerImpl(k, nexusK, &mock.BankKeeperMock{}, &mock.AccountKeeperMock{}, ibcK)
+		b = &mock.BankKeeperMock{}
+		server = keeper.NewMsgServerImpl(k, nexusK, b, &mock.AccountKeeperMock{}, ibcK)
 		count := 0
 		nexusK.GenerateMessageIDFunc = func(ctx sdk.Context) (string, []byte, uint64) {
 			count++
 			hash := sha256.Sum256(ctx.TxBytes())
 			return fmt.Sprintf("%s-%x", hex.EncodeToString(hash[:]), count), hash[:], uint64(count)
 		}
+		b.SendCoinsFunc = func(sdk.Context, sdk.AccAddress, sdk.AccAddress, sdk.Coins) error { return nil }
+		b.BlockedAddrFunc = func(addr sdk.AccAddress) bool { return false }
 	})
 
 	whenChainIsRegistered := When("chain is registered", func() {
@@ -1276,12 +1280,18 @@ func TestHandleCallContract(t *testing.T) {
 			rand.AccAddr(),
 			nexustestutils.RandomChain().Name.String(),
 			evmtestutils.RandomAddress().Hex(),
-			rand.BytesBetween(5, 1000))
+			rand.BytesBetween(5, 1000),
+			&types.Fee{Amount: rand.Coin(), Recipient: rand.AccAddr()})
 
 	})
 
 	callFails := Then("call contract request fails", func(t *testing.T) {
 		_, err := server.CallContract(sdk.WrapSDKContext(ctx), req)
+		assert.Error(t, err)
+	})
+
+	validationFails := Then("call contract validation fails", func(t *testing.T) {
+		err := req.ValidateBasic()
 		assert.Error(t, err)
 	})
 
@@ -1294,9 +1304,11 @@ func TestHandleCallContract(t *testing.T) {
 					When2(whenSetNewMessageSucceeds).
 					When2(requestIsMade).
 					Then("call contract succeeds", func(t *testing.T) {
-						_, err := server.CallContract(sdk.WrapSDKContext(ctx), req)
+						err := req.ValidateBasic()
 						assert.NoError(t, err)
-						assert.Equal(t, msg.Status, nexus.Processing)
+						_, err = server.CallContract(sdk.WrapSDKContext(ctx), req)
+						assert.NoError(t, err)
+						assert.Equal(t, msg.Status, nexus.Approved)
 						assert.Equal(t, msg.GetSourceChain(), nexus.ChainName(exported.Axelarnet.Name))
 						assert.Equal(t, msg.GetSourceAddress(), req.Sender.String())
 						assert.Equal(t, msg.GetDestinationAddress(), req.ContractAddress)
@@ -1305,6 +1317,77 @@ func TestHandleCallContract(t *testing.T) {
 						payloadHash := crypto.Keccak256(req.Payload)
 						assert.Equal(t, msg.PayloadHash, payloadHash)
 					}),
+				whenChainIsRegistered.
+					When2(whenChainIsActivated).
+					When2(whenAddressIsValid).
+					When2(whenSetNewMessageSucceeds).
+					When2(requestIsMade).
+					When("destination is cosmos", func() {
+
+						nexusK.GetChainFunc = func(_ sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
+							return nexus.Chain{
+								Name:                  chain,
+								SupportsForeignAssets: true,
+								Module:                exported.ModuleName,
+								KeyType:               tss.Multisig,
+							}, true
+						}
+					}).
+					Then("call contract succeeds", func(t *testing.T) {
+						err := req.ValidateBasic()
+						assert.NoError(t, err)
+						_, err = server.CallContract(sdk.WrapSDKContext(ctx), req)
+						assert.NoError(t, err)
+						assert.Equal(t, msg.Status, nexus.Approved)
+						assert.Equal(t, msg.GetSourceChain(), nexus.ChainName(exported.Axelarnet.Name))
+						assert.Equal(t, msg.GetSourceAddress(), req.Sender.String())
+						assert.Equal(t, msg.GetDestinationAddress(), req.ContractAddress)
+						assert.Equal(t, msg.GetDestinationChain(), req.Chain)
+
+						payloadHash := crypto.Keccak256(req.Payload)
+						assert.Equal(t, msg.PayloadHash, payloadHash)
+					}),
+				whenChainIsRegistered.
+					When2(whenChainIsActivated).
+					When2(whenAddressIsValid).
+					When2(whenSetNewMessageSucceeds).
+					When2(requestIsMade).
+					When("fee is nil", func() {
+						req.Fee = nil
+					}).
+					Then("call contract succeeds", func(t *testing.T) {
+						err := req.ValidateBasic()
+						assert.NoError(t, err)
+						_, err = server.CallContract(sdk.WrapSDKContext(ctx), req)
+						assert.NoError(t, err)
+						assert.Equal(t, msg.Status, nexus.Approved)
+						assert.Equal(t, msg.GetSourceChain(), nexus.ChainName(exported.Axelarnet.Name))
+						assert.Equal(t, msg.GetSourceAddress(), req.Sender.String())
+						assert.Equal(t, msg.GetDestinationAddress(), req.ContractAddress)
+						assert.Equal(t, msg.GetDestinationChain(), req.Chain)
+
+						payloadHash := crypto.Keccak256(req.Payload)
+						assert.Equal(t, msg.PayloadHash, payloadHash)
+					}),
+				whenChainIsRegistered.
+					When2(whenChainIsActivated).
+					When2(whenAddressIsValid).
+					When2(requestIsMade).
+					When("fee is zero", func() {
+						req.Fee.Amount.Amount = sdk.NewInt(0)
+					}).
+					Then2(validationFails),
+				whenChainIsRegistered.
+					When2(whenChainIsActivated).
+					When2(whenAddressIsValid).
+					When2(whenSetNewMessageSucceeds).
+					When2(requestIsMade).
+					When("fee receiver is blocked", func() {
+						b.BlockedAddrFunc = func(addr sdk.AccAddress) bool {
+							return true
+						}
+					}).
+					Then2(callFails),
 				whenChainIsRegistered.
 					When2(whenChainIsActivated).
 					When2(whenAddressIsValid).

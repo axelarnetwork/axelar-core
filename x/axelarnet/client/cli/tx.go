@@ -22,6 +22,8 @@ const (
 	flagIsNativeAsset = "is-native-asset"
 	flagLimit         = "limit"
 	flagWindow        = "window"
+	flagFeeAmount     = "fee-amount"
+	flagFeeRecipient  = "fee-recipient"
 )
 
 // GetTxCmd returns the transaction commands for this module
@@ -345,7 +347,38 @@ func getCmdCallContract() *cobra.Command {
 				return err
 			}
 
-			msg := types.NewCallContractRequest(clientCtx.GetFromAddress(), args[0], args[1], payload)
+			feeAmount, err := cmd.Flags().GetString(flagFeeAmount)
+			if err != nil {
+				return err
+			}
+
+			feeRecipient, err := cmd.Flags().GetString(flagFeeRecipient)
+			if err != nil {
+				return err
+			}
+
+			var fee *types.Fee = nil
+			if feeAmount != "" && feeRecipient != "" {
+
+				amount, err := sdk.ParseCoinNormalized(feeAmount)
+				if err != nil {
+					return err
+				}
+
+				recipient, err := sdk.AccAddressFromBech32(feeRecipient)
+				if err != nil {
+					return err
+				}
+
+				fee = &types.Fee{
+					Amount:    amount,
+					Recipient: recipient,
+				}
+			} else if feeAmount != "" || feeRecipient != "" {
+				return fmt.Errorf("need both %s and %s", flagFeeAmount, flagFeeRecipient)
+			}
+
+			msg := types.NewCallContractRequest(clientCtx.GetFromAddress(), args[0], args[1], payload, fee)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -353,6 +386,8 @@ func getCmdCallContract() *cobra.Command {
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
+	cmd.Flags().String(flagFeeAmount, "", "fee to pay for the contract call")
+	cmd.Flags().String(flagFeeRecipient, "", "recipient of the fee")
 	flags.AddTxFlagsToCmd(cmd)
 	return cmd
 }

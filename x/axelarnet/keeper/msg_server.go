@@ -57,10 +57,6 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
 	}
 
-	if !chain.IsFrom(evmtypes.ModuleName) {
-		return nil, fmt.Errorf("non EVM chains are not supported")
-	}
-
 	if !s.nexus.IsChainActivated(ctx, exported.Axelarnet) {
 		return nil, fmt.Errorf("chain %s is not activated yet", exported.Axelarnet.Name)
 	}
@@ -80,12 +76,7 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 	payloadHash := crypto.Keccak256(req.Payload)
 
 	msgID, txID, nonce := s.nexus.GenerateMessageID(ctx)
-	msg := nexus.NewGeneralMessage(msgID, sender, recipient, payloadHash, nexus.Processing, txID, nonce, nil)
-	if err := s.nexus.SetNewMessage(ctx, msg); err != nil {
-		return nil, sdkerrors.Wrap(err, "failed to add general message")
-	}
-
-	ctx.GasMeter().ConsumeGas(evmCallContractGasCost, "call-contract")
+	msg := nexus.NewGeneralMessage(msgID, sender, recipient, payloadHash, nexus.Approved, txID, nonce, nil)
 
 	events.Emit(ctx, &types.ContractCallSubmitted{
 		MessageID:        msg.ID,
@@ -96,6 +87,27 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 		PayloadHash:      msg.PayloadHash,
 		Payload:          req.Payload,
 	})
+
+	if req.Fee != nil {
+
+		if s.bank.BlockedAddr(req.Fee.Recipient) {
+			return nil, fmt.Errorf("fee recipient is a blocked address")
+		}
+
+		err := s.bank.SendCoins(ctx, req.Sender, req.Fee.Recipient, sdk.NewCoins(req.Fee.Amount))
+		if err != nil {
+			return nil, sdkerrors.Wrap(err, "failed to transfer fee")
+		}
+		events.Emit(ctx, &types.FeePaid{
+			MessageID: msgID,
+			Recipient: req.Fee.Recipient,
+			Fee:       req.Fee.Amount,
+		})
+	}
+
+	if err := s.nexus.SetNewMessage(ctx, msg); err != nil {
+		return nil, sdkerrors.Wrap(err, "failed to add general message")
+	}
 
 	s.Logger(ctx).Debug(fmt.Sprintf("successfully enqueued contract call for contract address %s on chain %s from sender %s with message id %s", req.ContractAddress, req.Chain.String(), req.Sender, msg.ID),
 		types.AttributeKeyDestinationChain, req.Chain.String(),

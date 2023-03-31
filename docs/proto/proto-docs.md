@@ -22,6 +22,7 @@
 - [axelar/axelarnet/v1beta1/types.proto](#axelar/axelarnet/v1beta1/types.proto)
     - [Asset](#axelar.axelarnet.v1beta1.Asset)
     - [CosmosChain](#axelar.axelarnet.v1beta1.CosmosChain)
+    - [Fee](#axelar.axelarnet.v1beta1.Fee)
     - [IBCTransfer](#axelar.axelarnet.v1beta1.IBCTransfer)
   
     - [IBCTransfer.Status](#axelar.axelarnet.v1beta1.IBCTransfer.Status)
@@ -819,6 +820,22 @@ Params represent the genesis parameters for the module
 | `ibc_path` | [string](#string) |  |  |
 | `assets` | [Asset](#axelar.axelarnet.v1beta1.Asset) | repeated | **Deprecated.**  |
 | `addr_prefix` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.axelarnet.v1beta1.Fee"></a>
+
+### Fee
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `amount` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+| `recipient` | [bytes](#bytes) |  |  |
 
 
 
@@ -2024,6 +2041,7 @@ to nexus
 | `chain` | [string](#string) |  |  |
 | `contract_address` | [string](#string) |  |  |
 | `payload` | [bytes](#bytes) |  |  |
+| `fee` | [Fee](#axelar.axelarnet.v1beta1.Fee) |  |  |
 
 
 

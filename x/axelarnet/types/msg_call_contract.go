@@ -11,12 +11,13 @@ import (
 )
 
 // NewCallContractRequest is the constructor for NewCallContractRequest
-func NewCallContractRequest(sender sdk.AccAddress, chain string, contractAddress string, payload []byte) *CallContractRequest {
+func NewCallContractRequest(sender sdk.AccAddress, chain string, contractAddress string, payload []byte, fee *Fee) *CallContractRequest {
 	return &CallContractRequest{
 		Sender:          sender,
 		Chain:           nexus.ChainName(utils.NormalizeString(chain)),
 		ContractAddress: contractAddress,
 		Payload:         payload,
+		Fee:             fee,
 	}
 }
 
@@ -42,6 +43,18 @@ func (m CallContractRequest) ValidateBasic() error {
 
 	if len(m.ContractAddress) == 0 {
 		return fmt.Errorf("contract address empty")
+	}
+
+	if m.Fee != nil {
+
+		if err := sdk.VerifyAddressFormat(m.Fee.Recipient); err != nil {
+			return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "fee recipient").Error())
+		}
+
+		if !m.Fee.Amount.IsValid() || !m.Fee.Amount.IsPositive() {
+			return fmt.Errorf("invalid fee amount")
+		}
+
 	}
 
 	return nil
