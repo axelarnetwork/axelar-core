@@ -153,6 +153,8 @@ message ChainAdded {
 }
 
 message CommandBatchSigned {
+  option (gogoproto.messagename) = true;
+
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
@@ -160,6 +162,8 @@ message CommandBatchSigned {
 }
 
 message CommandBatchAborted {
+  option (gogoproto.messagename) = true;
+
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
