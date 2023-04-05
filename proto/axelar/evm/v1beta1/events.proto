@@ -2,6 +2,7 @@ syntax = "proto3";
 package axelar.evm.v1beta1;
 
 option go_package = "github.com/axelarnetwork/axelar-core/x/evm/types";
+option (gogoproto.messagename_all) = true;
 
 import "gogoproto/gogo.proto";
 import "axelar/vote/exported/v1beta1/types.proto";
@@ -153,8 +154,6 @@ message ChainAdded {
 }
 
 message CommandBatchSigned {
-  option (gogoproto.messagename) = true;
-
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
@@ -162,8 +161,6 @@ message CommandBatchSigned {
 }
 
 message CommandBatchAborted {
-  option (gogoproto.messagename) = true;
-
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
