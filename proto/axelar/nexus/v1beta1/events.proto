@@ -46,6 +46,8 @@ message RateLimitUpdated {
 }
 
 message MessageReceived {
+  option (gogoproto.messagename) = true;
+
   string id = 1 [ (gogoproto.customname) = "ID" ];
   bytes payload_hash = 2;
   exported.v1beta1.CrossChainAddress sender = 3

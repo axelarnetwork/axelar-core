@@ -9,6 +9,8 @@ import "axelar/evm/v1beta1/types.proto";
 import "cosmos/base/v1beta1/coin.proto";
 
 message PollFailed {
+  option (gogoproto.messagename) = true;
+
   bytes tx_id = 1 [
     (gogoproto.nullable) = false,
     (gogoproto.customtype) = "Hash",
@@ -26,6 +28,8 @@ message PollFailed {
 }
 
 message PollExpired {
+  option (gogoproto.messagename) = true;
+
   bytes tx_id = 1 [
     (gogoproto.nullable) = false,
     (gogoproto.customtype) = "Hash",
@@ -60,6 +64,8 @@ message PollCompleted {
 }
 
 message NoEventsConfirmed {
+  option (gogoproto.messagename) = true;
+
   bytes tx_id = 1 [
     (gogoproto.nullable) = false,
     (gogoproto.customtype) = "Hash",
