@@ -2,6 +2,7 @@ syntax = "proto3";
 package axelar.nexus.v1beta1;
 
 option go_package = "github.com/axelarnetwork/axelar-core/x/nexus/types";
+option (gogoproto.messagename_all) = true;
 
 import "google/protobuf/duration.proto";
 import "gogoproto/gogo.proto";
