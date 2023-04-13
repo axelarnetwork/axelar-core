@@ -6,11 +6,12 @@ import (
 	"math/big"
 	"strings"
 
-	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
+
+	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 )
 
 //go:generate moq -out ./mock/client.go -pkg mock . Client
