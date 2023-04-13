@@ -116,7 +116,7 @@ func (c *ZkEvmPolygonClient) IsFinalized(ctx context.Context, _ uint64, l2Receip
 	}
 	var log *types.Log
 	for _, l := range l1Receipt.Logs {
-		if len(l.Topics) > 0 && bytes.Compare(l.Topics[0].Bytes(), zkEVMVerifyBatchesTrustedSig) == 0 {
+		if len(l.Topics) > 0 && bytes.Equal(l.Topics[0].Bytes(), zkEVMVerifyBatchesTrustedSig) {
 			log = l
 		}
 	}
@@ -127,7 +127,7 @@ func (c *ZkEvmPolygonClient) IsFinalized(ctx context.Context, _ uint64, l2Receip
 		return false, fmt.Errorf("unexpected amount of topics at VerifyBatchesTrusted log (want 3, got %d)", len(log.Topics))
 	}
 	l1ContractAddress := log.Address
-	if bytes.Compare(l1ContractAddress.Bytes(), c.l1Contract.Bytes()) != 0 {
+	if bytes.Equal(l1ContractAddress.Bytes(), c.l1Contract.Bytes()) {
 		return false, fmt.Errorf("wrong contract address at log index %d (want %s, got %s)", log.Index, c.l1Contract.Hex(), l1ContractAddress.Hex())
 	}
 
@@ -147,7 +147,7 @@ func (c *ZkEvmPolygonClient) IsFinalized(ctx context.Context, _ uint64, l2Receip
 		return false, err
 	}
 	l1StateRoot := common.BytesToHash(log.Data)
-	if bytes.Compare(verifiedBatch.StateRoot.Bytes(), l1StateRoot.Bytes()) != 0 {
+	if bytes.Equal(verifiedBatch.StateRoot.Bytes(), l1StateRoot.Bytes()) {
 		return false, fmt.Errorf("verified stateRoot mismatch: expected %s, got %s", batch.StateRoot.Hex(), l1StateRoot.Hex())
 	}
 
