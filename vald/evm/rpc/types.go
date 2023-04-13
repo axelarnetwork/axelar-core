@@ -22,3 +22,16 @@ type moonbeamHeader struct {
 	StateRoot      common.Hash  `json:"stateRoot"        gencodec:"required"`
 	Number         *hexutil.Big `json:"number"           gencodec:"required"`
 }
+
+// zkEvmPolygonHeader represents a batch header in the zkEVM polygon blockchain
+type zkEvmPolygonHeader struct {
+	VerifyBatchTxHash   *common.Hash   `json:"verifyBatchTxHash"     gencodec:"required"`
+	SendSequencesTxHash *common.Hash   `json:"sendSequencesTxHash"   gencodec:"required"`
+	AccInputHash        common.Hash    `json:"accInputHash"          gencodec:"required"`
+	LocalExitRoot       common.Hash    `json:"localExitRoot"         gencodec:"required"`
+	GlobalExitRoot      common.Hash    `json:"globalExitRoot"        gencodec:"required"`
+	StateRoot           common.Hash    `json:"stateRoot"             gencodec:"required"`
+	Transactions        []common.Hash  `json:"transactions"          gencodec:"required"`
+	Time                hexutil.Uint64 `json:"timestamp"             gencodec:"required"`
+	Number              *hexutil.Big   `json:"number"                gencodec:"required"`
+}
