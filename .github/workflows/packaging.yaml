@@ -1,7 +1,7 @@
 name: Package linux binaries
 
 env:
-  MY_LIST: "0.10.7,0.13.6,0.14.1"
+  MY_LIST: "0.10.7,0.13.6,0.14.1,0.17.3,0.18.3,0.19.4,0.21.1,0.24.0"
 
 on:
   push:
