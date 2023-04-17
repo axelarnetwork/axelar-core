@@ -1,7 +1,7 @@
 name: Package linux binaries
 
 env:
-  MY_LIST: "0.10.7,0.13.6,0.14.1,0.16.1,0.17.3,0.18.3,0.19.4,0.21.1,0.24.0,0.26.5,0.28.0,0.29.1,0.31.2,0.32.2,0.33.0"
+  MY_LIST: "0.10.7,0.13.6,0.14.1"
 
 on:
   push:
@@ -89,12 +89,27 @@ jobs:
           > ~/linux/axelard_$version-1_arm/DEBIAN/control
           done
           
-      - name: Build the packages
+      - name: Build the packages if they don't exist on S3
         run: |
+
           for version in $(echo $MY_LIST | tr "," "\n"); do
-          dpkg --build ~/linux/axelard_$version-1_amd64
-          dpkg --build ~/linux/axelard_$version-1_arm64
-          dpkg --build ~/linux/axelard_$version-1_arm
+            filename_amd64="axelard_$version-1_amd64.deb"
+            filename_arm64="axelard_$version-1_arm64.deb"
+            filename_arm="axelard_$version-1_arm.deb"
+
+            s3_path="axelar-static/axelard/apt-repo/pool/main/"
+
+            if ! aws s3 ls "s3://$s3_path$filename_amd64" > /dev/null 2>&1; then
+              dpkg --build ~/linux/axelard_$version-1_amd64
+            fi
+
+            if ! aws s3 ls "s3://$s3_path$filename_arm64" > /dev/null 2>&1; then
+              dpkg --build ~/linux/axelard_$version-1_arm64
+            fi
+
+            if ! aws s3 ls "s3://$s3_path$filename_arm" > /dev/null 2>&1; then
+              dpkg --build ~/linux/axelard_$version-1_arm
+            fi
           done
           
       - name: Check the packages
