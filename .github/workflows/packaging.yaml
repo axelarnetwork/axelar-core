@@ -4,7 +4,7 @@ env:
   MY_LIST: "0.10.7,0.13.6,0.14.1,0.16.1,0.17.3,0.18.3,0.19.4,0.21.1,0.24.0,0.26.5,0.28.0,0.29.1,0.31.2,0.32.2,0.33.0"
 
 on:
-  workflow_dispatch:
+  push:
 
 jobs:
   package-binaries:
@@ -189,10 +189,13 @@ jobs:
           aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static  --key axelard/apt-repo/dists/stable/Release --body axelard/apt-repo/dists/stable/Release
           aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static  --key axelard/apt-repo/dists/stable/Release.gpg --body axelard/apt-repo/dists/stable/Release.gpg
           for version in $(echo $MY_LIST | tr "," "\n"); do
-          aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static  --key axelard/apt-repo/pool/main/axelard_$version-1_amd64.deb --body axelard/apt-repo/pool/main/axelard_$version-1_amd64.deb
-          aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static  --key axelard/apt-repo/pool/main/axelard_$version-1_arm64.deb --body axelard/apt-repo/pool/main/axelard_$version-1_arm64.deb
-          aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static  --key axelard/apt-repo/pool/main/axelard_$version-1_arm.deb --body axelard/apt-repo/pool/main/axelard_$version-1_arm.deb
-          done 
+            for arch in amd64 arm64 arm; do
+              key="axelard/apt-repo/pool/main/axelard_$version-1_$arch.deb"
+              if ! aws s3api head-object --bucket axelar-static --key "$key" --endpoint-url ${{ secrets.S3_BIN }} > /dev/null 2>&1; then
+                aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static --key "$key" --body "axelard/apt-repo/pool/main/axelard_$version-1_$arch.deb"
+              fi
+            done
+          done
 
       - name: Get GPG public key
         continue-on-error: true
