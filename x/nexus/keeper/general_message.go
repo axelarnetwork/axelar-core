@@ -112,6 +112,8 @@ func (k Keeper) SetMessageProcessing(ctx sdk.Context, id string) error {
 		return err
 	}
 
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.MessageProcessing{ID: m.ID}))
+
 	return k.setProcessingMessageID(ctx, m)
 }
 

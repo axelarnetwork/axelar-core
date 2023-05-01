@@ -356,6 +356,7 @@
     - [InsufficientFee](#axelar.nexus.v1beta1.InsufficientFee)
     - [MessageExecuted](#axelar.nexus.v1beta1.MessageExecuted)
     - [MessageFailed](#axelar.nexus.v1beta1.MessageFailed)
+    - [MessageProcessing](#axelar.nexus.v1beta1.MessageProcessing)
     - [MessageReceived](#axelar.nexus.v1beta1.MessageReceived)
     - [RateLimitUpdated](#axelar.nexus.v1beta1.RateLimitUpdated)
   
@@ -5600,6 +5601,21 @@ Query defines the gRPC querier service.
 <a name="axelar.nexus.v1beta1.MessageFailed"></a>
 
 ### MessageFailed
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.nexus.v1beta1.MessageProcessing"></a>
+
+### MessageProcessing
 
 
 
