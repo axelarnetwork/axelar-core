@@ -19,10 +19,19 @@ service MsgService {
     };
   }
 
+  // Deprecated: use ConfirmGatewayTxs instead
   rpc ConfirmGatewayTx(ConfirmGatewayTxRequest)
       returns (ConfirmGatewayTxResponse) {
     option (google.api.http) = {
       post : "/axelar/evm/confirm_gateway_tx"
+      body : "*"
+    };
+  }
+
+  rpc ConfirmGatewayTxs(ConfirmGatewayTxsRequest)
+      returns (ConfirmGatewayTxsResponse) {
+    option (google.api.http) = {
+      post : "/axelar/evm/confirm_gateway_txs"
       body : "*"
     };
   }
