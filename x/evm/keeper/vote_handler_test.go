@@ -269,7 +269,8 @@ func TestHandleResult(t *testing.T) {
 	t.Run("GIVEN vote WHEN result is invalid THEN panic", testutils.Func(func(t *testing.T) {
 		setup()
 
-		result = types.NewConfirmGatewayTxRequest(rand.AccAddr(), rand.Str(5), types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))))
+		hash := types.Hash(common.BytesToHash(rand.Bytes(common.HashLength)))
+		result = types.NewConfirmGatewayTxRequest(rand.AccAddr(), rand.Str(5), []types.Hash{hash})
 		assert.Panics(t, func() {
 			_ = handler.HandleResult(ctx, result)
 		})

@@ -36,7 +36,13 @@ message ConfirmGatewayTxRequest {
   bytes tx_id = 3 [
     (gogoproto.nullable) = false,
     (gogoproto.customtype) = "Hash",
-    (gogoproto.customname) = "TxID"
+    (gogoproto.customname) = "TxID",
+    deprecated = true
+  ];
+  repeated bytes tx_ids = 4 [
+    (gogoproto.nullable) = false,
+    (gogoproto.customtype) = "Hash",
+    (gogoproto.customname) = "TxIDs"
   ];
 }
 

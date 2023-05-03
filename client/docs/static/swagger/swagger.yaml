@@ -3135,6 +3135,11 @@ paths:
               tx_id:
                 type: string
                 format: byte
+              tx_ids:
+                type: array
+                items:
+                  type: string
+                  format: byte
       tags:
         - MsgService
   /axelar/evm/confirm_gateway_txs:
@@ -42586,6 +42591,11 @@ definitions:
       tx_id:
         type: string
         format: byte
+      tx_ids:
+        type: array
+        items:
+          type: string
+          format: byte
   axelar.evm.v1beta1.ConfirmGatewayTxResponse:
     type: object
   axelar.evm.v1beta1.ConfirmGatewayTxsRequest:

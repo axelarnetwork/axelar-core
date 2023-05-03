@@ -103,19 +103,24 @@ func (s msgServer) ConfirmGatewayTx(c context.Context, req *types.ConfirmGateway
 		return nil, fmt.Errorf("axelar gateway address not set")
 	}
 
-	pollParticipants, err := s.initializePoll(ctx, chain, req.TxID)
+	snap, err := s.createSnapshot(ctx, chain)
+	if err != nil {
+		return nil, err
+	}
+
+	polls, err := s.initializePolls(ctx, chain, snap, req.TxIDs)
 	if err != nil {
 		return nil, err
 	}
 
 	height := keeper.GetRequiredConfirmationHeight(ctx)
 
-	events.Emit(ctx, &types.ConfirmGatewayTxStarted{
-		TxID:               req.TxID,
+	events.Emit(ctx, &types.ConfirmGatewayTxsStarted{
+		Polls:              polls,
 		Chain:              chain.Name,
 		GatewayAddress:     gatewayAddress,
 		ConfirmationHeight: height,
-		PollParticipants:   pollParticipants,
+		Participants:       snap.GetParticipantAddresses(),
 	})
 
 	return &types.ConfirmGatewayTxResponse{}, nil

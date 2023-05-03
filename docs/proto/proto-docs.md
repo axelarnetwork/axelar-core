@@ -4323,7 +4323,8 @@ MsgConfirmDeposit represents an erc20 deposit confirmation message
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
-| `tx_id` | [bytes](#bytes) |  |  |
+| `tx_id` | [bytes](#bytes) |  | **Deprecated.**  |
+| `tx_ids` | [bytes](#bytes) | repeated |  |
 
 
 

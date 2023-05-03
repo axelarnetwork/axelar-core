@@ -8,14 +8,17 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/utils/slices"
 )
 
+const TxLimit = 100
+
 // NewConfirmGatewayTxRequest creates a message of type ConfirmGatewayTxRequest
-func NewConfirmGatewayTxRequest(sender sdk.AccAddress, chain string, txID Hash) *ConfirmGatewayTxRequest {
+func NewConfirmGatewayTxRequest(sender sdk.AccAddress, chain string, txIDs []Hash) *ConfirmGatewayTxRequest {
 	return &ConfirmGatewayTxRequest{
 		Sender: sender,
 		Chain:  nexus.ChainName(utils.NormalizeString(chain)),
-		TxID:   txID,
+		TxIDs:  txIDs,
 	}
 }
 
@@ -39,7 +42,11 @@ func (m ConfirmGatewayTxRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(err, "invalid chain")
 	}
 
-	if m.TxID.IsZero() {
+	if len(m.TxIDs) > TxLimit {
+		return fmt.Errorf("txIDs limit exceeded")
+	}
+
+	if slices.Any(m.TxIDs, func(txID Hash) bool { return txID.IsZero() }) {
 		return fmt.Errorf("invalid tx id")
 	}
 

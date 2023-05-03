@@ -1,9 +1,9 @@
 ## axelard tx evm confirm-gateway-tx
 
-Confirm a gateway transaction in an EVM chain
+Confirm gateway transactions in an EVM chain
 
 ```
-axelard tx evm confirm-gateway-tx [chain] [txID] [flags]
+axelard tx evm confirm-gateway-tx [chain] [txID]... [flags]
 ```
 
 ### Options
