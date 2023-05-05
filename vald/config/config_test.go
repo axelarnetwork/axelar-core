@@ -28,6 +28,8 @@ func TestConfigAlias(t *testing.T) {
 	assert.Equal(t, 99*time.Hour, conf.MaxTimeout)
 	assert.Equal(t, 1*time.Nanosecond, conf.MinSleepBeforeRetry)
 	assert.Len(t, conf.EVMConfig, 2)
+	assert.Equal(t, true, conf.EVMConfig[0].RequireConfirmationHeight)
+	assert.Equal(t, false, conf.EVMConfig[1].RequireConfirmationHeight)
 }
 
 func buildTestdataFilePath() (string, error) {

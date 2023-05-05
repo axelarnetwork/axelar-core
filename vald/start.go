@@ -448,7 +448,7 @@ func createTSSMgr(broadcaster broadcast.Broadcaster, cliCtx client.Context, axel
 }
 
 func createEVMClient(config evmTypes.EVMConfig) (evmRPC.Client, error) {
-	return evmRPC.NewClient(config.RPCAddr)
+	return evmRPC.NewClient(config.RPCAddr, config.RequireConfirmationHeight)
 }
 
 func createEVMMgr(axelarCfg config.ValdConfig, cliCtx sdkClient.Context, b broadcast.Broadcaster, logger log.Logger, cdc *codec.LegacyAmino, valAddr sdk.ValAddress) *evm.Mgr {

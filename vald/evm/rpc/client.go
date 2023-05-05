@@ -25,7 +25,7 @@ type Client interface {
 }
 
 // NewClient returns an EVM JSON-RPC client
-func NewClient(url string) (Client, error) {
+func NewClient(url string, requireConfirmationHeight bool) (Client, error) {
 	rpc, err := rpc.DialContext(context.Background(), url)
 	if err != nil {
 		return nil, err
@@ -34,6 +34,10 @@ func NewClient(url string) (Client, error) {
 	ethereumClient, err := NewEthereumClient(ethclient.NewClient(rpc), rpc)
 	if err != nil {
 		return nil, err
+	}
+
+	if requireConfirmationHeight {
+		return ethereumClient, nil
 	}
 
 	if moonbeamClient, err := NewMoonbeamClient(ethereumClient); err == nil {
