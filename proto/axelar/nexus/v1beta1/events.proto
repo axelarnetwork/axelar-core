@@ -54,3 +54,9 @@ message MessageReceived {
   exported.v1beta1.CrossChainAddress recipient = 4
       [ (gogoproto.nullable) = false ];
 }
+
+message MessageProcessing { string id = 1 [ (gogoproto.customname) = "ID" ]; }
+
+message MessageExecuted { string id = 1 [ (gogoproto.customname) = "ID" ]; }
+
+message MessageFailed { string id = 1 [ (gogoproto.customname) = "ID" ]; }
