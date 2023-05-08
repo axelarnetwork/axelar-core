@@ -23,6 +23,7 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 	"github.com/axelarnetwork/utils/funcs"
+	rs "github.com/axelarnetwork/utils/monads/results"
 	"github.com/axelarnetwork/utils/slices"
 )
 
@@ -240,97 +241,112 @@ func (mgr Mgr) ProcessTransferKeyConfirmation(event *types.ConfirmKeyTransferSta
 }
 
 // ProcessGatewayTxConfirmation votes on the correctness of an EVM chain gateway's transactions
-func (mgr Mgr) ProcessGatewayTxConfirmation(event *types.ConfirmGatewayTxStarted) error {
+func (mgr Mgr) ProcessGatewayTxConfirmation(event *types.ConfirmGatewayTxsStarted) error {
 	if !slices.Any(event.Participants, func(v sdk.ValAddress) bool { return v.Equals(mgr.validator) }) {
-		mgr.logger.Debug("ignoring gateway tx confirmation poll: not a participant", "pollID", event.PollID)
+		mgr.logger.Debug("ignoring gateway tx confirmation polls: not a participant", "polls", event.Polls)
 		return nil
 	}
 
-	txReceipt, err := mgr.getTxReceiptIfFinalized(event.Chain, common.Hash(event.TxID), event.ConfirmationHeight)
+	txIDs := slices.Map(event.Polls, func(poll types.Poll) common.Hash { return common.Hash(poll.TxID) })
+	txReceipts, err := mgr.getTxReceiptsIfFinalized(event.Chain, txIDs, event.ConfirmationHeight)
 	if err != nil {
 		return err
 	}
-	if txReceipt == nil {
-		mgr.logger.Info(fmt.Sprintf("broadcasting empty vote for poll %s", event.PollID.String()))
-		_, err := mgr.broadcaster.Broadcast(context.TODO(), voteTypes.NewVoteRequest(mgr.proxy, event.PollID, types.NewVoteEvents(event.Chain)))
 
-		return err
-	}
-
-	var events []types.Event
-	for i, log := range txReceipt.Logs {
-		if !bytes.Equal(event.GatewayAddress.Bytes(), log.Address.Bytes()) {
-			continue
-		}
-
-		switch log.Topics[0] {
-		case ContractCallSig:
-			gatewayEvent, err := decodeEventContractCall(log)
-			if err != nil {
-				mgr.logger.Debug(sdkerrors.Wrap(err, "decode event ContractCall failed").Error())
-				continue
-			}
-
-			if err := gatewayEvent.ValidateBasic(); err != nil {
-				mgr.logger.Debug(sdkerrors.Wrap(err, "invalid event ContractCall").Error())
-				continue
-			}
-
-			events = append(events, types.Event{
-				Chain: event.Chain,
-				TxID:  event.TxID,
-				Index: uint64(i),
-				Event: &types.Event_ContractCall{
-					ContractCall: &gatewayEvent,
-				},
-			})
-		case ContractCallWithTokenSig:
-			gatewayEvent, err := decodeEventContractCallWithToken(log)
-			if err != nil {
-				mgr.logger.Debug(sdkerrors.Wrap(err, "decode event ContractCallWithToken failed").Error())
-				continue
-			}
-
-			if err := gatewayEvent.ValidateBasic(); err != nil {
-				mgr.logger.Debug(sdkerrors.Wrap(err, "invalid event ContractCallWithToken").Error())
-				continue
-			}
-
-			events = append(events, types.Event{
-				Chain: event.Chain,
-				TxID:  event.TxID,
-				Index: uint64(i),
-				Event: &types.Event_ContractCallWithToken{
-					ContractCallWithToken: &gatewayEvent,
-				},
-			})
-		case TokenSentSig:
-			gatewayEvent, err := decodeEventTokenSent(log)
-			if err != nil {
-				mgr.logger.Debug(sdkerrors.Wrap(err, "decode event TokenSent failed").Error())
-			}
-
-			if err := gatewayEvent.ValidateBasic(); err != nil {
-				mgr.logger.Debug(sdkerrors.Wrap(err, "invalid event TokenSent").Error())
-				continue
-			}
-
-			events = append(events, types.Event{
-				Chain: event.Chain,
-				TxID:  event.TxID,
-				Index: uint64(i),
-				Event: &types.Event_TokenSent{
-					TokenSent: &gatewayEvent,
-				},
-			})
-		default:
-		}
-	}
-
-	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", events, event.PollID.String()))
-	_, err = mgr.broadcaster.Broadcast(context.TODO(), voteTypes.NewVoteRequest(mgr.proxy, event.PollID, types.NewVoteEvents(event.Chain, events...)))
-
+	voteRequests := mgr.gatewayTxReceiptsToVotes(event, txReceipts)
+	_, err = mgr.broadcaster.Broadcast(context.TODO(), voteRequests...)
 	return err
+}
+
+func (mgr Mgr) gatewayTxReceiptsToVotes(event *types.ConfirmGatewayTxsStarted, txReceipts []rs.Result[*geth.Receipt]) []sdk.Msg {
+	res := make([]sdk.Msg, len(txReceipts))
+
+	for i, result := range txReceipts {
+		pollID := event.Polls[i].PollID
+		txID := event.Polls[i].TxID
+
+		keyvals := []interface{}{"chain", event.Chain, "poll_id", pollID.String(), "tx_id", txID.Hex()}
+
+		if result.Err() != nil {
+			mgr.logger.Info(fmt.Sprintf("broadcasting empty vote due to error: %s", result.Err().Error()), keyvals...)
+			res[i] = voteTypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain))
+		}
+
+		var events []types.Event
+		for i, log := range result.Ok().Logs {
+			if !bytes.Equal(event.GatewayAddress.Bytes(), log.Address.Bytes()) {
+				continue
+			}
+
+			switch log.Topics[0] {
+			case ContractCallSig:
+				gatewayEvent, err := decodeEventContractCall(log)
+				if err != nil {
+					mgr.logger.Debug(sdkerrors.Wrap(err, "decode event ContractCall failed").Error())
+					continue
+				}
+
+				if err := gatewayEvent.ValidateBasic(); err != nil {
+					mgr.logger.Debug(sdkerrors.Wrap(err, "invalid event ContractCall").Error())
+					continue
+				}
+
+				events = append(events, types.Event{
+					Chain: event.Chain,
+					TxID:  txID,
+					Index: uint64(i),
+					Event: &types.Event_ContractCall{
+						ContractCall: &gatewayEvent,
+					},
+				})
+			case ContractCallWithTokenSig:
+				gatewayEvent, err := decodeEventContractCallWithToken(log)
+				if err != nil {
+					mgr.logger.Debug(sdkerrors.Wrap(err, "decode event ContractCallWithToken failed").Error())
+					continue
+				}
+
+				if err := gatewayEvent.ValidateBasic(); err != nil {
+					mgr.logger.Debug(sdkerrors.Wrap(err, "invalid event ContractCallWithToken").Error())
+					continue
+				}
+
+				events = append(events, types.Event{
+					Chain: event.Chain,
+					TxID:  txID,
+					Index: uint64(i),
+					Event: &types.Event_ContractCallWithToken{
+						ContractCallWithToken: &gatewayEvent,
+					},
+				})
+			case TokenSentSig:
+				gatewayEvent, err := decodeEventTokenSent(log)
+				if err != nil {
+					mgr.logger.Debug(sdkerrors.Wrap(err, "decode event TokenSent failed").Error())
+				}
+
+				if err := gatewayEvent.ValidateBasic(); err != nil {
+					mgr.logger.Debug(sdkerrors.Wrap(err, "invalid event TokenSent").Error())
+					continue
+				}
+
+				events = append(events, types.Event{
+					Chain: event.Chain,
+					TxID:  txID,
+					Index: uint64(i),
+					Event: &types.Event_TokenSent{
+						TokenSent: &gatewayEvent,
+					},
+				})
+			default:
+			}
+		}
+
+		mgr.logger.Info(fmt.Sprintf("broadcasting vote %v", events), keyvals...)
+		res[i] = voteTypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain, events...))
+	}
+
+	return res
 }
 
 func decodeEventTokenSent(log *geth.Log) (types.EventTokenSent, error) {
@@ -469,6 +485,38 @@ func (mgr Mgr) getTxReceiptIfFinalized(chain nexus.ChainName, txID common.Hash, 
 	}
 
 	return txReceipt, nil
+}
+
+func (mgr Mgr) getTxReceiptsIfFinalized(chain nexus.ChainName, txIDs []common.Hash, confHeight uint64) ([]rs.Result[*geth.Receipt], error) {
+	client, ok := mgr.rpcs[strings.ToLower(chain.String())]
+	if !ok {
+		return nil, fmt.Errorf("rpc client not found for chain %s", chain.String())
+	}
+
+	keyvals := []interface{}{"chain", chain.String()}
+
+	finalizedBlock, err := client.FinalizedBlockNumber(context.Background(), confHeight)
+	if err != nil {
+		return nil, sdkerrors.Wrapf(errors.With(err, keyvals...), "cannot get finalized block")
+	}
+
+	results, err := client.TransactionReceipts(context.Background(), txIDs)
+	if err != nil {
+		return nil, sdkerrors.Wrapf(errors.With(err, keyvals...), "cannot get transaction receipts")
+	}
+
+	isFinalized := func(r *geth.Receipt) rs.Result[*geth.Receipt] {
+		if finalizedBlock.Cmp(r.BlockNumber) < 0 {
+			return rs.FromErr[*geth.Receipt](fmt.Errorf("tx not finalized"))
+		}
+
+		return rs.FromOk(r)
+	}
+
+	return slices.Map(results, func(r rpc.ReceiptResult) rs.Result[*geth.Receipt] {
+		return rs.Pipe(rs.Result[*geth.Receipt](r), isFinalized)
+	}), nil
+
 }
 
 func decodeERC20TransferEvent(log *geth.Log) (types.EventTransfer, error) {

@@ -33,6 +33,11 @@ func (c *Ethereum2Client) IsFinalized(ctx context.Context, _ uint64, txReceipt *
 	return latestFinalizedBlockNumber.Cmp(txReceipt.BlockNumber) >= 0, nil
 }
 
+// FinalizedBlockNumber returns the finalized block number
+func (c *Ethereum2Client) FinalizedBlockNumber(ctx context.Context, _ uint64) (*big.Int, error) {
+	return c.latestFinalizedBlockNumber(ctx)
+}
+
 func (c *Ethereum2Client) latestFinalizedBlockNumber(ctx context.Context) (*big.Int, error) {
 	var head *types.Header
 	err := c.rpc.CallContext(ctx, &head, "eth_getBlockByNumber", "finalized", false)

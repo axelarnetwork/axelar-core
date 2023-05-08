@@ -29,6 +29,8 @@ import (
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 	"github.com/axelarnetwork/utils/funcs"
+	"github.com/axelarnetwork/utils/monads/results"
+	"github.com/axelarnetwork/utils/slices"
 	. "github.com/axelarnetwork/utils/test"
 )
 
@@ -216,6 +218,83 @@ func TestMgr_getTxReceiptIfFinalized(t *testing.T) {
 			assert.NoError(t, err)
 			assert.NotNil(t, txReceipt)
 		}).
+		Run(t, 5)
+}
+
+func TestMgr_getTxReceiptsIfFinalized(t *testing.T) {
+	chain := nexus.ChainName(strings.ToLower(rand.NormalizedStr(5)))
+	txHashes := slices.Expand2(func() common.Hash { return common.BytesToHash(rand.Bytes(common.HashLength)) }, 100)
+
+	var (
+		mgr                        Mgr
+		confHeight                 uint64
+		latestFinalizedBlockNumber int64
+		evmClient                  mock.ClientMock
+	)
+
+	givenMgr := Given("evm mgr", func() {
+		mgr = Mgr{logger: log.TestingLogger(), rpcs: make(map[string]evmRpc.Client)}
+		confHeight = uint64(rand.I64Between(1, 50))
+
+		evmClient.FinalizedBlockNumberFunc = func(ctx context.Context, conf uint64) (*big.Int, error) {
+			return big.NewInt(latestFinalizedBlockNumber), nil
+		}
+		mgr.rpcs[chain.String()] = &evmClient
+	})
+
+	givenMgr.
+		Branch(
+			When("transactions are finalized", func() {
+				latestFinalizedBlockNumber = rand.I64Between(1000, 10000)
+
+				evmClient.TransactionReceiptsFunc = func(_ context.Context, _ []common.Hash) ([]evmRpc.ReceiptResult, error) {
+					return slices.Map(txHashes, func(hash common.Hash) evmRpc.ReceiptResult {
+						return evmRpc.ReceiptResult(results.FromOk(&geth.Receipt{
+							BlockNumber: big.NewInt(latestFinalizedBlockNumber - rand.I64Between(1, 100)),
+							TxHash:      hash,
+							Status:      1,
+						}))
+					}), nil
+				}
+			}).
+				Then("should return receipt results", func(t *testing.T) {
+					receipts, err := mgr.getTxReceiptsIfFinalized(chain, txHashes, confHeight)
+					assert.NoError(t, err)
+					assert.True(t, slices.All(receipts, func(result results.Result[*geth.Receipt]) bool { return result.Err() == nil }))
+				}),
+
+			When("some transactions are not finalized", func() {
+				evmClient.TransactionReceiptsFunc = func(_ context.Context, _ []common.Hash) ([]evmRpc.ReceiptResult, error) {
+					i := 0
+					return slices.Map(txHashes, func(hash common.Hash) evmRpc.ReceiptResult {
+						var blockNumber *big.Int
+						// half of the transactions are finalized
+						if i < len(txHashes)/2 {
+							blockNumber = big.NewInt(latestFinalizedBlockNumber - rand.I64Between(1, 100))
+						} else {
+							blockNumber = big.NewInt(latestFinalizedBlockNumber + rand.I64Between(1, 100))
+						}
+						i++
+
+						return evmRpc.ReceiptResult(results.FromOk(&geth.Receipt{
+							BlockNumber: blockNumber,
+							TxHash:      hash,
+							Status:      1,
+						}))
+					}), nil
+				}
+			}).
+				Then("should return error results for not found", func(t *testing.T) {
+					receipts, err := mgr.getTxReceiptsIfFinalized(chain, txHashes, confHeight)
+					assert.NoError(t, err)
+
+					finalized := receipts[:len(txHashes)/2]
+					notFinalized := receipts[len(txHashes)/2:]
+
+					assert.True(t, slices.All(finalized, func(result results.Result[*geth.Receipt]) bool { return result.Err() == nil }))
+					assert.True(t, slices.All(notFinalized, func(result results.Result[*geth.Receipt]) bool { return result.Err() != nil }))
+				}),
+		).
 		Run(t, 5)
 }
 
