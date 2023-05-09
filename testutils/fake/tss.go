@@ -5,9 +5,10 @@ import (
 	"crypto/rand"
 	"sync"
 
-	"github.com/axelarnetwork/utils/funcs"
 	"github.com/btcsuite/btcd/btcec/v2"
 	ec "github.com/btcsuite/btcd/btcec/v2/ecdsa"
+
+	"github.com/axelarnetwork/utils/funcs"
 )
 
 // Tofnd is a thread-safe fake that emulates the external tofnd process
