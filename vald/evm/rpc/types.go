@@ -1,6 +1,8 @@
 package rpc
 
 import (
+	"fmt"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )
@@ -21,4 +23,22 @@ type moonbeamHeader struct {
 	ExtrinsicsRoot common.Hash  `json:"extrinsicsRoot"   gencodec:"required"`
 	StateRoot      common.Hash  `json:"stateRoot"        gencodec:"required"`
 	Number         *hexutil.Big `json:"number"           gencodec:"required"`
+}
+
+type FinalityOverride int
+
+const (
+	NoOverride FinalityOverride = iota
+	Confirmation
+)
+
+func ParseFinalityOverride(s string) (FinalityOverride, error) {
+	switch s {
+	case "":
+		return NoOverride, nil
+	case "confirmation":
+		return Confirmation, nil
+	default:
+		return -1, fmt.Errorf("invalid finality override option")
+	}
 }
