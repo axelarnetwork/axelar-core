@@ -154,7 +154,7 @@ proto-lint:
 proto-check-breaking:
 	@$(DOCKER_BUF) breaking --against $(HTTPS_GIT)#branch=main
 
-TM_URL              	= https://raw.githubusercontent.com/tendermint/tendermint/v0.34.23/proto/tendermint
+TM_URL              	= https://raw.githubusercontent.com/cometbft/cometbft/v0.34.27/proto/tendermint
 GOGO_PROTO_URL      	= https://raw.githubusercontent.com/regen-network/protobuf/cosmos
 GOOGLE_PROTOBUF_URL		= https://raw.githubusercontent.com/protocolbuffers/protobuf/main/src/google/protobuf
 GOOGLE_API_URL			= https://raw.githubusercontent.com/googleapis/googleapis/master/google/api
