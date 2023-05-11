@@ -2,10 +2,12 @@ package rpc
 
 import (
 	"fmt"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"strings"
 )
+
+//go:generate stringer -type=FinalityOverride
 
 // Header represents a block header in any EVM blockchain
 type Header struct {
@@ -33,10 +35,10 @@ const (
 )
 
 func ParseFinalityOverride(s string) (FinalityOverride, error) {
-	switch s {
+	switch strings.ToLower(s) {
 	case "":
 		return NoOverride, nil
-	case "confirmation":
+	case strings.ToLower(Confirmation.String()):
 		return Confirmation, nil
 	default:
 		return -1, fmt.Errorf("invalid finality override option")
