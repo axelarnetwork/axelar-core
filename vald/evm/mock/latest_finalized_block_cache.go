@@ -5,6 +5,8 @@ package mock
 
 import (
 	"github.com/axelarnetwork/axelar-core/vald/evm"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"math/big"
 	"sync"
 )
 
@@ -18,10 +20,10 @@ var _ evm.LatestFinalizedBlockCache = &LatestFinalizedBlockCacheMock{}
 //
 //		// make and configure a mocked evm.LatestFinalizedBlockCache
 //		mockedLatestFinalizedBlockCache := &LatestFinalizedBlockCacheMock{
-//			GetFunc: func(chain string) uint64 {
+//			GetFunc: func(chain nexus.ChainName) *big.Int {
 //				panic("mock out the Get method")
 //			},
-//			SetFunc: func(chain string, blockNumber uint64)  {
+//			SetFunc: func(chain nexus.ChainName, blockNumber *big.Int)  {
 //				panic("mock out the Set method")
 //			},
 //		}
@@ -32,24 +34,24 @@ var _ evm.LatestFinalizedBlockCache = &LatestFinalizedBlockCacheMock{}
 //	}
 type LatestFinalizedBlockCacheMock struct {
 	// GetFunc mocks the Get method.
-	GetFunc func(chain string) uint64
+	GetFunc func(chain nexus.ChainName) *big.Int
 
 	// SetFunc mocks the Set method.
-	SetFunc func(chain string, blockNumber uint64)
+	SetFunc func(chain nexus.ChainName, blockNumber *big.Int)
 
 	// calls tracks calls to the methods.
 	calls struct {
 		// Get holds details about calls to the Get method.
 		Get []struct {
 			// Chain is the chain argument value.
-			Chain string
+			Chain nexus.ChainName
 		}
 		// Set holds details about calls to the Set method.
 		Set []struct {
 			// Chain is the chain argument value.
-			Chain string
+			Chain nexus.ChainName
 			// BlockNumber is the blockNumber argument value.
-			BlockNumber uint64
+			BlockNumber *big.Int
 		}
 	}
 	lockGet sync.RWMutex
@@ -57,12 +59,12 @@ type LatestFinalizedBlockCacheMock struct {
 }
 
 // Get calls GetFunc.
-func (mock *LatestFinalizedBlockCacheMock) Get(chain string) uint64 {
+func (mock *LatestFinalizedBlockCacheMock) Get(chain nexus.ChainName) *big.Int {
 	if mock.GetFunc == nil {
 		panic("LatestFinalizedBlockCacheMock.GetFunc: method is nil but LatestFinalizedBlockCache.Get was just called")
 	}
 	callInfo := struct {
-		Chain string
+		Chain nexus.ChainName
 	}{
 		Chain: chain,
 	}
@@ -77,10 +79,10 @@ func (mock *LatestFinalizedBlockCacheMock) Get(chain string) uint64 {
 //
 //	len(mockedLatestFinalizedBlockCache.GetCalls())
 func (mock *LatestFinalizedBlockCacheMock) GetCalls() []struct {
-	Chain string
+	Chain nexus.ChainName
 } {
 	var calls []struct {
-		Chain string
+		Chain nexus.ChainName
 	}
 	mock.lockGet.RLock()
 	calls = mock.calls.Get
@@ -89,13 +91,13 @@ func (mock *LatestFinalizedBlockCacheMock) GetCalls() []struct {
 }
 
 // Set calls SetFunc.
-func (mock *LatestFinalizedBlockCacheMock) Set(chain string, blockNumber uint64) {
+func (mock *LatestFinalizedBlockCacheMock) Set(chain nexus.ChainName, blockNumber *big.Int) {
 	if mock.SetFunc == nil {
 		panic("LatestFinalizedBlockCacheMock.SetFunc: method is nil but LatestFinalizedBlockCache.Set was just called")
 	}
 	callInfo := struct {
-		Chain       string
-		BlockNumber uint64
+		Chain       nexus.ChainName
+		BlockNumber *big.Int
 	}{
 		Chain:       chain,
 		BlockNumber: blockNumber,
@@ -111,12 +113,12 @@ func (mock *LatestFinalizedBlockCacheMock) Set(chain string, blockNumber uint64)
 //
 //	len(mockedLatestFinalizedBlockCache.SetCalls())
 func (mock *LatestFinalizedBlockCacheMock) SetCalls() []struct {
-	Chain       string
-	BlockNumber uint64
+	Chain       nexus.ChainName
+	BlockNumber *big.Int
 } {
 	var calls []struct {
-		Chain       string
-		BlockNumber uint64
+		Chain       nexus.ChainName
+		BlockNumber *big.Int
 	}
 	mock.lockSet.RLock()
 	calls = mock.calls.Set
