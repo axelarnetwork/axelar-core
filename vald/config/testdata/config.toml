@@ -9,6 +9,7 @@ min_sleep_before_retry = "1ns"
 name = "evm-1"
 rpc_addr = "https://localhost:7475"
 start-with-bridge = true
+finality_override = "confirmation"
 
 [[axelar_bridge_evm]]
 
