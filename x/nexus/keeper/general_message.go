@@ -112,6 +112,8 @@ func (k Keeper) SetMessageProcessing(ctx sdk.Context, id string) error {
 		return err
 	}
 
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.MessageProcessing{ID: m.ID}))
+
 	return k.setProcessingMessageID(ctx, m)
 }
 
@@ -130,6 +132,8 @@ func (k Keeper) SetMessageExecuted(ctx sdk.Context, id string) error {
 
 	m.Status = exported.Executed
 
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.MessageExecuted{ID: m.ID}))
+
 	return k.setMessage(ctx, m)
 }
 
@@ -147,6 +151,8 @@ func (k Keeper) SetMessageFailed(ctx sdk.Context, id string) error {
 	k.deleteSentMessageID(ctx, m)
 
 	m.Status = exported.Failed
+
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.MessageFailed{ID: m.ID}))
 
 	return k.setMessage(ctx, m)
 }
