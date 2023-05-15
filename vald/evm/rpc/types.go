@@ -2,9 +2,10 @@ package rpc
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"strings"
 )
 
 //go:generate stringer -type=FinalityOverride
