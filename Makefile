@@ -109,6 +109,7 @@ docker-image-debug:
 .Phony: prereqs
 prereqs:
 	@which goimports &>/dev/null	 ||	go install golang.org/x/tools/cmd/goimports
+	@which stringer &>/dev/null		 ||	go install golang.org/x/tools/cmd/stringer
 	@which moq &>/dev/null			 ||	go install github.com/matryer/moq
 	@which statik &>/dev/null        ||	go install github.com/rakyll/statik
 	@which mdformat &>/dev/null 	 ||	pip3 install mdformat

@@ -131,7 +131,7 @@ func runVald(cliCtx sdkClient.Context, txf tx.Factory, logger log.Logger, viper 
 
 	valdConf := config.DefaultValdConfig()
 	viper.RegisterAlias("broadcast.max_timeout", "rpc.timeout_broadcast_tx_commit")
-	if err := viper.Unmarshal(&valdConf); err != nil {
+	if err := viper.Unmarshal(&valdConf, config.AddDecodeHooks); err != nil {
 		panic(err)
 	}
 
@@ -448,7 +448,7 @@ func createTSSMgr(broadcaster broadcast.Broadcaster, cliCtx client.Context, axel
 }
 
 func createEVMClient(config evmTypes.EVMConfig) (evmRPC.Client, error) {
-	return evmRPC.NewClient(config.RPCAddr)
+	return evmRPC.NewClient(config.RPCAddr, config.FinalityOverride)
 }
 
 func createEVMMgr(axelarCfg config.ValdConfig, cliCtx sdkClient.Context, b broadcast.Broadcaster, logger log.Logger, cdc *codec.LegacyAmino, valAddr sdk.ValAddress) *evm.Mgr {
