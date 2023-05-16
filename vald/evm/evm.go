@@ -443,12 +443,12 @@ func (mgr Mgr) isTxReceiptFinalized(chain nexus.ChainName, txReceipt *geth.Recei
 		return true, nil
 	}
 
-	isFinalized, err := client.IsFinalized(context.Background(), confHeight, txReceipt)
-	if err != nil || !isFinalized {
-		return isFinalized, err
+	latestFinalizedBlockNumber, err := client.LatestFinalizedBlockNumber(context.Background(), confHeight)
+	if err != nil || latestFinalizedBlockNumber.Cmp(txReceipt.BlockNumber) < 0 {
+		return false, err
 	}
 
-	mgr.latestFinalizedBlockCache.Set(chain, txReceipt.BlockNumber)
+	mgr.latestFinalizedBlockCache.Set(chain, latestFinalizedBlockNumber)
 
 	return true, nil
 }

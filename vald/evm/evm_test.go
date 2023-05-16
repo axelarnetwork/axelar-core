@@ -219,8 +219,8 @@ func TestMgr_GetTxReceiptIfFinalized(t *testing.T) {
 
 				return nil, fmt.Errorf("not found")
 			}
-			rpcClient.IsFinalizedFunc = func(ctx context.Context, conf uint64, txReceipt *geth.Receipt) (bool, error) {
-				return true, nil
+			rpcClient.LatestFinalizedBlockNumberFunc = func(ctx context.Context, confirmations uint64) (*big.Int, error) {
+				return big.NewInt(int64(latestFinalizedBlockNumber)), nil
 			}
 		}).
 		Then("it conclude that the tx is finalized", func(t *testing.T) {
@@ -393,8 +393,8 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 					}
 					return receipt, nil
 				},
-				IsFinalizedFunc: func(ctx context.Context, conf uint64, txReceipt *geth.Receipt) (bool, error) {
-					return true, nil
+				LatestFinalizedBlockNumberFunc: func(ctx context.Context, confirmations uint64) (*big.Int, error) {
+					return receipt.BlockNumber, nil
 				},
 			}
 		}).
@@ -431,8 +431,8 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 
 			givenDeposit.
 				Given("confirmation height is not reached yet", func() {
-					rpc.IsFinalizedFunc = func(context.Context, uint64, *geth.Receipt) (bool, error) {
-						return false, nil
+					rpc.LatestFinalizedBlockNumberFunc = func(ctx context.Context, confirmations uint64) (*big.Int, error) {
+						return sdk.NewIntFromBigInt(receipt.BlockNumber).SubRaw(int64(confirmations)).BigInt(), nil
 					}
 				}).
 				When2(confirmingDeposit).
@@ -603,8 +603,8 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 			TransactionReceiptFunc: func(context.Context, common.Hash) (*geth.Receipt, error) {
 				return receipt, nil
 			},
-			IsFinalizedFunc: func(ctx context.Context, conf uint64, txReceipt *geth.Receipt) (bool, error) {
-				return true, nil
+			LatestFinalizedBlockNumberFunc: func(ctx context.Context, confirmations uint64) (*big.Int, error) {
+				return receipt.BlockNumber, nil
 			},
 		}
 		broadcaster = &mock2.BroadcasterMock{
@@ -751,8 +751,8 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 
 			return nil, fmt.Errorf("not found")
 		}
-		rpc.IsFinalizedFunc = func(ctx context.Context, conf uint64, txReceipt *geth.Receipt) (bool, error) {
-			return true, nil
+		rpc.LatestFinalizedBlockNumberFunc = func(ctx context.Context, confirmations uint64) (*big.Int, error) {
+			return txReceipt.BlockNumber, nil
 		}
 	})
 
