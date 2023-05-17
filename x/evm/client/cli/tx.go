@@ -232,7 +232,7 @@ func GetCmdCreateConfirmGatewayTxs() *cobra.Command {
 
 			chain := args[0]
 			txIDs := slices.Map(args[1:], func(s string) types.Hash {
-				return types.Hash(common.HexToHash(args[1]))
+				return types.Hash(common.HexToHash(s))
 			})
 
 			msg := types.NewConfirmGatewayTxsRequest(cliCtx.GetFromAddress(), chain, txIDs)

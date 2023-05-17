@@ -147,13 +147,13 @@ func (s msgServer) ConfirmGatewayTxs(c context.Context, req *types.ConfirmGatewa
 		return nil, err
 	}
 
-	polls, err := s.initializePolls(ctx, chain, snapshot, req.TxIDs)
+	pollMappings, err := s.initializePolls(ctx, chain, snapshot, req.TxIDs)
 	if err != nil {
 		return nil, err
 	}
 
 	events.Emit(ctx, &types.ConfirmGatewayTxsStarted{
-		Polls:              polls,
+		PollMappings:       pollMappings,
 		Chain:              chain.Name,
 		GatewayAddress:     gatewayAddress,
 		ConfirmationHeight: keeper.GetRequiredConfirmationHeight(ctx),
@@ -913,7 +913,7 @@ func (s msgServer) initializePoll(ctx sdk.Context, chain nexus.Chain, txID types
 	}, err
 }
 
-func (s msgServer) initializePolls(ctx sdk.Context, chain nexus.Chain, snapshot snapshot.Snapshot, txIDs []types.Hash) ([]types.Poll, error) {
+func (s msgServer) initializePolls(ctx sdk.Context, chain nexus.Chain, snapshot snapshot.Snapshot, txIDs []types.Hash) ([]types.PollMapping, error) {
 	keeper, err := s.ForChain(ctx, chain.Name)
 	if err != nil {
 		return nil, err
@@ -922,7 +922,7 @@ func (s msgServer) initializePolls(ctx sdk.Context, chain nexus.Chain, snapshot 
 	params := keeper.GetParams(ctx)
 	expiresAt := ctx.BlockHeight() + params.RevoteLockingPeriod
 
-	polls := make([]types.Poll, len(txIDs))
+	pollMappings := make([]types.PollMapping, len(txIDs))
 	for i, txID := range txIDs {
 		pollID, err := s.voter.InitializePoll(
 			ctx,
@@ -939,11 +939,11 @@ func (s msgServer) initializePolls(ctx sdk.Context, chain nexus.Chain, snapshot 
 			return nil, err
 		}
 
-		polls[i] = types.Poll{
+		pollMappings[i] = types.PollMapping{
 			TxID:   txID,
 			PollID: pollID,
 		}
 	}
 
-	return polls, nil
+	return pollMappings, nil
 }

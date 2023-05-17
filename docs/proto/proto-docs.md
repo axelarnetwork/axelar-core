@@ -204,10 +204,10 @@
     - [EVMEventRetryFailed](#axelar.evm.v1beta1.EVMEventRetryFailed)
     - [MintCommand](#axelar.evm.v1beta1.MintCommand)
     - [NoEventsConfirmed](#axelar.evm.v1beta1.NoEventsConfirmed)
-    - [Poll](#axelar.evm.v1beta1.Poll)
     - [PollCompleted](#axelar.evm.v1beta1.PollCompleted)
     - [PollExpired](#axelar.evm.v1beta1.PollExpired)
     - [PollFailed](#axelar.evm.v1beta1.PollFailed)
+    - [PollMapping](#axelar.evm.v1beta1.PollMapping)
     - [TokenSent](#axelar.evm.v1beta1.TokenSent)
   
 - [axelar/evm/v1beta1/params.proto](#axelar/evm/v1beta1/params.proto)
@@ -3192,7 +3192,7 @@ TransferKey contains information for a transfer operatorship
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `polls` | [Poll](#axelar.evm.v1beta1.Poll) | repeated |  |
+| `poll_mappings` | [PollMapping](#axelar.evm.v1beta1.PollMapping) | repeated |  |
 | `chain` | [string](#string) |  |  |
 | `gateway_address` | [bytes](#bytes) |  |  |
 | `confirmation_height` | [uint64](#uint64) |  |  |
@@ -3407,22 +3407,6 @@ TransferKey contains information for a transfer operatorship
 
 
 
-<a name="axelar.evm.v1beta1.Poll"></a>
-
-### Poll
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `tx_id` | [bytes](#bytes) |  |  |
-| `poll_id` | [uint64](#uint64) |  |  |
-
-
-
-
-
-
 <a name="axelar.evm.v1beta1.PollCompleted"></a>
 
 ### PollCompleted
@@ -3467,6 +3451,22 @@ TransferKey contains information for a transfer operatorship
 | ----- | ---- | ----- | ----------- |
 | `tx_id` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
+| `poll_id` | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.PollMapping"></a>
+
+### PollMapping
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tx_id` | [bytes](#bytes) |  |  |
 | `poll_id` | [uint64](#uint64) |  |  |
 
 
