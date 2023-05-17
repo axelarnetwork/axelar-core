@@ -28,8 +28,8 @@ var _ rpc.Client = &ClientMock{}
 //			HeaderByNumberFunc: func(ctx context.Context, number *big.Int) (*rpc.Header, error) {
 //				panic("mock out the HeaderByNumber method")
 //			},
-//			IsFinalizedFunc: func(ctx context.Context, conf uint64, txReceipt *types.Receipt) (bool, error) {
-//				panic("mock out the IsFinalized method")
+//			LatestFinalizedBlockNumberFunc: func(ctx context.Context, confirmations uint64) (*big.Int, error) {
+//				panic("mock out the LatestFinalizedBlockNumber method")
 //			},
 //			TransactionReceiptFunc: func(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {
 //				panic("mock out the TransactionReceipt method")
@@ -47,8 +47,8 @@ type ClientMock struct {
 	// HeaderByNumberFunc mocks the HeaderByNumber method.
 	HeaderByNumberFunc func(ctx context.Context, number *big.Int) (*rpc.Header, error)
 
-	// IsFinalizedFunc mocks the IsFinalized method.
-	IsFinalizedFunc func(ctx context.Context, conf uint64, txReceipt *types.Receipt) (bool, error)
+	// LatestFinalizedBlockNumberFunc mocks the LatestFinalizedBlockNumber method.
+	LatestFinalizedBlockNumberFunc func(ctx context.Context, confirmations uint64) (*big.Int, error)
 
 	// TransactionReceiptFunc mocks the TransactionReceipt method.
 	TransactionReceiptFunc func(ctx context.Context, txHash common.Hash) (*types.Receipt, error)
@@ -65,14 +65,12 @@ type ClientMock struct {
 			// Number is the number argument value.
 			Number *big.Int
 		}
-		// IsFinalized holds details about calls to the IsFinalized method.
-		IsFinalized []struct {
+		// LatestFinalizedBlockNumber holds details about calls to the LatestFinalizedBlockNumber method.
+		LatestFinalizedBlockNumber []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
-			// Conf is the conf argument value.
-			Conf uint64
-			// TxReceipt is the txReceipt argument value.
-			TxReceipt *types.Receipt
+			// Confirmations is the confirmations argument value.
+			Confirmations uint64
 		}
 		// TransactionReceipt holds details about calls to the TransactionReceipt method.
 		TransactionReceipt []struct {
@@ -82,10 +80,10 @@ type ClientMock struct {
 			TxHash common.Hash
 		}
 	}
-	lockClose              sync.RWMutex
-	lockHeaderByNumber     sync.RWMutex
-	lockIsFinalized        sync.RWMutex
-	lockTransactionReceipt sync.RWMutex
+	lockClose                      sync.RWMutex
+	lockHeaderByNumber             sync.RWMutex
+	lockLatestFinalizedBlockNumber sync.RWMutex
+	lockTransactionReceipt         sync.RWMutex
 }
 
 // Close calls CloseFunc.
@@ -151,43 +149,39 @@ func (mock *ClientMock) HeaderByNumberCalls() []struct {
 	return calls
 }
 
-// IsFinalized calls IsFinalizedFunc.
-func (mock *ClientMock) IsFinalized(ctx context.Context, conf uint64, txReceipt *types.Receipt) (bool, error) {
-	if mock.IsFinalizedFunc == nil {
-		panic("ClientMock.IsFinalizedFunc: method is nil but Client.IsFinalized was just called")
+// LatestFinalizedBlockNumber calls LatestFinalizedBlockNumberFunc.
+func (mock *ClientMock) LatestFinalizedBlockNumber(ctx context.Context, confirmations uint64) (*big.Int, error) {
+	if mock.LatestFinalizedBlockNumberFunc == nil {
+		panic("ClientMock.LatestFinalizedBlockNumberFunc: method is nil but Client.LatestFinalizedBlockNumber was just called")
 	}
 	callInfo := struct {
-		Ctx       context.Context
-		Conf      uint64
-		TxReceipt *types.Receipt
+		Ctx           context.Context
+		Confirmations uint64
 	}{
-		Ctx:       ctx,
-		Conf:      conf,
-		TxReceipt: txReceipt,
+		Ctx:           ctx,
+		Confirmations: confirmations,
 	}
-	mock.lockIsFinalized.Lock()
-	mock.calls.IsFinalized = append(mock.calls.IsFinalized, callInfo)
-	mock.lockIsFinalized.Unlock()
-	return mock.IsFinalizedFunc(ctx, conf, txReceipt)
+	mock.lockLatestFinalizedBlockNumber.Lock()
+	mock.calls.LatestFinalizedBlockNumber = append(mock.calls.LatestFinalizedBlockNumber, callInfo)
+	mock.lockLatestFinalizedBlockNumber.Unlock()
+	return mock.LatestFinalizedBlockNumberFunc(ctx, confirmations)
 }
 
-// IsFinalizedCalls gets all the calls that were made to IsFinalized.
+// LatestFinalizedBlockNumberCalls gets all the calls that were made to LatestFinalizedBlockNumber.
 // Check the length with:
 //
-//	len(mockedClient.IsFinalizedCalls())
-func (mock *ClientMock) IsFinalizedCalls() []struct {
-	Ctx       context.Context
-	Conf      uint64
-	TxReceipt *types.Receipt
+//	len(mockedClient.LatestFinalizedBlockNumberCalls())
+func (mock *ClientMock) LatestFinalizedBlockNumberCalls() []struct {
+	Ctx           context.Context
+	Confirmations uint64
 } {
 	var calls []struct {
-		Ctx       context.Context
-		Conf      uint64
-		TxReceipt *types.Receipt
+		Ctx           context.Context
+		Confirmations uint64
 	}
-	mock.lockIsFinalized.RLock()
-	calls = mock.calls.IsFinalized
-	mock.lockIsFinalized.RUnlock()
+	mock.lockLatestFinalizedBlockNumber.RLock()
+	calls = mock.calls.LatestFinalizedBlockNumber
+	mock.lockLatestFinalizedBlockNumber.RUnlock()
 	return calls
 }
 

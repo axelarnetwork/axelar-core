@@ -38,21 +38,23 @@ var (
 
 // Mgr manages all communication with Ethereum
 type Mgr struct {
-	logger      tmLog.Logger
-	rpcs        map[string]rpc.Client
-	broadcaster broadcast.Broadcaster
-	validator   sdk.ValAddress
-	proxy       sdk.AccAddress
+	logger                    tmLog.Logger
+	rpcs                      map[string]rpc.Client
+	broadcaster               broadcast.Broadcaster
+	validator                 sdk.ValAddress
+	proxy                     sdk.AccAddress
+	latestFinalizedBlockCache LatestFinalizedBlockCache
 }
 
 // NewMgr returns a new Mgr instance
-func NewMgr(rpcs map[string]rpc.Client, broadcaster broadcast.Broadcaster, logger tmLog.Logger, valAddr sdk.ValAddress, proxy sdk.AccAddress) *Mgr {
+func NewMgr(rpcs map[string]rpc.Client, broadcaster broadcast.Broadcaster, logger tmLog.Logger, valAddr sdk.ValAddress, proxy sdk.AccAddress, latestFinalizedBlockCache LatestFinalizedBlockCache) *Mgr {
 	return &Mgr{
-		rpcs:        rpcs,
-		proxy:       proxy,
-		broadcaster: broadcaster,
-		logger:      logger.With("listener", "evm"),
-		validator:   valAddr,
+		rpcs:                      rpcs,
+		proxy:                     proxy,
+		broadcaster:               broadcaster,
+		logger:                    logger.With("listener", "evm"),
+		validator:                 valAddr,
+		latestFinalizedBlockCache: latestFinalizedBlockCache,
 	}
 }
 
@@ -69,7 +71,7 @@ func (mgr Mgr) ProcessDepositConfirmation(event *types.ConfirmDepositStarted) er
 		return nil
 	}
 
-	txReceipt, err := mgr.getTxReceiptIfFinalized(event.Chain, common.Hash(event.TxID), event.ConfirmationHeight)
+	txReceipt, err := mgr.GetTxReceiptIfFinalized(event.Chain, common.Hash(event.TxID), event.ConfirmationHeight)
 	if err != nil {
 		return err
 	}
@@ -90,7 +92,7 @@ func (mgr Mgr) ProcessDepositConfirmation(event *types.ConfirmDepositStarted) er
 			continue
 		}
 
-		erc20Event, err := decodeERC20TransferEvent(log)
+		erc20Event, err := DecodeERC20TransferEvent(log)
 		if err != nil {
 			mgr.logger.Debug(sdkerrors.Wrap(err, "decode event Transfer failed").Error())
 			continue
@@ -128,7 +130,7 @@ func (mgr Mgr) ProcessTokenConfirmation(event *types.ConfirmTokenStarted) error 
 		return nil
 	}
 
-	txReceipt, err := mgr.getTxReceiptIfFinalized(event.Chain, common.Hash(event.TxID), event.ConfirmationHeight)
+	txReceipt, err := mgr.GetTxReceiptIfFinalized(event.Chain, common.Hash(event.TxID), event.ConfirmationHeight)
 	if err != nil {
 		return err
 	}
@@ -149,7 +151,7 @@ func (mgr Mgr) ProcessTokenConfirmation(event *types.ConfirmTokenStarted) error 
 			continue
 		}
 
-		erc20Event, err := decodeERC20TokenDeploymentEvent(log)
+		erc20Event, err := DecodeERC20TokenDeploymentEvent(log)
 		if err != nil {
 			mgr.logger.Debug(sdkerrors.Wrap(err, "decode event TokenDeployed failed").Error())
 			continue
@@ -188,7 +190,7 @@ func (mgr Mgr) ProcessTransferKeyConfirmation(event *types.ConfirmKeyTransferSta
 		return nil
 	}
 
-	txReceipt, err := mgr.getTxReceiptIfFinalized(event.Chain, common.Hash(event.TxID), event.ConfirmationHeight)
+	txReceipt, err := mgr.GetTxReceiptIfFinalized(event.Chain, common.Hash(event.TxID), event.ConfirmationHeight)
 	if err != nil {
 		return err
 	}
@@ -212,7 +214,7 @@ func (mgr Mgr) ProcessTransferKeyConfirmation(event *types.ConfirmKeyTransferSta
 			continue
 		}
 
-		transferOperatorshipEvent, err := decodeMultisigOperatorshipTransferredEvent(log)
+		transferOperatorshipEvent, err := DecodeMultisigOperatorshipTransferredEvent(log)
 		if err != nil {
 			mgr.logger.Debug(sdkerrors.Wrap(err, "failed decoding operatorship transferred event").Error())
 			continue
@@ -246,7 +248,7 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(event *types.ConfirmGatewayTxStarted
 		return nil
 	}
 
-	txReceipt, err := mgr.getTxReceiptIfFinalized(event.Chain, common.Hash(event.TxID), event.ConfirmationHeight)
+	txReceipt, err := mgr.GetTxReceiptIfFinalized(event.Chain, common.Hash(event.TxID), event.ConfirmationHeight)
 	if err != nil {
 		return err
 	}
@@ -265,7 +267,7 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(event *types.ConfirmGatewayTxStarted
 
 		switch log.Topics[0] {
 		case ContractCallSig:
-			gatewayEvent, err := decodeEventContractCall(log)
+			gatewayEvent, err := DecodeEventContractCall(log)
 			if err != nil {
 				mgr.logger.Debug(sdkerrors.Wrap(err, "decode event ContractCall failed").Error())
 				continue
@@ -285,7 +287,7 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(event *types.ConfirmGatewayTxStarted
 				},
 			})
 		case ContractCallWithTokenSig:
-			gatewayEvent, err := decodeEventContractCallWithToken(log)
+			gatewayEvent, err := DecodeEventContractCallWithToken(log)
 			if err != nil {
 				mgr.logger.Debug(sdkerrors.Wrap(err, "decode event ContractCallWithToken failed").Error())
 				continue
@@ -305,7 +307,7 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(event *types.ConfirmGatewayTxStarted
 				},
 			})
 		case TokenSentSig:
-			gatewayEvent, err := decodeEventTokenSent(log)
+			gatewayEvent, err := DecodeEventTokenSent(log)
 			if err != nil {
 				mgr.logger.Debug(sdkerrors.Wrap(err, "decode event TokenSent failed").Error())
 			}
@@ -333,7 +335,7 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(event *types.ConfirmGatewayTxStarted
 	return err
 }
 
-func decodeEventTokenSent(log *geth.Log) (types.EventTokenSent, error) {
+func DecodeEventTokenSent(log *geth.Log) (types.EventTokenSent, error) {
 	stringType, err := abi.NewType("string", "string", nil)
 	if err != nil {
 		return types.EventTokenSent{}, err
@@ -364,7 +366,7 @@ func decodeEventTokenSent(log *geth.Log) (types.EventTokenSent, error) {
 	}, nil
 }
 
-func decodeEventContractCall(log *geth.Log) (types.EventContractCall, error) {
+func DecodeEventContractCall(log *geth.Log) (types.EventContractCall, error) {
 	stringType, err := abi.NewType("string", "string", nil)
 	if err != nil {
 		return types.EventContractCall{}, err
@@ -393,7 +395,7 @@ func decodeEventContractCall(log *geth.Log) (types.EventContractCall, error) {
 	}, nil
 }
 
-func decodeEventContractCallWithToken(log *geth.Log) (types.EventContractCallWithToken, error) {
+func DecodeEventContractCallWithToken(log *geth.Log) (types.EventContractCallWithToken, error) {
 	stringType, err := abi.NewType("string", "string", nil)
 	if err != nil {
 		return types.EventContractCallWithToken{}, err
@@ -431,7 +433,27 @@ func decodeEventContractCallWithToken(log *geth.Log) (types.EventContractCallWit
 	}, nil
 }
 
-func (mgr Mgr) getTxReceiptIfFinalized(chain nexus.ChainName, txID common.Hash, confHeight uint64) (*geth.Receipt, error) {
+func (mgr Mgr) isTxReceiptFinalized(chain nexus.ChainName, txReceipt *geth.Receipt, confHeight uint64) (bool, error) {
+	client, ok := mgr.rpcs[strings.ToLower(chain.String())]
+	if !ok {
+		return false, fmt.Errorf("rpc client not found for chain %s", chain.String())
+	}
+
+	if mgr.latestFinalizedBlockCache.Get(chain).Cmp(txReceipt.BlockNumber) >= 0 {
+		return true, nil
+	}
+
+	latestFinalizedBlockNumber, err := client.LatestFinalizedBlockNumber(context.Background(), confHeight)
+	if err != nil || latestFinalizedBlockNumber.Cmp(txReceipt.BlockNumber) < 0 {
+		return false, err
+	}
+
+	mgr.latestFinalizedBlockCache.Set(chain, latestFinalizedBlockNumber)
+
+	return true, nil
+}
+
+func (mgr Mgr) GetTxReceiptIfFinalized(chain nexus.ChainName, txID common.Hash, confHeight uint64) (*geth.Receipt, error) {
 	client, ok := mgr.rpcs[strings.ToLower(chain.String())]
 	if !ok {
 		return nil, fmt.Errorf("rpc client not found for chain %s", chain.String())
@@ -448,18 +470,19 @@ func (mgr Mgr) getTxReceiptIfFinalized(chain nexus.ChainName, txID common.Hash, 
 		return nil, sdkerrors.Wrap(errors.With(err, keyvals...), "failed getting transaction receipt")
 	}
 
-	isFinalized, err := client.IsFinalized(context.Background(), confHeight, txReceipt)
+	isFinalized, err := mgr.isTxReceiptFinalized(chain, txReceipt, confHeight)
 	if err != nil {
 		return nil, sdkerrors.Wrapf(errors.With(err, keyvals...), "cannot determine if the transaction %s is finalized", txID.Hex())
 	}
 	if !isFinalized {
 		logger.Debug(fmt.Sprintf("transaction %s in block %s not finalized", txID.Hex(), txReceipt.BlockNumber.String()))
+
 		return nil, nil
 	}
 
 	header, err := client.HeaderByNumber(context.Background(), txReceipt.BlockNumber)
 	if err != nil {
-		return nil, sdkerrors.Wrapf(errors.With(err, keyvals...), "failed getting block %d", txReceipt.BlockNumber)
+		return nil, sdkerrors.Wrapf(errors.With(err, keyvals...), "failed getting block %s", txReceipt.BlockNumber.String())
 	}
 
 	txFound := slices.Any(header.Transactions, func(txHash common.Hash) bool { return bytes.Equal(txHash.Bytes(), txReceipt.TxHash.Bytes()) })
@@ -471,7 +494,7 @@ func (mgr Mgr) getTxReceiptIfFinalized(chain nexus.ChainName, txID common.Hash, 
 	return txReceipt, nil
 }
 
-func decodeERC20TransferEvent(log *geth.Log) (types.EventTransfer, error) {
+func DecodeERC20TransferEvent(log *geth.Log) (types.EventTransfer, error) {
 	if len(log.Topics) != 3 || log.Topics[0] != ERC20TransferSig {
 		return types.EventTransfer{}, fmt.Errorf("log is not an ERC20 transfer")
 	}
@@ -498,7 +521,7 @@ func decodeERC20TransferEvent(log *geth.Log) (types.EventTransfer, error) {
 	}, nil
 }
 
-func decodeERC20TokenDeploymentEvent(log *geth.Log) (types.EventTokenDeployed, error) {
+func DecodeERC20TokenDeploymentEvent(log *geth.Log) (types.EventTokenDeployed, error) {
 	if len(log.Topics) != 1 || log.Topics[0] != ERC20TokenDeploymentSig {
 		return types.EventTokenDeployed{}, fmt.Errorf("event is not for an ERC20 token deployment")
 	}
@@ -525,7 +548,7 @@ func decodeERC20TokenDeploymentEvent(log *geth.Log) (types.EventTokenDeployed, e
 	}, nil
 }
 
-func decodeMultisigOperatorshipTransferredEvent(log *geth.Log) (types.EventMultisigOperatorshipTransferred, error) {
+func DecodeMultisigOperatorshipTransferredEvent(log *geth.Log) (types.EventMultisigOperatorshipTransferred, error) {
 	if len(log.Topics) != 1 || log.Topics[0] != MultisigTransferOperatorshipSig {
 		return types.EventMultisigOperatorshipTransferred{}, fmt.Errorf("event is not OperatorshipTransferred")
 	}
