@@ -18,8 +18,8 @@ type Client interface {
 	TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error)
 	// HeaderByNumber returns the block header for the given block number
 	HeaderByNumber(ctx context.Context, number *big.Int) (*Header, error)
-	// IsFinalized determines whether or not the given transaction receipt is finalized on the chain
-	IsFinalized(ctx context.Context, conf uint64, txReceipt *types.Receipt) (bool, error)
+	// LatestFinalizedBlockNumber returns the latest finalized block number
+	LatestFinalizedBlockNumber(ctx context.Context, confirmations uint64) (*big.Int, error)
 	// Close closes the client connection
 	Close()
 }
