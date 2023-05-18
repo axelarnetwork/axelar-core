@@ -1371,7 +1371,7 @@ func TestRetryFailedEvent(t *testing.T) {
 func TestHandleMsgConfirmGatewayTxs(t *testing.T) {
 	validators := slices.Expand(func(int) snapshot.Participant { return snapshot.NewParticipant(rand2.ValAddr(), sdk.OneUint()) }, 10)
 	txIDs := slices.Expand2(evmTestUtils.RandomHash, int(rand.I64Between(5, 50)))
-	req := types.NewConfirmGatewayTxsRequest(rand.AccAddr(), rand.Str(5), txIDs)
+	req := types.NewConfirmGatewayTxsRequest(rand.AccAddr(), nexus.ChainName(rand.Str(5)), txIDs)
 
 	var (
 		ctx         sdk.Context
