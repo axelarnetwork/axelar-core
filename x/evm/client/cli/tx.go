@@ -13,7 +13,9 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/spf13/cobra"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/utils/slices"
 )
 
@@ -194,9 +196,10 @@ func GetCmdConfirmTransferOperatorship() *cobra.Command {
 // Deprecated: use GetCmdConfirmGatewayTxs instead.
 func GetCmdCreateConfirmGatewayTx() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "confirm-gateway-tx [chain] [txID]",
-		Short: "Confirm a gateway transaction in an EVM chain",
-		Args:  cobra.ExactArgs(2),
+		Deprecated: "use confirm-gateway-txs instead",
+		Use:        "confirm-gateway-tx [chain] [txID]",
+		Short:      "Confirm a gateway transaction in an EVM chain",
+		Args:       cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
@@ -230,7 +233,7 @@ func GetCmdCreateConfirmGatewayTxs() *cobra.Command {
 				return err
 			}
 
-			chain := args[0]
+			chain := nexus.ChainName(utils.NormalizeString(args[0]))
 			txIDs := slices.Map(args[1:], func(s string) types.Hash {
 				return types.Hash(common.HexToHash(s))
 			})

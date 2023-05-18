@@ -6,7 +6,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	"github.com/axelarnetwork/axelar-core/utils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/utils/slices"
 )
@@ -14,10 +13,10 @@ import (
 const TxLimit = 100
 
 // NewConfirmGatewayTxsRequest creates a message of type ConfirmGatewayTxsRequest
-func NewConfirmGatewayTxsRequest(sender sdk.AccAddress, chain string, txIDs []Hash) *ConfirmGatewayTxsRequest {
+func NewConfirmGatewayTxsRequest(sender sdk.AccAddress, chain nexus.ChainName, txIDs []Hash) *ConfirmGatewayTxsRequest {
 	return &ConfirmGatewayTxsRequest{
 		Sender: sender,
-		Chain:  nexus.ChainName(utils.NormalizeString(chain)),
+		Chain:  chain,
 		TxIDs:  txIDs,
 	}
 }
@@ -29,7 +28,7 @@ func (m ConfirmGatewayTxsRequest) Route() string {
 
 // Type implements sdk.Msg
 func (m ConfirmGatewayTxsRequest) Type() string {
-	return "ConfirmGatewayTx"
+	return "ConfirmGatewayTxs"
 }
 
 // ValidateBasic implements sdk.Msg
@@ -42,11 +41,15 @@ func (m ConfirmGatewayTxsRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(err, "invalid chain")
 	}
 
-	if len(m.TxIDs) > TxLimit {
-		return fmt.Errorf("txIDs limit exceeded")
+	if len(m.TxIDs) == 0 {
+		return fmt.Errorf("tx ids cannot be empty")
 	}
 
-	if slices.Any(m.TxIDs, func(txID Hash) bool { return txID.IsZero() }) {
+	if len(m.TxIDs) > TxLimit {
+		return fmt.Errorf("tx ids limit exceeded")
+	}
+
+	if slices.Any(m.TxIDs, Hash.IsZero) {
 		return fmt.Errorf("invalid tx id")
 	}
 
