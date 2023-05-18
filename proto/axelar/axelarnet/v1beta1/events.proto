@@ -6,6 +6,8 @@ option go_package = "github.com/axelarnetwork/axelar-core/x/axelarnet/types";
 import "gogoproto/gogo.proto";
 import "cosmos/base/v1beta1/coin.proto";
 
+option (gogoproto.messagename_all) = true;
+
 message IBCTransferSent {
   uint64 id = 1 [
     (gogoproto.customname) = "ID",
@@ -81,8 +83,6 @@ message FeePaid {
 }
 
 message ContractCallSubmitted {
-  option (gogoproto.messagename) = true;
-
   string message_id = 1 [ (gogoproto.customname) = "MessageID" ];
   string sender = 2;
   string source_chain = 3
@@ -97,8 +97,6 @@ message ContractCallSubmitted {
 }
 
 message ContractCallWithTokenSubmitted {
-  option (gogoproto.messagename) = true;
-
   string message_id = 1 [ (gogoproto.customname) = "MessageID" ];
   string sender = 2;
   string source_chain = 3
