@@ -34,8 +34,8 @@ require (
 	golang.org/x/exp v0.0.0-20221018221608-02f3b879a704
 	golang.org/x/mod v0.10.0
 	golang.org/x/sync v0.1.0
-	golang.org/x/text v0.8.0
-	golang.org/x/tools v0.7.0
+	golang.org/x/text v0.9.0
+	golang.org/x/tools v0.8.0
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2
 	google.golang.org/genproto v0.0.0-20221227171554-f9683d7f8bef
 	google.golang.org/grpc v1.52.0
@@ -140,9 +140,9 @@ require (
 	github.com/tyler-smith/go-bip39 v1.0.2 // indirect
 	github.com/zondax/hid v0.9.0 // indirect
 	go.etcd.io/bbolt v1.3.6 // indirect
-	golang.org/x/net v0.8.0 // indirect
+	golang.org/x/net v0.9.0 // indirect
 	golang.org/x/sys v0.7.0 // indirect
-	golang.org/x/term v0.6.0 // indirect
+	golang.org/x/term v0.7.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
