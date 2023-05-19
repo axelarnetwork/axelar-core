@@ -97,19 +97,17 @@ jobs:
             filename_arm64="axelard_$version-1_arm64.deb"
             filename_arm="axelard_$version-1_arm.deb"
 
-            s3_path="axelar-static/axelard/apt-repo/pool/main/"
-
-            if ! output=$(aws s3 ls "s3://axelar-static/axelard/apt-repo/pool/main/$filename_amd64" 2>&1); then
+            if ! output=$(aws s3 ls "s3://axelar-static/axelard/apt-repo/pool/main/$filename_amd64" --endpoint-url ${{ secrets.S3_BIN }} 2>&1); then
               echo "Failed to list file in S3: $output"
               dpkg --build ~/linux/axelard_$version-1_amd64
             fi
 
-            if ! output=$(aws s3 ls "s3://axelar-static/axelard/apt-repo/pool/main/$filename_arm64" 2>&1); then
+            if ! output=$(aws s3 ls "s3://axelar-static/axelard/apt-repo/pool/main/$filename_arm64" --endpoint-url ${{ secrets.S3_BIN }} 2>&1); then
               echo "Failed to list file in S3: $output"
               dpkg --build ~/linux/axelard_$version-1_arm64
             fi
 
-            if ! output=$(aws s3 ls "s3://axelar-static/axelard/apt-repo/pool/main/$filename_arm" 2>&1); then
+            if ! output=$(aws s3 ls "s3://axelar-static/axelard/apt-repo/pool/main/$filename_arm" --endpoint-url ${{ secrets.S3_BIN }} 2>&1); then
               echo "Failed to list file in S3: $output"
               dpkg --build ~/linux/axelard_$version-1_arm
             fi
