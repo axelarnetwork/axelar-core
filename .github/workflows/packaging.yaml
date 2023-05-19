@@ -123,44 +123,80 @@ jobs:
           dpkg-deb --info ~/linux/axelard_$version-1_arm.deb
           dpkg-deb --contents ~/linux/axelard_$version-1_arm.deb
           done
-          
+
+          for version in $(echo $MY_LIST | tr "," "\n"); do
+            file_amd64="~/linux/axelard_$version-1_amd64.deb"
+            file_arm64="~/linux/axelard_$version-1_arm64.deb"
+            file_arm="~/linux/axelard_$version-1_arm.deb"
+  
+            if [ -f $file_amd64 ]; then
+              dpkg-deb --info $file_amd64
+              dpkg-deb --contents $file_amd64
+            fi
+  
+            if [ -f $file_arm64 ]; then
+              dpkg-deb --info $file_arm64
+              dpkg-deb --contents $file_arm64
+            fi
+  
+            if [ -f $file_arm ]; then
+              dpkg-deb --info $file_arm
+              dpkg-deb --contents $file_arm
+            fi
+          done
+
       - name: Copy binaries in apt repo
         run: |
           mkdir -p ~/axelard/apt-repo/pool/main/
-          cp ~/linux/*.deb ~/axelard/apt-repo/pool/main/.
+            if ls ~/linux/*.deb 1> /dev/null 2>&1; then
+              cp ~/linux/*.deb ~/axelard/apt-repo/pool/main/.
+            fi
           
       - name: Generate Packages files
         run: |
+
           mkdir -p ~/axelard/apt-repo/dists/stable/main/binary-amd64
           mkdir -p ~/axelard/apt-repo/dists/stable/main/binary-arm64
           mkdir -p ~/axelard/apt-repo/dists/stable/main/binary-arm
+
           cd ~/axelard/apt-repo
-          dpkg-scanpackages -m --arch amd64 pool/ > dists/stable/main/binary-amd64/Packages
-          dpkg-scanpackages -m --arch arm64 pool/ > dists/stable/main/binary-arm64/Packages
-          dpkg-scanpackages -m --arch arm pool/ > dists/stable/main/binary-arm/Packages
-          cat dists/stable/main/binary-amd64/Packages 
-          cat dists/stable/main/binary-arm64/Packages 
-          cat dists/stable/main/binary-arm/Packages 
-          cat dists/stable/main/binary-amd64/Packages | gzip -9 > dists/stable/main/binary-amd64/Packages.gz
-          cat dists/stable/main/binary-arm64/Packages | gzip -9 > dists/stable/main/binary-arm64/Packages.gz
-          cat dists/stable/main/binary-arm/Packages | gzip -9 > dists/stable/main/binary-arm/Packages.gz
+
+          if [ -f "pool/axelard_$version-1_amd64.deb" ]; then
+            dpkg-scanpackages -m --arch amd64 pool/ > dists/stable/main/binary-amd64/Packages
+            cat dists/stable/main/binary-amd64/Packages | gzip -9 > dists/stable/main/binary-amd64/Packages.gz
+          fi
+
+          if [ -f "pool/axelard_$version-1_arm64.deb" ]; then
+            dpkg-scanpackages -m --arch arm64 pool/ > dists/stable/main/binary-arm64/Packages
+            cat dists/stable/main/binary-arm64/Packages | gzip -9 > dists/stable/main/binary-arm64/Packages.gz
+          fi
+
+          if [ -f "pool/axelard_$version-1_arm.deb" ]; then
+            dpkg-scanpackages -m --arch arm pool/ > dists/stable/main/binary-arm/Packages
+            cat dists/stable/main/binary-arm/Packages | gzip -9 > dists/stable/main/binary-arm/Packages.gz
+          fi
+
+          cat dists/stable/main/binary-amd64/Packages
+          cat dists/stable/main/binary-arm64/Packages
+          cat dists/stable/main/binary-arm/Packages
 
       - name: Generate Release file
         run: |
           echo '#!/bin/sh
           set -e
           do_hash() {
-               HASH_NAME=$1
-               HASH_CMD=$2
-               echo "${HASH_NAME}:"
-               for f in $(find -type f); do
-                  f=$(echo $f | cut -c3-) # remove ./ prefix
-                  if [ "$f" = "Release" ]; then
-                      continue
-                  fi
-                  echo " $(${HASH_CMD} ${f}  | cut -d" " -f1) $(wc -c $f)"
-               done
+            HASH_NAME=$1
+            HASH_CMD=$2
+            echo "${HASH_NAME}:"
+            for f in $(find -type f 2>/dev/null); do
+              f=$(echo $f | cut -c3-) # remove ./ prefix
+              if [ "$f" = "Release" ]; then
+                continue
+              fi
+              echo " $(${HASH_CMD} ${f}  | cut -d" " -f1) $(wc -c $f)"
+            done
           }
+
           cat << EOF
           Origin: Axelard repository
           Label: axelard
@@ -172,14 +208,15 @@ jobs:
           Description: Axelard repository
           Date: $(date -Ru)
           EOF
-          do_hash "MD5Sum" "md5sum"
-          do_hash "SHA1" "sha1sum"
-          do_hash "SHA256" "sha256sum"' > ~/axelard/generate-release.sh && chmod +x ~/axelard/generate-release.sh
-          sed -i "s/VERSION/$version/g" ~/axelard/generate-release.sh
-          cd ~/axelard/apt-repo/dists/stable
-          ~/axelard/generate-release.sh > Release
-          cat ~/axelard/apt-repo/dists/stable/Release
 
+          if [ -d ~/axelard/apt-repo/pool/main ]; then
+            do_hash "MD5Sum" "md5sum"
+            do_hash "SHA1" "sha1sum"
+            do_hash "SHA256" "sha256sum"
+          else
+            echo "No files found in ~/axelard/apt-repo/pool/main directory."
+          fi
+          
       - name: Import GPG key
         id: import_gpg
         uses: crazy-max/ghaction-import-gpg@v4
