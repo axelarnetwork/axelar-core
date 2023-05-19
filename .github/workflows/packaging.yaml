@@ -115,14 +115,6 @@ jobs:
           
       - name: Check the packages
         run: |
-          for version in $(echo $MY_LIST | tr "," "\n"); do
-          dpkg-deb --info ~/linux/axelard_$version-1_amd64.deb
-          dpkg-deb --contents ~/linux/axelard_$version-1_amd64.deb
-          dpkg-deb --info ~/linux/axelard_$version-1_arm64.deb
-          dpkg-deb --contents ~/linux/axelard_$version-1_arm64.deb
-          dpkg-deb --info ~/linux/axelard_$version-1_arm.deb
-          dpkg-deb --contents ~/linux/axelard_$version-1_arm.deb
-          done
 
           for version in $(echo $MY_LIST | tr "," "\n"); do
             file_amd64="~/linux/axelard_$version-1_amd64.deb"
