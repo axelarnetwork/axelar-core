@@ -99,15 +99,18 @@ jobs:
 
             s3_path="axelar-static/axelard/apt-repo/pool/main/"
 
-            if ! aws s3 ls "s3://$s3_path$filename_amd64" > /dev/null 2>&1; then
+            if ! output=$(aws s3 ls "s3://$s3_path$filename_amd64" 2>&1); then
+              echo "Failed to list file in S3: $output"
               dpkg --build ~/linux/axelard_$version-1_amd64
             fi
 
-            if ! aws s3 ls "s3://$s3_path$filename_arm64" > /dev/null 2>&1; then
+            if ! output=$(aws s3 ls "s3://$s3_path$filename_arm64" 2>&1); then
+              echo "Failed to list file in S3: $output"
               dpkg --build ~/linux/axelard_$version-1_arm64
             fi
 
-            if ! aws s3 ls "s3://$s3_path$filename_arm" > /dev/null 2>&1; then
+            if ! output=$(aws s3 ls "s3://$s3_path$filename_arm" 2>&1); then
+              echo "Failed to list file in S3: $output"
               dpkg --build ~/linux/axelard_$version-1_arm
             fi
           done
