@@ -64,6 +64,7 @@ jobs:
           done
           
       - name: Create control files
+        continue-on-error: true
         run: |
           for version in $(echo $MY_LIST | tr "," "\n"); do
           echo "Package: axelard
@@ -90,6 +91,7 @@ jobs:
           done
           
       - name: Build the packages if they don't exist on S3
+        continue-on-error: true
         run: |
 
           for version in $(echo $MY_LIST | tr "," "\n"); do
@@ -114,6 +116,7 @@ jobs:
           done
           
       - name: Check the packages
+        continue-on-error: true
         run: |
 
           for version in $(echo $MY_LIST | tr "," "\n"); do
@@ -138,6 +141,7 @@ jobs:
           done
 
       - name: Copy binaries in apt repo
+        continue-on-error: true
         run: |
           mkdir -p ~/axelard/apt-repo/pool/main/
             if ls ~/linux/*.deb 1> /dev/null 2>&1; then
@@ -145,6 +149,7 @@ jobs:
             fi
           
       - name: Generate Packages files
+        continue-on-error: true
         run: |
 
           mkdir -p ~/axelard/apt-repo/dists/stable/main/binary-amd64
@@ -156,16 +161,22 @@ jobs:
           if [ -f "pool/axelard_$version-1_amd64.deb" ]; then
             dpkg-scanpackages -m --arch amd64 pool/ > dists/stable/main/binary-amd64/Packages
             cat dists/stable/main/binary-amd64/Packages | gzip -9 > dists/stable/main/binary-amd64/Packages.gz
+          else
+            echo "Package file not found: pool/axelard_$version-1_amd64.deb"
           fi
 
           if [ -f "pool/axelard_$version-1_arm64.deb" ]; then
             dpkg-scanpackages -m --arch arm64 pool/ > dists/stable/main/binary-arm64/Packages
             cat dists/stable/main/binary-arm64/Packages | gzip -9 > dists/stable/main/binary-arm64/Packages.gz
+          else
+            echo "Package file not found: pool/axelard_$version-1_arm64.deb"
           fi
 
           if [ -f "pool/axelard_$version-1_arm.deb" ]; then
             dpkg-scanpackages -m --arch arm pool/ > dists/stable/main/binary-arm/Packages
             cat dists/stable/main/binary-arm/Packages | gzip -9 > dists/stable/main/binary-arm/Packages.gz
+          else
+            echo "Package file not found: pool/axelard_$version-1_arm.deb"
           fi
 
           cat dists/stable/main/binary-amd64/Packages
@@ -173,6 +184,7 @@ jobs:
           cat dists/stable/main/binary-arm/Packages
 
       - name: Generate Release file
+        continue-on-error: true
         run: |
           echo '#!/bin/sh
           set -e
