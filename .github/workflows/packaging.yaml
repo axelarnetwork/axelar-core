@@ -121,6 +121,11 @@ jobs:
             fi
           done
 
+      - name: List files in /home/runner/linux/ directory
+        run: |
+          ls -l /home/runner/linux/
+          ls -l /home/runner/linux/*.deb
+
       - name: Check the packages
         continue-on-error: true
         run: |
