@@ -155,7 +155,7 @@ jobs:
         continue-on-error: true
         run: |
           mkdir -p ~/axelard/apt-repo/pool/main/
-            if ls /home/runner/linux/*.deb 1> /dev/null 2>&1; then
+            if ls /home/runner/linux/*.deb; then
               cp /home/runner/linux/*.deb ~/axelard/apt-repo/pool/main/.
             fi
           
