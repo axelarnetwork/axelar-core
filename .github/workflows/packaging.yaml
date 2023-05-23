@@ -307,8 +307,6 @@ jobs:
               axelard version
               which axelard
               sudo apt-get remove -y axelard=$version
-            else
-              echo "Package not found: axelard=$version"
             fi
           done
 
