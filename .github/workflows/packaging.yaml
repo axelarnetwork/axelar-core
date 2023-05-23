@@ -169,30 +169,33 @@ jobs:
           cd ~/axelard/apt-repo
 
           for version in $(echo $MY_LIST | tr "," "\n"); do
-            if [ -f "pool/axelard_${version}-1_amd64.deb" ]; then
+            if [ -f "~/axelard/apt-repo/pool/axelard_${version}-1_amd64.deb" ]; then
+              cd ~/axelard/apt-repo
               dpkg-scanpackages -m --arch amd64 pool/ > dists/stable/main/binary-amd64/Packages
               cat dists/stable/main/binary-amd64/Packages | gzip -9 > dists/stable/main/binary-amd64/Packages.gz
             else
               echo "Package file not found: pool/axelard_${version}-1_amd64.deb"
             fi
 
-            if [ -f "pool/axelard_${version}-1_arm64.deb" ]; then
+            if [ -f "~/axelard/apt-repo/pool/axelard_${version}-1_arm64.deb" ]; then
+              cd ~/axelard/apt-repo
               dpkg-scanpackages -m --arch arm64 pool/ > dists/stable/main/binary-arm64/Packages
               cat dists/stable/main/binary-arm64/Packages | gzip -9 > dists/stable/main/binary-arm64/Packages.gz
             else
               echo "Package file not found: pool/axelard_${version}-1_arm64.deb"
             fi
 
-            if [ -f "pool/axelard_${version}-1_arm.deb" ]; then
+            if [ -f "~/axelard/apt-repo/pool/axelard_${version}-1_arm.deb" ]; then
+              cd ~/axelard/apt-repo
               dpkg-scanpackages -m --arch arm pool/ > dists/stable/main/binary-arm/Packages
               cat dists/stable/main/binary-arm/Packages | gzip -9 > dists/stable/main/binary-arm/Packages.gz
             else
               echo "Package file not found: pool/axelard_${version}-1_arm.deb"
             fi
 
-            cat dists/stable/main/binary-amd64/Packages
-            cat dists/stable/main/binary-arm64/Packages
-            cat dists/stable/main/binary-arm/Packages
+            cat ~/axelard/apt-repo/dists/stable/main/binary-amd64/Packages
+            cat ~/axelard/apt-repo/dists/stable/main/binary-arm64/Packages
+            cat ~/axelard/apt-repo/dists/stable/main/binary-arm/Packages
           done
 
       - name: Generate Release file
