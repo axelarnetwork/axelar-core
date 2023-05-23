@@ -203,18 +203,17 @@ jobs:
           echo '#!/bin/sh
           set -e
           do_hash() {
-            HASH_NAME=$1
-            HASH_CMD=$2
-            echo "${HASH_NAME}:"
-            for f in $(find -type f 2>/dev/null); do
-              f=$(echo $f | cut -c3-) # remove ./ prefix
-              if [ "$f" = "Release" ]; then
-                continue
-              fi
-              echo " $(${HASH_CMD} ${f}  | cut -d" " -f1) $(wc -c $f)"
-            done
+               HASH_NAME=$1
+               HASH_CMD=$2
+               echo "${HASH_NAME}:"
+               for f in $(find -type f); do
+                  f=$(echo $f | cut -c3-) # remove ./ prefix
+                  if [ "$f" = "Release" ]; then
+                      continue
+                  fi
+                  echo " $(${HASH_CMD} ${f}  | cut -d" " -f1) $(wc -c $f)"
+               done
           }
-
           cat << EOF
           Origin: Axelard repository
           Label: axelard
@@ -226,14 +225,13 @@ jobs:
           Description: Axelard repository
           Date: $(date -Ru)
           EOF
-
-          if [ -d ~/axelard/apt-repo/pool/main ]; then
-            do_hash "MD5Sum" "md5sum"
-            do_hash "SHA1" "sha1sum"
-            do_hash "SHA256" "sha256sum"
-          else
-            echo "No files found in ~/axelard/apt-repo/pool/main directory."
-          fi
+          do_hash "MD5Sum" "md5sum"
+          do_hash "SHA1" "sha1sum"
+          do_hash "SHA256" "sha256sum"' > ~/axelard/generate-release.sh && chmod +x ~/axelard/generate-release.sh
+          sed -i "s/VERSION/$version/g" ~/axelard/generate-release.sh
+          cd ~/axelard/apt-repo/dists/stable
+          ~/axelard/generate-release.sh > Release
+          cat ~/axelard/apt-repo/dists/stable/Release
           
       - name: Import GPG key
         id: import_gpg
