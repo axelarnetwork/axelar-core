@@ -25,6 +25,8 @@ message SetGatewayRequest {
 message SetGatewayResponse {}
 
 message ConfirmGatewayTxRequest {
+  option deprecated = true;
+
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
@@ -38,7 +40,23 @@ message ConfirmGatewayTxRequest {
   ];
 }
 
-message ConfirmGatewayTxResponse {}
+message ConfirmGatewayTxResponse { option deprecated = true; }
+
+message ConfirmGatewayTxsRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
+  bytes sender = 1 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  repeated bytes tx_ids = 3 [
+    (gogoproto.nullable) = false,
+    (gogoproto.customtype) = "Hash",
+    (gogoproto.customname) = "TxIDs"
+  ];
+}
+
+message ConfirmGatewayTxsResponse {}
 
 // MsgConfirmDeposit represents an erc20 deposit confirmation message
 message ConfirmDepositRequest {

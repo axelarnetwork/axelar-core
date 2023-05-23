@@ -94,6 +94,8 @@ message ConfirmKeyTransferStarted {
 }
 
 message ConfirmGatewayTxStarted {
+  option deprecated = true;
+
   bytes tx_id = 1 [
     (gogoproto.nullable) = false,
     (gogoproto.customtype) = "Hash",
@@ -107,6 +109,36 @@ message ConfirmGatewayTxStarted {
   uint64 confirmation_height = 4;
   vote.exported.v1beta1.PollParticipants participants = 5
       [ (gogoproto.nullable) = false, (gogoproto.embed) = true ];
+}
+
+message PollMapping {
+  bytes tx_id = 1 [
+    (gogoproto.nullable) = false,
+    (gogoproto.customtype) = "Hash",
+    (gogoproto.customname) = "TxID"
+  ];
+  uint64 poll_id = 2 [
+    (gogoproto.nullable) = false,
+    (gogoproto.customname) = "PollID",
+    (gogoproto.customtype) =
+        "github.com/axelarnetwork/axelar-core/x/vote/exported.PollID"
+  ];
+}
+
+message ConfirmGatewayTxsStarted {
+  repeated PollMapping poll_mappings = 1 [
+    (gogoproto.nullable) = false,
+    (gogoproto.jsontag) = "poll_mappings,omitempty"
+  ];
+  string chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  bytes gateway_address = 3
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+  uint64 confirmation_height = 4;
+  repeated bytes participants = 5
+      [ (gogoproto.casttype) =
+            "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
 }
 
 message ConfirmDepositStarted {
