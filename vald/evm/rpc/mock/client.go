@@ -34,6 +34,9 @@ var _ rpc.Client = &ClientMock{}
 //			TransactionReceiptFunc: func(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {
 //				panic("mock out the TransactionReceipt method")
 //			},
+//			TransactionReceiptsFunc: func(ctx context.Context, txHashes []common.Hash) ([]rpc.ReceiptResult, error) {
+//				panic("mock out the TransactionReceipts method")
+//			},
 //		}
 //
 //		// use mockedClient in code that requires rpc.Client
@@ -52,6 +55,9 @@ type ClientMock struct {
 
 	// TransactionReceiptFunc mocks the TransactionReceipt method.
 	TransactionReceiptFunc func(ctx context.Context, txHash common.Hash) (*types.Receipt, error)
+
+	// TransactionReceiptsFunc mocks the TransactionReceipts method.
+	TransactionReceiptsFunc func(ctx context.Context, txHashes []common.Hash) ([]rpc.ReceiptResult, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -79,11 +85,19 @@ type ClientMock struct {
 			// TxHash is the txHash argument value.
 			TxHash common.Hash
 		}
+		// TransactionReceipts holds details about calls to the TransactionReceipts method.
+		TransactionReceipts []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// TxHashes is the txHashes argument value.
+			TxHashes []common.Hash
+		}
 	}
 	lockClose                      sync.RWMutex
 	lockHeaderByNumber             sync.RWMutex
 	lockLatestFinalizedBlockNumber sync.RWMutex
 	lockTransactionReceipt         sync.RWMutex
+	lockTransactionReceipts        sync.RWMutex
 }
 
 // Close calls CloseFunc.
@@ -218,5 +232,41 @@ func (mock *ClientMock) TransactionReceiptCalls() []struct {
 	mock.lockTransactionReceipt.RLock()
 	calls = mock.calls.TransactionReceipt
 	mock.lockTransactionReceipt.RUnlock()
+	return calls
+}
+
+// TransactionReceipts calls TransactionReceiptsFunc.
+func (mock *ClientMock) TransactionReceipts(ctx context.Context, txHashes []common.Hash) ([]rpc.ReceiptResult, error) {
+	if mock.TransactionReceiptsFunc == nil {
+		panic("ClientMock.TransactionReceiptsFunc: method is nil but Client.TransactionReceipts was just called")
+	}
+	callInfo := struct {
+		Ctx      context.Context
+		TxHashes []common.Hash
+	}{
+		Ctx:      ctx,
+		TxHashes: txHashes,
+	}
+	mock.lockTransactionReceipts.Lock()
+	mock.calls.TransactionReceipts = append(mock.calls.TransactionReceipts, callInfo)
+	mock.lockTransactionReceipts.Unlock()
+	return mock.TransactionReceiptsFunc(ctx, txHashes)
+}
+
+// TransactionReceiptsCalls gets all the calls that were made to TransactionReceipts.
+// Check the length with:
+//
+//	len(mockedClient.TransactionReceiptsCalls())
+func (mock *ClientMock) TransactionReceiptsCalls() []struct {
+	Ctx      context.Context
+	TxHashes []common.Hash
+} {
+	var calls []struct {
+		Ctx      context.Context
+		TxHashes []common.Hash
+	}
+	mock.lockTransactionReceipts.RLock()
+	calls = mock.calls.TransactionReceipts
+	mock.lockTransactionReceipts.RUnlock()
 	return calls
 }

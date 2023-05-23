@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -9,6 +10,10 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/rpc"
+
+	"github.com/axelarnetwork/utils/monads/results"
+	"github.com/axelarnetwork/utils/slices"
 )
 
 //go:generate moq -out ./mock/ethereum.go -pkg mock . EthereumJSONRPCClient JSONRPCClient
@@ -25,6 +30,7 @@ type EthereumJSONRPCClient interface {
 // JSONRPCClient represents the functionality of github.com/ethereum/go-ethereum/rpc.Client
 type JSONRPCClient interface {
 	CallContext(ctx context.Context, result interface{}, method string, args ...interface{}) error
+	BatchCallContext(ctx context.Context, b []rpc.BatchElem) error
 }
 
 // EthereumClient is a JSON-RPC client of any Ethereum-compact chains
@@ -66,6 +72,29 @@ func (c *EthereumClient) LatestFinalizedBlockNumber(ctx context.Context, confirm
 	}
 
 	return sdk.NewIntFromUint64(blockNumber).SubRaw(int64(confirmations)).AddRaw(1).BigInt(), nil
+}
+
+func (c *EthereumClient) TransactionReceipts(ctx context.Context, txHashes []common.Hash) ([]ReceiptResult, error) {
+	batch := slices.Map(txHashes, func(txHash common.Hash) rpc.BatchElem {
+		var receipt types.Receipt
+		return rpc.BatchElem{
+			Method: "eth_getTransactionReceipt",
+			Args:   []interface{}{txHash},
+			Result: &receipt,
+		}
+	})
+
+	if err := c.rpc.BatchCallContext(ctx, batch); err != nil {
+		return nil, fmt.Errorf("unable to send batch request: %v", err)
+	}
+
+	return slices.Map(batch, func(elem rpc.BatchElem) ReceiptResult {
+		if elem.Error != nil {
+			return ReceiptResult(results.FromErr[*types.Receipt](elem.Error))
+		}
+		return ReceiptResult(results.FromOk(elem.Result.(*types.Receipt)))
+	}), nil
+
 }
 
 // copied from https://github.com/ethereum/go-ethereum/blob/69568c554880b3567bace64f8848ff1be27d084d/ethclient/ethclient.go#L565

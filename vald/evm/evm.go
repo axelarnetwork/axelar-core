@@ -23,6 +23,7 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 	"github.com/axelarnetwork/utils/funcs"
+	rs "github.com/axelarnetwork/utils/monads/results"
 	"github.com/axelarnetwork/utils/slices"
 )
 
@@ -259,79 +260,49 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(event *types.ConfirmGatewayTxStarted
 		return err
 	}
 
-	var events []types.Event
-	for i, log := range txReceipt.Logs {
-		if !bytes.Equal(event.GatewayAddress.Bytes(), log.Address.Bytes()) {
-			continue
-		}
-
-		switch log.Topics[0] {
-		case ContractCallSig:
-			gatewayEvent, err := DecodeEventContractCall(log)
-			if err != nil {
-				mgr.logger.Debug(sdkerrors.Wrap(err, "decode event ContractCall failed").Error())
-				continue
-			}
-
-			if err := gatewayEvent.ValidateBasic(); err != nil {
-				mgr.logger.Debug(sdkerrors.Wrap(err, "invalid event ContractCall").Error())
-				continue
-			}
-
-			events = append(events, types.Event{
-				Chain: event.Chain,
-				TxID:  event.TxID,
-				Index: uint64(i),
-				Event: &types.Event_ContractCall{
-					ContractCall: &gatewayEvent,
-				},
-			})
-		case ContractCallWithTokenSig:
-			gatewayEvent, err := DecodeEventContractCallWithToken(log)
-			if err != nil {
-				mgr.logger.Debug(sdkerrors.Wrap(err, "decode event ContractCallWithToken failed").Error())
-				continue
-			}
-
-			if err := gatewayEvent.ValidateBasic(); err != nil {
-				mgr.logger.Debug(sdkerrors.Wrap(err, "invalid event ContractCallWithToken").Error())
-				continue
-			}
-
-			events = append(events, types.Event{
-				Chain: event.Chain,
-				TxID:  event.TxID,
-				Index: uint64(i),
-				Event: &types.Event_ContractCallWithToken{
-					ContractCallWithToken: &gatewayEvent,
-				},
-			})
-		case TokenSentSig:
-			gatewayEvent, err := DecodeEventTokenSent(log)
-			if err != nil {
-				mgr.logger.Debug(sdkerrors.Wrap(err, "decode event TokenSent failed").Error())
-			}
-
-			if err := gatewayEvent.ValidateBasic(); err != nil {
-				mgr.logger.Debug(sdkerrors.Wrap(err, "invalid event TokenSent").Error())
-				continue
-			}
-
-			events = append(events, types.Event{
-				Chain: event.Chain,
-				TxID:  event.TxID,
-				Index: uint64(i),
-				Event: &types.Event_TokenSent{
-					TokenSent: &gatewayEvent,
-				},
-			})
-		default:
-		}
-	}
-
+	events := processGatewayTxLogs(mgr.logger, event.Chain, event.GatewayAddress, txReceipt.Logs)
 	mgr.logger.Info(fmt.Sprintf("broadcasting vote %v for poll %s", events, event.PollID.String()))
 	_, err = mgr.broadcaster.Broadcast(context.TODO(), voteTypes.NewVoteRequest(mgr.proxy, event.PollID, types.NewVoteEvents(event.Chain, events...)))
 
+	return err
+}
+
+// ProcessGatewayTxsConfirmation votes on the correctness of an EVM chain gateway's transactions
+func (mgr Mgr) ProcessGatewayTxsConfirmation(event *types.ConfirmGatewayTxsStarted) error {
+	if !slices.Any(event.Participants, func(v sdk.ValAddress) bool { return v.Equals(mgr.validator) }) {
+		mgr.logger.Debug("ignoring gateway txs confirmation polls: not a participant", "polls", event.PollMappings)
+		return nil
+	}
+
+	txIDs := slices.Map(event.PollMappings, func(poll types.PollMapping) common.Hash { return common.Hash(poll.TxID) })
+	txReceipts, err := mgr.GetTxReceiptsIfFinalized(event.Chain, txIDs, event.ConfirmationHeight)
+	if err != nil {
+		return err
+	}
+
+	votes := make([]sdk.Msg, len(txReceipts))
+	for i, result := range txReceipts {
+		pollID := event.PollMappings[i].PollID
+		txID := event.PollMappings[i].TxID
+
+		keyvals := []interface{}{"chain", event.Chain, "poll_id", pollID.String(), "tx_id", txID.Hex()}
+
+		if result.Err() != nil {
+			mgr.logger.Info(fmt.Sprintf("broadcasting empty vote due to error: %s", result.Err().Error()), keyvals...)
+			votes[i] = voteTypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain))
+		}
+
+		receipt := result.Ok()
+		if receipt == nil {
+			continue
+		}
+
+		events := processGatewayTxLogs(mgr.logger, event.Chain, event.GatewayAddress, receipt.Logs)
+		mgr.logger.Info(fmt.Sprintf("broadcasting vote %v", events), keyvals...)
+		votes[i] = voteTypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain, events...))
+	}
+
+	_, err = mgr.broadcaster.Broadcast(context.TODO(), votes...)
 	return err
 }
 
@@ -494,6 +465,41 @@ func (mgr Mgr) GetTxReceiptIfFinalized(chain nexus.ChainName, txID common.Hash, 
 	return txReceipt, nil
 }
 
+func (mgr Mgr) GetTxReceiptsIfFinalized(chain nexus.ChainName, txIDs []common.Hash, confHeight uint64) ([]rs.Result[*geth.Receipt], error) {
+	client, ok := mgr.rpcs[strings.ToLower(chain.String())]
+	if !ok {
+		return nil, fmt.Errorf("rpc client not found for chain %s", chain.String())
+	}
+
+	keyvals := []interface{}{"chain", chain.String()}
+
+	results, err := client.TransactionReceipts(context.Background(), txIDs)
+	if err != nil {
+		return nil, sdkerrors.Wrapf(errors.With(err, keyvals...), "cannot get transaction receipts")
+	}
+
+	isFinalized := func(r *geth.Receipt) rs.Result[*geth.Receipt] {
+		isFinalized, err := mgr.isTxReceiptFinalized(chain, r, confHeight)
+
+		if err != nil {
+			return rs.FromErr[*geth.Receipt](sdkerrors.Wrapf(errors.With(err, keyvals...),
+				"cannot determine if the transaction %s is finalized", r.TxHash.Hex()),
+			)
+		}
+
+		if !isFinalized {
+			return rs.FromErr[*geth.Receipt](fmt.Errorf("transaction %s not finalized", r.TxHash.Hex()))
+		}
+
+		return rs.FromOk(r)
+	}
+
+	return slices.Map(results, func(r rpc.ReceiptResult) rs.Result[*geth.Receipt] {
+		return rs.Pipe(rs.Result[*geth.Receipt](r), isFinalized)
+	}), nil
+
+}
+
 func DecodeERC20TransferEvent(log *geth.Log) (types.EventTransfer, error) {
 	if len(log.Topics) != 3 || log.Topics[0] != ERC20TransferSig {
 		return types.EventTransfer{}, fmt.Errorf("log is not an ERC20 transfer")
@@ -585,4 +591,79 @@ func unpackMultisigTransferKeyEvent(log *geth.Log) ([]common.Address, []*big.Int
 	}
 
 	return params[0].([]common.Address), params[1].([]*big.Int), params[2].(*big.Int), nil
+}
+
+// extract receipt processing from ProcessGatewayTxConfirmation, so that it can be used in ProcessGatewayTxsConfirmation
+func processGatewayTxLogs(logger tmLog.Logger, chain nexus.ChainName, gatewayAddress types.Address, logs []*geth.Log) []types.Event {
+	var events []types.Event
+	for i, log := range logs {
+		if !bytes.Equal(gatewayAddress.Bytes(), log.Address.Bytes()) {
+			continue
+		}
+
+		switch log.Topics[0] {
+		case ContractCallSig:
+			gatewayEvent, err := DecodeEventContractCall(log)
+			if err != nil {
+				logger.Debug(sdkerrors.Wrap(err, "decode event ContractCall failed").Error())
+				continue
+			}
+
+			if err := gatewayEvent.ValidateBasic(); err != nil {
+				logger.Debug(sdkerrors.Wrap(err, "invalid event ContractCall").Error())
+				continue
+			}
+
+			events = append(events, types.Event{
+				Chain: chain,
+				TxID:  types.Hash(log.TxHash),
+				Index: uint64(i),
+				Event: &types.Event_ContractCall{
+					ContractCall: &gatewayEvent,
+				},
+			})
+		case ContractCallWithTokenSig:
+			gatewayEvent, err := DecodeEventContractCallWithToken(log)
+			if err != nil {
+				logger.Debug(sdkerrors.Wrap(err, "decode event ContractCallWithToken failed").Error())
+				continue
+			}
+
+			if err := gatewayEvent.ValidateBasic(); err != nil {
+				logger.Debug(sdkerrors.Wrap(err, "invalid event ContractCallWithToken").Error())
+				continue
+			}
+
+			events = append(events, types.Event{
+				Chain: chain,
+				TxID:  types.Hash(log.TxHash),
+				Index: uint64(i),
+				Event: &types.Event_ContractCallWithToken{
+					ContractCallWithToken: &gatewayEvent,
+				},
+			})
+		case TokenSentSig:
+			gatewayEvent, err := DecodeEventTokenSent(log)
+			if err != nil {
+				logger.Debug(sdkerrors.Wrap(err, "decode event TokenSent failed").Error())
+			}
+
+			if err := gatewayEvent.ValidateBasic(); err != nil {
+				logger.Debug(sdkerrors.Wrap(err, "invalid event TokenSent").Error())
+				continue
+			}
+
+			events = append(events, types.Event{
+				Chain: chain,
+				TxID:  types.Hash(log.TxHash),
+				Index: uint64(i),
+				Event: &types.Event_TokenSent{
+					TokenSent: &gatewayEvent,
+				},
+			})
+		default:
+		}
+	}
+
+	return events
 }
