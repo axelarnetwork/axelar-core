@@ -168,33 +168,34 @@ jobs:
           mkdir -p ~/axelard/apt-repo/dists/stable/main/binary-arm64
           mkdir -p ~/axelard/apt-repo/dists/stable/main/binary-arm
 
+          cd ~/axelard/apt-repo
+
           for version in $(echo $MY_LIST | tr "," "\n"); do
-          if [ -f ~/axelard/apt-repo/pool/axelard_${version}-1_amd64.deb ]; then
-            dpkg-scanpackages -m --arch amd64 ~/axelard/apt-repo/pool/ > ~/axelard/apt-repo/dists/stable/main/binary-amd64/Packages
-            cat ~/axelard/apt-repo/dists/stable/main/binary-amd64/Packages | gzip -9 > ~/axelard/apt-repo/dists/stable/main/binary-amd64/Packages.gz
-          else
-            echo "Package file not found: ~/axelard/apt-repo/pool/axelard_${version}-1_amd64.deb"
-          fi
+            if [ -f ~/axelard/apt-repo/pool/main/axelard_${version}-1_amd64.deb ]; then
+              dpkg-scanpackages -m --arch amd64 pool/ > dists/stable/main/binary-amd64/Packages
+              cat dists/stable/main/binary-amd64/Packages | gzip -9 > dists/stable/main/binary-amd64/Packages.gz
+            else
+              echo "Package file not found: ~/axelard/apt-repo/pool/main/axelard_${version}-1_amd64.deb"
+            fi
 
-          if [ -f ~/axelard/apt-repo/pool/axelard_${version}-1_arm64.deb ]; then
-            dpkg-scanpackages -m --arch arm64 ~/axelard/apt-repo/pool/ > ~/axelard/apt-repo/dists/stable/main/binary-arm64/Packages
-            cat ~/axelard/apt-repo/dists/stable/main/binary-arm64/Packages | gzip -9 > ~/axelard/apt-repo/dists/stable/main/binary-arm64/Packages.gz
-          else
-            echo "Package file not found: ~/axelard/apt-repo/pool/axelard_${version}-1_arm64.deb"
-          fi
+            if [ -f ~/axelard/apt-repo/pool/main/axelard_${version}-1_arm64.deb ]; then
+              dpkg-scanpackages -m --arch arm64 pool/ > dists/stable/main/binary-arm64/Packages
+              cat dists/stable/main/binary-arm64/Packages | gzip -9 > dists/stable/main/binary-arm64/Packages.gz
+            else
+              echo "Package file not found: ~/axelard/apt-repo/pool/main/axelard_${version}-1_arm64.deb"
+            fi
 
-          if [ -f ~/axelard/apt-repo/pool/axelard_${version}-1_arm.deb ]; then
-            dpkg-scanpackages -m --arch arm ~/axelard/apt-repo/pool/ > ~/axelard/apt-repo/dists/stable/main/binary-arm/Packages
-            cat ~/axelard/apt-repo/dists/stable/main/binary-arm/Packages | gzip -9 > ~/axelard/apt-repo/dists/stable/main/binary-arm/Packages.gz
-          else
-            echo "Package file not found: ~/axelard/apt-repo/pool/axelard_${version}-1_arm.deb"
-          fi
+            if [ -f ~/axelard/apt-repo/pool/main/axelard_${version}-1_arm.deb ]; then
+              dpkg-scanpackages -m --arch arm pool/ > dists/stable/main/binary-arm/Packages
+              cat dists/stable/main/binary-arm/Packages | gzip -9 > dists/stable/main/binary-arm/Packages.gz
+            else
+              echo "Package file not found: ~/axelard/apt-repo/pool/main/axelard_${version}-1_arm.deb"
+            fi
 
-          cat ~/axelard/apt-repo/dists/stable/main/binary-amd64/Packages
-          cat ~/axelard/apt-repo/dists/stable/main/binary-arm64/Packages
-          cat ~/axelard/apt-repo/dists/stable/main/binary-arm/Packages
+            cat ~/axelard/apt-repo/dists/stable/main/binary-amd64/Packages
+            cat ~/axelard/apt-repo/dists/stable/main/binary-arm64/Packages
+            cat ~/axelard/apt-repo/dists/stable/main/binary-arm/Packages
           done
-
 
       - name: Generate Release file
         continue-on-error: true
