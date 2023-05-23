@@ -1,7 +1,7 @@
 name: Package linux binaries
 
 env:
-  MY_LIST: "0.10.7,0.13.6,0.14.1,0.17.3,0.18.3,0.19.4,0.21.1,0.24.0,0.26.5,0.28.0,0.29.1,0.31.2,0.31.3,0.32.0,0.32.2,0.33.0"
+  VERSIONS_LIST: "0.10.7,0.13.6,0.14.1,0.17.3,0.18.3,0.19.4,0.21.1,0.24.0,0.26.5,0.28.0,0.29.1,0.31.2,0.31.3,0.32.0,0.32.2,0.33.0"
 
 on:
   push:
@@ -43,7 +43,7 @@ jobs:
 
       - name: Create folder structures for Linux
         run: |
-          for version in $(echo $MY_LIST | tr "," "\n"); do
+          for version in $(echo $VERSIONS_LIST | tr "," "\n"); do
           mkdir -p ~/linux/axelard_$version-1_amd64/usr/bin/
           mkdir -p ~/linux/axelard_$version-1_amd64/DEBIAN/
           mkdir -p ~/linux/axelard_$version-1_arm64/usr/bin/
@@ -54,7 +54,7 @@ jobs:
           
       - name: Get binaries
         run: |
-          for version in $(echo $MY_LIST | tr "," "\n"); do
+          for version in $(echo $VERSIONS_LIST | tr "," "\n"); do
             filename_amd64="axelard_$version-1_amd64.deb"
             filename_arm64="axelard_$version-1_arm64.deb"
             filename_arm="axelard_$version-1_arm.deb"
@@ -87,7 +87,7 @@ jobs:
       - name: Create control files
         continue-on-error: true
         run: |
-          for version in $(echo $MY_LIST | tr "," "\n"); do
+          for version in $(echo $VERSIONS_LIST | tr "," "\n"); do
           echo "Package: axelard
           Version: $version
           Maintainer: axelar <devops@axelar.network>
@@ -115,7 +115,7 @@ jobs:
         continue-on-error: true
         run: |
 
-          for version in $(echo $MY_LIST | tr "," "\n"); do
+          for version in $(echo $VERSIONS_LIST | tr "," "\n"); do
             filename_amd64="axelard_$version-1_amd64.deb"
             filename_arm64="axelard_$version-1_arm64.deb"
             filename_arm="axelard_$version-1_arm.deb"
@@ -151,7 +151,7 @@ jobs:
         continue-on-error: true
         run: |
 
-          for version in $(echo $MY_LIST | tr "," "\n"); do
+          for version in $(echo $VERSIONS_LIST | tr "," "\n"); do
             file_amd64="/home/runner/linux/axelard_$version-1_amd64.deb"
             file_arm64="/home/runner/linux/axelard_$version-1_arm64.deb"
             file_arm="/home/runner/linux/axelard_$version-1_arm.deb"
@@ -190,7 +190,7 @@ jobs:
 
           cd ~/axelard/apt-repo
 
-          for version in $(echo $MY_LIST | tr "," "\n"); do
+          for version in $(echo $VERSIONS_LIST | tr "," "\n"); do
             if [ -f ~/axelard/apt-repo/pool/main/axelard_${version}-1_amd64.deb ]; then
               dpkg-scanpackages -m --arch amd64 pool/ > dists/stable/main/binary-amd64/Packages
               cat dists/stable/main/binary-amd64/Packages | gzip -9 > dists/stable/main/binary-amd64/Packages.gz
@@ -280,7 +280,7 @@ jobs:
           aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static  --key axelard/apt-repo/dists/stable/main/binary-arm/Packages --body axelard/apt-repo/dists/stable/main/binary-arm/Packages
           aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static  --key axelard/apt-repo/dists/stable/Release --body axelard/apt-repo/dists/stable/Release
           aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static  --key axelard/apt-repo/dists/stable/Release.gpg --body axelard/apt-repo/dists/stable/Release.gpg
-          for version in $(echo $MY_LIST | tr "," "\n"); do
+          for version in $(echo $VERSIONS_LIST | tr "," "\n"); do
             for arch in amd64 arm64 arm; do
               key="axelard/apt-repo/pool/main/axelard_$version-1_$arch.deb"
               if ! aws s3api head-object --bucket axelar-static --key "$key" --endpoint-url ${{ secrets.S3_BIN }} > /dev/null 2>&1; then
@@ -302,7 +302,7 @@ jobs:
           sudo apt-get clean
           sudo apt-get update 
           sudo apt list --all-versions axelard
-          for version in $(echo $MY_LIST | tr "," "\n"); do
+          for version in $(echo $VERSIONS_LIST | tr "," "\n"); do
             if sudo apt-get install -y axelard=$version; then
               axelard version
               which axelard
