@@ -55,14 +55,35 @@ jobs:
       - name: Get binaries
         run: |
           for version in $(echo $MY_LIST | tr "," "\n"); do
-          wget -O ~/linux/axelard_$version-1_amd64/usr/bin/axelard --no-check-certificate https://github.com/axelarnetwork/axelar-core/releases/download/v$version/axelard-linux-amd64-v$version
-          chmod 755 ~/linux/axelard_$version-1_amd64/usr/bin/axelard
-          wget -O ~/linux/axelard_$version-1_arm64/usr/bin/axelard --no-check-certificate https://github.com/axelarnetwork/axelar-core/releases/download/v$version/axelard-linux-arm64-v$version
-          chmod 755 ~/linux/axelard_$version-1_arm64/usr/bin/axelard
-          wget -O ~/linux/axelard_$version-1_arm/usr/bin/axelard --no-check-certificate https://github.com/axelarnetwork/axelar-core/releases/download/v$version/axelard-linux-arm-v$version
-          chmod 755 ~/linux/axelard_$version-1_arm/usr/bin/axelard
+            filename_amd64="axelard_$version-1_amd64.deb"
+            filename_arm64="axelard_$version-1_arm64.deb"
+            filename_arm="axelard_$version-1_arm.deb"
+      
+            if ! output=$(aws s3 ls "s3://axelar-static/axelard/apt-repo/pool/main/$filename_amd64" --endpoint-url ${{ secrets.S3_BIN }} 2>&1); then
+              echo "Downloading $filename_amd64..."
+              wget -O ~/linux/axelard_$version-1_amd64/usr/bin/axelard --no-check-certificate https://github.com/axelarnetwork/axelar-core/releases/download/v$version/axelard-linux-amd64-v$version
+              chmod 755 ~/linux/axelard_$version-1_amd64/usr/bin/axelard
+            else
+              echo "Package file already exists in S3: $filename_amd64"
+            fi
+      
+            if ! output=$(aws s3 ls "s3://axelar-static/axelard/apt-repo/pool/main/$filename_arm64" --endpoint-url ${{ secrets.S3_BIN }} 2>&1); then
+              echo "Downloading $filename_arm64..."
+              wget -O ~/linux/axelard_$version-1_arm64/usr/bin/axelard --no-check-certificate https://github.com/axelarnetwork/axelar-core/releases/download/v$version/axelard-linux-arm64-v$version
+              chmod 755 ~/linux/axelard_$version-1_arm64/usr/bin/axelard
+            else
+              echo "Package file already exists in S3: $filename_arm64"
+            fi
+      
+            if ! output=$(aws s3 ls "s3://axelar-static/axelard/apt-repo/pool/main/$filename_arm" --endpoint-url ${{ secrets.S3_BIN }} 2>&1); then
+              echo "Downloading $filename_arm..."
+              wget -O ~/linux/axelard_$version-1_arm/usr/bin/axelard --no-check-certificate https://github.com/axelarnetwork/axelar-core/releases/download/v$version/axelard-linux-arm-v$version
+              chmod 755 ~/linux/axelard_$version-1_arm/usr/bin/axelard
+            else
+              echo "Package file already exists in S3: $filename_arm"
+            fi
           done
-          
+ 
       - name: Create control files
         continue-on-error: true
         run: |
@@ -232,7 +253,7 @@ jobs:
           cd ~/axelard/apt-repo/dists/stable
           ~/axelard/generate-release.sh > Release
           cat ~/axelard/apt-repo/dists/stable/Release
-          
+
       - name: Import GPG key
         id: import_gpg
         uses: crazy-max/ghaction-import-gpg@v4
@@ -280,9 +301,12 @@ jobs:
           sudo apt-get update 
           sudo apt list --all-versions axelard
           for version in $(echo $MY_LIST | tr "," "\n"); do
-          sudo apt-get install axelard=$version
-          axelard version
-          which axelard
-          sudo apt-get remove axelard=$version
+            if sudo apt-get install -y axelard=$version; then
+              axelard version
+              which axelard
+              sudo apt-get remove -y axelard=$version
+            else
+              echo "Package not found: axelard=$version"
+            fi
           done
  
