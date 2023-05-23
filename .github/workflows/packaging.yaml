@@ -102,19 +102,25 @@ jobs:
             if ! output=$(aws s3 ls "s3://axelar-static/axelard/apt-repo/pool/main/$filename_amd64" --endpoint-url ${{ secrets.S3_BIN }} 2>&1); then
               echo "Failed to list file in S3: $output"
               dpkg --build ~/linux/axelard_$version-1_amd64
+            else
+              echo "Package file already exists in S3: $filename_amd64"
             fi
 
             if ! output=$(aws s3 ls "s3://axelar-static/axelard/apt-repo/pool/main/$filename_arm64" --endpoint-url ${{ secrets.S3_BIN }} 2>&1); then
               echo "Failed to list file in S3: $output"
               dpkg --build ~/linux/axelard_$version-1_arm64
+            else
+              echo "Package file already exists in S3: $filename_arm64"
             fi
 
             if ! output=$(aws s3 ls "s3://axelar-static/axelard/apt-repo/pool/main/$filename_arm" --endpoint-url ${{ secrets.S3_BIN }} 2>&1); then
               echo "Failed to list file in S3: $output"
               dpkg --build ~/linux/axelard_$version-1_arm
+            else
+              echo "Package file already exists in S3: $filename_arm"
             fi
           done
-          
+
       - name: Check the packages
         continue-on-error: true
         run: |
@@ -183,7 +189,6 @@ jobs:
             cat dists/stable/main/binary-arm64/Packages
             cat dists/stable/main/binary-arm/Packages
           done
-
 
       - name: Generate Release file
         continue-on-error: true
