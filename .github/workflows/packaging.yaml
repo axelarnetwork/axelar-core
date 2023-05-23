@@ -131,9 +131,9 @@ jobs:
         run: |
 
           for version in $(echo $MY_LIST | tr "," "\n"); do
-            file_amd64="~/linux/axelard_$version-1_amd64.deb"
-            file_arm64="~/linux/axelard_$version-1_arm64.deb"
-            file_arm="~/linux/axelard_$version-1_arm.deb"
+            file_amd64="/home/runner/linux/axelard_$version-1_amd64.deb"
+            file_arm64="/home/runner/linux/axelard_$version-1_arm64.deb"
+            file_arm="/home/runner/linux/axelard_$version-1_arm.deb"
   
             if [ -f $file_amd64 ]; then
               dpkg-deb --info $file_amd64
