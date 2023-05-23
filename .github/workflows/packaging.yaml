@@ -184,7 +184,6 @@ jobs:
       - name: Generate Packages files
         continue-on-error: true
         run: |
-
           mkdir -p ~/axelard/apt-repo/dists/stable/main/binary-amd64
           mkdir -p ~/axelard/apt-repo/dists/stable/main/binary-arm64
           mkdir -p ~/axelard/apt-repo/dists/stable/main/binary-arm
@@ -197,6 +196,7 @@ jobs:
               cat dists/stable/main/binary-amd64/Packages | gzip -9 > dists/stable/main/binary-amd64/Packages.gz
             else
               echo "Package file not found: ~/axelard/apt-repo/pool/main/axelard_${version}-1_amd64.deb"
+              continue
             fi
 
             if [ -f ~/axelard/apt-repo/pool/main/axelard_${version}-1_arm64.deb ]; then
@@ -204,6 +204,7 @@ jobs:
               cat dists/stable/main/binary-arm64/Packages | gzip -9 > dists/stable/main/binary-arm64/Packages.gz
             else
               echo "Package file not found: ~/axelard/apt-repo/pool/main/axelard_${version}-1_arm64.deb"
+              continue
             fi
 
             if [ -f ~/axelard/apt-repo/pool/main/axelard_${version}-1_arm.deb ]; then
@@ -211,12 +212,14 @@ jobs:
               cat dists/stable/main/binary-arm/Packages | gzip -9 > dists/stable/main/binary-arm/Packages.gz
             else
               echo "Package file not found: ~/axelard/apt-repo/pool/main/axelard_${version}-1_arm.deb"
+              continue
             fi
 
             cat ~/axelard/apt-repo/dists/stable/main/binary-amd64/Packages
             cat ~/axelard/apt-repo/dists/stable/main/binary-arm64/Packages
             cat ~/axelard/apt-repo/dists/stable/main/binary-arm/Packages
           done
+
 
       - name: Generate Release file
         continue-on-error: true
