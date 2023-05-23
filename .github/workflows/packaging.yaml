@@ -158,6 +158,7 @@ jobs:
             if ls /home/runner/linux/*.deb; then
               cp /home/runner/linux/*.deb ~/axelard/apt-repo/pool/main/.
             fi
+          ls -l ~/axelard/apt-repo/pool/main/
           
       - name: Generate Packages files
         continue-on-error: true
