@@ -142,7 +142,7 @@ func (s msgServer) ConfirmGatewayTxs(c context.Context, req *types.ConfirmGatewa
 		return nil, fmt.Errorf("axelar gateway address not set")
 	}
 
-	snapshot, err := s.createSnapshot(ctx, chain)
+	snapshot, err := s.CreateSnapshot(ctx, chain)
 	if err != nil {
 		return nil, err
 	}
@@ -867,7 +867,7 @@ func (s msgServer) RetryFailedEvent(c context.Context, req *types.RetryFailedEve
 	return &types.RetryFailedEventResponse{}, nil
 }
 
-func (s msgServer) createSnapshot(ctx sdk.Context, chain nexus.Chain) (snapshot.Snapshot, error) {
+func (s msgServer) CreateSnapshot(ctx sdk.Context, chain nexus.Chain) (snapshot.Snapshot, error) {
 	keeper, err := s.ForChain(ctx, chain.Name)
 	if err != nil {
 		return snapshot.Snapshot{}, err
@@ -890,7 +890,7 @@ func (s msgServer) initializePoll(ctx sdk.Context, chain nexus.Chain, txID types
 	}
 
 	params := keeper.GetParams(ctx)
-	snap, err := s.createSnapshot(ctx, chain)
+	snap, err := s.CreateSnapshot(ctx, chain)
 	if err != nil {
 		return vote.PollParticipants{}, err
 	}
