@@ -82,8 +82,7 @@ jobs:
                   Maintainer: axelar <devops@axelar.network>
                   Architecture: $arch
                   Homepage: https://axelar.network
-                  Description: axelard binary for Linux $arch" \
-                  > ~/linux/axelard_${version}-1_${arch}/DEBIAN/control
+                  Description: axelard binary for Linux $arch" > ~/linux/axelard_${version}-1_${arch}/DEBIAN/control
               done
           done
         
@@ -107,6 +106,7 @@ jobs:
           done
 
       - name: List files in /home/runner/linux/ directory
+        continue-on-error: true
         run: |
           ls -l /home/runner/linux/
           ls -l /home/runner/linux/*.deb
