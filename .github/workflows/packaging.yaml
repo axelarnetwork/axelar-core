@@ -77,18 +77,18 @@ jobs:
           for version in $(echo $VERSIONS_LIST | tr "," "\n"); do
             architectures=("amd64" "arm64" "arm")
             descriptions=("amd64" "arm64" "arm")
-  
+
             for i in "${!architectures[@]}"; do
               architecture="${architectures[$i]}"
               description="${descriptions[$i]}"
-    
+
               echo "Package: axelard
-              Version: $version
-              Maintainer: axelar <devops@axelar.network>
-              Architecture: $architecture
-              Homepage: https://axelar.network
-              Description: axelard binary for Linux $description" \
-              > "~/linux/axelard_$version-1_$architecture/DEBIAN/control"
+          Version: $version
+          Maintainer: axelar <devops@axelar.network>
+          Architecture: $architecture
+          Homepage: https://axelar.network
+          Description: axelard binary for Linux $description" \
+              > "$HOME/linux/axelard_$version-1_$architecture/DEBIAN/control"
             done
           done
 
