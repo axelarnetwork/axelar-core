@@ -53,64 +53,45 @@ jobs:
           done
          
       - name: Get binaries
+        continue-on-error: true
         run: |
           for version in $(echo $VERSIONS_LIST | tr "," "\n"); do
-            filename_amd64="axelard_$version-1_amd64.deb"
-            filename_arm64="axelard_$version-1_arm64.deb"
-            filename_arm="axelard_$version-1_arm.deb"
-     
-            if ! output=$(aws s3 ls "s3://axelar-static/axelard/apt-repo/pool/main/$filename_amd64" --endpoint-url ${{ secrets.S3_BIN }} 2>&1); then
-              echo "Downloading $filename_amd64..."
-              wget -O ~/linux/axelard_$version-1_amd64/usr/bin/axelard --no-check-certificate https://github.com/axelarnetwork/axelar-core/releases/download/v$version/axelard-linux-amd64-v$version
-              chmod 755 ~/linux/axelard_$version-1_amd64/usr/bin/axelard
-            else
-              echo "Package file already exists in S3: $filename_amd64"
-            fi
-     
-            if ! output=$(aws s3 ls "s3://axelar-static/axelard/apt-repo/pool/main/$filename_arm64" --endpoint-url ${{ secrets.S3_BIN }} 2>&1); then
-              echo "Downloading $filename_arm64..."
-              wget -O ~/linux/axelard_$version-1_arm64/usr/bin/axelard --no-check-certificate https://github.com/axelarnetwork/axelar-core/releases/download/v$version/axelard-linux-arm64-v$version
-              chmod 755 ~/linux/axelard_$version-1_arm64/usr/bin/axelard
-            else
-              echo "Package file already exists in S3: $filename_arm64"
-            fi
-     
-            if ! output=$(aws s3 ls "s3://axelar-static/axelard/apt-repo/pool/main/$filename_arm" --endpoint-url ${{ secrets.S3_BIN }} 2>&1); then
-              echo "Downloading $filename_arm..."
-              wget -O ~/linux/axelard_$version-1_arm/usr/bin/axelard --no-check-certificate https://github.com/axelarnetwork/axelar-core/releases/download/v$version/axelard-linux-arm-v$version
-              chmod 755 ~/linux/axelard_$version-1_arm/usr/bin/axelard
-            else
-              echo "Package file already exists in S3: $filename_arm"
-            fi
+            architectures=("amd64" "arm64" "arm")
+  
+            for arch in "${architectures[@]}"; do
+              filename="axelard_$version-1_$arch.deb"
+    
+              if ! output=$(aws s3 ls "s3://axelar-static/axelard/apt-repo/pool/main/$filename" --endpoint-url ${{ secrets.S3_BIN }} 2>&1); then
+                echo "Downloading $filename..."
+                wget -O "~/linux/axelard_$version-1_$arch/usr/bin/axelard" --no-check-certificate "https://github.com/axelarnetwork/axelar-core/releases/download/v$version/axelard-linux-$arch-v$version"
+                chmod 755 "~/linux/axelard_$version-1_$arch/usr/bin/axelard"
+              else
+                echo "Package file already exists in S3: $filename"
+              fi
+            done
           done
- 
+
       - name: Create control files
         continue-on-error: true
         run: |
           for version in $(echo $VERSIONS_LIST | tr "," "\n"); do
-          echo "Package: axelard
-          Version: $version
-          Maintainer: axelar <devops@axelar.network>
-          Architecture: amd64
-          Homepage: https://axelar.network
-          Description: axelard binary for Linux amd64" \
-          > ~/linux/axelard_$version-1_amd64/DEBIAN/control
-          echo "Package: axelard
-          Version: $version
-          Maintainer: axelar <devops@axelar.network>
-          Architecture: arm64
-          Homepage: https://axelar.network
-          Description: axelard binary for Linux arm64" \
-          > ~/linux/axelard_$version-1_arm64/DEBIAN/control
-          echo "Package: axelard
-          Version: $version
-          Maintainer: axelar <devops@axelar.network>
-          Architecture: arm
-          Homepage: https://axelar.network
-          Description: axelard binary for Linux arm" \
-          > ~/linux/axelard_$version-1_arm/DEBIAN/control
+            architectures=("amd64" "arm64" "arm")
+            descriptions=("amd64" "arm64" "arm")
+  
+            for i in "${!architectures[@]}"; do
+              architecture="${architectures[$i]}"
+              description="${descriptions[$i]}"
+    
+              echo "Package: axelard
+              Version: $version
+              Maintainer: axelar <devops@axelar.network>
+              Architecture: $architecture
+              Homepage: https://axelar.network
+              Description: axelard binary for Linux $description" \
+              > "~/linux/axelard_$version-1_$architecture/DEBIAN/control"
+            done
           done
-         
+
       - name: Build the packages if they don't exist on S3
         continue-on-error: true
         run: |
@@ -143,6 +124,7 @@ jobs:
           done
 
       - name: List files in /home/runner/linux/ directory
+        continue-on-error: true
         run: |
           ls -l /home/runner/linux/
           ls -l /home/runner/linux/*.deb
