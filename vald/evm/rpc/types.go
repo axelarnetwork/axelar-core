@@ -20,14 +20,6 @@ type Header struct {
 	L1BlockNumber *hexutil.Big   `json:"l1BlockNumber"`
 }
 
-// moonbeamHeader represents a block header in the Moonbeam blockchain
-type moonbeamHeader struct {
-	ParentHash     common.Hash  `json:"parentHash"       gencodec:"required"`
-	ExtrinsicsRoot common.Hash  `json:"extrinsicsRoot"   gencodec:"required"`
-	StateRoot      common.Hash  `json:"stateRoot"        gencodec:"required"`
-	Number         *hexutil.Big `json:"number"           gencodec:"required"`
-}
-
 type FinalityOverride int
 
 const (
