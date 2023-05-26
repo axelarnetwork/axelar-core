@@ -18,14 +18,14 @@ type Client interface {
 	TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error)
 	// HeaderByNumber returns the block header for the given block number
 	HeaderByNumber(ctx context.Context, number *big.Int) (*Header, error)
-	// IsFinalized determines whether or not the given transaction receipt is finalized on the chain
-	IsFinalized(ctx context.Context, conf uint64, txReceipt *types.Receipt) (bool, error)
+	// LatestFinalizedBlockNumber returns the latest finalized block number
+	LatestFinalizedBlockNumber(ctx context.Context, confirmations uint64) (*big.Int, error)
 	// Close closes the client connection
 	Close()
 }
 
 // NewClient returns an EVM JSON-RPC client
-func NewClient(url string) (Client, error) {
+func NewClient(url string, override FinalityOverride) (Client, error) {
 	rpc, err := rpc.DialContext(context.Background(), url)
 	if err != nil {
 		return nil, err
@@ -34,6 +34,10 @@ func NewClient(url string) (Client, error) {
 	ethereumClient, err := NewEthereumClient(ethclient.NewClient(rpc), rpc)
 	if err != nil {
 		return nil, err
+	}
+
+	if override == Confirmation {
+		return ethereumClient, nil
 	}
 
 	if moonbeamClient, err := NewMoonbeamClient(ethereumClient); err == nil {

@@ -192,6 +192,7 @@
     - [CommandBatchSigned](#axelar.evm.v1beta1.CommandBatchSigned)
     - [ConfirmDepositStarted](#axelar.evm.v1beta1.ConfirmDepositStarted)
     - [ConfirmGatewayTxStarted](#axelar.evm.v1beta1.ConfirmGatewayTxStarted)
+    - [ConfirmGatewayTxsStarted](#axelar.evm.v1beta1.ConfirmGatewayTxsStarted)
     - [ConfirmKeyTransferStarted](#axelar.evm.v1beta1.ConfirmKeyTransferStarted)
     - [ConfirmTokenStarted](#axelar.evm.v1beta1.ConfirmTokenStarted)
     - [ContractCallApproved](#axelar.evm.v1beta1.ContractCallApproved)
@@ -206,6 +207,7 @@
     - [PollCompleted](#axelar.evm.v1beta1.PollCompleted)
     - [PollExpired](#axelar.evm.v1beta1.PollExpired)
     - [PollFailed](#axelar.evm.v1beta1.PollFailed)
+    - [PollMapping](#axelar.evm.v1beta1.PollMapping)
     - [TokenSent](#axelar.evm.v1beta1.TokenSent)
   
 - [axelar/evm/v1beta1/params.proto](#axelar/evm/v1beta1/params.proto)
@@ -264,6 +266,8 @@
     - [ConfirmDepositResponse](#axelar.evm.v1beta1.ConfirmDepositResponse)
     - [ConfirmGatewayTxRequest](#axelar.evm.v1beta1.ConfirmGatewayTxRequest)
     - [ConfirmGatewayTxResponse](#axelar.evm.v1beta1.ConfirmGatewayTxResponse)
+    - [ConfirmGatewayTxsRequest](#axelar.evm.v1beta1.ConfirmGatewayTxsRequest)
+    - [ConfirmGatewayTxsResponse](#axelar.evm.v1beta1.ConfirmGatewayTxsResponse)
     - [ConfirmTokenRequest](#axelar.evm.v1beta1.ConfirmTokenRequest)
     - [ConfirmTokenResponse](#axelar.evm.v1beta1.ConfirmTokenResponse)
     - [ConfirmTransferKeyRequest](#axelar.evm.v1beta1.ConfirmTransferKeyRequest)
@@ -3180,6 +3184,25 @@ TransferKey contains information for a transfer operatorship
 
 
 
+<a name="axelar.evm.v1beta1.ConfirmGatewayTxsStarted"></a>
+
+### ConfirmGatewayTxsStarted
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `poll_mappings` | [PollMapping](#axelar.evm.v1beta1.PollMapping) | repeated |  |
+| `chain` | [string](#string) |  |  |
+| `gateway_address` | [bytes](#bytes) |  |  |
+| `confirmation_height` | [uint64](#uint64) |  |  |
+| `participants` | [bytes](#bytes) | repeated |  |
+
+
+
+
+
+
 <a name="axelar.evm.v1beta1.ConfirmKeyTransferStarted"></a>
 
 ### ConfirmKeyTransferStarted
@@ -3428,6 +3451,22 @@ TransferKey contains information for a transfer operatorship
 | ----- | ---- | ----- | ----------- |
 | `tx_id` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
+| `poll_id` | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.PollMapping"></a>
+
+### PollMapping
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tx_id` | [bytes](#bytes) |  |  |
 | `poll_id` | [uint64](#uint64) |  |  |
 
 
@@ -4301,6 +4340,33 @@ MsgConfirmDeposit represents an erc20 deposit confirmation message
 
 
 
+<a name="axelar.evm.v1beta1.ConfirmGatewayTxsRequest"></a>
+
+### ConfirmGatewayTxsRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
+| `tx_ids` | [bytes](#bytes) | repeated |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.ConfirmGatewayTxsResponse"></a>
+
+### ConfirmGatewayTxsResponse
+
+
+
+
+
+
+
 <a name="axelar.evm.v1beta1.ConfirmTokenRequest"></a>
 
 ### ConfirmTokenRequest
@@ -4646,7 +4712,8 @@ Msg defines the evm Msg service.
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `SetGateway` | [SetGatewayRequest](#axelar.evm.v1beta1.SetGatewayRequest) | [SetGatewayResponse](#axelar.evm.v1beta1.SetGatewayResponse) |  | POST|/axelar/evm/set_gateway|
-| `ConfirmGatewayTx` | [ConfirmGatewayTxRequest](#axelar.evm.v1beta1.ConfirmGatewayTxRequest) | [ConfirmGatewayTxResponse](#axelar.evm.v1beta1.ConfirmGatewayTxResponse) |  | POST|/axelar/evm/confirm_gateway_tx|
+| `ConfirmGatewayTx` | [ConfirmGatewayTxRequest](#axelar.evm.v1beta1.ConfirmGatewayTxRequest) | [ConfirmGatewayTxResponse](#axelar.evm.v1beta1.ConfirmGatewayTxResponse) | Deprecated: use ConfirmGatewayTxs instead | POST|/axelar/evm/confirm_gateway_tx|
+| `ConfirmGatewayTxs` | [ConfirmGatewayTxsRequest](#axelar.evm.v1beta1.ConfirmGatewayTxsRequest) | [ConfirmGatewayTxsResponse](#axelar.evm.v1beta1.ConfirmGatewayTxsResponse) |  | POST|/axelar/evm/confirm_gateway_txs|
 | `Link` | [LinkRequest](#axelar.evm.v1beta1.LinkRequest) | [LinkResponse](#axelar.evm.v1beta1.LinkResponse) |  | POST|/axelar/evm/link|
 | `ConfirmToken` | [ConfirmTokenRequest](#axelar.evm.v1beta1.ConfirmTokenRequest) | [ConfirmTokenResponse](#axelar.evm.v1beta1.ConfirmTokenResponse) |  | POST|/axelar/evm/confirm_token|
 | `ConfirmDeposit` | [ConfirmDepositRequest](#axelar.evm.v1beta1.ConfirmDepositRequest) | [ConfirmDepositResponse](#axelar.evm.v1beta1.ConfirmDepositResponse) |  | POST|/axelar/evm/confirm_deposit|

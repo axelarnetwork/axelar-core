@@ -28,6 +28,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
 	utilsMock "github.com/axelarnetwork/axelar-core/utils/mock"
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
@@ -42,6 +43,7 @@ import (
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/axelarnetwork/utils/funcs"
+	"github.com/axelarnetwork/utils/slices"
 	. "github.com/axelarnetwork/utils/test"
 )
 
@@ -1364,6 +1366,107 @@ func TestRetryFailedEvent(t *testing.T) {
 			assert.Len(t, contractCallQueue.EnqueueCalls(), 1)
 		}).
 		Run(t)
+}
+
+func TestHandleMsgConfirmGatewayTxs(t *testing.T) {
+	validators := slices.Expand(func(int) snapshot.Participant { return snapshot.NewParticipant(rand2.ValAddr(), sdk.OneUint()) }, 10)
+	txIDs := slices.Expand2(evmTestUtils.RandomHash, int(rand.I64Between(5, 50)))
+	req := types.NewConfirmGatewayTxsRequest(rand.AccAddr(), nexus.ChainName(rand.Str(5)), txIDs)
+
+	var (
+		ctx         sdk.Context
+		bk          *mock.BaseKeeperMock
+		ck          *mock.ChainKeeperMock
+		s           *mock.SlashingKeeperMock
+		n           *mock.NexusMock
+		snapshotter *mock.SnapshotterMock
+		v           *mock.VoterMock
+		msgServer   types.MsgServiceServer
+		pollID      vote.PollID
+	)
+
+	givenMsgServer := Given("an EVM msg server", func() {
+		ctx = rand2.Context(fake.NewMultiStore())
+
+		bk = &mock.BaseKeeperMock{
+			LoggerFunc:   func(ctx sdk.Context) log.Logger { return ctx.Logger() },
+			ForChainFunc: func(sdk.Context, nexus.ChainName) (types.ChainKeeper, error) { return nil, fmt.Errorf("unknown chain") },
+		}
+		snapshotter = &mock.SnapshotterMock{
+			CreateSnapshotFunc: func(sdk.Context, []sdk.ValAddress, func(snapshot.ValidatorI) bool, func(consensusPower sdk.Uint) sdk.Uint, utils.Threshold) (snapshot.Snapshot, error) {
+				return snapshot.NewSnapshot(ctx.BlockTime(), ctx.BlockHeight(), validators, sdk.NewUint(10)), nil
+			},
+		}
+		ck = &mock.ChainKeeperMock{
+			GetRequiredConfirmationHeightFunc: func(sdk.Context) uint64 { return 10 },
+			GetParamsFunc:                     func(sdk.Context) types.Params { return types.DefaultParams()[0] },
+		}
+		n = &mock.NexusMock{
+			GetChainMaintainersFunc: func(sdk.Context, nexus.Chain) []sdk.ValAddress {
+				return slices.Expand2(rand2.ValAddr, 10)
+			},
+		}
+		s = &mock.SlashingKeeperMock{}
+		v = &mock.VoterMock{}
+		pollID = vote.PollID(0)
+
+		msgServer = keeper.NewMsgServerImpl(bk, n, v, snapshotter, &mock.StakingKeeperMock{}, s, &mock.MultisigKeeperMock{})
+	})
+
+	whenChainIsValid := When("chain is set and activated", func() {
+		n.GetChainFunc = func(sdk.Context, nexus.ChainName) (nexus.Chain, bool) { return nexus.Chain{}, true }
+		n.IsChainActivatedFunc = func(sdk.Context, nexus.Chain) bool { return true }
+		bk.ForChainFunc = func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) { return ck, nil }
+		ck.GetGatewayAddressFunc = func(sdk.Context) (types.Address, bool) { return evmTestUtils.RandomAddress(), true }
+	})
+
+	whenSnapshotIsCreated := When("snapshot is created", func() {
+		snapshotter.GetProxyFunc = func(sdk.Context, sdk.ValAddress) (sdk.AccAddress, bool) {
+			return rand2.AccAddr(), true
+		}
+		s.IsTombstonedFunc = func(ctx sdk.Context, consAddr sdk.ConsAddress) bool { return false }
+	})
+
+	whenPollsAreInitialized := When("polls are initialized", func() {
+		v.InitializePollFunc = func(sdk.Context, vote.PollBuilder) (vote.PollID, error) {
+			pollID += 1
+			return pollID, nil
+		}
+	})
+
+	t.Run("confirm gateway txs", func(t *testing.T) {
+		givenMsgServer.Branch(
+			whenChainIsValid.
+				When("failed to create snapshot", func() {
+					snapshotter.CreateSnapshotFunc = func(sdk.Context, []sdk.ValAddress, func(snapshot.ValidatorI) bool, func(consensusPower sdk.Uint) sdk.Uint, utils.Threshold) (snapshot.Snapshot, error) {
+						return snapshot.Snapshot{}, fmt.Errorf("failed to create snapshot")
+					}
+				}).
+				Then("should return error", func(t *testing.T) {
+					_, err := msgServer.ConfirmGatewayTxs(sdk.WrapSDKContext(ctx), req)
+					assert.ErrorContains(t, err, "failed to create snapshot")
+				}),
+			whenChainIsValid.
+				When2(whenSnapshotIsCreated).
+				When("failed to initialize polls", func() {
+					v.InitializePollFunc = func(sdk.Context, vote.PollBuilder) (vote.PollID, error) {
+						return 0, fmt.Errorf("failed to initialize polls")
+					}
+				}).
+				Then("should return error", func(t *testing.T) {
+					_, err := msgServer.ConfirmGatewayTxs(sdk.WrapSDKContext(ctx), req)
+					assert.ErrorContains(t, err, "failed to initialize polls")
+				}),
+			whenChainIsValid.
+				When2(whenSnapshotIsCreated).
+				When2(whenPollsAreInitialized).
+				Then("should emit ConfirmGatewayTxsEvent", func(t *testing.T) {
+					_, err := msgServer.ConfirmGatewayTxs(sdk.WrapSDKContext(ctx), req)
+					assert.Equal(t, 1, len(ctx.EventManager().Events()))
+					assert.NoError(t, err)
+				}),
+		).Run(t)
+	})
 }
 
 func createSignedDeployTx() *evmTypes.Transaction {

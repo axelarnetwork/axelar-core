@@ -52,7 +52,9 @@ func NewHandler(k types.BaseKeeper, v types.Voter, n types.Nexus, snapshotter ty
 		case *types.ConfirmGatewayTxRequest:
 			res, err := server.ConfirmGatewayTx(sdk.WrapSDKContext(ctx), msg)
 			return sdk.WrapServiceResult(ctx, res, err)
-
+		case *types.ConfirmGatewayTxsRequest:
+			res, err := server.ConfirmGatewayTxs(sdk.WrapSDKContext(ctx), msg)
+			return sdk.WrapServiceResult(ctx, res, err)
 		case *types.CreateDeployTokenRequest:
 			res, err := server.CreateDeployToken(sdk.WrapSDKContext(ctx), msg)
 			return sdk.WrapServiceResult(ctx, res, err)
