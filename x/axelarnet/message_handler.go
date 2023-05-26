@@ -11,6 +11,7 @@ import (
 	ibcexported "github.com/cosmos/ibc-go/v4/modules/core/exported"
 	"github.com/ethereum/go-ethereum/crypto"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/events"
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
@@ -21,17 +22,38 @@ import (
 
 // Fee is used to pay relayer for executing cross chain message
 type Fee struct {
-	Amount    string `json:"amount"`
-	Recipient string `json:"recipient"`
+	Amount          string  `json:"amount"`
+	Recipient       string  `json:"recipient"`
+	RefundRecipient *string `json:"refund_recipient"`
 }
 
-func (f Fee) validate(ctx sdk.Context, n types.Nexus, b types.BankKeeper, token sdk.Coin, msgType nexus.MessageType) error {
-	amt, ok := sdk.NewIntFromString(f.Amount)
-	if !ok || amt.LTE(sdk.ZeroInt()) {
+func (f Fee) validateBasic() error {
+	amount, ok := sdk.NewIntFromString(f.Amount)
+	if !ok || !amount.IsPositive() {
 		return fmt.Errorf("invalid fee amount")
 	}
 
-	afterFee := token.Amount.Sub(amt)
+	if _, err := sdk.AccAddressFromBech32(f.Recipient); err != nil {
+		return err
+	}
+
+	if f.RefundRecipient != nil {
+		// The refund recipient is an address of the chain where the request is originally initiated from,
+		// and therefore we cannot validate much of it.
+		if err := utils.ValidateString(*f.RefundRecipient); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (f Fee) validate(ctx sdk.Context, n types.Nexus, b types.BankKeeper, token sdk.Coin, msgType nexus.MessageType) error {
+	if err := f.validateBasic(); err != nil {
+		return err
+	}
+
+	afterFee := token.Amount.Sub(funcs.MustOk(sdk.NewIntFromString(f.Amount)))
 	switch msgType {
 	case nexus.TypeGeneralMessage:
 		if afterFee.LT(sdk.ZeroInt()) {
@@ -50,12 +72,7 @@ func (f Fee) validate(ctx sdk.Context, n types.Nexus, b types.BankKeeper, token 
 		return fmt.Errorf("unregistered fee denom %s", token.GetDenom())
 	}
 
-	addr, err := sdk.AccAddressFromBech32(f.Recipient)
-	if err != nil {
-		return err
-	}
-
-	if b.BlockedAddr(addr) {
+	if b.BlockedAddr(funcs.Must(sdk.AccAddressFromBech32(f.Recipient))) {
 		return fmt.Errorf("fee recipient is a blocked address")
 	}
 
@@ -362,11 +379,15 @@ func deductFee(ctx sdk.Context, b types.BankKeeper, fee *Fee, token keeper.Coin,
 	coin := sdk.NewCoin(funcs.Must(token.GetOriginalDenom()), feeAmount)
 	recipient := funcs.Must(sdk.AccAddressFromBech32(fee.Recipient))
 
-	events.Emit(ctx, &types.FeePaid{
+	feePaidEvent := types.FeePaid{
 		MessageID: msgID,
 		Recipient: recipient,
 		Fee:       coin,
-	})
+	}
+	if fee.RefundRecipient != nil {
+		feePaidEvent.RefundRecipient = *fee.RefundRecipient
+	}
+	events.Emit(ctx, &feePaidEvent)
 
 	// subtract fee from transfer value
 	token.Amount = token.Amount.Sub(feeAmount)

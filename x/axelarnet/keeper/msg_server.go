@@ -98,11 +98,16 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 		if err != nil {
 			return nil, sdkerrors.Wrap(err, "failed to transfer fee")
 		}
-		events.Emit(ctx, &types.FeePaid{
+
+		feePaidEvent := types.FeePaid{
 			MessageID: msgID,
 			Recipient: req.Fee.Recipient,
 			Fee:       req.Fee.Amount,
-		})
+		}
+		if req.Fee.RefundRecipient != nil {
+			feePaidEvent.RefundRecipient = req.Fee.RefundRecipient.String()
+		}
+		events.Emit(ctx, &feePaidEvent)
 	}
 
 	if err := s.nexus.SetNewMessage(ctx, msg); err != nil {
