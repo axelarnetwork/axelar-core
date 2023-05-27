@@ -7,12 +7,12 @@ import "gogoproto/gogo.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
-// InflationRequest represents a message that queries the Axelar specific
-// Inflation RPC method.
-message InflationRequest {}
+// InflationRateRequest represents a message that queries the Axelar specific
+// inflation RPC method.
+message InflationRateRequest {}
 
-message InflationResponse {
-  bytes inflation = 1 [
+message InflationRateResponse {
+  bytes inflation_rate = 1 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec",
     (gogoproto.nullable) = false
   ];

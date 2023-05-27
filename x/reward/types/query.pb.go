@@ -24,23 +24,23 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-// InflationRequest represents a message that queries the Axelar specific
-// Inflation RPC method.
-type InflationRequest struct {
+// InflationRateRequest represents a message that queries the Axelar specific
+// inflation RPC method.
+type InflationRateRequest struct {
 }
 
-func (m *InflationRequest) Reset()         { *m = InflationRequest{} }
-func (m *InflationRequest) String() string { return proto.CompactTextString(m) }
-func (*InflationRequest) ProtoMessage()    {}
-func (*InflationRequest) Descriptor() ([]byte, []int) {
+func (m *InflationRateRequest) Reset()         { *m = InflationRateRequest{} }
+func (m *InflationRateRequest) String() string { return proto.CompactTextString(m) }
+func (*InflationRateRequest) ProtoMessage()    {}
+func (*InflationRateRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_ea20e5bdb695fbb5, []int{0}
 }
-func (m *InflationRequest) XXX_Unmarshal(b []byte) error {
+func (m *InflationRateRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *InflationRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *InflationRateRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_InflationRequest.Marshal(b, m, deterministic)
+		return xxx_messageInfo_InflationRateRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -50,34 +50,34 @@ func (m *InflationRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, er
 		return b[:n], nil
 	}
 }
-func (m *InflationRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_InflationRequest.Merge(m, src)
+func (m *InflationRateRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_InflationRateRequest.Merge(m, src)
 }
-func (m *InflationRequest) XXX_Size() int {
+func (m *InflationRateRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *InflationRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_InflationRequest.DiscardUnknown(m)
+func (m *InflationRateRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_InflationRateRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_InflationRequest proto.InternalMessageInfo
+var xxx_messageInfo_InflationRateRequest proto.InternalMessageInfo
 
-type InflationResponse struct {
-	Inflation github_com_cosmos_cosmos_sdk_types.Dec `protobuf:"bytes,1,opt,name=inflation,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Dec" json:"inflation"`
+type InflationRateResponse struct {
+	InflationRate github_com_cosmos_cosmos_sdk_types.Dec `protobuf:"bytes,1,opt,name=inflation_rate,json=inflationRate,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Dec" json:"inflation_rate"`
 }
 
-func (m *InflationResponse) Reset()         { *m = InflationResponse{} }
-func (m *InflationResponse) String() string { return proto.CompactTextString(m) }
-func (*InflationResponse) ProtoMessage()    {}
-func (*InflationResponse) Descriptor() ([]byte, []int) {
+func (m *InflationRateResponse) Reset()         { *m = InflationRateResponse{} }
+func (m *InflationRateResponse) String() string { return proto.CompactTextString(m) }
+func (*InflationRateResponse) ProtoMessage()    {}
+func (*InflationRateResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_ea20e5bdb695fbb5, []int{1}
 }
-func (m *InflationResponse) XXX_Unmarshal(b []byte) error {
+func (m *InflationRateResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *InflationResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *InflationRateResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_InflationResponse.Marshal(b, m, deterministic)
+		return xxx_messageInfo_InflationRateResponse.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -87,45 +87,46 @@ func (m *InflationResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, e
 		return b[:n], nil
 	}
 }
-func (m *InflationResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_InflationResponse.Merge(m, src)
+func (m *InflationRateResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_InflationRateResponse.Merge(m, src)
 }
-func (m *InflationResponse) XXX_Size() int {
+func (m *InflationRateResponse) XXX_Size() int {
 	return m.Size()
 }
-func (m *InflationResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_InflationResponse.DiscardUnknown(m)
+func (m *InflationRateResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_InflationRateResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_InflationResponse proto.InternalMessageInfo
+var xxx_messageInfo_InflationRateResponse proto.InternalMessageInfo
 
 func init() {
-	proto.RegisterType((*InflationRequest)(nil), "axelar.reward.v1beta1.InflationRequest")
-	proto.RegisterType((*InflationResponse)(nil), "axelar.reward.v1beta1.InflationResponse")
+	proto.RegisterType((*InflationRateRequest)(nil), "axelar.reward.v1beta1.InflationRateRequest")
+	proto.RegisterType((*InflationRateResponse)(nil), "axelar.reward.v1beta1.InflationRateResponse")
 }
 
 func init() { proto.RegisterFile("axelar/reward/v1beta1/query.proto", fileDescriptor_ea20e5bdb695fbb5) }
 
 var fileDescriptor_ea20e5bdb695fbb5 = []byte{
-	// 237 bytes of a gzipped FileDescriptorProto
+	// 248 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x52, 0x4c, 0xac, 0x48, 0xcd,
 	0x49, 0x2c, 0xd2, 0x2f, 0x4a, 0x2d, 0x4f, 0x2c, 0x4a, 0xd1, 0x2f, 0x33, 0x4c, 0x4a, 0x2d, 0x49,
 	0x34, 0xd4, 0x2f, 0x2c, 0x4d, 0x2d, 0xaa, 0xd4, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x12, 0x85,
 	0x28, 0xd1, 0x83, 0x28, 0xd1, 0x83, 0x2a, 0x91, 0x12, 0x49, 0xcf, 0x4f, 0xcf, 0x07, 0xab, 0xd0,
-	0x07, 0xb1, 0x20, 0x8a, 0x95, 0x84, 0xb8, 0x04, 0x3c, 0xf3, 0xd2, 0x72, 0x12, 0x4b, 0x32, 0xf3,
-	0xf3, 0x82, 0x52, 0x0b, 0x4b, 0x53, 0x8b, 0x4b, 0x94, 0x12, 0xb9, 0x04, 0x91, 0xc4, 0x8a, 0x0b,
-	0xf2, 0xf3, 0x8a, 0x53, 0x85, 0x7c, 0xb8, 0x38, 0x33, 0x61, 0x82, 0x12, 0x8c, 0x0a, 0x8c, 0x1a,
-	0x3c, 0x4e, 0x7a, 0x27, 0xee, 0xc9, 0x33, 0xdc, 0xba, 0x27, 0xaf, 0x96, 0x9e, 0x59, 0x92, 0x51,
-	0x9a, 0xa4, 0x97, 0x9c, 0x9f, 0xab, 0x9f, 0x9c, 0x5f, 0x9c, 0x9b, 0x5f, 0x0c, 0xa5, 0x74, 0x8b,
-	0x53, 0xb2, 0xf5, 0x4b, 0x2a, 0x0b, 0x52, 0x8b, 0xf5, 0x5c, 0x52, 0x93, 0x83, 0x10, 0x06, 0x38,
-	0x05, 0x9e, 0x78, 0x28, 0xc7, 0x70, 0xe2, 0x91, 0x1c, 0xe3, 0x85, 0x47, 0x72, 0x8c, 0x0f, 0x1e,
-	0xc9, 0x31, 0x4e, 0x78, 0x2c, 0xc7, 0x70, 0xe1, 0xb1, 0x1c, 0xc3, 0x8d, 0xc7, 0x72, 0x0c, 0x51,
-	0xc6, 0x48, 0x06, 0x42, 0x3c, 0x93, 0x97, 0x5a, 0x52, 0x9e, 0x5f, 0x94, 0x0d, 0xe5, 0xe9, 0x26,
-	0xe7, 0x17, 0xa5, 0xea, 0x57, 0xc0, 0x02, 0x01, 0x6c, 0x43, 0x12, 0x1b, 0xd8, 0x43, 0xc6, 0x80,
-	0x00, 0x00, 0x00, 0xff, 0xff, 0x29, 0x51, 0x21, 0xc1, 0x22, 0x01, 0x00, 0x00,
+	0x07, 0xb1, 0x20, 0x8a, 0x95, 0xc4, 0xb8, 0x44, 0x3c, 0xf3, 0xd2, 0x72, 0x12, 0x4b, 0x32, 0xf3,
+	0xf3, 0x82, 0x12, 0x4b, 0x52, 0x83, 0x52, 0x0b, 0x4b, 0x53, 0x8b, 0x4b, 0x94, 0xf2, 0xb8, 0x44,
+	0xd1, 0xc4, 0x8b, 0x0b, 0xf2, 0xf3, 0x8a, 0x53, 0x85, 0x42, 0xb9, 0xf8, 0x32, 0x61, 0x12, 0xf1,
+	0x45, 0x89, 0x25, 0xa9, 0x12, 0x8c, 0x0a, 0x8c, 0x1a, 0x3c, 0x4e, 0x7a, 0x27, 0xee, 0xc9, 0x33,
+	0xdc, 0xba, 0x27, 0xaf, 0x96, 0x9e, 0x59, 0x92, 0x51, 0x9a, 0xa4, 0x97, 0x9c, 0x9f, 0xab, 0x9f,
+	0x9c, 0x5f, 0x9c, 0x9b, 0x5f, 0x0c, 0xa5, 0x74, 0x8b, 0x53, 0xb2, 0xf5, 0x4b, 0x2a, 0x0b, 0x52,
+	0x8b, 0xf5, 0x5c, 0x52, 0x93, 0x83, 0x78, 0x33, 0x91, 0x8d, 0x77, 0x0a, 0x3c, 0xf1, 0x50, 0x8e,
+	0xe1, 0xc4, 0x23, 0x39, 0xc6, 0x0b, 0x8f, 0xe4, 0x18, 0x1f, 0x3c, 0x92, 0x63, 0x9c, 0xf0, 0x58,
+	0x8e, 0xe1, 0xc2, 0x63, 0x39, 0x86, 0x1b, 0x8f, 0xe5, 0x18, 0xa2, 0x8c, 0x91, 0x0c, 0x85, 0xf8,
+	0x2e, 0x2f, 0xb5, 0xa4, 0x3c, 0xbf, 0x28, 0x1b, 0xca, 0xd3, 0x4d, 0xce, 0x2f, 0x4a, 0xd5, 0xaf,
+	0x80, 0x85, 0x0a, 0xd8, 0x96, 0x24, 0x36, 0xb0, 0x0f, 0x8d, 0x01, 0x01, 0x00, 0x00, 0xff, 0xff,
+	0x92, 0x13, 0x59, 0xbc, 0x33, 0x01, 0x00, 0x00,
 }
 
-func (m *InflationRequest) Marshal() (dAtA []byte, err error) {
+func (m *InflationRateRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -135,12 +136,12 @@ func (m *InflationRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *InflationRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *InflationRateRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *InflationRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *InflationRateRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -148,7 +149,7 @@ func (m *InflationRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *InflationResponse) Marshal() (dAtA []byte, err error) {
+func (m *InflationRateResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -158,20 +159,20 @@ func (m *InflationResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *InflationResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *InflationRateResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *InflationResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *InflationRateResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
 	{
-		size := m.Inflation.Size()
+		size := m.InflationRate.Size()
 		i -= size
-		if _, err := m.Inflation.MarshalTo(dAtA[i:]); err != nil {
+		if _, err := m.InflationRate.MarshalTo(dAtA[i:]); err != nil {
 			return 0, err
 		}
 		i = encodeVarintQuery(dAtA, i, uint64(size))
@@ -192,7 +193,7 @@ func encodeVarintQuery(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *InflationRequest) Size() (n int) {
+func (m *InflationRateRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -201,13 +202,13 @@ func (m *InflationRequest) Size() (n int) {
 	return n
 }
 
-func (m *InflationResponse) Size() (n int) {
+func (m *InflationRateResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	l = m.Inflation.Size()
+	l = m.InflationRate.Size()
 	n += 1 + l + sovQuery(uint64(l))
 	return n
 }
@@ -218,7 +219,7 @@ func sovQuery(x uint64) (n int) {
 func sozQuery(x uint64) (n int) {
 	return sovQuery(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *InflationRequest) Unmarshal(dAtA []byte) error {
+func (m *InflationRateRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -241,10 +242,10 @@ func (m *InflationRequest) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: InflationRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: InflationRateRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: InflationRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: InflationRateRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		default:
@@ -268,7 +269,7 @@ func (m *InflationRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *InflationResponse) Unmarshal(dAtA []byte) error {
+func (m *InflationRateResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -291,15 +292,15 @@ func (m *InflationResponse) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: InflationResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: InflationRateResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: InflationResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: InflationRateResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Inflation", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field InflationRate", wireType)
 			}
 			var byteLen int
 			for shift := uint(0); ; shift += 7 {
@@ -326,7 +327,7 @@ func (m *InflationResponse) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.Inflation.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.InflationRate.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

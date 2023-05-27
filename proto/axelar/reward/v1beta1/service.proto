@@ -22,9 +22,9 @@ service MsgService {
 
 // QueryService defines the gRPC querier service.
 service QueryService {
-  rpc Inflation(InflationRequest) returns (InflationResponse) {
+  rpc InflationRate(InflationRateRequest) returns (InflationRateResponse) {
     option (google.api.http) = {
-      get : "/axelar/reward/v1beta1/inflation"
+      get : "/axelar/reward/v1beta1/inflation_rate"
     };
   }
 }

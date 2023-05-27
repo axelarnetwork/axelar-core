@@ -425,8 +425,8 @@
     - [GenesisState](#axelar.reward.v1beta1.GenesisState)
   
 - [axelar/reward/v1beta1/query.proto](#axelar/reward/v1beta1/query.proto)
-    - [InflationRequest](#axelar.reward.v1beta1.InflationRequest)
-    - [InflationResponse](#axelar.reward.v1beta1.InflationResponse)
+    - [InflationRateRequest](#axelar.reward.v1beta1.InflationRateRequest)
+    - [InflationRateResponse](#axelar.reward.v1beta1.InflationRateResponse)
   
 - [axelar/reward/v1beta1/tx.proto](#axelar/reward/v1beta1/tx.proto)
     - [RefundMsgRequest](#axelar.reward.v1beta1.RefundMsgRequest)
@@ -6449,26 +6449,26 @@ GenesisState represents the genesis state
 
 
 
-<a name="axelar.reward.v1beta1.InflationRequest"></a>
+<a name="axelar.reward.v1beta1.InflationRateRequest"></a>
 
-### InflationRequest
-InflationRequest represents a message that queries the Axelar specific
-Inflation RPC method.
-
-
+### InflationRateRequest
+InflationRateRequest represents a message that queries the Axelar specific
+inflation RPC method.
 
 
 
 
-<a name="axelar.reward.v1beta1.InflationResponse"></a>
 
-### InflationResponse
+
+<a name="axelar.reward.v1beta1.InflationRateResponse"></a>
+
+### InflationRateResponse
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `inflation` | [bytes](#bytes) |  |  |
+| `inflation_rate` | [bytes](#bytes) |  |  |
 
 
 
@@ -6562,7 +6562,7 @@ QueryService defines the gRPC querier service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `Inflation` | [InflationRequest](#axelar.reward.v1beta1.InflationRequest) | [InflationResponse](#axelar.reward.v1beta1.InflationResponse) |  | GET|/axelar/reward/v1beta1/inflation|
+| `InflationRate` | [InflationRateRequest](#axelar.reward.v1beta1.InflationRateRequest) | [InflationRateResponse](#axelar.reward.v1beta1.InflationRateResponse) |  | GET|/axelar/reward/v1beta1/inflation_rate|
 
  <!-- end services -->
 

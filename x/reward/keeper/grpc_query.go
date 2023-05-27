@@ -28,8 +28,8 @@ func NewGRPCQuerier(k Keeper, m types.Minter, n types.Nexus) Querier {
 	}
 }
 
-// Inflation returns the Axelar network inflation
-func (q Querier) Inflation(c context.Context, req *types.InflationRequest) (*types.InflationResponse, error) {
+// InflationRate returns the Axelar network inflation
+func (q Querier) InflationRate(c context.Context, req *types.InflationRateRequest) (*types.InflationRateResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
 	params := q.keeper.GetParams(ctx)
@@ -49,7 +49,7 @@ func (q Querier) Inflation(c context.Context, req *types.InflationRequest) (*typ
 
 	inflation := baseInflation.Add(keyManagementInflation).Add(chainMaintainerInflation)
 
-	return &types.InflationResponse{
-		Inflation: inflation,
+	return &types.InflationRateResponse{
+		InflationRate: inflation,
 	}, nil
 }
