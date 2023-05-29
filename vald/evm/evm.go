@@ -480,17 +480,6 @@ func (mgr Mgr) GetTxReceiptIfFinalized(chain nexus.ChainName, txID common.Hash, 
 		return nil, nil
 	}
 
-	header, err := client.HeaderByNumber(context.Background(), txReceipt.BlockNumber)
-	if err != nil {
-		return nil, sdkerrors.Wrapf(errors.With(err, keyvals...), "failed getting block %s", txReceipt.BlockNumber.String())
-	}
-
-	txFound := slices.Any(header.Transactions, func(txHash common.Hash) bool { return bytes.Equal(txHash.Bytes(), txReceipt.TxHash.Bytes()) })
-	if !txFound {
-		logger.Debug(fmt.Sprintf("transaction %s not found in block %s", txID.Hex(), txReceipt.BlockNumber.String()))
-		return nil, nil
-	}
-
 	return txReceipt, nil
 }
 
