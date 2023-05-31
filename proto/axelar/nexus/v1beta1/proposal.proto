@@ -8,8 +8,8 @@ import "axelar/nexus/exported/v1beta1/types.proto";
 option go_package = "github.com/axelarnetwork/axelar-core/x/nexus/types";
 option (gogoproto.goproto_getters_all) = false;
 
-// CallContractsProposal is gov Content type for calling a contract on another
-// chain
+// CallContractsProposal is a gov Content type for calling contracts on other
+// chains
 message CallContractsProposal {
   option (gogoproto.goproto_stringer) = false;
 

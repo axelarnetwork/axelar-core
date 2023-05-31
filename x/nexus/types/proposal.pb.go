@@ -25,8 +25,8 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-// CallContractsProposal is gov Content type for calling a contract on another
-// chain
+// CallContractsProposal is a gov Content type for calling contracts on other
+// chains
 type CallContractsProposal struct {
 	Title         string         `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
 	Description   string         `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`

@@ -5829,8 +5829,8 @@ GenesisState represents the genesis state
 <a name="axelar.nexus.v1beta1.CallContractsProposal"></a>
 
 ### CallContractsProposal
-CallContractsProposal is gov Content type for calling a contract on another
-chain
+CallContractsProposal is a gov Content type for calling contracts on other
+chains
 
 
 | Field | Type | Label | Description |
