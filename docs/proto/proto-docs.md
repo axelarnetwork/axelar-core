@@ -427,6 +427,8 @@
 - [axelar/reward/v1beta1/query.proto](#axelar/reward/v1beta1/query.proto)
     - [InflationRateRequest](#axelar.reward.v1beta1.InflationRateRequest)
     - [InflationRateResponse](#axelar.reward.v1beta1.InflationRateResponse)
+    - [ParamsRequest](#axelar.reward.v1beta1.ParamsRequest)
+    - [ParamsResponse](#axelar.reward.v1beta1.ParamsResponse)
   
 - [axelar/reward/v1beta1/tx.proto](#axelar/reward/v1beta1/tx.proto)
     - [RefundMsgRequest](#axelar.reward.v1beta1.RefundMsgRequest)
@@ -6474,6 +6476,31 @@ inflation RPC method.
 
 
 
+
+<a name="axelar.reward.v1beta1.ParamsRequest"></a>
+
+### ParamsRequest
+ParamsRequest represents a message that queries the params
+
+
+
+
+
+
+<a name="axelar.reward.v1beta1.ParamsResponse"></a>
+
+### ParamsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `params` | [Params](#axelar.reward.v1beta1.Params) |  |  |
+
+
+
+
+
  <!-- end messages -->
 
  <!-- end enums -->
@@ -6563,6 +6590,7 @@ QueryService defines the gRPC querier service.
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `InflationRate` | [InflationRateRequest](#axelar.reward.v1beta1.InflationRateRequest) | [InflationRateResponse](#axelar.reward.v1beta1.InflationRateResponse) |  | GET|/axelar/reward/v1beta1/inflation_rate|
+| `Params` | [ParamsRequest](#axelar.reward.v1beta1.ParamsRequest) | [ParamsResponse](#axelar.reward.v1beta1.ParamsResponse) |  | GET|/axelar/reward/v1beta1/params|
 
  <!-- end services -->
 

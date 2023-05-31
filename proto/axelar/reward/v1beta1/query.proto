@@ -4,6 +4,7 @@ package axelar.reward.v1beta1;
 option go_package = "github.com/axelarnetwork/axelar-core/x/reward/types";
 
 import "gogoproto/gogo.proto";
+import "axelar/reward/v1beta1/params.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
@@ -17,3 +18,8 @@ message InflationRateResponse {
     (gogoproto.nullable) = false
   ];
 }
+
+// ParamsRequest represents a message that queries the params
+message ParamsRequest {}
+
+message ParamsResponse { Params params = 1 [ (gogoproto.nullable) = false ]; }

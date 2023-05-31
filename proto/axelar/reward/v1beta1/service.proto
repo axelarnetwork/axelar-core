@@ -27,4 +27,10 @@ service QueryService {
       get : "/axelar/reward/v1beta1/inflation_rate"
     };
   }
+
+  rpc Params(ParamsRequest) returns (ParamsResponse) {
+    option (google.api.http) = {
+      get : "/axelar/reward/v1beta1/params"
+    };
+  }
 }
