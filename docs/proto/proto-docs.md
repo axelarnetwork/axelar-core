@@ -370,6 +370,10 @@
 - [axelar/nexus/v1beta1/genesis.proto](#axelar/nexus/v1beta1/genesis.proto)
     - [GenesisState](#axelar.nexus.v1beta1.GenesisState)
   
+- [axelar/nexus/v1beta1/proposal.proto](#axelar/nexus/v1beta1/proposal.proto)
+    - [CallContractsProposal](#axelar.nexus.v1beta1.CallContractsProposal)
+    - [ContractCall](#axelar.nexus.v1beta1.ContractCall)
+  
 - [axelar/nexus/v1beta1/tx.proto](#axelar/nexus/v1beta1/tx.proto)
     - [ActivateChainRequest](#axelar.nexus.v1beta1.ActivateChainRequest)
     - [ActivateChainResponse](#axelar.nexus.v1beta1.ActivateChainResponse)
@@ -5800,6 +5804,57 @@ GenesisState represents the genesis state
 | `transfer_epochs` | [TransferEpoch](#axelar.nexus.v1beta1.TransferEpoch) | repeated |  |
 | `messages` | [axelar.nexus.exported.v1beta1.GeneralMessage](#axelar.nexus.exported.v1beta1.GeneralMessage) | repeated |  |
 | `message_nonce` | [uint64](#uint64) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="axelar/nexus/v1beta1/proposal.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/nexus/v1beta1/proposal.proto
+
+
+
+<a name="axelar.nexus.v1beta1.CallContractsProposal"></a>
+
+### CallContractsProposal
+CallContractsProposal is gov Content type for calling a contract on another
+chain
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `title` | [string](#string) |  |  |
+| `description` | [string](#string) |  |  |
+| `contract_calls` | [ContractCall](#axelar.nexus.v1beta1.ContractCall) | repeated |  |
+
+
+
+
+
+
+<a name="axelar.nexus.v1beta1.ContractCall"></a>
+
+### ContractCall
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `contract_address` | [string](#string) |  |  |
+| `payload_hash` | [bytes](#bytes) |  |  |
 
 
 
