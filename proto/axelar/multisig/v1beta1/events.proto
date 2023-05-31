@@ -18,6 +18,8 @@ message KeygenStarted {
 }
 
 message KeygenCompleted {
+  option (gogoproto.messagename) = true;
+
   string module = 1;
   string key_id = 2 [
     (gogoproto.customname) = "KeyID",
@@ -27,6 +29,8 @@ message KeygenCompleted {
 }
 
 message KeygenExpired {
+  option (gogoproto.messagename) = true;
+
   string module = 1;
   string key_id = 2 [
     (gogoproto.customname) = "KeyID",
