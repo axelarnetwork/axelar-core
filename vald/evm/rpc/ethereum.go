@@ -58,16 +58,14 @@ func (c *EthereumClient) HeaderByNumber(ctx context.Context, number *big.Int) (*
 	return head, err
 }
 
-// IsFinalized determines whether or not the given transaction receipt is finalized on the chain
-func (c *EthereumClient) IsFinalized(ctx context.Context, conf uint64, txReceipt *types.Receipt) (bool, error) {
+// LatestFinalizedBlockNumber returns the latest finalized block number
+func (c *EthereumClient) LatestFinalizedBlockNumber(ctx context.Context, confirmations uint64) (*big.Int, error) {
 	blockNumber, err := c.BlockNumber(ctx)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 
-	latestFinalizedBlockNumber := sdk.NewIntFromUint64(blockNumber).SubRaw(int64(conf)).AddRaw(1).BigInt()
-
-	return latestFinalizedBlockNumber.Cmp(txReceipt.BlockNumber) >= 0, nil
+	return sdk.NewIntFromUint64(blockNumber).SubRaw(int64(confirmations)).AddRaw(1).BigInt(), nil
 }
 
 // copied from https://github.com/ethereum/go-ethereum/blob/69568c554880b3567bace64f8848ff1be27d084d/ethclient/ethclient.go#L565
