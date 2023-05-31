@@ -43,7 +43,7 @@ func (q Querier) InflationRate(c context.Context, req *types.InflationRateReques
 		}
 
 		maintainers := q.nexus.GetChainMaintainers(ctx, chain)
-		return len(maintainers) != 0
+		return len(maintainers) > 0
 	})
 	chainMaintainerInflation := params.ExternalChainVotingInflationRate.MulInt64(int64(len(chains)))
 
