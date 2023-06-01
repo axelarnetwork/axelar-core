@@ -1,0 +1,25 @@
+syntax = "proto3";
+package axelar.reward.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/reward/types";
+
+import "gogoproto/gogo.proto";
+import "axelar/reward/v1beta1/params.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+// InflationRateRequest represents a message that queries the Axelar specific
+// inflation RPC method.
+message InflationRateRequest {}
+
+message InflationRateResponse {
+  bytes inflation_rate = 1 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec",
+    (gogoproto.nullable) = false
+  ];
+}
+
+// ParamsRequest represents a message that queries the params
+message ParamsRequest {}
+
+message ParamsResponse { Params params = 1 [ (gogoproto.nullable) = false ]; }
