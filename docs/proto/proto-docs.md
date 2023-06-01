@@ -354,6 +354,9 @@
 - [axelar/nexus/v1beta1/events.proto](#axelar/nexus/v1beta1/events.proto)
     - [FeeDeducted](#axelar.nexus.v1beta1.FeeDeducted)
     - [InsufficientFee](#axelar.nexus.v1beta1.InsufficientFee)
+    - [MessageExecuted](#axelar.nexus.v1beta1.MessageExecuted)
+    - [MessageFailed](#axelar.nexus.v1beta1.MessageFailed)
+    - [MessageProcessing](#axelar.nexus.v1beta1.MessageProcessing)
     - [MessageReceived](#axelar.nexus.v1beta1.MessageReceived)
     - [RateLimitUpdated](#axelar.nexus.v1beta1.RateLimitUpdated)
   
@@ -5581,6 +5584,51 @@ Query defines the gRPC querier service.
 | `recipient_address` | [string](#string) |  |  |
 | `amount` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 | `fee` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+
+
+
+
+
+
+<a name="axelar.nexus.v1beta1.MessageExecuted"></a>
+
+### MessageExecuted
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.nexus.v1beta1.MessageFailed"></a>
+
+### MessageFailed
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.nexus.v1beta1.MessageProcessing"></a>
+
+### MessageProcessing
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [string](#string) |  |  |
 
 
 

@@ -2,6 +2,7 @@ syntax = "proto3";
 package axelar.evm.v1beta1;
 
 option go_package = "github.com/axelarnetwork/axelar-core/x/evm/types";
+option (gogoproto.messagename_all) = true;
 
 import "gogoproto/gogo.proto";
 import "axelar/vote/exported/v1beta1/types.proto";
