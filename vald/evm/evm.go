@@ -45,10 +45,11 @@ type Mgr struct {
 	validator                 sdk.ValAddress
 	proxy                     sdk.AccAddress
 	latestFinalizedBlockCache LatestFinalizedBlockCache
+	axelarChainID             string
 }
 
 // NewMgr returns a new Mgr instance
-func NewMgr(rpcs map[string]rpc.Client, broadcaster broadcast.Broadcaster, logger tmLog.Logger, valAddr sdk.ValAddress, proxy sdk.AccAddress, latestFinalizedBlockCache LatestFinalizedBlockCache) *Mgr {
+func NewMgr(rpcs map[string]rpc.Client, broadcaster broadcast.Broadcaster, logger tmLog.Logger, valAddr sdk.ValAddress, proxy sdk.AccAddress, latestFinalizedBlockCache LatestFinalizedBlockCache, axelarChainID string) *Mgr {
 	return &Mgr{
 		rpcs:                      rpcs,
 		proxy:                     proxy,
@@ -56,6 +57,7 @@ func NewMgr(rpcs map[string]rpc.Client, broadcaster broadcast.Broadcaster, logge
 		logger:                    logger.With("listener", "evm"),
 		validator:                 valAddr,
 		latestFinalizedBlockCache: latestFinalizedBlockCache,
+		axelarChainID:             axelarChainID,
 	}
 }
 
@@ -235,7 +237,7 @@ func (mgr Mgr) ProcessTransferKeyConfirmation(event *types.ConfirmKeyTransferSta
 	var txReceipt *geth.Receipt
 	var err error
 
-	if event.Chain.Equals(nexus.ChainName("filecoin")) && event.TxID == FilecoinTransferKeyTxID {
+	if event.Chain.Equals(nexus.ChainName("filecoin")) && event.TxID == FilecoinTransferKeyTxID && mgr.axelarChainID == "axelar-dojo-1" {
 		txReceipt = GetFilecoinTransferKeyTxReceipt()
 	} else {
 		txReceipt, err = mgr.GetTxReceiptIfFinalized(event.Chain, common.Hash(event.TxID), event.ConfirmationHeight)

@@ -188,7 +188,7 @@ func TestMgr_GetTxReceiptIfFinalized(t *testing.T) {
 		confHeight = uint64(rand.I64Between(1, 50))
 		latestFinalizedBlockNumber = uint64(rand.I64Between(1000, 10000))
 
-		mgr = evm.NewMgr(map[string]evmRpc.Client{chain.String(): rpcClient}, nil, log.TestingLogger(), rand.ValAddr(), rand.AccAddr(), cache)
+		mgr = evm.NewMgr(map[string]evmRpc.Client{chain.String(): rpcClient}, nil, log.TestingLogger(), rand.ValAddr(), rand.AccAddr(), cache, "")
 	})
 
 	givenMgr.
@@ -380,7 +380,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 		mgr = evm.NewMgr(evmMap, broadcaster, log.TestingLogger(), valAddr, rand.AccAddr(), &evmmock.LatestFinalizedBlockCacheMock{
 			GetFunc: func(_ nexus.ChainName) *big.Int { return big.NewInt(0) },
 			SetFunc: func(_ nexus.ChainName, _ *big.Int) {},
-		})
+		}, "")
 	}).
 		Given("an evm rpc client", func() {
 			rpc = &mock.ClientMock{
@@ -615,7 +615,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		mgr = evm.NewMgr(evmMap, broadcaster, log.TestingLogger(), valAddr, rand.AccAddr(), &evmmock.LatestFinalizedBlockCacheMock{
 			GetFunc: func(_ nexus.ChainName) *big.Int { return big.NewInt(0) },
 			SetFunc: func(_ nexus.ChainName, _ *big.Int) {},
-		})
+		}, "")
 	}
 
 	repeats := 20
@@ -721,7 +721,7 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 		mgr = evm.NewMgr(evmMap, broadcaster, log.TestingLogger(), valAddr, rand.AccAddr(), &evmmock.LatestFinalizedBlockCacheMock{
 			GetFunc: func(_ nexus.ChainName) *big.Int { return big.NewInt(0) },
 			SetFunc: func(_ nexus.ChainName, _ *big.Int) {},
-		})
+		}, "axelar-dojo-1")
 	})
 
 	givenTxReceiptAndBlockAreFound := Given("tx receipt and block can be found", func() {
