@@ -25,5 +25,5 @@ message ContractCall {
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
   string contract_address = 2;
-  bytes payload_hash = 3;
+  bytes payload = 3;
 }

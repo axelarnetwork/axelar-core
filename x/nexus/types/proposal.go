@@ -29,12 +29,8 @@ func (c ContractCall) ValidateBasic() error {
 		return err
 	}
 
-	if len(c.PayloadHash) != 32 {
-		return fmt.Errorf("payload hash must be 32 bytes")
-	}
-
-	if slices.All(c.PayloadHash, func(b byte) bool { return b == 0 }) {
-		return fmt.Errorf("payload hash cannot be zero")
+	if len(c.Payload) == 0 {
+		return fmt.Errorf("payload cannot be empty")
 	}
 
 	return nil
@@ -42,7 +38,7 @@ func (c ContractCall) ValidateBasic() error {
 
 // String returns a human readable string representation of the contract call
 func (c ContractCall) String() string {
-	return fmt.Sprintf("Chain: %s, Contract Address: %s, Payload Hash: %s", c.Chain.String(), c.ContractAddress, hex.EncodeToString(c.PayloadHash))
+	return fmt.Sprintf("Chain: %s, Contract Address: %s, Payload: %s", c.Chain.String(), c.ContractAddress, hex.EncodeToString(c.Payload))
 }
 
 // Implements Proposal Interface

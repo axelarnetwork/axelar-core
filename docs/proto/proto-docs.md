@@ -5861,7 +5861,7 @@ chains
 | ----- | ---- | ----- | ----------- |
 | `chain` | [string](#string) |  |  |
 | `contract_address` | [string](#string) |  |  |
-| `payload_hash` | [bytes](#bytes) |  |  |
+| `payload` | [bytes](#bytes) |  |  |
 
 
 
