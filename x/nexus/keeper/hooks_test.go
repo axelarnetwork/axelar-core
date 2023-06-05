@@ -1,0 +1,124 @@
+package keeper_test
+
+import (
+	"fmt"
+	"strings"
+	"testing"
+	"time"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types/proposal"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/stretchr/testify/assert"
+	"github.com/tendermint/tendermint/libs/log"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+
+	"github.com/axelarnetwork/axelar-core/testutils/fake"
+	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/axelar-core/x/nexus/types"
+	"github.com/axelarnetwork/axelar-core/x/nexus/types/mock"
+	"github.com/axelarnetwork/utils/funcs"
+	. "github.com/axelarnetwork/utils/test"
+)
+
+func TestAfterProposalDeposit(t *testing.T) {
+	var (
+		proposal govtypes.Proposal
+	)
+
+	gov := &mock.GovKeeperMock{}
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+	contractCall := types.ContractCall{
+		Chain:           exported.ChainName(rand.NormalizedStr(5)),
+		ContractAddress: common.BytesToAddress(rand.Bytes(common.AddressLength)).Hex(),
+		Payload:         rand.Bytes(100),
+	}
+	minDeposit := sdk.NewCoin("TEST", sdk.NewInt(rand.PosI64()))
+
+	Given("a proposal is created", func() {
+		keeper.SetParams(ctx, types.DefaultParams())
+		gov.GetProposalFunc = func(ctx sdk.Context, proposalID uint64) (govtypes.Proposal, bool) {
+			return proposal, proposalID == proposal.ProposalId
+		}
+	}).
+		Branch(
+			When("the proposal is not a nexus call contracts proposal", func() {
+				proposal = funcs.Must(govtypes.NewProposal(
+					paramstypes.NewParameterChangeProposal("title", "description", []paramstypes.ParamChange{}),
+					uint64(rand.I64Between(1, 100)),
+					time.Now(),
+					time.Now().AddDate(0, 0, 1),
+				))
+			}).
+				Then("should not panic", func(t *testing.T) {
+					assert.NotPanics(t, func() {
+						keeper.Hooks(gov).AfterProposalDeposit(ctx, proposal.ProposalId, rand.AccAddr())
+					})
+				}),
+
+			When("the proposal is a nexus call contracts proposal", func() {
+				proposal = funcs.Must(govtypes.NewProposal(
+					types.NewCallContractsProposal("title", "description", []types.ContractCall{contractCall}),
+					1,
+					time.Now(),
+					time.Now().AddDate(0, 0, 1),
+				))
+			}).
+				Branch(
+					When("keer is setup with the default params", func() {
+						keeper.SetParams(ctx, types.DefaultParams())
+					}).
+						Then("should not panic", func(t *testing.T) {
+							assert.NotPanics(t, func() {
+								keeper.Hooks(gov).AfterProposalDeposit(ctx, proposal.ProposalId, rand.AccAddr())
+							})
+						}),
+
+					When("keeper is setup with params that sets no min deposit for the contract call", func() {
+						params := types.DefaultParams()
+						params.CallContractsProposalMinDeposits = map[string]types.Params_Coins{
+							strings.ToLower(common.BytesToAddress(rand.Bytes(common.AddressLength)).Hex()): {Coins: sdk.NewCoins(minDeposit)},
+						}
+
+						keeper.SetParams(ctx, params)
+					}).
+						Then("should not panic", func(t *testing.T) {
+							assert.NotPanics(t, func() {
+								keeper.Hooks(gov).AfterProposalDeposit(ctx, proposal.ProposalId, rand.AccAddr())
+							})
+						}),
+
+					When("keeper is setup with params that sets some min deposit for the contract call", func() {
+						params := types.DefaultParams()
+						params.CallContractsProposalMinDeposits = map[string]types.Params_Coins{
+							strings.ToLower(contractCall.ContractAddress): {Coins: sdk.NewCoins(minDeposit)},
+						}
+
+						keeper.SetParams(ctx, params)
+					}).
+						Branch(
+							When("min deposit is met", func() {
+								proposal.TotalDeposit = proposal.TotalDeposit.Add(minDeposit)
+							}).
+								Then("should not panic", func(t *testing.T) {
+									assert.NotPanics(t, func() {
+										keeper.Hooks(gov).AfterProposalDeposit(ctx, proposal.ProposalId, rand.AccAddr())
+									})
+								}),
+
+							When("min deposit is not met", func() {
+								proposal.TotalDeposit = proposal.TotalDeposit.Add(minDeposit.SubAmount(sdk.NewInt(1)))
+							}).
+								Then("should panic", func(t *testing.T) {
+									assert.PanicsWithError(t, fmt.Sprintf("proposal %d does not have enough deposits for calling contract %s", proposal.ProposalId, strings.ToLower(contractCall.ContractAddress)), func() {
+										keeper.Hooks(gov).AfterProposalDeposit(ctx, proposal.ProposalId, rand.AccAddr())
+									})
+								}),
+						),
+				),
+		).
+		Run(t)
+
+}

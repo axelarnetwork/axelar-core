@@ -2,9 +2,12 @@ package types
 
 import (
 	"fmt"
+	"sort"
+	"strings"
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
+	"golang.org/x/exp/maps"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 )
@@ -19,6 +22,8 @@ var (
 	KeyChainMaintainerIncorrectVoteThreshold = []byte("chainMaintainerIncorrectVoteThreshold")
 	// KeyChainMaintainerCheckWindow represents the key for chain maintainer check window
 	KeyChainMaintainerCheckWindow = []byte("chainMaintainerCheckWindow")
+	// KeyCallContractsProposalMinDeposits represents the key for call contracts proposal min deposits
+	KeyCallContractsProposalMinDeposits = []byte("callContractsProposalMinDeposits")
 )
 
 // KeyTable retrieves a subspace table for the module
@@ -33,6 +38,7 @@ func DefaultParams() Params {
 		ChainMaintainerMissingVoteThreshold:   utils.NewThreshold(20, 100),
 		ChainMaintainerIncorrectVoteThreshold: utils.NewThreshold(15, 100),
 		ChainMaintainerCheckWindow:            500,
+		CallContractsProposalMinDeposits:      make(map[string]Params_Coins),
 	}
 }
 
@@ -50,6 +56,7 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 		params.NewParamSetPair(KeyChainMaintainerMissingVoteThreshold, &m.ChainMaintainerMissingVoteThreshold, validateThresholdWith("ChainMaintainerMissingVoteThreshold")),
 		params.NewParamSetPair(KeyChainMaintainerIncorrectVoteThreshold, &m.ChainMaintainerIncorrectVoteThreshold, validateThresholdWith("ChainMaintainerIncorrectVoteThreshold")),
 		params.NewParamSetPair(KeyChainMaintainerCheckWindow, &m.ChainMaintainerCheckWindow, validateChainMaintainerCheckWindow),
+		params.NewParamSetPair(KeyCallContractsProposalMinDeposits, &m.CallContractsProposalMinDeposits, validateCallContractsProposalMinDeposits),
 	}
 }
 
@@ -68,6 +75,10 @@ func (m Params) Validate() error {
 	}
 
 	if err := validateChainMaintainerCheckWindow(m.ChainMaintainerCheckWindow); err != nil {
+		return err
+	}
+
+	if err := validateCallContractsProposalMinDeposits(m.CallContractsProposalMinDeposits); err != nil {
 		return err
 	}
 
@@ -101,6 +112,28 @@ func validateChainMaintainerCheckWindow(i interface{}) error {
 
 	if val >= maxBitmapSize {
 		return fmt.Errorf("ChainMaintainerCheckWindow must be < %d", maxBitmapSize)
+	}
+
+	return nil
+}
+
+func validateCallContractsProposalMinDeposits(i interface{}) error {
+	val, ok := i.(map[string]Params_Coins)
+	if !ok {
+		return fmt.Errorf("invalid parameter type for CallContractsProposalMinDeposits: %T", i)
+	}
+
+	contractAddresses := maps.Keys(val)
+	sort.Strings(contractAddresses)
+
+	for _, contractAddress := range contractAddresses {
+		if strings.ToLower(contractAddress) != contractAddress {
+			return fmt.Errorf("contract addresses in CallContractsProposalMinDeposits must be lowercase")
+		}
+
+		if err := val[contractAddress].Coins.Validate(); err != nil {
+			return err
+		}
 	}
 
 	return nil

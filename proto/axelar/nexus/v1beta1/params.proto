@@ -3,12 +3,22 @@ package axelar.nexus.v1beta1;
 option go_package = "github.com/axelarnetwork/axelar-core/x/nexus/types";
 
 import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
 import "axelar/utils/v1beta1/threshold.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
 // Params represent the genesis parameters for the module
 message Params {
+  option (gogoproto.stable_marshaler) = true;
+
+  message Coins {
+    repeated cosmos.base.v1beta1.Coin coins = 2 [
+      (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins",
+      (gogoproto.nullable) = false
+    ];
+  }
+
   utils.v1beta1.Threshold chain_activation_threshold = 1
       [ (gogoproto.nullable) = false ];
   utils.v1beta1.Threshold chain_maintainer_missing_vote_threshold = 2
@@ -16,4 +26,6 @@ message Params {
   utils.v1beta1.Threshold chain_maintainer_incorrect_vote_threshold = 3
       [ (gogoproto.nullable) = false ];
   int32 chain_maintainer_check_window = 4;
+  map<string, Coins> call_contracts_proposal_min_deposits = 8
+      [ (gogoproto.nullable) = false ];
 }

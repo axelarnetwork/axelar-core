@@ -366,6 +366,8 @@
   
 - [axelar/nexus/v1beta1/params.proto](#axelar/nexus/v1beta1/params.proto)
     - [Params](#axelar.nexus.v1beta1.Params)
+    - [Params.CallContractsProposalMinDepositsEntry](#axelar.nexus.v1beta1.Params.CallContractsProposalMinDepositsEntry)
+    - [Params.Coins](#axelar.nexus.v1beta1.Params.Coins)
   
 - [axelar/nexus/v1beta1/genesis.proto](#axelar/nexus/v1beta1/genesis.proto)
     - [GenesisState](#axelar.nexus.v1beta1.GenesisState)
@@ -5769,6 +5771,38 @@ Params represent the genesis parameters for the module
 | `chain_maintainer_missing_vote_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
 | `chain_maintainer_incorrect_vote_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
 | `chain_maintainer_check_window` | [int32](#int32) |  |  |
+| `call_contracts_proposal_min_deposits` | [Params.CallContractsProposalMinDepositsEntry](#axelar.nexus.v1beta1.Params.CallContractsProposalMinDepositsEntry) | repeated |  |
+
+
+
+
+
+
+<a name="axelar.nexus.v1beta1.Params.CallContractsProposalMinDepositsEntry"></a>
+
+### Params.CallContractsProposalMinDepositsEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key` | [string](#string) |  |  |
+| `value` | [Params.Coins](#axelar.nexus.v1beta1.Params.Coins) |  |  |
+
+
+
+
+
+
+<a name="axelar.nexus.v1beta1.Params.Coins"></a>
+
+### Params.Coins
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `coins` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) | repeated |  |
 
 
 

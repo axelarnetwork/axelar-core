@@ -30,6 +30,7 @@ import (
 
 const maxAmount int64 = 100000000000
 
+var subspace params.Subspace
 var keeper nexusKeeper.Keeper
 var bankK *axelarnetmock.BankKeeperMock
 
@@ -62,8 +63,8 @@ func addressValidator() types.Router {
 
 func init() {
 	encCfg := app.MakeEncodingConfig()
-	nexusSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("nexusKey"), sdk.NewKVStoreKey("tNexusKey"), "nexus")
-	keeper = nexusKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("nexus"), nexusSubspace)
+	subspace = params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("nexusKey"), sdk.NewKVStoreKey("tNexusKey"), "nexus")
+	keeper = nexusKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("nexus"), subspace)
 	keeper.SetRouter(addressValidator())
 }
 
