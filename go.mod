@@ -178,5 +178,3 @@ replace github.com/confio/ics23/go => github.com/cosmos/cosmos-sdk/ics23/go v0.8
 
 // Temporary replacement for rosetta support
 replace github.com/cosmos/cosmos-sdk => github.com/axelarnetwork/cosmos-sdk v0.45.12-0.20230320160648-221f540372f1
-
-replace github.com/axelarnetwork/tm-events => ../tm-events
