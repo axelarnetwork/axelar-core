@@ -193,5 +193,4 @@ replace github.com/rjeczalik/notify => github.com/rjeczalik/notify v0.9.3
 replace github.com/tendermint/tendermint => github.com/cometbft/cometbft v0.34.27
 
 // Temporary replacement for rosetta support
-// TODO: uncomment after rosetta is updated
-// replace github.com/cosmos/cosmos-sdk => github.com/axelarnetwork/cosmos-sdk v0.45.12-0.20230320160648-221f540372f1
+replace github.com/cosmos/cosmos-sdk => github.com/axelarnetwork/cosmos-sdk v0.45.17-0.20230605143152-275baf0ed715
