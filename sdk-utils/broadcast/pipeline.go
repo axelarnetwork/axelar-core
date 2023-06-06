@@ -1,11 +1,12 @@
 package broadcast
 
 import (
+	"context"
 	"fmt"
+	"github.com/axelarnetwork/utils/log"
 	"time"
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/utils"
 )
@@ -15,16 +16,14 @@ type retryPipeline struct {
 	c          chan func()
 	backOff    utils.BackOff
 	maxRetries int
-	logger     log.Logger
 }
 
 // newPipelineWithRetry returns a retryPipeline with the given configuration
-func newPipelineWithRetry(cap int, maxRetries int, backOffStrategy utils.BackOff, logger log.Logger) *retryPipeline {
+func newPipelineWithRetry(cap int, maxRetries int, backOffStrategy utils.BackOff) *retryPipeline {
 	p := &retryPipeline{
 		c:          make(chan func(), cap),
 		backOff:    backOffStrategy,
 		maxRetries: maxRetries,
-		logger:     logger,
 	}
 
 	go func() {
@@ -37,21 +36,20 @@ func newPipelineWithRetry(cap int, maxRetries int, backOffStrategy utils.BackOff
 }
 
 // Push adds the given function to the serialized execution retryPipeline
-func (p *retryPipeline) Push(f func() error, retryOnError func(error) bool) error {
+func (p *retryPipeline) Push(ctx context.Context, f func(context.Context) error, retryOnError func(error) bool) error {
 	e := make(chan error, 1)
-	p.c <- func() { e <- p.retry(f, retryOnError) }
+	p.c <- func() { e <- p.retry(ctx, f, retryOnError) }
 	return <-e
 }
 
-func (p retryPipeline) retry(f func() error, retryOnError func(error) bool) error {
+func (p retryPipeline) retry(ctx context.Context, f func(context.Context) error, retryOnError func(error) bool) error {
 	var err error
-	logger := p.logger
 	for i := 0; i <= p.maxRetries; i++ {
-		logger = logger.With("num_attempts", i+1)
-		err = f()
+		ctx = log.Append(ctx, "num_attempts", i+1)
+		err = f(ctx)
 		if err == nil {
 			if i > 0 {
-				logger.Info("successful execution after backoff")
+				log.FromCtx(ctx).Info("successful execution after backoff")
 			}
 			return nil
 		}
@@ -62,7 +60,7 @@ func (p retryPipeline) retry(f func() error, retryOnError func(error) bool) erro
 
 		if i < p.maxRetries {
 			timeout := p.backOff(i)
-			logger.Info(sdkerrors.Wrapf(err, "backing off (retry in %v )", timeout).Error())
+			log.FromCtx(ctx).Infof("backing off (retry in %v )", timeout)
 			time.Sleep(timeout)
 		}
 	}

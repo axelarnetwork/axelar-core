@@ -23,7 +23,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/bytes"
-	"github.com/tendermint/tendermint/libs/log"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
 	coretypes "github.com/tendermint/tendermint/rpc/core/types"
 	tm "github.com/tendermint/tendermint/types"
@@ -85,7 +84,6 @@ func TestStatefulBroadcaster(t *testing.T) {
 		broadcaster = broadcast.WithStateManager(
 			clientCtx,
 			txf,
-			log.TestingLogger(),
 			broadcast.WithPollingInterval(1*time.Nanosecond),
 			broadcast.WithResponseTimeout(10*time.Millisecond),
 		)
@@ -262,7 +260,7 @@ func TestInBatches(t *testing.T) {
 
 	Given("a batched broadcaster", func() {
 		broadcaster = &mock2.BroadcasterMock{}
-		batched = broadcast.Batched(broadcaster, 1, 5, log.TestingLogger())
+		batched = broadcast.Batched(broadcaster, 1, 5)
 	}).Branch(
 		When("trying to broadcast 0 msgs", func() {
 			msgs = []sdk.Msg{}
@@ -339,7 +337,7 @@ func TestWithRetry(t *testing.T) {
 
 	Given("a retry broadcaster", func() {
 		broadcaster = &mock2.BroadcasterMock{}
-		retry = broadcast.WithRetry(broadcaster, 3, 1*time.Nanosecond, log.TestingLogger())
+		retry = broadcast.WithRetry(broadcaster, 3, 1*time.Nanosecond)
 	}).Branch(
 		When("one of the msgs fails", func() {
 			once := &sync.Once{}
@@ -408,7 +406,7 @@ func TestSuppressExecutionErrs(t *testing.T) {
 			return nil, sdkerrors.New("codespace", mathRand.Uint32(), "error")
 		}}
 
-	suppressor := broadcast.SuppressExecutionErrs(broadcaster, log.TestingLogger())
+	suppressor := broadcast.SuppressExecutionErrs(broadcaster)
 
 	_, err := suppressor.Broadcast(context.Background(), randomMsgs(5)...)
 	assert.NoError(t, err)

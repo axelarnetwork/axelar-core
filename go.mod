@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/armon/go-metrics v0.4.1
 	github.com/axelarnetwork/tm-events v0.0.0-20221019195821-9a3f03bc6ca6
-	github.com/axelarnetwork/utils v0.0.0-20230516203509-7f9a694f1fd7
+	github.com/axelarnetwork/utils v0.0.0-20230606193358-f065d88d9959
 	github.com/btcsuite/btcd v0.22.1
 	github.com/btcsuite/btcd/btcec/v2 v2.2.0
 	github.com/cosmos/cosmos-sdk v0.45.11
@@ -36,7 +36,7 @@ require (
 	golang.org/x/mod v0.10.0
 	golang.org/x/sync v0.2.0
 	golang.org/x/text v0.9.0
-	golang.org/x/tools v0.9.1
+	golang.org/x/tools v0.9.3
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2
 	google.golang.org/genproto v0.0.0-20221227171554-f9683d7f8bef
 	google.golang.org/grpc v1.52.0
@@ -178,3 +178,5 @@ replace github.com/confio/ics23/go => github.com/cosmos/cosmos-sdk/ics23/go v0.8
 
 // Temporary replacement for rosetta support
 replace github.com/cosmos/cosmos-sdk => github.com/axelarnetwork/cosmos-sdk v0.45.12-0.20230320160648-221f540372f1
+
+replace github.com/axelarnetwork/tm-events => ../tm-events

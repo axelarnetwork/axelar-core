@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"github.com/axelarnetwork/utils/log"
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -20,18 +21,18 @@ func (mgr *Mgr) ProcessKeygenStarted(event *types.KeygenStarted) error {
 	keyUID := fmt.Sprintf("%s_%d", event.GetKeyID().String(), 0)
 	partyUID := mgr.participant.String()
 
-	pubKey, err := mgr.generateKey(keyUID, partyUID)
+	pubKey, err := mgr.generateKey(keyUID)
 	if err != nil {
 		return err
 	}
 
 	payloadHash := sha256.Sum256(mgr.ctx.FromAddress)
-	sig, err := mgr.sign(keyUID, payloadHash[:], partyUID, pubKey)
+	sig, err := mgr.sign(keyUID, payloadHash[:], pubKey)
 	if err != nil {
 		return err
 	}
 
-	mgr.logger.Info(fmt.Sprintf("operator %s sending public key for multisig key %s", partyUID, keyUID))
+	log.Infof("operator %s sending public key for multisig key %s", partyUID, keyUID)
 
 	msg := types.NewSubmitPubKeyRequest(mgr.ctx.FromAddress, event.GetKeyID(), pubKey, sig)
 	if _, err := mgr.broadcaster.Broadcast(context.Background(), msg); err != nil {
