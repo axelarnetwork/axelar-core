@@ -17,6 +17,7 @@ const (
 
 func init() {
 	gov.RegisterProposalType(ProposalTypeCallContracts)
+	gov.RegisterProposalTypeCodec(&CallContractsProposal{}, "axelar/CallContractsProposal")
 }
 
 // ValidateBasic validates the contract call
@@ -58,7 +59,7 @@ func (p CallContractsProposal) GetDescription() string { return p.Description }
 // ProposalRoute returns the proposal router key
 func (p CallContractsProposal) ProposalRoute() string { return RouterKey }
 
-// ProposalType is "CallContracts"
+// ProposalType returns the proposal type
 func (p CallContractsProposal) ProposalType() string { return ProposalTypeCallContracts }
 
 // ValidateBasic validates the proposal
