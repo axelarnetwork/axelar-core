@@ -6,11 +6,13 @@ import (
 	"testing"
 	"time"
 
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types/proposal"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/gogo/protobuf/proto"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
@@ -18,6 +20,9 @@ import (
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
+	evmkeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
+	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexuskeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
@@ -33,7 +38,6 @@ func TestAfterProposalDeposit(t *testing.T) {
 
 	encCfg := app.MakeEncodingConfig()
 	subspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("nexusKey"), sdk.NewKVStoreKey("tNexusKey"), "nexus")
-	keeper := nexuskeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("nexus"), subspace)
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	gov := &mock.GovKeeperMock{}
 	contractCall := types.ContractCall{
@@ -43,8 +47,10 @@ func TestAfterProposalDeposit(t *testing.T) {
 	}
 	minDeposit := sdk.NewCoin("TEST", sdk.NewInt(rand.PosI64()))
 
+	keeper := nexuskeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("nexus"), subspace)
+	keeper.SetParams(ctx, types.DefaultParams())
+
 	Given("a proposal is created", func() {
-		keeper.SetParams(ctx, types.DefaultParams())
 		gov.GetProposalFunc = func(ctx sdk.Context, proposalID uint64) (govtypes.Proposal, bool) {
 			return proposal, proposalID == proposal.ProposalId
 		}
@@ -126,5 +132,98 @@ func TestAfterProposalDeposit(t *testing.T) {
 				),
 		).
 		Run(t)
+}
 
+func TestAfterProposalSubmission(t *testing.T) {
+	var (
+		proposal govtypes.Proposal
+	)
+
+	encCfg := app.MakeEncodingConfig()
+	subspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("nexusKey"), sdk.NewKVStoreKey("tNexusKey"), "nexus")
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+	gov := &mock.GovKeeperMock{}
+	nonRegisteredChain := exported.ChainName(rand.NormalizedStr(5))
+
+	keeper := nexuskeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("nexus"), subspace)
+	keeper.SetParams(ctx, types.DefaultParams())
+	keeper.SetRouter(types.NewRouter().AddAddressValidator(evmtypes.ModuleName, evmkeeper.NewAddressValidator()))
+	keeper.SetChain(ctx, evm.Ethereum)
+
+	Given("a proposal is created", func() {
+		gov.GetProposalFunc = func(ctx sdk.Context, proposalID uint64) (govtypes.Proposal, bool) {
+			return proposal, proposalID == proposal.ProposalId
+		}
+	}).
+		Branch(
+			When("the proposal is not a nexus call contracts proposal", func() {
+				proposal = funcs.Must(govtypes.NewProposal(
+					paramstypes.NewParameterChangeProposal("title", "description", []paramstypes.ParamChange{}),
+					uint64(rand.I64Between(1, 100)),
+					time.Now(),
+					time.Now().AddDate(0, 0, 1),
+				))
+			}).
+				Then("should not panic", func(t *testing.T) {
+					assert.NotPanics(t, func() {
+						keeper.Hooks(gov).AfterProposalSubmission(ctx, proposal.ProposalId)
+					})
+				}),
+
+			When("the proposal is a nexus call contracts proposal", func() {
+				proposal = funcs.Must(govtypes.NewProposal(
+					types.NewCallContractsProposal("title", "description", []types.ContractCall{}),
+					1,
+					time.Now(),
+					time.Now().AddDate(0, 0, 1),
+				))
+			}).
+				Branch(
+					When("contract call has non-registered chain", func() {
+						proposal.Content = funcs.Must(codectypes.NewAnyWithValue(types.NewCallContractsProposal("title", "description", []types.ContractCall{
+							{
+								Chain:           nonRegisteredChain,
+								ContractAddress: common.BytesToAddress(rand.Bytes(common.AddressLength)).Hex(),
+								Payload:         rand.Bytes(100),
+							},
+						}).(proto.Message)))
+					}).
+						Then("should panic", func(t *testing.T) {
+							assert.PanicsWithError(t, fmt.Sprintf("%s is not a registered chain", nonRegisteredChain), func() {
+								keeper.Hooks(gov).AfterProposalSubmission(ctx, proposal.ProposalId)
+							})
+						}),
+
+					When("contract call has registered chain but invalid contract address", func() {
+						proposal.Content = funcs.Must(codectypes.NewAnyWithValue(types.NewCallContractsProposal("title", "description", []types.ContractCall{
+							{
+								Chain:           evm.Ethereum.Name,
+								ContractAddress: rand.NormalizedStr(42),
+								Payload:         rand.Bytes(100),
+							},
+						}).(proto.Message)))
+					}).
+						Then("should panic", func(t *testing.T) {
+							assert.PanicsWithError(t, "not an hex address", func() {
+								keeper.Hooks(gov).AfterProposalSubmission(ctx, proposal.ProposalId)
+							})
+						}),
+
+					When("contract call has registered chain and valid contract address", func() {
+						proposal.Content = funcs.Must(codectypes.NewAnyWithValue(types.NewCallContractsProposal("title", "description", []types.ContractCall{
+							{
+								Chain:           evm.Ethereum.Name,
+								ContractAddress: common.BytesToAddress(rand.Bytes(common.AddressLength)).Hex(),
+								Payload:         rand.Bytes(100),
+							},
+						}).(proto.Message)))
+					}).
+						Then("should not panic", func(t *testing.T) {
+							assert.NotPanics(t, func() {
+								keeper.Hooks(gov).AfterProposalSubmission(ctx, proposal.ProposalId)
+							})
+						}),
+				),
+		).
+		Run(t)
 }
