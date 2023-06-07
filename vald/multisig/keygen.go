@@ -4,11 +4,11 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
-	"github.com/axelarnetwork/utils/log"
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
+	"github.com/axelarnetwork/utils/log"
 	"github.com/axelarnetwork/utils/slices"
 )
 

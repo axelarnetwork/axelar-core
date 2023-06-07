@@ -3,12 +3,12 @@ package broadcast
 import (
 	"context"
 	"fmt"
-	"github.com/axelarnetwork/utils/log"
 	"time"
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/utils"
+	"github.com/axelarnetwork/utils/log"
 )
 
 // retryPipeline manages serialized execution of functions with retry on error

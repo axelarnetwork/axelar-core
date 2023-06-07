@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/axelarnetwork/utils/log"
 	"strconv"
 	"strings"
 	"time"
@@ -21,6 +20,7 @@ import (
 	errors2 "github.com/axelarnetwork/axelar-core/utils/errors"
 	"github.com/axelarnetwork/axelar-core/x/reward/types"
 	"github.com/axelarnetwork/utils"
+	"github.com/axelarnetwork/utils/log"
 )
 
 //go:generate moq -pkg mock -out mock/broadcast.go . Broadcaster

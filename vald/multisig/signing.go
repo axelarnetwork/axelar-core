@@ -3,11 +3,11 @@ package multisig
 import (
 	"context"
 	"fmt"
-	"github.com/axelarnetwork/utils/log"
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
+	"github.com/axelarnetwork/utils/log"
 )
 
 // ProcessSigningStarted handles event signing started

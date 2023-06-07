@@ -3,10 +3,11 @@ package grpc
 import (
 	"context"
 	"fmt"
-	"github.com/axelarnetwork/utils/log"
 	"time"
 
 	"google.golang.org/grpc"
+
+	"github.com/axelarnetwork/utils/log"
 )
 
 // Connect connects to tofnd gRPC Server

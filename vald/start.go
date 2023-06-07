@@ -3,7 +3,6 @@ package vald
 import (
 	"context"
 	"fmt"
-	"github.com/axelarnetwork/utils/log"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -46,6 +45,7 @@ import (
 	"github.com/axelarnetwork/tm-events/tendermint"
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/jobs"
+	"github.com/axelarnetwork/utils/log"
 	"github.com/axelarnetwork/utils/slices"
 )
 

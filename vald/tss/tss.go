@@ -3,7 +3,6 @@ package tss
 import (
 	"context"
 	"fmt"
-	"github.com/axelarnetwork/utils/log"
 	"time"
 
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
@@ -18,6 +17,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
 	tmEvents "github.com/axelarnetwork/tm-events/events"
+	"github.com/axelarnetwork/utils/log"
 )
 
 // Mgr represents an object that manages all communication with the external tss process
