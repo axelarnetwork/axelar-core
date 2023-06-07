@@ -23,14 +23,12 @@ import (
 	evmkeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 )
 
 const maxAmount int64 = 100000000000
 
-var subspace params.Subspace
 var keeper nexusKeeper.Keeper
 var bankK *axelarnetmock.BankKeeperMock
 
@@ -63,7 +61,7 @@ func addressValidator() types.Router {
 
 func init() {
 	encCfg := app.MakeEncodingConfig()
-	subspace = params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("nexusKey"), sdk.NewKVStoreKey("tNexusKey"), "nexus")
+	subspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("nexusKey"), sdk.NewKVStoreKey("tNexusKey"), "nexus")
 	keeper = nexusKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("nexus"), subspace)
 	keeper.SetRouter(addressValidator())
 }
@@ -75,7 +73,7 @@ func TestLinkAddress(t *testing.T) {
 	cfg := app.MakeEncodingConfig()
 	keeper, ctx = setup(cfg)
 
-	terra := nexus.Chain{Name: nexus.ChainName("terra"), Module: axelarnetTypes.ModuleName, SupportsForeignAssets: true}
+	terra := exported.Chain{Name: exported.ChainName("terra"), Module: axelarnetTypes.ModuleName, SupportsForeignAssets: true}
 	evmAddr := exported.CrossChainAddress{Chain: evm.Ethereum, Address: "0x68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8"}
 	axelarAddr := exported.CrossChainAddress{Chain: axelarnet.Axelarnet, Address: "axelar1t66w8cazua870wu7t2hsffndmy2qy2v556ymndnczs83qpz2h45sq6lq9w"}
 
@@ -143,8 +141,8 @@ func TestLinkAddress(t *testing.T) {
 	}))
 
 	t.Run("should return error when link chain does not support foreign asset", testutils.Func(func(t *testing.T) {
-		fromChain := nexus.Chain{
-			Name:                  nexus.ChainName(rand.Str(5)),
+		fromChain := exported.Chain{
+			Name:                  exported.ChainName(rand.Str(5)),
 			SupportsForeignAssets: false,
 			Module:                evmTypes.ModuleName,
 		}

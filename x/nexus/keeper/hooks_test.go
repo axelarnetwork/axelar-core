@@ -8,15 +8,18 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types/proposal"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
+	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	nexuskeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types/mock"
 	"github.com/axelarnetwork/utils/funcs"
@@ -28,8 +31,11 @@ func TestAfterProposalDeposit(t *testing.T) {
 		proposal govtypes.Proposal
 	)
 
-	gov := &mock.GovKeeperMock{}
+	encCfg := app.MakeEncodingConfig()
+	subspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("nexusKey"), sdk.NewKVStoreKey("tNexusKey"), "nexus")
+	keeper := nexuskeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("nexus"), subspace)
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+	gov := &mock.GovKeeperMock{}
 	contractCall := types.ContractCall{
 		Chain:           exported.ChainName(rand.NormalizedStr(5)),
 		ContractAddress: common.BytesToAddress(rand.Bytes(common.AddressLength)).Hex(),
