@@ -14,7 +14,7 @@ import (
 
 // Hooks defines the nexus hooks for the gov module.
 type Hooks struct {
-	Keeper
+	k   Keeper
 	gov types.GovKeeper
 }
 
@@ -30,7 +30,7 @@ func (h Hooks) AfterProposalDeposit(ctx sdk.Context, proposalID uint64, _ sdk.Ac
 
 	switch c := proposal.GetContent().(type) {
 	case *types.CallContractsProposal:
-		minDeposits := h.GetParams(ctx).CallContractsProposalMinDeposits
+		minDeposits := h.k.GetParams(ctx).CallContractsProposalMinDeposits
 
 		for _, contractCall := range c.ContractCalls {
 			contractAddress := strings.ToLower(contractCall.ContractAddress)
@@ -60,13 +60,13 @@ func (h Hooks) AfterProposalSubmission(ctx sdk.Context, proposalID uint64) {
 	case *types.CallContractsProposal:
 		// perform stateful validations of the proposal
 		for _, contractCall := range c.ContractCalls {
-			chain, ok := h.GetChain(ctx, contractCall.Chain)
+			chain, ok := h.k.GetChain(ctx, contractCall.Chain)
 			if !ok {
 				panic(fmt.Errorf("%s is not a registered chain", contractCall.Chain))
 			}
 
 			crossChainAddress := exported.CrossChainAddress{Chain: chain, Address: contractCall.ContractAddress}
-			if err := h.ValidateAddress(ctx, crossChainAddress); err != nil {
+			if err := h.k.ValidateAddress(ctx, crossChainAddress); err != nil {
 				panic(err)
 			}
 		}
