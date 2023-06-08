@@ -30,7 +30,7 @@ func TestMigrate6to7(t *testing.T) {
 	}).
 		When("", func() {}).
 		Then("the migration should add the new param with the default value", func(t *testing.T) {
-			actual := make(map[string]types.Params_Coins)
+			actual := types.CallContractProposalMinDeposits{}
 
 			assert.PanicsWithError(t, "UnmarshalJSON cannot decode empty bytes", func() {
 				subspace.Get(ctx, types.KeyCallContractsProposalMinDeposits, &actual)

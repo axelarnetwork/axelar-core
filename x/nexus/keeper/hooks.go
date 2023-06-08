@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"fmt"
-	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
@@ -30,18 +29,11 @@ func (h Hooks) AfterProposalDeposit(ctx sdk.Context, proposalID uint64, _ sdk.Ac
 
 	switch c := proposal.GetContent().(type) {
 	case *types.CallContractsProposal:
-		minDeposits := h.k.GetParams(ctx).CallContractsProposalMinDeposits
+		minDepositsMap := h.k.GetParams(ctx).CallContractsProposalMinDeposits.ToMap()
 
 		for _, contractCall := range c.ContractCalls {
-			contractAddress := strings.ToLower(contractCall.ContractAddress)
-
-			minDeposit, ok := minDeposits[contractAddress]
-			if !ok {
-				continue
-			}
-
-			if !proposal.TotalDeposit.IsAllGTE(minDeposit.Coins) {
-				panic(fmt.Errorf("proposal %d does not have enough deposits for calling contract %s", proposalID, contractAddress))
+			if !proposal.TotalDeposit.IsAllGTE(minDepositsMap.Get(contractCall.Chain, contractCall.ContractAddress)) {
+				panic(fmt.Errorf("proposal %d does not have enough deposits for calling contract %s on chain %s", proposalID, contractCall.ContractAddress, contractCall.Chain))
 			}
 		}
 	default:

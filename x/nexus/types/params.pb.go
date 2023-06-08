@@ -6,11 +6,11 @@ package types
 import (
 	fmt "fmt"
 	utils "github.com/axelarnetwork/axelar-core/utils"
+	github_com_axelarnetwork_axelar_core_x_nexus_exported "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
 	types "github.com/cosmos/cosmos-sdk/types"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
-	github_com_gogo_protobuf_sortkeys "github.com/gogo/protobuf/sortkeys"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -29,11 +29,11 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 // Params represent the genesis parameters for the module
 type Params struct {
-	ChainActivationThreshold              utils.Threshold         `protobuf:"bytes,1,opt,name=chain_activation_threshold,json=chainActivationThreshold,proto3" json:"chain_activation_threshold"`
-	ChainMaintainerMissingVoteThreshold   utils.Threshold         `protobuf:"bytes,2,opt,name=chain_maintainer_missing_vote_threshold,json=chainMaintainerMissingVoteThreshold,proto3" json:"chain_maintainer_missing_vote_threshold"`
-	ChainMaintainerIncorrectVoteThreshold utils.Threshold         `protobuf:"bytes,3,opt,name=chain_maintainer_incorrect_vote_threshold,json=chainMaintainerIncorrectVoteThreshold,proto3" json:"chain_maintainer_incorrect_vote_threshold"`
-	ChainMaintainerCheckWindow            int32                   `protobuf:"varint,4,opt,name=chain_maintainer_check_window,json=chainMaintainerCheckWindow,proto3" json:"chain_maintainer_check_window,omitempty"`
-	CallContractsProposalMinDeposits      map[string]Params_Coins `protobuf:"bytes,8,rep,name=call_contracts_proposal_min_deposits,json=callContractsProposalMinDeposits,proto3" json:"call_contracts_proposal_min_deposits" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	ChainActivationThreshold              utils.Threshold                 `protobuf:"bytes,1,opt,name=chain_activation_threshold,json=chainActivationThreshold,proto3" json:"chain_activation_threshold"`
+	ChainMaintainerMissingVoteThreshold   utils.Threshold                 `protobuf:"bytes,2,opt,name=chain_maintainer_missing_vote_threshold,json=chainMaintainerMissingVoteThreshold,proto3" json:"chain_maintainer_missing_vote_threshold"`
+	ChainMaintainerIncorrectVoteThreshold utils.Threshold                 `protobuf:"bytes,3,opt,name=chain_maintainer_incorrect_vote_threshold,json=chainMaintainerIncorrectVoteThreshold,proto3" json:"chain_maintainer_incorrect_vote_threshold"`
+	ChainMaintainerCheckWindow            int32                           `protobuf:"varint,4,opt,name=chain_maintainer_check_window,json=chainMaintainerCheckWindow,proto3" json:"chain_maintainer_check_window,omitempty"`
+	CallContractsProposalMinDeposits      CallContractProposalMinDeposits `protobuf:"bytes,5,rep,name=call_contracts_proposal_min_deposits,json=callContractsProposalMinDeposits,proto3,castrepeated=CallContractProposalMinDeposits" json:"call_contracts_proposal_min_deposits"`
 }
 
 func (m *Params) Reset()         { *m = Params{} }
@@ -65,22 +65,24 @@ func (m *Params) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_Params proto.InternalMessageInfo
 
-type Params_Coins struct {
-	Coins github_com_cosmos_cosmos_sdk_types.Coins `protobuf:"bytes,2,rep,name=coins,proto3,castrepeated=github.com/cosmos/cosmos-sdk/types.Coins" json:"coins"`
+type CallContractProposalMinDeposit struct {
+	Chain           github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,1,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
+	ContractAddress string                                                          `protobuf:"bytes,2,opt,name=contract_address,json=contractAddress,proto3" json:"contract_address,omitempty"`
+	MinDeposits     github_com_cosmos_cosmos_sdk_types.Coins                        `protobuf:"bytes,3,rep,name=min_deposits,json=minDeposits,proto3,castrepeated=github.com/cosmos/cosmos-sdk/types.Coins" json:"min_deposits"`
 }
 
-func (m *Params_Coins) Reset()         { *m = Params_Coins{} }
-func (m *Params_Coins) String() string { return proto.CompactTextString(m) }
-func (*Params_Coins) ProtoMessage()    {}
-func (*Params_Coins) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c78ca34850cdc1ef, []int{0, 0}
+func (m *CallContractProposalMinDeposit) Reset()         { *m = CallContractProposalMinDeposit{} }
+func (m *CallContractProposalMinDeposit) String() string { return proto.CompactTextString(m) }
+func (*CallContractProposalMinDeposit) ProtoMessage()    {}
+func (*CallContractProposalMinDeposit) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c78ca34850cdc1ef, []int{1}
 }
-func (m *Params_Coins) XXX_Unmarshal(b []byte) error {
+func (m *CallContractProposalMinDeposit) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Params_Coins) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *CallContractProposalMinDeposit) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_Params_Coins.Marshal(b, m, deterministic)
+		return xxx_messageInfo_CallContractProposalMinDeposit.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -90,62 +92,62 @@ func (m *Params_Coins) XXX_Marshal(b []byte, deterministic bool) ([]byte, error)
 		return b[:n], nil
 	}
 }
-func (m *Params_Coins) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Params_Coins.Merge(m, src)
+func (m *CallContractProposalMinDeposit) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CallContractProposalMinDeposit.Merge(m, src)
 }
-func (m *Params_Coins) XXX_Size() int {
+func (m *CallContractProposalMinDeposit) XXX_Size() int {
 	return m.Size()
 }
-func (m *Params_Coins) XXX_DiscardUnknown() {
-	xxx_messageInfo_Params_Coins.DiscardUnknown(m)
+func (m *CallContractProposalMinDeposit) XXX_DiscardUnknown() {
+	xxx_messageInfo_CallContractProposalMinDeposit.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Params_Coins proto.InternalMessageInfo
+var xxx_messageInfo_CallContractProposalMinDeposit proto.InternalMessageInfo
 
 func init() {
 	proto.RegisterType((*Params)(nil), "axelar.nexus.v1beta1.Params")
-	proto.RegisterMapType((map[string]Params_Coins)(nil), "axelar.nexus.v1beta1.Params.CallContractsProposalMinDepositsEntry")
-	proto.RegisterType((*Params_Coins)(nil), "axelar.nexus.v1beta1.Params.Coins")
+	proto.RegisterType((*CallContractProposalMinDeposit)(nil), "axelar.nexus.v1beta1.CallContractProposalMinDeposit")
 }
 
 func init() { proto.RegisterFile("axelar/nexus/v1beta1/params.proto", fileDescriptor_c78ca34850cdc1ef) }
 
 var fileDescriptor_c78ca34850cdc1ef = []byte{
-	// 536 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x94, 0x3d, 0x6f, 0xd3, 0x40,
-	0x1c, 0xc6, 0xe3, 0xbc, 0x09, 0xae, 0x0b, 0xb2, 0x3a, 0x04, 0x4b, 0x38, 0xa1, 0xb4, 0x22, 0x0c,
-	0xb5, 0x69, 0x58, 0xaa, 0x6e, 0x4d, 0x60, 0x60, 0x88, 0x14, 0x45, 0x08, 0x24, 0x16, 0xeb, 0x72,
-	0x39, 0x25, 0x47, 0xec, 0xfb, 0x5b, 0x77, 0x97, 0x37, 0x31, 0xf0, 0x15, 0x18, 0xbb, 0xb2, 0x32,
-	0xf3, 0x21, 0x32, 0x76, 0x64, 0xe2, 0x25, 0xf9, 0x22, 0xc8, 0x77, 0x17, 0xb7, 0xa4, 0x08, 0xe8,
-	0xe4, 0xb3, 0xee, 0xb9, 0xdf, 0xf3, 0xfc, 0xed, 0xc7, 0x46, 0x0f, 0xf1, 0x82, 0xc6, 0x58, 0x84,
-	0x9c, 0x2e, 0xa6, 0x32, 0x9c, 0x9d, 0x0c, 0xa8, 0xc2, 0x27, 0x61, 0x8a, 0x05, 0x4e, 0x64, 0x90,
-	0x0a, 0x50, 0xe0, 0xee, 0x1b, 0x49, 0xa0, 0x25, 0x81, 0x95, 0x78, 0xfb, 0x23, 0x18, 0x81, 0x16,
-	0x84, 0xd9, 0xca, 0x68, 0x3d, 0x9f, 0x80, 0x4c, 0x40, 0x86, 0x03, 0x2c, 0x69, 0x4e, 0x23, 0xc0,
-	0xb8, 0xdd, 0x3f, 0xb4, 0x76, 0x53, 0xc5, 0xe2, 0x2b, 0x3b, 0x35, 0x16, 0x54, 0x8e, 0x21, 0x1e,
-	0x1a, 0xd5, 0xc1, 0x97, 0x2a, 0xaa, 0xf6, 0x74, 0x04, 0x97, 0x20, 0x8f, 0x8c, 0x31, 0xe3, 0x11,
-	0x26, 0x8a, 0xcd, 0xb0, 0x62, 0xc0, 0xa3, 0x5c, 0x5e, 0x73, 0x1a, 0x4e, 0x73, 0xaf, 0x55, 0x0f,
-	0x6c, 0x42, 0x4d, 0xdd, 0x26, 0x0c, 0x5e, 0x6d, 0x65, 0xed, 0xf2, 0xea, 0x5b, 0xbd, 0xd0, 0xaf,
-	0x69, 0xd0, 0x79, 0xce, 0xc9, 0xf7, 0xdd, 0xf7, 0xe8, 0xb1, 0x31, 0x49, 0x30, 0xe3, 0x0a, 0x33,
-	0x4e, 0x45, 0x94, 0x30, 0x29, 0x19, 0x1f, 0x45, 0x33, 0x50, 0xf4, 0x9a, 0x63, 0xf1, 0x36, 0x8e,
-	0x8f, 0x34, 0xb5, 0x9b, 0x43, 0xbb, 0x86, 0xf9, 0x1a, 0x14, 0xbd, 0x32, 0xff, 0x80, 0x9e, 0xdc,
-	0x30, 0x67, 0x9c, 0x80, 0x10, 0x94, 0xa8, 0x5d, 0xfb, 0xd2, 0x6d, 0xec, 0x8f, 0x76, 0xec, 0x5f,
-	0x6e, 0xa9, 0xbf, 0x07, 0x38, 0x47, 0x0f, 0x6e, 0x04, 0x20, 0x63, 0x4a, 0x26, 0xd1, 0x9c, 0xf1,
-	0x21, 0xcc, 0x6b, 0xe5, 0x86, 0xd3, 0xac, 0xf4, 0xbd, 0x1d, 0x5a, 0x27, 0x93, 0xbc, 0xd1, 0x0a,
-	0xf7, 0xc2, 0x41, 0x87, 0x04, 0xc7, 0x71, 0x44, 0x80, 0x2b, 0x81, 0x89, 0x92, 0x51, 0x2a, 0x20,
-	0x05, 0x89, 0xe3, 0x28, 0x61, 0x3c, 0x1a, 0xd2, 0x14, 0x24, 0x53, 0xb2, 0x76, 0xa7, 0x51, 0x6a,
-	0xee, 0xb5, 0xda, 0xc1, 0x9f, 0x2a, 0x15, 0x98, 0x57, 0x1e, 0x74, 0x70, 0x1c, 0x77, 0xb6, 0x9c,
-	0x9e, 0xc5, 0x74, 0x19, 0x7f, 0x6e, 0x21, 0x2f, 0xb8, 0x12, 0x4b, 0x3b, 0x62, 0x83, 0xfc, 0x43,
-	0xec, 0xbd, 0x43, 0x95, 0x0e, 0x30, 0x2e, 0x5d, 0x8c, 0x2a, 0x59, 0x11, 0x65, 0xad, 0xa8, 0x33,
-	0xdc, 0x0f, 0x4c, 0x55, 0x83, 0xac, 0xaa, 0x79, 0x84, 0x4c, 0xda, 0x7e, 0x9a, 0xa1, 0x3f, 0x7f,
-	0xaf, 0x37, 0x47, 0x4c, 0x8d, 0xa7, 0x83, 0x80, 0x40, 0x12, 0xda, 0x5e, 0x9b, 0xcb, 0xb1, 0x1c,
-	0x4e, 0x42, 0xb5, 0x4c, 0xa9, 0xd4, 0x07, 0x64, 0xdf, 0x90, 0xbd, 0x39, 0x3a, 0xfa, 0xaf, 0xf0,
-	0xee, 0x3d, 0x54, 0x9a, 0xd0, 0xa5, 0xae, 0xef, 0xdd, 0x7e, 0xb6, 0x74, 0x4f, 0x51, 0x65, 0x86,
-	0xe3, 0x29, 0xb5, 0x05, 0x3b, 0xf8, 0xfb, 0x13, 0x32, 0xa6, 0xfa, 0xc0, 0x59, 0xf1, 0xd4, 0x39,
-	0x2b, 0x5f, 0x7c, 0xaa, 0x3b, 0xed, 0xde, 0xea, 0xa7, 0x5f, 0x58, 0xad, 0x7d, 0xe7, 0x72, 0xed,
-	0x3b, 0x3f, 0xd6, 0xbe, 0xf3, 0x71, 0xe3, 0x17, 0x2e, 0x37, 0x7e, 0xe1, 0xeb, 0xc6, 0x2f, 0xbc,
-	0x6d, 0x5d, 0x9b, 0xc6, 0xc0, 0x39, 0x55, 0x73, 0x10, 0x13, 0x7b, 0x77, 0x4c, 0x40, 0xd0, 0x70,
-	0x61, 0xff, 0x04, 0x7a, 0xba, 0x41, 0x55, 0x7f, 0x8f, 0xcf, 0x7e, 0x05, 0x00, 0x00, 0xff, 0xff,
-	0x44, 0x7f, 0xc7, 0x24, 0x26, 0x04, 0x00, 0x00,
+	// 560 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x93, 0x3f, 0x6f, 0x13, 0x3f,
+	0x18, 0xc7, 0x73, 0x4d, 0x52, 0xa9, 0x97, 0x9f, 0xf4, 0x43, 0xa7, 0x0e, 0x21, 0x12, 0x77, 0xa1,
+	0x14, 0x35, 0x1d, 0xea, 0xa3, 0x81, 0x89, 0x05, 0x25, 0x61, 0x61, 0x08, 0x8a, 0x4e, 0x08, 0x04,
+	0xcb, 0xc9, 0xf1, 0x59, 0x89, 0x95, 0x3b, 0x3f, 0x27, 0xdb, 0xf9, 0x83, 0x18, 0x78, 0x0b, 0x4c,
+	0x88, 0x95, 0x15, 0x89, 0xf7, 0x91, 0xb1, 0x23, 0x53, 0x81, 0x84, 0x57, 0xc1, 0x84, 0x62, 0x5f,
+	0xfe, 0x34, 0xad, 0x2a, 0x65, 0x4a, 0xce, 0xfe, 0xf8, 0xf3, 0x7d, 0xfc, 0xc8, 0x8f, 0x7d, 0x1f,
+	0x4f, 0x68, 0x8c, 0x85, 0xcf, 0xe9, 0x64, 0x28, 0xfd, 0xd1, 0x79, 0x97, 0x2a, 0x7c, 0xee, 0xa7,
+	0x58, 0xe0, 0x44, 0xa2, 0x54, 0x80, 0x02, 0xe7, 0xd0, 0x20, 0x48, 0x23, 0x28, 0x43, 0x2a, 0x87,
+	0x3d, 0xe8, 0x81, 0x06, 0xfc, 0xc5, 0x3f, 0xc3, 0x56, 0x5c, 0x02, 0x32, 0x01, 0xe9, 0x77, 0xb1,
+	0xa4, 0x2b, 0x1b, 0x01, 0xc6, 0xb3, 0xfd, 0xe3, 0x2c, 0x6e, 0xa8, 0x58, 0xbc, 0x8e, 0x53, 0x7d,
+	0x41, 0x65, 0x1f, 0xe2, 0xc8, 0x50, 0x47, 0x7f, 0x0a, 0xf6, 0x7e, 0x47, 0x97, 0xe0, 0x10, 0xbb,
+	0x42, 0xfa, 0x98, 0xf1, 0x10, 0x13, 0xc5, 0x46, 0x58, 0x31, 0xe0, 0xe1, 0x0a, 0x2f, 0x5b, 0x55,
+	0xab, 0x56, 0xaa, 0x7b, 0x28, 0xab, 0x50, 0x5b, 0x97, 0x15, 0xa2, 0x57, 0x4b, 0xac, 0x59, 0x98,
+	0x5e, 0x7a, 0xb9, 0xa0, 0xac, 0x45, 0x8d, 0x95, 0x67, 0xb5, 0xef, 0x7c, 0xb0, 0x4f, 0x4c, 0x48,
+	0x82, 0x19, 0x57, 0x98, 0x71, 0x2a, 0xc2, 0x84, 0x49, 0xc9, 0x78, 0x2f, 0x1c, 0x81, 0xa2, 0x1b,
+	0x89, 0x7b, 0xbb, 0x24, 0x3e, 0xd0, 0xd6, 0xf6, 0x4a, 0xda, 0x36, 0xce, 0xd7, 0xa0, 0xe8, 0x3a,
+	0xfc, 0xa3, 0x7d, 0x7a, 0x2d, 0x9c, 0x71, 0x02, 0x42, 0x50, 0xa2, 0xb6, 0xe3, 0xf3, 0xbb, 0xc4,
+	0x3f, 0xdc, 0x8a, 0x7f, 0xb1, 0xb4, 0x5e, 0x2d, 0xa0, 0x61, 0xdf, 0xbb, 0x56, 0x00, 0xe9, 0x53,
+	0x32, 0x08, 0xc7, 0x8c, 0x47, 0x30, 0x2e, 0x17, 0xaa, 0x56, 0xad, 0x18, 0x54, 0xb6, 0x6c, 0xad,
+	0x05, 0xf2, 0x46, 0x13, 0xce, 0x77, 0xcb, 0x3e, 0x26, 0x38, 0x8e, 0x43, 0x02, 0x5c, 0x09, 0x4c,
+	0x94, 0x0c, 0x53, 0x01, 0x29, 0x48, 0x1c, 0x87, 0x09, 0xe3, 0x61, 0x44, 0x53, 0x90, 0x4c, 0xc9,
+	0x72, 0xb1, 0x9a, 0xaf, 0x95, 0xea, 0x4f, 0xd0, 0x4d, 0x4f, 0x0a, 0xb5, 0x70, 0x1c, 0xb7, 0x32,
+	0x41, 0x27, 0x3b, 0xde, 0x66, 0xfc, 0xb9, 0x39, 0xdc, 0x3c, 0x59, 0x5c, 0xea, 0xdb, 0x4f, 0xcf,
+	0xbb, 0x9d, 0x93, 0x41, 0x95, 0x6c, 0x00, 0xf2, 0x06, 0xe2, 0x69, 0xe1, 0xcb, 0x57, 0xcf, 0x3a,
+	0xfa, 0xbc, 0x67, 0xbb, 0xb7, 0xbb, 0x9c, 0xb7, 0x76, 0x51, 0x5f, 0x5b, 0xbf, 0xb4, 0x83, 0x66,
+	0xeb, 0xef, 0xa5, 0xf7, 0xac, 0xc7, 0x54, 0x7f, 0xd8, 0x45, 0x04, 0x12, 0xdf, 0x5c, 0x83, 0x53,
+	0x35, 0x06, 0x31, 0xc8, 0xbe, 0xce, 0x08, 0x08, 0xea, 0x4f, 0xb2, 0x89, 0xa2, 0x93, 0x14, 0x84,
+	0xa2, 0x11, 0x6a, 0x2d, 0x34, 0x2f, 0x71, 0x42, 0x03, 0x63, 0x74, 0x4e, 0xed, 0x3b, 0xcb, 0x6e,
+	0x85, 0x38, 0x8a, 0x04, 0x95, 0x52, 0xbf, 0xae, 0x83, 0xe0, 0xff, 0xe5, 0x7a, 0xc3, 0x2c, 0x3b,
+	0xdc, 0xfe, 0xef, 0x4a, 0x17, 0xf3, 0xba, 0x8b, 0x77, 0x91, 0x19, 0x36, 0xb4, 0x18, 0xb6, 0x75,
+	0x13, 0x81, 0xf1, 0xe6, 0xa3, 0xac, 0x55, 0xb5, 0x8d, 0x5a, 0xb3, 0xc9, 0x34, 0x3f, 0x67, 0x32,
+	0x1a, 0xf8, 0xea, 0x7d, 0x4a, 0xa5, 0x3e, 0x20, 0x83, 0x52, 0xb2, 0x6e, 0x4f, 0xb3, 0x33, 0xfd,
+	0xed, 0xe6, 0xa6, 0x33, 0xd7, 0xba, 0x98, 0xb9, 0xd6, 0xaf, 0x99, 0x6b, 0x7d, 0x9a, 0xbb, 0xb9,
+	0x8b, 0xb9, 0x9b, 0xfb, 0x31, 0x77, 0x73, 0xef, 0xea, 0x3b, 0x35, 0x40, 0x87, 0x74, 0xf7, 0xf5,
+	0x60, 0x3f, 0xfe, 0x17, 0x00, 0x00, 0xff, 0xff, 0xba, 0x07, 0x13, 0xb0, 0x6f, 0x04, 0x00, 0x00,
 }
 
 func (m *Params) Marshal() (dAtA []byte, err error) {
@@ -169,16 +171,9 @@ func (m *Params) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	var l int
 	_ = l
 	if len(m.CallContractsProposalMinDeposits) > 0 {
-		keysForCallContractsProposalMinDeposits := make([]string, 0, len(m.CallContractsProposalMinDeposits))
-		for k := range m.CallContractsProposalMinDeposits {
-			keysForCallContractsProposalMinDeposits = append(keysForCallContractsProposalMinDeposits, string(k))
-		}
-		github_com_gogo_protobuf_sortkeys.Strings(keysForCallContractsProposalMinDeposits)
-		for iNdEx := len(keysForCallContractsProposalMinDeposits) - 1; iNdEx >= 0; iNdEx-- {
-			v := m.CallContractsProposalMinDeposits[string(keysForCallContractsProposalMinDeposits[iNdEx])]
-			baseI := i
+		for iNdEx := len(m.CallContractsProposalMinDeposits) - 1; iNdEx >= 0; iNdEx-- {
 			{
-				size, err := (&v).MarshalToSizedBuffer(dAtA[:i])
+				size, err := m.CallContractsProposalMinDeposits[iNdEx].MarshalToSizedBuffer(dAtA[:i])
 				if err != nil {
 					return 0, err
 				}
@@ -186,15 +181,7 @@ func (m *Params) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 				i = encodeVarintParams(dAtA, i, uint64(size))
 			}
 			i--
-			dAtA[i] = 0x12
-			i -= len(keysForCallContractsProposalMinDeposits[iNdEx])
-			copy(dAtA[i:], keysForCallContractsProposalMinDeposits[iNdEx])
-			i = encodeVarintParams(dAtA, i, uint64(len(keysForCallContractsProposalMinDeposits[iNdEx])))
-			i--
-			dAtA[i] = 0xa
-			i = encodeVarintParams(dAtA, i, uint64(baseI-i))
-			i--
-			dAtA[i] = 0x42
+			dAtA[i] = 0x2a
 		}
 	}
 	if m.ChainMaintainerCheckWindow != 0 {
@@ -235,7 +222,7 @@ func (m *Params) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Params_Coins) Marshal() (dAtA []byte, err error) {
+func (m *CallContractProposalMinDeposit) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -245,20 +232,20 @@ func (m *Params_Coins) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Params_Coins) MarshalTo(dAtA []byte) (int, error) {
+func (m *CallContractProposalMinDeposit) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *Params_Coins) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *CallContractProposalMinDeposit) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
-	if len(m.Coins) > 0 {
-		for iNdEx := len(m.Coins) - 1; iNdEx >= 0; iNdEx-- {
+	if len(m.MinDeposits) > 0 {
+		for iNdEx := len(m.MinDeposits) - 1; iNdEx >= 0; iNdEx-- {
 			{
-				size, err := m.Coins[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				size, err := m.MinDeposits[iNdEx].MarshalToSizedBuffer(dAtA[:i])
 				if err != nil {
 					return 0, err
 				}
@@ -266,8 +253,22 @@ func (m *Params_Coins) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 				i = encodeVarintParams(dAtA, i, uint64(size))
 			}
 			i--
-			dAtA[i] = 0x12
+			dAtA[i] = 0x1a
 		}
+	}
+	if len(m.ContractAddress) > 0 {
+		i -= len(m.ContractAddress)
+		copy(dAtA[i:], m.ContractAddress)
+		i = encodeVarintParams(dAtA, i, uint64(len(m.ContractAddress)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Chain) > 0 {
+		i -= len(m.Chain)
+		copy(dAtA[i:], m.Chain)
+		i = encodeVarintParams(dAtA, i, uint64(len(m.Chain)))
+		i--
+		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -299,25 +300,30 @@ func (m *Params) Size() (n int) {
 		n += 1 + sovParams(uint64(m.ChainMaintainerCheckWindow))
 	}
 	if len(m.CallContractsProposalMinDeposits) > 0 {
-		for k, v := range m.CallContractsProposalMinDeposits {
-			_ = k
-			_ = v
-			l = v.Size()
-			mapEntrySize := 1 + len(k) + sovParams(uint64(len(k))) + 1 + l + sovParams(uint64(l))
-			n += mapEntrySize + 1 + sovParams(uint64(mapEntrySize))
+		for _, e := range m.CallContractsProposalMinDeposits {
+			l = e.Size()
+			n += 1 + l + sovParams(uint64(l))
 		}
 	}
 	return n
 }
 
-func (m *Params_Coins) Size() (n int) {
+func (m *CallContractProposalMinDeposit) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if len(m.Coins) > 0 {
-		for _, e := range m.Coins {
+	l = len(m.Chain)
+	if l > 0 {
+		n += 1 + l + sovParams(uint64(l))
+	}
+	l = len(m.ContractAddress)
+	if l > 0 {
+		n += 1 + l + sovParams(uint64(l))
+	}
+	if len(m.MinDeposits) > 0 {
+		for _, e := range m.MinDeposits {
 			l = e.Size()
 			n += 1 + l + sovParams(uint64(l))
 		}
@@ -478,7 +484,7 @@ func (m *Params) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-		case 8:
+		case 5:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field CallContractsProposalMinDeposits", wireType)
 			}
@@ -507,105 +513,10 @@ func (m *Params) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.CallContractsProposalMinDeposits == nil {
-				m.CallContractsProposalMinDeposits = make(map[string]Params_Coins)
+			m.CallContractsProposalMinDeposits = append(m.CallContractsProposalMinDeposits, CallContractProposalMinDeposit{})
+			if err := m.CallContractsProposalMinDeposits[len(m.CallContractsProposalMinDeposits)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
 			}
-			var mapkey string
-			mapvalue := &Params_Coins{}
-			for iNdEx < postIndex {
-				entryPreIndex := iNdEx
-				var wire uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return ErrIntOverflowParams
-					}
-					if iNdEx >= l {
-						return io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					wire |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				fieldNum := int32(wire >> 3)
-				if fieldNum == 1 {
-					var stringLenmapkey uint64
-					for shift := uint(0); ; shift += 7 {
-						if shift >= 64 {
-							return ErrIntOverflowParams
-						}
-						if iNdEx >= l {
-							return io.ErrUnexpectedEOF
-						}
-						b := dAtA[iNdEx]
-						iNdEx++
-						stringLenmapkey |= uint64(b&0x7F) << shift
-						if b < 0x80 {
-							break
-						}
-					}
-					intStringLenmapkey := int(stringLenmapkey)
-					if intStringLenmapkey < 0 {
-						return ErrInvalidLengthParams
-					}
-					postStringIndexmapkey := iNdEx + intStringLenmapkey
-					if postStringIndexmapkey < 0 {
-						return ErrInvalidLengthParams
-					}
-					if postStringIndexmapkey > l {
-						return io.ErrUnexpectedEOF
-					}
-					mapkey = string(dAtA[iNdEx:postStringIndexmapkey])
-					iNdEx = postStringIndexmapkey
-				} else if fieldNum == 2 {
-					var mapmsglen int
-					for shift := uint(0); ; shift += 7 {
-						if shift >= 64 {
-							return ErrIntOverflowParams
-						}
-						if iNdEx >= l {
-							return io.ErrUnexpectedEOF
-						}
-						b := dAtA[iNdEx]
-						iNdEx++
-						mapmsglen |= int(b&0x7F) << shift
-						if b < 0x80 {
-							break
-						}
-					}
-					if mapmsglen < 0 {
-						return ErrInvalidLengthParams
-					}
-					postmsgIndex := iNdEx + mapmsglen
-					if postmsgIndex < 0 {
-						return ErrInvalidLengthParams
-					}
-					if postmsgIndex > l {
-						return io.ErrUnexpectedEOF
-					}
-					mapvalue = &Params_Coins{}
-					if err := mapvalue.Unmarshal(dAtA[iNdEx:postmsgIndex]); err != nil {
-						return err
-					}
-					iNdEx = postmsgIndex
-				} else {
-					iNdEx = entryPreIndex
-					skippy, err := skipParams(dAtA[iNdEx:])
-					if err != nil {
-						return err
-					}
-					if (skippy < 0) || (iNdEx+skippy) < 0 {
-						return ErrInvalidLengthParams
-					}
-					if (iNdEx + skippy) > postIndex {
-						return io.ErrUnexpectedEOF
-					}
-					iNdEx += skippy
-				}
-			}
-			m.CallContractsProposalMinDeposits[mapkey] = *mapvalue
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -628,7 +539,7 @@ func (m *Params) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Params_Coins) Unmarshal(dAtA []byte) error {
+func (m *CallContractProposalMinDeposit) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -651,15 +562,79 @@ func (m *Params_Coins) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: Coins: wiretype end group for non-group")
+			return fmt.Errorf("proto: CallContractProposalMinDeposit: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: Coins: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: CallContractProposalMinDeposit: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Chain", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowParams
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthParams
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthParams
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Chain = github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Coins", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ContractAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowParams
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthParams
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthParams
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ContractAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MinDeposits", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -686,8 +661,8 @@ func (m *Params_Coins) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Coins = append(m.Coins, types.Coin{})
-			if err := m.Coins[len(m.Coins)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			m.MinDeposits = append(m.MinDeposits, types.Coin{})
+			if err := m.MinDeposits[len(m.MinDeposits)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

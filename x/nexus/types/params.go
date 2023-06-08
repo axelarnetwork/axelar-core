@@ -2,12 +2,9 @@ package types
 
 import (
 	"fmt"
-	"sort"
-	"strings"
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
-	"golang.org/x/exp/maps"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 )
@@ -38,7 +35,7 @@ func DefaultParams() Params {
 		ChainMaintainerMissingVoteThreshold:   utils.NewThreshold(20, 100),
 		ChainMaintainerIncorrectVoteThreshold: utils.NewThreshold(15, 100),
 		ChainMaintainerCheckWindow:            500,
-		CallContractsProposalMinDeposits:      make(map[string]Params_Coins),
+		CallContractsProposalMinDeposits:      nil,
 	}
 }
 
@@ -118,22 +115,13 @@ func validateChainMaintainerCheckWindow(i interface{}) error {
 }
 
 func validateCallContractsProposalMinDeposits(i interface{}) error {
-	val, ok := i.(map[string]Params_Coins)
+	val, ok := i.(CallContractProposalMinDeposits)
 	if !ok {
 		return fmt.Errorf("invalid parameter type for CallContractsProposalMinDeposits: %T", i)
 	}
 
-	contractAddresses := maps.Keys(val)
-	sort.Strings(contractAddresses)
-
-	for _, contractAddress := range contractAddresses {
-		if strings.ToLower(contractAddress) != contractAddress {
-			return fmt.Errorf("contract addresses in CallContractsProposalMinDeposits must be lowercase")
-		}
-
-		if err := val[contractAddress].Coins.Validate(); err != nil {
-			return err
-		}
+	if err := val.ValidateBasic(); err != nil {
+		return sdkerrors.Wrap(err, "invalid CallContractsProposalMinDeposits")
 	}
 
 	return nil

@@ -365,9 +365,8 @@
     - [RateLimitUpdated](#axelar.nexus.v1beta1.RateLimitUpdated)
   
 - [axelar/nexus/v1beta1/params.proto](#axelar/nexus/v1beta1/params.proto)
+    - [CallContractProposalMinDeposit](#axelar.nexus.v1beta1.CallContractProposalMinDeposit)
     - [Params](#axelar.nexus.v1beta1.Params)
-    - [Params.CallContractsProposalMinDepositsEntry](#axelar.nexus.v1beta1.Params.CallContractsProposalMinDepositsEntry)
-    - [Params.Coins](#axelar.nexus.v1beta1.Params.Coins)
   
 - [axelar/nexus/v1beta1/genesis.proto](#axelar/nexus/v1beta1/genesis.proto)
     - [GenesisState](#axelar.nexus.v1beta1.GenesisState)
@@ -5759,6 +5758,23 @@ Query defines the gRPC querier service.
 
 
 
+<a name="axelar.nexus.v1beta1.CallContractProposalMinDeposit"></a>
+
+### CallContractProposalMinDeposit
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `contract_address` | [string](#string) |  |  |
+| `min_deposits` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) | repeated |  |
+
+
+
+
+
+
 <a name="axelar.nexus.v1beta1.Params"></a>
 
 ### Params
@@ -5771,38 +5787,7 @@ Params represent the genesis parameters for the module
 | `chain_maintainer_missing_vote_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
 | `chain_maintainer_incorrect_vote_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
 | `chain_maintainer_check_window` | [int32](#int32) |  |  |
-| `call_contracts_proposal_min_deposits` | [Params.CallContractsProposalMinDepositsEntry](#axelar.nexus.v1beta1.Params.CallContractsProposalMinDepositsEntry) | repeated |  |
-
-
-
-
-
-
-<a name="axelar.nexus.v1beta1.Params.CallContractsProposalMinDepositsEntry"></a>
-
-### Params.CallContractsProposalMinDepositsEntry
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `key` | [string](#string) |  |  |
-| `value` | [Params.Coins](#axelar.nexus.v1beta1.Params.Coins) |  |  |
-
-
-
-
-
-
-<a name="axelar.nexus.v1beta1.Params.Coins"></a>
-
-### Params.Coins
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `coins` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) | repeated |  |
+| `call_contracts_proposal_min_deposits` | [CallContractProposalMinDeposit](#axelar.nexus.v1beta1.CallContractProposalMinDeposit) | repeated |  |
 
 
 

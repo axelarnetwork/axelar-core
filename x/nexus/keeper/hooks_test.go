@@ -2,7 +2,6 @@ package keeper_test
 
 import (
 	"fmt"
-	"strings"
 	"testing"
 	"time"
 
@@ -90,8 +89,9 @@ func TestAfterProposalDeposit(t *testing.T) {
 
 					When("keeper is setup with params that sets no min deposit for the contract call", func() {
 						params := types.DefaultParams()
-						params.CallContractsProposalMinDeposits = map[string]types.Params_Coins{
-							strings.ToLower(common.BytesToAddress(rand.Bytes(common.AddressLength)).Hex()): {Coins: sdk.NewCoins(minDeposit)},
+						params.CallContractsProposalMinDeposits = []types.CallContractProposalMinDeposit{
+							{Chain: contractCall.Chain, ContractAddress: common.BytesToAddress(rand.Bytes(common.AddressLength)).Hex(), MinDeposits: sdk.NewCoins(minDeposit)},
+							{Chain: exported.ChainName(rand.NormalizedStr(5)), ContractAddress: contractCall.ContractAddress, MinDeposits: sdk.NewCoins(minDeposit)},
 						}
 
 						keeper.SetParams(ctx, params)
@@ -104,8 +104,8 @@ func TestAfterProposalDeposit(t *testing.T) {
 
 					When("keeper is setup with params that sets some min deposit for the contract call", func() {
 						params := types.DefaultParams()
-						params.CallContractsProposalMinDeposits = map[string]types.Params_Coins{
-							strings.ToLower(contractCall.ContractAddress): {Coins: sdk.NewCoins(minDeposit)},
+						params.CallContractsProposalMinDeposits = []types.CallContractProposalMinDeposit{
+							{Chain: contractCall.Chain, ContractAddress: contractCall.ContractAddress, MinDeposits: sdk.NewCoins(minDeposit)},
 						}
 
 						keeper.SetParams(ctx, params)
@@ -124,7 +124,7 @@ func TestAfterProposalDeposit(t *testing.T) {
 								proposal.TotalDeposit = proposal.TotalDeposit.Add(minDeposit.SubAmount(sdk.NewInt(1)))
 							}).
 								Then("should panic", func(t *testing.T) {
-									assert.PanicsWithError(t, fmt.Sprintf("proposal %d does not have enough deposits for calling contract %s", proposal.ProposalId, strings.ToLower(contractCall.ContractAddress)), func() {
+									assert.PanicsWithError(t, fmt.Sprintf("proposal %d does not have enough deposits for calling contract %s on chain %s", proposal.ProposalId, contractCall.ContractAddress, contractCall.Chain), func() {
 										keeper.Hooks(gov).AfterProposalDeposit(ctx, proposal.ProposalId, rand.AccAddr())
 									})
 								}),
