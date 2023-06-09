@@ -66,7 +66,6 @@ jobs:
           done
           
       - name: Create control files
-        continue-on-error: true
         run: |
          for version in $(echo $VERSIONS_LIST | tr "," "\n"); do
          for arch in amd64 arm64 arm; do
@@ -81,7 +80,6 @@ jobs:
          done
 
       - name: Build the packages if they don't exist on S3
-        continue-on-error: true
         run: |
           for version in $(echo $VERSIONS_LIST | tr "," "\n"); do
             for arch in amd64 arm64 arm; do
@@ -96,7 +94,6 @@ jobs:
           done
           
       - name: Check the packages
-        continue-on-error: true
         run: |
           for version in $(echo $VERSIONS_LIST | tr "," "\n"); do
             for arch in amd64 arm64 arm; do
@@ -109,7 +106,6 @@ jobs:
           done
           
       - name: Copy binaries in apt repo
-        continue-on-error: true
         run: |
           mkdir -p ~/axelard/apt-repo/pool/main/
             if ls /home/runner/linux/*.deb; then
@@ -118,7 +114,6 @@ jobs:
           ls -l ~/axelard/apt-repo/pool/main/
           
       - name: Generate Packages files
-        continue-on-error: true
         run: |
           cd ~/axelard/apt-repo
           for version in $(echo $VERSIONS_LIST | tr "," "\n"); do
@@ -135,7 +130,6 @@ jobs:
           done
           
       - name: Generate Release file
-        continue-on-error: true
         run: |
           echo '#!/bin/sh
           set -e
@@ -178,11 +172,10 @@ jobs:
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
 
       - name: GPG sign apt repo
-        continue-on-error: true
         run: |
           cat ~/axelard/apt-repo/dists/stable/Release | gpg --default-key 5D9FFADEED11FA5D -abs > ~/axelard/apt-repo/dists/stable/Release.gpg
+
       - name: Upload to S3
-        continue-on-error: true
         run: |
           cd ~/
           architectures=("amd64" "arm64" "arm")
@@ -205,13 +198,11 @@ jobs:
           done
   
       - name: Get GPG public key
-        continue-on-error: true
         run: |
           curl https://keybase.io/axelardev/pgp_keys.asc | gpg --import
           curl https://keybase.io/axelardev/pgp_keys.asc | sudo apt-key add -
  
       - name: Install axelard and test
-        continue-on-error: true
         run: |
           echo "deb [arch=amd64] http://static.axelar.network/axelard/apt-repo stable main" | sudo tee /etc/apt/sources.list.d/axelar.list
           sudo apt-get clean
