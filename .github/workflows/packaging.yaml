@@ -28,7 +28,7 @@ jobs:
           echo "[default]
           region=auto
           output=json"  > ~/.aws/config
-         
+
       - name: Checkout code
         uses: actions/checkout@v2
         with:
@@ -47,23 +47,39 @@ jobs:
           mkdir -p ~/linux/axelard_$version-1_arm64/usr/bin/
           mkdir -p ~/linux/axelard_$version-1_arm64/DEBIAN/
           mkdir -p ~/linux/axelard_$version-1_arm/usr/bin/
-          mkdir -p ~/linux/axelard_$version-1_arm/DEBIAN/  
+          mkdir -p ~/linux/axelard_$version-1_arm/DEBIAN/
           done
-         
+
       - name: Get binaries
         run: |
           for version in $(echo $VERSIONS_LIST | tr "," "\n"); do
-            architectures=("amd64" "arm64" "arm")
-            for arch in "${architectures[@]}"; do
-              filename="axelard_$version-1_$arch.deb"
-              if ! output=$(aws s3 ls "s3://axelar-static/axelard/apt-repo/pool/main/$filename" --endpoint-url ${{ secrets.S3_BIN }} 2>&1); then
-                echo "Downloading $filename..."
-                wget -O "~/linux/axelard_$version-1_$arch/usr/bin/axelard" --no-check-certificate "https://github.com/axelarnetwork/axelar-core/releases/download/v$version/axelard-linux-$arch-v$version"
-                chmod 755 "~/linux/axelard_$version-1_$arch/usr/bin/axelard"
-              else
-                echo "Package file already exists in S3: $filename"
-              fi
-            done
+            filename_amd64="axelard_$version-1_amd64.deb"
+            filename_arm64="axelard_$version-1_arm64.deb"
+            filename_arm="axelard_$version-1_arm.deb"
+
+            if ! output=$(aws s3 ls "s3://axelar-static/axelard/apt-repo/pool/main/$filename_amd64" --endpoint-url ${{ secrets.S3_BIN }} 2>&1); then
+              echo "Downloading $filename_amd64..."
+              wget -O ~/linux/axelard_$version-1_amd64/usr/bin/axelard --no-check-certificate https://github.com/axelarnetwork/axelar-core/releases/download/v$version/axelard-linux-amd64-v$version
+              chmod 755 ~/linux/axelard_$version-1_amd64/usr/bin/axelard
+            else
+              echo "Package file already exists in S3: $filename_amd64"
+            fi
+
+            if ! output=$(aws s3 ls "s3://axelar-static/axelard/apt-repo/pool/main/$filename_arm64" --endpoint-url ${{ secrets.S3_BIN }} 2>&1); then
+              echo "Downloading $filename_arm64..."
+              wget -O ~/linux/axelard_$version-1_arm64/usr/bin/axelard --no-check-certificate https://github.com/axelarnetwork/axelar-core/releases/download/v$version/axelard-linux-arm64-v$version
+              chmod 755 ~/linux/axelard_$version-1_arm64/usr/bin/axelard
+            else
+              echo "Package file already exists in S3: $filename_arm64"
+            fi
+
+            if ! output=$(aws s3 ls "s3://axelar-static/axelard/apt-repo/pool/main/$filename_arm" --endpoint-url ${{ secrets.S3_BIN }} 2>&1); then
+              echo "Downloading $filename_arm..."
+              wget -O ~/linux/axelard_$version-1_arm/usr/bin/axelard --no-check-certificate https://github.com/axelarnetwork/axelar-core/releases/download/v$version/axelard-linux-arm-v$version
+              chmod 755 ~/linux/axelard_$version-1_arm/usr/bin/axelard
+            else
+              echo "Package file already exists in S3: $filename_arm"
+            fi
           done
 
       - name: Create control files
@@ -92,7 +108,7 @@ jobs:
           Description: axelard binary for Linux arm" \
           > ~/linux/axelard_$version-1_arm/DEBIAN/control
           done
-         
+
       - name: Build the packages if they don't exist on S3
         continue-on-error: true
         run: |
@@ -137,17 +153,17 @@ jobs:
             file_amd64="/home/runner/linux/axelard_$version-1_amd64.deb"
             file_arm64="/home/runner/linux/axelard_$version-1_arm64.deb"
             file_arm="/home/runner/linux/axelard_$version-1_arm.deb"
- 
+
             if [ -f $file_amd64 ]; then
               dpkg-deb --info $file_amd64
               dpkg-deb --contents $file_amd64
             fi
- 
+
             if [ -f $file_arm64 ]; then
               dpkg-deb --info $file_arm64
               dpkg-deb --contents $file_arm64
             fi
- 
+
             if [ -f $file_arm ]; then
               dpkg-deb --info $file_arm
               dpkg-deb --contents $file_arm
@@ -162,7 +178,7 @@ jobs:
               cp /home/runner/linux/*.deb ~/axelard/apt-repo/pool/main/.
             fi
           ls -l ~/axelard/apt-repo/pool/main/
-         
+
       - name: Generate Packages files
         continue-on-error: true
         run: |
@@ -276,7 +292,7 @@ jobs:
         run: |
           curl https://keybase.io/axelardev/pgp_keys.asc | gpg --import
           curl https://keybase.io/axelardev/pgp_keys.asc | sudo apt-key add -
- 
+
       - name: Install axelard and test
         continue-on-error: true
         run: |
