@@ -79,7 +79,7 @@ jobs:
          > ~/linux/axelard_$version-1_$arch/DEBIAN/control
          done
          done
-         
+
       - name: Build the packages if they don't exist on S3
         continue-on-error: true
         run: |
@@ -185,23 +185,25 @@ jobs:
         continue-on-error: true
         run: |
           cd ~/
-          aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static --key axelard/apt-repo/dists/stable/main/binary-amd64/Packages.gz --body axelard/apt-repo/dists/stable/main/binary-amd64/Packages.gz
-          aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static  --key axelard/apt-repo/dists/stable/main/binary-arm64/Packages.gz --body axelard/apt-repo/dists/stable/main/binary-arm64/Packages.gz
-          aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static  --key axelard/apt-repo/dists/stable/main/binary-arm/Packages.gz --body axelard/apt-repo/dists/stable/main/binary-arm/Packages.gz
-          aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static --key axelard/apt-repo/dists/stable/main/binary-amd64/Packages --body axelard/apt-repo/dists/stable/main/binary-amd64/Packages
-          aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static  --key axelard/apt-repo/dists/stable/main/binary-arm64/Packages --body axelard/apt-repo/dists/stable/main/binary-arm64/Packages
-          aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static  --key axelard/apt-repo/dists/stable/main/binary-arm/Packages --body axelard/apt-repo/dists/stable/main/binary-arm/Packages
-          aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static  --key axelard/apt-repo/dists/stable/Release --body axelard/apt-repo/dists/stable/Release
-          aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static  --key axelard/apt-repo/dists/stable/Release.gpg --body axelard/apt-repo/dists/stable/Release.gpg
+          architectures=("amd64" "arm64" "arm")
+
+          for arch in "${architectures[@]}"; do
+            aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static --key "axelard/apt-repo/dists/stable/main/binary-$arch/Packages.gz" --body "axelard/apt-repo/dists/stable/main/binary-$arch/Packages.gz"
+            aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static --key "axelard/apt-repo/dists/stable/main/binary-$arch/Packages" --body "axelard/apt-repo/dists/stable/main/binary-$arch/Packages"
+          done
+
+          aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static  --key "axelard/apt-repo/dists/stable/Release" --body "axelard/apt-repo/dists/stable/Release"
+          aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static  --key "axelard/apt-repo/dists/stable/Release.gpg" --body "axelard/apt-repo/dists/stable/Release.gpg"
+
           for version in $(echo $VERSIONS_LIST | tr "," "\n"); do
-            for arch in amd64 arm64 arm; do
+            for arch in "${architectures[@]}"; do
               key="axelard/apt-repo/pool/main/axelard_$version-1_$arch.deb"
               if ! aws s3api head-object --bucket axelar-static --key "$key" --endpoint-url ${{ secrets.S3_BIN }} > /dev/null 2>&1; then
                 aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static --key "$key" --body "axelard/apt-repo/pool/main/axelard_$version-1_$arch.deb"
               fi
             done
           done
-          
+  
       - name: Get GPG public key
         continue-on-error: true
         run: |
