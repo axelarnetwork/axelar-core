@@ -209,7 +209,7 @@ func (m callContractProposalMinDepositsMap) Get(chain exported.ChainName, contra
 
 // ValidateBasic returns an error if the type is invalid
 func (minDeposits CallContractProposalMinDeposits) ValidateBasic() error {
-	chainContractAddressPairs := make(map[string]bool)
+	chainContractAddressPairs := make(map[string]struct{})
 
 	for _, minDeposit := range minDeposits {
 		if err := minDeposit.ValidateBasic(); err != nil {
@@ -220,7 +220,7 @@ func (minDeposits CallContractProposalMinDeposits) ValidateBasic() error {
 		if _, ok := chainContractAddressPairs[key]; ok {
 			return fmt.Errorf("duplicate chain and contract address pair found")
 		}
-		chainContractAddressPairs[key] = true
+		chainContractAddressPairs[key] = struct{}{}
 
 	}
 

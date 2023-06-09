@@ -78,7 +78,7 @@ func TestAfterProposalDeposit(t *testing.T) {
 				))
 			}).
 				Branch(
-					When("keer is setup with the default params", func() {
+					When("keeper is setup with the default params", func() {
 						keeper.SetParams(ctx, types.DefaultParams())
 					}).
 						Then("should not panic", func(t *testing.T) {

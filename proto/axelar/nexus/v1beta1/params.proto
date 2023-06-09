@@ -10,8 +10,6 @@ option (gogoproto.goproto_getters_all) = false;
 
 // Params represent the genesis parameters for the module
 message Params {
-  option (gogoproto.stable_marshaler) = true;
-
   utils.v1beta1.Threshold chain_activation_threshold = 1
       [ (gogoproto.nullable) = false ];
   utils.v1beta1.Threshold chain_maintainer_missing_vote_threshold = 2
