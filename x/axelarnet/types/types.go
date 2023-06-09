@@ -257,6 +257,7 @@ var (
 	AxelarGMPAccount = GetEscrowAddress(fmt.Sprintf("%s_%s", ModuleName, "gmp"))
 )
 
+// ValidateBasic returns an error if the given Fee is invalid; nil otherwise
 func (f Fee) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(f.Recipient); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "fee recipient").Error())

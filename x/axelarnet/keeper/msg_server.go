@@ -89,7 +89,6 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 	})
 
 	if req.Fee != nil {
-
 		if s.bank.BlockedAddr(req.Fee.Recipient) {
 			return nil, fmt.Errorf("fee recipient is a blocked address")
 		}
