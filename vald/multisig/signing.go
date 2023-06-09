@@ -7,6 +7,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
+	"github.com/axelarnetwork/utils/log"
 )
 
 // ProcessSigningStarted handles event signing started
@@ -19,12 +20,12 @@ func (mgr *Mgr) ProcessSigningStarted(event *types.SigningStarted) error {
 	keyUID := fmt.Sprintf("%s_%d", event.GetKeyID().String(), 0)
 	partyUID := mgr.participant.String()
 
-	sig, err := mgr.sign(keyUID, event.GetPayloadHash(), partyUID, pubKey)
+	sig, err := mgr.sign(keyUID, event.GetPayloadHash(), pubKey)
 	if err != nil {
 		return err
 	}
 
-	mgr.logger.Info(fmt.Sprintf("operator %s sending signature for signing %d", partyUID, event.GetSigID()))
+	log.Infof("operator %s sending signature for signing %d", partyUID, event.GetSigID())
 
 	msg := types.NewSubmitSignatureRequest(mgr.ctx.FromAddress, event.GetSigID(), sig)
 	if _, err := mgr.broadcaster.Broadcast(context.Background(), msg); err != nil {
