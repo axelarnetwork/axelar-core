@@ -15,7 +15,6 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	geth "github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/assert"
-	"github.com/tendermint/tendermint/libs/log"
 
 	mock2 "github.com/axelarnetwork/axelar-core/sdk-utils/broadcast/mock"
 	"github.com/axelarnetwork/axelar-core/testutils"
@@ -188,7 +187,7 @@ func TestMgr_GetTxReceiptIfFinalized(t *testing.T) {
 		confHeight = uint64(rand.I64Between(1, 50))
 		latestFinalizedBlockNumber = uint64(rand.I64Between(1000, 10000))
 
-		mgr = evm.NewMgr(map[string]evmRpc.Client{chain.String(): rpcClient}, nil, log.TestingLogger(), rand.ValAddr(), rand.AccAddr(), cache)
+		mgr = evm.NewMgr(map[string]evmRpc.Client{chain.String(): rpcClient}, nil, rand.ValAddr(), rand.AccAddr(), cache)
 	})
 
 	givenMgr.
@@ -377,7 +376,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 		}
 
 		valAddr = rand.ValAddr()
-		mgr = evm.NewMgr(evmMap, broadcaster, log.TestingLogger(), valAddr, rand.AccAddr(), &evmmock.LatestFinalizedBlockCacheMock{
+		mgr = evm.NewMgr(evmMap, broadcaster, valAddr, rand.AccAddr(), &evmmock.LatestFinalizedBlockCacheMock{
 			GetFunc: func(_ nexus.ChainName) *big.Int { return big.NewInt(0) },
 			SetFunc: func(_ nexus.ChainName, _ *big.Int) {},
 		})
@@ -612,7 +611,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		}
 		evmMap := make(map[string]evmRpc.Client)
 		evmMap["ethereum"] = rpc
-		mgr = evm.NewMgr(evmMap, broadcaster, log.TestingLogger(), valAddr, rand.AccAddr(), &evmmock.LatestFinalizedBlockCacheMock{
+		mgr = evm.NewMgr(evmMap, broadcaster, valAddr, rand.AccAddr(), &evmmock.LatestFinalizedBlockCacheMock{
 			GetFunc: func(_ nexus.ChainName) *big.Int { return big.NewInt(0) },
 			SetFunc: func(_ nexus.ChainName, _ *big.Int) {},
 		})
@@ -718,7 +717,7 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 		evmMap := make(map[string]evmRpc.Client)
 		evmMap["ethereum"] = rpc
 		valAddr = rand.ValAddr()
-		mgr = evm.NewMgr(evmMap, broadcaster, log.TestingLogger(), valAddr, rand.AccAddr(), &evmmock.LatestFinalizedBlockCacheMock{
+		mgr = evm.NewMgr(evmMap, broadcaster, valAddr, rand.AccAddr(), &evmmock.LatestFinalizedBlockCacheMock{
 			GetFunc: func(_ nexus.ChainName) *big.Int { return big.NewInt(0) },
 			SetFunc: func(_ nexus.ChainName, _ *big.Int) {},
 		})
