@@ -74,7 +74,7 @@ func (c *EthereumClient) LatestFinalizedBlockNumber(ctx context.Context, confirm
 	return sdk.NewIntFromUint64(blockNumber).SubRaw(int64(confirmations)).AddRaw(1).BigInt(), nil
 }
 
-func (c *EthereumClient) TransactionReceipts(ctx context.Context, txHashes []common.Hash) ([]ReceiptResult, error) {
+func (c *EthereumClient) TransactionReceipts(ctx context.Context, txHashes []common.Hash) ([]Result, error) {
 	batch := slices.Map(txHashes, func(txHash common.Hash) rpc.BatchElem {
 		var receipt types.Receipt
 		return rpc.BatchElem{
@@ -88,11 +88,11 @@ func (c *EthereumClient) TransactionReceipts(ctx context.Context, txHashes []com
 		return nil, fmt.Errorf("unable to send batch request: %v", err)
 	}
 
-	return slices.Map(batch, func(elem rpc.BatchElem) ReceiptResult {
+	return slices.Map(batch, func(elem rpc.BatchElem) Result {
 		if elem.Error != nil {
-			return ReceiptResult(results.FromErr[*types.Receipt](elem.Error))
+			return Result(results.FromErr[*types.Receipt](elem.Error))
 		}
-		return ReceiptResult(results.FromOk(elem.Result.(*types.Receipt)))
+		return Result(results.FromOk(elem.Result.(*types.Receipt)))
 	}), nil
 
 }

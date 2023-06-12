@@ -487,7 +487,7 @@ func (mgr Mgr) GetTxReceiptsIfFinalized(chain nexus.ChainName, txIDs []common.Ha
 		return rs.FromOk(r)
 	}
 
-	return slices.Map(results, func(r rpc.ReceiptResult) rs.Result[*geth.Receipt] {
+	return slices.Map(results, func(r rpc.Result) rs.Result[*geth.Receipt] {
 		return rs.Pipe(rs.Result[*geth.Receipt](r), isFinalized)
 	}), nil
 

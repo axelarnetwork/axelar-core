@@ -883,9 +883,9 @@ func TestMgr_GetTxReceiptsIfFinalized(t *testing.T) {
 			When("transactions are finalized", func() {
 				latestFinalizedBlockNumber = rand.I64Between(1000, 10000)
 
-				evmClient.TransactionReceiptsFunc = func(_ context.Context, _ []common.Hash) ([]evmRpc.ReceiptResult, error) {
-					return slices.Map(txHashes, func(hash common.Hash) evmRpc.ReceiptResult {
-						return evmRpc.ReceiptResult(results.FromOk(&geth.Receipt{
+				evmClient.TransactionReceiptsFunc = func(_ context.Context, _ []common.Hash) ([]evmRpc.Result, error) {
+					return slices.Map(txHashes, func(hash common.Hash) evmRpc.Result {
+						return evmRpc.Result(results.FromOk(&geth.Receipt{
 							BlockNumber: big.NewInt(latestFinalizedBlockNumber - rand.I64Between(1, 100)),
 							TxHash:      hash,
 							Status:      1,
@@ -899,9 +899,9 @@ func TestMgr_GetTxReceiptsIfFinalized(t *testing.T) {
 					assert.True(t, slices.All(receipts, func(result results.Result[*geth.Receipt]) bool { return result.Err() == nil }))
 				}),
 			When("some transactions are not finalized", func() {
-				evmClient.TransactionReceiptsFunc = func(_ context.Context, _ []common.Hash) ([]evmRpc.ReceiptResult, error) {
+				evmClient.TransactionReceiptsFunc = func(_ context.Context, _ []common.Hash) ([]evmRpc.Result, error) {
 					i := 0
-					return slices.Map(txHashes, func(hash common.Hash) evmRpc.ReceiptResult {
+					return slices.Map(txHashes, func(hash common.Hash) evmRpc.Result {
 						var blockNumber *big.Int
 						// half of the transactions are finalized
 						if i < len(txHashes)/2 {
@@ -911,7 +911,7 @@ func TestMgr_GetTxReceiptsIfFinalized(t *testing.T) {
 						}
 						i++
 
-						return evmRpc.ReceiptResult(results.FromOk(&geth.Receipt{
+						return evmRpc.Result(results.FromOk(&geth.Receipt{
 							BlockNumber: blockNumber,
 							TxHash:      hash,
 							Status:      1,

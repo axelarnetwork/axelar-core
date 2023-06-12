@@ -34,7 +34,7 @@ var _ rpc.Client = &ClientMock{}
 //			TransactionReceiptFunc: func(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {
 //				panic("mock out the TransactionReceipt method")
 //			},
-//			TransactionReceiptsFunc: func(ctx context.Context, txHashes []common.Hash) ([]rpc.ReceiptResult, error) {
+//			TransactionReceiptsFunc: func(ctx context.Context, txHashes []common.Hash) ([]rpc.Result, error) {
 //				panic("mock out the TransactionReceipts method")
 //			},
 //		}
@@ -57,7 +57,7 @@ type ClientMock struct {
 	TransactionReceiptFunc func(ctx context.Context, txHash common.Hash) (*types.Receipt, error)
 
 	// TransactionReceiptsFunc mocks the TransactionReceipts method.
-	TransactionReceiptsFunc func(ctx context.Context, txHashes []common.Hash) ([]rpc.ReceiptResult, error)
+	TransactionReceiptsFunc func(ctx context.Context, txHashes []common.Hash) ([]rpc.Result, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -236,7 +236,7 @@ func (mock *ClientMock) TransactionReceiptCalls() []struct {
 }
 
 // TransactionReceipts calls TransactionReceiptsFunc.
-func (mock *ClientMock) TransactionReceipts(ctx context.Context, txHashes []common.Hash) ([]rpc.ReceiptResult, error) {
+func (mock *ClientMock) TransactionReceipts(ctx context.Context, txHashes []common.Hash) ([]rpc.Result, error) {
 	if mock.TransactionReceiptsFunc == nil {
 		panic("ClientMock.TransactionReceiptsFunc: method is nil but Client.TransactionReceipts was just called")
 	}
