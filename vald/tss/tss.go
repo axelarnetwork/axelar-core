@@ -8,7 +8,6 @@ import (
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/tendermint/tendermint/libs/log"
 	"google.golang.org/grpc"
 
 	"github.com/axelarnetwork/axelar-core/sdk-utils/broadcast"
@@ -18,6 +17,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
 	tmEvents "github.com/axelarnetwork/tm-events/events"
+	"github.com/axelarnetwork/utils/log"
 )
 
 // Mgr represents an object that manages all communication with the external tss process
@@ -27,15 +27,14 @@ type Mgr struct {
 	principalAddr  string
 	keys           map[string][][]byte
 	Timeout        time.Duration
-	Logger         log.Logger
 	broadcaster    broadcast.Broadcaster
 	cdc            *codec.LegacyAmino
 }
 
 // Connect connects to tofnd gRPC Server
-func Connect(host string, port string, timeout time.Duration, logger log.Logger) (*grpc.ClientConn, error) {
+func Connect(host string, port string, timeout time.Duration) (*grpc.ClientConn, error) {
 	tofndServerAddress := host + ":" + port
-	logger.Info(fmt.Sprintf("initiate connection to tofnd gRPC server: %s", tofndServerAddress))
+	log.Infof("initiate connection to tofnd gRPC server: %s", tofndServerAddress)
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
@@ -43,14 +42,13 @@ func Connect(host string, port string, timeout time.Duration, logger log.Logger)
 }
 
 // NewMgr returns a new tss manager instance
-func NewMgr(multiSigClient rpc.MultiSigClient, cliCtx sdkClient.Context, timeout time.Duration, principalAddr string, broadcaster broadcast.Broadcaster, logger log.Logger, cdc *codec.LegacyAmino) *Mgr {
+func NewMgr(multiSigClient rpc.MultiSigClient, cliCtx sdkClient.Context, timeout time.Duration, principalAddr string, broadcaster broadcast.Broadcaster, cdc *codec.LegacyAmino) *Mgr {
 	return &Mgr{
 		multiSigClient: multiSigClient,
 		cliCtx:         cliCtx,
 		Timeout:        timeout,
 		principalAddr:  principalAddr,
 		keys:           make(map[string][][]byte),
-		Logger:         logger.With("listener", "tss"),
 		broadcaster:    broadcaster,
 		cdc:            cdc,
 	}
@@ -121,12 +119,13 @@ func (mgr *Mgr) ProcessHeartBeatEvent(e tmEvents.Event) error {
 
 	tssMsg := tss.NewHeartBeatRequest(mgr.cliCtx.FromAddress, present)
 
-	mgr.Logger.Info(fmt.Sprintf("operator %s sending heartbeat acknowledging keys: %s", mgr.principalAddr, present))
+	logger := log.With("listener", "tss")
+	logger.Info(fmt.Sprintf("operator %s sending heartbeat acknowledging keys: %s", mgr.principalAddr, present))
 	if _, err := mgr.broadcaster.Broadcast(context.TODO(), tssMsg); err != nil {
 		return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing heartbeat msg")
 	}
 
-	mgr.Logger.Info(fmt.Sprintf("no keygen/signing issues reported for operator %s", mgr.principalAddr))
+	logger.Info(fmt.Sprintf("no keygen/signing issues reported for operator %s", mgr.principalAddr))
 
 	return nil
 }
