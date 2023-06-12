@@ -10,7 +10,6 @@ import (
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
-	"github.com/tendermint/tendermint/libs/log"
 	"google.golang.org/grpc"
 
 	broadcastmock "github.com/axelarnetwork/axelar-core/sdk-utils/broadcast/mock"
@@ -44,7 +43,6 @@ func TestMgr_ProcessKeygenStarted(t *testing.T) {
 			client,
 			sdkclient.Context{FromAddress: rand.AccAddr()},
 			participant,
-			log.TestingLogger(),
 			broadcaster,
 			time.Second,
 		)

@@ -23,7 +23,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/tendermint/tendermint/libs/log"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
 	"golang.org/x/sync/errgroup"
 
@@ -46,6 +45,7 @@ import (
 	"github.com/axelarnetwork/tm-events/tendermint"
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/jobs"
+	"github.com/axelarnetwork/utils/log"
 	"github.com/axelarnetwork/utils/slices"
 )
 
@@ -74,6 +74,7 @@ func GetValdCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			serverCtx := server.GetServerContextFromCmd(cmd)
 			logger := serverCtx.Logger.With("module", "vald")
+			log.Setup(logger)
 			v := serverCtx.Viper
 
 			if err := v.BindPFlag("tss.tofnd-host", cmd.PersistentFlags().Lookup("tofnd-host")); err != nil {
@@ -94,7 +95,7 @@ func GetValdCommand() *cobra.Command {
 			// dynamically adjust gas limit by simulating the tx first
 			txf := tx.NewFactoryCLI(cliCtx, cmd.Flags()).WithSimulateAndExecute(true)
 
-			return runVald(cliCtx, txf, logger, v)
+			return runVald(cliCtx, txf, v)
 		},
 	}
 	setPersistentFlags(cmd)
@@ -115,7 +116,7 @@ func GetValdCommand() *cobra.Command {
 	return cmd
 }
 
-func runVald(cliCtx sdkClient.Context, txf tx.Factory, logger log.Logger, viper *viper.Viper) error {
+func runVald(cliCtx sdkClient.Context, txf tx.Factory, viper *viper.Viper) error {
 	// in case of panic we still want to try and cleanup resources,
 	// but we have to make sure it's not called more than once if the program is stopped by an interrupt signal
 	defer once.Do(cleanUp)
@@ -125,7 +126,7 @@ func runVald(cliCtx sdkClient.Context, txf tx.Factory, logger log.Logger, viper 
 
 	go func() {
 		sig := <-sigs
-		logger.Info(fmt.Sprintf("captured signal \"%s\"", sig))
+		log.Infof("captured signal \"%s\"", sig)
 		once.Do(cleanUp)
 	}()
 
@@ -142,7 +143,7 @@ func runVald(cliCtx sdkClient.Context, txf tx.Factory, logger log.Logger, viper 
 
 	valdHome := filepath.Join(cliCtx.HomeDir, "vald")
 	if _, err := os.Stat(valdHome); os.IsNotExist(err) {
-		logger.Info(fmt.Sprintf("folder %s does not exist, creating...", valdHome))
+		log.Infof("folder %s does not exist, creating...", valdHome)
 		err := os.Mkdir(valdHome, RWX)
 		if err != nil {
 			return err
@@ -152,9 +153,9 @@ func runVald(cliCtx sdkClient.Context, txf tx.Factory, logger log.Logger, viper 
 	fPath := filepath.Join(valdHome, "state.json")
 	stateSource := NewRWFile(fPath)
 
-	logger.Info("start listening to events")
-	listen(cliCtx, txf, valdConf, valAddr, stateSource, logger)
-	logger.Info("shutting down")
+	log.Info("start listening to events")
+	listen(cliCtx, txf, valdConf, valAddr, stateSource)
+	log.Info("shutting down")
 	return nil
 }
 
@@ -173,7 +174,7 @@ func setPersistentFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().String(flags.FlagChainID, app.Name, "The network chain ID")
 }
 
-func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, valAddr sdk.ValAddress, stateSource ReadWriter, logger log.Logger) {
+func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, valAddr sdk.ValAddress, stateSource ReadWriter) {
 	encCfg := app.MakeEncodingConfig()
 	cdc := encCfg.Amino
 	sender, err := clientCtx.Keyring.Key(clientCtx.From)
@@ -184,7 +185,7 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 		WithFromAddress(sender.GetAddress()).
 		WithFromName(sender.GetName())
 
-	bc := createRefundableBroadcaster(txf, clientCtx, axelarCfg, logger)
+	bc := createRefundableBroadcaster(txf, clientCtx, axelarCfg)
 
 	robustClient := tendermint.NewRobustClient(func() (rpcclient.Client, error) {
 		cl, err := sdkClient.NewClientFromNode(clientCtx.NodeURI)
@@ -198,23 +199,23 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 		}
 		return cl, nil
 	})
-	tssMgr := createTSSMgr(bc, clientCtx, axelarCfg, logger, valAddr.String(), cdc)
+	tssMgr := createTSSMgr(bc, clientCtx, axelarCfg, valAddr.String(), cdc)
 
-	evmMgr := createEVMMgr(axelarCfg, clientCtx, bc, logger, cdc, valAddr)
-	multisigMgr := createMultisigMgr(bc, clientCtx, axelarCfg, logger, valAddr)
+	evmMgr := createEVMMgr(axelarCfg, clientCtx, bc, valAddr)
+	multisigMgr := createMultisigMgr(bc, clientCtx, axelarCfg, valAddr)
 
-	nodeHeight, err := waitUntilNetworkSync(axelarCfg, robustClient, logger)
+	nodeHeight, err := waitUntilNetworkSync(axelarCfg, robustClient)
 	if err != nil {
 		panic(err)
 	}
 
 	stateStore := NewStateStore(stateSource)
-	startBlock, err := getStartBlock(axelarCfg, stateStore, nodeHeight, robustClient, logger)
+	startBlock, err := getStartBlock(axelarCfg, stateStore, nodeHeight)
 	if err != nil {
 		panic(err)
 	}
 
-	eventBus := createEventBus(robustClient, startBlock, axelarCfg.EventNotificationsMaxRetries, axelarCfg.EventNotificationsBackOff, logger)
+	eventBus := createEventBus(robustClient, startBlock, axelarCfg.EventNotificationsMaxRetries, axelarCfg.EventNotificationsBackOff)
 	var blockHeight int64
 	blockHeaderSub := eventBus.Subscribe(func(event tmEvents.ABCIEventWithHeight) bool {
 		if event.Height != blockHeight {
@@ -246,15 +247,15 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 
 	// stop the jobs if process gets interrupted/terminated
 	cleanupCommands = append(cleanupCommands, func() {
-		logger.Info("stop listening for events...")
+		log.Info("stop listening for events...")
 		cancelEventCtx()
 		<-eventBus.Done()
-		logger.Info("event listener stopped")
-		logger.Info("stopping subscribers...")
+		log.Info("event listener stopped")
+		log.Info("stopping subscribers...")
 		if err := eGroup.Wait(); err != nil {
-			logger.Error(err.Error())
+			log.Error(err.Error())
 		}
-		logger.Info("subscriptions stopped")
+		log.Info("subscriptions stopped")
 	})
 
 	fetchEvents := func(ctx context.Context) error {
@@ -287,18 +288,18 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 	}
 
 	js := []jobs.Job{
-		createJob(blockHeaderSub, processBlockHeader, cancelEventCtx, logger),
+		createJob(blockHeaderSub, processBlockHeader, cancelEventCtx),
 		fetchEvents,
 		failOnTimeout,
-		createJob(heartbeat, tssMgr.ProcessHeartBeatEvent, cancelEventCtx, logger),
-		createJobTyped(evmNewChain, evmMgr.ProcessNewChain, cancelEventCtx, logger),
-		createJobTyped(evmDepConf, evmMgr.ProcessDepositConfirmation, cancelEventCtx, logger),
-		createJobTyped(evmTokConf, evmMgr.ProcessTokenConfirmation, cancelEventCtx, logger),
-		createJobTyped(evmTraConf, evmMgr.ProcessTransferKeyConfirmation, cancelEventCtx, logger),
-		createJobTyped(evmGatewayTxConf, evmMgr.ProcessGatewayTxConfirmation, cancelEventCtx, logger),
-		createJobTyped(evmGatewayTxsConf, evmMgr.ProcessGatewayTxsConfirmation, cancelEventCtx, logger),
-		createJobTyped(multisigKeygen, multisigMgr.ProcessKeygenStarted, cancelEventCtx, logger),
-		createJobTyped(multisigSigning, multisigMgr.ProcessSigningStarted, cancelEventCtx, logger),
+		createJob(heartbeat, tssMgr.ProcessHeartBeatEvent, cancelEventCtx),
+		createJobTyped(evmNewChain, evmMgr.ProcessNewChain, cancelEventCtx),
+		createJobTyped(evmDepConf, evmMgr.ProcessDepositConfirmation, cancelEventCtx),
+		createJobTyped(evmTokConf, evmMgr.ProcessTokenConfirmation, cancelEventCtx),
+		createJobTyped(evmTraConf, evmMgr.ProcessTransferKeyConfirmation, cancelEventCtx),
+		createJobTyped(evmGatewayTxConf, evmMgr.ProcessGatewayTxConfirmation, cancelEventCtx),
+		createJobTyped(evmGatewayTxsConf, evmMgr.ProcessGatewayTxsConfirmation, cancelEventCtx),
+		createJobTyped(multisigKeygen, multisigMgr.ProcessKeygenStarted, cancelEventCtx),
+		createJobTyped(multisigSigning, multisigMgr.ProcessSigningStarted, cancelEventCtx),
 	}
 
 	slices.ForEach(js, func(job jobs.Job) {
@@ -306,16 +307,17 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 	})
 
 	if err := eGroup.Wait(); err != nil {
-		logger.Error(err.Error())
+		log.Error(err.Error())
 	}
 }
 
-func createJob(sub <-chan tmEvents.ABCIEventWithHeight, processor func(event tmEvents.Event) error, cancel context.CancelFunc, logger log.Logger) jobs.Job {
+func createJob(sub <-chan tmEvents.ABCIEventWithHeight, processor func(event tmEvents.Event) error, cancel context.CancelFunc) jobs.Job {
 	return func(ctx context.Context) error {
 		processWithLog := func(e tmEvents.ABCIEventWithHeight) {
 			err := processor(tmEvents.Map(e))
 			if err != nil {
-				logger.Error(err.Error(), errors2.KeyVals(err))
+				ctx = log.AppendKeyVals(ctx, errors2.KeyVals(err)...)
+				log.FromCtx(ctx).Error(err.Error())
 			}
 		}
 		consume := tmEvents.Consume(sub, processWithLog)
@@ -328,13 +330,14 @@ func createJob(sub <-chan tmEvents.ABCIEventWithHeight, processor func(event tmE
 	}
 }
 
-func createJobTyped[T proto.Message](sub <-chan tmEvents.ABCIEventWithHeight, processor func(event T) error, cancel context.CancelFunc, logger log.Logger) jobs.Job {
+func createJobTyped[T proto.Message](sub <-chan tmEvents.ABCIEventWithHeight, processor func(event T) error, cancel context.CancelFunc) jobs.Job {
 	return func(ctx context.Context) error {
 		processWithLog := func(e tmEvents.ABCIEventWithHeight) {
 			event := funcs.Must(sdk.ParseTypedEvent(e.Event)).(T)
 			err := processor(event)
 			if err != nil {
-				logger.Error(err.Error(), errors2.KeyVals(err))
+				ctx = log.AppendKeyVals(ctx, errors2.KeyVals(err)...)
+				log.FromCtx(ctx).Error(err.Error())
 			}
 		}
 
@@ -350,7 +353,7 @@ func createJobTyped[T proto.Message](sub <-chan tmEvents.ABCIEventWithHeight, pr
 }
 
 // Wait until the node has synced with the network and return the node height
-func waitUntilNetworkSync(cfg config.ValdConfig, tmClient tmEvents.SyncInfoClient, logger log.Logger) (int64, error) {
+func waitUntilNetworkSync(cfg config.ValdConfig, tmClient tmEvents.SyncInfoClient) (int64, error) {
 	for {
 		rpcCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		syncInfo, err := tmClient.LatestSyncInfo(rpcCtx)
@@ -364,19 +367,19 @@ func waitUntilNetworkSync(cfg config.ValdConfig, tmClient tmEvents.SyncInfoClien
 			return syncInfo.LatestBlockHeight, nil
 		}
 
-		logger.Info(fmt.Sprintf("node height %d is old, waiting for a recent block", syncInfo.LatestBlockHeight))
+		log.Infof("node height %d is old, waiting for a recent block", syncInfo.LatestBlockHeight)
 		time.Sleep(cfg.MaxLatestBlockAge)
 	}
 }
 
 // Return the block height to start listening to TM events from
-func getStartBlock(cfg config.ValdConfig, stateStore StateStore, nodeHeight int64, tmClient tmEvents.SyncInfoClient, logger log.Logger) (int64, error) {
+func getStartBlock(cfg config.ValdConfig, stateStore StateStore, nodeHeight int64) (int64, error) {
 	storedHeight, err := stateStore.GetState()
 	if err != nil {
-		logger.Info(fmt.Sprintf("failed to retrieve the stored block height, using the latest: %s", err.Error()))
+		log.Infof("failed to retrieve the stored block height, using the latest: %s", err.Error())
 		storedHeight = 0
 	} else {
-		logger.Info(fmt.Sprintf("retrieved stored block height %d", storedHeight))
+		log.Infof("retrieved stored block height %d", storedHeight)
 	}
 
 	// stored height must not be larger than node height
@@ -384,7 +387,7 @@ func getStartBlock(cfg config.ValdConfig, stateStore StateStore, nodeHeight int6
 		return 0, fmt.Errorf("stored block height %d is ahead of the node height %d", storedHeight, nodeHeight)
 	}
 
-	logger.Info(fmt.Sprintf("node is synced, node height: %d", nodeHeight))
+	log.Infof("node is synced, node height: %d", nodeHeight)
 
 	startBlock := storedHeight
 	if startBlock != 0 {
@@ -393,50 +396,50 @@ func getStartBlock(cfg config.ValdConfig, stateStore StateStore, nodeHeight int6
 	}
 
 	if startBlock != 0 && nodeHeight-startBlock > cfg.MaxBlocksBehindLatest {
-		logger.Info(fmt.Sprintf("stored block height %d is too old, starting from the latest block", startBlock))
+		log.Infof("stored block height %d is too old, starting from the latest block", startBlock)
 		startBlock = 0
 	}
 
 	return startBlock, nil
 }
 
-func createEventBus(client *tendermint.RobustClient, startBlock int64, retries int, backOff time.Duration, logger log.Logger) *tmEvents.Bus {
-	notifier := tmEvents.NewBlockNotifier(client, logger, tmEvents.Retries(retries), tmEvents.BackOff(backOff)).StartingAt(startBlock)
-	return tmEvents.NewEventBus(tmEvents.NewBlockSource(client, notifier, logger, tmEvents.Retries(retries), tmEvents.BackOff(backOff)), pubsub.NewBus[tmEvents.ABCIEventWithHeight](), logger)
+func createEventBus(client *tendermint.RobustClient, startBlock int64, retries int, backOff time.Duration) *tmEvents.Bus {
+	notifier := tmEvents.NewBlockNotifier(client, tmEvents.Retries(retries), tmEvents.BackOff(backOff)).StartingAt(startBlock)
+	return tmEvents.NewEventBus(tmEvents.NewBlockSource(client, notifier, tmEvents.Retries(retries), tmEvents.BackOff(backOff)), pubsub.NewBus[tmEvents.ABCIEventWithHeight]())
 }
 
-func createRefundableBroadcaster(txf tx.Factory, ctx sdkClient.Context, axelarCfg config.ValdConfig, logger log.Logger) broadcast.Broadcaster {
-	broadcaster := broadcast.WithStateManager(ctx, txf, logger, broadcast.WithResponseTimeout(axelarCfg.BroadcastConfig.MaxTimeout))
-	broadcaster = broadcast.WithRetry(broadcaster, axelarCfg.MaxRetries, axelarCfg.MinSleepBeforeRetry, logger)
-	broadcaster = broadcast.Batched(broadcaster, axelarCfg.BatchThreshold, axelarCfg.BatchSizeLimit, logger)
+func createRefundableBroadcaster(txf tx.Factory, ctx sdkClient.Context, axelarCfg config.ValdConfig) broadcast.Broadcaster {
+	broadcaster := broadcast.WithStateManager(ctx, txf, broadcast.WithResponseTimeout(axelarCfg.BroadcastConfig.MaxTimeout))
+	broadcaster = broadcast.WithRetry(broadcaster, axelarCfg.MaxRetries, axelarCfg.MinSleepBeforeRetry)
+	broadcaster = broadcast.Batched(broadcaster, axelarCfg.BatchThreshold, axelarCfg.BatchSizeLimit)
 	broadcaster = broadcast.WithRefund(broadcaster)
-	broadcaster = broadcast.SuppressExecutionErrs(broadcaster, logger)
+	broadcaster = broadcast.SuppressExecutionErrs(broadcaster)
 
 	return broadcaster
 }
 
-func createMultisigMgr(broadcaster broadcast.Broadcaster, cliCtx client.Context, axelarCfg config.ValdConfig, logger log.Logger, valAddr sdk.ValAddress) *multisig.Mgr {
-	conn, err := grpc.Connect(axelarCfg.TssConfig.Host, axelarCfg.TssConfig.Port, axelarCfg.TssConfig.DialTimeout, logger)
+func createMultisigMgr(broadcaster broadcast.Broadcaster, cliCtx client.Context, axelarCfg config.ValdConfig, valAddr sdk.ValAddress) *multisig.Mgr {
+	conn, err := grpc.Connect(axelarCfg.TssConfig.Host, axelarCfg.TssConfig.Port, axelarCfg.TssConfig.DialTimeout)
 	if err != nil {
 		panic(sdkerrors.Wrap(err, "failed to create multisig manager"))
 	}
-	logger.Debug("successful connection to tofnd gRPC server")
+	log.Debug("successful connection to tofnd gRPC server")
 
-	return multisig.NewMgr(tofnd.NewMultisigClient(conn), cliCtx, valAddr, logger, broadcaster, timeout)
+	return multisig.NewMgr(tofnd.NewMultisigClient(conn), cliCtx, valAddr, broadcaster, timeout)
 }
 
-func createTSSMgr(broadcaster broadcast.Broadcaster, cliCtx client.Context, axelarCfg config.ValdConfig, logger log.Logger, valAddr string, cdc *codec.LegacyAmino) *tss.Mgr {
+func createTSSMgr(broadcaster broadcast.Broadcaster, cliCtx client.Context, axelarCfg config.ValdConfig, valAddr string, cdc *codec.LegacyAmino) *tss.Mgr {
 	create := func() (*tss.Mgr, error) {
-		conn, err := tss.Connect(axelarCfg.TssConfig.Host, axelarCfg.TssConfig.Port, axelarCfg.TssConfig.DialTimeout, logger)
+		conn, err := tss.Connect(axelarCfg.TssConfig.Host, axelarCfg.TssConfig.Port, axelarCfg.TssConfig.DialTimeout)
 		if err != nil {
 			return nil, err
 		}
-		logger.Debug("successful connection to tofnd gRPC server")
+		log.Debug("successful connection to tofnd gRPC server")
 
 		// creates client to communicate with the external tofnd process service
 		multiSigClient := tofnd.NewMultisigClient(conn)
 
-		tssMgr := tss.NewMgr(multiSigClient, cliCtx, 2*time.Hour, valAddr, broadcaster, logger, cdc)
+		tssMgr := tss.NewMgr(multiSigClient, cliCtx, 2*time.Hour, valAddr, broadcaster, cdc)
 
 		return tssMgr, nil
 	}
@@ -453,7 +456,7 @@ func createEVMClient(config evmTypes.EVMConfig) (evmRPC.Client, error) {
 	return evmRPC.NewClient(config.RPCAddr, config.FinalityOverride)
 }
 
-func createEVMMgr(axelarCfg config.ValdConfig, cliCtx sdkClient.Context, b broadcast.Broadcaster, logger log.Logger, cdc *codec.LegacyAmino, valAddr sdk.ValAddress) *evm.Mgr {
+func createEVMMgr(axelarCfg config.ValdConfig, cliCtx sdkClient.Context, b broadcast.Broadcaster, valAddr sdk.ValAddress) *evm.Mgr {
 	rpcs := make(map[string]evmRPC.Client)
 
 	chainConfigs := slices.Filter(axelarCfg.EVMConfig, func(config evmTypes.EVMConfig) bool {
@@ -464,34 +467,32 @@ func createEVMMgr(axelarCfg config.ValdConfig, cliCtx sdkClient.Context, b broad
 		chainName := strings.ToLower(config.Name)
 		if _, ok := rpcs[chainName]; ok {
 			err := fmt.Errorf("duplicate bridge configuration found for EVM chain %s", config.Name)
-			logger.Error(err.Error())
+			log.Error(err.Error())
 			panic(err)
 		}
 
 		if config.L1ChainName != nil {
-			logger.Info(fmt.Sprintf("`l1_chain_name` config is deprecated for EVM chain '%s'. Please remove it from your RPC config", config.Name))
+			log.Infof("`l1_chain_name` config is deprecated for EVM chain '%s'. Please remove it from your RPC config", config.Name)
 		}
 
 		client, err := createEVMClient(config)
 		if err != nil {
 			err = sdkerrors.Wrap(err, fmt.Sprintf("failed to create an RPC connection for EVM chain %s. Verify your RPC config.", config.Name))
-			logger.Error(err.Error())
+			log.Error(err.Error())
 			panic(err)
 		}
 
-		logger.Debug(fmt.Sprintf("created JSON-RPC client of type %T", client),
-			"chain", config.Name,
-			"url", config.RPCAddr,
-		)
+		log.WithKeyVals("chain", config.Name, "url", config.RPCAddr).
+			Debugf("created JSON-RPC client of type %T", client)
 
 		// clean up evmRPC connection on process shutdown
 		cleanupCommands = append(cleanupCommands, client.Close)
 
 		rpcs[chainName] = client
-		logger.Info(fmt.Sprintf("successfully connected to EVM bridge for chain %s", chainName))
+		log.Infof("successfully connected to EVM bridge for chain %s", chainName)
 	})
 
-	return evm.NewMgr(rpcs, b, logger, valAddr, cliCtx.FromAddress, evm.NewLatestFinalizedBlockCache())
+	return evm.NewMgr(rpcs, b, valAddr, cliCtx.FromAddress, evm.NewLatestFinalizedBlockCache())
 }
 
 // RWFile implements the ReadWriter interface for an underlying file

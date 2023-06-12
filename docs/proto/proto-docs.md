@@ -370,6 +370,10 @@
 - [axelar/nexus/v1beta1/genesis.proto](#axelar/nexus/v1beta1/genesis.proto)
     - [GenesisState](#axelar.nexus.v1beta1.GenesisState)
   
+- [axelar/nexus/v1beta1/proposal.proto](#axelar/nexus/v1beta1/proposal.proto)
+    - [CallContractsProposal](#axelar.nexus.v1beta1.CallContractsProposal)
+    - [ContractCall](#axelar.nexus.v1beta1.ContractCall)
+  
 - [axelar/nexus/v1beta1/tx.proto](#axelar/nexus/v1beta1/tx.proto)
     - [ActivateChainRequest](#axelar.nexus.v1beta1.ActivateChainRequest)
     - [ActivateChainResponse](#axelar.nexus.v1beta1.ActivateChainResponse)
@@ -424,12 +428,19 @@
 - [axelar/reward/v1beta1/genesis.proto](#axelar/reward/v1beta1/genesis.proto)
     - [GenesisState](#axelar.reward.v1beta1.GenesisState)
   
+- [axelar/reward/v1beta1/query.proto](#axelar/reward/v1beta1/query.proto)
+    - [InflationRateRequest](#axelar.reward.v1beta1.InflationRateRequest)
+    - [InflationRateResponse](#axelar.reward.v1beta1.InflationRateResponse)
+    - [ParamsRequest](#axelar.reward.v1beta1.ParamsRequest)
+    - [ParamsResponse](#axelar.reward.v1beta1.ParamsResponse)
+  
 - [axelar/reward/v1beta1/tx.proto](#axelar/reward/v1beta1/tx.proto)
     - [RefundMsgRequest](#axelar.reward.v1beta1.RefundMsgRequest)
     - [RefundMsgResponse](#axelar.reward.v1beta1.RefundMsgResponse)
   
 - [axelar/reward/v1beta1/service.proto](#axelar/reward/v1beta1/service.proto)
     - [MsgService](#axelar.reward.v1beta1.MsgService)
+    - [QueryService](#axelar.reward.v1beta1.QueryService)
   
 - [axelar/snapshot/v1beta1/params.proto](#axelar/snapshot/v1beta1/params.proto)
     - [Params](#axelar.snapshot.v1beta1.Params)
@@ -5815,6 +5826,57 @@ GenesisState represents the genesis state
 
 
 
+<a name="axelar/nexus/v1beta1/proposal.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/nexus/v1beta1/proposal.proto
+
+
+
+<a name="axelar.nexus.v1beta1.CallContractsProposal"></a>
+
+### CallContractsProposal
+CallContractsProposal is a gov Content type for calling contracts on other
+chains
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `title` | [string](#string) |  |  |
+| `description` | [string](#string) |  |  |
+| `contract_calls` | [ContractCall](#axelar.nexus.v1beta1.ContractCall) | repeated |  |
+
+
+
+
+
+
+<a name="axelar.nexus.v1beta1.ContractCall"></a>
+
+### ContractCall
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `contract_address` | [string](#string) |  |  |
+| `payload` | [bytes](#bytes) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
 <a name="axelar/nexus/v1beta1/tx.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -6437,6 +6499,73 @@ GenesisState represents the genesis state
 
 
 
+<a name="axelar/reward/v1beta1/query.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/reward/v1beta1/query.proto
+
+
+
+<a name="axelar.reward.v1beta1.InflationRateRequest"></a>
+
+### InflationRateRequest
+InflationRateRequest represents a message that queries the Axelar specific
+inflation RPC method.
+
+
+
+
+
+
+<a name="axelar.reward.v1beta1.InflationRateResponse"></a>
+
+### InflationRateResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `inflation_rate` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="axelar.reward.v1beta1.ParamsRequest"></a>
+
+### ParamsRequest
+ParamsRequest represents a message that queries the params
+
+
+
+
+
+
+<a name="axelar.reward.v1beta1.ParamsResponse"></a>
+
+### ParamsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `params` | [Params](#axelar.reward.v1beta1.Params) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
 <a name="axelar/reward/v1beta1/tx.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -6506,6 +6635,17 @@ Msg defines the axelarnet Msg service.
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `RefundMsg` | [RefundMsgRequest](#axelar.reward.v1beta1.RefundMsgRequest) | [RefundMsgResponse](#axelar.reward.v1beta1.RefundMsgResponse) |  | POST|/axelar/reward/refund_message|
+
+
+<a name="axelar.reward.v1beta1.QueryService"></a>
+
+### QueryService
+QueryService defines the gRPC querier service.
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `InflationRate` | [InflationRateRequest](#axelar.reward.v1beta1.InflationRateRequest) | [InflationRateResponse](#axelar.reward.v1beta1.InflationRateResponse) |  | GET|/axelar/reward/v1beta1/inflation_rate|
+| `Params` | [ParamsRequest](#axelar.reward.v1beta1.ParamsRequest) | [ParamsResponse](#axelar.reward.v1beta1.ParamsResponse) |  | GET|/axelar/reward/v1beta1/params|
 
  <!-- end services -->
 

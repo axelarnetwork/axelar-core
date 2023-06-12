@@ -53,10 +53,6 @@ func NewClient(url string, override FinalityOverride) (Client, error) {
 		return ethereumClient, nil
 	}
 
-	if moonbeamClient, err := NewMoonbeamClient(ethereumClient); err == nil {
-		return moonbeamClient, nil
-	}
-
 	if ethereum2Client, err := NewEthereum2Client(ethereumClient); err == nil {
 		return ethereum2Client, nil
 	}

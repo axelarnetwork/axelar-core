@@ -8,7 +8,6 @@ import (
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/sdk-utils/broadcast"
 	"github.com/axelarnetwork/axelar-core/x/multisig/exported"
@@ -21,18 +20,16 @@ type Mgr struct {
 	client      Client
 	ctx         sdkclient.Context
 	participant sdk.ValAddress
-	logger      log.Logger
 	broadcaster broadcast.Broadcaster
 	timeout     time.Duration
 }
 
 // NewMgr is the constructor of mgr
-func NewMgr(client Client, ctx sdkclient.Context, participant sdk.ValAddress, logger log.Logger, broadcaster broadcast.Broadcaster, timeout time.Duration) *Mgr {
+func NewMgr(client Client, ctx sdkclient.Context, participant sdk.ValAddress, broadcaster broadcast.Broadcaster, timeout time.Duration) *Mgr {
 	return &Mgr{
 		client:      client,
 		ctx:         ctx,
 		participant: participant,
-		logger:      logger,
 		broadcaster: broadcaster,
 		timeout:     timeout,
 	}
@@ -42,7 +39,7 @@ func (mgr Mgr) isParticipant(p sdk.ValAddress) bool {
 	return mgr.participant.Equals(p)
 }
 
-func (mgr Mgr) generateKey(keyUID string, partyUID string) (exported.PublicKey, error) {
+func (mgr Mgr) generateKey(keyUID string) (exported.PublicKey, error) {
 	grpcCtx, cancel := context.WithTimeout(context.Background(), mgr.timeout)
 	defer cancel()
 
@@ -64,7 +61,7 @@ func (mgr Mgr) generateKey(keyUID string, partyUID string) (exported.PublicKey, 
 	}
 }
 
-func (mgr Mgr) sign(keyUID string, payloadHash exported.Hash, partyUID string, pubKey []byte) (types.Signature, error) {
+func (mgr Mgr) sign(keyUID string, payloadHash exported.Hash, pubKey []byte) (types.Signature, error) {
 	grpcCtx, cancel := context.WithTimeout(context.Background(), mgr.timeout)
 	defer cancel()
 
