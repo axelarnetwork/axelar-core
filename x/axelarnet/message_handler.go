@@ -11,6 +11,7 @@ import (
 	ibcexported "github.com/cosmos/ibc-go/v4/modules/core/exported"
 	"github.com/ethereum/go-ethereum/crypto"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/events"
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
@@ -21,24 +22,46 @@ import (
 
 // Fee is used to pay relayer for executing cross chain message
 type Fee struct {
-	Amount    string `json:"amount"`
-	Recipient string `json:"recipient"`
+	Amount          string  `json:"amount"`
+	Recipient       string  `json:"recipient"`
+	RefundRecipient *string `json:"refund_recipient"`
 }
 
-func (f Fee) validate(ctx sdk.Context, n types.Nexus, b types.BankKeeper, token sdk.Coin, msgType nexus.MessageType) error {
-	amt, ok := sdk.NewIntFromString(f.Amount)
-	if !ok || amt.LTE(sdk.ZeroInt()) {
+// ValidateBasic validates the fee
+func (f Fee) ValidateBasic() error {
+	amount, ok := sdk.NewIntFromString(f.Amount)
+	if !ok || !amount.IsPositive() {
 		return fmt.Errorf("invalid fee amount")
 	}
 
-	afterFee := token.Amount.Sub(amt)
+	if _, err := sdk.AccAddressFromBech32(f.Recipient); err != nil {
+		return err
+	}
+
+	if f.RefundRecipient != nil {
+		// The refund recipient is an address of the chain where the request is originally initiated from,
+		// and therefore we cannot validate much of it.
+		if err := utils.ValidateString(*f.RefundRecipient); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func validateFee(ctx sdk.Context, n types.Nexus, b types.BankKeeper, token sdk.Coin, msgType nexus.MessageType, sourceChain nexus.Chain, fee Fee) error {
+	if err := fee.ValidateBasic(); err != nil {
+		return err
+	}
+
+	afterFee := token.Amount.Sub(funcs.MustOk(sdk.NewIntFromString(fee.Amount)))
 	switch msgType {
 	case nexus.TypeGeneralMessage:
-		if afterFee.LT(sdk.ZeroInt()) {
+		if afterFee.IsNegative() {
 			return fmt.Errorf("fee amount is greater than transfer value")
 		}
 	case nexus.TypeGeneralMessageWithToken:
-		if afterFee.LTE(sdk.ZeroInt()) {
+		if !afterFee.IsPositive() {
 			return fmt.Errorf("transfer amount must be non-zero after fees are deducted")
 		}
 	default:
@@ -50,13 +73,14 @@ func (f Fee) validate(ctx sdk.Context, n types.Nexus, b types.BankKeeper, token 
 		return fmt.Errorf("unregistered fee denom %s", token.GetDenom())
 	}
 
-	addr, err := sdk.AccAddressFromBech32(f.Recipient)
-	if err != nil {
-		return err
+	if b.BlockedAddr(funcs.Must(sdk.AccAddressFromBech32(fee.Recipient))) {
+		return fmt.Errorf("fee recipient is a blocked address")
 	}
 
-	if b.BlockedAddr(addr) {
-		return fmt.Errorf("fee recipient is a blocked address")
+	if fee.RefundRecipient != nil {
+		if err := n.ValidateAddress(ctx, nexus.CrossChainAddress{Chain: sourceChain, Address: *fee.RefundRecipient}); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -157,14 +181,14 @@ func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n ty
 }
 
 func validateMessage(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.Nexus, b types.BankKeeper, ibcPath string, msg Message, token keeper.Coin) error {
-	chainName, ok := ibcK.GetChainNameByIBCPath(ctx, ibcPath)
+	srcChainName, ok := ibcK.GetChainNameByIBCPath(ctx, ibcPath)
 	if !ok {
 		return fmt.Errorf("unrecognized IBC path %s", ibcPath)
 	}
-	chain := funcs.MustOk(n.GetChain(ctx, chainName))
+	srcChain := funcs.MustOk(n.GetChain(ctx, srcChainName))
 
-	if !n.IsChainActivated(ctx, chain) {
-		return fmt.Errorf("chain %s registered for IBC path %s is deactivated", chain.Name, ibcPath)
+	if !n.IsChainActivated(ctx, srcChain) {
+		return fmt.Errorf("chain %s registered for IBC path %s is deactivated", srcChain.Name, ibcPath)
 	}
 
 	destChainName := nexus.ChainName(msg.DestinationChain)
@@ -186,7 +210,7 @@ func validateMessage(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.Nexus, b ty
 	}
 
 	if msg.Fee != nil {
-		err := msg.Fee.validate(ctx, n, b, token.Coin, nexus.MessageType(msg.Type))
+		err := validateFee(ctx, n, b, token.Coin, nexus.MessageType(msg.Type), srcChain, *msg.Fee)
 		if err != nil {
 			return err
 		}
@@ -196,8 +220,8 @@ func validateMessage(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.Nexus, b ty
 	case nexus.TypeGeneralMessage:
 		return nil
 	case nexus.TypeGeneralMessageWithToken, nexus.TypeSendToken:
-		if !n.IsAssetRegistered(ctx, chain, token.GetDenom()) {
-			return fmt.Errorf("asset %s is not registered on chain %s", token.GetDenom(), chain.Name)
+		if !n.IsAssetRegistered(ctx, srcChain, token.GetDenom()) {
+			return fmt.Errorf("asset %s is not registered on chain %s", token.GetDenom(), srcChain.Name)
 		}
 
 		if !n.IsAssetRegistered(ctx, destChain, token.GetDenom()) {
@@ -362,11 +386,15 @@ func deductFee(ctx sdk.Context, b types.BankKeeper, fee *Fee, token keeper.Coin,
 	coin := sdk.NewCoin(funcs.Must(token.GetOriginalDenom()), feeAmount)
 	recipient := funcs.Must(sdk.AccAddressFromBech32(fee.Recipient))
 
-	events.Emit(ctx, &types.FeePaid{
+	feePaidEvent := types.FeePaid{
 		MessageID: msgID,
 		Recipient: recipient,
 		Fee:       coin,
-	})
+	}
+	if fee.RefundRecipient != nil {
+		feePaidEvent.RefundRecipient = *fee.RefundRecipient
+	}
+	events.Emit(ctx, &feePaidEvent)
 
 	// subtract fee from transfer value
 	token.Amount = token.Amount.Sub(feeAmount)
