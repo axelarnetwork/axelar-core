@@ -495,6 +495,9 @@ paths:
                   recipient:
                     type: string
                     format: byte
+                  refund_recipient:
+                    type: string
+                    format: byte
       tags:
         - MsgService
   /axelar/axelarnet/confirm_deposit:
@@ -48682,6 +48685,9 @@ definitions:
           recipient:
             type: string
             format: byte
+          refund_recipient:
+            type: string
+            format: byte
   axelar.axelarnet.v1beta1.CallContractResponse:
     type: object
   axelar.axelarnet.v1beta1.ConfirmDepositRequest:
@@ -48725,6 +48731,9 @@ definitions:
           NOTE: The amount field is an Int which implements the custom method
           signatures required by gogoproto.
       recipient:
+        type: string
+        format: byte
+      refund_recipient:
         type: string
         format: byte
   axelar.axelarnet.v1beta1.LinkRequest:

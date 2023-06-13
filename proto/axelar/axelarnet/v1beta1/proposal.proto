@@ -1,11 +1,11 @@
 syntax = "proto3";
 
-package axelar.nexus.v1beta1;
+package axelar.axelarnet.v1beta1;
 
 import "gogoproto/gogo.proto";
 import "axelar/nexus/exported/v1beta1/types.proto";
 
-option go_package = "github.com/axelarnetwork/axelar-core/x/nexus/types";
+option go_package = "github.com/axelarnetwork/axelar-core/x/axelarnet/types";
 option (gogoproto.goproto_getters_all) = false;
 
 // CallContractsProposal is a gov Content type for calling contracts on other
