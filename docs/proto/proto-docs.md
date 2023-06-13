@@ -658,6 +658,7 @@
 | `message_id` | [string](#string) |  |  |
 | `recipient` | [bytes](#bytes) |  |  |
 | `fee` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+| `refund_recipient` | [string](#string) |  |  |
 
 
 
@@ -855,6 +856,7 @@ Params represent the genesis parameters for the module
 | ----- | ---- | ----- | ----------- |
 | `amount` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 | `recipient` | [bytes](#bytes) |  |  |
+| `refund_recipient` | [bytes](#bytes) |  |  |
 
 
 

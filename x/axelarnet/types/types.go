@@ -256,3 +256,22 @@ var (
 	// AxelarGMPAccount account is the canonical general message sender
 	AxelarGMPAccount = GetEscrowAddress(fmt.Sprintf("%s_%s", ModuleName, "gmp"))
 )
+
+// ValidateBasic returns an error if the given Fee is invalid; nil otherwise
+func (f Fee) ValidateBasic() error {
+	if err := sdk.VerifyAddressFormat(f.Recipient); err != nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "fee recipient").Error())
+	}
+
+	if !f.Amount.IsValid() || !f.Amount.IsPositive() {
+		return fmt.Errorf("invalid fee amount")
+	}
+
+	if f.RefundRecipient != nil {
+		if err := sdk.VerifyAddressFormat(f.RefundRecipient); err != nil {
+			return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "fee refund recipient").Error())
+		}
+	}
+
+	return nil
+}
