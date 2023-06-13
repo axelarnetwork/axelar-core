@@ -1,6 +1,7 @@
 package vote
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
@@ -15,9 +16,10 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
-	"github.com/axelarnetwork/axelar-core/x/tss/client/cli"
+	"github.com/axelarnetwork/axelar-core/x/vote/client/cli"
 	"github.com/axelarnetwork/axelar-core/x/vote/keeper"
 	"github.com/axelarnetwork/axelar-core/x/vote/types"
+	"github.com/axelarnetwork/utils/funcs"
 )
 
 var (
@@ -58,7 +60,8 @@ func (AppModuleBasic) RegisterRESTRoutes(client.Context, *mux.Router) {
 }
 
 // RegisterGRPCGatewayRoutes registers the gRPC Gateway routes for the module.
-func (AppModuleBasic) RegisterGRPCGatewayRoutes(client.Context, *runtime.ServeMux) {
+func (AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *runtime.ServeMux) {
+	funcs.MustNoErr(types.RegisterQueryServiceHandlerClient(context.Background(), mux, types.NewQueryServiceClient(clientCtx)))
 }
 
 // GetTxCmd returns all CLI tx commands for this module

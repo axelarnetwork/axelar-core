@@ -8397,7 +8397,7 @@ paths:
           type: string
       tags:
         - QueryService
-  /axelar/evm/v1beta1/params:
+  /axelar/evm/v1beta1/params/{chain}:
     get:
       operationId: EVMParams
       responses:
@@ -8660,8 +8660,8 @@ paths:
                         }
       parameters:
         - name: chain
-          in: query
-          required: false
+          in: path
+          required: true
           type: string
       tags:
         - QueryService

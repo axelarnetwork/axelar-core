@@ -1,6 +1,7 @@
 package snapshot
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
@@ -18,6 +19,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/snapshot/client/rest"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
+	"github.com/axelarnetwork/utils/funcs"
 )
 
 var (
@@ -64,7 +66,8 @@ func (AppModuleBasic) RegisterRESTRoutes(clientCtx client.Context, rtr *mux.Rout
 }
 
 // RegisterGRPCGatewayRoutes registers the gRPC Gateway routes for the module.
-func (AppModuleBasic) RegisterGRPCGatewayRoutes(client.Context, *runtime.ServeMux) {
+func (AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *runtime.ServeMux) {
+	funcs.MustNoErr(types.RegisterQueryServiceHandlerClient(context.Background(), mux, types.NewQueryServiceClient(clientCtx)))
 }
 
 // GetTxCmd returns all CLI tx commands for this module

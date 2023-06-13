@@ -4948,7 +4948,7 @@ QueryService defines the gRPC querier service.
 | `Event` | [EventRequest](#axelar.evm.v1beta1.EventRequest) | [EventResponse](#axelar.evm.v1beta1.EventResponse) | Event queries an event at the specified chain | GET|/axelar/evm/v1beta1/event/{chain}/{event_id}|
 | `ERC20Tokens` | [ERC20TokensRequest](#axelar.evm.v1beta1.ERC20TokensRequest) | [ERC20TokensResponse](#axelar.evm.v1beta1.ERC20TokensResponse) | ERC20Tokens queries the ERC20 tokens registered for a chain | GET|/axelar/evm/v1beta1/erc20_tokens/{chain}|
 | `TokenInfo` | [TokenInfoRequest](#axelar.evm.v1beta1.TokenInfoRequest) | [TokenInfoResponse](#axelar.evm.v1beta1.TokenInfoResponse) | TokenInfo queries the token info for a registered ERC20 Token | GET|/axelar/evm/v1beta1/token_info/{chain}|
-| `Params` | [ParamsRequest](#axelar.evm.v1beta1.ParamsRequest) | [ParamsResponse](#axelar.evm.v1beta1.ParamsResponse) |  | GET|/axelar/evm/v1beta1/params|
+| `Params` | [ParamsRequest](#axelar.evm.v1beta1.ParamsRequest) | [ParamsResponse](#axelar.evm.v1beta1.ParamsResponse) |  | GET|/axelar/evm/v1beta1/params/{chain}|
 
  <!-- end services -->
 

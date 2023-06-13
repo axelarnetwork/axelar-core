@@ -203,8 +203,6 @@ service QueryService {
   }
 
   rpc Params(ParamsRequest) returns (ParamsResponse) {
-    option (google.api.http) = {
-      get : "/axelar/evm/v1beta1/params"
-    };
+    option (google.api.http).get = "/axelar/evm/v1beta1/params/{chain}";
   }
 }

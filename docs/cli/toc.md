@@ -139,6 +139,9 @@
     - [permission](axelard_query_permission.md)	 - Querying commands for the permission module
       - [governance-key](axelard_query_permission_governance-key.md)	 - Returns the governance key
       - [params](axelard_query_permission_params.md)	 - Returns the params for the permission module
+    - [reward](axelard_query_reward.md)	 - Querying commands for the reward module
+      - [inflation-rate](axelard_query_reward_inflation-rate.md)	 - Returns the inflation rate on the network
+      - [params](axelard_query_reward_params.md)	 - Returns the params for the reward module
     - [slashing](axelard_query_slashing.md)	 - Querying commands for the slashing module
       - [params](axelard_query_slashing_params.md)	 - Query the current slashing parameters
       - [signing-info \[validator-conspub\]](axelard_query_slashing_signing-info.md)	 - Query a validator's signing information
@@ -165,14 +168,14 @@
     - [tendermint-validator-set \[height\]](axelard_query_tendermint-validator-set.md)	 - Get the full tendermint validator set at given height
     - [tss](axelard_query_tss.md)	 - Querying commands for the tss module
       - [params](axelard_query_tss_params.md)	 - Returns the params for the tss module
-    - [tss](axelard_query_tss.md)	 - Querying commands for the tss module
-      - [params](axelard_query_tss_params.md)	 - Returns the params for the tss module
     - [tx --type=\[hash|acc_seq|signature\] \[hash|acc_seq|signature\]](axelard_query_tx.md)	 - Query for a transaction by hash, "<addr>/<seq>" combination or comma-separated signatures in a committed block
     - [txs](axelard_query_txs.md)	 - Query for paginated transactions that match a set of events
     - [upgrade](axelard_query_upgrade.md)	 - Querying commands for the upgrade module
       - [applied \[upgrade-name\]](axelard_query_upgrade_applied.md)	 - block header for height at which a completed upgrade was applied
       - [module_versions \[optional module_name\]](axelard_query_upgrade_module_versions.md)	 - get the list of module versions
       - [plan](axelard_query_upgrade_plan.md)	 - get upgrade plan (if one exists)
+    - [vote](axelard_query_vote.md)	 - Querying commands for the vote module
+      - [params](axelard_query_vote_params.md)	 - Returns the params for the vote module
   - [rollback](axelard_rollback.md)	 - rollback cosmos-sdk and tendermint state by one height
   - [rosetta](axelard_rosetta.md)	 - spin up a rosetta server
   - [set-genesis-auth](axelard_set-genesis-auth.md)	 - Set the genesis parameters for the auth module
