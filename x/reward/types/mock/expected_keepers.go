@@ -20,25 +20,25 @@ var _ rewardtypes.Rewarder = &RewarderMock{}
 
 // RewarderMock is a mock implementation of rewardtypes.Rewarder.
 //
-// 	func TestSomethingThatUsesRewarder(t *testing.T) {
+//	func TestSomethingThatUsesRewarder(t *testing.T) {
 //
-// 		// make and configure a mocked rewardtypes.Rewarder
-// 		mockedRewarder := &RewarderMock{
-// 			GetParamsFunc: func(ctx cosmossdktypes.Context) rewardtypes.Params {
-// 				panic("mock out the GetParams method")
-// 			},
-// 			GetPoolFunc: func(ctx cosmossdktypes.Context, name string) exported.RewardPool {
-// 				panic("mock out the GetPool method")
-// 			},
-// 			LoggerFunc: func(ctx cosmossdktypes.Context) log.Logger {
-// 				panic("mock out the Logger method")
-// 			},
-// 		}
+//		// make and configure a mocked rewardtypes.Rewarder
+//		mockedRewarder := &RewarderMock{
+//			GetParamsFunc: func(ctx cosmossdktypes.Context) rewardtypes.Params {
+//				panic("mock out the GetParams method")
+//			},
+//			GetPoolFunc: func(ctx cosmossdktypes.Context, name string) exported.RewardPool {
+//				panic("mock out the GetPool method")
+//			},
+//			LoggerFunc: func(ctx cosmossdktypes.Context) log.Logger {
+//				panic("mock out the Logger method")
+//			},
+//		}
 //
-// 		// use mockedRewarder in code that requires rewardtypes.Rewarder
-// 		// and then make assertions.
+//		// use mockedRewarder in code that requires rewardtypes.Rewarder
+//		// and then make assertions.
 //
-// 	}
+//	}
 type RewarderMock struct {
 	// GetParamsFunc mocks the GetParams method.
 	GetParamsFunc func(ctx cosmossdktypes.Context) rewardtypes.Params
@@ -92,7 +92,8 @@ func (mock *RewarderMock) GetParams(ctx cosmossdktypes.Context) rewardtypes.Para
 
 // GetParamsCalls gets all the calls that were made to GetParams.
 // Check the length with:
-//     len(mockedRewarder.GetParamsCalls())
+//
+//	len(mockedRewarder.GetParamsCalls())
 func (mock *RewarderMock) GetParamsCalls() []struct {
 	Ctx cosmossdktypes.Context
 } {
@@ -125,7 +126,8 @@ func (mock *RewarderMock) GetPool(ctx cosmossdktypes.Context, name string) expor
 
 // GetPoolCalls gets all the calls that were made to GetPool.
 // Check the length with:
-//     len(mockedRewarder.GetPoolCalls())
+//
+//	len(mockedRewarder.GetPoolCalls())
 func (mock *RewarderMock) GetPoolCalls() []struct {
 	Ctx  cosmossdktypes.Context
 	Name string
@@ -158,7 +160,8 @@ func (mock *RewarderMock) Logger(ctx cosmossdktypes.Context) log.Logger {
 
 // LoggerCalls gets all the calls that were made to Logger.
 // Check the length with:
-//     len(mockedRewarder.LoggerCalls())
+//
+//	len(mockedRewarder.LoggerCalls())
 func (mock *RewarderMock) LoggerCalls() []struct {
 	Ctx cosmossdktypes.Context
 } {
@@ -177,25 +180,25 @@ var _ rewardtypes.Refunder = &RefunderMock{}
 
 // RefunderMock is a mock implementation of rewardtypes.Refunder.
 //
-// 	func TestSomethingThatUsesRefunder(t *testing.T) {
+//	func TestSomethingThatUsesRefunder(t *testing.T) {
 //
-// 		// make and configure a mocked rewardtypes.Refunder
-// 		mockedRefunder := &RefunderMock{
-// 			DeletePendingRefundFunc: func(ctx cosmossdktypes.Context, req rewardtypes.RefundMsgRequest)  {
-// 				panic("mock out the DeletePendingRefund method")
-// 			},
-// 			GetPendingRefundFunc: func(ctx cosmossdktypes.Context, req rewardtypes.RefundMsgRequest) (rewardtypes.Refund, bool) {
-// 				panic("mock out the GetPendingRefund method")
-// 			},
-// 			LoggerFunc: func(ctx cosmossdktypes.Context) log.Logger {
-// 				panic("mock out the Logger method")
-// 			},
-// 		}
+//		// make and configure a mocked rewardtypes.Refunder
+//		mockedRefunder := &RefunderMock{
+//			DeletePendingRefundFunc: func(ctx cosmossdktypes.Context, req rewardtypes.RefundMsgRequest)  {
+//				panic("mock out the DeletePendingRefund method")
+//			},
+//			GetPendingRefundFunc: func(ctx cosmossdktypes.Context, req rewardtypes.RefundMsgRequest) (rewardtypes.Refund, bool) {
+//				panic("mock out the GetPendingRefund method")
+//			},
+//			LoggerFunc: func(ctx cosmossdktypes.Context) log.Logger {
+//				panic("mock out the Logger method")
+//			},
+//		}
 //
-// 		// use mockedRefunder in code that requires rewardtypes.Refunder
-// 		// and then make assertions.
+//		// use mockedRefunder in code that requires rewardtypes.Refunder
+//		// and then make assertions.
 //
-// 	}
+//	}
 type RefunderMock struct {
 	// DeletePendingRefundFunc mocks the DeletePendingRefund method.
 	DeletePendingRefundFunc func(ctx cosmossdktypes.Context, req rewardtypes.RefundMsgRequest)
@@ -253,7 +256,8 @@ func (mock *RefunderMock) DeletePendingRefund(ctx cosmossdktypes.Context, req re
 
 // DeletePendingRefundCalls gets all the calls that were made to DeletePendingRefund.
 // Check the length with:
-//     len(mockedRefunder.DeletePendingRefundCalls())
+//
+//	len(mockedRefunder.DeletePendingRefundCalls())
 func (mock *RefunderMock) DeletePendingRefundCalls() []struct {
 	Ctx cosmossdktypes.Context
 	Req rewardtypes.RefundMsgRequest
@@ -288,7 +292,8 @@ func (mock *RefunderMock) GetPendingRefund(ctx cosmossdktypes.Context, req rewar
 
 // GetPendingRefundCalls gets all the calls that were made to GetPendingRefund.
 // Check the length with:
-//     len(mockedRefunder.GetPendingRefundCalls())
+//
+//	len(mockedRefunder.GetPendingRefundCalls())
 func (mock *RefunderMock) GetPendingRefundCalls() []struct {
 	Ctx cosmossdktypes.Context
 	Req rewardtypes.RefundMsgRequest
@@ -321,7 +326,8 @@ func (mock *RefunderMock) Logger(ctx cosmossdktypes.Context) log.Logger {
 
 // LoggerCalls gets all the calls that were made to Logger.
 // Check the length with:
-//     len(mockedRefunder.LoggerCalls())
+//
+//	len(mockedRefunder.LoggerCalls())
 func (mock *RefunderMock) LoggerCalls() []struct {
 	Ctx cosmossdktypes.Context
 } {
@@ -340,25 +346,25 @@ var _ rewardtypes.Nexus = &NexusMock{}
 
 // NexusMock is a mock implementation of rewardtypes.Nexus.
 //
-// 	func TestSomethingThatUsesNexus(t *testing.T) {
+//	func TestSomethingThatUsesNexus(t *testing.T) {
 //
-// 		// make and configure a mocked rewardtypes.Nexus
-// 		mockedNexus := &NexusMock{
-// 			GetChainMaintainersFunc: func(ctx cosmossdktypes.Context, chain nexus.Chain) []cosmossdktypes.ValAddress {
-// 				panic("mock out the GetChainMaintainers method")
-// 			},
-// 			GetChainsFunc: func(ctx cosmossdktypes.Context) []nexus.Chain {
-// 				panic("mock out the GetChains method")
-// 			},
-// 			IsChainActivatedFunc: func(ctx cosmossdktypes.Context, chain nexus.Chain) bool {
-// 				panic("mock out the IsChainActivated method")
-// 			},
-// 		}
+//		// make and configure a mocked rewardtypes.Nexus
+//		mockedNexus := &NexusMock{
+//			GetChainMaintainersFunc: func(ctx cosmossdktypes.Context, chain nexus.Chain) []cosmossdktypes.ValAddress {
+//				panic("mock out the GetChainMaintainers method")
+//			},
+//			GetChainsFunc: func(ctx cosmossdktypes.Context) []nexus.Chain {
+//				panic("mock out the GetChains method")
+//			},
+//			IsChainActivatedFunc: func(ctx cosmossdktypes.Context, chain nexus.Chain) bool {
+//				panic("mock out the IsChainActivated method")
+//			},
+//		}
 //
-// 		// use mockedNexus in code that requires rewardtypes.Nexus
-// 		// and then make assertions.
+//		// use mockedNexus in code that requires rewardtypes.Nexus
+//		// and then make assertions.
 //
-// 	}
+//	}
 type NexusMock struct {
 	// GetChainMaintainersFunc mocks the GetChainMaintainers method.
 	GetChainMaintainersFunc func(ctx cosmossdktypes.Context, chain nexus.Chain) []cosmossdktypes.ValAddress
@@ -416,7 +422,8 @@ func (mock *NexusMock) GetChainMaintainers(ctx cosmossdktypes.Context, chain nex
 
 // GetChainMaintainersCalls gets all the calls that were made to GetChainMaintainers.
 // Check the length with:
-//     len(mockedNexus.GetChainMaintainersCalls())
+//
+//	len(mockedNexus.GetChainMaintainersCalls())
 func (mock *NexusMock) GetChainMaintainersCalls() []struct {
 	Ctx   cosmossdktypes.Context
 	Chain nexus.Chain
@@ -449,7 +456,8 @@ func (mock *NexusMock) GetChains(ctx cosmossdktypes.Context) []nexus.Chain {
 
 // GetChainsCalls gets all the calls that were made to GetChains.
 // Check the length with:
-//     len(mockedNexus.GetChainsCalls())
+//
+//	len(mockedNexus.GetChainsCalls())
 func (mock *NexusMock) GetChainsCalls() []struct {
 	Ctx cosmossdktypes.Context
 } {
@@ -482,7 +490,8 @@ func (mock *NexusMock) IsChainActivated(ctx cosmossdktypes.Context, chain nexus.
 
 // IsChainActivatedCalls gets all the calls that were made to IsChainActivated.
 // Check the length with:
-//     len(mockedNexus.IsChainActivatedCalls())
+//
+//	len(mockedNexus.IsChainActivatedCalls())
 func (mock *NexusMock) IsChainActivatedCalls() []struct {
 	Ctx   cosmossdktypes.Context
 	Chain nexus.Chain
@@ -503,25 +512,25 @@ var _ rewardtypes.Minter = &MinterMock{}
 
 // MinterMock is a mock implementation of rewardtypes.Minter.
 //
-// 	func TestSomethingThatUsesMinter(t *testing.T) {
+//	func TestSomethingThatUsesMinter(t *testing.T) {
 //
-// 		// make and configure a mocked rewardtypes.Minter
-// 		mockedMinter := &MinterMock{
-// 			GetMinterFunc: func(ctx cosmossdktypes.Context) minttypes.Minter {
-// 				panic("mock out the GetMinter method")
-// 			},
-// 			GetParamsFunc: func(ctx cosmossdktypes.Context) minttypes.Params {
-// 				panic("mock out the GetParams method")
-// 			},
-// 			StakingTokenSupplyFunc: func(ctx cosmossdktypes.Context) cosmossdktypes.Int {
-// 				panic("mock out the StakingTokenSupply method")
-// 			},
-// 		}
+//		// make and configure a mocked rewardtypes.Minter
+//		mockedMinter := &MinterMock{
+//			GetMinterFunc: func(ctx cosmossdktypes.Context) minttypes.Minter {
+//				panic("mock out the GetMinter method")
+//			},
+//			GetParamsFunc: func(ctx cosmossdktypes.Context) minttypes.Params {
+//				panic("mock out the GetParams method")
+//			},
+//			StakingTokenSupplyFunc: func(ctx cosmossdktypes.Context) cosmossdktypes.Int {
+//				panic("mock out the StakingTokenSupply method")
+//			},
+//		}
 //
-// 		// use mockedMinter in code that requires rewardtypes.Minter
-// 		// and then make assertions.
+//		// use mockedMinter in code that requires rewardtypes.Minter
+//		// and then make assertions.
 //
-// 	}
+//	}
 type MinterMock struct {
 	// GetMinterFunc mocks the GetMinter method.
 	GetMinterFunc func(ctx cosmossdktypes.Context) minttypes.Minter
@@ -573,7 +582,8 @@ func (mock *MinterMock) GetMinter(ctx cosmossdktypes.Context) minttypes.Minter {
 
 // GetMinterCalls gets all the calls that were made to GetMinter.
 // Check the length with:
-//     len(mockedMinter.GetMinterCalls())
+//
+//	len(mockedMinter.GetMinterCalls())
 func (mock *MinterMock) GetMinterCalls() []struct {
 	Ctx cosmossdktypes.Context
 } {
@@ -604,7 +614,8 @@ func (mock *MinterMock) GetParams(ctx cosmossdktypes.Context) minttypes.Params {
 
 // GetParamsCalls gets all the calls that were made to GetParams.
 // Check the length with:
-//     len(mockedMinter.GetParamsCalls())
+//
+//	len(mockedMinter.GetParamsCalls())
 func (mock *MinterMock) GetParamsCalls() []struct {
 	Ctx cosmossdktypes.Context
 } {
@@ -635,7 +646,8 @@ func (mock *MinterMock) StakingTokenSupply(ctx cosmossdktypes.Context) cosmossdk
 
 // StakingTokenSupplyCalls gets all the calls that were made to StakingTokenSupply.
 // Check the length with:
-//     len(mockedMinter.StakingTokenSupplyCalls())
+//
+//	len(mockedMinter.StakingTokenSupplyCalls())
 func (mock *MinterMock) StakingTokenSupplyCalls() []struct {
 	Ctx cosmossdktypes.Context
 } {
@@ -654,19 +666,19 @@ var _ rewardtypes.Distributor = &DistributorMock{}
 
 // DistributorMock is a mock implementation of rewardtypes.Distributor.
 //
-// 	func TestSomethingThatUsesDistributor(t *testing.T) {
+//	func TestSomethingThatUsesDistributor(t *testing.T) {
 //
-// 		// make and configure a mocked rewardtypes.Distributor
-// 		mockedDistributor := &DistributorMock{
-// 			AllocateTokensToValidatorFunc: func(ctx cosmossdktypes.Context, val stakingtypes.ValidatorI, tokens cosmossdktypes.DecCoins)  {
-// 				panic("mock out the AllocateTokensToValidator method")
-// 			},
-// 		}
+//		// make and configure a mocked rewardtypes.Distributor
+//		mockedDistributor := &DistributorMock{
+//			AllocateTokensToValidatorFunc: func(ctx cosmossdktypes.Context, val stakingtypes.ValidatorI, tokens cosmossdktypes.DecCoins)  {
+//				panic("mock out the AllocateTokensToValidator method")
+//			},
+//		}
 //
-// 		// use mockedDistributor in code that requires rewardtypes.Distributor
-// 		// and then make assertions.
+//		// use mockedDistributor in code that requires rewardtypes.Distributor
+//		// and then make assertions.
 //
-// 	}
+//	}
 type DistributorMock struct {
 	// AllocateTokensToValidatorFunc mocks the AllocateTokensToValidator method.
 	AllocateTokensToValidatorFunc func(ctx cosmossdktypes.Context, val stakingtypes.ValidatorI, tokens cosmossdktypes.DecCoins)
@@ -708,7 +720,8 @@ func (mock *DistributorMock) AllocateTokensToValidator(ctx cosmossdktypes.Contex
 
 // AllocateTokensToValidatorCalls gets all the calls that were made to AllocateTokensToValidator.
 // Check the length with:
-//     len(mockedDistributor.AllocateTokensToValidatorCalls())
+//
+//	len(mockedDistributor.AllocateTokensToValidatorCalls())
 func (mock *DistributorMock) AllocateTokensToValidatorCalls() []struct {
 	Ctx    cosmossdktypes.Context
 	Val    stakingtypes.ValidatorI
@@ -731,25 +744,25 @@ var _ rewardtypes.Staker = &StakerMock{}
 
 // StakerMock is a mock implementation of rewardtypes.Staker.
 //
-// 	func TestSomethingThatUsesStaker(t *testing.T) {
+//	func TestSomethingThatUsesStaker(t *testing.T) {
 //
-// 		// make and configure a mocked rewardtypes.Staker
-// 		mockedStaker := &StakerMock{
-// 			IterateBondedValidatorsByPowerFunc: func(ctx cosmossdktypes.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool))  {
-// 				panic("mock out the IterateBondedValidatorsByPower method")
-// 			},
-// 			PowerReductionFunc: func(ctx cosmossdktypes.Context) cosmossdktypes.Int {
-// 				panic("mock out the PowerReduction method")
-// 			},
-// 			ValidatorFunc: func(ctx cosmossdktypes.Context, addr cosmossdktypes.ValAddress) stakingtypes.ValidatorI {
-// 				panic("mock out the Validator method")
-// 			},
-// 		}
+//		// make and configure a mocked rewardtypes.Staker
+//		mockedStaker := &StakerMock{
+//			IterateBondedValidatorsByPowerFunc: func(ctx cosmossdktypes.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool))  {
+//				panic("mock out the IterateBondedValidatorsByPower method")
+//			},
+//			PowerReductionFunc: func(ctx cosmossdktypes.Context) cosmossdktypes.Int {
+//				panic("mock out the PowerReduction method")
+//			},
+//			ValidatorFunc: func(ctx cosmossdktypes.Context, addr cosmossdktypes.ValAddress) stakingtypes.ValidatorI {
+//				panic("mock out the Validator method")
+//			},
+//		}
 //
-// 		// use mockedStaker in code that requires rewardtypes.Staker
-// 		// and then make assertions.
+//		// use mockedStaker in code that requires rewardtypes.Staker
+//		// and then make assertions.
 //
-// 	}
+//	}
 type StakerMock struct {
 	// IterateBondedValidatorsByPowerFunc mocks the IterateBondedValidatorsByPower method.
 	IterateBondedValidatorsByPowerFunc func(ctx cosmossdktypes.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool))
@@ -807,7 +820,8 @@ func (mock *StakerMock) IterateBondedValidatorsByPower(ctx cosmossdktypes.Contex
 
 // IterateBondedValidatorsByPowerCalls gets all the calls that were made to IterateBondedValidatorsByPower.
 // Check the length with:
-//     len(mockedStaker.IterateBondedValidatorsByPowerCalls())
+//
+//	len(mockedStaker.IterateBondedValidatorsByPowerCalls())
 func (mock *StakerMock) IterateBondedValidatorsByPowerCalls() []struct {
 	Ctx cosmossdktypes.Context
 	Fn  func(index int64, validator stakingtypes.ValidatorI) (stop bool)
@@ -840,7 +854,8 @@ func (mock *StakerMock) PowerReduction(ctx cosmossdktypes.Context) cosmossdktype
 
 // PowerReductionCalls gets all the calls that were made to PowerReduction.
 // Check the length with:
-//     len(mockedStaker.PowerReductionCalls())
+//
+//	len(mockedStaker.PowerReductionCalls())
 func (mock *StakerMock) PowerReductionCalls() []struct {
 	Ctx cosmossdktypes.Context
 } {
@@ -873,7 +888,8 @@ func (mock *StakerMock) Validator(ctx cosmossdktypes.Context, addr cosmossdktype
 
 // ValidatorCalls gets all the calls that were made to Validator.
 // Check the length with:
-//     len(mockedStaker.ValidatorCalls())
+//
+//	len(mockedStaker.ValidatorCalls())
 func (mock *StakerMock) ValidatorCalls() []struct {
 	Ctx  cosmossdktypes.Context
 	Addr cosmossdktypes.ValAddress
@@ -894,19 +910,19 @@ var _ rewardtypes.Slasher = &SlasherMock{}
 
 // SlasherMock is a mock implementation of rewardtypes.Slasher.
 //
-// 	func TestSomethingThatUsesSlasher(t *testing.T) {
+//	func TestSomethingThatUsesSlasher(t *testing.T) {
 //
-// 		// make and configure a mocked rewardtypes.Slasher
-// 		mockedSlasher := &SlasherMock{
-// 			IsTombstonedFunc: func(ctx cosmossdktypes.Context, consAddr cosmossdktypes.ConsAddress) bool {
-// 				panic("mock out the IsTombstoned method")
-// 			},
-// 		}
+//		// make and configure a mocked rewardtypes.Slasher
+//		mockedSlasher := &SlasherMock{
+//			IsTombstonedFunc: func(ctx cosmossdktypes.Context, consAddr cosmossdktypes.ConsAddress) bool {
+//				panic("mock out the IsTombstoned method")
+//			},
+//		}
 //
-// 		// use mockedSlasher in code that requires rewardtypes.Slasher
-// 		// and then make assertions.
+//		// use mockedSlasher in code that requires rewardtypes.Slasher
+//		// and then make assertions.
 //
-// 	}
+//	}
 type SlasherMock struct {
 	// IsTombstonedFunc mocks the IsTombstoned method.
 	IsTombstonedFunc func(ctx cosmossdktypes.Context, consAddr cosmossdktypes.ConsAddress) bool
@@ -944,7 +960,8 @@ func (mock *SlasherMock) IsTombstoned(ctx cosmossdktypes.Context, consAddr cosmo
 
 // IsTombstonedCalls gets all the calls that were made to IsTombstoned.
 // Check the length with:
-//     len(mockedSlasher.IsTombstonedCalls())
+//
+//	len(mockedSlasher.IsTombstonedCalls())
 func (mock *SlasherMock) IsTombstonedCalls() []struct {
 	Ctx      cosmossdktypes.Context
 	ConsAddr cosmossdktypes.ConsAddress
@@ -965,25 +982,25 @@ var _ rewardtypes.Banker = &BankerMock{}
 
 // BankerMock is a mock implementation of rewardtypes.Banker.
 //
-// 	func TestSomethingThatUsesBanker(t *testing.T) {
+//	func TestSomethingThatUsesBanker(t *testing.T) {
 //
-// 		// make and configure a mocked rewardtypes.Banker
-// 		mockedBanker := &BankerMock{
-// 			MintCoinsFunc: func(ctx cosmossdktypes.Context, name string, amt cosmossdktypes.Coins) error {
-// 				panic("mock out the MintCoins method")
-// 			},
-// 			SendCoinsFromModuleToAccountFunc: func(ctx cosmossdktypes.Context, senderModule string, recipientAddr cosmossdktypes.AccAddress, amt cosmossdktypes.Coins) error {
-// 				panic("mock out the SendCoinsFromModuleToAccount method")
-// 			},
-// 			SendCoinsFromModuleToModuleFunc: func(ctx cosmossdktypes.Context, senderModule string, recipientModule string, amt cosmossdktypes.Coins) error {
-// 				panic("mock out the SendCoinsFromModuleToModule method")
-// 			},
-// 		}
+//		// make and configure a mocked rewardtypes.Banker
+//		mockedBanker := &BankerMock{
+//			MintCoinsFunc: func(ctx cosmossdktypes.Context, name string, amt cosmossdktypes.Coins) error {
+//				panic("mock out the MintCoins method")
+//			},
+//			SendCoinsFromModuleToAccountFunc: func(ctx cosmossdktypes.Context, senderModule string, recipientAddr cosmossdktypes.AccAddress, amt cosmossdktypes.Coins) error {
+//				panic("mock out the SendCoinsFromModuleToAccount method")
+//			},
+//			SendCoinsFromModuleToModuleFunc: func(ctx cosmossdktypes.Context, senderModule string, recipientModule string, amt cosmossdktypes.Coins) error {
+//				panic("mock out the SendCoinsFromModuleToModule method")
+//			},
+//		}
 //
-// 		// use mockedBanker in code that requires rewardtypes.Banker
-// 		// and then make assertions.
+//		// use mockedBanker in code that requires rewardtypes.Banker
+//		// and then make assertions.
 //
-// 	}
+//	}
 type BankerMock struct {
 	// MintCoinsFunc mocks the MintCoins method.
 	MintCoinsFunc func(ctx cosmossdktypes.Context, name string, amt cosmossdktypes.Coins) error
@@ -1055,7 +1072,8 @@ func (mock *BankerMock) MintCoins(ctx cosmossdktypes.Context, name string, amt c
 
 // MintCoinsCalls gets all the calls that were made to MintCoins.
 // Check the length with:
-//     len(mockedBanker.MintCoinsCalls())
+//
+//	len(mockedBanker.MintCoinsCalls())
 func (mock *BankerMock) MintCoinsCalls() []struct {
 	Ctx  cosmossdktypes.Context
 	Name string
@@ -1096,7 +1114,8 @@ func (mock *BankerMock) SendCoinsFromModuleToAccount(ctx cosmossdktypes.Context,
 
 // SendCoinsFromModuleToAccountCalls gets all the calls that were made to SendCoinsFromModuleToAccount.
 // Check the length with:
-//     len(mockedBanker.SendCoinsFromModuleToAccountCalls())
+//
+//	len(mockedBanker.SendCoinsFromModuleToAccountCalls())
 func (mock *BankerMock) SendCoinsFromModuleToAccountCalls() []struct {
 	Ctx           cosmossdktypes.Context
 	SenderModule  string
@@ -1139,7 +1158,8 @@ func (mock *BankerMock) SendCoinsFromModuleToModule(ctx cosmossdktypes.Context, 
 
 // SendCoinsFromModuleToModuleCalls gets all the calls that were made to SendCoinsFromModuleToModule.
 // Check the length with:
-//     len(mockedBanker.SendCoinsFromModuleToModuleCalls())
+//
+//	len(mockedBanker.SendCoinsFromModuleToModuleCalls())
 func (mock *BankerMock) SendCoinsFromModuleToModuleCalls() []struct {
 	Ctx             cosmossdktypes.Context
 	SenderModule    string

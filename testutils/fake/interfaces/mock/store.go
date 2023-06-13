@@ -17,55 +17,55 @@ var _ interfaces.MultiStore = &MultiStoreMock{}
 
 // MultiStoreMock is a mock implementation of interfaces.MultiStore.
 //
-// 	func TestSomethingThatUsesMultiStore(t *testing.T) {
+//	func TestSomethingThatUsesMultiStore(t *testing.T) {
 //
-// 		// make and configure a mocked interfaces.MultiStore
-// 		mockedMultiStore := &MultiStoreMock{
-// 			AddListenersFunc: func(key types.StoreKey, listeners []types.WriteListener)  {
-// 				panic("mock out the AddListeners method")
-// 			},
-// 			CacheMultiStoreFunc: func() types.CacheMultiStore {
-// 				panic("mock out the CacheMultiStore method")
-// 			},
-// 			CacheMultiStoreWithVersionFunc: func(version int64) (types.CacheMultiStore, error) {
-// 				panic("mock out the CacheMultiStoreWithVersion method")
-// 			},
-// 			CacheWrapFunc: func() types.CacheWrap {
-// 				panic("mock out the CacheWrap method")
-// 			},
-// 			CacheWrapWithListenersFunc: func(storeKey types.StoreKey, listeners []types.WriteListener) types.CacheWrap {
-// 				panic("mock out the CacheWrapWithListeners method")
-// 			},
-// 			CacheWrapWithTraceFunc: func(w io.Writer, tc types.TraceContext) types.CacheWrap {
-// 				panic("mock out the CacheWrapWithTrace method")
-// 			},
-// 			GetKVStoreFunc: func(storeKey types.StoreKey) types.KVStore {
-// 				panic("mock out the GetKVStore method")
-// 			},
-// 			GetStoreFunc: func(storeKey types.StoreKey) types.Store {
-// 				panic("mock out the GetStore method")
-// 			},
-// 			GetStoreTypeFunc: func() types.StoreType {
-// 				panic("mock out the GetStoreType method")
-// 			},
-// 			ListeningEnabledFunc: func(key types.StoreKey) bool {
-// 				panic("mock out the ListeningEnabled method")
-// 			},
-// 			SetTracerFunc: func(w io.Writer) types.MultiStore {
-// 				panic("mock out the SetTracer method")
-// 			},
-// 			SetTracingContextFunc: func(traceContext types.TraceContext) types.MultiStore {
-// 				panic("mock out the SetTracingContext method")
-// 			},
-// 			TracingEnabledFunc: func() bool {
-// 				panic("mock out the TracingEnabled method")
-// 			},
-// 		}
+//		// make and configure a mocked interfaces.MultiStore
+//		mockedMultiStore := &MultiStoreMock{
+//			AddListenersFunc: func(key types.StoreKey, listeners []types.WriteListener)  {
+//				panic("mock out the AddListeners method")
+//			},
+//			CacheMultiStoreFunc: func() types.CacheMultiStore {
+//				panic("mock out the CacheMultiStore method")
+//			},
+//			CacheMultiStoreWithVersionFunc: func(version int64) (types.CacheMultiStore, error) {
+//				panic("mock out the CacheMultiStoreWithVersion method")
+//			},
+//			CacheWrapFunc: func() types.CacheWrap {
+//				panic("mock out the CacheWrap method")
+//			},
+//			CacheWrapWithListenersFunc: func(storeKey types.StoreKey, listeners []types.WriteListener) types.CacheWrap {
+//				panic("mock out the CacheWrapWithListeners method")
+//			},
+//			CacheWrapWithTraceFunc: func(w io.Writer, tc types.TraceContext) types.CacheWrap {
+//				panic("mock out the CacheWrapWithTrace method")
+//			},
+//			GetKVStoreFunc: func(storeKey types.StoreKey) types.KVStore {
+//				panic("mock out the GetKVStore method")
+//			},
+//			GetStoreFunc: func(storeKey types.StoreKey) types.Store {
+//				panic("mock out the GetStore method")
+//			},
+//			GetStoreTypeFunc: func() types.StoreType {
+//				panic("mock out the GetStoreType method")
+//			},
+//			ListeningEnabledFunc: func(key types.StoreKey) bool {
+//				panic("mock out the ListeningEnabled method")
+//			},
+//			SetTracerFunc: func(w io.Writer) types.MultiStore {
+//				panic("mock out the SetTracer method")
+//			},
+//			SetTracingContextFunc: func(traceContext types.TraceContext) types.MultiStore {
+//				panic("mock out the SetTracingContext method")
+//			},
+//			TracingEnabledFunc: func() bool {
+//				panic("mock out the TracingEnabled method")
+//			},
+//		}
 //
-// 		// use mockedMultiStore in code that requires interfaces.MultiStore
-// 		// and then make assertions.
+//		// use mockedMultiStore in code that requires interfaces.MultiStore
+//		// and then make assertions.
 //
-// 	}
+//	}
 type MultiStoreMock struct {
 	// AddListenersFunc mocks the AddListeners method.
 	AddListenersFunc func(key types.StoreKey, listeners []types.WriteListener)
@@ -207,7 +207,8 @@ func (mock *MultiStoreMock) AddListeners(key types.StoreKey, listeners []types.W
 
 // AddListenersCalls gets all the calls that were made to AddListeners.
 // Check the length with:
-//     len(mockedMultiStore.AddListenersCalls())
+//
+//	len(mockedMultiStore.AddListenersCalls())
 func (mock *MultiStoreMock) AddListenersCalls() []struct {
 	Key       types.StoreKey
 	Listeners []types.WriteListener
@@ -237,7 +238,8 @@ func (mock *MultiStoreMock) CacheMultiStore() types.CacheMultiStore {
 
 // CacheMultiStoreCalls gets all the calls that were made to CacheMultiStore.
 // Check the length with:
-//     len(mockedMultiStore.CacheMultiStoreCalls())
+//
+//	len(mockedMultiStore.CacheMultiStoreCalls())
 func (mock *MultiStoreMock) CacheMultiStoreCalls() []struct {
 } {
 	var calls []struct {
@@ -266,7 +268,8 @@ func (mock *MultiStoreMock) CacheMultiStoreWithVersion(version int64) (types.Cac
 
 // CacheMultiStoreWithVersionCalls gets all the calls that were made to CacheMultiStoreWithVersion.
 // Check the length with:
-//     len(mockedMultiStore.CacheMultiStoreWithVersionCalls())
+//
+//	len(mockedMultiStore.CacheMultiStoreWithVersionCalls())
 func (mock *MultiStoreMock) CacheMultiStoreWithVersionCalls() []struct {
 	Version int64
 } {
@@ -294,7 +297,8 @@ func (mock *MultiStoreMock) CacheWrap() types.CacheWrap {
 
 // CacheWrapCalls gets all the calls that were made to CacheWrap.
 // Check the length with:
-//     len(mockedMultiStore.CacheWrapCalls())
+//
+//	len(mockedMultiStore.CacheWrapCalls())
 func (mock *MultiStoreMock) CacheWrapCalls() []struct {
 } {
 	var calls []struct {
@@ -325,7 +329,8 @@ func (mock *MultiStoreMock) CacheWrapWithListeners(storeKey types.StoreKey, list
 
 // CacheWrapWithListenersCalls gets all the calls that were made to CacheWrapWithListeners.
 // Check the length with:
-//     len(mockedMultiStore.CacheWrapWithListenersCalls())
+//
+//	len(mockedMultiStore.CacheWrapWithListenersCalls())
 func (mock *MultiStoreMock) CacheWrapWithListenersCalls() []struct {
 	StoreKey  types.StoreKey
 	Listeners []types.WriteListener
@@ -360,7 +365,8 @@ func (mock *MultiStoreMock) CacheWrapWithTrace(w io.Writer, tc types.TraceContex
 
 // CacheWrapWithTraceCalls gets all the calls that were made to CacheWrapWithTrace.
 // Check the length with:
-//     len(mockedMultiStore.CacheWrapWithTraceCalls())
+//
+//	len(mockedMultiStore.CacheWrapWithTraceCalls())
 func (mock *MultiStoreMock) CacheWrapWithTraceCalls() []struct {
 	W  io.Writer
 	Tc types.TraceContext
@@ -393,7 +399,8 @@ func (mock *MultiStoreMock) GetKVStore(storeKey types.StoreKey) types.KVStore {
 
 // GetKVStoreCalls gets all the calls that were made to GetKVStore.
 // Check the length with:
-//     len(mockedMultiStore.GetKVStoreCalls())
+//
+//	len(mockedMultiStore.GetKVStoreCalls())
 func (mock *MultiStoreMock) GetKVStoreCalls() []struct {
 	StoreKey types.StoreKey
 } {
@@ -424,7 +431,8 @@ func (mock *MultiStoreMock) GetStore(storeKey types.StoreKey) types.Store {
 
 // GetStoreCalls gets all the calls that were made to GetStore.
 // Check the length with:
-//     len(mockedMultiStore.GetStoreCalls())
+//
+//	len(mockedMultiStore.GetStoreCalls())
 func (mock *MultiStoreMock) GetStoreCalls() []struct {
 	StoreKey types.StoreKey
 } {
@@ -452,7 +460,8 @@ func (mock *MultiStoreMock) GetStoreType() types.StoreType {
 
 // GetStoreTypeCalls gets all the calls that were made to GetStoreType.
 // Check the length with:
-//     len(mockedMultiStore.GetStoreTypeCalls())
+//
+//	len(mockedMultiStore.GetStoreTypeCalls())
 func (mock *MultiStoreMock) GetStoreTypeCalls() []struct {
 } {
 	var calls []struct {
@@ -481,7 +490,8 @@ func (mock *MultiStoreMock) ListeningEnabled(key types.StoreKey) bool {
 
 // ListeningEnabledCalls gets all the calls that were made to ListeningEnabled.
 // Check the length with:
-//     len(mockedMultiStore.ListeningEnabledCalls())
+//
+//	len(mockedMultiStore.ListeningEnabledCalls())
 func (mock *MultiStoreMock) ListeningEnabledCalls() []struct {
 	Key types.StoreKey
 } {
@@ -512,7 +522,8 @@ func (mock *MultiStoreMock) SetTracer(w io.Writer) types.MultiStore {
 
 // SetTracerCalls gets all the calls that were made to SetTracer.
 // Check the length with:
-//     len(mockedMultiStore.SetTracerCalls())
+//
+//	len(mockedMultiStore.SetTracerCalls())
 func (mock *MultiStoreMock) SetTracerCalls() []struct {
 	W io.Writer
 } {
@@ -543,7 +554,8 @@ func (mock *MultiStoreMock) SetTracingContext(traceContext types.TraceContext) t
 
 // SetTracingContextCalls gets all the calls that were made to SetTracingContext.
 // Check the length with:
-//     len(mockedMultiStore.SetTracingContextCalls())
+//
+//	len(mockedMultiStore.SetTracingContextCalls())
 func (mock *MultiStoreMock) SetTracingContextCalls() []struct {
 	TraceContext types.TraceContext
 } {
@@ -571,7 +583,8 @@ func (mock *MultiStoreMock) TracingEnabled() bool {
 
 // TracingEnabledCalls gets all the calls that were made to TracingEnabled.
 // Check the length with:
-//     len(mockedMultiStore.TracingEnabledCalls())
+//
+//	len(mockedMultiStore.TracingEnabledCalls())
 func (mock *MultiStoreMock) TracingEnabledCalls() []struct {
 } {
 	var calls []struct {
@@ -588,58 +601,58 @@ var _ interfaces.CacheMultiStore = &CacheMultiStoreMock{}
 
 // CacheMultiStoreMock is a mock implementation of interfaces.CacheMultiStore.
 //
-// 	func TestSomethingThatUsesCacheMultiStore(t *testing.T) {
+//	func TestSomethingThatUsesCacheMultiStore(t *testing.T) {
 //
-// 		// make and configure a mocked interfaces.CacheMultiStore
-// 		mockedCacheMultiStore := &CacheMultiStoreMock{
-// 			AddListenersFunc: func(key types.StoreKey, listeners []types.WriteListener)  {
-// 				panic("mock out the AddListeners method")
-// 			},
-// 			CacheMultiStoreFunc: func() types.CacheMultiStore {
-// 				panic("mock out the CacheMultiStore method")
-// 			},
-// 			CacheMultiStoreWithVersionFunc: func(version int64) (types.CacheMultiStore, error) {
-// 				panic("mock out the CacheMultiStoreWithVersion method")
-// 			},
-// 			CacheWrapFunc: func() types.CacheWrap {
-// 				panic("mock out the CacheWrap method")
-// 			},
-// 			CacheWrapWithListenersFunc: func(storeKey types.StoreKey, listeners []types.WriteListener) types.CacheWrap {
-// 				panic("mock out the CacheWrapWithListeners method")
-// 			},
-// 			CacheWrapWithTraceFunc: func(w io.Writer, tc types.TraceContext) types.CacheWrap {
-// 				panic("mock out the CacheWrapWithTrace method")
-// 			},
-// 			GetKVStoreFunc: func(storeKey types.StoreKey) types.KVStore {
-// 				panic("mock out the GetKVStore method")
-// 			},
-// 			GetStoreFunc: func(storeKey types.StoreKey) types.Store {
-// 				panic("mock out the GetStore method")
-// 			},
-// 			GetStoreTypeFunc: func() types.StoreType {
-// 				panic("mock out the GetStoreType method")
-// 			},
-// 			ListeningEnabledFunc: func(key types.StoreKey) bool {
-// 				panic("mock out the ListeningEnabled method")
-// 			},
-// 			SetTracerFunc: func(w io.Writer) types.MultiStore {
-// 				panic("mock out the SetTracer method")
-// 			},
-// 			SetTracingContextFunc: func(traceContext types.TraceContext) types.MultiStore {
-// 				panic("mock out the SetTracingContext method")
-// 			},
-// 			TracingEnabledFunc: func() bool {
-// 				panic("mock out the TracingEnabled method")
-// 			},
-// 			WriteFunc: func()  {
-// 				panic("mock out the Write method")
-// 			},
-// 		}
+//		// make and configure a mocked interfaces.CacheMultiStore
+//		mockedCacheMultiStore := &CacheMultiStoreMock{
+//			AddListenersFunc: func(key types.StoreKey, listeners []types.WriteListener)  {
+//				panic("mock out the AddListeners method")
+//			},
+//			CacheMultiStoreFunc: func() types.CacheMultiStore {
+//				panic("mock out the CacheMultiStore method")
+//			},
+//			CacheMultiStoreWithVersionFunc: func(version int64) (types.CacheMultiStore, error) {
+//				panic("mock out the CacheMultiStoreWithVersion method")
+//			},
+//			CacheWrapFunc: func() types.CacheWrap {
+//				panic("mock out the CacheWrap method")
+//			},
+//			CacheWrapWithListenersFunc: func(storeKey types.StoreKey, listeners []types.WriteListener) types.CacheWrap {
+//				panic("mock out the CacheWrapWithListeners method")
+//			},
+//			CacheWrapWithTraceFunc: func(w io.Writer, tc types.TraceContext) types.CacheWrap {
+//				panic("mock out the CacheWrapWithTrace method")
+//			},
+//			GetKVStoreFunc: func(storeKey types.StoreKey) types.KVStore {
+//				panic("mock out the GetKVStore method")
+//			},
+//			GetStoreFunc: func(storeKey types.StoreKey) types.Store {
+//				panic("mock out the GetStore method")
+//			},
+//			GetStoreTypeFunc: func() types.StoreType {
+//				panic("mock out the GetStoreType method")
+//			},
+//			ListeningEnabledFunc: func(key types.StoreKey) bool {
+//				panic("mock out the ListeningEnabled method")
+//			},
+//			SetTracerFunc: func(w io.Writer) types.MultiStore {
+//				panic("mock out the SetTracer method")
+//			},
+//			SetTracingContextFunc: func(traceContext types.TraceContext) types.MultiStore {
+//				panic("mock out the SetTracingContext method")
+//			},
+//			TracingEnabledFunc: func() bool {
+//				panic("mock out the TracingEnabled method")
+//			},
+//			WriteFunc: func()  {
+//				panic("mock out the Write method")
+//			},
+//		}
 //
-// 		// use mockedCacheMultiStore in code that requires interfaces.CacheMultiStore
-// 		// and then make assertions.
+//		// use mockedCacheMultiStore in code that requires interfaces.CacheMultiStore
+//		// and then make assertions.
 //
-// 	}
+//	}
 type CacheMultiStoreMock struct {
 	// AddListenersFunc mocks the AddListeners method.
 	AddListenersFunc func(key types.StoreKey, listeners []types.WriteListener)
@@ -788,7 +801,8 @@ func (mock *CacheMultiStoreMock) AddListeners(key types.StoreKey, listeners []ty
 
 // AddListenersCalls gets all the calls that were made to AddListeners.
 // Check the length with:
-//     len(mockedCacheMultiStore.AddListenersCalls())
+//
+//	len(mockedCacheMultiStore.AddListenersCalls())
 func (mock *CacheMultiStoreMock) AddListenersCalls() []struct {
 	Key       types.StoreKey
 	Listeners []types.WriteListener
@@ -818,7 +832,8 @@ func (mock *CacheMultiStoreMock) CacheMultiStore() types.CacheMultiStore {
 
 // CacheMultiStoreCalls gets all the calls that were made to CacheMultiStore.
 // Check the length with:
-//     len(mockedCacheMultiStore.CacheMultiStoreCalls())
+//
+//	len(mockedCacheMultiStore.CacheMultiStoreCalls())
 func (mock *CacheMultiStoreMock) CacheMultiStoreCalls() []struct {
 } {
 	var calls []struct {
@@ -847,7 +862,8 @@ func (mock *CacheMultiStoreMock) CacheMultiStoreWithVersion(version int64) (type
 
 // CacheMultiStoreWithVersionCalls gets all the calls that were made to CacheMultiStoreWithVersion.
 // Check the length with:
-//     len(mockedCacheMultiStore.CacheMultiStoreWithVersionCalls())
+//
+//	len(mockedCacheMultiStore.CacheMultiStoreWithVersionCalls())
 func (mock *CacheMultiStoreMock) CacheMultiStoreWithVersionCalls() []struct {
 	Version int64
 } {
@@ -875,7 +891,8 @@ func (mock *CacheMultiStoreMock) CacheWrap() types.CacheWrap {
 
 // CacheWrapCalls gets all the calls that were made to CacheWrap.
 // Check the length with:
-//     len(mockedCacheMultiStore.CacheWrapCalls())
+//
+//	len(mockedCacheMultiStore.CacheWrapCalls())
 func (mock *CacheMultiStoreMock) CacheWrapCalls() []struct {
 } {
 	var calls []struct {
@@ -906,7 +923,8 @@ func (mock *CacheMultiStoreMock) CacheWrapWithListeners(storeKey types.StoreKey,
 
 // CacheWrapWithListenersCalls gets all the calls that were made to CacheWrapWithListeners.
 // Check the length with:
-//     len(mockedCacheMultiStore.CacheWrapWithListenersCalls())
+//
+//	len(mockedCacheMultiStore.CacheWrapWithListenersCalls())
 func (mock *CacheMultiStoreMock) CacheWrapWithListenersCalls() []struct {
 	StoreKey  types.StoreKey
 	Listeners []types.WriteListener
@@ -941,7 +959,8 @@ func (mock *CacheMultiStoreMock) CacheWrapWithTrace(w io.Writer, tc types.TraceC
 
 // CacheWrapWithTraceCalls gets all the calls that were made to CacheWrapWithTrace.
 // Check the length with:
-//     len(mockedCacheMultiStore.CacheWrapWithTraceCalls())
+//
+//	len(mockedCacheMultiStore.CacheWrapWithTraceCalls())
 func (mock *CacheMultiStoreMock) CacheWrapWithTraceCalls() []struct {
 	W  io.Writer
 	Tc types.TraceContext
@@ -974,7 +993,8 @@ func (mock *CacheMultiStoreMock) GetKVStore(storeKey types.StoreKey) types.KVSto
 
 // GetKVStoreCalls gets all the calls that were made to GetKVStore.
 // Check the length with:
-//     len(mockedCacheMultiStore.GetKVStoreCalls())
+//
+//	len(mockedCacheMultiStore.GetKVStoreCalls())
 func (mock *CacheMultiStoreMock) GetKVStoreCalls() []struct {
 	StoreKey types.StoreKey
 } {
@@ -1005,7 +1025,8 @@ func (mock *CacheMultiStoreMock) GetStore(storeKey types.StoreKey) types.Store {
 
 // GetStoreCalls gets all the calls that were made to GetStore.
 // Check the length with:
-//     len(mockedCacheMultiStore.GetStoreCalls())
+//
+//	len(mockedCacheMultiStore.GetStoreCalls())
 func (mock *CacheMultiStoreMock) GetStoreCalls() []struct {
 	StoreKey types.StoreKey
 } {
@@ -1033,7 +1054,8 @@ func (mock *CacheMultiStoreMock) GetStoreType() types.StoreType {
 
 // GetStoreTypeCalls gets all the calls that were made to GetStoreType.
 // Check the length with:
-//     len(mockedCacheMultiStore.GetStoreTypeCalls())
+//
+//	len(mockedCacheMultiStore.GetStoreTypeCalls())
 func (mock *CacheMultiStoreMock) GetStoreTypeCalls() []struct {
 } {
 	var calls []struct {
@@ -1062,7 +1084,8 @@ func (mock *CacheMultiStoreMock) ListeningEnabled(key types.StoreKey) bool {
 
 // ListeningEnabledCalls gets all the calls that were made to ListeningEnabled.
 // Check the length with:
-//     len(mockedCacheMultiStore.ListeningEnabledCalls())
+//
+//	len(mockedCacheMultiStore.ListeningEnabledCalls())
 func (mock *CacheMultiStoreMock) ListeningEnabledCalls() []struct {
 	Key types.StoreKey
 } {
@@ -1093,7 +1116,8 @@ func (mock *CacheMultiStoreMock) SetTracer(w io.Writer) types.MultiStore {
 
 // SetTracerCalls gets all the calls that were made to SetTracer.
 // Check the length with:
-//     len(mockedCacheMultiStore.SetTracerCalls())
+//
+//	len(mockedCacheMultiStore.SetTracerCalls())
 func (mock *CacheMultiStoreMock) SetTracerCalls() []struct {
 	W io.Writer
 } {
@@ -1124,7 +1148,8 @@ func (mock *CacheMultiStoreMock) SetTracingContext(traceContext types.TraceConte
 
 // SetTracingContextCalls gets all the calls that were made to SetTracingContext.
 // Check the length with:
-//     len(mockedCacheMultiStore.SetTracingContextCalls())
+//
+//	len(mockedCacheMultiStore.SetTracingContextCalls())
 func (mock *CacheMultiStoreMock) SetTracingContextCalls() []struct {
 	TraceContext types.TraceContext
 } {
@@ -1152,7 +1177,8 @@ func (mock *CacheMultiStoreMock) TracingEnabled() bool {
 
 // TracingEnabledCalls gets all the calls that were made to TracingEnabled.
 // Check the length with:
-//     len(mockedCacheMultiStore.TracingEnabledCalls())
+//
+//	len(mockedCacheMultiStore.TracingEnabledCalls())
 func (mock *CacheMultiStoreMock) TracingEnabledCalls() []struct {
 } {
 	var calls []struct {
@@ -1178,7 +1204,8 @@ func (mock *CacheMultiStoreMock) Write() {
 
 // WriteCalls gets all the calls that were made to Write.
 // Check the length with:
-//     len(mockedCacheMultiStore.WriteCalls())
+//
+//	len(mockedCacheMultiStore.WriteCalls())
 func (mock *CacheMultiStoreMock) WriteCalls() []struct {
 } {
 	var calls []struct {
@@ -1195,46 +1222,46 @@ var _ interfaces.KVStore = &KVStoreMock{}
 
 // KVStoreMock is a mock implementation of interfaces.KVStore.
 //
-// 	func TestSomethingThatUsesKVStore(t *testing.T) {
+//	func TestSomethingThatUsesKVStore(t *testing.T) {
 //
-// 		// make and configure a mocked interfaces.KVStore
-// 		mockedKVStore := &KVStoreMock{
-// 			CacheWrapFunc: func() types.CacheWrap {
-// 				panic("mock out the CacheWrap method")
-// 			},
-// 			CacheWrapWithListenersFunc: func(storeKey types.StoreKey, listeners []types.WriteListener) types.CacheWrap {
-// 				panic("mock out the CacheWrapWithListeners method")
-// 			},
-// 			CacheWrapWithTraceFunc: func(w io.Writer, tc types.TraceContext) types.CacheWrap {
-// 				panic("mock out the CacheWrapWithTrace method")
-// 			},
-// 			DeleteFunc: func(key []byte)  {
-// 				panic("mock out the Delete method")
-// 			},
-// 			GetFunc: func(key []byte) []byte {
-// 				panic("mock out the Get method")
-// 			},
-// 			GetStoreTypeFunc: func() types.StoreType {
-// 				panic("mock out the GetStoreType method")
-// 			},
-// 			HasFunc: func(key []byte) bool {
-// 				panic("mock out the Has method")
-// 			},
-// 			IteratorFunc: func(start []byte, end []byte) db.Iterator {
-// 				panic("mock out the Iterator method")
-// 			},
-// 			ReverseIteratorFunc: func(start []byte, end []byte) db.Iterator {
-// 				panic("mock out the ReverseIterator method")
-// 			},
-// 			SetFunc: func(key []byte, value []byte)  {
-// 				panic("mock out the Set method")
-// 			},
-// 		}
+//		// make and configure a mocked interfaces.KVStore
+//		mockedKVStore := &KVStoreMock{
+//			CacheWrapFunc: func() types.CacheWrap {
+//				panic("mock out the CacheWrap method")
+//			},
+//			CacheWrapWithListenersFunc: func(storeKey types.StoreKey, listeners []types.WriteListener) types.CacheWrap {
+//				panic("mock out the CacheWrapWithListeners method")
+//			},
+//			CacheWrapWithTraceFunc: func(w io.Writer, tc types.TraceContext) types.CacheWrap {
+//				panic("mock out the CacheWrapWithTrace method")
+//			},
+//			DeleteFunc: func(key []byte)  {
+//				panic("mock out the Delete method")
+//			},
+//			GetFunc: func(key []byte) []byte {
+//				panic("mock out the Get method")
+//			},
+//			GetStoreTypeFunc: func() types.StoreType {
+//				panic("mock out the GetStoreType method")
+//			},
+//			HasFunc: func(key []byte) bool {
+//				panic("mock out the Has method")
+//			},
+//			IteratorFunc: func(start []byte, end []byte) db.Iterator {
+//				panic("mock out the Iterator method")
+//			},
+//			ReverseIteratorFunc: func(start []byte, end []byte) db.Iterator {
+//				panic("mock out the ReverseIterator method")
+//			},
+//			SetFunc: func(key []byte, value []byte)  {
+//				panic("mock out the Set method")
+//			},
+//		}
 //
-// 		// use mockedKVStore in code that requires interfaces.KVStore
-// 		// and then make assertions.
+//		// use mockedKVStore in code that requires interfaces.KVStore
+//		// and then make assertions.
 //
-// 	}
+//	}
 type KVStoreMock struct {
 	// CacheWrapFunc mocks the CacheWrap method.
 	CacheWrapFunc func() types.CacheWrap
@@ -1352,7 +1379,8 @@ func (mock *KVStoreMock) CacheWrap() types.CacheWrap {
 
 // CacheWrapCalls gets all the calls that were made to CacheWrap.
 // Check the length with:
-//     len(mockedKVStore.CacheWrapCalls())
+//
+//	len(mockedKVStore.CacheWrapCalls())
 func (mock *KVStoreMock) CacheWrapCalls() []struct {
 } {
 	var calls []struct {
@@ -1383,7 +1411,8 @@ func (mock *KVStoreMock) CacheWrapWithListeners(storeKey types.StoreKey, listene
 
 // CacheWrapWithListenersCalls gets all the calls that were made to CacheWrapWithListeners.
 // Check the length with:
-//     len(mockedKVStore.CacheWrapWithListenersCalls())
+//
+//	len(mockedKVStore.CacheWrapWithListenersCalls())
 func (mock *KVStoreMock) CacheWrapWithListenersCalls() []struct {
 	StoreKey  types.StoreKey
 	Listeners []types.WriteListener
@@ -1418,7 +1447,8 @@ func (mock *KVStoreMock) CacheWrapWithTrace(w io.Writer, tc types.TraceContext) 
 
 // CacheWrapWithTraceCalls gets all the calls that were made to CacheWrapWithTrace.
 // Check the length with:
-//     len(mockedKVStore.CacheWrapWithTraceCalls())
+//
+//	len(mockedKVStore.CacheWrapWithTraceCalls())
 func (mock *KVStoreMock) CacheWrapWithTraceCalls() []struct {
 	W  io.Writer
 	Tc types.TraceContext
@@ -1451,7 +1481,8 @@ func (mock *KVStoreMock) Delete(key []byte) {
 
 // DeleteCalls gets all the calls that were made to Delete.
 // Check the length with:
-//     len(mockedKVStore.DeleteCalls())
+//
+//	len(mockedKVStore.DeleteCalls())
 func (mock *KVStoreMock) DeleteCalls() []struct {
 	Key []byte
 } {
@@ -1482,7 +1513,8 @@ func (mock *KVStoreMock) Get(key []byte) []byte {
 
 // GetCalls gets all the calls that were made to Get.
 // Check the length with:
-//     len(mockedKVStore.GetCalls())
+//
+//	len(mockedKVStore.GetCalls())
 func (mock *KVStoreMock) GetCalls() []struct {
 	Key []byte
 } {
@@ -1510,7 +1542,8 @@ func (mock *KVStoreMock) GetStoreType() types.StoreType {
 
 // GetStoreTypeCalls gets all the calls that were made to GetStoreType.
 // Check the length with:
-//     len(mockedKVStore.GetStoreTypeCalls())
+//
+//	len(mockedKVStore.GetStoreTypeCalls())
 func (mock *KVStoreMock) GetStoreTypeCalls() []struct {
 } {
 	var calls []struct {
@@ -1539,7 +1572,8 @@ func (mock *KVStoreMock) Has(key []byte) bool {
 
 // HasCalls gets all the calls that were made to Has.
 // Check the length with:
-//     len(mockedKVStore.HasCalls())
+//
+//	len(mockedKVStore.HasCalls())
 func (mock *KVStoreMock) HasCalls() []struct {
 	Key []byte
 } {
@@ -1572,7 +1606,8 @@ func (mock *KVStoreMock) Iterator(start []byte, end []byte) db.Iterator {
 
 // IteratorCalls gets all the calls that were made to Iterator.
 // Check the length with:
-//     len(mockedKVStore.IteratorCalls())
+//
+//	len(mockedKVStore.IteratorCalls())
 func (mock *KVStoreMock) IteratorCalls() []struct {
 	Start []byte
 	End   []byte
@@ -1607,7 +1642,8 @@ func (mock *KVStoreMock) ReverseIterator(start []byte, end []byte) db.Iterator {
 
 // ReverseIteratorCalls gets all the calls that were made to ReverseIterator.
 // Check the length with:
-//     len(mockedKVStore.ReverseIteratorCalls())
+//
+//	len(mockedKVStore.ReverseIteratorCalls())
 func (mock *KVStoreMock) ReverseIteratorCalls() []struct {
 	Start []byte
 	End   []byte
@@ -1642,7 +1678,8 @@ func (mock *KVStoreMock) Set(key []byte, value []byte) {
 
 // SetCalls gets all the calls that were made to Set.
 // Check the length with:
-//     len(mockedKVStore.SetCalls())
+//
+//	len(mockedKVStore.SetCalls())
 func (mock *KVStoreMock) SetCalls() []struct {
 	Key   []byte
 	Value []byte

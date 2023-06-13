@@ -17,79 +17,79 @@ var _ ValidatorI = &ValidatorIMock{}
 
 // ValidatorIMock is a mock implementation of ValidatorI.
 //
-// 	func TestSomethingThatUsesValidatorI(t *testing.T) {
+//	func TestSomethingThatUsesValidatorI(t *testing.T) {
 //
-// 		// make and configure a mocked ValidatorI
-// 		mockedValidatorI := &ValidatorIMock{
-// 			ConsPubKeyFunc: func() (cryptotypes.PubKey, error) {
-// 				panic("mock out the ConsPubKey method")
-// 			},
-// 			GetBondedTokensFunc: func() cosmossdktypes.Int {
-// 				panic("mock out the GetBondedTokens method")
-// 			},
-// 			GetCommissionFunc: func() cosmossdktypes.Dec {
-// 				panic("mock out the GetCommission method")
-// 			},
-// 			GetConsAddrFunc: func() (cosmossdktypes.ConsAddress, error) {
-// 				panic("mock out the GetConsAddr method")
-// 			},
-// 			GetConsensusPowerFunc: func(intMoqParam cosmossdktypes.Int) int64 {
-// 				panic("mock out the GetConsensusPower method")
-// 			},
-// 			GetDelegatorSharesFunc: func() cosmossdktypes.Dec {
-// 				panic("mock out the GetDelegatorShares method")
-// 			},
-// 			GetMinSelfDelegationFunc: func() cosmossdktypes.Int {
-// 				panic("mock out the GetMinSelfDelegation method")
-// 			},
-// 			GetMonikerFunc: func() string {
-// 				panic("mock out the GetMoniker method")
-// 			},
-// 			GetOperatorFunc: func() cosmossdktypes.ValAddress {
-// 				panic("mock out the GetOperator method")
-// 			},
-// 			GetStatusFunc: func() types.BondStatus {
-// 				panic("mock out the GetStatus method")
-// 			},
-// 			GetTokensFunc: func() cosmossdktypes.Int {
-// 				panic("mock out the GetTokens method")
-// 			},
-// 			IsBondedFunc: func() bool {
-// 				panic("mock out the IsBonded method")
-// 			},
-// 			IsJailedFunc: func() bool {
-// 				panic("mock out the IsJailed method")
-// 			},
-// 			IsUnbondedFunc: func() bool {
-// 				panic("mock out the IsUnbonded method")
-// 			},
-// 			IsUnbondingFunc: func() bool {
-// 				panic("mock out the IsUnbonding method")
-// 			},
-// 			SharesFromTokensFunc: func(amt cosmossdktypes.Int) (cosmossdktypes.Dec, error) {
-// 				panic("mock out the SharesFromTokens method")
-// 			},
-// 			SharesFromTokensTruncatedFunc: func(amt cosmossdktypes.Int) (cosmossdktypes.Dec, error) {
-// 				panic("mock out the SharesFromTokensTruncated method")
-// 			},
-// 			TmConsPublicKeyFunc: func() (crypto.PublicKey, error) {
-// 				panic("mock out the TmConsPublicKey method")
-// 			},
-// 			TokensFromSharesFunc: func(dec cosmossdktypes.Dec) cosmossdktypes.Dec {
-// 				panic("mock out the TokensFromShares method")
-// 			},
-// 			TokensFromSharesRoundUpFunc: func(dec cosmossdktypes.Dec) cosmossdktypes.Dec {
-// 				panic("mock out the TokensFromSharesRoundUp method")
-// 			},
-// 			TokensFromSharesTruncatedFunc: func(dec cosmossdktypes.Dec) cosmossdktypes.Dec {
-// 				panic("mock out the TokensFromSharesTruncated method")
-// 			},
-// 		}
+//		// make and configure a mocked ValidatorI
+//		mockedValidatorI := &ValidatorIMock{
+//			ConsPubKeyFunc: func() (cryptotypes.PubKey, error) {
+//				panic("mock out the ConsPubKey method")
+//			},
+//			GetBondedTokensFunc: func() cosmossdktypes.Int {
+//				panic("mock out the GetBondedTokens method")
+//			},
+//			GetCommissionFunc: func() cosmossdktypes.Dec {
+//				panic("mock out the GetCommission method")
+//			},
+//			GetConsAddrFunc: func() (cosmossdktypes.ConsAddress, error) {
+//				panic("mock out the GetConsAddr method")
+//			},
+//			GetConsensusPowerFunc: func(intMoqParam cosmossdktypes.Int) int64 {
+//				panic("mock out the GetConsensusPower method")
+//			},
+//			GetDelegatorSharesFunc: func() cosmossdktypes.Dec {
+//				panic("mock out the GetDelegatorShares method")
+//			},
+//			GetMinSelfDelegationFunc: func() cosmossdktypes.Int {
+//				panic("mock out the GetMinSelfDelegation method")
+//			},
+//			GetMonikerFunc: func() string {
+//				panic("mock out the GetMoniker method")
+//			},
+//			GetOperatorFunc: func() cosmossdktypes.ValAddress {
+//				panic("mock out the GetOperator method")
+//			},
+//			GetStatusFunc: func() types.BondStatus {
+//				panic("mock out the GetStatus method")
+//			},
+//			GetTokensFunc: func() cosmossdktypes.Int {
+//				panic("mock out the GetTokens method")
+//			},
+//			IsBondedFunc: func() bool {
+//				panic("mock out the IsBonded method")
+//			},
+//			IsJailedFunc: func() bool {
+//				panic("mock out the IsJailed method")
+//			},
+//			IsUnbondedFunc: func() bool {
+//				panic("mock out the IsUnbonded method")
+//			},
+//			IsUnbondingFunc: func() bool {
+//				panic("mock out the IsUnbonding method")
+//			},
+//			SharesFromTokensFunc: func(amt cosmossdktypes.Int) (cosmossdktypes.Dec, error) {
+//				panic("mock out the SharesFromTokens method")
+//			},
+//			SharesFromTokensTruncatedFunc: func(amt cosmossdktypes.Int) (cosmossdktypes.Dec, error) {
+//				panic("mock out the SharesFromTokensTruncated method")
+//			},
+//			TmConsPublicKeyFunc: func() (crypto.PublicKey, error) {
+//				panic("mock out the TmConsPublicKey method")
+//			},
+//			TokensFromSharesFunc: func(dec cosmossdktypes.Dec) cosmossdktypes.Dec {
+//				panic("mock out the TokensFromShares method")
+//			},
+//			TokensFromSharesRoundUpFunc: func(dec cosmossdktypes.Dec) cosmossdktypes.Dec {
+//				panic("mock out the TokensFromSharesRoundUp method")
+//			},
+//			TokensFromSharesTruncatedFunc: func(dec cosmossdktypes.Dec) cosmossdktypes.Dec {
+//				panic("mock out the TokensFromSharesTruncated method")
+//			},
+//		}
 //
-// 		// use mockedValidatorI in code that requires ValidatorI
-// 		// and then make assertions.
+//		// use mockedValidatorI in code that requires ValidatorI
+//		// and then make assertions.
 //
-// 	}
+//	}
 type ValidatorIMock struct {
 	// ConsPubKeyFunc mocks the ConsPubKey method.
 	ConsPubKeyFunc func() (cryptotypes.PubKey, error)
@@ -270,7 +270,8 @@ func (mock *ValidatorIMock) ConsPubKey() (cryptotypes.PubKey, error) {
 
 // ConsPubKeyCalls gets all the calls that were made to ConsPubKey.
 // Check the length with:
-//     len(mockedValidatorI.ConsPubKeyCalls())
+//
+//	len(mockedValidatorI.ConsPubKeyCalls())
 func (mock *ValidatorIMock) ConsPubKeyCalls() []struct {
 } {
 	var calls []struct {
@@ -296,7 +297,8 @@ func (mock *ValidatorIMock) GetBondedTokens() cosmossdktypes.Int {
 
 // GetBondedTokensCalls gets all the calls that were made to GetBondedTokens.
 // Check the length with:
-//     len(mockedValidatorI.GetBondedTokensCalls())
+//
+//	len(mockedValidatorI.GetBondedTokensCalls())
 func (mock *ValidatorIMock) GetBondedTokensCalls() []struct {
 } {
 	var calls []struct {
@@ -322,7 +324,8 @@ func (mock *ValidatorIMock) GetCommission() cosmossdktypes.Dec {
 
 // GetCommissionCalls gets all the calls that were made to GetCommission.
 // Check the length with:
-//     len(mockedValidatorI.GetCommissionCalls())
+//
+//	len(mockedValidatorI.GetCommissionCalls())
 func (mock *ValidatorIMock) GetCommissionCalls() []struct {
 } {
 	var calls []struct {
@@ -348,7 +351,8 @@ func (mock *ValidatorIMock) GetConsAddr() (cosmossdktypes.ConsAddress, error) {
 
 // GetConsAddrCalls gets all the calls that were made to GetConsAddr.
 // Check the length with:
-//     len(mockedValidatorI.GetConsAddrCalls())
+//
+//	len(mockedValidatorI.GetConsAddrCalls())
 func (mock *ValidatorIMock) GetConsAddrCalls() []struct {
 } {
 	var calls []struct {
@@ -377,7 +381,8 @@ func (mock *ValidatorIMock) GetConsensusPower(intMoqParam cosmossdktypes.Int) in
 
 // GetConsensusPowerCalls gets all the calls that were made to GetConsensusPower.
 // Check the length with:
-//     len(mockedValidatorI.GetConsensusPowerCalls())
+//
+//	len(mockedValidatorI.GetConsensusPowerCalls())
 func (mock *ValidatorIMock) GetConsensusPowerCalls() []struct {
 	IntMoqParam cosmossdktypes.Int
 } {
@@ -405,7 +410,8 @@ func (mock *ValidatorIMock) GetDelegatorShares() cosmossdktypes.Dec {
 
 // GetDelegatorSharesCalls gets all the calls that were made to GetDelegatorShares.
 // Check the length with:
-//     len(mockedValidatorI.GetDelegatorSharesCalls())
+//
+//	len(mockedValidatorI.GetDelegatorSharesCalls())
 func (mock *ValidatorIMock) GetDelegatorSharesCalls() []struct {
 } {
 	var calls []struct {
@@ -431,7 +437,8 @@ func (mock *ValidatorIMock) GetMinSelfDelegation() cosmossdktypes.Int {
 
 // GetMinSelfDelegationCalls gets all the calls that were made to GetMinSelfDelegation.
 // Check the length with:
-//     len(mockedValidatorI.GetMinSelfDelegationCalls())
+//
+//	len(mockedValidatorI.GetMinSelfDelegationCalls())
 func (mock *ValidatorIMock) GetMinSelfDelegationCalls() []struct {
 } {
 	var calls []struct {
@@ -457,7 +464,8 @@ func (mock *ValidatorIMock) GetMoniker() string {
 
 // GetMonikerCalls gets all the calls that were made to GetMoniker.
 // Check the length with:
-//     len(mockedValidatorI.GetMonikerCalls())
+//
+//	len(mockedValidatorI.GetMonikerCalls())
 func (mock *ValidatorIMock) GetMonikerCalls() []struct {
 } {
 	var calls []struct {
@@ -483,7 +491,8 @@ func (mock *ValidatorIMock) GetOperator() cosmossdktypes.ValAddress {
 
 // GetOperatorCalls gets all the calls that were made to GetOperator.
 // Check the length with:
-//     len(mockedValidatorI.GetOperatorCalls())
+//
+//	len(mockedValidatorI.GetOperatorCalls())
 func (mock *ValidatorIMock) GetOperatorCalls() []struct {
 } {
 	var calls []struct {
@@ -509,7 +518,8 @@ func (mock *ValidatorIMock) GetStatus() types.BondStatus {
 
 // GetStatusCalls gets all the calls that were made to GetStatus.
 // Check the length with:
-//     len(mockedValidatorI.GetStatusCalls())
+//
+//	len(mockedValidatorI.GetStatusCalls())
 func (mock *ValidatorIMock) GetStatusCalls() []struct {
 } {
 	var calls []struct {
@@ -535,7 +545,8 @@ func (mock *ValidatorIMock) GetTokens() cosmossdktypes.Int {
 
 // GetTokensCalls gets all the calls that were made to GetTokens.
 // Check the length with:
-//     len(mockedValidatorI.GetTokensCalls())
+//
+//	len(mockedValidatorI.GetTokensCalls())
 func (mock *ValidatorIMock) GetTokensCalls() []struct {
 } {
 	var calls []struct {
@@ -561,7 +572,8 @@ func (mock *ValidatorIMock) IsBonded() bool {
 
 // IsBondedCalls gets all the calls that were made to IsBonded.
 // Check the length with:
-//     len(mockedValidatorI.IsBondedCalls())
+//
+//	len(mockedValidatorI.IsBondedCalls())
 func (mock *ValidatorIMock) IsBondedCalls() []struct {
 } {
 	var calls []struct {
@@ -587,7 +599,8 @@ func (mock *ValidatorIMock) IsJailed() bool {
 
 // IsJailedCalls gets all the calls that were made to IsJailed.
 // Check the length with:
-//     len(mockedValidatorI.IsJailedCalls())
+//
+//	len(mockedValidatorI.IsJailedCalls())
 func (mock *ValidatorIMock) IsJailedCalls() []struct {
 } {
 	var calls []struct {
@@ -613,7 +626,8 @@ func (mock *ValidatorIMock) IsUnbonded() bool {
 
 // IsUnbondedCalls gets all the calls that were made to IsUnbonded.
 // Check the length with:
-//     len(mockedValidatorI.IsUnbondedCalls())
+//
+//	len(mockedValidatorI.IsUnbondedCalls())
 func (mock *ValidatorIMock) IsUnbondedCalls() []struct {
 } {
 	var calls []struct {
@@ -639,7 +653,8 @@ func (mock *ValidatorIMock) IsUnbonding() bool {
 
 // IsUnbondingCalls gets all the calls that were made to IsUnbonding.
 // Check the length with:
-//     len(mockedValidatorI.IsUnbondingCalls())
+//
+//	len(mockedValidatorI.IsUnbondingCalls())
 func (mock *ValidatorIMock) IsUnbondingCalls() []struct {
 } {
 	var calls []struct {
@@ -668,7 +683,8 @@ func (mock *ValidatorIMock) SharesFromTokens(amt cosmossdktypes.Int) (cosmossdkt
 
 // SharesFromTokensCalls gets all the calls that were made to SharesFromTokens.
 // Check the length with:
-//     len(mockedValidatorI.SharesFromTokensCalls())
+//
+//	len(mockedValidatorI.SharesFromTokensCalls())
 func (mock *ValidatorIMock) SharesFromTokensCalls() []struct {
 	Amt cosmossdktypes.Int
 } {
@@ -699,7 +715,8 @@ func (mock *ValidatorIMock) SharesFromTokensTruncated(amt cosmossdktypes.Int) (c
 
 // SharesFromTokensTruncatedCalls gets all the calls that were made to SharesFromTokensTruncated.
 // Check the length with:
-//     len(mockedValidatorI.SharesFromTokensTruncatedCalls())
+//
+//	len(mockedValidatorI.SharesFromTokensTruncatedCalls())
 func (mock *ValidatorIMock) SharesFromTokensTruncatedCalls() []struct {
 	Amt cosmossdktypes.Int
 } {
@@ -727,7 +744,8 @@ func (mock *ValidatorIMock) TmConsPublicKey() (crypto.PublicKey, error) {
 
 // TmConsPublicKeyCalls gets all the calls that were made to TmConsPublicKey.
 // Check the length with:
-//     len(mockedValidatorI.TmConsPublicKeyCalls())
+//
+//	len(mockedValidatorI.TmConsPublicKeyCalls())
 func (mock *ValidatorIMock) TmConsPublicKeyCalls() []struct {
 } {
 	var calls []struct {
@@ -756,7 +774,8 @@ func (mock *ValidatorIMock) TokensFromShares(dec cosmossdktypes.Dec) cosmossdkty
 
 // TokensFromSharesCalls gets all the calls that were made to TokensFromShares.
 // Check the length with:
-//     len(mockedValidatorI.TokensFromSharesCalls())
+//
+//	len(mockedValidatorI.TokensFromSharesCalls())
 func (mock *ValidatorIMock) TokensFromSharesCalls() []struct {
 	Dec cosmossdktypes.Dec
 } {
@@ -787,7 +806,8 @@ func (mock *ValidatorIMock) TokensFromSharesRoundUp(dec cosmossdktypes.Dec) cosm
 
 // TokensFromSharesRoundUpCalls gets all the calls that were made to TokensFromSharesRoundUp.
 // Check the length with:
-//     len(mockedValidatorI.TokensFromSharesRoundUpCalls())
+//
+//	len(mockedValidatorI.TokensFromSharesRoundUpCalls())
 func (mock *ValidatorIMock) TokensFromSharesRoundUpCalls() []struct {
 	Dec cosmossdktypes.Dec
 } {
@@ -818,7 +838,8 @@ func (mock *ValidatorIMock) TokensFromSharesTruncated(dec cosmossdktypes.Dec) co
 
 // TokensFromSharesTruncatedCalls gets all the calls that were made to TokensFromSharesTruncated.
 // Check the length with:
-//     len(mockedValidatorI.TokensFromSharesTruncatedCalls())
+//
+//	len(mockedValidatorI.TokensFromSharesTruncatedCalls())
 func (mock *ValidatorIMock) TokensFromSharesTruncatedCalls() []struct {
 	Dec cosmossdktypes.Dec
 } {

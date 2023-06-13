@@ -22,52 +22,52 @@ var _ types.Keeper = &KeeperMock{}
 
 // KeeperMock is a mock implementation of types.Keeper.
 //
-// 	func TestSomethingThatUsesKeeper(t *testing.T) {
+//	func TestSomethingThatUsesKeeper(t *testing.T) {
 //
-// 		// make and configure a mocked types.Keeper
-// 		mockedKeeper := &KeeperMock{
-// 			DeleteKeygenSessionFunc: func(ctx sdk.Context, id github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID)  {
-// 				panic("mock out the DeleteKeygenSession method")
-// 			},
-// 			DeleteSigningSessionFunc: func(ctx sdk.Context, id uint64)  {
-// 				panic("mock out the DeleteSigningSession method")
-// 			},
-// 			GetCurrentKeyIDFunc: func(ctx sdk.Context, chainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID, bool) {
-// 				panic("mock out the GetCurrentKeyID method")
-// 			},
-// 			GetKeyFunc: func(ctx sdk.Context, keyID github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID) (github_com_axelarnetwork_axelar_core_x_multisig_exported.Key, bool) {
-// 				panic("mock out the GetKey method")
-// 			},
-// 			GetKeygenSessionFunc: func(ctx sdk.Context, id github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID) (types.KeygenSession, bool) {
-// 				panic("mock out the GetKeygenSession method")
-// 			},
-// 			GetKeygenSessionsByExpiryFunc: func(ctx sdk.Context, expiry int64) []types.KeygenSession {
-// 				panic("mock out the GetKeygenSessionsByExpiry method")
-// 			},
-// 			GetNextKeyIDFunc: func(ctx sdk.Context, chainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID, bool) {
-// 				panic("mock out the GetNextKeyID method")
-// 			},
-// 			GetParamsFunc: func(ctx sdk.Context) types.Params {
-// 				panic("mock out the GetParams method")
-// 			},
-// 			GetSigRouterFunc: func() types.SigRouter {
-// 				panic("mock out the GetSigRouter method")
-// 			},
-// 			GetSigningSessionsByExpiryFunc: func(ctx sdk.Context, expiry int64) []types.SigningSession {
-// 				panic("mock out the GetSigningSessionsByExpiry method")
-// 			},
-// 			LoggerFunc: func(ctx sdk.Context) log.Logger {
-// 				panic("mock out the Logger method")
-// 			},
-// 			SetKeyFunc: func(ctx sdk.Context, key types.Key)  {
-// 				panic("mock out the SetKey method")
-// 			},
-// 		}
+//		// make and configure a mocked types.Keeper
+//		mockedKeeper := &KeeperMock{
+//			DeleteKeygenSessionFunc: func(ctx sdk.Context, id github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID)  {
+//				panic("mock out the DeleteKeygenSession method")
+//			},
+//			DeleteSigningSessionFunc: func(ctx sdk.Context, id uint64)  {
+//				panic("mock out the DeleteSigningSession method")
+//			},
+//			GetCurrentKeyIDFunc: func(ctx sdk.Context, chainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID, bool) {
+//				panic("mock out the GetCurrentKeyID method")
+//			},
+//			GetKeyFunc: func(ctx sdk.Context, keyID github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID) (github_com_axelarnetwork_axelar_core_x_multisig_exported.Key, bool) {
+//				panic("mock out the GetKey method")
+//			},
+//			GetKeygenSessionFunc: func(ctx sdk.Context, id github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID) (types.KeygenSession, bool) {
+//				panic("mock out the GetKeygenSession method")
+//			},
+//			GetKeygenSessionsByExpiryFunc: func(ctx sdk.Context, expiry int64) []types.KeygenSession {
+//				panic("mock out the GetKeygenSessionsByExpiry method")
+//			},
+//			GetNextKeyIDFunc: func(ctx sdk.Context, chainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID, bool) {
+//				panic("mock out the GetNextKeyID method")
+//			},
+//			GetParamsFunc: func(ctx sdk.Context) types.Params {
+//				panic("mock out the GetParams method")
+//			},
+//			GetSigRouterFunc: func() types.SigRouter {
+//				panic("mock out the GetSigRouter method")
+//			},
+//			GetSigningSessionsByExpiryFunc: func(ctx sdk.Context, expiry int64) []types.SigningSession {
+//				panic("mock out the GetSigningSessionsByExpiry method")
+//			},
+//			LoggerFunc: func(ctx sdk.Context) log.Logger {
+//				panic("mock out the Logger method")
+//			},
+//			SetKeyFunc: func(ctx sdk.Context, key types.Key)  {
+//				panic("mock out the SetKey method")
+//			},
+//		}
 //
-// 		// use mockedKeeper in code that requires types.Keeper
-// 		// and then make assertions.
+//		// use mockedKeeper in code that requires types.Keeper
+//		// and then make assertions.
 //
-// 	}
+//	}
 type KeeperMock struct {
 	// DeleteKeygenSessionFunc mocks the DeleteKeygenSession method.
 	DeleteKeygenSessionFunc func(ctx sdk.Context, id github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID)
@@ -218,7 +218,8 @@ func (mock *KeeperMock) DeleteKeygenSession(ctx sdk.Context, id github_com_axela
 
 // DeleteKeygenSessionCalls gets all the calls that were made to DeleteKeygenSession.
 // Check the length with:
-//     len(mockedKeeper.DeleteKeygenSessionCalls())
+//
+//	len(mockedKeeper.DeleteKeygenSessionCalls())
 func (mock *KeeperMock) DeleteKeygenSessionCalls() []struct {
 	Ctx sdk.Context
 	ID  github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID
@@ -253,7 +254,8 @@ func (mock *KeeperMock) DeleteSigningSession(ctx sdk.Context, id uint64) {
 
 // DeleteSigningSessionCalls gets all the calls that were made to DeleteSigningSession.
 // Check the length with:
-//     len(mockedKeeper.DeleteSigningSessionCalls())
+//
+//	len(mockedKeeper.DeleteSigningSessionCalls())
 func (mock *KeeperMock) DeleteSigningSessionCalls() []struct {
 	Ctx sdk.Context
 	ID  uint64
@@ -288,7 +290,8 @@ func (mock *KeeperMock) GetCurrentKeyID(ctx sdk.Context, chainName github_com_ax
 
 // GetCurrentKeyIDCalls gets all the calls that were made to GetCurrentKeyID.
 // Check the length with:
-//     len(mockedKeeper.GetCurrentKeyIDCalls())
+//
+//	len(mockedKeeper.GetCurrentKeyIDCalls())
 func (mock *KeeperMock) GetCurrentKeyIDCalls() []struct {
 	Ctx       sdk.Context
 	ChainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
@@ -323,7 +326,8 @@ func (mock *KeeperMock) GetKey(ctx sdk.Context, keyID github_com_axelarnetwork_a
 
 // GetKeyCalls gets all the calls that were made to GetKey.
 // Check the length with:
-//     len(mockedKeeper.GetKeyCalls())
+//
+//	len(mockedKeeper.GetKeyCalls())
 func (mock *KeeperMock) GetKeyCalls() []struct {
 	Ctx   sdk.Context
 	KeyID github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID
@@ -358,7 +362,8 @@ func (mock *KeeperMock) GetKeygenSession(ctx sdk.Context, id github_com_axelarne
 
 // GetKeygenSessionCalls gets all the calls that were made to GetKeygenSession.
 // Check the length with:
-//     len(mockedKeeper.GetKeygenSessionCalls())
+//
+//	len(mockedKeeper.GetKeygenSessionCalls())
 func (mock *KeeperMock) GetKeygenSessionCalls() []struct {
 	Ctx sdk.Context
 	ID  github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID
@@ -393,7 +398,8 @@ func (mock *KeeperMock) GetKeygenSessionsByExpiry(ctx sdk.Context, expiry int64)
 
 // GetKeygenSessionsByExpiryCalls gets all the calls that were made to GetKeygenSessionsByExpiry.
 // Check the length with:
-//     len(mockedKeeper.GetKeygenSessionsByExpiryCalls())
+//
+//	len(mockedKeeper.GetKeygenSessionsByExpiryCalls())
 func (mock *KeeperMock) GetKeygenSessionsByExpiryCalls() []struct {
 	Ctx    sdk.Context
 	Expiry int64
@@ -428,7 +434,8 @@ func (mock *KeeperMock) GetNextKeyID(ctx sdk.Context, chainName github_com_axela
 
 // GetNextKeyIDCalls gets all the calls that were made to GetNextKeyID.
 // Check the length with:
-//     len(mockedKeeper.GetNextKeyIDCalls())
+//
+//	len(mockedKeeper.GetNextKeyIDCalls())
 func (mock *KeeperMock) GetNextKeyIDCalls() []struct {
 	Ctx       sdk.Context
 	ChainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
@@ -461,7 +468,8 @@ func (mock *KeeperMock) GetParams(ctx sdk.Context) types.Params {
 
 // GetParamsCalls gets all the calls that were made to GetParams.
 // Check the length with:
-//     len(mockedKeeper.GetParamsCalls())
+//
+//	len(mockedKeeper.GetParamsCalls())
 func (mock *KeeperMock) GetParamsCalls() []struct {
 	Ctx sdk.Context
 } {
@@ -489,7 +497,8 @@ func (mock *KeeperMock) GetSigRouter() types.SigRouter {
 
 // GetSigRouterCalls gets all the calls that were made to GetSigRouter.
 // Check the length with:
-//     len(mockedKeeper.GetSigRouterCalls())
+//
+//	len(mockedKeeper.GetSigRouterCalls())
 func (mock *KeeperMock) GetSigRouterCalls() []struct {
 } {
 	var calls []struct {
@@ -520,7 +529,8 @@ func (mock *KeeperMock) GetSigningSessionsByExpiry(ctx sdk.Context, expiry int64
 
 // GetSigningSessionsByExpiryCalls gets all the calls that were made to GetSigningSessionsByExpiry.
 // Check the length with:
-//     len(mockedKeeper.GetSigningSessionsByExpiryCalls())
+//
+//	len(mockedKeeper.GetSigningSessionsByExpiryCalls())
 func (mock *KeeperMock) GetSigningSessionsByExpiryCalls() []struct {
 	Ctx    sdk.Context
 	Expiry int64
@@ -553,7 +563,8 @@ func (mock *KeeperMock) Logger(ctx sdk.Context) log.Logger {
 
 // LoggerCalls gets all the calls that were made to Logger.
 // Check the length with:
-//     len(mockedKeeper.LoggerCalls())
+//
+//	len(mockedKeeper.LoggerCalls())
 func (mock *KeeperMock) LoggerCalls() []struct {
 	Ctx sdk.Context
 } {
@@ -586,7 +597,8 @@ func (mock *KeeperMock) SetKey(ctx sdk.Context, key types.Key) {
 
 // SetKeyCalls gets all the calls that were made to SetKey.
 // Check the length with:
-//     len(mockedKeeper.SetKeyCalls())
+//
+//	len(mockedKeeper.SetKeyCalls())
 func (mock *KeeperMock) SetKeyCalls() []struct {
 	Ctx sdk.Context
 	Key types.Key
@@ -607,25 +619,25 @@ var _ types.Snapshotter = &SnapshotterMock{}
 
 // SnapshotterMock is a mock implementation of types.Snapshotter.
 //
-// 	func TestSomethingThatUsesSnapshotter(t *testing.T) {
+//	func TestSomethingThatUsesSnapshotter(t *testing.T) {
 //
-// 		// make and configure a mocked types.Snapshotter
-// 		mockedSnapshotter := &SnapshotterMock{
-// 			CreateSnapshotFunc: func(ctx sdk.Context, candidates []sdk.ValAddress, filterFunc func(exported.ValidatorI) bool, weightFunc func(consensusPower sdk.Uint) sdk.Uint, threshold utils.Threshold) (exported.Snapshot, error) {
-// 				panic("mock out the CreateSnapshot method")
-// 			},
-// 			GetOperatorFunc: func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress {
-// 				panic("mock out the GetOperator method")
-// 			},
-// 			GetProxyFunc: func(ctx sdk.Context, operator sdk.ValAddress) (sdk.AccAddress, bool) {
-// 				panic("mock out the GetProxy method")
-// 			},
-// 		}
+//		// make and configure a mocked types.Snapshotter
+//		mockedSnapshotter := &SnapshotterMock{
+//			CreateSnapshotFunc: func(ctx sdk.Context, candidates []sdk.ValAddress, filterFunc func(exported.ValidatorI) bool, weightFunc func(consensusPower sdk.Uint) sdk.Uint, threshold utils.Threshold) (exported.Snapshot, error) {
+//				panic("mock out the CreateSnapshot method")
+//			},
+//			GetOperatorFunc: func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress {
+//				panic("mock out the GetOperator method")
+//			},
+//			GetProxyFunc: func(ctx sdk.Context, operator sdk.ValAddress) (sdk.AccAddress, bool) {
+//				panic("mock out the GetProxy method")
+//			},
+//		}
 //
-// 		// use mockedSnapshotter in code that requires types.Snapshotter
-// 		// and then make assertions.
+//		// use mockedSnapshotter in code that requires types.Snapshotter
+//		// and then make assertions.
 //
-// 	}
+//	}
 type SnapshotterMock struct {
 	// CreateSnapshotFunc mocks the CreateSnapshot method.
 	CreateSnapshotFunc func(ctx sdk.Context, candidates []sdk.ValAddress, filterFunc func(exported.ValidatorI) bool, weightFunc func(consensusPower sdk.Uint) sdk.Uint, threshold utils.Threshold) (exported.Snapshot, error)
@@ -697,7 +709,8 @@ func (mock *SnapshotterMock) CreateSnapshot(ctx sdk.Context, candidates []sdk.Va
 
 // CreateSnapshotCalls gets all the calls that were made to CreateSnapshot.
 // Check the length with:
-//     len(mockedSnapshotter.CreateSnapshotCalls())
+//
+//	len(mockedSnapshotter.CreateSnapshotCalls())
 func (mock *SnapshotterMock) CreateSnapshotCalls() []struct {
 	Ctx        sdk.Context
 	Candidates []sdk.ValAddress
@@ -738,7 +751,8 @@ func (mock *SnapshotterMock) GetOperator(ctx sdk.Context, proxy sdk.AccAddress) 
 
 // GetOperatorCalls gets all the calls that were made to GetOperator.
 // Check the length with:
-//     len(mockedSnapshotter.GetOperatorCalls())
+//
+//	len(mockedSnapshotter.GetOperatorCalls())
 func (mock *SnapshotterMock) GetOperatorCalls() []struct {
 	Ctx   sdk.Context
 	Proxy sdk.AccAddress
@@ -773,7 +787,8 @@ func (mock *SnapshotterMock) GetProxy(ctx sdk.Context, operator sdk.ValAddress) 
 
 // GetProxyCalls gets all the calls that were made to GetProxy.
 // Check the length with:
-//     len(mockedSnapshotter.GetProxyCalls())
+//
+//	len(mockedSnapshotter.GetProxyCalls())
 func (mock *SnapshotterMock) GetProxyCalls() []struct {
 	Ctx      sdk.Context
 	Operator sdk.ValAddress
@@ -794,19 +809,19 @@ var _ types.Staker = &StakerMock{}
 
 // StakerMock is a mock implementation of types.Staker.
 //
-// 	func TestSomethingThatUsesStaker(t *testing.T) {
+//	func TestSomethingThatUsesStaker(t *testing.T) {
 //
-// 		// make and configure a mocked types.Staker
-// 		mockedStaker := &StakerMock{
-// 			GetBondedValidatorsByPowerFunc: func(ctx sdk.Context) []stakingTypes.Validator {
-// 				panic("mock out the GetBondedValidatorsByPower method")
-// 			},
-// 		}
+//		// make and configure a mocked types.Staker
+//		mockedStaker := &StakerMock{
+//			GetBondedValidatorsByPowerFunc: func(ctx sdk.Context) []stakingTypes.Validator {
+//				panic("mock out the GetBondedValidatorsByPower method")
+//			},
+//		}
 //
-// 		// use mockedStaker in code that requires types.Staker
-// 		// and then make assertions.
+//		// use mockedStaker in code that requires types.Staker
+//		// and then make assertions.
 //
-// 	}
+//	}
 type StakerMock struct {
 	// GetBondedValidatorsByPowerFunc mocks the GetBondedValidatorsByPower method.
 	GetBondedValidatorsByPowerFunc func(ctx sdk.Context) []stakingTypes.Validator
@@ -840,7 +855,8 @@ func (mock *StakerMock) GetBondedValidatorsByPower(ctx sdk.Context) []stakingTyp
 
 // GetBondedValidatorsByPowerCalls gets all the calls that were made to GetBondedValidatorsByPower.
 // Check the length with:
-//     len(mockedStaker.GetBondedValidatorsByPowerCalls())
+//
+//	len(mockedStaker.GetBondedValidatorsByPowerCalls())
 func (mock *StakerMock) GetBondedValidatorsByPowerCalls() []struct {
 	Ctx sdk.Context
 } {
@@ -859,19 +875,19 @@ var _ types.Slasher = &SlasherMock{}
 
 // SlasherMock is a mock implementation of types.Slasher.
 //
-// 	func TestSomethingThatUsesSlasher(t *testing.T) {
+//	func TestSomethingThatUsesSlasher(t *testing.T) {
 //
-// 		// make and configure a mocked types.Slasher
-// 		mockedSlasher := &SlasherMock{
-// 			IsTombstonedFunc: func(ctx sdk.Context, consAddr sdk.ConsAddress) bool {
-// 				panic("mock out the IsTombstoned method")
-// 			},
-// 		}
+//		// make and configure a mocked types.Slasher
+//		mockedSlasher := &SlasherMock{
+//			IsTombstonedFunc: func(ctx sdk.Context, consAddr sdk.ConsAddress) bool {
+//				panic("mock out the IsTombstoned method")
+//			},
+//		}
 //
-// 		// use mockedSlasher in code that requires types.Slasher
-// 		// and then make assertions.
+//		// use mockedSlasher in code that requires types.Slasher
+//		// and then make assertions.
 //
-// 	}
+//	}
 type SlasherMock struct {
 	// IsTombstonedFunc mocks the IsTombstoned method.
 	IsTombstonedFunc func(ctx sdk.Context, consAddr sdk.ConsAddress) bool
@@ -909,7 +925,8 @@ func (mock *SlasherMock) IsTombstoned(ctx sdk.Context, consAddr sdk.ConsAddress)
 
 // IsTombstonedCalls gets all the calls that were made to IsTombstoned.
 // Check the length with:
-//     len(mockedSlasher.IsTombstonedCalls())
+//
+//	len(mockedSlasher.IsTombstonedCalls())
 func (mock *SlasherMock) IsTombstonedCalls() []struct {
 	Ctx      sdk.Context
 	ConsAddr sdk.ConsAddress
@@ -930,19 +947,19 @@ var _ types.Rewarder = &RewarderMock{}
 
 // RewarderMock is a mock implementation of types.Rewarder.
 //
-// 	func TestSomethingThatUsesRewarder(t *testing.T) {
+//	func TestSomethingThatUsesRewarder(t *testing.T) {
 //
-// 		// make and configure a mocked types.Rewarder
-// 		mockedRewarder := &RewarderMock{
-// 			GetPoolFunc: func(ctx sdk.Context, name string) reward.RewardPool {
-// 				panic("mock out the GetPool method")
-// 			},
-// 		}
+//		// make and configure a mocked types.Rewarder
+//		mockedRewarder := &RewarderMock{
+//			GetPoolFunc: func(ctx sdk.Context, name string) reward.RewardPool {
+//				panic("mock out the GetPool method")
+//			},
+//		}
 //
-// 		// use mockedRewarder in code that requires types.Rewarder
-// 		// and then make assertions.
+//		// use mockedRewarder in code that requires types.Rewarder
+//		// and then make assertions.
 //
-// 	}
+//	}
 type RewarderMock struct {
 	// GetPoolFunc mocks the GetPool method.
 	GetPoolFunc func(ctx sdk.Context, name string) reward.RewardPool
@@ -980,7 +997,8 @@ func (mock *RewarderMock) GetPool(ctx sdk.Context, name string) reward.RewardPoo
 
 // GetPoolCalls gets all the calls that were made to GetPool.
 // Check the length with:
-//     len(mockedRewarder.GetPoolCalls())
+//
+//	len(mockedRewarder.GetPoolCalls())
 func (mock *RewarderMock) GetPoolCalls() []struct {
 	Ctx  sdk.Context
 	Name string
@@ -1001,22 +1019,22 @@ var _ types.Nexus = &NexusMock{}
 
 // NexusMock is a mock implementation of types.Nexus.
 //
-// 	func TestSomethingThatUsesNexus(t *testing.T) {
+//	func TestSomethingThatUsesNexus(t *testing.T) {
 //
-// 		// make and configure a mocked types.Nexus
-// 		mockedNexus := &NexusMock{
-// 			GetChainFunc: func(ctx sdk.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, bool) {
-// 				panic("mock out the GetChain method")
-// 			},
-// 			GetChainsFunc: func(ctx sdk.Context) []github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain {
-// 				panic("mock out the GetChains method")
-// 			},
-// 		}
+//		// make and configure a mocked types.Nexus
+//		mockedNexus := &NexusMock{
+//			GetChainFunc: func(ctx sdk.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, bool) {
+//				panic("mock out the GetChain method")
+//			},
+//			GetChainsFunc: func(ctx sdk.Context) []github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain {
+//				panic("mock out the GetChains method")
+//			},
+//		}
 //
-// 		// use mockedNexus in code that requires types.Nexus
-// 		// and then make assertions.
+//		// use mockedNexus in code that requires types.Nexus
+//		// and then make assertions.
 //
-// 	}
+//	}
 type NexusMock struct {
 	// GetChainFunc mocks the GetChain method.
 	GetChainFunc func(ctx sdk.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, bool)
@@ -1063,7 +1081,8 @@ func (mock *NexusMock) GetChain(ctx sdk.Context, chain github_com_axelarnetwork_
 
 // GetChainCalls gets all the calls that were made to GetChain.
 // Check the length with:
-//     len(mockedNexus.GetChainCalls())
+//
+//	len(mockedNexus.GetChainCalls())
 func (mock *NexusMock) GetChainCalls() []struct {
 	Ctx   sdk.Context
 	Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
@@ -1096,7 +1115,8 @@ func (mock *NexusMock) GetChains(ctx sdk.Context) []github_com_axelarnetwork_axe
 
 // GetChainsCalls gets all the calls that were made to GetChains.
 // Check the length with:
-//     len(mockedNexus.GetChainsCalls())
+//
+//	len(mockedNexus.GetChainsCalls())
 func (mock *NexusMock) GetChainsCalls() []struct {
 	Ctx sdk.Context
 } {
@@ -1115,19 +1135,19 @@ var _ types.KeygenParticipator = &KeygenParticipatorMock{}
 
 // KeygenParticipatorMock is a mock implementation of types.KeygenParticipator.
 //
-// 	func TestSomethingThatUsesKeygenParticipator(t *testing.T) {
+//	func TestSomethingThatUsesKeygenParticipator(t *testing.T) {
 //
-// 		// make and configure a mocked types.KeygenParticipator
-// 		mockedKeygenParticipator := &KeygenParticipatorMock{
-// 			HasOptedOutFunc: func(ctx sdk.Context, participant sdk.AccAddress) bool {
-// 				panic("mock out the HasOptedOut method")
-// 			},
-// 		}
+//		// make and configure a mocked types.KeygenParticipator
+//		mockedKeygenParticipator := &KeygenParticipatorMock{
+//			HasOptedOutFunc: func(ctx sdk.Context, participant sdk.AccAddress) bool {
+//				panic("mock out the HasOptedOut method")
+//			},
+//		}
 //
-// 		// use mockedKeygenParticipator in code that requires types.KeygenParticipator
-// 		// and then make assertions.
+//		// use mockedKeygenParticipator in code that requires types.KeygenParticipator
+//		// and then make assertions.
 //
-// 	}
+//	}
 type KeygenParticipatorMock struct {
 	// HasOptedOutFunc mocks the HasOptedOut method.
 	HasOptedOutFunc func(ctx sdk.Context, participant sdk.AccAddress) bool
@@ -1165,7 +1185,8 @@ func (mock *KeygenParticipatorMock) HasOptedOut(ctx sdk.Context, participant sdk
 
 // HasOptedOutCalls gets all the calls that were made to HasOptedOut.
 // Check the length with:
-//     len(mockedKeygenParticipator.HasOptedOutCalls())
+//
+//	len(mockedKeygenParticipator.HasOptedOutCalls())
 func (mock *KeygenParticipatorMock) HasOptedOutCalls() []struct {
 	Ctx         sdk.Context
 	Participant sdk.AccAddress

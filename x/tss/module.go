@@ -14,10 +14,9 @@ import (
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
 
+	"github.com/axelarnetwork/axelar-core/x/tss/client/cli"
 	"github.com/axelarnetwork/axelar-core/x/tss/keeper"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
-
-	"github.com/axelarnetwork/axelar-core/x/tss/client/cli"
 )
 
 var (

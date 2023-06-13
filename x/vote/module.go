@@ -15,10 +15,9 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/x/tss/client/cli"
 	"github.com/axelarnetwork/axelar-core/x/vote/keeper"
 	"github.com/axelarnetwork/axelar-core/x/vote/types"
-
-	"github.com/axelarnetwork/axelar-core/x/tss/client/cli"
 )
 
 var (

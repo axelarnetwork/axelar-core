@@ -14,22 +14,22 @@ var _ vald.ReadWriter = &ReadWriterMock{}
 
 // ReadWriterMock is a mock implementation of vald.ReadWriter.
 //
-// 	func TestSomethingThatUsesReadWriter(t *testing.T) {
+//	func TestSomethingThatUsesReadWriter(t *testing.T) {
 //
-// 		// make and configure a mocked vald.ReadWriter
-// 		mockedReadWriter := &ReadWriterMock{
-// 			ReadAllFunc: func() ([]byte, error) {
-// 				panic("mock out the ReadAll method")
-// 			},
-// 			WriteAllFunc: func(bytes []byte) error {
-// 				panic("mock out the WriteAll method")
-// 			},
-// 		}
+//		// make and configure a mocked vald.ReadWriter
+//		mockedReadWriter := &ReadWriterMock{
+//			ReadAllFunc: func() ([]byte, error) {
+//				panic("mock out the ReadAll method")
+//			},
+//			WriteAllFunc: func(bytes []byte) error {
+//				panic("mock out the WriteAll method")
+//			},
+//		}
 //
-// 		// use mockedReadWriter in code that requires vald.ReadWriter
-// 		// and then make assertions.
+//		// use mockedReadWriter in code that requires vald.ReadWriter
+//		// and then make assertions.
 //
-// 	}
+//	}
 type ReadWriterMock struct {
 	// ReadAllFunc mocks the ReadAll method.
 	ReadAllFunc func() ([]byte, error)
@@ -67,7 +67,8 @@ func (mock *ReadWriterMock) ReadAll() ([]byte, error) {
 
 // ReadAllCalls gets all the calls that were made to ReadAll.
 // Check the length with:
-//     len(mockedReadWriter.ReadAllCalls())
+//
+//	len(mockedReadWriter.ReadAllCalls())
 func (mock *ReadWriterMock) ReadAllCalls() []struct {
 } {
 	var calls []struct {
@@ -96,7 +97,8 @@ func (mock *ReadWriterMock) WriteAll(bytes []byte) error {
 
 // WriteAllCalls gets all the calls that were made to WriteAll.
 // Check the length with:
-//     len(mockedReadWriter.WriteAllCalls())
+//
+//	len(mockedReadWriter.WriteAllCalls())
 func (mock *ReadWriterMock) WriteAllCalls() []struct {
 	Bytes []byte
 } {
