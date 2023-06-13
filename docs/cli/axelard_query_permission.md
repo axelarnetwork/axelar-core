@@ -27,3 +27,4 @@ axelard query permission [flags]
 
 - [axelard query](axelard_query.md)	 - Querying subcommands
 - [axelard query permission governance-key](axelard_query_permission_governance-key.md)	 - Returns the governance key
+- [axelard query permission params](axelard_query_permission_params.md)	 - Returns the params for the permission module

@@ -15,31 +15,31 @@ var _ exported.ValidatorI = &ValidatorIMock{}
 
 // ValidatorIMock is a mock implementation of exported.ValidatorI.
 //
-//	func TestSomethingThatUsesValidatorI(t *testing.T) {
+// 	func TestSomethingThatUsesValidatorI(t *testing.T) {
 //
-//		// make and configure a mocked exported.ValidatorI
-//		mockedValidatorI := &ValidatorIMock{
-//			GetConsAddrFunc: func() (github_com_cosmos_cosmos_sdk_types.ConsAddress, error) {
-//				panic("mock out the GetConsAddr method")
-//			},
-//			GetConsensusPowerFunc: func(intMoqParam github_com_cosmos_cosmos_sdk_types.Int) int64 {
-//				panic("mock out the GetConsensusPower method")
-//			},
-//			GetOperatorFunc: func() github_com_cosmos_cosmos_sdk_types.ValAddress {
-//				panic("mock out the GetOperator method")
-//			},
-//			IsBondedFunc: func() bool {
-//				panic("mock out the IsBonded method")
-//			},
-//			IsJailedFunc: func() bool {
-//				panic("mock out the IsJailed method")
-//			},
-//		}
+// 		// make and configure a mocked exported.ValidatorI
+// 		mockedValidatorI := &ValidatorIMock{
+// 			GetConsAddrFunc: func() (github_com_cosmos_cosmos_sdk_types.ConsAddress, error) {
+// 				panic("mock out the GetConsAddr method")
+// 			},
+// 			GetConsensusPowerFunc: func(intMoqParam github_com_cosmos_cosmos_sdk_types.Int) int64 {
+// 				panic("mock out the GetConsensusPower method")
+// 			},
+// 			GetOperatorFunc: func() github_com_cosmos_cosmos_sdk_types.ValAddress {
+// 				panic("mock out the GetOperator method")
+// 			},
+// 			IsBondedFunc: func() bool {
+// 				panic("mock out the IsBonded method")
+// 			},
+// 			IsJailedFunc: func() bool {
+// 				panic("mock out the IsJailed method")
+// 			},
+// 		}
 //
-//		// use mockedValidatorI in code that requires exported.ValidatorI
-//		// and then make assertions.
+// 		// use mockedValidatorI in code that requires exported.ValidatorI
+// 		// and then make assertions.
 //
-//	}
+// 	}
 type ValidatorIMock struct {
 	// GetConsAddrFunc mocks the GetConsAddr method.
 	GetConsAddrFunc func() (github_com_cosmos_cosmos_sdk_types.ConsAddress, error)
@@ -98,8 +98,7 @@ func (mock *ValidatorIMock) GetConsAddr() (github_com_cosmos_cosmos_sdk_types.Co
 
 // GetConsAddrCalls gets all the calls that were made to GetConsAddr.
 // Check the length with:
-//
-//	len(mockedValidatorI.GetConsAddrCalls())
+//     len(mockedValidatorI.GetConsAddrCalls())
 func (mock *ValidatorIMock) GetConsAddrCalls() []struct {
 } {
 	var calls []struct {
@@ -128,8 +127,7 @@ func (mock *ValidatorIMock) GetConsensusPower(intMoqParam github_com_cosmos_cosm
 
 // GetConsensusPowerCalls gets all the calls that were made to GetConsensusPower.
 // Check the length with:
-//
-//	len(mockedValidatorI.GetConsensusPowerCalls())
+//     len(mockedValidatorI.GetConsensusPowerCalls())
 func (mock *ValidatorIMock) GetConsensusPowerCalls() []struct {
 	IntMoqParam github_com_cosmos_cosmos_sdk_types.Int
 } {
@@ -157,8 +155,7 @@ func (mock *ValidatorIMock) GetOperator() github_com_cosmos_cosmos_sdk_types.Val
 
 // GetOperatorCalls gets all the calls that were made to GetOperator.
 // Check the length with:
-//
-//	len(mockedValidatorI.GetOperatorCalls())
+//     len(mockedValidatorI.GetOperatorCalls())
 func (mock *ValidatorIMock) GetOperatorCalls() []struct {
 } {
 	var calls []struct {
@@ -184,8 +181,7 @@ func (mock *ValidatorIMock) IsBonded() bool {
 
 // IsBondedCalls gets all the calls that were made to IsBonded.
 // Check the length with:
-//
-//	len(mockedValidatorI.IsBondedCalls())
+//     len(mockedValidatorI.IsBondedCalls())
 func (mock *ValidatorIMock) IsBondedCalls() []struct {
 } {
 	var calls []struct {
@@ -211,8 +207,7 @@ func (mock *ValidatorIMock) IsJailed() bool {
 
 // IsJailedCalls gets all the calls that were made to IsJailed.
 // Check the length with:
-//
-//	len(mockedValidatorI.IsJailedCalls())
+//     len(mockedValidatorI.IsJailedCalls())
 func (mock *ValidatorIMock) IsJailedCalls() []struct {
 } {
 	var calls []struct {

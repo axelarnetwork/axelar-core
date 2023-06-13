@@ -16,22 +16,22 @@ var _ evm.LatestFinalizedBlockCache = &LatestFinalizedBlockCacheMock{}
 
 // LatestFinalizedBlockCacheMock is a mock implementation of evm.LatestFinalizedBlockCache.
 //
-//	func TestSomethingThatUsesLatestFinalizedBlockCache(t *testing.T) {
+// 	func TestSomethingThatUsesLatestFinalizedBlockCache(t *testing.T) {
 //
-//		// make and configure a mocked evm.LatestFinalizedBlockCache
-//		mockedLatestFinalizedBlockCache := &LatestFinalizedBlockCacheMock{
-//			GetFunc: func(chain nexus.ChainName) *big.Int {
-//				panic("mock out the Get method")
-//			},
-//			SetFunc: func(chain nexus.ChainName, blockNumber *big.Int)  {
-//				panic("mock out the Set method")
-//			},
-//		}
+// 		// make and configure a mocked evm.LatestFinalizedBlockCache
+// 		mockedLatestFinalizedBlockCache := &LatestFinalizedBlockCacheMock{
+// 			GetFunc: func(chain nexus.ChainName) *big.Int {
+// 				panic("mock out the Get method")
+// 			},
+// 			SetFunc: func(chain nexus.ChainName, blockNumber *big.Int)  {
+// 				panic("mock out the Set method")
+// 			},
+// 		}
 //
-//		// use mockedLatestFinalizedBlockCache in code that requires evm.LatestFinalizedBlockCache
-//		// and then make assertions.
+// 		// use mockedLatestFinalizedBlockCache in code that requires evm.LatestFinalizedBlockCache
+// 		// and then make assertions.
 //
-//	}
+// 	}
 type LatestFinalizedBlockCacheMock struct {
 	// GetFunc mocks the Get method.
 	GetFunc func(chain nexus.ChainName) *big.Int
@@ -76,8 +76,7 @@ func (mock *LatestFinalizedBlockCacheMock) Get(chain nexus.ChainName) *big.Int {
 
 // GetCalls gets all the calls that were made to Get.
 // Check the length with:
-//
-//	len(mockedLatestFinalizedBlockCache.GetCalls())
+//     len(mockedLatestFinalizedBlockCache.GetCalls())
 func (mock *LatestFinalizedBlockCacheMock) GetCalls() []struct {
 	Chain nexus.ChainName
 } {
@@ -110,8 +109,7 @@ func (mock *LatestFinalizedBlockCacheMock) Set(chain nexus.ChainName, blockNumbe
 
 // SetCalls gets all the calls that were made to Set.
 // Check the length with:
-//
-//	len(mockedLatestFinalizedBlockCache.SetCalls())
+//     len(mockedLatestFinalizedBlockCache.SetCalls())
 func (mock *LatestFinalizedBlockCacheMock) SetCalls() []struct {
 	Chain       nexus.ChainName
 	BlockNumber *big.Int

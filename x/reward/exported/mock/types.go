@@ -15,25 +15,25 @@ var _ exported.RewardPool = &RewardPoolMock{}
 
 // RewardPoolMock is a mock implementation of exported.RewardPool.
 //
-//	func TestSomethingThatUsesRewardPool(t *testing.T) {
+// 	func TestSomethingThatUsesRewardPool(t *testing.T) {
 //
-//		// make and configure a mocked exported.RewardPool
-//		mockedRewardPool := &RewardPoolMock{
-//			AddRewardFunc: func(valAddress sdk.ValAddress, coin sdk.Coin)  {
-//				panic("mock out the AddReward method")
-//			},
-//			ClearRewardsFunc: func(valAddress sdk.ValAddress)  {
-//				panic("mock out the ClearRewards method")
-//			},
-//			ReleaseRewardsFunc: func(valAddress sdk.ValAddress) error {
-//				panic("mock out the ReleaseRewards method")
-//			},
-//		}
+// 		// make and configure a mocked exported.RewardPool
+// 		mockedRewardPool := &RewardPoolMock{
+// 			AddRewardFunc: func(valAddress sdk.ValAddress, coin sdk.Coin)  {
+// 				panic("mock out the AddReward method")
+// 			},
+// 			ClearRewardsFunc: func(valAddress sdk.ValAddress)  {
+// 				panic("mock out the ClearRewards method")
+// 			},
+// 			ReleaseRewardsFunc: func(valAddress sdk.ValAddress) error {
+// 				panic("mock out the ReleaseRewards method")
+// 			},
+// 		}
 //
-//		// use mockedRewardPool in code that requires exported.RewardPool
-//		// and then make assertions.
+// 		// use mockedRewardPool in code that requires exported.RewardPool
+// 		// and then make assertions.
 //
-//	}
+// 	}
 type RewardPoolMock struct {
 	// AddRewardFunc mocks the AddReward method.
 	AddRewardFunc func(valAddress sdk.ValAddress, coin sdk.Coin)
@@ -89,8 +89,7 @@ func (mock *RewardPoolMock) AddReward(valAddress sdk.ValAddress, coin sdk.Coin) 
 
 // AddRewardCalls gets all the calls that were made to AddReward.
 // Check the length with:
-//
-//	len(mockedRewardPool.AddRewardCalls())
+//     len(mockedRewardPool.AddRewardCalls())
 func (mock *RewardPoolMock) AddRewardCalls() []struct {
 	ValAddress sdk.ValAddress
 	Coin       sdk.Coin
@@ -123,8 +122,7 @@ func (mock *RewardPoolMock) ClearRewards(valAddress sdk.ValAddress) {
 
 // ClearRewardsCalls gets all the calls that were made to ClearRewards.
 // Check the length with:
-//
-//	len(mockedRewardPool.ClearRewardsCalls())
+//     len(mockedRewardPool.ClearRewardsCalls())
 func (mock *RewardPoolMock) ClearRewardsCalls() []struct {
 	ValAddress sdk.ValAddress
 } {
@@ -155,8 +153,7 @@ func (mock *RewardPoolMock) ReleaseRewards(valAddress sdk.ValAddress) error {
 
 // ReleaseRewardsCalls gets all the calls that were made to ReleaseRewards.
 // Check the length with:
-//
-//	len(mockedRewardPool.ReleaseRewardsCalls())
+//     len(mockedRewardPool.ReleaseRewardsCalls())
 func (mock *RewardPoolMock) ReleaseRewardsCalls() []struct {
 	ValAddress sdk.ValAddress
 } {

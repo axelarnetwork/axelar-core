@@ -18,19 +18,19 @@ var _ types.StakingKeeper = &StakingKeeperMock{}
 
 // StakingKeeperMock is a mock implementation of types.StakingKeeper.
 //
-//	func TestSomethingThatUsesStakingKeeper(t *testing.T) {
+// 	func TestSomethingThatUsesStakingKeeper(t *testing.T) {
 //
-//		// make and configure a mocked types.StakingKeeper
-//		mockedStakingKeeper := &StakingKeeperMock{
-//			ValidatorFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, addr github_com_cosmos_cosmos_sdk_types.ValAddress) stakingtypes.ValidatorI {
-//				panic("mock out the Validator method")
-//			},
-//		}
+// 		// make and configure a mocked types.StakingKeeper
+// 		mockedStakingKeeper := &StakingKeeperMock{
+// 			ValidatorFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, addr github_com_cosmos_cosmos_sdk_types.ValAddress) stakingtypes.ValidatorI {
+// 				panic("mock out the Validator method")
+// 			},
+// 		}
 //
-//		// use mockedStakingKeeper in code that requires types.StakingKeeper
-//		// and then make assertions.
+// 		// use mockedStakingKeeper in code that requires types.StakingKeeper
+// 		// and then make assertions.
 //
-//	}
+// 	}
 type StakingKeeperMock struct {
 	// ValidatorFunc mocks the Validator method.
 	ValidatorFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, addr github_com_cosmos_cosmos_sdk_types.ValAddress) stakingtypes.ValidatorI
@@ -68,8 +68,7 @@ func (mock *StakingKeeperMock) Validator(ctx github_com_cosmos_cosmos_sdk_types.
 
 // ValidatorCalls gets all the calls that were made to Validator.
 // Check the length with:
-//
-//	len(mockedStakingKeeper.ValidatorCalls())
+//     len(mockedStakingKeeper.ValidatorCalls())
 func (mock *StakingKeeperMock) ValidatorCalls() []struct {
 	Ctx  github_com_cosmos_cosmos_sdk_types.Context
 	Addr github_com_cosmos_cosmos_sdk_types.ValAddress
@@ -90,19 +89,19 @@ var _ types.Snapshotter = &SnapshotterMock{}
 
 // SnapshotterMock is a mock implementation of types.Snapshotter.
 //
-//	func TestSomethingThatUsesSnapshotter(t *testing.T) {
+// 	func TestSomethingThatUsesSnapshotter(t *testing.T) {
 //
-//		// make and configure a mocked types.Snapshotter
-//		mockedSnapshotter := &SnapshotterMock{
-//			GetOperatorFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, proxy github_com_cosmos_cosmos_sdk_types.AccAddress) github_com_cosmos_cosmos_sdk_types.ValAddress {
-//				panic("mock out the GetOperator method")
-//			},
-//		}
+// 		// make and configure a mocked types.Snapshotter
+// 		mockedSnapshotter := &SnapshotterMock{
+// 			GetOperatorFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, proxy github_com_cosmos_cosmos_sdk_types.AccAddress) github_com_cosmos_cosmos_sdk_types.ValAddress {
+// 				panic("mock out the GetOperator method")
+// 			},
+// 		}
 //
-//		// use mockedSnapshotter in code that requires types.Snapshotter
-//		// and then make assertions.
+// 		// use mockedSnapshotter in code that requires types.Snapshotter
+// 		// and then make assertions.
 //
-//	}
+// 	}
 type SnapshotterMock struct {
 	// GetOperatorFunc mocks the GetOperator method.
 	GetOperatorFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, proxy github_com_cosmos_cosmos_sdk_types.AccAddress) github_com_cosmos_cosmos_sdk_types.ValAddress
@@ -140,8 +139,7 @@ func (mock *SnapshotterMock) GetOperator(ctx github_com_cosmos_cosmos_sdk_types.
 
 // GetOperatorCalls gets all the calls that were made to GetOperator.
 // Check the length with:
-//
-//	len(mockedSnapshotter.GetOperatorCalls())
+//     len(mockedSnapshotter.GetOperatorCalls())
 func (mock *SnapshotterMock) GetOperatorCalls() []struct {
 	Ctx   github_com_cosmos_cosmos_sdk_types.Context
 	Proxy github_com_cosmos_cosmos_sdk_types.AccAddress
@@ -162,19 +160,19 @@ var _ types.Nexus = &NexusMock{}
 
 // NexusMock is a mock implementation of types.Nexus.
 //
-//	func TestSomethingThatUsesNexus(t *testing.T) {
+// 	func TestSomethingThatUsesNexus(t *testing.T) {
 //
-//		// make and configure a mocked types.Nexus
-//		mockedNexus := &NexusMock{
-//			GetChainsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain {
-//				panic("mock out the GetChains method")
-//			},
-//		}
+// 		// make and configure a mocked types.Nexus
+// 		mockedNexus := &NexusMock{
+// 			GetChainsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain {
+// 				panic("mock out the GetChains method")
+// 			},
+// 		}
 //
-//		// use mockedNexus in code that requires types.Nexus
-//		// and then make assertions.
+// 		// use mockedNexus in code that requires types.Nexus
+// 		// and then make assertions.
 //
-//	}
+// 	}
 type NexusMock struct {
 	// GetChainsFunc mocks the GetChains method.
 	GetChainsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) []github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
@@ -208,8 +206,7 @@ func (mock *NexusMock) GetChains(ctx github_com_cosmos_cosmos_sdk_types.Context)
 
 // GetChainsCalls gets all the calls that were made to GetChains.
 // Check the length with:
-//
-//	len(mockedNexus.GetChainsCalls())
+//     len(mockedNexus.GetChainsCalls())
 func (mock *NexusMock) GetChainsCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 } {
@@ -228,22 +225,22 @@ var _ types.MultiSigKeeper = &MultiSigKeeperMock{}
 
 // MultiSigKeeperMock is a mock implementation of types.MultiSigKeeper.
 //
-//	func TestSomethingThatUsesMultiSigKeeper(t *testing.T) {
+// 	func TestSomethingThatUsesMultiSigKeeper(t *testing.T) {
 //
-//		// make and configure a mocked types.MultiSigKeeper
-//		mockedMultiSigKeeper := &MultiSigKeeperMock{
-//			GetActiveKeyIDsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) []multisig.KeyID {
-//				panic("mock out the GetActiveKeyIDs method")
-//			},
-//			GetKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID multisig.KeyID) (multisig.Key, bool) {
-//				panic("mock out the GetKey method")
-//			},
-//		}
+// 		// make and configure a mocked types.MultiSigKeeper
+// 		mockedMultiSigKeeper := &MultiSigKeeperMock{
+// 			GetActiveKeyIDsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) []multisig.KeyID {
+// 				panic("mock out the GetActiveKeyIDs method")
+// 			},
+// 			GetKeyFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, keyID multisig.KeyID) (multisig.Key, bool) {
+// 				panic("mock out the GetKey method")
+// 			},
+// 		}
 //
-//		// use mockedMultiSigKeeper in code that requires types.MultiSigKeeper
-//		// and then make assertions.
+// 		// use mockedMultiSigKeeper in code that requires types.MultiSigKeeper
+// 		// and then make assertions.
 //
-//	}
+// 	}
 type MultiSigKeeperMock struct {
 	// GetActiveKeyIDsFunc mocks the GetActiveKeyIDs method.
 	GetActiveKeyIDsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) []multisig.KeyID
@@ -292,8 +289,7 @@ func (mock *MultiSigKeeperMock) GetActiveKeyIDs(ctx github_com_cosmos_cosmos_sdk
 
 // GetActiveKeyIDsCalls gets all the calls that were made to GetActiveKeyIDs.
 // Check the length with:
-//
-//	len(mockedMultiSigKeeper.GetActiveKeyIDsCalls())
+//     len(mockedMultiSigKeeper.GetActiveKeyIDsCalls())
 func (mock *MultiSigKeeperMock) GetActiveKeyIDsCalls() []struct {
 	Ctx       github_com_cosmos_cosmos_sdk_types.Context
 	ChainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
@@ -328,8 +324,7 @@ func (mock *MultiSigKeeperMock) GetKey(ctx github_com_cosmos_cosmos_sdk_types.Co
 
 // GetKeyCalls gets all the calls that were made to GetKey.
 // Check the length with:
-//
-//	len(mockedMultiSigKeeper.GetKeyCalls())
+//     len(mockedMultiSigKeeper.GetKeyCalls())
 func (mock *MultiSigKeeperMock) GetKeyCalls() []struct {
 	Ctx   github_com_cosmos_cosmos_sdk_types.Context
 	KeyID multisig.KeyID

@@ -148,3 +148,14 @@ func (q Querier) KeygenSession(c context.Context, req *types.KeygenSessionReques
 		Participants:           getKeygenParticipants(key),
 	}, nil
 }
+
+// Params returns the reward module params
+func (q Querier) Params(c context.Context, req *types.ParamsRequest) (*types.ParamsResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	params := q.keeper.GetParams(ctx)
+
+	return &types.ParamsResponse{
+		Params: params,
+	}, nil
+}

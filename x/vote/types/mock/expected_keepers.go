@@ -20,34 +20,34 @@ var _ types.Voter = &VoterMock{}
 
 // VoterMock is a mock implementation of types.Voter.
 //
-//	func TestSomethingThatUsesVoter(t *testing.T) {
+// 	func TestSomethingThatUsesVoter(t *testing.T) {
 //
-//		// make and configure a mocked types.Voter
-//		mockedVoter := &VoterMock{
-//			DeletePollFunc: func(ctx sdk.Context, pollID github_com_axelarnetwork_axelar_core_x_vote_exported.PollID)  {
-//				panic("mock out the DeletePoll method")
-//			},
-//			GetParamsFunc: func(ctx sdk.Context) types.Params {
-//				panic("mock out the GetParams method")
-//			},
-//			GetPollFunc: func(ctx sdk.Context, id github_com_axelarnetwork_axelar_core_x_vote_exported.PollID) (github_com_axelarnetwork_axelar_core_x_vote_exported.Poll, bool) {
-//				panic("mock out the GetPoll method")
-//			},
-//			GetPollQueueFunc: func(ctx sdk.Context) utils.KVQueue {
-//				panic("mock out the GetPollQueue method")
-//			},
-//			GetVoteRouterFunc: func() types.VoteRouter {
-//				panic("mock out the GetVoteRouter method")
-//			},
-//			LoggerFunc: func(ctx sdk.Context) log.Logger {
-//				panic("mock out the Logger method")
-//			},
-//		}
+// 		// make and configure a mocked types.Voter
+// 		mockedVoter := &VoterMock{
+// 			DeletePollFunc: func(ctx sdk.Context, pollID github_com_axelarnetwork_axelar_core_x_vote_exported.PollID)  {
+// 				panic("mock out the DeletePoll method")
+// 			},
+// 			GetParamsFunc: func(ctx sdk.Context) types.Params {
+// 				panic("mock out the GetParams method")
+// 			},
+// 			GetPollFunc: func(ctx sdk.Context, id github_com_axelarnetwork_axelar_core_x_vote_exported.PollID) (github_com_axelarnetwork_axelar_core_x_vote_exported.Poll, bool) {
+// 				panic("mock out the GetPoll method")
+// 			},
+// 			GetPollQueueFunc: func(ctx sdk.Context) utils.KVQueue {
+// 				panic("mock out the GetPollQueue method")
+// 			},
+// 			GetVoteRouterFunc: func() types.VoteRouter {
+// 				panic("mock out the GetVoteRouter method")
+// 			},
+// 			LoggerFunc: func(ctx sdk.Context) log.Logger {
+// 				panic("mock out the Logger method")
+// 			},
+// 		}
 //
-//		// use mockedVoter in code that requires types.Voter
-//		// and then make assertions.
+// 		// use mockedVoter in code that requires types.Voter
+// 		// and then make assertions.
 //
-//	}
+// 	}
 type VoterMock struct {
 	// DeletePollFunc mocks the DeletePoll method.
 	DeletePollFunc func(ctx sdk.Context, pollID github_com_axelarnetwork_axelar_core_x_vote_exported.PollID)
@@ -130,8 +130,7 @@ func (mock *VoterMock) DeletePoll(ctx sdk.Context, pollID github_com_axelarnetwo
 
 // DeletePollCalls gets all the calls that were made to DeletePoll.
 // Check the length with:
-//
-//	len(mockedVoter.DeletePollCalls())
+//     len(mockedVoter.DeletePollCalls())
 func (mock *VoterMock) DeletePollCalls() []struct {
 	Ctx    sdk.Context
 	PollID github_com_axelarnetwork_axelar_core_x_vote_exported.PollID
@@ -164,8 +163,7 @@ func (mock *VoterMock) GetParams(ctx sdk.Context) types.Params {
 
 // GetParamsCalls gets all the calls that were made to GetParams.
 // Check the length with:
-//
-//	len(mockedVoter.GetParamsCalls())
+//     len(mockedVoter.GetParamsCalls())
 func (mock *VoterMock) GetParamsCalls() []struct {
 	Ctx sdk.Context
 } {
@@ -198,8 +196,7 @@ func (mock *VoterMock) GetPoll(ctx sdk.Context, id github_com_axelarnetwork_axel
 
 // GetPollCalls gets all the calls that were made to GetPoll.
 // Check the length with:
-//
-//	len(mockedVoter.GetPollCalls())
+//     len(mockedVoter.GetPollCalls())
 func (mock *VoterMock) GetPollCalls() []struct {
 	Ctx sdk.Context
 	ID  github_com_axelarnetwork_axelar_core_x_vote_exported.PollID
@@ -232,8 +229,7 @@ func (mock *VoterMock) GetPollQueue(ctx sdk.Context) utils.KVQueue {
 
 // GetPollQueueCalls gets all the calls that were made to GetPollQueue.
 // Check the length with:
-//
-//	len(mockedVoter.GetPollQueueCalls())
+//     len(mockedVoter.GetPollQueueCalls())
 func (mock *VoterMock) GetPollQueueCalls() []struct {
 	Ctx sdk.Context
 } {
@@ -261,8 +257,7 @@ func (mock *VoterMock) GetVoteRouter() types.VoteRouter {
 
 // GetVoteRouterCalls gets all the calls that were made to GetVoteRouter.
 // Check the length with:
-//
-//	len(mockedVoter.GetVoteRouterCalls())
+//     len(mockedVoter.GetVoteRouterCalls())
 func (mock *VoterMock) GetVoteRouterCalls() []struct {
 } {
 	var calls []struct {
@@ -291,8 +286,7 @@ func (mock *VoterMock) Logger(ctx sdk.Context) log.Logger {
 
 // LoggerCalls gets all the calls that were made to Logger.
 // Check the length with:
-//
-//	len(mockedVoter.LoggerCalls())
+//     len(mockedVoter.LoggerCalls())
 func (mock *VoterMock) LoggerCalls() []struct {
 	Ctx sdk.Context
 } {
@@ -311,19 +305,19 @@ var _ types.Snapshotter = &SnapshotterMock{}
 
 // SnapshotterMock is a mock implementation of types.Snapshotter.
 //
-//	func TestSomethingThatUsesSnapshotter(t *testing.T) {
+// 	func TestSomethingThatUsesSnapshotter(t *testing.T) {
 //
-//		// make and configure a mocked types.Snapshotter
-//		mockedSnapshotter := &SnapshotterMock{
-//			GetOperatorFunc: func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress {
-//				panic("mock out the GetOperator method")
-//			},
-//		}
+// 		// make and configure a mocked types.Snapshotter
+// 		mockedSnapshotter := &SnapshotterMock{
+// 			GetOperatorFunc: func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress {
+// 				panic("mock out the GetOperator method")
+// 			},
+// 		}
 //
-//		// use mockedSnapshotter in code that requires types.Snapshotter
-//		// and then make assertions.
+// 		// use mockedSnapshotter in code that requires types.Snapshotter
+// 		// and then make assertions.
 //
-//	}
+// 	}
 type SnapshotterMock struct {
 	// GetOperatorFunc mocks the GetOperator method.
 	GetOperatorFunc func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress
@@ -361,8 +355,7 @@ func (mock *SnapshotterMock) GetOperator(ctx sdk.Context, proxy sdk.AccAddress) 
 
 // GetOperatorCalls gets all the calls that were made to GetOperator.
 // Check the length with:
-//
-//	len(mockedSnapshotter.GetOperatorCalls())
+//     len(mockedSnapshotter.GetOperatorCalls())
 func (mock *SnapshotterMock) GetOperatorCalls() []struct {
 	Ctx   sdk.Context
 	Proxy sdk.AccAddress
@@ -383,25 +376,25 @@ var _ types.StakingKeeper = &StakingKeeperMock{}
 
 // StakingKeeperMock is a mock implementation of types.StakingKeeper.
 //
-//	func TestSomethingThatUsesStakingKeeper(t *testing.T) {
+// 	func TestSomethingThatUsesStakingKeeper(t *testing.T) {
 //
-//		// make and configure a mocked types.StakingKeeper
-//		mockedStakingKeeper := &StakingKeeperMock{
-//			GetLastTotalPowerFunc: func(context sdk.Context) sdk.Int {
-//				panic("mock out the GetLastTotalPower method")
-//			},
-//			PowerReductionFunc: func(context sdk.Context) sdk.Int {
-//				panic("mock out the PowerReduction method")
-//			},
-//			ValidatorFunc: func(ctx sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI {
-//				panic("mock out the Validator method")
-//			},
-//		}
+// 		// make and configure a mocked types.StakingKeeper
+// 		mockedStakingKeeper := &StakingKeeperMock{
+// 			GetLastTotalPowerFunc: func(context sdk.Context) sdk.Int {
+// 				panic("mock out the GetLastTotalPower method")
+// 			},
+// 			PowerReductionFunc: func(context sdk.Context) sdk.Int {
+// 				panic("mock out the PowerReduction method")
+// 			},
+// 			ValidatorFunc: func(ctx sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI {
+// 				panic("mock out the Validator method")
+// 			},
+// 		}
 //
-//		// use mockedStakingKeeper in code that requires types.StakingKeeper
-//		// and then make assertions.
+// 		// use mockedStakingKeeper in code that requires types.StakingKeeper
+// 		// and then make assertions.
 //
-//	}
+// 	}
 type StakingKeeperMock struct {
 	// GetLastTotalPowerFunc mocks the GetLastTotalPower method.
 	GetLastTotalPowerFunc func(context sdk.Context) sdk.Int
@@ -455,8 +448,7 @@ func (mock *StakingKeeperMock) GetLastTotalPower(context sdk.Context) sdk.Int {
 
 // GetLastTotalPowerCalls gets all the calls that were made to GetLastTotalPower.
 // Check the length with:
-//
-//	len(mockedStakingKeeper.GetLastTotalPowerCalls())
+//     len(mockedStakingKeeper.GetLastTotalPowerCalls())
 func (mock *StakingKeeperMock) GetLastTotalPowerCalls() []struct {
 	Context sdk.Context
 } {
@@ -487,8 +479,7 @@ func (mock *StakingKeeperMock) PowerReduction(context sdk.Context) sdk.Int {
 
 // PowerReductionCalls gets all the calls that were made to PowerReduction.
 // Check the length with:
-//
-//	len(mockedStakingKeeper.PowerReductionCalls())
+//     len(mockedStakingKeeper.PowerReductionCalls())
 func (mock *StakingKeeperMock) PowerReductionCalls() []struct {
 	Context sdk.Context
 } {
@@ -521,8 +512,7 @@ func (mock *StakingKeeperMock) Validator(ctx sdk.Context, addr sdk.ValAddress) s
 
 // ValidatorCalls gets all the calls that were made to Validator.
 // Check the length with:
-//
-//	len(mockedStakingKeeper.ValidatorCalls())
+//     len(mockedStakingKeeper.ValidatorCalls())
 func (mock *StakingKeeperMock) ValidatorCalls() []struct {
 	Ctx  sdk.Context
 	Addr sdk.ValAddress
@@ -543,19 +533,19 @@ var _ types.Rewarder = &RewarderMock{}
 
 // RewarderMock is a mock implementation of types.Rewarder.
 //
-//	func TestSomethingThatUsesRewarder(t *testing.T) {
+// 	func TestSomethingThatUsesRewarder(t *testing.T) {
 //
-//		// make and configure a mocked types.Rewarder
-//		mockedRewarder := &RewarderMock{
-//			GetPoolFunc: func(ctx sdk.Context, name string) reward.RewardPool {
-//				panic("mock out the GetPool method")
-//			},
-//		}
+// 		// make and configure a mocked types.Rewarder
+// 		mockedRewarder := &RewarderMock{
+// 			GetPoolFunc: func(ctx sdk.Context, name string) reward.RewardPool {
+// 				panic("mock out the GetPool method")
+// 			},
+// 		}
 //
-//		// use mockedRewarder in code that requires types.Rewarder
-//		// and then make assertions.
+// 		// use mockedRewarder in code that requires types.Rewarder
+// 		// and then make assertions.
 //
-//	}
+// 	}
 type RewarderMock struct {
 	// GetPoolFunc mocks the GetPool method.
 	GetPoolFunc func(ctx sdk.Context, name string) reward.RewardPool
@@ -593,8 +583,7 @@ func (mock *RewarderMock) GetPool(ctx sdk.Context, name string) reward.RewardPoo
 
 // GetPoolCalls gets all the calls that were made to GetPool.
 // Check the length with:
-//
-//	len(mockedRewarder.GetPoolCalls())
+//     len(mockedRewarder.GetPoolCalls())
 func (mock *RewarderMock) GetPoolCalls() []struct {
 	Ctx  sdk.Context
 	Name string

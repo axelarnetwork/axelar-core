@@ -15,55 +15,55 @@ var _ exported.MaintainerState = &MaintainerStateMock{}
 
 // MaintainerStateMock is a mock implementation of exported.MaintainerState.
 //
-//	func TestSomethingThatUsesMaintainerState(t *testing.T) {
+// 	func TestSomethingThatUsesMaintainerState(t *testing.T) {
 //
-//		// make and configure a mocked exported.MaintainerState
-//		mockedMaintainerState := &MaintainerStateMock{
-//			CountIncorrectVotesFunc: func(window int) uint64 {
-//				panic("mock out the CountIncorrectVotes method")
-//			},
-//			CountMissingVotesFunc: func(window int) uint64 {
-//				panic("mock out the CountMissingVotes method")
-//			},
-//			GetAddressFunc: func() types.ValAddress {
-//				panic("mock out the GetAddress method")
-//			},
-//			MarkIncorrectVoteFunc: func(incorrectVote bool)  {
-//				panic("mock out the MarkIncorrectVote method")
-//			},
-//			MarkMissingVoteFunc: func(missingVote bool)  {
-//				panic("mock out the MarkMissingVote method")
-//			},
-//			MarshalFunc: func() ([]byte, error) {
-//				panic("mock out the Marshal method")
-//			},
-//			MarshalToFunc: func(data []byte) (int, error) {
-//				panic("mock out the MarshalTo method")
-//			},
-//			MarshalToSizedBufferFunc: func(dAtA []byte) (int, error) {
-//				panic("mock out the MarshalToSizedBuffer method")
-//			},
-//			ProtoMessageFunc: func()  {
-//				panic("mock out the ProtoMessage method")
-//			},
-//			ResetFunc: func()  {
-//				panic("mock out the Reset method")
-//			},
-//			SizeFunc: func() int {
-//				panic("mock out the Size method")
-//			},
-//			StringFunc: func() string {
-//				panic("mock out the String method")
-//			},
-//			UnmarshalFunc: func(data []byte) error {
-//				panic("mock out the Unmarshal method")
-//			},
-//		}
+// 		// make and configure a mocked exported.MaintainerState
+// 		mockedMaintainerState := &MaintainerStateMock{
+// 			CountIncorrectVotesFunc: func(window int) uint64 {
+// 				panic("mock out the CountIncorrectVotes method")
+// 			},
+// 			CountMissingVotesFunc: func(window int) uint64 {
+// 				panic("mock out the CountMissingVotes method")
+// 			},
+// 			GetAddressFunc: func() types.ValAddress {
+// 				panic("mock out the GetAddress method")
+// 			},
+// 			MarkIncorrectVoteFunc: func(incorrectVote bool)  {
+// 				panic("mock out the MarkIncorrectVote method")
+// 			},
+// 			MarkMissingVoteFunc: func(missingVote bool)  {
+// 				panic("mock out the MarkMissingVote method")
+// 			},
+// 			MarshalFunc: func() ([]byte, error) {
+// 				panic("mock out the Marshal method")
+// 			},
+// 			MarshalToFunc: func(data []byte) (int, error) {
+// 				panic("mock out the MarshalTo method")
+// 			},
+// 			MarshalToSizedBufferFunc: func(dAtA []byte) (int, error) {
+// 				panic("mock out the MarshalToSizedBuffer method")
+// 			},
+// 			ProtoMessageFunc: func()  {
+// 				panic("mock out the ProtoMessage method")
+// 			},
+// 			ResetFunc: func()  {
+// 				panic("mock out the Reset method")
+// 			},
+// 			SizeFunc: func() int {
+// 				panic("mock out the Size method")
+// 			},
+// 			StringFunc: func() string {
+// 				panic("mock out the String method")
+// 			},
+// 			UnmarshalFunc: func(data []byte) error {
+// 				panic("mock out the Unmarshal method")
+// 			},
+// 		}
 //
-//		// use mockedMaintainerState in code that requires exported.MaintainerState
-//		// and then make assertions.
+// 		// use mockedMaintainerState in code that requires exported.MaintainerState
+// 		// and then make assertions.
 //
-//	}
+// 	}
 type MaintainerStateMock struct {
 	// CountIncorrectVotesFunc mocks the CountIncorrectVotes method.
 	CountIncorrectVotesFunc func(window int) uint64
@@ -193,8 +193,7 @@ func (mock *MaintainerStateMock) CountIncorrectVotes(window int) uint64 {
 
 // CountIncorrectVotesCalls gets all the calls that were made to CountIncorrectVotes.
 // Check the length with:
-//
-//	len(mockedMaintainerState.CountIncorrectVotesCalls())
+//     len(mockedMaintainerState.CountIncorrectVotesCalls())
 func (mock *MaintainerStateMock) CountIncorrectVotesCalls() []struct {
 	Window int
 } {
@@ -225,8 +224,7 @@ func (mock *MaintainerStateMock) CountMissingVotes(window int) uint64 {
 
 // CountMissingVotesCalls gets all the calls that were made to CountMissingVotes.
 // Check the length with:
-//
-//	len(mockedMaintainerState.CountMissingVotesCalls())
+//     len(mockedMaintainerState.CountMissingVotesCalls())
 func (mock *MaintainerStateMock) CountMissingVotesCalls() []struct {
 	Window int
 } {
@@ -254,8 +252,7 @@ func (mock *MaintainerStateMock) GetAddress() types.ValAddress {
 
 // GetAddressCalls gets all the calls that were made to GetAddress.
 // Check the length with:
-//
-//	len(mockedMaintainerState.GetAddressCalls())
+//     len(mockedMaintainerState.GetAddressCalls())
 func (mock *MaintainerStateMock) GetAddressCalls() []struct {
 } {
 	var calls []struct {
@@ -284,8 +281,7 @@ func (mock *MaintainerStateMock) MarkIncorrectVote(incorrectVote bool) {
 
 // MarkIncorrectVoteCalls gets all the calls that were made to MarkIncorrectVote.
 // Check the length with:
-//
-//	len(mockedMaintainerState.MarkIncorrectVoteCalls())
+//     len(mockedMaintainerState.MarkIncorrectVoteCalls())
 func (mock *MaintainerStateMock) MarkIncorrectVoteCalls() []struct {
 	IncorrectVote bool
 } {
@@ -316,8 +312,7 @@ func (mock *MaintainerStateMock) MarkMissingVote(missingVote bool) {
 
 // MarkMissingVoteCalls gets all the calls that were made to MarkMissingVote.
 // Check the length with:
-//
-//	len(mockedMaintainerState.MarkMissingVoteCalls())
+//     len(mockedMaintainerState.MarkMissingVoteCalls())
 func (mock *MaintainerStateMock) MarkMissingVoteCalls() []struct {
 	MissingVote bool
 } {
@@ -345,8 +340,7 @@ func (mock *MaintainerStateMock) Marshal() ([]byte, error) {
 
 // MarshalCalls gets all the calls that were made to Marshal.
 // Check the length with:
-//
-//	len(mockedMaintainerState.MarshalCalls())
+//     len(mockedMaintainerState.MarshalCalls())
 func (mock *MaintainerStateMock) MarshalCalls() []struct {
 } {
 	var calls []struct {
@@ -375,8 +369,7 @@ func (mock *MaintainerStateMock) MarshalTo(data []byte) (int, error) {
 
 // MarshalToCalls gets all the calls that were made to MarshalTo.
 // Check the length with:
-//
-//	len(mockedMaintainerState.MarshalToCalls())
+//     len(mockedMaintainerState.MarshalToCalls())
 func (mock *MaintainerStateMock) MarshalToCalls() []struct {
 	Data []byte
 } {
@@ -407,8 +400,7 @@ func (mock *MaintainerStateMock) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 
 // MarshalToSizedBufferCalls gets all the calls that were made to MarshalToSizedBuffer.
 // Check the length with:
-//
-//	len(mockedMaintainerState.MarshalToSizedBufferCalls())
+//     len(mockedMaintainerState.MarshalToSizedBufferCalls())
 func (mock *MaintainerStateMock) MarshalToSizedBufferCalls() []struct {
 	DAtA []byte
 } {
@@ -436,8 +428,7 @@ func (mock *MaintainerStateMock) ProtoMessage() {
 
 // ProtoMessageCalls gets all the calls that were made to ProtoMessage.
 // Check the length with:
-//
-//	len(mockedMaintainerState.ProtoMessageCalls())
+//     len(mockedMaintainerState.ProtoMessageCalls())
 func (mock *MaintainerStateMock) ProtoMessageCalls() []struct {
 } {
 	var calls []struct {
@@ -463,8 +454,7 @@ func (mock *MaintainerStateMock) Reset() {
 
 // ResetCalls gets all the calls that were made to Reset.
 // Check the length with:
-//
-//	len(mockedMaintainerState.ResetCalls())
+//     len(mockedMaintainerState.ResetCalls())
 func (mock *MaintainerStateMock) ResetCalls() []struct {
 } {
 	var calls []struct {
@@ -490,8 +480,7 @@ func (mock *MaintainerStateMock) Size() int {
 
 // SizeCalls gets all the calls that were made to Size.
 // Check the length with:
-//
-//	len(mockedMaintainerState.SizeCalls())
+//     len(mockedMaintainerState.SizeCalls())
 func (mock *MaintainerStateMock) SizeCalls() []struct {
 } {
 	var calls []struct {
@@ -517,8 +506,7 @@ func (mock *MaintainerStateMock) String() string {
 
 // StringCalls gets all the calls that were made to String.
 // Check the length with:
-//
-//	len(mockedMaintainerState.StringCalls())
+//     len(mockedMaintainerState.StringCalls())
 func (mock *MaintainerStateMock) StringCalls() []struct {
 } {
 	var calls []struct {
@@ -547,8 +535,7 @@ func (mock *MaintainerStateMock) Unmarshal(data []byte) error {
 
 // UnmarshalCalls gets all the calls that were made to Unmarshal.
 // Check the length with:
-//
-//	len(mockedMaintainerState.UnmarshalCalls())
+//     len(mockedMaintainerState.UnmarshalCalls())
 func (mock *MaintainerStateMock) UnmarshalCalls() []struct {
 	Data []byte
 } {

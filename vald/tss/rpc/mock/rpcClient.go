@@ -17,25 +17,25 @@ var _ rpc.MultiSigClient = &MultiSigClientMock{}
 
 // MultiSigClientMock is a mock implementation of rpc.MultiSigClient.
 //
-//	func TestSomethingThatUsesMultiSigClient(t *testing.T) {
+// 	func TestSomethingThatUsesMultiSigClient(t *testing.T) {
 //
-//		// make and configure a mocked rpc.MultiSigClient
-//		mockedMultiSigClient := &MultiSigClientMock{
-//			KeyPresenceFunc: func(ctx context.Context, in *tofnd.KeyPresenceRequest, opts ...grpc.CallOption) (*tofnd.KeyPresenceResponse, error) {
-//				panic("mock out the KeyPresence method")
-//			},
-//			KeygenFunc: func(ctx context.Context, in *tofnd.KeygenRequest, opts ...grpc.CallOption) (*tofnd.KeygenResponse, error) {
-//				panic("mock out the Keygen method")
-//			},
-//			SignFunc: func(ctx context.Context, in *tofnd.SignRequest, opts ...grpc.CallOption) (*tofnd.SignResponse, error) {
-//				panic("mock out the Sign method")
-//			},
-//		}
+// 		// make and configure a mocked rpc.MultiSigClient
+// 		mockedMultiSigClient := &MultiSigClientMock{
+// 			KeyPresenceFunc: func(ctx context.Context, in *tofnd.KeyPresenceRequest, opts ...grpc.CallOption) (*tofnd.KeyPresenceResponse, error) {
+// 				panic("mock out the KeyPresence method")
+// 			},
+// 			KeygenFunc: func(ctx context.Context, in *tofnd.KeygenRequest, opts ...grpc.CallOption) (*tofnd.KeygenResponse, error) {
+// 				panic("mock out the Keygen method")
+// 			},
+// 			SignFunc: func(ctx context.Context, in *tofnd.SignRequest, opts ...grpc.CallOption) (*tofnd.SignResponse, error) {
+// 				panic("mock out the Sign method")
+// 			},
+// 		}
 //
-//		// use mockedMultiSigClient in code that requires rpc.MultiSigClient
-//		// and then make assertions.
+// 		// use mockedMultiSigClient in code that requires rpc.MultiSigClient
+// 		// and then make assertions.
 //
-//	}
+// 	}
 type MultiSigClientMock struct {
 	// KeyPresenceFunc mocks the KeyPresence method.
 	KeyPresenceFunc func(ctx context.Context, in *tofnd.KeyPresenceRequest, opts ...grpc.CallOption) (*tofnd.KeyPresenceResponse, error)
@@ -103,8 +103,7 @@ func (mock *MultiSigClientMock) KeyPresence(ctx context.Context, in *tofnd.KeyPr
 
 // KeyPresenceCalls gets all the calls that were made to KeyPresence.
 // Check the length with:
-//
-//	len(mockedMultiSigClient.KeyPresenceCalls())
+//     len(mockedMultiSigClient.KeyPresenceCalls())
 func (mock *MultiSigClientMock) KeyPresenceCalls() []struct {
 	Ctx  context.Context
 	In   *tofnd.KeyPresenceRequest
@@ -143,8 +142,7 @@ func (mock *MultiSigClientMock) Keygen(ctx context.Context, in *tofnd.KeygenRequ
 
 // KeygenCalls gets all the calls that were made to Keygen.
 // Check the length with:
-//
-//	len(mockedMultiSigClient.KeygenCalls())
+//     len(mockedMultiSigClient.KeygenCalls())
 func (mock *MultiSigClientMock) KeygenCalls() []struct {
 	Ctx  context.Context
 	In   *tofnd.KeygenRequest
@@ -183,8 +181,7 @@ func (mock *MultiSigClientMock) Sign(ctx context.Context, in *tofnd.SignRequest,
 
 // SignCalls gets all the calls that were made to Sign.
 // Check the length with:
-//
-//	len(mockedMultiSigClient.SignCalls())
+//     len(mockedMultiSigClient.SignCalls())
 func (mock *MultiSigClientMock) SignCalls() []struct {
 	Ctx  context.Context
 	In   *tofnd.SignRequest

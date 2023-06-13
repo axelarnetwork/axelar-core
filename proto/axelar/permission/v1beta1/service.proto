@@ -45,4 +45,10 @@ service Query {
       returns (QueryGovernanceKeyResponse) {
     option (google.api.http).get = "/axelar/permission/v1beta1/governance_key";
   }
+
+  rpc Params(ParamsRequest) returns (ParamsResponse) {
+    option (google.api.http) = {
+      get : "/axelar/permission/v1beta1/params"
+    };
+  }
 }

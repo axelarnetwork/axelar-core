@@ -25,6 +25,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 	evmQueryCmd.AddCommand(
 		GetCmdGetProxy(queryRoute),
 		GetCmdGetOperator(queryRoute),
+		GetParams(),
 	)
 
 	return evmQueryCmd
@@ -77,6 +78,33 @@ func GetCmdGetOperator(queryRoute string) *cobra.Command {
 			return nil
 		},
 	}
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetParams returns the snapshot params
+func GetParams() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "params",
+		Short: "Returns the params for the snapshot module",
+		Args:  cobra.ExactArgs(0),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			queryClient := types.NewQueryServiceClient(clientCtx)
+
+			res, err := queryClient.Params(cmd.Context(), &types.ParamsRequest{})
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+
 	flags.AddQueryFlagsToCmd(cmd)
 	return cmd
 }

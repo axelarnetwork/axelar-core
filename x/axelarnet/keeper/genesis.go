@@ -61,7 +61,7 @@ func (k Keeper) ExportGenesis(ctx sdk.Context) *types.GenesisState {
 	collector, _ := k.GetFeeCollector(ctx)
 
 	return types.NewGenesisState(
-		k.getParams(ctx),
+		k.GetParams(ctx),
 		collector,
 		k.getCosmosChains(ctx),
 		k.GetIBCTransferQueue(ctx).(utils.GeneralKVQueue).ExportState(),

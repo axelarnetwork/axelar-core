@@ -20,22 +20,22 @@ var _ multisigexported.SigHandler = &SigHandlerMock{}
 
 // SigHandlerMock is a mock implementation of multisigexported.SigHandler.
 //
-//	func TestSomethingThatUsesSigHandler(t *testing.T) {
+// 	func TestSomethingThatUsesSigHandler(t *testing.T) {
 //
-//		// make and configure a mocked multisigexported.SigHandler
-//		mockedSigHandler := &SigHandlerMock{
-//			HandleCompletedFunc: func(ctx sdk.Context, sig utils.ValidatedProtoMarshaler, moduleMetadata codec.ProtoMarshaler) error {
-//				panic("mock out the HandleCompleted method")
-//			},
-//			HandleFailedFunc: func(ctx sdk.Context, moduleMetadata codec.ProtoMarshaler) error {
-//				panic("mock out the HandleFailed method")
-//			},
-//		}
+// 		// make and configure a mocked multisigexported.SigHandler
+// 		mockedSigHandler := &SigHandlerMock{
+// 			HandleCompletedFunc: func(ctx sdk.Context, sig utils.ValidatedProtoMarshaler, moduleMetadata codec.ProtoMarshaler) error {
+// 				panic("mock out the HandleCompleted method")
+// 			},
+// 			HandleFailedFunc: func(ctx sdk.Context, moduleMetadata codec.ProtoMarshaler) error {
+// 				panic("mock out the HandleFailed method")
+// 			},
+// 		}
 //
-//		// use mockedSigHandler in code that requires multisigexported.SigHandler
-//		// and then make assertions.
+// 		// use mockedSigHandler in code that requires multisigexported.SigHandler
+// 		// and then make assertions.
 //
-//	}
+// 	}
 type SigHandlerMock struct {
 	// HandleCompletedFunc mocks the HandleCompleted method.
 	HandleCompletedFunc func(ctx sdk.Context, sig utils.ValidatedProtoMarshaler, moduleMetadata codec.ProtoMarshaler) error
@@ -88,8 +88,7 @@ func (mock *SigHandlerMock) HandleCompleted(ctx sdk.Context, sig utils.Validated
 
 // HandleCompletedCalls gets all the calls that were made to HandleCompleted.
 // Check the length with:
-//
-//	len(mockedSigHandler.HandleCompletedCalls())
+//     len(mockedSigHandler.HandleCompletedCalls())
 func (mock *SigHandlerMock) HandleCompletedCalls() []struct {
 	Ctx            sdk.Context
 	Sig            utils.ValidatedProtoMarshaler
@@ -126,8 +125,7 @@ func (mock *SigHandlerMock) HandleFailed(ctx sdk.Context, moduleMetadata codec.P
 
 // HandleFailedCalls gets all the calls that were made to HandleFailed.
 // Check the length with:
-//
-//	len(mockedSigHandler.HandleFailedCalls())
+//     len(mockedSigHandler.HandleFailedCalls())
 func (mock *SigHandlerMock) HandleFailedCalls() []struct {
 	Ctx            sdk.Context
 	ModuleMetadata codec.ProtoMarshaler
@@ -148,43 +146,43 @@ var _ multisigexported.Key = &KeyMock{}
 
 // KeyMock is a mock implementation of multisigexported.Key.
 //
-//	func TestSomethingThatUsesKey(t *testing.T) {
+// 	func TestSomethingThatUsesKey(t *testing.T) {
 //
-//		// make and configure a mocked multisigexported.Key
-//		mockedKey := &KeyMock{
-//			GetBondedWeightFunc: func() sdk.Uint {
-//				panic("mock out the GetBondedWeight method")
-//			},
-//			GetHeightFunc: func() int64 {
-//				panic("mock out the GetHeight method")
-//			},
-//			GetMinPassingWeightFunc: func() sdk.Uint {
-//				panic("mock out the GetMinPassingWeight method")
-//			},
-//			GetParticipantsFunc: func() []sdk.ValAddress {
-//				panic("mock out the GetParticipants method")
-//			},
-//			GetPubKeyFunc: func(valAddress sdk.ValAddress) (multisigexported.PublicKey, bool) {
-//				panic("mock out the GetPubKey method")
-//			},
-//			GetSnapshotFunc: func() snapshotexported.Snapshot {
-//				panic("mock out the GetSnapshot method")
-//			},
-//			GetStateFunc: func() multisigexported.KeyState {
-//				panic("mock out the GetState method")
-//			},
-//			GetTimestampFunc: func() time.Time {
-//				panic("mock out the GetTimestamp method")
-//			},
-//			GetWeightFunc: func(valAddress sdk.ValAddress) sdk.Uint {
-//				panic("mock out the GetWeight method")
-//			},
-//		}
+// 		// make and configure a mocked multisigexported.Key
+// 		mockedKey := &KeyMock{
+// 			GetBondedWeightFunc: func() sdk.Uint {
+// 				panic("mock out the GetBondedWeight method")
+// 			},
+// 			GetHeightFunc: func() int64 {
+// 				panic("mock out the GetHeight method")
+// 			},
+// 			GetMinPassingWeightFunc: func() sdk.Uint {
+// 				panic("mock out the GetMinPassingWeight method")
+// 			},
+// 			GetParticipantsFunc: func() []sdk.ValAddress {
+// 				panic("mock out the GetParticipants method")
+// 			},
+// 			GetPubKeyFunc: func(valAddress sdk.ValAddress) (multisigexported.PublicKey, bool) {
+// 				panic("mock out the GetPubKey method")
+// 			},
+// 			GetSnapshotFunc: func() snapshotexported.Snapshot {
+// 				panic("mock out the GetSnapshot method")
+// 			},
+// 			GetStateFunc: func() multisigexported.KeyState {
+// 				panic("mock out the GetState method")
+// 			},
+// 			GetTimestampFunc: func() time.Time {
+// 				panic("mock out the GetTimestamp method")
+// 			},
+// 			GetWeightFunc: func(valAddress sdk.ValAddress) sdk.Uint {
+// 				panic("mock out the GetWeight method")
+// 			},
+// 		}
 //
-//		// use mockedKey in code that requires multisigexported.Key
-//		// and then make assertions.
+// 		// use mockedKey in code that requires multisigexported.Key
+// 		// and then make assertions.
 //
-//	}
+// 	}
 type KeyMock struct {
 	// GetBondedWeightFunc mocks the GetBondedWeight method.
 	GetBondedWeightFunc func() sdk.Uint
@@ -273,8 +271,7 @@ func (mock *KeyMock) GetBondedWeight() sdk.Uint {
 
 // GetBondedWeightCalls gets all the calls that were made to GetBondedWeight.
 // Check the length with:
-//
-//	len(mockedKey.GetBondedWeightCalls())
+//     len(mockedKey.GetBondedWeightCalls())
 func (mock *KeyMock) GetBondedWeightCalls() []struct {
 } {
 	var calls []struct {
@@ -300,8 +297,7 @@ func (mock *KeyMock) GetHeight() int64 {
 
 // GetHeightCalls gets all the calls that were made to GetHeight.
 // Check the length with:
-//
-//	len(mockedKey.GetHeightCalls())
+//     len(mockedKey.GetHeightCalls())
 func (mock *KeyMock) GetHeightCalls() []struct {
 } {
 	var calls []struct {
@@ -327,8 +323,7 @@ func (mock *KeyMock) GetMinPassingWeight() sdk.Uint {
 
 // GetMinPassingWeightCalls gets all the calls that were made to GetMinPassingWeight.
 // Check the length with:
-//
-//	len(mockedKey.GetMinPassingWeightCalls())
+//     len(mockedKey.GetMinPassingWeightCalls())
 func (mock *KeyMock) GetMinPassingWeightCalls() []struct {
 } {
 	var calls []struct {
@@ -354,8 +349,7 @@ func (mock *KeyMock) GetParticipants() []sdk.ValAddress {
 
 // GetParticipantsCalls gets all the calls that were made to GetParticipants.
 // Check the length with:
-//
-//	len(mockedKey.GetParticipantsCalls())
+//     len(mockedKey.GetParticipantsCalls())
 func (mock *KeyMock) GetParticipantsCalls() []struct {
 } {
 	var calls []struct {
@@ -384,8 +378,7 @@ func (mock *KeyMock) GetPubKey(valAddress sdk.ValAddress) (multisigexported.Publ
 
 // GetPubKeyCalls gets all the calls that were made to GetPubKey.
 // Check the length with:
-//
-//	len(mockedKey.GetPubKeyCalls())
+//     len(mockedKey.GetPubKeyCalls())
 func (mock *KeyMock) GetPubKeyCalls() []struct {
 	ValAddress sdk.ValAddress
 } {
@@ -413,8 +406,7 @@ func (mock *KeyMock) GetSnapshot() snapshotexported.Snapshot {
 
 // GetSnapshotCalls gets all the calls that were made to GetSnapshot.
 // Check the length with:
-//
-//	len(mockedKey.GetSnapshotCalls())
+//     len(mockedKey.GetSnapshotCalls())
 func (mock *KeyMock) GetSnapshotCalls() []struct {
 } {
 	var calls []struct {
@@ -440,8 +432,7 @@ func (mock *KeyMock) GetState() multisigexported.KeyState {
 
 // GetStateCalls gets all the calls that were made to GetState.
 // Check the length with:
-//
-//	len(mockedKey.GetStateCalls())
+//     len(mockedKey.GetStateCalls())
 func (mock *KeyMock) GetStateCalls() []struct {
 } {
 	var calls []struct {
@@ -467,8 +458,7 @@ func (mock *KeyMock) GetTimestamp() time.Time {
 
 // GetTimestampCalls gets all the calls that were made to GetTimestamp.
 // Check the length with:
-//
-//	len(mockedKey.GetTimestampCalls())
+//     len(mockedKey.GetTimestampCalls())
 func (mock *KeyMock) GetTimestampCalls() []struct {
 } {
 	var calls []struct {
@@ -497,8 +487,7 @@ func (mock *KeyMock) GetWeight(valAddress sdk.ValAddress) sdk.Uint {
 
 // GetWeightCalls gets all the calls that were made to GetWeight.
 // Check the length with:
-//
-//	len(mockedKey.GetWeightCalls())
+//     len(mockedKey.GetWeightCalls())
 func (mock *KeyMock) GetWeightCalls() []struct {
 	ValAddress sdk.ValAddress
 } {
@@ -517,28 +506,28 @@ var _ multisigexported.MultiSig = &MultiSigMock{}
 
 // MultiSigMock is a mock implementation of multisigexported.MultiSig.
 //
-//	func TestSomethingThatUsesMultiSig(t *testing.T) {
+// 	func TestSomethingThatUsesMultiSig(t *testing.T) {
 //
-//		// make and configure a mocked multisigexported.MultiSig
-//		mockedMultiSig := &MultiSigMock{
-//			GetKeyIDFunc: func() multisigexported.KeyID {
-//				panic("mock out the GetKeyID method")
-//			},
-//			GetPayloadHashFunc: func() multisigexported.Hash {
-//				panic("mock out the GetPayloadHash method")
-//			},
-//			GetSignatureFunc: func(p sdk.ValAddress) (btcec.Signature, bool) {
-//				panic("mock out the GetSignature method")
-//			},
-//			ValidateBasicFunc: func() error {
-//				panic("mock out the ValidateBasic method")
-//			},
-//		}
+// 		// make and configure a mocked multisigexported.MultiSig
+// 		mockedMultiSig := &MultiSigMock{
+// 			GetKeyIDFunc: func() multisigexported.KeyID {
+// 				panic("mock out the GetKeyID method")
+// 			},
+// 			GetPayloadHashFunc: func() multisigexported.Hash {
+// 				panic("mock out the GetPayloadHash method")
+// 			},
+// 			GetSignatureFunc: func(p sdk.ValAddress) (btcec.Signature, bool) {
+// 				panic("mock out the GetSignature method")
+// 			},
+// 			ValidateBasicFunc: func() error {
+// 				panic("mock out the ValidateBasic method")
+// 			},
+// 		}
 //
-//		// use mockedMultiSig in code that requires multisigexported.MultiSig
-//		// and then make assertions.
+// 		// use mockedMultiSig in code that requires multisigexported.MultiSig
+// 		// and then make assertions.
 //
-//	}
+// 	}
 type MultiSigMock struct {
 	// GetKeyIDFunc mocks the GetKeyID method.
 	GetKeyIDFunc func() multisigexported.KeyID
@@ -590,8 +579,7 @@ func (mock *MultiSigMock) GetKeyID() multisigexported.KeyID {
 
 // GetKeyIDCalls gets all the calls that were made to GetKeyID.
 // Check the length with:
-//
-//	len(mockedMultiSig.GetKeyIDCalls())
+//     len(mockedMultiSig.GetKeyIDCalls())
 func (mock *MultiSigMock) GetKeyIDCalls() []struct {
 } {
 	var calls []struct {
@@ -617,8 +605,7 @@ func (mock *MultiSigMock) GetPayloadHash() multisigexported.Hash {
 
 // GetPayloadHashCalls gets all the calls that were made to GetPayloadHash.
 // Check the length with:
-//
-//	len(mockedMultiSig.GetPayloadHashCalls())
+//     len(mockedMultiSig.GetPayloadHashCalls())
 func (mock *MultiSigMock) GetPayloadHashCalls() []struct {
 } {
 	var calls []struct {
@@ -647,8 +634,7 @@ func (mock *MultiSigMock) GetSignature(p sdk.ValAddress) (btcec.Signature, bool)
 
 // GetSignatureCalls gets all the calls that were made to GetSignature.
 // Check the length with:
-//
-//	len(mockedMultiSig.GetSignatureCalls())
+//     len(mockedMultiSig.GetSignatureCalls())
 func (mock *MultiSigMock) GetSignatureCalls() []struct {
 	P sdk.ValAddress
 } {
@@ -676,8 +662,7 @@ func (mock *MultiSigMock) ValidateBasic() error {
 
 // ValidateBasicCalls gets all the calls that were made to ValidateBasic.
 // Check the length with:
-//
-//	len(mockedMultiSig.ValidateBasicCalls())
+//     len(mockedMultiSig.ValidateBasicCalls())
 func (mock *MultiSigMock) ValidateBasicCalls() []struct {
 } {
 	var calls []struct {

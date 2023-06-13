@@ -16,19 +16,19 @@ var _ broadcast.Broadcaster = &BroadcasterMock{}
 
 // BroadcasterMock is a mock implementation of broadcast.Broadcaster.
 //
-//	func TestSomethingThatUsesBroadcaster(t *testing.T) {
+// 	func TestSomethingThatUsesBroadcaster(t *testing.T) {
 //
-//		// make and configure a mocked broadcast.Broadcaster
-//		mockedBroadcaster := &BroadcasterMock{
-//			BroadcastFunc: func(ctx context.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error) {
-//				panic("mock out the Broadcast method")
-//			},
-//		}
+// 		// make and configure a mocked broadcast.Broadcaster
+// 		mockedBroadcaster := &BroadcasterMock{
+// 			BroadcastFunc: func(ctx context.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error) {
+// 				panic("mock out the Broadcast method")
+// 			},
+// 		}
 //
-//		// use mockedBroadcaster in code that requires broadcast.Broadcaster
-//		// and then make assertions.
+// 		// use mockedBroadcaster in code that requires broadcast.Broadcaster
+// 		// and then make assertions.
 //
-//	}
+// 	}
 type BroadcasterMock struct {
 	// BroadcastFunc mocks the Broadcast method.
 	BroadcastFunc func(ctx context.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error)
@@ -66,8 +66,7 @@ func (mock *BroadcasterMock) Broadcast(ctx context.Context, msgs ...sdk.Msg) (*s
 
 // BroadcastCalls gets all the calls that were made to Broadcast.
 // Check the length with:
-//
-//	len(mockedBroadcaster.BroadcastCalls())
+//     len(mockedBroadcaster.BroadcastCalls())
 func (mock *BroadcasterMock) BroadcastCalls() []struct {
 	Ctx  context.Context
 	Msgs []sdk.Msg

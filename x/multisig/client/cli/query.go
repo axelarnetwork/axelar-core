@@ -23,17 +23,18 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 	}
 
 	multisigQueryCmd.AddCommand(
-		GetCmdKeyID(queryRoute),
-		GetCmdNextKeyID(queryRoute),
-		GetCmdKey(queryRoute),
-		GetCmdKeygenSession(queryRoute),
+		GetCmdKeyID(),
+		GetCmdNextKeyID(),
+		GetCmdKey(),
+		GetCmdKeygenSession(),
+		GetParams(),
 	)
 
 	return multisigQueryCmd
 }
 
 // GetCmdKeyID returns the key ID assigned to a given chain
-func GetCmdKeyID(queryRoute string) *cobra.Command {
+func GetCmdKeyID() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "key-id [chain]",
 		Short: "Returns the key ID assigned to a given chain",
@@ -63,7 +64,7 @@ func GetCmdKeyID(queryRoute string) *cobra.Command {
 }
 
 // GetCmdNextKeyID returns the key ID assigned for the next rotation on a given chain
-func GetCmdNextKeyID(queryRoute string) *cobra.Command {
+func GetCmdNextKeyID() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "next-key-id [chain]",
 		Short: "Returns the key ID assigned for the next rotation on a given chain and for the given key role",
@@ -93,7 +94,7 @@ func GetCmdNextKeyID(queryRoute string) *cobra.Command {
 }
 
 // GetCmdKey returns the key of the given ID
-func GetCmdKey(queryRoute string) *cobra.Command {
+func GetCmdKey() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "key [key-id]",
 		Short: "Returns the key of the given ID",
@@ -123,7 +124,7 @@ func GetCmdKey(queryRoute string) *cobra.Command {
 }
 
 // GetCmdKeygenSession returns the keygen session info for the given key ID
-func GetCmdKeygenSession(queryRoute string) *cobra.Command {
+func GetCmdKeygenSession() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "keygen-session [key-id]",
 		Short: "Returns the keygen session info for the given key ID",
@@ -140,6 +141,33 @@ func GetCmdKeygenSession(queryRoute string) *cobra.Command {
 				&types.KeygenSessionRequest{
 					KeyID: keyID,
 				})
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetParams returns the reward params
+func GetParams() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "params",
+		Short: "Returns the params for the multisig module",
+		Args:  cobra.ExactArgs(0),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			queryClient := types.NewQueryServiceClient(clientCtx)
+
+			res, err := queryClient.Params(cmd.Context(), &types.ParamsRequest{})
 			if err != nil {
 				return err
 			}

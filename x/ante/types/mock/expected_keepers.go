@@ -17,19 +17,19 @@ var _ types.Permission = &PermissionMock{}
 
 // PermissionMock is a mock implementation of types.Permission.
 //
-//	func TestSomethingThatUsesPermission(t *testing.T) {
+// 	func TestSomethingThatUsesPermission(t *testing.T) {
 //
-//		// make and configure a mocked types.Permission
-//		mockedPermission := &PermissionMock{
-//			GetRoleFunc: func(ctx sdk.Context, address sdk.AccAddress) permission.Role {
-//				panic("mock out the GetRole method")
-//			},
-//		}
+// 		// make and configure a mocked types.Permission
+// 		mockedPermission := &PermissionMock{
+// 			GetRoleFunc: func(ctx sdk.Context, address sdk.AccAddress) permission.Role {
+// 				panic("mock out the GetRole method")
+// 			},
+// 		}
 //
-//		// use mockedPermission in code that requires types.Permission
-//		// and then make assertions.
+// 		// use mockedPermission in code that requires types.Permission
+// 		// and then make assertions.
 //
-//	}
+// 	}
 type PermissionMock struct {
 	// GetRoleFunc mocks the GetRole method.
 	GetRoleFunc func(ctx sdk.Context, address sdk.AccAddress) permission.Role
@@ -67,8 +67,7 @@ func (mock *PermissionMock) GetRole(ctx sdk.Context, address sdk.AccAddress) per
 
 // GetRoleCalls gets all the calls that were made to GetRole.
 // Check the length with:
-//
-//	len(mockedPermission.GetRoleCalls())
+//     len(mockedPermission.GetRoleCalls())
 func (mock *PermissionMock) GetRoleCalls() []struct {
 	Ctx     sdk.Context
 	Address sdk.AccAddress
@@ -89,19 +88,19 @@ var _ types.Staking = &StakingMock{}
 
 // StakingMock is a mock implementation of types.Staking.
 //
-//	func TestSomethingThatUsesStaking(t *testing.T) {
+// 	func TestSomethingThatUsesStaking(t *testing.T) {
 //
-//		// make and configure a mocked types.Staking
-//		mockedStaking := &StakingMock{
-//			ValidatorFunc: func(ctx sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI {
-//				panic("mock out the Validator method")
-//			},
-//		}
+// 		// make and configure a mocked types.Staking
+// 		mockedStaking := &StakingMock{
+// 			ValidatorFunc: func(ctx sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI {
+// 				panic("mock out the Validator method")
+// 			},
+// 		}
 //
-//		// use mockedStaking in code that requires types.Staking
-//		// and then make assertions.
+// 		// use mockedStaking in code that requires types.Staking
+// 		// and then make assertions.
 //
-//	}
+// 	}
 type StakingMock struct {
 	// ValidatorFunc mocks the Validator method.
 	ValidatorFunc func(ctx sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI
@@ -139,8 +138,7 @@ func (mock *StakingMock) Validator(ctx sdk.Context, addr sdk.ValAddress) staking
 
 // ValidatorCalls gets all the calls that were made to Validator.
 // Check the length with:
-//
-//	len(mockedStaking.ValidatorCalls())
+//     len(mockedStaking.ValidatorCalls())
 func (mock *StakingMock) ValidatorCalls() []struct {
 	Ctx  sdk.Context
 	Addr sdk.ValAddress

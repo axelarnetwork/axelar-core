@@ -16,19 +16,19 @@ var _ utils.Logger = &LoggerMock{}
 
 // LoggerMock is a mock implementation of utils.Logger.
 //
-//	func TestSomethingThatUsesLogger(t *testing.T) {
+// 	func TestSomethingThatUsesLogger(t *testing.T) {
 //
-//		// make and configure a mocked utils.Logger
-//		mockedLogger := &LoggerMock{
-//			LoggerFunc: func(ctx sdk.Context) log.Logger {
-//				panic("mock out the Logger method")
-//			},
-//		}
+// 		// make and configure a mocked utils.Logger
+// 		mockedLogger := &LoggerMock{
+// 			LoggerFunc: func(ctx sdk.Context) log.Logger {
+// 				panic("mock out the Logger method")
+// 			},
+// 		}
 //
-//		// use mockedLogger in code that requires utils.Logger
-//		// and then make assertions.
+// 		// use mockedLogger in code that requires utils.Logger
+// 		// and then make assertions.
 //
-//	}
+// 	}
 type LoggerMock struct {
 	// LoggerFunc mocks the Logger method.
 	LoggerFunc func(ctx sdk.Context) log.Logger
@@ -62,8 +62,7 @@ func (mock *LoggerMock) Logger(ctx sdk.Context) log.Logger {
 
 // LoggerCalls gets all the calls that were made to Logger.
 // Check the length with:
-//
-//	len(mockedLogger.LoggerCalls())
+//     len(mockedLogger.LoggerCalls())
 func (mock *LoggerMock) LoggerCalls() []struct {
 	Ctx sdk.Context
 } {

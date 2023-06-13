@@ -17,22 +17,22 @@ var _ keeper.Snapshotter = &SnapshotterMock{}
 
 // SnapshotterMock is a mock implementation of keeper.Snapshotter.
 //
-//	func TestSomethingThatUsesSnapshotter(t *testing.T) {
+// 	func TestSomethingThatUsesSnapshotter(t *testing.T) {
 //
-//		// make and configure a mocked keeper.Snapshotter
-//		mockedSnapshotter := &SnapshotterMock{
-//			CreateSnapshotFunc: func(ctx sdk.Context, threshold utils.Threshold) (snapshot.Snapshot, error) {
-//				panic("mock out the CreateSnapshot method")
-//			},
-//			GetOperatorFunc: func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress {
-//				panic("mock out the GetOperator method")
-//			},
-//		}
+// 		// make and configure a mocked keeper.Snapshotter
+// 		mockedSnapshotter := &SnapshotterMock{
+// 			CreateSnapshotFunc: func(ctx sdk.Context, threshold utils.Threshold) (snapshot.Snapshot, error) {
+// 				panic("mock out the CreateSnapshot method")
+// 			},
+// 			GetOperatorFunc: func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress {
+// 				panic("mock out the GetOperator method")
+// 			},
+// 		}
 //
-//		// use mockedSnapshotter in code that requires keeper.Snapshotter
-//		// and then make assertions.
+// 		// use mockedSnapshotter in code that requires keeper.Snapshotter
+// 		// and then make assertions.
 //
-//	}
+// 	}
 type SnapshotterMock struct {
 	// CreateSnapshotFunc mocks the CreateSnapshot method.
 	CreateSnapshotFunc func(ctx sdk.Context, threshold utils.Threshold) (snapshot.Snapshot, error)
@@ -81,8 +81,7 @@ func (mock *SnapshotterMock) CreateSnapshot(ctx sdk.Context, threshold utils.Thr
 
 // CreateSnapshotCalls gets all the calls that were made to CreateSnapshot.
 // Check the length with:
-//
-//	len(mockedSnapshotter.CreateSnapshotCalls())
+//     len(mockedSnapshotter.CreateSnapshotCalls())
 func (mock *SnapshotterMock) CreateSnapshotCalls() []struct {
 	Ctx       sdk.Context
 	Threshold utils.Threshold
@@ -117,8 +116,7 @@ func (mock *SnapshotterMock) GetOperator(ctx sdk.Context, proxy sdk.AccAddress) 
 
 // GetOperatorCalls gets all the calls that were made to GetOperator.
 // Check the length with:
-//
-//	len(mockedSnapshotter.GetOperatorCalls())
+//     len(mockedSnapshotter.GetOperatorCalls())
 func (mock *SnapshotterMock) GetOperatorCalls() []struct {
 	Ctx   sdk.Context
 	Proxy sdk.AccAddress

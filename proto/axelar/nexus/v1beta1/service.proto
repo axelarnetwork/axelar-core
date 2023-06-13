@@ -141,4 +141,10 @@ service QueryService {
   rpc Message(MessageRequest) returns (MessageResponse) {
     option (google.api.http).get = "/axelar/nexus/v1beta1/message";
   }
+
+  rpc Params(ParamsRequest) returns (ParamsResponse) {
+    option (google.api.http) = {
+      get : "/axelar/nexus/v1beta1/params"
+    };
+  }
 }

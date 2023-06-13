@@ -17,31 +17,31 @@ var _ snapshottypes.StakingKeeper = &StakingKeeperMock{}
 
 // StakingKeeperMock is a mock implementation of snapshottypes.StakingKeeper.
 //
-//	func TestSomethingThatUsesStakingKeeper(t *testing.T) {
+// 	func TestSomethingThatUsesStakingKeeper(t *testing.T) {
 //
-//		// make and configure a mocked snapshottypes.StakingKeeper
-//		mockedStakingKeeper := &StakingKeeperMock{
-//			BondDenomFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) string {
-//				panic("mock out the BondDenom method")
-//			},
-//			GetLastTotalPowerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) github_com_cosmos_cosmos_sdk_types.Int {
-//				panic("mock out the GetLastTotalPower method")
-//			},
-//			IterateBondedValidatorsByPowerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool))  {
-//				panic("mock out the IterateBondedValidatorsByPower method")
-//			},
-//			PowerReductionFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) github_com_cosmos_cosmos_sdk_types.Int {
-//				panic("mock out the PowerReduction method")
-//			},
-//			ValidatorFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, addr github_com_cosmos_cosmos_sdk_types.ValAddress) stakingtypes.ValidatorI {
-//				panic("mock out the Validator method")
-//			},
-//		}
+// 		// make and configure a mocked snapshottypes.StakingKeeper
+// 		mockedStakingKeeper := &StakingKeeperMock{
+// 			BondDenomFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) string {
+// 				panic("mock out the BondDenom method")
+// 			},
+// 			GetLastTotalPowerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) github_com_cosmos_cosmos_sdk_types.Int {
+// 				panic("mock out the GetLastTotalPower method")
+// 			},
+// 			IterateBondedValidatorsByPowerFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool))  {
+// 				panic("mock out the IterateBondedValidatorsByPower method")
+// 			},
+// 			PowerReductionFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) github_com_cosmos_cosmos_sdk_types.Int {
+// 				panic("mock out the PowerReduction method")
+// 			},
+// 			ValidatorFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, addr github_com_cosmos_cosmos_sdk_types.ValAddress) stakingtypes.ValidatorI {
+// 				panic("mock out the Validator method")
+// 			},
+// 		}
 //
-//		// use mockedStakingKeeper in code that requires snapshottypes.StakingKeeper
-//		// and then make assertions.
+// 		// use mockedStakingKeeper in code that requires snapshottypes.StakingKeeper
+// 		// and then make assertions.
 //
-//	}
+// 	}
 type StakingKeeperMock struct {
 	// BondDenomFunc mocks the BondDenom method.
 	BondDenomFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) string
@@ -115,8 +115,7 @@ func (mock *StakingKeeperMock) BondDenom(ctx github_com_cosmos_cosmos_sdk_types.
 
 // BondDenomCalls gets all the calls that were made to BondDenom.
 // Check the length with:
-//
-//	len(mockedStakingKeeper.BondDenomCalls())
+//     len(mockedStakingKeeper.BondDenomCalls())
 func (mock *StakingKeeperMock) BondDenomCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 } {
@@ -147,8 +146,7 @@ func (mock *StakingKeeperMock) GetLastTotalPower(ctx github_com_cosmos_cosmos_sd
 
 // GetLastTotalPowerCalls gets all the calls that were made to GetLastTotalPower.
 // Check the length with:
-//
-//	len(mockedStakingKeeper.GetLastTotalPowerCalls())
+//     len(mockedStakingKeeper.GetLastTotalPowerCalls())
 func (mock *StakingKeeperMock) GetLastTotalPowerCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 } {
@@ -181,8 +179,7 @@ func (mock *StakingKeeperMock) IterateBondedValidatorsByPower(ctx github_com_cos
 
 // IterateBondedValidatorsByPowerCalls gets all the calls that were made to IterateBondedValidatorsByPower.
 // Check the length with:
-//
-//	len(mockedStakingKeeper.IterateBondedValidatorsByPowerCalls())
+//     len(mockedStakingKeeper.IterateBondedValidatorsByPowerCalls())
 func (mock *StakingKeeperMock) IterateBondedValidatorsByPowerCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 	Fn  func(index int64, validator stakingtypes.ValidatorI) (stop bool)
@@ -215,8 +212,7 @@ func (mock *StakingKeeperMock) PowerReduction(ctx github_com_cosmos_cosmos_sdk_t
 
 // PowerReductionCalls gets all the calls that were made to PowerReduction.
 // Check the length with:
-//
-//	len(mockedStakingKeeper.PowerReductionCalls())
+//     len(mockedStakingKeeper.PowerReductionCalls())
 func (mock *StakingKeeperMock) PowerReductionCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 } {
@@ -249,8 +245,7 @@ func (mock *StakingKeeperMock) Validator(ctx github_com_cosmos_cosmos_sdk_types.
 
 // ValidatorCalls gets all the calls that were made to Validator.
 // Check the length with:
-//
-//	len(mockedStakingKeeper.ValidatorCalls())
+//     len(mockedStakingKeeper.ValidatorCalls())
 func (mock *StakingKeeperMock) ValidatorCalls() []struct {
 	Ctx  github_com_cosmos_cosmos_sdk_types.Context
 	Addr github_com_cosmos_cosmos_sdk_types.ValAddress
@@ -271,19 +266,19 @@ var _ snapshottypes.BankKeeper = &BankKeeperMock{}
 
 // BankKeeperMock is a mock implementation of snapshottypes.BankKeeper.
 //
-//	func TestSomethingThatUsesBankKeeper(t *testing.T) {
+// 	func TestSomethingThatUsesBankKeeper(t *testing.T) {
 //
-//		// make and configure a mocked snapshottypes.BankKeeper
-//		mockedBankKeeper := &BankKeeperMock{
-//			GetBalanceFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, addr github_com_cosmos_cosmos_sdk_types.AccAddress, denom string) github_com_cosmos_cosmos_sdk_types.Coin {
-//				panic("mock out the GetBalance method")
-//			},
-//		}
+// 		// make and configure a mocked snapshottypes.BankKeeper
+// 		mockedBankKeeper := &BankKeeperMock{
+// 			GetBalanceFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, addr github_com_cosmos_cosmos_sdk_types.AccAddress, denom string) github_com_cosmos_cosmos_sdk_types.Coin {
+// 				panic("mock out the GetBalance method")
+// 			},
+// 		}
 //
-//		// use mockedBankKeeper in code that requires snapshottypes.BankKeeper
-//		// and then make assertions.
+// 		// use mockedBankKeeper in code that requires snapshottypes.BankKeeper
+// 		// and then make assertions.
 //
-//	}
+// 	}
 type BankKeeperMock struct {
 	// GetBalanceFunc mocks the GetBalance method.
 	GetBalanceFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, addr github_com_cosmos_cosmos_sdk_types.AccAddress, denom string) github_com_cosmos_cosmos_sdk_types.Coin
@@ -325,8 +320,7 @@ func (mock *BankKeeperMock) GetBalance(ctx github_com_cosmos_cosmos_sdk_types.Co
 
 // GetBalanceCalls gets all the calls that were made to GetBalance.
 // Check the length with:
-//
-//	len(mockedBankKeeper.GetBalanceCalls())
+//     len(mockedBankKeeper.GetBalanceCalls())
 func (mock *BankKeeperMock) GetBalanceCalls() []struct {
 	Ctx   github_com_cosmos_cosmos_sdk_types.Context
 	Addr  github_com_cosmos_cosmos_sdk_types.AccAddress
@@ -349,25 +343,25 @@ var _ snapshottypes.Slasher = &SlasherMock{}
 
 // SlasherMock is a mock implementation of snapshottypes.Slasher.
 //
-//	func TestSomethingThatUsesSlasher(t *testing.T) {
+// 	func TestSomethingThatUsesSlasher(t *testing.T) {
 //
-//		// make and configure a mocked snapshottypes.Slasher
-//		mockedSlasher := &SlasherMock{
-//			GetValidatorMissedBlockBitArrayFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress, index int64) bool {
-//				panic("mock out the GetValidatorMissedBlockBitArray method")
-//			},
-//			GetValidatorSigningInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress) (slashingtypes.ValidatorSigningInfo, bool) {
-//				panic("mock out the GetValidatorSigningInfo method")
-//			},
-//			SignedBlocksWindowFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64 {
-//				panic("mock out the SignedBlocksWindow method")
-//			},
-//		}
+// 		// make and configure a mocked snapshottypes.Slasher
+// 		mockedSlasher := &SlasherMock{
+// 			GetValidatorMissedBlockBitArrayFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress, index int64) bool {
+// 				panic("mock out the GetValidatorMissedBlockBitArray method")
+// 			},
+// 			GetValidatorSigningInfoFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress) (slashingtypes.ValidatorSigningInfo, bool) {
+// 				panic("mock out the GetValidatorSigningInfo method")
+// 			},
+// 			SignedBlocksWindowFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) int64 {
+// 				panic("mock out the SignedBlocksWindow method")
+// 			},
+// 		}
 //
-//		// use mockedSlasher in code that requires snapshottypes.Slasher
-//		// and then make assertions.
+// 		// use mockedSlasher in code that requires snapshottypes.Slasher
+// 		// and then make assertions.
 //
-//	}
+// 	}
 type SlasherMock struct {
 	// GetValidatorMissedBlockBitArrayFunc mocks the GetValidatorMissedBlockBitArray method.
 	GetValidatorMissedBlockBitArrayFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.ConsAddress, index int64) bool
@@ -429,8 +423,7 @@ func (mock *SlasherMock) GetValidatorMissedBlockBitArray(ctx github_com_cosmos_c
 
 // GetValidatorMissedBlockBitArrayCalls gets all the calls that were made to GetValidatorMissedBlockBitArray.
 // Check the length with:
-//
-//	len(mockedSlasher.GetValidatorMissedBlockBitArrayCalls())
+//     len(mockedSlasher.GetValidatorMissedBlockBitArrayCalls())
 func (mock *SlasherMock) GetValidatorMissedBlockBitArrayCalls() []struct {
 	Ctx     github_com_cosmos_cosmos_sdk_types.Context
 	Address github_com_cosmos_cosmos_sdk_types.ConsAddress
@@ -467,8 +460,7 @@ func (mock *SlasherMock) GetValidatorSigningInfo(ctx github_com_cosmos_cosmos_sd
 
 // GetValidatorSigningInfoCalls gets all the calls that were made to GetValidatorSigningInfo.
 // Check the length with:
-//
-//	len(mockedSlasher.GetValidatorSigningInfoCalls())
+//     len(mockedSlasher.GetValidatorSigningInfoCalls())
 func (mock *SlasherMock) GetValidatorSigningInfoCalls() []struct {
 	Ctx     github_com_cosmos_cosmos_sdk_types.Context
 	Address github_com_cosmos_cosmos_sdk_types.ConsAddress
@@ -501,8 +493,7 @@ func (mock *SlasherMock) SignedBlocksWindow(ctx github_com_cosmos_cosmos_sdk_typ
 
 // SignedBlocksWindowCalls gets all the calls that were made to SignedBlocksWindow.
 // Check the length with:
-//
-//	len(mockedSlasher.SignedBlocksWindowCalls())
+//     len(mockedSlasher.SignedBlocksWindowCalls())
 func (mock *SlasherMock) SignedBlocksWindowCalls() []struct {
 	Ctx github_com_cosmos_cosmos_sdk_types.Context
 } {

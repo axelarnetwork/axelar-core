@@ -16,6 +16,8 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/x/tss/keeper"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
+
+	"github.com/axelarnetwork/axelar-core/x/tss/client/cli"
 )
 
 var (
@@ -69,7 +71,7 @@ func (AppModuleBasic) GetTxCmd() *cobra.Command {
 
 // GetQueryCmd returns all CLI query commands for this module
 func (AppModuleBasic) GetQueryCmd() *cobra.Command {
-	return nil
+	return cli.GetQueryCmd()
 }
 
 // AppModule implements module.AppModule
@@ -126,6 +128,8 @@ func (AppModule) QuerierRoute() string {
 // RegisterServices registers a GRPC query service to respond to the
 // module-specific GRPC queries.
 func (am AppModule) RegisterServices(cfg module.Configurator) {
+	types.RegisterQueryServiceServer(cfg.QueryServer(), keeper.NewGRPCQuerier(am.keeper))
+
 	err := cfg.RegisterMigration(types.ModuleName, 2, keeper.GetMigrationHandler())
 	if err != nil {
 		panic(err)

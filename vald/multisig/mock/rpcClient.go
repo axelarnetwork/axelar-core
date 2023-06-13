@@ -17,25 +17,25 @@ var _ multisig.Client = &ClientMock{}
 
 // ClientMock is a mock implementation of multisig.Client.
 //
-//	func TestSomethingThatUsesClient(t *testing.T) {
+// 	func TestSomethingThatUsesClient(t *testing.T) {
 //
-//		// make and configure a mocked multisig.Client
-//		mockedClient := &ClientMock{
-//			KeyPresenceFunc: func(ctx context.Context, in *tofnd.KeyPresenceRequest, opts ...grpc.CallOption) (*tofnd.KeyPresenceResponse, error) {
-//				panic("mock out the KeyPresence method")
-//			},
-//			KeygenFunc: func(ctx context.Context, in *tofnd.KeygenRequest, opts ...grpc.CallOption) (*tofnd.KeygenResponse, error) {
-//				panic("mock out the Keygen method")
-//			},
-//			SignFunc: func(ctx context.Context, in *tofnd.SignRequest, opts ...grpc.CallOption) (*tofnd.SignResponse, error) {
-//				panic("mock out the Sign method")
-//			},
-//		}
+// 		// make and configure a mocked multisig.Client
+// 		mockedClient := &ClientMock{
+// 			KeyPresenceFunc: func(ctx context.Context, in *tofnd.KeyPresenceRequest, opts ...grpc.CallOption) (*tofnd.KeyPresenceResponse, error) {
+// 				panic("mock out the KeyPresence method")
+// 			},
+// 			KeygenFunc: func(ctx context.Context, in *tofnd.KeygenRequest, opts ...grpc.CallOption) (*tofnd.KeygenResponse, error) {
+// 				panic("mock out the Keygen method")
+// 			},
+// 			SignFunc: func(ctx context.Context, in *tofnd.SignRequest, opts ...grpc.CallOption) (*tofnd.SignResponse, error) {
+// 				panic("mock out the Sign method")
+// 			},
+// 		}
 //
-//		// use mockedClient in code that requires multisig.Client
-//		// and then make assertions.
+// 		// use mockedClient in code that requires multisig.Client
+// 		// and then make assertions.
 //
-//	}
+// 	}
 type ClientMock struct {
 	// KeyPresenceFunc mocks the KeyPresence method.
 	KeyPresenceFunc func(ctx context.Context, in *tofnd.KeyPresenceRequest, opts ...grpc.CallOption) (*tofnd.KeyPresenceResponse, error)
@@ -103,8 +103,7 @@ func (mock *ClientMock) KeyPresence(ctx context.Context, in *tofnd.KeyPresenceRe
 
 // KeyPresenceCalls gets all the calls that were made to KeyPresence.
 // Check the length with:
-//
-//	len(mockedClient.KeyPresenceCalls())
+//     len(mockedClient.KeyPresenceCalls())
 func (mock *ClientMock) KeyPresenceCalls() []struct {
 	Ctx  context.Context
 	In   *tofnd.KeyPresenceRequest
@@ -143,8 +142,7 @@ func (mock *ClientMock) Keygen(ctx context.Context, in *tofnd.KeygenRequest, opt
 
 // KeygenCalls gets all the calls that were made to Keygen.
 // Check the length with:
-//
-//	len(mockedClient.KeygenCalls())
+//     len(mockedClient.KeygenCalls())
 func (mock *ClientMock) KeygenCalls() []struct {
 	Ctx  context.Context
 	In   *tofnd.KeygenRequest
@@ -183,8 +181,7 @@ func (mock *ClientMock) Sign(ctx context.Context, in *tofnd.SignRequest, opts ..
 
 // SignCalls gets all the calls that were made to Sign.
 // Check the length with:
-//
-//	len(mockedClient.SignCalls())
+//     len(mockedClient.SignCalls())
 func (mock *ClientMock) SignCalls() []struct {
 	Ctx  context.Context
 	In   *tofnd.SignRequest

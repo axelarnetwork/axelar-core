@@ -24,136 +24,136 @@ var _ Client = &ClientMock{}
 
 // ClientMock is a mock implementation of Client.
 //
-//	func TestSomethingThatUsesClient(t *testing.T) {
+// 	func TestSomethingThatUsesClient(t *testing.T) {
 //
-//		// make and configure a mocked Client
-//		mockedClient := &ClientMock{
-//			ABCIInfoFunc: func(contextMoqParam context.Context) (*coretypes.ResultABCIInfo, error) {
-//				panic("mock out the ABCIInfo method")
-//			},
-//			ABCIQueryFunc: func(ctx context.Context, path string, data bytes.HexBytes) (*coretypes.ResultABCIQuery, error) {
-//				panic("mock out the ABCIQuery method")
-//			},
-//			ABCIQueryWithOptionsFunc: func(ctx context.Context, path string, data bytes.HexBytes, opts rpcclient.ABCIQueryOptions) (*coretypes.ResultABCIQuery, error) {
-//				panic("mock out the ABCIQueryWithOptions method")
-//			},
-//			BlockFunc: func(ctx context.Context, height *int64) (*coretypes.ResultBlock, error) {
-//				panic("mock out the Block method")
-//			},
-//			BlockByHashFunc: func(ctx context.Context, hash []byte) (*coretypes.ResultBlock, error) {
-//				panic("mock out the BlockByHash method")
-//			},
-//			BlockResultsFunc: func(ctx context.Context, height *int64) (*coretypes.ResultBlockResults, error) {
-//				panic("mock out the BlockResults method")
-//			},
-//			BlockSearchFunc: func(ctx context.Context, query string, page *int, perPage *int, orderBy string) (*coretypes.ResultBlockSearch, error) {
-//				panic("mock out the BlockSearch method")
-//			},
-//			BlockchainInfoFunc: func(ctx context.Context, minHeight int64, maxHeight int64) (*coretypes.ResultBlockchainInfo, error) {
-//				panic("mock out the BlockchainInfo method")
-//			},
-//			BroadcastEvidenceFunc: func(contextMoqParam context.Context, evidence tenderminttypes.Evidence) (*coretypes.ResultBroadcastEvidence, error) {
-//				panic("mock out the BroadcastEvidence method")
-//			},
-//			BroadcastTxAsyncFunc: func(contextMoqParam context.Context, tx tenderminttypes.Tx) (*coretypes.ResultBroadcastTx, error) {
-//				panic("mock out the BroadcastTxAsync method")
-//			},
-//			BroadcastTxCommitFunc: func(contextMoqParam context.Context, tx tenderminttypes.Tx) (*coretypes.ResultBroadcastTxCommit, error) {
-//				panic("mock out the BroadcastTxCommit method")
-//			},
-//			BroadcastTxSyncFunc: func(contextMoqParam context.Context, tx tenderminttypes.Tx) (*coretypes.ResultBroadcastTx, error) {
-//				panic("mock out the BroadcastTxSync method")
-//			},
-//			CheckTxFunc: func(contextMoqParam context.Context, tx tenderminttypes.Tx) (*coretypes.ResultCheckTx, error) {
-//				panic("mock out the CheckTx method")
-//			},
-//			CommitFunc: func(ctx context.Context, height *int64) (*coretypes.ResultCommit, error) {
-//				panic("mock out the Commit method")
-//			},
-//			ConsensusParamsFunc: func(ctx context.Context, height *int64) (*coretypes.ResultConsensusParams, error) {
-//				panic("mock out the ConsensusParams method")
-//			},
-//			ConsensusStateFunc: func(contextMoqParam context.Context) (*coretypes.ResultConsensusState, error) {
-//				panic("mock out the ConsensusState method")
-//			},
-//			DumpConsensusStateFunc: func(contextMoqParam context.Context) (*coretypes.ResultDumpConsensusState, error) {
-//				panic("mock out the DumpConsensusState method")
-//			},
-//			GenesisFunc: func(contextMoqParam context.Context) (*coretypes.ResultGenesis, error) {
-//				panic("mock out the Genesis method")
-//			},
-//			GenesisChunkedFunc: func(contextMoqParam context.Context, v uint) (*coretypes.ResultGenesisChunk, error) {
-//				panic("mock out the GenesisChunked method")
-//			},
-//			HealthFunc: func(contextMoqParam context.Context) (*coretypes.ResultHealth, error) {
-//				panic("mock out the Health method")
-//			},
-//			IsRunningFunc: func() bool {
-//				panic("mock out the IsRunning method")
-//			},
-//			NetInfoFunc: func(contextMoqParam context.Context) (*coretypes.ResultNetInfo, error) {
-//				panic("mock out the NetInfo method")
-//			},
-//			NumUnconfirmedTxsFunc: func(contextMoqParam context.Context) (*coretypes.ResultUnconfirmedTxs, error) {
-//				panic("mock out the NumUnconfirmedTxs method")
-//			},
-//			OnResetFunc: func() error {
-//				panic("mock out the OnReset method")
-//			},
-//			OnStartFunc: func() error {
-//				panic("mock out the OnStart method")
-//			},
-//			OnStopFunc: func()  {
-//				panic("mock out the OnStop method")
-//			},
-//			QuitFunc: func() <-chan struct{} {
-//				panic("mock out the Quit method")
-//			},
-//			ResetFunc: func() error {
-//				panic("mock out the Reset method")
-//			},
-//			SetLoggerFunc: func(logger log.Logger)  {
-//				panic("mock out the SetLogger method")
-//			},
-//			StartFunc: func() error {
-//				panic("mock out the Start method")
-//			},
-//			StatusFunc: func(contextMoqParam context.Context) (*coretypes.ResultStatus, error) {
-//				panic("mock out the Status method")
-//			},
-//			StopFunc: func() error {
-//				panic("mock out the Stop method")
-//			},
-//			StringFunc: func() string {
-//				panic("mock out the String method")
-//			},
-//			SubscribeFunc: func(ctx context.Context, subscriber string, query string, outCapacity ...int) (<-chan coretypes.ResultEvent, error) {
-//				panic("mock out the Subscribe method")
-//			},
-//			TxFunc: func(ctx context.Context, hash []byte, prove bool) (*coretypes.ResultTx, error) {
-//				panic("mock out the Tx method")
-//			},
-//			TxSearchFunc: func(ctx context.Context, query string, prove bool, page *int, perPage *int, orderBy string) (*coretypes.ResultTxSearch, error) {
-//				panic("mock out the TxSearch method")
-//			},
-//			UnconfirmedTxsFunc: func(ctx context.Context, limit *int) (*coretypes.ResultUnconfirmedTxs, error) {
-//				panic("mock out the UnconfirmedTxs method")
-//			},
-//			UnsubscribeFunc: func(ctx context.Context, subscriber string, query string) error {
-//				panic("mock out the Unsubscribe method")
-//			},
-//			UnsubscribeAllFunc: func(ctx context.Context, subscriber string) error {
-//				panic("mock out the UnsubscribeAll method")
-//			},
-//			ValidatorsFunc: func(ctx context.Context, height *int64, page *int, perPage *int) (*coretypes.ResultValidators, error) {
-//				panic("mock out the Validators method")
-//			},
-//		}
+// 		// make and configure a mocked Client
+// 		mockedClient := &ClientMock{
+// 			ABCIInfoFunc: func(contextMoqParam context.Context) (*coretypes.ResultABCIInfo, error) {
+// 				panic("mock out the ABCIInfo method")
+// 			},
+// 			ABCIQueryFunc: func(ctx context.Context, path string, data bytes.HexBytes) (*coretypes.ResultABCIQuery, error) {
+// 				panic("mock out the ABCIQuery method")
+// 			},
+// 			ABCIQueryWithOptionsFunc: func(ctx context.Context, path string, data bytes.HexBytes, opts rpcclient.ABCIQueryOptions) (*coretypes.ResultABCIQuery, error) {
+// 				panic("mock out the ABCIQueryWithOptions method")
+// 			},
+// 			BlockFunc: func(ctx context.Context, height *int64) (*coretypes.ResultBlock, error) {
+// 				panic("mock out the Block method")
+// 			},
+// 			BlockByHashFunc: func(ctx context.Context, hash []byte) (*coretypes.ResultBlock, error) {
+// 				panic("mock out the BlockByHash method")
+// 			},
+// 			BlockResultsFunc: func(ctx context.Context, height *int64) (*coretypes.ResultBlockResults, error) {
+// 				panic("mock out the BlockResults method")
+// 			},
+// 			BlockSearchFunc: func(ctx context.Context, query string, page *int, perPage *int, orderBy string) (*coretypes.ResultBlockSearch, error) {
+// 				panic("mock out the BlockSearch method")
+// 			},
+// 			BlockchainInfoFunc: func(ctx context.Context, minHeight int64, maxHeight int64) (*coretypes.ResultBlockchainInfo, error) {
+// 				panic("mock out the BlockchainInfo method")
+// 			},
+// 			BroadcastEvidenceFunc: func(contextMoqParam context.Context, evidence tenderminttypes.Evidence) (*coretypes.ResultBroadcastEvidence, error) {
+// 				panic("mock out the BroadcastEvidence method")
+// 			},
+// 			BroadcastTxAsyncFunc: func(contextMoqParam context.Context, tx tenderminttypes.Tx) (*coretypes.ResultBroadcastTx, error) {
+// 				panic("mock out the BroadcastTxAsync method")
+// 			},
+// 			BroadcastTxCommitFunc: func(contextMoqParam context.Context, tx tenderminttypes.Tx) (*coretypes.ResultBroadcastTxCommit, error) {
+// 				panic("mock out the BroadcastTxCommit method")
+// 			},
+// 			BroadcastTxSyncFunc: func(contextMoqParam context.Context, tx tenderminttypes.Tx) (*coretypes.ResultBroadcastTx, error) {
+// 				panic("mock out the BroadcastTxSync method")
+// 			},
+// 			CheckTxFunc: func(contextMoqParam context.Context, tx tenderminttypes.Tx) (*coretypes.ResultCheckTx, error) {
+// 				panic("mock out the CheckTx method")
+// 			},
+// 			CommitFunc: func(ctx context.Context, height *int64) (*coretypes.ResultCommit, error) {
+// 				panic("mock out the Commit method")
+// 			},
+// 			ConsensusParamsFunc: func(ctx context.Context, height *int64) (*coretypes.ResultConsensusParams, error) {
+// 				panic("mock out the ConsensusParams method")
+// 			},
+// 			ConsensusStateFunc: func(contextMoqParam context.Context) (*coretypes.ResultConsensusState, error) {
+// 				panic("mock out the ConsensusState method")
+// 			},
+// 			DumpConsensusStateFunc: func(contextMoqParam context.Context) (*coretypes.ResultDumpConsensusState, error) {
+// 				panic("mock out the DumpConsensusState method")
+// 			},
+// 			GenesisFunc: func(contextMoqParam context.Context) (*coretypes.ResultGenesis, error) {
+// 				panic("mock out the Genesis method")
+// 			},
+// 			GenesisChunkedFunc: func(contextMoqParam context.Context, v uint) (*coretypes.ResultGenesisChunk, error) {
+// 				panic("mock out the GenesisChunked method")
+// 			},
+// 			HealthFunc: func(contextMoqParam context.Context) (*coretypes.ResultHealth, error) {
+// 				panic("mock out the Health method")
+// 			},
+// 			IsRunningFunc: func() bool {
+// 				panic("mock out the IsRunning method")
+// 			},
+// 			NetInfoFunc: func(contextMoqParam context.Context) (*coretypes.ResultNetInfo, error) {
+// 				panic("mock out the NetInfo method")
+// 			},
+// 			NumUnconfirmedTxsFunc: func(contextMoqParam context.Context) (*coretypes.ResultUnconfirmedTxs, error) {
+// 				panic("mock out the NumUnconfirmedTxs method")
+// 			},
+// 			OnResetFunc: func() error {
+// 				panic("mock out the OnReset method")
+// 			},
+// 			OnStartFunc: func() error {
+// 				panic("mock out the OnStart method")
+// 			},
+// 			OnStopFunc: func()  {
+// 				panic("mock out the OnStop method")
+// 			},
+// 			QuitFunc: func() <-chan struct{} {
+// 				panic("mock out the Quit method")
+// 			},
+// 			ResetFunc: func() error {
+// 				panic("mock out the Reset method")
+// 			},
+// 			SetLoggerFunc: func(logger log.Logger)  {
+// 				panic("mock out the SetLogger method")
+// 			},
+// 			StartFunc: func() error {
+// 				panic("mock out the Start method")
+// 			},
+// 			StatusFunc: func(contextMoqParam context.Context) (*coretypes.ResultStatus, error) {
+// 				panic("mock out the Status method")
+// 			},
+// 			StopFunc: func() error {
+// 				panic("mock out the Stop method")
+// 			},
+// 			StringFunc: func() string {
+// 				panic("mock out the String method")
+// 			},
+// 			SubscribeFunc: func(ctx context.Context, subscriber string, query string, outCapacity ...int) (<-chan coretypes.ResultEvent, error) {
+// 				panic("mock out the Subscribe method")
+// 			},
+// 			TxFunc: func(ctx context.Context, hash []byte, prove bool) (*coretypes.ResultTx, error) {
+// 				panic("mock out the Tx method")
+// 			},
+// 			TxSearchFunc: func(ctx context.Context, query string, prove bool, page *int, perPage *int, orderBy string) (*coretypes.ResultTxSearch, error) {
+// 				panic("mock out the TxSearch method")
+// 			},
+// 			UnconfirmedTxsFunc: func(ctx context.Context, limit *int) (*coretypes.ResultUnconfirmedTxs, error) {
+// 				panic("mock out the UnconfirmedTxs method")
+// 			},
+// 			UnsubscribeFunc: func(ctx context.Context, subscriber string, query string) error {
+// 				panic("mock out the Unsubscribe method")
+// 			},
+// 			UnsubscribeAllFunc: func(ctx context.Context, subscriber string) error {
+// 				panic("mock out the UnsubscribeAll method")
+// 			},
+// 			ValidatorsFunc: func(ctx context.Context, height *int64, page *int, perPage *int) (*coretypes.ResultValidators, error) {
+// 				panic("mock out the Validators method")
+// 			},
+// 		}
 //
-//		// use mockedClient in code that requires Client
-//		// and then make assertions.
+// 		// use mockedClient in code that requires Client
+// 		// and then make assertions.
 //
-//	}
+// 	}
 type ClientMock struct {
 	// ABCIInfoFunc mocks the ABCIInfo method.
 	ABCIInfoFunc func(contextMoqParam context.Context) (*coretypes.ResultABCIInfo, error)
@@ -598,8 +598,7 @@ func (mock *ClientMock) ABCIInfo(contextMoqParam context.Context) (*coretypes.Re
 
 // ABCIInfoCalls gets all the calls that were made to ABCIInfo.
 // Check the length with:
-//
-//	len(mockedClient.ABCIInfoCalls())
+//     len(mockedClient.ABCIInfoCalls())
 func (mock *ClientMock) ABCIInfoCalls() []struct {
 	ContextMoqParam context.Context
 } {
@@ -634,8 +633,7 @@ func (mock *ClientMock) ABCIQuery(ctx context.Context, path string, data bytes.H
 
 // ABCIQueryCalls gets all the calls that were made to ABCIQuery.
 // Check the length with:
-//
-//	len(mockedClient.ABCIQueryCalls())
+//     len(mockedClient.ABCIQueryCalls())
 func (mock *ClientMock) ABCIQueryCalls() []struct {
 	Ctx  context.Context
 	Path string
@@ -676,8 +674,7 @@ func (mock *ClientMock) ABCIQueryWithOptions(ctx context.Context, path string, d
 
 // ABCIQueryWithOptionsCalls gets all the calls that were made to ABCIQueryWithOptions.
 // Check the length with:
-//
-//	len(mockedClient.ABCIQueryWithOptionsCalls())
+//     len(mockedClient.ABCIQueryWithOptionsCalls())
 func (mock *ClientMock) ABCIQueryWithOptionsCalls() []struct {
 	Ctx  context.Context
 	Path string
@@ -716,8 +713,7 @@ func (mock *ClientMock) Block(ctx context.Context, height *int64) (*coretypes.Re
 
 // BlockCalls gets all the calls that were made to Block.
 // Check the length with:
-//
-//	len(mockedClient.BlockCalls())
+//     len(mockedClient.BlockCalls())
 func (mock *ClientMock) BlockCalls() []struct {
 	Ctx    context.Context
 	Height *int64
@@ -752,8 +748,7 @@ func (mock *ClientMock) BlockByHash(ctx context.Context, hash []byte) (*coretype
 
 // BlockByHashCalls gets all the calls that were made to BlockByHash.
 // Check the length with:
-//
-//	len(mockedClient.BlockByHashCalls())
+//     len(mockedClient.BlockByHashCalls())
 func (mock *ClientMock) BlockByHashCalls() []struct {
 	Ctx  context.Context
 	Hash []byte
@@ -788,8 +783,7 @@ func (mock *ClientMock) BlockResults(ctx context.Context, height *int64) (*coret
 
 // BlockResultsCalls gets all the calls that were made to BlockResults.
 // Check the length with:
-//
-//	len(mockedClient.BlockResultsCalls())
+//     len(mockedClient.BlockResultsCalls())
 func (mock *ClientMock) BlockResultsCalls() []struct {
 	Ctx    context.Context
 	Height *int64
@@ -830,8 +824,7 @@ func (mock *ClientMock) BlockSearch(ctx context.Context, query string, page *int
 
 // BlockSearchCalls gets all the calls that were made to BlockSearch.
 // Check the length with:
-//
-//	len(mockedClient.BlockSearchCalls())
+//     len(mockedClient.BlockSearchCalls())
 func (mock *ClientMock) BlockSearchCalls() []struct {
 	Ctx     context.Context
 	Query   string
@@ -874,8 +867,7 @@ func (mock *ClientMock) BlockchainInfo(ctx context.Context, minHeight int64, max
 
 // BlockchainInfoCalls gets all the calls that were made to BlockchainInfo.
 // Check the length with:
-//
-//	len(mockedClient.BlockchainInfoCalls())
+//     len(mockedClient.BlockchainInfoCalls())
 func (mock *ClientMock) BlockchainInfoCalls() []struct {
 	Ctx       context.Context
 	MinHeight int64
@@ -912,8 +904,7 @@ func (mock *ClientMock) BroadcastEvidence(contextMoqParam context.Context, evide
 
 // BroadcastEvidenceCalls gets all the calls that were made to BroadcastEvidence.
 // Check the length with:
-//
-//	len(mockedClient.BroadcastEvidenceCalls())
+//     len(mockedClient.BroadcastEvidenceCalls())
 func (mock *ClientMock) BroadcastEvidenceCalls() []struct {
 	ContextMoqParam context.Context
 	Evidence        tenderminttypes.Evidence
@@ -948,8 +939,7 @@ func (mock *ClientMock) BroadcastTxAsync(contextMoqParam context.Context, tx ten
 
 // BroadcastTxAsyncCalls gets all the calls that were made to BroadcastTxAsync.
 // Check the length with:
-//
-//	len(mockedClient.BroadcastTxAsyncCalls())
+//     len(mockedClient.BroadcastTxAsyncCalls())
 func (mock *ClientMock) BroadcastTxAsyncCalls() []struct {
 	ContextMoqParam context.Context
 	Tx              tenderminttypes.Tx
@@ -984,8 +974,7 @@ func (mock *ClientMock) BroadcastTxCommit(contextMoqParam context.Context, tx te
 
 // BroadcastTxCommitCalls gets all the calls that were made to BroadcastTxCommit.
 // Check the length with:
-//
-//	len(mockedClient.BroadcastTxCommitCalls())
+//     len(mockedClient.BroadcastTxCommitCalls())
 func (mock *ClientMock) BroadcastTxCommitCalls() []struct {
 	ContextMoqParam context.Context
 	Tx              tenderminttypes.Tx
@@ -1020,8 +1009,7 @@ func (mock *ClientMock) BroadcastTxSync(contextMoqParam context.Context, tx tend
 
 // BroadcastTxSyncCalls gets all the calls that were made to BroadcastTxSync.
 // Check the length with:
-//
-//	len(mockedClient.BroadcastTxSyncCalls())
+//     len(mockedClient.BroadcastTxSyncCalls())
 func (mock *ClientMock) BroadcastTxSyncCalls() []struct {
 	ContextMoqParam context.Context
 	Tx              tenderminttypes.Tx
@@ -1056,8 +1044,7 @@ func (mock *ClientMock) CheckTx(contextMoqParam context.Context, tx tendermintty
 
 // CheckTxCalls gets all the calls that were made to CheckTx.
 // Check the length with:
-//
-//	len(mockedClient.CheckTxCalls())
+//     len(mockedClient.CheckTxCalls())
 func (mock *ClientMock) CheckTxCalls() []struct {
 	ContextMoqParam context.Context
 	Tx              tenderminttypes.Tx
@@ -1092,8 +1079,7 @@ func (mock *ClientMock) Commit(ctx context.Context, height *int64) (*coretypes.R
 
 // CommitCalls gets all the calls that were made to Commit.
 // Check the length with:
-//
-//	len(mockedClient.CommitCalls())
+//     len(mockedClient.CommitCalls())
 func (mock *ClientMock) CommitCalls() []struct {
 	Ctx    context.Context
 	Height *int64
@@ -1128,8 +1114,7 @@ func (mock *ClientMock) ConsensusParams(ctx context.Context, height *int64) (*co
 
 // ConsensusParamsCalls gets all the calls that were made to ConsensusParams.
 // Check the length with:
-//
-//	len(mockedClient.ConsensusParamsCalls())
+//     len(mockedClient.ConsensusParamsCalls())
 func (mock *ClientMock) ConsensusParamsCalls() []struct {
 	Ctx    context.Context
 	Height *int64
@@ -1162,8 +1147,7 @@ func (mock *ClientMock) ConsensusState(contextMoqParam context.Context) (*corety
 
 // ConsensusStateCalls gets all the calls that were made to ConsensusState.
 // Check the length with:
-//
-//	len(mockedClient.ConsensusStateCalls())
+//     len(mockedClient.ConsensusStateCalls())
 func (mock *ClientMock) ConsensusStateCalls() []struct {
 	ContextMoqParam context.Context
 } {
@@ -1194,8 +1178,7 @@ func (mock *ClientMock) DumpConsensusState(contextMoqParam context.Context) (*co
 
 // DumpConsensusStateCalls gets all the calls that were made to DumpConsensusState.
 // Check the length with:
-//
-//	len(mockedClient.DumpConsensusStateCalls())
+//     len(mockedClient.DumpConsensusStateCalls())
 func (mock *ClientMock) DumpConsensusStateCalls() []struct {
 	ContextMoqParam context.Context
 } {
@@ -1226,8 +1209,7 @@ func (mock *ClientMock) Genesis(contextMoqParam context.Context) (*coretypes.Res
 
 // GenesisCalls gets all the calls that were made to Genesis.
 // Check the length with:
-//
-//	len(mockedClient.GenesisCalls())
+//     len(mockedClient.GenesisCalls())
 func (mock *ClientMock) GenesisCalls() []struct {
 	ContextMoqParam context.Context
 } {
@@ -1260,8 +1242,7 @@ func (mock *ClientMock) GenesisChunked(contextMoqParam context.Context, v uint) 
 
 // GenesisChunkedCalls gets all the calls that were made to GenesisChunked.
 // Check the length with:
-//
-//	len(mockedClient.GenesisChunkedCalls())
+//     len(mockedClient.GenesisChunkedCalls())
 func (mock *ClientMock) GenesisChunkedCalls() []struct {
 	ContextMoqParam context.Context
 	V               uint
@@ -1294,8 +1275,7 @@ func (mock *ClientMock) Health(contextMoqParam context.Context) (*coretypes.Resu
 
 // HealthCalls gets all the calls that were made to Health.
 // Check the length with:
-//
-//	len(mockedClient.HealthCalls())
+//     len(mockedClient.HealthCalls())
 func (mock *ClientMock) HealthCalls() []struct {
 	ContextMoqParam context.Context
 } {
@@ -1323,8 +1303,7 @@ func (mock *ClientMock) IsRunning() bool {
 
 // IsRunningCalls gets all the calls that were made to IsRunning.
 // Check the length with:
-//
-//	len(mockedClient.IsRunningCalls())
+//     len(mockedClient.IsRunningCalls())
 func (mock *ClientMock) IsRunningCalls() []struct {
 } {
 	var calls []struct {
@@ -1353,8 +1332,7 @@ func (mock *ClientMock) NetInfo(contextMoqParam context.Context) (*coretypes.Res
 
 // NetInfoCalls gets all the calls that were made to NetInfo.
 // Check the length with:
-//
-//	len(mockedClient.NetInfoCalls())
+//     len(mockedClient.NetInfoCalls())
 func (mock *ClientMock) NetInfoCalls() []struct {
 	ContextMoqParam context.Context
 } {
@@ -1385,8 +1363,7 @@ func (mock *ClientMock) NumUnconfirmedTxs(contextMoqParam context.Context) (*cor
 
 // NumUnconfirmedTxsCalls gets all the calls that were made to NumUnconfirmedTxs.
 // Check the length with:
-//
-//	len(mockedClient.NumUnconfirmedTxsCalls())
+//     len(mockedClient.NumUnconfirmedTxsCalls())
 func (mock *ClientMock) NumUnconfirmedTxsCalls() []struct {
 	ContextMoqParam context.Context
 } {
@@ -1414,8 +1391,7 @@ func (mock *ClientMock) OnReset() error {
 
 // OnResetCalls gets all the calls that were made to OnReset.
 // Check the length with:
-//
-//	len(mockedClient.OnResetCalls())
+//     len(mockedClient.OnResetCalls())
 func (mock *ClientMock) OnResetCalls() []struct {
 } {
 	var calls []struct {
@@ -1441,8 +1417,7 @@ func (mock *ClientMock) OnStart() error {
 
 // OnStartCalls gets all the calls that were made to OnStart.
 // Check the length with:
-//
-//	len(mockedClient.OnStartCalls())
+//     len(mockedClient.OnStartCalls())
 func (mock *ClientMock) OnStartCalls() []struct {
 } {
 	var calls []struct {
@@ -1468,8 +1443,7 @@ func (mock *ClientMock) OnStop() {
 
 // OnStopCalls gets all the calls that were made to OnStop.
 // Check the length with:
-//
-//	len(mockedClient.OnStopCalls())
+//     len(mockedClient.OnStopCalls())
 func (mock *ClientMock) OnStopCalls() []struct {
 } {
 	var calls []struct {
@@ -1495,8 +1469,7 @@ func (mock *ClientMock) Quit() <-chan struct{} {
 
 // QuitCalls gets all the calls that were made to Quit.
 // Check the length with:
-//
-//	len(mockedClient.QuitCalls())
+//     len(mockedClient.QuitCalls())
 func (mock *ClientMock) QuitCalls() []struct {
 } {
 	var calls []struct {
@@ -1522,8 +1495,7 @@ func (mock *ClientMock) Reset() error {
 
 // ResetCalls gets all the calls that were made to Reset.
 // Check the length with:
-//
-//	len(mockedClient.ResetCalls())
+//     len(mockedClient.ResetCalls())
 func (mock *ClientMock) ResetCalls() []struct {
 } {
 	var calls []struct {
@@ -1552,8 +1524,7 @@ func (mock *ClientMock) SetLogger(logger log.Logger) {
 
 // SetLoggerCalls gets all the calls that were made to SetLogger.
 // Check the length with:
-//
-//	len(mockedClient.SetLoggerCalls())
+//     len(mockedClient.SetLoggerCalls())
 func (mock *ClientMock) SetLoggerCalls() []struct {
 	Logger log.Logger
 } {
@@ -1581,8 +1552,7 @@ func (mock *ClientMock) Start() error {
 
 // StartCalls gets all the calls that were made to Start.
 // Check the length with:
-//
-//	len(mockedClient.StartCalls())
+//     len(mockedClient.StartCalls())
 func (mock *ClientMock) StartCalls() []struct {
 } {
 	var calls []struct {
@@ -1611,8 +1581,7 @@ func (mock *ClientMock) Status(contextMoqParam context.Context) (*coretypes.Resu
 
 // StatusCalls gets all the calls that were made to Status.
 // Check the length with:
-//
-//	len(mockedClient.StatusCalls())
+//     len(mockedClient.StatusCalls())
 func (mock *ClientMock) StatusCalls() []struct {
 	ContextMoqParam context.Context
 } {
@@ -1640,8 +1609,7 @@ func (mock *ClientMock) Stop() error {
 
 // StopCalls gets all the calls that were made to Stop.
 // Check the length with:
-//
-//	len(mockedClient.StopCalls())
+//     len(mockedClient.StopCalls())
 func (mock *ClientMock) StopCalls() []struct {
 } {
 	var calls []struct {
@@ -1667,8 +1635,7 @@ func (mock *ClientMock) String() string {
 
 // StringCalls gets all the calls that were made to String.
 // Check the length with:
-//
-//	len(mockedClient.StringCalls())
+//     len(mockedClient.StringCalls())
 func (mock *ClientMock) StringCalls() []struct {
 } {
 	var calls []struct {
@@ -1703,8 +1670,7 @@ func (mock *ClientMock) Subscribe(ctx context.Context, subscriber string, query 
 
 // SubscribeCalls gets all the calls that were made to Subscribe.
 // Check the length with:
-//
-//	len(mockedClient.SubscribeCalls())
+//     len(mockedClient.SubscribeCalls())
 func (mock *ClientMock) SubscribeCalls() []struct {
 	Ctx         context.Context
 	Subscriber  string
@@ -1745,8 +1711,7 @@ func (mock *ClientMock) Tx(ctx context.Context, hash []byte, prove bool) (*coret
 
 // TxCalls gets all the calls that were made to Tx.
 // Check the length with:
-//
-//	len(mockedClient.TxCalls())
+//     len(mockedClient.TxCalls())
 func (mock *ClientMock) TxCalls() []struct {
 	Ctx   context.Context
 	Hash  []byte
@@ -1791,8 +1756,7 @@ func (mock *ClientMock) TxSearch(ctx context.Context, query string, prove bool, 
 
 // TxSearchCalls gets all the calls that were made to TxSearch.
 // Check the length with:
-//
-//	len(mockedClient.TxSearchCalls())
+//     len(mockedClient.TxSearchCalls())
 func (mock *ClientMock) TxSearchCalls() []struct {
 	Ctx     context.Context
 	Query   string
@@ -1835,8 +1799,7 @@ func (mock *ClientMock) UnconfirmedTxs(ctx context.Context, limit *int) (*corety
 
 // UnconfirmedTxsCalls gets all the calls that were made to UnconfirmedTxs.
 // Check the length with:
-//
-//	len(mockedClient.UnconfirmedTxsCalls())
+//     len(mockedClient.UnconfirmedTxsCalls())
 func (mock *ClientMock) UnconfirmedTxsCalls() []struct {
 	Ctx   context.Context
 	Limit *int
@@ -1873,8 +1836,7 @@ func (mock *ClientMock) Unsubscribe(ctx context.Context, subscriber string, quer
 
 // UnsubscribeCalls gets all the calls that were made to Unsubscribe.
 // Check the length with:
-//
-//	len(mockedClient.UnsubscribeCalls())
+//     len(mockedClient.UnsubscribeCalls())
 func (mock *ClientMock) UnsubscribeCalls() []struct {
 	Ctx        context.Context
 	Subscriber string
@@ -1911,8 +1873,7 @@ func (mock *ClientMock) UnsubscribeAll(ctx context.Context, subscriber string) e
 
 // UnsubscribeAllCalls gets all the calls that were made to UnsubscribeAll.
 // Check the length with:
-//
-//	len(mockedClient.UnsubscribeAllCalls())
+//     len(mockedClient.UnsubscribeAllCalls())
 func (mock *ClientMock) UnsubscribeAllCalls() []struct {
 	Ctx        context.Context
 	Subscriber string
@@ -1951,8 +1912,7 @@ func (mock *ClientMock) Validators(ctx context.Context, height *int64, page *int
 
 // ValidatorsCalls gets all the calls that were made to Validators.
 // Check the length with:
-//
-//	len(mockedClient.ValidatorsCalls())
+//     len(mockedClient.ValidatorsCalls())
 func (mock *ClientMock) ValidatorsCalls() []struct {
 	Ctx     context.Context
 	Height  *int64
@@ -1977,28 +1937,28 @@ var _ AccountRetriever = &AccountRetrieverMock{}
 
 // AccountRetrieverMock is a mock implementation of AccountRetriever.
 //
-//	func TestSomethingThatUsesAccountRetriever(t *testing.T) {
+// 	func TestSomethingThatUsesAccountRetriever(t *testing.T) {
 //
-//		// make and configure a mocked AccountRetriever
-//		mockedAccountRetriever := &AccountRetrieverMock{
-//			EnsureExistsFunc: func(clientCtx sdkClient.Context, addr sdk.AccAddress) error {
-//				panic("mock out the EnsureExists method")
-//			},
-//			GetAccountFunc: func(clientCtx sdkClient.Context, addr sdk.AccAddress) (sdkClient.Account, error) {
-//				panic("mock out the GetAccount method")
-//			},
-//			GetAccountNumberSequenceFunc: func(clientCtx sdkClient.Context, addr sdk.AccAddress) (uint64, uint64, error) {
-//				panic("mock out the GetAccountNumberSequence method")
-//			},
-//			GetAccountWithHeightFunc: func(clientCtx sdkClient.Context, addr sdk.AccAddress) (sdkClient.Account, int64, error) {
-//				panic("mock out the GetAccountWithHeight method")
-//			},
-//		}
+// 		// make and configure a mocked AccountRetriever
+// 		mockedAccountRetriever := &AccountRetrieverMock{
+// 			EnsureExistsFunc: func(clientCtx sdkClient.Context, addr sdk.AccAddress) error {
+// 				panic("mock out the EnsureExists method")
+// 			},
+// 			GetAccountFunc: func(clientCtx sdkClient.Context, addr sdk.AccAddress) (sdkClient.Account, error) {
+// 				panic("mock out the GetAccount method")
+// 			},
+// 			GetAccountNumberSequenceFunc: func(clientCtx sdkClient.Context, addr sdk.AccAddress) (uint64, uint64, error) {
+// 				panic("mock out the GetAccountNumberSequence method")
+// 			},
+// 			GetAccountWithHeightFunc: func(clientCtx sdkClient.Context, addr sdk.AccAddress) (sdkClient.Account, int64, error) {
+// 				panic("mock out the GetAccountWithHeight method")
+// 			},
+// 		}
 //
-//		// use mockedAccountRetriever in code that requires AccountRetriever
-//		// and then make assertions.
+// 		// use mockedAccountRetriever in code that requires AccountRetriever
+// 		// and then make assertions.
 //
-//	}
+// 	}
 type AccountRetrieverMock struct {
 	// EnsureExistsFunc mocks the EnsureExists method.
 	EnsureExistsFunc func(clientCtx sdkClient.Context, addr sdk.AccAddress) error
@@ -2069,8 +2029,7 @@ func (mock *AccountRetrieverMock) EnsureExists(clientCtx sdkClient.Context, addr
 
 // EnsureExistsCalls gets all the calls that were made to EnsureExists.
 // Check the length with:
-//
-//	len(mockedAccountRetriever.EnsureExistsCalls())
+//     len(mockedAccountRetriever.EnsureExistsCalls())
 func (mock *AccountRetrieverMock) EnsureExistsCalls() []struct {
 	ClientCtx sdkClient.Context
 	Addr      sdk.AccAddress
@@ -2105,8 +2064,7 @@ func (mock *AccountRetrieverMock) GetAccount(clientCtx sdkClient.Context, addr s
 
 // GetAccountCalls gets all the calls that were made to GetAccount.
 // Check the length with:
-//
-//	len(mockedAccountRetriever.GetAccountCalls())
+//     len(mockedAccountRetriever.GetAccountCalls())
 func (mock *AccountRetrieverMock) GetAccountCalls() []struct {
 	ClientCtx sdkClient.Context
 	Addr      sdk.AccAddress
@@ -2141,8 +2099,7 @@ func (mock *AccountRetrieverMock) GetAccountNumberSequence(clientCtx sdkClient.C
 
 // GetAccountNumberSequenceCalls gets all the calls that were made to GetAccountNumberSequence.
 // Check the length with:
-//
-//	len(mockedAccountRetriever.GetAccountNumberSequenceCalls())
+//     len(mockedAccountRetriever.GetAccountNumberSequenceCalls())
 func (mock *AccountRetrieverMock) GetAccountNumberSequenceCalls() []struct {
 	ClientCtx sdkClient.Context
 	Addr      sdk.AccAddress
@@ -2177,8 +2134,7 @@ func (mock *AccountRetrieverMock) GetAccountWithHeight(clientCtx sdkClient.Conte
 
 // GetAccountWithHeightCalls gets all the calls that were made to GetAccountWithHeight.
 // Check the length with:
-//
-//	len(mockedAccountRetriever.GetAccountWithHeightCalls())
+//     len(mockedAccountRetriever.GetAccountWithHeightCalls())
 func (mock *AccountRetrieverMock) GetAccountWithHeightCalls() []struct {
 	ClientCtx sdkClient.Context
 	Addr      sdk.AccAddress
@@ -2199,73 +2155,73 @@ var _ Keyring = &KeyringMock{}
 
 // KeyringMock is a mock implementation of Keyring.
 //
-//	func TestSomethingThatUsesKeyring(t *testing.T) {
+// 	func TestSomethingThatUsesKeyring(t *testing.T) {
 //
-//		// make and configure a mocked Keyring
-//		mockedKeyring := &KeyringMock{
-//			DeleteFunc: func(uid string) error {
-//				panic("mock out the Delete method")
-//			},
-//			DeleteByAddressFunc: func(address sdk.Address) error {
-//				panic("mock out the DeleteByAddress method")
-//			},
-//			ExportPrivKeyArmorFunc: func(uid string, encryptPassphrase string) (string, error) {
-//				panic("mock out the ExportPrivKeyArmor method")
-//			},
-//			ExportPrivKeyArmorByAddressFunc: func(address sdk.Address, encryptPassphrase string) (string, error) {
-//				panic("mock out the ExportPrivKeyArmorByAddress method")
-//			},
-//			ExportPubKeyArmorFunc: func(uid string) (string, error) {
-//				panic("mock out the ExportPubKeyArmor method")
-//			},
-//			ExportPubKeyArmorByAddressFunc: func(address sdk.Address) (string, error) {
-//				panic("mock out the ExportPubKeyArmorByAddress method")
-//			},
-//			ImportPrivKeyFunc: func(uid string, armor string, passphrase string) error {
-//				panic("mock out the ImportPrivKey method")
-//			},
-//			ImportPubKeyFunc: func(uid string, armor string) error {
-//				panic("mock out the ImportPubKey method")
-//			},
-//			KeyFunc: func(uid string) (keyring.Info, error) {
-//				panic("mock out the Key method")
-//			},
-//			KeyByAddressFunc: func(address sdk.Address) (keyring.Info, error) {
-//				panic("mock out the KeyByAddress method")
-//			},
-//			ListFunc: func() ([]keyring.Info, error) {
-//				panic("mock out the List method")
-//			},
-//			NewAccountFunc: func(uid string, mnemonic string, bip39Passphrase string, hdPath string, algo keyring.SignatureAlgo) (keyring.Info, error) {
-//				panic("mock out the NewAccount method")
-//			},
-//			NewMnemonicFunc: func(uid string, language keyring.Language, hdPath string, bip39Passphrase string, algo keyring.SignatureAlgo) (keyring.Info, string, error) {
-//				panic("mock out the NewMnemonic method")
-//			},
-//			SaveLedgerKeyFunc: func(uid string, algo keyring.SignatureAlgo, hrp string, coinType uint32, account uint32, index uint32) (keyring.Info, error) {
-//				panic("mock out the SaveLedgerKey method")
-//			},
-//			SaveMultisigFunc: func(uid string, pubkey cryptotypes.PubKey) (keyring.Info, error) {
-//				panic("mock out the SaveMultisig method")
-//			},
-//			SavePubKeyFunc: func(uid string, pubkey cryptotypes.PubKey, algo hd.PubKeyType) (keyring.Info, error) {
-//				panic("mock out the SavePubKey method")
-//			},
-//			SignFunc: func(uid string, msg []byte) ([]byte, cryptotypes.PubKey, error) {
-//				panic("mock out the Sign method")
-//			},
-//			SignByAddressFunc: func(address sdk.Address, msg []byte) ([]byte, cryptotypes.PubKey, error) {
-//				panic("mock out the SignByAddress method")
-//			},
-//			SupportedAlgorithmsFunc: func() (keyring.SigningAlgoList, keyring.SigningAlgoList) {
-//				panic("mock out the SupportedAlgorithms method")
-//			},
-//		}
+// 		// make and configure a mocked Keyring
+// 		mockedKeyring := &KeyringMock{
+// 			DeleteFunc: func(uid string) error {
+// 				panic("mock out the Delete method")
+// 			},
+// 			DeleteByAddressFunc: func(address sdk.Address) error {
+// 				panic("mock out the DeleteByAddress method")
+// 			},
+// 			ExportPrivKeyArmorFunc: func(uid string, encryptPassphrase string) (string, error) {
+// 				panic("mock out the ExportPrivKeyArmor method")
+// 			},
+// 			ExportPrivKeyArmorByAddressFunc: func(address sdk.Address, encryptPassphrase string) (string, error) {
+// 				panic("mock out the ExportPrivKeyArmorByAddress method")
+// 			},
+// 			ExportPubKeyArmorFunc: func(uid string) (string, error) {
+// 				panic("mock out the ExportPubKeyArmor method")
+// 			},
+// 			ExportPubKeyArmorByAddressFunc: func(address sdk.Address) (string, error) {
+// 				panic("mock out the ExportPubKeyArmorByAddress method")
+// 			},
+// 			ImportPrivKeyFunc: func(uid string, armor string, passphrase string) error {
+// 				panic("mock out the ImportPrivKey method")
+// 			},
+// 			ImportPubKeyFunc: func(uid string, armor string) error {
+// 				panic("mock out the ImportPubKey method")
+// 			},
+// 			KeyFunc: func(uid string) (keyring.Info, error) {
+// 				panic("mock out the Key method")
+// 			},
+// 			KeyByAddressFunc: func(address sdk.Address) (keyring.Info, error) {
+// 				panic("mock out the KeyByAddress method")
+// 			},
+// 			ListFunc: func() ([]keyring.Info, error) {
+// 				panic("mock out the List method")
+// 			},
+// 			NewAccountFunc: func(uid string, mnemonic string, bip39Passphrase string, hdPath string, algo keyring.SignatureAlgo) (keyring.Info, error) {
+// 				panic("mock out the NewAccount method")
+// 			},
+// 			NewMnemonicFunc: func(uid string, language keyring.Language, hdPath string, bip39Passphrase string, algo keyring.SignatureAlgo) (keyring.Info, string, error) {
+// 				panic("mock out the NewMnemonic method")
+// 			},
+// 			SaveLedgerKeyFunc: func(uid string, algo keyring.SignatureAlgo, hrp string, coinType uint32, account uint32, index uint32) (keyring.Info, error) {
+// 				panic("mock out the SaveLedgerKey method")
+// 			},
+// 			SaveMultisigFunc: func(uid string, pubkey cryptotypes.PubKey) (keyring.Info, error) {
+// 				panic("mock out the SaveMultisig method")
+// 			},
+// 			SavePubKeyFunc: func(uid string, pubkey cryptotypes.PubKey, algo hd.PubKeyType) (keyring.Info, error) {
+// 				panic("mock out the SavePubKey method")
+// 			},
+// 			SignFunc: func(uid string, msg []byte) ([]byte, cryptotypes.PubKey, error) {
+// 				panic("mock out the Sign method")
+// 			},
+// 			SignByAddressFunc: func(address sdk.Address, msg []byte) ([]byte, cryptotypes.PubKey, error) {
+// 				panic("mock out the SignByAddress method")
+// 			},
+// 			SupportedAlgorithmsFunc: func() (keyring.SigningAlgoList, keyring.SigningAlgoList) {
+// 				panic("mock out the SupportedAlgorithms method")
+// 			},
+// 		}
 //
-//		// use mockedKeyring in code that requires Keyring
-//		// and then make assertions.
+// 		// use mockedKeyring in code that requires Keyring
+// 		// and then make assertions.
 //
-//	}
+// 	}
 type KeyringMock struct {
 	// DeleteFunc mocks the Delete method.
 	DeleteFunc func(uid string) error
@@ -2503,8 +2459,7 @@ func (mock *KeyringMock) Delete(uid string) error {
 
 // DeleteCalls gets all the calls that were made to Delete.
 // Check the length with:
-//
-//	len(mockedKeyring.DeleteCalls())
+//     len(mockedKeyring.DeleteCalls())
 func (mock *KeyringMock) DeleteCalls() []struct {
 	UID string
 } {
@@ -2535,8 +2490,7 @@ func (mock *KeyringMock) DeleteByAddress(address sdk.Address) error {
 
 // DeleteByAddressCalls gets all the calls that were made to DeleteByAddress.
 // Check the length with:
-//
-//	len(mockedKeyring.DeleteByAddressCalls())
+//     len(mockedKeyring.DeleteByAddressCalls())
 func (mock *KeyringMock) DeleteByAddressCalls() []struct {
 	Address sdk.Address
 } {
@@ -2569,8 +2523,7 @@ func (mock *KeyringMock) ExportPrivKeyArmor(uid string, encryptPassphrase string
 
 // ExportPrivKeyArmorCalls gets all the calls that were made to ExportPrivKeyArmor.
 // Check the length with:
-//
-//	len(mockedKeyring.ExportPrivKeyArmorCalls())
+//     len(mockedKeyring.ExportPrivKeyArmorCalls())
 func (mock *KeyringMock) ExportPrivKeyArmorCalls() []struct {
 	UID               string
 	EncryptPassphrase string
@@ -2605,8 +2558,7 @@ func (mock *KeyringMock) ExportPrivKeyArmorByAddress(address sdk.Address, encryp
 
 // ExportPrivKeyArmorByAddressCalls gets all the calls that were made to ExportPrivKeyArmorByAddress.
 // Check the length with:
-//
-//	len(mockedKeyring.ExportPrivKeyArmorByAddressCalls())
+//     len(mockedKeyring.ExportPrivKeyArmorByAddressCalls())
 func (mock *KeyringMock) ExportPrivKeyArmorByAddressCalls() []struct {
 	Address           sdk.Address
 	EncryptPassphrase string
@@ -2639,8 +2591,7 @@ func (mock *KeyringMock) ExportPubKeyArmor(uid string) (string, error) {
 
 // ExportPubKeyArmorCalls gets all the calls that were made to ExportPubKeyArmor.
 // Check the length with:
-//
-//	len(mockedKeyring.ExportPubKeyArmorCalls())
+//     len(mockedKeyring.ExportPubKeyArmorCalls())
 func (mock *KeyringMock) ExportPubKeyArmorCalls() []struct {
 	UID string
 } {
@@ -2671,8 +2622,7 @@ func (mock *KeyringMock) ExportPubKeyArmorByAddress(address sdk.Address) (string
 
 // ExportPubKeyArmorByAddressCalls gets all the calls that were made to ExportPubKeyArmorByAddress.
 // Check the length with:
-//
-//	len(mockedKeyring.ExportPubKeyArmorByAddressCalls())
+//     len(mockedKeyring.ExportPubKeyArmorByAddressCalls())
 func (mock *KeyringMock) ExportPubKeyArmorByAddressCalls() []struct {
 	Address sdk.Address
 } {
@@ -2707,8 +2657,7 @@ func (mock *KeyringMock) ImportPrivKey(uid string, armor string, passphrase stri
 
 // ImportPrivKeyCalls gets all the calls that were made to ImportPrivKey.
 // Check the length with:
-//
-//	len(mockedKeyring.ImportPrivKeyCalls())
+//     len(mockedKeyring.ImportPrivKeyCalls())
 func (mock *KeyringMock) ImportPrivKeyCalls() []struct {
 	UID        string
 	Armor      string
@@ -2745,8 +2694,7 @@ func (mock *KeyringMock) ImportPubKey(uid string, armor string) error {
 
 // ImportPubKeyCalls gets all the calls that were made to ImportPubKey.
 // Check the length with:
-//
-//	len(mockedKeyring.ImportPubKeyCalls())
+//     len(mockedKeyring.ImportPubKeyCalls())
 func (mock *KeyringMock) ImportPubKeyCalls() []struct {
 	UID   string
 	Armor string
@@ -2779,8 +2727,7 @@ func (mock *KeyringMock) Key(uid string) (keyring.Info, error) {
 
 // KeyCalls gets all the calls that were made to Key.
 // Check the length with:
-//
-//	len(mockedKeyring.KeyCalls())
+//     len(mockedKeyring.KeyCalls())
 func (mock *KeyringMock) KeyCalls() []struct {
 	UID string
 } {
@@ -2811,8 +2758,7 @@ func (mock *KeyringMock) KeyByAddress(address sdk.Address) (keyring.Info, error)
 
 // KeyByAddressCalls gets all the calls that were made to KeyByAddress.
 // Check the length with:
-//
-//	len(mockedKeyring.KeyByAddressCalls())
+//     len(mockedKeyring.KeyByAddressCalls())
 func (mock *KeyringMock) KeyByAddressCalls() []struct {
 	Address sdk.Address
 } {
@@ -2840,8 +2786,7 @@ func (mock *KeyringMock) List() ([]keyring.Info, error) {
 
 // ListCalls gets all the calls that were made to List.
 // Check the length with:
-//
-//	len(mockedKeyring.ListCalls())
+//     len(mockedKeyring.ListCalls())
 func (mock *KeyringMock) ListCalls() []struct {
 } {
 	var calls []struct {
@@ -2878,8 +2823,7 @@ func (mock *KeyringMock) NewAccount(uid string, mnemonic string, bip39Passphrase
 
 // NewAccountCalls gets all the calls that were made to NewAccount.
 // Check the length with:
-//
-//	len(mockedKeyring.NewAccountCalls())
+//     len(mockedKeyring.NewAccountCalls())
 func (mock *KeyringMock) NewAccountCalls() []struct {
 	UID             string
 	Mnemonic        string
@@ -2926,8 +2870,7 @@ func (mock *KeyringMock) NewMnemonic(uid string, language keyring.Language, hdPa
 
 // NewMnemonicCalls gets all the calls that were made to NewMnemonic.
 // Check the length with:
-//
-//	len(mockedKeyring.NewMnemonicCalls())
+//     len(mockedKeyring.NewMnemonicCalls())
 func (mock *KeyringMock) NewMnemonicCalls() []struct {
 	UID             string
 	Language        keyring.Language
@@ -2976,8 +2919,7 @@ func (mock *KeyringMock) SaveLedgerKey(uid string, algo keyring.SignatureAlgo, h
 
 // SaveLedgerKeyCalls gets all the calls that were made to SaveLedgerKey.
 // Check the length with:
-//
-//	len(mockedKeyring.SaveLedgerKeyCalls())
+//     len(mockedKeyring.SaveLedgerKeyCalls())
 func (mock *KeyringMock) SaveLedgerKeyCalls() []struct {
 	UID      string
 	Algo     keyring.SignatureAlgo
@@ -3020,8 +2962,7 @@ func (mock *KeyringMock) SaveMultisig(uid string, pubkey cryptotypes.PubKey) (ke
 
 // SaveMultisigCalls gets all the calls that were made to SaveMultisig.
 // Check the length with:
-//
-//	len(mockedKeyring.SaveMultisigCalls())
+//     len(mockedKeyring.SaveMultisigCalls())
 func (mock *KeyringMock) SaveMultisigCalls() []struct {
 	UID    string
 	Pubkey cryptotypes.PubKey
@@ -3058,8 +2999,7 @@ func (mock *KeyringMock) SavePubKey(uid string, pubkey cryptotypes.PubKey, algo 
 
 // SavePubKeyCalls gets all the calls that were made to SavePubKey.
 // Check the length with:
-//
-//	len(mockedKeyring.SavePubKeyCalls())
+//     len(mockedKeyring.SavePubKeyCalls())
 func (mock *KeyringMock) SavePubKeyCalls() []struct {
 	UID    string
 	Pubkey cryptotypes.PubKey
@@ -3096,8 +3036,7 @@ func (mock *KeyringMock) Sign(uid string, msg []byte) ([]byte, cryptotypes.PubKe
 
 // SignCalls gets all the calls that were made to Sign.
 // Check the length with:
-//
-//	len(mockedKeyring.SignCalls())
+//     len(mockedKeyring.SignCalls())
 func (mock *KeyringMock) SignCalls() []struct {
 	UID string
 	Msg []byte
@@ -3132,8 +3071,7 @@ func (mock *KeyringMock) SignByAddress(address sdk.Address, msg []byte) ([]byte,
 
 // SignByAddressCalls gets all the calls that were made to SignByAddress.
 // Check the length with:
-//
-//	len(mockedKeyring.SignByAddressCalls())
+//     len(mockedKeyring.SignByAddressCalls())
 func (mock *KeyringMock) SignByAddressCalls() []struct {
 	Address sdk.Address
 	Msg     []byte
@@ -3163,8 +3101,7 @@ func (mock *KeyringMock) SupportedAlgorithms() (keyring.SigningAlgoList, keyring
 
 // SupportedAlgorithmsCalls gets all the calls that were made to SupportedAlgorithms.
 // Check the length with:
-//
-//	len(mockedKeyring.SupportedAlgorithmsCalls())
+//     len(mockedKeyring.SupportedAlgorithmsCalls())
 func (mock *KeyringMock) SupportedAlgorithmsCalls() []struct {
 } {
 	var calls []struct {
@@ -3181,34 +3118,34 @@ var _ Info = &InfoMock{}
 
 // InfoMock is a mock implementation of Info.
 //
-//	func TestSomethingThatUsesInfo(t *testing.T) {
+// 	func TestSomethingThatUsesInfo(t *testing.T) {
 //
-//		// make and configure a mocked Info
-//		mockedInfo := &InfoMock{
-//			GetAddressFunc: func() sdk.AccAddress {
-//				panic("mock out the GetAddress method")
-//			},
-//			GetAlgoFunc: func() hd.PubKeyType {
-//				panic("mock out the GetAlgo method")
-//			},
-//			GetNameFunc: func() string {
-//				panic("mock out the GetName method")
-//			},
-//			GetPathFunc: func() (*hd.BIP44Params, error) {
-//				panic("mock out the GetPath method")
-//			},
-//			GetPubKeyFunc: func() cryptotypes.PubKey {
-//				panic("mock out the GetPubKey method")
-//			},
-//			GetTypeFunc: func() keyring.KeyType {
-//				panic("mock out the GetType method")
-//			},
-//		}
+// 		// make and configure a mocked Info
+// 		mockedInfo := &InfoMock{
+// 			GetAddressFunc: func() sdk.AccAddress {
+// 				panic("mock out the GetAddress method")
+// 			},
+// 			GetAlgoFunc: func() hd.PubKeyType {
+// 				panic("mock out the GetAlgo method")
+// 			},
+// 			GetNameFunc: func() string {
+// 				panic("mock out the GetName method")
+// 			},
+// 			GetPathFunc: func() (*hd.BIP44Params, error) {
+// 				panic("mock out the GetPath method")
+// 			},
+// 			GetPubKeyFunc: func() cryptotypes.PubKey {
+// 				panic("mock out the GetPubKey method")
+// 			},
+// 			GetTypeFunc: func() keyring.KeyType {
+// 				panic("mock out the GetType method")
+// 			},
+// 		}
 //
-//		// use mockedInfo in code that requires Info
-//		// and then make assertions.
+// 		// use mockedInfo in code that requires Info
+// 		// and then make assertions.
 //
-//	}
+// 	}
 type InfoMock struct {
 	// GetAddressFunc mocks the GetAddress method.
 	GetAddressFunc func() sdk.AccAddress
@@ -3272,8 +3209,7 @@ func (mock *InfoMock) GetAddress() sdk.AccAddress {
 
 // GetAddressCalls gets all the calls that were made to GetAddress.
 // Check the length with:
-//
-//	len(mockedInfo.GetAddressCalls())
+//     len(mockedInfo.GetAddressCalls())
 func (mock *InfoMock) GetAddressCalls() []struct {
 } {
 	var calls []struct {
@@ -3299,8 +3235,7 @@ func (mock *InfoMock) GetAlgo() hd.PubKeyType {
 
 // GetAlgoCalls gets all the calls that were made to GetAlgo.
 // Check the length with:
-//
-//	len(mockedInfo.GetAlgoCalls())
+//     len(mockedInfo.GetAlgoCalls())
 func (mock *InfoMock) GetAlgoCalls() []struct {
 } {
 	var calls []struct {
@@ -3326,8 +3261,7 @@ func (mock *InfoMock) GetName() string {
 
 // GetNameCalls gets all the calls that were made to GetName.
 // Check the length with:
-//
-//	len(mockedInfo.GetNameCalls())
+//     len(mockedInfo.GetNameCalls())
 func (mock *InfoMock) GetNameCalls() []struct {
 } {
 	var calls []struct {
@@ -3353,8 +3287,7 @@ func (mock *InfoMock) GetPath() (*hd.BIP44Params, error) {
 
 // GetPathCalls gets all the calls that were made to GetPath.
 // Check the length with:
-//
-//	len(mockedInfo.GetPathCalls())
+//     len(mockedInfo.GetPathCalls())
 func (mock *InfoMock) GetPathCalls() []struct {
 } {
 	var calls []struct {
@@ -3380,8 +3313,7 @@ func (mock *InfoMock) GetPubKey() cryptotypes.PubKey {
 
 // GetPubKeyCalls gets all the calls that were made to GetPubKey.
 // Check the length with:
-//
-//	len(mockedInfo.GetPubKeyCalls())
+//     len(mockedInfo.GetPubKeyCalls())
 func (mock *InfoMock) GetPubKeyCalls() []struct {
 } {
 	var calls []struct {
@@ -3407,8 +3339,7 @@ func (mock *InfoMock) GetType() keyring.KeyType {
 
 // GetTypeCalls gets all the calls that were made to GetType.
 // Check the length with:
-//
-//	len(mockedInfo.GetTypeCalls())
+//     len(mockedInfo.GetTypeCalls())
 func (mock *InfoMock) GetTypeCalls() []struct {
 } {
 	var calls []struct {

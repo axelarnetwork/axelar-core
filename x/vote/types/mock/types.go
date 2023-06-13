@@ -15,28 +15,28 @@ var _ types.VoteRouter = &VoteRouterMock{}
 
 // VoteRouterMock is a mock implementation of types.VoteRouter.
 //
-//	func TestSomethingThatUsesVoteRouter(t *testing.T) {
+// 	func TestSomethingThatUsesVoteRouter(t *testing.T) {
 //
-//		// make and configure a mocked types.VoteRouter
-//		mockedVoteRouter := &VoteRouterMock{
-//			AddHandlerFunc: func(module string, handler github_com_axelarnetwork_axelar_core_x_vote_exported.VoteHandler) types.VoteRouter {
-//				panic("mock out the AddHandler method")
-//			},
-//			GetHandlerFunc: func(module string) github_com_axelarnetwork_axelar_core_x_vote_exported.VoteHandler {
-//				panic("mock out the GetHandler method")
-//			},
-//			HasHandlerFunc: func(module string) bool {
-//				panic("mock out the HasHandler method")
-//			},
-//			SealFunc: func()  {
-//				panic("mock out the Seal method")
-//			},
-//		}
+// 		// make and configure a mocked types.VoteRouter
+// 		mockedVoteRouter := &VoteRouterMock{
+// 			AddHandlerFunc: func(module string, handler github_com_axelarnetwork_axelar_core_x_vote_exported.VoteHandler) types.VoteRouter {
+// 				panic("mock out the AddHandler method")
+// 			},
+// 			GetHandlerFunc: func(module string) github_com_axelarnetwork_axelar_core_x_vote_exported.VoteHandler {
+// 				panic("mock out the GetHandler method")
+// 			},
+// 			HasHandlerFunc: func(module string) bool {
+// 				panic("mock out the HasHandler method")
+// 			},
+// 			SealFunc: func()  {
+// 				panic("mock out the Seal method")
+// 			},
+// 		}
 //
-//		// use mockedVoteRouter in code that requires types.VoteRouter
-//		// and then make assertions.
+// 		// use mockedVoteRouter in code that requires types.VoteRouter
+// 		// and then make assertions.
 //
-//	}
+// 	}
 type VoteRouterMock struct {
 	// AddHandlerFunc mocks the AddHandler method.
 	AddHandlerFunc func(module string, handler github_com_axelarnetwork_axelar_core_x_vote_exported.VoteHandler) types.VoteRouter
@@ -99,8 +99,7 @@ func (mock *VoteRouterMock) AddHandler(module string, handler github_com_axelarn
 
 // AddHandlerCalls gets all the calls that were made to AddHandler.
 // Check the length with:
-//
-//	len(mockedVoteRouter.AddHandlerCalls())
+//     len(mockedVoteRouter.AddHandlerCalls())
 func (mock *VoteRouterMock) AddHandlerCalls() []struct {
 	Module  string
 	Handler github_com_axelarnetwork_axelar_core_x_vote_exported.VoteHandler
@@ -133,8 +132,7 @@ func (mock *VoteRouterMock) GetHandler(module string) github_com_axelarnetwork_a
 
 // GetHandlerCalls gets all the calls that were made to GetHandler.
 // Check the length with:
-//
-//	len(mockedVoteRouter.GetHandlerCalls())
+//     len(mockedVoteRouter.GetHandlerCalls())
 func (mock *VoteRouterMock) GetHandlerCalls() []struct {
 	Module string
 } {
@@ -165,8 +163,7 @@ func (mock *VoteRouterMock) HasHandler(module string) bool {
 
 // HasHandlerCalls gets all the calls that were made to HasHandler.
 // Check the length with:
-//
-//	len(mockedVoteRouter.HasHandlerCalls())
+//     len(mockedVoteRouter.HasHandlerCalls())
 func (mock *VoteRouterMock) HasHandlerCalls() []struct {
 	Module string
 } {
@@ -194,8 +191,7 @@ func (mock *VoteRouterMock) Seal() {
 
 // SealCalls gets all the calls that were made to Seal.
 // Check the length with:
-//
-//	len(mockedVoteRouter.SealCalls())
+//     len(mockedVoteRouter.SealCalls())
 func (mock *VoteRouterMock) SealCalls() []struct {
 } {
 	var calls []struct {
