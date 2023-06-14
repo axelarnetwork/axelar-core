@@ -20766,7 +20766,7 @@ paths:
                           proposer_address:
                             type: string
                             format: byte
-                        description: Header defines the structure of a Tendermint block header.
+                        description: Header defines the structure of a block header.
                       data:
                         type: object
                         properties:
@@ -21005,7 +21005,7 @@ paths:
                                                 proposer_address:
                                                   type: string
                                                   format: byte
-                                              description: Header defines the structure of a Tendermint block header.
+                                              description: Header defines the structure of a block header.
                                             commit:
                                               type: object
                                               properties:
@@ -21078,7 +21078,7 @@ paths:
                                                       secp256k1:
                                                         type: string
                                                         format: byte
-                                                    title: PublicKey defines the keys available for use with Tendermint Validators
+                                                    title: PublicKey defines the keys available for use with Validators
                                                   voting_power:
                                                     type: string
                                                     format: int64
@@ -21100,7 +21100,7 @@ paths:
                                                     secp256k1:
                                                       type: string
                                                       format: byte
-                                                  title: PublicKey defines the keys available for use with Tendermint Validators
+                                                  title: PublicKey defines the keys available for use with Validators
                                                 voting_power:
                                                   type: string
                                                   format: int64
@@ -21130,7 +21130,7 @@ paths:
                                               secp256k1:
                                                 type: string
                                                 format: byte
-                                            title: PublicKey defines the keys available for use with Tendermint Validators
+                                            title: PublicKey defines the keys available for use with Validators
                                           voting_power:
                                             type: string
                                             format: int64
@@ -21478,7 +21478,7 @@ paths:
                           proposer_address:
                             type: string
                             format: byte
-                        description: Header defines the structure of a Tendermint block header.
+                        description: Header defines the structure of a block header.
                       data:
                         type: object
                         properties:
@@ -21717,7 +21717,7 @@ paths:
                                                 proposer_address:
                                                   type: string
                                                   format: byte
-                                              description: Header defines the structure of a Tendermint block header.
+                                              description: Header defines the structure of a block header.
                                             commit:
                                               type: object
                                               properties:
@@ -21790,7 +21790,7 @@ paths:
                                                       secp256k1:
                                                         type: string
                                                         format: byte
-                                                    title: PublicKey defines the keys available for use with Tendermint Validators
+                                                    title: PublicKey defines the keys available for use with Validators
                                                   voting_power:
                                                     type: string
                                                     format: int64
@@ -21812,7 +21812,7 @@ paths:
                                                     secp256k1:
                                                       type: string
                                                       format: byte
-                                                  title: PublicKey defines the keys available for use with Tendermint Validators
+                                                  title: PublicKey defines the keys available for use with Validators
                                                 voting_power:
                                                   type: string
                                                   format: int64
@@ -21842,7 +21842,7 @@ paths:
                                               secp256k1:
                                                 type: string
                                                 format: byte
-                                            title: PublicKey defines the keys available for use with Tendermint Validators
+                                            title: PublicKey defines the keys available for use with Validators
                                           voting_power:
                                             type: string
                                             format: int64
@@ -31026,7 +31026,7 @@ paths:
                           proposer_address:
                             type: string
                             format: byte
-                        description: Header defines the structure of a Tendermint block header.
+                        description: Header defines the structure of a block header.
                       valset:
                         type: array
                         items:
@@ -49943,7 +49943,7 @@ components:
                 proposer_address:
                   type: string
                   format: byte
-              description: Header defines the structure of a Tendermint block header.
+              description: Header defines the structure of a block header.
             data:
               type: object
               properties:
@@ -50180,7 +50180,7 @@ components:
                                       proposer_address:
                                         type: string
                                         format: byte
-                                    description: Header defines the structure of a Tendermint block header.
+                                    description: Header defines the structure of a block header.
                                   commit:
                                     type: object
                                     properties:
@@ -50253,7 +50253,7 @@ components:
                                             secp256k1:
                                               type: string
                                               format: byte
-                                          title: PublicKey defines the keys available for use with Tendermint Validators
+                                          title: PublicKey defines the keys available for use with Validators
                                         voting_power:
                                           type: string
                                           format: int64
@@ -50275,7 +50275,7 @@ components:
                                           secp256k1:
                                             type: string
                                             format: byte
-                                        title: PublicKey defines the keys available for use with Tendermint Validators
+                                        title: PublicKey defines the keys available for use with Validators
                                       voting_power:
                                         type: string
                                         format: int64
@@ -50305,7 +50305,7 @@ components:
                                     secp256k1:
                                       type: string
                                       format: byte
-                                  title: PublicKey defines the keys available for use with Tendermint Validators
+                                  title: PublicKey defines the keys available for use with Validators
                                 voting_power:
                                   type: string
                                   format: int64
@@ -50472,7 +50472,7 @@ components:
                 proposer_address:
                   type: string
                   format: byte
-              description: Header defines the structure of a Tendermint block header.
+              description: Header defines the structure of a block header.
             data:
               type: object
               properties:
@@ -50709,7 +50709,7 @@ components:
                                       proposer_address:
                                         type: string
                                         format: byte
-                                    description: Header defines the structure of a Tendermint block header.
+                                    description: Header defines the structure of a block header.
                                   commit:
                                     type: object
                                     properties:
@@ -50782,7 +50782,7 @@ components:
                                             secp256k1:
                                               type: string
                                               format: byte
-                                          title: PublicKey defines the keys available for use with Tendermint Validators
+                                          title: PublicKey defines the keys available for use with Validators
                                         voting_power:
                                           type: string
                                           format: int64
@@ -50804,7 +50804,7 @@ components:
                                           secp256k1:
                                             type: string
                                             format: byte
-                                        title: PublicKey defines the keys available for use with Tendermint Validators
+                                        title: PublicKey defines the keys available for use with Validators
                                       voting_power:
                                         type: string
                                         format: int64
@@ -50834,7 +50834,7 @@ components:
                                     secp256k1:
                                       type: string
                                       format: byte
-                                  title: PublicKey defines the keys available for use with Tendermint Validators
+                                  title: PublicKey defines the keys available for use with Validators
                                 voting_power:
                                   type: string
                                   format: int64
@@ -51595,7 +51595,7 @@ components:
         secp256k1:
           type: string
           format: byte
-      title: PublicKey defines the keys available for use with Tendermint Validators
+      title: PublicKey defines the keys available for use with Validators
     tendermint.p2p.DefaultNodeInfo:
       type: object
       properties:
@@ -51728,7 +51728,7 @@ components:
             proposer_address:
               type: string
               format: byte
-          description: Header defines the structure of a Tendermint block header.
+          description: Header defines the structure of a block header.
         data:
           type: object
           properties:
@@ -51964,7 +51964,7 @@ components:
                                   proposer_address:
                                     type: string
                                     format: byte
-                                description: Header defines the structure of a Tendermint block header.
+                                description: Header defines the structure of a block header.
                               commit:
                                 type: object
                                 properties:
@@ -52037,7 +52037,7 @@ components:
                                         secp256k1:
                                           type: string
                                           format: byte
-                                      title: PublicKey defines the keys available for use with Tendermint Validators
+                                      title: PublicKey defines the keys available for use with Validators
                                     voting_power:
                                       type: string
                                       format: int64
@@ -52059,7 +52059,7 @@ components:
                                       secp256k1:
                                         type: string
                                         format: byte
-                                    title: PublicKey defines the keys available for use with Tendermint Validators
+                                    title: PublicKey defines the keys available for use with Validators
                                   voting_power:
                                     type: string
                                     format: int64
@@ -52089,7 +52089,7 @@ components:
                                 secp256k1:
                                   type: string
                                   format: byte
-                              title: PublicKey defines the keys available for use with Tendermint Validators
+                              title: PublicKey defines the keys available for use with Validators
                             voting_power:
                               type: string
                               format: int64
@@ -52610,7 +52610,7 @@ components:
                         proposer_address:
                           type: string
                           format: byte
-                      description: Header defines the structure of a Tendermint block header.
+                      description: Header defines the structure of a block header.
                     commit:
                       type: object
                       properties:
@@ -52683,7 +52683,7 @@ components:
                               secp256k1:
                                 type: string
                                 format: byte
-                            title: PublicKey defines the keys available for use with Tendermint Validators
+                            title: PublicKey defines the keys available for use with Validators
                           voting_power:
                             type: string
                             format: int64
@@ -52705,7 +52705,7 @@ components:
                             secp256k1:
                               type: string
                               format: byte
-                          title: PublicKey defines the keys available for use with Tendermint Validators
+                          title: PublicKey defines the keys available for use with Validators
                         voting_power:
                           type: string
                           format: int64
@@ -52735,7 +52735,7 @@ components:
                       secp256k1:
                         type: string
                         format: byte
-                    title: PublicKey defines the keys available for use with Tendermint Validators
+                    title: PublicKey defines the keys available for use with Validators
                   voting_power:
                     type: string
                     format: int64
@@ -52970,7 +52970,7 @@ components:
                               proposer_address:
                                 type: string
                                 format: byte
-                            description: Header defines the structure of a Tendermint block header.
+                            description: Header defines the structure of a block header.
                           commit:
                             type: object
                             properties:
@@ -53043,7 +53043,7 @@ components:
                                     secp256k1:
                                       type: string
                                       format: byte
-                                  title: PublicKey defines the keys available for use with Tendermint Validators
+                                  title: PublicKey defines the keys available for use with Validators
                                 voting_power:
                                   type: string
                                   format: int64
@@ -53065,7 +53065,7 @@ components:
                                   secp256k1:
                                     type: string
                                     format: byte
-                                title: PublicKey defines the keys available for use with Tendermint Validators
+                                title: PublicKey defines the keys available for use with Validators
                               voting_power:
                                 type: string
                                 format: int64
@@ -53095,7 +53095,7 @@ components:
                             secp256k1:
                               type: string
                               format: byte
-                          title: PublicKey defines the keys available for use with Tendermint Validators
+                          title: PublicKey defines the keys available for use with Validators
                         voting_power:
                           type: string
                           format: int64
@@ -53185,7 +53185,7 @@ components:
         proposer_address:
           type: string
           format: byte
-      description: Header defines the structure of a Tendermint block header.
+      description: Header defines the structure of a block header.
     tendermint.types.LightBlock:
       type: object
       properties:
@@ -53267,7 +53267,7 @@ components:
                 proposer_address:
                   type: string
                   format: byte
-              description: Header defines the structure of a Tendermint block header.
+              description: Header defines the structure of a block header.
             commit:
               type: object
               properties:
@@ -53340,7 +53340,7 @@ components:
                       secp256k1:
                         type: string
                         format: byte
-                    title: PublicKey defines the keys available for use with Tendermint Validators
+                    title: PublicKey defines the keys available for use with Validators
                   voting_power:
                     type: string
                     format: int64
@@ -53362,7 +53362,7 @@ components:
                     secp256k1:
                       type: string
                       format: byte
-                  title: PublicKey defines the keys available for use with Tendermint Validators
+                  title: PublicKey defines the keys available for use with Validators
                 voting_power:
                   type: string
                   format: int64
@@ -53456,7 +53456,7 @@ components:
                     proposer_address:
                       type: string
                       format: byte
-                  description: Header defines the structure of a Tendermint block header.
+                  description: Header defines the structure of a block header.
                 commit:
                   type: object
                   properties:
@@ -53529,7 +53529,7 @@ components:
                           secp256k1:
                             type: string
                             format: byte
-                        title: PublicKey defines the keys available for use with Tendermint Validators
+                        title: PublicKey defines the keys available for use with Validators
                       voting_power:
                         type: string
                         format: int64
@@ -53551,7 +53551,7 @@ components:
                         secp256k1:
                           type: string
                           format: byte
-                      title: PublicKey defines the keys available for use with Tendermint Validators
+                      title: PublicKey defines the keys available for use with Validators
                     voting_power:
                       type: string
                       format: int64
@@ -53581,7 +53581,7 @@ components:
                   secp256k1:
                     type: string
                     format: byte
-                title: PublicKey defines the keys available for use with Tendermint Validators
+                title: PublicKey defines the keys available for use with Validators
               voting_power:
                 type: string
                 format: int64
@@ -53684,7 +53684,7 @@ components:
             proposer_address:
               type: string
               format: byte
-          description: Header defines the structure of a Tendermint block header.
+          description: Header defines the structure of a block header.
         commit:
           type: object
           properties:
@@ -53765,7 +53765,7 @@ components:
             secp256k1:
               type: string
               format: byte
-          title: PublicKey defines the keys available for use with Tendermint Validators
+          title: PublicKey defines the keys available for use with Validators
         voting_power:
           type: string
           format: int64
@@ -53792,7 +53792,7 @@ components:
                   secp256k1:
                     type: string
                     format: byte
-                title: PublicKey defines the keys available for use with Tendermint Validators
+                title: PublicKey defines the keys available for use with Validators
               voting_power:
                 type: string
                 format: int64
@@ -53814,7 +53814,7 @@ components:
                 secp256k1:
                   type: string
                   format: byte
-              title: PublicKey defines the keys available for use with Tendermint Validators
+              title: PublicKey defines the keys available for use with Validators
             voting_power:
               type: string
               format: int64
@@ -56660,7 +56660,7 @@ components:
             proposer_address:
               type: string
               format: byte
-          description: Header defines the structure of a Tendermint block header.
+          description: Header defines the structure of a block header.
         valset:
           type: array
           items:
@@ -57768,7 +57768,7 @@ components:
                 proposer_address:
                   type: string
                   format: byte
-              description: Header defines the structure of a Tendermint block header.
+              description: Header defines the structure of a block header.
             valset:
               type: array
               items:

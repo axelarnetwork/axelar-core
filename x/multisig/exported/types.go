@@ -7,7 +7,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
+	ec "github.com/btcsuite/btcd/btcec/v2/ecdsa"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -34,7 +35,7 @@ type Key interface {
 
 // MultiSig provides an interface to work with the multi sig
 type MultiSig interface {
-	GetSignature(p sdk.ValAddress) (btcec.Signature, bool)
+	GetSignature(p sdk.ValAddress) (ec.Signature, bool)
 	GetPayloadHash() Hash
 	GetKeyID() KeyID
 	ValidateBasic() error
@@ -78,7 +79,7 @@ type PublicKey []byte
 
 // ValidateBasic returns an error if the given public key is invalid; nil otherwise
 func (pk PublicKey) ValidateBasic() error {
-	btcecPubKey, err := btcec.ParsePubKey(pk, btcec.S256())
+	btcecPubKey, err := btcec.ParsePubKey(pk)
 	if err != nil {
 		return err
 	}
@@ -97,7 +98,7 @@ func (pk PublicKey) String() string {
 
 // ToECDSAPubKey returns the ECDSA public key
 func (pk PublicKey) ToECDSAPubKey() ecdsa.PublicKey {
-	btcecKey := funcs.Must(btcec.ParsePubKey(pk, btcec.S256()))
+	btcecKey := funcs.Must(btcec.ParsePubKey(pk))
 
 	return *btcecKey.ToECDSA()
 }
