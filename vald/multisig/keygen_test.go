@@ -6,7 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
+	ec "github.com/btcsuite/btcd/btcec/v2/ecdsa"
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
@@ -64,12 +65,12 @@ func TestMgr_ProcessKeygenStarted(t *testing.T) {
 			event = types.NewKeygenStarted(testutils.KeyID(), []sdk.ValAddress{rand.ValAddr(), participant, rand.ValAddr()})
 		}).
 		Then("should handle", func(t *testing.T) {
-			sk := funcs.Must(btcec.NewPrivateKey(btcec.S256()))
+			sk := funcs.Must(btcec.NewPrivateKey())
 			client.KeygenFunc = func(_ context.Context, in *tofnd.KeygenRequest, _ ...grpc.CallOption) (*tofnd.KeygenResponse, error) {
 				return &tofnd.KeygenResponse{KeygenResponse: &tofnd.KeygenResponse_PubKey{PubKey: sk.PubKey().SerializeCompressed()}}, nil
 			}
 			client.SignFunc = func(_ context.Context, in *tofnd.SignRequest, _ ...grpc.CallOption) (*tofnd.SignResponse, error) {
-				return &tofnd.SignResponse{SignResponse: &tofnd.SignResponse_Signature{Signature: funcs.Must(sk.Sign(in.MsgToSign)).Serialize()}}, nil
+				return &tofnd.SignResponse{SignResponse: &tofnd.SignResponse_Signature{Signature: ec.Sign(sk, in.MsgToSign).Serialize()}}, nil
 			}
 			broadcaster.BroadcastFunc = func(ctx context.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error) {
 				for _, msg := range msgs {
