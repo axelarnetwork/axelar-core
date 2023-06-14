@@ -17,7 +17,7 @@ import (
 
 // InitGenesis initializes the axelarnet module's state from a given genesis state.
 func (k Keeper) InitGenesis(ctx sdk.Context, genState *types.GenesisState) {
-	k.setParams(ctx, genState.Params)
+	k.SetParams(ctx, genState.Params)
 	if len(genState.CollectorAddress) > 0 {
 		if err := k.SetFeeCollector(ctx, genState.CollectorAddress); err != nil {
 			panic(err)

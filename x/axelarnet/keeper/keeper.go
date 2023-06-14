@@ -56,12 +56,14 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
+// GetParams returns the module parameters.
 func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 	k.params.GetParamSet(ctx, &params)
 	return
 }
 
-func (k Keeper) setParams(ctx sdk.Context, p types.Params) {
+// SetParams sets the module parameters.
+func (k Keeper) SetParams(ctx sdk.Context, p types.Params) {
 	k.params.SetParamSet(ctx, &p)
 }
 

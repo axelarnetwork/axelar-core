@@ -17,6 +17,7 @@
     - [TokenSent](#axelar.axelarnet.v1beta1.TokenSent)
   
 - [axelar/axelarnet/v1beta1/params.proto](#axelar/axelarnet/v1beta1/params.proto)
+    - [CallContractProposalMinDeposit](#axelar.axelarnet.v1beta1.CallContractProposalMinDeposit)
     - [Params](#axelar.axelarnet.v1beta1.Params)
   
 - [axelar/axelarnet/v1beta1/types.proto](#axelar/axelarnet/v1beta1/types.proto)
@@ -800,6 +801,23 @@
 
 
 
+<a name="axelar.axelarnet.v1beta1.CallContractProposalMinDeposit"></a>
+
+### CallContractProposalMinDeposit
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `contract_address` | [string](#string) |  |  |
+| `min_deposits` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) | repeated |  |
+
+
+
+
+
+
 <a name="axelar.axelarnet.v1beta1.Params"></a>
 
 ### Params
@@ -811,6 +829,7 @@ Params represent the genesis parameters for the module
 | `route_timeout_window` | [uint64](#uint64) |  | IBC packet route timeout window |
 | `transfer_limit` | [uint64](#uint64) |  |  |
 | `end_blocker_limit` | [uint64](#uint64) |  |  |
+| `call_contracts_proposal_min_deposits` | [CallContractProposalMinDeposit](#axelar.axelarnet.v1beta1.CallContractProposalMinDeposit) | repeated |  |
 
 
 

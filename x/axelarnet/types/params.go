@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 )
 
@@ -16,6 +17,8 @@ var (
 	KeyRouteTimeoutWindow = []byte("routeTimeoutWindow")
 	KeyTransferLimit      = []byte("transferLimit")
 	KeyEndBlockerLimit    = []byte("endBlockerLimit")
+	// KeyCallContractsProposalMinDeposits represents the key for call contracts proposal min deposits
+	KeyCallContractsProposalMinDeposits = []byte("callContractsProposalMinDeposits")
 )
 
 // KeyTable retrieves a subspace table for the module
@@ -26,9 +29,10 @@ func KeyTable() params.KeyTable {
 // DefaultParams creates the default genesis parameters
 func DefaultParams() Params {
 	return Params{
-		RouteTimeoutWindow: 17000,
-		TransferLimit:      20,
-		EndBlockerLimit:    50,
+		RouteTimeoutWindow:               17000,
+		TransferLimit:                    20,
+		EndBlockerLimit:                  50,
+		CallContractsProposalMinDeposits: nil,
 	}
 }
 
@@ -45,6 +49,7 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 		params.NewParamSetPair(KeyRouteTimeoutWindow, &m.RouteTimeoutWindow, validatePosUInt64("RouteTimeoutWindow")),
 		params.NewParamSetPair(KeyTransferLimit, &m.TransferLimit, validatePosUInt64("TransferLimit")),
 		params.NewParamSetPair(KeyEndBlockerLimit, &m.EndBlockerLimit, validatePosUInt64("EndBlockerLimit")),
+		params.NewParamSetPair(KeyCallContractsProposalMinDeposits, &m.CallContractsProposalMinDeposits, validateCallContractsProposalMinDeposits),
 	}
 }
 
@@ -59,6 +64,10 @@ func (m Params) Validate() error {
 	}
 
 	if err := validatePosUInt64("EndBlockerLimit")(m.EndBlockerLimit); err != nil {
+		return err
+	}
+
+	if err := validateCallContractsProposalMinDeposits(m.CallContractsProposalMinDeposits); err != nil {
 		return err
 	}
 
@@ -78,4 +87,17 @@ func validatePosUInt64(field string) func(value interface{}) error {
 
 		return nil
 	}
+}
+
+func validateCallContractsProposalMinDeposits(i interface{}) error {
+	val, ok := i.(CallContractProposalMinDeposits)
+	if !ok {
+		return fmt.Errorf("invalid parameter type for CallContractsProposalMinDeposits: %T", i)
+	}
+
+	if err := val.ValidateBasic(); err != nil {
+		return sdkerrors.Wrap(err, "invalid CallContractsProposalMinDeposits")
+	}
+
+	return nil
 }
