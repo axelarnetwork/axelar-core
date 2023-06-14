@@ -271,8 +271,8 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(event *types.ConfirmGatewayTxStarted
 	return err
 }
 
-// ProcessGatewayTxsConfirmation votes on the correctness of an EVM chain gateway's transactions
-func (mgr Mgr) ProcessGatewayTxsConfirmation(event *types.ConfirmGatewayTxsStarted) error {
+// ProcessMultipleGatewayTxConfirmations votes on the correctness of an EVM chain multiple gateway transactions
+func (mgr Mgr) ProcessMultipleGatewayTxConfirmations(event *types.ConfirmGatewayTxsStarted) error {
 	if !slices.Any(event.Participants, func(v sdk.ValAddress) bool { return v.Equals(mgr.validator) }) {
 		f := slices.Map(event.PollMappings, func(m types.PollMapping) voteTypes2.PollID { return m.PollID })
 		mgr.logger("poll_ids", f).Debug("ignoring gateway txs confirmation poll: not a participant")
@@ -280,12 +280,12 @@ func (mgr Mgr) ProcessGatewayTxsConfirmation(event *types.ConfirmGatewayTxsStart
 	}
 
 	txIDs := slices.Map(event.PollMappings, func(poll types.PollMapping) common.Hash { return common.Hash(poll.TxID) })
-	txReceipts, err := mgr.GetTxReceiptsIfFinalized(event.Chain, txIDs, event.ConfirmationHeight)
+	txReceipts, err := mgr.GetMultipleTxReceiptsIfFinalized(event.Chain, txIDs, event.ConfirmationHeight)
 	if err != nil {
 		return err
 	}
 
-	votes := make([]sdk.Msg, len(txReceipts))
+	var votes []sdk.Msg
 	for i, result := range txReceipts {
 		pollID := event.PollMappings[i].PollID
 		txID := event.PollMappings[i].TxID
@@ -293,7 +293,7 @@ func (mgr Mgr) ProcessGatewayTxsConfirmation(event *types.ConfirmGatewayTxsStart
 		keyvals := []interface{}{"chain", event.Chain, "poll_id", pollID.String(), "tx_id", txID.Hex()}
 		if result.Err() != nil {
 			mgr.logger(keyvals...).Infof("broadcasting empty vote due to error: %s", result.Err().Error())
-			votes[i] = voteTypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain))
+			votes = append(votes, voteTypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain)))
 		}
 
 		receipt := result.Ok()
@@ -303,7 +303,7 @@ func (mgr Mgr) ProcessGatewayTxsConfirmation(event *types.ConfirmGatewayTxsStart
 
 		events := mgr.processGatewayTxLogs(event.Chain, event.GatewayAddress, receipt.Logs)
 		mgr.logger(keyvals).Infof("broadcasting vote %v", events)
-		votes[i] = voteTypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain, events...))
+		votes = append(votes, voteTypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain, events...)))
 	}
 
 	_, err = mgr.broadcaster.Broadcast(context.TODO(), votes...)
@@ -458,7 +458,7 @@ func (mgr Mgr) GetTxReceiptIfFinalized(chain nexus.ChainName, txID common.Hash, 
 	return txReceipt, nil
 }
 
-func (mgr Mgr) GetTxReceiptsIfFinalized(chain nexus.ChainName, txIDs []common.Hash, confHeight uint64) ([]rs.Result[*geth.Receipt], error) {
+func (mgr Mgr) GetMultipleTxReceiptsIfFinalized(chain nexus.ChainName, txIDs []common.Hash, confHeight uint64) ([]rs.Result[*geth.Receipt], error) {
 	client, ok := mgr.rpcs[strings.ToLower(chain.String())]
 	if !ok {
 		return nil, fmt.Errorf("rpc client not found for chain %s", chain.String())
