@@ -7,6 +7,7 @@ import (
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/gogo/protobuf/proto"
 
 	"github.com/axelarnetwork/axelar-core/x/reward/exported"
@@ -54,6 +55,10 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 	}
 
 	r.RegisterCustomTypeURL((*sdk.Msg)(nil), "/axelar.axelarnet.v1beta1.ExecuteMessageRequest", &RouteMessageRequest{})
+
+	registry.RegisterImplementations((*govtypes.Content)(nil),
+		&CallContractsProposal{},
+	)
 }
 
 var amino = codec.NewLegacyAmino()

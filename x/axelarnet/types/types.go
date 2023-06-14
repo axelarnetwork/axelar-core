@@ -256,3 +256,98 @@ var (
 	// AxelarGMPAccount account is the canonical general message sender
 	AxelarGMPAccount = GetEscrowAddress(fmt.Sprintf("%s_%s", ModuleName, "gmp"))
 )
+
+// ValidateBasic returns an error if the given Fee is invalid; nil otherwise
+func (f Fee) ValidateBasic() error {
+	if err := sdk.VerifyAddressFormat(f.Recipient); err != nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "fee recipient").Error())
+	}
+
+	if !f.Amount.IsValid() || !f.Amount.IsPositive() {
+		return fmt.Errorf("invalid fee amount")
+	}
+
+	if f.RefundRecipient != nil {
+		if err := sdk.VerifyAddressFormat(f.RefundRecipient); err != nil {
+			return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "fee refund recipient").Error())
+		}
+	}
+
+	return nil
+}
+
+// CallContractProposalMinDeposits is a set of CallContractProposalMinDeposit, one per contract address
+type CallContractProposalMinDeposits []CallContractProposalMinDeposit
+
+type callContractProposalMinDepositsMap map[string]map[string]sdk.Coins
+
+// Get returns the minimum deposit for the given chain and contract address
+func (m callContractProposalMinDepositsMap) Get(chain nexus.ChainName, contractAddress string) sdk.Coins {
+	c := strings.ToLower(chain.String())
+	address := strings.ToLower(contractAddress)
+
+	if _, ok := m[c]; !ok {
+		return sdk.Coins{}
+	}
+
+	return m[c][address]
+}
+
+// ValidateBasic returns an error if the type is invalid
+func (minDeposits CallContractProposalMinDeposits) ValidateBasic() error {
+	chainContractAddressPairs := make(map[string]struct{})
+
+	for _, minDeposit := range minDeposits {
+		if err := minDeposit.ValidateBasic(); err != nil {
+			return err
+		}
+
+		key := fmt.Sprintf("%s/%s", strings.ToLower(minDeposit.Chain.String()), strings.ToLower(minDeposit.ContractAddress))
+		if _, ok := chainContractAddressPairs[key]; ok {
+			return fmt.Errorf("duplicate chain and contract address pair found")
+		}
+		chainContractAddressPairs[key] = struct{}{}
+
+	}
+
+	return nil
+}
+
+// ToMap returns a map of chain name to contract address to min deposit
+func (minDeposits CallContractProposalMinDeposits) ToMap() callContractProposalMinDepositsMap {
+	minDepositsMap := make(callContractProposalMinDepositsMap)
+
+	for _, minDeposit := range minDeposits {
+		chain := strings.ToLower(minDeposit.Chain.String())
+		contractAddress := strings.ToLower(minDeposit.ContractAddress)
+
+		if _, ok := minDepositsMap[chain]; !ok {
+			minDepositsMap[chain] = make(map[string]sdk.Coins)
+		}
+
+		minDepositsMap[chain][contractAddress] = minDeposit.MinDeposits
+	}
+
+	return minDepositsMap
+}
+
+// ValidateBasic returns an error if the type is invalid
+func (minDeposit CallContractProposalMinDeposit) ValidateBasic() error {
+	if err := minDeposit.Chain.Validate(); err != nil {
+		return err
+	}
+
+	if err := utils.ValidateString(minDeposit.ContractAddress); err != nil {
+		return err
+	}
+
+	if minDeposit.MinDeposits.Empty() {
+		return fmt.Errorf("min deposit cannot be empty")
+	}
+
+	if err := minDeposit.MinDeposits.Validate(); err != nil {
+		return err
+	}
+
+	return nil
+}
