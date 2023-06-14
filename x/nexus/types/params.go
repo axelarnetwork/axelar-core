@@ -19,8 +19,6 @@ var (
 	KeyChainMaintainerIncorrectVoteThreshold = []byte("chainMaintainerIncorrectVoteThreshold")
 	// KeyChainMaintainerCheckWindow represents the key for chain maintainer check window
 	KeyChainMaintainerCheckWindow = []byte("chainMaintainerCheckWindow")
-	// KeyCallContractsProposalMinDeposits represents the key for call contracts proposal min deposits
-	KeyCallContractsProposalMinDeposits = []byte("callContractsProposalMinDeposits")
 )
 
 // KeyTable retrieves a subspace table for the module
@@ -35,7 +33,6 @@ func DefaultParams() Params {
 		ChainMaintainerMissingVoteThreshold:   utils.NewThreshold(20, 100),
 		ChainMaintainerIncorrectVoteThreshold: utils.NewThreshold(15, 100),
 		ChainMaintainerCheckWindow:            500,
-		CallContractsProposalMinDeposits:      nil,
 	}
 }
 
@@ -53,7 +50,6 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 		params.NewParamSetPair(KeyChainMaintainerMissingVoteThreshold, &m.ChainMaintainerMissingVoteThreshold, validateThresholdWith("ChainMaintainerMissingVoteThreshold")),
 		params.NewParamSetPair(KeyChainMaintainerIncorrectVoteThreshold, &m.ChainMaintainerIncorrectVoteThreshold, validateThresholdWith("ChainMaintainerIncorrectVoteThreshold")),
 		params.NewParamSetPair(KeyChainMaintainerCheckWindow, &m.ChainMaintainerCheckWindow, validateChainMaintainerCheckWindow),
-		params.NewParamSetPair(KeyCallContractsProposalMinDeposits, &m.CallContractsProposalMinDeposits, validateCallContractsProposalMinDeposits),
 	}
 }
 
@@ -72,10 +68,6 @@ func (m Params) Validate() error {
 	}
 
 	if err := validateChainMaintainerCheckWindow(m.ChainMaintainerCheckWindow); err != nil {
-		return err
-	}
-
-	if err := validateCallContractsProposalMinDeposits(m.CallContractsProposalMinDeposits); err != nil {
 		return err
 	}
 
@@ -109,19 +101,6 @@ func validateChainMaintainerCheckWindow(i interface{}) error {
 
 	if val >= maxBitmapSize {
 		return fmt.Errorf("ChainMaintainerCheckWindow must be < %d", maxBitmapSize)
-	}
-
-	return nil
-}
-
-func validateCallContractsProposalMinDeposits(i interface{}) error {
-	val, ok := i.(CallContractProposalMinDeposits)
-	if !ok {
-		return fmt.Errorf("invalid parameter type for CallContractsProposalMinDeposits: %T", i)
-	}
-
-	if err := val.ValidateBasic(); err != nil {
-		return sdkerrors.Wrap(err, "invalid CallContractsProposalMinDeposits")
 	}
 
 	return nil

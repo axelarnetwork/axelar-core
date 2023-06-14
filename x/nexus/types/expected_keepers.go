@@ -4,7 +4,6 @@ import (
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/tendermint/tendermint/libs/log"
 
@@ -14,7 +13,7 @@ import (
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 )
 
-//go:generate moq -out ./mock/expected_keepers.go -pkg mock . Nexus Snapshotter AxelarnetKeeper RewardKeeper SlashingKeeper GovKeeper
+//go:generate moq -out ./mock/expected_keepers.go -pkg mock . Nexus Snapshotter AxelarnetKeeper RewardKeeper SlashingKeeper
 
 // Nexus provides functionality to manage cross-chain transfers
 type Nexus interface {
@@ -70,9 +69,4 @@ type RewardKeeper interface {
 // SlashingKeeper provides functionality to manage slashing info for a validator
 type SlashingKeeper interface {
 	IsTombstoned(ctx sdk.Context, consAddr sdk.ConsAddress) bool
-}
-
-// GovKeeper provides functionality to the gov module
-type GovKeeper interface {
-	GetProposal(ctx sdk.Context, proposalID uint64) (govtypes.Proposal, bool)
 }

@@ -6,21 +6,22 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
-	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	"github.com/axelarnetwork/axelar-core/x/nexus/types"
+	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/utils/funcs"
 )
 
 // Hooks defines the nexus hooks for the gov module.
 type Hooks struct {
-	k   Keeper
-	gov types.GovKeeper
+	k     Keeper
+	nexus types.Nexus
+	gov   types.GovKeeper
 }
 
 var _ govtypes.GovHooks = Hooks{}
 
-func (k Keeper) Hooks(gov types.GovKeeper) Hooks {
-	return Hooks{k, gov}
+func (k Keeper) Hooks(nexus types.Nexus, gov types.GovKeeper) Hooks {
+	return Hooks{k, nexus, gov}
 }
 
 // AfterProposalDeposit implements govtypes.GovHooks.
@@ -52,13 +53,13 @@ func (h Hooks) AfterProposalSubmission(ctx sdk.Context, proposalID uint64) {
 	case *types.CallContractsProposal:
 		// perform stateful validations of the proposal
 		for _, contractCall := range c.ContractCalls {
-			chain, ok := h.k.GetChain(ctx, contractCall.Chain)
+			chain, ok := h.nexus.GetChain(ctx, contractCall.Chain)
 			if !ok {
 				panic(fmt.Errorf("%s is not a registered chain", contractCall.Chain))
 			}
 
-			crossChainAddress := exported.CrossChainAddress{Chain: chain, Address: contractCall.ContractAddress}
-			if err := h.k.ValidateAddress(ctx, crossChainAddress); err != nil {
+			crossChainAddress := nexus.CrossChainAddress{Chain: chain, Address: contractCall.ContractAddress}
+			if err := h.nexus.ValidateAddress(ctx, crossChainAddress); err != nil {
 				panic(err)
 			}
 		}
