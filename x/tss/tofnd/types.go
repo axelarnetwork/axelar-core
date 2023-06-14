@@ -3,7 +3,8 @@ package tofnd
 import (
 	"fmt"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
+	ec "github.com/btcsuite/btcd/btcec/v2/ecdsa"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -42,7 +43,7 @@ func (m *MessageOut_CriminalList) Validate() error {
 // Validate checks if the sign result is valid
 func (m *MessageOut_SignResult) Validate() error {
 	if signature := m.GetSignature(); signature != nil {
-		if _, err := btcec.ParseDERSignature(signature, btcec.S256()); err != nil {
+		if _, err := ec.ParseDERSignature(signature); err != nil {
 			return err
 		}
 
@@ -75,7 +76,7 @@ func (m *MessageOut_KeygenResult) Validate() error {
 		if privateRecoverInfo == nil {
 			return fmt.Errorf("private recovery info is nil")
 		}
-		_, err := btcec.ParsePubKey(pubKeyBytes, btcec.S256())
+		_, err := btcec.ParsePubKey(pubKeyBytes)
 		if err != nil {
 			return err
 		}

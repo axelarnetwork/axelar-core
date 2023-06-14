@@ -1,7 +1,7 @@
 package types
 
 import (
-	"github.com/btcsuite/btcd/btcec"
+	ec "github.com/btcsuite/btcd/btcec/v2/ecdsa"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -35,7 +35,7 @@ func (m SubmitMultisigSignaturesRequest) ValidateBasic() error {
 	}
 
 	for _, sig := range m.Signatures {
-		_, err := btcec.ParseDERSignature(sig, btcec.S256())
+		_, err := ec.ParseDERSignature(sig)
 		if err != nil {
 			return err
 		}

@@ -7,9 +7,9 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	multisigexported "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	snapshotexported "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
-	"github.com/btcsuite/btcd/btcec"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/decred/dcrd/dcrec/secp256k1/v4/ecdsa"
 	"sync"
 	"time"
 )
@@ -527,7 +527,7 @@ var _ multisigexported.MultiSig = &MultiSigMock{}
 //			GetPayloadHashFunc: func() multisigexported.Hash {
 //				panic("mock out the GetPayloadHash method")
 //			},
-//			GetSignatureFunc: func(p sdk.ValAddress) (btcec.Signature, bool) {
+//			GetSignatureFunc: func(p sdk.ValAddress) (ecdsa.Signature, bool) {
 //				panic("mock out the GetSignature method")
 //			},
 //			ValidateBasicFunc: func() error {
@@ -547,7 +547,7 @@ type MultiSigMock struct {
 	GetPayloadHashFunc func() multisigexported.Hash
 
 	// GetSignatureFunc mocks the GetSignature method.
-	GetSignatureFunc func(p sdk.ValAddress) (btcec.Signature, bool)
+	GetSignatureFunc func(p sdk.ValAddress) (ecdsa.Signature, bool)
 
 	// ValidateBasicFunc mocks the ValidateBasic method.
 	ValidateBasicFunc func() error
@@ -630,7 +630,7 @@ func (mock *MultiSigMock) GetPayloadHashCalls() []struct {
 }
 
 // GetSignature calls GetSignatureFunc.
-func (mock *MultiSigMock) GetSignature(p sdk.ValAddress) (btcec.Signature, bool) {
+func (mock *MultiSigMock) GetSignature(p sdk.ValAddress) (ecdsa.Signature, bool) {
 	if mock.GetSignatureFunc == nil {
 		panic("MultiSigMock.GetSignatureFunc: method is nil but MultiSig.GetSignature was just called")
 	}

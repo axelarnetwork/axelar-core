@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
+	ec "github.com/btcsuite/btcd/btcec/v2/ecdsa"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -214,12 +215,12 @@ func (x KeyType) Validate() error {
 
 // Validate validates the SigKeyPair
 func (m SigKeyPair) Validate() error {
-	_, err := btcec.ParsePubKey(m.PubKey, btcec.S256())
+	_, err := btcec.ParsePubKey(m.PubKey)
 	if err != nil {
 		return err
 	}
 
-	_, err = btcec.ParseDERSignature(m.Signature, btcec.S256())
+	_, err = ec.ParseDERSignature(m.Signature)
 	if err != nil {
 		return err
 	}
@@ -229,7 +230,7 @@ func (m SigKeyPair) Validate() error {
 
 // GetKey returns the public key of the SigKeyPair
 func (m SigKeyPair) GetKey() (ecdsa.PublicKey, error) {
-	btcecKey, err := btcec.ParsePubKey(m.PubKey, btcec.S256())
+	btcecKey, err := btcec.ParsePubKey(m.PubKey)
 	if err != nil {
 		return ecdsa.PublicKey{}, err
 	}
@@ -239,10 +240,10 @@ func (m SigKeyPair) GetKey() (ecdsa.PublicKey, error) {
 }
 
 // GetSig returns the signature of the SigKeyPair
-func (m SigKeyPair) GetSig() (btcec.Signature, error) {
-	sig, err := btcec.ParseDERSignature(m.Signature, btcec.S256())
+func (m SigKeyPair) GetSig() (ec.Signature, error) {
+	sig, err := ec.ParseDERSignature(m.Signature)
 	if err != nil {
-		return btcec.Signature{}, err
+		return ec.Signature{}, err
 	}
 
 	return *sig, nil
