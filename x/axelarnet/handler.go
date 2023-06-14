@@ -99,7 +99,7 @@ func NewHandler(k keeper.Keeper, n types.Nexus, b types.BankKeeper, a types.Acco
 	}
 }
 
-// NewProposalHandler returns the handler for the proposals of the nexus module
+// NewProposalHandler returns the handler for the proposals of the axelarnet module
 func NewProposalHandler(nexusK types.Nexus, accountK types.AccountKeeper) govtypes.Handler {
 	return func(ctx sdk.Context, content govtypes.Content) error {
 		switch c := content.(type) {
@@ -138,7 +138,7 @@ func NewProposalHandler(nexusK types.Nexus, accountK types.AccountKeeper) govtyp
 
 			return nil
 		default:
-			return sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized nexus proposal content type: %T", c)
+			return sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized axelarnet proposal content type: %T", c)
 		}
 	}
 }
