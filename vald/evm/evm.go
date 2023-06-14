@@ -20,7 +20,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/vald/evm/rpc"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	voteTypes2 "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/log"
@@ -71,7 +71,7 @@ func (mgr Mgr) ProcessNewChain(event *types.ChainAdded) (err error) {
 
 // ProcessDepositConfirmation votes on the correctness of an EVM chain token deposit
 func (mgr Mgr) ProcessDepositConfirmation(event *types.ConfirmDepositStarted) error {
-	if !slices.Any(event.Participants, func(v sdk.ValAddress) bool { return v.Equals(mgr.validator) }) {
+	if !slices.Any(event.Participants, mgr.isValidator) {
 		mgr.logger("pollID", event.PollID).Debug("ignoring deposit confirmation poll: not a participant")
 		return nil
 	}
@@ -130,7 +130,7 @@ func (mgr Mgr) ProcessDepositConfirmation(event *types.ConfirmDepositStarted) er
 
 // ProcessTokenConfirmation votes on the correctness of an EVM chain token deployment
 func (mgr Mgr) ProcessTokenConfirmation(event *types.ConfirmTokenStarted) error {
-	if !slices.Any(event.Participants, func(v sdk.ValAddress) bool { return v.Equals(mgr.validator) }) {
+	if !slices.Any(event.Participants, mgr.isValidator) {
 		mgr.logger("pollID", event.PollID).Debug("ignoring token confirmation poll: not a participant")
 		return nil
 	}
@@ -190,7 +190,7 @@ func (mgr Mgr) ProcessTokenConfirmation(event *types.ConfirmTokenStarted) error 
 
 // ProcessTransferKeyConfirmation votes on the correctness of an EVM chain key transfer
 func (mgr Mgr) ProcessTransferKeyConfirmation(event *types.ConfirmKeyTransferStarted) error {
-	if !slices.Any(event.Participants, func(v sdk.ValAddress) bool { return v.Equals(mgr.validator) }) {
+	if !slices.Any(event.Participants, mgr.isValidator) {
 		mgr.logger("pollID", event.PollID).Debug("ignoring key transfer confirmation poll: not a participant")
 		return nil
 	}
@@ -248,7 +248,7 @@ func (mgr Mgr) ProcessTransferKeyConfirmation(event *types.ConfirmKeyTransferSta
 
 // ProcessGatewayTxConfirmation votes on the correctness of an EVM chain gateway's transactions
 func (mgr Mgr) ProcessGatewayTxConfirmation(event *types.ConfirmGatewayTxStarted) error {
-	if !slices.Any(event.Participants, func(v sdk.ValAddress) bool { return v.Equals(mgr.validator) }) {
+	if !slices.Any(event.Participants, mgr.isValidator) {
 		mgr.logger("pollID", event.PollID).Debug("ignoring gateway tx confirmation poll: not a participant")
 		return nil
 	}
@@ -273,8 +273,8 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(event *types.ConfirmGatewayTxStarted
 
 // ProcessMultipleGatewayTxConfirmations votes on the correctness of an EVM chain multiple gateway transactions
 func (mgr Mgr) ProcessMultipleGatewayTxConfirmations(event *types.ConfirmGatewayTxsStarted) error {
-	if !slices.Any(event.Participants, func(v sdk.ValAddress) bool { return v.Equals(mgr.validator) }) {
-		f := slices.Map(event.PollMappings, func(m types.PollMapping) voteTypes2.PollID { return m.PollID })
+	if !slices.Any(event.Participants, mgr.isValidator) {
+		f := slices.Map(event.PollMappings, func(m types.PollMapping) vote.PollID { return m.PollID })
 		mgr.logger("poll_ids", f).Debug("ignoring gateway txs confirmation poll: not a participant")
 		return nil
 	}
@@ -285,25 +285,26 @@ func (mgr Mgr) ProcessMultipleGatewayTxConfirmations(event *types.ConfirmGateway
 		return err
 	}
 
-	var votes []sdk.Msg
+	votes := make([]sdk.Msg, len(txReceipts))
 	for i, result := range txReceipts {
 		pollID := event.PollMappings[i].PollID
 		txID := event.PollMappings[i].TxID
 
-		keyvals := []interface{}{"chain", event.Chain, "poll_id", pollID.String(), "tx_id", txID.Hex()}
+		logger := mgr.logger("chain", event.Chain, "poll_id", pollID.String(), "tx_id", txID.Hex())
 		if result.Err() != nil {
-			mgr.logger(keyvals...).Infof("broadcasting empty vote due to error: %s", result.Err().Error())
+			logger.Infof("broadcasting empty vote due to error: %s", result.Err().Error())
 			votes = append(votes, voteTypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain)))
 		}
 
 		receipt := result.Ok()
 		if receipt == nil {
-			continue
+			logger.Infof("broadcasting empty vote due to nil receipt")
+			votes[i] = voteTypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain))
 		}
 
 		events := mgr.processGatewayTxLogs(event.Chain, event.GatewayAddress, receipt.Logs)
-		mgr.logger(keyvals).Infof("broadcasting vote %v", events)
-		votes = append(votes, voteTypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain, events...)))
+		logger.Infof("broadcasting vote %v", events)
+		votes[i] = voteTypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain, events...))
 	}
 
 	_, err = mgr.broadcaster.Broadcast(context.TODO(), votes...)
@@ -471,20 +472,20 @@ func (mgr Mgr) GetMultipleTxReceiptsIfFinalized(chain nexus.ChainName, txIDs []c
 		return nil, sdkerrors.Wrapf(errors.With(err, keyvals...), "cannot get transaction receipts")
 	}
 
-	isFinalized := func(r *geth.Receipt) rs.Result[*geth.Receipt] {
-		isFinalized, err := mgr.isTxReceiptFinalized(chain, r, confHeight)
+	isFinalized := func(receipt *geth.Receipt) rs.Result[*geth.Receipt] {
+		isFinalized, err := mgr.isTxReceiptFinalized(chain, receipt, confHeight)
 
 		if err != nil {
 			return rs.FromErr[*geth.Receipt](sdkerrors.Wrapf(errors.With(err, keyvals...),
-				"cannot determine if the transaction %s is finalized", r.TxHash.Hex()),
+				"cannot determine if the transaction %s is finalized", receipt.TxHash.Hex()),
 			)
 		}
 
 		if !isFinalized {
-			return rs.FromErr[*geth.Receipt](fmt.Errorf("transaction %s not finalized", r.TxHash.Hex()))
+			return rs.FromErr[*geth.Receipt](fmt.Errorf("transaction %s not finalized", receipt.TxHash.Hex()))
 		}
 
-		return rs.FromOk(r)
+		return rs.FromOk(receipt)
 	}
 
 	return slices.Map(results, func(r rpc.Result) rs.Result[*geth.Receipt] {
@@ -659,4 +660,8 @@ func (mgr Mgr) processGatewayTxLogs(chain nexus.ChainName, gatewayAddress types.
 	}
 
 	return events
+}
+
+func (mgr Mgr) isValidator(v sdk.ValAddress) bool {
+	return v.Equals(mgr.validator)
 }
