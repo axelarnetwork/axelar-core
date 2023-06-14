@@ -2495,6 +2495,33 @@ paths:
                   end_blocker_limit:
                     type: string
                     format: uint64
+                  call_contracts_proposal_min_deposits:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        chain:
+                          type: string
+                        contract_address:
+                          type: string
+                        min_deposits:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              denom:
+                                type: string
+                              amount:
+                                type: string
+                            description: >-
+                              Coin defines a token with a denomination and an
+                              amount.
+
+
+                              NOTE: The amount field is an Int which implements
+                              the custom method
+
+                              signatures required by gogoproto.
                 title: Params represent the genesis parameters for the module
         default:
           description: An unexpected error response
@@ -48651,6 +48678,27 @@ definitions:
       to nexus
   axelar.axelarnet.v1beta1.AddCosmosBasedChainResponse:
     type: object
+  axelar.axelarnet.v1beta1.CallContractProposalMinDeposit:
+    type: object
+    properties:
+      chain:
+        type: string
+      contract_address:
+        type: string
+      min_deposits:
+        type: array
+        items:
+          type: object
+          properties:
+            denom:
+              type: string
+            amount:
+              type: string
+          description: |-
+            Coin defines a token with a denomination and an amount.
+
+            NOTE: The amount field is an Int which implements the custom method
+            signatures required by gogoproto.
   axelar.axelarnet.v1beta1.CallContractRequest:
     type: object
     properties:
@@ -48769,6 +48817,32 @@ definitions:
       end_blocker_limit:
         type: string
         format: uint64
+      call_contracts_proposal_min_deposits:
+        type: array
+        items:
+          type: object
+          properties:
+            chain:
+              type: string
+            contract_address:
+              type: string
+            min_deposits:
+              type: array
+              items:
+                type: object
+                properties:
+                  denom:
+                    type: string
+                  amount:
+                    type: string
+                description: >-
+                  Coin defines a token with a denomination and an amount.
+
+
+                  NOTE: The amount field is an Int which implements the custom
+                  method
+
+                  signatures required by gogoproto.
     title: Params represent the genesis parameters for the module
   axelar.axelarnet.v1beta1.ParamsResponse:
     type: object
@@ -48786,6 +48860,32 @@ definitions:
           end_blocker_limit:
             type: string
             format: uint64
+          call_contracts_proposal_min_deposits:
+            type: array
+            items:
+              type: object
+              properties:
+                chain:
+                  type: string
+                contract_address:
+                  type: string
+                min_deposits:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      denom:
+                        type: string
+                      amount:
+                        type: string
+                    description: >-
+                      Coin defines a token with a denomination and an amount.
+
+
+                      NOTE: The amount field is an Int which implements the
+                      custom method
+
+                      signatures required by gogoproto.
         title: Params represent the genesis parameters for the module
   axelar.axelarnet.v1beta1.PendingIBCTransferCountResponse:
     type: object
