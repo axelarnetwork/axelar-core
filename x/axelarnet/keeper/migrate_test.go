@@ -4,87 +4,51 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/stretchr/testify/assert"
+	"github.com/tendermint/tendermint/libs/log"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
+	"github.com/axelarnetwork/axelar-core/app"
+	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
-	"github.com/axelarnetwork/axelar-core/x/axelarnet/types/testutils"
-	"github.com/axelarnetwork/utils/funcs"
+	"github.com/axelarnetwork/axelar-core/x/axelarnet/types/mock"
 	. "github.com/axelarnetwork/utils/test"
 )
 
-func TestMigrate4To5(t *testing.T) {
-	var (
-		ctx     sdk.Context
-		k       keeper.Keeper
-		handler func(ctx sdk.Context) error
-		err     error
-	)
-	repeats := 10
+func TestMigrate5to6(t *testing.T) {
+	encCfg := app.MakeEncodingConfig()
+	subspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("nexusKey"), sdk.NewKVStoreKey("tNexusKey"), "nexus")
+	k := keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("nexus"), subspace, &mock.ChannelKeeperMock{})
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 
-	givenKeeper := Given("a keeper", func() {
-		ctx, k, _ = setup()
-	})
+	Given("subspace is setup with params before migration", func() {
+		subspace.Set(ctx, types.KeyRouteTimeoutWindow, types.DefaultParams().RouteTimeoutWindow)
+		subspace.Set(ctx, types.KeyTransferLimit, types.DefaultParams().TransferLimit)
+		subspace.Set(ctx, types.KeyEndBlockerLimit, types.DefaultParams().EndBlockerLimit)
+	}).
+		When("", func() {}).
+		Then("the migration should add the new param with the default value", func(t *testing.T) {
+			actual := types.CallContractProposalMinDeposits{}
 
-	givenKeeper.
-		When("cosmos chains are set", func() {
-			for _, chain := range randomChains() {
-				k.SetCosmosChain(ctx, chain)
-			}
-		}).
-		Then("migration should succeed", func(t *testing.T) {
-			handler = keeper.Migrate4To5(k)
-			err = handler(ctx)
-			assert.NoError(t, err)
-		}).
-		Then("ibc path mapping should be set", func(t *testing.T) {
-			for _, chainName := range k.GetCosmosChains(ctx) {
-				chain := funcs.MustOk(k.GetCosmosChainByName(ctx, chainName))
-				chain2, found := k.GetChainNameByIBCPath(ctx, chain.IBCPath)
-				assert.True(t, found)
-				assert.Equal(t, chainName, chain2)
-			}
-		}).
-		Run(t, repeats)
-
-	givenKeeper.
-		When("cosmos chains are set", func() {
-			for _, chain := range randomChains() {
-				k.SetCosmosChain(ctx, chain)
-			}
-		}).
-		When("cosmos chain with duplicate ibc path is set", func() {
-			chain := testutils.RandomCosmosChain()
-			chain2 := testutils.RandomCosmosChain()
-			chain2.IBCPath = chain.IBCPath
-			k.SetCosmosChain(ctx, chain)
-			k.SetCosmosChain(ctx, chain2)
-		}).
-		Then("migration should fail", func(t *testing.T) {
-			handler = keeper.Migrate4To5(k)
-			err = handler(ctx)
-			assert.ErrorContains(t, err, "already registered")
-		}).
-		Run(t, repeats)
-
-	givenKeeper.
-		When("axelarnet is set", func() {
-			k.SetCosmosChain(ctx, types.CosmosChain{
-				Name:       exported.Axelarnet.Name,
-				IBCPath:    "",
-				AddrPrefix: "axelar",
+			assert.PanicsWithError(t, "UnmarshalJSON cannot decode empty bytes", func() {
+				subspace.Get(ctx, types.KeyCallContractsProposalMinDeposits, &actual)
 			})
-		}).
-		Then("migration should succeed", func(t *testing.T) {
-			handler = keeper.Migrate4To5(k)
-			err = handler(ctx)
-			assert.NoError(t, err)
-		}).
-		Then("ibc path mapping should not be set for axelarnet", func(t *testing.T) {
-			chain := funcs.MustOk(k.GetCosmosChainByName(ctx, exported.Axelarnet.Name))
-			_, found := k.GetChainNameByIBCPath(ctx, chain.IBCPath)
-			assert.False(t, found)
+			assert.PanicsWithError(t, "UnmarshalJSON cannot decode empty bytes", func() {
+				k.GetParams(ctx)
+			})
+
+			keeper.Migrate5to6(k)(ctx)
+
+			assert.NotPanics(t, func() {
+				subspace.Get(ctx, types.KeyCallContractsProposalMinDeposits, &actual)
+			})
+			assert.NotPanics(t, func() {
+				k.GetParams(ctx)
+			})
+
+			assert.Equal(t, types.DefaultParams().CallContractsProposalMinDeposits, actual)
 		}).
 		Run(t)
 }

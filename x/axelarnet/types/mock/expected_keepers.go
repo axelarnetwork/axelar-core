@@ -12,6 +12,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/query"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
+	gov "github.com/cosmos/cosmos-sdk/x/gov/types"
 	ibctransfertypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
 	clienttypes "github.com/cosmos/ibc-go/v4/modules/core/02-client/types"
 	channeltypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
@@ -3017,5 +3018,77 @@ func (mock *PortKeeperMock) BindPortCalls() []struct {
 	mock.lockBindPort.RLock()
 	calls = mock.calls.BindPort
 	mock.lockBindPort.RUnlock()
+	return calls
+}
+
+// Ensure, that GovKeeperMock does implement axelarnettypes.GovKeeper.
+// If this is not the case, regenerate this file with moq.
+var _ axelarnettypes.GovKeeper = &GovKeeperMock{}
+
+// GovKeeperMock is a mock implementation of axelarnettypes.GovKeeper.
+//
+//	func TestSomethingThatUsesGovKeeper(t *testing.T) {
+//
+//		// make and configure a mocked axelarnettypes.GovKeeper
+//		mockedGovKeeper := &GovKeeperMock{
+//			GetProposalFunc: func(ctx cosmossdktypes.Context, proposalID uint64) (gov.Proposal, bool) {
+//				panic("mock out the GetProposal method")
+//			},
+//		}
+//
+//		// use mockedGovKeeper in code that requires axelarnettypes.GovKeeper
+//		// and then make assertions.
+//
+//	}
+type GovKeeperMock struct {
+	// GetProposalFunc mocks the GetProposal method.
+	GetProposalFunc func(ctx cosmossdktypes.Context, proposalID uint64) (gov.Proposal, bool)
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// GetProposal holds details about calls to the GetProposal method.
+		GetProposal []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// ProposalID is the proposalID argument value.
+			ProposalID uint64
+		}
+	}
+	lockGetProposal sync.RWMutex
+}
+
+// GetProposal calls GetProposalFunc.
+func (mock *GovKeeperMock) GetProposal(ctx cosmossdktypes.Context, proposalID uint64) (gov.Proposal, bool) {
+	if mock.GetProposalFunc == nil {
+		panic("GovKeeperMock.GetProposalFunc: method is nil but GovKeeper.GetProposal was just called")
+	}
+	callInfo := struct {
+		Ctx        cosmossdktypes.Context
+		ProposalID uint64
+	}{
+		Ctx:        ctx,
+		ProposalID: proposalID,
+	}
+	mock.lockGetProposal.Lock()
+	mock.calls.GetProposal = append(mock.calls.GetProposal, callInfo)
+	mock.lockGetProposal.Unlock()
+	return mock.GetProposalFunc(ctx, proposalID)
+}
+
+// GetProposalCalls gets all the calls that were made to GetProposal.
+// Check the length with:
+//
+//	len(mockedGovKeeper.GetProposalCalls())
+func (mock *GovKeeperMock) GetProposalCalls() []struct {
+	Ctx        cosmossdktypes.Context
+	ProposalID uint64
+} {
+	var calls []struct {
+		Ctx        cosmossdktypes.Context
+		ProposalID uint64
+	}
+	mock.lockGetProposal.RLock()
+	calls = mock.calls.GetProposal
+	mock.lockGetProposal.RUnlock()
 	return calls
 }
