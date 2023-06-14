@@ -285,26 +285,35 @@ func (mgr Mgr) ProcessMultipleGatewayTxConfirmations(event *types.ConfirmGateway
 		return err
 	}
 
-	votes := make([]sdk.Msg, len(txReceipts))
+	var votes []sdk.Msg
 	for i, result := range txReceipts {
 		pollID := event.PollMappings[i].PollID
 		txID := event.PollMappings[i].TxID
 
 		logger := mgr.logger("chain", event.Chain, "poll_id", pollID.String(), "tx_id", txID.Hex())
+
 		if result.Err() != nil {
-			logger.Infof("broadcasting empty vote due to error: %s", result.Err().Error())
-			votes = append(votes, voteTypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain)))
+			// only broadcast empty votes if the tx is not found or not finalized
+			switch result.Err() {
+			case ethereum.NotFound, rpc.NotFinalized:
+				logger.Infof("broadcasting empty vote due to error: %s", result.Err().Error())
+				votes = append(votes, voteTypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain)))
+			default:
+				logger.Errorf("failed to get tx receipt: %s", result.Err().Error())
+			}
+
+			continue
 		}
 
 		receipt := result.Ok()
 		if receipt == nil {
 			logger.Infof("broadcasting empty vote due to nil receipt")
-			votes[i] = voteTypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain))
+			votes = append(votes, voteTypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain)))
 		}
 
 		events := mgr.processGatewayTxLogs(event.Chain, event.GatewayAddress, receipt.Logs)
 		logger.Infof("broadcasting vote %v", events)
-		votes[i] = voteTypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain, events...))
+		votes = append(votes, voteTypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain, events...)))
 	}
 
 	_, err = mgr.broadcaster.Broadcast(context.TODO(), votes...)
@@ -465,24 +474,25 @@ func (mgr Mgr) GetMultipleTxReceiptsIfFinalized(chain nexus.ChainName, txIDs []c
 		return nil, fmt.Errorf("rpc client not found for chain %s", chain.String())
 	}
 
-	keyvals := []interface{}{"chain", chain.String()}
-
 	results, err := client.TransactionReceipts(context.Background(), txIDs)
 	if err != nil {
-		return nil, sdkerrors.Wrapf(errors.With(err, keyvals...), "cannot get transaction receipts")
+		return nil, sdkerrors.Wrapf(errors.With(err, "chain", chain.String()), "cannot get transaction receipts")
 	}
 
 	isFinalized := func(receipt *geth.Receipt) rs.Result[*geth.Receipt] {
 		isFinalized, err := mgr.isTxReceiptFinalized(chain, receipt, confHeight)
 
 		if err != nil {
-			return rs.FromErr[*geth.Receipt](sdkerrors.Wrapf(errors.With(err, keyvals...),
+			if err == ethereum.NotFound {
+				return rs.FromErr[*geth.Receipt](ethereum.NotFound)
+			}
+			return rs.FromErr[*geth.Receipt](sdkerrors.Wrapf(errors.With(err, "chain", chain.String()),
 				"cannot determine if the transaction %s is finalized", receipt.TxHash.Hex()),
 			)
 		}
 
 		if !isFinalized {
-			return rs.FromErr[*geth.Receipt](fmt.Errorf("transaction %s not finalized", receipt.TxHash.Hex()))
+			return rs.FromErr[*geth.Receipt](rpc.NotFinalized)
 		}
 
 		return rs.FromOk(receipt)

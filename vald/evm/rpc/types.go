@@ -1,6 +1,7 @@
 package rpc
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -37,3 +38,6 @@ func ParseFinalityOverride(s string) (FinalityOverride, error) {
 		return -1, fmt.Errorf("invalid finality override option")
 	}
 }
+
+// NotFinalized is returned when a transaction is not finalized
+var NotFinalized = errors.New("not finalized")
