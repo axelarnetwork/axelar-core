@@ -305,15 +305,7 @@ func (mgr Mgr) ProcessMultipleGatewayTxConfirmations(event *types.ConfirmGateway
 			continue
 		}
 
-		receipt := result.Ok()
-		if receipt == nil {
-			logger.Infof("broadcasting empty vote due to nil receipt")
-			votes = append(votes, voteTypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain)))
-
-			continue
-		}
-
-		events := mgr.processGatewayTxLogs(event.Chain, event.GatewayAddress, receipt.Logs)
+		events := mgr.processGatewayTxLogs(event.Chain, event.GatewayAddress, result.Ok().Logs)
 		logger.Infof("broadcasting vote %v", events)
 		votes = append(votes, voteTypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain, events...)))
 	}

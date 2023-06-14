@@ -76,7 +76,7 @@ func (c *EthereumClient) LatestFinalizedBlockNumber(ctx context.Context, confirm
 
 func (c *EthereumClient) TransactionReceipts(ctx context.Context, txHashes []common.Hash) ([]Result, error) {
 	batch := slices.Map(txHashes, func(txHash common.Hash) rpc.BatchElem {
-		var receipt types.Receipt
+		var receipt *types.Receipt
 		return rpc.BatchElem{
 			Method: "eth_getTransactionReceipt",
 			Args:   []interface{}{txHash},
@@ -92,7 +92,13 @@ func (c *EthereumClient) TransactionReceipts(ctx context.Context, txHashes []com
 		if elem.Error != nil {
 			return Result(results.FromErr[*types.Receipt](elem.Error))
 		}
-		return Result(results.FromOk(elem.Result.(*types.Receipt)))
+
+		receipt := elem.Result.(**types.Receipt)
+		if *receipt == nil {
+			return Result(results.FromErr[*types.Receipt](ethereum.NotFound))
+		}
+
+		return Result(results.FromOk(*receipt))
 	}), nil
 
 }
