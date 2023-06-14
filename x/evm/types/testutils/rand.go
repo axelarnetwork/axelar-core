@@ -6,7 +6,7 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -208,7 +208,7 @@ func RandomCommand() types.Command {
 	case types.COMMAND_TYPE_TRANSFER_OPERATORSHIP:
 		key := &mock.KeyMock{
 			GetPubKeyFunc: func(valAddress sdk.ValAddress) (exported.PublicKey, bool) {
-				return funcs.Must(btcec.NewPrivateKey(btcec.S256())).PubKey().SerializeCompressed(), true
+				return funcs.Must(btcec.NewPrivateKey()).PubKey().SerializeCompressed(), true
 			},
 			GetParticipantsFunc: func() []sdk.ValAddress {
 				return slices.Expand2(rand.ValAddr, int(rand.I64Between(1, 10)))
