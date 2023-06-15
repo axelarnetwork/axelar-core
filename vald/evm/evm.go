@@ -423,11 +423,15 @@ func (mgr Mgr) isTxReceiptFinalized(chain nexus.ChainName, txReceipt *geth.Recei
 	}
 
 	latestFinalizedBlockNumber, err := client.LatestFinalizedBlockNumber(context.Background(), confHeight)
-	if err != nil || latestFinalizedBlockNumber.Cmp(txReceipt.BlockNumber) < 0 {
+	if err != nil {
 		return false, err
 	}
 
 	mgr.latestFinalizedBlockCache.Set(chain, latestFinalizedBlockNumber)
+
+	if latestFinalizedBlockNumber.Cmp(txReceipt.BlockNumber) < 0 {
+		return false, err
+	}
 
 	return true, nil
 }
