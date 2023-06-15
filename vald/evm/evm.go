@@ -71,7 +71,7 @@ func (mgr Mgr) ProcessNewChain(event *types.ChainAdded) (err error) {
 
 // ProcessDepositConfirmation votes on the correctness of an EVM chain token deposit
 func (mgr Mgr) ProcessDepositConfirmation(event *types.ConfirmDepositStarted) error {
-	if !slices.Any(event.Participants, mgr.isValidator) {
+	if !mgr.isParticipate(event.Participants) {
 		mgr.logger("pollID", event.PollID).Debug("ignoring deposit confirmation poll: not a participant")
 		return nil
 	}
@@ -130,7 +130,7 @@ func (mgr Mgr) ProcessDepositConfirmation(event *types.ConfirmDepositStarted) er
 
 // ProcessTokenConfirmation votes on the correctness of an EVM chain token deployment
 func (mgr Mgr) ProcessTokenConfirmation(event *types.ConfirmTokenStarted) error {
-	if !slices.Any(event.Participants, mgr.isValidator) {
+	if !mgr.isParticipate(event.Participants) {
 		mgr.logger("pollID", event.PollID).Debug("ignoring token confirmation poll: not a participant")
 		return nil
 	}
@@ -190,7 +190,7 @@ func (mgr Mgr) ProcessTokenConfirmation(event *types.ConfirmTokenStarted) error 
 
 // ProcessTransferKeyConfirmation votes on the correctness of an EVM chain key transfer
 func (mgr Mgr) ProcessTransferKeyConfirmation(event *types.ConfirmKeyTransferStarted) error {
-	if !slices.Any(event.Participants, mgr.isValidator) {
+	if !mgr.isParticipate(event.Participants) {
 		mgr.logger("pollID", event.PollID).Debug("ignoring key transfer confirmation poll: not a participant")
 		return nil
 	}
@@ -248,7 +248,7 @@ func (mgr Mgr) ProcessTransferKeyConfirmation(event *types.ConfirmKeyTransferSta
 
 // ProcessGatewayTxConfirmation votes on the correctness of an EVM chain gateway's transactions
 func (mgr Mgr) ProcessGatewayTxConfirmation(event *types.ConfirmGatewayTxStarted) error {
-	if !slices.Any(event.Participants, mgr.isValidator) {
+	if !mgr.isParticipate(event.Participants) {
 		mgr.logger("pollID", event.PollID).Debug("ignoring gateway tx confirmation poll: not a participant")
 		return nil
 	}
@@ -273,7 +273,7 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(event *types.ConfirmGatewayTxStarted
 
 // ProcessMultipleGatewayTxConfirmations votes on the correctness of an EVM chain multiple gateway transactions
 func (mgr Mgr) ProcessMultipleGatewayTxConfirmations(event *types.ConfirmGatewayTxsStarted) error {
-	if !slices.Any(event.Participants, mgr.isValidator) {
+	if !mgr.isParticipate(event.Participants) {
 		f := slices.Map(event.PollMappings, func(m types.PollMapping) vote.PollID { return m.PollID })
 		mgr.logger("poll_ids", f).Debug("ignoring gateway txs confirmation poll: not a participant")
 		return nil
@@ -466,6 +466,7 @@ func (mgr Mgr) GetTxReceiptIfFinalized(chain nexus.ChainName, txID common.Hash, 
 	return txReceipt, nil
 }
 
+// GetMultipleTxReceiptsIfFinalized retrieves receipts for provided transaction IDs, only if they're finalized.
 func (mgr Mgr) GetMultipleTxReceiptsIfFinalized(chain nexus.ChainName, txIDs []common.Hash, confHeight uint64) ([]rs.Result[*geth.Receipt], error) {
 	client, ok := mgr.rpcs[strings.ToLower(chain.String())]
 	if !ok {
@@ -499,7 +500,6 @@ func (mgr Mgr) GetMultipleTxReceiptsIfFinalized(chain nexus.ChainName, txIDs []c
 	return slices.Map(results, func(r rpc.Result) rs.Result[*geth.Receipt] {
 		return rs.Pipe(rs.Result[*geth.Receipt](r), isFinalized)
 	}), nil
-
 }
 
 func DecodeERC20TransferEvent(log *geth.Log) (types.EventTransfer, error) {
@@ -670,6 +670,11 @@ func (mgr Mgr) processGatewayTxLogs(chain nexus.ChainName, gatewayAddress types.
 	return events
 }
 
-func (mgr Mgr) isValidator(v sdk.ValAddress) bool {
-	return v.Equals(mgr.validator)
+// isParticipate checks if the validator is a participant of the pool
+func (mgr Mgr) isParticipate(participants []sdk.ValAddress) bool {
+	if !slices.Any(participants, func(v sdk.ValAddress) bool { return v.Equals(mgr.validator) }) {
+		return false
+	}
+
+	return true
 }
