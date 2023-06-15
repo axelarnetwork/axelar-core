@@ -894,7 +894,7 @@ func TestMgr_GetTxReceiptsIfFinalized(t *testing.T) {
 				}
 			}).
 				Then("should return receipt results", func(t *testing.T) {
-					receipts, err := mgr.GetMultipleTxReceiptsIfFinalized(chain, txHashes, confHeight)
+					receipts, err := mgr.GetTxReceiptsIfFinalized(chain, txHashes, confHeight)
 					assert.NoError(t, err)
 					assert.True(t, slices.All(receipts, func(result results.Result[*geth.Receipt]) bool { return result.Err() == nil }))
 				}),
@@ -920,7 +920,7 @@ func TestMgr_GetTxReceiptsIfFinalized(t *testing.T) {
 				}
 			}).
 				Then("should return error results for not found", func(t *testing.T) {
-					receipts, err := mgr.GetMultipleTxReceiptsIfFinalized(chain, txHashes, confHeight)
+					receipts, err := mgr.GetTxReceiptsIfFinalized(chain, txHashes, confHeight)
 					assert.NoError(t, err)
 
 					finalized := receipts[:len(txHashes)/2]

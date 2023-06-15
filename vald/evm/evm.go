@@ -271,8 +271,8 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(event *types.ConfirmGatewayTxStarted
 	return err
 }
 
-// ProcessMultipleGatewayTxConfirmations votes on the correctness of an EVM chain multiple gateway transactions
-func (mgr Mgr) ProcessMultipleGatewayTxConfirmations(event *types.ConfirmGatewayTxsStarted) error {
+// ProcessGatewayTxsConfirmation votes on the correctness of an EVM chain multiple gateway transactions
+func (mgr Mgr) ProcessGatewayTxsConfirmation(event *types.ConfirmGatewayTxsStarted) error {
 	if !mgr.isParticipate(event.Participants) {
 		f := slices.Map(event.PollMappings, func(m types.PollMapping) vote.PollID { return m.PollID })
 		mgr.logger("poll_ids", f).Debug("ignoring gateway txs confirmation poll: not a participant")
@@ -280,7 +280,7 @@ func (mgr Mgr) ProcessMultipleGatewayTxConfirmations(event *types.ConfirmGateway
 	}
 
 	txIDs := slices.Map(event.PollMappings, func(poll types.PollMapping) common.Hash { return common.Hash(poll.TxID) })
-	txReceipts, err := mgr.GetMultipleTxReceiptsIfFinalized(event.Chain, txIDs, event.ConfirmationHeight)
+	txReceipts, err := mgr.GetTxReceiptsIfFinalized(event.Chain, txIDs, event.ConfirmationHeight)
 	if err != nil {
 		return err
 	}
@@ -466,8 +466,8 @@ func (mgr Mgr) GetTxReceiptIfFinalized(chain nexus.ChainName, txID common.Hash, 
 	return txReceipt, nil
 }
 
-// GetMultipleTxReceiptsIfFinalized retrieves receipts for provided transaction IDs, only if they're finalized.
-func (mgr Mgr) GetMultipleTxReceiptsIfFinalized(chain nexus.ChainName, txIDs []common.Hash, confHeight uint64) ([]rs.Result[*geth.Receipt], error) {
+// GetTxReceiptsIfFinalized retrieves receipts for provided transaction IDs, only if they're finalized.
+func (mgr Mgr) GetTxReceiptsIfFinalized(chain nexus.ChainName, txIDs []common.Hash, confHeight uint64) ([]rs.Result[*geth.Receipt], error) {
 	client, ok := mgr.rpcs[strings.ToLower(chain.String())]
 	if !ok {
 		return nil, fmt.Errorf("rpc client not found for chain %s", chain.String())
