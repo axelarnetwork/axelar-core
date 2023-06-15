@@ -1,30 +1,34 @@
-## axelard tx gov submit-proposal
+## axelard tx gov submit-proposal call-contracts
 
-Submit a proposal along with an initial deposit
+Submit a call contracts proposal
 
 ### Synopsis
 
-Submit a proposal along with an initial deposit.
-Proposal title, description, type and deposit can be given directly or through a proposal JSON file.
+Submit a call contracts proposal along with an initial deposit.
+The proposal details must be supplied via a JSON file. For values that contains
+objects, only non-empty fields will be updated.
 
 Example:
-$ <appd> tx gov submit-proposal --proposal="path/to/proposal.json" --from mykey
+$ <appd> tx gov submit-proposal call-contracts \<path/to/proposal.json>
 
 Where proposal.json contains:
 
 {
-"title": "Test Proposal",
-"description": "My awesome proposal",
-"type": "Text",
-"deposit": "10test"
+"title": "Call Contracts",
+"description": "Call contracts on other chains",
+"contract_calls": \[
+{
+"chain": "chain",
+"contract_address": "0x1234",
+"payload": "MTIzMTIzMTIzNDEyNDEyMzU0ODk3MA=="
+}
+\]
 }
 
-Which is equivalent to:
-
-$ <appd> tx gov submit-proposal --title="Test Proposal" --description="My awesome proposal" --type="Text" --deposit="10test" --from mykey
+IMPORTANT: The payload field must be base64 encoded.
 
 ```
-axelard tx gov submit-proposal [flags]
+axelard tx gov submit-proposal call-contracts [proposal-file] [flags]
 ```
 
 ### Options
@@ -32,8 +36,7 @@ axelard tx gov submit-proposal [flags]
 ```
   -a, --account-number uint      The account number of the signing account (offline mode only)
   -b, --broadcast-mode string    Transaction broadcasting mode (sync|async|block) (default "block")
-      --deposit string           The proposal deposit
-      --description string       The proposal description
+      --deposit string           deposit of proposal
       --dry-run                  ignore the --gas flag and perform a simulation of a transaction, but don't broadcast it (when enabled, the local Keybase is not accessible)
       --fee-account string       Fee account pays fees for the transaction instead of deducting from the signer
       --fees string              Fees to pay along with transaction; eg: 10uatom
@@ -42,7 +45,7 @@ axelard tx gov submit-proposal [flags]
       --gas-adjustment float     adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default 1)
       --gas-prices string        Gas prices in decimal format to determine the transaction fee (e.g. 0.1uatom) (default "0.007uaxl")
       --generate-only            Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)
-  -h, --help                     help for submit-proposal
+  -h, --help                     help for call-contracts
       --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "file")
       --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
       --ledger                   Use a connected Ledger device
@@ -50,12 +53,9 @@ axelard tx gov submit-proposal [flags]
       --note string              Note to add a description to the transaction (previously --memo)
       --offline                  Offline mode (does not allow any online functionality
   -o, --output string            Output format (text|json) (default "json")
-      --proposal string          Proposal file path (if this path is given, other proposal flags are ignored)
   -s, --sequence uint            The sequence number of the signing account (offline mode only)
       --sign-mode string         Choose sign mode (direct|amino-json), this is an advanced feature
       --timeout-height uint      Set a block timeout height to prevent the tx from being committed past a certain height
-      --title string             The proposal title
-      --type string              The proposal Type
   -y, --yes                      Skip tx broadcasting prompt confirmation (default true)
 ```
 
@@ -71,11 +71,4 @@ axelard tx gov submit-proposal [flags]
 
 ### SEE ALSO
 
-- [axelard tx gov](axelard_tx_gov.md)	 - Governance transactions subcommands
-- [axelard tx gov submit-proposal call-contracts](axelard_tx_gov_submit-proposal_call-contracts.md)	 - Submit a call contracts proposal
-- [axelard tx gov submit-proposal cancel-software-upgrade](axelard_tx_gov_submit-proposal_cancel-software-upgrade.md)	 - Cancel the current software upgrade proposal
-- [axelard tx gov submit-proposal community-pool-spend](axelard_tx_gov_submit-proposal_community-pool-spend.md)	 - Submit a community pool spend proposal
-- [axelard tx gov submit-proposal ibc-upgrade](axelard_tx_gov_submit-proposal_ibc-upgrade.md)	 - Submit an IBC upgrade proposal
-- [axelard tx gov submit-proposal param-change](axelard_tx_gov_submit-proposal_param-change.md)	 - Submit a parameter change proposal
-- [axelard tx gov submit-proposal software-upgrade](axelard_tx_gov_submit-proposal_software-upgrade.md)	 - Submit a software upgrade proposal
-- [axelard tx gov submit-proposal update-client](axelard_tx_gov_submit-proposal_update-client.md)	 - Submit an update IBC client proposal
+- [axelard tx gov submit-proposal](axelard_tx_gov_submit-proposal.md)	 - Submit a proposal along with an initial deposit
