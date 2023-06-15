@@ -672,9 +672,5 @@ func (mgr Mgr) processGatewayTxLogs(chain nexus.ChainName, gatewayAddress types.
 
 // isParticipate checks if the validator is a participant of the pool
 func (mgr Mgr) isParticipate(participants []sdk.ValAddress) bool {
-	if !slices.Any(participants, func(v sdk.ValAddress) bool { return v.Equals(mgr.validator) }) {
-		return false
-	}
-
-	return true
+	return slices.Any(participants, func(v sdk.ValAddress) bool { return v.Equals(mgr.validator) })
 }
