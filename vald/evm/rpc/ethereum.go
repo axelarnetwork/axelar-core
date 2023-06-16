@@ -95,7 +95,7 @@ func (c *EthereumClient) TransactionReceipts(ctx context.Context, txHashes []com
 
 		receipt := elem.Result.(**types.Receipt)
 		if *receipt == nil {
-			return Result(results.FromErr[*types.Receipt](NotFinalized))
+			return Result(results.FromErr[*types.Receipt](ethereum.NotFound))
 		}
 
 		return Result(results.FromOk(*receipt))

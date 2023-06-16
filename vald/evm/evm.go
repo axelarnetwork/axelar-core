@@ -3,6 +3,7 @@ package evm
 import (
 	"bytes"
 	"context"
+	goerrors "errors"
 	"fmt"
 	"math/big"
 	"strings"
@@ -37,6 +38,9 @@ var (
 	ContractCallWithTokenSig        = crypto.Keccak256Hash([]byte("ContractCallWithToken(address,string,string,bytes32,bytes,string,uint256)"))
 	TokenSentSig                    = crypto.Keccak256Hash([]byte("TokenSent(address,string,string,string,uint256)"))
 )
+
+// NotFinalized is returned when a transaction is not finalized
+var NotFinalized = goerrors.New("not finalized")
 
 // Mgr manages all communication with Ethereum
 type Mgr struct {
@@ -475,7 +479,19 @@ func (mgr Mgr) GetTxReceiptsIfFinalized(chain nexus.ChainName, txIDs []common.Ha
 		return nil, sdkerrors.Wrapf(errors.With(err, "chain", chain.String()), "cannot get transaction receipts")
 	}
 
-	isFinalized := func(receipt *geth.Receipt) rs.Result[*geth.Receipt] {
+	isFinalized := func(r rpc.Result) rs.Result[*geth.Receipt] {
+		result := rs.Result[*geth.Receipt](r)
+
+		// Treat non-existent tx or tx in the mempool as not finalized.
+		if goerrors.Is(result.Err(), ethereum.NotFound) {
+			return rs.FromErr[*geth.Receipt](NotFinalized)
+		}
+
+		if result.Err() != nil {
+			return rs.FromErr[*geth.Receipt](result.Err())
+		}
+
+		receipt := result.Ok()
 		isFinalized, err := mgr.isTxReceiptFinalized(chain, receipt, confHeight)
 		if err != nil {
 			return rs.FromErr[*geth.Receipt](sdkerrors.Wrapf(errors.With(err, "chain", chain.String()),
@@ -487,12 +503,10 @@ func (mgr Mgr) GetTxReceiptsIfFinalized(chain nexus.ChainName, txIDs []common.Ha
 			return rs.FromErr[*geth.Receipt](rpc.NotFinalized)
 		}
 
-		return rs.FromOk(receipt)
+		return result
 	}
 
-	return slices.Map(results, func(r rpc.Result) rs.Result[*geth.Receipt] {
-		return rs.Pipe(rs.Result[*geth.Receipt](r), isFinalized)
-	}), nil
+	return slices.Map(results, isFinalized), nil
 }
 
 func DecodeERC20TransferEvent(log *geth.Log) (types.EventTransfer, error) {
