@@ -3,6 +3,7 @@ package cli
 import (
 	"encoding/hex"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -11,6 +12,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/version"
+	"github.com/cosmos/cosmos-sdk/x/gov/client/cli"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/spf13/cobra"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -389,5 +393,84 @@ func getCmdCallContract() *cobra.Command {
 	cmd.Flags().String(flagFeeAmount, "", "fee to pay for the contract call")
 	cmd.Flags().String(flagFeeRecipient, "", "recipient of the fee")
 	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+func NewSubmitCallContractsProposalTxCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "call-contracts [proposal-file]",
+		Args:  cobra.ExactArgs(1),
+		Short: "Submit a call contracts proposal",
+		Long: strings.TrimSpace(
+			fmt.Sprintf(`Submit a call contracts proposal along with an initial deposit.
+The proposal details must be supplied via a JSON file. For values that contains
+objects, only non-empty fields will be updated.
+
+Example:
+$ %s tx gov submit-proposal call-contracts <path/to/proposal.json>
+
+Where proposal.json contains:
+
+{
+  "title": "Call Contracts",
+  "description": "Call contracts on other chains",
+  "contract_calls": [
+    {
+      "chain": "chain",
+      "contract_address": "0x1234",
+      "payload": "MTIzMTIzMTIzNDEyNDEyMzU0ODk3MA=="
+    }
+  ]
+}
+
+IMPORTANT: The payload field must be base64 encoded.
+`,
+				version.AppName,
+			),
+		),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			file, err := os.ReadFile(args[0])
+			if err != nil {
+				return err
+			}
+
+			proposal := types.CallContractsProposal{}
+			if err := clientCtx.Codec.UnmarshalJSON(file, &proposal); err != nil {
+				return err
+			}
+
+			if err := proposal.ValidateBasic(); err != nil {
+				return err
+			}
+
+			depositStr, err := cmd.Flags().GetString(cli.FlagDeposit)
+			if err != nil {
+				return err
+			}
+
+			deposit, err := sdk.ParseCoinsNormalized(depositStr)
+			if err != nil {
+				return err
+			}
+
+			msg, err := govtypes.NewMsgSubmitProposal(&proposal, deposit, clientCtx.GetFromAddress())
+			if err != nil {
+				return err
+			}
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
+		},
+	}
+
+	cmd.Flags().String(cli.FlagDeposit, "", "deposit of proposal")
+
 	return cmd
 }
