@@ -47,6 +47,9 @@ var _ types.Keeper = &KeeperMock{}
 //			GetNextKeyIDFunc: func(ctx sdk.Context, chainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID, bool) {
 //				panic("mock out the GetNextKeyID method")
 //			},
+//			GetParamsFunc: func(ctx sdk.Context) types.Params {
+//				panic("mock out the GetParams method")
+//			},
 //			GetSigRouterFunc: func() types.SigRouter {
 //				panic("mock out the GetSigRouter method")
 //			},
@@ -86,6 +89,9 @@ type KeeperMock struct {
 
 	// GetNextKeyIDFunc mocks the GetNextKeyID method.
 	GetNextKeyIDFunc func(ctx sdk.Context, chainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID, bool)
+
+	// GetParamsFunc mocks the GetParams method.
+	GetParamsFunc func(ctx sdk.Context) types.Params
 
 	// GetSigRouterFunc mocks the GetSigRouter method.
 	GetSigRouterFunc func() types.SigRouter
@@ -150,6 +156,11 @@ type KeeperMock struct {
 			// ChainName is the chainName argument value.
 			ChainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
 		}
+		// GetParams holds details about calls to the GetParams method.
+		GetParams []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+		}
 		// GetSigRouter holds details about calls to the GetSigRouter method.
 		GetSigRouter []struct {
 		}
@@ -180,6 +191,7 @@ type KeeperMock struct {
 	lockGetKeygenSession           sync.RWMutex
 	lockGetKeygenSessionsByExpiry  sync.RWMutex
 	lockGetNextKeyID               sync.RWMutex
+	lockGetParams                  sync.RWMutex
 	lockGetSigRouter               sync.RWMutex
 	lockGetSigningSessionsByExpiry sync.RWMutex
 	lockLogger                     sync.RWMutex
@@ -435,6 +447,38 @@ func (mock *KeeperMock) GetNextKeyIDCalls() []struct {
 	mock.lockGetNextKeyID.RLock()
 	calls = mock.calls.GetNextKeyID
 	mock.lockGetNextKeyID.RUnlock()
+	return calls
+}
+
+// GetParams calls GetParamsFunc.
+func (mock *KeeperMock) GetParams(ctx sdk.Context) types.Params {
+	if mock.GetParamsFunc == nil {
+		panic("KeeperMock.GetParamsFunc: method is nil but Keeper.GetParams was just called")
+	}
+	callInfo := struct {
+		Ctx sdk.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetParams.Lock()
+	mock.calls.GetParams = append(mock.calls.GetParams, callInfo)
+	mock.lockGetParams.Unlock()
+	return mock.GetParamsFunc(ctx)
+}
+
+// GetParamsCalls gets all the calls that were made to GetParams.
+// Check the length with:
+//
+//	len(mockedKeeper.GetParamsCalls())
+func (mock *KeeperMock) GetParamsCalls() []struct {
+	Ctx sdk.Context
+} {
+	var calls []struct {
+		Ctx sdk.Context
+	}
+	mock.lockGetParams.RLock()
+	calls = mock.calls.GetParams
+	mock.lockGetParams.RUnlock()
 	return calls
 }
 

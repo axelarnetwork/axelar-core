@@ -6,6 +6,7 @@ option go_package = "github.com/axelarnetwork/axelar-core/x/vote/types";
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "axelar/vote/v1beta1/tx.proto";
+import "axelar/vote/v1beta1/query.proto";
 
 option (gogoproto.goproto_registration) = true;
 
@@ -15,6 +16,15 @@ service MsgService {
     option (google.api.http) = {
       post : "/axelar/vote/vote"
       body : "*"
+    };
+  }
+}
+
+// QueryService defines the gRPC querier service.
+service QueryService {
+  rpc Params(ParamsRequest) returns (ParamsResponse) {
+    option (google.api.http) = {
+      get : "/axelar/vote/v1beta1/params"
     };
   }
 }
