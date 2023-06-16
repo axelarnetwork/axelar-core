@@ -6,6 +6,7 @@ option go_package = "github.com/axelarnetwork/axelar-core/x/snapshot/types";
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "axelar/snapshot/v1beta1/tx.proto";
+import "axelar/snapshot/v1beta1/query.proto";
 
 option (gogoproto.goproto_registration) = true;
 
@@ -26,6 +27,15 @@ service MsgService {
     option (google.api.http) = {
       post : "/axelar/snapshot/deactivate_proxy"
       body : "*"
+    };
+  }
+}
+
+// QueryService defines the gRPC querier service.
+service QueryService {
+  rpc Params(ParamsRequest) returns (ParamsResponse) {
+    option (google.api.http) = {
+      get : "/axelar/snapshot/v1beta1/params"
     };
   }
 }

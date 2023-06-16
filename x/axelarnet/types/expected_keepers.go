@@ -26,6 +26,7 @@ import (
 // BaseKeeper is implemented by this module's base keeper
 type BaseKeeper interface {
 	Logger(ctx sdk.Context) log.Logger
+	GetParams(ctx sdk.Context) (params Params)
 	GetRouteTimeoutWindow(ctx sdk.Context) uint64
 	GetTransferLimit(ctx sdk.Context) uint64
 	GetEndBlockerLimit(ctx sdk.Context) uint64

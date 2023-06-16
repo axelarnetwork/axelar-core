@@ -72,6 +72,7 @@ axelard tx gov submit-proposal [flags]
 ### SEE ALSO
 
 - [axelard tx gov](axelard_tx_gov.md)	 - Governance transactions subcommands
+- [axelard tx gov submit-proposal call-contracts](axelard_tx_gov_submit-proposal_call-contracts.md)	 - Submit a call contracts proposal
 - [axelard tx gov submit-proposal cancel-software-upgrade](axelard_tx_gov_submit-proposal_cancel-software-upgrade.md)	 - Cancel the current software upgrade proposal
 - [axelard tx gov submit-proposal community-pool-spend](axelard_tx_gov_submit-proposal_community-pool-spend.md)	 - Submit a community pool spend proposal
 - [axelard tx gov submit-proposal ibc-upgrade](axelard_tx_gov_submit-proposal_ibc-upgrade.md)	 - Submit an IBC upgrade proposal

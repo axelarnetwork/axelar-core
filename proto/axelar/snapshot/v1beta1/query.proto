@@ -4,6 +4,7 @@ package axelar.snapshot.v1beta1;
 option go_package = "github.com/axelarnetwork/axelar-core/x/snapshot/types";
 
 import "gogoproto/gogo.proto";
+import "axelar/snapshot/v1beta1/params.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
@@ -27,3 +28,8 @@ message QueryValidatorsResponse {
 
   repeated Validator validators = 1;
 }
+
+// ParamsRequest represents a message that queries the params
+message ParamsRequest {}
+
+message ParamsResponse { Params params = 1 [ (gogoproto.nullable) = false ]; }

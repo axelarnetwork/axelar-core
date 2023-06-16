@@ -89,7 +89,7 @@ func (k Keeper) RotateKey(ctx sdk.Context, chainName nexus.ChainName) error {
 	k.setKey(ctx, key)
 	k.setKeyRotationCount(ctx, chainName, nextRotationCount)
 
-	params := k.getParams(ctx)
+	params := k.GetParams(ctx)
 	if keyEpoch.Epoch > params.ActiveEpochCount {
 		k.deactivateKeyAtEpoch(ctx, chainName, keyEpoch.Epoch-params.ActiveEpochCount)
 	}

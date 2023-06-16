@@ -48,6 +48,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		getCmdERC20Tokens(),
 		getCmdTokenInfo(),
 		getCmdEvent(),
+		getParams(),
 	)
 
 	return evmQueryCmd
@@ -588,6 +589,32 @@ func getCmdTokenInfo() *cobra.Command {
 		}
 
 		return clientCtx.PrintProto(res)
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+func getParams() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "params [chain]",
+		Short: "Returns the params for the evm module",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			queryClient := types.NewQueryServiceClient(clientCtx)
+
+			res, err := queryClient.Params(cmd.Context(), &types.ParamsRequest{Chain: args[0]})
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
 	}
 
 	flags.AddQueryFlagsToCmd(cmd)

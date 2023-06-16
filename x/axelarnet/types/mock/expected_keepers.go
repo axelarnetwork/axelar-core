@@ -48,6 +48,9 @@ var _ axelarnettypes.BaseKeeper = &BaseKeeperMock{}
 //			GetIBCTransferQueueFunc: func(ctx cosmossdktypes.Context) utils.KVQueue {
 //				panic("mock out the GetIBCTransferQueue method")
 //			},
+//			GetParamsFunc: func(ctx cosmossdktypes.Context) axelarnettypes.Params {
+//				panic("mock out the GetParams method")
+//			},
 //			GetRouteTimeoutWindowFunc: func(ctx cosmossdktypes.Context) uint64 {
 //				panic("mock out the GetRouteTimeoutWindow method")
 //			},
@@ -84,6 +87,9 @@ type BaseKeeperMock struct {
 
 	// GetIBCTransferQueueFunc mocks the GetIBCTransferQueue method.
 	GetIBCTransferQueueFunc func(ctx cosmossdktypes.Context) utils.KVQueue
+
+	// GetParamsFunc mocks the GetParams method.
+	GetParamsFunc func(ctx cosmossdktypes.Context) axelarnettypes.Params
 
 	// GetRouteTimeoutWindowFunc mocks the GetRouteTimeoutWindow method.
 	GetRouteTimeoutWindowFunc func(ctx cosmossdktypes.Context) uint64
@@ -131,6 +137,11 @@ type BaseKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx cosmossdktypes.Context
 		}
+		// GetParams holds details about calls to the GetParams method.
+		GetParams []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+		}
 		// GetRouteTimeoutWindow holds details about calls to the GetRouteTimeoutWindow method.
 		GetRouteTimeoutWindow []struct {
 			// Ctx is the ctx argument value.
@@ -166,6 +177,7 @@ type BaseKeeperMock struct {
 	lockGetCosmosChains       sync.RWMutex
 	lockGetEndBlockerLimit    sync.RWMutex
 	lockGetIBCTransferQueue   sync.RWMutex
+	lockGetParams             sync.RWMutex
 	lockGetRouteTimeoutWindow sync.RWMutex
 	lockGetTransferLimit      sync.RWMutex
 	lockLogger                sync.RWMutex
@@ -338,6 +350,38 @@ func (mock *BaseKeeperMock) GetIBCTransferQueueCalls() []struct {
 	mock.lockGetIBCTransferQueue.RLock()
 	calls = mock.calls.GetIBCTransferQueue
 	mock.lockGetIBCTransferQueue.RUnlock()
+	return calls
+}
+
+// GetParams calls GetParamsFunc.
+func (mock *BaseKeeperMock) GetParams(ctx cosmossdktypes.Context) axelarnettypes.Params {
+	if mock.GetParamsFunc == nil {
+		panic("BaseKeeperMock.GetParamsFunc: method is nil but BaseKeeper.GetParams was just called")
+	}
+	callInfo := struct {
+		Ctx cosmossdktypes.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetParams.Lock()
+	mock.calls.GetParams = append(mock.calls.GetParams, callInfo)
+	mock.lockGetParams.Unlock()
+	return mock.GetParamsFunc(ctx)
+}
+
+// GetParamsCalls gets all the calls that were made to GetParams.
+// Check the length with:
+//
+//	len(mockedBaseKeeper.GetParamsCalls())
+func (mock *BaseKeeperMock) GetParamsCalls() []struct {
+	Ctx cosmossdktypes.Context
+} {
+	var calls []struct {
+		Ctx cosmossdktypes.Context
+	}
+	mock.lockGetParams.RLock()
+	calls = mock.calls.GetParams
+	mock.lockGetParams.RUnlock()
 	return calls
 }
 

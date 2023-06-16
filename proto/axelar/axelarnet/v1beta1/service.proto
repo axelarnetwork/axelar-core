@@ -97,4 +97,10 @@ service QueryService {
     option (google.api.http).get =
         "/axelar/axelarnet/v1beta1/ibc_transfer_count";
   }
+
+  rpc Params(ParamsRequest) returns (ParamsResponse) {
+    option (google.api.http) = {
+      get : "/axelar/axelarnet/v1beta1/params"
+    };
+  }
 }
