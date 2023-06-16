@@ -83,4 +83,10 @@ service QueryService {
   rpc KeygenSession(KeygenSessionRequest) returns (KeygenSessionResponse) {
     option (google.api.http).get = "/axelar/multisig/v1beta1/keygen_session";
   }
+
+  rpc Params(ParamsRequest) returns (ParamsResponse) {
+    option (google.api.http) = {
+      get : "/axelar/multisig/v1beta1/params"
+    };
+  }
 }

@@ -34,7 +34,7 @@ func NewMsgServer(keeper Keeper, snapshotter Snapshotter, staker types.Staker, n
 func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest) (*types.StartKeygenResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	snap, err := s.snapshotter.CreateSnapshot(ctx, s.getParams(ctx).KeygenThreshold)
+	snap, err := s.snapshotter.CreateSnapshot(ctx, s.GetParams(ctx).KeygenThreshold)
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "unable to create snapshot for keygen")
 	}

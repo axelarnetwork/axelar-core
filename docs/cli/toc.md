@@ -32,6 +32,7 @@
       - [params](axelard_query_auth_params.md)	 - Query the current auth parameters
     - [axelarnet](axelard_query_axelarnet.md)	 - Querying commands for the axelarnet module
       - [ibc-transfer-count](axelard_query_axelarnet_ibc-transfer-count.md)	 - returns the number of pending IBC transfers per chain
+      - [params](axelard_query_axelarnet_params.md)	 - Returns the params for the axelarnet module
     - [bank](axelard_query_bank.md)	 - Querying commands for the bank module
       - [balances \[address\]](axelard_query_bank_balances.md)	 - Query for account balances by address
       - [denom-metadata](axelard_query_bank_denom-metadata.md)	 - Query the client metadata for coin denominations
@@ -57,6 +58,7 @@
       - [event \[chain\] \[event-id\]](axelard_query_evm_event.md)	 - Returns an event for the given chain
       - [gateway-address \[chain\]](axelard_query_evm_gateway-address.md)	 - Query the Axelar Gateway contract address
       - [latest-batched-commands \[chain\]](axelard_query_evm_latest-batched-commands.md)	 - Get the latest batched commands that can be wrapped in an EVM transaction to be executed in Axelar Gateway
+      - [params \[chain\]](axelard_query_evm_params.md)	 - Returns the params for the evm module
       - [pending-commands \[chain\]](axelard_query_evm_pending-commands.md)	 - Get the list of commands not yet added to a batch
       - [token-address \[chain\]](axelard_query_evm_token-address.md)	 - Query a token address by by either symbol or asset
       - [token-info \[chain\]](axelard_query_evm_token-info.md)	 - Returns the info of token by either symbol, asset, or address
@@ -117,6 +119,7 @@
       - [key-id \[chain\]](axelard_query_multisig_key-id.md)	 - Returns the key ID assigned to a given chain
       - [keygen-session \[key-id\]](axelard_query_multisig_keygen-session.md)	 - Returns the keygen session info for the given key ID
       - [next-key-id \[chain\]](axelard_query_multisig_next-key-id.md)	 - Returns the key ID assigned for the next rotation on a given chain and for the given key role
+      - [params](axelard_query_multisig_params.md)	 - Returns the params for the multisig module
     - [nexus](axelard_query_nexus.md)	 - Querying commands for the nexus module
       - [assets \[chain\]](axelard_query_nexus_assets.md)	 - Returns the registered assets of a chain
       - [chain-by-asset \[asset\]](axelard_query_nexus_chain-by-asset.md)	 - Returns the chains an asset is registered on
@@ -126,6 +129,7 @@
       - [fee-info \[chain\] \[asset\]](axelard_query_nexus_fee-info.md)	 - Returns the per-chain fee for a registered asset
       - [latest-deposit-address \[deposit chain\] \[recipient chain\] \[recipient address\]](axelard_query_nexus_latest-deposit-address.md)	 - Query for account by address
       - [message \[id\]](axelard_query_nexus_message.md)	 - Returns the cross-chain message with the given ID
+      - [params](axelard_query_nexus_params.md)	 - Returns the params for the nexus module
       - [recipient-address \[chain\] \[address\]](axelard_query_nexus_recipient-address.md)	 - Returns the recipient address corresponding to the given deposit address
       - [transfer-fee \[source-chain\] \[destination-chain\] \[amount\]](axelard_query_nexus_transfer-fee.md)	 - Returns the fee incurred on a cross-chain transfer
       - [transfer-rate-limit \[chain\] \[asset\]](axelard_query_nexus_transfer-rate-limit.md)	 - Returns the transfer rate limit for a given chain and asset
@@ -134,12 +138,17 @@
       - [subspace \[subspace\] \[key\]](axelard_query_params_subspace.md)	 - Query for raw parameters by subspace and key
     - [permission](axelard_query_permission.md)	 - Querying commands for the permission module
       - [governance-key](axelard_query_permission_governance-key.md)	 - Returns the governance key
+      - [params](axelard_query_permission_params.md)	 - Returns the params for the permission module
+    - [reward](axelard_query_reward.md)	 - Querying commands for the reward module
+      - [inflation-rate](axelard_query_reward_inflation-rate.md)	 - Returns the inflation rate on the network
+      - [params](axelard_query_reward_params.md)	 - Returns the params for the reward module
     - [slashing](axelard_query_slashing.md)	 - Querying commands for the slashing module
       - [params](axelard_query_slashing_params.md)	 - Query the current slashing parameters
       - [signing-info \[validator-conspub\]](axelard_query_slashing_signing-info.md)	 - Query a validator's signing information
       - [signing-infos](axelard_query_slashing_signing-infos.md)	 - Query signing information of all validators
     - [snapshot](axelard_query_snapshot.md)	 - Querying commands for the snapshot module
       - [operator \[proxy address\]](axelard_query_snapshot_operator.md)	 - Fetch the operator address associated with \[proxy address\]
+      - [params](axelard_query_snapshot_params.md)	 - Returns the params for the snapshot module
       - [proxy \[operator address\]](axelard_query_snapshot_proxy.md)	 - Fetch the proxy address associated with \[operator address\] and status (active/inactive)
     - [staking](axelard_query_staking.md)	 - Querying commands for the staking module
       - [delegation \[delegator-addr\] \[validator-addr\]](axelard_query_staking_delegation.md)	 - Query a delegation based on address and validator address
@@ -157,12 +166,16 @@
       - [validator \[validator-addr\]](axelard_query_staking_validator.md)	 - Query a validator
       - [validators](axelard_query_staking_validators.md)	 - Query for all validators
     - [tendermint-validator-set \[height\]](axelard_query_tendermint-validator-set.md)	 - Get the full tendermint validator set at given height
+    - [tss](axelard_query_tss.md)	 - Querying commands for the tss module
+      - [params](axelard_query_tss_params.md)	 - Returns the params for the tss module
     - [tx --type=\[hash|acc_seq|signature\] \[hash|acc_seq|signature\]](axelard_query_tx.md)	 - Query for a transaction by hash, "<addr>/<seq>" combination or comma-separated signatures in a committed block
     - [txs](axelard_query_txs.md)	 - Query for paginated transactions that match a set of events
     - [upgrade](axelard_query_upgrade.md)	 - Querying commands for the upgrade module
       - [applied \[upgrade-name\]](axelard_query_upgrade_applied.md)	 - block header for height at which a completed upgrade was applied
       - [module_versions \[optional module_name\]](axelard_query_upgrade_module_versions.md)	 - get the list of module versions
       - [plan](axelard_query_upgrade_plan.md)	 - get upgrade plan (if one exists)
+    - [vote](axelard_query_vote.md)	 - Querying commands for the vote module
+      - [params](axelard_query_vote_params.md)	 - Returns the params for the vote module
   - [rollback](axelard_rollback.md)	 - rollback cosmos-sdk and tendermint state by one height
   - [rosetta](axelard_rosetta.md)	 - spin up a rosetta server
   - [set-genesis-auth](axelard_set-genesis-auth.md)	 - Set the genesis parameters for the auth module

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/spf13/cobra"
 
@@ -22,6 +23,7 @@ func GetQueryCmd() *cobra.Command {
 
 	queryCmd.AddCommand(
 		GetCmdPendingIBCTransfersCount(),
+		getParams(),
 	)
 
 	return queryCmd
@@ -50,4 +52,30 @@ func GetCmdPendingIBCTransfersCount() *cobra.Command {
 			return clientCtx.PrintProto(res)
 		},
 	}
+}
+
+func getParams() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "params",
+		Short: "Returns the params for the axelarnet module",
+		Args:  cobra.ExactArgs(0),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			queryClient := types.NewQueryServiceClient(clientCtx)
+
+			res, err := queryClient.Params(cmd.Context(), &types.ParamsRequest{})
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
 }
