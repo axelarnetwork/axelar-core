@@ -153,7 +153,7 @@ func GetCmdKeygenSession() *cobra.Command {
 	return cmd
 }
 
-// GetParams returns the reward params
+// GetParams returns the multisig params
 func GetParams() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "params",
