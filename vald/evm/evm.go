@@ -71,7 +71,7 @@ func (mgr Mgr) ProcessNewChain(event *types.ChainAdded) (err error) {
 
 // ProcessDepositConfirmation votes on the correctness of an EVM chain token deposit
 func (mgr Mgr) ProcessDepositConfirmation(event *types.ConfirmDepositStarted) error {
-	if !mgr.isParticipate(event.Participants) {
+	if !mgr.isParticipantOf(event.Participants) {
 		mgr.logger("pollID", event.PollID).Debug("ignoring deposit confirmation poll: not a participant")
 		return nil
 	}
@@ -130,7 +130,7 @@ func (mgr Mgr) ProcessDepositConfirmation(event *types.ConfirmDepositStarted) er
 
 // ProcessTokenConfirmation votes on the correctness of an EVM chain token deployment
 func (mgr Mgr) ProcessTokenConfirmation(event *types.ConfirmTokenStarted) error {
-	if !mgr.isParticipate(event.Participants) {
+	if !mgr.isParticipantOf(event.Participants) {
 		mgr.logger("pollID", event.PollID).Debug("ignoring token confirmation poll: not a participant")
 		return nil
 	}
@@ -190,7 +190,7 @@ func (mgr Mgr) ProcessTokenConfirmation(event *types.ConfirmTokenStarted) error 
 
 // ProcessTransferKeyConfirmation votes on the correctness of an EVM chain key transfer
 func (mgr Mgr) ProcessTransferKeyConfirmation(event *types.ConfirmKeyTransferStarted) error {
-	if !mgr.isParticipate(event.Participants) {
+	if !mgr.isParticipantOf(event.Participants) {
 		mgr.logger("pollID", event.PollID).Debug("ignoring key transfer confirmation poll: not a participant")
 		return nil
 	}
@@ -248,7 +248,7 @@ func (mgr Mgr) ProcessTransferKeyConfirmation(event *types.ConfirmKeyTransferSta
 
 // ProcessGatewayTxConfirmation votes on the correctness of an EVM chain gateway's transactions
 func (mgr Mgr) ProcessGatewayTxConfirmation(event *types.ConfirmGatewayTxStarted) error {
-	if !mgr.isParticipate(event.Participants) {
+	if !mgr.isParticipantOf(event.Participants) {
 		mgr.logger("pollID", event.PollID).Debug("ignoring gateway tx confirmation poll: not a participant")
 		return nil
 	}
@@ -273,9 +273,9 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(event *types.ConfirmGatewayTxStarted
 
 // ProcessGatewayTxsConfirmation votes on the correctness of an EVM chain multiple gateway transactions
 func (mgr Mgr) ProcessGatewayTxsConfirmation(event *types.ConfirmGatewayTxsStarted) error {
-	if !mgr.isParticipate(event.Participants) {
-		f := slices.Map(event.PollMappings, func(m types.PollMapping) vote.PollID { return m.PollID })
-		mgr.logger("poll_ids", f).Debug("ignoring gateway txs confirmation poll: not a participant")
+	if !mgr.isParticipantOf(event.Participants) {
+		pollIDs := slices.Map(event.PollMappings, func(m types.PollMapping) vote.PollID { return m.PollID })
+		mgr.logger("poll_ids", pollIDs).Debug("ignoring gateway txs confirmation poll: not a participant")
 		return nil
 	}
 
@@ -292,22 +292,19 @@ func (mgr Mgr) ProcessGatewayTxsConfirmation(event *types.ConfirmGatewayTxsStart
 
 		logger := mgr.logger("chain", event.Chain, "poll_id", pollID.String(), "tx_id", txID.Hex())
 
-		if result.Err() != nil {
-			// only broadcast empty votes if the tx is not found or not finalized
-			switch result.Err() {
-			case ethereum.NotFound, rpc.NotFinalized:
-				logger.Infof("broadcasting empty vote due to error: %s", result.Err().Error())
-				votes = append(votes, voteTypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain)))
-			default:
-				logger.Errorf("failed to get tx receipt: %s", result.Err().Error())
-			}
-
-			continue
+		// only broadcast empty votes if the tx is not found or not finalized
+		switch result.Err() {
+		case nil:
+			events := mgr.processGatewayTxLogs(event.Chain, event.GatewayAddress, result.Ok().Logs)
+			logger.Infof("broadcasting vote %v", events)
+			votes = append(votes, voteTypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain, events...)))
+		case rpc.NotFinalized:
+			logger.Infof("broadcasting empty vote due to error: %s", result.Err().Error())
+			votes = append(votes, voteTypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain)))
+		default:
+			logger.Errorf("failed to get tx receipt: %s", result.Err().Error())
 		}
 
-		events := mgr.processGatewayTxLogs(event.Chain, event.GatewayAddress, result.Ok().Logs)
-		logger.Infof("broadcasting vote %v", events)
-		votes = append(votes, voteTypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain, events...)))
 	}
 
 	_, err = mgr.broadcaster.Broadcast(context.TODO(), votes...)
@@ -430,7 +427,7 @@ func (mgr Mgr) isTxReceiptFinalized(chain nexus.ChainName, txReceipt *geth.Recei
 	mgr.latestFinalizedBlockCache.Set(chain, latestFinalizedBlockNumber)
 
 	if latestFinalizedBlockNumber.Cmp(txReceipt.BlockNumber) < 0 {
-		return false, err
+		return false, nil
 	}
 
 	return true, nil
@@ -480,11 +477,7 @@ func (mgr Mgr) GetTxReceiptsIfFinalized(chain nexus.ChainName, txIDs []common.Ha
 
 	isFinalized := func(receipt *geth.Receipt) rs.Result[*geth.Receipt] {
 		isFinalized, err := mgr.isTxReceiptFinalized(chain, receipt, confHeight)
-
 		if err != nil {
-			if err == ethereum.NotFound {
-				return rs.FromErr[*geth.Receipt](ethereum.NotFound)
-			}
 			return rs.FromErr[*geth.Receipt](sdkerrors.Wrapf(errors.With(err, "chain", chain.String()),
 				"cannot determine if the transaction %s is finalized", receipt.TxHash.Hex()),
 			)
@@ -670,7 +663,7 @@ func (mgr Mgr) processGatewayTxLogs(chain nexus.ChainName, gatewayAddress types.
 	return events
 }
 
-// isParticipate checks if the validator is a participant of the pool
-func (mgr Mgr) isParticipate(participants []sdk.ValAddress) bool {
+// isParticipantOf checks if the validator is in the poll participants list
+func (mgr Mgr) isParticipantOf(participants []sdk.ValAddress) bool {
 	return slices.Any(participants, func(v sdk.ValAddress) bool { return v.Equals(mgr.validator) })
 }
