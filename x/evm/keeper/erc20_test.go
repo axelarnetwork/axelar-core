@@ -5,7 +5,8 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
+	ec "github.com/btcsuite/btcd/btcec/v2/ecdsa"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	evmTypes "github.com/ethereum/go-ethereum/core/types"
@@ -106,9 +107,13 @@ func TestSig(t *testing.T) {
 
 		V1, R1, S1 := signedTx1.RawSignatureValues()
 
+		var r, s btcec.ModNScalar
+		r.SetByteSlice(R1.Bytes())
+		s.SetByteSlice(S1.Bytes())
+
 		hash := signer.Hash(tx1)
 
-		sig, err := types.ToSignature(btcec.Signature{R: R1, S: S1}, hash, privateKey.PublicKey)
+		sig, err := types.ToSignature(*ec.NewSignature(&r, &s), hash, privateKey.PublicKey)
 		assert.NoError(t, err)
 
 		recoveredPK, err := crypto.SigToPub(hash.Bytes(), sig[:])

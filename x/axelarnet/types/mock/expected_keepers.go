@@ -12,6 +12,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/query"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
+	gov "github.com/cosmos/cosmos-sdk/x/gov/types"
 	ibctransfertypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
 	clienttypes "github.com/cosmos/ibc-go/v4/modules/core/02-client/types"
 	channeltypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
@@ -46,6 +47,9 @@ var _ axelarnettypes.BaseKeeper = &BaseKeeperMock{}
 //			},
 //			GetIBCTransferQueueFunc: func(ctx cosmossdktypes.Context) utils.KVQueue {
 //				panic("mock out the GetIBCTransferQueue method")
+//			},
+//			GetParamsFunc: func(ctx cosmossdktypes.Context) axelarnettypes.Params {
+//				panic("mock out the GetParams method")
 //			},
 //			GetRouteTimeoutWindowFunc: func(ctx cosmossdktypes.Context) uint64 {
 //				panic("mock out the GetRouteTimeoutWindow method")
@@ -83,6 +87,9 @@ type BaseKeeperMock struct {
 
 	// GetIBCTransferQueueFunc mocks the GetIBCTransferQueue method.
 	GetIBCTransferQueueFunc func(ctx cosmossdktypes.Context) utils.KVQueue
+
+	// GetParamsFunc mocks the GetParams method.
+	GetParamsFunc func(ctx cosmossdktypes.Context) axelarnettypes.Params
 
 	// GetRouteTimeoutWindowFunc mocks the GetRouteTimeoutWindow method.
 	GetRouteTimeoutWindowFunc func(ctx cosmossdktypes.Context) uint64
@@ -130,6 +137,11 @@ type BaseKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx cosmossdktypes.Context
 		}
+		// GetParams holds details about calls to the GetParams method.
+		GetParams []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+		}
 		// GetRouteTimeoutWindow holds details about calls to the GetRouteTimeoutWindow method.
 		GetRouteTimeoutWindow []struct {
 			// Ctx is the ctx argument value.
@@ -165,6 +177,7 @@ type BaseKeeperMock struct {
 	lockGetCosmosChains       sync.RWMutex
 	lockGetEndBlockerLimit    sync.RWMutex
 	lockGetIBCTransferQueue   sync.RWMutex
+	lockGetParams             sync.RWMutex
 	lockGetRouteTimeoutWindow sync.RWMutex
 	lockGetTransferLimit      sync.RWMutex
 	lockLogger                sync.RWMutex
@@ -337,6 +350,38 @@ func (mock *BaseKeeperMock) GetIBCTransferQueueCalls() []struct {
 	mock.lockGetIBCTransferQueue.RLock()
 	calls = mock.calls.GetIBCTransferQueue
 	mock.lockGetIBCTransferQueue.RUnlock()
+	return calls
+}
+
+// GetParams calls GetParamsFunc.
+func (mock *BaseKeeperMock) GetParams(ctx cosmossdktypes.Context) axelarnettypes.Params {
+	if mock.GetParamsFunc == nil {
+		panic("BaseKeeperMock.GetParamsFunc: method is nil but BaseKeeper.GetParams was just called")
+	}
+	callInfo := struct {
+		Ctx cosmossdktypes.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetParams.Lock()
+	mock.calls.GetParams = append(mock.calls.GetParams, callInfo)
+	mock.lockGetParams.Unlock()
+	return mock.GetParamsFunc(ctx)
+}
+
+// GetParamsCalls gets all the calls that were made to GetParams.
+// Check the length with:
+//
+//	len(mockedBaseKeeper.GetParamsCalls())
+func (mock *BaseKeeperMock) GetParamsCalls() []struct {
+	Ctx cosmossdktypes.Context
+} {
+	var calls []struct {
+		Ctx cosmossdktypes.Context
+	}
+	mock.lockGetParams.RLock()
+	calls = mock.calls.GetParams
+	mock.lockGetParams.RUnlock()
 	return calls
 }
 
@@ -3017,5 +3062,77 @@ func (mock *PortKeeperMock) BindPortCalls() []struct {
 	mock.lockBindPort.RLock()
 	calls = mock.calls.BindPort
 	mock.lockBindPort.RUnlock()
+	return calls
+}
+
+// Ensure, that GovKeeperMock does implement axelarnettypes.GovKeeper.
+// If this is not the case, regenerate this file with moq.
+var _ axelarnettypes.GovKeeper = &GovKeeperMock{}
+
+// GovKeeperMock is a mock implementation of axelarnettypes.GovKeeper.
+//
+//	func TestSomethingThatUsesGovKeeper(t *testing.T) {
+//
+//		// make and configure a mocked axelarnettypes.GovKeeper
+//		mockedGovKeeper := &GovKeeperMock{
+//			GetProposalFunc: func(ctx cosmossdktypes.Context, proposalID uint64) (gov.Proposal, bool) {
+//				panic("mock out the GetProposal method")
+//			},
+//		}
+//
+//		// use mockedGovKeeper in code that requires axelarnettypes.GovKeeper
+//		// and then make assertions.
+//
+//	}
+type GovKeeperMock struct {
+	// GetProposalFunc mocks the GetProposal method.
+	GetProposalFunc func(ctx cosmossdktypes.Context, proposalID uint64) (gov.Proposal, bool)
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// GetProposal holds details about calls to the GetProposal method.
+		GetProposal []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// ProposalID is the proposalID argument value.
+			ProposalID uint64
+		}
+	}
+	lockGetProposal sync.RWMutex
+}
+
+// GetProposal calls GetProposalFunc.
+func (mock *GovKeeperMock) GetProposal(ctx cosmossdktypes.Context, proposalID uint64) (gov.Proposal, bool) {
+	if mock.GetProposalFunc == nil {
+		panic("GovKeeperMock.GetProposalFunc: method is nil but GovKeeper.GetProposal was just called")
+	}
+	callInfo := struct {
+		Ctx        cosmossdktypes.Context
+		ProposalID uint64
+	}{
+		Ctx:        ctx,
+		ProposalID: proposalID,
+	}
+	mock.lockGetProposal.Lock()
+	mock.calls.GetProposal = append(mock.calls.GetProposal, callInfo)
+	mock.lockGetProposal.Unlock()
+	return mock.GetProposalFunc(ctx, proposalID)
+}
+
+// GetProposalCalls gets all the calls that were made to GetProposal.
+// Check the length with:
+//
+//	len(mockedGovKeeper.GetProposalCalls())
+func (mock *GovKeeperMock) GetProposalCalls() []struct {
+	Ctx        cosmossdktypes.Context
+	ProposalID uint64
+} {
+	var calls []struct {
+		Ctx        cosmossdktypes.Context
+		ProposalID uint64
+	}
+	mock.lockGetProposal.RLock()
+	calls = mock.calls.GetProposal
+	mock.lockGetProposal.RUnlock()
 	return calls
 }

@@ -44,6 +44,22 @@ func getEVMChains(ctx sdk.Context, n types.Nexus) []nexustypes.Chain {
 	return slices.Filter(n.GetChains(ctx), types.IsEVMChain)
 }
 
+// Params returns the reward module params
+func (q Querier) Params(c context.Context, req *types.ParamsRequest) (*types.ParamsResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	ck, err := q.keeper.ForChain(ctx, nexustypes.ChainName(req.Chain))
+	if err != nil {
+		return nil, fmt.Errorf("chain %s not found", req.Chain)
+	}
+
+	params := ck.GetParams(ctx)
+
+	return &types.ParamsResponse{
+		Params: params,
+	}, nil
+}
+
 // Chains returns the available evm chains
 func (q Querier) Chains(c context.Context, req *types.ChainsRequest) (*types.ChainsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)

@@ -44,7 +44,7 @@ func (k Keeper) InitGenesis(ctx sdk.Context, state *types.GenesisState) {
 // ExportGenesis generates a genesis file from the state
 func (k Keeper) ExportGenesis(ctx sdk.Context) *types.GenesisState {
 	return types.NewGenesisState(
-		k.getParams(ctx),
+		k.GetParams(ctx),
 		k.getKeygenSessions(ctx),
 		k.getSigningSessions(ctx),
 		k.getKeys(ctx),

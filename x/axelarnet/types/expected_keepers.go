@@ -8,6 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/query"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	ibctypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
 	clienttypes "github.com/cosmos/ibc-go/v4/modules/core/02-client/types"
 	channeltypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
@@ -20,11 +21,12 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
-//go:generate moq -out ./mock/expected_keepers.go -pkg mock . BaseKeeper Nexus BankKeeper IBCTransferKeeper ChannelKeeper AccountKeeper PortKeeper
+//go:generate moq -out ./mock/expected_keepers.go -pkg mock . BaseKeeper Nexus BankKeeper IBCTransferKeeper ChannelKeeper AccountKeeper PortKeeper GovKeeper
 
 // BaseKeeper is implemented by this module's base keeper
 type BaseKeeper interface {
 	Logger(ctx sdk.Context) log.Logger
+	GetParams(ctx sdk.Context) (params Params)
 	GetRouteTimeoutWindow(ctx sdk.Context) uint64
 	GetTransferLimit(ctx sdk.Context) uint64
 	GetEndBlockerLimit(ctx sdk.Context) uint64
@@ -114,4 +116,9 @@ type CosmosChainGetter func(ctx sdk.Context, chain nexus.ChainName) (CosmosChain
 // PortKeeper used in module_test
 type PortKeeper interface {
 	BindPort(ctx sdk.Context, portID string) *capabilitytypes.Capability
+}
+
+// GovKeeper provides functionality to the gov module
+type GovKeeper interface {
+	GetProposal(ctx sdk.Context, proposalID uint64) (govtypes.Proposal, bool)
 }
