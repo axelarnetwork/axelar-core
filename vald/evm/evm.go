@@ -476,7 +476,8 @@ func (mgr Mgr) GetTxReceiptsIfFinalized(chain nexus.ChainName, txIDs []common.Ha
 
 	results, err := client.TransactionReceipts(context.Background(), txIDs)
 	if err != nil {
-		return nil, sdkerrors.Wrapf(errors.With(err, "chain", chain.String()), "cannot get transaction receipts")
+		return nil, sdkerrors.Wrapf(errors.With(err, "chain", chain.String(), "tx_ids", txIDs),
+			"cannot get transaction receipts")
 	}
 
 	isFinalized := func(r rpc.Result) rs.Result[*geth.Receipt] {
