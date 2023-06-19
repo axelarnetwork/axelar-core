@@ -10,7 +10,7 @@ import (
 	"github.com/axelarnetwork/utils/slices"
 )
 
-const TxLimit = 100
+const TxLimit = 10
 
 // NewConfirmGatewayTxsRequest creates a message of type ConfirmGatewayTxsRequest
 func NewConfirmGatewayTxsRequest(sender sdk.AccAddress, chain nexus.ChainName, txIDs []Hash) *ConfirmGatewayTxsRequest {
