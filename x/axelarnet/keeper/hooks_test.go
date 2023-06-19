@@ -124,9 +124,11 @@ func TestAfterProposalDeposit(t *testing.T) {
 								proposal.TotalDeposit = proposal.TotalDeposit.Add(minDeposit.SubAmount(sdk.NewInt(1)))
 							}).
 								Then("should panic", func(t *testing.T) {
-									assert.PanicsWithError(t, fmt.Sprintf("proposal %d does not have enough deposits for calling contract %s on chain %s", proposal.ProposalId, contractCall.ContractAddress, contractCall.Chain), func() {
-										keeper.Hooks(nexusK, govK).AfterProposalDeposit(ctx, proposal.ProposalId, rand.AccAddr())
-									})
+									assert.PanicsWithError(t, fmt.Sprintf("proposal %d does not have enough deposits for calling contract %s on chain %s (required: %s, provided: %s)",
+										proposal.ProposalId, contractCall.ContractAddress, contractCall.Chain, minDeposit.String(), proposal.TotalDeposit.String()),
+										func() {
+											keeper.Hooks(nexusK, govK).AfterProposalDeposit(ctx, proposal.ProposalId, rand.AccAddr())
+										})
 								}),
 						),
 				),
