@@ -302,12 +302,11 @@ func (minDeposits CallContractProposalMinDeposits) ValidateBasic() error {
 			return err
 		}
 
-		key := fmt.Sprintf("%s/%s", strings.ToLower(minDeposit.Chain.String()), strings.ToLower(minDeposit.ContractAddress))
+		key := fmt.Sprintf("%s%s%s", strings.ToLower(minDeposit.Chain.String()), utils.DefaultDelimiter, strings.ToLower(minDeposit.ContractAddress))
 		if _, ok := chainContractAddressPairs[key]; ok {
 			return fmt.Errorf("duplicate chain and contract address pair found")
 		}
 		chainContractAddressPairs[key] = struct{}{}
-
 	}
 
 	return nil
