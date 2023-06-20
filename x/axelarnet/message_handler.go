@@ -73,10 +73,6 @@ func validateFee(ctx sdk.Context, n types.Nexus, b types.BankKeeper, token sdk.C
 		return fmt.Errorf("unregistered fee denom %s", token.GetDenom())
 	}
 
-	if b.BlockedAddr(funcs.Must(sdk.AccAddressFromBech32(fee.Recipient))) {
-		return fmt.Errorf("fee recipient is a blocked address")
-	}
-
 	if fee.RefundRecipient != nil {
 		if err := n.ValidateAddress(ctx, nexus.CrossChainAddress{Chain: sourceChain, Address: *fee.RefundRecipient}); err != nil {
 			return err

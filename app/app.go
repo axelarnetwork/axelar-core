@@ -101,6 +101,7 @@ import (
 	axelarnetclient "github.com/axelarnetwork/axelar-core/x/axelarnet/client"
 	axelarnetKeeper "github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	axelarnetTypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
+	axelarbankkeeper "github.com/axelarnetwork/axelar-core/x/bank/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm"
 	evmKeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
@@ -373,7 +374,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	// No more routes can be added
 	nexusRouter := nexusTypes.NewRouter()
 	nexusRouter.AddAddressValidator(evmTypes.ModuleName, evmKeeper.NewAddressValidator()).
-		AddAddressValidator(axelarnetTypes.ModuleName, axelarnetKeeper.NewAddressValidator(axelarnetK, bankK))
+		AddAddressValidator(axelarnetTypes.ModuleName, axelarnetKeeper.NewAddressValidator(axelarnetK))
 	nexusK.SetRouter(nexusRouter)
 
 	// Create IBC rate limiter
@@ -409,7 +410,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	)
 
 	rewardK := rewardKeeper.NewKeeper(
-		appCodec, keys[rewardTypes.StoreKey], app.getSubspace(rewardTypes.ModuleName), bankK, distrK, stakingK,
+		appCodec, keys[rewardTypes.StoreKey], app.getSubspace(rewardTypes.ModuleName), axelarbankkeeper.NewBankKeeper(bankK), distrK, stakingK,
 	)
 	multisigK := multisigKeeper.NewKeeper(
 		appCodec, keys[multisigTypes.StoreKey], app.getSubspace(multisigTypes.ModuleName),
@@ -423,7 +424,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		appCodec, keys[tssTypes.StoreKey], app.getSubspace(tssTypes.ModuleName),
 	)
 	snapK := snapKeeper.NewKeeper(
-		appCodec, keys[snapTypes.StoreKey], app.getSubspace(snapTypes.ModuleName), stakingK, bankK,
+		appCodec, keys[snapTypes.StoreKey], app.getSubspace(snapTypes.ModuleName), stakingK, axelarbankkeeper.NewBankKeeper(bankK),
 		slashingK,
 	)
 	votingK := voteKeeper.NewKeeper(
@@ -464,7 +465,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	}
 
 	ibcK := axelarnetKeeper.NewIBCKeeper(axelarnetK, app.transferKeeper, app.ibcKeeper.ChannelKeeper)
-	axelarnetModule := axelarnet.NewAppModule(axelarnetK, nexusK, bankK, accountK, ibcK, transfer.NewIBCModule(app.transferKeeper), rateLimiter, logger)
+	axelarnetModule := axelarnet.NewAppModule(axelarnetK, nexusK, axelarbankkeeper.NewBankKeeper(bankK), accountK, ibcK, transfer.NewIBCModule(app.transferKeeper), rateLimiter, logger)
 
 	// Create static IBC router, add transfer route, then set and seal it
 	ibcRouter := porttypes.NewRouter()
