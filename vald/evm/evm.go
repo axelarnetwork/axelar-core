@@ -302,7 +302,7 @@ func (mgr Mgr) ProcessGatewayTxsConfirmation(event *types.ConfirmGatewayTxsStart
 			events := mgr.processGatewayTxLogs(event.Chain, event.GatewayAddress, result.Ok().Logs)
 			logger.Infof("broadcasting vote %v", events)
 			votes = append(votes, voteTypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain, events...)))
-		case rpc.NotFinalized:
+		case NotFinalized, ethereum.NotFound:
 			logger.Infof("broadcasting empty vote due to error: %s", result.Err().Error())
 			votes = append(votes, voteTypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain)))
 		default:
@@ -480,19 +480,7 @@ func (mgr Mgr) GetTxReceiptsIfFinalized(chain nexus.ChainName, txIDs []common.Ha
 			"cannot get transaction receipts")
 	}
 
-	isFinalized := func(r rpc.Result) rs.Result[*geth.Receipt] {
-		result := rs.Result[*geth.Receipt](r)
-
-		// Treat non-existent tx or tx in the mempool as not finalized.
-		if goerrors.Is(result.Err(), ethereum.NotFound) {
-			return rs.FromErr[*geth.Receipt](NotFinalized)
-		}
-
-		if result.Err() != nil {
-			return rs.FromErr[*geth.Receipt](result.Err())
-		}
-
-		receipt := result.Ok()
+	isFinalized := func(receipt *geth.Receipt) rs.Result[*geth.Receipt] {
 		isFinalized, err := mgr.isTxReceiptFinalized(chain, receipt, confHeight)
 		if err != nil {
 			return rs.FromErr[*geth.Receipt](sdkerrors.Wrapf(errors.With(err, "chain", chain.String()),
@@ -501,13 +489,15 @@ func (mgr Mgr) GetTxReceiptsIfFinalized(chain nexus.ChainName, txIDs []common.Ha
 		}
 
 		if !isFinalized {
-			return rs.FromErr[*geth.Receipt](rpc.NotFinalized)
+			return rs.FromErr[*geth.Receipt](NotFinalized)
 		}
 
-		return result
+		return rs.FromOk(receipt)
 	}
 
-	return slices.Map(results, isFinalized), nil
+	return slices.Map(results, func(r rpc.Result) rs.Result[*geth.Receipt] {
+		return rs.Pipe(rs.Result[*geth.Receipt](r), isFinalized)
+	}), nil
 }
 
 func DecodeERC20TransferEvent(log *geth.Log) (types.EventTransfer, error) {
