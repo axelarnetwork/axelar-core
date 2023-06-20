@@ -8,14 +8,22 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
+
+	"github.com/axelarnetwork/utils/monads/results"
 )
 
 //go:generate moq -out ./mock/client.go -pkg mock . Client
+
+// Result is a custom type that allows moq to correctly generate the mock for
+// results.Result with *types.Receipt.
+type Result results.Result[*types.Receipt]
 
 // Client provides calls to EVM JSON-RPC endpoints
 type Client interface {
 	// TransactionReceipt returns the transaction receipt for the given transaction hash
 	TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error)
+	// TransactionReceipts returns transaction receipts for the given transaction hashes
+	TransactionReceipts(ctx context.Context, txHashes []common.Hash) ([]Result, error)
 	// HeaderByNumber returns the block header for the given block number
 	HeaderByNumber(ctx context.Context, number *big.Int) (*Header, error)
 	// LatestFinalizedBlockNumber returns the latest finalized block number
