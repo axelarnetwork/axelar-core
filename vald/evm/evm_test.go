@@ -927,7 +927,7 @@ func TestMgr_GetTxReceiptsIfFinalized(t *testing.T) {
 					notFinalized := receipts[len(txHashes)/2:]
 
 					assert.True(t, slices.All(finalized, func(result results.Result[*geth.Receipt]) bool { return result.Err() == nil }))
-					assert.True(t, slices.All(notFinalized, func(result results.Result[*geth.Receipt]) bool { return result.Err() == evmRpc.NotFinalized }))
+					assert.True(t, slices.All(notFinalized, func(result results.Result[*geth.Receipt]) bool { return result.Err() == evm.NotFinalized }))
 				}),
 		).
 		Run(t, 5)
