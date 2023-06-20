@@ -237,6 +237,7 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 	evmTokConf := eventBus.Subscribe(tmEvents.Filter[*evmTypes.ConfirmTokenStarted]())
 	evmTraConf := eventBus.Subscribe(tmEvents.Filter[*evmTypes.ConfirmKeyTransferStarted]())
 	evmGatewayTxConf := eventBus.Subscribe(tmEvents.Filter[*evmTypes.ConfirmGatewayTxStarted]())
+	evmGatewayTxsConf := eventBus.Subscribe(tmEvents.Filter[*evmTypes.ConfirmGatewayTxsStarted]())
 
 	multisigKeygen := eventBus.Subscribe(tmEvents.Filter[*multisigTypes.KeygenStarted]())
 	multisigSigning := eventBus.Subscribe(tmEvents.Filter[*multisigTypes.SigningStarted]())
@@ -296,6 +297,7 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 		createJobTyped(evmTokConf, evmMgr.ProcessTokenConfirmation, cancelEventCtx),
 		createJobTyped(evmTraConf, evmMgr.ProcessTransferKeyConfirmation, cancelEventCtx),
 		createJobTyped(evmGatewayTxConf, evmMgr.ProcessGatewayTxConfirmation, cancelEventCtx),
+		createJobTyped(evmGatewayTxsConf, evmMgr.ProcessGatewayTxsConfirmation, cancelEventCtx),
 		createJobTyped(multisigKeygen, multisigMgr.ProcessKeygenStarted, cancelEventCtx),
 		createJobTyped(multisigSigning, multisigMgr.ProcessSigningStarted, cancelEventCtx),
 	}
