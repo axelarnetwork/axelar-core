@@ -25,6 +25,8 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&RetryIBCTransferRequest{}, "axelarnet/RetryIBCTransfer", nil)
 	cdc.RegisterConcrete(&RouteMessageRequest{}, "axelarnet/RouteMessage", nil)
 	cdc.RegisterConcrete(&CallContractRequest{}, "axelarnet/CallContract", nil)
+
+	cdc.RegisterConcrete(&CallContractsProposal{}, "axelarnet/CallContractsProposal", nil)
 }
 
 type customRegistry interface {

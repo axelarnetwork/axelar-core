@@ -17,7 +17,7 @@ const (
 
 func init() {
 	gov.RegisterProposalType(ProposalTypeCallContracts)
-	gov.RegisterProposalTypeCodec(&CallContractsProposal{}, "axelar/CallContractsProposal")
+	gov.RegisterProposalTypeCodec(&CallContractsProposal{}, "axelarnet/CallContractsProposal")
 }
 
 // ValidateBasic validates the contract call

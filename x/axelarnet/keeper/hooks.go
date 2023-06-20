@@ -33,8 +33,10 @@ func (h Hooks) AfterProposalDeposit(ctx sdk.Context, proposalID uint64, _ sdk.Ac
 		minDepositsMap := h.k.GetParams(ctx).CallContractsProposalMinDeposits.ToMap()
 
 		for _, contractCall := range c.ContractCalls {
-			if !proposal.TotalDeposit.IsAllGTE(minDepositsMap.Get(contractCall.Chain, contractCall.ContractAddress)) {
-				panic(fmt.Errorf("proposal %d does not have enough deposits for calling contract %s on chain %s", proposalID, contractCall.ContractAddress, contractCall.Chain))
+			minDeposit := minDepositsMap.Get(contractCall.Chain, contractCall.ContractAddress)
+			if !proposal.TotalDeposit.IsAllGTE(minDeposit) {
+				panic(fmt.Errorf("proposal %d does not have enough deposits for calling contract %s on chain %s (required: %s, provided: %s)",
+					proposalID, contractCall.ContractAddress, contractCall.Chain, minDeposit.String(), proposal.TotalDeposit.String()))
 			}
 		}
 	default:
