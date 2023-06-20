@@ -3,6 +3,7 @@ package evm
 import (
 	"bytes"
 	"context"
+	goerrors "errors"
 	"fmt"
 	"math/big"
 	"strings"
@@ -20,9 +21,11 @@ import (
 	"github.com/axelarnetwork/axelar-core/vald/evm/rpc"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/log"
+	rs "github.com/axelarnetwork/utils/monads/results"
 	"github.com/axelarnetwork/utils/slices"
 )
 
@@ -35,6 +38,9 @@ var (
 	ContractCallWithTokenSig        = crypto.Keccak256Hash([]byte("ContractCallWithToken(address,string,string,bytes32,bytes,string,uint256)"))
 	TokenSentSig                    = crypto.Keccak256Hash([]byte("TokenSent(address,string,string,string,uint256)"))
 )
+
+// NotFinalized is returned when a transaction is not finalized
+var NotFinalized = goerrors.New("not finalized")
 
 // Mgr manages all communication with Ethereum
 type Mgr struct {
@@ -69,7 +75,7 @@ func (mgr Mgr) ProcessNewChain(event *types.ChainAdded) (err error) {
 
 // ProcessDepositConfirmation votes on the correctness of an EVM chain token deposit
 func (mgr Mgr) ProcessDepositConfirmation(event *types.ConfirmDepositStarted) error {
-	if !slices.Any(event.Participants, func(v sdk.ValAddress) bool { return v.Equals(mgr.validator) }) {
+	if !mgr.isParticipantOf(event.Participants) {
 		mgr.logger("pollID", event.PollID).Debug("ignoring deposit confirmation poll: not a participant")
 		return nil
 	}
@@ -128,7 +134,7 @@ func (mgr Mgr) ProcessDepositConfirmation(event *types.ConfirmDepositStarted) er
 
 // ProcessTokenConfirmation votes on the correctness of an EVM chain token deployment
 func (mgr Mgr) ProcessTokenConfirmation(event *types.ConfirmTokenStarted) error {
-	if !slices.Any(event.Participants, func(v sdk.ValAddress) bool { return v.Equals(mgr.validator) }) {
+	if !mgr.isParticipantOf(event.Participants) {
 		mgr.logger("pollID", event.PollID).Debug("ignoring token confirmation poll: not a participant")
 		return nil
 	}
@@ -188,7 +194,7 @@ func (mgr Mgr) ProcessTokenConfirmation(event *types.ConfirmTokenStarted) error 
 
 // ProcessTransferKeyConfirmation votes on the correctness of an EVM chain key transfer
 func (mgr Mgr) ProcessTransferKeyConfirmation(event *types.ConfirmKeyTransferStarted) error {
-	if !slices.Any(event.Participants, func(v sdk.ValAddress) bool { return v.Equals(mgr.validator) }) {
+	if !mgr.isParticipantOf(event.Participants) {
 		mgr.logger("pollID", event.PollID).Debug("ignoring key transfer confirmation poll: not a participant")
 		return nil
 	}
@@ -246,7 +252,7 @@ func (mgr Mgr) ProcessTransferKeyConfirmation(event *types.ConfirmKeyTransferSta
 
 // ProcessGatewayTxConfirmation votes on the correctness of an EVM chain gateway's transactions
 func (mgr Mgr) ProcessGatewayTxConfirmation(event *types.ConfirmGatewayTxStarted) error {
-	if !slices.Any(event.Participants, func(v sdk.ValAddress) bool { return v.Equals(mgr.validator) }) {
+	if !mgr.isParticipantOf(event.Participants) {
 		mgr.logger("pollID", event.PollID).Debug("ignoring gateway tx confirmation poll: not a participant")
 		return nil
 	}
@@ -262,79 +268,50 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(event *types.ConfirmGatewayTxStarted
 		return err
 	}
 
-	var events []types.Event
-	for i, txlog := range txReceipt.Logs {
-		if !bytes.Equal(event.GatewayAddress.Bytes(), txlog.Address.Bytes()) {
-			continue
-		}
-
-		switch txlog.Topics[0] {
-		case ContractCallSig:
-			gatewayEvent, err := DecodeEventContractCall(txlog)
-			if err != nil {
-				mgr.logger().Debug(sdkerrors.Wrap(err, "decode event ContractCall failed").Error())
-				continue
-			}
-
-			if err := gatewayEvent.ValidateBasic(); err != nil {
-				mgr.logger().Debug(sdkerrors.Wrap(err, "invalid event ContractCall").Error())
-				continue
-			}
-
-			events = append(events, types.Event{
-				Chain: event.Chain,
-				TxID:  event.TxID,
-				Index: uint64(i),
-				Event: &types.Event_ContractCall{
-					ContractCall: &gatewayEvent,
-				},
-			})
-		case ContractCallWithTokenSig:
-			gatewayEvent, err := DecodeEventContractCallWithToken(txlog)
-			if err != nil {
-				mgr.logger().Debug(sdkerrors.Wrap(err, "decode event ContractCallWithToken failed").Error())
-				continue
-			}
-
-			if err := gatewayEvent.ValidateBasic(); err != nil {
-				mgr.logger().Debug(sdkerrors.Wrap(err, "invalid event ContractCallWithToken").Error())
-				continue
-			}
-
-			events = append(events, types.Event{
-				Chain: event.Chain,
-				TxID:  event.TxID,
-				Index: uint64(i),
-				Event: &types.Event_ContractCallWithToken{
-					ContractCallWithToken: &gatewayEvent,
-				},
-			})
-		case TokenSentSig:
-			gatewayEvent, err := DecodeEventTokenSent(txlog)
-			if err != nil {
-				mgr.logger().Debug(sdkerrors.Wrap(err, "decode event TokenSent failed").Error())
-			}
-
-			if err := gatewayEvent.ValidateBasic(); err != nil {
-				mgr.logger().Debug(sdkerrors.Wrap(err, "invalid event TokenSent").Error())
-				continue
-			}
-
-			events = append(events, types.Event{
-				Chain: event.Chain,
-				TxID:  event.TxID,
-				Index: uint64(i),
-				Event: &types.Event_TokenSent{
-					TokenSent: &gatewayEvent,
-				},
-			})
-		default:
-		}
-	}
-
+	events := mgr.processGatewayTxLogs(event.Chain, event.GatewayAddress, txReceipt.Logs)
 	mgr.logger().Infof("broadcasting vote %v for poll %s", events, event.PollID.String())
 	_, err = mgr.broadcaster.Broadcast(context.TODO(), voteTypes.NewVoteRequest(mgr.proxy, event.PollID, types.NewVoteEvents(event.Chain, events...)))
 
+	return err
+}
+
+// ProcessGatewayTxsConfirmation votes on the correctness of an EVM chain multiple gateway transactions
+func (mgr Mgr) ProcessGatewayTxsConfirmation(event *types.ConfirmGatewayTxsStarted) error {
+	if !mgr.isParticipantOf(event.Participants) {
+		pollIDs := slices.Map(event.PollMappings, func(m types.PollMapping) vote.PollID { return m.PollID })
+		mgr.logger("poll_ids", pollIDs).Debug("ignoring gateway txs confirmation poll: not a participant")
+		return nil
+	}
+
+	txIDs := slices.Map(event.PollMappings, func(poll types.PollMapping) common.Hash { return common.Hash(poll.TxID) })
+	txReceipts, err := mgr.GetTxReceiptsIfFinalized(event.Chain, txIDs, event.ConfirmationHeight)
+	if err != nil {
+		return err
+	}
+
+	var votes []sdk.Msg
+	for i, result := range txReceipts {
+		pollID := event.PollMappings[i].PollID
+		txID := event.PollMappings[i].TxID
+
+		logger := mgr.logger("chain", event.Chain, "poll_id", pollID.String(), "tx_id", txID.Hex())
+
+		// only broadcast empty votes if the tx is not found or not finalized
+		switch result.Err() {
+		case nil:
+			events := mgr.processGatewayTxLogs(event.Chain, event.GatewayAddress, result.Ok().Logs)
+			logger.Infof("broadcasting vote %v", events)
+			votes = append(votes, voteTypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain, events...)))
+		case NotFinalized, ethereum.NotFound:
+			logger.Infof("broadcasting empty vote due to error: %s", result.Err().Error())
+			votes = append(votes, voteTypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain)))
+		default:
+			logger.Errorf("failed to get tx receipt: %s", result.Err().Error())
+		}
+
+	}
+
+	_, err = mgr.broadcaster.Broadcast(context.TODO(), votes...)
 	return err
 }
 
@@ -447,11 +424,15 @@ func (mgr Mgr) isTxReceiptFinalized(chain nexus.ChainName, txReceipt *geth.Recei
 	}
 
 	latestFinalizedBlockNumber, err := client.LatestFinalizedBlockNumber(context.Background(), confHeight)
-	if err != nil || latestFinalizedBlockNumber.Cmp(txReceipt.BlockNumber) < 0 {
+	if err != nil {
 		return false, err
 	}
 
 	mgr.latestFinalizedBlockCache.Set(chain, latestFinalizedBlockNumber)
+
+	if latestFinalizedBlockNumber.Cmp(txReceipt.BlockNumber) < 0 {
+		return false, nil
+	}
 
 	return true, nil
 }
@@ -484,6 +465,39 @@ func (mgr Mgr) GetTxReceiptIfFinalized(chain nexus.ChainName, txID common.Hash, 
 	}
 
 	return txReceipt, nil
+}
+
+// GetTxReceiptsIfFinalized retrieves receipts for provided transaction IDs, only if they're finalized.
+func (mgr Mgr) GetTxReceiptsIfFinalized(chain nexus.ChainName, txIDs []common.Hash, confHeight uint64) ([]rs.Result[*geth.Receipt], error) {
+	client, ok := mgr.rpcs[strings.ToLower(chain.String())]
+	if !ok {
+		return nil, fmt.Errorf("rpc client not found for chain %s", chain.String())
+	}
+
+	results, err := client.TransactionReceipts(context.Background(), txIDs)
+	if err != nil {
+		return nil, sdkerrors.Wrapf(errors.With(err, "chain", chain.String(), "tx_ids", txIDs),
+			"cannot get transaction receipts")
+	}
+
+	isFinalized := func(receipt *geth.Receipt) rs.Result[*geth.Receipt] {
+		isFinalized, err := mgr.isTxReceiptFinalized(chain, receipt, confHeight)
+		if err != nil {
+			return rs.FromErr[*geth.Receipt](sdkerrors.Wrapf(errors.With(err, "chain", chain.String()),
+				"cannot determine if the transaction %s is finalized", receipt.TxHash.Hex()),
+			)
+		}
+
+		if !isFinalized {
+			return rs.FromErr[*geth.Receipt](NotFinalized)
+		}
+
+		return rs.FromOk(receipt)
+	}
+
+	return slices.Map(results, func(r rpc.Result) rs.Result[*geth.Receipt] {
+		return rs.Pipe(rs.Result[*geth.Receipt](r), isFinalized)
+	}), nil
 }
 
 func DecodeERC20TransferEvent(log *geth.Log) (types.EventTransfer, error) {
@@ -577,4 +591,84 @@ func unpackMultisigTransferKeyEvent(log *geth.Log) ([]common.Address, []*big.Int
 	}
 
 	return params[0].([]common.Address), params[1].([]*big.Int), params[2].(*big.Int), nil
+}
+
+// extract receipt processing from ProcessGatewayTxConfirmation, so that it can be used in ProcessGatewayTxsConfirmation
+func (mgr Mgr) processGatewayTxLogs(chain nexus.ChainName, gatewayAddress types.Address, logs []*geth.Log) []types.Event {
+	var events []types.Event
+	for i, txlog := range logs {
+		if !bytes.Equal(gatewayAddress.Bytes(), txlog.Address.Bytes()) {
+			continue
+		}
+
+		switch txlog.Topics[0] {
+		case ContractCallSig:
+			gatewayEvent, err := DecodeEventContractCall(txlog)
+			if err != nil {
+				mgr.logger().Debug(sdkerrors.Wrap(err, "decode event ContractCall failed").Error())
+				continue
+			}
+
+			if err := gatewayEvent.ValidateBasic(); err != nil {
+				mgr.logger().Debug(sdkerrors.Wrap(err, "invalid event ContractCall").Error())
+				continue
+			}
+
+			events = append(events, types.Event{
+				Chain: chain,
+				TxID:  types.Hash(txlog.TxHash),
+				Index: uint64(i),
+				Event: &types.Event_ContractCall{
+					ContractCall: &gatewayEvent,
+				},
+			})
+		case ContractCallWithTokenSig:
+			gatewayEvent, err := DecodeEventContractCallWithToken(txlog)
+			if err != nil {
+				mgr.logger().Debug(sdkerrors.Wrap(err, "decode event ContractCallWithToken failed").Error())
+				continue
+			}
+
+			if err := gatewayEvent.ValidateBasic(); err != nil {
+				mgr.logger().Debug(sdkerrors.Wrap(err, "invalid event ContractCallWithToken").Error())
+				continue
+			}
+
+			events = append(events, types.Event{
+				Chain: chain,
+				TxID:  types.Hash(txlog.TxHash),
+				Index: uint64(i),
+				Event: &types.Event_ContractCallWithToken{
+					ContractCallWithToken: &gatewayEvent,
+				},
+			})
+		case TokenSentSig:
+			gatewayEvent, err := DecodeEventTokenSent(txlog)
+			if err != nil {
+				mgr.logger().Debug(sdkerrors.Wrap(err, "decode event TokenSent failed").Error())
+			}
+
+			if err := gatewayEvent.ValidateBasic(); err != nil {
+				mgr.logger().Debug(sdkerrors.Wrap(err, "invalid event TokenSent").Error())
+				continue
+			}
+
+			events = append(events, types.Event{
+				Chain: chain,
+				TxID:  types.Hash(txlog.TxHash),
+				Index: uint64(i),
+				Event: &types.Event_TokenSent{
+					TokenSent: &gatewayEvent,
+				},
+			})
+		default:
+		}
+	}
+
+	return events
+}
+
+// isParticipantOf checks if the validator is in the poll participants list
+func (mgr Mgr) isParticipantOf(participants []sdk.ValAddress) bool {
+	return slices.Any(participants, func(v sdk.ValAddress) bool { return v.Equals(mgr.validator) })
 }

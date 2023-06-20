@@ -5,23 +5,24 @@ package mock
 
 import (
 	"context"
-	"github.com/axelarnetwork/axelar-core/vald/evm/rpc"
+	evmrpc "github.com/axelarnetwork/axelar-core/vald/evm/rpc"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	ethereumrpc "github.com/ethereum/go-ethereum/rpc"
 	"math/big"
 	"sync"
 )
 
-// Ensure, that EthereumJSONRPCClientMock does implement rpc.EthereumJSONRPCClient.
+// Ensure, that EthereumJSONRPCClientMock does implement evmrpc.EthereumJSONRPCClient.
 // If this is not the case, regenerate this file with moq.
-var _ rpc.EthereumJSONRPCClient = &EthereumJSONRPCClientMock{}
+var _ evmrpc.EthereumJSONRPCClient = &EthereumJSONRPCClientMock{}
 
-// EthereumJSONRPCClientMock is a mock implementation of rpc.EthereumJSONRPCClient.
+// EthereumJSONRPCClientMock is a mock implementation of evmrpc.EthereumJSONRPCClient.
 //
 //	func TestSomethingThatUsesEthereumJSONRPCClient(t *testing.T) {
 //
-//		// make and configure a mocked rpc.EthereumJSONRPCClient
+//		// make and configure a mocked evmrpc.EthereumJSONRPCClient
 //		mockedEthereumJSONRPCClient := &EthereumJSONRPCClientMock{
 //			BlockNumberFunc: func(ctx context.Context) (uint64, error) {
 //				panic("mock out the BlockNumber method")
@@ -40,7 +41,7 @@ var _ rpc.EthereumJSONRPCClient = &EthereumJSONRPCClientMock{}
 //			},
 //		}
 //
-//		// use mockedEthereumJSONRPCClient in code that requires rpc.EthereumJSONRPCClient
+//		// use mockedEthereumJSONRPCClient in code that requires evmrpc.EthereumJSONRPCClient
 //		// and then make assertions.
 //
 //	}
@@ -272,31 +273,44 @@ func (mock *EthereumJSONRPCClientMock) TransactionReceiptCalls() []struct {
 	return calls
 }
 
-// Ensure, that JSONRPCClientMock does implement rpc.JSONRPCClient.
+// Ensure, that JSONRPCClientMock does implement evmrpc.JSONRPCClient.
 // If this is not the case, regenerate this file with moq.
-var _ rpc.JSONRPCClient = &JSONRPCClientMock{}
+var _ evmrpc.JSONRPCClient = &JSONRPCClientMock{}
 
-// JSONRPCClientMock is a mock implementation of rpc.JSONRPCClient.
+// JSONRPCClientMock is a mock implementation of evmrpc.JSONRPCClient.
 //
 //	func TestSomethingThatUsesJSONRPCClient(t *testing.T) {
 //
-//		// make and configure a mocked rpc.JSONRPCClient
+//		// make and configure a mocked evmrpc.JSONRPCClient
 //		mockedJSONRPCClient := &JSONRPCClientMock{
+//			BatchCallContextFunc: func(ctx context.Context, b []ethereumrpc.BatchElem) error {
+//				panic("mock out the BatchCallContext method")
+//			},
 //			CallContextFunc: func(ctx context.Context, result interface{}, method string, args ...interface{}) error {
 //				panic("mock out the CallContext method")
 //			},
 //		}
 //
-//		// use mockedJSONRPCClient in code that requires rpc.JSONRPCClient
+//		// use mockedJSONRPCClient in code that requires evmrpc.JSONRPCClient
 //		// and then make assertions.
 //
 //	}
 type JSONRPCClientMock struct {
+	// BatchCallContextFunc mocks the BatchCallContext method.
+	BatchCallContextFunc func(ctx context.Context, b []ethereumrpc.BatchElem) error
+
 	// CallContextFunc mocks the CallContext method.
 	CallContextFunc func(ctx context.Context, result interface{}, method string, args ...interface{}) error
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// BatchCallContext holds details about calls to the BatchCallContext method.
+		BatchCallContext []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// B is the b argument value.
+			B []ethereumrpc.BatchElem
+		}
 		// CallContext holds details about calls to the CallContext method.
 		CallContext []struct {
 			// Ctx is the ctx argument value.
@@ -309,7 +323,44 @@ type JSONRPCClientMock struct {
 			Args []interface{}
 		}
 	}
-	lockCallContext sync.RWMutex
+	lockBatchCallContext sync.RWMutex
+	lockCallContext      sync.RWMutex
+}
+
+// BatchCallContext calls BatchCallContextFunc.
+func (mock *JSONRPCClientMock) BatchCallContext(ctx context.Context, b []ethereumrpc.BatchElem) error {
+	if mock.BatchCallContextFunc == nil {
+		panic("JSONRPCClientMock.BatchCallContextFunc: method is nil but JSONRPCClient.BatchCallContext was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+		B   []ethereumrpc.BatchElem
+	}{
+		Ctx: ctx,
+		B:   b,
+	}
+	mock.lockBatchCallContext.Lock()
+	mock.calls.BatchCallContext = append(mock.calls.BatchCallContext, callInfo)
+	mock.lockBatchCallContext.Unlock()
+	return mock.BatchCallContextFunc(ctx, b)
+}
+
+// BatchCallContextCalls gets all the calls that were made to BatchCallContext.
+// Check the length with:
+//
+//	len(mockedJSONRPCClient.BatchCallContextCalls())
+func (mock *JSONRPCClientMock) BatchCallContextCalls() []struct {
+	Ctx context.Context
+	B   []ethereumrpc.BatchElem
+} {
+	var calls []struct {
+		Ctx context.Context
+		B   []ethereumrpc.BatchElem
+	}
+	mock.lockBatchCallContext.RLock()
+	calls = mock.calls.BatchCallContext
+	mock.lockBatchCallContext.RUnlock()
+	return calls
 }
 
 // CallContext calls CallContextFunc.
