@@ -87,6 +87,9 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/rakyll/statik/fs"
 	"github.com/spf13/cast"
+	packetforward "github.com/strangelove-ventures/packet-forward-middleware/v4/router"
+	packetforwardkeeper "github.com/strangelove-ventures/packet-forward-middleware/v4/router/keeper"
+	packetforwardtypes "github.com/strangelove-ventures/packet-forward-middleware/v4/router/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmjson "github.com/tendermint/tendermint/libs/json"
 	"github.com/tendermint/tendermint/libs/log"
@@ -466,9 +469,29 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	ibcK := axelarnetKeeper.NewIBCKeeper(axelarnetK, app.transferKeeper, app.ibcKeeper.ChannelKeeper)
 	axelarnetModule := axelarnet.NewAppModule(axelarnetK, nexusK, bankK, accountK, ibcK, transfer.NewIBCModule(app.transferKeeper), rateLimiter, logger)
 
+	// initialize packet forward middleware router
+	packetForwardK := packetforwardkeeper.NewKeeper(
+		appCodec,
+		app.keys[packetforwardtypes.StoreKey],
+		app.getSubspace(packetforwardtypes.ModuleName),
+		app.transferKeeper,
+		app.ibcKeeper.ChannelKeeper,
+		distrK,
+		bankK,
+		app.ibcKeeper.ChannelKeeper,
+	)
+
+	packetForwardMiddleware := packetforward.NewIBCMiddleware(
+		axelarnetModule,
+		packetForwardK,
+		0,
+		packetforwardkeeper.DefaultForwardTransferPacketTimeoutTimestamp,
+		packetforwardkeeper.DefaultRefundTransferPacketTimeoutTimestamp,
+	)
+
 	// Create static IBC router, add transfer route, then set and seal it
 	ibcRouter := porttypes.NewRouter()
-	ibcRouter.AddRoute(ibctransfertypes.ModuleName, axelarnetModule)
+	ibcRouter.AddRoute(ibctransfertypes.ModuleName, packetForwardMiddleware)
 
 	// Setting Router will finalize all routes by sealing router
 	// No more routes can be added
