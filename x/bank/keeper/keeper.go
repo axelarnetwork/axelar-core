@@ -21,11 +21,11 @@ func NewBankKeeper(bk types.BankKeeper) BankKeeper {
 // An error is returned upon failure, or when the from/to address is blocked.
 func (k BankKeeper) SendCoins(ctx sdk.Context, fromAddr sdk.AccAddress, toAddr sdk.AccAddress, amt sdk.Coins) error {
 	if k.BlockedAddr(fromAddr) {
-		return sdkerrors.Wrapf(sdkerrors.ErrUnauthorized, "%s is not allowed to send funds", fromAddr)
+		return sdkerrors.Wrapf(sdkerrors.ErrUnauthorized, "%s is not allowed to send funds", fromAddr.String())
 	}
 
 	if k.BlockedAddr(toAddr) {
-		return sdkerrors.Wrapf(sdkerrors.ErrUnauthorized, "%s is not allowed to receive funds", toAddr)
+		return sdkerrors.Wrapf(sdkerrors.ErrUnauthorized, "%s is not allowed to receive funds", toAddr.String())
 	}
 
 	return k.BankKeeper.SendCoins(ctx, fromAddr, toAddr, amt)
