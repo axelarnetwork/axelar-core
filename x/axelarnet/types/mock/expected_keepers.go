@@ -1795,6 +1795,9 @@ var _ axelarnettypes.BankKeeper = &BankKeeperMock{}
 //
 //		// make and configure a mocked axelarnettypes.BankKeeper
 //		mockedBankKeeper := &BankKeeperMock{
+//			BlockedAddrFunc: func(addr cosmossdktypes.AccAddress) bool {
+//				panic("mock out the BlockedAddr method")
+//			},
 //			BurnCoinsFunc: func(ctx cosmossdktypes.Context, moduleName string, amt cosmossdktypes.Coins) error {
 //				panic("mock out the BurnCoins method")
 //			},
@@ -1826,6 +1829,9 @@ var _ axelarnettypes.BankKeeper = &BankKeeperMock{}
 //
 //	}
 type BankKeeperMock struct {
+	// BlockedAddrFunc mocks the BlockedAddr method.
+	BlockedAddrFunc func(addr cosmossdktypes.AccAddress) bool
+
 	// BurnCoinsFunc mocks the BurnCoins method.
 	BurnCoinsFunc func(ctx cosmossdktypes.Context, moduleName string, amt cosmossdktypes.Coins) error
 
@@ -1852,6 +1858,11 @@ type BankKeeperMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// BlockedAddr holds details about calls to the BlockedAddr method.
+		BlockedAddr []struct {
+			// Addr is the addr argument value.
+			Addr cosmossdktypes.AccAddress
+		}
 		// BurnCoins holds details about calls to the BurnCoins method.
 		BurnCoins []struct {
 			// Ctx is the ctx argument value.
@@ -1927,6 +1938,7 @@ type BankKeeperMock struct {
 			Amt cosmossdktypes.Coins
 		}
 	}
+	lockBlockedAddr                  sync.RWMutex
 	lockBurnCoins                    sync.RWMutex
 	lockGetBalance                   sync.RWMutex
 	lockIsSendEnabledCoin            sync.RWMutex
@@ -1935,6 +1947,38 @@ type BankKeeperMock struct {
 	lockSendCoins                    sync.RWMutex
 	lockSendCoinsFromAccountToModule sync.RWMutex
 	lockSendCoinsFromModuleToAccount sync.RWMutex
+}
+
+// BlockedAddr calls BlockedAddrFunc.
+func (mock *BankKeeperMock) BlockedAddr(addr cosmossdktypes.AccAddress) bool {
+	if mock.BlockedAddrFunc == nil {
+		panic("BankKeeperMock.BlockedAddrFunc: method is nil but BankKeeper.BlockedAddr was just called")
+	}
+	callInfo := struct {
+		Addr cosmossdktypes.AccAddress
+	}{
+		Addr: addr,
+	}
+	mock.lockBlockedAddr.Lock()
+	mock.calls.BlockedAddr = append(mock.calls.BlockedAddr, callInfo)
+	mock.lockBlockedAddr.Unlock()
+	return mock.BlockedAddrFunc(addr)
+}
+
+// BlockedAddrCalls gets all the calls that were made to BlockedAddr.
+// Check the length with:
+//
+//	len(mockedBankKeeper.BlockedAddrCalls())
+func (mock *BankKeeperMock) BlockedAddrCalls() []struct {
+	Addr cosmossdktypes.AccAddress
+} {
+	var calls []struct {
+		Addr cosmossdktypes.AccAddress
+	}
+	mock.lockBlockedAddr.RLock()
+	calls = mock.calls.BlockedAddr
+	mock.lockBlockedAddr.RUnlock()
+	return calls
 }
 
 // BurnCoins calls BurnCoinsFunc.

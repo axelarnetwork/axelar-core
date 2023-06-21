@@ -35,12 +35,9 @@ func TestAddressValidator(t *testing.T) {
 		},
 	}
 
-	bankK := &mock.BankKeeperMock{
-		BlockedAddrFunc: func(addr sdk.AccAddress) bool { return false },
-	}
 	sdk.GetConfig().SetBech32PrefixForAccount("axelar", "axelar")
 
-	validator := keeper.NewAddressValidator(axelarnetK, bankK)
+	validator := keeper.NewAddressValidator(axelarnetK)
 	assert.NotNil(t, validator)
 
 	axelarAddr := "axelar1t66w8cazua870wu7t2hsffndmy2qy2v556ymndnczs83qpz2h45sq6lq9w"
@@ -88,15 +85,9 @@ func TestAddressValidator(t *testing.T) {
 	addr = nexus.CrossChainAddress{Chain: evm.Ethereum, Address: "0x68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8"}
 	assert.ErrorContains(t, validator(ctx, addr), "no known prefix")
 
-	bankK.BlockedAddrFunc = func(addr sdk.AccAddress) bool { return addr.Equals(sdk.MustAccAddressFromBech32(axelarAddr)) }
-
-	addr = nexus.CrossChainAddress{Chain: exported.Axelarnet, Address: axelarAddr}
-	assert.ErrorContains(t, validator(ctx, addr), "is not allowed to receive")
-
 	addr = nexus.CrossChainAddress{Chain: exported.Axelarnet, Address: rand.AccAddr().String()}
 	assert.NoError(t, validator(ctx, addr))
 
-	bankK.BlockedAddrFunc = func(addr sdk.AccAddress) bool { return true }
 	addr = nexus.CrossChainAddress{Chain: nexus.Chain{Name: "osmosis", Module: types.ModuleName}, Address: "osmo18zhnqjv70v0d2f8v0s5lape0gr5ua94ewflhd5"}
 	assert.NoError(t, validator(ctx, addr))
 }

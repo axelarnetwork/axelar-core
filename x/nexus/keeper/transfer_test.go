@@ -18,7 +18,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
-	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	axelarnettypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
@@ -213,40 +212,6 @@ func TestTransfer(t *testing.T) {
 			When("asset is not registered on dest chain", func() {}).
 			Then2(validateTransferAssetFails),
 	).Run(t, repeated)
-
-	addressError := Then("enqueue transfer should return error",
-		func(t *testing.T) {
-			_, err := k.EnqueueTransfer(ctx, sender.Chain, recipient, makeRandAmount(randAsset()))
-			assert.Error(t, err)
-		},
-	)
-
-	givenKeeper.
-		Branch(
-			When("link invalid axelarnet address", func() {
-				sender, _ = makeRandAddresses(k, ctx)
-				recipient = nexus.CrossChainAddress{Chain: exported.Axelarnet, Address: "axelar1t66w8cazua870wu7t2hsffndmy2qy2v556ymndnczs83qpz2h45sq6lq9v"}
-			}).
-				Then2(addressError),
-
-			When("link invalid terra address", func() {
-				sender, _ = makeRandAddresses(k, ctx)
-				recipient = nexus.CrossChainAddress{Chain: terra, Address: "terra18zhnqjv70v0d2f8v0s5lape0gr5ua94eqkk8ew"}
-			}).
-				Then2(addressError),
-
-			When("link invalid EVM address", func() {
-				sender, _ = makeRandAddresses(k, ctx)
-				recipient = nexus.CrossChainAddress{Chain: evm.Ethereum, Address: rand.HexStr(41)}
-			}).
-				Then2(addressError),
-
-			When("addresses are blocked", func() {
-				sender, recipient = makeRandAddressesForChain(chains[mathrand.Intn(len(chains))], axelarnet.Axelarnet)
-				bankK.BlockedAddrFunc = func(addr sdk.AccAddress) bool { return true }
-			}).
-				Then2(addressError)).
-		Run(t, repeated)
 
 	Given("a keeper",
 		func() {

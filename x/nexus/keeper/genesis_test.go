@@ -48,13 +48,9 @@ func setup() (sdk.Context, Keeper) {
 		},
 	}
 
-	bankK := &mock.BankKeeperMock{
-		BlockedAddrFunc: func(addr sdk.AccAddress) bool { return false },
-	}
-
 	router := types.NewRouter()
 	router.AddAddressValidator(evmTypes.ModuleName, evmkeeper.NewAddressValidator()).
-		AddAddressValidator(axelarnetTypes.ModuleName, axelarnetkeeper.NewAddressValidator(axelarnetK, bankK))
+		AddAddressValidator(axelarnetTypes.ModuleName, axelarnetkeeper.NewAddressValidator(axelarnetK))
 	keeper.SetRouter(router)
 
 	return ctx, keeper

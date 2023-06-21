@@ -76,6 +76,7 @@ type BankKeeper interface {
 	GetBalance(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin
 	IsSendEnabledCoin(ctx sdk.Context, coin sdk.Coin) bool
 	IsSendEnabledCoins(ctx sdk.Context, coins ...sdk.Coin) error
+	BlockedAddr(addr sdk.AccAddress) bool
 }
 
 // IBCTransferKeeper provides functionality to manage IBC transfers
