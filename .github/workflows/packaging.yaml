@@ -1,0 +1,219 @@
+name: Package linux binaries
+
+env:
+  VERSIONS_LIST: "0.10.7,0.13.6,0.14.1,0.17.3,0.18.3,0.19.4,0.21.1,0.24.0,0.26.5,0.28.0,0.29.1,0.31.2,0.31.3,0.32.0,0.32.2,0.33.0"
+
+on:
+  workflow_dispatch:
+
+jobs:
+  package-binaries:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-22.04]
+        arch: [amd64]
+
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+
+    steps:
+
+      - name: Configure AWS credentials
+        run: |
+          cd $HOME; mkdir ~/.aws; touch ~/.aws/credentials; touch ~/.aws/config
+          echo "[default]
+          aws_access_key_id = ${{ secrets.AWS_ACCESS_KEY_ID_CF }}
+          aws_secret_access_key = ${{ secrets.AWS_SECRET_ACCESS_KEY_CF }}" > ~/.aws/credentials
+          echo "[default]
+          region=auto
+          output=json"  > ~/.aws/config
+          
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: '0'
+          submodules: recursive
+
+      - name: Install prerequisites
+        run: |
+          sudo apt-get install -y gcc dpkg-dev gpg
+          
+      - name: Create folder structures for Linux
+        run: |
+          for version in $(echo $VERSIONS_LIST | tr "," "\n"); do
+            for arch in amd64 arm64 arm; do
+              mkdir -p ~/linux/axelard_$version-1_$arch/usr/bin/
+              mkdir -p ~/linux/axelard_$version-1_$arch/DEBIAN/
+            done
+          done
+          
+      - name: Get binaries
+        run: |
+          for version in $(echo $VERSIONS_LIST | tr "," "\n"); do
+            for arch in amd64 arm64 arm; do
+              filename="axelard_$version-1_$arch.deb"
+              if ! output=$(aws s3 ls "s3://axelar-static/axelard/apt-repo/pool/main/$filename" --endpoint-url ${{ secrets.S3_BIN }} 2>&1); then
+                echo "Downloading $filename..."
+                wget -O ~/linux/axelard_$version-1_$arch/usr/bin/axelard --no-check-certificate https://github.com/axelarnetwork/axelar-core/releases/download/v$version/axelard-linux-$arch-v$version
+                chmod 755 ~/linux/axelard_$version-1_$arch/usr/bin/axelard
+              else
+                echo "Package file already exists in S3: $filename"
+              fi
+            done
+          done
+          
+      - name: Create control files
+        run: |
+         for version in $(echo $VERSIONS_LIST | tr "," "\n"); do
+         for arch in amd64 arm64 arm; do
+         echo "Package: axelard
+         Version: $version
+         Maintainer: axelar <devops@axelar.network>
+         Architecture: $arch
+         Homepage: https://axelar.network
+         Description: axelard binary for Linux $arch" \
+         > ~/linux/axelard_$version-1_$arch/DEBIAN/control
+         done
+         done
+
+      - name: Build the packages if they don't exist on S3
+        run: |
+          for version in $(echo $VERSIONS_LIST | tr "," "\n"); do
+            for arch in amd64 arm64 arm; do
+              filename="axelard_$version-1_$arch.deb"
+              if ! output=$(aws s3 ls "s3://axelar-static/axelard/apt-repo/pool/main/$filename" --endpoint-url ${{ secrets.S3_BIN }} 2>&1); then
+                echo "Package not present in S3: $output"
+                dpkg --build ~/linux/axelard_$version-1_$arch
+              else
+                echo "Package file already exists in S3: $filename"
+              fi
+            done
+          done
+          
+      - name: Check the packages
+        run: |
+          for version in $(echo $VERSIONS_LIST | tr "," "\n"); do
+            for arch in amd64 arm64 arm; do
+              file="/home/runner/linux/axelard_$version-1_$arch.deb"
+              if [ -f $file ]; then
+                dpkg-deb --info $file
+                dpkg-deb --contents $file
+              fi
+            done
+          done
+          
+      - name: Copy binaries in apt repo
+        run: |
+          mkdir -p ~/axelard/apt-repo/pool/main/
+            if ls /home/runner/linux/*.deb; then
+              cp /home/runner/linux/*.deb ~/axelard/apt-repo/pool/main/.
+            fi
+          ls -l ~/axelard/apt-repo/pool/main/
+          
+      - name: Generate Packages files
+        run: |
+          cd ~/axelard/apt-repo
+          for version in $(echo $VERSIONS_LIST | tr "," "\n"); do
+            for arch in amd64 arm64 arm; do
+              mkdir -p dists/stable/main/binary-$arch
+              if [ -f ~/axelard/apt-repo/pool/main/axelard_${version}-1_$arch.deb ]; then
+                dpkg-scanpackages -m --arch $arch pool/ > dists/stable/main/binary-$arch/Packages
+                gzip -9 < dists/stable/main/binary-$arch/Packages > dists/stable/main/binary-$arch/Packages.gz
+                cat dists/stable/main/binary-$arch/Packages
+              else
+                echo "Package file not found: ~/axelard/apt-repo/pool/main/axelard_${version}-1_$arch.deb"
+              fi
+            done
+          done
+          
+      - name: Generate Release file
+        run: |
+          echo '#!/bin/sh
+          set -e
+          do_hash() {
+               HASH_NAME=$1
+               HASH_CMD=$2
+               echo "${HASH_NAME}:"
+               for f in $(find -type f); do
+                  f=$(echo $f | cut -c3-) # remove ./ prefix
+                  if [ "$f" = "Release" ]; then
+                      continue
+                  fi
+                  echo " $(${HASH_CMD} ${f}  | cut -d" " -f1) $(wc -c $f)"
+               done
+          }
+          cat << EOF
+          Origin: Axelard repository
+          Label: axelard
+          Suite: stable
+          Codename: stable
+          Version: VERSION
+          Architectures: amd64 arm64 arm
+          Components: main
+          Description: Axelard repository
+          Date: $(date -Ru)
+          EOF
+          do_hash "MD5Sum" "md5sum"
+          do_hash "SHA1" "sha1sum"
+          do_hash "SHA256" "sha256sum"' > ~/axelard/generate-release.sh && chmod +x ~/axelard/generate-release.sh
+          sed -i "s/VERSION/$version/g" ~/axelard/generate-release.sh
+          cd ~/axelard/apt-repo/dists/stable
+          ~/axelard/generate-release.sh > Release
+          cat ~/axelard/apt-repo/dists/stable/Release
+          
+      - name: Import GPG key
+        id: import_gpg
+        uses: crazy-max/ghaction-import-gpg@v4
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+
+      - name: GPG sign apt repo
+        run: |
+          cat ~/axelard/apt-repo/dists/stable/Release | gpg --default-key 5D9FFADEED11FA5D -abs > ~/axelard/apt-repo/dists/stable/Release.gpg
+
+      - name: Upload to S3
+        run: |
+          cd ~/
+          architectures=("amd64" "arm64" "arm")
+
+          for arch in "${architectures[@]}"; do
+            aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static --key "axelard/apt-repo/dists/stable/main/binary-$arch/Packages.gz" --body "axelard/apt-repo/dists/stable/main/binary-$arch/Packages.gz"
+            aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static --key "axelard/apt-repo/dists/stable/main/binary-$arch/Packages" --body "axelard/apt-repo/dists/stable/main/binary-$arch/Packages"
+          done
+
+          aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static  --key "axelard/apt-repo/dists/stable/Release" --body "axelard/apt-repo/dists/stable/Release"
+          aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static  --key "axelard/apt-repo/dists/stable/Release.gpg" --body "axelard/apt-repo/dists/stable/Release.gpg"
+
+          for version in $(echo $VERSIONS_LIST | tr "," "\n"); do
+            for arch in "${architectures[@]}"; do
+              key="axelard/apt-repo/pool/main/axelard_$version-1_$arch.deb"
+              if ! aws s3api head-object --bucket axelar-static --key "$key" --endpoint-url ${{ secrets.S3_BIN }} > /dev/null 2>&1; then
+                aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static --key "$key" --body "axelard/apt-repo/pool/main/axelard_$version-1_$arch.deb"
+              fi
+            done
+          done
+  
+      - name: Get GPG public key
+        run: |
+          curl https://keybase.io/axelardev/pgp_keys.asc | gpg --import
+          curl https://keybase.io/axelardev/pgp_keys.asc | sudo apt-key add -
+ 
+      - name: Install axelard and test
+        run: |
+          echo "deb [arch=amd64] http://static.axelar.network/axelard/apt-repo stable main" | sudo tee /etc/apt/sources.list.d/axelar.list
+          sudo apt-get clean
+          sudo apt-get update 
+          sudo apt list --all-versions axelard
+          for version in $(echo $VERSIONS_LIST | tr "," "\n"); do
+            if sudo apt-get install -y axelard=$version; then
+              axelard version
+              which axelard
+              sudo apt-get remove -y axelard=$version
+            else
+              echo "Package not found: axelard=$version"
+            fi
+          done
