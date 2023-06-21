@@ -1242,7 +1242,6 @@ func TestHandleCallContract(t *testing.T) {
 			return fmt.Sprintf("%s-%x", hex.EncodeToString(hash[:]), count), hash[:], uint64(count)
 		}
 		b.SendCoinsFunc = func(sdk.Context, sdk.AccAddress, sdk.AccAddress, sdk.Coins) error { return nil }
-		b.BlockedAddrFunc = func(addr sdk.AccAddress) bool { return false }
 	})
 
 	whenChainIsRegistered := When("chain is registered", func() {
@@ -1377,17 +1376,6 @@ func TestHandleCallContract(t *testing.T) {
 						req.Fee.Amount.Amount = sdk.NewInt(0)
 					}).
 					Then2(validationFails),
-				whenChainIsRegistered.
-					When2(whenChainIsActivated).
-					When2(whenAddressIsValid).
-					When2(whenSetNewMessageSucceeds).
-					When2(requestIsMade).
-					When("fee receiver is blocked", func() {
-						b.BlockedAddrFunc = func(addr sdk.AccAddress) bool {
-							return true
-						}
-					}).
-					Then2(callFails),
 				whenChainIsRegistered.
 					When2(whenChainIsActivated).
 					When2(whenAddressIsValid).

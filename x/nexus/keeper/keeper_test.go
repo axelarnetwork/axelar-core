@@ -48,13 +48,9 @@ func addressValidator() types.Router {
 		},
 	}
 
-	bankK = &axelarnetmock.BankKeeperMock{
-		BlockedAddrFunc: func(addr sdk.AccAddress) bool { return false },
-	}
-
 	router := types.NewRouter()
 	router.AddAddressValidator(evmTypes.ModuleName, evmkeeper.NewAddressValidator()).
-		AddAddressValidator(axelarnetTypes.ModuleName, axelarnetkeeper.NewAddressValidator(axelarnetK, bankK))
+		AddAddressValidator(axelarnetTypes.ModuleName, axelarnetkeeper.NewAddressValidator(axelarnetK))
 
 	return router
 }
@@ -109,35 +105,6 @@ func TestLinkAddress(t *testing.T) {
 			exported.CrossChainAddress{Chain: axelarnet.Axelarnet, Address: rand.StrBetween(10, 30)},
 		)
 		assert.ErrorContains(t, err, "decoding bech32 failed")
-	}))
-
-	t.Run("should return error for blocked addresses", testutils.Func(func(t *testing.T) {
-		blockedAddr := rand.AccAddr()
-		bankK.BlockedAddrFunc = func(addr sdk.AccAddress) bool { return addr.Equals(blockedAddr) }
-
-		err := keeper.LinkAddresses(ctx,
-			evmAddr,
-			axelarAddr,
-		)
-		assert.NoError(t, err)
-
-		err = keeper.LinkAddresses(ctx,
-			exported.CrossChainAddress{Chain: evm.Ethereum, Address: "0x68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8"},
-			exported.CrossChainAddress{Chain: axelarnet.Axelarnet, Address: blockedAddr.String()},
-		)
-		assert.ErrorContains(t, err, "is not allowed to receive")
-
-		err = keeper.LinkAddresses(ctx,
-			exported.CrossChainAddress{Chain: axelarnet.Axelarnet, Address: blockedAddr.String()},
-			evmAddr,
-		)
-		assert.ErrorContains(t, err, "is not allowed to receive")
-
-		err = keeper.LinkAddresses(ctx,
-			evmAddr,
-			exported.CrossChainAddress{Chain: axelarnet.Axelarnet, Address: rand.AccAddr().String()},
-		)
-		assert.NoError(t, err)
 	}))
 
 	t.Run("should return error when link chain does not support foreign asset", testutils.Func(func(t *testing.T) {

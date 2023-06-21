@@ -89,10 +89,6 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 	})
 
 	if req.Fee != nil {
-		if s.bank.BlockedAddr(req.Fee.Recipient) {
-			return nil, fmt.Errorf("fee recipient is a blocked address")
-		}
-
 		err := s.bank.SendCoins(ctx, req.Sender, req.Fee.Recipient, sdk.NewCoins(req.Fee.Amount))
 		if err != nil {
 			return nil, sdkerrors.Wrap(err, "failed to transfer fee")

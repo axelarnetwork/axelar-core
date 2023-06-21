@@ -55,15 +55,11 @@ func (k Keeper) getAllLinkedAddresses(ctx sdk.Context) (results []types.LinkedAd
 
 // LinkAddresses links a sender address to a cross-chain recipient address
 func (k Keeper) LinkAddresses(ctx sdk.Context, depositAddress exported.CrossChainAddress, recipientAddress exported.CrossChainAddress) error {
-	if validator := k.GetRouter().GetAddressValidator(depositAddress.Chain.Module); validator == nil {
-		return fmt.Errorf("unknown module for sender's chain %s", depositAddress.Chain.String())
-	} else if err := validator(ctx, depositAddress); err != nil {
+	if err := k.ValidateAddress(ctx, depositAddress); err != nil {
 		return err
 	}
 
-	if validator := k.GetRouter().GetAddressValidator(recipientAddress.Chain.Module); validator == nil {
-		return fmt.Errorf("unknown module for recipient's chain %s", recipientAddress.Chain.String())
-	} else if err := validator(ctx, recipientAddress); err != nil {
+	if err := k.ValidateAddress(ctx, recipientAddress); err != nil {
 		return err
 	}
 

@@ -74,6 +74,8 @@ func TestSetNewGeneralMessage(t *testing.T) {
 				destChain := funcs.MustOk(k.GetChain(ctx, destinationChain.Name))
 				destChain.Module = axelarnet.ModuleName
 				k.SetChain(ctx, destChain)
+
+				generalMessage.Recipient.Chain.Module = axelarnet.ModuleName
 			}
 		}
 	}

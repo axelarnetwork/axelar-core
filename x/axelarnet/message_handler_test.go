@@ -360,14 +360,6 @@ func TestHandleMessage(t *testing.T) {
 		}
 	}
 
-	isAddressBloked := func(isBlocked bool) func() {
-		return func() {
-			b.BlockedAddrFunc = func(addr sdk.AccAddress) bool {
-				return isBlocked
-			}
-		}
-	}
-
 	whenMessageIsValid.
 		When("fee denom is not registered", isAssetRegistered(false)).
 		When("message with fee", func() {
@@ -378,16 +370,6 @@ func TestHandleMessage(t *testing.T) {
 
 	whenMessageIsValid.
 		When("fee denom is registered", isAssetRegistered(true)).
-		When("fee recipient is blocked", isAddressBloked(true)).
-		When("message with fee", func() {
-			setFee(funcs.MustOk(sdk.NewIntFromString(ics20Packet.Amount)), rand.AccAddr())
-		}).
-		Then("should return ack error", ackError()).
-		Run(t)
-
-	whenMessageIsValid.
-		When("fee denom is registered", isAssetRegistered(true)).
-		When("fee recipient is not blocked", isAddressBloked(false)).
 		When("message with fee", func() {
 			setFee(funcs.MustOk(sdk.NewIntFromString(ics20Packet.Amount)), rand.AccAddr())
 		}).
@@ -402,7 +384,6 @@ func TestHandleMessage(t *testing.T) {
 			destChain.Module = exported.ModuleName
 		}).
 		When("fee denom is registered", isAssetRegistered(true)).
-		When("fee recipient is not blocked", isAddressBloked(false)).
 		When("message with fee", func() {
 			setFee(funcs.MustOk(sdk.NewIntFromString(ics20Packet.Amount)), rand.AccAddr())
 		}).
@@ -527,7 +508,6 @@ func TestHandleMessageWithToken(t *testing.T) {
 			SendCoinsFunc: func(ctx sdk.Context, fromAddr sdk.AccAddress, toAddr sdk.AccAddress, amt sdk.Coins) error {
 				return nil
 			},
-			BlockedAddrFunc: func(sdk.AccAddress) bool { return false },
 		}
 		r = axelarnet.NewRateLimiter(k, channelK, n)
 	})
