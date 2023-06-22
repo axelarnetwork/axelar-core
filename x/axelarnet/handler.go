@@ -100,7 +100,7 @@ func NewHandler(k keeper.Keeper, n types.Nexus, b types.BankKeeper, a types.Acco
 }
 
 // NewProposalHandler returns the handler for the proposals of the axelarnet module
-func NewProposalHandler(nexusK types.Nexus, accountK types.AccountKeeper) govtypes.Handler {
+func NewProposalHandler(k keeper.Keeper, nexusK types.Nexus, accountK types.AccountKeeper) govtypes.Handler {
 	return func(ctx sdk.Context, content govtypes.Content) error {
 		switch c := content.(type) {
 		case *types.CallContractsProposal:
@@ -127,7 +127,7 @@ func NewProposalHandler(nexusK types.Nexus, accountK types.AccountKeeper) govtyp
 					return sdkerrors.Wrap(err, "failed to add general message")
 				}
 
-				ctx.Logger().Debug(fmt.Sprintf("successfully enqueued contract call for contract address %s on chain %s from sender %s with message id %s", recipient.Address, recipient.Chain.String(), sender.Address, msg.ID),
+				k.Logger(ctx).Debug(fmt.Sprintf("successfully enqueued contract call for contract address %s on chain %s from sender %s with message id %s", recipient.Address, recipient.Chain.String(), sender.Address, msg.ID),
 					types.AttributeKeyDestinationChain, recipient.Chain.String(),
 					types.AttributeKeyDestinationAddress, recipient.Address,
 					types.AttributeKeySourceAddress, sender.Address,
