@@ -976,7 +976,7 @@ func TestAddCosmosBasedChain(t *testing.T) {
 		Run(t, repeats)
 }
 
-func TestExecuteMessage(t *testing.T) {
+func TestRouteMessage(t *testing.T) {
 	var (
 		server types.MsgServiceServer
 		k      keeper.Keeper
