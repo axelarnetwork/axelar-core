@@ -11,6 +11,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/query"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/events"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
@@ -435,7 +436,7 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 		return nil, err
 	}
 
-	dailyMintLimit, err := sdk.ParseUint(req.DailyMintLimit)
+	mintLimit, err := sdk.ParseUint(req.DailyMintLimit)
 	if err != nil {
 		return nil, err
 	}
@@ -479,7 +480,7 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 		return nil, sdkerrors.Wrapf(err, "failed to initialize token %s(%s) for chain %s", req.TokenDetails.TokenName, req.TokenDetails.Symbol, chain.Name)
 	}
 
-	cmd, err := token.CreateDeployCommand(keyID, dailyMintLimit)
+	cmd, err := token.CreateDeployCommand(keyID, mintLimit)
 	if err != nil {
 		return nil, err
 	}
@@ -488,7 +489,10 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 		return nil, err
 	}
 
-	if err = s.nexus.RegisterAsset(ctx, chain, nexus.NewAsset(req.Asset.Name, false), dailyMintLimit, types.DefaultRateLimitWindow); err != nil {
+	if mintLimit.IsZero() {
+		mintLimit = utils.MaxUint
+	}
+	if err = s.nexus.RegisterAsset(ctx, chain, nexus.NewAsset(req.Asset.Name, false), mintLimit, types.DefaultRateLimitWindow); err != nil {
 		return nil, err
 	}
 
