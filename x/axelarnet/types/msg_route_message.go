@@ -1,8 +1,6 @@
 package types
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -36,10 +34,6 @@ func (m RouteMessageRequest) ValidateBasic() error {
 
 	if err := utils.ValidateString(m.ID); err != nil {
 		return sdkerrors.Wrap(err, "invalid general message id")
-	}
-
-	if len(m.Payload) == 0 {
-		return fmt.Errorf("invalid payload")
 	}
 
 	return nil
