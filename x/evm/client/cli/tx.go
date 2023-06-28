@@ -277,7 +277,7 @@ func GetCmdCreatePendingTransfers() *cobra.Command {
 // GetCmdCreateDeployToken returns the cli command to create deploy-token command for an EVM chain
 func GetCmdCreateDeployToken() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "create-deploy-token [evm chain] [origin chain] [origin asset] [token name] [symbol] [decimals] [capacity] [dailyMintLimit]",
+		Use:   "create-deploy-token [evm chain] [origin chain] [origin asset] [token name] [symbol] [decimals] [capacity] [mintLimit]",
 		Short: "Create a deploy token command with the AxelarGateway contract",
 		Args:  cobra.ExactArgs(8),
 	}
@@ -307,11 +307,11 @@ func GetCmdCreateDeployToken() *cobra.Command {
 			return fmt.Errorf("could not parse address")
 		}
 
-		dailyMintLimit := args[7]
+		mintLimit := args[7]
 
 		asset := types.NewAsset(originChain, originAsset)
 		tokenDetails := types.NewTokenDetails(tokenName, symbol, uint8(decs), capacity)
-		msg := types.NewCreateDeployTokenRequest(cliCtx.GetFromAddress(), chain, asset, tokenDetails, types.Address(common.HexToAddress(*address)), dailyMintLimit)
+		msg := types.NewCreateDeployTokenRequest(cliCtx.GetFromAddress(), chain, asset, tokenDetails, types.Address(common.HexToAddress(*address)), mintLimit)
 		if err = msg.ValidateBasic(); err != nil {
 			return err
 		}

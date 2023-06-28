@@ -72,13 +72,8 @@ func (m CreateDeployTokenRequest) ValidateBasic() error {
 		return err
 	}
 
-	dailyMintLimit, err := sdk.ParseUint(m.DailyMintLimit)
-	if err != nil {
+	if _, err := sdk.ParseUint(m.DailyMintLimit); err != nil {
 		return err
-	}
-
-	if dailyMintLimit.IsZero() {
-		return fmt.Errorf("daily mint limit must be >0")
 	}
 
 	return nil
