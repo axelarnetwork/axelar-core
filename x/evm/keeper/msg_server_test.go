@@ -1221,6 +1221,15 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 		assert.Equal(t, 1, len(chaink.EnqueueCommandCalls()))
 	}).Repeat(repeats))
 
+	t.Run("should create deploy token with infinite rate limit", testutils.Func(func(t *testing.T) {
+		setup()
+		msg.DailyMintLimit = "0"
+
+		_, err := server.CreateDeployToken(sdk.WrapSDKContext(ctx), msg)
+		assert.NoError(t, err)
+		assert.Equal(t, 1, len(chaink.EnqueueCommandCalls()))
+	}))
+
 	t.Run("should return error when chain is unknown", testutils.Func(func(t *testing.T) {
 		setup()
 		msg.Chain = nexus.ChainName(rand.StrBetween(5, 20))
