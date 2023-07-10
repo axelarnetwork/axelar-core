@@ -26,6 +26,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types/mock"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types/testutils"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	nexustestutils "github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 	. "github.com/axelarnetwork/utils/test"
@@ -37,9 +38,11 @@ func TestGetMigrationHandler(t *testing.T) {
 		appModule axelarnet.AppModule
 		k         keeper.Keeper
 		n         *mock.NexusMock
+		bankK     *mock.BankKeeperMock
 
 		ack       channeltypes.Acknowledgement
 		transfer  types.IBCTransfer
+		message   exported.GeneralMessage
 		transfers []types.IBCTransfer
 	)
 
@@ -72,10 +75,14 @@ func TestGetMigrationHandler(t *testing.T) {
 			},
 		}
 
-		bankK := &mock.BankKeeperMock{
+		bankK = &mock.BankKeeperMock{
 			SendCoinsFunc: func(sdk.Context, sdk.AccAddress, sdk.AccAddress, sdk.Coins) error {
 				return nil
 			},
+			SendCoinsFromAccountToModuleFunc: func(sdk.Context, sdk.AccAddress, string, sdk.Coins) error {
+				return nil
+			},
+			BurnCoinsFunc: func(sdk.Context, string, sdk.Coins) error { return nil },
 		}
 
 		transferK := ibctransferkeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("transfer"), transferSubspace, &mock.ChannelKeeperMock{}, &mock.ChannelKeeperMock{}, &mock.PortKeeperMock{}, accountK, bankK, scopedTransferK)
@@ -109,6 +116,22 @@ func TestGetMigrationHandler(t *testing.T) {
 		transfer.ChannelID = channelID
 		funcs.MustNoErr(k.SetSeqIDMapping(ctx, transfer))
 		funcs.MustNoErr(k.EnqueueIBCTransfer(ctx, transfer))
+	})
+
+	seqMapsToMessageID := When("packet seq maps to message ID", func() {
+		message = nexustestutils.RandomMessage(exported.Processing)
+		funcs.MustNoErr(k.SetSeqMessageIDMapping(ctx, ibctransfertypes.PortID, channelID, packetSeq, message.ID))
+
+		n.GetMessageFunc = func(sdk.Context, string) (exported.GeneralMessage, bool) { return message, true }
+		n.IsAssetRegisteredFunc = func(sdk.Context, exported.Chain, string) bool { return true }
+		n.SetMessageFailedFunc = func(ctx sdk.Context, id string) error {
+			if id == message.ID {
+				message.Status = exported.Failed
+			}
+
+			return nil
+		}
+		n.GetChainByNativeAssetFunc = func(sdk.Context, string) (exported.Chain, bool) { return exported.Chain{}, false }
 	})
 
 	whenOnAck := When("on acknowledgement", func() {
@@ -180,5 +203,14 @@ func TestGetMigrationHandler(t *testing.T) {
 				When2(whenChainIsActivated).
 				When2(whenOnTimeout).
 				Then2(shouldNotChangeTransferState),
+
+			whenGetValidAckError.
+				When2(whenChainIsActivated).
+				When2(seqMapsToMessageID).
+				When2(whenOnAck).
+				Then("should set message to failed", func(t *testing.T) {
+					assert.Equal(t, exported.Failed, message.Status)
+					assert.Len(t, bankK.SendCoinsFromAccountToModuleCalls(), 1)
+				}),
 		).Run(t)
 }

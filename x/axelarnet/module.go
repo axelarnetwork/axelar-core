@@ -29,6 +29,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/utils/funcs"
 )
 
 var (
@@ -312,7 +313,7 @@ func (am AppModule) OnAcknowledgementPacket(
 			return err
 		}
 
-		return setRoutedPacketFailed(ctx, am.keeper, am.nexus, port, channel, sequence)
+		return am.setRoutedPacketFailed(ctx, packet)
 	}
 }
 
@@ -329,7 +330,7 @@ func (am AppModule) OnTimeoutPacket(
 
 	// IBC timeout packets, by convention, use the source port/channel to represent native chain -> counterparty chain channel id
 	// https://github.com/cosmos/ibc/tree/main/spec/core/ics-004-channel-and-packet-semantics#definitions
-	port, channel, sequence := packet.GetSourcePort(), packet.GetSourceChannel(), packet.GetSequence()
+	port, channel := packet.GetSourcePort(), packet.GetSourceChannel()
 
 	// Timeout causes a refund of the token (i.e unlock from the escrow address/mint of token depending on whether it's native to chain).
 	// Hence, it's rate limited on the Incoming direction (tokens coming in to Axelar hub).
@@ -337,7 +338,7 @@ func (am AppModule) OnTimeoutPacket(
 		return err
 	}
 
-	return setRoutedPacketFailed(ctx, am.keeper, am.nexus, port, channel, sequence)
+	return am.setRoutedPacketFailed(ctx, packet)
 }
 
 // GetAppVersion implements the ChannelKeeper interface
@@ -385,28 +386,51 @@ func setRoutedPacketCompleted(ctx sdk.Context, k keeper.Keeper, n types.Nexus, p
 	return nil
 }
 
-func setRoutedPacketFailed(ctx sdk.Context, k keeper.Keeper, n types.Nexus, portID, channelID string, seq uint64) error {
+func (am AppModule) setRoutedPacketFailed(ctx sdk.Context, packet channeltypes.Packet) error {
+	// IBC ack/timeout packets, by convention, use the source port/channel to represent native chain -> counterparty chain channel id
+	// https://github.com/cosmos/ibc/tree/main/spec/core/ics-004-channel-and-packet-semantics#definitions
+	port, channel, sequence := packet.GetSourcePort(), packet.GetSourceChannel(), packet.GetSequence()
+
 	// check if the packet is Axelar routed cross chain transfer
-	transferID, ok := getSeqIDMapping(ctx, k, portID, channelID, seq)
+	transferID, ok := getSeqIDMapping(ctx, am.keeper, port, channel, sequence)
 	if ok {
 		events.Emit(ctx,
 			&types.IBCTransferFailed{
 				ID:        transferID,
-				Sequence:  seq,
-				PortID:    portID,
-				ChannelID: channelID,
+				Sequence:  sequence,
+				PortID:    port,
+				ChannelID: channel,
 			})
-		k.Logger(ctx).Info(fmt.Sprintf("set IBC transfer %d failed", transferID))
+		am.keeper.Logger(ctx).Info(fmt.Sprintf("set IBC transfer %d failed", transferID))
 
-		return k.SetTransferFailed(ctx, transferID)
+		return am.keeper.SetTransferFailed(ctx, transferID)
 	}
 
 	// check if the packet is Axelar routed general message
-	messageID, ok := getSeqMessageIDMapping(ctx, k, portID, channelID, seq)
+	messageID, ok := getSeqMessageIDMapping(ctx, am.keeper, port, channel, sequence)
 	if ok {
-		k.Logger(ctx).Debug("set general message status to failed", "messageID", messageID)
-		return n.SetMessageFailed(ctx, messageID)
+		coin, err := keeper.NewCoin(ctx, am.ibcK, am.nexus, extractTokenFromAckOrTimeoutPacket(packet))
+		if err != nil {
+			return err
+		}
+
+		err = coin.Lock(am.bank, types.AxelarGMPAccount)
+		if err != nil {
+			return err
+		}
+
+		am.keeper.Logger(ctx).Debug("set general message status to failed", "messageID", messageID)
+		return am.nexus.SetMessageFailed(ctx, messageID)
 	}
 
 	return nil
+}
+
+func extractTokenFromAckOrTimeoutPacket(packet channeltypes.Packet) sdk.Coin {
+	data := funcs.Must(types.ToICS20Packet(packet))
+
+	trace := ibctransfertypes.ParseDenomTrace(data.Denom)
+	amount := funcs.MustOk(sdk.NewIntFromString(data.Amount))
+
+	return sdk.NewCoin(trace.IBCDenom(), amount)
 }
