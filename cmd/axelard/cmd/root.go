@@ -226,6 +226,9 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 
 	// add health check command
 	rootCmd.AddCommand(vald.GetHealthCheckCommand())
+
+	// add sign command
+	rootCmd.AddCommand(vald.GetSignCommand())
 }
 
 func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer, appOpts servertypes.AppOptions) servertypes.Application {
