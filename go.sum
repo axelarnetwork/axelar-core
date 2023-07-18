@@ -122,8 +122,8 @@ github.com/aws/aws-sdk-go-v2/service/route53 v1.1.1/go.mod h1:rLiOUrPLW/Er5kRcQ7
 github.com/aws/aws-sdk-go-v2/service/sso v1.1.1/go.mod h1:SuZJxklHxLAXgLTc1iFXbEWkXs7QRTQpCLGaKIprQW0=
 github.com/aws/aws-sdk-go-v2/service/sts v1.1.1/go.mod h1:Wi0EBZwiz/K44YliU0EKxqTCJGUfYTWXrrBwkq736bM=
 github.com/aws/smithy-go v1.1.0/go.mod h1:EzMw8dbp/YJL4A5/sbhGddag+NPT7q084agLbB9LgIw=
-github.com/axelarnetwork/cosmos-sdk v0.45.12-0.20230320160648-221f540372f1 h1:lms+/nb53gc5eacQ7t48PdOgUmOJiQ1eBDC3OHYWUjc=
-github.com/axelarnetwork/cosmos-sdk v0.45.12-0.20230320160648-221f540372f1/go.mod h1:45z8Q1Ah4iypFycu2Kl4kBPIsQKUiND8G2CUX+HTtPM=
+github.com/axelarnetwork/cosmos-sdk v0.45.12-0.20230706211309-4033a260beb3 h1:9aK/Xr2qliigiERVubbw2hRa7K/vW2rXBjYHAe8FT6g=
+github.com/axelarnetwork/cosmos-sdk v0.45.12-0.20230706211309-4033a260beb3/go.mod h1:45z8Q1Ah4iypFycu2Kl4kBPIsQKUiND8G2CUX+HTtPM=
 github.com/axelarnetwork/tm-events v0.0.0-20221019195821-9a3f03bc6ca6 h1:bNjORqBmAgv3hEwfm4M9nqjGE9XhbvX9n+5ha2QXZYw=
 github.com/axelarnetwork/tm-events v0.0.0-20221019195821-9a3f03bc6ca6/go.mod h1:nRFBzknkN/o4e8FmOrfF8HREzSmSWrAwTrSyJ48N4B8=
 github.com/axelarnetwork/utils v0.0.0-20230516203509-7f9a694f1fd7 h1:z5j9EALkT39WS63k0ABjP1aVbXo3lDN1RKC4JBYqi64=
