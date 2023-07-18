@@ -44,6 +44,7 @@ Axelar App
 - [axelard status](axelard_status.md)	 - Query remote node for status
 - [axelard tendermint](axelard_tendermint.md)	 - Tendermint subcommands
 - [axelard tx](axelard_tx.md)	 - Transactions subcommands
+- [axelard vald-sign](axelard_vald-sign.md)	 - Sign hash with specified key
 - [axelard vald-start](axelard_vald-start.md)	 -
 - [axelard validate-genesis](axelard_validate-genesis.md)	 - validates the genesis file at the default location or at the location passed as an arg
 - [axelard version](axelard_version.md)	 - Print the application binary version information

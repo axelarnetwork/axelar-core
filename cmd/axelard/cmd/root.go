@@ -222,10 +222,7 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 	rootCmd.PersistentFlags().String(tmcli.OutputFlag, "text", "Output format (text|json)")
 
 	// add vald after the overwrite so it can set its own defaults
-	rootCmd.AddCommand(vald.GetValdCommand())
-
-	// add health check command
-	rootCmd.AddCommand(vald.GetHealthCheckCommand())
+	rootCmd.AddCommand(vald.GetValdCommand(), vald.GetHealthCheckCommand(), vald.GetSignCommand())
 }
 
 func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer, appOpts servertypes.AppOptions) servertypes.Application {
