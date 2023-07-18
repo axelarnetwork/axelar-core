@@ -7,6 +7,7 @@ import (
 
 	ec "github.com/btcsuite/btcd/btcec/v2/ecdsa"
 	"github.com/cosmos/cosmos-sdk/server"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/spf13/cobra"
@@ -59,6 +60,10 @@ func GetSignCommand() *cobra.Command {
 				return err
 			}
 
+			if _, err := sdk.ValAddressFromBech32(valAddr); valAddr != "" && err != nil {
+				return err
+			}
+
 			serverCtx := server.GetServerContextFromCmd(cmd)
 			valdCfg := config.DefaultValdConfig()
 			if err := serverCtx.Viper.Unmarshal(&valdCfg); err != nil {
@@ -101,6 +106,7 @@ func GetSignCommand() *cobra.Command {
 
 		},
 	}
+
 	cmd.Flags().String("validator-addr", "", "the address of the validator operator, i.e axelarvaloper1..")
 
 	return cmd
