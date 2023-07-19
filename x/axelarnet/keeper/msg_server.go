@@ -326,11 +326,6 @@ func (s msgServer) AddCosmosBasedChain(c context.Context, req *types.AddCosmosBa
 		if err := s.nexus.RegisterAsset(ctx, chain, asset, utils.MaxUint, types.DefaultRateLimitWindow); err != nil {
 			return nil, err
 		}
-
-		// also register on axelarnet, it routes assets from cosmos chains to evm chains
-		if err := s.nexus.RegisterAsset(ctx, exported.Axelarnet, nexus.NewAsset(asset.Denom, false), utils.MaxUint, types.DefaultRateLimitWindow); err != nil {
-			return nil, err
-		}
 	}
 
 	if err := s.SetCosmosChain(ctx, types.CosmosChain{
@@ -366,10 +361,6 @@ func (s msgServer) RegisterAsset(c context.Context, req *types.RegisterAssetRequ
 	if err != nil {
 		return nil, err
 	}
-
-	// also register on axelarnet, it routes assets from cosmos chains to evm chains
-	// ignore the error in case above chain is axelarnet, or if the asset is already registered
-	_ = s.nexus.RegisterAsset(ctx, exported.Axelarnet, nexus.NewAsset(req.Asset.Denom, false), utils.MaxUint, types.DefaultRateLimitWindow)
 
 	return &types.RegisterAssetResponse{}, nil
 }

@@ -56,7 +56,7 @@ func TestCoin(t *testing.T) {
 		nexusK.GetChainByNativeAssetFunc = func(sdk.Context, string) (nexus.Chain, bool) {
 			return exported.Axelarnet, true
 		}
-		coin = funcs.Must(keeper.NewCoin(ctx, ibcK, nexusK, sdk.NewCoin("uaxl", sdk.NewInt(rand.PosI64()))))
+		coin = funcs.Must(keeper.NewCoin(ctx, ibcK, nexusK, sdk.NewCoin(exported.NativeAsset, sdk.NewInt(rand.PosI64()))))
 	})
 
 	whenCoinIsExternal := When("coin is external", func() {
