@@ -39,8 +39,7 @@ func TestGenesis(t *testing.T) {
 	givenKeeper := Given("a keeper",
 		func() {
 			subspace := paramstypes.NewSubspace(cfg.Codec, cfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "axelarnet")
-			k = keeper.NewKeeper(cfg.Codec, sdk.NewKVStoreKey(types.StoreKey), subspace, &mock.ChannelKeeperMock{})
-
+			k = keeper.NewKeeper(cfg.Codec, sdk.NewKVStoreKey(types.StoreKey), subspace, &mock.ChannelKeeperMock{}, &mock.FeegrantKeeperMock{})
 		})
 
 	givenGenesisState := Given("a genesis state",
