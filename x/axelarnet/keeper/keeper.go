@@ -43,12 +43,13 @@ type Keeper struct {
 	cdc      codec.BinaryCodec
 	params   params.Subspace
 
-	channelK types.ChannelKeeper
+	channelK  types.ChannelKeeper
+	feegrantK types.FeegrantKeeper
 }
 
 // NewKeeper returns a new axelarnet keeper
-func NewKeeper(cdc codec.BinaryCodec, storeKey sdk.StoreKey, paramSpace params.Subspace, channelK types.ChannelKeeper) Keeper {
-	return Keeper{cdc: cdc, storeKey: storeKey, params: paramSpace.WithKeyTable(types.KeyTable()), channelK: channelK}
+func NewKeeper(cdc codec.BinaryCodec, storeKey sdk.StoreKey, paramSpace params.Subspace, channelK types.ChannelKeeper, feegrantK types.FeegrantKeeper) Keeper {
+	return Keeper{cdc: cdc, storeKey: storeKey, params: paramSpace.WithKeyTable(types.KeyTable()), channelK: channelK, feegrantK: feegrantK}
 }
 
 // Logger returns a module-specific logger.

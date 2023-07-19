@@ -323,7 +323,20 @@ func getGeneralMessage() *cobra.Command {
 				return err
 			}
 
-			msg := types.NewRouteMessage(cliCtx.GetFromAddress(), id, payload)
+			feegranter, err := cmd.Flags().GetString(flags.FlagFeeAccount)
+			if err != nil {
+				return err
+			}
+
+			var feegranterAcc sdk.AccAddress = nil
+			if feegranter != "" {
+				feegranterAcc, err = sdk.AccAddressFromBech32(feegranter)
+				if err != nil {
+					return err
+				}
+			}
+
+			msg := types.NewRouteMessage(cliCtx.GetFromAddress(), feegranterAcc, id, payload)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

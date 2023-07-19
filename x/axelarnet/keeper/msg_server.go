@@ -527,7 +527,7 @@ func (s msgServer) RouteMessage(c context.Context, req *types.RouteMessageReques
 			return nil, sdkerrors.Wrap(err, "invalid payload")
 		}
 
-		asset, err := s.escrowAssetToMessageSender(ctx, req.Sender, msg)
+		asset, err := s.escrowAssetToMessageSender(ctx, req, msg)
 		if err != nil {
 			return nil, err
 		}
@@ -625,19 +625,27 @@ func prepareTransfer(ctx sdk.Context, k Keeper, n types.Nexus, b types.BankKeepe
 
 // all general messages are sent from the Axelar general message sender, so receiver can use the packet sender to authenticate the message
 // escrowAssetToMessageSender sends the asset to general msg sender account
-func (s msgServer) escrowAssetToMessageSender(ctx sdk.Context, reqSender sdk.AccAddress, msg nexus.GeneralMessage) (sdk.Coin, error) {
+func (s msgServer) escrowAssetToMessageSender(ctx sdk.Context, req *types.RouteMessageRequest, msg nexus.GeneralMessage) (sdk.Coin, error) {
 	var asset sdk.Coin
-	var acc sdk.AccAddress
+	var sender sdk.AccAddress
 	var err error
 
 	switch msg.Type() {
 	case nexus.TypeGeneralMessage:
-		// pure general message, take dust amount from request sender to satisfy ibc transfer requirements
-		asset = sdk.NewCoin(exported.NativeAsset, sdk.NewInt(1))
-		acc = reqSender
+		// pure general message, take dust amount from sender to satisfy ibc transfer requirements
+		asset = sdk.NewCoin(exported.NativeAsset, sdk.OneInt())
+		sender = req.Sender
+
+		if req.Feegranter != nil {
+			if err := s.feegrantK.UseGrantedFees(ctx, req.Feegranter, req.Sender, sdk.NewCoins(asset), []sdk.Msg{req}); err != nil {
+				return sdk.Coin{}, err
+			}
+
+			sender = req.Feegranter
+		}
 	case nexus.TypeGeneralMessageWithToken:
 		// general message with token, get token from corresponding account
-		asset, acc, err = prepareTransfer(ctx, s.Keeper, s.nexus, s.bank, s.account, *msg.Asset)
+		asset, sender, err = prepareTransfer(ctx, s.Keeper, s.nexus, s.bank, s.account, *msg.Asset)
 		if err != nil {
 			return sdk.Coin{}, err
 		}
@@ -646,7 +654,7 @@ func (s msgServer) escrowAssetToMessageSender(ctx sdk.Context, reqSender sdk.Acc
 	}
 
 	// use GeneralMessageSender account as the canonical general message sender
-	err = s.bank.SendCoins(ctx, acc, types.AxelarGMPAccount, sdk.NewCoins(asset))
+	err = s.bank.SendCoins(ctx, sender, types.AxelarGMPAccount, sdk.NewCoins(asset))
 	if err != nil {
 		return sdk.Coin{}, err
 	}
