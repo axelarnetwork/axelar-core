@@ -1,8 +1,6 @@
 package types
 
 import (
-	fmt "fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -41,8 +39,8 @@ func (m CallContractRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(err, "invalid chain")
 	}
 
-	if len(m.ContractAddress) == 0 {
-		return fmt.Errorf("contract address empty")
+	if err := utils.ValidateString(m.ContractAddress); err != nil {
+		return err
 	}
 
 	if m.Fee != nil {
