@@ -61,7 +61,6 @@ func validateString(str string, canBeEmpty bool, forbidden string) error {
 
 	if !utf8.ValidString(str) {
 		return fmt.Errorf("not an utf8 string")
-
 	}
 
 	if !norm.NFKC.IsNormalString(str) {
