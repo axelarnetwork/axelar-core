@@ -41,10 +41,10 @@ import (
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/utils"
 	"github.com/axelarnetwork/axelar-core/config"
 	"github.com/axelarnetwork/axelar-core/vald"
-	axelarnettypes "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
+	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 )
 
-const minGasPrice = "0.007" + axelarnettypes.NativeAsset
+const minGasPrice = "0.007" + axelarnet.NativeAsset
 
 // NewRootCmd creates a new root command for axelard. It is called once in the
 // main function.

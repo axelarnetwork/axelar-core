@@ -18,7 +18,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/vald/config"
 	"github.com/axelarnetwork/axelar-core/vald/tss"
-	axelarnettypes "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
+	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
 	snapshotTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
@@ -27,7 +27,7 @@ import (
 
 const (
 	keyID      = "testkey"
-	tokenDenom = axelarnettypes.NativeAsset
+	tokenDenom = axelarnet.NativeAsset
 	minBalance = 5000000
 	timeout    = time.Hour
 
