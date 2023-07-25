@@ -62,7 +62,7 @@ func TestGetMigrationHandler(t *testing.T) {
 			},
 		}
 
-		k = keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey(types.ModuleName), subspace, channelK)
+		k = keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey(types.ModuleName), subspace, channelK, &mock.FeegrantKeeperMock{})
 		ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{}, channelK)
 
 		scopeKeeper := capabilitykeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey(capabilitytypes.StoreKey), sdk.NewKVStoreKey(capabilitytypes.MemStoreKey))

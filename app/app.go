@@ -226,6 +226,7 @@ type AxelarApp struct {
 	evidenceKeeper   evidencekeeper.Keeper
 	transferKeeper   ibctransferkeeper.Keeper
 	capabilityKeeper *capabilitykeeper.Keeper
+	feegrantKeeper   feegrantkeeper.Keeper
 
 	// keys to access the substores
 	keys    map[string]*sdk.KVStoreKey
@@ -343,6 +344,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	app.evidenceKeeper = *evidenceK
 
 	feegrantK := feegrantkeeper.NewKeeper(appCodec, keys[feegrant.StoreKey], accountK)
+	app.feegrantKeeper = feegrantK
 
 	// register the staking hooks
 	// NOTE: stakingKeeper above is passed by reference, so that it will contain these hooks
@@ -364,7 +366,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	)
 
 	axelarnetK := axelarnetKeeper.NewKeeper(
-		appCodec, keys[axelarnetTypes.StoreKey], app.getSubspace(axelarnetTypes.ModuleName), app.ibcKeeper.ChannelKeeper,
+		appCodec, keys[axelarnetTypes.StoreKey], app.getSubspace(axelarnetTypes.ModuleName), app.ibcKeeper.ChannelKeeper, app.feegrantKeeper,
 	)
 
 	nexusK := nexusKeeper.NewKeeper(

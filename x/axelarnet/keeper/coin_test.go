@@ -32,7 +32,7 @@ func TestCoin(t *testing.T) {
 	)
 
 	givenAKeeper := Given("a keeper", func() {
-		ctx2, k, _ := setup()
+		ctx2, k, _, _ := setup()
 		ctx = ctx2
 		nexusK = &mock.NexusMock{}
 		bankK = &mock.BankKeeperMock{}

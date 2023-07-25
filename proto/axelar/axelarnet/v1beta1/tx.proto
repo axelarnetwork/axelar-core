@@ -164,6 +164,8 @@ message RouteMessageRequest {
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string id = 2 [ (gogoproto.customname) = "ID" ];
   bytes payload = 3;
+  bytes feegranter = 4 [ (gogoproto.casttype) =
+                             "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
 }
 
 message RouteMessageResponse {}
