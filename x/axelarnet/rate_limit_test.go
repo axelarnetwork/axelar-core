@@ -355,6 +355,6 @@ func setup() (sdk.Context, keeper.Keeper, *mock.ChannelKeeperMock) {
 
 	channelK := &mock.ChannelKeeperMock{}
 
-	k := keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("axelarnet"), axelarnetSubspace, channelK)
+	k := keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("axelarnet"), axelarnetSubspace, channelK, &mock.FeegrantKeeperMock{})
 	return ctx, k, channelK
 }

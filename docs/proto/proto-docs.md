@@ -2490,6 +2490,7 @@ cosmos based chains
 | `sender` | [bytes](#bytes) |  |  |
 | `id` | [string](#string) |  |  |
 | `payload` | [bytes](#bytes) |  |  |
+| `feegranter` | [bytes](#bytes) |  |  |
 
 
 

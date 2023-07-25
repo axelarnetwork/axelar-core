@@ -3136,3 +3136,93 @@ func (mock *GovKeeperMock) GetProposalCalls() []struct {
 	mock.lockGetProposal.RUnlock()
 	return calls
 }
+
+// Ensure, that FeegrantKeeperMock does implement axelarnettypes.FeegrantKeeper.
+// If this is not the case, regenerate this file with moq.
+var _ axelarnettypes.FeegrantKeeper = &FeegrantKeeperMock{}
+
+// FeegrantKeeperMock is a mock implementation of axelarnettypes.FeegrantKeeper.
+//
+//	func TestSomethingThatUsesFeegrantKeeper(t *testing.T) {
+//
+//		// make and configure a mocked axelarnettypes.FeegrantKeeper
+//		mockedFeegrantKeeper := &FeegrantKeeperMock{
+//			UseGrantedFeesFunc: func(ctx cosmossdktypes.Context, granter cosmossdktypes.AccAddress, grantee cosmossdktypes.AccAddress, fee cosmossdktypes.Coins, msgs []cosmossdktypes.Msg) error {
+//				panic("mock out the UseGrantedFees method")
+//			},
+//		}
+//
+//		// use mockedFeegrantKeeper in code that requires axelarnettypes.FeegrantKeeper
+//		// and then make assertions.
+//
+//	}
+type FeegrantKeeperMock struct {
+	// UseGrantedFeesFunc mocks the UseGrantedFees method.
+	UseGrantedFeesFunc func(ctx cosmossdktypes.Context, granter cosmossdktypes.AccAddress, grantee cosmossdktypes.AccAddress, fee cosmossdktypes.Coins, msgs []cosmossdktypes.Msg) error
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// UseGrantedFees holds details about calls to the UseGrantedFees method.
+		UseGrantedFees []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// Granter is the granter argument value.
+			Granter cosmossdktypes.AccAddress
+			// Grantee is the grantee argument value.
+			Grantee cosmossdktypes.AccAddress
+			// Fee is the fee argument value.
+			Fee cosmossdktypes.Coins
+			// Msgs is the msgs argument value.
+			Msgs []cosmossdktypes.Msg
+		}
+	}
+	lockUseGrantedFees sync.RWMutex
+}
+
+// UseGrantedFees calls UseGrantedFeesFunc.
+func (mock *FeegrantKeeperMock) UseGrantedFees(ctx cosmossdktypes.Context, granter cosmossdktypes.AccAddress, grantee cosmossdktypes.AccAddress, fee cosmossdktypes.Coins, msgs []cosmossdktypes.Msg) error {
+	if mock.UseGrantedFeesFunc == nil {
+		panic("FeegrantKeeperMock.UseGrantedFeesFunc: method is nil but FeegrantKeeper.UseGrantedFees was just called")
+	}
+	callInfo := struct {
+		Ctx     cosmossdktypes.Context
+		Granter cosmossdktypes.AccAddress
+		Grantee cosmossdktypes.AccAddress
+		Fee     cosmossdktypes.Coins
+		Msgs    []cosmossdktypes.Msg
+	}{
+		Ctx:     ctx,
+		Granter: granter,
+		Grantee: grantee,
+		Fee:     fee,
+		Msgs:    msgs,
+	}
+	mock.lockUseGrantedFees.Lock()
+	mock.calls.UseGrantedFees = append(mock.calls.UseGrantedFees, callInfo)
+	mock.lockUseGrantedFees.Unlock()
+	return mock.UseGrantedFeesFunc(ctx, granter, grantee, fee, msgs)
+}
+
+// UseGrantedFeesCalls gets all the calls that were made to UseGrantedFees.
+// Check the length with:
+//
+//	len(mockedFeegrantKeeper.UseGrantedFeesCalls())
+func (mock *FeegrantKeeperMock) UseGrantedFeesCalls() []struct {
+	Ctx     cosmossdktypes.Context
+	Granter cosmossdktypes.AccAddress
+	Grantee cosmossdktypes.AccAddress
+	Fee     cosmossdktypes.Coins
+	Msgs    []cosmossdktypes.Msg
+} {
+	var calls []struct {
+		Ctx     cosmossdktypes.Context
+		Granter cosmossdktypes.AccAddress
+		Grantee cosmossdktypes.AccAddress
+		Fee     cosmossdktypes.Coins
+		Msgs    []cosmossdktypes.Msg
+	}
+	mock.lockUseGrantedFees.RLock()
+	calls = mock.calls.UseGrantedFees
+	mock.lockUseGrantedFees.RUnlock()
+	return calls
+}

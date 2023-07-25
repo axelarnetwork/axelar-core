@@ -8,11 +8,12 @@ import (
 )
 
 // NewRouteMessage creates a message of type RouteMessageRequest
-func NewRouteMessage(sender sdk.AccAddress, id string, payload []byte) *RouteMessageRequest {
+func NewRouteMessage(sender sdk.AccAddress, feegranter sdk.AccAddress, id string, payload []byte) *RouteMessageRequest {
 	return &RouteMessageRequest{
-		Sender:  sender,
-		ID:      id,
-		Payload: payload,
+		Sender:     sender,
+		ID:         id,
+		Payload:    payload,
+		Feegranter: feegranter,
 	}
 }
 
@@ -34,6 +35,12 @@ func (m RouteMessageRequest) ValidateBasic() error {
 
 	if err := utils.ValidateString(m.ID); err != nil {
 		return sdkerrors.Wrap(err, "invalid general message id")
+	}
+
+	if m.Feegranter != nil {
+		if err := sdk.VerifyAddressFormat(m.Feegranter); err != nil {
+			return sdkerrors.Wrap(err, "invalid feegranter")
+		}
 	}
 
 	return nil

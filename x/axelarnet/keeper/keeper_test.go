@@ -25,15 +25,16 @@ import (
 	"github.com/axelarnetwork/utils/slices"
 )
 
-func setup() (sdk.Context, keeper.Keeper, *mock.ChannelKeeperMock) {
+func setup() (sdk.Context, keeper.Keeper, *mock.ChannelKeeperMock, *mock.FeegrantKeeperMock) {
 	encCfg := appParams.MakeEncodingConfig()
 	axelarnetSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("axelarnetKey"), sdk.NewKVStoreKey("tAxelarnetKey"), "axelarnet")
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 
 	channelK := &mock.ChannelKeeperMock{}
+	feegrantK := &mock.FeegrantKeeperMock{}
 
-	k := keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("axelarnet"), axelarnetSubspace, channelK)
-	return ctx, k, channelK
+	k := keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("axelarnet"), axelarnetSubspace, channelK, feegrantK)
+	return ctx, k, channelK, feegrantK
 }
 
 func TestKeeper_GetIBCPath(t *testing.T) {
@@ -45,7 +46,7 @@ func TestKeeper_GetIBCPath(t *testing.T) {
 	)
 
 	t.Run("should return the registered IBC path when the given asset is registered", testutils.Func(func(t *testing.T) {
-		ctx, k, _ = setup()
+		ctx, k, _, _ = setup()
 		chain := axelartestutils.RandomCosmosChain()
 		funcs.MustNoErr(k.SetCosmosChain(ctx, chain))
 		result, ok := k.GetIBCPath(ctx, chain.Name)
@@ -63,7 +64,7 @@ func TestKeeper_RegisterCosmosChain(t *testing.T) {
 	)
 
 	t.Run("should return list of registered cosmos chains", testutils.Func(func(t *testing.T) {
-		ctx, k, _ = setup()
+		ctx, k, _, _ = setup()
 
 		count := rand.I64Between(10, 100)
 		chains := make([]string, count)
@@ -82,7 +83,7 @@ func TestKeeper_RegisterCosmosChain(t *testing.T) {
 	}).Repeat(repeats))
 
 	t.Run("should empty list when no chain registered", testutils.Func(func(t *testing.T) {
-		ctx, k, _ = setup()
+		ctx, k, _, _ = setup()
 		empty := make([]nexus.ChainName, 0)
 
 		assert.Equal(t, empty, k.GetCosmosChains(ctx))
@@ -92,7 +93,7 @@ func TestKeeper_RegisterCosmosChain(t *testing.T) {
 }
 
 func TestSeqIDMap(t *testing.T) {
-	ctx, k, channelK := setup()
+	ctx, k, channelK, _ := setup()
 
 	nextSeq := 1
 	channelK.GetNextSequenceSendFunc = func(ctx sdk.Context, portID, channelID string) (uint64, bool) {
@@ -127,7 +128,7 @@ func TestSeqIDMap(t *testing.T) {
 }
 
 func TestSetTransferStatus(t *testing.T) {
-	ctx, k, _ := setup()
+	ctx, k, _, _ := setup()
 
 	pending := axelartestutils.RandomIBCTransfer()
 	assert.NoError(t, k.EnqueueIBCTransfer(ctx, pending))
@@ -148,7 +149,7 @@ func TestSetTransferStatus(t *testing.T) {
 }
 
 func TestSetChainByIBCPath(t *testing.T) {
-	ctx, k, _ := setup()
+	ctx, k, _, _ := setup()
 	ibcPaths := []string{
 		"",
 		"transfer",
