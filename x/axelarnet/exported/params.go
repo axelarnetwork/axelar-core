@@ -6,14 +6,14 @@ import (
 )
 
 const (
-	// NativeAsset is the native asset on Axelarnet
-	NativeAsset = "uaxl"
-
 	// ModuleName exposes axelarnet module name
 	ModuleName = "axelarnet"
 )
 
 var (
+	// NativeAsset is the native asset on Axelarnet
+	NativeAsset = "uaxl"
+
 	// Axelarnet defines properties of the Axelar chain
 	Axelarnet = exported.Chain{
 		Name:                  "Axelarnet",

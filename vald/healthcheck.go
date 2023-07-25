@@ -27,7 +27,6 @@ import (
 
 const (
 	keyID      = "testkey"
-	tokenDenom = axelarnet.NativeAsset
 	minBalance = 5000000
 	timeout    = time.Hour
 
@@ -170,7 +169,7 @@ func checkBroadcaster(ctx context.Context, clientCtx client.Context, serverCtx *
 	}
 
 	queryClient := bankTypes.NewQueryClient(clientCtx)
-	params := bankTypes.NewQueryBalanceRequest(broadcaster, tokenDenom)
+	params := bankTypes.NewQueryBalanceRequest(broadcaster, axelarnet.NativeAsset)
 
 	grpcCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
@@ -181,7 +180,7 @@ func checkBroadcaster(ctx context.Context, clientCtx client.Context, serverCtx *
 	}
 
 	if res.Balance.Amount.LTE(sdk.NewInt(minBalance)) {
-		return fmt.Errorf("broadcaster does not have enough funds (minimum balance is %d%s)", minBalance, tokenDenom)
+		return fmt.Errorf("broadcaster does not have enough funds (minimum balance is %d%s)", minBalance, axelarnet.NativeAsset)
 	}
 
 	return nil
