@@ -29,6 +29,7 @@ func TestCoin(t *testing.T) {
 		ibcK      keeper.IBCKeeper
 		chain     nexus.Chain
 		coin      keeper.Coin
+		trace     ibctypes.DenomTrace
 	)
 
 	givenAKeeper := Given("a keeper", func() {
@@ -73,7 +74,7 @@ func TestCoin(t *testing.T) {
 		// setup
 		path := testutils.RandomIBCPath()
 		chain = nexustestutils.RandomChain()
-		trace := ibctypes.DenomTrace{
+		trace = ibctypes.DenomTrace{
 			Path:      path,
 			BaseDenom: rand.Denom(5, 10),
 		}
@@ -89,8 +90,11 @@ func TestCoin(t *testing.T) {
 
 		coin = funcs.Must(keeper.NewCoin(ctx, ibcK, nexusK, sdk.NewCoin(trace.IBCDenom(), sdk.NewInt(rand.PosI64()))))
 
-		bankK.GetBalanceFunc = func(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin {
-			return sdk.NewCoin(trace.IBCDenom(), coin.Amount)
+		nexusK.GetChainFunc = func(sdk.Context, nexus.ChainName) (nexus.Chain, bool) {
+			return chain, true
+		}
+		nexusK.GetChainByNativeAssetFunc = func(sdk.Context, string) (nexus.Chain, bool) {
+			return chain, true
 		}
 	})
 
@@ -109,16 +113,34 @@ func TestCoin(t *testing.T) {
 					assert.Len(t, bankK.SendCoinsFromAccountToModuleCalls(), 1)
 					assert.Len(t, bankK.BurnCoinsCalls(), 1)
 				}),
-
 			whenCoinIsICS20.
+				When("coin is greater than bank balance", func() {
+					bankK.GetBalanceFunc = func(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin {
+						return sdk.NewCoin(trace.IBCDenom(), coin.Amount.Sub(sdk.OneInt()))
+					}
+				}).
+				Then("should return error", func(t *testing.T) {
+					err := coin.Lock(bankK, rand.AccAddr())
+					assert.ErrorContains(t, err, "is greater than account balance")
+				}),
+			whenCoinIsICS20.
+				When("coin equals to bank balance", func() {
+					bankK.GetBalanceFunc = func(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin {
+						return sdk.NewCoin(trace.IBCDenom(), coin.Amount)
+					}
+				}).
 				Then("should Lock ICS20 coin in escrow account", func(t *testing.T) {
-					nexusK.GetChainFunc = func(sdk.Context, nexus.ChainName) (nexus.Chain, bool) {
-						return chain, true
+					err := coin.Lock(bankK, rand.AccAddr())
+					assert.NoError(t, err)
+					assert.Len(t, bankK.SendCoinsCalls(), 1)
+				}),
+			whenCoinIsICS20.
+				When("coin is less than bank balance", func() {
+					bankK.GetBalanceFunc = func(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin {
+						return sdk.NewCoin(trace.IBCDenom(), coin.Amount.Add(sdk.OneInt()))
 					}
-					nexusK.GetChainByNativeAssetFunc = func(sdk.Context, string) (nexus.Chain, bool) {
-						return chain, true
-					}
-
+				}).
+				Then("should Lock ICS20 coin in escrow account", func(t *testing.T) {
 					err := coin.Lock(bankK, rand.AccAddr())
 					assert.NoError(t, err)
 					assert.Len(t, bankK.SendCoinsCalls(), 1)
