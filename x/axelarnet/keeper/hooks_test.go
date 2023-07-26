@@ -46,7 +46,7 @@ func TestAfterProposalDeposit(t *testing.T) {
 	}
 	minDeposit := sdk.NewCoin("TEST", sdk.NewInt(rand.PosI64()))
 
-	keeper := keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("nexus"), subspace, &mock.ChannelKeeperMock{})
+	keeper := keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("nexus"), subspace, &mock.ChannelKeeperMock{}, &mock.FeegrantKeeperMock{})
 	keeper.SetParams(ctx, types.DefaultParams())
 
 	Given("a proposal is created", func() {
@@ -155,7 +155,7 @@ func TestAfterProposalSubmission(t *testing.T) {
 	govK := &mock.GovKeeperMock{}
 	nonRegisteredChain := nexus.ChainName(rand.NormalizedStr(5))
 
-	keeper := keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("nexus"), subspace, &mock.ChannelKeeperMock{})
+	keeper := keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("nexus"), subspace, &mock.ChannelKeeperMock{}, &mock.FeegrantKeeperMock{})
 	keeper.SetParams(ctx, types.DefaultParams())
 
 	Given("a proposal is created", func() {

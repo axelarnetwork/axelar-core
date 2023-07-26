@@ -2262,6 +2262,9 @@ paths:
               payload:
                 type: string
                 format: byte
+              feegranter:
+                type: string
+                format: byte
       tags:
         - MsgService
   /axelar/axelarnet/v1beta1/ibc_transfer_count:
@@ -48970,6 +48973,9 @@ definitions:
       id:
         type: string
       payload:
+        type: string
+        format: byte
+      feegranter:
         type: string
         format: byte
   axelar.axelarnet.v1beta1.RouteMessageResponse:
