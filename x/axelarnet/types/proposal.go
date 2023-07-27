@@ -64,11 +64,7 @@ func (p CallContractsProposal) ProposalType() string { return ProposalTypeCallCo
 
 // ValidateBasic validates the proposal
 func (p CallContractsProposal) ValidateBasic() error {
-	if err := utils.ValidateString(p.Title); err != nil {
-		return err
-	}
-
-	if err := utils.ValidateString(p.Description); err != nil {
+	if err := gov.ValidateAbstract(p); err != nil {
 		return err
 	}
 
