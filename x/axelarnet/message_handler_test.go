@@ -499,7 +499,7 @@ func TestHandleMessageWithToken(t *testing.T) {
 			},
 		}, &mock.ChannelKeeperMock{})
 		b = &mock.BankKeeperMock{
-			GetBalanceFunc: func(ctx sdk.Context, addr sdk.AccAddress, d string) sdk.Coin {
+			SpendableBalanceFunc: func(ctx sdk.Context, addr sdk.AccAddress, d string) sdk.Coin {
 				if addr.Equals(types.AxelarGMPAccount) {
 					return sdk.NewCoin(d, funcs.MustOk(sdk.NewIntFromString(amount)).Sub(feeAmount))
 				}
@@ -713,7 +713,7 @@ func TestHandleSendToken(t *testing.T) {
 			},
 		}, &mock.ChannelKeeperMock{})
 		b = &mock.BankKeeperMock{
-			GetBalanceFunc: func(ctx sdk.Context, addr sdk.AccAddress, d string) sdk.Coin {
+			SpendableBalanceFunc: func(ctx sdk.Context, addr sdk.AccAddress, d string) sdk.Coin {
 				if addr.Equals(types.AxelarGMPAccount) {
 					return sdk.NewCoin(d, funcs.MustOk(sdk.NewIntFromString(amount)))
 				}

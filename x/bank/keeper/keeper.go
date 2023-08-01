@@ -30,3 +30,14 @@ func (k BankKeeper) SendCoins(ctx sdk.Context, fromAddr sdk.AccAddress, toAddr s
 
 	return k.BankKeeper.SendCoins(ctx, fromAddr, toAddr, amt)
 }
+
+// SpendableBalance returns the spendable balance of a specific denomination for a given account by address
+func (k BankKeeper) SpendableBalance(ctx sdk.Context, address sdk.AccAddress, denom string) sdk.Coin {
+	for _, coin := range k.SpendableCoins(ctx, address) {
+		if coin.Denom == denom {
+			return coin
+		}
+	}
+
+	return sdk.NewCoin(denom, sdk.ZeroInt())
+}
