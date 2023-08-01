@@ -92,3 +92,45 @@ func TestSendCoins(t *testing.T) {
 		).
 		Run(t)
 }
+
+func TestSpendableBalance(t *testing.T) {
+	var (
+		k          keeper.BankKeeper
+		bankKeeper *mock.BankKeeperMock
+	)
+
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+	addr := rand.AccAddr()
+	spendableCoins := sdk.NewCoins(
+		sdk.NewCoin("aaa", sdk.NewInt(rand.PosI64())),
+		sdk.NewCoin("bbb", sdk.NewInt(rand.PosI64())),
+		sdk.NewCoin("ccc", sdk.NewInt(rand.PosI64())),
+	)
+
+	Given("a bank keeper", func() {
+		bankKeeper = &mock.BankKeeperMock{}
+		k = keeper.NewBankKeeper(bankKeeper)
+	}).
+		Branch(
+			When("denom not in spendable coins", func() {
+				bankKeeper.SpendableCoinsFunc = func(sdk.Context, sdk.AccAddress) sdk.Coins {
+					return spendableCoins
+				}
+			}).
+				Then("should return zero", func(t *testing.T) {
+					coin := k.SpendableBalance(ctx, addr, "ddd")
+					assert.Equal(t, sdk.NewCoin("ddd", sdk.ZeroInt()), coin)
+				}),
+
+			When("denom in spendable coins", func() {
+				bankKeeper.SpendableCoinsFunc = func(sdk.Context, sdk.AccAddress) sdk.Coins {
+					return spendableCoins
+				}
+			}).
+				Then("should return coin", func(t *testing.T) {
+					coin := k.SpendableBalance(ctx, addr, spendableCoins[2].Denom)
+					assert.Equal(t, spendableCoins[2], coin)
+				}),
+		).
+		Run(t)
+}

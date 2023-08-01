@@ -50,7 +50,7 @@ func (c Coin) Lock(bankK types.BankKeeper, depositAddr sdk.AccAddress) error {
 			return err
 		}
 
-		if bankK.GetBalance(c.ctx, depositAddr, ics20.GetDenom()).IsLT(ics20) {
+		if bankK.SpendableBalance(c.ctx, depositAddr, ics20.GetDenom()).IsLT(ics20) {
 			return fmt.Errorf("coin %s to lock is greater than account balance", ics20)
 		}
 

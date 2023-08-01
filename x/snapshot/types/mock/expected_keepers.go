@@ -275,8 +275,8 @@ var _ snapshottypes.BankKeeper = &BankKeeperMock{}
 //
 //		// make and configure a mocked snapshottypes.BankKeeper
 //		mockedBankKeeper := &BankKeeperMock{
-//			GetBalanceFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, addr github_com_cosmos_cosmos_sdk_types.AccAddress, denom string) github_com_cosmos_cosmos_sdk_types.Coin {
-//				panic("mock out the GetBalance method")
+//			SpendableBalanceFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.AccAddress, denom string) github_com_cosmos_cosmos_sdk_types.Coin {
+//				panic("mock out the SpendableBalance method")
 //			},
 //		}
 //
@@ -285,61 +285,61 @@ var _ snapshottypes.BankKeeper = &BankKeeperMock{}
 //
 //	}
 type BankKeeperMock struct {
-	// GetBalanceFunc mocks the GetBalance method.
-	GetBalanceFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, addr github_com_cosmos_cosmos_sdk_types.AccAddress, denom string) github_com_cosmos_cosmos_sdk_types.Coin
+	// SpendableBalanceFunc mocks the SpendableBalance method.
+	SpendableBalanceFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.AccAddress, denom string) github_com_cosmos_cosmos_sdk_types.Coin
 
 	// calls tracks calls to the methods.
 	calls struct {
-		// GetBalance holds details about calls to the GetBalance method.
-		GetBalance []struct {
+		// SpendableBalance holds details about calls to the SpendableBalance method.
+		SpendableBalance []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// Addr is the addr argument value.
-			Addr github_com_cosmos_cosmos_sdk_types.AccAddress
+			// Address is the address argument value.
+			Address github_com_cosmos_cosmos_sdk_types.AccAddress
 			// Denom is the denom argument value.
 			Denom string
 		}
 	}
-	lockGetBalance sync.RWMutex
+	lockSpendableBalance sync.RWMutex
 }
 
-// GetBalance calls GetBalanceFunc.
-func (mock *BankKeeperMock) GetBalance(ctx github_com_cosmos_cosmos_sdk_types.Context, addr github_com_cosmos_cosmos_sdk_types.AccAddress, denom string) github_com_cosmos_cosmos_sdk_types.Coin {
-	if mock.GetBalanceFunc == nil {
-		panic("BankKeeperMock.GetBalanceFunc: method is nil but BankKeeper.GetBalance was just called")
+// SpendableBalance calls SpendableBalanceFunc.
+func (mock *BankKeeperMock) SpendableBalance(ctx github_com_cosmos_cosmos_sdk_types.Context, address github_com_cosmos_cosmos_sdk_types.AccAddress, denom string) github_com_cosmos_cosmos_sdk_types.Coin {
+	if mock.SpendableBalanceFunc == nil {
+		panic("BankKeeperMock.SpendableBalanceFunc: method is nil but BankKeeper.SpendableBalance was just called")
 	}
 	callInfo := struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Addr  github_com_cosmos_cosmos_sdk_types.AccAddress
-		Denom string
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Address github_com_cosmos_cosmos_sdk_types.AccAddress
+		Denom   string
 	}{
-		Ctx:   ctx,
-		Addr:  addr,
-		Denom: denom,
+		Ctx:     ctx,
+		Address: address,
+		Denom:   denom,
 	}
-	mock.lockGetBalance.Lock()
-	mock.calls.GetBalance = append(mock.calls.GetBalance, callInfo)
-	mock.lockGetBalance.Unlock()
-	return mock.GetBalanceFunc(ctx, addr, denom)
+	mock.lockSpendableBalance.Lock()
+	mock.calls.SpendableBalance = append(mock.calls.SpendableBalance, callInfo)
+	mock.lockSpendableBalance.Unlock()
+	return mock.SpendableBalanceFunc(ctx, address, denom)
 }
 
-// GetBalanceCalls gets all the calls that were made to GetBalance.
+// SpendableBalanceCalls gets all the calls that were made to SpendableBalance.
 // Check the length with:
 //
-//	len(mockedBankKeeper.GetBalanceCalls())
-func (mock *BankKeeperMock) GetBalanceCalls() []struct {
-	Ctx   github_com_cosmos_cosmos_sdk_types.Context
-	Addr  github_com_cosmos_cosmos_sdk_types.AccAddress
-	Denom string
+//	len(mockedBankKeeper.SpendableBalanceCalls())
+func (mock *BankKeeperMock) SpendableBalanceCalls() []struct {
+	Ctx     github_com_cosmos_cosmos_sdk_types.Context
+	Address github_com_cosmos_cosmos_sdk_types.AccAddress
+	Denom   string
 } {
 	var calls []struct {
-		Ctx   github_com_cosmos_cosmos_sdk_types.Context
-		Addr  github_com_cosmos_cosmos_sdk_types.AccAddress
-		Denom string
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		Address github_com_cosmos_cosmos_sdk_types.AccAddress
+		Denom   string
 	}
-	mock.lockGetBalance.RLock()
-	calls = mock.calls.GetBalance
-	mock.lockGetBalance.RUnlock()
+	mock.lockSpendableBalance.RLock()
+	calls = mock.calls.SpendableBalance
+	mock.lockSpendableBalance.RUnlock()
 	return calls
 }
 

@@ -30,3 +30,16 @@ func (k BankKeeper) SendCoins(ctx sdk.Context, fromAddr sdk.AccAddress, toAddr s
 
 	return k.BankKeeper.SendCoins(ctx, fromAddr, toAddr, amt)
 }
+
+func (k BankKeeper) SpendableBalance(ctx sdk.Context, address sdk.AccAddress, denom string) sdk.Coin {
+	amount := sdk.ZeroInt()
+
+	for _, coin := range k.SpendableCoins(ctx, address) {
+		if coin.Denom == denom {
+			amount = coin.Amount
+			break
+		}
+	}
+
+	return sdk.NewCoin(denom, amount)
+}

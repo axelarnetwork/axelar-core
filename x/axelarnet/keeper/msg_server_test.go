@@ -170,7 +170,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 	})
 
 	whenDepositAddressHasBalance := When("deposit address has balance", func() {
-		bankK.GetBalanceFunc = func(_ sdk.Context, _ sdk.AccAddress, denom string) sdk.Coin {
+		bankK.SpendableBalanceFunc = func(_ sdk.Context, _ sdk.AccAddress, denom string) sdk.Coin {
 			// need to compare the balance so cannot make it random
 			return sdk.NewCoin(denom, sdk.NewInt(1e18))
 		}
@@ -225,7 +225,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		givenMsgServer.
 			Branch(
 				When("deposit address holds no funds", func() {
-					bankK.GetBalanceFunc = func(_ sdk.Context, _ sdk.AccAddress, denom string) sdk.Coin {
+					bankK.SpendableBalanceFunc = func(_ sdk.Context, _ sdk.AccAddress, denom string) sdk.Coin {
 						return sdk.NewCoin(denom, sdk.ZeroInt())
 					}
 				}).
