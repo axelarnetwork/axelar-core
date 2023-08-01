@@ -48,7 +48,7 @@ func TestCoin(t *testing.T) {
 		bankK.SendCoinsFunc = func(sdk.Context, sdk.AccAddress, sdk.AccAddress, sdk.Coins) error {
 			return nil
 		}
-		bankK.GetBalanceFunc = func(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin {
+		bankK.SpendableBalanceFunc = func(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin {
 			return coin.Coin
 		}
 	})
@@ -115,7 +115,7 @@ func TestCoin(t *testing.T) {
 				}),
 			whenCoinIsICS20.
 				When("coin is greater than bank balance", func() {
-					bankK.GetBalanceFunc = func(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin {
+					bankK.SpendableBalanceFunc = func(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin {
 						return sdk.NewCoin(trace.IBCDenom(), coin.Amount.Sub(sdk.OneInt()))
 					}
 				}).
@@ -125,7 +125,7 @@ func TestCoin(t *testing.T) {
 				}),
 			whenCoinIsICS20.
 				When("coin equals to bank balance", func() {
-					bankK.GetBalanceFunc = func(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin {
+					bankK.SpendableBalanceFunc = func(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin {
 						return sdk.NewCoin(trace.IBCDenom(), coin.Amount)
 					}
 				}).
@@ -136,7 +136,7 @@ func TestCoin(t *testing.T) {
 				}),
 			whenCoinIsICS20.
 				When("coin is less than bank balance", func() {
-					bankK.GetBalanceFunc = func(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin {
+					bankK.SpendableBalanceFunc = func(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin {
 						return sdk.NewCoin(trace.IBCDenom(), coin.Amount.Add(sdk.OneInt()))
 					}
 				}).
