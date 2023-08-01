@@ -49,6 +49,10 @@ func TestAfterProposalDeposit(t *testing.T) {
 	keeper := keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("nexus"), subspace, &mock.ChannelKeeperMock{}, &mock.FeegrantKeeperMock{})
 	keeper.SetParams(ctx, types.DefaultParams())
 
+	nexusK.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
+		return evm.Ethereum, true
+	}
+
 	Given("a proposal is created", func() {
 		govK.GetProposalFunc = func(ctx sdk.Context, proposalID uint64) (govtypes.Proposal, bool) {
 			return proposal, proposalID == proposal.ProposalId

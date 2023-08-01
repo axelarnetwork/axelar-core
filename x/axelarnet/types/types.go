@@ -16,6 +16,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
+	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
@@ -29,6 +30,8 @@ const (
 	// DefaultRateLimitWindow is the default window for rate limits of assets on cosmos chains
 	DefaultRateLimitWindow = 6 * time.Hour
 )
+
+const ZERO_X_PREFIX = "0x"
 
 // NewLinkedAddress creates a new address to make a deposit which can be transferred to another blockchain
 func NewLinkedAddress(ctx sdk.Context, chain nexus.ChainName, symbol, recipientAddr string) sdk.AccAddress {
@@ -313,7 +316,7 @@ func (minDeposits CallContractProposalMinDeposits) ValidateBasic() error {
 }
 
 // ToMap returns a map of chain name to contract address to min deposit
-func (minDeposits CallContractProposalMinDeposits) ToMap() callContractProposalMinDepositsMap {
+func (minDeposits CallContractProposalMinDeposits) ToMap(ctx sdk.Context, nexus Nexus) callContractProposalMinDepositsMap {
 	minDepositsMap := make(callContractProposalMinDepositsMap)
 
 	for _, minDeposit := range minDeposits {
@@ -325,6 +328,19 @@ func (minDeposits CallContractProposalMinDeposits) ToMap() callContractProposalM
 		}
 
 		minDepositsMap[chain][contractAddress] = minDeposit.MinDeposits
+
+		// TODO: eventually, this is confusing and bad cuz cosmos addresses will also
+		// show up here and be prefixed with 0x. Like the address validator, we should
+		// also implement chain-specific address deserializer so that we just use the
+		// actual bytes as map keys for this check instead of a string representation.
+		if chain, ok := nexus.GetChain(ctx, minDeposit.Chain); !ok || !chain.IsFrom(evmtypes.ModuleName) {
+			continue
+		}
+		if strings.HasPrefix(contractAddress, ZERO_X_PREFIX) {
+			minDepositsMap[chain][strings.TrimPrefix(contractAddress, ZERO_X_PREFIX)] = minDeposit.MinDeposits
+		} else {
+			minDepositsMap[chain][fmt.Sprintf("%s%s", ZERO_X_PREFIX, contractAddress)] = minDeposit.MinDeposits
+		}
 	}
 
 	return minDepositsMap
