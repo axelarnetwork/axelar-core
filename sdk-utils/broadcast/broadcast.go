@@ -16,11 +16,11 @@ import (
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/config"
-	"github.com/tendermint/tendermint/libs/log"
 
 	errors2 "github.com/axelarnetwork/axelar-core/utils/errors"
 	"github.com/axelarnetwork/axelar-core/x/reward/types"
 	"github.com/axelarnetwork/utils"
+	"github.com/axelarnetwork/utils/log"
 )
 
 //go:generate moq -pkg mock -out mock/broadcast.go . Broadcaster
@@ -136,27 +136,24 @@ type statefulBroadcaster struct {
 	clientCtx sdkClient.Context
 	txf       tx.Factory
 	options   []BroadcasterOption
-	logger    log.Logger
 }
 
 // WithStateManager tracks sequence numbers, so it can be used to broadcast consecutive txs
-func WithStateManager(clientCtx sdkClient.Context, txf tx.Factory, logger log.Logger, options ...BroadcasterOption) Broadcaster {
+func WithStateManager(clientCtx sdkClient.Context, txf tx.Factory, options ...BroadcasterOption) Broadcaster {
 	return &statefulBroadcaster{
 		clientCtx: clientCtx,
 		txf:       txf,
-		logger:    logger,
 		options:   options,
 	}
 }
 
 // Broadcast broadcasts the given msgs to the blockchain, keeps track of the sender's sequence number
-func (b *statefulBroadcaster) Broadcast(_ context.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error) {
+func (b *statefulBroadcaster) Broadcast(ctx context.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error) {
 	if len(msgs) == 0 {
 		return nil, fmt.Errorf("no messages to broadcast")
 	}
 
-	logger := b.logger.With("batch_size", len(msgs))
-	logger.Debug("starting to broadcast message batch")
+	log.FromCtx(ctx).Debug("starting to broadcast message batch")
 
 	var err error
 	b.txf, err = prepareFactory(b.clientCtx, b.txf)
@@ -178,11 +175,10 @@ func (b *statefulBroadcaster) Broadcast(_ context.Context, msgs ...sdk.Msg) (*sd
 		return nil, sdkerrors.Wrap(err, "broadcast failed")
 	}
 
-	b.logger.Debug("received tx response",
-		"hash", response.TxHash,
-		"op_code", response.Code,
-		"raw_log", response.RawLog,
-	)
+	ctx = log.Append(ctx, "hash", response.TxHash).
+		Append("op_code", response.Code).
+		Append("raw_log", response.RawLog)
+	log.FromCtx(ctx).Debug("received tx response")
 
 	// broadcast has been successful, so increment sequence number
 	b.txf = b.txf.WithSequence(b.txf.Sequence() + 1)
@@ -245,17 +241,15 @@ func WithPollingInterval(interval time.Duration) BroadcasterOption {
 }
 
 type pipelinedBroadcaster struct {
-	logger        log.Logger
 	retryPipeline *retryPipeline
 	broadcaster   Broadcaster
 }
 
 // WithRetry returns a broadcaster that retries the broadcast up to the given number of times if the broadcast fails
-func WithRetry(broadcaster Broadcaster, maxRetries int, minSleep time.Duration, logger log.Logger) Broadcaster {
+func WithRetry(broadcaster Broadcaster, maxRetries int, minSleep time.Duration) Broadcaster {
 	b := &pipelinedBroadcaster{
 		broadcaster:   broadcaster,
-		retryPipeline: newPipelineWithRetry(10000, maxRetries, utils.LinearBackOff(minSleep), logger),
-		logger:        logger,
+		retryPipeline: newPipelineWithRetry(10000, maxRetries, utils.LinearBackOff(minSleep)),
 	}
 
 	return b
@@ -270,16 +264,15 @@ func (b *pipelinedBroadcaster) Broadcast(ctx context.Context, msgs ...sdk.Msg) (
 
 	// need to be able to reorder msgs, so clone the msgs slice
 	retryMsgs := append(make([]sdk.Msg, 0, len(msgs)), msgs...)
-	err = b.retryPipeline.Push(
-		func() error {
+	err = b.retryPipeline.Push(ctx,
+		func(ctx context.Context) error {
 			response, err = b.broadcaster.Broadcast(ctx, retryMsgs...)
 			return err
 		},
 		func(err error) bool {
-			logger := b.logger.With("batch_size", len(retryMsgs))
 			i, ok := tryParseErrorMsgIndex(err)
 			if ok && len(retryMsgs) > 1 {
-				logger.Debug(fmt.Sprintf("excluding message at index %d due to error", i))
+				log.FromCtx(ctx).Debug(fmt.Sprintf("excluding message at index %d due to error", i))
 				retryMsgs = append(retryMsgs[:i], retryMsgs[i+1:]...)
 				return true
 			}
@@ -318,17 +311,15 @@ type batchedBroadcaster struct {
 	backlog        backlog
 	batchThreshold int
 	batchSizeLimit int
-	logger         log.Logger
 }
 
 // Batched returns a broadcaster that batches msgs together if there is high traffic to increase throughput
-func Batched(broadcaster Broadcaster, batchThreshold, batchSizeLimit int, logger log.Logger) Broadcaster {
+func Batched(broadcaster Broadcaster, batchThreshold, batchSizeLimit int) Broadcaster {
 	b := &batchedBroadcaster{
 		broadcaster:    broadcaster,
 		backlog:        backlog{tail: make(chan broadcastTask, 10000)},
 		batchThreshold: batchThreshold,
 		batchSizeLimit: batchSizeLimit,
-		logger:         logger.With("process", "batched broadcast"),
 	}
 
 	go b.processBacklog()
@@ -337,13 +328,16 @@ func Batched(broadcaster Broadcaster, batchThreshold, batchSizeLimit int, logger
 
 // Broadcast implements the Broadcaster interface
 func (b *batchedBroadcaster) Broadcast(ctx context.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error) {
+	ctx = log.Append(ctx, "process", "batched broadcast")
+
 	// serialize concurrent calls to broadcast
 	callback := make(chan broadcastResult, 1)
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	case <-b.backlog.Push(broadcastTask{ctx, msgs, callback}):
-		b.logger.Debug("queuing up messages", "msg_count", len(msgs))
+		ctx = log.Append(ctx, "msg_count", len(msgs))
+		log.FromCtx(ctx).Debug("queuing up messages")
 		break
 	}
 
@@ -361,25 +355,40 @@ func (b *batchedBroadcaster) processBacklog() {
 		if b.backlog.Len() < b.batchThreshold {
 			task := b.backlog.Pop()
 
-			b.logger.Debug("low traffic; no batch merging", "batch_size", len(task.Msgs))
-			b.broadcast(task)
+			ctx := log.Append(task.Ctx, "batch_size", len(task.Msgs))
+			log.FromCtx(ctx).Debug("low traffic; no batch merging")
+			response, err := b.broadcaster.Broadcast(ctx, task.Msgs...)
+			task.Callback <- broadcastResult{
+				Response: response,
+				Err:      err,
+			}
 			continue
 		}
 
-		var batch []broadcastTask
-		msgCount := 0
+		var (
+			ctx       context.Context
+			msgs      []sdk.Msg
+			callbacks []chan<- broadcastResult
+		)
+
 		for {
 			// we cannot split a single task, so take at least one task and then fill up the batch
 			// until the size limit is reached
-			batchWouldBeTooLarge := len(batch) > 0 && msgCount+len(b.backlog.Peek().Msgs) > b.batchSizeLimit
+			batchWouldBeTooLarge := len(msgs) > 0 && len(msgs)+len(b.backlog.Peek().Msgs) > b.batchSizeLimit
 			if batchWouldBeTooLarge {
 				break
 			}
 
 			task := b.backlog.Pop()
 
-			batch = append(batch, task)
-			msgCount += len(task.Msgs)
+			if task.Ctx.Err() != nil {
+				log.FromCtx(task.Ctx).Debug("context expired, discarding msgs")
+				continue
+			}
+
+			ctx = task.Ctx
+			msgs = append(msgs, task.Msgs...)
+			callbacks = append(callbacks, task.Callback)
 
 			// if there are no new tasks in the backlog, stop filling up the batch
 			if b.backlog.Len() == 0 {
@@ -387,28 +396,18 @@ func (b *batchedBroadcaster) processBacklog() {
 			}
 		}
 
-		b.logger.Debug("high traffic; merging batches", "batch_size", msgCount)
-		b.broadcast(batch...)
-	}
-}
+		ctx = log.Append(ctx, "batch_size", len(msgs))
+		log.FromCtx(ctx).Debug("high traffic; merging batches")
 
-func (b *batchedBroadcaster) broadcast(batch ...broadcastTask) {
-	var msgs []sdk.Msg
-	for _, task := range batch {
-		if task.Ctx.Err() != nil {
-			b.logger.Debug("context expired, discarding msgs")
-			continue
+		response, err := b.broadcaster.Broadcast(ctx, msgs...)
+
+		for _, callback := range callbacks {
+			callback <- broadcastResult{
+				Response: response,
+				Err:      err,
+			}
 		}
-		msgs = append(msgs, task.Msgs...)
-	}
 
-	response, err := b.broadcaster.Broadcast(context.Background(), msgs...)
-
-	for _, task := range batch {
-		task.Callback <- broadcastResult{
-			Response: response,
-			Err:      err,
-		}
 	}
 }
 
@@ -433,15 +432,13 @@ func WithRefund(b Broadcaster) Broadcaster {
 }
 
 type suppressorBroadcaster struct {
-	b      Broadcaster
-	logger log.Logger
+	b Broadcaster
 }
 
 // SuppressExecutionErrs logs errors when msg executions fail and then suppresses them
-func SuppressExecutionErrs(broadcaster Broadcaster, logger log.Logger) Broadcaster {
+func SuppressExecutionErrs(broadcaster Broadcaster) Broadcaster {
 	return suppressorBroadcaster{
-		b:      broadcaster,
-		logger: logger,
+		b: broadcaster,
 	}
 }
 
@@ -449,7 +446,7 @@ func SuppressExecutionErrs(broadcaster Broadcaster, logger log.Logger) Broadcast
 func (s suppressorBroadcaster) Broadcast(ctx context.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error) {
 	res, err := s.b.Broadcast(ctx, msgs...)
 	if errors2.Is[*sdkerrors.Error](err) {
-		s.logger.Info(fmt.Sprintf("tx response with error: %s", err))
+		log.FromCtx(ctx).Info(fmt.Sprintf("tx response with error: %s", err))
 		return nil, nil
 	}
 	return res, err

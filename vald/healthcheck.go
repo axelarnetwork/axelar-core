@@ -95,7 +95,7 @@ func execCheck(ctx context.Context, clientCtx client.Context, serverCtx *server.
 	return true
 }
 
-func checkTofnd(ctx context.Context, clientCtx client.Context, serverCtx *server.Context) error {
+func checkTofnd(ctx context.Context, _ client.Context, serverCtx *server.Context) error {
 	valdCfg := config.DefaultValdConfig()
 	if err := serverCtx.Viper.Unmarshal(&valdCfg); err != nil {
 		panic(err)
@@ -103,7 +103,7 @@ func checkTofnd(ctx context.Context, clientCtx client.Context, serverCtx *server
 
 	nopLogger := server.ZeroLogWrapper{Logger: zerolog.New(io.Discard)}
 
-	conn, err := tss.Connect(valdCfg.TssConfig.Host, valdCfg.TssConfig.Port, valdCfg.TssConfig.DialTimeout, nopLogger)
+	conn, err := tss.Connect(valdCfg.TssConfig.Host, valdCfg.TssConfig.Port, valdCfg.TssConfig.DialTimeout)
 	if err != nil {
 		return fmt.Errorf("failed to reach tofnd: %s", err.Error())
 	}

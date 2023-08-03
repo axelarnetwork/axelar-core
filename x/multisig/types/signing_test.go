@@ -4,7 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
+	ec "github.com/btcsuite/btcd/btcec/v2/ecdsa"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 
@@ -57,8 +58,8 @@ func TestSig(t *testing.T) {
 
 		givenRandomSig.
 			When("some participant is invalid", func() {
-				sk := funcs.Must(btcec.NewPrivateKey(btcec.S256()))
-				multiSig.Sigs[rand.StrBetween(10, 50)] = funcs.Must(sk.Sign(multiSig.PayloadHash)).Serialize()
+				sk := funcs.Must(btcec.NewPrivateKey())
+				multiSig.Sigs[rand.StrBetween(10, 50)] = ec.Sign(sk, multiSig.PayloadHash).Serialize()
 			}).
 			Then("should return error", func(t *testing.T) {
 				assert.Error(t, multiSig.ValidateBasic())
@@ -76,8 +77,8 @@ func TestSig(t *testing.T) {
 
 		givenRandomSig.
 			When("duplicate signatures exist", func() {
-				sk := funcs.Must(btcec.NewPrivateKey(btcec.S256()))
-				signature := funcs.Must(sk.Sign(multiSig.PayloadHash)).Serialize()
+				sk := funcs.Must(btcec.NewPrivateKey())
+				signature := ec.Sign(sk, multiSig.PayloadHash).Serialize()
 
 				multiSig.Sigs[rand.ValAddr().String()] = signature
 				multiSig.Sigs[rand.ValAddr().String()] = signature
@@ -107,7 +108,7 @@ func TestSigningSession(t *testing.T) {
 		publicKeys := make(map[string]exported.PublicKey, len(validators))
 		privateKeys = make(map[string]*btcec.PrivateKey, len(validators))
 		for _, v := range validators {
-			privateKey := funcs.Must(btcec.NewPrivateKey(btcec.S256()))
+			privateKey := funcs.Must(btcec.NewPrivateKey())
 			privateKeys[v.String()] = privateKey
 			publicKeys[v.String()] = privateKey.PubKey().SerializeCompressed()
 		}
@@ -135,7 +136,7 @@ func TestSigningSession(t *testing.T) {
 	whenSignaturesAreCreated := When("signatures are created", func() {
 		signatures = make(map[string]types.Signature, len(privateKeys))
 		for p, sk := range privateKeys {
-			signatures[p] = funcs.Must(sk.Sign(signingSession.MultiSig.PayloadHash)).Serialize()
+			signatures[p] = ec.Sign(sk, signingSession.MultiSig.PayloadHash).Serialize()
 		}
 	})
 
@@ -243,10 +244,10 @@ func TestSigningSession(t *testing.T) {
 
 		givenNewSignSession.
 			When("some participant in multi sig is not found in the key", func() {
-				sk := funcs.Must(btcec.NewPrivateKey(btcec.S256()))
+				sk := funcs.Must(btcec.NewPrivateKey())
 
 				signingSession.MultiSig.Sigs = make(map[string]types.Signature)
-				signingSession.MultiSig.Sigs[rand.ValAddr().String()] = funcs.Must(sk.Sign(signingSession.MultiSig.PayloadHash)).Serialize()
+				signingSession.MultiSig.Sigs[rand.ValAddr().String()] = ec.Sign(sk, signingSession.MultiSig.PayloadHash).Serialize()
 			}).
 			Then("should return error", func(t *testing.T) {
 				assert.Error(t, signingSession.ValidateBasic())
@@ -255,10 +256,10 @@ func TestSigningSession(t *testing.T) {
 
 		givenNewSignSession.
 			When("some signature in multi sig mismatches with the corresponding public key", func() {
-				sk := funcs.Must(btcec.NewPrivateKey(btcec.S256()))
+				sk := funcs.Must(btcec.NewPrivateKey())
 
 				signingSession.MultiSig.Sigs = make(map[string]types.Signature)
-				signingSession.MultiSig.Sigs[validators[0].String()] = funcs.Must(sk.Sign(signingSession.MultiSig.PayloadHash)).Serialize()
+				signingSession.MultiSig.Sigs[validators[0].String()] = ec.Sign(sk, signingSession.MultiSig.PayloadHash).Serialize()
 			}).
 			Then("should return error", func(t *testing.T) {
 				assert.Error(t, signingSession.ValidateBasic())
@@ -348,8 +349,8 @@ func TestSigningSession(t *testing.T) {
 			When2(whenIsNotExpired).
 			When2(whenParticipantIsValid).
 			When("signature is invalid", func() {
-				sk := funcs.Must(btcec.NewPrivateKey(btcec.S256()))
-				signature = funcs.Must(sk.Sign(signingSession.MultiSig.PayloadHash)).Serialize()
+				sk := funcs.Must(btcec.NewPrivateKey())
+				signature = ec.Sign(sk, signingSession.MultiSig.PayloadHash).Serialize()
 			}).
 			Then("should return error", func(t *testing.T) {
 				assert.Error(t, signingSession.AddSig(blockHeight, participant, signature))

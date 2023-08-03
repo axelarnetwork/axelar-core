@@ -19,10 +19,19 @@ service MsgService {
     };
   }
 
+  // Deprecated: use ConfirmGatewayTxs instead
   rpc ConfirmGatewayTx(ConfirmGatewayTxRequest)
       returns (ConfirmGatewayTxResponse) {
     option (google.api.http) = {
       post : "/axelar/evm/confirm_gateway_tx"
+      body : "*"
+    };
+  }
+
+  rpc ConfirmGatewayTxs(ConfirmGatewayTxsRequest)
+      returns (ConfirmGatewayTxsResponse) {
+    option (google.api.http) = {
+      post : "/axelar/evm/confirm_gateway_txs"
       body : "*"
     };
   }
@@ -191,5 +200,9 @@ service QueryService {
   // TokenInfo queries the token info for a registered ERC20 Token
   rpc TokenInfo(TokenInfoRequest) returns (TokenInfoResponse) {
     option (google.api.http).get = "/axelar/evm/v1beta1/token_info/{chain}";
+  }
+
+  rpc Params(ParamsRequest) returns (ParamsResponse) {
+    option (google.api.http).get = "/axelar/evm/v1beta1/params/{chain}";
   }
 }

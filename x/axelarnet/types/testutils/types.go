@@ -12,11 +12,13 @@ import (
 	commitmenttypes "github.com/cosmos/ibc-go/v4/modules/core/23-commitment/types"
 	ibctmtypes "github.com/cosmos/ibc-go/v4/modules/light-clients/07-tendermint/types"
 	ibctesting "github.com/cosmos/ibc-go/v4/testing"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexustestutils "github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
+	"github.com/axelarnetwork/utils/funcs"
 )
 
 // RandomIBCTransfer creates a new IBC transfer
@@ -98,4 +100,9 @@ func RandomFullDenom() string {
 // RandomChannel creates an IBC channel
 func RandomChannel() string {
 	return fmt.Sprintf("%s%d", "channel-", rand.PosI64())
+}
+
+// PackPayloadWithVersion prepends the version to the payload
+func PackPayloadWithVersion(hexVersion string, payload []byte) []byte {
+	return append(funcs.Must(hexutil.Decode(hexVersion))[:], payload...)
 }

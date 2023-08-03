@@ -73,9 +73,9 @@ service MsgService {
     };
   }
 
-  rpc ExecuteMessage(ExecuteMessageRequest) returns (ExecuteMessageResponse) {
+  rpc RouteMessage(RouteMessageRequest) returns (RouteMessageResponse) {
     option (google.api.http) = {
-      post : "/axelar/axelarnet/execute_message"
+      post : "/axelar/axelarnet/route_message"
       body : "*"
     };
   }
@@ -96,5 +96,11 @@ service QueryService {
       returns (PendingIBCTransferCountResponse) {
     option (google.api.http).get =
         "/axelar/axelarnet/v1beta1/ibc_transfer_count";
+  }
+
+  rpc Params(ParamsRequest) returns (ParamsResponse) {
+    option (google.api.http) = {
+      get : "/axelar/axelarnet/v1beta1/params"
+    };
   }
 }

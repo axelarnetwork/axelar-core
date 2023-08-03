@@ -50,8 +50,8 @@ func (c Coin) Lock(bankK types.BankKeeper, depositAddr sdk.AccAddress) error {
 			return err
 		}
 
-		if !ics20.Equal(bankK.GetBalance(c.ctx, depositAddr, ics20.GetDenom())) {
-			return fmt.Errorf("balance does not match expected %s", ics20)
+		if bankK.SpendableBalance(c.ctx, depositAddr, ics20.GetDenom()).IsLT(ics20) {
+			return fmt.Errorf("coin %s to lock is greater than account balance", ics20)
 		}
 
 		// lock tokens in escrow address
@@ -86,6 +86,21 @@ func (c Coin) Lock(bankK types.BankKeeper, depositAddr sdk.AccAddress) error {
 	}
 
 	return nil
+}
+
+// GetOriginalDenom returns the coin's original denom
+func (c Coin) GetOriginalDenom() (string, error) {
+	if c.coinType != types.ICS20 {
+		return c.GetDenom(), nil
+	}
+
+	// convert back to IBC denom 'ibc/{hash}'
+	coin, err := c.toICS20()
+	if err != nil {
+		return "", err
+	}
+
+	return coin.GetDenom(), err
 }
 
 // normalizeDenom converts from 'ibc/{hash}' to native asset that recognized by nexus module,

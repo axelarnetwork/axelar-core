@@ -16,6 +16,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
+	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
@@ -29,6 +30,8 @@ const (
 	// DefaultRateLimitWindow is the default window for rate limits of assets on cosmos chains
 	DefaultRateLimitWindow = 6 * time.Hour
 )
+
+const ZERO_X_PREFIX = "0x"
 
 // NewLinkedAddress creates a new address to make a deposit which can be transferred to another blockchain
 func NewLinkedAddress(ctx sdk.Context, chain nexus.ChainName, symbol, recipientAddr string) sdk.AccAddress {
@@ -245,14 +248,121 @@ func ToICS20Packet(packet ibcexported.PacketI) (ibctransfertypes.FungibleTokenPa
 
 const (
 	// NativeV1 is the payload version hex indicates send general message to native chain
-	NativeV1 = "0x0000000000000000000000000000000000000000000000000000000000000000"
-	// CosmwasmV1 is the payload version hex indicates send general message to cosmwasm contract
-	CosmwasmV1 = "0x0000000000000000000000000000000000000000000000000000000000000001"
-	// CosmwasmV2 indicates the payload is json encoded
-	CosmwasmV2 = "0x0000000000000000000000000000000000000000000000000000000000000002"
+	NativeV1 = "0x00000000"
+	// CosmWasmV1 is the payload version hex indicates send general message to CosmWasm contract
+	CosmWasmV1 = "0x00000001"
+	// CosmWasmV2 indicates the payload is json encoded
+	CosmWasmV2 = "0x00000002"
 )
 
 var (
-	// MessageSender account is the canonical general message sender
-	MessageSender = GetEscrowAddress(fmt.Sprintf("%s_%s", ModuleName, "gmp"))
+	// AxelarGMPAccount account is the canonical general message sender
+	AxelarGMPAccount = GetEscrowAddress(fmt.Sprintf("%s_%s", ModuleName, "gmp"))
 )
+
+// ValidateBasic returns an error if the given Fee is invalid; nil otherwise
+func (f Fee) ValidateBasic() error {
+	if err := sdk.VerifyAddressFormat(f.Recipient); err != nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "fee recipient").Error())
+	}
+
+	if !f.Amount.IsValid() || !f.Amount.IsPositive() {
+		return fmt.Errorf("invalid fee amount")
+	}
+
+	if f.RefundRecipient != nil {
+		if err := sdk.VerifyAddressFormat(f.RefundRecipient); err != nil {
+			return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "fee refund recipient").Error())
+		}
+	}
+
+	return nil
+}
+
+// CallContractProposalMinDeposits is a set of CallContractProposalMinDeposit, one per contract address
+type CallContractProposalMinDeposits []CallContractProposalMinDeposit
+
+type callContractProposalMinDepositsMap map[string]map[string]sdk.Coins
+
+// Get returns the minimum deposit for the given chain and contract address
+func (m callContractProposalMinDepositsMap) Get(chain nexus.ChainName, contractAddress string) sdk.Coins {
+	c := strings.ToLower(chain.String())
+	address := strings.ToLower(contractAddress)
+
+	if _, ok := m[c]; !ok {
+		return sdk.Coins{}
+	}
+
+	return m[c][address]
+}
+
+// ValidateBasic returns an error if the type is invalid
+func (minDeposits CallContractProposalMinDeposits) ValidateBasic() error {
+	chainContractAddressPairs := make(map[string]struct{})
+
+	for _, minDeposit := range minDeposits {
+		if err := minDeposit.ValidateBasic(); err != nil {
+			return err
+		}
+
+		key := fmt.Sprintf("%s%s%s", strings.ToLower(minDeposit.Chain.String()), utils.DefaultDelimiter, strings.ToLower(minDeposit.ContractAddress))
+		if _, ok := chainContractAddressPairs[key]; ok {
+			return fmt.Errorf("duplicate chain and contract address pair found")
+		}
+		chainContractAddressPairs[key] = struct{}{}
+	}
+
+	return nil
+}
+
+// ToMap returns a map of chain name to contract address to min deposit
+func (minDeposits CallContractProposalMinDeposits) ToMap(ctx sdk.Context, nexus Nexus) callContractProposalMinDepositsMap {
+	minDepositsMap := make(callContractProposalMinDepositsMap)
+
+	for _, minDeposit := range minDeposits {
+		chain := strings.ToLower(minDeposit.Chain.String())
+		contractAddress := strings.ToLower(minDeposit.ContractAddress)
+
+		if _, ok := minDepositsMap[chain]; !ok {
+			minDepositsMap[chain] = make(map[string]sdk.Coins)
+		}
+
+		minDepositsMap[chain][contractAddress] = minDeposit.MinDeposits
+
+		// TODO: eventually, this is confusing and bad cuz cosmos addresses will also
+		// show up here and be prefixed with 0x. Like the address validator, we should
+		// also implement chain-specific address deserializer so that we just use the
+		// actual bytes as map keys for this check instead of a string representation.
+		if chain, ok := nexus.GetChain(ctx, minDeposit.Chain); !ok || !chain.IsFrom(evmtypes.ModuleName) {
+			continue
+		}
+		if strings.HasPrefix(contractAddress, ZERO_X_PREFIX) {
+			minDepositsMap[chain][strings.TrimPrefix(contractAddress, ZERO_X_PREFIX)] = minDeposit.MinDeposits
+		} else {
+			minDepositsMap[chain][fmt.Sprintf("%s%s", ZERO_X_PREFIX, contractAddress)] = minDeposit.MinDeposits
+		}
+	}
+
+	return minDepositsMap
+}
+
+// ValidateBasic returns an error if the type is invalid
+func (minDeposit CallContractProposalMinDeposit) ValidateBasic() error {
+	if err := minDeposit.Chain.Validate(); err != nil {
+		return err
+	}
+
+	if err := utils.ValidateString(minDeposit.ContractAddress); err != nil {
+		return err
+	}
+
+	if minDeposit.MinDeposits.Empty() {
+		return fmt.Errorf("min deposit cannot be empty")
+	}
+
+	if err := minDeposit.MinDeposits.Validate(); err != nil {
+		return err
+	}
+
+	return nil
+}

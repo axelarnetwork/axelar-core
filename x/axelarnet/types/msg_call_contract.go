@@ -1,8 +1,6 @@
 package types
 
 import (
-	fmt "fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -11,12 +9,13 @@ import (
 )
 
 // NewCallContractRequest is the constructor for NewCallContractRequest
-func NewCallContractRequest(sender sdk.AccAddress, chain string, contractAddress string, payload []byte) *CallContractRequest {
+func NewCallContractRequest(sender sdk.AccAddress, chain string, contractAddress string, payload []byte, fee *Fee) *CallContractRequest {
 	return &CallContractRequest{
 		Sender:          sender,
 		Chain:           nexus.ChainName(utils.NormalizeString(chain)),
 		ContractAddress: contractAddress,
 		Payload:         payload,
+		Fee:             fee,
 	}
 }
 
@@ -40,8 +39,14 @@ func (m CallContractRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(err, "invalid chain")
 	}
 
-	if len(m.ContractAddress) == 0 {
-		return fmt.Errorf("contract address empty")
+	if err := utils.ValidateString(m.ContractAddress); err != nil {
+		return err
+	}
+
+	if m.Fee != nil {
+		if err := m.Fee.ValidateBasic(); err != nil {
+			return sdkerrors.Wrap(err, "fee")
+		}
 	}
 
 	return nil

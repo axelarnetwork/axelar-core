@@ -9,6 +9,7 @@
     - [ContractCallSubmitted](#axelar.axelarnet.v1beta1.ContractCallSubmitted)
     - [ContractCallWithTokenSubmitted](#axelar.axelarnet.v1beta1.ContractCallWithTokenSubmitted)
     - [FeeCollected](#axelar.axelarnet.v1beta1.FeeCollected)
+    - [FeePaid](#axelar.axelarnet.v1beta1.FeePaid)
     - [IBCTransferCompleted](#axelar.axelarnet.v1beta1.IBCTransferCompleted)
     - [IBCTransferFailed](#axelar.axelarnet.v1beta1.IBCTransferFailed)
     - [IBCTransferRetried](#axelar.axelarnet.v1beta1.IBCTransferRetried)
@@ -16,11 +17,13 @@
     - [TokenSent](#axelar.axelarnet.v1beta1.TokenSent)
   
 - [axelar/axelarnet/v1beta1/params.proto](#axelar/axelarnet/v1beta1/params.proto)
+    - [CallContractProposalMinDeposit](#axelar.axelarnet.v1beta1.CallContractProposalMinDeposit)
     - [Params](#axelar.axelarnet.v1beta1.Params)
   
 - [axelar/axelarnet/v1beta1/types.proto](#axelar/axelarnet/v1beta1/types.proto)
     - [Asset](#axelar.axelarnet.v1beta1.Asset)
     - [CosmosChain](#axelar.axelarnet.v1beta1.CosmosChain)
+    - [Fee](#axelar.axelarnet.v1beta1.Fee)
     - [IBCTransfer](#axelar.axelarnet.v1beta1.IBCTransfer)
   
     - [IBCTransfer.Status](#axelar.axelarnet.v1beta1.IBCTransfer.Status)
@@ -58,6 +61,10 @@
     - [TransferDirection](#axelar.nexus.exported.v1beta1.TransferDirection)
     - [TransferState](#axelar.nexus.exported.v1beta1.TransferState)
   
+- [axelar/axelarnet/v1beta1/proposal.proto](#axelar/axelarnet/v1beta1/proposal.proto)
+    - [CallContractsProposal](#axelar.axelarnet.v1beta1.CallContractsProposal)
+    - [ContractCall](#axelar.axelarnet.v1beta1.ContractCall)
+  
 - [axelar/utils/v1beta1/bitmap.proto](#axelar/utils/v1beta1/bitmap.proto)
     - [Bitmap](#axelar.utils.v1beta1.Bitmap)
     - [CircularBuffer](#axelar.utils.v1beta1.CircularBuffer)
@@ -68,6 +75,9 @@
     - [MaintainerState](#axelar.nexus.v1beta1.MaintainerState)
     - [RateLimit](#axelar.nexus.v1beta1.RateLimit)
     - [TransferEpoch](#axelar.nexus.v1beta1.TransferEpoch)
+  
+- [axelar/nexus/v1beta1/params.proto](#axelar/nexus/v1beta1/params.proto)
+    - [Params](#axelar.nexus.v1beta1.Params)
   
 - [axelar/nexus/v1beta1/query.proto](#axelar/nexus/v1beta1/query.proto)
     - [AssetsRequest](#axelar.nexus.v1beta1.AssetsRequest)
@@ -86,6 +96,8 @@
     - [LatestDepositAddressResponse](#axelar.nexus.v1beta1.LatestDepositAddressResponse)
     - [MessageRequest](#axelar.nexus.v1beta1.MessageRequest)
     - [MessageResponse](#axelar.nexus.v1beta1.MessageResponse)
+    - [ParamsRequest](#axelar.nexus.v1beta1.ParamsRequest)
+    - [ParamsResponse](#axelar.nexus.v1beta1.ParamsResponse)
     - [RecipientAddressRequest](#axelar.nexus.v1beta1.RecipientAddressRequest)
     - [RecipientAddressResponse](#axelar.nexus.v1beta1.RecipientAddressResponse)
     - [TransferFeeRequest](#axelar.nexus.v1beta1.TransferFeeRequest)
@@ -99,6 +111,8 @@
     - [ChainStatus](#axelar.nexus.v1beta1.ChainStatus)
   
 - [axelar/axelarnet/v1beta1/query.proto](#axelar/axelarnet/v1beta1/query.proto)
+    - [ParamsRequest](#axelar.axelarnet.v1beta1.ParamsRequest)
+    - [ParamsResponse](#axelar.axelarnet.v1beta1.ParamsResponse)
     - [PendingIBCTransferCountRequest](#axelar.axelarnet.v1beta1.PendingIBCTransferCountRequest)
     - [PendingIBCTransferCountResponse](#axelar.axelarnet.v1beta1.PendingIBCTransferCountResponse)
     - [PendingIBCTransferCountResponse.TransfersByChainEntry](#axelar.axelarnet.v1beta1.PendingIBCTransferCountResponse.TransfersByChainEntry)
@@ -115,8 +129,6 @@
     - [CallContractResponse](#axelar.axelarnet.v1beta1.CallContractResponse)
     - [ConfirmDepositRequest](#axelar.axelarnet.v1beta1.ConfirmDepositRequest)
     - [ConfirmDepositResponse](#axelar.axelarnet.v1beta1.ConfirmDepositResponse)
-    - [ExecuteMessageRequest](#axelar.axelarnet.v1beta1.ExecuteMessageRequest)
-    - [ExecuteMessageResponse](#axelar.axelarnet.v1beta1.ExecuteMessageResponse)
     - [ExecutePendingTransfersRequest](#axelar.axelarnet.v1beta1.ExecutePendingTransfersRequest)
     - [ExecutePendingTransfersResponse](#axelar.axelarnet.v1beta1.ExecutePendingTransfersResponse)
     - [LinkRequest](#axelar.axelarnet.v1beta1.LinkRequest)
@@ -131,6 +143,8 @@
     - [RetryIBCTransferResponse](#axelar.axelarnet.v1beta1.RetryIBCTransferResponse)
     - [RouteIBCTransfersRequest](#axelar.axelarnet.v1beta1.RouteIBCTransfersRequest)
     - [RouteIBCTransfersResponse](#axelar.axelarnet.v1beta1.RouteIBCTransfersResponse)
+    - [RouteMessageRequest](#axelar.axelarnet.v1beta1.RouteMessageRequest)
+    - [RouteMessageResponse](#axelar.axelarnet.v1beta1.RouteMessageResponse)
   
 - [axelar/axelarnet/v1beta1/service.proto](#axelar/axelarnet/v1beta1/service.proto)
     - [MsgService](#axelar.axelarnet.v1beta1.MsgService)
@@ -190,6 +204,7 @@
     - [CommandBatchSigned](#axelar.evm.v1beta1.CommandBatchSigned)
     - [ConfirmDepositStarted](#axelar.evm.v1beta1.ConfirmDepositStarted)
     - [ConfirmGatewayTxStarted](#axelar.evm.v1beta1.ConfirmGatewayTxStarted)
+    - [ConfirmGatewayTxsStarted](#axelar.evm.v1beta1.ConfirmGatewayTxsStarted)
     - [ConfirmKeyTransferStarted](#axelar.evm.v1beta1.ConfirmKeyTransferStarted)
     - [ConfirmTokenStarted](#axelar.evm.v1beta1.ConfirmTokenStarted)
     - [ContractCallApproved](#axelar.evm.v1beta1.ContractCallApproved)
@@ -204,6 +219,7 @@
     - [PollCompleted](#axelar.evm.v1beta1.PollCompleted)
     - [PollExpired](#axelar.evm.v1beta1.PollExpired)
     - [PollFailed](#axelar.evm.v1beta1.PollFailed)
+    - [PollMapping](#axelar.evm.v1beta1.PollMapping)
     - [TokenSent](#axelar.evm.v1beta1.TokenSent)
   
 - [axelar/evm/v1beta1/params.proto](#axelar/evm/v1beta1/params.proto)
@@ -241,6 +257,8 @@
     - [KeyAddressRequest](#axelar.evm.v1beta1.KeyAddressRequest)
     - [KeyAddressResponse](#axelar.evm.v1beta1.KeyAddressResponse)
     - [KeyAddressResponse.WeightedAddress](#axelar.evm.v1beta1.KeyAddressResponse.WeightedAddress)
+    - [ParamsRequest](#axelar.evm.v1beta1.ParamsRequest)
+    - [ParamsResponse](#axelar.evm.v1beta1.ParamsResponse)
     - [PendingCommandsRequest](#axelar.evm.v1beta1.PendingCommandsRequest)
     - [PendingCommandsResponse](#axelar.evm.v1beta1.PendingCommandsResponse)
     - [Proof](#axelar.evm.v1beta1.Proof)
@@ -262,6 +280,8 @@
     - [ConfirmDepositResponse](#axelar.evm.v1beta1.ConfirmDepositResponse)
     - [ConfirmGatewayTxRequest](#axelar.evm.v1beta1.ConfirmGatewayTxRequest)
     - [ConfirmGatewayTxResponse](#axelar.evm.v1beta1.ConfirmGatewayTxResponse)
+    - [ConfirmGatewayTxsRequest](#axelar.evm.v1beta1.ConfirmGatewayTxsRequest)
+    - [ConfirmGatewayTxsResponse](#axelar.evm.v1beta1.ConfirmGatewayTxsResponse)
     - [ConfirmTokenRequest](#axelar.evm.v1beta1.ConfirmTokenRequest)
     - [ConfirmTokenResponse](#axelar.evm.v1beta1.ConfirmTokenResponse)
     - [ConfirmTransferKeyRequest](#axelar.evm.v1beta1.ConfirmTransferKeyRequest)
@@ -330,6 +350,8 @@
     - [KeygenSessionResponse](#axelar.multisig.v1beta1.KeygenSessionResponse)
     - [NextKeyIDRequest](#axelar.multisig.v1beta1.NextKeyIDRequest)
     - [NextKeyIDResponse](#axelar.multisig.v1beta1.NextKeyIDResponse)
+    - [ParamsRequest](#axelar.multisig.v1beta1.ParamsRequest)
+    - [ParamsResponse](#axelar.multisig.v1beta1.ParamsResponse)
   
 - [axelar/multisig/v1beta1/tx.proto](#axelar/multisig/v1beta1/tx.proto)
     - [KeygenOptInRequest](#axelar.multisig.v1beta1.KeygenOptInRequest)
@@ -352,11 +374,11 @@
 - [axelar/nexus/v1beta1/events.proto](#axelar/nexus/v1beta1/events.proto)
     - [FeeDeducted](#axelar.nexus.v1beta1.FeeDeducted)
     - [InsufficientFee](#axelar.nexus.v1beta1.InsufficientFee)
+    - [MessageExecuted](#axelar.nexus.v1beta1.MessageExecuted)
+    - [MessageFailed](#axelar.nexus.v1beta1.MessageFailed)
+    - [MessageProcessing](#axelar.nexus.v1beta1.MessageProcessing)
     - [MessageReceived](#axelar.nexus.v1beta1.MessageReceived)
     - [RateLimitUpdated](#axelar.nexus.v1beta1.RateLimitUpdated)
-  
-- [axelar/nexus/v1beta1/params.proto](#axelar/nexus/v1beta1/params.proto)
-    - [Params](#axelar.nexus.v1beta1.Params)
   
 - [axelar/nexus/v1beta1/genesis.proto](#axelar/nexus/v1beta1/genesis.proto)
     - [GenesisState](#axelar.nexus.v1beta1.GenesisState)
@@ -389,6 +411,8 @@
     - [GenesisState](#axelar.permission.v1beta1.GenesisState)
   
 - [axelar/permission/v1beta1/query.proto](#axelar/permission/v1beta1/query.proto)
+    - [ParamsRequest](#axelar.permission.v1beta1.ParamsRequest)
+    - [ParamsResponse](#axelar.permission.v1beta1.ParamsResponse)
     - [QueryGovernanceKeyRequest](#axelar.permission.v1beta1.QueryGovernanceKeyRequest)
     - [QueryGovernanceKeyResponse](#axelar.permission.v1beta1.QueryGovernanceKeyResponse)
   
@@ -415,12 +439,19 @@
 - [axelar/reward/v1beta1/genesis.proto](#axelar/reward/v1beta1/genesis.proto)
     - [GenesisState](#axelar.reward.v1beta1.GenesisState)
   
+- [axelar/reward/v1beta1/query.proto](#axelar/reward/v1beta1/query.proto)
+    - [InflationRateRequest](#axelar.reward.v1beta1.InflationRateRequest)
+    - [InflationRateResponse](#axelar.reward.v1beta1.InflationRateResponse)
+    - [ParamsRequest](#axelar.reward.v1beta1.ParamsRequest)
+    - [ParamsResponse](#axelar.reward.v1beta1.ParamsResponse)
+  
 - [axelar/reward/v1beta1/tx.proto](#axelar/reward/v1beta1/tx.proto)
     - [RefundMsgRequest](#axelar.reward.v1beta1.RefundMsgRequest)
     - [RefundMsgResponse](#axelar.reward.v1beta1.RefundMsgResponse)
   
 - [axelar/reward/v1beta1/service.proto](#axelar/reward/v1beta1/service.proto)
     - [MsgService](#axelar.reward.v1beta1.MsgService)
+    - [QueryService](#axelar.reward.v1beta1.QueryService)
   
 - [axelar/snapshot/v1beta1/params.proto](#axelar/snapshot/v1beta1/params.proto)
     - [Params](#axelar.snapshot.v1beta1.Params)
@@ -432,6 +463,8 @@
     - [GenesisState](#axelar.snapshot.v1beta1.GenesisState)
   
 - [axelar/snapshot/v1beta1/query.proto](#axelar/snapshot/v1beta1/query.proto)
+    - [ParamsRequest](#axelar.snapshot.v1beta1.ParamsRequest)
+    - [ParamsResponse](#axelar.snapshot.v1beta1.ParamsResponse)
     - [QueryValidatorsResponse](#axelar.snapshot.v1beta1.QueryValidatorsResponse)
     - [QueryValidatorsResponse.TssIllegibilityInfo](#axelar.snapshot.v1beta1.QueryValidatorsResponse.TssIllegibilityInfo)
     - [QueryValidatorsResponse.Validator](#axelar.snapshot.v1beta1.QueryValidatorsResponse.Validator)
@@ -444,6 +477,7 @@
   
 - [axelar/snapshot/v1beta1/service.proto](#axelar/snapshot/v1beta1/service.proto)
     - [MsgService](#axelar.snapshot.v1beta1.MsgService)
+    - [QueryService](#axelar.snapshot.v1beta1.QueryService)
   
 - [axelar/tss/tofnd/v1beta1/common.proto](#axelar/tss/tofnd/v1beta1/common.proto)
     - [KeyPresenceRequest](#axelar.tss.tofnd.v1beta1.KeyPresenceRequest)
@@ -491,6 +525,10 @@
 - [axelar/tss/v1beta1/genesis.proto](#axelar/tss/v1beta1/genesis.proto)
     - [GenesisState](#axelar.tss.v1beta1.GenesisState)
   
+- [axelar/tss/v1beta1/query.proto](#axelar/tss/v1beta1/query.proto)
+    - [ParamsRequest](#axelar.tss.v1beta1.ParamsRequest)
+    - [ParamsResponse](#axelar.tss.v1beta1.ParamsResponse)
+  
 - [axelar/tss/v1beta1/tx.proto](#axelar/tss/v1beta1/tx.proto)
     - [HeartBeatRequest](#axelar.tss.v1beta1.HeartBeatRequest)
     - [HeartBeatResponse](#axelar.tss.v1beta1.HeartBeatResponse)
@@ -527,6 +565,10 @@
 - [axelar/vote/v1beta1/genesis.proto](#axelar/vote/v1beta1/genesis.proto)
     - [GenesisState](#axelar.vote.v1beta1.GenesisState)
   
+- [axelar/vote/v1beta1/query.proto](#axelar/vote/v1beta1/query.proto)
+    - [ParamsRequest](#axelar.vote.v1beta1.ParamsRequest)
+    - [ParamsResponse](#axelar.vote.v1beta1.ParamsResponse)
+  
 - [axelar/vote/v1beta1/types.proto](#axelar/vote/v1beta1/types.proto)
     - [TalliedVote](#axelar.vote.v1beta1.TalliedVote)
     - [TalliedVote.IsVoterLateEntry](#axelar.vote.v1beta1.TalliedVote.IsVoterLateEntry)
@@ -537,6 +579,7 @@
   
 - [axelar/vote/v1beta1/service.proto](#axelar/vote/v1beta1/service.proto)
     - [MsgService](#axelar.vote.v1beta1.MsgService)
+    - [QueryService](#axelar.vote.v1beta1.QueryService)
   
 - [Scalar Value Types](#scalar-value-types)
 
@@ -620,6 +663,24 @@
 | ----- | ---- | ----- | ----------- |
 | `collector` | [bytes](#bytes) |  |  |
 | `fee` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+
+
+
+
+
+
+<a name="axelar.axelarnet.v1beta1.FeePaid"></a>
+
+### FeePaid
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `message_id` | [string](#string) |  |  |
+| `recipient` | [bytes](#bytes) |  |  |
+| `fee` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+| `refund_recipient` | [string](#string) |  |  |
 
 
 
@@ -740,6 +801,23 @@
 
 
 
+<a name="axelar.axelarnet.v1beta1.CallContractProposalMinDeposit"></a>
+
+### CallContractProposalMinDeposit
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `contract_address` | [string](#string) |  |  |
+| `min_deposits` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) | repeated |  |
+
+
+
+
+
+
 <a name="axelar.axelarnet.v1beta1.Params"></a>
 
 ### Params
@@ -751,6 +829,7 @@ Params represent the genesis parameters for the module
 | `route_timeout_window` | [uint64](#uint64) |  | IBC packet route timeout window |
 | `transfer_limit` | [uint64](#uint64) |  |  |
 | `end_blocker_limit` | [uint64](#uint64) |  |  |
+| `call_contracts_proposal_min_deposits` | [CallContractProposalMinDeposit](#axelar.axelarnet.v1beta1.CallContractProposalMinDeposit) | repeated |  |
 
 
 
@@ -801,6 +880,23 @@ Params represent the genesis parameters for the module
 | `ibc_path` | [string](#string) |  |  |
 | `assets` | [Asset](#axelar.axelarnet.v1beta1.Asset) | repeated | **Deprecated.**  |
 | `addr_prefix` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.axelarnet.v1beta1.Fee"></a>
+
+### Fee
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `amount` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+| `recipient` | [bytes](#bytes) |  |  |
+| `refund_recipient` | [bytes](#bytes) |  |  |
 
 
 
@@ -1206,6 +1302,8 @@ registered blockchain
 | `payload_hash` | [bytes](#bytes) |  |  |
 | `status` | [GeneralMessage.Status](#axelar.nexus.exported.v1beta1.GeneralMessage.Status) |  |  |
 | `asset` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+| `source_tx_id` | [bytes](#bytes) |  |  |
+| `source_tx_index` | [uint64](#uint64) |  |  |
 
 
 
@@ -1238,7 +1336,7 @@ TransferFee represents accumulated fees generated by the network
 | ---- | ------ | ----------- |
 | STATUS_UNSPECIFIED | 0 |  |
 | STATUS_APPROVED | 1 |  |
-| STATUS_SENT | 2 |  |
+| STATUS_PROCESSING | 2 |  |
 | STATUS_EXECUTED | 3 |  |
 | STATUS_FAILED | 4 |  |
 
@@ -1269,6 +1367,57 @@ TransferFee represents accumulated fees generated by the network
 | TRANSFER_STATE_ARCHIVED | 2 |  |
 | TRANSFER_STATE_INSUFFICIENT_AMOUNT | 3 |  |
 
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="axelar/axelarnet/v1beta1/proposal.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/axelarnet/v1beta1/proposal.proto
+
+
+
+<a name="axelar.axelarnet.v1beta1.CallContractsProposal"></a>
+
+### CallContractsProposal
+CallContractsProposal is a gov Content type for calling contracts on other
+chains
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `title` | [string](#string) |  |  |
+| `description` | [string](#string) |  |  |
+| `contract_calls` | [ContractCall](#axelar.axelarnet.v1beta1.ContractCall) | repeated |  |
+
+
+
+
+
+
+<a name="axelar.axelarnet.v1beta1.ContractCall"></a>
+
+### ContractCall
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+| `contract_address` | [string](#string) |  |  |
+| `payload` | [bytes](#bytes) |  |  |
+
+
+
+
+
+ <!-- end messages -->
 
  <!-- end enums -->
 
@@ -1414,6 +1563,40 @@ ChainState represents the state of a registered blockchain
 | `amount` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 | `epoch` | [uint64](#uint64) |  |  |
 | `direction` | [axelar.nexus.exported.v1beta1.TransferDirection](#axelar.nexus.exported.v1beta1.TransferDirection) |  | indicates whether the tracking is for transfers outgoing |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="axelar/nexus/v1beta1/params.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/nexus/v1beta1/params.proto
+
+
+
+<a name="axelar.nexus.v1beta1.Params"></a>
+
+### Params
+Params represent the genesis parameters for the module
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain_activation_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
+| `chain_maintainer_missing_vote_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
+| `chain_maintainer_incorrect_vote_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
+| `chain_maintainer_check_window` | [int32](#int32) |  |  |
 
 
 
@@ -1686,6 +1869,31 @@ address by recipient address
 
 
 
+<a name="axelar.nexus.v1beta1.ParamsRequest"></a>
+
+### ParamsRequest
+ParamsRequest represents a message that queries the params
+
+
+
+
+
+
+<a name="axelar.nexus.v1beta1.ParamsResponse"></a>
+
+### ParamsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `params` | [Params](#axelar.nexus.v1beta1.Params) |  |  |
+
+
+
+
+
+
 <a name="axelar.nexus.v1beta1.RecipientAddressRequest"></a>
 
 ### RecipientAddressRequest
@@ -1866,6 +2074,31 @@ transfers for the specified chain
 
 
 
+<a name="axelar.axelarnet.v1beta1.ParamsRequest"></a>
+
+### ParamsRequest
+ParamsRequest represents a message that queries the params
+
+
+
+
+
+
+<a name="axelar.axelarnet.v1beta1.ParamsResponse"></a>
+
+### ParamsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `params` | [Params](#axelar.axelarnet.v1beta1.Params) |  |  |
+
+
+
+
+
+
 <a name="axelar.axelarnet.v1beta1.PendingIBCTransferCountRequest"></a>
 
 ### PendingIBCTransferCountRequest
@@ -2004,6 +2237,7 @@ to nexus
 | `chain` | [string](#string) |  |  |
 | `contract_address` | [string](#string) |  |  |
 | `payload` | [bytes](#bytes) |  |  |
+| `fee` | [Fee](#axelar.axelarnet.v1beta1.Fee) |  |  |
 
 
 
@@ -2040,33 +2274,6 @@ MsgConfirmDeposit represents a deposit confirmation message
 <a name="axelar.axelarnet.v1beta1.ConfirmDepositResponse"></a>
 
 ### ConfirmDepositResponse
-
-
-
-
-
-
-
-<a name="axelar.axelarnet.v1beta1.ExecuteMessageRequest"></a>
-
-### ExecuteMessageRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `sender` | [bytes](#bytes) |  |  |
-| `id` | [string](#string) |  |  |
-| `payload` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="axelar.axelarnet.v1beta1.ExecuteMessageResponse"></a>
-
-### ExecuteMessageResponse
 
 
 
@@ -2271,6 +2478,34 @@ cosmos based chains
 
 
 
+
+<a name="axelar.axelarnet.v1beta1.RouteMessageRequest"></a>
+
+### RouteMessageRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `id` | [string](#string) |  |  |
+| `payload` | [bytes](#bytes) |  |  |
+| `feegranter` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="axelar.axelarnet.v1beta1.RouteMessageResponse"></a>
+
+### RouteMessageResponse
+
+
+
+
+
+
  <!-- end messages -->
 
  <!-- end enums -->
@@ -2309,7 +2544,7 @@ Msg defines the axelarnet Msg service.
 | `RouteIBCTransfers` | [RouteIBCTransfersRequest](#axelar.axelarnet.v1beta1.RouteIBCTransfersRequest) | [RouteIBCTransfersResponse](#axelar.axelarnet.v1beta1.RouteIBCTransfersResponse) |  | POST|/axelar/axelarnet/route_ibc_transfers|
 | `RegisterFeeCollector` | [RegisterFeeCollectorRequest](#axelar.axelarnet.v1beta1.RegisterFeeCollectorRequest) | [RegisterFeeCollectorResponse](#axelar.axelarnet.v1beta1.RegisterFeeCollectorResponse) |  | POST|/axelar/axelarnet/register_fee_collector|
 | `RetryIBCTransfer` | [RetryIBCTransferRequest](#axelar.axelarnet.v1beta1.RetryIBCTransferRequest) | [RetryIBCTransferResponse](#axelar.axelarnet.v1beta1.RetryIBCTransferResponse) |  | POST|/axelar/axelarnet/retry_ibc_transfer|
-| `ExecuteMessage` | [ExecuteMessageRequest](#axelar.axelarnet.v1beta1.ExecuteMessageRequest) | [ExecuteMessageResponse](#axelar.axelarnet.v1beta1.ExecuteMessageResponse) |  | POST|/axelar/axelarnet/execute_message|
+| `RouteMessage` | [RouteMessageRequest](#axelar.axelarnet.v1beta1.RouteMessageRequest) | [RouteMessageResponse](#axelar.axelarnet.v1beta1.RouteMessageResponse) |  | POST|/axelar/axelarnet/route_message|
 | `CallContract` | [CallContractRequest](#axelar.axelarnet.v1beta1.CallContractRequest) | [CallContractResponse](#axelar.axelarnet.v1beta1.CallContractResponse) |  | POST|/axelar/axelarnet/call_contract|
 
 
@@ -2321,6 +2556,7 @@ QueryService defines the gRPC querier service.
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `PendingIBCTransferCount` | [PendingIBCTransferCountRequest](#axelar.axelarnet.v1beta1.PendingIBCTransferCountRequest) | [PendingIBCTransferCountResponse](#axelar.axelarnet.v1beta1.PendingIBCTransferCountResponse) | PendingIBCTransferCount queries the pending ibc transfers for all chains | GET|/axelar/axelarnet/v1beta1/ibc_transfer_count|
+| `Params` | [ParamsRequest](#axelar.axelarnet.v1beta1.ParamsRequest) | [ParamsResponse](#axelar.axelarnet.v1beta1.ParamsResponse) |  | GET|/axelar/axelarnet/v1beta1/params|
 
  <!-- end services -->
 
@@ -3139,6 +3375,25 @@ TransferKey contains information for a transfer operatorship
 
 
 
+<a name="axelar.evm.v1beta1.ConfirmGatewayTxsStarted"></a>
+
+### ConfirmGatewayTxsStarted
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `poll_mappings` | [PollMapping](#axelar.evm.v1beta1.PollMapping) | repeated |  |
+| `chain` | [string](#string) |  |  |
+| `gateway_address` | [bytes](#bytes) |  |  |
+| `confirmation_height` | [uint64](#uint64) |  |  |
+| `participants` | [bytes](#bytes) | repeated |  |
+
+
+
+
+
+
 <a name="axelar.evm.v1beta1.ConfirmKeyTransferStarted"></a>
 
 ### ConfirmKeyTransferStarted
@@ -3387,6 +3642,22 @@ TransferKey contains information for a transfer operatorship
 | ----- | ---- | ----- | ----------- |
 | `tx_id` | [bytes](#bytes) |  |  |
 | `chain` | [string](#string) |  |  |
+| `poll_id` | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.PollMapping"></a>
+
+### PollMapping
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tx_id` | [bytes](#bytes) |  |  |
 | `poll_id` | [uint64](#uint64) |  |  |
 
 
@@ -3966,6 +4237,36 @@ ERC20 tokens requested for a chain
 
 
 
+<a name="axelar.evm.v1beta1.ParamsRequest"></a>
+
+### ParamsRequest
+ParamsRequest represents a message that queries the params
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.ParamsResponse"></a>
+
+### ParamsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `params` | [Params](#axelar.evm.v1beta1.Params) |  |  |
+
+
+
+
+
+
 <a name="axelar.evm.v1beta1.PendingCommandsRequest"></a>
 
 ### PendingCommandsRequest
@@ -4253,6 +4554,33 @@ MsgConfirmDeposit represents an erc20 deposit confirmation message
 <a name="axelar.evm.v1beta1.ConfirmGatewayTxResponse"></a>
 
 ### ConfirmGatewayTxResponse
+
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.ConfirmGatewayTxsRequest"></a>
+
+### ConfirmGatewayTxsRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `chain` | [string](#string) |  |  |
+| `tx_ids` | [bytes](#bytes) | repeated |  |
+
+
+
+
+
+
+<a name="axelar.evm.v1beta1.ConfirmGatewayTxsResponse"></a>
+
+### ConfirmGatewayTxsResponse
 
 
 
@@ -4605,7 +4933,8 @@ Msg defines the evm Msg service.
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `SetGateway` | [SetGatewayRequest](#axelar.evm.v1beta1.SetGatewayRequest) | [SetGatewayResponse](#axelar.evm.v1beta1.SetGatewayResponse) |  | POST|/axelar/evm/set_gateway|
-| `ConfirmGatewayTx` | [ConfirmGatewayTxRequest](#axelar.evm.v1beta1.ConfirmGatewayTxRequest) | [ConfirmGatewayTxResponse](#axelar.evm.v1beta1.ConfirmGatewayTxResponse) |  | POST|/axelar/evm/confirm_gateway_tx|
+| `ConfirmGatewayTx` | [ConfirmGatewayTxRequest](#axelar.evm.v1beta1.ConfirmGatewayTxRequest) | [ConfirmGatewayTxResponse](#axelar.evm.v1beta1.ConfirmGatewayTxResponse) | Deprecated: use ConfirmGatewayTxs instead | POST|/axelar/evm/confirm_gateway_tx|
+| `ConfirmGatewayTxs` | [ConfirmGatewayTxsRequest](#axelar.evm.v1beta1.ConfirmGatewayTxsRequest) | [ConfirmGatewayTxsResponse](#axelar.evm.v1beta1.ConfirmGatewayTxsResponse) |  | POST|/axelar/evm/confirm_gateway_txs|
 | `Link` | [LinkRequest](#axelar.evm.v1beta1.LinkRequest) | [LinkResponse](#axelar.evm.v1beta1.LinkResponse) |  | POST|/axelar/evm/link|
 | `ConfirmToken` | [ConfirmTokenRequest](#axelar.evm.v1beta1.ConfirmTokenRequest) | [ConfirmTokenResponse](#axelar.evm.v1beta1.ConfirmTokenResponse) |  | POST|/axelar/evm/confirm_token|
 | `ConfirmDeposit` | [ConfirmDepositRequest](#axelar.evm.v1beta1.ConfirmDepositRequest) | [ConfirmDepositResponse](#axelar.evm.v1beta1.ConfirmDepositResponse) |  | POST|/axelar/evm/confirm_deposit|
@@ -4639,6 +4968,7 @@ QueryService defines the gRPC querier service.
 | `Event` | [EventRequest](#axelar.evm.v1beta1.EventRequest) | [EventResponse](#axelar.evm.v1beta1.EventResponse) | Event queries an event at the specified chain | GET|/axelar/evm/v1beta1/event/{chain}/{event_id}|
 | `ERC20Tokens` | [ERC20TokensRequest](#axelar.evm.v1beta1.ERC20TokensRequest) | [ERC20TokensResponse](#axelar.evm.v1beta1.ERC20TokensResponse) | ERC20Tokens queries the ERC20 tokens registered for a chain | GET|/axelar/evm/v1beta1/erc20_tokens/{chain}|
 | `TokenInfo` | [TokenInfoRequest](#axelar.evm.v1beta1.TokenInfoRequest) | [TokenInfoResponse](#axelar.evm.v1beta1.TokenInfoResponse) | TokenInfo queries the token info for a registered ERC20 Token | GET|/axelar/evm/v1beta1/token_info/{chain}|
+| `Params` | [ParamsRequest](#axelar.evm.v1beta1.ParamsRequest) | [ParamsResponse](#axelar.evm.v1beta1.ParamsResponse) |  | GET|/axelar/evm/v1beta1/params/{chain}|
 
  <!-- end services -->
 
@@ -5269,6 +5599,31 @@ chain
 
 
 
+
+<a name="axelar.multisig.v1beta1.ParamsRequest"></a>
+
+### ParamsRequest
+ParamsRequest represents a message that queries the params
+
+
+
+
+
+
+<a name="axelar.multisig.v1beta1.ParamsResponse"></a>
+
+### ParamsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `params` | [Params](#axelar.multisig.v1beta1.Params) |  |  |
+
+
+
+
+
  <!-- end messages -->
 
  <!-- end enums -->
@@ -5492,6 +5847,7 @@ Query defines the gRPC querier service.
 | `NextKeyID` | [NextKeyIDRequest](#axelar.multisig.v1beta1.NextKeyIDRequest) | [NextKeyIDResponse](#axelar.multisig.v1beta1.NextKeyIDResponse) | NextKeyID returns the key ID assigned for the next rotation on a given chain. If no key rotation is in progress, it returns the grpc NOT_FOUND error. | GET|/axelar/multisig/v1beta1/next_key_id/{chain}|
 | `Key` | [KeyRequest](#axelar.multisig.v1beta1.KeyRequest) | [KeyResponse](#axelar.multisig.v1beta1.KeyResponse) | Key returns the key corresponding to a given key ID. If no key is found, it returns the grpc NOT_FOUND error. | GET|/axelar/multisig/v1beta1/key|
 | `KeygenSession` | [KeygenSessionRequest](#axelar.multisig.v1beta1.KeygenSessionRequest) | [KeygenSessionResponse](#axelar.multisig.v1beta1.KeygenSessionResponse) | KeygenSession returns the keygen session info for a given key ID. If no key is found, it returns the grpc NOT_FOUND error. | GET|/axelar/multisig/v1beta1/keygen_session|
+| `Params` | [ParamsRequest](#axelar.multisig.v1beta1.ParamsRequest) | [ParamsResponse](#axelar.multisig.v1beta1.ParamsResponse) |  | GET|/axelar/multisig/v1beta1/params|
 
  <!-- end services -->
 
@@ -5542,6 +5898,51 @@ Query defines the gRPC querier service.
 
 
 
+<a name="axelar.nexus.v1beta1.MessageExecuted"></a>
+
+### MessageExecuted
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.nexus.v1beta1.MessageFailed"></a>
+
+### MessageFailed
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.nexus.v1beta1.MessageProcessing"></a>
+
+### MessageProcessing
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="axelar.nexus.v1beta1.MessageReceived"></a>
 
 ### MessageReceived
@@ -5586,40 +5987,6 @@ Query defines the gRPC querier service.
 
 
 
-<a name="axelar/nexus/v1beta1/params.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## axelar/nexus/v1beta1/params.proto
-
-
-
-<a name="axelar.nexus.v1beta1.Params"></a>
-
-### Params
-Params represent the genesis parameters for the module
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `chain_activation_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
-| `chain_maintainer_missing_vote_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
-| `chain_maintainer_incorrect_vote_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
-| `chain_maintainer_check_window` | [int32](#int32) |  |  |
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
 <a name="axelar/nexus/v1beta1/genesis.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -5645,6 +6012,8 @@ GenesisState represents the genesis state
 | `fee_infos` | [axelar.nexus.exported.v1beta1.FeeInfo](#axelar.nexus.exported.v1beta1.FeeInfo) | repeated |  |
 | `rate_limits` | [RateLimit](#axelar.nexus.v1beta1.RateLimit) | repeated |  |
 | `transfer_epochs` | [TransferEpoch](#axelar.nexus.v1beta1.TransferEpoch) | repeated |  |
+| `messages` | [axelar.nexus.exported.v1beta1.GeneralMessage](#axelar.nexus.exported.v1beta1.GeneralMessage) | repeated |  |
+| `message_nonce` | [uint64](#uint64) |  |  |
 
 
 
@@ -5883,6 +6252,7 @@ QueryService defines the gRPC querier service.
 | `ChainMaintainers` | [ChainMaintainersRequest](#axelar.nexus.v1beta1.ChainMaintainersRequest) | [ChainMaintainersResponse](#axelar.nexus.v1beta1.ChainMaintainersResponse) | ChainMaintainers queries the chain maintainers for a given chain | GET|/axelar/nexus/v1beta1/chain_maintainers/{chain}|
 | `TransferRateLimit` | [TransferRateLimitRequest](#axelar.nexus.v1beta1.TransferRateLimitRequest) | [TransferRateLimitResponse](#axelar.nexus.v1beta1.TransferRateLimitResponse) | TransferRateLimit queries the transfer rate limit for a given chain and asset. If a rate limit is not set, nil is returned. | GET|/axelar/nexus/v1beta1/transfer_rate_limit/{chain}/{asset}|
 | `Message` | [MessageRequest](#axelar.nexus.v1beta1.MessageRequest) | [MessageResponse](#axelar.nexus.v1beta1.MessageResponse) |  | GET|/axelar/nexus/v1beta1/message|
+| `Params` | [ParamsRequest](#axelar.nexus.v1beta1.ParamsRequest) | [ParamsResponse](#axelar.nexus.v1beta1.ParamsResponse) |  | GET|/axelar/nexus/v1beta1/params|
 
  <!-- end services -->
 
@@ -5983,6 +6353,31 @@ GenesisState represents the genesis state
 <p align="right"><a href="#top">Top</a></p>
 
 ## axelar/permission/v1beta1/query.proto
+
+
+
+<a name="axelar.permission.v1beta1.ParamsRequest"></a>
+
+### ParamsRequest
+ParamsRequest represents a message that queries the params
+
+
+
+
+
+
+<a name="axelar.permission.v1beta1.ParamsResponse"></a>
+
+### ParamsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `params` | [Params](#axelar.permission.v1beta1.Params) |  |  |
+
+
+
 
 
 
@@ -6149,6 +6544,7 @@ Query defines the gRPC querier service.
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `GovernanceKey` | [QueryGovernanceKeyRequest](#axelar.permission.v1beta1.QueryGovernanceKeyRequest) | [QueryGovernanceKeyResponse](#axelar.permission.v1beta1.QueryGovernanceKeyResponse) | GovernanceKey returns the multisig governance key | GET|/axelar/permission/v1beta1/governance_key|
+| `Params` | [ParamsRequest](#axelar.permission.v1beta1.ParamsRequest) | [ParamsResponse](#axelar.permission.v1beta1.ParamsResponse) |  | GET|/axelar/permission/v1beta1/params|
 
  <!-- end services -->
 
@@ -6282,6 +6678,73 @@ GenesisState represents the genesis state
 
 
 
+<a name="axelar/reward/v1beta1/query.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/reward/v1beta1/query.proto
+
+
+
+<a name="axelar.reward.v1beta1.InflationRateRequest"></a>
+
+### InflationRateRequest
+InflationRateRequest represents a message that queries the Axelar specific
+inflation RPC method.
+
+
+
+
+
+
+<a name="axelar.reward.v1beta1.InflationRateResponse"></a>
+
+### InflationRateResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `inflation_rate` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="axelar.reward.v1beta1.ParamsRequest"></a>
+
+### ParamsRequest
+ParamsRequest represents a message that queries the params
+
+
+
+
+
+
+<a name="axelar.reward.v1beta1.ParamsResponse"></a>
+
+### ParamsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `params` | [Params](#axelar.reward.v1beta1.Params) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
 <a name="axelar/reward/v1beta1/tx.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -6351,6 +6814,17 @@ Msg defines the axelarnet Msg service.
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `RefundMsg` | [RefundMsgRequest](#axelar.reward.v1beta1.RefundMsgRequest) | [RefundMsgResponse](#axelar.reward.v1beta1.RefundMsgResponse) |  | POST|/axelar/reward/refund_message|
+
+
+<a name="axelar.reward.v1beta1.QueryService"></a>
+
+### QueryService
+QueryService defines the gRPC querier service.
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `InflationRate` | [InflationRateRequest](#axelar.reward.v1beta1.InflationRateRequest) | [InflationRateResponse](#axelar.reward.v1beta1.InflationRateResponse) |  | GET|/axelar/reward/v1beta1/inflation_rate|
+| `Params` | [ParamsRequest](#axelar.reward.v1beta1.ParamsRequest) | [ParamsResponse](#axelar.reward.v1beta1.ParamsResponse) |  | GET|/axelar/reward/v1beta1/params|
 
  <!-- end services -->
 
@@ -6456,6 +6930,31 @@ GenesisState represents the genesis state
 <p align="right"><a href="#top">Top</a></p>
 
 ## axelar/snapshot/v1beta1/query.proto
+
+
+
+<a name="axelar.snapshot.v1beta1.ParamsRequest"></a>
+
+### ParamsRequest
+ParamsRequest represents a message that queries the params
+
+
+
+
+
+
+<a name="axelar.snapshot.v1beta1.ParamsResponse"></a>
+
+### ParamsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `params` | [Params](#axelar.snapshot.v1beta1.Params) |  |  |
+
+
+
 
 
 
@@ -6610,6 +7109,16 @@ Msg defines the snapshot Msg service.
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `RegisterProxy` | [RegisterProxyRequest](#axelar.snapshot.v1beta1.RegisterProxyRequest) | [RegisterProxyResponse](#axelar.snapshot.v1beta1.RegisterProxyResponse) | RegisterProxy defines a method for registering a proxy account that can act in a validator account's stead. | POST|/axelar/snapshot/register_proxy|
 | `DeactivateProxy` | [DeactivateProxyRequest](#axelar.snapshot.v1beta1.DeactivateProxyRequest) | [DeactivateProxyResponse](#axelar.snapshot.v1beta1.DeactivateProxyResponse) | DeactivateProxy defines a method for deregistering a proxy account. | POST|/axelar/snapshot/deactivate_proxy|
+
+
+<a name="axelar.snapshot.v1beta1.QueryService"></a>
+
+### QueryService
+QueryService defines the gRPC querier service.
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `Params` | [ParamsRequest](#axelar.snapshot.v1beta1.ParamsRequest) | [ParamsResponse](#axelar.snapshot.v1beta1.ParamsResponse) |  | GET|/axelar/snapshot/v1beta1/params|
 
  <!-- end services -->
 
@@ -7236,6 +7745,47 @@ KeyInfo holds information about a key
 
 
 
+<a name="axelar/tss/v1beta1/query.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/tss/v1beta1/query.proto
+
+
+
+<a name="axelar.tss.v1beta1.ParamsRequest"></a>
+
+### ParamsRequest
+ParamsRequest represents a message that queries the params
+
+
+
+
+
+
+<a name="axelar.tss.v1beta1.ParamsResponse"></a>
+
+### ParamsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `params` | [Params](#axelar.tss.v1beta1.Params) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
 <a name="axelar/tss/v1beta1/tx.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -7577,6 +8127,7 @@ Query defines the gRPC querier service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `Params` | [ParamsRequest](#axelar.tss.v1beta1.ParamsRequest) | [ParamsResponse](#axelar.tss.v1beta1.ParamsResponse) |  | GET|/axelar/tss/v1beta1/params|
 
  <!-- end services -->
 
@@ -7666,6 +8217,47 @@ Params represent the genesis parameters for the module
 | ----- | ---- | ----- | ----------- |
 | `params` | [Params](#axelar.vote.v1beta1.Params) |  |  |
 | `poll_metadatas` | [axelar.vote.exported.v1beta1.PollMetadata](#axelar.vote.exported.v1beta1.PollMetadata) | repeated |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="axelar/vote/v1beta1/query.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/vote/v1beta1/query.proto
+
+
+
+<a name="axelar.vote.v1beta1.ParamsRequest"></a>
+
+### ParamsRequest
+ParamsRequest represents a message that queries the params
+
+
+
+
+
+
+<a name="axelar.vote.v1beta1.ParamsResponse"></a>
+
+### ParamsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `params` | [Params](#axelar.vote.v1beta1.Params) |  |  |
 
 
 
@@ -7801,6 +8393,16 @@ Msg defines the vote Msg service.
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `Vote` | [VoteRequest](#axelar.vote.v1beta1.VoteRequest) | [VoteResponse](#axelar.vote.v1beta1.VoteResponse) |  | POST|/axelar/vote/vote|
+
+
+<a name="axelar.vote.v1beta1.QueryService"></a>
+
+### QueryService
+QueryService defines the gRPC querier service.
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `Params` | [ParamsRequest](#axelar.vote.v1beta1.ParamsRequest) | [ParamsResponse](#axelar.vote.v1beta1.ParamsResponse) |  | GET|/axelar/vote/v1beta1/params|
 
  <!-- end services -->
 

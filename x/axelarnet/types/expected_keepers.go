@@ -8,6 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/query"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	ibctypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
 	clienttypes "github.com/cosmos/ibc-go/v4/modules/core/02-client/types"
 	channeltypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
@@ -20,11 +21,12 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
-//go:generate moq -out ./mock/expected_keepers.go -pkg mock . BaseKeeper Nexus BankKeeper IBCTransferKeeper ChannelKeeper AccountKeeper PortKeeper
+//go:generate moq -out ./mock/expected_keepers.go -pkg mock . BaseKeeper Nexus BankKeeper IBCTransferKeeper ChannelKeeper AccountKeeper PortKeeper GovKeeper FeegrantKeeper
 
 // BaseKeeper is implemented by this module's base keeper
 type BaseKeeper interface {
 	Logger(ctx sdk.Context) log.Logger
+	GetParams(ctx sdk.Context) (params Params)
 	GetRouteTimeoutWindow(ctx sdk.Context) uint64
 	GetTransferLimit(ctx sdk.Context) uint64
 	GetEndBlockerLimit(ctx sdk.Context) uint64
@@ -56,10 +58,10 @@ type Nexus interface {
 	RateLimitTransfer(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error
 	GetMessage(ctx sdk.Context, id string) (m nexus.GeneralMessage, found bool)
 	SetNewMessage(ctx sdk.Context, m nexus.GeneralMessage) error
-	SetMessageSent(ctx sdk.Context, id string) error
+	SetMessageProcessing(ctx sdk.Context, id string) error
 	SetMessageExecuted(ctx sdk.Context, id string) error
 	SetMessageFailed(ctx sdk.Context, id string) error
-	GenerateMessageID(ctx sdk.Context) string
+	GenerateMessageID(ctx sdk.Context) (string, []byte, uint64)
 	ValidateAddress(ctx sdk.Context, address nexus.CrossChainAddress) error
 }
 
@@ -71,10 +73,10 @@ type BankKeeper interface {
 	BurnCoins(ctx sdk.Context, moduleName string, amt sdk.Coins) error
 	SendCoinsFromModuleToAccount(ctx sdk.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error
 	SendCoinsFromAccountToModule(ctx sdk.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error
-	GetBalance(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin
-	BlockedAddr(addr sdk.AccAddress) bool
 	IsSendEnabledCoin(ctx sdk.Context, coin sdk.Coin) bool
 	IsSendEnabledCoins(ctx sdk.Context, coins ...sdk.Coin) error
+	BlockedAddr(addr sdk.AccAddress) bool
+	SpendableBalance(ctx sdk.Context, address sdk.AccAddress, denom string) sdk.Coin
 }
 
 // IBCTransferKeeper provides functionality to manage IBC transfers
@@ -114,4 +116,14 @@ type CosmosChainGetter func(ctx sdk.Context, chain nexus.ChainName) (CosmosChain
 // PortKeeper used in module_test
 type PortKeeper interface {
 	BindPort(ctx sdk.Context, portID string) *capabilitytypes.Capability
+}
+
+// GovKeeper provides functionality to the gov module
+type GovKeeper interface {
+	GetProposal(ctx sdk.Context, proposalID uint64) (govtypes.Proposal, bool)
+}
+
+// FeegrantKeeper defines the expected feegrant keeper.
+type FeegrantKeeper interface {
+	UseGrantedFees(ctx sdk.Context, granter, grantee sdk.AccAddress, fee sdk.Coins, msgs []sdk.Msg) error
 }

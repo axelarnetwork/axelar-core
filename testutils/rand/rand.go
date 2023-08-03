@@ -56,6 +56,10 @@ func I64Between(lower int64, upper int64) int64 {
 	return rand.Int63n(upper-lower) + lower
 }
 
+func ThresholdDec() sdk.Dec {
+	return sdk.NewDecWithPrec(I64Between(0, math.BigPow(10, 18).Int64()), 18)
+}
+
 // NormalizeString normalizes a string as NFKC
 func NormalizeString(str string) string {
 	return norm.NFKC.String(str)

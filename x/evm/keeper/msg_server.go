@@ -11,6 +11,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/query"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/events"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
@@ -80,6 +81,7 @@ func excludeJailedOrTombstoned(ctx sdk.Context, slashing types.SlashingKeeper, s
 	)
 }
 
+// Deprecated: use ConfirmGatewayTxs instead
 func (s msgServer) ConfirmGatewayTx(c context.Context, req *types.ConfirmGatewayTxRequest) (*types.ConfirmGatewayTxResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
@@ -118,6 +120,48 @@ func (s msgServer) ConfirmGatewayTx(c context.Context, req *types.ConfirmGateway
 	})
 
 	return &types.ConfirmGatewayTxResponse{}, nil
+}
+func (s msgServer) ConfirmGatewayTxs(c context.Context, req *types.ConfirmGatewayTxsRequest) (*types.ConfirmGatewayTxsResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	chain, ok := s.nexus.GetChain(ctx, req.Chain)
+	if !ok {
+		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
+	}
+
+	if err := validateChainActivated(ctx, s.nexus, chain); err != nil {
+		return nil, err
+	}
+
+	keeper, err := s.ForChain(ctx, chain.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	gatewayAddress, ok := keeper.GetGatewayAddress(ctx)
+	if !ok {
+		return nil, fmt.Errorf("axelar gateway address not set")
+	}
+
+	snapshot, err := s.CreateSnapshot(ctx, chain)
+	if err != nil {
+		return nil, err
+	}
+
+	pollMappings, err := s.initializePolls(ctx, chain, snapshot, req.TxIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	events.Emit(ctx, &types.ConfirmGatewayTxsStarted{
+		PollMappings:       pollMappings,
+		Chain:              chain.Name,
+		GatewayAddress:     gatewayAddress,
+		ConfirmationHeight: keeper.GetRequiredConfirmationHeight(ctx),
+		Participants:       snapshot.GetParticipantAddresses(),
+	})
+
+	return &types.ConfirmGatewayTxsResponse{}, nil
 }
 
 func (s msgServer) SetGateway(c context.Context, req *types.SetGatewayRequest) (*types.SetGatewayResponse, error) {
@@ -392,7 +436,7 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 		return nil, err
 	}
 
-	dailyMintLimit, err := sdk.ParseUint(req.DailyMintLimit)
+	mintLimit, err := sdk.ParseUint(req.DailyMintLimit)
 	if err != nil {
 		return nil, err
 	}
@@ -436,7 +480,7 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 		return nil, sdkerrors.Wrapf(err, "failed to initialize token %s(%s) for chain %s", req.TokenDetails.TokenName, req.TokenDetails.Symbol, chain.Name)
 	}
 
-	cmd, err := token.CreateDeployCommand(keyID, dailyMintLimit)
+	cmd, err := token.CreateDeployCommand(keyID, mintLimit)
 	if err != nil {
 		return nil, err
 	}
@@ -445,7 +489,10 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 		return nil, err
 	}
 
-	if err = s.nexus.RegisterAsset(ctx, chain, nexus.NewAsset(req.Asset.Name, false), dailyMintLimit, types.DefaultRateLimitWindow); err != nil {
+	if mintLimit.IsZero() {
+		mintLimit = utils.MaxUint
+	}
+	if err = s.nexus.RegisterAsset(ctx, chain, nexus.NewAsset(req.Asset.Name, false), mintLimit, types.DefaultRateLimitWindow); err != nil {
 		return nil, err
 	}
 
@@ -824,19 +871,30 @@ func (s msgServer) RetryFailedEvent(c context.Context, req *types.RetryFailedEve
 	return &types.RetryFailedEventResponse{}, nil
 }
 
-func (s msgServer) initializePoll(ctx sdk.Context, chain nexus.Chain, txID types.Hash) (vote.PollParticipants, error) {
+func (s msgServer) CreateSnapshot(ctx sdk.Context, chain nexus.Chain) (snapshot.Snapshot, error) {
 	keeper, err := s.ForChain(ctx, chain.Name)
 	if err != nil {
-		return vote.PollParticipants{}, err
+		return snapshot.Snapshot{}, err
 	}
 	params := keeper.GetParams(ctx)
-	snap, err := s.snapshotter.CreateSnapshot(
+
+	return s.snapshotter.CreateSnapshot(
 		ctx,
 		s.nexus.GetChainMaintainers(ctx, chain),
 		excludeJailedOrTombstoned(ctx, s.slashing, s.snapshotter),
 		snapshot.QuadraticWeightFunc,
 		params.VotingThreshold,
 	)
+}
+
+func (s msgServer) initializePoll(ctx sdk.Context, chain nexus.Chain, txID types.Hash) (vote.PollParticipants, error) {
+	keeper, err := s.ForChain(ctx, chain.Name)
+	if err != nil {
+		return vote.PollParticipants{}, err
+	}
+
+	params := keeper.GetParams(ctx)
+	snap, err := s.CreateSnapshot(ctx, chain)
 	if err != nil {
 		return vote.PollParticipants{}, err
 	}
@@ -852,8 +910,44 @@ func (s msgServer) initializePoll(ctx sdk.Context, chain nexus.Chain, txID types
 				TxID:  txID,
 			}),
 	)
+
 	return vote.PollParticipants{
 		PollID:       pollID,
 		Participants: snap.GetParticipantAddresses(),
 	}, err
+}
+
+func (s msgServer) initializePolls(ctx sdk.Context, chain nexus.Chain, snapshot snapshot.Snapshot, txIDs []types.Hash) ([]types.PollMapping, error) {
+	keeper, err := s.ForChain(ctx, chain.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	params := keeper.GetParams(ctx)
+	expiresAt := ctx.BlockHeight() + params.RevoteLockingPeriod
+
+	pollMappings := make([]types.PollMapping, len(txIDs))
+	for i, txID := range txIDs {
+		pollID, err := s.voter.InitializePoll(
+			ctx,
+			vote.NewPollBuilder(types.ModuleName, params.VotingThreshold, snapshot, expiresAt).
+				MinVoterCount(params.MinVoterCount).
+				RewardPoolName(chain.Name.String()).
+				GracePeriod(keeper.GetParams(ctx).VotingGracePeriod).
+				ModuleMetadata(&types.PollMetadata{
+					Chain: chain.Name,
+					TxID:  txID,
+				}),
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		pollMappings[i] = types.PollMapping{
+			TxID:   txID,
+			PollID: pollID,
+		}
+	}
+
+	return pollMappings, nil
 }

@@ -82,7 +82,7 @@ func TestKeeper_RegisterProxy(t *testing.T) {
 		principalAddress = validators[rand.I64Between(0, 10)].GetOperator()
 		expectedProxy = rand.AccAddr()
 		bank = &mock.BankKeeperMock{
-			GetBalanceFunc: func(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin {
+			SpendableBalanceFunc: func(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin {
 				if addr.Equals(expectedProxy) {
 					return sdk.NewCoin("uaxl", sdk.NewInt(5000000))
 				}
@@ -127,7 +127,7 @@ func TestKeeper_RegisterProxy(t *testing.T) {
 	t.Run("insufficient funds in proxy", testutils.Func(func(t *testing.T) {
 		setup()
 
-		bank.GetBalanceFunc = func(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin {
+		bank.SpendableBalanceFunc = func(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin {
 			if addr.Equals(expectedProxy) {
 				return sdk.NewCoin("uaxl", sdk.NewInt(4999999))
 			}
@@ -161,7 +161,7 @@ func TestKeeper_DeregisterProxy(t *testing.T) {
 		expectedProxy = rand.AccAddr()
 
 		bank := &mock.BankKeeperMock{
-			GetBalanceFunc: func(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin {
+			SpendableBalanceFunc: func(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin {
 				return sdk.NewCoin("uaxl", sdk.NewInt(5000000))
 			},
 		}

@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package axelar.axelarnet.v1beta1;
+
+import "gogoproto/gogo.proto";
+import "axelar/nexus/exported/v1beta1/types.proto";
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/axelarnet/types";
+option (gogoproto.goproto_getters_all) = false;
+
+// CallContractsProposal is a gov Content type for calling contracts on other
+// chains
+message CallContractsProposal {
+  option (gogoproto.goproto_stringer) = false;
+
+  string title = 1;
+  string description = 2;
+  repeated ContractCall contract_calls = 3 [ (gogoproto.nullable) = false ];
+}
+
+message ContractCall {
+  option (gogoproto.goproto_stringer) = false;
+
+  string chain = 1
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string contract_address = 2;
+  bytes payload = 3;
+}

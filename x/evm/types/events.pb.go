@@ -8,6 +8,7 @@ import (
 	github_com_axelarnetwork_axelar_core_x_nexus_exported "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	exported "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	github_com_axelarnetwork_axelar_core_x_vote_exported "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
 	types "github.com/cosmos/cosmos-sdk/types"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
@@ -73,6 +74,10 @@ func (m *PollFailed) GetChain() github_com_axelarnetwork_axelar_core_x_nexus_exp
 	return ""
 }
 
+func (*PollFailed) XXX_MessageName() string {
+	return "axelar.evm.v1beta1.PollFailed"
+}
+
 type PollExpired struct {
 	TxID   Hash                                                            `protobuf:"bytes,1,opt,name=tx_id,json=txId,proto3,customtype=Hash" json:"tx_id"`
 	Chain  github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
@@ -117,6 +122,10 @@ func (m *PollExpired) GetChain() github_com_axelarnetwork_axelar_core_x_nexus_ex
 		return m.Chain
 	}
 	return ""
+}
+
+func (*PollExpired) XXX_MessageName() string {
+	return "axelar.evm.v1beta1.PollExpired"
 }
 
 type PollCompleted struct {
@@ -165,6 +174,10 @@ func (m *PollCompleted) GetChain() github_com_axelarnetwork_axelar_core_x_nexus_
 	return ""
 }
 
+func (*PollCompleted) XXX_MessageName() string {
+	return "axelar.evm.v1beta1.PollCompleted"
+}
+
 type NoEventsConfirmed struct {
 	TxID   Hash                                                            `protobuf:"bytes,1,opt,name=tx_id,json=txId,proto3,customtype=Hash" json:"tx_id"`
 	Chain  github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
@@ -209,6 +222,10 @@ func (m *NoEventsConfirmed) GetChain() github_com_axelarnetwork_axelar_core_x_ne
 		return m.Chain
 	}
 	return ""
+}
+
+func (*NoEventsConfirmed) XXX_MessageName() string {
+	return "axelar.evm.v1beta1.NoEventsConfirmed"
 }
 
 type ConfirmKeyTransferStarted struct {
@@ -266,6 +283,11 @@ func (m *ConfirmKeyTransferStarted) GetConfirmationHeight() uint64 {
 	return 0
 }
 
+func (*ConfirmKeyTransferStarted) XXX_MessageName() string {
+	return "axelar.evm.v1beta1.ConfirmKeyTransferStarted"
+}
+
+// Deprecated: Do not use.
 type ConfirmGatewayTxStarted struct {
 	TxID                      Hash                                                            `protobuf:"bytes,1,opt,name=tx_id,json=txId,proto3,customtype=Hash" json:"tx_id"`
 	Chain                     github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
@@ -321,6 +343,125 @@ func (m *ConfirmGatewayTxStarted) GetConfirmationHeight() uint64 {
 	return 0
 }
 
+func (*ConfirmGatewayTxStarted) XXX_MessageName() string {
+	return "axelar.evm.v1beta1.ConfirmGatewayTxStarted"
+}
+
+type PollMapping struct {
+	TxID   Hash                                                        `protobuf:"bytes,1,opt,name=tx_id,json=txId,proto3,customtype=Hash" json:"tx_id"`
+	PollID github_com_axelarnetwork_axelar_core_x_vote_exported.PollID `protobuf:"varint,2,opt,name=poll_id,json=pollId,proto3,customtype=github.com/axelarnetwork/axelar-core/x/vote/exported.PollID" json:"poll_id"`
+}
+
+func (m *PollMapping) Reset()         { *m = PollMapping{} }
+func (m *PollMapping) String() string { return proto.CompactTextString(m) }
+func (*PollMapping) ProtoMessage()    {}
+func (*PollMapping) Descriptor() ([]byte, []int) {
+	return fileDescriptor_091c22a44ca6f0af, []int{6}
+}
+func (m *PollMapping) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *PollMapping) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_PollMapping.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *PollMapping) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PollMapping.Merge(m, src)
+}
+func (m *PollMapping) XXX_Size() int {
+	return m.Size()
+}
+func (m *PollMapping) XXX_DiscardUnknown() {
+	xxx_messageInfo_PollMapping.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_PollMapping proto.InternalMessageInfo
+
+func (*PollMapping) XXX_MessageName() string {
+	return "axelar.evm.v1beta1.PollMapping"
+}
+
+type ConfirmGatewayTxsStarted struct {
+	PollMappings       []PollMapping                                                   `protobuf:"bytes,1,rep,name=poll_mappings,json=pollMappings,proto3" json:"poll_mappings,omitempty"`
+	Chain              github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
+	GatewayAddress     Address                                                         `protobuf:"bytes,3,opt,name=gateway_address,json=gatewayAddress,proto3,customtype=Address" json:"gateway_address"`
+	ConfirmationHeight uint64                                                          `protobuf:"varint,4,opt,name=confirmation_height,json=confirmationHeight,proto3" json:"confirmation_height,omitempty"`
+	Participants       []github_com_cosmos_cosmos_sdk_types.ValAddress                 `protobuf:"bytes,5,rep,name=participants,proto3,casttype=github.com/cosmos/cosmos-sdk/types.ValAddress" json:"participants,omitempty"`
+}
+
+func (m *ConfirmGatewayTxsStarted) Reset()         { *m = ConfirmGatewayTxsStarted{} }
+func (m *ConfirmGatewayTxsStarted) String() string { return proto.CompactTextString(m) }
+func (*ConfirmGatewayTxsStarted) ProtoMessage()    {}
+func (*ConfirmGatewayTxsStarted) Descriptor() ([]byte, []int) {
+	return fileDescriptor_091c22a44ca6f0af, []int{7}
+}
+func (m *ConfirmGatewayTxsStarted) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ConfirmGatewayTxsStarted) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ConfirmGatewayTxsStarted.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ConfirmGatewayTxsStarted) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ConfirmGatewayTxsStarted.Merge(m, src)
+}
+func (m *ConfirmGatewayTxsStarted) XXX_Size() int {
+	return m.Size()
+}
+func (m *ConfirmGatewayTxsStarted) XXX_DiscardUnknown() {
+	xxx_messageInfo_ConfirmGatewayTxsStarted.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ConfirmGatewayTxsStarted proto.InternalMessageInfo
+
+func (m *ConfirmGatewayTxsStarted) GetPollMappings() []PollMapping {
+	if m != nil {
+		return m.PollMappings
+	}
+	return nil
+}
+
+func (m *ConfirmGatewayTxsStarted) GetChain() github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName {
+	if m != nil {
+		return m.Chain
+	}
+	return ""
+}
+
+func (m *ConfirmGatewayTxsStarted) GetConfirmationHeight() uint64 {
+	if m != nil {
+		return m.ConfirmationHeight
+	}
+	return 0
+}
+
+func (m *ConfirmGatewayTxsStarted) GetParticipants() []github_com_cosmos_cosmos_sdk_types.ValAddress {
+	if m != nil {
+		return m.Participants
+	}
+	return nil
+}
+
+func (*ConfirmGatewayTxsStarted) XXX_MessageName() string {
+	return "axelar.evm.v1beta1.ConfirmGatewayTxsStarted"
+}
+
 type ConfirmDepositStarted struct {
 	TxID                      Hash                                                            `protobuf:"bytes,1,opt,name=tx_id,json=txId,proto3,customtype=Hash" json:"tx_id"`
 	Chain                     github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
@@ -335,7 +476,7 @@ func (m *ConfirmDepositStarted) Reset()         { *m = ConfirmDepositStarted{} }
 func (m *ConfirmDepositStarted) String() string { return proto.CompactTextString(m) }
 func (*ConfirmDepositStarted) ProtoMessage()    {}
 func (*ConfirmDepositStarted) Descriptor() ([]byte, []int) {
-	return fileDescriptor_091c22a44ca6f0af, []int{6}
+	return fileDescriptor_091c22a44ca6f0af, []int{8}
 }
 func (m *ConfirmDepositStarted) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -385,6 +526,10 @@ func (m *ConfirmDepositStarted) GetAsset() string {
 	return ""
 }
 
+func (*ConfirmDepositStarted) XXX_MessageName() string {
+	return "axelar.evm.v1beta1.ConfirmDepositStarted"
+}
+
 type ConfirmTokenStarted struct {
 	TxID                      Hash                                                            `protobuf:"bytes,1,opt,name=tx_id,json=txId,proto3,customtype=Hash" json:"tx_id"`
 	Chain                     github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
@@ -399,7 +544,7 @@ func (m *ConfirmTokenStarted) Reset()         { *m = ConfirmTokenStarted{} }
 func (m *ConfirmTokenStarted) String() string { return proto.CompactTextString(m) }
 func (*ConfirmTokenStarted) ProtoMessage()    {}
 func (*ConfirmTokenStarted) Descriptor() ([]byte, []int) {
-	return fileDescriptor_091c22a44ca6f0af, []int{7}
+	return fileDescriptor_091c22a44ca6f0af, []int{9}
 }
 func (m *ConfirmTokenStarted) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -449,6 +594,10 @@ func (m *ConfirmTokenStarted) GetConfirmationHeight() uint64 {
 	return 0
 }
 
+func (*ConfirmTokenStarted) XXX_MessageName() string {
+	return "axelar.evm.v1beta1.ConfirmTokenStarted"
+}
+
 type ChainAdded struct {
 	Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,1,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
 }
@@ -457,7 +606,7 @@ func (m *ChainAdded) Reset()         { *m = ChainAdded{} }
 func (m *ChainAdded) String() string { return proto.CompactTextString(m) }
 func (*ChainAdded) ProtoMessage()    {}
 func (*ChainAdded) Descriptor() ([]byte, []int) {
-	return fileDescriptor_091c22a44ca6f0af, []int{8}
+	return fileDescriptor_091c22a44ca6f0af, []int{10}
 }
 func (m *ChainAdded) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -493,6 +642,10 @@ func (m *ChainAdded) GetChain() github_com_axelarnetwork_axelar_core_x_nexus_exp
 	return ""
 }
 
+func (*ChainAdded) XXX_MessageName() string {
+	return "axelar.evm.v1beta1.ChainAdded"
+}
+
 type CommandBatchSigned struct {
 	Chain          github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
 	CommandBatchID []byte                                                          `protobuf:"bytes,3,opt,name=command_batch_id,json=commandBatchId,proto3" json:"command_batch_id,omitempty"`
@@ -502,7 +655,7 @@ func (m *CommandBatchSigned) Reset()         { *m = CommandBatchSigned{} }
 func (m *CommandBatchSigned) String() string { return proto.CompactTextString(m) }
 func (*CommandBatchSigned) ProtoMessage()    {}
 func (*CommandBatchSigned) Descriptor() ([]byte, []int) {
-	return fileDescriptor_091c22a44ca6f0af, []int{9}
+	return fileDescriptor_091c22a44ca6f0af, []int{11}
 }
 func (m *CommandBatchSigned) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -545,6 +698,10 @@ func (m *CommandBatchSigned) GetCommandBatchID() []byte {
 	return nil
 }
 
+func (*CommandBatchSigned) XXX_MessageName() string {
+	return "axelar.evm.v1beta1.CommandBatchSigned"
+}
+
 type CommandBatchAborted struct {
 	Chain          github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
 	CommandBatchID []byte                                                          `protobuf:"bytes,3,opt,name=command_batch_id,json=commandBatchId,proto3" json:"command_batch_id,omitempty"`
@@ -554,7 +711,7 @@ func (m *CommandBatchAborted) Reset()         { *m = CommandBatchAborted{} }
 func (m *CommandBatchAborted) String() string { return proto.CompactTextString(m) }
 func (*CommandBatchAborted) ProtoMessage()    {}
 func (*CommandBatchAborted) Descriptor() ([]byte, []int) {
-	return fileDescriptor_091c22a44ca6f0af, []int{10}
+	return fileDescriptor_091c22a44ca6f0af, []int{12}
 }
 func (m *CommandBatchAborted) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -597,6 +754,10 @@ func (m *CommandBatchAborted) GetCommandBatchID() []byte {
 	return nil
 }
 
+func (*CommandBatchAborted) XXX_MessageName() string {
+	return "axelar.evm.v1beta1.CommandBatchAborted"
+}
+
 type EVMEventConfirmed struct {
 	Chain   github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,1,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
 	EventID EventID                                                         `protobuf:"bytes,2,opt,name=event_id,json=eventId,proto3,casttype=EventID" json:"event_id,omitempty"`
@@ -607,7 +768,7 @@ func (m *EVMEventConfirmed) Reset()         { *m = EVMEventConfirmed{} }
 func (m *EVMEventConfirmed) String() string { return proto.CompactTextString(m) }
 func (*EVMEventConfirmed) ProtoMessage()    {}
 func (*EVMEventConfirmed) Descriptor() ([]byte, []int) {
-	return fileDescriptor_091c22a44ca6f0af, []int{11}
+	return fileDescriptor_091c22a44ca6f0af, []int{13}
 }
 func (m *EVMEventConfirmed) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -657,6 +818,10 @@ func (m *EVMEventConfirmed) GetType() string {
 	return ""
 }
 
+func (*EVMEventConfirmed) XXX_MessageName() string {
+	return "axelar.evm.v1beta1.EVMEventConfirmed"
+}
+
 type EVMEventCompleted struct {
 	Chain   github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,1,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
 	EventID EventID                                                         `protobuf:"bytes,2,opt,name=event_id,json=eventId,proto3,casttype=EventID" json:"event_id,omitempty"`
@@ -667,7 +832,7 @@ func (m *EVMEventCompleted) Reset()         { *m = EVMEventCompleted{} }
 func (m *EVMEventCompleted) String() string { return proto.CompactTextString(m) }
 func (*EVMEventCompleted) ProtoMessage()    {}
 func (*EVMEventCompleted) Descriptor() ([]byte, []int) {
-	return fileDescriptor_091c22a44ca6f0af, []int{12}
+	return fileDescriptor_091c22a44ca6f0af, []int{14}
 }
 func (m *EVMEventCompleted) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -717,6 +882,10 @@ func (m *EVMEventCompleted) GetType() string {
 	return ""
 }
 
+func (*EVMEventCompleted) XXX_MessageName() string {
+	return "axelar.evm.v1beta1.EVMEventCompleted"
+}
+
 type EVMEventFailed struct {
 	Chain   github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,1,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
 	EventID EventID                                                         `protobuf:"bytes,2,opt,name=event_id,json=eventId,proto3,casttype=EventID" json:"event_id,omitempty"`
@@ -727,7 +896,7 @@ func (m *EVMEventFailed) Reset()         { *m = EVMEventFailed{} }
 func (m *EVMEventFailed) String() string { return proto.CompactTextString(m) }
 func (*EVMEventFailed) ProtoMessage()    {}
 func (*EVMEventFailed) Descriptor() ([]byte, []int) {
-	return fileDescriptor_091c22a44ca6f0af, []int{13}
+	return fileDescriptor_091c22a44ca6f0af, []int{15}
 }
 func (m *EVMEventFailed) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -777,6 +946,10 @@ func (m *EVMEventFailed) GetType() string {
 	return ""
 }
 
+func (*EVMEventFailed) XXX_MessageName() string {
+	return "axelar.evm.v1beta1.EVMEventFailed"
+}
+
 type EVMEventRetryFailed struct {
 	Chain   github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,1,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
 	EventID EventID                                                         `protobuf:"bytes,2,opt,name=event_id,json=eventId,proto3,casttype=EventID" json:"event_id,omitempty"`
@@ -787,7 +960,7 @@ func (m *EVMEventRetryFailed) Reset()         { *m = EVMEventRetryFailed{} }
 func (m *EVMEventRetryFailed) String() string { return proto.CompactTextString(m) }
 func (*EVMEventRetryFailed) ProtoMessage()    {}
 func (*EVMEventRetryFailed) Descriptor() ([]byte, []int) {
-	return fileDescriptor_091c22a44ca6f0af, []int{14}
+	return fileDescriptor_091c22a44ca6f0af, []int{16}
 }
 func (m *EVMEventRetryFailed) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -837,6 +1010,10 @@ func (m *EVMEventRetryFailed) GetType() string {
 	return ""
 }
 
+func (*EVMEventRetryFailed) XXX_MessageName() string {
+	return "axelar.evm.v1beta1.EVMEventRetryFailed"
+}
+
 type ContractCallApproved struct {
 	Chain            github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,1,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
 	EventID          EventID                                                         `protobuf:"bytes,2,opt,name=event_id,json=eventId,proto3,casttype=EventID" json:"event_id,omitempty"`
@@ -851,7 +1028,7 @@ func (m *ContractCallApproved) Reset()         { *m = ContractCallApproved{} }
 func (m *ContractCallApproved) String() string { return proto.CompactTextString(m) }
 func (*ContractCallApproved) ProtoMessage()    {}
 func (*ContractCallApproved) Descriptor() ([]byte, []int) {
-	return fileDescriptor_091c22a44ca6f0af, []int{15}
+	return fileDescriptor_091c22a44ca6f0af, []int{17}
 }
 func (m *ContractCallApproved) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -915,6 +1092,10 @@ func (m *ContractCallApproved) GetContractAddress() string {
 	return ""
 }
 
+func (*ContractCallApproved) XXX_MessageName() string {
+	return "axelar.evm.v1beta1.ContractCallApproved"
+}
+
 type ContractCallFailed struct {
 	Chain     github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,1,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
 	MessageID string                                                          `protobuf:"bytes,2,opt,name=msg_id,json=msgId,proto3" json:"msg_id,omitempty"`
@@ -924,7 +1105,7 @@ func (m *ContractCallFailed) Reset()         { *m = ContractCallFailed{} }
 func (m *ContractCallFailed) String() string { return proto.CompactTextString(m) }
 func (*ContractCallFailed) ProtoMessage()    {}
 func (*ContractCallFailed) Descriptor() ([]byte, []int) {
-	return fileDescriptor_091c22a44ca6f0af, []int{16}
+	return fileDescriptor_091c22a44ca6f0af, []int{18}
 }
 func (m *ContractCallFailed) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -967,6 +1148,10 @@ func (m *ContractCallFailed) GetMessageID() string {
 	return ""
 }
 
+func (*ContractCallFailed) XXX_MessageName() string {
+	return "axelar.evm.v1beta1.ContractCallFailed"
+}
+
 type ContractCallWithMintApproved struct {
 	Chain            github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,1,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
 	EventID          EventID                                                         `protobuf:"bytes,2,opt,name=event_id,json=eventId,proto3,casttype=EventID" json:"event_id,omitempty"`
@@ -982,7 +1167,7 @@ func (m *ContractCallWithMintApproved) Reset()         { *m = ContractCallWithMi
 func (m *ContractCallWithMintApproved) String() string { return proto.CompactTextString(m) }
 func (*ContractCallWithMintApproved) ProtoMessage()    {}
 func (*ContractCallWithMintApproved) Descriptor() ([]byte, []int) {
-	return fileDescriptor_091c22a44ca6f0af, []int{17}
+	return fileDescriptor_091c22a44ca6f0af, []int{19}
 }
 func (m *ContractCallWithMintApproved) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1053,6 +1238,10 @@ func (m *ContractCallWithMintApproved) GetAsset() types.Coin {
 	return types.Coin{}
 }
 
+func (*ContractCallWithMintApproved) XXX_MessageName() string {
+	return "axelar.evm.v1beta1.ContractCallWithMintApproved"
+}
+
 type TokenSent struct {
 	Chain              github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName  `protobuf:"bytes,1,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
 	EventID            EventID                                                          `protobuf:"bytes,2,opt,name=event_id,json=eventId,proto3,casttype=EventID" json:"event_id,omitempty"`
@@ -1067,7 +1256,7 @@ func (m *TokenSent) Reset()         { *m = TokenSent{} }
 func (m *TokenSent) String() string { return proto.CompactTextString(m) }
 func (*TokenSent) ProtoMessage()    {}
 func (*TokenSent) Descriptor() ([]byte, []int) {
-	return fileDescriptor_091c22a44ca6f0af, []int{18}
+	return fileDescriptor_091c22a44ca6f0af, []int{20}
 }
 func (m *TokenSent) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1145,6 +1334,10 @@ func (m *TokenSent) GetAsset() types.Coin {
 	return types.Coin{}
 }
 
+func (*TokenSent) XXX_MessageName() string {
+	return "axelar.evm.v1beta1.TokenSent"
+}
+
 type MintCommand struct {
 	Chain              github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName  `protobuf:"bytes,1,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
 	TransferID         github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferID `protobuf:"varint,2,opt,name=transfer_id,json=transferId,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.TransferID" json:"transfer_id,omitempty"`
@@ -1158,7 +1351,7 @@ func (m *MintCommand) Reset()         { *m = MintCommand{} }
 func (m *MintCommand) String() string { return proto.CompactTextString(m) }
 func (*MintCommand) ProtoMessage()    {}
 func (*MintCommand) Descriptor() ([]byte, []int) {
-	return fileDescriptor_091c22a44ca6f0af, []int{19}
+	return fileDescriptor_091c22a44ca6f0af, []int{21}
 }
 func (m *MintCommand) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1222,6 +1415,10 @@ func (m *MintCommand) GetAsset() types.Coin {
 	return types.Coin{}
 }
 
+func (*MintCommand) XXX_MessageName() string {
+	return "axelar.evm.v1beta1.MintCommand"
+}
+
 type BurnCommand struct {
 	Chain            github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,1,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
 	CommandID        CommandID                                                       `protobuf:"bytes,2,opt,name=command_id,json=commandId,proto3,customtype=CommandID" json:"command_id"`
@@ -1234,7 +1431,7 @@ func (m *BurnCommand) Reset()         { *m = BurnCommand{} }
 func (m *BurnCommand) String() string { return proto.CompactTextString(m) }
 func (*BurnCommand) ProtoMessage()    {}
 func (*BurnCommand) Descriptor() ([]byte, []int) {
-	return fileDescriptor_091c22a44ca6f0af, []int{20}
+	return fileDescriptor_091c22a44ca6f0af, []int{22}
 }
 func (m *BurnCommand) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1291,6 +1488,9 @@ func (m *BurnCommand) GetAsset() string {
 	return ""
 }
 
+func (*BurnCommand) XXX_MessageName() string {
+	return "axelar.evm.v1beta1.BurnCommand"
+}
 func init() {
 	proto.RegisterType((*PollFailed)(nil), "axelar.evm.v1beta1.PollFailed")
 	proto.RegisterType((*PollExpired)(nil), "axelar.evm.v1beta1.PollExpired")
@@ -1298,6 +1498,8 @@ func init() {
 	proto.RegisterType((*NoEventsConfirmed)(nil), "axelar.evm.v1beta1.NoEventsConfirmed")
 	proto.RegisterType((*ConfirmKeyTransferStarted)(nil), "axelar.evm.v1beta1.ConfirmKeyTransferStarted")
 	proto.RegisterType((*ConfirmGatewayTxStarted)(nil), "axelar.evm.v1beta1.ConfirmGatewayTxStarted")
+	proto.RegisterType((*PollMapping)(nil), "axelar.evm.v1beta1.PollMapping")
+	proto.RegisterType((*ConfirmGatewayTxsStarted)(nil), "axelar.evm.v1beta1.ConfirmGatewayTxsStarted")
 	proto.RegisterType((*ConfirmDepositStarted)(nil), "axelar.evm.v1beta1.ConfirmDepositStarted")
 	proto.RegisterType((*ConfirmTokenStarted)(nil), "axelar.evm.v1beta1.ConfirmTokenStarted")
 	proto.RegisterType((*ChainAdded)(nil), "axelar.evm.v1beta1.ChainAdded")
@@ -1318,80 +1520,87 @@ func init() {
 func init() { proto.RegisterFile("axelar/evm/v1beta1/events.proto", fileDescriptor_091c22a44ca6f0af) }
 
 var fileDescriptor_091c22a44ca6f0af = []byte{
-	// 1161 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xec, 0x59, 0xcf, 0x6f, 0xe3, 0xc4,
-	0x17, 0xaf, 0x13, 0x27, 0x69, 0x5e, 0xd2, 0x5f, 0x6e, 0xbf, 0xfb, 0xed, 0x56, 0x28, 0xa9, 0x22,
-	0x24, 0xca, 0x01, 0x9b, 0x02, 0x2b, 0x21, 0x01, 0x82, 0x3a, 0x29, 0x6c, 0x58, 0x75, 0xb5, 0xf2,
-	0x56, 0x20, 0x10, 0x52, 0x35, 0xb1, 0xa7, 0x89, 0xb5, 0xb6, 0xc7, 0xf2, 0x4c, 0xb3, 0xe9, 0x0d,
-	0x6e, 0x1c, 0xb9, 0xf0, 0x67, 0xc0, 0x61, 0x25, 0xc4, 0xbf, 0xb0, 0xdc, 0x7a, 0x5c, 0x71, 0x88,
-	0x50, 0x7a, 0x00, 0xf1, 0x07, 0x70, 0x28, 0x42, 0x42, 0x33, 0x1e, 0x27, 0x4e, 0xb7, 0xa8, 0x65,
-	0x69, 0x96, 0xec, 0x96, 0x9b, 0xe7, 0xd7, 0x9b, 0xcf, 0xfb, 0x7c, 0xde, 0xf3, 0x3c, 0x8f, 0xa1,
-	0x8a, 0x7a, 0xd8, 0x43, 0x91, 0x81, 0xbb, 0xbe, 0xd1, 0xdd, 0x6c, 0x61, 0x86, 0x36, 0x0d, 0xdc,
-	0xc5, 0x01, 0xa3, 0x7a, 0x18, 0x11, 0x46, 0x34, 0x2d, 0x9e, 0xa0, 0xe3, 0xae, 0xaf, 0xcb, 0x09,
-	0x6b, 0x2b, 0x6d, 0xd2, 0x26, 0x62, 0xd8, 0xe0, 0x4f, 0xf1, 0xcc, 0xb5, 0x0d, 0x69, 0xaa, 0x4b,
-	0x18, 0x36, 0x70, 0x2f, 0x24, 0x11, 0xc3, 0xce, 0xd0, 0x28, 0x3b, 0x0c, 0xb1, 0xb4, 0xb9, 0x56,
-	0x39, 0x63, 0xd3, 0xb1, 0x71, 0x9b, 0x50, 0x9f, 0x50, 0xa3, 0x85, 0x28, 0x1e, 0x4e, 0xb0, 0x89,
-	0x1b, 0xc4, 0xe3, 0xb5, 0x13, 0x05, 0xe0, 0x0e, 0xf1, 0xbc, 0xf7, 0x91, 0xeb, 0x61, 0x47, 0x7b,
-	0x19, 0x72, 0xac, 0xb7, 0xe7, 0x3a, 0xab, 0xca, 0xba, 0xb2, 0x51, 0x36, 0x57, 0x1e, 0xf6, 0xab,
-	0x33, 0x3f, 0xf6, 0xab, 0xea, 0x4d, 0x44, 0x3b, 0x83, 0x7e, 0x55, 0xdd, 0xed, 0x35, 0x1b, 0x96,
-	0xca, 0x7a, 0x4d, 0x47, 0xfb, 0x04, 0x72, 0x76, 0x07, 0xb9, 0xc1, 0x6a, 0x66, 0x5d, 0xd9, 0x28,
-	0x9a, 0xf5, 0x93, 0x7e, 0xf5, 0xdd, 0xb6, 0xcb, 0x3a, 0x07, 0x2d, 0xdd, 0x26, 0xbe, 0x11, 0xe3,
-	0x0a, 0x30, 0xbb, 0x4f, 0xa2, 0x7b, 0xb2, 0xf5, 0x8a, 0x4d, 0x22, 0x6c, 0xf4, 0x8c, 0x00, 0xf7,
-	0x0e, 0xe8, 0xd0, 0x2f, 0xbd, 0xce, 0xcd, 0xdc, 0x46, 0x3e, 0xb6, 0x62, 0x8b, 0xda, 0x3e, 0x14,
-	0x42, 0xe2, 0x79, 0x1c, 0x47, 0x76, 0x5d, 0xd9, 0x50, 0xcd, 0x1d, 0x89, 0xe3, 0xad, 0x0b, 0x6e,
-	0x30, 0xc6, 0x9b, 0xce, 0xfd, 0x6b, 0x36, 0x06, 0xfd, 0x6a, 0x3e, 0x7e, 0xb2, 0xf2, 0xdc, 0x7a,
-	0xd3, 0xa9, 0xfd, 0xae, 0x40, 0x89, 0x77, 0x6d, 0xf7, 0x42, 0x37, 0xba, 0x72, 0xde, 0xff, 0xa1,
-	0xc0, 0x1c, 0xef, 0xaa, 0x13, 0x3f, 0xf4, 0x30, 0xbb, 0x72, 0xfe, 0x7f, 0x91, 0x81, 0xa5, 0xdb,
-	0x64, 0x5b, 0x64, 0x68, 0x9d, 0x04, 0xfb, 0x6e, 0xe4, 0x5f, 0x39, 0x0e, 0x7e, 0xcd, 0xc0, 0x75,
-	0xe9, 0xfb, 0x2d, 0x7c, 0xb8, 0x1b, 0xa1, 0x80, 0xee, 0xe3, 0xe8, 0x2e, 0x43, 0x7c, 0xd9, 0xc8,
-	0x41, 0xe5, 0xd2, 0x1d, 0x1c, 0xd2, 0x9c, 0x39, 0x97, 0xe6, 0x37, 0x61, 0xa1, 0x8d, 0x18, 0xbe,
-	0x8f, 0x0e, 0xf7, 0x90, 0xe3, 0x44, 0x98, 0x52, 0xc1, 0x49, 0xd9, 0x5c, 0x90, 0x8b, 0x0a, 0x5b,
-	0x71, 0xb7, 0x35, 0x2f, 0xe7, 0xc9, 0xb6, 0x66, 0xc0, 0xb2, 0x1d, 0x3b, 0x87, 0x98, 0x4b, 0x82,
-	0xbd, 0x0e, 0x76, 0xdb, 0x1d, 0xb6, 0xaa, 0x72, 0x46, 0x2d, 0x2d, 0x3d, 0x74, 0x53, 0x8c, 0x68,
-	0x9f, 0x41, 0x39, 0x44, 0x11, 0x73, 0x6d, 0x37, 0x44, 0x01, 0xa3, 0xab, 0xb9, 0x75, 0x65, 0xa3,
-	0xf4, 0x9a, 0xae, 0xcb, 0x17, 0x37, 0x27, 0x55, 0x1f, 0xfa, 0x24, 0xdf, 0xa6, 0x82, 0xdc, 0x3b,
-	0xa9, 0x55, 0xe6, 0x2c, 0xc7, 0x75, 0xd4, 0xaf, 0x2a, 0xd6, 0x98, 0xb5, 0xda, 0x2f, 0x19, 0xf8,
-	0xbf, 0x24, 0xfb, 0x83, 0x18, 0xe8, 0x6e, 0x2f, 0xa1, 0x7a, 0x3a, 0xc2, 0xee, 0xb9, 0xa1, 0xfa,
-	0x41, 0x16, 0xfe, 0x27, 0xa9, 0x6e, 0xe0, 0x90, 0x50, 0x97, 0x4d, 0x1d, 0xd1, 0x4e, 0x8c, 0xeb,
-	0x5c, 0xa2, 0xe5, 0xbc, 0x84, 0xe8, 0x37, 0x60, 0x8e, 0x91, 0x7b, 0x38, 0x18, 0xae, 0x53, 0xcf,
-	0x5e, 0x57, 0x16, 0xb3, 0xce, 0x91, 0x27, 0x77, 0x61, 0x79, 0xf2, 0x97, 0x29, 0x8f, 0xb6, 0x02,
-	0x39, 0x44, 0x29, 0x66, 0xab, 0x05, 0xce, 0xac, 0x15, 0x37, 0x6a, 0x3f, 0x67, 0x61, 0x59, 0x8a,
-	0xb6, 0xcb, 0xc1, 0x3f, 0x2f, 0xb9, 0xf1, 0x64, 0x92, 0xdd, 0x4a, 0x56, 0x39, 0x98, 0x21, 0xd7,
-	0x4b, 0x32, 0x64, 0x5d, 0x7f, 0xbc, 0x8a, 0xd4, 0x05, 0x5d, 0x8d, 0x78, 0x9e, 0xa9, 0x72, 0xbb,
-	0xd2, 0x98, 0xec, 0xfb, 0x2b, 0xfd, 0xf3, 0x17, 0xd6, 0xbf, 0x70, 0xa9, 0xe9, 0xd9, 0x06, 0x10,
-	0xfc, 0x6e, 0x39, 0xce, 0x44, 0x8f, 0x99, 0xda, 0x37, 0x0a, 0x68, 0x75, 0xe2, 0xfb, 0x28, 0x70,
-	0x4c, 0xc4, 0xec, 0xce, 0x5d, 0xb7, 0x1d, 0xe0, 0x89, 0x86, 0xc9, 0xdb, 0xb0, 0x68, 0xc7, 0x1b,
-	0xee, 0xb5, 0xf8, 0x8e, 0xc9, 0x11, 0x5e, 0x36, 0xb5, 0x41, 0xbf, 0x3a, 0x9f, 0x06, 0xd3, 0x6c,
-	0x58, 0xf3, 0x76, 0xba, 0xed, 0xd4, 0xbe, 0x55, 0x78, 0x0a, 0x8c, 0xba, 0xb6, 0x5a, 0x64, 0xfc,
-	0x24, 0x9e, 0x36, 0xc0, 0xdf, 0x29, 0xb0, 0xb4, 0xfd, 0xd1, 0x8e, 0xa8, 0xa2, 0x46, 0x45, 0xd4,
-	0x04, 0x0b, 0x87, 0x4d, 0x98, 0x15, 0x1f, 0x55, 0x49, 0xed, 0x50, 0x34, 0xaf, 0x0d, 0xfa, 0xd5,
-	0x82, 0x00, 0xd0, 0x6c, 0x9c, 0x8c, 0x1e, 0xad, 0x82, 0x98, 0xd7, 0x74, 0x34, 0x0d, 0x54, 0xfe,
-	0x49, 0x24, 0xbc, 0x2a, 0x5a, 0xe2, 0xf9, 0x14, 0xee, 0xa4, 0x00, 0x9e, 0x7e, 0xdc, 0x0f, 0x14,
-	0x98, 0x4f, 0x70, 0xcb, 0x6f, 0xb6, 0xe9, 0x07, 0xfd, 0xbd, 0x02, 0xcb, 0x09, 0x68, 0x0b, 0xb3,
-	0xe8, 0xf0, 0x99, 0x41, 0xfe, 0x43, 0x16, 0x56, 0xea, 0x24, 0x60, 0x11, 0xb2, 0x59, 0x1d, 0x79,
-	0xde, 0x56, 0x18, 0x46, 0xa4, 0x3b, 0x75, 0xd0, 0xdf, 0x01, 0x48, 0x72, 0x78, 0x98, 0xbd, 0x15,
-	0x79, 0xbc, 0x14, 0x65, 0x06, 0x8b, 0xfa, 0x7f, 0xd4, 0xb0, 0x8a, 0x72, 0x45, 0xd3, 0xd1, 0xae,
-	0x41, 0x9e, 0xe2, 0xc0, 0xc1, 0x91, 0x38, 0x99, 0x8a, 0x96, 0x6c, 0x69, 0x21, 0x2c, 0x39, 0x98,
-	0x32, 0x37, 0x88, 0x0f, 0x8d, 0xd8, 0xe1, 0xdc, 0xe5, 0x39, 0xbc, 0x98, 0xb2, 0x5e, 0x97, 0x9f,
-	0x05, 0x8b, 0xb6, 0xa4, 0x7b, 0x78, 0x5a, 0xe6, 0x05, 0xa6, 0x85, 0xa4, 0x7f, 0x54, 0xd2, 0x94,
-	0x43, 0x74, 0xe8, 0x11, 0xe4, 0xec, 0x75, 0x10, 0xed, 0x88, 0x13, 0xaa, 0x6c, 0x96, 0xd3, 0xc5,
-	0x81, 0x55, 0x92, 0x33, 0x78, 0xa3, 0xf6, 0xb5, 0x38, 0x0b, 0x46, 0x5a, 0x4e, 0x3e, 0x08, 0x5f,
-	0x84, 0xbc, 0x4f, 0xdb, 0x23, 0x1d, 0xe7, 0xb8, 0x02, 0x3b, 0x98, 0x52, 0xd4, 0xc6, 0xcd, 0x86,
-	0x95, 0xf3, 0x69, 0xbb, 0xe9, 0xd4, 0xbe, 0x54, 0xe1, 0x85, 0x34, 0xae, 0x8f, 0x5d, 0xd6, 0xd9,
-	0x71, 0x03, 0xf6, 0x5f, 0xac, 0x3d, 0xb3, 0xb1, 0xa6, 0xdd, 0x48, 0x0a, 0xdc, 0x59, 0x51, 0x37,
-	0x5d, 0xd7, 0xe3, 0x6b, 0x38, 0xbd, 0x85, 0x28, 0x1e, 0x96, 0x4b, 0x75, 0xe2, 0x06, 0xb2, 0x5a,
-	0x93, 0x15, 0xf0, 0xe7, 0x2a, 0x14, 0xe3, 0xd2, 0x17, 0x07, 0x6c, 0xca, 0x74, 0xa7, 0x50, 0x62,
-	0xf2, 0x7e, 0x60, 0x74, 0x2d, 0x61, 0x0d, 0xfa, 0x55, 0x48, 0xae, 0x0d, 0xc4, 0xc2, 0xf7, 0x9e,
-	0x0c, 0xe1, 0xc8, 0x86, 0x05, 0xc9, 0x36, 0x53, 0x15, 0x2d, 0x06, 0x2c, 0xa7, 0x77, 0x1c, 0x0f,
-	0x18, 0x2d, 0x35, 0x94, 0xc4, 0xcc, 0x8d, 0xf4, 0x37, 0xce, 0xc5, 0x43, 0xe0, 0xb7, 0x2c, 0x94,
-	0x78, 0xf6, 0xcb, 0xe4, 0x99, 0x64, 0x10, 0x9c, 0x52, 0x34, 0xf3, 0x54, 0x14, 0xfd, 0x87, 0xaf,
-	0x8f, 0x33, 0x85, 0x57, 0xff, 0x05, 0xe1, 0x73, 0xe7, 0x0b, 0x9f, 0xff, 0x5b, 0xc2, 0x3f, 0xca,
-	0x40, 0xc9, 0x3c, 0x88, 0x82, 0xa7, 0x20, 0xfc, 0xb8, 0x06, 0x99, 0x4b, 0xd1, 0x20, 0x3b, 0x49,
-	0x0d, 0x5e, 0x7a, 0xfc, 0xba, 0x24, 0x7e, 0x1f, 0x9c, 0xbe, 0x1d, 0x19, 0x5e, 0x2c, 0xe4, 0x52,
-	0x17, 0x0b, 0xe6, 0x87, 0x0f, 0x07, 0x15, 0xe5, 0x68, 0x50, 0x51, 0x7e, 0x1a, 0x54, 0x94, 0xaf,
-	0x8e, 0x2b, 0x33, 0x47, 0xc7, 0x95, 0x99, 0x47, 0xc7, 0x95, 0x99, 0x4f, 0x5f, 0xbd, 0x20, 0x56,
-	0xdc, 0xf5, 0xe3, 0xdf, 0x2a, 0xad, 0xbc, 0xf8, 0x6f, 0xf2, 0xfa, 0x9f, 0x01, 0x00, 0x00, 0xff,
-	0xff, 0x08, 0x96, 0x26, 0x4f, 0xee, 0x19, 0x00, 0x00,
+	// 1275 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xec, 0x59, 0xcd, 0x6f, 0xe3, 0x44,
+	0x14, 0xaf, 0xf3, 0xd9, 0x4c, 0xd2, 0x2f, 0xb7, 0xec, 0x66, 0x2b, 0x14, 0x47, 0x11, 0x12, 0x41,
+	0xa2, 0x0e, 0x5d, 0x58, 0x09, 0xf1, 0x21, 0xa8, 0x93, 0xc2, 0x46, 0xab, 0x56, 0x2b, 0x6f, 0x59,
+	0x04, 0x42, 0xaa, 0x26, 0xf6, 0x34, 0xb1, 0x6a, 0x7b, 0x2c, 0xcf, 0x34, 0x9b, 0xdc, 0xe0, 0xc6,
+	0x91, 0x0b, 0x57, 0xc4, 0x3f, 0x00, 0x87, 0x95, 0x10, 0xff, 0x42, 0xb9, 0xf5, 0xb8, 0xe2, 0x60,
+	0xa1, 0xf4, 0x80, 0xb4, 0xe2, 0xcc, 0xa1, 0x08, 0x09, 0x79, 0x3c, 0x8e, 0x9d, 0xb6, 0xa8, 0xdd,
+	0xa5, 0x59, 0xb2, 0xed, 0x9e, 0xe2, 0x99, 0x79, 0xf3, 0xe6, 0xf7, 0xde, 0xef, 0xbd, 0x99, 0x37,
+	0x13, 0x20, 0xc1, 0x1e, 0x32, 0xa1, 0x5b, 0x43, 0x5d, 0xab, 0xd6, 0x5d, 0x6d, 0x21, 0x0a, 0x57,
+	0x6b, 0xa8, 0x8b, 0x6c, 0x4a, 0x64, 0xc7, 0xc5, 0x14, 0x8b, 0x62, 0x20, 0x20, 0xa3, 0xae, 0x25,
+	0x73, 0x81, 0xe5, 0xa5, 0x36, 0x6e, 0x63, 0x36, 0x5c, 0xf3, 0xbf, 0x02, 0xc9, 0xe5, 0x2a, 0x57,
+	0xd5, 0xc5, 0x14, 0xd5, 0x50, 0xcf, 0xc1, 0x2e, 0x45, 0xfa, 0x50, 0x29, 0xed, 0x3b, 0x88, 0xeb,
+	0x5c, 0x2e, 0x9d, 0xb2, 0xe8, 0xc8, 0xb8, 0x86, 0x89, 0x85, 0x49, 0xad, 0x05, 0x09, 0x1a, 0x0a,
+	0x68, 0xd8, 0xb0, 0x83, 0xf1, 0xca, 0x91, 0x00, 0xc0, 0x5d, 0x6c, 0x9a, 0x1f, 0x41, 0xc3, 0x44,
+	0xba, 0xf8, 0x1a, 0x48, 0xd3, 0xde, 0xb6, 0xa1, 0x17, 0x85, 0xb2, 0x50, 0x2d, 0x28, 0x4b, 0xfb,
+	0x9e, 0x34, 0xf5, 0xab, 0x27, 0xa5, 0x6e, 0x43, 0xd2, 0x19, 0x78, 0x52, 0x6a, 0xab, 0xd7, 0x6c,
+	0xa8, 0x29, 0xda, 0x6b, 0xea, 0xe2, 0x67, 0x20, 0xad, 0x75, 0xa0, 0x61, 0x17, 0x13, 0x65, 0xa1,
+	0x9a, 0x53, 0xea, 0x47, 0x9e, 0xf4, 0x41, 0xdb, 0xa0, 0x9d, 0xbd, 0x96, 0xac, 0x61, 0xab, 0x16,
+	0xe0, 0xb2, 0x11, 0x7d, 0x80, 0xdd, 0x5d, 0xde, 0x5a, 0xd1, 0xb0, 0x8b, 0x6a, 0xbd, 0x9a, 0x8d,
+	0x7a, 0x7b, 0x64, 0x68, 0x97, 0x5c, 0xf7, 0xd5, 0x6c, 0x42, 0x0b, 0xa9, 0x81, 0x46, 0x71, 0x07,
+	0x64, 0x1d, 0x6c, 0x9a, 0x3e, 0x8e, 0x64, 0x59, 0xa8, 0xa6, 0x94, 0x0d, 0x8e, 0xe3, 0xdd, 0x73,
+	0x2e, 0x30, 0xe2, 0x37, 0xd9, 0xb7, 0xaf, 0xd9, 0x18, 0x78, 0x52, 0x26, 0xf8, 0x52, 0x33, 0xbe,
+	0xf6, 0xa6, 0x5e, 0xf9, 0x4b, 0x00, 0x79, 0xbf, 0x6b, 0xbd, 0xe7, 0x18, 0xee, 0x95, 0xb3, 0xfe,
+	0x6f, 0x01, 0xcc, 0xf8, 0x5d, 0x75, 0x6c, 0x39, 0x26, 0xa2, 0x57, 0xce, 0xfe, 0xaf, 0x12, 0x60,
+	0x61, 0x13, 0xaf, 0xb3, 0x0c, 0xad, 0x63, 0x7b, 0xc7, 0x70, 0xad, 0x2b, 0xe7, 0x83, 0xc7, 0x09,
+	0x70, 0x83, 0xdb, 0x7e, 0x07, 0xf5, 0xb7, 0x5c, 0x68, 0x93, 0x1d, 0xe4, 0xde, 0xa3, 0xd0, 0x9f,
+	0x16, 0x19, 0x28, 0x5c, 0xb8, 0x81, 0x43, 0x37, 0x27, 0xce, 0x74, 0xf3, 0xdb, 0x60, 0xae, 0x0d,
+	0x29, 0x7a, 0x00, 0xfb, 0xdb, 0x50, 0xd7, 0x5d, 0x44, 0x08, 0xf3, 0x49, 0x41, 0x99, 0xe3, 0x93,
+	0xb2, 0x6b, 0x41, 0xb7, 0x3a, 0xcb, 0xe5, 0x78, 0x5b, 0xac, 0x81, 0x45, 0x2d, 0x30, 0x0e, 0x52,
+	0x03, 0xdb, 0xdb, 0x1d, 0x64, 0xb4, 0x3b, 0xb4, 0x98, 0xf2, 0x3d, 0xaa, 0x8a, 0xf1, 0xa1, 0xdb,
+	0x6c, 0x44, 0xfc, 0x02, 0x14, 0x1c, 0xe8, 0x52, 0x43, 0x33, 0x1c, 0x68, 0x53, 0x52, 0x4c, 0x97,
+	0x85, 0x6a, 0xfe, 0xa6, 0x2c, 0xf3, 0x8d, 0xdb, 0x77, 0xaa, 0x3c, 0xb4, 0x89, 0xef, 0xa6, 0xcc,
+	0xb9, 0x77, 0x63, 0xb3, 0x94, 0x69, 0x1f, 0xd7, 0x81, 0x27, 0x09, 0xea, 0x88, 0xb6, 0xca, 0x1f,
+	0x09, 0x70, 0x9d, 0x3b, 0xfb, 0xe3, 0x00, 0xe8, 0x56, 0x2f, 0x74, 0xf5, 0x64, 0x84, 0xdd, 0x65,
+	0x71, 0xf5, 0x3b, 0x89, 0xa2, 0x50, 0xf9, 0x9e, 0xef, 0xee, 0x1b, 0xd0, 0x71, 0x0c, 0xbb, 0xfd,
+	0x24, 0x2e, 0x8e, 0xa5, 0x5f, 0x62, 0x9c, 0xe9, 0xf7, 0x5d, 0x12, 0x14, 0x8f, 0x47, 0x04, 0x09,
+	0x43, 0x02, 0x81, 0x19, 0x06, 0xc2, 0x0a, 0xf0, 0x93, 0xa2, 0x50, 0x4e, 0x56, 0xf3, 0x37, 0x25,
+	0xf9, 0x64, 0x19, 0x21, 0xc7, 0xec, 0x54, 0x24, 0x1f, 0xeb, 0x63, 0x4f, 0xba, 0x3e, 0x32, 0xfb,
+	0x75, 0x6c, 0x19, 0x14, 0x59, 0x0e, 0xed, 0xab, 0x05, 0x27, 0x92, 0x26, 0x97, 0x24, 0x9c, 0x3e,
+	0x39, 0x11, 0x4e, 0xc9, 0x6a, 0x41, 0x59, 0x3d, 0xf2, 0xa4, 0x95, 0x98, 0x31, 0xbc, 0x18, 0x0a,
+	0x7e, 0x56, 0x88, 0xbe, 0xcb, 0x6b, 0xa5, 0xfb, 0xd0, 0x0c, 0x91, 0x8c, 0xa6, 0xec, 0xc3, 0x24,
+	0x78, 0x89, 0x13, 0xd4, 0x40, 0x0e, 0x26, 0x06, 0x9d, 0xb8, 0x84, 0xd5, 0x03, 0x5c, 0x67, 0x7a,
+	0x98, 0xcb, 0x85, 0x1e, 0x7e, 0x0b, 0xcc, 0x50, 0xbc, 0x8b, 0xec, 0xe1, 0xbc, 0xd4, 0xe9, 0xf3,
+	0x0a, 0x4c, 0xea, 0x0c, 0x5e, 0xd2, 0xe7, 0x4e, 0xf3, 0xcc, 0x45, 0xa6, 0xb9, 0xb8, 0x04, 0xd2,
+	0x90, 0x10, 0x44, 0x8b, 0x59, 0xdf, 0xb3, 0x6a, 0xd0, 0xa8, 0xfc, 0x9e, 0x04, 0x8b, 0x9c, 0xb4,
+	0x2d, 0x1f, 0xfc, 0x65, 0xd9, 0x63, 0x9f, 0x8e, 0xb2, 0x3b, 0xe1, 0x2c, 0x1d, 0x51, 0x68, 0x98,
+	0xe1, 0x4e, 0x5b, 0x3e, 0x6d, 0x1b, 0x61, 0xee, 0x6a, 0x04, 0x72, 0x4a, 0xca, 0xd7, 0xcb, 0x95,
+	0xf1, 0xbe, 0x7f, 0xe3, 0x3f, 0x73, 0x6e, 0xfe, 0xb3, 0x17, 0x7a, 0xa2, 0xb6, 0x01, 0x60, 0xfe,
+	0x5d, 0xd3, 0xf5, 0xb1, 0x96, 0x2b, 0x95, 0x1f, 0x04, 0x20, 0xd6, 0xb1, 0x65, 0x41, 0x5b, 0x57,
+	0x20, 0xd5, 0x3a, 0xf7, 0x8c, 0xb6, 0x8d, 0xc6, 0x1a, 0x26, 0xef, 0x81, 0x79, 0x2d, 0x58, 0x70,
+	0xbb, 0xe5, 0xaf, 0x18, 0x96, 0x82, 0x05, 0x45, 0x1c, 0x78, 0xd2, 0x6c, 0x1c, 0x4c, 0xb3, 0xa1,
+	0xce, 0x6a, 0xf1, 0xb6, 0x5e, 0xf9, 0x51, 0xf0, 0x53, 0x20, 0xea, 0x5a, 0x6b, 0xe1, 0xd1, 0x8a,
+	0x6e, 0xd2, 0x00, 0xff, 0x24, 0x80, 0x85, 0xf5, 0xfb, 0x1b, 0xac, 0x1a, 0x8f, 0x8a, 0xf1, 0x31,
+	0x16, 0xa0, 0xab, 0x60, 0x9a, 0x5d, 0xce, 0xc3, 0x33, 0x3e, 0xa7, 0x5c, 0x1b, 0x78, 0x52, 0x96,
+	0x01, 0x68, 0x36, 0x8e, 0xa2, 0x4f, 0x35, 0xcb, 0xe4, 0x9a, 0xba, 0x28, 0x82, 0x94, 0x7f, 0x5c,
+	0x30, 0xab, 0x72, 0x2a, 0xfb, 0x3e, 0x86, 0x3b, 0xbc, 0x48, 0x4d, 0x3e, 0xee, 0x87, 0x02, 0x98,
+	0x0d, 0x71, 0xf3, 0xbb, 0xff, 0xe4, 0x83, 0xfe, 0x59, 0x00, 0x8b, 0x21, 0x68, 0x15, 0x51, 0xb7,
+	0xff, 0xdc, 0x20, 0xff, 0x25, 0x09, 0x96, 0xea, 0xd8, 0xa6, 0x2e, 0xd4, 0x68, 0x1d, 0x9a, 0xe6,
+	0x9a, 0xe3, 0xb8, 0xb8, 0x3b, 0x71, 0xd0, 0xdf, 0x07, 0x20, 0xcc, 0xe1, 0x61, 0xf6, 0x96, 0xf8,
+	0xf1, 0x92, 0xe3, 0x19, 0xcc, 0x0a, 0xd9, 0xa8, 0xa1, 0xe6, 0xf8, 0x8c, 0xa6, 0x2e, 0x5e, 0x03,
+	0x19, 0x82, 0x6c, 0x1d, 0xb9, 0xec, 0x64, 0xca, 0xa9, 0xbc, 0x25, 0x3a, 0x60, 0x41, 0x47, 0x84,
+	0x1a, 0x76, 0x70, 0x68, 0x04, 0x06, 0xa7, 0x2f, 0xce, 0xe0, 0xf9, 0x98, 0xf6, 0x3a, 0xbf, 0x5e,
+	0xce, 0x6b, 0xdc, 0xdd, 0xc3, 0xd3, 0x32, 0xc3, 0x30, 0xcd, 0x85, 0xfd, 0x51, 0x49, 0x53, 0x70,
+	0x60, 0xdf, 0xc4, 0x50, 0xdf, 0xee, 0x40, 0xd2, 0x61, 0x27, 0x54, 0x41, 0x29, 0xc4, 0x8b, 0x03,
+	0x35, 0xcf, 0x25, 0xfc, 0x46, 0xe5, 0x5b, 0x76, 0x16, 0x44, 0x5c, 0x8e, 0x3f, 0x08, 0x5f, 0x01,
+	0x19, 0x8b, 0xb4, 0x23, 0x1e, 0x67, 0x7c, 0x06, 0x36, 0x10, 0x21, 0xb0, 0x8d, 0x9a, 0x0d, 0x35,
+	0x6d, 0x91, 0x76, 0x53, 0xaf, 0x7c, 0x9d, 0x02, 0x2f, 0xc7, 0x71, 0x7d, 0x6a, 0xd0, 0xce, 0x86,
+	0x61, 0xd3, 0x17, 0xb1, 0xf6, 0xdc, 0xc6, 0x9a, 0x78, 0x2b, 0x2c, 0x70, 0xa7, 0x59, 0xdd, 0x74,
+	0x43, 0x0e, 0xae, 0x2e, 0x72, 0x0b, 0x12, 0x34, 0x2c, 0x97, 0xea, 0xd8, 0xb0, 0x79, 0xb5, 0xc6,
+	0x2b, 0xe0, 0x2f, 0x53, 0x20, 0x17, 0x94, 0xbe, 0xc8, 0xa6, 0x13, 0xc6, 0x3b, 0x01, 0x79, 0xca,
+	0xdf, 0x99, 0xa2, 0xe7, 0x2d, 0x75, 0xe0, 0x49, 0x20, 0x7c, 0x7e, 0x62, 0x13, 0x3f, 0x7c, 0x3a,
+	0x84, 0x91, 0x0e, 0x15, 0x84, 0xcb, 0x4c, 0x54, 0xb4, 0xd4, 0xc0, 0x62, 0x7c, 0xc5, 0xd1, 0x80,
+	0x11, 0x63, 0x43, 0x61, 0xcc, 0xdc, 0x8a, 0xdf, 0x71, 0xce, 0x1f, 0x02, 0x7f, 0x26, 0x41, 0xde,
+	0xcf, 0x7e, 0x9e, 0x3c, 0xe3, 0x0c, 0x82, 0x63, 0x8c, 0x26, 0x9e, 0x09, 0xa3, 0xff, 0x71, 0xfb,
+	0x38, 0x95, 0xf8, 0xd4, 0xff, 0x40, 0x7c, 0xfa, 0x6c, 0xe2, 0x33, 0x4f, 0x44, 0xfc, 0xa3, 0x04,
+	0xc8, 0x2b, 0x7b, 0xae, 0xfd, 0x0c, 0x88, 0x1f, 0xe5, 0x20, 0x71, 0x21, 0x1c, 0x24, 0xc7, 0xc9,
+	0xc1, 0xab, 0x27, 0x9f, 0x4b, 0x82, 0xfd, 0xe0, 0xf8, 0xeb, 0xc8, 0xf0, 0x61, 0x21, 0x1d, 0x7b,
+	0x58, 0x50, 0x36, 0xf7, 0x07, 0x25, 0xe1, 0x60, 0x50, 0x12, 0x7e, 0x1b, 0x94, 0x84, 0x6f, 0x0e,
+	0x4b, 0x53, 0xfb, 0x87, 0x25, 0xe1, 0xe0, 0xb0, 0x34, 0xf5, 0xe8, 0xb0, 0x34, 0xf5, 0xf9, 0x1b,
+	0xe7, 0xc4, 0x8b, 0xba, 0x56, 0xf0, 0xec, 0xd4, 0xca, 0xb0, 0xff, 0xe0, 0xde, 0xfc, 0x27, 0x00,
+	0x00, 0xff, 0xff, 0x5b, 0xdc, 0xa9, 0x5f, 0x3a, 0x1c, 0x00, 0x00,
 }
 
 func (m *PollFailed) Marshal() (dAtA []byte, err error) {
@@ -1701,6 +1910,112 @@ func (m *ConfirmGatewayTxStarted) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	}
 	i--
 	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
+func (m *PollMapping) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *PollMapping) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *PollMapping) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.PollID != 0 {
+		i = encodeVarintEvents(dAtA, i, uint64(m.PollID))
+		i--
+		dAtA[i] = 0x10
+	}
+	{
+		size := m.TxID.Size()
+		i -= size
+		if _, err := m.TxID.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintEvents(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
+func (m *ConfirmGatewayTxsStarted) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ConfirmGatewayTxsStarted) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ConfirmGatewayTxsStarted) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Participants) > 0 {
+		for iNdEx := len(m.Participants) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.Participants[iNdEx])
+			copy(dAtA[i:], m.Participants[iNdEx])
+			i = encodeVarintEvents(dAtA, i, uint64(len(m.Participants[iNdEx])))
+			i--
+			dAtA[i] = 0x2a
+		}
+	}
+	if m.ConfirmationHeight != 0 {
+		i = encodeVarintEvents(dAtA, i, uint64(m.ConfirmationHeight))
+		i--
+		dAtA[i] = 0x20
+	}
+	{
+		size := m.GatewayAddress.Size()
+		i -= size
+		if _, err := m.GatewayAddress.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintEvents(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x1a
+	if len(m.Chain) > 0 {
+		i -= len(m.Chain)
+		copy(dAtA[i:], m.Chain)
+		i = encodeVarintEvents(dAtA, i, uint64(len(m.Chain)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.PollMappings) > 0 {
+		for iNdEx := len(m.PollMappings) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.PollMappings[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintEvents(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
 	return len(dAtA) - i, nil
 }
 
@@ -2681,6 +2996,50 @@ func (m *ConfirmGatewayTxStarted) Size() (n int) {
 	}
 	l = m.PollParticipants.Size()
 	n += 1 + l + sovEvents(uint64(l))
+	return n
+}
+
+func (m *PollMapping) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = m.TxID.Size()
+	n += 1 + l + sovEvents(uint64(l))
+	if m.PollID != 0 {
+		n += 1 + sovEvents(uint64(m.PollID))
+	}
+	return n
+}
+
+func (m *ConfirmGatewayTxsStarted) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.PollMappings) > 0 {
+		for _, e := range m.PollMappings {
+			l = e.Size()
+			n += 1 + l + sovEvents(uint64(l))
+		}
+	}
+	l = len(m.Chain)
+	if l > 0 {
+		n += 1 + l + sovEvents(uint64(l))
+	}
+	l = m.GatewayAddress.Size()
+	n += 1 + l + sovEvents(uint64(l))
+	if m.ConfirmationHeight != 0 {
+		n += 1 + sovEvents(uint64(m.ConfirmationHeight))
+	}
+	if len(m.Participants) > 0 {
+		for _, b := range m.Participants {
+			l = len(b)
+			n += 1 + l + sovEvents(uint64(l))
+		}
+	}
 	return n
 }
 
@@ -3963,6 +4322,308 @@ func (m *ConfirmGatewayTxStarted) Unmarshal(dAtA []byte) error {
 			if err := m.PollParticipants.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipEvents(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthEvents
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *PollMapping) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowEvents
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: PollMapping: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: PollMapping: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TxID", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvents
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthEvents
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvents
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.TxID.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PollID", wireType)
+			}
+			m.PollID = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvents
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.PollID |= github_com_axelarnetwork_axelar_core_x_vote_exported.PollID(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipEvents(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthEvents
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ConfirmGatewayTxsStarted) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowEvents
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ConfirmGatewayTxsStarted: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ConfirmGatewayTxsStarted: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PollMappings", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvents
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthEvents
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvents
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.PollMappings = append(m.PollMappings, PollMapping{})
+			if err := m.PollMappings[len(m.PollMappings)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Chain", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvents
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvents
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvents
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Chain = github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field GatewayAddress", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvents
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthEvents
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvents
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.GatewayAddress.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ConfirmationHeight", wireType)
+			}
+			m.ConfirmationHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvents
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ConfirmationHeight |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Participants", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvents
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthEvents
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvents
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Participants = append(m.Participants, make([]byte, postIndex-iNdEx))
+			copy(m.Participants[len(m.Participants)-1], dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

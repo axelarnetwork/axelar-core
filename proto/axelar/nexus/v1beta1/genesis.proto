@@ -26,4 +26,7 @@ message GenesisState {
       [ (gogoproto.nullable) = false ];
   repeated RateLimit rate_limits = 9 [ (gogoproto.nullable) = false ];
   repeated TransferEpoch transfer_epochs = 10 [ (gogoproto.nullable) = false ];
+  repeated nexus.exported.v1beta1.GeneralMessage messages = 11
+      [ (gogoproto.nullable) = false ];
+  uint64 message_nonce = 12;
 }

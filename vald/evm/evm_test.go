@@ -1,4 +1,4 @@
-package evm
+package evm_test
 
 import (
 	"bytes"
@@ -15,11 +15,12 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	geth "github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/assert"
-	"github.com/tendermint/tendermint/libs/log"
 
 	mock2 "github.com/axelarnetwork/axelar-core/sdk-utils/broadcast/mock"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	"github.com/axelarnetwork/axelar-core/vald/evm"
+	evmmock "github.com/axelarnetwork/axelar-core/vald/evm/mock"
 	evmRpc "github.com/axelarnetwork/axelar-core/vald/evm/rpc"
 	"github.com/axelarnetwork/axelar-core/vald/evm/rpc/mock"
 	"github.com/axelarnetwork/axelar-core/x/evm/exported"
@@ -29,6 +30,8 @@ import (
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 	"github.com/axelarnetwork/utils/funcs"
+	"github.com/axelarnetwork/utils/monads/results"
+	"github.com/axelarnetwork/utils/slices"
 	. "github.com/axelarnetwork/utils/test"
 )
 
@@ -48,7 +51,7 @@ func TestDecodeEventTokenSent(t *testing.T) {
 		Symbol:             "ethereum-1-uaxl",
 		Amount:             sdk.NewUint(10000000),
 	}
-	actual, err := decodeEventTokenSent(log)
+	actual, err := evm.DecodeEventTokenSent(log)
 
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)
@@ -70,7 +73,7 @@ func TestDecodeEventContractCall(t *testing.T) {
 		ContractAddress:  "0xb9845f9247a85Ee592273a79605f34E8607d7e75",
 		PayloadHash:      types.Hash(common.HexToHash("0x9fcef596d62dca8e51b6ba3414901947c0e6821d4483b2f3327ce87c2d4e662e")),
 	}
-	actual, err := decodeEventContractCall(log)
+	actual, err := evm.DecodeEventContractCall(log)
 
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)
@@ -94,7 +97,7 @@ func TestDecodeEventContractCallWithToken(t *testing.T) {
 		Symbol:           "uaxl",
 		Amount:           sdk.NewUint(10000000),
 	}
-	actual, err := decodeEventContractCallWithToken(log)
+	actual, err := evm.DecodeEventContractCallWithToken(log)
 
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)
@@ -102,14 +105,15 @@ func TestDecodeEventContractCallWithToken(t *testing.T) {
 
 func TestDecodeTokenDeployEvent_CorrectData(t *testing.T) {
 	axelarGateway := common.HexToAddress("0xA193E42526F1FEA8C99AF609dcEabf30C1c29fAA")
-	tokenDeploySig := ERC20TokenDeploymentSig
+
+	tokenDeploySig := evm.ERC20TokenDeploymentSig
 	expectedAddr := common.HexToAddress("0xE7481ECB61F9C84b91C03414F3D5d48E5436045D")
 	expectedSymbol := "XPTO"
 	data := common.FromHex("0x0000000000000000000000000000000000000000000000000000000000000040000000000000000000000000e7481ecb61f9c84b91c03414f3d5d48e5436045d00000000000000000000000000000000000000000000000000000000000000045850544f00000000000000000000000000000000000000000000000000000000")
 
 	l := &geth.Log{Address: axelarGateway, Data: data, Topics: []common.Hash{tokenDeploySig}}
 
-	tokenDeployed, err := decodeERC20TokenDeploymentEvent(l)
+	tokenDeployed, err := evm.DecodeERC20TokenDeploymentEvent(l)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedSymbol, tokenDeployed.Symbol)
 	assert.Equal(t, types.Address(expectedAddr), tokenDeployed.TokenAddress)
@@ -125,7 +129,7 @@ func TestDecodeErc20TransferEvent_NotErc20Transfer(t *testing.T) {
 		Data: common.LeftPadBytes(big.NewInt(2).Bytes(), common.HashLength),
 	}
 
-	_, err := decodeERC20TransferEvent(&l)
+	_, err := evm.DecodeERC20TransferEvent(&l)
 	assert.Error(t, err)
 }
 
@@ -140,7 +144,7 @@ func TestDecodeErc20TransferEvent_InvalidErc20Transfer(t *testing.T) {
 		Data: common.LeftPadBytes(big.NewInt(2).Bytes(), common.HashLength),
 	}
 
-	_, err := decodeERC20TransferEvent(&l)
+	_, err := evm.DecodeERC20TransferEvent(&l)
 
 	assert.Error(t, err)
 }
@@ -160,58 +164,104 @@ func TestDecodeErc20TransferEvent_CorrectData(t *testing.T) {
 		Data: common.LeftPadBytes(expectedAmount.BigInt().Bytes(), common.HashLength),
 	}
 
-	transfer, err := decodeERC20TransferEvent(&l)
+	transfer, err := evm.DecodeERC20TransferEvent(&l)
 
 	assert.NoError(t, err)
 	assert.Equal(t, types.Address(expectedTo), transfer.To)
 	assert.Equal(t, expectedAmount, transfer.Amount)
 }
 
-func TestMgr_getTxReceiptIfFinalized(t *testing.T) {
+func TestMgr_GetTxReceiptIfFinalized(t *testing.T) {
 	chain := nexus.ChainName(strings.ToLower(rand.NormalizedStr(5)))
 	tx := geth.NewTransaction(0, common.BytesToAddress(rand.Bytes(common.HashLength)), big.NewInt(rand.PosI64()), uint64(rand.PosI64()), big.NewInt(rand.PosI64()), rand.Bytes(int(rand.I64Between(100, 1000))))
 
 	var (
-		mgr        Mgr
-		confHeight uint64
+		mgr                        *evm.Mgr
+		rpcClient                  *mock.ClientMock
+		cache                      *evmmock.LatestFinalizedBlockCacheMock
+		confHeight                 uint64
+		latestFinalizedBlockNumber uint64
 	)
 
 	givenMgr := Given("evm mgr", func() {
-		mgr = Mgr{logger: log.TestingLogger(), rpcs: make(map[string]evmRpc.Client)}
+		rpcClient = &mock.ClientMock{}
+		cache = &evmmock.LatestFinalizedBlockCacheMock{}
 		confHeight = uint64(rand.I64Between(1, 50))
+		latestFinalizedBlockNumber = uint64(rand.I64Between(1000, 10000))
+
+		mgr = evm.NewMgr(map[string]evmRpc.Client{chain.String(): rpcClient}, nil, rand.ValAddr(), rand.AccAddr(), cache)
 	})
 
 	givenMgr.
-		When("rpc client", func() {
-			latestFinalizedBlockNumber := rand.I64Between(1000, 10000)
+		When("the lastest finalized block cache does not have the result", func() {
+			cache.GetFunc = func(_ nexus.ChainName) *big.Int {
+				return big.NewInt(0)
+			}
+			cache.SetFunc = func(_ nexus.ChainName, blockNumber *big.Int) {}
+		}).
+		When("the rpc client determines that the tx is finalized", func() {
 			receipt := &geth.Receipt{
-				BlockNumber: big.NewInt(latestFinalizedBlockNumber - rand.I64Between(1, 100)),
+				BlockNumber: big.NewInt(int64(latestFinalizedBlockNumber) - rand.I64Between(1, 100)),
 				TxHash:      tx.Hash(),
 				Status:      1,
 			}
 
-			mgr.rpcs[chain.String()] = &mock.ClientMock{
-				TransactionReceiptFunc: func(_ context.Context, txHash common.Hash) (*geth.Receipt, error) {
-					if bytes.Equal(txHash.Bytes(), tx.Hash().Bytes()) {
-						return receipt, nil
-					}
+			rpcClient.TransactionReceiptFunc = func(_ context.Context, txHash common.Hash) (*geth.Receipt, error) {
+				if bytes.Equal(txHash.Bytes(), tx.Hash().Bytes()) {
+					return receipt, nil
+				}
 
-					return nil, fmt.Errorf("not found")
-				},
-				HeaderByNumberFunc: func(ctx context.Context, number *big.Int) (*evmRpc.Header, error) {
-					if number.Cmp(receipt.BlockNumber) == 0 {
-						return &evmRpc.Header{Transactions: []common.Hash{receipt.TxHash}}, nil
-					}
+				return nil, fmt.Errorf("not found")
+			}
+			rpcClient.HeaderByNumberFunc = func(ctx context.Context, number *big.Int) (*evmRpc.Header, error) {
+				if number.Cmp(receipt.BlockNumber) == 0 {
+					return &evmRpc.Header{Transactions: []common.Hash{receipt.TxHash}}, nil
+				}
 
-					return nil, fmt.Errorf("not found")
-				},
-				IsFinalizedFunc: func(ctx context.Context, conf uint64, txReceipt *geth.Receipt) (bool, error) {
-					return true, nil
-				},
+				return nil, fmt.Errorf("not found")
+			}
+			rpcClient.LatestFinalizedBlockNumberFunc = func(ctx context.Context, confirmations uint64) (*big.Int, error) {
+				return big.NewInt(int64(latestFinalizedBlockNumber)), nil
 			}
 		}).
-		Then("it should work", func(t *testing.T) {
-			txReceipt, err := mgr.getTxReceiptIfFinalized(chain, tx.Hash(), confHeight)
+		Then("it conclude that the tx is finalized", func(t *testing.T) {
+			txReceipt, err := mgr.GetTxReceiptIfFinalized(chain, tx.Hash(), confHeight)
+
+			assert.NoError(t, err)
+			assert.NotNil(t, txReceipt)
+		}).
+		Run(t, 5)
+
+	givenMgr.
+		When("the lastest finalized block cache has the result", func() {
+			cache.GetFunc = func(_ nexus.ChainName) *big.Int {
+				return big.NewInt(int64(latestFinalizedBlockNumber))
+			}
+		}).
+		When("the rpc client can find the tx receipt", func() {
+			receipt := &geth.Receipt{
+				BlockNumber: big.NewInt(int64(latestFinalizedBlockNumber) - rand.I64Between(1, 100)),
+				TxHash:      tx.Hash(),
+				Status:      1,
+			}
+
+			rpcClient.TransactionReceiptFunc = func(_ context.Context, txHash common.Hash) (*geth.Receipt, error) {
+				if bytes.Equal(txHash.Bytes(), tx.Hash().Bytes()) {
+					return receipt, nil
+				}
+
+				return nil, fmt.Errorf("not found")
+			}
+			rpcClient.HeaderByNumberFunc = func(ctx context.Context, number *big.Int) (*evmRpc.Header, error) {
+				if number.Cmp(receipt.BlockNumber) == 0 {
+					return &evmRpc.Header{Transactions: []common.Hash{receipt.TxHash}}, nil
+				}
+
+				return nil, fmt.Errorf("not found")
+			}
+		}).
+		Then("it conclude that the tx is finalized", func(t *testing.T) {
+			txReceipt, err := mgr.GetTxReceiptIfFinalized(chain, tx.Hash(), confHeight)
 
 			assert.NoError(t, err)
 			assert.NotNil(t, txReceipt)
@@ -221,7 +271,7 @@ func TestMgr_getTxReceiptIfFinalized(t *testing.T) {
 
 func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 	var (
-		mgr         *Mgr
+		mgr         *evm.Mgr
 		receipt     *geth.Receipt
 		tokenAddr   types.Address
 		depositAddr types.Address
@@ -241,7 +291,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 		randomTokenDeposit := &geth.Log{
 			Address: common.Address(evmtestutils.RandomAddress()),
 			Topics: []common.Hash{
-				ERC20TransferSig,
+				evm.ERC20TransferSig,
 				padToHash(evmtestutils.RandomAddress()),
 				padToHash(depositAddr),
 			},
@@ -260,7 +310,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 		invalidDeposit := &geth.Log{
 			Address: common.Address(tokenAddr),
 			Topics: []common.Hash{
-				ERC20TransferSig,
+				evm.ERC20TransferSig,
 				padToHash(evmtestutils.RandomAddress()),
 			},
 			Data: padToHash(big.NewInt(rand.PosI64())).Bytes(),
@@ -269,7 +319,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 		zeroAmountDeposit := &geth.Log{
 			Address: common.Address(tokenAddr),
 			Topics: []common.Hash{
-				ERC20TransferSig,
+				evm.ERC20TransferSig,
 				padToHash(evmtestutils.RandomAddress()),
 				padToHash(depositAddr),
 			},
@@ -279,7 +329,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 		validDeposit := &geth.Log{
 			Address: common.Address(tokenAddr),
 			Topics: []common.Hash{
-				ERC20TransferSig,
+				evm.ERC20TransferSig,
 				padToHash(evmtestutils.RandomAddress()),
 				padToHash(depositAddr),
 			},
@@ -328,7 +378,10 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 		}
 
 		valAddr = rand.ValAddr()
-		mgr = NewMgr(evmMap, broadcaster, log.TestingLogger(), valAddr, rand.AccAddr())
+		mgr = evm.NewMgr(evmMap, broadcaster, valAddr, rand.AccAddr(), &evmmock.LatestFinalizedBlockCacheMock{
+			GetFunc: func(_ nexus.ChainName) *big.Int { return big.NewInt(0) },
+			SetFunc: func(_ nexus.ChainName, _ *big.Int) {},
+		})
 	}).
 		Given("an evm rpc client", func() {
 			rpc = &mock.ClientMock{
@@ -341,8 +394,8 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 					}
 					return receipt, nil
 				},
-				IsFinalizedFunc: func(ctx context.Context, conf uint64, txReceipt *geth.Receipt) (bool, error) {
-					return true, nil
+				LatestFinalizedBlockNumberFunc: func(ctx context.Context, confirmations uint64) (*big.Int, error) {
+					return receipt.BlockNumber, nil
 				},
 			}
 		}).
@@ -379,8 +432,8 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 
 			givenDeposit.
 				Given("confirmation height is not reached yet", func() {
-					rpc.IsFinalizedFunc = func(context.Context, uint64, *geth.Receipt) (bool, error) {
-						return false, nil
+					rpc.LatestFinalizedBlockNumberFunc = func(ctx context.Context, confirmations uint64) (*big.Int, error) {
+						return sdk.NewIntFromBigInt(receipt.BlockNumber).SubRaw(int64(confirmations)).BigInt(), nil
 					}
 				}).
 				When2(confirmingDeposit).
@@ -461,7 +514,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 					additionalDeposit := &geth.Log{
 						Address: common.Address(tokenAddr),
 						Topics: []common.Hash{
-							ERC20TransferSig,
+							evm.ERC20TransferSig,
 							padToHash(evmtestutils.RandomAddress()),
 							padToHash(depositAddr),
 						},
@@ -501,7 +554,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 
 func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 	var (
-		mgr              *Mgr
+		mgr              *evm.Mgr
 		event            *types.ConfirmTokenStarted
 		rpc              *mock.ClientMock
 		broadcaster      *mock2.BroadcasterMock
@@ -539,7 +592,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 				symbol,
 				common.BytesToAddress(gatewayAddrBytes),
 				common.BytesToAddress(tokenAddrBytes),
-				ERC20TokenDeploymentSig,
+				evm.ERC20TokenDeploymentSig,
 				true,
 			),
 			Status: 1,
@@ -551,8 +604,8 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 			TransactionReceiptFunc: func(context.Context, common.Hash) (*geth.Receipt, error) {
 				return receipt, nil
 			},
-			IsFinalizedFunc: func(ctx context.Context, conf uint64, txReceipt *geth.Receipt) (bool, error) {
-				return true, nil
+			LatestFinalizedBlockNumberFunc: func(ctx context.Context, confirmations uint64) (*big.Int, error) {
+				return receipt.BlockNumber, nil
 			},
 		}
 		broadcaster = &mock2.BroadcasterMock{
@@ -560,7 +613,10 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		}
 		evmMap := make(map[string]evmRpc.Client)
 		evmMap["ethereum"] = rpc
-		mgr = NewMgr(evmMap, broadcaster, log.TestingLogger(), valAddr, rand.AccAddr())
+		mgr = evm.NewMgr(evmMap, broadcaster, valAddr, rand.AccAddr(), &evmmock.LatestFinalizedBlockCacheMock{
+			GetFunc: func(_ nexus.ChainName) *big.Int { return big.NewInt(0) },
+			SetFunc: func(_ nexus.ChainName, _ *big.Int) {},
+		})
 	}
 
 	repeats := 20
@@ -644,7 +700,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 
 func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 	var (
-		mgr            *Mgr
+		mgr            *evm.Mgr
 		event          *types.ConfirmKeyTransferStarted
 		rpc            *mock.ClientMock
 		broadcaster    *mock2.BroadcasterMock
@@ -663,7 +719,10 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 		evmMap := make(map[string]evmRpc.Client)
 		evmMap["ethereum"] = rpc
 		valAddr = rand.ValAddr()
-		mgr = NewMgr(evmMap, broadcaster, log.TestingLogger(), valAddr, rand.AccAddr())
+		mgr = evm.NewMgr(evmMap, broadcaster, valAddr, rand.AccAddr(), &evmmock.LatestFinalizedBlockCacheMock{
+			GetFunc: func(_ nexus.ChainName) *big.Int { return big.NewInt(0) },
+			SetFunc: func(_ nexus.ChainName, _ *big.Int) {},
+		})
 	})
 
 	givenTxReceiptAndBlockAreFound := Given("tx receipt and block can be found", func() {
@@ -693,8 +752,8 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 
 			return nil, fmt.Errorf("not found")
 		}
-		rpc.IsFinalizedFunc = func(ctx context.Context, conf uint64, txReceipt *geth.Receipt) (bool, error) {
-			return true, nil
+		rpc.LatestFinalizedBlockNumberFunc = func(ctx context.Context, confirmations uint64) (*big.Int, error) {
+			return txReceipt.BlockNumber, nil
 		}
 	})
 
@@ -749,7 +808,7 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 			When("is not emitted from the gateway", func() {
 				txReceipt.Logs = append(txReceipt.Logs, &geth.Log{
 					Address: common.BytesToAddress(rand.Bytes(common.AddressLength)),
-					Topics:  []common.Hash{MultisigTransferOperatorshipSig},
+					Topics:  []common.Hash{evm.MultisigTransferOperatorshipSig},
 				})
 			}).
 				Then2(thenShouldVoteNoEvent),
@@ -757,7 +816,7 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 			When("is invalid operatorship transferred event", func() {
 				txReceipt.Logs = append(txReceipt.Logs, &geth.Log{
 					Address: common.Address(gatewayAddress),
-					Topics:  []common.Hash{MultisigTransferOperatorshipSig},
+					Topics:  []common.Hash{evm.MultisigTransferOperatorshipSig},
 					Data:    rand.Bytes(int(rand.I64Between(0, 1000))),
 				})
 			}).
@@ -768,7 +827,7 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 				txReceipt.Logs = append(txReceipt.Logs, &geth.Log{})
 				txReceipt.Logs = append(txReceipt.Logs, &geth.Log{
 					Address: common.Address(gatewayAddress),
-					Topics:  []common.Hash{MultisigTransferOperatorshipSig},
+					Topics:  []common.Hash{evm.MultisigTransferOperatorshipSig},
 					Data:    funcs.Must(abi.Arguments{{Type: funcs.Must(abi.NewType("bytes", "bytes", nil))}}.Pack(newOperatorsData)),
 				})
 			}).
@@ -787,6 +846,88 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 					assert.Len(t, actualEvent.MultisigOperatorshipTransferred.NewOperators, 8)
 					assert.Len(t, actualEvent.MultisigOperatorshipTransferred.NewWeights, 8)
 					assert.EqualValues(t, 30, actualEvent.MultisigOperatorshipTransferred.NewThreshold.BigInt().Int64())
+				}),
+		).
+		Run(t, 5)
+}
+
+func TestMgr_GetTxReceiptsIfFinalized(t *testing.T) {
+	chain := nexus.ChainName(strings.ToLower(rand.NormalizedStr(5)))
+	txHashes := slices.Expand2(func() common.Hash { return common.BytesToHash(rand.Bytes(common.HashLength)) }, 100)
+
+	var (
+		mgr                        *evm.Mgr
+		confHeight                 uint64
+		latestFinalizedBlockNumber int64
+		evmClient                  *mock.ClientMock
+		cache                      *evmmock.LatestFinalizedBlockCacheMock
+	)
+
+	givenMgr := Given("evm mgr", func() {
+		evmClient = &mock.ClientMock{
+			LatestFinalizedBlockNumberFunc: func(context.Context, uint64) (*big.Int, error) {
+				return big.NewInt(latestFinalizedBlockNumber), nil
+			},
+		}
+		cache = &evmmock.LatestFinalizedBlockCacheMock{
+			GetFunc: func(chain nexus.ChainName) *big.Int { return big.NewInt(0) },
+			SetFunc: func(nexus.ChainName, *big.Int) {},
+		}
+		mgr = evm.NewMgr(map[string]evmRpc.Client{chain.String(): evmClient}, nil, rand.ValAddr(), rand.AccAddr(), cache)
+	})
+
+	confHeight = uint64(rand.I64Between(1, 50))
+
+	givenMgr.
+		Branch(
+			When("transactions are finalized", func() {
+				latestFinalizedBlockNumber = rand.I64Between(1000, 10000)
+
+				evmClient.TransactionReceiptsFunc = func(_ context.Context, _ []common.Hash) ([]evmRpc.Result, error) {
+					return slices.Map(txHashes, func(hash common.Hash) evmRpc.Result {
+						return evmRpc.Result(results.FromOk(&geth.Receipt{
+							BlockNumber: big.NewInt(latestFinalizedBlockNumber - rand.I64Between(1, 100)),
+							TxHash:      hash,
+							Status:      1,
+						}))
+					}), nil
+				}
+			}).
+				Then("should return receipt results", func(t *testing.T) {
+					receipts, err := mgr.GetTxReceiptsIfFinalized(chain, txHashes, confHeight)
+					assert.NoError(t, err)
+					assert.True(t, slices.All(receipts, func(result results.Result[*geth.Receipt]) bool { return result.Err() == nil }))
+				}),
+			When("some transactions are not finalized", func() {
+				evmClient.TransactionReceiptsFunc = func(_ context.Context, _ []common.Hash) ([]evmRpc.Result, error) {
+					i := 0
+					return slices.Map(txHashes, func(hash common.Hash) evmRpc.Result {
+						var blockNumber *big.Int
+						// half of the transactions are finalized
+						if i < len(txHashes)/2 {
+							blockNumber = big.NewInt(latestFinalizedBlockNumber - rand.I64Between(1, 100))
+						} else {
+							blockNumber = big.NewInt(latestFinalizedBlockNumber + rand.I64Between(1, 100))
+						}
+						i++
+
+						return evmRpc.Result(results.FromOk(&geth.Receipt{
+							BlockNumber: blockNumber,
+							TxHash:      hash,
+							Status:      1,
+						}))
+					}), nil
+				}
+			}).
+				Then("should return error results for not found", func(t *testing.T) {
+					receipts, err := mgr.GetTxReceiptsIfFinalized(chain, txHashes, confHeight)
+					assert.NoError(t, err)
+
+					finalized := receipts[:len(txHashes)/2]
+					notFinalized := receipts[len(txHashes)/2:]
+
+					assert.True(t, slices.All(finalized, func(result results.Result[*geth.Receipt]) bool { return result.Err() == nil }))
+					assert.True(t, slices.All(notFinalized, func(result results.Result[*geth.Receipt]) bool { return result.Err() == evm.NotFinalized }))
 				}),
 		).
 		Run(t, 5)

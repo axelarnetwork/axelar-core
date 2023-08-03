@@ -137,6 +137,7 @@ docker-image-debug:
 .Phony: prereqs
 prereqs:
 	@which goimports &>/dev/null	 ||	go install golang.org/x/tools/cmd/goimports
+	@which stringer &>/dev/null		 ||	go install golang.org/x/tools/cmd/stringer
 	@which moq &>/dev/null			 ||	go install github.com/matryer/moq
 	@which statik &>/dev/null        ||	go install github.com/rakyll/statik
 	@which mdformat &>/dev/null 	 ||	pip3 install mdformat
@@ -182,12 +183,12 @@ proto-lint:
 proto-check-breaking:
 	@$(DOCKER_BUF) breaking --against $(HTTPS_GIT)#branch=main
 
-TM_URL              	= https://raw.githubusercontent.com/tendermint/tendermint/v0.34.23/proto/tendermint
+TM_URL              	= https://raw.githubusercontent.com/cometbft/cometbft/v0.34.27/proto/tendermint
 GOGO_PROTO_URL      	= https://raw.githubusercontent.com/regen-network/protobuf/cosmos
 GOOGLE_PROTOBUF_URL		= https://raw.githubusercontent.com/protocolbuffers/protobuf/main/src/google/protobuf
 GOOGLE_API_URL			= https://raw.githubusercontent.com/googleapis/googleapis/master/google/api
 COSMOS_PROTO_URL    	= https://raw.githubusercontent.com/regen-network/cosmos-proto/master
-CONFIO_URL          	= https://raw.githubusercontent.com/confio/ics23/v0.6.4
+CONFIO_URL          	= https://raw.githubusercontent.com/confio/ics23/go/v0.9.0
 
 TM_CRYPTO_TYPES     	= third_party/proto/tendermint/crypto
 TM_ABCI_TYPES       	= third_party/proto/tendermint/abci
@@ -211,9 +212,6 @@ proto-update-deps:
 	@mkdir -p $(GOOGLE_API_TYPES)
 	@curl -sSL $(GOOGLE_API_URL)/annotations.proto > $(GOOGLE_API_TYPES)/annotations.proto
 	@curl -sSL $(GOOGLE_API_URL)/http.proto > $(GOOGLE_API_TYPES)/http.proto
-
-	@mkdir -p $(GOOGLE_PROTOBUF_TYPES)
-	@curl -sSL $(GOOGLE_PROTOBUF_URL)/descriptor.proto > $(GOOGLE_PROTOBUF_TYPES)/descriptor.proto
 
 	@mkdir -p $(COSMOS_PROTO_TYPES)
 	@curl -sSL $(COSMOS_PROTO_URL)/cosmos.proto > $(COSMOS_PROTO_TYPES)/cosmos.proto

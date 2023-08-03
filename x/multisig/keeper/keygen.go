@@ -108,7 +108,7 @@ func (k Keeper) createKeygenSession(ctx sdk.Context, id exported.KeyID, snapshot
 		return fmt.Errorf("key %s already set", id)
 	}
 
-	params := k.getParams(ctx)
+	params := k.GetParams(ctx)
 
 	expiresAt := ctx.BlockHeight() + params.KeygenTimeout
 	keygenSession := types.NewKeygenSession(id, params.KeygenThreshold, params.SigningThreshold, snapshot, expiresAt, params.KeygenGracePeriod)

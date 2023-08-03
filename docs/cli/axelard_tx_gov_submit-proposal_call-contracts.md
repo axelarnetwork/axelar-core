@@ -1,9 +1,34 @@
-## axelard tx evm confirm-gateway-tx
+## axelard tx gov submit-proposal call-contracts
 
-Confirm a gateway transaction in an EVM chain
+Submit a call contracts proposal
+
+### Synopsis
+
+Submit a call contracts proposal along with an initial deposit.
+The proposal details must be supplied via a JSON file. For values that contains
+objects, only non-empty fields will be updated.
+
+Example:
+$ <appd> tx gov submit-proposal call-contracts \<path/to/proposal.json>
+
+Where proposal.json contains:
+
+{
+"title": "Call Contracts",
+"description": "Call contracts on other chains",
+"contract_calls": \[
+{
+"chain": "chain",
+"contract_address": "0x1234",
+"payload": "MTIzMTIzMTIzNDEyNDEyMzU0ODk3MA=="
+}
+\]
+}
+
+IMPORTANT: The payload field must be base64 encoded.
 
 ```
-axelard tx evm confirm-gateway-tx [chain] [txID] [flags]
+axelard tx gov submit-proposal call-contracts [proposal-file] [flags]
 ```
 
 ### Options
@@ -11,6 +36,7 @@ axelard tx evm confirm-gateway-tx [chain] [txID] [flags]
 ```
   -a, --account-number uint      The account number of the signing account (offline mode only)
   -b, --broadcast-mode string    Transaction broadcasting mode (sync|async|block) (default "block")
+      --deposit string           deposit of proposal
       --dry-run                  ignore the --gas flag and perform a simulation of a transaction, but don't broadcast it (when enabled, the local Keybase is not accessible)
       --fee-account string       Fee account pays fees for the transaction instead of deducting from the signer
       --fees string              Fees to pay along with transaction; eg: 10uatom
@@ -19,7 +45,7 @@ axelard tx evm confirm-gateway-tx [chain] [txID] [flags]
       --gas-adjustment float     adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default 1)
       --gas-prices string        Gas prices in decimal format to determine the transaction fee (e.g. 0.1uatom) (default "0.007uaxl")
       --generate-only            Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)
-  -h, --help                     help for confirm-gateway-tx
+  -h, --help                     help for call-contracts
       --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "file")
       --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
       --ledger                   Use a connected Ledger device
@@ -45,4 +71,4 @@ axelard tx evm confirm-gateway-tx [chain] [txID] [flags]
 
 ### SEE ALSO
 
-- [axelard tx evm](axelard_tx_evm.md)	 - evm transactions subcommands
+- [axelard tx gov submit-proposal](axelard_tx_gov_submit-proposal.md)	 - Submit a proposal along with an initial deposit

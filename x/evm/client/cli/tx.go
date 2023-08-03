@@ -13,7 +13,10 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/spf13/cobra"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/utils/slices"
 )
 
 const (
@@ -38,6 +41,7 @@ func GetTxCmd() *cobra.Command {
 		GetCmdConfirmERC20Deposit(),
 		GetCmdConfirmTransferOperatorship(),
 		GetCmdCreateConfirmGatewayTx(),
+		GetCmdCreateConfirmGatewayTxs(),
 		GetCmdCreatePendingTransfers(),
 		GetCmdCreateDeployToken(),
 		GetCmdCreateBurnTokens(),
@@ -189,11 +193,13 @@ func GetCmdConfirmTransferOperatorship() *cobra.Command {
 }
 
 // GetCmdCreateConfirmGatewayTx returns the cli command to confirm a gateway transaction
+// Deprecated: use GetCmdConfirmGatewayTxs instead.
 func GetCmdCreateConfirmGatewayTx() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "confirm-gateway-tx [chain] [txID]",
-		Short: "Confirm a gateway transaction in an EVM chain",
-		Args:  cobra.ExactArgs(2),
+		Deprecated: "use confirm-gateway-txs instead",
+		Use:        "confirm-gateway-tx [chain] [txID]",
+		Short:      "Confirm a gateway transaction in an EVM chain",
+		Args:       cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
@@ -204,6 +210,35 @@ func GetCmdCreateConfirmGatewayTx() *cobra.Command {
 			txID := types.Hash(common.HexToHash(args[1]))
 
 			msg := types.NewConfirmGatewayTxRequest(cliCtx.GetFromAddress(), chain, txID)
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
+		},
+	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdCreateConfirmGatewayTxs returns the cli command to confirm gateway transactions
+func GetCmdCreateConfirmGatewayTxs() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "confirm-gateway-txs [chain] [txID]...",
+		Short: "Confirm gateway transactions in an EVM chain",
+		Args:  cobra.MinimumNArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			chain := nexus.ChainName(utils.NormalizeString(args[0]))
+			txIDs := slices.Map(args[1:], func(s string) types.Hash {
+				return types.Hash(common.HexToHash(s))
+			})
+
+			msg := types.NewConfirmGatewayTxsRequest(cliCtx.GetFromAddress(), chain, txIDs)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -242,7 +277,7 @@ func GetCmdCreatePendingTransfers() *cobra.Command {
 // GetCmdCreateDeployToken returns the cli command to create deploy-token command for an EVM chain
 func GetCmdCreateDeployToken() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "create-deploy-token [evm chain] [origin chain] [origin asset] [token name] [symbol] [decimals] [capacity] [dailyMintLimit]",
+		Use:   "create-deploy-token [evm chain] [origin chain] [origin asset] [token name] [symbol] [decimals] [capacity] [mintLimit]",
 		Short: "Create a deploy token command with the AxelarGateway contract",
 		Args:  cobra.ExactArgs(8),
 	}
@@ -272,11 +307,11 @@ func GetCmdCreateDeployToken() *cobra.Command {
 			return fmt.Errorf("could not parse address")
 		}
 
-		dailyMintLimit := args[7]
+		mintLimit := args[7]
 
 		asset := types.NewAsset(originChain, originAsset)
 		tokenDetails := types.NewTokenDetails(tokenName, symbol, uint8(decs), capacity)
-		msg := types.NewCreateDeployTokenRequest(cliCtx.GetFromAddress(), chain, asset, tokenDetails, types.Address(common.HexToAddress(*address)), dailyMintLimit)
+		msg := types.NewCreateDeployTokenRequest(cliCtx.GetFromAddress(), chain, asset, tokenDetails, types.Address(common.HexToAddress(*address)), mintLimit)
 		if err = msg.ValidateBasic(); err != nil {
 			return err
 		}

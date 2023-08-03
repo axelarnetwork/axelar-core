@@ -23,7 +23,6 @@ import (
 	evmkeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 )
@@ -49,21 +48,17 @@ func addressValidator() types.Router {
 		},
 	}
 
-	bankK = &axelarnetmock.BankKeeperMock{
-		BlockedAddrFunc: func(addr sdk.AccAddress) bool { return false },
-	}
-
 	router := types.NewRouter()
 	router.AddAddressValidator(evmTypes.ModuleName, evmkeeper.NewAddressValidator()).
-		AddAddressValidator(axelarnetTypes.ModuleName, axelarnetkeeper.NewAddressValidator(axelarnetK, bankK))
+		AddAddressValidator(axelarnetTypes.ModuleName, axelarnetkeeper.NewAddressValidator(axelarnetK))
 
 	return router
 }
 
 func init() {
 	encCfg := app.MakeEncodingConfig()
-	nexusSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("nexusKey"), sdk.NewKVStoreKey("tNexusKey"), "nexus")
-	keeper = nexusKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("nexus"), nexusSubspace)
+	subspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("nexusKey"), sdk.NewKVStoreKey("tNexusKey"), "nexus")
+	keeper = nexusKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("nexus"), subspace)
 	keeper.SetRouter(addressValidator())
 }
 
@@ -74,7 +69,7 @@ func TestLinkAddress(t *testing.T) {
 	cfg := app.MakeEncodingConfig()
 	keeper, ctx = setup(cfg)
 
-	terra := nexus.Chain{Name: nexus.ChainName("terra"), Module: axelarnetTypes.ModuleName, SupportsForeignAssets: true}
+	terra := exported.Chain{Name: exported.ChainName("terra"), Module: axelarnetTypes.ModuleName, SupportsForeignAssets: true}
 	evmAddr := exported.CrossChainAddress{Chain: evm.Ethereum, Address: "0x68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8"}
 	axelarAddr := exported.CrossChainAddress{Chain: axelarnet.Axelarnet, Address: "axelar1t66w8cazua870wu7t2hsffndmy2qy2v556ymndnczs83qpz2h45sq6lq9w"}
 
@@ -112,38 +107,9 @@ func TestLinkAddress(t *testing.T) {
 		assert.ErrorContains(t, err, "decoding bech32 failed")
 	}))
 
-	t.Run("should return error for blocked addresses", testutils.Func(func(t *testing.T) {
-		blockedAddr := rand.AccAddr()
-		bankK.BlockedAddrFunc = func(addr sdk.AccAddress) bool { return addr.Equals(blockedAddr) }
-
-		err := keeper.LinkAddresses(ctx,
-			evmAddr,
-			axelarAddr,
-		)
-		assert.NoError(t, err)
-
-		err = keeper.LinkAddresses(ctx,
-			exported.CrossChainAddress{Chain: evm.Ethereum, Address: "0x68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8"},
-			exported.CrossChainAddress{Chain: axelarnet.Axelarnet, Address: blockedAddr.String()},
-		)
-		assert.ErrorContains(t, err, "is not allowed to receive")
-
-		err = keeper.LinkAddresses(ctx,
-			exported.CrossChainAddress{Chain: axelarnet.Axelarnet, Address: blockedAddr.String()},
-			evmAddr,
-		)
-		assert.ErrorContains(t, err, "is not allowed to receive")
-
-		err = keeper.LinkAddresses(ctx,
-			evmAddr,
-			exported.CrossChainAddress{Chain: axelarnet.Axelarnet, Address: rand.AccAddr().String()},
-		)
-		assert.NoError(t, err)
-	}))
-
 	t.Run("should return error when link chain does not support foreign asset", testutils.Func(func(t *testing.T) {
-		fromChain := nexus.Chain{
-			Name:                  nexus.ChainName(rand.Str(5)),
+		fromChain := exported.Chain{
+			Name:                  exported.ChainName(rand.Str(5)),
 			SupportsForeignAssets: false,
 			Module:                evmTypes.ModuleName,
 		}

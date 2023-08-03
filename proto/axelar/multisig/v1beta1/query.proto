@@ -8,6 +8,7 @@ import "google/protobuf/timestamp.proto";
 import "axelar/multisig/exported/v1beta1/types.proto";
 import "axelar/multisig/v1beta1/types.proto";
 import "axelar/utils/v1beta1/threshold.proto";
+import "axelar/multisig/v1beta1/params.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
@@ -106,3 +107,8 @@ message KeygenSessionResponse {
   // Keygen candidates in descending order by weight
   repeated KeygenParticipant participants = 10 [ (gogoproto.nullable) = false ];
 }
+
+// ParamsRequest represents a message that queries the params
+message ParamsRequest {}
+
+message ParamsResponse { Params params = 1 [ (gogoproto.nullable) = false ]; }

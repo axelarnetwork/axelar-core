@@ -108,9 +108,7 @@ func (k Keeper) EnqueueTransfer(ctx sdk.Context, senderChain exported.Chain, rec
 		return 0, err
 	}
 
-	if validator := k.GetRouter().GetAddressValidator(recipient.Chain.Module); validator == nil {
-		return 0, fmt.Errorf("unknown module for recipient chain %s", recipient.Chain.String())
-	} else if err := validator(ctx, recipient); err != nil {
+	if err := k.ValidateAddress(ctx, recipient); err != nil {
 		return 0, err
 	}
 

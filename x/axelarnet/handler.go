@@ -1,13 +1,20 @@
 package axelarnet
 
 import (
+	"encoding/hex"
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	"github.com/ethereum/go-ethereum/crypto"
 
+	"github.com/axelarnetwork/axelar-core/utils/events"
+	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/utils/funcs"
 )
 
 // NewHandler returns the handler of the Cosmos module
@@ -66,8 +73,8 @@ func NewHandler(k keeper.Keeper, n types.Nexus, b types.BankKeeper, a types.Acco
 			res, err := server.RetryIBCTransfer(sdk.WrapSDKContext(ctx), msg)
 			result, err := sdk.WrapServiceResult(ctx, res, err)
 			return result, err
-		case *types.ExecuteMessageRequest:
-			res, err := server.ExecuteMessage(sdk.WrapSDKContext(ctx), msg)
+		case *types.RouteMessageRequest:
+			res, err := server.RouteMessage(sdk.WrapSDKContext(ctx), msg)
 			result, err := sdk.WrapServiceResult(ctx, res, err)
 			return result, err
 		case *types.CallContractRequest:
@@ -89,5 +96,49 @@ func NewHandler(k keeper.Keeper, n types.Nexus, b types.BankKeeper, a types.Acco
 			return nil, sdkerrors.Wrap(types.ErrAxelarnet, err.Error())
 		}
 		return res, nil
+	}
+}
+
+// NewProposalHandler returns the handler for the proposals of the axelarnet module
+func NewProposalHandler(k keeper.Keeper, nexusK types.Nexus, accountK types.AccountKeeper) govtypes.Handler {
+	return func(ctx sdk.Context, content govtypes.Content) error {
+		switch c := content.(type) {
+		case *types.CallContractsProposal:
+			for _, contractCall := range c.ContractCalls {
+				sender := nexus.CrossChainAddress{Chain: exported.Axelarnet, Address: accountK.GetModuleAddress(govtypes.ModuleName).String()}
+				recipient := nexus.CrossChainAddress{Chain: funcs.MustOk(nexusK.GetChain(ctx, contractCall.Chain)), Address: contractCall.ContractAddress}
+				// axelar gateway expects keccak256 hashes for payloads
+				payloadHash := crypto.Keccak256(contractCall.Payload)
+
+				msgID, txID, nonce := nexusK.GenerateMessageID(ctx)
+				msg := nexus.NewGeneralMessage(msgID, sender, recipient, payloadHash, nexus.Approved, txID, nonce, nil)
+
+				events.Emit(ctx, &types.ContractCallSubmitted{
+					MessageID:        msg.ID,
+					Sender:           msg.GetSourceAddress(),
+					SourceChain:      msg.GetSourceChain(),
+					DestinationChain: msg.GetDestinationChain(),
+					ContractAddress:  msg.GetDestinationAddress(),
+					PayloadHash:      msg.PayloadHash,
+					Payload:          contractCall.Payload,
+				})
+
+				if err := nexusK.SetNewMessage(ctx, msg); err != nil {
+					return sdkerrors.Wrap(err, "failed to add general message")
+				}
+
+				k.Logger(ctx).Debug(fmt.Sprintf("successfully enqueued contract call for contract address %s on chain %s from sender %s with message id %s", recipient.Address, recipient.Chain.String(), sender.Address, msg.ID),
+					types.AttributeKeyDestinationChain, recipient.Chain.String(),
+					types.AttributeKeyDestinationAddress, recipient.Address,
+					types.AttributeKeySourceAddress, sender.Address,
+					types.AttributeKeyMessageID, msg.ID,
+					types.AttributeKeyPayloadHash, hex.EncodeToString(payloadHash),
+				)
+			}
+
+			return nil
+		default:
+			return sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized axelarnet proposal content type: %T", c)
+		}
 	}
 }

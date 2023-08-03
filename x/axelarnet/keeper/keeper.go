@@ -43,12 +43,13 @@ type Keeper struct {
 	cdc      codec.BinaryCodec
 	params   params.Subspace
 
-	channelK types.ChannelKeeper
+	channelK  types.ChannelKeeper
+	feegrantK types.FeegrantKeeper
 }
 
 // NewKeeper returns a new axelarnet keeper
-func NewKeeper(cdc codec.BinaryCodec, storeKey sdk.StoreKey, paramSpace params.Subspace, channelK types.ChannelKeeper) Keeper {
-	return Keeper{cdc: cdc, storeKey: storeKey, params: paramSpace.WithKeyTable(types.KeyTable()), channelK: channelK}
+func NewKeeper(cdc codec.BinaryCodec, storeKey sdk.StoreKey, paramSpace params.Subspace, channelK types.ChannelKeeper, feegrantK types.FeegrantKeeper) Keeper {
+	return Keeper{cdc: cdc, storeKey: storeKey, params: paramSpace.WithKeyTable(types.KeyTable()), channelK: channelK, feegrantK: feegrantK}
 }
 
 // Logger returns a module-specific logger.
@@ -56,12 +57,14 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
-func (k Keeper) getParams(ctx sdk.Context) (params types.Params) {
+// GetParams returns the module parameters.
+func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 	k.params.GetParamSet(ctx, &params)
 	return
 }
 
-func (k Keeper) setParams(ctx sdk.Context, p types.Params) {
+// SetParams sets the module parameters.
+func (k Keeper) SetParams(ctx sdk.Context, p types.Params) {
 	k.params.SetParamSet(ctx, &p)
 }
 

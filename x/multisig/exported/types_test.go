@@ -3,7 +3,7 @@ package exported_test
 import (
 	"testing"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
@@ -38,16 +38,7 @@ func TestPublicKey(t *testing.T) {
 			Run(t, 5)
 
 		Given("uncompressed public key", func() {
-			pubKey = funcs.Must(btcec.NewPrivateKey(btcec.S256())).PubKey().SerializeUncompressed()
-		}).
-			When("", func() {}).
-			Then("should return error", func(t *testing.T) {
-				assert.Error(t, pubKey.ValidateBasic())
-			}).
-			Run(t, 5)
-
-		Given("hybrid public key", func() {
-			pubKey = funcs.Must(btcec.NewPrivateKey(btcec.S256())).PubKey().SerializeHybrid()
+			pubKey = funcs.Must(btcec.NewPrivateKey()).PubKey().SerializeUncompressed()
 		}).
 			When("", func() {}).
 			Then("should return error", func(t *testing.T) {

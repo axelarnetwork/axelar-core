@@ -32,6 +32,17 @@ func NewGRPCQuerier(k Keeper, a types.AxelarnetKeeper) Querier {
 	}
 }
 
+// Params returns the reward module params
+func (q Querier) Params(c context.Context, req *types.ParamsRequest) (*types.ParamsResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	params := q.keeper.GetParams(ctx)
+
+	return &types.ParamsResponse{
+		Params: params,
+	}, nil
+}
+
 // TransfersForChain returns the transfers for a given chain
 func (q Querier) TransfersForChain(c context.Context, req *types.TransfersForChainRequest) (*types.TransfersForChainResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)

@@ -5,6 +5,7 @@ option go_package = "github.com/axelarnetwork/axelar-core/x/evm/types";
 
 import "gogoproto/gogo.proto";
 import "axelar/evm/v1beta1/types.proto";
+import "axelar/evm/v1beta1/params.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
@@ -235,3 +236,8 @@ message Proof {
   string threshold = 3;
   repeated string signatures = 4;
 }
+
+// ParamsRequest represents a message that queries the params
+message ParamsRequest { string chain = 1; }
+
+message ParamsResponse { Params params = 1 [ (gogoproto.nullable) = false ]; }

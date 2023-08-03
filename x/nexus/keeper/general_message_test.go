@@ -1,6 +1,8 @@
 package keeper_test
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"testing"
 	"time"
@@ -72,6 +74,8 @@ func TestSetNewGeneralMessage(t *testing.T) {
 				destChain := funcs.MustOk(k.GetChain(ctx, destinationChain.Name))
 				destChain.Module = axelarnet.ModuleName
 				k.SetChain(ctx, destChain)
+
+				generalMessage.Recipient.Chain.Module = axelarnet.ModuleName
 			}
 		}
 	}
@@ -121,13 +125,30 @@ func TestSetNewGeneralMessage(t *testing.T) {
 }
 
 func TestGenerateMessageID(t *testing.T) {
-	cfg := app.MakeEncodingConfig()
-	k, ctx := setup(cfg)
+	var (
+		ctx    sdk.Context
+		k      nexus.Keeper
+		txhash [32]byte
+	)
 
-	// use the same hash and source chain, still shouldn't collide
-	id := k.GenerateMessageID(ctx)
-	id2 := k.GenerateMessageID(ctx)
-	assert.NotEqual(t, id, id2)
+	Given("a keeper", func() {
+		cfg := app.MakeEncodingConfig()
+		k, ctx = setup(cfg)
+	}).
+		When("tx bytes are set", func() {
+			tx := rand.Bytes(int(rand.I64Between(1, 100)))
+			txhash = sha256.Sum256(tx)
+			ctx = ctx.WithTxBytes(tx)
+		}).
+		Then("should return message id with counter 0", func(t *testing.T) {
+			for i := range [10]int{} {
+				id, txId, txIndex := k.GenerateMessageID(ctx)
+				assert.Equal(t, txhash[:], txId)
+				assert.Equal(t, uint64(i), txIndex)
+				assert.Equal(t, fmt.Sprintf("0x%s-%d", hex.EncodeToString(txhash[:]), i), id)
+			}
+		}).
+		Run(t)
 }
 
 func TestStatusTransitions(t *testing.T) {
@@ -138,13 +159,16 @@ func TestStatusTransitions(t *testing.T) {
 	sourceChain.Module = axelarnet.ModuleName
 	destinationChain := nexustestutils.RandomChain()
 	destinationChain.Module = evmtypes.ModuleName
+	id, txID, nonce := k.GenerateMessageID(ctx)
 	msg := exported.GeneralMessage{
-		ID:          k.GenerateMessageID(ctx),
-		Sender:      exported.CrossChainAddress{Chain: sourceChain, Address: genCosmosAddr(sourceChain.Name.String())},
-		Recipient:   exported.CrossChainAddress{Chain: destinationChain, Address: evmtestutils.RandomAddress().Hex()},
-		Status:      exported.Approved,
-		PayloadHash: crypto.Keccak256Hash(rand.Bytes(int(rand.I64Between(1, 100)))).Bytes(),
-		Asset:       nil,
+		ID:            id,
+		Sender:        exported.CrossChainAddress{Chain: sourceChain, Address: genCosmosAddr(sourceChain.Name.String())},
+		Recipient:     exported.CrossChainAddress{Chain: destinationChain, Address: evmtestutils.RandomAddress().Hex()},
+		Status:        exported.Approved,
+		PayloadHash:   crypto.Keccak256Hash(rand.Bytes(int(rand.I64Between(1, 100)))).Bytes(),
+		Asset:         nil,
+		SourceTxID:    txID,
+		SourceTxIndex: nonce,
 	}
 	k.SetChain(ctx, sourceChain)
 	k.SetChain(ctx, destinationChain)
@@ -153,7 +177,7 @@ func TestStatusTransitions(t *testing.T) {
 	err := k.SetMessageFailed(ctx, msg.ID)
 	assert.Error(t, err, fmt.Sprintf("general message %s not found", msg.ID))
 
-	err = k.SetMessageSent(ctx, msg.ID)
+	err = k.SetMessageProcessing(ctx, msg.ID)
 	assert.Error(t, err, fmt.Sprintf("general message %s not found", msg.ID))
 
 	err = k.SetMessageExecuted(ctx, msg.ID)
@@ -164,33 +188,33 @@ func TestStatusTransitions(t *testing.T) {
 	assert.NoError(t, err)
 
 	err = k.SetMessageFailed(ctx, msg.ID)
-	assert.Error(t, err, "general message is not sent")
+	assert.Error(t, err, "general message is not processed")
 
 	err = k.SetMessageExecuted(ctx, msg.ID)
-	assert.Error(t, err, "general message is not sent")
+	assert.Error(t, err, "general message is not processed")
 
-	err = k.SetMessageSent(ctx, msg.ID)
+	err = k.SetMessageProcessing(ctx, msg.ID)
 	assert.NoError(t, err)
 
-	err = k.SetMessageSent(ctx, msg.ID)
+	err = k.SetMessageProcessing(ctx, msg.ID)
 	assert.Error(t, err, "general message is not approved or failed")
 
 	err = k.SetMessageFailed(ctx, msg.ID)
 	assert.NoError(t, err)
 
 	err = k.SetMessageExecuted(ctx, msg.ID)
-	assert.Error(t, err, "general message is not sent")
+	assert.Error(t, err, "general message is not processed")
 
-	err = k.SetMessageSent(ctx, msg.ID)
+	err = k.SetMessageProcessing(ctx, msg.ID)
 	assert.NoError(t, err)
 
 	err = k.SetMessageExecuted(ctx, msg.ID)
 	assert.NoError(t, err)
 
 	err = k.SetMessageFailed(ctx, msg.ID)
-	assert.Error(t, err, "general message is not sent")
+	assert.Error(t, err, "general message is not processed")
 
-	err = k.SetMessageSent(ctx, msg.ID)
+	err = k.SetMessageProcessing(ctx, msg.ID)
 	assert.Error(t, err, "general message is not approved or failed")
 
 }
@@ -202,13 +226,16 @@ func TestGetMessage(t *testing.T) {
 	sourceChain.Module = axelarnet.ModuleName
 	destinationChain := nexustestutils.RandomChain()
 	destinationChain.Module = evmtypes.ModuleName
+	id, txID, nonce := k.GenerateMessageID(ctx)
 	msg := exported.GeneralMessage{
-		ID:          k.GenerateMessageID(ctx),
-		Sender:      exported.CrossChainAddress{Chain: sourceChain, Address: genCosmosAddr(sourceChain.Name.String())},
-		Recipient:   exported.CrossChainAddress{Chain: destinationChain, Address: evmtestutils.RandomAddress().Hex()},
-		Status:      exported.Approved,
-		PayloadHash: crypto.Keccak256Hash(rand.Bytes(int(rand.I64Between(1, 100)))).Bytes(),
-		Asset:       nil,
+		ID:            id,
+		Sender:        exported.CrossChainAddress{Chain: sourceChain, Address: genCosmosAddr(sourceChain.Name.String())},
+		Recipient:     exported.CrossChainAddress{Chain: destinationChain, Address: evmtestutils.RandomAddress().Hex()},
+		Status:        exported.Approved,
+		PayloadHash:   crypto.Keccak256Hash(rand.Bytes(int(rand.I64Between(1, 100)))).Bytes(),
+		Asset:         nil,
+		SourceTxID:    txID,
+		SourceTxIndex: nonce,
 	}
 	k.SetChain(ctx, sourceChain)
 	k.SetChain(ctx, destinationChain)
@@ -239,13 +266,16 @@ func TestGetSentMessages(t *testing.T) {
 		for i := 0; i < numMsgs; i++ {
 			destChain := destinationChain
 			destChain.Name = destChainName
+			id, txID, nonce := k.GenerateMessageID(ctx)
 			msg := exported.GeneralMessage{
-				ID:          k.GenerateMessageID(ctx),
-				Sender:      exported.CrossChainAddress{Chain: sourceChain, Address: genCosmosAddr(sourceChain.Name.String())},
-				Recipient:   exported.CrossChainAddress{Chain: destChain, Address: evmtestutils.RandomAddress().Hex()},
-				Status:      exported.Sent,
-				PayloadHash: crypto.Keccak256Hash(rand.Bytes(int(rand.I64Between(1, 100)))).Bytes(),
-				Asset:       nil,
+				ID:            id,
+				Sender:        exported.CrossChainAddress{Chain: sourceChain, Address: genCosmosAddr(sourceChain.Name.String())},
+				Recipient:     exported.CrossChainAddress{Chain: destChain, Address: evmtestutils.RandomAddress().Hex()},
+				Status:        exported.Processing,
+				PayloadHash:   crypto.Keccak256Hash(rand.Bytes(int(rand.I64Between(1, 100)))).Bytes(),
+				Asset:         nil,
+				SourceTxID:    txID,
+				SourceTxIndex: nonce,
 			}
 
 			msgs[msg.ID] = msg
@@ -275,7 +305,7 @@ func TestGetSentMessages(t *testing.T) {
 		}
 	}
 	consumeSent := func(dest exported.ChainName, limit int64) []exported.GeneralMessage {
-		sent := k.GetSentMessages(ctx, dest, limit)
+		sent := k.GetProcessingMessages(ctx, dest, limit)
 		for _, msg := range sent {
 			err := k.SetMessageExecuted(ctx, msg.ID)
 			assert.NoError(t, err)
@@ -293,7 +323,7 @@ func TestGetSentMessages(t *testing.T) {
 	assert.Equal(t, msgs, retMsgs)
 
 	// make sure executed messages are not returned
-	sent = k.GetSentMessages(ctx, destinationChainName, 100)
+	sent = k.GetProcessingMessages(ctx, destinationChainName, 100)
 	assert.Empty(t, sent)
 	for _, msg := range msgs {
 		m, found := k.GetMessage(ctx, msg.ID)
@@ -316,7 +346,7 @@ func TestGetSentMessages(t *testing.T) {
 	// make sure failed messages are not returned
 	msgs = makeSentMessages(1, destinationChainName)
 	enqueueMsgs(msgs)
-	sent = k.GetSentMessages(ctx, destinationChainName, 1)
+	sent = k.GetProcessingMessages(ctx, destinationChainName, 1)
 	assert.Equal(t, len(msgs), len(sent))
 	err := k.SetMessageFailed(ctx, sent[0].ID)
 	assert.NoError(t, err)
@@ -328,7 +358,7 @@ func TestGetSentMessages(t *testing.T) {
 	checkForExistence(msgs)
 
 	//resend the failed message
-	err = k.SetMessageSent(ctx, msg.ID)
+	err = k.SetMessageProcessing(ctx, msg.ID)
 	assert.NoError(t, err)
 	sent = consumeSent(destinationChainName, 1)
 	assert.Equal(t, len(sent), 1)

@@ -1,9 +1,11 @@
 package keeper_test
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	mathRand "math/rand"
 	"strings"
@@ -48,7 +50,7 @@ func TestHandleMsgLink(t *testing.T) {
 	)
 
 	givenMsgServer := Given("an axelarnet msg server", func() {
-		ctx, k, _ = setup()
+		ctx, k, _, _ = setup()
 		k.InitGenesis(ctx, types.DefaultGenesisState())
 		nexusK = &mock.NexusMock{}
 		ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{}, &mock.ChannelKeeperMock{})
@@ -135,7 +137,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 
 	chain := nexustestutils.RandomChain()
 	givenMsgServer := Given("an axelarnet msg server", func() {
-		ctx, k, _ = setup()
+		ctx, k, _, _ = setup()
 		k.InitGenesis(ctx, types.DefaultGenesisState())
 		funcs.MustNoErr(k.SetCosmosChain(ctx, types.CosmosChain{
 			Name:       chain.Name,
@@ -168,7 +170,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 	})
 
 	whenDepositAddressHasBalance := When("deposit address has balance", func() {
-		bankK.GetBalanceFunc = func(_ sdk.Context, _ sdk.AccAddress, denom string) sdk.Coin {
+		bankK.SpendableBalanceFunc = func(_ sdk.Context, _ sdk.AccAddress, denom string) sdk.Coin {
 			// need to compare the balance so cannot make it random
 			return sdk.NewCoin(denom, sdk.NewInt(1e18))
 		}
@@ -223,7 +225,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		givenMsgServer.
 			Branch(
 				When("deposit address holds no funds", func() {
-					bankK.GetBalanceFunc = func(_ sdk.Context, _ sdk.AccAddress, denom string) sdk.Coin {
+					bankK.SpendableBalanceFunc = func(_ sdk.Context, _ sdk.AccAddress, denom string) sdk.Coin {
 						return sdk.NewCoin(denom, sdk.ZeroInt())
 					}
 				}).
@@ -376,7 +378,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 	)
 
 	givenMsgServer := Given("an axelarnet msg server", func() {
-		ctx, k, _ = setup()
+		ctx, k, _, _ = setup()
 		k.InitGenesis(ctx, types.DefaultGenesisState())
 		funcs.MustNoErr(k.SetFeeCollector(ctx, rand.AccAddr()))
 		nexusK = &mock.NexusMock{
@@ -573,7 +575,7 @@ func TestHandleMsgRouteIBCTransfers(t *testing.T) {
 	)
 
 	givenMsgServer := Given("an axelarnet msg server", func() {
-		ctx, k, _ = setup()
+		ctx, k, _, _ = setup()
 		k.InitGenesis(ctx, types.DefaultGenesisState())
 		transfersNum = 0
 		cosmosChains = slices.Expand(func(i int) types.CosmosChain {
@@ -740,7 +742,7 @@ func TestRetryIBCTransfer(t *testing.T) {
 	)
 
 	givenMessageServer := Given("a message server", func() {
-		ctx, k, channelK = setup()
+		ctx, k, channelK, _ = setup()
 		k.InitGenesis(ctx, types.DefaultGenesisState())
 		chain = nexustestutils.RandomChain()
 		cosmosChain := axelartestutils.RandomCosmosChain()
@@ -847,7 +849,7 @@ func TestAddCosmosBasedChain(t *testing.T) {
 	repeats := 20
 
 	givenMsgServer := Given("an axelarnet msg server", func() {
-		ctx, k, _ = setup()
+		ctx, k, _, _ = setup()
 		k.InitGenesis(ctx, types.DefaultGenesisState())
 		nexusK = &mock.NexusMock{
 			GetChainFunc:              func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) { return nexus.Chain{}, false },
@@ -975,14 +977,15 @@ func TestAddCosmosBasedChain(t *testing.T) {
 		Run(t, repeats)
 }
 
-func TestExecuteMessage(t *testing.T) {
+func TestRouteMessage(t *testing.T) {
 	var (
-		server types.MsgServiceServer
-		k      keeper.Keeper
-		nexusK *mock.NexusMock
-		ctx    sdk.Context
-		req    *types.ExecuteMessageRequest
-		msg    nexus.GeneralMessage
+		server    types.MsgServiceServer
+		k         keeper.Keeper
+		nexusK    *mock.NexusMock
+		feegrantK *mock.FeegrantKeeperMock
+		ctx       sdk.Context
+		req       *types.RouteMessageRequest
+		msg       nexus.GeneralMessage
 	)
 
 	chain := nexustestutils.RandomChain()
@@ -1005,7 +1008,7 @@ func TestExecuteMessage(t *testing.T) {
 	}
 
 	givenMsgServer := Given("an axelarnet msg server", func() {
-		ctx, k, _ = setup()
+		ctx, k, _, feegrantK = setup()
 		k.InitGenesis(ctx, types.DefaultGenesisState())
 		funcs.MustNoErr(k.SetCosmosChain(ctx, types.CosmosChain{
 			Name:       chain.Name,
@@ -1016,7 +1019,7 @@ func TestExecuteMessage(t *testing.T) {
 			GetChainByNativeAssetFunc: func(sdk.Context, string) (nexus.Chain, bool) {
 				return chain, true
 			},
-			SetMessageSentFunc: func(sdk.Context, string) error {
+			SetMessageProcessingFunc: func(sdk.Context, string) error {
 				return nil
 			},
 		}
@@ -1071,87 +1074,115 @@ func TestExecuteMessage(t *testing.T) {
 		msg.Sender.Chain.Module = evmtypes.ModuleName
 		isChainActivated(true)()
 	})
+	whenMessageIsFromCosmos := When("message is from cosmos", func() {
+		isMessageFound(true, nexus.Approved)()
+		msg.Sender.Chain.Module = exported.ModuleName
+		isChainActivated(true)()
+	})
+	whenMessageIsToEVM := When("message is to evm", func() {
+		msg.Recipient.Chain.Module = evmtypes.ModuleName
+	})
+	whenMessageIsToCosmos := When("message is to cosmos", func() {
+		msg.Recipient.Chain.Module = exported.ModuleName
+	})
 
 	requestIsMade := When("an execute message request is made", func() {
-		req = types.NewExecuteMessage(
+		req = types.NewRouteMessage(
 			rand.AccAddr(),
+			nil,
 			id,
 			payload,
 		)
 	})
 
-	executeFailsWithError := func(msg string) func(t *testing.T) {
+	routeFailsWithError := func(msg string) func(t *testing.T) {
 		return func(t *testing.T) {
-			_, err := server.ExecuteMessage(sdk.WrapSDKContext(ctx), req)
+			_, err := server.RouteMessage(sdk.WrapSDKContext(ctx), req)
 			assert.ErrorContains(t, err, msg)
 		}
 	}
 
-	t.Run("execute message", func(t *testing.T) {
+	t.Run("route message", func(t *testing.T) {
 		givenMsgServer.
 			Branch(
 				When("general message is not found", isMessageFound(false, nexus.NonExistent)).
 					When2(requestIsMade).
-					Then("should fail", executeFailsWithError("not found")),
-
-				When("general message is found", isMessageFound(true, nexus.Approved)).
-					When("source chain is not an EVM chain", func() {}).
-					When2(requestIsMade).
-					Then("should fail", executeFailsWithError("message is not from an EVM chain")),
+					Then("should fail", routeFailsWithError("not found")),
 
 				When("general message is found", isMessageFound(true, nexus.Approved)).
 					When("source chain is an EVM chain", func() { msg.Sender.Chain.Module = evmtypes.ModuleName }).
 					When("chain is not activated", isChainActivated(false)).
 					When2(requestIsMade).
-					Then("should fail", executeFailsWithError("not activated")),
+					Then("should fail", routeFailsWithError("not activated")),
 
 				whenMessageIsFromEVM.
+					When2(whenMessageIsToCosmos).
 					When("asset is registered", isAssetRegistered(true)).
 					When("payload does not match", func() {
-						req = types.NewExecuteMessage(
+						req = types.NewRouteMessage(
 							rand.AccAddr(),
+							nil,
 							id,
 							rand.BytesBetween(100, 500),
 						)
 					}).
-					Then("should fail", executeFailsWithError("payload hash does not match")),
+					Then("should fail", routeFailsWithError("payload hash does not match")),
 
 				whenMessageIsFromEVM.
+					When2(whenMessageIsToCosmos).
 					When("asset is registered", isAssetRegistered(true)).
 					When("general message already executed", isMessageFound(true, nexus.Executed)).
 					When2(requestIsMade).
-					Then("should fail", executeFailsWithError("already executed")),
+					Then("should fail", routeFailsWithError("already executed")),
 
 				whenMessageIsFromEVM.
+					When2(whenMessageIsToCosmos).
 					When("asset is registered", isAssetRegistered(true)).
 					When("payload with version is invalid", func() {
+						payload = rand.Bytes(4)
+						msg.PayloadHash = crypto.Keccak256Hash(payload).Bytes()
+					}).
+					When2(requestIsMade).
+					Then("should fail", routeFailsWithError("invalid versioned payload")),
+
+				whenMessageIsFromEVM.
+					When2(whenMessageIsToCosmos).
+					When("asset is registered", isAssetRegistered(true)).
+					When("payload is invalid", func() {
+						payload = axelartestutils.PackPayloadWithVersion(types.CosmWasmV1, rand.BytesBetween(100, 500))
+						msg.PayloadHash = crypto.Keccak256Hash(payload).Bytes()
+					}).
+					When2(requestIsMade).
+					Then("should fail", routeFailsWithError("invalid payload")),
+
+				whenMessageIsFromCosmos.
+					When2(whenMessageIsToCosmos).
+					When("asset is registered", isAssetRegistered(true)).
+					When("payload is invalid", func() {
 						payload = rand.BytesBetween(100, 500)
 						msg.PayloadHash = crypto.Keccak256Hash(payload).Bytes()
 					}).
 					When2(requestIsMade).
-					Then("should fail", executeFailsWithError("invalid payload with version")),
-
+					Then("should fail", routeFailsWithError("invalid payload")),
 				whenMessageIsFromEVM.
+					When2(whenMessageIsToCosmos).
 					When("asset is registered", isAssetRegistered(true)).
-					When("payload is invalid", func() {
-						bytesType := funcs.Must(abi.NewType("bytes", "bytes", nil))
-						bytes32Type := funcs.Must(abi.NewType("bytes32", "bytes32", nil))
-
-						versionBz, _ := hexutil.Decode(types.CosmwasmV1)
-						var bz32 [32]byte
-						copy(bz32[:], versionBz)
-
-						payload = funcs.Must(abi.Arguments{{Type: bytes32Type}, {Type: bytesType}}.Pack(
-							bz32,
-							rand.BytesBetween(100, 500),
-						))
-
+					When("payload is valid", func() {
+						payload = randWasmPayload()
 						msg.PayloadHash = crypto.Keccak256Hash(payload).Bytes()
 					}).
 					When2(requestIsMade).
-					Then("should fail", executeFailsWithError("invalid payload")),
+					When("feegranter is set with no allowance", func() {
+						req.Feegranter = rand.AccAddr()
+						msg.Asset = nil
+						feegrantK.UseGrantedFeesFunc = func(ctx sdk.Context, granter sdk.AccAddress, addr sdk.AccAddress, amt sdk.Coins, msgs []sdk.Msg) error {
+							return fmt.Errorf("feegrant error")
+						}
+					}).
+					Then("should fail", routeFailsWithError("feegrant error")),
 
 				whenMessageIsFromEVM.
+					When2(whenMessageIsToCosmos).
 					When("asset is registered", isAssetRegistered(true)).
 					When("payload is valid", func() {
 						payload = randPayload()
@@ -1159,7 +1190,70 @@ func TestExecuteMessage(t *testing.T) {
 					}).
 					When2(requestIsMade).
 					Then("should success", func(t *testing.T) {
-						_, err := server.ExecuteMessage(sdk.WrapSDKContext(ctx), req)
+						_, err := server.RouteMessage(sdk.WrapSDKContext(ctx), req)
+						fmt.Println(err)
+						assert.NoError(t, err)
+					}),
+				whenMessageIsFromCosmos.
+					When2(whenMessageIsToEVM).
+					When("asset is registered", isAssetRegistered(true)).
+					When("payload is valid", func() {
+						payload = rand.BytesBetween(100, 500)
+						msg.PayloadHash = crypto.Keccak256Hash(payload).Bytes()
+					}).
+					When2(requestIsMade).
+					Then("should success", func(t *testing.T) {
+						_, err := server.RouteMessage(sdk.WrapSDKContext(ctx), req)
+						fmt.Println(err)
+						assert.NoError(t, err)
+					}),
+				whenMessageIsFromCosmos.
+					When2(whenMessageIsToCosmos).
+					When("asset is registered", isAssetRegistered(true)).
+					When("payload is valid", func() {
+						payload = randPayload()
+						msg.PayloadHash = crypto.Keccak256Hash(payload).Bytes()
+					}).
+					When2(requestIsMade).
+					Then("should success", func(t *testing.T) {
+						_, err := server.RouteMessage(sdk.WrapSDKContext(ctx), req)
+						fmt.Println(err)
+						assert.NoError(t, err)
+					}),
+				whenMessageIsFromCosmos.
+					When2(whenMessageIsToCosmos).
+					When("asset is registered", isAssetRegistered(true)).
+					When("payload is valid", func() {
+						payload = randWasmPayload()
+						msg.PayloadHash = crypto.Keccak256Hash(payload).Bytes()
+					}).
+					When2(requestIsMade).
+					Then("should success", func(t *testing.T) {
+						_, err := server.RouteMessage(sdk.WrapSDKContext(ctx), req)
+						fmt.Println(err)
+						assert.NoError(t, err)
+					}),
+				whenMessageIsFromEVM.
+					When2(whenMessageIsToCosmos).
+					When("asset is registered", isAssetRegistered(true)).
+					When("payload is valid", func() {
+						payload = randWasmPayload()
+						msg.PayloadHash = crypto.Keccak256Hash(payload).Bytes()
+					}).
+					When2(requestIsMade).
+					When("feegranter is set with no allowance", func() {
+						req.Feegranter = rand.AccAddr()
+						msg.Asset = nil
+						feegrantK.UseGrantedFeesFunc = func(ctx sdk.Context, granter sdk.AccAddress, addr sdk.AccAddress, amt sdk.Coins, msgs []sdk.Msg) error {
+							if !bytes.Equal(req.Sender, addr) || !amt[0].Equal(sdk.NewCoin("uaxl", sdk.NewInt(1))) {
+								return fmt.Errorf("invalid %s %s", addr, amt)
+							}
+
+							return nil
+						}
+					}).
+					Then("should success", func(t *testing.T) {
+						_, err := server.RouteMessage(sdk.WrapSDKContext(ctx), req)
 						fmt.Println(err)
 						assert.NoError(t, err)
 					}),
@@ -1172,23 +1266,26 @@ func TestHandleCallContract(t *testing.T) {
 		server types.MsgServiceServer
 		k      keeper.Keeper
 		nexusK *mock.NexusMock
+		b      *mock.BankKeeperMock
 		ctx    sdk.Context
 		req    *types.CallContractRequest
 		msg    nexus.GeneralMessage
 	)
 
 	givenMsgServer := Given("an axelarnet msg server", func() {
-		ctx, k, _ = setup()
+		ctx, k, _, _ = setup()
 		k.InitGenesis(ctx, types.DefaultGenesisState())
 		nexusK = &mock.NexusMock{}
 		ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{}, &mock.ChannelKeeperMock{})
-		server = keeper.NewMsgServerImpl(k, nexusK, &mock.BankKeeperMock{}, &mock.AccountKeeperMock{}, ibcK)
+		b = &mock.BankKeeperMock{}
+		server = keeper.NewMsgServerImpl(k, nexusK, b, &mock.AccountKeeperMock{}, ibcK)
 		count := 0
-		nexusK.GenerateMessageIDFunc = func(ctx sdk.Context) string {
+		nexusK.GenerateMessageIDFunc = func(ctx sdk.Context) (string, []byte, uint64) {
 			count++
 			hash := sha256.Sum256(ctx.TxBytes())
-			return fmt.Sprintf("%s-%x", hex.EncodeToString(hash[:]), count)
+			return fmt.Sprintf("%s-%x", hex.EncodeToString(hash[:]), count), hash[:], uint64(count)
 		}
+		b.SendCoinsFunc = func(sdk.Context, sdk.AccAddress, sdk.AccAddress, sdk.Coins) error { return nil }
 	})
 
 	whenChainIsRegistered := When("chain is registered", func() {
@@ -1226,12 +1323,18 @@ func TestHandleCallContract(t *testing.T) {
 			rand.AccAddr(),
 			nexustestutils.RandomChain().Name.String(),
 			evmtestutils.RandomAddress().Hex(),
-			rand.BytesBetween(5, 1000))
+			rand.BytesBetween(5, 1000),
+			&types.Fee{Amount: rand.Coin(), Recipient: rand.AccAddr()})
 
 	})
 
 	callFails := Then("call contract request fails", func(t *testing.T) {
 		_, err := server.CallContract(sdk.WrapSDKContext(ctx), req)
+		assert.Error(t, err)
+	})
+
+	validationFails := Then("call contract validation fails", func(t *testing.T) {
+		err := req.ValidateBasic()
 		assert.Error(t, err)
 	})
 
@@ -1244,9 +1347,11 @@ func TestHandleCallContract(t *testing.T) {
 					When2(whenSetNewMessageSucceeds).
 					When2(requestIsMade).
 					Then("call contract succeeds", func(t *testing.T) {
-						_, err := server.CallContract(sdk.WrapSDKContext(ctx), req)
+						err := req.ValidateBasic()
 						assert.NoError(t, err)
-						assert.Equal(t, msg.Status, nexus.Sent)
+						_, err = server.CallContract(sdk.WrapSDKContext(ctx), req)
+						assert.NoError(t, err)
+						assert.Equal(t, msg.Status, nexus.Approved)
 						assert.Equal(t, msg.GetSourceChain(), nexus.ChainName(exported.Axelarnet.Name))
 						assert.Equal(t, msg.GetSourceAddress(), req.Sender.String())
 						assert.Equal(t, msg.GetDestinationAddress(), req.ContractAddress)
@@ -1255,6 +1360,66 @@ func TestHandleCallContract(t *testing.T) {
 						payloadHash := crypto.Keccak256(req.Payload)
 						assert.Equal(t, msg.PayloadHash, payloadHash)
 					}),
+				whenChainIsRegistered.
+					When2(whenChainIsActivated).
+					When2(whenAddressIsValid).
+					When2(whenSetNewMessageSucceeds).
+					When2(requestIsMade).
+					When("destination is cosmos", func() {
+
+						nexusK.GetChainFunc = func(_ sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
+							return nexus.Chain{
+								Name:                  chain,
+								SupportsForeignAssets: true,
+								Module:                exported.ModuleName,
+								KeyType:               tss.Multisig,
+							}, true
+						}
+					}).
+					Then("call contract succeeds", func(t *testing.T) {
+						err := req.ValidateBasic()
+						assert.NoError(t, err)
+						_, err = server.CallContract(sdk.WrapSDKContext(ctx), req)
+						assert.NoError(t, err)
+						assert.Equal(t, msg.Status, nexus.Approved)
+						assert.Equal(t, msg.GetSourceChain(), nexus.ChainName(exported.Axelarnet.Name))
+						assert.Equal(t, msg.GetSourceAddress(), req.Sender.String())
+						assert.Equal(t, msg.GetDestinationAddress(), req.ContractAddress)
+						assert.Equal(t, msg.GetDestinationChain(), req.Chain)
+
+						payloadHash := crypto.Keccak256(req.Payload)
+						assert.Equal(t, msg.PayloadHash, payloadHash)
+					}),
+				whenChainIsRegistered.
+					When2(whenChainIsActivated).
+					When2(whenAddressIsValid).
+					When2(whenSetNewMessageSucceeds).
+					When2(requestIsMade).
+					When("fee is nil", func() {
+						req.Fee = nil
+					}).
+					Then("call contract succeeds", func(t *testing.T) {
+						err := req.ValidateBasic()
+						assert.NoError(t, err)
+						_, err = server.CallContract(sdk.WrapSDKContext(ctx), req)
+						assert.NoError(t, err)
+						assert.Equal(t, msg.Status, nexus.Approved)
+						assert.Equal(t, msg.GetSourceChain(), nexus.ChainName(exported.Axelarnet.Name))
+						assert.Equal(t, msg.GetSourceAddress(), req.Sender.String())
+						assert.Equal(t, msg.GetDestinationAddress(), req.ContractAddress)
+						assert.Equal(t, msg.GetDestinationChain(), req.Chain)
+
+						payloadHash := crypto.Keccak256(req.Payload)
+						assert.Equal(t, msg.PayloadHash, payloadHash)
+					}),
+				whenChainIsRegistered.
+					When2(whenChainIsActivated).
+					When2(whenAddressIsValid).
+					When2(requestIsMade).
+					When("fee is zero", func() {
+						req.Fee.Amount.Amount = sdk.NewInt(0)
+					}).
+					Then2(validationFails),
 				whenChainIsRegistered.
 					When2(whenChainIsActivated).
 					When2(whenAddressIsValid).
@@ -1314,7 +1479,6 @@ func randomTransfer(asset string, chain nexus.ChainName) nexus.CrossChainTransfe
 
 func randPayload() []byte {
 	bytesType := funcs.Must(abi.NewType("bytes", "bytes", nil))
-	bytes32Type := funcs.Must(abi.NewType("bytes32", "bytes32", nil))
 	stringType := funcs.Must(abi.NewType("string", "string", nil))
 	stringArrayType := funcs.Must(abi.NewType("string[]", "string[]", nil))
 
@@ -1335,12 +1499,22 @@ func randPayload() []byte {
 		),
 	)
 
-	versionBz, _ := hexutil.Decode(types.CosmwasmV1)
-	var bz32 [32]byte
-	copy(bz32[:], versionBz)
+	return append(funcs.Must(hexutil.Decode(types.CosmWasmV1)), payload...)
+}
 
-	return funcs.Must(abi.Arguments{{Type: bytes32Type}, {Type: bytesType}}.Pack(
-		bz32,
-		payload,
-	))
+func randWasmPayload() []byte {
+	args := make(map[string]string)
+
+	randStr := func() string { return rand.Str(int(rand.I64Between(1, 32))) }
+
+	argNum := int(rand2.I64Between(1, 10))
+
+	for i := 0; i < argNum; i += 1 {
+		args[randStr()] = randStr()
+	}
+	msg := make(map[string]map[string]string)
+	msg[randStr()] = args
+	payload := funcs.Must(json.Marshal(msg))
+
+	return axelartestutils.PackPayloadWithVersion(types.CosmWasmV2, payload)
 }

@@ -95,7 +95,7 @@ message GeneralMessage {
 
     STATUS_UNSPECIFIED = 0 [ (gogoproto.enumvalue_customname) = "NonExistent" ];
     STATUS_APPROVED = 1 [ (gogoproto.enumvalue_customname) = "Approved" ];
-    STATUS_SENT = 2 [ (gogoproto.enumvalue_customname) = "Sent" ];
+    STATUS_PROCESSING = 2 [ (gogoproto.enumvalue_customname) = "Processing" ];
     STATUS_EXECUTED = 3 [ (gogoproto.enumvalue_customname) = "Executed" ];
     STATUS_FAILED = 4 [ (gogoproto.enumvalue_customname) = "Failed" ];
   }
@@ -106,4 +106,6 @@ message GeneralMessage {
   bytes payload_hash = 4;
   Status status = 5;
   cosmos.base.v1beta1.Coin asset = 6;
+  bytes source_tx_id = 7 [ (gogoproto.customname) = "SourceTxID" ];
+  uint64 source_tx_index = 8;
 }

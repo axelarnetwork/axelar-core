@@ -17,6 +17,7 @@ import (
 // Keeper provides keeper functionality of this module
 type Keeper interface {
 	Logger(ctx sdk.Context) log.Logger
+	GetParams(ctx sdk.Context) (params Params)
 	GetCurrentKeyID(ctx sdk.Context, chainName nexus.ChainName) (exported.KeyID, bool)
 	GetNextKeyID(ctx sdk.Context, chainName nexus.ChainName) (exported.KeyID, bool)
 	GetKeygenSession(ctx sdk.Context, id exported.KeyID) (KeygenSession, bool)

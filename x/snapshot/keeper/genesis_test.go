@@ -48,7 +48,7 @@ func TestExportGenesis(t *testing.T) {
 	staking.BondDenomFunc = func(sdk.Context) string {
 		return bondDenom
 	}
-	bank.GetBalanceFunc = func(sdk.Context, sdk.AccAddress, string) sdk.Coin {
+	bank.SpendableBalanceFunc = func(sdk.Context, sdk.AccAddress, string) sdk.Coin {
 		return sdk.NewCoin(bondDenom, sdk.NewInt(types.DefaultParams().MinProxyBalance))
 	}
 	staking.ValidatorFunc = func(ctx sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI {

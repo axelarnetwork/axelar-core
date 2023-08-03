@@ -90,7 +90,7 @@ func (k Keeper) ActivateProxy(ctx sdk.Context, operator sdk.ValAddress, proxy sd
 
 	minBalance := k.GetMinProxyBalance(ctx)
 	denom := k.staking.BondDenom(ctx)
-	if balance := k.bank.GetBalance(ctx, proxy, denom); balance.Amount.LT(minBalance) {
+	if balance := k.bank.SpendableBalance(ctx, proxy, denom); balance.Amount.LT(minBalance) {
 		return fmt.Errorf("account %s does not have sufficient funds to become a proxy (minimum %s%s, actual %s)",
 			proxy.String(), minBalance.String(), denom, balance.String())
 	}

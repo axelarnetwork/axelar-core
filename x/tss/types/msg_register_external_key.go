@@ -3,7 +3,7 @@ package types
 import (
 	"encoding/hex"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -53,7 +53,7 @@ func (m RegisterExternalKeysRequest) ValidateBasic() error {
 			return err
 		}
 
-		if _, err := btcec.ParsePubKey(externalKey.PubKey, btcec.S256()); err != nil {
+		if _, err := btcec.ParsePubKey(externalKey.PubKey); err != nil {
 			return sdkerrors.Wrap(ErrTss, err.Error())
 		}
 
