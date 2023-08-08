@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -83,13 +84,14 @@ func TestHandleMessage(t *testing.T) {
 					return srcChain, true
 				default:
 					return nexus.Chain{}, false
-
 				}
 			},
 			ValidateAddressFunc: func(ctx sdk.Context, address nexus.CrossChainAddress) error {
 				switch address.Chain.Module {
 				case evmtypes.ModuleName:
 					return evmKeeper.NewAddressValidator()(ctx, address)
+				case exported.ModuleName:
+					return keeper.NewAddressValidator(k)(ctx, address)
 				default:
 					return fmt.Errorf("module not found")
 				}
@@ -380,8 +382,29 @@ func TestHandleMessage(t *testing.T) {
 		Run(t)
 
 	whenMessageIsValid.
+		When("receiver is in uppercase", func() {
+			ics20Packet.Receiver = strings.ToUpper(ics20Packet.Receiver)
+			packet = axelartestutils.RandomPacket(ics20Packet, ibctransfertypes.PortID, sourceChannel, ibctransfertypes.PortID, receiverChannel)
+		}).
+		Then("should return ack success", func(t *testing.T) {
+			assert.True(t, axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, r, packet).Success())
+			assert.Equal(t, genMsg.Status, nexus.Approved)
+		}).
+		Run(t)
+
+	whenMessageIsValid.
 		When("dest chain is cosmos", func() {
+			funcs.MustNoErr(k.SetCosmosChain(ctx, types.CosmosChain{
+				Name:       destChain.Name,
+				IBCPath:    types.NewIBCPath(ibctransfertypes.PortID, axelartestutils.RandomChannel()),
+				AddrPrefix: sdk.GetConfig().GetBech32AccountAddrPrefix(),
+			}))
+			message.DestinationAddress = rand.AccAddr().String()
+			ics20Packet.Memo = string(funcs.Must(json.Marshal(message)))
+			packet = axelartestutils.RandomPacket(ics20Packet, ibctransfertypes.PortID, sourceChannel, ibctransfertypes.PortID, receiverChannel)
+
 			destChain.Module = exported.ModuleName
+			isChainFound(destChain, true)()
 		}).
 		When("fee denom is registered", isAssetRegistered(true)).
 		When("message with fee", func() {

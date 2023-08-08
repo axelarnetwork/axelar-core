@@ -93,7 +93,7 @@ type Message struct {
 
 // OnRecvMessage handles general message from a cosmos chain
 func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n types.Nexus, b types.BankKeeper, r RateLimiter, packet ibcexported.PacketI) ibcexported.Acknowledgement {
-	// the acknowledgement is considered successful if it is a ResultAcknowledgement,
+	// The acknowledgement is considered successful if it is a ResultAcknowledgement,
 	// follow ibc transfer convention, put byte(1) in ResultAcknowledgement to indicate success.
 	ack := channeltypes.NewResultAcknowledgement([]byte{byte(1)})
 
@@ -102,8 +102,9 @@ func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n ty
 		return channeltypes.NewErrorAcknowledgement(err)
 	}
 
-	// skip if packet not sent to Axelar message sender account
-	if data.GetReceiver() != types.AxelarGMPAccount.String() {
+	// Skip if packet not sent to Axelar message sender account.
+	// Receiver must be valid at this point. Otherwise, the transfer handler in upper layer would reject the packet.
+	if !types.AxelarGMPAccount.Equals(funcs.Must(sdk.AccAddressFromBech32(data.GetReceiver()))) {
 		// Rate limit non-GMP IBC transfers
 		// IBC receives are rate limited on the Incoming direction (tokens coming in to Axelar hub).
 		if err := r.RateLimitPacket(ctx, packet, nexus.Incoming, types.NewIBCPath(packet.GetDestPort(), packet.GetDestChannel())); err != nil {
