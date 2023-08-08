@@ -1,16 +1,19 @@
 ## axelard vald-sign
 
-Sign hash with specified key
+Sign hash with the key corresponding to the key id for the given validator. If unspecified, the public key will be retrieved from the node.
 
 ```
-axelard vald-sign [key-id] [public-key] [hash to sign] [flags]
+axelard vald-sign [key-id] [validator-addr] [hash to sign] [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help                    help for vald-sign
-      --validator-addr string   the address of the validator operator, i.e axelarvaloper1..
+      --height int      Use a specific height to query state at (this can error if the node is pruning state)
+  -h, --help            help for vald-sign
+      --node string     <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
+  -o, --output string   Output format (text|json) (default "text")
+      --pubkey string   the public key of the validator for the key id in hex format
 ```
 
 ### Options inherited from parent commands
@@ -19,7 +22,6 @@ axelard vald-sign [key-id] [public-key] [hash to sign] [flags]
       --home string         directory for config and data (default "$HOME/.axelar")
       --log_format string   The logging format (json|plain) (default "plain")
       --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
-      --output string       Output format (text|json) (default "text")
       --trace               print out full stack trace on errors
 ```
 
