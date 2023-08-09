@@ -681,6 +681,7 @@
 | `recipient` | [bytes](#bytes) |  |  |
 | `fee` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 | `refund_recipient` | [string](#string) |  |  |
+| `asset` | [string](#string) |  | registered asset name in nexus |
 
 
 
