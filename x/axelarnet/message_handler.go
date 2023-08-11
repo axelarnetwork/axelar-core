@@ -386,6 +386,7 @@ func deductFee(ctx sdk.Context, b types.BankKeeper, fee *Fee, token keeper.Coin,
 		MessageID: msgID,
 		Recipient: recipient,
 		Fee:       coin,
+		Asset:     token.GetDenom(),
 	}
 	if fee.RefundRecipient != nil {
 		feePaidEvent.RefundRecipient = *fee.RefundRecipient
