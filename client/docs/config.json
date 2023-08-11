@@ -34,6 +34,9 @@
       }
     },
     {
+      "url": "../../tmp-swagger-gen/axelar/multisig/v1beta1/query.swagger.json"
+    },
+    {
       "url": "../../tmp-swagger-gen/axelar/multisig/v1beta1/service.swagger.json",
       "operationIds": {
         "rename": {
@@ -51,6 +54,9 @@
           "Params": "NexusParams"
         }
       }
+    },
+    {
+      "url": "../../tmp-swagger-gen/axelar/reward/v1beta1/query.swagger.json"
     },
     {
       "url": "../../tmp-swagger-gen/axelar/reward/v1beta1/service.swagger.json",
@@ -72,6 +78,9 @@
       }
     },
     {
+      "url": "../../tmp-swagger-gen/axelar/tss/v1beta1/query.swagger.json"
+    },
+    {
       "url": "../../tmp-swagger-gen/axelar/tss/v1beta1/service.swagger.json",
       "operationIds": {
         "rename": {
@@ -80,12 +89,18 @@
       }
     },
     {
+      "url": "../../tmp-swagger-gen/axelar/permission/v1beta1/query.swagger.json"
+    },
+    {
       "url": "../../tmp-swagger-gen/axelar/permission/v1beta1/service.swagger.json",
       "operationIds": {
         "rename": {
           "Params": "PermissionParams"
         }
       }
+    },
+    {
+      "url": "../../tmp-swagger-gen/axelar/vote/v1beta1/query.swagger.json"
     },
     {
       "url": "../../tmp-swagger-gen/axelar/vote/v1beta1/service.swagger.json",
