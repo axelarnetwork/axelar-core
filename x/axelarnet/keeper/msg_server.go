@@ -89,7 +89,12 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 	})
 
 	if req.Fee != nil {
-		err := s.bank.SendCoins(ctx, req.Sender, req.Fee.Recipient, sdk.NewCoins(req.Fee.Amount))
+		token, err := NewCoin(ctx, s.ibcK, s.nexus, req.Fee.Amount)
+		if err != nil {
+			return nil, sdkerrors.Wrap(err, "unrecognized fee denom")
+		}
+
+		err = s.bank.SendCoins(ctx, req.Sender, req.Fee.Recipient, sdk.NewCoins(req.Fee.Amount))
 		if err != nil {
 			return nil, sdkerrors.Wrap(err, "failed to transfer fee")
 		}
@@ -98,6 +103,7 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 			MessageID: msgID,
 			Recipient: req.Fee.Recipient,
 			Fee:       req.Fee.Amount,
+			Asset:     token.GetDenom(),
 		}
 		if req.Fee.RefundRecipient != nil {
 			feePaidEvent.RefundRecipient = req.Fee.RefundRecipient.String()
