@@ -3,6 +3,7 @@ package axelarnet
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -102,9 +103,13 @@ func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n ty
 		return channeltypes.NewErrorAcknowledgement(err)
 	}
 
+	err = validateReceiver(data.GetReceiver())
+	if err != nil {
+		return channeltypes.NewErrorAcknowledgement(err)
+	}
+
 	// Skip if packet not sent to Axelar message sender account.
-	// Receiver must be valid at this point. Otherwise, the transfer handler in upper layer would reject the packet.
-	if !types.AxelarGMPAccount.Equals(funcs.Must(sdk.AccAddressFromBech32(data.GetReceiver()))) {
+	if data.GetReceiver() != types.AxelarGMPAccount.String() {
 		// Rate limit non-GMP IBC transfers
 		// IBC receives are rate limited on the Incoming direction (tokens coming in to Axelar hub).
 		if err := r.RateLimitPacket(ctx, packet, nexus.Incoming, types.NewIBCPath(packet.GetDestPort(), packet.GetDestChannel())); err != nil {
@@ -398,4 +403,13 @@ func deductFee(ctx sdk.Context, b types.BankKeeper, fee *Fee, token keeper.Coin,
 	token.Amount = token.Amount.Sub(feeAmount)
 
 	return token, b.SendCoins(ctx, types.AxelarGMPAccount, recipient, sdk.NewCoins(coin))
+}
+
+// validateReceiver rejects uppercase GMP account address
+func validateReceiver(receiver string) error {
+	if strings.ToUpper(receiver) == receiver && types.AxelarGMPAccount.Equals(funcs.Must(sdk.AccAddressFromBech32(receiver))) {
+		return fmt.Errorf("uppercase GMP account address is not allowed")
+	}
+
+	return nil
 }

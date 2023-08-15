@@ -386,10 +386,7 @@ func TestHandleMessage(t *testing.T) {
 			ics20Packet.Receiver = strings.ToUpper(ics20Packet.Receiver)
 			packet = axelartestutils.RandomPacket(ics20Packet, ibctransfertypes.PortID, sourceChannel, ibctransfertypes.PortID, receiverChannel)
 		}).
-		Then("should return ack success", func(t *testing.T) {
-			assert.True(t, axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, r, packet).Success())
-			assert.Equal(t, genMsg.Status, nexus.Approved)
-		}).
+		Then("should return ack error", func(t *testing.T) { ackError() }).
 		Run(t)
 
 	whenMessageIsValid.
