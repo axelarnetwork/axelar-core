@@ -1286,6 +1286,7 @@ func TestHandleCallContract(t *testing.T) {
 			return fmt.Sprintf("%s-%x", hex.EncodeToString(hash[:]), count), hash[:], uint64(count)
 		}
 		b.SendCoinsFunc = func(sdk.Context, sdk.AccAddress, sdk.AccAddress, sdk.Coins) error { return nil }
+		nexusK.GetChainByNativeAssetFunc = func(_ sdk.Context, asset string) (nexus.Chain, bool) { return exported.Axelarnet, true }
 	})
 
 	whenChainIsRegistered := When("chain is registered", func() {
@@ -1325,7 +1326,6 @@ func TestHandleCallContract(t *testing.T) {
 			evmtestutils.RandomAddress().Hex(),
 			rand.BytesBetween(5, 1000),
 			&types.Fee{Amount: rand.Coin(), Recipient: rand.AccAddr()})
-
 	})
 
 	callFails := Then("call contract request fails", func(t *testing.T) {
