@@ -114,7 +114,7 @@ prereqs:
 	@which statik &>/dev/null        ||	go install github.com/rakyll/statik
 	@which mdformat &>/dev/null 	 ||	pip3 install mdformat
 	@which protoc &>/dev/null 		 || echo "Please install protoc for grpc (https://grpc.io/docs/languages/go/quickstart/)"
-	@which golangci-lint &>/dev/null || go install github.com/golangci/golangci-lint/cmd/golangci-lint
+	@which golangci-lint &>/dev/null || go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.53.3
 
 # Run all the code generators in the project
 .PHONY: generate
