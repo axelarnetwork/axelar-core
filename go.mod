@@ -41,6 +41,7 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20230525234020-1aefcd67740a
 	google.golang.org/grpc v1.55.0
 	google.golang.org/protobuf v1.30.0
+	github.com/golangci/golangci-lint v1.53.3
 )
 
 require (

@@ -6,6 +6,7 @@
 package tools
 
 import (
+	_ "github.com/golangci/golangci-lint"
 	_ "github.com/matryer/moq"
 	_ "golang.org/x/tools/cmd/goimports"
 )
