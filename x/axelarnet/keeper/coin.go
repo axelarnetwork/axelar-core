@@ -50,8 +50,8 @@ func (c Coin) Lock(bankK types.BankKeeper, depositAddr sdk.AccAddress) error {
 			return err
 		}
 
-		if !ics20.Equal(bankK.GetBalance(c.ctx, depositAddr, ics20.GetDenom())) {
-			return fmt.Errorf("balance does not match expected %s", ics20)
+		if bankK.SpendableBalance(c.ctx, depositAddr, ics20.GetDenom()).IsLT(ics20) {
+			return fmt.Errorf("coin %s to lock is greater than account balance", ics20)
 		}
 
 		// lock tokens in escrow address

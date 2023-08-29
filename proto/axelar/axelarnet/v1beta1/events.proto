@@ -81,6 +81,7 @@ message FeePaid {
                             "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   cosmos.base.v1beta1.Coin fee = 3 [ (gogoproto.nullable) = false ];
   string refund_recipient = 4;
+  string asset = 5; // registered asset name in nexus
 }
 
 message ContractCallSubmitted {

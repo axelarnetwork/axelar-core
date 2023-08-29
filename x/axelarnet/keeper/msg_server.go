@@ -89,7 +89,12 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 	})
 
 	if req.Fee != nil {
-		err := s.bank.SendCoins(ctx, req.Sender, req.Fee.Recipient, sdk.NewCoins(req.Fee.Amount))
+		token, err := NewCoin(ctx, s.ibcK, s.nexus, req.Fee.Amount)
+		if err != nil {
+			return nil, sdkerrors.Wrap(err, "unrecognized fee denom")
+		}
+
+		err = s.bank.SendCoins(ctx, req.Sender, req.Fee.Recipient, sdk.NewCoins(req.Fee.Amount))
 		if err != nil {
 			return nil, sdkerrors.Wrap(err, "failed to transfer fee")
 		}
@@ -98,6 +103,7 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 			MessageID: msgID,
 			Recipient: req.Fee.Recipient,
 			Fee:       req.Fee.Amount,
+			Asset:     token.GetDenom(),
 		}
 		if req.Fee.RefundRecipient != nil {
 			feePaidEvent.RefundRecipient = req.Fee.RefundRecipient.String()
@@ -171,8 +177,8 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 	ctx := sdk.UnwrapSDKContext(c)
 
 	depositAddr := nexus.CrossChainAddress{Address: req.DepositAddress.String(), Chain: exported.Axelarnet}
-	amount := s.bank.GetBalance(ctx, req.DepositAddress, req.Denom)
-	if amount.IsZero() {
+	coin := s.bank.SpendableBalance(ctx, req.DepositAddress, req.Denom)
+	if coin.IsZero() {
 		return nil, fmt.Errorf("deposit address '%s' holds no funds for token %s", req.DepositAddress.String(), req.Denom)
 	}
 
@@ -189,28 +195,28 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, fmt.Errorf("recipient chain '%s' is not activated", recipient.Chain.Name)
 	}
 
-	coin, err := NewCoin(ctx, s.ibcK, s.nexus, amount)
+	normalizedCoin, err := NewCoin(ctx, s.ibcK, s.nexus, coin)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := coin.Lock(s.bank, req.DepositAddress); err != nil {
+	if err := normalizedCoin.Lock(s.bank, req.DepositAddress); err != nil {
 		return nil, err
 	}
 
-	transferID, err := s.nexus.EnqueueForTransfer(ctx, depositAddr, coin.Coin)
+	transferID, err := s.nexus.EnqueueForTransfer(ctx, depositAddr, normalizedCoin.Coin)
 	if err != nil {
 		return nil, err
 	}
 
-	s.Logger(ctx).Info(fmt.Sprintf("deposit confirmed for %s on chain %s to recipient %s on chain %s for asset %s with transfer ID %d", req.DepositAddress.String(), exported.Axelarnet.Name, recipient.Address, recipient.Chain.Name, amount.String(), transferID),
+	s.Logger(ctx).Info(fmt.Sprintf("deposit confirmed for %s on chain %s to recipient %s on chain %s for asset %s with transfer ID %d", req.DepositAddress.String(), exported.Axelarnet.Name, recipient.Address, recipient.Chain.Name, coin.String(), transferID),
 		sdk.AttributeKeyAction, types.AttributeValueConfirm,
 		types.AttributeKeySourceChain, exported.Axelarnet.Name,
 		types.AttributeKeyDepositAddress, req.DepositAddress.String(),
 		types.AttributeKeyDestinationChain, recipient.Chain.Name,
 		types.AttributeKeyDestinationAddress, recipient.Address,
-		sdk.AttributeKeyAmount, amount.String(),
-		types.AttributeKeyAsset, amount.Denom,
+		sdk.AttributeKeyAmount, coin.String(),
+		types.AttributeKeyAsset, coin.Denom,
 		types.AttributeKeyTransferID, transferID.String(),
 	)
 
@@ -222,8 +228,8 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 			sdk.NewAttribute(types.AttributeKeyDepositAddress, req.DepositAddress.String()),
 			sdk.NewAttribute(types.AttributeKeyDestinationChain, recipient.Chain.Name.String()),
 			sdk.NewAttribute(types.AttributeKeyDestinationAddress, recipient.Address),
-			sdk.NewAttribute(sdk.AttributeKeyAmount, amount.String()),
-			sdk.NewAttribute(types.AttributeKeyAsset, amount.Denom),
+			sdk.NewAttribute(sdk.AttributeKeyAmount, coin.String()),
+			sdk.NewAttribute(types.AttributeKeyAsset, coin.Denom),
 			sdk.NewAttribute(types.AttributeKeyTransferID, transferID.String()),
 		))
 

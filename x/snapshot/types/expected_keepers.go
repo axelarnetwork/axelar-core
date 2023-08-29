@@ -23,7 +23,7 @@ type StakingKeeper interface {
 
 // BankKeeper adopts the GetBalance function of the bank keeper that is used by this module
 type BankKeeper interface {
-	GetBalance(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin
+	SpendableBalance(ctx sdk.Context, address sdk.AccAddress, denom string) sdk.Coin
 }
 
 // Nexus provides functionality to manage cross-chain transfers

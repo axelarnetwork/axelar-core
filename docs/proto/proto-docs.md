@@ -681,6 +681,7 @@
 | `recipient` | [bytes](#bytes) |  |  |
 | `fee` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 | `refund_recipient` | [string](#string) |  |  |
+| `asset` | [string](#string) |  | registered asset name in nexus |
 
 
 
@@ -6690,6 +6691,11 @@ GenesisState represents the genesis state
 ### InflationRateRequest
 InflationRateRequest represents a message that queries the Axelar specific
 inflation RPC method.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `validator` | [bytes](#bytes) |  |  |
 
 
 

@@ -1801,9 +1801,6 @@ var _ axelarnettypes.BankKeeper = &BankKeeperMock{}
 //			BurnCoinsFunc: func(ctx cosmossdktypes.Context, moduleName string, amt cosmossdktypes.Coins) error {
 //				panic("mock out the BurnCoins method")
 //			},
-//			GetBalanceFunc: func(ctx cosmossdktypes.Context, addr cosmossdktypes.AccAddress, denom string) cosmossdktypes.Coin {
-//				panic("mock out the GetBalance method")
-//			},
 //			IsSendEnabledCoinFunc: func(ctx cosmossdktypes.Context, coin cosmossdktypes.Coin) bool {
 //				panic("mock out the IsSendEnabledCoin method")
 //			},
@@ -1822,6 +1819,9 @@ var _ axelarnettypes.BankKeeper = &BankKeeperMock{}
 //			SendCoinsFromModuleToAccountFunc: func(ctx cosmossdktypes.Context, senderModule string, recipientAddr cosmossdktypes.AccAddress, amt cosmossdktypes.Coins) error {
 //				panic("mock out the SendCoinsFromModuleToAccount method")
 //			},
+//			SpendableBalanceFunc: func(ctx cosmossdktypes.Context, address cosmossdktypes.AccAddress, denom string) cosmossdktypes.Coin {
+//				panic("mock out the SpendableBalance method")
+//			},
 //		}
 //
 //		// use mockedBankKeeper in code that requires axelarnettypes.BankKeeper
@@ -1834,9 +1834,6 @@ type BankKeeperMock struct {
 
 	// BurnCoinsFunc mocks the BurnCoins method.
 	BurnCoinsFunc func(ctx cosmossdktypes.Context, moduleName string, amt cosmossdktypes.Coins) error
-
-	// GetBalanceFunc mocks the GetBalance method.
-	GetBalanceFunc func(ctx cosmossdktypes.Context, addr cosmossdktypes.AccAddress, denom string) cosmossdktypes.Coin
 
 	// IsSendEnabledCoinFunc mocks the IsSendEnabledCoin method.
 	IsSendEnabledCoinFunc func(ctx cosmossdktypes.Context, coin cosmossdktypes.Coin) bool
@@ -1856,6 +1853,9 @@ type BankKeeperMock struct {
 	// SendCoinsFromModuleToAccountFunc mocks the SendCoinsFromModuleToAccount method.
 	SendCoinsFromModuleToAccountFunc func(ctx cosmossdktypes.Context, senderModule string, recipientAddr cosmossdktypes.AccAddress, amt cosmossdktypes.Coins) error
 
+	// SpendableBalanceFunc mocks the SpendableBalance method.
+	SpendableBalanceFunc func(ctx cosmossdktypes.Context, address cosmossdktypes.AccAddress, denom string) cosmossdktypes.Coin
+
 	// calls tracks calls to the methods.
 	calls struct {
 		// BlockedAddr holds details about calls to the BlockedAddr method.
@@ -1871,15 +1871,6 @@ type BankKeeperMock struct {
 			ModuleName string
 			// Amt is the amt argument value.
 			Amt cosmossdktypes.Coins
-		}
-		// GetBalance holds details about calls to the GetBalance method.
-		GetBalance []struct {
-			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
-			// Addr is the addr argument value.
-			Addr cosmossdktypes.AccAddress
-			// Denom is the denom argument value.
-			Denom string
 		}
 		// IsSendEnabledCoin holds details about calls to the IsSendEnabledCoin method.
 		IsSendEnabledCoin []struct {
@@ -1937,16 +1928,25 @@ type BankKeeperMock struct {
 			// Amt is the amt argument value.
 			Amt cosmossdktypes.Coins
 		}
+		// SpendableBalance holds details about calls to the SpendableBalance method.
+		SpendableBalance []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// Address is the address argument value.
+			Address cosmossdktypes.AccAddress
+			// Denom is the denom argument value.
+			Denom string
+		}
 	}
 	lockBlockedAddr                  sync.RWMutex
 	lockBurnCoins                    sync.RWMutex
-	lockGetBalance                   sync.RWMutex
 	lockIsSendEnabledCoin            sync.RWMutex
 	lockIsSendEnabledCoins           sync.RWMutex
 	lockMintCoins                    sync.RWMutex
 	lockSendCoins                    sync.RWMutex
 	lockSendCoinsFromAccountToModule sync.RWMutex
 	lockSendCoinsFromModuleToAccount sync.RWMutex
+	lockSpendableBalance             sync.RWMutex
 }
 
 // BlockedAddr calls BlockedAddrFunc.
@@ -2018,46 +2018,6 @@ func (mock *BankKeeperMock) BurnCoinsCalls() []struct {
 	mock.lockBurnCoins.RLock()
 	calls = mock.calls.BurnCoins
 	mock.lockBurnCoins.RUnlock()
-	return calls
-}
-
-// GetBalance calls GetBalanceFunc.
-func (mock *BankKeeperMock) GetBalance(ctx cosmossdktypes.Context, addr cosmossdktypes.AccAddress, denom string) cosmossdktypes.Coin {
-	if mock.GetBalanceFunc == nil {
-		panic("BankKeeperMock.GetBalanceFunc: method is nil but BankKeeper.GetBalance was just called")
-	}
-	callInfo := struct {
-		Ctx   cosmossdktypes.Context
-		Addr  cosmossdktypes.AccAddress
-		Denom string
-	}{
-		Ctx:   ctx,
-		Addr:  addr,
-		Denom: denom,
-	}
-	mock.lockGetBalance.Lock()
-	mock.calls.GetBalance = append(mock.calls.GetBalance, callInfo)
-	mock.lockGetBalance.Unlock()
-	return mock.GetBalanceFunc(ctx, addr, denom)
-}
-
-// GetBalanceCalls gets all the calls that were made to GetBalance.
-// Check the length with:
-//
-//	len(mockedBankKeeper.GetBalanceCalls())
-func (mock *BankKeeperMock) GetBalanceCalls() []struct {
-	Ctx   cosmossdktypes.Context
-	Addr  cosmossdktypes.AccAddress
-	Denom string
-} {
-	var calls []struct {
-		Ctx   cosmossdktypes.Context
-		Addr  cosmossdktypes.AccAddress
-		Denom string
-	}
-	mock.lockGetBalance.RLock()
-	calls = mock.calls.GetBalance
-	mock.lockGetBalance.RUnlock()
 	return calls
 }
 
@@ -2302,6 +2262,46 @@ func (mock *BankKeeperMock) SendCoinsFromModuleToAccountCalls() []struct {
 	mock.lockSendCoinsFromModuleToAccount.RLock()
 	calls = mock.calls.SendCoinsFromModuleToAccount
 	mock.lockSendCoinsFromModuleToAccount.RUnlock()
+	return calls
+}
+
+// SpendableBalance calls SpendableBalanceFunc.
+func (mock *BankKeeperMock) SpendableBalance(ctx cosmossdktypes.Context, address cosmossdktypes.AccAddress, denom string) cosmossdktypes.Coin {
+	if mock.SpendableBalanceFunc == nil {
+		panic("BankKeeperMock.SpendableBalanceFunc: method is nil but BankKeeper.SpendableBalance was just called")
+	}
+	callInfo := struct {
+		Ctx     cosmossdktypes.Context
+		Address cosmossdktypes.AccAddress
+		Denom   string
+	}{
+		Ctx:     ctx,
+		Address: address,
+		Denom:   denom,
+	}
+	mock.lockSpendableBalance.Lock()
+	mock.calls.SpendableBalance = append(mock.calls.SpendableBalance, callInfo)
+	mock.lockSpendableBalance.Unlock()
+	return mock.SpendableBalanceFunc(ctx, address, denom)
+}
+
+// SpendableBalanceCalls gets all the calls that were made to SpendableBalance.
+// Check the length with:
+//
+//	len(mockedBankKeeper.SpendableBalanceCalls())
+func (mock *BankKeeperMock) SpendableBalanceCalls() []struct {
+	Ctx     cosmossdktypes.Context
+	Address cosmossdktypes.AccAddress
+	Denom   string
+} {
+	var calls []struct {
+		Ctx     cosmossdktypes.Context
+		Address cosmossdktypes.AccAddress
+		Denom   string
+	}
+	mock.lockSpendableBalance.RLock()
+	calls = mock.calls.SpendableBalance
+	mock.lockSpendableBalance.RUnlock()
 	return calls
 }
 

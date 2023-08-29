@@ -30,7 +30,7 @@ func (h Hooks) AfterProposalDeposit(ctx sdk.Context, proposalID uint64, _ sdk.Ac
 
 	switch c := proposal.GetContent().(type) {
 	case *types.CallContractsProposal:
-		minDepositsMap := h.k.GetParams(ctx).CallContractsProposalMinDeposits.ToMap()
+		minDepositsMap := h.k.GetParams(ctx).CallContractsProposalMinDeposits.ToMap(ctx, h.nexus)
 
 		for _, contractCall := range c.ContractCalls {
 			minDeposit := minDepositsMap.Get(contractCall.Chain, contractCall.ContractAddress)

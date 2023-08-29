@@ -170,7 +170,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 	})
 
 	whenDepositAddressHasBalance := When("deposit address has balance", func() {
-		bankK.GetBalanceFunc = func(_ sdk.Context, _ sdk.AccAddress, denom string) sdk.Coin {
+		bankK.SpendableBalanceFunc = func(_ sdk.Context, _ sdk.AccAddress, denom string) sdk.Coin {
 			// need to compare the balance so cannot make it random
 			return sdk.NewCoin(denom, sdk.NewInt(1e18))
 		}
@@ -225,7 +225,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		givenMsgServer.
 			Branch(
 				When("deposit address holds no funds", func() {
-					bankK.GetBalanceFunc = func(_ sdk.Context, _ sdk.AccAddress, denom string) sdk.Coin {
+					bankK.SpendableBalanceFunc = func(_ sdk.Context, _ sdk.AccAddress, denom string) sdk.Coin {
 						return sdk.NewCoin(denom, sdk.ZeroInt())
 					}
 				}).
@@ -1274,6 +1274,7 @@ func TestHandleCallContract(t *testing.T) {
 			return fmt.Sprintf("%s-%x", hex.EncodeToString(hash[:]), count), hash[:], uint64(count)
 		}
 		b.SendCoinsFunc = func(sdk.Context, sdk.AccAddress, sdk.AccAddress, sdk.Coins) error { return nil }
+		nexusK.GetChainByNativeAssetFunc = func(_ sdk.Context, asset string) (nexus.Chain, bool) { return exported.Axelarnet, true }
 	})
 
 	whenChainIsRegistered := When("chain is registered", func() {
@@ -1313,7 +1314,6 @@ func TestHandleCallContract(t *testing.T) {
 			evmtestutils.RandomAddress().Hex(),
 			rand.BytesBetween(5, 1000),
 			&types.Fee{Amount: rand.Coin(), Recipient: rand.AccAddr()})
-
 	})
 
 	callFails := Then("call contract request fails", func(t *testing.T) {
