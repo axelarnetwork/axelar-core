@@ -17244,6 +17244,12 @@ paths:
                           "@type": "type.googleapis.com/google.protobuf.Duration",
                           "value": "1.212s"
                         }
+      parameters:
+        - name: validator
+          in: query
+          required: false
+          type: string
+          format: byte
       tags:
         - QueryService
   /axelar/reward/v1beta1/params:

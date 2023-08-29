@@ -46,7 +46,7 @@ func (m RegisterAssetRequest) ValidateBasic() error {
 		return err
 	}
 
-	// any m.Limit value is valid
+	// Any m.Limit value is valid. If m.Limit is equal to 0, it means no cross-chain transfers will be allowed.
 
 	if m.Window.Nanoseconds() <= 0 {
 		return fmt.Errorf("rate limit window must be positive")

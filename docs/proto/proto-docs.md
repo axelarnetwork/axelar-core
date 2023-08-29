@@ -6693,6 +6693,11 @@ InflationRateRequest represents a message that queries the Axelar specific
 inflation RPC method.
 
 
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `validator` | [bytes](#bytes) |  |  |
+
+
 
 
 

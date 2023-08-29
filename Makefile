@@ -8,11 +8,13 @@ DOCKER := $(shell which docker)
 DOCKER_BUF := $(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace bufbuild/buf
 HTTPS_GIT := https://github.com/axelarnetwork/axelar-core.git
 PUSH_DOCKER_IMAGE=true
+DENOM := uaxl
 ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=axelar \
 	-X github.com/cosmos/cosmos-sdk/version.AppName=axelard \
 	-X github.com/cosmos/cosmos-sdk/version.Version=$(VERSION) \
 	-X "github.com/cosmos/cosmos-sdk/version.BuildTags=$(BUILD_TAGS)" \
-	-X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT)
+	-X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT) \
+	-X github.com/axelarnetwork/axelar-core/x/axelarnet/exported.NativeAsset=$(DENOM)
 
 BUILD_FLAGS := -tags "$(BUILD_TAGS)" -ldflags '$(ldflags)'
 USER_ID := $(shell id -u)
@@ -113,8 +115,8 @@ prereqs:
 	@which moq &>/dev/null			 ||	go install github.com/matryer/moq
 	@which statik &>/dev/null        ||	go install github.com/rakyll/statik
 	@which mdformat &>/dev/null 	 ||	pip3 install mdformat
-	@which protoc &>/dev/null 		 || 	echo "Please install protoc for grpc (https://grpc.io/docs/languages/go/quickstart/)"
-	@which golangci-lint &>/dev/null ||  go install github.com/golangci/golangci-lint/cmd/golangci-lint
+	@which protoc &>/dev/null 		 || echo "Please install protoc for grpc (https://grpc.io/docs/languages/go/quickstart/)"
+	@which golangci-lint &>/dev/null || go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.53.3
 
 # Run all the code generators in the project
 .PHONY: generate

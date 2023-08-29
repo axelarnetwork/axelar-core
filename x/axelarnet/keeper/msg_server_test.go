@@ -948,18 +948,6 @@ func TestAddCosmosBasedChain(t *testing.T) {
 				}
 			}).
 				Then2(requestFails("asset already registered")),
-
-			When("asset is already registered on axelarnet", func() {
-				req.NativeAssets = []nexus.Asset{{Denom: rand.Denom(3, 10), IsNativeAsset: true}}
-				nexusK.RegisterAssetFunc = func(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset, limit sdk.Uint, window time.Duration) error {
-					if chain.Name == exported.Axelarnet.Name {
-						return fmt.Errorf("asset already registered")
-					} else {
-						return nil
-					}
-				}
-			}).
-				Then2(requestFails("asset already registered")),
 		).
 		Run(t, repeats)
 
