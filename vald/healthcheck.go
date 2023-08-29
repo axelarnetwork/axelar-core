@@ -18,6 +18,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/vald/config"
 	"github.com/axelarnetwork/axelar-core/vald/tss"
+	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
 	snapshotTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
@@ -26,7 +27,6 @@ import (
 
 const (
 	keyID      = "testkey"
-	tokenDenom = "uaxl"
 	minBalance = 5000000
 	timeout    = time.Hour
 
@@ -169,7 +169,7 @@ func checkBroadcaster(ctx context.Context, clientCtx client.Context, serverCtx *
 	}
 
 	queryClient := bankTypes.NewQueryClient(clientCtx)
-	params := bankTypes.NewQueryBalanceRequest(broadcaster, tokenDenom)
+	params := bankTypes.NewQueryBalanceRequest(broadcaster, axelarnet.NativeAsset)
 
 	grpcCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
@@ -180,7 +180,7 @@ func checkBroadcaster(ctx context.Context, clientCtx client.Context, serverCtx *
 	}
 
 	if res.Balance.Amount.LTE(sdk.NewInt(minBalance)) {
-		return fmt.Errorf("broadcaster does not have enough funds (minimum balance is %d%s)", minBalance, tokenDenom)
+		return fmt.Errorf("broadcaster does not have enough funds (minimum balance is %d%s)", minBalance, axelarnet.NativeAsset)
 	}
 
 	return nil

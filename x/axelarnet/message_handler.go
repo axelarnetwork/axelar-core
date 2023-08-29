@@ -200,7 +200,7 @@ func validateMessage(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.Nexus, b ty
 
 	destChain, ok := n.GetChain(ctx, destChainName)
 	if !ok {
-		return fmt.Errorf("unrecognized destination chain %s", destChain.Name)
+		return fmt.Errorf("unrecognized destination chain %s", destChainName)
 	}
 
 	if !n.IsChainActivated(ctx, destChain) {

@@ -62,7 +62,7 @@ func NewHandler(k keeper.Keeper, n types.Nexus, b types.BankKeeper, a types.Acco
 			res, err := server.RouteIBCTransfers(sdk.WrapSDKContext(ctx), msg)
 			result, err := sdk.WrapServiceResult(ctx, res, err)
 			if err == nil {
-				result.Log = "successfully executed pending transfers"
+				result.Log = "successfully routed IBC transfers"
 			}
 			return result, err
 		case *types.RegisterFeeCollectorRequest:

@@ -36,6 +36,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/vald/multisig"
 	grpc "github.com/axelarnetwork/axelar-core/vald/tofnd_grpc"
 	"github.com/axelarnetwork/axelar-core/vald/tss"
+	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	multisigTypes "github.com/axelarnetwork/axelar-core/x/multisig/types"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
@@ -109,7 +110,7 @@ func GetValdCommand() *cobra.Command {
 	utils.OverwriteFlagDefaults(cmd, map[string]string{
 		flags.FlagBroadcastMode:  flags.BroadcastSync,
 		flags.FlagChainID:        app.Name,
-		flags.FlagGasPrices:      "0.007uaxl",
+		flags.FlagGasPrices:      "0.007" + axelarnet.NativeAsset,
 		flags.FlagKeyringBackend: "file",
 	}, false)
 
