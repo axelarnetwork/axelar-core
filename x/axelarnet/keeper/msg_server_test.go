@@ -744,11 +744,16 @@ func TestRetryIBCTransfer(t *testing.T) {
 	givenMessageServer := Given("a message server", func() {
 		ctx, k, channelK, _ = setup()
 		k.InitGenesis(ctx, types.DefaultGenesisState())
-		chain = nexustestutils.RandomChain()
 		cosmosChain := axelartestutils.RandomCosmosChain()
+		chain = nexus.Chain{
+			Name:                  cosmosChain.Name,
+			SupportsForeignAssets: true,
+			Module:                types.ModuleName,
+		}
 		cosmosChain.Name = chain.Name
 		path = cosmosChain.IBCPath
 		funcs.MustNoErr(k.SetCosmosChain(ctx, cosmosChain))
+		funcs.MustNoErr(k.SetChainByIBCPath(ctx, path, cosmosChain.Name))
 
 		b = &mock.BankKeeperMock{}
 		a = &mock.AccountKeeperMock{}
@@ -780,7 +785,6 @@ func TestRetryIBCTransfer(t *testing.T) {
 	requestIsMade := When("a retry failed transfer request is made", func() {
 		req = types.NewRetryIBCTransferRequest(
 			rand.AccAddr(),
-			chain.Name,
 			transfer.ID,
 		)
 	})
@@ -812,15 +816,14 @@ func TestRetryIBCTransfer(t *testing.T) {
 					assert.Error(t, err)
 				}),
 
-			When("ibc path does not match", func() {
-				transfer := axelartestutils.RandomIBCTransfer()
-				funcs.MustNoErr(k.EnqueueIBCTransfer(ctx, transfer))
-				funcs.MustNoErr(k.SetTransferFailed(ctx, transfer.ID))
-			}).
+			whenTransferIsFailed.
+				When("chain is not activated", func() {
+					n.IsChainActivatedFunc = func(sdk.Context, nexus.Chain) bool { return false }
+				}).
 				When2(requestIsMade).
 				Then("should return error", func(t *testing.T) {
 					_, err := server.RetryIBCTransfer(sdk.WrapSDKContext(ctx), req)
-					assert.Error(t, err)
+					assert.ErrorContains(t, err, "not activated")
 				}),
 
 			whenTransferIsFailed.
