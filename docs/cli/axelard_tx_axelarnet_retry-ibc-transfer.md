@@ -3,7 +3,7 @@
 Retry a failed IBC transfer
 
 ```
-axelard tx axelarnet retry-ibc-transfer [chain] [transfer ID] [flags]
+axelard tx axelarnet retry-ibc-transfer [transfer ID] [flags]
 ```
 
 ### Options

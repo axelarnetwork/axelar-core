@@ -2436,7 +2436,7 @@ a cosmos chain
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
-| `chain` | [string](#string) |  |  |
+| `chain` | [string](#string) |  | **Deprecated.**  |
 | `id` | [uint64](#uint64) |  |  |
 
 
