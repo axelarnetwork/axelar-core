@@ -107,6 +107,10 @@ func (d UndelegateDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate boo
 			chains := d.nexus.GetChains(ctx)
 
 			for _, chain := range chains {
+				if !d.nexus.IsChainActivated(ctx, chain) {
+					continue
+				}
+
 				nextKeyID, idFound := d.multiSig.GetNextKeyID(ctx, chain.Name)
 				key, keyFound := d.multiSig.GetKey(ctx, nextKeyID)
 				if idFound && keyFound && !key.GetWeight(valAddress).IsZero() {
