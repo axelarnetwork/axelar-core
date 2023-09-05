@@ -135,8 +135,8 @@ github.com/aws/aws-sdk-go-v2/service/route53 v1.1.1/go.mod h1:rLiOUrPLW/Er5kRcQ7
 github.com/aws/aws-sdk-go-v2/service/sso v1.1.1/go.mod h1:SuZJxklHxLAXgLTc1iFXbEWkXs7QRTQpCLGaKIprQW0=
 github.com/aws/aws-sdk-go-v2/service/sts v1.1.1/go.mod h1:Wi0EBZwiz/K44YliU0EKxqTCJGUfYTWXrrBwkq736bM=
 github.com/aws/smithy-go v1.1.0/go.mod h1:EzMw8dbp/YJL4A5/sbhGddag+NPT7q084agLbB9LgIw=
-github.com/axelarnetwork/cosmos-sdk v0.45.17-0.20230612175028-3c6cfe382b56 h1:J2b78vj5aNvsODEePoSalvasvc5z0LGTEvzdN+6rhnU=
-github.com/axelarnetwork/cosmos-sdk v0.45.17-0.20230612175028-3c6cfe382b56/go.mod h1:bScuNwWAP0TZJpUf+SHXRU3xGoUPp+X9nAzfeIXts40=
+github.com/axelarnetwork/cosmos-sdk v0.45.17-0.20230904150332-37fb903a6c62 h1:sY5jKknnxAgwLP4PueojJ9RNASDvJWnxdeICXHlezA8=
+github.com/axelarnetwork/cosmos-sdk v0.45.17-0.20230904150332-37fb903a6c62/go.mod h1:bScuNwWAP0TZJpUf+SHXRU3xGoUPp+X9nAzfeIXts40=
 github.com/axelarnetwork/tm-events v0.0.0-20230704201410-3cf91089034b h1:qTbA+WlbMRiPtK5zn5evVfU2XhmIOrOZNIE8VNU1O3Q=
 github.com/axelarnetwork/tm-events v0.0.0-20230704201410-3cf91089034b/go.mod h1:vDpqqxWxMvMIKbF6DN3BkxXAI4UJjolCHvaMGhE/FCI=
 github.com/axelarnetwork/utils v0.0.0-20230706045331-b7aacc1f4a2f h1:Q0Qh79MuZ/PWKzytqU8/4dt+S2QemdYYPXkjwp/i4l0=
@@ -1322,8 +1322,8 @@ golang.org/x/sys v0.0.0-20220715151400-c0bba94af5f8/go.mod h1:oPkhp1MJrh7nUepCBc
 golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.0.0-20220908164124-27713097b956/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.2.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
-golang.org/x/sys v0.11.0 h1:eG7RXZHdqOJ1i+0lgLgCpSXAp6M3LYlAo6osgSi0xOM=
-golang.org/x/sys v0.11.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
+golang.org/x/sys v0.12.0 h1:CM0HF96J0hcLAwsHPJZjfdNzs0gftsLfgKt57wWHJ0o=
+golang.org/x/sys v0.12.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/term v0.0.0-20201117132131-f5c789dd3221/go.mod h1:Nr5EML6q2oocZ2LXRh80K7BxOlk5/8JxuGnuhpl+muw=
 golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1/go.mod h1:bj7SfCRtBDWHUb9snDiAeCFNEtKQo2Wmx5Cou7ajbmo=
 golang.org/x/term v0.11.0 h1:F9tnn/DA/Im8nCwm+fX+1/eBwi4qFjRT++MhtVC4ZX0=

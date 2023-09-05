@@ -157,7 +157,7 @@ require (
 	github.com/zondax/ledger-go v0.14.1 // indirect
 	go.etcd.io/bbolt v1.3.6 // indirect
 	golang.org/x/net v0.14.0 // indirect
-	golang.org/x/sys v0.11.0 // indirect
+	golang.org/x/sys v0.12.0 // indirect
 	golang.org/x/term v0.11.0 // indirect
 	google.golang.org/genproto v0.0.0-20230526015343-6ee61e4f9d5f // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230525234015-3fc162c6f38a // indirect
@@ -194,4 +194,4 @@ replace github.com/rjeczalik/notify => github.com/rjeczalik/notify v0.9.3
 replace github.com/tendermint/tendermint => github.com/cometbft/cometbft v0.34.27
 
 // Temporary replacement for rosetta support
-replace github.com/cosmos/cosmos-sdk => github.com/axelarnetwork/cosmos-sdk v0.45.17-0.20230612175028-3c6cfe382b56
+replace github.com/cosmos/cosmos-sdk => github.com/axelarnetwork/cosmos-sdk v0.45.17-0.20230904150332-37fb903a6c62

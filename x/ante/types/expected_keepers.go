@@ -22,6 +22,7 @@ type MultiSig interface {
 // Nexus provides access to the nexus functionality
 type Nexus interface {
 	GetChains(ctx sdk.Context) []nexus.Chain
+	IsChainActivated(ctx sdk.Context, chain nexus.Chain) bool
 }
 
 // Snapshotter provides access to the snapshot functionality

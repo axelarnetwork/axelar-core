@@ -208,7 +208,7 @@
       - [link \[recipient chain\] \[recipient address\] \[asset\]](axelard_tx_axelarnet_link.md)	 - Link a cross chain address to an Axelar address
       - [register-asset \[chain\] \[denom\]](axelard_tx_axelarnet_register-asset.md)	 - Register a new asset to a cosmos based chain
       - [register-fee-collector \[fee collector\]](axelard_tx_axelarnet_register-fee-collector.md)	 - Register axelarnet fee collector account
-      - [retry-ibc-transfer \[chain\] \[transfer ID\]](axelard_tx_axelarnet_retry-ibc-transfer.md)	 - Retry a failed IBC transfer
+      - [retry-ibc-transfer \[transfer ID\]](axelard_tx_axelarnet_retry-ibc-transfer.md)	 - Retry a failed IBC transfer
       - [route-ibc-transfers](axelard_tx_axelarnet_route-ibc-transfers.md)	 - Routes pending transfers to cosmos chains
       - [route-message \[message ID\] \[payload\]](axelard_tx_axelarnet_route-message.md)	 - Route an approved general message to the destination chain
     - [bank](axelard_tx_bank.md)	 - Bank transaction subcommands
