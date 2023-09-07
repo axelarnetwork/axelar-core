@@ -15,14 +15,6 @@ jobs:
           - ubuntu-20.04
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Setup Golang with cache
-        uses: magnetikonline/action-golang-cache@v2
-        with:
-          go-version: ${{ matrix.go-version }}
-
-      - name: Checkout code
-        uses: actions/checkout@v2
-
       - name: Update internal dependencies
         run: |
           go get -u github.com/axelarnetwork/utils@latest
