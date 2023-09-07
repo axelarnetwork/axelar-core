@@ -17,11 +17,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-    
-      - name: Update internal dependencies
-        run: |
-          go get -u github.com/axelarnetwork/utils@latest
-          go get -u github.com/axelarnetwork/tm-events@latest
 
       - name: Check for changes
         run: |
