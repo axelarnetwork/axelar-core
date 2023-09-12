@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:experimental
 
-FROM golang:1.19-alpine3.17 as build
+FROM golang:1.21-alpine3.18 as build
 
 ARG ARCH=x86_64
 ARG ENABLE_WASM=false
@@ -33,7 +33,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/root/go/pkg/mod \
     make ENABLE_WASM="${ENABLE_WASM}" USE_MUSLC=true build
 
-FROM alpine:3.17
+FROM alpine:3.18
 
 ARG USER_ID=1000
 ARG GROUP_ID=1001

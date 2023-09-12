@@ -371,7 +371,9 @@ func setRoutedPacketCompleted(ctx sdk.Context, k keeper.Keeper, n types.Nexus, p
 				PortID:    portID,
 				ChannelID: channelID,
 			})
-		k.Logger(ctx).Info(fmt.Sprintf("set IBC transfer %d completed", transferID))
+
+		k.Logger(ctx).Info(fmt.Sprintf("IBC transfer %d completed", transferID),
+			"transferID", transferID, "portID", portID, "channelID", channelID, "sequence", seq)
 
 		return k.SetTransferCompleted(ctx, transferID)
 	}
@@ -379,7 +381,9 @@ func setRoutedPacketCompleted(ctx sdk.Context, k keeper.Keeper, n types.Nexus, p
 	// check if the packet is Axelar routed general message
 	messageID, ok := getSeqMessageIDMapping(ctx, k, portID, channelID, seq)
 	if ok {
-		k.Logger(ctx).Debug("set general message status to executed", "messageID", messageID)
+		k.Logger(ctx).Debug(fmt.Sprintf("general message %s executed", messageID),
+			"messageID", messageID, "portID", portID, "channelID", channelID, "sequence", seq)
+
 		return n.SetMessageExecuted(ctx, messageID)
 	}
 
@@ -401,7 +405,8 @@ func (am AppModule) setRoutedPacketFailed(ctx sdk.Context, packet channeltypes.P
 				PortID:    port,
 				ChannelID: channel,
 			})
-		am.keeper.Logger(ctx).Info(fmt.Sprintf("set IBC transfer %d failed", transferID))
+		am.keeper.Logger(ctx).Info(fmt.Sprintf("IBC transfer %d failed", transferID),
+			"transferID", transferID, "portID", port, "channelID", channel, "sequence", sequence)
 
 		return am.keeper.SetTransferFailed(ctx, transferID)
 	}
@@ -419,7 +424,9 @@ func (am AppModule) setRoutedPacketFailed(ctx sdk.Context, packet channeltypes.P
 			return err
 		}
 
-		am.keeper.Logger(ctx).Debug("set general message status to failed", "messageID", messageID)
+		am.keeper.Logger(ctx).Debug(fmt.Sprintf("general message %s failed to execute", messageID),
+			"messageID", messageID, "portID", port, "channelID", channel, "sequence", sequence)
+
 		return am.nexus.SetMessageFailed(ctx, messageID)
 	}
 

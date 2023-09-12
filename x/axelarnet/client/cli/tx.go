@@ -278,23 +278,21 @@ func GetCmdRegisterFeeCollector() *cobra.Command {
 
 func getRetryIBCTransfer() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "retry-ibc-transfer [chain] [transfer ID]",
+		Use:   "retry-ibc-transfer [transfer ID]",
 		Short: "Retry a failed IBC transfer",
-		Args:  cobra.ExactArgs(2),
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
 				return err
 			}
 
-			chain := utils.NormalizeString(args[0])
-
-			transferID, err := strconv.ParseUint(args[1], 10, 64)
+			transferID, err := strconv.ParseUint(args[0], 10, 64)
 			if err != nil {
 				return err
 			}
 
-			msg := types.NewRetryIBCTransferRequest(cliCtx.GetFromAddress(), nexus.ChainName(chain), nexus.TransferID(transferID))
+			msg := types.NewRetryIBCTransferRequest(cliCtx.GetFromAddress(), nexus.TransferID(transferID))
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

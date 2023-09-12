@@ -208,7 +208,7 @@
       - [link \[recipient chain\] \[recipient address\] \[asset\]](axelard_tx_axelarnet_link.md)	 - Link a cross chain address to an Axelar address
       - [register-asset \[chain\] \[denom\]](axelard_tx_axelarnet_register-asset.md)	 - Register a new asset to a cosmos based chain
       - [register-fee-collector \[fee collector\]](axelard_tx_axelarnet_register-fee-collector.md)	 - Register axelarnet fee collector account
-      - [retry-ibc-transfer \[chain\] \[transfer ID\]](axelard_tx_axelarnet_retry-ibc-transfer.md)	 - Retry a failed IBC transfer
+      - [retry-ibc-transfer \[transfer ID\]](axelard_tx_axelarnet_retry-ibc-transfer.md)	 - Retry a failed IBC transfer
       - [route-ibc-transfers](axelard_tx_axelarnet_route-ibc-transfers.md)	 - Routes pending transfers to cosmos chains
       - [route-message \[message ID\] \[payload\]](axelard_tx_axelarnet_route-message.md)	 - Route an approved general message to the destination chain
     - [bank](axelard_tx_bank.md)	 - Bank transaction subcommands
@@ -302,7 +302,7 @@
       - [create-vesting-account \[to_address\] \[amount\] \[end_time\]](axelard_tx_vesting_create-vesting-account.md)	 - Create a new vesting account funded with an allocation of tokens.
     - [vesting](axelard_tx_vesting.md)	 - Vesting transaction subcommands
       - [create-vesting-account \[to_address\] \[amount\] \[end_time\]](axelard_tx_vesting_create-vesting-account.md)	 - Create a new vesting account funded with an allocation of tokens.
-  - [vald-sign \[key-id\] \[public-key\] \[hash to sign\]](axelard_vald-sign.md)	 - Sign hash with specified key
+  - [vald-sign \[key-id\] \[validator-addr\] \[hash to sign\]](axelard_vald-sign.md)	 - Sign hash with the key corresponding to the key id for the given validator. If unspecified, the public key will be retrieved from the node.
   - [vald-start](axelard_vald-start.md)	 -
   - [validate-genesis \[file\]](axelard_validate-genesis.md)	 - validates the genesis file at the default location or at the location passed as an arg
   - [version](axelard_version.md)	 - Print the application binary version information

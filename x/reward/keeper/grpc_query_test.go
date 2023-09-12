@@ -36,6 +36,7 @@ func TestKeeper_Inflation(t *testing.T) {
 		externalChainInflation sdk.Dec
 		chains                 []nexus.Chain
 		activeStatus           map[nexus.ChainName]bool
+		val                    sdk.ValAddress
 	)
 
 	given := Given("a reward keeper", func() {
@@ -85,6 +86,34 @@ func TestKeeper_Inflation(t *testing.T) {
 
 			keyManagementInflation := tmInflation.Mul(keyRelativeInflation)
 			assert.Equal(t, response.InflationRate, tmInflation.Add(keyManagementInflation).Add(externalChainInflation))
+		}).
+		Run(t)
+
+	given.
+		When2(whenParamsAreSet).
+		When("one chain is active", func() {
+			val = rand.ValAddr()
+			nexusK.GetChainMaintainersFunc = func(ctx sdk.Context, chain nexus.Chain) []sdk.ValAddress { return []sdk.ValAddress{val} }
+			nexusK.GetChainsFunc = func(ctx sdk.Context) []nexus.Chain {
+				return []nexus.Chain{
+					{Name: nexus.ChainName("test")},
+				}
+			}
+			nexusK.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return true }
+		}).
+		Then("query inflation", func(t *testing.T) {
+			response, err = q.InflationRate(sdk.WrapSDKContext(ctx), &types.InflationRateRequest{Validator: val})
+			assert.NoError(t, err)
+
+			keyManagementInflation := tmInflation.Mul(keyRelativeInflation)
+			assert.Equal(t, response.InflationRate, tmInflation.Add(keyManagementInflation).Add(externalChainInflation))
+		}).
+		Then("query inflation for a non chain maintainer", func(t *testing.T) {
+			response, err = q.InflationRate(sdk.WrapSDKContext(ctx), &types.InflationRateRequest{Validator: rand.ValAddr()})
+			assert.NoError(t, err)
+
+			keyManagementInflation := tmInflation.Mul(keyRelativeInflation)
+			assert.Equal(t, response.InflationRate, tmInflation.Add(keyManagementInflation))
 		}).
 		Run(t)
 

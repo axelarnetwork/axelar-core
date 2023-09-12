@@ -5,12 +5,14 @@ import (
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
+const (
+	// ModuleName exposes axelarnet module name
+	ModuleName = "axelarnet"
+)
+
 var (
 	// NativeAsset is the native asset on Axelarnet
 	NativeAsset = "uaxl"
-
-	// ModuleName exposes axelarnet module name
-	ModuleName = "axelarnet"
 
 	// Axelarnet defines properties of the Axelar chain
 	Axelarnet = exported.Chain{

@@ -27,11 +27,14 @@ ifeq ($(shell uname -m), arm64)
 ARCH = aarch64
 endif
 
+DENOM := uaxl
+
 ldflags = "-X github.com/cosmos/cosmos-sdk/version.Name=axelar \
 	-X github.com/cosmos/cosmos-sdk/version.AppName=axelard \
 	-X github.com/cosmos/cosmos-sdk/version.Version=$(VERSION) \
 	-X "github.com/cosmos/cosmos-sdk/version.BuildTags=$(BUILD_TAGS)" \
 	-X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT) \
+	-X github.com/axelarnetwork/axelar-core/x/axelarnet/exported.NativeAsset=$(DENOM) \
 	-X github.com/axelarnetwork/axelar-core/app.WasmEnabled=$(WASM_ENABLED) \
 	-w -s ${STATIC_LINK_FLAGS}"
 
@@ -141,8 +144,8 @@ prereqs:
 	@which moq &>/dev/null			 ||	go install github.com/matryer/moq
 	@which statik &>/dev/null        ||	go install github.com/rakyll/statik
 	@which mdformat &>/dev/null 	 ||	pip3 install mdformat
-	@which protoc &>/dev/null 		 || 	echo "Please install protoc for grpc (https://grpc.io/docs/languages/go/quickstart/)"
-	@which golangci-lint &>/dev/null ||  go install github.com/golangci/golangci-lint/cmd/golangci-lint
+	@which protoc &>/dev/null 		 || echo "Please install protoc for grpc (https://grpc.io/docs/languages/go/quickstart/)"
+	@which golangci-lint &>/dev/null || go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.53.3
 
 # Run all the code generators in the project
 .PHONY: generate

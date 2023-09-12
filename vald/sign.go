@@ -3,9 +3,13 @@ package vald
 import (
 	"context"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"strings"
 
 	ec "github.com/btcsuite/btcd/btcec/v2/ecdsa"
+	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -16,25 +20,48 @@ import (
 	"github.com/axelarnetwork/axelar-core/vald/tss"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
+	multisigTypes "github.com/axelarnetwork/axelar-core/x/multisig/types"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	"github.com/axelarnetwork/utils/funcs"
 )
 
-// GetHealthCheckCommand returns the command to execute a node health check
+// GetSignCommand returns the command to execute a manual sign request from vald
 func GetSignCommand() *cobra.Command {
+	flagPubKey := "pubkey"
 
 	cmd := &cobra.Command{
-		Use:   "vald-sign [key-id] [public-key] [hash to sign]",
-		Short: "Sign hash with specified key",
+		Use:   "vald-sign [key-id] [validator-addr] [hash to sign]",
+		Short: "Sign hash with the key corresponding to the key id for the given validator. If unspecified, the public key will be retrieved from the node.",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
 
 			keyID := multisig.KeyID(args[0])
 			if err := keyID.ValidateBasic(); err != nil {
 				return err
 			}
 
-			pubKeyRaw, err := hex.DecodeString(args[1])
+			valAddr := strings.ToLower(args[1])
+			if _, err := sdk.ValAddressFromBech32(valAddr); err != nil {
+				return err
+			}
+
+			pubKeyHex, err := cmd.Flags().GetString(flagPubKey)
+			if err != nil {
+				return err
+			}
+
+			if pubKeyHex == "" {
+				pubKeyHex, err = getPubKeyByValidator(cmd.Context(), clientCtx, valAddr, keyID)
+				if err != nil {
+					return err
+				}
+			}
+
+			pubKeyRaw, err := hex.DecodeString(pubKeyHex)
 			if err != nil {
 				return err
 			}
@@ -54,15 +81,6 @@ func GetSignCommand() *cobra.Command {
 			}
 
 			hash := common.BytesToHash(hashRaw)
-
-			valAddr, err := cmd.Flags().GetString("validator-addr")
-			if err != nil {
-				return err
-			}
-
-			if _, err := sdk.ValAddressFromBech32(valAddr); valAddr != "" && err != nil {
-				return err
-			}
 
 			serverCtx := server.GetServerContextFromCmd(cmd)
 			valdCfg := config.DefaultValdConfig()
@@ -96,18 +114,44 @@ func GetSignCommand() *cobra.Command {
 			case *tofnd.SignResponse_Signature:
 				ecdsaSig := *funcs.Must(ec.ParseDERSignature(res.GetSignature()))
 				evmSignature := funcs.Must(evm.ToSignature(ecdsaSig, hash, pubKey.ToECDSAPubKey())).ToHomesteadSig()
-				fmt.Printf("signature: %s\n", hex.EncodeToString(evmSignature))
+
+				signDetails := map[string]string{
+					"key_id":    keyID.String(),
+					"validator": valAddr,
+					"msg_hash":  hex.EncodeToString(hash.Bytes()),
+					"pub_key":   pubKey.String(),
+					"signature": hex.EncodeToString(evmSignature),
+				}
+				fmt.Printf("%s", funcs.Must(json.MarshalIndent(signDetails, "", "  ")))
+
 				return nil
 			case *tofnd.SignResponse_Error:
 				return fmt.Errorf(res.GetError())
 			default:
 				panic(fmt.Errorf("unknown multisig sign response %T", res.GetSignResponse()))
 			}
-
 		},
 	}
 
-	cmd.Flags().String("validator-addr", "", "the address of the validator operator, i.e axelarvaloper1..")
+	cmd.Flags().String(flagPubKey, "", "the public key of the validator for the key id in hex format")
+
+	flags.AddQueryFlagsToCmd(cmd)
 
 	return cmd
+}
+
+func getPubKeyByValidator(ctx context.Context, clientCtx client.Context, valAddr string, keyID multisig.KeyID) (string, error) {
+	queryClient := multisigTypes.NewQueryServiceClient(clientCtx)
+	res, err := queryClient.Key(ctx, &multisigTypes.KeyRequest{KeyID: keyID})
+	if err != nil {
+		return "", err
+	}
+
+	for _, participant := range res.Participants {
+		if participant.Address == valAddr {
+			return participant.PubKey, nil
+		}
+	}
+
+	return "", fmt.Errorf("validator %s is not a participant for key %s", valAddr, keyID)
 }

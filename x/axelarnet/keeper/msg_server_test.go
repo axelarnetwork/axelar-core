@@ -744,11 +744,16 @@ func TestRetryIBCTransfer(t *testing.T) {
 	givenMessageServer := Given("a message server", func() {
 		ctx, k, channelK, _ = setup()
 		k.InitGenesis(ctx, types.DefaultGenesisState())
-		chain = nexustestutils.RandomChain()
 		cosmosChain := axelartestutils.RandomCosmosChain()
+		chain = nexus.Chain{
+			Name:                  cosmosChain.Name,
+			SupportsForeignAssets: true,
+			Module:                types.ModuleName,
+		}
 		cosmosChain.Name = chain.Name
 		path = cosmosChain.IBCPath
 		funcs.MustNoErr(k.SetCosmosChain(ctx, cosmosChain))
+		funcs.MustNoErr(k.SetChainByIBCPath(ctx, path, cosmosChain.Name))
 
 		b = &mock.BankKeeperMock{}
 		a = &mock.AccountKeeperMock{}
@@ -780,7 +785,6 @@ func TestRetryIBCTransfer(t *testing.T) {
 	requestIsMade := When("a retry failed transfer request is made", func() {
 		req = types.NewRetryIBCTransferRequest(
 			rand.AccAddr(),
-			chain.Name,
 			transfer.ID,
 		)
 	})
@@ -812,15 +816,14 @@ func TestRetryIBCTransfer(t *testing.T) {
 					assert.Error(t, err)
 				}),
 
-			When("ibc path does not match", func() {
-				transfer := axelartestutils.RandomIBCTransfer()
-				funcs.MustNoErr(k.EnqueueIBCTransfer(ctx, transfer))
-				funcs.MustNoErr(k.SetTransferFailed(ctx, transfer.ID))
-			}).
+			whenTransferIsFailed.
+				When("chain is not activated", func() {
+					n.IsChainActivatedFunc = func(sdk.Context, nexus.Chain) bool { return false }
+				}).
 				When2(requestIsMade).
 				Then("should return error", func(t *testing.T) {
 					_, err := server.RetryIBCTransfer(sdk.WrapSDKContext(ctx), req)
-					assert.Error(t, err)
+					assert.ErrorContains(t, err, "not activated")
 				}),
 
 			whenTransferIsFailed.
@@ -945,18 +948,6 @@ func TestAddCosmosBasedChain(t *testing.T) {
 				req.NativeAssets = []nexus.Asset{{Denom: rand.Denom(3, 10), IsNativeAsset: true}}
 				nexusK.RegisterAssetFunc = func(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset, limit sdk.Uint, window time.Duration) error {
 					return fmt.Errorf("asset already registered")
-				}
-			}).
-				Then2(requestFails("asset already registered")),
-
-			When("asset is already registered on axelarnet", func() {
-				req.NativeAssets = []nexus.Asset{{Denom: rand.Denom(3, 10), IsNativeAsset: true}}
-				nexusK.RegisterAssetFunc = func(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset, limit sdk.Uint, window time.Duration) error {
-					if chain.Name == exported.Axelarnet.Name {
-						return fmt.Errorf("asset already registered")
-					} else {
-						return nil
-					}
 				}
 			}).
 				Then2(requestFails("asset already registered")),
@@ -1286,6 +1277,7 @@ func TestHandleCallContract(t *testing.T) {
 			return fmt.Sprintf("%s-%x", hex.EncodeToString(hash[:]), count), hash[:], uint64(count)
 		}
 		b.SendCoinsFunc = func(sdk.Context, sdk.AccAddress, sdk.AccAddress, sdk.Coins) error { return nil }
+		nexusK.GetChainByNativeAssetFunc = func(_ sdk.Context, asset string) (nexus.Chain, bool) { return exported.Axelarnet, true }
 	})
 
 	whenChainIsRegistered := When("chain is registered", func() {
@@ -1325,7 +1317,6 @@ func TestHandleCallContract(t *testing.T) {
 			evmtestutils.RandomAddress().Hex(),
 			rand.BytesBetween(5, 1000),
 			&types.Fee{Amount: rand.Coin(), Recipient: rand.AccAddr()})
-
 	})
 
 	callFails := Then("call contract request fails", func(t *testing.T) {

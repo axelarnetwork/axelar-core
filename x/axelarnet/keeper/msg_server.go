@@ -89,7 +89,12 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 	})
 
 	if req.Fee != nil {
-		err := s.bank.SendCoins(ctx, req.Sender, req.Fee.Recipient, sdk.NewCoins(req.Fee.Amount))
+		token, err := NewCoin(ctx, s.ibcK, s.nexus, req.Fee.Amount)
+		if err != nil {
+			return nil, sdkerrors.Wrap(err, "unrecognized fee denom")
+		}
+
+		err = s.bank.SendCoins(ctx, req.Sender, req.Fee.Recipient, sdk.NewCoins(req.Fee.Amount))
 		if err != nil {
 			return nil, sdkerrors.Wrap(err, "failed to transfer fee")
 		}
@@ -98,6 +103,7 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 			MessageID: msgID,
 			Recipient: req.Fee.Recipient,
 			Fee:       req.Fee.Amount,
+			Asset:     token.GetDenom(),
 		}
 		if req.Fee.RefundRecipient != nil {
 			feePaidEvent.RefundRecipient = req.Fee.RefundRecipient.String()
@@ -326,11 +332,6 @@ func (s msgServer) AddCosmosBasedChain(c context.Context, req *types.AddCosmosBa
 		if err := s.nexus.RegisterAsset(ctx, chain, asset, utils.MaxUint, types.DefaultRateLimitWindow); err != nil {
 			return nil, err
 		}
-
-		// also register on axelarnet, it routes assets from cosmos chains to evm chains
-		if err := s.nexus.RegisterAsset(ctx, exported.Axelarnet, nexus.NewAsset(asset.Denom, false), utils.MaxUint, types.DefaultRateLimitWindow); err != nil {
-			return nil, err
-		}
 	}
 
 	if err := s.SetCosmosChain(ctx, types.CosmosChain{
@@ -366,10 +367,6 @@ func (s msgServer) RegisterAsset(c context.Context, req *types.RegisterAssetRequ
 	if err != nil {
 		return nil, err
 	}
-
-	// also register on axelarnet, it routes assets from cosmos chains to evm chains
-	// ignore the error in case above chain is axelarnet, or if the asset is already registered
-	_ = s.nexus.RegisterAsset(ctx, exported.Axelarnet, nexus.NewAsset(req.Asset.Denom, false), utils.MaxUint, types.DefaultRateLimitWindow)
 
 	return &types.RegisterAssetResponse{}, nil
 }
@@ -444,19 +441,6 @@ func (s msgServer) RegisterFeeCollector(c context.Context, req *types.RegisterFe
 // RetryIBCTransfer handles retry a failed IBC transfer
 func (s msgServer) RetryIBCTransfer(c context.Context, req *types.RetryIBCTransferRequest) (*types.RetryIBCTransferResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
-	chain, ok := s.nexus.GetChain(ctx, req.Chain)
-	if !ok {
-		return nil, fmt.Errorf("invalid chain %s", req.Chain)
-	}
-
-	if !s.nexus.IsChainActivated(ctx, chain) {
-		return nil, fmt.Errorf("chain %s is not activated", chain.Name)
-	}
-
-	path, ok := s.GetIBCPath(ctx, chain.Name)
-	if !ok {
-		return nil, fmt.Errorf("%s does not have a valid IBC path", chain.Name)
-	}
 
 	t, ok := s.GetTransfer(ctx, req.ID)
 	if !ok {
@@ -467,9 +451,21 @@ func (s msgServer) RetryIBCTransfer(c context.Context, req *types.RetryIBCTransf
 		return nil, fmt.Errorf("IBC transfer %s does not have failed status", req.ID.String())
 	}
 
-	if path != types.NewIBCPath(t.PortID, t.ChannelID) {
-		return nil, fmt.Errorf("chain %s IBC path doesn't match %s IBC transfer path", chain.Name, path)
+	path := types.NewIBCPath(t.PortID, t.ChannelID)
+	chainName, ok := s.GetChainNameByIBCPath(ctx, path)
+	if !ok {
+		return nil, fmt.Errorf("no cosmos chain registered for ibc path %s", path)
 	}
+
+	chain, ok := s.nexus.GetChain(ctx, chainName)
+	if !ok {
+		return nil, fmt.Errorf("invalid chain %s", chainName)
+	}
+
+	if !s.nexus.IsChainActivated(ctx, chain) {
+		return nil, fmt.Errorf("chain %s is not activated", chain.Name)
+	}
+
 	err := s.ibcK.SendIBCTransfer(ctx, t)
 	if err != nil {
 		return nil, err

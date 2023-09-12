@@ -3,6 +3,7 @@ package axelarnet
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -93,7 +94,7 @@ type Message struct {
 
 // OnRecvMessage handles general message from a cosmos chain
 func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n types.Nexus, b types.BankKeeper, r RateLimiter, packet ibcexported.PacketI) ibcexported.Acknowledgement {
-	// the acknowledgement is considered successful if it is a ResultAcknowledgement,
+	// The acknowledgement is considered successful if it is a ResultAcknowledgement,
 	// follow ibc transfer convention, put byte(1) in ResultAcknowledgement to indicate success.
 	ack := channeltypes.NewResultAcknowledgement([]byte{byte(1)})
 
@@ -102,7 +103,12 @@ func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n ty
 		return channeltypes.NewErrorAcknowledgement(err)
 	}
 
-	// skip if packet not sent to Axelar message sender account
+	err = validateReceiver(data.GetReceiver())
+	if err != nil {
+		return channeltypes.NewErrorAcknowledgement(err)
+	}
+
+	// Skip if packet not sent to Axelar message sender account.
 	if data.GetReceiver() != types.AxelarGMPAccount.String() {
 		// Rate limit non-GMP IBC transfers
 		// IBC receives are rate limited on the Incoming direction (tokens coming in to Axelar hub).
@@ -194,7 +200,7 @@ func validateMessage(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.Nexus, b ty
 
 	destChain, ok := n.GetChain(ctx, destChainName)
 	if !ok {
-		return fmt.Errorf("unrecognized destination chain %s", destChain.Name)
+		return fmt.Errorf("unrecognized destination chain %s", destChainName)
 	}
 
 	if !n.IsChainActivated(ctx, destChain) {
@@ -386,6 +392,7 @@ func deductFee(ctx sdk.Context, b types.BankKeeper, fee *Fee, token keeper.Coin,
 		MessageID: msgID,
 		Recipient: recipient,
 		Fee:       coin,
+		Asset:     token.GetDenom(),
 	}
 	if fee.RefundRecipient != nil {
 		feePaidEvent.RefundRecipient = *fee.RefundRecipient
@@ -396,4 +403,13 @@ func deductFee(ctx sdk.Context, b types.BankKeeper, fee *Fee, token keeper.Coin,
 	token.Amount = token.Amount.Sub(feeAmount)
 
 	return token, b.SendCoins(ctx, types.AxelarGMPAccount, recipient, sdk.NewCoins(coin))
+}
+
+// validateReceiver rejects uppercase GMP account address
+func validateReceiver(receiver string) error {
+	if strings.ToUpper(receiver) == receiver && types.AxelarGMPAccount.Equals(funcs.Must(sdk.AccAddressFromBech32(receiver))) {
+		return fmt.Errorf("uppercase GMP account address is not allowed")
+	}
+
+	return nil
 }
