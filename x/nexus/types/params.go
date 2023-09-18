@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 
@@ -19,6 +20,8 @@ var (
 	KeyChainMaintainerIncorrectVoteThreshold = []byte("chainMaintainerIncorrectVoteThreshold")
 	// KeyChainMaintainerCheckWindow represents the key for chain maintainer check window
 	KeyChainMaintainerCheckWindow = []byte("chainMaintainerCheckWindow")
+	// KeyConnectionRouter represents the key for connection router's address
+	KeyConnectionRouter = []byte("connectionRouter")
 )
 
 // KeyTable retrieves a subspace table for the module
@@ -33,6 +36,7 @@ func DefaultParams() Params {
 		ChainMaintainerMissingVoteThreshold:   utils.NewThreshold(20, 100),
 		ChainMaintainerIncorrectVoteThreshold: utils.NewThreshold(15, 100),
 		ChainMaintainerCheckWindow:            500,
+		ConnectionRouter:                      nil,
 	}
 }
 
@@ -50,6 +54,7 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 		params.NewParamSetPair(KeyChainMaintainerMissingVoteThreshold, &m.ChainMaintainerMissingVoteThreshold, validateThresholdWith("ChainMaintainerMissingVoteThreshold")),
 		params.NewParamSetPair(KeyChainMaintainerIncorrectVoteThreshold, &m.ChainMaintainerIncorrectVoteThreshold, validateThresholdWith("ChainMaintainerIncorrectVoteThreshold")),
 		params.NewParamSetPair(KeyChainMaintainerCheckWindow, &m.ChainMaintainerCheckWindow, validateChainMaintainerCheckWindow),
+		params.NewParamSetPair(KeyConnectionRouter, &m.ConnectionRouter, validateConnectionRouter),
 	}
 }
 
@@ -68,6 +73,10 @@ func (m Params) Validate() error {
 	}
 
 	if err := validateChainMaintainerCheckWindow(m.ChainMaintainerCheckWindow); err != nil {
+		return err
+	}
+
+	if err := validateConnectionRouter(m.ConnectionRouter); err != nil {
 		return err
 	}
 
@@ -101,6 +110,23 @@ func validateChainMaintainerCheckWindow(i interface{}) error {
 
 	if val >= maxBitmapSize {
 		return fmt.Errorf("ChainMaintainerCheckWindow must be < %d", maxBitmapSize)
+	}
+
+	return nil
+}
+
+func validateConnectionRouter(i interface{}) error {
+	val, ok := i.(sdk.AccAddress)
+	if !ok {
+		return fmt.Errorf("invalid parameter type for ConnectionRouter: %T", i)
+	}
+
+	if len(val) == 0 {
+		return nil
+	}
+
+	if err := sdk.VerifyAddressFormat(val); err != nil {
+		return sdkerrors.Wrap(err, "invalid ConnectionRouter")
 	}
 
 	return nil

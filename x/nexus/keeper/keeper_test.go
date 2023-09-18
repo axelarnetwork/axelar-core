@@ -23,14 +23,13 @@ import (
 	evmkeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
+	"github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 )
 
 const maxAmount int64 = 100000000000
 
-var keeper nexusKeeper.Keeper
-var bankK *axelarnetmock.BankKeeperMock
+var k keeper.Keeper
 
 func addressValidator() types.Router {
 	axelarnetK := &axelarnetmock.BaseKeeperMock{
@@ -58,8 +57,8 @@ func addressValidator() types.Router {
 func init() {
 	encCfg := app.MakeEncodingConfig()
 	subspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("nexusKey"), sdk.NewKVStoreKey("tNexusKey"), "nexus")
-	keeper = nexusKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("nexus"), subspace)
-	keeper.SetRouter(addressValidator())
+	k = keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("nexus"), subspace)
+	k.SetRouter(addressValidator())
 }
 
 func TestLinkAddress(t *testing.T) {
@@ -67,26 +66,26 @@ func TestLinkAddress(t *testing.T) {
 
 	var ctx sdk.Context
 	cfg := app.MakeEncodingConfig()
-	keeper, ctx = setup(cfg)
+	k, ctx = setup(cfg)
 
 	terra := exported.Chain{Name: exported.ChainName("terra"), Module: axelarnetTypes.ModuleName, SupportsForeignAssets: true}
 	evmAddr := exported.CrossChainAddress{Chain: evm.Ethereum, Address: "0x68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8"}
 	axelarAddr := exported.CrossChainAddress{Chain: axelarnet.Axelarnet, Address: "axelar1t66w8cazua870wu7t2hsffndmy2qy2v556ymndnczs83qpz2h45sq6lq9w"}
 
 	t.Run("should pass address validation", testutils.Func(func(t *testing.T) {
-		err := keeper.LinkAddresses(ctx,
+		err := k.LinkAddresses(ctx,
 			evmAddr,
 			exported.CrossChainAddress{Chain: axelarnet.Axelarnet, Address: "axelar1t66w8cazua870wu7t2hsffndmy2qy2v556ymndnczs83qpz2h45sq6lq9w"},
 		)
 		assert.NoError(t, err)
 
-		err = keeper.LinkAddresses(ctx,
+		err = k.LinkAddresses(ctx,
 			evmAddr,
 			exported.CrossChainAddress{Chain: terra, Address: "terra18zhnqjv70v0d2f8v0s5lape0gr5ua94eqkk8ex"},
 		)
 		assert.NoError(t, err)
 
-		err = keeper.LinkAddresses(ctx,
+		err = k.LinkAddresses(ctx,
 			exported.CrossChainAddress{Chain: evm.Ethereum, Address: "68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8"},
 			axelarAddr,
 		)
@@ -94,13 +93,13 @@ func TestLinkAddress(t *testing.T) {
 	}))
 
 	t.Run("should return error when linking invalid addresses", testutils.Func(func(t *testing.T) {
-		err := keeper.LinkAddresses(ctx,
+		err := k.LinkAddresses(ctx,
 			exported.CrossChainAddress{Chain: evm.Ethereum, Address: "0xZ8B93045fe7D8794a7cAF327e7f855CD6Cd03BB8"},
 			axelarAddr,
 		)
 		assert.ErrorContains(t, err, "not an hex address")
 
-		err = keeper.LinkAddresses(ctx,
+		err = k.LinkAddresses(ctx,
 			evmAddr,
 			exported.CrossChainAddress{Chain: axelarnet.Axelarnet, Address: rand.StrBetween(10, 30)},
 		)
@@ -113,29 +112,29 @@ func TestLinkAddress(t *testing.T) {
 			SupportsForeignAssets: false,
 			Module:                evmTypes.ModuleName,
 		}
-		keeper.SetChain(ctx, fromChain)
-		keeper.ActivateChain(ctx, fromChain)
+		k.SetChain(ctx, fromChain)
+		k.ActivateChain(ctx, fromChain)
 		sender, recipient := makeRandAddressesForChain(fromChain, evm.Ethereum)
-		err := keeper.LinkAddresses(ctx, sender, recipient)
+		err := k.LinkAddresses(ctx, sender, recipient)
 		assert.NoError(t, err)
-		_, err = keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(makeRandomDenom()))
+		_, err = k.EnqueueForTransfer(ctx, sender, makeRandAmount(makeRandomDenom()))
 		assert.Error(t, err)
 	}).Repeat(repeats))
 
 	t.Run("successfully link", testutils.Func(func(t *testing.T) {
 		sender, recipient := makeRandAddressesForChain(axelarnet.Axelarnet, evm.Ethereum)
-		err := keeper.LinkAddresses(ctx, sender, recipient)
+		err := k.LinkAddresses(ctx, sender, recipient)
 		assert.NoError(t, err)
-		_, err = keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(axelarnet.NativeAsset))
+		_, err = k.EnqueueForTransfer(ctx, sender, makeRandAmount(axelarnet.NativeAsset))
 		assert.NoError(t, err)
-		recp, ok := keeper.GetRecipient(ctx, sender)
+		recp, ok := k.GetRecipient(ctx, sender)
 		assert.True(t, ok)
 		assert.Equal(t, recipient, recp)
 
 		sender.Address = rand.Str(20)
-		_, err = keeper.EnqueueForTransfer(ctx, sender, makeRandAmount(axelarnet.NativeAsset))
+		_, err = k.EnqueueForTransfer(ctx, sender, makeRandAmount(axelarnet.NativeAsset))
 		assert.Error(t, err)
-		recp, ok = keeper.GetRecipient(ctx, sender)
+		recp, ok = k.GetRecipient(ctx, sender)
 		assert.False(t, ok)
 		assert.NotEqual(t, recipient, recp)
 	}).Repeat(repeats))
@@ -146,14 +145,14 @@ func TestSetChainGetChain_MixCaseChainName(t *testing.T) {
 	chain := makeRandomChain(chainName)
 
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
-	keeper.SetChain(ctx, chain)
+	k.SetChain(ctx, chain)
 
-	actual, ok := keeper.GetChain(ctx, exported.ChainName(strings.ToUpper(chainName)))
+	actual, ok := k.GetChain(ctx, exported.ChainName(strings.ToUpper(chainName)))
 
 	assert.True(t, ok)
 	assert.Equal(t, chain, actual)
 
-	actual, ok = keeper.GetChain(ctx, exported.ChainName(strings.ToLower(chainName)))
+	actual, ok = k.GetChain(ctx, exported.ChainName(strings.ToLower(chainName)))
 
 	assert.True(t, ok)
 	assert.Equal(t, chain, actual)
@@ -164,14 +163,14 @@ func TestSetChainGetChain_UpperCaseChainName(t *testing.T) {
 	chain := makeRandomChain(chainName)
 
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
-	keeper.SetChain(ctx, chain)
+	k.SetChain(ctx, chain)
 
-	actual, ok := keeper.GetChain(ctx, exported.ChainName(strings.ToUpper(chainName)))
+	actual, ok := k.GetChain(ctx, exported.ChainName(strings.ToUpper(chainName)))
 
 	assert.True(t, ok)
 	assert.Equal(t, chain, actual)
 
-	actual, ok = keeper.GetChain(ctx, exported.ChainName(strings.ToLower(chainName)))
+	actual, ok = k.GetChain(ctx, exported.ChainName(strings.ToLower(chainName)))
 
 	assert.True(t, ok)
 	assert.Equal(t, chain, actual)
@@ -182,14 +181,14 @@ func TestSetChainGetChain_LowerCaseChainName(t *testing.T) {
 	chain := makeRandomChain(chainName)
 
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
-	keeper.SetChain(ctx, chain)
+	k.SetChain(ctx, chain)
 
-	actual, ok := keeper.GetChain(ctx, exported.ChainName(strings.ToUpper(chainName)))
+	actual, ok := k.GetChain(ctx, exported.ChainName(strings.ToUpper(chainName)))
 
 	assert.True(t, ok)
 	assert.Equal(t, chain, actual)
 
-	actual, ok = keeper.GetChain(ctx, exported.ChainName(strings.ToLower(chainName)))
+	actual, ok = k.GetChain(ctx, exported.ChainName(strings.ToLower(chainName)))
 
 	assert.True(t, ok)
 	assert.Equal(t, chain, actual)
