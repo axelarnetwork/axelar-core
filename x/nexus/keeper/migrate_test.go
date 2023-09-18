@@ -48,8 +48,8 @@ func TestMigrate6to7(t *testing.T) {
 				k.GetParams(ctx)
 			})
 
-			assert.Len(t, actual, 0)
-			assert.Len(t, k.GetParams(ctx).ConnectionRouter, 0)
+			assert.Equal(t, types.DefaultParams().ConnectionRouter, actual)
+			assert.Equal(t, types.DefaultParams().ConnectionRouter, k.GetParams(ctx).ConnectionRouter)
 		}).
 		Run(t)
 

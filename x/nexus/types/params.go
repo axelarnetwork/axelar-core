@@ -36,7 +36,7 @@ func DefaultParams() Params {
 		ChainMaintainerMissingVoteThreshold:   utils.NewThreshold(20, 100),
 		ChainMaintainerIncorrectVoteThreshold: utils.NewThreshold(15, 100),
 		ChainMaintainerCheckWindow:            500,
-		ConnectionRouter:                      nil,
+		ConnectionRouter:                      sdk.AccAddress{},
 	}
 }
 
