@@ -14,7 +14,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexustestutils "github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
 	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	"github.com/axelarnetwork/utils/funcs"
@@ -28,7 +27,7 @@ func TestSetRateLimit(t *testing.T) {
 	var (
 		k      nexusKeeper.Keeper
 		ctx    sdk.Context
-		chain  nexus.ChainName
+		chain  exported.ChainName
 		asset  string
 		limit  sdk.Coin
 		window time.Duration
@@ -40,7 +39,7 @@ func TestSetRateLimit(t *testing.T) {
 
 	whenAssetIsRegistered := When("asset is registered", func() {
 		nexusChain := funcs.MustOk(k.GetChain(ctx, chain))
-		err := k.RegisterAsset(ctx, nexusChain, nexus.NewAsset(asset, false), utils.MaxUint, time.Hour)
+		err := k.RegisterAsset(ctx, nexusChain, exported.NewAsset(asset, false), utils.MaxUint, time.Hour)
 		assert.NoError(t, err)
 	})
 
@@ -53,7 +52,7 @@ func TestSetRateLimit(t *testing.T) {
 
 	givenKeeper.
 		When("using a non existent chain", func() {
-			chain = nexus.ChainName(rand.StrBetween(1, 20))
+			chain = exported.ChainName(rand.StrBetween(1, 20))
 			asset = rand.Denom(3, 20)
 			limit = sdk.NewInt64Coin(asset, mathrand.Int63())
 			window = rand.Duration()
@@ -127,7 +126,7 @@ func TestRateLimitTransfer(t *testing.T) {
 	var (
 		k         nexusKeeper.Keeper
 		ctx       sdk.Context
-		chain     nexus.ChainName
+		chain     exported.ChainName
 		denom     string
 		asset     sdk.Coin
 		direction exported.TransferDirection
@@ -143,7 +142,7 @@ func TestRateLimitTransfer(t *testing.T) {
 		chain = randChain(k, ctx).Name
 		denom = rand.Denom(3, 20)
 		nexusChain := funcs.MustOk(k.GetChain(ctx, chain))
-		err := k.RegisterAsset(ctx, nexusChain, nexus.NewAsset(denom, false), utils.MaxUint, time.Hour)
+		err := k.RegisterAsset(ctx, nexusChain, exported.NewAsset(denom, false), utils.MaxUint, time.Hour)
 		assert.NoError(t, err)
 	})
 
