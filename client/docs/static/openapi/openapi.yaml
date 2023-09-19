@@ -13787,6 +13787,9 @@ paths:
                       chain_maintainer_check_window:
                         type: integer
                         format: int32
+                      connection_router:
+                        type: string
+                        format: byte
                     title: Params represent the genesis parameters for the module
         default:
           description: An unexpected error response
@@ -47026,6 +47029,9 @@ components:
         chain_maintainer_check_window:
           type: integer
           format: int32
+        connection_router:
+          type: string
+          format: byte
       title: Params represent the genesis parameters for the module
     axelar.nexus.v1beta1.ParamsResponse:
       type: object
@@ -47078,6 +47084,9 @@ components:
             chain_maintainer_check_window:
               type: integer
               format: int32
+            connection_router:
+              type: string
+              format: byte
           title: Params represent the genesis parameters for the module
     axelar.nexus.v1beta1.RecipientAddressResponse:
       type: object

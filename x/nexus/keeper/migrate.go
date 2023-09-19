@@ -2,11 +2,19 @@ package keeper
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 )
 
-// GetMigrationHandler returns the handler that performs in-place store migrations
-func GetMigrationHandler(k Keeper) func(ctx sdk.Context) error {
+// Migrate6to7 returns the handler that performs in-place store migrations
+func Migrate6to7(k Keeper) func(ctx sdk.Context) error {
 	return func(ctx sdk.Context) error {
+		addModuleParamConnectionRouter(ctx, k)
+
 		return nil
 	}
+}
+
+func addModuleParamConnectionRouter(ctx sdk.Context, k Keeper) {
+	k.params.Set(ctx, types.KeyConnectionRouter, types.DefaultParams().ConnectionRouter)
 }
