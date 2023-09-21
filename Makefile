@@ -134,13 +134,14 @@ build-push-docker-images-rosetta: populate-bytecode guard-SEMVER
 	@DOCKER_BUILDKIT=1 docker buildx build -f Dockerfile.rosetta \
 		--platform linux/amd64 \
 		--output "type=image,push=${PUSH_DOCKER_IMAGE}" \
+		--build-arg WASM="${WASM}" \
 		-t axelarnet/axelar-core:${SEMVER}-rosetta .
 
 
 # Build a docker image that is able to run dlv and a debugger can be hooked up to
 .PHONY: docker-image-debug
 docker-image-debug:
-	@DOCKER_BUILDKIT=1 docker build -t axelar/core-debug -f ./Dockerfile.debug .
+	@DOCKER_BUILDKIT=1 docker build --build-arg WASM="${WASM}" -t axelar/core-debug -f ./Dockerfile.debug .
 
 # Install all generate prerequisites
 .Phony: prereqs

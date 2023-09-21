@@ -49,8 +49,10 @@ jobs:
 
       - name: Build docker image (debug)
         if: github.event.inputs.buildDebug != 'false'
+        env:
+          WASM: ${{ github.event.inputs.WASM }}
         run: |
-          make docker-image-debug
+          make WASM="${WASM}" docker-image-debug
 
       - name: Push to ECR (debug)
         uses: jwalton/gh-ecr-push@v1

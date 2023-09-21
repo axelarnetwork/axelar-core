@@ -8,7 +8,8 @@ ARG WASM=false
 RUN apk add --no-cache --update \
   ca-certificates \
   git \
-  make
+  make \
+  build-base
 
 WORKDIR axelar
 
