@@ -109,9 +109,9 @@ func GetValdCommand() *cobra.Command {
 	// Only set default, not actual value, so it can be overwritten by env variable
 	utils.OverwriteFlagDefaults(cmd, map[string]string{
 		flags.FlagBroadcastMode:  flags.BroadcastSync,
-		flags.FlagChainID:        "devnet-wasm", // TODO: switch back
+		flags.FlagChainID:        app.Name,
 		flags.FlagGasPrices:      "0.007" + axelarnet.NativeAsset,
-		flags.FlagKeyringBackend: "test", // TODO: switch back
+		flags.FlagKeyringBackend: "file",
 	}, false)
 
 	return cmd

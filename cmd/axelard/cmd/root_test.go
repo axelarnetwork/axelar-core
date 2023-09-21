@@ -24,8 +24,8 @@ func TestNewRootCmd(t *testing.T) {
 
 func keyringBackendSetToFile(t *testing.T, cmd *cobra.Command) (foundKeyringBackend bool) {
 	if f := cmd.Flags().Lookup(flags.FlagKeyringBackend); f != nil {
-		assert.Equal(t, keyring.BackendTest, f.DefValue) // TODO: revert this
-		assert.Equal(t, keyring.BackendTest, f.Value.String())
+		assert.Equal(t, keyring.BackendFile, f.DefValue)
+		assert.Equal(t, keyring.BackendFile, f.Value.String())
 		assert.False(t, f.Changed)
 		foundKeyringBackend = true
 	}

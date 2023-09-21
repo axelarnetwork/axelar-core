@@ -217,9 +217,9 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 	// Only set default, not actual value, so it can be overwritten by env variable
 	utils.OverwriteFlagDefaults(rootCmd, map[string]string{
 		flags.FlagBroadcastMode:    flags.BroadcastBlock,
-		flags.FlagChainID:          "devnet-wasm",
+		flags.FlagChainID:          app.Name,
 		flags.FlagGasPrices:        minGasPrice,
-		flags.FlagKeyringBackend:   "test", // TODO: switch back
+		flags.FlagKeyringBackend:   "file",
 		flags.FlagSkipConfirmation: "true",
 	}, false)
 
