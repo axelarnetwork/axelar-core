@@ -7,6 +7,7 @@ RUN apt update && apt install \
 
 WORKDIR $GOPATH/src/github.com/axelarnetwork/axelar-core
 ARG SEMVER
+ARG WASM=false
 
 COPY ./go.mod .
 COPY ./go.sum .
@@ -14,4 +15,4 @@ RUN go mod download
 
 COPY . .
 ENV CGO_ENABLED=0
-RUN make build-binaries
+RUN make WASM="${WASM}" build-binaries

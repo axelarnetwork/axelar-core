@@ -21,7 +21,8 @@ func TestMsgRoles(t *testing.T) {
 	var missingRoles []string
 	for _, implementation := range implementations {
 		if strings.HasPrefix(implementation, "/ibc.") ||
-			strings.HasPrefix(implementation, "/cosmos.") {
+			strings.HasPrefix(implementation, "/cosmos.") ||
+			strings.HasPrefix(implementation, "/cosmwasm.") {
 			continue
 		}
 

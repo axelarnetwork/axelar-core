@@ -1,30 +1,35 @@
 PACKAGES=$(shell go list ./... | grep -v '/simulation')
 
-VERSION := 0.35.0 # $(shell echo $(shell git describe --tags) | sed 's/^v//')
+VERSION := $(shell echo $(shell git describe --tags) | sed 's/^v//')
 COMMIT := $(shell git log -1 --format='%H')
 
 DOCKER := $(shell which docker)
 DOCKER_BUF := $(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace bufbuild/buf
 HTTPS_GIT := https://github.com/axelarnetwork/axelar-core.git
-PUSH_DOCKER_IMAGE=true
+PUSH_DOCKER_IMAGE := true
 
-ifeq ($(ENABLE_WASM), true)
-WASM_ENABLED="true"
+ifeq ($(WASM), true)
+WASM_ENABLED := "true"
+ifndef $(WASM_CAPABILITIES)
+# Wasm capabilities: https://github.com/CosmWasm/cosmwasm/blob/main/docs/CAPABILITIES-BUILT-IN.md
+WASM_CAPABILITIES := "iterator,staking,stargate,cosmwasm_1_3"
+endif
 else
-WASM_ENABLED=""
+WASM_ENABLED := ""
+WASM_CAPABILITIES := ""
 endif
 
-ifeq ($(USE_MUSLC), true)
-STATIC_LINK_FLAGS=-linkmode=external -extldflags '-Wl,-z,muldefs -static'
+ifeq ($(MUSLC), true)
+STATIC_LINK_FLAGS := -linkmode=external -extldflags '-Wl,-z,muldefs -static'
 BUILD_TAGS := muslc
 else
-STATIC_LINK_FLAGS=""
+STATIC_LINK_FLAGS := ""
 BUILD_TAGS := ledger
 endif
 
 ARCH := x86_64
 ifeq ($(shell uname -m), arm64)
-ARCH = aarch64
+ARCH := aarch64
 endif
 
 DENOM := uaxl
@@ -36,6 +41,7 @@ ldflags = "-X github.com/cosmos/cosmos-sdk/version.Name=axelar \
 	-X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT) \
 	-X github.com/axelarnetwork/axelar-core/x/axelarnet/exported.NativeAsset=$(DENOM) \
 	-X github.com/axelarnetwork/axelar-core/app.WasmEnabled=$(WASM_ENABLED) \
+	-X github.com/axelarnetwork/axelar-core/app.WasmCapabilities=$(WASM_CAPABILITIES) \
 	-w -s ${STATIC_LINK_FLAGS}"
 
 BUILD_FLAGS := -tags $(BUILD_TAGS) -ldflags $(ldflags) -trimpath
@@ -99,7 +105,7 @@ debug:  go.sum
 .PHONY: docker-image
 docker-image:
 	@DOCKER_BUILDKIT=1 docker build \
-		--build-arg ENABLE_WASM="${ENABLE_WASM}" \
+		--build-arg WASM="${WASM}" \
 		--build-arg ARCH="${ARCH}" \
 		-t axelar/core .
 
@@ -109,7 +115,7 @@ docker-image-local-user:  guard-VERSION guard-GROUP_ID guard-USER_ID
 	@DOCKER_BUILDKIT=1 docker build \
 		--build-arg USER_ID=${USER_ID} \
 		--build-arg GROUP_ID=${GROUP_ID} \
-		--build-arg ENABLE_WASM="${ENABLE_WASM}" \
+		--build-arg WASM="${WASM}" \
 		--build-arg ARCH="${ARCH}" \
 		-t axelarnet/axelar-core:${VERSION}-local .
 
@@ -118,7 +124,7 @@ build-push-docker-images:  guard-SEMVER
 	@DOCKER_BUILDKIT=1 docker buildx build \
 		--platform ${PLATFORM} \
 		--output "type=image,push=${PUSH_DOCKER_IMAGE}" \
-		--build-arg ENABLE_WASM="${ENABLE_WASM}" \
+		--build-arg WASM="${WASM}" \
 		--build-arg ARCH="${ARCH}" \
 		-t axelarnet/axelar-core-${SUFFIX}:${SEMVER} --provenance=false .
 

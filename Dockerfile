@@ -3,7 +3,7 @@
 FROM golang:1.21-alpine3.18 as build
 
 ARG ARCH=x86_64
-ARG ENABLE_WASM=false
+ARG WASM=false
 
 RUN --mount=type=cache,target=/tmp/ \
   apk add --cache-dir=/tmp/ --update \
@@ -18,9 +18,10 @@ RUN --mount=type=bind,source=. \
   --mount=type=cache,target=/go/pkg/mod \
   go mod download
 
-# Cosmwasm - Download correct libwasmvm version
-RUN if [[ "${ENABLE_WASM}" == "true" ]]; then \
-    WASMVM_VERSION=v1.1.1 && \
+# Use a compatible libwasmvm
+# Alpine Linux requires static linking against muslc: https://github.com/CosmWasm/wasmd/blob/v0.33.0/INTEGRATION.md#prerequisites
+RUN if [[ "${WASM}" == "true" ]]; then \
+    WASMVM_VERSION=v1.3.0 && \
     wget https://github.com/CosmWasm/wasmvm/releases/download/${WASMVM_VERSION}/libwasmvm_muslc.${ARCH}.a \
         -O /lib/libwasmvm_muslc.a && \
     wget https://github.com/CosmWasm/wasmvm/releases/download/${WASMVM_VERSION}/checksums.txt -O /tmp/checksums.txt && \
@@ -31,7 +32,7 @@ COPY . .
 
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/root/go/pkg/mod \
-    make ENABLE_WASM="${ENABLE_WASM}" USE_MUSLC=true build
+    make WASM="${WASM}" MUSLC=true build
 
 FROM alpine:3.18
 
