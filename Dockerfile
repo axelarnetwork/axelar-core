@@ -5,18 +5,16 @@ FROM golang:1.21-alpine3.18 as build
 ARG ARCH=x86_64
 ARG WASM=false
 
-RUN --mount=type=cache,target=/tmp/ \
-  apk add --cache-dir=/tmp/ --update \
+RUN apk add --no-cache --update \
   ca-certificates \
   git \
-  make \
-  build-base
+  make
 
 WORKDIR axelar
 
-RUN --mount=type=bind,source=. \
-  --mount=type=cache,target=/go/pkg/mod \
-  go mod download
+COPY ./go.mod .
+COPY ./go.sum .
+RUN go mod download
 
 # Use a compatible libwasmvm
 # Alpine Linux requires static linking against muslc: https://github.com/CosmWasm/wasmd/blob/v0.33.0/INTEGRATION.md#prerequisites
@@ -25,14 +23,12 @@ RUN if [[ "${WASM}" == "true" ]]; then \
     wget https://github.com/CosmWasm/wasmvm/releases/download/${WASMVM_VERSION}/libwasmvm_muslc.${ARCH}.a \
         -O /lib/libwasmvm_muslc.a && \
     wget https://github.com/CosmWasm/wasmvm/releases/download/${WASMVM_VERSION}/checksums.txt -O /tmp/checksums.txt && \
-    sha256sum /lib/libwasmvm_muslc.a | grep $(cat /tmp/checksums.txt | grep ${ARCH} | cut -d ' ' -f 1); \
+    sha256sum /lib/libwasmvm_muslc.a | grep $(cat /tmp/checksums.txt | grep libwasmvm_muslc.${ARCH}.a | cut -d ' ' -f 1); \
     fi
 
 COPY . .
 
-RUN --mount=type=cache,target=/root/.cache/go-build \
-    --mount=type=cache,target=/root/go/pkg/mod \
-    make WASM="${WASM}" MUSLC=true build
+RUN make WASM="${WASM}" MUSLC=true build
 
 FROM alpine:3.18
 
