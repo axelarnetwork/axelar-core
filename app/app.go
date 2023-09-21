@@ -169,9 +169,9 @@ var (
 	// This is configured during the build.
 	WasmEnabled = ""
 
-	// wasmCapabilities specifies the capabilities of the wasm vm
+	// WasmCapabilities specifies the capabilities of the wasm vm
 	// capabilities are detailed here: https://github.com/CosmWasm/cosmwasm/blob/main/docs/CAPABILITIES-BUILT-IN.md
-	wasmCapabilities = "iterator,staking,stargate,cosmwasm_1_1"
+	WasmCapabilities = ""
 )
 
 var (
@@ -271,7 +271,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	keys := sdk.NewKVStoreKeys(storeKeys...)
 
 	if IsWasmEnabled() {
-		maccPerms[wasm.ModuleName] = []string{authtypes.Burner} // TODO
+		maccPerms[wasm.ModuleName] = []string{authtypes.Burner}
 	}
 
 	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
@@ -357,53 +357,82 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		appCodec, keys[ibchost.StoreKey], app.getSubspace(ibchost.ModuleName), app.stakingKeeper, upgradeK, scopedIBCK,
 	)
 
+	// Custom axelarnet/evm/nexus keepers
 	axelarnetK := axelarnetKeeper.NewKeeper(
 		appCodec, keys[axelarnetTypes.StoreKey], app.getSubspace(axelarnetTypes.ModuleName), app.ibcKeeper.ChannelKeeper, app.feegrantKeeper,
+	)
+
+	evmK := evmKeeper.NewKeeper(
+		appCodec, keys[evmTypes.StoreKey], app.paramsKeeper,
 	)
 
 	nexusK := nexusKeeper.NewKeeper(
 		appCodec, keys[nexusTypes.StoreKey], app.getSubspace(nexusTypes.ModuleName),
 	)
 
+	// Setting Router will finalize all routes by sealing router
+	// No more routes can be added
+	nexusRouter := nexusTypes.NewRouter()
+	nexusRouter.AddAddressValidator(evmTypes.ModuleName, evmKeeper.NewAddressValidator()).
+		AddAddressValidator(axelarnetTypes.ModuleName, axelarnetKeeper.NewAddressValidator(axelarnetK))
+	nexusK.SetRouter(nexusRouter)
+
+	// IBC Transfer Stack: SendPacket
+	//
+	// Originates from the transferKeeper and goes up the stack
+	// transferKeeper.SendPacket -> ibc_hooks.SendPacket -> rateLimiter.SendPacket -> channel.SendPacket
+	//
+	// After this, the wasm keeper is required to be set on WasmHooks
+
 	// Create IBC rate limiter
 	rateLimiter := axelarnet.NewRateLimiter(axelarnetK, app.ibcKeeper.ChannelKeeper, nexusK)
+	var ibcHooksMiddleware ibchooks.ICS4Middleware
+	var ics4Wrapper ibctransfertypes.ICS4Wrapper
+	var wasmHooks ibchooks.WasmHooks
+	ics4Wrapper = rateLimiter
 
-	// Configure the hooks keeper
-	hooksKeeper := ibchookskeeper.NewKeeper(
-		keys[ibchookstypes.StoreKey],
-	)
-	accPrefix := sdk.GetConfig().GetBech32AccountAddrPrefix()
-	wasmHooks := ibchooks.NewWasmHooks(&hooksKeeper, nil, accPrefix) // The contract keeper needs to be set later
-	ibcHooksICS4Wrapper := ibchooks.NewICS4Middleware(
-		rateLimiter,
-		&wasmHooks,
-	)
+	if IsWasmEnabled() {
+		// Configure the IBC hooks keeper to make wasm calls via IBC transfer memo
+		ibcHooksKeeper := ibchookskeeper.NewKeeper(
+			keys[ibchookstypes.StoreKey],
+		)
+		accPrefix := sdk.GetConfig().GetBech32AccountAddrPrefix()
+		wasmHooks = ibchooks.NewWasmHooks(&ibcHooksKeeper, nil, accPrefix) // The contract keeper needs to be set later
+		ibcHooksMiddleware = ibchooks.NewICS4Middleware(
+			rateLimiter, // Wrap IBC hooks on top of the rate limit middleware
+			&wasmHooks,
+		)
+
+		ics4Wrapper = ibcHooksMiddleware
+	}
 
 	// Create Transfer Keepers
 	app.transferKeeper = ibctransferkeeper.NewKeeper(
 		appCodec, keys[ibctransfertypes.StoreKey], app.getSubspace(ibctransfertypes.ModuleName),
-		// The ICS4Wrapper is replaced by the HooksICS4Wrapper instead of the channel so that sending can be overridden by the middleware
-		ibcHooksICS4Wrapper, // TODO: refactor hooks to be easily composable
+		// Use the IBC middleware stack
+		ics4Wrapper,
 		app.ibcKeeper.ChannelKeeper, &app.ibcKeeper.PortKeeper,
 		accountK, bankK, scopedTransferK,
 	)
-	transferModule := transfer.NewAppModule(app.transferKeeper)
 
-	// register the proposal types
-	govRouter := govtypes.NewRouter()
-	govRouter.AddRoute(govtypes.RouterKey, govtypes.ProposalHandler).
-		AddRoute(paramproposal.RouterKey, params.NewParamChangeProposalHandler(paramsK)).
-		AddRoute(distrtypes.RouterKey, distr.NewCommunityPoolSpendProposalHandler(distrK)).
-		AddRoute(upgradetypes.RouterKey, upgrade.NewSoftwareUpgradeProposalHandler(upgradeK)).
-		AddRoute(ibcclienttypes.RouterKey, ibcclient.NewClientProposalHandler(app.ibcKeeper.ClientKeeper)).
-		AddRoute(axelarnetTypes.RouterKey, axelarnet.NewProposalHandler(axelarnetK, nexusK, accountK))
+	// IBC Transfer Stack: RecvPacket
+	//
+	// Packet originates from core IBC and goes down to app, the flow is the other way
+	// channel.RecvPacket -> axelarnet.OnRecvPacket (transfer, GMP, and rate limit handler) -> ibc_hooks.OnRecvPacket -> transfer.OnRecvPacket
+	var transferStack porttypes.IBCModule = transfer.NewIBCModule(app.transferKeeper)
+	if IsWasmEnabled() {
+		transferStack = ibchooks.NewIBCMiddleware(transferStack, &ibcHooksMiddleware)
+	}
+
+	ibcK := axelarnetKeeper.NewIBCKeeper(axelarnetK, app.transferKeeper, app.ibcKeeper.ChannelKeeper)
+	axelarnetModule := axelarnet.NewAppModule(axelarnetK, nexusK, axelarbankkeeper.NewBankKeeper(bankK), accountK, ibcK, transferStack, rateLimiter, logger)
+
+	// Create static IBC router, add axelarnet module as the IBC transfer route, and seal it
+	ibcRouter := porttypes.NewRouter()
+	ibcRouter.AddRoute(ibctransfertypes.ModuleName, axelarnetModule)
 
 	// axelar custom keepers
-	// axelarnet / nexus keepers created above
-	evmK := evmKeeper.NewKeeper(
-		appCodec, keys[evmTypes.StoreKey], app.paramsKeeper,
-	)
-
+	// axelarnet / evm / nexus keepers created above
 	rewardK := rewardKeeper.NewKeeper(
 		appCodec, keys[rewardTypes.StoreKey], app.getSubspace(rewardTypes.ModuleName), axelarbankkeeper.NewBankKeeper(bankK), distrK, stakingK,
 	)
@@ -451,6 +480,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 			stakingK,
 			distrK,
 			app.ibcKeeper.ChannelKeeper,
+			app.ibcKeeper.ChannelKeeper,
 			&app.ibcKeeper.PortKeeper,
 			scopedWasmK,
 			app.transferKeeper,
@@ -458,7 +488,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 			app.GRPCQueryRouter(),
 			wasmDir,
 			wasmConfig,
-			wasmCapabilities,
+			WasmCapabilities,
 			wasmOpts...,
 		)
 
@@ -467,6 +497,27 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 			wasmkeeper.NewCountTXDecorator(app.keys[wasm.StoreKey]),
 		}
 
+		// Create wasm ibc stack
+		var wasmStack porttypes.IBCModule = wasm.NewIBCHandler(wasmK, app.ibcKeeper.ChannelKeeper, app.ibcKeeper.ChannelKeeper)
+		ibcRouter.AddRoute(wasm.ModuleName, wasmStack)
+
+		// set the contract keeper for the Ics20WasmHooks
+		wasmHooks.ContractKeeper = wasmkeeper.NewDefaultPermissionKeeper(wasmK)
+	}
+
+	// Finalize the IBC router
+	app.ibcKeeper.SetRouter(ibcRouter)
+
+	// Add governance proposal hooks
+	govRouter := govtypes.NewRouter()
+	govRouter.AddRoute(govtypes.RouterKey, govtypes.ProposalHandler).
+		AddRoute(paramproposal.RouterKey, params.NewParamChangeProposalHandler(paramsK)).
+		AddRoute(distrtypes.RouterKey, distr.NewCommunityPoolSpendProposalHandler(distrK)).
+		AddRoute(upgradetypes.RouterKey, upgrade.NewSoftwareUpgradeProposalHandler(upgradeK)).
+		AddRoute(ibcclienttypes.RouterKey, ibcclient.NewClientProposalHandler(app.ibcKeeper.ClientKeeper)).
+		AddRoute(axelarnetTypes.RouterKey, axelarnet.NewProposalHandler(axelarnetK, nexusK, accountK))
+
+	if IsWasmEnabled() {
 		govRouter.AddRoute(wasm.RouterKey, wasm.NewWasmProposalHandler(wasmK, wasm.EnableAllProposals))
 	}
 
@@ -501,51 +552,15 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 
 	if upgradeInfo.Name == upgradeName && !upgradeK.IsSkipHeight(upgradeInfo.Height) {
 		storeUpgrades := store.StoreUpgrades{}
+
 		if IsWasmEnabled() {
 			storeUpgrades.Added = append(storeUpgrades.Added, ibchookstypes.StoreKey)
-			// storeUpgrades.Added = append(storeUpgrades.Added, wasm.ModuleName)  // TODO: Add this in for main branch
+			storeUpgrades.Added = append(storeUpgrades.Added, wasm.ModuleName)
 		}
 
 		// configure store loader that checks if version == upgradeHeight and applies store upgrades
 		app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
 	}
-
-	// Setting Router will finalize all routes by sealing router
-	// No more routes can be added
-	nexusRouter := nexusTypes.NewRouter()
-	nexusRouter.AddAddressValidator(evmTypes.ModuleName, evmKeeper.NewAddressValidator()).
-		AddAddressValidator(axelarnetTypes.ModuleName, axelarnetKeeper.NewAddressValidator(axelarnetK))
-	nexusK.SetRouter(nexusRouter)
-
-	var transferStack porttypes.IBCModule
-	transferStack = transfer.NewIBCModule(app.transferKeeper)
-	// transferStack = ibcfee.NewIBCMiddleware(transferStack, appKeepers.IBCFeeKeeper)
-	// transferStack = axelarnet.NewRateLimiter(axelarnetK, transferStack, nexusK)
-	// TODO: missing rate limiter hooks
-	if IsWasmEnabled() {
-		transferStack = ibchooks.NewIBCMiddleware(transferStack, &ibcHooksICS4Wrapper)
-	}
-
-	ibcK := axelarnetKeeper.NewIBCKeeper(axelarnetK, app.transferKeeper, app.ibcKeeper.ChannelKeeper)
-	axelarnetModule := axelarnet.NewAppModule(axelarnetK, nexusK, axelarbankkeeper.NewBankKeeper(bankK), accountK, ibcK, transferStack, rateLimiter, logger)
-
-	// Create static IBC router, add transfer route, then set and seal it
-	ibcRouter := porttypes.NewRouter()
-	ibcRouter.AddRoute(ibctransfertypes.ModuleName, axelarnetModule)
-
-	if IsWasmEnabled() {
-		// Create fee enabled wasm ibc Stack
-		var wasmStack porttypes.IBCModule
-		wasmStack = wasm.NewIBCHandler(wasmK, app.ibcKeeper.ChannelKeeper, app.ibcKeeper.ChannelKeeper)
-		ibcRouter.AddRoute(wasm.ModuleName, wasmStack)
-
-		// set the contract keeper for the Ics20WasmHooks
-		wasmHooks.ContractKeeper = wasmkeeper.NewDefaultPermissionKeeper(wasmK)
-	}
-
-	// Setting Router will finalize all routes by sealing router
-	// No more routes can be added
-	app.ibcKeeper.SetRouter(ibcRouter)
 
 	voteRouter := voteTypes.NewRouter()
 	voteRouter.AddHandler(evmTypes.ModuleName, evmKeeper.NewVoteHandler(appCodec, evmK, nexusK, rewardK))
@@ -574,6 +589,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		capability.NewAppModule(appCodec, *app.capabilityKeeper),
 	}
 
+	// wasm module needs to be added in a specific order
 	if IsWasmEnabled() {
 		appModules = append(
 			appModules,
@@ -585,7 +601,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	appModules = append(appModules, []module.AppModule{
 		evidence.NewAppModule(app.evidenceKeeper),
 		ibc.NewAppModule(app.ibcKeeper),
-		transferModule,
+		transfer.NewAppModule(app.transferKeeper),
 		feegrantmodule.NewAppModule(appCodec, accountK, bankK, feegrantK, app.interfaceRegistry),
 
 		snapshot.NewAppModule(snapK),
@@ -625,6 +641,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		vestingtypes.ModuleName,
 	}
 
+	// wasm module needs to be added in a specific order
 	if IsWasmEnabled() {
 		migrationOrder = append(migrationOrder, wasm.ModuleName, ibchookstypes.ModuleName)
 	}
@@ -669,6 +686,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		vestingtypes.ModuleName,
 	}
 
+	// wasm module needs to be added in a specific order
 	if IsWasmEnabled() {
 		beginBlockerOrder = append(beginBlockerOrder, wasm.ModuleName, ibchookstypes.ModuleName)
 	}
@@ -708,6 +726,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		vestingtypes.ModuleName,
 	}
 
+	// wasm module needs to be added in a specific order
 	if IsWasmEnabled() {
 		endBlockerOrder = append(endBlockerOrder, wasm.ModuleName, ibchookstypes.ModuleName)
 	}
@@ -751,6 +770,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		vestingtypes.ModuleName,
 	}
 
+	// wasm module needs to be added in a specific order
 	if IsWasmEnabled() {
 		genesisOrder = append(genesisOrder, wasm.ModuleName, ibchookstypes.ModuleName)
 	}
@@ -796,13 +816,20 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 			SigGasConsumer:  authAnte.DefaultSigVerificationGasConsumer,
 		},
 	)
-
 	if err != nil {
 		panic(err)
 	}
 
 	anteDecorators := []sdk.AnteDecorator{
 		ante.NewAnteHandlerDecorator(baseAnteHandler),
+	}
+
+	// enforce wasm limits earlier in the ante handler chain
+	if IsWasmEnabled() {
+		anteDecorators = append(anteDecorators, wasmAnteDecorators...)
+	}
+
+	anteDecorators = append(anteDecorators,
 		ante.NewLogMsgDecorator(appCodec),
 		ante.NewCheckCommissionRate(stakingK),
 		ante.NewUndelegateDecorator(multisigK, nexusK, snapK),
@@ -810,11 +837,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		ante.NewCheckProxy(snapK),
 		ante.NewRestrictedTx(permissionK),
 		ibcante.NewAnteDecorator(app.ibcKeeper),
-	}
-
-	if IsWasmEnabled() {
-		anteDecorators = append(anteDecorators, wasmAnteDecorators...) // TODO: correct ordering?
-	}
+	)
 
 	anteHandler := sdk.ChainAnteDecorators(
 		anteDecorators...,
