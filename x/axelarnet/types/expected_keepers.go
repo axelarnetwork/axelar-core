@@ -12,8 +12,7 @@ import (
 	ibctypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
 	clienttypes "github.com/cosmos/ibc-go/v4/modules/core/02-client/types"
 	channeltypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
-	ibcclient "github.com/cosmos/ibc-go/v4/modules/core/exported"
-	ibcexported "github.com/cosmos/ibc-go/v4/modules/core/exported"
+	ibc "github.com/cosmos/ibc-go/v4/modules/core/exported"
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 	"github.com/tendermint/tendermint/libs/log"
 
@@ -89,15 +88,15 @@ type IBCTransferKeeper interface {
 // ChannelKeeper defines the expected IBC channel keeper
 type ChannelKeeper interface {
 	GetNextSequenceSend(ctx sdk.Context, portID, channelID string) (uint64, bool)
-	GetChannelClientState(ctx sdk.Context, portID, channelID string) (string, ibcclient.ClientState, error)
+	GetChannelClientState(ctx sdk.Context, portID, channelID string) (string, ibc.ClientState, error)
 
 	GetChannel(ctx sdk.Context, srcPort string, srcChan string) (channel channeltypes.Channel, found bool) // used in module_test
-	SendPacket(ctx sdk.Context, channelCap *capabilitytypes.Capability, packet ibcexported.PacketI) error  // used in module_test
+	SendPacket(ctx sdk.Context, channelCap *capabilitytypes.Capability, packet ibc.PacketI) error          // used in module_test
 	WriteAcknowledgement(
 		ctx sdk.Context,
 		chanCap *capabilitytypes.Capability,
-		packet ibcexported.PacketI,
-		ack ibcexported.Acknowledgement,
+		packet ibc.PacketI,
+		ack ibc.Acknowledgement,
 	) error
 	GetAppVersion(ctx sdk.Context, portID string, channelID string) (string, bool) // used in module_test
 }

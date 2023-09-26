@@ -7,6 +7,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/query"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -33,6 +34,53 @@ func (k Keeper) GenerateMessageID(ctx sdk.Context) (string, []byte, uint64) {
 	hash := sha256.Sum256(ctx.TxBytes())
 
 	return fmt.Sprintf("0x%s-%d", hex.EncodeToString(hash[:]), nonce), hash[:], nonce
+}
+
+// SetNewMessageFromWasm sets the given general message from a wasm contract.
+func (k Keeper) SetNewMessageFromWasm(ctx sdk.Context, msg exported.GeneralMessage) error {
+	if msg.Asset != nil {
+		return fmt.Errorf("asset transfer is not supported")
+	}
+
+	if _, ok := k.GetChain(ctx, msg.GetDestinationChain()); !ok {
+		return fmt.Errorf("destination chain %s is not a registered chain", msg.GetDestinationChain())
+	}
+
+	if !k.IsChainActivated(ctx, msg.Recipient.Chain) {
+		return fmt.Errorf("destination chain %s is not activated", msg.GetDestinationChain())
+	}
+
+	if err := k.ValidateAddress(ctx, msg.Recipient); err != nil {
+		return sdkerrors.Wrap(err, "invalid recipient address")
+	}
+
+	if _, ok := k.GetMessage(ctx, msg.ID); ok {
+		return fmt.Errorf("general message %s already exists", msg.ID)
+	}
+
+	if err := k.setMessage(ctx, msg); err != nil {
+		return err
+	}
+
+	switch msg.Status {
+	case exported.Approved:
+		funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.MessageReceived{
+			ID:          msg.ID,
+			PayloadHash: msg.PayloadHash,
+			Sender:      msg.Sender,
+			Recipient:   msg.Recipient,
+		}))
+	case exported.Processing:
+		if err := k.setProcessingMessageID(ctx, msg); err != nil {
+			return err
+		}
+
+		funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.MessageProcessing{ID: msg.ID}))
+	default:
+		return fmt.Errorf("invalid message status %s", msg.Status)
+	}
+
+	return nil
 }
 
 // SetNewMessage sets the given general message. If the messages is approved, adds the message ID to approved messages store
