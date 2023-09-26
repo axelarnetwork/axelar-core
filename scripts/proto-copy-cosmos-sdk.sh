@@ -13,6 +13,11 @@ find "$ibc_protos" -maxdepth 1 -mindepth 1 \
   -exec sh -c 'file=$1; basename $1  | xargs -I % -n1 rm -rf "./third_party/proto/%"' _ {} \;
 cp -r "$ibc_protos" ./third_party
 
+wasm_protos="$(go list -f '{{ .Dir }}' -m github.com/CosmWasm/wasmd)/proto/cosmwasm"
+find "$wasm_protos" -maxdepth 1 -mindepth 1 \
+  -exec sh -c 'file=$1; basename $1  | xargs -I % -n1 rm -rf "./third_party/proto/%"' _ {} \;
+cp -r "$wasm_protos" ./third_party/proto
+
 chmod -R +w ./third_party/proto
 
 # Remove ICA and fee IBC app protos

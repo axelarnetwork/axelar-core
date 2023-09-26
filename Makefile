@@ -3,20 +3,48 @@ PACKAGES=$(shell go list ./... | grep -v '/simulation')
 VERSION := $(shell echo $(shell git describe --tags) | sed 's/^v//')
 COMMIT := $(shell git log -1 --format='%H')
 
-BUILD_TAGS := ledger
 DOCKER := $(shell which docker)
 DOCKER_BUF := $(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace bufbuild/buf
 HTTPS_GIT := https://github.com/axelarnetwork/axelar-core.git
-PUSH_DOCKER_IMAGE=true
+PUSH_DOCKER_IMAGE := true
+
+ifeq ($(WASM), true)
+WASM_ENABLED := "true"
+ifndef $(WASM_CAPABILITIES)
+# Wasm capabilities: https://github.com/CosmWasm/cosmwasm/blob/main/docs/CAPABILITIES-BUILT-IN.md
+WASM_CAPABILITIES := "iterator,staking,stargate,cosmwasm_1_3"
+endif
+else
+WASM_ENABLED := ""
+WASM_CAPABILITIES := ""
+endif
+
+ifeq ($(MUSLC), true)
+STATIC_LINK_FLAGS := -linkmode=external -extldflags '-Wl,-z,muldefs -static'
+BUILD_TAGS := muslc
+else
+STATIC_LINK_FLAGS := ""
+BUILD_TAGS := ledger
+endif
+
+ARCH := x86_64
+ifeq ($(shell uname -m), arm64)
+ARCH := aarch64
+endif
+
 DENOM := uaxl
-ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=axelar \
+
+ldflags = "-X github.com/cosmos/cosmos-sdk/version.Name=axelar \
 	-X github.com/cosmos/cosmos-sdk/version.AppName=axelard \
 	-X github.com/cosmos/cosmos-sdk/version.Version=$(VERSION) \
 	-X "github.com/cosmos/cosmos-sdk/version.BuildTags=$(BUILD_TAGS)" \
 	-X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT) \
-	-X github.com/axelarnetwork/axelar-core/x/axelarnet/exported.NativeAsset=$(DENOM)
+	-X github.com/axelarnetwork/axelar-core/x/axelarnet/exported.NativeAsset=$(DENOM) \
+	-X github.com/axelarnetwork/axelar-core/app.WasmEnabled=$(WASM_ENABLED) \
+	-X github.com/axelarnetwork/axelar-core/app.WasmCapabilities=$(WASM_CAPABILITIES) \
+	-w -s ${STATIC_LINK_FLAGS}"
 
-BUILD_FLAGS := -tags "$(BUILD_TAGS)" -ldflags '$(ldflags)'
+BUILD_FLAGS := -tags $(BUILD_TAGS) -ldflags $(ldflags) -trimpath
 USER_ID := $(shell id -u)
 GROUP_ID := $(shell id -g)
 OS := $(shell echo $$OS_TYPE | sed -e 's/ubuntu-20.04/linux/; s/macos-latest/darwin/')
@@ -76,7 +104,10 @@ debug:  go.sum
 # Build a release image
 .PHONY: docker-image
 docker-image:
-	@DOCKER_BUILDKIT=1 docker build -t axelar/core .
+	@DOCKER_BUILDKIT=1 docker build \
+		--build-arg WASM="${WASM}" \
+		--build-arg ARCH="${ARCH}" \
+		-t axelar/core .
 
 # Build a release image
 .PHONY: docker-image-local-user
@@ -84,6 +115,8 @@ docker-image-local-user:  guard-VERSION guard-GROUP_ID guard-USER_ID
 	@DOCKER_BUILDKIT=1 docker build \
 		--build-arg USER_ID=${USER_ID} \
 		--build-arg GROUP_ID=${GROUP_ID} \
+		--build-arg WASM="${WASM}" \
+		--build-arg ARCH="${ARCH}" \
 		-t axelarnet/axelar-core:${VERSION}-local .
 
 .PHONY: build-push-docker-image
@@ -91,6 +124,8 @@ build-push-docker-images:  guard-SEMVER
 	@DOCKER_BUILDKIT=1 docker buildx build \
 		--platform ${PLATFORM} \
 		--output "type=image,push=${PUSH_DOCKER_IMAGE}" \
+		--build-arg WASM="${WASM}" \
+		--build-arg ARCH="${ARCH}" \
 		-t axelarnet/axelar-core-${SUFFIX}:${SEMVER} --provenance=false .
 
 
@@ -99,13 +134,14 @@ build-push-docker-images-rosetta: populate-bytecode guard-SEMVER
 	@DOCKER_BUILDKIT=1 docker buildx build -f Dockerfile.rosetta \
 		--platform linux/amd64 \
 		--output "type=image,push=${PUSH_DOCKER_IMAGE}" \
+		--build-arg WASM="${WASM}" \
 		-t axelarnet/axelar-core:${SEMVER}-rosetta .
 
 
 # Build a docker image that is able to run dlv and a debugger can be hooked up to
 .PHONY: docker-image-debug
 docker-image-debug:
-	@DOCKER_BUILDKIT=1 docker build -t axelar/core-debug -f ./Dockerfile.debug .
+	@DOCKER_BUILDKIT=1 docker build --build-arg WASM="${WASM}" -t axelar/core-debug -f ./Dockerfile.debug .
 
 # Install all generate prerequisites
 .Phony: prereqs

@@ -4,6 +4,7 @@ FROM golang:1.21-bullseye as build
 RUN apt update && apt install ca-certificates git make -y
 
 WORKDIR axelar
+ARG WASM=false
 
 COPY ./go.mod .
 COPY ./go.sum .
@@ -11,7 +12,7 @@ RUN go mod download
 
 COPY . .
 ENV CGO_ENABLED=0
-RUN make build
+RUN make WASM="${WASM}" build
 
 FROM ubuntu:20.04
 RUN apt update && apt install jq -y

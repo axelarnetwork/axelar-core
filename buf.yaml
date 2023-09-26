@@ -14,5 +14,6 @@ lint:
     - cosmos
     - ibc
     - proofs.proto
+    - cosmwasm
   except:
     - SERVICE_SUFFIX

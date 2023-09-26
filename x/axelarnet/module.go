@@ -12,9 +12,9 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
-	"github.com/cosmos/ibc-go/v4/modules/apps/transfer"
 	ibctransfertypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
 	channeltypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
+	porttypes "github.com/cosmos/ibc-go/v4/modules/core/05-port/types"
 	ibcexported "github.com/cosmos/ibc-go/v4/modules/core/exported"
 	"github.com/gorilla/mux"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -105,7 +105,7 @@ type AppModule struct {
 	ibcK        keeper.IBCKeeper
 	rateLimiter RateLimiter
 
-	transferModule transfer.IBCModule
+	transferModule porttypes.IBCModule
 }
 
 // NewAppModule creates a new AppModule object
@@ -115,7 +115,7 @@ func NewAppModule(
 	bank types.BankKeeper,
 	account types.AccountKeeper,
 	ibcK keeper.IBCKeeper,
-	transferModule transfer.IBCModule,
+	transferModule porttypes.IBCModule,
 	rateLimiter RateLimiter,
 	logger log.Logger) AppModule {
 	return AppModule{

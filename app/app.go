@@ -10,6 +10,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/CosmWasm/wasmd/x/wasm"
+	wasmclient "github.com/CosmWasm/wasmd/x/wasm/client"
+	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/grpc/tmservice"
@@ -53,6 +56,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 	"github.com/cosmos/cosmos-sdk/x/gov"
+	govclient "github.com/cosmos/cosmos-sdk/x/gov/client"
 	govkeeper "github.com/cosmos/cosmos-sdk/x/gov/keeper"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/cosmos/cosmos-sdk/x/mint"
@@ -85,6 +89,9 @@ import (
 	ibcante "github.com/cosmos/ibc-go/v4/modules/core/ante"
 	ibckeeper "github.com/cosmos/ibc-go/v4/modules/core/keeper"
 	"github.com/gorilla/mux"
+	ibchooks "github.com/osmosis-labs/osmosis/x/ibc-hooks"
+	ibchookskeeper "github.com/osmosis-labs/osmosis/x/ibc-hooks/keeper"
+	ibchookstypes "github.com/osmosis-labs/osmosis/x/ibc-hooks/types"
 	"github.com/rakyll/statik/fs"
 	"github.com/spf13/cast"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -141,44 +148,8 @@ var (
 
 	// ModuleBasics defines the module BasicManager is in charge of setting up basic,
 	// non-dependant module elements, such as codec registration
-	// and genesis verification.
-	ModuleBasics = module.NewBasicManager(
-		auth.AppModuleBasic{},
-		genutil.AppModuleBasic{},
-		bank.AppModuleBasic{},
-		capability.AppModuleBasic{},
-		staking.AppModuleBasic{},
-		mint.AppModuleBasic{},
-		distr.AppModuleBasic{},
-		gov.NewAppModuleBasic(
-			paramsclient.ProposalHandler,
-			distrclient.ProposalHandler,
-			upgradeclient.ProposalHandler,
-			upgradeclient.CancelProposalHandler,
-			ibcclientclient.UpdateClientProposalHandler,
-			ibcclientclient.UpgradeProposalHandler,
-			axelarnetclient.ProposalHandler,
-		),
-		params.AppModuleBasic{},
-		crisis.AppModuleBasic{},
-		slashing.AppModuleBasic{},
-		feegrantmodule.AppModuleBasic{},
-		upgrade.AppModuleBasic{},
-		evidence.AppModuleBasic{},
-		vesting.AppModuleBasic{},
-		ibc.AppModuleBasic{},
-		transfer.AppModuleBasic{},
-
-		multisig.AppModuleBasic{},
-		tss.AppModuleBasic{},
-		vote.AppModuleBasic{},
-		evm.AppModuleBasic{},
-		snapshot.AppModuleBasic{},
-		nexus.AppModuleBasic{},
-		axelarnet.AppModuleBasic{},
-		reward.AppModuleBasic{},
-		permission.AppModuleBasic{},
-	)
+	// and genesis verification. It is dynamically initialized by GetModuleBasics method.
+	ModuleBasics module.BasicManager
 
 	// module account permissions
 	maccPerms = map[string][]string{
@@ -192,6 +163,15 @@ var (
 		axelarnetTypes.ModuleName:      {authtypes.Minter, authtypes.Burner},
 		rewardTypes.ModuleName:         {authtypes.Minter},
 	}
+
+	// WasmEnabled indicates whether wasm module is added to the app.
+	// "true" setting means it will be, otherwise it won't.
+	// This is configured during the build.
+	WasmEnabled = ""
+
+	// WasmCapabilities specifies the capabilities of the wasm vm
+	// capabilities are detailed here: https://github.com/CosmWasm/cosmwasm/blob/main/docs/CAPABILITIES-BUILT-IN.md
+	WasmCapabilities = ""
 )
 
 var (
@@ -243,7 +223,7 @@ type AxelarApp struct {
 // NewAxelarApp is a constructor function for axelar
 func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest bool, skipUpgradeHeights map[int64]bool,
 	homePath string, invCheckPeriod uint, encodingConfig axelarParams.EncodingConfig,
-	appOpts servertypes.AppOptions, baseAppOptions ...func(*bam.BaseApp)) *AxelarApp {
+	appOpts servertypes.AppOptions, wasmOpts []wasm.Option, baseAppOptions ...func(*bam.BaseApp)) *AxelarApp {
 
 	appCodec := encodingConfig.Codec
 	legacyAmino := encodingConfig.Amino
@@ -255,7 +235,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	bApp.SetVersion(version.Version)
 	bApp.SetInterfaceRegistry(interfaceRegistry)
 
-	keys := sdk.NewKVStoreKeys(
+	storeKeys := []string{
 		authtypes.StoreKey,
 		banktypes.StoreKey,
 		stakingtypes.StoreKey,
@@ -270,7 +250,13 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		ibctransfertypes.StoreKey,
 		capabilitytypes.StoreKey,
 		feegrant.StoreKey,
+	}
 
+	if IsWasmEnabled() {
+		storeKeys = append(storeKeys, wasm.StoreKey, ibchookstypes.StoreKey)
+	}
+
+	storeKeys = append(storeKeys, []string{
 		voteTypes.StoreKey,
 		evmTypes.StoreKey,
 		snapTypes.StoreKey,
@@ -280,7 +266,13 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		axelarnetTypes.StoreKey,
 		rewardTypes.StoreKey,
 		permissionTypes.StoreKey,
-	)
+	}...)
+
+	keys := sdk.NewKVStoreKeys(storeKeys...)
+
+	if IsWasmEnabled() {
+		maccPerms[wasm.ModuleName] = []string{authtypes.Burner}
+	}
 
 	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
 	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
@@ -365,13 +357,19 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		appCodec, keys[ibchost.StoreKey], app.getSubspace(ibchost.ModuleName), app.stakingKeeper, upgradeK, scopedIBCK,
 	)
 
+	// Custom axelarnet/evm/nexus keepers
 	axelarnetK := axelarnetKeeper.NewKeeper(
 		appCodec, keys[axelarnetTypes.StoreKey], app.getSubspace(axelarnetTypes.ModuleName), app.ibcKeeper.ChannelKeeper, app.feegrantKeeper,
+	)
+
+	evmK := evmKeeper.NewKeeper(
+		appCodec, keys[evmTypes.StoreKey], app.paramsKeeper,
 	)
 
 	nexusK := nexusKeeper.NewKeeper(
 		appCodec, keys[nexusTypes.StoreKey], app.getSubspace(nexusTypes.ModuleName),
 	)
+
 	// Setting Router will finalize all routes by sealing router
 	// No more routes can be added
 	nexusRouter := nexusTypes.NewRouter()
@@ -379,38 +377,62 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		AddAddressValidator(axelarnetTypes.ModuleName, axelarnetKeeper.NewAddressValidator(axelarnetK))
 	nexusK.SetRouter(nexusRouter)
 
+	// IBC Transfer Stack: SendPacket
+	//
+	// Originates from the transferKeeper and goes up the stack
+	// transferKeeper.SendPacket -> ibc_hooks.SendPacket -> rateLimiter.SendPacket -> channel.SendPacket
+	//
+	// After this, the wasm keeper is required to be set on WasmHooks
+
 	// Create IBC rate limiter
 	rateLimiter := axelarnet.NewRateLimiter(axelarnetK, app.ibcKeeper.ChannelKeeper, nexusK)
+	var ibcHooksMiddleware ibchooks.ICS4Middleware
+	var ics4Wrapper ibctransfertypes.ICS4Wrapper
+	var wasmHooks ibchooks.WasmHooks
+	ics4Wrapper = rateLimiter
+
+	if IsWasmEnabled() {
+		// Configure the IBC hooks keeper to make wasm calls via IBC transfer memo
+		ibcHooksKeeper := ibchookskeeper.NewKeeper(
+			keys[ibchookstypes.StoreKey],
+		)
+		accPrefix := sdk.GetConfig().GetBech32AccountAddrPrefix()
+		wasmHooks = ibchooks.NewWasmHooks(&ibcHooksKeeper, nil, accPrefix) // The contract keeper needs to be set later
+		ibcHooksMiddleware = ibchooks.NewICS4Middleware(
+			rateLimiter, // Wrap IBC hooks on top of the rate limit middleware
+			&wasmHooks,
+		)
+
+		ics4Wrapper = ibcHooksMiddleware
+	}
 
 	// Create Transfer Keepers
 	app.transferKeeper = ibctransferkeeper.NewKeeper(
 		appCodec, keys[ibctransfertypes.StoreKey], app.getSubspace(ibctransfertypes.ModuleName),
-		rateLimiter, app.ibcKeeper.ChannelKeeper, &app.ibcKeeper.PortKeeper,
+		// Use the IBC middleware stack
+		ics4Wrapper,
+		app.ibcKeeper.ChannelKeeper, &app.ibcKeeper.PortKeeper,
 		accountK, bankK, scopedTransferK,
 	)
-	transferModule := transfer.NewAppModule(app.transferKeeper)
 
-	// register the proposal types
-	govRouter := govtypes.NewRouter()
-	govRouter.AddRoute(govtypes.RouterKey, govtypes.ProposalHandler).
-		AddRoute(paramproposal.RouterKey, params.NewParamChangeProposalHandler(paramsK)).
-		AddRoute(distrtypes.RouterKey, distr.NewCommunityPoolSpendProposalHandler(distrK)).
-		AddRoute(upgradetypes.RouterKey, upgrade.NewSoftwareUpgradeProposalHandler(upgradeK)).
-		AddRoute(ibcclienttypes.RouterKey, ibcclient.NewClientProposalHandler(app.ibcKeeper.ClientKeeper)).
-		AddRoute(axelarnetTypes.RouterKey, axelarnet.NewProposalHandler(axelarnetK, nexusK, accountK))
+	// IBC Transfer Stack: RecvPacket
+	//
+	// Packet originates from core IBC and goes down to app, the flow is the other way
+	// channel.RecvPacket -> axelarnet.OnRecvPacket (transfer, GMP, and rate limit handler) -> ibc_hooks.OnRecvPacket -> transfer.OnRecvPacket
+	var transferStack porttypes.IBCModule = transfer.NewIBCModule(app.transferKeeper)
+	if IsWasmEnabled() {
+		transferStack = ibchooks.NewIBCMiddleware(transferStack, &ibcHooksMiddleware)
+	}
 
-	govK := govkeeper.NewKeeper(
-		appCodec, keys[govtypes.StoreKey], app.getSubspace(govtypes.ModuleName), accountK, bankK,
-		&stakingK, govRouter,
-	)
-	govK.SetHooks(govtypes.NewMultiGovHooks(axelarnetK.Hooks(nexusK, govK)))
+	ibcK := axelarnetKeeper.NewIBCKeeper(axelarnetK, app.transferKeeper, app.ibcKeeper.ChannelKeeper)
+	axelarnetModule := axelarnet.NewAppModule(axelarnetK, nexusK, axelarbankkeeper.NewBankKeeper(bankK), accountK, ibcK, transferStack, rateLimiter, logger)
+
+	// Create static IBC router, add axelarnet module as the IBC transfer route, and seal it
+	ibcRouter := porttypes.NewRouter()
+	ibcRouter.AddRoute(ibctransfertypes.ModuleName, axelarnetModule)
 
 	// axelar custom keepers
-	// axelarnet / nexus keepers created above
-	evmK := evmKeeper.NewKeeper(
-		appCodec, keys[evmTypes.StoreKey], app.paramsKeeper,
-	)
-
+	// axelarnet / evm / nexus keepers created above
 	rewardK := rewardKeeper.NewKeeper(
 		appCodec, keys[rewardTypes.StoreKey], app.getSubspace(rewardTypes.ModuleName), axelarbankkeeper.NewBankKeeper(bankK), distrK, stakingK,
 	)
@@ -435,6 +457,75 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	permissionK := permissionKeeper.NewKeeper(
 		appCodec, keys[permissionTypes.StoreKey], app.getSubspace(permissionTypes.ModuleName),
 	)
+
+	var wasmK wasm.Keeper
+	var wasmAnteDecorators []sdk.AnteDecorator
+
+	if IsWasmEnabled() {
+		wasmDir := filepath.Join(homePath, "wasm")
+		wasmConfig, err := wasm.ReadWasmConfig(appOpts)
+		if err != nil {
+			panic(fmt.Sprintf("error while reading wasm config: %s", err))
+		}
+
+		scopedWasmK := app.capabilityKeeper.ScopeToModule(wasm.ModuleName)
+		// The last arguments can contain custom message handlers, and custom query handlers,
+		// if we want to allow any custom callbacks
+		wasmK = wasm.NewKeeper(
+			appCodec,
+			keys[wasm.StoreKey],
+			app.getSubspace(wasm.ModuleName),
+			accountK,
+			bankK,
+			stakingK,
+			distrK,
+			app.ibcKeeper.ChannelKeeper,
+			app.ibcKeeper.ChannelKeeper,
+			&app.ibcKeeper.PortKeeper,
+			scopedWasmK,
+			app.transferKeeper,
+			app.MsgServiceRouter(),
+			app.GRPCQueryRouter(),
+			wasmDir,
+			wasmConfig,
+			WasmCapabilities,
+			wasmOpts...,
+		)
+
+		wasmAnteDecorators = []sdk.AnteDecorator{
+			wasmkeeper.NewLimitSimulationGasDecorator(wasmConfig.SimulationGasLimit),
+			wasmkeeper.NewCountTXDecorator(app.keys[wasm.StoreKey]),
+		}
+
+		// Create wasm ibc stack
+		var wasmStack porttypes.IBCModule = wasm.NewIBCHandler(wasmK, app.ibcKeeper.ChannelKeeper, app.ibcKeeper.ChannelKeeper)
+		ibcRouter.AddRoute(wasm.ModuleName, wasmStack)
+
+		// set the contract keeper for the Ics20WasmHooks
+		wasmHooks.ContractKeeper = wasmkeeper.NewDefaultPermissionKeeper(wasmK)
+	}
+
+	// Finalize the IBC router
+	app.ibcKeeper.SetRouter(ibcRouter)
+
+	// Add governance proposal hooks
+	govRouter := govtypes.NewRouter()
+	govRouter.AddRoute(govtypes.RouterKey, govtypes.ProposalHandler).
+		AddRoute(paramproposal.RouterKey, params.NewParamChangeProposalHandler(paramsK)).
+		AddRoute(distrtypes.RouterKey, distr.NewCommunityPoolSpendProposalHandler(distrK)).
+		AddRoute(upgradetypes.RouterKey, upgrade.NewSoftwareUpgradeProposalHandler(upgradeK)).
+		AddRoute(ibcclienttypes.RouterKey, ibcclient.NewClientProposalHandler(app.ibcKeeper.ClientKeeper)).
+		AddRoute(axelarnetTypes.RouterKey, axelarnet.NewProposalHandler(axelarnetK, nexusK, accountK))
+
+	if IsWasmEnabled() {
+		govRouter.AddRoute(wasm.RouterKey, wasm.NewWasmProposalHandler(wasmK, wasm.EnableAllProposals))
+	}
+
+	govK := govkeeper.NewKeeper(
+		appCodec, keys[govtypes.StoreKey], app.getSubspace(govtypes.ModuleName), accountK, bankK,
+		&stakingK, govRouter,
+	)
+	govK.SetHooks(govtypes.NewMultiGovHooks(axelarnetK.Hooks(nexusK, govK)))
 
 	semverVersion := app.Version()
 	if !strings.HasPrefix(semverVersion, "v") {
@@ -462,20 +553,14 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	if upgradeInfo.Name == upgradeName && !upgradeK.IsSkipHeight(upgradeInfo.Height) {
 		storeUpgrades := store.StoreUpgrades{}
 
+		if IsWasmEnabled() {
+			storeUpgrades.Added = append(storeUpgrades.Added, ibchookstypes.StoreKey)
+			storeUpgrades.Added = append(storeUpgrades.Added, wasm.ModuleName)
+		}
+
 		// configure store loader that checks if version == upgradeHeight and applies store upgrades
 		app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
 	}
-
-	ibcK := axelarnetKeeper.NewIBCKeeper(axelarnetK, app.transferKeeper, app.ibcKeeper.ChannelKeeper)
-	axelarnetModule := axelarnet.NewAppModule(axelarnetK, nexusK, axelarbankkeeper.NewBankKeeper(bankK), accountK, ibcK, transfer.NewIBCModule(app.transferKeeper), rateLimiter, logger)
-
-	// Create static IBC router, add transfer route, then set and seal it
-	ibcRouter := porttypes.NewRouter()
-	ibcRouter.AddRoute(ibctransfertypes.ModuleName, axelarnetModule)
-
-	// Setting Router will finalize all routes by sealing router
-	// No more routes can be added
-	app.ibcKeeper.SetRouter(ibcRouter)
 
 	voteRouter := voteTypes.NewRouter()
 	voteRouter.AddHandler(evmTypes.ModuleName, evmKeeper.NewVoteHandler(appCodec, evmK, nexusK, rewardK))
@@ -487,9 +572,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	// we prefer to be more strict in what arguments the modules expect.
 	var skipGenesisInvariants = cast.ToBool(appOpts.Get(crisis.FlagSkipGenesisInvariants))
 
-	// NOTE: Any module instantiated in the module manager that is later modified
-	// must be passed by reference here.
-	app.mm = module.NewManager(
+	appModules := []module.AppModule{
 		genutil.NewAppModule(accountK, stakingK, app.BaseApp.DeliverTx, encodingConfig.TxConfig),
 		auth.NewAppModule(appCodec, accountK, nil),
 		vesting.NewAppModule(accountK, bankK),
@@ -504,9 +587,21 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		evidence.NewAppModule(*evidenceK),
 		params.NewAppModule(paramsK),
 		capability.NewAppModule(appCodec, *app.capabilityKeeper),
+	}
+
+	// wasm module needs to be added in a specific order
+	if IsWasmEnabled() {
+		appModules = append(
+			appModules,
+			wasm.NewAppModule(appCodec, &wasmK, stakingK, accountK, bankK),
+			ibchooks.NewAppModule(accountK),
+		)
+	}
+
+	appModules = append(appModules, []module.AppModule{
 		evidence.NewAppModule(app.evidenceKeeper),
 		ibc.NewAppModule(app.ibcKeeper),
-		transferModule,
+		transfer.NewAppModule(app.transferKeeper),
 		feegrantmodule.NewAppModule(appCodec, accountK, bankK, feegrantK, app.interfaceRegistry),
 
 		snapshot.NewAppModule(snapK),
@@ -518,9 +613,13 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		axelarnetModule,
 		reward.NewAppModule(rewardK, nexusK, mintK, stakingK, slashingK, multisigK, snapK, bankK, bApp.MsgServiceRouter(), bApp.Router()),
 		permission.NewAppModule(permissionK),
+	}...)
+
+	app.mm = module.NewManager(
+		appModules...,
 	)
 
-	app.mm.SetOrderMigrations(
+	migrationOrder := []string{
 		// auth module needs to go first
 		authtypes.ModuleName,
 		// sdk modules
@@ -540,7 +639,15 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		feegrant.ModuleName,
 		paramstypes.ModuleName,
 		vestingtypes.ModuleName,
-		// axelar modules
+	}
+
+	// wasm module needs to be added in a specific order
+	if IsWasmEnabled() {
+		migrationOrder = append(migrationOrder, wasm.ModuleName, ibchookstypes.ModuleName)
+	}
+
+	// axelar modules
+	migrationOrder = append(migrationOrder,
 		multisigTypes.ModuleName,
 		tssTypes.ModuleName,
 		rewardTypes.ModuleName,
@@ -551,11 +658,14 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		snapTypes.ModuleName,
 		axelarnetTypes.ModuleName,
 	)
+
+	app.mm.SetOrderMigrations(migrationOrder...)
+
 	// During begin block slashing happens after distr.BeginBlocker so that
 	// there is nothing left over in the validator fee pool, so as to keep the
 	// CanWithdrawInvariant invariant.
 	// NOTE: staking module is required if HistoricalEntries param > 0
-	app.mm.SetOrderBeginBlockers(
+	beginBlockerOrder := []string{
 		// upgrades should be run first
 		upgradetypes.ModuleName,
 		capabilitytypes.ModuleName,
@@ -574,8 +684,15 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		feegrant.ModuleName,
 		paramstypes.ModuleName,
 		vestingtypes.ModuleName,
+	}
 
-		// axelar custom modules
+	// wasm module needs to be added in a specific order
+	if IsWasmEnabled() {
+		beginBlockerOrder = append(beginBlockerOrder, wasm.ModuleName, ibchookstypes.ModuleName)
+	}
+
+	// axelar custom modules
+	beginBlockerOrder = append(beginBlockerOrder,
 		rewardTypes.ModuleName,
 		nexusTypes.ModuleName,
 		permissionTypes.ModuleName,
@@ -586,7 +703,10 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		axelarnetTypes.ModuleName,
 		voteTypes.ModuleName,
 	)
-	app.mm.SetOrderEndBlockers(
+
+	app.mm.SetOrderBeginBlockers(beginBlockerOrder...)
+
+	endBlockerOrder := []string{
 		crisistypes.ModuleName,
 		govtypes.ModuleName,
 		stakingtypes.ModuleName,
@@ -604,8 +724,15 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		paramstypes.ModuleName,
 		upgradetypes.ModuleName,
 		vestingtypes.ModuleName,
+	}
 
-		// axelar custom modules
+	// wasm module needs to be added in a specific order
+	if IsWasmEnabled() {
+		endBlockerOrder = append(endBlockerOrder, wasm.ModuleName, ibchookstypes.ModuleName)
+	}
+
+	// axelar custom modules
+	endBlockerOrder = append(endBlockerOrder,
 		multisigTypes.ModuleName,
 		tssTypes.ModuleName,
 		evmTypes.ModuleName,
@@ -616,11 +743,13 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		permissionTypes.ModuleName,
 		voteTypes.ModuleName,
 	)
+
+	app.mm.SetOrderEndBlockers(endBlockerOrder...)
 
 	// Sets the order of Genesis - Order matters, genutil is to always come last
 	// NOTE: The genutils module must occur after staking so that pools are
 	// properly initialized with tokens from genesis accounts.
-	app.mm.SetOrderInitGenesis(
+	genesisOrder := []string{
 		capabilitytypes.ModuleName,
 		authtypes.ModuleName,
 		banktypes.ModuleName,
@@ -639,7 +768,14 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		paramstypes.ModuleName,
 		upgradetypes.ModuleName,
 		vestingtypes.ModuleName,
+	}
 
+	// wasm module needs to be added in a specific order
+	if IsWasmEnabled() {
+		genesisOrder = append(genesisOrder, wasm.ModuleName, ibchookstypes.ModuleName)
+	}
+
+	genesisOrder = append(genesisOrder,
 		snapTypes.ModuleName,
 		multisigTypes.ModuleName,
 		tssTypes.ModuleName,
@@ -650,6 +786,8 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		rewardTypes.ModuleName,
 		permissionTypes.ModuleName,
 	)
+
+	app.mm.SetOrderInitGenesis(genesisOrder...)
 
 	app.mm.RegisterInvariants(&crisisK)
 
@@ -678,13 +816,20 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 			SigGasConsumer:  authAnte.DefaultSigVerificationGasConsumer,
 		},
 	)
-
 	if err != nil {
 		panic(err)
 	}
 
-	anteHandler := sdk.ChainAnteDecorators(
+	anteDecorators := []sdk.AnteDecorator{
 		ante.NewAnteHandlerDecorator(baseAnteHandler),
+	}
+
+	// enforce wasm limits earlier in the ante handler chain
+	if IsWasmEnabled() {
+		anteDecorators = append(anteDecorators, wasmAnteDecorators...)
+	}
+
+	anteDecorators = append(anteDecorators,
 		ante.NewLogMsgDecorator(appCodec),
 		ante.NewCheckCommissionRate(stakingK),
 		ante.NewUndelegateDecorator(multisigK, nexusK, snapK),
@@ -693,11 +838,24 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		ante.NewRestrictedTx(permissionK),
 		ibcante.NewAnteDecorator(app.ibcKeeper),
 	)
+
+	anteHandler := sdk.ChainAnteDecorators(
+		anteDecorators...,
+	)
 	app.SetAnteHandler(anteHandler)
 
 	if loadLatest {
 		if err := app.LoadLatestVersion(); err != nil {
 			tmos.Exit(err.Error())
+		}
+
+		if IsWasmEnabled() {
+			ctx := app.BaseApp.NewUncachedContext(true, tmproto.Header{})
+
+			// Initialize pinned codes in wasmvm as they are not persisted there
+			if err := wasmK.InitializePinnedCodes(ctx); err != nil {
+				tmos.Exit(fmt.Sprintf("failed initialize pinned codes %s", err))
+			}
 		}
 	}
 
@@ -725,6 +883,7 @@ func initParamsKeeper(appCodec codec.Codec, legacyAmino *codec.LegacyAmino, key,
 	paramsKeeper.Subspace(crisistypes.ModuleName)
 	paramsKeeper.Subspace(ibctransfertypes.ModuleName)
 	paramsKeeper.Subspace(ibchost.ModuleName)
+	paramsKeeper.Subspace(wasm.ModuleName)
 
 	paramsKeeper.Subspace(snapTypes.ModuleName)
 	paramsKeeper.Subspace(multisigTypes.ModuleName)
@@ -808,8 +967,8 @@ func (app *AxelarApp) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.API
 	tmservice.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 
 	// Register legacy and grpc-gateway routes for all modules.
-	ModuleBasics.RegisterRESTRoutes(clientCtx, apiSvr.Router)
-	ModuleBasics.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
+	GetModuleBasics().RegisterRESTRoutes(clientCtx, apiSvr.Router)
+	GetModuleBasics().RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 
 	// register swagger API from root so that other applications can override easily
 	if apiConfig.Swagger {
@@ -838,7 +997,78 @@ func (app *AxelarApp) RegisterTendermintService(clientCtx client.Context) {
 	tmservice.RegisterTendermintService(app.BaseApp.GRPCQueryRouter(), clientCtx, app.interfaceRegistry)
 }
 
+// GetModuleBasics initializes the module BasicManager is in charge of setting up basic,
+// non-dependant module elements, such as codec registration and genesis verification.
+// Initialization is dependent on whether wasm is enabled.
+func GetModuleBasics() module.BasicManager {
+	if ModuleBasics != nil {
+		return ModuleBasics
+	}
+
+	wasmProposals := []govclient.ProposalHandler{}
+	if IsWasmEnabled() {
+		wasmProposals = wasmclient.ProposalHandlers
+	}
+
+	managers := []module.AppModuleBasic{
+		auth.AppModuleBasic{},
+		genutil.AppModuleBasic{},
+		bank.AppModuleBasic{},
+		capability.AppModuleBasic{},
+		staking.AppModuleBasic{},
+		mint.AppModuleBasic{},
+		distr.AppModuleBasic{},
+		gov.NewAppModuleBasic(
+			append(
+				wasmProposals,
+				paramsclient.ProposalHandler,
+				distrclient.ProposalHandler,
+				upgradeclient.ProposalHandler,
+				upgradeclient.CancelProposalHandler,
+				ibcclientclient.UpdateClientProposalHandler,
+				ibcclientclient.UpgradeProposalHandler,
+				axelarnetclient.ProposalHandler,
+			)...,
+		),
+		params.AppModuleBasic{},
+		crisis.AppModuleBasic{},
+		slashing.AppModuleBasic{},
+		feegrantmodule.AppModuleBasic{},
+		upgrade.AppModuleBasic{},
+		evidence.AppModuleBasic{},
+		vesting.AppModuleBasic{},
+	}
+
+	if IsWasmEnabled() {
+		managers = append(managers, wasm.AppModuleBasic{}, ibchooks.AppModuleBasic{})
+	}
+
+	managers = append(managers,
+		ibc.AppModuleBasic{},
+		transfer.AppModuleBasic{},
+
+		multisig.AppModuleBasic{},
+		tss.AppModuleBasic{},
+		vote.AppModuleBasic{},
+		evm.AppModuleBasic{},
+		snapshot.AppModuleBasic{},
+		nexus.AppModuleBasic{},
+		axelarnet.AppModuleBasic{},
+		reward.AppModuleBasic{},
+		permission.AppModuleBasic{},
+	)
+
+	ModuleBasics = module.NewBasicManager(managers...)
+
+	return ModuleBasics
+}
+
 func (app *AxelarApp) getSubspace(moduleName string) paramstypes.Subspace {
 	subspace, _ := app.paramsKeeper.GetSubspace(moduleName)
 	return subspace
+}
+
+// IsWasmEnabled returns whether wasm is enabled
+func IsWasmEnabled() bool {
+	return WasmEnabled != ""
 }

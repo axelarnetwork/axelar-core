@@ -3,6 +3,7 @@ package app_test
 import (
 	"testing"
 
+	"github.com/CosmWasm/wasmd/x/wasm"
 	"github.com/cosmos/cosmos-sdk/simapp"
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/stretchr/testify/assert"
@@ -26,6 +27,7 @@ func TestNewAxelarApp(t *testing.T) {
 			0,
 			app.MakeEncodingConfig(),
 			simapp.EmptyAppOptions{},
+			[]wasm.Option{},
 		)
 	})
 }
