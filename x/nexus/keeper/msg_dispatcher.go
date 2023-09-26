@@ -72,7 +72,7 @@ func (m Messenger) DispatchMsg(ctx sdk.Context, contractAddr sdk.AccAddress, _ s
 		recipient := exported.CrossChainAddress{Chain: recipientChain, Address: msg.RecipientAddress}
 
 		// set status to approved if the message is sent to a cosmos chain and set
-		// to processing otherwise, cuz messages sent to cosmos chains require
+		// to processing otherwise, because messages sent to cosmos chains require
 		// translation with the original payload.
 		// https://github.com/axelarnetwork/axelar-core/blob/ea48d5b974dfd94ea235311eddabe23bfa430cd9/x/axelarnet/keeper/msg_server.go#L520
 		status := exported.Approved
