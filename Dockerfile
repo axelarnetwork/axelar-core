@@ -9,7 +9,8 @@ RUN apk add --no-cache --update \
   ca-certificates \
   git \
   make \
-  build-base
+  build-base \
+  linux-headers
 
 WORKDIR axelar
 
@@ -29,7 +30,8 @@ RUN if [[ "${WASM}" == "true" ]]; then \
 
 COPY . .
 
-RUN make WASM="${WASM}" MUSLC=true build
+ENV CGO_ENABLED=0
+RUN make WASM="${WASM}" MUSLC="${WASM}" build
 
 FROM alpine:3.18
 

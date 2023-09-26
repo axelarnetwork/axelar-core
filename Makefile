@@ -21,7 +21,7 @@ endif
 
 ifeq ($(MUSLC), true)
 STATIC_LINK_FLAGS := -linkmode=external -extldflags '-Wl,-z,muldefs -static'
-BUILD_TAGS := muslc
+BUILD_TAGS := ledger,muslc
 else
 STATIC_LINK_FLAGS := ""
 BUILD_TAGS := ledger
