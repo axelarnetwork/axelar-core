@@ -10,25 +10,17 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
+	"github.com/axelarnetwork/utils/funcs"
 )
 
 var _ wasmkeeper.Messenger = (*Messenger)(nil)
 
-type message struct {
-	SenderChain      exported.ChainName `json:"sender_chain"`
-	SenderAddress    string             `json:"sender_address"`
-	RecipientChain   exported.ChainName `json:"recipient_chain"`
-	RecipientAddress string             `json:"recipient_address"`
-	PayloadHash      []byte             `json:"payload_hash"`
-	SourceTxID       []byte             `json:"source_tx_id"`
-	SourceTxIndex    uint64             `json:"source_tx_index"`
-}
-
-type request = []message
+type request = []exported.ConnectionRouterMessage
 
 type Messenger struct {
 	types.Nexus
@@ -56,46 +48,49 @@ func (m Messenger) DispatchMsg(ctx sdk.Context, contractAddr sdk.AccAddress, _ s
 		return nil, nil, fmt.Errorf("contract address %s is not the connection router", contractAddr)
 	}
 
-	// TODO: consider routing messages that can be routed instead of failing the
-	// whole batch whenever one message fails and returning the ones that
-	// succeeded/failed in the response
-	// TODO: consider handling only one message at a time instead of a batch
 	for _, msg := range req {
-		recipientChain, ok := m.GetChain(ctx, msg.RecipientChain)
-		if !ok {
-			return nil, nil, fmt.Errorf("recipient chain %s is not a registered chain", msg.RecipientChain)
-		}
+		routed := utils.RunCached(ctx, m, func(ctx sdk.Context) (bool, error) {
+			return m.routeMsg(ctx, msg)
+		})
 
-		msgID, _, _ := m.GenerateMessageID(ctx)
-		senderChain := exported.Chain{Name: msg.SenderChain, SupportsForeignAssets: false, KeyType: tss.None, Module: wasmtypes.ModuleName}
-		sender := exported.CrossChainAddress{Chain: senderChain, Address: msg.SenderAddress}
-		recipient := exported.CrossChainAddress{Chain: recipientChain, Address: msg.RecipientAddress}
-
-		// set status to approved if the message is sent to a cosmos chain and set
-		// to processing otherwise, because messages sent to cosmos chains require
-		// translation with the original payload.
-		// https://github.com/axelarnetwork/axelar-core/blob/ea48d5b974dfd94ea235311eddabe23bfa430cd9/x/axelarnet/keeper/msg_server.go#L520
-		status := exported.Approved
-		if !recipientChain.IsFrom(axelarnet.ModuleName) {
-			status = exported.Processing
-		}
-		msg := exported.NewGeneralMessage(
-			msgID,
-			sender,
-			recipient,
-			msg.PayloadHash,
-			status,
-			msg.SourceTxID,
-			msg.SourceTxIndex,
-			nil,
-		)
-
-		if err := m.Nexus.SetNewMessageFromWasm(ctx, msg); err != nil {
-			return nil, nil, err
-		}
-
+		funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.ConnectionRouterMessageReceived{Message: msg, Routed: routed}))
 	}
 
-	// TODO: return events
 	return nil, nil, nil
+}
+
+func (m Messenger) routeMsg(ctx sdk.Context, msg exported.ConnectionRouterMessage) (bool, error) {
+	recipientChain, ok := m.GetChain(ctx, msg.RecipientChain)
+	if !ok {
+		return false, fmt.Errorf("recipient chain %s is not a registered chain", msg.RecipientChain)
+	}
+
+	id, _, _ := m.GenerateMessageID(ctx)
+	senderChain := exported.Chain{Name: msg.SenderChain, SupportsForeignAssets: false, KeyType: tss.None, Module: wasmtypes.ModuleName}
+	sender := exported.CrossChainAddress{Chain: senderChain, Address: msg.SenderAddress}
+	recipient := exported.CrossChainAddress{Chain: recipientChain, Address: msg.RecipientAddress}
+
+	// set status to approved if the message is sent to a cosmos chain and set
+	// to processing otherwise, because messages sent to cosmos chains require
+	// translation with the original payload.
+	// https://github.com/axelarnetwork/axelar-core/blob/ea48d5b974dfd94ea235311eddabe23bfa430cd9/x/axelarnet/keeper/msg_server.go#L520
+	status := exported.Approved
+	if !recipientChain.IsFrom(axelarnet.ModuleName) {
+		status = exported.Processing
+	}
+
+	if err := m.Nexus.SetNewMessageFromWasm(ctx, exported.NewGeneralMessage(
+		id,
+		sender,
+		recipient,
+		msg.PayloadHash,
+		status,
+		msg.SourceTxID,
+		msg.SourceTxIndex,
+		nil,
+	)); err != nil {
+		return false, err
+	}
+
+	return true, nil
 }

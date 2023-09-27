@@ -51,6 +51,7 @@
 - [axelar/nexus/exported/v1beta1/types.proto](#axelar/nexus/exported/v1beta1/types.proto)
     - [Asset](#axelar.nexus.exported.v1beta1.Asset)
     - [Chain](#axelar.nexus.exported.v1beta1.Chain)
+    - [ConnectionRouterMessage](#axelar.nexus.exported.v1beta1.ConnectionRouterMessage)
     - [CrossChainAddress](#axelar.nexus.exported.v1beta1.CrossChainAddress)
     - [CrossChainTransfer](#axelar.nexus.exported.v1beta1.CrossChainTransfer)
     - [FeeInfo](#axelar.nexus.exported.v1beta1.FeeInfo)
@@ -372,6 +373,7 @@
     - [QueryService](#axelar.multisig.v1beta1.QueryService)
   
 - [axelar/nexus/v1beta1/events.proto](#axelar/nexus/v1beta1/events.proto)
+    - [ConnectionRouterMessageReceived](#axelar.nexus.v1beta1.ConnectionRouterMessageReceived)
     - [FeeDeducted](#axelar.nexus.v1beta1.FeeDeducted)
     - [InsufficientFee](#axelar.nexus.v1beta1.InsufficientFee)
     - [MessageExecuted](#axelar.nexus.v1beta1.MessageExecuted)
@@ -1229,6 +1231,27 @@ Chain represents the properties of a registered blockchain
 | `supports_foreign_assets` | [bool](#bool) |  |  |
 | `key_type` | [axelar.tss.exported.v1beta1.KeyType](#axelar.tss.exported.v1beta1.KeyType) |  |  |
 | `module` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.nexus.exported.v1beta1.ConnectionRouterMessage"></a>
+
+### ConnectionRouterMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender_chain` | [string](#string) |  |  |
+| `sender_address` | [string](#string) |  |  |
+| `recipient_chain` | [string](#string) |  |  |
+| `recipient_address` | [string](#string) |  |  |
+| `payload_hash` | [bytes](#bytes) |  |  |
+| `source_tx_id` | [bytes](#bytes) |  |  |
+| `source_tx_index` | [uint64](#uint64) |  |  |
 
 
 
@@ -5859,6 +5882,22 @@ Query defines the gRPC querier service.
 <p align="right"><a href="#top">Top</a></p>
 
 ## axelar/nexus/v1beta1/events.proto
+
+
+
+<a name="axelar.nexus.v1beta1.ConnectionRouterMessageReceived"></a>
+
+### ConnectionRouterMessageReceived
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `message` | [axelar.nexus.exported.v1beta1.ConnectionRouterMessage](#axelar.nexus.exported.v1beta1.ConnectionRouterMessage) |  |  |
+| `routed` | [bool](#bool) |  |  |
+
+
+
 
 
 

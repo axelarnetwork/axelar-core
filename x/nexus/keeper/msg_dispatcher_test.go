@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"testing"
@@ -9,6 +10,7 @@ import (
 	wasmvmtypes "github.com/CosmWasm/wasmvm/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
+	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
@@ -20,21 +22,23 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types/mock"
+	"github.com/axelarnetwork/utils/slices"
 	. "github.com/axelarnetwork/utils/test"
 )
 
 func TestMessenger_DispatchMsg(t *testing.T) {
 	var (
+		ctx       sdk.Context
 		messenger keeper.Messenger
 		nexus     *mock.NexusMock
 		msg       wasmvmtypes.CosmosMsg
 	)
 
-	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 	contractAddr := rand.AccAddr()
 
 	givenMessenger := Given("a messenger", func() {
-		nexus = &mock.NexusMock{}
+		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+		nexus = &mock.NexusMock{LoggerFunc: func(_ sdk.Context) log.Logger { return log.TestingLogger() }}
 		messenger = keeper.NewMessenger(nexus)
 	})
 
@@ -110,11 +114,15 @@ func TestMessenger_DispatchMsg(t *testing.T) {
 					return exported.Chain{}, false
 				}
 			}).
-				Then("should return error", func(t *testing.T) {
+				Then("should not do anything", func(t *testing.T) {
 					_, _, err := messenger.DispatchMsg(ctx, contractAddr, "", msg)
 
-					assert.ErrorContains(t, err, "is not a registered chain")
-					assert.False(t, errors.Is(err, wasmtypes.ErrUnknownMsg))
+					assert.NoError(t, err)
+					assert.Len(t, slices.Filter(ctx.EventManager().Events(), func(ev sdk.Event) bool {
+						return ev.Type == "axelar.nexus.v1beta1.ConnectionRouterMessageReceived" && slices.Any(ev.Attributes, func(attr abci.EventAttribute) bool {
+							return bytes.Equal(attr.Key, []byte("routed")) && bytes.Equal(attr.Value, []byte("false"))
+						})
+					}), 2)
 				}),
 
 			When("the destination chain is registered", func() {
@@ -137,11 +145,15 @@ func TestMessenger_DispatchMsg(t *testing.T) {
 						return fmt.Errorf("set msg error")
 					}
 				}).
-				Then("should return error", func(t *testing.T) {
+				Then("should do nothing", func(t *testing.T) {
 					_, _, err := messenger.DispatchMsg(ctx, contractAddr, "", msg)
 
-					assert.ErrorContains(t, err, "set msg error")
-					assert.False(t, errors.Is(err, wasmtypes.ErrUnknownMsg))
+					assert.NoError(t, err)
+					assert.Len(t, slices.Filter(ctx.EventManager().Events(), func(ev sdk.Event) bool {
+						return ev.Type == "axelar.nexus.v1beta1.ConnectionRouterMessageReceived" && slices.Any(ev.Attributes, func(attr abci.EventAttribute) bool {
+							return bytes.Equal(attr.Key, []byte("routed")) && bytes.Equal(attr.Value, []byte("false"))
+						})
+					}), 2)
 				}),
 
 			When("the destination chain is registered", func() {
@@ -177,6 +189,11 @@ func TestMessenger_DispatchMsg(t *testing.T) {
 					assert.Equal(t, nexus.SetNewMessageFromWasmCalls()[1].Msg.Recipient.Chain, axelarnet.Axelarnet)
 					assert.Equal(t, nexus.SetNewMessageFromWasmCalls()[1].Msg.Status, exported.Approved)
 					assert.Nil(t, nexus.SetNewMessageFromWasmCalls()[1].Msg.Asset)
+					assert.Len(t, slices.Filter(ctx.EventManager().Events(), func(ev sdk.Event) bool {
+						return ev.Type == "axelar.nexus.v1beta1.ConnectionRouterMessageReceived" && slices.Any(ev.Attributes, func(attr abci.EventAttribute) bool {
+							return bytes.Equal(attr.Key, []byte("routed")) && bytes.Equal(attr.Value, []byte("true"))
+						})
+					}), 2)
 				}),
 		).
 		Run(t)

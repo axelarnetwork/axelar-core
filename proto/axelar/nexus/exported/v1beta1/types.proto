@@ -109,3 +109,13 @@ message GeneralMessage {
   bytes source_tx_id = 7 [ (gogoproto.customname) = "SourceTxID" ];
   uint64 source_tx_index = 8;
 }
+
+message ConnectionRouterMessage {
+  string sender_chain = 1 [ (gogoproto.casttype) = "ChainName" ];
+  string sender_address = 2;
+  string recipient_chain = 3 [ (gogoproto.casttype) = "ChainName" ];
+  string recipient_address = 4;
+  bytes payload_hash = 5;
+  bytes source_tx_id = 6 [ (gogoproto.customname) = "SourceTxID" ];
+  uint64 source_tx_index = 7;
+}
