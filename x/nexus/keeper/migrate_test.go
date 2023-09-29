@@ -33,7 +33,7 @@ func TestMigrate6to7(t *testing.T) {
 			actual := sdk.AccAddress{}
 
 			assert.PanicsWithError(t, "UnmarshalJSON cannot decode empty bytes", func() {
-				subspace.Get(ctx, types.KeyConnectionRouter, &actual)
+				subspace.Get(ctx, types.KeyGateway, &actual)
 			})
 			assert.PanicsWithError(t, "UnmarshalJSON cannot decode empty bytes", func() {
 				k.GetParams(ctx)
@@ -42,14 +42,14 @@ func TestMigrate6to7(t *testing.T) {
 			keeper.Migrate6to7(k)(ctx)
 
 			assert.NotPanics(t, func() {
-				subspace.Get(ctx, types.KeyConnectionRouter, &actual)
+				subspace.Get(ctx, types.KeyGateway, &actual)
 			})
 			assert.NotPanics(t, func() {
 				k.GetParams(ctx)
 			})
 
-			assert.Equal(t, types.DefaultParams().ConnectionRouter, actual)
-			assert.Equal(t, types.DefaultParams().ConnectionRouter, k.GetParams(ctx).ConnectionRouter)
+			assert.Equal(t, types.DefaultParams().Gateway, actual)
+			assert.Equal(t, types.DefaultParams().Gateway, k.GetParams(ctx).Gateway)
 		}).
 		Run(t)
 

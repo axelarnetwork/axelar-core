@@ -1621,7 +1621,7 @@ Params represent the genesis parameters for the module
 | `chain_maintainer_missing_vote_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
 | `chain_maintainer_incorrect_vote_threshold` | [axelar.utils.v1beta1.Threshold](#axelar.utils.v1beta1.Threshold) |  |  |
 | `chain_maintainer_check_window` | [int32](#int32) |  |  |
-| `connection_router` | [bytes](#bytes) |  |  |
+| `gateway` | [bytes](#bytes) |  |  |
 
 
 

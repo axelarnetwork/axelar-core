@@ -9,12 +9,12 @@ import (
 // Migrate6to7 returns the handler that performs in-place store migrations
 func Migrate6to7(k Keeper) func(ctx sdk.Context) error {
 	return func(ctx sdk.Context) error {
-		addModuleParamConnectionRouter(ctx, k)
+		addModuleParamGateway(ctx, k)
 
 		return nil
 	}
 }
 
-func addModuleParamConnectionRouter(ctx sdk.Context, k Keeper) {
-	k.params.Set(ctx, types.KeyConnectionRouter, types.DefaultParams().ConnectionRouter)
+func addModuleParamGateway(ctx sdk.Context, k Keeper) {
+	k.params.Set(ctx, types.KeyGateway, types.DefaultParams().Gateway)
 }

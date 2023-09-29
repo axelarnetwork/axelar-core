@@ -60,7 +60,7 @@ func TestMessenger_DispatchMsg(t *testing.T) {
 			}
 		}).
 		Branch(
-			When("the connection router is not set", func() {
+			When("the gateway is not set", func() {
 				nexus.GetParamsFunc = func(_ sdk.Context) types.Params {
 					return types.DefaultParams()
 				}
@@ -68,14 +68,14 @@ func TestMessenger_DispatchMsg(t *testing.T) {
 				Then("should return error", func(t *testing.T) {
 					_, _, err := messenger.DispatchMsg(ctx, contractAddr, "", msg)
 
-					assert.ErrorContains(t, err, "connection router is not set")
+					assert.ErrorContains(t, err, "gateway is not set")
 					assert.False(t, errors.Is(err, wasmtypes.ErrUnknownMsg))
 				}),
 
-			When("the connection router is set but given contract address does not match", func() {
+			When("the gateway is set but given contract address does not match", func() {
 				nexus.GetParamsFunc = func(_ sdk.Context) types.Params {
 					params := types.DefaultParams()
-					params.ConnectionRouter = rand.AccAddr()
+					params.Gateway = rand.AccAddr()
 
 					return params
 				}
@@ -83,21 +83,21 @@ func TestMessenger_DispatchMsg(t *testing.T) {
 				Then("should return error", func(t *testing.T) {
 					_, _, err := messenger.DispatchMsg(ctx, contractAddr, "", msg)
 
-					assert.ErrorContains(t, err, "is not the connection router")
+					assert.ErrorContains(t, err, "is not the gateway")
 					assert.False(t, errors.Is(err, wasmtypes.ErrUnknownMsg))
 				}),
 		).
 		Run(t)
 
 	givenMessenger.
-		When("the msg is encoded correctly and the connection router is set correctly", func() {
+		When("the msg is encoded correctly and the gateway is set correctly", func() {
 			msg = wasmvmtypes.CosmosMsg{
 				Custom: []byte("{}"),
 			}
 
 			nexus.GetParamsFunc = func(_ sdk.Context) types.Params {
 				params := types.DefaultParams()
-				params.ConnectionRouter = contractAddr
+				params.Gateway = contractAddr
 
 				return params
 			}
@@ -137,10 +137,10 @@ func TestMessenger_DispatchMsg(t *testing.T) {
 		Run(t)
 
 	givenMessenger.
-		When("the connection router is set correctly", func() {
+		When("the gateway is set correctly", func() {
 			nexus.GetParamsFunc = func(_ sdk.Context) types.Params {
 				params := types.DefaultParams()
-				params.ConnectionRouter = contractAddr
+				params.Gateway = contractAddr
 
 				return params
 			}
