@@ -82,8 +82,8 @@ var _ nexustypes.Nexus = &NexusMock{}
 //			RemoveChainMaintainerFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, validator cosmossdktypes.ValAddress) error {
 //				panic("mock out the RemoveChainMaintainer method")
 //			},
-//			SetNewMessageFromWasmFunc: func(ctx cosmossdktypes.Context, msg github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage) error {
-//				panic("mock out the SetNewMessageFromWasm method")
+//			SetNewWasmMessageFunc: func(ctx cosmossdktypes.Context, msg github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage) error {
+//				panic("mock out the SetNewWasmMessage method")
 //			},
 //			SetParamsFunc: func(ctx cosmossdktypes.Context, p nexustypes.Params)  {
 //				panic("mock out the SetParams method")
@@ -155,8 +155,8 @@ type NexusMock struct {
 	// RemoveChainMaintainerFunc mocks the RemoveChainMaintainer method.
 	RemoveChainMaintainerFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, validator cosmossdktypes.ValAddress) error
 
-	// SetNewMessageFromWasmFunc mocks the SetNewMessageFromWasm method.
-	SetNewMessageFromWasmFunc func(ctx cosmossdktypes.Context, msg github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage) error
+	// SetNewWasmMessageFunc mocks the SetNewWasmMessage method.
+	SetNewWasmMessageFunc func(ctx cosmossdktypes.Context, msg github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage) error
 
 	// SetParamsFunc mocks the SetParams method.
 	SetParamsFunc func(ctx cosmossdktypes.Context, p nexustypes.Params)
@@ -305,8 +305,8 @@ type NexusMock struct {
 			// Validator is the validator argument value.
 			Validator cosmossdktypes.ValAddress
 		}
-		// SetNewMessageFromWasm holds details about calls to the SetNewMessageFromWasm method.
-		SetNewMessageFromWasm []struct {
+		// SetNewWasmMessage holds details about calls to the SetNewWasmMessage method.
+		SetNewWasmMessage []struct {
 			// Ctx is the ctx argument value.
 			Ctx cosmossdktypes.Context
 			// Msg is the msg argument value.
@@ -350,7 +350,7 @@ type NexusMock struct {
 	lockRateLimitTransfer        sync.RWMutex
 	lockRegisterFee              sync.RWMutex
 	lockRemoveChainMaintainer    sync.RWMutex
-	lockSetNewMessageFromWasm    sync.RWMutex
+	lockSetNewWasmMessage        sync.RWMutex
 	lockSetParams                sync.RWMutex
 	lockSetRateLimit             sync.RWMutex
 }
@@ -1051,10 +1051,10 @@ func (mock *NexusMock) RemoveChainMaintainerCalls() []struct {
 	return calls
 }
 
-// SetWasmMessage calls SetNewMessageFromWasmFunc.
-func (mock *NexusMock) SetWasmMessage(ctx cosmossdktypes.Context, msg github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage) error {
-	if mock.SetNewMessageFromWasmFunc == nil {
-		panic("NexusMock.SetNewMessageFromWasmFunc: method is nil but Nexus.SetNewMessageFromWasm was just called")
+// SetNewWasmMessage calls SetNewWasmMessageFunc.
+func (mock *NexusMock) SetNewWasmMessage(ctx cosmossdktypes.Context, msg github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage) error {
+	if mock.SetNewWasmMessageFunc == nil {
+		panic("NexusMock.SetNewWasmMessageFunc: method is nil but Nexus.SetNewWasmMessage was just called")
 	}
 	callInfo := struct {
 		Ctx cosmossdktypes.Context
@@ -1063,17 +1063,17 @@ func (mock *NexusMock) SetWasmMessage(ctx cosmossdktypes.Context, msg github_com
 		Ctx: ctx,
 		Msg: msg,
 	}
-	mock.lockSetNewMessageFromWasm.Lock()
-	mock.calls.SetNewMessageFromWasm = append(mock.calls.SetNewMessageFromWasm, callInfo)
-	mock.lockSetNewMessageFromWasm.Unlock()
-	return mock.SetNewMessageFromWasmFunc(ctx, msg)
+	mock.lockSetNewWasmMessage.Lock()
+	mock.calls.SetNewWasmMessage = append(mock.calls.SetNewWasmMessage, callInfo)
+	mock.lockSetNewWasmMessage.Unlock()
+	return mock.SetNewWasmMessageFunc(ctx, msg)
 }
 
-// SetNewMessageFromWasmCalls gets all the calls that were made to SetNewMessageFromWasm.
+// SetNewWasmMessageCalls gets all the calls that were made to SetNewWasmMessage.
 // Check the length with:
 //
-//	len(mockedNexus.SetNewMessageFromWasmCalls())
-func (mock *NexusMock) SetNewMessageFromWasmCalls() []struct {
+//	len(mockedNexus.SetNewWasmMessageCalls())
+func (mock *NexusMock) SetNewWasmMessageCalls() []struct {
 	Ctx cosmossdktypes.Context
 	Msg github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage
 } {
@@ -1081,9 +1081,9 @@ func (mock *NexusMock) SetNewMessageFromWasmCalls() []struct {
 		Ctx cosmossdktypes.Context
 		Msg github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage
 	}
-	mock.lockSetNewMessageFromWasm.RLock()
-	calls = mock.calls.SetNewMessageFromWasm
-	mock.lockSetNewMessageFromWasm.RUnlock()
+	mock.lockSetNewWasmMessage.RLock()
+	calls = mock.calls.SetNewWasmMessage
+	mock.lockSetNewWasmMessage.RUnlock()
 	return calls
 }
 

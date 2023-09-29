@@ -77,7 +77,7 @@ func (m Messenger) routeMsg(ctx sdk.Context, msg exported.WasmMessage) error {
 		status = exported.Processing
 	}
 
-	if err := m.Nexus.SetWasmMessage(ctx, exported.NewGeneralMessage(
+	if err := m.Nexus.SetNewWasmMessage(ctx, exported.NewGeneralMessage(
 		id,
 		sender,
 		recipient,

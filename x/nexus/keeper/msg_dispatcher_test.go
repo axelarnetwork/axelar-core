@@ -123,7 +123,7 @@ func TestMessenger_DispatchMsg(t *testing.T) {
 					nexus.GenerateMessageIDFunc = func(_ sdk.Context) (string, []byte, uint64) {
 						return "1", []byte("1"), 1
 					}
-					nexus.SetNewMessageFromWasmFunc = func(_ sdk.Context, _ exported.GeneralMessage) error {
+					nexus.SetNewWasmMessageFunc = func(_ sdk.Context, _ exported.GeneralMessage) error {
 						return fmt.Errorf("set msg error")
 					}
 				}).
@@ -161,7 +161,7 @@ func TestMessenger_DispatchMsg(t *testing.T) {
 			nexus.GenerateMessageIDFunc = func(_ sdk.Context) (string, []byte, uint64) {
 				return "1", []byte("1"), 1
 			}
-			nexus.SetNewMessageFromWasmFunc = func(_ sdk.Context, msg exported.GeneralMessage) error {
+			nexus.SetNewWasmMessageFunc = func(_ sdk.Context, msg exported.GeneralMessage) error {
 				return nil
 			}
 		}).
@@ -175,10 +175,10 @@ func TestMessenger_DispatchMsg(t *testing.T) {
 					_, _, err := messenger.DispatchMsg(ctx, contractAddr, "", msg)
 					assert.NoError(t, err)
 
-					assert.Len(t, nexus.SetNewMessageFromWasmCalls(), 1)
-					assert.Equal(t, nexus.SetNewMessageFromWasmCalls()[0].Msg.Recipient.Chain, axelarnet.Axelarnet)
-					assert.Equal(t, nexus.SetNewMessageFromWasmCalls()[0].Msg.Status, exported.Approved)
-					assert.Nil(t, nexus.SetNewMessageFromWasmCalls()[0].Msg.Asset)
+					assert.Len(t, nexus.SetNewWasmMessageCalls(), 1)
+					assert.Equal(t, nexus.SetNewWasmMessageCalls()[0].Msg.Recipient.Chain, axelarnet.Axelarnet)
+					assert.Equal(t, nexus.SetNewWasmMessageCalls()[0].Msg.Status, exported.Approved)
+					assert.Nil(t, nexus.SetNewWasmMessageCalls()[0].Msg.Asset)
 				}),
 
 			When("the destination chain is a non-cosmos chain", func() {
@@ -190,10 +190,10 @@ func TestMessenger_DispatchMsg(t *testing.T) {
 					_, _, err := messenger.DispatchMsg(ctx, contractAddr, "", msg)
 					assert.NoError(t, err)
 
-					assert.Len(t, nexus.SetNewMessageFromWasmCalls(), 1)
-					assert.Equal(t, nexus.SetNewMessageFromWasmCalls()[0].Msg.Recipient.Chain, evm.Ethereum)
-					assert.Equal(t, nexus.SetNewMessageFromWasmCalls()[0].Msg.Status, exported.Processing)
-					assert.Nil(t, nexus.SetNewMessageFromWasmCalls()[0].Msg.Asset)
+					assert.Len(t, nexus.SetNewWasmMessageCalls(), 1)
+					assert.Equal(t, nexus.SetNewWasmMessageCalls()[0].Msg.Recipient.Chain, evm.Ethereum)
+					assert.Equal(t, nexus.SetNewWasmMessageCalls()[0].Msg.Status, exported.Processing)
+					assert.Nil(t, nexus.SetNewWasmMessageCalls()[0].Msg.Asset)
 				}),
 		).
 		Run(t)
