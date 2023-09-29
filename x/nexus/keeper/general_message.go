@@ -36,8 +36,8 @@ func (k Keeper) GenerateMessageID(ctx sdk.Context) (string, []byte, uint64) {
 	return fmt.Sprintf("0x%s-%d", hex.EncodeToString(hash[:]), nonce), hash[:], nonce
 }
 
-// SetNewMessageFromWasm sets the given general message from a wasm contract.
-func (k Keeper) SetNewMessageFromWasm(ctx sdk.Context, msg exported.GeneralMessage) error {
+// SetWasmMessage sets the given general message from a wasm contract.
+func (k Keeper) SetWasmMessage(ctx sdk.Context, msg exported.GeneralMessage) error {
 	if msg.Asset != nil {
 		return fmt.Errorf("asset transfer is not supported")
 	}

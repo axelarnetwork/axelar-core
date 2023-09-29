@@ -1051,8 +1051,8 @@ func (mock *NexusMock) RemoveChainMaintainerCalls() []struct {
 	return calls
 }
 
-// SetNewMessageFromWasm calls SetNewMessageFromWasmFunc.
-func (mock *NexusMock) SetNewMessageFromWasm(ctx cosmossdktypes.Context, msg github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage) error {
+// SetWasmMessage calls SetNewMessageFromWasmFunc.
+func (mock *NexusMock) SetWasmMessage(ctx cosmossdktypes.Context, msg github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage) error {
 	if mock.SetNewMessageFromWasmFunc == nil {
 		panic("NexusMock.SetNewMessageFromWasmFunc: method is nil but Nexus.SetNewMessageFromWasm was just called")
 	}

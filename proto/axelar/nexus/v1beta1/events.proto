@@ -61,8 +61,6 @@ message MessageExecuted { string id = 1 [ (gogoproto.customname) = "ID" ]; }
 
 message MessageFailed { string id = 1 [ (gogoproto.customname) = "ID" ]; }
 
-message ConnectionRouterMessageReceived {
-  exported.v1beta1.ConnectionRouterMessage message = 1
-      [ (gogoproto.nullable) = false ];
-  bool routed = 2;
+message WasmMessageRouted {
+  exported.v1beta1.WasmMessage message = 1 [ (gogoproto.nullable) = false ];
 }

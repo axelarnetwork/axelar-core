@@ -25,7 +25,7 @@ import (
 	. "github.com/axelarnetwork/utils/test"
 )
 
-func randMsgFromWasm(status exported.GeneralMessage_Status) exported.GeneralMessage {
+func randWasmMsg(status exported.GeneralMessage_Status) exported.GeneralMessage {
 	return exported.GeneralMessage{
 		ID: rand.NormalizedStr(10),
 		Sender: exported.CrossChainAddress{
@@ -44,7 +44,7 @@ func randMsgFromWasm(status exported.GeneralMessage_Status) exported.GeneralMess
 	}
 }
 
-func TestSetNewMessageFromWasm(t *testing.T) {
+func TestSetNewWasmMessage(t *testing.T) {
 	var (
 		msg    exported.GeneralMessage
 		ctx    sdk.Context
@@ -58,7 +58,7 @@ func TestSetNewMessageFromWasm(t *testing.T) {
 
 	givenKeeper.
 		When("the message is valid", func() {
-			msg = randMsgFromWasm(exported.Approved)
+			msg = randWasmMsg(exported.Approved)
 		}).
 		Branch(
 			When("the message contains token transfer", func() {
@@ -66,49 +66,49 @@ func TestSetNewMessageFromWasm(t *testing.T) {
 				msg.Asset = &coin
 			}).
 				Then("should return error", func(t *testing.T) {
-					assert.ErrorContains(t, keeper.SetNewMessageFromWasm(ctx, msg), "asset transfer is not supported")
+					assert.ErrorContains(t, keeper.SetWasmMessage(ctx, msg), "asset transfer is not supported")
 				}),
 
 			When("the destination chain is not registered", func() {
 				msg.Recipient.Chain = nexustestutils.RandomChain()
 			}).
 				Then("should return error", func(t *testing.T) {
-					assert.ErrorContains(t, keeper.SetNewMessageFromWasm(ctx, msg), "is not a registered chain")
+					assert.ErrorContains(t, keeper.SetWasmMessage(ctx, msg), "is not a registered chain")
 				}),
 
 			When("the destination chain is not activated", func() {
 				keeper.DeactivateChain(ctx, msg.Recipient.Chain)
 			}).
 				Then("should return error", func(t *testing.T) {
-					assert.ErrorContains(t, keeper.SetNewMessageFromWasm(ctx, msg), "is not activated")
+					assert.ErrorContains(t, keeper.SetWasmMessage(ctx, msg), "is not activated")
 				}),
 
 			When("the recipient address is invalid", func() {
 				msg.Recipient.Address = rand.Str(20)
 			}).
 				Then("should return error", func(t *testing.T) {
-					assert.ErrorContains(t, keeper.SetNewMessageFromWasm(ctx, msg), "invalid recipient address")
+					assert.ErrorContains(t, keeper.SetWasmMessage(ctx, msg), "invalid recipient address")
 				}),
 
 			When("the message already exists", func() {
-				keeper.SetNewMessageFromWasm(ctx, msg)
+				keeper.SetWasmMessage(ctx, msg)
 			}).
 				Then("should return error", func(t *testing.T) {
-					assert.ErrorContains(t, keeper.SetNewMessageFromWasm(ctx, msg), "already exists")
+					assert.ErrorContains(t, keeper.SetWasmMessage(ctx, msg), "already exists")
 				}),
 
 			When("the message is invalid", func() {
 				msg.Sender.Address = ""
 			}).
 				Then("should return error", func(t *testing.T) {
-					assert.ErrorContains(t, keeper.SetNewMessageFromWasm(ctx, msg), "invalid source chain: invalid address: string is empty")
+					assert.ErrorContains(t, keeper.SetWasmMessage(ctx, msg), "invalid source chain: invalid address: string is empty")
 				}),
 
 			When("the message status is invalid", func() {
 				msg.Status = exported.Failed
 			}).
 				Then("should return error", func(t *testing.T) {
-					assert.ErrorContains(t, keeper.SetNewMessageFromWasm(ctx, msg), "invalid message status")
+					assert.ErrorContains(t, keeper.SetWasmMessage(ctx, msg), "invalid message status")
 				}),
 		).
 		Run(t)
@@ -116,10 +116,10 @@ func TestSetNewMessageFromWasm(t *testing.T) {
 	givenKeeper.
 		Branch(
 			When("the message status is approved", func() {
-				msg = randMsgFromWasm(exported.Approved)
+				msg = randWasmMsg(exported.Approved)
 			}).
 				Then("should be stored as approved and emit MessageReceived event", func(t *testing.T) {
-					assert.NoError(t, keeper.SetNewMessageFromWasm(ctx, msg))
+					assert.NoError(t, keeper.SetWasmMessage(ctx, msg))
 
 					actual, ok := keeper.GetMessage(ctx, msg.ID)
 					assert.True(t, ok)
@@ -128,10 +128,10 @@ func TestSetNewMessageFromWasm(t *testing.T) {
 				}),
 
 			When("the message status is processing", func() {
-				msg = randMsgFromWasm(exported.Processing)
+				msg = randWasmMsg(exported.Processing)
 			}).
 				Then("should be stored as processing and emit MessageProcessing event", func(t *testing.T) {
-					assert.NoError(t, keeper.SetNewMessageFromWasm(ctx, msg))
+					assert.NoError(t, keeper.SetWasmMessage(ctx, msg))
 
 					actual, ok := keeper.GetMessage(ctx, msg.ID)
 					assert.True(t, ok)

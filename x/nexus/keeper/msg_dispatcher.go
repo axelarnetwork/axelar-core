@@ -10,7 +10,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	"github.com/axelarnetwork/axelar-core/utils"
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
@@ -20,7 +19,7 @@ import (
 
 var _ wasmkeeper.Messenger = (*Messenger)(nil)
 
-type request = []exported.ConnectionRouterMessage
+type request = exported.WasmMessage
 
 type Messenger struct {
 	types.Nexus
@@ -38,6 +37,7 @@ func (m Messenger) DispatchMsg(ctx sdk.Context, contractAddr sdk.AccAddress, _ s
 		return nil, nil, sdkerrors.Wrap(wasmtypes.ErrUnknownMsg, err.Error())
 	}
 
+	// TODO: rename to gateway
 	connectionRouter := m.GetParams(ctx).ConnectionRouter
 
 	if len(connectionRouter) == 0 {
@@ -48,38 +48,36 @@ func (m Messenger) DispatchMsg(ctx sdk.Context, contractAddr sdk.AccAddress, _ s
 		return nil, nil, fmt.Errorf("contract address %s is not the connection router", contractAddr)
 	}
 
-	for _, msg := range req {
-		routed := utils.RunCached(ctx, m, func(ctx sdk.Context) (bool, error) {
-			return m.routeMsg(ctx, msg)
-		})
-
-		funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.ConnectionRouterMessageReceived{Message: msg, Routed: routed}))
+	if err := m.routeMsg(ctx, req); err != nil {
+		return nil, nil, err
 	}
+
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.WasmMessageRouted{Message: req}))
 
 	return nil, nil, nil
 }
 
-func (m Messenger) routeMsg(ctx sdk.Context, msg exported.ConnectionRouterMessage) (bool, error) {
-	recipientChain, ok := m.GetChain(ctx, msg.RecipientChain)
+func (m Messenger) routeMsg(ctx sdk.Context, msg exported.WasmMessage) error {
+	destinationChain, ok := m.GetChain(ctx, msg.DestinationChain)
 	if !ok {
-		return false, fmt.Errorf("recipient chain %s is not a registered chain", msg.RecipientChain)
+		return fmt.Errorf("recipient chain %s is not a registered chain", msg.DestinationChain)
 	}
 
 	id, _, _ := m.GenerateMessageID(ctx)
-	senderChain := exported.Chain{Name: msg.SenderChain, SupportsForeignAssets: false, KeyType: tss.None, Module: wasmtypes.ModuleName}
-	sender := exported.CrossChainAddress{Chain: senderChain, Address: msg.SenderAddress}
-	recipient := exported.CrossChainAddress{Chain: recipientChain, Address: msg.RecipientAddress}
+	sourceChain := exported.Chain{Name: msg.SourceChain, SupportsForeignAssets: false, KeyType: tss.None, Module: wasmtypes.ModuleName}
+	sender := exported.CrossChainAddress{Chain: sourceChain, Address: msg.SourceAddress}
+	recipient := exported.CrossChainAddress{Chain: destinationChain, Address: msg.DestinationAddress}
 
 	// set status to approved if the message is sent to a cosmos chain and set
 	// to processing otherwise, because messages sent to cosmos chains require
 	// translation with the original payload.
 	// https://github.com/axelarnetwork/axelar-core/blob/ea48d5b974dfd94ea235311eddabe23bfa430cd9/x/axelarnet/keeper/msg_server.go#L520
 	status := exported.Approved
-	if !recipientChain.IsFrom(axelarnet.ModuleName) {
+	if !destinationChain.IsFrom(axelarnet.ModuleName) {
 		status = exported.Processing
 	}
 
-	if err := m.Nexus.SetNewMessageFromWasm(ctx, exported.NewGeneralMessage(
+	if err := m.Nexus.SetWasmMessage(ctx, exported.NewGeneralMessage(
 		id,
 		sender,
 		recipient,
@@ -89,8 +87,8 @@ func (m Messenger) routeMsg(ctx sdk.Context, msg exported.ConnectionRouterMessag
 		msg.SourceTxIndex,
 		nil,
 	)); err != nil {
-		return false, err
+		return err
 	}
 
-	return true, nil
+	return nil
 }
