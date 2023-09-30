@@ -22,6 +22,9 @@ jobs:
         os:
           - ubuntu-20.04
     runs-on: ${{ matrix.os }}
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -32,6 +35,12 @@ jobs:
         run: |
           git fetch --unshallow
 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-region: us-east-2
+          role-to-assume: arn:aws:iam::499786161782:role/ghwf-axelar-core
+
       - name: Build docker image (normal)
         env:
           WASM: ${{ github.event.inputs.WASM }}
@@ -41,8 +50,6 @@ jobs:
       - name: Push to ECR (normal)
         uses: jwalton/gh-ecr-push@v1
         with:
-          access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           region: us-east-2
           local-image: axelar/core
           image: axelar-core:${{ github.sha }}
@@ -58,8 +65,6 @@ jobs:
         uses: jwalton/gh-ecr-push@v1
         if: github.event.inputs.buildDebug != 'false'
         with:
-          access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           region: us-east-2
           local-image: axelar/core-debug
           image: axelar-core:${{ github.sha }}-debug
