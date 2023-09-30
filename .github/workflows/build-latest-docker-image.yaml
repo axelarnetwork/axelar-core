@@ -14,6 +14,8 @@ on:
         description: Whether to enable wasm ("true"/"false")
         required: true
         default: "false"
+env:
+  ECR_REPO: 499786161782.dkr.ecr.us-east-2.amazonaws.com
 
 jobs:
   build-and-push-latest-docker-image:
@@ -48,11 +50,11 @@ jobs:
           make WASM="${WASM}" docker-image
 
       - name: Push to ECR (normal)
-        uses: jwalton/gh-ecr-push@v1
-        with:
-          region: us-east-2
-          local-image: axelar/core
-          image: axelar-core:${{ github.sha }}
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin "${ECR_REPO}"
+          docker push "${ECR_REPO}/axelar-core:${IMAGE_TAG}"
 
       - name: Build docker image (debug)
         if: github.event.inputs.buildDebug != 'false'
@@ -62,9 +64,8 @@ jobs:
           make WASM="${WASM}" docker-image-debug
 
       - name: Push to ECR (debug)
-        uses: jwalton/gh-ecr-push@v1
-        if: github.event.inputs.buildDebug != 'false'
-        with:
-          region: us-east-2
-          local-image: axelar/core-debug
-          image: axelar-core:${{ github.sha }}-debug
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin "${ECR_REPO}"
+          docker push "${ECR_REPO}/axelar-core:${IMAGE_TAG}-debug"
