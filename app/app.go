@@ -471,6 +471,9 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		scopedWasmK := app.capabilityKeeper.ScopeToModule(wasm.ModuleName)
 		// The last arguments can contain custom message handlers, and custom query handlers,
 		// if we want to allow any custom callbacks
+		wasmOpts = append(wasmOpts, wasmkeeper.WithMessageHandlerDecorator(func(old wasmkeeper.Messenger) wasmkeeper.Messenger {
+			return wasmkeeper.NewMessageHandlerChain(old, nexusKeeper.NewMessenger(nexusK))
+		}))
 		wasmK = wasm.NewKeeper(
 			appCodec,
 			keys[wasm.StoreKey],

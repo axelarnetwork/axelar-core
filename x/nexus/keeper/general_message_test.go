@@ -15,6 +15,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
+	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	evmtestutils "github.com/axelarnetwork/axelar-core/x/evm/types/testutils"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -23,6 +24,124 @@ import (
 	"github.com/axelarnetwork/utils/funcs"
 	. "github.com/axelarnetwork/utils/test"
 )
+
+func randWasmMsg(status exported.GeneralMessage_Status) exported.GeneralMessage {
+	return exported.GeneralMessage{
+		ID: rand.NormalizedStr(10),
+		Sender: exported.CrossChainAddress{
+			Chain:   nexustestutils.RandomChain(),
+			Address: rand.NormalizedStr(42),
+		},
+		Recipient: exported.CrossChainAddress{
+			Chain:   evm.Ethereum,
+			Address: evmtestutils.RandomAddress().Hex(),
+		},
+		PayloadHash:   evmtestutils.RandomHash().Bytes(),
+		Status:        status,
+		Asset:         nil,
+		SourceTxID:    evmtestutils.RandomHash().Bytes(),
+		SourceTxIndex: uint64(rand.I64Between(0, 100)),
+	}
+}
+
+func TestSetNewWasmMessage(t *testing.T) {
+	var (
+		msg    exported.GeneralMessage
+		ctx    sdk.Context
+		keeper nexus.Keeper
+	)
+
+	cfg := app.MakeEncodingConfig()
+	givenKeeper := Given("the keeper", func() {
+		keeper, ctx = setup(cfg)
+	})
+
+	givenKeeper.
+		When("the message is valid", func() {
+			msg = randWasmMsg(exported.Approved)
+		}).
+		Branch(
+			When("the message contains token transfer", func() {
+				coin := rand.Coin()
+				msg.Asset = &coin
+			}).
+				Then("should return error", func(t *testing.T) {
+					assert.ErrorContains(t, keeper.SetNewWasmMessage(ctx, msg), "asset transfer is not supported")
+				}),
+
+			When("the destination chain is not registered", func() {
+				msg.Recipient.Chain = nexustestutils.RandomChain()
+			}).
+				Then("should return error", func(t *testing.T) {
+					assert.ErrorContains(t, keeper.SetNewWasmMessage(ctx, msg), "is not a registered chain")
+				}),
+
+			When("the destination chain is not activated", func() {
+				keeper.DeactivateChain(ctx, msg.Recipient.Chain)
+			}).
+				Then("should return error", func(t *testing.T) {
+					assert.ErrorContains(t, keeper.SetNewWasmMessage(ctx, msg), "is not activated")
+				}),
+
+			When("the recipient address is invalid", func() {
+				msg.Recipient.Address = rand.Str(20)
+			}).
+				Then("should return error", func(t *testing.T) {
+					assert.ErrorContains(t, keeper.SetNewWasmMessage(ctx, msg), "invalid recipient address")
+				}),
+
+			When("the message already exists", func() {
+				keeper.SetNewWasmMessage(ctx, msg)
+			}).
+				Then("should return error", func(t *testing.T) {
+					assert.ErrorContains(t, keeper.SetNewWasmMessage(ctx, msg), "already exists")
+				}),
+
+			When("the message is invalid", func() {
+				msg.Sender.Address = ""
+			}).
+				Then("should return error", func(t *testing.T) {
+					assert.ErrorContains(t, keeper.SetNewWasmMessage(ctx, msg), "invalid source chain: invalid address: string is empty")
+				}),
+
+			When("the message status is invalid", func() {
+				msg.Status = exported.Failed
+			}).
+				Then("should return error", func(t *testing.T) {
+					assert.ErrorContains(t, keeper.SetNewWasmMessage(ctx, msg), "invalid message status")
+				}),
+		).
+		Run(t)
+
+	givenKeeper.
+		Branch(
+			When("the message status is approved", func() {
+				msg = randWasmMsg(exported.Approved)
+			}).
+				Then("should be stored as approved and emit MessageReceived event", func(t *testing.T) {
+					assert.NoError(t, keeper.SetNewWasmMessage(ctx, msg))
+
+					actual, ok := keeper.GetMessage(ctx, msg.ID)
+					assert.True(t, ok)
+					assert.Equal(t, msg, actual)
+					assert.Equal(t, "axelar.nexus.v1beta1.MessageReceived", ctx.EventManager().Events()[len(ctx.EventManager().Events())-1].Type)
+				}),
+
+			When("the message status is processing", func() {
+				msg = randWasmMsg(exported.Processing)
+			}).
+				Then("should be stored as processing and emit MessageProcessing event", func(t *testing.T) {
+					assert.NoError(t, keeper.SetNewWasmMessage(ctx, msg))
+
+					actual, ok := keeper.GetMessage(ctx, msg.ID)
+					assert.True(t, ok)
+					assert.Equal(t, msg, actual)
+					assert.Equal(t, "axelar.nexus.v1beta1.MessageProcessing", ctx.EventManager().Events()[len(ctx.EventManager().Events())-1].Type)
+					assert.Equal(t, msg, keeper.GetProcessingMessages(ctx, msg.GetDestinationChain(), 1)[0])
+				}),
+		).
+		Run(t)
+}
 
 func TestSetNewGeneralMessage(t *testing.T) {
 	var (
@@ -53,7 +172,6 @@ func TestSetNewGeneralMessage(t *testing.T) {
 			PayloadHash: crypto.Keccak256Hash(rand.Bytes(int(rand.I64Between(1, 100)))).Bytes(),
 			Asset:       &asset,
 		}
-
 	})
 
 	whenChainsAreRegistered := givenContractCallEvent.

@@ -60,3 +60,7 @@ message MessageProcessing { string id = 1 [ (gogoproto.customname) = "ID" ]; }
 message MessageExecuted { string id = 1 [ (gogoproto.customname) = "ID" ]; }
 
 message MessageFailed { string id = 1 [ (gogoproto.customname) = "ID" ]; }
+
+message WasmMessageRouted {
+  exported.v1beta1.WasmMessage message = 1 [ (gogoproto.nullable) = false ];
+}
