@@ -54,7 +54,8 @@ jobs:
           IMAGE_TAG: ${{ github.sha }}
         run: |
           aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin "${ECR_REPO}"
-          docker push "axelar-core:${IMAGE_TAG}" "${ECR_REPO}/axelar-core:${IMAGE_TAG}"
+          docker image tag "axelar-core:${IMAGE_TAG}" "${ECR_REPO}/axelar-core:${IMAGE_TAG}"
+          docker push "${ECR_REPO}/axelar-core:${IMAGE_TAG}"
 
       - name: Build docker image (debug)
         if: github.event.inputs.buildDebug != 'false'
@@ -68,4 +69,5 @@ jobs:
           IMAGE_TAG: ${{ github.sha }}
         run: |
           aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin "${ECR_REPO}"
-          docker push "axelar-core:${IMAGE_TAG}" "${ECR_REPO}/axelar-core:${IMAGE_TAG}-debug"
+          docker image tag "axelar-core:${IMAGE_TAG}" "${ECR_REPO}/axelar-core:${IMAGE_TAG}-debug"
+          docker push "${ECR_REPO}/axelar-core:${IMAGE_TAG}-debug"
