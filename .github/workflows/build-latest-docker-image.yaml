@@ -65,6 +65,7 @@ jobs:
           make WASM="${WASM}" docker-image-debug
 
       - name: Push to ECR (debug)
+        if: github.event.inputs.buildDebug != 'false'
         env:
           IMAGE_TAG: ${{ github.sha }}
         run: |
