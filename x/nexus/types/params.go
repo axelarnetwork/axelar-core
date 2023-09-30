@@ -20,8 +20,8 @@ var (
 	KeyChainMaintainerIncorrectVoteThreshold = []byte("chainMaintainerIncorrectVoteThreshold")
 	// KeyChainMaintainerCheckWindow represents the key for chain maintainer check window
 	KeyChainMaintainerCheckWindow = []byte("chainMaintainerCheckWindow")
-	// KeyConnectionRouter represents the key for connection router's address
-	KeyConnectionRouter = []byte("connectionRouter")
+	// KeyGateway represents the key for the gateway's address
+	KeyGateway = []byte("gateway")
 )
 
 // KeyTable retrieves a subspace table for the module
@@ -36,7 +36,7 @@ func DefaultParams() Params {
 		ChainMaintainerMissingVoteThreshold:   utils.NewThreshold(20, 100),
 		ChainMaintainerIncorrectVoteThreshold: utils.NewThreshold(15, 100),
 		ChainMaintainerCheckWindow:            500,
-		ConnectionRouter:                      sdk.AccAddress{},
+		Gateway:                               sdk.AccAddress{},
 	}
 }
 
@@ -54,7 +54,7 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 		params.NewParamSetPair(KeyChainMaintainerMissingVoteThreshold, &m.ChainMaintainerMissingVoteThreshold, validateThresholdWith("ChainMaintainerMissingVoteThreshold")),
 		params.NewParamSetPair(KeyChainMaintainerIncorrectVoteThreshold, &m.ChainMaintainerIncorrectVoteThreshold, validateThresholdWith("ChainMaintainerIncorrectVoteThreshold")),
 		params.NewParamSetPair(KeyChainMaintainerCheckWindow, &m.ChainMaintainerCheckWindow, validateChainMaintainerCheckWindow),
-		params.NewParamSetPair(KeyConnectionRouter, &m.ConnectionRouter, validateConnectionRouter),
+		params.NewParamSetPair(KeyGateway, &m.Gateway, validateGateway),
 	}
 }
 
@@ -76,7 +76,7 @@ func (m Params) Validate() error {
 		return err
 	}
 
-	if err := validateConnectionRouter(m.ConnectionRouter); err != nil {
+	if err := validateGateway(m.Gateway); err != nil {
 		return err
 	}
 
@@ -115,10 +115,10 @@ func validateChainMaintainerCheckWindow(i interface{}) error {
 	return nil
 }
 
-func validateConnectionRouter(i interface{}) error {
+func validateGateway(i interface{}) error {
 	val, ok := i.(sdk.AccAddress)
 	if !ok {
-		return fmt.Errorf("invalid parameter type for ConnectionRouter: %T", i)
+		return fmt.Errorf("invalid parameter type for Gateway: %T", i)
 	}
 
 	if len(val) == 0 {
@@ -126,7 +126,7 @@ func validateConnectionRouter(i interface{}) error {
 	}
 
 	if err := sdk.VerifyAddressFormat(val); err != nil {
-		return sdkerrors.Wrap(err, "invalid ConnectionRouter")
+		return sdkerrors.Wrap(err, "invalid Gateway")
 	}
 
 	return nil

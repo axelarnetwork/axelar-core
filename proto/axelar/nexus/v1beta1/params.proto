@@ -16,7 +16,6 @@ message Params {
   utils.v1beta1.Threshold chain_maintainer_incorrect_vote_threshold = 3
       [ (gogoproto.nullable) = false ];
   int32 chain_maintainer_check_window = 4;
-  bytes connection_router = 5
-      [ (gogoproto.casttype) =
-            "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  bytes gateway = 5 [ (gogoproto.casttype) =
+                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
 }

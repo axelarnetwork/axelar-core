@@ -30,22 +30,21 @@ func NewMessenger(nexus types.Nexus) Messenger {
 	return Messenger{nexus}
 }
 
-// DispatchMsg decodes the messages from the cosmowasm connection router and routes them to the nexus module if possible
+// DispatchMsg decodes the messages from the cosmowasm gateway and routes them to the nexus module if possible
 func (m Messenger) DispatchMsg(ctx sdk.Context, contractAddr sdk.AccAddress, _ string, msg wasmvmtypes.CosmosMsg) (events []sdk.Event, data [][]byte, err error) {
 	req := request{}
 	if err := json.Unmarshal(msg.Custom, &req); err != nil {
 		return nil, nil, sdkerrors.Wrap(wasmtypes.ErrUnknownMsg, err.Error())
 	}
 
-	// TODO: rename to gateway
-	connectionRouter := m.GetParams(ctx).ConnectionRouter
+	gateway := m.GetParams(ctx).Gateway
 
-	if len(connectionRouter) == 0 {
-		return nil, nil, fmt.Errorf("connection router is not set")
+	if len(gateway) == 0 {
+		return nil, nil, fmt.Errorf("gateway is not set")
 	}
 
-	if !connectionRouter.Equals(contractAddr) {
-		return nil, nil, fmt.Errorf("contract address %s is not the connection router", contractAddr)
+	if !gateway.Equals(contractAddr) {
+		return nil, nil, fmt.Errorf("contract address %s is not the gateway", contractAddr)
 	}
 
 	if err := m.routeMsg(ctx, req); err != nil {
