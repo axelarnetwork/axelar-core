@@ -15,7 +15,7 @@ on:
         required: true
         default: "false"
 env:
-  ECR_REPO: 499786161782.dkr.ecr.us-east-2.amazonaws.com
+  ECR_REPO: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-2.amazonaws.com
 
 jobs:
   build-and-push-latest-docker-image:
@@ -41,7 +41,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-region: us-east-2
-          role-to-assume: arn:aws:iam::499786161782:role/ghwf-axelar-core
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/ghwf-axelar-core
 
       - name: Build docker image (normal)
         env:
