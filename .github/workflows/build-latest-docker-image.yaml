@@ -18,6 +18,9 @@ jobs:
         os:
           - ubuntu-20.04
     runs-on: ${{ matrix.os }}
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -28,18 +31,28 @@ jobs:
         run: |
           git fetch --unshallow
 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-region: us-east-2
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/ghwf-axelar-core
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
       - name: Build docker image (normal)
         run: |
           make docker-image
 
       - name: Push to ECR (normal)
-        uses: jwalton/gh-ecr-push@v1
-        with:
-          access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          region: us-east-2
-          local-image: axelar/core
-          image: axelar-core:${{ github.sha }}
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: axelar-core
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker image tag axelar/core "${REGISTRY}/${REPOSITORY}:${IMAGE_TAG}"
+          docker push "${REGISTRY}/${REPOSITORY}:${IMAGE_TAG}"
 
       - name: Build docker image (debug)
         if: github.event.inputs.buildDebug != 'false'
@@ -47,11 +60,11 @@ jobs:
           make docker-image-debug
 
       - name: Push to ECR (debug)
-        uses: jwalton/gh-ecr-push@v1
         if: github.event.inputs.buildDebug != 'false'
-        with:
-          access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          region: us-east-2
-          local-image: axelar/core-debug
-          image: axelar-core:${{ github.sha }}-debug
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: axelar-core
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker image tag axelar/core "${REGISTRY}/${REPOSITORY}:${IMAGE_TAG}-debug"
+          docker push "${REGISTRY}/${REPOSITORY}:${IMAGE_TAG}-debug"
