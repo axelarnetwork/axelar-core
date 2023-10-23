@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 
+	"github.com/CosmWasm/wasmd/x/wasm"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -37,6 +38,7 @@ func (k Keeper) GenerateMessageID(ctx sdk.Context) (string, []byte, uint64) {
 }
 
 // SetNewWasmMessage sets the given general message from a wasm contract.
+// Deprecated
 func (k Keeper) SetNewWasmMessage(ctx sdk.Context, msg exported.GeneralMessage) error {
 	if msg.Asset != nil {
 		return fmt.Errorf("asset transfer is not supported")
@@ -84,6 +86,7 @@ func (k Keeper) SetNewWasmMessage(ctx sdk.Context, msg exported.GeneralMessage) 
 }
 
 // SetNewMessage sets the given general message. If the messages is approved, adds the message ID to approved messages store
+// Deprecated
 func (k Keeper) SetNewMessage(ctx sdk.Context, m exported.GeneralMessage) error {
 	sourceChain, ok := k.GetChain(ctx, m.GetSourceChain())
 	if !ok {
@@ -104,11 +107,11 @@ func (k Keeper) SetNewMessage(ctx sdk.Context, m exported.GeneralMessage) error 
 	}
 
 	if m.Asset != nil {
-		if err := k.validateTransferAsset(ctx, sourceChain, m.Asset.Denom); err != nil {
+		if err := k.validateAsset(ctx, sourceChain, m.Asset.Denom); err != nil {
 			return err
 		}
 
-		if err := k.validateTransferAsset(ctx, destChain, m.Asset.Denom); err != nil {
+		if err := k.validateAsset(ctx, destChain, m.Asset.Denom); err != nil {
 			return err
 		}
 	}
@@ -142,6 +145,7 @@ func (k Keeper) SetNewMessage(ctx sdk.Context, m exported.GeneralMessage) error 
  */
 
 // SetMessageProcessing sets the general message as processing
+// Deprecated
 func (k Keeper) SetMessageProcessing(ctx sdk.Context, id string) error {
 	m, found := k.GetMessage(ctx, id)
 	if !found {
@@ -174,7 +178,7 @@ func (k Keeper) SetMessageExecuted(ctx sdk.Context, id string) error {
 		return fmt.Errorf("general message is not processing")
 	}
 
-	k.deleteSentMessageID(ctx, m)
+	k.deleteProcessingMessageID(ctx, m)
 
 	m.Status = exported.Executed
 
@@ -194,22 +198,13 @@ func (k Keeper) SetMessageFailed(ctx sdk.Context, id string) error {
 		return fmt.Errorf("general message is not processing")
 	}
 
-	k.deleteSentMessageID(ctx, m)
+	k.deleteProcessingMessageID(ctx, m)
 
 	m.Status = exported.Failed
 
 	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.MessageFailed{ID: m.ID}))
 
 	return k.setMessage(ctx, m)
-}
-
-// DeleteMessage deletes the general message with associated ID, and also deletes the message ID from the approved messages store
-func (k Keeper) DeleteMessage(ctx sdk.Context, id string) {
-	m, found := k.GetMessage(ctx, id)
-	if found {
-		k.deleteSentMessageID(ctx, m)
-		k.getStore(ctx).DeleteNew(getMessageKey(id))
-	}
 }
 
 // GetMessage returns the general message by ID
@@ -227,10 +222,11 @@ func (k Keeper) setProcessingMessageID(ctx sdk.Context, m exported.GeneralMessag
 	}
 
 	k.getStore(ctx).SetRawNew(getProcessingMessageKey(m.GetDestinationChain(), m.ID), []byte(m.ID))
+
 	return nil
 }
 
-func (k Keeper) deleteSentMessageID(ctx sdk.Context, m exported.GeneralMessage) {
+func (k Keeper) deleteProcessingMessageID(ctx sdk.Context, m exported.GeneralMessage) {
 	k.getStore(ctx).DeleteNew(getProcessingMessageKey(m.GetDestinationChain(), m.ID))
 }
 
@@ -271,4 +267,84 @@ func (k Keeper) GetProcessingMessages(ctx sdk.Context, chain exported.ChainName,
 	return slices.Map(ids, func(id string) exported.GeneralMessage {
 		return funcs.MustOk(k.GetMessage(ctx, id))
 	})
+}
+
+func (k Keeper) SetNewMessage_(ctx sdk.Context, msg exported.GeneralMessage) error {
+	if _, ok := k.GetMessage(ctx, msg.ID); ok {
+		return fmt.Errorf("general message %s already exists", msg.ID)
+	}
+
+	if !msg.Is(exported.Approved) {
+		return fmt.Errorf("new general message has to be approved")
+	}
+
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.MessageReceived{
+		ID:          msg.ID,
+		PayloadHash: msg.PayloadHash,
+		Sender:      msg.Sender,
+		Recipient:   msg.Recipient,
+	}))
+
+	return k.setMessage(ctx, msg)
+}
+
+func (k Keeper) SetMessageProcessing_(ctx sdk.Context, id string) error {
+	msg, ok := k.GetMessage(ctx, id)
+	if !ok {
+		return fmt.Errorf("general message %s not found", id)
+	}
+
+	if !msg.Is(exported.Approved) && !msg.Is(exported.Failed) {
+		return fmt.Errorf("general message has to be approved or failed")
+	}
+
+	if err := k.validateMessage(ctx, msg); err != nil {
+		return err
+	}
+
+	msg.Status = exported.Processing
+	if err := k.setMessage(ctx, msg); err != nil {
+		return err
+	}
+
+	funcs.MustNoErr(k.setProcessingMessageID(ctx, msg))
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.MessageProcessing{ID: msg.ID}))
+
+	return nil
+}
+
+func (k Keeper) validateMessage(ctx sdk.Context, msg exported.GeneralMessage) error {
+	if !msg.Sender.Chain.IsFrom(wasm.ModuleName) {
+		if err := k.validateAddressAndAsset(ctx, msg.Sender, msg.Asset); err != nil {
+			return err
+		}
+	}
+
+	if !msg.Recipient.Chain.IsFrom(wasm.ModuleName) {
+		if err := k.validateAddressAndAsset(ctx, msg.Recipient, msg.Asset); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (k Keeper) validateAddressAndAsset(ctx sdk.Context, address exported.CrossChainAddress, asset *sdk.Coin) error {
+	if _, ok := k.GetChain(ctx, address.Chain.Name); !ok {
+		return fmt.Errorf("chain %s is not found", address.Chain.Name)
+	}
+
+	if !k.IsChainActivated(ctx, address.Chain) {
+		return fmt.Errorf("chain %s is not activated", address.Chain.Name)
+	}
+
+	if err := k.ValidateAddress(ctx, address); err != nil {
+		return err
+	}
+
+	if asset == nil {
+		return nil
+	}
+
+	return k.validateAsset(ctx, address.Chain, asset.Denom)
 }
