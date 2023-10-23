@@ -17252,7 +17252,6 @@ paths:
           in: query
           required: false
           type: string
-          format: byte
       tags:
         - QueryService
   /axelar/reward/v1beta1/params:

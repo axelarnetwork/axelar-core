@@ -11,8 +11,7 @@ option (gogoproto.goproto_getters_all) = false;
 // InflationRateRequest represents a message that queries the Axelar specific
 // inflation RPC method.
 message InflationRateRequest {
-  bytes validator = 1 [ (gogoproto.casttype) =
-                            "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
+  string validator = 1;
 }
 
 message InflationRateResponse {

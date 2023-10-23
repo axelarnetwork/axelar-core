@@ -15700,7 +15700,6 @@ paths:
           required: false
           schema:
             type: string
-            format: byte
       tags:
         - QueryService
   /axelar/reward/v1beta1/params:

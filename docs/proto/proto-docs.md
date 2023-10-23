@@ -6734,7 +6734,7 @@ inflation RPC method.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `validator` | [bytes](#bytes) |  |  |
+| `validator` | [string](#string) |  |  |
 
 
 
