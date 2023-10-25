@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/CosmWasm/wasmd/x/wasm"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/assert"
@@ -24,6 +25,282 @@ import (
 	"github.com/axelarnetwork/utils/funcs"
 	. "github.com/axelarnetwork/utils/test"
 )
+
+func randMsg(status exported.GeneralMessage_Status, withAsset ...bool) exported.GeneralMessage {
+	var asset *sdk.Coin
+	if len(withAsset) > 0 && withAsset[0] {
+		coin := rand.Coin()
+		asset = &coin
+	}
+
+	return exported.GeneralMessage{
+		ID: rand.NormalizedStr(10),
+		Sender: exported.CrossChainAddress{
+			Chain:   nexustestutils.RandomChain(),
+			Address: rand.NormalizedStr(42),
+		},
+		Recipient: exported.CrossChainAddress{
+			Chain:   nexustestutils.RandomChain(),
+			Address: rand.NormalizedStr(42),
+		},
+		PayloadHash:   evmtestutils.RandomHash().Bytes(),
+		Status:        status,
+		Asset:         asset,
+		SourceTxID:    evmtestutils.RandomHash().Bytes(),
+		SourceTxIndex: uint64(rand.I64Between(0, 100)),
+	}
+}
+
+func TestSetNewMessage_(t *testing.T) {
+	var (
+		msg    exported.GeneralMessage
+		ctx    sdk.Context
+		keeper nexus.Keeper
+	)
+
+	cfg := app.MakeEncodingConfig()
+	givenKeeper := Given("the keeper", func() {
+		keeper, ctx = setup(cfg)
+	})
+
+	givenKeeper.
+		When("the message already exists", func() {
+			msg = randMsg(exported.Approved, true)
+			keeper.SetNewMessage_(ctx, msg)
+		}).
+		Then("should return error", func(t *testing.T) {
+			assert.ErrorContains(t, keeper.SetNewMessage_(ctx, msg), "already exists")
+		}).
+		Run(t)
+
+	givenKeeper.
+		When("the message has invalid status", func() {
+			msg = randMsg(exported.Processing)
+		}).
+		Then("should return error", func(t *testing.T) {
+			assert.ErrorContains(t, keeper.SetNewMessage_(ctx, msg), "new general message has to be approved")
+		}).
+		Run(t)
+
+	givenKeeper.
+		When("the message is valid", func() {
+			msg = randMsg(exported.Approved)
+		}).
+		Then("should store the message", func(t *testing.T) {
+			assert.NoError(t, keeper.SetNewMessage_(ctx, msg))
+
+			actual, ok := keeper.GetMessage(ctx, msg.ID)
+			assert.True(t, ok)
+			assert.Equal(t, msg, actual)
+		}).
+		Run(t)
+}
+
+func TestSetMessageProcessing_(t *testing.T) {
+	var (
+		msg    exported.GeneralMessage
+		ctx    sdk.Context
+		keeper nexus.Keeper
+	)
+
+	cfg := app.MakeEncodingConfig()
+	givenKeeper := Given("the keeper", func() {
+		keeper, ctx = setup(cfg)
+	})
+
+	givenKeeper.
+		When("the message doesn't exist", func() {}).
+		Then("should return error", func(t *testing.T) {
+			assert.ErrorContains(t, keeper.SetMessageProcessing_(ctx, rand.NormalizedStr(10)), "not found")
+		}).
+		Run(t)
+
+	givenKeeper.
+		When("the message is being processed", func() {
+			msg = randMsg(exported.Approved)
+			msg.Sender = exported.CrossChainAddress{
+				Chain:   evm.Ethereum,
+				Address: evmtestutils.RandomAddress().Hex(),
+			}
+			msg.Recipient = exported.CrossChainAddress{
+				Chain:   evm.Ethereum,
+				Address: evmtestutils.RandomAddress().Hex(),
+			}
+
+			keeper.SetNewMessage_(ctx, msg)
+			keeper.SetMessageProcessing_(ctx, msg.ID)
+		}).
+		Then("should return error", func(t *testing.T) {
+			assert.ErrorContains(t, keeper.SetMessageProcessing_(ctx, msg.ID), "general message has to be approved or failed")
+		}).
+		Run(t)
+
+	givenKeeper.
+		When("the message is from wasm", func() {
+			msg = randMsg(exported.Approved)
+			msg.Sender = exported.CrossChainAddress{
+				Chain:   nexustestutils.RandomChain(),
+				Address: rand.NormalizedStr(42),
+			}
+			msg.Sender.Chain.Module = wasm.ModuleName
+		}).
+		Branch(
+			When("the destination chain is not registered", func() {
+				msg.Recipient.Chain = nexustestutils.RandomChain()
+
+				keeper.SetNewMessage_(ctx, msg)
+			}).
+				Then("should return error", func(t *testing.T) {
+					assert.ErrorContains(t, keeper.SetMessageProcessing_(ctx, msg.ID), "is not registered")
+				}),
+
+			When("the destination chain is not activated", func() {
+				msg.Recipient = exported.CrossChainAddress{
+					Chain:   evm.Ethereum,
+					Address: evmtestutils.RandomAddress().Hex(),
+				}
+
+				keeper.DeactivateChain(ctx, msg.Recipient.Chain)
+				keeper.SetNewMessage_(ctx, msg)
+			}).
+				Then("should return error", func(t *testing.T) {
+					assert.ErrorContains(t, keeper.SetMessageProcessing_(ctx, msg.ID), "is not activated")
+				}),
+
+			When("the destination address is invalid", func() {
+				msg.Recipient = exported.CrossChainAddress{
+					Chain:   evm.Ethereum,
+					Address: rand.NormalizedStr(42),
+				}
+
+				keeper.SetNewMessage_(ctx, msg)
+			}).
+				Then("should return error", func(t *testing.T) {
+					assert.ErrorContains(t, keeper.SetMessageProcessing_(ctx, msg.ID), "not an hex address")
+				}),
+
+			When("the destination chain does't support the asset", func() {
+				msg.Recipient = exported.CrossChainAddress{
+					Chain:   evm.Ethereum,
+					Address: evmtestutils.RandomAddress().Hex(),
+				}
+				asset := rand.Coin()
+				msg.Asset = &asset
+
+				keeper.SetNewMessage_(ctx, msg)
+			}).
+				Then("should return error", func(t *testing.T) {
+					assert.ErrorContains(t, keeper.SetMessageProcessing_(ctx, msg.ID), "does not support foreign asset")
+				}),
+
+			When("asset is set", func() {
+				msg.Recipient = exported.CrossChainAddress{
+					Chain:   evm.Ethereum,
+					Address: evmtestutils.RandomAddress().Hex(),
+				}
+				msg.Asset = &sdk.Coin{Denom: "external-erc-20", Amount: sdk.NewInt(100)}
+
+				keeper.SetNewMessage_(ctx, msg)
+			}).
+				Then("should return error", func(t *testing.T) {
+					assert.ErrorContains(t, keeper.SetMessageProcessing_(ctx, msg.ID), "asset transfer is not supported for wasm messages")
+				}),
+		).
+		Run(t)
+
+	givenKeeper.
+		When("the message is to wasm", func() {
+			msg = randMsg(exported.Approved)
+			msg.Recipient = exported.CrossChainAddress{
+				Chain:   nexustestutils.RandomChain(),
+				Address: rand.NormalizedStr(42),
+			}
+			msg.Recipient.Chain.Module = wasm.ModuleName
+		}).
+		Branch(
+			When("the sender chain is not registered", func() {
+				msg.Sender.Chain = nexustestutils.RandomChain()
+
+				keeper.SetNewMessage_(ctx, msg)
+			}).
+				Then("should return error", func(t *testing.T) {
+					assert.ErrorContains(t, keeper.SetMessageProcessing_(ctx, msg.ID), "is not registered")
+				}),
+
+			When("the sender chain is not activated", func() {
+				msg.Sender = exported.CrossChainAddress{
+					Chain:   evm.Ethereum,
+					Address: evmtestutils.RandomAddress().Hex(),
+				}
+
+				keeper.DeactivateChain(ctx, msg.Sender.Chain)
+				keeper.SetNewMessage_(ctx, msg)
+			}).
+				Then("should return error", func(t *testing.T) {
+					assert.ErrorContains(t, keeper.SetMessageProcessing_(ctx, msg.ID), "is not activated")
+				}),
+
+			When("the sender address is invalid", func() {
+				msg.Sender = exported.CrossChainAddress{
+					Chain:   evm.Ethereum,
+					Address: rand.NormalizedStr(42),
+				}
+
+				keeper.SetNewMessage_(ctx, msg)
+			}).
+				Then("should return error", func(t *testing.T) {
+					assert.ErrorContains(t, keeper.SetMessageProcessing_(ctx, msg.ID), "not an hex address")
+				}),
+
+			When("the sender chain does't support the asset", func() {
+				msg.Sender = exported.CrossChainAddress{
+					Chain:   evm.Ethereum,
+					Address: evmtestutils.RandomAddress().Hex(),
+				}
+				asset := rand.Coin()
+				msg.Asset = &asset
+
+				keeper.SetNewMessage_(ctx, msg)
+			}).
+				Then("should return error", func(t *testing.T) {
+					assert.ErrorContains(t, keeper.SetMessageProcessing_(ctx, msg.ID), "does not support foreign asset")
+				}),
+
+			When("asset is set", func() {
+				msg.Sender = exported.CrossChainAddress{
+					Chain:   evm.Ethereum,
+					Address: evmtestutils.RandomAddress().Hex(),
+				}
+				msg.Asset = &sdk.Coin{Denom: "external-erc-20", Amount: sdk.NewInt(100)}
+
+				keeper.SetNewMessage_(ctx, msg)
+			}).
+				Then("should return error", func(t *testing.T) {
+					assert.ErrorContains(t, keeper.SetMessageProcessing_(ctx, msg.ID), "asset transfer is not supported for wasm messages")
+				}),
+		).
+		Run(t)
+
+	givenKeeper.
+		When("the message is valid", func() {
+			msg = randMsg(exported.Approved)
+			msg.Sender.Chain.Module = wasm.ModuleName
+			msg.Recipient = exported.CrossChainAddress{
+				Chain:   evm.Ethereum,
+				Address: evmtestutils.RandomAddress().Hex(),
+			}
+
+			keeper.SetNewMessage_(ctx, msg)
+		}).
+		Then("should set the message status to processing", func(t *testing.T) {
+			assert.NoError(t, keeper.SetMessageProcessing_(ctx, msg.ID))
+
+			actual, ok := keeper.GetMessage(ctx, msg.ID)
+			assert.True(t, ok)
+			assert.Equal(t, exported.Processing, actual.Status)
+		}).
+		Run(t)
+}
 
 func randWasmMsg(status exported.GeneralMessage_Status) exported.GeneralMessage {
 	return exported.GeneralMessage{
@@ -521,5 +798,4 @@ func TestGetSentMessages(t *testing.T) {
 	assert.Equal(t, dest2Msgs, toMap(consumeSent(dest2, 100)))
 	assert.Equal(t, dest3Msgs, toMap(consumeSent(dest3, 100)))
 	assert.Equal(t, dest4Msgs, toMap(consumeSent(dest4, 100)))
-
 }
