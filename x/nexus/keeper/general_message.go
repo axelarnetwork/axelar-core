@@ -269,6 +269,7 @@ func (k Keeper) GetProcessingMessages(ctx sdk.Context, chain exported.ChainName,
 	})
 }
 
+// SetNewMessage_ sets the given general messsage as approved
 func (k Keeper) SetNewMessage_(ctx sdk.Context, msg exported.GeneralMessage) error {
 	if _, ok := k.GetMessage(ctx, msg.ID); ok {
 		return fmt.Errorf("general message %s already exists", msg.ID)
@@ -288,6 +289,8 @@ func (k Keeper) SetNewMessage_(ctx sdk.Context, msg exported.GeneralMessage) err
 	return k.setMessage(ctx, msg)
 }
 
+// SetMessageProcessing_ sets the given general message as processing and perform
+// validations on the message
 func (k Keeper) SetMessageProcessing_(ctx sdk.Context, id string) error {
 	msg, ok := k.GetMessage(ctx, id)
 	if !ok {
@@ -326,12 +329,16 @@ func (k Keeper) validateMessage(ctx sdk.Context, msg exported.GeneralMessage) er
 		}
 	}
 
+	if (msg.Sender.Chain.IsFrom(wasm.ModuleName) || msg.Recipient.Chain.IsFrom(wasm.ModuleName)) && msg.Asset != nil {
+		return fmt.Errorf("asset transfer is not supported for wasm messages")
+	}
+
 	return nil
 }
 
 func (k Keeper) validateAddressAndAsset(ctx sdk.Context, address exported.CrossChainAddress, asset *sdk.Coin) error {
 	if _, ok := k.GetChain(ctx, address.Chain.Name); !ok {
-		return fmt.Errorf("chain %s is not found", address.Chain.Name)
+		return fmt.Errorf("chain %s is not registered", address.Chain.Name)
 	}
 
 	if !k.IsChainActivated(ctx, address.Chain) {
