@@ -38,7 +38,7 @@ func (k Keeper) GenerateMessageID(ctx sdk.Context) (string, []byte, uint64) {
 }
 
 // SetNewWasmMessage sets the given general message from a wasm contract.
-// Deprecated
+// Deprecated: use SetNewMessage_ instead
 func (k Keeper) SetNewWasmMessage(ctx sdk.Context, msg exported.GeneralMessage) error {
 	if msg.Asset != nil {
 		return fmt.Errorf("asset transfer is not supported")
@@ -86,7 +86,7 @@ func (k Keeper) SetNewWasmMessage(ctx sdk.Context, msg exported.GeneralMessage) 
 }
 
 // SetNewMessage sets the given general message. If the messages is approved, adds the message ID to approved messages store
-// Deprecated
+// Deprecated: use SetNewMessage_ instead
 func (k Keeper) SetNewMessage(ctx sdk.Context, m exported.GeneralMessage) error {
 	sourceChain, ok := k.GetChain(ctx, m.GetSourceChain())
 	if !ok {
@@ -145,7 +145,7 @@ func (k Keeper) SetNewMessage(ctx sdk.Context, m exported.GeneralMessage) error 
  */
 
 // SetMessageProcessing sets the general message as processing
-// Deprecated
+// Deprecated: use SetMessageProcessing_ instead
 func (k Keeper) SetMessageProcessing(ctx sdk.Context, id string) error {
 	m, found := k.GetMessage(ctx, id)
 	if !found {
@@ -297,7 +297,7 @@ func (k Keeper) SetMessageProcessing_(ctx sdk.Context, id string) error {
 		return fmt.Errorf("general message %s not found", id)
 	}
 
-	if !msg.Is(exported.Approved) && !msg.Is(exported.Failed) {
+	if !(msg.Is(exported.Approved) || msg.Is(exported.Failed)) {
 		return fmt.Errorf("general message has to be approved or failed")
 	}
 
@@ -317,18 +317,23 @@ func (k Keeper) SetMessageProcessing_(ctx sdk.Context, id string) error {
 }
 
 func (k Keeper) validateMessage(ctx sdk.Context, msg exported.GeneralMessage) error {
+	// only validate sender and asset if it's not from wasm.
+	// the nexus module doesn't know how to validate wasm chains and addresses.
 	if !msg.Sender.Chain.IsFrom(wasm.ModuleName) {
 		if err := k.validateAddressAndAsset(ctx, msg.Sender, msg.Asset); err != nil {
 			return err
 		}
 	}
 
+	// only validate recipient and asset if it's not to wasm.
+	// the nexus module doesn't know how to validate wasm chains and addresses.
 	if !msg.Recipient.Chain.IsFrom(wasm.ModuleName) {
 		if err := k.validateAddressAndAsset(ctx, msg.Recipient, msg.Asset); err != nil {
 			return err
 		}
 	}
 
+	// asset is not supported for wasm messages
 	if (msg.Sender.Chain.IsFrom(wasm.ModuleName) || msg.Recipient.Chain.IsFrom(wasm.ModuleName)) && msg.Asset != nil {
 		return fmt.Errorf("asset transfer is not supported for wasm messages")
 	}
@@ -336,6 +341,7 @@ func (k Keeper) validateMessage(ctx sdk.Context, msg exported.GeneralMessage) er
 	return nil
 }
 
+// validateAddressAndAsset validates 1) chain existence, 2) chain activation, 3) address, 4) asset
 func (k Keeper) validateAddressAndAsset(ctx sdk.Context, address exported.CrossChainAddress, asset *sdk.Coin) error {
 	if _, ok := k.GetChain(ctx, address.Chain.Name); !ok {
 		return fmt.Errorf("chain %s is not registered", address.Chain.Name)
