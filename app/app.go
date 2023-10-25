@@ -162,6 +162,7 @@ var (
 		ibctransfertypes.ModuleName:    {authtypes.Minter, authtypes.Burner},
 		axelarnetTypes.ModuleName:      {authtypes.Minter, authtypes.Burner},
 		rewardTypes.ModuleName:         {authtypes.Minter},
+		wasm.ModuleName:                {authtypes.Burner},
 	}
 
 	// WasmEnabled indicates whether wasm module is added to the app.
@@ -214,7 +215,6 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	appOpts servertypes.AppOptions, wasmOpts []wasm.Option, baseAppOptions ...func(*bam.BaseApp)) *AxelarApp {
 
 	appCodec := encodingConfig.Codec
-	legacyAmino := encodingConfig.Amino
 	interfaceRegistry := encodingConfig.InterfaceRegistry
 
 	// BaseApp handles interactions with Tendermint through the ABCI protocol
@@ -223,67 +223,21 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	bApp.SetVersion(version.Version)
 	bApp.SetInterfaceRegistry(interfaceRegistry)
 
-	storeKeys := []string{
-		authtypes.StoreKey,
-		banktypes.StoreKey,
-		stakingtypes.StoreKey,
-		minttypes.StoreKey,
-		distrtypes.StoreKey,
-		slashingtypes.StoreKey,
-		govtypes.StoreKey,
-		paramstypes.StoreKey,
-		upgradetypes.StoreKey,
-		evidencetypes.StoreKey,
-		ibchost.StoreKey,
-		ibctransfertypes.StoreKey,
-		capabilitytypes.StoreKey,
-		feegrant.StoreKey,
-	}
-
-	if IsWasmEnabled() {
-		storeKeys = append(storeKeys, wasm.StoreKey, ibchookstypes.StoreKey)
-	}
-
-	storeKeys = append(storeKeys, []string{
-		voteTypes.StoreKey,
-		evmTypes.StoreKey,
-		snapTypes.StoreKey,
-		multisigTypes.StoreKey,
-		tssTypes.StoreKey,
-		nexusTypes.StoreKey,
-		axelarnetTypes.StoreKey,
-		rewardTypes.StoreKey,
-		permissionTypes.StoreKey,
-	}...)
-
-	keys := sdk.NewKVStoreKeys(storeKeys...)
-
-	if IsWasmEnabled() {
-		maccPerms[wasm.ModuleName] = []string{authtypes.Burner}
-	}
-
+	keys := createStoreKeys()
 	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
 	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
 
-	var app = &AxelarApp{
-		BaseApp:           bApp,
-		appCodec:          appCodec,
-		interfaceRegistry: interfaceRegistry,
-		keys:              keys,
-	}
-
-	paramsK := initParamsKeeper(appCodec, legacyAmino, keys[paramstypes.StoreKey], tkeys[paramstypes.TStoreKey])
-	app.paramsKeeper = paramsK
+	paramsK := initParamsKeeper(appCodec, encodingConfig.Amino, keys[paramstypes.StoreKey], tkeys[paramstypes.TStoreKey])
 	// set the BaseApp's parameter store
-	bApp.SetParamStore(app.getSubspace(bam.Paramspace))
+	bApp.SetParamStore(getSubspace(paramsK, bam.Paramspace))
 
 	// add keepers
 	accountK := authkeeper.NewAccountKeeper(
-		appCodec, keys[authtypes.StoreKey], app.getSubspace(authtypes.ModuleName), authtypes.ProtoBaseAccount, maccPerms,
+		appCodec, keys[authtypes.StoreKey], getSubspace(paramsK, authtypes.ModuleName), authtypes.ProtoBaseAccount, maccPerms,
 	)
 	bankK := bankkeeper.NewBaseKeeper(
-		appCodec, keys[banktypes.StoreKey], accountK, app.getSubspace(banktypes.ModuleName),
-		maps.Filter(app.ModuleAccountAddrs(), func(addr string, _ bool) bool {
+		appCodec, keys[banktypes.StoreKey], accountK, getSubspace(paramsK, banktypes.ModuleName),
+		maps.Filter(ModuleAccountAddrs(), func(addr string, _ bool) bool {
 			// we do not rely on internal balance tracking for invariance checks in the axelarnet module
 			// (https://github.com/cosmos/cosmos-sdk/issues/12825 for more details on the purpose of the blocked list),
 			// but the module address must be able to use ibc transfers,
@@ -292,27 +246,24 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		}),
 	)
 	stakingK := stakingkeeper.NewKeeper(
-		appCodec, keys[stakingtypes.StoreKey], accountK, bankK, app.getSubspace(stakingtypes.ModuleName),
+		appCodec, keys[stakingtypes.StoreKey], accountK, bankK, getSubspace(paramsK, stakingtypes.ModuleName),
 	)
 
 	mintK := mintkeeper.NewKeeper(
-		appCodec, keys[minttypes.StoreKey], app.getSubspace(minttypes.ModuleName), &stakingK,
+		appCodec, keys[minttypes.StoreKey], getSubspace(paramsK, minttypes.ModuleName), &stakingK,
 		accountK, bankK, authtypes.FeeCollectorName,
 	)
 	distrK := distrkeeper.NewKeeper(
-		appCodec, keys[distrtypes.StoreKey], app.getSubspace(distrtypes.ModuleName), accountK, bankK,
-		&stakingK, authtypes.FeeCollectorName, app.ModuleAccountAddrs(),
+		appCodec, keys[distrtypes.StoreKey], getSubspace(paramsK, distrtypes.ModuleName), accountK, bankK,
+		&stakingK, authtypes.FeeCollectorName, ModuleAccountAddrs(),
 	)
-	app.distrKeeper = distrK
 	slashingK := slashingkeeper.NewKeeper(
-		appCodec, keys[slashingtypes.StoreKey], &stakingK, app.getSubspace(slashingtypes.ModuleName),
+		appCodec, keys[slashingtypes.StoreKey], &stakingK, getSubspace(paramsK, slashingtypes.ModuleName),
 	)
-	app.slashingKeeper = slashingK
 	crisisK := crisiskeeper.NewKeeper(
-		app.getSubspace(crisistypes.ModuleName), invCheckPeriod, bankK, authtypes.FeeCollectorName,
+		getSubspace(paramsK, crisistypes.ModuleName), invCheckPeriod, bankK, authtypes.FeeCollectorName,
 	)
-	app.crisisKeeper = crisisK
-	upgradeK := upgradekeeper.NewKeeper(skipUpgradeHeights, keys[upgradetypes.StoreKey], appCodec, homePath, app.BaseApp)
+	upgradeK := upgradekeeper.NewKeeper(skipUpgradeHeights, keys[upgradetypes.StoreKey], appCodec, homePath, bApp)
 
 	evidenceK := evidencekeeper.NewKeeper(
 		appCodec, keys[evidencetypes.StoreKey], &stakingK, slashingK,
@@ -325,7 +276,6 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	stakingK = *stakingK.SetHooks(
 		stakingtypes.NewMultiStakingHooks(distrK.Hooks(), slashingK.Hooks()),
 	)
-	app.stakingKeeper = stakingK
 
 	// add capability keeper and ScopeToModule for ibc module
 	capabilityK := capabilitykeeper.NewKeeper(appCodec, keys[capabilitytypes.StoreKey], memKeys[capabilitytypes.MemStoreKey])
@@ -336,20 +286,20 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 
 	// Create IBC Keeper
 	ibcKeeper := ibckeeper.NewKeeper(
-		appCodec, keys[ibchost.StoreKey], app.getSubspace(ibchost.ModuleName), app.stakingKeeper, upgradeK, scopedIBCK,
+		appCodec, keys[ibchost.StoreKey], getSubspace(paramsK, ibchost.ModuleName), stakingK, upgradeK, scopedIBCK,
 	)
 
 	// Custom axelarnet/evm/nexus keepers
 	axelarnetK := axelarnetKeeper.NewKeeper(
-		appCodec, keys[axelarnetTypes.StoreKey], app.getSubspace(axelarnetTypes.ModuleName), ibcKeeper.ChannelKeeper, feegrantK,
+		appCodec, keys[axelarnetTypes.StoreKey], getSubspace(paramsK, axelarnetTypes.ModuleName), ibcKeeper.ChannelKeeper, feegrantK,
 	)
 
 	evmK := evmKeeper.NewKeeper(
-		appCodec, keys[evmTypes.StoreKey], app.paramsKeeper,
+		appCodec, keys[evmTypes.StoreKey], paramsK,
 	)
 
 	nexusK := nexusKeeper.NewKeeper(
-		appCodec, keys[nexusTypes.StoreKey], app.getSubspace(nexusTypes.ModuleName),
+		appCodec, keys[nexusTypes.StoreKey], getSubspace(paramsK, nexusTypes.ModuleName),
 	)
 
 	// Setting Router will finalize all routes by sealing router
@@ -390,7 +340,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 
 	// Create Transfer Keepers
 	transferKeeper := ibctransferkeeper.NewKeeper(
-		appCodec, keys[ibctransfertypes.StoreKey], app.getSubspace(ibctransfertypes.ModuleName),
+		appCodec, keys[ibctransfertypes.StoreKey], getSubspace(paramsK, ibctransfertypes.ModuleName),
 		// Use the IBC middleware stack
 		ics4Wrapper,
 		ibcKeeper.ChannelKeeper, &ibcKeeper.PortKeeper,
@@ -416,10 +366,10 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	// axelar custom keepers
 	// axelarnet / evm / nexus keepers created above
 	rewardK := rewardKeeper.NewKeeper(
-		appCodec, keys[rewardTypes.StoreKey], app.getSubspace(rewardTypes.ModuleName), axelarbankkeeper.NewBankKeeper(bankK), distrK, stakingK,
+		appCodec, keys[rewardTypes.StoreKey], getSubspace(paramsK, rewardTypes.ModuleName), axelarbankkeeper.NewBankKeeper(bankK), distrK, stakingK,
 	)
 	multisigK := multisigKeeper.NewKeeper(
-		appCodec, keys[multisigTypes.StoreKey], app.getSubspace(multisigTypes.ModuleName),
+		appCodec, keys[multisigTypes.StoreKey], getSubspace(paramsK, multisigTypes.ModuleName),
 	)
 
 	multisigRouter := multisigTypes.NewSigRouter()
@@ -427,17 +377,17 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	multisigK.SetSigRouter(multisigRouter)
 
 	tssK := tssKeeper.NewKeeper(
-		appCodec, keys[tssTypes.StoreKey], app.getSubspace(tssTypes.ModuleName),
+		appCodec, keys[tssTypes.StoreKey], getSubspace(paramsK, tssTypes.ModuleName),
 	)
 	snapK := snapKeeper.NewKeeper(
-		appCodec, keys[snapTypes.StoreKey], app.getSubspace(snapTypes.ModuleName), stakingK, axelarbankkeeper.NewBankKeeper(bankK),
+		appCodec, keys[snapTypes.StoreKey], getSubspace(paramsK, snapTypes.ModuleName), stakingK, axelarbankkeeper.NewBankKeeper(bankK),
 		slashingK,
 	)
 	votingK := voteKeeper.NewKeeper(
-		appCodec, keys[voteTypes.StoreKey], app.getSubspace(voteTypes.ModuleName), snapK, stakingK, rewardK,
+		appCodec, keys[voteTypes.StoreKey], getSubspace(paramsK, voteTypes.ModuleName), snapK, stakingK, rewardK,
 	)
 	permissionK := permissionKeeper.NewKeeper(
-		appCodec, keys[permissionTypes.StoreKey], app.getSubspace(permissionTypes.ModuleName),
+		appCodec, keys[permissionTypes.StoreKey], getSubspace(paramsK, permissionTypes.ModuleName),
 	)
 
 	var wasmK wasm.Keeper
@@ -459,7 +409,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		wasmK = wasm.NewKeeper(
 			appCodec,
 			keys[wasm.StoreKey],
-			app.getSubspace(wasm.ModuleName),
+			getSubspace(paramsK, wasm.ModuleName),
 			accountK,
 			bankK,
 			stakingK,
@@ -469,8 +419,8 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 			&ibcKeeper.PortKeeper,
 			scopedWasmK,
 			transferKeeper,
-			app.MsgServiceRouter(),
-			app.GRPCQueryRouter(),
+			bApp.MsgServiceRouter(),
+			bApp.GRPCQueryRouter(),
 			wasmDir,
 			wasmConfig,
 			WasmCapabilities,
@@ -479,7 +429,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 
 		wasmAnteDecorators = []sdk.AnteDecorator{
 			wasmkeeper.NewLimitSimulationGasDecorator(wasmConfig.SimulationGasLimit),
-			wasmkeeper.NewCountTXDecorator(app.keys[wasm.StoreKey]),
+			wasmkeeper.NewCountTXDecorator(keys[wasm.StoreKey]),
 		}
 
 		// Create wasm ibc stack
@@ -507,30 +457,30 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	}
 
 	govK := govkeeper.NewKeeper(
-		appCodec, keys[govtypes.StoreKey], app.getSubspace(govtypes.ModuleName), accountK, bankK,
+		appCodec, keys[govtypes.StoreKey], getSubspace(paramsK, govtypes.ModuleName), accountK, bankK,
 		&stakingK, govRouter,
 	)
 	govK.SetHooks(govtypes.NewMultiGovHooks(axelarnetK.Hooks(nexusK, govK)))
 
-	semverVersion := app.Version()
+	semverVersion := bApp.Version()
 	if !strings.HasPrefix(semverVersion, "v") {
 		semverVersion = fmt.Sprintf("v%s", semverVersion)
 	}
 
 	upgradeName := semver.MajorMinor(semverVersion)
 	if upgradeName == "" {
-		panic(fmt.Errorf("invalid app version %s", app.Version()))
+		panic(fmt.Errorf("invalid app version %s", bApp.Version()))
 	}
 
 	// todo: change order of commands so this doesn't have to be defined before initialization
 	var configurator module.Configurator
+	var mm *module.Manager
 	upgradeK.SetUpgradeHandler(
 		upgradeName,
 		func(ctx sdk.Context, _ upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
-			return app.mm.RunMigrations(ctx, configurator, fromVM)
+			return mm.RunMigrations(ctx, configurator, fromVM)
 		},
 	)
-	app.upgradeKeeper = upgradeK
 
 	upgradeInfo, err := upgradeK.ReadUpgradeInfoFromDisk()
 	if err != nil {
@@ -546,7 +496,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		}
 
 		// configure store loader that checks if version == upgradeHeight and applies store upgrades
-		app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
+		bApp.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
 	}
 
 	voteRouter := voteTypes.NewRouter()
@@ -560,7 +510,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	var skipGenesisInvariants = cast.ToBool(appOpts.Get(crisis.FlagSkipGenesisInvariants))
 
 	appModules := []module.AppModule{
-		genutil.NewAppModule(accountK, stakingK, app.BaseApp.DeliverTx, encodingConfig.TxConfig),
+		genutil.NewAppModule(accountK, stakingK, bApp.DeliverTx, encodingConfig.TxConfig),
 		auth.NewAppModule(appCodec, accountK, nil),
 		vesting.NewAppModule(accountK, bankK),
 		bank.NewAppModule(appCodec, bankK, accountK),
@@ -589,7 +539,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		evidence.NewAppModule(*evidenceK),
 		ibc.NewAppModule(ibcKeeper),
 		transfer.NewAppModule(transferKeeper),
-		feegrantmodule.NewAppModule(appCodec, accountK, bankK, feegrantK, app.interfaceRegistry),
+		feegrantmodule.NewAppModule(appCodec, accountK, bankK, feegrantK, interfaceRegistry),
 
 		snapshot.NewAppModule(snapK),
 		multisig.NewAppModule(multisigK, stakingK, slashingK, snapK, rewardK, nexusK),
@@ -602,184 +552,28 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		permission.NewAppModule(permissionK),
 	}...)
 
-	app.mm = module.NewManager(
+	var app = &AxelarApp{
+		BaseApp:           bApp,
+		appCodec:          appCodec,
+		interfaceRegistry: interfaceRegistry,
+		keys:              keys,
+		upgradeKeeper:     upgradeK,
+	}
+
+	mm = module.NewManager(
 		appModules...,
 	)
+	app.mm = mm
 
-	migrationOrder := []string{
-		// auth module needs to go first
-		authtypes.ModuleName,
-		// sdk modules
-		upgradetypes.ModuleName,
-		capabilitytypes.ModuleName,
-		crisistypes.ModuleName,
-		govtypes.ModuleName,
-		stakingtypes.ModuleName,
-		ibctransfertypes.ModuleName,
-		ibchost.ModuleName,
-		banktypes.ModuleName,
-		distrtypes.ModuleName,
-		slashingtypes.ModuleName,
-		minttypes.ModuleName,
-		genutiltypes.ModuleName,
-		evidencetypes.ModuleName,
-		feegrant.ModuleName,
-		paramstypes.ModuleName,
-		vestingtypes.ModuleName,
-	}
-
-	// wasm module needs to be added in a specific order
-	if IsWasmEnabled() {
-		migrationOrder = append(migrationOrder, wasm.ModuleName, ibchookstypes.ModuleName)
-	}
-
-	// axelar modules
-	migrationOrder = append(migrationOrder,
-		multisigTypes.ModuleName,
-		tssTypes.ModuleName,
-		rewardTypes.ModuleName,
-		voteTypes.ModuleName,
-		evmTypes.ModuleName,
-		nexusTypes.ModuleName,
-		permissionTypes.ModuleName,
-		snapTypes.ModuleName,
-		axelarnetTypes.ModuleName,
-	)
-
-	app.mm.SetOrderMigrations(migrationOrder...)
-
-	// During begin block slashing happens after distr.BeginBlocker so that
-	// there is nothing left over in the validator fee pool, so as to keep the
-	// CanWithdrawInvariant invariant.
-	// NOTE: staking module is required if HistoricalEntries param > 0
-	beginBlockerOrder := []string{
-		// upgrades should be run first
-		upgradetypes.ModuleName,
-		capabilitytypes.ModuleName,
-		crisistypes.ModuleName,
-		govtypes.ModuleName,
-		stakingtypes.ModuleName,
-		ibctransfertypes.ModuleName,
-		ibchost.ModuleName,
-		authtypes.ModuleName,
-		banktypes.ModuleName,
-		distrtypes.ModuleName,
-		slashingtypes.ModuleName,
-		minttypes.ModuleName,
-		genutiltypes.ModuleName,
-		evidencetypes.ModuleName,
-		feegrant.ModuleName,
-		paramstypes.ModuleName,
-		vestingtypes.ModuleName,
-	}
-
-	// wasm module needs to be added in a specific order
-	if IsWasmEnabled() {
-		beginBlockerOrder = append(beginBlockerOrder, wasm.ModuleName, ibchookstypes.ModuleName)
-	}
-
-	// axelar custom modules
-	beginBlockerOrder = append(beginBlockerOrder,
-		rewardTypes.ModuleName,
-		nexusTypes.ModuleName,
-		permissionTypes.ModuleName,
-		multisigTypes.ModuleName,
-		tssTypes.ModuleName,
-		evmTypes.ModuleName,
-		snapTypes.ModuleName,
-		axelarnetTypes.ModuleName,
-		voteTypes.ModuleName,
-	)
-
-	app.mm.SetOrderBeginBlockers(beginBlockerOrder...)
-
-	endBlockerOrder := []string{
-		crisistypes.ModuleName,
-		govtypes.ModuleName,
-		stakingtypes.ModuleName,
-		ibctransfertypes.ModuleName,
-		ibchost.ModuleName,
-		feegrant.ModuleName,
-		capabilitytypes.ModuleName,
-		authtypes.ModuleName,
-		banktypes.ModuleName,
-		distrtypes.ModuleName,
-		slashingtypes.ModuleName,
-		minttypes.ModuleName,
-		genutiltypes.ModuleName,
-		evidencetypes.ModuleName,
-		paramstypes.ModuleName,
-		upgradetypes.ModuleName,
-		vestingtypes.ModuleName,
-	}
-
-	// wasm module needs to be added in a specific order
-	if IsWasmEnabled() {
-		endBlockerOrder = append(endBlockerOrder, wasm.ModuleName, ibchookstypes.ModuleName)
-	}
-
-	// axelar custom modules
-	endBlockerOrder = append(endBlockerOrder,
-		multisigTypes.ModuleName,
-		tssTypes.ModuleName,
-		evmTypes.ModuleName,
-		nexusTypes.ModuleName,
-		rewardTypes.ModuleName,
-		snapTypes.ModuleName,
-		axelarnetTypes.ModuleName,
-		permissionTypes.ModuleName,
-		voteTypes.ModuleName,
-	)
-
-	app.mm.SetOrderEndBlockers(endBlockerOrder...)
-
-	// Sets the order of Genesis - Order matters, genutil is to always come last
-	// NOTE: The genutils module must occur after staking so that pools are
-	// properly initialized with tokens from genesis accounts.
-	genesisOrder := []string{
-		capabilitytypes.ModuleName,
-		authtypes.ModuleName,
-		banktypes.ModuleName,
-		distrtypes.ModuleName,
-		stakingtypes.ModuleName,
-		slashingtypes.ModuleName,
-		govtypes.ModuleName,
-		minttypes.ModuleName,
-		crisistypes.ModuleName,
-		genutiltypes.ModuleName,
-		evidencetypes.ModuleName,
-		ibchost.ModuleName,
-		evidencetypes.ModuleName,
-		ibctransfertypes.ModuleName,
-		feegrant.ModuleName,
-		paramstypes.ModuleName,
-		upgradetypes.ModuleName,
-		vestingtypes.ModuleName,
-	}
-
-	// wasm module needs to be added in a specific order
-	if IsWasmEnabled() {
-		genesisOrder = append(genesisOrder, wasm.ModuleName, ibchookstypes.ModuleName)
-	}
-
-	genesisOrder = append(genesisOrder,
-		snapTypes.ModuleName,
-		multisigTypes.ModuleName,
-		tssTypes.ModuleName,
-		evmTypes.ModuleName,
-		nexusTypes.ModuleName,
-		voteTypes.ModuleName,
-		axelarnetTypes.ModuleName,
-		rewardTypes.ModuleName,
-		permissionTypes.ModuleName,
-	)
-
-	app.mm.SetOrderInitGenesis(genesisOrder...)
+	app.mm.SetOrderMigrations(orderMigrations()...)
+	app.mm.SetOrderBeginBlockers(orderBeginBlockers()...)
+	app.mm.SetOrderEndBlockers(orderEndBlockers()...)
+	app.mm.SetOrderInitGenesis(orderModulesForGenesis()...)
 
 	app.mm.RegisterInvariants(&crisisK)
 
 	// register all module routes and module queriers
-	app.mm.RegisterRoutes(app.Router(), app.QueryRouter(), legacyAmino)
+	app.mm.RegisterRoutes(app.Router(), app.QueryRouter(), encodingConfig.Amino)
 	configurator = module.NewConfigurator(app.appCodec, app.MsgServiceRouter(), app.GRPCQueryRouter())
 	app.mm.RegisterServices(configurator)
 
@@ -855,6 +649,208 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	return app
 }
 
+func orderMigrations() []string {
+	migrationOrder := []string{
+		// auth module needs to go first
+		authtypes.ModuleName,
+		// sdk modules
+		upgradetypes.ModuleName,
+		capabilitytypes.ModuleName,
+		crisistypes.ModuleName,
+		govtypes.ModuleName,
+		stakingtypes.ModuleName,
+		ibctransfertypes.ModuleName,
+		ibchost.ModuleName,
+		banktypes.ModuleName,
+		distrtypes.ModuleName,
+		slashingtypes.ModuleName,
+		minttypes.ModuleName,
+		genutiltypes.ModuleName,
+		evidencetypes.ModuleName,
+		feegrant.ModuleName,
+		paramstypes.ModuleName,
+		vestingtypes.ModuleName,
+	}
+
+	// wasm module needs to be added in a specific order
+	if IsWasmEnabled() {
+		migrationOrder = append(migrationOrder, wasm.ModuleName, ibchookstypes.ModuleName)
+	}
+
+	// axelar modules
+	migrationOrder = append(migrationOrder,
+		multisigTypes.ModuleName,
+		tssTypes.ModuleName,
+		rewardTypes.ModuleName,
+		voteTypes.ModuleName,
+		evmTypes.ModuleName,
+		nexusTypes.ModuleName,
+		permissionTypes.ModuleName,
+		snapTypes.ModuleName,
+		axelarnetTypes.ModuleName,
+	)
+	return migrationOrder
+}
+
+func orderBeginBlockers() []string {
+	// During begin block slashing happens after distr.BeginBlocker so that
+	// there is nothing left over in the validator fee pool, so as to keep the
+	// CanWithdrawInvariant invariant.
+	// NOTE: staking module is required if HistoricalEntries param > 0
+	beginBlockerOrder := []string{
+		// upgrades should be run first
+		upgradetypes.ModuleName,
+		capabilitytypes.ModuleName,
+		crisistypes.ModuleName,
+		govtypes.ModuleName,
+		stakingtypes.ModuleName,
+		ibctransfertypes.ModuleName,
+		ibchost.ModuleName,
+		authtypes.ModuleName,
+		banktypes.ModuleName,
+		distrtypes.ModuleName,
+		slashingtypes.ModuleName,
+		minttypes.ModuleName,
+		genutiltypes.ModuleName,
+		evidencetypes.ModuleName,
+		feegrant.ModuleName,
+		paramstypes.ModuleName,
+		vestingtypes.ModuleName,
+	}
+
+	// wasm module needs to be added in a specific order
+	if IsWasmEnabled() {
+		beginBlockerOrder = append(beginBlockerOrder, wasm.ModuleName, ibchookstypes.ModuleName)
+	}
+
+	// axelar custom modules
+	beginBlockerOrder = append(beginBlockerOrder,
+		rewardTypes.ModuleName,
+		nexusTypes.ModuleName,
+		permissionTypes.ModuleName,
+		multisigTypes.ModuleName,
+		tssTypes.ModuleName,
+		evmTypes.ModuleName,
+		snapTypes.ModuleName,
+		axelarnetTypes.ModuleName,
+		voteTypes.ModuleName,
+	)
+	return beginBlockerOrder
+}
+
+func orderEndBlockers() []string {
+	endBlockerOrder := []string{
+		crisistypes.ModuleName,
+		govtypes.ModuleName,
+		stakingtypes.ModuleName,
+		ibctransfertypes.ModuleName,
+		ibchost.ModuleName,
+		feegrant.ModuleName,
+		capabilitytypes.ModuleName,
+		authtypes.ModuleName,
+		banktypes.ModuleName,
+		distrtypes.ModuleName,
+		slashingtypes.ModuleName,
+		minttypes.ModuleName,
+		genutiltypes.ModuleName,
+		evidencetypes.ModuleName,
+		paramstypes.ModuleName,
+		upgradetypes.ModuleName,
+		vestingtypes.ModuleName,
+	}
+
+	// wasm module needs to be added in a specific order
+	if IsWasmEnabled() {
+		endBlockerOrder = append(endBlockerOrder, wasm.ModuleName, ibchookstypes.ModuleName)
+	}
+
+	// axelar custom modules
+	endBlockerOrder = append(endBlockerOrder,
+		multisigTypes.ModuleName,
+		tssTypes.ModuleName,
+		evmTypes.ModuleName,
+		nexusTypes.ModuleName,
+		rewardTypes.ModuleName,
+		snapTypes.ModuleName,
+		axelarnetTypes.ModuleName,
+		permissionTypes.ModuleName,
+		voteTypes.ModuleName,
+	)
+	return endBlockerOrder
+}
+
+func orderModulesForGenesis() []string {
+	// Sets the order of Genesis - Order matters, genutil is to always come last
+	// NOTE: The genutils module must occur after staking so that pools are
+	// properly initialized with tokens from genesis accounts.
+	genesisOrder := []string{
+		capabilitytypes.ModuleName,
+		authtypes.ModuleName,
+		banktypes.ModuleName,
+		distrtypes.ModuleName,
+		stakingtypes.ModuleName,
+		slashingtypes.ModuleName,
+		govtypes.ModuleName,
+		minttypes.ModuleName,
+		crisistypes.ModuleName,
+		genutiltypes.ModuleName,
+		evidencetypes.ModuleName,
+		ibchost.ModuleName,
+		evidencetypes.ModuleName,
+		ibctransfertypes.ModuleName,
+		feegrant.ModuleName,
+		paramstypes.ModuleName,
+		upgradetypes.ModuleName,
+		vestingtypes.ModuleName,
+	}
+
+	// wasm module needs to be added in a specific order
+	if IsWasmEnabled() {
+		genesisOrder = append(genesisOrder, wasm.ModuleName, ibchookstypes.ModuleName)
+	}
+
+	genesisOrder = append(genesisOrder,
+		snapTypes.ModuleName,
+		multisigTypes.ModuleName,
+		tssTypes.ModuleName,
+		evmTypes.ModuleName,
+		nexusTypes.ModuleName,
+		voteTypes.ModuleName,
+		axelarnetTypes.ModuleName,
+		rewardTypes.ModuleName,
+		permissionTypes.ModuleName,
+	)
+	return genesisOrder
+}
+
+func createStoreKeys() map[string]*sdk.KVStoreKey {
+	return sdk.NewKVStoreKeys(authtypes.StoreKey,
+		banktypes.StoreKey,
+		stakingtypes.StoreKey,
+		minttypes.StoreKey,
+		distrtypes.StoreKey,
+		slashingtypes.StoreKey,
+		govtypes.StoreKey,
+		paramstypes.StoreKey,
+		upgradetypes.StoreKey,
+		evidencetypes.StoreKey,
+		ibchost.StoreKey,
+		ibctransfertypes.StoreKey,
+		capabilitytypes.StoreKey,
+		feegrant.StoreKey,
+		wasm.StoreKey,
+		ibchookstypes.StoreKey,
+		voteTypes.StoreKey,
+		evmTypes.StoreKey,
+		snapTypes.StoreKey,
+		multisigTypes.StoreKey,
+		tssTypes.StoreKey,
+		nexusTypes.StoreKey,
+		axelarnetTypes.StoreKey,
+		rewardTypes.StoreKey,
+		permissionTypes.StoreKey)
+}
+
 func initParamsKeeper(appCodec codec.Codec, legacyAmino *codec.LegacyAmino, key, tkey sdk.StoreKey) paramskeeper.Keeper {
 	paramsKeeper := paramskeeper.NewKeeper(appCodec, legacyAmino, key, tkey)
 
@@ -924,7 +920,7 @@ func (app *AxelarApp) AppCodec() codec.Codec {
 }
 
 // ModuleAccountAddrs returns all the app's module account addresses.
-func (app *AxelarApp) ModuleAccountAddrs() map[string]bool {
+func ModuleAccountAddrs() map[string]bool {
 	modAccAddrs := make(map[string]bool)
 	for acc := range maccPerms {
 		modAccAddrs[authtypes.NewModuleAddress(acc).String()] = true
@@ -1042,8 +1038,8 @@ func GetModuleBasics() module.BasicManager {
 	return ModuleBasics
 }
 
-func (app *AxelarApp) getSubspace(moduleName string) paramstypes.Subspace {
-	subspace, _ := app.paramsKeeper.GetSubspace(moduleName)
+func getSubspace(keeper paramskeeper.Keeper, moduleName string) paramstypes.Subspace {
+	subspace, _ := keeper.GetSubspace(moduleName)
 	return subspace
 }
 
