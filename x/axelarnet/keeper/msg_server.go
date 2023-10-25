@@ -76,7 +76,7 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 	payloadHash := crypto.Keccak256(req.Payload)
 
 	msgID, txID, nonce := s.nexus.GenerateMessageID(ctx)
-	msg := nexus.NewGeneralMessage(msgID, sender, recipient, payloadHash, nexus.Approved, txID, nonce, nil)
+	msg := nexus.NewGeneralMessage_(msgID, sender, recipient, payloadHash, txID, nonce, nil)
 
 	events.Emit(ctx, &types.ContractCallSubmitted{
 		MessageID:        msg.ID,
@@ -111,7 +111,7 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 		events.Emit(ctx, &feePaidEvent)
 	}
 
-	if err := s.nexus.SetNewMessage(ctx, msg); err != nil {
+	if err := s.nexus.SetNewMessage_(ctx, msg); err != nil {
 		return nil, sdkerrors.Wrap(err, "failed to add general message")
 	}
 
@@ -496,24 +496,8 @@ func (s msgServer) RouteMessage(c context.Context, req *types.RouteMessageReques
 		return nil, fmt.Errorf("message %s not found", req.ID)
 	}
 
-	if !s.nexus.IsChainActivated(ctx, msg.Sender.Chain) {
-		return nil, fmt.Errorf("chain %s is not activated", msg.GetSourceChain())
-	}
-
-	if !s.nexus.IsChainActivated(ctx, msg.Recipient.Chain) {
-		return nil, fmt.Errorf("chain %s is not activated", msg.GetDestinationChain())
-	}
-
-	if msg.Type() == nexus.TypeGeneralMessageWithToken {
-		funcs.MustTrue(s.nexus.IsAssetRegistered(ctx, msg.Recipient.Chain, msg.Asset.GetDenom()))
-	}
-
 	if !msg.Match(req.Payload) {
 		return nil, fmt.Errorf("payload hash does not match")
-	}
-
-	if !(msg.Is(nexus.Approved) || msg.Is(nexus.Failed)) {
-		return nil, fmt.Errorf("general message %s already executed", req.ID)
 	}
 
 	// send ibc message if destination is cosmos
@@ -534,7 +518,7 @@ func (s msgServer) RouteMessage(c context.Context, req *types.RouteMessageReques
 		}
 	}
 
-	err := s.nexus.SetMessageProcessing(ctx, msg.ID)
+	err := s.nexus.SetMessageProcessing_(ctx, msg.ID)
 	if err != nil {
 		return nil, err
 	}

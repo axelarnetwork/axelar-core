@@ -111,7 +111,7 @@ func NewProposalHandler(k keeper.Keeper, nexusK types.Nexus, accountK types.Acco
 				payloadHash := crypto.Keccak256(contractCall.Payload)
 
 				msgID, txID, nonce := nexusK.GenerateMessageID(ctx)
-				msg := nexus.NewGeneralMessage(msgID, sender, recipient, payloadHash, nexus.Approved, txID, nonce, nil)
+				msg := nexus.NewGeneralMessage_(msgID, sender, recipient, payloadHash, txID, nonce, nil)
 
 				events.Emit(ctx, &types.ContractCallSubmitted{
 					MessageID:        msg.ID,
@@ -123,7 +123,7 @@ func NewProposalHandler(k keeper.Keeper, nexusK types.Nexus, accountK types.Acco
 					Payload:          contractCall.Payload,
 				})
 
-				if err := nexusK.SetNewMessage(ctx, msg); err != nil {
+				if err := nexusK.SetNewMessage_(ctx, msg); err != nil {
 					return sdkerrors.Wrap(err, "failed to add general message")
 				}
 

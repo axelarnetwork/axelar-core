@@ -57,7 +57,9 @@ type Nexus interface {
 	RateLimitTransfer(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error
 	GetMessage(ctx sdk.Context, id string) (m nexus.GeneralMessage, found bool)
 	SetNewMessage(ctx sdk.Context, m nexus.GeneralMessage) error
+	SetNewMessage_(ctx sdk.Context, m nexus.GeneralMessage) error
 	SetMessageProcessing(ctx sdk.Context, id string) error
+	SetMessageProcessing_(ctx sdk.Context, id string) error
 	SetMessageExecuted(ctx sdk.Context, id string) error
 	SetMessageFailed(ctx sdk.Context, id string) error
 	GenerateMessageID(ctx sdk.Context) (string, []byte, uint64)
