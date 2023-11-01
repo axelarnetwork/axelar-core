@@ -363,8 +363,8 @@ type NexusMock struct {
 	lockRateLimitTransfer        sync.RWMutex
 	lockRegisterFee              sync.RWMutex
 	lockRemoveChainMaintainer    sync.RWMutex
-	lockSetMessageProcessing    sync.RWMutex
-	lockSetNewMessage           sync.RWMutex
+	lockSetMessageProcessing     sync.RWMutex
+	lockSetNewMessage            sync.RWMutex
 	lockSetParams                sync.RWMutex
 	lockSetRateLimit             sync.RWMutex
 }

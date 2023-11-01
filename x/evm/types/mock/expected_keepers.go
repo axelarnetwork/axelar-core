@@ -462,7 +462,7 @@ type NexusMock struct {
 	lockSetChainMaintainerState       sync.RWMutex
 	lockSetMessageExecuted            sync.RWMutex
 	lockSetMessageFailed              sync.RWMutex
-	lockSetNewMessage                sync.RWMutex
+	lockSetNewMessage                 sync.RWMutex
 }
 
 // AddTransferFee calls AddTransferFeeFunc.

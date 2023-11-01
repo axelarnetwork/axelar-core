@@ -911,8 +911,8 @@ type NexusMock struct {
 	lockSetChain                      sync.RWMutex
 	lockSetMessageExecuted            sync.RWMutex
 	lockSetMessageFailed              sync.RWMutex
-	lockSetMessageProcessing         sync.RWMutex
-	lockSetNewMessage                sync.RWMutex
+	lockSetMessageProcessing          sync.RWMutex
+	lockSetNewMessage                 sync.RWMutex
 	lockSubTransferFee                sync.RWMutex
 	lockValidateAddress               sync.RWMutex
 }
