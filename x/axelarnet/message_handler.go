@@ -246,7 +246,7 @@ func handleMessage(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceAdd
 
 	destChain := funcs.MustOk(n.GetChain(ctx, nexus.ChainName(msg.DestinationChain)))
 	recipient := nexus.CrossChainAddress{Chain: destChain, Address: msg.DestinationAddress}
-	m := nexus.NewGeneralMessage_(
+	m := nexus.NewGeneralMessage(
 		id,
 		sourceAddress,
 		recipient,
@@ -283,7 +283,7 @@ func handleMessageWithToken(ctx sdk.Context, n types.Nexus, b types.BankKeeper, 
 
 	destChain := funcs.MustOk(n.GetChain(ctx, nexus.ChainName(msg.DestinationChain)))
 	recipient := nexus.CrossChainAddress{Chain: destChain, Address: msg.DestinationAddress}
-	m := nexus.NewGeneralMessage_(
+	m := nexus.NewGeneralMessage(
 		id,
 		sourceAddress,
 		recipient,

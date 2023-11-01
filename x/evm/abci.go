@@ -214,7 +214,7 @@ func setMessageToNexus(ctx sdk.Context, n types.Nexus, event types.Event, asset 
 			Address: e.ContractCall.ContractAddress,
 		}
 
-		message = nexus.NewGeneralMessage_(
+		message = nexus.NewGeneralMessage(
 			string(event.GetID()),
 			sender,
 			recipient,
@@ -239,7 +239,7 @@ func setMessageToNexus(ctx sdk.Context, n types.Nexus, event types.Event, asset 
 			Address: e.ContractCallWithToken.ContractAddress,
 		}
 
-		message = nexus.NewGeneralMessage_(
+		message = nexus.NewGeneralMessage(
 			string(event.GetID()),
 			sender,
 			recipient,

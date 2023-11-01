@@ -111,7 +111,7 @@ func NewProposalHandler(k keeper.Keeper, nexusK types.Nexus, accountK types.Acco
 				payloadHash := crypto.Keccak256(contractCall.Payload)
 
 				msgID, txID, nonce := nexusK.GenerateMessageID(ctx)
-				msg := nexus.NewGeneralMessage_(msgID, sender, recipient, payloadHash, txID, nonce, nil)
+				msg := nexus.NewGeneralMessage(msgID, sender, recipient, payloadHash, txID, nonce, nil)
 
 				events.Emit(ctx, &types.ContractCallSubmitted{
 					MessageID:        msg.ID,
