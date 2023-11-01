@@ -237,7 +237,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	)
 	bankK := bankkeeper.NewBaseKeeper(
 		appCodec, keys[banktypes.StoreKey], accountK, getSubspace(paramsK, banktypes.ModuleName),
-		maps.Filter(ModuleAccountAddrs(), func(addr string, _ bool) bool {
+		maps.Filter(moduleAccountAddrs(), func(addr string, _ bool) bool {
 			// we do not rely on internal balance tracking for invariance checks in the axelarnet module
 			// (https://github.com/cosmos/cosmos-sdk/issues/12825 for more details on the purpose of the blocked list),
 			// but the module address must be able to use ibc transfers,
@@ -255,7 +255,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	)
 	distrK := distrkeeper.NewKeeper(
 		appCodec, keys[distrtypes.StoreKey], getSubspace(paramsK, distrtypes.ModuleName), accountK, bankK,
-		&stakingK, authtypes.FeeCollectorName, ModuleAccountAddrs(),
+		&stakingK, authtypes.FeeCollectorName, moduleAccountAddrs(),
 	)
 	slashingK := slashingkeeper.NewKeeper(
 		appCodec, keys[slashingtypes.StoreKey], &stakingK, getSubspace(paramsK, slashingtypes.ModuleName),
@@ -919,8 +919,8 @@ func (app *AxelarApp) AppCodec() codec.Codec {
 	return app.appCodec
 }
 
-// ModuleAccountAddrs returns all the app's module account addresses.
-func ModuleAccountAddrs() map[string]bool {
+// moduleAccountAddrs returns all the app's module account addresses.
+func moduleAccountAddrs() map[string]bool {
 	modAccAddrs := make(map[string]bool)
 	for acc := range maccPerms {
 		modAccAddrs[authtypes.NewModuleAddress(acc).String()] = true
