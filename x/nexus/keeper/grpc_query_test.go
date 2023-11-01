@@ -211,7 +211,7 @@ func TestKeeper_Message(t *testing.T) {
 				SourceTxID:    txID,
 				SourceTxIndex: nonce,
 			}
-			err := k.SetNewMessage_(ctx, msg)
+			err := k.SetNewMessage(ctx, msg)
 			assert.NoError(t, err)
 		}).Then("should succeed", func(t *testing.T) {
 			response, err := q.Message(sdk.WrapSDKContext(ctx), &types.MessageRequest{ID: id})

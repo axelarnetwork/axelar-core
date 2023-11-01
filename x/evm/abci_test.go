@@ -484,7 +484,7 @@ func TestHandleContractCall(t *testing.T) {
 
 	setGeneralMessageSucceed := func(isSuccessful bool) func() {
 		return func() {
-			n.SetNewMessage_Func = func(sdk.Context, nexus.GeneralMessage) error {
+			n.SetNewMessageFunc = func(sdk.Context, nexus.GeneralMessage) error {
 				if !isSuccessful {
 					return fmt.Errorf("set general message error")
 				}
@@ -553,7 +553,7 @@ func TestHandleContractCall(t *testing.T) {
 		Then("should succeed", func(t *testing.T) {
 			err := handleContractCall(ctx, event, bk, n, multisigKeeper)
 			assert.NoError(t, err)
-			assert.Len(t, n.SetNewMessage_Calls(), 1)
+			assert.Len(t, n.SetNewMessageCalls(), 1)
 		}).
 		Run(t)
 }

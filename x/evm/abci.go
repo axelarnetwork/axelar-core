@@ -256,7 +256,7 @@ func setMessageToNexus(ctx sdk.Context, n types.Nexus, event types.Event, asset 
 		return fmt.Errorf("%s is not a supported recipient", axelarnet.Axelarnet.Name)
 	}
 
-	return n.SetNewMessage_(ctx, message)
+	return n.SetNewMessage(ctx, message)
 }
 
 func handleConfirmDeposit(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus) error {

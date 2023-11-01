@@ -123,7 +123,7 @@ func NewProposalHandler(k keeper.Keeper, nexusK types.Nexus, accountK types.Acco
 					Payload:          contractCall.Payload,
 				})
 
-				if err := nexusK.SetNewMessage_(ctx, msg); err != nil {
+				if err := nexusK.SetNewMessage(ctx, msg); err != nil {
 					return sdkerrors.Wrap(err, "failed to add general message")
 				}
 
