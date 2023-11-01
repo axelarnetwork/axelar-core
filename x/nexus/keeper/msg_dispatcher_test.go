@@ -123,7 +123,7 @@ func TestMessenger_DispatchMsg(t *testing.T) {
 					nexus.GenerateMessageIDFunc = func(_ sdk.Context) (string, []byte, uint64) {
 						return "1", []byte("1"), 1
 					}
-					nexus.SetNewMessage_Func = func(_ sdk.Context, _ exported.GeneralMessage) error {
+					nexus.SetNewMessageFunc = func(_ sdk.Context, _ exported.GeneralMessage) error {
 						return fmt.Errorf("set msg error")
 					}
 				}).
@@ -161,10 +161,10 @@ func TestMessenger_DispatchMsg(t *testing.T) {
 			nexus.GenerateMessageIDFunc = func(_ sdk.Context) (string, []byte, uint64) {
 				return "1", []byte("1"), 1
 			}
-			nexus.SetNewMessage_Func = func(_ sdk.Context, msg exported.GeneralMessage) error {
+			nexus.SetNewMessageFunc = func(_ sdk.Context, msg exported.GeneralMessage) error {
 				return nil
 			}
-			nexus.SetMessageProcessing_Func = func(ctx sdk.Context, id string) error { return nil }
+			nexus.SetMessageProcessingFunc = func(ctx sdk.Context, id string) error { return nil }
 		}).
 		Branch(
 			When("the destination chain is a cosmos chain", func() {
@@ -176,12 +176,12 @@ func TestMessenger_DispatchMsg(t *testing.T) {
 					_, _, err := messenger.DispatchMsg(ctx, contractAddr, "", msg)
 					assert.NoError(t, err)
 
-					assert.Len(t, nexus.SetNewMessage_Calls(), 1)
-					assert.Equal(t, nexus.SetNewMessage_Calls()[0].Msg.Recipient.Chain, axelarnet.Axelarnet)
-					assert.Equal(t, nexus.SetNewMessage_Calls()[0].Msg.Status, exported.Approved)
-					assert.Nil(t, nexus.SetNewMessage_Calls()[0].Msg.Asset)
+					assert.Len(t, nexus.SetNewMessageCalls(), 1)
+					assert.Equal(t, nexus.SetNewMessageCalls()[0].Msg.Recipient.Chain, axelarnet.Axelarnet)
+					assert.Equal(t, nexus.SetNewMessageCalls()[0].Msg.Status, exported.Approved)
+					assert.Nil(t, nexus.SetNewMessageCalls()[0].Msg.Asset)
 
-					assert.Empty(t, nexus.SetMessageProcessing_Calls())
+					assert.Empty(t, nexus.SetMessageProcessingCalls())
 				}),
 
 			When("the destination chain is a non-cosmos chain", func() {
@@ -193,13 +193,13 @@ func TestMessenger_DispatchMsg(t *testing.T) {
 					_, _, err := messenger.DispatchMsg(ctx, contractAddr, "", msg)
 					assert.NoError(t, err)
 
-					assert.Len(t, nexus.SetNewMessage_Calls(), 1)
-					assert.Equal(t, nexus.SetNewMessage_Calls()[0].Msg.Recipient.Chain, evm.Ethereum)
-					assert.Equal(t, nexus.SetNewMessage_Calls()[0].Msg.Status, exported.Approved)
-					assert.Nil(t, nexus.SetNewMessage_Calls()[0].Msg.Asset)
+					assert.Len(t, nexus.SetNewMessageCalls(), 1)
+					assert.Equal(t, nexus.SetNewMessageCalls()[0].Msg.Recipient.Chain, evm.Ethereum)
+					assert.Equal(t, nexus.SetNewMessageCalls()[0].Msg.Status, exported.Approved)
+					assert.Nil(t, nexus.SetNewMessageCalls()[0].Msg.Asset)
 
-					assert.Len(t, nexus.SetMessageProcessing_Calls(), 1)
-					assert.Equal(t, nexus.SetNewMessage_Calls()[0].Msg.ID, nexus.SetMessageProcessing_Calls()[0].ID)
+					assert.Len(t, nexus.SetMessageProcessingCalls(), 1)
+					assert.Equal(t, nexus.SetNewMessageCalls()[0].Msg.ID, nexus.SetMessageProcessingCalls()[0].ID)
 				}),
 		).
 		Run(t)

@@ -67,8 +67,8 @@ func (m Messenger) routeMsg(ctx sdk.Context, msg exported.WasmMessage) error {
 	sender := exported.CrossChainAddress{Chain: sourceChain, Address: msg.SourceAddress}
 	recipient := exported.CrossChainAddress{Chain: destinationChain, Address: msg.DestinationAddress}
 
-	nexusMsg := exported.NewGeneralMessage_(id, sender, recipient, msg.PayloadHash, msg.SourceTxID, msg.SourceTxIndex, nil)
-	if err := m.Nexus.SetNewMessage_(ctx, nexusMsg); err != nil {
+	nexusMsg := exported.NewGeneralMessage(id, sender, recipient, msg.PayloadHash, msg.SourceTxID, msg.SourceTxIndex, nil)
+	if err := m.Nexus.SetNewMessage(ctx, nexusMsg); err != nil {
 		return err
 	}
 
@@ -79,5 +79,5 @@ func (m Messenger) routeMsg(ctx sdk.Context, msg exported.WasmMessage) error {
 	// set message to be processing if the destination chain is not a cosmos chain.
 	// messages sent to cosmos chains require translation with the original payload.
 	// https://github.com/axelarnetwork/axelar-core/blob/ea48d5b974dfd94ea235311eddabe23bfa430cd9/x/axelarnet/keeper/msg_server.go#L520
-	return m.Nexus.SetMessageProcessing_(ctx, nexusMsg.ID)
+	return m.Nexus.SetMessageProcessing(ctx, nexusMsg.ID)
 }

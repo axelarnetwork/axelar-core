@@ -76,7 +76,7 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 	payloadHash := crypto.Keccak256(req.Payload)
 
 	msgID, txID, nonce := s.nexus.GenerateMessageID(ctx)
-	msg := nexus.NewGeneralMessage_(msgID, sender, recipient, payloadHash, txID, nonce, nil)
+	msg := nexus.NewGeneralMessage(msgID, sender, recipient, payloadHash, txID, nonce, nil)
 
 	events.Emit(ctx, &types.ContractCallSubmitted{
 		MessageID:        msg.ID,
@@ -111,7 +111,7 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 		events.Emit(ctx, &feePaidEvent)
 	}
 
-	if err := s.nexus.SetNewMessage_(ctx, msg); err != nil {
+	if err := s.nexus.SetNewMessage(ctx, msg); err != nil {
 		return nil, sdkerrors.Wrap(err, "failed to add general message")
 	}
 
@@ -518,7 +518,7 @@ func (s msgServer) RouteMessage(c context.Context, req *types.RouteMessageReques
 		}
 	}
 
-	err := s.nexus.SetMessageProcessing_(ctx, msg.ID)
+	err := s.nexus.SetMessageProcessing(ctx, msg.ID)
 	if err != nil {
 		return nil, err
 	}

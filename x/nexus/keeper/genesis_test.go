@@ -205,7 +205,7 @@ func TestExportGenesisInitGenesis(t *testing.T) {
 		id, _, _ := keeper.GenerateMessageID(ctx)
 		msg := getRandomMessage(id)
 		expected.Messages = append(expected.Messages, msg)
-		funcs.MustNoErr(keeper.SetNewMessage(ctx, msg))
+		funcs.MustNoErr(keeper.setMessage(ctx, msg))
 	}
 	expected.MessageNonce = uint64(messageCount)
 

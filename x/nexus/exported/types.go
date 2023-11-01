@@ -240,23 +240,8 @@ func (m TransferDirection) ValidateBasic() error {
 	}
 }
 
-// NewGeneralMessage returns a GeneralMessage struct
-// Deprecated: use NewGeneralMessage_ instead
-func NewGeneralMessage(id string, sender CrossChainAddress, recipient CrossChainAddress, payloadHash []byte, status GeneralMessage_Status, sourceTxID []byte, sourceTxIndex uint64, asset *sdk.Coin) GeneralMessage {
-	return GeneralMessage{
-		ID:            id,
-		Sender:        sender,
-		Recipient:     recipient,
-		PayloadHash:   payloadHash,
-		Status:        status,
-		Asset:         asset,
-		SourceTxID:    sourceTxID,
-		SourceTxIndex: sourceTxIndex,
-	}
-}
-
-// NewGeneralMessage_ returns a GeneralMessage struct with status set to approved
-func NewGeneralMessage_(id string, sender CrossChainAddress, recipient CrossChainAddress, payloadHash []byte, sourceTxID []byte, sourceTxIndex uint64, asset *sdk.Coin) GeneralMessage {
+// NewGeneralMessage returns a GeneralMessage struct with status set to approved
+func NewGeneralMessage(id string, sender CrossChainAddress, recipient CrossChainAddress, payloadHash []byte, sourceTxID []byte, sourceTxIndex uint64, asset *sdk.Coin) GeneralMessage {
 	return GeneralMessage{
 		ID:            id,
 		Sender:        sender,
