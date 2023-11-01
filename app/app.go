@@ -205,7 +205,6 @@ type AxelarApp struct {
 	keys map[string]*sdk.KVStoreKey
 
 	mm            *module.Manager
-	paramsKeeper  paramskeeper.Keeper
 	upgradeKeeper upgradekeeper.Keeper
 }
 
