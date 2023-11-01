@@ -214,12 +214,11 @@ func setMessageToNexus(ctx sdk.Context, n types.Nexus, event types.Event, asset 
 			Address: e.ContractCall.ContractAddress,
 		}
 
-		message = nexus.NewGeneralMessage(
+		message = nexus.NewGeneralMessage_(
 			string(event.GetID()),
 			sender,
 			recipient,
 			e.ContractCall.PayloadHash.Bytes(),
-			nexus.Approved,
 			event.TxID.Bytes(),
 			event.Index,
 			nil,
@@ -240,12 +239,11 @@ func setMessageToNexus(ctx sdk.Context, n types.Nexus, event types.Event, asset 
 			Address: e.ContractCallWithToken.ContractAddress,
 		}
 
-		message = nexus.NewGeneralMessage(
+		message = nexus.NewGeneralMessage_(
 			string(event.GetID()),
 			sender,
 			recipient,
 			e.ContractCallWithToken.PayloadHash.Bytes(),
-			nexus.Approved,
 			event.TxID.Bytes(),
 			event.Index,
 			asset,
@@ -258,7 +256,7 @@ func setMessageToNexus(ctx sdk.Context, n types.Nexus, event types.Event, asset 
 		return fmt.Errorf("%s is not a supported recipient", axelarnet.Axelarnet.Name)
 	}
 
-	return n.SetNewMessage(ctx, message)
+	return n.SetNewMessage_(ctx, message)
 }
 
 func handleConfirmDeposit(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus) error {
