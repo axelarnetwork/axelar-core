@@ -74,7 +74,7 @@ func TestHandleMessage(t *testing.T) {
 		}))
 		channelK.SendPacketFunc = func(sdk.Context, *captypes.Capability, ibcexported.PacketI) error { return nil }
 		n = &mock.NexusMock{
-			SetNewMessage_Func: func(ctx sdk.Context, msg nexus.GeneralMessage) error {
+			SetNewMessageFunc: func(ctx sdk.Context, msg nexus.GeneralMessage) error {
 				genMsg = msg
 				return nil
 			},
@@ -473,7 +473,7 @@ func TestHandleMessageWithToken(t *testing.T) {
 
 		channelK.SendPacketFunc = func(sdk.Context, *captypes.Capability, ibcexported.PacketI) error { return nil }
 		n = &mock.NexusMock{
-			SetNewMessage_Func: func(ctx sdk.Context, msg nexus.GeneralMessage) error {
+			SetNewMessageFunc: func(ctx sdk.Context, msg nexus.GeneralMessage) error {
 				genMsg = msg
 				return nil
 			},
@@ -689,7 +689,7 @@ func TestHandleSendToken(t *testing.T) {
 
 		channelK.SendPacketFunc = func(sdk.Context, *captypes.Capability, ibcexported.PacketI) error { return nil }
 		n = &mock.NexusMock{
-			SetNewMessage_Func: func(sdk.Context, nexus.GeneralMessage) error { return nil },
+			SetNewMessageFunc: func(sdk.Context, nexus.GeneralMessage) error { return nil },
 			GetChainFunc: func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 				switch chain {
 				case srcChain.Name:

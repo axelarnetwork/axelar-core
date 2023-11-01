@@ -48,7 +48,7 @@ func randMsg(status exported.GeneralMessage_Status, withAsset ...bool) exported.
 	}
 }
 
-func TestSetNewMessage_(t *testing.T) {
+func TestSetNewMessage(t *testing.T) {
 	var (
 		msg    exported.GeneralMessage
 		ctx    sdk.Context
@@ -63,10 +63,10 @@ func TestSetNewMessage_(t *testing.T) {
 	givenKeeper.
 		When("the message already exists", func() {
 			msg = randMsg(exported.Approved, true)
-			keeper.SetNewMessage_(ctx, msg)
+			keeper.SetNewMessage(ctx, msg)
 		}).
 		Then("should return error", func(t *testing.T) {
-			assert.ErrorContains(t, keeper.SetNewMessage_(ctx, msg), "already exists")
+			assert.ErrorContains(t, keeper.SetNewMessage(ctx, msg), "already exists")
 		}).
 		Run(t)
 
@@ -75,7 +75,7 @@ func TestSetNewMessage_(t *testing.T) {
 			msg = randMsg(exported.Processing)
 		}).
 		Then("should return error", func(t *testing.T) {
-			assert.ErrorContains(t, keeper.SetNewMessage_(ctx, msg), "new general message has to be approved")
+			assert.ErrorContains(t, keeper.SetNewMessage(ctx, msg), "new general message has to be approved")
 		}).
 		Run(t)
 
@@ -84,7 +84,7 @@ func TestSetNewMessage_(t *testing.T) {
 			msg = randMsg(exported.Approved)
 		}).
 		Then("should store the message", func(t *testing.T) {
-			assert.NoError(t, keeper.SetNewMessage_(ctx, msg))
+			assert.NoError(t, keeper.SetNewMessage(ctx, msg))
 
 			actual, ok := keeper.GetMessage(ctx, msg.ID)
 			assert.True(t, ok)
@@ -93,7 +93,7 @@ func TestSetNewMessage_(t *testing.T) {
 		Run(t)
 }
 
-func TestSetMessageProcessing_(t *testing.T) {
+func TestSetMessageProcessing(t *testing.T) {
 	var (
 		msg    exported.GeneralMessage
 		ctx    sdk.Context
@@ -108,7 +108,7 @@ func TestSetMessageProcessing_(t *testing.T) {
 	givenKeeper.
 		When("the message doesn't exist", func() {}).
 		Then("should return error", func(t *testing.T) {
-			assert.ErrorContains(t, keeper.SetMessageProcessing_(ctx, rand.NormalizedStr(10)), "not found")
+			assert.ErrorContains(t, keeper.SetMessageProcessing(ctx, rand.NormalizedStr(10)), "not found")
 		}).
 		Run(t)
 
@@ -124,11 +124,11 @@ func TestSetMessageProcessing_(t *testing.T) {
 				Address: evmtestutils.RandomAddress().Hex(),
 			}
 
-			keeper.SetNewMessage_(ctx, msg)
-			keeper.SetMessageProcessing_(ctx, msg.ID)
+			keeper.SetNewMessage(ctx, msg)
+			keeper.SetMessageProcessing(ctx, msg.ID)
 		}).
 		Then("should return error", func(t *testing.T) {
-			assert.ErrorContains(t, keeper.SetMessageProcessing_(ctx, msg.ID), "general message has to be approved or failed")
+			assert.ErrorContains(t, keeper.SetMessageProcessing(ctx, msg.ID), "general message has to be approved or failed")
 		}).
 		Run(t)
 
@@ -145,10 +145,10 @@ func TestSetMessageProcessing_(t *testing.T) {
 			When("the destination chain is not registered", func() {
 				msg.Recipient.Chain = nexustestutils.RandomChain()
 
-				keeper.SetNewMessage_(ctx, msg)
+				keeper.SetNewMessage(ctx, msg)
 			}).
 				Then("should return error", func(t *testing.T) {
-					assert.ErrorContains(t, keeper.SetMessageProcessing_(ctx, msg.ID), "is not registered")
+					assert.ErrorContains(t, keeper.SetMessageProcessing(ctx, msg.ID), "is not registered")
 				}),
 
 			When("the destination chain is not activated", func() {
@@ -158,10 +158,10 @@ func TestSetMessageProcessing_(t *testing.T) {
 				}
 
 				keeper.DeactivateChain(ctx, msg.Recipient.Chain)
-				keeper.SetNewMessage_(ctx, msg)
+				keeper.SetNewMessage(ctx, msg)
 			}).
 				Then("should return error", func(t *testing.T) {
-					assert.ErrorContains(t, keeper.SetMessageProcessing_(ctx, msg.ID), "is not activated")
+					assert.ErrorContains(t, keeper.SetMessageProcessing(ctx, msg.ID), "is not activated")
 				}),
 
 			When("the destination address is invalid", func() {
@@ -170,10 +170,10 @@ func TestSetMessageProcessing_(t *testing.T) {
 					Address: rand.NormalizedStr(42),
 				}
 
-				keeper.SetNewMessage_(ctx, msg)
+				keeper.SetNewMessage(ctx, msg)
 			}).
 				Then("should return error", func(t *testing.T) {
-					assert.ErrorContains(t, keeper.SetMessageProcessing_(ctx, msg.ID), "not an hex address")
+					assert.ErrorContains(t, keeper.SetMessageProcessing(ctx, msg.ID), "not an hex address")
 				}),
 
 			When("the destination chain does't support the asset", func() {
@@ -184,10 +184,10 @@ func TestSetMessageProcessing_(t *testing.T) {
 				asset := rand.Coin()
 				msg.Asset = &asset
 
-				keeper.SetNewMessage_(ctx, msg)
+				keeper.SetNewMessage(ctx, msg)
 			}).
 				Then("should return error", func(t *testing.T) {
-					assert.ErrorContains(t, keeper.SetMessageProcessing_(ctx, msg.ID), "does not support foreign asset")
+					assert.ErrorContains(t, keeper.SetMessageProcessing(ctx, msg.ID), "does not support foreign asset")
 				}),
 
 			When("asset is set", func() {
@@ -197,10 +197,10 @@ func TestSetMessageProcessing_(t *testing.T) {
 				}
 				msg.Asset = &sdk.Coin{Denom: "external-erc-20", Amount: sdk.NewInt(100)}
 
-				keeper.SetNewMessage_(ctx, msg)
+				keeper.SetNewMessage(ctx, msg)
 			}).
 				Then("should return error", func(t *testing.T) {
-					assert.ErrorContains(t, keeper.SetMessageProcessing_(ctx, msg.ID), "asset transfer is not supported for wasm messages")
+					assert.ErrorContains(t, keeper.SetMessageProcessing(ctx, msg.ID), "asset transfer is not supported for wasm messages")
 				}),
 		).
 		Run(t)
@@ -218,10 +218,10 @@ func TestSetMessageProcessing_(t *testing.T) {
 			When("the sender chain is not registered", func() {
 				msg.Sender.Chain = nexustestutils.RandomChain()
 
-				keeper.SetNewMessage_(ctx, msg)
+				keeper.SetNewMessage(ctx, msg)
 			}).
 				Then("should return error", func(t *testing.T) {
-					assert.ErrorContains(t, keeper.SetMessageProcessing_(ctx, msg.ID), "is not registered")
+					assert.ErrorContains(t, keeper.SetMessageProcessing(ctx, msg.ID), "is not registered")
 				}),
 
 			When("the sender chain is not activated", func() {
@@ -231,10 +231,10 @@ func TestSetMessageProcessing_(t *testing.T) {
 				}
 
 				keeper.DeactivateChain(ctx, msg.Sender.Chain)
-				keeper.SetNewMessage_(ctx, msg)
+				keeper.SetNewMessage(ctx, msg)
 			}).
 				Then("should return error", func(t *testing.T) {
-					assert.ErrorContains(t, keeper.SetMessageProcessing_(ctx, msg.ID), "is not activated")
+					assert.ErrorContains(t, keeper.SetMessageProcessing(ctx, msg.ID), "is not activated")
 				}),
 
 			When("the sender address is invalid", func() {
@@ -243,10 +243,10 @@ func TestSetMessageProcessing_(t *testing.T) {
 					Address: rand.NormalizedStr(42),
 				}
 
-				keeper.SetNewMessage_(ctx, msg)
+				keeper.SetNewMessage(ctx, msg)
 			}).
 				Then("should return error", func(t *testing.T) {
-					assert.ErrorContains(t, keeper.SetMessageProcessing_(ctx, msg.ID), "not an hex address")
+					assert.ErrorContains(t, keeper.SetMessageProcessing(ctx, msg.ID), "not an hex address")
 				}),
 
 			When("the sender chain does't support the asset", func() {
@@ -257,10 +257,10 @@ func TestSetMessageProcessing_(t *testing.T) {
 				asset := rand.Coin()
 				msg.Asset = &asset
 
-				keeper.SetNewMessage_(ctx, msg)
+				keeper.SetNewMessage(ctx, msg)
 			}).
 				Then("should return error", func(t *testing.T) {
-					assert.ErrorContains(t, keeper.SetMessageProcessing_(ctx, msg.ID), "does not support foreign asset")
+					assert.ErrorContains(t, keeper.SetMessageProcessing(ctx, msg.ID), "does not support foreign asset")
 				}),
 
 			When("asset is set", func() {
@@ -270,10 +270,10 @@ func TestSetMessageProcessing_(t *testing.T) {
 				}
 				msg.Asset = &sdk.Coin{Denom: "external-erc-20", Amount: sdk.NewInt(100)}
 
-				keeper.SetNewMessage_(ctx, msg)
+				keeper.SetNewMessage(ctx, msg)
 			}).
 				Then("should return error", func(t *testing.T) {
-					assert.ErrorContains(t, keeper.SetMessageProcessing_(ctx, msg.ID), "asset transfer is not supported for wasm messages")
+					assert.ErrorContains(t, keeper.SetMessageProcessing(ctx, msg.ID), "asset transfer is not supported for wasm messages")
 				}),
 		).
 		Run(t)
@@ -287,10 +287,10 @@ func TestSetMessageProcessing_(t *testing.T) {
 				Address: evmtestutils.RandomAddress().Hex(),
 			}
 
-			keeper.SetNewMessage_(ctx, msg)
+			keeper.SetNewMessage(ctx, msg)
 		}).
 		Then("should set the message status to processing", func(t *testing.T) {
-			assert.NoError(t, keeper.SetMessageProcessing_(ctx, msg.ID))
+			assert.NoError(t, keeper.SetMessageProcessing(ctx, msg.ID))
 
 			actual, ok := keeper.GetMessage(ctx, msg.ID)
 			assert.True(t, ok)
@@ -353,14 +353,14 @@ func TestStatusTransitions(t *testing.T) {
 	err := k.SetMessageFailed(ctx, msg.ID)
 	assert.Error(t, err, fmt.Sprintf("general message %s not found", msg.ID))
 
-	err = k.SetMessageProcessing_(ctx, msg.ID)
+	err = k.SetMessageProcessing(ctx, msg.ID)
 	assert.Error(t, err, fmt.Sprintf("general message %s not found", msg.ID))
 
 	err = k.SetMessageExecuted(ctx, msg.ID)
 	assert.Error(t, err, fmt.Sprintf("general message %s not found", msg.ID))
 
 	// Now store the message with approved status
-	err = k.SetNewMessage_(ctx, msg)
+	err = k.SetNewMessage(ctx, msg)
 	assert.NoError(t, err)
 
 	err = k.SetMessageFailed(ctx, msg.ID)
@@ -369,10 +369,10 @@ func TestStatusTransitions(t *testing.T) {
 	err = k.SetMessageExecuted(ctx, msg.ID)
 	assert.Error(t, err, "general message is not processed")
 
-	err = k.SetMessageProcessing_(ctx, msg.ID)
+	err = k.SetMessageProcessing(ctx, msg.ID)
 	assert.NoError(t, err)
 
-	err = k.SetMessageProcessing_(ctx, msg.ID)
+	err = k.SetMessageProcessing(ctx, msg.ID)
 	assert.Error(t, err, "general message is not approved or failed")
 
 	err = k.SetMessageFailed(ctx, msg.ID)
@@ -381,7 +381,7 @@ func TestStatusTransitions(t *testing.T) {
 	err = k.SetMessageExecuted(ctx, msg.ID)
 	assert.Error(t, err, "general message is not processed")
 
-	err = k.SetMessageProcessing_(ctx, msg.ID)
+	err = k.SetMessageProcessing(ctx, msg.ID)
 	assert.NoError(t, err)
 
 	err = k.SetMessageExecuted(ctx, msg.ID)
@@ -390,7 +390,7 @@ func TestStatusTransitions(t *testing.T) {
 	err = k.SetMessageFailed(ctx, msg.ID)
 	assert.Error(t, err, "general message is not processed")
 
-	err = k.SetMessageProcessing_(ctx, msg.ID)
+	err = k.SetMessageProcessing(ctx, msg.ID)
 	assert.Error(t, err, "general message is not approved or failed")
 
 }
@@ -414,7 +414,7 @@ func TestGetMessage(t *testing.T) {
 		SourceTxIndex: nonce,
 	}
 
-	err := k.SetNewMessage_(ctx, msg)
+	err := k.SetNewMessage(ctx, msg)
 	assert.NoError(t, err)
 
 	exp, found := k.GetMessage(ctx, msg.ID)
@@ -461,16 +461,16 @@ func TestGetSentMessages(t *testing.T) {
 			status := msg.Status
 
 			msg.Status = exported.Approved
-			assert.NoError(t, k.SetNewMessage_(ctx, msg))
+			assert.NoError(t, k.SetNewMessage(ctx, msg))
 
 			switch status {
 			case exported.Processing:
-				assert.NoError(t, k.SetMessageProcessing_(ctx, msg.ID))
+				assert.NoError(t, k.SetMessageProcessing(ctx, msg.ID))
 			case exported.Executed:
-				assert.NoError(t, k.SetMessageProcessing_(ctx, msg.ID))
+				assert.NoError(t, k.SetMessageProcessing(ctx, msg.ID))
 				assert.NoError(t, k.SetMessageExecuted(ctx, msg.ID))
 			case exported.Failed:
-				assert.NoError(t, k.SetMessageProcessing_(ctx, msg.ID))
+				assert.NoError(t, k.SetMessageProcessing(ctx, msg.ID))
 				assert.NoError(t, k.SetMessageFailed(ctx, msg.ID))
 			default:
 			}
@@ -546,7 +546,7 @@ func TestGetSentMessages(t *testing.T) {
 	checkForExistence(msgs)
 
 	//resend the failed message
-	err = k.SetMessageProcessing_(ctx, msg.ID)
+	err = k.SetMessageProcessing(ctx, msg.ID)
 	assert.NoError(t, err)
 	sent = consumeSent(destinationChainName, 1)
 	assert.Equal(t, len(sent), 1)
