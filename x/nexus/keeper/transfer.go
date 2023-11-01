@@ -100,11 +100,11 @@ func (k Keeper) ComputeTransferFee(ctx sdk.Context, sourceChain exported.Chain, 
 
 // EnqueueTransfer enqueues an asset transfer to the given recipient address
 func (k Keeper) EnqueueTransfer(ctx sdk.Context, senderChain exported.Chain, recipient exported.CrossChainAddress, asset sdk.Coin) (exported.TransferID, error) {
-	if err := k.validateTransferAsset(ctx, senderChain, asset.Denom); err != nil {
+	if err := k.validateAsset(ctx, senderChain, asset.Denom); err != nil {
 		return 0, err
 	}
 
-	if err := k.validateTransferAsset(ctx, recipient.Chain, asset.Denom); err != nil {
+	if err := k.validateAsset(ctx, recipient.Chain, asset.Denom); err != nil {
 		return 0, err
 	}
 
@@ -178,10 +178,10 @@ func (k Keeper) EnqueueTransfer(ctx sdk.Context, senderChain exported.Chain, rec
 	return transferID, nil
 }
 
-// validateTransferAsset validates asset if
+// validateAsset validates asset if
 // - chain supports foreign assets, and the asset is registered on the chain
 // - or asset is the native asset on the chain
-func (k Keeper) validateTransferAsset(ctx sdk.Context, chain exported.Chain, asset string) error {
+func (k Keeper) validateAsset(ctx sdk.Context, chain exported.Chain, asset string) error {
 	if chain.SupportsForeignAssets && k.IsAssetRegistered(ctx, chain, asset) {
 		return nil
 	}

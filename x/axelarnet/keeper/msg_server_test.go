@@ -1035,18 +1035,6 @@ func TestRouteMessage(t *testing.T) {
 		server = keeper.NewMsgServerImpl(k, nexusK, bankK, accountK, ibcK)
 	})
 
-	isChainActivated := func(isActivated bool) func() {
-		return func() {
-			nexusK.IsChainActivatedFunc = func(_ sdk.Context, chain nexus.Chain) bool { return isActivated }
-		}
-	}
-
-	isAssetRegistered := func(isRegistered bool) func() {
-		return func() {
-			nexusK.IsAssetRegisteredFunc = func(sdk.Context, nexus.Chain, string) bool { return isRegistered }
-		}
-	}
-
 	isMessageFound := func(isFound bool, status nexus.GeneralMessage_Status) func() {
 		return func() {
 			nexusK.GetMessageFunc = func(ctx sdk.Context, messageID string) (nexus.GeneralMessage, bool) {
@@ -1063,12 +1051,10 @@ func TestRouteMessage(t *testing.T) {
 	whenMessageIsFromEVM := When("message is from evm", func() {
 		isMessageFound(true, nexus.Approved)()
 		msg.Sender.Chain.Module = evmtypes.ModuleName
-		isChainActivated(true)()
 	})
 	whenMessageIsFromCosmos := When("message is from cosmos", func() {
 		isMessageFound(true, nexus.Approved)()
 		msg.Sender.Chain.Module = exported.ModuleName
-		isChainActivated(true)()
 	})
 	whenMessageIsToEVM := When("message is to evm", func() {
 		msg.Recipient.Chain.Module = evmtypes.ModuleName
@@ -1100,15 +1086,8 @@ func TestRouteMessage(t *testing.T) {
 					When2(requestIsMade).
 					Then("should fail", routeFailsWithError("not found")),
 
-				When("general message is found", isMessageFound(true, nexus.Approved)).
-					When("source chain is an EVM chain", func() { msg.Sender.Chain.Module = evmtypes.ModuleName }).
-					When("chain is not activated", isChainActivated(false)).
-					When2(requestIsMade).
-					Then("should fail", routeFailsWithError("not activated")),
-
 				whenMessageIsFromEVM.
 					When2(whenMessageIsToCosmos).
-					When("asset is registered", isAssetRegistered(true)).
 					When("payload does not match", func() {
 						req = types.NewRouteMessage(
 							rand.AccAddr(),
@@ -1121,14 +1100,6 @@ func TestRouteMessage(t *testing.T) {
 
 				whenMessageIsFromEVM.
 					When2(whenMessageIsToCosmos).
-					When("asset is registered", isAssetRegistered(true)).
-					When("general message already executed", isMessageFound(true, nexus.Executed)).
-					When2(requestIsMade).
-					Then("should fail", routeFailsWithError("already executed")),
-
-				whenMessageIsFromEVM.
-					When2(whenMessageIsToCosmos).
-					When("asset is registered", isAssetRegistered(true)).
 					When("payload with version is invalid", func() {
 						payload = rand.Bytes(4)
 						msg.PayloadHash = crypto.Keccak256Hash(payload).Bytes()
@@ -1138,7 +1109,6 @@ func TestRouteMessage(t *testing.T) {
 
 				whenMessageIsFromEVM.
 					When2(whenMessageIsToCosmos).
-					When("asset is registered", isAssetRegistered(true)).
 					When("payload is invalid", func() {
 						payload = axelartestutils.PackPayloadWithVersion(types.CosmWasmV1, rand.BytesBetween(100, 500))
 						msg.PayloadHash = crypto.Keccak256Hash(payload).Bytes()
@@ -1148,16 +1118,15 @@ func TestRouteMessage(t *testing.T) {
 
 				whenMessageIsFromCosmos.
 					When2(whenMessageIsToCosmos).
-					When("asset is registered", isAssetRegistered(true)).
 					When("payload is invalid", func() {
 						payload = rand.BytesBetween(100, 500)
 						msg.PayloadHash = crypto.Keccak256Hash(payload).Bytes()
 					}).
 					When2(requestIsMade).
 					Then("should fail", routeFailsWithError("invalid payload")),
+
 				whenMessageIsFromEVM.
 					When2(whenMessageIsToCosmos).
-					When("asset is registered", isAssetRegistered(true)).
 					When("payload is valid", func() {
 						payload = randWasmPayload()
 						msg.PayloadHash = crypto.Keccak256Hash(payload).Bytes()
@@ -1174,7 +1143,6 @@ func TestRouteMessage(t *testing.T) {
 
 				whenMessageIsFromEVM.
 					When2(whenMessageIsToCosmos).
-					When("asset is registered", isAssetRegistered(true)).
 					When("payload is valid", func() {
 						payload = randPayload()
 						msg.PayloadHash = crypto.Keccak256Hash(payload).Bytes()
@@ -1182,12 +1150,11 @@ func TestRouteMessage(t *testing.T) {
 					When2(requestIsMade).
 					Then("should success", func(t *testing.T) {
 						_, err := server.RouteMessage(sdk.WrapSDKContext(ctx), req)
-						fmt.Println(err)
 						assert.NoError(t, err)
 					}),
+
 				whenMessageIsFromCosmos.
 					When2(whenMessageIsToEVM).
-					When("asset is registered", isAssetRegistered(true)).
 					When("payload is valid", func() {
 						payload = rand.BytesBetween(100, 500)
 						msg.PayloadHash = crypto.Keccak256Hash(payload).Bytes()
@@ -1195,12 +1162,11 @@ func TestRouteMessage(t *testing.T) {
 					When2(requestIsMade).
 					Then("should success", func(t *testing.T) {
 						_, err := server.RouteMessage(sdk.WrapSDKContext(ctx), req)
-						fmt.Println(err)
 						assert.NoError(t, err)
 					}),
+
 				whenMessageIsFromCosmos.
 					When2(whenMessageIsToCosmos).
-					When("asset is registered", isAssetRegistered(true)).
 					When("payload is valid", func() {
 						payload = randPayload()
 						msg.PayloadHash = crypto.Keccak256Hash(payload).Bytes()
@@ -1208,12 +1174,11 @@ func TestRouteMessage(t *testing.T) {
 					When2(requestIsMade).
 					Then("should success", func(t *testing.T) {
 						_, err := server.RouteMessage(sdk.WrapSDKContext(ctx), req)
-						fmt.Println(err)
 						assert.NoError(t, err)
 					}),
+
 				whenMessageIsFromCosmos.
 					When2(whenMessageIsToCosmos).
-					When("asset is registered", isAssetRegistered(true)).
 					When("payload is valid", func() {
 						payload = randWasmPayload()
 						msg.PayloadHash = crypto.Keccak256Hash(payload).Bytes()
@@ -1221,12 +1186,11 @@ func TestRouteMessage(t *testing.T) {
 					When2(requestIsMade).
 					Then("should success", func(t *testing.T) {
 						_, err := server.RouteMessage(sdk.WrapSDKContext(ctx), req)
-						fmt.Println(err)
 						assert.NoError(t, err)
 					}),
+
 				whenMessageIsFromEVM.
 					When2(whenMessageIsToCosmos).
-					When("asset is registered", isAssetRegistered(true)).
 					When("payload is valid", func() {
 						payload = randWasmPayload()
 						msg.PayloadHash = crypto.Keccak256Hash(payload).Bytes()
@@ -1245,7 +1209,6 @@ func TestRouteMessage(t *testing.T) {
 					}).
 					Then("should success", func(t *testing.T) {
 						_, err := server.RouteMessage(sdk.WrapSDKContext(ctx), req)
-						fmt.Println(err)
 						assert.NoError(t, err)
 					}),
 			).Run(t)

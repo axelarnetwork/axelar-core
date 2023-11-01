@@ -45,14 +45,17 @@ func RandomMessage(statuses ...exported.GeneralMessage_Status) exported.GeneralM
 		statuses = []exported.GeneralMessage_Status{exported.Approved, exported.Processing, exported.Executed, exported.Failed}
 	}
 	coin := rand.Coin()
-	return exported.NewGeneralMessage(
+
+	msg := exported.NewGeneralMessage(
 		rand.StrBetween(10, 20),
 		RandomCrossChainAddress(),
 		RandomCrossChainAddress(),
 		rand.Bytes(32),
-		rand.Of(statuses...),
 		rand.Bytes(32),
 		uint64(rand.I64Between(0, 10000)),
 		&coin,
 	)
+	msg.Status = rand.Of(statuses...)
+
+	return msg
 }

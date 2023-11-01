@@ -5,9 +5,9 @@ import (
 	"encoding/hex"
 	"fmt"
 
+	"github.com/CosmWasm/wasmd/x/wasm"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/query"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -36,133 +36,6 @@ func (k Keeper) GenerateMessageID(ctx sdk.Context) (string, []byte, uint64) {
 	return fmt.Sprintf("0x%s-%d", hex.EncodeToString(hash[:]), nonce), hash[:], nonce
 }
 
-// SetNewWasmMessage sets the given general message from a wasm contract.
-func (k Keeper) SetNewWasmMessage(ctx sdk.Context, msg exported.GeneralMessage) error {
-	if msg.Asset != nil {
-		return fmt.Errorf("asset transfer is not supported")
-	}
-
-	if _, ok := k.GetChain(ctx, msg.GetDestinationChain()); !ok {
-		return fmt.Errorf("destination chain %s is not a registered chain", msg.GetDestinationChain())
-	}
-
-	if !k.IsChainActivated(ctx, msg.Recipient.Chain) {
-		return fmt.Errorf("destination chain %s is not activated", msg.GetDestinationChain())
-	}
-
-	if err := k.ValidateAddress(ctx, msg.Recipient); err != nil {
-		return sdkerrors.Wrap(err, "invalid recipient address")
-	}
-
-	if _, ok := k.GetMessage(ctx, msg.ID); ok {
-		return fmt.Errorf("general message %s already exists", msg.ID)
-	}
-
-	if err := k.setMessage(ctx, msg); err != nil {
-		return err
-	}
-
-	switch msg.Status {
-	case exported.Approved:
-		funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.MessageReceived{
-			ID:          msg.ID,
-			PayloadHash: msg.PayloadHash,
-			Sender:      msg.Sender,
-			Recipient:   msg.Recipient,
-		}))
-	case exported.Processing:
-		if err := k.setProcessingMessageID(ctx, msg); err != nil {
-			return err
-		}
-
-		funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.MessageProcessing{ID: msg.ID}))
-	default:
-		return fmt.Errorf("invalid message status %s", msg.Status)
-	}
-
-	return nil
-}
-
-// SetNewMessage sets the given general message. If the messages is approved, adds the message ID to approved messages store
-func (k Keeper) SetNewMessage(ctx sdk.Context, m exported.GeneralMessage) error {
-	sourceChain, ok := k.GetChain(ctx, m.GetSourceChain())
-	if !ok {
-		return fmt.Errorf("source chain %s is not a registered chain", m.GetSourceChain())
-	}
-
-	if err := k.ValidateAddress(ctx, m.Sender); err != nil {
-		return err
-	}
-
-	destChain, ok := k.GetChain(ctx, m.GetDestinationChain())
-	if !ok {
-		return fmt.Errorf("destination chain %s is not a registered chain", m.GetDestinationChain())
-	}
-
-	if err := k.ValidateAddress(ctx, m.Recipient); err != nil {
-		return err
-	}
-
-	if m.Asset != nil {
-		if err := k.validateTransferAsset(ctx, sourceChain, m.Asset.Denom); err != nil {
-			return err
-		}
-
-		if err := k.validateTransferAsset(ctx, destChain, m.Asset.Denom); err != nil {
-			return err
-		}
-	}
-
-	if _, found := k.GetMessage(ctx, m.ID); found {
-		return fmt.Errorf("general message %s already exists", m.ID)
-	}
-
-	if m.Is(exported.Processing) {
-		if err := k.setProcessingMessageID(ctx, m); err != nil {
-			return err
-		}
-	}
-
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.MessageReceived{
-		ID:          m.ID,
-		PayloadHash: m.PayloadHash,
-		Sender:      m.Sender,
-		Recipient:   m.Recipient,
-	}))
-
-	return k.setMessage(ctx, m)
-}
-
-/*
- * Below are the valid message status transitions:
- * Approved -> Processing
- * Processing -> Executed
- * Processing -> Failed
- * Failed -> Processing
- */
-
-// SetMessageProcessing sets the general message as processing
-func (k Keeper) SetMessageProcessing(ctx sdk.Context, id string) error {
-	m, found := k.GetMessage(ctx, id)
-	if !found {
-		return fmt.Errorf("general message %s not found", id)
-	}
-
-	if !(m.Is(exported.Approved) || m.Is(exported.Failed)) {
-		return fmt.Errorf("general message is not approved or failed")
-	}
-
-	m.Status = exported.Processing
-
-	if err := k.setMessage(ctx, m); err != nil {
-		return err
-	}
-
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.MessageProcessing{ID: m.ID}))
-
-	return k.setProcessingMessageID(ctx, m)
-}
-
 // SetMessageExecuted sets the general message as executed
 func (k Keeper) SetMessageExecuted(ctx sdk.Context, id string) error {
 	m, found := k.GetMessage(ctx, id)
@@ -174,7 +47,7 @@ func (k Keeper) SetMessageExecuted(ctx sdk.Context, id string) error {
 		return fmt.Errorf("general message is not processing")
 	}
 
-	k.deleteSentMessageID(ctx, m)
+	k.deleteProcessingMessageID(ctx, m)
 
 	m.Status = exported.Executed
 
@@ -194,22 +67,13 @@ func (k Keeper) SetMessageFailed(ctx sdk.Context, id string) error {
 		return fmt.Errorf("general message is not processing")
 	}
 
-	k.deleteSentMessageID(ctx, m)
+	k.deleteProcessingMessageID(ctx, m)
 
 	m.Status = exported.Failed
 
 	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.MessageFailed{ID: m.ID}))
 
 	return k.setMessage(ctx, m)
-}
-
-// DeleteMessage deletes the general message with associated ID, and also deletes the message ID from the approved messages store
-func (k Keeper) DeleteMessage(ctx sdk.Context, id string) {
-	m, found := k.GetMessage(ctx, id)
-	if found {
-		k.deleteSentMessageID(ctx, m)
-		k.getStore(ctx).DeleteNew(getMessageKey(id))
-	}
 }
 
 // GetMessage returns the general message by ID
@@ -227,10 +91,11 @@ func (k Keeper) setProcessingMessageID(ctx sdk.Context, m exported.GeneralMessag
 	}
 
 	k.getStore(ctx).SetRawNew(getProcessingMessageKey(m.GetDestinationChain(), m.ID), []byte(m.ID))
+
 	return nil
 }
 
-func (k Keeper) deleteSentMessageID(ctx sdk.Context, m exported.GeneralMessage) {
+func (k Keeper) deleteProcessingMessageID(ctx sdk.Context, m exported.GeneralMessage) {
 	k.getStore(ctx).DeleteNew(getProcessingMessageKey(m.GetDestinationChain(), m.ID))
 }
 
@@ -271,4 +136,97 @@ func (k Keeper) GetProcessingMessages(ctx sdk.Context, chain exported.ChainName,
 	return slices.Map(ids, func(id string) exported.GeneralMessage {
 		return funcs.MustOk(k.GetMessage(ctx, id))
 	})
+}
+
+// SetNewMessage sets the given general messsage as approved
+func (k Keeper) SetNewMessage(ctx sdk.Context, msg exported.GeneralMessage) error {
+	if _, ok := k.GetMessage(ctx, msg.ID); ok {
+		return fmt.Errorf("general message %s already exists", msg.ID)
+	}
+
+	if !msg.Is(exported.Approved) {
+		return fmt.Errorf("new general message has to be approved")
+	}
+
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.MessageReceived{
+		ID:          msg.ID,
+		PayloadHash: msg.PayloadHash,
+		Sender:      msg.Sender,
+		Recipient:   msg.Recipient,
+	}))
+
+	return k.setMessage(ctx, msg)
+}
+
+// SetMessageProcessing sets the given general message as processing and perform
+// validations on the message
+func (k Keeper) SetMessageProcessing(ctx sdk.Context, id string) error {
+	msg, ok := k.GetMessage(ctx, id)
+	if !ok {
+		return fmt.Errorf("general message %s not found", id)
+	}
+
+	if !(msg.Is(exported.Approved) || msg.Is(exported.Failed)) {
+		return fmt.Errorf("general message has to be approved or failed")
+	}
+
+	if err := k.validateMessage(ctx, msg); err != nil {
+		return err
+	}
+
+	msg.Status = exported.Processing
+	if err := k.setMessage(ctx, msg); err != nil {
+		return err
+	}
+
+	funcs.MustNoErr(k.setProcessingMessageID(ctx, msg))
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.MessageProcessing{ID: msg.ID}))
+
+	return nil
+}
+
+func (k Keeper) validateMessage(ctx sdk.Context, msg exported.GeneralMessage) error {
+	// only validate sender and asset if it's not from wasm.
+	// the nexus module doesn't know how to validate wasm chains and addresses.
+	if !msg.Sender.Chain.IsFrom(wasm.ModuleName) {
+		if err := k.validateAddressAndAsset(ctx, msg.Sender, msg.Asset); err != nil {
+			return err
+		}
+	}
+
+	// only validate recipient and asset if it's not to wasm.
+	// the nexus module doesn't know how to validate wasm chains and addresses.
+	if !msg.Recipient.Chain.IsFrom(wasm.ModuleName) {
+		if err := k.validateAddressAndAsset(ctx, msg.Recipient, msg.Asset); err != nil {
+			return err
+		}
+	}
+
+	// asset is not supported for wasm messages
+	if (msg.Sender.Chain.IsFrom(wasm.ModuleName) || msg.Recipient.Chain.IsFrom(wasm.ModuleName)) && msg.Asset != nil {
+		return fmt.Errorf("asset transfer is not supported for wasm messages")
+	}
+
+	return nil
+}
+
+// validateAddressAndAsset validates 1) chain existence, 2) chain activation, 3) address, 4) asset
+func (k Keeper) validateAddressAndAsset(ctx sdk.Context, address exported.CrossChainAddress, asset *sdk.Coin) error {
+	if _, ok := k.GetChain(ctx, address.Chain.Name); !ok {
+		return fmt.Errorf("chain %s is not registered", address.Chain.Name)
+	}
+
+	if !k.IsChainActivated(ctx, address.Chain) {
+		return fmt.Errorf("chain %s is not activated", address.Chain.Name)
+	}
+
+	if err := k.ValidateAddress(ctx, address); err != nil {
+		return err
+	}
+
+	if asset == nil {
+		return nil
+	}
+
+	return k.validateAsset(ctx, address.Chain, asset.Denom)
 }

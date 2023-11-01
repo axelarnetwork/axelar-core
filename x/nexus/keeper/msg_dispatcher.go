@@ -67,27 +67,17 @@ func (m Messenger) routeMsg(ctx sdk.Context, msg exported.WasmMessage) error {
 	sender := exported.CrossChainAddress{Chain: sourceChain, Address: msg.SourceAddress}
 	recipient := exported.CrossChainAddress{Chain: destinationChain, Address: msg.DestinationAddress}
 
-	// set status to approved if the message is sent to a cosmos chain and set
-	// to processing otherwise, because messages sent to cosmos chains require
-	// translation with the original payload.
-	// https://github.com/axelarnetwork/axelar-core/blob/ea48d5b974dfd94ea235311eddabe23bfa430cd9/x/axelarnet/keeper/msg_server.go#L520
-	status := exported.Approved
-	if !destinationChain.IsFrom(axelarnet.ModuleName) {
-		status = exported.Processing
-	}
-
-	if err := m.Nexus.SetNewWasmMessage(ctx, exported.NewGeneralMessage(
-		id,
-		sender,
-		recipient,
-		msg.PayloadHash,
-		status,
-		msg.SourceTxID,
-		msg.SourceTxIndex,
-		nil,
-	)); err != nil {
+	nexusMsg := exported.NewGeneralMessage(id, sender, recipient, msg.PayloadHash, msg.SourceTxID, msg.SourceTxIndex, nil)
+	if err := m.Nexus.SetNewMessage(ctx, nexusMsg); err != nil {
 		return err
 	}
 
-	return nil
+	if destinationChain.IsFrom(axelarnet.ModuleName) {
+		return nil
+	}
+
+	// set message to be processing if the destination chain is not a cosmos chain.
+	// messages sent to cosmos chains require translation with the original payload.
+	// https://github.com/axelarnetwork/axelar-core/blob/ea48d5b974dfd94ea235311eddabe23bfa430cd9/x/axelarnet/keeper/msg_server.go#L520
+	return m.Nexus.SetMessageProcessing(ctx, nexusMsg.ID)
 }
