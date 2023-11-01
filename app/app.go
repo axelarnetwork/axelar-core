@@ -328,11 +328,11 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	app.stakingKeeper = stakingK
 
 	// add capability keeper and ScopeToModule for ibc module
-	capabilityKeeper := capabilitykeeper.NewKeeper(appCodec, keys[capabilitytypes.StoreKey], memKeys[capabilitytypes.MemStoreKey])
+	capabilityK := capabilitykeeper.NewKeeper(appCodec, keys[capabilitytypes.StoreKey], memKeys[capabilitytypes.MemStoreKey])
 
 	// grant capabilities for the ibc and ibc-transfer modules
-	scopedIBCK := capabilityKeeper.ScopeToModule(ibchost.ModuleName)
-	scopedTransferK := capabilityKeeper.ScopeToModule(ibctransfertypes.ModuleName)
+	scopedIBCK := capabilityK.ScopeToModule(ibchost.ModuleName)
+	scopedTransferK := capabilityK.ScopeToModule(ibctransfertypes.ModuleName)
 
 	// Create IBC Keeper
 	ibcKeeper := ibckeeper.NewKeeper(
@@ -450,7 +450,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 			panic(fmt.Sprintf("error while reading wasm config: %s", err))
 		}
 
-		scopedWasmK := capabilityKeeper.ScopeToModule(wasm.ModuleName)
+		scopedWasmK := capabilityK.ScopeToModule(wasm.ModuleName)
 		// The last arguments can contain custom message handlers, and custom query handlers,
 		// if we want to allow any custom callbacks
 		wasmOpts = append(wasmOpts, wasmkeeper.WithMessageHandlerDecorator(func(old wasmkeeper.Messenger) wasmkeeper.Messenger {
@@ -573,7 +573,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		upgrade.NewAppModule(upgradeK),
 		evidence.NewAppModule(*evidenceK),
 		params.NewAppModule(paramsK),
-		capability.NewAppModule(appCodec, *capabilityKeeper),
+		capability.NewAppModule(appCodec, *capabilityK),
 	}
 
 	// wasm module needs to be added in a specific order
