@@ -138,8 +138,8 @@ func (k Keeper) GetProcessingMessages(ctx sdk.Context, chain exported.ChainName,
 	})
 }
 
-// SetNewMessage sets the given general messsage as approved
-func (k Keeper) SetNewMessage(ctx sdk.Context, msg exported.GeneralMessage) error {
+// SetNewMessage_ sets the given general messsage as approved
+func (k Keeper) SetNewMessage_(ctx sdk.Context, msg exported.GeneralMessage) error {
 	if _, ok := k.GetMessage(ctx, msg.ID); ok {
 		return fmt.Errorf("general message %s already exists", msg.ID)
 	}
@@ -158,9 +158,9 @@ func (k Keeper) SetNewMessage(ctx sdk.Context, msg exported.GeneralMessage) erro
 	return k.setMessage(ctx, msg)
 }
 
-// SetMessageProcessing sets the given general message as processing and perform
+// SetMessageProcessing_ sets the given general message as processing and perform
 // validations on the message
-func (k Keeper) SetMessageProcessing(ctx sdk.Context, id string) error {
+func (k Keeper) SetMessageProcessing_(ctx sdk.Context, id string) error {
 	msg, ok := k.GetMessage(ctx, id)
 	if !ok {
 		return fmt.Errorf("general message %s not found", id)

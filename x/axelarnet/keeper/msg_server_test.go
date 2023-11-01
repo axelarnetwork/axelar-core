@@ -1010,7 +1010,7 @@ func TestRouteMessage(t *testing.T) {
 			GetChainByNativeAssetFunc: func(sdk.Context, string) (nexus.Chain, bool) {
 				return chain, true
 			},
-			SetMessageProcessingFunc: func(sdk.Context, string) error {
+			SetMessageProcessing_Func: func(sdk.Context, string) error {
 				return nil
 			},
 		}
@@ -1267,7 +1267,7 @@ func TestHandleCallContract(t *testing.T) {
 	})
 
 	whenSetNewMessageSucceeds := When("set new message succeeds", func() {
-		nexusK.SetNewMessageFunc = func(_ sdk.Context, m nexus.GeneralMessage) error {
+		nexusK.SetNewMessage_Func = func(_ sdk.Context, m nexus.GeneralMessage) error {
 			msg = m
 			return m.ValidateBasic()
 		}
@@ -1378,7 +1378,7 @@ func TestHandleCallContract(t *testing.T) {
 					When2(whenChainIsActivated).
 					When2(whenAddressIsValid).
 					When("set new message fails", func() {
-						nexusK.SetNewMessageFunc = func(_ sdk.Context, m nexus.GeneralMessage) error {
+						nexusK.SetNewMessage_Func = func(_ sdk.Context, m nexus.GeneralMessage) error {
 							return fmt.Errorf("failed to set message")
 						}
 					}).

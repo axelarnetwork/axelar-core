@@ -82,11 +82,11 @@ var _ nexustypes.Nexus = &NexusMock{}
 //			RemoveChainMaintainerFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, validator cosmossdktypes.ValAddress) error {
 //				panic("mock out the RemoveChainMaintainer method")
 //			},
-//			SetMessageProcessingFunc: func(ctx cosmossdktypes.Context, id string) error {
-//				panic("mock out the SetMessageProcessing method")
+//			SetMessageProcessing_Func: func(ctx cosmossdktypes.Context, id string) error {
+//				panic("mock out the SetMessageProcessing_ method")
 //			},
-//			SetNewMessageFunc: func(ctx cosmossdktypes.Context, msg github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage) error {
-//				panic("mock out the SetNewMessage method")
+//			SetNewMessage_Func: func(ctx cosmossdktypes.Context, msg github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage) error {
+//				panic("mock out the SetNewMessage_ method")
 //			},
 //			SetParamsFunc: func(ctx cosmossdktypes.Context, p nexustypes.Params)  {
 //				panic("mock out the SetParams method")
@@ -158,11 +158,11 @@ type NexusMock struct {
 	// RemoveChainMaintainerFunc mocks the RemoveChainMaintainer method.
 	RemoveChainMaintainerFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, validator cosmossdktypes.ValAddress) error
 
-	// SetMessageProcessingFunc mocks the SetMessageProcessing method.
-	SetMessageProcessingFunc func(ctx cosmossdktypes.Context, id string) error
+	// SetMessageProcessing_Func mocks the SetMessageProcessing_ method.
+	SetMessageProcessing_Func func(ctx cosmossdktypes.Context, id string) error
 
-	// SetNewMessageFunc mocks the SetNewMessage method.
-	SetNewMessageFunc func(ctx cosmossdktypes.Context, msg github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage) error
+	// SetNewMessage_Func mocks the SetNewMessage_ method.
+	SetNewMessage_Func func(ctx cosmossdktypes.Context, msg github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage) error
 
 	// SetParamsFunc mocks the SetParams method.
 	SetParamsFunc func(ctx cosmossdktypes.Context, p nexustypes.Params)
@@ -311,15 +311,15 @@ type NexusMock struct {
 			// Validator is the validator argument value.
 			Validator cosmossdktypes.ValAddress
 		}
-		// SetMessageProcessing holds details about calls to the SetMessageProcessing method.
-		SetMessageProcessing []struct {
+		// SetMessageProcessing_ holds details about calls to the SetMessageProcessing_ method.
+		SetMessageProcessing_ []struct {
 			// Ctx is the ctx argument value.
 			Ctx cosmossdktypes.Context
 			// ID is the id argument value.
 			ID string
 		}
-		// SetNewMessage holds details about calls to the SetNewMessage method.
-		SetNewMessage []struct {
+		// SetNewMessage_ holds details about calls to the SetNewMessage_ method.
+		SetNewMessage_ []struct {
 			// Ctx is the ctx argument value.
 			Ctx cosmossdktypes.Context
 			// Msg is the msg argument value.
@@ -363,8 +363,8 @@ type NexusMock struct {
 	lockRateLimitTransfer        sync.RWMutex
 	lockRegisterFee              sync.RWMutex
 	lockRemoveChainMaintainer    sync.RWMutex
-	lockSetMessageProcessing    sync.RWMutex
-	lockSetNewMessage           sync.RWMutex
+	lockSetMessageProcessing_    sync.RWMutex
+	lockSetNewMessage_           sync.RWMutex
 	lockSetParams                sync.RWMutex
 	lockSetRateLimit             sync.RWMutex
 }
@@ -1065,10 +1065,10 @@ func (mock *NexusMock) RemoveChainMaintainerCalls() []struct {
 	return calls
 }
 
-// SetMessageProcessing calls SetMessageProcessingFunc.
-func (mock *NexusMock) SetMessageProcessing(ctx cosmossdktypes.Context, id string) error {
-	if mock.SetMessageProcessingFunc == nil {
-		panic("NexusMock.SetMessageProcessingFunc: method is nil but Nexus.SetMessageProcessing was just called")
+// SetMessageProcessing_ calls SetMessageProcessing_Func.
+func (mock *NexusMock) SetMessageProcessing_(ctx cosmossdktypes.Context, id string) error {
+	if mock.SetMessageProcessing_Func == nil {
+		panic("NexusMock.SetMessageProcessing_Func: method is nil but Nexus.SetMessageProcessing_ was just called")
 	}
 	callInfo := struct {
 		Ctx cosmossdktypes.Context
@@ -1077,17 +1077,17 @@ func (mock *NexusMock) SetMessageProcessing(ctx cosmossdktypes.Context, id strin
 		Ctx: ctx,
 		ID:  id,
 	}
-	mock.lockSetMessageProcessing.Lock()
-	mock.calls.SetMessageProcessing = append(mock.calls.SetMessageProcessing, callInfo)
-	mock.lockSetMessageProcessing.Unlock()
-	return mock.SetMessageProcessingFunc(ctx, id)
+	mock.lockSetMessageProcessing_.Lock()
+	mock.calls.SetMessageProcessing_ = append(mock.calls.SetMessageProcessing_, callInfo)
+	mock.lockSetMessageProcessing_.Unlock()
+	return mock.SetMessageProcessing_Func(ctx, id)
 }
 
-// SetMessageProcessingCalls gets all the calls that were made to SetMessageProcessing.
+// SetMessageProcessing_Calls gets all the calls that were made to SetMessageProcessing_.
 // Check the length with:
 //
-//	len(mockedNexus.SetMessageProcessingCalls())
-func (mock *NexusMock) SetMessageProcessingCalls() []struct {
+//	len(mockedNexus.SetMessageProcessing_Calls())
+func (mock *NexusMock) SetMessageProcessing_Calls() []struct {
 	Ctx cosmossdktypes.Context
 	ID  string
 } {
@@ -1095,16 +1095,16 @@ func (mock *NexusMock) SetMessageProcessingCalls() []struct {
 		Ctx cosmossdktypes.Context
 		ID  string
 	}
-	mock.lockSetMessageProcessing.RLock()
-	calls = mock.calls.SetMessageProcessing
-	mock.lockSetMessageProcessing.RUnlock()
+	mock.lockSetMessageProcessing_.RLock()
+	calls = mock.calls.SetMessageProcessing_
+	mock.lockSetMessageProcessing_.RUnlock()
 	return calls
 }
 
-// SetNewMessage calls SetNewMessageFunc.
-func (mock *NexusMock) SetNewMessage(ctx cosmossdktypes.Context, msg github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage) error {
-	if mock.SetNewMessageFunc == nil {
-		panic("NexusMock.SetNewMessageFunc: method is nil but Nexus.SetNewMessage was just called")
+// SetNewMessage_ calls SetNewMessage_Func.
+func (mock *NexusMock) SetNewMessage_(ctx cosmossdktypes.Context, msg github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage) error {
+	if mock.SetNewMessage_Func == nil {
+		panic("NexusMock.SetNewMessage_Func: method is nil but Nexus.SetNewMessage_ was just called")
 	}
 	callInfo := struct {
 		Ctx cosmossdktypes.Context
@@ -1113,17 +1113,17 @@ func (mock *NexusMock) SetNewMessage(ctx cosmossdktypes.Context, msg github_com_
 		Ctx: ctx,
 		Msg: msg,
 	}
-	mock.lockSetNewMessage.Lock()
-	mock.calls.SetNewMessage = append(mock.calls.SetNewMessage, callInfo)
-	mock.lockSetNewMessage.Unlock()
-	return mock.SetNewMessageFunc(ctx, msg)
+	mock.lockSetNewMessage_.Lock()
+	mock.calls.SetNewMessage_ = append(mock.calls.SetNewMessage_, callInfo)
+	mock.lockSetNewMessage_.Unlock()
+	return mock.SetNewMessage_Func(ctx, msg)
 }
 
-// SetNewMessageCalls gets all the calls that were made to SetNewMessage.
+// SetNewMessage_Calls gets all the calls that were made to SetNewMessage_.
 // Check the length with:
 //
-//	len(mockedNexus.SetNewMessageCalls())
-func (mock *NexusMock) SetNewMessageCalls() []struct {
+//	len(mockedNexus.SetNewMessage_Calls())
+func (mock *NexusMock) SetNewMessage_Calls() []struct {
 	Ctx cosmossdktypes.Context
 	Msg github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage
 } {
@@ -1131,9 +1131,9 @@ func (mock *NexusMock) SetNewMessageCalls() []struct {
 		Ctx cosmossdktypes.Context
 		Msg github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage
 	}
-	mock.lockSetNewMessage.RLock()
-	calls = mock.calls.SetNewMessage
-	mock.lockSetNewMessage.RUnlock()
+	mock.lockSetNewMessage_.RLock()
+	calls = mock.calls.SetNewMessage_
+	mock.lockSetNewMessage_.RUnlock()
 	return calls
 }
 

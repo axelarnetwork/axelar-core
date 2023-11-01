@@ -266,7 +266,7 @@ func handleMessage(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceAdd
 		Payload:          msg.Payload,
 	})
 
-	return n.SetNewMessage(ctx, m)
+	return n.SetNewMessage_(ctx, m)
 }
 
 func handleMessageWithToken(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceAddress nexus.CrossChainAddress, msg Message, token keeper.Coin) error {
@@ -304,7 +304,7 @@ func handleMessageWithToken(ctx sdk.Context, n types.Nexus, b types.BankKeeper, 
 		Asset:            token.Coin,
 	})
 
-	return n.SetNewMessage(ctx, m)
+	return n.SetNewMessage_(ctx, m)
 }
 
 func handleTokenSent(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceAddress nexus.CrossChainAddress, msg Message, token keeper.Coin) error {
