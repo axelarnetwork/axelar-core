@@ -14,7 +14,6 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/client/cli"
@@ -87,7 +86,6 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 // AppModule implements module.AppModule
 type AppModule struct {
 	AppModuleBasic
-	logger      log.Logger
 	keeper      *keeper.BaseKeeper
 	voter       types.Voter
 	nexus       types.Nexus
@@ -98,18 +96,9 @@ type AppModule struct {
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(
-	k *keeper.BaseKeeper,
-	voter types.Voter,
-	nexus types.Nexus,
-	snapshotter types.Snapshotter,
-	staking types.StakingKeeper,
-	slashing types.SlashingKeeper,
-	multisig types.MultisigKeeper,
-	logger log.Logger) AppModule {
+func NewAppModule(k *keeper.BaseKeeper, voter types.Voter, nexus types.Nexus, snapshotter types.Snapshotter, staking types.StakingKeeper, slashing types.SlashingKeeper, multisig types.MultisigKeeper) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
-		logger:         logger,
 		keeper:         k,
 		voter:          voter,
 		nexus:          nexus,

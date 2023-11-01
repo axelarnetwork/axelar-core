@@ -191,33 +191,21 @@ func init() {
 type AxelarApp struct {
 	*bam.BaseApp
 
-	legacyAmino       *codec.LegacyAmino
 	appCodec          codec.Codec
 	interfaceRegistry types.InterfaceRegistry
 
-	invCheckPeriod uint
-
 	// necessery keepers for export
-	stakingKeeper    stakingkeeper.Keeper
-	crisisKeeper     crisiskeeper.Keeper
-	distrKeeper      distrkeeper.Keeper
-	slashingKeeper   slashingkeeper.Keeper
-	ibcKeeper        *ibckeeper.Keeper
-	evidenceKeeper   evidencekeeper.Keeper
-	transferKeeper   ibctransferkeeper.Keeper
-	capabilityKeeper *capabilitykeeper.Keeper
-	feegrantKeeper   feegrantkeeper.Keeper
+	stakingKeeper  stakingkeeper.Keeper
+	crisisKeeper   crisiskeeper.Keeper
+	distrKeeper    distrkeeper.Keeper
+	slashingKeeper slashingkeeper.Keeper
 
 	// keys to access the substores
-	keys    map[string]*sdk.KVStoreKey
-	tkeys   map[string]*sdk.TransientStoreKey
-	memKeys map[string]*sdk.MemoryStoreKey
+	keys map[string]*sdk.KVStoreKey
 
 	mm            *module.Manager
 	paramsKeeper  paramskeeper.Keeper
 	upgradeKeeper upgradekeeper.Keeper
-
-	configurator module.Configurator
 }
 
 // NewAxelarApp is a constructor function for axelar
@@ -279,13 +267,9 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 
 	var app = &AxelarApp{
 		BaseApp:           bApp,
-		legacyAmino:       legacyAmino,
 		appCodec:          appCodec,
 		interfaceRegistry: interfaceRegistry,
-		invCheckPeriod:    invCheckPeriod,
 		keys:              keys,
-		tkeys:             tkeys,
-		memKeys:           memKeys,
 	}
 
 	paramsK := initParamsKeeper(appCodec, legacyAmino, keys[paramstypes.StoreKey], tkeys[paramstypes.TStoreKey])
@@ -333,10 +317,8 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	evidenceK := evidencekeeper.NewKeeper(
 		appCodec, keys[evidencetypes.StoreKey], &stakingK, slashingK,
 	)
-	app.evidenceKeeper = *evidenceK
 
 	feegrantK := feegrantkeeper.NewKeeper(appCodec, keys[feegrant.StoreKey], accountK)
-	app.feegrantKeeper = feegrantK
 
 	// register the staking hooks
 	// NOTE: stakingKeeper above is passed by reference, so that it will contain these hooks
@@ -346,20 +328,20 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	app.stakingKeeper = stakingK
 
 	// add capability keeper and ScopeToModule for ibc module
-	app.capabilityKeeper = capabilitykeeper.NewKeeper(appCodec, keys[capabilitytypes.StoreKey], memKeys[capabilitytypes.MemStoreKey])
+	capabilityK := capabilitykeeper.NewKeeper(appCodec, keys[capabilitytypes.StoreKey], memKeys[capabilitytypes.MemStoreKey])
 
 	// grant capabilities for the ibc and ibc-transfer modules
-	scopedIBCK := app.capabilityKeeper.ScopeToModule(ibchost.ModuleName)
-	scopedTransferK := app.capabilityKeeper.ScopeToModule(ibctransfertypes.ModuleName)
+	scopedIBCK := capabilityK.ScopeToModule(ibchost.ModuleName)
+	scopedTransferK := capabilityK.ScopeToModule(ibctransfertypes.ModuleName)
 
 	// Create IBC Keeper
-	app.ibcKeeper = ibckeeper.NewKeeper(
+	ibcKeeper := ibckeeper.NewKeeper(
 		appCodec, keys[ibchost.StoreKey], app.getSubspace(ibchost.ModuleName), app.stakingKeeper, upgradeK, scopedIBCK,
 	)
 
 	// Custom axelarnet/evm/nexus keepers
 	axelarnetK := axelarnetKeeper.NewKeeper(
-		appCodec, keys[axelarnetTypes.StoreKey], app.getSubspace(axelarnetTypes.ModuleName), app.ibcKeeper.ChannelKeeper, app.feegrantKeeper,
+		appCodec, keys[axelarnetTypes.StoreKey], app.getSubspace(axelarnetTypes.ModuleName), ibcKeeper.ChannelKeeper, feegrantK,
 	)
 
 	evmK := evmKeeper.NewKeeper(
@@ -385,7 +367,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	// After this, the wasm keeper is required to be set on WasmHooks
 
 	// Create IBC rate limiter
-	rateLimiter := axelarnet.NewRateLimiter(axelarnetK, app.ibcKeeper.ChannelKeeper, nexusK)
+	rateLimiter := axelarnet.NewRateLimiter(axelarnetK, ibcKeeper.ChannelKeeper, nexusK)
 	var ibcHooksMiddleware ibchooks.ICS4Middleware
 	var ics4Wrapper ibctransfertypes.ICS4Wrapper
 	var wasmHooks ibchooks.WasmHooks
@@ -407,11 +389,11 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	}
 
 	// Create Transfer Keepers
-	app.transferKeeper = ibctransferkeeper.NewKeeper(
+	transferKeeper := ibctransferkeeper.NewKeeper(
 		appCodec, keys[ibctransfertypes.StoreKey], app.getSubspace(ibctransfertypes.ModuleName),
 		// Use the IBC middleware stack
 		ics4Wrapper,
-		app.ibcKeeper.ChannelKeeper, &app.ibcKeeper.PortKeeper,
+		ibcKeeper.ChannelKeeper, &ibcKeeper.PortKeeper,
 		accountK, bankK, scopedTransferK,
 	)
 
@@ -419,12 +401,12 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	//
 	// Packet originates from core IBC and goes down to app, the flow is the other way
 	// channel.RecvPacket -> axelarnet.OnRecvPacket (transfer, GMP, and rate limit handler) -> ibc_hooks.OnRecvPacket -> transfer.OnRecvPacket
-	var transferStack porttypes.IBCModule = transfer.NewIBCModule(app.transferKeeper)
+	var transferStack porttypes.IBCModule = transfer.NewIBCModule(transferKeeper)
 	if IsWasmEnabled() {
 		transferStack = ibchooks.NewIBCMiddleware(transferStack, &ibcHooksMiddleware)
 	}
 
-	ibcK := axelarnetKeeper.NewIBCKeeper(axelarnetK, app.transferKeeper, app.ibcKeeper.ChannelKeeper)
+	ibcK := axelarnetKeeper.NewIBCKeeper(axelarnetK, transferKeeper, ibcKeeper.ChannelKeeper)
 	axelarnetModule := axelarnet.NewAppModule(axelarnetK, nexusK, axelarbankkeeper.NewBankKeeper(bankK), accountK, ibcK, transferStack, rateLimiter, logger)
 
 	// Create static IBC router, add axelarnet module as the IBC transfer route, and seal it
@@ -468,7 +450,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 			panic(fmt.Sprintf("error while reading wasm config: %s", err))
 		}
 
-		scopedWasmK := app.capabilityKeeper.ScopeToModule(wasm.ModuleName)
+		scopedWasmK := capabilityK.ScopeToModule(wasm.ModuleName)
 		// The last arguments can contain custom message handlers, and custom query handlers,
 		// if we want to allow any custom callbacks
 		wasmOpts = append(wasmOpts, wasmkeeper.WithMessageHandlerDecorator(func(old wasmkeeper.Messenger) wasmkeeper.Messenger {
@@ -482,11 +464,11 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 			bankK,
 			stakingK,
 			distrK,
-			app.ibcKeeper.ChannelKeeper,
-			app.ibcKeeper.ChannelKeeper,
-			&app.ibcKeeper.PortKeeper,
+			ibcKeeper.ChannelKeeper,
+			ibcKeeper.ChannelKeeper,
+			&ibcKeeper.PortKeeper,
 			scopedWasmK,
-			app.transferKeeper,
+			transferKeeper,
 			app.MsgServiceRouter(),
 			app.GRPCQueryRouter(),
 			wasmDir,
@@ -501,7 +483,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		}
 
 		// Create wasm ibc stack
-		var wasmStack porttypes.IBCModule = wasm.NewIBCHandler(wasmK, app.ibcKeeper.ChannelKeeper, app.ibcKeeper.ChannelKeeper)
+		var wasmStack porttypes.IBCModule = wasm.NewIBCHandler(wasmK, ibcKeeper.ChannelKeeper, ibcKeeper.ChannelKeeper)
 		ibcRouter.AddRoute(wasm.ModuleName, wasmStack)
 
 		// set the contract keeper for the Ics20WasmHooks
@@ -509,7 +491,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	}
 
 	// Finalize the IBC router
-	app.ibcKeeper.SetRouter(ibcRouter)
+	ibcKeeper.SetRouter(ibcRouter)
 
 	// Add governance proposal hooks
 	govRouter := govtypes.NewRouter()
@@ -517,7 +499,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		AddRoute(paramproposal.RouterKey, params.NewParamChangeProposalHandler(paramsK)).
 		AddRoute(distrtypes.RouterKey, distr.NewCommunityPoolSpendProposalHandler(distrK)).
 		AddRoute(upgradetypes.RouterKey, upgrade.NewSoftwareUpgradeProposalHandler(upgradeK)).
-		AddRoute(ibcclienttypes.RouterKey, ibcclient.NewClientProposalHandler(app.ibcKeeper.ClientKeeper)).
+		AddRoute(ibcclienttypes.RouterKey, ibcclient.NewClientProposalHandler(ibcKeeper.ClientKeeper)).
 		AddRoute(axelarnetTypes.RouterKey, axelarnet.NewProposalHandler(axelarnetK, nexusK, accountK))
 
 	if IsWasmEnabled() {
@@ -540,10 +522,12 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		panic(fmt.Errorf("invalid app version %s", app.Version()))
 	}
 
+	// todo: change order of commands so this doesn't have to be defined before initialization
+	var configurator module.Configurator
 	upgradeK.SetUpgradeHandler(
 		upgradeName,
 		func(ctx sdk.Context, _ upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
-			return app.mm.RunMigrations(ctx, app.configurator, fromVM)
+			return app.mm.RunMigrations(ctx, configurator, fromVM)
 		},
 	)
 	app.upgradeKeeper = upgradeK
@@ -589,7 +573,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		upgrade.NewAppModule(upgradeK),
 		evidence.NewAppModule(*evidenceK),
 		params.NewAppModule(paramsK),
-		capability.NewAppModule(appCodec, *app.capabilityKeeper),
+		capability.NewAppModule(appCodec, *capabilityK),
 	}
 
 	// wasm module needs to be added in a specific order
@@ -602,9 +586,9 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	}
 
 	appModules = append(appModules, []module.AppModule{
-		evidence.NewAppModule(app.evidenceKeeper),
-		ibc.NewAppModule(app.ibcKeeper),
-		transfer.NewAppModule(app.transferKeeper),
+		evidence.NewAppModule(*evidenceK),
+		ibc.NewAppModule(ibcKeeper),
+		transfer.NewAppModule(transferKeeper),
 		feegrantmodule.NewAppModule(appCodec, accountK, bankK, feegrantK, app.interfaceRegistry),
 
 		snapshot.NewAppModule(snapK),
@@ -612,7 +596,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		tss.NewAppModule(tssK, snapK, nexusK, stakingK, multisigK),
 		vote.NewAppModule(votingK),
 		nexus.NewAppModule(nexusK, snapK, slashingK, stakingK, axelarnetK, rewardK),
-		evm.NewAppModule(evmK, votingK, nexusK, snapK, stakingK, slashingK, multisigK, logger),
+		evm.NewAppModule(evmK, votingK, nexusK, snapK, stakingK, slashingK, multisigK),
 		axelarnetModule,
 		reward.NewAppModule(rewardK, nexusK, mintK, stakingK, slashingK, multisigK, snapK, bankK, bApp.MsgServiceRouter(), bApp.Router()),
 		permission.NewAppModule(permissionK),
@@ -796,8 +780,8 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 
 	// register all module routes and module queriers
 	app.mm.RegisterRoutes(app.Router(), app.QueryRouter(), legacyAmino)
-	app.configurator = module.NewConfigurator(app.appCodec, app.MsgServiceRouter(), app.GRPCQueryRouter())
-	app.mm.RegisterServices(app.configurator)
+	configurator = module.NewConfigurator(app.appCodec, app.MsgServiceRouter(), app.GRPCQueryRouter())
+	app.mm.RegisterServices(configurator)
 
 	// initialize stores
 	app.MountKVStores(keys)
@@ -839,7 +823,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		ante.NewCheckRefundFeeDecorator(app.interfaceRegistry, accountK, stakingK, snapK, rewardK),
 		ante.NewCheckProxy(snapK),
 		ante.NewRestrictedTx(permissionK),
-		ibcante.NewAnteDecorator(app.ibcKeeper),
+		ibcante.NewAnteDecorator(ibcKeeper),
 	)
 
 	anteHandler := sdk.ChainAnteDecorators(
@@ -931,14 +915,6 @@ func (app *AxelarApp) LoadHeight(height int64) error {
 	return app.LoadVersion(height)
 }
 
-// LegacyAmino returns AxelarApp's amino codec.
-//
-// NOTE: This is solely to be used for testing purposes as it may be desirable
-// for modules to register their own custom testing types.
-func (app *AxelarApp) LegacyAmino() *codec.LegacyAmino {
-	return app.legacyAmino
-}
-
 // AppCodec returns AxelarApp's app codec.
 //
 // NOTE: This is solely to be used for testing purposes as it may be desirable
@@ -1008,7 +984,7 @@ func GetModuleBasics() module.BasicManager {
 		return ModuleBasics
 	}
 
-	wasmProposals := []govclient.ProposalHandler{}
+	var wasmProposals []govclient.ProposalHandler
 	if IsWasmEnabled() {
 		wasmProposals = wasmclient.ProposalHandlers
 	}
