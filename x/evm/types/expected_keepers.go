@@ -76,6 +76,7 @@ type ChainKeeper interface {
 	GetConfirmedEventQueue(ctx sdk.Context) utils.KVQueue
 	GetEvent(ctx sdk.Context, eventID EventID) (Event, bool)
 	SetConfirmedEvent(ctx sdk.Context, event Event) error
+	EnqueueConfirmedEvent(ctx sdk.Context, eventID EventID) error
 	SetEventCompleted(ctx sdk.Context, eventID EventID) error
 	SetEventFailed(ctx sdk.Context, eventID EventID) error
 
@@ -116,6 +117,7 @@ type Nexus interface {
 	RateLimitTransfer(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error
 	SetNewMessage(ctx sdk.Context, m nexus.GeneralMessage) error
 	GetProcessingMessages(ctx sdk.Context, chain nexus.ChainName, limit int64) []nexus.GeneralMessage
+	SetMessageProcessing(ctx sdk.Context, id string) error
 	SetMessageFailed(ctx sdk.Context, id string) error
 	SetMessageExecuted(ctx sdk.Context, id string) error
 }

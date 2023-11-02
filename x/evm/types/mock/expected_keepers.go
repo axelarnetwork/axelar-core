@@ -167,6 +167,9 @@ var _ types.Nexus = &NexusMock{}
 //			SetMessageFailedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, id string) error {
 //				panic("mock out the SetMessageFailed method")
 //			},
+//			SetMessageProcessingFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, id string) error {
+//				panic("mock out the SetMessageProcessing method")
+//			},
 //			SetNewMessageFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, m github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage) error {
 //				panic("mock out the SetNewMessage method")
 //			},
@@ -242,6 +245,9 @@ type NexusMock struct {
 
 	// SetMessageFailedFunc mocks the SetMessageFailed method.
 	SetMessageFailedFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, id string) error
+
+	// SetMessageProcessingFunc mocks the SetMessageProcessing method.
+	SetMessageProcessingFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, id string) error
 
 	// SetNewMessageFunc mocks the SetNewMessage method.
 	SetNewMessageFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, m github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage) error
@@ -432,6 +438,13 @@ type NexusMock struct {
 			// ID is the id argument value.
 			ID string
 		}
+		// SetMessageProcessing holds details about calls to the SetMessageProcessing method.
+		SetMessageProcessing []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// ID is the id argument value.
+			ID string
+		}
 		// SetNewMessage holds details about calls to the SetNewMessage method.
 		SetNewMessage []struct {
 			// Ctx is the ctx argument value.
@@ -462,6 +475,7 @@ type NexusMock struct {
 	lockSetChainMaintainerState       sync.RWMutex
 	lockSetMessageExecuted            sync.RWMutex
 	lockSetMessageFailed              sync.RWMutex
+	lockSetMessageProcessing          sync.RWMutex
 	lockSetNewMessage                 sync.RWMutex
 }
 
@@ -1317,6 +1331,42 @@ func (mock *NexusMock) SetMessageFailedCalls() []struct {
 	return calls
 }
 
+// SetMessageProcessing calls SetMessageProcessingFunc.
+func (mock *NexusMock) SetMessageProcessing(ctx github_com_cosmos_cosmos_sdk_types.Context, id string) error {
+	if mock.SetMessageProcessingFunc == nil {
+		panic("NexusMock.SetMessageProcessingFunc: method is nil but Nexus.SetMessageProcessing was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+		ID  string
+	}{
+		Ctx: ctx,
+		ID:  id,
+	}
+	mock.lockSetMessageProcessing.Lock()
+	mock.calls.SetMessageProcessing = append(mock.calls.SetMessageProcessing, callInfo)
+	mock.lockSetMessageProcessing.Unlock()
+	return mock.SetMessageProcessingFunc(ctx, id)
+}
+
+// SetMessageProcessingCalls gets all the calls that were made to SetMessageProcessing.
+// Check the length with:
+//
+//	len(mockedNexus.SetMessageProcessingCalls())
+func (mock *NexusMock) SetMessageProcessingCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+	ID  string
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+		ID  string
+	}
+	mock.lockSetMessageProcessing.RLock()
+	calls = mock.calls.SetMessageProcessing
+	mock.lockSetMessageProcessing.RUnlock()
+	return calls
+}
+
 // SetNewMessage calls SetNewMessageFunc.
 func (mock *NexusMock) SetNewMessage(ctx github_com_cosmos_cosmos_sdk_types.Context, m github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage) error {
 	if mock.SetNewMessageFunc == nil {
@@ -1684,6 +1734,9 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 //			EnqueueCommandFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, cmd types.Command) error {
 //				panic("mock out the EnqueueCommand method")
 //			},
+//			EnqueueConfirmedEventFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, eventID types.EventID) error {
+//				panic("mock out the EnqueueConfirmedEvent method")
+//			},
 //			GenerateSaltFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, recipient string) types.Hash {
 //				panic("mock out the GenerateSalt method")
 //			},
@@ -1819,6 +1872,9 @@ type ChainKeeperMock struct {
 
 	// EnqueueCommandFunc mocks the EnqueueCommand method.
 	EnqueueCommandFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, cmd types.Command) error
+
+	// EnqueueConfirmedEventFunc mocks the EnqueueConfirmedEvent method.
+	EnqueueConfirmedEventFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, eventID types.EventID) error
 
 	// GenerateSaltFunc mocks the GenerateSalt method.
 	GenerateSaltFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, recipient string) types.Hash
@@ -1970,6 +2026,13 @@ type ChainKeeperMock struct {
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Cmd is the cmd argument value.
 			Cmd types.Command
+		}
+		// EnqueueConfirmedEvent holds details about calls to the EnqueueConfirmedEvent method.
+		EnqueueConfirmedEvent []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// EventID is the eventID argument value.
+			EventID types.EventID
 		}
 		// GenerateSalt holds details about calls to the GenerateSalt method.
 		GenerateSalt []struct {
@@ -2221,6 +2284,7 @@ type ChainKeeperMock struct {
 	lockDeleteDeposit                 sync.RWMutex
 	lockDeleteUnsignedCommandBatchID  sync.RWMutex
 	lockEnqueueCommand                sync.RWMutex
+	lockEnqueueConfirmedEvent         sync.RWMutex
 	lockGenerateSalt                  sync.RWMutex
 	lockGetBatchByID                  sync.RWMutex
 	lockGetBurnerAddress              sync.RWMutex
@@ -2438,6 +2502,42 @@ func (mock *ChainKeeperMock) EnqueueCommandCalls() []struct {
 	mock.lockEnqueueCommand.RLock()
 	calls = mock.calls.EnqueueCommand
 	mock.lockEnqueueCommand.RUnlock()
+	return calls
+}
+
+// EnqueueConfirmedEvent calls EnqueueConfirmedEventFunc.
+func (mock *ChainKeeperMock) EnqueueConfirmedEvent(ctx github_com_cosmos_cosmos_sdk_types.Context, eventID types.EventID) error {
+	if mock.EnqueueConfirmedEventFunc == nil {
+		panic("ChainKeeperMock.EnqueueConfirmedEventFunc: method is nil but ChainKeeper.EnqueueConfirmedEvent was just called")
+	}
+	callInfo := struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		EventID types.EventID
+	}{
+		Ctx:     ctx,
+		EventID: eventID,
+	}
+	mock.lockEnqueueConfirmedEvent.Lock()
+	mock.calls.EnqueueConfirmedEvent = append(mock.calls.EnqueueConfirmedEvent, callInfo)
+	mock.lockEnqueueConfirmedEvent.Unlock()
+	return mock.EnqueueConfirmedEventFunc(ctx, eventID)
+}
+
+// EnqueueConfirmedEventCalls gets all the calls that were made to EnqueueConfirmedEvent.
+// Check the length with:
+//
+//	len(mockedChainKeeper.EnqueueConfirmedEventCalls())
+func (mock *ChainKeeperMock) EnqueueConfirmedEventCalls() []struct {
+	Ctx     github_com_cosmos_cosmos_sdk_types.Context
+	EventID types.EventID
+} {
+	var calls []struct {
+		Ctx     github_com_cosmos_cosmos_sdk_types.Context
+		EventID types.EventID
+	}
+	mock.lockEnqueueConfirmedEvent.RLock()
+	calls = mock.calls.EnqueueConfirmedEvent
+	mock.lockEnqueueConfirmedEvent.RUnlock()
 	return calls
 }
 
