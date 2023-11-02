@@ -227,7 +227,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
 	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
 
-	var keepers = make(map[string]any)
+	keepers := newKeeperCache()
 	setKeeper(keepers, initParamsKeeper(appCodec, encodingConfig.Amino, keys[paramstypes.StoreKey], tkeys[paramstypes.TStoreKey]))
 
 	// set the BaseApp's parameter store
@@ -1060,8 +1060,18 @@ func GetModuleBasics() module.BasicManager {
 	return ModuleBasics
 }
 
-func getSubspace(keepers map[string]any, moduleName string) paramstypes.Subspace {
-	paramsK := getKeeper[paramskeeper.Keeper](keepers)
+type keeperCache struct {
+	repository map[string]any
+}
+
+func newKeeperCache() *keeperCache {
+	return &keeperCache{
+		repository: make(map[string]any),
+	}
+}
+
+func getSubspace(k *keeperCache, moduleName string) paramstypes.Subspace {
+	paramsK := getKeeper[paramskeeper.Keeper](k)
 	subspace, ok := paramsK.GetSubspace(moduleName)
 	if !ok {
 		panic(fmt.Sprintf("subspace %s not found", moduleName))
@@ -1069,17 +1079,17 @@ func getSubspace(keepers map[string]any, moduleName string) paramstypes.Subspace
 	return subspace
 }
 
-func getKeeper[T any](keepers map[string]any) T {
+func getKeeper[T any](k *keeperCache) T {
 	key := fullTypeName[T]()
-	keeper, ok := keepers[key].(T)
+	keeper, ok := k.repository[key].(T)
 	if !ok {
 		panic(fmt.Sprintf("keeper %s not found", key))
 	}
 	return keeper
 }
 
-func setKeeper[T any](keepers map[string]any, keeper T) {
-	keepers[fullTypeName[T]()] = keeper
+func setKeeper[T any](k *keeperCache, keeper T) {
+	k.repository[fullTypeName[T]()] = keeper
 }
 
 func fullTypeName[T any]() string {
