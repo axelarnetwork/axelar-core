@@ -193,6 +193,8 @@ func (v voteHandler) handleEvent(ctx sdk.Context, ck types.ChainKeeper, event ty
 		return err
 	}
 
+	// Event_ContractCall is no longer directly handled by the EVM module,
+	// which bypassed nexus routing
 	switch event.GetEvent().(type) {
 	case *types.Event_ContractCall:
 		if err := v.handleContractCall(ctx, event); err != nil {

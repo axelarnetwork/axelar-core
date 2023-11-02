@@ -886,8 +886,8 @@ func (k chainKeeper) EnqueueConfirmedEvent(ctx sdk.Context, id types.EventID) er
 	}
 
 	switch event.GetEvent().(type) {
-	// we no longer allow Event_ContractCall to be enqueued in the EVM module, but
-	// to be enqueued in the nexus module as a general message instead
+	// the missing Event_ContractCall is no longer allowed to be enqueued in the
+	// EVM module, it must be routed through the nexus module instead
 	case *types.Event_ContractCallWithToken,
 		*types.Event_TokenSent,
 		*types.Event_Transfer,
