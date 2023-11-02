@@ -3,16 +3,41 @@ package app
 import (
 	"encoding/json"
 	"fmt"
-	"io"
-	stdlog "log"
-	"net/http"
-	"os"
-	"path/filepath"
-	"strings"
-
 	"github.com/CosmWasm/wasmd/x/wasm"
 	wasmclient "github.com/CosmWasm/wasmd/x/wasm/client"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
+	axelarParams "github.com/axelarnetwork/axelar-core/app/params"
+	"github.com/axelarnetwork/axelar-core/x/ante"
+	"github.com/axelarnetwork/axelar-core/x/axelarnet"
+	axelarnetclient "github.com/axelarnetwork/axelar-core/x/axelarnet/client"
+	axelarnetKeeper "github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
+	axelarnetTypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
+	axelarbankkeeper "github.com/axelarnetwork/axelar-core/x/bank/keeper"
+	"github.com/axelarnetwork/axelar-core/x/evm"
+	evmKeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
+	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
+	"github.com/axelarnetwork/axelar-core/x/multisig"
+	multisigKeeper "github.com/axelarnetwork/axelar-core/x/multisig/keeper"
+	multisigTypes "github.com/axelarnetwork/axelar-core/x/multisig/types"
+	"github.com/axelarnetwork/axelar-core/x/nexus"
+	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
+	nexusTypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
+	"github.com/axelarnetwork/axelar-core/x/permission"
+	permissionKeeper "github.com/axelarnetwork/axelar-core/x/permission/keeper"
+	permissionTypes "github.com/axelarnetwork/axelar-core/x/permission/types"
+	"github.com/axelarnetwork/axelar-core/x/reward"
+	rewardKeeper "github.com/axelarnetwork/axelar-core/x/reward/keeper"
+	rewardTypes "github.com/axelarnetwork/axelar-core/x/reward/types"
+	"github.com/axelarnetwork/axelar-core/x/snapshot"
+	snapKeeper "github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
+	snapTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
+	"github.com/axelarnetwork/axelar-core/x/tss"
+	tssKeeper "github.com/axelarnetwork/axelar-core/x/tss/keeper"
+	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
+	"github.com/axelarnetwork/axelar-core/x/vote"
+	voteKeeper "github.com/axelarnetwork/axelar-core/x/vote/keeper"
+	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
+	"github.com/axelarnetwork/utils/maps"
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/grpc/tmservice"
@@ -101,39 +126,13 @@ import (
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 	"golang.org/x/mod/semver"
-
-	axelarParams "github.com/axelarnetwork/axelar-core/app/params"
-	"github.com/axelarnetwork/axelar-core/x/ante"
-	"github.com/axelarnetwork/axelar-core/x/axelarnet"
-	axelarnetclient "github.com/axelarnetwork/axelar-core/x/axelarnet/client"
-	axelarnetKeeper "github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
-	axelarnetTypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
-	axelarbankkeeper "github.com/axelarnetwork/axelar-core/x/bank/keeper"
-	"github.com/axelarnetwork/axelar-core/x/evm"
-	evmKeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
-	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
-	"github.com/axelarnetwork/axelar-core/x/multisig"
-	multisigKeeper "github.com/axelarnetwork/axelar-core/x/multisig/keeper"
-	multisigTypes "github.com/axelarnetwork/axelar-core/x/multisig/types"
-	"github.com/axelarnetwork/axelar-core/x/nexus"
-	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
-	nexusTypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
-	"github.com/axelarnetwork/axelar-core/x/permission"
-	permissionKeeper "github.com/axelarnetwork/axelar-core/x/permission/keeper"
-	permissionTypes "github.com/axelarnetwork/axelar-core/x/permission/types"
-	"github.com/axelarnetwork/axelar-core/x/reward"
-	rewardKeeper "github.com/axelarnetwork/axelar-core/x/reward/keeper"
-	rewardTypes "github.com/axelarnetwork/axelar-core/x/reward/types"
-	"github.com/axelarnetwork/axelar-core/x/snapshot"
-	snapKeeper "github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
-	snapTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
-	"github.com/axelarnetwork/axelar-core/x/tss"
-	tssKeeper "github.com/axelarnetwork/axelar-core/x/tss/keeper"
-	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
-	"github.com/axelarnetwork/axelar-core/x/vote"
-	voteKeeper "github.com/axelarnetwork/axelar-core/x/vote/keeper"
-	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
-	"github.com/axelarnetwork/utils/maps"
+	"io"
+	stdlog "log"
+	"net/http"
+	"os"
+	"path/filepath"
+	"reflect"
+	"strings"
 
 	// Override with generated statik docs
 	_ "github.com/axelarnetwork/axelar-core/client/docs/statik"
@@ -195,7 +194,7 @@ type AxelarApp struct {
 	appCodec          codec.Codec
 	interfaceRegistry types.InterfaceRegistry
 
-	// necessery keepers for export
+	// necessary keepers for export
 	stakingKeeper  stakingkeeper.Keeper
 	crisisKeeper   crisiskeeper.Keeper
 	distrKeeper    distrkeeper.Keeper
@@ -226,16 +225,18 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
 	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
 
-	paramsK := initParamsKeeper(appCodec, encodingConfig.Amino, keys[paramstypes.StoreKey], tkeys[paramstypes.TStoreKey])
+	var keepers = make(map[string]any)
+	setKeeper(keepers, initParamsKeeper(appCodec, encodingConfig.Amino, keys[paramstypes.StoreKey], tkeys[paramstypes.TStoreKey]))
+
 	// set the BaseApp's parameter store
-	bApp.SetParamStore(getSubspace(paramsK, bam.Paramspace))
+	bApp.SetParamStore(getSubspace(keepers, bam.Paramspace))
 
 	// add keepers
-	accountK := authkeeper.NewAccountKeeper(
-		appCodec, keys[authtypes.StoreKey], getSubspace(paramsK, authtypes.ModuleName), authtypes.ProtoBaseAccount, maccPerms,
-	)
-	bankK := bankkeeper.NewBaseKeeper(
-		appCodec, keys[banktypes.StoreKey], accountK, getSubspace(paramsK, banktypes.ModuleName),
+	setKeeper(keepers, authkeeper.NewAccountKeeper(
+		appCodec, keys[authtypes.StoreKey], getSubspace(keepers, authtypes.ModuleName), authtypes.ProtoBaseAccount, maccPerms,
+	))
+	setKeeper(keepers, bankkeeper.NewBaseKeeper(
+		appCodec, keys[banktypes.StoreKey], getKeeper[authkeeper.AccountKeeper](keepers), getSubspace(keepers, banktypes.ModuleName),
 		maps.Filter(moduleAccountAddrs(), func(addr string, _ bool) bool {
 			// we do not rely on internal balance tracking for invariance checks in the axelarnet module
 			// (https://github.com/cosmos/cosmos-sdk/issues/12825 for more details on the purpose of the blocked list),
@@ -243,70 +244,99 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 			// so we exclude this address from the blocked list
 			return addr != authtypes.NewModuleAddress(axelarnetTypes.ModuleName).String()
 		}),
-	)
+	))
+
 	stakingK := stakingkeeper.NewKeeper(
-		appCodec, keys[stakingtypes.StoreKey], accountK, bankK, getSubspace(paramsK, stakingtypes.ModuleName),
+		appCodec, keys[stakingtypes.StoreKey], getKeeper[authkeeper.AccountKeeper](keepers), getKeeper[bankkeeper.BaseKeeper](keepers), getSubspace(keepers, stakingtypes.ModuleName),
 	)
 
-	mintK := mintkeeper.NewKeeper(
-		appCodec, keys[minttypes.StoreKey], getSubspace(paramsK, minttypes.ModuleName), &stakingK,
-		accountK, bankK, authtypes.FeeCollectorName,
-	)
-	distrK := distrkeeper.NewKeeper(
-		appCodec, keys[distrtypes.StoreKey], getSubspace(paramsK, distrtypes.ModuleName), accountK, bankK,
+	setKeeper(keepers, mintkeeper.NewKeeper(
+		appCodec, keys[minttypes.StoreKey], getSubspace(keepers, minttypes.ModuleName), &stakingK,
+		getKeeper[authkeeper.AccountKeeper](keepers), getKeeper[bankkeeper.BaseKeeper](keepers), authtypes.FeeCollectorName,
+	))
+
+	setKeeper(keepers, distrkeeper.NewKeeper(
+		appCodec, keys[distrtypes.StoreKey], getSubspace(keepers, distrtypes.ModuleName), getKeeper[authkeeper.AccountKeeper](keepers), getKeeper[bankkeeper.BaseKeeper](keepers),
 		&stakingK, authtypes.FeeCollectorName, moduleAccountAddrs(),
-	)
-	slashingK := slashingkeeper.NewKeeper(
-		appCodec, keys[slashingtypes.StoreKey], &stakingK, getSubspace(paramsK, slashingtypes.ModuleName),
-	)
-	crisisK := crisiskeeper.NewKeeper(
-		getSubspace(paramsK, crisistypes.ModuleName), invCheckPeriod, bankK, authtypes.FeeCollectorName,
-	)
+	))
+
+	setKeeper(keepers, slashingkeeper.NewKeeper(
+		appCodec, keys[slashingtypes.StoreKey], &stakingK, getSubspace(keepers, slashingtypes.ModuleName),
+	))
+
+	setKeeper(keepers, crisiskeeper.NewKeeper(
+		getSubspace(keepers, crisistypes.ModuleName), invCheckPeriod, getKeeper[bankkeeper.BaseKeeper](keepers), authtypes.FeeCollectorName,
+	))
+
 	upgradeK := upgradekeeper.NewKeeper(skipUpgradeHeights, keys[upgradetypes.StoreKey], appCodec, homePath, bApp)
-
-	evidenceK := evidencekeeper.NewKeeper(
-		appCodec, keys[evidencetypes.StoreKey], &stakingK, slashingK,
+	semverVersion := bApp.Version()
+	if !strings.HasPrefix(semverVersion, "v") {
+		semverVersion = fmt.Sprintf("v%s", semverVersion)
+	}
+	upgradeName := semver.MajorMinor(semverVersion)
+	if upgradeName == "" {
+		panic(fmt.Errorf("invalid app version %s", bApp.Version()))
+	}
+	// todo: change order of commands so this doesn't have to be defined before initialization
+	var configurator module.Configurator
+	var mm *module.Manager
+	upgradeK.SetUpgradeHandler(
+		upgradeName,
+		func(ctx sdk.Context, _ upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
+			return mm.RunMigrations(ctx, configurator, fromVM)
+		},
 	)
+	setKeeper(keepers, upgradeK)
 
-	feegrantK := feegrantkeeper.NewKeeper(appCodec, keys[feegrant.StoreKey], accountK)
+	// there is no point in this constructor returning a reference, so we deref it
+	evidenceK := evidencekeeper.NewKeeper(
+		appCodec, keys[evidencetypes.StoreKey], &stakingK, getKeeper[slashingkeeper.Keeper](keepers),
+	)
+	setKeeper(keepers, *evidenceK)
+
+	setKeeper(keepers, feegrantkeeper.NewKeeper(appCodec, keys[feegrant.StoreKey], getKeeper[authkeeper.AccountKeeper](keepers)))
 
 	// register the staking hooks
 	// NOTE: stakingKeeper above is passed by reference, so that it will contain these hooks
 	stakingK = *stakingK.SetHooks(
-		stakingtypes.NewMultiStakingHooks(distrK.Hooks(), slashingK.Hooks()),
+		stakingtypes.NewMultiStakingHooks(getKeeper[distrkeeper.Keeper](keepers).Hooks(), getKeeper[slashingkeeper.Keeper](keepers).Hooks()),
 	)
+	setKeeper(keepers, stakingK)
 
 	// add capability keeper and ScopeToModule for ibc module
 	capabilityK := capabilitykeeper.NewKeeper(appCodec, keys[capabilitytypes.StoreKey], memKeys[capabilitytypes.MemStoreKey])
+	setKeeper(keepers, *capabilityK)
 
 	// grant capabilities for the ibc and ibc-transfer modules
 	scopedIBCK := capabilityK.ScopeToModule(ibchost.ModuleName)
 	scopedTransferK := capabilityK.ScopeToModule(ibctransfertypes.ModuleName)
+	capabilityK.Seal()
 
 	// Create IBC Keeper
-	ibcKeeper := ibckeeper.NewKeeper(
-		appCodec, keys[ibchost.StoreKey], getSubspace(paramsK, ibchost.ModuleName), stakingK, upgradeK, scopedIBCK,
-	)
+	setKeeper(keepers, ibckeeper.NewKeeper(
+		appCodec, keys[ibchost.StoreKey], getSubspace(keepers, ibchost.ModuleName), getKeeper[stakingkeeper.Keeper](keepers), getKeeper[upgradekeeper.Keeper](keepers), scopedIBCK,
+	))
 
 	// Custom axelarnet/evm/nexus keepers
-	axelarnetK := axelarnetKeeper.NewKeeper(
-		appCodec, keys[axelarnetTypes.StoreKey], getSubspace(paramsK, axelarnetTypes.ModuleName), ibcKeeper.ChannelKeeper, feegrantK,
-	)
+	setKeeper(keepers, axelarnetKeeper.NewKeeper(
+		appCodec, keys[axelarnetTypes.StoreKey], getSubspace(keepers, axelarnetTypes.ModuleName), getKeeper[*ibckeeper.Keeper](keepers).ChannelKeeper, getKeeper[feegrantkeeper.Keeper](keepers),
+	))
 
-	evmK := evmKeeper.NewKeeper(
-		appCodec, keys[evmTypes.StoreKey], paramsK,
-	)
+	setKeeper(keepers, evmKeeper.NewKeeper(
+		appCodec, keys[evmTypes.StoreKey], getKeeper[paramskeeper.Keeper](keepers),
+	))
 
 	nexusK := nexusKeeper.NewKeeper(
-		appCodec, keys[nexusTypes.StoreKey], getSubspace(paramsK, nexusTypes.ModuleName),
+		appCodec, keys[nexusTypes.StoreKey], getSubspace(keepers, nexusTypes.ModuleName),
 	)
 
 	// Setting Router will finalize all routes by sealing router
 	// No more routes can be added
 	nexusRouter := nexusTypes.NewRouter()
 	nexusRouter.AddAddressValidator(evmTypes.ModuleName, evmKeeper.NewAddressValidator()).
-		AddAddressValidator(axelarnetTypes.ModuleName, axelarnetKeeper.NewAddressValidator(axelarnetK))
+		AddAddressValidator(axelarnetTypes.ModuleName, axelarnetKeeper.NewAddressValidator(getKeeper[axelarnetKeeper.Keeper](keepers)))
 	nexusK.SetRouter(nexusRouter)
+	setKeeper(keepers, nexusK)
 
 	// IBC Transfer Stack: SendPacket
 	//
@@ -316,7 +346,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	// After this, the wasm keeper is required to be set on WasmHooks
 
 	// Create IBC rate limiter
-	rateLimiter := axelarnet.NewRateLimiter(axelarnetK, ibcKeeper.ChannelKeeper, nexusK)
+	rateLimiter := axelarnet.NewRateLimiter(getKeeper[axelarnetKeeper.Keeper](keepers), getKeeper[*ibckeeper.Keeper](keepers).ChannelKeeper, getKeeper[nexusKeeper.Keeper](keepers))
 	var ibcHooksMiddleware ibchooks.ICS4Middleware
 	var ics4Wrapper ibctransfertypes.ICS4Wrapper
 	var wasmHooks ibchooks.WasmHooks
@@ -338,25 +368,26 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	}
 
 	// Create Transfer Keepers
-	transferKeeper := ibctransferkeeper.NewKeeper(
-		appCodec, keys[ibctransfertypes.StoreKey], getSubspace(paramsK, ibctransfertypes.ModuleName),
+	setKeeper(keepers, ibctransferkeeper.NewKeeper(
+		appCodec, keys[ibctransfertypes.StoreKey], getSubspace(keepers, ibctransfertypes.ModuleName),
 		// Use the IBC middleware stack
 		ics4Wrapper,
-		ibcKeeper.ChannelKeeper, &ibcKeeper.PortKeeper,
-		accountK, bankK, scopedTransferK,
-	)
+		getKeeper[*ibckeeper.Keeper](keepers).ChannelKeeper, &getKeeper[*ibckeeper.Keeper](keepers).PortKeeper,
+		getKeeper[authkeeper.AccountKeeper](keepers), getKeeper[bankkeeper.BaseKeeper](keepers), scopedTransferK,
+	))
 
 	// IBC Transfer Stack: RecvPacket
 	//
 	// Packet originates from core IBC and goes down to app, the flow is the other way
 	// channel.RecvPacket -> axelarnet.OnRecvPacket (transfer, GMP, and rate limit handler) -> ibc_hooks.OnRecvPacket -> transfer.OnRecvPacket
-	var transferStack porttypes.IBCModule = transfer.NewIBCModule(transferKeeper)
+	var transferStack porttypes.IBCModule = transfer.NewIBCModule(getKeeper[ibctransferkeeper.Keeper](keepers))
 	if IsWasmEnabled() {
 		transferStack = ibchooks.NewIBCMiddleware(transferStack, &ibcHooksMiddleware)
 	}
 
-	ibcK := axelarnetKeeper.NewIBCKeeper(axelarnetK, transferKeeper, ibcKeeper.ChannelKeeper)
-	axelarnetModule := axelarnet.NewAppModule(axelarnetK, nexusK, axelarbankkeeper.NewBankKeeper(bankK), accountK, ibcK, transferStack, rateLimiter, logger)
+	setKeeper(keepers, axelarnetKeeper.NewIBCKeeper(getKeeper[axelarnetKeeper.Keeper](keepers), getKeeper[ibctransferkeeper.Keeper](keepers), getKeeper[*ibckeeper.Keeper](keepers).ChannelKeeper))
+
+	axelarnetModule := axelarnet.NewAppModule(getKeeper[axelarnetKeeper.Keeper](keepers), getKeeper[nexusKeeper.Keeper](keepers), axelarbankkeeper.NewBankKeeper(getKeeper[bankkeeper.BaseKeeper](keepers)), getKeeper[authkeeper.AccountKeeper](keepers), getKeeper[axelarnetKeeper.IBCKeeper](keepers), transferStack, rateLimiter, logger)
 
 	// Create static IBC router, add axelarnet module as the IBC transfer route, and seal it
 	ibcRouter := porttypes.NewRouter()
@@ -364,30 +395,39 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 
 	// axelar custom keepers
 	// axelarnet / evm / nexus keepers created above
-	rewardK := rewardKeeper.NewKeeper(
-		appCodec, keys[rewardTypes.StoreKey], getSubspace(paramsK, rewardTypes.ModuleName), axelarbankkeeper.NewBankKeeper(bankK), distrK, stakingK,
-	)
+	setKeeper(keepers, rewardKeeper.NewKeeper(
+		appCodec, keys[rewardTypes.StoreKey], getSubspace(keepers, rewardTypes.ModuleName), axelarbankkeeper.NewBankKeeper(getKeeper[bankkeeper.BaseKeeper](keepers)), getKeeper[distrkeeper.Keeper](keepers), getKeeper[stakingkeeper.Keeper](keepers),
+	))
 	multisigK := multisigKeeper.NewKeeper(
-		appCodec, keys[multisigTypes.StoreKey], getSubspace(paramsK, multisigTypes.ModuleName),
+		appCodec, keys[multisigTypes.StoreKey], getSubspace(keepers, multisigTypes.ModuleName),
 	)
 
 	multisigRouter := multisigTypes.NewSigRouter()
-	multisigRouter.AddHandler(evmTypes.ModuleName, evmKeeper.NewSigHandler(appCodec, evmK))
+	multisigRouter.AddHandler(evmTypes.ModuleName, evmKeeper.NewSigHandler(appCodec, getKeeper[*evmKeeper.BaseKeeper](keepers)))
 	multisigK.SetSigRouter(multisigRouter)
+	setKeeper(keepers, multisigK)
 
-	tssK := tssKeeper.NewKeeper(
-		appCodec, keys[tssTypes.StoreKey], getSubspace(paramsK, tssTypes.ModuleName),
+	setKeeper(keepers, tssKeeper.NewKeeper(
+		appCodec, keys[tssTypes.StoreKey], getSubspace(keepers, tssTypes.ModuleName),
+	))
+
+	setKeeper(keepers, snapKeeper.NewKeeper(
+		appCodec, keys[snapTypes.StoreKey], getSubspace(keepers, snapTypes.ModuleName), getKeeper[stakingkeeper.Keeper](keepers), axelarbankkeeper.NewBankKeeper(getKeeper[bankkeeper.BaseKeeper](keepers)),
+		getKeeper[slashingkeeper.Keeper](keepers),
+	))
+
+	voteK := voteKeeper.NewKeeper(
+		appCodec, keys[voteTypes.StoreKey], getSubspace(keepers, voteTypes.ModuleName), getKeeper[snapKeeper.Keeper](keepers), getKeeper[stakingkeeper.Keeper](keepers), getKeeper[rewardKeeper.Keeper](keepers),
 	)
-	snapK := snapKeeper.NewKeeper(
-		appCodec, keys[snapTypes.StoreKey], getSubspace(paramsK, snapTypes.ModuleName), stakingK, axelarbankkeeper.NewBankKeeper(bankK),
-		slashingK,
-	)
-	votingK := voteKeeper.NewKeeper(
-		appCodec, keys[voteTypes.StoreKey], getSubspace(paramsK, voteTypes.ModuleName), snapK, stakingK, rewardK,
-	)
-	permissionK := permissionKeeper.NewKeeper(
-		appCodec, keys[permissionTypes.StoreKey], getSubspace(paramsK, permissionTypes.ModuleName),
-	)
+
+	voteRouter := voteTypes.NewRouter()
+	voteRouter.AddHandler(evmTypes.ModuleName, evmKeeper.NewVoteHandler(appCodec, getKeeper[*evmKeeper.BaseKeeper](keepers), getKeeper[nexusKeeper.Keeper](keepers), getKeeper[rewardKeeper.Keeper](keepers)))
+	(&voteK).SetVoteRouter(voteRouter)
+	setKeeper(keepers, voteK)
+
+	setKeeper(keepers, permissionKeeper.NewKeeper(
+		appCodec, keys[permissionTypes.StoreKey], getSubspace(keepers, permissionTypes.ModuleName),
+	))
 
 	var wasmK wasm.Keeper
 	var wasmAnteDecorators []sdk.AnteDecorator
@@ -403,21 +443,21 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		// The last arguments can contain custom message handlers, and custom query handlers,
 		// if we want to allow any custom callbacks
 		wasmOpts = append(wasmOpts, wasmkeeper.WithMessageHandlerDecorator(func(old wasmkeeper.Messenger) wasmkeeper.Messenger {
-			return wasmkeeper.NewMessageHandlerChain(old, nexusKeeper.NewMessenger(nexusK))
+			return wasmkeeper.NewMessageHandlerChain(old, nexusKeeper.NewMessenger(getKeeper[nexusKeeper.Keeper](keepers)))
 		}))
 		wasmK = wasm.NewKeeper(
 			appCodec,
 			keys[wasm.StoreKey],
-			getSubspace(paramsK, wasm.ModuleName),
-			accountK,
-			bankK,
-			stakingK,
-			distrK,
-			ibcKeeper.ChannelKeeper,
-			ibcKeeper.ChannelKeeper,
-			&ibcKeeper.PortKeeper,
+			getSubspace(keepers, wasm.ModuleName),
+			getKeeper[authkeeper.AccountKeeper](keepers),
+			getKeeper[bankkeeper.BaseKeeper](keepers),
+			getKeeper[stakingkeeper.Keeper](keepers),
+			getKeeper[distrkeeper.Keeper](keepers),
+			getKeeper[*ibckeeper.Keeper](keepers).ChannelKeeper,
+			getKeeper[*ibckeeper.Keeper](keepers).ChannelKeeper,
+			&getKeeper[*ibckeeper.Keeper](keepers).PortKeeper,
 			scopedWasmK,
-			transferKeeper,
+			getKeeper[ibctransferkeeper.Keeper](keepers),
 			bApp.MsgServiceRouter(),
 			bApp.GRPCQueryRouter(),
 			wasmDir,
@@ -432,61 +472,44 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		}
 
 		// Create wasm ibc stack
-		var wasmStack porttypes.IBCModule = wasm.NewIBCHandler(wasmK, ibcKeeper.ChannelKeeper, ibcKeeper.ChannelKeeper)
+		var wasmStack porttypes.IBCModule = wasm.NewIBCHandler(wasmK, getKeeper[*ibckeeper.Keeper](keepers).ChannelKeeper, getKeeper[*ibckeeper.Keeper](keepers).ChannelKeeper)
 		ibcRouter.AddRoute(wasm.ModuleName, wasmStack)
 
 		// set the contract keeper for the Ics20WasmHooks
 		wasmHooks.ContractKeeper = wasmkeeper.NewDefaultPermissionKeeper(wasmK)
+
+		setKeeper(keepers, wasmK)
 	}
 
 	// Finalize the IBC router
-	ibcKeeper.SetRouter(ibcRouter)
+	getKeeper[*ibckeeper.Keeper](keepers).SetRouter(ibcRouter)
 
 	// Add governance proposal hooks
 	govRouter := govtypes.NewRouter()
 	govRouter.AddRoute(govtypes.RouterKey, govtypes.ProposalHandler).
-		AddRoute(paramproposal.RouterKey, params.NewParamChangeProposalHandler(paramsK)).
-		AddRoute(distrtypes.RouterKey, distr.NewCommunityPoolSpendProposalHandler(distrK)).
-		AddRoute(upgradetypes.RouterKey, upgrade.NewSoftwareUpgradeProposalHandler(upgradeK)).
-		AddRoute(ibcclienttypes.RouterKey, ibcclient.NewClientProposalHandler(ibcKeeper.ClientKeeper)).
-		AddRoute(axelarnetTypes.RouterKey, axelarnet.NewProposalHandler(axelarnetK, nexusK, accountK))
+		AddRoute(paramproposal.RouterKey, params.NewParamChangeProposalHandler(getKeeper[paramskeeper.Keeper](keepers))).
+		AddRoute(distrtypes.RouterKey, distr.NewCommunityPoolSpendProposalHandler(getKeeper[distrkeeper.Keeper](keepers))).
+		AddRoute(upgradetypes.RouterKey, upgrade.NewSoftwareUpgradeProposalHandler(getKeeper[upgradekeeper.Keeper](keepers))).
+		AddRoute(ibcclienttypes.RouterKey, ibcclient.NewClientProposalHandler(getKeeper[*ibckeeper.Keeper](keepers).ClientKeeper)).
+		AddRoute(axelarnetTypes.RouterKey, axelarnet.NewProposalHandler(getKeeper[axelarnetKeeper.Keeper](keepers), getKeeper[nexusKeeper.Keeper](keepers), getKeeper[authkeeper.AccountKeeper](keepers)))
 
 	if IsWasmEnabled() {
-		govRouter.AddRoute(wasm.RouterKey, wasm.NewWasmProposalHandler(wasmK, wasm.EnableAllProposals))
+		govRouter.AddRoute(wasm.RouterKey, wasm.NewWasmProposalHandler(getKeeper[wasm.Keeper](keepers), wasm.EnableAllProposals))
 	}
 
 	govK := govkeeper.NewKeeper(
-		appCodec, keys[govtypes.StoreKey], getSubspace(paramsK, govtypes.ModuleName), accountK, bankK,
-		&stakingK, govRouter,
+		appCodec, keys[govtypes.StoreKey], getSubspace(keepers, govtypes.ModuleName), getKeeper[authkeeper.AccountKeeper](keepers), getKeeper[bankkeeper.BaseKeeper](keepers),
+		getKeeper[stakingkeeper.Keeper](keepers), govRouter,
 	)
-	govK.SetHooks(govtypes.NewMultiGovHooks(axelarnetK.Hooks(nexusK, govK)))
+	govK.SetHooks(govtypes.NewMultiGovHooks(getKeeper[axelarnetKeeper.Keeper](keepers).Hooks(getKeeper[nexusKeeper.Keeper](keepers), govK)))
+	setKeeper(keepers, govK)
 
-	semverVersion := bApp.Version()
-	if !strings.HasPrefix(semverVersion, "v") {
-		semverVersion = fmt.Sprintf("v%s", semverVersion)
-	}
-
-	upgradeName := semver.MajorMinor(semverVersion)
-	if upgradeName == "" {
-		panic(fmt.Errorf("invalid app version %s", bApp.Version()))
-	}
-
-	// todo: change order of commands so this doesn't have to be defined before initialization
-	var configurator module.Configurator
-	var mm *module.Manager
-	upgradeK.SetUpgradeHandler(
-		upgradeName,
-		func(ctx sdk.Context, _ upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
-			return mm.RunMigrations(ctx, configurator, fromVM)
-		},
-	)
-
-	upgradeInfo, err := upgradeK.ReadUpgradeInfoFromDisk()
+	upgradeInfo, err := getKeeper[upgradekeeper.Keeper](keepers).ReadUpgradeInfoFromDisk()
 	if err != nil {
 		panic(err)
 	}
 
-	if upgradeInfo.Name == upgradeName && !upgradeK.IsSkipHeight(upgradeInfo.Height) {
+	if upgradeInfo.Name == upgradeName && !getKeeper[upgradekeeper.Keeper](keepers).IsSkipHeight(upgradeInfo.Height) {
 		storeUpgrades := store.StoreUpgrades{}
 
 		if IsWasmEnabled() {
@@ -498,57 +521,55 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		bApp.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
 	}
 
-	voteRouter := voteTypes.NewRouter()
-	voteRouter.AddHandler(evmTypes.ModuleName, evmKeeper.NewVoteHandler(appCodec, evmK, nexusK, rewardK))
-	votingK.SetVoteRouter(voteRouter)
-
 	/****  Module Options ****/
 
 	// NOTE: we may consider parsing `appOpts` inside module constructors. For the moment
 	// we prefer to be more strict in what arguments the modules expect.
 	var skipGenesisInvariants = cast.ToBool(appOpts.Get(crisis.FlagSkipGenesisInvariants))
 
+	crisisK := getKeeper[crisiskeeper.Keeper](keepers)
 	appModules := []module.AppModule{
-		genutil.NewAppModule(accountK, stakingK, bApp.DeliverTx, encodingConfig.TxConfig),
-		auth.NewAppModule(appCodec, accountK, nil),
-		vesting.NewAppModule(accountK, bankK),
-		bank.NewAppModule(appCodec, bankK, accountK),
+		genutil.NewAppModule(getKeeper[authkeeper.AccountKeeper](keepers), getKeeper[stakingkeeper.Keeper](keepers), bApp.DeliverTx, encodingConfig.TxConfig),
+		auth.NewAppModule(appCodec, getKeeper[authkeeper.AccountKeeper](keepers), nil),
+		vesting.NewAppModule(getKeeper[authkeeper.AccountKeeper](keepers), getKeeper[bankkeeper.BaseKeeper](keepers)),
+		bank.NewAppModule(appCodec, getKeeper[bankkeeper.BaseKeeper](keepers), getKeeper[authkeeper.AccountKeeper](keepers)),
 		crisis.NewAppModule(&crisisK, skipGenesisInvariants),
-		gov.NewAppModule(appCodec, govK, accountK, bankK),
-		mint.NewAppModule(appCodec, mintK, accountK),
-		slashing.NewAppModule(appCodec, slashingK, accountK, bankK, stakingK),
-		distr.NewAppModule(appCodec, distrK, accountK, bankK, stakingK),
-		staking.NewAppModule(appCodec, stakingK, accountK, bankK),
-		upgrade.NewAppModule(upgradeK),
-		evidence.NewAppModule(*evidenceK),
-		params.NewAppModule(paramsK),
+		gov.NewAppModule(appCodec, getKeeper[govkeeper.Keeper](keepers), getKeeper[authkeeper.AccountKeeper](keepers), getKeeper[bankkeeper.BaseKeeper](keepers)),
+		mint.NewAppModule(appCodec, getKeeper[mintkeeper.Keeper](keepers), getKeeper[authkeeper.AccountKeeper](keepers)),
+		slashing.NewAppModule(appCodec, getKeeper[slashingkeeper.Keeper](keepers), getKeeper[authkeeper.AccountKeeper](keepers), getKeeper[bankkeeper.BaseKeeper](keepers), getKeeper[stakingkeeper.Keeper](keepers)),
+		distr.NewAppModule(appCodec, getKeeper[distrkeeper.Keeper](keepers), getKeeper[authkeeper.AccountKeeper](keepers), getKeeper[bankkeeper.BaseKeeper](keepers), getKeeper[stakingkeeper.Keeper](keepers)),
+		staking.NewAppModule(appCodec, getKeeper[stakingkeeper.Keeper](keepers), getKeeper[authkeeper.AccountKeeper](keepers), getKeeper[bankkeeper.BaseKeeper](keepers)),
+		upgrade.NewAppModule(getKeeper[upgradekeeper.Keeper](keepers)),
+		evidence.NewAppModule(getKeeper[evidencekeeper.Keeper](keepers)),
+		params.NewAppModule(getKeeper[paramskeeper.Keeper](keepers)),
 		capability.NewAppModule(appCodec, *capabilityK),
 	}
 
 	// wasm module needs to be added in a specific order
 	if IsWasmEnabled() {
+		wasmK := getKeeper[wasm.Keeper](keepers)
 		appModules = append(
 			appModules,
-			wasm.NewAppModule(appCodec, &wasmK, stakingK, accountK, bankK),
-			ibchooks.NewAppModule(accountK),
+			wasm.NewAppModule(appCodec, &wasmK, getKeeper[stakingkeeper.Keeper](keepers), getKeeper[authkeeper.AccountKeeper](keepers), getKeeper[bankkeeper.BaseKeeper](keepers)),
+			ibchooks.NewAppModule(getKeeper[authkeeper.AccountKeeper](keepers)),
 		)
 	}
 
 	appModules = append(appModules, []module.AppModule{
-		evidence.NewAppModule(*evidenceK),
-		ibc.NewAppModule(ibcKeeper),
-		transfer.NewAppModule(transferKeeper),
-		feegrantmodule.NewAppModule(appCodec, accountK, bankK, feegrantK, interfaceRegistry),
+		evidence.NewAppModule(getKeeper[evidencekeeper.Keeper](keepers)),
+		ibc.NewAppModule(getKeeper[*ibckeeper.Keeper](keepers)),
+		transfer.NewAppModule(getKeeper[ibctransferkeeper.Keeper](keepers)),
+		feegrantmodule.NewAppModule(appCodec, getKeeper[authkeeper.AccountKeeper](keepers), getKeeper[bankkeeper.BaseKeeper](keepers), getKeeper[feegrantkeeper.Keeper](keepers), interfaceRegistry),
 
-		snapshot.NewAppModule(snapK),
-		multisig.NewAppModule(multisigK, stakingK, slashingK, snapK, rewardK, nexusK),
-		tss.NewAppModule(tssK, snapK, nexusK, stakingK, multisigK),
-		vote.NewAppModule(votingK),
-		nexus.NewAppModule(nexusK, snapK, slashingK, stakingK, axelarnetK, rewardK),
-		evm.NewAppModule(evmK, votingK, nexusK, snapK, stakingK, slashingK, multisigK),
+		snapshot.NewAppModule(getKeeper[snapKeeper.Keeper](keepers)),
+		multisig.NewAppModule(getKeeper[multisigKeeper.Keeper](keepers), getKeeper[stakingkeeper.Keeper](keepers), getKeeper[slashingkeeper.Keeper](keepers), getKeeper[snapKeeper.Keeper](keepers), getKeeper[rewardKeeper.Keeper](keepers), getKeeper[nexusKeeper.Keeper](keepers)),
+		tss.NewAppModule(getKeeper[tssKeeper.Keeper](keepers), getKeeper[snapKeeper.Keeper](keepers), getKeeper[nexusKeeper.Keeper](keepers), getKeeper[stakingkeeper.Keeper](keepers), getKeeper[multisigKeeper.Keeper](keepers)),
+		vote.NewAppModule(getKeeper[voteKeeper.Keeper](keepers)),
+		nexus.NewAppModule(getKeeper[nexusKeeper.Keeper](keepers), getKeeper[snapKeeper.Keeper](keepers), getKeeper[slashingkeeper.Keeper](keepers), getKeeper[stakingkeeper.Keeper](keepers), getKeeper[axelarnetKeeper.Keeper](keepers), getKeeper[rewardKeeper.Keeper](keepers)),
+		evm.NewAppModule(getKeeper[*evmKeeper.BaseKeeper](keepers), getKeeper[voteKeeper.Keeper](keepers), getKeeper[nexusKeeper.Keeper](keepers), getKeeper[snapKeeper.Keeper](keepers), getKeeper[stakingkeeper.Keeper](keepers), getKeeper[slashingkeeper.Keeper](keepers), getKeeper[multisigKeeper.Keeper](keepers)),
 		axelarnetModule,
-		reward.NewAppModule(rewardK, nexusK, mintK, stakingK, slashingK, multisigK, snapK, bankK, bApp.MsgServiceRouter(), bApp.Router()),
-		permission.NewAppModule(permissionK),
+		reward.NewAppModule(getKeeper[rewardKeeper.Keeper](keepers), getKeeper[nexusKeeper.Keeper](keepers), getKeeper[mintkeeper.Keeper](keepers), getKeeper[stakingkeeper.Keeper](keepers), getKeeper[slashingkeeper.Keeper](keepers), getKeeper[multisigKeeper.Keeper](keepers), getKeeper[snapKeeper.Keeper](keepers), getKeeper[bankkeeper.BaseKeeper](keepers), bApp.MsgServiceRouter(), bApp.Router()),
+		permission.NewAppModule(getKeeper[permissionKeeper.Keeper](keepers)),
 	}...)
 
 	var app = &AxelarApp{
@@ -556,7 +577,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		appCodec:          appCodec,
 		interfaceRegistry: interfaceRegistry,
 		keys:              keys,
-		upgradeKeeper:     upgradeK,
+		upgradeKeeper:     getKeeper[upgradekeeper.Keeper](keepers),
 	}
 
 	mm = module.NewManager(
@@ -589,10 +610,10 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	// The baseAnteHandler handles signature verification and transaction pre-processing
 	baseAnteHandler, err := authAnte.NewAnteHandler(
 		authAnte.HandlerOptions{
-			AccountKeeper:   accountK,
-			BankKeeper:      bankK,
+			AccountKeeper:   getKeeper[authkeeper.AccountKeeper](keepers),
+			BankKeeper:      getKeeper[bankkeeper.BaseKeeper](keepers),
 			SignModeHandler: encodingConfig.TxConfig.SignModeHandler(),
-			FeegrantKeeper:  feegrantK,
+			FeegrantKeeper:  getKeeper[feegrantkeeper.Keeper](keepers),
 			SigGasConsumer:  authAnte.DefaultSigVerificationGasConsumer,
 		},
 	)
@@ -611,12 +632,12 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 
 	anteDecorators = append(anteDecorators,
 		ante.NewLogMsgDecorator(appCodec),
-		ante.NewCheckCommissionRate(stakingK),
-		ante.NewUndelegateDecorator(multisigK, nexusK, snapK),
-		ante.NewCheckRefundFeeDecorator(app.interfaceRegistry, accountK, stakingK, snapK, rewardK),
-		ante.NewCheckProxy(snapK),
-		ante.NewRestrictedTx(permissionK),
-		ibcante.NewAnteDecorator(ibcKeeper),
+		ante.NewCheckCommissionRate(getKeeper[stakingkeeper.Keeper](keepers)),
+		ante.NewUndelegateDecorator(getKeeper[multisigKeeper.Keeper](keepers), getKeeper[nexusKeeper.Keeper](keepers), getKeeper[snapKeeper.Keeper](keepers)),
+		ante.NewCheckRefundFeeDecorator(app.interfaceRegistry, getKeeper[authkeeper.AccountKeeper](keepers), getKeeper[stakingkeeper.Keeper](keepers), getKeeper[snapKeeper.Keeper](keepers), getKeeper[rewardKeeper.Keeper](keepers)),
+		ante.NewCheckProxy(getKeeper[snapKeeper.Keeper](keepers)),
+		ante.NewRestrictedTx(getKeeper[permissionKeeper.Keeper](keepers)),
+		ibcante.NewAnteDecorator(getKeeper[*ibckeeper.Keeper](keepers)),
 	)
 
 	anteHandler := sdk.ChainAnteDecorators(
@@ -633,7 +654,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 			ctx := app.BaseApp.NewUncachedContext(true, tmproto.Header{})
 
 			// Initialize pinned codes in wasmvm as they are not persisted there
-			if err := wasmK.InitializePinnedCodes(ctx); err != nil {
+			if err := getKeeper[wasm.Keeper](keepers).InitializePinnedCodes(ctx); err != nil {
 				tmos.Exit(fmt.Sprintf("failed initialize pinned codes %s", err))
 			}
 		}
@@ -643,7 +664,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 
 	// we need to ensure that all chain subspaces are loaded at start-up to prevent unexpected consensus failures
 	// when the params keeper is used outside the evm module's context
-	evmK.InitChains(app.NewContext(true, tmproto.Header{}))
+	getKeeper[*evmKeeper.BaseKeeper](keepers).InitChains(app.NewContext(true, tmproto.Header{}))
 
 	return app
 }
@@ -1037,9 +1058,38 @@ func GetModuleBasics() module.BasicManager {
 	return ModuleBasics
 }
 
-func getSubspace(keeper paramskeeper.Keeper, moduleName string) paramstypes.Subspace {
-	subspace, _ := keeper.GetSubspace(moduleName)
+func getSubspace(keepers map[string]any, moduleName string) paramstypes.Subspace {
+	paramsK := getKeeper[paramskeeper.Keeper](keepers)
+	subspace, ok := paramsK.GetSubspace(moduleName)
+	if !ok {
+		panic(fmt.Sprintf("subspace %s not found", moduleName))
+	}
 	return subspace
+}
+
+func getKeeper[T any](keepers map[string]any) T {
+	key := fullTypeName[T]()
+	keeper, ok := keepers[key].(T)
+	if !ok {
+		panic(fmt.Sprintf("keeper %s not found", key))
+	}
+	return keeper
+}
+
+func setKeeper[T any](keepers map[string]any, keeper T) {
+	keepers[fullTypeName[T]()] = keeper
+}
+
+func fullTypeName[T any]() string {
+	keeperType := reflect.TypeOf(*new(T))
+
+	var prefix string
+	if keeperType.Kind() == reflect.Ptr {
+		prefix = "*"
+		keeperType = keeperType.Elem()
+	}
+
+	return prefix + keeperType.PkgPath() + "." + keeperType.Name()
 }
 
 // IsWasmEnabled returns whether wasm is enabled
