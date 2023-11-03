@@ -857,7 +857,6 @@ func (k chainKeeper) GetEvent(ctx sdk.Context, eventID types.EventID) (event typ
 	return event, event.Status != types.EventNonExistent
 }
 
-// SetConfirmedEvent sets the event as confirmed
 func (k chainKeeper) SetConfirmedEvent(ctx sdk.Context, event types.Event) error {
 	eventID := event.GetID()
 	if _, ok := k.GetEvent(ctx, eventID); ok {
@@ -865,20 +864,39 @@ func (k chainKeeper) SetConfirmedEvent(ctx sdk.Context, event types.Event) error
 	}
 
 	event.Status = types.EventConfirmed
-
-	switch event.GetEvent().(type) {
-	case *types.Event_ContractCall, *types.Event_ContractCallWithToken, *types.Event_TokenSent,
-		*types.Event_Transfer, *types.Event_TokenDeployed, *types.Event_MultisigOperatorshipTransferred:
-		k.GetConfirmedEventQueue(ctx).Enqueue(getEventKey(eventID), &event)
-	default:
-		return fmt.Errorf("unsupported event type %T", event)
-	}
+	k.setEvent(ctx, event)
 
 	events.Emit(ctx, &types.EVMEventConfirmed{
 		Chain:   event.Chain,
 		EventID: event.GetID(),
 		Type:    event.GetEventType(),
 	})
+
+	return nil
+}
+
+// EnqueueConfirmedEvent enqueues the confirmed event
+func (k chainKeeper) EnqueueConfirmedEvent(ctx sdk.Context, id types.EventID) error {
+	event, ok := k.GetEvent(ctx, id)
+	if !ok {
+		return fmt.Errorf("event %s does not exist", id)
+	}
+	if event.Status != types.EventConfirmed {
+		return fmt.Errorf("event %s is not confirmed", id)
+	}
+
+	switch event.GetEvent().(type) {
+	// the missing Event_ContractCall is no longer allowed to be enqueued in the
+	// EVM module, it must be routed through the nexus module instead
+	case *types.Event_ContractCallWithToken,
+		*types.Event_TokenSent,
+		*types.Event_Transfer,
+		*types.Event_TokenDeployed,
+		*types.Event_MultisigOperatorshipTransferred:
+		k.GetConfirmedEventQueue(ctx).Enqueue(getEventKey(id), &event)
+	default:
+		return fmt.Errorf("unsupported event type %T", event)
+	}
 
 	return nil
 }
