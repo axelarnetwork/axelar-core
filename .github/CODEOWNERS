@@ -1,6 +1,6 @@
 # Lines starting with '#' are comments.
 # Each line is a file pattern followed by one or more owners.
 
-* @cgorenflo @jcs47 @haiyizxx @sammy1991106 @milapsheth @cjcobb23
+* @axelarnetwork/core
 ./.github/workflows/* @talalashraf
 ./.github/*.toml @talalashraf
