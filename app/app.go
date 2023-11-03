@@ -246,8 +246,8 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	setKeeper(keepers, *capabilityK)
 
 	// grant capabilities for the ibc and ibc-transfer modules
-	scopedTransferK := capabilityK.ScopeToModule(ibctransfertypes.ModuleName)
 	scopedIBCK := capabilityK.ScopeToModule(ibchost.ModuleName)
+	scopedTransferK := capabilityK.ScopeToModule(ibctransfertypes.ModuleName)
 
 	capabilityK.Seal()
 	setKeeper(keepers, initIBCKeeper(appCodec, keys, keepers, scopedIBCK))
