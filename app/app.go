@@ -235,7 +235,7 @@ func NewAxelarApp(
 	stakingK = *stakingK.SetHooks(
 		stakingtypes.NewMultiStakingHooks(getKeeper[distrkeeper.Keeper](keepers).Hooks(), getKeeper[slashingkeeper.Keeper](keepers).Hooks()),
 	)
-	setKeeper(keepers, stakingK)
+	setKeeper(keepers, &stakingK)
 
 	// add capability keeper and ScopeToModule for ibc module
 	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
@@ -247,14 +247,11 @@ func NewAxelarApp(
 	scopedWasmK := capabilityK.ScopeToModule(wasm.ModuleName)
 
 	capabilityK.Seal()
-	setKeeper(keepers, *capabilityK)
+	setKeeper(keepers, capabilityK)
 	setKeeper(keepers, initIBCKeeper(appCodec, keys, keepers, scopedIBCK))
 	// Custom axelarnet/evm/nexus keepers
-	setKeeper(keepers, axelarnetKeeper.NewKeeper(
-		appCodec, keys[axelarnetTypes.StoreKey], keepers.getSubspace(axelarnetTypes.ModuleName), getKeeper[*ibckeeper.Keeper](keepers).ChannelKeeper, getKeeper[feegrantkeeper.Keeper](keepers),
-	))
-
-	setKeeper(keepers, evmKeeper.NewKeeper(appCodec, keys[evmTypes.StoreKey], getKeeper[paramskeeper.Keeper](keepers)))
+	setKeeper(keepers, initAxelarnetKeeper(appCodec, keys, keepers))
+	setKeeper(keepers, initEvmKeeper(appCodec, keys, keepers))
 	setKeeper(keepers, initNexusKeeper(appCodec, keys, keepers))
 
 	// IBC Transfer Stack: SendPacket
@@ -265,7 +262,7 @@ func NewAxelarApp(
 	// After this, the wasm keeper is required to be set on WasmHooks
 
 	// Create IBC rate limiter
-	rateLimiter := axelarnet.NewRateLimiter(getKeeper[axelarnetKeeper.Keeper](keepers), getKeeper[*ibckeeper.Keeper](keepers).ChannelKeeper, getKeeper[nexusKeeper.Keeper](keepers))
+	rateLimiter := axelarnet.NewRateLimiter(getKeeper[axelarnetKeeper.Keeper](keepers), getKeeperAsRef[ibckeeper.Keeper](keepers).ChannelKeeper, getKeeper[nexusKeeper.Keeper](keepers))
 	var ibcHooksMiddleware ibchooks.ICS4Middleware
 	var ics4Wrapper ibctransfertypes.ICS4Wrapper
 	var wasmHooks ibchooks.WasmHooks
@@ -287,13 +284,7 @@ func NewAxelarApp(
 	}
 
 	// Create Transfer Keepers
-	setKeeper(keepers, ibctransferkeeper.NewKeeper(
-		appCodec, keys[ibctransfertypes.StoreKey], keepers.getSubspace(ibctransfertypes.ModuleName),
-		// Use the IBC middleware stack
-		ics4Wrapper,
-		getKeeper[*ibckeeper.Keeper](keepers).ChannelKeeper, &getKeeper[*ibckeeper.Keeper](keepers).PortKeeper,
-		getKeeper[authkeeper.AccountKeeper](keepers), getKeeper[bankkeeper.BaseKeeper](keepers), scopedTransferK,
-	))
+	setKeeper(keepers, initIBCTransferKeeper(appCodec, keys, keepers, ics4Wrapper, scopedTransferK))
 
 	// IBC Transfer Stack: RecvPacket
 	//
@@ -304,7 +295,7 @@ func NewAxelarApp(
 		transferStack = ibchooks.NewIBCMiddleware(transferStack, &ibcHooksMiddleware)
 	}
 
-	setKeeper(keepers, axelarnetKeeper.NewIBCKeeper(getKeeper[axelarnetKeeper.Keeper](keepers), getKeeper[ibctransferkeeper.Keeper](keepers), getKeeper[*ibckeeper.Keeper](keepers).ChannelKeeper))
+	setKeeper(keepers, initAxelarIBCKeeper(keepers))
 
 	axelarnetModule := axelarnet.NewAppModule(getKeeper[axelarnetKeeper.Keeper](keepers), getKeeper[nexusKeeper.Keeper](keepers), axelarbankkeeper.NewBankKeeper(getKeeper[bankkeeper.BaseKeeper](keepers)), getKeeper[authkeeper.AccountKeeper](keepers), getKeeper[axelarnetKeeper.IBCKeeper](keepers), transferStack, rateLimiter, logger)
 
@@ -355,7 +346,7 @@ func NewAxelarApp(
 		)
 
 		// Create wasm ibc stack
-		var wasmStack porttypes.IBCModule = wasm.NewIBCHandler(wasmK, getKeeper[*ibckeeper.Keeper](keepers).ChannelKeeper, getKeeper[*ibckeeper.Keeper](keepers).ChannelKeeper)
+		var wasmStack porttypes.IBCModule = wasm.NewIBCHandler(wasmK, getKeeperAsRef[ibckeeper.Keeper](keepers).ChannelKeeper, getKeeperAsRef[ibckeeper.Keeper](keepers).ChannelKeeper)
 		ibcRouter.AddRoute(wasm.ModuleName, wasmStack)
 
 		// set the contract keeper for the Ics20WasmHooks
@@ -364,7 +355,7 @@ func NewAxelarApp(
 	}
 
 	// Finalize the IBC router
-	getKeeper[*ibckeeper.Keeper](keepers).SetRouter(ibcRouter)
+	getKeeperAsRef[ibckeeper.Keeper](keepers).SetRouter(ibcRouter)
 
 	setKeeper(keepers, initGovernanceKeeper(appCodec, keys, keepers))
 
@@ -430,7 +421,7 @@ func NewAxelarApp(
 
 	// we need to ensure that all chain subspaces are loaded at start-up to prevent unexpected consensus failures
 	// when the params keeper is used outside the evm module's context
-	getKeeper[*evmKeeper.BaseKeeper](keepers).InitChains(app.NewContext(true, tmproto.Header{}))
+	getKeeperAsRef[evmKeeper.BaseKeeper](keepers).InitChains(app.NewContext(true, tmproto.Header{}))
 
 	return app
 }
@@ -481,7 +472,7 @@ func initAppModules(keepers *keeperCache, bApp *bam.BaseApp, encodingConfig axel
 
 	appModules = append(appModules,
 		evidence.NewAppModule(getKeeper[evidencekeeper.Keeper](keepers)),
-		ibc.NewAppModule(getKeeper[*ibckeeper.Keeper](keepers)),
+		ibc.NewAppModule(getKeeperAsRef[ibckeeper.Keeper](keepers)),
 		transfer.NewAppModule(getKeeper[ibctransferkeeper.Keeper](keepers)),
 		feegrantmodule.NewAppModule(appCodec, getKeeper[authkeeper.AccountKeeper](keepers), getKeeper[bankkeeper.BaseKeeper](keepers), getKeeper[feegrantkeeper.Keeper](keepers), encodingConfig.InterfaceRegistry),
 
@@ -490,7 +481,7 @@ func initAppModules(keepers *keeperCache, bApp *bam.BaseApp, encodingConfig axel
 		tss.NewAppModule(getKeeper[tssKeeper.Keeper](keepers), getKeeper[snapKeeper.Keeper](keepers), getKeeper[nexusKeeper.Keeper](keepers), getKeeper[stakingkeeper.Keeper](keepers), getKeeper[multisigKeeper.Keeper](keepers)),
 		vote.NewAppModule(getKeeper[voteKeeper.Keeper](keepers)),
 		nexus.NewAppModule(getKeeper[nexusKeeper.Keeper](keepers), getKeeper[snapKeeper.Keeper](keepers), getKeeper[slashingkeeper.Keeper](keepers), getKeeper[stakingkeeper.Keeper](keepers), getKeeper[axelarnetKeeper.Keeper](keepers), getKeeper[rewardKeeper.Keeper](keepers)),
-		evm.NewAppModule(getKeeper[*evmKeeper.BaseKeeper](keepers), getKeeper[voteKeeper.Keeper](keepers), getKeeper[nexusKeeper.Keeper](keepers), getKeeper[snapKeeper.Keeper](keepers), getKeeper[stakingkeeper.Keeper](keepers), getKeeper[slashingkeeper.Keeper](keepers), getKeeper[multisigKeeper.Keeper](keepers)),
+		evm.NewAppModule(getKeeperAsRef[evmKeeper.BaseKeeper](keepers), getKeeper[voteKeeper.Keeper](keepers), getKeeper[nexusKeeper.Keeper](keepers), getKeeper[snapKeeper.Keeper](keepers), getKeeper[stakingkeeper.Keeper](keepers), getKeeper[slashingkeeper.Keeper](keepers), getKeeper[multisigKeeper.Keeper](keepers)),
 		axelarnetModule,
 		reward.NewAppModule(getKeeper[rewardKeeper.Keeper](keepers), getKeeper[nexusKeeper.Keeper](keepers), getKeeper[mintkeeper.Keeper](keepers), getKeeper[stakingkeeper.Keeper](keepers), getKeeper[slashingkeeper.Keeper](keepers), getKeeper[multisigKeeper.Keeper](keepers), getKeeper[snapKeeper.Keeper](keepers), getKeeper[bankkeeper.BaseKeeper](keepers), bApp.MsgServiceRouter(), bApp.Router()),
 		permission.NewAppModule(getKeeper[permissionKeeper.Keeper](keepers)),
@@ -542,7 +533,7 @@ func initAnteHandlers(encodingConfig axelarParams.EncodingConfig, keys map[strin
 		ante.NewCheckRefundFeeDecorator(encodingConfig.InterfaceRegistry, getKeeper[authkeeper.AccountKeeper](keepers), getKeeper[stakingkeeper.Keeper](keepers), getKeeper[snapKeeper.Keeper](keepers), getKeeper[rewardKeeper.Keeper](keepers)),
 		ante.NewCheckProxy(getKeeper[snapKeeper.Keeper](keepers)),
 		ante.NewRestrictedTx(getKeeper[permissionKeeper.Keeper](keepers)),
-		ibcante.NewAnteDecorator(getKeeper[*ibckeeper.Keeper](keepers)),
+		ibcante.NewAnteDecorator(getKeeperAsRef[ibckeeper.Keeper](keepers)),
 	)
 
 	anteHandler := sdk.ChainAnteDecorators(
@@ -766,34 +757,6 @@ func createStoreKeys() map[string]*sdk.KVStoreKey {
 		axelarnetTypes.StoreKey,
 		rewardTypes.StoreKey,
 		permissionTypes.StoreKey)
-}
-
-func initParamsKeeper(encodingConfig axelarParams.EncodingConfig, key, tkey sdk.StoreKey) paramskeeper.Keeper {
-	paramsKeeper := paramskeeper.NewKeeper(encodingConfig.Codec, encodingConfig.Amino, key, tkey)
-
-	paramsKeeper.Subspace(bam.Paramspace).WithKeyTable(paramskeeper.ConsensusParamsKeyTable())
-
-	paramsKeeper.Subspace(authtypes.ModuleName)
-	paramsKeeper.Subspace(banktypes.ModuleName)
-	paramsKeeper.Subspace(stakingtypes.ModuleName)
-	paramsKeeper.Subspace(minttypes.ModuleName)
-	paramsKeeper.Subspace(distrtypes.ModuleName)
-	paramsKeeper.Subspace(slashingtypes.ModuleName)
-	paramsKeeper.Subspace(govtypes.ModuleName).WithKeyTable(govtypes.ParamKeyTable())
-	paramsKeeper.Subspace(crisistypes.ModuleName)
-	paramsKeeper.Subspace(ibctransfertypes.ModuleName)
-	paramsKeeper.Subspace(ibchost.ModuleName)
-	paramsKeeper.Subspace(wasm.ModuleName)
-	paramsKeeper.Subspace(snapTypes.ModuleName)
-	paramsKeeper.Subspace(multisigTypes.ModuleName)
-	paramsKeeper.Subspace(tssTypes.ModuleName)
-	paramsKeeper.Subspace(nexusTypes.ModuleName)
-	paramsKeeper.Subspace(axelarnetTypes.ModuleName)
-	paramsKeeper.Subspace(rewardTypes.ModuleName)
-	paramsKeeper.Subspace(voteTypes.ModuleName)
-	paramsKeeper.Subspace(permissionTypes.ModuleName)
-
-	return paramsKeeper
 }
 
 // GenesisState represents chain state at the start of the chain. Any initial state (account balances) are stored here.
