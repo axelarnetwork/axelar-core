@@ -2,6 +2,8 @@ package app
 
 import (
 	"fmt"
+	store "github.com/cosmos/cosmos-sdk/store/types"
+	ibchookstypes "github.com/osmosis-labs/osmosis/x/ibc-hooks/types"
 	"reflect"
 	"strings"
 
@@ -241,6 +243,24 @@ func initUpgradeKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, sk
 			return mm.RunMigrations(ctx, *configurator, fromVM)
 		},
 	)
+
+	upgradeInfo, err := upgradeK.ReadUpgradeInfoFromDisk()
+	if err != nil {
+		panic(err)
+	}
+
+	if upgradeInfo.Name == upgradeName(bApp.Version()) && !upgradeK.IsSkipHeight(upgradeInfo.Height) {
+		storeUpgrades := store.StoreUpgrades{}
+
+		if IsWasmEnabled() {
+			storeUpgrades.Added = append(storeUpgrades.Added, ibchookstypes.StoreKey)
+			storeUpgrades.Added = append(storeUpgrades.Added, wasm.ModuleName)
+		}
+
+		// configure store loader that checks if version == upgradeHeight and applies store upgrades
+		bApp.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
+	}
+
 	return upgradeK
 }
 
