@@ -218,7 +218,7 @@ func NewAxelarApp(
 	bApp.SetCommitMultiStoreTracer(traceStore)
 	bApp.SetVersion(version.Version)
 	bApp.SetInterfaceRegistry(interfaceRegistry)
-	bApp.SetParamStore(getSubspace(keepers, bam.Paramspace))
+	bApp.SetParamStore(keepers.getSubspace(bam.Paramspace))
 
 	moduleAccountPermissions := initModuleAccountPermissions()
 
@@ -227,7 +227,7 @@ func NewAxelarApp(
 	setKeeper(keepers, initBankKeeper(appCodec, keys, keepers, moduleAccountPermissions))
 
 	stakingK := stakingkeeper.NewKeeper(
-		appCodec, keys[stakingtypes.StoreKey], getKeeper[authkeeper.AccountKeeper](keepers), getKeeper[bankkeeper.BaseKeeper](keepers), getSubspace(keepers, stakingtypes.ModuleName),
+		appCodec, keys[stakingtypes.StoreKey], getKeeper[authkeeper.AccountKeeper](keepers), getKeeper[bankkeeper.BaseKeeper](keepers), keepers.getSubspace(stakingtypes.ModuleName),
 	)
 
 	setKeeper(keepers, initMintKeeper(appCodec, keys, keepers, &stakingK))
@@ -262,7 +262,7 @@ func NewAxelarApp(
 	setKeeper(keepers, initIBCKeeper(appCodec, keys, keepers, scopedIBCK))
 	// Custom axelarnet/evm/nexus keepers
 	setKeeper(keepers, axelarnetKeeper.NewKeeper(
-		appCodec, keys[axelarnetTypes.StoreKey], getSubspace(keepers, axelarnetTypes.ModuleName), getKeeper[*ibckeeper.Keeper](keepers).ChannelKeeper, getKeeper[feegrantkeeper.Keeper](keepers),
+		appCodec, keys[axelarnetTypes.StoreKey], keepers.getSubspace(axelarnetTypes.ModuleName), getKeeper[*ibckeeper.Keeper](keepers).ChannelKeeper, getKeeper[feegrantkeeper.Keeper](keepers),
 	))
 
 	setKeeper(keepers, evmKeeper.NewKeeper(
@@ -302,7 +302,7 @@ func NewAxelarApp(
 
 	// Create Transfer Keepers
 	setKeeper(keepers, ibctransferkeeper.NewKeeper(
-		appCodec, keys[ibctransfertypes.StoreKey], getSubspace(keepers, ibctransfertypes.ModuleName),
+		appCodec, keys[ibctransfertypes.StoreKey], keepers.getSubspace(ibctransfertypes.ModuleName),
 		// Use the IBC middleware stack
 		ics4Wrapper,
 		getKeeper[*ibckeeper.Keeper](keepers).ChannelKeeper, &getKeeper[*ibckeeper.Keeper](keepers).PortKeeper,
@@ -350,7 +350,7 @@ func NewAxelarApp(
 		wasmK = wasm.NewKeeper(
 			appCodec,
 			keys[wasm.StoreKey],
-			getSubspace(keepers, wasm.ModuleName),
+			keepers.getSubspace(wasm.ModuleName),
 			getKeeper[authkeeper.AccountKeeper](keepers),
 			getKeeper[bankkeeper.BaseKeeper](keepers),
 			getKeeper[stakingkeeper.Keeper](keepers),
@@ -571,6 +571,22 @@ func initAnteHandlers(encodingConfig axelarParams.EncodingConfig, keys map[strin
 		anteDecorators...,
 	)
 	return anteHandler
+}
+
+func initModuleAccountPermissions() map[string][]string {
+	return map[string][]string{
+		authtypes.FeeCollectorName:     nil,
+		distrtypes.ModuleName:          nil,
+		minttypes.ModuleName:           {authtypes.Minter},
+		stakingtypes.BondedPoolName:    {authtypes.Burner, authtypes.Staking},
+		stakingtypes.NotBondedPoolName: {authtypes.Burner, authtypes.Staking},
+		govtypes.ModuleName:            {authtypes.Burner},
+		ibctransfertypes.ModuleName:    {authtypes.Minter, authtypes.Burner},
+		axelarnetTypes.ModuleName:      {authtypes.Minter, authtypes.Burner},
+		rewardTypes.ModuleName:         {authtypes.Minter},
+		wasm.ModuleName:                {authtypes.Burner},
+	}
+
 }
 
 func initModuleAccountPermissions() map[string][]string {
