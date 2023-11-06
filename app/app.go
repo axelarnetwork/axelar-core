@@ -212,14 +212,14 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	setKeeper(keepers, initParamsKeeper(appCodec, encodingConfig.Amino, keys[paramstypes.StoreKey], tkeys[paramstypes.TStoreKey]))
 
 	// set the BaseApp's parameter store
-	bApp.SetParamStore(getSubspace(keepers, bam.Paramspace))
+	bApp.SetParamStore(keepers.getSubspace(bam.Paramspace))
 
 	// add keepers
 	setKeeper(keepers, initAccountKeeper(appCodec, keys, keepers, moduleAccountPermissions))
 	setKeeper(keepers, initBankKeeper(appCodec, keys, keepers, moduleAccountPermissions))
 
 	stakingK := stakingkeeper.NewKeeper(
-		appCodec, keys[stakingtypes.StoreKey], getKeeper[authkeeper.AccountKeeper](keepers), getKeeper[bankkeeper.BaseKeeper](keepers), getSubspace(keepers, stakingtypes.ModuleName),
+		appCodec, keys[stakingtypes.StoreKey], getKeeper[authkeeper.AccountKeeper](keepers), getKeeper[bankkeeper.BaseKeeper](keepers), keepers.getSubspace(stakingtypes.ModuleName),
 	)
 
 	setKeeper(keepers, initMintKeeper(appCodec, keys, keepers, &stakingK))
@@ -253,7 +253,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	setKeeper(keepers, initIBCKeeper(appCodec, keys, keepers, scopedIBCK))
 	// Custom axelarnet/evm/nexus keepers
 	setKeeper(keepers, axelarnetKeeper.NewKeeper(
-		appCodec, keys[axelarnetTypes.StoreKey], getSubspace(keepers, axelarnetTypes.ModuleName), getKeeper[*ibckeeper.Keeper](keepers).ChannelKeeper, getKeeper[feegrantkeeper.Keeper](keepers),
+		appCodec, keys[axelarnetTypes.StoreKey], keepers.getSubspace(axelarnetTypes.ModuleName), getKeeper[*ibckeeper.Keeper](keepers).ChannelKeeper, getKeeper[feegrantkeeper.Keeper](keepers),
 	))
 
 	setKeeper(keepers, evmKeeper.NewKeeper(
@@ -293,7 +293,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 
 	// Create Transfer Keepers
 	setKeeper(keepers, ibctransferkeeper.NewKeeper(
-		appCodec, keys[ibctransfertypes.StoreKey], getSubspace(keepers, ibctransfertypes.ModuleName),
+		appCodec, keys[ibctransfertypes.StoreKey], keepers.getSubspace(ibctransfertypes.ModuleName),
 		// Use the IBC middleware stack
 		ics4Wrapper,
 		getKeeper[*ibckeeper.Keeper](keepers).ChannelKeeper, &getKeeper[*ibckeeper.Keeper](keepers).PortKeeper,
@@ -345,7 +345,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		wasmK = wasm.NewKeeper(
 			appCodec,
 			keys[wasm.StoreKey],
-			getSubspace(keepers, wasm.ModuleName),
+			keepers.getSubspace(wasm.ModuleName),
 			getKeeper[authkeeper.AccountKeeper](keepers),
 			getKeeper[bankkeeper.BaseKeeper](keepers),
 			getKeeper[stakingkeeper.Keeper](keepers),
