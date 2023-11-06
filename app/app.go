@@ -440,7 +440,7 @@ func initBaseApp(db dbm.DB, traceStore io.Writer, encodingConfig axelarParams.En
 	bApp.SetCommitMultiStoreTracer(traceStore)
 	bApp.SetVersion(version.Version)
 	bApp.SetInterfaceRegistry(encodingConfig.InterfaceRegistry)
-	bApp.SetParamStore(getSubspace(keepers, bam.Paramspace))
+	bApp.SetParamStore(keepers.getSubspace(bam.Paramspace))
 	return bApp
 }
 
