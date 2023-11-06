@@ -258,7 +258,7 @@ func initIBCKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, keeper
 
 func initIBCTransferKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, keepers *keeperCache, ics4Wrapper ibctransfertypes.ICS4Wrapper, scopedTransferK capabilitykeeper.ScopedKeeper) *ibctransferkeeper.Keeper {
 	transferK := ibctransferkeeper.NewKeeper(
-		appCodec, keys[ibctransfertypes.StoreKey], getSubspace(keepers, ibctransfertypes.ModuleName),
+		appCodec, keys[ibctransfertypes.StoreKey], keepers.getSubspace(ibctransfertypes.ModuleName),
 		// Use the IBC middleware stack
 		ics4Wrapper,
 		getKeeperAsRef[ibckeeper.Keeper](keepers).ChannelKeeper, &getKeeperAsRef[ibckeeper.Keeper](keepers).PortKeeper,
@@ -274,7 +274,7 @@ func initAxelarIBCKeeper(keepers *keeperCache) *axelarnetKeeper.IBCKeeper {
 
 func initAxelarnetKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, keepers *keeperCache) *axelarnetKeeper.Keeper {
 	axelarnetK := axelarnetKeeper.NewKeeper(
-		appCodec, keys[axelarnetTypes.StoreKey], getSubspace(keepers, axelarnetTypes.ModuleName), getKeeperAsRef[ibckeeper.Keeper](keepers).ChannelKeeper, getKeeper[feegrantkeeper.Keeper](keepers),
+		appCodec, keys[axelarnetTypes.StoreKey], keepers.getSubspace(axelarnetTypes.ModuleName), getKeeperAsRef[ibckeeper.Keeper](keepers).ChannelKeeper, getKeeper[feegrantkeeper.Keeper](keepers),
 	)
 	return &axelarnetK
 }
