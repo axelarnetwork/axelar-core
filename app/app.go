@@ -299,6 +299,12 @@ func NewAxelarApp(
 
 	axelarnetModule := axelarnet.NewAppModule(getKeeper[axelarnetKeeper.Keeper](keepers), getKeeper[nexusKeeper.Keeper](keepers), axelarbankkeeper.NewBankKeeper(getKeeper[bankkeeper.BaseKeeper](keepers)), getKeeper[authkeeper.AccountKeeper](keepers), getKeeper[axelarnetKeeper.IBCKeeper](keepers), transferStack, rateLimiter, logger)
 
+	// TODO: fix this
+	// messageRouter := nexusTypes.NewMessageRouter().
+	// 	AddRoute(evmTypes.ModuleName, evmKeeper.NewMessageRouter()).
+	// 	AddRoute(axelarnetTypes.ModuleName, axelarnetKeeper.NewMessageRouter(ibcK, axelarnetK, feegrantK, axelarbankkeeper.NewBankKeeper(bankK), nexusK, accountK))
+	// nexusK.SetMessageRouter(messageRouter)
+
 	// Create static IBC router, add axelarnet module as the IBC transfer route, and seal it
 	ibcRouter := porttypes.NewRouter()
 	ibcRouter.AddRoute(ibctransfertypes.ModuleName, axelarnetModule)

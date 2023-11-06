@@ -230,3 +230,14 @@ func (k Keeper) validateAddressAndAsset(ctx sdk.Context, address exported.CrossC
 
 	return k.validateAsset(ctx, address.Chain, asset.Denom)
 }
+
+func (k Keeper) RouteMessage(ctx sdk.Context, routingCtx exported.RoutingContext, id string) error {
+	err := k.SetMessageProcessing(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	k.Logger(ctx).Debug("set general message status to processing", "messageID", id)
+
+	return k.getMessageRouter().Route(ctx, routingCtx, funcs.MustOk(k.GetMessage(ctx, id)))
+}

@@ -90,7 +90,7 @@ func (k Keeper) GetRecipient(ctx sdk.Context, depositAddress exported.CrossChain
 
 // ValidateAddress validates the given cross chain address
 func (k Keeper) ValidateAddress(ctx sdk.Context, address exported.CrossChainAddress) error {
-	validator := k.GetRouter().GetAddressValidator(address.Chain.Module)
+	validator := k.getAddressValidator().GetAddressValidator(address.Chain.Module)
 	if validator == nil {
 		return fmt.Errorf("unknown module for chain %s", address.Chain.String())
 	}

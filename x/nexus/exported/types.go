@@ -20,6 +20,15 @@ import (
 // AddressValidator defines a function that implements address verification upon a request to link addresses
 type AddressValidator func(ctx sdk.Context, address CrossChainAddress) error
 
+type RoutingContext struct {
+	Sender     sdk.AccAddress
+	FeeGranter sdk.AccAddress
+	Payload    []byte
+}
+
+// MessageRouter defines a function that implements message routing
+type MessageRouter func(ctx sdk.Context, routingCtx RoutingContext, msg GeneralMessage) error
+
 // TransferStateFromString converts a describing state string to the corresponding TransferState
 func TransferStateFromString(s string) TransferState {
 	state, ok := TransferState_value["TRANSFER_STATE_"+strings.ToUpper(s)]

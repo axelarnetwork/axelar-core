@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strings"
 
-	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/query"
@@ -17,18 +16,12 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils/events"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
-	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/utils/funcs"
 )
 
 var _ types.MsgServiceServer = msgServer{}
-
-const (
-	evmCallContractGasCost    = storetypes.Gas(10000000)
-	cosmosCallContractGasCost = storetypes.Gas(1000000)
-)
 
 type msgServer struct {
 	Keeper
@@ -491,45 +484,14 @@ func (s msgServer) RetryIBCTransfer(c context.Context, req *types.RetryIBCTransf
 func (s msgServer) RouteMessage(c context.Context, req *types.RouteMessageRequest) (*types.RouteMessageResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	msg, ok := s.nexus.GetMessage(ctx, req.ID)
-	if !ok {
-		return nil, fmt.Errorf("message %s not found", req.ID)
+	routingCtx := nexus.RoutingContext{
+		Sender:     req.Sender,
+		FeeGranter: req.Feegranter,
+		Payload:    req.Payload,
 	}
-
-	if !msg.Match(req.Payload) {
-		return nil, fmt.Errorf("payload hash does not match")
-	}
-
-	// send ibc message if destination is cosmos
-	if msg.Recipient.Chain.IsFrom(exported.ModuleName) {
-		bz, err := types.TranslateMessage(msg, req.Payload)
-		if err != nil {
-			return nil, sdkerrors.Wrap(err, "invalid payload")
-		}
-
-		asset, err := s.escrowAssetToMessageSender(ctx, req, msg)
-		if err != nil {
-			return nil, err
-		}
-
-		err = s.ibcK.SendMessage(c, msg.Recipient, asset, string(bz), msg.ID)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	err := s.nexus.SetMessageProcessing(ctx, msg.ID)
-	if err != nil {
+	if err := s.nexus.RouteMessage(ctx, routingCtx, req.ID); err != nil {
 		return nil, err
 	}
-
-	if msg.Recipient.Chain.IsFrom(evmtypes.ModuleName) {
-		ctx.GasMeter().ConsumeGas(evmCallContractGasCost, "execute-message")
-	} else {
-		ctx.GasMeter().ConsumeGas(cosmosCallContractGasCost, "execute-message")
-	}
-
-	s.Logger(ctx).Debug("set general message status to processing", "messageID", msg.ID)
 
 	return &types.RouteMessageResponse{}, nil
 }
@@ -601,43 +563,4 @@ func prepareTransfer(ctx sdk.Context, k Keeper, n types.Nexus, b types.BankKeepe
 	}
 
 	return coin, sender, nil
-}
-
-// all general messages are sent from the Axelar general message sender, so receiver can use the packet sender to authenticate the message
-// escrowAssetToMessageSender sends the asset to general msg sender account
-func (s msgServer) escrowAssetToMessageSender(ctx sdk.Context, req *types.RouteMessageRequest, msg nexus.GeneralMessage) (sdk.Coin, error) {
-	var asset sdk.Coin
-	var sender sdk.AccAddress
-	var err error
-
-	switch msg.Type() {
-	case nexus.TypeGeneralMessage:
-		// pure general message, take dust amount from sender to satisfy ibc transfer requirements
-		asset = sdk.NewCoin(exported.NativeAsset, sdk.OneInt())
-		sender = req.Sender
-
-		if req.Feegranter != nil {
-			if err := s.feegrantK.UseGrantedFees(ctx, req.Feegranter, req.Sender, sdk.NewCoins(asset), []sdk.Msg{req}); err != nil {
-				return sdk.Coin{}, err
-			}
-
-			sender = req.Feegranter
-		}
-	case nexus.TypeGeneralMessageWithToken:
-		// general message with token, get token from corresponding account
-		asset, sender, err = prepareTransfer(ctx, s.Keeper, s.nexus, s.bank, s.account, *msg.Asset)
-		if err != nil {
-			return sdk.Coin{}, err
-		}
-	default:
-		return sdk.Coin{}, fmt.Errorf("unrecognized message type")
-	}
-
-	// use GeneralMessageSender account as the canonical general message sender
-	err = s.bank.SendCoins(ctx, sender, types.AxelarGMPAccount, sdk.NewCoins(asset))
-	if err != nil {
-		return sdk.Coin{}, err
-	}
-
-	return asset, nil
 }
