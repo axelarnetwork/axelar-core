@@ -586,23 +586,6 @@ func initModuleAccountPermissions() map[string][]string {
 		rewardTypes.ModuleName:         {authtypes.Minter},
 		wasm.ModuleName:                {authtypes.Burner},
 	}
-
-}
-
-func initModuleAccountPermissions() map[string][]string {
-	return map[string][]string{
-		authtypes.FeeCollectorName:     nil,
-		distrtypes.ModuleName:          nil,
-		minttypes.ModuleName:           {authtypes.Minter},
-		stakingtypes.BondedPoolName:    {authtypes.Burner, authtypes.Staking},
-		stakingtypes.NotBondedPoolName: {authtypes.Burner, authtypes.Staking},
-		govtypes.ModuleName:            {authtypes.Burner},
-		ibctransfertypes.ModuleName:    {authtypes.Minter, authtypes.Burner},
-		axelarnetTypes.ModuleName:      {authtypes.Minter, authtypes.Burner},
-		rewardTypes.ModuleName:         {authtypes.Minter},
-		wasm.ModuleName:                {authtypes.Burner},
-	}
-
 }
 
 func orderMigrations() []string {
