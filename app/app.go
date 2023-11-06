@@ -12,6 +12,7 @@ import (
 	"github.com/CosmWasm/wasmd/x/wasm"
 	wasmclient "github.com/CosmWasm/wasmd/x/wasm/client"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
+	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/grpc/tmservice"
@@ -189,30 +190,37 @@ type AxelarApp struct {
 }
 
 // NewAxelarApp is a constructor function for axelar
-func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest bool, skipUpgradeHeights map[int64]bool,
-	homePath string, invCheckPeriod uint, encodingConfig axelarParams.EncodingConfig,
-	appOpts servertypes.AppOptions, wasmOpts []wasm.Option, baseAppOptions ...func(*bam.BaseApp)) *AxelarApp {
+func NewAxelarApp(
+	logger log.Logger,
+	db dbm.DB,
+	traceStore io.Writer,
+	loadLatest bool,
+	skipUpgradeHeights map[int64]bool,
+	homePath string,
+	invCheckPeriod uint,
+	encodingConfig axelarParams.EncodingConfig,
+	appOpts servertypes.AppOptions,
+	wasmOpts []wasm.Option,
+	baseAppOptions ...func(*bam.BaseApp),
+) *AxelarApp {
 
 	appCodec := encodingConfig.Codec
-	interfaceRegistry := encodingConfig.InterfaceRegistry
 
+	keys := createStoreKeys()
+	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
+
+	keepers := newKeeperCache()
+	setKeeper(keepers, initParamsKeeper(appCodec, encodingConfig.Amino, keys[paramstypes.StoreKey], tkeys[paramstypes.TStoreKey]))
+
+	interfaceRegistry := encodingConfig.InterfaceRegistry
 	// BaseApp handles interactions with Tendermint through the ABCI protocol
 	bApp := bam.NewBaseApp(Name, logger, db, encodingConfig.TxConfig.TxDecoder(), baseAppOptions...)
 	bApp.SetCommitMultiStoreTracer(traceStore)
 	bApp.SetVersion(version.Version)
 	bApp.SetInterfaceRegistry(interfaceRegistry)
-
-	keys := createStoreKeys()
-	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
-	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
+	bApp.SetParamStore(keepers.getSubspace(bam.Paramspace))
 
 	moduleAccountPermissions := initModuleAccountPermissions()
-
-	keepers := newKeeperCache()
-	setKeeper(keepers, initParamsKeeper(appCodec, encodingConfig.Amino, keys[paramstypes.StoreKey], tkeys[paramstypes.TStoreKey]))
-
-	// set the BaseApp's parameter store
-	bApp.SetParamStore(keepers.getSubspace(bam.Paramspace))
 
 	// add keepers
 	setKeeper(keepers, initAccountKeeper(appCodec, keys, keepers, moduleAccountPermissions))
@@ -242,6 +250,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	setKeeper(keepers, stakingK)
 
 	// add capability keeper and ScopeToModule for ibc module
+	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
 	capabilityK := capabilitykeeper.NewKeeper(appCodec, keys[capabilitytypes.StoreKey], memKeys[capabilitytypes.MemStoreKey])
 	setKeeper(keepers, *capabilityK)
 
@@ -327,15 +336,11 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	setKeeper(keepers, initPermissionKeeper(appCodec, keys, keepers))
 
 	var wasmK wasm.Keeper
-	var wasmAnteDecorators []sdk.AnteDecorator
+
+	wasmDir := filepath.Join(homePath, "wasm")
+	wasmConfig := mustReadWasmConfig(appOpts)
 
 	if IsWasmEnabled() {
-		wasmDir := filepath.Join(homePath, "wasm")
-		wasmConfig, err := wasm.ReadWasmConfig(appOpts)
-		if err != nil {
-			panic(fmt.Sprintf("error while reading wasm config: %s", err))
-		}
-
 		scopedWasmK := capabilityK.ScopeToModule(wasm.ModuleName)
 		// The last arguments can contain custom message handlers, and custom query handlers,
 		// if we want to allow any custom callbacks
@@ -362,11 +367,6 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 			WasmCapabilities,
 			wasmOpts...,
 		)
-
-		wasmAnteDecorators = []sdk.AnteDecorator{
-			wasmkeeper.NewLimitSimulationGasDecorator(wasmConfig.SimulationGasLimit),
-			wasmkeeper.NewCountTXDecorator(keys[wasm.StoreKey]),
-		}
 
 		// Create wasm ibc stack
 		var wasmStack porttypes.IBCModule = wasm.NewIBCHandler(wasmK, getKeeper[*ibckeeper.Keeper](keepers).ChannelKeeper, getKeeper[*ibckeeper.Keeper](keepers).ChannelKeeper)
@@ -406,6 +406,74 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	var skipGenesisInvariants = cast.ToBool(appOpts.Get(crisis.FlagSkipGenesisInvariants))
 
 	crisisK := getKeeper[crisiskeeper.Keeper](keepers)
+
+	appModules := initAppModules(keepers, bApp, encodingConfig, appCodec, crisisK, skipGenesisInvariants, capabilityK, interfaceRegistry, axelarnetModule)
+
+	mm = module.NewManager(appModules...)
+	mm.SetOrderMigrations(orderMigrations()...)
+	mm.SetOrderBeginBlockers(orderBeginBlockers()...)
+	mm.SetOrderEndBlockers(orderEndBlockers()...)
+	mm.SetOrderInitGenesis(orderModulesForGenesis()...)
+
+	mm.RegisterInvariants(&crisisK)
+
+	// register all module routes and module queriers
+	mm.RegisterRoutes(bApp.Router(), bApp.QueryRouter(), encodingConfig.Amino)
+	configurator = module.NewConfigurator(appCodec, bApp.MsgServiceRouter(), bApp.GRPCQueryRouter())
+	mm.RegisterServices(configurator)
+
+	anteHandler := initAnteHandlers(encodingConfig, keys, keepers, interfaceRegistry, wasmConfig)
+
+	var app = &AxelarApp{
+		BaseApp:           bApp,
+		appCodec:          appCodec,
+		interfaceRegistry: interfaceRegistry,
+		stakingKeeper:     getKeeper[stakingkeeper.Keeper](keepers),
+		crisisKeeper:      getKeeper[crisiskeeper.Keeper](keepers),
+		distrKeeper:       getKeeper[distrkeeper.Keeper](keepers),
+		slashingKeeper:    getKeeper[slashingkeeper.Keeper](keepers),
+		keys:              keys,
+		mm:                mm,
+		upgradeKeeper:     getKeeper[upgradekeeper.Keeper](keepers),
+	}
+
+	// initialize stores
+	app.MountKVStores(keys)
+	app.MountTransientStores(tkeys)
+	app.MountMemoryStores(memKeys)
+
+	// The initChainer handles translating the genesis.json file into initial state for the network
+	app.SetInitChainer(app.InitChainer)
+	app.SetBeginBlocker(app.BeginBlocker)
+	app.SetEndBlocker(app.EndBlocker)
+
+	app.SetAnteHandler(anteHandler)
+
+	if loadLatest {
+		if err := app.LoadLatestVersion(); err != nil {
+			tmos.Exit(err.Error())
+		}
+
+		if IsWasmEnabled() {
+			ctx := app.BaseApp.NewUncachedContext(true, tmproto.Header{})
+
+			// Initialize pinned codes in wasmvm as they are not persisted there
+			if err := getKeeper[wasm.Keeper](keepers).InitializePinnedCodes(ctx); err != nil {
+				tmos.Exit(fmt.Sprintf("failed initialize pinned codes %s", err))
+			}
+		}
+	}
+
+	/* ==== at this point all stores are fully loaded ==== */
+
+	// we need to ensure that all chain subspaces are loaded at start-up to prevent unexpected consensus failures
+	// when the params keeper is used outside the evm module's context
+	getKeeper[*evmKeeper.BaseKeeper](keepers).InitChains(app.NewContext(true, tmproto.Header{}))
+
+	return app
+}
+
+func initAppModules(keepers *keeperCache, bApp *bam.BaseApp, encodingConfig axelarParams.EncodingConfig, appCodec codec.Codec, crisisK crisiskeeper.Keeper, skipGenesisInvariants bool, capabilityK *capabilitykeeper.Keeper, interfaceRegistry types.InterfaceRegistry, axelarnetModule axelarnet.AppModule) []module.AppModule {
 	appModules := []module.AppModule{
 		genutil.NewAppModule(getKeeper[authkeeper.AccountKeeper](keepers), getKeeper[stakingkeeper.Keeper](keepers), bApp.DeliverTx, encodingConfig.TxConfig),
 		auth.NewAppModule(appCodec, getKeeper[authkeeper.AccountKeeper](keepers), nil),
@@ -433,7 +501,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		)
 	}
 
-	appModules = append(appModules, []module.AppModule{
+	appModules = append(appModules,
 		evidence.NewAppModule(getKeeper[evidencekeeper.Keeper](keepers)),
 		ibc.NewAppModule(getKeeper[*ibckeeper.Keeper](keepers)),
 		transfer.NewAppModule(getKeeper[ibctransferkeeper.Keeper](keepers)),
@@ -448,43 +516,19 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		axelarnetModule,
 		reward.NewAppModule(getKeeper[rewardKeeper.Keeper](keepers), getKeeper[nexusKeeper.Keeper](keepers), getKeeper[mintkeeper.Keeper](keepers), getKeeper[stakingkeeper.Keeper](keepers), getKeeper[slashingkeeper.Keeper](keepers), getKeeper[multisigKeeper.Keeper](keepers), getKeeper[snapKeeper.Keeper](keepers), getKeeper[bankkeeper.BaseKeeper](keepers), bApp.MsgServiceRouter(), bApp.Router()),
 		permission.NewAppModule(getKeeper[permissionKeeper.Keeper](keepers)),
-	}...)
-
-	var app = &AxelarApp{
-		BaseApp:           bApp,
-		appCodec:          appCodec,
-		interfaceRegistry: interfaceRegistry,
-		keys:              keys,
-		upgradeKeeper:     getKeeper[upgradekeeper.Keeper](keepers),
-	}
-
-	mm = module.NewManager(
-		appModules...,
 	)
-	app.mm = mm
+	return appModules
+}
 
-	app.mm.SetOrderMigrations(orderMigrations()...)
-	app.mm.SetOrderBeginBlockers(orderBeginBlockers()...)
-	app.mm.SetOrderEndBlockers(orderEndBlockers()...)
-	app.mm.SetOrderInitGenesis(orderModulesForGenesis()...)
+func mustReadWasmConfig(appOpts servertypes.AppOptions) wasmtypes.WasmConfig {
+	wasmConfig, err := wasm.ReadWasmConfig(appOpts)
+	if err != nil {
+		panic(fmt.Sprintf("error while reading wasm config: %s", err))
+	}
+	return wasmConfig
+}
 
-	app.mm.RegisterInvariants(&crisisK)
-
-	// register all module routes and module queriers
-	app.mm.RegisterRoutes(app.Router(), app.QueryRouter(), encodingConfig.Amino)
-	configurator = module.NewConfigurator(app.appCodec, app.MsgServiceRouter(), app.GRPCQueryRouter())
-	app.mm.RegisterServices(configurator)
-
-	// initialize stores
-	app.MountKVStores(keys)
-	app.MountTransientStores(tkeys)
-	app.MountMemoryStores(memKeys)
-
-	// The initChainer handles translating the genesis.json file into initial state for the network
-	app.SetInitChainer(app.InitChainer)
-	app.SetBeginBlocker(app.BeginBlocker)
-	app.SetEndBlocker(app.EndBlocker)
-
+func initAnteHandlers(encodingConfig axelarParams.EncodingConfig, keys map[string]*sdk.KVStoreKey, keepers *keeperCache, interfaceRegistry types.InterfaceRegistry, wasmConfig wasmtypes.WasmConfig) sdk.AnteHandler {
 	// The baseAnteHandler handles signature verification and transaction pre-processing
 	baseAnteHandler, err := authAnte.NewAnteHandler(
 		authAnte.HandlerOptions{
@@ -505,14 +549,19 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 
 	// enforce wasm limits earlier in the ante handler chain
 	if IsWasmEnabled() {
+		wasmAnteDecorators := []sdk.AnteDecorator{
+			wasmkeeper.NewLimitSimulationGasDecorator(wasmConfig.SimulationGasLimit),
+			wasmkeeper.NewCountTXDecorator(keys[wasm.StoreKey]),
+		}
+
 		anteDecorators = append(anteDecorators, wasmAnteDecorators...)
 	}
 
 	anteDecorators = append(anteDecorators,
-		ante.NewLogMsgDecorator(appCodec),
+		ante.NewLogMsgDecorator(encodingConfig.Codec),
 		ante.NewCheckCommissionRate(getKeeper[stakingkeeper.Keeper](keepers)),
 		ante.NewUndelegateDecorator(getKeeper[multisigKeeper.Keeper](keepers), getKeeper[nexusKeeper.Keeper](keepers), getKeeper[snapKeeper.Keeper](keepers)),
-		ante.NewCheckRefundFeeDecorator(app.interfaceRegistry, getKeeper[authkeeper.AccountKeeper](keepers), getKeeper[stakingkeeper.Keeper](keepers), getKeeper[snapKeeper.Keeper](keepers), getKeeper[rewardKeeper.Keeper](keepers)),
+		ante.NewCheckRefundFeeDecorator(interfaceRegistry, getKeeper[authkeeper.AccountKeeper](keepers), getKeeper[stakingkeeper.Keeper](keepers), getKeeper[snapKeeper.Keeper](keepers), getKeeper[rewardKeeper.Keeper](keepers)),
 		ante.NewCheckProxy(getKeeper[snapKeeper.Keeper](keepers)),
 		ante.NewRestrictedTx(getKeeper[permissionKeeper.Keeper](keepers)),
 		ibcante.NewAnteDecorator(getKeeper[*ibckeeper.Keeper](keepers)),
@@ -521,30 +570,7 @@ func NewAxelarApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	anteHandler := sdk.ChainAnteDecorators(
 		anteDecorators...,
 	)
-	app.SetAnteHandler(anteHandler)
-
-	if loadLatest {
-		if err := app.LoadLatestVersion(); err != nil {
-			tmos.Exit(err.Error())
-		}
-
-		if IsWasmEnabled() {
-			ctx := app.BaseApp.NewUncachedContext(true, tmproto.Header{})
-
-			// Initialize pinned codes in wasmvm as they are not persisted there
-			if err := getKeeper[wasm.Keeper](keepers).InitializePinnedCodes(ctx); err != nil {
-				tmos.Exit(fmt.Sprintf("failed initialize pinned codes %s", err))
-			}
-		}
-	}
-
-	/* ==== at this point all stores are fully loaded ==== */
-
-	// we need to ensure that all chain subspaces are loaded at start-up to prevent unexpected consensus failures
-	// when the params keeper is used outside the evm module's context
-	getKeeper[*evmKeeper.BaseKeeper](keepers).InitChains(app.NewContext(true, tmproto.Header{}))
-
-	return app
+	return anteHandler
 }
 
 func initModuleAccountPermissions() map[string][]string {
@@ -560,7 +586,6 @@ func initModuleAccountPermissions() map[string][]string {
 		rewardTypes.ModuleName:         {authtypes.Minter},
 		wasm.ModuleName:                {authtypes.Burner},
 	}
-
 }
 
 func orderMigrations() []string {
