@@ -22,7 +22,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/server/api"
 	"github.com/cosmos/cosmos-sdk/server/config"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
-	store "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/version"
@@ -141,11 +140,6 @@ var (
 	// DefaultNodeHome default home directories for the application daemon
 	DefaultNodeHome string
 
-	// ModuleBasics defines the module BasicManager is in charge of setting up basic,
-	// non-dependant module elements, such as codec registration
-	// and genesis verification. It is dynamically initialized by GetModuleBasics method.
-	ModuleBasics module.BasicManager
-
 	// WasmEnabled indicates whether wasm module is added to the app.
 	// "true" setting means it will be, otherwise it won't.
 	// This is configured during the build.
@@ -204,23 +198,17 @@ func NewAxelarApp(
 	baseAppOptions ...func(*bam.BaseApp),
 ) *AxelarApp {
 
-	appCodec := encodingConfig.Codec
-
 	keys := createStoreKeys()
 	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
 
 	keepers := newKeeperCache()
-	setKeeper(keepers, initParamsKeeper(appCodec, encodingConfig.Amino, keys[paramstypes.StoreKey], tkeys[paramstypes.TStoreKey]))
+	setKeeper(keepers, initParamsKeeper(encodingConfig, keys[paramstypes.StoreKey], tkeys[paramstypes.TStoreKey]))
 
-	interfaceRegistry := encodingConfig.InterfaceRegistry
 	// BaseApp handles interactions with Tendermint through the ABCI protocol
-	bApp := bam.NewBaseApp(Name, logger, db, encodingConfig.TxConfig.TxDecoder(), baseAppOptions...)
-	bApp.SetCommitMultiStoreTracer(traceStore)
-	bApp.SetVersion(version.Version)
-	bApp.SetInterfaceRegistry(interfaceRegistry)
-	bApp.SetParamStore(keepers.getSubspace(bam.Paramspace))
+	bApp := initBaseApp(db, traceStore, encodingConfig, keepers, baseAppOptions, logger)
 
 	moduleAccountPermissions := initModuleAccountPermissions()
+	appCodec := encodingConfig.Codec
 
 	// add keepers
 	setKeeper(keepers, initAccountKeeper(appCodec, keys, keepers, moduleAccountPermissions))
@@ -252,23 +240,21 @@ func NewAxelarApp(
 	// add capability keeper and ScopeToModule for ibc module
 	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
 	capabilityK := capabilitykeeper.NewKeeper(appCodec, keys[capabilitytypes.StoreKey], memKeys[capabilitytypes.MemStoreKey])
-	setKeeper(keepers, *capabilityK)
 
-	// grant capabilities for the ibc and ibc-transfer modules
+	// grant capabilities for the ibc, ibc-transfer and wasm modules
 	scopedIBCK := capabilityK.ScopeToModule(ibchost.ModuleName)
 	scopedTransferK := capabilityK.ScopeToModule(ibctransfertypes.ModuleName)
+	scopedWasmK := capabilityK.ScopeToModule(wasm.ModuleName)
 
 	capabilityK.Seal()
+	setKeeper(keepers, *capabilityK)
 	setKeeper(keepers, initIBCKeeper(appCodec, keys, keepers, scopedIBCK))
 	// Custom axelarnet/evm/nexus keepers
 	setKeeper(keepers, axelarnetKeeper.NewKeeper(
 		appCodec, keys[axelarnetTypes.StoreKey], keepers.getSubspace(axelarnetTypes.ModuleName), getKeeper[*ibckeeper.Keeper](keepers).ChannelKeeper, getKeeper[feegrantkeeper.Keeper](keepers),
 	))
 
-	setKeeper(keepers, evmKeeper.NewKeeper(
-		appCodec, keys[evmTypes.StoreKey], getKeeper[paramskeeper.Keeper](keepers),
-	))
-
+	setKeeper(keepers, evmKeeper.NewKeeper(appCodec, keys[evmTypes.StoreKey], getKeeper[paramskeeper.Keeper](keepers)))
 	setKeeper(keepers, initNexusKeeper(appCodec, keys, keepers))
 
 	// IBC Transfer Stack: SendPacket
@@ -341,7 +327,7 @@ func NewAxelarApp(
 	wasmConfig := mustReadWasmConfig(appOpts)
 
 	if IsWasmEnabled() {
-		scopedWasmK := capabilityK.ScopeToModule(wasm.ModuleName)
+
 		// The last arguments can contain custom message handlers, and custom query handlers,
 		// if we want to allow any custom callbacks
 		wasmOpts = append(wasmOpts, wasmkeeper.WithMessageHandlerDecorator(func(old wasmkeeper.Messenger) wasmkeeper.Messenger {
@@ -382,32 +368,9 @@ func NewAxelarApp(
 
 	setKeeper(keepers, initGovernanceKeeper(appCodec, keys, keepers))
 
-	upgradeInfo, err := getKeeper[upgradekeeper.Keeper](keepers).ReadUpgradeInfoFromDisk()
-	if err != nil {
-		panic(err)
-	}
-
-	if upgradeInfo.Name == upgradeName(bApp.Version()) && !getKeeper[upgradekeeper.Keeper](keepers).IsSkipHeight(upgradeInfo.Height) {
-		storeUpgrades := store.StoreUpgrades{}
-
-		if IsWasmEnabled() {
-			storeUpgrades.Added = append(storeUpgrades.Added, ibchookstypes.StoreKey)
-			storeUpgrades.Added = append(storeUpgrades.Added, wasm.ModuleName)
-		}
-
-		// configure store loader that checks if version == upgradeHeight and applies store upgrades
-		bApp.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
-	}
-
 	/****  Module Options ****/
 
-	// NOTE: we may consider parsing `appOpts` inside module constructors. For the moment
-	// we prefer to be more strict in what arguments the modules expect.
-	var skipGenesisInvariants = cast.ToBool(appOpts.Get(crisis.FlagSkipGenesisInvariants))
-
-	crisisK := getKeeper[crisiskeeper.Keeper](keepers)
-
-	appModules := initAppModules(keepers, bApp, encodingConfig, appCodec, crisisK, skipGenesisInvariants, capabilityK, interfaceRegistry, axelarnetModule)
+	appModules := initAppModules(keepers, bApp, encodingConfig, appOpts, axelarnetModule)
 
 	mm = module.NewManager(appModules...)
 	mm.SetOrderMigrations(orderMigrations()...)
@@ -415,6 +378,7 @@ func NewAxelarApp(
 	mm.SetOrderEndBlockers(orderEndBlockers()...)
 	mm.SetOrderInitGenesis(orderModulesForGenesis()...)
 
+	crisisK := getKeeper[crisiskeeper.Keeper](keepers)
 	mm.RegisterInvariants(&crisisK)
 
 	// register all module routes and module queriers
@@ -422,12 +386,10 @@ func NewAxelarApp(
 	configurator = module.NewConfigurator(appCodec, bApp.MsgServiceRouter(), bApp.GRPCQueryRouter())
 	mm.RegisterServices(configurator)
 
-	anteHandler := initAnteHandlers(encodingConfig, keys, keepers, interfaceRegistry, wasmConfig)
-
 	var app = &AxelarApp{
 		BaseApp:           bApp,
 		appCodec:          appCodec,
-		interfaceRegistry: interfaceRegistry,
+		interfaceRegistry: encodingConfig.InterfaceRegistry,
 		stakingKeeper:     getKeeper[stakingkeeper.Keeper](keepers),
 		crisisKeeper:      getKeeper[crisiskeeper.Keeper](keepers),
 		distrKeeper:       getKeeper[distrkeeper.Keeper](keepers),
@@ -447,7 +409,7 @@ func NewAxelarApp(
 	app.SetBeginBlocker(app.BeginBlocker)
 	app.SetEndBlocker(app.EndBlocker)
 
-	app.SetAnteHandler(anteHandler)
+	app.SetAnteHandler(initAnteHandlers(encodingConfig, keys, keepers, wasmConfig))
 
 	if loadLatest {
 		if err := app.LoadLatestVersion(); err != nil {
@@ -473,7 +435,23 @@ func NewAxelarApp(
 	return app
 }
 
-func initAppModules(keepers *keeperCache, bApp *bam.BaseApp, encodingConfig axelarParams.EncodingConfig, appCodec codec.Codec, crisisK crisiskeeper.Keeper, skipGenesisInvariants bool, capabilityK *capabilitykeeper.Keeper, interfaceRegistry types.InterfaceRegistry, axelarnetModule axelarnet.AppModule) []module.AppModule {
+func initBaseApp(db dbm.DB, traceStore io.Writer, encodingConfig axelarParams.EncodingConfig, keepers *keeperCache, baseAppOptions []func(*bam.BaseApp), logger log.Logger) *bam.BaseApp {
+	bApp := bam.NewBaseApp(Name, logger, db, encodingConfig.TxConfig.TxDecoder(), baseAppOptions...)
+	bApp.SetCommitMultiStoreTracer(traceStore)
+	bApp.SetVersion(version.Version)
+	bApp.SetInterfaceRegistry(encodingConfig.InterfaceRegistry)
+	bApp.SetParamStore(keepers.getSubspace(bam.Paramspace))
+	return bApp
+}
+
+func initAppModules(keepers *keeperCache, bApp *bam.BaseApp, encodingConfig axelarParams.EncodingConfig, appOpts servertypes.AppOptions, axelarnetModule axelarnet.AppModule) []module.AppModule {
+	// NOTE: we may consider parsing `appOpts` inside module constructors. For the moment
+	// we prefer to be more strict in what arguments the modules expect.
+	var skipGenesisInvariants = cast.ToBool(appOpts.Get(crisis.FlagSkipGenesisInvariants))
+
+	crisisK := getKeeper[crisiskeeper.Keeper](keepers)
+	appCodec := encodingConfig.Codec
+
 	appModules := []module.AppModule{
 		genutil.NewAppModule(getKeeper[authkeeper.AccountKeeper](keepers), getKeeper[stakingkeeper.Keeper](keepers), bApp.DeliverTx, encodingConfig.TxConfig),
 		auth.NewAppModule(appCodec, getKeeper[authkeeper.AccountKeeper](keepers), nil),
@@ -488,7 +466,7 @@ func initAppModules(keepers *keeperCache, bApp *bam.BaseApp, encodingConfig axel
 		upgrade.NewAppModule(getKeeper[upgradekeeper.Keeper](keepers)),
 		evidence.NewAppModule(getKeeper[evidencekeeper.Keeper](keepers)),
 		params.NewAppModule(getKeeper[paramskeeper.Keeper](keepers)),
-		capability.NewAppModule(appCodec, *capabilityK),
+		capability.NewAppModule(appCodec, getKeeper[capabilitykeeper.Keeper](keepers)),
 	}
 
 	// wasm module needs to be added in a specific order
@@ -505,7 +483,7 @@ func initAppModules(keepers *keeperCache, bApp *bam.BaseApp, encodingConfig axel
 		evidence.NewAppModule(getKeeper[evidencekeeper.Keeper](keepers)),
 		ibc.NewAppModule(getKeeper[*ibckeeper.Keeper](keepers)),
 		transfer.NewAppModule(getKeeper[ibctransferkeeper.Keeper](keepers)),
-		feegrantmodule.NewAppModule(appCodec, getKeeper[authkeeper.AccountKeeper](keepers), getKeeper[bankkeeper.BaseKeeper](keepers), getKeeper[feegrantkeeper.Keeper](keepers), interfaceRegistry),
+		feegrantmodule.NewAppModule(appCodec, getKeeper[authkeeper.AccountKeeper](keepers), getKeeper[bankkeeper.BaseKeeper](keepers), getKeeper[feegrantkeeper.Keeper](keepers), encodingConfig.InterfaceRegistry),
 
 		snapshot.NewAppModule(getKeeper[snapKeeper.Keeper](keepers)),
 		multisig.NewAppModule(getKeeper[multisigKeeper.Keeper](keepers), getKeeper[stakingkeeper.Keeper](keepers), getKeeper[slashingkeeper.Keeper](keepers), getKeeper[snapKeeper.Keeper](keepers), getKeeper[rewardKeeper.Keeper](keepers), getKeeper[nexusKeeper.Keeper](keepers)),
@@ -528,7 +506,7 @@ func mustReadWasmConfig(appOpts servertypes.AppOptions) wasmtypes.WasmConfig {
 	return wasmConfig
 }
 
-func initAnteHandlers(encodingConfig axelarParams.EncodingConfig, keys map[string]*sdk.KVStoreKey, keepers *keeperCache, interfaceRegistry types.InterfaceRegistry, wasmConfig wasmtypes.WasmConfig) sdk.AnteHandler {
+func initAnteHandlers(encodingConfig axelarParams.EncodingConfig, keys map[string]*sdk.KVStoreKey, keepers *keeperCache, wasmConfig wasmtypes.WasmConfig) sdk.AnteHandler {
 	// The baseAnteHandler handles signature verification and transaction pre-processing
 	baseAnteHandler, err := authAnte.NewAnteHandler(
 		authAnte.HandlerOptions{
@@ -561,7 +539,7 @@ func initAnteHandlers(encodingConfig axelarParams.EncodingConfig, keys map[strin
 		ante.NewLogMsgDecorator(encodingConfig.Codec),
 		ante.NewCheckCommissionRate(getKeeper[stakingkeeper.Keeper](keepers)),
 		ante.NewUndelegateDecorator(getKeeper[multisigKeeper.Keeper](keepers), getKeeper[nexusKeeper.Keeper](keepers), getKeeper[snapKeeper.Keeper](keepers)),
-		ante.NewCheckRefundFeeDecorator(interfaceRegistry, getKeeper[authkeeper.AccountKeeper](keepers), getKeeper[stakingkeeper.Keeper](keepers), getKeeper[snapKeeper.Keeper](keepers), getKeeper[rewardKeeper.Keeper](keepers)),
+		ante.NewCheckRefundFeeDecorator(encodingConfig.InterfaceRegistry, getKeeper[authkeeper.AccountKeeper](keepers), getKeeper[stakingkeeper.Keeper](keepers), getKeeper[snapKeeper.Keeper](keepers), getKeeper[rewardKeeper.Keeper](keepers)),
 		ante.NewCheckProxy(getKeeper[snapKeeper.Keeper](keepers)),
 		ante.NewRestrictedTx(getKeeper[permissionKeeper.Keeper](keepers)),
 		ibcante.NewAnteDecorator(getKeeper[*ibckeeper.Keeper](keepers)),
@@ -790,8 +768,8 @@ func createStoreKeys() map[string]*sdk.KVStoreKey {
 		permissionTypes.StoreKey)
 }
 
-func initParamsKeeper(appCodec codec.Codec, legacyAmino *codec.LegacyAmino, key, tkey sdk.StoreKey) paramskeeper.Keeper {
-	paramsKeeper := paramskeeper.NewKeeper(appCodec, legacyAmino, key, tkey)
+func initParamsKeeper(encodingConfig axelarParams.EncodingConfig, key, tkey sdk.StoreKey) paramskeeper.Keeper {
+	paramsKeeper := paramskeeper.NewKeeper(encodingConfig.Codec, encodingConfig.Amino, key, tkey)
 
 	paramsKeeper.Subspace(bam.Paramspace).WithKeyTable(paramskeeper.ConsensusParamsKeyTable())
 
@@ -806,7 +784,6 @@ func initParamsKeeper(appCodec codec.Codec, legacyAmino *codec.LegacyAmino, key,
 	paramsKeeper.Subspace(ibctransfertypes.ModuleName)
 	paramsKeeper.Subspace(ibchost.ModuleName)
 	paramsKeeper.Subspace(wasm.ModuleName)
-
 	paramsKeeper.Subspace(snapTypes.ModuleName)
 	paramsKeeper.Subspace(multisigTypes.ModuleName)
 	paramsKeeper.Subspace(tssTypes.ModuleName)
@@ -905,10 +882,6 @@ func (app *AxelarApp) RegisterTendermintService(clientCtx client.Context) {
 // non-dependant module elements, such as codec registration and genesis verification.
 // Initialization is dependent on whether wasm is enabled.
 func GetModuleBasics() module.BasicManager {
-	if ModuleBasics != nil {
-		return ModuleBasics
-	}
-
 	var wasmProposals []govclient.ProposalHandler
 	if IsWasmEnabled() {
 		wasmProposals = wasmclient.ProposalHandlers
@@ -941,13 +914,6 @@ func GetModuleBasics() module.BasicManager {
 		upgrade.AppModuleBasic{},
 		evidence.AppModuleBasic{},
 		vesting.AppModuleBasic{},
-	}
-
-	if IsWasmEnabled() {
-		managers = append(managers, wasm.AppModuleBasic{}, ibchooks.AppModuleBasic{})
-	}
-
-	managers = append(managers,
 		ibc.AppModuleBasic{},
 		transfer.AppModuleBasic{},
 
@@ -960,11 +926,13 @@ func GetModuleBasics() module.BasicManager {
 		axelarnet.AppModuleBasic{},
 		reward.AppModuleBasic{},
 		permission.AppModuleBasic{},
-	)
+	}
 
-	ModuleBasics = module.NewBasicManager(managers...)
+	if IsWasmEnabled() {
+		managers = append(managers, wasm.AppModuleBasic{}, ibchooks.AppModuleBasic{})
+	}
 
-	return ModuleBasics
+	return module.NewBasicManager(managers...)
 }
 
 // IsWasmEnabled returns whether wasm is enabled

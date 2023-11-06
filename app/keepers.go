@@ -8,6 +8,7 @@ import (
 	"github.com/CosmWasm/wasmd/x/wasm"
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
+	store "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
@@ -42,6 +43,7 @@ import (
 	ibcclienttypes "github.com/cosmos/ibc-go/v4/modules/core/02-client/types"
 	ibchost "github.com/cosmos/ibc-go/v4/modules/core/24-host"
 	ibckeeper "github.com/cosmos/ibc-go/v4/modules/core/keeper"
+	ibchookstypes "github.com/osmosis-labs/osmosis/x/ibc-hooks/types"
 	"golang.org/x/mod/semver"
 
 	"github.com/axelarnetwork/axelar-core/x/axelarnet"
@@ -241,6 +243,24 @@ func initUpgradeKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, sk
 			return mm.RunMigrations(ctx, *configurator, fromVM)
 		},
 	)
+
+	upgradeInfo, err := upgradeK.ReadUpgradeInfoFromDisk()
+	if err != nil {
+		panic(err)
+	}
+
+	if upgradeInfo.Name == upgradeName(bApp.Version()) && !upgradeK.IsSkipHeight(upgradeInfo.Height) {
+		storeUpgrades := store.StoreUpgrades{}
+
+		if IsWasmEnabled() {
+			storeUpgrades.Added = append(storeUpgrades.Added, ibchookstypes.StoreKey)
+			storeUpgrades.Added = append(storeUpgrades.Added, wasm.ModuleName)
+		}
+
+		// configure store loader that checks if version == upgradeHeight and applies store upgrades
+		bApp.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
+	}
+
 	return upgradeK
 }
 
