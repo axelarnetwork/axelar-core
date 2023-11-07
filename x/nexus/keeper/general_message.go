@@ -231,7 +231,9 @@ func (k Keeper) validateAddressAndAsset(ctx sdk.Context, address exported.CrossC
 	return k.validateAsset(ctx, address.Chain, asset.Denom)
 }
 
-func (k Keeper) RouteMessage(ctx sdk.Context, routingCtx exported.RoutingContext, id string) error {
+// RouteMessage routes the given general message to the corresponding module and
+// set the message status to processing
+func (k Keeper) RouteMessage(ctx sdk.Context, id string, routingCtx ...exported.RoutingContext) error {
 	err := k.SetMessageProcessing(ctx, id)
 	if err != nil {
 		return err
@@ -239,5 +241,8 @@ func (k Keeper) RouteMessage(ctx sdk.Context, routingCtx exported.RoutingContext
 
 	k.Logger(ctx).Debug("set general message status to processing", "messageID", id)
 
-	return k.getMessageRouter().Route(ctx, routingCtx, funcs.MustOk(k.GetMessage(ctx, id)))
+	if len(routingCtx) == 0 {
+		routingCtx = []exported.RoutingContext{{}}
+	}
+	return k.getMessageRouter().Route(ctx, routingCtx[0], funcs.MustOk(k.GetMessage(ctx, id)))
 }

@@ -61,7 +61,7 @@ func escrowAssetToMessageSender(
 		asset := sdk.NewCoin(exported.NativeAsset, sdk.OneInt())
 		sender := routingCtx.Sender
 
-		if routingCtx.FeeGranter != nil {
+		if !routingCtx.FeeGranter.Empty() {
 			req := types.RouteMessageRequest{
 				Sender:     routingCtx.Sender,
 				ID:         msg.ID,

@@ -489,7 +489,7 @@ func (s msgServer) RouteMessage(c context.Context, req *types.RouteMessageReques
 		FeeGranter: req.Feegranter,
 		Payload:    req.Payload,
 	}
-	if err := s.nexus.RouteMessage(ctx, routingCtx, req.ID); err != nil {
+	if err := s.nexus.RouteMessage(ctx, req.ID, routingCtx); err != nil {
 		return nil, err
 	}
 

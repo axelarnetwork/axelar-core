@@ -989,16 +989,16 @@ func TestRouteMessage(t *testing.T) {
 
 	givenMsgServer.
 		When("route message successfully", func() {
-			nexusK.RouteMessageFunc = func(_ sdk.Context, _ nexus.RoutingContext, _ string) error { return nil }
+			nexusK.RouteMessageFunc = func(_ sdk.Context, _ string, _ ...nexus.RoutingContext) error { return nil }
 		}).
 		Then("should route the correct message", func(t *testing.T) {
 			_, err := server.RouteMessage(sdk.WrapSDKContext(ctx), &req)
 
 			assert.NoError(t, err)
 			assert.Len(t, nexusK.RouteMessageCalls(), 1)
-			assert.Equal(t, nexusK.RouteMessageCalls()[0].RoutingCtx.Sender, req.Sender)
-			assert.Equal(t, nexusK.RouteMessageCalls()[0].RoutingCtx.FeeGranter, req.Feegranter)
-			assert.Equal(t, nexusK.RouteMessageCalls()[0].RoutingCtx.Payload, req.Payload)
+			assert.Equal(t, nexusK.RouteMessageCalls()[0].RoutingCtx[0].Sender, req.Sender)
+			assert.Equal(t, nexusK.RouteMessageCalls()[0].RoutingCtx[0].FeeGranter, req.Feegranter)
+			assert.Equal(t, nexusK.RouteMessageCalls()[0].RoutingCtx[0].Payload, req.Payload)
 			assert.Equal(t, nexusK.RouteMessageCalls()[0].ID, req.ID)
 		}).
 		Run(t)
