@@ -7,6 +7,7 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
+// for commands approval
 const gasCost = storetypes.Gas(10000000)
 
 func NewMessageRoute() nexus.MessageRoute {

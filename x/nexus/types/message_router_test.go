@@ -34,7 +34,7 @@ func TestAddRoute(t *testing.T) {
 			module = "module"
 		}).
 		Then("it panics when adding a route", func(t *testing.T) {
-			assert.PanicsWithValue(t, "cannot add handler (router sealed)", func() {
+			assert.PanicsWithValue(t, "cannot add route (router sealed)", func() {
 				router.AddRoute(module, nil)
 			})
 		}).
@@ -59,7 +59,7 @@ func TestAddRoute(t *testing.T) {
 			})
 		}).
 		Then("it panics when adding a route again", func(t *testing.T) {
-			assert.PanicsWithValue(t, fmt.Sprintf("router for module %s has already been registered", module), func() {
+			assert.PanicsWithValue(t, fmt.Sprintf("route for module %s has already been registered", module), func() {
 				router.AddRoute(module, func(_ sdk.Context, _ exported.RoutingContext, _ exported.GeneralMessage) error {
 					return nil
 				})
@@ -103,7 +103,7 @@ func TestRoute(t *testing.T) {
 			msg = exported.GeneralMessage{Recipient: exported.CrossChainAddress{Chain: exported.Chain{Module: "unknown"}}}
 		}).
 		Then("it should return error", func(t *testing.T) {
-			assert.ErrorContains(t, router.Route(ctx, routingCtx, msg), "no router found")
+			assert.ErrorContains(t, router.Route(ctx, routingCtx, msg), "no route found")
 		}).
 		Run(t)
 

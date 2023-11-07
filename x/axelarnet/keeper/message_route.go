@@ -12,6 +12,7 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
+// for IBC execution
 const gasCost = storetypes.Gas(1000000)
 
 func NewMessageRoute(

@@ -9,9 +9,9 @@ import (
 )
 
 // MessageRouter implements a message router based on the message's destination
-// chain's  module name
+// chain's module name
 type MessageRouter interface {
-	AddRoute(module string, router exported.MessageRoute) MessageRouter
+	AddRoute(module string, route exported.MessageRoute) MessageRouter
 	Route(ctx sdk.Context, routingCtx exported.RoutingContext, msg exported.GeneralMessage) error
 	Seal()
 }
@@ -31,9 +31,9 @@ func NewMessageRouter() MessageRouter {
 	}
 }
 
-func (r *messageRouter) AddRoute(module string, router exported.MessageRoute) MessageRouter {
+func (r *messageRouter) AddRoute(module string, route exported.MessageRoute) MessageRouter {
 	if r.sealed {
-		panic("cannot add handler (router sealed)")
+		panic("cannot add route (router sealed)")
 	}
 
 	if module == "" {
@@ -41,10 +41,10 @@ func (r *messageRouter) AddRoute(module string, router exported.MessageRoute) Me
 	}
 
 	if _, ok := r.routes[module]; ok {
-		panic(fmt.Sprintf("router for module %s has already been registered", module))
+		panic(fmt.Sprintf("route for module %s has already been registered", module))
 	}
 
-	r.routes[module] = router
+	r.routes[module] = route
 
 	return r
 }
@@ -54,16 +54,16 @@ func (r messageRouter) Route(ctx sdk.Context, routingCtx exported.RoutingContext
 		panic("cannot route message (router not sealed)")
 	}
 
-	router, ok := r.routes[msg.Recipient.Chain.Module]
+	route, ok := r.routes[msg.Recipient.Chain.Module]
 	if !ok {
-		return fmt.Errorf("no router found for module %s", msg.Recipient.Chain.Module)
+		return fmt.Errorf("no route found for module %s", msg.Recipient.Chain.Module)
 	}
 
 	if routingCtx.Payload != nil && !msg.Match(routingCtx.Payload) {
 		return fmt.Errorf("payload hash does not match")
 	}
 
-	return router(ctx, routingCtx, msg)
+	return route(ctx, routingCtx, msg)
 }
 
 func (r *messageRouter) Seal() {
