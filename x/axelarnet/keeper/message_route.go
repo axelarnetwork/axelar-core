@@ -14,14 +14,14 @@ import (
 
 const gasCost = storetypes.Gas(1000000)
 
-func NewMessageRouter(
-	ibcK IBCKeeper,
+func NewMessageRoute(
 	keeper Keeper,
+	ibcK types.IBCKeeper,
 	feegrantK types.FeegrantKeeper,
 	bankK types.BankKeeper,
 	nexusK types.Nexus,
 	accountK types.AccountKeeper,
-) nexus.MessageRouter {
+) nexus.MessageRoute {
 	return func(ctx sdk.Context, routingCtx nexus.RoutingContext, msg nexus.GeneralMessage) error {
 		if routingCtx.Payload == nil {
 			return fmt.Errorf("payload is required for routing messages to a cosmos chain")

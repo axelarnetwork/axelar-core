@@ -20,7 +20,7 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
-//go:generate moq -out ./mock/expected_keepers.go -pkg mock . BaseKeeper Nexus BankKeeper IBCTransferKeeper ChannelKeeper AccountKeeper PortKeeper GovKeeper FeegrantKeeper
+//go:generate moq -out ./mock/expected_keepers.go -pkg mock . BaseKeeper Nexus BankKeeper IBCTransferKeeper ChannelKeeper AccountKeeper PortKeeper GovKeeper FeegrantKeeper IBCKeeper
 
 // BaseKeeper is implemented by this module's base keeper
 type BaseKeeper interface {
@@ -126,4 +126,9 @@ type GovKeeper interface {
 // FeegrantKeeper defines the expected feegrant keeper.
 type FeegrantKeeper interface {
 	UseGrantedFees(ctx sdk.Context, granter, grantee sdk.AccAddress, fee sdk.Coins, msgs []sdk.Msg) error
+}
+
+// IBCKeeper defines the expected IBC keeper
+type IBCKeeper interface {
+	SendMessage(c context.Context, recipient nexus.CrossChainAddress, asset sdk.Coin, payload string, id string) error
 }

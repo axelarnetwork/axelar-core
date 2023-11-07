@@ -3,14 +3,15 @@ package types
 import (
 	"fmt"
 
-	exported "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	exported "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
 // MessageRouter implements a message router based on the message's destination
 // chain's  module name
 type MessageRouter interface {
-	AddRoute(module string, router exported.MessageRouter) MessageRouter
+	AddRoute(module string, router exported.MessageRoute) MessageRouter
 	Route(ctx sdk.Context, routingCtx exported.RoutingContext, msg exported.GeneralMessage) error
 	Seal()
 }
@@ -18,19 +19,19 @@ type MessageRouter interface {
 var _ MessageRouter = (*messageRouter)(nil)
 
 type messageRouter struct {
-	routes map[string]exported.MessageRouter
+	routes map[string]exported.MessageRoute
 	sealed bool
 }
 
 // NewMessageRouter creates a new MessageRouter interface instance
 func NewMessageRouter() MessageRouter {
 	return &messageRouter{
-		routes: make(map[string]exported.MessageRouter),
+		routes: make(map[string]exported.MessageRoute),
 		sealed: false,
 	}
 }
 
-func (r *messageRouter) AddRoute(module string, router exported.MessageRouter) MessageRouter {
+func (r *messageRouter) AddRoute(module string, router exported.MessageRoute) MessageRouter {
 	if r.sealed {
 		panic("cannot add handler (router sealed)")
 	}

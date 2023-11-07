@@ -138,10 +138,6 @@ func randomChains() []types.CosmosChain {
 	return chains
 }
 
-func randomNormalizedStr(min, max int) string {
-	return strings.ReplaceAll(utils.NormalizeString(rand.StrBetween(min, max)), utils.DefaultDelimiter, "-")
-}
-
 // randomTransferQueue returns a random (valid) transfer queue state for testing
 func randomTransferQueue(cdc codec.Codec, transfers []types.IBCTransfer) utils.QueueState {
 	qs := utils.QueueState{Items: make(map[string]utils.QueueState_Item)}

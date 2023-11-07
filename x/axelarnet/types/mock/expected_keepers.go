@@ -611,6 +611,9 @@ var _ axelarnettypes.Nexus = &NexusMock{}
 //			RegisterAssetFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset, limit cosmossdktypes.Uint, window time.Duration) error {
 //				panic("mock out the RegisterAsset method")
 //			},
+//			RouteMessageFunc: func(ctx cosmossdktypes.Context, routingCtx github_com_axelarnetwork_axelar_core_x_nexus_exported.RoutingContext, id string) error {
+//				panic("mock out the RouteMessage method")
+//			},
 //			SetChainFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain)  {
 //				panic("mock out the SetChain method")
 //			},
@@ -686,6 +689,9 @@ type NexusMock struct {
 
 	// RegisterAssetFunc mocks the RegisterAsset method.
 	RegisterAssetFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset, limit cosmossdktypes.Uint, window time.Duration) error
+
+	// RouteMessageFunc mocks the RouteMessage method.
+	RouteMessageFunc func(ctx cosmossdktypes.Context, routingCtx github_com_axelarnetwork_axelar_core_x_nexus_exported.RoutingContext, id string) error
 
 	// SetChainFunc mocks the SetChain method.
 	SetChainFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain)
@@ -842,6 +848,15 @@ type NexusMock struct {
 			// Window is the window argument value.
 			Window time.Duration
 		}
+		// RouteMessage holds details about calls to the RouteMessage method.
+		RouteMessage []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// RoutingCtx is the routingCtx argument value.
+			RoutingCtx github_com_axelarnetwork_axelar_core_x_nexus_exported.RoutingContext
+			// ID is the id argument value.
+			ID string
+		}
 		// SetChain holds details about calls to the SetChain method.
 		SetChain []struct {
 			// Ctx is the ctx argument value.
@@ -908,6 +923,7 @@ type NexusMock struct {
 	lockLinkAddresses                 sync.RWMutex
 	lockRateLimitTransfer             sync.RWMutex
 	lockRegisterAsset                 sync.RWMutex
+	lockRouteMessage                  sync.RWMutex
 	lockSetChain                      sync.RWMutex
 	lockSetMessageExecuted            sync.RWMutex
 	lockSetMessageFailed              sync.RWMutex
@@ -1530,6 +1546,46 @@ func (mock *NexusMock) RegisterAssetCalls() []struct {
 	mock.lockRegisterAsset.RLock()
 	calls = mock.calls.RegisterAsset
 	mock.lockRegisterAsset.RUnlock()
+	return calls
+}
+
+// RouteMessage calls RouteMessageFunc.
+func (mock *NexusMock) RouteMessage(ctx cosmossdktypes.Context, routingCtx github_com_axelarnetwork_axelar_core_x_nexus_exported.RoutingContext, id string) error {
+	if mock.RouteMessageFunc == nil {
+		panic("NexusMock.RouteMessageFunc: method is nil but Nexus.RouteMessage was just called")
+	}
+	callInfo := struct {
+		Ctx        cosmossdktypes.Context
+		RoutingCtx github_com_axelarnetwork_axelar_core_x_nexus_exported.RoutingContext
+		ID         string
+	}{
+		Ctx:        ctx,
+		RoutingCtx: routingCtx,
+		ID:         id,
+	}
+	mock.lockRouteMessage.Lock()
+	mock.calls.RouteMessage = append(mock.calls.RouteMessage, callInfo)
+	mock.lockRouteMessage.Unlock()
+	return mock.RouteMessageFunc(ctx, routingCtx, id)
+}
+
+// RouteMessageCalls gets all the calls that were made to RouteMessage.
+// Check the length with:
+//
+//	len(mockedNexus.RouteMessageCalls())
+func (mock *NexusMock) RouteMessageCalls() []struct {
+	Ctx        cosmossdktypes.Context
+	RoutingCtx github_com_axelarnetwork_axelar_core_x_nexus_exported.RoutingContext
+	ID         string
+} {
+	var calls []struct {
+		Ctx        cosmossdktypes.Context
+		RoutingCtx github_com_axelarnetwork_axelar_core_x_nexus_exported.RoutingContext
+		ID         string
+	}
+	mock.lockRouteMessage.RLock()
+	calls = mock.calls.RouteMessage
+	mock.lockRouteMessage.RUnlock()
 	return calls
 }
 

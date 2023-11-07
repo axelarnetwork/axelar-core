@@ -1,11 +1,8 @@
 package keeper_test
 
 import (
-	"bytes"
-	"context"
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	mathRand "math/rand"
 	"strings"
@@ -17,8 +14,6 @@ import (
 	ibctypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
 	clienttypes "github.com/cosmos/ibc-go/v4/modules/core/02-client/types"
 	ibcclient "github.com/cosmos/ibc-go/v4/modules/core/exported"
-	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/assert"
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
@@ -37,7 +32,6 @@ import (
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 	. "github.com/axelarnetwork/utils/test"
-	rand2 "github.com/axelarnetwork/utils/test/rand"
 )
 
 func TestHandleMsgLink(t *testing.T) {
@@ -970,249 +964,44 @@ func TestAddCosmosBasedChain(t *testing.T) {
 
 func TestRouteMessage(t *testing.T) {
 	var (
-		server    types.MsgServiceServer
-		k         keeper.Keeper
-		nexusK    *mock.NexusMock
-		feegrantK *mock.FeegrantKeeperMock
-		ctx       sdk.Context
-		req       *types.RouteMessageRequest
-		msg       nexus.GeneralMessage
+		server types.MsgServiceServer
+		nexusK *mock.NexusMock
+		ctx    sdk.Context
 	)
 
-	chain := nexustestutils.RandomChain()
-	chain.Module = evmtypes.ModuleName
-	id := rand.StrBetween(5, 100)
-	payload := randPayload()
-	coin := rand.Coin()
-
-	msg = nexus.GeneralMessage{
-		Sender: nexus.CrossChainAddress{
-			Chain:   nexustestutils.RandomChain(),
-			Address: evmtestutils.RandomAddress().Hex(),
-		},
-		Recipient: nexus.CrossChainAddress{
-			Chain:   chain,
-			Address: rand.AccAddr().String(),
-		},
-		PayloadHash: crypto.Keccak256Hash(payload).Bytes(),
-		Asset:       &coin,
+	req := types.RouteMessageRequest{
+		ID:         rand.Str(10),
+		Sender:     rand.AccAddr(),
+		Feegranter: rand.AccAddr(),
+		Payload:    rand.BytesBetween(5, 100),
 	}
 
 	givenMsgServer := Given("an axelarnet msg server", func() {
-		ctx, k, _, feegrantK = setup()
-		k.InitGenesis(ctx, types.DefaultGenesisState())
-		funcs.MustNoErr(k.SetCosmosChain(ctx, types.CosmosChain{
-			Name:       chain.Name,
-			AddrPrefix: rand.StrBetween(1, 10),
-			IBCPath:    axelartestutils.RandomIBCPath(),
-		}))
-		nexusK = &mock.NexusMock{
-			GetChainByNativeAssetFunc: func(sdk.Context, string) (nexus.Chain, bool) {
-				return chain, true
-			},
-			SetMessageProcessingFunc: func(sdk.Context, string) error {
-				return nil
-			},
-		}
-		ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{
-			TransferFunc: func(context.Context, *ibctypes.MsgTransfer) (*ibctypes.MsgTransferResponse, error) {
-				return &ibctypes.MsgTransferResponse{Sequence: uint64(rand2.I64Between(1, 100000))}, nil
-			},
-		}, &mock.ChannelKeeperMock{
-			GetChannelClientStateFunc: func(sdk.Context, string, string) (string, ibcclient.ClientState, error) {
-				return "07-tendermint-0", axelartestutils.ClientState(), nil
-			},
-		})
-		bankK := &mock.BankKeeperMock{
-			MintCoinsFunc: func(sdk.Context, string, sdk.Coins) error { return nil },
-			SendCoinsFunc: func(sdk.Context, sdk.AccAddress, sdk.AccAddress, sdk.Coins) error { return nil },
-		}
-		accountK := &mock.AccountKeeperMock{
-			GetModuleAddressFunc: func(moduleName string) sdk.AccAddress {
-				return rand.AccAddr()
-			},
-		}
+		c, k, _, _ := setup()
+		ctx = c
+
+		nexusK = &mock.NexusMock{}
+		ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{}, &mock.ChannelKeeperMock{})
+		bankK := &mock.BankKeeperMock{}
+		accountK := &mock.AccountKeeperMock{}
 		server = keeper.NewMsgServerImpl(k, nexusK, bankK, accountK, ibcK)
 	})
 
-	isMessageFound := func(isFound bool, status nexus.GeneralMessage_Status) func() {
-		return func() {
-			nexusK.GetMessageFunc = func(ctx sdk.Context, messageID string) (nexus.GeneralMessage, bool) {
-				if !isFound {
-					return nexus.GeneralMessage{}, false
-				}
-				msg.Status = status
-				return msg, true
+	givenMsgServer.
+		When("route message successfully", func() {
+			nexusK.RouteMessageFunc = func(_ sdk.Context, _ nexus.RoutingContext, _ string) error { return nil }
+		}).
+		Then("should route the correct message", func(t *testing.T) {
+			_, err := server.RouteMessage(sdk.WrapSDKContext(ctx), &req)
 
-			}
-		}
-	}
-
-	whenMessageIsFromEVM := When("message is from evm", func() {
-		isMessageFound(true, nexus.Approved)()
-		msg.Sender.Chain.Module = evmtypes.ModuleName
-	})
-	whenMessageIsFromCosmos := When("message is from cosmos", func() {
-		isMessageFound(true, nexus.Approved)()
-		msg.Sender.Chain.Module = exported.ModuleName
-	})
-	whenMessageIsToEVM := When("message is to evm", func() {
-		msg.Recipient.Chain.Module = evmtypes.ModuleName
-	})
-	whenMessageIsToCosmos := When("message is to cosmos", func() {
-		msg.Recipient.Chain.Module = exported.ModuleName
-	})
-
-	requestIsMade := When("an execute message request is made", func() {
-		req = types.NewRouteMessage(
-			rand.AccAddr(),
-			nil,
-			id,
-			payload,
-		)
-	})
-
-	routeFailsWithError := func(msg string) func(t *testing.T) {
-		return func(t *testing.T) {
-			_, err := server.RouteMessage(sdk.WrapSDKContext(ctx), req)
-			assert.ErrorContains(t, err, msg)
-		}
-	}
-
-	t.Run("route message", func(t *testing.T) {
-		givenMsgServer.
-			Branch(
-				When("general message is not found", isMessageFound(false, nexus.NonExistent)).
-					When2(requestIsMade).
-					Then("should fail", routeFailsWithError("not found")),
-
-				whenMessageIsFromEVM.
-					When2(whenMessageIsToCosmos).
-					When("payload does not match", func() {
-						req = types.NewRouteMessage(
-							rand.AccAddr(),
-							nil,
-							id,
-							rand.BytesBetween(100, 500),
-						)
-					}).
-					Then("should fail", routeFailsWithError("payload hash does not match")),
-
-				whenMessageIsFromEVM.
-					When2(whenMessageIsToCosmos).
-					When("payload with version is invalid", func() {
-						payload = rand.Bytes(4)
-						msg.PayloadHash = crypto.Keccak256Hash(payload).Bytes()
-					}).
-					When2(requestIsMade).
-					Then("should fail", routeFailsWithError("invalid versioned payload")),
-
-				whenMessageIsFromEVM.
-					When2(whenMessageIsToCosmos).
-					When("payload is invalid", func() {
-						payload = axelartestutils.PackPayloadWithVersion(types.CosmWasmV1, rand.BytesBetween(100, 500))
-						msg.PayloadHash = crypto.Keccak256Hash(payload).Bytes()
-					}).
-					When2(requestIsMade).
-					Then("should fail", routeFailsWithError("invalid payload")),
-
-				whenMessageIsFromCosmos.
-					When2(whenMessageIsToCosmos).
-					When("payload is invalid", func() {
-						payload = rand.BytesBetween(100, 500)
-						msg.PayloadHash = crypto.Keccak256Hash(payload).Bytes()
-					}).
-					When2(requestIsMade).
-					Then("should fail", routeFailsWithError("invalid payload")),
-
-				whenMessageIsFromEVM.
-					When2(whenMessageIsToCosmos).
-					When("payload is valid", func() {
-						payload = randWasmPayload()
-						msg.PayloadHash = crypto.Keccak256Hash(payload).Bytes()
-					}).
-					When2(requestIsMade).
-					When("feegranter is set with no allowance", func() {
-						req.Feegranter = rand.AccAddr()
-						msg.Asset = nil
-						feegrantK.UseGrantedFeesFunc = func(ctx sdk.Context, granter sdk.AccAddress, addr sdk.AccAddress, amt sdk.Coins, msgs []sdk.Msg) error {
-							return fmt.Errorf("feegrant error")
-						}
-					}).
-					Then("should fail", routeFailsWithError("feegrant error")),
-
-				whenMessageIsFromEVM.
-					When2(whenMessageIsToCosmos).
-					When("payload is valid", func() {
-						payload = randPayload()
-						msg.PayloadHash = crypto.Keccak256Hash(payload).Bytes()
-					}).
-					When2(requestIsMade).
-					Then("should success", func(t *testing.T) {
-						_, err := server.RouteMessage(sdk.WrapSDKContext(ctx), req)
-						assert.NoError(t, err)
-					}),
-
-				whenMessageIsFromCosmos.
-					When2(whenMessageIsToEVM).
-					When("payload is valid", func() {
-						payload = rand.BytesBetween(100, 500)
-						msg.PayloadHash = crypto.Keccak256Hash(payload).Bytes()
-					}).
-					When2(requestIsMade).
-					Then("should success", func(t *testing.T) {
-						_, err := server.RouteMessage(sdk.WrapSDKContext(ctx), req)
-						assert.NoError(t, err)
-					}),
-
-				whenMessageIsFromCosmos.
-					When2(whenMessageIsToCosmos).
-					When("payload is valid", func() {
-						payload = randPayload()
-						msg.PayloadHash = crypto.Keccak256Hash(payload).Bytes()
-					}).
-					When2(requestIsMade).
-					Then("should success", func(t *testing.T) {
-						_, err := server.RouteMessage(sdk.WrapSDKContext(ctx), req)
-						assert.NoError(t, err)
-					}),
-
-				whenMessageIsFromCosmos.
-					When2(whenMessageIsToCosmos).
-					When("payload is valid", func() {
-						payload = randWasmPayload()
-						msg.PayloadHash = crypto.Keccak256Hash(payload).Bytes()
-					}).
-					When2(requestIsMade).
-					Then("should success", func(t *testing.T) {
-						_, err := server.RouteMessage(sdk.WrapSDKContext(ctx), req)
-						assert.NoError(t, err)
-					}),
-
-				whenMessageIsFromEVM.
-					When2(whenMessageIsToCosmos).
-					When("payload is valid", func() {
-						payload = randWasmPayload()
-						msg.PayloadHash = crypto.Keccak256Hash(payload).Bytes()
-					}).
-					When2(requestIsMade).
-					When("feegranter is set with no allowance", func() {
-						req.Feegranter = rand.AccAddr()
-						msg.Asset = nil
-						feegrantK.UseGrantedFeesFunc = func(ctx sdk.Context, granter sdk.AccAddress, addr sdk.AccAddress, amt sdk.Coins, msgs []sdk.Msg) error {
-							if !bytes.Equal(req.Sender, addr) || !amt[0].Equal(sdk.NewCoin("uaxl", sdk.NewInt(1))) {
-								return fmt.Errorf("invalid %s %s", addr, amt)
-							}
-
-							return nil
-						}
-					}).
-					Then("should success", func(t *testing.T) {
-						_, err := server.RouteMessage(sdk.WrapSDKContext(ctx), req)
-						assert.NoError(t, err)
-					}),
-			).Run(t)
-	})
+			assert.NoError(t, err)
+			assert.Len(t, nexusK.RouteMessageCalls(), 1)
+			assert.Equal(t, nexusK.RouteMessageCalls()[0].RoutingCtx.Sender, req.Sender)
+			assert.Equal(t, nexusK.RouteMessageCalls()[0].RoutingCtx.FeeGranter, req.Feegranter)
+			assert.Equal(t, nexusK.RouteMessageCalls()[0].RoutingCtx.Payload, req.Payload)
+			assert.Equal(t, nexusK.RouteMessageCalls()[0].ID, req.ID)
+		}).
+		Run(t)
 }
 
 func TestHandleCallContract(t *testing.T) {
@@ -1429,46 +1218,4 @@ func randomTransfer(asset string, chain nexus.ChainName) nexus.CrossChainTransfe
 		},
 		sdk.NewInt64Coin(asset, rand.I64Between(1, 10000000000)),
 	)
-}
-
-func randPayload() []byte {
-	bytesType := funcs.Must(abi.NewType("bytes", "bytes", nil))
-	stringType := funcs.Must(abi.NewType("string", "string", nil))
-	stringArrayType := funcs.Must(abi.NewType("string[]", "string[]", nil))
-
-	argNum := int(rand2.I64Between(1, 10))
-
-	var args abi.Arguments
-	for i := 0; i < argNum; i += 1 {
-		args = append(args, abi.Argument{Type: stringType})
-	}
-
-	schema := abi.Arguments{{Type: stringType}, {Type: stringArrayType}, {Type: stringArrayType}, {Type: bytesType}}
-	payload := funcs.Must(
-		schema.Pack(
-			rand.StrBetween(5, 10),
-			slices.Expand2(func() string { return rand.Str(5) }, argNum),
-			slices.Expand2(func() string { return "string" }, argNum),
-			funcs.Must(args.Pack(slices.Expand2(func() interface{} { return "string" }, argNum)...)),
-		),
-	)
-
-	return append(funcs.Must(hexutil.Decode(types.CosmWasmV1)), payload...)
-}
-
-func randWasmPayload() []byte {
-	args := make(map[string]string)
-
-	randStr := func() string { return rand.Str(int(rand.I64Between(1, 32))) }
-
-	argNum := int(rand2.I64Between(1, 10))
-
-	for i := 0; i < argNum; i += 1 {
-		args[randStr()] = randStr()
-	}
-	msg := make(map[string]map[string]string)
-	msg[randStr()] = args
-	payload := funcs.Must(json.Marshal(msg))
-
-	return axelartestutils.PackPayloadWithVersion(types.CosmWasmV2, payload)
 }

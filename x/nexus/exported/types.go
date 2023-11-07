@@ -26,8 +26,8 @@ type RoutingContext struct {
 	Payload    []byte
 }
 
-// MessageRouter defines a function that implements message routing
-type MessageRouter func(ctx sdk.Context, routingCtx RoutingContext, msg GeneralMessage) error
+// MessageRoute defines a function that implements message routing
+type MessageRoute func(ctx sdk.Context, routingCtx RoutingContext, msg GeneralMessage) error
 
 // TransferStateFromString converts a describing state string to the corresponding TransferState
 func TransferStateFromString(s string) TransferState {

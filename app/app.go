@@ -301,8 +301,8 @@ func NewAxelarApp(
 
 	// TODO: fix this
 	// messageRouter := nexusTypes.NewMessageRouter().
-	// 	AddRoute(evmTypes.ModuleName, evmKeeper.NewMessageRouter()).
-	// 	AddRoute(axelarnetTypes.ModuleName, axelarnetKeeper.NewMessageRouter(ibcK, axelarnetK, feegrantK, axelarbankkeeper.NewBankKeeper(bankK), nexusK, accountK))
+	// 	AddRoute(evmTypes.ModuleName, evmKeeper.NewMessageRoute()).
+	// 	AddRoute(axelarnetTypes.ModuleName, axelarnetKeeper.NewMessageRoute(ibcK, axelarnetK, feegrantK, axelarbankkeeper.NewBankKeeper(bankK), nexusK, accountK))
 	// nexusK.SetMessageRouter(messageRouter)
 
 	// Create static IBC router, add axelarnet module as the IBC transfer route, and seal it
