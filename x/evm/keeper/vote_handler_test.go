@@ -288,15 +288,15 @@ func TestHandleResult(t *testing.T) {
 				When("succeeded to set the confirmed event", func() {
 					chaink.SetConfirmedEventFunc = func(_ sdk.Context, _ types.Event) error { return nil }
 				}).
-				When("succeeded to set as processing general messages", func() {
-					nexusK.SetMessageProcessingFunc = func(_ sdk.Context, _ string) error { return nil }
+				When("succeeded to route the general messages", func() {
+					nexusK.RouteMessageFunc = func(_ sdk.Context, _ string, _ ...nexus.RoutingContext) error { return nil }
 				}).
-				Then("should set as processing general messages", func(t *testing.T) {
+				Then("should route the general messages", func(t *testing.T) {
 					nexusK.SetNewMessageFunc = func(_ sdk.Context, _ nexus.GeneralMessage) error { return nil }
 
 					assert.NoError(t, handler.HandleResult(ctx, result))
 					assert.Len(t, nexusK.SetNewMessageCalls(), 5)
-					assert.Len(t, nexusK.SetMessageProcessingCalls(), 5)
+					assert.Len(t, nexusK.RouteMessageCalls(), 5)
 				}),
 
 			When("event is contract call and is sent to an evm chain", func() {
@@ -305,15 +305,16 @@ func TestHandleResult(t *testing.T) {
 				When("succeeded to set the confirmed event", func() {
 					chaink.SetConfirmedEventFunc = func(_ sdk.Context, _ types.Event) error { return nil }
 				}).
-				When("failed to set as processing general messages", func() {
-					nexusK.SetMessageProcessingFunc = func(_ sdk.Context, _ string) error { return fmt.Errorf("failed") }
+				When("failed to route the general messages", func() {
+					nexusK.RouteMessageFunc = func(_ sdk.Context, _ string, _ ...nexus.RoutingContext) error { return fmt.Errorf("failed") }
 				}).
 				Then("should set as approved general messages", func(t *testing.T) {
 					nexusK.SetNewMessageFunc = func(_ sdk.Context, _ nexus.GeneralMessage) error { return nil }
 
 					assert.NoError(t, handler.HandleResult(ctx, result))
 					assert.Len(t, nexusK.SetNewMessageCalls(), 5)
-					assert.Len(t, nexusK.SetMessageProcessingCalls(), 5)
+					assert.Len(t, nexusK.RouteMessageCalls(), 5)
+
 				}),
 
 			When("event is contract call and is sent to an non-evm chain", func() {
@@ -327,6 +328,7 @@ func TestHandleResult(t *testing.T) {
 
 					assert.NoError(t, handler.HandleResult(ctx, result))
 					assert.Len(t, nexusK.SetNewMessageCalls(), 5)
+					assert.Len(t, nexusK.RouteMessageCalls(), 0)
 				}),
 
 			When("event is contract call and is sent to an unknown chain", func() {
@@ -340,6 +342,7 @@ func TestHandleResult(t *testing.T) {
 
 					assert.NoError(t, handler.HandleResult(ctx, result))
 					assert.Len(t, nexusK.SetNewMessageCalls(), 5)
+					assert.Len(t, nexusK.RouteMessageCalls(), 0)
 
 					for _, call := range nexusK.SetNewMessageCalls() {
 						assert.Equal(t, wasm.ModuleName, call.M.Recipient.Chain.Module)

@@ -10,7 +10,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
@@ -72,12 +72,10 @@ func (m Messenger) routeMsg(ctx sdk.Context, msg exported.WasmMessage) error {
 		return err
 	}
 
-	if destinationChain.IsFrom(axelarnet.ModuleName) {
-		return nil
-	}
+	// try routing the message
+	_ = utils.RunCached(ctx, m, func(ctx sdk.Context) (struct{}, error) {
+		return struct{}{}, m.RouteMessage(ctx, nexusMsg.ID)
+	})
 
-	// set message to be processing if the destination chain is not a cosmos chain.
-	// messages sent to cosmos chains require translation with the original payload.
-	// https://github.com/axelarnetwork/axelar-core/blob/ea48d5b974dfd94ea235311eddabe23bfa430cd9/x/axelarnet/keeper/msg_server.go#L520
-	return m.Nexus.SetMessageProcessing(ctx, nexusMsg.ID)
+	return nil
 }

@@ -42,7 +42,7 @@ type Nexus interface {
 	RateLimitTransfer(ctx sdk.Context, chain exported.ChainName, asset sdk.Coin, direction exported.TransferDirection) error
 	GenerateMessageID(ctx sdk.Context) (string, []byte, uint64)
 	SetNewMessage(ctx sdk.Context, msg exported.GeneralMessage) error
-	SetMessageProcessing(ctx sdk.Context, id string) error
+	RouteMessage(ctx sdk.Context, id string, routingCtx ...exported.RoutingContext) error
 }
 
 // Snapshotter provides functionality to the snapshot module
