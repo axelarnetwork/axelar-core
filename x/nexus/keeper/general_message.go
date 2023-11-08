@@ -158,9 +158,9 @@ func (k Keeper) SetNewMessage(ctx sdk.Context, msg exported.GeneralMessage) erro
 	return k.setMessage(ctx, msg)
 }
 
-// SetMessageProcessing sets the given general message as processing and perform
+// setMessageProcessing sets the given general message as processing and perform
 // validations on the message
-func (k Keeper) SetMessageProcessing(ctx sdk.Context, id string) error {
+func (k Keeper) setMessageProcessing(ctx sdk.Context, id string) error {
 	msg, ok := k.GetMessage(ctx, id)
 	if !ok {
 		return fmt.Errorf("general message %s not found", id)
@@ -234,7 +234,7 @@ func (k Keeper) validateAddressAndAsset(ctx sdk.Context, address exported.CrossC
 // RouteMessage routes the given general message to the corresponding module and
 // set the message status to processing
 func (k Keeper) RouteMessage(ctx sdk.Context, id string, routingCtx ...exported.RoutingContext) error {
-	err := k.SetMessageProcessing(ctx, id)
+	err := k.setMessageProcessing(ctx, id)
 	if err != nil {
 		return err
 	}

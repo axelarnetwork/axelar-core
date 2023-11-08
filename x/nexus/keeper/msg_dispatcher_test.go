@@ -35,7 +35,9 @@ func TestMessenger_DispatchMsg(t *testing.T) {
 
 	givenMessenger := Given("a messenger", func() {
 		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
-		nexus = &mock.NexusMock{}
+		nexus = &mock.NexusMock{
+			LoggerFunc: func(ctx sdk.Context) log.Logger { return ctx.Logger() },
+		}
 		messenger = keeper.NewMessenger(nexus)
 	})
 
@@ -164,15 +166,18 @@ func TestMessenger_DispatchMsg(t *testing.T) {
 			nexus.SetNewMessageFunc = func(_ sdk.Context, msg exported.GeneralMessage) error {
 				return nil
 			}
-			nexus.SetMessageProcessingFunc = func(ctx sdk.Context, id string) error { return nil }
+			nexus.RouteMessageFunc = func(ctx sdk.Context, id string, _ ...exported.RoutingContext) error { return nil }
+		}).
+		When("the msg is encoded correctly", func() {
+			msg = wasmvmtypes.CosmosMsg{
+				Custom: []byte("{\"source_chain\":\"SomeChain\",\"source_address\":\"SomeAddress\",\"destination_chain\":\"Axelarnet\",\"destination_address\":\"axelarvaloper1zh9wrak6ke4n6fclj5e8yk397czv430ygs5jz7\",\"payload_hash\":\"XZx9n7ycI4EWhVo411N4PVWPconX0CPuNfVvKDLMSOQ=\",\"source_tx_id\":\"jvJHwR7yyDhI53dnhELdJj5ZUDO/FJovyCjamgOQ5Xk=\",\"source_tx_index\":100}"),
+			}
 		}).
 		Branch(
-			When("the destination chain is a cosmos chain", func() {
-				msg = wasmvmtypes.CosmosMsg{
-					Custom: []byte("{\"source_chain\":\"SomeChain\",\"source_address\":\"SomeAddress\",\"destination_chain\":\"Axelarnet\",\"destination_address\":\"axelarvaloper1zh9wrak6ke4n6fclj5e8yk397czv430ygs5jz7\",\"payload_hash\":\"XZx9n7ycI4EWhVo411N4PVWPconX0CPuNfVvKDLMSOQ=\",\"source_tx_id\":\"jvJHwR7yyDhI53dnhELdJj5ZUDO/FJovyCjamgOQ5Xk=\",\"source_tx_index\":100}"),
-				}
+			When("succeed to route message", func() {
+				nexus.RouteMessageFunc = func(_ sdk.Context, id string, _ ...exported.RoutingContext) error { return nil }
 			}).
-				Then("should set message as approved", func(t *testing.T) {
+				Then("should route the message", func(t *testing.T) {
 					_, _, err := messenger.DispatchMsg(ctx, contractAddr, "", msg)
 					assert.NoError(t, err)
 
@@ -181,25 +186,24 @@ func TestMessenger_DispatchMsg(t *testing.T) {
 					assert.Equal(t, nexus.SetNewMessageCalls()[0].Msg.Status, exported.Approved)
 					assert.Nil(t, nexus.SetNewMessageCalls()[0].Msg.Asset)
 
-					assert.Empty(t, nexus.SetMessageProcessingCalls())
+					assert.Len(t, nexus.RouteMessageCalls(), 1)
+					assert.Equal(t, nexus.SetNewMessageCalls()[0].Msg.ID, nexus.RouteMessageCalls()[0].ID)
 				}),
 
-			When("the destination chain is a non-cosmos chain", func() {
-				msg = wasmvmtypes.CosmosMsg{
-					Custom: []byte("{\"source_chain\":\"SomeChain\",\"source_address\":\"SomeAddress\",\"destination_chain\":\"Ethereum\",\"destination_address\":\"0xDAFEA492D9c6733ae3d56b7Ed1ADB60692c98Bc5\",\"payload_hash\":\"pOcUbpJ7WCC/TIx2sJA/qm0gZGSvDvXgK9QagbH4E2w=\",\"source_tx_id\":\"0ITBsic95Pt5EqsbMyKO04iW/74srqpDnPMzthkCM6w=\",\"source_tx_index\":0}"),
-				}
+			When("failed to route message", func() {
+				nexus.RouteMessageFunc = func(_ sdk.Context, id string, _ ...exported.RoutingContext) error { return fmt.Errorf("failed") }
 			}).
 				Then("should set message as processing", func(t *testing.T) {
 					_, _, err := messenger.DispatchMsg(ctx, contractAddr, "", msg)
 					assert.NoError(t, err)
 
 					assert.Len(t, nexus.SetNewMessageCalls(), 1)
-					assert.Equal(t, nexus.SetNewMessageCalls()[0].Msg.Recipient.Chain, evm.Ethereum)
+					assert.Equal(t, nexus.SetNewMessageCalls()[0].Msg.Recipient.Chain, axelarnet.Axelarnet)
 					assert.Equal(t, nexus.SetNewMessageCalls()[0].Msg.Status, exported.Approved)
 					assert.Nil(t, nexus.SetNewMessageCalls()[0].Msg.Asset)
 
-					assert.Len(t, nexus.SetMessageProcessingCalls(), 1)
-					assert.Equal(t, nexus.SetNewMessageCalls()[0].Msg.ID, nexus.SetMessageProcessingCalls()[0].ID)
+					assert.Len(t, nexus.RouteMessageCalls(), 1)
+					assert.Equal(t, nexus.SetNewMessageCalls()[0].Msg.ID, nexus.RouteMessageCalls()[0].ID)
 				}),
 		).
 		Run(t)

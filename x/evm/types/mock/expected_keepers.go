@@ -155,6 +155,9 @@ var _ types.Nexus = &NexusMock{}
 //			RegisterAssetFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset, limit github_com_cosmos_cosmos_sdk_types.Uint, window time.Duration) error {
 //				panic("mock out the RegisterAsset method")
 //			},
+//			RouteMessageFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, id string, routingCtx ...github_com_axelarnetwork_axelar_core_x_nexus_exported.RoutingContext) error {
+//				panic("mock out the RouteMessage method")
+//			},
 //			SetChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain)  {
 //				panic("mock out the SetChain method")
 //			},
@@ -166,9 +169,6 @@ var _ types.Nexus = &NexusMock{}
 //			},
 //			SetMessageFailedFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, id string) error {
 //				panic("mock out the SetMessageFailed method")
-//			},
-//			SetMessageProcessingFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, id string) error {
-//				panic("mock out the SetMessageProcessing method")
 //			},
 //			SetNewMessageFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, m github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage) error {
 //				panic("mock out the SetNewMessage method")
@@ -234,6 +234,9 @@ type NexusMock struct {
 	// RegisterAssetFunc mocks the RegisterAsset method.
 	RegisterAssetFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset, limit github_com_cosmos_cosmos_sdk_types.Uint, window time.Duration) error
 
+	// RouteMessageFunc mocks the RouteMessage method.
+	RouteMessageFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, id string, routingCtx ...github_com_axelarnetwork_axelar_core_x_nexus_exported.RoutingContext) error
+
 	// SetChainFunc mocks the SetChain method.
 	SetChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain)
 
@@ -245,9 +248,6 @@ type NexusMock struct {
 
 	// SetMessageFailedFunc mocks the SetMessageFailed method.
 	SetMessageFailedFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, id string) error
-
-	// SetMessageProcessingFunc mocks the SetMessageProcessing method.
-	SetMessageProcessingFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, id string) error
 
 	// SetNewMessageFunc mocks the SetNewMessage method.
 	SetNewMessageFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, m github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage) error
@@ -410,6 +410,15 @@ type NexusMock struct {
 			// Window is the window argument value.
 			Window time.Duration
 		}
+		// RouteMessage holds details about calls to the RouteMessage method.
+		RouteMessage []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// ID is the id argument value.
+			ID string
+			// RoutingCtx is the routingCtx argument value.
+			RoutingCtx []github_com_axelarnetwork_axelar_core_x_nexus_exported.RoutingContext
+		}
 		// SetChain holds details about calls to the SetChain method.
 		SetChain []struct {
 			// Ctx is the ctx argument value.
@@ -433,13 +442,6 @@ type NexusMock struct {
 		}
 		// SetMessageFailed holds details about calls to the SetMessageFailed method.
 		SetMessageFailed []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// ID is the id argument value.
-			ID string
-		}
-		// SetMessageProcessing holds details about calls to the SetMessageProcessing method.
-		SetMessageProcessing []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// ID is the id argument value.
@@ -471,11 +473,11 @@ type NexusMock struct {
 	lockLinkAddresses                 sync.RWMutex
 	lockRateLimitTransfer             sync.RWMutex
 	lockRegisterAsset                 sync.RWMutex
+	lockRouteMessage                  sync.RWMutex
 	lockSetChain                      sync.RWMutex
 	lockSetChainMaintainerState       sync.RWMutex
 	lockSetMessageExecuted            sync.RWMutex
 	lockSetMessageFailed              sync.RWMutex
-	lockSetMessageProcessing          sync.RWMutex
 	lockSetNewMessage                 sync.RWMutex
 }
 
@@ -1187,6 +1189,46 @@ func (mock *NexusMock) RegisterAssetCalls() []struct {
 	return calls
 }
 
+// RouteMessage calls RouteMessageFunc.
+func (mock *NexusMock) RouteMessage(ctx github_com_cosmos_cosmos_sdk_types.Context, id string, routingCtx ...github_com_axelarnetwork_axelar_core_x_nexus_exported.RoutingContext) error {
+	if mock.RouteMessageFunc == nil {
+		panic("NexusMock.RouteMessageFunc: method is nil but Nexus.RouteMessage was just called")
+	}
+	callInfo := struct {
+		Ctx        github_com_cosmos_cosmos_sdk_types.Context
+		ID         string
+		RoutingCtx []github_com_axelarnetwork_axelar_core_x_nexus_exported.RoutingContext
+	}{
+		Ctx:        ctx,
+		ID:         id,
+		RoutingCtx: routingCtx,
+	}
+	mock.lockRouteMessage.Lock()
+	mock.calls.RouteMessage = append(mock.calls.RouteMessage, callInfo)
+	mock.lockRouteMessage.Unlock()
+	return mock.RouteMessageFunc(ctx, id, routingCtx...)
+}
+
+// RouteMessageCalls gets all the calls that were made to RouteMessage.
+// Check the length with:
+//
+//	len(mockedNexus.RouteMessageCalls())
+func (mock *NexusMock) RouteMessageCalls() []struct {
+	Ctx        github_com_cosmos_cosmos_sdk_types.Context
+	ID         string
+	RoutingCtx []github_com_axelarnetwork_axelar_core_x_nexus_exported.RoutingContext
+} {
+	var calls []struct {
+		Ctx        github_com_cosmos_cosmos_sdk_types.Context
+		ID         string
+		RoutingCtx []github_com_axelarnetwork_axelar_core_x_nexus_exported.RoutingContext
+	}
+	mock.lockRouteMessage.RLock()
+	calls = mock.calls.RouteMessage
+	mock.lockRouteMessage.RUnlock()
+	return calls
+}
+
 // SetChain calls SetChainFunc.
 func (mock *NexusMock) SetChain(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain) {
 	if mock.SetChainFunc == nil {
@@ -1328,42 +1370,6 @@ func (mock *NexusMock) SetMessageFailedCalls() []struct {
 	mock.lockSetMessageFailed.RLock()
 	calls = mock.calls.SetMessageFailed
 	mock.lockSetMessageFailed.RUnlock()
-	return calls
-}
-
-// SetMessageProcessing calls SetMessageProcessingFunc.
-func (mock *NexusMock) SetMessageProcessing(ctx github_com_cosmos_cosmos_sdk_types.Context, id string) error {
-	if mock.SetMessageProcessingFunc == nil {
-		panic("NexusMock.SetMessageProcessingFunc: method is nil but Nexus.SetMessageProcessing was just called")
-	}
-	callInfo := struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
-		ID  string
-	}{
-		Ctx: ctx,
-		ID:  id,
-	}
-	mock.lockSetMessageProcessing.Lock()
-	mock.calls.SetMessageProcessing = append(mock.calls.SetMessageProcessing, callInfo)
-	mock.lockSetMessageProcessing.Unlock()
-	return mock.SetMessageProcessingFunc(ctx, id)
-}
-
-// SetMessageProcessingCalls gets all the calls that were made to SetMessageProcessing.
-// Check the length with:
-//
-//	len(mockedNexus.SetMessageProcessingCalls())
-func (mock *NexusMock) SetMessageProcessingCalls() []struct {
-	Ctx github_com_cosmos_cosmos_sdk_types.Context
-	ID  string
-} {
-	var calls []struct {
-		Ctx github_com_cosmos_cosmos_sdk_types.Context
-		ID  string
-	}
-	mock.lockSetMessageProcessing.RLock()
-	calls = mock.calls.SetMessageProcessing
-	mock.lockSetMessageProcessing.RUnlock()
 	return calls
 }
 

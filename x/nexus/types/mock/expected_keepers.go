@@ -82,8 +82,8 @@ var _ nexustypes.Nexus = &NexusMock{}
 //			RemoveChainMaintainerFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, validator cosmossdktypes.ValAddress) error {
 //				panic("mock out the RemoveChainMaintainer method")
 //			},
-//			SetMessageProcessingFunc: func(ctx cosmossdktypes.Context, id string) error {
-//				panic("mock out the SetMessageProcessing method")
+//			RouteMessageFunc: func(ctx cosmossdktypes.Context, id string, routingCtx ...github_com_axelarnetwork_axelar_core_x_nexus_exported.RoutingContext) error {
+//				panic("mock out the RouteMessage method")
 //			},
 //			SetNewMessageFunc: func(ctx cosmossdktypes.Context, msg github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage) error {
 //				panic("mock out the SetNewMessage method")
@@ -158,8 +158,8 @@ type NexusMock struct {
 	// RemoveChainMaintainerFunc mocks the RemoveChainMaintainer method.
 	RemoveChainMaintainerFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, validator cosmossdktypes.ValAddress) error
 
-	// SetMessageProcessingFunc mocks the SetMessageProcessing method.
-	SetMessageProcessingFunc func(ctx cosmossdktypes.Context, id string) error
+	// RouteMessageFunc mocks the RouteMessage method.
+	RouteMessageFunc func(ctx cosmossdktypes.Context, id string, routingCtx ...github_com_axelarnetwork_axelar_core_x_nexus_exported.RoutingContext) error
 
 	// SetNewMessageFunc mocks the SetNewMessage method.
 	SetNewMessageFunc func(ctx cosmossdktypes.Context, msg github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage) error
@@ -311,12 +311,14 @@ type NexusMock struct {
 			// Validator is the validator argument value.
 			Validator cosmossdktypes.ValAddress
 		}
-		// SetMessageProcessing holds details about calls to the SetMessageProcessing method.
-		SetMessageProcessing []struct {
+		// RouteMessage holds details about calls to the RouteMessage method.
+		RouteMessage []struct {
 			// Ctx is the ctx argument value.
 			Ctx cosmossdktypes.Context
 			// ID is the id argument value.
 			ID string
+			// RoutingCtx is the routingCtx argument value.
+			RoutingCtx []github_com_axelarnetwork_axelar_core_x_nexus_exported.RoutingContext
 		}
 		// SetNewMessage holds details about calls to the SetNewMessage method.
 		SetNewMessage []struct {
@@ -363,7 +365,7 @@ type NexusMock struct {
 	lockRateLimitTransfer        sync.RWMutex
 	lockRegisterFee              sync.RWMutex
 	lockRemoveChainMaintainer    sync.RWMutex
-	lockSetMessageProcessing     sync.RWMutex
+	lockRouteMessage             sync.RWMutex
 	lockSetNewMessage            sync.RWMutex
 	lockSetParams                sync.RWMutex
 	lockSetRateLimit             sync.RWMutex
@@ -1065,39 +1067,43 @@ func (mock *NexusMock) RemoveChainMaintainerCalls() []struct {
 	return calls
 }
 
-// SetMessageProcessing calls SetMessageProcessingFunc.
-func (mock *NexusMock) SetMessageProcessing(ctx cosmossdktypes.Context, id string) error {
-	if mock.SetMessageProcessingFunc == nil {
-		panic("NexusMock.SetMessageProcessingFunc: method is nil but Nexus.SetMessageProcessing was just called")
+// RouteMessage calls RouteMessageFunc.
+func (mock *NexusMock) RouteMessage(ctx cosmossdktypes.Context, id string, routingCtx ...github_com_axelarnetwork_axelar_core_x_nexus_exported.RoutingContext) error {
+	if mock.RouteMessageFunc == nil {
+		panic("NexusMock.RouteMessageFunc: method is nil but Nexus.RouteMessage was just called")
 	}
 	callInfo := struct {
-		Ctx cosmossdktypes.Context
-		ID  string
+		Ctx        cosmossdktypes.Context
+		ID         string
+		RoutingCtx []github_com_axelarnetwork_axelar_core_x_nexus_exported.RoutingContext
 	}{
-		Ctx: ctx,
-		ID:  id,
+		Ctx:        ctx,
+		ID:         id,
+		RoutingCtx: routingCtx,
 	}
-	mock.lockSetMessageProcessing.Lock()
-	mock.calls.SetMessageProcessing = append(mock.calls.SetMessageProcessing, callInfo)
-	mock.lockSetMessageProcessing.Unlock()
-	return mock.SetMessageProcessingFunc(ctx, id)
+	mock.lockRouteMessage.Lock()
+	mock.calls.RouteMessage = append(mock.calls.RouteMessage, callInfo)
+	mock.lockRouteMessage.Unlock()
+	return mock.RouteMessageFunc(ctx, id, routingCtx...)
 }
 
-// SetMessageProcessingCalls gets all the calls that were made to SetMessageProcessing.
+// RouteMessageCalls gets all the calls that were made to RouteMessage.
 // Check the length with:
 //
-//	len(mockedNexus.SetMessageProcessingCalls())
-func (mock *NexusMock) SetMessageProcessingCalls() []struct {
-	Ctx cosmossdktypes.Context
-	ID  string
+//	len(mockedNexus.RouteMessageCalls())
+func (mock *NexusMock) RouteMessageCalls() []struct {
+	Ctx        cosmossdktypes.Context
+	ID         string
+	RoutingCtx []github_com_axelarnetwork_axelar_core_x_nexus_exported.RoutingContext
 } {
 	var calls []struct {
-		Ctx cosmossdktypes.Context
-		ID  string
+		Ctx        cosmossdktypes.Context
+		ID         string
+		RoutingCtx []github_com_axelarnetwork_axelar_core_x_nexus_exported.RoutingContext
 	}
-	mock.lockSetMessageProcessing.RLock()
-	calls = mock.calls.SetMessageProcessing
-	mock.lockSetMessageProcessing.RUnlock()
+	mock.lockRouteMessage.RLock()
+	calls = mock.calls.RouteMessage
+	mock.lockRouteMessage.RUnlock()
 	return calls
 }
 

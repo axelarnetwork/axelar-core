@@ -1,11 +1,13 @@
 package keeper_test
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"testing"
 
+	// "github.com/CosmWasm/wasmd/x/wasm"
 	"github.com/CosmWasm/wasmd/x/wasm"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -14,12 +16,15 @@ import (
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
+
+	// evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	evmtestutils "github.com/axelarnetwork/axelar-core/x/evm/types/testutils"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexustestutils "github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
+	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 	. "github.com/axelarnetwork/utils/test"
 )
 
@@ -93,11 +98,14 @@ func TestSetNewMessage(t *testing.T) {
 		Run(t)
 }
 
-func TestSetMessageProcessing(t *testing.T) {
+func TestRouteMessage(t *testing.T) {
 	var (
-		msg    exported.GeneralMessage
-		ctx    sdk.Context
-		keeper nexus.Keeper
+		msg        exported.GeneralMessage
+		ctx        sdk.Context
+		keeper     nexus.Keeper
+		routeCount uint
+		routingCtx exported.RoutingContext
+		payload    []byte
 	)
 
 	cfg := app.MakeEncodingConfig()
@@ -108,7 +116,7 @@ func TestSetMessageProcessing(t *testing.T) {
 	givenKeeper.
 		When("the message doesn't exist", func() {}).
 		Then("should return error", func(t *testing.T) {
-			assert.ErrorContains(t, keeper.SetMessageProcessing(ctx, rand.NormalizedStr(10)), "not found")
+			assert.ErrorContains(t, keeper.RouteMessage(ctx, rand.NormalizedStr(10)), "not found")
 		}).
 		Run(t)
 
@@ -125,10 +133,10 @@ func TestSetMessageProcessing(t *testing.T) {
 			}
 
 			keeper.SetNewMessage(ctx, msg)
-			keeper.SetMessageProcessing(ctx, msg.ID)
+			keeper.RouteMessage(ctx, msg.ID)
 		}).
 		Then("should return error", func(t *testing.T) {
-			assert.ErrorContains(t, keeper.SetMessageProcessing(ctx, msg.ID), "general message has to be approved or failed")
+			assert.ErrorContains(t, keeper.RouteMessage(ctx, msg.ID), "general message has to be approved or failed")
 		}).
 		Run(t)
 
@@ -148,7 +156,7 @@ func TestSetMessageProcessing(t *testing.T) {
 				keeper.SetNewMessage(ctx, msg)
 			}).
 				Then("should return error", func(t *testing.T) {
-					assert.ErrorContains(t, keeper.SetMessageProcessing(ctx, msg.ID), "is not registered")
+					assert.ErrorContains(t, keeper.RouteMessage(ctx, msg.ID), "is not registered")
 				}),
 
 			When("the destination chain is not activated", func() {
@@ -161,7 +169,7 @@ func TestSetMessageProcessing(t *testing.T) {
 				keeper.SetNewMessage(ctx, msg)
 			}).
 				Then("should return error", func(t *testing.T) {
-					assert.ErrorContains(t, keeper.SetMessageProcessing(ctx, msg.ID), "is not activated")
+					assert.ErrorContains(t, keeper.RouteMessage(ctx, msg.ID), "is not activated")
 				}),
 
 			When("the destination address is invalid", func() {
@@ -173,7 +181,7 @@ func TestSetMessageProcessing(t *testing.T) {
 				keeper.SetNewMessage(ctx, msg)
 			}).
 				Then("should return error", func(t *testing.T) {
-					assert.ErrorContains(t, keeper.SetMessageProcessing(ctx, msg.ID), "not an hex address")
+					assert.ErrorContains(t, keeper.RouteMessage(ctx, msg.ID), "not an hex address")
 				}),
 
 			When("the destination chain does't support the asset", func() {
@@ -187,7 +195,7 @@ func TestSetMessageProcessing(t *testing.T) {
 				keeper.SetNewMessage(ctx, msg)
 			}).
 				Then("should return error", func(t *testing.T) {
-					assert.ErrorContains(t, keeper.SetMessageProcessing(ctx, msg.ID), "does not support foreign asset")
+					assert.ErrorContains(t, keeper.RouteMessage(ctx, msg.ID), "does not support foreign asset")
 				}),
 
 			When("asset is set", func() {
@@ -200,7 +208,7 @@ func TestSetMessageProcessing(t *testing.T) {
 				keeper.SetNewMessage(ctx, msg)
 			}).
 				Then("should return error", func(t *testing.T) {
-					assert.ErrorContains(t, keeper.SetMessageProcessing(ctx, msg.ID), "asset transfer is not supported for wasm messages")
+					assert.ErrorContains(t, keeper.RouteMessage(ctx, msg.ID), "asset transfer is not supported for wasm messages")
 				}),
 		).
 		Run(t)
@@ -221,7 +229,7 @@ func TestSetMessageProcessing(t *testing.T) {
 				keeper.SetNewMessage(ctx, msg)
 			}).
 				Then("should return error", func(t *testing.T) {
-					assert.ErrorContains(t, keeper.SetMessageProcessing(ctx, msg.ID), "is not registered")
+					assert.ErrorContains(t, keeper.RouteMessage(ctx, msg.ID), "is not registered")
 				}),
 
 			When("the sender chain is not activated", func() {
@@ -234,7 +242,7 @@ func TestSetMessageProcessing(t *testing.T) {
 				keeper.SetNewMessage(ctx, msg)
 			}).
 				Then("should return error", func(t *testing.T) {
-					assert.ErrorContains(t, keeper.SetMessageProcessing(ctx, msg.ID), "is not activated")
+					assert.ErrorContains(t, keeper.RouteMessage(ctx, msg.ID), "is not activated")
 				}),
 
 			When("the sender address is invalid", func() {
@@ -246,7 +254,7 @@ func TestSetMessageProcessing(t *testing.T) {
 				keeper.SetNewMessage(ctx, msg)
 			}).
 				Then("should return error", func(t *testing.T) {
-					assert.ErrorContains(t, keeper.SetMessageProcessing(ctx, msg.ID), "not an hex address")
+					assert.ErrorContains(t, keeper.RouteMessage(ctx, msg.ID), "not an hex address")
 				}),
 
 			When("the sender chain does't support the asset", func() {
@@ -260,7 +268,7 @@ func TestSetMessageProcessing(t *testing.T) {
 				keeper.SetNewMessage(ctx, msg)
 			}).
 				Then("should return error", func(t *testing.T) {
-					assert.ErrorContains(t, keeper.SetMessageProcessing(ctx, msg.ID), "does not support foreign asset")
+					assert.ErrorContains(t, keeper.RouteMessage(ctx, msg.ID), "does not support foreign asset")
 				}),
 
 			When("asset is set", func() {
@@ -273,7 +281,7 @@ func TestSetMessageProcessing(t *testing.T) {
 				keeper.SetNewMessage(ctx, msg)
 			}).
 				Then("should return error", func(t *testing.T) {
-					assert.ErrorContains(t, keeper.SetMessageProcessing(ctx, msg.ID), "asset transfer is not supported for wasm messages")
+					assert.ErrorContains(t, keeper.RouteMessage(ctx, msg.ID), "asset transfer is not supported for wasm messages")
 				}),
 		).
 		Run(t)
@@ -286,16 +294,58 @@ func TestSetMessageProcessing(t *testing.T) {
 				Chain:   evm.Ethereum,
 				Address: evmtestutils.RandomAddress().Hex(),
 			}
+			payload = rand.Bytes(100)
+			msg.PayloadHash = crypto.Keccak256Hash(payload).Bytes()
 
 			keeper.SetNewMessage(ctx, msg)
 		}).
-		Then("should set the message status to processing", func(t *testing.T) {
-			assert.NoError(t, keeper.SetMessageProcessing(ctx, msg.ID))
+		Branch(
+			When("no route is registered for the destination chain", func() {}).
+				Then("should return error", func(t *testing.T) {
+					assert.ErrorContains(t, keeper.RouteMessage(ctx, msg.ID), "no route found")
+				}),
 
-			actual, ok := keeper.GetMessage(ctx, msg.ID)
-			assert.True(t, ok)
-			assert.Equal(t, exported.Processing, actual.Status)
-		}).
+			When("the route is registed for the destination chain and routing context is not provided", func() {
+				routeCount = 0
+
+				keeper.SetMessageRouter(types.NewMessageRouter().AddRoute(evm.Ethereum.Module, func(_ sdk.Context, routingCtx exported.RoutingContext, _ exported.GeneralMessage) error {
+					routeCount++
+
+					if !routingCtx.FeeGranter.Empty() || !routingCtx.Sender.Empty() || routingCtx.Payload != nil {
+						return fmt.Errorf("unexpected routing context")
+					}
+
+					return nil
+				}))
+			}).
+				Then("should route the message with the default routing context when it is not provided", func(t *testing.T) {
+					assert.NoError(t, keeper.RouteMessage(ctx, msg.ID))
+					assert.EqualValues(t, 1, routeCount)
+				}),
+
+			When("the route is registed for the destination chain and routing context is provided", func() {
+				routeCount = 0
+				routingCtx = exported.RoutingContext{
+					Sender:     rand.AccAddr(),
+					FeeGranter: rand.AccAddr(),
+					Payload:    payload,
+				}
+
+				keeper.SetMessageRouter(types.NewMessageRouter().AddRoute(evm.Ethereum.Module, func(_ sdk.Context, rCtx exported.RoutingContext, _ exported.GeneralMessage) error {
+					routeCount++
+
+					if !rCtx.Sender.Equals(routingCtx.Sender) || !rCtx.FeeGranter.Equals(routingCtx.FeeGranter) || !bytes.Equal(rCtx.Payload, routingCtx.Payload) {
+						return fmt.Errorf("unexpected routing context")
+					}
+
+					return nil
+				}))
+			}).
+				Then("should route the message with the default routing context when it is not provided", func(t *testing.T) {
+					assert.NoError(t, keeper.RouteMessage(ctx, msg.ID, routingCtx))
+					assert.EqualValues(t, 1, routeCount)
+				}),
+		).
 		Run(t)
 }
 
@@ -348,12 +398,15 @@ func TestStatusTransitions(t *testing.T) {
 	k.SetChain(ctx, destinationChain)
 	k.ActivateChain(ctx, sourceChain)
 	k.ActivateChain(ctx, destinationChain)
+	k.SetMessageRouter(types.NewMessageRouter().AddRoute(destinationChain.Module, func(_ sdk.Context, _ exported.RoutingContext, _ exported.GeneralMessage) error {
+		return nil
+	}))
 
 	// Message doesn't exist, can't set any status
 	err := k.SetMessageFailed(ctx, msg.ID)
 	assert.Error(t, err, fmt.Sprintf("general message %s not found", msg.ID))
 
-	err = k.SetMessageProcessing(ctx, msg.ID)
+	err = k.RouteMessage(ctx, msg.ID)
 	assert.Error(t, err, fmt.Sprintf("general message %s not found", msg.ID))
 
 	err = k.SetMessageExecuted(ctx, msg.ID)
@@ -369,10 +422,10 @@ func TestStatusTransitions(t *testing.T) {
 	err = k.SetMessageExecuted(ctx, msg.ID)
 	assert.Error(t, err, "general message is not processed")
 
-	err = k.SetMessageProcessing(ctx, msg.ID)
+	err = k.RouteMessage(ctx, msg.ID)
 	assert.NoError(t, err)
 
-	err = k.SetMessageProcessing(ctx, msg.ID)
+	err = k.RouteMessage(ctx, msg.ID)
 	assert.Error(t, err, "general message is not approved or failed")
 
 	err = k.SetMessageFailed(ctx, msg.ID)
@@ -381,7 +434,7 @@ func TestStatusTransitions(t *testing.T) {
 	err = k.SetMessageExecuted(ctx, msg.ID)
 	assert.Error(t, err, "general message is not processed")
 
-	err = k.SetMessageProcessing(ctx, msg.ID)
+	err = k.RouteMessage(ctx, msg.ID)
 	assert.NoError(t, err)
 
 	err = k.SetMessageExecuted(ctx, msg.ID)
@@ -390,9 +443,8 @@ func TestStatusTransitions(t *testing.T) {
 	err = k.SetMessageFailed(ctx, msg.ID)
 	assert.Error(t, err, "general message is not processed")
 
-	err = k.SetMessageProcessing(ctx, msg.ID)
+	err = k.RouteMessage(ctx, msg.ID)
 	assert.Error(t, err, "general message is not approved or failed")
-
 }
 
 func TestGetMessage(t *testing.T) {
@@ -433,6 +485,9 @@ func TestGetSentMessages(t *testing.T) {
 	k.SetChain(ctx, destinationChain)
 	k.ActivateChain(ctx, sourceChain)
 	k.ActivateChain(ctx, destinationChain)
+	k.SetMessageRouter(types.NewMessageRouter().AddRoute(destinationChain.Module, func(_ sdk.Context, _ exported.RoutingContext, _ exported.GeneralMessage) error {
+		return nil
+	}))
 
 	makeSentMessages := func(numMsgs int, destChainName exported.ChainName) map[string]exported.GeneralMessage {
 		msgs := make(map[string]exported.GeneralMessage)
@@ -465,12 +520,12 @@ func TestGetSentMessages(t *testing.T) {
 
 			switch status {
 			case exported.Processing:
-				assert.NoError(t, k.SetMessageProcessing(ctx, msg.ID))
+				assert.NoError(t, k.RouteMessage(ctx, msg.ID))
 			case exported.Executed:
-				assert.NoError(t, k.SetMessageProcessing(ctx, msg.ID))
+				assert.NoError(t, k.RouteMessage(ctx, msg.ID))
 				assert.NoError(t, k.SetMessageExecuted(ctx, msg.ID))
 			case exported.Failed:
-				assert.NoError(t, k.SetMessageProcessing(ctx, msg.ID))
+				assert.NoError(t, k.RouteMessage(ctx, msg.ID))
 				assert.NoError(t, k.SetMessageFailed(ctx, msg.ID))
 			default:
 			}
@@ -546,7 +601,7 @@ func TestGetSentMessages(t *testing.T) {
 	checkForExistence(msgs)
 
 	//resend the failed message
-	err = k.SetMessageProcessing(ctx, msg.ID)
+	err = k.RouteMessage(ctx, msg.ID)
 	assert.NoError(t, err)
 	sent = consumeSent(destinationChainName, 1)
 	assert.Equal(t, len(sent), 1)

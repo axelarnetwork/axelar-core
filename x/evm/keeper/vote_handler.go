@@ -227,14 +227,16 @@ func (v voteHandler) handleContractCall(ctx sdk.Context, event types.Event) erro
 		return err
 	}
 
+	// this is still here only because routing to modules other than EVM can be
+	// expensive. this is currently called by the last voter, and the extra gas
+	// may cause trouble for gas estimation.
 	if !msg.Recipient.Chain.IsFrom(types.ModuleName) {
 		return nil
 	}
 
-	// if the message is sent to an EVM chain, try setting the message processing
-	// so that the end blocker can pick it up
+	// try routing the message
 	_ = utils.RunCached(ctx, v.keeper, func(ctx sdk.Context) (bool, error) {
-		err := v.nexus.SetMessageProcessing(ctx, msg.ID)
+		err := v.nexus.RouteMessage(ctx, msg.ID)
 
 		return err == nil, err
 	})
