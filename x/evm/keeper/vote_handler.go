@@ -235,10 +235,8 @@ func (v voteHandler) handleContractCall(ctx sdk.Context, event types.Event) erro
 	}
 
 	// try routing the message
-	_ = utils.RunCached(ctx, v.keeper, func(ctx sdk.Context) (bool, error) {
-		err := v.nexus.RouteMessage(ctx, msg.ID)
-
-		return err == nil, err
+	_ = utils.RunCached(ctx, v.keeper, func(ctx sdk.Context) (struct{}, error) {
+		return struct{}{}, v.nexus.RouteMessage(ctx, msg.ID)
 	})
 
 	return nil
