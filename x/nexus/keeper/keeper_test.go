@@ -31,7 +31,7 @@ const maxAmount int64 = 100000000000
 
 var k keeper.Keeper
 
-func addressValidator() types.Router {
+func addressValidator() types.AddressValidator {
 	axelarnetK := &axelarnetmock.BaseKeeperMock{
 		GetCosmosChainByNameFunc: func(ctx sdk.Context, chain exported.ChainName) (axelarnetTypes.CosmosChain, bool) {
 			var prefix string
@@ -47,7 +47,7 @@ func addressValidator() types.Router {
 		},
 	}
 
-	router := types.NewRouter()
+	router := types.NewAddressValidator()
 	router.AddAddressValidator(evmTypes.ModuleName, evmkeeper.NewAddressValidator()).
 		AddAddressValidator(axelarnetTypes.ModuleName, axelarnetkeeper.NewAddressValidator(axelarnetK))
 
@@ -58,7 +58,7 @@ func init() {
 	encCfg := app.MakeEncodingConfig()
 	subspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("nexusKey"), sdk.NewKVStoreKey("tNexusKey"), "nexus")
 	k = keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("nexus"), subspace)
-	k.SetRouter(addressValidator())
+	k.SetAddressValidator(addressValidator())
 }
 
 func TestLinkAddress(t *testing.T) {

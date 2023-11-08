@@ -48,10 +48,10 @@ func setup() (sdk.Context, Keeper) {
 		},
 	}
 
-	router := types.NewRouter()
+	router := types.NewAddressValidator()
 	router.AddAddressValidator(evmTypes.ModuleName, evmkeeper.NewAddressValidator()).
 		AddAddressValidator(axelarnetTypes.ModuleName, axelarnetkeeper.NewAddressValidator(axelarnetK))
-	keeper.SetRouter(router)
+	keeper.SetAddressValidator(router)
 
 	return ctx, keeper
 }

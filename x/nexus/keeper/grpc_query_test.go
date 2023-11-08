@@ -62,13 +62,13 @@ func TestKeeper_TransfersForChain(t *testing.T) {
 			funcs.MustNoErr(k.RegisterAsset(ctx, evm.Ethereum, exported.NewAsset(axelarnet.NativeAsset, false), utils.MaxUint, time.Hour))
 			funcs.MustNoErr(k.RegisterAsset(ctx, axelarnet.Axelarnet, exported.NewAsset(axelarnet.NativeAsset, true), utils.MaxUint, time.Hour))
 
-			nexusRouter := types.NewRouter().
+			nexusRouter := types.NewAddressValidator().
 				AddAddressValidator("evm", func(sdk.Context, exported.CrossChainAddress) error {
 					return nil
 				}).AddAddressValidator("axelarnet", func(sdk.Context, exported.CrossChainAddress) error {
 				return nil
 			})
-			k.SetRouter(nexusRouter)
+			k.SetAddressValidator(nexusRouter)
 
 		}).
 		When("there are some pending transfers", func() {

@@ -41,7 +41,9 @@ type Keeper struct {
 	storeKey sdk.StoreKey
 	cdc      codec.BinaryCodec
 	params   params.Subspace
-	router   types.Router
+
+	addressValidator types.AddressValidator
+	messageRouter    types.MessageRouter
 }
 
 // NewKeeper returns a new nexus keeper
@@ -66,26 +68,45 @@ func (k Keeper) GetParams(ctx sdk.Context) types.Params {
 	return p
 }
 
-// SetRouter sets the nexus router. It will panic if called more than once
-func (k *Keeper) SetRouter(router types.Router) {
-	if k.router != nil {
+// SetAddressValidator sets the nexus address validator. It will panic if called more than once
+func (k *Keeper) SetAddressValidator(validator types.AddressValidator) {
+	if k.addressValidator != nil {
+		panic("validator already set")
+	}
+
+	k.addressValidator = validator
+
+	// In order to avoid invalid or non-deterministic behavior, we seal the validator immediately
+	// to prevent additionals handlers from being registered after the keeper is initialized.
+	k.addressValidator.Seal()
+}
+
+// getAddressValidator returns the nexus address validator. If not set, it returns a sealed empty validator
+func (k Keeper) getAddressValidator() types.AddressValidator {
+	if k.addressValidator == nil {
+		k.SetAddressValidator(types.NewAddressValidator())
+	}
+
+	return k.addressValidator
+}
+
+func (k *Keeper) SetMessageRouter(router types.MessageRouter) {
+	if k.messageRouter != nil {
 		panic("router already set")
 	}
 
-	k.router = router
-
+	k.messageRouter = router
 	// In order to avoid invalid or non-deterministic behavior, we seal the router immediately
 	// to prevent additionals handlers from being registered after the keeper is initialized.
-	k.router.Seal()
+	k.messageRouter.Seal()
 }
 
-// GetRouter returns the nexus router. If no router was set, it returns a (sealed) router with no handlers
-func (k Keeper) GetRouter() types.Router {
-	if k.router == nil {
-		k.SetRouter(types.NewRouter())
+func (k Keeper) getMessageRouter() types.MessageRouter {
+	if k.messageRouter == nil {
+		k.SetMessageRouter(types.NewMessageRouter())
 	}
 
-	return k.router
+	return k.messageRouter
 }
 
 func (k Keeper) getStore(ctx sdk.Context) utils.KVStore {

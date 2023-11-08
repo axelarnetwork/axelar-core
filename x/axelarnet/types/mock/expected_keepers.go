@@ -611,6 +611,9 @@ var _ axelarnettypes.Nexus = &NexusMock{}
 //			RegisterAssetFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset, limit cosmossdktypes.Uint, window time.Duration) error {
 //				panic("mock out the RegisterAsset method")
 //			},
+//			RouteMessageFunc: func(ctx cosmossdktypes.Context, id string, routingCtx ...github_com_axelarnetwork_axelar_core_x_nexus_exported.RoutingContext) error {
+//				panic("mock out the RouteMessage method")
+//			},
 //			SetChainFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain)  {
 //				panic("mock out the SetChain method")
 //			},
@@ -686,6 +689,9 @@ type NexusMock struct {
 
 	// RegisterAssetFunc mocks the RegisterAsset method.
 	RegisterAssetFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset, limit cosmossdktypes.Uint, window time.Duration) error
+
+	// RouteMessageFunc mocks the RouteMessage method.
+	RouteMessageFunc func(ctx cosmossdktypes.Context, id string, routingCtx ...github_com_axelarnetwork_axelar_core_x_nexus_exported.RoutingContext) error
 
 	// SetChainFunc mocks the SetChain method.
 	SetChainFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain)
@@ -842,6 +848,15 @@ type NexusMock struct {
 			// Window is the window argument value.
 			Window time.Duration
 		}
+		// RouteMessage holds details about calls to the RouteMessage method.
+		RouteMessage []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// ID is the id argument value.
+			ID string
+			// RoutingCtx is the routingCtx argument value.
+			RoutingCtx []github_com_axelarnetwork_axelar_core_x_nexus_exported.RoutingContext
+		}
 		// SetChain holds details about calls to the SetChain method.
 		SetChain []struct {
 			// Ctx is the ctx argument value.
@@ -908,6 +923,7 @@ type NexusMock struct {
 	lockLinkAddresses                 sync.RWMutex
 	lockRateLimitTransfer             sync.RWMutex
 	lockRegisterAsset                 sync.RWMutex
+	lockRouteMessage                  sync.RWMutex
 	lockSetChain                      sync.RWMutex
 	lockSetMessageExecuted            sync.RWMutex
 	lockSetMessageFailed              sync.RWMutex
@@ -1530,6 +1546,46 @@ func (mock *NexusMock) RegisterAssetCalls() []struct {
 	mock.lockRegisterAsset.RLock()
 	calls = mock.calls.RegisterAsset
 	mock.lockRegisterAsset.RUnlock()
+	return calls
+}
+
+// RouteMessage calls RouteMessageFunc.
+func (mock *NexusMock) RouteMessage(ctx cosmossdktypes.Context, id string, routingCtx ...github_com_axelarnetwork_axelar_core_x_nexus_exported.RoutingContext) error {
+	if mock.RouteMessageFunc == nil {
+		panic("NexusMock.RouteMessageFunc: method is nil but Nexus.RouteMessage was just called")
+	}
+	callInfo := struct {
+		Ctx        cosmossdktypes.Context
+		ID         string
+		RoutingCtx []github_com_axelarnetwork_axelar_core_x_nexus_exported.RoutingContext
+	}{
+		Ctx:        ctx,
+		ID:         id,
+		RoutingCtx: routingCtx,
+	}
+	mock.lockRouteMessage.Lock()
+	mock.calls.RouteMessage = append(mock.calls.RouteMessage, callInfo)
+	mock.lockRouteMessage.Unlock()
+	return mock.RouteMessageFunc(ctx, id, routingCtx...)
+}
+
+// RouteMessageCalls gets all the calls that were made to RouteMessage.
+// Check the length with:
+//
+//	len(mockedNexus.RouteMessageCalls())
+func (mock *NexusMock) RouteMessageCalls() []struct {
+	Ctx        cosmossdktypes.Context
+	ID         string
+	RoutingCtx []github_com_axelarnetwork_axelar_core_x_nexus_exported.RoutingContext
+} {
+	var calls []struct {
+		Ctx        cosmossdktypes.Context
+		ID         string
+		RoutingCtx []github_com_axelarnetwork_axelar_core_x_nexus_exported.RoutingContext
+	}
+	mock.lockRouteMessage.RLock()
+	calls = mock.calls.RouteMessage
+	mock.lockRouteMessage.RUnlock()
 	return calls
 }
 
@@ -3224,5 +3280,95 @@ func (mock *FeegrantKeeperMock) UseGrantedFeesCalls() []struct {
 	mock.lockUseGrantedFees.RLock()
 	calls = mock.calls.UseGrantedFees
 	mock.lockUseGrantedFees.RUnlock()
+	return calls
+}
+
+// Ensure, that IBCKeeperMock does implement axelarnettypes.IBCKeeper.
+// If this is not the case, regenerate this file with moq.
+var _ axelarnettypes.IBCKeeper = &IBCKeeperMock{}
+
+// IBCKeeperMock is a mock implementation of axelarnettypes.IBCKeeper.
+//
+//	func TestSomethingThatUsesIBCKeeper(t *testing.T) {
+//
+//		// make and configure a mocked axelarnettypes.IBCKeeper
+//		mockedIBCKeeper := &IBCKeeperMock{
+//			SendMessageFunc: func(c context.Context, recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, asset cosmossdktypes.Coin, payload string, id string) error {
+//				panic("mock out the SendMessage method")
+//			},
+//		}
+//
+//		// use mockedIBCKeeper in code that requires axelarnettypes.IBCKeeper
+//		// and then make assertions.
+//
+//	}
+type IBCKeeperMock struct {
+	// SendMessageFunc mocks the SendMessage method.
+	SendMessageFunc func(c context.Context, recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, asset cosmossdktypes.Coin, payload string, id string) error
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// SendMessage holds details about calls to the SendMessage method.
+		SendMessage []struct {
+			// C is the c argument value.
+			C context.Context
+			// Recipient is the recipient argument value.
+			Recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
+			// Asset is the asset argument value.
+			Asset cosmossdktypes.Coin
+			// Payload is the payload argument value.
+			Payload string
+			// ID is the id argument value.
+			ID string
+		}
+	}
+	lockSendMessage sync.RWMutex
+}
+
+// SendMessage calls SendMessageFunc.
+func (mock *IBCKeeperMock) SendMessage(c context.Context, recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, asset cosmossdktypes.Coin, payload string, id string) error {
+	if mock.SendMessageFunc == nil {
+		panic("IBCKeeperMock.SendMessageFunc: method is nil but IBCKeeper.SendMessage was just called")
+	}
+	callInfo := struct {
+		C         context.Context
+		Recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
+		Asset     cosmossdktypes.Coin
+		Payload   string
+		ID        string
+	}{
+		C:         c,
+		Recipient: recipient,
+		Asset:     asset,
+		Payload:   payload,
+		ID:        id,
+	}
+	mock.lockSendMessage.Lock()
+	mock.calls.SendMessage = append(mock.calls.SendMessage, callInfo)
+	mock.lockSendMessage.Unlock()
+	return mock.SendMessageFunc(c, recipient, asset, payload, id)
+}
+
+// SendMessageCalls gets all the calls that were made to SendMessage.
+// Check the length with:
+//
+//	len(mockedIBCKeeper.SendMessageCalls())
+func (mock *IBCKeeperMock) SendMessageCalls() []struct {
+	C         context.Context
+	Recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
+	Asset     cosmossdktypes.Coin
+	Payload   string
+	ID        string
+} {
+	var calls []struct {
+		C         context.Context
+		Recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
+		Asset     cosmossdktypes.Coin
+		Payload   string
+		ID        string
+	}
+	mock.lockSendMessage.RLock()
+	calls = mock.calls.SendMessage
+	mock.lockSendMessage.RUnlock()
 	return calls
 }
