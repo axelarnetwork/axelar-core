@@ -86,9 +86,14 @@ func TestNewMessageRoute(t *testing.T) {
 					assert.Equal(t, wasmK.ExecuteCalls()[0].Caller, moduleAddr)
 					assert.Empty(t, wasmK.ExecuteCalls()[0].Coins)
 
-					var actual nexus.WasmMessage
+					type req struct {
+						RouteMessages []nexus.WasmMessage `json:"route_messages"`
+					}
+
+					var actual req
 					assert.NoError(t, json.Unmarshal(wasmK.ExecuteCalls()[0].Msg, &actual))
-					assert.Equal(t, nexus.FromGeneralMessage(msg), actual)
+					assert.Len(t, actual.RouteMessages, 1)
+					assert.Equal(t, nexus.FromGeneralMessage(msg), actual.RouteMessages[0])
 				}),
 		).
 		Run(t)

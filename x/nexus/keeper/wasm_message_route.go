@@ -10,6 +10,10 @@ import (
 	types "github.com/axelarnetwork/axelar-core/x/nexus/types"
 )
 
+type req struct {
+	RouteMessages []exported.WasmMessage `json:"route_messages"`
+}
+
 // NewMessageRoute creates a new message route
 func NewMessageRoute(nexus types.Nexus, account types.AccountKeeper, wasm types.WasmKeeper) exported.MessageRoute {
 	return func(ctx sdk.Context, _ exported.RoutingContext, msg exported.GeneralMessage) error {
@@ -22,7 +26,7 @@ func NewMessageRoute(nexus types.Nexus, account types.AccountKeeper, wasm types.
 			return fmt.Errorf("gateway is not set")
 		}
 
-		bz, err := json.Marshal(exported.FromGeneralMessage(msg))
+		bz, err := json.Marshal(req{RouteMessages: []exported.WasmMessage{exported.FromGeneralMessage(msg)}})
 		if err != nil {
 			return nil
 		}
