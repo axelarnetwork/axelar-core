@@ -286,12 +286,13 @@ func initEvmKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, keeper
 func initNexusKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, keepers *keeperCache) *nexusKeeper.Keeper {
 	// setting validator will finalize all by sealing it
 	// no more validators can be added
-	addressValidator := nexusTypes.NewAddressValidator().
+	addressValidator := nexusTypes.NewAddressValidators().
 		AddAddressValidator(evmTypes.ModuleName, evmKeeper.NewAddressValidator()).
 		AddAddressValidator(axelarnetTypes.ModuleName, axelarnetKeeper.NewAddressValidator(getKeeper[axelarnetKeeper.Keeper](keepers)))
+	addressValidator.Seal()
 
 	nexusK := nexusKeeper.NewKeeper(appCodec, keys[nexusTypes.StoreKey], keepers.getSubspace(nexusTypes.ModuleName))
-	nexusK.SetAddressValidator(addressValidator)
+	nexusK.SetAddressValidators(addressValidator)
 
 	return &nexusK
 }

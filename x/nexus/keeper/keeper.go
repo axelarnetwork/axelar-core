@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"fmt"
+	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -42,8 +43,8 @@ type Keeper struct {
 	cdc      codec.BinaryCodec
 	params   params.Subspace
 
-	addressValidator types.AddressValidator
-	messageRouter    types.MessageRouter
+	addressValidators *types.AddressValidators
+	messageRouter     types.MessageRouter
 }
 
 // NewKeeper returns a new nexus keeper
@@ -68,26 +69,25 @@ func (k Keeper) GetParams(ctx sdk.Context) types.Params {
 	return p
 }
 
-// SetAddressValidator sets the nexus address validator. It will panic if called more than once
-func (k *Keeper) SetAddressValidator(validator types.AddressValidator) {
-	if k.addressValidator != nil {
-		panic("validator already set")
+// SetAddressValidators sets the nexus address validator. It will panic if called more than once
+func (k *Keeper) SetAddressValidators(validators *types.AddressValidators) {
+	if !validators.IsSealed() {
+		panic("address validator must be sealed")
 	}
 
-	k.addressValidator = validator
+	if k.addressValidators != nil {
+		panic("address validator already set")
+	}
 
-	// In order to avoid invalid or non-deterministic behavior, we seal the validator immediately
-	// to prevent additionals handlers from being registered after the keeper is initialized.
-	k.addressValidator.Seal()
+	k.addressValidators = validators
 }
 
-// getAddressValidator returns the nexus address validator. If not set, it returns a sealed empty validator
-func (k Keeper) getAddressValidator() types.AddressValidator {
-	if k.addressValidator == nil {
-		k.SetAddressValidator(types.NewAddressValidator())
+func (k Keeper) getAddressValidator(module string) (exported.AddressValidator, error) {
+	if k.addressValidators == nil {
+		k.SetAddressValidators(types.NewAddressValidators())
 	}
 
-	return k.addressValidator
+	return k.addressValidators.GetAddressValidator(module)
 }
 
 func (k *Keeper) SetMessageRouter(router types.MessageRouter) {
