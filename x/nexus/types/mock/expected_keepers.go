@@ -4,6 +4,7 @@
 package mock
 
 import (
+	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	utils "github.com/axelarnetwork/axelar-core/utils"
 	github_com_axelarnetwork_axelar_core_x_nexus_exported "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexustypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
@@ -1626,5 +1627,855 @@ func (mock *SlashingKeeperMock) IsTombstonedCalls() []struct {
 	mock.lockIsTombstoned.RLock()
 	calls = mock.calls.IsTombstoned
 	mock.lockIsTombstoned.RUnlock()
+	return calls
+}
+
+// Ensure, that WasmKeeperMock does implement nexustypes.WasmKeeper.
+// If this is not the case, regenerate this file with moq.
+var _ nexustypes.WasmKeeper = &WasmKeeperMock{}
+
+// WasmKeeperMock is a mock implementation of nexustypes.WasmKeeper.
+//
+//	func TestSomethingThatUsesWasmKeeper(t *testing.T) {
+//
+//		// make and configure a mocked nexustypes.WasmKeeper
+//		mockedWasmKeeper := &WasmKeeperMock{
+//			ClearContractAdminFunc: func(ctx cosmossdktypes.Context, contractAddress cosmossdktypes.AccAddress, caller cosmossdktypes.AccAddress) error {
+//				panic("mock out the ClearContractAdmin method")
+//			},
+//			CreateFunc: func(ctx cosmossdktypes.Context, creator cosmossdktypes.AccAddress, wasmCode []byte, instantiateAccess *wasmtypes.AccessConfig) (uint64, []byte, error) {
+//				panic("mock out the Create method")
+//			},
+//			ExecuteFunc: func(ctx cosmossdktypes.Context, contractAddress cosmossdktypes.AccAddress, caller cosmossdktypes.AccAddress, msg []byte, coins cosmossdktypes.Coins) ([]byte, error) {
+//				panic("mock out the Execute method")
+//			},
+//			InstantiateFunc: func(ctx cosmossdktypes.Context, codeID uint64, creator cosmossdktypes.AccAddress, admin cosmossdktypes.AccAddress, initMsg []byte, label string, deposit cosmossdktypes.Coins) (cosmossdktypes.AccAddress, []byte, error) {
+//				panic("mock out the Instantiate method")
+//			},
+//			Instantiate2Func: func(ctx cosmossdktypes.Context, codeID uint64, creator cosmossdktypes.AccAddress, admin cosmossdktypes.AccAddress, initMsg []byte, label string, deposit cosmossdktypes.Coins, salt []byte, fixMsg bool) (cosmossdktypes.AccAddress, []byte, error) {
+//				panic("mock out the Instantiate2 method")
+//			},
+//			MigrateFunc: func(ctx cosmossdktypes.Context, contractAddress cosmossdktypes.AccAddress, caller cosmossdktypes.AccAddress, newCodeID uint64, msg []byte) ([]byte, error) {
+//				panic("mock out the Migrate method")
+//			},
+//			PinCodeFunc: func(ctx cosmossdktypes.Context, codeID uint64) error {
+//				panic("mock out the PinCode method")
+//			},
+//			SetAccessConfigFunc: func(ctx cosmossdktypes.Context, codeID uint64, caller cosmossdktypes.AccAddress, newConfig wasmtypes.AccessConfig) error {
+//				panic("mock out the SetAccessConfig method")
+//			},
+//			SetContractInfoExtensionFunc: func(ctx cosmossdktypes.Context, contract cosmossdktypes.AccAddress, extra wasmtypes.ContractInfoExtension) error {
+//				panic("mock out the SetContractInfoExtension method")
+//			},
+//			SudoFunc: func(ctx cosmossdktypes.Context, contractAddress cosmossdktypes.AccAddress, msg []byte) ([]byte, error) {
+//				panic("mock out the Sudo method")
+//			},
+//			UnpinCodeFunc: func(ctx cosmossdktypes.Context, codeID uint64) error {
+//				panic("mock out the UnpinCode method")
+//			},
+//			UpdateContractAdminFunc: func(ctx cosmossdktypes.Context, contractAddress cosmossdktypes.AccAddress, caller cosmossdktypes.AccAddress, newAdmin cosmossdktypes.AccAddress) error {
+//				panic("mock out the UpdateContractAdmin method")
+//			},
+//		}
+//
+//		// use mockedWasmKeeper in code that requires nexustypes.WasmKeeper
+//		// and then make assertions.
+//
+//	}
+type WasmKeeperMock struct {
+	// ClearContractAdminFunc mocks the ClearContractAdmin method.
+	ClearContractAdminFunc func(ctx cosmossdktypes.Context, contractAddress cosmossdktypes.AccAddress, caller cosmossdktypes.AccAddress) error
+
+	// CreateFunc mocks the Create method.
+	CreateFunc func(ctx cosmossdktypes.Context, creator cosmossdktypes.AccAddress, wasmCode []byte, instantiateAccess *wasmtypes.AccessConfig) (uint64, []byte, error)
+
+	// ExecuteFunc mocks the Execute method.
+	ExecuteFunc func(ctx cosmossdktypes.Context, contractAddress cosmossdktypes.AccAddress, caller cosmossdktypes.AccAddress, msg []byte, coins cosmossdktypes.Coins) ([]byte, error)
+
+	// InstantiateFunc mocks the Instantiate method.
+	InstantiateFunc func(ctx cosmossdktypes.Context, codeID uint64, creator cosmossdktypes.AccAddress, admin cosmossdktypes.AccAddress, initMsg []byte, label string, deposit cosmossdktypes.Coins) (cosmossdktypes.AccAddress, []byte, error)
+
+	// Instantiate2Func mocks the Instantiate2 method.
+	Instantiate2Func func(ctx cosmossdktypes.Context, codeID uint64, creator cosmossdktypes.AccAddress, admin cosmossdktypes.AccAddress, initMsg []byte, label string, deposit cosmossdktypes.Coins, salt []byte, fixMsg bool) (cosmossdktypes.AccAddress, []byte, error)
+
+	// MigrateFunc mocks the Migrate method.
+	MigrateFunc func(ctx cosmossdktypes.Context, contractAddress cosmossdktypes.AccAddress, caller cosmossdktypes.AccAddress, newCodeID uint64, msg []byte) ([]byte, error)
+
+	// PinCodeFunc mocks the PinCode method.
+	PinCodeFunc func(ctx cosmossdktypes.Context, codeID uint64) error
+
+	// SetAccessConfigFunc mocks the SetAccessConfig method.
+	SetAccessConfigFunc func(ctx cosmossdktypes.Context, codeID uint64, caller cosmossdktypes.AccAddress, newConfig wasmtypes.AccessConfig) error
+
+	// SetContractInfoExtensionFunc mocks the SetContractInfoExtension method.
+	SetContractInfoExtensionFunc func(ctx cosmossdktypes.Context, contract cosmossdktypes.AccAddress, extra wasmtypes.ContractInfoExtension) error
+
+	// SudoFunc mocks the Sudo method.
+	SudoFunc func(ctx cosmossdktypes.Context, contractAddress cosmossdktypes.AccAddress, msg []byte) ([]byte, error)
+
+	// UnpinCodeFunc mocks the UnpinCode method.
+	UnpinCodeFunc func(ctx cosmossdktypes.Context, codeID uint64) error
+
+	// UpdateContractAdminFunc mocks the UpdateContractAdmin method.
+	UpdateContractAdminFunc func(ctx cosmossdktypes.Context, contractAddress cosmossdktypes.AccAddress, caller cosmossdktypes.AccAddress, newAdmin cosmossdktypes.AccAddress) error
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// ClearContractAdmin holds details about calls to the ClearContractAdmin method.
+		ClearContractAdmin []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// ContractAddress is the contractAddress argument value.
+			ContractAddress cosmossdktypes.AccAddress
+			// Caller is the caller argument value.
+			Caller cosmossdktypes.AccAddress
+		}
+		// Create holds details about calls to the Create method.
+		Create []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// Creator is the creator argument value.
+			Creator cosmossdktypes.AccAddress
+			// WasmCode is the wasmCode argument value.
+			WasmCode []byte
+			// InstantiateAccess is the instantiateAccess argument value.
+			InstantiateAccess *wasmtypes.AccessConfig
+		}
+		// Execute holds details about calls to the Execute method.
+		Execute []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// ContractAddress is the contractAddress argument value.
+			ContractAddress cosmossdktypes.AccAddress
+			// Caller is the caller argument value.
+			Caller cosmossdktypes.AccAddress
+			// Msg is the msg argument value.
+			Msg []byte
+			// Coins is the coins argument value.
+			Coins cosmossdktypes.Coins
+		}
+		// Instantiate holds details about calls to the Instantiate method.
+		Instantiate []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// CodeID is the codeID argument value.
+			CodeID uint64
+			// Creator is the creator argument value.
+			Creator cosmossdktypes.AccAddress
+			// Admin is the admin argument value.
+			Admin cosmossdktypes.AccAddress
+			// InitMsg is the initMsg argument value.
+			InitMsg []byte
+			// Label is the label argument value.
+			Label string
+			// Deposit is the deposit argument value.
+			Deposit cosmossdktypes.Coins
+		}
+		// Instantiate2 holds details about calls to the Instantiate2 method.
+		Instantiate2 []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// CodeID is the codeID argument value.
+			CodeID uint64
+			// Creator is the creator argument value.
+			Creator cosmossdktypes.AccAddress
+			// Admin is the admin argument value.
+			Admin cosmossdktypes.AccAddress
+			// InitMsg is the initMsg argument value.
+			InitMsg []byte
+			// Label is the label argument value.
+			Label string
+			// Deposit is the deposit argument value.
+			Deposit cosmossdktypes.Coins
+			// Salt is the salt argument value.
+			Salt []byte
+			// FixMsg is the fixMsg argument value.
+			FixMsg bool
+		}
+		// Migrate holds details about calls to the Migrate method.
+		Migrate []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// ContractAddress is the contractAddress argument value.
+			ContractAddress cosmossdktypes.AccAddress
+			// Caller is the caller argument value.
+			Caller cosmossdktypes.AccAddress
+			// NewCodeID is the newCodeID argument value.
+			NewCodeID uint64
+			// Msg is the msg argument value.
+			Msg []byte
+		}
+		// PinCode holds details about calls to the PinCode method.
+		PinCode []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// CodeID is the codeID argument value.
+			CodeID uint64
+		}
+		// SetAccessConfig holds details about calls to the SetAccessConfig method.
+		SetAccessConfig []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// CodeID is the codeID argument value.
+			CodeID uint64
+			// Caller is the caller argument value.
+			Caller cosmossdktypes.AccAddress
+			// NewConfig is the newConfig argument value.
+			NewConfig wasmtypes.AccessConfig
+		}
+		// SetContractInfoExtension holds details about calls to the SetContractInfoExtension method.
+		SetContractInfoExtension []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// Contract is the contract argument value.
+			Contract cosmossdktypes.AccAddress
+			// Extra is the extra argument value.
+			Extra wasmtypes.ContractInfoExtension
+		}
+		// Sudo holds details about calls to the Sudo method.
+		Sudo []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// ContractAddress is the contractAddress argument value.
+			ContractAddress cosmossdktypes.AccAddress
+			// Msg is the msg argument value.
+			Msg []byte
+		}
+		// UnpinCode holds details about calls to the UnpinCode method.
+		UnpinCode []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// CodeID is the codeID argument value.
+			CodeID uint64
+		}
+		// UpdateContractAdmin holds details about calls to the UpdateContractAdmin method.
+		UpdateContractAdmin []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// ContractAddress is the contractAddress argument value.
+			ContractAddress cosmossdktypes.AccAddress
+			// Caller is the caller argument value.
+			Caller cosmossdktypes.AccAddress
+			// NewAdmin is the newAdmin argument value.
+			NewAdmin cosmossdktypes.AccAddress
+		}
+	}
+	lockClearContractAdmin       sync.RWMutex
+	lockCreate                   sync.RWMutex
+	lockExecute                  sync.RWMutex
+	lockInstantiate              sync.RWMutex
+	lockInstantiate2             sync.RWMutex
+	lockMigrate                  sync.RWMutex
+	lockPinCode                  sync.RWMutex
+	lockSetAccessConfig          sync.RWMutex
+	lockSetContractInfoExtension sync.RWMutex
+	lockSudo                     sync.RWMutex
+	lockUnpinCode                sync.RWMutex
+	lockUpdateContractAdmin      sync.RWMutex
+}
+
+// ClearContractAdmin calls ClearContractAdminFunc.
+func (mock *WasmKeeperMock) ClearContractAdmin(ctx cosmossdktypes.Context, contractAddress cosmossdktypes.AccAddress, caller cosmossdktypes.AccAddress) error {
+	if mock.ClearContractAdminFunc == nil {
+		panic("WasmKeeperMock.ClearContractAdminFunc: method is nil but WasmKeeper.ClearContractAdmin was just called")
+	}
+	callInfo := struct {
+		Ctx             cosmossdktypes.Context
+		ContractAddress cosmossdktypes.AccAddress
+		Caller          cosmossdktypes.AccAddress
+	}{
+		Ctx:             ctx,
+		ContractAddress: contractAddress,
+		Caller:          caller,
+	}
+	mock.lockClearContractAdmin.Lock()
+	mock.calls.ClearContractAdmin = append(mock.calls.ClearContractAdmin, callInfo)
+	mock.lockClearContractAdmin.Unlock()
+	return mock.ClearContractAdminFunc(ctx, contractAddress, caller)
+}
+
+// ClearContractAdminCalls gets all the calls that were made to ClearContractAdmin.
+// Check the length with:
+//
+//	len(mockedWasmKeeper.ClearContractAdminCalls())
+func (mock *WasmKeeperMock) ClearContractAdminCalls() []struct {
+	Ctx             cosmossdktypes.Context
+	ContractAddress cosmossdktypes.AccAddress
+	Caller          cosmossdktypes.AccAddress
+} {
+	var calls []struct {
+		Ctx             cosmossdktypes.Context
+		ContractAddress cosmossdktypes.AccAddress
+		Caller          cosmossdktypes.AccAddress
+	}
+	mock.lockClearContractAdmin.RLock()
+	calls = mock.calls.ClearContractAdmin
+	mock.lockClearContractAdmin.RUnlock()
+	return calls
+}
+
+// Create calls CreateFunc.
+func (mock *WasmKeeperMock) Create(ctx cosmossdktypes.Context, creator cosmossdktypes.AccAddress, wasmCode []byte, instantiateAccess *wasmtypes.AccessConfig) (uint64, []byte, error) {
+	if mock.CreateFunc == nil {
+		panic("WasmKeeperMock.CreateFunc: method is nil but WasmKeeper.Create was just called")
+	}
+	callInfo := struct {
+		Ctx               cosmossdktypes.Context
+		Creator           cosmossdktypes.AccAddress
+		WasmCode          []byte
+		InstantiateAccess *wasmtypes.AccessConfig
+	}{
+		Ctx:               ctx,
+		Creator:           creator,
+		WasmCode:          wasmCode,
+		InstantiateAccess: instantiateAccess,
+	}
+	mock.lockCreate.Lock()
+	mock.calls.Create = append(mock.calls.Create, callInfo)
+	mock.lockCreate.Unlock()
+	return mock.CreateFunc(ctx, creator, wasmCode, instantiateAccess)
+}
+
+// CreateCalls gets all the calls that were made to Create.
+// Check the length with:
+//
+//	len(mockedWasmKeeper.CreateCalls())
+func (mock *WasmKeeperMock) CreateCalls() []struct {
+	Ctx               cosmossdktypes.Context
+	Creator           cosmossdktypes.AccAddress
+	WasmCode          []byte
+	InstantiateAccess *wasmtypes.AccessConfig
+} {
+	var calls []struct {
+		Ctx               cosmossdktypes.Context
+		Creator           cosmossdktypes.AccAddress
+		WasmCode          []byte
+		InstantiateAccess *wasmtypes.AccessConfig
+	}
+	mock.lockCreate.RLock()
+	calls = mock.calls.Create
+	mock.lockCreate.RUnlock()
+	return calls
+}
+
+// Execute calls ExecuteFunc.
+func (mock *WasmKeeperMock) Execute(ctx cosmossdktypes.Context, contractAddress cosmossdktypes.AccAddress, caller cosmossdktypes.AccAddress, msg []byte, coins cosmossdktypes.Coins) ([]byte, error) {
+	if mock.ExecuteFunc == nil {
+		panic("WasmKeeperMock.ExecuteFunc: method is nil but WasmKeeper.Execute was just called")
+	}
+	callInfo := struct {
+		Ctx             cosmossdktypes.Context
+		ContractAddress cosmossdktypes.AccAddress
+		Caller          cosmossdktypes.AccAddress
+		Msg             []byte
+		Coins           cosmossdktypes.Coins
+	}{
+		Ctx:             ctx,
+		ContractAddress: contractAddress,
+		Caller:          caller,
+		Msg:             msg,
+		Coins:           coins,
+	}
+	mock.lockExecute.Lock()
+	mock.calls.Execute = append(mock.calls.Execute, callInfo)
+	mock.lockExecute.Unlock()
+	return mock.ExecuteFunc(ctx, contractAddress, caller, msg, coins)
+}
+
+// ExecuteCalls gets all the calls that were made to Execute.
+// Check the length with:
+//
+//	len(mockedWasmKeeper.ExecuteCalls())
+func (mock *WasmKeeperMock) ExecuteCalls() []struct {
+	Ctx             cosmossdktypes.Context
+	ContractAddress cosmossdktypes.AccAddress
+	Caller          cosmossdktypes.AccAddress
+	Msg             []byte
+	Coins           cosmossdktypes.Coins
+} {
+	var calls []struct {
+		Ctx             cosmossdktypes.Context
+		ContractAddress cosmossdktypes.AccAddress
+		Caller          cosmossdktypes.AccAddress
+		Msg             []byte
+		Coins           cosmossdktypes.Coins
+	}
+	mock.lockExecute.RLock()
+	calls = mock.calls.Execute
+	mock.lockExecute.RUnlock()
+	return calls
+}
+
+// Instantiate calls InstantiateFunc.
+func (mock *WasmKeeperMock) Instantiate(ctx cosmossdktypes.Context, codeID uint64, creator cosmossdktypes.AccAddress, admin cosmossdktypes.AccAddress, initMsg []byte, label string, deposit cosmossdktypes.Coins) (cosmossdktypes.AccAddress, []byte, error) {
+	if mock.InstantiateFunc == nil {
+		panic("WasmKeeperMock.InstantiateFunc: method is nil but WasmKeeper.Instantiate was just called")
+	}
+	callInfo := struct {
+		Ctx     cosmossdktypes.Context
+		CodeID  uint64
+		Creator cosmossdktypes.AccAddress
+		Admin   cosmossdktypes.AccAddress
+		InitMsg []byte
+		Label   string
+		Deposit cosmossdktypes.Coins
+	}{
+		Ctx:     ctx,
+		CodeID:  codeID,
+		Creator: creator,
+		Admin:   admin,
+		InitMsg: initMsg,
+		Label:   label,
+		Deposit: deposit,
+	}
+	mock.lockInstantiate.Lock()
+	mock.calls.Instantiate = append(mock.calls.Instantiate, callInfo)
+	mock.lockInstantiate.Unlock()
+	return mock.InstantiateFunc(ctx, codeID, creator, admin, initMsg, label, deposit)
+}
+
+// InstantiateCalls gets all the calls that were made to Instantiate.
+// Check the length with:
+//
+//	len(mockedWasmKeeper.InstantiateCalls())
+func (mock *WasmKeeperMock) InstantiateCalls() []struct {
+	Ctx     cosmossdktypes.Context
+	CodeID  uint64
+	Creator cosmossdktypes.AccAddress
+	Admin   cosmossdktypes.AccAddress
+	InitMsg []byte
+	Label   string
+	Deposit cosmossdktypes.Coins
+} {
+	var calls []struct {
+		Ctx     cosmossdktypes.Context
+		CodeID  uint64
+		Creator cosmossdktypes.AccAddress
+		Admin   cosmossdktypes.AccAddress
+		InitMsg []byte
+		Label   string
+		Deposit cosmossdktypes.Coins
+	}
+	mock.lockInstantiate.RLock()
+	calls = mock.calls.Instantiate
+	mock.lockInstantiate.RUnlock()
+	return calls
+}
+
+// Instantiate2 calls Instantiate2Func.
+func (mock *WasmKeeperMock) Instantiate2(ctx cosmossdktypes.Context, codeID uint64, creator cosmossdktypes.AccAddress, admin cosmossdktypes.AccAddress, initMsg []byte, label string, deposit cosmossdktypes.Coins, salt []byte, fixMsg bool) (cosmossdktypes.AccAddress, []byte, error) {
+	if mock.Instantiate2Func == nil {
+		panic("WasmKeeperMock.Instantiate2Func: method is nil but WasmKeeper.Instantiate2 was just called")
+	}
+	callInfo := struct {
+		Ctx     cosmossdktypes.Context
+		CodeID  uint64
+		Creator cosmossdktypes.AccAddress
+		Admin   cosmossdktypes.AccAddress
+		InitMsg []byte
+		Label   string
+		Deposit cosmossdktypes.Coins
+		Salt    []byte
+		FixMsg  bool
+	}{
+		Ctx:     ctx,
+		CodeID:  codeID,
+		Creator: creator,
+		Admin:   admin,
+		InitMsg: initMsg,
+		Label:   label,
+		Deposit: deposit,
+		Salt:    salt,
+		FixMsg:  fixMsg,
+	}
+	mock.lockInstantiate2.Lock()
+	mock.calls.Instantiate2 = append(mock.calls.Instantiate2, callInfo)
+	mock.lockInstantiate2.Unlock()
+	return mock.Instantiate2Func(ctx, codeID, creator, admin, initMsg, label, deposit, salt, fixMsg)
+}
+
+// Instantiate2Calls gets all the calls that were made to Instantiate2.
+// Check the length with:
+//
+//	len(mockedWasmKeeper.Instantiate2Calls())
+func (mock *WasmKeeperMock) Instantiate2Calls() []struct {
+	Ctx     cosmossdktypes.Context
+	CodeID  uint64
+	Creator cosmossdktypes.AccAddress
+	Admin   cosmossdktypes.AccAddress
+	InitMsg []byte
+	Label   string
+	Deposit cosmossdktypes.Coins
+	Salt    []byte
+	FixMsg  bool
+} {
+	var calls []struct {
+		Ctx     cosmossdktypes.Context
+		CodeID  uint64
+		Creator cosmossdktypes.AccAddress
+		Admin   cosmossdktypes.AccAddress
+		InitMsg []byte
+		Label   string
+		Deposit cosmossdktypes.Coins
+		Salt    []byte
+		FixMsg  bool
+	}
+	mock.lockInstantiate2.RLock()
+	calls = mock.calls.Instantiate2
+	mock.lockInstantiate2.RUnlock()
+	return calls
+}
+
+// Migrate calls MigrateFunc.
+func (mock *WasmKeeperMock) Migrate(ctx cosmossdktypes.Context, contractAddress cosmossdktypes.AccAddress, caller cosmossdktypes.AccAddress, newCodeID uint64, msg []byte) ([]byte, error) {
+	if mock.MigrateFunc == nil {
+		panic("WasmKeeperMock.MigrateFunc: method is nil but WasmKeeper.Migrate was just called")
+	}
+	callInfo := struct {
+		Ctx             cosmossdktypes.Context
+		ContractAddress cosmossdktypes.AccAddress
+		Caller          cosmossdktypes.AccAddress
+		NewCodeID       uint64
+		Msg             []byte
+	}{
+		Ctx:             ctx,
+		ContractAddress: contractAddress,
+		Caller:          caller,
+		NewCodeID:       newCodeID,
+		Msg:             msg,
+	}
+	mock.lockMigrate.Lock()
+	mock.calls.Migrate = append(mock.calls.Migrate, callInfo)
+	mock.lockMigrate.Unlock()
+	return mock.MigrateFunc(ctx, contractAddress, caller, newCodeID, msg)
+}
+
+// MigrateCalls gets all the calls that were made to Migrate.
+// Check the length with:
+//
+//	len(mockedWasmKeeper.MigrateCalls())
+func (mock *WasmKeeperMock) MigrateCalls() []struct {
+	Ctx             cosmossdktypes.Context
+	ContractAddress cosmossdktypes.AccAddress
+	Caller          cosmossdktypes.AccAddress
+	NewCodeID       uint64
+	Msg             []byte
+} {
+	var calls []struct {
+		Ctx             cosmossdktypes.Context
+		ContractAddress cosmossdktypes.AccAddress
+		Caller          cosmossdktypes.AccAddress
+		NewCodeID       uint64
+		Msg             []byte
+	}
+	mock.lockMigrate.RLock()
+	calls = mock.calls.Migrate
+	mock.lockMigrate.RUnlock()
+	return calls
+}
+
+// PinCode calls PinCodeFunc.
+func (mock *WasmKeeperMock) PinCode(ctx cosmossdktypes.Context, codeID uint64) error {
+	if mock.PinCodeFunc == nil {
+		panic("WasmKeeperMock.PinCodeFunc: method is nil but WasmKeeper.PinCode was just called")
+	}
+	callInfo := struct {
+		Ctx    cosmossdktypes.Context
+		CodeID uint64
+	}{
+		Ctx:    ctx,
+		CodeID: codeID,
+	}
+	mock.lockPinCode.Lock()
+	mock.calls.PinCode = append(mock.calls.PinCode, callInfo)
+	mock.lockPinCode.Unlock()
+	return mock.PinCodeFunc(ctx, codeID)
+}
+
+// PinCodeCalls gets all the calls that were made to PinCode.
+// Check the length with:
+//
+//	len(mockedWasmKeeper.PinCodeCalls())
+func (mock *WasmKeeperMock) PinCodeCalls() []struct {
+	Ctx    cosmossdktypes.Context
+	CodeID uint64
+} {
+	var calls []struct {
+		Ctx    cosmossdktypes.Context
+		CodeID uint64
+	}
+	mock.lockPinCode.RLock()
+	calls = mock.calls.PinCode
+	mock.lockPinCode.RUnlock()
+	return calls
+}
+
+// SetAccessConfig calls SetAccessConfigFunc.
+func (mock *WasmKeeperMock) SetAccessConfig(ctx cosmossdktypes.Context, codeID uint64, caller cosmossdktypes.AccAddress, newConfig wasmtypes.AccessConfig) error {
+	if mock.SetAccessConfigFunc == nil {
+		panic("WasmKeeperMock.SetAccessConfigFunc: method is nil but WasmKeeper.SetAccessConfig was just called")
+	}
+	callInfo := struct {
+		Ctx       cosmossdktypes.Context
+		CodeID    uint64
+		Caller    cosmossdktypes.AccAddress
+		NewConfig wasmtypes.AccessConfig
+	}{
+		Ctx:       ctx,
+		CodeID:    codeID,
+		Caller:    caller,
+		NewConfig: newConfig,
+	}
+	mock.lockSetAccessConfig.Lock()
+	mock.calls.SetAccessConfig = append(mock.calls.SetAccessConfig, callInfo)
+	mock.lockSetAccessConfig.Unlock()
+	return mock.SetAccessConfigFunc(ctx, codeID, caller, newConfig)
+}
+
+// SetAccessConfigCalls gets all the calls that were made to SetAccessConfig.
+// Check the length with:
+//
+//	len(mockedWasmKeeper.SetAccessConfigCalls())
+func (mock *WasmKeeperMock) SetAccessConfigCalls() []struct {
+	Ctx       cosmossdktypes.Context
+	CodeID    uint64
+	Caller    cosmossdktypes.AccAddress
+	NewConfig wasmtypes.AccessConfig
+} {
+	var calls []struct {
+		Ctx       cosmossdktypes.Context
+		CodeID    uint64
+		Caller    cosmossdktypes.AccAddress
+		NewConfig wasmtypes.AccessConfig
+	}
+	mock.lockSetAccessConfig.RLock()
+	calls = mock.calls.SetAccessConfig
+	mock.lockSetAccessConfig.RUnlock()
+	return calls
+}
+
+// SetContractInfoExtension calls SetContractInfoExtensionFunc.
+func (mock *WasmKeeperMock) SetContractInfoExtension(ctx cosmossdktypes.Context, contract cosmossdktypes.AccAddress, extra wasmtypes.ContractInfoExtension) error {
+	if mock.SetContractInfoExtensionFunc == nil {
+		panic("WasmKeeperMock.SetContractInfoExtensionFunc: method is nil but WasmKeeper.SetContractInfoExtension was just called")
+	}
+	callInfo := struct {
+		Ctx      cosmossdktypes.Context
+		Contract cosmossdktypes.AccAddress
+		Extra    wasmtypes.ContractInfoExtension
+	}{
+		Ctx:      ctx,
+		Contract: contract,
+		Extra:    extra,
+	}
+	mock.lockSetContractInfoExtension.Lock()
+	mock.calls.SetContractInfoExtension = append(mock.calls.SetContractInfoExtension, callInfo)
+	mock.lockSetContractInfoExtension.Unlock()
+	return mock.SetContractInfoExtensionFunc(ctx, contract, extra)
+}
+
+// SetContractInfoExtensionCalls gets all the calls that were made to SetContractInfoExtension.
+// Check the length with:
+//
+//	len(mockedWasmKeeper.SetContractInfoExtensionCalls())
+func (mock *WasmKeeperMock) SetContractInfoExtensionCalls() []struct {
+	Ctx      cosmossdktypes.Context
+	Contract cosmossdktypes.AccAddress
+	Extra    wasmtypes.ContractInfoExtension
+} {
+	var calls []struct {
+		Ctx      cosmossdktypes.Context
+		Contract cosmossdktypes.AccAddress
+		Extra    wasmtypes.ContractInfoExtension
+	}
+	mock.lockSetContractInfoExtension.RLock()
+	calls = mock.calls.SetContractInfoExtension
+	mock.lockSetContractInfoExtension.RUnlock()
+	return calls
+}
+
+// Sudo calls SudoFunc.
+func (mock *WasmKeeperMock) Sudo(ctx cosmossdktypes.Context, contractAddress cosmossdktypes.AccAddress, msg []byte) ([]byte, error) {
+	if mock.SudoFunc == nil {
+		panic("WasmKeeperMock.SudoFunc: method is nil but WasmKeeper.Sudo was just called")
+	}
+	callInfo := struct {
+		Ctx             cosmossdktypes.Context
+		ContractAddress cosmossdktypes.AccAddress
+		Msg             []byte
+	}{
+		Ctx:             ctx,
+		ContractAddress: contractAddress,
+		Msg:             msg,
+	}
+	mock.lockSudo.Lock()
+	mock.calls.Sudo = append(mock.calls.Sudo, callInfo)
+	mock.lockSudo.Unlock()
+	return mock.SudoFunc(ctx, contractAddress, msg)
+}
+
+// SudoCalls gets all the calls that were made to Sudo.
+// Check the length with:
+//
+//	len(mockedWasmKeeper.SudoCalls())
+func (mock *WasmKeeperMock) SudoCalls() []struct {
+	Ctx             cosmossdktypes.Context
+	ContractAddress cosmossdktypes.AccAddress
+	Msg             []byte
+} {
+	var calls []struct {
+		Ctx             cosmossdktypes.Context
+		ContractAddress cosmossdktypes.AccAddress
+		Msg             []byte
+	}
+	mock.lockSudo.RLock()
+	calls = mock.calls.Sudo
+	mock.lockSudo.RUnlock()
+	return calls
+}
+
+// UnpinCode calls UnpinCodeFunc.
+func (mock *WasmKeeperMock) UnpinCode(ctx cosmossdktypes.Context, codeID uint64) error {
+	if mock.UnpinCodeFunc == nil {
+		panic("WasmKeeperMock.UnpinCodeFunc: method is nil but WasmKeeper.UnpinCode was just called")
+	}
+	callInfo := struct {
+		Ctx    cosmossdktypes.Context
+		CodeID uint64
+	}{
+		Ctx:    ctx,
+		CodeID: codeID,
+	}
+	mock.lockUnpinCode.Lock()
+	mock.calls.UnpinCode = append(mock.calls.UnpinCode, callInfo)
+	mock.lockUnpinCode.Unlock()
+	return mock.UnpinCodeFunc(ctx, codeID)
+}
+
+// UnpinCodeCalls gets all the calls that were made to UnpinCode.
+// Check the length with:
+//
+//	len(mockedWasmKeeper.UnpinCodeCalls())
+func (mock *WasmKeeperMock) UnpinCodeCalls() []struct {
+	Ctx    cosmossdktypes.Context
+	CodeID uint64
+} {
+	var calls []struct {
+		Ctx    cosmossdktypes.Context
+		CodeID uint64
+	}
+	mock.lockUnpinCode.RLock()
+	calls = mock.calls.UnpinCode
+	mock.lockUnpinCode.RUnlock()
+	return calls
+}
+
+// UpdateContractAdmin calls UpdateContractAdminFunc.
+func (mock *WasmKeeperMock) UpdateContractAdmin(ctx cosmossdktypes.Context, contractAddress cosmossdktypes.AccAddress, caller cosmossdktypes.AccAddress, newAdmin cosmossdktypes.AccAddress) error {
+	if mock.UpdateContractAdminFunc == nil {
+		panic("WasmKeeperMock.UpdateContractAdminFunc: method is nil but WasmKeeper.UpdateContractAdmin was just called")
+	}
+	callInfo := struct {
+		Ctx             cosmossdktypes.Context
+		ContractAddress cosmossdktypes.AccAddress
+		Caller          cosmossdktypes.AccAddress
+		NewAdmin        cosmossdktypes.AccAddress
+	}{
+		Ctx:             ctx,
+		ContractAddress: contractAddress,
+		Caller:          caller,
+		NewAdmin:        newAdmin,
+	}
+	mock.lockUpdateContractAdmin.Lock()
+	mock.calls.UpdateContractAdmin = append(mock.calls.UpdateContractAdmin, callInfo)
+	mock.lockUpdateContractAdmin.Unlock()
+	return mock.UpdateContractAdminFunc(ctx, contractAddress, caller, newAdmin)
+}
+
+// UpdateContractAdminCalls gets all the calls that were made to UpdateContractAdmin.
+// Check the length with:
+//
+//	len(mockedWasmKeeper.UpdateContractAdminCalls())
+func (mock *WasmKeeperMock) UpdateContractAdminCalls() []struct {
+	Ctx             cosmossdktypes.Context
+	ContractAddress cosmossdktypes.AccAddress
+	Caller          cosmossdktypes.AccAddress
+	NewAdmin        cosmossdktypes.AccAddress
+} {
+	var calls []struct {
+		Ctx             cosmossdktypes.Context
+		ContractAddress cosmossdktypes.AccAddress
+		Caller          cosmossdktypes.AccAddress
+		NewAdmin        cosmossdktypes.AccAddress
+	}
+	mock.lockUpdateContractAdmin.RLock()
+	calls = mock.calls.UpdateContractAdmin
+	mock.lockUpdateContractAdmin.RUnlock()
+	return calls
+}
+
+// Ensure, that AccountKeeperMock does implement nexustypes.AccountKeeper.
+// If this is not the case, regenerate this file with moq.
+var _ nexustypes.AccountKeeper = &AccountKeeperMock{}
+
+// AccountKeeperMock is a mock implementation of nexustypes.AccountKeeper.
+//
+//	func TestSomethingThatUsesAccountKeeper(t *testing.T) {
+//
+//		// make and configure a mocked nexustypes.AccountKeeper
+//		mockedAccountKeeper := &AccountKeeperMock{
+//			GetModuleAddressFunc: func(moduleName string) cosmossdktypes.AccAddress {
+//				panic("mock out the GetModuleAddress method")
+//			},
+//		}
+//
+//		// use mockedAccountKeeper in code that requires nexustypes.AccountKeeper
+//		// and then make assertions.
+//
+//	}
+type AccountKeeperMock struct {
+	// GetModuleAddressFunc mocks the GetModuleAddress method.
+	GetModuleAddressFunc func(moduleName string) cosmossdktypes.AccAddress
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// GetModuleAddress holds details about calls to the GetModuleAddress method.
+		GetModuleAddress []struct {
+			// ModuleName is the moduleName argument value.
+			ModuleName string
+		}
+	}
+	lockGetModuleAddress sync.RWMutex
+}
+
+// GetModuleAddress calls GetModuleAddressFunc.
+func (mock *AccountKeeperMock) GetModuleAddress(moduleName string) cosmossdktypes.AccAddress {
+	if mock.GetModuleAddressFunc == nil {
+		panic("AccountKeeperMock.GetModuleAddressFunc: method is nil but AccountKeeper.GetModuleAddress was just called")
+	}
+	callInfo := struct {
+		ModuleName string
+	}{
+		ModuleName: moduleName,
+	}
+	mock.lockGetModuleAddress.Lock()
+	mock.calls.GetModuleAddress = append(mock.calls.GetModuleAddress, callInfo)
+	mock.lockGetModuleAddress.Unlock()
+	return mock.GetModuleAddressFunc(moduleName)
+}
+
+// GetModuleAddressCalls gets all the calls that were made to GetModuleAddress.
+// Check the length with:
+//
+//	len(mockedAccountKeeper.GetModuleAddressCalls())
+func (mock *AccountKeeperMock) GetModuleAddressCalls() []struct {
+	ModuleName string
+} {
+	var calls []struct {
+		ModuleName string
+	}
+	mock.lockGetModuleAddress.RLock()
+	calls = mock.calls.GetModuleAddress
+	mock.lockGetModuleAddress.RUnlock()
 	return calls
 }

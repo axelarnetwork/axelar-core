@@ -39,7 +39,7 @@ func (m Messenger) DispatchMsg(ctx sdk.Context, contractAddr sdk.AccAddress, _ s
 
 	gateway := m.GetParams(ctx).Gateway
 
-	if len(gateway) == 0 {
+	if gateway.Empty() {
 		return nil, nil, fmt.Errorf("gateway is not set")
 	}
 

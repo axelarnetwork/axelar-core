@@ -300,7 +300,6 @@ func NewAxelarApp(
 	messageRouter := nexusTypes.NewMessageRouter().
 		AddRoute(evmTypes.ModuleName, evmKeeper.NewMessageRoute()).
 		AddRoute(axelarnetTypes.ModuleName, axelarnetKeeper.NewMessageRoute(getKeeper[axelarnetKeeper.Keeper](keepers), getKeeper[axelarnetKeeper.IBCKeeper](keepers), getKeeper[feegrantkeeper.Keeper](keepers), axelarbankkeeper.NewBankKeeper(getKeeper[bankkeeper.BaseKeeper](keepers)), getKeeper[nexusKeeper.Keeper](keepers), getKeeper[authkeeper.AccountKeeper](keepers)))
-	getKeeperAsRef[nexusKeeper.Keeper](keepers).SetMessageRouter(messageRouter)
 
 	axelarnetModule := axelarnet.NewAppModule(getKeeper[axelarnetKeeper.Keeper](keepers), getKeeper[nexusKeeper.Keeper](keepers), axelarbankkeeper.NewBankKeeper(getKeeper[bankkeeper.BaseKeeper](keepers)), getKeeper[authkeeper.AccountKeeper](keepers), getKeeper[axelarnetKeeper.IBCKeeper](keepers), transferStack, rateLimiter, logger)
 
@@ -355,9 +354,14 @@ func NewAxelarApp(
 		ibcRouter.AddRoute(wasm.ModuleName, wasmStack)
 
 		// set the contract keeper for the Ics20WasmHooks
-		wasmHooks.ContractKeeper = wasmkeeper.NewDefaultPermissionKeeper(wasmK)
+		contractKeeper := wasmkeeper.NewDefaultPermissionKeeper(wasmK)
+		wasmHooks.ContractKeeper = contractKeeper
 		setKeeper(keepers, wasmK)
+
+		messageRouter.AddRoute(wasm.ModuleName, nexusKeeper.NewMessageRoute(getKeeperAsRef[nexusKeeper.Keeper](keepers), getKeeper[authkeeper.AccountKeeper](keepers), contractKeeper))
 	}
+
+	getKeeperAsRef[nexusKeeper.Keeper](keepers).SetMessageRouter(messageRouter)
 
 	// Finalize the IBC router
 	getKeeperAsRef[ibckeeper.Keeper](keepers).SetRouter(ibcRouter)

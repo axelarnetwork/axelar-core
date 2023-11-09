@@ -3,6 +3,7 @@ package types
 import (
 	"time"
 
+	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/tendermint/tendermint/libs/log"
@@ -13,7 +14,7 @@ import (
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 )
 
-//go:generate moq -out ./mock/expected_keepers.go -pkg mock . Nexus Snapshotter AxelarnetKeeper RewardKeeper SlashingKeeper
+//go:generate moq -out ./mock/expected_keepers.go -pkg mock . Nexus Snapshotter AxelarnetKeeper RewardKeeper SlashingKeeper WasmKeeper AccountKeeper
 
 // Nexus provides functionality to manage cross-chain transfers
 type Nexus interface {
@@ -72,4 +73,14 @@ type RewardKeeper interface {
 // SlashingKeeper provides functionality to manage slashing info for a validator
 type SlashingKeeper interface {
 	IsTombstoned(ctx sdk.Context, consAddr sdk.ConsAddress) bool
+}
+
+// WasmKeeper provides functionality to manage wasm contracts
+type WasmKeeper interface {
+	wasmtypes.ContractOpsKeeper
+}
+
+// AccountKeeper provides functionality to get account keeper
+type AccountKeeper interface {
+	GetModuleAddress(moduleName string) sdk.AccAddress
 }
