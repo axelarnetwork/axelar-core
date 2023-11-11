@@ -44,7 +44,7 @@ func (r *AddressValidators) AddAddressValidator(module string, validator exporte
 		panic("module name cannot be an empty string")
 	}
 
-	if r.HasAddressValidator(module) {
+	if r.hasAddressValidator(module) {
 		panic(fmt.Sprintf("validator for module %s has already been registered", module))
 	}
 
@@ -52,8 +52,8 @@ func (r *AddressValidators) AddAddressValidator(module string, validator exporte
 	return r
 }
 
-// HasAddressValidator returns true if a validator is registered for the given module
-func (r *AddressValidators) HasAddressValidator(module string) bool {
+// hasAddressValidator returns true if a validator is registered for the given module
+func (r *AddressValidators) hasAddressValidator(module string) bool {
 	_, err := r.GetAddressValidator(module)
 	return err == nil
 }
