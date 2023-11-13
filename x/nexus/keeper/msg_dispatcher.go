@@ -19,8 +19,6 @@ import (
 
 var _ wasmkeeper.Messenger = (*Messenger)(nil)
 
-type request = exported.WasmMessage
-
 type Messenger struct {
 	types.Nexus
 }
@@ -32,7 +30,7 @@ func NewMessenger(nexus types.Nexus) Messenger {
 
 // DispatchMsg decodes the messages from the cosmowasm gateway and routes them to the nexus module if possible
 func (m Messenger) DispatchMsg(ctx sdk.Context, contractAddr sdk.AccAddress, _ string, msg wasmvmtypes.CosmosMsg) (events []sdk.Event, data [][]byte, err error) {
-	req := request{}
+	req := exported.WasmMessage{}
 	if err := json.Unmarshal(msg.Custom, &req); err != nil {
 		return nil, nil, sdkerrors.Wrap(wasmtypes.ErrUnknownMsg, err.Error())
 	}
