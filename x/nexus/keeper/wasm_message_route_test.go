@@ -65,7 +65,7 @@ func TestNewMessageRoute(t *testing.T) {
 				msg = randMsg(nexus.Processing, true)
 			}).
 				Then("should return error", func(t *testing.T) {
-					assert.ErrorContains(t, route(ctx, nexus.RoutingContext{}, msg), "asset is not supported")
+					assert.ErrorContains(t, route(ctx, nexus.RoutingContext{}, msg), "asset transfer is not supported")
 				}),
 
 			When("the message has no asset", func() {

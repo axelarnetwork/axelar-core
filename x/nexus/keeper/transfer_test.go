@@ -442,7 +442,7 @@ func setup(cfg params.EncodingConfig) (nexusKeeper.Keeper, sdk.Context) {
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 
 	k.SetParams(ctx, types.DefaultParams())
-	k.SetAddressValidator(addressValidator())
+	k.SetAddressValidators(addressValidators())
 
 	// register asset in ChainState
 	for _, chain := range chains {
