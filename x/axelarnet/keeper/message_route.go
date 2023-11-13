@@ -15,6 +15,7 @@ import (
 // for IBC execution
 const gasCost = storetypes.Gas(1000000)
 
+// NewMessageRoute creates a new message route
 func NewMessageRoute(
 	keeper Keeper,
 	ibcK types.IBCKeeper,

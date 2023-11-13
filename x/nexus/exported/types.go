@@ -336,3 +336,16 @@ func (m GeneralMessage) Type() MessageType {
 
 	return TypeGeneralMessageWithToken
 }
+
+// FromGeneralMessage returns a WasmMessage from a GeneralMessage
+func FromGeneralMessage(msg GeneralMessage) WasmMessage {
+	return WasmMessage{
+		SourceChain:        msg.GetSourceChain(),
+		SourceAddress:      msg.GetSourceAddress(),
+		DestinationChain:   msg.GetDestinationChain(),
+		DestinationAddress: msg.GetDestinationAddress(),
+		PayloadHash:        msg.PayloadHash,
+		SourceTxID:         msg.SourceTxID,
+		SourceTxIndex:      msg.SourceTxIndex,
+	}
+}
