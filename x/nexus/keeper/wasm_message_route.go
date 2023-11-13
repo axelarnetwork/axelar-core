@@ -18,7 +18,7 @@ type req struct {
 func NewMessageRoute(nexus types.Nexus, account types.AccountKeeper, wasm types.WasmKeeper) exported.MessageRoute {
 	return func(ctx sdk.Context, _ exported.RoutingContext, msg exported.GeneralMessage) error {
 		if msg.Asset != nil {
-			return fmt.Errorf("asset is not supported")
+			return fmt.Errorf("asset transfer is not supported")
 		}
 
 		gateway := nexus.GetParams(ctx).Gateway

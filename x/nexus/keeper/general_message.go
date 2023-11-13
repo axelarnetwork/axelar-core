@@ -8,6 +8,7 @@ import (
 	"github.com/CosmWasm/wasmd/x/wasm"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/query"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -244,5 +245,11 @@ func (k Keeper) RouteMessage(ctx sdk.Context, id string, routingCtx ...exported.
 	if len(routingCtx) == 0 {
 		routingCtx = []exported.RoutingContext{{}}
 	}
-	return k.getMessageRouter().Route(ctx, routingCtx[0], funcs.MustOk(k.GetMessage(ctx, id)))
+
+	msg := funcs.MustOk(k.GetMessage(ctx, id))
+	if err := k.getMessageRouter().Route(ctx, routingCtx[0], msg); err != nil {
+		return sdkerrors.Wrapf(err, "failed to route message %s to the %s module", id, msg.Recipient.Chain.Module)
+	}
+
+	return nil
 }
