@@ -84,7 +84,7 @@ func (k *Keeper) SetAddressValidators(validators *types.AddressValidators) {
 
 func (k Keeper) getAddressValidator(module string) (exported.AddressValidator, error) {
 	if k.addressValidators == nil {
-		k.SetAddressValidators(types.NewAddressValidators())
+		return nil, fmt.Errorf("address validator not set")
 	}
 
 	return k.addressValidators.GetAddressValidator(module)
