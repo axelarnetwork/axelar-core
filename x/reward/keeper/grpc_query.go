@@ -36,9 +36,17 @@ func (q Querier) InflationRate(c context.Context, req *types.InflationRateReques
 
 	baseInflation := q.minter.GetMinter(ctx).Inflation
 	keyManagementInflation := params.KeyMgmtRelativeInflationRate.Mul(baseInflation)
-	validator, err := sdk.ValAddressFromBech32(req.Validator)
-	if err != nil {
-		return nil, err
+
+	validator := sdk.ValAddress{}
+
+	// Get network inflation rate if no validator is specified
+	if req.Validator != "" {
+		var err error
+
+		validator, err = sdk.ValAddressFromBech32(req.Validator)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	chains := slices.Filter(q.nexus.GetChains(ctx), func(chain nexus.Chain) bool {

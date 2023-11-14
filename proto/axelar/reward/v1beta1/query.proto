@@ -10,9 +10,7 @@ option (gogoproto.goproto_getters_all) = false;
 
 // InflationRateRequest represents a message that queries the Axelar specific
 // inflation RPC method.
-message InflationRateRequest {
-  string validator = 1;
-}
+message InflationRateRequest { string validator = 1; }
 
 message InflationRateResponse {
   bytes inflation_rate = 1 [
