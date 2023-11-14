@@ -1,6 +1,6 @@
 ## axelard query reward inflation-rate
 
-Returns the inflation rate on the network
+Returns the inflation rate on the network. If a validator is provided, query the inflation rate for that validator.
 
 ```
 axelard query reward inflation-rate [flags]

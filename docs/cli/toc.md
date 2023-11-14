@@ -140,7 +140,7 @@
       - [governance-key](axelard_query_permission_governance-key.md)	 - Returns the governance key
       - [params](axelard_query_permission_params.md)	 - Returns the params for the permission module
     - [reward](axelard_query_reward.md)	 - Querying commands for the reward module
-      - [inflation-rate](axelard_query_reward_inflation-rate.md)	 - Returns the inflation rate on the network
+      - [inflation-rate](axelard_query_reward_inflation-rate.md)	 - Returns the inflation rate on the network. If a validator is provided, query the inflation rate for that validator.
       - [params](axelard_query_reward_params.md)	 - Returns the params for the reward module
     - [slashing](axelard_query_slashing.md)	 - Querying commands for the slashing module
       - [params](axelard_query_slashing_params.md)	 - Query the current slashing parameters

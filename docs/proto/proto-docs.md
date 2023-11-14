@@ -6868,7 +6868,7 @@ QueryService defines the gRPC querier service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `InflationRate` | [InflationRateRequest](#axelar.reward.v1beta1.InflationRateRequest) | [InflationRateResponse](#axelar.reward.v1beta1.InflationRateResponse) |  | GET|/axelar/reward/v1beta1/inflation_rate|
+| `InflationRate` | [InflationRateRequest](#axelar.reward.v1beta1.InflationRateRequest) | [InflationRateResponse](#axelar.reward.v1beta1.InflationRateResponse) |  | GET|/axelar/reward/v1beta1/inflation_rate/{validator}GET|/axelar/reward/v1beta1/inflation_rate|
 | `Params` | [ParamsRequest](#axelar.reward.v1beta1.ParamsRequest) | [ParamsResponse](#axelar.reward.v1beta1.ParamsResponse) |  | GET|/axelar/reward/v1beta1/params|
 
  <!-- end services -->

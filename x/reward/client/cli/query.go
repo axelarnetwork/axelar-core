@@ -34,7 +34,7 @@ func GetQueryCmd() *cobra.Command {
 func GetCmdInflationRate() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "inflation-rate",
-		Short: "Returns the inflation rate on the network",
+		Short: "Returns the inflation rate on the network. If a validator is provided, query the inflation rate for that validator.",
 		Args:  cobra.ExactArgs(0),
 	}
 
