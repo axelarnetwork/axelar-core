@@ -25,7 +25,8 @@ var _ = math.Inf
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 // InflationRateRequest represents a message that queries the Axelar specific
-// inflation RPC method.
+// inflation RPC method. string is used for the validator address instead of
+// bytes so that it's supported as an arg in the generated REST API
 type InflationRateRequest struct {
 	Validator string `protobuf:"bytes,1,opt,name=validator,proto3" json:"validator,omitempty"`
 }

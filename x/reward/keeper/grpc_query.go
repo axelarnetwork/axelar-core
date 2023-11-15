@@ -38,8 +38,6 @@ func (q Querier) InflationRate(c context.Context, req *types.InflationRateReques
 	keyManagementInflation := params.KeyMgmtRelativeInflationRate.Mul(baseInflation)
 
 	validator := sdk.ValAddress{}
-
-	// Get network inflation rate if no validator is specified
 	if req.Validator != "" {
 		var err error
 
@@ -55,6 +53,8 @@ func (q Querier) InflationRate(c context.Context, req *types.InflationRateReques
 		}
 
 		maintainers := q.nexus.GetChainMaintainers(ctx, chain)
+
+		// If no validator is specified, check if there are any maintainers to get the max network inflation rate
 		if len(validator) == 0 {
 			return len(maintainers) > 0
 		}

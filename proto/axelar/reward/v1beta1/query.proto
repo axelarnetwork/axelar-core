@@ -9,7 +9,8 @@ import "axelar/reward/v1beta1/params.proto";
 option (gogoproto.goproto_getters_all) = false;
 
 // InflationRateRequest represents a message that queries the Axelar specific
-// inflation RPC method.
+// inflation RPC method. string is used for the validator address instead of
+// bytes so that it's supported as an arg in the generated REST API
 message InflationRateRequest { string validator = 1; }
 
 message InflationRateResponse {

@@ -46,10 +46,8 @@ func GetCmdInflationRate() *cobra.Command {
 			return err
 		}
 
-		if *validator != "" {
-			if _, err := sdk.ValAddressFromBech32(*validator); err != nil {
-				return sdkerrors.Wrap(err, "invalid validator address")
-			}
+		if _, err := sdk.ValAddressFromBech32(*validator); *validator != "" && err != nil {
+			return sdkerrors.Wrap(err, "invalid validator address")
 		}
 
 		queryClient := types.NewQueryServiceClient(clientCtx)

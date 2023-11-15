@@ -6729,7 +6729,8 @@ GenesisState represents the genesis state
 
 ### InflationRateRequest
 InflationRateRequest represents a message that queries the Axelar specific
-inflation RPC method.
+inflation RPC method. string is used for the validator address instead of
+bytes so that it's supported as an arg in the generated REST API
 
 
 | Field | Type | Label | Description |
