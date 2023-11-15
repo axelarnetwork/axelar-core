@@ -189,7 +189,7 @@ func TestMgr_GetTxReceiptIfFinalized(t *testing.T) {
 		confHeight = uint64(rand.I64Between(1, 50))
 		latestFinalizedBlockNumber = uint64(rand.I64Between(1000, 10000))
 
-		mgr = evm.NewMgr(map[string]evmRpc.Client{chain.String(): rpcClient}, nil, rand.ValAddr(), rand.AccAddr(), cache, "")
+		mgr = evm.NewMgr(map[string]evmRpc.Client{chain.String(): rpcClient}, nil, rand.ValAddr(), rand.AccAddr(), cache)
 	})
 
 	givenMgr.
@@ -381,7 +381,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 		mgr = evm.NewMgr(evmMap, broadcaster, valAddr, rand.AccAddr(), &evmmock.LatestFinalizedBlockCacheMock{
 			GetFunc: func(_ nexus.ChainName) *big.Int { return big.NewInt(0) },
 			SetFunc: func(_ nexus.ChainName, _ *big.Int) {},
-		}, "")
+		})
 	}).
 		Given("an evm rpc client", func() {
 			rpc = &mock.ClientMock{
@@ -616,7 +616,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		mgr = evm.NewMgr(evmMap, broadcaster, valAddr, rand.AccAddr(), &evmmock.LatestFinalizedBlockCacheMock{
 			GetFunc: func(_ nexus.ChainName) *big.Int { return big.NewInt(0) },
 			SetFunc: func(_ nexus.ChainName, _ *big.Int) {},
-		}, "")
+		})
 	}
 
 	repeats := 20
@@ -722,7 +722,7 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 		mgr = evm.NewMgr(evmMap, broadcaster, valAddr, rand.AccAddr(), &evmmock.LatestFinalizedBlockCacheMock{
 			GetFunc: func(_ nexus.ChainName) *big.Int { return big.NewInt(0) },
 			SetFunc: func(_ nexus.ChainName, _ *big.Int) {},
-		}, "axelar-dojo-1")
+		})
 	})
 
 	givenTxReceiptAndBlockAreFound := Given("tx receipt and block can be found", func() {
@@ -849,36 +849,6 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 				}),
 		).
 		Run(t, 5)
-
-	givenEvmMgr.
-		Given2(givenEventConfirmKeyTransfer).
-		When("filecoin key transfer tx", func() {
-			txReceipt = evm.GetFilecoinTransferKeyTxReceipt()
-			event.TxID = evm.FilecoinTransferKeyTxID
-			event.Chain = nexus.ChainName("filecoin")
-			event.GatewayAddress = types.Address(common.BytesToAddress(funcs.Must(hexutil.Decode("0xe432150cce91c13a887f7D836923d5597adD8E31"))))
-		}).
-		Then("should vote for the correct event", func(t *testing.T) {
-			err := mgr.ProcessTransferKeyConfirmation(event)
-			assert.NoError(t, err)
-
-			actual := assertAndGetVoteEvents(t, false)
-			assert.Equal(t, event.Chain, actual.Chain)
-			assert.Len(t, actual.Events, 1)
-			assert.Equal(t, event.Chain, actual.Events[0].Chain)
-			assert.Equal(t, event.TxID, actual.Events[0].TxID)
-			assert.EqualValues(t, 1, actual.Events[0].Index)
-			assert.IsType(t, &types.Event_MultisigOperatorshipTransferred{}, actual.Events[0].Event)
-
-			actualEvent := actual.Events[0].Event.(*types.Event_MultisigOperatorshipTransferred).MultisigOperatorshipTransferred
-			assert.Len(t, actualEvent.NewOperators, 74)
-			assert.Equal(t, actualEvent.NewThreshold, sdk.NewUintFromString("126168"))
-			assert.Equal(t, actualEvent.NewOperators[0].Hex(), "0x030fE8Ea0cbda2850a6ed251685e3cc5A98537b5")
-			assert.Equal(t, actualEvent.NewWeights[0], sdk.NewUintFromString("1579"))
-			assert.Equal(t, actualEvent.NewOperators[len(actualEvent.NewOperators)-1].Hex(), "0xFf6E4973b3C8f27120Ca5c03472D3712102d61E7")
-			assert.Equal(t, actualEvent.NewWeights[len(actualEvent.NewOperators)-1], sdk.NewUintFromString("2080"))
-		}).
-		Run(t)
 }
 
 func TestMgr_GetTxReceiptsIfFinalized(t *testing.T) {
@@ -903,7 +873,7 @@ func TestMgr_GetTxReceiptsIfFinalized(t *testing.T) {
 			GetFunc: func(chain nexus.ChainName) *big.Int { return big.NewInt(0) },
 			SetFunc: func(nexus.ChainName, *big.Int) {},
 		}
-		mgr = evm.NewMgr(map[string]evmRpc.Client{chain.String(): evmClient}, nil, rand.ValAddr(), rand.AccAddr(), cache, "")
+		mgr = evm.NewMgr(map[string]evmRpc.Client{chain.String(): evmClient}, nil, rand.ValAddr(), rand.AccAddr(), cache)
 	})
 
 	confHeight = uint64(rand.I64Between(1, 50))
