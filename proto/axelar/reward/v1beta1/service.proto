@@ -24,7 +24,13 @@ service MsgService {
 service QueryService {
   rpc InflationRate(InflationRateRequest) returns (InflationRateResponse) {
     option (google.api.http) = {
-      get : "/axelar/reward/v1beta1/inflation_rate"
+      get : "/axelar/reward/v1beta1/inflation_rate/{validator}",
+      additional_bindings : {
+        get : "/axelar/reward/v1beta1/inflation_rate" // query network inflation
+                                                      // rate, without having to
+                                                      // pass empty validator
+                                                      // `.../inflation_rate//`
+      }
     };
   }
 
