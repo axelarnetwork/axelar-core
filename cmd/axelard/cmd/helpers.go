@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -45,5 +44,5 @@ func getByteCodes(file string) ([]byte, error) {
 		return nil, fmt.Errorf("could not retrieve bytecode from file")
 	}
 
-	return hex.DecodeString(str)
+	return utils.HexDecode(str)
 }
