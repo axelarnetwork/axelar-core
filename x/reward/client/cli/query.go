@@ -5,6 +5,8 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/spf13/cobra"
 
 	"github.com/axelarnetwork/axelar-core/x/reward/types"
@@ -32,23 +34,31 @@ func GetQueryCmd() *cobra.Command {
 func GetCmdInflationRate() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "inflation-rate",
-		Short: "Returns the inflation rate on the network",
+		Short: "Returns the inflation rate on the network. If a validator is provided, query the inflation rate for that validator.",
 		Args:  cobra.ExactArgs(0),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			clientCtx, err := client.GetClientQueryContext(cmd)
-			if err != nil {
-				return err
-			}
+	}
 
-			queryClient := types.NewQueryServiceClient(clientCtx)
+	validator := cmd.Flags().String("validator", "", "the validator to retrieve the inflation rate for")
 
-			res, err := queryClient.InflationRate(cmd.Context(), &types.InflationRateRequest{})
-			if err != nil {
-				return err
-			}
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		clientCtx, err := client.GetClientQueryContext(cmd)
+		if err != nil {
+			return err
+		}
 
-			return clientCtx.PrintProto(res)
-		},
+		if _, err := sdk.ValAddressFromBech32(*validator); *validator != "" && err != nil {
+			return sdkerrors.Wrap(err, "invalid validator address")
+		}
+
+		queryClient := types.NewQueryServiceClient(clientCtx)
+		res, err := queryClient.InflationRate(cmd.Context(), &types.InflationRateRequest{
+			Validator: *validator,
+		})
+		if err != nil {
+			return err
+		}
+
+		return clientCtx.PrintProto(res)
 	}
 
 	flags.AddQueryFlagsToCmd(cmd)
