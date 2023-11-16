@@ -9,11 +9,11 @@ import "axelar/reward/v1beta1/params.proto";
 option (gogoproto.goproto_getters_all) = false;
 
 // InflationRateRequest represents a message that queries the Axelar specific
-// inflation RPC method.
-message InflationRateRequest {
-  bytes validator = 1 [ (gogoproto.casttype) =
-                            "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
-}
+// inflation RPC method. Ideally, this would use ValAddress as the validator
+// field type. However, this makes it awkward for REST-based calls, because it
+// would expect a byte array as part of the url. So, the bech32 encoded address
+// string is used for this request instead.
+message InflationRateRequest { string validator = 1; }
 
 message InflationRateResponse {
   bytes inflation_rate = 1 [
