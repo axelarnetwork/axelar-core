@@ -6690,12 +6690,15 @@ GenesisState represents the genesis state
 
 ### InflationRateRequest
 InflationRateRequest represents a message that queries the Axelar specific
-inflation RPC method.
+inflation RPC method. Ideally, this would use ValAddress as the validator
+field type. However, this makes it awkward for REST-based calls, because it
+would expect a byte array as part of the url. So, the bech32 encoded address
+string is used for this request instead.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `validator` | [bytes](#bytes) |  |  |
+| `validator` | [string](#string) |  |  |
 
 
 
@@ -6829,7 +6832,7 @@ QueryService defines the gRPC querier service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `InflationRate` | [InflationRateRequest](#axelar.reward.v1beta1.InflationRateRequest) | [InflationRateResponse](#axelar.reward.v1beta1.InflationRateResponse) |  | GET|/axelar/reward/v1beta1/inflation_rate|
+| `InflationRate` | [InflationRateRequest](#axelar.reward.v1beta1.InflationRateRequest) | [InflationRateResponse](#axelar.reward.v1beta1.InflationRateResponse) |  | GET|/axelar/reward/v1beta1/inflation_rate/{validator}GET|/axelar/reward/v1beta1/inflation_rate|
 | `Params` | [ParamsRequest](#axelar.reward.v1beta1.ParamsRequest) | [ParamsResponse](#axelar.reward.v1beta1.ParamsResponse) |  | GET|/axelar/reward/v1beta1/params|
 
  <!-- end services -->
