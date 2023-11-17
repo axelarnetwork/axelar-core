@@ -1,7 +1,6 @@
 package types
 
 import (
-	"encoding/hex"
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -39,12 +38,12 @@ func KeyTable() params.KeyTable {
 
 // DefaultParams returns the module's parameter set initialized with default values
 func DefaultParams() []Params {
-	bzToken, err := hex.DecodeString(Token)
+	bzToken, err := utils.HexDecode(Token)
 	if err != nil {
 		panic(err)
 	}
 
-	bzBurnable, err := hex.DecodeString(Burnable)
+	bzBurnable, err := utils.HexDecode(Burnable)
 	if err != nil {
 		panic(err)
 	}

@@ -15,6 +15,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	nexustypes "github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -259,7 +260,7 @@ func (q Querier) BatchedCommands(c context.Context, req *types.BatchedCommandsRe
 			return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not get the latest batched commands for chain %s", req.Chain)).Error())
 		}
 	default:
-		commandBatchID, err := hex.DecodeString(req.Id)
+		commandBatchID, err := utils.HexDecode(req.Id)
 		if err != nil {
 			return nil, status.Error(codes.InvalidArgument, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("invalid batched commands ID: %v", err)).Error())
 		}
