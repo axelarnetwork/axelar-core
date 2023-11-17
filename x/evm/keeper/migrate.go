@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"encoding/hex"
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -140,12 +139,12 @@ func AlwaysMigrateBytecode(k *BaseKeeper, n types.Nexus, otherMigrations func(ct
 // EVM chain. It's crucial whenever contracts are changed between versions.
 // DO NOT DELETE
 func migrateContractsBytecode(ctx sdk.Context, ck chainKeeper) error {
-	bzToken, err := hex.DecodeString(types.Token)
+	bzToken, err := utils.HexDecode(types.Token)
 	if err != nil {
 		return err
 	}
 
-	bzBurnable, err := hex.DecodeString(types.Burnable)
+	bzBurnable, err := utils.HexDecode(types.Burnable)
 	if err != nil {
 		return err
 	}
