@@ -16,6 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/spf13/cobra"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/vald/config"
 	"github.com/axelarnetwork/axelar-core/vald/tss"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
@@ -61,7 +62,7 @@ func GetSignCommand() *cobra.Command {
 				}
 			}
 
-			pubKeyRaw, err := hex.DecodeString(pubKeyHex)
+			pubKeyRaw, err := utils.HexDecode(pubKeyHex)
 			if err != nil {
 				return err
 			}
@@ -71,7 +72,7 @@ func GetSignCommand() *cobra.Command {
 				return err
 			}
 
-			hashRaw, err := hex.DecodeString(args[2])
+			hashRaw, err := utils.HexDecode(args[2])
 			if err != nil {
 				return err
 			}

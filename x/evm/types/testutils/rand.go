@@ -1,7 +1,6 @@
 package testutils
 
 import (
-	"encoding/hex"
 	"fmt"
 	"math/big"
 	"strings"
@@ -323,7 +322,7 @@ func RandomTokens() []types.ERC20TokenMetadata {
 
 // RandomToken returns a random (valid) token for testing
 func RandomToken() types.ERC20TokenMetadata {
-	bzBurnable, err := hex.DecodeString(types.Burnable)
+	bzBurnable, err := utils.HexDecode(types.Burnable)
 	if err != nil {
 		panic(err)
 	}
@@ -390,7 +389,7 @@ func RandomBurnerInfo() types.BurnerInfo {
 
 // RandomParams returns a random (valid) params instance for testing
 func RandomParams() types.Params {
-	bzBurnable, err := hex.DecodeString(types.Burnable)
+	bzBurnable, err := utils.HexDecode(types.Burnable)
 	if err != nil {
 		panic(err)
 	}
