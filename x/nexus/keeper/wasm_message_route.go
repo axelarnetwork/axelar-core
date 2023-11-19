@@ -11,7 +11,7 @@ import (
 )
 
 type request struct {
-	RouteMessages []exported.WasmMessage `json:"route_messages"`
+	RouteMessagesToRouter []exported.WasmMessage `json:"route_messages_to_router"`
 }
 
 // NewMessageRoute creates a new message route
@@ -26,7 +26,7 @@ func NewMessageRoute(nexus types.Nexus, account types.AccountKeeper, wasm types.
 			return fmt.Errorf("gateway is not set")
 		}
 
-		bz, err := json.Marshal(request{RouteMessages: []exported.WasmMessage{exported.FromGeneralMessage(msg)}})
+		bz, err := json.Marshal(request{RouteMessagesToRouter: []exported.WasmMessage{exported.FromGeneralMessage(msg)}})
 		if err != nil {
 			return nil
 		}
