@@ -25,8 +25,8 @@ jobs:
         git fetch private
 
         # Push main branch to private repo
-        git reset --hard origin/main
-        git push private main --force
+        # git reset --hard origin/main
+        # git push private main --force
 
         # Push release branches to private repo
         for branch in $(git branch -r | grep 'origin/releases/'); do
