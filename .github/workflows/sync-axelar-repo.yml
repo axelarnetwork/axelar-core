@@ -18,19 +18,17 @@ jobs:
       run: |
 
 
-        # Add axelar-core-private as a remote repository using the secret
+        # Add private repo as a remote
         git remote add private ${{ secrets.PRIVATE_REPO_URL }}
 
-        # Fetch branches from the private repository
+        # Fetch branches from private repo
         git fetch private
 
-        # Reset and force-update the main branch of the private repository
-        git checkout main
-        git pull origin main
+        # Push main branch to private repo
         git reset --hard origin/main
         git push private main --force
 
-        # Fetch and push release branches to axelar-core-private
+        # Push release branches to private repo
         for branch in $(git branch -r | grep 'origin/releases/'); do
           git checkout -b ${branch#origin/} || git checkout ${branch#origin/}
           git push private ${branch#origin/} --force
