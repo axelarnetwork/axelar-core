@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout axelar-core
+    - name: Checkout current repo
       uses: actions/checkout@v3
       with:
         token: ${{ secrets.PAT_TOKEN }}
