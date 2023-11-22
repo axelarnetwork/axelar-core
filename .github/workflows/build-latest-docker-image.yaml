@@ -41,7 +41,7 @@ jobs:
           REPO_NAME: ${{ github.event.repository.name }}
         with:
           aws-region: us-east-2
-          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/ghwf-${{ REPO_NAME }}
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/ghwf-${REPO_NAME}
 
       - name: Login to Amazon ECR
         id: login-ecr
