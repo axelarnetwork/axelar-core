@@ -16,8 +16,6 @@ jobs:
 
     - name: Sync with private repo
       run: |
-
-
         # Add private repo as a remote
         git remote add private ${{ secrets.PRIVATE_REPO_URL }}
 
