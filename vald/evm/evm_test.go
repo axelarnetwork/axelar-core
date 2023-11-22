@@ -193,7 +193,31 @@ func TestMgr_GetTxReceiptIfFinalized(t *testing.T) {
 	})
 
 	givenMgr.
-		When("the lastest finalized block cache does not have the result", func() {
+		When("the rpc client determines that the tx failed", func() {
+			receipt := &geth.Receipt{
+				BlockNumber: big.NewInt(int64(latestFinalizedBlockNumber) - rand.I64Between(1, 100)),
+				TxHash:      tx.Hash(),
+				Status:      geth.ReceiptStatusFailed,
+			}
+
+			rpcClient.TransactionReceiptFunc = func(_ context.Context, txHash common.Hash) (*geth.Receipt, error) {
+				if bytes.Equal(txHash.Bytes(), tx.Hash().Bytes()) {
+					return receipt, nil
+				}
+
+				return nil, fmt.Errorf("not found")
+			}
+		}).
+		Then("tx is considered not finalized", func(t *testing.T) {
+			txReceipt, err := mgr.GetTxReceiptIfFinalized(chain, tx.Hash(), confHeight)
+
+			assert.ErrorContains(t, err, "failed")
+			assert.Nil(t, txReceipt)
+		}).
+		Run(t)
+
+	givenMgr.
+		When("the latest finalized block cache does not have the result", func() {
 			cache.GetFunc = func(_ nexus.ChainName) *big.Int {
 				return big.NewInt(0)
 			}
@@ -203,7 +227,7 @@ func TestMgr_GetTxReceiptIfFinalized(t *testing.T) {
 			receipt := &geth.Receipt{
 				BlockNumber: big.NewInt(int64(latestFinalizedBlockNumber) - rand.I64Between(1, 100)),
 				TxHash:      tx.Hash(),
-				Status:      1,
+				Status:      geth.ReceiptStatusSuccessful,
 			}
 
 			rpcClient.TransactionReceiptFunc = func(_ context.Context, txHash common.Hash) (*geth.Receipt, error) {
@@ -224,7 +248,7 @@ func TestMgr_GetTxReceiptIfFinalized(t *testing.T) {
 				return big.NewInt(int64(latestFinalizedBlockNumber)), nil
 			}
 		}).
-		Then("it conclude that the tx is finalized", func(t *testing.T) {
+		Then("tx is considered finalized", func(t *testing.T) {
 			txReceipt, err := mgr.GetTxReceiptIfFinalized(chain, tx.Hash(), confHeight)
 
 			assert.NoError(t, err)
@@ -233,7 +257,7 @@ func TestMgr_GetTxReceiptIfFinalized(t *testing.T) {
 		Run(t, 5)
 
 	givenMgr.
-		When("the lastest finalized block cache has the result", func() {
+		When("the latest finalized block cache has the result", func() {
 			cache.GetFunc = func(_ nexus.ChainName) *big.Int {
 				return big.NewInt(int64(latestFinalizedBlockNumber))
 			}
@@ -242,7 +266,7 @@ func TestMgr_GetTxReceiptIfFinalized(t *testing.T) {
 			receipt := &geth.Receipt{
 				BlockNumber: big.NewInt(int64(latestFinalizedBlockNumber) - rand.I64Between(1, 100)),
 				TxHash:      tx.Hash(),
-				Status:      1,
+				Status:      geth.ReceiptStatusSuccessful,
 			}
 
 			rpcClient.TransactionReceiptFunc = func(_ context.Context, txHash common.Hash) (*geth.Receipt, error) {
@@ -260,7 +284,7 @@ func TestMgr_GetTxReceiptIfFinalized(t *testing.T) {
 				return nil, fmt.Errorf("not found")
 			}
 		}).
-		Then("it conclude that the tx is finalized", func(t *testing.T) {
+		Then("tx is considered finalized", func(t *testing.T) {
 			txReceipt, err := mgr.GetTxReceiptIfFinalized(chain, tx.Hash(), confHeight)
 
 			assert.NoError(t, err)
@@ -880,6 +904,25 @@ func TestMgr_GetTxReceiptsIfFinalized(t *testing.T) {
 
 	givenMgr.
 		Branch(
+			When("transactions failed", func() {
+				latestFinalizedBlockNumber = rand.I64Between(1000, 10000)
+
+				evmClient.TransactionReceiptsFunc = func(_ context.Context, _ []common.Hash) ([]evmRpc.Result, error) {
+					return slices.Map(txHashes, func(hash common.Hash) evmRpc.Result {
+						return evmRpc.Result(results.FromOk(&geth.Receipt{
+							BlockNumber: big.NewInt(latestFinalizedBlockNumber - rand.I64Between(1, 100)),
+							TxHash:      hash,
+							Status:      geth.ReceiptStatusFailed,
+						}))
+					}), nil
+				}
+			}).
+				Then("should not retrieve receipts", func(t *testing.T) {
+					receipts, err := mgr.GetTxReceiptsIfFinalized(chain, txHashes, confHeight)
+					assert.NoError(t, err)
+					slices.ForEach(receipts, func(result results.Result[*geth.Receipt]) { assert.ErrorContains(t, result.Err(), "failed") })
+				}),
+
 			When("transactions are finalized", func() {
 				latestFinalizedBlockNumber = rand.I64Between(1000, 10000)
 
@@ -888,7 +931,7 @@ func TestMgr_GetTxReceiptsIfFinalized(t *testing.T) {
 						return evmRpc.Result(results.FromOk(&geth.Receipt{
 							BlockNumber: big.NewInt(latestFinalizedBlockNumber - rand.I64Between(1, 100)),
 							TxHash:      hash,
-							Status:      1,
+							Status:      geth.ReceiptStatusSuccessful,
 						}))
 					}), nil
 				}
@@ -898,6 +941,7 @@ func TestMgr_GetTxReceiptsIfFinalized(t *testing.T) {
 					assert.NoError(t, err)
 					assert.True(t, slices.All(receipts, func(result results.Result[*geth.Receipt]) bool { return result.Err() == nil }))
 				}),
+
 			When("some transactions are not finalized", func() {
 				evmClient.TransactionReceiptsFunc = func(_ context.Context, _ []common.Hash) ([]evmRpc.Result, error) {
 					i := 0
@@ -914,7 +958,7 @@ func TestMgr_GetTxReceiptsIfFinalized(t *testing.T) {
 						return evmRpc.Result(results.FromOk(&geth.Receipt{
 							BlockNumber: blockNumber,
 							TxHash:      hash,
-							Status:      1,
+							Status:      geth.ReceiptStatusSuccessful,
 						}))
 					}), nil
 				}
