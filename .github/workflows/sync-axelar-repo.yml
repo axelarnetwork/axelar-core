@@ -16,6 +16,8 @@ jobs:
 
     - name: Sync with private repo
       run: |
+
+
         # Add axelar-core-private as a remote repository using the secret
         git remote add private ${{ secrets.PRIVATE_REPO_URL }}
 
@@ -23,6 +25,8 @@ jobs:
         git fetch private
 
         # Reset and force-update the main branch of the private repository
+        git checkout main
+        git pull origin main
         git reset --hard origin/main
         git push private main --force
 
