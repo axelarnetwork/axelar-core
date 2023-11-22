@@ -1,7 +1,7 @@
 name: Synchronize to private repo
 
 on:
-  push:
+  workflow_dispatch:
 
 jobs:
   sync:
@@ -24,9 +24,9 @@ jobs:
         # Fetch branches from private repo
         git fetch private
 
-        # Push main branch to private repo
-        # git reset --hard origin/main
-        # git push private main --force
+        Push main branch to private repo
+        git reset --hard origin/main
+        git push private main --force
 
         # Push release branches to private repo
         for branch in $(git branch -r | grep 'origin/releases/'); do
