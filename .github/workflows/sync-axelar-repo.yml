@@ -1,0 +1,33 @@
+name: Synchronize to private repo
+
+on:
+  push:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout axelar-core
+      uses: actions/checkout@v3
+      with:
+        token: ${{ secrets.PAT_TOKEN }}
+        fetch-depth: 0
+
+    - name: Sync with private repo
+      run: |
+        # Add axelar-core-private as a remote repository using the secret
+        git remote add private ${{ secrets.PRIVATE_REPO_URL }}
+
+        # Fetch branches from the private repository
+        git fetch private
+
+        # Reset and force-update the main branch of the private repository
+        git reset --hard origin/main
+        git push private main --force
+
+        # Fetch and push release branches to axelar-core-private
+        for branch in $(git branch -r | grep 'origin/releases/'); do
+          git checkout -b ${branch#origin/} || git checkout ${branch#origin/}
+          git push private ${branch#origin/} --force
+        done
