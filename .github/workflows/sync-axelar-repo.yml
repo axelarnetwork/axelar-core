@@ -1,7 +1,7 @@
 name: Synchronize to private repo
 
 on:
-  workflow_dispatch:
+  push:
 
 jobs:
   sync:
