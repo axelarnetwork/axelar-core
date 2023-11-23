@@ -16,8 +16,6 @@ jobs:
 
     - name: Sync with private repo
       run: |
-        # Ensure the remote 'origin' is set up correctly
-        git remote add origin $(git config --get remote.origin.url) || true
         # Set the push URL for the 'origin' remote
         git remote set-url --push origin ${{ secrets.PRIVATE_REPO_URL }}
         # Push changes using --mirror
