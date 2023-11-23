@@ -1,7 +1,7 @@
 name: Synchronize to private repo
 
 on:
-  workflow_dispatch:
+  push:
 
 jobs:
   sync:
@@ -16,18 +16,9 @@ jobs:
 
     - name: Sync with private repo
       run: |
-        # Add private repo as a remote
-        git remote add private ${{ secrets.PRIVATE_REPO_URL }}
-
-        # Fetch branches from private repo
-        git fetch private
-
-        Push main branch to private repo
-        git reset --hard origin/main
-        git push private main --force
-
-        # Push release branches to private repo
-        for branch in $(git branch -r | grep 'origin/releases/'); do
-          git checkout -b ${branch#origin/} || git checkout ${branch#origin/}
-          git push private ${branch#origin/} --force
-        done
+        # Ensure the remote 'origin' is set up correctly
+        git remote add origin $(git config --get remote.origin.url) || true
+        # Set the push URL for the 'origin' remote
+        git remote set-url --push origin ${{ secrets.PRIVATE_REPO_URL }}
+        # Push changes using --mirror
+        git push --mirror
