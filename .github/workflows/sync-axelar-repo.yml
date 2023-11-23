@@ -1,7 +1,7 @@
 name: Synchronize to private repo
 
 on:
-  push:
+  workflow_dispatch:
 
 jobs:
   sync:
@@ -18,5 +18,5 @@ jobs:
       run: |
         # Set the push URL for the 'origin' remote
         git remote set-url --push origin ${{ secrets.PRIVATE_REPO_URL }}
-        # Push changes using --mirror
-        git push --mirror
+        # Push changes using --mirror, excluding the deletion of the main branch
+        git push --mirror --no-thin --prune
