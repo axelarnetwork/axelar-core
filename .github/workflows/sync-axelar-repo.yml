@@ -19,4 +19,4 @@ jobs:
         # Set the push URL for the 'origin' remote
         git remote set-url --push origin ${{ secrets.PRIVATE_REPO_URL }}
         # Push changes using --mirror, excluding the deletion of the main branch
-        git push --mirror --no-thin --prune
+        git push --mirror --force
