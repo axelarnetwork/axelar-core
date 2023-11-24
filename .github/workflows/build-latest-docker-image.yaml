@@ -59,7 +59,7 @@ jobs:
           fi
           echo wasm: "${WASM}"
           echo cgo: "${CGO_ENABLED}"
-          make WASM="${WASM}" docker-image
+          make WASM="${WASM}" CGO_ENABLED="${CGO_ENABLED}" docker-image
 
       - name: Push to ECR (normal)
         env:
