@@ -30,7 +30,7 @@ RUN if [[ "${WASM}" == "true" ]]; then \
 
 COPY . .
 
-ENV CGO_ENABLED=1
+ENV CGO_ENABLED=0
 RUN make WASM="${WASM}" MUSLC="${WASM}" build
 
 FROM alpine:3.18
