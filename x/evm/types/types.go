@@ -703,7 +703,7 @@ func CommandIDFromTransferID(id nexus.TransferID) CommandID {
 
 // HexToCommandID decodes a hex representation of a CommandID
 func HexToCommandID(id string) (CommandID, error) {
-	bz, err := hex.DecodeString(id)
+	bz, err := utils.HexDecode(id)
 	if err != nil {
 		return CommandID{}, err
 	}
