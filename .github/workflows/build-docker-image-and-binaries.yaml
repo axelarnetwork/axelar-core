@@ -185,7 +185,7 @@ jobs:
         env:
           PLATFORM: ${{ matrix.platform }}
           SEMVER: ${{ github.event.inputs.tag }}
-          WASM: ${{ github.event.inputs.WASM }}
+          WASM: ${{ github.event.inputs.wasm }}
           CGO_ENABLED: 0
 
   combine-sign:

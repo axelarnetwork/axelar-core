@@ -51,7 +51,7 @@ jobs:
 
       - name: Build docker image (normal)
         env:
-          WASM: ${{ github.event.inputs.WASM }}
+          WASM: ${{ github.event.inputs.wasm }}
           CGO_ENABLED: 0
         run: |
           if [ "${{ github.event.inputs.cgo }}" == "true" ]; then
