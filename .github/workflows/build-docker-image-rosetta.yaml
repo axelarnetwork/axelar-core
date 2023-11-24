@@ -7,7 +7,14 @@ on:
         description: Github tag to release binaries for (reusing an existing tag will make the pipeline fail)
         required: true
         default: latest
-
+      cgo:
+        description: Whether to enable cgo ("true"/"false")
+        required: true
+        default: "false"
+      wasm:
+        description: Whether to enable wasm ("true"/"false")
+        required: true
+        default: "false"
 jobs:
   release:
     runs-on: ${{ matrix.os }}
@@ -61,9 +68,14 @@ jobs:
 
       - name: Build and push docker image rosetta
         run: |
-          make build-push-docker-images-rosetta
+          if [ "${{ github.event.inputs.cgo }}" == "true" ]; then
+            export CGO_ENABLED=0
+          fi
+          make WASM="${WASM}" CGO_ENABLED="${CGO_ENABLED}" build-push-docker-images-rosetta
         env:
           SEMVER: ${{ github.event.inputs.tag }}
+          WASM: ${{ github.event.inputs.wasm }}
+          CGO_ENABLED: 0
 
       - name: Sign the images with GitHub OIDC
         run: cosign sign --oidc-issuer https://token.actions.githubusercontent.com ${TAGS}

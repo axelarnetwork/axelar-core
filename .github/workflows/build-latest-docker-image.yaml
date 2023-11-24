@@ -10,6 +10,10 @@ on:
         description: Whether or build the debug image ("true"/"false")
         required: true
         default: "false"
+      cgo:
+        description: Whether to enable cgo ("true"/"false")
+        required: true
+        default: "false"
       wasm:
         description: Whether to enable wasm ("true"/"false")
         required: true
@@ -63,9 +67,13 @@ jobs:
       - name: Build docker image (debug)
         if: github.event.inputs.buildDebug != 'false'
         env:
-          WASM: ${{ github.event.inputs.WASM }}
+          WASM: ${{ github.event.inputs.wasm }}
+          CGO_ENABLED: 0
         run: |
-          make WASM="${WASM}" docker-image-debug
+          if [ "${{ github.event.inputs.cgo }}" == "true" ]; then
+            export CGO_ENABLED=0
+          fi
+          make WASM="${WASM}" CGO_ENABLED="${CGO_ENABLED}" docker-image-debug
 
       - name: Push to ECR (debug)
         if: github.event.inputs.buildDebug != 'false'
