@@ -57,8 +57,6 @@ jobs:
           if [ "${{ github.event.inputs.cgo }}" == "true" ]; then
             export CGO_ENABLED=1
           fi
-          echo wasm: "${WASM}"
-          echo cgo: "${CGO_ENABLED}"
           make WASM="${WASM}" CGO_ENABLED="${CGO_ENABLED}" docker-image
 
       - name: Push to ECR (normal)
