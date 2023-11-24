@@ -69,7 +69,7 @@ jobs:
       - name: Build and push docker image rosetta
         run: |
           if [ "${{ github.event.inputs.cgo }}" == "true" ]; then
-            export CGO_ENABLED=0
+            export CGO_ENABLED=1
           fi
           make WASM="${WASM}" CGO_ENABLED="${CGO_ENABLED}" build-push-docker-images-rosetta
         env:
