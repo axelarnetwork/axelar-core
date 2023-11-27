@@ -4543,6 +4543,8 @@ MsgConfirmDeposit represents an erc20 deposit confirmation message
 | `tx_id` | [bytes](#bytes) |  |  |
 | `amount` | [bytes](#bytes) |  | **Deprecated.**  |
 | `burner_address` | [bytes](#bytes) |  |  |
+| `recipient_chain` | [string](#string) |  |  |
+| `recipient_addr` | [string](#string) |  |  |
 
 
 

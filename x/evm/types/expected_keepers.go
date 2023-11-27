@@ -97,6 +97,7 @@ type Voter interface {
 // Nexus provides functionality to manage cross-chain transfers
 type Nexus interface {
 	LinkAddresses(ctx sdk.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress) error
+	GetLatestDepositAddress(ctx sdk.Context, depositChain nexus.ChainName, recipientAddress nexus.CrossChainAddress) (depositAddress nexus.CrossChainAddress, ok bool)
 	GetRecipient(ctx sdk.Context, sender nexus.CrossChainAddress) (nexus.CrossChainAddress, bool)
 	EnqueueTransfer(ctx sdk.Context, senderChain nexus.Chain, recipient nexus.CrossChainAddress, asset sdk.Coin) (nexus.TransferID, error)
 	EnqueueForTransfer(ctx sdk.Context, sender nexus.CrossChainAddress, amount sdk.Coin) (nexus.TransferID, error)

@@ -21,10 +21,6 @@ func (k Keeper) setLatestDepositAddress(ctx sdk.Context, recipientAddress, depos
 	k.getStore(ctx).Set(getLatestDepositAddressKey(depositAddress.Chain.Name, recipientAddress), &depositAddress)
 }
 
-func (k Keeper) getLatestDepositAddress(ctx sdk.Context, depositChain exported.ChainName, recipientAddress exported.CrossChainAddress) (depositAddress exported.CrossChainAddress, ok bool) {
-	return depositAddress, k.getStore(ctx).Get(getLatestDepositAddressKey(depositChain, recipientAddress), &depositAddress)
-}
-
 func getLinkedAddressesKey(depositAddress exported.CrossChainAddress) utils.Key {
 	return linkedAddressesPrefix.
 		Append(utils.LowerCaseKey(depositAddress.Chain.Name.String())).
@@ -51,6 +47,10 @@ func (k Keeper) getAllLinkedAddresses(ctx sdk.Context) (results []types.LinkedAd
 	}
 
 	return results
+}
+
+func (k Keeper) GetLatestDepositAddress(ctx sdk.Context, depositChain exported.ChainName, recipientAddress exported.CrossChainAddress) (depositAddress exported.CrossChainAddress, ok bool) {
+	return depositAddress, k.getStore(ctx).Get(getLatestDepositAddressKey(depositChain, recipientAddress), &depositAddress)
 }
 
 // LinkAddresses links a sender address to a cross-chain recipient address

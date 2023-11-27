@@ -3166,6 +3166,10 @@ paths:
               burner_address:
                 type: string
                 format: byte
+              recipient_chain:
+                type: string
+              recipient_addr:
+                type: string
             title: MsgConfirmDeposit represents an erc20 deposit confirmation message
       tags:
         - MsgService
@@ -49427,6 +49431,10 @@ definitions:
       burner_address:
         type: string
         format: byte
+      recipient_chain:
+        type: string
+      recipient_addr:
+        type: string
     title: MsgConfirmDeposit represents an erc20 deposit confirmation message
   axelar.evm.v1beta1.ConfirmDepositResponse:
     type: object

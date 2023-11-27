@@ -78,6 +78,10 @@ message ConfirmDepositRequest {
   ];
   bytes burner_address = 5
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+  string recipient_chain = 6
+  [ (gogoproto.casttype) =
+      "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string recipient_addr = 7;
 }
 
 message ConfirmDepositResponse {}

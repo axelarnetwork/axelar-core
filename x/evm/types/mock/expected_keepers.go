@@ -131,6 +131,9 @@ var _ types.Nexus = &NexusMock{}
 //			GetChainsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain {
 //				panic("mock out the GetChains method")
 //			},
+//			GetLatestDepositAddressFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, depositChain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, recipientAddress github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress) (github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, bool) {
+//				panic("mock out the GetLatestDepositAddress method")
+//			},
 //			GetProcessingMessagesFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, limit int64) []github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage {
 //				panic("mock out the GetProcessingMessages method")
 //			},
@@ -209,6 +212,9 @@ type NexusMock struct {
 
 	// GetChainsFunc mocks the GetChains method.
 	GetChainsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) []github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
+
+	// GetLatestDepositAddressFunc mocks the GetLatestDepositAddress method.
+	GetLatestDepositAddressFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, depositChain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, recipientAddress github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress) (github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, bool)
 
 	// GetProcessingMessagesFunc mocks the GetProcessingMessages method.
 	GetProcessingMessagesFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, limit int64) []github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage
@@ -333,6 +339,15 @@ type NexusMock struct {
 		GetChains []struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
+		}
+		// GetLatestDepositAddress holds details about calls to the GetLatestDepositAddress method.
+		GetLatestDepositAddress []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// DepositChain is the depositChain argument value.
+			DepositChain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+			// RecipientAddress is the recipientAddress argument value.
+			RecipientAddress github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
 		}
 		// GetProcessingMessages holds details about calls to the GetProcessingMessages method.
 		GetProcessingMessages []struct {
@@ -465,6 +480,7 @@ type NexusMock struct {
 	lockGetChainMaintainerState       sync.RWMutex
 	lockGetChainMaintainers           sync.RWMutex
 	lockGetChains                     sync.RWMutex
+	lockGetLatestDepositAddress       sync.RWMutex
 	lockGetProcessingMessages         sync.RWMutex
 	lockGetRecipient                  sync.RWMutex
 	lockGetTransfersForChainPaginated sync.RWMutex
@@ -858,6 +874,46 @@ func (mock *NexusMock) GetChainsCalls() []struct {
 	mock.lockGetChains.RLock()
 	calls = mock.calls.GetChains
 	mock.lockGetChains.RUnlock()
+	return calls
+}
+
+// GetLatestDepositAddress calls GetLatestDepositAddressFunc.
+func (mock *NexusMock) GetLatestDepositAddress(ctx github_com_cosmos_cosmos_sdk_types.Context, depositChain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, recipientAddress github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress) (github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, bool) {
+	if mock.GetLatestDepositAddressFunc == nil {
+		panic("NexusMock.GetLatestDepositAddressFunc: method is nil but Nexus.GetLatestDepositAddress was just called")
+	}
+	callInfo := struct {
+		Ctx              github_com_cosmos_cosmos_sdk_types.Context
+		DepositChain     github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+		RecipientAddress github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
+	}{
+		Ctx:              ctx,
+		DepositChain:     depositChain,
+		RecipientAddress: recipientAddress,
+	}
+	mock.lockGetLatestDepositAddress.Lock()
+	mock.calls.GetLatestDepositAddress = append(mock.calls.GetLatestDepositAddress, callInfo)
+	mock.lockGetLatestDepositAddress.Unlock()
+	return mock.GetLatestDepositAddressFunc(ctx, depositChain, recipientAddress)
+}
+
+// GetLatestDepositAddressCalls gets all the calls that were made to GetLatestDepositAddress.
+// Check the length with:
+//
+//	len(mockedNexus.GetLatestDepositAddressCalls())
+func (mock *NexusMock) GetLatestDepositAddressCalls() []struct {
+	Ctx              github_com_cosmos_cosmos_sdk_types.Context
+	DepositChain     github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+	RecipientAddress github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
+} {
+	var calls []struct {
+		Ctx              github_com_cosmos_cosmos_sdk_types.Context
+		DepositChain     github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
+		RecipientAddress github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
+	}
+	mock.lockGetLatestDepositAddress.RLock()
+	calls = mock.calls.GetLatestDepositAddress
+	mock.lockGetLatestDepositAddress.RUnlock()
 	return calls
 }
 

@@ -75,7 +75,7 @@ func (q Querier) LatestDepositAddress(c context.Context, req *types.LatestDeposi
 	}
 
 	recipientAddress := nexus.CrossChainAddress{Chain: recipientChain, Address: req.RecipientAddr}
-	depositAddress, ok := q.keeper.getLatestDepositAddress(ctx, depositChain.Name, recipientAddress)
+	depositAddress, ok := q.keeper.GetLatestDepositAddress(ctx, depositChain.Name, recipientAddress)
 	if !ok {
 		return nil, sdkerrors.Wrapf(types.ErrNexus, "no deposit address found for recipient %s on chain %s", req.RecipientAddr, req.RecipientChain)
 	}

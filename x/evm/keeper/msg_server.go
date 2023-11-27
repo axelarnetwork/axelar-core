@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"github.com/ethereum/go-ethereum/common"
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -348,6 +349,19 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 	gatewayAddr, ok := keeper.GetGatewayAddress(ctx)
 	if !ok {
 		return nil, fmt.Errorf("gateway address not set for chain %s", chain.Name)
+	}
+
+	if req.BurnerAddress.IsZeroAddress() {
+		recipientChain, ok := s.nexus.GetChain(ctx, req.RecipientChain)
+		if !ok {
+			return nil, fmt.Errorf("unknown recipient chain")
+		}
+		crossChainAddress := nexus.CrossChainAddress{Chain: recipientChain, Address: req.RecipientAddr}
+		depositAddress, ok := s.nexus.GetLatestDepositAddress(ctx, chain.Name, crossChainAddress)
+		if !ok {
+			return nil, fmt.Errorf("no burner info found for recipient %s", crossChainAddress.Address)
+		}
+		req.BurnerAddress = types.Address(common.HexToAddress(depositAddress.Address))
 	}
 
 	burnerInfo := keeper.GetBurnerInfo(ctx, req.BurnerAddress)
