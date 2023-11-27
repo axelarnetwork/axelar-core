@@ -22,6 +22,16 @@ jobs:
         # Fetch branches from private repo
         git fetch private
 
-        # Mirror all branches, tags, and other refs to private repo
-        git push private --mirror
+        # Push main branch to private repo
+        git reset --hard origin/main
+        git push private main --force
+
+        # Push release branches to private repo
+        for branch in $(git branch -r | grep 'origin/releases/'); do
+          git checkout -b ${branch#origin/} || git checkout ${branch#origin/}
+          git push private ${branch#origin/} --force
+        done
+
+        # Push all tags to private repo
+        git push private --tags
 
