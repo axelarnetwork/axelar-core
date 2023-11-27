@@ -14,25 +14,27 @@ jobs:
         token: ${{ secrets.PAT_TOKEN }}
         fetch-depth: 0
 
-    - name: Sync with private repo
+    - name: Add private repo as a remote
+      run: git remote add private ${{ secrets.PRIVATE_REPO_URL }}
+
+    - name: Fetch branches from private repo
+      run: git fetch private
+
+    - name: List all branches
+      run: git branch -a
+
+    - name: Prepare and push main branch
       run: |
-        # Add private repo as a remote
-        git remote add private ${{ secrets.PRIVATE_REPO_URL }}
-
-        # Fetch branches from private repo
-        git branch -a
-        git fetch private
-
-        # Push main branch to private repo
-        git reset --hard origin/main
+        git checkout main
+        git pull origin main
         git push private main --force
 
-        # Push release branches to private repo
+    - name: Push release branches to private repo
+      run: |
         for branch in $(git branch -r | grep 'origin/releases/'); do
           git checkout -b ${branch#origin/} || git checkout ${branch#origin/}
           git push private ${branch#origin/} --force
         done
 
-        # Push all tags to private repo
-        git push private --tags
-
+    - name: Push all tags to private repo
+      run: git push private --tags
