@@ -17,25 +17,8 @@ jobs:
     - name: Add private repo as a remote
       run: git remote add private ${{ secrets.PRIVATE_REPO_URL }}
 
-    - name: Fetch branches from private repo
-      run: git fetch private
+    - name: Fetch all history from origin
+      run: git fetch origin --prune --unshallow
 
-    - name: List all branches
-      run: git branch -a
-
-    - name: Prepare and push main branch
-      run: |
-        git fetch origin main
-        git checkout -b main origin/main
-        git pull origin main
-        git push private main --force
-
-    - name: Push release branches to private repo
-      run: |
-        for branch in $(git branch -r | grep 'origin/releases/'); do
-          git checkout -b ${branch#origin/} || git checkout ${branch#origin/}
-          git push private ${branch#origin/} --force
-        done
-
-    - name: Push all tags to private repo
-      run: git push private --tags
+    - name: Push everything to private repo
+      run: git push private --all && git push private --tags
