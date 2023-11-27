@@ -20,7 +20,9 @@ import (
 )
 
 const (
-	flagAddress = "address"
+	flagAddress          = "address"
+	flagRecipientChain   = "recipientChain"
+	flagRecipientAddress = "recipientAddress"
 )
 
 // GetTxCmd returns the transaction commands for this module
@@ -153,8 +155,16 @@ func GetCmdConfirmERC20Deposit() *cobra.Command {
 			chain := args[0]
 			txID := common.HexToHash(args[1])
 			burnerAddr := common.HexToAddress(args[2])
+			recipientChain, err := cmd.Flags().GetString(flagRecipientChain)
+			if err != nil {
+				return err
+			}
+			recipientAddress, err := cmd.Flags().GetString(flagRecipientAddress)
+			if err != nil {
+				return err
+			}
 
-			msg := types.NewConfirmDepositRequest(cliCtx.GetFromAddress(), chain, txID, burnerAddr, "", "")
+			msg := types.NewConfirmDepositRequest(cliCtx.GetFromAddress(), chain, txID, burnerAddr, recipientChain, common.HexToAddress(recipientAddress))
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -162,6 +172,8 @@ func GetCmdConfirmERC20Deposit() *cobra.Command {
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
 		},
 	}
+	cmd.Flags().String(flagRecipientChain, "", "deposit recipient chain")
+	cmd.Flags().String(flagRecipientAddress, types.ZeroAddress.Hex(), "deposit recipient address")
 	flags.AddTxFlagsToCmd(cmd)
 	return cmd
 }

@@ -76,10 +76,12 @@ type ReqConfirmTokenDeploy struct {
 
 // ReqConfirmDeposit represents a request to confirm a deposit
 type ReqConfirmDeposit struct {
-	BaseReq       rest.BaseReq `json:"base_req" yaml:"base_req"`
-	TxID          string       `json:"tx_id" yaml:"tx_id"`
-	Amount        string       `json:"amount" yaml:"amount"`
-	BurnerAddress string       `json:"burner_address" yaml:"burner_address"`
+	BaseReq          rest.BaseReq `json:"base_req" yaml:"base_req"`
+	TxID             string       `json:"tx_id" yaml:"tx_id"`
+	Amount           string       `json:"amount" yaml:"amount"`
+	BurnerAddress    string       `json:"burner_address" yaml:"burner_address"`
+	RecipientChain   string       `json:"recipient_chain" yaml:"recipient_chain"`
+	RecipientAddress string       `json:"recipient_address" yaml:"recipient_address"`
 }
 
 // ReqConfirmTransferKey represents a request to confirm a transfer operatorship
@@ -209,8 +211,10 @@ func GetHandlerConfirmDeposit(cliCtx client.Context) http.HandlerFunc {
 
 		txID := common.HexToHash(req.TxID)
 		burnerAddr := common.HexToAddress(req.BurnerAddress)
+		recipientChain := req.RecipientChain
+		recipientAddress := common.HexToAddress(req.RecipientAddress)
 
-		msg := types.NewConfirmDepositRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], txID, burnerAddr, "", "")
+		msg := types.NewConfirmDepositRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], txID, burnerAddr, recipientChain, recipientAddress)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

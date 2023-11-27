@@ -1061,8 +1061,8 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 				return c, ok
 			},
 			GetLatestDepositAddressFunc: func(ctx sdk.Context, depositChain nexus.ChainName, givenRecipientAddress nexus.CrossChainAddress) (nexus.CrossChainAddress, bool) {
-				if depositChain == evmChain && common.Address(recipientAddress).String() == givenRecipientAddress.Address {
-					return nexus.CrossChainAddress{Chain: axelarnet.Axelarnet, Address: common.Address(burnerAddress).String()}, true
+				if depositChain == evmChain && recipientAddress.Hex() == givenRecipientAddress.Address {
+					return nexus.CrossChainAddress{Chain: axelarnet.Axelarnet, Address: burnerAddress.Hex()}, true
 				} else {
 					return nexus.CrossChainAddress{}, false
 				}
@@ -1074,7 +1074,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			Chain:         evmChain,
 			TxID:          types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
 			BurnerAddress: burnerAddress,
-			RecipientAddr: common.Address(recipientAddress).String(),
+			RecipientAddr: recipientAddress,
 		}
 		snapshotKeeper := &mock.SnapshotterMock{
 			CreateSnapshotFunc: func(sdk.Context, []sdk.ValAddress, func(snapshot.ValidatorI) bool, func(consensusPower sdk.Uint) sdk.Uint, utils.Threshold) (snapshot.Snapshot, error) {
@@ -1115,7 +1115,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		setup()
 		msg.BurnerAddress = types.Address{}
 		msg.RecipientChain = axelarnet.Axelarnet.Name
-		msg.RecipientAddr = common.BytesToAddress(rand.Bytes(common.AddressLength)).String()
+		msg.RecipientAddr = types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength)))
 
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 

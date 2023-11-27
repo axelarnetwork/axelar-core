@@ -356,7 +356,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		if !ok {
 			return nil, fmt.Errorf("unknown recipient chain")
 		}
-		crossChainAddress := nexus.CrossChainAddress{Chain: recipientChain, Address: req.RecipientAddr}
+		crossChainAddress := nexus.CrossChainAddress{Chain: recipientChain, Address: req.RecipientAddr.Hex()}
 		depositAddress, ok := s.nexus.GetLatestDepositAddress(ctx, chain.Name, crossChainAddress)
 		if !ok {
 			return nil, fmt.Errorf("no burner info found for recipient %s", crossChainAddress.Address)
