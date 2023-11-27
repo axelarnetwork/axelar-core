@@ -18,7 +18,7 @@ jobs:
       run: git remote add private ${{ secrets.PRIVATE_REPO_URL }}
 
     - name: Fetch all history from origin
-      run: git fetch origin --prune --unshallow
+      run: git fetch origin --prune
 
     - name: Push everything to private repo
       run: git push private --all && git push private --tags
