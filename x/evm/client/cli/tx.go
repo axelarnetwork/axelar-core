@@ -154,7 +154,7 @@ func GetCmdConfirmERC20Deposit() *cobra.Command {
 			txID := common.HexToHash(args[1])
 			burnerAddr := common.HexToAddress(args[2])
 
-			msg := types.NewConfirmDepositRequest(cliCtx.GetFromAddress(), chain, txID, burnerAddr)
+			msg := types.NewConfirmDepositRequest(cliCtx.GetFromAddress(), chain, txID, burnerAddr, "", "")
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

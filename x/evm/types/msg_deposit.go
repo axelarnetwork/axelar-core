@@ -10,12 +10,14 @@ import (
 )
 
 // NewConfirmDepositRequest creates a message of type ConfirmDepositRequest
-func NewConfirmDepositRequest(sender sdk.AccAddress, chain string, txID common.Hash, burnerAddr common.Address) *ConfirmDepositRequest {
+func NewConfirmDepositRequest(sender sdk.AccAddress, chain string, txID common.Hash, burnerAddr common.Address, recipientChain, recipientAddr string) *ConfirmDepositRequest {
 	return &ConfirmDepositRequest{
-		Sender:        sender,
-		Chain:         nexus.ChainName(utils.NormalizeString(chain)),
-		TxID:          Hash(txID),
-		BurnerAddress: Address(burnerAddr),
+		Sender:         sender,
+		Chain:          nexus.ChainName(utils.NormalizeString(chain)),
+		TxID:           Hash(txID),
+		BurnerAddress:  Address(burnerAddr),
+		RecipientChain: nexus.ChainName(utils.NormalizeString(recipientChain)),
+		RecipientAddr:  utils.NormalizeString(recipientAddr),
 	}
 }
 

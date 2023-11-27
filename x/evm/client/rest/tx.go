@@ -210,7 +210,7 @@ func GetHandlerConfirmDeposit(cliCtx client.Context) http.HandlerFunc {
 		txID := common.HexToHash(req.TxID)
 		burnerAddr := common.HexToAddress(req.BurnerAddress)
 
-		msg := types.NewConfirmDepositRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], txID, burnerAddr)
+		msg := types.NewConfirmDepositRequest(fromAddr, mux.Vars(r)[clientUtils.PathVarChain], txID, burnerAddr, "", "")
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
