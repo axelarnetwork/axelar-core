@@ -962,14 +962,16 @@ func TestAddChain(t *testing.T) {
 
 func TestHandleMsgConfirmDeposit(t *testing.T) {
 	var (
-		ctx            sdk.Context
-		basek          *mock.BaseKeeperMock
-		chaink         *mock.ChainKeeperMock
-		v              *mock.VoterMock
-		multisigKeeper *mock.MultisigKeeperMock
-		n              *mock.NexusMock
-		msg            *types.ConfirmDepositRequest
-		server         types.MsgServiceServer
+		ctx              sdk.Context
+		basek            *mock.BaseKeeperMock
+		chaink           *mock.ChainKeeperMock
+		v                *mock.VoterMock
+		multisigKeeper   *mock.MultisigKeeperMock
+		n                *mock.NexusMock
+		msg              *types.ConfirmDepositRequest
+		server           types.MsgServiceServer
+		burnerAddress    types.Address
+		recipientAddress types.Address
 	)
 
 	setup := func() {
@@ -992,9 +994,11 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			Status:       types.Confirmed,
 		})
 
+		sender := rand.AccAddr()
 		salt := types.Hash(common.BytesToHash(rand.Bytes(common.HashLength)))
 		gatewayAddr := types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength)))
-		burnerAddress := types.Address(crypto.CreateAddress2(common.Address(gatewayAddr), salt, funcs.MustOk(token.GetBurnerCodeHash()).Bytes()))
+		burnerAddress = types.Address(crypto.CreateAddress2(common.Address(gatewayAddr), salt, funcs.MustOk(token.GetBurnerCodeHash()).Bytes()))
+		recipientAddress = types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength)))
 
 		chaink = &mock.ChainKeeperMock{
 			GetBurnerAddressFunc: func(ctx sdk.Context, token types.ERC20Token, salt types.Hash, gatewayAddr types.Address) (types.Address, error) {
@@ -1013,10 +1017,11 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 				}
 
 				return &types.BurnerInfo{
-					TokenAddress: token.GetAddress(),
-					Asset:        token.GetAsset(),
-					Symbol:       rand.StrBetween(5, 10),
-					Salt:         salt,
+					TokenAddress:     token.GetAddress(),
+					Asset:            token.GetAsset(),
+					DestinationChain: axelarnet.Axelarnet.Name,
+					Symbol:           rand.StrBetween(5, 10),
+					Salt:             salt,
 				}
 			},
 			GetERC20TokenByAssetFunc: func(ctx sdk.Context, asset string) types.ERC20Token {
@@ -1055,13 +1060,21 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 				c, ok := chains[chain]
 				return c, ok
 			},
+			GetLatestDepositAddressFunc: func(ctx sdk.Context, depositChain nexus.ChainName, givenRecipientAddress nexus.CrossChainAddress) (nexus.CrossChainAddress, bool) {
+				if depositChain == evmChain && common.Address(recipientAddress).String() == givenRecipientAddress.Address {
+					return nexus.CrossChainAddress{Chain: axelarnet.Axelarnet, Address: common.Address(burnerAddress).String()}, true
+				} else {
+					return nexus.CrossChainAddress{}, false
+				}
+			},
 		}
 
 		msg = &types.ConfirmDepositRequest{
-			Sender:        rand.AccAddr(),
+			Sender:        sender,
 			Chain:         evmChain,
 			TxID:          types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
 			BurnerAddress: burnerAddress,
+			RecipientAddr: common.Address(recipientAddress).String(),
 		}
 		snapshotKeeper := &mock.SnapshotterMock{
 			CreateSnapshotFunc: func(sdk.Context, []sdk.ValAddress, func(snapshot.ValidatorI) bool, func(consensusPower sdk.Uint) sdk.Uint, utils.Threshold) (snapshot.Snapshot, error) {
@@ -1083,6 +1096,30 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == proto.MessageName(&types.ConfirmDepositStarted{}) }), 1)
 		assert.Equal(t, len(v.InitializePollCalls()), 1)
+	}).Repeat(repeats))
+
+	t.Run("happy path confirm self-bridge", testutils.Func(func(t *testing.T) {
+		setup()
+		msg.BurnerAddress = types.Address{}
+		msg.RecipientChain = axelarnet.Axelarnet.Name
+
+		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
+
+		assert.True(t, msg.BurnerAddress == burnerAddress)
+		assert.NoError(t, err)
+		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == proto.MessageName(&types.ConfirmDepositStarted{}) }), 1)
+		assert.Equal(t, len(v.InitializePollCalls()), 1)
+	}).Repeat(repeats))
+
+	t.Run("unlinked sender self-bridge", testutils.Func(func(t *testing.T) {
+		setup()
+		msg.BurnerAddress = types.Address{}
+		msg.RecipientChain = axelarnet.Axelarnet.Name
+		msg.RecipientAddr = common.BytesToAddress(rand.Bytes(common.AddressLength)).String()
+
+		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
+
+		assert.ErrorContains(t, err, "no burner info found for recipient")
 	}).Repeat(repeats))
 
 	t.Run("unknown chain", testutils.Func(func(t *testing.T) {
