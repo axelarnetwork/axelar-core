@@ -961,6 +961,11 @@ func TestAddChain(t *testing.T) {
 }
 
 func TestHandleMsgConfirmDeposit(t *testing.T) {
+	const (
+		NUM_EXPECTED_POLLS_SUCCESS = 1
+		NUM_EXPECTED_POLLS_FAIL    = 0
+	)
+
 	var (
 		ctx              sdk.Context
 		basek            *mock.BaseKeeperMock
@@ -1094,8 +1099,8 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 
 		assert.NoError(t, err)
-		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == proto.MessageName(&types.ConfirmDepositStarted{}) }), 1)
-		assert.Equal(t, len(v.InitializePollCalls()), 1)
+		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == proto.MessageName(&types.ConfirmDepositStarted{}) }), NUM_EXPECTED_POLLS_SUCCESS)
+		assert.Equal(t, len(v.InitializePollCalls()), NUM_EXPECTED_POLLS_SUCCESS)
 	}).Repeat(repeats))
 
 	t.Run("happy path confirm self-bridge", testutils.Func(func(t *testing.T) {
@@ -1107,8 +1112,8 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 
 		assert.True(t, msg.BurnerAddress == burnerAddress)
 		assert.NoError(t, err)
-		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == proto.MessageName(&types.ConfirmDepositStarted{}) }), 1)
-		assert.Equal(t, len(v.InitializePollCalls()), 1)
+		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == proto.MessageName(&types.ConfirmDepositStarted{}) }), NUM_EXPECTED_POLLS_SUCCESS)
+		assert.Equal(t, len(v.InitializePollCalls()), NUM_EXPECTED_POLLS_SUCCESS)
 	}).Repeat(repeats))
 
 	t.Run("unlinked sender self-bridge", testutils.Func(func(t *testing.T) {
@@ -1120,6 +1125,21 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 
 		assert.ErrorContains(t, err, "no burner info found for recipient")
+		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == proto.MessageName(&types.ConfirmDepositStarted{}) }), NUM_EXPECTED_POLLS_FAIL)
+		assert.Equal(t, len(v.InitializePollCalls()), NUM_EXPECTED_POLLS_FAIL)
+	}).Repeat(repeats))
+
+	t.Run("unknown chain self-bridge", testutils.Func(func(t *testing.T) {
+		setup()
+		msg.BurnerAddress = types.Address{}
+		msg.RecipientChain = "FakeChain"
+		msg.RecipientAddr = types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength)))
+
+		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
+
+		assert.ErrorContains(t, err, "unknown recipient chain")
+		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()), NUM_EXPECTED_POLLS_FAIL)
+		assert.Equal(t, len(v.InitializePollCalls()), NUM_EXPECTED_POLLS_FAIL)
 	}).Repeat(repeats))
 
 	t.Run("unknown chain", testutils.Func(func(t *testing.T) {
@@ -1129,6 +1149,8 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 
 		assert.ErrorContains(t, err, "not a registered chain")
+		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()), NUM_EXPECTED_POLLS_FAIL)
+		assert.Equal(t, len(v.InitializePollCalls()), NUM_EXPECTED_POLLS_FAIL)
 	}).Repeat(repeats))
 
 	t.Run("unknown gateway address", testutils.Func(func(t *testing.T) {
@@ -1138,6 +1160,8 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 
 		assert.ErrorContains(t, err, "gateway address not set for chain")
+		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()), NUM_EXPECTED_POLLS_FAIL)
+		assert.Equal(t, len(v.InitializePollCalls()), NUM_EXPECTED_POLLS_FAIL)
 	}).Repeat(repeats))
 
 	t.Run("invalid asset", testutils.Func(func(t *testing.T) {
@@ -1147,6 +1171,8 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 
 		assert.ErrorContains(t, err, "is not confirmed on")
+		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()), NUM_EXPECTED_POLLS_FAIL)
+		assert.Equal(t, len(v.InitializePollCalls()), NUM_EXPECTED_POLLS_FAIL)
 	}).Repeat(repeats))
 
 	t.Run("invalid burner address", testutils.Func(func(t *testing.T) {
@@ -1159,6 +1185,8 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 
 		assert.ErrorContains(t, err, "provided burner address")
 		assert.ErrorContains(t, err, "doesn't match expected address")
+		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()), NUM_EXPECTED_POLLS_FAIL)
+		assert.Equal(t, len(v.InitializePollCalls()), NUM_EXPECTED_POLLS_FAIL)
 	}).Repeat(repeats))
 
 	t.Run("init poll failed", testutils.Func(func(t *testing.T) {
@@ -1170,6 +1198,8 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 
 		assert.ErrorContains(t, err, errMsg)
+		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()), NUM_EXPECTED_POLLS_FAIL)
+		assert.Equal(t, len(v.InitializePollCalls()), NUM_EXPECTED_POLLS_SUCCESS) // poll should attempt init once
 	}).Repeat(repeats))
 }
 
