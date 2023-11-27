@@ -20,6 +20,7 @@ jobs:
         git remote add private ${{ secrets.PRIVATE_REPO_URL }}
 
         # Fetch branches from private repo
+        git branch -a
         git fetch private
 
         # Push main branch to private repo
