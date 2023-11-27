@@ -16,7 +16,12 @@ jobs:
 
     - name: Sync with private repo
       run: |
-        # Set the push URL for the 'origin' remote
-        git remote set-url --push origin ${{ secrets.PRIVATE_REPO_URL }}
-        # Push changes using --mirror, excluding the deletion of the main branch
-        git push --mirror --force
+        # Add private repo as a remote
+        git remote add private ${{ secrets.PRIVATE_REPO_URL }}
+
+        # Fetch branches from private repo
+        git fetch private
+
+        # Mirror all branches, tags, and other refs to private repo
+        git push private --mirror
+
