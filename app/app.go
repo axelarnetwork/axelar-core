@@ -22,6 +22,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/server/api"
 	"github.com/cosmos/cosmos-sdk/server/config"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
+	store "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/version"
@@ -200,6 +201,7 @@ func NewAxelarApp(
 
 	keys := createStoreKeys()
 	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
+	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
 
 	keepers := newKeeperCache()
 	setKeeper(keepers, initParamsKeeper(encodingConfig, keys[paramstypes.StoreKey], tkeys[paramstypes.TStoreKey]))
@@ -210,49 +212,32 @@ func NewAxelarApp(
 	moduleAccountPermissions := initModuleAccountPermissions()
 	appCodec := encodingConfig.Codec
 
-	// add keepers
+	// set up predefined keepers
 	setKeeper(keepers, initAccountKeeper(appCodec, keys, keepers, moduleAccountPermissions))
 	setKeeper(keepers, initBankKeeper(appCodec, keys, keepers, moduleAccountPermissions))
-
-	stakingK := stakingkeeper.NewKeeper(
-		appCodec, keys[stakingtypes.StoreKey], getKeeper[authkeeper.AccountKeeper](keepers), getKeeper[bankkeeper.BaseKeeper](keepers), keepers.getSubspace(stakingtypes.ModuleName),
-	)
-
-	setKeeper(keepers, initMintKeeper(appCodec, keys, keepers, &stakingK))
-	setKeeper(keepers, initDistributionKeeper(appCodec, keys, keepers, &stakingK, moduleAccountPermissions))
-	setKeeper(keepers, initSlashingKeeper(appCodec, keys, keepers, &stakingK))
+	setKeeper(keepers, initStakingKeeper(appCodec, keys, keepers))
+	setKeeper(keepers, initMintKeeper(appCodec, keys, keepers))
+	setKeeper(keepers, initDistributionKeeper(appCodec, keys, keepers, moduleAccountPermissions))
+	setKeeper(keepers, initSlashingKeeper(appCodec, keys, keepers))
 	setKeeper(keepers, initCrisisKeeper(keepers, invCheckPeriod))
-
-	// todo: change order of commands so this doesn't have to be defined before initialization
-	var configurator module.Configurator
-	var mm *module.Manager
-	setKeeper(keepers, initUpgradeKeeper(appCodec, keys, skipUpgradeHeights, homePath, bApp, &configurator, mm))
-	setKeeper(keepers, initEvidenceKeeper(appCodec, keys, keepers, &stakingK))
+	setKeeper(keepers, initUpgradeKeeper(appCodec, keys, skipUpgradeHeights, homePath, bApp))
+	setKeeper(keepers, initEvidenceKeeper(appCodec, keys, keepers))
 	setKeeper(keepers, initFeegrantKeeper(appCodec, keys, keepers))
-
-	// register the staking hooks
-	// NOTE: stakingKeeper above is passed by reference, so that it will contain these hooks
-	stakingK = *stakingK.SetHooks(
-		stakingtypes.NewMultiStakingHooks(getKeeper[distrkeeper.Keeper](keepers).Hooks(), getKeeper[slashingkeeper.Keeper](keepers).Hooks()),
-	)
-	setKeeper(keepers, &stakingK)
-
-	// add capability keeper and ScopeToModule for ibc module
-	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
+	// TODO: remove variable
 	capabilityK := capabilitykeeper.NewKeeper(appCodec, keys[capabilitytypes.StoreKey], memKeys[capabilitytypes.MemStoreKey])
-
-	// grant capabilities for the ibc, ibc-transfer and wasm modules
-	scopedIBCK := capabilityK.ScopeToModule(ibchost.ModuleName)
-	scopedTransferK := capabilityK.ScopeToModule(ibctransfertypes.ModuleName)
-	scopedWasmK := capabilityK.ScopeToModule(wasm.ModuleName)
-
-	capabilityK.Seal()
 	setKeeper(keepers, capabilityK)
-	setKeeper(keepers, initIBCKeeper(appCodec, keys, keepers, scopedIBCK))
-	// Custom axelarnet/evm/nexus keepers
+	setKeeper(keepers, initIBCKeeper(appCodec, keys, keepers))
+
+	// set up custom axelar keepers
 	setKeeper(keepers, initAxelarnetKeeper(appCodec, keys, keepers))
 	setKeeper(keepers, initEvmKeeper(appCodec, keys, keepers))
 	setKeeper(keepers, initNexusKeeper(appCodec, keys, keepers))
+	setKeeper(keepers, initRewardKeeper(appCodec, keys, keepers))
+	setKeeper(keepers, initMultisigKeeper(appCodec, keys, keepers))
+	setKeeper(keepers, initTssKeeper(appCodec, keys, keepers))
+	setKeeper(keepers, initSnapshotKeeper(appCodec, keys, keepers))
+	setKeeper(keepers, initVoteKeeper(appCodec, keys, keepers))
+	setKeeper(keepers, initPermissionKeeper(appCodec, keys, keepers))
 
 	// IBC Transfer Stack: SendPacket
 	//
@@ -284,7 +269,8 @@ func NewAxelarApp(
 	}
 
 	// Create Transfer Keepers
-	setKeeper(keepers, initIBCTransferKeeper(appCodec, keys, keepers, ics4Wrapper, scopedTransferK))
+	setKeeper(keepers, initIBCTransferKeeper(appCodec, keys, keepers, ics4Wrapper))
+	setKeeper(keepers, initAxelarIBCKeeper(keepers))
 
 	// IBC Transfer Stack: RecvPacket
 	//
@@ -297,58 +283,30 @@ func NewAxelarApp(
 
 	setKeeper(keepers, initAxelarIBCKeeper(keepers))
 
-	messageRouter := nexusTypes.NewMessageRouter().
-		AddRoute(evmTypes.ModuleName, evmKeeper.NewMessageRoute()).
-		AddRoute(axelarnetTypes.ModuleName, axelarnetKeeper.NewMessageRoute(getKeeper[axelarnetKeeper.Keeper](keepers), getKeeper[axelarnetKeeper.IBCKeeper](keepers), getKeeper[feegrantkeeper.Keeper](keepers), axelarbankkeeper.NewBankKeeper(getKeeper[bankkeeper.BaseKeeper](keepers)), getKeeper[nexusKeeper.Keeper](keepers), getKeeper[authkeeper.AccountKeeper](keepers)))
-
 	axelarnetModule := axelarnet.NewAppModule(getKeeper[axelarnetKeeper.Keeper](keepers), getKeeper[nexusKeeper.Keeper](keepers), axelarbankkeeper.NewBankKeeper(getKeeper[bankkeeper.BaseKeeper](keepers)), getKeeper[authkeeper.AccountKeeper](keepers), getKeeper[axelarnetKeeper.IBCKeeper](keepers), transferStack, rateLimiter, logger)
-
-	// Create static IBC router, add axelarnet module as the IBC transfer route, and seal it
-	ibcRouter := porttypes.NewRouter()
-	ibcRouter.AddRoute(ibctransfertypes.ModuleName, axelarnetModule)
-
-	// axelar custom keepers
-	// axelarnet / evm / nexus keepers created above
-	setKeeper(keepers, initRewardKeeper(appCodec, keys, keepers))
-	setKeeper(keepers, initMultisigKeeper(appCodec, keys, keepers))
-	setKeeper(keepers, initTssKeeper(appCodec, keys, keepers))
-	setKeeper(keepers, initSnapshotKeeper(appCodec, keys, keepers))
-	setKeeper(keepers, initVoteKeeper(appCodec, keys, keepers))
-	setKeeper(keepers, initPermissionKeeper(appCodec, keys, keepers))
-
-	var wasmK wasm.Keeper
 
 	wasmDir := filepath.Join(homePath, "wasm")
 	wasmConfig := mustReadWasmConfig(appOpts)
 
+	scopedWasmK := capabilityK.ScopeToModule(wasm.ModuleName)
+	wasmK := initWasmKeeper(appCodec, keys, keepers, scopedWasmK, bApp, wasmDir, wasmConfig, wasmOpts)
+	setKeeper(keepers, wasmK)
+
+	setKeeper(keepers, initGovernanceKeeper(appCodec, keys, keepers))
+
+	capabilityK.Seal()
+
+	// set the contract keeper for the Ics20WasmHooks
+	wasmHooks.ContractKeeper = wasmkeeper.NewDefaultPermissionKeeper(wasmK)
+
+	messageRouter := nexusTypes.NewMessageRouter().
+		AddRoute(evmTypes.ModuleName, evmKeeper.NewMessageRoute()).
+		AddRoute(axelarnetTypes.ModuleName, axelarnetKeeper.NewMessageRoute(getKeeper[axelarnetKeeper.Keeper](keepers), getKeeper[axelarnetKeeper.IBCKeeper](keepers), getKeeper[feegrantkeeper.Keeper](keepers), axelarbankkeeper.NewBankKeeper(getKeeper[bankkeeper.BaseKeeper](keepers)), getKeeper[nexusKeeper.Keeper](keepers), getKeeper[authkeeper.AccountKeeper](keepers)))
+
+	// Create static IBC router, add axelarnet module as the IBC transfer route, and seal it
+	ibcRouter := porttypes.NewRouter()
+	ibcRouter.AddRoute(ibctransfertypes.ModuleName, axelarnetModule)
 	if IsWasmEnabled() {
-
-		// The last arguments can contain custom message handlers, and custom query handlers,
-		// if we want to allow any custom callbacks
-		wasmOpts = append(wasmOpts, wasmkeeper.WithMessageHandlerDecorator(func(old wasmkeeper.Messenger) wasmkeeper.Messenger {
-			return wasmkeeper.NewMessageHandlerChain(old, nexusKeeper.NewMessenger(getKeeper[nexusKeeper.Keeper](keepers)))
-		}))
-		wasmK = wasm.NewKeeper(
-			appCodec,
-			keys[wasm.StoreKey],
-			keepers.getSubspace(wasm.ModuleName),
-			getKeeper[authkeeper.AccountKeeper](keepers),
-			getKeeper[bankkeeper.BaseKeeper](keepers),
-			getKeeper[stakingkeeper.Keeper](keepers),
-			getKeeper[distrkeeper.Keeper](keepers),
-			getKeeper[*ibckeeper.Keeper](keepers).ChannelKeeper,
-			getKeeper[*ibckeeper.Keeper](keepers).ChannelKeeper,
-			&getKeeper[*ibckeeper.Keeper](keepers).PortKeeper,
-			scopedWasmK,
-			getKeeper[ibctransferkeeper.Keeper](keepers),
-			bApp.MsgServiceRouter(),
-			bApp.GRPCQueryRouter(),
-			wasmDir,
-			wasmConfig,
-			WasmCapabilities,
-			wasmOpts...,
-		)
-
 		// Create wasm ibc stack
 		var wasmStack porttypes.IBCModule = wasm.NewIBCHandler(wasmK, getKeeperAsRef[ibckeeper.Keeper](keepers).ChannelKeeper, getKeeperAsRef[ibckeeper.Keeper](keepers).ChannelKeeper)
 		ibcRouter.AddRoute(wasm.ModuleName, wasmStack)
@@ -356,7 +314,6 @@ func NewAxelarApp(
 		// set the contract keeper for the Ics20WasmHooks
 		contractKeeper := wasmkeeper.NewDefaultPermissionKeeper(wasmK)
 		wasmHooks.ContractKeeper = contractKeeper
-		setKeeper(keepers, wasmK)
 
 		messageRouter.AddRoute(wasm.ModuleName, nexusKeeper.NewMessageRoute(getKeeperAsRef[nexusKeeper.Keeper](keepers), getKeeper[authkeeper.AccountKeeper](keepers), contractKeeper))
 	}
@@ -366,13 +323,17 @@ func NewAxelarApp(
 	// Finalize the IBC router
 	getKeeperAsRef[ibckeeper.Keeper](keepers).SetRouter(ibcRouter)
 
-	setKeeper(keepers, initGovernanceKeeper(appCodec, keys, keepers))
+	// register the staking hooks
+	// NOTE: stakingKeeper above is passed by reference, so that it will contain these hooks
+	getKeeperAsRef[stakingkeeper.Keeper](keepers).SetHooks(
+		stakingtypes.NewMultiStakingHooks(getKeeper[distrkeeper.Keeper](keepers).Hooks(), getKeeper[slashingkeeper.Keeper](keepers).Hooks()),
+	)
 
 	/****  Module Options ****/
 
 	appModules := initAppModules(keepers, bApp, encodingConfig, appOpts, axelarnetModule)
 
-	mm = module.NewManager(appModules...)
+	mm := module.NewManager(appModules...)
 	mm.SetOrderMigrations(orderMigrations()...)
 	mm.SetOrderBeginBlockers(orderBeginBlockers()...)
 	mm.SetOrderEndBlockers(orderEndBlockers()...)
@@ -383,7 +344,7 @@ func NewAxelarApp(
 
 	// register all module routes and module queriers
 	mm.RegisterRoutes(bApp.Router(), bApp.QueryRouter(), encodingConfig.Amino)
-	configurator = module.NewConfigurator(appCodec, bApp.MsgServiceRouter(), bApp.GRPCQueryRouter())
+	configurator := module.NewConfigurator(appCodec, bApp.MsgServiceRouter(), bApp.GRPCQueryRouter())
 	mm.RegisterServices(configurator)
 
 	var app = &AxelarApp{
@@ -398,6 +359,8 @@ func NewAxelarApp(
 		mm:                mm,
 		upgradeKeeper:     getKeeper[upgradekeeper.Keeper](keepers),
 	}
+
+	app.setUpgradeBehaviour(configurator)
 
 	// initialize stores
 	app.MountKVStores(keys)
@@ -433,6 +396,32 @@ func NewAxelarApp(
 	getKeeperAsRef[evmKeeper.BaseKeeper](keepers).InitChains(app.NewContext(true, tmproto.Header{}))
 
 	return app
+}
+
+func (app *AxelarApp) setUpgradeBehaviour(configurator module.Configurator) {
+	app.upgradeKeeper.SetUpgradeHandler(
+		upgradeName(app.Version()),
+		func(ctx sdk.Context, _ upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
+			return app.mm.RunMigrations(ctx, configurator, fromVM)
+		},
+	)
+
+	upgradeInfo, err := app.upgradeKeeper.ReadUpgradeInfoFromDisk()
+	if err != nil {
+		panic(err)
+	}
+
+	if upgradeInfo.Name == upgradeName(app.Version()) && !app.upgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
+		storeUpgrades := store.StoreUpgrades{}
+
+		if IsWasmEnabled() {
+			storeUpgrades.Added = append(storeUpgrades.Added, ibchookstypes.StoreKey)
+			storeUpgrades.Added = append(storeUpgrades.Added, wasm.ModuleName)
+		}
+
+		// configure store loader that checks if version == upgradeHeight and applies store upgrades
+		app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
+	}
 }
 
 func initBaseApp(db dbm.DB, traceStore io.Writer, encodingConfig axelarParams.EncodingConfig, keepers *keeperCache, baseAppOptions []func(*bam.BaseApp), logger log.Logger) *bam.BaseApp {
