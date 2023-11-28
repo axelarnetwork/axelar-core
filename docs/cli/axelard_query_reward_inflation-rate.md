@@ -1,6 +1,6 @@
 ## axelard query reward inflation-rate
 
-Returns the inflation rate on the network
+Returns the inflation rate on the network. If a validator is provided, query the inflation rate for that validator.
 
 ```
 axelard query reward inflation-rate [flags]
@@ -9,10 +9,11 @@ axelard query reward inflation-rate [flags]
 ### Options
 
 ```
-      --height int      Use a specific height to query state at (this can error if the node is pruning state)
-  -h, --help            help for inflation-rate
-      --node string     <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
-  -o, --output string   Output format (text|json) (default "text")
+      --height int         Use a specific height to query state at (this can error if the node is pruning state)
+  -h, --help               help for inflation-rate
+      --node string        <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
+  -o, --output string      Output format (text|json) (default "text")
+      --validator string   the validator to retrieve the inflation rate for
 ```
 
 ### Options inherited from parent commands

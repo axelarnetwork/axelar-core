@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"encoding/hex"
 	"fmt"
 	"os"
 	"strconv"
@@ -316,7 +315,7 @@ func getGeneralMessage() *cobra.Command {
 			}
 
 			id := utils.NormalizeString(args[0])
-			payload, err := hex.DecodeString(args[1])
+			payload, err := utils.HexDecode(args[1])
 			if err != nil {
 				return err
 			}
@@ -357,7 +356,7 @@ func getCmdCallContract() *cobra.Command {
 				return err
 			}
 
-			payload, err := hex.DecodeString(strings.TrimPrefix(args[2], "0x"))
+			payload, err := utils.HexDecode(args[2])
 			if err != nil {
 				return err
 			}

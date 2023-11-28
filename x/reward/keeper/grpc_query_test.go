@@ -102,14 +102,14 @@ func TestKeeper_Inflation(t *testing.T) {
 			nexusK.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return true }
 		}).
 		Then("query inflation", func(t *testing.T) {
-			response, err = q.InflationRate(sdk.WrapSDKContext(ctx), &types.InflationRateRequest{Validator: val})
+			response, err = q.InflationRate(sdk.WrapSDKContext(ctx), &types.InflationRateRequest{Validator: val.String()})
 			assert.NoError(t, err)
 
 			keyManagementInflation := tmInflation.Mul(keyRelativeInflation)
 			assert.Equal(t, response.InflationRate, tmInflation.Add(keyManagementInflation).Add(externalChainInflation))
 		}).
 		Then("query inflation for a non chain maintainer", func(t *testing.T) {
-			response, err = q.InflationRate(sdk.WrapSDKContext(ctx), &types.InflationRateRequest{Validator: rand.ValAddr()})
+			response, err = q.InflationRate(sdk.WrapSDKContext(ctx), &types.InflationRateRequest{Validator: rand.ValAddr().String()})
 			assert.NoError(t, err)
 
 			keyManagementInflation := tmInflation.Mul(keyRelativeInflation)
