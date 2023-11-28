@@ -91,12 +91,6 @@ func (k *keeperCache) getSubspace(moduleName string) paramstypes.Subspace {
 	return subspace
 }
 
-// whenever possible, use getKeeper. Many keepers need to be set up in multiple steps,
-// so it is better to work with references
-func getKeeperAsVal[T any](k *keeperCache) T {
-	return *getKeeper[T](k)
-}
-
 func getKeeper[T any](k *keeperCache) *T {
 	if reflect.TypeOf(*new(T)).Kind() == reflect.Ptr {
 		panic(fmt.Sprintf("the generic parameter for %s cannot be a reference type", fullTypeName[T]()))
@@ -203,11 +197,11 @@ func initGovernanceKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey,
 	// Add governance proposal hooks
 	govRouter := govtypes.NewRouter()
 	govRouter.AddRoute(govtypes.RouterKey, govtypes.ProposalHandler).
-		AddRoute(paramproposal.RouterKey, params.NewParamChangeProposalHandler(getKeeperAsVal[paramskeeper.Keeper](keepers))).
-		AddRoute(distrtypes.RouterKey, distr.NewCommunityPoolSpendProposalHandler(getKeeperAsVal[distrkeeper.Keeper](keepers))).
-		AddRoute(upgradetypes.RouterKey, upgrade.NewSoftwareUpgradeProposalHandler(getKeeperAsVal[upgradekeeper.Keeper](keepers))).
-		AddRoute(ibcclienttypes.RouterKey, ibcclient.NewClientProposalHandler(getKeeperAsVal[ibckeeper.Keeper](keepers).ClientKeeper)).
-		AddRoute(axelarnetTypes.RouterKey, axelarnet.NewProposalHandler(getKeeperAsVal[axelarnetKeeper.Keeper](keepers), getKeeper[nexusKeeper.Keeper](keepers), getKeeper[authkeeper.AccountKeeper](keepers)))
+		AddRoute(paramproposal.RouterKey, params.NewParamChangeProposalHandler(*getKeeper[paramskeeper.Keeper](keepers))).
+		AddRoute(distrtypes.RouterKey, distr.NewCommunityPoolSpendProposalHandler(*getKeeper[distrkeeper.Keeper](keepers))).
+		AddRoute(upgradetypes.RouterKey, upgrade.NewSoftwareUpgradeProposalHandler(*getKeeper[upgradekeeper.Keeper](keepers))).
+		AddRoute(ibcclienttypes.RouterKey, ibcclient.NewClientProposalHandler(getKeeper[ibckeeper.Keeper](keepers).ClientKeeper)).
+		AddRoute(axelarnetTypes.RouterKey, axelarnet.NewProposalHandler(*getKeeper[axelarnetKeeper.Keeper](keepers), getKeeper[nexusKeeper.Keeper](keepers), getKeeper[authkeeper.AccountKeeper](keepers)))
 
 	if IsWasmEnabled() {
 		govRouter.AddRoute(wasm.RouterKey, wasm.NewWasmProposalHandler(getKeeper[wasm.Keeper](keepers), wasm.EnableAllProposals))
@@ -316,7 +310,7 @@ func initIBCTransferKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey
 
 func initAxelarIBCKeeper(keepers *keeperCache) *axelarnetKeeper.IBCKeeper {
 	ibcK := axelarnetKeeper.NewIBCKeeper(
-		getKeeperAsVal[axelarnetKeeper.Keeper](keepers),
+		*getKeeper[axelarnetKeeper.Keeper](keepers),
 		getKeeper[ibctransferkeeper.Keeper](keepers),
 		getKeeper[ibckeeper.Keeper](keepers).ChannelKeeper,
 	)

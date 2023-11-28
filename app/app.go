@@ -276,7 +276,7 @@ func NewAxelarApp(
 	//
 	// Packet originates from core IBC and goes down to app, the flow is the other way
 	// channel.RecvPacket -> axelarnet.OnRecvPacket (transfer, GMP, and rate limit handler) -> ibc_hooks.OnRecvPacket -> transfer.OnRecvPacket
-	var transferStack porttypes.IBCModule = transfer.NewIBCModule(getKeeperAsVal[ibctransferkeeper.Keeper](keepers))
+	var transferStack porttypes.IBCModule = transfer.NewIBCModule(*getKeeper[ibctransferkeeper.Keeper](keepers))
 	if IsWasmEnabled() {
 		transferStack = ibchooks.NewIBCMiddleware(transferStack, &ibcHooksMiddleware)
 	}
@@ -301,7 +301,14 @@ func NewAxelarApp(
 
 	messageRouter := nexusTypes.NewMessageRouter().
 		AddRoute(evmTypes.ModuleName, evmKeeper.NewMessageRoute()).
-		AddRoute(axelarnetTypes.ModuleName, axelarnetKeeper.NewMessageRoute(getKeeperAsVal[axelarnetKeeper.Keeper](keepers), getKeeper[axelarnetKeeper.IBCKeeper](keepers), getKeeper[feegrantkeeper.Keeper](keepers), axelarbankkeeper.NewBankKeeper(getKeeper[bankkeeper.BaseKeeper](keepers)), getKeeper[nexusKeeper.Keeper](keepers), getKeeper[authkeeper.AccountKeeper](keepers)))
+		AddRoute(axelarnetTypes.ModuleName, axelarnetKeeper.NewMessageRoute(
+			getKeeperAsVal[axelarnetKeeper.Keeper](keepers),
+			getKeeper[axelarnetKeeper.IBCKeeper](keepers),
+			getKeeper[feegrantkeeper.Keeper](keepers),
+			axelarbankkeeper.NewBankKeeper(getKeeper[bankkeeper.BaseKeeper](keepers)),
+			getKeeper[nexusKeeper.Keeper](keepers),
+			getKeeper[authkeeper.AccountKeeper](keepers),
+		))
 
 	// Create static IBC router, add axelarnet module as the IBC transfer route, and seal it
 	ibcRouter := porttypes.NewRouter()
