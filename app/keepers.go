@@ -1,6 +1,7 @@
 package app
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strings"
@@ -168,9 +169,16 @@ func initStakingKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, ke
 func initWasmKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, keepers *keeperCache, scopedWasmK capabilitykeeper.ScopedKeeper, bApp *bam.BaseApp, wasmDir string, wasmConfig wasmtypes.WasmConfig, wasmOpts []wasm.Option) *wasm.Keeper {
 	// The last arguments can contain custom message handlers, and custom query handlers,
 	// if we want to allow any custom callbacks
-	wasmOpts = append(wasmOpts, wasmkeeper.WithMessageHandlerDecorator(func(old wasmkeeper.Messenger) wasmkeeper.Messenger {
-		return wasmkeeper.NewMessageHandlerChain(old, nexusKeeper.NewMessenger(getKeeper[nexusKeeper.Keeper](keepers)))
-	}))
+	wasmOpts = append(
+		wasmOpts,
+		// this allows custom message to pass through due to https://github.com/CosmWasm/wasmd/blob/21ec15a5c025bc0fa8c634691dc839ab77b9a7d2/x/wasm/keeper/handler_plugin_encoders.go#L128
+		wasmkeeper.WithMessageEncoders(&wasmkeeper.MessageEncoders{
+			Custom: func(_ sdk.AccAddress, _ json.RawMessage) ([]sdk.Msg, error) { return nil, nil },
+		}),
+		wasmkeeper.WithMessageHandlerDecorator(func(old wasmkeeper.Messenger) wasmkeeper.Messenger {
+			return wasmkeeper.NewMessageHandlerChain(old, nexusKeeper.NewMessenger(getKeeper[nexusKeeper.Keeper](keepers)))
+		}),
+	)
 
 	ibcKeeper := getKeeperAsRef[ibckeeper.Keeper](keepers)
 	wasmK := wasm.NewKeeper(
