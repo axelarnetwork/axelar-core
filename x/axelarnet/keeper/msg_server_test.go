@@ -47,7 +47,7 @@ func TestHandleMsgLink(t *testing.T) {
 		ctx, k, _, _ = setup()
 		k.InitGenesis(ctx, types.DefaultGenesisState())
 		nexusK = &mock.NexusMock{}
-		ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{}, &mock.ChannelKeeperMock{})
+		ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{})
 		server = keeper.NewMsgServerImpl(k, nexusK, &mock.BankKeeperMock{}, &mock.AccountKeeperMock{}, ibcK)
 	})
 
@@ -153,7 +153,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 				return denomTrace, true
 			},
 		}
-		ibcK := keeper.NewIBCKeeper(k, transferK, &mock.ChannelKeeperMock{})
+		ibcK := keeper.NewIBCKeeper(k, transferK)
 		server = keeper.NewMsgServerImpl(k, nexusK, bankK, &mock.AccountKeeperMock{}, ibcK)
 	})
 
@@ -392,7 +392,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 				return rand.AccAddr()
 			},
 		}
-		ibcK := keeper.NewIBCKeeper(k, transferK, &mock.ChannelKeeperMock{})
+		ibcK := keeper.NewIBCKeeper(k, transferK)
 		server = keeper.NewMsgServerImpl(k, nexusK, bankK, accountK, ibcK)
 	})
 
@@ -600,7 +600,7 @@ func TestHandleMsgRouteIBCTransfers(t *testing.T) {
 				return rand.AccAddr()
 			},
 		}
-		ibcK := keeper.NewIBCKeeper(k, transferK, &mock.ChannelKeeperMock{})
+		ibcK := keeper.NewIBCKeeper(k, transferK)
 		server = keeper.NewMsgServerImpl(k, nexusK, bankK, accountK, ibcK)
 	})
 
@@ -772,7 +772,8 @@ func TestRetryIBCTransfer(t *testing.T) {
 		channelK.GetChannelClientStateFunc = func(sdk.Context, string, string) (string, ibcclient.ClientState, error) {
 			return "07-tendermint-0", axelartestutils.ClientState(), nil
 		}
-		ibcK := keeper.NewIBCKeeper(k, i, channelK)
+
+		ibcK := keeper.NewIBCKeeper(k, i)
 		server = keeper.NewMsgServerImpl(k, n, b, a, ibcK)
 	})
 
@@ -856,7 +857,7 @@ func TestAddCosmosBasedChain(t *testing.T) {
 				return nil
 			},
 		}
-		ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{}, &mock.ChannelKeeperMock{})
+		ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{})
 		server = keeper.NewMsgServerImpl(k, nexusK, &mock.BankKeeperMock{}, &mock.AccountKeeperMock{}, ibcK)
 	})
 
@@ -981,7 +982,7 @@ func TestRouteMessage(t *testing.T) {
 		ctx = c
 
 		nexusK = &mock.NexusMock{}
-		ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{}, &mock.ChannelKeeperMock{})
+		ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{})
 		bankK := &mock.BankKeeperMock{}
 		accountK := &mock.AccountKeeperMock{}
 		server = keeper.NewMsgServerImpl(k, nexusK, bankK, accountK, ibcK)
@@ -1019,7 +1020,7 @@ func TestHandleCallContract(t *testing.T) {
 		ctx, k, _, _ = setup()
 		k.InitGenesis(ctx, types.DefaultGenesisState())
 		nexusK = &mock.NexusMock{}
-		ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{}, &mock.ChannelKeeperMock{})
+		ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{})
 		b = &mock.BankKeeperMock{}
 		server = keeper.NewMsgServerImpl(k, nexusK, b, &mock.AccountKeeperMock{}, ibcK)
 		count := 0

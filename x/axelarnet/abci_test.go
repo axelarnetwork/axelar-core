@@ -45,7 +45,7 @@ func setup() (sdk.Context, keeper.IBCKeeper, *mock.ChannelKeeperMock, *mock.IBCT
 
 	k := keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("axelarnet"), axelarnetSubspace, channelK, &mock.FeegrantKeeperMock{})
 	k.InitGenesis(ctx, types.DefaultGenesisState())
-	ibcK := keeper.NewIBCKeeper(k, transferK, channelK)
+	ibcK := keeper.NewIBCKeeper(k, transferK)
 	return ctx, ibcK, channelK, transferK
 }
 
