@@ -364,7 +364,7 @@ func initICS4Wrapper(keepers *keeperCache, wasmHooks ibchooks.WasmHooks) ibchook
 func initIBCMiddleware(keepers *keeperCache, ics4Middleware ibchooks.ICS4Middleware) ibchooks.IBCMiddleware {
 	// IBCModule deals with received IBC packets. These need to get rate limited when appropriate,
 	// so we wrap the transfer module's IBCModule with a rate limiter.
-	ibcModule := axelarnet.NewRateLimitedIBCModule(
+	ibcModule := axelarnet.NewAxelarnetIBCModule(
 		*getKeeper[axelarnetKeeper.Keeper](keepers),
 		transfer.NewIBCModule(*getKeeper[ibctransferkeeper.Keeper](keepers)),
 		*getKeeper[axelarnetKeeper.IBCKeeper](keepers),

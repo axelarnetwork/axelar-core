@@ -176,7 +176,8 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 // ConsensusVersion implements AppModule/ConsensusVersion.
 func (AppModule) ConsensusVersion() uint64 { return 6 }
 
-type RateLimitedIBCModule struct {
+// AxelarnetIBCModule is an IBCModule that adds rate limiting and gmp processing to the ibc middleware
+type AxelarnetIBCModule struct {
 	porttypes.IBCModule
 	keeper      keeper.Keeper
 	nexus       types.Nexus
@@ -185,15 +186,16 @@ type RateLimitedIBCModule struct {
 	rateLimiter RateLimiter
 }
 
-func NewRateLimitedIBCModule(
+// NewAxelarnetIBCModule creates a new AxelarnetIBCModule instance
+func NewAxelarnetIBCModule(
 	keeper keeper.Keeper,
 	transferModule porttypes.IBCModule,
 	ibcK keeper.IBCKeeper,
 	rateLimiter RateLimiter,
 	nexus types.Nexus,
 	bank types.BankKeeper,
-) RateLimitedIBCModule {
-	return RateLimitedIBCModule{
+) AxelarnetIBCModule {
+	return AxelarnetIBCModule{
 		IBCModule:   transferModule,
 		keeper:      keeper,
 		nexus:       nexus,
@@ -206,7 +208,7 @@ func NewRateLimitedIBCModule(
 // OnRecvPacket implements the IBCModule interface. A successful acknowledgement
 // is returned if the packet data is succesfully decoded and the receive application
 // logic returns without error.
-func (m RateLimitedIBCModule) OnRecvPacket(
+func (m AxelarnetIBCModule) OnRecvPacket(
 	ctx sdk.Context,
 	packet channeltypes.Packet,
 	relayer sdk.AccAddress,
@@ -222,7 +224,7 @@ func (m RateLimitedIBCModule) OnRecvPacket(
 }
 
 // OnAcknowledgementPacket implements the IBCModule interface
-func (m RateLimitedIBCModule) OnAcknowledgementPacket(
+func (m AxelarnetIBCModule) OnAcknowledgementPacket(
 	ctx sdk.Context,
 	packet channeltypes.Packet,
 	acknowledgement []byte,
@@ -261,7 +263,7 @@ func (m RateLimitedIBCModule) OnAcknowledgementPacket(
 }
 
 // OnTimeoutPacket implements the IBCModule interface
-func (m RateLimitedIBCModule) OnTimeoutPacket(
+func (m AxelarnetIBCModule) OnTimeoutPacket(
 	ctx sdk.Context,
 	packet channeltypes.Packet,
 	relayer sdk.AccAddress,
@@ -328,7 +330,7 @@ func setRoutedPacketCompleted(ctx sdk.Context, k keeper.Keeper, n types.Nexus, p
 	return nil
 }
 
-func (m RateLimitedIBCModule) setRoutedPacketFailed(ctx sdk.Context, packet channeltypes.Packet) error {
+func (m AxelarnetIBCModule) setRoutedPacketFailed(ctx sdk.Context, packet channeltypes.Packet) error {
 	// IBC ack/timeout packets, by convention, use the source port/channel to represent native chain -> counterparty chain channel id
 	// https://github.com/cosmos/ibc/tree/main/spec/core/ics-004-channel-and-packet-semantics#definitions
 	port, channel, sequence := packet.GetSourcePort(), packet.GetSourceChannel(), packet.GetSequence()
