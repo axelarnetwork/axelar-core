@@ -31,3 +31,36 @@ func (decorator HandlerDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulat
 
 	return next(newCtx, tx, simulate)
 }
+
+type MessageAnteHandler func(ctx sdk.Context, msgs []sdk.Msg, simulate bool) (sdk.Context, error)
+type MessageAnteDecorator interface {
+	AnteHandle(ctx sdk.Context, msgs []sdk.Msg, simulate bool, next MessageAnteHandler) (sdk.Context, error)
+}
+
+func ChainMessageAnteDecorators(chain ...MessageAnteDecorator) MessageAnteHandler {
+	if len(chain) == 0 {
+		return nil
+	}
+
+	// handle non-terminated decorators chain
+	if (chain[len(chain)-1] != Terminator{}) {
+		chain = append(chain, Terminator{})
+	}
+
+	return func(ctx sdk.Context, msgs []sdk.Msg, simulate bool) (sdk.Context, error) {
+		return chain[0].AnteHandle(ctx, msgs, simulate, ChainMessageAnteDecorators(chain[1:]...))
+	}
+}
+
+type Terminator struct{}
+
+func (Terminator) AnteHandle(ctx sdk.Context, _ []sdk.Msg, _ bool, _ MessageAnteHandler) (sdk.Context, error) {
+	return ctx, nil
+}
+
+func (m MessageAnteHandler) ToAnteHandler() sdk.AnteHandler {
+	return func(ctx sdk.Context, tx sdk.Tx, simulate bool) (sdk.Context, error) {
+		msgs := tx.GetMsgs()
+		return m(ctx, msgs, simulate)
+	}
+}

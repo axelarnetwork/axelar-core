@@ -3,6 +3,7 @@ package app
 import (
 	"encoding/json"
 	"fmt"
+	ibcante "github.com/cosmos/ibc-go/v4/modules/core/ante"
 	"io"
 	stdlog "log"
 	"net/http"
@@ -83,7 +84,6 @@ import (
 	ibcclientclient "github.com/cosmos/ibc-go/v4/modules/core/02-client/client"
 	porttypes "github.com/cosmos/ibc-go/v4/modules/core/05-port/types"
 	ibchost "github.com/cosmos/ibc-go/v4/modules/core/24-host"
-	ibcante "github.com/cosmos/ibc-go/v4/modules/core/ante"
 	ibckeeper "github.com/cosmos/ibc-go/v4/modules/core/keeper"
 	"github.com/gorilla/mux"
 	ibchooks "github.com/osmosis-labs/osmosis/x/ibc-hooks"
@@ -245,7 +245,7 @@ func NewAxelarApp(
 	setKeeper(keepers, initIBCTransferKeeper(appCodec, keys, keepers, ics4Wrapper))
 
 	setKeeper(keepers, initAxelarIBCKeeper(keepers))
-	setKeeper(keepers, initWasmKeeper(appCodec, keys, keepers, bApp, wasmDir, wasmConfig, wasmOpts))
+	setKeeper(keepers, initWasmKeeper(encodingConfig, keys, keepers, bApp, wasmDir, wasmConfig, wasmOpts))
 	setKeeper(keepers, initWasmContractKeeper(keepers))
 
 	// set the contract keeper for the Ics20WasmHooks
@@ -594,6 +594,7 @@ func initAnteHandlers(encodingConfig axelarParams.EncodingConfig, keys map[strin
 
 	anteDecorators := []sdk.AnteDecorator{
 		ante.NewAnteHandlerDecorator(baseAnteHandler),
+		ibcante.NewAnteDecorator(getKeeper[ibckeeper.Keeper](keepers)),
 	}
 
 	// enforce wasm limits earlier in the ante handler chain
@@ -607,13 +608,6 @@ func initAnteHandlers(encodingConfig axelarParams.EncodingConfig, keys map[strin
 	}
 
 	anteDecorators = append(anteDecorators,
-		ante.NewLogMsgDecorator(encodingConfig.Codec),
-		ante.NewCheckCommissionRate(getKeeper[stakingkeeper.Keeper](keepers)),
-		ante.NewUndelegateDecorator(
-			getKeeper[multisigKeeper.Keeper](keepers),
-			getKeeper[nexusKeeper.Keeper](keepers),
-			getKeeper[snapKeeper.Keeper](keepers),
-		),
 		ante.NewCheckRefundFeeDecorator(
 			encodingConfig.InterfaceRegistry,
 			getKeeper[authkeeper.AccountKeeper](keepers),
@@ -621,15 +615,26 @@ func initAnteHandlers(encodingConfig axelarParams.EncodingConfig, keys map[strin
 			getKeeper[snapKeeper.Keeper](keepers),
 			getKeeper[rewardKeeper.Keeper](keepers),
 		),
-		ante.NewCheckProxy(getKeeper[snapKeeper.Keeper](keepers)),
-		ante.NewRestrictedTx(getKeeper[permissionKeeper.Keeper](keepers)),
-		ibcante.NewAnteDecorator(getKeeper[ibckeeper.Keeper](keepers)),
+		ante.NewAnteHandlerDecorator(
+			initMessageAnteDecorators(encodingConfig, keepers).ToAnteHandler()),
 	)
 
-	anteHandler := sdk.ChainAnteDecorators(
-		anteDecorators...,
+	return sdk.ChainAnteDecorators(anteDecorators...)
+}
+
+func initMessageAnteDecorators(encodingConfig axelarParams.EncodingConfig, keepers *keeperCache) ante.MessageAnteHandler {
+	return ante.ChainMessageAnteDecorators(
+		ante.NewLogMsgDecorator(encodingConfig.Codec),
+		ante.NewCheckCommissionRate(getKeeper[stakingkeeper.Keeper](keepers)),
+		ante.NewUndelegateDecorator(
+			getKeeper[multisigKeeper.Keeper](keepers),
+			getKeeper[nexusKeeper.Keeper](keepers),
+			getKeeper[snapKeeper.Keeper](keepers),
+		),
+
+		ante.NewCheckProxy(getKeeper[snapKeeper.Keeper](keepers)),
+		ante.NewRestrictedTx(getKeeper[permissionKeeper.Keeper](keepers)),
 	)
-	return anteHandler
 }
 
 func initModuleAccountPermissions() map[string][]string {

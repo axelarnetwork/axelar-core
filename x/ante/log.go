@@ -18,12 +18,10 @@ func NewLogMsgDecorator(cdc codec.Codec) LogMsgDecorator {
 }
 
 // AnteHandle logs all messages in blocks
-func (d LogMsgDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
+func (d LogMsgDecorator) AnteHandle(ctx sdk.Context, msgs []sdk.Msg, simulate bool, next MessageAnteHandler) (sdk.Context, error) {
 	if simulate || ctx.IsCheckTx() {
-		return next(ctx, tx, simulate)
+		return next(ctx, msgs, simulate)
 	}
-
-	msgs := tx.GetMsgs()
 
 	for _, msg := range msgs {
 		logger(ctx).Debug(fmt.Sprintf("received message of type %s in block %d: %s",
@@ -33,5 +31,5 @@ func (d LogMsgDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, n
 		))
 	}
 
-	return next(ctx, tx, simulate)
+	return next(ctx, msgs, simulate)
 }

@@ -25,9 +25,7 @@ func NewUndelegateDecorator(multiSig types.MultiSig, nexus types.Nexus, snapshot
 }
 
 // AnteHandle fails the transaction if it finds any validator holding multiSig share of active keys is trying to unbond
-func (d UndelegateDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
-	msgs := tx.GetMsgs()
-
+func (d UndelegateDecorator) AnteHandle(ctx sdk.Context, msgs []sdk.Msg, simulate bool, next MessageAnteHandler) (sdk.Context, error) {
 	for _, msg := range msgs {
 		switch msg := msg.(type) {
 		case *stakingtypes.MsgUndelegate:
@@ -72,5 +70,5 @@ func (d UndelegateDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate boo
 		}
 	}
 
-	return next(ctx, tx, simulate)
+	return next(ctx, msgs, simulate)
 }
