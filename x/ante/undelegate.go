@@ -1,11 +1,12 @@
 package ante
 
 import (
-	"github.com/axelarnetwork/axelar-core/x/ante/types"
-	"github.com/axelarnetwork/utils/funcs"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+
+	"github.com/axelarnetwork/axelar-core/x/ante/types"
+	"github.com/axelarnetwork/utils/funcs"
 )
 
 // UndelegateDecorator checks if the unbonding validator holds any multiSig share of active crypto keys

@@ -3,7 +3,6 @@ package app
 import (
 	"encoding/json"
 	"fmt"
-	ibcante "github.com/cosmos/ibc-go/v4/modules/core/ante"
 	"io"
 	stdlog "log"
 	"net/http"
@@ -84,6 +83,7 @@ import (
 	ibcclientclient "github.com/cosmos/ibc-go/v4/modules/core/02-client/client"
 	porttypes "github.com/cosmos/ibc-go/v4/modules/core/05-port/types"
 	ibchost "github.com/cosmos/ibc-go/v4/modules/core/24-host"
+	ibcante "github.com/cosmos/ibc-go/v4/modules/core/ante"
 	ibckeeper "github.com/cosmos/ibc-go/v4/modules/core/keeper"
 	"github.com/gorilla/mux"
 	ibchooks "github.com/osmosis-labs/osmosis/x/ibc-hooks"

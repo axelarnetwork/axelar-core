@@ -4,8 +4,9 @@ import (
 	"github.com/CosmWasm/wasmd/x/wasm"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmvmtypes "github.com/CosmWasm/wasmvm/types"
-	"github.com/axelarnetwork/axelar-core/x/ante"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/axelarnetwork/axelar-core/x/ante"
 )
 
 type AnteHandlerMessenger struct {
