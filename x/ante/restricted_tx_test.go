@@ -21,9 +21,9 @@ import (
 
 func TestRestrictedTx(t *testing.T) {
 	var (
-		handler    ante.RestrictedTx
+		handler    sdk.AnteDecorator
 		permission *mock.PermissionMock
-		msgs       []sdk.Msg
+		tx         *mock.TxMock
 	)
 
 	signerAnyRole := func() {
@@ -41,52 +41,57 @@ func TestRestrictedTx(t *testing.T) {
 		}
 	}
 
-	letMsgsThrough := func(t *testing.T) {
-		_, err := handler.AnteHandle(sdk.Context{}, msgs, false,
-			func(sdk.Context, []sdk.Msg, bool) (sdk.Context, error) { return sdk.Context{}, nil })
+	letTxThrough := func(t *testing.T) {
+		_, err := handler.AnteHandle(sdk.Context{}, tx, false,
+			func(sdk.Context, sdk.Tx, bool) (sdk.Context, error) { return sdk.Context{}, nil })
 		assert.NoError(t, err)
 	}
 
-	stopMsgs := func(t *testing.T) {
-		_, err := handler.AnteHandle(sdk.Context{}, msgs, false,
-			func(sdk.Context, []sdk.Msg, bool) (sdk.Context, error) { return sdk.Context{}, nil })
+	stopTx := func(t *testing.T) {
+		_, err := handler.AnteHandle(sdk.Context{}, tx, false,
+			func(sdk.Context, sdk.Tx, bool) (sdk.Context, error) { return sdk.Context{}, nil })
 		assert.Error(t, err)
 	}
 
-	toSdkMsgs := func(msg descriptor.Message) []sdk.Msg {
-		return slices.Expand(func(_ int) sdk.Msg {
-			return &mock.MsgMock{
-				GetSignersFunc: func() []sdk.AccAddress {
-					return slices.Expand(func(_ int) sdk.AccAddress { return rand.AccAddr() }, int(rand.I64Between(1, 5)))
-				},
-				DescriptorFunc: msg.Descriptor,
-			}
-		}, int(rand.I64Between(1, 20)))
+	txWithMsg := func(msg descriptor.Message) *mock.TxMock {
+		return &mock.TxMock{
+			GetMsgsFunc: func() []sdk.Msg {
+				return slices.Expand(func(_ int) sdk.Msg {
+					return &mock.MsgMock{
+						GetSignersFunc: func() []sdk.AccAddress {
+							return slices.Expand(func(_ int) sdk.AccAddress { return rand.AccAddr() }, int(rand.I64Between(1, 5)))
+						},
+						DescriptorFunc: msg.Descriptor,
+					}
+				}, int(rand.I64Between(1, 20)))
+			},
+		}
 	}
 
-	msgRoleIsUnrestricted := func() { msgs = toSdkMsgs(&evm.LinkRequest{}) }
-	msgRoleIsUnspecified := func() { msgs = toSdkMsgs(&banktypes.MsgSend{}) }
-	msgRoleIsChainManagement := func() { msgs = toSdkMsgs(&evm.CreateDeployTokenRequest{}) }
-	msgRoleIsAccessControl := func() { msgs = toSdkMsgs(&axelarnet.RegisterFeeCollectorRequest{}) }
+	msgRoleIsUnrestricted := func() { tx = txWithMsg(&evm.LinkRequest{}) }
+	msgRoleIsUnspecified := func() { tx = txWithMsg(&banktypes.MsgSend{}) }
+	msgRoleIsChainManagement := func() { tx = txWithMsg(&evm.CreateDeployTokenRequest{}) }
+	msgRoleIsAccessControl := func() { tx = txWithMsg(&axelarnet.RegisterFeeCollectorRequest{}) }
 
 	Given("a restricted tx ante handler", func() {
 		permission = &mock.PermissionMock{}
-		handler = ante.NewRestrictedTx(permission)
+		handler = ante.NewAnteHandlerDecorator(
+			ante.ChainMessageAnteDecorators(ante.NewRestrictedTx(permission)).ToAnteHandler())
 	}).Branch(
 		When("msg role is unrestricted", msgRoleIsUnrestricted).
 			When("signer has any role", signerAnyRole).
-			Then("let the msg through", letMsgsThrough),
+			Then("let the msg through", letTxThrough),
 
 		When("msg role is unspecified", msgRoleIsUnspecified).
 			When("signer has any role", signerAnyRole).
-			Then("let the msg through", letMsgsThrough),
+			Then("let the msg through", letTxThrough),
 
 		When("msg role is chain management", msgRoleIsChainManagement).
 			When("signer is not chain management", signerIsNot(exported.ROLE_CHAIN_MANAGEMENT)).
-			Then("stop tx", stopMsgs),
+			Then("stop tx", stopTx),
 
 		When("msg role is access control", msgRoleIsAccessControl).
 			When("signer is not access control", signerIsNot(exported.ROLE_ACCESS_CONTROL)).
-			Then("stop tx", stopMsgs),
+			Then("stop tx", stopTx),
 	).Run(t, 20)
 }

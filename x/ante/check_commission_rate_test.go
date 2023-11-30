@@ -15,22 +15,35 @@ import (
 
 func TestCheckCommissionRate(t *testing.T) {
 	var (
-		handler ante.CheckCommissionRate
+		handler sdk.AnteDecorator
+		tx      *mock.TxMock
 		msg     sdk.Msg
 		staking *mock.StakingMock
 	)
 
 	valAddr := rand.ValAddr().String()
 
-	letMsgsThrough := func(t *testing.T) {
-		_, err := handler.AnteHandle(sdk.Context{}, []sdk.Msg{msg}, false,
-			func(sdk.Context, []sdk.Msg, bool) (sdk.Context, error) { return sdk.Context{}, nil })
+	letTxThrough := func(t *testing.T) {
+		tx = &mock.TxMock{
+			GetMsgsFunc: func() []sdk.Msg {
+				return []sdk.Msg{msg}
+			},
+		}
+
+		_, err := handler.AnteHandle(sdk.Context{}, tx, false,
+			func(sdk.Context, sdk.Tx, bool) (sdk.Context, error) { return sdk.Context{}, nil })
 		assert.NoError(t, err)
 	}
 
-	stopMsgs := func(t *testing.T) {
-		_, err := handler.AnteHandle(sdk.Context{}, []sdk.Msg{msg}, false,
-			func(sdk.Context, []sdk.Msg, bool) (sdk.Context, error) { return sdk.Context{}, nil })
+	stopTx := func(t *testing.T) {
+		tx = &mock.TxMock{
+			GetMsgsFunc: func() []sdk.Msg {
+				return []sdk.Msg{msg}
+			},
+		}
+
+		_, err := handler.AnteHandle(sdk.Context{}, tx, false,
+			func(sdk.Context, sdk.Tx, bool) (sdk.Context, error) { return sdk.Context{}, nil })
 		assert.Error(t, err)
 	}
 
@@ -65,29 +78,28 @@ func TestCheckCommissionRate(t *testing.T) {
 
 	givenCheckCommissionRateAnteHandler := Given("the check commission rate ante handler", func() {
 		staking = &mock.StakingMock{}
-		handler = ante.NewCheckCommissionRate(
-			staking,
-		)
+		handler = ante.NewAnteHandlerDecorator(
+			ante.ChainMessageAnteDecorators(ante.NewCheckCommissionRate(staking)).ToAnteHandler())
 	})
 
 	givenCheckCommissionRateAnteHandler.
 		When("a tx with MsgCreateValidator with commission rate below minimum is received", createValidator(sdk.NewDecWithPrec(49, 3), sdk.NewDecWithPrec(51, 3))).
-		Then("should return an error", stopMsgs).
+		Then("should return an error", stopTx).
 		Run(t)
 
 	givenCheckCommissionRateAnteHandler.
 		When("a tx with MsgCreateValidator with max commission rate below minimum is received", createValidator(sdk.NewDecWithPrec(51, 3), sdk.NewDecWithPrec(49, 3))).
-		Then("should return an error", stopMsgs).
+		Then("should return an error", stopTx).
 		Run(t)
 
 	givenCheckCommissionRateAnteHandler.
 		When("a tx with MsgEditValidator with commission rate below minimum is received", editValidator(sdk.NewDecWithPrec(50, 3), sdk.NewDecWithPrec(49, 3))).
-		Then("should return an error", stopMsgs).
+		Then("should return an error", stopTx).
 		Run(t)
 
 	givenCheckCommissionRateAnteHandler.
 		When("a tx with MsgEditValidator for validator with existing commission rate below minimum being increased is received", editValidator(sdk.NewDecWithPrec(39, 3), sdk.NewDecWithPrec(49, 3))).
-		Then("should go through", letMsgsThrough).
+		Then("should go through", letTxThrough).
 		Run(t)
 
 	givenCheckCommissionRateAnteHandler.
@@ -98,16 +110,16 @@ func TestCheckCommissionRate(t *testing.T) {
 			}
 			setValidatorCommission(sdk.NewDecWithPrec(49, 3))
 		}).
-		Then("should go through", letMsgsThrough).
+		Then("should go through", letTxThrough).
 		Run(t)
 
 	givenCheckCommissionRateAnteHandler.
 		When("a tx with eligible MsgCreateValidator is received", createValidator(sdk.NewDecWithPrec(50, 3), sdk.NewDecWithPrec(51, 3))).
-		Then("should go through", letMsgsThrough).
+		Then("should go through", letTxThrough).
 		Run(t)
 
 	givenCheckCommissionRateAnteHandler.
 		When("a tx with eligible MsgEditValidator is received", editValidator(sdk.NewDecWithPrec(50, 3), sdk.NewDecWithPrec(51, 3))).
-		Then("should go through", letMsgsThrough).
+		Then("should go through", letTxThrough).
 		Run(t)
 }
