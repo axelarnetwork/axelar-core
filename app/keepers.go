@@ -2,8 +2,6 @@ package app
 
 import (
 	"fmt"
-	wasmvmtypes "github.com/CosmWasm/wasmvm/types"
-	"github.com/axelarnetwork/axelar-core/x/ante"
 	"reflect"
 	"strings"
 
@@ -168,8 +166,10 @@ func initWasmKeeper(encodingConfig axelarParams.EncodingConfig, keys map[string]
 	// if we want to allow any custom callbacks
 	wasmOpts = append(wasmOpts, wasmkeeper.WithMessageHandlerDecorator(
 		func(old wasmkeeper.Messenger) wasmkeeper.Messenger {
-			return withAnteChecks(
-				wasm.DefaultEncoders(), // todo add custom encoder
+			encoders := wasm.DefaultEncoders(encodingConfig.Codec, getKeeper[ibctransferkeeper.Keeper](keepers))
+			encoders.Custom = nexusKeeper.EncodeRoutingMessage
+			return withAnteHandlers(
+				encoders,
 				initMessageAnteDecorators(encodingConfig, keepers),
 				wasmkeeper.NewMessageHandlerChain(old, nexusKeeper.NewMessenger(getKeeper[nexusKeeper.Keeper](keepers))))
 		}))
@@ -198,33 +198,6 @@ func initWasmKeeper(encodingConfig axelarParams.EncodingConfig, keys map[string]
 	)
 
 	return &wasmK
-}
-
-type Messenger struct {
-	anteHandle ante.MessageAnteHandler
-	encoders   wasm.MessageEncoders
-	messenger  wasmkeeper.Messenger
-}
-
-func (m Messenger) DispatchMsg(ctx sdk.Context, contractAddr sdk.AccAddress, contractIBCPortID string, msg wasmvmtypes.CosmosMsg) (events []sdk.Event, data [][]byte, err error) {
-	sdkMsgs, err := m.encoders.Encode(ctx, contractAddr, contractIBCPortID, msg)
-	if err != nil {
-		return nil, nil, err
-	}
-	ctx, err = m.anteHandle(ctx, sdkMsgs, false) //todo: how do I get the simulate boolean?
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return m.messenger.DispatchMsg(ctx, contractAddr, contractIBCPortID, msg)
-}
-
-func withAnteChecks(encoders wasmkeeper.MessageEncoders, anteHandler ante.MessageAnteHandler, messenger wasmkeeper.Messenger) wasmkeeper.Messenger {
-	return Messenger{
-		encoders:   encoders,
-		anteHandle: anteHandler,
-		messenger:  messenger,
-	}
 }
 
 func initGovernanceKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, keepers *keeperCache) *govkeeper.Keeper {

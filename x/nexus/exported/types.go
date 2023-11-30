@@ -349,3 +349,15 @@ func FromGeneralMessage(msg GeneralMessage) WasmMessage {
 		SourceTxIndex:      msg.SourceTxIndex,
 	}
 }
+
+var _ sdk.Msg = &WasmMessage{}
+
+// ValidateBasic implements sdk.Msg
+func (m WasmMessage) ValidateBasic() error {
+	return nil
+}
+
+// GetSigners implements sdk.Msg
+func (m WasmMessage) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{m.Sender}
+}
