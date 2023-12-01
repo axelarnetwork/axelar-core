@@ -10,11 +10,11 @@ on:
       cgo:
         description: Whether to enable cgo ("true"/"false")
         required: true
-        default: "false"
+        default: "true"
       wasm:
         description: Whether to enable wasm ("true"/"false")
         required: true
-        default: "false"
+        default: "true"
 jobs:
   release:
     runs-on: ${{ matrix.os }}
