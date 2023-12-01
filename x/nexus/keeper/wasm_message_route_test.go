@@ -87,7 +87,7 @@ func TestNewMessageRoute(t *testing.T) {
 					assert.Empty(t, wasmK.ExecuteCalls()[0].Coins)
 
 					type req struct {
-						RouteMessages []nexus.WasmMessage `json:"route_messages"`
+						RouteMessages []nexus.WasmMessage `json:"route_messages_from_nexus"`
 					}
 
 					var actual req
