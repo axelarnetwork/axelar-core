@@ -16,7 +16,7 @@ RUN go mod download
 COPY . .
 RUN git config --global --add safe.directory /axelar
 ENV CGO_ENABLED=1
-RUN make WASM="${WASM}" debug
+RUN make debug
 RUN cp /axelar/bin/* /usr/local/bin
 
 # The home directory of axelar-core where configuration/genesis/data are stored

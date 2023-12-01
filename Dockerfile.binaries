@@ -15,4 +15,4 @@ RUN go mod download
 
 COPY . .
 ENV CGO_ENABLED=1
-RUN make WASM="${WASM}" build-binaries
+RUN make build-binaries
