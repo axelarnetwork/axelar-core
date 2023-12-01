@@ -78,7 +78,7 @@ jobs:
             export CGO_ENABLED=1
           fi
           OS=$(echo "$OS_TYPE" | sed -e 's/ubuntu-20.04/linux/; s/macos-latest/darwin/')
-          make WASM="${WASM}" CGO_ENABLED="${CGO_ENABLED}" build-binaries-multiarch
+          make build-binaries-multiarch
           mv ./bin/axelard ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
           gpg --armor --detach-sign  ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
 
@@ -181,7 +181,7 @@ jobs:
           if [ "${{ github.event.inputs.cgo }}" == "true" ]; then
             export CGO_ENABLED=1
           fi
-          make WASM="${WASM}" CGO_ENABLED="${CGO_ENABLED}" build-push-docker-images
+          make build-push-docker-images
         env:
           PLATFORM: ${{ matrix.platform }}
           SEMVER: ${{ github.event.inputs.tag }}
