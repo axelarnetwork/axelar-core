@@ -16,6 +16,7 @@ import (
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	capabilitykeeper "github.com/cosmos/cosmos-sdk/x/capability/keeper"
+	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
 	crisiskeeper "github.com/cosmos/cosmos-sdk/x/crisis/keeper"
 	crisistypes "github.com/cosmos/cosmos-sdk/x/crisis/types"
 	distr "github.com/cosmos/cosmos-sdk/x/distribution"
@@ -160,14 +161,14 @@ func initStakingKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, ke
 	return &stakingK
 }
 
-// todo: simplify if possible
-func initWasmKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, keepers *keeperCache, scopedWasmK capabilitykeeper.ScopedKeeper, bApp *bam.BaseApp, wasmDir string, wasmConfig wasmtypes.WasmConfig, wasmOpts []wasm.Option) *wasm.Keeper {
+func initWasmKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, keepers *keeperCache, bApp *bam.BaseApp, wasmDir string, wasmConfig wasmtypes.WasmConfig, wasmOpts []wasm.Option) *wasm.Keeper {
 	// The last arguments can contain custom message handlers, and custom query handlers,
 	// if we want to allow any custom callbacks
 	wasmOpts = append(wasmOpts, wasmkeeper.WithMessageHandlerDecorator(func(old wasmkeeper.Messenger) wasmkeeper.Messenger {
 		return wasmkeeper.NewMessageHandlerChain(old, nexusKeeper.NewMessenger(getKeeper[nexusKeeper.Keeper](keepers)))
 	}))
 
+	scopedWasmK := getKeeper[capabilitykeeper.Keeper](keepers).ScopeToModule(wasm.ModuleName)
 	ibcKeeper := getKeeper[ibckeeper.Keeper](keepers)
 	wasmK := wasm.NewKeeper(
 		appCodec,
@@ -308,12 +309,12 @@ func initIBCTransferKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey
 	return &transferK
 }
 
+func initWasmContractKeeper(keepers *keeperCache) *wasmkeeper.PermissionedKeeper {
+	return wasmkeeper.NewDefaultPermissionKeeper(getKeeper[wasm.Keeper](keepers))
+}
+
 func initAxelarIBCKeeper(keepers *keeperCache) *axelarnetKeeper.IBCKeeper {
-	ibcK := axelarnetKeeper.NewIBCKeeper(
-		*getKeeper[axelarnetKeeper.Keeper](keepers),
-		getKeeper[ibctransferkeeper.Keeper](keepers),
-		getKeeper[ibckeeper.Keeper](keepers).ChannelKeeper,
-	)
+	ibcK := axelarnetKeeper.NewIBCKeeper(*getKeeper[axelarnetKeeper.Keeper](keepers), getKeeper[ibctransferkeeper.Keeper](keepers))
 	return &ibcK
 }
 
@@ -344,6 +345,10 @@ func initNexusKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, keep
 	nexusK.SetAddressValidators(addressValidators)
 
 	return &nexusK
+}
+
+func initCapabilityKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, memKeys map[string]*sdk.MemoryStoreKey) *capabilitykeeper.Keeper {
+	return capabilitykeeper.NewKeeper(appCodec, keys[capabilitytypes.StoreKey], memKeys[capabilitytypes.MemStoreKey])
 }
 
 func initFeegrantKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, keepers *keeperCache) *feegrantkeeper.Keeper {

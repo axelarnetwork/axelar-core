@@ -114,9 +114,9 @@ func TestHandleMessage(t *testing.T) {
 					BaseDenom: rand.Denom(5, 10),
 				}, true
 			},
-		}, &mock.ChannelKeeperMock{})
+		})
 
-		r = axelarnet.NewRateLimiter(k, channelK, n)
+		r = axelarnet.NewRateLimiter(&k, n)
 		b = &mock.BankKeeperMock{
 			SendCoinsFunc: func(sdk.Context, sdk.AccAddress, sdk.AccAddress, sdk.Coins) error { return nil },
 		}
@@ -517,7 +517,7 @@ func TestHandleMessageWithToken(t *testing.T) {
 					BaseDenom: denom,
 				}, true
 			},
-		}, &mock.ChannelKeeperMock{})
+		})
 		b = &mock.BankKeeperMock{
 			SpendableBalanceFunc: func(ctx sdk.Context, addr sdk.AccAddress, d string) sdk.Coin {
 				if addr.Equals(types.AxelarGMPAccount) {
@@ -529,7 +529,7 @@ func TestHandleMessageWithToken(t *testing.T) {
 				return nil
 			},
 		}
-		r = axelarnet.NewRateLimiter(k, channelK, n)
+		r = axelarnet.NewRateLimiter(&k, n)
 	})
 
 	ackError := func() func(t *testing.T) {
@@ -731,7 +731,7 @@ func TestHandleSendToken(t *testing.T) {
 					BaseDenom: denom,
 				}, true
 			},
-		}, &mock.ChannelKeeperMock{})
+		})
 		b = &mock.BankKeeperMock{
 			SpendableBalanceFunc: func(ctx sdk.Context, addr sdk.AccAddress, d string) sdk.Coin {
 				if addr.Equals(types.AxelarGMPAccount) {
@@ -743,7 +743,7 @@ func TestHandleSendToken(t *testing.T) {
 				return nil
 			},
 		}
-		r = axelarnet.NewRateLimiter(k, channelK, n)
+		r = axelarnet.NewRateLimiter(&k, n)
 	})
 
 	ackError := func() func(t *testing.T) {

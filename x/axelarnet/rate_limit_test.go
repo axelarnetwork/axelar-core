@@ -38,7 +38,6 @@ func TestRateLimitPacket(t *testing.T) {
 		baseDenom   string
 		rateLimiter axelarnet.RateLimiter
 		n           *mock.NexusMock
-		channelK    *mock.ChannelKeeperMock
 		err         error
 		chain       nexus.ChainName
 		direction   nexus.TransferDirection
@@ -50,9 +49,9 @@ func TestRateLimitPacket(t *testing.T) {
 	ibcPath = types.NewIBCPath(port, channel)
 
 	givenKeeper := Given("a keeper", func() {
-		ctx, k, channelK = setup()
+		ctx, k, _ = setup()
 		n = &mock.NexusMock{}
-		rateLimiter = axelarnet.NewRateLimiter(k, channelK, n)
+		rateLimiter = axelarnet.NewRateLimiter(&k, n)
 	})
 
 	givenPacket := Given("a random ICS-20 packet", func() {
@@ -248,7 +247,7 @@ func TestSendPacket(t *testing.T) {
 		packet      ibcchanneltypes.Packet
 		transfer    ibctransfertypes.FungibleTokenPacketData
 		denom       string
-		rateLimiter axelarnet.RateLimiter
+		rateLimiter axelarnet.RateLimitedICS4Wrapper
 		n           *mock.NexusMock
 		channelK    *mock.ChannelKeeperMock
 		chain       nexus.ChainName
@@ -260,7 +259,7 @@ func TestSendPacket(t *testing.T) {
 	givenKeeper := Given("a keeper", func() {
 		ctx, k, channelK = setup()
 		n = &mock.NexusMock{}
-		rateLimiter = axelarnet.NewRateLimiter(k, channelK, n)
+		rateLimiter = axelarnet.NewRateLimitedICS4Wrapper(channelK, axelarnet.NewRateLimiter(&k, n), &k)
 	})
 
 	givenPacket := Given("a random ICS-20 packet", func() {
