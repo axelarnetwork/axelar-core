@@ -87,7 +87,7 @@ func TestIBCModule(t *testing.T) {
 
 		transferK := ibctransferkeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("transfer"), transferSubspace, &mock.ChannelKeeperMock{}, &mock.ChannelKeeperMock{}, &mock.PortKeeperMock{}, accountK, bankK, scopedTransferK)
 		n = &mock.NexusMock{}
-		ibcModule = axelarnet.NewAxelarnetIBCModule(k, ibcTransfer.NewIBCModule(transferK), ibcK, axelarnet.NewRateLimiter(&k, n), n, bankK)
+		ibcModule = axelarnet.NewAxelarnetIBCModule(ibcTransfer.NewIBCModule(transferK), ibcK, axelarnet.NewRateLimiter(&k, n), n, bankK)
 	})
 
 	fungibleTokenPacket := ibctransfertypes.NewFungibleTokenPacketData(rand.Denom(5, 10), "1", rand.AccAddr().String(), rand.AccAddr().String())
