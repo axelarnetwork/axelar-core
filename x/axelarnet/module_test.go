@@ -8,7 +8,7 @@ import (
 	capabilitykeeper "github.com/cosmos/cosmos-sdk/x/capability/keeper"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
-	ibctransfer "github.com/cosmos/ibc-go/v4/modules/apps/transfer"
+	ibcTransfer "github.com/cosmos/ibc-go/v4/modules/apps/transfer"
 	ibctransferkeeper "github.com/cosmos/ibc-go/v4/modules/apps/transfer/keeper"
 	ibctransfertypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
 	clienttypes "github.com/cosmos/ibc-go/v4/modules/core/02-client/types"
@@ -32,10 +32,10 @@ import (
 	. "github.com/axelarnetwork/utils/test"
 )
 
-func TestGetMigrationHandler(t *testing.T) {
+func TestIBCModule(t *testing.T) {
 	var (
 		ctx       sdk.Context
-		appModule axelarnet.AppModule
+		ibcModule axelarnet.AxelarnetIBCModule
 		k         keeper.Keeper
 		n         *mock.NexusMock
 		bankK     *mock.BankKeeperMock
@@ -51,7 +51,7 @@ func TestGetMigrationHandler(t *testing.T) {
 		channelID = "channel-0"
 	)
 
-	givenAnAppModule := Given("given a module", func() {
+	givenAnIBCModule := Given("given a module", func() {
 		encCfg := appParams.MakeEncodingConfig()
 		subspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey(types.StoreKey), sdk.NewKVStoreKey("tAxelarnetKey"), types.ModuleName)
 		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
@@ -63,11 +63,7 @@ func TestGetMigrationHandler(t *testing.T) {
 		}
 
 		k = keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey(types.ModuleName), subspace, channelK, &mock.FeegrantKeeperMock{})
-		ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{}, channelK)
-
-		scopeKeeper := capabilitykeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey(capabilitytypes.StoreKey), sdk.NewKVStoreKey(capabilitytypes.MemStoreKey))
-		scopedTransferK := scopeKeeper.ScopeToModule(ibctransfertypes.ModuleName)
-		transferSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey(ibctransfertypes.StoreKey), sdk.NewKVStoreKey("tTrasferKey"), ibctransfertypes.ModuleName)
+		ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{})
 
 		accountK := &mock.AccountKeeperMock{
 			GetModuleAddressFunc: func(string) sdk.AccAddress {
@@ -85,9 +81,13 @@ func TestGetMigrationHandler(t *testing.T) {
 			BurnCoinsFunc: func(sdk.Context, string, sdk.Coins) error { return nil },
 		}
 
+		scopeKeeper := capabilitykeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey(capabilitytypes.StoreKey), sdk.NewKVStoreKey(capabilitytypes.MemStoreKey))
+		scopedTransferK := scopeKeeper.ScopeToModule(ibctransfertypes.ModuleName)
+		transferSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey(ibctransfertypes.StoreKey), sdk.NewKVStoreKey("tTrasferKey"), ibctransfertypes.ModuleName)
+
 		transferK := ibctransferkeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("transfer"), transferSubspace, &mock.ChannelKeeperMock{}, &mock.ChannelKeeperMock{}, &mock.PortKeeperMock{}, accountK, bankK, scopedTransferK)
 		n = &mock.NexusMock{}
-		appModule = axelarnet.NewAppModule(k, n, bankK, accountK, ibcK, ibctransfer.NewIBCModule(transferK), axelarnet.NewRateLimiter(k, channelK, n), log.TestingLogger())
+		ibcModule = axelarnet.NewAxelarnetIBCModule(ibcTransfer.NewIBCModule(transferK), ibcK, axelarnet.NewRateLimiter(&k, n), n, bankK)
 	})
 
 	fungibleTokenPacket := ibctransfertypes.NewFungibleTokenPacketData(rand.Denom(5, 10), "1", rand.AccAddr().String(), rand.AccAddr().String())
@@ -135,12 +135,12 @@ func TestGetMigrationHandler(t *testing.T) {
 	})
 
 	whenOnAck := When("on acknowledgement", func() {
-		err := appModule.OnAcknowledgementPacket(ctx, packet, ack.Acknowledgement(), nil)
+		err := ibcModule.OnAcknowledgementPacket(ctx, packet, ack.Acknowledgement(), nil)
 		assert.NoError(t, err)
 	})
 
 	whenOnTimeout := When("on timeout", func() {
-		err := appModule.OnTimeoutPacket(ctx, packet, nil)
+		err := ibcModule.OnTimeoutPacket(ctx, packet, nil)
 		assert.NoError(t, err)
 	})
 
@@ -158,7 +158,7 @@ func TestGetMigrationHandler(t *testing.T) {
 		}
 	})
 
-	givenAnAppModule.
+	givenAnIBCModule.
 		Branch(
 			whenGetValidAckResult.
 				When2(seqMapsToID).
@@ -179,7 +179,7 @@ func TestGetMigrationHandler(t *testing.T) {
 
 			whenPendingTransfersExist.
 				When("get invalid ack", func() {
-					err := appModule.OnAcknowledgementPacket(ctx, packet, rand.BytesBetween(1, 50), nil)
+					err := ibcModule.OnAcknowledgementPacket(ctx, packet, rand.BytesBetween(1, 50), nil)
 					assert.Error(t, err)
 				}).
 				Then2(shouldNotChangeTransferState),

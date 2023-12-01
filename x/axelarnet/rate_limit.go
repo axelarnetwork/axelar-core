@@ -18,17 +18,15 @@ import (
 
 // RateLimiter implements an ICS4Wrapper middleware to rate limit IBC transfers
 type RateLimiter struct {
-	keeper  keeper.Keeper
-	channel porttypes.ICS4Wrapper
-	nexus   types.Nexus
+	keeper *keeper.Keeper
+	nexus  types.Nexus
 }
 
 // NewRateLimiter returns a new RateLimiter
-func NewRateLimiter(keeper keeper.Keeper, channel porttypes.ICS4Wrapper, nexus types.Nexus) RateLimiter {
+func NewRateLimiter(keeper *keeper.Keeper, nexus types.Nexus) RateLimiter {
 	return RateLimiter{
-		keeper:  keeper,
-		channel: channel,
-		nexus:   nexus,
+		keeper: keeper,
+		nexus:  nexus,
 	}
 }
 
@@ -62,8 +60,22 @@ func (r RateLimiter) RateLimitPacket(ctx sdk.Context, packet ibcexported.PacketI
 	return nil
 }
 
+type RateLimitedICS4Wrapper struct {
+	channel     porttypes.ICS4Wrapper
+	rateLimiter RateLimiter
+	keeper      *keeper.Keeper
+}
+
+func NewRateLimitedICS4Wrapper(channel porttypes.ICS4Wrapper, rateLimiter RateLimiter, keeper *keeper.Keeper) RateLimitedICS4Wrapper {
+	return RateLimitedICS4Wrapper{
+		channel:     channel,
+		rateLimiter: rateLimiter,
+		keeper:      keeper,
+	}
+}
+
 // SendPacket implements the ICS4 Wrapper interface
-func (r RateLimiter) SendPacket(ctx sdk.Context, chanCap *capabilitytypes.Capability, packet ibcexported.PacketI) error {
+func (r RateLimitedICS4Wrapper) SendPacket(ctx sdk.Context, chanCap *capabilitytypes.Capability, packet ibcexported.PacketI) error {
 	if err := r.channel.SendPacket(ctx, chanCap, packet); err != nil {
 		return err
 	}
@@ -73,16 +85,16 @@ func (r RateLimiter) SendPacket(ctx sdk.Context, chanCap *capabilitytypes.Capabi
 		return nil
 	}
 
-	return r.RateLimitPacket(ctx, packet, nexus.Outgoing, types.NewIBCPath(packet.GetSourcePort(), packet.GetSourceChannel()))
+	return r.rateLimiter.RateLimitPacket(ctx, packet, nexus.Outgoing, types.NewIBCPath(packet.GetSourcePort(), packet.GetSourceChannel()))
 }
 
 // WriteAcknowledgement implements the ICS4 Wrapper interface
-func (r RateLimiter) WriteAcknowledgement(ctx sdk.Context, chanCap *capabilitytypes.Capability, packet ibcexported.PacketI, ack ibcexported.Acknowledgement) error {
+func (r RateLimitedICS4Wrapper) WriteAcknowledgement(ctx sdk.Context, chanCap *capabilitytypes.Capability, packet ibcexported.PacketI, ack ibcexported.Acknowledgement) error {
 	return r.channel.WriteAcknowledgement(ctx, chanCap, packet, ack)
 }
 
 // GetAppVersion implements the ICS4 Wrapper interface
-func (r RateLimiter) GetAppVersion(ctx sdk.Context, portID string, channelID string) (string, bool) {
+func (r RateLimitedICS4Wrapper) GetAppVersion(ctx sdk.Context, portID string, channelID string) (string, bool) {
 	return r.channel.GetAppVersion(ctx, portID, channelID)
 }
 

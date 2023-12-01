@@ -38,7 +38,7 @@ func TestCoin(t *testing.T) {
 		nexusK = &mock.NexusMock{}
 		bankK = &mock.BankKeeperMock{}
 		transferK = &mock.IBCTransferKeeperMock{}
-		ibcK = keeper.NewIBCKeeper(k, transferK, &mock.ChannelKeeperMock{})
+		ibcK = keeper.NewIBCKeeper(k, transferK)
 		bankK.SendCoinsFromAccountToModuleFunc = func(sdk.Context, sdk.AccAddress, string, sdk.Coins) error {
 			return nil
 		}

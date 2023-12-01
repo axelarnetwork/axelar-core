@@ -20,12 +20,11 @@ import (
 type IBCKeeper struct {
 	Keeper
 	ibcTransferK types.IBCTransferKeeper
-	channelK     types.ChannelKeeper
 }
 
 // NewIBCKeeper returns a new  IBCKeeper
-func NewIBCKeeper(k Keeper, ibcTransferK types.IBCTransferKeeper, channelK types.ChannelKeeper) IBCKeeper {
-	return IBCKeeper{Keeper: k, ibcTransferK: ibcTransferK, channelK: channelK}
+func NewIBCKeeper(k Keeper, ibcTransferK types.IBCTransferKeeper) IBCKeeper {
+	return IBCKeeper{Keeper: k, ibcTransferK: ibcTransferK}
 }
 
 // SendIBCTransfer inits an IBC transfer
