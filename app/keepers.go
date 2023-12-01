@@ -6,11 +6,11 @@ import (
 	"strings"
 
 	"github.com/CosmWasm/wasmd/x/wasm"
+	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
+	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
-	store "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/types/module"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
@@ -46,7 +46,6 @@ import (
 	ibcclienttypes "github.com/cosmos/ibc-go/v4/modules/core/02-client/types"
 	ibchost "github.com/cosmos/ibc-go/v4/modules/core/24-host"
 	ibckeeper "github.com/cosmos/ibc-go/v4/modules/core/keeper"
-	ibchookstypes "github.com/osmosis-labs/osmosis/x/ibc-hooks/types"
 	"golang.org/x/mod/semver"
 
 	axelarParams "github.com/axelarnetwork/axelar-core/app/params"
@@ -92,11 +91,7 @@ func (k *keeperCache) getSubspace(moduleName string) paramstypes.Subspace {
 	return subspace
 }
 
-func getKeeper[T any](k *keeperCache) T {
-	return *getKeeperAsRef[T](k)
-}
-
-func getKeeperAsRef[T any](k *keeperCache) *T {
+func getKeeper[T any](k *keeperCache) *T {
 	if reflect.TypeOf(*new(T)).Kind() == reflect.Ptr {
 		panic(fmt.Sprintf("the generic parameter for %s cannot be a reference type", fullTypeName[T]()))
 	}
@@ -154,15 +149,59 @@ func initParamsKeeper(encodingConfig axelarParams.EncodingConfig, key, tkey sdk.
 	return &paramsKeeper
 }
 
+func initStakingKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, keepers *keeperCache) *stakingkeeper.Keeper {
+	stakingK := stakingkeeper.NewKeeper(
+		appCodec,
+		keys[stakingtypes.StoreKey],
+		getKeeper[authkeeper.AccountKeeper](keepers),
+		getKeeper[bankkeeper.BaseKeeper](keepers),
+		keepers.getSubspace(stakingtypes.ModuleName),
+	)
+	return &stakingK
+}
+
+// todo: simplify if possible
+func initWasmKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, keepers *keeperCache, scopedWasmK capabilitykeeper.ScopedKeeper, bApp *bam.BaseApp, wasmDir string, wasmConfig wasmtypes.WasmConfig, wasmOpts []wasm.Option) *wasm.Keeper {
+	// The last arguments can contain custom message handlers, and custom query handlers,
+	// if we want to allow any custom callbacks
+	wasmOpts = append(wasmOpts, wasmkeeper.WithMessageHandlerDecorator(func(old wasmkeeper.Messenger) wasmkeeper.Messenger {
+		return wasmkeeper.NewMessageHandlerChain(old, nexusKeeper.NewMessenger(getKeeper[nexusKeeper.Keeper](keepers)))
+	}))
+
+	ibcKeeper := getKeeper[ibckeeper.Keeper](keepers)
+	wasmK := wasm.NewKeeper(
+		appCodec,
+		keys[wasm.StoreKey],
+		keepers.getSubspace(wasm.ModuleName),
+		getKeeper[authkeeper.AccountKeeper](keepers),
+		getKeeper[bankkeeper.BaseKeeper](keepers),
+		getKeeper[stakingkeeper.Keeper](keepers),
+		getKeeper[distrkeeper.Keeper](keepers),
+		ibcKeeper.ChannelKeeper,
+		ibcKeeper.ChannelKeeper,
+		&ibcKeeper.PortKeeper,
+		scopedWasmK,
+		getKeeper[ibctransferkeeper.Keeper](keepers),
+		bApp.MsgServiceRouter(),
+		bApp.GRPCQueryRouter(),
+		wasmDir,
+		wasmConfig,
+		WasmCapabilities,
+		wasmOpts...,
+	)
+
+	return &wasmK
+}
+
 func initGovernanceKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, keepers *keeperCache) *govkeeper.Keeper {
 	// Add governance proposal hooks
 	govRouter := govtypes.NewRouter()
 	govRouter.AddRoute(govtypes.RouterKey, govtypes.ProposalHandler).
-		AddRoute(paramproposal.RouterKey, params.NewParamChangeProposalHandler(getKeeper[paramskeeper.Keeper](keepers))).
-		AddRoute(distrtypes.RouterKey, distr.NewCommunityPoolSpendProposalHandler(getKeeper[distrkeeper.Keeper](keepers))).
-		AddRoute(upgradetypes.RouterKey, upgrade.NewSoftwareUpgradeProposalHandler(getKeeper[upgradekeeper.Keeper](keepers))).
-		AddRoute(ibcclienttypes.RouterKey, ibcclient.NewClientProposalHandler(getKeeperAsRef[ibckeeper.Keeper](keepers).ClientKeeper)).
-		AddRoute(axelarnetTypes.RouterKey, axelarnet.NewProposalHandler(getKeeper[axelarnetKeeper.Keeper](keepers), getKeeper[nexusKeeper.Keeper](keepers), getKeeper[authkeeper.AccountKeeper](keepers)))
+		AddRoute(paramproposal.RouterKey, params.NewParamChangeProposalHandler(*getKeeper[paramskeeper.Keeper](keepers))).
+		AddRoute(distrtypes.RouterKey, distr.NewCommunityPoolSpendProposalHandler(*getKeeper[distrkeeper.Keeper](keepers))).
+		AddRoute(upgradetypes.RouterKey, upgrade.NewSoftwareUpgradeProposalHandler(*getKeeper[upgradekeeper.Keeper](keepers))).
+		AddRoute(ibcclienttypes.RouterKey, ibcclient.NewClientProposalHandler(getKeeper[ibckeeper.Keeper](keepers).ClientKeeper)).
+		AddRoute(axelarnetTypes.RouterKey, axelarnet.NewProposalHandler(*getKeeper[axelarnetKeeper.Keeper](keepers), getKeeper[nexusKeeper.Keeper](keepers), getKeeper[authkeeper.AccountKeeper](keepers)))
 
 	if IsWasmEnabled() {
 		govRouter.AddRoute(wasm.RouterKey, wasm.NewWasmProposalHandler(getKeeper[wasm.Keeper](keepers), wasm.EnableAllProposals))
@@ -189,7 +228,7 @@ func initVoteKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, keepe
 		evmTypes.ModuleName,
 		evmKeeper.NewVoteHandler(
 			appCodec,
-			getKeeperAsRef[evmKeeper.BaseKeeper](keepers),
+			getKeeper[evmKeeper.BaseKeeper](keepers),
 			getKeeper[nexusKeeper.Keeper](keepers),
 			getKeeper[rewardKeeper.Keeper](keepers),
 		),
@@ -226,7 +265,7 @@ func initTssKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, keeper
 
 func initMultisigKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, keepers *keeperCache) *multisigKeeper.Keeper {
 	multisigRouter := multisigTypes.NewSigRouter()
-	multisigRouter.AddHandler(evmTypes.ModuleName, evmKeeper.NewSigHandler(appCodec, getKeeperAsRef[evmKeeper.BaseKeeper](keepers)))
+	multisigRouter.AddHandler(evmTypes.ModuleName, evmKeeper.NewSigHandler(appCodec, getKeeper[evmKeeper.BaseKeeper](keepers)))
 
 	multisigK := multisigKeeper.NewKeeper(appCodec, keys[multisigTypes.StoreKey], keepers.getSubspace(multisigTypes.ModuleName))
 	multisigK.SetSigRouter(multisigRouter)
@@ -245,7 +284,8 @@ func initRewardKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, kee
 	return &rewardK
 }
 
-func initIBCKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, keepers *keeperCache, scopedIBCK capabilitykeeper.ScopedKeeper) *ibckeeper.Keeper {
+func initIBCKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, keepers *keeperCache) *ibckeeper.Keeper {
+	scopedIBCK := getKeeper[capabilitykeeper.Keeper](keepers).ScopeToModule(ibchost.ModuleName)
 	return ibckeeper.NewKeeper(
 		appCodec,
 		keys[ibchost.StoreKey],
@@ -256,25 +296,34 @@ func initIBCKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, keeper
 	)
 }
 
-func initIBCTransferKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, keepers *keeperCache, ics4Wrapper ibctransfertypes.ICS4Wrapper, scopedTransferK capabilitykeeper.ScopedKeeper) *ibctransferkeeper.Keeper {
+func initIBCTransferKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, keepers *keeperCache, ics4Wrapper ibctransfertypes.ICS4Wrapper) *ibctransferkeeper.Keeper {
+	scopedTransferK := getKeeper[capabilitykeeper.Keeper](keepers).ScopeToModule(ibctransfertypes.ModuleName)
 	transferK := ibctransferkeeper.NewKeeper(
 		appCodec, keys[ibctransfertypes.StoreKey], keepers.getSubspace(ibctransfertypes.ModuleName),
 		// Use the IBC middleware stack
 		ics4Wrapper,
-		getKeeperAsRef[ibckeeper.Keeper](keepers).ChannelKeeper, &getKeeperAsRef[ibckeeper.Keeper](keepers).PortKeeper,
+		getKeeper[ibckeeper.Keeper](keepers).ChannelKeeper, &getKeeper[ibckeeper.Keeper](keepers).PortKeeper,
 		getKeeper[authkeeper.AccountKeeper](keepers), getKeeper[bankkeeper.BaseKeeper](keepers), scopedTransferK,
 	)
 	return &transferK
 }
 
 func initAxelarIBCKeeper(keepers *keeperCache) *axelarnetKeeper.IBCKeeper {
-	ibcK := axelarnetKeeper.NewIBCKeeper(getKeeper[axelarnetKeeper.Keeper](keepers), getKeeper[ibctransferkeeper.Keeper](keepers), getKeeperAsRef[ibckeeper.Keeper](keepers).ChannelKeeper)
+	ibcK := axelarnetKeeper.NewIBCKeeper(
+		*getKeeper[axelarnetKeeper.Keeper](keepers),
+		getKeeper[ibctransferkeeper.Keeper](keepers),
+		getKeeper[ibckeeper.Keeper](keepers).ChannelKeeper,
+	)
 	return &ibcK
 }
 
 func initAxelarnetKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, keepers *keeperCache) *axelarnetKeeper.Keeper {
 	axelarnetK := axelarnetKeeper.NewKeeper(
-		appCodec, keys[axelarnetTypes.StoreKey], keepers.getSubspace(axelarnetTypes.ModuleName), getKeeperAsRef[ibckeeper.Keeper](keepers).ChannelKeeper, getKeeper[feegrantkeeper.Keeper](keepers),
+		appCodec,
+		keys[axelarnetTypes.StoreKey],
+		keepers.getSubspace(axelarnetTypes.ModuleName),
+		getKeeper[ibckeeper.Keeper](keepers).ChannelKeeper,
+		getKeeper[feegrantkeeper.Keeper](keepers),
 	)
 	return &axelarnetK
 }
@@ -302,37 +351,12 @@ func initFeegrantKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, k
 	return &feegrantK
 }
 
-func initEvidenceKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, keepers *keeperCache, stakingK *stakingkeeper.Keeper) *evidencekeeper.Keeper {
-	return evidencekeeper.NewKeeper(appCodec, keys[evidencetypes.StoreKey], stakingK, getKeeper[slashingkeeper.Keeper](keepers))
+func initEvidenceKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, keepers *keeperCache) *evidencekeeper.Keeper {
+	return evidencekeeper.NewKeeper(appCodec, keys[evidencetypes.StoreKey], getKeeper[stakingkeeper.Keeper](keepers), getKeeper[slashingkeeper.Keeper](keepers))
 }
 
-// todo: clean this up
-func initUpgradeKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, skipUpgradeHeights map[int64]bool, homePath string, bApp *bam.BaseApp, configurator *module.Configurator, mm *module.Manager) *upgradekeeper.Keeper {
+func initUpgradeKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, skipUpgradeHeights map[int64]bool, homePath string, bApp *bam.BaseApp) *upgradekeeper.Keeper {
 	upgradeK := upgradekeeper.NewKeeper(skipUpgradeHeights, keys[upgradetypes.StoreKey], appCodec, homePath, bApp)
-	upgradeK.SetUpgradeHandler(
-		upgradeName(bApp.Version()),
-		func(ctx sdk.Context, _ upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
-			return mm.RunMigrations(ctx, *configurator, fromVM)
-		},
-	)
-
-	upgradeInfo, err := upgradeK.ReadUpgradeInfoFromDisk()
-	if err != nil {
-		panic(err)
-	}
-
-	if upgradeInfo.Name == upgradeName(bApp.Version()) && !upgradeK.IsSkipHeight(upgradeInfo.Height) {
-		storeUpgrades := store.StoreUpgrades{}
-
-		if IsWasmEnabled() {
-			storeUpgrades.Added = append(storeUpgrades.Added, ibchookstypes.StoreKey)
-			storeUpgrades.Added = append(storeUpgrades.Added, wasm.ModuleName)
-		}
-
-		// configure store loader that checks if version == upgradeHeight and applies store upgrades
-		bApp.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
-	}
-
 	return &upgradeK
 }
 
@@ -357,31 +381,31 @@ func initCrisisKeeper(keepers *keeperCache, invCheckPeriod uint) *crisiskeeper.K
 	return &crisisK
 }
 
-func initSlashingKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, keepers *keeperCache, stakingK *stakingkeeper.Keeper) *slashingkeeper.Keeper {
-	slashK := slashingkeeper.NewKeeper(appCodec, keys[slashingtypes.StoreKey], stakingK, keepers.getSubspace(slashingtypes.ModuleName))
+func initSlashingKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, keepers *keeperCache) *slashingkeeper.Keeper {
+	slashK := slashingkeeper.NewKeeper(appCodec, keys[slashingtypes.StoreKey], getKeeper[stakingkeeper.Keeper](keepers), keepers.getSubspace(slashingtypes.ModuleName))
 	return &slashK
 }
 
-func initDistributionKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, keepers *keeperCache, stakingK *stakingkeeper.Keeper, moduleAccPerms map[string][]string) *distrkeeper.Keeper {
+func initDistributionKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, keepers *keeperCache, moduleAccPerms map[string][]string) *distrkeeper.Keeper {
 	distrK := distrkeeper.NewKeeper(
 		appCodec,
 		keys[distrtypes.StoreKey],
 		keepers.getSubspace(distrtypes.ModuleName),
 		getKeeper[authkeeper.AccountKeeper](keepers),
 		getKeeper[bankkeeper.BaseKeeper](keepers),
-		stakingK,
+		getKeeper[stakingkeeper.Keeper](keepers),
 		authtypes.FeeCollectorName,
 		moduleAccountAddrs(moduleAccPerms),
 	)
 	return &distrK
 }
 
-func initMintKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, keepers *keeperCache, stakingK *stakingkeeper.Keeper) *mintkeeper.Keeper {
+func initMintKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, keepers *keeperCache) *mintkeeper.Keeper {
 	mintK := mintkeeper.NewKeeper(
 		appCodec,
 		keys[minttypes.StoreKey],
 		keepers.getSubspace(minttypes.ModuleName),
-		stakingK,
+		getKeeper[stakingkeeper.Keeper](keepers),
 		getKeeper[authkeeper.AccountKeeper](keepers),
 		getKeeper[bankkeeper.BaseKeeper](keepers),
 		authtypes.FeeCollectorName,
