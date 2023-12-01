@@ -71,7 +71,7 @@ jobs:
           if [ "${{ github.event.inputs.cgo }}" == "true" ]; then
             export CGO_ENABLED=1
           fi
-          make WASM="${WASM}" CGO_ENABLED="${CGO_ENABLED}" build-push-docker-images-rosetta
+          make build-push-docker-images-rosetta
         env:
           SEMVER: ${{ github.event.inputs.tag }}
           WASM: ${{ github.event.inputs.wasm }}
