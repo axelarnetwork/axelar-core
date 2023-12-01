@@ -96,7 +96,8 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 type AppModule struct {
 	AppModuleBasic
 	logger  log.Logger
-	keeper  keeper.IBCKeeper
+	ibcK    keeper.IBCKeeper
+	keeper  keeper.Keeper
 	nexus   types.Nexus
 	bank    types.BankKeeper
 	account types.AccountKeeper
@@ -107,7 +108,8 @@ func NewAppModule(ibcK keeper.IBCKeeper, nexus types.Nexus, bank types.BankKeepe
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		logger:         logger,
-		keeper:         ibcK,
+		ibcK:           ibcK,
+		keeper:         ibcK.Keeper,
 		nexus:          nexus,
 		bank:           bank,
 		account:        account,
@@ -125,20 +127,20 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, gs json.Ra
 	// Initialize global index to index in genesis state
 	cdc.MustUnmarshalJSON(gs, &genState)
 
-	am.keeper.InitGenesis(ctx, &genState)
+	am.ibcK.InitGenesis(ctx, &genState)
 
 	return []abci.ValidatorUpdate{}
 }
 
 // ExportGenesis exports a genesis state from the module's keeper
 func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.RawMessage {
-	genState := am.keeper.ExportGenesis(ctx)
+	genState := am.ibcK.ExportGenesis(ctx)
 	return cdc.MustMarshalJSON(genState)
 }
 
 // Route returns the module's route
 func (am AppModule) Route() sdk.Route {
-	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper.Keeper, am.nexus, am.bank, am.account, am.keeper))
+	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper, am.nexus, am.bank, am.account, am.ibcK))
 }
 
 // QuerierRoute returns this module's query route
@@ -154,9 +156,9 @@ func (am AppModule) LegacyQuerierHandler(*codec.LegacyAmino) sdk.Querier {
 // RegisterServices registers a GRPC query service to respond to the
 // module-specific GRPC queries.
 func (am AppModule) RegisterServices(cfg module.Configurator) {
-	types.RegisterQueryServiceServer(cfg.QueryServer(), keeper.NewGRPCQuerier(am.keeper, am.nexus))
+	types.RegisterQueryServiceServer(cfg.QueryServer(), keeper.NewGRPCQuerier(am.ibcK, am.nexus))
 
-	err := cfg.RegisterMigration(types.ModuleName, 5, keeper.Migrate5to6(am.keeper.Keeper))
+	err := cfg.RegisterMigration(types.ModuleName, 5, keeper.Migrate5to6(am.keeper))
 	if err != nil {
 		panic(err)
 	}
@@ -169,8 +171,8 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 
 // EndBlock executes all state transitions this module requires at the end of each new block
 func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
-	return utils.RunCached(ctx, am.keeper, func(ctx sdk.Context) ([]abci.ValidatorUpdate, error) {
-		return EndBlocker(ctx, req, am.keeper, am.keeper)
+	return utils.RunCached(ctx, am.ibcK, func(ctx sdk.Context) ([]abci.ValidatorUpdate, error) {
+		return EndBlocker(ctx, req, am.ibcK, am.ibcK)
 	})
 }
 
@@ -189,7 +191,6 @@ type AxelarnetIBCModule struct {
 
 // NewAxelarnetIBCModule creates a new AxelarnetIBCModule instance
 func NewAxelarnetIBCModule(
-	keeper keeper.Keeper,
 	transferModule porttypes.IBCModule,
 	ibcK keeper.IBCKeeper,
 	rateLimiter RateLimiter,
@@ -198,7 +199,7 @@ func NewAxelarnetIBCModule(
 ) AxelarnetIBCModule {
 	return AxelarnetIBCModule{
 		IBCModule:   transferModule,
-		keeper:      keeper,
+		keeper:      ibcK.Keeper,
 		nexus:       nexus,
 		ibcK:        ibcK,
 		bank:        bank,
