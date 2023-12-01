@@ -354,6 +354,9 @@ var _ sdk.Msg = &WasmMessage{}
 
 // ValidateBasic implements sdk.Msg
 func (m WasmMessage) ValidateBasic() error {
+	// The ValidateBasic function allows cheap stateless checks to fail msg handling early during CheckTx.
+	// This message can only be sent by the cosmwasm router as part of the amplifier integration into core,
+	// so there is no point in validating the message here.
 	return nil
 }
 
