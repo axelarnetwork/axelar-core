@@ -41,7 +41,7 @@ func NewMessageRoute(
 
 		ctx.GasMeter().ConsumeGas(gasCost, "execute-message")
 
-		return ibcK.SendMessage(ctx.Context(), msg.Recipient, asset, string(bz), msg.ID)
+		return ibcK.SendMessage(sdk.WrapSDKContext(ctx), msg.Recipient, asset, string(bz), msg.ID)
 	}
 }
 
