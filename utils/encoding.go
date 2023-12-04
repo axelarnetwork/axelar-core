@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// Decode a hex string. Hex string can be optionally prefixed with 0x.
+// Encode a bytearray as hex string with 0x prefix.
 func HexEncode(input []byte) string {
 	return "0x" + hex.EncodeToString(input)
 }
