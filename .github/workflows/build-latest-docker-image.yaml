@@ -10,10 +10,14 @@ on:
         description: Whether or build the debug image ("true"/"false")
         required: true
         default: "false"
+      cgo:
+        description: Whether to enable cgo ("true"/"false")
+        required: true
+        default: "true"
       wasm:
         description: Whether to enable wasm ("true"/"false")
         required: true
-        default: "false"
+        default: "true"
 
 jobs:
   build-and-push-latest-docker-image:
@@ -47,9 +51,13 @@ jobs:
 
       - name: Build docker image (normal)
         env:
-          WASM: ${{ github.event.inputs.WASM }}
+          WASM: ${{ github.event.inputs.wasm }}
+          CGO_ENABLED: 0
         run: |
-          make WASM="${WASM}" docker-image
+          if [ "${{ github.event.inputs.cgo }}" == "true" ]; then
+            export CGO_ENABLED=1
+          fi
+          make docker-image
 
       - name: Push to ECR (normal)
         env:
@@ -63,9 +71,13 @@ jobs:
       - name: Build docker image (debug)
         if: github.event.inputs.buildDebug != 'false'
         env:
-          WASM: ${{ github.event.inputs.WASM }}
+          WASM: ${{ github.event.inputs.wasm }}
+          CGO_ENABLED: 0
         run: |
-          make WASM="${WASM}" docker-image-debug
+          if [ "${{ github.event.inputs.cgo }}" == "true" ]; then
+            export CGO_ENABLED=1
+          fi
+          make docker-image-debug
 
       - name: Push to ECR (debug)
         if: github.event.inputs.buildDebug != 'false'

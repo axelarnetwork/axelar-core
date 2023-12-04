@@ -3,7 +3,7 @@
 FROM golang:1.21-alpine3.18 as build
 
 ARG ARCH=x86_64
-ARG WASM=false
+ARG WASM=true
 
 RUN apk add --no-cache --update \
   ca-certificates \
@@ -30,8 +30,8 @@ RUN if [[ "${WASM}" == "true" ]]; then \
 
 COPY . .
 
-ENV CGO_ENABLED=0
-RUN make WASM="${WASM}" MUSLC="${WASM}" build
+ENV CGO_ENABLED=1
+RUN make MUSLC="${WASM}" build
 
 FROM alpine:3.18
 
