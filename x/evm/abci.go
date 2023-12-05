@@ -603,7 +603,6 @@ func validateMessage(ctx sdk.Context, ck types.ChainKeeper, n types.Nexus, m typ
 }
 
 func handleMessage(ctx sdk.Context, ck types.ChainKeeper, chainID sdk.Int, keyID multisig.KeyID, msg nexus.GeneralMessage) {
-
 	cmd := types.NewApproveContractCallCommandGeneric(chainID, keyID, common.HexToAddress(msg.GetDestinationAddress()), common.BytesToHash(msg.PayloadHash), common.BytesToHash(msg.SourceTxID), msg.GetSourceChain(), msg.GetSourceAddress(), msg.SourceTxIndex, msg.ID)
 	funcs.MustNoErr(ck.EnqueueCommand(ctx, cmd))
 
@@ -699,12 +698,10 @@ func handleMessages(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, m types
 				continue
 			}
 
-			if srcCk, err := bk.ForChain(ctx, msg.GetSourceChain()); err != nil {
+			if srcCk, err := bk.ForChain(ctx, msg.GetSourceChain()); err == nil {
 				eventID := types.NewEventID(types.Hash(common.BytesToHash(msg.SourceTxID)), msg.SourceTxIndex)
 
-				if _, ok := srcCk.GetEvent(ctx, eventID); ok {
-					funcs.MustNoErr(srcCk.SetEventCompleted(ctx, eventID))
-				}
+				funcs.MustNoErr(srcCk.SetEventCompleted(ctx, eventID))
 			}
 
 			funcs.MustNoErr(n.SetMessageExecuted(ctx, msg.ID))

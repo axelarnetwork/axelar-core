@@ -239,9 +239,11 @@ func TestHandleGeneralMessages(t *testing.T) {
 		multisigKeeper *mock.MultisigKeeperMock
 		ck1            *mock.ChainKeeperMock
 		ck2            *mock.ChainKeeperMock
+		ck3            *mock.ChainKeeperMock
 	)
 	chain1 := nexus.ChainName(rand.Str(5))
 	chain2 := nexus.ChainName(rand.Str(5))
+
 	givenGeneralMessagesEnqueued := Given("general messages queued", func() {
 		ctx, bk, n, multisigKeeper, ck1, ck2 = setup()
 		n.GetChainsFunc = func(_ sdk.Context) []nexus.Chain {
@@ -269,15 +271,16 @@ func TestHandleGeneralMessages(t *testing.T) {
 		n.SetMessageExecutedFunc = func(ctx sdk.Context, id string) error { return nil }
 		n.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return true }
 	})
+
 	withGeneralMessages := func(numPerChain map[nexus.ChainName]int) WhenStatement {
 		return When("having general messages", func() {
 			n.GetProcessingMessagesFunc = func(_ sdk.Context, chain nexus.ChainName, limit int64) []nexus.GeneralMessage {
 				msgs := []nexus.GeneralMessage{}
+
 				for i := 0; i < int(limit) && i < numPerChain[chain]; i++ {
 					srcChain := nexustestutils.RandomChain()
 					srcChain.Module = types.ModuleName
-					destChain := nexustestutils.RandomChain()
-					destChain.Module = types.ModuleName
+					destChain := nexus.Chain{Name: chain, Module: types.ModuleName}
 					sender := nexus.CrossChainAddress{Chain: srcChain, Address: evmTestUtils.RandomAddress().Hex()}
 					receiver := nexus.CrossChainAddress{Chain: destChain, Address: evmTestUtils.RandomAddress().Hex()}
 
@@ -286,10 +289,12 @@ func TestHandleGeneralMessages(t *testing.T) {
 
 					msgs = append(msgs, msg)
 				}
+
 				return msgs
 			}
 		})
 	}
+
 	panicWith := func(msg string) func(t *testing.T) {
 		return func(t *testing.T) {
 			assert.PanicsWithError(t, msg, func() {
@@ -298,7 +303,8 @@ func TestHandleGeneralMessages(t *testing.T) {
 		}
 	}
 
-	givenGeneralMessagesEnqueued.When2(withGeneralMessages(map[nexus.ChainName]int{})).
+	givenGeneralMessagesEnqueued.
+		When2(withGeneralMessages(map[nexus.ChainName]int{})).
 		When("ForChainFails", func() {
 			bk.ForChainFunc = func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) {
 				return nil, errors.New("not found")
@@ -307,57 +313,120 @@ func TestHandleGeneralMessages(t *testing.T) {
 		Then("should panic", panicWith("call should not have failed: not found")).
 		Run(t)
 
-	givenGeneralMessagesEnqueued.When2(withGeneralMessages(map[nexus.ChainName]int{})).When("no messages", func() {
-		ck1.GetParamsFunc = func(ctx sdk.Context) types.Params {
-			return types.Params{EndBlockerLimit: 50}
-		}
-		ck2.GetParamsFunc = func(ctx sdk.Context) types.Params {
-			return types.Params{EndBlockerLimit: 50}
-		}
-	}).Then("should handle", func(t *testing.T) {
-		handleMessages(ctx, bk, n, multisigKeeper)
-		assert.Len(t, ck1.EnqueueCommandCalls(), 0)
-		assert.Len(t, ck2.EnqueueCommandCalls(), 0)
-	}).Run(t)
+	givenGeneralMessagesEnqueued.
+		When2(withGeneralMessages(map[nexus.ChainName]int{})).
+		When("no messages", func() {
+			ck1.GetParamsFunc = func(ctx sdk.Context) types.Params {
+				return types.Params{EndBlockerLimit: 50}
+			}
+			ck2.GetParamsFunc = func(ctx sdk.Context) types.Params {
+				return types.Params{EndBlockerLimit: 50}
+			}
+		}).
+		Then("should handle", func(t *testing.T) {
+			handleMessages(ctx, bk, n, multisigKeeper)
+			assert.Len(t, ck1.EnqueueCommandCalls(), 0)
+			assert.Len(t, ck2.EnqueueCommandCalls(), 0)
+		}).
+		Run(t)
 
-	givenGeneralMessagesEnqueued.When2(withGeneralMessages(map[nexus.ChainName]int{chain1: 10})).When("end blocker limit is greater than num messages", func() {
-		ck1.GetParamsFunc = func(ctx sdk.Context) types.Params {
-			return types.Params{EndBlockerLimit: 50}
-		}
-		ck2.GetParamsFunc = func(ctx sdk.Context) types.Params {
-			return types.Params{EndBlockerLimit: 50}
-		}
-	}).Then("should handle", func(t *testing.T) {
-		handleMessages(ctx, bk, n, multisigKeeper)
-		assert.Len(t, ck1.EnqueueCommandCalls(), 10)
-		assert.Len(t, ck2.EnqueueCommandCalls(), 0)
-	}).Run(t)
+	givenGeneralMessagesEnqueued.
+		When2(withGeneralMessages(map[nexus.ChainName]int{chain1: 10})).
+		When("end blocker limit is greater than num messages", func() {
+			ck1.GetParamsFunc = func(ctx sdk.Context) types.Params {
+				return types.Params{EndBlockerLimit: 50}
+			}
+			ck2.GetParamsFunc = func(ctx sdk.Context) types.Params {
+				return types.Params{EndBlockerLimit: 50}
+			}
+		}).
+		Then("should handle", func(t *testing.T) {
+			handleMessages(ctx, bk, n, multisigKeeper)
+			assert.Len(t, ck1.EnqueueCommandCalls(), 10)
+			assert.Len(t, ck2.EnqueueCommandCalls(), 0)
+		}).
+		Run(t)
 
-	givenGeneralMessagesEnqueued.When2(withGeneralMessages(map[nexus.ChainName]int{chain2: 100})).When("end blocker limit is less than num messages", func() {
-		ck1.GetParamsFunc = func(ctx sdk.Context) types.Params {
-			return types.Params{EndBlockerLimit: 50}
-		}
-		ck2.GetParamsFunc = func(ctx sdk.Context) types.Params {
-			return types.Params{EndBlockerLimit: 50}
-		}
-	}).Then("should handle", func(t *testing.T) {
-		handleMessages(ctx, bk, n, multisigKeeper)
-		assert.Len(t, ck1.EnqueueCommandCalls(), 0)
-		assert.Len(t, ck2.EnqueueCommandCalls(), int(ck2.GetParams(ctx).EndBlockerLimit))
-	}).Run(t)
+	givenGeneralMessagesEnqueued.
+		When2(withGeneralMessages(map[nexus.ChainName]int{chain2: 100})).
+		When("end blocker limit is less than num messages", func() {
+			ck1.GetParamsFunc = func(ctx sdk.Context) types.Params {
+				return types.Params{EndBlockerLimit: 50}
+			}
+			ck2.GetParamsFunc = func(ctx sdk.Context) types.Params {
+				return types.Params{EndBlockerLimit: 50}
+			}
+		}).
+		Then("should handle", func(t *testing.T) {
+			handleMessages(ctx, bk, n, multisigKeeper)
+			assert.Len(t, ck1.EnqueueCommandCalls(), 0)
+			assert.Len(t, ck2.EnqueueCommandCalls(), int(ck2.GetParams(ctx).EndBlockerLimit))
+		}).
+		Run(t)
 
-	givenGeneralMessagesEnqueued.When2(withGeneralMessages(map[nexus.ChainName]int{chain1: 100, chain2: 65})).When("multiple chains", func() {
-		ck1.GetParamsFunc = func(ctx sdk.Context) types.Params {
-			return types.Params{EndBlockerLimit: 45}
-		}
-		ck2.GetParamsFunc = func(ctx sdk.Context) types.Params {
-			return types.Params{EndBlockerLimit: 40}
-		}
-	}).Then("should handle", func(t *testing.T) {
-		handleMessages(ctx, bk, n, multisigKeeper)
-		assert.Len(t, ck1.EnqueueCommandCalls(), int(ck1.GetParams(ctx).EndBlockerLimit))
-		assert.Len(t, ck2.EnqueueCommandCalls(), int(ck2.GetParams(ctx).EndBlockerLimit))
-	}).Run(t)
+	givenGeneralMessagesEnqueued.
+		When2(withGeneralMessages(map[nexus.ChainName]int{chain1: 100, chain2: 65})).
+		When("multiple chains", func() {
+			ck1.GetParamsFunc = func(ctx sdk.Context) types.Params {
+				return types.Params{EndBlockerLimit: 45}
+			}
+			ck2.GetParamsFunc = func(ctx sdk.Context) types.Params {
+				return types.Params{EndBlockerLimit: 40}
+			}
+		}).
+		Then("should handle", func(t *testing.T) {
+			handleMessages(ctx, bk, n, multisigKeeper)
+			assert.Len(t, ck1.EnqueueCommandCalls(), int(ck1.GetParams(ctx).EndBlockerLimit))
+			assert.Len(t, ck2.EnqueueCommandCalls(), int(ck2.GetParams(ctx).EndBlockerLimit))
+		}).
+		Run(t)
+
+	givenGeneralMessagesEnqueued.
+		When("some associated EVM event exists", func() {
+			srcChain := nexustestutils.RandomChain()
+			srcChain.Module = types.ModuleName
+
+			ck1.GetParamsFunc = func(ctx sdk.Context) types.Params {
+				return types.Params{EndBlockerLimit: 45}
+			}
+			ck2.GetParamsFunc = func(ctx sdk.Context) types.Params {
+				return types.Params{EndBlockerLimit: 40}
+			}
+			ck3 = &mock.ChainKeeperMock{}
+
+			bk.ForChainFunc = func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) {
+				switch chain {
+				case chain1:
+					return ck1, nil
+				case chain2:
+					return ck2, nil
+				case srcChain.Name:
+					return ck3, nil
+				default:
+					return nil, errors.New("not found")
+				}
+			}
+
+			n.GetProcessingMessagesFunc = func(_ sdk.Context, chain nexus.ChainName, limit int64) []nexus.GeneralMessage {
+				destChain := nexus.Chain{Name: chain, Module: types.ModuleName}
+				sender := nexus.CrossChainAddress{Chain: srcChain, Address: evmTestUtils.RandomAddress().Hex()}
+				receiver := nexus.CrossChainAddress{Chain: destChain, Address: evmTestUtils.RandomAddress().Hex()}
+
+				msg := nexus.NewGeneralMessage(evmTestUtils.RandomHash().Hex(), sender, receiver, evmTestUtils.RandomHash().Bytes(), evmTestUtils.RandomHash().Bytes()[:], uint64(rand.I64Between(0, 10000)), nil)
+
+				return []nexus.GeneralMessage{msg}
+			}
+		}).
+		Then("should handle", func(t *testing.T) {
+			ck3.SetEventCompletedFunc = func(ctx sdk.Context, eventID types.EventID) error { return nil }
+
+			handleMessages(ctx, bk, n, multisigKeeper)
+
+			assert.Len(t, ck1.EnqueueCommandCalls(), 1)
+			assert.Len(t, ck2.EnqueueCommandCalls(), 1)
+			assert.Len(t, ck3.SetEventCompletedCalls(), 2)
+		}).
+		Run(t)
 }
 
 func TestHandleContractCall(t *testing.T) {
