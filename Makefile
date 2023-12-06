@@ -9,6 +9,9 @@ DOCKER_BUF := $(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace bu
 HTTPS_GIT := https://github.com/axelarnetwork/axelar-core.git
 PUSH_DOCKER_IMAGE := true
 
+$(info $$WASM is [${WASM}])
+$(info $$CGO_ENABLED is [${CGO_ENABLED}])
+
 ifeq ($(WASM), true)
 WASM_ENABLED := "true"
 ifndef $(WASM_CAPABILITIES)

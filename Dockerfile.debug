@@ -5,7 +5,7 @@ RUN groupadd -r -g 1001 axelard && useradd -m -r -u 1000 -g axelard axelard
 
 WORKDIR /axelar
 RUN chown -R axelard:axelard /axelar
-ARG WASM=false
+ARG WASM=true
 
 RUN go install github.com/go-delve/delve/cmd/dlv@latest
 
@@ -15,7 +15,8 @@ RUN go mod download
 
 COPY . .
 RUN git config --global --add safe.directory /axelar
-RUN make WASM="${WASM}" debug
+ENV CGO_ENABLED=1
+RUN make debug
 RUN cp /axelar/bin/* /usr/local/bin
 
 # The home directory of axelar-core where configuration/genesis/data are stored
