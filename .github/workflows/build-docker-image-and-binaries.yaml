@@ -71,7 +71,7 @@ jobs:
           ARCH: ${{ matrix.arch }}
           OS_TYPE: ${{ matrix.os }}
           SEMVER: ${{ github.event.inputs.tag }}
-          WASM: ${{ github.event.inputs.WASM }}
+          WASM: ${{ github.event.inputs.wasm }}
           CGO_ENABLED: 0
         run: |
           if [ "${{ github.event.inputs.cgo }}" == "true" ]; then
