@@ -2,7 +2,6 @@ package vald
 
 import (
 	"context"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -119,9 +118,9 @@ func GetSignCommand() *cobra.Command {
 				signDetails := map[string]string{
 					"key_id":    keyID.String(),
 					"validator": valAddr,
-					"msg_hash":  hex.EncodeToString(hash.Bytes()),
-					"pub_key":   pubKey.String(),
-					"signature": hex.EncodeToString(evmSignature),
+					"msg_hash":  utils.HexEncode(hash.Bytes()),
+					"pub_key":   utils.HexEncode(pubKey),
+					"signature": utils.HexEncode(evmSignature),
 				}
 				fmt.Printf("%s", funcs.Must(json.MarshalIndent(signDetails, "", "  ")))
 
