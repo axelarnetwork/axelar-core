@@ -603,7 +603,6 @@ func validateMessage(ctx sdk.Context, ck types.ChainKeeper, n types.Nexus, m typ
 }
 
 func handleMessage(ctx sdk.Context, ck types.ChainKeeper, chainID sdk.Int, keyID multisig.KeyID, msg nexus.GeneralMessage) {
-
 	cmd := types.NewApproveContractCallCommandGeneric(chainID, keyID, common.HexToAddress(msg.GetDestinationAddress()), common.BytesToHash(msg.PayloadHash), common.BytesToHash(msg.SourceTxID), msg.GetSourceChain(), msg.GetSourceAddress(), msg.SourceTxIndex, msg.ID)
 	funcs.MustNoErr(ck.EnqueueCommand(ctx, cmd))
 
@@ -650,8 +649,8 @@ func handleMessageWithToken(ctx sdk.Context, ck types.ChainKeeper, chainID sdk.I
 
 func handleMessages(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, m types.MultisigKeeper) {
 	for _, chain := range slices.Filter(n.GetChains(ctx), types.IsEVMChain) {
-		ck := funcs.Must(bk.ForChain(ctx, chain.Name))
-		endBlockerLimit := ck.GetParams(ctx).EndBlockerLimit
+		destCk := funcs.Must(bk.ForChain(ctx, chain.Name))
+		endBlockerLimit := destCk.GetParams(ctx).EndBlockerLimit
 		msgs := n.GetProcessingMessages(ctx, chain.Name, endBlockerLimit)
 
 		bk.Logger(ctx).Debug(fmt.Sprintf("handling %d general messages", len(msgs)), types.AttributeKeyChain, chain.Name)
@@ -659,7 +658,7 @@ func handleMessages(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, m types
 		for _, msg := range msgs {
 			success := false
 			_ = utils.RunCached(ctx, bk, func(ctx sdk.Context) (bool, error) {
-				if err := validateMessage(ctx, ck, n, m, chain, msg); err != nil {
+				if err := validateMessage(ctx, destCk, n, m, chain, msg); err != nil {
 					bk.Logger(ctx).Info(fmt.Sprintf("failed validating message: %s", err.Error()),
 						types.AttributeKeyChain, msg.GetDestinationChain(),
 						types.AttributeKeyMessageID, msg.ID,
@@ -667,14 +666,14 @@ func handleMessages(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, m types
 					return false, err
 				}
 
-				chainID := funcs.MustOk(ck.GetChainID(ctx))
+				chainID := funcs.MustOk(destCk.GetChainID(ctx))
 				keyID := funcs.MustOk(m.GetCurrentKeyID(ctx, chain.Name))
 
 				switch msg.Type() {
 				case nexus.TypeGeneralMessage:
-					handleMessage(ctx, ck, chainID, keyID, msg)
+					handleMessage(ctx, destCk, chainID, keyID, msg)
 				case nexus.TypeGeneralMessageWithToken:
-					handleMessageWithToken(ctx, ck, chainID, keyID, msg)
+					handleMessageWithToken(ctx, destCk, chainID, keyID, msg)
 				default:
 					panic(fmt.Sprintf("unrecognized message type %d", msg.Type()))
 				}
@@ -684,7 +683,7 @@ func handleMessages(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, m types
 			})
 
 			if !success {
-				ck.Logger(ctx).Error("failed handling general message",
+				destCk.Logger(ctx).Error("failed handling general message",
 					types.AttributeKeyChain, chain.Name.String(),
 					types.AttributeKeyMessageID, msg.ID,
 				)
@@ -697,6 +696,12 @@ func handleMessages(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, m types
 				funcs.MustNoErr(n.SetMessageFailed(ctx, msg.ID))
 
 				continue
+			}
+
+			if srcCk, err := bk.ForChain(ctx, msg.GetSourceChain()); err == nil {
+				eventID := types.NewEventID(types.Hash(common.BytesToHash(msg.SourceTxID)), msg.SourceTxIndex)
+
+				funcs.MustNoErr(srcCk.SetEventCompleted(ctx, eventID))
 			}
 
 			funcs.MustNoErr(n.SetMessageExecuted(ctx, msg.ID))
