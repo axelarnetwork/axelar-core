@@ -593,7 +593,6 @@ func initAnteHandlers(encodingConfig axelarParams.EncodingConfig, keys map[strin
 
 	anteDecorators := []sdk.AnteDecorator{
 		ante.NewAnteHandlerDecorator(baseAnteHandler),
-		ibcante.NewAnteDecorator(getKeeper[ibckeeper.Keeper](keepers)),
 	}
 
 	// enforce wasm limits earlier in the ante handler chain
@@ -607,6 +606,7 @@ func initAnteHandlers(encodingConfig axelarParams.EncodingConfig, keys map[strin
 	}
 
 	anteDecorators = append(anteDecorators,
+		ibcante.NewAnteDecorator(getKeeper[ibckeeper.Keeper](keepers)),
 		ante.NewCheckRefundFeeDecorator(
 			encodingConfig.InterfaceRegistry,
 			getKeeper[authkeeper.AccountKeeper](keepers),

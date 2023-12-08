@@ -168,7 +168,7 @@ func initWasmKeeper(encodingConfig axelarParams.EncodingConfig, keys map[string]
 		func(old wasmkeeper.Messenger) wasmkeeper.Messenger {
 			encoders := wasm.DefaultEncoders(encodingConfig.Codec, getKeeper[ibctransferkeeper.Keeper](keepers))
 			encoders.Custom = nexusKeeper.EncodeRoutingMessage
-			return withAnteHandlers(
+			return WithAnteHandlers(
 				encoders,
 				initMessageAnteDecorators(encodingConfig, keepers),
 				wasmkeeper.NewMessageHandlerChain(old, nexusKeeper.NewMessenger(getKeeper[nexusKeeper.Keeper](keepers))))
