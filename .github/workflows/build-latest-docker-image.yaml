@@ -50,11 +50,15 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build docker image (normal)
+        env:
+          WASM: "true"
+          CGO_ENABLED: 1
         run: |
-          export WASM="${{ github.event.inputs.wasm }}"
-          export CGO_ENABLED=0
-          if [ "${{ github.event.inputs.cgo }}" == "true" ]; then
-            export CGO_ENABLED=1
+          if [ "${{ github.event.inputs.wasm }}" == "false" ]; then
+            export WASM="false"
+          fi
+          if [ "${{ github.event.inputs.cgo }}" == "false" ]; then
+            export CGO_ENABLED=0
           fi
           make docker-image
 
@@ -68,12 +72,16 @@ jobs:
           docker push "${REGISTRY}/${REPOSITORY}:${IMAGE_TAG}"
 
       - name: Build docker image (debug)
+        env:
+          WASM: "true"
+          CGO_ENABLED: 1
         if: github.event.inputs.buildDebug != 'false'
         run: |
-          export WASM="${{ github.event.inputs.wasm }}"
-          export CGO_ENABLED=0
-          if [ "${{ github.event.inputs.cgo }}" == "true" ]; then
-            export CGO_ENABLED=1
+          if [ "${{ github.event.inputs.wasm }}" == "false" ]; then
+            export WASM="false"
+          fi
+          if [ "${{ github.event.inputs.cgo }}" == "false" ]; then
+            export CGO_ENABLED=0
           fi
           make docker-image-debug
 
