@@ -919,7 +919,7 @@ func CommandIDsToStrings(commandIDs []CommandID) []string {
 
 // GetID returns an unique ID for the event
 func (m Event) GetID() EventID {
-	return EventID(fmt.Sprintf("%s-%d", m.TxID.Hex(), m.Index))
+	return NewEventID(m.TxID, m.Index)
 }
 
 // ValidateBasic returns an error if the event is invalid
@@ -1190,6 +1190,11 @@ func getType(val interface{}) string {
 
 // EventID ensures a correctly formatted event ID
 type EventID string
+
+// NewEventID returns a new event ID
+func NewEventID(txID Hash, index uint64) EventID {
+	return EventID(fmt.Sprintf("%s-%d", txID.Hex(), index))
+}
 
 // Validate returns an error, if the event ID is not in format of txID-index
 func (id EventID) Validate() error {
