@@ -3,6 +3,7 @@ package app
 import (
 	"encoding/json"
 	"fmt"
+	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 
 	"github.com/CosmWasm/wasmd/x/wasm"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
@@ -73,18 +74,38 @@ func assertSingleMessageIsSet(msg wasmvmtypes.CosmosMsg) error {
 	}
 }
 
-func isBankBurnMsg(msg wasmvmtypes.CosmosMsg) bool {
-	return msg.Bank != nil && msg.Bank.Burn != nil
-}
-
-func isIBCSendPacketMsg(msg wasmvmtypes.CosmosMsg) bool {
-	return msg.IBC != nil && msg.IBC.SendPacket != nil
-}
-
 func WithAnteHandlers(encoders wasmkeeper.MessageEncoders, anteHandler ante.MessageAnteHandler, messenger wasmkeeper.Messenger) wasmkeeper.Messenger {
 	return AnteHandlerMessenger{
 		encoders:   encoders,
 		anteHandle: anteHandler,
 		messenger:  messenger,
 	}
+}
+
+type MsgTypeBlacklistMessenger struct {
+	messenger wasmkeeper.Messenger
+}
+
+func WithMsgTypeBlacklist(messenger wasmkeeper.Messenger) MsgTypeBlacklistMessenger {
+	return MsgTypeBlacklistMessenger{messenger: messenger}
+}
+
+func (m MsgTypeBlacklistMessenger) DispatchMsg(ctx sdk.Context, contractAddr sdk.AccAddress, contractIBCPortID string, msg wasmvmtypes.CosmosMsg) (events []sdk.Event, data [][]byte, err error) {
+	if isIBCSendPacketMsg(msg) || isStargateMsg(msg) {
+		return nil, nil, wasmtypes.ErrUnknownMsg
+	}
+
+	return m.messenger.DispatchMsg(ctx, contractAddr, contractIBCPortID, msg)
+}
+
+func isStargateMsg(msg wasmvmtypes.CosmosMsg) bool {
+	return msg.Stargate != nil
+}
+
+func isBankBurnMsg(msg wasmvmtypes.CosmosMsg) bool {
+	return msg.Bank != nil && msg.Bank.Burn != nil
+}
+
+func isIBCSendPacketMsg(msg wasmvmtypes.CosmosMsg) bool {
+	return msg.IBC != nil && msg.IBC.SendPacket != nil
 }

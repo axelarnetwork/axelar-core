@@ -171,7 +171,8 @@ func initWasmKeeper(encodingConfig axelarParams.EncodingConfig, keys map[string]
 			return WithAnteHandlers(
 				encoders,
 				initMessageAnteDecorators(encodingConfig, keepers),
-				wasmkeeper.NewMessageHandlerChain(old, nexusKeeper.NewMessenger(getKeeper[nexusKeeper.Keeper](keepers))))
+				// for security reasons we disallow some msg types that can be used for arbitrary calls
+				WithMsgTypeBlacklist(wasmkeeper.NewMessageHandlerChain(old, nexusKeeper.NewMessenger(getKeeper[nexusKeeper.Keeper](keepers)))))
 		}))
 
 	scopedWasmK := getKeeper[capabilitykeeper.Keeper](keepers).ScopeToModule(wasm.ModuleName)
