@@ -515,6 +515,7 @@ func initAppModules(keepers *keeperCache, bApp *bam.BaseApp, encodingConfig axel
 			*getKeeper[feegrantkeeper.Keeper](keepers),
 			encodingConfig.InterfaceRegistry,
 		),
+
 		snapshot.NewAppModule(*getKeeper[snapKeeper.Keeper](keepers)),
 		multisig.NewAppModule(
 			*getKeeper[multisigKeeper.Keeper](keepers),
