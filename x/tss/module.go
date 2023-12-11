@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/axelarnetwork/axelar-core/utils/grpc"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -131,6 +132,8 @@ func (AppModule) QuerierRoute() string {
 // RegisterServices registers a GRPC query service to respond to the
 // module-specific GRPC queries.
 func (am AppModule) RegisterServices(cfg module.Configurator) {
+	msgServer := keeper.NewMsgServerImpl(am.keeper, am.snapshotter, am.staker, am.multisig)
+	types.RegisterMsgServiceServer(grpc.ServerWithSDKErrors{Server: cfg.MsgServer(), Err: types.ErrTss, Logger: am.keeper.Logger}, msgServer)
 	types.RegisterQueryServiceServer(cfg.QueryServer(), keeper.NewGRPCQuerier(am.keeper))
 
 	err := cfg.RegisterMigration(types.ModuleName, 2, keeper.GetMigrationHandler())
