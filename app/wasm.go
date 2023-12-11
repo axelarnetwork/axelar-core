@@ -54,8 +54,12 @@ func assertSingleMessageIsSet(msg wasmvmtypes.CosmosMsg) error {
 	}
 
 	msgCount := 0
-	for _, typedMsgs := range msgs {
-		if typedMsgs, ok := typedMsgs.(map[string]interface{}); ok {
+	for msgType, typedMsgs := range msgs {
+		// custom and stargate msgs are not categorized in CosmosMsg, so the next lower structural level would be message fields and not individual messages,
+		// so we can safely assume that there is only one message
+		if msgType == "custom" || msgType == "stargate" {
+			msgCount++
+		} else if typedMsgs, ok := typedMsgs.(map[string]interface{}); ok {
 			msgCount += len(maps.Keys(typedMsgs))
 		}
 	}

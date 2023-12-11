@@ -152,5 +152,38 @@ func TestAnteHandlerMessenger_DispatchMsg(t *testing.T) {
 			Then("the message should get dispatched without error", func(t *testing.T) {
 				assert.NoError(t, err)
 			}),
+
+		When("it dispatches a single custom message", func() {
+			_, _, err = messenger.DispatchMsg(sdk.Context{}, nil, "", wasmvmtypes.CosmosMsg{
+				Custom: json.RawMessage(`{"foo":"bar", "baz":1}`),
+			})
+		}).
+			Then("antehandlers should get triggered", func(t *testing.T) {
+				assert.True(t, antehandlerCalled)
+			}).
+			Then("messagehandlers should get triggered", func(t *testing.T) {
+				assert.True(t, messagehandlerCalled)
+			}).
+			Then("the message should get dispatched without error", func(t *testing.T) {
+				assert.NoError(t, err)
+			}),
+
+		When("it dispatches a single stargate message", func() {
+			_, _, err = messenger.DispatchMsg(sdk.Context{}, nil, "",
+				wasmvmtypes.CosmosMsg{Stargate: &wasmvmtypes.StargateMsg{
+					TypeURL: "type",
+					Value:   []byte("value"),
+				}},
+			)
+		}).
+			Then("antehandlers should get triggered", func(t *testing.T) {
+				assert.True(t, antehandlerCalled)
+			}).
+			Then("messagehandlers should get triggered", func(t *testing.T) {
+				assert.True(t, messagehandlerCalled)
+			}).
+			Then("the message should get dispatched without error", func(t *testing.T) {
+				assert.NoError(t, err)
+			}),
 	).Run(t)
 }
