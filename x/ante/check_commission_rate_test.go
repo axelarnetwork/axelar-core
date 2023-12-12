@@ -15,7 +15,7 @@ import (
 
 func TestCheckCommissionRate(t *testing.T) {
 	var (
-		handler ante.CheckCommissionRate
+		handler sdk.AnteDecorator
 		tx      *mock.TxMock
 		msg     sdk.Msg
 		staking *mock.StakingMock
@@ -78,9 +78,8 @@ func TestCheckCommissionRate(t *testing.T) {
 
 	givenCheckCommissionRateAnteHandler := Given("the check commission rate ante handler", func() {
 		staking = &mock.StakingMock{}
-		handler = ante.NewCheckCommissionRate(
-			staking,
-		)
+		handler = ante.NewAnteHandlerDecorator(
+			ante.ChainMessageAnteDecorators(ante.NewCheckCommissionRate(staking)).ToAnteHandler())
 	})
 
 	givenCheckCommissionRateAnteHandler.
