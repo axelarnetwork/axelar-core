@@ -19,7 +19,7 @@ execute `make docker-image-debug`. This creates the image axelar/core-debug:late
 
 ### Smart contracts bytecode dependency
 
-In order to run/build the project locally we need to import the bytecode from gateway smart contracts.
+In order to run/build the project locally, we need to import the bytecode from gateway smart contracts.
 
 1. Find the specific version of the bytecode here `contract-version.json`
 2. Download the right version from the [gateway workflow](https://github.com/axelarnetwork/solidity-cgp-gateway/actions/workflows/publish-bytecode.yaml).
