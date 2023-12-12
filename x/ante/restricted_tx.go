@@ -22,8 +22,7 @@ func NewRestrictedTx(permission types.Permission) RestrictedTx {
 }
 
 // AnteHandle fails if the signer is not authorized to send the transaction
-func (d RestrictedTx) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
-	msgs := tx.GetMsgs()
+func (d RestrictedTx) AnteHandle(ctx sdk.Context, msgs []sdk.Msg, simulate bool, next MessageAnteHandler) (sdk.Context, error) {
 	for _, msg := range msgs {
 		signer := msg.GetSigners()[0]
 		signerRole := d.permission.GetRole(ctx, signer)
@@ -42,5 +41,5 @@ func (d RestrictedTx) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next
 		}
 	}
 
-	return next(ctx, tx, simulate)
+	return next(ctx, msgs, simulate)
 }

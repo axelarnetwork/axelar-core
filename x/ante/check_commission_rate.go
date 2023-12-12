@@ -23,9 +23,7 @@ func NewCheckCommissionRate(staking types.Staking) CheckCommissionRate {
 }
 
 // AnteHandle fails the transaction if it finds any validator registering a commission rate that is below the minimum
-func (d CheckCommissionRate) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
-	msgs := tx.GetMsgs()
-
+func (d CheckCommissionRate) AnteHandle(ctx sdk.Context, msgs []sdk.Msg, simulate bool, next MessageAnteHandler) (sdk.Context, error) {
 	for _, msg := range msgs {
 		switch msg := msg.(type) {
 		case *stakingtypes.MsgCreateValidator:
@@ -58,5 +56,5 @@ func (d CheckCommissionRate) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate boo
 		}
 	}
 
-	return next(ctx, tx, simulate)
+	return next(ctx, msgs, simulate)
 }
