@@ -143,13 +143,13 @@ func TestHandleExpiredPoll(t *testing.T) {
 				HasVotedFunc: func(address sdk.ValAddress) bool { return false },
 			}
 		}).
-		When("the voter is a chain maintainer", func() {
+		When("the voters are a chain maintainer", func() {
 			maintainerState = &nexusmock.MaintainerStateMock{}
 			n.GetChainMaintainerStateFunc = func(sdk.Context, nexus.Chain, sdk.ValAddress) (nexus.MaintainerState, bool) {
 				return maintainerState, true
 			}
 		}).
-		Then("should clear rewards and mark voter missing vote", func(t *testing.T) {
+		Then("should clear rewards and mark voters missing vote", func(t *testing.T) {
 			maintainerState.MarkMissingVoteFunc = func(bool) {}
 			n.SetChainMaintainerStateFunc = func(ctx sdk.Context, maintainerState nexus.MaintainerState) error { return nil }
 			rewardPool.ClearRewardsFunc = func(sdk.ValAddress) {}
@@ -178,13 +178,13 @@ func TestHandleExpiredPoll(t *testing.T) {
 				HasVotedFunc: func(address sdk.ValAddress) bool { return false },
 			}
 		}).
-		When("the voter is not a chain maintainer", func() {
+		When("the voters are not a chain maintainer", func() {
 			maintainerState = &nexusmock.MaintainerStateMock{}
 			n.GetChainMaintainerStateFunc = func(sdk.Context, nexus.Chain, sdk.ValAddress) (nexus.MaintainerState, bool) {
 				return nil, false
 			}
 		}).
-		Then("should clear rewards and not mark voter missing vote", func(t *testing.T) {
+		Then("should clear rewards and not mark voters missing vote", func(t *testing.T) {
 			rewardPool.ClearRewardsFunc = func(sdk.ValAddress) {}
 
 			err := handler.HandleExpiredPoll(ctx, poll)
