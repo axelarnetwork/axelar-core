@@ -360,7 +360,7 @@ func (m WasmMessage) ValidateBasic() error {
 	return nil
 }
 
-// GetSigners implements sdk.Msg
+// GetSigners implements sdk.Msg. There is no signer for wasm generated messages, so this returns an empty slice.
 func (m WasmMessage) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{m.Sender}
+	return []sdk.AccAddress{}
 }
