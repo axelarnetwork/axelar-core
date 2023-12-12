@@ -114,6 +114,17 @@ func TestHandleExpiredPoll(t *testing.T) {
 				HasVotedFunc: func(address sdk.ValAddress) bool { return !address.Equals(missingVoter) },
 			}
 		}).
+		When("all voter failed to vote for poll", func() {
+			poll = &votemock.PollMock{
+				GetIDFunc:             func() vote.PollID { return vote.PollID(rand.I64Between(10, 100)) },
+				GetRewardPoolNameFunc: func() (string, bool) { return rand.NormalizedStr(3), true },
+				GetMetaDataFunc:       func() (codec.ProtoMarshaler, bool) { return &types.PollMetadata{Chain: exported.Ethereum.Name}, true },
+				GetVotersFunc: func() []sdk.ValAddress {
+					return []sdk.ValAddress{missingVoter}
+				},
+				HasVotedFunc: func(address sdk.ValAddress) bool { return false },
+			}
+		}).
 		When("maintainer state can not be found", func() {
 			maintainerState = &nexusmock.MaintainerStateMock{}
 			n.GetChainMaintainerStateFunc = func(sdk.Context, nexus.Chain, sdk.ValAddress) (nexus.MaintainerState, bool) {
