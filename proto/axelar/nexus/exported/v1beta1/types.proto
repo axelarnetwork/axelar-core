@@ -118,4 +118,6 @@ message WasmMessage {
   bytes payload_hash = 5;
   bytes source_tx_id = 6 [ (gogoproto.customname) = "SourceTxID" ];
   uint64 source_tx_index = 7;
+  bytes sender = 8 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
 }
