@@ -143,18 +143,25 @@ func TestHandleExpiredPoll(t *testing.T) {
 				HasVotedFunc: func(address sdk.ValAddress) bool { return false },
 			}
 		}).
-		When("maintainer state can not be found", func() {
+		When("maintainer state can be found", func() {
 			maintainerState = &nexusmock.MaintainerStateMock{}
 			n.GetChainMaintainerStateFunc = func(sdk.Context, nexus.Chain, sdk.ValAddress) (nexus.MaintainerState, bool) {
-				return nil, false
+				return maintainerState, true
 			}
 		}).
-		Then("should clear rewards and not mark voter missing vote", func(t *testing.T) {
+		Then("should clear rewards and mark voter missing vote", func(t *testing.T) {
+			maintainerState.MarkMissingVoteFunc = func(bool) {}
+			n.SetChainMaintainerStateFunc = func(ctx sdk.Context, maintainerState nexus.MaintainerState) error { return nil }
 			rewardPool.ClearRewardsFunc = func(sdk.ValAddress) {}
 
 			err := handler.HandleExpiredPoll(ctx, poll)
 
 			assert.NoError(t, err)
+			assert.Len(t, maintainerState.MarkMissingVoteCalls(), 10)
+			for _, call := range maintainerState.MarkMissingVoteCalls() {
+				assert.True(t, call.MissingVote)
+			}
+			assert.Len(t, n.SetChainMaintainerStateCalls(), 10)
 			assert.Len(t, rewardPool.ClearRewardsCalls(), 10)
 		}).
 		Run(t)
