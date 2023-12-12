@@ -349,3 +349,18 @@ func FromGeneralMessage(msg GeneralMessage) WasmMessage {
 		SourceTxIndex:      msg.SourceTxIndex,
 	}
 }
+
+var _ sdk.Msg = &WasmMessage{}
+
+// ValidateBasic implements sdk.Msg
+func (m WasmMessage) ValidateBasic() error {
+	// The ValidateBasic function allows cheap stateless checks to fail msg handling early during CheckTx.
+	// This message can only be sent by the cosmwasm router as part of the amplifier integration into core,
+	// so there is no point in validating the message here.
+	return nil
+}
+
+// GetSigners implements sdk.Msg. There is no signer for wasm generated messages, so this returns an empty slice.
+func (m WasmMessage) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{}
+}

@@ -21,7 +21,7 @@ import (
 
 func TestRestrictedTx(t *testing.T) {
 	var (
-		handler    ante.RestrictedTx
+		handler    sdk.AnteDecorator
 		permission *mock.PermissionMock
 		tx         *mock.TxMock
 	)
@@ -75,7 +75,8 @@ func TestRestrictedTx(t *testing.T) {
 
 	Given("a restricted tx ante handler", func() {
 		permission = &mock.PermissionMock{}
-		handler = ante.NewRestrictedTx(permission)
+		handler = ante.NewAnteHandlerDecorator(
+			ante.ChainMessageAnteDecorators(ante.NewRestrictedTx(permission)).ToAnteHandler())
 	}).Branch(
 		When("msg role is unrestricted", msgRoleIsUnrestricted).
 			When("signer has any role", signerAnyRole).

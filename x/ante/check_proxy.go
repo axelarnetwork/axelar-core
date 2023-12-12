@@ -21,13 +21,12 @@ func NewCheckProxy(snapshotter types.Snapshotter) CheckProxy {
 }
 
 // AnteHandle fails the transaction if it finds any validator holding multiSig share of active keys is trying to unbond
-func (d CheckProxy) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
+func (d CheckProxy) AnteHandle(ctx sdk.Context, msgs []sdk.Msg, simulate bool, next MessageAnteHandler) (sdk.Context, error) {
 	// exempt genesis validator(s) from this check
 	if ctx.BlockHeight() == 0 {
-		return next(ctx, tx, simulate)
+		return next(ctx, msgs, simulate)
 	}
 
-	msgs := tx.GetMsgs()
 	for _, msg := range msgs {
 		switch msg := msg.(type) {
 		case *stakingtypes.MsgCreateValidator:
@@ -43,5 +42,5 @@ func (d CheckProxy) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next s
 		}
 	}
 
-	return next(ctx, tx, simulate)
+	return next(ctx, msgs, simulate)
 }
