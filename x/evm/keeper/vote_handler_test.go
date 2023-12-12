@@ -178,7 +178,7 @@ func TestHandleExpiredPoll(t *testing.T) {
 				HasVotedFunc: func(address sdk.ValAddress) bool { return false },
 			}
 		}).
-		When("maintainer state can not be found", func() {
+		When("the voter is not a chain maintainer", func() {
 			maintainerState = &nexusmock.MaintainerStateMock{}
 			n.GetChainMaintainerStateFunc = func(sdk.Context, nexus.Chain, sdk.ValAddress) (nexus.MaintainerState, bool) {
 				return nil, false
