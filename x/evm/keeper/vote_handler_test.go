@@ -78,7 +78,7 @@ func TestHandleExpiredPoll(t *testing.T) {
 				HasVotedFunc: func(address sdk.ValAddress) bool { return !address.Equals(missingVoter) },
 			}
 		}).
-		When("maintainer state can be found", func() {
+		When("the voter is a chain maintainer", func() {
 			maintainerState = &nexusmock.MaintainerStateMock{}
 			n.GetChainMaintainerStateFunc = func(sdk.Context, nexus.Chain, sdk.ValAddress) (nexus.MaintainerState, bool) {
 				return maintainerState, true
@@ -114,7 +114,7 @@ func TestHandleExpiredPoll(t *testing.T) {
 				HasVotedFunc: func(address sdk.ValAddress) bool { return !address.Equals(missingVoter) },
 			}
 		}).
-		When("maintainer state can not be found", func() {
+		When("the voter is not a chain maintainer", func() {
 			maintainerState = &nexusmock.MaintainerStateMock{}
 			n.GetChainMaintainerStateFunc = func(sdk.Context, nexus.Chain, sdk.ValAddress) (nexus.MaintainerState, bool) {
 				return nil, false
@@ -143,7 +143,7 @@ func TestHandleExpiredPoll(t *testing.T) {
 				HasVotedFunc: func(address sdk.ValAddress) bool { return false },
 			}
 		}).
-		When("maintainer state can be found", func() {
+		When("the voter is a chain maintainer", func() {
 			maintainerState = &nexusmock.MaintainerStateMock{}
 			n.GetChainMaintainerStateFunc = func(sdk.Context, nexus.Chain, sdk.ValAddress) (nexus.MaintainerState, bool) {
 				return maintainerState, true
@@ -167,6 +167,34 @@ func TestHandleExpiredPoll(t *testing.T) {
 		Run(t)
 
 	givenVoteHandler.
+		When("all voters failed to vote for poll", func() {
+			poll = &votemock.PollMock{
+				GetIDFunc:             func() vote.PollID { return vote.PollID(rand.I64Between(10, 100)) },
+				GetRewardPoolNameFunc: func() (string, bool) { return rand.NormalizedStr(3), true },
+				GetMetaDataFunc:       func() (codec.ProtoMarshaler, bool) { return &types.PollMetadata{Chain: exported.Ethereum.Name}, true },
+				GetVotersFunc: func() []sdk.ValAddress {
+					return slices.Expand(func(int) sdk.ValAddress { return rand.ValAddr() }, 10)
+				},
+				HasVotedFunc: func(address sdk.ValAddress) bool { return false },
+			}
+		}).
+		When("maintainer state can not be found", func() {
+			maintainerState = &nexusmock.MaintainerStateMock{}
+			n.GetChainMaintainerStateFunc = func(sdk.Context, nexus.Chain, sdk.ValAddress) (nexus.MaintainerState, bool) {
+				return nil, false
+			}
+		}).
+		Then("should clear rewards and not mark voter missing vote", func(t *testing.T) {
+			rewardPool.ClearRewardsFunc = func(sdk.ValAddress) {}
+
+			err := handler.HandleExpiredPoll(ctx, poll)
+
+			assert.NoError(t, err)
+			assert.Len(t, rewardPool.ClearRewardsCalls(), 10)
+		}).
+		Run(t)
+
+	givenVoteHandler.
 		When("no voter failed to vote for poll", func() {
 			poll = &votemock.PollMock{
 				GetIDFunc:             func() vote.PollID { return vote.PollID(rand.I64Between(10, 100)) },
@@ -178,7 +206,7 @@ func TestHandleExpiredPoll(t *testing.T) {
 				HasVotedFunc: func(address sdk.ValAddress) bool { return true },
 			}
 		}).
-		When("maintainer state can be found", func() {
+		When("the voter is a chain maintainer", func() {
 			maintainerState = &nexusmock.MaintainerStateMock{}
 			n.GetChainMaintainerStateFunc = func(sdk.Context, nexus.Chain, sdk.ValAddress) (nexus.MaintainerState, bool) {
 				return maintainerState, true
