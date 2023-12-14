@@ -368,7 +368,7 @@ func (m WasmMessage) GetSigners() []sdk.AccAddress {
 }
 
 // WasmBytes is a wrapper around []byte that gets JSON marshalized as an array
-// of uint16 instead of base64-encoded string
+// of numbers instead of base64-encoded string
 type WasmBytes []byte
 
 // MarshalJSON implements json.Marshaler
@@ -383,10 +383,7 @@ func (bz *WasmBytes) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	*bz = make([]byte, len(arr))
-	for i, v := range arr {
-		(*bz)[i] = byte(v)
-	}
+	*bz = slices.Map(arr, func(u uint16) byte { return byte(u) })
 
 	return nil
 }
