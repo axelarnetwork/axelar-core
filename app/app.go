@@ -148,7 +148,7 @@ var (
 
 	// IBCWasmHooksEnabled indicates whether wasm hooks for ibc are enabled.
 	// "true" setting means it will be, otherwise it won't.
-	// When disabled, cosmwasm will not be able to send and receive IBC packets.
+	// When disabled, cosmwasm contracts cannot be called via IBC.
 	// This is configured during the build.
 	IBCWasmHooksEnabled = ""
 
