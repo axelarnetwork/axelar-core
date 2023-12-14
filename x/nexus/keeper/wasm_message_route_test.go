@@ -101,7 +101,7 @@ func TestNewMessageRoute(t *testing.T) {
 }
 
 func TestReq_MarshalUnmarshalJSON(t *testing.T) {
-	bz := []byte("{\"route_messages_from_nexus\":[{\"source_chain\":\"sourcechain\",\"source_address\":\"0xb860\",\"destination_chain\":\"destinationchain\",\"destination_address\":\"0xD419\",\"payload_hash\":[187,155,85,102,194,244,135,104,99,51,62,72,31,70,152,53,1,84,37,159,254,98,38,226,131,177,108,225,138,100,188,241],\"source_tx_id\":[47,228],\"source_tx_index\":100},{\"source_chain\":\"sourcechain\",\"source_address\":\"0xc860\",\"destination_chain\":\"destinationchain\",\"destination_address\":\"0xA419\",\"payload_hash\":[203,155,85,102,194,244,135,104,83,51,62,72,31,70,152,53,1,84,37,159,254,98,38,226,131,177,108,225,138,100,188,241],\"source_tx_id\":[35,244],\"source_tx_index\":1000}]}")
+	bz := []byte("{\"route_messages_from_nexus\":[{\"source_chain\":\"sourcechain\",\"source_address\":\"0xb860\",\"destination_chain\":\"destinationchain\",\"destination_address\":\"0xD419\",\"payload_hash\":[187,155,85,102,194,244,135,104,99,51,62,72,31,70,152,53,1,84,37,159,254,98,38,226,131,177,108,225,138,100,188,241],\"source_tx_id\":[47,228],\"source_tx_index\":100},{\"source_chain\":\"sourcechain\",\"source_address\":\"0xc860\",\"destination_chain\":\"destinationchain\",\"destination_address\":\"0xA419\",\"payload_hash\":[203,155,85,102,194,244,135,104,83,51,62,72,31,70,152,53,1,84,37,159,254,98,38,226,131,177,108,225,138,100,188,241],\"source_tx_id\":[35,244],\"source_tx_index\":0}]}")
 
 	var actual req
 	err := json.Unmarshal(bz, &actual)
