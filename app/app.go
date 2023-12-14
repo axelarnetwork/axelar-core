@@ -738,7 +738,7 @@ func orderBeginBlockers() []string {
 		vestingtypes.ModuleName,
 	}
 
-	// wasm module needs to be added in a specific order
+	// wasm module needs to be added in a specific order, so we cannot just append it at the end
 	if IsWasmEnabled() {
 		beginBlockerOrder = append(beginBlockerOrder, wasm.ModuleName)
 	}
