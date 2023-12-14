@@ -11,18 +11,23 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
-	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types/mock"
+	"github.com/axelarnetwork/utils/funcs"
 	. "github.com/axelarnetwork/utils/test"
 )
+
+type req struct {
+	RouteMessages []exported.WasmMessage `json:"route_messages_from_nexus"`
+}
 
 func TestNewMessageRoute(t *testing.T) {
 	var (
 		ctx   sdk.Context
-		route nexus.MessageRoute
-		msg   nexus.GeneralMessage
+		route exported.MessageRoute
+		msg   exported.GeneralMessage
 
 		nexusK   *mock.NexusMock
 		accountK *mock.AccountKeeperMock
@@ -45,7 +50,7 @@ func TestNewMessageRoute(t *testing.T) {
 			nexusK.GetParamsFunc = func(ctx sdk.Context) types.Params { return types.DefaultParams() }
 		}).
 		Then("should return error", func(t *testing.T) {
-			assert.ErrorContains(t, route(ctx, nexus.RoutingContext{}, msg), "gateway is not set")
+			assert.ErrorContains(t, route(ctx, exported.RoutingContext{}, msg), "gateway is not set")
 		}).
 		Run(t)
 
@@ -62,14 +67,14 @@ func TestNewMessageRoute(t *testing.T) {
 		}).
 		Branch(
 			When("the message has an asset", func() {
-				msg = randMsg(nexus.Processing, true)
+				msg = randMsg(exported.Processing, true)
 			}).
 				Then("should return error", func(t *testing.T) {
-					assert.ErrorContains(t, route(ctx, nexus.RoutingContext{}, msg), "asset transfer is not supported")
+					assert.ErrorContains(t, route(ctx, exported.RoutingContext{}, msg), "asset transfer is not supported")
 				}),
 
 			When("the message has no asset", func() {
-				msg = randMsg(nexus.Processing)
+				msg = randMsg(exported.Processing)
 			}).
 				Then("should execute the wasm message", func(t *testing.T) {
 					moduleAddr := rand.AccAddr()
@@ -79,23 +84,28 @@ func TestNewMessageRoute(t *testing.T) {
 						return nil, nil
 					}
 
-					assert.NoError(t, route(ctx, nexus.RoutingContext{}, msg))
+					assert.NoError(t, route(ctx, exported.RoutingContext{}, msg))
 
 					assert.Len(t, wasmK.ExecuteCalls(), 1)
 					assert.Equal(t, wasmK.ExecuteCalls()[0].ContractAddress, gateway)
 					assert.Equal(t, wasmK.ExecuteCalls()[0].Caller, moduleAddr)
 					assert.Empty(t, wasmK.ExecuteCalls()[0].Coins)
 
-					type req struct {
-						RouteMessages []nexus.WasmMessage `json:"route_messages_from_nexus"`
-					}
-
 					var actual req
 					assert.NoError(t, json.Unmarshal(wasmK.ExecuteCalls()[0].Msg, &actual))
 					assert.Len(t, actual.RouteMessages, 1)
-					assert.Equal(t, nexus.FromGeneralMessage(msg), actual.RouteMessages[0])
+					assert.Equal(t, exported.FromGeneralMessage(msg), actual.RouteMessages[0])
 				}),
 		).
 		Run(t)
+}
 
+func TestReq_MarshalUnmarshalJSON(t *testing.T) {
+	bz := []byte("{\"route_messages_from_nexus\":[{\"source_chain\":\"sourcechain\",\"source_address\":\"0xb860\",\"destination_chain\":\"destinationchain\",\"destination_address\":\"0xD419\",\"payload_hash\":[187,155,85,102,194,244,135,104,99,51,62,72,31,70,152,53,1,84,37,159,254,98,38,226,131,177,108,225,138,100,188,241],\"source_tx_id\":[47,228],\"source_tx_index\":100},{\"source_chain\":\"sourcechain\",\"source_address\":\"0xc860\",\"destination_chain\":\"destinationchain\",\"destination_address\":\"0xA419\",\"payload_hash\":[203,155,85,102,194,244,135,104,83,51,62,72,31,70,152,53,1,84,37,159,254,98,38,226,131,177,108,225,138,100,188,241],\"source_tx_id\":[35,244],\"source_tx_index\":1000}]}")
+
+	var actual req
+	err := json.Unmarshal(bz, &actual)
+
+	assert.NoError(t, err)
+	assert.Equal(t, bz, funcs.Must(json.Marshal(actual)))
 }
