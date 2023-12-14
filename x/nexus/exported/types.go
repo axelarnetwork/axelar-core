@@ -2,6 +2,7 @@ package exported
 
 import (
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -13,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/utils/slices"
 )
 
 //go:generate moq -out ./mock/types.go -pkg mock . MaintainerState
@@ -363,4 +365,28 @@ func (m WasmMessage) ValidateBasic() error {
 // GetSigners implements sdk.Msg. There is no signer for wasm generated messages, so this returns an empty slice.
 func (m WasmMessage) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{}
+}
+
+// WasmBytes is a wrapper around []byte that gets JSON marshalized as an array
+// of uint16 instead of base64-encoded string
+type WasmBytes []byte
+
+// MarshalJSON implements json.Marshaler
+func (bz WasmBytes) MarshalJSON() ([]byte, error) {
+	return json.Marshal(slices.Map(bz, func(b byte) uint16 { return uint16(b) }))
+}
+
+// UnmarshalJSON implements json.Unmarshaler
+func (bz *WasmBytes) UnmarshalJSON(data []byte) error {
+	var arr []uint16
+	if err := json.Unmarshal(data, &arr); err != nil {
+		return err
+	}
+
+	*bz = make([]byte, len(arr))
+	for i, v := range arr {
+		(*bz)[i] = byte(v)
+	}
+
+	return nil
 }
