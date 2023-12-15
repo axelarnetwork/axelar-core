@@ -170,7 +170,7 @@ func TestMessenger_DispatchMsg(t *testing.T) {
 		}).
 		When("the msg is encoded correctly", func() {
 			msg = wasmvmtypes.CosmosMsg{
-				Custom: []byte("{\"source_chain\":\"SomeChain\",\"source_address\":\"SomeAddress\",\"destination_chain\":\"Axelarnet\",\"destination_address\":\"axelarvaloper1zh9wrak6ke4n6fclj5e8yk397czv430ygs5jz7\",\"payload_hash\":\"XZx9n7ycI4EWhVo411N4PVWPconX0CPuNfVvKDLMSOQ=\",\"source_tx_id\":\"jvJHwR7yyDhI53dnhELdJj5ZUDO/FJovyCjamgOQ5Xk=\",\"source_tx_index\":100}"),
+				Custom: []byte("{\"source_chain\":\"sourcechain\",\"source_address\":\"0xb860\",\"destination_chain\":\"Axelarnet\",\"destination_address\":\"axelarvaloper1zh9wrak6ke4n6fclj5e8yk397czv430ygs5jz7\",\"payload_hash\":[187,155,85,102,194,244,135,104,99,51,62,72,31,70,152,53,1,84,37,159,254,98,38,226,131,177,108,225,138,100,188,241],\"source_tx_id\":[47,228],\"source_tx_index\":100}"),
 			}
 		}).
 		Branch(
