@@ -13,17 +13,10 @@ $(info $$WASM is [${WASM}])
 $(info $$IBC_WASM_HOOKS is [${IBC_WASM_HOOKS}])
 $(info $$CGO_ENABLED is [${CGO_ENABLED}])
 
-ifeq ($(WASM), true)
-WASM_ENABLED := "true"
-ifeq ($(IBC_WASM_HOOKS), true)
-IBC_WASM_HOOKS_ENABLED := "true"
 ifndef $(WASM_CAPABILITIES)
 # Wasm capabilities: https://github.com/CosmWasm/cosmwasm/blob/main/docs/CAPABILITIES-BUILT-IN.md
 WASM_CAPABILITIES := "iterator,staking,stargate,cosmwasm_1_3"
-endif
 else
-WASM_ENABLED := ""
-IBC_WASM_HOOKS_ENABLED := ""
 WASM_CAPABILITIES := ""
 endif
 
@@ -49,8 +42,8 @@ ldflags = "-X github.com/cosmos/cosmos-sdk/version.Name=axelar \
 	-X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT) \
 	-X github.com/CosmWasm/wasmd/x/wasm/types/MaxWasmSize=${MAX_WASM_SIZE} \
 	-X github.com/axelarnetwork/axelar-core/x/axelarnet/exported.NativeAsset=$(DENOM) \
-	-X github.com/axelarnetwork/axelar-core/app.WasmEnabled=$(WASM_ENABLED) \
-	-X github.com/axelarnetwork/axelar-core/app.IBCWasmHooksEnabled=$(IBC_WASM_HOOKS_ENABLED) \
+	-X github.com/axelarnetwork/axelar-core/app.WasmEnabled=$(WASM) \
+	-X github.com/axelarnetwork/axelar-core/app.IBCWasmHooksEnabled=$(IBC_WASM_HOOKS) \
 	-X github.com/axelarnetwork/axelar-core/app.WasmCapabilities=$(WASM_CAPABILITIES) \
 	-w -s ${STATIC_LINK_FLAGS}"
 

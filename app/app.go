@@ -388,7 +388,7 @@ func initIBCMiddleware(keepers *keeperCache, ics4Middleware ibchooks.ICS4Middlew
 
 func initWasmHooks(keys map[string]*sdk.KVStoreKey) ibchooks.WasmHooks {
 	var wasmHooks ibchooks.WasmHooks
-	if !IsWasmEnabled() || !IsIBCWasmHooksEnabled() {
+	if !(IsWasmEnabled() && IsIBCWasmHooksEnabled()) {
 		return wasmHooks
 	}
 
@@ -1028,10 +1028,10 @@ func GetModuleBasics() module.BasicManager {
 
 // IsWasmEnabled returns whether wasm is enabled
 func IsWasmEnabled() bool {
-	return WasmEnabled != ""
+	return WasmEnabled == "true"
 }
 
 // IsIBCWasmHooksEnabled returns whether ibc wasm hooks are enabled
 func IsIBCWasmHooksEnabled() bool {
-	return IBCWasmHooksEnabled != ""
+	return IBCWasmHooksEnabled == "true"
 }
