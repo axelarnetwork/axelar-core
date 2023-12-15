@@ -18,7 +18,7 @@ func TestPanic(t *testing.T) {
 		timer := time.AfterFunc(0, func() {})
 		defer timer.Stop()
 		blockTimeout, timeoutCancel := context.WithCancel(context.Background())
-		var blocksSeen atomic.Uint64
+		var blocksSeen atomic.Uint64 // Atomic type is used to prevent a false positive data race error.
 		newBlock := func() {
 			timer.Stop()
 			timer = time.AfterFunc(1*time.Millisecond, func() {
