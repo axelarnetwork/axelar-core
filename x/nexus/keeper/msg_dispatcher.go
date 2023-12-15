@@ -30,9 +30,9 @@ func NewMessenger(nexus types.Nexus) Messenger {
 
 // DispatchMsg decodes the messages from the cosmowasm gateway and routes them to the nexus module if possible
 func (m Messenger) DispatchMsg(ctx sdk.Context, contractAddr sdk.AccAddress, _ string, msg wasmvmtypes.CosmosMsg) (events []sdk.Event, data [][]byte, err error) {
-	req := exported.WasmMessage{}
-	if err := json.Unmarshal(msg.Custom, &req); err != nil {
-		return nil, nil, sdkerrors.Wrap(wasmtypes.ErrUnknownMsg, err.Error())
+	req, err := encodeRoutingMessage(contractAddr, msg.Custom)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	gateway := m.GetParams(ctx).Gateway
@@ -76,4 +76,24 @@ func (m Messenger) routeMsg(ctx sdk.Context, msg exported.WasmMessage) error {
 	})
 
 	return nil
+}
+
+// EncodeRoutingMessage encodes the message from the wasm contract into a sdk.Msg
+func EncodeRoutingMessage(sender sdk.AccAddress, msg json.RawMessage) ([]sdk.Msg, error) {
+	req, err := encodeRoutingMessage(sender, msg)
+	if err != nil {
+		return nil, err
+	}
+
+	return []sdk.Msg{&req}, nil
+}
+
+func encodeRoutingMessage(sender sdk.AccAddress, msg json.RawMessage) (exported.WasmMessage, error) {
+	req := exported.WasmMessage{}
+	if err := json.Unmarshal(msg, &req); err != nil {
+		return exported.WasmMessage{}, sdkerrors.Wrap(wasmtypes.ErrUnknownMsg, err.Error())
+	}
+
+	req.Sender = sender
+	return req, nil
 }

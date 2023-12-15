@@ -2,6 +2,7 @@ package exported
 
 import (
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -13,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/utils/slices"
 )
 
 //go:generate moq -out ./mock/types.go -pkg mock . MaintainerState
@@ -348,4 +350,40 @@ func FromGeneralMessage(msg GeneralMessage) WasmMessage {
 		SourceTxID:         msg.SourceTxID,
 		SourceTxIndex:      msg.SourceTxIndex,
 	}
+}
+
+var _ sdk.Msg = &WasmMessage{}
+
+// ValidateBasic implements sdk.Msg
+func (m WasmMessage) ValidateBasic() error {
+	// The ValidateBasic function allows cheap stateless checks to fail msg handling early during CheckTx.
+	// This message can only be sent by the cosmwasm router as part of the amplifier integration into core,
+	// so there is no point in validating the message here.
+	return nil
+}
+
+// GetSigners implements sdk.Msg. There is no signer for wasm generated messages, so this returns an empty slice.
+func (m WasmMessage) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{}
+}
+
+// WasmBytes is a wrapper around []byte that gets JSON marshalized as an array
+// of numbers instead of base64-encoded string
+type WasmBytes []byte
+
+// MarshalJSON implements json.Marshaler
+func (bz WasmBytes) MarshalJSON() ([]byte, error) {
+	return json.Marshal(slices.Map(bz, func(b byte) uint16 { return uint16(b) }))
+}
+
+// UnmarshalJSON implements json.Unmarshaler
+func (bz *WasmBytes) UnmarshalJSON(data []byte) error {
+	var arr []uint16
+	if err := json.Unmarshal(data, &arr); err != nil {
+		return err
+	}
+
+	*bz = slices.Map(arr, func(u uint16) byte { return byte(u) })
+
+	return nil
 }
