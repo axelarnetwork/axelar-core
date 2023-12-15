@@ -9,6 +9,7 @@ import (
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	wasmvmtypes "github.com/CosmWasm/wasmvm/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/axelarnetwork/axelar-core/app"
@@ -232,4 +233,20 @@ func TestMsgTypeBlacklistMessenger_DispatchMsg(t *testing.T) {
 				assert.Equal(t, err, wasmtypes.ErrUnknownMsg)
 			}),
 	).Run(t)
+}
+
+func TestNewWasmAppModuleBasicOverride(t *testing.T) {
+	uploader := authtypes.NewModuleAddress("governance")
+	wasmModule := app.NewWasmAppModuleBasicOverride(wasm.AppModuleBasic{}, uploader)
+	cdc := app.MakeEncodingConfig().Codec
+
+	genesis := wasmModule.DefaultGenesis(cdc)
+	assert.NotEqual(t, genesis, wasm.AppModuleBasic{}.DefaultGenesis(cdc))
+
+	var state wasm.GenesisState
+	assert.NoError(t, cdc.UnmarshalJSON(genesis, &state))
+
+	assert.Equal(t, state.Params.InstantiateDefaultPermission, wasmtypes.AccessTypeAnyOfAddresses)
+	assert.True(t, state.Params.CodeUploadAccess.Allowed(uploader))
+	assert.Len(t, state.Params.CodeUploadAccess.AllAuthorizedAddresses(), 1)
 }
