@@ -2,6 +2,7 @@ package vald
 
 import (
 	"context"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -17,13 +18,13 @@ func TestPanic(t *testing.T) {
 		timer := time.AfterFunc(0, func() {})
 		defer timer.Stop()
 		blockTimeout, timeoutCancel := context.WithCancel(context.Background())
-		blocksSeen := 0
+		var blocksSeen atomic.Uint64
 		newBlock := func() {
 			timer.Stop()
 			timer = time.AfterFunc(1*time.Millisecond, func() {
 				timeoutCancel()
 			})
-			blocksSeen++
+			blocksSeen.Add(1)
 		}
 
 		go func() {
@@ -38,7 +39,7 @@ func TestPanic(t *testing.T) {
 		case <-testTimeout.Done():
 			return
 		case <-blockTimeout.Done():
-			assert.Equal(t, 100, blocksSeen)
+			assert.Equal(t, uint64(100), blocksSeen.Load())
 			panic("no new blocks discovered, is the chain halted?")
 		}
 	})
