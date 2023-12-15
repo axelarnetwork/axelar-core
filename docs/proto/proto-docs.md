@@ -297,6 +297,7 @@
     - [CreateTransferOperatorshipResponse](#axelar.evm.v1beta1.CreateTransferOperatorshipResponse)
     - [CreateTransferOwnershipRequest](#axelar.evm.v1beta1.CreateTransferOwnershipRequest)
     - [CreateTransferOwnershipResponse](#axelar.evm.v1beta1.CreateTransferOwnershipResponse)
+    - [LabelInfo](#axelar.evm.v1beta1.LabelInfo)
     - [LinkRequest](#axelar.evm.v1beta1.LinkRequest)
     - [LinkResponse](#axelar.evm.v1beta1.LinkResponse)
     - [RetryFailedEventRequest](#axelar.evm.v1beta1.RetryFailedEventRequest)
@@ -4544,6 +4545,7 @@ MsgConfirmDeposit represents an erc20 deposit confirmation message
 | `tx_id` | [bytes](#bytes) |  |  |
 | `amount` | [bytes](#bytes) |  | **Deprecated.**  |
 | `burner_address` | [bytes](#bytes) |  |  |
+| `label_info` | [LabelInfo](#axelar.evm.v1beta1.LabelInfo) |  |  |
 
 
 
@@ -4808,6 +4810,23 @@ commands handling all pending transfers
 
 
 
+<a name="axelar.evm.v1beta1.LabelInfo"></a>
+
+### LabelInfo
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `label` | [string](#string) |  |  |
+| `recipient_address` | [bytes](#bytes) |  |  |
+| `recipient_chain` | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="axelar.evm.v1beta1.LinkRequest"></a>
 
 ### LinkRequest
@@ -4822,6 +4841,7 @@ address
 | `recipient_addr` | [string](#string) |  |  |
 | `asset` | [string](#string) |  |  |
 | `recipient_chain` | [string](#string) |  |  |
+| `label` | [string](#string) |  |  |
 
 
 

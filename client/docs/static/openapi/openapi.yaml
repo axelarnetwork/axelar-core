@@ -2883,6 +2883,16 @@ paths:
                 burner_address:
                   type: string
                   format: byte
+                label_info:
+                  type: object
+                  properties:
+                    label:
+                      type: string
+                    recipient_address:
+                      type: string
+                      format: byte
+                    recipient_chain:
+                      type: string
               title: MsgConfirmDeposit represents an erc20 deposit confirmation message
         required: true
       tags:
@@ -4665,6 +4675,8 @@ paths:
                 asset:
                   type: string
                 recipient_chain:
+                  type: string
+                label:
                   type: string
               title: >-
                 MsgLink represents the message that links a cross chain address
@@ -45403,6 +45415,16 @@ components:
         burner_address:
           type: string
           format: byte
+        label_info:
+          type: object
+          properties:
+            label:
+              type: string
+            recipient_address:
+              type: string
+              format: byte
+            recipient_chain:
+              type: string
       title: MsgConfirmDeposit represents an erc20 deposit confirmation message
     axelar.evm.v1beta1.ConfirmDepositResponse:
       type: object
@@ -45966,6 +45988,16 @@ components:
           type: string
         weight:
           type: string
+    axelar.evm.v1beta1.LabelInfo:
+      type: object
+      properties:
+        label:
+          type: string
+        recipient_address:
+          type: string
+          format: byte
+        recipient_chain:
+          type: string
     axelar.evm.v1beta1.LinkRequest:
       type: object
       properties:
@@ -45979,6 +46011,8 @@ components:
         asset:
           type: string
         recipient_chain:
+          type: string
+        label:
           type: string
       title: >-
         MsgLink represents the message that links a cross chain address to a
