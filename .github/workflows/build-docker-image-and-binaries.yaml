@@ -15,6 +15,10 @@ on:
         description: Whether to enable wasm ("true"/"false")
         required: true
         default: "true"
+      ibc-wasm-hooks:
+        description: Whether to enable ibc wasm hooks ("true"/"false")
+        required: true
+        default: "false"
 jobs:
   release-binaries:
     runs-on: ${{ matrix.os }}
@@ -72,6 +76,7 @@ jobs:
           OS_TYPE: ${{ matrix.os }}
           SEMVER: ${{ github.event.inputs.tag }}
           WASM: ${{ github.event.inputs.wasm }}
+          IBC_WASM_HOOKS: ${{ github.event.inputs.ibc-wasm-hooks }}
           CGO_ENABLED: 0
         run: |
           if [ "${{ github.event.inputs.cgo }}" == "true" ]; then
@@ -186,6 +191,7 @@ jobs:
           PLATFORM: ${{ matrix.platform }}
           SEMVER: ${{ github.event.inputs.tag }}
           WASM: ${{ github.event.inputs.wasm }}
+          IBC_WASM_HOOKS: ${{ github.event.inputs.ibc-wasm-hooks }}
           CGO_ENABLED: 0
 
   combine-sign:

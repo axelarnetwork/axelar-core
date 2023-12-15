@@ -18,6 +18,10 @@ on:
         description: Whether to enable wasm ("true"/"false")
         required: true
         default: "true"
+      ibc-wasm-hooks:
+        description: Whether to enable ibc wasm hooks ("true"/"false")
+        required: true
+        default: "false"
 
 jobs:
   build-and-push-latest-docker-image:
@@ -50,12 +54,19 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build docker image (normal)
+        # This action can be called automatically, so it is possible that inputs are not set.
+        # Therefore, a default is set in the env section and then the inputs are explicitly checked in the run section
+        # instead of binding them directly in the env section.
         env:
           WASM: "true"
+          IBC_WASM_HOOKS: "false"
           CGO_ENABLED: 1
         run: |
           if [ "${{ github.event.inputs.wasm }}" == "false" ]; then
             export WASM="false"
+          fi
+          if [ "${{ github.event.inputs.ibc-wasm-hooks }}" == "true" ]; then
+            export IBC_WASM_HOOKS="true"
           fi
           if [ "${{ github.event.inputs.cgo }}" == "false" ]; then
             export CGO_ENABLED=0
@@ -74,11 +85,15 @@ jobs:
       - name: Build docker image (debug)
         env:
           WASM: "true"
+          IBC_WASM_HOOKS: "false"
           CGO_ENABLED: 1
         if: github.event.inputs.buildDebug != 'false'
         run: |
           if [ "${{ github.event.inputs.wasm }}" == "false" ]; then
             export WASM="false"
+          fi
+          if [ "${{ github.event.inputs.ibc-wasm-hooks }}" == "true" ]; then
+            export IBC_WASM_HOOKS="true"
           fi
           if [ "${{ github.event.inputs.cgo }}" == "false" ]; then
             export CGO_ENABLED=0
