@@ -11,6 +11,14 @@ import (
 )
 
 func TestParams_Validate(t *testing.T) {
+	t.Run("zero end blocker limit", func(t *testing.T) {
+		params := Params{
+			DefaultVotingThreshold: testutils.RandThreshold(),
+			EndBlockerLimit:        int64(0),
+		}
+		assert.Error(t, params.Validate())
+	})
+
 	t.Run("negative end blocker limit", func(t *testing.T) {
 		params := Params{
 			DefaultVotingThreshold: testutils.RandThreshold(),
