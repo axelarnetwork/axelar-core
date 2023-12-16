@@ -50,7 +50,6 @@ func TestAnteHandlerMessenger_DispatchMsg(t *testing.T) {
 			})
 		messenger = app.WithAnteHandlers(encoder, anteHandler, messageHandler)
 	}).Branch(
-
 		When("it dispatches an empty message", func() {
 			_, _, err = messenger.DispatchMsg(sdk.Context{}, nil, "", wasmvmtypes.CosmosMsg{})
 		}).
@@ -189,19 +188,14 @@ func TestAnteHandlerMessenger_DispatchMsg(t *testing.T) {
 	).Run(t)
 }
 
-func TestWithMsgTypeBlacklist(t *testing.T) {
+func TestMsgTypeBlacklistMessenger_DispatchMsg(t *testing.T) {
 	var (
-		messagehandlerCalled bool
-		messenger            wasmkeeper.Messenger
-		err                  error
+		messenger wasmkeeper.Messenger
+		err       error
 	)
 
 	Given("a message handler with blacklisted message types", func() {
-		messenger = app.WithMsgTypeBlacklist(wasmkeeper.MessageHandlerFunc(
-			func(_ sdk.Context, _ sdk.AccAddress, _ string, _ wasmvmtypes.CosmosMsg) ([]sdk.Event, [][]byte, error) {
-				messagehandlerCalled = true
-				return nil, nil, nil
-			}))
+		messenger = app.NewMsgTypeBlacklistMessenger()
 	}).Branch(
 		When("it dispatches a stargate message", func() {
 			_, _, err = messenger.DispatchMsg(sdk.Context{}, nil, "",
@@ -211,11 +205,9 @@ func TestWithMsgTypeBlacklist(t *testing.T) {
 				}},
 			)
 		}).
-			Then("the message handler should get skipped", func(t *testing.T) {
-				assert.False(t, messagehandlerCalled)
-			}).
-			Then("it should return an unknown msg error", func(t *testing.T) {
-				assert.Equal(t, err, wasmtypes.ErrUnknownMsg)
+			Then("it should return an error that is not 'unknown msg'", func(t *testing.T) {
+				assert.Error(t, err)
+				assert.NotEqual(t, err, wasmtypes.ErrUnknownMsg)
 			}),
 
 		When("it dispatches a stargate message", func() {
@@ -227,22 +219,17 @@ func TestWithMsgTypeBlacklist(t *testing.T) {
 				}}},
 			)
 		}).
-			Then("the message handler should get skipped", func(t *testing.T) {
-				assert.False(t, messagehandlerCalled)
-			}).
-			Then("it should return an unknown msg error", func(t *testing.T) {
-				assert.Equal(t, err, wasmtypes.ErrUnknownMsg)
+			Then("it should return an error that is not 'unknown msg'", func(t *testing.T) {
+				assert.Error(t, err)
+				assert.NotEqual(t, err, wasmtypes.ErrUnknownMsg)
 			}),
 		When("it dispatches a custom message", func() {
 			_, _, err = messenger.DispatchMsg(sdk.Context{}, nil, "",
 				wasmvmtypes.CosmosMsg{Custom: json.RawMessage(`{"foo":"bar", "baz":1}`)},
 			)
 		}).
-			Then("the message handler should get called", func(t *testing.T) {
-				assert.True(t, messagehandlerCalled)
-			}).
-			Then("it should not return an error", func(t *testing.T) {
-				assert.NoError(t, err)
+			Then("it should return an 'unknown msg' error", func(t *testing.T) {
+				assert.Equal(t, err, wasmtypes.ErrUnknownMsg)
 			}),
 	).Run(t)
 }
