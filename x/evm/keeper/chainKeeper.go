@@ -134,10 +134,6 @@ func getAddressLabelKey(labelInfo types.LabelInfo) key.Key {
 		Append(key.FromStrHashed(labelInfo.Label.String()))
 }
 
-func (k chainKeeper) setLabeledAddress(ctx sdk.Context, burnerAddr types.Address, labelInfo types.LabelInfo) {
-	k.getStore(ctx).SetRawNew(getAddressLabelKey(labelInfo), burnerAddr.Bytes())
-}
-
 func (k chainKeeper) GetLabeledBurnerAddress(ctx sdk.Context, labelInfo types.LabelInfo) (string, error) {
 	var depositAddress gogoprototypes.StringValue
 	found := k.getStore(ctx).GetNew(getAddressLabelKey(labelInfo), &depositAddress)
@@ -152,7 +148,7 @@ func (k chainKeeper) SetLabeledBurnerAddress(ctx sdk.Context, labelInfo types.La
 	if found {
 		return fmt.Errorf("label '%s' for recipient '%s' sent from chain '%s' already set", labelInfo.Label, labelInfo.RecipientAddress.Hex(), k.chain)
 	} else {
-		k.setLabeledAddress(ctx, burnerAddr, labelInfo)
+		k.getStore(ctx).SetRawNew(getAddressLabelKey(labelInfo), burnerAddr.Bytes())
 		return nil
 	}
 }
