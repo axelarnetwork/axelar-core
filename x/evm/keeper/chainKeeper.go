@@ -148,13 +148,13 @@ func (k chainKeeper) GetLabeledBurnerAddress(ctx sdk.Context, labelInfo types.La
 }
 
 func (k chainKeeper) SetLabeledBurnerAddress(ctx sdk.Context, labelInfo types.LabelInfo, burnerAddr types.Address) error {
-	_, err := k.GetLabeledBurnerAddress(ctx, labelInfo)
-	if err != nil {
-		return err
+	found := k.getStore(ctx).HasNew(getAddressLabelKey(labelInfo))
+	if found {
+		return fmt.Errorf("label '%s' for recipient '%s' sent from chain '%s' already set", labelInfo.Label, labelInfo.RecipientAddress.Hex(), k.chain)
+	} else {
+		k.setLabeledAddress(ctx, burnerAddr, labelInfo)
+		return nil
 	}
-
-	k.setLabeledAddress(ctx, burnerAddr, labelInfo)
-	return nil
 }
 
 // calculates the token address for some asset with the provided axelar gateway address
