@@ -236,7 +236,7 @@ func TestMsgTypeBlacklistMessenger_DispatchMsg(t *testing.T) {
 }
 
 func TestNewWasmAppModuleBasicOverride(t *testing.T) {
-	uploader := authtypes.NewModuleAddress("governance")
+	uploader := authtypes.NewModuleAddress("allowed to upload")
 	wasmModule := app.NewWasmAppModuleBasicOverride(wasm.AppModuleBasic{}, uploader)
 	cdc := app.MakeEncodingConfig().Codec
 
