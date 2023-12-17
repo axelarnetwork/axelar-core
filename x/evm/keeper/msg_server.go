@@ -369,7 +369,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		}
 
 		burnerAddr, err := keeper.GetLabeledBurnerAddress(ctx, *req.LabelInfo)
-		req.BurnerAddress = types.Address(common.HexToAddress(burnerAddr))
+		req.BurnerAddress = burnerAddr
 		if err != nil {
 			return nil, fmt.Errorf("could not get labeled address: %s", err.Error())
 		}
