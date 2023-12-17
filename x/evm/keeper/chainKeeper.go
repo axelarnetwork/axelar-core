@@ -135,15 +135,9 @@ func getAddressLabelKey(labelInfo types.LabelInfo) key.Key {
 		Append(key.FromStrHashed(labelInfo.Asset))
 }
 
-<<<<<<< HEAD
 func (k chainKeeper) GetLabeledBurnerAddress(ctx sdk.Context, labelInfo types.LabelInfo) (types.Address, error) {
 	var depositAddressBytes gogoprototypes.BytesValue
 	found := k.getStore(ctx).GetNew(getAddressLabelKey(labelInfo), &depositAddressBytes)
-=======
-func (k chainKeeper) GetLabeledBurnerAddress(ctx sdk.Context, labelInfo types.LabelInfo) (string, error) {
-	var depositAddress gogoprototypes.StringValue
-	found := k.getStore(ctx).GetNew(getAddressLabelKey(labelInfo), &depositAddress)
->>>>>>> b16b89ff (simplify changes)
 	if !found {
 		return types.Address{}, fmt.Errorf("no deposit address with label '%s' found for recipient '%s' sent from chain '%s'", labelInfo.Label, labelInfo.RecipientAddress.Hex(), k.chain)
 	}
