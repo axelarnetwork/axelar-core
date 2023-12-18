@@ -168,11 +168,12 @@ func initWasmKeeper(encodingConfig axelarParams.EncodingConfig, keys map[string]
 		func(old wasmkeeper.Messenger) wasmkeeper.Messenger {
 			encoders := wasm.DefaultEncoders(encodingConfig.Codec, getKeeper[ibctransferkeeper.Keeper](keepers))
 			encoders.Custom = nexusKeeper.EncodeRoutingMessage
+
 			return WithAnteHandlers(
 				encoders,
 				initMessageAnteDecorators(encodingConfig, keepers),
 				// for security reasons we disallow some msg types that can be used for arbitrary calls
-				WithMsgTypeBlacklist(wasmkeeper.NewMessageHandlerChain(old, nexusKeeper.NewMessenger(getKeeper[nexusKeeper.Keeper](keepers)))))
+				wasmkeeper.NewMessageHandlerChain(NewMsgTypeBlacklistMessenger(), old, nexusKeeper.NewMessenger(getKeeper[nexusKeeper.Keeper](keepers))))
 		}))
 
 	scopedWasmK := getKeeper[capabilitykeeper.Keeper](keepers).ScopeToModule(wasm.ModuleName)

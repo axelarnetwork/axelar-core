@@ -83,27 +83,28 @@ func WithAnteHandlers(encoders wasmkeeper.MessageEncoders, anteHandler ante.Mess
 }
 
 type MsgTypeBlacklistMessenger struct {
-	messenger wasmkeeper.Messenger
 }
 
-func WithMsgTypeBlacklist(messenger wasmkeeper.Messenger) MsgTypeBlacklistMessenger {
-	return MsgTypeBlacklistMessenger{messenger: messenger}
+func NewMsgTypeBlacklistMessenger() MsgTypeBlacklistMessenger {
+	return MsgTypeBlacklistMessenger{}
 }
 
-func (m MsgTypeBlacklistMessenger) DispatchMsg(ctx sdk.Context, contractAddr sdk.AccAddress, contractIBCPortID string, msg wasmvmtypes.CosmosMsg) (events []sdk.Event, data [][]byte, err error) {
+func (m MsgTypeBlacklistMessenger) DispatchMsg(_ sdk.Context, _ sdk.AccAddress, _ string, msg wasmvmtypes.CosmosMsg) (events []sdk.Event, data [][]byte, err error) {
 	if isIBCSendPacketMsg(msg) || isStargateMsg(msg) {
-		return nil, nil, wasmtypes.ErrUnknownMsg
+		return nil, nil, fmt.Errorf("ibc send packet and stargate messages are not supported")
 	}
 
-	return m.messenger.DispatchMsg(ctx, contractAddr, contractIBCPortID, msg)
-}
-
-func isStargateMsg(msg wasmvmtypes.CosmosMsg) bool {
-	return msg.Stargate != nil
+	// this means that this message handler doesn't know how to deal with these messages (i.e. they can pass through),
+	// other handlers might be able to deal with them
+	return nil, nil, wasmtypes.ErrUnknownMsg
 }
 
 func isBankBurnMsg(msg wasmvmtypes.CosmosMsg) bool {
 	return msg.Bank != nil && msg.Bank.Burn != nil
+}
+
+func isStargateMsg(msg wasmvmtypes.CosmosMsg) bool {
+	return msg.Stargate != nil
 }
 
 func isIBCSendPacketMsg(msg wasmvmtypes.CosmosMsg) bool {
