@@ -302,7 +302,12 @@ func (mgr Mgr) ProcessGatewayTxsConfirmation(event *types.ConfirmGatewayTxsStart
 			events := mgr.processGatewayTxLogs(event.Chain, event.GatewayAddress, result.Ok().Logs)
 			logger.Infof("broadcasting vote %v", events)
 			votes = append(votes, voteTypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain, events...)))
-		case NotFinalized, ethereum.NotFound:
+		case NotFinalized:
+			logger.Debug(fmt.Sprintf("transaction %s in block %s not finalized", txID.Hex(), result.Ok().BlockNumber.String()))
+			logger.Infof("broadcasting empty vote due to error: %s", result.Err().Error())
+			votes = append(votes, voteTypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain)))
+		case ethereum.NotFound:
+			logger.Debug(fmt.Sprintf("transaction receipt %s not found", txID.Hex()))
 			logger.Infof("broadcasting empty vote due to error: %s", result.Err().Error())
 			votes = append(votes, voteTypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain)))
 		default:
@@ -454,6 +459,10 @@ func (mgr Mgr) GetTxReceiptIfFinalized(chain nexus.ChainName, txID common.Hash, 
 		return nil, sdkerrors.Wrap(errors.With(err, keyvals...), "failed getting transaction receipt")
 	}
 
+	if txReceipt.Status != geth.ReceiptStatusSuccessful {
+		return nil, errors.With(fmt.Errorf("transaction %s failed", txID.Hex()), keyvals...)
+	}
+
 	isFinalized, err := mgr.isTxReceiptFinalized(chain, txReceipt, confHeight)
 	if err != nil {
 		return nil, sdkerrors.Wrapf(errors.With(err, keyvals...), "cannot determine if the transaction %s is finalized", txID.Hex())
@@ -481,6 +490,10 @@ func (mgr Mgr) GetTxReceiptsIfFinalized(chain nexus.ChainName, txIDs []common.Ha
 	}
 
 	isFinalized := func(receipt *geth.Receipt) rs.Result[*geth.Receipt] {
+		if receipt.Status != geth.ReceiptStatusSuccessful {
+			return rs.FromErr[*geth.Receipt](fmt.Errorf("transaction %s failed", receipt.TxHash.Hex()))
+		}
+
 		isFinalized, err := mgr.isTxReceiptFinalized(chain, receipt, confHeight)
 		if err != nil {
 			return rs.FromErr[*geth.Receipt](sdkerrors.Wrapf(errors.With(err, "chain", chain.String()),
