@@ -19,6 +19,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	"github.com/axelarnetwork/axelar-core/utils"
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 	evmKeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
@@ -392,6 +393,10 @@ func TestBaseKeeper(t *testing.T) {
 		assert.NotPanics(t, func() {
 			_ = ck.GetParams(ctx)
 		})
+		assert.Equal(t, uint64(1), ck.GetRequiredConfirmationHeight(ctx))
+		assert.Equal(t, int64(50), ck.GetRevoteLockingPeriod(ctx))
+		assert.Equal(t, utils.Threshold(utils.Threshold{Numerator: 51, Denominator: 100}), ck.GetVotingThreshold(ctx))
+		assert.Equal(t, int64(1), ck.GetMinVoterCount(ctx))
 	})
 
 	thenGetChainKeeperForUnkownChainFails := Then("getting the chain keeper for an unknown chain fails", func(t *testing.T) {
