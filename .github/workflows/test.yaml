@@ -1,7 +1,11 @@
-name: Testing
+name: Testing and coverage
 
 on:
-  - pull_request
+  pull_request:
+  push:
+    branches:
+      - main
+      - releases/**
 
 jobs:
   test:
@@ -14,13 +18,17 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Setup Golang with cache
-        uses: magnetikonline/action-golang-cache@v2
+        uses: magnetikonline/action-golang-cache@v4
         with:
           go-version: ${{ matrix.go-version }}
 
-      - name: Test
+      - name: Run test and coverage
         run: |
-          go test ./...
+          go test ./... -race -coverprofile=coverage.txt -covermode=atomic
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4-beta
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }} 
