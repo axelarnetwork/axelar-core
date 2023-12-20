@@ -2,13 +2,13 @@ package tss
 
 import (
 	"context"
-	"google.golang.org/grpc/credentials/insecure"
 	"net"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
 )
 
