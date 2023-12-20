@@ -36,7 +36,7 @@ func TestGRPCTimeout(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 		defer cancel()
 
-		_, err := grpc.DialContext(ctx, "", grpc.WithInsecure(), grpc.WithBlock())
+		_, err := grpc.DialContext(ctx, "target", grpc.WithInsecure(), grpc.WithBlock())
 		assert.Equal(t, context.DeadlineExceeded, err)
 	})
 }
