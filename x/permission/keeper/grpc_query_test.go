@@ -3,17 +3,16 @@ package keeper_test
 import (
 	"testing"
 
-	"github.com/axelarnetwork/axelar-core/x/permission/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/stretchr/testify/assert"
-
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
+	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/x/permission/keeper"
+	"github.com/axelarnetwork/axelar-core/x/permission/types"
 	. "github.com/axelarnetwork/utils/test"
 )
 
