@@ -42,9 +42,9 @@ require (
 	golang.org/x/text v0.14.0
 	golang.org/x/tools v0.16.1
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2
-	google.golang.org/genproto/googleapis/api v0.0.0-20230525234020-1aefcd67740a
-	google.golang.org/grpc v1.55.0
-	google.golang.org/protobuf v1.30.0
+	google.golang.org/genproto/googleapis/api v0.0.0-20230629202037-9506855d4529
+	google.golang.org/grpc v1.58.3
+	google.golang.org/protobuf v1.31.0
 )
 
 require (
@@ -54,7 +54,7 @@ require (
 	filippo.io/edwards25519 v1.0.0-rc.1 // indirect
 	github.com/99designs/go-keychain v0.0.0-20191008050251-8e49817e8af4 // indirect
 	github.com/99designs/keyring v1.2.1 // indirect
-	github.com/ChainSafe/go-schnorrkel v0.0.0-20200405005733-88cbf1b4c40d // indirect
+	github.com/ChainSafe/go-schnorrkel v1.0.0 // indirect
 	github.com/DataDog/zstd v1.5.2 // indirect
 	github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6 // indirect
 	github.com/Workiva/go-datastructures v1.0.53 // indirect
@@ -104,11 +104,11 @@ require (
 	github.com/go-stack/stack v1.8.1 // indirect
 	github.com/godbus/dbus v0.0.0-20190726142602-4481cbc300e2 // indirect
 	github.com/gogo/gateway v1.1.0 // indirect
-	github.com/golang/glog v1.0.0 // indirect
+	github.com/golang/glog v1.1.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/snappy v0.0.5-0.20220116011046-fa5810519dcb // indirect
 	github.com/google/btree v1.1.2 // indirect
-	github.com/google/flatbuffers v1.12.1 // indirect
+	github.com/google/flatbuffers v2.0.8+incompatible // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/orderedcode v0.0.1 // indirect
@@ -174,8 +174,8 @@ require (
 	golang.org/x/net v0.19.0 // indirect
 	golang.org/x/sys v0.15.0 // indirect
 	golang.org/x/term v0.15.0 // indirect
-	google.golang.org/genproto v0.0.0-20230526015343-6ee61e4f9d5f // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20230525234015-3fc162c6f38a // indirect
+	google.golang.org/genproto v0.0.0-20230706204954-ccb25ca9f130 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20230711160842-782d3b101e98 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
@@ -183,7 +183,7 @@ require (
 	nhooyr.io/websocket v1.8.6 // indirect
 )
 
-replace google.golang.org/grpc => google.golang.org/grpc v1.33.2
+replace google.golang.org/grpc => google.golang.org/grpc v1.56.3
 
 replace github.com/opencontainers/image-spec v1.0.1 => github.com/opencontainers/image-spec v1.0.2
 
@@ -206,7 +206,7 @@ replace github.com/dgrijalva/jwt-go => github.com/golang-jwt/jwt/v4 v4.4.2
 replace github.com/rjeczalik/notify => github.com/rjeczalik/notify v0.9.3
 
 // use cometbft
-replace github.com/tendermint/tendermint => github.com/cometbft/cometbft v0.34.27
+replace github.com/tendermint/tendermint => github.com/cometbft/cometbft v0.34.30
 
 // Temporary replacement for rosetta support
 replace github.com/cosmos/cosmos-sdk => github.com/axelarnetwork/cosmos-sdk v0.45.17-0.20230904150332-37fb903a6c62
