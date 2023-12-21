@@ -19,6 +19,10 @@ func TestRandBoolGen(t *testing.T) {
 	t.Run("correct ratio", ratioConvergesToOneEigth)
 }
 
+func TestUintGen(t *testing.T) {
+	t.Run("limit range", uintbetween0And10)
+}
+
 func intTake10(t *testing.T) {
 	g := PInt64Gen()
 
@@ -61,6 +65,14 @@ func between0And50GreaterThan25LesserThan30OrExactly45Take20(t *testing.T) {
 	for _, n := range nums {
 		assert.True(t, n > 25)
 		assert.True(t, n < 30 || n == 45)
+	}
+}
+
+func uintbetween0And10(t *testing.T) {
+	for i := 0; i < 10; i++ {
+		g := UintBetween(sdk.ZeroUint(), sdk.NewUint(10))
+		assert.True(t, g.GTE(sdk.ZeroUint()))
+		assert.True(t, g.LT(sdk.NewUint(10)))
 	}
 }
 
