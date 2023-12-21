@@ -24,6 +24,15 @@ func TestReadSeeds(t *testing.T) {
 		}
 	})
 
+	t.Run("file exists but is empty", func(t *testing.T) {
+		v := viper.New()
+		v.AddConfigPath("./empty_test_files")
+
+		seeds, err := config.ReadSeeds(v)
+		assert.NoError(t, err)
+		assert.Len(t, seeds, 0)
+	})
+
 	t.Run("file does not exist", func(t *testing.T) {
 		v := viper.New()
 		v.AddConfigPath("some other path")
