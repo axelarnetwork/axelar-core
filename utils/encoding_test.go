@@ -50,6 +50,30 @@ func TestHexDecode(t *testing.T) {
 			expected:    nil,
 			expectedErr: true,
 		},
+		{
+			name:        "valid input with uppercase hex characters",
+			input:       "0x48656C6C6F",
+			expected:    []byte("Hello"),
+			expectedErr: false,
+		},
+		{
+			name:        "valid input with mixed case hex characters",
+			input:       "0x48656c6C6F",
+			expected:    []byte("Hello"),
+			expectedErr: false,
+		},
+		{
+			name:        "input with leading zeros",
+			input:       "0x00000068656c6c6f",
+			expected:    append([]byte{0, 0, 0}, []byte("hello")...),
+			expectedErr: false,
+		},
+		{
+			name:        "input with trailing zeros",
+			input:       "0x68656c6c6f000000",
+			expected:    append([]byte("hello"), 0, 0, 0),
+			expectedErr: false,
+		},
 	}
 
 	for _, test := range tests {
