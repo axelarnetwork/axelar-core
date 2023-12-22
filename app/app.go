@@ -146,6 +146,12 @@ var (
 	// This is configured during the build.
 	WasmEnabled = ""
 
+	// IBCWasmHooksEnabled indicates whether wasm hooks for ibc are enabled.
+	// "true" setting means it will be, otherwise it won't.
+	// When disabled, cosmwasm contracts cannot be called via IBC.
+	// This is configured during the build.
+	IBCWasmHooksEnabled = ""
+
 	// WasmCapabilities specifies the capabilities of the wasm vm
 	// capabilities are detailed here: https://github.com/CosmWasm/cosmwasm/blob/main/docs/CAPABILITIES-BUILT-IN.md
 	WasmCapabilities = ""
@@ -162,6 +168,10 @@ func init() {
 	}
 
 	DefaultNodeHome = filepath.Join(userHomeDir, "."+Name)
+
+	if !IsWasmEnabled() && IsIBCWasmHooksEnabled() {
+		panic("ibc wasm hooks should only be enabled when wasm is enabled")
+	}
 }
 
 // AxelarApp defines the axelar Cosmos app that runs all modules
@@ -245,7 +255,7 @@ func NewAxelarApp(
 	setKeeper(keepers, initIBCTransferKeeper(appCodec, keys, keepers, ics4Wrapper))
 
 	setKeeper(keepers, initAxelarIBCKeeper(keepers))
-	setKeeper(keepers, initWasmKeeper(appCodec, keys, keepers, bApp, wasmDir, wasmConfig, wasmOpts))
+	setKeeper(keepers, initWasmKeeper(encodingConfig, keys, keepers, bApp, wasmDir, wasmConfig, wasmOpts))
 	setKeeper(keepers, initWasmContractKeeper(keepers))
 
 	// set the contract keeper for the Ics20WasmHooks
@@ -378,7 +388,7 @@ func initIBCMiddleware(keepers *keeperCache, ics4Middleware ibchooks.ICS4Middlew
 
 func initWasmHooks(keys map[string]*sdk.KVStoreKey) ibchooks.WasmHooks {
 	var wasmHooks ibchooks.WasmHooks
-	if !IsWasmEnabled() {
+	if !(IsWasmEnabled() && IsIBCWasmHooksEnabled()) {
 		return wasmHooks
 	}
 
@@ -445,8 +455,10 @@ func (app *AxelarApp) setUpgradeBehaviour(configurator module.Configurator) {
 		storeUpgrades := store.StoreUpgrades{}
 
 		if IsWasmEnabled() {
-			storeUpgrades.Added = append(storeUpgrades.Added, ibchookstypes.StoreKey)
 			storeUpgrades.Added = append(storeUpgrades.Added, wasm.ModuleName)
+		}
+		if IsIBCWasmHooksEnabled() {
+			storeUpgrades.Added = append(storeUpgrades.Added, ibchookstypes.StoreKey)
 		}
 
 		// configure store loader that checks if version == upgradeHeight and applies store upgrades
@@ -489,7 +501,7 @@ func initAppModules(keepers *keeperCache, bApp *bam.BaseApp, encodingConfig axel
 		capability.NewAppModule(appCodec, *getKeeper[capabilitykeeper.Keeper](keepers)),
 	}
 
-	// wasm module needs to be added in a specific order
+	// wasm module needs to be added in a specific order, so we cannot just append it at the end
 	if IsWasmEnabled() {
 		appModules = append(
 			appModules,
@@ -500,8 +512,11 @@ func initAppModules(keepers *keeperCache, bApp *bam.BaseApp, encodingConfig axel
 				getKeeper[authkeeper.AccountKeeper](keepers),
 				getKeeper[bankkeeper.BaseKeeper](keepers),
 			),
-			ibchooks.NewAppModule(getKeeper[authkeeper.AccountKeeper](keepers)),
 		)
+	}
+
+	if IsIBCWasmHooksEnabled() {
+		appModules = append(appModules, ibchooks.NewAppModule(getKeeper[authkeeper.AccountKeeper](keepers)))
 	}
 
 	appModules = append(appModules,
@@ -515,7 +530,6 @@ func initAppModules(keepers *keeperCache, bApp *bam.BaseApp, encodingConfig axel
 			*getKeeper[feegrantkeeper.Keeper](keepers),
 			encodingConfig.InterfaceRegistry,
 		),
-
 		snapshot.NewAppModule(*getKeeper[snapKeeper.Keeper](keepers)),
 		multisig.NewAppModule(
 			*getKeeper[multisigKeeper.Keeper](keepers),
@@ -606,13 +620,7 @@ func initAnteHandlers(encodingConfig axelarParams.EncodingConfig, keys map[strin
 	}
 
 	anteDecorators = append(anteDecorators,
-		ante.NewLogMsgDecorator(encodingConfig.Codec),
-		ante.NewCheckCommissionRate(getKeeper[stakingkeeper.Keeper](keepers)),
-		ante.NewUndelegateDecorator(
-			getKeeper[multisigKeeper.Keeper](keepers),
-			getKeeper[nexusKeeper.Keeper](keepers),
-			getKeeper[snapKeeper.Keeper](keepers),
-		),
+		ibcante.NewAnteDecorator(getKeeper[ibckeeper.Keeper](keepers)),
 		ante.NewCheckRefundFeeDecorator(
 			encodingConfig.InterfaceRegistry,
 			getKeeper[authkeeper.AccountKeeper](keepers),
@@ -620,15 +628,26 @@ func initAnteHandlers(encodingConfig axelarParams.EncodingConfig, keys map[strin
 			getKeeper[snapKeeper.Keeper](keepers),
 			getKeeper[rewardKeeper.Keeper](keepers),
 		),
-		ante.NewCheckProxy(getKeeper[snapKeeper.Keeper](keepers)),
-		ante.NewRestrictedTx(getKeeper[permissionKeeper.Keeper](keepers)),
-		ibcante.NewAnteDecorator(getKeeper[ibckeeper.Keeper](keepers)),
+		ante.NewAnteHandlerDecorator(
+			initMessageAnteDecorators(encodingConfig, keepers).ToAnteHandler()),
 	)
 
-	anteHandler := sdk.ChainAnteDecorators(
-		anteDecorators...,
+	return sdk.ChainAnteDecorators(anteDecorators...)
+}
+
+func initMessageAnteDecorators(encodingConfig axelarParams.EncodingConfig, keepers *keeperCache) ante.MessageAnteHandler {
+	return ante.ChainMessageAnteDecorators(
+		ante.NewLogMsgDecorator(encodingConfig.Codec),
+		ante.NewCheckCommissionRate(getKeeper[stakingkeeper.Keeper](keepers)),
+		ante.NewUndelegateDecorator(
+			getKeeper[multisigKeeper.Keeper](keepers),
+			getKeeper[nexusKeeper.Keeper](keepers),
+			getKeeper[snapKeeper.Keeper](keepers),
+		),
+
+		ante.NewCheckProxy(getKeeper[snapKeeper.Keeper](keepers)),
+		ante.NewRestrictedTx(getKeeper[permissionKeeper.Keeper](keepers)),
 	)
-	return anteHandler
 }
 
 func initModuleAccountPermissions() map[string][]string {
@@ -643,6 +662,7 @@ func initModuleAccountPermissions() map[string][]string {
 		axelarnetTypes.ModuleName:      {authtypes.Minter, authtypes.Burner},
 		rewardTypes.ModuleName:         {authtypes.Minter},
 		wasm.ModuleName:                {authtypes.Burner},
+		nexusTypes.ModuleName:          nil,
 	}
 }
 
@@ -669,9 +689,13 @@ func orderMigrations() []string {
 		vestingtypes.ModuleName,
 	}
 
-	// wasm module needs to be added in a specific order
+	// wasm module needs to be added in a specific order, so we cannot just append it at the end
 	if IsWasmEnabled() {
-		migrationOrder = append(migrationOrder, wasm.ModuleName, ibchookstypes.ModuleName)
+		migrationOrder = append(migrationOrder, wasm.ModuleName)
+	}
+
+	if IsIBCWasmHooksEnabled() {
+		migrationOrder = append(migrationOrder, ibchookstypes.ModuleName)
 	}
 
 	// axelar modules
@@ -715,9 +739,13 @@ func orderBeginBlockers() []string {
 		vestingtypes.ModuleName,
 	}
 
-	// wasm module needs to be added in a specific order
+	// wasm module needs to be added in a specific order, so we cannot just append it at the end
 	if IsWasmEnabled() {
-		beginBlockerOrder = append(beginBlockerOrder, wasm.ModuleName, ibchookstypes.ModuleName)
+		beginBlockerOrder = append(beginBlockerOrder, wasm.ModuleName)
+	}
+
+	if IsIBCWasmHooksEnabled() {
+		beginBlockerOrder = append(beginBlockerOrder, ibchookstypes.ModuleName)
 	}
 
 	// axelar custom modules
@@ -756,9 +784,13 @@ func orderEndBlockers() []string {
 		vestingtypes.ModuleName,
 	}
 
-	// wasm module needs to be added in a specific order
+	// wasm module needs to be added in a specific order, so we cannot just append it at the end
 	if IsWasmEnabled() {
-		endBlockerOrder = append(endBlockerOrder, wasm.ModuleName, ibchookstypes.ModuleName)
+		endBlockerOrder = append(endBlockerOrder, wasm.ModuleName)
+	}
+
+	if IsIBCWasmHooksEnabled() {
+		endBlockerOrder = append(endBlockerOrder, ibchookstypes.ModuleName)
 	}
 
 	// axelar custom modules
@@ -801,9 +833,13 @@ func orderModulesForGenesis() []string {
 		vestingtypes.ModuleName,
 	}
 
-	// wasm module needs to be added in a specific order
+	// wasm module needs to be added in a specific order, so we cannot just append it at the end
 	if IsWasmEnabled() {
-		genesisOrder = append(genesisOrder, wasm.ModuleName, ibchookstypes.ModuleName)
+		genesisOrder = append(genesisOrder, wasm.ModuleName)
+	}
+
+	if IsIBCWasmHooksEnabled() {
+		genesisOrder = append(genesisOrder, ibchookstypes.ModuleName)
 	}
 
 	genesisOrder = append(genesisOrder,
@@ -981,7 +1017,11 @@ func GetModuleBasics() module.BasicManager {
 	}
 
 	if IsWasmEnabled() {
-		managers = append(managers, wasm.AppModuleBasic{}, ibchooks.AppModuleBasic{})
+		managers = append(managers, wasm.AppModuleBasic{})
+	}
+
+	if IsIBCWasmHooksEnabled() {
+		managers = append(managers, ibchooks.AppModuleBasic{})
 	}
 
 	return module.NewBasicManager(managers...)
@@ -989,5 +1029,10 @@ func GetModuleBasics() module.BasicManager {
 
 // IsWasmEnabled returns whether wasm is enabled
 func IsWasmEnabled() bool {
-	return WasmEnabled != ""
+	return WasmEnabled == "true"
+}
+
+// IsIBCWasmHooksEnabled returns whether ibc wasm hooks are enabled
+func IsIBCWasmHooksEnabled() bool {
+	return IBCWasmHooksEnabled == "true"
 }

@@ -161,17 +161,25 @@ func initStakingKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, ke
 	return &stakingK
 }
 
-func initWasmKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, keepers *keeperCache, bApp *bam.BaseApp, wasmDir string, wasmConfig wasmtypes.WasmConfig, wasmOpts []wasm.Option) *wasm.Keeper {
+func initWasmKeeper(encodingConfig axelarParams.EncodingConfig, keys map[string]*sdk.KVStoreKey, keepers *keeperCache, bApp *bam.BaseApp, wasmDir string, wasmConfig wasmtypes.WasmConfig, wasmOpts []wasm.Option) *wasm.Keeper {
 	// The last arguments can contain custom message handlers, and custom query handlers,
 	// if we want to allow any custom callbacks
-	wasmOpts = append(wasmOpts, wasmkeeper.WithMessageHandlerDecorator(func(old wasmkeeper.Messenger) wasmkeeper.Messenger {
-		return wasmkeeper.NewMessageHandlerChain(old, nexusKeeper.NewMessenger(getKeeper[nexusKeeper.Keeper](keepers)))
-	}))
+	wasmOpts = append(wasmOpts, wasmkeeper.WithMessageHandlerDecorator(
+		func(old wasmkeeper.Messenger) wasmkeeper.Messenger {
+			encoders := wasm.DefaultEncoders(encodingConfig.Codec, getKeeper[ibctransferkeeper.Keeper](keepers))
+			encoders.Custom = nexusKeeper.EncodeRoutingMessage
+
+			return WithAnteHandlers(
+				encoders,
+				initMessageAnteDecorators(encodingConfig, keepers),
+				// for security reasons we disallow some msg types that can be used for arbitrary calls
+				wasmkeeper.NewMessageHandlerChain(NewMsgTypeBlacklistMessenger(), old, nexusKeeper.NewMessenger(getKeeper[nexusKeeper.Keeper](keepers))))
+		}))
 
 	scopedWasmK := getKeeper[capabilitykeeper.Keeper](keepers).ScopeToModule(wasm.ModuleName)
 	ibcKeeper := getKeeper[ibckeeper.Keeper](keepers)
 	wasmK := wasm.NewKeeper(
-		appCodec,
+		encodingConfig.Codec,
 		keys[wasm.StoreKey],
 		keepers.getSubspace(wasm.ModuleName),
 		getKeeper[authkeeper.AccountKeeper](keepers),
