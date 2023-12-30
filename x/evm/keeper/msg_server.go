@@ -243,13 +243,13 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 
 	symbol := token.GetDetails().Symbol
 	recipient := nexus.CrossChainAddress{Chain: recipientChain, Address: req.RecipientAddr}
-	labelInfo := types.LabelInfo{
-		Label:            req.Label,
-		RecipientAddress: types.Address(common.HexToAddress(req.RecipientAddr)),
-		RecipientChain:   req.RecipientChain,
-	}
 
-	if len(labelInfo.Label) > 0 {
+	if len(req.Label) > 0 {
+		labelInfo := types.LabelInfo{
+			Label:            req.Label,
+			RecipientAddress: types.Address(common.HexToAddress(req.RecipientAddr)),
+			RecipientChain:   req.RecipientChain,
+		}
 		err = keeper.SetLabeledBurnerAddress(ctx, labelInfo, burnerAddress)
 		if err != nil {
 			return nil, fmt.Errorf("could not label address %s", err.Error())
@@ -363,11 +363,9 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, fmt.Errorf("gateway address not set for chain %s", chain.Name)
 	}
 
-	if req.LabelInfo != nil {
-		if !req.BurnerAddress.IsZeroAddress() {
-			return nil, fmt.Errorf("provided both burner address and label info")
-		}
-
+	if req.LabelInfo != nil && !req.BurnerAddress.IsZeroAddress() {
+		return nil, fmt.Errorf("provided both burner address and label info")
+	} else if req.LabelInfo != nil {
 		burnerAddr, err := keeper.GetLabeledBurnerAddress(ctx, *req.LabelInfo)
 		req.BurnerAddress = burnerAddr
 		if err != nil {
