@@ -69,9 +69,6 @@ func GetCmdLink() *cobra.Command {
 			}
 
 			msg := types.NewLinkRequest(clientCtx.GetFromAddress(), args[0], args[1], args[2])
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
 
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
@@ -98,9 +95,6 @@ func GetCmdConfirmDeposit() *cobra.Command {
 			}
 
 			msg := types.NewConfirmDepositRequest(cliCtx.GetFromAddress(), args[0], burnerAddr)
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
 
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
 		},
@@ -122,9 +116,6 @@ func GetCmdExecutePendingTransfersTx() *cobra.Command {
 			}
 
 			msg := types.NewExecutePendingTransfersRequest(cliCtx.GetFromAddress())
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
 
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
 		},
@@ -158,9 +149,6 @@ func GetCmdAddCosmosBasedChain() *cobra.Command {
 		path := args[2]
 
 		msg := types.NewAddCosmosBasedChainRequest(cliCtx.GetFromAddress(), name, addrPrefix, assets, path)
-		if err := msg.ValidateBasic(); err != nil {
-			return err
-		}
 
 		return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
 	}
@@ -209,9 +197,6 @@ func GetCmdRegisterAsset() *cobra.Command {
 		}
 
 		msg := types.NewRegisterAssetRequest(cliCtx.GetFromAddress(), chain, nexus.NewAsset(denom, isNativeAsset), limit, window)
-		if err := msg.ValidateBasic(); err != nil {
-			return err
-		}
 
 		return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
 	}
@@ -237,9 +222,6 @@ func GetCmdRouteIBCTransfersTx() *cobra.Command {
 			}
 
 			msg := types.NewRouteIBCTransfersRequest(cliCtx.GetFromAddress())
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
 
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
 		},
@@ -264,9 +246,6 @@ func GetCmdRegisterFeeCollector() *cobra.Command {
 				return err
 			}
 			msg := types.NewRegisterFeeCollectorRequest(cliCtx.GetFromAddress(), feeCollector)
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
 
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
 		},
@@ -292,9 +271,6 @@ func getRetryIBCTransfer() *cobra.Command {
 			}
 
 			msg := types.NewRetryIBCTransferRequest(cliCtx.GetFromAddress(), nexus.TransferID(transferID))
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
 
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
 		},
@@ -334,9 +310,6 @@ func getGeneralMessage() *cobra.Command {
 			}
 
 			msg := types.NewRouteMessage(cliCtx.GetFromAddress(), feegranterAcc, id, payload)
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
 
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
 		},
@@ -393,9 +366,6 @@ func getCmdCallContract() *cobra.Command {
 			}
 
 			msg := types.NewCallContractRequest(clientCtx.GetFromAddress(), args[0], args[1], payload, fee)
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
 
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
@@ -470,9 +440,6 @@ IMPORTANT: The payload field must be base64 encoded.
 
 			msg, err := govtypes.NewMsgSubmitProposal(&proposal, deposit, clientCtx.GetFromAddress())
 			if err != nil {
-				return err
-			}
-			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
 

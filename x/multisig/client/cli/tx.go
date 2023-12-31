@@ -56,9 +56,6 @@ func getCmdRotateKey() *cobra.Command {
 			keyID := exported.KeyID(args[1])
 
 			msg := types.NewRotateKeyRequest(clientCtx.FromAddress, chain, keyID)
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
 
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
@@ -106,9 +103,6 @@ func getCmdStart() *cobra.Command {
 		}
 
 		msg := types.NewStartKeygenRequest(cliCtx.FromAddress, exported.KeyID(*keyID))
-		if err := msg.ValidateBasic(); err != nil {
-			return err
-		}
 
 		return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
 	}
@@ -130,9 +124,6 @@ func getCmdOptOut() *cobra.Command {
 			}
 
 			msg := &types.KeygenOptOutRequest{Sender: clientCtx.FromAddress}
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
 
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
@@ -155,9 +146,6 @@ func getCmdOptIn() *cobra.Command {
 			}
 
 			msg := &types.KeygenOptInRequest{Sender: clientCtx.FromAddress}
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
 
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
