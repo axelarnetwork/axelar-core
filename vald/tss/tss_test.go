@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
 )
 
@@ -27,7 +28,7 @@ func TestGRPCTimeout(t *testing.T) {
 			ctx,
 			"",
 			grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) { return listener.Dial() }),
-			grpc.WithInsecure(),
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
 			grpc.WithBlock(),
 		)
 		assert.NoError(t, err)
@@ -36,7 +37,7 @@ func TestGRPCTimeout(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 		defer cancel()
 
-		_, err := grpc.DialContext(ctx, "", grpc.WithInsecure(), grpc.WithBlock())
+		_, err := grpc.DialContext(ctx, "target", grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
 		assert.Equal(t, context.DeadlineExceeded, err)
 	})
 }
