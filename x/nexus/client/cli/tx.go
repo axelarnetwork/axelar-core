@@ -51,10 +51,6 @@ func GetCmdRegisterChainMaintainer() *cobra.Command {
 
 			msg := types.NewRegisterChainMaintainerRequest(cliCtx.GetFromAddress(), args...)
 
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
-
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
 		},
 	}
@@ -76,10 +72,6 @@ func GetCmdDeregisterChainMaintainer() *cobra.Command {
 			}
 
 			msg := types.NewDeregisterChainMaintainerRequest(cliCtx.GetFromAddress(), args...)
-
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
 
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
 		},
@@ -103,10 +95,6 @@ func GetCmdActivateChain() *cobra.Command {
 
 			msg := types.NewActivateChainRequest(cliCtx.GetFromAddress(), args...)
 
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
-
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
 		},
 	}
@@ -128,10 +116,6 @@ func GetCmdDeactivateChain() *cobra.Command {
 			}
 
 			msg := types.NewDeactivateChainRequest(cliCtx.GetFromAddress(), args...)
-
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
 
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
 		},
@@ -169,10 +153,6 @@ func GetCmdRegisterAssetFee() *cobra.Command {
 
 			msg := types.NewRegisterAssetFeeRequest(cliCtx.GetFromAddress(), feeInfo)
 
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
-
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
 		},
 	}
@@ -204,9 +184,6 @@ func GetCmdSetTransferRateLimit() *cobra.Command {
 			}
 
 			msg := types.NewSetTransferRateLimitRequest(cliCtx.GetFromAddress(), exported.ChainName(args[0]), limit, window)
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
 
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
 		},

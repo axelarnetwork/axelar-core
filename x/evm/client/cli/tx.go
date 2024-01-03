@@ -73,9 +73,6 @@ func GetCmdSetGateway() *cobra.Command {
 			}
 
 			msg := types.NewSetGatewayRequest(cliCtx.GetFromAddress(), chain, types.Address(common.HexToAddress(addressHex)))
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
 
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
 		},
@@ -98,9 +95,6 @@ func GetCmdLink() *cobra.Command {
 			}
 
 			msg := types.NewLinkRequest(cliCtx.GetFromAddress(), args[0], args[1], args[2], args[3])
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
 
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
 		},
@@ -127,9 +121,6 @@ func GetCmdConfirmERC20TokenDeployment() *cobra.Command {
 			asset := types.NewAsset(originChain, originAsset)
 			txID := common.HexToHash(args[3])
 			msg := types.NewConfirmTokenRequest(cliCtx.GetFromAddress(), chain, asset, txID)
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
 
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
 		},
@@ -155,9 +146,6 @@ func GetCmdConfirmERC20Deposit() *cobra.Command {
 			burnerAddr := common.HexToAddress(args[2])
 
 			msg := types.NewConfirmDepositRequest(cliCtx.GetFromAddress(), chain, txID, burnerAddr)
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
 
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
 		},
@@ -181,9 +169,6 @@ func GetCmdConfirmTransferOperatorship() *cobra.Command {
 			chain := args[0]
 			txID := common.HexToHash(args[1])
 			msg := types.NewConfirmTransferKeyRequest(cliCtx.GetFromAddress(), chain, txID)
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
 
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
 		},
@@ -210,9 +195,6 @@ func GetCmdCreateConfirmGatewayTx() *cobra.Command {
 			txID := types.Hash(common.HexToHash(args[1]))
 
 			msg := types.NewConfirmGatewayTxRequest(cliCtx.GetFromAddress(), chain, txID)
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
 
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
 		},
@@ -239,9 +221,6 @@ func GetCmdCreateConfirmGatewayTxs() *cobra.Command {
 			})
 
 			msg := types.NewConfirmGatewayTxsRequest(cliCtx.GetFromAddress(), chain, txIDs)
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
 
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
 		},
@@ -263,9 +242,6 @@ func GetCmdCreatePendingTransfers() *cobra.Command {
 			}
 
 			msg := types.NewCreatePendingTransfersRequest(cliCtx.GetFromAddress(), args[0])
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
 
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
 		},
@@ -312,9 +288,6 @@ func GetCmdCreateDeployToken() *cobra.Command {
 		asset := types.NewAsset(originChain, originAsset)
 		tokenDetails := types.NewTokenDetails(tokenName, symbol, uint8(decs), capacity)
 		msg := types.NewCreateDeployTokenRequest(cliCtx.GetFromAddress(), chain, asset, tokenDetails, types.Address(common.HexToAddress(*address)), mintLimit)
-		if err = msg.ValidateBasic(); err != nil {
-			return err
-		}
 
 		return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
 	}
@@ -336,9 +309,6 @@ func GetCmdCreateBurnTokens() *cobra.Command {
 			}
 
 			msg := types.NewCreateBurnTokensRequest(cliCtx.GetFromAddress(), args[0])
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
 
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
 		},
@@ -360,9 +330,6 @@ func GetCmdCreateTransferOperatorship() *cobra.Command {
 			}
 
 			msg := types.NewCreateTransferOperatorshipRequest(cliCtx.GetFromAddress(), args[0], args[1])
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
 
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
 		},
@@ -384,9 +351,6 @@ func GetCmdSignCommands() *cobra.Command {
 			}
 
 			msg := types.NewSignCommandsRequest(cliCtx.GetFromAddress(), args[0])
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
 
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
 		},
@@ -423,9 +387,6 @@ func GetCmdAddChain() *cobra.Command {
 			}
 
 			msg := types.NewAddChainRequest(cliCtx.GetFromAddress(), name, chainConf.Params)
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
 
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
 		},
@@ -447,9 +408,6 @@ func GetCmdRetryFailedEvent() *cobra.Command {
 			}
 
 			msg := types.NewRetryFailedEventRequest(cliCtx.GetFromAddress(), args[0], args[1])
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
 
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
 		},
