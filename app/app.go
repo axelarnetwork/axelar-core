@@ -1017,7 +1017,7 @@ func GetModuleBasics() module.BasicManager {
 	}
 
 	if IsWasmEnabled() {
-		managers = append(managers, wasm.AppModuleBasic{})
+		managers = append(managers, NewWasmAppModuleBasicOverride(wasm.AppModuleBasic{}, authtypes.NewModuleAddress(govtypes.ModuleName)))
 	}
 
 	if IsIBCWasmHooksEnabled() {

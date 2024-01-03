@@ -8,6 +8,7 @@ import (
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	wasmvmtypes "github.com/CosmWasm/wasmvm/types"
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"golang.org/x/exp/maps"
 
@@ -109,4 +110,27 @@ func isStargateMsg(msg wasmvmtypes.CosmosMsg) bool {
 
 func isIBCSendPacketMsg(msg wasmvmtypes.CosmosMsg) bool {
 	return msg.IBC != nil && msg.IBC.SendPacket != nil
+}
+
+type WasmAppModuleBasicOverride struct {
+	wasm.AppModuleBasic
+	uploader sdk.AccAddress
+}
+
+func NewWasmAppModuleBasicOverride(wasmModule wasm.AppModuleBasic, uploader sdk.AccAddress) WasmAppModuleBasicOverride {
+	return WasmAppModuleBasicOverride{
+		AppModuleBasic: wasmModule,
+		uploader:       uploader,
+	}
+}
+
+// DefaultGenesis returns an override for the wasm module's DefaultGenesis,
+// because as soon as the module is initialized the restriction to contract upload and instantiation must hold
+func (m WasmAppModuleBasicOverride) DefaultGenesis(cdc codec.JSONCodec) json.RawMessage {
+	return cdc.MustMarshalJSON(&wasm.GenesisState{
+		Params: wasmtypes.Params{
+			CodeUploadAccess:             wasmtypes.AccessTypeAnyOfAddresses.With(m.uploader),
+			InstantiateDefaultPermission: wasmtypes.AccessTypeAnyOfAddresses,
+		},
+	})
 }
