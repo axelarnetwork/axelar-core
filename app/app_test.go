@@ -1,7 +1,12 @@
 package app_test
 
 import (
+	multisig "github.com/axelarnetwork/axelar-core/x/multisig/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"google.golang.org/grpc/encoding"
+	encproto "google.golang.org/grpc/encoding/proto"
 	"testing"
+	"time"
 
 	"github.com/CosmWasm/wasmd/x/wasm"
 	"github.com/cosmos/cosmos-sdk/simapp"
@@ -30,4 +35,28 @@ func TestNewAxelarApp(t *testing.T) {
 			[]wasm.Option{},
 		)
 	})
+}
+
+// check that encoding is set so gogoproto extensions are supported
+func TestGRPCEncodingSetDuringInit(t *testing.T) {
+	// if the codec is set during the app's init() function, then this should return a codec that can encode gogoproto extensions
+	codec := encoding.GetCodec(encproto.Name)
+
+	keyResponse := multisig.KeyResponse{
+		KeyID:              "keyID",
+		State:              0,
+		StartedAt:          0,
+		StartedAtTimestamp: time.Now(),
+		ThresholdWeight:    sdk.ZeroUint(),
+		BondedWeight:       sdk.ZeroUint(),
+		Participants: []multisig.KeygenParticipant{{
+			Address: "participant",
+			Weight:  sdk.OneUint(),
+			PubKey:  "pubkey",
+		}},
+	}
+
+	bz, err := codec.Marshal(&keyResponse)
+	assert.NoError(t, err)
+	assert.NoError(t, codec.Unmarshal(bz, &keyResponse))
 }
