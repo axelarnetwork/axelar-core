@@ -1,21 +1,21 @@
 package app_test
 
 import (
-	multisig "github.com/axelarnetwork/axelar-core/x/multisig/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"google.golang.org/grpc/encoding"
-	encproto "google.golang.org/grpc/encoding/proto"
 	"testing"
 	"time"
 
 	"github.com/CosmWasm/wasmd/x/wasm"
 	"github.com/cosmos/cosmos-sdk/simapp"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
+	"google.golang.org/grpc/encoding"
+	encproto "google.golang.org/grpc/encoding/proto"
 
 	"github.com/axelarnetwork/axelar-core/app"
+	multisig "github.com/axelarnetwork/axelar-core/x/multisig/types"
 )
 
 func TestNewAxelarApp(t *testing.T) {

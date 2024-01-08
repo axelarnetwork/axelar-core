@@ -3,9 +3,6 @@ package app
 import (
 	"encoding/json"
 	"fmt"
-	appCodec "github.com/axelarnetwork/axelar-core/app/codec"
-	"google.golang.org/grpc/encoding"
-	encproto "google.golang.org/grpc/encoding/proto"
 	"io"
 	stdlog "log"
 	"net/http"
@@ -100,7 +97,10 @@ import (
 	tmos "github.com/tendermint/tendermint/libs/os"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
+	"google.golang.org/grpc/encoding"
+	encproto "google.golang.org/grpc/encoding/proto"
 
+	appCodec "github.com/axelarnetwork/axelar-core/app/codec"
 	axelarParams "github.com/axelarnetwork/axelar-core/app/params"
 	"github.com/axelarnetwork/axelar-core/x/ante"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet"
