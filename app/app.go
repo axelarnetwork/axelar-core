@@ -3,6 +3,9 @@ package app
 import (
 	"encoding/json"
 	"fmt"
+	appCodec "github.com/axelarnetwork/axelar-core/app/codec"
+	"google.golang.org/grpc/encoding"
+	encproto "google.golang.org/grpc/encoding/proto"
 	"io"
 	stdlog "log"
 	"net/http"
@@ -162,6 +165,8 @@ var (
 )
 
 func init() {
+	encoding.RegisterCodec(appCodec.GogoEnabled{Codec: encoding.GetCodec(encproto.Name)})
+
 	userHomeDir, err := os.UserHomeDir()
 	if err != nil {
 		stdlog.Println("Failed to get home dir %2", err)
