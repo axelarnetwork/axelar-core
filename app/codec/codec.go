@@ -113,7 +113,3 @@ func (c GogoEnabled) Unmarshal(data []byte, v interface{}) error {
 	}
 	return c.Codec.Unmarshal(data, v)
 }
-
-func (c GogoEnabled) Name() string {
-	return c.Codec.Name()
-}
