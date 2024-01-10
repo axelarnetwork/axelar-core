@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/CosmWasm/wasmd v0.33.0
-	github.com/CosmWasm/wasmvm v1.3.0
+	github.com/CosmWasm/wasmvm v1.3.1
 	github.com/armon/go-metrics v0.4.1
 	github.com/axelarnetwork/tm-events v0.0.0-20230704201410-3cf91089034b
 	github.com/axelarnetwork/utils v0.0.0-20230706045331-b7aacc1f4a2f
