@@ -113,6 +113,9 @@ var _ types.Nexus = &NexusMock{}
 //			EnqueueForTransferFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, amount github_com_cosmos_cosmos_sdk_types.Coin) (github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferID, error) {
 //				panic("mock out the EnqueueForTransfer method")
 //			},
+//			EnqueueRouteMessageFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, id string) error {
+//				panic("mock out the EnqueueRouteMessage method")
+//			},
 //			EnqueueTransferFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, senderChain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, asset github_com_cosmos_cosmos_sdk_types.Coin) (github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferID, error) {
 //				panic("mock out the EnqueueTransfer method")
 //			},
@@ -155,9 +158,6 @@ var _ types.Nexus = &NexusMock{}
 //			RegisterAssetFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset, limit github_com_cosmos_cosmos_sdk_types.Uint, window time.Duration) error {
 //				panic("mock out the RegisterAsset method")
 //			},
-//			RouteMessageFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, id string, routingCtx ...github_com_axelarnetwork_axelar_core_x_nexus_exported.RoutingContext) error {
-//				panic("mock out the RouteMessage method")
-//			},
 //			SetChainFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain)  {
 //				panic("mock out the SetChain method")
 //			},
@@ -191,6 +191,9 @@ type NexusMock struct {
 
 	// EnqueueForTransferFunc mocks the EnqueueForTransfer method.
 	EnqueueForTransferFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, amount github_com_cosmos_cosmos_sdk_types.Coin) (github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferID, error)
+
+	// EnqueueRouteMessageFunc mocks the EnqueueRouteMessage method.
+	EnqueueRouteMessageFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, id string) error
 
 	// EnqueueTransferFunc mocks the EnqueueTransfer method.
 	EnqueueTransferFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, senderChain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, asset github_com_cosmos_cosmos_sdk_types.Coin) (github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferID, error)
@@ -233,9 +236,6 @@ type NexusMock struct {
 
 	// RegisterAssetFunc mocks the RegisterAsset method.
 	RegisterAssetFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset, limit github_com_cosmos_cosmos_sdk_types.Uint, window time.Duration) error
-
-	// RouteMessageFunc mocks the RouteMessage method.
-	RouteMessageFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, id string, routingCtx ...github_com_axelarnetwork_axelar_core_x_nexus_exported.RoutingContext) error
 
 	// SetChainFunc mocks the SetChain method.
 	SetChainFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain)
@@ -287,6 +287,13 @@ type NexusMock struct {
 			Sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
 			// Amount is the amount argument value.
 			Amount github_com_cosmos_cosmos_sdk_types.Coin
+		}
+		// EnqueueRouteMessage holds details about calls to the EnqueueRouteMessage method.
+		EnqueueRouteMessage []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// ID is the id argument value.
+			ID string
 		}
 		// EnqueueTransfer holds details about calls to the EnqueueTransfer method.
 		EnqueueTransfer []struct {
@@ -410,15 +417,6 @@ type NexusMock struct {
 			// Window is the window argument value.
 			Window time.Duration
 		}
-		// RouteMessage holds details about calls to the RouteMessage method.
-		RouteMessage []struct {
-			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
-			// ID is the id argument value.
-			ID string
-			// RoutingCtx is the routingCtx argument value.
-			RoutingCtx []github_com_axelarnetwork_axelar_core_x_nexus_exported.RoutingContext
-		}
 		// SetChain holds details about calls to the SetChain method.
 		SetChain []struct {
 			// Ctx is the ctx argument value.
@@ -459,6 +457,7 @@ type NexusMock struct {
 	lockArchivePendingTransfer        sync.RWMutex
 	lockComputeTransferFee            sync.RWMutex
 	lockEnqueueForTransfer            sync.RWMutex
+	lockEnqueueRouteMessage           sync.RWMutex
 	lockEnqueueTransfer               sync.RWMutex
 	lockGetChain                      sync.RWMutex
 	lockGetChainByNativeAsset         sync.RWMutex
@@ -473,7 +472,6 @@ type NexusMock struct {
 	lockLinkAddresses                 sync.RWMutex
 	lockRateLimitTransfer             sync.RWMutex
 	lockRegisterAsset                 sync.RWMutex
-	lockRouteMessage                  sync.RWMutex
 	lockSetChain                      sync.RWMutex
 	lockSetChainMaintainerState       sync.RWMutex
 	lockSetMessageExecuted            sync.RWMutex
@@ -634,6 +632,42 @@ func (mock *NexusMock) EnqueueForTransferCalls() []struct {
 	mock.lockEnqueueForTransfer.RLock()
 	calls = mock.calls.EnqueueForTransfer
 	mock.lockEnqueueForTransfer.RUnlock()
+	return calls
+}
+
+// EnqueueRouteMessage calls EnqueueRouteMessageFunc.
+func (mock *NexusMock) EnqueueRouteMessage(ctx github_com_cosmos_cosmos_sdk_types.Context, id string) error {
+	if mock.EnqueueRouteMessageFunc == nil {
+		panic("NexusMock.EnqueueRouteMessageFunc: method is nil but Nexus.EnqueueRouteMessage was just called")
+	}
+	callInfo := struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+		ID  string
+	}{
+		Ctx: ctx,
+		ID:  id,
+	}
+	mock.lockEnqueueRouteMessage.Lock()
+	mock.calls.EnqueueRouteMessage = append(mock.calls.EnqueueRouteMessage, callInfo)
+	mock.lockEnqueueRouteMessage.Unlock()
+	return mock.EnqueueRouteMessageFunc(ctx, id)
+}
+
+// EnqueueRouteMessageCalls gets all the calls that were made to EnqueueRouteMessage.
+// Check the length with:
+//
+//	len(mockedNexus.EnqueueRouteMessageCalls())
+func (mock *NexusMock) EnqueueRouteMessageCalls() []struct {
+	Ctx github_com_cosmos_cosmos_sdk_types.Context
+	ID  string
+} {
+	var calls []struct {
+		Ctx github_com_cosmos_cosmos_sdk_types.Context
+		ID  string
+	}
+	mock.lockEnqueueRouteMessage.RLock()
+	calls = mock.calls.EnqueueRouteMessage
+	mock.lockEnqueueRouteMessage.RUnlock()
 	return calls
 }
 
@@ -1186,46 +1220,6 @@ func (mock *NexusMock) RegisterAssetCalls() []struct {
 	mock.lockRegisterAsset.RLock()
 	calls = mock.calls.RegisterAsset
 	mock.lockRegisterAsset.RUnlock()
-	return calls
-}
-
-// RouteMessage calls RouteMessageFunc.
-func (mock *NexusMock) RouteMessage(ctx github_com_cosmos_cosmos_sdk_types.Context, id string, routingCtx ...github_com_axelarnetwork_axelar_core_x_nexus_exported.RoutingContext) error {
-	if mock.RouteMessageFunc == nil {
-		panic("NexusMock.RouteMessageFunc: method is nil but Nexus.RouteMessage was just called")
-	}
-	callInfo := struct {
-		Ctx        github_com_cosmos_cosmos_sdk_types.Context
-		ID         string
-		RoutingCtx []github_com_axelarnetwork_axelar_core_x_nexus_exported.RoutingContext
-	}{
-		Ctx:        ctx,
-		ID:         id,
-		RoutingCtx: routingCtx,
-	}
-	mock.lockRouteMessage.Lock()
-	mock.calls.RouteMessage = append(mock.calls.RouteMessage, callInfo)
-	mock.lockRouteMessage.Unlock()
-	return mock.RouteMessageFunc(ctx, id, routingCtx...)
-}
-
-// RouteMessageCalls gets all the calls that were made to RouteMessage.
-// Check the length with:
-//
-//	len(mockedNexus.RouteMessageCalls())
-func (mock *NexusMock) RouteMessageCalls() []struct {
-	Ctx        github_com_cosmos_cosmos_sdk_types.Context
-	ID         string
-	RoutingCtx []github_com_axelarnetwork_axelar_core_x_nexus_exported.RoutingContext
-} {
-	var calls []struct {
-		Ctx        github_com_cosmos_cosmos_sdk_types.Context
-		ID         string
-		RoutingCtx []github_com_axelarnetwork_axelar_core_x_nexus_exported.RoutingContext
-	}
-	mock.lockRouteMessage.RLock()
-	calls = mock.calls.RouteMessage
-	mock.lockRouteMessage.RUnlock()
 	return calls
 }
 

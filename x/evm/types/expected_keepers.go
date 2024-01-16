@@ -119,7 +119,7 @@ type Nexus interface {
 	GetProcessingMessages(ctx sdk.Context, chain nexus.ChainName, limit int64) []nexus.GeneralMessage
 	SetMessageFailed(ctx sdk.Context, id string) error
 	SetMessageExecuted(ctx sdk.Context, id string) error
-	RouteMessage(ctx sdk.Context, id string, routingCtx ...nexus.RoutingContext) error
+	EnqueueRouteMessage(ctx sdk.Context, id string) error
 }
 
 // InitPoller is a minimal interface to start a poll. This must be a type alias instead of a type definition,

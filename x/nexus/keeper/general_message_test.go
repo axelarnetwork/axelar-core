@@ -22,6 +22,7 @@ import (
 	nexustestutils "github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
+	"github.com/axelarnetwork/utils/funcs"
 	. "github.com/axelarnetwork/utils/test"
 )
 
@@ -48,6 +49,78 @@ func randMsg(status exported.GeneralMessage_Status, withAsset ...bool) exported.
 		SourceTxID:    evmtestutils.RandomHash().Bytes(),
 		SourceTxIndex: uint64(rand.I64Between(0, 100)),
 	}
+}
+
+func TestRouteMessageQueue(t *testing.T) {
+	var (
+		msg    exported.GeneralMessage
+		ctx    sdk.Context
+		keeper nexus.Keeper
+	)
+
+	cfg := app.MakeEncodingConfig()
+	givenKeeper := Given("the keeper", func() {
+		keeper, ctx = setup(cfg)
+		keeper.SetMessageRouter(
+			types.NewMessageRouter().
+				AddRoute(evm.Ethereum.Module, func(_ sdk.Context, rCtx exported.RoutingContext, _ exported.GeneralMessage) error { return nil }),
+		)
+	})
+
+	givenKeeper.
+		Branch(
+			When("the general message does not exist", func() {}).
+				Then("should fail to enqueue for routing", func(t *testing.T) {
+					assert.ErrorContains(t, keeper.EnqueueRouteMessage(ctx, rand.NormalizedStr(10)), "not found")
+				}),
+
+			When("the general message is not at the expected status", func() {
+				msg = randMsg(exported.Approved)
+				msg.Sender = exported.CrossChainAddress{
+					Chain:   evm.Ethereum,
+					Address: evmtestutils.RandomAddress().Hex(),
+				}
+				msg.Recipient = exported.CrossChainAddress{
+					Chain:   evm.Ethereum,
+					Address: evmtestutils.RandomAddress().Hex(),
+				}
+
+				funcs.MustNoErr(keeper.SetNewMessage(ctx, msg))
+				funcs.MustNoErr(keeper.RouteMessage(ctx, msg.ID))
+			}).
+				Then("should fail to enqueue for routing", func(t *testing.T) {
+					assert.ErrorContains(t, keeper.EnqueueRouteMessage(ctx, msg.ID), "general message has to be approved or failed")
+				}),
+
+			When("the general message is approved", func() {
+				msg = randMsg(exported.Approved)
+				msg.Sender = exported.CrossChainAddress{
+					Chain:   evm.Ethereum,
+					Address: evmtestutils.RandomAddress().Hex(),
+				}
+				msg.Recipient = exported.CrossChainAddress{
+					Chain:   evm.Ethereum,
+					Address: evmtestutils.RandomAddress().Hex(),
+				}
+
+				funcs.MustNoErr(keeper.SetNewMessage(ctx, msg))
+			}).
+				Then("should enqueue for routing", func(t *testing.T) {
+					assert.NoError(t, keeper.EnqueueRouteMessage(ctx, msg.ID))
+
+					actual, ok := keeper.DequeueRouteMessage(ctx)
+					assert.True(t, ok)
+					assert.Equal(t, msg, actual)
+
+					_, ok = keeper.DequeueRouteMessage(ctx)
+					assert.False(t, ok)
+
+					actual, ok = keeper.GetMessage(ctx, msg.ID)
+					assert.True(t, ok)
+					assert.Equal(t, msg, actual)
+				}),
+		).
+		Run(t)
 }
 
 func TestSetNewMessage(t *testing.T) {

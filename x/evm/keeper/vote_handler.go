@@ -7,7 +7,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/events"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -227,17 +226,7 @@ func (v voteHandler) handleContractCall(ctx sdk.Context, event types.Event) erro
 		return err
 	}
 
-	// this is still here only because routing to modules other than EVM can be
-	// expensive. this is currently called by the last voter, and the extra gas
-	// may cause trouble for gas estimation.
-	if !msg.Recipient.Chain.IsFrom(types.ModuleName) {
-		return nil
-	}
-
-	// try routing the message
-	_ = utils.RunCached(ctx, v.keeper, func(ctx sdk.Context) (struct{}, error) {
-		return struct{}{}, v.nexus.RouteMessage(ctx, msg.ID)
-	})
+	funcs.MustNoErr(v.nexus.EnqueueRouteMessage(ctx, msg.ID))
 
 	return nil
 }

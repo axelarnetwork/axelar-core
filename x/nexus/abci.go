@@ -14,18 +14,21 @@ import (
 // on every begin block
 func BeginBlocker(_ sdk.Context, _ abci.RequestBeginBlock, _ types.Nexus) {}
 
-// EndBlocker called every block, checking the chain maintainers of all activated chains
-// - if a chain maintainer has missed voting for too many polls, then it will be de-registered
-// - if a chain maintainer has voted incorrectly for too many polls, then it will be de-registered
-// - if a chain maintainer does not active proxy set, then it will be de-registered
+// EndBlocker called every block
 func EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock, n types.Nexus, r types.RewardKeeper, s types.Snapshotter) ([]abci.ValidatorUpdate, error) {
 	if err := checkChainMaintainers(ctx, n, r, s); err != nil {
 		return nil, err
 	}
 
+	routeQueuedMessages(ctx, n)
+
 	return nil, nil
 }
 
+// checkChainMaintainers checks the chain maintainers of all activated chains
+// - if a chain maintainer has missed voting for too many polls, then it will be de-registered
+// - if a chain maintainer has voted incorrectly for too many polls, then it will be de-registered
+// - if a chain maintainer does not active proxy set, then it will be de-registered
 func checkChainMaintainers(ctx sdk.Context, n types.Nexus, r types.RewardKeeper, s types.Snapshotter) error {
 	for _, chain := range n.GetChains(ctx) {
 		if !n.IsChainActivated(ctx, chain) {
@@ -67,4 +70,21 @@ func checkChainMaintainers(ctx sdk.Context, n types.Nexus, r types.RewardKeeper,
 	}
 
 	return nil
+}
+
+func routeQueuedMessages(ctx sdk.Context, n types.Nexus) {
+	// TODO: make this a module parameter
+	max := 50
+
+	for i := 0; i < max; i++ {
+		msg, ok := n.DequeueRouteMessage(ctx)
+		if !ok {
+			break
+		}
+
+		// try routing the message
+		_ = utils.RunCached(ctx, n, func(ctx sdk.Context) (struct{}, error) {
+			return struct{}{}, n.RouteMessage(ctx, msg.ID)
+		})
+	}
 }

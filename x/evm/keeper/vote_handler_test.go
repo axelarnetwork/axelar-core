@@ -345,53 +345,38 @@ func TestHandleResult(t *testing.T) {
 					assert.Len(t, chaink.EnqueueConfirmedEventCalls(), 5)
 				}),
 
-			When("event is contract call and is sent to an evm chain", func() {
+			When("event is contract call and is sent to a known chain", func() {
 				result.(*types.VoteEvents).Events = randContractCallEvents(exported.Ethereum.Name, exported.Ethereum.Name, 5)
 			}).
 				When("succeeded to set the confirmed event", func() {
 					chaink.SetConfirmedEventFunc = func(_ sdk.Context, _ types.Event) error { return nil }
 				}).
 				When("succeeded to route the general messages", func() {
-					nexusK.RouteMessageFunc = func(_ sdk.Context, _ string, _ ...nexus.RoutingContext) error { return nil }
+					nexusK.EnqueueRouteMessageFunc = func(_ sdk.Context, _ string) error { return nil }
 				}).
 				Then("should route the general messages", func(t *testing.T) {
 					nexusK.SetNewMessageFunc = func(_ sdk.Context, _ nexus.GeneralMessage) error { return nil }
 
 					assert.NoError(t, handler.HandleResult(ctx, result))
 					assert.Len(t, nexusK.SetNewMessageCalls(), 5)
-					assert.Len(t, nexusK.RouteMessageCalls(), 5)
+					assert.Len(t, nexusK.EnqueueRouteMessageCalls(), 5)
 				}),
 
-			When("event is contract call and is sent to an evm chain", func() {
+			When("event is contract call and is sent to a known chain", func() {
 				result.(*types.VoteEvents).Events = randContractCallEvents(exported.Ethereum.Name, exported.Ethereum.Name, 5)
 			}).
 				When("succeeded to set the confirmed event", func() {
 					chaink.SetConfirmedEventFunc = func(_ sdk.Context, _ types.Event) error { return nil }
 				}).
 				When("failed to route the general messages", func() {
-					nexusK.RouteMessageFunc = func(_ sdk.Context, _ string, _ ...nexus.RoutingContext) error { return fmt.Errorf("failed") }
+					nexusK.EnqueueRouteMessageFunc = func(_ sdk.Context, _ string) error { return fmt.Errorf("failed") }
 				}).
-				Then("should set as approved general messages", func(t *testing.T) {
+				Then("should panic", func(t *testing.T) {
 					nexusK.SetNewMessageFunc = func(_ sdk.Context, _ nexus.GeneralMessage) error { return nil }
 
-					assert.NoError(t, handler.HandleResult(ctx, result))
-					assert.Len(t, nexusK.SetNewMessageCalls(), 5)
-					assert.Len(t, nexusK.RouteMessageCalls(), 5)
-
-				}),
-
-			When("event is contract call and is sent to an non-evm chain", func() {
-				result.(*types.VoteEvents).Events = randContractCallEvents(exported.Ethereum.Name, axelarnet.Axelarnet.Name, 5)
-			}).
-				When("succeeded to set the confirmed event", func() {
-					chaink.SetConfirmedEventFunc = func(_ sdk.Context, _ types.Event) error { return nil }
-				}).
-				Then("should set as approved general messages", func(t *testing.T) {
-					nexusK.SetNewMessageFunc = func(_ sdk.Context, _ nexus.GeneralMessage) error { return nil }
-
-					assert.NoError(t, handler.HandleResult(ctx, result))
-					assert.Len(t, nexusK.SetNewMessageCalls(), 5)
-					assert.Len(t, nexusK.RouteMessageCalls(), 0)
+					assert.Panics(t, func() { handler.HandleResult(ctx, result) })
+					assert.Len(t, nexusK.SetNewMessageCalls(), 1)
+					assert.Len(t, nexusK.EnqueueRouteMessageCalls(), 1)
 				}),
 
 			When("event is contract call and is sent to an unknown chain", func() {
@@ -400,12 +385,15 @@ func TestHandleResult(t *testing.T) {
 				When("succeeded to set the confirmed event", func() {
 					chaink.SetConfirmedEventFunc = func(_ sdk.Context, _ types.Event) error { return nil }
 				}).
+				When("succeeded to route the general messages", func() {
+					nexusK.EnqueueRouteMessageFunc = func(_ sdk.Context, _ string) error { return nil }
+				}).
 				Then("should set as approved general messages", func(t *testing.T) {
 					nexusK.SetNewMessageFunc = func(_ sdk.Context, _ nexus.GeneralMessage) error { return nil }
 
 					assert.NoError(t, handler.HandleResult(ctx, result))
 					assert.Len(t, nexusK.SetNewMessageCalls(), 5)
-					assert.Len(t, nexusK.RouteMessageCalls(), 0)
+					assert.Len(t, nexusK.EnqueueRouteMessageCalls(), 5)
 
 					for _, call := range nexusK.SetNewMessageCalls() {
 						assert.Equal(t, wasm.ModuleName, call.M.Recipient.Chain.Module)
