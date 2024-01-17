@@ -2,9 +2,6 @@ package cli
 
 import (
 	"fmt"
-	appCodec "github.com/axelarnetwork/axelar-core/app/codec"
-	"google.golang.org/grpc/encoding"
-	encproto "google.golang.org/grpc/encoding/proto"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -110,14 +107,6 @@ func GetCmdKey() *cobra.Command {
 
 			keyID := multisig.KeyID(utils.NormalizeString(args[0]))
 			queryClient := types.NewQueryServiceClient(clientCtx)
-
-			codec := encoding.GetCodec(encproto.Name)
-			switch codec.(type) {
-			case appCodec.GogoEnabled:
-				fmt.Println("loaded correct grpc codec")
-			default:
-				fmt.Println("loaded incorrect grpc codec")
-			}
 			res, err := queryClient.Key(cmd.Context(),
 				&types.KeyRequest{
 					KeyID: keyID,

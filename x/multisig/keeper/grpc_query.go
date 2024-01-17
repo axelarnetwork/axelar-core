@@ -3,9 +3,6 @@ package keeper
 import (
 	"context"
 	"fmt"
-	appCodec "github.com/axelarnetwork/axelar-core/app/codec"
-	"google.golang.org/grpc/encoding"
-	encproto "google.golang.org/grpc/encoding/proto"
 	"sort"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -63,14 +60,6 @@ func (q Querier) NextKeyID(c context.Context, req *types.NextKeyIDRequest) (*typ
 
 // Key returns the key corresponding to a given key ID
 func (q Querier) Key(c context.Context, req *types.KeyRequest) (*types.KeyResponse, error) {
-	codec := encoding.GetCodec(encproto.Name)
-	switch codec.(type) {
-	case appCodec.GogoEnabled:
-		return nil, fmt.Errorf("loaded correct grpc codec")
-	default:
-		return nil, fmt.Errorf("loaded incorrect grpc codec")
-	}
-
 	ctx := sdk.UnwrapSDKContext(c)
 
 	if _, ok := q.keeper.GetKeygenSession(ctx, req.KeyID); ok {
