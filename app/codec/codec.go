@@ -7,6 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/gogo/protobuf/proto"
 	"google.golang.org/grpc/encoding"
+	encproto "google.golang.org/grpc/encoding/proto"
 
 	axelarnettypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
@@ -17,6 +18,10 @@ import (
 	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	votetypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 )
+
+func init() {
+	encoding.RegisterCodec(GogoEnabled{Codec: encoding.GetCodec(encproto.Name)})
+}
 
 type customRegistry interface {
 	RegisterCustomTypeURL(iface interface{}, typeURL string, impl proto.Message)

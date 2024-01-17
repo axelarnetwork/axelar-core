@@ -97,10 +97,7 @@ import (
 	tmos "github.com/tendermint/tendermint/libs/os"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
-	"google.golang.org/grpc/encoding"
-	encproto "google.golang.org/grpc/encoding/proto"
 
-	appCodec "github.com/axelarnetwork/axelar-core/app/codec"
 	axelarParams "github.com/axelarnetwork/axelar-core/app/params"
 	"github.com/axelarnetwork/axelar-core/x/ante"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet"
@@ -165,8 +162,6 @@ var (
 )
 
 func init() {
-	encoding.RegisterCodec(appCodec.GogoEnabled{Codec: encoding.GetCodec(encproto.Name)})
-
 	userHomeDir, err := os.UserHomeDir()
 	if err != nil {
 		stdlog.Println("Failed to get home dir %2", err)
