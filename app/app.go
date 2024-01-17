@@ -166,6 +166,7 @@ var (
 
 func init() {
 	encoding.RegisterCodec(appCodec.GogoEnabled{Codec: encoding.GetCodec(encproto.Name)})
+	fmt.Println("loaded grpc codec")
 
 	userHomeDir, err := os.UserHomeDir()
 	if err != nil {
