@@ -1,4 +1,4 @@
-package encoding_fix
+package encoding_override
 
 import (
 	"github.com/gogo/protobuf/proto"
