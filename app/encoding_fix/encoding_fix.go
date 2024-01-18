@@ -6,6 +6,9 @@ import (
 	encproto "google.golang.org/grpc/encoding/proto"
 )
 
+// This registers a codec that can encode custom Golang types defined by gogoproto extensions, which newer versions of the grpc module cannot.
+// The fix has been extracted into its own module in order to minimize the number of dependencies
+// that get imported before this init() function is called.
 func init() {
 	encoding.RegisterCodec(GogoEnabled{Codec: encoding.GetCodec(encproto.Name)})
 }
