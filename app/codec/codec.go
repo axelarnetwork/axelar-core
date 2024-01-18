@@ -3,12 +3,6 @@ package codec
 import (
 	"fmt"
 
-	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/gogo/protobuf/proto"
-	"google.golang.org/grpc/encoding"
-	encproto "google.golang.org/grpc/encoding/proto"
-
 	axelarnettypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexustypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
@@ -17,11 +11,10 @@ import (
 	snapshottypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	votetypes "github.com/axelarnetwork/axelar-core/x/vote/types"
+	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/gogo/protobuf/proto"
 )
-
-func init() {
-	encoding.RegisterCodec(GogoEnabled{Codec: encoding.GetCodec(encproto.Name)})
-}
 
 type customRegistry interface {
 	RegisterCustomTypeURL(iface interface{}, typeURL string, impl proto.Message)
@@ -100,22 +93,4 @@ func RegisterLegacyMsgInterfaces(registry cdctypes.InterfaceRegistry) {
 	r.RegisterCustomTypeURL((*sdk.Msg)(nil), "/axelar.tss.v1beta1.SubmitMultisigSignaturesRequest", &tsstypes.SubmitMultisigSignaturesRequest{})
 
 	r.RegisterCustomTypeURL((*sdk.Msg)(nil), "/vote.v1beta1.VoteRequest", &votetypes.VoteRequest{})
-}
-
-type GogoEnabled struct {
-	encoding.Codec
-}
-
-func (c GogoEnabled) Marshal(v interface{}) ([]byte, error) {
-	if vv, ok := v.(proto.Marshaler); ok {
-		return vv.Marshal()
-	}
-	return c.Codec.Marshal(v)
-}
-
-func (c GogoEnabled) Unmarshal(data []byte, v interface{}) error {
-	if vv, ok := v.(proto.Unmarshaler); ok {
-		return vv.Unmarshal(data)
-	}
-	return c.Codec.Unmarshal(data, v)
 }
