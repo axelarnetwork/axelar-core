@@ -6,7 +6,6 @@ import (
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/gogo/protobuf/proto"
-	"google.golang.org/grpc/encoding"
 
 	axelarnettypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
@@ -95,22 +94,4 @@ func RegisterLegacyMsgInterfaces(registry cdctypes.InterfaceRegistry) {
 	r.RegisterCustomTypeURL((*sdk.Msg)(nil), "/axelar.tss.v1beta1.SubmitMultisigSignaturesRequest", &tsstypes.SubmitMultisigSignaturesRequest{})
 
 	r.RegisterCustomTypeURL((*sdk.Msg)(nil), "/vote.v1beta1.VoteRequest", &votetypes.VoteRequest{})
-}
-
-type GogoEnabled struct {
-	encoding.Codec
-}
-
-func (c GogoEnabled) Marshal(v interface{}) ([]byte, error) {
-	if vv, ok := v.(proto.Marshaler); ok {
-		return vv.Marshal()
-	}
-	return c.Codec.Marshal(v)
-}
-
-func (c GogoEnabled) Unmarshal(data []byte, v interface{}) error {
-	if vv, ok := v.(proto.Unmarshaler); ok {
-		return vv.Unmarshal(data)
-	}
-	return c.Codec.Unmarshal(data, v)
 }
