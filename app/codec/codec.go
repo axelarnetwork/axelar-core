@@ -3,6 +3,10 @@ package codec
 import (
 	"fmt"
 
+	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/gogo/protobuf/proto"
+
 	axelarnettypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexustypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
@@ -11,9 +15,6 @@ import (
 	snapshottypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	votetypes "github.com/axelarnetwork/axelar-core/x/vote/types"
-	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/gogo/protobuf/proto"
 )
 
 type customRegistry interface {
