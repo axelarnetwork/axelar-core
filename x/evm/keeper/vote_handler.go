@@ -196,7 +196,7 @@ func (v voteHandler) handleEvent(ctx sdk.Context, ck types.ChainKeeper, event ty
 	// which bypassed nexus routing
 	switch event.GetEvent().(type) {
 	case *types.Event_ContractCall:
-		if err := v.handleContractCall(ctx, event); err != nil {
+		if err := v.handleContractCall(ctx, ck, event); err != nil {
 			return err
 		}
 	default:
@@ -219,7 +219,7 @@ func (v voteHandler) handleEvent(ctx sdk.Context, ck types.ChainKeeper, event ty
 	return nil
 }
 
-func (v voteHandler) handleContractCall(ctx sdk.Context, event types.Event) error {
+func (v voteHandler) handleContractCall(ctx sdk.Context, ck types.ChainKeeper, event types.Event) error {
 	msg := mustToGeneralMessage(ctx, v.nexus, event)
 
 	if err := v.nexus.SetNewMessage(ctx, msg); err != nil {
@@ -227,6 +227,7 @@ func (v voteHandler) handleContractCall(ctx sdk.Context, event types.Event) erro
 	}
 
 	funcs.MustNoErr(v.nexus.EnqueueRouteMessage(ctx, msg.ID))
+	funcs.MustNoErr(ck.SetEventCompleted(ctx, event.GetID()))
 
 	return nil
 }
