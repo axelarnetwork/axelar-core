@@ -19,6 +19,8 @@ import (
 	"github.com/axelarnetwork/utils/slices"
 )
 
+const routeMessageQueue = "route_message_queue"
+
 func getMessageKey(id string) key.Key {
 	return generalMessagePrefix.Append(key.FromStr(id))
 }
@@ -230,6 +232,31 @@ func (k Keeper) validateAddressAndAsset(ctx sdk.Context, address exported.CrossC
 	}
 
 	return k.validateAsset(ctx, address.Chain, asset.Denom)
+}
+
+func (k Keeper) getRouteMessageQueue(ctx sdk.Context) utils.KVQueue {
+	return utils.NewBlockHeightKVQueue(routeMessageQueue, k.getStore(ctx), ctx.BlockHeight(), k.Logger(ctx))
+}
+
+// EnqueueRouteMessage enqueues the given general message to be routed
+func (k Keeper) EnqueueRouteMessage(ctx sdk.Context, id string) error {
+	msg, ok := k.GetMessage(ctx, id)
+	if !ok {
+		return fmt.Errorf("general message %s not found", id)
+	}
+
+	if !(msg.Is(exported.Approved) || msg.Is(exported.Failed)) {
+		return fmt.Errorf("general message has to be approved or failed")
+	}
+
+	k.getRouteMessageQueue(ctx).Enqueue(utils.KeyFromBz(getMessageKey(id).Bytes()), &msg)
+
+	return nil
+}
+
+// DequeueRouteMessage dequeues the next general message to be routed
+func (k Keeper) DequeueRouteMessage(ctx sdk.Context) (msg exported.GeneralMessage, ok bool) {
+	return msg, k.getRouteMessageQueue(ctx).Dequeue(&msg)
 }
 
 // RouteMessage routes the given general message to the corresponding module and

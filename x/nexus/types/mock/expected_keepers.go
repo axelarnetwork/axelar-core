@@ -35,6 +35,9 @@ var _ nexustypes.Nexus = &NexusMock{}
 //			DeactivateChainFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain)  {
 //				panic("mock out the DeactivateChain method")
 //			},
+//			DequeueRouteMessageFunc: func(ctx cosmossdktypes.Context) (github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage, bool) {
+//				panic("mock out the DequeueRouteMessage method")
+//			},
 //			ExportGenesisFunc: func(ctx cosmossdktypes.Context) *nexustypes.GenesisState {
 //				panic("mock out the ExportGenesis method")
 //			},
@@ -110,6 +113,9 @@ type NexusMock struct {
 
 	// DeactivateChainFunc mocks the DeactivateChain method.
 	DeactivateChainFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain)
+
+	// DequeueRouteMessageFunc mocks the DequeueRouteMessage method.
+	DequeueRouteMessageFunc func(ctx cosmossdktypes.Context) (github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage, bool)
 
 	// ExportGenesisFunc mocks the ExportGenesis method.
 	ExportGenesisFunc func(ctx cosmossdktypes.Context) *nexustypes.GenesisState
@@ -195,6 +201,11 @@ type NexusMock struct {
 			Ctx cosmossdktypes.Context
 			// Chain is the chain argument value.
 			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
+		}
+		// DequeueRouteMessage holds details about calls to the DequeueRouteMessage method.
+		DequeueRouteMessage []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
 		}
 		// ExportGenesis holds details about calls to the ExportGenesis method.
 		ExportGenesis []struct {
@@ -350,6 +361,7 @@ type NexusMock struct {
 	lockActivateChain            sync.RWMutex
 	lockAddChainMaintainer       sync.RWMutex
 	lockDeactivateChain          sync.RWMutex
+	lockDequeueRouteMessage      sync.RWMutex
 	lockExportGenesis            sync.RWMutex
 	lockGenerateMessageID        sync.RWMutex
 	lockGetChain                 sync.RWMutex
@@ -481,6 +493,38 @@ func (mock *NexusMock) DeactivateChainCalls() []struct {
 	mock.lockDeactivateChain.RLock()
 	calls = mock.calls.DeactivateChain
 	mock.lockDeactivateChain.RUnlock()
+	return calls
+}
+
+// DequeueRouteMessage calls DequeueRouteMessageFunc.
+func (mock *NexusMock) DequeueRouteMessage(ctx cosmossdktypes.Context) (github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage, bool) {
+	if mock.DequeueRouteMessageFunc == nil {
+		panic("NexusMock.DequeueRouteMessageFunc: method is nil but Nexus.DequeueRouteMessage was just called")
+	}
+	callInfo := struct {
+		Ctx cosmossdktypes.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockDequeueRouteMessage.Lock()
+	mock.calls.DequeueRouteMessage = append(mock.calls.DequeueRouteMessage, callInfo)
+	mock.lockDequeueRouteMessage.Unlock()
+	return mock.DequeueRouteMessageFunc(ctx)
+}
+
+// DequeueRouteMessageCalls gets all the calls that were made to DequeueRouteMessage.
+// Check the length with:
+//
+//	len(mockedNexus.DequeueRouteMessageCalls())
+func (mock *NexusMock) DequeueRouteMessageCalls() []struct {
+	Ctx cosmossdktypes.Context
+} {
+	var calls []struct {
+		Ctx cosmossdktypes.Context
+	}
+	mock.lockDequeueRouteMessage.RLock()
+	calls = mock.calls.DequeueRouteMessage
+	mock.lockDequeueRouteMessage.RUnlock()
 	return calls
 }
 

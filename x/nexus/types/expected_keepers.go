@@ -44,6 +44,7 @@ type Nexus interface {
 	GenerateMessageID(ctx sdk.Context) (string, []byte, uint64)
 	SetNewMessage(ctx sdk.Context, msg exported.GeneralMessage) error
 	RouteMessage(ctx sdk.Context, id string, routingCtx ...exported.RoutingContext) error
+	DequeueRouteMessage(ctx sdk.Context) (exported.GeneralMessage, bool)
 }
 
 // Snapshotter provides functionality to the snapshot module
