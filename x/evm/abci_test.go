@@ -239,7 +239,6 @@ func TestHandleGeneralMessages(t *testing.T) {
 		multisigKeeper *mock.MultisigKeeperMock
 		ck1            *mock.ChainKeeperMock
 		ck2            *mock.ChainKeeperMock
-		ck3            *mock.ChainKeeperMock
 	)
 	chain1 := nexus.ChainName(rand.Str(5))
 	chain2 := nexus.ChainName(rand.Str(5))
@@ -378,53 +377,6 @@ func TestHandleGeneralMessages(t *testing.T) {
 			handleMessages(ctx, bk, n, multisigKeeper)
 			assert.Len(t, ck1.EnqueueCommandCalls(), int(ck1.GetParams(ctx).EndBlockerLimit))
 			assert.Len(t, ck2.EnqueueCommandCalls(), int(ck2.GetParams(ctx).EndBlockerLimit))
-		}).
-		Run(t)
-
-	givenGeneralMessagesEnqueued.
-		When("some associated EVM event exists", func() {
-			srcChain := nexustestutils.RandomChain()
-			srcChain.Module = types.ModuleName
-
-			ck1.GetParamsFunc = func(ctx sdk.Context) types.Params {
-				return types.Params{EndBlockerLimit: 45}
-			}
-			ck2.GetParamsFunc = func(ctx sdk.Context) types.Params {
-				return types.Params{EndBlockerLimit: 40}
-			}
-			ck3 = &mock.ChainKeeperMock{}
-
-			bk.ForChainFunc = func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) {
-				switch chain {
-				case chain1:
-					return ck1, nil
-				case chain2:
-					return ck2, nil
-				case srcChain.Name:
-					return ck3, nil
-				default:
-					return nil, errors.New("not found")
-				}
-			}
-
-			n.GetProcessingMessagesFunc = func(_ sdk.Context, chain nexus.ChainName, limit int64) []nexus.GeneralMessage {
-				destChain := nexus.Chain{Name: chain, Module: types.ModuleName}
-				sender := nexus.CrossChainAddress{Chain: srcChain, Address: evmTestUtils.RandomAddress().Hex()}
-				receiver := nexus.CrossChainAddress{Chain: destChain, Address: evmTestUtils.RandomAddress().Hex()}
-
-				msg := nexus.NewGeneralMessage(evmTestUtils.RandomHash().Hex(), sender, receiver, evmTestUtils.RandomHash().Bytes(), evmTestUtils.RandomHash().Bytes()[:], uint64(rand.I64Between(0, 10000)), nil)
-
-				return []nexus.GeneralMessage{msg}
-			}
-		}).
-		Then("should handle", func(t *testing.T) {
-			ck3.SetEventCompletedFunc = func(ctx sdk.Context, eventID types.EventID) error { return nil }
-
-			handleMessages(ctx, bk, n, multisigKeeper)
-
-			assert.Len(t, ck1.EnqueueCommandCalls(), 1)
-			assert.Len(t, ck2.EnqueueCommandCalls(), 1)
-			assert.Len(t, ck3.SetEventCompletedCalls(), 2)
 		}).
 		Run(t)
 }

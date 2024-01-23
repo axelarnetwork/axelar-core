@@ -698,12 +698,6 @@ func handleMessages(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, m types
 				continue
 			}
 
-			if srcCk, err := bk.ForChain(ctx, msg.GetSourceChain()); err == nil {
-				eventID := types.NewEventID(types.Hash(common.BytesToHash(msg.SourceTxID)), msg.SourceTxIndex)
-
-				funcs.MustNoErr(srcCk.SetEventCompleted(ctx, eventID))
-			}
-
 			funcs.MustNoErr(n.SetMessageExecuted(ctx, msg.ID))
 		}
 	}
