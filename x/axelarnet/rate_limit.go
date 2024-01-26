@@ -36,7 +36,8 @@ func NewRateLimiter(keeper *keeper.Keeper, nexus types.Nexus) RateLimiter {
 // - If the rate limit is exceeded, an error is returned.
 // From direction is used for tokens coming from source chain (unlocked from IBC escrow/minted as an IBC denom).
 // To direction is used for tokens going to destination chain (locked in the IBC escrow/burned as an IBC denom).
-func (r RateLimiter) RateLimitPacket(ctx sdk.Context, packet ibcexported.PacketI, direction nexus.TransferDirection, ibcPath string) error {
+// messageId is optional since not all transfers are a part of a GMP call.
+func (r RateLimiter) RateLimitPacket(ctx sdk.Context, packet ibcexported.PacketI, direction nexus.TransferDirection, ibcPath string, messageId string) error {
 	chainName, ok := r.keeper.GetChainNameByIBCPath(ctx, ibcPath)
 	if !ok {
 		// If the IBC channel is not registered as a chain, skip rate limiting
@@ -53,7 +54,7 @@ func (r RateLimiter) RateLimitPacket(ctx sdk.Context, packet ibcexported.PacketI
 		return err
 	}
 
-	if err := r.nexus.RateLimitTransfer(ctx, chain.Name, token, direction); err != nil {
+	if err := r.nexus.RateLimitTransfer(ctx, chain.Name, token, direction, messageId); err != nil {
 		return err
 	}
 
@@ -85,7 +86,7 @@ func (r RateLimitedICS4Wrapper) SendPacket(ctx sdk.Context, chanCap *capabilityt
 		return nil
 	}
 
-	return r.rateLimiter.RateLimitPacket(ctx, packet, nexus.TransferDirectionTo, types.NewIBCPath(packet.GetSourcePort(), packet.GetSourceChannel()))
+	return r.rateLimiter.RateLimitPacket(ctx, packet, nexus.TransferDirectionTo, types.NewIBCPath(packet.GetSourcePort(), packet.GetSourceChannel()), "")
 }
 
 // WriteAcknowledgement implements the ICS4 Wrapper interface

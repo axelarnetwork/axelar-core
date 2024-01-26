@@ -112,7 +112,7 @@ func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n ty
 	if data.GetReceiver() != types.AxelarGMPAccount.String() {
 		// Rate limit non-GMP IBC transfers
 		// IBC receives are rate limited on the from direction (tokens coming from the source chain).
-		if err := r.RateLimitPacket(ctx, packet, nexus.TransferDirectionFrom, types.NewIBCPath(packet.GetDestPort(), packet.GetDestChannel())); err != nil {
+		if err := r.RateLimitPacket(ctx, packet, nexus.TransferDirectionFrom, types.NewIBCPath(packet.GetDestPort(), packet.GetDestChannel()), ""); err != nil {
 			return channeltypes.NewErrorAcknowledgement(err)
 		}
 
@@ -148,12 +148,13 @@ func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n ty
 	}
 
 	rateLimitPacket := true
+	messageId := ""
 
 	switch msg.Type {
 	case nexus.TypeGeneralMessage:
 		err = handleMessage(ctx, n, b, sourceAddress, msg, token)
 	case nexus.TypeGeneralMessageWithToken:
-		err = handleMessageWithToken(ctx, n, b, sourceAddress, msg, token)
+		messageId, err = handleMessageWithToken(ctx, n, b, sourceAddress, msg, token)
 	case nexus.TypeSendToken:
 		// Send token is already rate limited in nexus.EnqueueTransfer
 		rateLimitPacket = false
@@ -174,7 +175,7 @@ func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n ty
 
 	if rateLimitPacket {
 		// IBC receives are rate limited on the from direction (tokens coming from the source chain).
-		if err := r.RateLimitPacket(ctx, packet, nexus.TransferDirectionFrom, types.NewIBCPath(packet.GetDestPort(), packet.GetDestChannel())); err != nil {
+		if err := r.RateLimitPacket(ctx, packet, nexus.TransferDirectionFrom, types.NewIBCPath(packet.GetDestPort(), packet.GetDestChannel()), messageId); err != nil {
 			return channeltypes.NewErrorAcknowledgement(err)
 		}
 	}
@@ -269,16 +270,16 @@ func handleMessage(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceAdd
 	return n.SetNewMessage(ctx, m)
 }
 
-func handleMessageWithToken(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceAddress nexus.CrossChainAddress, msg Message, token keeper.Coin) error {
+func handleMessageWithToken(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceAddress nexus.CrossChainAddress, msg Message, token keeper.Coin) (string, error) {
 	id, txID, nonce := n.GenerateMessageID(ctx)
 
 	token, err := deductFee(ctx, b, msg.Fee, token, id)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	if err = token.Lock(b, types.AxelarGMPAccount); err != nil {
-		return err
+		return "", err
 	}
 
 	destChain := funcs.MustOk(n.GetChain(ctx, nexus.ChainName(msg.DestinationChain)))
@@ -304,7 +305,7 @@ func handleMessageWithToken(ctx sdk.Context, n types.Nexus, b types.BankKeeper, 
 		Asset:            token.Coin,
 	})
 
-	return n.SetNewMessage(ctx, m)
+	return id, n.SetNewMessage(ctx, m)
 }
 
 func handleTokenSent(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceAddress nexus.CrossChainAddress, msg Message, token keeper.Coin) error {

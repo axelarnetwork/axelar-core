@@ -153,7 +153,7 @@ func TestRateLimitTransfer(t *testing.T) {
 			direction = nexustestutils.RandomDirection()
 		}).
 		Then("rate limit transfer succeeds", func(t *testing.T) {
-			err := k.RateLimitTransfer(ctx, chain, asset, direction)
+			err := k.RateLimitTransfer(ctx, chain, asset, direction, "")
 			assert.NoError(t, err)
 		}).
 		Run(t, repeated)
@@ -173,7 +173,7 @@ func TestRateLimitTransfer(t *testing.T) {
 			asset.Amount = rand.IntBetween(sdk.ZeroInt(), limit.Amount)
 		}).
 		Then("rate limit transfer succeeds", func(t *testing.T) {
-			err := k.RateLimitTransfer(ctx, chain, asset, direction)
+			err := k.RateLimitTransfer(ctx, chain, asset, direction, "")
 			assert.NoError(t, err)
 		}).
 		Run(t, repeated)
@@ -191,18 +191,18 @@ func TestRateLimitTransfer(t *testing.T) {
 			asset = limit
 		}).
 		Then("rate limit transfer succeeds", func(t *testing.T) {
-			err := k.RateLimitTransfer(ctx, chain, asset, exported.TransferDirectionFrom)
+			err := k.RateLimitTransfer(ctx, chain, asset, exported.TransferDirectionFrom, "")
 			assert.NoError(t, err)
 
-			err = k.RateLimitTransfer(ctx, chain, asset, exported.TransferDirectionTo)
+			err = k.RateLimitTransfer(ctx, chain, asset, exported.TransferDirectionTo, "")
 			assert.NoError(t, err)
 		}).
 		Then("rate limit transfer fails on another transfer", func(t *testing.T) {
 			asset = sdk.NewInt64Coin(asset.Denom, 1)
-			err := k.RateLimitTransfer(ctx, chain, asset, exported.TransferDirectionFrom)
+			err := k.RateLimitTransfer(ctx, chain, asset, exported.TransferDirectionFrom, "")
 			assert.ErrorContains(t, err, "exceeded rate limit")
 
-			err = k.RateLimitTransfer(ctx, chain, asset, exported.TransferDirectionTo)
+			err = k.RateLimitTransfer(ctx, chain, asset, exported.TransferDirectionTo, "")
 			assert.ErrorContains(t, err, "exceeded rate limit")
 		}).
 		Then("reset rate limit and rate limit transfer succeeds", func(t *testing.T) {
@@ -210,7 +210,7 @@ func TestRateLimitTransfer(t *testing.T) {
 			err := k.SetRateLimit(ctx, chain, limit, window)
 			assert.NoError(t, err)
 
-			err = k.RateLimitTransfer(ctx, chain, asset, direction)
+			err = k.RateLimitTransfer(ctx, chain, asset, direction, "")
 			assert.NoError(t, err)
 		}).
 		Run(t)
@@ -230,12 +230,12 @@ func TestRateLimitTransfer(t *testing.T) {
 			asset.Amount = rand.IntBetween(limit.Amount.AddRaw(1), limit.Amount.AddRaw(math.MaxInt64))
 		}).
 		Then("rate limit transfer fails", func(t *testing.T) {
-			err := k.RateLimitTransfer(ctx, chain, asset, direction)
+			err := k.RateLimitTransfer(ctx, chain, asset, direction, "")
 			assert.ErrorContains(t, err, "exceeded rate limit")
 		}).
 		Then("rate limit transfer succeeds on a small transfer", func(t *testing.T) {
 			asset.Amount = rand.IntBetween(sdk.ZeroInt(), limit.Amount)
-			err := k.RateLimitTransfer(ctx, chain, asset, direction)
+			err := k.RateLimitTransfer(ctx, chain, asset, direction, "")
 			assert.NoError(t, err)
 		}).
 		Run(t)

@@ -260,7 +260,7 @@ func (m AxelarnetIBCModule) OnAcknowledgementPacket(
 	default:
 		// AckError causes a refund of the token (i.e unlock from the escrow address/mint of token depending on whether it's native to chain).
 		// Hence, it's rate limited on the from direction (tokens coming from the source chain).
-		if err := m.rateLimiter.RateLimitPacket(ctx, packet, nexus.TransferDirectionFrom, types.NewIBCPath(port, channel)); err != nil {
+		if err := m.rateLimiter.RateLimitPacket(ctx, packet, nexus.TransferDirectionFrom, types.NewIBCPath(port, channel), ""); err != nil {
 			return err
 		}
 
@@ -285,7 +285,7 @@ func (m AxelarnetIBCModule) OnTimeoutPacket(
 
 	// Timeout causes a refund of the token (i.e unlock from the escrow address/mint of token depending on whether it's native to chain).
 	// Hence, it's rate limited on the from direction (tokens coming from source chain).
-	if err := m.rateLimiter.RateLimitPacket(ctx, packet, nexus.TransferDirectionFrom, types.NewIBCPath(port, channel)); err != nil {
+	if err := m.rateLimiter.RateLimitPacket(ctx, packet, nexus.TransferDirectionFrom, types.NewIBCPath(port, channel), ""); err != nil {
 		return err
 	}
 

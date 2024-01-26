@@ -13,6 +13,7 @@ const (
 	AttributeKeyAsset                  = "asset"
 	AttributeKeyLimit                  = "limit"
 	AttributeKeyTransferEpoch          = "transferEpoch"
+	AttributeKeyMessageId              = "messageId"
 	AttributeKeyTxHash                 = "txHash"
 	AttributeKeyBlock                  = "block"
 )

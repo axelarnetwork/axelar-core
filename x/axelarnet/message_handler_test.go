@@ -100,7 +100,7 @@ func TestHandleMessage(t *testing.T) {
 				hash := sha256.Sum256(ctx.TxBytes())
 				return fmt.Sprintf("%s-%d", hex.EncodeToString(hash[:]), 0), hash[:], 0
 			},
-			RateLimitTransferFunc: func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error {
+			RateLimitTransferFunc: func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection, messageId string) error {
 				return nil
 			},
 			GetChainByNativeAssetFunc: func(ctx sdk.Context, asset string) (nexus.Chain, bool) {
@@ -129,7 +129,7 @@ func TestHandleMessage(t *testing.T) {
 				token.Denom = rand.Denom(10, 20)
 			}
 
-			n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error {
+			n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection, messageId string) error {
 				if direction == nexus.TransferDirectionFrom && asset.Equal(token) {
 					return fmt.Errorf("rate limit exceeded")
 				}
@@ -506,7 +506,7 @@ func TestHandleMessageWithToken(t *testing.T) {
 				hash := sha256.Sum256(ctx.TxBytes())
 				return fmt.Sprintf("%s-%d", hex.EncodeToString(hash[:]), 0), hash[:], 0
 			},
-			RateLimitTransferFunc: func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error {
+			RateLimitTransferFunc: func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection, messageId string) error {
 				return nil
 			},
 		}
@@ -561,7 +561,7 @@ func TestHandleMessageWithToken(t *testing.T) {
 				token.Denom = rand.Denom(10, 20)
 			}
 
-			n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error {
+			n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection, messageId string) error {
 				if direction == nexus.TransferDirectionFrom && asset.Equal(token) {
 					return fmt.Errorf("rate limit exceeded")
 				}
@@ -720,7 +720,7 @@ func TestHandleSendToken(t *testing.T) {
 				hash := sha256.Sum256(ctx.TxBytes())
 				return fmt.Sprintf("%s-%d", hex.EncodeToString(hash[:]), 0), hash[:], 0
 			},
-			RateLimitTransferFunc: func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error {
+			RateLimitTransferFunc: func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection, messageId string) error {
 				return nil
 			},
 		}
