@@ -33,6 +33,8 @@ func (k Keeper) RateLimitTransfer(ctx sdk.Context, chain exported.ChainName, ass
 			types.AttributeKeyAsset, asset,
 			types.AttributeKeyLimit, rateLimit.Limit,
 			types.AttributeKeyTransferEpoch, transferEpoch.Amount,
+			types.AttributeKeyBlock, ctx.BlockHeight(),
+			types.AttributeKeyTxHash, utils.HexEncode(utils.GetTxHash(ctx)),
 		)
 		return sdkerrors.Wrap(types.ErrRateLimitExceeded, err.Error())
 	}
@@ -65,8 +67,8 @@ func (k Keeper) SetRateLimit(ctx sdk.Context, chainName exported.ChainName, limi
 	// delete any rate limit info if provided limit is max uint256
 	if limit.Amount.Equal(sdk.NewIntFromBigInt(utils.MaxUint.BigInt())) {
 		k.getStore(ctx).DeleteNew(getRateLimitKey(chain.Name, limit.Denom))
-		k.deleteTransferEpoch(ctx, chain.Name, limit.Denom, exported.Incoming)
-		k.deleteTransferEpoch(ctx, chain.Name, limit.Denom, exported.Outgoing)
+		k.deleteTransferEpoch(ctx, chain.Name, limit.Denom, exported.TransferDirectionFrom)
+		k.deleteTransferEpoch(ctx, chain.Name, limit.Denom, exported.TransferDirectionTo)
 		return nil
 	}
 
@@ -80,8 +82,8 @@ func (k Keeper) SetRateLimit(ctx sdk.Context, chainName exported.ChainName, limi
 
 	epoch := computeEpoch(ctx, window)
 
-	k.setTransferEpoch(ctx, types.NewTransferEpoch(chain.Name, limit.Denom, epoch, exported.Incoming))
-	k.setTransferEpoch(ctx, types.NewTransferEpoch(chain.Name, limit.Denom, epoch, exported.Outgoing))
+	k.setTransferEpoch(ctx, types.NewTransferEpoch(chain.Name, limit.Denom, epoch, exported.TransferDirectionFrom))
+	k.setTransferEpoch(ctx, types.NewTransferEpoch(chain.Name, limit.Denom, epoch, exported.TransferDirectionTo))
 
 	k.Logger(ctx).Info(fmt.Sprintf("transfer rate limit %s set for chain %s with window %s", chain.Name, limit, window))
 
