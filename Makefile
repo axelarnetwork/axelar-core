@@ -12,7 +12,8 @@ PUSH_DOCKER_IMAGE := true
 WASM := true
 MAX_WASM_SIZE := $(shell echo "$$((3 * 1024 * 1024))")  # 3 MB max wasm bytecode size
 IBC_WASM_HOOKS := false
-export CGO_ENABLED := 1 # Export env var to go build so Cosmos SDK can see it
+# Export env var to go build so Cosmos SDK can see it
+export CGO_ENABLED := 1
 
 $(info $$WASM is [${WASM}])
 $(info $$IBC_WASM_HOOKS is [${IBC_WASM_HOOKS}])

@@ -273,19 +273,21 @@ func (q Querier) TransferRateLimit(c context.Context, req *types.TransferRateLim
 		return &types.TransferRateLimitResponse{}, nil
 	}
 
-	incomingEpoch := q.keeper.getCurrentTransferEpoch(ctx, chain.Name, req.Asset, nexus.Incoming, rateLimit.Window)
-	outgoingEpoch := q.keeper.getCurrentTransferEpoch(ctx, chain.Name, req.Asset, nexus.Outgoing, rateLimit.Window)
+	fromDirectionEpoch := q.keeper.getCurrentTransferEpoch(ctx, chain.Name, req.Asset, nexus.TransferDirectionFrom, rateLimit.Window)
+	toDirectionEpoch := q.keeper.getCurrentTransferEpoch(ctx, chain.Name, req.Asset, nexus.TransferDirectionTo, rateLimit.Window)
 
 	// time left = (epoch + 1) * window - current time
-	timeLeft := time.Duration(int64(incomingEpoch.Epoch+1)*int64(rateLimit.Window) - ctx.BlockTime().UnixNano())
+	timeLeft := time.Duration(int64(fromDirectionEpoch.Epoch+1)*int64(rateLimit.Window) - ctx.BlockTime().UnixNano())
 
 	return &types.TransferRateLimitResponse{
 		TransferRateLimit: &types.TransferRateLimit{
 			Limit:    rateLimit.Limit.Amount,
 			Window:   rateLimit.Window,
-			Incoming: incomingEpoch.Amount.Amount,
-			Outgoing: outgoingEpoch.Amount.Amount,
+			Incoming: fromDirectionEpoch.Amount.Amount,
+			Outgoing: toDirectionEpoch.Amount.Amount,
 			TimeLeft: timeLeft,
+			From:     fromDirectionEpoch.Amount.Amount,
+			To:       toDirectionEpoch.Amount.Amount,
 		},
 	}, nil
 }

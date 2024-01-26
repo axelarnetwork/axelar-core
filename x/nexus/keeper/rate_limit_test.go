@@ -191,18 +191,18 @@ func TestRateLimitTransfer(t *testing.T) {
 			asset = limit
 		}).
 		Then("rate limit transfer succeeds", func(t *testing.T) {
-			err := k.RateLimitTransfer(ctx, chain, asset, exported.Incoming)
+			err := k.RateLimitTransfer(ctx, chain, asset, exported.TransferDirectionFrom)
 			assert.NoError(t, err)
 
-			err = k.RateLimitTransfer(ctx, chain, asset, exported.Outgoing)
+			err = k.RateLimitTransfer(ctx, chain, asset, exported.TransferDirectionTo)
 			assert.NoError(t, err)
 		}).
 		Then("rate limit transfer fails on another transfer", func(t *testing.T) {
 			asset = sdk.NewInt64Coin(asset.Denom, 1)
-			err := k.RateLimitTransfer(ctx, chain, asset, exported.Incoming)
+			err := k.RateLimitTransfer(ctx, chain, asset, exported.TransferDirectionFrom)
 			assert.ErrorContains(t, err, "exceeded rate limit")
 
-			err = k.RateLimitTransfer(ctx, chain, asset, exported.Outgoing)
+			err = k.RateLimitTransfer(ctx, chain, asset, exported.TransferDirectionTo)
 			assert.ErrorContains(t, err, "exceeded rate limit")
 		}).
 		Then("reset rate limit and rate limit transfer succeeds", func(t *testing.T) {
