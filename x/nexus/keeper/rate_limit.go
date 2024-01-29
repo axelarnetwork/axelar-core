@@ -27,7 +27,18 @@ func (k Keeper) RateLimitTransfer(ctx sdk.Context, chain exported.ChainName, ass
 	transferEpoch.Amount = transferEpoch.Amount.Add(asset)
 
 	if transferEpoch.Amount.Amount.GT(rateLimit.Limit.Amount) {
-		err := fmt.Errorf("transfer %s for chain %s (%s) exceeded rate limit %s with transfer rate %s", asset, transferEpoch.Chain, transferEpoch.Direction, rateLimit.Limit, transferEpoch.Amount)
+		directionLog := "from"
+		if direction == exported.TransferDirectionTo {
+			directionLog = "to"
+		}
+
+		txHash, isTx := utils.GetTxHash(ctx)
+		encodedTxHash := utils.HexEncode(txHash)
+		if !isTx {
+			encodedTxHash = "0x"
+		}
+
+		err := fmt.Errorf("transfer %s %s chain %s exceeded rate limit %s with transfer rate %s", asset, directionLog, transferEpoch.Chain, rateLimit.Limit, transferEpoch.Amount)
 		k.Logger(ctx).Error(err.Error(),
 			types.AttributeKeyChain, transferEpoch.Chain,
 			types.AttributeKeyAsset, asset,
@@ -35,8 +46,10 @@ func (k Keeper) RateLimitTransfer(ctx sdk.Context, chain exported.ChainName, ass
 			types.AttributeKeyTransferEpoch, transferEpoch.Amount,
 			types.AttributeKeyMessageId, messageId,
 			types.AttributeKeyBlock, ctx.BlockHeight(),
-			types.AttributeKeyTxHash, utils.HexEncode(utils.GetTxHash(ctx)),
+			types.AttributeKeyIsBeginEndBlocker, !isTx,
+			types.AttributeKeyTxHash, encodedTxHash,
 		)
+
 		return sdkerrors.Wrap(types.ErrRateLimitExceeded, err.Error())
 	}
 
