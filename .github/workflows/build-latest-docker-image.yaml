@@ -10,10 +10,6 @@ on:
         description: Whether or build the debug image ("true"/"false")
         required: true
         default: "false"
-      cgo:
-        description: Whether to enable cgo ("true"/"false")
-        required: true
-        default: "true"
       wasm:
         description: Whether to enable wasm ("true"/"false")
         required: true
@@ -60,16 +56,12 @@ jobs:
         env:
           WASM: "true"
           IBC_WASM_HOOKS: "false"
-          CGO_ENABLED: 1
         run: |
           if [ "${{ github.event.inputs.wasm }}" == "false" ]; then
             export WASM="false"
           fi
           if [ "${{ github.event.inputs.ibc-wasm-hooks }}" == "true" ]; then
             export IBC_WASM_HOOKS="true"
-          fi
-          if [ "${{ github.event.inputs.cgo }}" == "false" ]; then
-            export CGO_ENABLED=0
           fi
           make docker-image
 
@@ -86,7 +78,6 @@ jobs:
         env:
           WASM: "true"
           IBC_WASM_HOOKS: "false"
-          CGO_ENABLED: 1
         if: github.event.inputs.buildDebug != 'false'
         run: |
           if [ "${{ github.event.inputs.wasm }}" == "false" ]; then
@@ -94,9 +85,6 @@ jobs:
           fi
           if [ "${{ github.event.inputs.ibc-wasm-hooks }}" == "true" ]; then
             export IBC_WASM_HOOKS="true"
-          fi
-          if [ "${{ github.event.inputs.cgo }}" == "false" ]; then
-            export CGO_ENABLED=0
           fi
           make docker-image-debug
 

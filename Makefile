@@ -2,12 +2,16 @@ PACKAGES=$(shell go list ./... | grep -v '/simulation')
 
 VERSION := $(shell echo $(shell git describe --tags) | sed 's/^v//')
 COMMIT := $(shell git log -1 --format='%H')
-MAX_WASM_SIZE := $(shell echo "$$((3 * 1024 * 1024))")
 
 DOCKER := $(shell which docker)
 DOCKER_BUF := $(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace bufbuild/buf
 HTTPS_GIT := https://github.com/axelarnetwork/axelar-core.git
 PUSH_DOCKER_IMAGE := true
+
+WASM := true
+MAX_WASM_SIZE := $(shell echo "$$((3 * 1024 * 1024))")  # 3 MB max wasm bytecode size
+IBC_WASM_HOOKS := false
+export CGO_ENABLED := 1
 
 $(info $$WASM is [${WASM}])
 $(info $$IBC_WASM_HOOKS is [${IBC_WASM_HOOKS}])
