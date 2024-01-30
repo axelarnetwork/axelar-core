@@ -14,6 +14,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/nexus"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types/mock"
 	. "github.com/axelarnetwork/utils/test"
 )
@@ -33,6 +34,7 @@ func TestRouteQueuedMessages(t *testing.T) {
 		n = &mock.NexusMock{
 			LoggerFunc:    func(_ sdk.Context) log.Logger { return log.TestingLogger() },
 			GetChainsFunc: func(ctx sdk.Context) []exported.Chain { return nil },
+			GetParamsFunc: func(ctx sdk.Context) types.Params { return types.DefaultParams() },
 		}
 		reward = &mock.RewardKeeperMock{}
 		snapshot = &mock.SnapshotterMock{}
@@ -79,11 +81,11 @@ func TestRouteQueuedMessages(t *testing.T) {
 		}).
 		Run(t)
 
-	max := 50
+	endBlockerLimit := types.DefaultParams().EndBlockerLimit
 	givenTheEndBlocker.
 		When("some route messages are queued", func() {
-			msgs = make([]exported.GeneralMessage, max+10)
-			for i := 0; i < max+10; i++ {
+			msgs = make([]exported.GeneralMessage, endBlockerLimit+10)
+			for i := uint64(0); i < endBlockerLimit+10; i++ {
 				msgs[i] = exported.GeneralMessage{ID: rand.NormalizedStr(10)}
 			}
 			count := 0
@@ -107,7 +109,7 @@ func TestRouteQueuedMessages(t *testing.T) {
 			_, err := nexus.EndBlocker(ctx, abci.RequestEndBlock{}, n, reward, snapshot)
 			assert.NoError(t, err)
 
-			assert.Len(t, n.RouteMessageCalls(), max)
+			assert.Len(t, n.RouteMessageCalls(), int(endBlockerLimit))
 			for i, call := range n.RouteMessageCalls() {
 				assert.Equal(t, msgs[i].ID, call.ID)
 			}
