@@ -89,6 +89,9 @@ var _ nexustypes.Nexus = &NexusMock{}
 //			RouteMessageFunc: func(ctx cosmossdktypes.Context, id string, routingCtx ...github_com_axelarnetwork_axelar_core_x_nexus_exported.RoutingContext) error {
 //				panic("mock out the RouteMessage method")
 //			},
+//			SetMessageExecutedFunc: func(ctx cosmossdktypes.Context, id string) error {
+//				panic("mock out the SetMessageExecuted method")
+//			},
 //			SetNewMessageFunc: func(ctx cosmossdktypes.Context, msg github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage) error {
 //				panic("mock out the SetNewMessage method")
 //			},
@@ -167,6 +170,9 @@ type NexusMock struct {
 
 	// RouteMessageFunc mocks the RouteMessage method.
 	RouteMessageFunc func(ctx cosmossdktypes.Context, id string, routingCtx ...github_com_axelarnetwork_axelar_core_x_nexus_exported.RoutingContext) error
+
+	// SetMessageExecutedFunc mocks the SetMessageExecuted method.
+	SetMessageExecutedFunc func(ctx cosmossdktypes.Context, id string) error
 
 	// SetNewMessageFunc mocks the SetNewMessage method.
 	SetNewMessageFunc func(ctx cosmossdktypes.Context, msg github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage) error
@@ -332,6 +338,13 @@ type NexusMock struct {
 			// RoutingCtx is the routingCtx argument value.
 			RoutingCtx []github_com_axelarnetwork_axelar_core_x_nexus_exported.RoutingContext
 		}
+		// SetMessageExecuted holds details about calls to the SetMessageExecuted method.
+		SetMessageExecuted []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// ID is the id argument value.
+			ID string
+		}
 		// SetNewMessage holds details about calls to the SetNewMessage method.
 		SetNewMessage []struct {
 			// Ctx is the ctx argument value.
@@ -379,6 +392,7 @@ type NexusMock struct {
 	lockRegisterFee              sync.RWMutex
 	lockRemoveChainMaintainer    sync.RWMutex
 	lockRouteMessage             sync.RWMutex
+	lockSetMessageExecuted       sync.RWMutex
 	lockSetNewMessage            sync.RWMutex
 	lockSetParams                sync.RWMutex
 	lockSetRateLimit             sync.RWMutex
@@ -1149,6 +1163,42 @@ func (mock *NexusMock) RouteMessageCalls() []struct {
 	mock.lockRouteMessage.RLock()
 	calls = mock.calls.RouteMessage
 	mock.lockRouteMessage.RUnlock()
+	return calls
+}
+
+// SetMessageExecuted calls SetMessageExecutedFunc.
+func (mock *NexusMock) SetMessageExecuted(ctx cosmossdktypes.Context, id string) error {
+	if mock.SetMessageExecutedFunc == nil {
+		panic("NexusMock.SetMessageExecutedFunc: method is nil but Nexus.SetMessageExecuted was just called")
+	}
+	callInfo := struct {
+		Ctx cosmossdktypes.Context
+		ID  string
+	}{
+		Ctx: ctx,
+		ID:  id,
+	}
+	mock.lockSetMessageExecuted.Lock()
+	mock.calls.SetMessageExecuted = append(mock.calls.SetMessageExecuted, callInfo)
+	mock.lockSetMessageExecuted.Unlock()
+	return mock.SetMessageExecutedFunc(ctx, id)
+}
+
+// SetMessageExecutedCalls gets all the calls that were made to SetMessageExecuted.
+// Check the length with:
+//
+//	len(mockedNexus.SetMessageExecutedCalls())
+func (mock *NexusMock) SetMessageExecutedCalls() []struct {
+	Ctx cosmossdktypes.Context
+	ID  string
+} {
+	var calls []struct {
+		Ctx cosmossdktypes.Context
+		ID  string
+	}
+	mock.lockSetMessageExecuted.RLock()
+	calls = mock.calls.SetMessageExecuted
+	mock.lockSetMessageExecuted.RUnlock()
 	return calls
 }
 
