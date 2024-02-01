@@ -197,6 +197,12 @@
       }
     },
     {
+      "url": "../../tmp-swagger-gen/cosmos/tx/v1beta1/service.swagger.json",
+      "dereference": {
+        "circular": "ignore"
+      }
+    },
+    {
       "url": "../../tmp-swagger-gen/cosmos/upgrade/v1beta1/query.swagger.json",
       "operationIds": {
         "rename": {
@@ -234,6 +240,14 @@
       "operationIds": {
         "rename": {
           "Params": "IBCTransferParams"
+        }
+      }
+    },
+    {
+      "url": "../../tmp-swagger-gen/cosmwasm/wasm/v1/query.swagger.json",
+      "operationIds": {
+        "rename": {
+          "Params": "WasmParams"
         }
       }
     }
