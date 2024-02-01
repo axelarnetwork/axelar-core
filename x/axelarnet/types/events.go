@@ -19,6 +19,7 @@ const (
 	AttributeKeyTransferID         = "transferID"
 	AttributeKeyPayloadHash        = "payloadHash"
 	AttributeKeyMessageID          = "messageID"
+	AttributeKeyTransferType       = "transferType"
 )
 
 // Event attribute values

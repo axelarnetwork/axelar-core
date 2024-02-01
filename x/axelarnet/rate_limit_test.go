@@ -107,7 +107,7 @@ func TestRateLimitPacket(t *testing.T) {
 		Given2(givenPacket).
 		When("ibc path is not registered", func() {}).
 		Then("rate limit packet succeeds", func(t *testing.T) {
-			err = rateLimiter.RateLimitPacket(ctx, packet, direction, ibcPath, "")
+			err = rateLimiter.RateLimitPacket(ctx, packet, direction, ibcPath, ctx.Logger())
 			assert.NoError(t, err)
 		}).
 		Run(t, repeats)
@@ -124,7 +124,7 @@ func TestRateLimitPacket(t *testing.T) {
 			}
 		}).
 		Then("rate limit packet fails", func(t *testing.T) {
-			err = rateLimiter.RateLimitPacket(ctx, packet, direction, ibcPath, "")
+			err = rateLimiter.RateLimitPacket(ctx, packet, direction, ibcPath, ctx.Logger())
 			assert.ErrorContains(t, err, "deactivated")
 		}).
 		Run(t, repeats)
@@ -137,7 +137,7 @@ func TestRateLimitPacket(t *testing.T) {
 			packet.Data = nil
 		}).
 		Then("rate limit packet fails", func(t *testing.T) {
-			err = rateLimiter.RateLimitPacket(ctx, packet, direction, ibcPath, "")
+			err = rateLimiter.RateLimitPacket(ctx, packet, direction, ibcPath, ctx.Logger())
 			assert.ErrorContains(t, err, "cannot unmarshal")
 		}).
 		Run(t, repeats)
@@ -151,7 +151,7 @@ func TestRateLimitPacket(t *testing.T) {
 		When2(whenIBCPathIsRegistered).
 		When2(whenChainIsRegistered).
 		Then("rate limit packet fails", func(t *testing.T) {
-			err = rateLimiter.RateLimitPacket(ctx, packet, direction, ibcPath, "")
+			err = rateLimiter.RateLimitPacket(ctx, packet, direction, ibcPath, ctx.Logger())
 			assert.ErrorContains(t, err, "unable to parse transfer amount")
 		}).
 		Run(t, repeats)
@@ -165,7 +165,7 @@ func TestRateLimitPacket(t *testing.T) {
 		When2(whenIBCPathIsRegistered).
 		When2(whenChainIsRegistered).
 		Then("rate limit packet fails", func(t *testing.T) {
-			err = rateLimiter.RateLimitPacket(ctx, packet, direction, ibcPath, "")
+			err = rateLimiter.RateLimitPacket(ctx, packet, direction, ibcPath, ctx.Logger())
 			assert.ErrorContains(t, err, "amount must be strictly positive")
 		}).
 		Run(t, repeats)
@@ -175,7 +175,7 @@ func TestRateLimitPacket(t *testing.T) {
 		When2(whenIBCPathIsRegistered).
 		When2(whenChainIsRegistered).
 		When("rate limit transfer exceeded", func() {
-			n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection, messageId string) error {
+			n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection, logger log.Logger) error {
 				if asset.Denom == baseDenom {
 					return fmt.Errorf("rate limit exceeded")
 				} else {
@@ -184,7 +184,7 @@ func TestRateLimitPacket(t *testing.T) {
 			}
 		}).
 		Then("rate limit packet fails", func(t *testing.T) {
-			err = rateLimiter.RateLimitPacket(ctx, packet, direction, ibcPath, "")
+			err = rateLimiter.RateLimitPacket(ctx, packet, direction, ibcPath, ctx.Logger())
 			assert.ErrorContains(t, err, "rate limit exceeded")
 		}).
 		Run(t, repeats)
@@ -206,7 +206,7 @@ func TestRateLimitPacket(t *testing.T) {
 		When2(whenIBCPathIsRegistered).
 		When2(whenChainIsRegistered).
 		When("rate limit transfer is called for an unknown asset", func() {
-			n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection, messageId string) error {
+			n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection, logger log.Logger) error {
 				if asset.Denom != denom {
 					return fmt.Errorf("rate limit exceeded")
 				} else {
@@ -215,7 +215,7 @@ func TestRateLimitPacket(t *testing.T) {
 			}
 		}).
 		Then("rate limit is skipped", func(t *testing.T) {
-			err = rateLimiter.RateLimitPacket(ctx, packet, direction, ibcPath, "")
+			err = rateLimiter.RateLimitPacket(ctx, packet, direction, ibcPath, ctx.Logger())
 			assert.Nil(t, err)
 		}).
 		Run(t, repeats)
@@ -225,7 +225,7 @@ func TestRateLimitPacket(t *testing.T) {
 		When2(whenIBCPathIsRegistered).
 		When2(whenChainIsRegistered).
 		When("rate limit transfer succeeds", func() {
-			n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection, messageId string) error {
+			n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection, logger log.Logger) error {
 				if asset.Denom != baseDenom {
 					return fmt.Errorf("unknown asset")
 				} else {
@@ -234,7 +234,7 @@ func TestRateLimitPacket(t *testing.T) {
 			}
 		}).
 		Then("rate limit packet succeeds", func(t *testing.T) {
-			err = rateLimiter.RateLimitPacket(ctx, packet, direction, ibcPath, "")
+			err = rateLimiter.RateLimitPacket(ctx, packet, direction, ibcPath, ctx.Logger())
 			assert.NoError(t, err)
 		}).
 		Run(t, repeats)

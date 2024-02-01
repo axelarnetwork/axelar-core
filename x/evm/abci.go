@@ -131,8 +131,9 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 		return fmt.Errorf("token with symbol %s not confirmed on source chain", e.Symbol)
 	}
 	asset := token.GetAsset()
+	rateLimitLogger := bk.Logger(ctx).With(types.AttributeKeyTransferType, "callContractWithToken", types.AttributeKeyMessageID, string(event.GetID()))
 
-	if err := n.RateLimitTransfer(ctx, sourceChain.Name, sdk.NewCoin(asset, sdk.Int(e.Amount)), nexus.TransferDirectionFrom, string(event.GetID())); err != nil {
+	if err := n.RateLimitTransfer(ctx, sourceChain.Name, sdk.NewCoin(asset, sdk.Int(e.Amount)), nexus.TransferDirectionFrom, rateLimitLogger); err != nil {
 		return err
 	}
 
@@ -164,8 +165,9 @@ func handleContractCallWithTokenToEVM(ctx sdk.Context, event types.Event, bk typ
 	}
 
 	coin := sdk.NewCoin(asset, sdk.Int(e.Amount))
+	rateLimitLogger := bk.Logger(ctx).With(types.AttributeKeyTransferType, "callContractWithToken", types.AttributeKeyMessageID, string(event.GetID()))
 
-	if err := n.RateLimitTransfer(ctx, destinationChain, coin, nexus.TransferDirectionTo, string(event.GetID())); err != nil {
+	if err := n.RateLimitTransfer(ctx, destinationChain, coin, nexus.TransferDirectionTo, rateLimitLogger); err != nil {
 		return err
 	}
 
@@ -627,8 +629,9 @@ func handleMessage(ctx sdk.Context, ck types.ChainKeeper, chainID sdk.Int, keyID
 
 func handleMessageWithToken(ctx sdk.Context, ck types.ChainKeeper, n types.Nexus, chainID sdk.Int, keyID multisig.KeyID, msg nexus.GeneralMessage) error {
 	token := ck.GetERC20TokenByAsset(ctx, msg.Asset.GetDenom())
+	rateLimitLogger := ck.Logger(ctx).With(types.AttributeKeyTransferType, "callContractWithToken", types.AttributeKeyMessageID, msg.ID)
 
-	if err := n.RateLimitTransfer(ctx, msg.GetDestinationChain(), *msg.Asset, nexus.TransferDirectionTo, msg.ID); err != nil {
+	if err := n.RateLimitTransfer(ctx, msg.GetDestinationChain(), *msg.Asset, nexus.TransferDirectionTo, rateLimitLogger); err != nil {
 		return err
 	}
 

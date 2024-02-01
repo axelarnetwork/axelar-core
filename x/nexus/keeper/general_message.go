@@ -33,7 +33,7 @@ func getProcessingMessageKey(destinationChain exported.ChainName, id string) key
 func (k Keeper) GenerateMessageID(ctx sdk.Context) (string, []byte, uint64) {
 	counter := utils.NewCounter[uint64](messageNonceKey, k.getStore(ctx))
 	nonce := counter.Incr(ctx)
-	txHash, _ := utils.GetTxHash(ctx)
+	txHash := utils.GetTxHash(ctx)
 
 	return fmt.Sprintf("0x%s-%d", hex.EncodeToString(txHash), nonce), txHash, nonce
 }

@@ -277,7 +277,7 @@ func TestHandleGeneralMessages(t *testing.T) {
 
 		n.SetMessageExecutedFunc = func(ctx sdk.Context, id string) error { return nil }
 		n.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return true }
-		n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection, messageId string) error {
+		n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection, logger log.Logger) error {
 			return nil
 		}
 	})
@@ -419,7 +419,7 @@ func TestHandleGeneralMessages(t *testing.T) {
 		}).
 		When("rate limit is triggered", func() {
 			n.SetMessageFailedFunc = func(ctx sdk.Context, id string) error { return nil }
-			n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection, messageId string) error {
+			n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection, logger log.Logger) error {
 				return fmt.Errorf("rate limit triggered")
 			}
 		}).
@@ -932,7 +932,7 @@ func TestHandleContractCallWithToken(t *testing.T) {
 		}
 
 		n.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return true }
-		n.RateLimitTransferFunc = func(sdk.Context, nexus.ChainName, sdk.Coin, nexus.TransferDirection, string) error { return nil }
+		n.RateLimitTransferFunc = func(sdk.Context, nexus.ChainName, sdk.Coin, nexus.TransferDirection, log.Logger) error { return nil }
 		sourceCk.GetERC20TokenBySymbolFunc = func(ctx sdk.Context, symbol string) types.ERC20Token {
 			if symbol == event.GetContractCallWithToken().Symbol {
 				return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed, Asset: symbol})
@@ -970,7 +970,7 @@ func TestHandleContractCallWithToken(t *testing.T) {
 		}
 
 		n.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return true }
-		n.RateLimitTransferFunc = func(sdk.Context, nexus.ChainName, sdk.Coin, nexus.TransferDirection, string) error { return nil }
+		n.RateLimitTransferFunc = func(sdk.Context, nexus.ChainName, sdk.Coin, nexus.TransferDirection, log.Logger) error { return nil }
 		sourceCk.GetERC20TokenBySymbolFunc = func(ctx sdk.Context, symbol string) types.ERC20Token {
 			if symbol == event.GetContractCallWithToken().Symbol {
 				return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed, Asset: symbol})
@@ -1030,7 +1030,7 @@ func TestHandleContractCallWithToken(t *testing.T) {
 		n.ComputeTransferFeeFunc = func(ctx sdk.Context, sourceChain, destinationChain nexus.Chain, asset sdk.Coin) (sdk.Coin, error) {
 			return fee, nil
 		}
-		n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection, messageId string) error {
+		n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection, logger log.Logger) error {
 			return nil
 		}
 		destinationCk.GetChainIDFunc = func(ctx sdk.Context) (sdk.Int, bool) { return sdk.ZeroInt(), false }
@@ -1079,7 +1079,7 @@ func TestHandleContractCallWithToken(t *testing.T) {
 		n.ComputeTransferFeeFunc = func(ctx sdk.Context, sourceChain, destinationChain nexus.Chain, asset sdk.Coin) (sdk.Coin, error) {
 			return fee, nil
 		}
-		n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection, messageId string) error {
+		n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection, logger log.Logger) error {
 			return nil
 		}
 		destinationCk.GetChainIDFunc = func(ctx sdk.Context) (sdk.Int, bool) { return sdk.NewInt(1), true }
@@ -1132,7 +1132,7 @@ func TestHandleContractCallWithToken(t *testing.T) {
 			return fee, nil
 		}
 
-		n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection, messageId string) error {
+		n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection, logger log.Logger) error {
 			if chain == destinationChainName {
 				return fmt.Errorf("rate limit exceeded %s", chain)
 			}
@@ -1142,7 +1142,7 @@ func TestHandleContractCallWithToken(t *testing.T) {
 		err := handleContractCallWithToken(ctx, event, bk, n, multisigKeeper)
 		assert.ErrorContains(t, err, fmt.Sprintf("rate limit exceeded %s", destinationChainName))
 
-		n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection, messageId string) error {
+		n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection, logger log.Logger) error {
 			if chain == sourceChainName {
 				return fmt.Errorf("rate limit exceeded %s", chain)
 			}
@@ -1188,7 +1188,7 @@ func TestHandleContractCallWithToken(t *testing.T) {
 			}
 			return types.NilToken
 		}
-		n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection, messageId string) error {
+		n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection, logger log.Logger) error {
 			return nil
 		}
 		destinationCk.GetChainIDFunc = func(ctx sdk.Context) (sdk.Int, bool) { return sdk.NewInt(1), true }

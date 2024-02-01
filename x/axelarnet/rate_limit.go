@@ -9,7 +9,9 @@ import (
 	ibctransfertypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
 	porttypes "github.com/cosmos/ibc-go/v4/modules/core/05-port/types"
 	ibcexported "github.com/cosmos/ibc-go/v4/modules/core/exported"
+	"github.com/tendermint/tendermint/libs/log"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -37,7 +39,7 @@ func NewRateLimiter(keeper *keeper.Keeper, nexus types.Nexus) RateLimiter {
 // From direction is used for tokens coming from source chain (unlocked from IBC escrow/minted as an IBC denom).
 // To direction is used for tokens going to destination chain (locked in the IBC escrow/burned as an IBC denom).
 // messageId is optional since not all transfers are a part of a GMP call.
-func (r RateLimiter) RateLimitPacket(ctx sdk.Context, packet ibcexported.PacketI, direction nexus.TransferDirection, ibcPath string, messageId string) error {
+func (r RateLimiter) RateLimitPacket(ctx sdk.Context, packet ibcexported.PacketI, direction nexus.TransferDirection, ibcPath string, logger log.Logger) error {
 	chainName, ok := r.keeper.GetChainNameByIBCPath(ctx, ibcPath)
 	if !ok {
 		// If the IBC channel is not registered as a chain, skip rate limiting
@@ -54,7 +56,7 @@ func (r RateLimiter) RateLimitPacket(ctx sdk.Context, packet ibcexported.PacketI
 		return err
 	}
 
-	if err := r.nexus.RateLimitTransfer(ctx, chain.Name, token, direction, messageId); err != nil {
+	if err := r.nexus.RateLimitTransfer(ctx, chain.Name, token, direction, logger); err != nil {
 		return err
 	}
 
@@ -86,7 +88,9 @@ func (r RateLimitedICS4Wrapper) SendPacket(ctx sdk.Context, chanCap *capabilityt
 		return nil
 	}
 
-	return r.rateLimiter.RateLimitPacket(ctx, packet, nexus.TransferDirectionTo, types.NewIBCPath(packet.GetSourcePort(), packet.GetSourceChannel()), "")
+	rateLimitLogger := r.keeper.Logger(ctx).With(types.AttributeKeyTxID, utils.GetTxHashAsHex(ctx))
+
+	return r.rateLimiter.RateLimitPacket(ctx, packet, nexus.TransferDirectionTo, types.NewIBCPath(packet.GetSourcePort(), packet.GetSourceChannel()), rateLimitLogger)
 }
 
 // WriteAcknowledgement implements the ICS4 Wrapper interface

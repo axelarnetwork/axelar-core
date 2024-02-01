@@ -6,9 +6,14 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-// GetTxHash returns the hash of the current transaction, and whether it's a tx, i.e if the current context is a transaction or begin/end blocker
-func GetTxHash(ctx sdk.Context) ([]byte, bool) {
+// GetTxHash returns the hash of the current transaction
+func GetTxHash(ctx sdk.Context) []byte {
 	tx := ctx.TxBytes()
 	hash := sha256.Sum256(tx)
-	return hash[:], len(tx) > 0
+	return hash[:]
+}
+
+// GetTxHashAsHex returns the hash of the current transaction as a hex string
+func GetTxHashAsHex(ctx sdk.Context) string {
+	return HexEncode(GetTxHash(ctx))
 }

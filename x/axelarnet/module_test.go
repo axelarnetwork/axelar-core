@@ -153,7 +153,7 @@ func TestIBCModule(t *testing.T) {
 	whenChainIsActivated := When("chain is activated", func() {
 		n.GetChainFunc = func(ctx sdk.Context, chain exported.ChainName) (exported.Chain, bool) { return exported.Chain{}, true }
 		n.IsChainActivatedFunc = func(ctx sdk.Context, chain exported.Chain) bool { return true }
-		n.RateLimitTransferFunc = func(ctx sdk.Context, chain exported.ChainName, asset sdk.Coin, direction exported.TransferDirection, messageId string) error {
+		n.RateLimitTransferFunc = func(ctx sdk.Context, chain exported.ChainName, asset sdk.Coin, direction exported.TransferDirection, logger log.Logger) error {
 			return nil
 		}
 	})

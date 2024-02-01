@@ -112,7 +112,8 @@ func (k Keeper) EnqueueTransfer(ctx sdk.Context, senderChain exported.Chain, rec
 		return 0, err
 	}
 
-	if err := k.RateLimitTransfer(ctx, senderChain.Name, asset, exported.TransferDirectionFrom, ""); err != nil {
+	rateLimitLogger := k.Logger(ctx).With(types.AttributeKeyTransferType, "sendToken", types.AttributeKeyTransferEpoch, utils.GetTxHashAsHex(ctx))
+	if err := k.RateLimitTransfer(ctx, senderChain.Name, asset, exported.TransferDirectionFrom, rateLimitLogger); err != nil {
 		return 0, err
 	}
 
@@ -151,10 +152,6 @@ func (k Keeper) EnqueueTransfer(ctx sdk.Context, senderChain exported.Chain, rec
 		asset = asset.Sub(fee)
 	}
 
-	if err := k.RateLimitTransfer(ctx, recipient.Chain.Name, asset, exported.TransferDirectionTo, ""); err != nil {
-		return 0, err
-	}
-
 	// merging transfers for the specified recipient
 	previousTransfer, found := k.getTransfer(ctx, recipient, asset.Denom, exported.Pending)
 	if found {
@@ -166,6 +163,10 @@ func (k Keeper) EnqueueTransfer(ctx sdk.Context, senderChain exported.Chain, rec
 		asset.String(), senderChain.Name, recipient.Chain.Name, recipient.Address))
 
 	transferID := k.setNewTransfer(ctx, recipient, asset, exported.Pending)
+
+	if err := k.RateLimitTransfer(ctx, recipient.Chain.Name, asset, exported.TransferDirectionTo, rateLimitLogger.With(types.AttributeKeyTransferID, transferID.String())); err != nil {
+		return 0, err
+	}
 
 	events.Emit(ctx, &types.FeeDeducted{
 		TransferID:       transferID,

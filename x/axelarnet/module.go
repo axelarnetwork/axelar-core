@@ -258,9 +258,11 @@ func (m AxelarnetIBCModule) OnAcknowledgementPacket(
 	case *channeltypes.Acknowledgement_Result:
 		return setRoutedPacketCompleted(ctx, m.keeper, m.nexus, port, channel, sequence)
 	default:
+		rateLimitLogger := m.keeper.Logger(ctx).With(types.AttributeKeyTransferType, "ibcTransfer", types.AttributeKeyTxID, utils.GetTxHashAsHex(ctx))
+
 		// AckError causes a refund of the token (i.e unlock from the escrow address/mint of token depending on whether it's native to chain).
 		// Hence, it's rate limited on the from direction (tokens coming from the source chain).
-		if err := m.rateLimiter.RateLimitPacket(ctx, packet, nexus.TransferDirectionFrom, types.NewIBCPath(port, channel), ""); err != nil {
+		if err := m.rateLimiter.RateLimitPacket(ctx, packet, nexus.TransferDirectionFrom, types.NewIBCPath(port, channel), rateLimitLogger); err != nil {
 			return err
 		}
 
@@ -283,9 +285,11 @@ func (m AxelarnetIBCModule) OnTimeoutPacket(
 	// https://github.com/cosmos/ibc/tree/main/spec/core/ics-004-channel-and-packet-semantics#definitions
 	port, channel := packet.GetSourcePort(), packet.GetSourceChannel()
 
+	rateLimitLogger := m.keeper.Logger(ctx).With(types.AttributeKeyTransferType, "ibcTransfer", types.AttributeKeyTxID, utils.GetTxHashAsHex(ctx))
+
 	// Timeout causes a refund of the token (i.e unlock from the escrow address/mint of token depending on whether it's native to chain).
 	// Hence, it's rate limited on the from direction (tokens coming from source chain).
-	if err := m.rateLimiter.RateLimitPacket(ctx, packet, nexus.TransferDirectionFrom, types.NewIBCPath(port, channel), ""); err != nil {
+	if err := m.rateLimiter.RateLimitPacket(ctx, packet, nexus.TransferDirectionFrom, types.NewIBCPath(port, channel), rateLimitLogger); err != nil {
 		return err
 	}
 

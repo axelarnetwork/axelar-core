@@ -6,6 +6,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/events"
@@ -16,7 +17,7 @@ import (
 )
 
 // RateLimitTransfer applies a rate limit to transfers, and returns an error if the rate limit is exceeded
-func (k Keeper) RateLimitTransfer(ctx sdk.Context, chain exported.ChainName, asset sdk.Coin, direction exported.TransferDirection, messageId string) error {
+func (k Keeper) RateLimitTransfer(ctx sdk.Context, chain exported.ChainName, asset sdk.Coin, direction exported.TransferDirection, logger log.Logger) error {
 	rateLimit, found := k.getRateLimit(ctx, chain, asset.Denom)
 	// If a rate limit is not set, it is treated as unbounded
 	if !found {
@@ -32,22 +33,13 @@ func (k Keeper) RateLimitTransfer(ctx sdk.Context, chain exported.ChainName, ass
 			directionLog = "to"
 		}
 
-		txHash, isTx := utils.GetTxHash(ctx)
-		encodedTxHash := utils.HexEncode(txHash)
-		if !isTx {
-			encodedTxHash = "0x"
-		}
-
 		err := fmt.Errorf("transfer %s %s chain %s exceeded rate limit %s with transfer rate %s", asset, directionLog, transferEpoch.Chain, rateLimit.Limit, transferEpoch.Amount)
-		k.Logger(ctx).Error(err.Error(),
+		logger.Error(err.Error(),
 			types.AttributeKeyChain, transferEpoch.Chain,
 			types.AttributeKeyAsset, asset,
 			types.AttributeKeyLimit, rateLimit.Limit,
 			types.AttributeKeyTransferEpoch, transferEpoch.Amount,
-			types.AttributeKeyMessageId, messageId,
 			types.AttributeKeyBlock, ctx.BlockHeight(),
-			types.AttributeKeyIsBeginEndBlocker, !isTx,
-			types.AttributeKeyTxHash, encodedTxHash,
 		)
 
 		return sdkerrors.Wrap(types.ErrRateLimitExceeded, err.Error())

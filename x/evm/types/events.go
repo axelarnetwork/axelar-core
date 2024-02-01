@@ -41,6 +41,7 @@ const (
 	AttributeKeyEventID            = "eventID"
 	AttributeKeyKeyID              = "keyID"
 	AttributeKeyMessageID          = "messageID"
+	AttributeKeyTransferType       = "transferType"
 )
 
 // Event attribute values

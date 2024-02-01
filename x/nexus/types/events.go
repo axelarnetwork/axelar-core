@@ -13,10 +13,9 @@ const (
 	AttributeKeyAsset                  = "asset"
 	AttributeKeyLimit                  = "limit"
 	AttributeKeyTransferEpoch          = "transferEpoch"
-	AttributeKeyMessageId              = "messageId"
 	AttributeKeyBlock                  = "block"
-	AttributeKeyIsBeginEndBlocker      = "isBeginOrEndBlocker"
-	AttributeKeyTxHash                 = "txHash"
+	AttributeKeyTransferType           = "transferType"
+	AttributeKeyTransferID             = "transferID"
 )
 
 // Event attribute values

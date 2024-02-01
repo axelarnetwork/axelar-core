@@ -54,7 +54,7 @@ type Nexus interface {
 	ActivateChain(ctx sdk.Context, chain nexus.Chain)
 	GetChainByNativeAsset(ctx sdk.Context, asset string) (nexus.Chain, bool)
 	IsChainActivated(ctx sdk.Context, chain nexus.Chain) bool
-	RateLimitTransfer(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection, messageId string) error
+	RateLimitTransfer(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection, logger log.Logger) error
 	GetMessage(ctx sdk.Context, id string) (m nexus.GeneralMessage, found bool)
 	SetNewMessage(ctx sdk.Context, m nexus.GeneralMessage) error
 	SetMessageExecuted(ctx sdk.Context, id string) error

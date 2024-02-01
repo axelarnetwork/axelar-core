@@ -17,6 +17,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/stretchr/testify/assert"
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
+	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet"
@@ -100,7 +101,7 @@ func TestHandleMessage(t *testing.T) {
 				hash := sha256.Sum256(ctx.TxBytes())
 				return fmt.Sprintf("%s-%d", hex.EncodeToString(hash[:]), 0), hash[:], 0
 			},
-			RateLimitTransferFunc: func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection, messageId string) error {
+			RateLimitTransferFunc: func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection, logger log.Logger) error {
 				return nil
 			},
 			GetChainByNativeAssetFunc: func(ctx sdk.Context, asset string) (nexus.Chain, bool) {
@@ -129,7 +130,7 @@ func TestHandleMessage(t *testing.T) {
 				token.Denom = rand.Denom(10, 20)
 			}
 
-			n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection, messageId string) error {
+			n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection, logger log.Logger) error {
 				if direction == nexus.TransferDirectionFrom && asset.Equal(token) {
 					return fmt.Errorf("rate limit exceeded")
 				}
@@ -506,7 +507,7 @@ func TestHandleMessageWithToken(t *testing.T) {
 				hash := sha256.Sum256(ctx.TxBytes())
 				return fmt.Sprintf("%s-%d", hex.EncodeToString(hash[:]), 0), hash[:], 0
 			},
-			RateLimitTransferFunc: func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection, messageId string) error {
+			RateLimitTransferFunc: func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection, logger log.Logger) error {
 				return nil
 			},
 		}
@@ -561,7 +562,7 @@ func TestHandleMessageWithToken(t *testing.T) {
 				token.Denom = rand.Denom(10, 20)
 			}
 
-			n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection, messageId string) error {
+			n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection, logger log.Logger) error {
 				if direction == nexus.TransferDirectionFrom && asset.Equal(token) {
 					return fmt.Errorf("rate limit exceeded")
 				}
@@ -720,7 +721,7 @@ func TestHandleSendToken(t *testing.T) {
 				hash := sha256.Sum256(ctx.TxBytes())
 				return fmt.Sprintf("%s-%d", hex.EncodeToString(hash[:]), 0), hash[:], 0
 			},
-			RateLimitTransferFunc: func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection, messageId string) error {
+			RateLimitTransferFunc: func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection, logger log.Logger) error {
 				return nil
 			},
 		}
