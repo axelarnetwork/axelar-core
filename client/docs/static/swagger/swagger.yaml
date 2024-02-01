@@ -15169,6 +15169,9 @@ paths:
                   gateway:
                     type: string
                     format: byte
+                  end_blocker_limit:
+                    type: string
+                    format: uint64
                 title: Params represent the genesis parameters for the module
         default:
           description: An unexpected error response
@@ -51247,6 +51250,9 @@ definitions:
       gateway:
         type: string
         format: byte
+      end_blocker_limit:
+        type: string
+        format: uint64
     title: Params represent the genesis parameters for the module
   axelar.nexus.v1beta1.ParamsResponse:
     type: object
@@ -51302,6 +51308,9 @@ definitions:
           gateway:
             type: string
             format: byte
+          end_blocker_limit:
+            type: string
+            format: uint64
         title: Params represent the genesis parameters for the module
   axelar.nexus.v1beta1.RecipientAddressResponse:
     type: object
