@@ -18,4 +18,5 @@ message Params {
   int32 chain_maintainer_check_window = 4;
   bytes gateway = 5 [ (gogoproto.casttype) =
                           "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  uint64 end_blocker_limit = 6;
 }

@@ -73,10 +73,9 @@ func checkChainMaintainers(ctx sdk.Context, n types.Nexus, r types.RewardKeeper,
 }
 
 func routeQueuedMessages(ctx sdk.Context, n types.Nexus) {
-	// TODO: make this a module parameter
-	max := 50
+	params := n.GetParams(ctx)
 
-	for i := 0; i < max; i++ {
+	for i := uint64(0); i < params.EndBlockerLimit; i++ {
 		msg, ok := n.DequeueRouteMessage(ctx)
 		if !ok {
 			break
