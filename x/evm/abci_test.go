@@ -261,14 +261,25 @@ func TestHandleGeneralMessages(t *testing.T) {
 				return nil, errors.New("not found")
 			}
 		}
+
 		ck1.GetChainIDFunc = func(ctx sdk.Context) (sdk.Int, bool) { return sdk.ZeroInt(), true }
 		ck1.EnqueueCommandFunc = func(ctx sdk.Context, cmd types.Command) error { return nil }
 		ck2.GetChainIDFunc = func(ctx sdk.Context) (sdk.Int, bool) { return sdk.ZeroInt(), true }
 		ck2.EnqueueCommandFunc = func(ctx sdk.Context, cmd types.Command) error { return nil }
 		ck1.GetGatewayAddressFunc = func(ctx sdk.Context) (types.Address, bool) { return evmTestUtils.RandomAddress(), true }
 		ck2.GetGatewayAddressFunc = func(ctx sdk.Context) (types.Address, bool) { return evmTestUtils.RandomAddress(), true }
+		ck1.GetERC20TokenByAssetFunc = func(ctx sdk.Context, asset string) types.ERC20Token {
+			return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed, Asset: asset})
+		}
+		ck2.GetERC20TokenByAssetFunc = func(ctx sdk.Context, asset string) types.ERC20Token {
+			return types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{Status: types.Confirmed, Asset: asset})
+		}
+
 		n.SetMessageExecutedFunc = func(ctx sdk.Context, id string) error { return nil }
 		n.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return true }
+		n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error {
+			return nil
+		}
 	})
 
 	withGeneralMessages := func(numPerChain map[nexus.ChainName]int) WhenStatement {
@@ -283,7 +294,13 @@ func TestHandleGeneralMessages(t *testing.T) {
 					sender := nexus.CrossChainAddress{Chain: srcChain, Address: evmTestUtils.RandomAddress().Hex()}
 					receiver := nexus.CrossChainAddress{Chain: destChain, Address: evmTestUtils.RandomAddress().Hex()}
 
-					msg := nexus.NewGeneralMessage(evmTestUtils.RandomHash().Hex(), sender, receiver, evmTestUtils.RandomHash().Bytes(), evmTestUtils.RandomHash().Bytes()[:], uint64(rand.I64Between(0, 10000)), nil)
+					asset := rand.Coin()
+					assetRef := &asset
+					if rand.Bools(0.5).Next() {
+						assetRef = nil
+					}
+
+					msg := nexus.NewGeneralMessage(evmTestUtils.RandomHash().Hex(), sender, receiver, evmTestUtils.RandomHash().Bytes(), evmTestUtils.RandomHash().Bytes()[:], uint64(rand.I64Between(0, 10000)), assetRef)
 					msg.Status = nexus.Processing
 
 					msgs = append(msgs, msg)
@@ -377,6 +394,39 @@ func TestHandleGeneralMessages(t *testing.T) {
 			handleMessages(ctx, bk, n, multisigKeeper)
 			assert.Len(t, ck1.EnqueueCommandCalls(), int(ck1.GetParams(ctx).EndBlockerLimit))
 			assert.Len(t, ck2.EnqueueCommandCalls(), int(ck2.GetParams(ctx).EndBlockerLimit))
+		}).
+		Run(t)
+
+	givenGeneralMessagesEnqueued.
+		When("message with token is queued", func() {
+			ck1.GetParamsFunc = func(ctx sdk.Context) types.Params {
+				return types.Params{EndBlockerLimit: 10}
+			}
+			n.GetChainsFunc = func(_ sdk.Context) []nexus.Chain {
+				return []nexus.Chain{{Name: chain1, Module: types.ModuleName}}
+			}
+			n.GetProcessingMessagesFunc = func(_ sdk.Context, chain nexus.ChainName, limit int64) []nexus.GeneralMessage {
+				destChain := nexus.Chain{Name: chain, Module: types.ModuleName}
+				sender := nexus.CrossChainAddress{Chain: nexustestutils.RandomChain(), Address: evmTestUtils.RandomAddress().Hex()}
+				receiver := nexus.CrossChainAddress{Chain: destChain, Address: evmTestUtils.RandomAddress().Hex()}
+				asset := rand.Coin()
+
+				msg := nexus.NewGeneralMessage(evmTestUtils.RandomHash().Hex(), sender, receiver, evmTestUtils.RandomHash().Bytes(), evmTestUtils.RandomHash().Bytes()[:], uint64(rand.I64Between(0, 10000)), &asset)
+				msg.Status = nexus.Processing
+
+				return []nexus.GeneralMessage{msg}
+			}
+		}).
+		When("rate limit is triggered", func() {
+			n.SetMessageFailedFunc = func(ctx sdk.Context, id string) error { return nil }
+			n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error {
+				return fmt.Errorf("rate limit triggered")
+			}
+		}).
+		Then("should handle", func(t *testing.T) {
+			handleMessages(ctx, bk, n, multisigKeeper)
+			assert.Len(t, ck1.EnqueueCommandCalls(), 0)
+			assert.Len(t, n.SetMessageFailedCalls(), 1)
 		}).
 		Run(t)
 }
@@ -1081,12 +1131,26 @@ func TestHandleContractCallWithToken(t *testing.T) {
 		n.ComputeTransferFeeFunc = func(ctx sdk.Context, sourceChain, destinationChain nexus.Chain, asset sdk.Coin) (sdk.Coin, error) {
 			return fee, nil
 		}
-		n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error {
-			return fmt.Errorf("rate limit exceeded")
-		}
 
+		n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error {
+			if chain == destinationChainName {
+				return fmt.Errorf("rate limit exceeded %s", chain)
+			}
+
+			return nil
+		}
 		err := handleContractCallWithToken(ctx, event, bk, n, multisigKeeper)
-		assert.ErrorContains(t, err, "rate limit exceeded")
+		assert.ErrorContains(t, err, fmt.Sprintf("rate limit exceeded %s", destinationChainName))
+
+		n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error {
+			if chain == sourceChainName {
+				return fmt.Errorf("rate limit exceeded %s", chain)
+			}
+
+			return nil
+		}
+		err = handleContractCallWithToken(ctx, event, bk, n, multisigKeeper)
+		assert.ErrorContains(t, err, fmt.Sprintf("rate limit exceeded %s", sourceChainName))
 	}))
 
 	t.Run("should succeed if successfully created the command", testutils.Func(func(t *testing.T) {
