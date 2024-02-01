@@ -846,8 +846,8 @@ func orderModulesForGenesis() []string {
 		snapTypes.ModuleName,
 		multisigTypes.ModuleName,
 		tssTypes.ModuleName,
-		evmTypes.ModuleName,
 		nexusTypes.ModuleName,
+		evmTypes.ModuleName, // Run evm end blocker after nexus so GMP calls routed to EVM get processed within the same block
 		voteTypes.ModuleName,
 		axelarnetTypes.ModuleName,
 		rewardTypes.ModuleName,

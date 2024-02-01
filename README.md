@@ -27,6 +27,38 @@ In order to run/build the project locally we need to import the bytecode from ga
 3. Unzip the json files under `contract-artifacts/`
 4. Run `make generate` to generate `x/evm/types/contracts.go`
 
+## Download and Verify Binary
+
+Before interacting with the axelar network, ensure you have the correct `axelard` binary and that it's verified:
+
+1. **Download the Binary and Signature File:**
+   - Go to the [Axelar Core releases page](https://github.com/axelarnetwork/axelar-core/releases).
+   - Download the `axelard` binary for your operating system and architecture.
+   - Also, download the corresponding `.asc` signature file.
+
+2. **Import Axelar's Public Key:**
+   - Run the following command to import the public key:
+     ```bash
+     curl https://keybase.io/axelardev/pgp_keys.asc | gpg --import
+     ```
+
+3. **Trust the Imported Key:**
+   - Enter GPG interactive mode:
+     ```bash
+     gpg --edit-key 5D9FFADEED11FA5D
+     ```
+   - Type `trust` then select option `5` to trust ultimately.
+
+4. **Verify the Binary:**
+   - For example, for version v0.34.3, use:
+     ```bash
+     gpg --verify axelard-darwin-amd64-v0.34.3.asc axelard-darwin-amd64-v0.34.3
+     ```
+   - A message indicating a good signature should appear, like:
+     ```
+     Good signature from "Axelar Network Devs <eng@axelar.network>" [ultimate]
+     ```
+
 ## Interacting with a local node
 
 With a local (dockerized) node running, the `axelard` binary can be used to interact with the node.

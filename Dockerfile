@@ -31,8 +31,7 @@ RUN if [[ "${WASM}" == "true" ]]; then \
 
 COPY . .
 
-ENV CGO_ENABLED=1
-RUN make MUSLC="${WASM}" build
+RUN make MUSLC="${WASM}" WASM="${WASM}" IBC_WASM_HOOKS="${IBC_WASM_HOOKS}" build
 
 FROM alpine:3.18
 

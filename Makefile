@@ -2,12 +2,17 @@ PACKAGES=$(shell go list ./... | grep -v '/simulation')
 
 VERSION := $(shell echo $(shell git describe --tags) | sed 's/^v//')
 COMMIT := $(shell git log -1 --format='%H')
-MAX_WASM_SIZE := $(shell echo "$$((3 * 1024 * 1024))")
 
 DOCKER := $(shell which docker)
 DOCKER_BUF := $(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace bufbuild/buf
 HTTPS_GIT := https://github.com/axelarnetwork/axelar-core.git
 PUSH_DOCKER_IMAGE := true
+
+# Default values that can be overridden by the caller via `make VAR=value [target]`
+WASM := true
+MAX_WASM_SIZE := $(shell echo "$$((3 * 1024 * 1024))")  # 3 MB max wasm bytecode size
+IBC_WASM_HOOKS := false
+export CGO_ENABLED := 1 # Export env var to go build so Cosmos SDK can see it
 
 $(info $$WASM is [${WASM}])
 $(info $$IBC_WASM_HOOKS is [${IBC_WASM_HOOKS}])
@@ -109,6 +114,7 @@ debug:  go.sum
 docker-image:
 	@DOCKER_BUILDKIT=1 docker build \
 		--build-arg WASM="${WASM}" \
+		--build-arg IBC_WASM_HOOKS="${IBC_WASM_HOOKS}" \
 		--build-arg ARCH="${ARCH}" \
 		-t axelar/core .
 
@@ -119,6 +125,7 @@ docker-image-local-user:  guard-VERSION guard-GROUP_ID guard-USER_ID
 		--build-arg USER_ID=${USER_ID} \
 		--build-arg GROUP_ID=${GROUP_ID} \
 		--build-arg WASM="${WASM}" \
+		--build-arg IBC_WASM_HOOKS="${IBC_WASM_HOOKS}" \
 		--build-arg ARCH="${ARCH}" \
 		-t axelarnet/axelar-core:${VERSION}-local .
 
@@ -128,6 +135,7 @@ build-push-docker-images:  guard-SEMVER
 		--platform ${PLATFORM} \
 		--output "type=image,push=${PUSH_DOCKER_IMAGE}" \
 		--build-arg WASM="${WASM}" \
+		--build-arg IBC_WASM_HOOKS="${IBC_WASM_HOOKS}" \
 		--build-arg ARCH="${ARCH}" \
 		-t axelarnet/axelar-core-${SUFFIX}:${SEMVER} --provenance=false .
 
@@ -138,13 +146,14 @@ build-push-docker-images-rosetta: populate-bytecode guard-SEMVER
 		--platform linux/amd64 \
 		--output "type=image,push=${PUSH_DOCKER_IMAGE}" \
 		--build-arg WASM="${WASM}" \
+		--build-arg IBC_WASM_HOOKS="${IBC_WASM_HOOKS}" \
 		-t axelarnet/axelar-core:${SEMVER}-rosetta .
 
 
 # Build a docker image that is able to run dlv and a debugger can be hooked up to
 .PHONY: docker-image-debug
 docker-image-debug:
-	@DOCKER_BUILDKIT=1 docker build --build-arg WASM="${WASM}" -t axelar/core-debug -f ./Dockerfile.debug .
+	@DOCKER_BUILDKIT=1 docker build --build-arg WASM="${WASM}" --build-arg IBC_WASM_HOOKS="${IBC_WASM_HOOKS}" -t axelar/core-debug -f ./Dockerfile.debug .
 
 # Install all generate prerequisites
 .Phony: prereqs
