@@ -136,13 +136,9 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 		return err
 	}
 
-	if err := n.RateLimitTransfer(ctx, destinationChain.Name, sdk.NewCoin(asset, sdk.Int(e.Amount)), nexus.Outgoing); err != nil {
-		return err
-	}
-
 	switch destinationChain.Module {
 	case types.ModuleName:
-		return handleContractCallWithTokenToEVM(ctx, event, bk, multisig, sourceChain.Name, destinationChain.Name, asset)
+		return handleContractCallWithTokenToEVM(ctx, event, bk, n, multisig, sourceChain.Name, destinationChain.Name, asset)
 	default:
 		coin := sdk.NewCoin(asset, sdk.Int(e.Amount))
 		// set as general message in nexus, so the dest module can handle the message
@@ -150,7 +146,7 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 	}
 }
 
-func handleContractCallWithTokenToEVM(ctx sdk.Context, event types.Event, bk types.BaseKeeper, multisig types.MultisigKeeper, sourceChain, destinationChain nexus.ChainName, asset string) error {
+func handleContractCallWithTokenToEVM(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus, multisig types.MultisigKeeper, sourceChain, destinationChain nexus.ChainName, asset string) error {
 	e := event.GetContractCallWithToken()
 	if e == nil {
 		panic(fmt.Errorf("event is nil"))
@@ -165,6 +161,12 @@ func handleContractCallWithTokenToEVM(ctx sdk.Context, event types.Event, bk typ
 
 	if !common.IsHexAddress(e.ContractAddress) {
 		return fmt.Errorf("invalid contract address %s", e.ContractAddress)
+	}
+
+	coin := sdk.NewCoin(asset, sdk.Int(e.Amount))
+
+	if err := n.RateLimitTransfer(ctx, destinationChain, coin, nexus.Outgoing); err != nil {
+		return err
 	}
 
 	cmd := types.NewApproveContractCallWithMintCommand(
@@ -192,7 +194,7 @@ func handleContractCallWithTokenToEVM(ctx sdk.Context, event types.Event, bk typ
 		DestinationChain: e.DestinationChain,
 		ContractAddress:  e.ContractAddress,
 		PayloadHash:      e.PayloadHash,
-		Asset:            sdk.NewCoin(asset, sdk.Int(e.Amount)),
+		Asset:            coin,
 	})
 
 	return nil
@@ -623,8 +625,12 @@ func handleMessage(ctx sdk.Context, ck types.ChainKeeper, chainID sdk.Int, keyID
 	)
 }
 
-func handleMessageWithToken(ctx sdk.Context, ck types.ChainKeeper, chainID sdk.Int, keyID multisig.KeyID, msg nexus.GeneralMessage) {
+func handleMessageWithToken(ctx sdk.Context, ck types.ChainKeeper, n types.Nexus, chainID sdk.Int, keyID multisig.KeyID, msg nexus.GeneralMessage) error {
 	token := ck.GetERC20TokenByAsset(ctx, msg.Asset.GetDenom())
+
+	if err := n.RateLimitTransfer(ctx, msg.GetDestinationChain(), *msg.Asset, nexus.Outgoing); err != nil {
+		return err
+	}
 
 	cmd := types.NewApproveContractCallWithMintGeneric(chainID, keyID, common.BytesToHash(msg.SourceTxID), msg.SourceTxIndex, msg, token.GetDetails().Symbol)
 	funcs.MustNoErr(ck.EnqueueCommand(ctx, cmd))
@@ -645,6 +651,8 @@ func handleMessageWithToken(ctx sdk.Context, ck types.ChainKeeper, chainID sdk.I
 		types.AttributeKeyMessageID, msg.ID,
 		types.AttributeKeyCommandsID, cmd.ID,
 	)
+
+	return nil
 }
 
 func handleMessages(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, m types.MultisigKeeper) {
@@ -673,7 +681,9 @@ func handleMessages(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, m types
 				case nexus.TypeGeneralMessage:
 					handleMessage(ctx, destCk, chainID, keyID, msg)
 				case nexus.TypeGeneralMessageWithToken:
-					handleMessageWithToken(ctx, destCk, chainID, keyID, msg)
+					if err := handleMessageWithToken(ctx, destCk, n, chainID, keyID, msg); err != nil {
+						return false, err
+					}
 				default:
 					panic(fmt.Sprintf("unrecognized message type %d", msg.Type()))
 				}
