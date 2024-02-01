@@ -30,10 +30,14 @@ func TestMigrate6to7(t *testing.T) {
 	}).
 		When("", func() {}).
 		Then("the migration should add the new param with the default value", func(t *testing.T) {
-			actual := sdk.AccAddress{}
+			actualGateway := sdk.AccAddress{}
+			actualEndBlockerLimit := uint64(0)
 
 			assert.PanicsWithError(t, "UnmarshalJSON cannot decode empty bytes", func() {
-				subspace.Get(ctx, types.KeyGateway, &actual)
+				subspace.Get(ctx, types.KeyGateway, &actualGateway)
+			})
+			assert.PanicsWithError(t, "UnmarshalJSON cannot decode empty bytes", func() {
+				subspace.Get(ctx, types.KeyEndBlockerLimit, &actualEndBlockerLimit)
 			})
 			assert.PanicsWithError(t, "UnmarshalJSON cannot decode empty bytes", func() {
 				k.GetParams(ctx)
@@ -42,14 +46,19 @@ func TestMigrate6to7(t *testing.T) {
 			keeper.Migrate6to7(k)(ctx)
 
 			assert.NotPanics(t, func() {
-				subspace.Get(ctx, types.KeyGateway, &actual)
+				subspace.Get(ctx, types.KeyGateway, &actualGateway)
+			})
+			assert.NotPanics(t, func() {
+				subspace.Get(ctx, types.KeyEndBlockerLimit, &actualEndBlockerLimit)
 			})
 			assert.NotPanics(t, func() {
 				k.GetParams(ctx)
 			})
 
-			assert.Equal(t, types.DefaultParams().Gateway, actual)
+			assert.Equal(t, types.DefaultParams().Gateway, actualGateway)
 			assert.Equal(t, types.DefaultParams().Gateway, k.GetParams(ctx).Gateway)
+			assert.Equal(t, types.DefaultParams().EndBlockerLimit, actualEndBlockerLimit)
+			assert.Equal(t, types.DefaultParams().EndBlockerLimit, k.GetParams(ctx).EndBlockerLimit)
 		}).
 		Run(t)
 

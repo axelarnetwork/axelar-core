@@ -22,6 +22,8 @@ var (
 	KeyChainMaintainerCheckWindow = []byte("chainMaintainerCheckWindow")
 	// KeyGateway represents the key for the gateway's address
 	KeyGateway = []byte("gateway")
+	// KeyEndBlockerLimit represents the key for the end blocker limit
+	KeyEndBlockerLimit = []byte("endBlockerLimit")
 )
 
 // KeyTable retrieves a subspace table for the module
@@ -37,6 +39,7 @@ func DefaultParams() Params {
 		ChainMaintainerIncorrectVoteThreshold: utils.NewThreshold(15, 100),
 		ChainMaintainerCheckWindow:            500,
 		Gateway:                               sdk.AccAddress{},
+		EndBlockerLimit:                       50,
 	}
 }
 
@@ -55,6 +58,7 @@ func (m *Params) ParamSetPairs() params.ParamSetPairs {
 		params.NewParamSetPair(KeyChainMaintainerIncorrectVoteThreshold, &m.ChainMaintainerIncorrectVoteThreshold, validateThresholdWith("ChainMaintainerIncorrectVoteThreshold")),
 		params.NewParamSetPair(KeyChainMaintainerCheckWindow, &m.ChainMaintainerCheckWindow, validateChainMaintainerCheckWindow),
 		params.NewParamSetPair(KeyGateway, &m.Gateway, validateGateway),
+		params.NewParamSetPair(KeyEndBlockerLimit, &m.EndBlockerLimit, validateEndBlockerLimit),
 	}
 }
 
@@ -77,6 +81,10 @@ func (m Params) Validate() error {
 	}
 
 	if err := validateGateway(m.Gateway); err != nil {
+		return err
+	}
+
+	if err := validateEndBlockerLimit(m.EndBlockerLimit); err != nil {
 		return err
 	}
 
@@ -127,6 +135,18 @@ func validateGateway(i interface{}) error {
 
 	if err := sdk.VerifyAddressFormat(val); err != nil {
 		return sdkerrors.Wrap(err, "invalid Gateway")
+	}
+
+	return nil
+}
+
+func validateEndBlockerLimit(limit interface{}) error {
+	v, ok := limit.(uint64)
+	if !ok {
+		return fmt.Errorf("invalid parameter type for end blocker limit: %T", limit)
+	}
+	if v == 0 {
+		return fmt.Errorf("end blocker limit must be >0")
 	}
 
 	return nil

@@ -10,6 +10,7 @@ import (
 func Migrate6to7(k Keeper) func(ctx sdk.Context) error {
 	return func(ctx sdk.Context) error {
 		addModuleParamGateway(ctx, k)
+		addModuleParamEndBlockerLimit(ctx, k)
 
 		return nil
 	}
@@ -17,4 +18,8 @@ func Migrate6to7(k Keeper) func(ctx sdk.Context) error {
 
 func addModuleParamGateway(ctx sdk.Context, k Keeper) {
 	k.params.Set(ctx, types.KeyGateway, types.DefaultParams().Gateway)
+}
+
+func addModuleParamEndBlockerLimit(ctx sdk.Context, k Keeper) {
+	k.params.Set(ctx, types.KeyEndBlockerLimit, types.DefaultParams().EndBlockerLimit)
 }
