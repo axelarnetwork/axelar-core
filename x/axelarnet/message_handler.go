@@ -111,8 +111,8 @@ func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n ty
 	// Skip if packet not sent to Axelar message sender account.
 	if data.GetReceiver() != types.AxelarGMPAccount.String() {
 		// Rate limit non-GMP IBC transfers
-		// IBC receives are rate limited on the Incoming direction (tokens coming in to Axelar hub).
-		if err := r.RateLimitPacket(ctx, packet, nexus.Incoming, types.NewIBCPath(packet.GetDestPort(), packet.GetDestChannel())); err != nil {
+		// IBC receives are rate limited on the from direction (tokens coming from the source chain).
+		if err := r.RateLimitPacket(ctx, packet, nexus.TransferDirectionFrom, types.NewIBCPath(packet.GetDestPort(), packet.GetDestChannel())); err != nil {
 			return channeltypes.NewErrorAcknowledgement(err)
 		}
 
@@ -173,8 +173,8 @@ func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n ty
 	}
 
 	if rateLimitPacket {
-		// IBC receives are rate limited on the Incoming direction (tokens coming in to Axelar hub).
-		if err := r.RateLimitPacket(ctx, packet, nexus.Incoming, types.NewIBCPath(packet.GetDestPort(), packet.GetDestChannel())); err != nil {
+		// IBC receives are rate limited on the from direction (tokens coming from the source chain).
+		if err := r.RateLimitPacket(ctx, packet, nexus.TransferDirectionFrom, types.NewIBCPath(packet.GetDestPort(), packet.GetDestChannel())); err != nil {
 			return channeltypes.NewErrorAcknowledgement(err)
 		}
 	}

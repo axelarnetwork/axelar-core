@@ -13,6 +13,7 @@ const (
 	AttributeKeyAsset                  = "asset"
 	AttributeKeyLimit                  = "limit"
 	AttributeKeyTransferEpoch          = "transferEpoch"
+	AttributeKeyBlock                  = "block"
 )
 
 // Event attribute values
