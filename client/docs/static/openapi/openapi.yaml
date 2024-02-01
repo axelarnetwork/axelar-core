@@ -14629,6 +14629,12 @@ paths:
                       time_left:
                         type: string
                         title: time_left indicates the time left in the rate limit window
+                      from:
+                        type: string
+                        format: byte
+                      to:
+                        type: string
+                        format: byte
         default:
           description: An unexpected error response
           content:
@@ -47395,6 +47401,12 @@ components:
         time_left:
           type: string
           title: time_left indicates the time left in the rate limit window
+        from:
+          type: string
+          format: byte
+        to:
+          type: string
+          format: byte
     axelar.nexus.v1beta1.TransferRateLimitResponse:
       type: object
       properties:
@@ -47415,6 +47427,12 @@ components:
             time_left:
               type: string
               title: time_left indicates the time left in the rate limit window
+            from:
+              type: string
+              format: byte
+            to:
+              type: string
+              format: byte
     axelar.nexus.v1beta1.TransfersForChainResponse:
       type: object
       properties:

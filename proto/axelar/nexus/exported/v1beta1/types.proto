@@ -82,10 +82,10 @@ enum TransferDirection {
 
   TRANSFER_DIRECTION_UNSPECIFIED = 0
       [ (gogoproto.enumvalue_customname) = "Unspecified" ];
-  TRANSFER_DIRECTION_INCOMING = 1
-      [ (gogoproto.enumvalue_customname) = "Incoming" ];
-  TRANSFER_DIRECTION_OUTGOING = 2
-      [ (gogoproto.enumvalue_customname) = "Outgoing" ];
+  TRANSFER_DIRECTION_FROM = 1
+      [ (gogoproto.enumvalue_customname) = "TransferDirectionFrom" ];
+  TRANSFER_DIRECTION_TO = 2
+      [ (gogoproto.enumvalue_customname) = "TransferDirectionTo" ];
 }
 
 message GeneralMessage {

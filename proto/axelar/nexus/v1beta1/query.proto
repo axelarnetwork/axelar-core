@@ -141,16 +141,26 @@ message TransferRateLimit {
   google.protobuf.Duration window = 2
       [ (gogoproto.stdduration) = true, (gogoproto.nullable) = false ];
   bytes incoming = 3 [
+    deprecated = true,
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
     (gogoproto.nullable) = false
   ];
   bytes outgoing = 4 [
+    deprecated = true,
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
     (gogoproto.nullable) = false
   ];
   // time_left indicates the time left in the rate limit window
   google.protobuf.Duration time_left = 5
       [ (gogoproto.stdduration) = true, (gogoproto.nullable) = false ];
+  bytes from = 6 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.nullable) = false
+  ];
+  bytes to = 7 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.nullable) = false
+  ];
 }
 
 message MessageRequest { string id = 1 [ (gogoproto.customname) = "ID" ]; }
