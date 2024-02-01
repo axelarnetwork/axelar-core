@@ -7,10 +7,6 @@ on:
         description: Github tag to release binaries for (reusing an existing tag will make the pipeline fail)
         required: true
         default: latest
-      cgo:
-        description: Whether to enable cgo ("true"/"false")
-        required: true
-        default: "true"
       wasm:
         description: Whether to enable wasm ("true"/"false")
         required: true
@@ -77,11 +73,7 @@ jobs:
           SEMVER: ${{ github.event.inputs.tag }}
           WASM: ${{ github.event.inputs.wasm }}
           IBC_WASM_HOOKS: ${{ github.event.inputs.ibc-wasm-hooks }}
-          CGO_ENABLED: 0
         run: |
-          if [ "${{ github.event.inputs.cgo }}" == "true" ]; then
-            export CGO_ENABLED=1
-          fi
           OS=$(echo "$OS_TYPE" | sed -e 's/ubuntu-20.04/linux/; s/macos-latest/darwin/')
           make build-binaries-multiarch
           mv ./bin/axelard ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
@@ -183,16 +175,12 @@ jobs:
 
       - name: Build and push docker images
         run: |
-          if [ "${{ github.event.inputs.cgo }}" == "true" ]; then
-            export CGO_ENABLED=1
-          fi
           make build-push-docker-images
         env:
           PLATFORM: ${{ matrix.platform }}
           SEMVER: ${{ github.event.inputs.tag }}
           WASM: ${{ github.event.inputs.wasm }}
           IBC_WASM_HOOKS: ${{ github.event.inputs.ibc-wasm-hooks }}
-          CGO_ENABLED: 0
 
   combine-sign:
 
