@@ -38,8 +38,8 @@ func (k Keeper) RateLimitTransfer(ctx sdk.Context, chain exported.ChainName, ass
 			types.AttributeKeyAsset, asset,
 			types.AttributeKeyLimit, rateLimit.Limit,
 			types.AttributeKeyTransferEpoch, transferEpoch.Amount,
-			types.AttributeKeyBlock, ctx.BlockHeight())
-
+			types.AttributeKeyBlock, ctx.BlockHeight(),
+		)
 		return sdkerrors.Wrap(types.ErrRateLimitExceeded, err.Error())
 	}
 
