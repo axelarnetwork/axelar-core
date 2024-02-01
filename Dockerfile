@@ -4,6 +4,7 @@ FROM golang:1.21-alpine3.18 as build
 
 ARG ARCH=x86_64
 ARG WASM=true
+ARG IBC_WASM_HOOKS=false
 
 RUN apk add --no-cache --update \
   ca-certificates \
@@ -30,7 +31,7 @@ RUN if [[ "${WASM}" == "true" ]]; then \
 
 COPY . .
 
-RUN make MUSLC="${WASM}" build
+RUN make MUSLC="${WASM}" WASM="${WASM}" IBC_WASM_HOOKS="${IBC_WASM_HOOKS}" build
 
 FROM alpine:3.18
 
