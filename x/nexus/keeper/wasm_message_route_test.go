@@ -64,6 +64,7 @@ func TestNewMessageRoute(t *testing.T) {
 
 				return params
 			}
+			nexusK.SetMessageExecutedFunc = func(_ sdk.Context, _ string) error { return nil }
 		}).
 		Branch(
 			When("the message has an asset", func() {
@@ -95,6 +96,8 @@ func TestNewMessageRoute(t *testing.T) {
 					assert.NoError(t, json.Unmarshal(wasmK.ExecuteCalls()[0].Msg, &actual))
 					assert.Len(t, actual.RouteMessages, 1)
 					assert.Equal(t, exported.FromGeneralMessage(msg), actual.RouteMessages[0])
+
+					assert.Equal(t, len(nexusK.SetMessageExecutedCalls()), 1)
 				}),
 		).
 		Run(t)

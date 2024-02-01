@@ -35,6 +35,10 @@ func NewMessageRoute(nexus types.Nexus, account types.AccountKeeper, wasm types.
 			return err
 		}
 
+		if err := nexus.SetMessageExecuted(ctx, msg.ID); err != nil {
+			return err
+		}
+
 		return nil
 	}
 }
