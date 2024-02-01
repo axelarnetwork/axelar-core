@@ -8,10 +8,11 @@ DOCKER_BUF := $(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace bu
 HTTPS_GIT := https://github.com/axelarnetwork/axelar-core.git
 PUSH_DOCKER_IMAGE := true
 
+# Default values that can be overridden by the caller via `make VAR=value [target]`
 WASM := true
 MAX_WASM_SIZE := $(shell echo "$$((3 * 1024 * 1024))")  # 3 MB max wasm bytecode size
 IBC_WASM_HOOKS := false
-export CGO_ENABLED := 1
+export CGO_ENABLED := 1 # Export env var to go build so Cosmos SDK can see it
 
 $(info $$WASM is [${WASM}])
 $(info $$IBC_WASM_HOOKS is [${IBC_WASM_HOOKS}])
