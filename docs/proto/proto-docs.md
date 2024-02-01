@@ -1587,7 +1587,7 @@ ChainState represents the state of a registered blockchain
 | `chain` | [string](#string) |  |  |
 | `amount` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 | `epoch` | [uint64](#uint64) |  |  |
-| `direction` | [axelar.nexus.exported.v1beta1.TransferDirection](#axelar.nexus.exported.v1beta1.TransferDirection) |  | indicates whether the tracking is for transfers going to |
+| `direction` | [axelar.nexus.exported.v1beta1.TransferDirection](#axelar.nexus.exported.v1beta1.TransferDirection) |  | indicates whether the rate tracking is for transfers going |
 
 
 
