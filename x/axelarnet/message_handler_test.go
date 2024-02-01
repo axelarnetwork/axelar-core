@@ -130,7 +130,7 @@ func TestHandleMessage(t *testing.T) {
 			}
 
 			n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error {
-				if direction == nexus.Incoming && asset.Equal(token) {
+				if direction == nexus.TransferDirectionFrom && asset.Equal(token) {
 					return fmt.Errorf("rate limit exceeded")
 				}
 
@@ -562,7 +562,7 @@ func TestHandleMessageWithToken(t *testing.T) {
 			}
 
 			n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error {
-				if direction == nexus.Incoming && asset.Equal(token) {
+				if direction == nexus.TransferDirectionFrom && asset.Equal(token) {
 					return fmt.Errorf("rate limit exceeded")
 				}
 

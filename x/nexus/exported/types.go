@@ -244,7 +244,7 @@ type MaintainerState interface {
 // ValidateBasic validates the transfer direction
 func (m TransferDirection) ValidateBasic() error {
 	switch m {
-	case Incoming, Outgoing:
+	case TransferDirectionFrom, TransferDirectionTo:
 		return nil
 	default:
 		return fmt.Errorf("invalid transfer direction %s", m)

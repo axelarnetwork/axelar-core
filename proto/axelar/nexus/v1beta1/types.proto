@@ -60,6 +60,6 @@ message TransferEpoch {
   cosmos.base.v1beta1.Coin amount = 2 [ (gogoproto.nullable) = false ];
   uint64 epoch = 3;
   axelar.nexus.exported.v1beta1.TransferDirection direction =
-      4; // indicates whether the tracking is for transfers outgoing
-         // to that chain or incoming from it
+      4; // indicates whether the rate tracking is for transfers going
+         // to that chain or coming from it
 }
