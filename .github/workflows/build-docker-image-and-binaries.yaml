@@ -23,9 +23,9 @@ jobs:
         go-version:
           - 1.21
         os: [ubuntu-20.04, macos-latest]
-        arch: [amd64, arm64, arm]
+        arch: [amd64, arm64]
         exclude:
-          - {os: "macos-latest", arch: "arm"}
+          - {os: "ubuntu-20.04", arch: "arm64"}
 
     permissions:
       contents: write
@@ -48,7 +48,7 @@ jobs:
           aws s3 ls s3://axelar-releases/axelard/"$SEMVER" && echo "tag already exists, use a new one" && exit 1
 
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           fetch-depth: '0'
           ref: ${{ github.event.inputs.tag }}
@@ -75,7 +75,7 @@ jobs:
           IBC_WASM_HOOKS: ${{ github.event.inputs.ibc-wasm-hooks }}
         run: |
           OS=$(echo "$OS_TYPE" | sed -e 's/ubuntu-20.04/linux/; s/macos-latest/darwin/')
-          make build-binaries-multiarch
+          make ARCH="$ARCH" build-binaries-multiarch
           mv ./bin/axelard ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
           gpg --armor --detach-sign  ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
 
@@ -137,7 +137,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-20.04]
-        platform: [linux/arm64,linux/amd64,linux/arm/v7,linux/arm/v6]
+        platform: [linux/amd64]
 
     permissions:
       contents: write
@@ -147,7 +147,7 @@ jobs:
     steps:
 
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           fetch-depth: '0'
           ref: ${{ github.event.inputs.tag }}
@@ -211,10 +211,7 @@ jobs:
       - name: Create multiarch manifest
         run: |
           docker buildx imagetools create -t axelarnet/axelar-core:${SEMVER} \
-            axelarnet/axelar-core-linux-arm64:${SEMVER} \
-            axelarnet/axelar-core-linux-amd64:${SEMVER} \
-            axelarnet/axelar-core-linux-armv6:${SEMVER} \
-            axelarnet/axelar-core-linux-armv7:${SEMVER}
+            axelarnet/axelar-core-linux-amd64:${SEMVER}
         env:
           SEMVER: ${{ github.event.inputs.tag }}
 
