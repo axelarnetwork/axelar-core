@@ -359,7 +359,7 @@ func NewAxelarApp(
 	return app
 }
 
-func initICS4Wrapper(keepers *keeperCache, wasmHooks ibchooks.WasmHooks) ibchooks.ICS4Middleware {
+func initICS4Wrapper(keepers *keeperCache, wasmHooks *ibchooks.WasmHooks) ibchooks.ICS4Middleware {
 	// ICS4Wrapper deals with sending IBC packets. These need to get rate limited when appropriate,
 	// so we wrap the channel keeper (which implements the ICS4Wrapper interface) with a rate limiter.
 	ics4Wrapper := axelarnet.NewRateLimitedICS4Wrapper(
@@ -368,7 +368,7 @@ func initICS4Wrapper(keepers *keeperCache, wasmHooks ibchooks.WasmHooks) ibchook
 		getKeeper[axelarnetKeeper.Keeper](keepers),
 	)
 	// create a middleware to integrate wasm hooks into the ibc pipeline
-	if wasmHooks.ProperlyConfigured() {
+	if wasmHooks != nil {
 		return ibchooks.NewICS4Middleware(ics4Wrapper, wasmHooks)
 	} else {
 		return ibchooks.NewICS4Middleware(ics4Wrapper, nil)
@@ -390,17 +390,17 @@ func initIBCMiddleware(keepers *keeperCache, ics4Middleware ibchooks.ICS4Middlew
 	return ibchooks.NewIBCMiddleware(ibcModule, &ics4Middleware)
 }
 
-func initWasmHooks(keys map[string]*sdk.KVStoreKey) ibchooks.WasmHooks {
-	var wasmHooks ibchooks.WasmHooks
+func initWasmHooks(keys map[string]*sdk.KVStoreKey) *ibchooks.WasmHooks {
 	if !(IsWasmEnabled() && IsIBCWasmHooksEnabled()) {
-		return wasmHooks
+		return nil
 	}
 
 	// Configure the IBC hooks keeper to make wasm calls via IBC transfer memo
 	ibcHooksKeeper := ibchookskeeper.NewKeeper(keys[ibchookstypes.StoreKey])
 
 	// The contract keeper needs to be set later
-	return ibchooks.NewWasmHooks(&ibcHooksKeeper, nil, sdk.GetConfig().GetBech32AccountAddrPrefix())
+	var wasmHooks ibchooks.WasmHooks = ibchooks.NewWasmHooks(&ibcHooksKeeper, nil, sdk.GetConfig().GetBech32AccountAddrPrefix())
+	return &wasmHooks
 }
 
 func initIBCRouter(keepers *keeperCache, axelarnetModule porttypes.IBCModule) *porttypes.Router {
