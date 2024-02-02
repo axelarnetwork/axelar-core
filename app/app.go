@@ -259,7 +259,9 @@ func NewAxelarApp(
 	setKeeper(keepers, initWasmContractKeeper(keepers))
 
 	// set the contract keeper for the Ics20WasmHooks
-	wasmHooks.ContractKeeper = getKeeper[wasmkeeper.PermissionedKeeper](keepers)
+	if wasmHooks != nil {
+		wasmHooks.ContractKeeper = getKeeper[wasmkeeper.PermissionedKeeper](keepers)
+	}
 
 	// set up governance keeper last when it has access to all other keepers to set up governance routes
 	setKeeper(keepers, initGovernanceKeeper(appCodec, keys, keepers))
