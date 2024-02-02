@@ -23,9 +23,9 @@ jobs:
         go-version:
           - 1.21
         os: [ubuntu-20.04, macos-latest]
-        arch: [amd64, arm64, arm]
+        arch: [amd64, arm64]
         exclude:
-          - {os: "macos-latest", arch: "arm"}
+          - {os: "ubuntu-20.04", arch: "arm64"}
 
     permissions:
       contents: write
