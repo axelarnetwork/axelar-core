@@ -368,11 +368,7 @@ func initICS4Wrapper(keepers *keeperCache, wasmHooks *ibchooks.WasmHooks) ibchoo
 		getKeeper[axelarnetKeeper.Keeper](keepers),
 	)
 	// create a middleware to integrate wasm hooks into the ibc pipeline
-	if wasmHooks != nil {
-		return ibchooks.NewICS4Middleware(ics4Wrapper, wasmHooks)
-	} else {
-		return ibchooks.NewICS4Middleware(ics4Wrapper, nil)
-	}
+	return ibchooks.NewICS4Middleware(ics4Wrapper, wasmHooks)
 }
 
 func initIBCMiddleware(keepers *keeperCache, ics4Middleware ibchooks.ICS4Middleware) ibchooks.IBCMiddleware {
