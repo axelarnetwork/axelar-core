@@ -75,7 +75,7 @@ jobs:
           IBC_WASM_HOOKS: ${{ github.event.inputs.ibc-wasm-hooks }}
         run: |
           OS=$(echo "$OS_TYPE" | sed -e 's/ubuntu-20.04/linux/; s/macos-latest/darwin/')
-          make build-binaries-multiarch
+          make ARCH="$ARCH" build-binaries-multiarch
           mv ./bin/axelard ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
           gpg --armor --detach-sign  ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
 
