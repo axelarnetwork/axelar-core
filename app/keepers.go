@@ -2,14 +2,15 @@ package app
 
 import (
 	"fmt"
+	"path/filepath"
 	"reflect"
 	"strings"
 
 	"github.com/CosmWasm/wasmd/x/wasm"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
-	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/server/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -161,7 +162,10 @@ func initStakingKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, ke
 	return &stakingK
 }
 
-func initWasmKeeper(encodingConfig axelarParams.EncodingConfig, keys map[string]*sdk.KVStoreKey, keepers *keeperCache, bApp *bam.BaseApp, wasmDir string, wasmConfig wasmtypes.WasmConfig, wasmOpts []wasm.Option) *wasm.Keeper {
+func initWasmKeeper(encodingConfig axelarParams.EncodingConfig, keys map[string]*sdk.KVStoreKey, keepers *keeperCache, bApp *bam.BaseApp, appOpts types.AppOptions, wasmOpts []wasm.Option, homePath string) *wasm.Keeper {
+	wasmDir := filepath.Join(homePath, "wasm")
+	wasmConfig := mustReadWasmConfig(appOpts)
+
 	// The last arguments can contain custom message handlers, and custom query handlers,
 	// if we want to allow any custom callbacks
 	wasmOpts = append(wasmOpts, wasmkeeper.WithMessageHandlerDecorator(
