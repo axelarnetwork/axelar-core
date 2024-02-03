@@ -219,8 +219,6 @@ func NewAxelarApp(
 	// BaseApp handles interactions with Tendermint through the ABCI protocol
 	bApp := initBaseApp(db, traceStore, encodingConfig, keepers, baseAppOptions, logger)
 
-	wasmDir := filepath.Join(homePath, "wasm")
-	wasmConfig := mustReadWasmConfig(appOpts)
 	appCodec := encodingConfig.Codec
 	moduleAccountPermissions := initModuleAccountPermissions()
 
@@ -255,12 +253,15 @@ func NewAxelarApp(
 	setKeeper(keepers, initIBCTransferKeeper(appCodec, keys, keepers, ics4Wrapper))
 
 	setKeeper(keepers, initAxelarIBCKeeper(keepers))
-	setKeeper(keepers, initWasmKeeper(encodingConfig, keys, keepers, bApp, wasmDir, wasmConfig, wasmOpts))
-	setKeeper(keepers, initWasmContractKeeper(keepers))
 
-	// set the contract keeper for the Ics20WasmHooks
-	if wasmHooks != nil {
-		wasmHooks.ContractKeeper = getKeeper[wasmkeeper.PermissionedKeeper](keepers)
+	if IsWasmEnabled() {
+		setKeeper(keepers, initWasmKeeper(encodingConfig, keys, keepers, bApp, appOpts, wasmOpts, homePath))
+		setKeeper(keepers, initWasmContractKeeper(keepers))
+
+		// set the contract keeper for the Ics20WasmHooks
+		if wasmHooks != nil {
+			wasmHooks.ContractKeeper = getKeeper[wasmkeeper.PermissionedKeeper](keepers)
+		}
 	}
 
 	// set up governance keeper last when it has access to all other keepers to set up governance routes
@@ -335,7 +336,7 @@ func NewAxelarApp(
 	app.SetBeginBlocker(app.BeginBlocker)
 	app.SetEndBlocker(app.EndBlocker)
 
-	app.SetAnteHandler(initAnteHandlers(encodingConfig, keys, keepers, wasmConfig))
+	app.SetAnteHandler(initAnteHandlers(encodingConfig, keys, keepers, appOpts))
 
 	if loadLatest {
 		if err := app.LoadLatestVersion(); err != nil {
@@ -397,7 +398,7 @@ func initWasmHooks(keys map[string]*sdk.KVStoreKey) *ibchooks.WasmHooks {
 	ibcHooksKeeper := ibchookskeeper.NewKeeper(keys[ibchookstypes.StoreKey])
 
 	// The contract keeper needs to be set later
-	var wasmHooks ibchooks.WasmHooks = ibchooks.NewWasmHooks(&ibcHooksKeeper, nil, sdk.GetConfig().GetBech32AccountAddrPrefix())
+	var wasmHooks = ibchooks.NewWasmHooks(&ibcHooksKeeper, nil, sdk.GetConfig().GetBech32AccountAddrPrefix())
 	return &wasmHooks
 }
 
@@ -592,7 +593,7 @@ func mustReadWasmConfig(appOpts servertypes.AppOptions) wasmtypes.WasmConfig {
 	return wasmConfig
 }
 
-func initAnteHandlers(encodingConfig axelarParams.EncodingConfig, keys map[string]*sdk.KVStoreKey, keepers *keeperCache, wasmConfig wasmtypes.WasmConfig) sdk.AnteHandler {
+func initAnteHandlers(encodingConfig axelarParams.EncodingConfig, keys map[string]*sdk.KVStoreKey, keepers *keeperCache, appOpts servertypes.AppOptions) sdk.AnteHandler {
 	// The baseAnteHandler handles signature verification and transaction pre-processing
 	baseAnteHandler, err := authAnte.NewAnteHandler(
 		authAnte.HandlerOptions{
@@ -613,6 +614,7 @@ func initAnteHandlers(encodingConfig axelarParams.EncodingConfig, keys map[strin
 
 	// enforce wasm limits earlier in the ante handler chain
 	if IsWasmEnabled() {
+		wasmConfig := mustReadWasmConfig(appOpts)
 		wasmAnteDecorators := []sdk.AnteDecorator{
 			wasmkeeper.NewLimitSimulationGasDecorator(wasmConfig.SimulationGasLimit),
 			wasmkeeper.NewCountTXDecorator(keys[wasm.StoreKey]),
@@ -859,7 +861,7 @@ func orderModulesForGenesis() []string {
 }
 
 func createStoreKeys() map[string]*sdk.KVStoreKey {
-	return sdk.NewKVStoreKeys(authtypes.StoreKey,
+	keys := []string{authtypes.StoreKey,
 		banktypes.StoreKey,
 		stakingtypes.StoreKey,
 		minttypes.StoreKey,
@@ -873,8 +875,6 @@ func createStoreKeys() map[string]*sdk.KVStoreKey {
 		ibctransfertypes.StoreKey,
 		capabilitytypes.StoreKey,
 		feegrant.StoreKey,
-		wasm.StoreKey,
-		ibchookstypes.StoreKey,
 		voteTypes.StoreKey,
 		evmTypes.StoreKey,
 		snapTypes.StoreKey,
@@ -883,7 +883,17 @@ func createStoreKeys() map[string]*sdk.KVStoreKey {
 		nexusTypes.StoreKey,
 		axelarnetTypes.StoreKey,
 		rewardTypes.StoreKey,
-		permissionTypes.StoreKey)
+		permissionTypes.StoreKey}
+
+	if IsWasmEnabled() {
+		keys = append(keys, wasm.StoreKey)
+	}
+
+	if IsIBCWasmHooksEnabled() {
+		keys = append(keys, ibchookstypes.StoreKey)
+	}
+
+	return sdk.NewKVStoreKeys(keys...)
 }
 
 // GenesisState represents chain state at the start of the chain. Any initial state (account balances) are stored here.
