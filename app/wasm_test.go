@@ -10,9 +10,15 @@ import (
 	wasmvmtypes "github.com/CosmWasm/wasmvm/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
+	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/stretchr/testify/assert"
+	"github.com/tendermint/tendermint/libs/log"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/app"
+	"github.com/axelarnetwork/axelar-core/app/mock"
+	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	. "github.com/axelarnetwork/utils/test"
 )
 
@@ -249,4 +255,59 @@ func TestNewWasmAppModuleBasicOverride(t *testing.T) {
 	assert.Equal(t, state.Params.InstantiateDefaultPermission, wasmtypes.AccessTypeAnyOfAddresses)
 	assert.True(t, state.Params.CodeUploadAccess.Allowed(uploader))
 	assert.Len(t, state.Params.CodeUploadAccess.AllAuthorizedAddresses(), 1)
+}
+
+func TestICSMiddleWare(t *testing.T) {
+	encodingConfig := app.MakeEncodingConfig()
+	appCodec := encodingConfig.Codec
+
+	keys := app.CreateStoreKeys()
+	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
+	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
+	moduleAccountPermissions := app.InitModuleAccountPermissions()
+
+	testCases := []struct {
+		wasm  string
+		hooks string
+	}{
+		{"false", "false"},
+		{"true", "false"},
+		{"true", "true"}}
+
+	for _, testCase := range testCases {
+		t.Run("wasm_enabled:"+testCase.wasm+"-hooks_enabled:"+testCase.hooks, func(t *testing.T) {
+			app.WasmEnabled, app.IBCWasmHooksEnabled = testCase.wasm, testCase.hooks
+
+			keepers := app.NewKeeperCache()
+			app.SetKeeper(keepers, app.InitParamsKeeper(encodingConfig, keys[paramstypes.StoreKey], tkeys[paramstypes.TStoreKey]))
+			app.SetKeeper(keepers, app.InitAccountKeeper(appCodec, keys, keepers, moduleAccountPermissions))
+			app.SetKeeper(keepers, app.InitBankKeeper(appCodec, keys, keepers, moduleAccountPermissions))
+			app.SetKeeper(keepers, app.InitStakingKeeper(appCodec, keys, keepers))
+			app.SetKeeper(keepers, app.InitCapabilityKeeper(appCodec, keys, memKeys))
+			app.SetKeeper(keepers, app.InitUpgradeKeeper(appCodec, keys, nil, "home", nil))
+			app.SetKeeper(keepers, app.InitIBCKeeper(appCodec, keys, keepers))
+			app.SetKeeper(keepers, app.InitFeegrantKeeper(appCodec, keys, keepers))
+			app.SetKeeper(keepers, app.InitAxelarnetKeeper(appCodec, keys, keepers))
+			app.SetKeeper(keepers, app.InitNexusKeeper(appCodec, keys, keepers))
+
+			// this is the focus of the test, we need to ensure that the hooks and wrapper are correctly set up for each valid wasm/hooks flag combination
+			wasmHooks := app.InitWasmHooks(keys)
+			ics4Wrapper := app.InitICS4Wrapper(keepers, wasmHooks)
+
+			ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+			packet := &mock.PacketIMock{
+				ValidateBasicFunc:    func() error { return nil },
+				GetSourcePortFunc:    func() string { return "source port" },
+				GetSourceChannelFunc: func() string { return "source channel" },
+				GetDestPortFunc:      func() string { return "destination port" },
+				GetDestChannelFunc:   func() string { return "destination channel" },
+			}
+
+			// these must not panic and return an error unrelated to the wasm hook
+			assert.ErrorContains(t, ics4Wrapper.SendPacket(ctx, nil, packet), "channel: channel not found")
+			assert.ErrorContains(t, ics4Wrapper.WriteAcknowledgement(ctx, nil, packet, nil), "channel: channel not found")
+			_, ok := ics4Wrapper.GetAppVersion(ctx, "port", "channel")
+			assert.False(t, ok)
+		})
+	}
 }

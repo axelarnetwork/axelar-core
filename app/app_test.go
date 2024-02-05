@@ -21,20 +21,34 @@ import (
 func TestNewAxelarApp(t *testing.T) {
 	version.Version = "0.27.0"
 
-	assert.NotPanics(t, func() {
-		app.NewAxelarApp(
-			log.TestingLogger(),
-			dbm.NewMemDB(),
-			nil,
-			true,
-			nil,
-			"",
-			0,
-			app.MakeEncodingConfig(),
-			simapp.EmptyAppOptions{},
-			[]wasm.Option{},
-		)
-	})
+	testCases := []struct {
+		wasm  string
+		hooks string
+	}{
+		{"false", "false"},
+		{"true", "false"},
+		{"true", "true"}}
+
+	for _, testCase := range testCases {
+		app.WasmEnabled, app.IBCWasmHooksEnabled = testCase.wasm, testCase.hooks
+
+		t.Run("wasm_enabled:"+testCase.wasm+"-hooks_enabled:"+testCase.hooks, func(t *testing.T) {
+			assert.NotPanics(t, func() {
+				app.NewAxelarApp(
+					log.TestingLogger(),
+					dbm.NewMemDB(),
+					nil,
+					true,
+					nil,
+					"",
+					0,
+					app.MakeEncodingConfig(),
+					simapp.EmptyAppOptions{},
+					[]wasm.Option{},
+				)
+			})
+		})
+	}
 }
 
 // check that encoding is set so gogoproto extensions are supported
