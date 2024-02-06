@@ -90,6 +90,7 @@ message LabelInfo {
   string recipient_chain = 3
   [ (gogoproto.casttype) =
       "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string asset = 4;
 }
 
 message ConfirmDepositResponse {}

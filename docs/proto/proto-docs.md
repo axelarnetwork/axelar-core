@@ -4821,6 +4821,7 @@ commands handling all pending transfers
 | `label` | [string](#string) |  |  |
 | `recipient_address` | [bytes](#bytes) |  |  |
 | `recipient_chain` | [string](#string) |  |  |
+| `asset` | [string](#string) |  |  |
 
 
 

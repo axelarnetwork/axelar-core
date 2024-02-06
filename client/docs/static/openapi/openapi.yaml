@@ -2893,6 +2893,8 @@ paths:
                       format: byte
                     recipient_chain:
                       type: string
+                    asset:
+                      type: string
               title: MsgConfirmDeposit represents an erc20 deposit confirmation message
         required: true
       tags:
@@ -45425,6 +45427,8 @@ components:
               format: byte
             recipient_chain:
               type: string
+            asset:
+              type: string
       title: MsgConfirmDeposit represents an erc20 deposit confirmation message
     axelar.evm.v1beta1.ConfirmDepositResponse:
       type: object
@@ -45997,6 +46001,8 @@ components:
           type: string
           format: byte
         recipient_chain:
+          type: string
+        asset:
           type: string
     axelar.evm.v1beta1.LinkRequest:
       type: object
