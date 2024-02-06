@@ -209,54 +209,54 @@ func NewAxelarApp(
 	baseAppOptions ...func(*bam.BaseApp),
 ) *AxelarApp {
 
-	keys := createStoreKeys()
+	keys := CreateStoreKeys()
 	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
 	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
 
-	keepers := newKeeperCache()
-	setKeeper(keepers, initParamsKeeper(encodingConfig, keys[paramstypes.StoreKey], tkeys[paramstypes.TStoreKey]))
+	keepers := NewKeeperCache()
+	SetKeeper(keepers, InitParamsKeeper(encodingConfig, keys[paramstypes.StoreKey], tkeys[paramstypes.TStoreKey]))
 
 	// BaseApp handles interactions with Tendermint through the ABCI protocol
 	bApp := initBaseApp(db, traceStore, encodingConfig, keepers, baseAppOptions, logger)
 
 	appCodec := encodingConfig.Codec
-	moduleAccountPermissions := initModuleAccountPermissions()
+	moduleAccountPermissions := InitModuleAccountPermissions()
 
 	// set up predefined keepers
-	setKeeper(keepers, initAccountKeeper(appCodec, keys, keepers, moduleAccountPermissions))
-	setKeeper(keepers, initBankKeeper(appCodec, keys, keepers, moduleAccountPermissions))
-	setKeeper(keepers, initStakingKeeper(appCodec, keys, keepers))
-	setKeeper(keepers, initMintKeeper(appCodec, keys, keepers))
-	setKeeper(keepers, initDistributionKeeper(appCodec, keys, keepers, moduleAccountPermissions))
-	setKeeper(keepers, initSlashingKeeper(appCodec, keys, keepers))
-	setKeeper(keepers, initCrisisKeeper(keepers, invCheckPeriod))
-	setKeeper(keepers, initUpgradeKeeper(appCodec, keys, skipUpgradeHeights, homePath, bApp))
-	setKeeper(keepers, initEvidenceKeeper(appCodec, keys, keepers))
-	setKeeper(keepers, initFeegrantKeeper(appCodec, keys, keepers))
-	setKeeper(keepers, initCapabilityKeeper(appCodec, keys, memKeys))
-	setKeeper(keepers, initIBCKeeper(appCodec, keys, keepers))
+	SetKeeper(keepers, InitAccountKeeper(appCodec, keys, keepers, moduleAccountPermissions))
+	SetKeeper(keepers, InitBankKeeper(appCodec, keys, keepers, moduleAccountPermissions))
+	SetKeeper(keepers, InitStakingKeeper(appCodec, keys, keepers))
+	SetKeeper(keepers, initMintKeeper(appCodec, keys, keepers))
+	SetKeeper(keepers, initDistributionKeeper(appCodec, keys, keepers, moduleAccountPermissions))
+	SetKeeper(keepers, initSlashingKeeper(appCodec, keys, keepers))
+	SetKeeper(keepers, initCrisisKeeper(keepers, invCheckPeriod))
+	SetKeeper(keepers, InitUpgradeKeeper(appCodec, keys, skipUpgradeHeights, homePath, bApp))
+	SetKeeper(keepers, initEvidenceKeeper(appCodec, keys, keepers))
+	SetKeeper(keepers, InitFeegrantKeeper(appCodec, keys, keepers))
+	SetKeeper(keepers, InitCapabilityKeeper(appCodec, keys, memKeys))
+	SetKeeper(keepers, InitIBCKeeper(appCodec, keys, keepers))
 
 	// set up custom axelar keepers
-	setKeeper(keepers, initAxelarnetKeeper(appCodec, keys, keepers))
-	setKeeper(keepers, initEvmKeeper(appCodec, keys, keepers))
-	setKeeper(keepers, initNexusKeeper(appCodec, keys, keepers))
-	setKeeper(keepers, initRewardKeeper(appCodec, keys, keepers))
-	setKeeper(keepers, initMultisigKeeper(appCodec, keys, keepers))
-	setKeeper(keepers, initTssKeeper(appCodec, keys, keepers))
-	setKeeper(keepers, initSnapshotKeeper(appCodec, keys, keepers))
-	setKeeper(keepers, initVoteKeeper(appCodec, keys, keepers))
-	setKeeper(keepers, initPermissionKeeper(appCodec, keys, keepers))
+	SetKeeper(keepers, InitAxelarnetKeeper(appCodec, keys, keepers))
+	SetKeeper(keepers, initEvmKeeper(appCodec, keys, keepers))
+	SetKeeper(keepers, InitNexusKeeper(appCodec, keys, keepers))
+	SetKeeper(keepers, initRewardKeeper(appCodec, keys, keepers))
+	SetKeeper(keepers, initMultisigKeeper(appCodec, keys, keepers))
+	SetKeeper(keepers, initTssKeeper(appCodec, keys, keepers))
+	SetKeeper(keepers, initSnapshotKeeper(appCodec, keys, keepers))
+	SetKeeper(keepers, initVoteKeeper(appCodec, keys, keepers))
+	SetKeeper(keepers, initPermissionKeeper(appCodec, keys, keepers))
 
 	// set up ibc/wasm keepers
-	wasmHooks := initWasmHooks(keys)
-	ics4Wrapper := initICS4Wrapper(keepers, wasmHooks)
-	setKeeper(keepers, initIBCTransferKeeper(appCodec, keys, keepers, ics4Wrapper))
+	wasmHooks := InitWasmHooks(keys)
+	ics4Wrapper := InitICS4Wrapper(keepers, wasmHooks)
+	SetKeeper(keepers, initIBCTransferKeeper(appCodec, keys, keepers, ics4Wrapper))
 
-	setKeeper(keepers, initAxelarIBCKeeper(keepers))
+	SetKeeper(keepers, initAxelarIBCKeeper(keepers))
 
 	if IsWasmEnabled() {
-		setKeeper(keepers, initWasmKeeper(encodingConfig, keys, keepers, bApp, appOpts, wasmOpts, homePath))
-		setKeeper(keepers, initWasmContractKeeper(keepers))
+		SetKeeper(keepers, initWasmKeeper(encodingConfig, keys, keepers, bApp, appOpts, wasmOpts, homePath))
+		SetKeeper(keepers, initWasmContractKeeper(keepers))
 
 		// set the contract keeper for the Ics20WasmHooks
 		if wasmHooks != nil {
@@ -265,7 +265,7 @@ func NewAxelarApp(
 	}
 
 	// set up governance keeper last when it has access to all other keepers to set up governance routes
-	setKeeper(keepers, initGovernanceKeeper(appCodec, keys, keepers))
+	SetKeeper(keepers, initGovernanceKeeper(appCodec, keys, keepers))
 
 	// seal capability keeper after all keepers are set to be certain that all capabilities have been registered
 	getKeeper[capabilitykeeper.Keeper](keepers).Seal()
@@ -362,7 +362,7 @@ func NewAxelarApp(
 	return app
 }
 
-func initICS4Wrapper(keepers *keeperCache, wasmHooks *ibchooks.WasmHooks) ibchooks.ICS4Middleware {
+func InitICS4Wrapper(keepers *KeeperCache, wasmHooks *ibchooks.WasmHooks) ibchooks.ICS4Middleware {
 	// ICS4Wrapper deals with sending IBC packets. These need to get rate limited when appropriate,
 	// so we wrap the channel keeper (which implements the ICS4Wrapper interface) with a rate limiter.
 	ics4Wrapper := axelarnet.NewRateLimitedICS4Wrapper(
@@ -371,10 +371,16 @@ func initICS4Wrapper(keepers *keeperCache, wasmHooks *ibchooks.WasmHooks) ibchoo
 		getKeeper[axelarnetKeeper.Keeper](keepers),
 	)
 	// create a middleware to integrate wasm hooks into the ibc pipeline
-	return ibchooks.NewICS4Middleware(ics4Wrapper, wasmHooks)
+	if wasmHooks != nil {
+		return ibchooks.NewICS4Middleware(ics4Wrapper, wasmHooks)
+	} else {
+		// we need to erase the type of the wasm hooks when it is nil so the middleware's type casts do not succeed.
+		// Otherwise, it will try to call an interface function on wasmHooks and create a nil pointer panic
+		return ibchooks.NewICS4Middleware(ics4Wrapper, nil)
+	}
 }
 
-func initIBCMiddleware(keepers *keeperCache, ics4Middleware ibchooks.ICS4Middleware) ibchooks.IBCMiddleware {
+func initIBCMiddleware(keepers *KeeperCache, ics4Middleware ibchooks.ICS4Middleware) ibchooks.IBCMiddleware {
 	// IBCModule deals with received IBC packets. These need to get rate limited when appropriate,
 	// so we wrap the transfer module's IBCModule with a rate limiter.
 	ibcModule := axelarnet.NewAxelarnetIBCModule(
@@ -389,7 +395,7 @@ func initIBCMiddleware(keepers *keeperCache, ics4Middleware ibchooks.ICS4Middlew
 	return ibchooks.NewIBCMiddleware(ibcModule, &ics4Middleware)
 }
 
-func initWasmHooks(keys map[string]*sdk.KVStoreKey) *ibchooks.WasmHooks {
+func InitWasmHooks(keys map[string]*sdk.KVStoreKey) *ibchooks.WasmHooks {
 	if !(IsWasmEnabled() && IsIBCWasmHooksEnabled()) {
 		return nil
 	}
@@ -402,7 +408,7 @@ func initWasmHooks(keys map[string]*sdk.KVStoreKey) *ibchooks.WasmHooks {
 	return &wasmHooks
 }
 
-func initIBCRouter(keepers *keeperCache, axelarnetModule porttypes.IBCModule) *porttypes.Router {
+func initIBCRouter(keepers *KeeperCache, axelarnetModule porttypes.IBCModule) *porttypes.Router {
 	// Finalize the IBC router
 	// Create static IBC router, add axelarnet module as the IBC transfer route, and seal it
 	ibcRouter := porttypes.NewRouter()
@@ -419,7 +425,7 @@ func initIBCRouter(keepers *keeperCache, axelarnetModule porttypes.IBCModule) *p
 	return ibcRouter
 }
 
-func initMessageRouter(keepers *keeperCache) nexusTypes.MessageRouter {
+func initMessageRouter(keepers *KeeperCache) nexusTypes.MessageRouter {
 	messageRouter := nexusTypes.NewMessageRouter().
 		AddRoute(evmTypes.ModuleName, evmKeeper.NewMessageRoute()).
 		AddRoute(axelarnetTypes.ModuleName, axelarnetKeeper.NewMessageRoute(
@@ -469,7 +475,7 @@ func (app *AxelarApp) setUpgradeBehaviour(configurator module.Configurator) {
 	}
 }
 
-func initBaseApp(db dbm.DB, traceStore io.Writer, encodingConfig axelarParams.EncodingConfig, keepers *keeperCache, baseAppOptions []func(*bam.BaseApp), logger log.Logger) *bam.BaseApp {
+func initBaseApp(db dbm.DB, traceStore io.Writer, encodingConfig axelarParams.EncodingConfig, keepers *KeeperCache, baseAppOptions []func(*bam.BaseApp), logger log.Logger) *bam.BaseApp {
 	bApp := bam.NewBaseApp(Name, logger, db, encodingConfig.TxConfig.TxDecoder(), baseAppOptions...)
 	bApp.SetCommitMultiStoreTracer(traceStore)
 	bApp.SetVersion(version.Version)
@@ -478,7 +484,7 @@ func initBaseApp(db dbm.DB, traceStore io.Writer, encodingConfig axelarParams.En
 	return bApp
 }
 
-func initAppModules(keepers *keeperCache, bApp *bam.BaseApp, encodingConfig axelarParams.EncodingConfig, appOpts servertypes.AppOptions, axelarnetModule axelarnet.AppModule) []module.AppModule {
+func initAppModules(keepers *KeeperCache, bApp *bam.BaseApp, encodingConfig axelarParams.EncodingConfig, appOpts servertypes.AppOptions, axelarnetModule axelarnet.AppModule) []module.AppModule {
 	// NOTE: we may consider parsing `appOpts` inside module constructors. For the moment
 	// we prefer to be more strict in what arguments the modules expect.
 	var skipGenesisInvariants = cast.ToBool(appOpts.Get(crisis.FlagSkipGenesisInvariants))
@@ -593,7 +599,7 @@ func mustReadWasmConfig(appOpts servertypes.AppOptions) wasmtypes.WasmConfig {
 	return wasmConfig
 }
 
-func initAnteHandlers(encodingConfig axelarParams.EncodingConfig, keys map[string]*sdk.KVStoreKey, keepers *keeperCache, appOpts servertypes.AppOptions) sdk.AnteHandler {
+func initAnteHandlers(encodingConfig axelarParams.EncodingConfig, keys map[string]*sdk.KVStoreKey, keepers *KeeperCache, appOpts servertypes.AppOptions) sdk.AnteHandler {
 	// The baseAnteHandler handles signature verification and transaction pre-processing
 	baseAnteHandler, err := authAnte.NewAnteHandler(
 		authAnte.HandlerOptions{
@@ -639,7 +645,7 @@ func initAnteHandlers(encodingConfig axelarParams.EncodingConfig, keys map[strin
 	return sdk.ChainAnteDecorators(anteDecorators...)
 }
 
-func initMessageAnteDecorators(encodingConfig axelarParams.EncodingConfig, keepers *keeperCache) ante.MessageAnteHandler {
+func initMessageAnteDecorators(encodingConfig axelarParams.EncodingConfig, keepers *KeeperCache) ante.MessageAnteHandler {
 	return ante.ChainMessageAnteDecorators(
 		ante.NewLogMsgDecorator(encodingConfig.Codec),
 		ante.NewCheckCommissionRate(getKeeper[stakingkeeper.Keeper](keepers)),
@@ -654,7 +660,7 @@ func initMessageAnteDecorators(encodingConfig axelarParams.EncodingConfig, keepe
 	)
 }
 
-func initModuleAccountPermissions() map[string][]string {
+func InitModuleAccountPermissions() map[string][]string {
 	return map[string][]string{
 		authtypes.FeeCollectorName:     nil,
 		distrtypes.ModuleName:          nil,
@@ -860,7 +866,7 @@ func orderModulesForGenesis() []string {
 	return genesisOrder
 }
 
-func createStoreKeys() map[string]*sdk.KVStoreKey {
+func CreateStoreKeys() map[string]*sdk.KVStoreKey {
 	keys := []string{authtypes.StoreKey,
 		banktypes.StoreKey,
 		stakingtypes.StoreKey,
