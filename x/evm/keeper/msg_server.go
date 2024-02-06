@@ -249,6 +249,7 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 			Label:            req.Label,
 			RecipientAddress: types.Address(common.HexToAddress(req.RecipientAddr)),
 			RecipientChain:   req.RecipientChain,
+			Asset:            req.Asset,
 		}
 		err = keeper.SetLabeledBurnerAddress(ctx, labelInfo, burnerAddress)
 		if err != nil {

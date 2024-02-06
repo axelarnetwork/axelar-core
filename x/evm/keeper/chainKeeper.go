@@ -131,7 +131,8 @@ func getAddressLabelKey(labelInfo types.LabelInfo) key.Key {
 	return addressLabelPrefix.
 		Append(key.FromStrHashed(labelInfo.RecipientAddress.Hex())).
 		Append(key.FromStrHashed(labelInfo.RecipientChain.String())).
-		Append(key.FromStrHashed(labelInfo.Label.String()))
+		Append(key.FromStrHashed(labelInfo.Label.String())).
+		Append(key.FromStrHashed(labelInfo.Asset))
 }
 
 func (k chainKeeper) GetLabeledBurnerAddress(ctx sdk.Context, labelInfo types.LabelInfo) (types.Address, error) {
