@@ -5,12 +5,12 @@ import (
 	"context"
 	goerrors "errors"
 	"fmt"
-	"github.com/ethereum/go-ethereum"
 	"math/big"
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	geth "github.com/ethereum/go-ethereum/core/types"

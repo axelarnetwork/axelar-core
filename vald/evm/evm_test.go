@@ -3,7 +3,6 @@ package evm_test
 import (
 	"context"
 	"fmt"
-	"github.com/axelarnetwork/axelar-core/utils/errors"
 	"math/big"
 	"strings"
 	"testing"
@@ -19,6 +18,7 @@ import (
 	mock2 "github.com/axelarnetwork/axelar-core/sdk-utils/broadcast/mock"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	"github.com/axelarnetwork/axelar-core/utils/errors"
 	"github.com/axelarnetwork/axelar-core/vald/evm"
 	evmmock "github.com/axelarnetwork/axelar-core/vald/evm/mock"
 	evmRpc "github.com/axelarnetwork/axelar-core/vald/evm/rpc"
