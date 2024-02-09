@@ -1,9 +1,10 @@
 package types
 
 import (
+	"github.com/ethereum/go-ethereum/common"
+
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
-	"github.com/ethereum/go-ethereum/common"
 )
 
 // Event types
