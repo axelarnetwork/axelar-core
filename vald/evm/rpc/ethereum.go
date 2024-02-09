@@ -22,7 +22,6 @@ import (
 type EthereumJSONRPCClient interface {
 	BlockNumber(ctx context.Context) (uint64, error)
 	CallContract(ctx context.Context, msg ethereum.CallMsg, blockNumber *big.Int) ([]byte, error)
-	TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error)
 	FilterLogs(ctx context.Context, q ethereum.FilterQuery) ([]types.Log, error)
 	Close()
 }
