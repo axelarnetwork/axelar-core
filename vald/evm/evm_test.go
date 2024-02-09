@@ -211,7 +211,7 @@ func TestMgr_GetTxReceiptIfFinalized(t *testing.T) {
 		Then("tx is considered not finalized", func(t *testing.T) {
 			txReceipt, err := mgr.GetTxReceiptIfFinalized(chain, tx.Hash(), confHeight)
 
-			assert.ErrorContains(t, err, "failed")
+			assert.NoError(t, err)
 			assert.Nil(t, txReceipt)
 		}).
 		Run(t)
@@ -920,7 +920,7 @@ func TestMgr_GetTxReceiptsIfFinalized(t *testing.T) {
 				Then("should not retrieve receipts", func(t *testing.T) {
 					receipts, err := mgr.GetTxReceiptsIfFinalized(chain, txHashes, confHeight)
 					assert.NoError(t, err)
-					slices.ForEach(receipts, func(result results.Result[*geth.Receipt]) { assert.ErrorContains(t, result.Err(), "failed") })
+					slices.ForEach(receipts, func(result results.Result[*geth.Receipt]) { assert.Equal(t, result.Err(), evm.FailedTransaction) })
 				}),
 
 			When("transactions are finalized", func() {

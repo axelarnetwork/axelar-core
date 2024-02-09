@@ -42,6 +42,9 @@ var (
 // NotFinalized is returned when a transaction is not finalized
 var NotFinalized = goerrors.New("not finalized")
 
+// FailedTransaction is returned when a transaction did not succeed
+var FailedTransaction = goerrors.New("failed transaction")
+
 // Mgr manages all communication with Ethereum
 type Mgr struct {
 	rpcs                      map[string]rpc.Client
@@ -306,6 +309,10 @@ func (mgr Mgr) ProcessGatewayTxsConfirmation(event *types.ConfirmGatewayTxsStart
 			logger.Debug(fmt.Sprintf("transaction %s in block %s not finalized", txID.Hex(), result.Ok().BlockNumber.String()))
 			logger.Infof("broadcasting empty vote due to error: %s", result.Err().Error())
 			votes = append(votes, voteTypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain)))
+		case FailedTransaction:
+			logger.Debug(fmt.Sprintf("transaction %s in block %s has failed status", txID.Hex(), result.Ok().BlockNumber.String()))
+			logger.Infof("broadcasting empty vote due to error: %s", result.Err().Error())
+			votes = append(votes, voteTypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain)))
 		case ethereum.NotFound:
 			logger.Debug(fmt.Sprintf("transaction receipt %s not found", txID.Hex()))
 			logger.Infof("broadcasting empty vote due to error: %s", result.Err().Error())
@@ -442,6 +449,7 @@ func (mgr Mgr) isTxReceiptFinalized(chain nexus.ChainName, txReceipt *geth.Recei
 	return true, nil
 }
 
+// GetTxReceiptIfFinalized retrieves the receipt for the provided transaction ID, only if it is successful and finalized.
 func (mgr Mgr) GetTxReceiptIfFinalized(chain nexus.ChainName, txID common.Hash, confHeight uint64) (*geth.Receipt, error) {
 	client, ok := mgr.rpcs[strings.ToLower(chain.String())]
 	if !ok {
@@ -460,7 +468,8 @@ func (mgr Mgr) GetTxReceiptIfFinalized(chain nexus.ChainName, txID common.Hash, 
 	}
 
 	if txReceipt.Status != geth.ReceiptStatusSuccessful {
-		return nil, errors.With(fmt.Errorf("transaction %s failed", txID.Hex()), keyvals...)
+		logger.Debug(fmt.Sprintf("transaction %s failed", txID.Hex()))
+		return nil, nil
 	}
 
 	isFinalized, err := mgr.isTxReceiptFinalized(chain, txReceipt, confHeight)
@@ -476,7 +485,7 @@ func (mgr Mgr) GetTxReceiptIfFinalized(chain nexus.ChainName, txID common.Hash, 
 	return txReceipt, nil
 }
 
-// GetTxReceiptsIfFinalized retrieves receipts for provided transaction IDs, only if they're finalized.
+// GetTxReceiptsIfFinalized retrieves receipts for provided transaction IDs, only if they're successful and finalized.
 func (mgr Mgr) GetTxReceiptsIfFinalized(chain nexus.ChainName, txIDs []common.Hash, confHeight uint64) ([]rs.Result[*geth.Receipt], error) {
 	client, ok := mgr.rpcs[strings.ToLower(chain.String())]
 	if !ok {
@@ -491,7 +500,7 @@ func (mgr Mgr) GetTxReceiptsIfFinalized(chain nexus.ChainName, txIDs []common.Ha
 
 	isFinalized := func(receipt *geth.Receipt) rs.Result[*geth.Receipt] {
 		if receipt.Status != geth.ReceiptStatusSuccessful {
-			return rs.FromErr[*geth.Receipt](fmt.Errorf("transaction %s failed", receipt.TxHash.Hex()))
+			return rs.FromErr[*geth.Receipt](FailedTransaction)
 		}
 
 		isFinalized, err := mgr.isTxReceiptFinalized(chain, receipt, confHeight)
