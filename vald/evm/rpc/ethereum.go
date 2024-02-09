@@ -73,7 +73,21 @@ func (c *EthereumClient) LatestFinalizedBlockNumber(ctx context.Context, confirm
 	return sdk.NewIntFromUint64(blockNumber).SubRaw(int64(confirmations)).AddRaw(1).BigInt(), nil
 }
 
+// TransactionReceipts returns transaction receipts for the given transaction hashes. Returns an error if the call fails.
+// If a transaction is not found, the corresponding result will be in the error case with a type of NotFound.
 func (c *EthereumClient) TransactionReceipts(ctx context.Context, txHashes []common.Hash) ([]Result, error) {
+	if len(txHashes) == 1 {
+		var receipt *types.Receipt
+		err := c.rpc.CallContext(ctx, receipt, "eth_getTransactionReceipt", txHashes[0])
+		if err != nil {
+			return nil, err
+		}
+		if receipt == nil {
+			return []Result{Result(results.FromErr[*types.Receipt](ethereum.NotFound))}, nil
+		}
+		return []Result{Result(results.FromOk(receipt))}, nil
+	}
+
 	batch := slices.Map(txHashes, func(txHash common.Hash) rpc.BatchElem {
 		var receipt *types.Receipt
 		return rpc.BatchElem{
