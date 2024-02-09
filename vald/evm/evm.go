@@ -21,7 +21,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/vald/evm/rpc"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/log"
@@ -289,12 +288,12 @@ type voteContext struct {
 
 func (mgr Mgr) vote(voteContext voteContext, logsToVotes func(logs []*geth.Log) []types.Event) error {
 	if !mgr.isParticipantOf(voteContext.Participants) {
-		pollIDs := slices.Map(voteContext.PollMappings, func(m types.PollMapping) vote.PollID { return m.PollID })
+		pollIDs := slices.Map(voteContext.PollMappings, types.PollMapping.GetPollID)
 		mgr.logger("poll_ids", pollIDs).Debug(fmt.Sprintf("ignoring %s poll: not a participant", voteContext.PollType))
 		return nil
 	}
 
-	txIDs := slices.Map(voteContext.PollMappings, func(poll types.PollMapping) common.Hash { return common.Hash(poll.TxID) })
+	txIDs := slices.Map(voteContext.PollMappings, types.PollMapping.GetTxID)
 	txReceipts, err := mgr.GetTxReceiptsIfFinalized(voteContext.Chain, txIDs, voteContext.ConfirmationHeight)
 	if err != nil {
 		return err
