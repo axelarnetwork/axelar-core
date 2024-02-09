@@ -1,6 +1,8 @@
 package types
 
 import (
+	"github.com/ethereum/go-ethereum/common"
+
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
@@ -68,4 +70,14 @@ func NewCommandBatchSigned(chain nexus.ChainName, batchID []byte) *CommandBatchS
 // NewCommandBatchAborted returns a new CommandBatchAborted instance
 func NewCommandBatchAborted(chain nexus.ChainName, batchID []byte) *CommandBatchAborted {
 	return &CommandBatchAborted{Chain: chain, CommandBatchID: batchID}
+}
+
+// GetTxID is a getter for the transaction ID for convenience when used in mappings
+func (m PollMapping) GetTxID() common.Hash {
+	return common.Hash(m.TxID)
+}
+
+// GetPollID is a getter for the poll ID for convenience when used in mappings
+func (m PollMapping) GetPollID() vote.PollID {
+	return m.PollID
 }
