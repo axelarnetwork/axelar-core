@@ -324,7 +324,7 @@ func NewAxelarApp(
 		upgradeKeeper:     *getKeeper[upgradekeeper.Keeper](keepers),
 	}
 
-	app.setUpgradeBehaviour(configurator)
+	app.setUpgradeBehaviour(configurator, getKeeper[wasm.Keeper](keepers))
 
 	// initialize stores
 	app.MountKVStores(keys)
@@ -447,11 +447,23 @@ func initMessageRouter(keepers *KeeperCache) nexusTypes.MessageRouter {
 	return messageRouter
 }
 
-func (app *AxelarApp) setUpgradeBehaviour(configurator module.Configurator) {
+func (app *AxelarApp) setUpgradeBehaviour(configurator module.Configurator, wasmKeeper *wasm.Keeper) {
 	app.upgradeKeeper.SetUpgradeHandler(
 		upgradeName(app.Version()),
 		func(ctx sdk.Context, _ upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
-			return app.mm.RunMigrations(ctx, configurator, fromVM)
+			updatedVM, err := app.mm.RunMigrations(ctx, configurator, fromVM)
+			if err != nil {
+				return updatedVM, err
+			}
+
+			// TODO: remove after v35 upgrade
+			// Override wasm module default params
+			wasmKeeper.SetParams(ctx, wasmtypes.Params{
+				CodeUploadAccess:             wasmtypes.AllowNobody,
+				InstantiateDefaultPermission: wasmtypes.AccessTypeNobody,
+			})
+
+			return updatedVM, err
 		},
 	)
 
@@ -1035,7 +1047,7 @@ func GetModuleBasics() module.BasicManager {
 	}
 
 	if IsWasmEnabled() {
-		managers = append(managers, NewWasmAppModuleBasicOverride(wasm.AppModuleBasic{}, authtypes.NewModuleAddress(govtypes.ModuleName)))
+		managers = append(managers, NewWasmAppModuleBasicOverride(wasm.AppModuleBasic{}))
 	}
 
 	if IsIBCWasmHooksEnabled() {
