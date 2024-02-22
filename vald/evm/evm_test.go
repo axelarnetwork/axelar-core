@@ -3,7 +3,10 @@ package evm_test
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"github.com/axelarnetwork/axelar-core/app"
+	abci "github.com/tendermint/tendermint/abci/types"
 	"math/big"
 	"strings"
 	"testing"
@@ -875,6 +878,45 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 		Run(t, 5)
 }
 
+func TestMgr_ProcessTokenConfirmationRegression(t *testing.T) {
+	var abciEvent abci.Event
+	funcs.MustNoErr(json.Unmarshal([]byte(confirmTokenEvent), &abciEvent))
+	app.SetConfig()
+	event := funcs.Must(sdk.ParseTypedEvent(abciEvent)).(*types.ConfirmTokenStarted)
+
+	validator := event.Participants[0]
+	proxy := rand.AccAddr()
+
+	txID := types.Hash(common.HexToHash("0x294170d9429e8eb9706f4465696a715f24f30596b2595a1a6d1d1dc53e7d9a0d"))
+	rpcs := map[string]evmRpc.Client{"ganache-0": &mock.ClientMock{TransactionReceiptsFunc: func(ctx context.Context, txHashes []common.Hash) ([]evmRpc.Result, error) {
+		if slices.Any(txHashes, func(hash common.Hash) bool { return types.Hash(hash) == txID }) {
+			var receipt geth.Receipt
+			assert.NoError(t, json.Unmarshal([]byte(tokenReceipt), &receipt))
+			return []evmRpc.Result{evmRpc.Result(results.FromOk(&receipt))}, nil
+		}
+
+		return nil, fmt.Errorf("not found")
+	}, LatestFinalizedBlockNumberFunc: func(ctx context.Context, confirmations uint64) (*big.Int, error) {
+		panic("not implemented")
+	}}}
+	blockCache := &evmmock.LatestFinalizedBlockCacheMock{
+		GetFunc: func(chain nexus.ChainName) *big.Int {
+			assert.Equal(t, "ganache-0", chain.String())
+
+			return big.NewInt(30)
+		},
+	}
+	broadcaster := &mock2.BroadcasterMock{BroadcastFunc: func(_ context.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error) {
+		assert.Len(t, msgs, 1)
+		assert.Equal(t, "ganache-0", msgs[0].(*voteTypes.VoteRequest).Vote.GetCachedValue().(*types.VoteEvents).Chain.String())
+		return nil, nil
+	}}
+	mgr := evm.NewMgr(rpcs, broadcaster, validator, proxy, blockCache)
+
+	assert.NoError(t, mgr.ProcessTokenConfirmation(event))
+	assert.Len(t, broadcaster.BroadcastCalls(), 1)
+}
+
 func TestMgr_GetTxReceiptsIfFinalized(t *testing.T) {
 	chain := nexus.ChainName(strings.ToLower(rand.NormalizedStr(5)))
 	txHashes := slices.Expand2(func() common.Hash { return common.BytesToHash(rand.Bytes(common.HashLength)) }, 100)
@@ -1025,3 +1067,102 @@ type byter interface {
 func padToHash[T byter](x T) common.Hash {
 	return common.BytesToHash(common.LeftPadBytes(x.Bytes(), common.HashLength))
 }
+
+var tokenReceipt = `{
+    "transactionHash": "0x294170d9429e8eb9706f4465696a715f24f30596b2595a1a6d1d1dc53e7d9a0d",
+    "transactionIndex": "0x0",
+    "blockNumber": "0x1d",
+    "blockHash": "0xc5c2e309f234403df03d6261183c7d26fc24450f90dd0b73a1572de01aa56a00",
+    "from": "0x68b93045fe7d8794a7caf327e7f855cd6cd03bb8",
+    "to": "0xe720c5c38028ca08da47e179162eca2dd255b6ec",
+    "cumulativeGasUsed": "0x2ce12",
+    "gasUsed": "0x2ce12",
+    "contractAddress": null,
+    "logs": [
+      {
+        "address": "0xe720c5c38028ca08da47e179162eca2dd255b6ec",
+        "blockHash": "0xc5c2e309f234403df03d6261183c7d26fc24450f90dd0b73a1572de01aa56a00",
+        "blockNumber": "0x1d",
+        "data": "0x000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000002540be400000000000000000000000000000000000000000000000000000000000000004973796d626f6c2d3078366263623936656330313364376338323138633661386530623762313366313034613465653030393938633361333463333763373034383138393834363065360000000000000000000000000000000000000000000000",
+        "logIndex": "0x0",
+        "removed": false,
+        "topics": [
+          "0xd99446c1d76385bb5519ccfb5274abcfd5896dfc22405e40010fde217f018a18"
+        ],
+        "transactionHash": "0x294170d9429e8eb9706f4465696a715f24f30596b2595a1a6d1d1dc53e7d9a0d",
+        "transactionIndex": "0x0"
+      },
+      {
+        "address": "0xe720c5c38028ca08da47e179162eca2dd255b6ec",
+        "blockHash": "0xc5c2e309f234403df03d6261183c7d26fc24450f90dd0b73a1572de01aa56a00",
+        "blockNumber": "0x1d",
+        "data": "0x000000000000000000000000000000000000000000000000000000000000004000000000000000000000000084a45f772ce557bf1f138d596b4081feba8ea7b5000000000000000000000000000000000000000000000000000000000000004973796d626f6c2d3078366263623936656330313364376338323138633661386530623762313366313034613465653030393938633361333463333763373034383138393834363065360000000000000000000000000000000000000000000000",
+        "logIndex": "0x1",
+        "removed": false,
+        "topics": [
+          "0xbf90b5a1ec9763e8bf4b9245cef0c28db92bab309fc2c5177f17814f38246938"
+        ],
+        "transactionHash": "0x294170d9429e8eb9706f4465696a715f24f30596b2595a1a6d1d1dc53e7d9a0d",
+        "transactionIndex": "0x0"
+      },
+      {
+        "address": "0xe720c5c38028ca08da47e179162eca2dd255b6ec",
+        "blockHash": "0xc5c2e309f234403df03d6261183c7d26fc24450f90dd0b73a1572de01aa56a00",
+        "blockNumber": "0x1d",
+        "data": "0x",
+        "logIndex": "0x2",
+        "removed": false,
+        "topics": [
+          "0xa74c8847d513feba22a0f0cb38d53081abf97562cdb293926ba243689e7c41ca",
+          "0x61c32211e6c7be4ac0022e1a83999bd95adf308a5655a6d4b43d368ef6620100"
+        ],
+        "transactionHash": "0x294170d9429e8eb9706f4465696a715f24f30596b2595a1a6d1d1dc53e7d9a0d",
+        "transactionIndex": "0x0"
+      }
+    ],
+    "logsBloom": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000084010000000000000000000000000000000000000000000000000000000000000000002000000000080000000040000000400000000000000000000000100000000000000000000000000000000000000000000000000000000000000100000000000000000000400000000000000000000000040000000000000000000000000800000000000000000000000000000000008000000000000000400000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000000",
+    "status": "0x1",
+    "effectiveGasPrice": "0x5b7ec11d",
+    "type": "0x2"
+  }`
+
+var confirmTokenEvent = `{
+  "type": "axelar.evm.v1beta1.ConfirmTokenStarted",
+  "attributes": [
+    {
+      "key": "Y2hhaW4=",
+      "value": "ImdhbmFjaGUtMCI=",
+      "index": true
+    },
+    {
+      "key": "Y29uZmlybWF0aW9uX2hlaWdodA==",
+      "value": "IjEi",
+      "index": true
+    },
+    {
+      "key": "Z2F0ZXdheV9hZGRyZXNz",
+      "value": "WzIzMSwzMiwxOTcsMTk1LDEyOCw0MCwyMDIsOCwyMTgsNzEsMjI1LDEyMSwyMiw0NiwyMDIsNDUsMjEwLDg1LDE4MiwyMzZd",
+      "index": true
+    },
+    {
+      "key": "cGFydGljaXBhbnRz",
+      "value": "eyJwb2xsX2lkIjoiMTYiLCJwYXJ0aWNpcGFudHMiOlsiYXhlbGFydmFsb3BlcjFwcjBrcnZuZjM2djBtampmbGM3MHE0ZHowemEzbHhoamowNDlhaiIsImF4ZWxhcnZhbG9wZXIxOHl6eGs1NzRzajRkem14djRoa3cwdjZ6NHNqM2t4N2g3amRha2MiLCJheGVsYXJ2YWxvcGVyMW5mNnphc2tnNHVjbnU5eWtmbjhzeDh5NzV6MnRneWw3bXV2ZTR1IiwiYXhlbGFydmFsb3BlcjFhdHZxc3RreWs0bXRxeTVrbnZ3cWRycHVnMGtwZXVjcWU5OWthMiJdfQ==",
+      "index": true
+    },
+    {
+      "key": "dG9rZW5fYWRkcmVzcw==",
+      "value": "WzEzMiwxNjQsOTUsMTE5LDQ0LDIyOSw4NywxOTEsMzEsMTksMTQxLDg5LDEwNyw2NCwxMjksMjU0LDE4NiwxNDIsMTY3LDE4MV0=",
+      "index": true
+    },
+    {
+      "key": "dG9rZW5fZGV0YWlscw==",
+      "value": "eyJ0b2tlbl9uYW1lIjoidG9rZW4tbmFtZS0weDZiY2I5NmVjMDEzZDdjODIxOGM2YThlMGI3YjEzZjEwNGE0ZWUwMDk5OGMzYTM0YzM3YzcwNDgxODk4NDYwZTYiLCJzeW1ib2wiOiJzeW1ib2wtMHg2YmNiOTZlYzAxM2Q3YzgyMThjNmE4ZTBiN2IxM2YxMDRhNGVlMDA5OThjM2EzNGMzN2M3MDQ4MTg5ODQ2MGU2IiwiZGVjaW1hbHMiOjYsImNhcGFjaXR5IjoiMCJ9",
+      "index": true
+    },
+    {
+      "key": "dHhfaWQ=",
+      "value": "WzQxLDY1LDExMiwyMTcsNjYsMTU4LDE0MiwxODUsMTEyLDExMSw2OCwxMDEsMTA1LDEwNiwxMTMsOTUsMzYsMjQzLDUsMTUwLDE3OCw4OSw5MCwyNiwxMDksMjksMjksMTk3LDYyLDEyNSwxNTQsMTNd",
+      "index": true
+    }
+  ]
+}`
