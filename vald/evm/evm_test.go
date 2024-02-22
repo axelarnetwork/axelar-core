@@ -805,8 +805,6 @@ func TestMgr_ProcessTokenConfirmationRegression(t *testing.T) {
 		}
 
 		return nil, fmt.Errorf("not found")
-	}, LatestFinalizedBlockNumberFunc: func(ctx context.Context, confirmations uint64) (*big.Int, error) {
-		panic("not implemented")
 	}}}
 	blockCache := &evmmock.LatestFinalizedBlockCacheMock{
 		GetFunc: func(chain nexus.ChainName) *big.Int {
