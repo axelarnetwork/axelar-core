@@ -7,7 +7,6 @@ import (
 	"context"
 	evmrpc "github.com/axelarnetwork/axelar-core/vald/evm/rpc"
 	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	ethereumrpc "github.com/ethereum/go-ethereum/rpc"
 	"math/big"
@@ -36,9 +35,6 @@ var _ evmrpc.EthereumJSONRPCClient = &EthereumJSONRPCClientMock{}
 //			FilterLogsFunc: func(ctx context.Context, q ethereum.FilterQuery) ([]types.Log, error) {
 //				panic("mock out the FilterLogs method")
 //			},
-//			TransactionReceiptFunc: func(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {
-//				panic("mock out the TransactionReceipt method")
-//			},
 //		}
 //
 //		// use mockedEthereumJSONRPCClient in code that requires evmrpc.EthereumJSONRPCClient
@@ -57,9 +53,6 @@ type EthereumJSONRPCClientMock struct {
 
 	// FilterLogsFunc mocks the FilterLogs method.
 	FilterLogsFunc func(ctx context.Context, q ethereum.FilterQuery) ([]types.Log, error)
-
-	// TransactionReceiptFunc mocks the TransactionReceipt method.
-	TransactionReceiptFunc func(ctx context.Context, txHash common.Hash) (*types.Receipt, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -87,19 +80,11 @@ type EthereumJSONRPCClientMock struct {
 			// Q is the q argument value.
 			Q ethereum.FilterQuery
 		}
-		// TransactionReceipt holds details about calls to the TransactionReceipt method.
-		TransactionReceipt []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
-			// TxHash is the txHash argument value.
-			TxHash common.Hash
-		}
 	}
-	lockBlockNumber        sync.RWMutex
-	lockCallContract       sync.RWMutex
-	lockClose              sync.RWMutex
-	lockFilterLogs         sync.RWMutex
-	lockTransactionReceipt sync.RWMutex
+	lockBlockNumber  sync.RWMutex
+	lockCallContract sync.RWMutex
+	lockClose        sync.RWMutex
+	lockFilterLogs   sync.RWMutex
 }
 
 // BlockNumber calls BlockNumberFunc.
@@ -234,42 +219,6 @@ func (mock *EthereumJSONRPCClientMock) FilterLogsCalls() []struct {
 	mock.lockFilterLogs.RLock()
 	calls = mock.calls.FilterLogs
 	mock.lockFilterLogs.RUnlock()
-	return calls
-}
-
-// TransactionReceipt calls TransactionReceiptFunc.
-func (mock *EthereumJSONRPCClientMock) TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {
-	if mock.TransactionReceiptFunc == nil {
-		panic("EthereumJSONRPCClientMock.TransactionReceiptFunc: method is nil but EthereumJSONRPCClient.TransactionReceipt was just called")
-	}
-	callInfo := struct {
-		Ctx    context.Context
-		TxHash common.Hash
-	}{
-		Ctx:    ctx,
-		TxHash: txHash,
-	}
-	mock.lockTransactionReceipt.Lock()
-	mock.calls.TransactionReceipt = append(mock.calls.TransactionReceipt, callInfo)
-	mock.lockTransactionReceipt.Unlock()
-	return mock.TransactionReceiptFunc(ctx, txHash)
-}
-
-// TransactionReceiptCalls gets all the calls that were made to TransactionReceipt.
-// Check the length with:
-//
-//	len(mockedEthereumJSONRPCClient.TransactionReceiptCalls())
-func (mock *EthereumJSONRPCClientMock) TransactionReceiptCalls() []struct {
-	Ctx    context.Context
-	TxHash common.Hash
-} {
-	var calls []struct {
-		Ctx    context.Context
-		TxHash common.Hash
-	}
-	mock.lockTransactionReceipt.RLock()
-	calls = mock.calls.TransactionReceipt
-	mock.lockTransactionReceipt.RUnlock()
 	return calls
 }
 
