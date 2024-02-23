@@ -42,6 +42,9 @@ var (
 // ErrNotFinalized is returned when a transaction is not finalized
 var ErrNotFinalized = goerrors.New("not finalized")
 
+// ErrTxFailed is returned when a transaction has failed
+var ErrTxFailed = goerrors.New("transaction failed")
+
 // Mgr manages all communication with Ethereum
 type Mgr struct {
 	rpcs                      map[string]rpc.Client
@@ -306,6 +309,10 @@ func (mgr Mgr) ProcessGatewayTxsConfirmation(event *types.ConfirmGatewayTxsStart
 			logger.Debug(fmt.Sprintf("transaction %s not finalized", txID.Hex()))
 			logger.Infof("broadcasting empty vote due to error: %s", result.Err().Error())
 			votes = append(votes, voteTypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain)))
+		case ErrTxFailed:
+			logger.Debug(fmt.Sprintf("transaction %s failed", txID.Hex()))
+			logger.Infof("broadcasting empty vote due to error: %s", result.Err().Error())
+			votes = append(votes, voteTypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain)))
 		case ethereum.NotFound:
 			logger.Debug(fmt.Sprintf("transaction receipt %s not found", txID.Hex()))
 			logger.Infof("broadcasting empty vote due to error: %s", result.Err().Error())
@@ -460,7 +467,7 @@ func (mgr Mgr) GetTxReceiptIfFinalized(chain nexus.ChainName, txID common.Hash, 
 	}
 
 	if txReceipt.Status != geth.ReceiptStatusSuccessful {
-		return nil, errors.With(fmt.Errorf("transaction %s failed", txID.Hex()), keyvals...)
+		return nil, nil
 	}
 
 	isFinalized, err := mgr.isTxReceiptFinalized(chain, txReceipt, confHeight)
@@ -491,7 +498,7 @@ func (mgr Mgr) GetTxReceiptsIfFinalized(chain nexus.ChainName, txIDs []common.Ha
 
 	isFinalized := func(receipt *geth.Receipt) rs.Result[*geth.Receipt] {
 		if receipt.Status != geth.ReceiptStatusSuccessful {
-			return rs.FromErr[*geth.Receipt](fmt.Errorf("transaction %s failed", receipt.TxHash.Hex()))
+			return rs.FromErr[*geth.Receipt](ErrTxFailed)
 		}
 
 		isFinalized, err := mgr.isTxReceiptFinalized(chain, receipt, confHeight)
