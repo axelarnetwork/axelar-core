@@ -324,7 +324,7 @@ func NewAxelarApp(
 		upgradeKeeper:     *getKeeper[upgradekeeper.Keeper](keepers),
 	}
 
-	app.setUpgradeBehaviour(configurator, getKeeper[wasm.Keeper](keepers))
+	app.setUpgradeBehaviour(configurator, keepers)
 
 	// initialize stores
 	app.MountKVStores(keys)
@@ -447,7 +447,7 @@ func initMessageRouter(keepers *KeeperCache) nexusTypes.MessageRouter {
 	return messageRouter
 }
 
-func (app *AxelarApp) setUpgradeBehaviour(configurator module.Configurator, wasmKeeper *wasm.Keeper) {
+func (app *AxelarApp) setUpgradeBehaviour(configurator module.Configurator, keepers *KeeperCache) {
 	app.upgradeKeeper.SetUpgradeHandler(
 		upgradeName(app.Version()),
 		func(ctx sdk.Context, _ upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
@@ -458,10 +458,12 @@ func (app *AxelarApp) setUpgradeBehaviour(configurator module.Configurator, wasm
 
 			// TODO: remove after v35 upgrade
 			// Override wasm module default params
-			wasmKeeper.SetParams(ctx, wasmtypes.Params{
-				CodeUploadAccess:             wasmtypes.AllowNobody,
-				InstantiateDefaultPermission: wasmtypes.AccessTypeNobody,
-			})
+			if IsWasmEnabled() {
+				getKeeper[wasm.Keeper](keepers).SetParams(ctx, wasmtypes.Params{
+					CodeUploadAccess:             wasmtypes.AllowNobody,
+					InstantiateDefaultPermission: wasmtypes.AccessTypeNobody,
+				})
+			}
 
 			return updatedVM, err
 		},
