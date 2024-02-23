@@ -39,8 +39,8 @@ var (
 	TokenSentSig                    = crypto.Keccak256Hash([]byte("TokenSent(address,string,string,string,uint256)"))
 )
 
-// NotFinalized is returned when a transaction is not finalized
-var NotFinalized = goerrors.New("not finalized")
+// ErrNotFinalized is returned when a transaction is not finalized
+var ErrNotFinalized = goerrors.New("not finalized")
 
 // Mgr manages all communication with Ethereum
 type Mgr struct {
@@ -302,8 +302,8 @@ func (mgr Mgr) ProcessGatewayTxsConfirmation(event *types.ConfirmGatewayTxsStart
 			events := mgr.processGatewayTxLogs(event.Chain, event.GatewayAddress, result.Ok().Logs)
 			logger.Infof("broadcasting vote %v", events)
 			votes = append(votes, voteTypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain, events...)))
-		case NotFinalized:
-			logger.Debug(fmt.Sprintf("transaction %s in block %s not finalized", txID.Hex(), result.Ok().BlockNumber.String()))
+		case ErrNotFinalized:
+			logger.Debug(fmt.Sprintf("transaction %s in block not finalized", txID.Hex()))
 			logger.Infof("broadcasting empty vote due to error: %s", result.Err().Error())
 			votes = append(votes, voteTypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain)))
 		case ethereum.NotFound:
@@ -502,7 +502,7 @@ func (mgr Mgr) GetTxReceiptsIfFinalized(chain nexus.ChainName, txIDs []common.Ha
 		}
 
 		if !isFinalized {
-			return rs.FromErr[*geth.Receipt](NotFinalized)
+			return rs.FromErr[*geth.Receipt](ErrNotFinalized)
 		}
 
 		return rs.FromOk(receipt)
