@@ -303,7 +303,7 @@ func (mgr Mgr) ProcessGatewayTxsConfirmation(event *types.ConfirmGatewayTxsStart
 			logger.Infof("broadcasting vote %v", events)
 			votes = append(votes, voteTypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain, events...)))
 		case ErrNotFinalized:
-			logger.Debug(fmt.Sprintf("transaction %s in block not finalized", txID.Hex()))
+			logger.Debug(fmt.Sprintf("transaction %s not finalized", txID.Hex()))
 			logger.Infof("broadcasting empty vote due to error: %s", result.Err().Error())
 			votes = append(votes, voteTypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain)))
 		case ethereum.NotFound:
