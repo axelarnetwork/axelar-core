@@ -458,7 +458,7 @@ func (app *AxelarApp) setUpgradeBehaviour(configurator module.Configurator, keep
 
 			// TODO: remove after v35 upgrade
 			// Override wasm module default params
-			if IsWasmEnabled() {
+			if upgradeName(app.Version()) == "v0.35" && IsWasmEnabled() {
 				getKeeper[wasm.Keeper](keepers).SetParams(ctx, wasmtypes.Params{
 					CodeUploadAccess:             wasmtypes.AllowNobody,
 					InstantiateDefaultPermission: wasmtypes.AccessTypeNobody,
