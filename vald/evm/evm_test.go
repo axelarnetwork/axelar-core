@@ -211,7 +211,7 @@ func TestMgr_GetTxReceiptIfFinalized(t *testing.T) {
 		Then("tx is considered not finalized", func(t *testing.T) {
 			txReceipt, err := mgr.GetTxReceiptIfFinalized(chain, tx.Hash(), confHeight)
 
-			assert.ErrorContains(t, err, "failed")
+			assert.NoError(t, err)
 			assert.Nil(t, txReceipt)
 		}).
 		Run(t)
