@@ -2,15 +2,13 @@ package evm
 
 import (
 	"context"
-	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
-	votetypes "github.com/axelarnetwork/axelar-core/x/vote/types"
+	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 	"github.com/axelarnetwork/utils/slices"
 )
 
@@ -29,34 +27,22 @@ func (mgr Mgr) ProcessGatewayTxsConfirmation(event *types.ConfirmGatewayTxsStart
 	}
 
 	var votes []sdk.Msg
-	for i, result := range txReceipts {
+	for i, txReceipt := range txReceipts {
 		pollID := event.PollMappings[i].PollID
 		txID := event.PollMappings[i].TxID
 
 		logger := mgr.logger("chain", event.Chain, "poll_id", pollID.String(), "tx_id", txID.Hex())
 
-		// only broadcast empty votes if the tx is not found or not finalized
-		switch result.Err() {
-		case nil:
-			events := mgr.processGatewayTxLogs(event.Chain, event.GatewayAddress, result.Ok().Logs)
-			logger.Infof("broadcasting vote %v", events)
-			votes = append(votes, votetypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain, events...)))
-		case ErrNotFinalized:
-			logger.Debug(fmt.Sprintf("transaction %s not finalized", txID.Hex()))
-			logger.Infof("broadcasting empty vote due to error: %s", result.Err().Error())
-			votes = append(votes, votetypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain)))
-		case ErrTxFailed:
-			logger.Debug(fmt.Sprintf("transaction %s failed", txID.Hex()))
-			logger.Infof("broadcasting empty vote due to error: %s", result.Err().Error())
-			votes = append(votes, votetypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain)))
-		case ethereum.NotFound:
-			logger.Debug(fmt.Sprintf("transaction receipt %s not found", txID.Hex()))
-			logger.Infof("broadcasting empty vote due to error: %s", result.Err().Error())
-			votes = append(votes, votetypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain)))
-		default:
-			logger.Errorf("failed to get tx receipt: %s", result.Err().Error())
-		}
+		if txReceipt.Err() != nil {
+			votes = append(votes, voteTypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain)))
 
+			logger.Infof("broadcasting empty vote for poll %s: %s", pollID.String(), txReceipt.Err().Error())
+		} else {
+			events := mgr.processGatewayTxLogs(event.Chain, event.GatewayAddress, txReceipt.Ok().Logs)
+			votes = append(votes, voteTypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain, events...)))
+
+			logger.Infof("broadcasting vote %v for poll %s", events, pollID.String())
+		}
 	}
 
 	_, err = mgr.broadcaster.Broadcast(context.TODO(), votes...)

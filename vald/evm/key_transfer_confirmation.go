@@ -5,6 +5,7 @@ import (
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
+	geth "github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
@@ -17,20 +18,31 @@ func (mgr Mgr) ProcessTransferKeyConfirmation(event *types.ConfirmKeyTransferSta
 		return nil
 	}
 
+	var vote *voteTypes.VoteRequest
+
 	txReceipt, err := mgr.GetTxReceiptIfFinalized(event.Chain, common.Hash(event.TxID), event.ConfirmationHeight)
 	if err != nil {
 		return err
 	}
-	if txReceipt == nil {
-		mgr.logger().Infof("broadcasting empty vote for poll %s", event.PollID.String())
-		_, err := mgr.broadcaster.Broadcast(context.TODO(), voteTypes.NewVoteRequest(mgr.proxy, event.PollID, types.NewVoteEvents(event.Chain)))
+	if txReceipt.Err() != nil {
+		vote = voteTypes.NewVoteRequest(mgr.proxy, event.PollID, types.NewVoteEvents(event.Chain))
 
-		return err
+		mgr.logger().Infof("broadcasting empty vote for poll %s: %s", event.PollID.String(), txReceipt.Err().Error())
+	} else {
+		events := mgr.processTransferKeyLogs(event, txReceipt.Ok().Logs)
+		vote = voteTypes.NewVoteRequest(mgr.proxy, event.PollID, types.NewVoteEvents(event.Chain, events...))
+
+		mgr.logger().Infof("broadcasting vote %v for poll %s", events, event.PollID.String())
 	}
 
-	var events []types.Event
-	for i := len(txReceipt.Logs) - 1; i >= 0; i-- {
-		txlog := txReceipt.Logs[i]
+	_, err = mgr.broadcaster.Broadcast(context.TODO(), vote)
+
+	return err
+}
+
+func (mgr Mgr) processTransferKeyLogs(event *types.ConfirmKeyTransferStarted, logs []*geth.Log) []types.Event {
+	for i := len(logs) - 1; i >= 0; i-- {
+		txlog := logs[i]
 
 		if txlog.Topics[0] != MultisigTransferOperatorshipSig {
 			continue
@@ -52,18 +64,14 @@ func (mgr Mgr) ProcessTransferKeyConfirmation(event *types.ConfirmKeyTransferSta
 			continue
 		}
 
-		events = append(events, types.Event{
-			Chain: event.Chain,
+		return []types.Event{{Chain: event.Chain,
 			TxID:  event.TxID,
 			Index: uint64(i),
 			Event: &types.Event_MultisigOperatorshipTransferred{
 				MultisigOperatorshipTransferred: &transferOperatorshipEvent,
-			}})
-		break
+			},
+		}}
 	}
 
-	mgr.logger().Infof("broadcasting vote %v for poll %s", events, event.PollID.String())
-	_, err = mgr.broadcaster.Broadcast(context.TODO(), voteTypes.NewVoteRequest(mgr.proxy, event.PollID, types.NewVoteEvents(event.Chain, events...)))
-
-	return err
+	return []types.Event{}
 }
