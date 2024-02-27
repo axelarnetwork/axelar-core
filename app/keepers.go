@@ -167,7 +167,11 @@ func initWasmKeeper(encodingConfig axelarParams.EncodingConfig, keys map[string]
 	wasmConfig := mustReadWasmConfig(appOpts)
 
 	if wasmDir == "" {
-		wasmDir = filepath.Join(homePath, cast.ToString(appOpts.Get("db_dir")), "wasm")
+		dbDir := cast.ToString(appOpts.Get("db_dir"))
+		wasmDir = filepath.Join(dbDir, "wasm")
+		if dbDir == "data" {
+			wasmDir = filepath.Join(homePath, dbDir)
+		}
 	}
 
 	// The last arguments can contain custom message handlers, and custom query handlers,
