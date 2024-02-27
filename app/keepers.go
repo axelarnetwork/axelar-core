@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -72,6 +73,7 @@ import (
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	voteKeeper "github.com/axelarnetwork/axelar-core/x/vote/keeper"
 	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
+	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/maps"
 )
 
@@ -163,6 +165,25 @@ func InitStakingKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, ke
 	return &stakingK
 }
 
+func migrateWasmDir(oldWasmDir, newWasmDir string) error {
+	// If the new wasm dir exists, there's nothing to do
+	if _, err := os.Stat(newWasmDir); !os.IsNotExist(err) {
+		return nil
+	}
+
+	// If the old wasm dir doesn't exist, there's nothing to do
+	if _, err := os.Stat(oldWasmDir); os.IsNotExist(err) {
+		return nil
+	}
+
+	// Move the wasm dir from old path to new path
+	if err := os.Rename(oldWasmDir, newWasmDir); err != nil {
+		return fmt.Errorf("failed to move wasm directory from %s to %s: %v", oldWasmDir, newWasmDir, err)
+	}
+
+	return nil
+}
+
 func initWasmKeeper(encodingConfig axelarParams.EncodingConfig, keys map[string]*sdk.KVStoreKey, keepers *KeeperCache, bApp *bam.BaseApp, appOpts types.AppOptions, wasmOpts []wasm.Option, homePath, wasmDir string) *wasm.Keeper {
 	wasmConfig := mustReadWasmConfig(appOpts)
 
@@ -170,6 +191,11 @@ func initWasmKeeper(encodingConfig axelarParams.EncodingConfig, keys map[string]
 		dbDir := cast.ToString(appOpts.Get("db_dir"))
 		wasmDir = filepath.Join(homePath, dbDir, "wasm")
 	}
+
+	// Migrate wasm dir from old path to new path
+	// TODO: Remove this once nodes have migrated
+	oldWasmDir := filepath.Join(homePath, "wasm")
+	funcs.MustNoErr(migrateWasmDir(oldWasmDir, wasmDir))
 
 	// The last arguments can contain custom message handlers, and custom query handlers,
 	// if we want to allow any custom callbacks
