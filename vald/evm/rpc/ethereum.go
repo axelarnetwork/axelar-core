@@ -22,6 +22,7 @@ import (
 type EthereumJSONRPCClient interface {
 	BlockNumber(ctx context.Context) (uint64, error)
 	CallContract(ctx context.Context, msg ethereum.CallMsg, blockNumber *big.Int) ([]byte, error)
+	TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error)
 	FilterLogs(ctx context.Context, q ethereum.FilterQuery) ([]types.Log, error)
 	Close()
 }
@@ -73,49 +74,33 @@ func (c *EthereumClient) LatestFinalizedBlockNumber(ctx context.Context, confirm
 	return sdk.NewIntFromUint64(blockNumber).SubRaw(int64(confirmations)).AddRaw(1).BigInt(), nil
 }
 
-// TransactionReceipts returns transaction receipts for the given transaction hashes. Returns an error if the call fails.
-// If a transaction is not found, the corresponding result will be in the error case with a type of NotFound.
 func (c *EthereumClient) TransactionReceipts(ctx context.Context, txHashes []common.Hash) ([]Result, error) {
-	switch len(txHashes) {
-	case 0:
-		return nil, nil
-	case 1:
+	batch := slices.Map(txHashes, func(txHash common.Hash) rpc.BatchElem {
 		var receipt *types.Receipt
-		err := c.rpc.CallContext(ctx, receipt, "eth_getTransactionReceipt", txHashes[0])
-		if err != nil {
-			return nil, err
+		return rpc.BatchElem{
+			Method: "eth_getTransactionReceipt",
+			Args:   []interface{}{txHash},
+			Result: &receipt,
 		}
-		if receipt == nil {
-			return []Result{Result(results.FromErr[*types.Receipt](ethereum.NotFound))}, nil
-		}
-		return []Result{Result(results.FromOk(receipt))}, nil
-	default:
-		batch := slices.Map(txHashes, func(txHash common.Hash) rpc.BatchElem {
-			var receipt *types.Receipt
-			return rpc.BatchElem{
-				Method: "eth_getTransactionReceipt",
-				Args:   []interface{}{txHash},
-				Result: &receipt,
-			}
-		})
+	})
 
-		if err := c.rpc.BatchCallContext(ctx, batch); err != nil {
-			return nil, fmt.Errorf("unable to send batch request: %v", err)
-		}
-
-		return slices.Map(batch, func(elem rpc.BatchElem) Result {
-			if elem.Error != nil {
-				return Result(results.FromErr[*types.Receipt](elem.Error))
-			}
-
-			receipt := elem.Result.(**types.Receipt)
-			if *receipt == nil {
-				return Result(results.FromErr[*types.Receipt](ethereum.NotFound))
-			}
-
-			return Result(results.FromOk(*receipt))
-		}), nil
+	if err := c.rpc.BatchCallContext(ctx, batch); err != nil {
+		return nil, fmt.Errorf("unable to send batch request: %v", err)
 	}
+
+	return slices.Map(batch, func(elem rpc.BatchElem) Result {
+		if elem.Error != nil {
+			return Result(results.FromErr[*types.Receipt](elem.Error))
+		}
+
+		receipt := elem.Result.(**types.Receipt)
+		if *receipt == nil {
+			return Result(results.FromErr[*types.Receipt](ethereum.NotFound))
+		}
+
+		return Result(results.FromOk(*receipt))
+	}), nil
+
 }
 
 // copied from https://github.com/ethereum/go-ethereum/blob/69568c554880b3567bace64f8848ff1be27d084d/ethclient/ethclient.go#L565

@@ -20,6 +20,8 @@ type Result results.Result[*types.Receipt]
 
 // Client provides calls to EVM JSON-RPC endpoints
 type Client interface {
+	// TransactionReceipt returns the transaction receipt for the given transaction hash
+	TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error)
 	// TransactionReceipts returns transaction receipts for the given transaction hashes
 	TransactionReceipts(ctx context.Context, txHashes []common.Hash) ([]Result, error)
 	// HeaderByNumber returns the block header for the given block number
