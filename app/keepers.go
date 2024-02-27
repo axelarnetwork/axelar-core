@@ -170,7 +170,7 @@ func initWasmKeeper(encodingConfig axelarParams.EncodingConfig, keys map[string]
 		dbDir := cast.ToString(appOpts.Get("db_dir"))
 		wasmDir = filepath.Join(dbDir, "wasm")
 		if dbDir == "data" {
-			wasmDir = filepath.Join(homePath, dbDir)
+			wasmDir = filepath.Join(homePath, wasmDir)
 		}
 	}
 
