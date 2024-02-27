@@ -256,7 +256,7 @@ func NewAxelarApp(
 	SetKeeper(keepers, initAxelarIBCKeeper(keepers))
 
 	if IsWasmEnabled() {
-		SetKeeper(keepers, initWasmKeeper(encodingConfig, keys, keepers, bApp, appOpts, wasmOpts, wasmDir))
+		SetKeeper(keepers, initWasmKeeper(encodingConfig, keys, keepers, bApp, appOpts, wasmOpts, homePath, wasmDir))
 		SetKeeper(keepers, initWasmContractKeeper(keepers))
 
 		// set the contract keeper for the Ics20WasmHooks

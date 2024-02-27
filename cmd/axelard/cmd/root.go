@@ -206,7 +206,7 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 
 	starterFlags := func(startCmd *cobra.Command) {
 		crisis.AddModuleInitFlags(startCmd)
-		startCmd.Flags().String(wasmdirFlag, filepath.Join("$HOME", "."+app.Name, "wasm"), "path for the cosmwasm directory")
+		startCmd.Flags().String(wasmdirFlag, "", "path for the cosmwasm directory")
 	}
 
 	server.AddCommands(rootCmd, app.DefaultNodeHome, newApp, export(encodingConfig), starterFlags)

@@ -88,7 +88,7 @@ axelard start [flags]
       --trace-store string                              Enable KVStore tracing to an output file
       --transport string                                Transport protocol: socket, grpc (default "socket")
       --unsafe-skip-upgrades ints                       Skip a set of upgrade heights to continue the old binary
-      --wasm-dir string                                 path for the cosmwasm directory (default "$HOME/.axelar/wasm")
+      --wasm-dir string                                 path for the cosmwasm directory
       --with-tendermint                                 Run abci app embedded in-process with tendermint (default true)
       --x-crisis-skip-assert-invariants                 Skip x/crisis invariants check on startup
 ```
