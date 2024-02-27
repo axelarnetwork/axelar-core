@@ -49,7 +49,7 @@ import (
 
 var (
 	minGasPrice = "0.007" + axelarnet.NativeAsset
-	wasmdirFlag = "wasm-dir"
+	wasmDirFlag = "wasm-dir"
 )
 
 // NewRootCmd creates a new root command for axelard. It is called once in the
@@ -272,7 +272,7 @@ func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer, appOpts serverty
 	return app.NewAxelarApp(
 		logger, db, traceStore, true, skipUpgradeHeights,
 		cast.ToString(appOpts.Get(flags.FlagHome)),
-		cast.ToString(appOpts.Get(wasmdirFlag)),
+		cast.ToString(appOpts.Get(wasmDirFlag)),
 		cast.ToUint(appOpts.Get(server.FlagInvCheckPeriod)),
 		app.MakeEncodingConfig(),
 		appOpts,
@@ -300,7 +300,7 @@ func export(encCfg params.EncodingConfig) servertypes.AppExporter {
 			return servertypes.ExportedApp{}, errors.New("application home not set")
 		}
 
-		wasmdir := cast.ToString(appOpts.Get(wasmdirFlag))
+		wasmdir := cast.ToString(appOpts.Get(wasmDirFlag))
 		aApp := app.NewAxelarApp(logger, db, traceStore, height == -1, map[int64]bool{}, homePath, wasmdir,
 			cast.ToUint(appOpts.Get(server.FlagInvCheckPeriod)), encCfg, appOpts, []wasm.Option{})
 		if height != -1 {
